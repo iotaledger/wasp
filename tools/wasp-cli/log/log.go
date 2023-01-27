@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/iotaledger/wasp/client"
 	"os"
 	"strings"
 	"text/tabwriter"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 

@@ -73,9 +73,12 @@
     "enabled": false,
     "bindAddress": "localhost:6060"
   },
+  "profilingRecorder": {
+    "enabled": false
+  },
   "prometheus": {
     "enabled": true,
-    "bindAddress": "127.0.0.1:2112",
+    "bindAddress": "0.0.0.0:2112",
     "nodeMetrics": true,
     "nodeConnMetrics": true,
     "blockWALMetrics": true,
@@ -87,7 +90,7 @@
   "webapi": {
     "enabled": true,
     "nodeOwnerAddresses": [],
-    "bindAddress": "127.0.0.1:9090",
+    "bindAddress": "0.0.0.0:9090",
     "debugRequestLoggerEnabled": false,
     "auth": {
       "scheme": "jwt",
@@ -99,10 +102,12 @@
       },
       "ip": {
         "whitelist": [
-          "127.0.0.1"
+          "0.0.0.0"
         ]
       }
-    }
+    },
+    "readTimeout": "20s",
+    "writeTimeout": "30s"
   },
   "nanomsg": {
     "enabled": true,
@@ -110,7 +115,7 @@
   },
   "dashboard": {
     "enabled": true,
-    "bindAddress": "127.0.0.1:7000",
+    "bindAddress": "0.0.0.0:7000",
     "exploreAddressURL": "",
     "debugRequestLoggerEnabled": false,
     "auth": {
@@ -123,7 +128,7 @@
       },
       "ip": {
         "whitelist": [
-          "127.0.0.1"
+          "0.0.0.0"
         ]
       }
     }

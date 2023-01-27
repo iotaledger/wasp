@@ -287,7 +287,6 @@ impl MutableSendRequest {
 #[derive(Clone)]
 pub struct TransferRequest {
     pub agent_id : ScAgentID,
-    pub create   : bool,
     pub transfer : Vec<u8>,
 }
 
@@ -296,7 +295,6 @@ impl TransferRequest {
         let mut dec = WasmDecoder::new(bytes);
         TransferRequest {
             agent_id : agent_id_decode(&mut dec),
-            create   : bool_decode(&mut dec),
             transfer : bytes_decode(&mut dec),
         }
     }
@@ -304,7 +302,6 @@ impl TransferRequest {
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut enc = WasmEncoder::new();
         agent_id_encode(&mut enc, &self.agent_id);
-        bool_encode(&mut enc, self.create);
         bytes_encode(&mut enc, &self.transfer);
         enc.buf()
     }

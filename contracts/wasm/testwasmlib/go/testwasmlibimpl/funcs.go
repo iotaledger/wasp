@@ -89,7 +89,7 @@ func funcRandom(ctx wasmlib.ScFuncContext, f *RandomContext) {
 }
 
 func funcTakeAllowance(ctx wasmlib.ScFuncContext, _ *TakeAllowanceContext) {
-	ctx.TransferAllowed(ctx.AccountID(), wasmlib.NewScTransferFromBalances(ctx.Allowance()), false)
+	ctx.TransferAllowed(ctx.AccountID(), wasmlib.NewScTransferFromBalances(ctx.Allowance()))
 	ctx.Log(ctx.Utility().String(int64(ctx.Balances().BaseTokens())))
 }
 

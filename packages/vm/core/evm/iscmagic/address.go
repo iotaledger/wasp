@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
@@ -20,12 +21,17 @@ const (
 	addressKindERC20BaseTokens
 	addressKindERC20NativeTokens
 	addressKindERC721NFTs
+	addressKindERC721NFTCollection
 	addressKindInvalid
 )
 
 var (
 	AddressPrefix = []byte{0x10, 0x74}
 	Address       = packMagicAddress(addressKindISCMagic, nil)
+
+	kindByteIndex    = len(AddressPrefix)
+	headerLength     = len(AddressPrefix) + 1 // AddressPrefix + kind (byte)
+	maxPayloadLength = common.AddressLength - headerLength
 )
 
 func ERC20NativeTokensAddress(foundrySN uint32) common.Address {
@@ -46,26 +52,30 @@ func ERC20NativeTokensFoundrySN(addr common.Address) (uint32, error) {
 	return codec.MustDecodeUint32(payload[0:4]), nil
 }
 
+func ERC721NFTCollectionAddress(collectionID iotago.NFTID) common.Address {
+	return packMagicAddress(addressKindERC721NFTCollection, collectionID[:maxPayloadLength])
+}
+
 func packMagicAddress(kind addressKind, payload []byte) common.Address {
 	var ret common.Address
-	copy(ret[0:2], AddressPrefix)
-	ret[2] = byte(kind)
-	if len(payload) > len(ret[3:]) {
+	copy(ret[:], AddressPrefix)
+	ret[kindByteIndex] = byte(kind)
+	if len(payload) > maxPayloadLength {
 		panic("packMagicAddress: invalid payload length")
 	}
-	copy(ret[3:], payload)
+	copy(ret[headerLength:], payload)
 	return ret
 }
 
 func unpackMagicAddress(addr common.Address) (addressKind, []byte, error) {
-	if !bytes.Equal(addr[0:2], AddressPrefix) {
+	if !bytes.Equal(addr[0:len(AddressPrefix)], AddressPrefix) {
 		return 0, nil, errors.New("unpackMagicAddress: expected magic address prefix")
 	}
-	kind := addressKind(addr[2])
+	kind := addressKind(addr[kindByteIndex])
 	if kind >= addressKindInvalid {
 		return 0, nil, errors.New("unpackMagicAddress: unknown address kind")
 	}
-	payload := addr[3:]
+	payload := addr[headerLength:]
 	return kind, payload, nil
 }
 

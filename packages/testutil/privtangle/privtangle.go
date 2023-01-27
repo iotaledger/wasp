@@ -31,10 +31,10 @@ import (
 
 // ===== Wasp dependencies ===== // DO NOT DELETE THIS LINE! It is needed for `make deps-versions` command
 // requires hornet, and inx plugins binaries to be in PATH
-// https://github.com/iotaledger/hornet (b3b0153)
-// https://github.com/iotaledger/inx-indexer (3b84047)
-// https://github.com/iotaledger/inx-coordinator (5c0f794)
-// https://github.com/iotaledger/inx-faucet (0cb51d2) (requires `git submodule update --init --recursive` before building )
+// https://github.com/iotaledger/hornet (v2.0.0-rc.4)
+// https://github.com/iotaledger/inx-indexer (v1.0.0-rc.3)
+// https://github.com/iotaledger/inx-coordinator (v1.0.0-rc.3)
+// https://github.com/iotaledger/inx-faucet (v1.0.0-rc.1) (requires `git submodule update --init --recursive` before building )
 // ============================= // DO NOT DELETE THIS LINE! It is needed for `make deps-versions` command
 
 type LogFunc func(format string, args ...interface{})
@@ -176,6 +176,10 @@ func (pt *PrivTangle) startNode(i int) {
 		fmt.Sprintf("--prometheus.fileServiceDiscovery.target=localhost:%d", pt.NodePortPrometheus(i)),
 		fmt.Sprintf("--inx.bindAddress=localhost:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--p2p.db.path=%s", nodeP2PStore),
+		// nodes almost start at the same time in the clustertests,
+		// causing them to try to connect to each other at the same time, which ends up in "duplicated stream" errors.
+		// we can only fix that by a reconnect.
+		"--p2p.reconnectInterval=2s",
 		fmt.Sprintf("--p2p.identityPrivateKey=%s", hex.EncodeToString(pt.NodeKeyPairs[i].GetPrivateKey().AsBytes())),
 		fmt.Sprintf("--p2p.peers=%s", strings.Join(pt.NodeMultiAddrsWoIndex(i), ",")),
 	}

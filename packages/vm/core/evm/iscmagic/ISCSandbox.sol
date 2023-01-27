@@ -79,6 +79,9 @@ interface ISCSandbox {
     // Get information about an on-chain NFT
     function getNFTData(NFTID id) external view returns (ISCNFT memory);
 
+    // Get information about an on-chain IRC27 NFT
+    function getIRC27NFTData(NFTID id) external view returns (IRC27NFT memory);
+
     // Get the address of an ERC20NativeTokens contract for the given foundry serial number
     function erc20NativeTokensAddress(uint32 foundrySN) external view returns (address);
 

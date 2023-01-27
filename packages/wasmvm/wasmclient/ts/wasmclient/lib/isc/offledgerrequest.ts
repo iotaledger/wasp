@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmlib from 'wasmlib';
-import {KeyPair} from "./keypair";
-import {concat} from "wasmlib";
-import {Blake2b} from "@iota/crypto.js";
+import {concat} from 'wasmlib';
+import {KeyPair} from './keypair';
+import {Blake2b} from '@iota/crypto.js';
 
 export class OffLedgerSignatureScheme {
     keyPair: KeyPair;
@@ -36,7 +36,7 @@ export class OffLedgerRequest {
 
     public bytes(): Uint8Array {
         const sig = this.signatureScheme.signature;
-        let data = concat(this.essence(), wasmlib.uint16ToBytes(sig.length as u16));
+        const data = concat(this.essence(), wasmlib.uint16ToBytes(sig.length as u16));
         return concat(data, sig);
     }
 

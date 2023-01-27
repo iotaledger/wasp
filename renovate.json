@@ -1,0 +1,15 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base"
+  ],
+  "ignorePaths": [
+    "documentation/**",
+    "contracts/**",
+    "tools/evm-toolkit/**"
+  ],
+  "ignoreDeps": [
+    "github.com/iotaledger/wasp",
+    "github.com/iotaledger/wasp/tools/wasp-cli"
+  ]
+}

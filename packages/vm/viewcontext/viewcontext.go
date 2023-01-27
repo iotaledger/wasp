@@ -107,15 +107,15 @@ func (ctx *ViewContext) Processors() *processors.Cache {
 }
 
 func (ctx *ViewContext) GetAssets(agentID isc.AgentID) *isc.FungibleTokens {
-	return accounts.GetAccountAssets(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
+	return accounts.GetAccountFungibleTokens(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
 func (ctx *ViewContext) GetAccountNFTs(agentID isc.AgentID) []iotago.NFTID {
 	return accounts.GetAccountNFTs(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
-func (ctx *ViewContext) GetNFTData(nftID iotago.NFTID) isc.NFT {
-	return accounts.GetNFTData(ctx.contractStateReader(accounts.Contract.Hname()), nftID)
+func (ctx *ViewContext) GetNFTData(nftID iotago.NFTID) *isc.NFT {
+	return accounts.MustGetNFTData(ctx.contractStateReader(accounts.Contract.Hname()), nftID)
 }
 
 func (ctx *ViewContext) Timestamp() time.Time {

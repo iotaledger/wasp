@@ -39,5 +39,5 @@ type WaspContext interface {
 	GasBurned() uint64
 	GasBudgetLeft() uint64
 	GetAccountNFTs(agentID isc.AgentID) []iotago.NFTID
-	GetNFTData(nftID iotago.NFTID) isc.NFT
+	GetNFTData(nftID iotago.NFTID) *isc.NFT
 }

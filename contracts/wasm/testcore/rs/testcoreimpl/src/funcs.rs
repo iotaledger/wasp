@@ -50,7 +50,7 @@ pub fn func_check_context_from_full_ep(ctx: &ScFuncContext, f: &CheckContextFrom
 pub fn func_claim_allowance(ctx: &ScFuncContext, _f: &ClaimAllowanceContext) {
     let allowance = ctx.allowance();
     let transfer = wasmlib::ScTransfer::from_balances(&allowance);
-    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer);
 }
 
 pub fn func_do_nothing(ctx: &ScFuncContext, _f: &DoNothingContext) {
@@ -96,7 +96,7 @@ pub fn func_ping_allowance_back(ctx: &ScFuncContext, _f: &PingAllowanceBackConte
     let caller = ctx.caller();
     ctx.require(caller.is_address(), "pingAllowanceBack: caller expected to be a L1 address");
     let transfer = wasmlib::ScTransfer::from_balances(&ctx.allowance());
-    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer);
     ctx.send(&caller.address(), &transfer);
 }
 
@@ -121,7 +121,7 @@ pub fn func_send_nf_ts_back(ctx: &ScFuncContext, _f: &SendNFTsBackContext) {
     let address = ctx.caller().address();
     let allowance = ctx.allowance();
     let transfer = wasmlib::ScTransfer::from_balances(&allowance);
-    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer);
     for nft_id in allowance.nft_ids() {
         let transfer = ScTransfer::nft(&nft_id);
         ctx.send(&address, &transfer);
@@ -155,7 +155,7 @@ pub fn func_split_funds(ctx: &ScFuncContext, _f: &SplitFundsContext) {
     let tokens_to_transfer: u64 = 1_000_000;
     let transfer = wasmlib::ScTransfer::base_tokens(tokens_to_transfer);
     while tokens >= tokens_to_transfer {
-        ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+        ctx.transfer_allowed(&ctx.account_id(), &transfer);
         ctx.send(&address, &transfer);
         tokens -= tokens_to_transfer;
     }
@@ -165,13 +165,13 @@ pub fn func_split_funds_native_tokens(ctx: &ScFuncContext, _f: &SplitFundsNative
     let tokens = ctx.allowance().base_tokens();
     let address = ctx.caller().address();
     let transfer = wasmlib::ScTransfer::base_tokens(tokens);
-    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer);
     for token in ctx.allowance().token_ids() {
         let one = ScBigInt::from_uint64(1);
         let transfer = wasmlib::ScTransfer::tokens(&token, &one);
         let mut tokens = ctx.allowance().balance(&token);
         while tokens.cmp(&one) >= 0 {
-            ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+            ctx.transfer_allowed(&ctx.account_id(), &transfer);
             ctx.send(&address, &transfer);
             tokens = tokens.sub(&one);
         }

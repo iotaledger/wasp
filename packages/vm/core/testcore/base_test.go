@@ -363,7 +363,6 @@ func TestEstimateGas(t *testing.T) {
 				err = ch.TransferAllowanceTo(
 					isc.NewAllowanceBaseTokens(testCase.L2Balance),
 					isc.NewAgentID(addr),
-					true,
 					anotherKeyPair,
 				)
 				require.NoError(t, err)

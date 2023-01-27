@@ -28,6 +28,7 @@ func AddBasicAuth(webAPI WebAPI, userManager *users.UserManager) {
 			return false, nil
 		}
 
+		authContext.name = username
 		authContext.isAuthenticated = true
 		return true, nil
 	}))

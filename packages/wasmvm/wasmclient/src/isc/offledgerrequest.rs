@@ -132,4 +132,7 @@ impl OffLedgerRequestData {
         );
         return b;
     }
+    pub fn with_allowance(&mut self, allowance: &ScAssets) {
+        self.allowance = allowance.clone();
+    }
 }

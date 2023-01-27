@@ -3,13 +3,14 @@
 
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
-import { panic } from 'wasmlib';
-import { IClientService } from './';
+import {panic} from 'wasmlib';
+import {IClientService} from './';
 
 export class WasmClientSandbox implements wasmlib.ScHost {
     chainID: wasmlib.ScChainID = new wasmlib.ScChainID();
     Err: isc.Error = null;
-    hrp: string = "";
+    eventReceived: bool = false;
+    hrp = '';
     keyPair: isc.KeyPair | null = null;
     nonce: u64 = 0n;
     ReqID: wasmlib.ScRequestID = new wasmlib.ScRequestID();
@@ -27,6 +28,8 @@ export class WasmClientSandbox implements wasmlib.ScHost {
             return this;
         }
         this.hrp = hrp;
+
+        // note that chainIDFromString needs host to be connected
         wasmlib.connectHost(this);
         this.chainID = wasmlib.chainIDFromString(chain);
     }
@@ -39,11 +42,11 @@ export class WasmClientSandbox implements wasmlib.ScHost {
         this.Err = null;
         switch (funcNr) {
             case wasmlib.FnCall:
-                return this.fnCall(args);
+                return this.fnCall(wasmlib.CallRequest.fromBytes(args));
             case wasmlib.FnChainID:
-                return this.chainID.toBytes();
+                return this.fnChainID().toBytes();
             case wasmlib.FnPost:
-                return this.fnPost(args);
+                return this.fnPost(wasmlib.PostRequest.fromBytes(args));
             case wasmlib.FnUtilsBech32Decode:
                 return this.fnUtilsBech32Decode(args);
             case wasmlib.FnUtilsBech32Encode:
@@ -75,8 +78,8 @@ export class WasmClientSandbox implements wasmlib.ScHost {
 
     /////////////////////////////////////////////////////////////////
 
-    public fnCall(args: Uint8Array): Uint8Array {
-        const req = wasmlib.CallRequest.fromBytes(args);
+    public fnCall(req: wasmlib.CallRequest): Uint8Array {
+        this.eventReceived = false;
         if (!req.contract.equals(this.scHname)) {
             this.Err = 'unknown contract: ' + req.contract.toString();
             return new Uint8Array(0);
@@ -86,12 +89,16 @@ export class WasmClientSandbox implements wasmlib.ScHost {
         return res;
     }
 
-    public fnPost(args: Uint8Array): Uint8Array {
+    public fnChainID(): wasmlib.ScChainID {
+        return this.chainID;
+    }
+
+    public fnPost(req: wasmlib.PostRequest): Uint8Array {
+        this.eventReceived = false;
         if (this.keyPair == null) {
             this.Err = 'missing key pair';
             return new Uint8Array(0);
         }
-        const req = wasmlib.PostRequest.fromBytes(args);
         if (!req.chainID.equals(this.chainID)) {
             this.Err = 'unknown chain id: ' + req.chainID.toString();
             return new Uint8Array(0);
@@ -102,7 +109,7 @@ export class WasmClientSandbox implements wasmlib.ScHost {
         }
         const scAssets = new wasmlib.ScAssets(req.transfer);
         this.nonce++;
-        const [reqId, err] = this.svcClient.postRequest(this.chainID, req.contract, req.function, req.params, scAssets, this.keyPair, this.nonce);
+        const [reqId, err] = this.svcClient.postRequest(req.chainID, req.contract, req.function, req.params, scAssets, this.keyPair, this.nonce);
         this.ReqID = reqId;
         this.Err = err;
         return new Uint8Array(0);
@@ -116,7 +123,7 @@ export class WasmClientSandbox implements wasmlib.ScHost {
             return new Uint8Array(0);
         }
         if (hrp != this.hrp) {
-            this.Err = "invalid protocol prefix: " + hrp;
+            this.Err = 'invalid protocol prefix: ' + hrp;
             return new Uint8Array(0);
         }
         return addr.toBytes();

@@ -600,7 +600,6 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...uint64)
 	err := ch.TransferAllowanceTo(
 		isc.NewAllowanceBaseTokens(amount),
 		agentID,
-		true,
 		walletKey,
 	)
 	require.NoError(ch.Env.T, err)

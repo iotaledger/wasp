@@ -27,6 +27,7 @@ import (
 func Init(
 	logger *loggerpkg.Logger,
 	server echoswagger.ApiRoot,
+	waspVersion string,
 	network peering.NetworkProvider,
 	tnm peering.TrustedNetworkManager,
 	userManager *users.UserManager,
@@ -45,7 +46,7 @@ func Init(
 	pub := server.Group("public", "").SetDescription("Public endpoints")
 	addWebSocketEndpoint(pub, logger)
 
-	info.AddEndpoints(pub, network, publisherPort)
+	info.AddEndpoints(pub, waspVersion, network, publisherPort)
 	reqstatus.AddEndpoints(pub, chainsProvider.ChainProvider())
 	state.AddEndpoints(pub, chainsProvider)
 	evm.AddEndpoints(pub, chainsProvider, network.Self().PubKey)

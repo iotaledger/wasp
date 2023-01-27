@@ -13,28 +13,28 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
 
-func parsePeerPubKeys(dkgRequestModel models.DKSharesPostRequest) ([]*cryptolib.PublicKey, error) {
-	if dkgRequestModel.PeerPubKeys == nil || len(dkgRequestModel.PeerPubKeys) == 0 {
-		return nil, apierrors.InvalidPropertyError("PeerPubKeys", errors.New("PeerPubKeys are mandatory"))
+func parsePeerPublicKeys(dkgRequestModel models.DKSharesPostRequest) ([]*cryptolib.PublicKey, error) {
+	if dkgRequestModel.PeerIdentities == nil || len(dkgRequestModel.PeerIdentities) == 0 {
+		return nil, apierrors.InvalidPropertyError("PeerPublicKeys", errors.New("PeerPublicKeys are mandatory"))
 	}
 
-	peerPubKeys := make([]*cryptolib.PublicKey, len(dkgRequestModel.PeerPubKeys))
-	invalidPeerPubKeys := make([]string, 0)
+	peerPublicKeys := make([]*cryptolib.PublicKey, len(dkgRequestModel.PeerIdentities))
+	invalidPeerPublicKeys := make([]string, 0)
 
-	for i, publicKey := range dkgRequestModel.PeerPubKeys {
+	for i, publicKey := range dkgRequestModel.PeerIdentities {
 		peerPubKey, err := cryptolib.NewPublicKeyFromString(publicKey)
 		if err != nil {
-			invalidPeerPubKeys = append(invalidPeerPubKeys, publicKey)
+			invalidPeerPublicKeys = append(invalidPeerPublicKeys, publicKey)
 		}
 
-		peerPubKeys[i] = peerPubKey
+		peerPublicKeys[i] = peerPubKey
 	}
 
-	if len(invalidPeerPubKeys) > 0 {
-		return nil, apierrors.InvalidPeerPublicKeys(invalidPeerPubKeys)
+	if len(invalidPeerPublicKeys) > 0 {
+		return nil, apierrors.InvalidPeerPublicKeys(invalidPeerPublicKeys)
 	}
 
-	return peerPubKeys, nil
+	return peerPublicKeys, nil
 }
 
 func (c *Controller) generateDKS(e echo.Context) error {
@@ -44,7 +44,7 @@ func (c *Controller) generateDKS(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	peerPublicKeys, err := parsePeerPubKeys(generateDKSRequest)
+	peerPublicKeys, err := parsePeerPublicKeys(generateDKSRequest)
 	if err != nil {
 		return err
 	}

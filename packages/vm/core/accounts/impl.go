@@ -6,7 +6,6 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -25,6 +24,9 @@ var Processor = Contract.Processor(initialize,
 
 	// views
 	ViewAccountNFTs.WithHandler(viewAccountNFTs),
+	ViewAccountNFTAmount.WithHandler(viewAccountNFTAmount),
+	ViewAccountNFTsInCollection.WithHandler(viewAccountNFTsInCollection),
+	ViewAccountNFTAmountInCollection.WithHandler(viewAccountNFTAmountInCollection),
 	ViewAccountFoundries.WithHandler(viewAccountFoundries),
 	ViewAccounts.WithHandler(viewAccounts),
 	ViewBalance.WithHandler(viewBalance),
@@ -45,7 +47,7 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 	// checking if assumptions are consistent
 	ctx.Requiref(err == nil && baseTokensOnAnchor >= storageDepositAssumptions.AnchorOutput,
 		"accounts.initialize.fail: %v", ErrStorageDepositAssumptionsWrong)
-	ctx.State().Set(kv.Key(stateVarMinimumStorageDepositAssumptionsBin), storageDepositAssumptionsBin)
+	ctx.State().Set(keyStorageDepositAssumptions, storageDepositAssumptionsBin)
 	// storing hname as a terminal value of the contract's state root.
 	// This way we will be able to retrieve commitment to the contract's state
 	ctx.State().Set("", ctx.Contract().Bytes())
@@ -68,19 +70,10 @@ func deposit(ctx isc.Sandbox) dict.Dict {
 // Can be sent as a request (sender is the caller) or can be called
 // Params:
 // - ParamAgentID. AgentID. Required
-// - ParamForceOpenAccount Bool. Optional, default: false
 func transferAllowanceTo(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.AllowanceAvailable())
-
 	targetAccount := ctx.Params().MustGetAgentID(ParamAgentID)
-	forceOpenAccount := ctx.Params().MustGetBool(ParamForceOpenAccount, false)
-
-	if forceOpenAccount {
-		ctx.TransferAllowedFundsForceCreateTarget(targetAccount)
-	} else {
-		ctx.TransferAllowedFunds(targetAccount)
-	}
-
+	ctx.TransferAllowedFunds(targetAccount)
 	ctx.Log().Debugf("accounts.transferAllowanceTo.success: target: %s\n%s", targetAccount, ctx.AllowanceAvailable())
 	return nil
 }
@@ -174,7 +167,7 @@ func harvest(ctx isc.Sandbox) dict.Dict {
 		bottomBaseTokens = MinimumBaseTokensOnCommonAccount
 	}
 	commonAccount := ctx.ChainID().CommonAccount()
-	toWithdraw := GetAccountAssets(state, commonAccount)
+	toWithdraw := GetAccountFungibleTokens(state, commonAccount)
 	if toWithdraw.BaseTokens <= bottomBaseTokens {
 		// below minimum, nothing to withdraw
 		return nil
@@ -203,7 +196,7 @@ func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
 	debitBaseTokensFromAllowance(ctx, storageDepositConsumed)
 
 	// add to the ownership list of the account
-	AddFoundryToAccount(ctx.State(), ctx.Caller(), sn)
+	addFoundryToAccount(ctx.State(), ctx.Caller(), sn)
 
 	ret := dict.New()
 	ret.Set(ParamFoundrySN, util.Uint32To4Bytes(sn))
@@ -215,7 +208,7 @@ func foundryDestroy(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryDestroy")
 	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
 	// check if foundry is controlled by the caller
-	ctx.Requiref(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
+	ctx.Requiref(hasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	simpleTokenScheme := util.MustTokenScheme(out.TokenScheme)
@@ -223,7 +216,7 @@ func foundryDestroy(ctx isc.Sandbox) dict.Dict {
 
 	storageDepositReleased := ctx.Privileged().DestroyFoundry(sn)
 
-	deleteFoundryFromAccount(getAccountFoundries(ctx.State(), ctx.Caller()), sn)
+	deleteFoundryFromAccount(ctx.State(), ctx.Caller(), sn)
 	DeleteFoundryOutput(ctx.State(), sn)
 	// the storage deposit goes to the caller's account
 	CreditToAccount(ctx.State(), ctx.Caller(), &isc.FungibleTokens{
@@ -246,7 +239,7 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 	}
 	destroy := ctx.Params().MustGetBool(ParamDestroyTokens, false)
 	// check if foundry is controlled by the caller
-	ctx.Requiref(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
+	ctx.Requiref(hasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	nativeTokenID, err := out.NativeTokenID()

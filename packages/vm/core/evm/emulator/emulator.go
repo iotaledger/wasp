@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
+	lru "github.com/hashicorp/golang-lru"
 
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -34,8 +35,21 @@ type EVMEmulator struct {
 	addBalance  AddBalanceFunc
 }
 
-func makeConfig(chainID int) *params.ChainConfig {
-	return &params.ChainConfig{
+var configCache *lru.Cache
+
+func init() {
+	var err error
+	configCache, err = lru.New(100)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func getConfig(chainID int) *params.ChainConfig {
+	if c, ok := configCache.Get(chainID); ok {
+		return c.(*params.ChainConfig)
+	}
+	c := &params.ChainConfig{
 		ChainID:             big.NewInt(int64(chainID)),
 		HomesteadBlock:      big.NewInt(0),
 		EIP150Block:         big.NewInt(0),
@@ -50,6 +64,8 @@ func makeConfig(chainID int) *params.ChainConfig {
 		BerlinBlock:         big.NewInt(0),
 		Ethash:              &params.EthashConfig{},
 	}
+	configCache.Add(chainID, c)
+	return c
 }
 
 const (
@@ -119,7 +135,7 @@ func NewEVMEmulator(
 
 	return &EVMEmulator{
 		timestamp:   timestamp,
-		chainConfig: makeConfig(int(bdb.GetChainID())),
+		chainConfig: getConfig(int(bdb.GetChainID())),
 		kv:          store,
 		vmConfig:    vm.Config{MagicContracts: magicContracts},
 		getBalance:  getBalance,

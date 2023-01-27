@@ -49,7 +49,7 @@ func postRequest(hname, fname string, params chainclient.PostRequestParams, offL
 	})
 }
 
-func postRequestCmd() *cobra.Command {
+func initPostRequestCmd() *cobra.Command {
 	var transfer []string
 	var allowance []string
 	var offLedger bool

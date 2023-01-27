@@ -7,29 +7,45 @@ use std::rc::Rc;
 
 use crate::*;
 use crate::host::*;
-
-pub trait ScFuncCallContext {
-    fn init_func_call_context(&self);
-}
+use crate::wasmrequests::*;
 
 pub trait ScViewCallContext {
+    fn fn_call(&self, req: &CallRequest) -> Vec<u8> {
+        sandbox(FN_CALL, &req.to_bytes())
+    }
+
+    fn fn_chain_id(&self) -> ScChainID {
+        chain_id_from_bytes(&sandbox(FN_CHAIN_ID, &[]))
+    }
+
     fn init_view_call_context(&self, h_contract: ScHname) -> ScHname;
+}
+
+pub trait ScFuncCallContext: ScViewCallContext {
+    fn fn_post(&self, req: &PostRequest) -> Vec<u8> {
+        sandbox(FN_POST, &req.to_bytes())
+    }
+
+    fn init_func_call_context(&self);
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 #[derive(Clone)]
-pub struct ScView {
+pub struct ScView<'a> {
+    ctx: &'a dyn ScViewCallContext,
     h_contract: ScHname,
     h_function: ScHname,
     params: Rc<ScDict>,
     results: Rc<ScDict>,
 }
 
-impl ScView {
-    pub fn new(h_contract: ScHname, h_function: ScHname) -> ScView {
+impl<'a> ScView<'_> {
+    pub fn new(ctx: &'a impl ScViewCallContext, h_contract: ScHname, h_function: ScHname) -> ScView {
         ScView {
-            h_contract: h_contract,
+            // allow context to override default hContract
+            ctx: ctx,
+            h_contract: ctx.init_view_call_context(h_contract),
             h_function: h_function,
             params: Rc::new(ScDict::new(&[])),
             results: Rc::new(ScDict::new(&[])),
@@ -58,7 +74,7 @@ impl ScView {
         if let Some(allowance) = allowance {
             req.allowance = allowance.to_bytes();
         }
-        let res = sandbox(FN_CALL, &req.to_bytes());
+        let res = self.ctx.fn_call(&req);
         self.results.copy(&res);
     }
 
@@ -72,14 +88,14 @@ impl ScView {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 #[derive(Clone)]
-pub struct ScInitFunc {
-    view: ScView,
+pub struct ScInitFunc<'a> {
+    view: ScView<'a>,
 }
 
-impl ScInitFunc {
-    pub fn new(h_contract: ScHname, h_function: ScHname) -> ScInitFunc {
+impl<'a> ScInitFunc<'_> {
+    pub fn new(ctx: &'a impl ScFuncCallContext, h_contract: ScHname, h_function: ScHname) -> ScInitFunc {
         ScInitFunc {
-            view: ScView::new(h_contract, h_function),
+            view: ScView::new(ctx, h_contract, h_function),
         }
     }
 
@@ -105,19 +121,21 @@ impl ScInitFunc {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 #[derive(Clone)]
-pub struct ScFunc {
-    pub view: ScView,
+pub struct ScFunc<'a> {
+    pub view: ScView<'a>,
     allowance: ScTransfer,
     delay: u32,
+    fctx: &'a dyn ScFuncCallContext,
     transfer: ScTransfer,
 }
 
-impl ScFunc {
-    pub fn new(h_contract: ScHname, h_function: ScHname) -> ScFunc {
+impl<'a> ScFunc<'_> {
+    pub fn new(ctx: &'a impl ScFuncCallContext, h_contract: ScHname, h_function: ScHname) -> ScFunc {
         ScFunc {
-            view: ScView::new(h_contract, h_function),
+            view: ScView::new(ctx, h_contract, h_function),
             allowance: ScTransfer::new(),
             delay: 0,
+            fctx: ctx,
             transfer: ScTransfer::new(),
         }
     }
@@ -163,7 +181,7 @@ impl ScFunc {
     }
 
     pub fn post(&self) {
-        self.post_to_chain(ScFuncContext {}.current_chain_id())
+        self.post_to_chain(self.fctx.fn_chain_id())
     }
 
     pub(crate) fn post_request(&self, chain_id: ScChainID) -> wasmrequests::PostRequest {
@@ -180,7 +198,7 @@ impl ScFunc {
 
     pub fn post_to_chain(&self, chain_id: ScChainID) {
         let req = self.post_request(chain_id);
-        let res = sandbox(FN_POST, &req.to_bytes());
+        let res = self.fctx.fn_post(&req);
         self.view.results.copy(&res);
     }
 

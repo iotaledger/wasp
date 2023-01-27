@@ -12,7 +12,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -50,7 +49,9 @@ func NewWasmClientContext(svcClient IClientService, chain string, scName string)
 		return s
 	}
 	s.hrp = string(hrp)
-	_ = wasmhost.Connect(s)
+
+	// note that ChainIDFromString needs host to be connected
+	_ = wasmlib.ConnectHost(s)
 	s.chainID = wasmtypes.ChainIDFromString(chain)
 	return s
 }
@@ -68,12 +69,12 @@ func (s *WasmClientContext) CurrentSvcClient() IClientService {
 }
 
 func (s *WasmClientContext) InitFuncCallContext() {
-	_ = wasmhost.Connect(s)
+	_ = wasmlib.ConnectHost(s)
 }
 
 func (s *WasmClientContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
 	_ = hContract
-	_ = wasmhost.Connect(s)
+	_ = wasmlib.ConnectHost(s)
 	return s.scHname
 }
 
@@ -100,6 +101,8 @@ func (s *WasmClientContext) SignRequests(keyPair *cryptolib.KeyPair) {
 	// get last used nonce from accounts core contract
 	iscAgent := isc.NewAgentID(keyPair.Address())
 	agent := wasmtypes.AgentIDFromBytes(iscAgent.Bytes())
+	fmt.Printf("Chain: %s\n", s.chainID.String())
+	fmt.Printf("Agent: %s\n", agent.String())
 	ctx := NewWasmClientContext(s.svcClient, s.chainID.String(), coreaccounts.ScName)
 	n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
 	n.Params.AgentID().SetValue(agent)

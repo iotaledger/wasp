@@ -8,21 +8,26 @@ import (
 
 type HTTPErrorResult struct {
 	Message interface{}
-	Error   error
+	Error   string
 }
 
 type HTTPError struct {
 	HTTPCode        int
 	Message         interface{}
-	AdditionalError error
+	AdditionalError string
 }
 
 func NewHTTPError(httpCode int, message interface{}, err error) *HTTPError {
-	return &HTTPError{
-		HTTPCode:        httpCode,
-		Message:         message,
-		AdditionalError: err,
+	httpError := &HTTPError{
+		HTTPCode: httpCode,
+		Message:  message,
 	}
+
+	if err != nil {
+		httpError.AdditionalError = err.Error()
+	}
+
+	return httpError
 }
 
 func HTTPErrorFromEchoError(httpError *echo.HTTPError) *HTTPError {

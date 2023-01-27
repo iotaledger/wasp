@@ -33,12 +33,10 @@ func TestBasic(t *testing.T) {
 var dummyAssetID = [iotago.NativeTokenIDLength]byte{1, 2, 3}
 
 func checkLedgerT(t *testing.T, state dict.Dict, cp string) *isc.FungibleTokens {
-	total := GetTotalL2Assets(state)
-	// t.Logf("checkpoint '%s.%s':\n%s", curTest, cp, total.String())
 	require.NotPanics(t, func() {
 		CheckLedger(state, cp)
 	})
-	return total
+	return GetTotalL2FungibleTokens(state)
 }
 
 func TestCreditDebit1(t *testing.T) {
@@ -63,7 +61,7 @@ func TestCreditDebit1(t *testing.T) {
 	expected := isc.NewFungibleTokens(43, nil).AddNativeTokens(dummyAssetID, big.NewInt(4))
 	require.True(t, expected.Equals(total))
 
-	userAssets := GetAccountAssets(state, agentID1)
+	userAssets := GetAccountFungibleTokens(state, agentID1)
 	require.EqualValues(t, 43, userAssets.BaseTokens)
 	require.Zero(t, userAssets.NativeTokens.MustSet()[dummyAssetID].Amount.Cmp(big.NewInt(4)))
 	checkLedgerT(t, state, "cp2")
@@ -96,7 +94,7 @@ func TestCreditDebit2(t *testing.T) {
 	require.True(t, expected.Equals(total))
 
 	require.True(t, util.IsZeroBigInt(GetNativeTokenBalance(state, agentID1, transfer.NativeTokens[0].ID)))
-	bal1 := GetAccountAssets(state, agentID1)
+	bal1 := GetAccountFungibleTokens(state, agentID1)
 	require.False(t, bal1.IsEmpty())
 	require.True(t, total.Equals(bal1))
 }
@@ -142,29 +140,28 @@ func TestCreditDebit4(t *testing.T) {
 	require.EqualValues(t, 1, len(total.NativeTokens))
 	require.True(t, expected.Equals(total))
 
-	keys := getAccountsIntern(state).Keys()
+	keys := allAccountsAsDict(state).Keys()
 	require.EqualValues(t, 1, len(keys))
 
 	agentID2 := isc.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
 	transfer = isc.NewFungibleBaseTokens(20)
-	ok := MoveBetweenAccounts(state, agentID1, agentID2, transfer, nil)
-	require.True(t, ok)
+	MustMoveBetweenAccounts(state, agentID1, agentID2, transfer, nil)
 	total = checkLedgerT(t, state, "cp2")
 
-	keys = getAccountsIntern(state).Keys()
+	keys = allAccountsAsDict(state).Keys()
 	require.EqualValues(t, 2, len(keys))
 
 	expected = isc.NewFungibleTokens(42, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	require.True(t, expected.Equals(total))
 
-	bm1 := GetAccountAssets(state, agentID1)
+	bm1 := GetAccountFungibleTokens(state, agentID1)
 	require.False(t, bm1.IsEmpty())
 	expected = isc.NewFungibleTokens(22, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	require.True(t, expected.Equals(bm1))
 
-	bm2 := GetAccountAssets(state, agentID2)
+	bm2 := GetAccountFungibleTokens(state, agentID2)
 	require.False(t, bm2.IsEmpty())
 	expected = isc.NewFungibleTokens(20, nil)
 	require.True(t, expected.Equals(bm2))
@@ -184,28 +181,27 @@ func TestCreditDebit5(t *testing.T) {
 	require.EqualValues(t, 1, len(total.NativeTokens))
 	require.True(t, expected.Equals(total))
 
-	keys := getAccountsIntern(state).Keys()
+	keys := allAccountsAsDict(state).Keys()
 	require.EqualValues(t, 1, len(keys))
 
 	agentID2 := isc.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
 	transfer = isc.NewFungibleBaseTokens(50)
-	ok := MoveBetweenAccounts(state, agentID1, agentID2, transfer, nil)
-	require.False(t, ok)
+	require.Error(t, MoveBetweenAccounts(state, agentID1, agentID2, transfer, nil))
 	total = checkLedgerT(t, state, "cp2")
 
-	keys = getAccountsIntern(state).Keys()
+	keys = allAccountsAsDict(state).Keys()
 	require.EqualValues(t, 1, len(keys))
 
 	expected = isc.NewFungibleTokens(42, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	require.True(t, expected.Equals(total))
 
-	bm1 := GetAccountAssets(state, agentID1)
+	bm1 := GetAccountFungibleTokens(state, agentID1)
 	require.False(t, bm1.IsEmpty())
 	require.True(t, expected.Equals(bm1))
 
-	bm2 := GetAccountAssets(state, agentID2)
+	bm2 := GetAccountFungibleTokens(state, agentID2)
 	require.True(t, bm2.IsEmpty())
 }
 
@@ -222,17 +218,16 @@ func TestCreditDebit6(t *testing.T) {
 	agentID2 := isc.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
-	ok := MoveBetweenAccounts(state, agentID1, agentID2, transfer, nil)
-	require.True(t, ok)
+	MustMoveBetweenAccounts(state, agentID1, agentID2, transfer, nil)
 	total = checkLedgerT(t, state, "cp2")
 
-	keys := getAccountsIntern(state).Keys()
-	require.EqualValues(t, 1, len(keys))
+	keys := allAccountsAsDict(state).Keys()
+	require.EqualValues(t, 2, len(keys))
 
-	bal := GetAccountAssets(state, agentID1)
+	bal := GetAccountFungibleTokens(state, agentID1)
 	require.True(t, bal.IsEmpty())
 
-	bal2 := GetAccountAssets(state, agentID2)
+	bal2 := GetAccountFungibleTokens(state, agentID2)
 	require.False(t, bal2.IsEmpty())
 	require.True(t, total.Equals(bal2))
 }
@@ -264,16 +259,16 @@ func TestMoveAll(t *testing.T) {
 
 	transfer := isc.NewFungibleBaseTokens(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	CreditToAccount(state, agentID1, transfer)
-	require.EqualValues(t, 1, getAccountsMapR(state).MustLen())
-	accs := getAccountsIntern(state)
+	require.EqualValues(t, 1, allAccountsMapR(state).MustLen())
+	accs := allAccountsAsDict(state)
 	require.EqualValues(t, 1, len(accs))
 	_, ok := accs[kv.Key(agentID1.Bytes())]
 	require.True(t, ok)
 
-	MoveBetweenAccounts(state, agentID1, agentID2, transfer, nil)
-	require.EqualValues(t, 1, getAccountsMapR(state).MustLen())
-	accs = getAccountsIntern(state)
-	require.EqualValues(t, 1, len(accs))
+	MustMoveBetweenAccounts(state, agentID1, agentID2, transfer, nil)
+	require.EqualValues(t, 2, allAccountsMapR(state).MustLen())
+	accs = allAccountsAsDict(state)
+	require.EqualValues(t, 2, len(accs))
 	_, ok = accs[kv.Key(agentID2.Bytes())]
 	require.True(t, ok)
 }
@@ -284,22 +279,22 @@ func TestDebitAll(t *testing.T) {
 
 	transfer := isc.NewFungibleTokens(42, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	CreditToAccount(state, agentID1, transfer)
-	require.EqualValues(t, 1, getAccountsMapR(state).MustLen())
-	accs := getAccountsIntern(state)
+	require.EqualValues(t, 1, allAccountsMapR(state).MustLen())
+	accs := allAccountsAsDict(state)
 	require.EqualValues(t, 1, len(accs))
 	_, ok := accs[kv.Key(agentID1.Bytes())]
 	require.True(t, ok)
 
 	DebitFromAccount(state, agentID1, transfer)
-	require.EqualValues(t, 0, getAccountsMapR(state).MustLen())
-	accs = getAccountsIntern(state)
-	require.EqualValues(t, 0, len(accs))
+	require.EqualValues(t, 1, allAccountsMapR(state).MustLen())
+	accs = allAccountsAsDict(state)
+	require.EqualValues(t, 1, len(accs))
 	require.True(t, ok)
 
-	assets := GetAccountAssets(state, agentID1)
+	assets := GetAccountFungibleTokens(state, agentID1)
 	require.True(t, assets.IsEmpty())
 
-	assets = GetTotalL2Assets(state)
+	assets = GetTotalL2FungibleTokens(state)
 	require.True(t, assets.IsEmpty())
 }
 
@@ -317,12 +312,12 @@ func TestTransferNFTs(t *testing.T) {
 	}
 	CreditNFTToAccount(state, agentID1, NFT1)
 	// nft is credited
-	user1NFTs := getAccountNFTs(getAccountR(state, agentID1))
+	user1NFTs := getAccountNFTs(state, agentID1)
 	require.Len(t, user1NFTs, 1)
 	require.Equal(t, user1NFTs[0], NFT1.ID)
 
 	// nft data is saved
-	nftData := GetNFTData(state, NFT1.ID)
+	nftData := MustGetNFTData(state, NFT1.ID)
 	require.Equal(t, nftData.ID, NFT1.ID)
 	require.Equal(t, nftData.Issuer, NFT1.Issuer)
 	require.Equal(t, nftData.Metadata, NFT1.Metadata)
@@ -330,23 +325,21 @@ func TestTransferNFTs(t *testing.T) {
 	agentID2 := isc.NewRandomAgentID()
 
 	// cannot move an NFT that is not owned
-	ok := MoveBetweenAccounts(state, agentID1, agentID2, nil, []iotago.NFTID{{111}})
-	require.False(t, ok)
+	require.Error(t, MoveBetweenAccounts(state, agentID1, agentID2, nil, []iotago.NFTID{{111}}))
 
 	// moves successfully when the NFT is owned
-	ok = MoveBetweenAccounts(state, agentID1, agentID2, nil, []iotago.NFTID{NFT1.ID})
-	require.True(t, ok)
+	MustMoveBetweenAccounts(state, agentID1, agentID2, nil, []iotago.NFTID{NFT1.ID})
 
-	user1NFTs = getAccountNFTs(getAccountR(state, agentID1))
+	user1NFTs = getAccountNFTs(state, agentID1)
 	require.Len(t, user1NFTs, 0)
-	user2NFTs := getAccountNFTs(getAccountR(state, agentID2))
+	user2NFTs := getAccountNFTs(state, agentID2)
 	require.Len(t, user2NFTs, 1)
 	require.Equal(t, user2NFTs[0], NFT1.ID)
 
 	// remove the NFT from the chain
 	DebitNFTFromAccount(state, agentID2, NFT1.ID)
 	require.Panics(t, func() {
-		GetNFTData(state, NFT1.ID)
+		MustGetNFTData(state, NFT1.ID)
 	})
 }
 

@@ -318,7 +318,7 @@ func (vmctx *VMContext) assertConsistentL2WithL1TxBuilder(checkpoint string) {
 	}
 	var totalL2Assets *isc.FungibleTokens
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		totalL2Assets = accounts.GetTotalL2Assets(s)
+		totalL2Assets = accounts.GetTotalL2FungibleTokens(s)
 	})
 	vmctx.txbuilder.AssertConsistentWithL2Totals(totalL2Assets, checkpoint)
 }

@@ -81,7 +81,7 @@ export function funcRandom(ctx: wasmlib.ScFuncContext, f: sc.RandomContext): voi
 }
 
 export function funcTakeAllowance(ctx: wasmlib.ScFuncContext, f: sc.TakeAllowanceContext): void {
-    ctx.transferAllowed(ctx.accountID(), wasmlib.ScTransfer.fromBalances(ctx.allowance()), false);
+    ctx.transferAllowed(ctx.accountID(), wasmlib.ScTransfer.fromBalances(ctx.allowance()));
 }
 
 export function funcTakeBalance(ctx: wasmlib.ScFuncContext, f: sc.TakeBalanceContext): void {

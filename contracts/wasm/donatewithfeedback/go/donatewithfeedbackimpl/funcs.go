@@ -11,7 +11,7 @@ import (
 func funcDonate(ctx wasmlib.ScFuncContext, f *DonateContext) {
 	amount := ctx.Allowance().BaseTokens()
 	transfer := wasmlib.NewScTransferBaseTokens(amount)
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	ctx.TransferAllowed(ctx.AccountID(), transfer)
 	donation := &donatewithfeedback.Donation{
 		Amount:    amount,
 		Donator:   ctx.Caller(),

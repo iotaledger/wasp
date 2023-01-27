@@ -68,7 +68,6 @@ func TestTransferAllowanceTo(t *testing.T) {
 
 	f := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.OffLedger(user0))
 	f.Params.AgentID().SetValue(user1.ScAgentID())
-	f.Params.ForceOpenAccount().SetValue(false)
 	f.Func.AllowanceBaseTokens(transferAmountBaseTokens).Post()
 	require.NoError(t, ctx.Err)
 
@@ -98,7 +97,6 @@ func TestTransferAllowanceTo(t *testing.T) {
 	balanceOldUser1L2 := ctx.Chain.L2NativeTokens(user1.AgentID(), nativeTokenID)
 
 	f.Params.AgentID().SetValue(user1.ScAgentID())
-	f.Params.ForceOpenAccount().SetValue(false)
 	transfer := wasmlib.NewScTransfer()
 	transfer.Set(&scTokenID, wasmtypes.NewScBigInt(transferAmount))
 	f.Func.Allowance(transfer).Post()
@@ -438,7 +436,6 @@ func TestGetAccountNonce(t *testing.T) {
 
 	ftrans := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.OffLedger(user0))
 	ftrans.Params.AgentID().SetValue(user0.ScAgentID())
-	ftrans.Params.ForceOpenAccount().SetValue(false)
 	ftrans.Func.TransferBaseTokens(1000).Post()
 	require.NoError(t, ctx.Err)
 

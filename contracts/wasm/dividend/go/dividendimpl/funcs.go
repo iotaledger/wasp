@@ -176,7 +176,7 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 
 			// Perform the actual transfer of tokens from the caller allowance
 			// to the member account.
-			ctx.TransferAllowed(address.AsAgentID(), transfer, true)
+			ctx.TransferAllowed(address.AsAgentID(), transfer)
 		}
 	}
 }

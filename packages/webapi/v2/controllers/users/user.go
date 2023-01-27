@@ -6,6 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
@@ -46,6 +47,11 @@ func (c *Controller) updateUserPassword(e echo.Context) error {
 
 func (c *Controller) updateUserPermissions(e echo.Context) error {
 	userName := e.Param("username")
+	authContext := e.Get("auth").(*authentication.AuthContext)
+
+	if userName == authContext.Name() {
+		return apierrors.InvalidPropertyError("username", errors.New("you can't change your own permissions"))
+	}
 
 	if userName == "" {
 		return apierrors.InvalidPropertyError("username", errors.New("username is empty"))
@@ -67,6 +73,11 @@ func (c *Controller) updateUserPermissions(e echo.Context) error {
 
 func (c *Controller) deleteUser(e echo.Context) error {
 	userName := e.Param("username")
+	authContext := e.Get("auth").(*authentication.AuthContext)
+
+	if userName == authContext.Name() {
+		return apierrors.InvalidPropertyError("username", errors.New("you can't remove yourself"))
+	}
 
 	if userName == "" {
 		return apierrors.InvalidPropertyError("username", errors.New("username is empty"))

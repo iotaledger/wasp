@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
@@ -338,6 +339,18 @@ func (ctx *SoloContext) existFile(lang string) string {
 	return ""
 }
 
+func (ctx *SoloContext) FnCall(req *wasmrequests.CallRequest) []byte {
+	return NewSoloSandbox(ctx).FnCall(req)
+}
+
+func (ctx *SoloContext) FnChainID() wasmtypes.ScChainID {
+	return ctx.CurrentChainID()
+}
+
+func (ctx *SoloContext) FnPost(req *wasmrequests.PostRequest) []byte {
+	return NewSoloSandbox(ctx).FnPost(req)
+}
+
 func (ctx *SoloContext) Host() wasmlib.ScHost {
 	return nil
 }
@@ -476,7 +489,12 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 		expectedRequests = -expectedRequests
 	}
 
-	result := ctx.Chain.WaitForRequestsThrough(expectedRequests, maxWait...)
+	timeout := time.Duration(expectedRequests*5) * time.Second
+	if len(maxWait) > 0 {
+		timeout = maxWait[0]
+	}
+
+	result := ctx.Chain.WaitForRequestsThrough(expectedRequests, timeout)
 	_ = wasmhost.Connect(ctx.wc)
 	return result
 }

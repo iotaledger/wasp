@@ -19,7 +19,6 @@ const (
 	ParamAgentID                = "a"
 	ParamDestroyTokens          = "y"
 	ParamForceMinimumBaseTokens = "f"
-	ParamForceOpenAccount       = "c"
 	ParamFoundrySN              = "s"
 	ParamNftID                  = "z"
 	ParamSupplyDeltaAbs         = "d"

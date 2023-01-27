@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::errors;
 use bech32::*;
 use serde::{Deserialize, Serialize};
 use wasmlib::*;
@@ -8,14 +9,20 @@ pub use wasmtypes::*;
 
 const BECH32_PREFIX: &'static str = "smr";
 
-pub fn bech32_decode(input: &str) -> Result<ScAddress, String> {
-    let (_hrp, data, _v) = bech32::decode(&input).unwrap();
+pub fn bech32_decode(input: &str) -> errors::Result<(String, ScAddress)> {
+    let (hrp, data, _v) = match bech32::decode(&input) {
+        Ok(v) => v,
+        Err(_) => return Err(String::from(format!("invalid bech32 string: {}", input))),
+    };
     let buf: Vec<u8> = data.iter().map(|&e| e.to_u8()).collect();
-    return Ok(address_from_bytes(&buf));
+    return Ok((hrp, address_from_bytes(&buf)));
 }
 
-pub fn bech32_encode(addr: &ScAddress) -> String {
-    return bech32::encode(BECH32_PREFIX, addr.to_bytes().to_base32(), Variant::Bech32).unwrap();
+pub fn bech32_encode(addr: &ScAddress) -> errors::Result<String> {
+    match bech32::encode(BECH32_PREFIX, addr.to_bytes().to_base32(), Variant::Bech32) {
+        Ok(v) => Ok(v),
+        Err(e) => Err(e.to_string()),
+    }
 }
 
 use crypto::hashes::{blake2b::Blake2b256, Digest};

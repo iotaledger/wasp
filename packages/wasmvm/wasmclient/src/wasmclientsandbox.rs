@@ -1,12 +1,11 @@
 // // Copyright 2020 IOTA Stiftung
 // // SPDX-License-Identifier: Apache-2.0
 
-use crate::*;
 use wasmlib::*;
 
+use crate::*;
+
 pub trait WasmClientSandbox {
-    fn fn_call(&self, args: &[u8]) -> Vec<u8>;
-    fn fn_post(&self, args: &[u8]) -> Vec<u8>;
     fn fn_utils_bech32_decode(&self, args: &[u8]) -> Vec<u8>;
     fn fn_utils_bech32_encode(&self, args: &[u8]) -> Vec<u8>;
     fn fn_utils_hash_name(&self, args: &[u8]) -> Vec<u8>;
@@ -19,8 +18,9 @@ impl wasmlib::host::ScHost for WasmClientContext {
 
     fn sandbox(&self, func_num: i32, args: &[u8]) -> Vec<u8> {
         match func_num {
-            wasmlib::FN_CALL => return self.fn_call(args),
-            wasmlib::FN_POST => return self.fn_post(args),
+            wasmlib::FN_CALL => return self.fn_call(&wasmrequests::CallRequest::from_bytes(args)),
+            wasmlib::FN_CHAIN_ID => return self.chain_id.to_bytes(),
+            wasmlib::FN_POST => return self.fn_post(&wasmrequests::PostRequest::from_bytes(args)),
             wasmlib::FN_UTILS_BECH32_DECODE => return self.fn_utils_bech32_decode(args),
             wasmlib::FN_UTILS_BECH32_ENCODE => return self.fn_utils_bech32_encode(args),
             wasmlib::FN_UTILS_HASH_NAME => return self.fn_utils_hash_name(args),
@@ -45,11 +45,14 @@ impl wasmlib::host::ScHost for WasmClientContext {
     }
 }
 
-impl WasmClientSandbox for WasmClientContext {
-    fn fn_call(&self, args: &[u8]) -> Vec<u8> {
-        let req = wasmrequests::PostRequest::from_bytes(args);
-        self.err("unknown contract: ", &req.contract.to_string());
-        if req.contract == self.sc_hname {
+impl ScViewCallContext for WasmClientContext {
+    fn fn_call(&self, req: &wasmrequests::CallRequest) -> Vec<u8> {
+        let lock_received = self.event_received.clone();
+        let mut received = lock_received.write().unwrap();
+        *received = false;
+
+        if req.contract != self.sc_hname {
+            self.err("unknown contract: ", &req.contract.to_string());
             return Vec::new();
         }
 
@@ -60,40 +63,52 @@ impl WasmClientSandbox for WasmClientContext {
             &req.params,
         );
 
-        match res {
-            Ok(v) => {
-                return v;
-            }
-            Err(e) => {
-                self.err("fn_call: ", &e);
-                return Vec::new();
-            }
+        if let Err(e) = &res {
+            self.err("fn_call: ", &e);
+            return Vec::new();
         }
+
+        res.unwrap()
     }
 
-    fn fn_post(&self, args: &[u8]) -> Vec<u8> {
-        let req = wasmrequests::PostRequest::from_bytes(args);
+    fn fn_chain_id(&self) -> ScChainID {
+        self.chain_id
+    }
+
+    fn init_view_call_context(&self, _contract_hname: ScHname) -> ScHname {
+       self.sc_hname
+    }
+}
+
+impl ScFuncCallContext for WasmClientContext {
+    fn fn_post(&self, req: &wasmrequests::PostRequest) -> Vec<u8> {
+        let lock_received = self.event_received.clone();
+        let mut received = lock_received.write().unwrap();
+        *received = false;
+
         if self.key_pair.is_none() {
             self.err("fn_post: ", "missing key pair");
             return Vec::new();
         }
-        if req.chain_id == self.chain_id {
+        if req.chain_id != self.chain_id {
             self.err("unknown chain id: ", &req.chain_id.to_string());
             return Vec::new();
         }
-        if req.contract == self.sc_hname {
+        if req.contract != self.sc_hname {
             self.err("unknown contract: ", &req.contract.to_string());
             return Vec::new();
         }
         let sc_assets = wasmlib::ScAssets::new(&req.transfer);
+        let mut nonce = self.nonce.lock().unwrap();
+        *nonce += 1;
         let res = self.svc_client.post_request(
-            &self.chain_id,
+            &req.chain_id,
             &req.contract,
             &req.function,
             &req.params,
             &sc_assets,
             self.key_pair.as_ref().unwrap(),
-            0, // FIXME must use counter
+            *nonce,
         );
 
         match res {
@@ -103,29 +118,49 @@ impl WasmClientSandbox for WasmClientContext {
             }
             Err(e) => self.err("", &e),
         }
-        return Vec::new();
+        Vec::new()
     }
 
+    fn init_func_call_context(&self) {
+    }
+}
+
+impl WasmClientSandbox for WasmClientContext {
     fn fn_utils_bech32_decode(&self, args: &[u8]) -> Vec<u8> {
         let bech32 = wasmlib::string_from_bytes(args);
-        let addr = codec::bech32_decode(&bech32).unwrap();
-        return addr.to_bytes();
+        match codec::bech32_decode(&bech32) {
+            Ok((hrp, addr)) => {
+                if hrp != self.hrp {
+                    self.err("invalid protocol prefix: ", &hrp);
+                    return Vec::new();
+                }
+                return addr.to_bytes();
+            }
+            Err(e) => {
+                self.err("", &e.to_string());
+                return Vec::new();
+            }
+        }
     }
 
     fn fn_utils_bech32_encode(&self, args: &[u8]) -> Vec<u8> {
         let addr = wasmtypes::address_from_bytes(args);
-        let bech32 = codec::bech32_encode(&addr);
-        return bech32.into_bytes();
+        match codec::bech32_encode(&addr) {
+            Ok(v) => return v.into_bytes(),
+            Err(e) => {
+                self.err("", &e.to_string());
+                return Vec::new();
+            }
+        }
     }
 
     fn fn_utils_hash_name(&self, args: &[u8]) -> Vec<u8> {
-        let s = match std::str::from_utf8(args) {
-            Ok(v) => v,
+        match std::str::from_utf8(args) {
+            Ok(v) => return wasmtypes::hname_from_string(v).to_bytes(),
             Err(e) => {
-                self.err(&format!("invalid hname: {}", e), "");
+                self.err("invalid hname: {}", &e.to_string());
                 return Vec::new();
             }
         };
-        return wasmtypes::hname_from_string(s).to_bytes();
     }
 }

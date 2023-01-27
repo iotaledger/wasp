@@ -8,8 +8,8 @@ import "@iscmagic/ISCSandbox.sol";
 import "@iscmagic/ISCAccounts.sol";
 import "@iscmagic/ISCPrivileged.sol";
 
-// The ERC721 contract for ISC L2 NFTs.
-contract ERC721NFTs { // is ERC721, ERC165
+// The ERC721 contract for the "global" collection of ISC L2 NFTs.
+contract ERC721NFTs { // is IERC721Metadata, IERC721, IERC165
     using ISCTypes for ISCAgentID;
     using ISCTypes for uint256;
 
@@ -22,16 +22,24 @@ contract ERC721NFTs { // is ERC721, ERC165
     event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
     event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
 
+    function _balanceOf(ISCAgentID memory owner) internal virtual view returns (uint256) {
+        return __iscAccounts.getL2NFTAmount(owner);
+    }
+
+    // virtual function meant to be overridden. ERC721NFTs manages all NFTs, regardless of
+    // whether they belong to any collection or not.
+    function _isManagedByThisContract(ISCNFT memory) internal virtual view returns (bool) {
+        return true;
+    }
+
     function balanceOf(address owner) public view returns (uint256) {
-        ISCAgentID memory ownerAgentID = ISCTypes.newEthereumAgentID(owner);
-        return __iscAccounts.getL2NFTs(ownerAgentID).length;
+        return _balanceOf(ISCTypes.newEthereumAgentID(owner));
     }
 
     function ownerOf(uint256 tokenId) public view returns (address) {
         ISCNFT memory nft = __iscSandbox.getNFTData(tokenId.asNFTID());
-        if (!nft.owner.isEthereum()) {
-            return address(0);
-        }
+        require(nft.owner.isEthereum());
+        require(_isManagedByThisContract(nft));
         return nft.owner.ethAddress();
     }
 
@@ -98,11 +106,14 @@ contract ERC721NFTs { // is ERC721, ERC165
     }
 
     // ERC165
+
+    bytes4 private constant _INTERFACE_ID_ERC721METADATA = 0x5b5e139f;
     bytes4 private constant _INTERFACE_ID_ERC721 = 0x80ac58cd;
     bytes4 private constant _INTERFACE_ID_ERC165 = 0x01ffc9a7;
     function supportsInterface(bytes4 interfaceID) public pure returns (bool) {
         return interfaceID == _INTERFACE_ID_ERC165
-            || interfaceID == _INTERFACE_ID_ERC721;
+            || interfaceID == _INTERFACE_ID_ERC721
+            || interfaceID == _INTERFACE_ID_ERC721METADATA;
     }
 
     bytes4 private constant _ERC721_RECEIVED = 0x150b7a02;
@@ -120,6 +131,22 @@ contract ERC721NFTs { // is ERC721, ERC165
         uint256 size;
         assembly { size := extcodesize(account) }
         return size > 0;
+    }
+
+    // IERC721Metadata
+
+    function name() external virtual view returns (string memory) {
+        return "";
+    }
+
+    function symbol() external pure returns (string memory) {
+        return ""; // not defined in IRC27
+    }
+
+    function tokenURI(uint256 tokenId) external view returns (string memory) {
+        IRC27NFT memory nft = __iscSandbox.getIRC27NFTData(tokenId.asNFTID());
+        require(_isManagedByThisContract(nft.nft));
+        return nft.metadata.uri;
     }
 }
 

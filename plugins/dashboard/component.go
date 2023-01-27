@@ -54,6 +54,7 @@ func provide(c *dig.Container) error {
 	type dashboardDeps struct {
 		dig.In
 
+		AppInfo                     *app.Info
 		WebAPIBindAddress           string `name:"webAPIBindAddress"`
 		Chains                      *chains.Chains
 		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
@@ -92,6 +93,7 @@ func provide(c *dig.Container) error {
 		)
 
 		waspServices := dashboard.NewWaspServices(
+			deps.AppInfo.Version,
 			deps.WebAPIBindAddress,
 			ParamsDashboard.ExploreAddressURL,
 			Plugin.App().Config(),

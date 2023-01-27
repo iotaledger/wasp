@@ -14,14 +14,16 @@ import (
 )
 
 type Controller struct {
+	waspVersion    string
 	config         *configuration.Configuration
 	dkgService     *services.DKGService
 	nodeService    interfaces.NodeService
 	peeringService interfaces.PeeringService
 }
 
-func NewNodeController(config *configuration.Configuration, dkgService *services.DKGService, nodeService interfaces.NodeService, peeringService interfaces.PeeringService) interfaces.APIController {
+func NewNodeController(waspVersion string, config *configuration.Configuration, dkgService *services.DKGService, nodeService interfaces.NodeService, peeringService interfaces.PeeringService) interfaces.APIController {
 	return &Controller{
+		waspVersion:    waspVersion,
 		config:         config,
 		dkgService:     dkgService,
 		nodeService:    nodeService,
@@ -47,60 +49,60 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetOperationId("getInfo").
 		SetSummary("Returns private information about this node.")
 
-	adminAPI.GET("node/peers/trusted", c.getTrustedPeers, authentication.ValidatePermissions([]string{permissions.PeeringRead})).
+	adminAPI.GET("node/peers/trusted", c.getTrustedPeers, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "A list of trusted peers", mocker.Get([]models.PeeringNodeIdentityResponse{}), nil).
 		SetSummary("Get trusted peers").
 		SetOperationId("getTrustedPeers")
 
-	adminAPI.DELETE("node/peers/trusted", c.distrustPeer, authentication.ValidatePermissions([]string{permissions.PeeringWrite})).
+	adminAPI.DELETE("node/peers/trusted", c.distrustPeer, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddParamBody(mocker.Get(models.PeeringTrustRequest{}), "", "Info of the peer to distrust", true).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "Peer was successfully distrusted", nil, nil).
 		SetSummary("Distrust a peering node").
 		SetOperationId("distrustPeer")
 
-	adminAPI.POST("node/owner/certificate", c.setNodeOwner, authentication.ValidatePermissions([]string{permissions.NodeWrite})).
+	adminAPI.POST("node/owner/certificate", c.setNodeOwner, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddParamBody(mocker.Get(models.NodeOwnerCertificateRequest{}), "", "The node owner certificate", true).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "Node owner was successfully changed", nil, nil).
 		SetSummary("Sets the node owner").
 		SetOperationId("setNodeOwner")
 
-	adminAPI.POST("node/peers/trusted", c.trustPeer, authentication.ValidatePermissions([]string{permissions.PeeringWrite})).
+	adminAPI.POST("node/peers/trusted", c.trustPeer, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddParamBody(mocker.Get(models.PeeringTrustRequest{}), "", "Info of the peer to trust", true).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "Peer was successfully trusted", nil, nil).
 		SetSummary("Trust a peering node").
 		SetOperationId("trustPeer")
 
-	adminAPI.POST("node/dks", c.generateDKS, authentication.ValidatePermissions([]string{permissions.PeeringWrite})).
+	adminAPI.POST("node/dks", c.generateDKS, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddParamBody(mocker.Get(models.DKSharesPostRequest{}), "DKSharesPostRequest", "Request parameters", true).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "DK shares info", mocker.Get(models.DKSharesPostRequest{}), nil).
 		SetSummary("Generate a new distributed key").
 		SetOperationId("generateDKS")
 
-	adminAPI.GET("node/dks/:sharedAddress", c.getDKSInfo, authentication.ValidatePermissions([]string{permissions.NodeRead})).
+	adminAPI.GET("node/dks/:sharedAddress", c.getDKSInfo, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddParamPath("", "sharedAddress", "SharedAddress (Bech32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "DK shares info", mocker.Get(models.DKSharesInfo{}), nil).
 		SetSummary("Get information about the shared address DKS configuration").
 		SetOperationId("getDKSInfo")
 
-	adminAPI.GET("node/peers/identity", c.getIdentity, authentication.ValidatePermissions([]string{permissions.NodeRead})).
+	adminAPI.GET("node/peers/identity", c.getIdentity, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "This node peering identity", mocker.Get(models.PeeringNodeIdentityResponse{}), nil).
 		SetSummary("Get basic peer info of the current node").
 		SetOperationId("getPeeringIdentity")
 
-	adminAPI.GET("node/peers", c.getRegisteredPeers, authentication.ValidatePermissions([]string{permissions.PeeringRead})).
+	adminAPI.GET("node/peers", c.getRegisteredPeers, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "A list of all peers", mocker.Get([]models.PeeringNodeStatusResponse{}), nil).
 		SetSummary("Get basic information about all configured peers").
 		SetOperationId("getAllPeers")
 
-	adminAPI.POST("node/shutdown", c.shutdownNode, authentication.ValidatePermissions([]string{permissions.NodeWrite})).
+	adminAPI.POST("node/shutdown", c.shutdownNode, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "The node has been shut down", nil, nil).
 		SetSummary("Shut down the node").
@@ -111,7 +113,7 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 	fakeConfigMap["logger.level"] = "info"
 	fakeConfigMap["inx.maxConnectionAttempts"] = 30
 
-	adminAPI.GET("node/config", c.getConfiguration, authentication.ValidatePermissions([]string{permissions.NodeRead})).
+	adminAPI.GET("node/config", c.getConfiguration, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "Dumped configuration", fakeConfigMap, nil).
 		SetOperationId("getConfiguration").

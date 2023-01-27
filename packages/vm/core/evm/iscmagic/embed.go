@@ -64,3 +64,12 @@ var (
 
 	ERC721NFTsAddress = packMagicAddress(addressKindERC721NFTs, nil)
 )
+
+//go:generate sh -c "solc --abi --storage-layout --bin-runtime --overwrite @iscmagic=`realpath .` ERC721NFTCollection.sol -o ."
+var (
+	//go:embed ERC721NFTCollection.abi
+	ERC721NFTCollectionABI string
+	//go:embed ERC721NFTCollection.bin-runtime
+	erc721NFTCollectionBytecodeHex     string
+	ERC721NFTCollectionRuntimeBytecode = common.FromHex(strings.TrimSpace(erc721NFTCollectionBytecodeHex))
+)

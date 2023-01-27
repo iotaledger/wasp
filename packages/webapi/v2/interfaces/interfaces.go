@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -53,8 +54,12 @@ type MetricsService interface {
 	GetChainMetrics(chainID isc.ChainID) *dto.ChainMetrics
 }
 
+var ErrPeerNotFound = errors.New("couldn't find peer")
+
 type NodeService interface {
-	SetNodeOwnerCertificate(nodePubKey []byte, ownerAddress iotago.Address) ([]byte, error)
+	AddAccessNode(chainID isc.ChainID, publicKey *cryptolib.PublicKey) error
+	DeleteAccessNode(chainID isc.ChainID, publicKey *cryptolib.PublicKey) error
+	SetNodeOwnerCertificate(publicKey *cryptolib.PublicKey, ownerAddress iotago.Address) ([]byte, error)
 	ShutdownNode()
 }
 

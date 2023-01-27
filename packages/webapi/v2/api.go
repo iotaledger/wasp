@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/hive.go/core/configuration"
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
-	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
@@ -33,8 +32,9 @@ func loadControllers(server echoswagger.ApiRoot, userManager *userspkg.UserManag
 		controller.RegisterPublic(publicGroup, mocker)
 
 		claimValidator := func(claims *authentication.WaspClaims) bool {
-			// The API will be accessible if the token has an 'API' claim
-			return claims.HasPermission(permissions.API)
+			// The v2 api uses another way of permission handling, so we can always return true here.
+			// Permissions are now validated at the route level. See the webapi/v2/controllers/*/controller.go routes.
+			return true
 		}
 
 		adminGroup := server.Group(controller.Name(), "v2/").
@@ -49,6 +49,7 @@ func loadControllers(server echoswagger.ApiRoot, userManager *userspkg.UserManag
 func Init(
 	logger *loggerpkg.Logger,
 	server echoswagger.ApiRoot,
+	waspVersion string,
 	config *configuration.Configuration,
 	networkProvider peering.NetworkProvider,
 	trustedNetworkManager peering.TrustedNetworkManager,
@@ -76,15 +77,15 @@ func Init(
 	metricsService := services.NewMetricsService(chainsProvider)
 	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
 	evmService := services.NewEVMService(chainService, networkProvider)
-	nodeService := services.NewNodeService(nodeOwnerAddresses, nodeIdentityProvider, shutdownHandler)
+	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeOwnerAddresses, nodeIdentityProvider, shutdownHandler, trustedNetworkManager)
 	dkgService := services.NewDKGService(dkShareRegistryProvider, dkgNodeProvider)
 	userService := services.NewUserService(userManager)
 	// --
 
 	controllersToLoad := []interfaces.APIController{
-		chain.NewChainController(logger, chainService, committeeService, evmService, offLedgerService, registryService, vmService),
+		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, vmService),
 		metrics.NewMetricsController(metricsService),
-		node.NewNodeController(config, dkgService, nodeService, peeringService),
+		node.NewNodeController(waspVersion, config, dkgService, nodeService, peeringService),
 		requests.NewRequestsController(chainService, offLedgerService, peeringService, vmService),
 		users.NewUsersController(userService),
 		corecontracts.NewCoreContractsController(vmService),

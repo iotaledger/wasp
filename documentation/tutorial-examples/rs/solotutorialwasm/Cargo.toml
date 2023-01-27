@@ -20,8 +20,8 @@ default = ["console_error_panic_hook"]
 solotutorialimpl = { path = "../solotutorialimpl" }
 wasmvmhost = { path = "../../../../packages/wasmvm/wasmvmhost" }
 #wasmvmhost = { git = "https://github.com/iotaledger/wasp", branch = "wasmclient" }
-console_error_panic_hook = { version = "0.1.6", optional = true }
+console_error_panic_hook = { version = "0.1.7", optional = true }
 wee_alloc = { version = "0.4.5", optional = true }
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.13"
+wasm-bindgen-test = "0.3.33"

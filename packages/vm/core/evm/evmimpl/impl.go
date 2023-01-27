@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -35,6 +36,7 @@ var Processor = evm.Contract.Processor(initialize,
 	evm.FuncSendTransaction.WithHandler(restricted(applyTransaction)),
 	evm.FuncEstimateGas.WithHandler(restricted(estimateGas)),
 	evm.FuncRegisterERC20NativeToken.WithHandler(restricted(registerERC20NativeToken)),
+	evm.FuncRegisterERC721NFTCollection.WithHandler(restricted(registerERC721NFTCollection)),
 
 	// views
 	evm.FuncGetBalance.WithHandler(restrictedView(getBalance)),
@@ -186,6 +188,41 @@ func registerERC20NativeToken(ctx isc.Sandbox) dict.Dict {
 	evmState.SetState(addr, solidity.StorageSlot(0), solidity.StorageEncodeShortString(name))
 	evmState.SetState(addr, solidity.StorageSlot(1), solidity.StorageEncodeShortString(tickerSymbol))
 	evmState.SetState(addr, solidity.StorageSlot(2), solidity.StorageEncodeUint8(decimals))
+
+	addToPrivileged(ctx, addr)
+
+	return nil
+}
+
+func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
+	collectionID := codec.MustDecodeNFTID(ctx.Params().MustGet(evm.FieldNFTCollectionID))
+
+	// The collection NFT must be deposited into the chain before registering. Afterwards it may be
+	// withdrawn to L1.
+	collection := func() *isc.NFT {
+		res := ctx.CallView(accounts.Contract.Hname(), accounts.ViewNFTData.Hname(), dict.Dict{
+			accounts.ParamNFTID: codec.EncodeNFTID(collectionID),
+		})
+		collection, err := isc.NFTFromBytes(res[accounts.ParamNFTData])
+		ctx.RequireNoError(err)
+		return collection
+	}()
+
+	metadata, err := transaction.IRC27NFTMetadataFromBytes(collection.Metadata)
+	ctx.RequireNoError(err, "cannot decode IRC27 collection NFT metadata")
+
+	// deploy the contract to the EVM state
+	addr := iscmagic.ERC721NFTCollectionAddress(collectionID)
+	emu := createEmulator(ctx)
+	evmState := emu.StateDB()
+	ctx.Requiref(!evmState.Exist(addr), "cannot register ERC721NFTCollection contract: EVM account already exists")
+	evmState.CreateAccount(addr)
+	evmState.SetCode(addr, iscmagic.ERC721NFTCollectionRuntimeBytecode)
+	// see ERC721NFTCollection_storage.json
+	evmState.SetState(addr, solidity.StorageSlot(2), solidity.StorageEncodeBytes32(collectionID[:]))
+	for k, v := range solidity.StorageEncodeString(3, metadata.Name) {
+		evmState.SetState(addr, k, v)
+	}
 
 	addToPrivileged(ctx, addr)
 

@@ -93,7 +93,7 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 	// take custody of deposit and NFT
 	transfer := wasmlib.NewScTransferBaseTokens(deposit)
 	transfer.AddNFT(&auctionNFT)
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	ctx.TransferAllowed(ctx.AccountID(), transfer)
 
 	fa := fairauction.ScFuncs.FinalizeAuction(ctx)
 	fa.Params.Nft().SetValue(auction.Nft)

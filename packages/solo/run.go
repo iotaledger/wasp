@@ -116,16 +116,18 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 
 	tx := transaction.MakeAnchorTransaction(essence, sigs[0])
 
+	if task.RotationAddress == nil {
+		// normal state transition
+		ch.settleStateTransition(tx, task.GetProcessedRequestIDs(), task.StateDraft)
+	}
+
 	err = ch.Env.AddToLedger(tx)
 	require.NoError(ch.Env.T, err)
 
 	anchor, _, err := transaction.GetAnchorFromTransaction(tx)
 	require.NoError(ch.Env.T, err)
 
-	if task.RotationAddress == nil {
-		// normal state transition
-		ch.settleStateTransition(tx, task.GetProcessedRequestIDs(), task.StateDraft)
-	} else {
+	if task.RotationAddress != nil {
 		ch.Log().Infof("ROTATED STATE CONTROLLER to %s", anchor.StateController)
 	}
 

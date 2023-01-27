@@ -10,26 +10,26 @@
 use crate::*;
 use crate::coreblob::*;
 
-pub struct StoreBlobCall {
-    pub func:    ScFunc,
+pub struct StoreBlobCall<'a> {
+    pub func:    ScFunc<'a>,
     pub params:  MutableStoreBlobParams,
     pub results: ImmutableStoreBlobResults,
 }
 
-pub struct GetBlobFieldCall {
-    pub func:    ScView,
+pub struct GetBlobFieldCall<'a> {
+    pub func:    ScView<'a>,
     pub params:  MutableGetBlobFieldParams,
     pub results: ImmutableGetBlobFieldResults,
 }
 
-pub struct GetBlobInfoCall {
-    pub func:    ScView,
+pub struct GetBlobInfoCall<'a> {
+    pub func:    ScView<'a>,
     pub params:  MutableGetBlobInfoParams,
     pub results: ImmutableGetBlobInfoResults,
 }
 
-pub struct ListBlobsCall {
-    pub func:    ScView,
+pub struct ListBlobsCall<'a> {
+    pub func:    ScView<'a>,
     pub results: ImmutableListBlobsResults,
 }
 
@@ -37,9 +37,9 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn store_blob(_ctx: &dyn ScFuncCallContext) -> StoreBlobCall {
+    pub fn store_blob(ctx: &impl ScFuncCallContext) -> StoreBlobCall {
         let mut f = StoreBlobCall {
-            func:    ScFunc::new(HSC_NAME, HFUNC_STORE_BLOB),
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_STORE_BLOB),
             params:  MutableStoreBlobParams { proxy: Proxy::nil() },
             results: ImmutableStoreBlobResults { proxy: Proxy::nil() },
         };
@@ -48,9 +48,9 @@ impl ScFuncs {
         f
     }
 
-    pub fn get_blob_field(_ctx: &dyn ScViewCallContext) -> GetBlobFieldCall {
+    pub fn get_blob_field(ctx: &impl ScViewCallContext) -> GetBlobFieldCall {
         let mut f = GetBlobFieldCall {
-            func:    ScView::new(HSC_NAME, HVIEW_GET_BLOB_FIELD),
+            func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_BLOB_FIELD),
             params:  MutableGetBlobFieldParams { proxy: Proxy::nil() },
             results: ImmutableGetBlobFieldResults { proxy: Proxy::nil() },
         };
@@ -59,9 +59,9 @@ impl ScFuncs {
         f
     }
 
-    pub fn get_blob_info(_ctx: &dyn ScViewCallContext) -> GetBlobInfoCall {
+    pub fn get_blob_info(ctx: &impl ScViewCallContext) -> GetBlobInfoCall {
         let mut f = GetBlobInfoCall {
-            func:    ScView::new(HSC_NAME, HVIEW_GET_BLOB_INFO),
+            func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_BLOB_INFO),
             params:  MutableGetBlobInfoParams { proxy: Proxy::nil() },
             results: ImmutableGetBlobInfoResults { proxy: Proxy::nil() },
         };
@@ -70,9 +70,9 @@ impl ScFuncs {
         f
     }
 
-    pub fn list_blobs(_ctx: &dyn ScViewCallContext) -> ListBlobsCall {
+    pub fn list_blobs(ctx: &impl ScViewCallContext) -> ListBlobsCall {
         let mut f = ListBlobsCall {
-            func:    ScView::new(HSC_NAME, HVIEW_LIST_BLOBS),
+            func:    ScView::new(ctx, HSC_NAME, HVIEW_LIST_BLOBS),
             results: ImmutableListBlobsResults { proxy: Proxy::nil() },
         };
         ScView::link_results(&mut f.results.proxy, &f.func);

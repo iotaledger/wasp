@@ -324,15 +324,13 @@ func (ch *Chain) DepositAssetsToL2(assets *isc.FungibleTokens, user *cryptolib.K
 func (ch *Chain) TransferAllowanceTo(
 	allowance *isc.Allowance,
 	targetAccount isc.AgentID,
-	forceOpenAccount bool,
 	wallet *cryptolib.KeyPair,
 	nft ...*isc.NFT,
 ) error {
 	callParams := NewCallParams(
 		accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 		dict.Dict{
-			accounts.ParamAgentID:          codec.EncodeAgentID(targetAccount),
-			accounts.ParamForceOpenAccount: codec.EncodeBool(forceOpenAccount),
+			accounts.ParamAgentID: codec.EncodeAgentID(targetAccount),
 		}).
 		WithAllowance(allowance).
 		WithFungibleTokens(allowance.Assets.Clone().AddBaseTokens(TransferAllowanceToGasBudgetBaseTokens)).
@@ -355,6 +353,20 @@ func (ch *Chain) MustDepositBaseTokensToL2(amount uint64, user *cryptolib.KeyPai
 	require.NoError(ch.Env.T, err)
 }
 
+func (ch *Chain) DepositNFT(nft *isc.NFT, to isc.AgentID, owner *cryptolib.KeyPair) error {
+	return ch.TransferAllowanceTo(
+		isc.NewEmptyAllowance().AddNFTs(nft.ID),
+		to,
+		owner,
+		nft,
+	)
+}
+
+func (ch *Chain) MustDepositNFT(nft *isc.NFT, to isc.AgentID, owner *cryptolib.KeyPair) {
+	err := ch.DepositNFT(nft, to, owner)
+	require.NoError(ch.Env.T, err)
+}
+
 // SendFromL1ToL2Account sends ftokens from L1 address to the target account on L2
 // Sender pays the gas fee
 func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens uint64, toSend *isc.FungibleTokens, target isc.AgentID, user *cryptolib.KeyPair) error {
@@ -363,7 +375,6 @@ func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens uint64, toSend *isc.Fungi
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 			accounts.ParamAgentID, target,
-			accounts.ParamForceOpenAccount, codec.EncodeBool(true),
 		).
 			AddFungibleTokens(sumAssets).
 			AddAllowance(isc.NewAllowanceFungibleTokens(toSend)).
@@ -380,7 +391,8 @@ func (ch *Chain) SendFromL1ToL2AccountBaseTokens(totalBaseTokens, baseTokensSend
 // SendFromL2ToL2Account moves ftokens on L2 from user's account to the target
 func (ch *Chain) SendFromL2ToL2Account(transfer *isc.Allowance, target isc.AgentID, user *cryptolib.KeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
-		accounts.ParamAgentID, target)
+		accounts.ParamAgentID, target,
+	)
 
 	req.AddBaseTokens(SendToL2AccountGasBudgetBaseTokens).
 		AddAllowance(transfer).
