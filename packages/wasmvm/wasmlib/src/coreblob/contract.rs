@@ -10,26 +10,26 @@
 use crate::*;
 use crate::coreblob::*;
 
-pub struct StoreBlobCall {
-    pub func:    ScFunc,
+pub struct StoreBlobCall<'a> {
+    pub func:    ScFunc<'a>,
     pub params:  MutableStoreBlobParams,
     pub results: ImmutableStoreBlobResults,
 }
 
-pub struct GetBlobFieldCall {
-    pub func:    ScView,
+pub struct GetBlobFieldCall<'a> {
+    pub func:    ScView<'a>,
     pub params:  MutableGetBlobFieldParams,
     pub results: ImmutableGetBlobFieldResults,
 }
 
-pub struct GetBlobInfoCall {
-    pub func:    ScView,
+pub struct GetBlobInfoCall<'a> {
+    pub func:    ScView<'a>,
     pub params:  MutableGetBlobInfoParams,
     pub results: ImmutableGetBlobInfoResults,
 }
 
-pub struct ListBlobsCall {
-    pub func:    ScView,
+pub struct ListBlobsCall<'a> {
+    pub func:    ScView<'a>,
     pub results: ImmutableListBlobsResults,
 }
 

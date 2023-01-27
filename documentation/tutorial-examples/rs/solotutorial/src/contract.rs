@@ -11,13 +11,13 @@ use wasmlib::*;
 
 use crate::*;
 
-pub struct StoreStringCall {
-    pub func:   ScFunc,
+pub struct StoreStringCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableStoreStringParams,
 }
 
-pub struct GetStringCall {
-    pub func:    ScView,
+pub struct GetStringCall<'a> {
+    pub func:    ScView<'a>,
     pub results: ImmutableGetStringResults,
 }
 

@@ -25,8 +25,8 @@ $#each func FuncNameForCall
 $#emit alignCalculate
 $#emit setupInitFunc
 
-pub struct $FuncName$+Call {
-    pub func:$falign Sc$initFunc$Kind,
+pub struct $FuncName$+Call<'a> {
+    pub func:$falign Sc$initFunc$Kind<'a>,
 $#if param MutableFuncNameParams
 $#if result ImmutableFuncNameResults
 }

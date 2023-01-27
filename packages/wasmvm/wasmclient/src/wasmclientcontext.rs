@@ -11,7 +11,6 @@ use wasmlib::*;
 
 // TODO to handle the request in parallel, WasmClientContext must be static now.
 // We need to solve this problem. By copying the vector of event_handlers, we may solve this problem
-#[derive(Debug)]
 pub struct WasmClientContext {
     pub chain_id: ScChainID,
     pub error: Arc<RwLock<errors::Result<()>>>,
@@ -38,8 +37,8 @@ impl WasmClientContext {
             }
         };
 
-        let mut ctx = WasmClientContext {
-            chain_id: chain_id_from_bytes(&[]),
+        WasmClientContext {
+            chain_id: chain_id_from_string(chain_id),
             error: Arc::new(RwLock::new(Ok(()))),
             event_done: Arc::new(RwLock::new(false)),
             event_handlers: Vec::new(),
@@ -51,12 +50,7 @@ impl WasmClientContext {
             sc_name: sc_name.to_string(),
             sc_hname: wasmlib::hname_from_bytes(&codec::hname_bytes(&sc_name)),
             svc_client: svc_client.clone(),
-        };
-
-        // note that chain_id_from_string needs host to be connected
-        wasmlib::host::connect_host(&ctx);
-        ctx.chain_id = chain_id_from_string(chain_id);
-        ctx
+        }
     }
 
     pub fn current_chain_id(&self) -> ScChainID {
@@ -69,15 +63,6 @@ impl WasmClientContext {
 
     pub fn current_svc_client(&self) -> WasmClientService {
         return self.svc_client.clone();
-    }
-
-    pub fn init_func_call_context(&'static self) {
-        wasmlib::host::connect_host(self);
-    }
-
-    pub fn init_view_call_context(&'static self, _contract_hname: &ScHname) -> ScHname {
-        wasmlib::host::connect_host(self);
-        return self.sc_hname;
     }
 
     pub fn register(&'static mut self, handler: Box<dyn IEventHandlers>) -> errors::Result<()> {
@@ -173,9 +158,9 @@ impl WasmClientContext {
     fn process_event(&'static self, rx: mpsc::Receiver<Vec<String>>) -> errors::Result<()> {
         for msg in rx {
             spawn(move || {
-                let l = self.event_received.clone();
+                let lock_received = self.event_received.clone();
                 if msg[0] == isc::waspclient::ISC_EVENT_KIND_ERROR {
-                    let mut received = l.write().unwrap();
+                    let mut received = lock_received.write().unwrap();
                     *received = true;
                     return Err(msg[1].clone());
                 }
@@ -196,7 +181,7 @@ impl WasmClientContext {
                     handler.as_ref().call_handler(&topic, &params);
                 }
 
-                let mut received = l.write().unwrap();
+                let mut received = lock_received.write().unwrap();
                 *received = true;
                 return Ok(());
             });

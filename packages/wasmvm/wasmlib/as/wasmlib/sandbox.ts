@@ -107,8 +107,12 @@ export class ScSandbox {
             allowance = new ScTransfer();
         }
         req.allowance = allowance.toBytes();
-        const res = sandbox(FnCall, req.bytes());
+        const res = this.fnCall(req);
         return new ScDict(res).immutable();
+    }
+
+    fnCall(req: CallRequest): Uint8Array {
+        return sandbox(FnCall, req.bytes());
     }
 
     // retrieve the agent id of the owner of the chain this contract lives on
@@ -123,6 +127,10 @@ export class ScSandbox {
 
     // retrieve the chain id of the chain this contract lives on
     public currentChainID(): ScChainID {
+        return this.fnChainID();
+    }
+
+    fnChainID(): ScChainID {
         return chainIDFromBytes(sandbox(FnChainID, null));
     }
 
@@ -260,7 +268,11 @@ export class ScSandboxFunc extends ScSandbox {
         req.allowance = allowance.toBytes();
         req.transfer = transfer.toBytes();
         req.delay = delay;
-        sandbox(FnPost, req.bytes());
+        this.fnPost(req);
+    }
+
+    fnPost(req: PostRequest): Uint8Array {
+        return sandbox(FnPost, req.bytes());
     }
 
     // generates a random value from 0 to max (exclusive: max) using a deterministic RNG

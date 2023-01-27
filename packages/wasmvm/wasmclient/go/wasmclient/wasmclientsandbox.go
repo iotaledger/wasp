@@ -9,7 +9,6 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
@@ -26,13 +25,11 @@ func (s *WasmClientContext) Sandbox(funcNr int32, args []byte) []byte {
 	s.Err = nil
 	switch funcNr {
 	case wasmlib.FnCall:
-		s.eventReceived = false
-		return s.fnCall(args)
+		return s.FnCall(wasmrequests.NewCallRequestFromBytes(args))
 	case wasmlib.FnChainID:
-		return s.chainID.Bytes()
+		return s.FnChainID().Bytes()
 	case wasmlib.FnPost:
-		s.eventReceived = false
-		return s.fnPost(args)
+		return s.FnPost(wasmrequests.NewPostRequestFromBytes(args))
 	case wasmlib.FnUtilsBech32Decode:
 		return s.fnUtilsBech32Decode(args)
 	case wasmlib.FnUtilsBech32Encode:
@@ -66,8 +63,8 @@ func (s *WasmClientContext) StateSet(key, value []byte) {
 
 /////////////////////////////////////////////////////////////////
 
-func (s *WasmClientContext) fnCall(args []byte) []byte {
-	req := wasmrequests.NewCallRequestFromBytes(args)
+func (s *WasmClientContext) FnCall(req *wasmrequests.CallRequest) []byte {
+	s.eventReceived = false
 	if req.Contract != s.scHname {
 		s.Err = fmt.Errorf("unknown contract: %s", req.Contract.String())
 		return nil
@@ -80,12 +77,16 @@ func (s *WasmClientContext) fnCall(args []byte) []byte {
 	return res
 }
 
-func (s *WasmClientContext) fnPost(args []byte) []byte {
+func (s *WasmClientContext) FnChainID() wasmtypes.ScChainID {
+	return s.chainID
+}
+
+func (s *WasmClientContext) FnPost(req *wasmrequests.PostRequest) []byte {
+	s.eventReceived = false
 	if s.keyPair == nil {
 		s.Err = errors.New("missing key pair")
 		return nil
 	}
-	req := wasmrequests.NewPostRequestFromBytes(args)
 	if req.ChainID != s.chainID {
 		s.Err = fmt.Errorf("unknown chain id: %s", req.ChainID.String())
 		return nil
@@ -96,7 +97,7 @@ func (s *WasmClientContext) fnPost(args []byte) []byte {
 	}
 	scAssets := wasmlib.NewScAssets(req.Transfer)
 	s.nonce++
-	s.ReqID, s.Err = s.svcClient.PostRequest(s.chainID, req.Contract, req.Function, req.Params, scAssets, s.keyPair, s.nonce)
+	s.ReqID, s.Err = s.svcClient.PostRequest(req.ChainID, req.Contract, req.Function, req.Params, scAssets, s.keyPair, s.nonce)
 	return nil
 }
 
@@ -119,7 +120,7 @@ func (s *WasmClientContext) fnUtilsBech32Encode(args []byte) []byte {
 	var cvt wasmhost.WasmConvertor
 	scAddress := wasmtypes.AddressFromBytes(args)
 	addr := cvt.IscAddress(&scAddress)
-	return []byte(addr.Bech32(parameters.L1().Protocol.Bech32HRP))
+	return []byte(addr.Bech32(iotago.NetworkPrefix(s.hrp)))
 }
 
 func (s *WasmClientContext) fnUtilsHashName(args []byte) []byte {

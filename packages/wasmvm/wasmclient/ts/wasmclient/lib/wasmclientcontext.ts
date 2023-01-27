@@ -10,7 +10,6 @@ import {IClientService} from './wasmclientservice';
 
 export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFuncCallContext {
     private eventHandlers: wasmlib.IEventHandlers[] = [];
-    private eventReceived: bool = false;
 
     public constructor(svcClient: IClientService, chain: string, scName: string) {
         super(svcClient, chain, scName);
@@ -59,6 +58,8 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
 
         // get last used nonce from accounts core contract
         const agent = wasmlib.ScAgentID.fromAddress(keyPair.address());
+        console.log('Chain: ' + this.chainID.toString());
+        console.log('Agent: ' + agent.toString());
         const ctx = new WasmClientContext(this.svcClient, this.chainID.toString(), coreaccounts.ScName);
         const n = coreaccounts.ScFuncs.getAccountNonce(ctx);
         n.params.agentID().setValue(agent);

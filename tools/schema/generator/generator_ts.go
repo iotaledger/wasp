@@ -66,7 +66,7 @@ func (g *TypeScriptGenerator) GenerateInterface() error {
 	if err != nil {
 		return err
 	}
-	if g.s.CoreContracts && g.rootFolder == "ts" {
+	if !g.s.CoreContracts || g.rootFolder == "ts" {
 		err = g.generateConfig("", packageJSON)
 		if err != nil {
 			return err
