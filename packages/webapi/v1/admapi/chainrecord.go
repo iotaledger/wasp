@@ -62,6 +62,7 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	returnStatus := http.StatusAccepted
 	if storedChainRec != nil {
 		_, err = s.chainRecordRegistryProvider.UpdateChainRecord(
 			requestChainRec.ChainID(),
@@ -74,10 +75,11 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		return c.NoContent(http.StatusAccepted)
-	}
-	if err := s.chainRecordRegistryProvider.AddChainRecord(requestChainRec); err != nil {
-		return err
+	} else {
+		if err := s.chainRecordRegistryProvider.AddChainRecord(requestChainRec); err != nil {
+			return err
+		}
+		returnStatus = http.StatusCreated
 	}
 
 	// Activate/deactivate the chain accordingly.
@@ -85,13 +87,13 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 		if err := s.chainsProvider().Activate(requestChainRec.ChainID()); err != nil {
 			return err
 		}
-	} else {
+	} else if storedChainRec != nil {
 		if err := s.chainsProvider().Deactivate(requestChainRec.ChainID()); err != nil {
 			return err
 		}
 	}
 
-	return c.NoContent(http.StatusCreated)
+	return c.NoContent(returnStatus)
 }
 
 func (s *chainRecordService) handleGetChainRecord(c echo.Context) error {

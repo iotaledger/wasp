@@ -67,6 +67,7 @@ func TestCruelWorld(t *testing.T) {
 			netProviders[i],
 			smGPAUtils.NewMockedTestBlockWAL(),
 			stores[i],
+			nil,
 			log.Named(peerNetIDs[i]),
 			timers,
 		)

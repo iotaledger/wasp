@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/shutdowncoordinator"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -61,6 +62,8 @@ type Chains struct {
 	mutex     sync.RWMutex
 	allChains map[isc.ChainID]*activeChain
 	accessMgr accessMgr.AccessMgr
+
+	shutdownCoordinator *shutdowncoordinator.ShutdownCoordinator
 }
 
 type activeChain struct {
@@ -85,6 +88,7 @@ func New(
 	nodeIdentityProvider registry.NodeIdentityProvider,
 	consensusStateRegistry cmtLog.ConsensusStateRegistry,
 	chainListener chain.ChainListener,
+	shutdownCoordinator *shutdowncoordinator.ShutdownCoordinator,
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
@@ -104,6 +108,7 @@ func New(
 		nodeIdentityProvider:             nodeIdentityProvider,
 		chainListener:                    nil, // See bellow.
 		consensusStateRegistry:           consensusStateRegistry,
+		shutdownCoordinator:              shutdownCoordinator,
 	}
 	ret.chainListener = NewChainsListener(chainListener, ret.chainAccessUpdatedCB)
 	return ret
@@ -133,6 +138,11 @@ func (c *Chains) Run(ctx context.Context) error {
 }
 
 func (c *Chains) Close() {
+	for _, c := range c.allChains {
+		c.cancelFunc()
+	}
+	c.shutdownCoordinator.WaitWithLogging()
+	c.shutdownCoordinator.Done()
 	if c.trustedNetworkListenerCancel != nil {
 		c.trustedNetworkListenerCancel()
 		c.trustedNetworkListenerCancel = nil
@@ -183,7 +193,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	//
 	// Check, maybe it is already running.
 	if _, ok := c.allChains[chainID]; ok {
-		c.log.Debugf("Chain %v is already activated", chainID.String())
+		c.log.Debugf("Chain %v = %v is already activated", chainID.ShortString(), chainID.String())
 		return nil
 	}
 	//
@@ -239,6 +249,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.chainListener,
 		chainRecord.AccessNodes,
 		c.networkProvider,
+		c.shutdownCoordinator.Sub(fmt.Sprintf("chain-%s", chainID)),
 		c.log.Named(chainID.ShortString()),
 	)
 	if err != nil {
@@ -250,7 +261,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		cancelFunc: chainCancel,
 	}
 
-	c.log.Infof("activated chain: %s", chainID.String())
+	c.log.Infof("activated chain: %v = %s", chainID.ShortString(), chainID.String())
 	return nil
 }
 
@@ -273,13 +284,13 @@ func (c *Chains) Deactivate(chainID isc.ChainID) error {
 
 	ch, ok := c.allChains[chainID]
 	if !ok {
-		c.log.Debugf("chain is not active: %s", chainID.String())
+		c.log.Debugf("chain is not active: %v = %s", chainID.ShortString(), chainID.String())
 		return nil
 	}
 	ch.cancelFunc()
 	c.accessMgr.ChainDismissed(chainID)
 	delete(c.allChains, chainID)
-	c.log.Debugf("chain has been deactivated: %s", chainID.String())
+	c.log.Debugf("chain has been deactivated: %v = %s", chainID.ShortString(), chainID.String())
 	return nil
 }
 

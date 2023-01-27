@@ -125,7 +125,6 @@ func (c *l1client) postBlock(ctx context.Context, block *iotago.Block) (*iotago.
 			return nil, fmt.Errorf("failed during local PoW: %w", err)
 		}
 	}
-
 	block, err := c.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1().Protocol)
 	if err != nil {
 		return nil, fmt.Errorf("failed to submit block: %w", err)

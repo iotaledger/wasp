@@ -20,6 +20,7 @@ type WaspClient struct {
 	httpClient http.Client
 	baseURL    string
 	token      string
+	logFunc    func(msg string, args ...interface{})
 }
 
 // NewWaspClient returns a new *WaspClient with the given baseURL and httpClient.
@@ -33,12 +34,24 @@ func NewWaspClient(baseURL string, httpClient ...http.Client) *WaspClient {
 	return &WaspClient{baseURL: baseURL}
 }
 
+func (c *WaspClient) WithLogFunc(logFunc func(msg string, args ...interface{})) *WaspClient {
+	c.logFunc = logFunc
+	return c
+}
+
 func (c *WaspClient) WithToken(token string) *WaspClient {
 	if len(token) > 0 {
 		c.token = token
 	}
 
 	return c
+}
+
+func (c *WaspClient) log(msg string, args ...interface{}) {
+	if c.logFunc == nil {
+		return
+	}
+	c.logFunc(msg, args...)
 }
 
 func processResponse(res *http.Response, decodeTo interface{}) error {

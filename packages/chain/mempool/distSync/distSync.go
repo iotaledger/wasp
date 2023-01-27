@@ -69,6 +69,7 @@ func New(
 }
 
 func (dsi *distSyncImpl) Input(input gpa.Input) gpa.OutMessages {
+	dsi.log.Debugf("Input %T: %+v", input, input)
 	switch input := input.(type) {
 	case *inputServerNodes:
 		return dsi.handleInputServerNodes(input)
