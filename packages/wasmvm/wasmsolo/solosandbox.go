@@ -78,15 +78,13 @@ func (s *SoloSandbox) Call(funcNr int32, args []byte) []byte {
 	}()
 	switch funcNr {
 	case wasmlib.FnCall:
-		req := wasmrequests.NewCallRequestFromBytes(args)
-		return s.FnCall(req)
+		return s.FnCall(wasmrequests.NewCallRequestFromBytes(args))
 	case wasmlib.FnChainID:
 		return s.FnChainID().Bytes()
 	case wasmlib.FnLog:
 		return s.fnLog(args)
 	case wasmlib.FnPost:
-		req := wasmrequests.NewPostRequestFromBytes(args)
-		return s.FnPost(req)
+		return s.FnPost(wasmrequests.NewPostRequestFromBytes(args))
 	case wasmlib.FnUtilsBech32Decode:
 		return s.fnUtilsBech32Decode(args)
 	case wasmlib.FnUtilsBech32Encode:
@@ -164,11 +162,6 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 
 //////////////////// sandbox functions \\\\\\\\\\\\\\\\\\\\
 
-func (s *SoloSandbox) fnLog(args []byte) []byte {
-	s.ctx.Chain.Log().Infof(string(args))
-	return nil
-}
-
 func (s *SoloSandbox) FnCall(req *wasmrequests.CallRequest) []byte {
 	ctx := s.ctx
 	ctx.GasFee = 0
@@ -202,6 +195,11 @@ func (s *SoloSandbox) FnCall(req *wasmrequests.CallRequest) []byte {
 
 func (s *SoloSandbox) FnChainID() wasmtypes.ScChainID {
 	return s.ctx.CurrentChainID()
+}
+
+func (s *SoloSandbox) fnLog(args []byte) []byte {
+	s.ctx.Chain.Log().Infof(string(args))
+	return nil
 }
 
 func (s *SoloSandbox) FnPost(req *wasmrequests.PostRequest) []byte {
