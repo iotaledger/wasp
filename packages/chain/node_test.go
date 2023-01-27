@@ -409,8 +409,8 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			chain.NewEmptyChainListener(),
 			[]*cryptolib.PublicKey{}, // Access nodes.
 			te.networkProviders[i],
-			shutdowncoordinator.New("test", nil, te.log),
-			te.log.Named(fmt.Sprintf("N#%v", i)),
+			shutdowncoordinator.New("test", nil, log),
+			log,
 		)
 		require.NoError(t, err)
 		te.nodes[i].ServersUpdated(te.peerPubKeys)
