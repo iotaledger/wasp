@@ -592,8 +592,7 @@ func (cni *chainNodeImpl) handleNetMessage(ctx context.Context, recv *peering.Pe
 		return
 	}
 	msg.SetSender(cni.pubKeyAsNodeID(recv.SenderPubKey))
-	outMsgs := cni.chainMgr.Message(msg)
-	cni.sendMessages(outMsgs)
+	cni.sendMessages(cni.chainMgr.Message(msg))
 	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 

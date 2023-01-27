@@ -52,17 +52,18 @@ func provide(c *dig.Container) error {
 	}
 
 	if err := c.Provide(func(deps networkDeps) networkResult {
+		nodeIdentity := deps.NodeIdentityProvider.NodeIdentity()
 		netImpl, tnmImpl, err := lpp.NewNetworkProvider(
 			ParamsPeering.NetID,
 			ParamsPeering.Port,
-			deps.NodeIdentityProvider.NodeIdentity(),
+			nodeIdentity,
 			deps.TrustedPeersRegistryProvider,
 			CoreComponent.Logger(),
 		)
 		if err != nil {
 			CoreComponent.LogPanicf("Init.peering: %v", err)
 		}
-		CoreComponent.LogInfof("------------- NetID is %s ------------------", ParamsPeering.NetID)
+		CoreComponent.LogInfof("------------- NetID = %s, PubKey = %s ------------------", ParamsPeering.NetID, nodeIdentity.GetPublicKey().String())
 
 		return networkResult{
 			NetworkProvider:       netImpl,
