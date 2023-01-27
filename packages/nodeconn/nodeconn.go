@@ -573,7 +573,7 @@ func (nc *nodeConnection) AttachChain(
 		// so we can track all pending ledger updates until the chain is synchronized.
 		nc.chainsMap.Set(chainID, chain)
 		nc.nodeConnectionMetrics.SetRegistered(chainID)
-		nc.LogDebugf("chain registered: %s", chainID)
+		nc.LogDebugf("chain registered: %s = %s", chainID.ShortString(), chainID)
 
 		return chain
 	}()
@@ -592,6 +592,6 @@ func (nc *nodeConnection) AttachChain(
 
 		nc.chainsMap.Delete(chainID)
 		nc.nodeConnectionMetrics.SetUnregistered(chainID)
-		nc.LogDebugf("chain unregistered: %s", chainID)
+		nc.LogDebugf("chain unregistered: %s = %s, |remaining|=%v", chainID.ShortString(), chainID, nc.chainsMap.Size())
 	}()
 }

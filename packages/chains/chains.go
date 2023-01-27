@@ -194,7 +194,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	//
 	// Check, maybe it is already running.
 	if _, ok := c.allChains[chainID]; ok {
-		c.log.Debugf("Chain %v is already activated", chainID.String())
+		c.log.Debugf("Chain %v = %v is already activated", chainID.ShortString(), chainID.String())
 		return nil
 	}
 	//
@@ -261,7 +261,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		cancelFunc: chainCancel,
 	}
 
-	c.log.Infof("activated chain: %s", chainID.String())
+	c.log.Infof("activated chain: %v = %s", chainID.ShortString(), chainID.String())
 	return nil
 }
 
@@ -284,13 +284,13 @@ func (c *Chains) Deactivate(chainID isc.ChainID) error {
 
 	ch, ok := c.allChains[chainID]
 	if !ok {
-		c.log.Debugf("chain is not active: %s", chainID.String())
+		c.log.Debugf("chain is not active: %v = %s", chainID.ShortString(), chainID.String())
 		return nil
 	}
 	ch.cancelFunc()
 	c.accessMgr.ChainDismissed(chainID)
 	delete(c.allChains, chainID)
-	c.log.Debugf("chain has been deactivated: %s", chainID.String())
+	c.log.Debugf("chain has been deactivated: %v = %s", chainID.ShortString(), chainID.String())
 	return nil
 }
 
