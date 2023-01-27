@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
@@ -21,7 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 	clustertests "github.com/iotaledger/wasp/tools/cluster/tests"
-	"github.com/stretchr/testify/require"
 )
 
 const (
