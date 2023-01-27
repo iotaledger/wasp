@@ -395,6 +395,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.nodes = make([]chain.Chain, len(te.peerIdentities))
 	for i := range te.peerIdentities {
 		te.nodeConns[i] = newTestNodeConn(t)
+		log := te.log.Named(fmt.Sprintf("N#%v", i))
 		te.nodes[i], err = chain.New(
 			te.ctx,
 			te.chainID,

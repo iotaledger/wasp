@@ -138,7 +138,6 @@ func (c *Chains) Run(ctx context.Context) error {
 }
 
 func (c *Chains) Close() {
-	// c.shutdownCoordinator.Wait()
 	for _, c := range c.allChains {
 		c.cancelFunc()
 	}
