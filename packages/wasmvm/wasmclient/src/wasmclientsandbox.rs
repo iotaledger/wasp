@@ -19,7 +19,7 @@ impl wasmlib::host::ScHost for WasmClientContext {
     fn sandbox(&self, func_num: i32, args: &[u8]) -> Vec<u8> {
         match func_num {
             wasmlib::FN_CALL => return self.fn_call(&wasmrequests::CallRequest::from_bytes(args)),
-            wasmlib::FN_CHAIN_ID => return self.chain_id.to_bytes(),
+            wasmlib::FN_CHAIN_ID => return self.fn_chain_id().to_bytes(),
             wasmlib::FN_POST => return self.fn_post(&wasmrequests::PostRequest::from_bytes(args)),
             wasmlib::FN_UTILS_BECH32_DECODE => return self.fn_utils_bech32_decode(args),
             wasmlib::FN_UTILS_BECH32_ENCODE => return self.fn_utils_bech32_encode(args),
