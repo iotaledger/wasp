@@ -14,8 +14,8 @@ function setupClient() {
     return ctx;
 }
 
-describe('wasmclient unverified', function () {
-});
+// describe('wasmclient unverified', function () {
+// });
 
 describe('wasmclient verified', function () {
     describe('call() view', function () {

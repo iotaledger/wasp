@@ -10,55 +10,55 @@
 use crate::*;
 use crate::coreblocklog::*;
 
-pub struct ControlAddressesCall {
-    pub func:    ScView,
+pub struct ControlAddressesCall<'a> {
+    pub func:    ScView<'a>,
     pub results: ImmutableControlAddressesResults,
 }
 
-pub struct GetBlockInfoCall {
-    pub func:    ScView,
+pub struct GetBlockInfoCall<'a> {
+    pub func:    ScView<'a>,
     pub params:  MutableGetBlockInfoParams,
     pub results: ImmutableGetBlockInfoResults,
 }
 
-pub struct GetEventsForBlockCall {
-    pub func:    ScView,
+pub struct GetEventsForBlockCall<'a> {
+    pub func:    ScView<'a>,
     pub params:  MutableGetEventsForBlockParams,
     pub results: ImmutableGetEventsForBlockResults,
 }
 
-pub struct GetEventsForContractCall {
-    pub func:    ScView,
+pub struct GetEventsForContractCall<'a> {
+    pub func:    ScView<'a>,
     pub params:  MutableGetEventsForContractParams,
     pub results: ImmutableGetEventsForContractResults,
 }
 
-pub struct GetEventsForRequestCall {
-    pub func:    ScView,
+pub struct GetEventsForRequestCall<'a> {
+    pub func:    ScView<'a>,
     pub params:  MutableGetEventsForRequestParams,
     pub results: ImmutableGetEventsForRequestResults,
 }
 
-pub struct GetRequestIDsForBlockCall {
-    pub func:    ScView,
+pub struct GetRequestIDsForBlockCall<'a> {
+    pub func:    ScView<'a>,
     pub params:  MutableGetRequestIDsForBlockParams,
     pub results: ImmutableGetRequestIDsForBlockResults,
 }
 
-pub struct GetRequestReceiptCall {
-    pub func:    ScView,
+pub struct GetRequestReceiptCall<'a> {
+    pub func:    ScView<'a>,
     pub params:  MutableGetRequestReceiptParams,
     pub results: ImmutableGetRequestReceiptResults,
 }
 
-pub struct GetRequestReceiptsForBlockCall {
-    pub func:    ScView,
+pub struct GetRequestReceiptsForBlockCall<'a> {
+    pub func:    ScView<'a>,
     pub params:  MutableGetRequestReceiptsForBlockParams,
     pub results: ImmutableGetRequestReceiptsForBlockResults,
 }
 
-pub struct IsRequestProcessedCall {
-    pub func:    ScView,
+pub struct IsRequestProcessedCall<'a> {
+    pub func:    ScView<'a>,
     pub params:  MutableIsRequestProcessedParams,
     pub results: ImmutableIsRequestProcessedResults,
 }

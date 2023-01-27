@@ -25,13 +25,11 @@ func (s *WasmClientContext) Sandbox(funcNr int32, args []byte) []byte {
 	s.Err = nil
 	switch funcNr {
 	case wasmlib.FnCall:
-		callReq := wasmrequests.NewCallRequestFromBytes(args)
-		return s.FnCall(callReq)
+		return s.FnCall(wasmrequests.NewCallRequestFromBytes(args))
 	case wasmlib.FnChainID:
 		return s.FnChainID().Bytes()
 	case wasmlib.FnPost:
-		postReq := wasmrequests.NewPostRequestFromBytes(args)
-		return s.FnPost(postReq)
+		return s.FnPost(wasmrequests.NewPostRequestFromBytes(args))
 	case wasmlib.FnUtilsBech32Decode:
 		return s.fnUtilsBech32Decode(args)
 	case wasmlib.FnUtilsBech32Encode:

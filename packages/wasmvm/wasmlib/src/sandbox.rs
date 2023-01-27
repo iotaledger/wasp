@@ -5,6 +5,7 @@ use std::rc::Rc;
 
 use crate::*;
 use crate::host::*;
+use crate::wasmrequests::*;
 
 // @formatter:off
 pub const FN_ACCOUNT_ID               : i32 = -1;
@@ -104,8 +105,12 @@ pub trait ScSandbox {
         if let Some(allowance) = allowance {
             req.allowance = allowance.to_bytes();
         }
-        let buf = sandbox(FN_CALL, &req.to_bytes());
+        let buf = self.fn_call(&req);
         ScImmutableDict::new(ScDict::new(&buf))
+    }
+
+    fn fn_call(&self, req: &CallRequest) -> Vec<u8> {
+        sandbox(FN_CALL, &req.to_bytes())
     }
 
     // retrieve the agent id of the owner of the chain this contract lives on
@@ -120,6 +125,10 @@ pub trait ScSandbox {
 
     // retrieve the chain id of the chain this contract lives on
     fn current_chain_id(&self) -> ScChainID {
+        self.fn_chain_id()
+    }
+
+    fn fn_chain_id(&self) -> ScChainID {
         chain_id_from_bytes(&sandbox(FN_CHAIN_ID, &[]))
     }
 
@@ -244,7 +253,11 @@ pub trait ScSandboxFunc: ScSandbox {
             transfer: transfer.to_bytes(),
             delay: delay,
         };
-        sandbox(FN_POST, &req.to_bytes());
+        self.fn_post(&req);
+    }
+
+    fn fn_post(&self, req: &PostRequest) -> Vec<u8> {
+        sandbox(FN_POST, &req.to_bytes())
     }
 
     // generates a random value from 0 to max (exclusive: max) using a deterministic RNG

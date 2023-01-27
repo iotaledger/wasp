@@ -3,7 +3,7 @@
 
 use crypto::hashes::{blake2b::Blake2b256, Digest};
 use crypto::signatures::ed25519;
-use std::{convert::TryInto, fmt::Debug};
+use std::{convert::TryInto};
 use wasmlib::*;
 
 pub struct KeyPair {
@@ -47,11 +47,11 @@ impl Clone for KeyPair {
     }
 }
 
-impl Debug for KeyPair {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        f.debug_tuple("KeyPair").field(&self.public_key).finish()
-    }
-}
+// impl Debug for KeyPair {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+//         f.debug_tuple("KeyPair").field(&self.public_key).finish()
+//     }
+// }
 
 impl PartialEq for KeyPair {
     fn eq(&self, other: &Self) -> bool {

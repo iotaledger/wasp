@@ -10,39 +10,39 @@
 use crate::*;
 use crate::coreroot::*;
 
-pub struct DeployContractCall {
-    pub func:   ScFunc,
+pub struct DeployContractCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableDeployContractParams,
 }
 
-pub struct GrantDeployPermissionCall {
-    pub func:   ScFunc,
+pub struct GrantDeployPermissionCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableGrantDeployPermissionParams,
 }
 
-pub struct RequireDeployPermissionsCall {
-    pub func:   ScFunc,
+pub struct RequireDeployPermissionsCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableRequireDeployPermissionsParams,
 }
 
-pub struct RevokeDeployPermissionCall {
-    pub func:   ScFunc,
+pub struct RevokeDeployPermissionCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableRevokeDeployPermissionParams,
 }
 
-pub struct SubscribeBlockContextCall {
-    pub func:   ScFunc,
+pub struct SubscribeBlockContextCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableSubscribeBlockContextParams,
 }
 
-pub struct FindContractCall {
-    pub func:    ScView,
+pub struct FindContractCall<'a> {
+    pub func:    ScView<'a>,
     pub params:  MutableFindContractParams,
     pub results: ImmutableFindContractResults,
 }
 
-pub struct GetContractRecordsCall {
-    pub func:    ScView,
+pub struct GetContractRecordsCall<'a> {
+    pub func:    ScView<'a>,
     pub results: ImmutableGetContractRecordsResults,
 }
 
