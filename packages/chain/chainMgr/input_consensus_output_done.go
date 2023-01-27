@@ -4,6 +4,8 @@
 package chainMgr
 
 import (
+	"fmt"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -36,4 +38,19 @@ func NewInputConsensusOutputDone(
 		nextState:         nextState,
 		transaction:       transaction,
 	}
+}
+
+func (inp *inputConsensusOutputDone) String() string {
+	txID, err := inp.transaction.ID()
+	if err != nil {
+		txID = iotago.TransactionID{}
+	}
+	return fmt.Sprintf(
+		"{chainMgr.inputConsensusOutputDone, committeeAddr=%v, logIndex=%v, baseAliasOutputID=%v, nextAliasOutput.ID=%v, transaction=%v}",
+		inp.committeeAddr.String(),
+		inp.logIndex,
+		inp.baseAliasOutputID.ToHex(),
+		inp.nextAliasOutput.OutputID().ToHex(),
+		txID.ToHex(),
+	)
 }

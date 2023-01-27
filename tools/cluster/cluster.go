@@ -243,7 +243,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 		addAccessNodesRequests[i] = tx
 	}
 
-	peers := multiclient.New(chain.CommitteeAPIHosts())
+	peers := multiclient.New(chain.CommitteeAPIHosts()).WithLogFunc(clu.t.Logf)
 
 	for _, tx := range addAccessNodesRequests {
 		// ---------- wait until the requests are processed in all committee nodes
@@ -286,9 +286,10 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 // to consider it as an access node.
 func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Transaction, error) {
 	waspClient := clu.WaspClient(accessNodeIndex)
-	if err := apilib.ActivateChainOnAccessNodes("", clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
+	if err := apilib.ActivateChainOnNodes("", clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
 		return nil, err
 	}
+
 	accessNodePeering, err := waspClient.GetPeeringSelf()
 	if err != nil {
 		return nil, err
@@ -329,11 +330,11 @@ func (clu *Cluster) IsNodeUp(i int) bool {
 }
 
 func (clu *Cluster) MultiClient() *multiclient.MultiClient {
-	return multiclient.New(clu.Config.APIHosts())
+	return multiclient.New(clu.Config.APIHosts()).WithLogFunc(clu.t.Logf)
 }
 
 func (clu *Cluster) WaspClient(nodeIndex int) *client.WaspClient {
-	return client.NewWaspClient(clu.Config.APIHost(nodeIndex))
+	return client.NewWaspClient(clu.Config.APIHost(nodeIndex)).WithLogFunc(clu.t.Logf)
 }
 
 func (clu *Cluster) NodeDataPath(i int) string {
@@ -479,7 +480,7 @@ func (clu *Cluster) KillNodeProcess(nodeIndex int) error {
 }
 
 func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
-	waspNodesCount := len(clu.waspCmds)
+	waspNodesCount := len(nodeIndex)
 
 	// send stop commands
 	for _, i := range nodeIndex {

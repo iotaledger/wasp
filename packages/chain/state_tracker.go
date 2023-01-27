@@ -6,6 +6,7 @@ package chain
 import (
 	"context"
 
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smInputs"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -38,6 +39,7 @@ type stateTrackerImpl struct {
 	nextAOCancel context.CancelFunc     // Cancel for a context used to query for the nextAO state.
 	nextAOWaitCh <-chan *smInputs.ChainFetchStateDiffResults
 	awaitReceipt AwaitReceipt
+	log          *logger.Logger
 }
 
 var _ StateTracker = &stateTrackerImpl{}
@@ -46,6 +48,7 @@ func NewStateTracker(
 	ctx context.Context,
 	stateMgr statemanager.StateMgr,
 	haveLatestCB StateTrackerStepCB,
+	log *logger.Logger,
 ) StateTracker {
 	return &stateTrackerImpl{
 		ctx:          ctx,
@@ -56,11 +59,13 @@ func NewStateTracker(
 		nextAO:       nil,
 		nextAOCancel: nil,
 		nextAOWaitCh: nil,
-		awaitReceipt: NewAwaitReceipt(awaitReceiptCleanupEvery),
+		awaitReceipt: NewAwaitReceipt(awaitReceiptCleanupEvery, log),
+		log:          log,
 	}
 }
 
 func (sti *stateTrackerImpl) TrackAliasOutput(ao *isc.AliasOutputWithID) {
+	sti.log.Debugf("TrackAliasOutput, ao=%v, haveAO=%v, nextAO=%v", ao, sti.haveAO, sti.nextAO)
 	if ao.Equals(sti.nextAO) {
 		return
 	}
@@ -76,6 +81,7 @@ func (sti *stateTrackerImpl) TrackAliasOutput(ao *isc.AliasOutputWithID) {
 }
 
 func (sti *stateTrackerImpl) AwaitRequestReceipt(query *awaitReceiptReq) {
+	sti.log.Debugf("AwaitRequestReceipt, query.requestID=%v", query.requestID)
 	sti.awaitReceipt.Await(query)
 }
 

@@ -93,7 +93,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 	fmt.Fprintf(textout, "creating chain origin and init transaction %s.. OK\n", txID.ToHex())
 	fmt.Fprint(textout, "sending committee record to nodes.. OK\n")
 
-	err = ActivateChainOnAccessNodes(par.AuthenticationToken, par.CommitteeAPIHosts, chainID)
+	err = ActivateChainOnNodes(par.AuthenticationToken, par.CommitteeAPIHosts, chainID)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.String(), err)
@@ -187,19 +187,9 @@ func CreateChainOrigin(
 	return chainID, reqTx, nil
 }
 
-// ActivateChainOnAccessNodes puts chain records into nodes and activates its
-// TODO needs refactoring and optimization
-func ActivateChainOnAccessNodes(authToken string, apiHosts []string, chainID isc.ChainID) error {
+// ActivateChainOnNodes puts chain records into nodes and activates its
+func ActivateChainOnNodes(authToken string, apiHosts []string, chainID isc.ChainID) error {
 	nodes := multiclient.New(apiHosts).WithToken(authToken)
 	// ------------ put chain records to hosts
-	err := nodes.PutChainRecord(registry.NewChainRecord(chainID, false, []*cryptolib.PublicKey{}))
-	if err != nil {
-		return fmt.Errorf("ActivateChainOnAccessNodes: %w", err)
-	}
-	// ------------- activate chain
-	err = nodes.ActivateChain(chainID)
-	if err != nil {
-		return fmt.Errorf("ActivateChainOnAccessNodes: %w", err)
-	}
-	return nil
+	return nodes.PutChainRecord(registry.NewChainRecord(chainID, true, []*cryptolib.PublicKey{}))
 }
