@@ -1,8 +1,9 @@
 // // Copyright 2020 IOTA Stiftung
 // // SPDX-License-Identifier: Apache-2.0
 
-use crate::*;
 use wasmlib::*;
+
+use crate::*;
 
 impl ScViewCallContext for WasmClientContext {
     fn fn_call(&self, req: &wasmrequests::CallRequest) -> Vec<u8> {
@@ -49,14 +50,17 @@ impl ScFuncCallContext for WasmClientContext {
             self.err("fn_post: ", "missing key pair");
             return Vec::new();
         }
+
         if req.chain_id != self.chain_id {
             self.err("unknown chain id: ", &req.chain_id.to_string());
             return Vec::new();
         }
+
         if req.contract != self.sc_hname {
             self.err("unknown contract: ", &req.contract.to_string());
             return Vec::new();
         }
+
         let sc_assets = ScAssets::new(&req.transfer);
         let mut nonce = self.nonce.lock().unwrap();
         *nonce += 1;
@@ -83,7 +87,7 @@ impl ScFuncCallContext for WasmClientContext {
     fn init_func_call_context(&self) {}
 }
 
-pub(crate) static mut HRP_FOR_CLIENT: String = String::new();
+pub(crate) static mut HRP_FOR_CLIENT: String = "";
 
 pub(crate) fn client_bech32_decode(bech32: &str) -> ScAddress {
     match codec::bech32_decode(&bech32) {

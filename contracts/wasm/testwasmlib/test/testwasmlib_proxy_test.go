@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 )
@@ -94,7 +93,7 @@ func genTestAddress(ctx *wasmsolo.SoloContext, num int) []wasmtypes.ScAddress {
 	addrs := make([]wasmtypes.ScAddress, num)
 	for i := 0; i < num; i++ {
 		_, addr := ctx.Chain.Env.NewKeyPair()
-		addrs[i] = wasmhost.WasmConvertor{}.ScAddress(addr)
+		addrs[i] = ctx.Cvt.ScAddress(addr)
 	}
 
 	return addrs

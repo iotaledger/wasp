@@ -17,15 +17,17 @@ import (
 
 var (
 	cvt          wasmhost.WasmConvertor
-	hrpForClient = iotago.NetworkPrefix("")
+	HrpForClient = iotago.NetworkPrefix("")
 )
 
 func (s *WasmClientContext) FnCall(req *wasmrequests.CallRequest) []byte {
 	s.eventReceived = false
+
 	if req.Contract != s.scHname {
 		s.Err = fmt.Errorf("unknown contract: %s", req.Contract.String())
 		return nil
 	}
+
 	res, err := s.svcClient.CallViewByHname(s.chainID, req.Contract, req.Function, req.Params)
 	if err != nil {
 		s.Err = err
@@ -40,42 +42,45 @@ func (s *WasmClientContext) FnChainID() wasmtypes.ScChainID {
 
 func (s *WasmClientContext) FnPost(req *wasmrequests.PostRequest) []byte {
 	s.eventReceived = false
+
 	if s.keyPair == nil {
 		s.Err = errors.New("missing key pair")
 		return nil
 	}
+
 	if req.ChainID != s.chainID {
 		s.Err = fmt.Errorf("unknown chain id: %s", req.ChainID.String())
 		return nil
 	}
+
 	if req.Contract != s.scHname {
 		s.Err = fmt.Errorf("unknown contract: %s", req.Contract.String())
 		return nil
 	}
+
 	scAssets := wasmlib.NewScAssets(req.Transfer)
 	s.nonce++
 	s.ReqID, s.Err = s.svcClient.PostRequest(req.ChainID, req.Contract, req.Function, req.Params, scAssets, s.keyPair, s.nonce)
 	return nil
 }
 
-func clientBech32Decode(bech32 string) wasmtypes.ScAddress {
+func ClientBech32Decode(bech32 string) wasmtypes.ScAddress {
 	hrp, addr, err := iotago.ParseBech32(bech32)
 	if err != nil {
 		panic(err)
 	}
-	if hrp != hrpForClient {
+	if hrp != HrpForClient {
 		panic("invalid protocol prefix: " + string(hrp))
 	}
 	return cvt.ScAddress(addr)
 }
 
-func clientBech32Encode(scAddress wasmtypes.ScAddress) string {
+func ClientBech32Encode(scAddress wasmtypes.ScAddress) string {
 	addr := cvt.IscAddress(&scAddress)
-	bech32 := addr.Bech32(hrpForClient)
-	return bech32
+	return addr.Bech32(HrpForClient)
 }
 
-func clientHashName(name string) wasmtypes.ScHname {
+func ClientHashName(name string) wasmtypes.ScHname {
 	hName := isc.Hn(name)
 	return cvt.ScHname(hName)
 }

@@ -26,6 +26,8 @@ export class WasmClientSandbox {
         this.svcClient = svcClient;
         this.scName = scName;
         this.scHname = wasmlib.hnameFromBytes(isc.Codec.hNameBytes(scName));
+
+        // set the network prefix for the current network
         const [hrp, _addr, err] = isc.Codec.bech32Decode(chain);
         if (err != null) {
             this.Err = err;
@@ -37,15 +39,17 @@ export class WasmClientSandbox {
         WasmClientSandbox.hrpForClient = hrp;
 
         // note that hrpForClient needs to be set
-         this.chainID = wasmlib.chainIDFromString(chain);
+        this.chainID = wasmlib.chainIDFromString(chain);
     }
 
     public fnCall(req: wasmlib.CallRequest): Uint8Array {
         this.eventReceived = false;
+
         if (!req.contract.equals(this.scHname)) {
             this.Err = 'unknown contract: ' + req.contract.toString();
             return new Uint8Array(0);
         }
+
         const [res, err] = this.svcClient.callViewByHname(this.chainID, req.contract, req.function, req.params);
         this.Err = err;
         return res;
@@ -57,23 +61,25 @@ export class WasmClientSandbox {
 
     public fnPost(req: wasmlib.PostRequest): Uint8Array {
         this.eventReceived = false;
+
         if (this.keyPair == null) {
             this.Err = 'missing key pair';
             return new Uint8Array(0);
         }
+
         if (!req.chainID.equals(this.chainID)) {
             this.Err = 'unknown chain id: ' + req.chainID.toString();
             return new Uint8Array(0);
         }
+
         if (!req.contract.equals(this.scHname)) {
             this.Err = 'unknown contract:' + req.contract.toString();
             return new Uint8Array(0);
         }
+
         const scAssets = new wasmlib.ScAssets(req.transfer);
         this.nonce++;
-        const [reqId, err] = this.svcClient.postRequest(req.chainID, req.contract, req.function, req.params, scAssets, this.keyPair, this.nonce);
-        this.ReqID = reqId;
-        this.Err = err;
+        [this.ReqID, this.Err] = this.svcClient.postRequest(req.chainID, req.contract, req.function, req.params, scAssets, this.keyPair, this.nonce);
         return new Uint8Array(0);
     }
 }

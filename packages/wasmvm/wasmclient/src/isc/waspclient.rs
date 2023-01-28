@@ -1,20 +1,21 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-pub use crate::*;
 pub use codec::*;
 pub use reqwest::*;
 use std::{
-    sync::{mpsc, Arc, RwLock},
+    sync::{Arc, mpsc, RwLock},
     thread::spawn,
     time::*,
 };
 pub use wasmlib::*;
 
+pub use crate::*;
+
 const DEFAULT_OPTIMISTIC_READ_TIMEOUT: Duration = Duration::from_millis(1100);
 
 pub const ISC_EVENT_KIND_NEW_BLOCK: &str = "new_block";
-pub const ISC_EVENT_KIND_RECEIPT: &str = "receipt"; // issuer will be the request sender
+pub const ISC_EVENT_KIND_RECEIPT: &str = "receipt";
 pub const ISC_EVENT_KIND_SMART_CONTRACT: &str = "contract";
 pub const ISC_EVENT_KIND_ERROR: &str = "error";
 
@@ -186,8 +187,15 @@ impl WaspClient {
 
 #[cfg(test)]
 mod tests {
-    use crate::waspclient;
     use httpmock::prelude::*;
+    use std::{
+        net::TcpListener,
+        sync::{Arc, mpsc, RwLock},
+        thread::spawn,
+    };
+    use tungstenite::accept;
+
+    use crate::waspclient;
 
     #[test]
     fn waspclient_new() {
@@ -231,12 +239,6 @@ mod tests {
             .unwrap();
         call_view_by_hname_mock.assert();
     }
-    use std::{
-        net::TcpListener,
-        sync::{mpsc, Arc, RwLock},
-        thread::spawn,
-    };
-    use tungstenite::accept;
 
     #[derive(Clone)]
     struct MockServerMsg {
@@ -269,6 +271,7 @@ mod tests {
             cnt += 1;
         }
     }
+
     #[test]
     fn test_subscribe_stop() {
         let url = "ws://localhost:3013";

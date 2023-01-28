@@ -31,6 +31,7 @@ const (
 )
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
+	wasmclient.HrpForClient = ""
 	if useCluster {
 		return setupClientCluster(t)
 	}

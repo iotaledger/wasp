@@ -27,6 +27,7 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         return this.svcClient;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     public initFuncCallContext(): void {
     }
 

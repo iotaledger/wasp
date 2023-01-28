@@ -37,28 +37,32 @@ var (
 )
 
 func NewWasmClientContext(svcClient IClientService, chain string, scName string) *WasmClientContext {
-	// local client implementations for sandboxed functions
-	wasmtypes.Bech32Decode = clientBech32Decode
-	wasmtypes.Bech32Encode = clientBech32Encode
-	wasmtypes.HashName = clientHashName
+	if HrpForClient == "" {
+		// local client implementations for sandboxed functions
+		wasmtypes.Bech32Decode = ClientBech32Decode
+		wasmtypes.Bech32Encode = ClientBech32Encode
+		wasmtypes.HashName = ClientHashName
+	}
 
 	s := &WasmClientContext{}
 	s.svcClient = svcClient
 	s.scName = scName
 	s.ServiceContractName(scName)
 
-	// set the network prefix for the current network
-	hrp, _, err := iotago.ParseBech32(chain)
-	if err != nil {
-		s.Err = err
-		return s
+	if HrpForClient == "" {
+		// set the network prefix for the current network
+		hrp, _, err := iotago.ParseBech32(chain)
+		if err != nil {
+			s.Err = err
+			return s
+		}
+		if HrpForClient != hrp && HrpForClient != "" {
+			panic("WasmClient can only connect to one Tangle network per app")
+		}
+		HrpForClient = hrp
 	}
-	if hrpForClient != hrp && hrpForClient != "" {
-		panic("WasmClient can only connect to one Tangle network per app")
-	}
-	hrpForClient = hrp
 
-	// note that hrpForClient needs to be set
+	// note that HrpForClient needs to be set
 	s.chainID = wasmtypes.ChainIDFromString(chain)
 	return s
 }

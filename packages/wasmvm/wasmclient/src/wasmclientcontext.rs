@@ -1,21 +1,22 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::*;
 use std::{
     any::Any,
-    sync::{mpsc, Arc, Mutex, RwLock},
+    sync::{Arc, mpsc, Mutex, RwLock},
     thread::spawn,
 };
-use wasmlib::*;
 use wasmclientsandbox::*;
+use wasmlib::*;
+
+use crate::*;
 
 // TODO to handle the request in parallel, WasmClientContext must be static now.
 // We need to solve this problem. By copying the vector of event_handlers, we may solve this problem
 pub struct WasmClientContext {
     pub chain_id: ScChainID,
     pub error: Arc<RwLock<errors::Result<()>>>,
-    event_done: Arc<RwLock<bool>>, // Set `done` to true to close the ongoing `subscribe()`
+    event_done: Arc<RwLock<bool>>,
     pub event_handlers: Vec<Box<dyn IEventHandlers>>,
     pub event_received: Arc<RwLock<bool>>,
     pub key_pair: Option<keypair::KeyPair>,
@@ -29,13 +30,18 @@ pub struct WasmClientContext {
 impl WasmClientContext {
     pub fn new(svc_client: &WasmClientService, chain_id: &str, sc_name: &str) -> WasmClientContext {
         unsafe {
+            // local client implementations for sandboxed functions
             BECH32_DECODE = client_bech32_decode;
             BECH32_ENCODE = client_bech32_encode;
             HASH_NAME = client_hash_name;
         }
 
+        // set the network prefix for the current network
         match codec::bech32_decode(chain_id) {
             Ok((hrp, _)) => unsafe {
+                if HRP_FOR_CLIENT != hrp && HRP_FOR_CLIENT != "" {
+                    panic!("WasmClient can only connect to one Tangle network per app");
+                }
                 HRP_FOR_CLIENT = hrp;
             },
             Err(e) => {
@@ -51,7 +57,7 @@ impl WasmClientContext {
             event_done: Arc::new(RwLock::new(false)),
             event_handlers: Vec::new(),
             event_received: Arc::new(RwLock::new(false)),
-             key_pair: None,
+            key_pair: None,
             nonce: Mutex::new(0),
             req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
             sc_name: sc_name.to_string(),
@@ -92,6 +98,7 @@ impl WasmClientContext {
 
     pub fn sign_requests(&mut self, key_pair: &keypair::KeyPair) {
         self.key_pair = Some(key_pair.clone());
+        //TODO get last used nonce from accounts core contract
     }
 
     pub fn unregister(&mut self, handler: Box<dyn IEventHandlers>) {
@@ -149,19 +156,6 @@ impl WasmClientContext {
         }
     }
 
-    pub fn start_event_handlers(&'static self) -> errors::Result<()> {
-        let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
-        let done = Arc::clone(&self.event_done);
-        self.svc_client.subscribe_events(tx, done)?;
-        self.process_event(rx)?;
-        return Ok(());
-    }
-
-    pub fn stop_event_handlers(&self) {
-        let mut done = self.event_done.write().unwrap();
-        *done = true;
-    }
-
     fn process_event(&'static self, rx: mpsc::Receiver<Vec<String>>) -> errors::Result<()> {
         for msg in rx {
             spawn(move || {
@@ -197,6 +191,19 @@ impl WasmClientContext {
         return Ok(());
     }
 
+    pub fn start_event_handlers(&'static self) -> errors::Result<()> {
+        let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
+        let done = Arc::clone(&self.event_done);
+        self.svc_client.subscribe_events(tx, done)?;
+        self.process_event(rx)?;
+        return Ok(());
+    }
+
+    pub fn stop_event_handlers(&self) {
+        let mut done = self.event_done.write().unwrap();
+        *done = true;
+    }
+
     fn unescape(&self, param: &str) -> String {
         let idx = match param.find("~") {
             Some(idx) => idx,
@@ -212,6 +219,7 @@ impl WasmClientContext {
             _ => panic!("invalid event encoding"),
         }
     }
+
     pub fn err(&self, current_layer_msg: &str, e: &str) {
         let mut err = self.error.write().unwrap();
         *err = Err(current_layer_msg.to_string() + e);
@@ -239,11 +247,13 @@ impl Default for WasmClientContext {
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
     use wasmlib::*;
+
+    use crate::*;
 
     #[derive(Debug)]
     struct FakeEventHandler {}
+
     impl IEventHandlers for FakeEventHandler {
         fn call_handler(&self, _topic: &str, _params: &Vec<String>) {}
     }
