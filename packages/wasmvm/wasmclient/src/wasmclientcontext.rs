@@ -17,7 +17,6 @@ pub struct WasmClientContext {
     event_done: Arc<RwLock<bool>>, // Set `done` to true to close the ongoing `subscribe()`
     pub event_handlers: Vec<Box<dyn IEventHandlers>>,
     pub event_received: Arc<RwLock<bool>>,
-    pub hrp: String,
     pub key_pair: Option<keypair::KeyPair>,
     pub nonce: Mutex<u64>,
     pub req_id: Arc<RwLock<ScRequestID>>,
@@ -28,8 +27,16 @@ pub struct WasmClientContext {
 
 impl WasmClientContext {
     pub fn new(svc_client: &WasmClientService, chain_id: &str, sc_name: &str) -> WasmClientContext {
-        let hrp = match codec::bech32_decode(chain_id) {
-            Ok((hrp, _)) => hrp,
+        unsafe {
+            BECH32_DECODE = client_bech32_decode;
+            BECH32_ENCODE = client_bech32_encode;
+            HASH_NAME = client_hash_name;
+        }
+
+        match codec::bech32_decode(chain_id) {
+            Ok((hrp, _)) => unsafe {
+                HRP_FOR_CLIENT = hrp;
+            },
             Err(e) => {
                 let ctx = WasmClientContext::default();
                 ctx.err("failed to init", e.as_str());
@@ -37,18 +44,18 @@ impl WasmClientContext {
             }
         };
 
+
         WasmClientContext {
             chain_id: chain_id_from_string(chain_id),
             error: Arc::new(RwLock::new(Ok(()))),
             event_done: Arc::new(RwLock::new(false)),
             event_handlers: Vec::new(),
             event_received: Arc::new(RwLock::new(false)),
-            hrp: hrp,
-            key_pair: None,
+             key_pair: None,
             nonce: Mutex::new(0),
             req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
             sc_name: sc_name.to_string(),
-            sc_hname: wasmlib::hname_from_bytes(&codec::hname_bytes(&sc_name)),
+            sc_hname: hname_from_bytes(&codec::hname_bytes(&sc_name)),
             svc_client: svc_client.clone(),
         }
     }
@@ -80,7 +87,7 @@ impl WasmClientContext {
 
     // overrides default contract name
     pub fn service_contract_name(&mut self, contract_name: &str) {
-        self.sc_hname = wasmlib::ScHname::new(contract_name);
+        self.sc_hname = ScHname::new(contract_name);
     }
 
     pub fn sign_requests(&mut self, key_pair: &keypair::KeyPair) {
@@ -220,7 +227,6 @@ impl Default for WasmClientContext {
             event_done: Arc::default(),
             event_handlers: Vec::new(),
             event_received: Arc::default(),
-            hrp: String::default(),
             key_pair: None,
             nonce: Mutex::default(),
             req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),

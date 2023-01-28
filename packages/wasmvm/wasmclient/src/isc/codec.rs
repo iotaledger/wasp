@@ -18,8 +18,8 @@ pub fn bech32_decode(input: &str) -> errors::Result<(String, ScAddress)> {
     return Ok((hrp, address_from_bytes(&buf)));
 }
 
-pub fn bech32_encode(addr: &ScAddress) -> errors::Result<String> {
-    match bech32::encode(BECH32_PREFIX, addr.to_bytes().to_base32(), Variant::Bech32) {
+pub fn bech32_encode(hrp: &str, addr: &ScAddress) -> errors::Result<String> {
+    match bech32::encode(hrp, addr.to_bytes().to_base32(), Variant::Bech32) {
         Ok(v) => Ok(v),
         Err(e) => Err(e.to_string()),
     }
