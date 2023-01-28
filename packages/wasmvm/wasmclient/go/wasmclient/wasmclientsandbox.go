@@ -15,53 +15,10 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
-func (s *WasmClientContext) ExportName(index int32, name string) {
-	_ = index
-	_ = name
-	panic("WasmClientContext.ExportName")
-}
-
-func (s *WasmClientContext) Sandbox(funcNr int32, args []byte) []byte {
-	s.Err = nil
-	switch funcNr {
-	case wasmlib.FnCall:
-		return s.FnCall(wasmrequests.NewCallRequestFromBytes(args))
-	case wasmlib.FnChainID:
-		return s.FnChainID().Bytes()
-	case wasmlib.FnPost:
-		return s.FnPost(wasmrequests.NewPostRequestFromBytes(args))
-	case wasmlib.FnUtilsBech32Decode:
-		return s.fnUtilsBech32Decode(args)
-	case wasmlib.FnUtilsBech32Encode:
-		return s.fnUtilsBech32Encode(args)
-	case wasmlib.FnUtilsHashName:
-		return s.fnUtilsHashName(args)
-	}
-	panic("implement WasmClientContext.Sandbox")
-}
-
-func (s *WasmClientContext) StateDelete(key []byte) {
-	_ = key
-	panic("WasmClientContext.StateDelete")
-}
-
-func (s *WasmClientContext) StateExists(key []byte) bool {
-	_ = key
-	panic("WasmClientContext.StateExists")
-}
-
-func (s *WasmClientContext) StateGet(key []byte) []byte {
-	_ = key
-	panic("WasmClientContext.StateGet")
-}
-
-func (s *WasmClientContext) StateSet(key, value []byte) {
-	_ = key
-	_ = value
-	panic("WasmClientContext.StateSet")
-}
-
-/////////////////////////////////////////////////////////////////
+var (
+	cvt          wasmhost.WasmConvertor
+	hrpForClient = iotago.NetworkPrefix("")
+)
 
 func (s *WasmClientContext) FnCall(req *wasmrequests.CallRequest) []byte {
 	s.eventReceived = false
@@ -101,22 +58,6 @@ func (s *WasmClientContext) FnPost(req *wasmrequests.PostRequest) []byte {
 	return nil
 }
 
-func (s *WasmClientContext) fnUtilsBech32Decode(args []byte) []byte {
-	bech32 := wasmtypes.StringFromBytes(args)
-	return clientBech32Decode(bech32).Bytes()
-}
-
-func (s *WasmClientContext) fnUtilsBech32Encode(args []byte) []byte {
-	scAddress := wasmtypes.AddressFromBytes(args)
-	bech32 := clientBech32Encode(scAddress)
-	return wasmtypes.BytesFromString(bech32)
-}
-
-var (
-	cvt          wasmhost.WasmConvertor
-	hrpForClient = iotago.NetworkPrefix("")
-)
-
 func clientBech32Decode(bech32 string) wasmtypes.ScAddress {
 	hrp, addr, err := iotago.ParseBech32(bech32)
 	if err != nil {
@@ -132,11 +73,6 @@ func clientBech32Encode(scAddress wasmtypes.ScAddress) string {
 	addr := cvt.IscAddress(&scAddress)
 	bech32 := addr.Bech32(hrpForClient)
 	return bech32
-}
-
-func (s *WasmClientContext) fnUtilsHashName(args []byte) []byte {
-	name := string(args)
-	return clientHashName(name).Bytes()
 }
 
 func clientHashName(name string) wasmtypes.ScHname {

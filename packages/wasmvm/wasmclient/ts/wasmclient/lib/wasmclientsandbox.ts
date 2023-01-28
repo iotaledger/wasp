@@ -6,7 +6,7 @@ import * as wasmlib from 'wasmlib';
 import {panic} from 'wasmlib';
 import {IClientService} from './';
 
-export class WasmClientSandbox implements wasmlib.ScHost {
+export class WasmClientSandbox {
     static hrpForClient = '';
 
     chainID: wasmlib.ScChainID = new wasmlib.ScChainID();
@@ -39,50 +39,6 @@ export class WasmClientSandbox implements wasmlib.ScHost {
         // note that hrpForClient needs to be set
          this.chainID = wasmlib.chainIDFromString(chain);
     }
-
-    public exportName(index: i32, name: string) {
-        panic('WasmClientContext.ExportName');
-    }
-
-    public sandbox(funcNr: i32, args: Uint8Array): Uint8Array {
-        this.Err = null;
-        switch (funcNr) {
-            case wasmlib.FnCall:
-                return this.fnCall(wasmlib.CallRequest.fromBytes(args));
-            case wasmlib.FnChainID:
-                return this.fnChainID().toBytes();
-            case wasmlib.FnPost:
-                return this.fnPost(wasmlib.PostRequest.fromBytes(args));
-            case wasmlib.FnUtilsBech32Decode:
-                return this.fnUtilsBech32Decode(args);
-            case wasmlib.FnUtilsBech32Encode:
-                return this.fnUtilsBech32Encode(args);
-            case wasmlib.FnUtilsHashName:
-                return this.fnUtilsHashName(args);
-        }
-        panic('implement WasmClientContext.Sandbox');
-        return new Uint8Array(0);
-    }
-
-    public stateDelete(key: Uint8Array) {
-        panic('WasmClientContext.StateDelete');
-    }
-
-    public stateExists(key: Uint8Array): bool {
-        panic('WasmClientContext.StateExists');
-        return false;
-    }
-
-    public stateGet(key: Uint8Array): Uint8Array {
-        panic('WasmClientContext.StateGet');
-        return new Uint8Array(0);
-    }
-
-    public stateSet(key: Uint8Array, value: Uint8Array) {
-        panic('WasmClientContext.StateSet');
-    }
-
-    /////////////////////////////////////////////////////////////////
 
     public fnCall(req: wasmlib.CallRequest): Uint8Array {
         this.eventReceived = false;
@@ -120,24 +76,7 @@ export class WasmClientSandbox implements wasmlib.ScHost {
         this.Err = err;
         return new Uint8Array(0);
     }
-
-    public fnUtilsBech32Decode(args: Uint8Array): Uint8Array {
-        const bech32 = wasmlib.stringFromBytes(args);
-        return clientBech32Decode(bech32).toBytes();
-    }
-
-    public fnUtilsBech32Encode(args: Uint8Array): Uint8Array {
-        const addr = wasmlib.addressFromBytes(args);
-        const bech32 = clientBech32Encode(addr);
-        return wasmlib.stringToBytes(bech32);
-    }
-
-    public fnUtilsHashName(args: Uint8Array): Uint8Array {
-        const name = wasmlib.stringFromBytes(args);
-        return clientHashName(name).toBytes();
-    }
 }
-
 
 export function clientBech32Decode(bech32: string): wasmlib.ScAddress {
     const [hrp, addr, err] = isc.Codec.bech32Decode(bech32);

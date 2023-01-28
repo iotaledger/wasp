@@ -32,7 +32,6 @@ type WasmClientContext struct {
 }
 
 var (
-	_ wasmlib.ScHost            = new(WasmClientContext)
 	_ wasmlib.ScFuncCallContext = new(WasmClientContext)
 	_ wasmlib.ScViewCallContext = new(WasmClientContext)
 )
