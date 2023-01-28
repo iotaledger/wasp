@@ -7,10 +7,11 @@ import {panic} from 'wasmlib';
 import {IClientService} from './';
 
 export class WasmClientSandbox implements wasmlib.ScHost {
+    static hrpForClient = '';
+
     chainID: wasmlib.ScChainID = new wasmlib.ScChainID();
     Err: isc.Error = null;
     eventReceived: bool = false;
-    hrp = '';
     keyPair: isc.KeyPair | null = null;
     nonce: u64 = 0n;
     ReqID: wasmlib.ScRequestID = new wasmlib.ScRequestID();
@@ -19,6 +20,9 @@ export class WasmClientSandbox implements wasmlib.ScHost {
     svcClient: IClientService;
 
     public constructor(svcClient: IClientService, chain: string, scName: string) {
+        // local client implementations for sandboxed functions
+        wasmlib.sandboxWrappers(clientBech32Decode, clientBech32Encode, clientHashName);
+
         this.svcClient = svcClient;
         this.scName = scName;
         this.scHname = wasmlib.hnameFromBytes(isc.Codec.hNameBytes(scName));
@@ -27,11 +31,13 @@ export class WasmClientSandbox implements wasmlib.ScHost {
             this.Err = err;
             return this;
         }
-        this.hrp = hrp;
+        if (WasmClientSandbox.hrpForClient != hrp && WasmClientSandbox.hrpForClient != '') {
+            panic('WasmClient can only connect to one Tangle network per app');
+        }
+        WasmClientSandbox.hrpForClient = hrp;
 
-        // note that chainIDFromString needs host to be connected
-        wasmlib.connectHost(this);
-        this.chainID = wasmlib.chainIDFromString(chain);
+        // note that hrpForClient needs to be set
+         this.chainID = wasmlib.chainIDFromString(chain);
     }
 
     public exportName(index: i32, name: string) {
@@ -117,26 +123,39 @@ export class WasmClientSandbox implements wasmlib.ScHost {
 
     public fnUtilsBech32Decode(args: Uint8Array): Uint8Array {
         const bech32 = wasmlib.stringFromBytes(args);
-        const [hrp, addr, err] = isc.Codec.bech32Decode(bech32);
-        if (err != null) {
-            this.Err = err;
-            return new Uint8Array(0);
-        }
-        if (hrp != this.hrp) {
-            this.Err = 'invalid protocol prefix: ' + hrp;
-            return new Uint8Array(0);
-        }
-        return addr.toBytes();
+        return clientBech32Decode(bech32).toBytes();
     }
 
     public fnUtilsBech32Encode(args: Uint8Array): Uint8Array {
         const addr = wasmlib.addressFromBytes(args);
-        const bech32 = isc.Codec.bech32Encode(this.hrp, addr);
+        const bech32 = clientBech32Encode(addr);
         return wasmlib.stringToBytes(bech32);
     }
 
     public fnUtilsHashName(args: Uint8Array): Uint8Array {
         const name = wasmlib.stringFromBytes(args);
-        return isc.Codec.hNameBytes(name);
+        return clientHashName(name).toBytes();
     }
+}
+
+
+export function clientBech32Decode(bech32: string): wasmlib.ScAddress {
+    const [hrp, addr, err] = isc.Codec.bech32Decode(bech32);
+    if (err != null) {
+        panic(err);
+    }
+    if (hrp != WasmClientSandbox.hrpForClient) {
+        panic('invalid protocol prefix: ' + hrp);
+    }
+    return addr;
+}
+
+export function clientBech32Encode(addr: wasmlib.ScAddress): string {
+    return isc.Codec.bech32Encode(WasmClientSandbox.hrpForClient, addr);
+}
+
+export function clientHashName(name: string): wasmlib.ScHname {
+    const hName = new wasmlib.ScHname(0);
+    hName.id = isc.Codec.hNameBytes(name);
+    return hName;
 }

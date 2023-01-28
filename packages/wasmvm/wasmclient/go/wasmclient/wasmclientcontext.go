@@ -23,7 +23,6 @@ type WasmClientContext struct {
 	eventDone     chan bool
 	eventHandlers []wasmlib.IEventHandlers
 	eventReceived bool
-	hrp           string
 	keyPair       *cryptolib.KeyPair
 	nonce         uint64
 	ReqID         wasmtypes.ScRequestID
@@ -39,19 +38,28 @@ var (
 )
 
 func NewWasmClientContext(svcClient IClientService, chain string, scName string) *WasmClientContext {
+	// local client implementations for sandboxed functions
+	wasmtypes.Bech32Decode = clientBech32Decode
+	wasmtypes.Bech32Encode = clientBech32Encode
+	wasmtypes.HashName = clientHashName
+
 	s := &WasmClientContext{}
 	s.svcClient = svcClient
 	s.scName = scName
 	s.ServiceContractName(scName)
+
+	// set the network prefix for the current network
 	hrp, _, err := iotago.ParseBech32(chain)
 	if err != nil {
 		s.Err = err
 		return s
 	}
-	s.hrp = string(hrp)
+	if hrpForClient != hrp && hrpForClient != "" {
+		panic("WasmClient can only connect to one Tangle network per app")
+	}
+	hrpForClient = hrp
 
-	// note that ChainIDFromString needs host to be connected
-	_ = wasmlib.ConnectHost(s)
+	// note that hrpForClient needs to be set
 	s.chainID = wasmtypes.ChainIDFromString(chain)
 	return s
 }
@@ -69,12 +77,10 @@ func (s *WasmClientContext) CurrentSvcClient() IClientService {
 }
 
 func (s *WasmClientContext) InitFuncCallContext() {
-	_ = wasmlib.ConnectHost(s)
 }
 
 func (s *WasmClientContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
 	_ = hContract
-	_ = wasmlib.ConnectHost(s)
 	return s.scHname
 }
 

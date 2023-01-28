@@ -6,8 +6,8 @@
 import {ScFuncCallContext, ScViewCallContext} from './contract';
 import {ScSandboxFunc, ScSandboxView} from './sandbox';
 import {ScHname} from './wasmtypes/schname';
-import {CallRequest, PostRequest} from "./wasmrequests";
-import {ScChainID} from "./wasmtypes";
+import {CallRequest, PostRequest} from './wasmrequests';
+import {ScChainID} from './wasmtypes';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 

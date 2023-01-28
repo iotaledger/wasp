@@ -103,26 +103,43 @@ func (s *WasmClientContext) FnPost(req *wasmrequests.PostRequest) []byte {
 
 func (s *WasmClientContext) fnUtilsBech32Decode(args []byte) []byte {
 	bech32 := wasmtypes.StringFromBytes(args)
-	hrp, addr, err := iotago.ParseBech32(bech32)
-	if err != nil {
-		s.Err = err
-		return nil
-	}
-	if string(hrp) != s.hrp {
-		s.Err = fmt.Errorf("invalid protocol prefix: %s", string(hrp))
-		return nil
-	}
-	var cvt wasmhost.WasmConvertor
-	return cvt.ScAddress(addr).Bytes()
+	return clientBech32Decode(bech32).Bytes()
 }
 
 func (s *WasmClientContext) fnUtilsBech32Encode(args []byte) []byte {
-	var cvt wasmhost.WasmConvertor
 	scAddress := wasmtypes.AddressFromBytes(args)
+	bech32 := clientBech32Encode(scAddress)
+	return wasmtypes.BytesFromString(bech32)
+}
+
+var (
+	cvt          wasmhost.WasmConvertor
+	hrpForClient = iotago.NetworkPrefix("")
+)
+
+func clientBech32Decode(bech32 string) wasmtypes.ScAddress {
+	hrp, addr, err := iotago.ParseBech32(bech32)
+	if err != nil {
+		panic(err)
+	}
+	if hrp != hrpForClient {
+		panic("invalid protocol prefix: " + string(hrp))
+	}
+	return cvt.ScAddress(addr)
+}
+
+func clientBech32Encode(scAddress wasmtypes.ScAddress) string {
 	addr := cvt.IscAddress(&scAddress)
-	return []byte(addr.Bech32(iotago.NetworkPrefix(s.hrp)))
+	bech32 := addr.Bech32(hrpForClient)
+	return bech32
 }
 
 func (s *WasmClientContext) fnUtilsHashName(args []byte) []byte {
-	return isc.Hn(string(args)).Bytes()
+	name := string(args)
+	return clientHashName(name).Bytes()
+}
+
+func clientHashName(name string) wasmtypes.ScHname {
+	hName := isc.Hn(name)
+	return cvt.ScHname(hName)
 }

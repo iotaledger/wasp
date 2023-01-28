@@ -28,11 +28,9 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
     }
 
     public initFuncCallContext(): void {
-        wasmlib.connectHost(this);
     }
 
     public initViewCallContext(_hContract: wasmlib.ScHname): wasmlib.ScHname {
-        wasmlib.connectHost(this);
         return this.scHname;
     }
 
