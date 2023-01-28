@@ -88,7 +88,7 @@ export function funcPassTypesFull(ctx: wasmlib.ScFuncContext, f: sc.PassTypesFul
     ctx.require(f.params.int64Zero().value() == 0, "int64-0 wrong");
     ctx.require(f.params.string().value() == sc.ParamString, "string wrong");
     ctx.require(f.params.stringZero().value() == "", "string-0 wrong");
-    ctx.require(f.params.hname().value().equals(ctx.utility().hname(sc.ParamHname)), "Hname wrong");
+    ctx.require(f.params.hname().value().equals(wasmtypes.ScHname.fromName(sc.ParamHname)), "Hname wrong");
     ctx.require(f.params.hnameZero().value().equals(new wasmtypes.ScHname(0)), "Hname-0 wrong");
 }
 
@@ -144,7 +144,7 @@ export function funcSpawn(ctx: wasmlib.ScFuncContext, f: sc.SpawnContext): void 
     let spawnDescr = "spawned contract description";
     ctx.deployContract(programHash, spawnName, spawnDescr, null);
 
-    let spawnHname = ctx.utility().hname(spawnName);
+    let spawnHname = wasmtypes.ScHname.fromName(spawnName);
     for (let i = 0; i < 5; i++) {
         ctx.call(spawnHname, sc.HFuncIncCounter, null, null);
     }
@@ -291,7 +291,7 @@ export function viewPassTypesView(ctx: wasmlib.ScViewContext, f: sc.PassTypesVie
     ctx.require(f.params.int64Zero().value() == 0, "int64-0 wrong");
     ctx.require(f.params.string().value() == sc.ParamString, "string wrong");
     ctx.require(f.params.stringZero().value() == "", "string-0 wrong");
-    ctx.require(f.params.hname().value().equals(ctx.utility().hname(sc.ParamHname)), "Hname wrong");
+    ctx.require(f.params.hname().value().equals(wasmtypes.ScHname.fromName(sc.ParamHname)), "Hname wrong");
     ctx.require(f.params.hnameZero().value().equals(new wasmtypes.ScHname(0)), "Hname-0 wrong");
 }
 

@@ -114,16 +114,14 @@ pub fn address_from_string(value: &str) -> ScAddress {
         b.append(&mut hex_decode(&value));
         return address_from_bytes(&b);
     }
-    let utils = ScSandboxUtils {};
-    utils.bech32_decode(value)
+    bech32_decode(value)
 }
 
 pub fn address_to_string(value: &ScAddress) -> String {
     if value.id[0] == SC_ADDRESS_ETH {
         return hex_encode(&value.id[1..SC_ADDRESS_ETH_LENGTH]);
     }
-    let utils = ScSandboxUtils {};
-    utils.bech32_encode(value)
+    bech32_encode(value)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

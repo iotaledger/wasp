@@ -209,6 +209,24 @@ impl WasmEncoder {
 
 static HEX_DIGITS: &'static [u8] = b"0123456789abcdef";
 
+static UTILS: ScSandboxUtils = ScSandboxUtils{};
+
+pub static BECH32_DECODE: fn(bech32: &str) -> ScAddress = |bech32| UTILS.bech32_decode(bech32);
+pub static BECH32_ENCODE: fn(addr: &ScAddress) -> String = |addr| UTILS.bech32_encode(addr);
+pub static HASH_NAME: fn(name: &str) -> ScHname = |name| UTILS.hash_name(name);
+
+pub fn bech32_decode(bech32: &str) -> ScAddress {
+    BECH32_DECODE(bech32)
+}
+
+pub fn bech32_encode(addr: &ScAddress) -> String {
+    BECH32_ENCODE(addr)
+}
+
+pub fn hash_name(name: &str) -> ScHname {
+    HASH_NAME(name)
+}
+
 fn has_0x_prefix(buf: &[u8]) -> bool {
     return buf.len() >= 2 && buf[0] == b'0' && (buf[1] == b'x' || buf[1] == b'X');
 }

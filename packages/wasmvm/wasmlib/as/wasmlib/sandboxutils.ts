@@ -71,13 +71,13 @@ export class ScSandboxUtils {
         return hashFromBytes(sandbox(FnUtilsHashBlake2b, value));
     }
 
+    // hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
+    public hashName(value: string): ScHname {
+        return hnameFromBytes(sandbox(FnUtilsHashName, stringToBytes(value)));
+    }
+
     // hashes the specified value bytes using sha3 hashing and returns the resulting 32-byte hash
     public hashSha3(value: Uint8Array): ScHash {
         return hashFromBytes(sandbox(FnUtilsHashSha3, value));
-    }
-
-    // hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
-    public hname(value: string): ScHname {
-        return hnameFromBytes(sandbox(FnUtilsHashName, stringToBytes(value)));
     }
 }

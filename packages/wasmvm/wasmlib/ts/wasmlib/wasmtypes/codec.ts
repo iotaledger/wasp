@@ -3,8 +3,22 @@
 
 import {panic} from '../sandbox';
 import {stringFromBytes} from './scstring';
+import {ScAddress} from "./scaddress";
+import {ScHname} from "./schname";
+import {ScSandboxUtils} from "../sandboxutils";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+const utils = new ScSandboxUtils();
+export let bech32Decode = function (bech32: string): ScAddress {
+    return utils.bech32Decode(bech32)
+}
+export let bech32Encode = function (addr: ScAddress): string {
+    return utils.bech32Encode(addr);
+}
+export let hashName = function (name: string): ScHname {
+    return utils.hashName(name);
+}
 
 // WasmDecoder decodes separate entities from a byte buffer
 export class WasmDecoder {

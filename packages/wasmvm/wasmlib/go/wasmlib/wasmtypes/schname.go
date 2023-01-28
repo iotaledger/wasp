@@ -13,7 +13,9 @@ const ScHnameLength = 4
 
 type ScHname uint32
 
-var NewScHname func(name string) ScHname
+func NewScHname(name string) ScHname {
+	return HashName(name)
+}
 
 func (o ScHname) Bytes() []byte {
 	return HnameToBytes(o)

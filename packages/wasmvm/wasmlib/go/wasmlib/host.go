@@ -32,7 +32,7 @@ const hexDigits = "0123456789abcdef"
 func init() {
 	wasmtypes.Bech32Decode = utils.Bech32Decode
 	wasmtypes.Bech32Encode = utils.Bech32Encode
-	wasmtypes.NewScHname = utils.Hname
+	wasmtypes.HashName = utils.HashName
 
 	wasmtypes.HexDecode = func(hex string) []byte {
 		if !has0xPrefix(hex) {
