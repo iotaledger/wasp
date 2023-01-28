@@ -4,46 +4,6 @@
 use crate::*;
 use wasmlib::*;
 
-pub trait WasmClientSandbox {
-    fn fn_utils_bech32_decode(&self, args: &[u8]) -> Vec<u8>;
-    fn fn_utils_bech32_encode(&self, args: &[u8]) -> Vec<u8>;
-    fn fn_utils_hash_name(&self, args: &[u8]) -> Vec<u8>;
-}
-
-impl host::ScHost for WasmClientContext {
-    fn export_name(&self, _index: i32, _name: &str) {
-        panic!("WasmClientContext.ExportName")
-    }
-
-    fn sandbox(&self, func_num: i32, args: &[u8]) -> Vec<u8> {
-        match func_num {
-            FN_CALL => return self.fn_call(&wasmrequests::CallRequest::from_bytes(args)),
-            FN_CHAIN_ID => return self.fn_chain_id().to_bytes(),
-            FN_POST => return self.fn_post(&wasmrequests::PostRequest::from_bytes(args)),
-            FN_UTILS_BECH32_DECODE => return self.fn_utils_bech32_decode(args),
-            FN_UTILS_BECH32_ENCODE => return self.fn_utils_bech32_encode(args),
-            FN_UTILS_HASH_NAME => return self.fn_utils_hash_name(args),
-            _ => panic!("implement WasmClientContext.Sandbox"),
-        }
-    }
-
-    fn state_delete(&self, _key: &[u8]) {
-        panic!("WasmClientContext.StateDelete")
-    }
-
-    fn state_exists(&self, _key: &[u8]) -> bool {
-        panic!("WasmClientContext.StateExists")
-    }
-
-    fn state_get(&self, _key: &[u8]) -> Vec<u8> {
-        panic!("WasmClientContext.StateGet")
-    }
-
-    fn state_set(&self, _key: &[u8], _value: &[u8]) {
-        panic!("WasmClientContext.StateSet")
-    }
-}
-
 impl ScViewCallContext for WasmClientContext {
     fn fn_call(&self, req: &wasmrequests::CallRequest) -> Vec<u8> {
         let lock_received = self.event_received.clone();
@@ -121,23 +81,6 @@ impl ScFuncCallContext for WasmClientContext {
     }
 
     fn init_func_call_context(&self) {}
-}
-
-impl WasmClientSandbox for WasmClientContext {
-    fn fn_utils_bech32_decode(&self, args: &[u8]) -> Vec<u8> {
-        let bech32 = string_from_bytes(args);
-        client_bech32_decode(&bech32).to_bytes()
-    }
-
-    fn fn_utils_bech32_encode(&self, args: &[u8]) -> Vec<u8> {
-        let addr = address_from_bytes(args);
-        string_to_bytes(&client_bech32_encode(&addr))
-    }
-
-    fn fn_utils_hash_name(&self, args: &[u8]) -> Vec<u8> {
-        let name = string_from_bytes(args);
-        client_hash_name(&name).to_bytes()
-    }
 }
 
 pub(crate) static mut HRP_FOR_CLIENT: String = String::new();

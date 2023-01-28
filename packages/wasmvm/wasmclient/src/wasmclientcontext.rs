@@ -8,6 +8,7 @@ use std::{
     thread::spawn,
 };
 use wasmlib::*;
+use wasmclientsandbox::*;
 
 // TODO to handle the request in parallel, WasmClientContext must be static now.
 // We need to solve this problem. By copying the vector of event_handlers, we may solve this problem
@@ -43,7 +44,6 @@ impl WasmClientContext {
                 return ctx;
             }
         };
-
 
         WasmClientContext {
             chain_id: chain_id_from_string(chain_id),
