@@ -76,7 +76,6 @@ type SoloContext struct {
 	offLedger      bool
 	scName         string
 	Tx             *iotago.Transaction
-	wasmHostOld    wasmlib.ScHost
 	wc             *wasmhost.WasmContext
 }
 
@@ -370,20 +369,18 @@ func (ctx *SoloContext) Host() wasmlib.ScHost {
 // init further initializes the SoloContext.
 func (ctx *SoloContext) init(onLoad wasmhost.ScOnloadFunc) *SoloContext {
 	ctx.wc = wasmhost.NewWasmContextForSoloContext("-solo-", NewSoloSandbox(ctx))
-	ctx.wasmHostOld = wasmhost.Connect(ctx.wc)
+	wasmhost.Connect(ctx.wc)
 	onLoad(-1)
 	return ctx
 }
 
 // InitFuncCallContext is a function that is required to use SoloContext as an ScFuncCallContext
 func (ctx *SoloContext) InitFuncCallContext() {
-	_ = wasmhost.Connect(ctx.wc)
 }
 
 // InitViewCallContext is a function that is required to use SoloContext as an ScViewCallContext
 func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
 	_ = hContract
-	_ = wasmhost.Connect(ctx.wc)
 	return cvt.ScHname(isc.Hn(ctx.scName))
 }
 
@@ -457,9 +454,7 @@ func (ctx *SoloContext) Sign(agent *SoloAgent) wasmlib.ScFuncCallContext {
 }
 
 func (ctx *SoloContext) SoloContextForCore(t solo.TestContext, scName string, onLoad wasmhost.ScOnloadFunc) *SoloContext {
-	ctxCore := soloContext(t, ctx.Chain, scName, nil).init(onLoad)
-	ctxCore.wasmHostOld = ctx.wasmHostOld
-	return ctxCore
+	return soloContext(t, ctx.Chain, scName, nil).init(onLoad)
 }
 
 func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {
@@ -493,7 +488,6 @@ func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {
 // The function will wait for maxWait (default 5 seconds) duration before giving up with a timeout.
 // The function returns false in case of a timeout.
 func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...time.Duration) bool {
-	_ = wasmhost.Connect(ctx.wasmHostOld)
 	if expectedRequests > 0 {
 		info := ctx.Chain.MempoolInfo()
 		expectedRequests += info.OutPoolCounter
@@ -507,7 +501,6 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 	}
 
 	result := ctx.Chain.WaitForRequestsThrough(expectedRequests, timeout)
-	_ = wasmhost.Connect(ctx.wc)
 	return result
 }
 

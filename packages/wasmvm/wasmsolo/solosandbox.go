@@ -103,7 +103,6 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 		req.WithNFT(ctx.nfts[nftID])
 	}
 	req.WithMaxAffordableGasBudget()
-	_ = wasmhost.Connect(ctx.wasmHostOld)
 	var res dict.Dict
 	if ctx.offLedger {
 		ctx.offLedger = false
@@ -117,7 +116,6 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 			ctx.Chain.Env.EnqueueRequests(ctx.Tx)
 		}
 	}
-	_ = wasmhost.Connect(ctx.wc)
 	ctx.UpdateGasFees()
 	if ctx.Err != nil {
 		return nil
@@ -148,9 +146,7 @@ func (s *SoloSandbox) FnCall(req *wasmrequests.CallRequest) []byte {
 		return s.postSync(ctx.scName, funcName, params, allowance, nil)
 	}
 
-	_ = wasmhost.Connect(ctx.wasmHostOld)
 	res, err := ctx.Chain.CallView(ctx.scName, funcName, params)
-	_ = wasmhost.Connect(ctx.wc)
 	ctx.Err = err
 	if ctx.Err != nil {
 		return nil
