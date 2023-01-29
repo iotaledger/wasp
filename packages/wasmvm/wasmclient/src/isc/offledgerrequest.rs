@@ -1,8 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::keypair;
+use crypto::hashes::{blake2b::Blake2b256, Digest};
 use wasmlib::*;
+
+use crate::keypair;
 
 pub trait OffLedgerRequest {
     fn new(
@@ -24,7 +26,8 @@ pub struct OffLedgerRequestData {
     contract: ScHname,
     entry_point: ScHname,
     params: ScDict,
-    signature_scheme: Option<OffLedgerSignatureScheme>, // None if unsigned
+    signature_scheme: Option<OffLedgerSignatureScheme>,
+    // None if unsigned
     nonce: u64,
     allowance: ScAssets,
     gas_budget: u64,
@@ -90,8 +93,6 @@ impl OffLedgerRequest for OffLedgerRequestData {
         return req;
     }
 }
-
-use crypto::hashes::{blake2b::Blake2b256, Digest};
 
 impl OffLedgerRequestData {
     pub fn id(&self) -> ScRequestID {

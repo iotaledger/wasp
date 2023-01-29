@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from '../sandbox';
-import {ScSandboxUtils} from '../sandboxutils';
-import {hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from './codec';
+import {bech32Decode, bech32Encode, hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from './codec';
 import {Proxy} from './proxy';
 import {bytesCompare} from './scbytes';
 import {ScAgentID} from './scagentid';
@@ -117,16 +116,14 @@ export function addressFromString(value: string): ScAddress {
         b.set(hexBytes, 1);
         return addressFromBytes(b);
     }
-    const utils = new ScSandboxUtils();
-    return utils.bech32Decode(value);
+    return bech32Decode(value);
 }
 
 export function addressToString(value: ScAddress): string {
     if (value.id[0] == ScAddressEth) {
         return hexEncode(value.id.slice(1, ScAddressEthLength));
     }
-    const utils = new ScSandboxUtils();
-    return utils.bech32Encode(value);
+    return bech32Encode(value);
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

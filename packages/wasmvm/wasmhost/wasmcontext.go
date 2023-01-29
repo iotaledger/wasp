@@ -20,6 +20,7 @@ const (
 
 type ISandbox interface {
 	Call(funcNr int32, params []byte) []byte
+	Logf(format string, args ...interface{})
 	Tracef(format string, args ...interface{})
 }
 
@@ -138,7 +139,7 @@ func (wc *WasmContext) ExportName(index int32, name string) {
 	}
 
 	// Invocation through SoloContext
-	wc.sandbox.Call(wasmlib.FnLog, wasmtypes.StringToBytes("WASM::SOLO"))
+	wc.sandbox.Logf("WASM::SOLO")
 }
 
 func (wc *WasmContext) FunctionFromCode(code uint32) string {

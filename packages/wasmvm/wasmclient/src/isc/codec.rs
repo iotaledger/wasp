@@ -1,11 +1,13 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::errors;
 use bech32::*;
+use crypto::hashes::{blake2b::Blake2b256, Digest};
 use serde::{Deserialize, Serialize};
 use wasmlib::*;
 pub use wasmtypes::*;
+
+use crate::errors;
 
 const BECH32_PREFIX: &'static str = "smr";
 
@@ -18,14 +20,12 @@ pub fn bech32_decode(input: &str) -> errors::Result<(String, ScAddress)> {
     return Ok((hrp, address_from_bytes(&buf)));
 }
 
-pub fn bech32_encode(addr: &ScAddress) -> errors::Result<String> {
-    match bech32::encode(BECH32_PREFIX, addr.to_bytes().to_base32(), Variant::Bech32) {
+pub fn bech32_encode(hrp: &str, addr: &ScAddress) -> errors::Result<String> {
+    match bech32::encode(hrp, addr.to_bytes().to_base32(), Variant::Bech32) {
         Ok(v) => Ok(v),
         Err(e) => Err(e.to_string()),
     }
 }
-
-use crypto::hashes::{blake2b::Blake2b256, Digest};
 
 pub fn hname_bytes(name: &str) -> Vec<u8> {
     let hash = Blake2b256::digest(name.as_bytes());

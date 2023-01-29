@@ -15,9 +15,11 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
@@ -74,7 +76,6 @@ type SoloContext struct {
 	offLedger      bool
 	scName         string
 	Tx             *iotago.Transaction
-	wasmHostOld    wasmlib.ScHost
 	wc             *wasmhost.WasmContext
 }
 
@@ -206,6 +207,16 @@ func NewSoloContextForNative(t solo.TestContext, chain *solo.Chain, creator *Sol
 }
 
 func soloContext(t solo.TestContext, chain *solo.Chain, scName string, creator *SoloAgent) *SoloContext {
+	if wasmclient.HrpForClient == "" {
+		// local client implementations for sandboxed functions
+		wasmtypes.Bech32Decode = wasmclient.ClientBech32Decode
+		wasmtypes.Bech32Encode = wasmclient.ClientBech32Encode
+		wasmtypes.HashName = wasmclient.ClientHashName
+
+		// set the network prefix for the current network
+		wasmclient.HrpForClient = parameters.L1().Protocol.Bech32HRP
+	}
+
 	ctx := &SoloContext{scName: scName, Chain: chain, creator: creator, StorageDeposit: WasmStorageDeposit}
 	if chain == nil {
 		ctx.Chain = StartChain(t, "chain1")
@@ -265,7 +276,7 @@ func (ctx *SoloContext) Balance(agent *SoloAgent, nativeTokenID ...wasmtypes.ScT
 		baseTokens := ctx.Chain.L2BaseTokens(account)
 		return baseTokens
 	case 1:
-		token := ctx.Cvt.IscTokenID(&nativeTokenID[0])
+		token := cvt.IscTokenID(&nativeTokenID[0])
 		tokens := ctx.Chain.L2NativeTokens(account, token).Uint64()
 		return tokens
 	default:
@@ -291,7 +302,7 @@ func (ctx *SoloContext) ChainAccount() *SoloAgent {
 }
 
 func (ctx *SoloContext) ChainOwnerID() wasmtypes.ScAgentID {
-	return ctx.Cvt.ScAgentID(ctx.Chain.OriginatorAgentID)
+	return cvt.ScAgentID(ctx.Chain.OriginatorAgentID)
 }
 
 // ContractExists checks to see if the contract named scName exists in the chain associated with ctx.
@@ -309,7 +320,7 @@ func (ctx *SoloContext) Creator() *SoloAgent {
 }
 
 func (ctx *SoloContext) CurrentChainID() wasmtypes.ScChainID {
-	return ctx.Cvt.ScChainID(ctx.Chain.ChainID)
+	return cvt.ScChainID(ctx.Chain.ChainID)
 }
 
 func (ctx *SoloContext) EnqueueRequest() {
@@ -358,21 +369,19 @@ func (ctx *SoloContext) Host() wasmlib.ScHost {
 // init further initializes the SoloContext.
 func (ctx *SoloContext) init(onLoad wasmhost.ScOnloadFunc) *SoloContext {
 	ctx.wc = wasmhost.NewWasmContextForSoloContext("-solo-", NewSoloSandbox(ctx))
-	ctx.wasmHostOld = wasmhost.Connect(ctx.wc)
+	wasmhost.Connect(ctx.wc)
 	onLoad(-1)
 	return ctx
 }
 
 // InitFuncCallContext is a function that is required to use SoloContext as an ScFuncCallContext
 func (ctx *SoloContext) InitFuncCallContext() {
-	_ = wasmhost.Connect(ctx.wc)
 }
 
 // InitViewCallContext is a function that is required to use SoloContext as an ScViewCallContext
 func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
 	_ = hContract
-	_ = wasmhost.Connect(ctx.wc)
-	return ctx.Cvt.ScHname(isc.Hn(ctx.scName))
+	return cvt.ScHname(isc.Hn(ctx.scName))
 }
 
 // NewSoloAgent creates a new SoloAgent with utxodb.FundsFromFaucetAmount (1 Gi)
@@ -396,7 +405,7 @@ func (ctx *SoloContext) NFTs(agent *SoloAgent) []wasmtypes.ScNftID {
 	nfts := make([]wasmtypes.ScNftID, 0, len(l2nfts))
 	for _, l2nft := range l2nfts {
 		theNft := l2nft
-		nfts = append(nfts, ctx.Cvt.ScNftID(&theNft))
+		nfts = append(nfts, cvt.ScNftID(&theNft))
 	}
 	return nfts
 }
@@ -426,7 +435,7 @@ func (ctx *SoloContext) MintNFT(agent *SoloAgent, metadata []byte) wasmtypes.ScN
 		ctx.nfts = make(map[iotago.NFTID]*isc.NFT)
 	}
 	ctx.nfts[nft.ID] = nft
-	return ctx.Cvt.ScNftID(&nft.ID)
+	return cvt.ScNftID(&nft.ID)
 }
 
 // Originator returns a SoloAgent representing the chain originator
@@ -445,9 +454,7 @@ func (ctx *SoloContext) Sign(agent *SoloAgent) wasmlib.ScFuncCallContext {
 }
 
 func (ctx *SoloContext) SoloContextForCore(t solo.TestContext, scName string, onLoad wasmhost.ScOnloadFunc) *SoloContext {
-	ctxCore := soloContext(t, ctx.Chain, scName, nil).init(onLoad)
-	ctxCore.wasmHostOld = ctx.wasmHostOld
-	return ctxCore
+	return soloContext(t, ctx.Chain, scName, nil).init(onLoad)
 }
 
 func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {
@@ -481,7 +488,6 @@ func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {
 // The function will wait for maxWait (default 5 seconds) duration before giving up with a timeout.
 // The function returns false in case of a timeout.
 func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...time.Duration) bool {
-	_ = wasmhost.Connect(ctx.wasmHostOld)
 	if expectedRequests > 0 {
 		info := ctx.Chain.MempoolInfo()
 		expectedRequests += info.OutPoolCounter
@@ -495,7 +501,6 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 	}
 
 	result := ctx.Chain.WaitForRequestsThrough(expectedRequests, timeout)
-	_ = wasmhost.Connect(ctx.wc)
 	return result
 }
 

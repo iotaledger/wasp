@@ -1,10 +1,11 @@
 // // Copyright 2020 IOTA Stiftung
 // // SPDX-License-Identifier: Apache-2.0
 
-use crate::*;
 use isc::{offledgerrequest::*, waspclient::*};
-use std::sync::{mpsc, Arc, RwLock};
+use std::sync::{Arc, mpsc, RwLock};
 use std::time::Duration;
+
+use crate::*;
 
 pub trait IClientService {
     fn call_view_by_hname(

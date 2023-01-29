@@ -11,6 +11,7 @@ import "strconv"
 var (
 	Bech32Decode func(bech32 string) ScAddress
 	Bech32Encode func(addr ScAddress) string
+	HashName     func(name string) ScHname
 	HexDecode    func(hex string) []byte
 	HexEncode    func(buf []byte) string
 )

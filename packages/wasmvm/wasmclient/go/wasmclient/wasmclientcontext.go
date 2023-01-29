@@ -23,7 +23,6 @@ type WasmClientContext struct {
 	eventDone     chan bool
 	eventHandlers []wasmlib.IEventHandlers
 	eventReceived bool
-	hrp           string
 	keyPair       *cryptolib.KeyPair
 	nonce         uint64
 	ReqID         wasmtypes.ScRequestID
@@ -33,25 +32,37 @@ type WasmClientContext struct {
 }
 
 var (
-	_ wasmlib.ScHost            = new(WasmClientContext)
 	_ wasmlib.ScFuncCallContext = new(WasmClientContext)
 	_ wasmlib.ScViewCallContext = new(WasmClientContext)
 )
 
 func NewWasmClientContext(svcClient IClientService, chain string, scName string) *WasmClientContext {
+	if HrpForClient == "" {
+		// local client implementations for sandboxed functions
+		wasmtypes.Bech32Decode = ClientBech32Decode
+		wasmtypes.Bech32Encode = ClientBech32Encode
+		wasmtypes.HashName = ClientHashName
+	}
+
 	s := &WasmClientContext{}
 	s.svcClient = svcClient
 	s.scName = scName
 	s.ServiceContractName(scName)
-	hrp, _, err := iotago.ParseBech32(chain)
-	if err != nil {
-		s.Err = err
-		return s
-	}
-	s.hrp = string(hrp)
 
-	// note that ChainIDFromString needs host to be connected
-	_ = wasmlib.ConnectHost(s)
+	if HrpForClient == "" {
+		// set the network prefix for the current network
+		hrp, _, err := iotago.ParseBech32(chain)
+		if err != nil {
+			s.Err = err
+			return s
+		}
+		if HrpForClient != hrp && HrpForClient != "" {
+			panic("WasmClient can only connect to one Tangle network per app")
+		}
+		HrpForClient = hrp
+	}
+
+	// note that HrpForClient needs to be set
 	s.chainID = wasmtypes.ChainIDFromString(chain)
 	return s
 }
@@ -69,12 +80,10 @@ func (s *WasmClientContext) CurrentSvcClient() IClientService {
 }
 
 func (s *WasmClientContext) InitFuncCallContext() {
-	_ = wasmlib.ConnectHost(s)
 }
 
 func (s *WasmClientContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
 	_ = hContract
-	_ = wasmlib.ConnectHost(s)
 	return s.scHname
 }
 
@@ -101,8 +110,6 @@ func (s *WasmClientContext) SignRequests(keyPair *cryptolib.KeyPair) {
 	// get last used nonce from accounts core contract
 	iscAgent := isc.NewAgentID(keyPair.Address())
 	agent := wasmtypes.AgentIDFromBytes(iscAgent.Bytes())
-	fmt.Printf("Chain: %s\n", s.chainID.String())
-	fmt.Printf("Agent: %s\n", agent.String())
 	ctx := NewWasmClientContext(s.svcClient, s.chainID.String(), coreaccounts.ScName)
 	n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
 	n.Params.AgentID().SetValue(agent)
