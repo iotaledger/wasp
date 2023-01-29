@@ -5,6 +5,7 @@ package test
 
 import (
 	"flag"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,18 +13,16 @@ import (
 	"github.com/iotaledger/wasp/contracts/wasm/gascalibration"
 	"github.com/iotaledger/wasp/contracts/wasm/gascalibration/executiontime/go/executiontime"
 	"github.com/iotaledger/wasp/contracts/wasm/gascalibration/executiontime/go/executiontimeimpl"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 )
 
 var force = flag.Bool("force", false, "")
 
 func TestCallF(t *testing.T) {
-	// running theses tests should be intentional
+	// running these tests should be intentional
 	if !*force {
 		t.SkipNow()
 	}
-	wasmlib.ConnectHost(nil)
 	ctx := wasmsolo.NewSoloContext(t, executiontime.ScName, executiontimeimpl.OnDispatch)
 	require.NoError(t, ctx.Err)
 
@@ -49,6 +48,7 @@ func TestCallF(t *testing.T) {
 	}
 	t.Logf("Running %s version of %s", contractVersion, t.Name())
 
+	_ = os.MkdirAll("../pkg", 0755)
 	filePath := "../pkg/executiontime_" + contractVersion + ".json"
 	gascalibration.SaveTestResultAsJSON(filePath, results)
 }

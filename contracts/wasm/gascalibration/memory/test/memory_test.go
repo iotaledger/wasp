@@ -5,6 +5,7 @@ package test
 
 import (
 	"flag"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/contracts/wasm/gascalibration"
 	"github.com/iotaledger/wasp/contracts/wasm/gascalibration/memory/go/memory"
 	"github.com/iotaledger/wasp/contracts/wasm/gascalibration/memory/go/memoryimpl"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 )
 
@@ -29,7 +29,6 @@ func TestCallF(t *testing.T) {
 	if !*force {
 		t.SkipNow()
 	}
-	wasmlib.ConnectHost(nil)
 	ctx := deployContract(t)
 	f := memory.ScFuncs.F(ctx)
 
@@ -53,6 +52,7 @@ func TestCallF(t *testing.T) {
 	}
 	t.Logf("Running %s version of contract", contractVersion)
 
+	_ = os.MkdirAll("../pkg", 0755)
 	filePath := "../pkg/memory_" + contractVersion + ".json"
 	gascalibration.SaveTestResultAsJSON(filePath, results)
 }
