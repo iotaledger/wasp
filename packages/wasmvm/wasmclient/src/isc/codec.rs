@@ -16,7 +16,10 @@ pub fn bech32_decode(input: &str) -> errors::Result<(String, ScAddress)> {
         Ok(v) => v,
         Err(_) => return Err(String::from(format!("invalid bech32 string: {}", input))),
     };
-    let buf: Vec<u8> = data.iter().map(|&e| e.to_u8()).collect();
+    let buf = match Vec::<u8>::from_base32(&data) {
+        Ok(b) => b,
+        Err(e) => return Err(e.to_string()),
+    };
     return Ok((hrp, address_from_bytes(&buf)));
 }
 
