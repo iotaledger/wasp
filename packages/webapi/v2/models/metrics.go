@@ -8,9 +8,9 @@ import (
 )
 
 type MetricItem[T interface{}] struct {
-	Messages    uint32    `json:"messages"`
-	Timestamp   time.Time `json:"timestamp"`
-	LastMessage T         `json:"lastMessage"`
+	Messages    uint32    `json:"messages" swagger:"required"`
+	Timestamp   time.Time `json:"timestamp" swagger:"required"`
+	LastMessage T         `json:"lastMessage" swagger:"required"`
 }
 
 /*
@@ -33,15 +33,15 @@ type (
 )
 
 type ChainMetrics struct {
-	InAliasOutput                   AliasOutputMetricItem         `json:"inAliasOutput"`
-	InOnLedgerRequest               OnLedgerRequestMetricItem     `json:"inOnLedgerRequest"`
-	InOutput                        InOutputMetricItem            `json:"inOutput"`
-	InStateOutput                   InStateOutputMetricItem       `json:"inStateOutput"`
-	InTxInclusionState              TxInclusionStateMsgMetricItem `json:"inTxInclusionState"`
-	OutPublishGovernanceTransaction TransactionMetricItem         `json:"outPublishGovernanceTransaction"`
-	OutPullLatestOutput             InterfaceMetricItem           `json:"outPullLatestOutput"`
-	OutPullOutputByID               UTXOInputMetricItem           `json:"outPullOutputByID"`
-	OutPullTxInclusionState         TransactionIDMetricItem       `json:"outPullTxInclusionState"`
+	InAliasOutput                   AliasOutputMetricItem         `json:"inAliasOutput" swagger:"required"`
+	InOnLedgerRequest               OnLedgerRequestMetricItem     `json:"inOnLedgerRequest" swagger:"required"`
+	InOutput                        InOutputMetricItem            `json:"inOutput" swagger:"required"`
+	InStateOutput                   InStateOutputMetricItem       `json:"inStateOutput" swagger:"required"`
+	InTxInclusionState              TxInclusionStateMsgMetricItem `json:"inTxInclusionState" swagger:"required"`
+	OutPublishGovernanceTransaction TransactionMetricItem         `json:"outPublishGovernanceTransaction" swagger:"required"`
+	OutPullLatestOutput             InterfaceMetricItem           `json:"outPullLatestOutput" swagger:"required"`
+	OutPullOutputByID               UTXOInputMetricItem           `json:"outPullOutputByID" swagger:"required"`
+	OutPullTxInclusionState         TransactionIDMetricItem       `json:"outPullTxInclusionState" swagger:"required"`
 }
 
 func MapMetricItem[T any, G any](metrics *dto.MetricItem[G], value T) MetricItem[T] {
@@ -67,24 +67,24 @@ func MapChainMetrics(metrics *dto.ChainMetrics) *ChainMetrics {
 }
 
 type ConsensusWorkflowMetrics struct {
-	FlagStateReceived        bool `json:"flagStateReceived" swagger:"desc(Shows if state output is received in current consensus iteration)"`
-	FlagBatchProposalSent    bool `json:"flagBatchProposalSent" swagger:"desc(Shows if batch proposal is sent out in current consensus iteration)"`
-	FlagConsensusBatchKnown  bool `json:"flagConsensusBatchKnown" swagger:"desc(Shows if consensus on batch is reached and known in current consensus iteration)"`
-	FlagVMStarted            bool `json:"flagVMStarted" swagger:"desc(Shows if virtual machine is started in current consensus iteration)"`
-	FlagVMResultSigned       bool `json:"flagVMResultSigned" swagger:"desc(Shows if virtual machine has returned its results in current consensus iteration)"`
-	FlagTransactionFinalized bool `json:"flagTransactionFinalized" swagger:"desc(Shows if consensus on transaction is reached in current consensus iteration)"`
-	FlagTransactionPosted    bool `json:"flagTransactionPosted" swagger:"desc(Shows if transaction is posted to L1 in current consensus iteration)"`
-	FlagTransactionSeen      bool `json:"flagTransactionSeen" swagger:"desc(Shows if L1 reported that it has seen the transaction of current consensus iteration)"`
-	FlagInProgress           bool `json:"flagInProgress" swagger:"desc(Shows if consensus algorithm is still not completed in current consensus iteration)"`
+	FlagStateReceived        bool `json:"flagStateReceived" swagger:"desc(Shows if state output is received in current consensus iteration),required"`
+	FlagBatchProposalSent    bool `json:"flagBatchProposalSent" swagger:"desc(Shows if batch proposal is sent out in current consensus iteration),required"`
+	FlagConsensusBatchKnown  bool `json:"flagConsensusBatchKnown" swagger:"desc(Shows if consensus on batch is reached and known in current consensus iteration),required"`
+	FlagVMStarted            bool `json:"flagVMStarted" swagger:"desc(Shows if virtual machine is started in current consensus iteration),required"`
+	FlagVMResultSigned       bool `json:"flagVMResultSigned" swagger:"desc(Shows if virtual machine has returned its results in current consensus iteration),required"`
+	FlagTransactionFinalized bool `json:"flagTransactionFinalized" swagger:"desc(Shows if consensus on transaction is reached in current consensus iteration),required"`
+	FlagTransactionPosted    bool `json:"flagTransactionPosted" swagger:"desc(Shows if transaction is posted to L1 in current consensus iteration),required"`
+	FlagTransactionSeen      bool `json:"flagTransactionSeen" swagger:"desc(Shows if L1 reported that it has seen the transaction of current consensus iteration),required"`
+	FlagInProgress           bool `json:"flagInProgress" swagger:"desc(Shows if consensus algorithm is still not completed in current consensus iteration),required"`
 
-	TimeBatchProposalSent    time.Time `json:"timeBatchProposalSent" swagger:"desc(Shows when batch proposal was last sent out in current consensus iteration)"`
-	TimeConsensusBatchKnown  time.Time `json:"timeConsensusBatchKnown" swagger:"desc(Shows when ACS results of consensus on batch was last received in current consensus iteration)"`
-	TimeVMStarted            time.Time `json:"timeVMStarted" swagger:"desc(Shows when virtual machine was last started in current consensus iteration)"`
-	TimeVMResultSigned       time.Time `json:"timeVMResultSigned" swagger:"desc(Shows when virtual machine results were last received and signed in current consensus iteration)"`
-	TimeTransactionFinalized time.Time `json:"timeTransactionFinalized" swagger:"desc(Shows when algorithm last noted that all the data for consensus on transaction had been received in current consensus iteration)"`
-	TimeTransactionPosted    time.Time `json:"timeTransactionPosted" swagger:"desc(Shows when transaction was last posted to L1 in current consensus iteration)"`
-	TimeTransactionSeen      time.Time `json:"timeTransactionSeen" swagger:"desc(Shows when algorithm last noted that transaction had been seen by L1 in current consensus iteration)"`
-	TimeCompleted            time.Time `json:"timeCompleted" swagger:"desc(Shows when algorithm was last completed in current consensus iteration)"`
+	TimeBatchProposalSent    time.Time `json:"timeBatchProposalSent" swagger:"desc(Shows when batch proposal was last sent out in current consensus iteration),required"`
+	TimeConsensusBatchKnown  time.Time `json:"timeConsensusBatchKnown" swagger:"desc(Shows when ACS results of consensus on batch was last received in current consensus iteration),required"`
+	TimeVMStarted            time.Time `json:"timeVMStarted" swagger:"desc(Shows when virtual machine was last started in current consensus iteration),required"`
+	TimeVMResultSigned       time.Time `json:"timeVMResultSigned" swagger:"desc(Shows when virtual machine results were last received and signed in current consensus iteration),required"`
+	TimeTransactionFinalized time.Time `json:"timeTransactionFinalized" swagger:"desc(Shows when algorithm last noted that all the data for consensus on transaction had been received in current consensus iteration),required"`
+	TimeTransactionPosted    time.Time `json:"timeTransactionPosted" swagger:"desc(Shows when transaction was last posted to L1 in current consensus iteration),required"`
+	TimeTransactionSeen      time.Time `json:"timeTransactionSeen" swagger:"desc(Shows when algorithm last noted that transaction had been seen by L1 in current consensus iteration),required"`
+	TimeCompleted            time.Time `json:"timeCompleted" swagger:"desc(Shows when algorithm was last completed in current consensus iteration),required"`
 
 	CurrentStateIndex uint32 `json:"currentStateIndex" swagger:"desc(Shows current state index of the consensus)"`
 }
@@ -115,11 +115,11 @@ func MapConsensusWorkflowStatus(status chain.ConsensusWorkflowStatus) *Consensus
 }
 
 type ConsensusPipeMetrics struct {
-	EventStateTransitionMsgPipeSize int `json:"eventStateTransitionMsgPipeSize"`
-	EventPeerLogIndexMsgPipeSize    int `json:"eventPeerLogIndexMsgPipeSize"`
-	EventACSMsgPipeSize             int `json:"eventACSMsgPipeSize"`
-	EventVMResultMsgPipeSize        int `json:"eventVMResultMsgPipeSize"`
-	EventTimerMsgPipeSize           int `json:"eventTimerMsgPipeSize"`
+	EventStateTransitionMsgPipeSize int `json:"eventStateTransitionMsgPipeSize" swagger:"required"`
+	EventPeerLogIndexMsgPipeSize    int `json:"eventPeerLogIndexMsgPipeSize" swagger:"required"`
+	EventACSMsgPipeSize             int `json:"eventACSMsgPipeSize" swagger:"required"`
+	EventVMResultMsgPipeSize        int `json:"eventVMResultMsgPipeSize" swagger:"required"`
+	EventTimerMsgPipeSize           int `json:"eventTimerMsgPipeSize" swagger:"required"`
 }
 
 func MapConsensusPipeMetrics(pipeMetrics chain.ConsensusPipeMetrics) *ConsensusPipeMetrics {

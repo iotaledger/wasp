@@ -10,7 +10,7 @@ import (
 )
 
 type ErrorMessageFormatResponse struct {
-	MessageFormat string
+	MessageFormat string `json:"messageFormat" swagger:"required"`
 }
 
 func (c *Controller) getErrorMessageFormat(e echo.Context) error {

@@ -43,7 +43,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		SetOperationId("getReceipt")
 
 	publicAPI.POST("requests/callview", c.executeCallView).
-		AddParamBody(mocker.Get(models.ContractCallViewRequest{}), "", "Parameters", false).
+		AddParamBody(mocker.Get(models.ContractCallViewRequest{}), "", "Parameters", true).
 		AddResponse(http.StatusOK, "Result", dictExample, nil).
 		SetSummary("Call a view function on a contract by Hname").
 		SetDescription("Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.").
@@ -54,7 +54,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 			models.OffLedgerRequest{Request: "Hex string"},
 			"",
 			"Offledger request as JSON. Request encoded in Hex",
-			false).
+			true).
 		AddResponse(http.StatusAccepted, "Request submitted", nil, nil).
 		SetSummary("Post an off-ledger request").
 		SetOperationId("offLedger")

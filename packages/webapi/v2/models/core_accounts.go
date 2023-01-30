@@ -6,21 +6,21 @@ import (
 )
 
 type AccountsResponse struct {
-	AccountIDs []string `json:"accountIds"`
+	AccountIDs []string `json:"accountIds" swagger:"required"`
 }
 
 type AccountListResponse struct {
-	Accounts []string `json:"accounts"`
+	Accounts []string `json:"accounts" swagger:"required"`
 }
 
 type NativeToken struct {
-	ID     string `json:"id"`
-	Amount string `json:"amount"`
+	ID     string `json:"id" swagger:"required"`
+	Amount string `json:"amount" swagger:"required"`
 }
 
 type AssetsResponse struct {
-	BaseTokens   uint64         `json:"baseTokens"`
-	NativeTokens []*NativeToken `json:"nativeTokens"`
+	BaseTokens   uint64         `json:"baseTokens" swagger:"required"`
+	NativeTokens []*NativeToken `json:"nativeTokens" swagger:"required"`
 }
 
 func MapNativeToken(token *iotago.NativeToken) *NativeToken {
@@ -41,18 +41,18 @@ func MapNativeTokens(tokens iotago.NativeTokens) []*NativeToken {
 }
 
 type AccountNFTsResponse struct {
-	NFTIDs []string `json:"nftIds"`
+	NFTIDs []string `json:"nftIds" swagger:"required"`
 }
 
 type AccountNonceResponse struct {
-	Nonce uint64 `json:"nonce"`
+	Nonce uint64 `json:"nonce" swagger:"required"`
 }
 
 type NFTDataResponse struct {
-	ID       string `json:"id"`
-	Issuer   string `json:"issuer"`
-	Metadata string `json:"metadata"`
-	Owner    string `json:"owner"`
+	ID       string `json:"id" swagger:"required"`
+	Issuer   string `json:"issuer" swagger:"required"`
+	Metadata string `json:"metadata" swagger:"required"`
+	Owner    string `json:"owner" swagger:"required"`
 }
 
 func MapNFTDataResponse(nft *isc.NFT) *NFTDataResponse {
@@ -69,10 +69,10 @@ func MapNFTDataResponse(nft *isc.NFT) *NFTDataResponse {
 }
 
 type NativeTokenIDRegistryResponse struct {
-	NativeTokenRegistryIDs []string `json:"nativeTokenRegistryIds"`
+	NativeTokenRegistryIDs []string `json:"nativeTokenRegistryIds" swagger:"required"`
 }
 
 type FoundryOutputResponse struct {
-	FoundryID string         `json:"foundryId"`
-	Assets    AssetsResponse `json:"assets"`
+	FoundryID string         `json:"foundryId" swagger:"required"`
+	Assets    AssetsResponse `json:"assets" swagger:"required"`
 }
