@@ -30,10 +30,7 @@ RUN go mod download
 # Project build stage
 COPY . .
 
-RUN go build -o . -tags=${BUILD_TAGS} -ldflags="${BUILD_LD_FLAGS}" .
-
-# Wasp build
-FROM gcr.io/distroless/cc
+RUN go build -o /app/wasp -a -tags=${BUILD_TAGS} -ldflags=${BUILD_LD_FLAGS} .
 
 ############################
 # Image
