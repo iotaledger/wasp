@@ -12,25 +12,25 @@ import (
 )
 
 type ControlAddressesResponse struct {
-	GoverningAddress string `json:"governingAddress"`
-	SinceBlockIndex  uint32 `json:"sinceBlockIndex"`
-	StateAddress     string `json:"stateAddress"`
+	GoverningAddress string `json:"governingAddress" swagger:"required"`
+	SinceBlockIndex  uint32 `json:"sinceBlockIndex" swagger:"required"`
+	StateAddress     string `json:"stateAddress" swagger:"required"`
 }
 
 type BlockInfoResponse struct {
-	AnchorTransactionID         string    `json:"anchorTransactionId"`
-	BlockIndex                  uint32    `json:"blockIndex"`
-	GasBurned                   uint64    `json:"gasBurned"`
-	GasFeeCharged               uint64    `json:"gasFeeCharged"`
-	L1CommitmentHash            string    `json:"l1CommitmentHash"`
-	NumOffLedgerRequests        uint16    `json:"numOffLedgerRequests"`
-	NumSuccessfulRequests       uint16    `json:"numSuccessfulRequests"`
-	PreviousL1CommitmentHash    string    `json:"previousL1CommitmentHash"`
-	Timestamp                   time.Time `json:"timestamp"`
-	TotalBaseTokensInL2Accounts uint64    `json:"totalBaseTokensInL2Accounts"`
-	TotalRequests               uint16    `json:"totalRequests"`
-	TotalStorageDeposit         uint64    `json:"totalStorageDeposit"`
-	TransactionSubEssenceHash   string    `json:"transactionSubEssenceHash"`
+	AnchorTransactionID         string    `json:"anchorTransactionId" swagger:"required"`
+	BlockIndex                  uint32    `json:"blockIndex" swagger:"required"`
+	GasBurned                   uint64    `json:"gasBurned" swagger:"required"`
+	GasFeeCharged               uint64    `json:"gasFeeCharged" swagger:"required"`
+	L1CommitmentHash            string    `json:"l1CommitmentHash" swagger:"required"`
+	NumOffLedgerRequests        uint16    `json:"numOffLedgerRequests" swagger:"required"`
+	NumSuccessfulRequests       uint16    `json:"numSuccessfulRequests" swagger:"required"`
+	PreviousL1CommitmentHash    string    `json:"previousL1CommitmentHash" swagger:"required"`
+	Timestamp                   time.Time `json:"timestamp" swagger:"required"`
+	TotalBaseTokensInL2Accounts uint64    `json:"totalBaseTokensInL2Accounts" swagger:"required"`
+	TotalRequests               uint16    `json:"totalRequests" swagger:"required"`
+	TotalStorageDeposit         uint64    `json:"totalStorageDeposit" swagger:"required"`
+	TransactionSubEssenceHash   string    `json:"transactionSubEssenceHash" swagger:"required"`
 }
 
 func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
@@ -59,17 +59,17 @@ func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
 }
 
 type RequestIDsResponse struct {
-	RequestIDs []string `json:"requestIds"`
+	RequestIDs []string `json:"requestIds" swagger:"required"`
 }
 
 type BlockReceiptError struct {
-	Hash         string `json:"hash"`
-	ErrorMessage string `json:"errorMessage"`
+	Hash         string `json:"hash" swagger:"required"`
+	ErrorMessage string `json:"errorMessage" swagger:"required"`
 }
 
 type FungibleTokens struct {
-	BaseTokens   uint64         `json:"baseTokens"`
-	NativeTokens []*NativeToken `json:"nativeTokens"`
+	BaseTokens   uint64         `json:"baseTokens" swagger:"required"`
+	NativeTokens []*NativeToken `json:"nativeTokens" swagger:"required"`
 }
 
 func MapFungibleTokens(tokens *isc.FungibleTokens) *FungibleTokens {
@@ -84,8 +84,8 @@ func MapFungibleTokens(tokens *isc.FungibleTokens) *FungibleTokens {
 }
 
 type Allowance struct {
-	FungibleTokens *FungibleTokens `json:"fungibleTokens"`
-	NFTs           []string        `json:"nfts"`
+	FungibleTokens *FungibleTokens `json:"fungibleTokens" swagger:"required"`
+	NFTs           []string        `json:"nfts" swagger:"required"`
 }
 
 func MapAllowance(allowance *isc.Allowance) *Allowance {
@@ -106,17 +106,17 @@ func MapAllowance(allowance *isc.Allowance) *Allowance {
 }
 
 type RequestDetail struct {
-	Allowance      *Allowance       `json:"allowance"`
-	CallTarget     isc.CallTarget   `json:"callTarget"`
-	FungibleTokens *FungibleTokens  `json:"fungibleTokens"`
-	GasGudget      uint64           `json:"gasGudget"`
-	IsEVM          bool             `json:"isEVM"`
-	IsOffLedger    bool             `json:"isOffLedger"`
-	NFT            *NFTDataResponse `json:"nft"`
-	Params         dict.JSONDict    `json:"params"`
-	RequestID      string           `json:"requestId"`
-	SenderAccount  string           `json:"senderAccount"`
-	TargetAddress  string           `json:"targetAddress"`
+	Allowance      *Allowance       `json:"allowance" swagger:"required"`
+	CallTarget     isc.CallTarget   `json:"callTarget" swagger:"required"`
+	FungibleTokens *FungibleTokens  `json:"fungibleTokens" swagger:"required"`
+	GasGudget      uint64           `json:"gasGudget" swagger:"required"`
+	IsEVM          bool             `json:"isEVM" swagger:"required"`
+	IsOffLedger    bool             `json:"isOffLedger" swagger:"required"`
+	NFT            *NFTDataResponse `json:"nft" swagger:"required"`
+	Params         dict.JSONDict    `json:"params" swagger:"required"`
+	RequestID      string           `json:"requestId" swagger:"required"`
+	SenderAccount  string           `json:"senderAccount" swagger:"required"`
+	TargetAddress  string           `json:"targetAddress" swagger:"required"`
 }
 
 func MapRequestDetail(request isc.Request) *RequestDetail {
@@ -138,26 +138,26 @@ func MapRequestDetail(request isc.Request) *RequestDetail {
 }
 
 type RequestReceiptResponse struct {
-	BlockIndex    uint32             `json:"blockIndex"`
-	Error         *BlockReceiptError `json:"error"`
-	GasBudget     uint64             `json:"gasBudget"`
-	GasBurnLog    *gas.BurnLog       `json:"gasBurnLog"`
-	GasBurned     uint64             `json:"gasBurned"`
-	GasFeeCharged uint64             `json:"gasFeeCharged"`
-	Request       *RequestDetail     `json:"request"`
-	RequestIndex  uint16             `json:"requestIndex"`
+	BlockIndex    uint32             `json:"blockIndex" swagger:"required"`
+	Error         *BlockReceiptError `json:"error" swagger:"required"`
+	GasBudget     uint64             `json:"gasBudget" swagger:"required"`
+	GasBurnLog    *gas.BurnLog       `json:"gasBurnLog" swagger:"required"`
+	GasBurned     uint64             `json:"gasBurned" swagger:"required"`
+	GasFeeCharged uint64             `json:"gasFeeCharged" swagger:"required"`
+	Request       *RequestDetail     `json:"request" swagger:"required"`
+	RequestIndex  uint16             `json:"requestIndex" swagger:"required"`
 }
 
 type BlockReceiptsResponse struct {
-	Receipts []*RequestReceiptResponse `json:"receipts"`
+	Receipts []*RequestReceiptResponse `json:"receipts" swagger:"required"`
 }
 
 type RequestProcessedResponse struct {
-	ChainID     string `json:"chainId"`
-	RequestID   string `json:"requestId"`
-	IsProcessed bool   `json:"isProcessed"`
+	ChainID     string `json:"chainId" swagger:"required"`
+	RequestID   string `json:"requestId" swagger:"required"`
+	IsProcessed bool   `json:"isProcessed" swagger:"required"`
 }
 
 type EventsResponse struct {
-	Events []string `json:"events"`
+	Events []string `json:"events" swagger:"required"`
 }

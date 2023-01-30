@@ -7,8 +7,8 @@ import (
 )
 
 type CommitteeNode struct {
-	AccessAPI string                    `json:"accessAPI"`
-	Node      PeeringNodeStatusResponse `json:"node"`
+	AccessAPI string                    `json:"accessAPI" swagger:"required"`
+	Node      PeeringNodeStatusResponse `json:"node" swagger:"required"`
 }
 
 func MapCommitteeNode(status *dto.ChainNodeStatus) CommitteeNode {
@@ -35,37 +35,37 @@ func MapCommitteeNodes(status []*dto.ChainNodeStatus) []CommitteeNode {
 }
 
 type CommitteeInfoResponse struct {
-	AccessNodes    []CommitteeNode `json:"accessNodes" swagger:"desc(A list of all access nodes and their peering info.)"`
-	Active         bool            `json:"active" swagger:"desc(Whether or not the chain is active.)"`
-	CandidateNodes []CommitteeNode `json:"candidateNodes" swagger:"desc(A list of all candidate nodes and their peering info.)"`
-	ChainID        string          `json:"chainId" swagger:"desc(ChainID (Bech32-encoded).)"`
-	CommitteeNodes []CommitteeNode `json:"committeeNodes" swagger:"desc(A list of all committee nodes and their peering info.)"`
-	StateAddress   string          `json:"stateAddress" swagger:"desc(State address, if we are part of it.)"`
+	AccessNodes    []CommitteeNode `json:"accessNodes" swagger:"desc(A list of all access nodes and their peering info.),required"`
+	Active         bool            `json:"active" swagger:"desc(Whether or not the chain is active.),required"`
+	CandidateNodes []CommitteeNode `json:"candidateNodes" swagger:"desc(A list of all candidate nodes and their peering info.),required"`
+	ChainID        string          `json:"chainId" swagger:"desc(ChainID (Bech32-encoded).),required"`
+	CommitteeNodes []CommitteeNode `json:"committeeNodes" swagger:"desc(A list of all committee nodes and their peering info.),required"`
+	StateAddress   string          `json:"stateAddress" swagger:"desc(State address, if we are part of it.),required"`
 }
 
 type ContractInfoResponse struct {
-	Description string            `json:"description" swagger:"desc(The description of the contract.)"`
-	HName       string            `json:"hName" swagger:"desc(The id (HName as Hex)) of the contract.)"`
-	Name        string            `json:"name" swagger:"desc(The name of the contract.)"`
-	ProgramHash hashing.HashValue `json:"programHash" swagger:"desc(The hash of the contract.)"`
+	Description string            `json:"description" swagger:"desc(The description of the contract.),required"`
+	HName       string            `json:"hName" swagger:"desc(The id (HName as Hex)) of the contract.),required"`
+	Name        string            `json:"name" swagger:"desc(The name of the contract.),required"`
+	ProgramHash hashing.HashValue `json:"programHash" swagger:"desc(The hash of the contract.),required"`
 }
 
 type gasFeePolicy struct {
-	GasFeeTokenID     string `json:"gasFeeTokenId" swagger:"desc(The gas fee token id. Empty if base token.)"`
-	GasPerToken       uint64 `json:"gasPerToken" swagger:"desc(The amount of gas per token.)"`
-	ValidatorFeeShare uint8  `json:"validatorFeeShare" swagger:"desc(The validator fee share.)"`
+	GasFeeTokenID     string `json:"gasFeeTokenId" swagger:"desc(The gas fee token id. Empty if base token.),required"`
+	GasPerToken       uint64 `json:"gasPerToken" swagger:"desc(The amount of gas per token.),required"`
+	ValidatorFeeShare uint8  `json:"validatorFeeShare" swagger:"desc(The validator fee share.),required"`
 }
 
 type ChainInfoResponse struct {
-	IsActive        bool         `json:"isActive" swagger:"desc(Whether or not the chain is active.)"`
-	ChainID         string       `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).)"`
-	EVMChainID      uint16       `json:"evmChainId" swagger:"desc(The EVM chain ID)"`
-	ChainOwnerID    string       `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).)"`
-	Description     string       `json:"description" swagger:"desc(The description of the chain.)"`
+	IsActive        bool         `json:"isActive" swagger:"desc(Whether or not the chain is active.) required"`
+	ChainID         string       `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).) required"`
+	EVMChainID      uint16       `json:"evmChainId" swagger:"desc(The EVM chain ID) required"`
+	ChainOwnerID    string       `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).) required"`
+	Description     string       `json:"description" swagger:"desc(The description of the chain.) required"`
 	GasFeePolicy    gasFeePolicy `json:"gasFeePolicy"`
-	MaxBlobSize     uint32       `json:"maxBlobSize" swagger:"desc(The maximum contract blob size.)"`
-	MaxEventSize    uint16       `json:"maxEventSize" swagger:"desc(The maximum event size.)"`                      // TODO: Clarify
-	MaxEventsPerReq uint16       `json:"maxEventsPerReq" swagger:"desc(The maximum amount of events per request.)"` // TODO: Clarify
+	MaxBlobSize     uint32       `json:"maxBlobSize" swagger:"desc(The maximum contract blob size.) required"`
+	MaxEventSize    uint16       `json:"maxEventSize" swagger:"desc(The maximum event size.) required"`                      // TODO: Clarify
+	MaxEventsPerReq uint16       `json:"maxEventsPerReq" swagger:"desc(The maximum amount of events per request.) required"` // TODO: Clarify
 }
 
 func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfoResponse {
