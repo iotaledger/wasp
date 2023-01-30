@@ -32,10 +32,6 @@ COPY . .
 
 RUN go build -o . -tags=${BUILD_TAGS} -ldflags="${BUILD_LD_FLAGS}" .
 
-WORKDIR /scratch/tools/wasp-cli
-
-RUN go build -o /app/wasp-cli -a -tags=${BUILD_TAGS} -ldflags="${BUILD_LD_FLAGS}" .
-
 # Wasp build
 FROM gcr.io/distroless/cc
 
