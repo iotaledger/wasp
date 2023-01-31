@@ -243,11 +243,11 @@ func TestRebootN3TwoNodes(t *testing.T) {
 func TestRebootDuringTasks(t *testing.T) {
 	env := setupNativeInccounterTest(t, 3, []int{0, 1, 2})
 
-	// deposit funds for offledger requests
+	// deposit funds for off-ledger requests
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair)
+	env.DepositFunds(utxodb.FundsFromFaucetAmount/2, keyPair)
 	client := env.Chain.SCClient(nativeIncCounterSCHname, keyPair)
 
 	for i := 0; i < 10000; i++ {
