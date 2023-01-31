@@ -88,7 +88,7 @@ pub fn func_pass_types_full(ctx: &ScFuncContext, f: &PassTypesFullContext) {
     ctx.require(f.params.int64_zero().value() == 0, "int64-0 wrong");
     ctx.require(f.params.string().value() == PARAM_STRING, "string wrong");
     ctx.require(f.params.string_zero().value() == "", "string-0 wrong");
-    ctx.require(f.params.hname().value() == ctx.utility().hash_name(PARAM_HNAME), "Hname wrong");
+    ctx.require(f.params.hname().value() == ScHname::new(PARAM_HNAME), "Hname wrong");
     ctx.require(f.params.hname_zero().value() == ScHname(0), "Hname-0 wrong");
 }
 
@@ -143,7 +143,7 @@ pub fn func_spawn(ctx: &ScFuncContext, f: &SpawnContext) {
     let spawn_descr = "spawned contract description";
     ctx.deploy_contract(&program_hash, &spawn_name, spawn_descr, None);
 
-    let spawn_hname = ctx.utility().hash_name(&spawn_name);
+    let spawn_hname = ScHname::new(&spawn_name);
     for _i in 0..5 {
         ctx.call(spawn_hname, HFUNC_INC_COUNTER, None, None);
     }
@@ -290,7 +290,7 @@ pub fn view_pass_types_view(ctx: &ScViewContext, f: &PassTypesViewContext) {
     ctx.require(f.params.int64_zero().value() == 0, "int64-0 wrong");
     ctx.require(f.params.string().value() == PARAM_STRING, "string wrong");
     ctx.require(f.params.string_zero().value() == "", "string-0 wrong");
-    ctx.require(f.params.hname().value() == ctx.utility().hash_name(PARAM_HNAME), "Hname wrong");
+    ctx.require(f.params.hname().value() == ScHname::new(PARAM_HNAME), "Hname wrong");
     ctx.require(f.params.hname_zero().value() == ScHname(0), "Hname-0 wrong");
 }
 

@@ -12,19 +12,19 @@ import (
 )
 
 type gasFeePolicy struct {
-	GasFeeTokenID     string `json:"gasFeeTokenId" swagger:"desc(The gas fee token id. Empty if base token.)"`
-	GasPerToken       uint64 `json:"gasPerToken" swagger:"desc(The amount of gas per token.)"`
-	ValidatorFeeShare uint8  `json:"validatorFeeShare" swagger:"desc(The validator fee share.)"`
+	GasFeeTokenID     string `json:"gasFeeTokenId" swagger:"desc(The gas fee token id. Empty if base token.),required"`
+	GasPerToken       uint64 `json:"gasPerToken" swagger:"desc(The amount of gas per token.),required"`
+	ValidatorFeeShare uint8  `json:"validatorFeeShare" swagger:"desc(The validator fee share.),required"`
 }
 
 type GovChainInfoResponse struct {
-	ChainID         string       `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).)"`
-	ChainOwnerID    string       `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).)"`
-	Description     string       `json:"description" swagger:"desc(The description of the chain.)"`
-	GasFeePolicy    gasFeePolicy `json:"gasFeePolicy"`
-	MaxBlobSize     uint32       `json:"maxBlobSize" swagger:"desc(The maximum contract blob size.)"`
-	MaxEventSize    uint16       `json:"maxEventSize" swagger:"desc(The maximum event size.)"`                      // TODO: Clarify
-	MaxEventsPerReq uint16       `json:"maxEventsPerReq" swagger:"desc(The maximum amount of events per request.)"` // TODO: Clarify
+	ChainID         string       `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
+	ChainOwnerID    string       `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
+	Description     string       `json:"description" swagger:"desc(The description of the chain.),required"`
+	GasFeePolicy    gasFeePolicy `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
+	MaxBlobSize     uint32       `json:"maxBlobSize" swagger:"desc(The maximum contract blob size.),required"`
+	MaxEventSize    uint16       `json:"maxEventSize" swagger:"desc(The maximum event size.),required"`                      // TODO: Clarify
+	MaxEventsPerReq uint16       `json:"maxEventsPerReq" swagger:"desc(The maximum amount of events per request.),required"` // TODO: Clarify
 }
 
 func MapGovChainInfoResponse(chainInfo *governance.ChainInfo) GovChainInfoResponse {

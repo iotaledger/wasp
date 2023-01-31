@@ -1,39 +1,117 @@
 name: Release
+
 on:
   release:
-    types:
-      - published
+    types: [published]
+
 jobs:
-  goreleaser:
+  setup:
+    name: Setup repository
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Check out code into the Go module directory
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.19.4
+
       - name: Install solc
         run: |
-          sudo apt update 
           sudo add-apt-repository ppa:ethereum/ethereum
-          sudo apt-get update
-          sudo apt-get install solc
+          sudo apt update
+          sudo apt install -y solc
+
       - name: Compile solidity contracts
         run: make compile-solidity
-      - name: Run GoReleaser for wasp
-        uses: goreleaser/goreleaser-action@v3
+
+      - name: Tar temporary artifacts
+        run: tar --exclude='temp.tar' -cf temp.tar ./
+      
+      - name: Upload temporary artifacts
+        uses: actions/upload-artifact@v3
         with:
-          version: latest
-          args: release --rm-dist
+          name: wasp
+          path: temp.tar
+          retention-days: 1
+
+  binaries:
+    needs: setup
+    name: Release wasp-cli Binaries
+    runs-on: ubuntu-latest
+    container:
+      image: iotaledger/goreleaser-cgo-cross-compiler:1.19.4
+    steps:
+      - name: Download temporary artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: wasp
+      
+      - name: Untar temporary artifacts
+        run: tar -xf temp.tar
+      
+      - name: Release wasp-cli
+        run: goreleaser --rm-dist -f ./tools/wasp-cli/.goreleaser.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Run GoReleaser for wasp-cli
-        uses: goreleaser/goreleaser-action@v3
+
+  release-docker:
+    needs: setup
+    name: Release Docker
+    runs-on: ubuntu-latest
+    container:
+      image: iotaledger/goreleaser-cgo-cross-compiler:1.19.4
+    env:
+      image_name: iotaledger/wasp
+    steps:
+      - name: Download temporary artifacts
+        uses: actions/download-artifact@v3
         with:
-          version: latest
-          args: release --rm-dist -f ./tools/wasp-cli/.goreleaser.yml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: wasp
+      
+      - name: Untar temporary artifacts
+        run: tar -xf temp.tar
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Query git tag
+        id: tagger
+        uses: jimschubert/query-tag-action@v2
+        with:
+          include: 'v*'
+          exclude: ''
+          commit-ish: 'HEAD'
+          skip-unshallow: 'true'
+      
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: iotaledger/wasp
+          flavor: |
+            latest=true
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=match,pattern=v(\d+.\d+),suffix=-alpha,group=1,enable=${{ contains(github.ref, '-alpha') }}
+            type=match,pattern=v(\d+.\d+),suffix=-beta,group=1,enable=${{ contains(github.ref, '-beta') }}
+            type=match,pattern=v(\d+.\d+),suffix=-rc,group=1,enable=${{ contains(github.ref, '-rc') }}
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.IOTALEDGER_DOCKER_USERNAME }}
+          password: ${{ secrets.IOTALEDGER_DOCKER_PASSWORD }}
+  
+      - name: Build and push to Dockerhub
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/core/app.Version=${{ steps.tagger.outputs.tag }}

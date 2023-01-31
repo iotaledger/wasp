@@ -27,12 +27,11 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         return this.svcClient;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     public initFuncCallContext(): void {
-        wasmlib.connectHost(this);
     }
 
     public initViewCallContext(_hContract: wasmlib.ScHname): wasmlib.ScHname {
-        wasmlib.connectHost(this);
         return this.scHname;
     }
 
@@ -58,8 +57,6 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
 
         // get last used nonce from accounts core contract
         const agent = wasmlib.ScAgentID.fromAddress(keyPair.address());
-        console.log('Chain: ' + this.chainID.toString());
-        console.log('Agent: ' + agent.toString());
         const ctx = new WasmClientContext(this.svcClient, this.chainID.toString(), coreaccounts.ScName);
         const n = coreaccounts.ScFuncs.getAccountNonce(ctx);
         n.params.agentID().setValue(agent);

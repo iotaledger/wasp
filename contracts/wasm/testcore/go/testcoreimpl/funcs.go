@@ -98,7 +98,7 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 func funcPassTypesFull(ctx wasmlib.ScFuncContext, f *PassTypesFullContext) {
 	hash := ctx.Utility().HashBlake2b([]byte(testcore.ParamHash))
 	ctx.Require(f.Params.Hash().Value() == hash, "wrong hash")
-	ctx.Require(f.Params.Hname().Value() == ctx.Utility().Hname(testcore.ParamHname), "wrong hname")
+	ctx.Require(f.Params.Hname().Value() == wasmtypes.NewScHname(testcore.ParamHname), "wrong hname")
 	ctx.Require(f.Params.HnameZero().Value() == 0, "wrong hname-0")
 	ctx.Require(f.Params.Int64().Value() == 42, "wrong int64")
 	ctx.Require(f.Params.Int64Zero().Value() == 0, "wrong int64-0")
@@ -330,7 +330,7 @@ func viewJustView(ctx wasmlib.ScViewContext, _ *JustViewContext) {
 func viewPassTypesView(ctx wasmlib.ScViewContext, f *PassTypesViewContext) {
 	hash := ctx.Utility().HashBlake2b([]byte(testcore.ParamHash))
 	ctx.Require(f.Params.Hash().Value() == hash, "wrong hash")
-	ctx.Require(f.Params.Hname().Value() == ctx.Utility().Hname(testcore.ParamHname), "wrong hname")
+	ctx.Require(f.Params.Hname().Value() == wasmtypes.NewScHname(testcore.ParamHname), "wrong hname")
 	ctx.Require(f.Params.HnameZero().Value() == 0, "wrong hname-0")
 	ctx.Require(f.Params.Int64().Value() == 42, "wrong int64")
 	ctx.Require(f.Params.Int64Zero().Value() == 0, "wrong int64-0")

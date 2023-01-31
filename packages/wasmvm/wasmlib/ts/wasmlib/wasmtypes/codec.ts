@@ -3,8 +3,36 @@
 
 import {panic} from '../sandbox';
 import {stringFromBytes} from './scstring';
+import {ScAddress} from './scaddress';
+import {ScHname} from './schname';
+import {ScSandboxUtils} from '../sandboxutils';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+// sandbox function wrappers for simplified use by hashtypes
+
+type FuncBech32Decode = (bech32: string) => ScAddress;
+type FuncBech32Encode = (addr: ScAddress) => string;
+type FuncHashName = (name: string) => ScHname;
+
+export let bech32Decode: FuncBech32Decode = function (bech32: string): ScAddress {
+    const utils = new ScSandboxUtils();
+    return utils.bech32Decode(bech32);
+};
+export let bech32Encode: FuncBech32Encode = function (addr: ScAddress): string {
+    const utils = new ScSandboxUtils();
+    return utils.bech32Encode(addr);
+};
+export let hashName: FuncHashName = function (name: string): ScHname {
+    const utils = new ScSandboxUtils();
+    return utils.hashName(name);
+};
+
+export function sandboxWrappers(wrapBech32Decode: FuncBech32Decode, wrapBech32Encode: FuncBech32Encode, wrapHashName: FuncHashName): void {
+    bech32Decode = wrapBech32Decode;
+    bech32Encode = wrapBech32Encode;
+    hashName = wrapHashName;
+}
 
 // WasmDecoder decodes separate entities from a byte buffer
 export class WasmDecoder {

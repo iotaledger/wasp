@@ -6,45 +6,45 @@ import (
 )
 
 type NodeOwnerCertificateRequest struct {
-	PublicKey    string `json:"publicKey" swagger:"desc(The public key of the node (Hex))"`
-	OwnerAddress string `json:"ownerAddress" swagger:"desc(Node owner address. (Bech32))"`
+	PublicKey    string `json:"publicKey" swagger:"desc(The public key of the node (Hex)),required"`
+	OwnerAddress string `json:"ownerAddress" swagger:"desc(Node owner address. (Bech32)),required"`
 }
 
 type NodeOwnerCertificateResponse struct {
-	Certificate string `json:"certificate" swagger:"desc(Certificate stating the ownership. (Hex))"`
+	Certificate string `json:"certificate" swagger:"desc(Certificate stating the ownership. (Hex)),required"`
 }
 
 // RentStructure defines the parameters of rent cost calculations on objects which take node resources.
 type RentStructure struct {
 	// Defines the rent of a single virtual byte denoted in IOTA tokens.
-	VByteCost uint32 `json:"vByteCost" swagger:"desc(The virtual byte cost)"`
+	VByteCost uint32 `json:"vByteCost" swagger:"desc(The virtual byte cost),required"`
 	// Defines the factor to be used for data only fields.
-	VBFactorData iotago.VByteCostFactor `json:"vByteFactorData" swagger:"desc(The virtual byte factor for data fields)"`
+	VBFactorData iotago.VByteCostFactor `json:"vByteFactorData" swagger:"desc(The virtual byte factor for data fields),required"`
 	// defines the factor to be used for key/lookup generating fields.
-	VBFactorKey iotago.VByteCostFactor `json:"vByteFactorKey" swagger:"desc(The virtual byte factor for key/lookup generating fields)"`
+	VBFactorKey iotago.VByteCostFactor `json:"vByteFactorKey" swagger:"desc(The virtual byte factor for key/lookup generating fields),required"`
 }
 
 type ProtocolParameters struct {
 	// The version of the protocol running.
-	Version byte `json:"version" swagger:"desc(The protocol version)"`
+	Version byte `json:"version" swagger:"desc(The protocol version),required"`
 	// The human friendly name of the network.
-	NetworkName string `json:"networkName" swagger:"desc(The network name)"`
+	NetworkName string `json:"networkName" swagger:"desc(The network name),required"`
 	// The HRP prefix used for Bech32 addresses in the network.
-	Bech32HRP iotago.NetworkPrefix `json:"bech32Hrp" swagger:"desc(The human readable network prefix)"`
+	Bech32HRP iotago.NetworkPrefix `json:"bech32Hrp" swagger:"desc(The human readable network prefix),required"`
 	// The minimum pow score of the network.
-	MinPoWScore uint32 `json:"minPowScore" swagger:"desc(The minimal PoW score)"`
+	MinPoWScore uint32 `json:"minPowScore" swagger:"desc(The minimal PoW score),required"`
 	// The below max depth parameter of the network.
-	BelowMaxDepth uint8 `json:"belowMaxDepth" swagger:"desc(The networks max depth)"`
+	BelowMaxDepth uint8 `json:"belowMaxDepth" swagger:"desc(The networks max depth),required"`
 	// The rent structure used by given node/network.
-	RentStructure RentStructure `json:"rentStructure" swagger:"desc(The rent structure of the protocol)"`
+	RentStructure RentStructure `json:"rentStructure" swagger:"desc(The rent structure of the protocol),required"`
 	// TokenSupply defines the current token supply on the network.
-	TokenSupply string `json:"tokenSupply" swagger:"desc(The token supply)"`
+	TokenSupply string `json:"tokenSupply" swagger:"desc(The token supply),required"`
 }
 
 type L1Params struct {
-	MaxPayloadSize int                   `json:"maxPayloadSize" swagger:"desc(The max payload size)"`
-	Protocol       *ProtocolParameters   `json:"protocol" swagger:"desc(The protocol parameters)"`
-	BaseToken      *parameters.BaseToken `json:"baseToken" swagger:"desc(The base token parameters)"`
+	MaxPayloadSize int                   `json:"maxPayloadSize" swagger:"desc(The max payload size),required"`
+	Protocol       *ProtocolParameters   `json:"protocol" swagger:"desc(The protocol parameters),required"`
+	BaseToken      *parameters.BaseToken `json:"baseToken" swagger:"desc(The base token parameters),required"`
 }
 
 func MapL1Params(l1 *parameters.L1Params) *L1Params {
@@ -77,8 +77,8 @@ func MapL1Params(l1 *parameters.L1Params) *L1Params {
 }
 
 type InfoResponse struct {
-	Version   string    `json:"version" swagger:"desc(The version of the node)"`
-	PublicKey string    `json:"publicKey" swagger:"desc(The public key of the node (Hex))"`
-	NetID     string    `json:"netID" swagger:"desc(The net id of the node)"`
-	L1Params  *L1Params `json:"l1Params" swagger:"desc(The L1 parameters)"`
+	Version   string    `json:"version" swagger:"desc(The version of the node),required"`
+	PublicKey string    `json:"publicKey" swagger:"desc(The public key of the node (Hex)),required"`
+	NetID     string    `json:"netID" swagger:"desc(The net id of the node),required"`
+	L1Params  *L1Params `json:"l1Params" swagger:"desc(The L1 parameters),required"`
 }

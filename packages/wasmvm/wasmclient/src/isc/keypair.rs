@@ -3,7 +3,7 @@
 
 use crypto::hashes::{blake2b::Blake2b256, Digest};
 use crypto::signatures::ed25519;
-use std::{convert::TryInto};
+use std::convert::TryInto;
 use wasmlib::*;
 
 pub struct KeyPair {

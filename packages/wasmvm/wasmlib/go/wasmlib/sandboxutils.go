@@ -57,14 +57,14 @@ func (u ScSandboxUtils) HashBlake2b(value []byte) wasmtypes.ScHash {
 	return wasmtypes.HashFromBytes(Sandbox(FnUtilsHashBlake2b, value))
 }
 
+// hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
+func (u ScSandboxUtils) HashName(value string) wasmtypes.ScHname {
+	return wasmtypes.HnameFromBytes(Sandbox(FnUtilsHashName, []byte(value)))
+}
+
 // hashes the specified value bytes using sha3 hashing and returns the resulting 32-byte hash
 func (u ScSandboxUtils) HashSha3(value []byte) wasmtypes.ScHash {
 	return wasmtypes.HashFromBytes(Sandbox(FnUtilsHashSha3, value))
-}
-
-// hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
-func (u ScSandboxUtils) Hname(value string) wasmtypes.ScHname {
-	return wasmtypes.HnameFromBytes(Sandbox(FnUtilsHashName, []byte(value)))
 }
 
 // converts an integer to its string representation

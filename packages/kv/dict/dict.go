@@ -297,8 +297,8 @@ type JSONDict struct {
 
 // Item is a JSON-compatible representation of a single key-value pair
 type Item struct {
-	Key   string `json:"key" swagger:"desc(key (hex-encoded))"`
-	Value string `json:"value" swagger:"desc(value (hex-encoded))"`
+	Key   string `json:"key" swagger:"desc(key (hex-encoded)),required"`
+	Value string `json:"value" swagger:"desc(value (hex-encoded)),required"`
 }
 
 // JSONDict returns a JSON-compatible representation of the Dict
