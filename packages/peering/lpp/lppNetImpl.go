@@ -60,7 +60,7 @@ type netImpl struct {
 	ctx         context.Context         // Context for the libp2p
 	ctxCancel   context.CancelFunc      // A way to close the context.
 	peers       map[libp2ppeer.ID]*peer // By remotePeer.ID()
-	peersLock   *sync.Mutex
+	peersLock   *sync.RWMutex
 	recvEvents  *events.Event // Used to publish events to all attached clients.
 	nodeKeyPair *cryptolib.KeyPair
 	trusted     peering.TrustedNetworkManager
@@ -106,7 +106,7 @@ func NewNetworkProvider(
 		ctxCancel:   ctxCancel,
 		port:        port,
 		peers:       make(map[libp2ppeer.ID]*peer),
-		peersLock:   &sync.Mutex{},
+		peersLock:   &sync.RWMutex{},
 		recvEvents:  nil, // Initialized bellow.
 		nodeKeyPair: nodeKeyPair,
 		trusted:     trusted,
@@ -193,7 +193,9 @@ func (n *netImpl) lppTrustedPeerID(trustedPeer *peering.TrustedPeer) (libp2ppeer
 // Handles the incoming messages from the network.
 func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 	defer stream.Close()
+	n.peersLock.RLock()
 	remotePeer, ok := n.peers[stream.Conn().RemotePeer()]
+	n.peersLock.RUnlock()
 	if !ok {
 		n.log.Warnf("Dropping incoming message from unknown peer: %v", stream.Conn().RemotePeer())
 		return
@@ -217,7 +219,9 @@ func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 
 func (n *netImpl) lppHeartbeatProtocolHandler(stream network.Stream) {
 	defer stream.Close()
+	n.peersLock.RLock()
 	remotePeer, ok := n.peers[stream.Conn().RemotePeer()]
+	n.peersLock.RUnlock()
 	if !ok {
 		n.log.Warnf("Dropping incoming heartbeat from unknown peer: %v", stream.Conn().RemotePeer())
 		return
@@ -374,8 +378,8 @@ func (n *netImpl) PeerByPubKey(peerPubKey *cryptolib.PublicKey) (peering.PeerSen
 
 // PeerStatus implements peering.NetworkProvider.
 func (n *netImpl) PeerStatus() []peering.PeerStatusProvider {
-	n.peersLock.Lock()
-	defer n.peersLock.Unlock()
+	n.peersLock.RLock()
+	defer n.peersLock.RUnlock()
 	peerStatus := make([]peering.PeerStatusProvider, 0)
 	for i := range n.peers {
 		peerStatus = append(peerStatus, n.peers[i])
