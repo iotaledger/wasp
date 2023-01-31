@@ -18,8 +18,8 @@ type TrieReader struct {
 	root      Hash
 }
 
-func NewTrieUpdatable(store KVReader, root Hash) (*TrieUpdatable, error) {
-	trieReader, err := NewTrieReader(store, root)
+func NewTrieUpdatable(store KVReader, root Hash, cacheSize ...int) (*TrieUpdatable, error) {
+	trieReader, err := NewTrieReader(store, root, cacheSize...)
 	if err != nil {
 		return nil, err
 	}
@@ -32,9 +32,9 @@ func NewTrieUpdatable(store KVReader, root Hash) (*TrieUpdatable, error) {
 	return ret, nil
 }
 
-func NewTrieReader(store KVReader, root Hash) (*TrieReader, error) {
+func NewTrieReader(store KVReader, root Hash, cacheSize ...int) (*TrieReader, error) {
 	ret := &TrieReader{
-		nodeStore: openNodeStore(store),
+		nodeStore: openNodeStore(store, cacheSize...),
 	}
 	if _, err := ret.setRoot(root); err != nil {
 		return nil, err

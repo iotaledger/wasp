@@ -10,6 +10,8 @@ type nodeStore struct {
 	valueStore KVReader
 }
 
+const defaultCacheSize = 10_000
+
 const (
 	partitionTrieNodes = byte(iota)
 	partitionValues
@@ -27,7 +29,13 @@ func MustInitRoot(store KVWriter) Hash {
 	return n.nodeData.commitment
 }
 
-func openNodeStore(store KVReader) *nodeStore {
+func openNodeStore(store KVReader, cacheSize ...int) *nodeStore {
+	size := defaultCacheSize
+	if len(cacheSize) > 0 {
+		size = cacheSize[0]
+	}
+
+	store = makeCachedKVReader(store, size)
 	return &nodeStore{
 		trieStore:  makeReaderPartition(store, partitionTrieNodes),
 		valueStore: makeReaderPartition(store, partitionValues),
