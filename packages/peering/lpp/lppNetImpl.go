@@ -91,12 +91,12 @@ func NewNetworkProvider(
 		libp2p.Identity(privKey),
 		libp2p.ListenAddrStrings(
 			fmt.Sprintf("/ip4/0.0.0.0/udp/%v/quic", port),
-			fmt.Sprintf("/ip6/::1/udp/%v/quic", port),
+			//fmt.Sprintf("/ip6/::1/udp/%v/quic", port), // Disabled for now
 			fmt.Sprintf("/ip4/0.0.0.0/tcp/%v", port),
 			fmt.Sprintf("/ip6/::1/tcp/%v", port),
 		),
 		libp2p.Transport(tcp.NewTCPTransport),
-		libp2p.Transport(libp2pquic.NewTransport),
+		// libp2p.Transport(libp2pquic.NewTransport), // Disabled for now
 		libp2p.Security(libp2ptls.ID, libp2ptls.New),
 	)
 	if err != nil {
