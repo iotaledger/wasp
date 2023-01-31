@@ -19,6 +19,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
@@ -480,19 +482,20 @@ func (clu *Cluster) KillNodeProcess(nodeIndex int) error {
 }
 
 func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
-	waspNodesCount := len(nodeIndex)
+	for _, ni := range nodeIndex {
+		if !lo.Contains(clu.AllNodes(), ni) {
+			panic(fmt.Errorf("unexpected node index specified for a restart: %v", ni))
+		}
+	}
 
 	// send stop commands
 	for _, i := range nodeIndex {
-		if i >= waspNodesCount {
-			return fmt.Errorf("[cluster] Wasp node with index %d not found", i)
-		}
 		clu.stopNode(i)
 	}
 
 	// wait until all nodes are stopped
 	exitedWaitGroup := sync.WaitGroup{}
-	exitedWaitGroup.Add(waspNodesCount)
+	exitedWaitGroup.Add(len(nodeIndex))
 
 	exited := make(chan struct{})
 	go func() {
@@ -501,10 +504,6 @@ func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
 	}()
 
 	for _, i := range nodeIndex {
-		if i >= waspNodesCount {
-			return fmt.Errorf("[cluster] Wasp node with index %d not found", i)
-		}
-
 		go func(cmd *waspCmd) {
 			waitCmd(cmd)
 			// mark process as finished
