@@ -57,12 +57,17 @@ func (d *StorageDepositAssumption) String() string {
 		d.AnchorOutput, d.NativeTokenOutput)
 }
 
-func NewStorageDepositEstimate() *StorageDepositAssumption {
-	return &StorageDepositAssumption{
+var storageDepositEstimate = func() StorageDepositAssumption {
+	return StorageDepositAssumption{
 		AnchorOutput:      aliasOutputStorageDeposit(),
 		NativeTokenOutput: nativeTokenOutputStorageDeposit(),
 		NFTOutput:         nftOutputStorageDeposit(),
 	}
+}()
+
+func NewStorageDepositEstimate() *StorageDepositAssumption {
+	s := storageDepositEstimate // make a copy
+	return &s
 }
 
 func aliasOutputStorageDeposit() uint64 {

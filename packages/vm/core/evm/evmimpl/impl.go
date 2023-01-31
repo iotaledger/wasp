@@ -92,6 +92,9 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 	addToPrivileged(ctx, iscmagic.ERC721NFTsAddress)
 
 	chainID := evmtypes.MustDecodeChainID(ctx.Params().MustGet(evm.FieldChainID), evm.DefaultChainID)
+
+	feePolicy := getFeePolicy(ctx)
+
 	emulator.Init(
 		evmStateSubrealm(ctx.State()),
 		chainID,
@@ -99,9 +102,9 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 		gasLimit,
 		timestamp(ctx),
 		genesisAlloc,
-		getBalanceFunc(ctx),
-		getSubBalanceFunc(ctx),
-		getAddBalanceFunc(ctx),
+		getBalanceFunc(ctx, feePolicy),
+		getSubBalanceFunc(ctx, feePolicy),
+		getAddBalanceFunc(ctx, feePolicy),
 	)
 
 	// storing hname as a terminal value of the contract's state nil key.

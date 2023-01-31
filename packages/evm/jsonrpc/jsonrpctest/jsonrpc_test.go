@@ -19,12 +19,14 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
 
@@ -34,13 +36,19 @@ type soloTestEnv struct {
 	soloChain *solo.Chain
 }
 
-func newSoloTestEnv(t *testing.T) *soloTestEnv {
+func newSoloTestEnv(t testing.TB) *soloTestEnv {
 	evmtest.InitGoEthLogger(t)
+
+	var log *logger.Logger
+	if _, ok := t.(*testing.B); ok {
+		log = testlogger.NewSilentLogger(t.Name(), true)
+	}
 
 	s := solo.New(t, &solo.InitOptions{
 		AutoAdjustStorageDeposit: true,
 		Debug:                    true,
 		PrintStackTrace:          true,
+		Log:                      log,
 	})
 	chainOwner, _ := s.NewKeyPairWithFunds()
 	chain, _, _ := s.NewChainExt(chainOwner, 0, "chain1")
@@ -398,4 +406,17 @@ func TestRPCTxRejectedIfNotEnoughFunds(t *testing.T) {
 	err = env.Client.SendTransaction(context.Background(), tx)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "sender doesn't have enough L2 funds to cover tx gas budget")
+}
+
+func BenchmarkRPCEstimateGas(b *testing.B) {
+	env := newSoloTestEnv(b)
+	_, addr := env.soloChain.NewEthereumAccountWithL2Funds()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		n, err := env.Client.EstimateGas(context.Background(), ethereum.CallMsg{
+			From: addr,
+		})
+		require.NoError(b, err)
+		require.NotZero(b, n)
+	}
 }

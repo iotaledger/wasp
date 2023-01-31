@@ -63,6 +63,11 @@ func runTask(task *vm.VMTask) {
 		vmctx.AssertConsistentGasTotals()
 	}
 
+	// closing the task and producing a new block is not needed if we are estimating gas
+	if task.EstimateGasMode {
+		return
+	}
+
 	{
 		accountsState := subrealm.NewReadOnly(task.StateDraft, kv.Key(accounts.Contract.Hname().Bytes()))
 		accounts.CheckLedger(accountsState, "runTask")
