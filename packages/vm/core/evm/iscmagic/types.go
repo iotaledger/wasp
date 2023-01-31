@@ -243,12 +243,12 @@ type ISCAllowance struct {
 	Nfts         []NFTID
 }
 
-func WrapISCAllowance(a *isc.Allowance) ISCAllowance {
+func WrapISCAllowance(a *isc.Assets) ISCAllowance {
 	if a == nil {
-		return WrapISCAllowance(isc.NewEmptyAllowance())
+		return WrapISCAllowance(isc.NewEmptyAssets())
 	}
-	tokens := make([]NativeToken, len(a.Assets.NativeTokens))
-	for i, nativeToken := range a.Assets.NativeTokens {
+	tokens := make([]NativeToken, len(a.NativeTokens))
+	for i, nativeToken := range a.NativeTokens {
 		tokens[i] = WrapNativeToken(nativeToken)
 	}
 	nfts := make([]NFTID, len(a.NFTs))
@@ -256,13 +256,13 @@ func WrapISCAllowance(a *isc.Allowance) ISCAllowance {
 		nfts[i] = WrapNFTID(id)
 	}
 	return ISCAllowance{
-		BaseTokens:   a.Assets.BaseTokens,
+		BaseTokens:   a.BaseTokens,
 		NativeTokens: tokens,
 		Nfts:         nfts,
 	}
 }
 
-func (a ISCAllowance) Unwrap() *isc.Allowance {
+func (a ISCAllowance) Unwrap() *isc.Assets {
 	tokens := make(iotago.NativeTokens, len(a.NativeTokens))
 	for i, nativeToken := range a.NativeTokens {
 		tokens[i] = nativeToken.Unwrap()
@@ -271,7 +271,7 @@ func (a ISCAllowance) Unwrap() *isc.Allowance {
 	for i, id := range a.Nfts {
 		nfts[i] = id.Unwrap()
 	}
-	return isc.NewAllowance(a.BaseTokens, tokens, nfts)
+	return isc.NewAssets(a.BaseTokens, tokens, nfts...)
 }
 
 // ISCDictItem matches the struct definition in ISCTypes.sol
@@ -306,7 +306,7 @@ type ISCFungibleTokens struct {
 	NativeTokens []NativeToken
 }
 
-func WrapISCFungibleTokens(fungibleTokens isc.FungibleTokens) ISCFungibleTokens {
+func WrapISCFungibleTokens(fungibleTokens isc.Assets) ISCFungibleTokens {
 	ret := ISCFungibleTokens{
 		BaseTokens:   fungibleTokens.BaseTokens,
 		NativeTokens: make([]NativeToken, len(fungibleTokens.NativeTokens)),
@@ -320,8 +320,8 @@ func WrapISCFungibleTokens(fungibleTokens isc.FungibleTokens) ISCFungibleTokens 
 	return ret
 }
 
-func (t ISCFungibleTokens) Unwrap() *isc.FungibleTokens {
-	ret := isc.FungibleTokens{
+func (t ISCFungibleTokens) Unwrap() *isc.Assets {
+	ret := isc.Assets{
 		BaseTokens:   t.BaseTokens,
 		NativeTokens: make(iotago.NativeTokens, len(t.NativeTokens)),
 	}

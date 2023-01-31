@@ -74,7 +74,7 @@ func (s *SoloSandbox) Tracef(format string, args ...interface{}) {
 	s.ctx.Chain.Log().Debugf(format, args...)
 }
 
-func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allowance, transfer *isc.Allowance) []byte {
+func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allowance, transfer *isc.Assets) []byte {
 	ctx := s.ctx
 	req := solo.NewCallParamsFromDict(contract, function, params)
 	if allowance.IsEmpty() {
@@ -85,13 +85,13 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 	// excess can always be reclaimed from the chain account by the user
 	// This also removes the silly requirement to transfer 1 base token
 	if transfer.IsEmpty() && !ctx.offLedger {
-		transfer = isc.NewAllowanceBaseTokens(1 * isc.Million)
+		transfer = isc.NewAssetsBaseTokens(1 * isc.Million)
 	}
-	if !transfer.IsEmpty() && transfer.Assets.BaseTokens < 1*isc.Million {
+	if !transfer.IsEmpty() && transfer.BaseTokens < 1*isc.Million {
 		transfer = transfer.Clone()
-		transfer.Assets.BaseTokens = 1 * isc.Million
+		transfer.BaseTokens = 1 * isc.Million
 	}
-	req.AddFungibleTokens(transfer.Assets)
+	req.AddFungibleTokens(transfer)
 	if len(transfer.NFTs) != 0 {
 		if len(transfer.NFTs) != 1 {
 			panic("cannot transfer multiple NFTs")

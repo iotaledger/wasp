@@ -11,7 +11,7 @@ import (
 )
 
 // CreditToAccount brings new funds to the on chain ledger
-func CreditToAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.FungibleTokens) {
+func CreditToAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Assets) {
 	if assets == nil || assets.IsEmpty() {
 		return
 	}
@@ -21,7 +21,7 @@ func CreditToAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Fungible
 }
 
 // creditToAccount adds assets to the internal account map
-func creditToAccount(state kv.KVStore, accountKey kv.Key, assets *isc.FungibleTokens) {
+func creditToAccount(state kv.KVStore, accountKey kv.Key, assets *isc.Assets) {
 	if assets == nil || assets.IsEmpty() {
 		return
 	}
@@ -36,17 +36,17 @@ func creditToAccount(state kv.KVStore, accountKey kv.Key, assets *isc.FungibleTo
 		if nt.Amount.Sign() < 0 {
 			panic(ErrBadAmount)
 		}
-		balance := getNativeTokens(state, accountKey, nt.ID)
+		balance := getNativeTokenAmount(state, accountKey, nt.ID)
 		balance.Add(balance, nt.Amount)
 		if balance.Cmp(util.MaxUint256) > 0 {
 			panic(ErrOverflow)
 		}
-		setNativeTokens(state, accountKey, nt.ID, balance)
+		setNativeTokenAmount(state, accountKey, nt.ID, balance)
 	}
 }
 
 // DebitFromAccount takes out assets balance the on chain ledger. If not enough it panics
-func DebitFromAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.FungibleTokens) {
+func DebitFromAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Assets) {
 	if assets == nil || assets.IsEmpty() {
 		return
 	}
@@ -60,14 +60,14 @@ func DebitFromAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Fungibl
 }
 
 // debitFromAccount debits assets from the internal accounts map
-func debitFromAccount(state kv.KVStore, accountKey kv.Key, assets *isc.FungibleTokens) bool {
+func debitFromAccount(state kv.KVStore, accountKey kv.Key, assets *isc.Assets) bool {
 	if assets == nil || assets.IsEmpty() {
 		return true
 	}
 
 	// first check, then mutate
 	mutateBaseTokens := false
-	mutations := isc.NewEmptyFungibleTokens()
+	mutations := isc.NewEmptyAssets()
 
 	if assets.BaseTokens > 0 {
 		balance := getBaseTokens(state, accountKey)
@@ -84,7 +84,7 @@ func debitFromAccount(state kv.KVStore, accountKey kv.Key, assets *isc.FungibleT
 		if nt.Amount.Sign() < 0 {
 			panic(ErrBadAmount)
 		}
-		balance := getNativeTokens(state, accountKey, nt.ID)
+		balance := getNativeTokenAmount(state, accountKey, nt.ID)
 		balance = balance.Sub(balance, nt.Amount)
 		if balance.Sign() < 0 {
 			return false
@@ -96,13 +96,13 @@ func debitFromAccount(state kv.KVStore, accountKey kv.Key, assets *isc.FungibleT
 		setBaseTokens(state, accountKey, mutations.BaseTokens)
 	}
 	for _, nt := range mutations.NativeTokens {
-		setNativeTokens(state, accountKey, nt.ID, nt.Amount)
+		setNativeTokenAmount(state, accountKey, nt.ID, nt.Amount)
 	}
 	return true
 }
 
-func getFungibleTokens(state kv.KVStoreReader, accountKey kv.Key) *isc.FungibleTokens {
-	ret := isc.NewEmptyFungibleTokens()
+func getFungibleTokens(state kv.KVStoreReader, accountKey kv.Key) *isc.Assets {
+	ret := isc.NewEmptyAssets()
 	ret.AddBaseTokens(getBaseTokens(state, accountKey))
 	nativeTokensMapR(state, accountKey).MustIterate(func(idBytes []byte, val []byte) bool {
 		ret.AddNativeTokens(
@@ -114,8 +114,8 @@ func getFungibleTokens(state kv.KVStoreReader, accountKey kv.Key) *isc.FungibleT
 	return ret
 }
 
-func calcL2TotalFungibleTokens(state kv.KVStoreReader) *isc.FungibleTokens {
-	ret := isc.NewEmptyFungibleTokens()
+func calcL2TotalFungibleTokens(state kv.KVStoreReader) *isc.Assets {
+	ret := isc.NewEmptyAssets()
 	allAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
 		ret.Add(getFungibleTokens(state, kv.Key(key)))
 		return true
@@ -123,12 +123,12 @@ func calcL2TotalFungibleTokens(state kv.KVStoreReader) *isc.FungibleTokens {
 	return ret
 }
 
-// GetAccountAssets returns all fungible tokens belonging to the agentID on the state
-func GetAccountFungibleTokens(state kv.KVStoreReader, agentID isc.AgentID) *isc.FungibleTokens {
+// GetAccountFungibleTokens returns all fungible tokens belonging to the agentID on the state
+func GetAccountFungibleTokens(state kv.KVStoreReader, agentID isc.AgentID) *isc.Assets {
 	return getFungibleTokens(state, accountKey(agentID))
 }
 
-func GetTotalL2FungibleTokens(state kv.KVStoreReader) *isc.FungibleTokens {
+func GetTotalL2FungibleTokens(state kv.KVStoreReader) *isc.Assets {
 	return getFungibleTokens(state, l2TotalsAccount)
 }
 

@@ -64,7 +64,7 @@ func initBalanceCmd() *cobra.Command {
 			outs, err := config.L1Client().OutputMap(address)
 			log.Check(err)
 
-			balance := isc.FungibleTokensFromOutputMap(outs)
+			balance := isc.AssetsFromOutputMap(outs)
 
 			model := &BalanceModel{
 				Address:      address.Bech32(parameters.L1().Protocol.Bech32HRP),
@@ -77,7 +77,7 @@ func initBalanceCmd() *cobra.Command {
 				model.VerboseOutputs = map[uint16]string{}
 
 				for i, out := range outs {
-					tokens := isc.FungibleTokensFromOutput(out)
+					tokens := isc.AssetsFromOutput(out)
 					model.VerboseOutputs[i.Index()] = tokens.String()
 				}
 			}

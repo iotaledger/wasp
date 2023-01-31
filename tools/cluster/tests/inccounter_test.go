@@ -41,11 +41,11 @@ func setupContract(env *ChainEnv) *contractWithMessageCounterEnv {
 	// deposit funds onto the contract account, so it can post a L1 request
 	contractAgentID := isc.NewContractAgentID(env.Chain.ChainID, incHname)
 	tx, err := env.NewChainClient().Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
-		Transfer: isc.NewFungibleBaseTokens(1_500_000),
+		Transfer: isc.NewAssetsBaseTokens(1_500_000),
 		Args: map[kv.Key][]byte{
 			accounts.ParamAgentID: codec.EncodeAgentID(contractAgentID),
 		},
-		Allowance: isc.NewAllowanceBaseTokens(1_000_000),
+		Allowance: isc.NewAssetsBaseTokens(1_000_000),
 	})
 	require.NoError(env.t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 30*time.Second)
@@ -55,8 +55,8 @@ func setupContract(env *ChainEnv) *contractWithMessageCounterEnv {
 }
 
 func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint isc.Hname, tokens int, params map[string]interface{}) {
-	transfer := isc.NewFungibleTokens(uint64(tokens), nil)
-	b := isc.NewEmptyFungibleTokens()
+	transfer := isc.NewAssets(uint64(tokens), nil)
+	b := isc.NewEmptyAssets()
 	if transfer != nil {
 		b = transfer
 	}

@@ -253,7 +253,7 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 	//		TargetContract: accounts.Contract.Hname(),
 	//		EntryPoint:     accounts.FuncWithdraw.Hname(),
 	//		GasBudget:      gasBudget,
-	//		Allowance:      isc.NewAllowanceBaseTokens(withdrawal),
+	//		Allowance:      isc.NewAssetsBaseTokens(withdrawal),
 	//	},
 	//}
 

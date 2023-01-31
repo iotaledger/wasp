@@ -23,7 +23,7 @@ type NewRequestTransactionParams struct {
 
 type NewTransferTransactionParams struct {
 	DisableAutoAdjustStorageDeposit bool // if true, the minimal storage deposit won't be adjusted automatically
-	FungibleTokens                  *isc.FungibleTokens
+	FungibleTokens                  *isc.Assets
 	SendOptions                     isc.SendOptions
 	SenderAddress                   iotago.Address
 	SenderKeyPair                   *cryptolib.KeyPair
@@ -93,10 +93,10 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	req := par.Request
 
 	// create outputs, sum totals needed
-	assets := req.FungibleTokens
+	assets := req.Assets
 	if assets == nil {
 		// if assets not specified, the minimum storage deposit will be adjusted by vmtxbuilder.MakeBasicOutput
-		assets = &isc.FungibleTokens{}
+		assets = &isc.Assets{}
 	}
 	var out iotago.Output
 	// will adjust to minimum storage deposit

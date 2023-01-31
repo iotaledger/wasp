@@ -64,7 +64,7 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 		contractRegistry.MustLen() == 0
 	ctx.Requiref(initConditionsCorrect, "root.initialize.fail: %v", root.ErrChainInitConditionsFailed)
 
-	assetsOnStateAnchor := isc.NewFungibleTokens(stateAnchor.Deposit, nil)
+	assetsOnStateAnchor := isc.NewAssets(stateAnchor.Deposit, nil)
 	ctx.Requiref(len(assetsOnStateAnchor.NativeTokens) == 0, "root.initialize.fail: native tokens in origin output are not allowed")
 
 	// store 'root' into the registry

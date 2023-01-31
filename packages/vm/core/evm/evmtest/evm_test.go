@@ -447,18 +447,18 @@ func TestSendBaseTokens(t *testing.T) {
 		[]ethCallOptions{{sender: ethKey}},
 		"allow",
 		iscTest.address,
-		iscmagic.WrapISCAllowance(isc.NewAllowanceBaseTokens(transfer)),
+		iscmagic.WrapISCAllowance(isc.NewAssetsBaseTokens(transfer)),
 	)
 	require.NoError(t, err)
 
-	getAllowanceTo := func(target common.Address) *isc.Allowance {
+	getAllowanceTo := func(target common.Address) *isc.Assets {
 		var ret struct{ Allowance iscmagic.ISCAllowance }
 		env.ISCMagicSandbox(ethKey).callView("getAllowanceTo", []interface{}{target}, &ret)
 		return ret.Allowance.Unwrap()
 	}
 
 	// stored allowance should be == transfer
-	require.Equal(t, transfer, getAllowanceTo(iscTest.address).Assets.BaseTokens)
+	require.Equal(t, transfer, getAllowanceTo(iscTest.address).BaseTokens)
 
 	// attempt again
 	const allAllowed = uint64(0)
@@ -489,10 +489,10 @@ func TestSendAsNFT(t *testing.T) {
 		[]ethCallOptions{{sender: ethKey}},
 		"allow",
 		iscTest.address,
-		iscmagic.WrapISCAllowance(isc.NewAllowance(
+		iscmagic.WrapISCAllowance(isc.NewAssets(
 			storageDeposit,
 			nil,
-			[]iotago.NFTID{nft.ID},
+			nft.ID,
 		)),
 	)
 	require.NoError(t, err)
@@ -766,7 +766,7 @@ func TestEVMContractOwnsFundsL2Transfer(t *testing.T) {
 	randAgentID := isc.NewAgentID(tpkg.RandEd25519Address())
 
 	nBaseTokens := uint64(100)
-	allowance := isc.NewAllowanceBaseTokens(nBaseTokens)
+	allowance := isc.NewAssetsBaseTokens(nBaseTokens)
 
 	_, err := iscTest.callFn(
 		nil,
@@ -820,13 +820,13 @@ func TestISCSendWithArgs(t *testing.T) {
 		nil,
 		"send",
 		iscmagic.WrapL1Address(env.soloChain.ChainID.AsAddress()),
-		iscmagic.WrapISCFungibleTokens(*isc.NewFungibleBaseTokens(sendBaseTokens)),
+		iscmagic.WrapISCFungibleTokens(*isc.NewAssetsBaseTokens(sendBaseTokens)),
 		false, // auto adjust SD
 		iscmagic.WrapISCSendMetadata(isc.SendMetadata{
 			TargetContract: inccounter.Contract.Hname(),
 			EntryPoint:     inccounter.FuncIncCounter.Hname(),
 			Params:         dict.Dict{},
-			Allowance:      isc.NewEmptyAllowance(),
+			Allowance:      isc.NewEmptyAssets(),
 			GasBudget:      math.MaxUint64,
 		}),
 		iscmagic.ISCSendOptions{},
@@ -977,9 +977,9 @@ func TestERC20NativeTokens(t *testing.T) {
 	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
 	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
 
-	err = env.soloChain.SendFromL2ToL2Account(isc.NewAllowanceFungibleTokens(isc.NewFungibleTokens(0, iotago.NativeTokens{
+	err = env.soloChain.SendFromL2ToL2Account(isc.NewAssets(0, iotago.NativeTokens{
 		&iotago.NativeToken{ID: nativeTokenID, Amount: supply},
-	})), ethAgentID, foundryOwner)
+	}), ethAgentID, foundryOwner)
 	require.NoError(t, err)
 
 	{
@@ -1132,7 +1132,7 @@ func TestEVMWithdrawAll(t *testing.T) {
 			TargetContract: inccounter.Contract.Hname(),
 			EntryPoint:     inccounter.FuncIncCounter.Hname(),
 			Params:         dict.Dict{},
-			Allowance:      isc.NewEmptyAllowance(),
+			Allowance:      isc.NewEmptyAssets(),
 			GasBudget:      math.MaxUint64,
 		},
 	)
@@ -1143,7 +1143,7 @@ func TestEVMWithdrawAll(t *testing.T) {
 		}},
 		"send",
 		iscmagic.WrapL1Address(receiver),
-		iscmagic.WrapISCFungibleTokens(*isc.NewFungibleBaseTokens(tokensToWithdraw)),
+		iscmagic.WrapISCFungibleTokens(*isc.NewAssetsBaseTokens(tokensToWithdraw)),
 		false,
 		metadata,
 		iscmagic.ISCSendOptions{},
@@ -1162,7 +1162,7 @@ func TestEVMWithdrawAll(t *testing.T) {
 		[]ethCallOptions{{sender: ethKey}},
 		"send",
 		iscmagic.WrapL1Address(receiver),
-		iscmagic.WrapISCFungibleTokens(*isc.NewFungibleBaseTokens(tokensToWithdraw)),
+		iscmagic.WrapISCFungibleTokens(*isc.NewAssetsBaseTokens(tokensToWithdraw)),
 		false,
 		metadata,
 		iscmagic.ISCSendOptions{},
@@ -1303,7 +1303,7 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 	// fund the contract via a L1 wallet ISC transfer, then call `sendTo` to use those funds
 	l1Wallet, _ := env.soloChain.Env.NewKeyPairWithFunds()
 	env.soloChain.TransferAllowanceTo(
-		isc.NewAllowanceBaseTokens(10*isc.Million),
+		isc.NewAssetsBaseTokens(10*isc.Million),
 		isc.NewEthereumAddressAgentID(iscTest.address),
 		l1Wallet,
 	)
@@ -1459,12 +1459,10 @@ func TestSolidityTransferCustomBaseTokens(t *testing.T) {
 	// move some of these custom tokens into an ethereum account
 	tokensToMoveToEvmAccount := int64(500_000)
 	err = env.soloChain.SendFromL2ToL2Account(
-		isc.NewAllowanceFungibleTokens(
-			isc.NewFungibleTokens(0, iotago.NativeTokens{{
-				ID:     nativeTokenID,
-				Amount: big.NewInt(tokensToMoveToEvmAccount),
-			}}),
-		),
+		isc.NewAssets(0, iotago.NativeTokens{{
+			ID:     nativeTokenID,
+			Amount: big.NewInt(tokensToMoveToEvmAccount),
+		}}),
 		ethAgentID,
 		foundryOwner,
 	)

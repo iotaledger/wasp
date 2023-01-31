@@ -15,14 +15,14 @@ func testSplitFunds(ctx isc.Sandbox) dict.Dict {
 	ctx.Requiref(ok, "caller must have L1 address")
 	// claim 1Mi base tokens from allowance at a time
 	baseTokensToTransfer := 1 * isc.Million
-	for !ctx.AllowanceAvailable().IsEmpty() && ctx.AllowanceAvailable().Assets.BaseTokens >= baseTokensToTransfer {
+	for !ctx.AllowanceAvailable().IsEmpty() && ctx.AllowanceAvailable().BaseTokens >= baseTokensToTransfer {
 		// send back to caller's address
 		// depending on the amount of base tokens, it will exceed number of outputs or not
-		ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAllowance(baseTokensToTransfer, nil, nil))
+		ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssets(baseTokensToTransfer, nil))
 		ctx.Send(
 			isc.RequestParameters{
-				TargetAddress:  addr,
-				FungibleTokens: isc.NewFungibleBaseTokens(baseTokensToTransfer),
+				TargetAddress: addr,
+				Assets:        isc.NewAssetsBaseTokens(baseTokensToTransfer),
 			},
 		)
 	}
@@ -34,20 +34,19 @@ func testSplitFundsNativeTokens(ctx isc.Sandbox) dict.Dict {
 	addr, ok := isc.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
 	// claims all base tokens from allowance
-	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAllowance(ctx.AllowanceAvailable().Assets.BaseTokens, nil, nil))
-	for _, nativeToken := range ctx.AllowanceAvailable().Assets.NativeTokens {
-		for ctx.AllowanceAvailable().Assets.AmountNativeToken(nativeToken.ID).Cmp(util.Big0) > 0 {
+	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssets(ctx.AllowanceAvailable().BaseTokens, nil))
+	for _, nativeToken := range ctx.AllowanceAvailable().NativeTokens {
+		for ctx.AllowanceAvailable().AmountNativeToken(nativeToken.ID).Cmp(util.Big0) > 0 {
 			// claim 1 token from allowance at a time
 			// send back to caller's address
 			// depending on the amount of tokens, it will exceed number of outputs or not
-			assets := isc.NewEmptyFungibleTokens().AddNativeTokens(nativeToken.ID, 1)
-			transfer := isc.NewAllowanceFungibleTokens(assets)
-			rem := ctx.TransferAllowedFunds(ctx.AccountID(), transfer)
+			assets := isc.NewEmptyAssets().AddNativeTokens(nativeToken.ID, 1)
+			rem := ctx.TransferAllowedFunds(ctx.AccountID(), assets)
 			fmt.Printf("%s\n", rem)
 			ctx.Send(
 				isc.RequestParameters{
 					TargetAddress:                 addr,
-					FungibleTokens:                assets,
+					Assets:                        assets,
 					AdjustToMinimumStorageDeposit: true,
 				},
 			)
@@ -62,7 +61,7 @@ func pingAllowanceBack(ctx isc.Sandbox) dict.Dict {
 	ctx.Requiref(ok && !ctx.ChainID().IsSameChain(ctx.Caller()),
 		"pingAllowanceBack: caller expected to be a L1 address")
 	// save allowance budget because after transfer it will be modified
-	toSend := ctx.AllowanceAvailable().Assets
+	toSend := ctx.AllowanceAvailable()
 	if toSend.IsEmpty() {
 		// nothing to send back, NOP
 		return nil
@@ -75,8 +74,8 @@ func pingAllowanceBack(ctx isc.Sandbox) dict.Dict {
 	// send the funds to the caller L1 address on-ledger
 	ctx.Send(
 		isc.RequestParameters{
-			TargetAddress:  addr,
-			FungibleTokens: toSend,
+			TargetAddress: addr,
+			Assets:        toSend,
 		},
 	)
 	return nil
@@ -87,7 +86,7 @@ func testEstimateMinimumStorageDeposit(ctx isc.Sandbox) dict.Dict {
 	addr, ok := isc.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
 
-	provided := ctx.AllowanceAvailable().Assets.BaseTokens
+	provided := ctx.AllowanceAvailable().BaseTokens
 
 	requestParams := isc.RequestParameters{
 		TargetAddress: addr,
@@ -113,7 +112,7 @@ func sendNFTsBack(ctx isc.Sandbox) dict.Dict {
 	for _, nftID := range allowance.NFTs {
 		ctx.SendAsNFT(isc.RequestParameters{
 			TargetAddress:                 addr,
-			FungibleTokens:                &isc.FungibleTokens{},
+			Assets:                        &isc.Assets{},
 			AdjustToMinimumStorageDeposit: true,
 			Metadata:                      &isc.SendMetadata{},
 			Options:                       isc.SendOptions{},
@@ -148,15 +147,15 @@ func sendLargeRequest(ctx isc.Sandbox) dict.Dict {
 			Params:         dict.Dict{"x": make([]byte, ctx.Params().MustGetInt32(ParamSize))},
 		},
 		AdjustToMinimumStorageDeposit: true,
-		FungibleTokens:                ctx.AllowanceAvailable().Assets,
+		Assets:                        ctx.AllowanceAvailable(),
 	}
 	storageDeposit := ctx.EstimateRequiredStorageDeposit(req)
-	provided := ctx.AllowanceAvailable().Assets.BaseTokens
+	provided := ctx.AllowanceAvailable().BaseTokens
 	if provided < storageDeposit {
 		panic("not enough funds for storage deposit")
 	}
-	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAllowanceBaseTokens(storageDeposit))
-	req.FungibleTokens.BaseTokens = storageDeposit
+	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokens(storageDeposit))
+	req.Assets.BaseTokens = storageDeposit
 	ctx.Send(req)
 	return nil
 }

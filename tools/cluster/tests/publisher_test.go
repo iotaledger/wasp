@@ -78,7 +78,7 @@ func testNanoPublisher(t *testing.T, env *ChainEnv) {
 
 	accountsClient := env.Chain.SCClient(accounts.Contract.Hname(), keyPair)
 	reqTx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: isc.NewFungibleBaseTokens(1_000_000),
+		Transfer: isc.NewAssetsBaseTokens(1_000_000),
 	})
 	require.NoError(t, err)
 

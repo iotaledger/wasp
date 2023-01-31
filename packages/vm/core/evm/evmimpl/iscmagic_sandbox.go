@@ -8,7 +8,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	iscvm "github.com/iotaledger/wasp/packages/vm"
@@ -46,8 +45,7 @@ func (h *magicContractHandler) TakeAllowedFunds(addr common.Address, allowance i
 	h.ctx.Privileged().MustMoveBetweenAccounts(
 		isc.NewEthereumAddressAgentID(addr),
 		isc.NewEthereumAddressAgentID(h.caller.Address()),
-		taken.Assets,
-		taken.NFTs,
+		taken,
 	)
 }
 
@@ -61,14 +59,14 @@ func (h *magicContractHandler) Send(
 ) {
 	req := isc.RequestParameters{
 		TargetAddress:                 targetAddress.MustUnwrap(),
-		FungibleTokens:                fungibleTokens.Unwrap(),
+		Assets:                        fungibleTokens.Unwrap(),
 		AdjustToMinimumStorageDeposit: adjustMinimumStorageDeposit,
 		Metadata:                      metadata.Unwrap(),
 		Options:                       sendOptions.Unwrap(),
 	}
 	h.adjustStorageDeposit(req)
 
-	h.moveAssetsToCommonAccount(req.FungibleTokens, nil)
+	h.moveAssetsToCommonAccount(req.Assets)
 
 	// assert that remaining tokens in the sender's account are enough to pay for the gas budget
 	if !h.ctx.HasInAccount(
@@ -91,7 +89,7 @@ func (h *magicContractHandler) SendAsNFT(
 ) {
 	req := isc.RequestParameters{
 		TargetAddress:                 targetAddress.MustUnwrap(),
-		FungibleTokens:                fungibleTokens.Unwrap(),
+		Assets:                        fungibleTokens.Unwrap(),
 		AdjustToMinimumStorageDeposit: adjustMinimumStorageDeposit,
 		Metadata:                      metadata.Unwrap(),
 		Options:                       sendOptions.Unwrap(),
@@ -102,11 +100,11 @@ func (h *magicContractHandler) SendAsNFT(
 	// make sure that allowance <= sent tokens, so that the target contract does not
 	// spend from the common account
 	h.ctx.Requiref(
-		isc.NewAllowanceFungibleTokens(req.FungibleTokens).AddNFTs(id).SpendFromBudget(req.Metadata.Allowance),
+		req.Assets.AddNFTs(id).Spend(req.Metadata.Allowance),
 		"allowance must not be greater than sent tokens",
 	)
 
-	h.moveAssetsToCommonAccount(req.FungibleTokens, []iotago.NFTID{id})
+	h.moveAssetsToCommonAccount(req.Assets)
 
 	// assert that remaining tokens in the sender's account are enough to pay for the gas budget
 	if !h.ctx.HasInAccount(
@@ -126,7 +124,7 @@ func (h *magicContractHandler) Call(
 	allowance iscmagic.ISCAllowance,
 ) iscmagic.ISCDict {
 	a := allowance.Unwrap()
-	h.moveAssetsToCommonAccount(a.Assets, a.NFTs)
+	h.moveAssetsToCommonAccount(a)
 	callRet := h.ctx.Call(
 		isc.Hname(contractHname),
 		isc.Hname(entryPoint),
@@ -138,25 +136,24 @@ func (h *magicContractHandler) Call(
 
 func (h *magicContractHandler) adjustStorageDeposit(req isc.RequestParameters) {
 	sd := h.ctx.EstimateRequiredStorageDeposit(req)
-	if req.FungibleTokens.BaseTokens < sd {
+	if req.Assets.BaseTokens < sd {
 		if !req.AdjustToMinimumStorageDeposit {
 			panic(fmt.Sprintf(
 				"base tokens (%d) not enough to cover storage deposit (%d)",
-				req.FungibleTokens.BaseTokens,
+				req.Assets.BaseTokens,
 				sd,
 			))
 		}
-		req.FungibleTokens.BaseTokens = sd
+		req.Assets.BaseTokens = sd
 	}
 }
 
 // moveAssetsToCommonAccount moves the assets from the caller's L2 account to the common
 // account before sending to L1
-func (h *magicContractHandler) moveAssetsToCommonAccount(fungibleTokens *isc.FungibleTokens, nftIDs []iotago.NFTID) {
+func (h *magicContractHandler) moveAssetsToCommonAccount(assets *isc.Assets) {
 	h.ctx.Privileged().MustMoveBetweenAccounts(
 		isc.NewEthereumAddressAgentID(h.caller.Address()),
 		h.ctx.AccountID(),
-		fungibleTokens,
-		nftIDs,
+		assets,
 	)
 }

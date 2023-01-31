@@ -46,7 +46,7 @@ func (vmctx *VMContext) sendOutput(o iotago.Output) {
 	}
 	vmctx.NumPostedOutputs++
 
-	assets := isc.FungibleTokensFromOutput(o)
+	assets := isc.AssetsFromOutput(o)
 
 	vmctx.assertConsistentL2WithL1TxBuilder("sandbox.Send: begin")
 	// this call cannot panic due to not enough base tokens for storage deposit because

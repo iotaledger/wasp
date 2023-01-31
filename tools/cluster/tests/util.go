@@ -84,7 +84,7 @@ func (e *ChainEnv) getBalanceOnChain(agentID isc.AgentID, assetID []byte, nodeIn
 		return 0
 	}
 
-	actual, err := isc.FungibleTokensFromDict(ret)
+	actual, err := isc.AssetsFromDict(ret)
 	require.NoError(e.t, err)
 
 	if bytes.Equal(assetID, isc.BaseTokenID) {
@@ -121,8 +121,8 @@ func (e *ChainEnv) getAccountsOnChain() []isc.AgentID {
 	return ret
 }
 
-func (e *ChainEnv) getBalancesOnChain() map[string]*isc.FungibleTokens {
-	ret := make(map[string]*isc.FungibleTokens)
+func (e *ChainEnv) getBalancesOnChain() map[string]*isc.Assets {
+	ret := make(map[string]*isc.Assets)
 	acc := e.getAccountsOnChain()
 	for _, agentID := range acc {
 		r, err := e.Chain.Cluster.WaspClient(0).CallView(
@@ -132,18 +132,18 @@ func (e *ChainEnv) getBalancesOnChain() map[string]*isc.FungibleTokens {
 			},
 		)
 		require.NoError(e.t, err)
-		ret[string(agentID.Bytes())], err = isc.FungibleTokensFromDict(r)
+		ret[string(agentID.Bytes())], err = isc.AssetsFromDict(r)
 		require.NoError(e.t, err)
 	}
 	return ret
 }
 
-func (e *ChainEnv) getTotalBalance() *isc.FungibleTokens {
+func (e *ChainEnv) getTotalBalance() *isc.Assets {
 	r, err := e.Chain.Cluster.WaspClient(0).CallView(
 		e.Chain.ChainID, accounts.Contract.Hname(), accounts.ViewTotalAssets.Name, nil,
 	)
 	require.NoError(e.t, err)
-	ret, err := isc.FungibleTokensFromDict(r)
+	ret, err := isc.AssetsFromDict(r)
 	require.NoError(e.t, err)
 	return ret
 }
@@ -162,7 +162,7 @@ func (e *ChainEnv) printAccounts(title string) {
 
 func (e *ChainEnv) checkLedger() {
 	balances := e.getBalancesOnChain()
-	sum := isc.NewEmptyFungibleTokens()
+	sum := isc.NewEmptyAssets()
 	for _, bal := range balances {
 		sum.Add(bal)
 	}

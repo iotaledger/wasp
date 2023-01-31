@@ -58,7 +58,7 @@
 
 			{{if (not $req.IsOffLedger)}}
 			<h5>Attached tokens</h5>
-				{{$tokens := $req.FungibleTokens}}
+				{{$tokens := $req.Assets}}
 				<dl>
 					<dt>BaseTokens</dt><dd><code>{{$tokens.BaseTokens}}</code></dd>
 					{{range $_, $t := $tokens.NativeTokens}}
@@ -82,7 +82,7 @@
 			{{if $allowance}}
 			<h5>Allowance</h5>
 				<dl>
-					{{$tokens := $allowance.Assets}}
+					{{$tokens := $allowance}}
 					{{if $tokens}}
 						<dt>BaseTokens</dt><dd><code>{{$tokens.BaseTokens}}</code></dd>
 						{{range $_, $t := $tokens.NativeTokens}}
