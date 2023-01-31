@@ -44,6 +44,7 @@ EXPOSE 9090/tcp
 EXPOSE 5550/tcp
 EXPOSE 6060/tcp
 EXPOSE 4000/udp
+EXPOSE 4000/tcp
 
 # Copy the app dir into distroless image
 COPY --chown=nonroot:nonroot --from=build /app /app
