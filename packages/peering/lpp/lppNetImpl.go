@@ -33,7 +33,6 @@ import (
 	libp2ppeer "github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/peerstore"
 	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
-	libp2pquic "github.com/libp2p/go-libp2p/p2p/transport/quic"
 	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/multiformats/go-multiaddr"
 
@@ -90,13 +89,10 @@ func NewNetworkProvider(
 	lppHost, err := libp2p.New(
 		libp2p.Identity(privKey),
 		libp2p.ListenAddrStrings(
-			fmt.Sprintf("/ip4/0.0.0.0/udp/%v/quic", port),
-			fmt.Sprintf("/ip6/::1/udp/%v/quic", port),
 			fmt.Sprintf("/ip4/0.0.0.0/tcp/%v", port),
 			fmt.Sprintf("/ip6/::1/tcp/%v", port),
 		),
 		libp2p.Transport(tcp.NewTCPTransport),
-		libp2p.Transport(libp2pquic.NewTransport),
 		libp2p.Security(libp2ptls.ID, libp2ptls.New),
 	)
 	if err != nil {
