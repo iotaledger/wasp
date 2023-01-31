@@ -1,13 +1,17 @@
 package tests
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/utxodb"
 )
 
@@ -134,12 +138,105 @@ func TestReboot2(t *testing.T) {
 	_, err = env.Clu.WaspClient(0).WaitUntilAllRequestsProcessed(env.Chain.ChainID, tx, 10*time.Second)
 	require.NoError(t, err)
 	env.expectCounter(nativeIncCounterSCHname, 3)
-	// ensure offledger requests are still working
+	// ensure off-ledger requests are still working
 	req, err = client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
 	_, err = env.Clu.WaspClient(0).WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
 	require.NoError(t, err)
 	env.expectCounter(nativeIncCounterSCHname, 4)
+}
+
+type incCounterClient struct {
+	expected int64
+	t        *testing.T
+	env      *ChainEnv
+	client   *scclient.SCClient
+}
+
+func newIncCounterClient(t *testing.T, env *ChainEnv, client *scclient.SCClient) *incCounterClient {
+	return &incCounterClient{t: t, env: env, client: client}
+}
+
+func (icc *incCounterClient) MustIncOnLedger() {
+	tx, err := icc.client.PostRequest(inccounter.FuncIncCounter.Name)
+	require.NoError(icc.t, err)
+	_, err = icc.env.Clu.WaspClient(0).WaitUntilAllRequestsProcessed(icc.env.Chain.ChainID, tx, 10*time.Second)
+	require.NoError(icc.t, err)
+	icc.expected++
+	icc.env.expectCounter(nativeIncCounterSCHname, icc.expected)
+}
+
+func (icc *incCounterClient) MustIncOffLedger() {
+	req, err := icc.client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
+	require.NoError(icc.t, err)
+	_, err = icc.env.Clu.WaspClient(0).WaitUntilRequestProcessed(icc.env.Chain.ChainID, req.ID(), 10*time.Second)
+	require.NoError(icc.t, err)
+	icc.expected++
+	icc.env.expectCounter(nativeIncCounterSCHname, icc.expected)
+}
+
+func (icc *incCounterClient) MustIncBoth(onLedgerFirst bool) {
+	if onLedgerFirst {
+		icc.MustIncOnLedger()
+		icc.MustIncOffLedger()
+	} else {
+		icc.MustIncOffLedger()
+		icc.MustIncOnLedger()
+	}
+}
+
+// Ensures a nodes resumes normal operation after rebooting.
+// In this case we have F=0 and N=3, thus any reboot violates the assumptions.
+func TestRebootN3Single(t *testing.T) {
+	tm := util.NewTimer()
+	allNodes := []int{0, 1, 2}
+	env := setupNativeInccounterTest(t, 3, allNodes)
+	tm.Step("setupNativeInccounterTest")
+	client := env.createNewClient()
+	tm.Step("createNewClient")
+
+	env.DepositFunds(1_000_000, client.ChainClient.KeyPair) // For Off-ledger requests to pass.
+	tm.Step("DepositFunds")
+
+	icc := newIncCounterClient(t, env, client)
+	icc.MustIncBoth(true)
+	tm.Step("incCounter")
+
+	// Restart all nodes, one by one.
+	for _, nodeIndex := range allNodes {
+		require.NoError(t, env.Clu.RestartNodes(nodeIndex))
+		icc.MustIncBoth(nodeIndex%2 == 1)
+		tm.Step(fmt.Sprintf("incCounter-%v", nodeIndex))
+	}
+	t.Logf("Timing: %v", tm.String())
+}
+
+// Ensures a nodes resumes normal operation after rebooting.
+// In this case we have F=0 and N=3, thus any reboot violates the assumptions.
+// We restart 2 nodes each iteration in this scenario..
+func TestRebootN3TwoNodes(t *testing.T) {
+	tm := util.NewTimer()
+	allNodes := []int{0, 1, 2}
+	env := setupNativeInccounterTest(t, 3, allNodes)
+	tm.Step("setupNativeInccounterTest")
+	client := env.createNewClient()
+	tm.Step("createNewClient")
+
+	env.DepositFunds(1_000_000, client.ChainClient.KeyPair) // For Off-ledger requests to pass.
+	tm.Step("DepositFunds")
+
+	icc := newIncCounterClient(t, env, client)
+	icc.MustIncBoth(true)
+	tm.Step("incCounter")
+
+	// Restart all nodes, one by one.
+	for _, nodeIndex := range allNodes {
+		otherTwo := lo.Filter(allNodes, func(ni int, _ int) bool { return ni != nodeIndex })
+		require.NoError(t, env.Clu.RestartNodes(otherTwo...))
+		icc.MustIncBoth(nodeIndex%2 == 1)
+		tm.Step(fmt.Sprintf("incCounter-%v", nodeIndex))
+	}
+	t.Logf("Timing: %v", tm.String())
 }
 
 // Test rebooting nodes during operation.
