@@ -1,17 +1,17 @@
 package kv
 
-import lru "github.com/hashicorp/golang-lru"
+import lru "github.com/hashicorp/golang-lru/v2"
 
 type cachedKVStoreReader struct {
 	KVStoreReader
-	cache *lru.Cache
+	cache *lru.Cache[Key, []byte]
 }
 
 // NewCachedKVStoreReader wraps a KVStoreReader with an in-memory cache.
 // IMPORTANT: there is no logic for cache invalidation, so make sure that the
 // underlying KVStoreReader is never mutated.
 func NewCachedKVStoreReader(r KVStoreReader, cacheSize int) KVStoreReader {
-	cache, err := lru.New(cacheSize)
+	cache, err := lru.New[Key, []byte](cacheSize)
 	if err != nil {
 		panic(err)
 	}
@@ -23,7 +23,7 @@ func NewCachedKVStoreReader(r KVStoreReader, cacheSize int) KVStoreReader {
 
 func (c *cachedKVStoreReader) Get(key Key) ([]byte, error) {
 	if v, ok := c.cache.Get(key); ok {
-		return v.([]byte), nil
+		return v, nil
 	}
 	v, err := c.KVStoreReader.Get(key)
 	if err != nil {
