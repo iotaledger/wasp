@@ -16,7 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
-	lru "github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru/v2"
 
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -35,11 +35,11 @@ type EVMEmulator struct {
 	addBalance  AddBalanceFunc
 }
 
-var configCache *lru.Cache
+var configCache *lru.Cache[int, *params.ChainConfig]
 
 func init() {
 	var err error
-	configCache, err = lru.New(100)
+	configCache, err = lru.New[int, *params.ChainConfig](100)
 	if err != nil {
 		panic(err)
 	}
@@ -47,7 +47,7 @@ func init() {
 
 func getConfig(chainID int) *params.ChainConfig {
 	if c, ok := configCache.Get(chainID); ok {
-		return c.(*params.ChainConfig)
+		return c
 	}
 	c := &params.ChainConfig{
 		ChainID:             big.NewInt(int64(chainID)),
