@@ -44,36 +44,27 @@ func accountSuicidedKey(addr common.Address) kv.Key {
 	return accountKey(keyAccountSuicided, addr)
 }
 
-type (
-	GetBalanceFunc func(addr common.Address) *big.Int
-	AddBalanceFunc func(addr common.Address, amount *big.Int)
-	SubBalanceFunc func(addr common.Address, amount *big.Int)
-)
+type L2Balance interface {
+	Get(addr common.Address) *big.Int
+	Add(addr common.Address, amount *big.Int)
+	Sub(addr common.Address, amount *big.Int)
+}
 
 // StateDB implements vm.StateDB with a kv.KVStore as backend.
 // The Ethereum account balance is tied to the L1 balance.
 type StateDB struct {
-	kv         kv.KVStore
-	logs       []*types.Log
-	refund     uint64
-	getBalance GetBalanceFunc
-	subBalance SubBalanceFunc
-	addBalance AddBalanceFunc
+	kv        kv.KVStore
+	logs      []*types.Log
+	refund    uint64
+	l2Balance L2Balance
 }
 
 var _ vm.StateDB = &StateDB{}
 
-func NewStateDB(
-	store kv.KVStore,
-	getBalance GetBalanceFunc,
-	subBalance SubBalanceFunc,
-	addBalance AddBalanceFunc,
-) *StateDB {
+func NewStateDB(store kv.KVStore, l2Balance L2Balance) *StateDB {
 	return &StateDB{
-		kv:         store,
-		getBalance: getBalance,
-		subBalance: subBalance,
-		addBalance: addBalance,
+		kv:        store,
+		l2Balance: l2Balance,
 	}
 }
 
@@ -88,7 +79,7 @@ func (s *StateDB) SubBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	s.subBalance(addr, amount)
+	s.l2Balance.Sub(addr, amount)
 }
 
 func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
@@ -98,11 +89,11 @@ func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	s.addBalance(addr, amount)
+	s.l2Balance.Add(addr, amount)
 }
 
 func (s *StateDB) GetBalance(addr common.Address) *big.Int {
-	return s.getBalance(addr)
+	return s.l2Balance.Get(addr)
 }
 
 func (s *StateDB) GetNonce(addr common.Address) uint64 {
@@ -185,7 +176,7 @@ func (s *StateDB) Suicide(addr common.Address) bool {
 
 	// for some reason the EVM engine calls AddBalance to the beneficiary address,
 	// but not SubBalance for the suicided address.
-	s.subBalance(addr, s.getBalance(addr))
+	s.l2Balance.Sub(addr, s.l2Balance.Get(addr))
 
 	s.kv.Set(accountSuicidedKey(addr), []byte{1})
 
@@ -264,29 +255,23 @@ func (s *StateDB) Buffered() *BufferedStateDB {
 // BufferedStateDB is a wrapper for StateDB that writes all mutations into an in-memory buffer,
 // leaving the original state unmodified until the mutations are applied manually with Commit().
 type BufferedStateDB struct {
-	buf        *buffered.BufferedKVStore
-	base       kv.KVStore
-	getBalance GetBalanceFunc
-	subBalance SubBalanceFunc
-	addBalance AddBalanceFunc
+	buf       *buffered.BufferedKVStore
+	base      kv.KVStore
+	l2Balance L2Balance
 }
 
 func NewBufferedStateDB(base *StateDB) *BufferedStateDB {
 	return &BufferedStateDB{
-		buf:        buffered.NewBufferedKVStore(base.kv),
-		base:       base.kv,
-		getBalance: base.getBalance,
-		subBalance: base.subBalance,
-		addBalance: base.addBalance,
+		buf:       buffered.NewBufferedKVStore(base.kv),
+		base:      base.kv,
+		l2Balance: base.l2Balance,
 	}
 }
 
 func (b *BufferedStateDB) StateDB() *StateDB {
 	return &StateDB{
-		kv:         b.buf,
-		getBalance: b.getBalance,
-		subBalance: b.subBalance,
-		addBalance: b.addBalance,
+		kv:        b.buf,
+		l2Balance: b.l2Balance,
 	}
 }
 

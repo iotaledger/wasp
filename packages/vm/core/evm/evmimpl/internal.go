@@ -28,9 +28,10 @@ import (
 )
 
 type blockContext struct {
-	emu      *emulator.EVMEmulator
-	txs      []*types.Transaction
-	receipts []*types.Receipt
+	emu       *emulator.EVMEmulator
+	l2Balance *l2Balance
+	txs       []*types.Transaction
+	receipts  []*types.Receipt
 }
 
 // openBlockContext creates a new emulator instance before processing any
@@ -38,7 +39,8 @@ type blockContext struct {
 // for each ISC block.
 func openBlockContext(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCaller(&isc.NilAgentID{}) // called from ISC VM
-	ctx.Privileged().SetBlockContext(&blockContext{emu: createEmulator(ctx)})
+	emu, l2Balance := createEmulator(ctx)
+	ctx.Privileged().SetBlockContext(&blockContext{emu: emu, l2Balance: l2Balance})
 	return nil
 }
 
@@ -51,7 +53,9 @@ func closeBlockContext(ctx isc.Sandbox) dict.Dict {
 }
 
 func getBlockContext(ctx isc.Sandbox) *blockContext {
-	return ctx.Privileged().BlockContext().(*blockContext)
+	bctx := ctx.Privileged().BlockContext().(*blockContext)
+	bctx.l2Balance.clearFeePolicyCache()
+	return bctx
 }
 
 func (bctx *blockContext) mintBlock() {
@@ -82,15 +86,14 @@ func (bctx *blockContext) mintBlock() {
 	bctx.emu.MintBlock()
 }
 
-func createEmulator(ctx isc.Sandbox) *emulator.EVMEmulator {
+func createEmulator(ctx isc.Sandbox) (*emulator.EVMEmulator, *l2Balance) {
+	l2Balance := newL2Balance(ctx)
 	return emulator.NewEVMEmulator(
 		evmStateSubrealm(ctx.State()),
 		timestamp(ctx),
 		newMagicContract(ctx),
-		getBalanceFunc(ctx),
-		getSubBalanceFunc(ctx),
-		getAddBalanceFunc(ctx),
-	)
+		l2Balance,
+	), l2Balance
 }
 
 func createEmulatorR(ctx isc.SandboxView) *emulator.EVMEmulator {
@@ -98,9 +101,7 @@ func createEmulatorR(ctx isc.SandboxView) *emulator.EVMEmulator {
 		evmStateSubrealm(buffered.NewBufferedKVStore(ctx.StateR())),
 		timestamp(ctx),
 		newMagicContractView(ctx),
-		getBalanceFunc(ctx),
-		nil,
-		nil,
+		newL2BalanceR(ctx),
 	)
 }
 
@@ -212,48 +213,82 @@ func paramBlockNumber(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevi
 	return current
 }
 
-// TODO dropping "customtokens gas fee" might be the way to go
-func getFeePolicy(ctx isc.SandboxBase) *gas.GasFeePolicy {
-	res := ctx.CallView(
-		governance.Contract.Hname(),
-		governance.ViewGetFeePolicy.Hname(),
-		nil,
-	)
-	feePolicy, err := gas.FeePolicyFromBytes(res.MustGet(governance.ParamFeePolicyBytes))
-	ctx.RequireNoError(err)
-	return feePolicy
+type l2BalanceR struct {
+	feePolicy *gas.GasFeePolicy
+	ctx       isc.SandboxBase
 }
 
-func getBalanceFunc(ctx isc.SandboxBase) emulator.GetBalanceFunc {
-	return func(addr common.Address) *big.Int {
-		feePolicy := getFeePolicy(ctx)
-
-		if !isc.IsEmptyNativeTokenID(feePolicy.GasFeeTokenID) {
-			res := ctx.CallView(
-				accounts.Contract.Hname(),
-				accounts.ViewBalanceNativeToken.Hname(),
-				dict.Dict{
-					accounts.ParamAgentID:       isc.NewEthereumAddressAgentID(addr).Bytes(),
-					accounts.ParamNativeTokenID: feePolicy.GasFeeTokenID[:],
-				},
-			)
-			ret := new(big.Int).SetBytes(res.MustGet(accounts.ParamBalance))
-			return util.CustomTokensDecimalsToEthereumDecimals(ret, feePolicy.GasFeeTokenDecimals)
-		}
-		res := ctx.CallView(
-			accounts.Contract.Hname(),
-			accounts.ViewBalanceBaseToken.Hname(),
-			dict.Dict{accounts.ParamAgentID: isc.NewEthereumAddressAgentID(addr).Bytes()},
-		)
-		decimals := parameters.L1().BaseToken.Decimals
-		ret := new(big.Int).SetUint64(codec.MustDecodeUint64(res.MustGet(accounts.ParamBalance), 0))
-		return util.CustomTokensDecimalsToEthereumDecimals(ret, decimals)
+func newL2BalanceR(ctx isc.SandboxBase) *l2BalanceR {
+	return &l2BalanceR{
+		ctx: ctx,
 	}
 }
 
-func fungibleTokensForFeeFromEthereumDecimals(ctx isc.SandboxBase, amount *big.Int) *isc.Assets {
+type l2Balance struct {
+	*l2BalanceR
+	ctx isc.Sandbox
+}
+
+func newL2Balance(ctx isc.Sandbox) *l2Balance {
+	return &l2Balance{
+		l2BalanceR: newL2BalanceR(ctx),
+		ctx:        ctx,
+	}
+}
+
+// TODO dropping "customtokens gas fee" might be the way to go
+func (b *l2BalanceR) getFeePolicy() *gas.GasFeePolicy {
+	if b.feePolicy == nil {
+		res := b.ctx.CallView(
+			governance.Contract.Hname(),
+			governance.ViewGetFeePolicy.Hname(),
+			nil,
+		)
+		var err error
+		b.feePolicy, err = gas.FeePolicyFromBytes(res.MustGet(governance.ParamFeePolicyBytes))
+		b.ctx.RequireNoError(err)
+	}
+	return b.feePolicy
+}
+
+func (b *l2BalanceR) clearFeePolicyCache() {
+	b.feePolicy = nil
+}
+
+func (b *l2BalanceR) Get(addr common.Address) *big.Int {
+	feePolicy := b.getFeePolicy()
+	if !isc.IsEmptyNativeTokenID(feePolicy.GasFeeTokenID) {
+		res := b.ctx.CallView(
+			accounts.Contract.Hname(),
+			accounts.ViewBalanceNativeToken.Hname(),
+			dict.Dict{
+				accounts.ParamAgentID:       isc.NewEthereumAddressAgentID(addr).Bytes(),
+				accounts.ParamNativeTokenID: feePolicy.GasFeeTokenID[:],
+			},
+		)
+		ret := new(big.Int).SetBytes(res.MustGet(accounts.ParamBalance))
+		return util.CustomTokensDecimalsToEthereumDecimals(ret, feePolicy.GasFeeTokenDecimals)
+	}
+	res := b.ctx.CallView(
+		accounts.Contract.Hname(),
+		accounts.ViewBalanceBaseToken.Hname(),
+		dict.Dict{accounts.ParamAgentID: isc.NewEthereumAddressAgentID(addr).Bytes()},
+	)
+	decimals := parameters.L1().BaseToken.Decimals
+	ret := new(big.Int).SetUint64(codec.MustDecodeUint64(res.MustGet(accounts.ParamBalance), 0))
+	return util.CustomTokensDecimalsToEthereumDecimals(ret, decimals)
+}
+
+func (b *l2BalanceR) Add(addr common.Address, amount *big.Int) {
+	panic("should not be called")
+}
+
+func (b *l2BalanceR) Sub(addr common.Address, amount *big.Int) {
+	panic("should not be called")
+}
+
+func assetsForFeeFromEthereumDecimals(feePolicy *gas.GasFeePolicy, amount *big.Int) *isc.Assets {
 	decimals := uint32(0)
-	feePolicy := getFeePolicy(ctx)
 	if isc.IsEmptyNativeTokenID(feePolicy.GasFeeTokenID) {
 		decimals = parameters.L1().BaseToken.Decimals
 	} else {
@@ -270,24 +305,22 @@ func fungibleTokensForFeeFromEthereumDecimals(ctx isc.SandboxBase, amount *big.I
 	}})
 }
 
-func getSubBalanceFunc(ctx isc.Sandbox) emulator.SubBalanceFunc {
-	return func(addr common.Address, amount *big.Int) {
-		tokens := fungibleTokensForFeeFromEthereumDecimals(ctx, amount)
-		ctx.Privileged().DebitFromAccount(isc.NewEthereumAddressAgentID(addr), tokens)
-
-		// assert that remaining tokens in the sender's account are enough to pay for the gas budget
-		if !ctx.HasInAccount(
-			ctx.Request().SenderAccount(),
-			ctx.Privileged().TotalGasTokens(),
-		) {
-			panic(vm.ErrNotEnoughTokensLeftForGas)
-		}
-	}
+func (b *l2Balance) Add(addr common.Address, amount *big.Int) {
+	feePolicy := b.getFeePolicy()
+	tokens := assetsForFeeFromEthereumDecimals(feePolicy, amount)
+	b.ctx.Privileged().CreditToAccount(isc.NewEthereumAddressAgentID(addr), tokens)
 }
 
-func getAddBalanceFunc(ctx isc.Sandbox) emulator.AddBalanceFunc {
-	return func(addr common.Address, amount *big.Int) {
-		tokens := fungibleTokensForFeeFromEthereumDecimals(ctx, amount)
-		ctx.Privileged().CreditToAccount(isc.NewEthereumAddressAgentID(addr), tokens)
+func (b *l2Balance) Sub(addr common.Address, amount *big.Int) {
+	feePolicy := b.getFeePolicy()
+	tokens := assetsForFeeFromEthereumDecimals(feePolicy, amount)
+	b.ctx.Privileged().DebitFromAccount(isc.NewEthereumAddressAgentID(addr), tokens)
+
+	// assert that remaining tokens in the sender's account are enough to pay for the gas budget
+	if !b.ctx.HasInAccount(
+		b.ctx.Request().SenderAccount(),
+		b.ctx.Privileged().TotalGasTokens(),
+	) {
+		panic(vm.ErrNotEnoughTokensLeftForGas)
 	}
 }

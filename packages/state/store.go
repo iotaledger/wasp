@@ -29,7 +29,7 @@ type store struct {
 
 	// stateCache is a cache of immutable state readers by trie root. Reusing the
 	// State instances allows to better take advantage of its internal caches.
-	stateCache *lru.Cache[trie.Hash, *state] // [trie.Hash]State
+	stateCache *lru.Cache[trie.Hash, *state]
 }
 
 func NewStore(db kvstore.KVStore) Store {

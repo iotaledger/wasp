@@ -32,7 +32,7 @@ import (
 // Env is a testing environment for the EVM JSON-RPC support, allowing to run the same tests
 // with both Solo and cluster backends.
 type Env struct {
-	T                     *testing.T
+	T                     testing.TB
 	Client                *ethclient.Client
 	RawClient             *rpc.Client
 	ChainID               uint16
