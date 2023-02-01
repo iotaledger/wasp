@@ -29,7 +29,7 @@ func NewEmptyAssets() *Assets {
 	}
 }
 
-func NewAssets(baseTokens uint64, tokens iotago.NativeTokens, NFTs ...iotago.NFTID) *Assets {
+func NewAssets(baseTokens uint64, tokens iotago.NativeTokens, nfts ...iotago.NFTID) *Assets {
 	if tokens == nil {
 		tokens = make(iotago.NativeTokens, 0)
 	}
@@ -38,7 +38,7 @@ func NewAssets(baseTokens uint64, tokens iotago.NativeTokens, NFTs ...iotago.NFT
 		NativeTokens: tokens,
 		NFTs:         make([]iotago.NFTID, 0),
 	}
-	return ret.AddNFTs(NFTs...)
+	return ret.AddNFTs(nfts...)
 }
 
 func NewAssetsBaseTokens(amount uint64) *Assets {
@@ -283,7 +283,7 @@ func (a *Assets) Equals(b *Assets) bool {
 
 	bNFTS := b.NFTSet()
 	for _, nft := range a.NFTs {
-		if ok, _ := bNFTS[nft]; !ok {
+		if !bNFTS[nft] {
 			return false
 		}
 	}
