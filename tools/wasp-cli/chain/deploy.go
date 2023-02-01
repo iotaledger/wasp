@@ -69,7 +69,7 @@ func initDeployCmd() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "deploy",
+		Use:   "deploy [<alias>]",
 		Short: "Deploy a new chain",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
