@@ -75,6 +75,10 @@ func initDeployCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			l1Client := config.L1Client()
 
+			if quorum == 0 {
+				quorum = defaultQuorum(len(committee))
+			}
+
 			if ok, _ := isEnoughQuorum(len(committee), quorum); !ok {
 				log.Fatal("quorum needs to be bigger than 1/3 of committee size")
 			}
@@ -116,8 +120,8 @@ func initDeployCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().IntSliceVarP(&committee, "committee", "", []int{0}, "peers acting as committee nodes (ex: 0,1,2,3) (default: all nodes)")
-	cmd.Flags().IntVarP(&quorum, "quorum", "", 1, "quorum (default: 3/4s of the number of committee nodes)")
+	cmd.Flags().IntSliceVarP(&committee, "committee", "", []int{0}, "peers acting as committee nodes (ex: 0,1,2,3) (default: 0)")
+	cmd.Flags().IntVarP(&quorum, "quorum", "", 0, "quorum (default: 3/4s of the number of committee nodes)")
 	cmd.Flags().StringVarP(&description, "description", "", "", "description")
 	cmd.Flags().StringVarP(&govControllerStr, "gov-controller", "", "", "governance controller address")
 
