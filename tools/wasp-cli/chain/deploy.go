@@ -47,6 +47,13 @@ func isEnoughQuorum(n, t int) (bool, int) {
 	return t >= (n - maxF), maxF
 }
 
+func controllerAddressStr(addr string) string {
+	if addr != "" {
+		return addr
+	}
+	return viper.GetString("address.0")
+}
+
 func initDeployCmd() *cobra.Command {
 	var (
 		committee        []int
@@ -59,17 +66,9 @@ func initDeployCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "deploy",
 		Short: "Deploy a new chain",
-		Args:  cobra.NoArgs,
+		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			l1Client := config.L1Client()
-			alias := GetChainAlias()
-
-			if committee == nil {
-				committee = getAllWaspNodes()
-			}
-			if quorum == 0 {
-				quorum = defaultQuorum(len(committee))
-			}
 
 			if ok, _ := isEnoughQuorum(len(committee), quorum); !ok {
 				log.Fatal("quorum needs to be bigger than 1/3 of committee size")
@@ -83,7 +82,7 @@ func initDeployCmd() *cobra.Command {
 			}
 
 			var govControllerAddr iotago.Address
-			if govControllerStr != "" {
+			if controllerAddressStr(govControllerStr) != "" {
 				var err error
 				var prefix iotago.NetworkPrefix
 				prefix, govControllerAddr, err = iotago.ParseBech32(govControllerStr)
@@ -113,12 +112,18 @@ func initDeployCmd() *cobra.Command {
 			})
 			log.Check(err)
 
+			var alias string
+			if len(args) == 0 {
+				alias = GetChainAlias()
+			} else {
+				alias = args[0]
+			}
 			AddChainAlias(alias, chainid.String())
 		},
 	}
 
-	cmd.Flags().IntSliceVarP(&committee, "committee", "", nil, "peers acting as committee nodes (ex: 0,1,2,3) (default: all nodes)")
-	cmd.Flags().IntVarP(&quorum, "quorum", "", 0, "quorum (default: 3/4s of the number of committee nodes)")
+	cmd.Flags().IntSliceVarP(&committee, "committee", "", []int{0}, "peers acting as committee nodes (ex: 0,1,2,3) (default: all nodes)")
+	cmd.Flags().IntVarP(&quorum, "quorum", "", 1, "quorum (default: 3/4s of the number of committee nodes)")
 	cmd.Flags().StringVarP(&description, "description", "", "", "description")
 	cmd.Flags().StringVarP(&govControllerStr, "gov-controller", "", "", "governance controller address")
 
