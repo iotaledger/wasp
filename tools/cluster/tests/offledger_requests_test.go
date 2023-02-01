@@ -189,7 +189,7 @@ func newWalletWithFunds(e *ChainEnv, waspnode int, waitOnNodes ...int) *chaincli
 
 	// deposit funds before sending the off-ledger requestargs
 	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), chainclient.PostRequestParams{
-		Transfer: isc.NewFungibleBaseTokens(baseTokes),
+		Transfer: isc.NewAssetsBaseTokens(baseTokes),
 	})
 	require.NoError(e.t, err)
 	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 30*time.Second)

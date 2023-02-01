@@ -15,40 +15,45 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-// FungibleTokens is used as assets in the UTXO and as tokens in transfer
-type FungibleTokens struct {
+type Assets struct {
 	BaseTokens   uint64              `json:"baseTokens"`
 	NativeTokens iotago.NativeTokens `json:"nativeTokens"`
+	NFTs         []iotago.NFTID      `json:"nfts"`
 }
 
 var BaseTokenID = []byte{}
 
-func NewEmptyFungibleTokens() *FungibleTokens {
-	return &FungibleTokens{
+func NewEmptyAssets() *Assets {
+	return &Assets{
 		NativeTokens: make([]*iotago.NativeToken, 0),
 	}
 }
 
-func NewFungibleTokens(baseTokens uint64, tokens iotago.NativeTokens) *FungibleTokens {
-	return &FungibleTokens{
+func NewAssets(baseTokens uint64, tokens iotago.NativeTokens, nfts ...iotago.NFTID) *Assets {
+	if tokens == nil {
+		tokens = make(iotago.NativeTokens, 0)
+	}
+	ret := &Assets{
 		BaseTokens:   baseTokens,
 		NativeTokens: tokens,
+		NFTs:         make([]iotago.NFTID, 0),
 	}
+	return ret.AddNFTs(nfts...)
 }
 
-func NewFungibleBaseTokens(amount uint64) *FungibleTokens {
-	return &FungibleTokens{BaseTokens: amount}
+func NewAssetsBaseTokens(amount uint64) *Assets {
+	return &Assets{BaseTokens: amount}
 }
 
-func NewFungibleTokensForGasFee(p *gas.GasFeePolicy, feeAmount uint64) *FungibleTokens {
+func NewAssetsForGasFee(p *gas.GasFeePolicy, feeAmount uint64) *Assets {
 	if IsEmptyNativeTokenID(p.GasFeeTokenID) {
-		return NewFungibleBaseTokens(feeAmount)
+		return NewAssetsBaseTokens(feeAmount)
 	}
-	return NewEmptyFungibleTokens().AddNativeTokens(p.GasFeeTokenID, feeAmount)
+	return NewEmptyAssets().AddNativeTokens(p.GasFeeTokenID, feeAmount)
 }
 
-func FungibleTokensFromDict(d dict.Dict) (*FungibleTokens, error) {
-	ret := NewEmptyFungibleTokens()
+func AssetsFromDict(d dict.Dict) (*Assets, error) {
+	ret := NewEmptyAssets()
 	for key, val := range d {
 		if IsBaseToken([]byte(key)) {
 			ret.BaseTokens = new(big.Int).SetBytes(d.MustGet(kv.Key(BaseTokenID))).Uint64()
@@ -56,7 +61,7 @@ func FungibleTokensFromDict(d dict.Dict) (*FungibleTokens, error) {
 		}
 		id, err := NativeTokenIDFromBytes([]byte(key))
 		if err != nil {
-			return nil, fmt.Errorf("FungibleTokensFromDict: %w", err)
+			return nil, fmt.Errorf("Assets: %w", err)
 		}
 		token := &iotago.NativeToken{
 			ID:     id,
@@ -67,8 +72,8 @@ func FungibleTokensFromDict(d dict.Dict) (*FungibleTokens, error) {
 	return ret, nil
 }
 
-func FungibleTokensFromNativeTokenSum(baseTokens uint64, tokens iotago.NativeTokenSum) *FungibleTokens {
-	ret := NewEmptyFungibleTokens()
+func AssetsFromNativeTokenSum(baseTokens uint64, tokens iotago.NativeTokenSum) *Assets {
+	ret := NewEmptyAssets()
 	ret.BaseTokens = baseTokens
 	for id, val := range tokens {
 		ret.NativeTokens = append(ret.NativeTokens, &iotago.NativeToken{
@@ -79,16 +84,16 @@ func FungibleTokensFromNativeTokenSum(baseTokens uint64, tokens iotago.NativeTok
 	return ret
 }
 
-func FungibleTokensFromOutputMap(outs map[iotago.OutputID]iotago.Output) *FungibleTokens {
-	ret := NewEmptyFungibleTokens()
+func AssetsFromOutputMap(outs map[iotago.OutputID]iotago.Output) *Assets {
+	ret := NewEmptyAssets()
 	for _, out := range outs {
-		ret.Add(FungibleTokensFromOutput(out))
+		ret.Add(AssetsFromOutput(out))
 	}
 	return ret
 }
 
-func FungibleTokensFromOutput(o iotago.Output) *FungibleTokens {
-	ret := &FungibleTokens{
+func AssetsFromOutput(o iotago.Output) *Assets {
+	ret := &Assets{
 		BaseTokens:   o.Deposit(),
 		NativeTokens: o.NativeTokenList().Clone(),
 	}
@@ -113,18 +118,41 @@ func MustNativeTokenIDFromBytes(data []byte) iotago.NativeTokenID {
 }
 
 // returns nil if nil pointer receiver is cloned
-func (a *FungibleTokens) Clone() *FungibleTokens {
+func (a *Assets) Clone() *Assets {
 	if a == nil {
 		return nil
 	}
 
-	return &FungibleTokens{
+	nfts := make([]iotago.NFTID, len(a.NFTs))
+	for i := range a.NFTs {
+		nftID := iotago.NFTID{}
+		copy(nftID[:], a.NFTs[i][:])
+		nfts[i] = nftID
+	}
+
+	return &Assets{
 		BaseTokens:   a.BaseTokens,
 		NativeTokens: a.NativeTokens.Clone(),
+		NFTs:         nfts,
 	}
 }
 
-func (a *FungibleTokens) AmountNativeToken(nativeTokenID iotago.NativeTokenID) *big.Int {
+func (a *Assets) AddNFTs(nfts ...iotago.NFTID) *Assets {
+	nftMap := make(map[iotago.NFTID]bool)
+	nfts = append(nfts, a.NFTs...)
+	for _, nftid := range nfts {
+		nftMap[nftid] = true
+	}
+	a.NFTs = make([]iotago.NFTID, len(nftMap))
+	i := 0
+	for nftid := range nftMap {
+		a.NFTs[i] = nftid
+		i++
+	}
+	return a
+}
+
+func (a *Assets) AmountNativeToken(nativeTokenID iotago.NativeTokenID) *big.Int {
 	for _, t := range a.NativeTokens {
 		if t.ID == nativeTokenID {
 			return t.Amount
@@ -133,7 +161,7 @@ func (a *FungibleTokens) AmountNativeToken(nativeTokenID iotago.NativeTokenID) *
 	return big.NewInt(0)
 }
 
-func (a *FungibleTokens) String() string {
+func (a *Assets) String() string {
 	ret := fmt.Sprintf("base tokens: %d", a.BaseTokens)
 	if len(a.NativeTokens) > 0 {
 		ret += fmt.Sprintf(", tokens (%d):", len(a.NativeTokens))
@@ -141,16 +169,25 @@ func (a *FungibleTokens) String() string {
 	for _, nt := range a.NativeTokens {
 		ret += fmt.Sprintf("\n       %s: %d", nt.ID.String(), nt.Amount)
 	}
+	for _, nftid := range a.NFTs {
+		ret += fmt.Sprintf("\n NFTID: %s", nftid.String())
+	}
 	return ret
 }
 
-func (a *FungibleTokens) Bytes() []byte {
+func (a *Assets) Bytes() []byte {
 	mu := marshalutil.New()
 	a.WriteToMarshalUtil(mu)
 	return mu.Bytes()
 }
 
-func (a *FungibleTokens) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
+var NativeAssetsSerializationArrayRules = iotago.NativeTokenArrayRules()
+
+func (a *Assets) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
+	mu.WriteBool(a.IsEmpty())
+	if a.IsEmpty() {
+		return
+	}
 	mu.WriteUint64(a.BaseTokens)
 	tokenBytes, err := serializer.NewSerializer().WriteSliceOfObjects(&a.NativeTokens, serializer.DeSeriModePerformLexicalOrdering, nil, serializer.SeriLengthPrefixTypeAsUint16, &NativeAssetsSerializationArrayRules, func(err error) error {
 		return fmt.Errorf("unable to serialize alias output native tokens: %w", err)
@@ -160,13 +197,32 @@ func (a *FungibleTokens) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	}
 	mu.WriteUint16(uint16(len(tokenBytes)))
 	mu.WriteBytes(tokenBytes)
+	mu.WriteUint16(uint16(len(a.NFTs)))
+	for _, id := range a.NFTs {
+		mu.WriteBytes(id[:])
+	}
 }
 
-func FungibleTokensFromMarshalUtil(mu *marshalutil.MarshalUtil) (*FungibleTokens, error) {
-	ret := &FungibleTokens{
-		NativeTokens: make(iotago.NativeTokens, 0),
+func MustAssetsFromBytes(b []byte) *Assets {
+	if len(b) == 0 {
+		return NewEmptyAssets()
 	}
-	var err error
+	ret, err := AssetsFromMarshalUtil(marshalutil.New(b))
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+func AssetsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Assets, error) {
+	ret := NewEmptyAssets()
+	empty, err := mu.ReadBool()
+	if err != nil {
+		return nil, err
+	}
+	if empty {
+		return ret, nil
+	}
 	if ret.BaseTokens, err = mu.ReadUint64(); err != nil {
 		return nil, err
 	}
@@ -185,10 +241,24 @@ func FungibleTokensFromMarshalUtil(mu *marshalutil.MarshalUtil) (*FungibleTokens
 	if err != nil {
 		return nil, err
 	}
+	nNFTs, err := mu.ReadUint16()
+	if err != nil {
+		return nil, err
+	}
+	ret.NFTs = make([]iotago.NFTID, nNFTs)
+	for i := 0; i < int(nNFTs); i++ {
+		b, err := mu.ReadBytes(iotago.NFTIDLength)
+		if err != nil {
+			return nil, err
+		}
+		var id iotago.NFTID
+		copy(id[:], b)
+		ret.NFTs[i] = id
+	}
 	return ret, nil
 }
 
-func (a *FungibleTokens) Equals(b *FungibleTokens) bool {
+func (a *Assets) Equals(b *Assets) bool {
 	if a == b {
 		return true
 	}
@@ -207,13 +277,23 @@ func (a *FungibleTokens) Equals(b *FungibleTokens) bool {
 			return false
 		}
 	}
+	if len(a.NFTs) != len(b.NFTs) {
+		return false
+	}
+
+	bNFTS := b.NFTSet()
+	for _, nft := range a.NFTs {
+		if !bNFTS[nft] {
+			return false
+		}
+	}
 	return true
 }
 
-// SpendFromFungibleTokenBudget subtracts fungible tokens from budget.
+// Spend subtracts assets from the current set.
 // Mutates receiver `a` !
 // If budget is not enough, returns false and leaves receiver untouched
-func (a *FungibleTokens) SpendFromFungibleTokenBudget(toSpend *FungibleTokens) bool {
+func (a *Assets) Spend(toSpend *Assets) bool {
 	if a.IsEmpty() {
 		return toSpend.IsEmpty()
 	}
@@ -223,6 +303,7 @@ func (a *FungibleTokens) SpendFromFungibleTokenBudget(toSpend *FungibleTokens) b
 	if a.Equals(toSpend) {
 		a.BaseTokens = 0
 		a.NativeTokens = nil
+		a.NFTs = make([]iotago.NFTID, 0)
 		return true
 	}
 	if a.BaseTokens < toSpend.BaseTokens {
@@ -237,6 +318,15 @@ func (a *FungibleTokens) SpendFromFungibleTokenBudget(toSpend *FungibleTokens) b
 		}
 		curr.Amount.Sub(curr.Amount, nativeToken.Amount)
 	}
+
+	nftSet := a.NFTSet()
+	for _, nftID := range toSpend.NFTs {
+		if !nftSet[nftID] {
+			return false
+		}
+		delete(nftSet, nftID)
+	}
+
 	// budget is enough
 	a.BaseTokens -= toSpend.BaseTokens
 	a.NativeTokens = a.NativeTokens[:0]
@@ -246,10 +336,24 @@ func (a *FungibleTokens) SpendFromFungibleTokenBudget(toSpend *FungibleTokens) b
 		}
 		a.NativeTokens = append(a.NativeTokens, nativeToken)
 	}
+	a.NFTs = make([]iotago.NFTID, len(nftSet))
+	i := 0
+	for nftID := range nftSet {
+		a.NFTs[i] = nftID
+		i++
+	}
 	return true
 }
 
-func (a *FungibleTokens) Add(b *FungibleTokens) *FungibleTokens {
+func (a *Assets) NFTSet() map[iotago.NFTID]bool {
+	ret := map[iotago.NFTID]bool{}
+	for _, nft := range a.NFTs {
+		ret[nft] = true
+	}
+	return ret
+}
+
+func (a *Assets) Add(b *Assets) *Assets {
 	a.BaseTokens += b.BaseTokens
 	resultTokens := a.NativeTokens.MustSet()
 	for _, nativeToken := range b.NativeTokens {
@@ -263,20 +367,23 @@ func (a *FungibleTokens) Add(b *FungibleTokens) *FungibleTokens {
 		resultTokens[nativeToken.ID] = nativeToken
 	}
 	a.NativeTokens = nativeTokensFromSet(resultTokens)
+	a.AddNFTs(b.NFTs...)
 	return a
 }
 
-func (a *FungibleTokens) IsEmpty() bool {
-	return a == nil || a.BaseTokens == 0 && len(a.NativeTokens) == 0
+func (a *Assets) IsEmpty() bool {
+	return a == nil || (a.BaseTokens == 0 &&
+		len(a.NativeTokens) == 0 &&
+		len(a.NFTs) == 0)
 }
 
-func (a *FungibleTokens) AddBaseTokens(amount uint64) *FungibleTokens {
+func (a *Assets) AddBaseTokens(amount uint64) *Assets {
 	a.BaseTokens += amount
 	return a
 }
 
-func (a *FungibleTokens) AddNativeTokens(nativeTokenID iotago.NativeTokenID, amount interface{}) *FungibleTokens {
-	b := NewFungibleTokens(0, iotago.NativeTokens{
+func (a *Assets) AddNativeTokens(nativeTokenID iotago.NativeTokenID, amount interface{}) *Assets {
+	b := NewAssets(0, iotago.NativeTokens{
 		&iotago.NativeToken{
 			ID:     nativeTokenID,
 			Amount: util.ToBigInt(amount),
@@ -285,13 +392,32 @@ func (a *FungibleTokens) AddNativeTokens(nativeTokenID iotago.NativeTokenID, amo
 	return a.Add(b)
 }
 
-func (a *FungibleTokens) ToDict() dict.Dict {
+func (a *Assets) ToDict() dict.Dict {
 	ret := dict.New()
 	ret.Set(kv.Key(BaseTokenID), new(big.Int).SetUint64(a.BaseTokens).Bytes())
 	for _, nativeToken := range a.NativeTokens {
 		ret.Set(kv.Key(nativeToken.ID[:]), nativeToken.Amount.Bytes())
 	}
 	return ret
+}
+
+func (a *Assets) fillEmptyNFTIDs(output iotago.Output, outputID iotago.OutputID) *Assets {
+	if a == nil {
+		return nil
+	}
+
+	nftOutput, ok := output.(*iotago.NFTOutput)
+	if !ok {
+		return a
+	}
+
+	// see if there is an empty NFTID in the assets (this can happpen if the NTF is minted as a request to the chain)
+	for i, nftID := range a.NFTs {
+		if nftID.Empty() {
+			a.NFTs[i] = util.NFTIDFromNFTOutput(nftOutput, outputID)
+		}
+	}
+	return a
 }
 
 func nativeTokensFromSet(nativeTokenSet iotago.NativeTokensSet) iotago.NativeTokens {
@@ -307,16 +433,4 @@ func nativeTokensFromSet(nativeTokenSet iotago.NativeTokensSet) iotago.NativeTok
 // IsBaseToken return whether a given tokenID represents the base token
 func IsBaseToken(tokenID []byte) bool {
 	return bytes.Equal(tokenID, BaseTokenID)
-}
-
-var NativeAssetsSerializationArrayRules = iotago.NativeTokenArrayRules()
-
-// TODO this could be refactored to use `AmountNativeToken`
-func FindNativeTokenBalance(nts iotago.NativeTokens, nativeTokenID iotago.NativeTokenID) *big.Int {
-	for _, nt := range nts {
-		if nt.ID == nativeTokenID {
-			return nt.Amount
-		}
-	}
-	return nil
 }

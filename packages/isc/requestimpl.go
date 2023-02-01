@@ -60,7 +60,7 @@ type offLedgerRequestData struct {
 	params          dict.Dict
 	signatureScheme *offLedgerSignatureScheme // nil if unsigned
 	nonce           uint64
-	allowance       *Allowance
+	allowance       *Assets
 	gasBudget       uint64
 }
 
@@ -109,7 +109,7 @@ func NewOffLedgerRequest(chainID ChainID, contract, entryPoint Hname, params dic
 		entryPoint: entryPoint,
 		params:     params,
 		nonce:      nonce,
-		allowance:  NewEmptyAllowance(),
+		allowance:  NewEmptyAssets(),
 		gasBudget:  gas.MaxGasPerRequest,
 	}
 }
@@ -213,7 +213,7 @@ func (r *offLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.Marsha
 	if err := r.signatureScheme.readEssence(mu); err != nil {
 		return err
 	}
-	if r.allowance, err = AllowanceFromMarshalUtil(mu); err != nil {
+	if r.allowance, err = AssetsFromMarshalUtil(mu); err != nil {
 		return err
 	}
 	return nil
@@ -229,8 +229,8 @@ func (r *offLedgerRequestData) Sign(key *cryptolib.KeyPair) OffLedgerRequest {
 	return r
 }
 
-// FungibleTokens is attached assets to the UTXO. Nil for off-ledger
-func (r *offLedgerRequestData) FungibleTokens() *FungibleTokens {
+// Assets is attached assets to the UTXO. Nil for off-ledger
+func (r *offLedgerRequestData) Assets() *Assets {
 	return nil
 }
 
@@ -239,7 +239,7 @@ func (r *offLedgerRequestData) NFT() *NFT {
 }
 
 // Allowance from the sender's account to the target smart contract. Nil mean no Allowance
-func (r *offLedgerRequestData) Allowance() *Allowance {
+func (r *offLedgerRequestData) Allowance() *Assets {
 	return r.allowance
 }
 
@@ -248,7 +248,7 @@ func (r *offLedgerRequestData) WithGasBudget(gasBudget uint64) UnsignedOffLedger
 	return r
 }
 
-func (r *offLedgerRequestData) WithAllowance(allowance *Allowance) UnsignedOffLedgerRequest {
+func (r *offLedgerRequestData) WithAllowance(allowance *Assets) UnsignedOffLedgerRequest {
 	r.allowance = allowance.Clone()
 	return r
 }
@@ -504,14 +504,19 @@ func (r *onLedgerRequestData) NFT() *NFT {
 	return ret
 }
 
-func (r *onLedgerRequestData) Allowance() *Allowance {
+func (r *onLedgerRequestData) Allowance() *Assets {
 	return r.requestMetadata.Allowance
 }
 
-func (r *onLedgerRequestData) FungibleTokens() *FungibleTokens {
+func (r *onLedgerRequestData) Assets() *Assets {
 	amount := r.output.Deposit()
 	tokens := r.output.NativeTokenList()
-	return NewFungibleTokens(amount, tokens)
+	ret := NewAssets(amount, tokens)
+	NFT := r.NFT()
+	if NFT != nil {
+		ret.AddNFTs(NFT.ID)
+	}
+	return ret
 }
 
 func (r *onLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
@@ -758,7 +763,7 @@ type RequestMetadata struct {
 	// request arguments
 	Params dict.Dict `json:"params"`
 	// Allowance intended to the target contract to take. Nil means zero allowance
-	Allowance *Allowance `json:"allowance"`
+	Allowance *Assets `json:"allowance"`
 	// gas budget
 	GasBudget uint64 `json:"gasBudget"`
 }
@@ -825,7 +830,7 @@ func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error
 	if p.Params, err = dict.FromMarshalUtil(mu); err != nil {
 		return err
 	}
-	if p.Allowance, err = AllowanceFromMarshalUtil(mu); err != nil {
+	if p.Allowance, err = AssetsFromMarshalUtil(mu); err != nil {
 		return err
 	}
 	return nil

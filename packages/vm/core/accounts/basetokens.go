@@ -21,9 +21,9 @@ func setBaseTokens(state kv.KVStore, accountKey kv.Key, n uint64) {
 func AdjustAccountBaseTokens(state kv.KVStore, account isc.AgentID, adjustment int64) {
 	switch {
 	case adjustment > 0:
-		CreditToAccount(state, account, isc.NewFungibleTokens(uint64(adjustment), nil))
+		CreditToAccount(state, account, isc.NewAssets(uint64(adjustment), nil))
 	case adjustment < 0:
-		DebitFromAccount(state, account, isc.NewFungibleTokens(uint64(-adjustment), nil))
+		DebitFromAccount(state, account, isc.NewAssets(uint64(-adjustment), nil))
 	}
 }
 

@@ -70,8 +70,8 @@ func (r *evmOffLedgerRequest) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.WriteBytes(b)
 }
 
-func (r *evmOffLedgerRequest) Allowance() *Allowance {
-	return NewEmptyAllowance()
+func (r *evmOffLedgerRequest) Allowance() *Assets {
+	return NewEmptyAssets()
 }
 
 func (r *evmOffLedgerRequest) CallTarget() CallTarget {
@@ -85,8 +85,8 @@ func (r *evmOffLedgerRequest) Params() dict.Dict {
 	return dict.Dict{evmnames.FieldTransaction: evmtypes.EncodeTransaction(r.tx)}
 }
 
-func (r *evmOffLedgerRequest) FungibleTokens() *FungibleTokens {
-	return NewEmptyFungibleTokens()
+func (r *evmOffLedgerRequest) Assets() *Assets {
+	return NewEmptyAssets()
 }
 
 func (r *evmOffLedgerRequest) GasBudget() (gas uint64, isEVM bool) {
@@ -189,8 +189,8 @@ func (r *evmOffLedgerEstimateGasRequest) WriteToMarshalUtil(mu *marshalutil.Mars
 	mu.WriteBytes(b)
 }
 
-func (r *evmOffLedgerEstimateGasRequest) Allowance() *Allowance {
-	return NewEmptyAllowance()
+func (r *evmOffLedgerEstimateGasRequest) Allowance() *Assets {
+	return NewEmptyAssets()
 }
 
 func (r *evmOffLedgerEstimateGasRequest) CallTarget() CallTarget {
@@ -204,8 +204,8 @@ func (r *evmOffLedgerEstimateGasRequest) Params() dict.Dict {
 	return dict.Dict{evmnames.FieldCallMsg: evmtypes.EncodeCallMsg(r.callMsg)}
 }
 
-func (r *evmOffLedgerEstimateGasRequest) FungibleTokens() *FungibleTokens {
-	return NewEmptyFungibleTokens()
+func (r *evmOffLedgerEstimateGasRequest) Assets() *Assets {
+	return NewEmptyAssets()
 }
 
 func (r *evmOffLedgerEstimateGasRequest) GasBudget() (gas uint64, isEVM bool) {

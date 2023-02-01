@@ -132,7 +132,7 @@ func (txb *AnchorTransactionBuilder) Consume(req isc.OnLedgerRequest) int64 {
 	txb.addDeltaBaseTokensToTotal(req.Output().Deposit())
 	// then we add all arriving native tokens to corresponding internal outputs
 	deltaBaseTokensStorageDepositAdjustment := int64(0)
-	for _, nativeToken := range req.FungibleTokens().NativeTokens {
+	for _, nativeToken := range req.Assets().NativeTokens {
 		deltaBaseTokensStorageDepositAdjustment += txb.addNativeTokenBalanceDelta(nativeToken.ID, nativeToken.Amount)
 	}
 	if req.NFT() != nil {

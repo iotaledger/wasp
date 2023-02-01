@@ -6,7 +6,6 @@ import (
 
 	"github.com/samber/lo"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -99,17 +98,17 @@ func touchAccount(state kv.KVStore, agentID isc.AgentID) {
 }
 
 // HasEnoughForAllowance checkes whether an account has enough balance to cover for the allowance
-func HasEnoughForAllowance(state kv.KVStoreReader, agentID isc.AgentID, allowance *isc.Allowance) bool {
+func HasEnoughForAllowance(state kv.KVStoreReader, agentID isc.AgentID, allowance *isc.Assets) bool {
 	if allowance == nil || allowance.IsEmpty() {
 		return true
 	}
 	accountKey := accountKey(agentID)
-	if allowance.Assets != nil {
-		if getBaseTokens(state, accountKey) < allowance.Assets.BaseTokens {
+	if allowance != nil {
+		if getBaseTokens(state, accountKey) < allowance.BaseTokens {
 			return false
 		}
-		for _, nativeToken := range allowance.Assets.NativeTokens {
-			if getNativeTokens(state, accountKey, nativeToken.ID).Cmp(nativeToken.Amount) < 0 {
+		for _, nativeToken := range allowance.NativeTokens {
+			if getNativeTokenAmount(state, accountKey, nativeToken.ID).Cmp(nativeToken.Amount) < 0 {
 				return false
 			}
 		}
@@ -123,18 +122,18 @@ func HasEnoughForAllowance(state kv.KVStoreReader, agentID isc.AgentID, allowanc
 }
 
 // MoveBetweenAccounts moves assets between on-chain accounts
-func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID isc.AgentID, fungibleTokens *isc.FungibleTokens, nfts []iotago.NFTID) error {
+func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID isc.AgentID, assets *isc.Assets) error {
 	if fromAgentID.Equals(toAgentID) {
 		// no need to move
 		return nil
 	}
 
-	if !debitFromAccount(state, accountKey(fromAgentID), fungibleTokens) {
+	if !debitFromAccount(state, accountKey(fromAgentID), assets) {
 		return errors.New("MoveBetweenAccounts: not enough funds")
 	}
-	creditToAccount(state, accountKey(toAgentID), fungibleTokens)
+	creditToAccount(state, accountKey(toAgentID), assets)
 
-	for _, nftID := range nfts {
+	for _, nftID := range assets.NFTs {
 		nft, err := GetNFTData(state, nftID)
 		if err != nil {
 			return err
@@ -150,8 +149,8 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID isc.AgentID, f
 	return nil
 }
 
-func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID isc.AgentID, fungibleTokens *isc.FungibleTokens, nfts []iotago.NFTID) {
-	err := MoveBetweenAccounts(state, fromAgentID, toAgentID, fungibleTokens, nfts)
+func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID isc.AgentID, assets *isc.Assets) {
+	err := MoveBetweenAccounts(state, fromAgentID, toAgentID, assets)
 	if err != nil {
 		panic(err)
 	}
@@ -195,8 +194,7 @@ func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount uint64) {
 		return
 	}
 	commonAccount := ctx.ChainID().CommonAccount()
-	storageDepositAssets := isc.NewFungibleBaseTokens(amount)
-	transfer := isc.NewAllowanceFungibleTokens(storageDepositAssets)
-	ctx.TransferAllowedFunds(commonAccount, transfer)
+	storageDepositAssets := isc.NewAssetsBaseTokens(amount)
+	ctx.TransferAllowedFunds(commonAccount, storageDepositAssets)
 	DebitFromAccount(ctx.State(), commonAccount, storageDepositAssets)
 }

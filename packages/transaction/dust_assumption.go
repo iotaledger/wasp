@@ -96,7 +96,7 @@ func nativeTokenOutputStorageDeposit() uint64 {
 	o := MakeBasicOutput(
 		&addr,
 		&addr,
-		&isc.FungibleTokens{
+		&isc.Assets{
 			BaseTokens: 1,
 			NativeTokens: iotago.NativeTokens{&iotago.NativeToken{
 				ID:     iotago.NativeTokenID{},
@@ -114,7 +114,7 @@ func nftOutputStorageDeposit() uint64 {
 	basicOut := MakeBasicOutput(
 		&addr,
 		&addr,
-		&isc.FungibleTokens{
+		&isc.Assets{
 			BaseTokens: 1,
 			NativeTokens: iotago.NativeTokens{&iotago.NativeToken{
 				ID:     iotago.NativeTokenID{},

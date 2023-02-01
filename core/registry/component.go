@@ -6,7 +6,6 @@ package registry
 import (
 	"os"
 	"path"
-	"path/filepath"
 
 	"go.uber.org/dig"
 
@@ -84,8 +83,6 @@ func nodeIdentityRegistry() *registry.NodeIdentity {
 		CoreComponent.LogPanicf("could not create peer store database dir '%s': %w", ParamsP2P.Database.Path, err)
 	}
 
-	privKeyFilePath := filepath.Join(ParamsP2P.Database.Path, "identity.key")
-
 	// make sure nobody copies around the peer store since it contains the private key of the node
 	CoreComponent.LogInfof(`WARNING: never share your "%s" or "%s" folder as both contain your node's private key!`, ParamsP2P.Database.Path, path.Dir(ParamsP2P.Identity.FilePath))
 
@@ -96,9 +93,9 @@ func nodeIdentityRegistry() *registry.NodeIdentity {
 	}
 
 	if newlyCreated {
-		CoreComponent.LogInfof(`stored new private key for peer identity under "%s"`, privKeyFilePath)
+		CoreComponent.LogInfof(`stored new private key for peer identity under "%s"`, ParamsP2P.Identity.FilePath)
 	} else {
-		CoreComponent.LogInfof(`loaded existing private key for peer identity from "%s"`, privKeyFilePath)
+		CoreComponent.LogInfof(`loaded existing private key for peer identity from "%s"`, ParamsP2P.Identity.FilePath)
 	}
 
 	privKeyBytes, err := privKey.Raw()

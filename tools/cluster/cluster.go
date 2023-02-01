@@ -696,14 +696,14 @@ func (clu *Cluster) PostTransaction(tx *iotago.Transaction) error {
 	return err
 }
 
-func (clu *Cluster) AddressBalances(addr iotago.Address) *isc.FungibleTokens {
+func (clu *Cluster) AddressBalances(addr iotago.Address) *isc.Assets {
 	// get funds controlled by addr
 	outputMap, err := clu.l1.OutputMap(addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
 		return nil
 	}
-	balance := isc.NewEmptyFungibleTokens()
+	balance := isc.NewEmptyAssets()
 	for _, out := range outputMap {
 		balance.Add(transaction.AssetsFromOutput(out))
 	}
@@ -725,7 +725,7 @@ func (clu *Cluster) L1BaseTokens(addr iotago.Address) uint64 {
 	return tokens.BaseTokens
 }
 
-func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *isc.FungibleTokens) bool {
+func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *isc.Assets) bool {
 	return clu.AddressBalances(addr).Equals(expected)
 }
 

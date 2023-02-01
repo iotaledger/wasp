@@ -514,8 +514,8 @@ func getRequestsOnLedger(t *testing.T, chainAddress iotago.Address, amount int, 
 	result := make([]isc.OnLedgerRequest, amount)
 	for i := range result {
 		requestParams := isc.RequestParameters{
-			TargetAddress:  chainAddress,
-			FungibleTokens: nil,
+			TargetAddress: chainAddress,
+			Assets:        nil,
 			Metadata: &isc.SendMetadata{
 				TargetContract: isc.Hn("dummyTargetContract"),
 				EntryPoint:     isc.Hn("dummyEP"),

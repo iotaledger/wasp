@@ -38,7 +38,7 @@ func TestSerializeRequestData(t *testing.T) {
 			SenderContract: Hn("sender_contract"),
 			TargetContract: Hn("target_contract"),
 			EntryPoint:     Hn("entrypoint"),
-			Allowance:      NewAllowanceBaseTokens(1),
+			Allowance:      NewAssetsBaseTokens(1),
 			GasBudget:      1000,
 		}
 		basicOutput := &iotago.BasicOutput{

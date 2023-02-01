@@ -37,7 +37,7 @@ func viewBalanceBaseToken(ctx isc.SandboxView) dict.Dict {
 // Returns: {ParamBalance: big.Int}
 func viewBalanceNativeToken(ctx isc.SandboxView) dict.Dict {
 	nativeTokenID := ctx.Params().MustGetNativeTokenID(ParamNativeTokenID)
-	bal := getNativeTokens(
+	bal := getNativeTokenAmount(
 		ctx.StateR(),
 		accountKey(ctx.Params().MustGetAgentID(ParamAgentID)),
 		nativeTokenID,

@@ -70,13 +70,8 @@ func testBasic(t *testing.T, n, f int) {
 	gpaTC := gpa.NewTestContext(gpaNodes)
 	//
 	// Start the algorithms.
-	gpaInputs := map[gpa.NodeID]gpa.Input{}
-	for i := range gpaNodeIDs {
-		gpaInputs[gpaNodeIDs[i]] = cmtLog.NewInputStart()
-	}
-	gpaTC.WithInputs(gpaInputs)
-	gpaTC.WithInputs(gpaInputs).RunAll()
-	gpaTC.PrintAllStatusStrings("After Input", t.Logf)
+	gpaTC.RunAll()
+	gpaTC.PrintAllStatusStrings("Initial", t.Logf)
 	//
 	// Provide first alias output. Consensus should be sent now.
 	ao1 := randomAliasOutputWithID(aliasID, governor.Address(), committeeAddress)

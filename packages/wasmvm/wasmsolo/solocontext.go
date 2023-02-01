@@ -72,6 +72,7 @@ type SoloContext struct {
 	isRequest      bool
 	IsWasm         bool
 	keyPair        *cryptolib.KeyPair
+	mark           int
 	nfts           map[iotago.NFTID]*isc.NFT
 	offLedger      bool
 	scName         string
@@ -483,25 +484,28 @@ func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {
 	ctx.IsWasm = true
 }
 
-// WaitForPendingRequests waits for expectedRequests pending requests to be processed.
-// a negative value indicates the absolute amount of requests
-// The function will wait for maxWait (default 5 seconds) duration before giving up with a timeout.
-// The function returns false in case of a timeout.
+// WaitForPendingRequests waits for expectedRequests requests to be processed
+// since the last call to WaitForPendingRequestsMark().
+// The function will wait for maxWait (default 5 seconds per request) duration
+// before giving up with a timeout. The function returns false in case of a timeout.
 func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...time.Duration) bool {
-	if expectedRequests > 0 {
-		info := ctx.Chain.MempoolInfo()
-		expectedRequests += info.OutPoolCounter
-	} else {
-		expectedRequests = -expectedRequests
-	}
-
 	timeout := time.Duration(expectedRequests*5) * time.Second
 	if len(maxWait) > 0 {
 		timeout = maxWait[0]
 	}
 
-	result := ctx.Chain.WaitForRequestsThrough(expectedRequests, timeout)
-	return result
+	allDone := ctx.Chain.WaitForRequestsThrough(ctx.mark+expectedRequests, timeout)
+	if !allDone {
+		info := ctx.Chain.MempoolInfo()
+		ctx.Chain.Env.T.Logf("In: %d, out: %d, pool: %d\n", info.InPoolCounter, info.OutPoolCounter, info.TotalPool)
+	}
+	return allDone
+}
+
+// WaitForPendingRequestsMark marks the current InPoolCounter to be used by
+// a subsequent call to WaitForPendingRequests()
+func (ctx *SoloContext) WaitForPendingRequestsMark() {
+	ctx.mark = ctx.Chain.MempoolInfo().InPoolCounter
 }
 
 func (ctx *SoloContext) UpdateGasFees() {

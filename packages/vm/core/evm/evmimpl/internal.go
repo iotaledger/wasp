@@ -287,7 +287,7 @@ func (b *l2BalanceR) Sub(addr common.Address, amount *big.Int) {
 	panic("should not be called")
 }
 
-func fungibleTokensForFeeFromEthereumDecimals(feePolicy *gas.GasFeePolicy, amount *big.Int) *isc.FungibleTokens {
+func assetsForFeeFromEthereumDecimals(feePolicy *gas.GasFeePolicy, amount *big.Int) *isc.Assets {
 	decimals := uint32(0)
 	if isc.IsEmptyNativeTokenID(feePolicy.GasFeeTokenID) {
 		decimals = parameters.L1().BaseToken.Decimals
@@ -297,9 +297,9 @@ func fungibleTokensForFeeFromEthereumDecimals(feePolicy *gas.GasFeePolicy, amoun
 	amt := util.EthereumDecimalsToCustomTokenDecimals(amount, decimals)
 
 	if isc.IsEmptyNativeTokenID(feePolicy.GasFeeTokenID) {
-		return isc.NewFungibleBaseTokens(amt.Uint64())
+		return isc.NewAssetsBaseTokens(amt.Uint64())
 	}
-	return isc.NewFungibleTokens(0, iotago.NativeTokens{&iotago.NativeToken{
+	return isc.NewAssets(0, iotago.NativeTokens{&iotago.NativeToken{
 		ID:     feePolicy.GasFeeTokenID,
 		Amount: amt,
 	}})
@@ -307,13 +307,13 @@ func fungibleTokensForFeeFromEthereumDecimals(feePolicy *gas.GasFeePolicy, amoun
 
 func (b *l2Balance) Add(addr common.Address, amount *big.Int) {
 	feePolicy := b.getFeePolicy()
-	tokens := fungibleTokensForFeeFromEthereumDecimals(feePolicy, amount)
+	tokens := assetsForFeeFromEthereumDecimals(feePolicy, amount)
 	b.ctx.Privileged().CreditToAccount(isc.NewEthereumAddressAgentID(addr), tokens)
 }
 
 func (b *l2Balance) Sub(addr common.Address, amount *big.Int) {
 	feePolicy := b.getFeePolicy()
-	tokens := fungibleTokensForFeeFromEthereumDecimals(feePolicy, amount)
+	tokens := assetsForFeeFromEthereumDecimals(feePolicy, amount)
 	b.ctx.Privileged().DebitFromAccount(isc.NewEthereumAddressAgentID(addr), tokens)
 
 	// assert that remaining tokens in the sender's account are enough to pay for the gas budget

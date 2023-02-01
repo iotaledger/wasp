@@ -52,7 +52,7 @@ func (ch *Chain) CheckChain() {
 func (ch *Chain) CheckAccountLedger() {
 	total := ch.L2TotalAssets()
 	accs := ch.L2Accounts()
-	sum := isc.NewEmptyFungibleTokens()
+	sum := isc.NewEmptyAssets()
 	for i := range accs {
 		acc := accs[i]
 		sum.Add(ch.L2Assets(acc))
