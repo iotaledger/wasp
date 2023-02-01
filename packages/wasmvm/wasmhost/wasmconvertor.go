@@ -35,15 +35,14 @@ func (cvt WasmConvertor) IscAgentID(scAgentID *wasmtypes.ScAgentID) isc.AgentID 
 	return agentID
 }
 
-func (cvt WasmConvertor) IscAllowance(assets *wasmlib.ScAssets) *isc.Allowance {
-	iscAllowance := isc.NewAllowanceBaseTokens(assets.BaseTokens)
-	iscAssets := iscAllowance.Assets
+func (cvt WasmConvertor) IscAllowance(assets *wasmlib.ScAssets) *isc.Assets {
+	iscAllowance := isc.NewAssetsBaseTokens(assets.BaseTokens)
 	for tokenID, amount := range assets.NativeTokens {
 		nativeToken := &iotago.NativeToken{
 			ID:     cvt.IscTokenID(&tokenID),
 			Amount: cvt.IscBigInt(amount),
 		}
-		iscAssets.NativeTokens = append(iscAssets.NativeTokens, nativeToken)
+		iscAllowance.NativeTokens = append(iscAllowance.NativeTokens, nativeToken)
 	}
 	for nftID := range assets.NftIDs {
 		nft := cvt.IscNFTID(&nftID)
@@ -107,9 +106,9 @@ func (cvt WasmConvertor) ScAgentID(agentID isc.AgentID) wasmtypes.ScAgentID {
 	return wasmtypes.AgentIDFromBytes(buf)
 }
 
-func (cvt WasmConvertor) ScBalances(allowance *isc.Allowance) *wasmlib.ScBalances {
-	transfer := wasmlib.NewScTransferBaseTokens(allowance.Assets.BaseTokens)
-	for _, token := range allowance.Assets.NativeTokens {
+func (cvt WasmConvertor) ScBalances(allowance *isc.Assets) *wasmlib.ScBalances {
+	transfer := wasmlib.NewScTransferBaseTokens(allowance.BaseTokens)
+	for _, token := range allowance.NativeTokens {
 		tokenID := cvt.ScTokenID(token.ID)
 		transfer.Set(&tokenID, cvt.ScBigInt(token.Amount))
 	}

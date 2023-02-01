@@ -41,13 +41,13 @@ build: compile-solidity build-cli
 build-lint: build lint
 
 test-full: install
-	go test -tags $(BUILD_TAGS),runheavy ./... --timeout 60m --count 1 -failfast
+	go test -tags $(BUILD_TAGS),runheavy ./... --timeout 60m --count 1 -failfast -p 1
 
 test: install
-	go test -tags $(BUILD_TAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast $(TEST_ARG)
+	go test -tags $(BUILD_TAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast -p 1  $(TEST_ARG)
 
 test-short:
-	go test -tags $(BUILD_TAGS) --short --count 1 -failfast $(shell go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm)
+	go test -tags $(BUILD_TAGS) --short --count 1 -failfast -p 1 $(shell go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm)
 
 install-cli:
 	cd tools/wasp-cli && go mod tidy && go install -ldflags $(BUILD_LD_FLAGS)

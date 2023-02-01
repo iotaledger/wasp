@@ -64,7 +64,7 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 		SenderContract: isc.Hn("sender_contract"),
 		TargetContract: isc.Hn("target_contract"),
 		EntryPoint:     isc.Hn("entrypoint"),
-		Allowance:      isc.NewAllowanceBaseTokens(1),
+		Allowance:      isc.NewAssetsBaseTokens(1),
 		GasBudget:      1000,
 	}
 

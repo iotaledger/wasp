@@ -100,7 +100,7 @@ func TestIncWith1Post(t *testing.T) {
 
 	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter2s.Name).
 		AddBaseTokens(2 * isc.Million).
-		WithAllowance(isc.NewAllowanceBaseTokens(1 * isc.Million)).
+		WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
 		WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)

@@ -572,8 +572,8 @@ func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.Ke
 
 type L1L2AddressAssets struct {
 	Address  iotago.Address
-	AssetsL1 *isc.FungibleTokens
-	AssetsL2 *isc.FungibleTokens
+	AssetsL1 *isc.Assets
+	AssetsL2 *isc.Assets
 }
 
 func (a *L1L2AddressAssets) String() string {
@@ -598,7 +598,7 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...uint64)
 		amount = ch.Env.L1BaseTokens(walletAddr) - TransferAllowanceToGasBudgetBaseTokens
 	}
 	err := ch.TransferAllowanceTo(
-		isc.NewAllowanceBaseTokens(amount),
+		isc.NewAssetsBaseTokens(amount),
 		agentID,
 		walletKey,
 	)

@@ -361,7 +361,7 @@ func TestEstimateGas(t *testing.T) {
 				// deposit must come from another user so that we have exactly the funds we need on the test account (can't send lower than storage deposit)
 				anotherKeyPair, _ := env.NewKeyPairWithFunds()
 				err = ch.TransferAllowanceTo(
-					isc.NewAllowanceBaseTokens(testCase.L2Balance),
+					isc.NewAssetsBaseTokens(testCase.L2Balance),
 					isc.NewAgentID(addr),
 					anotherKeyPair,
 				)

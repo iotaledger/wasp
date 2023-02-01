@@ -96,6 +96,6 @@ func runTask(task *vm.VMTask) {
 }
 
 // checkTotalAssets asserts if assets on the L1 transaction equals assets on the chain's ledger
-func checkTotalAssets(_ *iotago.TransactionEssence, _ *isc.FungibleTokens) {
+func checkTotalAssets(_ *iotago.TransactionEssence, _ *isc.Assets) {
 	// TODO implement
 }

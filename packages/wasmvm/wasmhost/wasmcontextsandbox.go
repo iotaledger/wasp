@@ -163,16 +163,16 @@ func (s *WasmContextSandbox) makeRequest(args []byte) isc.RequestParameters {
 	}
 	// Force a minimum transfer of 1 million base tokens for storage deposit and some gas
 	// excess can always be reclaimed from the chain account by the user
-	if !transfer.IsEmpty() && transfer.Assets.BaseTokens < 1*isc.Million {
+	if !transfer.IsEmpty() && transfer.BaseTokens < 1*isc.Million {
 		transfer = transfer.Clone()
-		transfer.Assets.BaseTokens = 1 * isc.Million
+		transfer.BaseTokens = 1 * isc.Million
 	}
 
 	s.Tracef("POST %s.%s, chain %s", contract.String(), function.String(), chainID.String())
 	sendReq := isc.RequestParameters{
 		AdjustToMinimumStorageDeposit: true,
 		TargetAddress:                 chainID.AsAddress(),
-		FungibleTokens:                transfer.Assets,
+		Assets:                        transfer,
 		Metadata: &isc.SendMetadata{
 			TargetContract: contract,
 			EntryPoint:     function,
@@ -222,8 +222,9 @@ func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnBalances(_ []byte) []byte {
-	allowance := &isc.Allowance{}
-	allowance.Assets = s.common.BalanceFungibleTokens()
+	allowance := &isc.Assets{}
+	allowance.BaseTokens = s.common.BalanceBaseTokens()
+	allowance.NativeTokens = s.common.BalanceNativeTokens()
 	allowance.NFTs = s.common.OwnedNFTs()
 	return cvt.ScBalances(allowance).Bytes()
 }
@@ -244,7 +245,7 @@ func (s *WasmContextSandbox) fnCall(args []byte) []byte {
 	return results.Bytes()
 }
 
-func (s *WasmContextSandbox) callUnlocked(contract, function isc.Hname, params dict.Dict, transfer *isc.Allowance) dict.Dict {
+func (s *WasmContextSandbox) callUnlocked(contract, function isc.Hname, params dict.Dict, transfer *isc.Assets) dict.Dict {
 	// TODO is this really necessary? We should not be able to call in parallel
 	s.wc.proc.instanceLock.Unlock()
 	defer s.wc.proc.instanceLock.Lock()
@@ -364,13 +365,9 @@ func (s *WasmContextSandbox) fnSend(args []byte) []byte {
 		metadata := isc.RequestParameters{
 			AdjustToMinimumStorageDeposit: true,
 			TargetAddress:                 address,
-			FungibleTokens:                allowance.Assets,
+			Assets:                        allowance,
 		}
-		if len(allowance.NFTs) == 0 {
-			s.ctx.Send(metadata)
-			return nil
-		}
-		s.ctx.SendAsNFT(metadata, allowance.NFTs[0])
+		s.ctx.Send(metadata)
 	}
 	return nil
 }

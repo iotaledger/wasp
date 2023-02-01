@@ -77,7 +77,7 @@ func incCounterAndRepeatOnce(ctx isc.Sandbox) dict.Dict {
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Send(isc.RequestParameters{
 		TargetAddress:                 ctx.ChainID().AsAddress(),
-		FungibleTokens:                isc.NewFungibleTokens(allowance.Assets.BaseTokens, nil),
+		Assets:                        isc.NewAssets(allowance.BaseTokens, nil),
 		AdjustToMinimumStorageDeposit: true,
 		Metadata: &isc.SendMetadata{
 			TargetContract: ctx.Contract(),
@@ -120,13 +120,13 @@ func incCounterAndRepeatMany(ctx isc.Sandbox) dict.Dict {
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Send(isc.RequestParameters{
 		TargetAddress:                 ctx.ChainID().AsAddress(),
-		FungibleTokens:                isc.NewFungibleTokens(1000, nil),
+		Assets:                        isc.NewAssets(1000, nil),
 		AdjustToMinimumStorageDeposit: true,
 		Metadata: &isc.SendMetadata{
 			TargetContract: ctx.Contract(),
 			EntryPoint:     FuncIncAndRepeatMany.Hname(),
 			GasBudget:      math.MaxUint64,
-			Allowance:      isc.NewAllowanceBaseTokens(1000),
+			Allowance:      isc.NewAssetsBaseTokens(1000),
 		},
 		Options: isc.SendOptions{
 			Timelock: ctx.Timestamp().Add(2 * time.Second),

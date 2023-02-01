@@ -48,8 +48,8 @@ func TestSendBack(t *testing.T) {
 		UnspentOutputs:   allOuts,
 		UnspentOutputIDs: allOutIDs,
 		Request: &isc.RequestParameters{
-			TargetAddress:  ch.ChainID.AsAddress(),
-			FungibleTokens: &isc.FungibleTokens{BaseTokens: 1 * isc.Million},
+			TargetAddress: ch.ChainID.AsAddress(),
+			Assets:        &isc.Assets{BaseTokens: 1 * isc.Million},
 			Metadata: &isc.SendMetadata{
 				TargetContract: inccounter.Contract.Hname(),
 				EntryPoint:     inccounter.FuncIncCounter.Hname(),

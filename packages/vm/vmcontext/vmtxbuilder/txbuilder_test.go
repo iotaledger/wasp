@@ -30,9 +30,9 @@ func rndAliasID() (ret iotago.AliasID) {
 
 // return deposit in BaseToken
 func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTokenID, amountNative uint64, addBaseTokensToStorageDepositMinimum ...uint64) uint64 {
-	var assets *isc.FungibleTokens
+	var assets *isc.Assets
 	if amountNative > 0 {
-		assets = &isc.FungibleTokens{
+		assets = &isc.Assets{
 			BaseTokens:   0,
 			NativeTokens: iotago.NativeTokens{{ID: id, Amount: big.NewInt(int64(amountNative))}},
 		}
@@ -56,7 +56,7 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 }
 
 func addOutput(txb *AnchorTransactionBuilder, amount uint64, nativeTokenID iotago.NativeTokenID) uint64 {
-	assets := &isc.FungibleTokens{
+	assets := &isc.Assets{
 		BaseTokens: 0,
 		NativeTokens: iotago.NativeTokens{
 			&iotago.NativeToken{
@@ -70,7 +70,7 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, nativeTokenID iotag
 		isc.Hn("test"),
 		isc.RequestParameters{
 			TargetAddress:                 tpkg.RandEd25519Address(),
-			FungibleTokens:                assets,
+			Assets:                        assets,
 			Metadata:                      &isc.SendMetadata{},
 			Options:                       isc.SendOptions{},
 			AdjustToMinimumStorageDeposit: true,
@@ -615,7 +615,7 @@ func TestStorageDeposit(t *testing.T) {
 		TargetContract: 0,
 		EntryPoint:     0,
 		Params:         dict.New(),
-		Allowance:      isc.NewEmptyAllowance(),
+		Allowance:      isc.NewEmptyAssets(),
 		GasBudget:      0,
 	}
 	t.Run("calc storage deposit assumptions", func(t *testing.T) {
@@ -628,7 +628,7 @@ func TestStorageDeposit(t *testing.T) {
 		require.EqualValues(t, d.NativeTokenOutput, d1.NativeTokenOutput)
 	})
 	t.Run("adjusts the output amount to the correct storage deposit when needed", func(t *testing.T) {
-		assets := isc.NewEmptyFungibleTokens()
+		assets := isc.NewEmptyAssets()
 		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
@@ -640,7 +640,7 @@ func TestStorageDeposit(t *testing.T) {
 		require.Equal(t, out.Deposit(), expected)
 	})
 	t.Run("keeps the same amount of base tokens when enough for storage deposit cost", func(t *testing.T) {
-		assets := isc.NewFungibleTokens(10000, nil)
+		assets := isc.NewAssets(10000, nil)
 		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
@@ -740,10 +740,10 @@ func TestSerDe(t *testing.T) {
 			TargetContract: 0,
 			EntryPoint:     0,
 			Params:         dict.New(),
-			Allowance:      isc.NewEmptyAllowance(),
+			Allowance:      isc.NewEmptyAssets(),
 			GasBudget:      0,
 		}
-		assets := isc.NewEmptyFungibleTokens()
+		assets := isc.NewEmptyAssets()
 		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},

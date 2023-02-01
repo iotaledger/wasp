@@ -108,7 +108,7 @@ func test2Chains(t *testing.T, w bool) {
 		sbtestsc.ParamChainID, chain1.ChainID,
 		sbtestsc.ParamBaseTokensToWithdrawal, baseTokensToWithdrawalFromChain1).
 		AddBaseTokens(baseTokensToSend2).
-		WithAllowance(isc.NewAllowanceBaseTokens(reqAllowance)).
+		WithAllowance(isc.NewAssetsBaseTokens(reqAllowance)).
 		WithGasBudget(math.MaxUint64)
 
 	_, err = chain2.PostRequestSync(req, userWallet)

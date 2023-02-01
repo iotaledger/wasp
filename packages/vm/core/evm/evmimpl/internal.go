@@ -251,7 +251,7 @@ func getBalanceFunc(ctx isc.SandboxBase) emulator.GetBalanceFunc {
 	}
 }
 
-func fungibleTokensForFeeFromEthereumDecimals(ctx isc.SandboxBase, amount *big.Int) *isc.FungibleTokens {
+func fungibleTokensForFeeFromEthereumDecimals(ctx isc.SandboxBase, amount *big.Int) *isc.Assets {
 	decimals := uint32(0)
 	feePolicy := getFeePolicy(ctx)
 	if isc.IsEmptyNativeTokenID(feePolicy.GasFeeTokenID) {
@@ -262,9 +262,9 @@ func fungibleTokensForFeeFromEthereumDecimals(ctx isc.SandboxBase, amount *big.I
 	amt := util.EthereumDecimalsToCustomTokenDecimals(amount, decimals)
 
 	if isc.IsEmptyNativeTokenID(feePolicy.GasFeeTokenID) {
-		return isc.NewFungibleBaseTokens(amt.Uint64())
+		return isc.NewAssetsBaseTokens(amt.Uint64())
 	}
-	return isc.NewFungibleTokens(0, iotago.NativeTokens{&iotago.NativeToken{
+	return isc.NewAssets(0, iotago.NativeTokens{&iotago.NativeToken{
 		ID:     feePolicy.GasFeeTokenID,
 		Amount: amt,
 	}})

@@ -97,7 +97,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	accountsClient := e.Chain.SCClient(accounts.Contract.Hname(), keyPair)
 	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: isc.NewFungibleBaseTokens(1_000_000),
+		Transfer: isc.NewAssetsBaseTokens(1_000_000),
 	})
 	require.NoError(t, err)
 

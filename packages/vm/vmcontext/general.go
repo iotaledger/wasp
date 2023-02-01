@@ -71,10 +71,10 @@ func (vmctx *VMContext) AccountID() isc.AgentID {
 	return isc.NewContractAgentID(vmctx.ChainID(), hname)
 }
 
-func (vmctx *VMContext) AllowanceAvailable() *isc.Allowance {
+func (vmctx *VMContext) AllowanceAvailable() *isc.Assets {
 	allowance := vmctx.getCallContext().allowanceAvailable
 	if allowance == nil {
-		return isc.NewEmptyAllowance()
+		return isc.NewEmptyAssets()
 	}
 	return allowance.Clone()
 }
@@ -87,20 +87,20 @@ func (vmctx *VMContext) IsCoreAccount(agentID isc.AgentID) bool {
 	return contract.ChainID().Equals(vmctx.ChainID()) && corecontracts.IsCoreHname(contract.Hname())
 }
 
-func (vmctx *VMContext) spendAllowedBudget(toSpend *isc.Allowance) {
-	if !vmctx.getCallContext().allowanceAvailable.SpendFromBudget(toSpend) {
+func (vmctx *VMContext) spendAllowedBudget(toSpend *isc.Assets) {
+	if !vmctx.getCallContext().allowanceAvailable.Spend(toSpend) {
 		panic(accounts.ErrNotEnoughAllowance)
 	}
 }
 
 // TransferAllowedFunds transfers funds within the budget set by the Allowance() to the existing target account on chain
-func (vmctx *VMContext) TransferAllowedFunds(target isc.AgentID, transfer ...*isc.Allowance) *isc.Allowance {
+func (vmctx *VMContext) TransferAllowedFunds(target isc.AgentID, transfer ...*isc.Assets) *isc.Assets {
 	if vmctx.IsCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
 		target = vmctx.ChainID().CommonAccount()
 	}
 
-	var toMove *isc.Allowance
+	var toMove *isc.Assets
 	if len(transfer) == 0 {
 		toMove = vmctx.AllowanceAvailable()
 	} else {
@@ -116,7 +116,7 @@ func (vmctx *VMContext) TransferAllowedFunds(target isc.AgentID, transfer ...*is
 		caller = vmctx.ChainID().CommonAccount()
 	}
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		if err := accounts.MoveBetweenAccounts(s, caller, target, toMove.Assets, toMove.NFTs); err != nil {
+		if err := accounts.MoveBetweenAccounts(s, caller, target, toMove); err != nil {
 			panic(vm.ErrNotEnoughFundsForAllowance)
 		}
 	})

@@ -70,10 +70,10 @@ type VMContext struct {
 var _ execution.WaspContext = &VMContext{}
 
 type callContext struct {
-	caller             isc.AgentID    // calling agent
-	contract           isc.Hname      // called contract
-	params             isc.Params     // params passed
-	allowanceAvailable *isc.Allowance // MUTABLE: allowance budget left after TransferAllowedFunds
+	caller             isc.AgentID // calling agent
+	contract           isc.Hname   // called contract
+	params             isc.Params  // params passed
+	allowanceAvailable *isc.Assets // MUTABLE: allowance budget left after TransferAllowedFunds
 }
 
 // CreateVMContext creates a context for the whole batch run
@@ -316,7 +316,7 @@ func (vmctx *VMContext) assertConsistentL2WithL1TxBuilder(checkpoint string) {
 	if vmctx.task.AnchorOutput.StateIndex == 0 && vmctx.isInitChainRequest() {
 		return
 	}
-	var totalL2Assets *isc.FungibleTokens
+	var totalL2Assets *isc.Assets
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		totalL2Assets = accounts.GetTotalL2FungibleTokens(s)
 	})

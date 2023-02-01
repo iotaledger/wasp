@@ -65,7 +65,7 @@ func (bal *SoloBalances) dumpBalances() {
 	for _, acc := range accs {
 		l2 := ctx.Chain.L2Assets(acc)
 		addr, ok := isc.AddressFromAgentID(acc)
-		l1 := isc.NewEmptyFungibleTokens()
+		l1 := isc.NewEmptyAssets()
 		if ok {
 			l1 = ctx.Chain.Env.L1Assets(addr)
 		}
