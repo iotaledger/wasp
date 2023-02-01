@@ -248,8 +248,7 @@ func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutput
 	cmi.latestConfirmedAO = input.aliasOutput
 	msgs := gpa.NoMessages()
 	committeeAddr := input.aliasOutput.GetAliasOutput().StateController().(*iotago.Ed25519Address)
-	committeeLog, cmtMsgs, err := cmi.ensureCmtLog(*committeeAddr)
-	msgs.AddAll(cmtMsgs)
+	committeeLog, err := cmi.ensureCmtLog(*committeeAddr)
 	if errors.Is(err, ErrNotInCommittee) {
 		// >     IF this node is in the committee THEN ... ELSE
 		// >         IF LatestActiveCmt != nil THEN
@@ -469,34 +468,32 @@ func (cmi *chainMgrImpl) suspendCommittee(committeeAddr *iotago.Ed25519Address) 
 }
 
 func (cmi *chainMgrImpl) withCmtLog(committeeAddr iotago.Ed25519Address, handler func(cl gpa.GPA) gpa.OutMessages) gpa.OutMessages {
-	cli, clMsgs, err := cmi.ensureCmtLog(committeeAddr)
+	cli, err := cmi.ensureCmtLog(committeeAddr)
 	if err != nil {
 		cmi.log.Warnf("cannot find committee: %v", committeeAddr)
 		return nil
 	}
-	return gpa.NoMessages().
-		AddAll(clMsgs).
-		AddAll(cmi.handleCmtLogOutput(cli, handler(cli.gpaInstance)))
+	return gpa.NoMessages().AddAll(cmi.handleCmtLogOutput(cli, handler(cli.gpaInstance)))
 }
 
 // NOTE: ErrNotInCommittee
-func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr iotago.Ed25519Address) (*cmtLogInst, gpa.OutMessages, error) {
+func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr iotago.Ed25519Address) (*cmtLogInst, error) {
 	if cli, ok := cmi.cmtLogs[committeeAddr]; ok {
-		return cli, nil, nil
+		return cli, nil
 	}
 	//
 	// Create a committee if not created yet.
 	dkShare, err := cmi.dkShareRegistryProvider.LoadDKShare(&committeeAddr)
 	if errors.Is(err, tcrypto.ErrDKShareNotFound) {
-		return nil, nil, ErrNotInCommittee
+		return nil, ErrNotInCommittee
 	}
 	if err != nil {
-		return nil, nil, fmt.Errorf("ensureCmtLog cannot load DKShare for committeeAddress=%v: %w", committeeAddr, err)
+		return nil, fmt.Errorf("ensureCmtLog cannot load DKShare for committeeAddress=%v: %w", committeeAddr, err)
 	}
 
 	clInst, err := cmtLog.New(cmi.me, cmi.chainID, dkShare, cmi.consensusStateRegistry, cmi.nodeIDFromPubKey, cmi.log)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot create cmtLog for committeeAddress=%v: %w", committeeAddr, err)
+		return nil, fmt.Errorf("cannot create cmtLog for committeeAddress=%v: %w", committeeAddr, err)
 	}
 	clGPA := clInst.AsGPA()
 	cli := &cmtLogInst{
@@ -505,6 +502,5 @@ func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr iotago.Ed25519Address) (*cmt
 		pendingMsgs:   []gpa.Message{},
 	}
 	cmi.cmtLogs[committeeAddr] = cli
-	msgs := cmi.handleCmtLogOutput(cli, clGPA.Input(cmtLog.NewInputStart()))
-	return cli, msgs, nil
+	return cli, nil
 }
