@@ -47,13 +47,6 @@ func isEnoughQuorum(n, t int) (bool, int) {
 	return t >= (n - maxF), maxF
 }
 
-func controllerAddressStr(addr string) string {
-	if addr != "" {
-		return addr
-	}
-	return viper.GetString("address.0")
-}
-
 func controllerAddr(addr string) iotago.Address {
 	if addr == "" {
 		return wallet.Load().Address()
