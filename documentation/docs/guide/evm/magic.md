@@ -76,7 +76,7 @@ contract MyEVMContract {
         ISCDict memory params = ISCDict(new ISCDictItem[](1));
         bytes memory int64Encoded42 = hex"2A00000000000000";
         params.items[0] = ISCDictItem("counter", int64Encoded42);
-        ISCAllowance memory allowance;
+        ISCAssets memory allowance;
         ISC.sandbox.call(ISC.util.hn("inccounter"), ISC.util.hn("incCounter"), params, allowance);
     }
 }

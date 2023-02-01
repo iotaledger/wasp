@@ -120,7 +120,7 @@ func EstimateGas(ch chain.ChainCore, call ethereum.CallMsg) (uint64, error) {
 		}
 		if failed {
 			if hi == maximumPossibleGas {
-				return 0, fmt.Errorf("request might require more gas than it is allowed by the VM (%d)", gasCap)
+				return 0, fmt.Errorf("request might require more gas than it is allowed by the VM, or will never succeed (%d)", gasCap)
 			}
 			// the specified gas cap is too low
 			return 0, fmt.Errorf("gas required exceeds allowance (%d)", gasCap)

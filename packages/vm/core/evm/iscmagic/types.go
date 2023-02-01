@@ -236,16 +236,16 @@ type IRC27NFT struct {
 	Metadata IRC27NFTMetadata
 }
 
-// ISCAllowance matches the struct definition in ISCTypes.sol
-type ISCAllowance struct {
+// ISCAssets matches the struct definition in ISCTypes.sol
+type ISCAssets struct {
 	BaseTokens   uint64
 	NativeTokens []NativeToken
 	Nfts         []NFTID
 }
 
-func WrapISCAllowance(a *isc.Assets) ISCAllowance {
+func WrapISCAssets(a *isc.Assets) ISCAssets {
 	if a == nil {
-		return WrapISCAllowance(isc.NewEmptyAssets())
+		return WrapISCAssets(isc.NewEmptyAssets())
 	}
 	tokens := make([]NativeToken, len(a.NativeTokens))
 	for i, nativeToken := range a.NativeTokens {
@@ -255,14 +255,14 @@ func WrapISCAllowance(a *isc.Assets) ISCAllowance {
 	for i, id := range a.NFTs {
 		nfts[i] = WrapNFTID(id)
 	}
-	return ISCAllowance{
+	return ISCAssets{
 		BaseTokens:   a.BaseTokens,
 		NativeTokens: tokens,
 		Nfts:         nfts,
 	}
 }
 
-func (a ISCAllowance) Unwrap() *isc.Assets {
+func (a ISCAssets) Unwrap() *isc.Assets {
 	tokens := make(iotago.NativeTokens, len(a.NativeTokens))
 	for i, nativeToken := range a.NativeTokens {
 		tokens[i] = nativeToken.Unwrap()
@@ -301,48 +301,11 @@ func (d ISCDict) Unwrap() dict.Dict {
 	return ret
 }
 
-type ISCFungibleTokens struct {
-	BaseTokens   uint64
-	NativeTokens []NativeToken
-}
-
-func WrapISCFungibleTokens(fungibleTokens isc.Assets) ISCFungibleTokens {
-	ret := ISCFungibleTokens{
-		BaseTokens:   fungibleTokens.BaseTokens,
-		NativeTokens: make([]NativeToken, len(fungibleTokens.NativeTokens)),
-	}
-
-	for i, nativeToken := range fungibleTokens.NativeTokens {
-		ret.NativeTokens[i].ID = WrapNativeTokenID(nativeToken.ID)
-		ret.NativeTokens[i].Amount = nativeToken.Amount
-	}
-
-	return ret
-}
-
-func (t ISCFungibleTokens) Unwrap() *isc.Assets {
-	ret := isc.Assets{
-		BaseTokens:   t.BaseTokens,
-		NativeTokens: make(iotago.NativeTokens, len(t.NativeTokens)),
-	}
-
-	for i, nativeToken := range t.NativeTokens {
-		nativeToken := iotago.NativeToken{
-			ID:     nativeToken.ID.Unwrap(),
-			Amount: nativeToken.Amount,
-		}
-
-		ret.NativeTokens[i] = &nativeToken
-	}
-
-	return &ret
-}
-
 type ISCSendMetadata struct {
 	TargetContract uint32
 	Entrypoint     uint32
 	Params         ISCDict
-	Allowance      ISCAllowance
+	Allowance      ISCAssets
 	GasBudget      uint64
 }
 
@@ -351,7 +314,7 @@ func WrapISCSendMetadata(metadata isc.SendMetadata) ISCSendMetadata {
 		GasBudget:      metadata.GasBudget,
 		Entrypoint:     uint32(metadata.EntryPoint),
 		TargetContract: uint32(metadata.TargetContract),
-		Allowance:      WrapISCAllowance(metadata.Allowance),
+		Allowance:      WrapISCAssets(metadata.Allowance),
 		Params:         WrapISCDict(metadata.Params),
 	}
 

@@ -11,6 +11,7 @@ import (
 )
 
 // CreditToAccount brings new funds to the on chain ledger
+// NOTE: this function does not take NFTs into account
 func CreditToAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Assets) {
 	if assets == nil || assets.IsEmpty() {
 		return
@@ -21,6 +22,7 @@ func CreditToAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Assets) 
 }
 
 // creditToAccount adds assets to the internal account map
+// NOTE: this function does not take NFTs into account
 func creditToAccount(state kv.KVStore, accountKey kv.Key, assets *isc.Assets) {
 	if assets == nil || assets.IsEmpty() {
 		return
@@ -46,6 +48,7 @@ func creditToAccount(state kv.KVStore, accountKey kv.Key, assets *isc.Assets) {
 }
 
 // DebitFromAccount takes out assets balance the on chain ledger. If not enough it panics
+// NOTE: this function does not take NFTs into account
 func DebitFromAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Assets) {
 	if assets == nil || assets.IsEmpty() {
 		return
@@ -60,6 +63,7 @@ func DebitFromAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Assets)
 }
 
 // debitFromAccount debits assets from the internal accounts map
+// NOTE: this function does not take NFTs into account
 func debitFromAccount(state kv.KVStore, accountKey kv.Key, assets *isc.Assets) bool {
 	if assets == nil || assets.IsEmpty() {
 		return true

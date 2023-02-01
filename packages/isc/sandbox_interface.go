@@ -108,8 +108,6 @@ type Sandbox interface {
 	TransferAllowedFunds(target AgentID, transfer ...*Assets) *Assets
 	// Send sends an on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
-	// SendAsNFT sends an on-ledger request as an NFTOutput
-	SendAsNFT(metadata RequestParameters, nftID iotago.NFTID)
 	// EstimateRequiredStorageDeposit returns the amount of base tokens needed to cover for a given request's storage deposit
 	EstimateRequiredStorageDeposit(r RequestParameters) uint64
 	// StateAnchor properties of the anchor output

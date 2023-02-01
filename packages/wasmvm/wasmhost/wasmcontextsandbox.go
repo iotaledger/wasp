@@ -367,11 +367,7 @@ func (s *WasmContextSandbox) fnSend(args []byte) []byte {
 			TargetAddress:                 address,
 			Assets:                        allowance,
 		}
-		if len(allowance.NFTs) == 0 {
-			s.ctx.Send(metadata)
-			return nil
-		}
-		s.ctx.SendAsNFT(metadata, allowance.NFTs[0])
+		s.ctx.Send(metadata)
 	}
 	return nil
 }

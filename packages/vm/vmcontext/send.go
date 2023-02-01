@@ -17,20 +17,24 @@ func (vmctx *VMContext) getNFTData(nftID iotago.NFTID) *isc.NFT {
 	return nft
 }
 
-func (vmctx *VMContext) SendAsNFT(par isc.RequestParameters, nftID iotago.NFTID) {
-	nft := vmctx.getNFTData(nftID)
-	out := transaction.NFTOutputFromPostData(
-		vmctx.task.AnchorOutput.AliasID.ToAddress(),
-		vmctx.CurrentContractHname(),
-		par,
-		nft,
-	)
-	vmctx.debitNFTFromAccount(vmctx.AccountID(), nftID)
-	vmctx.sendOutput(out)
-}
-
 // Send implements sandbox function of sending cross-chain request
 func (vmctx *VMContext) Send(par isc.RequestParameters) {
+	if len(par.Assets.NFTs) > 1 {
+		panic(vm.ErrSendMultipleNFTs)
+	}
+	if len(par.Assets.NFTs) == 1 {
+		// create NFT output
+		nft := vmctx.getNFTData(par.Assets.NFTs[0])
+		out := transaction.NFTOutputFromPostData(
+			vmctx.task.AnchorOutput.AliasID.ToAddress(),
+			vmctx.CurrentContractHname(),
+			par,
+			nft,
+		)
+		vmctx.debitNFTFromAccount(vmctx.AccountID(), nft.ID)
+		vmctx.sendOutput(out)
+		return
+	}
 	// create extended output
 	out := transaction.BasicOutputFromPostData(
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),

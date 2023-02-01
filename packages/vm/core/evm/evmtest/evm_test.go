@@ -447,12 +447,12 @@ func TestSendBaseTokens(t *testing.T) {
 		[]ethCallOptions{{sender: ethKey}},
 		"allow",
 		iscTest.address,
-		iscmagic.WrapISCAllowance(isc.NewAssetsBaseTokens(transfer)),
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(transfer)),
 	)
 	require.NoError(t, err)
 
 	getAllowanceTo := func(target common.Address) *isc.Assets {
-		var ret struct{ Allowance iscmagic.ISCAllowance }
+		var ret struct{ Allowance iscmagic.ISCAssets }
 		env.ISCMagicSandbox(ethKey).callView("getAllowanceTo", []interface{}{target}, &ret)
 		return ret.Allowance.Unwrap()
 	}
@@ -471,7 +471,7 @@ func TestSendBaseTokens(t *testing.T) {
 	require.True(t, getAllowanceTo(iscTest.address).IsEmpty())
 }
 
-func TestSendAsNFT(t *testing.T) {
+func TestSendNFT(t *testing.T) {
 	env := initEVM(t)
 	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
 	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
@@ -489,7 +489,7 @@ func TestSendAsNFT(t *testing.T) {
 		[]ethCallOptions{{sender: ethKey}},
 		"allow",
 		iscTest.address,
-		iscmagic.WrapISCAllowance(isc.NewAssets(
+		iscmagic.WrapISCAssets(isc.NewAssets(
 			storageDeposit,
 			nil,
 			nft.ID,
@@ -499,7 +499,7 @@ func TestSendAsNFT(t *testing.T) {
 
 	// send to receiver on L1
 	_, receiver := env.solo.NewKeyPair()
-	_, err = iscTest.callFn(nil, "sendAsNFT",
+	_, err = iscTest.callFn(nil, "sendNFT",
 		iscmagic.WrapL1Address(receiver),
 		iscmagic.WrapNFTID(nft.ID),
 		storageDeposit,
@@ -772,7 +772,7 @@ func TestEVMContractOwnsFundsL2Transfer(t *testing.T) {
 		nil,
 		"moveToAccount",
 		iscmagic.WrapISCAgentID(randAgentID),
-		iscmagic.WrapISCAllowance(allowance),
+		iscmagic.WrapISCAssets(allowance),
 	)
 	require.NoError(t, err)
 
@@ -820,7 +820,7 @@ func TestISCSendWithArgs(t *testing.T) {
 		nil,
 		"send",
 		iscmagic.WrapL1Address(env.soloChain.ChainID.AsAddress()),
-		iscmagic.WrapISCFungibleTokens(*isc.NewAssetsBaseTokens(sendBaseTokens)),
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(sendBaseTokens)),
 		false, // auto adjust SD
 		iscmagic.WrapISCSendMetadata(isc.SendMetadata{
 			TargetContract: inccounter.Contract.Hname(),
@@ -1143,7 +1143,7 @@ func TestEVMWithdrawAll(t *testing.T) {
 		}},
 		"send",
 		iscmagic.WrapL1Address(receiver),
-		iscmagic.WrapISCFungibleTokens(*isc.NewAssetsBaseTokens(tokensToWithdraw)),
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(tokensToWithdraw)),
 		false,
 		metadata,
 		iscmagic.ISCSendOptions{},
@@ -1162,7 +1162,7 @@ func TestEVMWithdrawAll(t *testing.T) {
 		[]ethCallOptions{{sender: ethKey}},
 		"send",
 		iscmagic.WrapL1Address(receiver),
-		iscmagic.WrapISCFungibleTokens(*isc.NewAssetsBaseTokens(tokensToWithdraw)),
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(tokensToWithdraw)),
 		false,
 		metadata,
 		iscmagic.ISCSendOptions{},

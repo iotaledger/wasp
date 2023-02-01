@@ -110,13 +110,13 @@ func sendNFTsBack(ctx isc.Sandbox) dict.Dict {
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	for _, nftID := range allowance.NFTs {
-		ctx.SendAsNFT(isc.RequestParameters{
+		ctx.Send(isc.RequestParameters{
 			TargetAddress:                 addr,
-			Assets:                        &isc.Assets{},
+			Assets:                        isc.NewEmptyAssets().AddNFTs(nftID),
 			AdjustToMinimumStorageDeposit: true,
 			Metadata:                      &isc.SendMetadata{},
 			Options:                       isc.SendOptions{},
-		}, nftID)
+		})
 	}
 	return nil
 }

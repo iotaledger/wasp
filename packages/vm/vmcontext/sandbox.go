@@ -75,11 +75,6 @@ func (s *contractSandbox) Send(par isc.RequestParameters) {
 	s.Ctx.(*VMContext).Send(par)
 }
 
-func (s *contractSandbox) SendAsNFT(par isc.RequestParameters, nftID iotago.NFTID) {
-	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeSendL1Request, uint64(s.Ctx.(*VMContext).NumPostedOutputs))
-	s.Ctx.(*VMContext).SendAsNFT(par, nftID)
-}
-
 func (s *contractSandbox) EstimateRequiredStorageDeposit(par isc.RequestParameters) uint64 {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeEstimateStorageDepositCost)
 	return s.Ctx.(*VMContext).EstimateRequiredStorageDeposit(par)

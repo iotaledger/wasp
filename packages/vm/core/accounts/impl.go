@@ -100,12 +100,10 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 	// before saving the allowance budget because after the transfer it is mutated
 	allowance := ctx.AllowanceAvailable()
 	fundsToWithdraw := allowance
-	var nftID *iotago.NFTID
 	if len(allowance.NFTs) > 0 {
 		if len(allowance.NFTs) > 1 {
 			panic(ErrTooManyNFTsInAllowance)
 		}
-		nftID = &allowance.NFTs[0]
 	}
 	remains := ctx.TransferAllowedFunds(ctx.AccountID())
 
@@ -128,11 +126,7 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 			},
 		}
 
-		if nftID != nil {
-			ctx.SendAsNFT(tx, *nftID)
-		} else {
-			ctx.Send(tx)
-		}
+		ctx.Send(tx)
 		ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.AllowanceAvailable().String())
 		return nil
 	}
@@ -140,11 +134,7 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 		TargetAddress: callerAddress,
 		Assets:        fundsToWithdraw,
 	}
-	if nftID != nil {
-		ctx.SendAsNFT(tx, *nftID)
-	} else {
-		ctx.Send(tx)
-	}
+	ctx.Send(tx)
 	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.AllowanceAvailable().String())
 	return nil
 }
