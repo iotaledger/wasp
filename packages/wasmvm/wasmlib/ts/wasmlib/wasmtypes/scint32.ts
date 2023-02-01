@@ -1,11 +1,11 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+export const ScInt32Length = 4;
+
 import {panic} from '../sandbox';
 import {intFromString, WasmDecoder, WasmEncoder} from './codec';
 import {Proxy} from './proxy';
-
-export const ScInt32Length = 4;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
