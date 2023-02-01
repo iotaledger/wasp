@@ -65,8 +65,8 @@ func TestSynchronous(t *testing.T) {
 		require.NoError(t, ctx.Err)
 		require.EqualValues(t, sum, v.Results.Counter().Value())
 
-		//require.EqualValues(t, sum, ctx.Balance(ctx.Account()))
-		//chainAccountBalances(ctx, w, 2, uint64(2+sum))
+		// require.EqualValues(t, sum, ctx.Balance(ctx.Account()))
+		// chainAccountBalances(ctx, w, 2, uint64(2+sum))
 	})
 }
 
@@ -114,8 +114,8 @@ func TestConcurrency(t *testing.T) {
 		require.NoError(t, ctx.Err)
 		require.EqualValues(t, sum, v.Results.Counter().Value())
 
-		//require.EqualValues(t, sum, ctx.Balance(ctx.Account()))
-		//chainAccountBalances(ctx, w, 2, uint64(2+sum))
+		// require.EqualValues(t, sum, ctx.Balance(ctx.Account()))
+		// chainAccountBalances(ctx, w, 2, uint64(2+sum))
 	})
 }
 
@@ -170,9 +170,9 @@ func TestConcurrency2(t *testing.T) {
 		//	require.EqualValues(t, 0, ctx.Balance(user))
 		//}
 
-		//require.EqualValues(t, sum, ctx.Balance(ctx.Account()))
-		//require.EqualValues(t, sum, ctx.Balance(ctx.Account()))
-		//chainAccountBalances(ctx, w, 2, uint64(2+sum))
+		// require.EqualValues(t, sum, ctx.Balance(ctx.Account()))
+		// require.EqualValues(t, sum, ctx.Balance(ctx.Account()))
+		// chainAccountBalances(ctx, w, 2, uint64(2+sum))
 	})
 }
 

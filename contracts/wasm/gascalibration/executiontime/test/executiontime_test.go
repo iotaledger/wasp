@@ -48,7 +48,7 @@ func TestCallF(t *testing.T) {
 	}
 	t.Logf("Running %s version of %s", contractVersion, t.Name())
 
-	_ = os.MkdirAll("../pkg", 0755)
+	_ = os.MkdirAll("../pkg", 0o755)
 	filePath := "../pkg/executiontime_" + contractVersion + ".json"
 	gascalibration.SaveTestResultAsJSON(filePath, results)
 }

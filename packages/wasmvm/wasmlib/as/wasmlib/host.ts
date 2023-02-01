@@ -1,6 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+import {panic} from './sandbox';
+
 export interface ScHost {
     exportName(index: i32, name: string): void;
 
@@ -15,7 +17,40 @@ export interface ScHost {
     stateSet(key: Uint8Array, value: Uint8Array): void;
 }
 
-let host: ScHost;
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+class NullVmHost implements ScHost {
+    exportName(index: i32, name: string): void {
+        panic('NullVmHost::exportName');
+    }
+
+    sandbox(funcNr: i32, params: Uint8Array | null): Uint8Array {
+        panic('NullVmHost::sandbox');
+        return new Uint8Array(0);
+    }
+
+    stateDelete(key: Uint8Array): void {
+        panic('NullVmHost::stateDelete');
+    }
+
+    stateExists(key: Uint8Array): bool {
+        panic('NullVmHost::stateExists');
+        return false;
+    }
+
+    stateGet(key: Uint8Array): Uint8Array | null {
+        panic('NullVmHost::stateGet');
+        return null;
+    }
+
+    stateSet(key: Uint8Array, value: Uint8Array): void {
+        panic('NullVmHost::stateSet');
+    }
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+let host: ScHost = new NullVmHost();
 
 export function connectHost(h: ScHost): ScHost {
     const oldHost = host;
