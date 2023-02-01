@@ -25,9 +25,15 @@ func TestDeploy(t *testing.T) {
 
 func TestBets(t *testing.T) {
 	ctx := setupTest(t)
+
 	var better [10]*wasmsolo.SoloAgent
-	for i := 0; i < 10; i++ {
+	for i := 0; i < len(better); i++ {
 		better[i] = ctx.NewSoloAgent()
+	}
+
+	ctx.WaitForPendingRequestsMark()
+
+	for i := 0; i < len(better); i++ {
 		placeBet := fairroulette.ScFuncs.PlaceBet(ctx.Sign(better[i]))
 		placeBet.Params.Number().SetValue(3)
 		placeBet.Func.TransferBaseTokens(1234).Post()
@@ -36,5 +42,5 @@ func TestBets(t *testing.T) {
 
 	// wait for finalize_auction
 	ctx.AdvanceClockBy(1201 * time.Second)
-	require.True(t, ctx.WaitForPendingRequests(1))
+	require.True(t, ctx.WaitForPendingRequests(len(better)+1))
 }

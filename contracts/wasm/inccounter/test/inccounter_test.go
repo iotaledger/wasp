@@ -94,12 +94,14 @@ func TestIncrementTwice(t *testing.T) {
 func TestIncrementRepeatOnce(t *testing.T) {
 	ctx := setupTest(t)
 
+	ctx.WaitForPendingRequestsMark()
+
 	repeatMany := inccounter.ScFuncs.RepeatMany(ctx)
 	repeatMany.Params.NumRepeats().SetValue(1)
 	repeatMany.Func.Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.WaitForPendingRequests(1))
+	require.True(t, ctx.WaitForPendingRequests(2))
 
 	checkStateCounter(t, ctx, 2)
 }
@@ -107,12 +109,14 @@ func TestIncrementRepeatOnce(t *testing.T) {
 func TestIncrementRepeatThrice(t *testing.T) {
 	ctx := setupTest(t)
 
+	ctx.WaitForPendingRequestsMark()
+
 	repeatMany := inccounter.ScFuncs.RepeatMany(ctx)
 	repeatMany.Params.NumRepeats().SetValue(3)
 	repeatMany.Func.Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.WaitForPendingRequests(3))
+	require.True(t, ctx.WaitForPendingRequests(4))
 
 	checkStateCounter(t, ctx, 4)
 }
@@ -140,11 +144,13 @@ func TestIncrementCallIncrementRecurse5x(t *testing.T) {
 func TestIncrementPostIncrement(t *testing.T) {
 	ctx := setupTest(t)
 
+	ctx.WaitForPendingRequestsMark()
+
 	postIncrement := inccounter.ScFuncs.PostIncrement(ctx)
 	postIncrement.Func.Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.WaitForPendingRequests(1))
+	require.True(t, ctx.WaitForPendingRequests(2))
 
 	checkStateCounter(t, ctx, 2)
 }
@@ -180,11 +186,13 @@ func TestIncrementLocalStateSandboxCall(t *testing.T) {
 func TestIncrementLocalStatePost(t *testing.T) {
 	ctx := setupTest(t)
 
+	ctx.WaitForPendingRequestsMark()
+
 	localStatePost := inccounter.ScFuncs.LocalStatePost(ctx)
 	localStatePost.Func.Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.WaitForPendingRequests(3))
+	require.True(t, ctx.WaitForPendingRequests(4))
 
 	if ctx.IsWasm {
 		// global var in wasm execution has no effect
