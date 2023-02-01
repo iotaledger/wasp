@@ -93,8 +93,6 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 
 	chainID := evmtypes.MustDecodeChainID(ctx.Params().MustGet(evm.FieldChainID), evm.DefaultChainID)
 
-	feePolicy := getFeePolicy(ctx)
-
 	emulator.Init(
 		evmStateSubrealm(ctx.State()),
 		chainID,
@@ -102,9 +100,7 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 		gasLimit,
 		timestamp(ctx),
 		genesisAlloc,
-		getBalanceFunc(ctx, feePolicy),
-		getSubBalanceFunc(ctx, feePolicy),
-		getAddBalanceFunc(ctx, feePolicy),
+		newL2Balance(ctx),
 	)
 
 	// storing hname as a terminal value of the contract's state nil key.
@@ -182,7 +178,7 @@ func registerERC20NativeToken(ctx isc.Sandbox) dict.Dict {
 
 	// deploy the contract to the EVM state
 	addr := iscmagic.ERC20NativeTokensAddress(foundrySN)
-	emu := createEmulator(ctx)
+	emu := getBlockContext(ctx).emu
 	evmState := emu.StateDB()
 	ctx.Requiref(!evmState.Exist(addr), "cannot register ERC20NativeTokens contract: EVM account already exists")
 	evmState.CreateAccount(addr)
@@ -216,7 +212,7 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 
 	// deploy the contract to the EVM state
 	addr := iscmagic.ERC721NFTCollectionAddress(collectionID)
-	emu := createEmulator(ctx)
+	emu := getBlockContext(ctx).emu
 	evmState := emu.StateDB()
 	ctx.Requiref(!evmState.Exist(addr), "cannot register ERC721NFTCollection contract: EVM account already exists")
 	evmState.CreateAccount(addr)
@@ -360,7 +356,7 @@ func estimateGas(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err)
 	ctx.RequireCaller(isc.NewEthereumAddressAgentID(callMsg.From))
 
-	emu := createEmulator(ctx)
+	emu := getBlockContext(ctx).emu
 
 	res, err := emu.CallContract(callMsg, ctx.Privileged().GasBurnEnable)
 	ctx.RequireNoError(err)
