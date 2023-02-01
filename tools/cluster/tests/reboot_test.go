@@ -298,10 +298,8 @@ func TestRebootDuringTasks(t *testing.T) {
 		Args: map[kv.Key][]byte{
 			accounts.ParamAgentID: targetAgentID.Bytes(),
 		},
-		Allowance: &isc.Allowance{
-			Assets: &isc.FungibleTokens{
-				BaseTokens: 5000,
-			},
+		Allowance: &isc.Assets{
+			BaseTokens: 5000,
 		},
 	})
 	require.NoError(t, err)
