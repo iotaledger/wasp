@@ -23,7 +23,6 @@ packges/vm/wasmlib
 schema
 snapshot
 tools
-!tools/wasp-cli
 wal
 wasp
 wasp-cli

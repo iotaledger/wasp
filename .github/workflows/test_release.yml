@@ -1,0 +1,53 @@
+name: Test wasp-cli Release
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'contracts/**'
+      - 'documentation/**'
+      - 'scripts/**'
+
+jobs:
+  setup:
+    name: Setup repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v3
+
+      - name: Install solc
+        run: |
+          sudo add-apt-repository ppa:ethereum/ethereum
+          sudo apt update
+          sudo apt install -y solc
+
+      - name: Compile solidity contracts
+        run: make compile-solidity
+
+      - name: Tar temporary artifacts
+        run: tar --exclude='temp.tar' -cf temp.tar ./
+      
+      - name: Upload temporary artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: wasp
+          path: temp.tar
+          retention-days: 1
+
+  test-release:
+    needs: setup
+    name: Test wasp-cli Release
+    runs-on: ubuntu-latest
+    container:
+      image: iotaledger/goreleaser-cgo-cross-compiler:1.19.4
+    steps:
+      - name: Download temporary artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: wasp
+      
+      - name: Untar temporary artifacts and cleanup
+        run: tar -xf temp.tar && rm temp.tar
+      
+      - name: Test wasp-cli Release
+        run: goreleaser --snapshot --skip-publish --rm-dist -f ./tools/wasp-cli/.goreleaser.yml

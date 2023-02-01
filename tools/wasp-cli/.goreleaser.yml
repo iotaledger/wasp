@@ -1,43 +1,87 @@
-# Documentation: http://goreleaser.com
+# Documentation at http://goreleaser.com
 
+# Project name
 project_name: wasp-cli
 
-before:
-  hooks:
-    - go mod download
-
+# Builds
 builds:
-  - id: wasp-cli
-    main: ./main.go
+  # Linux AMD64
+  - id: wasp-cli-linux-amd64
     binary: wasp-cli
+    ldflags:
+      - -s -w -X=github.com/iotaledger/wasp/core/app.Version={{ .Summary }}
+    main: main.go
+    dir: ./tools/wasp-cli
     goos:
       - linux
     goarch:
       - amd64
 
+  # Linux ARM64
+  - id: wasp-cli-linux-arm64
+    binary: wasp-cli
+    env:
+      - CGO_ENABLED=1
+      - CC=aarch64-linux-gnu-gcc
+      - CXX=aarch64-linux-gnu-g++
+    ldflags:
+      - -s -w -X=github.com/iotaledger/wasp/core/app.Version={{ .Summary }}
+    main: main.go
+    dir: ./tools/wasp-cli
+    goos:
+      - linux
+    goarch:
+      - arm64
+
+  # Windows AMD64
+  - id: wasp-cli-windows-amd64
+    binary: wasp-cli
+    env:
+      - CGO_ENABLED=1
+      - CC=/usr/bin/x86_64-w64-mingw32-gcc-posix
+      - CXX=/usr/bin/x86_64-w64-mingw32-g++-posix
+    ldflags:
+      - -s -w -X=github.com/iotaledger/wasp/core/app.Version={{ .Summary }}
+    main: main.go
+    dir: ./tools/wasp-cli
+    goos:
+      - windows
+    goarch:
+      - amd64
+
+# Archives
 archives:
-  - id: wasp-cli
-    name_template: "wasp-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    builds:
-      - wasp-cli
-    replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      amd64: x86_64
+  - format: tar.gz
+    wrap_in_directory: true
     format_overrides:
       - goos: windows
         format: zip
-    wrap_in_directory: true
+    name_template: "wasp-cli_{{.Version}}_{{.Os}}_{{.Arch}}"
+    replacements:
+      amd64: x86_64
+      arm64: ARM64
+      darwin: macOS
+      linux: Linux
+      windows: Windows
     files:
       - README.md
+      - LICENSE
 
+# Checksum
+checksum:
+  name_template: "checksums.txt"
+
+# Snapshot
+snapshot:
+  name_template: "{{ .Tag }}"
+
+# Changelog
 changelog:
   skip: true
 
+# Release
 release:
   prerelease: auto
-  name_template: "{{.ProjectName}}-{{.Version}}"
   github:
     owner: iotaledger
     name: wasp

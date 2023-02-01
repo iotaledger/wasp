@@ -207,8 +207,6 @@ func (cl *cmtLogImpl) AsGPA() gpa.GPA {
 // Implements the gpa.GPA interface.
 func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
 	switch input := input.(type) {
-	case *inputStart:
-		return cl.handleInputStart()
 	case *inputAliasOutputConfirmed:
 		return cl.handleInputAliasOutputConfirmed(input)
 	case *inputAliasOutputRejected:
@@ -233,17 +231,6 @@ func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 		return nil
 	}
 	return cl.handleMsgNextLogIndex(msgNLI)
-}
-
-// > ON Startup:
-// >     ...
-// >     LogIndex.Start(prevLI)
-// >     TryProposeConsensus()
-func (cl *cmtLogImpl) handleInputStart() gpa.OutMessages {
-	// msgs := cl.varLogIndex.StartReceived() // TODO: Remove this function and related calls.
-	// cl.tryProposeConsensus()
-	// return msgs
-	return nil
 }
 
 // > UPON AliasOutput (AO) {Confirmed | Rejected} by L1:

@@ -33,7 +33,6 @@ import (
 	libp2ppeer "github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/peerstore"
 	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
-	libp2pquic "github.com/libp2p/go-libp2p/p2p/transport/quic"
 	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/multiformats/go-multiaddr"
 
@@ -61,7 +60,7 @@ type netImpl struct {
 	ctx         context.Context         // Context for the libp2p
 	ctxCancel   context.CancelFunc      // A way to close the context.
 	peers       map[libp2ppeer.ID]*peer // By remotePeer.ID()
-	peersLock   *sync.Mutex
+	peersLock   *sync.RWMutex
 	recvEvents  *events.Event // Used to publish events to all attached clients.
 	nodeKeyPair *cryptolib.KeyPair
 	trusted     peering.TrustedNetworkManager
@@ -90,13 +89,10 @@ func NewNetworkProvider(
 	lppHost, err := libp2p.New(
 		libp2p.Identity(privKey),
 		libp2p.ListenAddrStrings(
-			fmt.Sprintf("/ip4/0.0.0.0/udp/%v/quic", port),
-			fmt.Sprintf("/ip6/::1/udp/%v/quic", port),
 			fmt.Sprintf("/ip4/0.0.0.0/tcp/%v", port),
 			fmt.Sprintf("/ip6/::1/tcp/%v", port),
 		),
 		libp2p.Transport(tcp.NewTCPTransport),
-		libp2p.Transport(libp2pquic.NewTransport),
 		libp2p.Security(libp2ptls.ID, libp2ptls.New),
 	)
 	if err != nil {
@@ -110,7 +106,7 @@ func NewNetworkProvider(
 		ctxCancel:   ctxCancel,
 		port:        port,
 		peers:       make(map[libp2ppeer.ID]*peer),
-		peersLock:   &sync.Mutex{},
+		peersLock:   &sync.RWMutex{},
 		recvEvents:  nil, // Initialized bellow.
 		nodeKeyPair: nodeKeyPair,
 		trusted:     trusted,
@@ -197,7 +193,9 @@ func (n *netImpl) lppTrustedPeerID(trustedPeer *peering.TrustedPeer) (libp2ppeer
 // Handles the incoming messages from the network.
 func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 	defer stream.Close()
+	n.peersLock.RLock()
 	remotePeer, ok := n.peers[stream.Conn().RemotePeer()]
+	n.peersLock.RUnlock()
 	if !ok {
 		n.log.Warnf("Dropping incoming message from unknown peer: %v", stream.Conn().RemotePeer())
 		return
@@ -221,7 +219,9 @@ func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 
 func (n *netImpl) lppHeartbeatProtocolHandler(stream network.Stream) {
 	defer stream.Close()
+	n.peersLock.RLock()
 	remotePeer, ok := n.peers[stream.Conn().RemotePeer()]
+	n.peersLock.RUnlock()
 	if !ok {
 		n.log.Warnf("Dropping incoming heartbeat from unknown peer: %v", stream.Conn().RemotePeer())
 		return
@@ -378,8 +378,8 @@ func (n *netImpl) PeerByPubKey(peerPubKey *cryptolib.PublicKey) (peering.PeerSen
 
 // PeerStatus implements peering.NetworkProvider.
 func (n *netImpl) PeerStatus() []peering.PeerStatusProvider {
-	n.peersLock.Lock()
-	defer n.peersLock.Unlock()
+	n.peersLock.RLock()
+	defer n.peersLock.RUnlock()
 	peerStatus := make([]peering.PeerStatusProvider, 0)
 	for i := range n.peers {
 		peerStatus = append(peerStatus, n.peers[i])
