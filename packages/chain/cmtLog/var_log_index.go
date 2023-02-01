@@ -12,9 +12,10 @@ import (
 
 type VarLogIndex interface {
 	Value() (LogIndex, *isc.AliasOutputWithID)
-	// StartReceived() gpa.OutMessages // TODO: Add the BaseAO parameter, or maybe it is enough to have the L1ReplacedBaseAliasOutput?
 	ConsensusOutputReceived(consensusLI LogIndex, nextBaseAO *isc.AliasOutputWithID) gpa.OutMessages
 	ConsensusTimeoutReceived(consensusLI LogIndex) gpa.OutMessages
+	// This might get a nil alias output in the case when a TX gets rejected and
+	// it was not the latest TX in the active chain.
 	L1ReplacedBaseAliasOutput(nextBaseAO *isc.AliasOutputWithID) gpa.OutMessages
 	MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutMessages
 }
@@ -61,7 +62,7 @@ type varLogIndexImpl struct {
 	logIndex   LogIndex
 	sentNextLI LogIndex                        // LogIndex for which the MsgNextLogIndex was sent.
 	maxPeerLIs map[gpa.NodeID]*msgNextLogIndex // Latest peer indexes received from peers.
-	latestAO   *isc.AliasOutputWithID          // TODO: ...
+	latestAO   *isc.AliasOutputWithID          // Latest known AO, as reported by the varLocalView, can be nil.
 	log        *logger.Logger
 }
 
@@ -87,13 +88,6 @@ func NewVarLogIndex(
 func (v *varLogIndexImpl) Value() (LogIndex, *isc.AliasOutputWithID) {
 	return v.logIndex, v.latestAO
 }
-
-// > UPON Reception of Start:
-// >    Send ⟨NextLI, LogIndex⟩, if not sent for LogIndex or later.
-// func (v *varLogIndexImpl) StartReceived() gpa.OutMessages {
-// 	v.log.Debugf("StartReceived, logIndex=%v", v.logIndex)
-// 	return v.maybeSendNextLogIndex(v.logIndex.Next())
-// }
 
 // > UPON Reception of ConsensusOutput{DONE | SKIP}:
 // >    Ignore if outdated.
@@ -164,9 +158,7 @@ func (v *varLogIndexImpl) MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutM
 	//
 	// Support log indexes, if there are F+1 votes for that log index.
 	supportLogIndex, supportAO := v.votedFor(v.f + 1)
-	// v.log.Debugf("supportLogIndex=%v, logIndex=%v", supportLogIndex, v.logIndex)
 	if supportLogIndex > v.logIndex && supportAO != nil {
-		// if supportLogIndex > v.logIndex && v.latestAO != nil && supportAO != nil && v.latestAO.Equals(supportAO) {
 		msgs.AddAll(v.maybeSendNextLogIndex(supportLogIndex, supportAO))
 	}
 	//
@@ -234,6 +226,9 @@ func (v *varLogIndexImpl) maybeSendNextLogIndex(logIndex LogIndex, baseAO *isc.A
 		return nil
 	}
 	if v.sentNextLI.AsUint32() >= logIndex.AsUint32() {
+		return nil
+	}
+	if v.latestAO == nil {
 		return nil
 	}
 	v.sentNextLI = logIndex

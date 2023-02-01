@@ -8,11 +8,16 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
 // ensures a nodes resumes normal operation after rebooting
@@ -241,13 +246,14 @@ func TestRebootN3TwoNodes(t *testing.T) {
 
 // Test rebooting nodes during operation.
 func TestRebootDuringTasks(t *testing.T) {
+	testutil.RunHeavy(t)
 	env := setupNativeInccounterTest(t, 3, []int{0, 1, 2})
 
-	// deposit funds for offledger requests
+	// deposit funds for off-ledger requests
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair)
+	env.DepositFunds(utxodb.FundsFromFaucetAmount/2, keyPair)
 	client := env.Chain.SCClient(nativeIncCounterSCHname, keyPair)
 
 	for i := 0; i < 10000; i++ {
@@ -269,19 +275,37 @@ func TestRebootDuringTasks(t *testing.T) {
 		// TODO test rebooting only 1 node and see if the consensus breaks
 		err := env.Clu.RestartNodes(0, 1, 2)
 		require.NoError(t, err)
-		time.Sleep(8 * time.Second)
+		time.Sleep(20 * time.Second)
 	}
-	// // after rebooting, the chain should resume processing requests without issues
-	// _, err = client.PostRequest(inccounter.FuncIncCounter.Name)
-	// require.NoError(t, err)
-	// e.expectCounter(nativeIncCounterSCHname,2)
 
+	// after rebooting, the chain should resume processing requests/views without issues
 	ret, err := env.Clu.WaspClient(0).CallView(
 		env.Chain.ChainID, nativeIncCounterSCHname, inccounter.ViewGetCounter.Name, nil,
 	)
 	require.NoError(t, err)
 	counter, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
 	require.NoError(t, err)
+	require.Greater(t, counter, int64(0))
 
-	println("potato", counter)
+	// assert the node still processes on and off-ledger request
+	keyPair2, _, err := env.Clu.NewKeyPairWithFunds()
+	require.NoError(t, err)
+	// deposit funds, then move them via off-ledger request
+	env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair2)
+	accountsClient := env.Chain.SCClient(accounts.Contract.Hname(), keyPair2)
+	targetAgentID := isc.NewRandomAgentID()
+	req, err := accountsClient.PostOffLedgerRequest(accounts.FuncTransferAllowanceTo.Name, chainclient.PostRequestParams{
+		Args: map[kv.Key][]byte{
+			accounts.ParamAgentID: targetAgentID.Bytes(),
+		},
+		Allowance: &isc.Allowance{
+			Assets: &isc.FungibleTokens{
+				BaseTokens: 5000,
+			},
+		},
+	})
+	require.NoError(t, err)
+	_, err = env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
+	require.NoError(t, err)
+	env.checkBalanceOnChain(targetAgentID, isc.BaseTokenID, 5000)
 }
