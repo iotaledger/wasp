@@ -39,7 +39,7 @@ jobs:
     name: Test wasp-cli Release
     runs-on: ubuntu-latest
     container:
-      image: iotaledger/goreleaser-cgo-cross-compiler:1.19.4
+      image: iotaledger/goreleaser-cgo-cross-compiler:1.19.5
     steps:
       - name: Download temporary artifacts
         uses: actions/download-artifact@v3
