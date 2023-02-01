@@ -23,7 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/shutdowncoordinator"
+	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -63,7 +63,7 @@ type Chains struct {
 	allChains map[isc.ChainID]*activeChain
 	accessMgr accessMgr.AccessMgr
 
-	shutdownCoordinator *shutdowncoordinator.ShutdownCoordinator
+	shutdownCoordinator *shutdown.Coordinator
 }
 
 type activeChain struct {
@@ -88,7 +88,7 @@ func New(
 	nodeIdentityProvider registry.NodeIdentityProvider,
 	consensusStateRegistry cmtLog.ConsensusStateRegistry,
 	chainListener chain.ChainListener,
-	shutdownCoordinator *shutdowncoordinator.ShutdownCoordinator,
+	shutdownCoordinator *shutdown.Coordinator,
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
@@ -141,7 +141,7 @@ func (c *Chains) Close() {
 	for _, c := range c.allChains {
 		c.cancelFunc()
 	}
-	c.shutdownCoordinator.WaitWithLogging()
+	c.shutdownCoordinator.WaitNestedWithLogging(1 * time.Second)
 	c.shutdownCoordinator.Done()
 	if c.trustedNetworkListenerCancel != nil {
 		c.trustedNetworkListenerCancel()
@@ -249,7 +249,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.chainListener,
 		chainRecord.AccessNodes,
 		c.networkProvider,
-		c.shutdownCoordinator.Sub(fmt.Sprintf("chain-%s", chainID)),
+		c.shutdownCoordinator.Nested(fmt.Sprintf("Chain-%s", chainID.AsAddress().String())),
 		c.log.Named(chainID.ShortString()),
 	)
 	if err != nil {
