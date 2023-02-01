@@ -93,6 +93,7 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	// remove the access node from cluster1 node 0
 	err = nodeClient.RemoveAccessNode(env.Chain.ChainID, accessNodePeerInfo.PubKey)
 	require.NoError(t, err)
+	time.Sleep(1 * time.Second) // Access/Server node info is exchanged asynchronously.
 
 	// try sending the request again
 	req, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
