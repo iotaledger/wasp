@@ -162,7 +162,7 @@ func TestHarvest(t *testing.T) {
 	commonAccountBal2 := ctx.Chain.L2Assets(commonAccount)
 	creatorBal1 := ctx.Chain.L2Assets(creatorAgentID)
 	assert.Equal(t, minimumBaseTokensOnCommonAccount+ctx.GasFee, commonAccountBal2.BaseTokens)
-	assert.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+isc.Million, creatorBal1.BaseTokens)
+	assert.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+ctx.StorageDeposit, creatorBal1.BaseTokens)
 	assert.Equal(t, big.NewInt(int64(transferAmount)), creatorBal1.NativeTokens[0].Amount)
 }
 
@@ -323,7 +323,7 @@ func TestBalanceBaseToken(t *testing.T) {
 	fbal.Func.Call()
 	require.NoError(t, ctx.Err)
 	user1Balance1 := fbal.Results.Balance().Value()
-	require.Equal(t, user0Balance0+1*isc.Million-transferAmt-gasFee, user0Balance1)
+	require.Equal(t, user0Balance0+ctx.StorageDeposit-transferAmt-gasFee, user0Balance1)
 	require.Equal(t, user1Balance0+transferAmt, user1Balance1)
 }
 

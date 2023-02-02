@@ -3,7 +3,7 @@
 
 use std::{
     any::Any,
-    sync::{Arc, mpsc, Mutex, RwLock},
+    sync::{mpsc, Arc, Mutex, RwLock},
     thread::spawn,
 };
 use wasmclientsandbox::*;
@@ -130,12 +130,12 @@ impl WasmClientContext {
         return Err(err_msg);
     }
 
-    pub fn wait_request(&mut self) {
+    pub fn wait_request(&self) {
         let req_id = self.req_id.read().unwrap().to_owned();
         self.wait_request_id(Some(&req_id));
     }
 
-    pub fn wait_request_id(&mut self, req_id: Option<&ScRequestID>) {
+    pub fn wait_request_id(&self, req_id: Option<&ScRequestID>) {
         let r_id;
         let binding;
         match req_id {
@@ -258,28 +258,34 @@ mod tests {
         fn call_handler(&self, _topic: &str, _params: &Vec<String>) {}
     }
 
+    const MYCHAIN: &str = "tgl1pp0j5wr5e5dxhk4hzwlgfs9vu7r025zeq0et7ftkrzmf8lwa44wy645r2hj";
+    const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
+
     #[test]
     fn test_wasm_client_context_new() {
         let svc_client = wasmclientservice::WasmClientService::default();
-        let chain_id = wasmlib::chain_id_from_bytes(&vec![
-            41, 180, 220, 182, 186, 38, 166, 60, 91, 105, 181, 183, 219, 243, 200, 162, 131, 181,
-            57, 142, 41, 30, 236, 92, 178, 1, 116, 229, 174, 86, 156, 210,
-        ]);
 
         // FIXME use valid sc_name which meets the requirement of bech32
         let sc_name = "sc_name";
-        let ctx =
-            wasmclientcontext::WasmClientContext::new(&svc_client, &chain_id.to_string(), sc_name);
-        assert_eq!(svc_client, ctx.svc_client);
-        assert_eq!(sc_name, ctx.sc_name);
-        assert_eq!(wasmlib::ScHname::new(sc_name), ctx.sc_hname);
-        assert_eq!(chain_id, ctx.chain_id);
-        assert_eq!(0, ctx.event_handlers.len());
-        assert_eq!(None, ctx.key_pair);
-        assert_eq!(
-            wasmlib::request_id_from_bytes(&[]),
-            *ctx.req_id.read().unwrap()
-        );
+        let ctx = wasmclientcontext::WasmClientContext::new(&svc_client, MYCHAIN, sc_name);
+        assert!(svc_client == ctx.svc_client);
+        assert!(sc_name == ctx.sc_name);
+        assert!(wasmlib::ScHname::new(sc_name) == ctx.sc_hname);
+        assert!(MYCHAIN == ctx.chain_id.to_string());
+        assert!(0 == ctx.event_handlers.len());
+        assert!(None == ctx.key_pair);
+        assert!(wasmlib::request_id_from_bytes(&[]) == *ctx.req_id.read().unwrap());
+    }
+
+    fn setup_client() -> WasmClientContext {
+        let svc = WasmClientService::new("127.0.0.1:19090", "127.0.0.1:15550");
+        let mut ctx = WasmClientContext::new(&svc, MYCHAIN, "testwasmlib");
+        ctx.sign_requests(&keypair::KeyPair::from_sub_seed(
+            &wasmlib::bytes_from_string(MYSEED),
+            0,
+        ));
+        assert!(ctx.error.read().unwrap().is_ok());
+        return ctx;
     }
 
     #[test]

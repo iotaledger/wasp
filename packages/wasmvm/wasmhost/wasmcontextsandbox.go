@@ -161,11 +161,12 @@ func (s *WasmContextSandbox) makeRequest(args []byte) isc.RequestParameters {
 	if allowance.IsEmpty() {
 		allowance = transfer
 	}
-	// Force a minimum transfer of 1 million base tokens for storage deposit and some gas
+
+	// Force a minimum transfer of WasmStorageDeposit base tokens for storage deposit
 	// excess can always be reclaimed from the chain account by the user
-	if !transfer.IsEmpty() && transfer.BaseTokens < 1*isc.Million {
+	if !transfer.IsEmpty() && transfer.BaseTokens < WasmStorageDeposit {
 		transfer = transfer.Clone()
-		transfer.BaseTokens = 1 * isc.Million
+		transfer.BaseTokens = WasmStorageDeposit
 	}
 
 	s.Tracef("POST %s.%s, chain %s", contract.String(), function.String(), chainID.String())
