@@ -19,7 +19,6 @@ import (
 // executed in cluster_test.go
 func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	// deploy the inccounter for the test to use
-	// TODO change to deploy the wasm inccounter instead
 	env.deployNativeIncCounterSC(0)
 
 	// deposit funds for offledger requests

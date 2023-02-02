@@ -16,8 +16,8 @@ func initChangeAccessNodesCmd() *cobra.Command {
 	var offLedger bool
 
 	cmd := &cobra.Command{
-		Use:   "change-access-nodes <action (accept|remove|drop)> <pubkey>",
-		Short: "Changes the access nodes of a chain.",
+		Use:   "gov-change-access-nodes <action (accept|remove|drop)> <pubkey>",
+		Short: "Changes the access nodes of a chain on the governance contract.",
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args)%2 != 0 {

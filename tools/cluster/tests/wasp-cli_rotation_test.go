@@ -16,7 +16,23 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
-func TestWaspCLIExternalRotation(t *testing.T) {
+func TestWaspCLIExternalRotationGovAccessNodes(t *testing.T) {
+	addAccessNode := func(w *WaspCLITest, pubKey string) {
+		out := w.MustRun("chain", "gov-change-access-nodes", "accept", pubKey)
+		out = w.GetReceiptFromRunPostRequestOutput(out)
+		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
+	}
+	testWaspCLIExternalRotation(t, addAccessNode)
+}
+
+func TestWaspCLIExternalRotationPermitionlessAccessNodes(t *testing.T) {
+	addAccessNode := func(w *WaspCLITest, pubKey string) {
+		w.MustRun("chain", "access-nodes", "add", pubKey)
+	}
+	testWaspCLIExternalRotation(t, addAccessNode)
+}
+
+func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, string)) {
 	// this test starts a chain on cluster of 4 nodes,
 	// adds 1 new node as an access node (this node will be part of the new committee, this way it is synced)
 	// then puts the chain on maintenance mode, stops the cluster
@@ -76,8 +92,7 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 			// equivalent of "wasp-cli peer info"
 			peerInfo, err := w.Cluster.WaspClient(nodeIndex).GetPeeringSelf()
 			require.NoError(t, err)
-			// TODO change to "wasp-cli peer trust <pubkey> <netID>"
-			w2.Cluster.AddTrustedNode(peerInfo, []int{0})
+			w2.MustRun("peering", "trust", peerInfo.PubKey, peerInfo.NetID)
 			cluster1PubKeys[nodeIndex], err = cryptolib.NewPublicKeyFromString(peerInfo.PubKey)
 			require.NoError(t, err)
 		}
@@ -86,9 +101,7 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 		pubKey, err := cryptolib.NewPublicKeyFromString(node0peerInfo.PubKey)
 		require.NoError(t, err)
 
-		out = w.MustRun("chain", "change-access-nodes", "accept", pubKey.String())
-		out = w.GetReceiptFromRunPostRequestOutput(out)
-		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
+		addAccessNode(w, pubKey.String())
 	}
 
 	// activate the chain on the new nodes
