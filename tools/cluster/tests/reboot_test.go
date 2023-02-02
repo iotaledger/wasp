@@ -253,7 +253,7 @@ func TestRebootDuringTasks(t *testing.T) {
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	env.DepositFunds(utxodb.FundsFromFaucetAmount/2, keyPair)
+	env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair)
 	client := env.Chain.SCClient(nativeIncCounterSCHname, keyPair)
 
 	for i := 0; i < 10000; i++ {
@@ -265,8 +265,11 @@ func TestRebootDuringTasks(t *testing.T) {
 	}
 
 	go func() {
-		for i := 0; i < 10000; i++ {
-			_, err := client.PostRequest(inccounter.FuncIncCounter.Name)
+		keyPair, _, err := env.Clu.NewKeyPairWithFunds()
+		require.NoError(t, err)
+		client := env.Chain.SCClient(nativeIncCounterSCHname, keyPair)
+		for i := 0; i < 1000; i++ {
+			_, err = client.PostRequest(inccounter.FuncIncCounter.Name)
 			require.NoError(t, err)
 		}
 	}()
