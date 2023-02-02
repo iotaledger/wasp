@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/shutdowncoordinator"
+	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 )
@@ -56,7 +56,7 @@ type stateManager struct {
 	timers              smGPA.StateManagerTimers
 	ctx                 context.Context
 	cleanupFun          func()
-	shutdownCoordinator *shutdowncoordinator.ShutdownCoordinator
+	shutdownCoordinator *shutdown.Coordinator
 }
 
 var (
@@ -77,7 +77,7 @@ func New(
 	net peering.NetworkProvider,
 	wal smGPAUtils.BlockWAL,
 	store state.Store,
-	shutdownCoordinator *shutdowncoordinator.ShutdownCoordinator,
+	shutdownCoordinator *shutdown.Coordinator,
 	log *logger.Logger,
 	timersOpt ...smGPA.StateManagerTimers,
 ) (StateMgr, error) {
@@ -197,7 +197,7 @@ func (smT *stateManager) run() {
 				return
 			}
 			// TODO what should the statemgr wait for?
-			if smT.shutdownCoordinator.AreAllSubComponentsDone() {
+			if smT.shutdownCoordinator.CheckNestedDone() {
 				smT.log.Debugf("Stopping state manager, because context was closed")
 				smT.shutdownCoordinator.Done()
 				return
