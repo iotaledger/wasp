@@ -47,7 +47,7 @@ jobs:
         run: tar -xf temp.tar && rm temp.tar
       
       - name: Release wasp-cli
-        run: goreleaser --rm-dist -f ./tools/wasp-cli/.goreleaser.yml
+        run: goreleaser --clean -f ./tools/wasp-cli/.goreleaser.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

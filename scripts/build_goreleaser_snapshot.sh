@@ -6,8 +6,8 @@
 # make script executable independent of path
 WASP_ROOT_DIR="$( cd -- "$(dirname "$0")/.." >/dev/null 2>&1 ; pwd -P )"
 
-GORELEASER_IMAGE=iotaledger/goreleaser-cgo-cross-compiler:1.19.4
+GORELEASER_IMAGE=iotaledger/goreleaser-cgo-cross-compiler:1.19.5
 REPO_PATH="/build"
 
 docker pull "${GORELEASER_IMAGE}"
-docker run --rm --privileged -v "${WASP_ROOT_DIR}":"${REPO_PATH}" -w "${REPO_PATH}" "${GORELEASER_IMAGE}" goreleaser --rm-dist --snapshot --skip-publish -f ./tools/wasp-cli/.goreleaser.yml
+docker run --rm --privileged -v "${WASP_ROOT_DIR}":"${REPO_PATH}" -w "${REPO_PATH}" "${GORELEASER_IMAGE}" goreleaser --clean --snapshot --skip-publish -f ./tools/wasp-cli/.goreleaser.yml
