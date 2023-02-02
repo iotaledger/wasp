@@ -50,4 +50,4 @@ jobs:
         run: tar -xf temp.tar && rm temp.tar
       
       - name: Test wasp-cli Release
-        run: goreleaser --snapshot --skip-publish --rm-dist -f ./tools/wasp-cli/.goreleaser.yml
+        run: goreleaser --snapshot --skip-publish --clean -f ./tools/wasp-cli/.goreleaser.yml
