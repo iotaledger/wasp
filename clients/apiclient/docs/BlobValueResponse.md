@@ -4,13 +4,13 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**ValueData** | Pointer to **string** |  | [optional] 
+**ValueData** | **string** |  | 
 
 ## Methods
 
 ### NewBlobValueResponse
 
-`func NewBlobValueResponse() *BlobValueResponse`
+`func NewBlobValueResponse(valueData string, ) *BlobValueResponse`
 
 NewBlobValueResponse instantiates a new BlobValueResponse object
 This constructor will assign default values to properties that have it defined,
@@ -44,11 +44,6 @@ and a boolean to check if the value has been set.
 
 SetValueData sets ValueData field to given value.
 
-### HasValueData
-
-`func (o *BlobValueResponse) HasValueData() bool`
-
-HasValueData returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

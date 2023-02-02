@@ -4,13 +4,13 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Fields** | Pointer to **map[string]int32** |  | [optional] 
+**Fields** | **map[string]int32** |  | 
 
 ## Methods
 
 ### NewBlobInfoResponse
 
-`func NewBlobInfoResponse() *BlobInfoResponse`
+`func NewBlobInfoResponse(fields map[string]int32, ) *BlobInfoResponse`
 
 NewBlobInfoResponse instantiates a new BlobInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -44,11 +44,6 @@ and a boolean to check if the value has been set.
 
 SetFields sets Fields field to given value.
 
-### HasFields
-
-`func (o *BlobInfoResponse) HasFields() bool`
-
-HasFields returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

@@ -1,8 +1,9 @@
 package chainclient
 
 import (
-	"time"
+	"context"
 
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -10,7 +11,7 @@ import (
 )
 
 // UploadBlob sends an off-ledger request to call 'store' in the blob contract.
-func (c *Client) UploadBlob(fields dict.Dict) (hashing.HashValue, isc.OffLedgerRequest, *isc.Receipt, error) {
+func (c *Client) UploadBlob(ctx context.Context, fields dict.Dict) (hashing.HashValue, isc.OffLedgerRequest, *apiclient.ReceiptResponse, error) {
 	blobHash := blob.MustGetBlobHash(fields)
 
 	req, err := c.PostOffLedgerRequest(
@@ -24,6 +25,7 @@ func (c *Client) UploadBlob(fields dict.Dict) (hashing.HashValue, isc.OffLedgerR
 		return hashing.NilHash, nil, nil, err
 	}
 
-	receipt, err := c.WaspClient.WaitUntilRequestProcessed(c.ChainID, req.ID(), 2*time.Minute)
+	receipt, _, err := c.WaspClient.RequestsApi.WaitForTransaction(ctx, c.ChainID.String(), req.ID().String()).Execute()
+
 	return blobHash, req, receipt, err
 }

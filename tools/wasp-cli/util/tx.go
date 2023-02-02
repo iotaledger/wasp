@@ -6,7 +6,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -20,7 +20,7 @@ func WithOffLedgerRequest(chainID isc.ChainID, f func() (isc.OffLedgerRequest, e
 	log.Check(err)
 	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().String())
 	if config.WaitForCompletion {
-		_, err = config.WaspClient(config.MustWaspAPI()).WaitUntilRequestProcessed(chainID, req.ID(), 1*time.Minute)
+		_, err = config.WaspClient(config.MustWaspAPIURL()).WaitUntilRequestProcessed(chainID, req.ID(), 1*time.Minute)
 		log.Check(err)
 	}
 	// TODO print receipt?
@@ -33,7 +33,7 @@ func WithSCTransaction(chainID isc.ChainID, f func() (*iotago.Transaction, error
 
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
-		_, err := config.WaspClient(config.MustWaspAPI()).WaitUntilAllRequestsProcessed(chainID, tx, 1*time.Minute)
+		_, err := config.WaspClient(config.MustWaspAPIURL()).WaitUntilAllRequestsProcessed(chainID, tx, 1*time.Minute)
 		log.Check(err)
 	}
 

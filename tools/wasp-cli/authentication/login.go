@@ -2,13 +2,16 @@ package authentication
 
 import (
 	"bufio"
+	"context"
 	"os"
 	"syscall"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -45,13 +48,16 @@ func initLoginCmd() *cobra.Command {
 				return
 			}
 
-			client := config.WaspClient(config.MustWaspAPI())
-			token, err := client.Login(username, password)
-			if err != nil {
-				panic(err)
-			}
+			token, _, err := cliclients.WaspClientForNodeIndex().AuthApi.
+				Authenticate(context.Background()).
+				LoginRequest(apiclient.LoginRequest{
+					Username: username,
+					Password: password,
+				}).Execute()
 
-			config.SetToken(token)
+			log.Check(err)
+
+			config.SetToken(token.Jwt)
 
 			log.Printf("\nSuccessfully authenticated\n")
 		},

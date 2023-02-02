@@ -4,18 +4,18 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Decimals** | Pointer to **int32** | The token decimals | [optional] 
-**Name** | Pointer to **string** | The base token name | [optional] 
-**Subunit** | Pointer to **string** | The token subunit | [optional] 
-**TickerSymbol** | Pointer to **string** | The ticker symbol | [optional] 
-**Unit** | Pointer to **string** | The token unit | [optional] 
-**UseMetricPrefix** | Pointer to **bool** | Whether or not the token uses a metric prefix | [optional] 
+**Decimals** | **int32** | The token decimals | 
+**Name** | **string** | The base token name | 
+**Subunit** | **string** | The token subunit | 
+**TickerSymbol** | **string** | The ticker symbol | 
+**Unit** | **string** | The token unit | 
+**UseMetricPrefix** | **bool** | Whether or not the token uses a metric prefix | 
 
 ## Methods
 
 ### NewBaseToken
 
-`func NewBaseToken() *BaseToken`
+`func NewBaseToken(decimals int32, name string, subunit string, tickerSymbol string, unit string, useMetricPrefix bool, ) *BaseToken`
 
 NewBaseToken instantiates a new BaseToken object
 This constructor will assign default values to properties that have it defined,
@@ -49,11 +49,6 @@ and a boolean to check if the value has been set.
 
 SetDecimals sets Decimals field to given value.
 
-### HasDecimals
-
-`func (o *BaseToken) HasDecimals() bool`
-
-HasDecimals returns a boolean if a field has been set.
 
 ### GetName
 
@@ -74,11 +69,6 @@ and a boolean to check if the value has been set.
 
 SetName sets Name field to given value.
 
-### HasName
-
-`func (o *BaseToken) HasName() bool`
-
-HasName returns a boolean if a field has been set.
 
 ### GetSubunit
 
@@ -99,11 +89,6 @@ and a boolean to check if the value has been set.
 
 SetSubunit sets Subunit field to given value.
 
-### HasSubunit
-
-`func (o *BaseToken) HasSubunit() bool`
-
-HasSubunit returns a boolean if a field has been set.
 
 ### GetTickerSymbol
 
@@ -124,11 +109,6 @@ and a boolean to check if the value has been set.
 
 SetTickerSymbol sets TickerSymbol field to given value.
 
-### HasTickerSymbol
-
-`func (o *BaseToken) HasTickerSymbol() bool`
-
-HasTickerSymbol returns a boolean if a field has been set.
 
 ### GetUnit
 
@@ -149,11 +129,6 @@ and a boolean to check if the value has been set.
 
 SetUnit sets Unit field to given value.
 
-### HasUnit
-
-`func (o *BaseToken) HasUnit() bool`
-
-HasUnit returns a boolean if a field has been set.
 
 ### GetUseMetricPrefix
 
@@ -174,11 +149,6 @@ and a boolean to check if the value has been set.
 
 SetUseMetricPrefix sets UseMetricPrefix field to given value.
 
-### HasUseMetricPrefix
-
-`func (o *BaseToken) HasUseMetricPrefix() bool`
-
-HasUseMetricPrefix returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

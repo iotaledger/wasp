@@ -4,14 +4,14 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Code** | Pointer to **int32** |  | [optional] 
-**GasBurned** | Pointer to **int64** |  | [optional] 
+**Code** | **int32** |  | 
+**GasBurned** | **int64** |  | 
 
 ## Methods
 
 ### NewBurnRecord
 
-`func NewBurnRecord() *BurnRecord`
+`func NewBurnRecord(code int32, gasBurned int64, ) *BurnRecord`
 
 NewBurnRecord instantiates a new BurnRecord object
 This constructor will assign default values to properties that have it defined,
@@ -45,11 +45,6 @@ and a boolean to check if the value has been set.
 
 SetCode sets Code field to given value.
 
-### HasCode
-
-`func (o *BurnRecord) HasCode() bool`
-
-HasCode returns a boolean if a field has been set.
 
 ### GetGasBurned
 
@@ -70,11 +65,6 @@ and a boolean to check if the value has been set.
 
 SetGasBurned sets GasBurned field to given value.
 
-### HasGasBurned
-
-`func (o *BurnRecord) HasGasBurned() bool`
-
-HasGasBurned returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

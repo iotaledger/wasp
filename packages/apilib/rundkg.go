@@ -10,7 +10,6 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 )
 
@@ -27,7 +26,7 @@ func RunDKG(authToken string, apiHosts, peerPubKeys []string, threshold, initiat
 	if int(initiatorIndex) >= len(apiHosts) {
 		return nil, errors.New("RunDKG: wrong initiator index")
 	}
-	dkShares, err := client.NewWaspClient(apiHosts[initiatorIndex]).WithToken(authToken).DKSharesPost(&model.DKSharesPostRequest{
+	dkShares, err := clients.NewWaspClient(apiHosts[initiatorIndex]).WithToken(authToken).DKSharesPost(&model.DKSharesPostRequest{
 		PeerPubKeys: peerPubKeys,
 		Threshold:   threshold,
 		TimeoutMS:   to, // 1 min

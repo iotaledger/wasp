@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -18,7 +18,7 @@ func initDistrustCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			pubKeyOrNetID := args[0]
-			waspClient := config.WaspClient(config.MustWaspAPI())
+			waspClient := config.WaspClient(config.MustWaspAPIURL())
 			if peering.CheckNetID(pubKeyOrNetID) != nil {
 				log.Check(waspClient.DeletePeeringTrusted(pubKeyOrNetID))
 				log.Printf("# Distrusted PubKey: %v\n", pubKeyOrNetID)

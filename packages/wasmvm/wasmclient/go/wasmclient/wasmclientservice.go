@@ -6,7 +6,6 @@ package wasmclient
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -23,14 +22,15 @@ type IClientService interface {
 }
 
 type WasmClientService struct {
-	waspClient *client.WaspClient
+	cvt        wasmhost.WasmConvertor
+	waspClient *clients.WaspClient
 	eventPort  string
 }
 
 var _ IClientService = new(WasmClientService)
 
 func NewWasmClientService(waspAPI, eventPort string) *WasmClientService {
-	return &WasmClientService{waspClient: client.NewWaspClient(waspAPI), eventPort: eventPort}
+	return &WasmClientService{waspClient: clients.NewWaspClient(waspAPI), eventPort: eventPort}
 }
 
 func DefaultWasmClientService() *WasmClientService {

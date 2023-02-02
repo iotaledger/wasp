@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -16,7 +16,7 @@ func initListCmd() *cobra.Command {
 		Short: "List deployed chains",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := config.WaspClient(config.MustWaspAPI())
+			client := config.WaspClient(config.MustWaspAPIURL())
 			chains, err := client.GetChainRecordList()
 			log.Check(err)
 			model := &ListChainModel{

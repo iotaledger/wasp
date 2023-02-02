@@ -5,7 +5,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **BlockIndex** | **uint32** |  | 
-**Error** | [**BlockReceiptError**](BlockReceiptError.md) |  | 
+**Error** | Pointer to [**BlockReceiptError**](BlockReceiptError.md) |  | [optional] 
 **GasBudget** | **int64** |  | 
 **GasBurnLog** | [**BurnLog**](BurnLog.md) |  | 
 **GasBurned** | **int64** |  | 
@@ -17,7 +17,7 @@ Name | Type | Description | Notes
 
 ### NewRequestReceiptResponse
 
-`func NewRequestReceiptResponse(blockIndex uint32, error_ BlockReceiptError, gasBudget int64, gasBurnLog BurnLog, gasBurned int64, gasFeeCharged int64, request RequestDetail, requestIndex uint32, ) *RequestReceiptResponse`
+`func NewRequestReceiptResponse(blockIndex uint32, gasBudget int64, gasBurnLog BurnLog, gasBurned int64, gasFeeCharged int64, request RequestDetail, requestIndex uint32, ) *RequestReceiptResponse`
 
 NewRequestReceiptResponse instantiates a new RequestReceiptResponse object
 This constructor will assign default values to properties that have it defined,
@@ -71,6 +71,11 @@ and a boolean to check if the value has been set.
 
 SetError sets Error field to given value.
 
+### HasError
+
+`func (o *RequestReceiptResponse) HasError() bool`
+
+HasError returns a boolean if a field has been set.
 
 ### GetGasBudget
 

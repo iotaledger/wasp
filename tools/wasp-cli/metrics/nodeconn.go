@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v1/model"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -20,7 +20,7 @@ func initNodeconnMetricsCmd() *cobra.Command {
 		Short: "Show current value of collected metrics of connection to L1",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := config.WaspClient(config.MustWaspAPI())
+			client := config.WaspClient(config.MustWaspAPIURL())
 			if chainAlias == "" {
 				nodeconnMetrics, err := client.GetNodeConnectionMetrics()
 				log.Check(err)

@@ -4,18 +4,18 @@ All URIs are relative to *http://localhost:9090*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**DistrustPeer**](NodeApi.md#DistrustPeer) | **Delete** /node/peers/trusted | Distrust a peering node
-[**GenerateDKS**](NodeApi.md#GenerateDKS) | **Post** /node/dks | Generate a new distributed key
-[**GetAllPeers**](NodeApi.md#GetAllPeers) | **Get** /node/peers | Get basic information about all configured peers
-[**GetConfiguration**](NodeApi.md#GetConfiguration) | **Get** /node/config | Return the Wasp configuration
-[**GetDKSInfo**](NodeApi.md#GetDKSInfo) | **Get** /node/dks/{sharedAddress} | Get information about the shared address DKS configuration
-[**GetInfo**](NodeApi.md#GetInfo) | **Get** /node/info | Returns private information about this node.
-[**GetPeeringIdentity**](NodeApi.md#GetPeeringIdentity) | **Get** /node/peers/identity | Get basic peer info of the current node
-[**GetTrustedPeers**](NodeApi.md#GetTrustedPeers) | **Get** /node/peers/trusted | Get trusted peers
-[**GetVersion**](NodeApi.md#GetVersion) | **Get** /node/version | Returns the node version.
-[**SetNodeOwner**](NodeApi.md#SetNodeOwner) | **Post** /node/owner/certificate | Sets the node owner
-[**ShutdownNode**](NodeApi.md#ShutdownNode) | **Post** /node/shutdown | Shut down the node
-[**TrustPeer**](NodeApi.md#TrustPeer) | **Post** /node/peers/trusted | Trust a peering node
+[**DistrustPeer**](NodeApi.md#DistrustPeer) | **Delete** /v2node/peers/trusted | Distrust a peering node
+[**GenerateDKS**](NodeApi.md#GenerateDKS) | **Post** /v2node/dks | Generate a new distributed key
+[**GetAllPeers**](NodeApi.md#GetAllPeers) | **Get** /v2node/peers | Get basic information about all configured peers
+[**GetConfiguration**](NodeApi.md#GetConfiguration) | **Get** /v2node/config | Return the Wasp configuration
+[**GetDKSInfo**](NodeApi.md#GetDKSInfo) | **Get** /v2node/dks/{sharedAddress} | Get information about the shared address DKS configuration
+[**GetInfo**](NodeApi.md#GetInfo) | **Get** /v2node/info | Returns private information about this node.
+[**GetPeeringIdentity**](NodeApi.md#GetPeeringIdentity) | **Get** /v2node/peers/identity | Get basic peer info of the current node
+[**GetTrustedPeers**](NodeApi.md#GetTrustedPeers) | **Get** /v2node/peers/trusted | Get trusted peers
+[**GetVersion**](NodeApi.md#GetVersion) | **Get** /v2node/version | Returns the node version.
+[**SetNodeOwner**](NodeApi.md#SetNodeOwner) | **Post** /v2node/owner/certificate | Sets the node owner
+[**ShutdownNode**](NodeApi.md#ShutdownNode) | **Post** /v2node/shutdown | Shut down the node
+[**TrustPeer**](NodeApi.md#TrustPeer) | **Post** /v2node/peers/trusted | Trust a peering node
 
 
 

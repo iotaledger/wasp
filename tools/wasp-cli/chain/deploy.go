@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 )
@@ -88,7 +88,7 @@ func initDeployCmd() *cobra.Command {
 			}
 
 			committeePubKeys := make([]string, 0)
-			for _, api := range config.CommitteeAPI(committee) {
+			for _, api := range config.CommitteeAPIURL(committee) {
 				peerInfo, err := config.WaspClient(api).GetPeeringSelf()
 				log.Check(err)
 				committeePubKeys = append(committeePubKeys, peerInfo.PubKey)
@@ -97,7 +97,7 @@ func initDeployCmd() *cobra.Command {
 			chainid, _, err := apilib.DeployChainWithDKG(apilib.CreateChainParams{
 				AuthenticationToken:  config.GetToken(),
 				Layer1Client:         l1Client,
-				CommitteeAPIHosts:    config.CommitteeAPI(committee),
+				CommitteeAPIHosts:    config.CommitteeAPIURL(committee),
 				CommitteePubKeys:     committeePubKeys,
 				N:                    uint16(len(committee)),
 				T:                    uint16(quorum),

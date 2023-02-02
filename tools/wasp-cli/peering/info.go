@@ -6,7 +6,7 @@ package peering
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -16,7 +16,7 @@ func initInfoCmd() *cobra.Command {
 		Short: "Node info.",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			info, err := config.WaspClient(config.MustWaspAPI()).GetPeeringSelf()
+			info, err := config.WaspClient(config.MustWaspAPIURL()).GetPeeringSelf()
 			log.Check(err)
 
 			model := &InfoModel{PubKey: info.PubKey, NetID: info.NetID}

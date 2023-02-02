@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -29,54 +27,6 @@ const (
 	l1ParamsExpiration   = 24 * time.Hour
 )
 
-func initConfigSetCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "set <key> <value>",
-		Short: "Set a configuration value",
-		Args:  cobra.ExactArgs(2),
-		Run: func(cmd *cobra.Command, args []string) {
-			v := args[1]
-			switch v {
-			case "true":
-				Set(args[0], true)
-			case "false":
-				Set(args[0], false)
-			default:
-				Set(args[0], v)
-			}
-		},
-	}
-}
-
-func initRefreshL1ParamsCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "refresh-l1-params",
-		Short: "Refresh L1 params from node",
-		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			refreshL1ParamsFromNode()
-		},
-	}
-}
-
-func Init(rootCmd *cobra.Command, waspVersion string) {
-	rootCmd.PersistentFlags().StringVarP(&ConfigPath, "config", "c", "wasp-cli.json", "path to wasp-cli.json")
-	rootCmd.PersistentFlags().BoolVarP(&WaitForCompletion, "wait", "w", true, "wait for request completion")
-
-	rootCmd.AddCommand(initConfigSetCmd())
-	rootCmd.AddCommand(initCheckVersionsCmd(waspVersion))
-	rootCmd.AddCommand(initRefreshL1ParamsCmd())
-
-	// The first time parameters.L1() is called, it will be initialized with this function
-	parameters.InitL1Lazy(func() {
-		if l1ParamsExpired() {
-			refreshL1ParamsFromNode()
-		} else {
-			loadL1ParamsFromConfig()
-		}
-	})
-}
-
 func l1ParamsExpired() bool {
 	if viper.Get(l1ParamsKey) == nil {
 		return true
@@ -88,7 +38,7 @@ func refreshL1ParamsFromNode() {
 	if log.VerboseFlag {
 		log.Printf("Getting L1 params from node at %s...\n", L1APIAddress())
 	}
-	L1Client() // this will call parameters.InitL1()
+	cliclients.L1Client() // this will call parameters.InitL1()
 	Set(l1ParamsKey, parameters.L1NoLock())
 	Set(l1ParamsTimestampKey, time.Now())
 }
@@ -118,18 +68,6 @@ func L1APIAddress() string {
 	)
 }
 
-func L1INXAddress() string {
-	host := viper.GetString("l1.inxAddress")
-	if host != "" {
-		return host
-	}
-	return fmt.Sprintf(
-		"%s:%d",
-		privtangledefaults.INXHost,
-		privtangledefaults.BasePort+privtangledefaults.NodePortOffsetINX,
-	)
-}
-
 func L1FaucetAddress() string {
 	address := viper.GetString("l1.faucetAddress")
 	if address != "" {
@@ -142,40 +80,12 @@ func L1FaucetAddress() string {
 	)
 }
 
-func L1Client() l1connection.Client {
-	log.Verbosef("using L1 API %s\n", L1APIAddress())
-
-	return l1connection.NewClient(
-		l1connection.Config{
-			APIAddress:    L1APIAddress(),
-			FaucetAddress: L1FaucetAddress(),
-		},
-		log.HiveLogger(),
-	)
-}
-
 func GetToken() string {
 	return viper.GetString("authentication.token")
 }
 
 func SetToken(token string) {
 	Set("authentication.token", token)
-}
-
-func WaspClientForNodeNumber(i ...int) *apiclient.APIClient {
-	return WaspClient(WaspAPIURL(i...))
-}
-
-func WaspClient(apiAddress string) *apiclient.APIClient {
-	// TODO: add authentication for /adm
-	L1Client() // this will fill parameters.L1() with data from the L1 node
-	log.Verbosef("using Wasp host %s\n", apiAddress)
-
-	config := apiclient.NewConfiguration()
-	config.Host = apiAddress
-	config.AddDefaultHeader("Authorization", GetToken())
-
-	return apiclient.NewAPIClient(config)
 }
 
 func MustWaspAPIURL(i ...int) string {
@@ -194,38 +104,8 @@ func WaspAPIURL(i ...int) string {
 	return viper.GetString(fmt.Sprintf("wasp.%d.%s", index, HostKindAPI))
 }
 
-func WaspNanomsg(i ...int) string {
-	index := 0
-	if len(i) > 0 {
-		index = i[0]
-	}
-	r := viper.GetString("wasp." + HostKindNanomsg)
-	if r != "" {
-		return r
-	}
-	return committeeHost(HostKindNanomsg, index)
-}
-
-func FindNodeBy(kind, v string) int {
-	for i := 0; i < 100; i++ {
-		if committeeHost(kind, i) == v {
-			return i
-		}
-	}
-	log.Fatalf("Cannot find node with %q = %q in configuration", kind, v)
-	return 0
-}
-
 func CommitteeAPIURL(indices []int) []string {
 	return committeeHosts(HostKindAPI, indices)
-}
-
-func CommitteePeering(indices []int) []string {
-	return committeeHosts(HostKindPeering, indices)
-}
-
-func CommitteeNanomsg(indices []int) []string {
-	return committeeHosts(HostKindNanomsg, indices)
 }
 
 func committeeHosts(kind string, indices []int) []string {
@@ -238,18 +118,6 @@ func committeeHosts(kind string, indices []int) []string {
 
 func committeeConfigVar(kind string, i int) string {
 	return fmt.Sprintf("wasp.%d.%s", i, kind)
-}
-
-func CommitteeAPIConfigVar(i int) string {
-	return committeeConfigVar(HostKindAPI, i)
-}
-
-func CommitteePeeringConfigVar(i int) string {
-	return committeeConfigVar(HostKindPeering, i)
-}
-
-func CommitteeNanomsgConfigVar(i int) string {
-	return committeeConfigVar(HostKindNanomsg, i)
 }
 
 func committeeHost(kind string, i int) string {

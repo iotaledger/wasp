@@ -1,6 +1,7 @@
 .gitignore
 .travis.yml
 api/openapi.yaml
+api_auth.go
 api_chains.go
 api_corecontracts.go
 api_metrics.go
@@ -16,6 +17,8 @@ docs/AddUserRequest.md
 docs/AliasOutputMetricItem.md
 docs/Allowance.md
 docs/AssetsResponse.md
+docs/AuthApi.md
+docs/AuthInfoModel.md
 docs/BaseToken.md
 docs/Blob.md
 docs/BlobInfoResponse.md
@@ -55,6 +58,8 @@ docs/InterfaceMetricItem.md
 docs/Item.md
 docs/JSONDict.md
 docs/L1Params.md
+docs/LoginRequest.md
+docs/LoginResponse.md
 docs/MetricsApi.md
 docs/NFTDataResponse.md
 docs/NativeToken.md
@@ -99,6 +104,7 @@ model_add_user_request.go
 model_alias_output_metric_item.go
 model_allowance.go
 model_assets_response.go
+model_auth_info_model.go
 model_base_token.go
 model_blob.go
 model_blob_info_response.go
@@ -136,6 +142,8 @@ model_interface_metric_item.go
 model_item.go
 model_json_dict.go
 model_l1_params.go
+model_login_request.go
+model_login_response.go
 model_native_token.go
 model_native_token_id_registry_response.go
 model_nft_data_response.go

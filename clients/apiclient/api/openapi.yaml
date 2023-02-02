@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   description: REST API for the Wasp node
   title: Wasp API
-  version: 0.4.0-alpha.2-403-g907bc6c54
+  version: "123"
 externalDocs:
   description: Find out more about Wasp
   url: https://wiki.iota.org/smart-contracts/overview
@@ -10,6 +10,7 @@ servers:
 - url: http://localhost:9090/
 - url: https://localhost:9090/
 tags:
+- name: auth
 - name: chains
 - name: chains
 - name: metrics
@@ -23,7 +24,44 @@ tags:
 - name: corecontracts
 - name: corecontracts
 paths:
-  /chains:
+  /auth:
+    post:
+      operationId: authenticate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        description: The login request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+          description: Login was successful
+        "401":
+          content: {}
+          description: "Unauthorized (Wrong permissions, missing token)"
+      summary: Authenticate towards the node
+      tags:
+      - auth
+      x-codegen-request-body-name: ""
+  /auth/info:
+    get:
+      operationId: authInfo
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthInfoModel'
+          description: Login was successful
+      summary: Get information about the current authentication mode
+      tags:
+      - auth
+  /v2chains:
     get:
       operationId: getChains
       responses:
@@ -46,7 +84,7 @@ paths:
       summary: Get a list of all chains
       tags:
       - chains
-  /chains/{chainID}:
+  /v2chains/{chainID}:
     get:
       operationId: getChainInfo
       parameters:
@@ -75,7 +113,7 @@ paths:
       summary: Get information about a specific chain
       tags:
       - chains
-  /chains/{chainID}/access-node/{publicKey}:
+  /v2chains/{chainID}/access-node/{publicKey}:
     delete:
       operationId: removeAccessNode
       parameters:
@@ -140,7 +178,7 @@ paths:
       summary: Configure a trusted node to be an access node.
       tags:
       - chains
-  /chains/{chainID}/activate:
+  /v2chains/{chainID}/activate:
     post:
       operationId: activateChain
       parameters:
@@ -169,7 +207,7 @@ paths:
       summary: Activate a chain
       tags:
       - chains
-  /chains/{chainID}/committee:
+  /v2chains/{chainID}/committee:
     get:
       operationId: getCommitteeInfo
       parameters:
@@ -198,7 +236,7 @@ paths:
       summary: Get information about the deployed committee
       tags:
       - chains
-  /chains/{chainID}/contracts:
+  /v2chains/{chainID}/contracts:
     get:
       operationId: getContracts
       parameters:
@@ -229,7 +267,7 @@ paths:
       summary: Get all available chain contracts
       tags:
       - chains
-  /chains/{chainID}/core/accounts:
+  /v2chains/{chainID}/core/accounts:
     get:
       operationId: accountsGetAccounts
       parameters:
@@ -256,7 +294,7 @@ paths:
       summary: Get a list of all accounts
       tags:
       - corecontracts
-  /chains/{chainID}/core/accounts/account/{agentID}/balance:
+  /v2chains/{chainID}/core/accounts/account/{agentID}/balance:
     get:
       operationId: accountsGetAccountBalance
       parameters:
@@ -290,7 +328,7 @@ paths:
       summary: Get all assets belonging to an account
       tags:
       - corecontracts
-  /chains/{chainID}/core/accounts/account/{agentID}/nfts:
+  /v2chains/{chainID}/core/accounts/account/{agentID}/nfts:
     get:
       operationId: accountsGetAccountNFTIDs
       parameters:
@@ -324,7 +362,7 @@ paths:
       summary: Get all NFT ids belonging to an account
       tags:
       - corecontracts
-  /chains/{chainID}/core/accounts/account/{agentID}/nonce:
+  /v2chains/{chainID}/core/accounts/account/{agentID}/nonce:
     get:
       operationId: accountsGetAccountNonce
       parameters:
@@ -359,7 +397,7 @@ paths:
       summary: Get the current nonce of an account
       tags:
       - corecontracts
-  /chains/{chainID}/core/accounts/foundry_output:
+  /v2chains/{chainID}/core/accounts/foundry_output:
     get:
       operationId: accountsGetFoundryOutput
       parameters:
@@ -393,7 +431,7 @@ paths:
       summary: Get the foundry output
       tags:
       - corecontracts
-  /chains/{chainID}/core/accounts/nftdata:
+  /v2chains/{chainID}/core/accounts/nftdata:
     get:
       operationId: accountsGetNFTData
       parameters:
@@ -427,7 +465,7 @@ paths:
       summary: Get the NFT data by an ID
       tags:
       - corecontracts
-  /chains/{chainID}/core/accounts/token_registry:
+  /v2chains/{chainID}/core/accounts/token_registry:
     get:
       operationId: accountsGetNativeTokenIDRegistry
       parameters:
@@ -454,7 +492,7 @@ paths:
       summary: Get a list of all registries
       tags:
       - corecontracts
-  /chains/{chainID}/core/accounts/total_assets:
+  /v2chains/{chainID}/core/accounts/total_assets:
     get:
       operationId: accountsGetTotalAssets
       parameters:
@@ -481,7 +519,7 @@ paths:
       summary: Get all stored assets
       tags:
       - corecontracts
-  /chains/{chainID}/core/blobs:
+  /v2chains/{chainID}/core/blobs:
     get:
       operationId: blobsGetAllBlobs
       parameters:
@@ -508,7 +546,7 @@ paths:
       summary: Get all stored blobs
       tags:
       - corecontracts
-  /chains/{chainID}/core/blobs/{blobHash}:
+  /v2chains/{chainID}/core/blobs/{blobHash}:
     get:
       operationId: blobsGetBlobInfo
       parameters:
@@ -542,7 +580,7 @@ paths:
       summary: Get all fields of a blob
       tags:
       - corecontracts
-  /chains/{chainID}/core/blobs/{blobHash}/data/{fieldKey}:
+  /v2chains/{chainID}/core/blobs/{blobHash}/data/{fieldKey}:
     get:
       operationId: blobsGetBlobValue
       parameters:
@@ -583,7 +621,7 @@ paths:
       summary: Get the value of the supplied field (key)
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/blocks/latest:
+  /v2chains/{chainID}/core/blocklog/blocks/latest:
     get:
       operationId: blocklogGetLatestBlockInfo
       parameters:
@@ -610,7 +648,7 @@ paths:
       summary: Get the block info of the latest block
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/blocks/latest/receipts:
+  /v2chains/{chainID}/core/blocklog/blocks/latest/receipts:
     get:
       operationId: blocklogGetRequestReceiptsOfLatestBlock
       parameters:
@@ -637,7 +675,7 @@ paths:
       summary: Get all receipts of the latest block
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/blocks/latest/requestids:
+  /v2chains/{chainID}/core/blocklog/blocks/latest/requestids:
     get:
       operationId: blocklogGetRequestIDsForLatestBlock
       parameters:
@@ -664,7 +702,7 @@ paths:
       summary: Get the request ids for the latest block
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/blocks/{blockIndex}:
+  /v2chains/{chainID}/core/blocklog/blocks/{blockIndex}:
     get:
       operationId: blocklogGetBlockInfo
       parameters:
@@ -698,7 +736,7 @@ paths:
       summary: Get the block info of a certain block index
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts:
+  /v2chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts:
     get:
       operationId: blocklogGetRequestReceiptsOfBlock
       parameters:
@@ -732,7 +770,7 @@ paths:
       summary: Get all receipts of a certain block
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids:
+  /v2chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids:
     get:
       operationId: blocklogGetRequestIDsForBlock
       parameters:
@@ -766,7 +804,7 @@ paths:
       summary: Get the request ids for a certain block index
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/controladdresses:
+  /v2chains/{chainID}/core/blocklog/controladdresses:
     get:
       operationId: blocklogGetControlAddresses
       parameters:
@@ -793,7 +831,7 @@ paths:
       summary: Get the control addresses
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/events/block/latest:
+  /v2chains/{chainID}/core/blocklog/events/block/latest:
     get:
       operationId: blocklogGetEventsOfLatestBlock
       parameters:
@@ -820,7 +858,7 @@ paths:
       summary: Get events of the latest block
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/events/block/{blockIndex}:
+  /v2chains/{chainID}/core/blocklog/events/block/{blockIndex}:
     get:
       operationId: blocklogGetEventsOfBlock
       parameters:
@@ -854,7 +892,7 @@ paths:
       summary: Get events of a block
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/events/contract/{contractHname}:
+  /v2chains/{chainID}/core/blocklog/events/contract/{contractHname}:
     get:
       operationId: blocklogGetEventsOfContract
       parameters:
@@ -888,7 +926,7 @@ paths:
       summary: Get events of a contract
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/events/request/{requestID}:
+  /v2chains/{chainID}/core/blocklog/events/request/{requestID}:
     get:
       operationId: blocklogGetEventsOfRequest
       parameters:
@@ -922,7 +960,7 @@ paths:
       summary: Get events of a request
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/requests/{requestID}:
+  /v2chains/{chainID}/core/blocklog/requests/{requestID}:
     get:
       operationId: blocklogGetRequestReceipt
       parameters:
@@ -956,7 +994,7 @@ paths:
       summary: Get the receipt of a certain request id
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/requests/{requestID}/is_processed:
+  /v2chains/{chainID}/core/blocklog/requests/{requestID}/is_processed:
     get:
       operationId: blocklogGetRequestIsProcessed
       parameters:
@@ -990,7 +1028,7 @@ paths:
       summary: Get the request processing status
       tags:
       - corecontracts
-  /chains/{chainID}/core/errors/{contractHname}/message/{errorID}:
+  /v2chains/{chainID}/core/errors/{contractHname}/message/{errorID}:
     get:
       operationId: errorsGetErrorMessageFormat
       parameters:
@@ -1031,7 +1069,7 @@ paths:
       summary: Get the error message format of a specific error id
       tags:
       - corecontracts
-  /chains/{chainID}/core/governance/chaininfo:
+  /v2chains/{chainID}/core/governance/chaininfo:
     get:
       description: "If you are using the common API functions, you most likely rather\
         \ want to use '/chains/:chainID' to get information about a chain."
@@ -1060,7 +1098,7 @@ paths:
       summary: Get the chain info
       tags:
       - corecontracts
-  /chains/{chainID}/deactivate:
+  /v2chains/{chainID}/deactivate:
     post:
       operationId: deactivateChain
       parameters:
@@ -1089,7 +1127,7 @@ paths:
       summary: Deactivate a chain
       tags:
       - chains
-  /chains/{chainID}/evm/tx/{txHash}:
+  /v2chains/{chainID}/evm/tx/{txHash}:
     get:
       operationId: getRequestIDFromEVMTransactionID
       parameters:
@@ -1125,7 +1163,7 @@ paths:
       summary: Get the ISC request ID for the given Ethereum transaction hash
       tags:
       - chains
-  /chains/{chainID}/receipts/{requestID}:
+  /v2chains/{chainID}/receipts/{requestID}:
     get:
       operationId: getReceipt
       parameters:
@@ -1153,7 +1191,7 @@ paths:
       summary: Get a receipt from a request ID
       tags:
       - requests
-  /chains/{chainID}/requests/{requestID}/wait:
+  /v2chains/{chainID}/requests/{requestID}/wait:
     get:
       operationId: waitForTransaction
       parameters:
@@ -1187,7 +1225,7 @@ paths:
       summary: Wait until the given request has been processed by the node
       tags:
       - requests
-  /chains/{chainID}/state/{stateKey}:
+  /v2chains/{chainID}/state/{stateKey}:
     get:
       operationId: getStateValue
       parameters:
@@ -1215,7 +1253,7 @@ paths:
       summary: Fetch the raw value associated with the given key in the chain state
       tags:
       - chains
-  /chains/{chainID}/ws:
+  /v2chains/{chainID}/ws:
     get:
       operationId: attachToWebsocket
       parameters:
@@ -1232,7 +1270,7 @@ paths:
           description: successful operation
       tags:
       - chains
-  /metrics/chain/{chainID}:
+  /v2metrics/chain/{chainID}:
     get:
       operationId: getChainMetrics
       parameters:
@@ -1261,7 +1299,7 @@ paths:
       summary: Get chain specific metrics.
       tags:
       - metrics
-  /metrics/chain/{chainID}/pipe:
+  /v2metrics/chain/{chainID}/pipe:
     get:
       operationId: getChainPipeMetrics
       parameters:
@@ -1290,7 +1328,7 @@ paths:
       summary: Get chain pipe event metrics.
       tags:
       - metrics
-  /metrics/chain/{chainID}/workflow:
+  /v2metrics/chain/{chainID}/workflow:
     get:
       operationId: getChainWorkflowMetrics
       parameters:
@@ -1319,7 +1357,7 @@ paths:
       summary: Get chain workflow metrics.
       tags:
       - metrics
-  /metrics/l1:
+  /v2metrics/l1:
     get:
       operationId: getL1Metrics
       responses:
@@ -1340,7 +1378,7 @@ paths:
       summary: Get accumulated metrics.
       tags:
       - metrics
-  /node/config:
+  /v2node/config:
     get:
       operationId: getConfiguration
       responses:
@@ -1365,7 +1403,7 @@ paths:
       summary: Return the Wasp configuration
       tags:
       - node
-  /node/dks:
+  /v2node/dks:
     post:
       operationId: generateDKS
       requestBody:
@@ -1394,7 +1432,7 @@ paths:
       tags:
       - node
       x-codegen-request-body-name: DKSharesPostRequest
-  /node/dks/{sharedAddress}:
+  /v2node/dks/{sharedAddress}:
     get:
       operationId: getDKSInfo
       parameters:
@@ -1423,7 +1461,7 @@ paths:
       summary: Get information about the shared address DKS configuration
       tags:
       - node
-  /node/info:
+  /v2node/info:
     get:
       operationId: getInfo
       responses:
@@ -1444,7 +1482,7 @@ paths:
       summary: Returns private information about this node.
       tags:
       - node
-  /node/owner/certificate:
+  /v2node/owner/certificate:
     post:
       operationId: setNodeOwner
       requestBody:
@@ -1470,7 +1508,7 @@ paths:
       tags:
       - node
       x-codegen-request-body-name: ""
-  /node/peers:
+  /v2node/peers:
     get:
       operationId: getAllPeers
       responses:
@@ -1493,7 +1531,7 @@ paths:
       summary: Get basic information about all configured peers
       tags:
       - node
-  /node/peers/identity:
+  /v2node/peers/identity:
     get:
       operationId: getPeeringIdentity
       responses:
@@ -1514,7 +1552,7 @@ paths:
       summary: Get basic peer info of the current node
       tags:
       - node
-  /node/peers/trusted:
+  /v2node/peers/trusted:
     delete:
       operationId: distrustPeer
       requestBody:
@@ -1587,7 +1625,7 @@ paths:
       tags:
       - node
       x-codegen-request-body-name: ""
-  /node/shutdown:
+  /v2node/shutdown:
     post:
       operationId: shutdownNode
       responses:
@@ -1605,7 +1643,7 @@ paths:
       summary: Shut down the node
       tags:
       - node
-  /node/version:
+  /v2node/version:
     get:
       operationId: getVersion
       responses:
@@ -1619,7 +1657,7 @@ paths:
       summary: Returns the node version.
       tags:
       - node
-  /requests/callview:
+  /v2requests/callview:
     post:
       description: "Execute a view call. Either use HName or Name properties. If both\
         \ are supplied, HName are used."
@@ -1642,7 +1680,7 @@ paths:
       tags:
       - requests
       x-codegen-request-body-name: ""
-  /requests/offledger:
+  /v2requests/offledger:
     post:
       operationId: offLedger
       requestBody:
@@ -1660,7 +1698,7 @@ paths:
       tags:
       - requests
       x-codegen-request-body-name: ""
-  /users:
+  /v2users:
     get:
       operationId: getUsers
       responses:
@@ -1711,7 +1749,7 @@ paths:
       tags:
       - users
       x-codegen-request-body-name: ""
-  /users/{username}:
+  /v2users/{username}:
     delete:
       operationId: deleteUser
       parameters:
@@ -1771,7 +1809,7 @@ paths:
       summary: Get a user
       tags:
       - users
-  /users/{username}/password:
+  /v2users/{username}/password:
     put:
       operationId: changeUserPassword
       parameters:
@@ -1808,7 +1846,7 @@ paths:
       tags:
       - users
       x-codegen-request-body-name: ""
-  /users/{username}/permissions:
+  /v2users/{username}/permissions:
     put:
       operationId: changeUserPermissions
       parameters:
@@ -2016,6 +2054,28 @@ components:
       type: object
       xml:
         name: AssetsResponse
+    AuthInfoModel:
+      example:
+        authURL: authURL
+        scheme: scheme
+      properties:
+        authURL:
+          description: JWT only
+          format: string
+          type: string
+          xml:
+            name: AuthURL
+        scheme:
+          format: string
+          type: string
+          xml:
+            name: Scheme
+      required:
+      - authURL
+      - scheme
+      type: object
+      xml:
+        name: AuthInfoModel
     BaseToken:
       example:
         unit: TEST
@@ -2066,49 +2126,61 @@ components:
           type: boolean
           xml:
             name: UseMetricPrefix
+      required:
+      - decimals
+      - name
+      - subunit
+      - tickerSymbol
+      - unit
+      - useMetricPrefix
       type: object
       xml:
         name: BaseToken
     Blob:
       example:
-        Size: 0
-        Hash: Hash
+        size: 0
+        hash: hash
       properties:
-        Hash:
+        hash:
           format: string
           type: string
           xml:
             name: Hash
-        Size:
+        size:
           format: int32
           type: integer
           xml:
             name: Size
+      required:
+      - hash
+      - size
       type: object
       xml:
         name: Blob
     BlobInfoResponse:
       example:
-        Fields:
+        fields:
           key: 0
       properties:
-        Fields:
+        fields:
           additionalProperties:
             format: int32
             type: integer
           type: object
           xml:
             name: Fields
+      required:
+      - fields
       type: object
       xml:
         name: BlobInfoResponse
     BlobListResponse:
       example:
         Blobs:
-        - Size: 0
-          Hash: Hash
-        - Size: 0
-          Hash: Hash
+        - size: 0
+          hash: hash
+        - size: 0
+          hash: hash
       properties:
         Blobs:
           items:
@@ -2122,13 +2194,15 @@ components:
         name: BlobListResponse
     BlobValueResponse:
       example:
-        ValueData: ValueData
+        valueData: valueData
       properties:
-        ValueData:
+        valueData:
           format: string
           type: string
           xml:
             name: ValueData
+      required:
+      - valueData
       type: object
       xml:
         name: BlobValueResponse
@@ -2259,11 +2333,11 @@ components:
       example:
         receipts:
         - gasBurnLog:
-            Records:
-            - GasBurned: 5
-              Code: 1
-            - GasBurned: 5
-              Code: 1
+            records:
+            - code: 1
+              gasBurned: 5
+            - code: 1
+              gasBurned: 5
           request:
             fungibleTokens:
               baseTokens: 7
@@ -2312,11 +2386,11 @@ components:
             errorMessage: errorMessage
             hash: hash
         - gasBurnLog:
-            Records:
-            - GasBurned: 5
-              Code: 1
-            - GasBurned: 5
-              Code: 1
+            records:
+            - code: 1
+              gasBurned: 5
+            - code: 1
+              gasBurned: 5
           request:
             fungibleTokens:
               baseTokens: 7
@@ -2379,37 +2453,42 @@ components:
         name: BlockReceiptsResponse
     BurnLog:
       example:
-        Records:
-        - GasBurned: 5
-          Code: 1
-        - GasBurned: 5
-          Code: 1
+        records:
+        - code: 1
+          gasBurned: 5
+        - code: 1
+          gasBurned: 5
       properties:
-        Records:
+        records:
           items:
             $ref: '#/components/schemas/BurnRecord'
           type: array
           xml:
             name: Records
             wrapped: true
+      required:
+      - records
       type: object
       xml:
         name: BurnLog
     BurnRecord:
       example:
-        GasBurned: 5
-        Code: 1
+        code: 1
+        gasBurned: 5
       properties:
-        Code:
+        code:
           format: int32
           type: integer
           xml:
             name: Code
-        GasBurned:
+        gasBurned:
           format: int64
           type: integer
           xml:
             name: GasBurned
+      required:
+      - code
+      - gasBurned
       type: object
       xml:
         name: BurnRecord
@@ -3662,6 +3741,48 @@ components:
       type: object
       xml:
         name: L1Params
+    LoginRequest:
+      example:
+        password: password
+        username: username
+      properties:
+        password:
+          format: string
+          type: string
+          xml:
+            name: Password
+        username:
+          format: string
+          type: string
+          xml:
+            name: Username
+      required:
+      - password
+      - username
+      type: object
+      xml:
+        name: LoginRequest
+    LoginResponse:
+      example:
+        jwt: jwt
+        error: error
+      properties:
+        error:
+          format: string
+          type: string
+          xml:
+            name: Error
+        jwt:
+          format: string
+          type: string
+          xml:
+            name: JWT
+      required:
+      - error
+      - jwt
+      type: object
+      xml:
+        name: LoginResponse
     NFTDataResponse:
       example:
         owner: owner
@@ -4173,10 +4294,10 @@ components:
     ReceiptResponse:
       example:
         gasBurnLog:
-        - GasBurned: 5
-          Code: 1
-        - GasBurned: 5
-          Code: 1
+        - code: 1
+          gasBurned: 5
+        - code: 1
+          gasBurned: 5
         request: request
         blockIndex: 1
         requestIndex: 1
@@ -4426,11 +4547,11 @@ components:
     RequestReceiptResponse:
       example:
         gasBurnLog:
-          Records:
-          - GasBurned: 5
-            Code: 1
-          - GasBurned: 5
-            Code: 1
+          records:
+          - code: 1
+            gasBurned: 5
+          - code: 1
+            gasBurned: 5
         request:
           fungibleTokens:
             baseTokens: 7
@@ -4514,7 +4635,6 @@ components:
             name: RequestIndex
       required:
       - blockIndex
-      - error
       - gasBudget
       - gasBurnLog
       - gasBurned

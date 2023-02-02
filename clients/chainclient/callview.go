@@ -16,7 +16,7 @@ func (c *Client) CallView(ctx context.Context, hContract isc.Hname, functionName
 		ChainId:       c.ChainID.String(),
 		ContractHName: hContract.String(),
 		FunctionName:  functionName,
-		Arguments:     *clients.JSONDictToAPIJSONDict(args.JSONDict()),
+		Arguments:     clients.JSONDictToAPIJSONDict(args.JSONDict()),
 	}
 
 	result, _, err := c.WaspClient.RequestsApi.

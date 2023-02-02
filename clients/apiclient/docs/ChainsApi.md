@@ -4,17 +4,17 @@ All URIs are relative to *http://localhost:9090*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**ActivateChain**](ChainsApi.md#ActivateChain) | **Post** /chains/{chainID}/activate | Activate a chain
-[**AddAccessNode**](ChainsApi.md#AddAccessNode) | **Put** /chains/{chainID}/access-node/{publicKey} | Configure a trusted node to be an access node.
-[**AttachToWebsocket**](ChainsApi.md#AttachToWebsocket) | **Get** /chains/{chainID}/ws | 
-[**DeactivateChain**](ChainsApi.md#DeactivateChain) | **Post** /chains/{chainID}/deactivate | Deactivate a chain
-[**GetChainInfo**](ChainsApi.md#GetChainInfo) | **Get** /chains/{chainID} | Get information about a specific chain
-[**GetChains**](ChainsApi.md#GetChains) | **Get** /chains | Get a list of all chains
-[**GetCommitteeInfo**](ChainsApi.md#GetCommitteeInfo) | **Get** /chains/{chainID}/committee | Get information about the deployed committee
-[**GetContracts**](ChainsApi.md#GetContracts) | **Get** /chains/{chainID}/contracts | Get all available chain contracts
-[**GetRequestIDFromEVMTransactionID**](ChainsApi.md#GetRequestIDFromEVMTransactionID) | **Get** /chains/{chainID}/evm/tx/{txHash} | Get the ISC request ID for the given Ethereum transaction hash
-[**GetStateValue**](ChainsApi.md#GetStateValue) | **Get** /chains/{chainID}/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
-[**RemoveAccessNode**](ChainsApi.md#RemoveAccessNode) | **Delete** /chains/{chainID}/access-node/{publicKey} | Remove an access node.
+[**ActivateChain**](ChainsApi.md#ActivateChain) | **Post** /v2chains/{chainID}/activate | Activate a chain
+[**AddAccessNode**](ChainsApi.md#AddAccessNode) | **Put** /v2chains/{chainID}/access-node/{publicKey} | Configure a trusted node to be an access node.
+[**AttachToWebsocket**](ChainsApi.md#AttachToWebsocket) | **Get** /v2chains/{chainID}/ws | 
+[**DeactivateChain**](ChainsApi.md#DeactivateChain) | **Post** /v2chains/{chainID}/deactivate | Deactivate a chain
+[**GetChainInfo**](ChainsApi.md#GetChainInfo) | **Get** /v2chains/{chainID} | Get information about a specific chain
+[**GetChains**](ChainsApi.md#GetChains) | **Get** /v2chains | Get a list of all chains
+[**GetCommitteeInfo**](ChainsApi.md#GetCommitteeInfo) | **Get** /v2chains/{chainID}/committee | Get information about the deployed committee
+[**GetContracts**](ChainsApi.md#GetContracts) | **Get** /v2chains/{chainID}/contracts | Get all available chain contracts
+[**GetRequestIDFromEVMTransactionID**](ChainsApi.md#GetRequestIDFromEVMTransactionID) | **Get** /v2chains/{chainID}/evm/tx/{txHash} | Get the ISC request ID for the given Ethereum transaction hash
+[**GetStateValue**](ChainsApi.md#GetStateValue) | **Get** /v2chains/{chainID}/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
+[**RemoveAccessNode**](ChainsApi.md#RemoveAccessNode) | **Delete** /v2chains/{chainID}/access-node/{publicKey} | Remove an access node.
 
 
 

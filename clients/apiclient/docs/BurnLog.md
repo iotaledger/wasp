@@ -4,13 +4,13 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Records** | Pointer to [**[]BurnRecord**](BurnRecord.md) |  | [optional] 
+**Records** | [**[]BurnRecord**](BurnRecord.md) |  | 
 
 ## Methods
 
 ### NewBurnLog
 
-`func NewBurnLog() *BurnLog`
+`func NewBurnLog(records []BurnRecord, ) *BurnLog`
 
 NewBurnLog instantiates a new BurnLog object
 This constructor will assign default values to properties that have it defined,
@@ -44,11 +44,6 @@ and a boolean to check if the value has been set.
 
 SetRecords sets Records field to given value.
 
-### HasRecords
-
-`func (o *BurnLog) HasRecords() bool`
-
-HasRecords returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

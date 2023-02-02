@@ -10,10 +10,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -36,14 +35,14 @@ func initRunDKGCmd() *cobra.Command {
 			}
 
 			committeePubKeys := make([]string, 0)
-			for _, api := range config.CommitteeAPI(committee) {
-				peerInfo, err := client.NewWaspClient(api).GetPeeringSelf()
+			for _, api := range config.CommitteeAPIURL(committee) {
+				peerInfo, err := clients.NewWaspClient(api).GetPeeringSelf()
 				log.Check(err)
 				committeePubKeys = append(committeePubKeys, peerInfo.PubKey)
 			}
 
 			dkgInitiatorIndex := uint16(rand.Intn(len(committee)))
-			stateControllerAddr, err := apilib.RunDKG(config.GetToken(), config.CommitteeAPI(committee), committeePubKeys, uint16(quorum), dkgInitiatorIndex)
+			stateControllerAddr, err := apilib.RunDKG(config.GetToken(), config.CommitteeAPIURL(committee), committeePubKeys, uint16(quorum), dkgInitiatorIndex)
 			log.Check(err)
 
 			fmt.Fprintf(os.Stdout, "DKG successful, address: %s", stateControllerAddr.Bech32(parameters.L1().Protocol.Bech32HRP))

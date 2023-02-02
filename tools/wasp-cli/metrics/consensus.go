@@ -8,7 +8,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -20,7 +20,7 @@ func initConsensusMetricsCmd() *cobra.Command {
 		Short: "Show current value of collected metrics of consensus",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := config.WaspClient(config.MustWaspAPI())
+			client := config.WaspClient(config.MustWaspAPIURL())
 			_, chainAddress, err := iotago.ParseBech32(chainAlias)
 			log.Check(err)
 			chainID := isc.ChainIDFromAddress(chainAddress.(*iotago.AliasAddress))
