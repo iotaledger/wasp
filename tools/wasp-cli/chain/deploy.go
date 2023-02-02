@@ -24,7 +24,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 )
 
-func getAllWaspNodes() []int {
+func GetAllWaspNodes() []int {
 	ret := []int{}
 	for index := range viper.GetStringMap("wasp") {
 		i, err := strconv.Atoi(index)
@@ -75,6 +75,10 @@ func initDeployCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			l1Client := config.L1Client()
 
+			if committee == nil {
+				committee = GetAllWaspNodes()
+			}
+
 			if quorum == 0 {
 				quorum = defaultQuorum(len(committee))
 			}
@@ -120,7 +124,7 @@ func initDeployCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().IntSliceVarP(&committee, "committee", "", []int{0}, "peers acting as committee nodes (ex: 0,1,2,3) (default: 0)")
+	cmd.Flags().IntSliceVarP(&committee, "committee", "", nil, "peers acting as committee nodes (ex: 0,1,2,3) (default: all nodes)")
 	cmd.Flags().IntVarP(&quorum, "quorum", "", 0, "quorum (default: 3/4s of the number of committee nodes)")
 	cmd.Flags().StringVarP(&description, "description", "", "", "description")
 	cmd.Flags().StringVarP(&govControllerStr, "gov-controller", "", "", "governance controller address")
