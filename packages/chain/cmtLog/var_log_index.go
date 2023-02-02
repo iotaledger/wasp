@@ -192,7 +192,15 @@ func (v *varLogIndexImpl) votedFor(quorum int) (LogIndex, *isc.AliasOutputWithID
 		countsLI[msg.nextLogIndex]++
 	}
 	maxLI := NilLogIndex()
-	for li, c := range countsLI {
+	for li := range countsLI {
+		// Count votes: all vote for this LI, if votes for it or higher LI.
+		c := 0
+		for li2, c2 := range countsLI {
+			if li2.AsUint32() >= li.AsUint32() {
+				c += c2
+			}
+		}
+		// If quorum reached and it is higher than we had before, take it.
 		if c >= quorum && li.AsUint32() > maxLI.AsUint32() {
 			maxLI = li
 		}
