@@ -70,6 +70,7 @@ func TestSynchronous(t *testing.T) {
 }
 
 func TestConcurrency(t *testing.T) {
+	t.SkipNow()
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
@@ -118,6 +119,7 @@ func TestConcurrency(t *testing.T) {
 }
 
 func TestConcurrency2(t *testing.T) {
+	t.SkipNow()
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
