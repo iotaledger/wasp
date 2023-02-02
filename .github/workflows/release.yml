@@ -46,8 +46,8 @@ jobs:
         with:
           name: wasp
       
-      - name: Untar temporary artifacts and cleanup
-        run: tar -xf temp.tar && rm temp.tar
+      - name: Untar temporary artifacts, cleanup and set correct permissions
+        run: tar -xf temp.tar && rm temp.tar && chown -R root:root .
       
       - name: Release wasp-cli
         run: goreleaser --clean -f ./tools/wasp-cli/.goreleaser.yml
