@@ -4,10 +4,13 @@
 package peering
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
 
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -18,21 +21,30 @@ func initDistrustCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			pubKeyOrNetID := args[0]
-			waspClient := config.WaspClient(config.MustWaspAPIURL())
+			client := cliclients.WaspClientForIndex()
+
 			if peering.CheckNetID(pubKeyOrNetID) != nil {
-				log.Check(waspClient.DeletePeeringTrusted(pubKeyOrNetID))
+				_, err := client.NodeApi.DistrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
+					NetId: pubKeyOrNetID,
+				}).Execute()
+				log.Check(err)
 				log.Printf("# Distrusted PubKey: %v\n", pubKeyOrNetID)
 				return
 			}
-			trustedList, err := waspClient.GetPeeringTrustedList()
+
+			trustedList, _, err := client.NodeApi.GetTrustedPeers(context.Background()).Execute()
 			log.Check(err)
+
 			for _, t := range trustedList {
-				if t.NetID == pubKeyOrNetID {
-					err := waspClient.DeletePeeringTrusted(t.PubKey)
+				if t.NetId == pubKeyOrNetID {
+					_, err := client.NodeApi.DistrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
+						PublicKey: t.PublicKey,
+					}).Execute()
+
 					if err != nil {
-						log.Printf("error: failed to distrust %v/%v, reason=%v\n", t.PubKey, t.NetID, err)
+						log.Printf("error: failed to distrust %v/%v, reason=%v\n", t.PublicKey, t.NetId, err)
 					} else {
-						log.Printf("# Distrusted PubKey: %v\n", t.PubKey)
+						log.Printf("# Distrusted PubKey: %v\n", t.PublicKey)
 					}
 				}
 			}

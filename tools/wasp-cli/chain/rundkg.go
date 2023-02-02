@@ -4,6 +4,7 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"os"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
@@ -35,10 +37,11 @@ func initRunDKGCmd() *cobra.Command {
 			}
 
 			committeePubKeys := make([]string, 0)
-			for _, api := range config.CommitteeAPIURL(committee) {
-				peerInfo, err := clients.NewWaspClient(api).GetPeeringSelf()
+			for _, apiIndex := range committee {
+				peerInfo, _, err := cliclients.WaspClientForIndex(apiIndex).NodeApi.GetPeeringIdentity(context.Background()).Execute()
 				log.Check(err)
-				committeePubKeys = append(committeePubKeys, peerInfo.PubKey)
+
+				committeePubKeys = append(committeePubKeys, peerInfo.PublicKey)
 			}
 
 			dkgInitiatorIndex := uint16(rand.Intn(len(committee)))

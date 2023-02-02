@@ -12,11 +12,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 )
 
-func WaspClientForNodeIndex(i ...int) *apiclient.APIClient {
-	return WaspClient(config.WaspAPIURL(i...))
-}
-
-func WaspClient(apiAddress string) *apiclient.APIClient {
+func waspClient(apiAddress string) *apiclient.APIClient {
 	// TODO: add authentication for /adm
 	L1Client() // this will fill parameters.L1() with data from the L1 node
 	log.Verbosef("using Wasp host %s\n", apiAddress)
@@ -26,6 +22,10 @@ func WaspClient(apiAddress string) *apiclient.APIClient {
 	apiConfig.AddDefaultHeader("Authorization", config.GetToken())
 
 	return apiclient.NewAPIClient(apiConfig)
+}
+
+func WaspClientForIndex(i ...int) *apiclient.APIClient {
+	return waspClient(config.MustWaspAPIURL(i...))
 }
 
 func L1Client() l1connection.Client {

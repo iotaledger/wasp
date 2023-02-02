@@ -6,15 +6,17 @@ import (
 	"github.com/spf13/cobra"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
 
 func postRequest(hname, fname string, params chainclient.PostRequestParams, offLedger, adjustStorageDeposit bool) {
-	scClient := SCClient(isc.Hn(hname))
+	apiClient := cliclients.WaspClientForIndex()
+	scClient := cliclients.SCClient(apiClient, isc.Hn(hname))
 
 	if offLedger {
 		params.Nonce = uint64(time.Now().UnixNano())

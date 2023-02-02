@@ -34,7 +34,7 @@ func initBlockCmd() *cobra.Command {
 }
 
 func fetchBlockInfo(args []string) *apiclient.BlockInfoResponse {
-	client := cliclients.WaspClientForNodeIndex()
+	client := cliclients.WaspClientForIndex()
 
 	if len(args) == 0 {
 		blockInfo, _, err := client.
@@ -60,7 +60,7 @@ func fetchBlockInfo(args []string) *apiclient.BlockInfoResponse {
 }
 
 func logRequestsInBlock(index uint32) {
-	client := cliclients.WaspClientForNodeIndex()
+	client := cliclients.WaspClientForIndex()
 	// TODO: It should be uint32 here. Fix generator!
 	receipts, _, err := client.CorecontractsApi.
 		BlocklogGetRequestReceiptsOfBlock(context.Background(), GetCurrentChainID().String(), int32(index)).
@@ -110,7 +110,7 @@ func logReceipt(receipt *apiclient.RequestReceiptResponse, index ...int) {
 }
 
 func logEventsInBlock(index uint32) {
-	client := cliclients.WaspClientForNodeIndex()
+	client := cliclients.WaspClientForIndex()
 	// TODO: It should be uint32 here. Fix generator!
 	events, _, err := client.CorecontractsApi.
 		BlocklogGetEventsOfBlock(context.Background(), GetCurrentChainID().String(), int32(index)).
@@ -129,7 +129,7 @@ func initRequestCmd() *cobra.Command {
 			reqID, err := isc.RequestIDFromString(args[0])
 			log.Check(err)
 
-			client := cliclients.WaspClientForNodeIndex()
+			client := cliclients.WaspClientForIndex()
 			// TODO: It should be uint32 here. Fix generator!
 			receipt, _, err := client.CorecontractsApi.
 				BlocklogGetRequestReceipt(context.Background(), GetCurrentChainID().String(), reqID.String()).
@@ -148,7 +148,7 @@ func initRequestCmd() *cobra.Command {
 }
 
 func logEventsInRequest(reqID isc.RequestID) {
-	client := cliclients.WaspClientForNodeIndex()
+	client := cliclients.WaspClientForIndex()
 	// TODO: It should be uint32 here. Fix generator!
 	events, _, err := client.CorecontractsApi.
 		BlocklogGetEventsOfRequest(context.Background(), GetCurrentChainID().String(), reqID.String()).

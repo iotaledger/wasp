@@ -6,11 +6,11 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	config2 "github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
@@ -27,13 +27,12 @@ func initStoreBlobCmd() *cobra.Command {
 		Short: "Store a blob in the chain",
 		Args:  cobra.MinimumNArgs(4),
 		Run: func(cmd *cobra.Command, args []string) {
-			uploadBlob(util.EncodeParams(args), config2.MustWaspAPIURL())
+			uploadBlob(cliclients.WaspClientForIndex(), util.EncodeParams(args))
 		},
 	}
 }
 
-func uploadBlob(fieldValues dict.Dict, apiAddress string) (hash hashing.HashValue) {
-	client := cliclients.WaspClientForNodeIndex()
+func uploadBlob(client *apiclient.APIClient, fieldValues dict.Dict) (hash hashing.HashValue) {
 	chainClient := cliclients.ChainClient(client)
 
 	hash, _, _, err := chainClient.UploadBlob(context.Background(), fieldValues)
@@ -52,7 +51,7 @@ func initShowBlobCmd() *cobra.Command {
 			hash, err := hashing.HashValueFromHex(args[0])
 			log.Check(err)
 
-			client := cliclients.WaspClientForNodeIndex()
+			client := cliclients.WaspClientForIndex()
 
 			blobInfo, _, err := client.
 				CorecontractsApi.
@@ -81,7 +80,7 @@ func initListBlobsCmd() *cobra.Command {
 		Short: "List blobs in chain",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClientForNodeIndex()
+			client := cliclients.WaspClientForIndex()
 
 			blobsResponse, _, err := client.
 				CorecontractsApi.

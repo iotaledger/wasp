@@ -24,7 +24,7 @@ func initActivateCmd() *cobra.Command {
 				nodes = GetAllWaspNodes()
 			}
 			for _, nodeIdx := range nodes {
-				client := cliclients.WaspClientForNodeIndex(nodeIdx)
+				client := cliclients.WaspClientForIndex(nodeIdx)
 
 				r, _, err := client.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute()
 
@@ -59,7 +59,7 @@ func initDeactivateCmd() *cobra.Command {
 				nodes = GetAllWaspNodes()
 			}
 			for _, nodeIdx := range nodes {
-				client := cliclients.WaspClientForNodeIndex(nodeIdx)
+				client := cliclients.WaspClientForIndex(nodeIdx)
 
 				_, err := client.ChainsApi.DeactivateChain(context.Background(), chainID.String()).Execute()
 				log.Check(err)

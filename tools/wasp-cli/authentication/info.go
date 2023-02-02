@@ -28,7 +28,7 @@ func initInfoCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 
 			// Auth is currently not inside Swagger, so this is a temporary change
-			client := cliclients.WaspClientForNodeIndex()
+			client := cliclients.WaspClientForIndex()
 			authInfo, _, err := client.AuthApi.AuthInfo(context.Background()).Execute()
 
 			log.Check(err)

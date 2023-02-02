@@ -1,14 +1,14 @@
 package metrics
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/webapi/v1/model"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -20,14 +20,16 @@ func initNodeconnMetricsCmd() *cobra.Command {
 		Short: "Show current value of collected metrics of connection to L1",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := config.WaspClient(config.MustWaspAPIURL())
+			client := cliclients.WaspClientForIndex()
+
 			if chainAlias == "" {
-				nodeconnMetrics, err := client.GetNodeConnectionMetrics()
+				nodeconnMetrics, _, err := client.MetricsApi.GetL1Metrics(context.Background()).Execute()
 				log.Check(err)
 				log.Printf("Following chains are registered for L1 events:\n")
 				for _, s := range nodeconnMetrics.Registered {
 					log.Printf("\t%s\n", s)
 				}
+
 				printMessagesMetrics(
 					&nodeconnMetrics.NodeConnectionMessagesMetrics,
 					[][]string{makeMessagesMetricsTableRow("Milestone", true, nodeconnMetrics.InMilestone)},

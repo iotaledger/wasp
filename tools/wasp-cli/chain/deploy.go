@@ -4,6 +4,7 @@
 package chain
 
 import (
+	"context"
 	"math"
 	"os"
 	"strconv"
@@ -19,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
@@ -73,7 +75,8 @@ func initDeployCmd() *cobra.Command {
 		Short: "Deploy a new chain",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			l1Client := config.L1Client()
+			l1Client := cliclients.L1Client()
+			alias := GetChainAlias()
 
 			if committee == nil {
 				committee = GetAllWaspNodes()
@@ -88,10 +91,10 @@ func initDeployCmd() *cobra.Command {
 			}
 
 			committeePubKeys := make([]string, 0)
-			for _, api := range config.CommitteeAPIURL(committee) {
-				peerInfo, err := config.WaspClient(api).GetPeeringSelf()
+			for _, apiIndex := range committee {
+				peerInfo, _, err := cliclients.WaspClientForIndex(apiIndex).NodeApi.GetPeeringIdentity(context.Background()).Execute()
 				log.Check(err)
-				committeePubKeys = append(committeePubKeys, peerInfo.PubKey)
+				committeePubKeys = append(committeePubKeys, peerInfo.PublicKey)
 			}
 
 			chainid, _, err := apilib.DeployChainWithDKG(apilib.CreateChainParams{
