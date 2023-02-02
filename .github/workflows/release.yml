@@ -36,18 +36,21 @@ jobs:
     name: Release wasp-cli Binaries
     runs-on: ubuntu-latest
     container:
-      image: iotaledger/goreleaser-cgo-cross-compiler:1.19.4
+      image: iotaledger/goreleaser-cgo-cross-compiler:1.19.5
     steps:
+      - name: Create dist folder
+        run: mkdir /dist && cd /dist/
+      
       - name: Download temporary artifacts
         uses: actions/download-artifact@v3
         with:
           name: wasp
       
-      - name: Untar temporary artifacts and cleanup
-        run: tar -xf temp.tar && rm temp.tar
+      - name: Untar temporary artifacts, cleanup and set correct permissions
+        run: tar -xf temp.tar && rm temp.tar && chown -R root:root .
       
       - name: Release wasp-cli
-        run: goreleaser --rm-dist -f ./tools/wasp-cli/.goreleaser.yml
+        run: goreleaser --clean -f ./tools/wasp-cli/.goreleaser.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -55,10 +58,6 @@ jobs:
     needs: setup
     name: Release Docker
     runs-on: ubuntu-latest
-    container:
-      image: iotaledger/goreleaser-cgo-cross-compiler:1.19.4
-    env:
-      image_name: iotaledger/wasp
     steps:
       - name: Download temporary artifacts
         uses: actions/download-artifact@v3
@@ -88,8 +87,6 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: iotaledger/wasp
-          flavor: |
-            latest=true
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}

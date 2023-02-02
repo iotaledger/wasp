@@ -30,7 +30,7 @@ func initRotateCmd() *cobra.Command {
 				log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.L1().Protocol.Bech32HRP, prefix)
 			}
 
-			kp := wallet.Load().KeyPair
+			wallet := wallet.Load()
 
 			aliasID := GetCurrentChainID().AsAliasID()
 
@@ -42,9 +42,13 @@ func initRotateCmd() *cobra.Command {
 				newStateControllerAddr,
 				chainOutputID,
 				chainOutput,
-				kp,
+				wallet.KeyPair,
 			)
 			log.Check(err)
+			log.Verbosef("issuing rotation tx, signed for address: %s", wallet.KeyPair.Address().Bech32(parameters.L1().Protocol.Bech32HRP))
+			json, err := tx.MarshalJSON()
+			log.Check(err)
+			log.Verbosef("rotation tx: %s", string(json))
 
 			_, err = l1Client.PostTxAndWaitUntilConfirmation(tx)
 			if err != nil {

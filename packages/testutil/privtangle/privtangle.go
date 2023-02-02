@@ -226,6 +226,7 @@ func (pt *PrivTangle) startFaucet(i int) *exec.Cmd {
 	args := []string{
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--faucet.bindAddress=localhost:%d", pt.NodePortFaucet(i)),
+		"--faucet.rateLimit.enabled=false",
 	}
 	return pt.startINXPlugin(i, "inx-faucet", args, env)
 }

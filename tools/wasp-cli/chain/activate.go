@@ -22,7 +22,7 @@ func initActivateCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			chainID := GetCurrentChainID()
 			if nodes == nil {
-				nodes = getAllWaspNodes()
+				nodes = GetAllWaspNodes()
 			}
 			for _, nodeIdx := range nodes {
 				client := Client(config.WaspAPI(nodeIdx))
@@ -57,7 +57,7 @@ func initDeactivateCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			chainID := GetCurrentChainID()
 			if nodes == nil {
-				nodes = getAllWaspNodes()
+				nodes = GetAllWaspNodes()
 			}
 			for _, nodeIdx := range nodes {
 				log.Check(Client(config.WaspAPI(nodeIdx)).WaspClient.DeactivateChain(chainID))

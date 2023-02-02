@@ -24,7 +24,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 )
 
-func getAllWaspNodes() []int {
+func GetAllWaspNodes() []int {
 	ret := []int{}
 	for index := range viper.GetStringMap("wasp") {
 		i, err := strconv.Atoi(index)
@@ -47,6 +47,18 @@ func isEnoughQuorum(n, t int) (bool, int) {
 	return t >= (n - maxF), maxF
 }
 
+func controllerAddr(addr string) iotago.Address {
+	if addr == "" {
+		return wallet.Load().Address()
+	}
+	prefix, govControllerAddr, err := iotago.ParseBech32(addr)
+	log.Check(err)
+	if parameters.L1().Protocol.Bech32HRP != prefix {
+		log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.L1().Protocol.Bech32HRP, prefix)
+	}
+	return govControllerAddr
+}
+
 func initDeployCmd() *cobra.Command {
 	var (
 		committee        []int
@@ -57,16 +69,16 @@ func initDeployCmd() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "deploy",
+		Use:   "deploy [<alias>]",
 		Short: "Deploy a new chain",
-		Args:  cobra.NoArgs,
+		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			l1Client := config.L1Client()
-			alias := GetChainAlias()
 
 			if committee == nil {
-				committee = getAllWaspNodes()
+				committee = GetAllWaspNodes()
 			}
+
 			if quorum == 0 {
 				quorum = defaultQuorum(len(committee))
 			}
@@ -82,17 +94,6 @@ func initDeployCmd() *cobra.Command {
 				committeePubKeys = append(committeePubKeys, peerInfo.PubKey)
 			}
 
-			var govControllerAddr iotago.Address
-			if govControllerStr != "" {
-				var err error
-				var prefix iotago.NetworkPrefix
-				prefix, govControllerAddr, err = iotago.ParseBech32(govControllerStr)
-				log.Check(err)
-				if parameters.L1().Protocol.Bech32HRP != prefix {
-					log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.L1().Protocol.Bech32HRP, prefix)
-				}
-			}
-
 			chainid, _, err := apilib.DeployChainWithDKG(apilib.CreateChainParams{
 				AuthenticationToken:  config.GetToken(),
 				Layer1Client:         l1Client,
@@ -103,7 +104,7 @@ func initDeployCmd() *cobra.Command {
 				OriginatorKeyPair:    wallet.Load().KeyPair,
 				Description:          description,
 				Textout:              os.Stdout,
-				GovernanceController: govControllerAddr,
+				GovernanceController: controllerAddr(govControllerStr),
 				InitParams: dict.Dict{
 					root.ParamEVM(evm.FieldChainID):         codec.EncodeUint16(evmParams.ChainID),
 					root.ParamEVM(evm.FieldGenesisAlloc):    evmtypes.EncodeGenesisAlloc(evmParams.getGenesis(nil)),
@@ -113,6 +114,12 @@ func initDeployCmd() *cobra.Command {
 			})
 			log.Check(err)
 
+			var alias string
+			if len(args) == 0 {
+				alias = GetChainAlias()
+			} else {
+				alias = args[0]
+			}
 			AddChainAlias(alias, chainid.String())
 		},
 	}

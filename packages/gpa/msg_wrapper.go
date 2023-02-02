@@ -70,7 +70,7 @@ func (w *MsgWrapper) UnmarshalMessage(data []byte) (Message, error) {
 		return nil, err
 	}
 	index := int(indexU16)
-	wrappedBin, err := util.ReadBytes16(r)
+	wrappedBin, err := util.ReadBytes32(r)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func (m *WrappingMsg) MarshalBinary() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := util.WriteBytes16(w, bin); err != nil {
+	if err := util.WriteBytes32(w, bin); err != nil {
 		return nil, err
 	}
 	return w.Bytes(), nil

@@ -46,12 +46,21 @@ For new access nodes to join the network, they need to:
   wasp-cli to do so:
 
 ```bash
-wasp-cli chain change-access-nodes
+wasp-cli chain gov-change-access-nodes accept <pubkey (0x...)> 
 ```
 
 After this, new nodes should be able to sync the state and execute view queries (call view entry points).
 
 You can remove an access node by calling `changeAccessNodes`.
+
+Alternatively, to add any node as an "access node", you can add "non-permissioned" access nodes, without the signature from the chain owner.
+You can do this by using the following command:
+
+```bash
+wasp-cli chain access-nodes <add|remove> <pubkey (0x...)> 
+```
+
+This node won't be "officially" recognized by the committee, but will still be able to sync the state and provide all regular functionality.
 
 ### Changing the Set of Validators
 

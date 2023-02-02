@@ -40,7 +40,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/shutdowncoordinator"
+	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -177,7 +177,7 @@ type chainNodeImpl struct {
 	netPeeringID        peering.PeeringID
 	netPeerPubs         map[gpa.NodeID]*cryptolib.PublicKey
 	net                 peering.NetworkProvider
-	shutdownCoordinator *shutdowncoordinator.ShutdownCoordinator
+	shutdownCoordinator *shutdown.Coordinator
 	log                 *logger.Logger
 }
 
@@ -186,7 +186,7 @@ type consensusInst struct {
 	cancelFunc          context.CancelFunc
 	consensus           *consGR.ConsGr
 	committee           []*cryptolib.PublicKey
-	shutdownCoordinator *shutdowncoordinator.ShutdownCoordinator
+	shutdownCoordinator *shutdown.Coordinator
 }
 
 // Used to correlate consensus request with its output.
@@ -233,7 +233,7 @@ func New(
 	listener ChainListener,
 	accessNodesFromNode []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
-	shutdownCoordinator *shutdowncoordinator.ShutdownCoordinator,
+	shutdownCoordinator *shutdown.Coordinator,
 	log *logger.Logger,
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
@@ -309,7 +309,7 @@ func New(
 		net,
 		blockWAL,
 		chainStore,
-		shutdownCoordinator.Sub(fmt.Sprintf("stateMgr-%v", chainID)),
+		shutdownCoordinator.Nested("StateMgr"),
 		cni.log.Named("SM"),
 	)
 	if err != nil {
@@ -417,7 +417,7 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 				return
 			}
 			// needs to wait for state mgr and consensusInst
-			if cni.shutdownCoordinator.AreAllSubComponentsDone() {
+			if cni.shutdownCoordinator.CheckNestedDone() {
 				cni.net.Detach(netAttachID)
 				cni.shutdownCoordinator.Done()
 				return
