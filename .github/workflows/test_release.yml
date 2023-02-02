@@ -41,6 +41,9 @@ jobs:
     container:
       image: iotaledger/goreleaser-cgo-cross-compiler:1.19.5
     steps:
+      - name: Create dist folder
+        run: mkdir /dist && cd /dist/
+      
       - name: Download temporary artifacts
         uses: actions/download-artifact@v3
         with:
