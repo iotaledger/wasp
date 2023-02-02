@@ -57,8 +57,7 @@ archives:
       - goos: windows
         format: zip
     name_template: >- 
-      {{ .ProjectName }}_
-      {{ .Version }}_
+      {{ .ProjectName }}_{{ .Version }}_
       {{- if eq .Os "darwin" }}macOS_
       {{- else if eq .Os "linux" }}Linux_
       {{- else if eq .Os "windows" }}Windows_

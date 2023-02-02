@@ -38,6 +38,9 @@ jobs:
     container:
       image: iotaledger/goreleaser-cgo-cross-compiler:1.19.5
     steps:
+      - name: Create dist folder
+        run: mkdir /dist && cd /dist/
+      
       - name: Download temporary artifacts
         uses: actions/download-artifact@v3
         with:
@@ -55,11 +58,10 @@ jobs:
     needs: setup
     name: Release Docker
     runs-on: ubuntu-latest
-    container:
-      image: iotaledger/goreleaser-cgo-cross-compiler:1.19.5
-    env:
-      image_name: iotaledger/wasp
     steps:
+      - name: Create dist folder
+        run: mkdir /dist && cd /dist/
+      
       - name: Download temporary artifacts
         uses: actions/download-artifact@v3
         with:
@@ -88,8 +90,6 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: iotaledger/wasp
-          flavor: |
-            latest=true
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
