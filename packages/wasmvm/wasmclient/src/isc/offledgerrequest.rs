@@ -26,8 +26,7 @@ pub struct OffLedgerRequestData {
     contract: ScHname,
     entry_point: ScHname,
     params: ScDict,
-    signature_scheme: Option<OffLedgerSignatureScheme>,
-    // None if unsigned
+    signature_scheme: OffLedgerSignatureScheme,
     nonce: u64,
     allowance: ScAssets,
     gas_budget: u64,
@@ -61,7 +60,7 @@ impl OffLedgerRequest for OffLedgerRequestData {
             contract: contract.clone(),
             entry_point: entry_point.clone(),
             params: params.clone(),
-            signature_scheme: None,
+            signature_scheme: OffLedgerSignatureScheme::new(&keypair::KeyPair::new(&[])),
             nonce: nonce,
             allowance: ScAssets::new(&Vec::new()),
             gas_budget: super::gas::MAX_GAS_PER_REQUEST,
@@ -89,7 +88,7 @@ impl OffLedgerRequest for OffLedgerRequestData {
         );
         let mut scheme = OffLedgerSignatureScheme::new(&key_pair.to_owned());
         scheme.signature = key_pair.clone().sign(&self.essence()).clone();
-        req.signature_scheme = Some(scheme);
+        req.signature_scheme = scheme;
         return req;
     }
 }
@@ -108,12 +107,7 @@ impl OffLedgerRequestData {
         data.append(self.params.to_bytes().as_mut());
         data.append(wasmlib::uint64_to_bytes(self.nonce).as_mut());
         data.append(wasmlib::uint64_to_bytes(self.gas_budget).as_mut());
-        let scheme = match self.signature_scheme.clone() {
-            Some(val) => val.clone(),
-            None => {
-                panic!("signature_scheme is not given")
-            }
-        };
+        let scheme = self.signature_scheme.clone();
         let mut public_key = scheme.key_pair.public_key.to_bytes().to_vec();
         data.push(public_key.len() as u8);
         data.append(&mut public_key);
@@ -122,15 +116,7 @@ impl OffLedgerRequestData {
     }
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut b = self.essence();
-        b.append(
-            &mut self
-                .signature_scheme
-                .clone()
-                .unwrap()
-                .signature
-                .to_owned()
-                .to_vec(),
-        );
+        b.append(&mut self.signature_scheme.clone().signature.to_owned().to_vec());
         return b;
     }
     pub fn with_allowance(&mut self, allowance: &ScAssets) {

@@ -2,7 +2,7 @@
 // // SPDX-License-Identifier: Apache-2.0
 
 use isc::{offledgerrequest::*, waspclient::*};
-use std::sync::{Arc, mpsc, RwLock};
+use std::sync::{mpsc, Arc, RwLock};
 use std::time::Duration;
 
 use crate::*;
@@ -84,7 +84,7 @@ impl IClientService for WasmClientService {
                 nonce,
             );
         req.with_allowance(&allowance);
-        req.sign(key_pair);
+        req = req.sign(key_pair);
         self.client.post_offledger_request(&chain_id, &req)?;
         return Ok(req.id());
     }
@@ -94,7 +94,7 @@ impl IClientService for WasmClientService {
         tx: mpsc::Sender<Vec<String>>,
         done: Arc<RwLock<bool>>,
     ) -> errors::Result<()> {
-        self.client.subscribe(tx, done); // TODO remove clone
+        self.client.subscribe(tx, done);
         return Ok(());
     }
 
