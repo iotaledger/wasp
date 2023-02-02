@@ -8,7 +8,7 @@ import (
 )
 
 type MetricItem[T interface{}] struct {
-	Messages    uint32    `json:"messages" swagger:"required"`
+	Messages    uint32    `json:"messages" swagger:"required,min(1)"`
 	Timestamp   time.Time `json:"timestamp" swagger:"required"`
 	LastMessage T         `json:"lastMessage" swagger:"required"`
 }
@@ -86,7 +86,7 @@ type ConsensusWorkflowMetrics struct {
 	TimeTransactionSeen      time.Time `json:"timeTransactionSeen" swagger:"desc(Shows when algorithm last noted that transaction had been seen by L1 in current consensus iteration),required"`
 	TimeCompleted            time.Time `json:"timeCompleted" swagger:"desc(Shows when algorithm was last completed in current consensus iteration),required"`
 
-	CurrentStateIndex uint32 `json:"currentStateIndex" swagger:"desc(Shows current state index of the consensus)"`
+	CurrentStateIndex uint32 `json:"currentStateIndex" swagger:"desc(Shows current state index of the consensus),min(1)"`
 }
 
 func MapConsensusWorkflowStatus(status chain.ConsensusWorkflowStatus) *ConsensusWorkflowMetrics {

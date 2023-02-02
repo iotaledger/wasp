@@ -13,22 +13,22 @@ import (
 
 type ControlAddressesResponse struct {
 	GoverningAddress string `json:"governingAddress" swagger:"required"`
-	SinceBlockIndex  uint32 `json:"sinceBlockIndex" swagger:"required"`
+	SinceBlockIndex  uint32 `json:"sinceBlockIndex" swagger:"required,min(1)"`
 	StateAddress     string `json:"stateAddress" swagger:"required"`
 }
 
 type BlockInfoResponse struct {
 	AnchorTransactionID         string    `json:"anchorTransactionId" swagger:"required"`
-	BlockIndex                  uint32    `json:"blockIndex" swagger:"required"`
+	BlockIndex                  uint32    `json:"blockIndex" swagger:"required,min(1)"`
 	GasBurned                   uint64    `json:"gasBurned" swagger:"required"`
 	GasFeeCharged               uint64    `json:"gasFeeCharged" swagger:"required"`
 	L1CommitmentHash            string    `json:"l1CommitmentHash" swagger:"required"`
-	NumOffLedgerRequests        uint16    `json:"numOffLedgerRequests" swagger:"required"`
-	NumSuccessfulRequests       uint16    `json:"numSuccessfulRequests" swagger:"required"`
+	NumOffLedgerRequests        uint16    `json:"numOffLedgerRequests" swagger:"required,min(1)"`
+	NumSuccessfulRequests       uint16    `json:"numSuccessfulRequests" swagger:"required,min(1)"`
 	PreviousL1CommitmentHash    string    `json:"previousL1CommitmentHash" swagger:"required"`
 	Timestamp                   time.Time `json:"timestamp" swagger:"required"`
 	TotalBaseTokensInL2Accounts uint64    `json:"totalBaseTokensInL2Accounts" swagger:"required"`
-	TotalRequests               uint16    `json:"totalRequests" swagger:"required"`
+	TotalRequests               uint16    `json:"totalRequests" swagger:"required,min(1)"`
 	TotalStorageDeposit         uint64    `json:"totalStorageDeposit" swagger:"required"`
 	TransactionSubEssenceHash   string    `json:"transactionSubEssenceHash" swagger:"required"`
 }
@@ -138,14 +138,14 @@ func MapRequestDetail(request isc.Request) *RequestDetail {
 }
 
 type RequestReceiptResponse struct {
-	BlockIndex    uint32             `json:"blockIndex" swagger:"required"`
+	BlockIndex    uint32             `json:"blockIndex" swagger:"required,min(1)"`
 	Error         *BlockReceiptError `json:"error" swagger:"required"`
 	GasBudget     uint64             `json:"gasBudget" swagger:"required"`
 	GasBurnLog    *gas.BurnLog       `json:"gasBurnLog" swagger:"required"`
 	GasBurned     uint64             `json:"gasBurned" swagger:"required"`
 	GasFeeCharged uint64             `json:"gasFeeCharged" swagger:"required"`
 	Request       *RequestDetail     `json:"request" swagger:"required"`
-	RequestIndex  uint16             `json:"requestIndex" swagger:"required"`
+	RequestIndex  uint16             `json:"requestIndex" swagger:"required,min(1)"`
 }
 
 type BlockReceiptsResponse struct {

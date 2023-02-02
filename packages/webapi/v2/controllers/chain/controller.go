@@ -60,7 +60,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		SetOperationId("getStateValue").
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "stateKey", "Key (Hex-encoded)").
-		AddResponse(http.StatusOK, "Result", []byte("value"), nil)
+		AddResponse(http.StatusOK, "Result", mocker.Get(models.StateResponse{}), nil)
 
 	publicAPI.GET("chains/:chainID/ws", c.handleWebSocket).
 		SetOperationId("attachToWebsocket").

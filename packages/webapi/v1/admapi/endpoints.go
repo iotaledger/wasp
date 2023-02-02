@@ -36,7 +36,7 @@ func AddEndpoints(
 		return claims.HasPermission(permissions.API)
 	}
 
-	authentication.AddAuthentication(adm.EchoGroup(), userManager, nodeIdentityProvider, authConfig, claimValidator)
+	authentication.AddV1Authentication(adm.EchoGroup(), userManager, nodeIdentityProvider, authConfig, claimValidator)
 	addShutdownEndpoint(adm, shutdownFunc)
 	addNodeOwnerEndpoints(adm, nodeIdentityProvider, nodeOwnerAddresses)
 	addChainRecordEndpoints(adm, chainRecordRegistryProvider, chainsProvider)

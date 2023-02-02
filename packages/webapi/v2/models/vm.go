@@ -8,7 +8,7 @@ import (
 
 type ReceiptError struct {
 	ContractID    isc.Hname     `json:"contractId" swagger:"required"`
-	ErrorID       uint16        `json:"errorId" swagger:"required"`
+	ErrorID       uint16        `json:"errorId" swagger:"required,min(1)"`
 	ErrorCode     string        `json:"errorCode" swagger:"required"`
 	Message       string        `json:"message" swagger:"required"`
 	MessageFormat string        `json:"messageFormat" swagger:"required"`
@@ -36,8 +36,8 @@ type ReceiptResponse struct {
 	GasBudget     uint64           `json:"gasBudget" swagger:"required"`
 	GasBurned     uint64           `json:"gasBurned" swagger:"required"`
 	GasFeeCharged uint64           `json:"gasFeeCharged" swagger:"required"`
-	BlockIndex    uint32           `json:"blockIndex" swagger:"required"`
-	RequestIndex  uint16           `json:"requestIndex" swagger:"required"`
+	BlockIndex    uint32           `json:"blockIndex" swagger:"required,min(1)"`
+	RequestIndex  uint16           `json:"requestIndex" swagger:"required,min(1)"`
 	GasBurnLog    []gas.BurnRecord `json:"gasBurnLog" swagger:"required"`
 }
 

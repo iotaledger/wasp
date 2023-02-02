@@ -28,6 +28,10 @@ func ValidatePermissions(permissions []string) func(next echo.HandlerFunc) echo.
 				return next(e)
 			}
 
+			if !authContext.IsAuthenticated() {
+				return e.JSON(http.StatusUnauthorized, ValidationError{Error: "Invalid token"})
+			}
+
 			for _, permission := range permissions {
 				if !authContext.claims.HasPermission(permission) {
 					return e.JSON(http.StatusUnauthorized, ValidationError{MissingPermission: permission, Error: "Missing permission"})

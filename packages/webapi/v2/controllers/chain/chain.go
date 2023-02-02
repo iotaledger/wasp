@@ -103,5 +103,9 @@ func (c *Controller) getState(e echo.Context) error {
 		return apierrors.InternalServerError(err)
 	}
 
-	return e.JSON(http.StatusOK, state)
+	response := models.StateResponse{
+		State: iotago.EncodeHex(state),
+	}
+
+	return e.JSON(http.StatusOK, response)
 }

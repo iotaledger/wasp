@@ -78,7 +78,7 @@ func InStateOutputFromISCInStateOutput(output *nodeconnmetrics.InStateOutput) *I
 }
 
 type StateTransaction struct {
-	StateIndex    uint32 `json:"stateIndex" swagger:"desc(The state index),required"`
+	StateIndex    uint32 `json:"stateIndex" swagger:"desc(The state index),required,min(1)"`
 	TransactionID string `json:"txId" swagger:"desc(The transaction ID),required"`
 }
 

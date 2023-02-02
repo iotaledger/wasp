@@ -52,20 +52,24 @@ type ContractInfoResponse struct {
 
 type gasFeePolicy struct {
 	GasFeeTokenID     string `json:"gasFeeTokenId" swagger:"desc(The gas fee token id. Empty if base token.),required"`
-	GasPerToken       uint64 `json:"gasPerToken" swagger:"desc(The amount of gas per token.),required"`
-	ValidatorFeeShare uint8  `json:"validatorFeeShare" swagger:"desc(The validator fee share.),required"`
+	GasPerToken       uint64 `json:"gasPerToken,string" swagger:"desc(The amount of gas per token.),required"`
+	ValidatorFeeShare uint8  `json:"validatorFeeShare" swagger:"desc(The validator fee share.),required,min(1)"`
 }
 
 type ChainInfoResponse struct {
-	IsActive        bool         `json:"isActive" swagger:"desc(Whether or not the chain is active.) required"`
-	ChainID         string       `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).) required"`
-	EVMChainID      uint16       `json:"evmChainId" swagger:"desc(The EVM chain ID) required"`
-	ChainOwnerID    string       `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).) required"`
-	Description     string       `json:"description" swagger:"desc(The description of the chain.) required"`
+	IsActive        bool         `json:"isActive" swagger:"desc(Whether or not the chain is active.),required"`
+	ChainID         string       `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
+	EVMChainID      uint16       `json:"evmChainId" swagger:"desc(The EVM chain ID),required,min(1)"`
+	ChainOwnerID    string       `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
+	Description     string       `json:"description" swagger:"desc(The description of the chain.),required"`
 	GasFeePolicy    gasFeePolicy `json:"gasFeePolicy"`
-	MaxBlobSize     uint32       `json:"maxBlobSize" swagger:"desc(The maximum contract blob size.) required"`
-	MaxEventSize    uint16       `json:"maxEventSize" swagger:"desc(The maximum event size.) required"`                      // TODO: Clarify
-	MaxEventsPerReq uint16       `json:"maxEventsPerReq" swagger:"desc(The maximum amount of events per request.) required"` // TODO: Clarify
+	MaxBlobSize     uint32       `json:"maxBlobSize" swagger:"desc(The maximum contract blob size.),required,min(1)"`
+	MaxEventSize    uint16       `json:"maxEventSize" swagger:"desc(The maximum event size.),required,min(1)"`                      // TODO: Clarify
+	MaxEventsPerReq uint16       `json:"maxEventsPerReq" swagger:"desc(The maximum amount of events per request.),required,min(1)"` // TODO: Clarify
+}
+
+type StateResponse struct {
+	State string `json:"state" swagger:"desc(The state of the requested key (Hex-encoded)),required"`
 }
 
 func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfoResponse {
