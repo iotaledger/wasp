@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -231,11 +232,25 @@ func MakeAnchorTransaction(essence *iotago.TransactionEssence, sig iotago.Signat
 }
 
 func CreateAndSignTx(inputs iotago.OutputIDs, inputsCommitment []byte, outputs iotago.Outputs, wallet *cryptolib.KeyPair, networkID uint64) (*iotago.Transaction, error) {
-	essence := &iotago.TransactionEssence{
+	unorderedEssence := &iotago.TransactionEssence{
 		NetworkID: networkID,
 		Inputs:    inputs.UTXOInputs(),
 		Outputs:   outputs,
 	}
+
+	// IMPORTANT: serialize and de-serialize the essence, just to make sure it is correctly ordered before signing
+	// otherwise it might fail when it reaches the node, since the PoW that would order the tx is done after the signing,
+	// so if we don't order now, we might sign an invalid TX
+	essenseBytes, err := unorderedEssence.Serialize(serializer.DeSeriModePerformValidation|serializer.DeSeriModePerformLexicalOrdering, nil)
+	if err != nil {
+		return nil, err
+	}
+	essence := new(iotago.TransactionEssence)
+	_, err = essence.Deserialize(essenseBytes, serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		return nil, err
+	}
+	// --
 
 	sigs, err := essence.Sign(
 		inputsCommitment,
