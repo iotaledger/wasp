@@ -87,7 +87,7 @@ impl ScFuncCallContext for WasmClientContext {
     fn init_func_call_context(&self) {}
 }
 
-pub(crate) static mut HRP_FOR_CLIENT: String = "";
+pub(crate) static mut HRP_FOR_CLIENT: String = String::new();
 
 pub(crate) fn client_bech32_decode(bech32: &str) -> ScAddress {
     match codec::bech32_decode(&bech32) {
@@ -97,7 +97,7 @@ pub(crate) fn client_bech32_decode(bech32: &str) -> ScAddress {
                 return address_from_bytes(&[]);
             }
             return addr;
-        }
+        },
         Err(e) => {
             panic(&e.to_string());
             return address_from_bytes(&[]);
