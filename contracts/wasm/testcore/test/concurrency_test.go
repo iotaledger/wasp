@@ -31,7 +31,6 @@ func TestCounter(t *testing.T) {
 }
 
 func TestSynchronous(t *testing.T) {
-	t.SkipNow()
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
@@ -71,7 +70,6 @@ func TestSynchronous(t *testing.T) {
 }
 
 func TestConcurrency(t *testing.T) {
-	t.SkipNow()
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
@@ -120,7 +118,6 @@ func TestConcurrency(t *testing.T) {
 }
 
 func TestConcurrency2(t *testing.T) {
-	t.SkipNow()
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
@@ -143,13 +140,16 @@ func TestConcurrency2(t *testing.T) {
 			sum += n
 		}
 
-		ctx.WaitForPendingRequestsMark()
-
 		chain := ctx.Chain
 		users := make([]*wasmsolo.SoloAgent, len(repeats))
+		for r := range repeats {
+			users[r] = ctx.NewSoloAgent()
+		}
+
+		ctx.WaitForPendingRequestsMark()
+
 		for r, n := range repeats {
 			go func(r, n int) {
-				users[r] = ctx.NewSoloAgent()
 				for i := 0; i < n; i++ {
 					tx, _, err := chain.RequestFromParamsToLedger(req, users[r].Pair)
 					require.NoError(t, err)

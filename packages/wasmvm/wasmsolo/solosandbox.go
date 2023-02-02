@@ -81,15 +81,15 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 		allowance = transfer
 	}
 	req.WithAllowance(allowance)
-	// Force a minimum transfer of 1 Million base tokens for storage deposit and some gas
+	// Force a minimum transfer of WasmStorageDeposit base tokens for storage deposit and some gas
 	// excess can always be reclaimed from the chain account by the user
 	// This also removes the silly requirement to transfer 1 base token
 	if transfer.IsEmpty() && !ctx.offLedger {
-		transfer = isc.NewAssetsBaseTokens(1 * isc.Million)
+		transfer = isc.NewAssetsBaseTokens(wasmhost.WasmStorageDeposit)
 	}
-	if !transfer.IsEmpty() && transfer.BaseTokens < 1*isc.Million {
+	if !transfer.IsEmpty() && transfer.BaseTokens < wasmhost.WasmStorageDeposit {
 		transfer = transfer.Clone()
-		transfer.BaseTokens = 1 * isc.Million
+		transfer.BaseTokens = wasmhost.WasmStorageDeposit
 	}
 	req.AddFungibleTokens(transfer)
 	if len(transfer.NFTs) != 0 {

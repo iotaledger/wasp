@@ -56,8 +56,6 @@ const (
 	L2FundsContract   = 10 * isc.Million
 	L2FundsCreator    = 20 * isc.Million
 	L2FundsOriginator = 30 * isc.Million
-
-	WasmStorageDeposit = 1 * isc.Million
 )
 
 type SoloContext struct {
@@ -218,7 +216,7 @@ func soloContext(t solo.TestContext, chain *solo.Chain, scName string, creator *
 		wasmclient.HrpForClient = parameters.L1().Protocol.Bech32HRP
 	}
 
-	ctx := &SoloContext{scName: scName, Chain: chain, creator: creator, StorageDeposit: WasmStorageDeposit}
+	ctx := &SoloContext{scName: scName, Chain: chain, creator: creator, StorageDeposit: wasmhost.WasmStorageDeposit}
 	if chain == nil {
 		ctx.Chain = StartChain(t, "chain1")
 	}

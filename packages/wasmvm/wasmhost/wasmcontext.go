@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	FuncDefault = "_default"
+	FuncDefault        = "_default"
+	WasmStorageDeposit = 20_000
 )
 
 type ISandbox interface {
