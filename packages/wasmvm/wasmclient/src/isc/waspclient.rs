@@ -58,7 +58,7 @@ impl WaspClient {
             .timeout(deadline)
             .build()
             .unwrap();
-        let res = client.post(url).body(args.to_bytes()).send();
+        let res = client.post(url).json(args).send();
 
         match res {
             Ok(v) => match v.status() {

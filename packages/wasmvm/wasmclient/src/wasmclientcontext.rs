@@ -258,7 +258,7 @@ mod tests {
         fn call_handler(&self, _topic: &str, _params: &Vec<String>) {}
     }
 
-    const MYCHAIN: &str = "tgl1pp0j5wr5e5dxhk4hzwlgfs9vu7r025zeq0et7ftkrzmf8lwa44wy645r2hj";
+    const MYCHAIN: &str = "atoi1prj5xunmvc8uka9qznnpu4yrhn3ftm3ya0wr2jvurwr209llw7xdyztcr6g";
     const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
 
     #[test]
@@ -266,7 +266,7 @@ mod tests {
         let svc_client = wasmclientservice::WasmClientService::default();
 
         // FIXME use valid sc_name which meets the requirement of bech32
-        let sc_name = "sc_name";
+        let sc_name = "testwasmlib";
         let ctx = wasmclientcontext::WasmClientContext::new(&svc_client, MYCHAIN, sc_name);
         assert!(svc_client == ctx.svc_client);
         assert!(sc_name == ctx.sc_name);
