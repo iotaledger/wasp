@@ -164,7 +164,10 @@ func (v *varLogIndexImpl) MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutM
 	//
 	// Proceed to the next log index, if needed.
 	newLogIndex, newAO := v.votedFor(v.n - v.f)
-	v.log.Debugf("supportLogIndex=%v, newLogIndex=%v, logIndex=%v", supportLogIndex, newLogIndex, v.logIndex)
+	v.log.Debugf(
+		"supportLogIndex=%v, newLogIndex=%v, v.logIndex=%v, v.sentNextLI=%v supportAO=%v",
+		supportLogIndex, newLogIndex, v.logIndex, v.sentNextLI, supportAO.String(),
+	)
 	if newLogIndex > v.logIndex {
 		v.logIndex = newLogIndex
 		v.latestAO = newAO
@@ -209,7 +212,7 @@ func (v *varLogIndexImpl) votedFor(quorum int) (LogIndex, *isc.AliasOutputWithID
 	countsAOMap := map[iotago.OutputID]*isc.AliasOutputWithID{}
 	countsAO := map[iotago.OutputID]int{}
 	for _, msg := range v.maxPeerLIs {
-		if msg.nextLogIndex != maxLI {
+		if msg.nextLogIndex < maxLI {
 			continue
 		}
 		countsAOMap[msg.nextBaseAO.OutputID()] = msg.nextBaseAO
@@ -236,7 +239,7 @@ func (v *varLogIndexImpl) maybeSendNextLogIndex(logIndex LogIndex, baseAO *isc.A
 	if v.sentNextLI.AsUint32() >= logIndex.AsUint32() {
 		return nil
 	}
-	if v.latestAO == nil {
+	if baseAO == nil {
 		return nil
 	}
 	v.sentNextLI = logIndex
@@ -244,6 +247,6 @@ func (v *varLogIndexImpl) maybeSendNextLogIndex(logIndex LogIndex, baseAO *isc.A
 	for i := range v.nodeIDs {
 		msgs.Add(newMsgNextLogIndex(v.nodeIDs[i], logIndex, baseAO))
 	}
-	v.log.Debugf("Sending NextLogIndex=%v, latestAO=%v", logIndex, baseAO)
+	v.log.Debugf("Sending NextLogIndex=%v, baseAO=%v", logIndex, baseAO)
 	return msgs
 }
