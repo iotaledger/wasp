@@ -220,7 +220,7 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*apiclient.B
 	ret := make([]*apiclient.BlockInfoResponse, 0, blockIndex+1)
 	for idx := int(blockIndex); idx >= 0; idx-- {
 		blockInfo, _, err := ch.Cluster.
-			WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetBlockInfo(context.Background(), ch.ChainID.String(), int32(idx)).
+			WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetBlockInfo(context.Background(), ch.ChainID.String(), uint32(idx)).
 			Execute()
 
 		if err != nil {
@@ -289,7 +289,7 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex *uint32, nodeIndex ...int
 	var receipts *apiclient.BlockReceiptsResponse
 
 	if blockIndex != nil {
-		receipts, _, err = ch.Cluster.WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetRequestReceiptsOfBlock(context.Background(), ch.ChainID.String(), int32(*blockIndex)).
+		receipts, _, err = ch.Cluster.WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetRequestReceiptsOfBlock(context.Background(), ch.ChainID.String(), *blockIndex).
 			Execute()
 	} else {
 		receipts, _, err = ch.Cluster.WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetRequestReceiptsOfLatestBlock(context.Background(), ch.ChainID.String()).
