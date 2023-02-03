@@ -94,13 +94,19 @@ func testNanoPublisher(t *testing.T, env *ChainEnv) {
 		req, err := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
 		require.NoError(t, err)
 
-		// ---
-		// TODO shouldn't be needed
-		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 30*time.Second)
-		require.NoError(t, err)
-		// ---
-
 		reqIDs[i] = req.ID()
+	}
+
+	timeEnd := time.Now().Add(30 * time.Second)
+	for i, reqID := range reqIDs {
+		durationLeft := time.Until(timeEnd)
+		require.True(t, durationLeft > 0, "WaitUntilRequestProcessedSuccessfully time exceeded")
+
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, reqID, durationLeft)
+		if err != nil {
+			println(i)
+		}
+		require.NoError(t, err)
 	}
 
 	waitUntil(t, env.counterEquals(int64(numRequests)), util.MakeRange(0, 1), 60*time.Second, "requests counted - A")
@@ -110,15 +116,24 @@ func testNanoPublisher(t *testing.T, env *ChainEnv) {
 		assertMessages(t, client.messages, numRequests)
 	}
 
+	reqIDs = make([]isc.RequestID, numRequests)
 	for i := 0; i < numRequests; i++ {
 		req, err := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 101)})
 		require.NoError(t, err)
 
-		// ---
-		// TODO shouldn't be needed
-		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 30*time.Second)
+		reqIDs[i] = req.ID()
+	}
+
+	timeEnd = time.Now().Add(30 * time.Second)
+	for i, reqID := range reqIDs {
+		durationLeft := time.Until(timeEnd)
+		require.True(t, durationLeft > 0, "WaitUntilRequestProcessedSuccessfully time exceeded")
+
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, reqID, durationLeft)
+		if err != nil {
+			println(i)
+		}
 		require.NoError(t, err)
-		// ---
 	}
 
 	waitUntil(t, env.counterEquals(int64(numRequests*2)), util.MakeRange(0, 1), 60*time.Second, "requests counted - B")

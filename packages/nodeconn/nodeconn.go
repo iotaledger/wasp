@@ -14,7 +14,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/core/contextutils"
 	"github.com/iotaledger/hive.go/core/generics/lo"
 	"github.com/iotaledger/hive.go/core/generics/shrinkingmap"
 	"github.com/iotaledger/hive.go/core/logger"
@@ -364,7 +363,14 @@ func (nc *nodeConnection) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 	return nc.nodeConnectionMetrics
 }
 
+// doPostTx posts the transaction on layer 1 including tipselection and proof of work.
+// this function does not wait until the transaction gets confirmed on L1.
 func (nc *nodeConnection) doPostTx(ctx context.Context, tx *iotago.Transaction, tipsAdditional ...iotago.BlockID) (iotago.BlockID, error) {
+	if ctx.Err() != nil {
+		// context may have already been canceled
+		return iotago.EmptyBlockID(), ctx.Err()
+	}
+
 	var parents iotago.BlockIDs
 
 	// if no tips are given, we use empty parents, the node will do the tipselection in that case.
@@ -413,25 +419,44 @@ func (nc *nodeConnection) addPendingTransaction(pending *pendingTransaction) {
 	nc.pendingTransactionsMap.Set(pending.ID(), pending)
 }
 
+// hasPendingTransaction returns true if a pending transaction exists.
+func (nc *nodeConnection) hasPendingTransaction(txID iotago.TransactionID) bool {
+	nc.pendingTransactionsLock.Lock()
+	defer nc.pendingTransactionsLock.Unlock()
+
+	return nc.pendingTransactionsMap.Has(txID)
+}
+
 // clearPendingTransactionWithoutLocking removes tracking of a pending transaction.
 // write lock must be acquired outside.
 func (nc *nodeConnection) clearPendingTransactionWithoutLocking(transactionID iotago.TransactionID) {
 	nc.pendingTransactionsMap.Delete(transactionID)
 }
 
+// clearPendingTransaction removes tracking of a pending transaction.
+func (nc *nodeConnection) clearPendingTransaction(transactionID iotago.TransactionID) {
+	nc.pendingTransactionsLock.Lock()
+	defer nc.pendingTransactionsLock.Unlock()
+
+	nc.clearPendingTransactionWithoutLocking(transactionID)
+}
+
+// reattachWorkerpoolFunc is triggered by handleLedgerUpdate for every pending transaction,
+// if the inputs of the pending transaction were not consumed in the ledger update.
 func (nc *nodeConnection) reattachWorkerpoolFunc(task workerpool.Task) {
 	defer task.Return(nil)
 
 	pendingTx := task.Param(0).(*pendingTransaction)
-
 	if pendingTx.Conflicting() || pendingTx.Confirmed() {
 		// no need to reattach
+		// we can remove the tracking of the pending transaction
+		nc.clearPendingTransaction(pendingTx.transactionID)
 		return
 	}
 
 	blockID := pendingTx.BlockID()
-	if blockID == iotago.EmptyBlockID() {
-		// no need to check because no block was posted by this node
+	if blockID.Empty() {
+		// no need to check because no block was posted by this node yet (maybe busy with doPostTx)
 		return
 	}
 
@@ -463,19 +488,7 @@ func (nc *nodeConnection) reattachWorkerpoolFunc(task workerpool.Task) {
 	}
 
 	if blockMetadata.ShouldReattach {
-		nc.LogDebugf("reattaching transaction %s", pendingTx.ID().ToHex())
-
-		ctxSubmitBlock, cancelSubmitBlock := context.WithTimeout(nc.ctx, inxTimeoutSubmitBlock)
-		defer cancelSubmitBlock()
-
-		newBlockID, err := nc.doPostTx(ctxSubmitBlock, pendingTx.Transaction())
-		if err != nil {
-			nc.LogDebugf("reattaching transaction %s failed, error: %w", pendingTx.ID().ToHex(), err)
-			return
-		}
-
-		// set the new blockID for promote/reattach checks
-		pendingTx.SetBlockID(newBlockID)
+		pendingTx.Reattach()
 
 		return
 	}
@@ -515,24 +528,31 @@ func (nc *nodeConnection) promoteBlock(ctx context.Context, blockID iotago.Block
 	return nil
 }
 
+// PublishTX handles promoting and reattachments until the tx is confirmed or the context is canceled.
 // Publishing can be canceled via the context.
 // The result must be returned via the callback, unless ctx is canceled first.
-// PublishTX handles promoting and reattachments until the tx is confirmed or the context is canceled.
-// TODO: is it ok to call the callback if the context was canceled?
+// It is fine to call the callback, even if the ctx is already canceled.
+// PublishTX could be called multiple times in parallel, but only once per chain.
 func (nc *nodeConnection) PublishTX(
 	ctx context.Context,
 	chainID isc.ChainID,
 	tx *iotago.Transaction,
 	callback chain.TxPostHandler,
 ) error {
+	// check if the chain exists
 	ncc, err := nc.GetChain(chainID)
+	if err != nil {
+		return err
+	}
+
+	pendingTx, err := ncc.createPendingTransaction(ctx, tx)
 	if err != nil {
 		return err
 	}
 
 	// transactions are published asynchronously
 	go func() {
-		err = ncc.publishTX(ctx, tx)
+		err = ncc.publishTX(pendingTx)
 		if err != nil {
 			nc.LogDebug(err.Error())
 		}
@@ -553,21 +573,19 @@ func (nc *nodeConnection) PublishTX(
 //
 // NOTE: Any out-of-order AO will be considered as a rollback or AO by the chain impl.
 func (nc *nodeConnection) AttachChain(
-	ctx context.Context,
+	ctx context.Context, // ctx is the context given by a backgroundworker with PriorityChains
 	chainID isc.ChainID,
 	recvRequestCB chain.RequestOutputHandler,
 	recvAliasOutput chain.AliasOutputHandler,
 	recvMilestone chain.MilestoneHandler,
 ) {
-	mergedCtx, mergedCancel := contextutils.MergeContexts(nc.ctx, ctx)
-
 	chain := func() *ncChain {
 		// we need to lock until the chain init is done,
 		// otherwise there could be race conditions with new ledger updates in parallel
 		nc.chainsLock.Lock()
 		defer nc.chainsLock.Unlock()
 
-		chain := newNCChain(nc, chainID, recvRequestCB, recvAliasOutput, recvMilestone)
+		chain := newNCChain(ctx, nc, chainID, recvRequestCB, recvAliasOutput, recvMilestone)
 
 		// the chain is added to the map, even if not synchronzied yet,
 		// so we can track all pending ledger updates until the chain is synchronized.
@@ -578,14 +596,14 @@ func (nc *nodeConnection) AttachChain(
 		return chain
 	}()
 
-	if err := chain.SyncChainStateWithL1(mergedCtx); err != nil {
+	if err := chain.SyncChainStateWithL1(ctx); err != nil {
 		nc.LogPanicf("synchronizing chain state %s failed: %s", chainID, err.Error())
 	}
 
 	// disconnect the chain after the context is done
 	go func() {
-		<-mergedCtx.Done()
-		defer mergedCancel()
+		<-ctx.Done()
+		chain.WaitUntilStopped()
 
 		nc.chainsLock.Lock()
 		defer nc.chainsLock.Unlock()
