@@ -76,6 +76,10 @@ func MapL1Params(l1 *parameters.L1Params) *L1Params {
 	return params
 }
 
+type VersionResponse struct {
+	Version string `json:"version" swagger:"desc(The version of the node),required"`
+}
+
 type InfoResponse struct {
 	Version   string    `json:"version" swagger:"desc(The version of the node),required"`
 	PublicKey string    `json:"publicKey" swagger:"desc(The public key of the node (Hex)),required"`

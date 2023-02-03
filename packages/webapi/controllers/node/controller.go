@@ -37,7 +37,7 @@ func (c *Controller) Name() string {
 
 func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	publicAPI.GET("node/version", c.getPublicInfo).
-		AddResponse(http.StatusOK, "Returns the version of the node.", "", nil).
+		AddResponse(http.StatusOK, "Returns the version of the node.", mocker.Get(models.VersionResponse{}), nil).
 		SetOperationId("getVersion").
 		SetSummary("Returns the node version.")
 }

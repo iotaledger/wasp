@@ -23,7 +23,7 @@ func (c *Controller) getConfiguration(e echo.Context) error {
 }
 
 func (c *Controller) getPublicInfo(e echo.Context) error {
-	return e.JSON(http.StatusOK, c.waspVersion)
+	return e.JSON(http.StatusOK, models.VersionResponse{Version: c.waspVersion})
 }
 
 func (c *Controller) getInfo(e echo.Context) error {

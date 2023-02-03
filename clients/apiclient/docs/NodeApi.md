@@ -510,7 +510,7 @@ Other parameters are passed through a pointer to a apiGetTrustedPeersRequest str
 
 ## GetVersion
 
-> string GetVersion(ctx).Execute()
+> VersionResponse GetVersion(ctx).Execute()
 
 Returns the node version.
 
@@ -535,7 +535,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `NodeApi.GetVersion``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `GetVersion`: string
+    // response from `GetVersion`: VersionResponse
     fmt.Fprintf(os.Stdout, "Response from `NodeApi.GetVersion`: %v\n", resp)
 }
 ```
@@ -551,7 +551,7 @@ Other parameters are passed through a pointer to a apiGetVersionRequest struct v
 
 ### Return type
 
-**string**
+[**VersionResponse**](VersionResponse.md)
 
 ### Authorization
 

@@ -23,10 +23,10 @@ func initCheckVersionsCmd(waspVersion string) *cobra.Command {
 					Execute()
 				log.Check(err)
 
-				if waspVersion == version {
+				if waspVersion == version.Version {
 					log.Printf("Wasp-cli version matches Wasp #%d\n", i)
 				} else {
-					log.Printf("! -> Version mismatch with Wasp #%d. cli version: %s, wasp version: %s\n", i, waspVersion, version)
+					log.Printf("! -> Version mismatch with Wasp #%d. cli version: %s, wasp version: %s\n", i, waspVersion, version.Version)
 				}
 			}
 		},

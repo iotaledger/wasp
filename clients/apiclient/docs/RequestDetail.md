@@ -4,9 +4,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Allowance** | [**Allowance**](Allowance.md) |  | 
+**Allowance** | [**Assets**](Assets.md) |  | 
 **CallTarget** | [**CallTarget**](CallTarget.md) |  | 
-**FungibleTokens** | [**FungibleTokens**](FungibleTokens.md) |  | 
+**FungibleTokens** | [**Assets**](Assets.md) |  | 
 **GasGudget** | **int64** |  | 
 **IsEVM** | **bool** |  | 
 **IsOffLedger** | **bool** |  | 
@@ -20,7 +20,7 @@ Name | Type | Description | Notes
 
 ### NewRequestDetail
 
-`func NewRequestDetail(allowance Allowance, callTarget CallTarget, fungibleTokens FungibleTokens, gasGudget int64, isEVM bool, isOffLedger bool, nft NFTDataResponse, params JSONDict, requestId string, senderAccount string, targetAddress string, ) *RequestDetail`
+`func NewRequestDetail(allowance Assets, callTarget CallTarget, fungibleTokens Assets, gasGudget int64, isEVM bool, isOffLedger bool, nft NFTDataResponse, params JSONDict, requestId string, senderAccount string, targetAddress string, ) *RequestDetail`
 
 NewRequestDetail instantiates a new RequestDetail object
 This constructor will assign default values to properties that have it defined,
@@ -37,20 +37,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetAllowance
 
-`func (o *RequestDetail) GetAllowance() Allowance`
+`func (o *RequestDetail) GetAllowance() Assets`
 
 GetAllowance returns the Allowance field if non-nil, zero value otherwise.
 
 ### GetAllowanceOk
 
-`func (o *RequestDetail) GetAllowanceOk() (*Allowance, bool)`
+`func (o *RequestDetail) GetAllowanceOk() (*Assets, bool)`
 
 GetAllowanceOk returns a tuple with the Allowance field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetAllowance
 
-`func (o *RequestDetail) SetAllowance(v Allowance)`
+`func (o *RequestDetail) SetAllowance(v Assets)`
 
 SetAllowance sets Allowance field to given value.
 
@@ -77,20 +77,20 @@ SetCallTarget sets CallTarget field to given value.
 
 ### GetFungibleTokens
 
-`func (o *RequestDetail) GetFungibleTokens() FungibleTokens`
+`func (o *RequestDetail) GetFungibleTokens() Assets`
 
 GetFungibleTokens returns the FungibleTokens field if non-nil, zero value otherwise.
 
 ### GetFungibleTokensOk
 
-`func (o *RequestDetail) GetFungibleTokensOk() (*FungibleTokens, bool)`
+`func (o *RequestDetail) GetFungibleTokensOk() (*Assets, bool)`
 
 GetFungibleTokensOk returns a tuple with the FungibleTokens field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetFungibleTokens
 
-`func (o *RequestDetail) SetFungibleTokens(v FungibleTokens)`
+`func (o *RequestDetail) SetFungibleTokens(v Assets)`
 
 SetFungibleTokens sets FungibleTokens field to given value.
 

@@ -24,6 +24,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/multiclient"
@@ -375,9 +376,13 @@ func (clu *Cluster) MultiClient() *multiclient.MultiClient {
 }
 
 func (clu *Cluster) WaspClientFromHostName(hostName string) *apiclient.APIClient {
-	config := apiclient.NewConfiguration()
-	config.Host = hostName
-	return apiclient.NewAPIClient(config)
+	client, err := clients.WaspAPIClientByHostName(hostName)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return client
 }
 
 func (clu *Cluster) WaspClient(nodeIndex ...int) *apiclient.APIClient {

@@ -2,6 +2,7 @@ package clients
 
 import (
 	"context"
+	"net/url"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -61,4 +62,18 @@ func APIWaitUntilAllRequestsProcessed(client *apiclient.APIClient, chainID isc.C
 		ret[i] = receipt
 	}
 	return ret, nil
+}
+
+func WaspAPIClientByHostName(hostname string) (*apiclient.APIClient, error) {
+	parsed, err := url.Parse(hostname)
+
+	if err != nil {
+		return nil, err
+	}
+
+	config := apiclient.NewConfiguration()
+	config.Host = parsed.Host
+	config.Scheme = parsed.Scheme
+
+	return apiclient.NewAPIClient(config), nil
 }
