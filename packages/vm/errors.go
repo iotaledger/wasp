@@ -32,4 +32,5 @@ var (
 	ErrNotEnoughTokensLeftForGas             = coreerrors.Register("not enough funds left to pay for gas")
 	ErrUnauthorized                          = coreerrors.Register("unauthorized access").Create()
 	ErrIllegalCall                           = coreerrors.Register("illegal call - entrypoint cannot be called from contracts")
+	ErrSendMultipleNFTs                      = coreerrors.Register("cannot send more than 1 NFT").Create()
 )

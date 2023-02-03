@@ -46,13 +46,8 @@ func (tr *TrieReader) Root() Hash {
 	return tr.root
 }
 
-func (tr *TrieReader) ClearCache() {
-	tr.nodeStore.clearCache()
-}
-
 // SetRoot fetches and sets new root. It clears cache before fetching the new root
 func (tr *TrieReader) setRoot(h Hash) (*nodeData, error) {
-	tr.ClearCache()
 	rootNodeData, ok := tr.nodeStore.FetchNodeData(h)
 	if !ok {
 		return nil, fmt.Errorf("root commitment '%s' does not exist", &h)

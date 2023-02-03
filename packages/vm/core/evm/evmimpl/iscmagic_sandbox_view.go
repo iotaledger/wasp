@@ -66,18 +66,18 @@ func (h *magicContractViewHandler) CallView(
 }
 
 // handler for ISCSandbox::getAllowanceFrom
-func (h *magicContractViewHandler) GetAllowanceFrom(addr common.Address) iscmagic.ISCAllowance {
-	return iscmagic.WrapISCAllowance(getAllowance(h.ctx, addr, h.caller.Address()))
+func (h *magicContractViewHandler) GetAllowanceFrom(addr common.Address) iscmagic.ISCAssets {
+	return iscmagic.WrapISCAssets(getAllowance(h.ctx, addr, h.caller.Address()))
 }
 
 // handler for ISCSandbox::getAllowanceTo
-func (h *magicContractViewHandler) GetAllowanceTo(target common.Address) iscmagic.ISCAllowance {
-	return iscmagic.WrapISCAllowance(getAllowance(h.ctx, h.caller.Address(), target))
+func (h *magicContractViewHandler) GetAllowanceTo(target common.Address) iscmagic.ISCAssets {
+	return iscmagic.WrapISCAssets(getAllowance(h.ctx, h.caller.Address(), target))
 }
 
 // handler for ISCSandbox::getAllowance
-func (h *magicContractViewHandler) GetAllowance(from, to common.Address) iscmagic.ISCAllowance {
-	return iscmagic.WrapISCAllowance(getAllowance(h.ctx, from, to))
+func (h *magicContractViewHandler) GetAllowance(from, to common.Address) iscmagic.ISCAssets {
+	return iscmagic.WrapISCAssets(getAllowance(h.ctx, from, to))
 }
 
 // handler for ISCSandbox::getBaseTokenProperties

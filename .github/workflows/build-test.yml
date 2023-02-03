@@ -12,7 +12,7 @@ jobs:
       - name: Set up Go 1.x
         uses: actions/setup-go@v3
         with:
-          go-version: 1.19.4
+          go-version: 1.19.5
         id: go
 
       - name: Check out code into the Go module directory
@@ -49,7 +49,7 @@ jobs:
       - name: install golang
         uses: actions/setup-go@v3
         with:
-          go-version: 1.19.4
+          go-version: 1.19.5
 
       - name: Install solc
         run: |
@@ -109,13 +109,13 @@ jobs:
           make compile-solidity
           cd contracts/wasm
           if [ $TEST_LANG == "go" ]; then
-            go test ./...
+            go test ./... -p 1
           elif [ $TEST_LANG == "gowasm" ]; then
-            go test ./... -gowasm
+            go test ./... -gowasm  -p 1
           elif [ $TEST_LANG == "tswasm" ]; then
-            go test ./... -tswasm
+            go test ./... -tswasm  -p 1
           elif [ $TEST_LANG == "rswasm" ]; then
-            go test ./... -rswasm
+            go test ./... -rswasm  -p 1
           fi
 
   golangci:
@@ -124,7 +124,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v3
         with:
-          go-version: 1.19.4
+          go-version: 1.19.5
         id: go
 
       - name: Check out code into the Go module directory

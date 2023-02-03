@@ -270,6 +270,7 @@ func (c *consImpl) AsGPA() gpa.GPA {
 }
 
 func (c *consImpl) Input(input gpa.Input) gpa.OutMessages {
+	c.log.Debugf("Input %T: %+v", input, input)
 	switch input := input.(type) {
 	case *inputProposal:
 		c.log.Debugf("received %v", input.String())
@@ -400,6 +401,7 @@ func (c *consImpl) uponSMSaveProducedBlockDone() gpa.OutMessages {
 // DSS
 
 func (c *consImpl) uponDSSInitialInputsReady() gpa.OutMessages {
+	c.log.Debugf("uponDSSInitialInputsReady")
 	sub, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, dss.NewInputStart())
 	if err != nil {
 		panic(fmt.Errorf("cannot provide input to DSS: %w", err))
@@ -410,10 +412,12 @@ func (c *consImpl) uponDSSInitialInputsReady() gpa.OutMessages {
 }
 
 func (c *consImpl) uponDSSIndexProposalReady(indexProposal []int) gpa.OutMessages {
+	c.log.Debugf("uponDSSIndexProposalReady")
 	return c.subACS.DSSIndexProposalReceived(indexProposal)
 }
 
 func (c *consImpl) uponDSSSigningInputsReceived(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.OutMessages {
+	c.log.Debugf("uponDSSSigningInputsReceived")
 	dssDecidedInput := dss.NewInputDecided(decidedIndexProposals, messageToSign)
 	subDSS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, dssDecidedInput)
 	if err != nil {
@@ -425,6 +429,7 @@ func (c *consImpl) uponDSSSigningInputsReceived(decidedIndexProposals map[gpa.No
 }
 
 func (c *consImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
+	c.log.Debugf("uponDSSOutputReady")
 	return c.subTX.SignatureReceived(signature)
 }
 

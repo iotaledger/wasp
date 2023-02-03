@@ -39,6 +39,13 @@ func (m *MultiClient) WithToken(token string) *MultiClient {
 	return m
 }
 
+func (m *MultiClient) WithLogFunc(logFunc func(msg string, args ...interface{})) *MultiClient {
+	for i, node := range m.nodes {
+		m.nodes[i] = node.WithLogFunc(logFunc)
+	}
+	return m
+}
+
 func (m *MultiClient) Len() int {
 	return len(m.nodes)
 }

@@ -1,9 +1,11 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crypto::hashes::{blake2b::Blake2b256, Digest};
-use crypto::signatures::ed25519;
-use std::{convert::TryInto, fmt::Debug};
+use crypto::{
+    hashes::{blake2b::Blake2b256, Digest},
+    keys::slip10::{Curve, Seed},
+    signatures::ed25519,
+};
 use wasmlib::*;
 
 pub struct KeyPair {
@@ -12,6 +14,22 @@ pub struct KeyPair {
 }
 
 impl KeyPair {
+    pub fn new(seed_bytes: &[u8]) -> KeyPair {
+        if seed_bytes.len() == 0 {
+            return KeyPair {
+                private_key: ed25519::SecretKey::from_bytes([0; ed25519::SECRET_KEY_LENGTH]),
+                public_key: ed25519::PublicKey::try_from_bytes([0; ed25519::PUBLIC_KEY_LENGTH])
+                    .unwrap(),
+            };
+        }
+        let seed = Seed::from_bytes(seed_bytes);
+        let key = seed.to_master_key(Curve::Ed25519);
+        return KeyPair {
+            private_key: key.secret_key(),
+            public_key: key.secret_key().public_key(),
+        };
+    }
+
     pub fn address(&self) -> ScAddress {
         let mut addr: Vec<u8> = Vec::with_capacity(wasmlib::SC_LENGTH_ED25519);
         addr[0] = wasmlib::SC_ADDRESS_ED25519;
@@ -28,13 +46,7 @@ impl KeyPair {
         for i in 0..seed.len() {
             hash_of_index_bytes[i] ^= seed[i];
         }
-        let public_key =
-            ed25519::PublicKey::try_from_bytes(hash_of_index_bytes.try_into().unwrap()).unwrap();
-        let private_key = ed25519::SecretKey::from_bytes(hash_of_index_bytes.try_into().unwrap());
-        return KeyPair {
-            public_key: public_key,
-            private_key: private_key,
-        };
+        return KeyPair::new(hash_of_index_bytes.as_slice());
     }
 }
 
@@ -47,11 +59,11 @@ impl Clone for KeyPair {
     }
 }
 
-impl Debug for KeyPair {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        f.debug_tuple("KeyPair").field(&self.public_key).finish()
-    }
-}
+// impl Debug for KeyPair {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+//         f.debug_tuple("KeyPair").field(&self.public_key).finish()
+//     }
+// }
 
 impl PartialEq for KeyPair {
     fn eq(&self, other: &Self) -> bool {

@@ -100,25 +100,17 @@ struct ISCDict {
     ISCDictItem[] items;
 }
 
-// A collection of fungible tokens (base tokens + native tokens)
-struct ISCFungibleTokens {
-    uint64 baseTokens;
-    NativeToken[] nativeTokens;
-}
-
 // Parameters for building an on-ledger request
 struct ISCSendMetadata  {
     ISCHname targetContract;
     ISCHname entrypoint;
     ISCDict params;
-    ISCAllowance allowance;
+    ISCAssets allowance;
     uint64 gasBudget;
 }
 
-// The allowance of an ISC call.
-// The specified tokens, assets and NFTs are transferred from the caller's L2 account to
-// the callee's L2 account.
-struct ISCAllowance {
+// The specifies an amount of funds (tokens) for an ISC call.
+struct ISCAssets {
     uint64 baseTokens;
     NativeToken[] nativeTokens;
     NFTID[] nfts;

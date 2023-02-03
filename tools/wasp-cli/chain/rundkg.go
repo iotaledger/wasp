@@ -29,7 +29,7 @@ func initRunDKGCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			if committee == nil {
-				committee = getAllWaspNodes()
+				committee = GetAllWaspNodes()
 			}
 			if quorum == 0 {
 				quorum = defaultQuorum(len(committee))

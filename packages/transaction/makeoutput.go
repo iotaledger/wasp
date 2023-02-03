@@ -22,7 +22,7 @@ func BasicOutputFromPostData(
 	ret := MakeBasicOutput(
 		par.TargetAddress,
 		senderAddress,
-		par.FungibleTokens,
+		par.Assets,
 		&isc.RequestMetadata{
 			SenderContract: senderContract,
 			TargetContract: metadata.TargetContract,
@@ -43,13 +43,13 @@ func BasicOutputFromPostData(
 func MakeBasicOutput(
 	targetAddress iotago.Address,
 	senderAddress iotago.Address,
-	assets *isc.FungibleTokens,
+	assets *isc.Assets,
 	metadata *isc.RequestMetadata,
 	options isc.SendOptions,
 	disableAutoAdjustStorageDeposit ...bool,
 ) *iotago.BasicOutput {
 	if assets == nil {
-		assets = &isc.FungibleTokens{}
+		assets = &isc.Assets{}
 	}
 	out := &iotago.BasicOutput{
 		Amount:       assets.BaseTokens,
@@ -132,8 +132,8 @@ func NftOutputFromBasicOutput(o *iotago.BasicOutput, nft *isc.NFT) *iotago.NFTOu
 	}
 }
 
-func AssetsFromOutput(o iotago.Output) *isc.FungibleTokens {
-	return &isc.FungibleTokens{
+func AssetsFromOutput(o iotago.Output) *isc.Assets {
+	return &isc.Assets{
 		BaseTokens:   o.Deposit(),
 		NativeTokens: o.NativeTokenList(),
 	}

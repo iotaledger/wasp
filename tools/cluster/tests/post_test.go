@@ -148,8 +148,8 @@ func testPost3Recursive(t *testing.T, e *ChainEnv) {
 	myClient := e.Chain.SCClient(contractID.Hname(), myWallet)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany.Name, chainclient.PostRequestParams{
-		Transfer:  isc.NewFungibleBaseTokens(10 * isc.Million),
-		Allowance: isc.NewAllowanceBaseTokens(9 * isc.Million),
+		Transfer:  isc.NewAssetsBaseTokens(10 * isc.Million),
+		Allowance: isc.NewAssetsBaseTokens(9 * isc.Million),
 		Args: codec.MakeDict(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
 		}),
@@ -177,7 +177,7 @@ func testPost5Requests(t *testing.T, e *ChainEnv) {
 	for i := 0; i < 5; i++ {
 		baseTokesSent := 1 * isc.Million
 		tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{
-			Transfer: isc.NewFungibleTokens(baseTokesSent, nil),
+			Transfer: isc.NewAssets(baseTokesSent, nil),
 		})
 		require.NoError(t, err)
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
@@ -207,7 +207,7 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 	baseTokesSent := 1 * isc.Million
 	for i := 0; i < 5; i++ {
 		tx[i], err = myClient.PostRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{
-			Transfer: isc.NewFungibleTokens(baseTokesSent, nil),
+			Transfer: isc.NewAssets(baseTokesSent, nil),
 		})
 		require.NoError(t, err)
 	}
@@ -222,7 +222,7 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 	e.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance)
 
 	if !e.Clu.AssertAddressBalances(myAddress,
-		isc.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount-5*baseTokesSent)) {
+		isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-5*baseTokesSent)) {
 		t.Fatal()
 	}
 	e.checkLedger()

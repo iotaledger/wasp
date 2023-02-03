@@ -1,4 +1,4 @@
-package state_test
+package state
 
 import (
 	"testing"
@@ -9,12 +9,11 @@ import (
 	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/state"
 )
 
 type stateSM struct {
-	store state.Store
-	draft state.StateDraft
+	store Store
+	draft StateDraft
 	model kvstore.KVStore
 }
 
@@ -22,7 +21,7 @@ var _ rapid.StateMachine = &stateSM{}
 
 // State Machine initialization.
 func (sm *stateSM) Init(t *rapid.T) {
-	sm.store = state.NewStore(mapdb.NewMapDB())
+	sm.store = NewStore(mapdb.NewMapDB())
 	sm.draft = sm.store.NewOriginStateDraft()
 	sm.model = mapdb.NewMapDB()
 }
@@ -98,7 +97,7 @@ func TestRapid(t *testing.T) {
 
 func TestRapidReproduced(t *testing.T) {
 	var err error
-	store := state.NewStore(mapdb.NewMapDB())
+	store := NewStore(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()
 	draft.Set(kv.Key([]byte{0}), []byte{0})
 	draft.Set(kv.Key([]byte{1}), []byte{0})
@@ -121,4 +120,31 @@ func TestRapidReproduced(t *testing.T) {
 	check(0)
 	check(1)
 	check(0x10)
+}
+
+func TestRapidReproduced2(t *testing.T) {
+	store := NewStore(mapdb.NewMapDB())
+	draft := store.NewOriginStateDraft()
+	draft.Set(kv.Key([]byte{0x2}), []byte{0x1})
+	draft.Set(kv.Key([]byte{0x7}), []byte{0x1})
+
+	block := store.Commit(draft)
+	root1 := block.TrieRoot()
+	blockState, err := store.StateByTrieRoot(block.TrieRoot())
+	t.Log(block.TrieRoot())
+	require.NoError(t, err)
+
+	require.Equal(t, blockState.MustGet(kv.Key([]byte{0x2})), []byte{0x1})
+	require.Equal(t, blockState.MustGet(kv.Key([]byte{0x7})), []byte{0x1})
+
+	//
+	// Proceed to the next transition.
+	draft, err = store.NewEmptyStateDraft(block.L1Commitment())
+	require.NoError(t, err)
+
+	draft.Set(kv.Key([]byte{0x2}), []byte{0x0})
+	draft.Set(kv.Key([]byte{0x7}), []byte{0x1})
+
+	block = store.Commit(draft)
+	require.NotEqualValues(t, root1, block.TrieRoot())
 }

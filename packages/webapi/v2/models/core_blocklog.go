@@ -67,73 +67,58 @@ type BlockReceiptError struct {
 	ErrorMessage string `json:"errorMessage" swagger:"required"`
 }
 
-type FungibleTokens struct {
+type Assets struct {
 	BaseTokens   uint64         `json:"baseTokens" swagger:"required"`
 	NativeTokens []*NativeToken `json:"nativeTokens" swagger:"required"`
+	NFTs         []string       `json:"nfts" swagger:"required"`
 }
 
-func MapFungibleTokens(tokens *isc.FungibleTokens) *FungibleTokens {
-	if tokens == nil {
+func mapAssets(assets *isc.Assets) *Assets {
+	if assets == nil {
 		return nil
 	}
 
-	return &FungibleTokens{
-		BaseTokens:   tokens.BaseTokens,
-		NativeTokens: MapNativeTokens(tokens.NativeTokens),
-	}
-}
-
-type Allowance struct {
-	FungibleTokens *FungibleTokens `json:"fungibleTokens" swagger:"required"`
-	NFTs           []string        `json:"nfts" swagger:"required"`
-}
-
-func MapAllowance(allowance *isc.Allowance) *Allowance {
-	if allowance == nil {
-		return nil
+	ret := &Assets{
+		BaseTokens:   assets.BaseTokens,
+		NativeTokens: MapNativeTokens(assets.NativeTokens),
+		NFTs:         make([]string, len(assets.NFTs)),
 	}
 
-	allowanceResult := Allowance{
-		FungibleTokens: MapFungibleTokens(allowance.Assets),
-		NFTs:           make([]string, len(allowance.NFTs)),
+	for k, v := range assets.NFTs {
+		ret.NFTs[k] = v.ToHex()
 	}
-
-	for k, v := range allowance.NFTs {
-		allowanceResult.NFTs[k] = v.ToHex()
-	}
-
-	return &allowanceResult
+	return ret
 }
 
 type RequestDetail struct {
-	Allowance      *Allowance       `json:"allowance" swagger:"required"`
-	CallTarget     isc.CallTarget   `json:"callTarget" swagger:"required"`
-	FungibleTokens *FungibleTokens  `json:"fungibleTokens" swagger:"required"`
-	GasGudget      uint64           `json:"gasGudget" swagger:"required"`
-	IsEVM          bool             `json:"isEVM" swagger:"required"`
-	IsOffLedger    bool             `json:"isOffLedger" swagger:"required"`
-	NFT            *NFTDataResponse `json:"nft" swagger:"required"`
-	Params         dict.JSONDict    `json:"params" swagger:"required"`
-	RequestID      string           `json:"requestId" swagger:"required"`
-	SenderAccount  string           `json:"senderAccount" swagger:"required"`
-	TargetAddress  string           `json:"targetAddress" swagger:"required"`
+	Allowance     *Assets          `json:"allowance" swagger:"required"`
+	CallTarget    isc.CallTarget   `json:"callTarget" swagger:"required"`
+	Assets        *Assets          `json:"fungibleTokens" swagger:"required"`
+	GasGudget     uint64           `json:"gasGudget" swagger:"required"`
+	IsEVM         bool             `json:"isEVM" swagger:"required"`
+	IsOffLedger   bool             `json:"isOffLedger" swagger:"required"`
+	NFT           *NFTDataResponse `json:"nft" swagger:"required"`
+	Params        dict.JSONDict    `json:"params" swagger:"required"`
+	RequestID     string           `json:"requestId" swagger:"required"`
+	SenderAccount string           `json:"senderAccount" swagger:"required"`
+	TargetAddress string           `json:"targetAddress" swagger:"required"`
 }
 
 func MapRequestDetail(request isc.Request) *RequestDetail {
 	gasBudget, isEVM := request.GasBudget()
 
 	return &RequestDetail{
-		Allowance:      MapAllowance(request.Allowance()),
-		CallTarget:     request.CallTarget(),
-		FungibleTokens: MapFungibleTokens(request.FungibleTokens()),
-		GasGudget:      gasBudget,
-		IsEVM:          isEVM,
-		IsOffLedger:    request.IsOffLedger(),
-		NFT:            MapNFTDataResponse(request.NFT()),
-		Params:         request.Params().JSONDict(),
-		RequestID:      request.ID().String(),
-		SenderAccount:  request.SenderAccount().String(),
-		TargetAddress:  request.TargetAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
+		Allowance:     mapAssets(request.Allowance()),
+		CallTarget:    request.CallTarget(),
+		Assets:        mapAssets(request.Assets()),
+		GasGudget:     gasBudget,
+		IsEVM:         isEVM,
+		IsOffLedger:   request.IsOffLedger(),
+		NFT:           MapNFTDataResponse(request.NFT()),
+		Params:        request.Params().JSONDict(),
+		RequestID:     request.ID().String(),
+		SenderAccount: request.SenderAccount().String(),
+		TargetAddress: request.TargetAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
 	}
 }
 

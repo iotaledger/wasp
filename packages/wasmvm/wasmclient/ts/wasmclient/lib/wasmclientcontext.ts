@@ -10,7 +10,6 @@ import {IClientService} from './wasmclientservice';
 
 export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFuncCallContext {
     private eventHandlers: wasmlib.IEventHandlers[] = [];
-    private eventReceived: bool = false;
 
     public constructor(svcClient: IClientService, chain: string, scName: string) {
         super(svcClient, chain, scName);
@@ -28,12 +27,11 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         return this.svcClient;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     public initFuncCallContext(): void {
-        wasmlib.connectHost(this);
     }
 
     public initViewCallContext(_hContract: wasmlib.ScHname): wasmlib.ScHname {
-        wasmlib.connectHost(this);
         return this.scHname;
     }
 

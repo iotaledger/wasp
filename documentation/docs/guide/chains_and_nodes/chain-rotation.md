@@ -26,14 +26,7 @@ wasp-cli chain deploy --description "Test Chain" --gov-controller ${wallet_publi
 To introduce new committee nodes, its recommended to add them as access nodes while the previous committee is still in place, so that they can sync the chain state.
 If all you want to do is remove existing nodes from the chain then skip this step.
 
-To learn more about adding access nodes see [chain management](./chain-management.md#changing-access-nodes). Once you have configured at least one access node, add their public keys with the command below.
-
-```bash
-wasp-cli chain change-access-nodes accept ${node_pub_key}
-```
-
-Run that command for each new access node public key.
-Wait for the new access nodes to be fully synced before issuing the `rotate` command.
+To learn more about adding access nodes see [chain management](./chain-management.md#changing-access-nodes).
 
 ## Run DKG
 

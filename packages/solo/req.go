@@ -31,9 +31,9 @@ type CallParams struct {
 	target     isc.Hname
 	epName     string
 	entryPoint isc.Hname
-	ftokens    *isc.FungibleTokens // ignored off-ledger
+	ftokens    *isc.Assets // ignored off-ledger
 	nft        *isc.NFT
-	allowance  *isc.Allowance
+	allowance  *isc.Assets
 	gasBudget  uint64
 	nonce      uint64 // ignored for on-ledger
 	params     dict.Dict
@@ -72,12 +72,12 @@ func NewCallParamsFromDictByHname(hContract, hFunction isc.Hname, par dict.Dict)
 	return ret
 }
 
-func (r *CallParams) WithAllowance(allowance *isc.Allowance) *CallParams {
+func (r *CallParams) WithAllowance(allowance *isc.Assets) *CallParams {
 	r.allowance = allowance.Clone()
 	return r
 }
 
-func (r *CallParams) AddAllowance(allowance *isc.Allowance) *CallParams {
+func (r *CallParams) AddAllowance(allowance *isc.Assets) *CallParams {
 	if r.allowance == nil {
 		r.allowance = allowance.Clone()
 	} else {
@@ -87,14 +87,14 @@ func (r *CallParams) AddAllowance(allowance *isc.Allowance) *CallParams {
 }
 
 func (r *CallParams) AddAllowanceBaseTokens(amount uint64) *CallParams {
-	return r.AddAllowance(isc.NewAllowance(amount, nil, nil))
+	return r.AddAllowance(isc.NewAssetsBaseTokens(amount))
 }
 
 func (r *CallParams) AddAllowanceNativeTokensVect(nativeTokens ...*iotago.NativeToken) *CallParams {
 	if r.allowance == nil {
-		r.allowance = isc.NewEmptyAllowance()
+		r.allowance = isc.NewEmptyAssets()
 	}
-	r.allowance.Assets.Add(&isc.FungibleTokens{
+	r.allowance.Add(&isc.Assets{
 		NativeTokens: nativeTokens,
 	})
 	return r
@@ -102,9 +102,9 @@ func (r *CallParams) AddAllowanceNativeTokensVect(nativeTokens ...*iotago.Native
 
 func (r *CallParams) AddAllowanceNativeTokens(nativeTokenID iotago.NativeTokenID, amount interface{}) *CallParams {
 	if r.allowance == nil {
-		r.allowance = isc.NewEmptyAllowance()
+		r.allowance = isc.NewEmptyAssets()
 	}
-	r.allowance.Assets.Add(&isc.FungibleTokens{
+	r.allowance.Add(&isc.Assets{
 		NativeTokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     nativeTokenID,
 			Amount: util.ToBigInt(amount),
@@ -114,15 +114,15 @@ func (r *CallParams) AddAllowanceNativeTokens(nativeTokenID iotago.NativeTokenID
 }
 
 func (r *CallParams) AddAllowanceNFTs(nfts ...iotago.NFTID) *CallParams {
-	return r.AddAllowance(isc.NewAllowance(0, nil, nfts))
+	return r.AddAllowance(isc.NewEmptyAssets().AddNFTs(nfts...))
 }
 
-func (r *CallParams) WithFungibleTokens(assets *isc.FungibleTokens) *CallParams {
+func (r *CallParams) WithFungibleTokens(assets *isc.Assets) *CallParams {
 	r.ftokens = assets.Clone()
 	return r
 }
 
-func (r *CallParams) AddFungibleTokens(assets *isc.FungibleTokens) *CallParams {
+func (r *CallParams) AddFungibleTokens(assets *isc.Assets) *CallParams {
 	if r.ftokens == nil {
 		r.ftokens = assets.Clone()
 	} else {
@@ -132,17 +132,17 @@ func (r *CallParams) AddFungibleTokens(assets *isc.FungibleTokens) *CallParams {
 }
 
 func (r *CallParams) AddBaseTokens(amount uint64) *CallParams {
-	return r.AddFungibleTokens(isc.NewFungibleTokens(amount, nil))
+	return r.AddFungibleTokens(isc.NewAssets(amount, nil))
 }
 
 func (r *CallParams) AddNativeTokensVect(nativeTokens ...*iotago.NativeToken) *CallParams {
-	return r.AddFungibleTokens(&isc.FungibleTokens{
+	return r.AddFungibleTokens(&isc.Assets{
 		NativeTokens: nativeTokens,
 	})
 }
 
 func (r *CallParams) AddNativeTokens(nativeTokenID iotago.NativeTokenID, amount interface{}) *CallParams {
-	return r.AddFungibleTokens(&isc.FungibleTokens{
+	return r.AddFungibleTokens(&isc.Assets{
 		NativeTokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     nativeTokenID,
 			Amount: util.ToBigInt(amount),
@@ -247,8 +247,8 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 		UnspentOutputs:   allOuts,
 		UnspentOutputIDs: allOutIDs,
 		Request: &isc.RequestParameters{
-			TargetAddress:  ch.ChainID.AsAddress(),
-			FungibleTokens: req.ftokens,
+			TargetAddress: ch.ChainID.AsAddress(),
+			Assets:        req.ftokens,
 			Metadata: &isc.SendMetadata{
 				TargetContract: req.target,
 				EntryPoint:     req.entryPoint,

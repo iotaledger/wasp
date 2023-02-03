@@ -2,6 +2,7 @@ version: "3.9"
 services:
   hornet-nest:
     image: iotaledger/hornet-nest:2.0-rc
+    stop_grace_period: 5m
     networks:
       - wasp-net
     ports:
@@ -9,12 +10,15 @@ services:
       - "${HOST:-127.0.0.1}:8081:8081/tcp"
       - "${HOST:-127.0.0.1}:8091:8091/tcp"
       - "${HOST:-127.0.0.1}:9029:9029/tcp"
-    stop_grace_period: 5m
   wasp:
-    image: iotaledger/wasp:latest 
-    # build:
-    #   context: ../../
-    #   dockerfile: Dockerfile
+    image: iotaledger/wasp:latest
+    stop_grace_period: 5m
+    build:
+      context: ../../
+      dockerfile: Dockerfile.noncached
+      args:
+        - BUILD_TAGS
+        - BUILD_LD_FLAGS
     command:
       - "--dashboard.auth.scheme=none"
       - "--webapi.auth.scheme=none"

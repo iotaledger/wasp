@@ -45,7 +45,7 @@ contract ISCTest {
     function sendBaseTokens(L1Address memory receiver, uint64 baseTokens)
         public
     {
-        ISCAllowance memory allowance;
+        ISCAssets memory allowance;
         if (baseTokens == 0) {
             allowance = ISC.sandbox.getAllowanceFrom(msg.sender);
         } else {
@@ -54,41 +54,43 @@ contract ISCTest {
 
         ISC.sandbox.takeAllowedFunds(msg.sender, allowance);
 
-        ISCFungibleTokens memory fungibleTokens;
+        ISCAssets memory assets;
         require(allowance.baseTokens > TokensForGas);
-        fungibleTokens.baseTokens = allowance.baseTokens - TokensForGas;
+        assets.baseTokens = allowance.baseTokens - TokensForGas;
 
         ISCSendMetadata memory metadata;
         ISCSendOptions memory options;
-        ISC.sandbox.send(receiver, fungibleTokens, true, metadata, options);
+        ISC.sandbox.send(receiver, assets, true, metadata, options);
     }
 
-    function sendAsNFT(L1Address memory receiver, NFTID id, uint64 storageDeposit) public {
-        ISCAllowance memory allowance;
+    function sendNFT(L1Address memory receiver, NFTID id, uint64 storageDeposit) public {
+        ISCAssets memory allowance;
         allowance.baseTokens = storageDeposit;
         allowance.nfts = new NFTID[](1);
         allowance.nfts[0] = id;
 
         ISC.sandbox.takeAllowedFunds(msg.sender, allowance);
 
-        ISCFungibleTokens memory fungibleTokens;
+        ISCAssets memory assets;
+        assets.nfts = new NFTID[](1);
+        assets.nfts[0] = id;
         ISCSendMetadata memory metadata;
         ISCSendOptions memory options;
-        ISC.sandbox.sendAsNFT(receiver, fungibleTokens, id, true, metadata, options);
+        ISC.sandbox.send(receiver, assets, true, metadata, options);
     }
 
     function callInccounter() public {
         ISCDict memory params = ISCDict(new ISCDictItem[](1));
         bytes memory int64Encoded42 = hex"2A00000000000000";
         params.items[0] = ISCDictItem("counter", int64Encoded42);
-        ISCAllowance memory allowance;
+        ISCAssets memory allowance;
         ISC.sandbox.call(ISC.util.hn("inccounter"), ISC.util.hn("incCounter"), params, allowance);
     }
 
     function makeISCPanic() public {
         // will produce a panic in ISC
         ISCDict memory params;
-        ISCAllowance memory allowance;
+        ISCAssets memory allowance;
         ISC.sandbox.call(
             ISC.util.hn("governance"),
             ISC.util.hn("claimChainOwnership"),
@@ -99,7 +101,7 @@ contract ISCTest {
 
     function moveToAccount(
         ISCAgentID memory targetAgentID,
-        ISCAllowance memory allowance
+        ISCAssets memory allowance
     ) public {
         // moves funds owned by the current contract to the targetAgentID
         ISCDict memory params = ISCDict(new ISCDictItem[](2));

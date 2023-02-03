@@ -11,6 +11,11 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
+const (
+	ackHandlerMsgTypeReset byte = iota
+	ackHandlerMsgTypeBatch
+)
+
 // The purpose of this wrapper is to handle unreliable network by implementing
 // a RELIABLE CHANNEL abstraction. This is done by resending messages until an
 // acknowledgement is received. To make this more efficient, acknowledgements
@@ -19,6 +24,8 @@ import (
 type ackHandler struct {
 	me           NodeID
 	nested       GPA
+	initialized  map[NodeID]bool
+	initPending  map[NodeID][]Message
 	counters     map[NodeID]int // For numbering the outgoing messages.
 	resendPeriod time.Duration
 	sentUnacked  map[NodeID]map[int]*ackHandlerBatch
@@ -39,6 +46,8 @@ func NewAckHandler(me NodeID, nested GPA, resendPeriod time.Duration) AckHandler
 	return &ackHandler{
 		me:           me,
 		nested:       nested,
+		initialized:  map[NodeID]bool{},
+		initPending:  map[NodeID][]Message{},
 		counters:     map[NodeID]int{},
 		resendPeriod: resendPeriod,
 		sentUnacked:  map[NodeID]map[int]*ackHandlerBatch{},
@@ -47,6 +56,8 @@ func NewAckHandler(me NodeID, nested GPA, resendPeriod time.Duration) AckHandler
 }
 
 func (a *ackHandler) DismissPeer(peerID NodeID) {
+	delete(a.initialized, peerID)
+	delete(a.initPending, peerID)
 	delete(a.counters, peerID)
 	delete(a.sentUnacked, peerID)
 	delete(a.recvAcksIn, peerID)
@@ -66,9 +77,11 @@ func (a *ackHandler) Input(input Input) OutMessages {
 }
 
 func (a *ackHandler) Message(msg Message) OutMessages {
-	switch msgT := msg.(type) {
+	switch msg := msg.(type) {
+	case *ackHandlerReset:
+		return a.handleResetMsg(msg)
 	case *ackHandlerBatch:
-		return a.handleBatchMsg(msgT)
+		return a.handleBatchMsg(msg)
 	default:
 		panic(fmt.Errorf("unexpected message type: %+v", msg))
 	}
@@ -91,11 +104,25 @@ func (a *ackHandler) StatusString() string {
 }
 
 func (a *ackHandler) UnmarshalMessage(data []byte) (Message, error) {
-	msg := &ackHandlerBatch{nestedGPA: a.nested}
-	if err := msg.UnmarshalBinary(data); err != nil {
-		return nil, fmt.Errorf("cannot unmarshal ackHandlerBatch: %w", err)
+	if len(data) < 1 {
+		return nil, fmt.Errorf("Data to short: %v", data)
 	}
-	return msg, nil
+	switch data[0] {
+	case ackHandlerMsgTypeReset:
+		msg := &ackHandlerReset{}
+		if err := msg.UnmarshalBinary(data); err != nil {
+			return nil, fmt.Errorf("cannot unmarshal ackHandlerReset: %w", err)
+		}
+		return msg, nil
+	case ackHandlerMsgTypeBatch:
+		msg := &ackHandlerBatch{nestedGPA: a.nested}
+		if err := msg.UnmarshalBinary(data); err != nil {
+			return nil, fmt.Errorf("cannot unmarshal ackHandlerBatch: %w", err)
+		}
+		return msg, nil
+	default:
+		return nil, fmt.Errorf("unexpected message type: %v", data[0])
+	}
 }
 
 func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) OutMessages {
@@ -114,7 +141,35 @@ func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) OutMessages {
 			}
 		}
 	}
+	for nodeID := range a.initPending {
+		resendMsgs.Add(&ackHandlerReset{BasicMessage: NewBasicMessage(nodeID), response: false, latestID: 0})
+	}
 	return resendMsgs
+}
+
+func (a *ackHandler) handleResetMsg(msg *ackHandlerReset) OutMessages {
+	from := msg.sender
+	if !msg.response {
+		max := 0
+		if recvAcksIn, ok := a.recvAcksIn[msg.sender]; ok {
+			for id := range recvAcksIn {
+				if id > max {
+					max = id
+				}
+			}
+		}
+		return NoMessages().Add(&ackHandlerReset{
+			BasicMessage: NewBasicMessage(msg.sender),
+			response:     true,
+			latestID:     max,
+		})
+	}
+	if ini, ok := a.initialized[from]; ok && ini {
+		return nil
+	}
+	a.counters[msg.sender] = msg.latestID + 1
+	a.initialized[msg.sender] = true
+	return a.makeBatches(NoMessages())
 }
 
 func (a *ackHandler) handleBatchMsg(msgBatch *ackHandlerBatch) OutMessages {
@@ -193,9 +248,26 @@ func (a *ackHandler) makeBatches(msgs OutMessages) OutMessages {
 			groupedMsgs[msgRecipient] = []Message{msg}
 		}
 	})
+	for nodeID, pending := range a.initPending {
+		if gr, ok := groupedMsgs[nodeID]; ok {
+			groupedMsgs[nodeID] = append(gr, pending...)
+		} else {
+			groupedMsgs[nodeID] = pending
+		}
+	}
+	a.initPending = map[NodeID][]Message{}
 
 	batches := NoMessages()
 	for nodeID, batchMsgs := range groupedMsgs {
+		if initialized, ok := a.initialized[nodeID]; !ok || !initialized {
+			if pending, ok := a.initPending[nodeID]; ok {
+				a.initPending[nodeID] = append(pending, batchMsgs...)
+			} else {
+				a.initPending[nodeID] = batchMsgs
+			}
+			batches.Add(&ackHandlerReset{BasicMessage: NewBasicMessage(nodeID), response: false, latestID: 0})
+			continue
+		}
 		//
 		// Assign batch ID.
 		if _, ok := a.counters[nodeID]; !ok {
@@ -235,6 +307,54 @@ func (a *ackHandler) makeBatches(msgs OutMessages) OutMessages {
 	return batches
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// ackHandlerReset
+
+type ackHandlerReset struct {
+	BasicMessage
+	response bool
+	latestID int
+}
+
+var _ Message = &ackHandlerReset{}
+
+func (m *ackHandlerReset) MarshalBinary() ([]byte, error) {
+	w := &bytes.Buffer{}
+	if err := util.WriteByte(w, ackHandlerMsgTypeReset); err != nil {
+		return nil, fmt.Errorf("cannot serialize ackHandlerReset.msgType: %w", err)
+	}
+	if err := util.WriteBoolByte(w, m.response); err != nil {
+		return nil, fmt.Errorf("cannot serialize ackHandlerReset.response: %w", err)
+	}
+	if err := util.WriteUint32(w, uint32(m.latestID)); err != nil {
+		return nil, fmt.Errorf("cannot serialize ackHandlerReset.latestID: %w", err)
+	}
+	return w.Bytes(), nil
+}
+
+func (m *ackHandlerReset) UnmarshalBinary(data []byte) error {
+	r := bytes.NewReader(data)
+	msgType, err := util.ReadByte(r)
+	if err != nil {
+		return fmt.Errorf("cannot deserialize ackHandlerReset.msgType: %w", err)
+	}
+	if msgType != ackHandlerMsgTypeReset {
+		return fmt.Errorf("unexpected msgType: %v", msgType)
+	}
+	if err := util.ReadBoolByte(r, &m.response); err != nil {
+		return fmt.Errorf("cannot deserialize ackHandlerReset.response: %w", err)
+	}
+	var u32 uint32
+	if err := util.ReadUint32(r, &u32); err != nil {
+		return fmt.Errorf("cannot deserialize ackHandlerReset.latestID: %w", err)
+	}
+	m.latestID = int(u32)
+	return nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ackHandlerBatch
+
 // Message conveying the message batches and acknowledgements.
 type ackHandlerBatch struct {
 	sender    NodeID
@@ -261,6 +381,9 @@ func (m *ackHandlerBatch) SetSender(sender NodeID) {
 
 func (m *ackHandlerBatch) MarshalBinary() ([]byte, error) {
 	w := &bytes.Buffer{}
+	if err := util.WriteByte(w, ackHandlerMsgTypeBatch); err != nil {
+		return nil, fmt.Errorf("cannot serialize ackHandlerBatch.msgType: %w", err)
+	}
 	//
 	// m.id
 	if m.id != nil {
@@ -304,6 +427,13 @@ func (m *ackHandlerBatch) MarshalBinary() ([]byte, error) {
 
 func (m *ackHandlerBatch) UnmarshalBinary(data []byte) error {
 	r := bytes.NewReader(data)
+	msgType, err := util.ReadByte(r)
+	if err != nil {
+		return fmt.Errorf("cannot deserialize ackHandlerBatch.msgType: %w", err)
+	}
+	if msgType != ackHandlerMsgTypeBatch {
+		return fmt.Errorf("unexpected msgType: %v", msgType)
+	}
 	//
 	// m.id
 	var mIDPresent bool
@@ -354,6 +484,9 @@ func (m *ackHandlerBatch) UnmarshalBinary(data []byte) error {
 	}
 	return nil
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// ackHandlerTick
 
 // Event representing a timer tick.
 type ackHandlerTick struct {

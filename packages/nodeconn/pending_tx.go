@@ -5,6 +5,7 @@ package nodeconn
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -15,8 +16,16 @@ import (
 
 // pendingTransaction holds info about a sent transaction that is pending.
 type pendingTransaction struct {
-	ctx            context.Context
-	ctxCancel      context.CancelFunc
+	// this is the context given by the chain consensus.
+	// if this context gets canceled, the tx should not be tracked by the node connection anymore.
+	ctxChainConsensus context.Context
+
+	// this context is used to signal that the transaction got referenced by a milestone.
+	// it might be confirmed or conflicting, or the parent ctxChainConsensus got canceled.
+	ctxConfirmed       context.Context
+	cancelCtxConfirmed context.CancelFunc
+
+	ncChain        *ncChain
 	transaction    *iotago.Transaction
 	consumedInputs iotago.OutputIDs
 	transactionID  iotago.TransactionID
@@ -26,9 +35,13 @@ type pendingTransaction struct {
 
 	blockID     iotago.BlockID
 	blockIDLock sync.RWMutex
+
+	lastPendingTx        *pendingTransaction
+	chainedPendingTxLock sync.RWMutex
+	chainedPendingTx     *pendingTransaction
 }
 
-func newPendingTransaction(ctxPendingTransaction context.Context, cancelPendingTransaction context.CancelFunc, transaction *iotago.Transaction) (*pendingTransaction, error) {
+func newPendingTransaction(ctxChainConsensus context.Context, ncChain *ncChain, transaction *iotago.Transaction, lastPendingTx *pendingTransaction) (*pendingTransaction, error) {
 	txID, err := transaction.ID()
 	if err != nil {
 		return nil, err
@@ -45,18 +58,40 @@ func newPendingTransaction(ctxPendingTransaction context.Context, cancelPendingT
 		}
 	}
 
-	return &pendingTransaction{
-		ctx:            ctxPendingTransaction,
-		ctxCancel:      cancelPendingTransaction,
-		transaction:    transaction,
-		consumedInputs: consumedInputs,
-		transactionID:  txID,
-		conflicting:    atomic.NewBool(false),
-		conflictReason: nil,
-		confirmed:      atomic.NewBool(false),
-		blockID:        iotago.EmptyBlockID(),
-		blockIDLock:    sync.RWMutex{},
-	}, nil
+	ctxConfirmed, cancelCtxConfirmed := context.WithCancel(ctxChainConsensus)
+
+	pendingTx := &pendingTransaction{
+		ctxChainConsensus:    ctxChainConsensus,
+		ctxConfirmed:         ctxConfirmed,
+		cancelCtxConfirmed:   cancelCtxConfirmed,
+		ncChain:              ncChain,
+		transaction:          transaction,
+		consumedInputs:       consumedInputs,
+		transactionID:        txID,
+		lastPendingTx:        lastPendingTx,
+		conflicting:          atomic.NewBool(false),
+		conflictReason:       nil,
+		confirmed:            atomic.NewBool(false),
+		blockID:              iotago.EmptyBlockID(),
+		blockIDLock:          sync.RWMutex{},
+		chainedPendingTxLock: sync.RWMutex{},
+		chainedPendingTx:     nil,
+	}
+
+	// chain the new transaction with the last pending one
+	if lastPendingTx != nil {
+		lastPendingTx.SetChainedPendingTransaction(pendingTx)
+	}
+
+	return pendingTx, nil
+}
+
+func (tx *pendingTransaction) Cleanup() {
+	tx.chainedPendingTxLock.RLock()
+	defer tx.chainedPendingTxLock.RUnlock()
+
+	tx.lastPendingTx = nil
+	tx.chainedPendingTx = nil
 }
 
 func (tx *pendingTransaction) ID() iotago.TransactionID {
@@ -81,8 +116,33 @@ func (tx *pendingTransaction) BlockID() iotago.BlockID {
 func (tx *pendingTransaction) SetBlockID(blockID iotago.BlockID) {
 	tx.blockIDLock.Lock()
 	defer tx.blockIDLock.Unlock()
-
 	tx.blockID = blockID
+}
+
+func (tx *pendingTransaction) Reattach() {
+	ncc := tx.ncChain
+
+	ncc.LogDebugf("reattaching transaction %s", tx.ID().ToHex())
+
+	ncc.shutdownWaitGroup.Add(1)
+
+	// HINT: the new blockID is set by "postTxLoop" and further reattachments are also scheduled there
+	ncc.reattachTxTaskPipe.In() <- &transactionTask{
+		pendingTx: tx,
+		back:      nil,
+	}
+}
+
+func (tx *pendingTransaction) PropagateReattach() {
+	// propagate the new blockID to chained transactions.
+	// we need to reattach pending transactions that reference
+	// this transaction to fix the ordering of the outputs on L1.
+	tx.chainedPendingTxLock.RLock()
+	defer tx.chainedPendingTxLock.RUnlock()
+
+	if tx.chainedPendingTx != nil {
+		tx.chainedPendingTx.Reattach()
+	}
 }
 
 func (tx *pendingTransaction) Confirmed() bool {
@@ -91,7 +151,7 @@ func (tx *pendingTransaction) Confirmed() bool {
 
 func (tx *pendingTransaction) SetConfirmed() {
 	tx.confirmed.Store(true)
-	tx.ctxCancel()
+	tx.cancelCtxConfirmed()
 }
 
 func (tx *pendingTransaction) Conflicting() bool {
@@ -101,7 +161,22 @@ func (tx *pendingTransaction) Conflicting() bool {
 func (tx *pendingTransaction) SetConflicting(reason error) {
 	tx.conflictReason = reason
 	tx.conflicting.Store(true)
-	tx.ctxCancel()
+	tx.cancelCtxConfirmed()
+
+	// propagate the conflict to chained transactions
+	tx.chainedPendingTxLock.RLock()
+	defer tx.chainedPendingTxLock.RUnlock()
+
+	if tx.chainedPendingTx != nil {
+		tx.chainedPendingTx.SetConflicting(errors.New("former chained transaction was conflicting"))
+	}
+}
+
+func (tx *pendingTransaction) SetChainedPendingTransaction(pendingTx *pendingTransaction) {
+	tx.chainedPendingTxLock.Lock()
+	defer tx.chainedPendingTxLock.Unlock()
+
+	tx.chainedPendingTx = pendingTx
 }
 
 func (tx *pendingTransaction) ConflictReason() error {
@@ -110,15 +185,16 @@ func (tx *pendingTransaction) ConflictReason() error {
 
 // WaitUntilConfirmed waits until a given tx Block is confirmed, it takes care of promotions/re-attachments for that Block
 func (tx *pendingTransaction) WaitUntilConfirmed() error {
-	// wait until the context is done
-	<-tx.ctx.Done()
+	// wait until the context for L1 confirmation is done
+	<-tx.ctxConfirmed.Done()
 
 	if tx.Conflicting() {
 		return fmt.Errorf("transaction was conflicting: %s, error: %w", tx.transactionID.ToHex(), tx.conflictReason)
 	}
 
 	if !tx.Confirmed() {
-		return fmt.Errorf("context was canceled but transaction was not confirmed: %s, error: %w", tx.transactionID.ToHex(), tx.ctx.Err())
+		ctxChainConsensusCanceled := tx.ctxChainConsensus.Err() != nil
+		return fmt.Errorf("context was canceled but transaction was not confirmed: %s, ctxChainConsensusCanceled: %t, error: %w", tx.transactionID.ToHex(), ctxChainConsensusCanceled, tx.ctxConfirmed.Err())
 	}
 
 	// transaction was confirmed

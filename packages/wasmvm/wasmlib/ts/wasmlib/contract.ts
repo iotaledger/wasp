@@ -3,22 +3,26 @@
 
 import {ScTransfer} from './assets';
 import {ScDict} from './dict';
-import {sandbox} from './host';
-import {FnCall, FnPost, panic} from './sandbox';
+import {panic} from './sandbox';
 import {CallRequest, PostRequest} from './wasmrequests';
 import {ScChainID} from './wasmtypes/scchainid';
 import {Proxy} from './wasmtypes/proxy';
 import {ScHname} from './wasmtypes/schname';
-import {ScFuncContext} from './context';
 
 // base contract objects
 
-export interface ScFuncCallContext extends ScViewCallContext {
-    initFuncCallContext(): void;
+export interface ScViewCallContext {
+    fnCall(req: CallRequest): Uint8Array;
+
+    fnChainID(): ScChainID;
+
+    initViewCallContext(hContract: ScHname): ScHname;
 }
 
-export interface ScViewCallContext {
-    initViewCallContext(hContract: ScHname): ScHname;
+export interface ScFuncCallContext extends ScViewCallContext {
+    fnPost(req: PostRequest): Uint8Array;
+
+    initFuncCallContext(): void;
 }
 
 export function newCallParamsProxy(v: ScView): Proxy {
@@ -38,12 +42,14 @@ export class ScView {
     private static nilParams: ScDict = new ScDict(null);
     public static nilProxy: Proxy = new Proxy(ScView.nilParams);
 
+    ctx: ScViewCallContext;
     hContract: ScHname;
     hFunction: ScHname;
     params: ScDict;
     resultsProxy: Proxy | null;
 
     constructor(ctx: ScViewCallContext, hContract: ScHname, hFunction: ScHname) {
+        this.ctx = ctx;
         this.hContract = ctx.initViewCallContext(hContract);
         this.hFunction = hFunction;
         this.params = ScView.nilParams;
@@ -63,7 +69,7 @@ export class ScView {
             allowance = new ScTransfer();
         }
         req.allowance = allowance.toBytes();
-        const res = sandbox(FnCall, req.bytes());
+        const res = this.ctx.fnCall(req);
         const proxy = this.resultsProxy;
         if (proxy != null) {
             proxy.kvStore = new ScDict(res);
@@ -91,12 +97,14 @@ export class ScInitFunc extends ScView {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScFunc extends ScView {
-    delaySeconds: u32 = 0;
     allowanceAssets: ScTransfer | null = null;
+    delaySeconds: u32 = 0;
+    fctx: ScFuncCallContext;
     transferAssets: ScTransfer | null = null;
 
     constructor(ctx: ScFuncCallContext, hContract: ScHname, hFunction: ScHname) {
         super(ctx, hContract, hFunction);
+        this.fctx = ctx;
     }
 
     allowance(allowance: ScTransfer): ScFunc {
@@ -126,7 +134,7 @@ export class ScFunc extends ScView {
     }
 
     post(): void {
-        return this.postToChain(new ScFuncContext().currentChainID());
+        return this.postToChain(this.ctx.fnChainID());
     }
 
     postToChain(chainID: ScChainID): void {
@@ -144,7 +152,7 @@ export class ScFunc extends ScView {
             req.transfer = transfer.toBytes();
         }
         req.delay = this.delaySeconds;
-        const res = sandbox(FnPost, req.bytes());
+        const res = this.fctx.fnPost(req);
         if (this.resultsProxy) {
             this.resultsProxy = new Proxy(new ScDict(res));
         }

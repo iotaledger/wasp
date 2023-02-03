@@ -42,3 +42,6 @@ packages/evm/**/*.bin-runtime
 packages/vm/core/evm/**/*.bin
 packages/vm/core/evm/**/*.bin-runtime
 *__debug_bin
+*.blk
+go.work
+go.work.sum

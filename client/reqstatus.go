@@ -32,6 +32,7 @@ const waitRequestProcessedDefaultTimeout = 30 * time.Second
 
 // WaitUntilRequestProcessed blocks until the request has been processed by the node
 func (c *WaspClient) WaitUntilRequestProcessed(chainID isc.ChainID, reqID isc.RequestID, timeout time.Duration) (*isc.Receipt, error) {
+	now := time.Now()
 	if timeout == 0 {
 		timeout = waitRequestProcessedDefaultTimeout
 	}
@@ -43,30 +44,42 @@ func (c *WaspClient) WaitUntilRequestProcessed(chainID isc.ChainID, reqID isc.Re
 		&res,
 	)
 	if err != nil {
+		c.log("WaitUntilRequestProcessed, chainID=%v, reqID=%v failed in %v with: %v", chainID, reqID, time.Since(now), err)
 		return nil, err
 	}
 	var receipt isc.Receipt
 	err = json.Unmarshal([]byte(res.Receipt), &receipt)
 	if err != nil {
+		c.log("WaitUntilRequestProcessed, chainID=%v, reqID=%v failed in %v with: %v", chainID, reqID, time.Since(now), err)
 		return nil, err
 	}
+	c.log("WaitUntilRequestProcessed, chainID=%v, reqID=%v done in %v", chainID, reqID, time.Since(now))
 	return &receipt, nil
 }
 
 // WaitUntilAllRequestsProcessed blocks until all requests in the given transaction have been processed
 // by the node
 func (c *WaspClient) WaitUntilAllRequestsProcessed(chainID isc.ChainID, tx *iotago.Transaction, timeout time.Duration) ([]*isc.Receipt, error) {
+	now := time.Now()
+	txID, err := tx.ID()
+	if err != nil {
+		c.log("WaitUntilAllRequestsProcessed, chainID=%v, tx=? failed in %v with: %v", chainID, time.Since(now), err)
+		return nil, err
+	}
 	reqs, err := isc.RequestsInTransaction(tx)
 	if err != nil {
+		c.log("WaitUntilAllRequestsProcessed, chainID=%v, tx=%v failed in %v with: %v", chainID, txID.ToHex(), time.Since(now), err)
 		return nil, err
 	}
 	ret := make([]*isc.Receipt, len(reqs))
 	for i, req := range reqs[chainID] {
 		receipt, err := c.WaitUntilRequestProcessed(chainID, req.ID(), timeout)
 		if err != nil {
+			c.log("WaitUntilAllRequestsProcessed, chainID=%v, tx=%v failed in %v with: %v", chainID, txID.ToHex(), time.Since(now), err)
 			return nil, err
 		}
 		ret[i] = receipt
 	}
+	c.log("WaitUntilAllRequestsProcessed, chainID=%v, tx=%v done in %v", chainID, txID.ToHex(), time.Since(now))
 	return ret, nil
 }

@@ -27,7 +27,7 @@ func NewSandbox(vmctx *VMContext) isc.Sandbox {
 }
 
 // Call calls an entry point of contract, passes parameters and funds
-func (s *contractSandbox) Call(target, entryPoint isc.Hname, params dict.Dict, transfer *isc.Allowance) dict.Dict {
+func (s *contractSandbox) Call(target, entryPoint isc.Hname, params dict.Dict, transfer *isc.Assets) dict.Dict {
 	s.Ctx.GasBurn(gas.BurnCodeCallContract)
 	return s.Ctx.Call(target, entryPoint, params, transfer)
 }
@@ -50,17 +50,17 @@ func (s *contractSandbox) GetEntropy() hashing.HashValue {
 	return s.Ctx.(*VMContext).Entropy()
 }
 
-func (s *contractSandbox) AllowanceAvailable() *isc.Allowance {
+func (s *contractSandbox) AllowanceAvailable() *isc.Assets {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeGetAllowance)
 	return s.Ctx.(*VMContext).AllowanceAvailable()
 }
 
-func (s *contractSandbox) TransferAllowedFunds(target isc.AgentID, transfer ...*isc.Allowance) *isc.Allowance {
+func (s *contractSandbox) TransferAllowedFunds(target isc.AgentID, transfer ...*isc.Assets) *isc.Assets {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeTransferAllowance)
 	return s.Ctx.(*VMContext).TransferAllowedFunds(target, transfer...)
 }
 
-func (s *contractSandbox) TransferAllowedFundsForceCreateTarget(target isc.AgentID, transfer ...*isc.Allowance) *isc.Allowance {
+func (s *contractSandbox) TransferAllowedFundsForceCreateTarget(target isc.AgentID, transfer ...*isc.Assets) *isc.Assets {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeTransferAllowance)
 	return s.Ctx.(*VMContext).TransferAllowedFunds(target, transfer...)
 }
@@ -73,11 +73,6 @@ func (s *contractSandbox) Request() isc.Calldata {
 func (s *contractSandbox) Send(par isc.RequestParameters) {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeSendL1Request, uint64(s.Ctx.(*VMContext).NumPostedOutputs))
 	s.Ctx.(*VMContext).Send(par)
-}
-
-func (s *contractSandbox) SendAsNFT(par isc.RequestParameters, nftID iotago.NFTID) {
-	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeSendL1Request, uint64(s.Ctx.(*VMContext).NumPostedOutputs))
-	s.Ctx.(*VMContext).SendAsNFT(par, nftID)
 }
 
 func (s *contractSandbox) EstimateRequiredStorageDeposit(par isc.RequestParameters) uint64 {
@@ -160,28 +155,28 @@ func (s *contractSandbox) GasBurnEnable(enable bool) {
 	s.Ctx.GasBurnEnable(enable)
 }
 
-func (s *contractSandbox) MustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, fungibleTokens *isc.FungibleTokens, nfts []iotago.NFTID) {
-	s.Ctx.(*VMContext).mustMoveBetweenAccounts(fromAgentID, toAgentID, fungibleTokens, nfts)
+func (s *contractSandbox) MustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, assets *isc.Assets) {
+	s.Ctx.(*VMContext).mustMoveBetweenAccounts(fromAgentID, toAgentID, assets)
 }
 
-func (s *contractSandbox) DebitFromAccount(agentID isc.AgentID, tokens *isc.FungibleTokens) {
+func (s *contractSandbox) DebitFromAccount(agentID isc.AgentID, tokens *isc.Assets) {
 	s.Ctx.(*VMContext).debitFromAccount(agentID, tokens)
 }
 
-func (s *contractSandbox) CreditToAccount(agentID isc.AgentID, tokens *isc.FungibleTokens) {
+func (s *contractSandbox) CreditToAccount(agentID isc.AgentID, tokens *isc.Assets) {
 	s.Ctx.(*VMContext).creditToAccount(agentID, tokens)
 }
 
-func (s *contractSandbox) TotalGasTokens() *isc.FungibleTokens {
+func (s *contractSandbox) TotalGasTokens() *isc.Assets {
 	if s.Ctx.(*VMContext).task.EstimateGasMode {
-		return isc.NewEmptyFungibleTokens()
+		return isc.NewEmptyAssets()
 	}
 	amount := s.Ctx.(*VMContext).gasMaxTokensToSpendForGasFee
 	nativeTokenID := s.Ctx.(*VMContext).chainInfo.GasFeePolicy.GasFeeTokenID
 	if isc.IsEmptyNativeTokenID(nativeTokenID) {
-		return isc.NewFungibleBaseTokens(amount)
+		return isc.NewAssetsBaseTokens(amount)
 	}
-	return isc.NewFungibleTokens(0, iotago.NativeTokens{&iotago.NativeToken{
+	return isc.NewAssets(0, iotago.NativeTokens{&iotago.NativeToken{
 		ID:     nativeTokenID,
 		Amount: new(big.Int).SetUint64(amount),
 	}})

@@ -90,14 +90,18 @@ func (s ScSandbox) Balances() *ScBalances {
 
 // calls a smart contract function
 func (s ScSandbox) callWithAllowance(hContract, hFunction wasmtypes.ScHname, params *ScDict, allowance *ScTransfer) *ScImmutableDict {
-	req := &wasmrequests.CallRequest{
+	req := wasmrequests.CallRequest{
 		Contract:  hContract,
 		Function:  hFunction,
 		Params:    params.Bytes(),
 		Allowance: allowance.Bytes(),
 	}
-	res := Sandbox(FnCall, req.Bytes())
+	res := s.FnCall(&req)
 	return NewScDictFromBytes(res).Immutable()
+}
+
+func (s ScSandbox) FnCall(req *wasmrequests.CallRequest) []byte {
+	return Sandbox(FnCall, req.Bytes())
 }
 
 // retrieve the agent id of the owner of the chain this contract lives on
@@ -112,6 +116,10 @@ func (s ScSandbox) Contract() wasmtypes.ScHname {
 
 // retrieve the chain id of the chain this contract lives on
 func (s ScSandbox) CurrentChainID() wasmtypes.ScChainID {
+	return s.FnChainID()
+}
+
+func (s ScSandbox) FnChainID() wasmtypes.ScChainID {
 	return wasmtypes.ChainIDFromBytes(Sandbox(FnChainID, nil))
 }
 
@@ -234,7 +242,7 @@ func (s ScSandboxFunc) Minted() ScBalances {
 
 // Post (delayed) posts a SC function request
 func (s ScSandboxFunc) Post(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, params *ScDict, allowance, transfer ScTransfer, delay uint32) {
-	req := &wasmrequests.PostRequest{
+	req := wasmrequests.PostRequest{
 		ChainID:   chainID,
 		Contract:  hContract,
 		Function:  hFunction,
@@ -243,7 +251,11 @@ func (s ScSandboxFunc) Post(chainID wasmtypes.ScChainID, hContract, hFunction wa
 		Transfer:  transfer.Bytes(),
 		Delay:     delay,
 	}
-	Sandbox(FnPost, req.Bytes())
+	s.FnPost(&req)
+}
+
+func (s ScSandboxFunc) FnPost(req *wasmrequests.PostRequest) []byte {
+	return Sandbox(FnPost, req.Bytes())
 }
 
 var (

@@ -9,8 +9,6 @@ import {Codec, JsonReq, JsonResp} from './codec';
 
 export type Error = string | null;
 
-
-// TODO
 export class WaspClient {
     baseURL: string;
 

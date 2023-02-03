@@ -19,6 +19,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
@@ -243,7 +245,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 		addAccessNodesRequests[i] = tx
 	}
 
-	peers := multiclient.New(chain.CommitteeAPIHosts())
+	peers := multiclient.New(chain.CommitteeAPIHosts()).WithLogFunc(clu.t.Logf)
 
 	for _, tx := range addAccessNodesRequests {
 		// ---------- wait until the requests are processed in all committee nodes
@@ -286,9 +288,10 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 // to consider it as an access node.
 func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Transaction, error) {
 	waspClient := clu.WaspClient(accessNodeIndex)
-	if err := apilib.ActivateChainOnAccessNodes("", clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
+	if err := apilib.ActivateChainOnNodes("", clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
 		return nil, err
 	}
+
 	accessNodePeering, err := waspClient.GetPeeringSelf()
 	if err != nil {
 		return nil, err
@@ -329,11 +332,11 @@ func (clu *Cluster) IsNodeUp(i int) bool {
 }
 
 func (clu *Cluster) MultiClient() *multiclient.MultiClient {
-	return multiclient.New(clu.Config.APIHosts())
+	return multiclient.New(clu.Config.APIHosts()).WithLogFunc(clu.t.Logf)
 }
 
 func (clu *Cluster) WaspClient(nodeIndex int) *client.WaspClient {
-	return client.NewWaspClient(clu.Config.APIHost(nodeIndex))
+	return client.NewWaspClient(clu.Config.APIHost(nodeIndex)).WithLogFunc(clu.t.Logf)
 }
 
 func (clu *Cluster) NodeDataPath(i int) string {
@@ -479,19 +482,20 @@ func (clu *Cluster) KillNodeProcess(nodeIndex int) error {
 }
 
 func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
-	waspNodesCount := len(clu.waspCmds)
+	for _, ni := range nodeIndex {
+		if !lo.Contains(clu.AllNodes(), ni) {
+			panic(fmt.Errorf("unexpected node index specified for a restart: %v", ni))
+		}
+	}
 
 	// send stop commands
 	for _, i := range nodeIndex {
-		if i >= waspNodesCount {
-			return fmt.Errorf("[cluster] Wasp node with index %d not found", i)
-		}
 		clu.stopNode(i)
 	}
 
 	// wait until all nodes are stopped
 	exitedWaitGroup := sync.WaitGroup{}
-	exitedWaitGroup.Add(waspNodesCount)
+	exitedWaitGroup.Add(len(nodeIndex))
 
 	exited := make(chan struct{})
 	go func() {
@@ -500,10 +504,6 @@ func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
 	}()
 
 	for _, i := range nodeIndex {
-		if i >= waspNodesCount {
-			return fmt.Errorf("[cluster] Wasp node with index %d not found", i)
-		}
-
 		go func(cmd *waspCmd) {
 			waitCmd(cmd)
 			// mark process as finished
@@ -696,14 +696,14 @@ func (clu *Cluster) PostTransaction(tx *iotago.Transaction) error {
 	return err
 }
 
-func (clu *Cluster) AddressBalances(addr iotago.Address) *isc.FungibleTokens {
+func (clu *Cluster) AddressBalances(addr iotago.Address) *isc.Assets {
 	// get funds controlled by addr
 	outputMap, err := clu.l1.OutputMap(addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
 		return nil
 	}
-	balance := isc.NewEmptyFungibleTokens()
+	balance := isc.NewEmptyAssets()
 	for _, out := range outputMap {
 		balance.Add(transaction.AssetsFromOutput(out))
 	}
@@ -725,7 +725,7 @@ func (clu *Cluster) L1BaseTokens(addr iotago.Address) uint64 {
 	return tokens.BaseTokens
 }
 
-func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *isc.FungibleTokens) bool {
+func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *isc.Assets) bool {
 	return clu.AddressBalances(addr).Equals(expected)
 }
 

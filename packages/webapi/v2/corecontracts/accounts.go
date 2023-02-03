@@ -42,16 +42,16 @@ func (a *Accounts) GetAccounts(chainID isc.ChainID) ([]isc.AgentID, error) {
 	return accountIds, nil
 }
 
-func (a *Accounts) GetTotalAssets(chainID isc.ChainID) (*isc.FungibleTokens, error) {
+func (a *Accounts) GetTotalAssets(chainID isc.ChainID) (*isc.Assets, error) {
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewTotalAssets.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return isc.FungibleTokensFromDict(ret)
+	return isc.AssetsFromDict(ret)
 }
 
-func (a *Accounts) GetAccountBalance(chainID isc.ChainID, agentID isc.AgentID) (*isc.FungibleTokens, error) {
+func (a *Accounts) GetAccountBalance(chainID isc.ChainID, agentID isc.AgentID) (*isc.Assets, error) {
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewBalance.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: agentID,
 	}))
@@ -59,7 +59,7 @@ func (a *Accounts) GetAccountBalance(chainID isc.ChainID, agentID isc.AgentID) (
 		return nil, err
 	}
 
-	return isc.FungibleTokensFromDict(ret)
+	return isc.AssetsFromDict(ret)
 }
 
 func (a *Accounts) GetAccountNFTs(chainID isc.ChainID, agentID isc.AgentID) ([]iotago.NFTID, error) {

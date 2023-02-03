@@ -20,7 +20,7 @@ import (
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
 // It adds new tokens to the chain ledger. It is used when new tokens arrive with a request
-func (vmctx *VMContext) creditToAccount(agentID isc.AgentID, ftokens *isc.FungibleTokens) {
+func (vmctx *VMContext) creditToAccount(agentID isc.AgentID, ftokens *isc.Assets) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.CreditToAccount(s, agentID, ftokens)
 	})
@@ -34,7 +34,7 @@ func (vmctx *VMContext) creditNFTToAccount(agentID isc.AgentID, nft *isc.NFT) {
 
 // debitFromAccount subtracts tokens from account if it is enough of it.
 // should be called only when posting request
-func (vmctx *VMContext) debitFromAccount(agentID isc.AgentID, transfer *isc.FungibleTokens) {
+func (vmctx *VMContext) debitFromAccount(agentID isc.AgentID, transfer *isc.Assets) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.DebitFromAccount(s, agentID, transfer)
 	})
@@ -48,9 +48,9 @@ func (vmctx *VMContext) debitNFTFromAccount(agentID isc.AgentID, nftID iotago.NF
 	})
 }
 
-func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, fungibleTokens *isc.FungibleTokens, nfts []iotago.NFTID) {
+func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, assets *isc.Assets) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accounts.MustMoveBetweenAccounts(s, fromAgentID, toAgentID, fungibleTokens, nfts)
+		accounts.MustMoveBetweenAccounts(s, fromAgentID, toAgentID, assets)
 	})
 }
 
@@ -77,7 +77,7 @@ func (vmctx *VMContext) GetBaseTokensBalance(agentID isc.AgentID) uint64 {
 	return ret
 }
 
-func (vmctx *VMContext) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.Allowance) bool {
+func (vmctx *VMContext) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.Assets) bool {
 	var ret bool
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.HasEnoughForAllowance(s, agentID, allowance)
@@ -101,13 +101,10 @@ func (vmctx *VMContext) GetNativeTokenBalanceTotal(nativeTokenID iotago.NativeTo
 	return ret
 }
 
-func (vmctx *VMContext) GetAssets(agentID isc.AgentID) *isc.FungibleTokens {
-	var ret *isc.FungibleTokens
+func (vmctx *VMContext) GetNativeTokens(agentID isc.AgentID) iotago.NativeTokens {
+	var ret iotago.NativeTokens
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.GetAccountFungibleTokens(s, agentID)
-		if ret == nil {
-			ret = &isc.FungibleTokens{}
-		}
+		ret = accounts.GetNativeTokens(s, agentID)
 	})
 	return ret
 }

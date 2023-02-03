@@ -253,7 +253,12 @@ func committeeHost(kind string, i int) string {
 }
 
 func totalNumberOfWaspNodes() int {
-	return len(viper.Sub("wasp").AllSettings())
+	waspSubKey := viper.Sub("wasp")
+	if waspSubKey == nil {
+		return 0
+	}
+
+	return len(waspSubKey.AllSettings())
 }
 
 func defaultWaspPort(kind string, i int) int {

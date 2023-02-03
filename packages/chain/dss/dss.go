@@ -158,6 +158,7 @@ func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 		d.dkgOutNonce = tcrypto.NewDistKeyShare(
 			dkgOut.(*nonce.Output).PriShare,
 			dkgOut.(*nonce.Output).Commits,
+			len(d.nodeIDs),
 			dkgOut.(*nonce.Output).Threshold,
 		)
 		//

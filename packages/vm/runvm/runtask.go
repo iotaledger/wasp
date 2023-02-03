@@ -63,6 +63,11 @@ func runTask(task *vm.VMTask) {
 		vmctx.AssertConsistentGasTotals()
 	}
 
+	// closing the task and producing a new block is not needed if we are estimating gas
+	if task.EstimateGasMode {
+		return
+	}
+
 	{
 		accountsState := subrealm.NewReadOnly(task.StateDraft, kv.Key(accounts.Contract.Hname().Bytes()))
 		accounts.CheckLedger(accountsState, "runTask")
@@ -96,6 +101,6 @@ func runTask(task *vm.VMTask) {
 }
 
 // checkTotalAssets asserts if assets on the L1 transaction equals assets on the chain's ledger
-func checkTotalAssets(_ *iotago.TransactionEssence, _ *isc.FungibleTokens) {
+func checkTotalAssets(_ *iotago.TransactionEssence, _ *isc.Assets) {
 	// TODO implement
 }

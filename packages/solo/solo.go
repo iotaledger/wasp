@@ -533,7 +533,7 @@ func (env *Solo) L1BaseTokens(addr iotago.Address) uint64 {
 }
 
 // L1Assets returns all ftokens of the address contained in the UTXODB ledger
-func (env *Solo) L1Assets(addr iotago.Address) *isc.FungibleTokens {
+func (env *Solo) L1Assets(addr iotago.Address) *isc.Assets {
 	return env.utxoDB.GetAddressBalances(addr)
 }
 

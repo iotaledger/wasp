@@ -10,82 +10,82 @@
 use crate::*;
 use crate::coregovernance::*;
 
-pub struct AddAllowedStateControllerAddressCall {
-    pub func:   ScFunc,
+pub struct AddAllowedStateControllerAddressCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableAddAllowedStateControllerAddressParams,
 }
 
-pub struct AddCandidateNodeCall {
-    pub func:   ScFunc,
+pub struct AddCandidateNodeCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableAddCandidateNodeParams,
 }
 
-pub struct ChangeAccessNodesCall {
-    pub func:   ScFunc,
+pub struct ChangeAccessNodesCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableChangeAccessNodesParams,
 }
 
-pub struct ClaimChainOwnershipCall {
-    pub func: ScFunc,
+pub struct ClaimChainOwnershipCall<'a> {
+    pub func: ScFunc<'a>,
 }
 
-pub struct DelegateChainOwnershipCall {
-    pub func:   ScFunc,
+pub struct DelegateChainOwnershipCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableDelegateChainOwnershipParams,
 }
 
-pub struct RemoveAllowedStateControllerAddressCall {
-    pub func:   ScFunc,
+pub struct RemoveAllowedStateControllerAddressCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableRemoveAllowedStateControllerAddressParams,
 }
 
-pub struct RevokeAccessNodeCall {
-    pub func:   ScFunc,
+pub struct RevokeAccessNodeCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableRevokeAccessNodeParams,
 }
 
-pub struct RotateStateControllerCall {
-    pub func:   ScFunc,
+pub struct RotateStateControllerCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableRotateStateControllerParams,
 }
 
-pub struct SetChainInfoCall {
-    pub func:   ScFunc,
+pub struct SetChainInfoCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableSetChainInfoParams,
 }
 
-pub struct SetFeePolicyCall {
-    pub func:   ScFunc,
+pub struct SetFeePolicyCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableSetFeePolicyParams,
 }
 
-pub struct GetAllowedStateControllerAddressesCall {
-    pub func:    ScView,
+pub struct GetAllowedStateControllerAddressesCall<'a> {
+    pub func:    ScView<'a>,
     pub results: ImmutableGetAllowedStateControllerAddressesResults,
 }
 
-pub struct GetChainInfoCall {
-    pub func:    ScView,
+pub struct GetChainInfoCall<'a> {
+    pub func:    ScView<'a>,
     pub results: ImmutableGetChainInfoResults,
 }
 
-pub struct GetChainNodesCall {
-    pub func:    ScView,
+pub struct GetChainNodesCall<'a> {
+    pub func:    ScView<'a>,
     pub results: ImmutableGetChainNodesResults,
 }
 
-pub struct GetChainOwnerCall {
-    pub func:    ScView,
+pub struct GetChainOwnerCall<'a> {
+    pub func:    ScView<'a>,
     pub results: ImmutableGetChainOwnerResults,
 }
 
-pub struct GetFeePolicyCall {
-    pub func:    ScView,
+pub struct GetFeePolicyCall<'a> {
+    pub func:    ScView<'a>,
     pub results: ImmutableGetFeePolicyResults,
 }
 
-pub struct GetMaxBlobSizeCall {
-    pub func:    ScView,
+pub struct GetMaxBlobSizeCall<'a> {
+    pub func:    ScView<'a>,
     pub results: ImmutableGetMaxBlobSizeResults,
 }
 

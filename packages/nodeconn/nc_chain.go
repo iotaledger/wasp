@@ -11,14 +11,17 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/iotaledger/hive.go/core/contextutils"
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util/pipe"
 )
+
+// ErrChainShutdown gets returned if the chain is shutting down.
+var ErrChainShutdown = errors.New("chain is shutting down")
 
 const (
 	inxInitialStateRetries = 5
@@ -57,9 +60,17 @@ type ncChain struct {
 	pendingLedgerUpdates     []*pendingLedgerUpdate
 	appliedMilestoneIndex    iotago.MilestoneIndex
 	synchronized             *atomic.Bool
+
+	shutdownWaitGroup *sync.WaitGroup
+
+	pendingTxTaskPipe  pipe.Pipe[*transactionTask]
+	reattachTxTaskPipe pipe.Pipe[*transactionTask]
+	lastPendingTxLock  sync.Mutex
+	lastPendingTx      *pendingTransaction
 }
 
 func newNCChain(
+	ctx context.Context,
 	nodeConn *nodeConnection,
 	chainID isc.ChainID,
 	requestOutputHandler chain.RequestOutputHandler,
@@ -77,6 +88,11 @@ func newNCChain(
 		pendingLedgerUpdates:     make([]*pendingLedgerUpdate, 0),
 		appliedMilestoneIndex:    0,
 		synchronized:             &atomic.Bool{},
+		pendingTxTaskPipe:        pipe.NewInfinitePipe[*transactionTask](),
+		reattachTxTaskPipe:       pipe.NewInfinitePipe[*transactionTask](),
+		shutdownWaitGroup:        &sync.WaitGroup{},
+		lastPendingTxLock:        sync.Mutex{},
+		lastPendingTx:            nil,
 	}
 
 	chain.requestOutputHandler = func(milestoneIndex iotago.MilestoneIndex, outputInfo *isc.OutputInfo) {
@@ -96,7 +112,14 @@ func newNCChain(
 		milestoneHandler(milestoneTimestamp)
 	}
 
+	chain.shutdownWaitGroup.Add(1)
+	go chain.postTxLoop(ctx)
+
 	return chain
+}
+
+func (ncc *ncChain) WaitUntilStopped() {
+	ncc.shutdownWaitGroup.Wait()
 }
 
 func (ncc *ncChain) addPendingLedgerUpdate(updateType pendingLedgerUpdateType, ledgerIndex iotago.MilestoneIndex, update any) bool {
@@ -200,40 +223,252 @@ func (ncc *ncChain) HandleMilestone(milestoneIndex iotago.MilestoneIndex, milest
 	ncc.milestoneHandler(milestoneIndex, milestoneTimestamp)
 }
 
-func (ncc *ncChain) publishTX(ctx context.Context, tx *iotago.Transaction) error {
-	mergedCtx, mergedCancel := contextutils.MergeContexts(ncc.nodeConn.ctx, ctx)
-	defer mergedCancel()
+// getLastPendingTx checks if there is a pending transaction for the chain.
+// If the pending transaction was already removed or confirmed, it will be ignored.
+func (ncc *ncChain) getLastPendingTx() *pendingTransaction {
+	ncc.lastPendingTxLock.Lock()
+	defer ncc.lastPendingTxLock.Unlock()
 
-	ctxWithTimeout, cancelContext := newCtxWithTimeout(mergedCtx, inxTimeoutPublishTransaction)
-	defer cancelContext()
+	if ncc.lastPendingTx != nil {
+		ncc.nodeConn.pendingTransactionsLock.Lock()
+		defer ncc.nodeConn.pendingTransactionsLock.Unlock()
 
-	pendingTx, err := newPendingTransaction(ctxWithTimeout, cancelContext, tx)
-	if err != nil {
-		return fmt.Errorf("publishing transaction failed: %w", err)
+		// check if the transaction is still pending, otherwise reset it
+		if ncc.nodeConn.pendingTransactionsMap.Has(ncc.lastPendingTx.transactionID) {
+			return ncc.lastPendingTx
+		}
+
+		ncc.lastPendingTx = nil
 	}
+
+	return nil
+}
+
+func (ncc *ncChain) setLastPendingTx(pendingTx *pendingTransaction) {
+	ncc.lastPendingTxLock.Lock()
+	defer ncc.lastPendingTxLock.Unlock()
+
+	ncc.lastPendingTx = pendingTx
+}
+
+//nolint:funlen,gocyclo
+func (ncc *ncChain) postTxLoop(ctx context.Context) {
+	nodeConn := ncc.nodeConn
+
+	cancelTask := func(task *transactionTask) {
+		defer ncc.shutdownWaitGroup.Done()
+
+		if task.back == nil {
+			return
+		}
+
+		task.back <- &pendingTxResult{
+			err: ErrChainShutdown,
+		}
+	}
+
+	// we need to cancel all pending tasks to stop waiting on the results
+	cancelTasks := func() {
+		for task := range ncc.reattachTxTaskPipe.Out() {
+			cancelTask(task)
+		}
+
+		for task := range ncc.pendingTxTaskPipe.Out() {
+			cancelTask(task)
+		}
+	}
+
+	defer func() {
+		// cancel all outstanding tasks
+		cancelTasks()
+
+		// mark the chain as completely shut down
+		ncc.shutdownWaitGroup.Done()
+	}()
+
+	checkTransactionIncludedAndSetConfirmed := func(pendingTx *pendingTransaction) bool {
+		ctxWithTimeout, ctxCancel := context.WithTimeout(nodeConn.ctx, inxTimeoutBlockMetadata)
+		defer ctxCancel()
+
+		// check if the transaction was already included (race condition with other validators)
+		if _, err := ncc.nodeConn.nodeClient.TransactionIncludedBlock(ctxWithTimeout, pendingTx.ID(), parameters.L1().Protocol); err == nil {
+			// transaction was already included
+			pendingTx.SetConfirmed()
+			return true
+		}
+
+		return false
+	}
+
+	checkIsPending := func(pendingTx *pendingTransaction) bool {
+		// check if the pending transaction is still being tracked.
+		// if not, it must have been confirmed already or canceled.
+		if !nodeConn.hasPendingTransaction(pendingTx.transactionID) {
+			return false
+		}
+
+		// if it was not included, it is still pending
+		return !checkTransactionIncludedAndSetConfirmed(pendingTx)
+	}
+
+	postTransaction := func(pendingTx *pendingTransaction) error {
+		// check if the the transaction should be chained with another pending transaction
+		chainedTxBlockIDs := iotago.BlockIDs{}
+		if pendingTx.lastPendingTx != nil {
+			// check if the chained pending transaction is still being tracked.
+			// if yes, use the blockID to chain the transaction in the correct order.
+			// if not, it must have been confirmed already or if it was canceled instead, also all chained tx would have been canceled already
+			if checkIsPending(pendingTx.lastPendingTx) {
+				chainedTxBlockIDs = append(chainedTxBlockIDs, pendingTx.lastPendingTx.BlockID())
+			} else {
+				// the chained pending transaction is not tracked anymore.
+				pendingTx.lastPendingTx = nil
+			}
+		}
+
+		// we link the ctxAttach to ctxConfirmed. this way the proof of work will be canceled if the transaction already got confirmed on L1.
+		// (e.g. another validator finished PoW and tx was confirmed)
+		// the given context will be canceled by the pending transaction checks.
+		ctxAttach, cancelCtxAttach := context.WithTimeout(pendingTx.ctxConfirmed, inxTimeoutPublishTransaction)
+		defer cancelCtxAttach()
+
+		// post the transaction
+		blockID, err := nodeConn.doPostTx(ctxAttach, pendingTx.transaction, chainedTxBlockIDs...)
+		if err != nil && !errors.Is(err, context.Canceled) {
+			return err
+		}
+
+		// check if the context was canceled
+		if err == nil {
+			// set the current blockID for promote/reattach checks and "transaction chaining"
+			pendingTx.SetBlockID(blockID)
+		}
+
+		// check if the transaction was already included (race condition with other validators)
+		checkTransactionIncludedAndSetConfirmed(pendingTx)
+
+		return nil
+	}
+
+	processTransactionTask := func(txTask *transactionTask, isReattachment bool) {
+		defer ncc.shutdownWaitGroup.Done()
+
+		pendingTx := txTask.pendingTx
+
+		var txErr error
+
+		// check if the transaction is still pending
+		if checkIsPending(pendingTx) {
+			// transaction is still pending
+			for {
+				txErr = postTransaction(pendingTx)
+				if txErr != nil {
+					action := "publishing"
+					if isReattachment {
+						action = "reattaching"
+					}
+					ncc.LogDebugf("%s transaction %s (chainID: %s) failed: %s", action, pendingTx.ID().ToHex(), ncc.chainID, txErr.Error())
+					continue
+				}
+
+				// loop until it was successfully posted or canceled
+				break
+			}
+		}
+
+		if isReattachment {
+			// reattach the chain
+			// TODO: how do we cancel the whole chain in case of reattachment?
+			txTask.pendingTx.PropagateReattach()
+		}
+
+		if txTask.back != nil {
+			txTask.back <- &pendingTxResult{
+				err: txErr,
+			}
+		}
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			// cancel all outstanding tasks
+			cancelTasks()
+			return
+
+		case reattachTxTask := <-ncc.reattachTxTaskPipe.Out():
+			processTransactionTask(reattachTxTask, true)
+
+		case pendingTxTask := <-ncc.pendingTxTaskPipe.Out():
+			// if both channels are ready while we enter the select case, golang picks a random channel first.
+			// since reattachments have higher priority over pending tx, we need to process them first until none are left.
+			for done := false; !done; {
+				select {
+				case <-ctx.Done():
+					// done
+					return
+				case reattachTxTask := <-ncc.reattachTxTaskPipe.Out():
+					processTransactionTask(reattachTxTask, true)
+				default:
+					done = true
+				}
+			}
+
+			processTransactionTask(pendingTxTask, false)
+		}
+	}
+}
+
+type pendingTxResult struct {
+	err error
+}
+
+type transactionTask struct {
+	pendingTx *pendingTransaction
+	back      chan *pendingTxResult
+}
+
+// createPendingTransaction creates and tracks a pending transaction that is linked
+// to the former pending transaction in case the former was not confirmed yet.
+// Linking to the former transaction is used to publish the transaction in
+// the correct order for the whiteflag confirmation.
+// The given context is used to cancel posting and tracking of the transaction.
+func (ncc *ncChain) createPendingTransaction(ctx context.Context, tx *iotago.Transaction) (*pendingTransaction, error) {
+	// As long as every validator references its own blocks of the pending transactions they posted,
+	// the transactions will confirm eventually.
+	// Of course there will be conflicts on L1, but we track confirmation based on transaction IDs,
+	// so there will be one "winning subtangle/chain" that confirms the transactions for every validator.
+	// If only parts of this chain of transactions are confirmed,
+	// the validators will reference their own pending transactions in the next milestone cone.
+	pendingTx, err := newPendingTransaction(ctx, ncc, tx, ncc.getLastPendingTx())
+	if err != nil {
+		return nil, fmt.Errorf("publishing transaction failed: %w", err)
+	}
+	ncc.setLastPendingTx(pendingTx)
 
 	// track pending tx before publishing the transaction
 	ncc.nodeConn.addPendingTransaction(pendingTx)
 
+	return pendingTx, nil
+}
+
+func (ncc *ncChain) publishTX(pendingTx *pendingTransaction) error {
 	ncc.LogDebugf("publishing transaction %s (chainID: %s)...", pendingTx.ID().ToHex(), ncc.chainID)
 
-	// we use the context of the pending transaction to post the transaction. this way
-	// the proof of work will be canceled if the transaction already got confirmed on L1.
-	// (e.g. another validator finished PoW and tx was confirmed)
-	// the given context will be canceled by the pending transaction checks.
-	blockID, err := ncc.nodeConn.doPostTx(ctxWithTimeout, tx)
-	if err != nil && !errors.Is(err, context.Canceled) {
-		ncc.LogDebugf("publishing transaction %s (chainID: %s) failed: %s", pendingTx.ID().ToHex(), ncc.chainID, err.Error())
-		return err
+	ncc.shutdownWaitGroup.Add(1)
+	back := make(chan *pendingTxResult)
+	ncc.pendingTxTaskPipe.In() <- &transactionTask{
+		pendingTx: pendingTx,
+		back:      back,
 	}
 
-	// check if the transaction was already included (race condition with other validators)
-	if _, err := ncc.nodeConn.nodeClient.TransactionIncludedBlock(ctxWithTimeout, pendingTx.ID(), parameters.L1().Protocol); err == nil {
-		// transaction was already included
-		pendingTx.SetConfirmed()
-	} else {
-		// set the current blockID for promote/reattach checks
-		pendingTx.SetBlockID(blockID)
+	pendingTxResult := <-back
+	if err := pendingTxResult.err; err != nil && !errors.Is(err, context.Canceled) {
+		// remove tracking of the pending transaction if posting the transaction failed
+		ncc.nodeConn.clearPendingTransaction(pendingTx.transactionID)
+
+		ncc.LogDebugf("publishing transaction %s (chainID: %s) failed: %s", pendingTx.ID().ToHex(), ncc.chainID, err.Error())
+		return err
 	}
 
 	if err := pendingTx.WaitUntilConfirmed(); err != nil {

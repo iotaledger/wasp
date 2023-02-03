@@ -39,9 +39,9 @@ func NewSoloClientService(ctx *SoloContext, extra ...bool) *SoloClientService {
 }
 
 func (s *SoloClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error) {
-	iscChainID := s.ctx.Cvt.IscChainID(&chainID)
-	iscContract := s.ctx.Cvt.IscHname(hContract)
-	iscFunction := s.ctx.Cvt.IscHname(hFunction)
+	iscChainID := cvt.IscChainID(&chainID)
+	iscContract := cvt.IscHname(hContract)
+	iscFunction := cvt.IscHname(hFunction)
 	params, err := dict.FromBytes(args)
 	if err != nil {
 		return nil, err
@@ -63,9 +63,9 @@ func (s *SoloClientService) Event(msg string) {
 }
 
 func (s *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair, nonce uint64) (reqID wasmtypes.ScRequestID, err error) {
-	iscChainID := s.ctx.Cvt.IscChainID(&chainID)
-	iscContract := s.ctx.Cvt.IscHname(hContract)
-	iscFunction := s.ctx.Cvt.IscHname(hFunction)
+	iscChainID := cvt.IscChainID(&chainID)
+	iscContract := cvt.IscHname(hContract)
+	iscFunction := cvt.IscHname(hFunction)
 	params, err := dict.FromBytes(args)
 	if err != nil {
 		return reqID, err
@@ -75,7 +75,7 @@ func (s *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, 
 	}
 	req := solo.NewCallParamsFromDictByHname(iscContract, iscFunction, params)
 	req.WithNonce(nonce)
-	iscAllowance := s.ctx.Cvt.IscAllowance(allowance)
+	iscAllowance := cvt.IscAllowance(allowance)
 	req.WithAllowance(iscAllowance)
 	req.WithGasBudget(gas.MaxGasPerRequest)
 	_, err = s.ctx.Chain.PostRequestOffLedger(req, keyPair)

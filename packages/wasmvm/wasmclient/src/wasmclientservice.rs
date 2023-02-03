@@ -1,10 +1,11 @@
 // // Copyright 2020 IOTA Stiftung
 // // SPDX-License-Identifier: Apache-2.0
 
-use crate::*;
 use isc::{offledgerrequest::*, waspclient::*};
 use std::sync::{mpsc, Arc, RwLock};
 use std::time::Duration;
+
+use crate::*;
 
 pub trait IClientService {
     fn call_view_by_hname(
@@ -83,7 +84,7 @@ impl IClientService for WasmClientService {
                 nonce,
             );
         req.with_allowance(&allowance);
-        req.sign(key_pair);
+        req = req.sign(key_pair);
         self.client.post_offledger_request(&chain_id, &req)?;
         return Ok(req.id());
     }
@@ -93,7 +94,7 @@ impl IClientService for WasmClientService {
         tx: mpsc::Sender<Vec<String>>,
         done: Arc<RwLock<bool>>,
     ) -> errors::Result<()> {
-        self.client.subscribe(tx, done); // TODO remove clone
+        self.client.subscribe(tx, done);
         return Ok(());
     }
 
@@ -129,14 +130,14 @@ impl Default for WasmClientService {
     }
 }
 
-impl std::fmt::Debug for WasmClientService {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> core::result::Result<(), std::fmt::Error> {
-        f.debug_tuple("WasmClientService")
-            .field(&self.client)
-            .field(&self.event_port)
-            .finish()
-    }
-}
+// impl std::fmt::Debug for WasmClientService {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> core::result::Result<(), std::fmt::Error> {
+//         f.debug_tuple("WasmClientService")
+//             .field(&self.client)
+//             .field(&self.event_port)
+//             .finish()
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

@@ -10,10 +10,14 @@ import "@iscmagic/ISCAccounts.sol";
 
 // The ERC20 contract for ISC L2 base tokens.
 contract ERC20BaseTokens {
-    uint constant MAX_UINT64 = 1 << 64 - 1;
+    uint256 constant MAX_UINT64 = 1 << (64 - 1);
 
-    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);
-    event Transfer(address indexed from, address indexed to, uint tokens);
+    event Approval(
+        address indexed tokenOwner,
+        address indexed spender,
+        uint256 tokens
+    );
+    event Transfer(address indexed from, address indexed to, uint256 tokens);
 
     function name() public view returns (string memory) {
         return __iscSandbox.getBaseTokenProperties().name;
@@ -32,36 +36,52 @@ contract ERC20BaseTokens {
     }
 
     function balanceOf(address tokenOwner) public view returns (uint256) {
-        ISCAgentID memory ownerAgentID = ISCTypes.newEthereumAgentID(tokenOwner);
+        ISCAgentID memory ownerAgentID = ISCTypes.newEthereumAgentID(
+            tokenOwner
+        );
         return __iscAccounts.getL2BalanceBaseTokens(ownerAgentID);
     }
 
-    function transfer(address receiver, uint256 numTokens) public returns (bool) {
+    function transfer(address receiver, uint256 numTokens)
+        public
+        returns (bool)
+    {
         require(numTokens <= MAX_UINT64, "amount is too large");
-        ISCAllowance memory assets;
+        ISCAssets memory assets;
         assets.baseTokens = uint64(numTokens);
         __iscPrivileged.moveBetweenAccounts(msg.sender, receiver, assets);
         emit Transfer(msg.sender, receiver, numTokens);
         return true;
     }
 
-    function approve(address delegate, uint256 numTokens) public returns (bool) {
+    function approve(address delegate, uint256 numTokens)
+        public
+        returns (bool)
+    {
         require(numTokens <= MAX_UINT64, "amount is too large");
-        ISCAllowance memory assets;
+        ISCAssets memory assets;
         assets.baseTokens = uint64(numTokens);
         __iscPrivileged.addToAllowance(msg.sender, delegate, assets);
         emit Approval(msg.sender, delegate, numTokens);
         return true;
     }
 
-    function allowance(address owner, address delegate) public view returns (uint) {
-        ISCAllowance memory assets = __iscSandbox.getAllowance(owner, delegate);
+    function allowance(address owner, address delegate)
+        public
+        view
+        returns (uint256)
+    {
+        ISCAssets memory assets = __iscSandbox.getAllowance(owner, delegate);
         return assets.baseTokens;
     }
 
-    function transferFrom(address owner, address buyer, uint256 numTokens) public returns (bool) {
+    function transferFrom(
+        address owner,
+        address buyer,
+        uint256 numTokens
+    ) public returns (bool) {
         require(numTokens <= MAX_UINT64, "amount is too large");
-        ISCAllowance memory assets;
+        ISCAssets memory assets;
         assets.baseTokens = uint64(numTokens);
         __iscPrivileged.moveAllowedFunds(owner, msg.sender, assets);
         if (buyer != msg.sender) {
@@ -72,4 +92,6 @@ contract ERC20BaseTokens {
     }
 }
 
-ERC20BaseTokens constant __erc20BaseTokens = ERC20BaseTokens(ISC_ERC20BASETOKENS_ADDRESS);
+ERC20BaseTokens constant __erc20BaseTokens = ERC20BaseTokens(
+    ISC_ERC20BASETOKENS_ADDRESS
+);

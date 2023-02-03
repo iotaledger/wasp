@@ -31,6 +31,7 @@ const (
 )
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
+	wasmclient.HrpForClient = ""
 	if useCluster {
 		return setupClientCluster(t)
 	}
@@ -110,7 +111,7 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 
 func setupClientSolo(t solo.TestContext) *wasmclient.WasmClientContext {
 	ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlibimpl.OnDispatch)
-	chain := ctx.CurrentChainID().String()
+	chain := ctx.Chain.ChainID.String()
 	wallet := ctx.Chain.OriginatorPrivateKey
 
 	// use Solo as fake Wasp cluster
@@ -146,6 +147,13 @@ func TestClientAccountBalance(t *testing.T) {
 func TestClientArray(t *testing.T) {
 	ctx := setupClient(t)
 
+	c := testwasmlib.ScFuncs.StringMapOfStringArrayClear(ctx)
+	c.Params.Name().SetValue("Bands")
+	c.Func.Post()
+	require.NoError(t, ctx.Err)
+	ctx.WaitRequest()
+	require.NoError(t, ctx.Err)
+
 	v := testwasmlib.ScFuncs.StringMapOfStringArrayLength(ctx)
 	v.Params.Name().SetValue("Bands")
 	v.Func.Call()
@@ -166,7 +174,7 @@ func TestClientArray(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	require.EqualValues(t, 1, v.Results.Length().Value())
 
-	c := testwasmlib.ScFuncs.StringMapOfStringArrayClear(ctx)
+	c = testwasmlib.ScFuncs.StringMapOfStringArrayClear(ctx)
 	c.Params.Name().SetValue("Bands")
 	c.Func.Post()
 	require.NoError(t, ctx.Err)
