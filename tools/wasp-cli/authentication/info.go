@@ -17,7 +17,8 @@ type AuthInfoOutput struct {
 var _ log.CLIOutput = &AuthInfoOutput{}
 
 func (l *AuthInfoOutput) AsText() (string, error) {
-	template := `Authentication Method: {{ .AuthenticationMethod }}\nAuthentication URL: {{ .AuthenticationURL }}`
+	template := `Authentication Method: {{ .AuthenticationMethod }}
+Authentication URL: {{ .AuthenticationURL }}`
 	return log.ParseCLIOutputTemplate(l, template)
 }
 
