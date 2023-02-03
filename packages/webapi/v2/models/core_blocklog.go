@@ -139,7 +139,7 @@ func MapRequestDetail(request isc.Request) *RequestDetail {
 
 type RequestReceiptResponse struct {
 	BlockIndex    uint32             `json:"blockIndex" swagger:"required,min(1)"`
-	Error         *BlockReceiptError `json:"error" swagger:"required"`
+	Error         *BlockReceiptError `json:"error" swagger:""`
 	GasBudget     uint64             `json:"gasBudget" swagger:"required"`
 	GasBurnLog    *gas.BurnLog       `json:"gasBurnLog" swagger:"required"`
 	GasBurned     uint64             `json:"gasBurned" swagger:"required"`
