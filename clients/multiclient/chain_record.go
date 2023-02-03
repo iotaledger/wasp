@@ -10,21 +10,17 @@ import (
 // PutChainRecord calls PutChainRecord in all wasp nodes
 func (m *MultiClient) PutChainRecord(bd *registry.ChainRecord) error {
 	return m.Do(func(i int, w *apiclient.APIClient) error {
-		// TODO: Validate the replacement logic from PutChainRecord => ActivateChain + AccessNodes
-		_, err := w.ChainsApi.ActivateChain(context.Background(), bd.ChainID().String()).Execute()
+		accessNodes := make([]string, len(bd.AccessNodes))
 
-		if err != nil {
-			return err
+		for k, v := range bd.AccessNodes {
+			accessNodes[k] = v.String()
 		}
 
-		for _, accessNode := range bd.AccessNodes {
-			_, err := w.ChainsApi.AddAccessNode(context.Background(), bd.ChainID().String(), accessNode.String()).Execute()
+		_, err := w.ChainsApi.SetChainRecord(context.Background(), bd.ChainID().String()).ChainRecord(apiclient.ChainRecord{
+			IsActive:    true,
+			AccessNodes: accessNodes,
+		}).Execute()
 
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return err
 	})
 }

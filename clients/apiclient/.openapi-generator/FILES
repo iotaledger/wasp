@@ -32,6 +32,7 @@ docs/BurnRecord.md
 docs/CallTarget.md
 docs/ChainInfoResponse.md
 docs/ChainMetrics.md
+docs/ChainRecord.md
 docs/ChainsApi.md
 docs/CommitteeInfoResponse.md
 docs/CommitteeNode.md
@@ -123,6 +124,7 @@ model_burn_record.go
 model_call_target.go
 model_chain_info_response.go
 model_chain_metrics.go
+model_chain_record.go
 model_committee_info_response.go
 model_committee_node.go
 model_consensus_pipe_metrics.go

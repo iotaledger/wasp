@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   description: REST API for the Wasp node
   title: Wasp API
-  version: 0.4.0-alpha.8-14-gbb23763d3
+  version: 0.4.0-alpha.8-16-g83edf92b9
 externalDocs:
   description: Find out more about Wasp
   url: https://wiki.iota.org/smart-contracts/overview
@@ -61,7 +61,7 @@ paths:
       summary: Get information about the current authentication mode
       tags:
       - auth
-  /v2chains:
+  /chains:
     get:
       operationId: getChains
       responses:
@@ -84,7 +84,7 @@ paths:
       summary: Get a list of all chains
       tags:
       - chains
-  /v2chains/{chainID}:
+  /chains/{chainID}:
     get:
       operationId: getChainInfo
       parameters:
@@ -113,7 +113,7 @@ paths:
       summary: Get information about a specific chain
       tags:
       - chains
-  /v2chains/{chainID}/access-node/{publicKey}:
+  /chains/{chainID}/access-node/{publicKey}:
     delete:
       operationId: removeAccessNode
       parameters:
@@ -178,7 +178,7 @@ paths:
       summary: Configure a trusted node to be an access node.
       tags:
       - chains
-  /v2chains/{chainID}/activate:
+  /chains/{chainID}/activate:
     post:
       operationId: activateChain
       parameters:
@@ -207,7 +207,41 @@ paths:
       summary: Activate a chain
       tags:
       - chains
-  /v2chains/{chainID}/committee:
+  /chains/{chainID}/chainrecord:
+    post:
+      operationId: setChainRecord
+      parameters:
+      - description: ChainID (Bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChainRecord'
+        description: Chain Record
+        required: true
+      responses:
+        "201":
+          content: {}
+          description: Chain record was saved
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: "Unauthorized (Wrong permissions, missing token)"
+      security:
+      - Authorization: []
+      summary: Sets the chain record.
+      tags:
+      - chains
+      x-codegen-request-body-name: ChainRecord
+  /chains/{chainID}/committee:
     get:
       operationId: getCommitteeInfo
       parameters:
@@ -236,7 +270,7 @@ paths:
       summary: Get information about the deployed committee
       tags:
       - chains
-  /v2chains/{chainID}/contracts:
+  /chains/{chainID}/contracts:
     get:
       operationId: getContracts
       parameters:
@@ -267,7 +301,7 @@ paths:
       summary: Get all available chain contracts
       tags:
       - chains
-  /v2chains/{chainID}/core/accounts:
+  /chains/{chainID}/core/accounts:
     get:
       operationId: accountsGetAccounts
       parameters:
@@ -294,7 +328,7 @@ paths:
       summary: Get a list of all accounts
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/accounts/account/{agentID}/balance:
+  /chains/{chainID}/core/accounts/account/{agentID}/balance:
     get:
       operationId: accountsGetAccountBalance
       parameters:
@@ -328,7 +362,7 @@ paths:
       summary: Get all assets belonging to an account
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/accounts/account/{agentID}/nfts:
+  /chains/{chainID}/core/accounts/account/{agentID}/nfts:
     get:
       operationId: accountsGetAccountNFTIDs
       parameters:
@@ -362,7 +396,7 @@ paths:
       summary: Get all NFT ids belonging to an account
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/accounts/account/{agentID}/nonce:
+  /chains/{chainID}/core/accounts/account/{agentID}/nonce:
     get:
       operationId: accountsGetAccountNonce
       parameters:
@@ -397,7 +431,7 @@ paths:
       summary: Get the current nonce of an account
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/accounts/foundry_output:
+  /chains/{chainID}/core/accounts/foundry_output:
     get:
       operationId: accountsGetFoundryOutput
       parameters:
@@ -431,7 +465,7 @@ paths:
       summary: Get the foundry output
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/accounts/nftdata:
+  /chains/{chainID}/core/accounts/nftdata:
     get:
       operationId: accountsGetNFTData
       parameters:
@@ -465,7 +499,7 @@ paths:
       summary: Get the NFT data by an ID
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/accounts/token_registry:
+  /chains/{chainID}/core/accounts/token_registry:
     get:
       operationId: accountsGetNativeTokenIDRegistry
       parameters:
@@ -492,7 +526,7 @@ paths:
       summary: Get a list of all registries
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/accounts/total_assets:
+  /chains/{chainID}/core/accounts/total_assets:
     get:
       operationId: accountsGetTotalAssets
       parameters:
@@ -519,7 +553,7 @@ paths:
       summary: Get all stored assets
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/blobs:
+  /chains/{chainID}/core/blobs:
     get:
       operationId: blobsGetAllBlobs
       parameters:
@@ -546,7 +580,7 @@ paths:
       summary: Get all stored blobs
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/blobs/{blobHash}:
+  /chains/{chainID}/core/blobs/{blobHash}:
     get:
       operationId: blobsGetBlobInfo
       parameters:
@@ -580,7 +614,7 @@ paths:
       summary: Get all fields of a blob
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/blobs/{blobHash}/data/{fieldKey}:
+  /chains/{chainID}/core/blobs/{blobHash}/data/{fieldKey}:
     get:
       operationId: blobsGetBlobValue
       parameters:
@@ -621,7 +655,7 @@ paths:
       summary: Get the value of the supplied field (key)
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/blocklog/blocks/latest:
+  /chains/{chainID}/core/blocklog/blocks/latest:
     get:
       operationId: blocklogGetLatestBlockInfo
       parameters:
@@ -648,7 +682,7 @@ paths:
       summary: Get the block info of the latest block
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/blocklog/blocks/latest/receipts:
+  /chains/{chainID}/core/blocklog/blocks/latest/receipts:
     get:
       operationId: blocklogGetRequestReceiptsOfLatestBlock
       parameters:
@@ -675,7 +709,7 @@ paths:
       summary: Get all receipts of the latest block
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/blocklog/blocks/latest/requestids:
+  /chains/{chainID}/core/blocklog/blocks/latest/requestids:
     get:
       operationId: blocklogGetRequestIDsForLatestBlock
       parameters:
@@ -702,7 +736,7 @@ paths:
       summary: Get the request ids for the latest block
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/blocklog/blocks/{blockIndex}:
+  /chains/{chainID}/core/blocklog/blocks/{blockIndex}:
     get:
       operationId: blocklogGetBlockInfo
       parameters:
@@ -736,7 +770,7 @@ paths:
       summary: Get the block info of a certain block index
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts:
+  /chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts:
     get:
       operationId: blocklogGetRequestReceiptsOfBlock
       parameters:
@@ -770,7 +804,7 @@ paths:
       summary: Get all receipts of a certain block
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids:
+  /chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids:
     get:
       operationId: blocklogGetRequestIDsForBlock
       parameters:
@@ -804,7 +838,7 @@ paths:
       summary: Get the request ids for a certain block index
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/blocklog/controladdresses:
+  /chains/{chainID}/core/blocklog/controladdresses:
     get:
       operationId: blocklogGetControlAddresses
       parameters:
@@ -831,7 +865,7 @@ paths:
       summary: Get the control addresses
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/blocklog/events/block/latest:
+  /chains/{chainID}/core/blocklog/events/block/latest:
     get:
       operationId: blocklogGetEventsOfLatestBlock
       parameters:
@@ -858,7 +892,7 @@ paths:
       summary: Get events of the latest block
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/blocklog/events/block/{blockIndex}:
+  /chains/{chainID}/core/blocklog/events/block/{blockIndex}:
     get:
       operationId: blocklogGetEventsOfBlock
       parameters:
@@ -892,7 +926,7 @@ paths:
       summary: Get events of a block
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/blocklog/events/contract/{contractHname}:
+  /chains/{chainID}/core/blocklog/events/contract/{contractHname}:
     get:
       operationId: blocklogGetEventsOfContract
       parameters:
@@ -926,7 +960,7 @@ paths:
       summary: Get events of a contract
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/blocklog/events/request/{requestID}:
+  /chains/{chainID}/core/blocklog/events/request/{requestID}:
     get:
       operationId: blocklogGetEventsOfRequest
       parameters:
@@ -960,7 +994,7 @@ paths:
       summary: Get events of a request
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/blocklog/requests/{requestID}:
+  /chains/{chainID}/core/blocklog/requests/{requestID}:
     get:
       operationId: blocklogGetRequestReceipt
       parameters:
@@ -994,7 +1028,7 @@ paths:
       summary: Get the receipt of a certain request id
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/blocklog/requests/{requestID}/is_processed:
+  /chains/{chainID}/core/blocklog/requests/{requestID}/is_processed:
     get:
       operationId: blocklogGetRequestIsProcessed
       parameters:
@@ -1028,7 +1062,7 @@ paths:
       summary: Get the request processing status
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/errors/{contractHname}/message/{errorID}:
+  /chains/{chainID}/core/errors/{contractHname}/message/{errorID}:
     get:
       operationId: errorsGetErrorMessageFormat
       parameters:
@@ -1069,7 +1103,7 @@ paths:
       summary: Get the error message format of a specific error id
       tags:
       - corecontracts
-  /v2chains/{chainID}/core/governance/chaininfo:
+  /chains/{chainID}/core/governance/chaininfo:
     get:
       description: "If you are using the common API functions, you most likely rather\
         \ want to use '/chains/:chainID' to get information about a chain."
@@ -1098,7 +1132,7 @@ paths:
       summary: Get the chain info
       tags:
       - corecontracts
-  /v2chains/{chainID}/deactivate:
+  /chains/{chainID}/deactivate:
     post:
       operationId: deactivateChain
       parameters:
@@ -1127,7 +1161,7 @@ paths:
       summary: Deactivate a chain
       tags:
       - chains
-  /v2chains/{chainID}/evm/tx/{txHash}:
+  /chains/{chainID}/evm/tx/{txHash}:
     get:
       operationId: getRequestIDFromEVMTransactionID
       parameters:
@@ -1163,7 +1197,7 @@ paths:
       summary: Get the ISC request ID for the given Ethereum transaction hash
       tags:
       - chains
-  /v2chains/{chainID}/receipts/{requestID}:
+  /chains/{chainID}/receipts/{requestID}:
     get:
       operationId: getReceipt
       parameters:
@@ -1191,7 +1225,7 @@ paths:
       summary: Get a receipt from a request ID
       tags:
       - requests
-  /v2chains/{chainID}/requests/{requestID}/wait:
+  /chains/{chainID}/requests/{requestID}/wait:
     get:
       operationId: waitForRequest
       parameters:
@@ -1225,7 +1259,7 @@ paths:
       summary: Wait until the given request has been processed by the node
       tags:
       - requests
-  /v2chains/{chainID}/state/{stateKey}:
+  /chains/{chainID}/state/{stateKey}:
     get:
       operationId: getStateValue
       parameters:
@@ -1253,7 +1287,7 @@ paths:
       summary: Fetch the raw value associated with the given key in the chain state
       tags:
       - chains
-  /v2chains/{chainID}/ws:
+  /chains/{chainID}/ws:
     get:
       operationId: attachToWebsocket
       parameters:
@@ -1270,7 +1304,7 @@ paths:
           description: successful operation
       tags:
       - chains
-  /v2metrics/chain/{chainID}:
+  /metrics/chain/{chainID}:
     get:
       operationId: getChainMetrics
       parameters:
@@ -1299,7 +1333,7 @@ paths:
       summary: Get chain specific metrics.
       tags:
       - metrics
-  /v2metrics/chain/{chainID}/pipe:
+  /metrics/chain/{chainID}/pipe:
     get:
       operationId: getChainPipeMetrics
       parameters:
@@ -1328,7 +1362,7 @@ paths:
       summary: Get chain pipe event metrics.
       tags:
       - metrics
-  /v2metrics/chain/{chainID}/workflow:
+  /metrics/chain/{chainID}/workflow:
     get:
       operationId: getChainWorkflowMetrics
       parameters:
@@ -1357,7 +1391,7 @@ paths:
       summary: Get chain workflow metrics.
       tags:
       - metrics
-  /v2metrics/l1:
+  /metrics/l1:
     get:
       operationId: getL1Metrics
       responses:
@@ -1378,7 +1412,7 @@ paths:
       summary: Get accumulated metrics.
       tags:
       - metrics
-  /v2node/config:
+  /node/config:
     get:
       operationId: getConfiguration
       responses:
@@ -1403,7 +1437,7 @@ paths:
       summary: Return the Wasp configuration
       tags:
       - node
-  /v2node/dks:
+  /node/dks:
     post:
       operationId: generateDKS
       requestBody:
@@ -1432,7 +1466,7 @@ paths:
       tags:
       - node
       x-codegen-request-body-name: DKSharesPostRequest
-  /v2node/dks/{sharedAddress}:
+  /node/dks/{sharedAddress}:
     get:
       operationId: getDKSInfo
       parameters:
@@ -1461,7 +1495,7 @@ paths:
       summary: Get information about the shared address DKS configuration
       tags:
       - node
-  /v2node/info:
+  /node/info:
     get:
       operationId: getInfo
       responses:
@@ -1482,7 +1516,7 @@ paths:
       summary: Returns private information about this node.
       tags:
       - node
-  /v2node/owner/certificate:
+  /node/owner/certificate:
     post:
       operationId: setNodeOwner
       requestBody:
@@ -1511,7 +1545,7 @@ paths:
       tags:
       - node
       x-codegen-request-body-name: ""
-  /v2node/peers:
+  /node/peers:
     get:
       operationId: getAllPeers
       responses:
@@ -1520,7 +1554,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/PeeringNodeStatusResponse_'
+                  $ref: '#/components/schemas/PeeringNodeStatusResponse__'
                 type: array
           description: A list of all peers
         "401":
@@ -1534,7 +1568,7 @@ paths:
       summary: Get basic information about all configured peers
       tags:
       - node
-  /v2node/peers/identity:
+  /node/peers/identity:
     get:
       operationId: getPeeringIdentity
       responses:
@@ -1555,7 +1589,7 @@ paths:
       summary: Get basic peer info of the current node
       tags:
       - node
-  /v2node/peers/trusted:
+  /node/peers/trusted:
     delete:
       operationId: distrustPeer
       requestBody:
@@ -1628,7 +1662,7 @@ paths:
       tags:
       - node
       x-codegen-request-body-name: ""
-  /v2node/shutdown:
+  /node/shutdown:
     post:
       operationId: shutdownNode
       responses:
@@ -1646,7 +1680,7 @@ paths:
       summary: Shut down the node
       tags:
       - node
-  /v2node/version:
+  /node/version:
     get:
       operationId: getVersion
       responses:
@@ -1659,7 +1693,7 @@ paths:
       summary: Returns the node version.
       tags:
       - node
-  /v2requests/callview:
+  /requests/callview:
     post:
       description: "Execute a view call. Either use HName or Name properties. If both\
         \ are supplied, HName are used."
@@ -1682,7 +1716,7 @@ paths:
       tags:
       - requests
       x-codegen-request-body-name: ""
-  /v2requests/offledger:
+  /requests/offledger:
     post:
       operationId: offLedger
       requestBody:
@@ -1700,7 +1734,7 @@ paths:
       tags:
       - requests
       x-codegen-request-body-name: ""
-  /v2users:
+  /users:
     get:
       operationId: getUsers
       responses:
@@ -1751,7 +1785,7 @@ paths:
       tags:
       - users
       x-codegen-request-body-name: ""
-  /v2users/{username}:
+  /users/{username}:
     delete:
       operationId: deleteUser
       parameters:
@@ -1811,7 +1845,7 @@ paths:
       summary: Get a user
       tags:
       - users
-  /v2users/{username}/password:
+  /users/{username}/password:
     put:
       operationId: changeUserPassword
       parameters:
@@ -1848,7 +1882,7 @@ paths:
       tags:
       - users
       x-codegen-request-body-name: ""
-  /v2users/{username}/permissions:
+  /users/{username}/permissions:
     put:
       operationId: changeUserPermissions
       parameters:
@@ -2738,6 +2772,32 @@ components:
       type: object
       xml:
         name: ChainMetrics
+    ChainRecord:
+      example:
+        accessNodes:
+        - accessNodes
+        - accessNodes
+        isActive: true
+      properties:
+        accessNodes:
+          items:
+            format: string
+            type: string
+          type: array
+          xml:
+            name: AccessNodes
+            wrapped: true
+        isActive:
+          format: boolean
+          type: boolean
+          xml:
+            name: IsActive
+      required:
+      - accessNodes
+      - isActive
+      type: object
+      xml:
+        name: ChainRecord
     CommitteeInfoResponse:
       example:
         candidateNodes:
@@ -2758,16 +2818,16 @@ components:
         committeeNodes:
         - node:
             isAlive: true
-            netId: localhost:4000
-            publicKey: 0x0000
-            numUsers: 1
+            netId: netId
+            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+            numUsers: 6
             isTrusted: true
           accessAPI: accessAPI
         - node:
             isAlive: true
-            netId: localhost:4000
-            publicKey: 0x0000
-            numUsers: 1
+            netId: netId
+            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+            numUsers: 6
             isTrusted: true
           accessAPI: accessAPI
         chainId: tst1pqm5ckama06xhkl080mmvz6l3xy8c8lulrwy7mx4ll0fc69krxfgka70j0e
@@ -2870,9 +2930,9 @@ components:
       example:
         node:
           isAlive: true
-          netId: localhost:4000
-          publicKey: 0x0000
-          numUsers: 1
+          netId: netId
+          publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+          numUsers: 6
           isTrusted: true
         accessAPI: accessAPI
       properties:
@@ -4180,6 +4240,53 @@ components:
       xml:
         name: PeeringNodeStatusResponse
     PeeringNodeStatusResponse_:
+      example:
+        isAlive: true
+        netId: netId
+        publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+        numUsers: 6
+        isTrusted: true
+      properties:
+        isAlive:
+          description: Whether or not the peer is activated
+          format: boolean
+          type: boolean
+          xml:
+            name: IsAlive
+        isTrusted:
+          format: boolean
+          type: boolean
+          xml:
+            name: IsTrusted
+        netId:
+          description: The NetID of the peer
+          format: string
+          type: string
+          xml:
+            name: NetID
+        numUsers:
+          description: The amount of users attached to the peer
+          format: int32
+          type: integer
+          xml:
+            name: NumUsers
+        publicKey:
+          description: The peers public key encoded in Hex
+          example: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+          format: string
+          type: string
+          xml:
+            name: PublicKey
+      required:
+      - isAlive
+      - isTrusted
+      - netId
+      - numUsers
+      - publicKey
+      type: object
+      xml:
+        name: PeeringNodeStatusResponse
+    PeeringNodeStatusResponse__:
       example:
         isAlive: true
         netId: localhost:4000

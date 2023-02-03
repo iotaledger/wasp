@@ -31,6 +31,7 @@ type APIController interface {
 
 type ChainService interface {
 	ActivateChain(chainID isc.ChainID) error
+	SetChainRecord(chainRecord *registry.ChainRecord) error
 	DeactivateChain(chainID isc.ChainID) error
 	GetAllChainIDs() ([]isc.ChainID, error)
 	HasChain(chainID isc.ChainID) bool

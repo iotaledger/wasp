@@ -58,6 +58,49 @@ func (c *ChainService) DeactivateChain(chainID isc.ChainID) error {
 	return c.chainsProvider().Deactivate(chainID)
 }
 
+func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
+	err := c.chainRecordRegistryProvider.AddChainRecord(chainRecord)
+	if err != nil {
+		return err
+	}
+
+	storedChainRec, err := c.chainRecordRegistryProvider.ChainRecord(chainRecord.ChainID())
+	if err != nil {
+		return err
+	}
+
+	if storedChainRec != nil {
+		_, err = c.chainRecordRegistryProvider.UpdateChainRecord(
+			chainRecord.ChainID(),
+			func(rec *registry.ChainRecord) bool {
+				rec.AccessNodes = chainRecord.AccessNodes
+				rec.Active = chainRecord.Active
+				return true
+			},
+		)
+		if err != nil {
+			return err
+		}
+	} else {
+		if err := c.chainRecordRegistryProvider.AddChainRecord(chainRecord); err != nil {
+			return err
+		}
+	}
+
+	// Activate/deactivate the chain accordingly.
+	if chainRecord.Active {
+		if err := c.chainsProvider().Activate(chainRecord.ChainID()); err != nil {
+			return err
+		}
+	} else if storedChainRec != nil {
+		if err := c.chainsProvider().Deactivate(chainRecord.ChainID()); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (c *ChainService) HasChain(chainID isc.ChainID) bool {
 	return c.GetChainByID(chainID) != nil
 }
