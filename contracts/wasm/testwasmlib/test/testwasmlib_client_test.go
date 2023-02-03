@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	useCluster    = false
+	useCluster    = true
 	useDisposable = false
 )
 

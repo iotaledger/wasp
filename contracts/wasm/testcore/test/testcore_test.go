@@ -54,16 +54,7 @@ func run2(t *testing.T, test func(*testing.T, bool)) {
 		test(t, true)
 	})
 
-	exists, _ := util.ExistsFilePath("../ts/pkg/testcore_ts.wasm")
-	if exists {
-		*wasmsolo.TsWasm = true
-		t.Run(fmt.Sprintf("run TS version of %s", t.Name()), func(t *testing.T) {
-			test(t, true)
-		})
-		*wasmsolo.TsWasm = false
-	}
-
-	exists, _ = util.ExistsFilePath("../go/pkg/testcore_go.wasm")
+	exists, _ := util.ExistsFilePath("../go/pkg/testcore_go.wasm")
 	if exists {
 		*wasmsolo.GoWasm = true
 		t.Run(fmt.Sprintf("run GO version of %s", t.Name()), func(t *testing.T) {
@@ -79,6 +70,15 @@ func run2(t *testing.T, test func(*testing.T, bool)) {
 			test(t, true)
 		})
 		*wasmsolo.RsWasm = false
+	}
+
+	exists, _ = util.ExistsFilePath("../ts/pkg/testcore_ts.wasm")
+	if exists {
+		*wasmsolo.TsWasm = true
+		t.Run(fmt.Sprintf("run TS version of %s", t.Name()), func(t *testing.T) {
+			test(t, true)
+		})
+		*wasmsolo.TsWasm = false
 	}
 
 	*wasmsolo.GoWasm = saveGoWasm
