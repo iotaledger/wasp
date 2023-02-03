@@ -65,10 +65,11 @@ func initBalanceCmd() *cobra.Command {
 			log.Check(err)
 
 			header := []string{"token", "amount"}
-			rows := make([][]string, len(balance.NativeTokens))
+			rows := make([][]string, len(balance.NativeTokens)+1)
 
+			rows[0] = []string{"Base Token", iotago.EncodeUint64(uint64(balance.BaseTokens))}
 			for k, v := range balance.NativeTokens {
-				rows[k] = []string{v.Id, v.Amount}
+				rows[k+1] = []string{v.Id, v.Amount}
 			}
 
 			log.PrintTable(header, rows)
