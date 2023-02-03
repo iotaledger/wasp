@@ -83,7 +83,7 @@ Name | Type | Description  | Notes
 
 ## GenerateDKS
 
-> DKSharesPostRequest GenerateDKS(ctx).DKSharesPostRequest(dKSharesPostRequest).Execute()
+> DKSharesInfo GenerateDKS(ctx).DKSharesPostRequest(dKSharesPostRequest).Execute()
 
 Generate a new distributed key
 
@@ -109,7 +109,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `NodeApi.GenerateDKS``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `GenerateDKS`: DKSharesPostRequest
+    // response from `GenerateDKS`: DKSharesInfo
     fmt.Fprintf(os.Stdout, "Response from `NodeApi.GenerateDKS`: %v\n", resp)
 }
 ```
@@ -129,7 +129,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**DKSharesPostRequest**](DKSharesPostRequest.md)
+[**DKSharesInfo**](DKSharesInfo.md)
 
 ### Authorization
 
@@ -569,7 +569,7 @@ No authorization required
 
 ## SetNodeOwner
 
-> SetNodeOwner(ctx).NodeOwnerCertificateRequest(nodeOwnerCertificateRequest).Execute()
+> NodeOwnerCertificateResponse SetNodeOwner(ctx).NodeOwnerCertificateRequest(nodeOwnerCertificateRequest).Execute()
 
 Sets the node owner
 
@@ -595,6 +595,8 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `NodeApi.SetNodeOwner``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
+    // response from `SetNodeOwner`: NodeOwnerCertificateResponse
+    fmt.Fprintf(os.Stdout, "Response from `NodeApi.SetNodeOwner`: %v\n", resp)
 }
 ```
 
@@ -613,7 +615,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
- (empty response body)
+[**NodeOwnerCertificateResponse**](NodeOwnerCertificateResponse.md)
 
 ### Authorization
 

@@ -13,6 +13,8 @@ import (
 	"github.com/spf13/viper"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -22,8 +24,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 )
 
 func GetAllWaspNodes() []int {
@@ -76,7 +78,6 @@ func initDeployCmd() *cobra.Command {
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			l1Client := cliclients.L1Client()
-			alias := GetChainAlias()
 
 			if committee == nil {
 				committee = GetAllWaspNodes()
@@ -97,8 +98,11 @@ func initDeployCmd() *cobra.Command {
 				committeePubKeys = append(committeePubKeys, peerInfo.PublicKey)
 			}
 
-			chainid, _, err := apilib.DeployChainWithDKG(apilib.CreateChainParams{
-				AuthenticationToken:  config.GetToken(),
+			var clientResolver multiclient.ClientResolver = func(apiHost string) *apiclient.APIClient {
+				return cliclients.WaspClientForHostName(apiHost)
+			}
+
+			chainid, _, err := apilib.DeployChainWithDKG(clientResolver, apilib.CreateChainParams{
 				Layer1Client:         l1Client,
 				CommitteeAPIHosts:    config.CommitteeAPIURL(committee),
 				CommitteePubKeys:     committeePubKeys,
@@ -119,11 +123,11 @@ func initDeployCmd() *cobra.Command {
 
 			var alias string
 			if len(args) == 0 {
-				alias = GetChainAlias()
+				alias = config.GetChainAlias()
 			} else {
 				alias = args[0]
 			}
-			AddChainAlias(alias, chainid.String())
+			config.AddChainAlias(alias, chainid.String())
 		},
 	}
 

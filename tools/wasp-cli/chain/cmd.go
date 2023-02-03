@@ -3,6 +3,7 @@ package chain
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -21,7 +22,7 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd := initChainCmd()
 	rootCmd.AddCommand(chainCmd)
 
-	initAliasFlags(chainCmd)
+	config.InitAliasFlags(chainCmd)
 	initUploadFlags(chainCmd)
 
 	chainCmd.AddCommand(initListCmd())

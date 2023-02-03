@@ -157,7 +157,7 @@ func (r ApiGenerateDKSRequest) DKSharesPostRequest(dKSharesPostRequest DKSharesP
 	return r
 }
 
-func (r ApiGenerateDKSRequest) Execute() (*DKSharesPostRequest, *http.Response, error) {
+func (r ApiGenerateDKSRequest) Execute() (*DKSharesInfo, *http.Response, error) {
 	return r.ApiService.GenerateDKSExecute(r)
 }
 
@@ -175,13 +175,13 @@ func (a *NodeApiService) GenerateDKS(ctx context.Context) ApiGenerateDKSRequest 
 }
 
 // Execute executes the request
-//  @return DKSharesPostRequest
-func (a *NodeApiService) GenerateDKSExecute(r ApiGenerateDKSRequest) (*DKSharesPostRequest, *http.Response, error) {
+//  @return DKSharesInfo
+func (a *NodeApiService) GenerateDKSExecute(r ApiGenerateDKSRequest) (*DKSharesInfo, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *DKSharesPostRequest
+		localVarReturnValue  *DKSharesInfo
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeApiService.GenerateDKS")
@@ -1117,7 +1117,7 @@ func (r ApiSetNodeOwnerRequest) NodeOwnerCertificateRequest(nodeOwnerCertificate
 	return r
 }
 
-func (r ApiSetNodeOwnerRequest) Execute() (*http.Response, error) {
+func (r ApiSetNodeOwnerRequest) Execute() (*NodeOwnerCertificateResponse, *http.Response, error) {
 	return r.ApiService.SetNodeOwnerExecute(r)
 }
 
@@ -1135,16 +1135,18 @@ func (a *NodeApiService) SetNodeOwner(ctx context.Context) ApiSetNodeOwnerReques
 }
 
 // Execute executes the request
-func (a *NodeApiService) SetNodeOwnerExecute(r ApiSetNodeOwnerRequest) (*http.Response, error) {
+//  @return NodeOwnerCertificateResponse
+func (a *NodeApiService) SetNodeOwnerExecute(r ApiSetNodeOwnerRequest) (*NodeOwnerCertificateResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
+		localVarReturnValue  *NodeOwnerCertificateResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeApiService.SetNodeOwner")
 	if err != nil {
-		return nil, &GenericOpenAPIError{error: err.Error()}
+		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
 	localVarPath := localBasePath + "/v2node/owner/certificate"
@@ -1153,7 +1155,7 @@ func (a *NodeApiService) SetNodeOwnerExecute(r ApiSetNodeOwnerRequest) (*http.Re
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 	if r.nodeOwnerCertificateRequest == nil {
-		return nil, reportError("nodeOwnerCertificateRequest is required and must be specified")
+		return localVarReturnValue, nil, reportError("nodeOwnerCertificateRequest is required and must be specified")
 	}
 
 	// to determine the Content-Type header
@@ -1191,19 +1193,19 @@ func (a *NodeApiService) SetNodeOwnerExecute(r ApiSetNodeOwnerRequest) (*http.Re
 	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return nil, err
+		return localVarReturnValue, nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -1216,15 +1218,24 @@ func (a *NodeApiService) SetNodeOwnerExecute(r ApiSetNodeOwnerRequest) (*http.Re
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
-				return localVarHTTPResponse, newErr
+				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
 					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
 					newErr.model = v
 		}
-		return localVarHTTPResponse, newErr
+		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
-	return localVarHTTPResponse, nil
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
 type ApiShutdownNodeRequest struct {

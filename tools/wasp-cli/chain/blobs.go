@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
@@ -55,7 +56,7 @@ func initShowBlobCmd() *cobra.Command {
 
 			blobInfo, _, err := client.
 				CorecontractsApi.
-				BlobsGetBlobInfo(context.Background(), GetCurrentChainID().String(), hash.Hex()).
+				BlobsGetBlobInfo(context.Background(), config.GetCurrentChainID().String(), hash.Hex()).
 				Execute()
 			log.Check(err)
 
@@ -63,7 +64,7 @@ func initShowBlobCmd() *cobra.Command {
 			for field := range blobInfo.Fields {
 				value, _, err := client.
 					CorecontractsApi.
-					BlobsGetBlobValue(context.Background(), GetCurrentChainID().String(), hash.Hex(), field).
+					BlobsGetBlobValue(context.Background(), config.GetCurrentChainID().String(), hash.Hex(), field).
 					Execute()
 
 				log.Check(err)
@@ -84,12 +85,12 @@ func initListBlobsCmd() *cobra.Command {
 
 			blobsResponse, _, err := client.
 				CorecontractsApi.
-				BlobsGetAllBlobs(context.Background(), GetCurrentChainID().String()).
+				BlobsGetAllBlobs(context.Background(), config.GetCurrentChainID().String()).
 				Execute()
 
 			log.Check(err)
 
-			log.Printf("Total %d blob(s) in chain %s\n", len(blobsResponse.Blobs), GetCurrentChainID())
+			log.Printf("Total %d blob(s) in chain %s\n", len(blobsResponse.Blobs), config.GetCurrentChainID())
 
 			header := []string{"hash", "size"}
 			rows := make([][]string, len(blobsResponse.Blobs))

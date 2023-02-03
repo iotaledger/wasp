@@ -6,14 +6,12 @@ import (
 	"github.com/iotaledger/wasp/clients/scclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/l1connection"
-	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 )
 
-func waspClient(apiAddress string) *apiclient.APIClient {
-	// TODO: add authentication for /adm
+func WaspClientForHostName(apiAddress string) *apiclient.APIClient {
 	L1Client() // this will fill parameters.L1() with data from the L1 node
 	log.Verbosef("using Wasp host %s\n", apiAddress)
 
@@ -21,11 +19,13 @@ func waspClient(apiAddress string) *apiclient.APIClient {
 	apiConfig.Host = apiAddress
 	apiConfig.AddDefaultHeader("Authorization", config.GetToken())
 
-	return apiclient.NewAPIClient(apiConfig)
+	client := apiclient.NewAPIClient(apiConfig)
+
+	return client
 }
 
 func WaspClientForIndex(i ...int) *apiclient.APIClient {
-	return waspClient(config.MustWaspAPIURL(i...))
+	return WaspClientForHostName(config.MustWaspAPIURL(i...))
 }
 
 func L1Client() l1connection.Client {
@@ -44,7 +44,7 @@ func ChainClient(waspClient *apiclient.APIClient) *chainclient.Client {
 	return chainclient.New(
 		L1Client(),
 		waspClient,
-		chain.GetCurrentChainID(),
+		config.GetCurrentChainID(),
 		wallet.Load().KeyPair,
 	)
 }

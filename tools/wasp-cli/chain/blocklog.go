@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -39,7 +40,7 @@ func fetchBlockInfo(args []string) *apiclient.BlockInfoResponse {
 	if len(args) == 0 {
 		blockInfo, _, err := client.
 			CorecontractsApi.
-			BlocklogGetLatestBlockInfo(context.Background(), GetCurrentChainID().String()).
+			BlocklogGetLatestBlockInfo(context.Background(), config.GetCurrentChainID().String()).
 			Execute()
 
 		log.Check(err)
@@ -51,7 +52,7 @@ func fetchBlockInfo(args []string) *apiclient.BlockInfoResponse {
 
 	blockInfo, _, err := client.
 		CorecontractsApi.
-		BlocklogGetBlockInfo(context.Background(), GetCurrentChainID().String(), int32(index)).
+		BlocklogGetBlockInfo(context.Background(), config.GetCurrentChainID().String(), int32(index)).
 		Execute()
 
 	log.Check(err)
@@ -63,7 +64,7 @@ func logRequestsInBlock(index uint32) {
 	client := cliclients.WaspClientForIndex()
 	// TODO: It should be uint32 here. Fix generator!
 	receipts, _, err := client.CorecontractsApi.
-		BlocklogGetRequestReceiptsOfBlock(context.Background(), GetCurrentChainID().String(), int32(index)).
+		BlocklogGetRequestReceiptsOfBlock(context.Background(), config.GetCurrentChainID().String(), int32(index)).
 		Execute()
 
 	log.Check(err)
@@ -113,7 +114,7 @@ func logEventsInBlock(index uint32) {
 	client := cliclients.WaspClientForIndex()
 	// TODO: It should be uint32 here. Fix generator!
 	events, _, err := client.CorecontractsApi.
-		BlocklogGetEventsOfBlock(context.Background(), GetCurrentChainID().String(), int32(index)).
+		BlocklogGetEventsOfBlock(context.Background(), config.GetCurrentChainID().String(), int32(index)).
 		Execute()
 
 	log.Check(err)
@@ -132,7 +133,7 @@ func initRequestCmd() *cobra.Command {
 			client := cliclients.WaspClientForIndex()
 			// TODO: It should be uint32 here. Fix generator!
 			receipt, _, err := client.CorecontractsApi.
-				BlocklogGetRequestReceipt(context.Background(), GetCurrentChainID().String(), reqID.String()).
+				BlocklogGetRequestReceipt(context.Background(), config.GetCurrentChainID().String(), reqID.String()).
 				Execute()
 
 			log.Check(err)
@@ -151,7 +152,7 @@ func logEventsInRequest(reqID isc.RequestID) {
 	client := cliclients.WaspClientForIndex()
 	// TODO: It should be uint32 here. Fix generator!
 	events, _, err := client.CorecontractsApi.
-		BlocklogGetEventsOfRequest(context.Background(), GetCurrentChainID().String(), reqID.String()).
+		BlocklogGetEventsOfRequest(context.Background(), config.GetCurrentChainID().String(), reqID.String()).
 		Execute()
 
 	log.Check(err)

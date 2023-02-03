@@ -10,6 +10,10 @@ servers:
 - url: http://localhost:9090/
 - url: https://localhost:9090/
 tags:
+- description: Public endpoints
+  name: public
+- description: Admin endpoints
+  name: admin
 - name: auth
 - name: chains
 - name: chains
@@ -24,6 +28,445 @@ tags:
 - name: corecontracts
 - name: corecontracts
 paths:
+  /adm/chain/nodeconn/metrics:
+    get:
+      deprecated: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeConnectionMetrics'
+          description: Cummulative chains metrics
+      summary: Get cummulative chains node connection metrics
+      tags:
+      - admin
+  /adm/chain/{chainID}/access-node/{pubKey}:
+    delete:
+      parameters:
+      - description: ChainID (bech32))
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      - description: PublicKey (hex string)
+        in: path
+        name: pubKey
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        default:
+          content: {}
+          description: successful operation
+      summary: Remove an access node from a chain
+      tags:
+      - admin
+    put:
+      parameters:
+      - description: ChainID (bech32))
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      - description: PublicKey (hex string)
+        in: path
+        name: pubKey
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        default:
+          content: {}
+          description: successful operation
+      summary: Add an access node to a chain
+      tags:
+      - admin
+  /adm/chain/{chainID}/activate:
+    post:
+      deprecated: true
+      parameters:
+      - description: ChainID (bech32))
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        default:
+          content: {}
+          description: successful operation
+      summary: Activate a chain
+      tags:
+      - admin
+  /adm/chain/{chainID}/consensus/metrics/pipe:
+    get:
+      deprecated: true
+      parameters:
+      - description: chainID
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsensusPipeMetrics'
+          description: Chain consensus pipe metrics
+        "404":
+          content: {}
+          description: Chain consensus hasn't been created
+      summary: Get consensus pipe metrics
+      tags:
+      - admin
+  /adm/chain/{chainID}/consensus/status:
+    get:
+      deprecated: true
+      parameters:
+      - description: ChainID (bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsensusWorkflowStatus'
+          description: Chain consensus stats
+        "404":
+          content: {}
+          description: Chain consensus hasn't been created
+      summary: Get chain state statistics for the given chain ID
+      tags:
+      - admin
+  /adm/chain/{chainID}/deactivate:
+    post:
+      deprecated: true
+      parameters:
+      - description: ChainID (bech32))
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        default:
+          content: {}
+          description: successful operation
+      summary: Deactivate a chain
+      tags:
+      - admin
+  /adm/chain/{chainID}/info:
+    get:
+      deprecated: true
+      parameters:
+      - description: ChainID (bech32))
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        default:
+          content: {}
+          description: successful operation
+      summary: Get basic chain info.
+      tags:
+      - admin
+  /adm/chain/{chainID}/nodeconn/metrics:
+    get:
+      deprecated: true
+      parameters:
+      - description: ChainID (bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeConnectionMessagesMetrics'
+          description: Chain metrics
+      summary: Get chain node connection metrics for the given chain ID
+      tags:
+      - admin
+  /adm/chainrecord:
+    post:
+      deprecated: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChainRecord'
+        description: Chain record
+        required: true
+      responses:
+        default:
+          content: {}
+          description: successful operation
+      summary: Create a new chain record
+      tags:
+      - admin
+      x-codegen-request-body-name: Record
+  /adm/chainrecord/{chainID}:
+    get:
+      deprecated: true
+      parameters:
+      - description: ChainID (bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChainRecord'
+          description: Chain Record
+      summary: Find the chain record for the given chain ID
+      tags:
+      - admin
+  /adm/chainrecords:
+    get:
+      deprecated: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ChainRecord'
+                type: array
+          description: Chain Record
+      summary: Get the list of chain records in the node
+      tags:
+      - admin
+  /adm/dks:
+    post:
+      deprecated: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DKSharesPostRequest'
+        description: Request parameters
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DKSharesInfo'
+          description: DK shares info
+      summary: Generate a new distributed key
+      tags:
+      - admin
+      x-codegen-request-body-name: DKSharesPostRequest
+  /adm/dks/{sharedAddress}:
+    get:
+      deprecated: true
+      parameters:
+      - description: Address of the DK share (hex)
+        in: path
+        name: sharedAddress
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DKSharesInfo'
+          description: DK shares info
+      summary: Get distributed key properties
+      tags:
+      - admin
+  /adm/node/owner/certificate:
+    post:
+      deprecated: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeOwnerCertificateRequest'
+        description: Certificate request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeOwnerCertificateResponse'
+          description: Generated certificate.
+      summary: "Provides a certificate, if the node recognizes the owner."
+      tags:
+      - admin
+      x-codegen-request-body-name: Request
+  /adm/peering/established:
+    get:
+      deprecated: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/PeeringNodeStatus'
+                type: array
+          description: A list of all peers.
+      summary: Basic information about all configured peers.
+      tags:
+      - admin
+  /adm/peering/self:
+    get:
+      deprecated: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PeeringTrustedNode'
+          description: This node as a peer.
+      summary: Basic peer info of the current node.
+      tags:
+      - admin
+  /adm/peering/trusted:
+    get:
+      deprecated: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/PeeringTrustedNode'
+                type: array
+          description: A list of trusted peers.
+      summary: Get a list of trusted peers.
+      tags:
+      - admin
+    post:
+      deprecated: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PeeringTrustedNode'
+        description: Info of the peer to trust.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PeeringTrustedNode'
+          description: Trusted peer info.
+      summary: Trust the specified peer.
+      tags:
+      - admin
+      x-codegen-request-body-name: PeeringTrustedNode
+  /adm/peering/trusted/{pubKey}:
+    delete:
+      deprecated: true
+      parameters:
+      - description: Public key of the trusted peer (hex).
+        in: path
+        name: pubKey
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        default:
+          content: {}
+          description: successful operation
+      summary: Distrust the specified peer.
+      tags:
+      - admin
+    get:
+      deprecated: true
+      parameters:
+      - description: Public key of the trusted peer (hex).
+        in: path
+        name: pubKey
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PeeringTrustedNode'
+          description: Trusted peer info.
+      summary: Get details on a particular trusted peer.
+      tags:
+      - admin
+    put:
+      deprecated: true
+      parameters:
+      - description: Public key of the trusted peer (hex).
+        in: path
+        name: pubKey
+        required: true
+        schema:
+          format: string
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PeeringTrustedNode'
+        description: Info of the peer to trust.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PeeringTrustedNode'
+          description: Trusted peer info.
+      summary: "Trust the specified peer, the pub key is passed via the path."
+      tags:
+      - admin
+      x-codegen-request-body-name: PeeringTrustedNode
+  /adm/shutdown:
+    get:
+      deprecated: true
+      responses:
+        default:
+          content: {}
+          description: successful operation
+      summary: Shut down the node
+      tags:
+      - admin
   /auth:
     post:
       operationId: authenticate
@@ -61,6 +504,367 @@ paths:
       summary: Get information about the current authentication mode
       tags:
       - auth
+  /chain/{chainID}/contract/{contractHname}/callview/{fname}:
+    get:
+      deprecated: true
+      parameters:
+      - description: ChainID
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      - description: Contract Hname
+        in: path
+        name: contractHname
+        required: true
+        schema:
+          format: string
+          type: string
+      - description: Function name
+        in: path
+        name: fname
+        required: true
+        schema:
+          format: string
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JSONDict'
+        description: Parameters
+        required: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JSONDict'
+          description: Result
+      summary: Call a view function on a contract by name
+      tags:
+      - public
+      x-codegen-request-body-name: params
+    post:
+      deprecated: true
+      parameters:
+      - description: ChainID
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      - description: Contract Hname
+        in: path
+        name: contractHname
+        required: true
+        schema:
+          format: string
+          type: string
+      - description: Function name
+        in: path
+        name: fname
+        required: true
+        schema:
+          format: string
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JSONDict'
+        description: Parameters
+        required: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JSONDict'
+          description: Result
+      summary: Call a view function on a contract by name
+      tags:
+      - public
+      x-codegen-request-body-name: params
+  /chain/{chainID}/contract/{contractHname}/callviewbyhname/{functionHname}:
+    get:
+      deprecated: true
+      parameters:
+      - description: ChainID
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      - description: Contract Hname
+        in: path
+        name: contractHname
+        required: true
+        schema:
+          format: string
+          type: string
+      - description: Function Hname
+        in: path
+        name: functionHname
+        required: true
+        schema:
+          format: string
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JSONDict'
+        description: Parameters
+        required: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JSONDict'
+          description: Result
+      summary: Call a view function on a contract by Hname
+      tags:
+      - public
+      x-codegen-request-body-name: params
+    post:
+      deprecated: true
+      parameters:
+      - description: ChainID
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      - description: Contract Hname
+        in: path
+        name: contractHname
+        required: true
+        schema:
+          format: string
+          type: string
+      - description: Function Hname
+        in: path
+        name: functionHname
+        required: true
+        schema:
+          format: string
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JSONDict'
+        description: Parameters
+        required: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JSONDict'
+          description: Result
+      summary: Call a view function on a contract by Hname
+      tags:
+      - public
+      x-codegen-request-body-name: params
+  /chain/{chainID}/evm/reqid/{txHash}:
+    get:
+      deprecated: true
+      parameters:
+      - description: ChainID (bech32-encoded)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      - description: Transaction hash (hex-encoded)
+        in: path
+        name: txHash
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                format: string
+                type: string
+          description: Request ID
+        "404":
+          content:
+            application/json:
+              schema:
+                example: 0x00000000000000000000000000000000000000000000000000000000000000000000
+                format: string
+                type: string
+          description: Request ID not found
+      summary: Get the ISC request ID for the given Ethereum transaction hash
+      tags:
+      - public
+  /chain/{chainID}/request:
+    post:
+      deprecated: true
+      parameters:
+      - description: chainID
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OffLedgerRequestBody'
+        description: "Offledger Request encoded in base64. Optionally, the body can\
+          \ be the binary representation of the offledger request, but mime-type must\
+          \ be specified to \"application/octet-stream\""
+        required: false
+      responses:
+        "202":
+          content: {}
+          description: Request submitted
+      summary: Post an off-ledger request
+      tags:
+      - public
+      x-codegen-request-body-name: Request
+  /chain/{chainID}/request/{reqID}/receipt:
+    get:
+      deprecated: true
+      parameters:
+      - description: ChainID (bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      - description: Request ID
+        in: path
+        name: reqID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestReceiptResponse'
+          description: Request Receipt
+      summary: Get the processing status of a given request in the node
+      tags:
+      - public
+  /chain/{chainID}/request/{reqID}/wait:
+    get:
+      deprecated: true
+      parameters:
+      - description: ChainID (bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      - description: Request ID
+        in: path
+        name: reqID
+        required: true
+        schema:
+          format: string
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WaitRequestProcessedParams'
+        description: Optional parameters
+        required: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestReceiptResponse'
+          description: Request Receipt
+      summary: Wait until the given request has been processed by the node
+      tags:
+      - public
+      x-codegen-request-body-name: Params
+  /chain/{chainID}/state/{key}:
+    get:
+      deprecated: true
+      parameters:
+      - description: ChainID
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      - description: Key (hex-encoded)
+        in: path
+        name: key
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  example: 118
+                  format: int32
+                  type: integer
+                type: array
+          description: Result
+      summary: Fetch the raw value associated with the given key in the chain state
+      tags:
+      - public
+  /chain/{chainID}/ws:
+    get:
+      deprecated: true
+      parameters:
+      - description: ChainID (bech32-encoded)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        default:
+          content: {}
+          description: successful operation
+      tags:
+      - public
+  /info:
+    get:
+      deprecated: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+          description: Node properties
+      summary: Get information about the node
+      tags:
+      - public
   /v2chains:
     get:
       operationId: getChains
@@ -983,7 +1787,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RequestReceiptResponse'
+                $ref: '#/components/schemas/RequestReceiptResponse_'
           description: The receipt
         "401":
           content:
@@ -1193,7 +1997,7 @@ paths:
       - requests
   /v2chains/{chainID}/requests/{requestID}/wait:
     get:
-      operationId: waitForTransaction
+      operationId: waitForRequest
       parameters:
       - description: ChainID (Bech32)
         in: path
@@ -1315,7 +2119,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConsensusPipeMetrics'
+                $ref: '#/components/schemas/ConsensusPipeMetrics_'
           description: A list of all available metrics.
         "401":
           content:
@@ -1410,7 +2214,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DKSharesPostRequest'
+              $ref: '#/components/schemas/DKSharesPostRequest_'
         description: Request parameters
         required: true
       responses:
@@ -1418,7 +2222,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DKSharesPostRequest'
+                $ref: '#/components/schemas/DKSharesInfo_'
           description: DK shares info
         "401":
           content:
@@ -1448,7 +2252,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DKSharesInfo'
+                $ref: '#/components/schemas/DKSharesInfo_'
           description: DK shares info
         "401":
           content:
@@ -1469,7 +2273,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InfoResponse'
+                $ref: '#/components/schemas/InfoResponse_'
           description: Returns information about this node.
         "401":
           content:
@@ -1489,12 +2293,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NodeOwnerCertificateRequest'
+              $ref: '#/components/schemas/NodeOwnerCertificateRequest_'
         description: The node owner certificate
         required: true
       responses:
         "200":
-          content: {}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeOwnerCertificateResponse_'
           description: Node owner was successfully changed
         "401":
           content:
@@ -1674,7 +2481,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JSONDict_'
+                $ref: '#/components/schemas/JSONDict'
           description: Result
       summary: Call a view function on a contract by Hname
       tags:
@@ -2441,7 +3248,7 @@ components:
       properties:
         receipts:
           items:
-            $ref: '#/components/schemas/RequestReceiptResponse'
+            $ref: '#/components/schemas/RequestReceiptResponse_'
           type: array
           xml:
             name: Receipts
@@ -2607,6 +3414,12 @@ components:
             txId: txId
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
+        outPublisherStateTransaction:
+          lastMessage:
+            stateIndex: 1
+            txId: txId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
         inTxInclusionState:
           lastMessage:
             txId: txId
@@ -2631,6 +3444,13 @@ components:
             outputId: outputId
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
+        inMilestone:
+          lastMessage:
+            milestoneId: milestoneId
+            index: 1
+            timestamp: 5
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
         inAliasOutput:
           lastMessage:
             outputType: 0
@@ -2650,6 +3470,9 @@ components:
             txId: txId
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
+        registeredChainIDs:
+        - registeredChainIDs
+        - registeredChainIDs
         outPullLatestOutput:
           lastMessage: lastMessage
           messages: 1
@@ -2662,6 +3485,8 @@ components:
       properties:
         inAliasOutput:
           $ref: '#/components/schemas/AliasOutputMetricItem'
+        inMilestone:
+          $ref: '#/components/schemas/MilestoneMetricItem'
         inOnLedgerRequest:
           $ref: '#/components/schemas/OnLedgerRequestMetricItem'
         inOutput:
@@ -2672,25 +3497,70 @@ components:
           $ref: '#/components/schemas/TxInclusionStateMsgMetricItem'
         outPublishGovernanceTransaction:
           $ref: '#/components/schemas/TransactionMetricItem'
+        outPublisherStateTransaction:
+          $ref: '#/components/schemas/PublisherStateTransactionItem'
         outPullLatestOutput:
           $ref: '#/components/schemas/InterfaceMetricItem'
         outPullOutputByID:
           $ref: '#/components/schemas/UTXOInputMetricItem'
         outPullTxInclusionState:
           $ref: '#/components/schemas/TransactionIDMetricItem'
+        registeredChainIDs:
+          items:
+            format: string
+            type: string
+          type: array
+          xml:
+            name: RegisteredChainIDs
+            wrapped: true
       required:
       - inAliasOutput
+      - inMilestone
       - inOnLedgerRequest
       - inOutput
       - inStateOutput
       - inTxInclusionState
       - outPublishGovernanceTransaction
+      - outPublisherStateTransaction
       - outPullLatestOutput
       - outPullOutputByID
       - outPullTxInclusionState
+      - registeredChainIDs
       type: object
       xml:
         name: ChainMetrics
+    ChainRecord:
+      example:
+        chainId: tst1pqtn76c7y28uh0fjz7pdu303j5mcwl35wthrq995qxyxa9zfr2s0uq8s0c9
+        accessNodes:
+        - accessNodes
+        - accessNodes
+        active: true
+      properties:
+        accessNodes:
+          items:
+            format: string
+            type: string
+          type: array
+          xml:
+            name: AccessNodes
+            wrapped: true
+        active:
+          description: Whether or not the chain is active
+          format: boolean
+          type: boolean
+          xml:
+            name: Active
+        chainId:
+          description: ChainID (bech32)
+          example: tst1pqtn76c7y28uh0fjz7pdu303j5mcwl35wthrq995qxyxa9zfr2s0uq8s0c9
+          format: string
+          type: string
+          xml:
+            name: ChainID
+      type: object
+      xml:
+        name: ChainRecord
     CommitteeInfoResponse:
       example:
         candidateNodes:
@@ -2843,6 +3713,42 @@ components:
       xml:
         name: CommitteeNode
     ConsensusPipeMetrics:
+      example:
+        EventVMResultMsgPipeSize: 5
+        EventStateTransitionMsgPipeSize: 1
+        EventACSMsgPipeSize: 0
+        EventPeerLogIndexMsgPipeSize: 6
+        EventTimerMsgPipeSize: 5
+      properties:
+        EventACSMsgPipeSize:
+          format: int32
+          type: integer
+          xml:
+            name: EventACSMsgPipeSize
+        EventPeerLogIndexMsgPipeSize:
+          format: int32
+          type: integer
+          xml:
+            name: EventPeerLogIndexMsgPipeSize
+        EventStateTransitionMsgPipeSize:
+          format: int32
+          type: integer
+          xml:
+            name: EventStateTransitionMsgPipeSize
+        EventTimerMsgPipeSize:
+          format: int32
+          type: integer
+          xml:
+            name: EventTimerMsgPipeSize
+        EventVMResultMsgPipeSize:
+          format: int32
+          type: integer
+          xml:
+            name: EventVMResultMsgPipeSize
+      type: object
+      xml:
+        name: ConsensusPipeMetrics
+    ConsensusPipeMetrics_:
       example:
         eventACSMsgPipeSize: 0
         eventPeerLogIndexMsgPipeSize: 6
@@ -3048,6 +3954,157 @@ components:
       type: object
       xml:
         name: ConsensusWorkflowMetrics
+    ConsensusWorkflowStatus:
+      example:
+        flagStateReceived: true
+        flagTransactionPosted: true
+        flagVMStarted: true
+        timeTransactionSeen: 2000-01-23T04:56:07.000+00:00
+        flagConsensusBatchKnown: true
+        timeTransactionFinalized: 2000-01-23T04:56:07.000+00:00
+        timeVMStarted: 2000-01-23T04:56:07.000+00:00
+        flagVMResultSigned: true
+        timeBatchProposalSent: 2023-02-03T18:48:24.994717506+01:00
+        timeVMResultSigned: 2000-01-23T04:56:07.000+00:00
+        timeCompleted: 2000-01-23T04:56:07.000+00:00
+        timeTransactionPosted: 2000-01-23T04:56:07.000+00:00
+        flagTransactionSeen: true
+        timeConsensusBatchKnown: 2023-02-03T18:48:29.994717666+01:00
+        currentStateIndex: 0
+        flagInProgress: true
+        flagBatchProposalSent: true
+        flagTransactionFinalized: true
+      properties:
+        currentStateIndex:
+          description: Shows current state index of the consensus
+          format: int32
+          type: integer
+          xml:
+            name: CurrentStateIndex
+        flagBatchProposalSent:
+          description: Shows if batch proposal is sent out in current consensus iteration
+          example: true
+          format: boolean
+          type: boolean
+          xml:
+            name: FlagBatchProposalSent
+        flagConsensusBatchKnown:
+          description: Shows if consensus on batch is reached and known in current
+            consensus iteration
+          example: true
+          format: boolean
+          type: boolean
+          xml:
+            name: FlagConsensusBatchKnown
+        flagInProgress:
+          description: Shows if consensus algorithm is still not completed in current
+            consensus iteration
+          example: true
+          format: boolean
+          type: boolean
+          xml:
+            name: FlagInProgress
+        flagStateReceived:
+          description: Shows if state output is received in current consensus iteration
+          example: true
+          format: boolean
+          type: boolean
+          xml:
+            name: FlagStateReceived
+        flagTransactionFinalized:
+          description: Shows if consensus on transaction is reached in current consensus
+            iteration
+          format: boolean
+          type: boolean
+          xml:
+            name: FlagTransactionFinalized
+        flagTransactionPosted:
+          description: Shows if transaction is posted to L1 in current consensus iteration
+          format: boolean
+          type: boolean
+          xml:
+            name: FlagTransactionPosted
+        flagTransactionSeen:
+          description: Shows if L1 reported that it has seen the transaction of current
+            consensus iteration
+          format: boolean
+          type: boolean
+          xml:
+            name: FlagTransactionSeen
+        flagVMResultSigned:
+          description: Shows if virtual machine has returned its results in current
+            consensus iteration
+          format: boolean
+          type: boolean
+          xml:
+            name: FlagVMResultSigned
+        flagVMStarted:
+          description: Shows if virtual machine is started in current consensus iteration
+          format: boolean
+          type: boolean
+          xml:
+            name: FlagVMStarted
+        timeBatchProposalSent:
+          description: Shows when batch proposal was last sent out in current consensus
+            iteration
+          example: 2023-02-03T18:48:24.994717506+01:00
+          format: date-time
+          type: string
+          xml:
+            name: TimeBatchProposalSent
+        timeCompleted:
+          description: Shows when algorithm was last completed in current consensus
+            iteration
+          format: date-time
+          type: string
+          xml:
+            name: TimeCompleted
+        timeConsensusBatchKnown:
+          description: Shows when ACS results of consensus on batch was last received
+            in current consensus iteration
+          example: 2023-02-03T18:48:29.994717666+01:00
+          format: date-time
+          type: string
+          xml:
+            name: TimeConsensusBatchKnown
+        timeTransactionFinalized:
+          description: Shows when algorithm last noted that all the data for consensus
+            on transaction had been received in current consensus iteration
+          format: date-time
+          type: string
+          xml:
+            name: TimeTransactionFinalized
+        timeTransactionPosted:
+          description: Shows when transaction was last posted to L1 in current consensus
+            iteration
+          format: date-time
+          type: string
+          xml:
+            name: TimeTransactionPosted
+        timeTransactionSeen:
+          description: Shows when algorithm last noted that transaction hadd been
+            seen by L1 in current consensus iteration
+          format: date-time
+          type: string
+          xml:
+            name: TimeTransactionSeen
+        timeVMResultSigned:
+          description: Shows when virtual machine results were last received and signed
+            in current consensus iteration
+          format: date-time
+          type: string
+          xml:
+            name: TimeVMResultSigned
+        timeVMStarted:
+          description: Shows when virtual machine was last started in current consensus
+            iteration
+          format: date-time
+          type: string
+          xml:
+            name: TimeVMStarted
+      type: object
+      xml:
+        name: ConsensusWorkflowStatus
     ContractCallViewRequest:
       example:
         contractHName: contractHName
@@ -3063,7 +4120,7 @@ components:
         contractName: contractName
       properties:
         arguments:
-          $ref: '#/components/schemas/JSONDict'
+          $ref: '#/components/schemas/JSONDict_'
         chainId:
           description: The chain id
           format: string
@@ -3183,6 +4240,67 @@ components:
         name: ControlAddressesResponse
     DKSharesInfo:
       example:
+        peerPubKeys:
+        - a2V5
+        - a2V5
+        address: tst1ppe9mtkewv8v4an5lv9yt6whz3kvzyj043ls4l3wqun9fhxrnwzpz6uv2s4
+        threshold: 3
+        pubKeyShares:
+        - a2V5
+        - a2V5
+        sharedPubKey: a2V5
+        peerIndex: 0
+      properties:
+        address:
+          description: New generated shared address.
+          example: tst1ppe9mtkewv8v4an5lv9yt6whz3kvzyj043ls4l3wqun9fhxrnwzpz6uv2s4
+          format: string
+          type: string
+          xml:
+            name: Address
+        peerIndex:
+          format: int32
+          type: integer
+          xml:
+            name: PeerIndex
+        peerPubKeys:
+          description: Public keys of the nodes sharing the key (base64-encoded).
+          items:
+            example: a2V5
+            format: string
+            type: string
+          type: array
+          xml:
+            name: PeerPubKeys
+            wrapped: true
+        pubKeyShares:
+          description: Public key shares for all the peers (base64-encoded).
+          items:
+            example: a2V5
+            format: string
+            type: string
+          type: array
+          xml:
+            name: PubKeyShares
+            wrapped: true
+        sharedPubKey:
+          description: Shared public key (base64-encoded).
+          example: a2V5
+          format: string
+          type: string
+          xml:
+            name: SharedPubKey
+        threshold:
+          example: 3
+          format: int32
+          type: integer
+          xml:
+            name: Threshold
+      type: object
+      xml:
+        name: DKSharesInfo
+    DKSharesInfo_:
+      example:
         publicKeyShares:
         - publicKeyShares
         - publicKeyShares
@@ -3248,11 +4366,39 @@ components:
         name: DKSharesInfo
     DKSharesPostRequest:
       example:
-        peerIdentities:
-        - peerIdentities
-        - peerIdentities
-        timeoutMS: 1
-        threshold: 1
+        peerPubKeys:
+        - a2V5
+        - a2V5
+        timeoutMS: 10000
+        threshold: 3
+      properties:
+        peerPubKeys:
+          items:
+            example: a2V5
+            format: string
+            type: string
+          type: array
+          xml:
+            name: PeerPubKeys
+            wrapped: true
+        threshold:
+          description: Should be =< len(PeerPubKeys)
+          example: 3
+          format: int32
+          type: integer
+          xml:
+            name: Threshold
+        timeoutMS:
+          description: Timeout in milliseconds.
+          example: 10000
+          format: int32
+          type: integer
+          xml:
+            name: TimeoutMS
+      type: object
+      xml:
+        name: DKSharesPostRequest
+    DKSharesPostRequest_:
       properties:
         peerIdentities:
           items:
@@ -3533,6 +4679,33 @@ components:
         name: InStateOutputMetricItem
     InfoResponse:
       example:
+        networkId: networkId
+        version: version
+        publisherPort: 0
+      properties:
+        networkId:
+          description: '''hostname:port''; uniquely identifies the node'
+          format: string
+          type: string
+          xml:
+            name: NetworkID
+        publisherPort:
+          description: Nanomsg port that exposes publisher messages
+          format: int32
+          type: integer
+          xml:
+            name: PublisherPort
+        version:
+          description: Wasp version
+          format: string
+          type: string
+          xml:
+            name: Version
+      type: object
+      xml:
+        name: InfoResponse
+    InfoResponse_:
+      example:
         netID: 0.0.0.0:4000
         l1Params:
           protocol:
@@ -3619,29 +4792,6 @@ components:
         name: InterfaceMetricItem
     Item:
       example:
-        value: value
-        key: key
-      properties:
-        key:
-          description: key (hex-encoded)
-          format: string
-          type: string
-          xml:
-            name: Key
-        value:
-          description: value (hex-encoded)
-          format: string
-          type: string
-          xml:
-            name: Value
-      required:
-      - key
-      - value
-      type: object
-      xml:
-        name: Item
-    Item_:
-      example:
         value: 0x76616c756531
         key: 0x6b657931
       properties:
@@ -3665,13 +4815,36 @@ components:
       type: object
       xml:
         name: Item
+    Item_:
+      example:
+        value: value
+        key: key
+      properties:
+        key:
+          description: key (hex-encoded)
+          format: string
+          type: string
+          xml:
+            name: Key
+        value:
+          description: value (hex-encoded)
+          format: string
+          type: string
+          xml:
+            name: Value
+      required:
+      - key
+      - value
+      type: object
+      xml:
+        name: Item
     JSONDict:
       example:
         Items:
-        - value: value
-          key: key
-        - value: value
-          key: key
+        - value: 0x76616c756531
+          key: 0x6b657931
+        - value: 0x76616c756531
+          key: 0x6b657931
       properties:
         Items:
           items:
@@ -3686,10 +4859,10 @@ components:
     JSONDict_:
       example:
         Items:
-        - value: 0x76616c756531
-          key: 0x6b657931
-        - value: 0x76616c756531
-          key: 0x6b657931
+        - value: value
+          key: key
+        - value: value
+          key: key
       properties:
         Items:
           items:
@@ -3783,6 +4956,59 @@ components:
       type: object
       xml:
         name: LoginResponse
+    MilestoneInfo:
+      example:
+        milestoneId: milestoneId
+        index: 1
+        timestamp: 5
+      properties:
+        index:
+          format: int32
+          type: integer
+          xml:
+            name: Index
+        milestoneId:
+          format: string
+          type: string
+          xml:
+            name: MilestoneID
+        timestamp:
+          format: int32
+          type: integer
+          xml:
+            name: Timestamp
+      type: object
+      xml:
+        name: MilestoneInfo
+    MilestoneMetricItem:
+      example:
+        lastMessage:
+          milestoneId: milestoneId
+          index: 1
+          timestamp: 5
+        messages: 1
+        timestamp: 2000-01-23T04:56:07.000+00:00
+      properties:
+        lastMessage:
+          $ref: '#/components/schemas/MilestoneInfo'
+        messages:
+          format: int32
+          minimum: 1
+          type: integer
+          xml:
+            name: Messages
+        timestamp:
+          format: date-time
+          type: string
+          xml:
+            name: Timestamp
+      required:
+      - lastMessage
+      - messages
+      - timestamp
+      type: object
+      xml:
+        name: MilestoneMetricItem
     NFTDataResponse:
       example:
         owner: owner
@@ -3858,10 +5084,343 @@ components:
       type: object
       xml:
         name: NativeTokenIDRegistryResponse
+    NodeConnectionMessageMetrics:
+      example:
+        total: 3
+        lastEvent: 2023-02-03T18:48:34.992472605+01:00
+        lastMessage: Last sent PublishStateTransaction message structure
+      properties:
+        lastEvent:
+          description: Last time the message was sent/received
+          example: 2023-02-03T18:48:34.992472605+01:00
+          format: date-time
+          type: string
+          xml:
+            name: LastEvent
+        lastMessage:
+          description: The print out of the last message
+          example: Last sent PublishStateTransaction message structure
+          format: string
+          type: string
+          xml:
+            name: LastMessage
+        total:
+          description: Total number of messages sent/received
+          example: 3
+          format: int32
+          type: integer
+          xml:
+            name: Total
+      type: object
+      xml:
+        name: NodeConnectionMessageMetrics
+    NodeConnectionMessageMetrics_:
+      example:
+        total: 85
+        lastEvent: 2023-02-03T18:48:32.994473647+01:00
+        lastMessage: Last received OnLedgerRequest message structure
+      properties:
+        lastEvent:
+          description: Last time the message was sent/received
+          example: 2023-02-03T18:48:32.994473647+01:00
+          format: date-time
+          type: string
+          xml:
+            name: LastEvent
+        lastMessage:
+          description: The print out of the last message
+          example: Last received OnLedgerRequest message structure
+          format: string
+          type: string
+          xml:
+            name: LastMessage
+        total:
+          description: Total number of messages sent/received
+          example: 85
+          format: int32
+          type: integer
+          xml:
+            name: Total
+      type: object
+      xml:
+        name: NodeConnectionMessageMetrics
+    NodeConnectionMessageMetrics__:
+      example:
+        total: 101
+        lastEvent: 2023-02-03T18:48:26.994473276+01:00
+        lastMessage: Last received State output message structure
+      properties:
+        lastEvent:
+          description: Last time the message was sent/received
+          example: 2023-02-03T18:48:26.994473276+01:00
+          format: date-time
+          type: string
+          xml:
+            name: LastEvent
+        lastMessage:
+          description: The print out of the last message
+          example: Last received State output message structure
+          format: string
+          type: string
+          xml:
+            name: LastMessage
+        total:
+          description: Total number of messages sent/received
+          example: 101
+          format: int32
+          type: integer
+          xml:
+            name: Total
+      type: object
+      xml:
+        name: NodeConnectionMessageMetrics
+    NodeConnectionMessageMetrics___:
+      example:
+        total: 28
+        lastEvent: 2023-02-03T18:48:29.994472995+01:00
+        lastMessage: Last sent PullTxInclusionState message structure
+      properties:
+        lastEvent:
+          description: Last time the message was sent/received
+          example: 2023-02-03T18:48:29.994472995+01:00
+          format: date-time
+          type: string
+          xml:
+            name: LastEvent
+        lastMessage:
+          description: The print out of the last message
+          example: Last sent PullTxInclusionState message structure
+          format: string
+          type: string
+          xml:
+            name: LastMessage
+        total:
+          description: Total number of messages sent/received
+          example: 28
+          format: int32
+          type: integer
+          xml:
+            name: Total
+      type: object
+      xml:
+        name: NodeConnectionMessageMetrics
+    NodeConnectionMessageMetrics____:
+      example:
+        total: 101
+        lastEvent: 2023-02-03T18:48:26.994473536+01:00
+        lastMessage: Last received Output message structure
+      properties:
+        lastEvent:
+          description: Last time the message was sent/received
+          example: 2023-02-03T18:48:26.994473536+01:00
+          format: date-time
+          type: string
+          xml:
+            name: LastEvent
+        lastMessage:
+          description: The print out of the last message
+          example: Last received Output message structure
+          format: string
+          type: string
+          xml:
+            name: LastMessage
+        total:
+          description: Total number of messages sent/received
+          example: 101
+          format: int32
+          type: integer
+          xml:
+            name: Total
+      type: object
+      xml:
+        name: NodeConnectionMessageMetrics
+    NodeConnectionMessageMetrics_____:
+      example:
+        total: 1234
+        lastEvent: 2023-02-03T18:48:35.99447546+01:00
+        lastMessage: Last received Milestone message structure
+      properties:
+        lastEvent:
+          description: Last time the message was sent/received
+          example: 2023-02-03T18:48:35.99447546+01:00
+          format: date-time
+          type: string
+          xml:
+            name: LastEvent
+        lastMessage:
+          description: The print out of the last message
+          example: Last received Milestone message structure
+          format: string
+          type: string
+          xml:
+            name: LastMessage
+        total:
+          description: Total number of messages sent/received
+          example: 1234
+          format: int32
+          type: integer
+          xml:
+            name: Total
+      type: object
+      xml:
+        name: NodeConnectionMessageMetrics
+    NodeConnectionMessagesMetrics:
+      example:
+        outPublishGovernanceTransaction:
+          total: 85
+          lastEvent: 2023-02-03T18:48:32.994473647+01:00
+          lastMessage: Last received OnLedgerRequest message structure
+        inTxInclusionState:
+          total: 1234
+          lastEvent: 2023-02-03T18:48:35.99447546+01:00
+          lastMessage: Last received Milestone message structure
+        inOnLedgerRequest:
+          total: 85
+          lastEvent: 2023-02-03T18:48:32.994473647+01:00
+          lastMessage: Last received OnLedgerRequest message structure
+        inOutput:
+          total: 101
+          lastEvent: 2023-02-03T18:48:26.994473536+01:00
+          lastMessage: Last received Output message structure
+        inAliasOutput:
+          total: 85
+          lastEvent: 2023-02-03T18:48:32.994473647+01:00
+          lastMessage: Last received OnLedgerRequest message structure
+        inStateOutput:
+          total: 101
+          lastEvent: 2023-02-03T18:48:26.994473276+01:00
+          lastMessage: Last received State output message structure
+        outPublishStateTransaction:
+          total: 3
+          lastEvent: 2023-02-03T18:48:34.992472605+01:00
+          lastMessage: Last sent PublishStateTransaction message structure
+        outPullTxInclusionState:
+          total: 28
+          lastEvent: 2023-02-03T18:48:29.994472995+01:00
+          lastMessage: Last sent PullTxInclusionState message structure
+        outPullLatestOutput:
+          total: 101
+          lastEvent: 2023-02-03T18:48:26.994473276+01:00
+          lastMessage: Last received State output message structure
+        outPullOutputByID:
+          total: 101
+          lastEvent: 2023-02-03T18:48:26.994473536+01:00
+          lastMessage: Last received Output message structure
+      properties:
+        inAliasOutput:
+          $ref: '#/components/schemas/NodeConnectionMessageMetrics_'
+        inOnLedgerRequest:
+          $ref: '#/components/schemas/NodeConnectionMessageMetrics_'
+        inOutput:
+          $ref: '#/components/schemas/NodeConnectionMessageMetrics____'
+        inStateOutput:
+          $ref: '#/components/schemas/NodeConnectionMessageMetrics__'
+        inTxInclusionState:
+          $ref: '#/components/schemas/NodeConnectionMessageMetrics_____'
+        outPublishGovernanceTransaction:
+          $ref: '#/components/schemas/NodeConnectionMessageMetrics_'
+        outPublishStateTransaction:
+          $ref: '#/components/schemas/NodeConnectionMessageMetrics'
+        outPullLatestOutput:
+          $ref: '#/components/schemas/NodeConnectionMessageMetrics__'
+        outPullOutputByID:
+          $ref: '#/components/schemas/NodeConnectionMessageMetrics____'
+        outPullTxInclusionState:
+          $ref: '#/components/schemas/NodeConnectionMessageMetrics___'
+      type: object
+      xml:
+        name: NodeConnectionMessagesMetrics
+    NodeConnectionMetrics:
+      example:
+        inMilestone:
+          total: 1234
+          lastEvent: 2023-02-03T18:48:35.99447546+01:00
+          lastMessage: Last received Milestone message structure
+        registered:
+        - tst1pqjuqksecfatlgy4uxd2m73kqmnlv4hr0gqqcggq4wcerwu2cx7uz3p735p
+        - tst1pqjuqksecfatlgy4uxd2m73kqmnlv4hr0gqqcggq4wcerwu2cx7uz3p735p
+        nodeConnectionMessagesMetrics:
+          outPublishGovernanceTransaction:
+            total: 85
+            lastEvent: 2023-02-03T18:48:32.994473647+01:00
+            lastMessage: Last received OnLedgerRequest message structure
+          inTxInclusionState:
+            total: 1234
+            lastEvent: 2023-02-03T18:48:35.99447546+01:00
+            lastMessage: Last received Milestone message structure
+          inOnLedgerRequest:
+            total: 85
+            lastEvent: 2023-02-03T18:48:32.994473647+01:00
+            lastMessage: Last received OnLedgerRequest message structure
+          inOutput:
+            total: 101
+            lastEvent: 2023-02-03T18:48:26.994473536+01:00
+            lastMessage: Last received Output message structure
+          inAliasOutput:
+            total: 85
+            lastEvent: 2023-02-03T18:48:32.994473647+01:00
+            lastMessage: Last received OnLedgerRequest message structure
+          inStateOutput:
+            total: 101
+            lastEvent: 2023-02-03T18:48:26.994473276+01:00
+            lastMessage: Last received State output message structure
+          outPublishStateTransaction:
+            total: 3
+            lastEvent: 2023-02-03T18:48:34.992472605+01:00
+            lastMessage: Last sent PublishStateTransaction message structure
+          outPullTxInclusionState:
+            total: 28
+            lastEvent: 2023-02-03T18:48:29.994472995+01:00
+            lastMessage: Last sent PullTxInclusionState message structure
+          outPullLatestOutput:
+            total: 101
+            lastEvent: 2023-02-03T18:48:26.994473276+01:00
+            lastMessage: Last received State output message structure
+          outPullOutputByID:
+            total: 101
+            lastEvent: 2023-02-03T18:48:26.994473536+01:00
+            lastMessage: Last received Output message structure
+      properties:
+        inMilestone:
+          $ref: '#/components/schemas/NodeConnectionMessageMetrics_____'
+        nodeConnectionMessagesMetrics:
+          $ref: '#/components/schemas/NodeConnectionMessagesMetrics'
+        registered:
+          description: Chain IDs of the chains registered to receiving L1 events
+          items:
+            example: tst1pqjuqksecfatlgy4uxd2m73kqmnlv4hr0gqqcggq4wcerwu2cx7uz3p735p
+            format: string
+            type: string
+          type: array
+          xml:
+            name: Registered
+            wrapped: true
+      type: object
+      xml:
+        name: NodeConnectionMetrics
     NodeOwnerCertificateRequest:
       example:
-        ownerAddress: ownerAddress
-        publicKey: publicKey
+        nodePubKey: AAER
+        ownerAddress: any_address
+      properties:
+        nodePubKey:
+          description: Node pub key. (base64)
+          example: AAER
+          format: string
+          type: string
+          xml:
+            name: NodePubKey
+        ownerAddress:
+          description: Node owner address. (bech32)
+          example: any_address
+          format: string
+          type: string
+          xml:
+            name: OwnerAddress
+      type: object
+      xml:
+        name: NodeOwnerCertificateRequest
+    NodeOwnerCertificateRequest_:
       properties:
         ownerAddress:
           description: Node owner address. (Bech32)
@@ -3881,6 +5440,35 @@ components:
       type: object
       xml:
         name: NodeOwnerCertificateRequest
+    NodeOwnerCertificateResponse:
+      example:
+        certificate: AAEREw==
+      properties:
+        certificate:
+          description: Certificate stating the ownership. (base64)
+          example: AAEREw==
+          format: string
+          type: string
+          xml:
+            name: Certificate
+      type: object
+      xml:
+        name: NodeOwnerCertificateResponse
+    NodeOwnerCertificateResponse_:
+      example:
+        certificate: certificate
+      properties:
+        certificate:
+          description: Certificate stating the ownership. (Hex)
+          format: string
+          type: string
+          xml:
+            name: Certificate
+      required:
+      - certificate
+      type: object
+      xml:
+        name: NodeOwnerCertificateResponse
     OffLedgerRequest:
       example:
         request: Hex string
@@ -3905,6 +5493,20 @@ components:
       type: object
       xml:
         name: OffLedgerRequest
+    OffLedgerRequestBody:
+      example:
+        request: base64 string
+      properties:
+        request:
+          description: Offledger Request (base64)
+          example: base64 string
+          format: string
+          type: string
+          xml:
+            name: Request
+      type: object
+      xml:
+        name: OffLedgerRequestBody
     OnLedgerRequest:
       example:
         output:
@@ -4045,6 +5647,40 @@ components:
       type: object
       xml:
         name: PeeringNodeIdentityResponse
+    PeeringNodeStatus:
+      example:
+        PubKey: 8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiQ
+        NetID: some-host:9081
+        IsAlive: true
+        NumUsers: 1
+      properties:
+        IsAlive:
+          example: true
+          format: boolean
+          type: boolean
+          xml:
+            name: IsAlive
+        NetID:
+          example: some-host:9081
+          format: string
+          type: string
+          xml:
+            name: NetID
+        NumUsers:
+          example: 1
+          format: int32
+          type: integer
+          xml:
+            name: NumUsers
+        PubKey:
+          example: 8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiQ
+          format: string
+          type: string
+          xml:
+            name: PubKey
+      type: object
+      xml:
+        name: PeeringNodeStatus
     PeeringNodeStatusResponse:
       example:
         isAlive: true
@@ -4167,6 +5803,28 @@ components:
       type: object
       xml:
         name: PeeringTrustRequest
+    PeeringTrustedNode:
+      example:
+        netId: some-host:9081
+        pubKey: 8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiQ
+      properties:
+        netId:
+          description: NetID of a peer to trust.
+          example: some-host:9081
+          format: string
+          type: string
+          xml:
+            name: NetID
+        pubKey:
+          description: Public key of the NetID.
+          example: 8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiQ
+          format: string
+          type: string
+          xml:
+            name: PubKey
+      type: object
+      xml:
+        name: PeeringTrustedNode
     ProtocolParameters:
       example:
         rentStructure:
@@ -4236,6 +5894,34 @@ components:
       type: object
       xml:
         name: ProtocolParameters
+    PublisherStateTransactionItem:
+      example:
+        lastMessage:
+          stateIndex: 1
+          txId: txId
+        messages: 1
+        timestamp: 2000-01-23T04:56:07.000+00:00
+      properties:
+        lastMessage:
+          $ref: '#/components/schemas/StateTransaction'
+        messages:
+          format: int32
+          minimum: 1
+          type: integer
+          xml:
+            name: Messages
+        timestamp:
+          format: date-time
+          type: string
+          xml:
+            name: Timestamp
+      required:
+      - lastMessage
+      - messages
+      - timestamp
+      type: object
+      xml:
+        name: PublisherStateTransactionItem
     ReceiptError:
       example:
         messageFormat: messageFormat
@@ -4466,7 +6152,7 @@ components:
         nft:
           $ref: '#/components/schemas/NFTDataResponse'
         params:
-          $ref: '#/components/schemas/JSONDict'
+          $ref: '#/components/schemas/JSONDict_'
         requestId:
           format: string
           type: string
@@ -4545,6 +6231,18 @@ components:
       xml:
         name: RequestProcessedResponse
     RequestReceiptResponse:
+      example:
+        receipt: receipt
+      properties:
+        receipt:
+          format: string
+          type: string
+          xml:
+            name: Receipt
+      type: object
+      xml:
+        name: RequestReceiptResponse
+    RequestReceiptResponse_:
       example:
         gasBurnLog:
           records:
@@ -4659,6 +6357,30 @@ components:
       type: object
       xml:
         name: StateResponse
+    StateTransaction:
+      example:
+        stateIndex: 1
+        txId: txId
+      properties:
+        stateIndex:
+          description: The state index
+          format: int32
+          minimum: 1
+          type: integer
+          xml:
+            name: StateIndex
+        txId:
+          description: The transaction ID
+          format: string
+          type: string
+          xml:
+            name: TransactionID
+      required:
+      - stateIndex
+      - txId
+      type: object
+      xml:
+        name: StateTransaction
     Transaction:
       example:
         txId: txId
@@ -4883,6 +6605,19 @@ components:
       type: object
       xml:
         name: ValidationError
+    WaitRequestProcessedParams:
+      example:
+        timeout: 0
+      properties:
+        timeout:
+          description: Timeout in nanoseconds
+          format: int64
+          type: integer
+          xml:
+            name: Timeout
+      type: object
+      xml:
+        name: WaitRequestProcessedParams
     gasFeePolicy:
       example:
         gasFeeTokenId: gasFeeTokenId

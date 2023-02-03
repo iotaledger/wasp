@@ -7,7 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
-	models2 "github.com/iotaledger/wasp/packages/webapi/models"
+	"github.com/iotaledger/wasp/packages/webapi/models"
 )
 
 type Controller struct {
@@ -38,7 +38,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 	publicAPI.GET("chains/:chainID/receipts/:requestID", c.getReceipt).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "requestID", "RequestID (Hex)").
-		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models2.ReceiptResponse{}), nil).
+		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
 		SetSummary("Get a receipt from a request ID").
 		SetOperationId("getReceipt")
 
@@ -51,7 +51,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 
 	publicAPI.POST("requests/offledger", c.handleOffLedgerRequest).
 		AddParamBody(
-			models2.OffLedgerRequest{Request: "Hex string"},
+			models.OffLedgerRequest{Request: "Hex string"},
 			"",
 			"Offledger request as JSON. Request encoded in Hex",
 			true).
@@ -66,7 +66,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		AddParamPath("", "requestID", "RequestID (Hex)").
 		AddResponse(http.StatusNotFound, "The chain or request id is invalid", nil, nil).
 		AddResponse(http.StatusRequestTimeout, "The waiting time has reached the defined limit", nil, nil).
-		AddResponse(http.StatusOK, "The request receipt", mocker.Get(models2.ReceiptResponse{}), nil)
+		AddResponse(http.StatusOK, "The request receipt", mocker.Get(models.ReceiptResponse{}), nil)
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {

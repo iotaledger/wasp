@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
@@ -26,7 +27,7 @@ func initCallViewCmd() *cobra.Command {
 			params := util.EncodeParams(args[2:])
 
 			result, _, err := client.RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
-				ChainId:      GetCurrentChainID().String(),
+				ChainId:      config.GetCurrentChainID().String(),
 				ContractName: contractName,
 				FunctionName: funcName,
 				Arguments:    clients.JSONDictToAPIJSONDict(params.JSONDict()),

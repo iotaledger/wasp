@@ -8,7 +8,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -27,23 +26,24 @@ const (
 	l1ParamsExpiration   = 24 * time.Hour
 )
 
-func l1ParamsExpired() bool {
+func L1ParamsExpired() bool {
 	if viper.Get(l1ParamsKey) == nil {
 		return true
 	}
 	return viper.GetTime(l1ParamsTimestampKey).Add(l1ParamsExpiration).Before(time.Now())
 }
 
-func refreshL1ParamsFromNode() {
+func RefreshL1ParamsFromNode() {
 	if log.VerboseFlag {
 		log.Printf("Getting L1 params from node at %s...\n", L1APIAddress())
 	}
-	cliclients.L1Client() // this will call parameters.InitL1()
+	//TODO: Move to a proper place
+	//cliclients.L1Client() // this will call parameters.InitL1()
 	Set(l1ParamsKey, parameters.L1NoLock())
 	Set(l1ParamsTimestampKey, time.Now())
 }
 
-func loadL1ParamsFromConfig() {
+func LoadL1ParamsFromConfig() {
 	// read L1 params from config file
 	var params *parameters.L1Params
 	err := viper.UnmarshalKey("l1.params", &params)
@@ -129,13 +129,8 @@ func committeeHost(kind string, i int) string {
 	return fmt.Sprintf("127.0.0.1:%d", defaultPort)
 }
 
-func totalNumberOfWaspNodes() int {
-	waspSubKey := viper.Sub("wasp")
-	if waspSubKey == nil {
-		return 0
-	}
-
-	return len(waspSubKey.AllSettings())
+func TotalNumberOfWaspNodes() int {
+	return len(viper.Sub("wasp").AllSettings())
 }
 
 func defaultWaspPort(kind string, i int) int {

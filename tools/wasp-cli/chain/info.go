@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
@@ -26,12 +27,12 @@ func initInfoCmd() *cobra.Command {
 			client := cliclients.WaspClientForIndex()
 
 			chainInfo, _, err := client.ChainsApi.
-				GetChainInfo(context.Background(), GetCurrentChainID().String()).
+				GetChainInfo(context.Background(), config.GetCurrentChainID().String()).
 				Execute()
 			log.Check(err)
 
 			committeeInfo, _, err := client.ChainsApi.
-				GetCommitteeInfo(context.Background(), GetCurrentChainID().String()).
+				GetCommitteeInfo(context.Background(), config.GetCurrentChainID().String()).
 				Execute()
 			log.Check(err)
 
@@ -69,7 +70,7 @@ func initInfoCmd() *cobra.Command {
 
 				log.Printf("Description: %s\n", chainInfo.Description)
 
-				contracts, _, err := client.ChainsApi.GetContracts(context.Background(), GetCurrentChainID().String()).Execute()
+				contracts, _, err := client.ChainsApi.GetContracts(context.Background(), config.GetCurrentChainID().String()).Execute()
 				log.Check(err)
 				log.Printf("#Contracts: %d\n", len(contracts))
 

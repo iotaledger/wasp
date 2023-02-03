@@ -13,8 +13,9 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 )
 
 func initRotateCmd() *cobra.Command {
@@ -31,8 +32,7 @@ func initRotateCmd() *cobra.Command {
 			}
 
 			wallet := wallet.Load()
-
-			aliasID := GetCurrentChainID().AsAliasID()
+			aliasID := config.GetCurrentChainID().AsAliasID()
 
 			chainOutputID, chainOutput, err := l1Client.GetAliasOutput(aliasID)
 			log.Check(err)

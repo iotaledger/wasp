@@ -6,7 +6,8 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -16,7 +17,7 @@ func initAddressCmd() *cobra.Command {
 		Short: "Show the wallet address",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			wallet := Load()
+			wallet := wallet.Load()
 
 			address := wallet.Address()
 
@@ -58,17 +59,17 @@ func initBalanceCmd() *cobra.Command {
 		Short: "Show the wallet balance",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			wallet := Load()
+			wallet := wallet.Load()
 			address := wallet.Address()
 
-			outs, err := config.L1Client().OutputMap(address)
+			outs, err := cliclients.L1Client().OutputMap(address)
 			log.Check(err)
 
 			balance := isc.AssetsFromOutputMap(outs)
 
 			model := &BalanceModel{
 				Address:      address.Bech32(parameters.L1().Protocol.Bech32HRP),
-				AddressIndex: addressIndex,
+				AddressIndex: wallet.AddressIndex,
 				NativeTokens: balance.NativeTokens,
 				BaseTokens:   balance.BaseTokens,
 				OutputMap:    outs,

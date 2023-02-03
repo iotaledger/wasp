@@ -20,31 +20,37 @@ var _ MappedNullable = &ChainMetrics{}
 // ChainMetrics struct for ChainMetrics
 type ChainMetrics struct {
 	InAliasOutput AliasOutputMetricItem `json:"inAliasOutput"`
+	InMilestone MilestoneMetricItem `json:"inMilestone"`
 	InOnLedgerRequest OnLedgerRequestMetricItem `json:"inOnLedgerRequest"`
 	InOutput InOutputMetricItem `json:"inOutput"`
 	InStateOutput InStateOutputMetricItem `json:"inStateOutput"`
 	InTxInclusionState TxInclusionStateMsgMetricItem `json:"inTxInclusionState"`
 	OutPublishGovernanceTransaction TransactionMetricItem `json:"outPublishGovernanceTransaction"`
+	OutPublisherStateTransaction PublisherStateTransactionItem `json:"outPublisherStateTransaction"`
 	OutPullLatestOutput InterfaceMetricItem `json:"outPullLatestOutput"`
 	OutPullOutputByID UTXOInputMetricItem `json:"outPullOutputByID"`
 	OutPullTxInclusionState TransactionIDMetricItem `json:"outPullTxInclusionState"`
+	RegisteredChainIDs []string `json:"registeredChainIDs"`
 }
 
 // NewChainMetrics instantiates a new ChainMetrics object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewChainMetrics(inAliasOutput AliasOutputMetricItem, inOnLedgerRequest OnLedgerRequestMetricItem, inOutput InOutputMetricItem, inStateOutput InStateOutputMetricItem, inTxInclusionState TxInclusionStateMsgMetricItem, outPublishGovernanceTransaction TransactionMetricItem, outPullLatestOutput InterfaceMetricItem, outPullOutputByID UTXOInputMetricItem, outPullTxInclusionState TransactionIDMetricItem) *ChainMetrics {
+func NewChainMetrics(inAliasOutput AliasOutputMetricItem, inMilestone MilestoneMetricItem, inOnLedgerRequest OnLedgerRequestMetricItem, inOutput InOutputMetricItem, inStateOutput InStateOutputMetricItem, inTxInclusionState TxInclusionStateMsgMetricItem, outPublishGovernanceTransaction TransactionMetricItem, outPublisherStateTransaction PublisherStateTransactionItem, outPullLatestOutput InterfaceMetricItem, outPullOutputByID UTXOInputMetricItem, outPullTxInclusionState TransactionIDMetricItem, registeredChainIDs []string) *ChainMetrics {
 	this := ChainMetrics{}
 	this.InAliasOutput = inAliasOutput
+	this.InMilestone = inMilestone
 	this.InOnLedgerRequest = inOnLedgerRequest
 	this.InOutput = inOutput
 	this.InStateOutput = inStateOutput
 	this.InTxInclusionState = inTxInclusionState
 	this.OutPublishGovernanceTransaction = outPublishGovernanceTransaction
+	this.OutPublisherStateTransaction = outPublisherStateTransaction
 	this.OutPullLatestOutput = outPullLatestOutput
 	this.OutPullOutputByID = outPullOutputByID
 	this.OutPullTxInclusionState = outPullTxInclusionState
+	this.RegisteredChainIDs = registeredChainIDs
 	return &this
 }
 
@@ -78,6 +84,30 @@ func (o *ChainMetrics) GetInAliasOutputOk() (*AliasOutputMetricItem, bool) {
 // SetInAliasOutput sets field value
 func (o *ChainMetrics) SetInAliasOutput(v AliasOutputMetricItem) {
 	o.InAliasOutput = v
+}
+
+// GetInMilestone returns the InMilestone field value
+func (o *ChainMetrics) GetInMilestone() MilestoneMetricItem {
+	if o == nil {
+		var ret MilestoneMetricItem
+		return ret
+	}
+
+	return o.InMilestone
+}
+
+// GetInMilestoneOk returns a tuple with the InMilestone field value
+// and a boolean to check if the value has been set.
+func (o *ChainMetrics) GetInMilestoneOk() (*MilestoneMetricItem, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.InMilestone, true
+}
+
+// SetInMilestone sets field value
+func (o *ChainMetrics) SetInMilestone(v MilestoneMetricItem) {
+	o.InMilestone = v
 }
 
 // GetInOnLedgerRequest returns the InOnLedgerRequest field value
@@ -200,6 +230,30 @@ func (o *ChainMetrics) SetOutPublishGovernanceTransaction(v TransactionMetricIte
 	o.OutPublishGovernanceTransaction = v
 }
 
+// GetOutPublisherStateTransaction returns the OutPublisherStateTransaction field value
+func (o *ChainMetrics) GetOutPublisherStateTransaction() PublisherStateTransactionItem {
+	if o == nil {
+		var ret PublisherStateTransactionItem
+		return ret
+	}
+
+	return o.OutPublisherStateTransaction
+}
+
+// GetOutPublisherStateTransactionOk returns a tuple with the OutPublisherStateTransaction field value
+// and a boolean to check if the value has been set.
+func (o *ChainMetrics) GetOutPublisherStateTransactionOk() (*PublisherStateTransactionItem, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.OutPublisherStateTransaction, true
+}
+
+// SetOutPublisherStateTransaction sets field value
+func (o *ChainMetrics) SetOutPublisherStateTransaction(v PublisherStateTransactionItem) {
+	o.OutPublisherStateTransaction = v
+}
+
 // GetOutPullLatestOutput returns the OutPullLatestOutput field value
 func (o *ChainMetrics) GetOutPullLatestOutput() InterfaceMetricItem {
 	if o == nil {
@@ -272,6 +326,30 @@ func (o *ChainMetrics) SetOutPullTxInclusionState(v TransactionIDMetricItem) {
 	o.OutPullTxInclusionState = v
 }
 
+// GetRegisteredChainIDs returns the RegisteredChainIDs field value
+func (o *ChainMetrics) GetRegisteredChainIDs() []string {
+	if o == nil {
+		var ret []string
+		return ret
+	}
+
+	return o.RegisteredChainIDs
+}
+
+// GetRegisteredChainIDsOk returns a tuple with the RegisteredChainIDs field value
+// and a boolean to check if the value has been set.
+func (o *ChainMetrics) GetRegisteredChainIDsOk() ([]string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.RegisteredChainIDs, true
+}
+
+// SetRegisteredChainIDs sets field value
+func (o *ChainMetrics) SetRegisteredChainIDs(v []string) {
+	o.RegisteredChainIDs = v
+}
+
 func (o ChainMetrics) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -283,14 +361,17 @@ func (o ChainMetrics) MarshalJSON() ([]byte, error) {
 func (o ChainMetrics) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["inAliasOutput"] = o.InAliasOutput
+	toSerialize["inMilestone"] = o.InMilestone
 	toSerialize["inOnLedgerRequest"] = o.InOnLedgerRequest
 	toSerialize["inOutput"] = o.InOutput
 	toSerialize["inStateOutput"] = o.InStateOutput
 	toSerialize["inTxInclusionState"] = o.InTxInclusionState
 	toSerialize["outPublishGovernanceTransaction"] = o.OutPublishGovernanceTransaction
+	toSerialize["outPublisherStateTransaction"] = o.OutPublisherStateTransaction
 	toSerialize["outPullLatestOutput"] = o.OutPullLatestOutput
 	toSerialize["outPullOutputByID"] = o.OutPullOutputByID
 	toSerialize["outPullTxInclusionState"] = o.OutPullTxInclusionState
+	toSerialize["registeredChainIDs"] = o.RegisteredChainIDs
 	return toSerialize, nil
 }
 

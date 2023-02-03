@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -19,7 +20,7 @@ func initActivateCmd() *cobra.Command {
 		Short: "Activates the chain on selected nodes",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			chainID := GetCurrentChainID()
+			chainID := config.GetCurrentChainID()
 			if nodes == nil {
 				nodes = GetAllWaspNodes()
 			}
@@ -54,7 +55,7 @@ func initDeactivateCmd() *cobra.Command {
 		Short: "Deactivates the chain on selected nodes",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			chainID := GetCurrentChainID()
+			chainID := config.GetCurrentChainID()
 			if nodes == nil {
 				nodes = GetAllWaspNodes()
 			}

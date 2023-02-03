@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
 
@@ -20,7 +21,7 @@ func postRequest(hname, fname string, params chainclient.PostRequestParams, offL
 
 	if offLedger {
 		params.Nonce = uint64(time.Now().UnixNano())
-		util.WithOffLedgerRequest(GetCurrentChainID(), func() (isc.OffLedgerRequest, error) {
+		util.WithOffLedgerRequest(config.GetCurrentChainID(), func() (isc.OffLedgerRequest, error) {
 			return scClient.PostOffLedgerRequest(fname, params)
 		})
 		return
@@ -29,7 +30,7 @@ func postRequest(hname, fname string, params chainclient.PostRequestParams, offL
 	if !adjustStorageDeposit {
 		// check if there are enough funds for SD
 		output := transaction.MakeBasicOutput(
-			GetCurrentChainID().AsAddress(),
+			config.GetCurrentChainID().AsAddress(),
 			scClient.ChainClient.KeyPair.Address(),
 			params.Transfer,
 			&isc.RequestMetadata{
@@ -46,7 +47,7 @@ func postRequest(hname, fname string, params chainclient.PostRequestParams, offL
 		util.SDAdjustmentPrompt(output)
 	}
 
-	util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
+	util.WithSCTransaction(config.GetCurrentChainID(), func() (*iotago.Transaction, error) {
 		return scClient.PostRequest(fname, params)
 	})
 }

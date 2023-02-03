@@ -1,29 +1,34 @@
 package clients
 
 import (
+	"context"
+	"time"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 func JSONDictToAPIJSONDict(jsonDict dict.JSONDict) apiclient.JSONDict {
-	apiJsonDict := apiclient.NewJSONDict()
+	apiJSONDict := apiclient.NewJSONDict()
 
 	for k, v := range jsonDict.Items {
-		apiJsonDict.Items[k] = apiclient.Item{
+		apiJSONDict.Items[k] = apiclient.Item{
 			Key:   v.Key,
 			Value: v.Value,
 		}
 	}
 
-	return *apiJsonDict
+	return *apiJSONDict
 }
 
-func APIJsonDictToJSONDict(apiJsonDict apiclient.JSONDict) dict.JSONDict {
+func APIJsonDictToJSONDict(apiJSONDict apiclient.JSONDict) dict.JSONDict {
 	jsonDict := dict.JSONDict{
-		Items: make([]dict.Item, len(apiJsonDict.Items)),
+		Items: make([]dict.Item, len(apiJSONDict.Items)),
 	}
 
-	for k, v := range apiJsonDict.Items {
+	for k, v := range apiJSONDict.Items {
 		jsonDict.Items[k] = dict.Item{
 			Key:   v.Key,
 			Value: v.Value,
@@ -33,8 +38,27 @@ func APIJsonDictToJSONDict(apiJsonDict apiclient.JSONDict) dict.JSONDict {
 	return jsonDict
 }
 
-func APIJsonDictToDict(apiJsonDict apiclient.JSONDict) (dict.Dict, error) {
-	jsonDict := APIJsonDictToJSONDict(apiJsonDict)
+func APIJsonDictToDict(apiJSONDict apiclient.JSONDict) (dict.Dict, error) {
+	jsonDict := APIJsonDictToJSONDict(apiJSONDict)
 
 	return dict.FromJSONDict(jsonDict)
+}
+
+func APIWaitUntilAllRequestsProcessed(client *apiclient.APIClient, chainID isc.ChainID, tx *iotago.Transaction, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
+	reqs, err := isc.RequestsInTransaction(tx)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]*apiclient.ReceiptResponse, len(reqs))
+	for i, req := range reqs[chainID] {
+		receipt, _, err := client.RequestsApi.
+			WaitForRequest(context.Background(), chainID.String(), req.ID().String()).
+			Execute()
+		if err != nil {
+			return nil, err
+		}
+
+		ret[i] = receipt
+	}
+	return ret, nil
 }

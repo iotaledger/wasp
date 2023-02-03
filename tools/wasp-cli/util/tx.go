@@ -1,17 +1,20 @@
 package util
 
 import (
+	"context"
 	"os"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 func PostTransaction(tx *iotago.Transaction) {
-	_, err := config.L1Client().PostTxAndWaitUntilConfirmation(tx)
+	_, err := cliclients.L1Client().PostTxAndWaitUntilConfirmation(tx)
 	log.Check(err)
 }
 
@@ -20,7 +23,12 @@ func WithOffLedgerRequest(chainID isc.ChainID, f func() (isc.OffLedgerRequest, e
 	log.Check(err)
 	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().String())
 	if config.WaitForCompletion {
-		_, err = config.WaspClient(config.MustWaspAPIURL()).WaitUntilRequestProcessed(chainID, req.ID(), 1*time.Minute)
+
+		// TODO: Add timeout again? 1*time.Minute
+		_, _, err = cliclients.WaspClientForIndex().RequestsApi.
+			WaitForRequest(context.Background(), chainID.String(), req.ID().String()).
+			Execute()
+
 		log.Check(err)
 	}
 	// TODO print receipt?
@@ -33,7 +41,8 @@ func WithSCTransaction(chainID isc.ChainID, f func() (*iotago.Transaction, error
 
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
-		_, err := config.WaspClient(config.MustWaspAPIURL()).WaitUntilAllRequestsProcessed(chainID, tx, 1*time.Minute)
+		client := cliclients.WaspClientForIndex()
+		_, err := clients.APIWaitUntilAllRequestsProcessed(client, chainID, tx, 1*time.Minute)
 		log.Check(err)
 	}
 

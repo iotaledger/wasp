@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -37,7 +38,7 @@ func initListContractsCmd() *cobra.Command {
 			contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(parsedRecords, root.StateVarContractRegistry))
 			log.Check(err)
 
-			log.Printf("Total %d contracts in chain %s\n", len(contracts), GetCurrentChainID())
+			log.Printf("Total %d contracts in chain %s\n", len(contracts), config.GetCurrentChainID())
 
 			header := []string{
 				"hname",

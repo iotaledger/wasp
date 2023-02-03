@@ -14,10 +14,6 @@ type WalletConfig struct {
 	Seed []byte
 }
 
-type Wallet struct {
-	KeyPair *cryptolib.KeyPair
-}
-
 func initInitCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "init",
@@ -42,28 +38,6 @@ func initInitCmd() *cobra.Command {
 			log.PrintCLIOutput(model)
 		},
 	}
-}
-
-func Load() *Wallet {
-	seedHex := viper.GetString("wallet.seed")
-	if seedHex == "" {
-		log.Fatal("call `init` first")
-	}
-	seedBytes, err := iotago.DecodeHex(seedHex)
-	log.Check(err)
-	seed := cryptolib.NewSeedFromBytes(seedBytes)
-	kp := cryptolib.NewKeyPairFromSeed(seed.SubSeed(uint64(addressIndex)))
-	return &Wallet{KeyPair: kp}
-}
-
-var addressIndex int
-
-func (w *Wallet) PrivateKey() *cryptolib.PrivateKey {
-	return w.KeyPair.GetPrivateKey()
-}
-
-func (w *Wallet) Address() iotago.Address {
-	return w.KeyPair.GetPublicKey().AsEd25519Address()
 }
 
 type InitModel struct {

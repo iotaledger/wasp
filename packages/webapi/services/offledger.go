@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
-	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 )
 
 type OffLedgerService struct {
@@ -87,30 +86,41 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 }
 
 // implemented this way so we can re-use the same state, and avoid the overhead of calling views
-// TODO exported just to be used by V1 API until that gets deprecated at once.
 func ShouldBeProcessed(ch chain.ChainCore, req isc.OffLedgerRequest) error {
 	state, err := ch.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
-		return httperrors.ServerError("unable to get latest state")
+		//ServerError
+		return interfaces.ErrUnableToGetLatestState
 	}
 	// query blocklog contract
+
 	processed, err := blocklog.IsRequestProcessed(state, req.ID())
 	if err != nil {
-		return httperrors.ServerError("unable to get request receipt from block state")
+		//ServerError
+
+		return interfaces.ErrUnableToGetReceipt
 	}
 	if processed {
-		return httperrors.BadRequest("request already processed")
+		//BadRequest
+
+		return interfaces.ErrAlreadyProcessed
 	}
 
 	// query accounts contract
 	accountsPartition := subrealm.NewReadOnly(state, kv.Key(accounts.Contract.Hname().Bytes()))
 	// check user has on-chain balance
 	if !accounts.AccountExists(accountsPartition, req.SenderAccount()) {
-		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", req.SenderAccount().String()))
+		//BadRequest
+
+		return interfaces.ErrNoBalanceOnAccount
 	}
+
 	accountNonce := accounts.GetMaxAssumedNonce(accountsPartition, req.SenderAccount())
 	if err := vmcontext.CheckNonce(req, accountNonce); err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("invalid nonce, %v", err))
+		//BadRequest
+
+		return interfaces.ErrInvalidNonce
 	}
+
 	return nil
 }

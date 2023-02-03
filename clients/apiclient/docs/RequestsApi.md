@@ -7,7 +7,7 @@ Method | HTTP request | Description
 [**CallView**](RequestsApi.md#CallView) | **Post** /v2requests/callview | Call a view function on a contract by Hname
 [**GetReceipt**](RequestsApi.md#GetReceipt) | **Get** /v2chains/{chainID}/receipts/{requestID} | Get a receipt from a request ID
 [**OffLedger**](RequestsApi.md#OffLedger) | **Post** /v2requests/offledger | Post an off-ledger request
-[**WaitForTransaction**](RequestsApi.md#WaitForTransaction) | **Get** /v2chains/{chainID}/requests/{requestID}/wait | Wait until the given request has been processed by the node
+[**WaitForRequest**](RequestsApi.md#WaitForRequest) | **Get** /v2chains/{chainID}/requests/{requestID}/wait | Wait until the given request has been processed by the node
 
 
 
@@ -210,9 +210,9 @@ No authorization required
 [[Back to README]](../README.md)
 
 
-## WaitForTransaction
+## WaitForRequest
 
-> ReceiptResponse WaitForTransaction(ctx, chainID, requestID).Execute()
+> ReceiptResponse WaitForRequest(ctx, chainID, requestID).Execute()
 
 Wait until the given request has been processed by the node
 
@@ -234,13 +234,13 @@ func main() {
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.RequestsApi.WaitForTransaction(context.Background(), chainID, requestID).Execute()
+    resp, r, err := apiClient.RequestsApi.WaitForRequest(context.Background(), chainID, requestID).Execute()
     if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `RequestsApi.WaitForTransaction``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Error when calling `RequestsApi.WaitForRequest``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `WaitForTransaction`: ReceiptResponse
-    fmt.Fprintf(os.Stdout, "Response from `RequestsApi.WaitForTransaction`: %v\n", resp)
+    // response from `WaitForRequest`: ReceiptResponse
+    fmt.Fprintf(os.Stdout, "Response from `RequestsApi.WaitForRequest`: %v\n", resp)
 }
 ```
 
@@ -255,7 +255,7 @@ Name | Type | Description  | Notes
 
 ### Other Parameters
 
-Other parameters are passed through a pointer to a apiWaitForTransactionRequest struct via the builder pattern
+Other parameters are passed through a pointer to a apiWaitForRequestRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes

@@ -5,20 +5,23 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **InAliasOutput** | [**AliasOutputMetricItem**](AliasOutputMetricItem.md) |  | 
+**InMilestone** | [**MilestoneMetricItem**](MilestoneMetricItem.md) |  | 
 **InOnLedgerRequest** | [**OnLedgerRequestMetricItem**](OnLedgerRequestMetricItem.md) |  | 
 **InOutput** | [**InOutputMetricItem**](InOutputMetricItem.md) |  | 
 **InStateOutput** | [**InStateOutputMetricItem**](InStateOutputMetricItem.md) |  | 
 **InTxInclusionState** | [**TxInclusionStateMsgMetricItem**](TxInclusionStateMsgMetricItem.md) |  | 
 **OutPublishGovernanceTransaction** | [**TransactionMetricItem**](TransactionMetricItem.md) |  | 
+**OutPublisherStateTransaction** | [**PublisherStateTransactionItem**](PublisherStateTransactionItem.md) |  | 
 **OutPullLatestOutput** | [**InterfaceMetricItem**](InterfaceMetricItem.md) |  | 
 **OutPullOutputByID** | [**UTXOInputMetricItem**](UTXOInputMetricItem.md) |  | 
 **OutPullTxInclusionState** | [**TransactionIDMetricItem**](TransactionIDMetricItem.md) |  | 
+**RegisteredChainIDs** | **[]string** |  | 
 
 ## Methods
 
 ### NewChainMetrics
 
-`func NewChainMetrics(inAliasOutput AliasOutputMetricItem, inOnLedgerRequest OnLedgerRequestMetricItem, inOutput InOutputMetricItem, inStateOutput InStateOutputMetricItem, inTxInclusionState TxInclusionStateMsgMetricItem, outPublishGovernanceTransaction TransactionMetricItem, outPullLatestOutput InterfaceMetricItem, outPullOutputByID UTXOInputMetricItem, outPullTxInclusionState TransactionIDMetricItem, ) *ChainMetrics`
+`func NewChainMetrics(inAliasOutput AliasOutputMetricItem, inMilestone MilestoneMetricItem, inOnLedgerRequest OnLedgerRequestMetricItem, inOutput InOutputMetricItem, inStateOutput InStateOutputMetricItem, inTxInclusionState TxInclusionStateMsgMetricItem, outPublishGovernanceTransaction TransactionMetricItem, outPublisherStateTransaction PublisherStateTransactionItem, outPullLatestOutput InterfaceMetricItem, outPullOutputByID UTXOInputMetricItem, outPullTxInclusionState TransactionIDMetricItem, registeredChainIDs []string, ) *ChainMetrics`
 
 NewChainMetrics instantiates a new ChainMetrics object
 This constructor will assign default values to properties that have it defined,
@@ -51,6 +54,26 @@ and a boolean to check if the value has been set.
 `func (o *ChainMetrics) SetInAliasOutput(v AliasOutputMetricItem)`
 
 SetInAliasOutput sets InAliasOutput field to given value.
+
+
+### GetInMilestone
+
+`func (o *ChainMetrics) GetInMilestone() MilestoneMetricItem`
+
+GetInMilestone returns the InMilestone field if non-nil, zero value otherwise.
+
+### GetInMilestoneOk
+
+`func (o *ChainMetrics) GetInMilestoneOk() (*MilestoneMetricItem, bool)`
+
+GetInMilestoneOk returns a tuple with the InMilestone field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetInMilestone
+
+`func (o *ChainMetrics) SetInMilestone(v MilestoneMetricItem)`
+
+SetInMilestone sets InMilestone field to given value.
 
 
 ### GetInOnLedgerRequest
@@ -153,6 +176,26 @@ and a boolean to check if the value has been set.
 SetOutPublishGovernanceTransaction sets OutPublishGovernanceTransaction field to given value.
 
 
+### GetOutPublisherStateTransaction
+
+`func (o *ChainMetrics) GetOutPublisherStateTransaction() PublisherStateTransactionItem`
+
+GetOutPublisherStateTransaction returns the OutPublisherStateTransaction field if non-nil, zero value otherwise.
+
+### GetOutPublisherStateTransactionOk
+
+`func (o *ChainMetrics) GetOutPublisherStateTransactionOk() (*PublisherStateTransactionItem, bool)`
+
+GetOutPublisherStateTransactionOk returns a tuple with the OutPublisherStateTransaction field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetOutPublisherStateTransaction
+
+`func (o *ChainMetrics) SetOutPublisherStateTransaction(v PublisherStateTransactionItem)`
+
+SetOutPublisherStateTransaction sets OutPublisherStateTransaction field to given value.
+
+
 ### GetOutPullLatestOutput
 
 `func (o *ChainMetrics) GetOutPullLatestOutput() InterfaceMetricItem`
@@ -211,6 +254,26 @@ and a boolean to check if the value has been set.
 `func (o *ChainMetrics) SetOutPullTxInclusionState(v TransactionIDMetricItem)`
 
 SetOutPullTxInclusionState sets OutPullTxInclusionState field to given value.
+
+
+### GetRegisteredChainIDs
+
+`func (o *ChainMetrics) GetRegisteredChainIDs() []string`
+
+GetRegisteredChainIDs returns the RegisteredChainIDs field if non-nil, zero value otherwise.
+
+### GetRegisteredChainIDsOk
+
+`func (o *ChainMetrics) GetRegisteredChainIDsOk() (*[]string, bool)`
+
+GetRegisteredChainIDsOk returns a tuple with the RegisteredChainIDs field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetRegisteredChainIDs
+
+`func (o *ChainMetrics) SetRegisteredChainIDs(v []string)`
+
+SetRegisteredChainIDs sets RegisteredChainIDs field to given value.
 
 
 

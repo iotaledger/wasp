@@ -2,22 +2,22 @@ package cluster
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/client/multiclient"
-	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/clients"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/multiclient"
+	"github.com/iotaledger/wasp/clients/scclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -89,11 +89,19 @@ func (ch *Chain) SCClient(contractHname isc.Hname, sigScheme *cryptolib.KeyPair,
 }
 
 func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
-	return multiclient.New(ch.CommitteeAPIHosts()).WithLogFunc(ch.Cluster.Logf)
+	var resolver multiclient.ClientResolver = func(apiHost string) *apiclient.APIClient {
+		return ch.Cluster.WaspClientFromHostName(apiHost)
+	}
+
+	return multiclient.New(resolver, ch.CommitteeAPIHosts()) //.WithLogFunc(ch.Cluster.t.Logf)
 }
 
 func (ch *Chain) AllNodesMultiClient() *multiclient.MultiClient {
-	return multiclient.New(ch.AllAPIHosts()).WithLogFunc(ch.Cluster.Logf)
+	var resolver multiclient.ClientResolver = func(apiHost string) *apiclient.APIClient {
+		return ch.Cluster.WaspClientFromHostName(apiHost)
+	}
+
+	return multiclient.New(resolver, ch.AllAPIHosts()) //.WithLogFunc(ch.Cluster.t.Logf)
 }
 
 func (ch *Chain) DeployContract(name, progHashStr, description string, initParams map[string]interface{}) (*iotago.Transaction, error) {
@@ -134,7 +142,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 		blob.VarFieldProgramDescription: description,
 	})
 
-	programHash, _, _, err := ch.OriginatorClient().UploadBlob(blobFieldValues)
+	programHash, _, _, err := ch.OriginatorClient().UploadBlob(context.Background(), blobFieldValues)
 	if err != nil {
 		return hashing.NilHash, err
 	}
@@ -176,114 +184,121 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 }
 
 func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]byte, error) {
-	v, err := ch.Cluster.WaspClient(0).CallView(
-		ch.ChainID, blob.Contract.Hname(), blob.ViewGetBlobField.Name,
-		dict.Dict{
-			blob.ParamHash:  blobHash[:],
-			blob.ParamField: []byte(field),
-		})
+	v, _, err := ch.Cluster.WaspClient(0).CorecontractsApi.
+		BlobsGetBlobValue(context.Background(), ch.ChainID.String(), iotago.EncodeHex(blobHash[:]), field).
+		Execute()
+
 	if err != nil {
 		return nil, err
 	}
-	if v.IsEmpty() {
-		return nil, nil
-	}
-	ret, err := v.Get(blob.ParamBytes)
+
+	decodedValue, err := iotago.DecodeHex(v.ValueData)
 	if err != nil {
 		return nil, err
 	}
-	return ret, nil
+
+	return decodedValue, nil
 }
 
 func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {
-	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(blocklog.ViewGetBlockInfo.Name, nil)
+	blockInfo, _, err := ch.Cluster.
+		WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetLatestBlockInfo(context.Background(), ch.ChainID.String()).
+		Execute()
+
 	if err != nil {
 		return 0, err
 	}
-	return codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex), 0)
+
+	return blockInfo.BlockIndex, nil
 }
 
-func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.BlockInfo, error) {
+func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*apiclient.BlockInfoResponse, error) {
 	blockIndex, err := ch.BlockIndex(nodeIndex...)
 	if err != nil {
 		return nil, err
 	}
-	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
-	ret := make([]*blocklog.BlockInfo, 0, blockIndex+1)
+	ret := make([]*apiclient.BlockInfoResponse, 0, blockIndex+1)
 	for idx := int(blockIndex); idx >= 0; idx-- {
-		res, err := cl.CallView(blocklog.ViewGetBlockInfo.Name, dict.Dict{
-			blocklog.ParamBlockIndex: codec.EncodeUint32(uint32(idx)),
-		})
+		blockInfo, _, err := ch.Cluster.
+			WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetBlockInfo(context.Background(), ch.ChainID.String(), int32(idx)).
+			Execute()
+
 		if err != nil {
 			return nil, err
 		}
-		bi, err := blocklog.BlockInfoFromBytes(uint32(idx), res.MustGet(blocklog.ParamBlockInfo))
-		if err != nil {
-			return nil, err
-		}
-		ret = append(ret, bi)
+
+		ret = append(ret, blockInfo)
 	}
 	return ret, nil
 }
 
-func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[isc.Hname]*root.ContractRecord, error) {
-	cl := ch.SCClient(root.Contract.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(root.ViewGetContractRecords.Name, nil)
+func (ch *Chain) ContractRegistry(nodeIndex ...int) ([]apiclient.ContractInfoResponse, error) {
+	contracts, _, err := ch.Cluster.
+		WaspClient(nodeIndex...).ChainsApi.GetContracts(context.Background(), ch.ChainID.String()).
+		Execute()
+
 	if err != nil {
 		return nil, err
 	}
-	return root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.StateVarContractRegistry))
+
+	return contracts, nil
 }
 
 func (ch *Chain) GetCounterValue(inccounterSCHname isc.Hname, nodeIndex ...int) (int64, error) {
-	cl := ch.SCClient(inccounterSCHname, nil, nodeIndex...)
-	ret, err := cl.CallView(inccounter.ViewGetCounter.Name, nil)
+	result, _, err := ch.Cluster.
+		WaspClient(nodeIndex...).RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
+		ChainId:       ch.ChainID.String(),
+		ContractHName: inccounterSCHname.String(),
+		FunctionHName: inccounter.ViewGetCounter.Hname().String(),
+	}).Execute()
 	if err != nil {
 		return 0, err
 	}
-	return codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
+
+	parsedDict, err := clients.APIJsonDictToDict(*result)
+	if err != nil {
+		return 0, err
+	}
+
+	return codec.DecodeInt64(parsedDict.MustGet(inccounter.VarCounter), 0)
 }
 
 func (ch *Chain) GetStateVariable(contractHname isc.Hname, key string, nodeIndex ...int) ([]byte, error) {
 	cl := ch.SCClient(contractHname, nil, nodeIndex...)
-	return cl.StateGet(key)
-}
 
-func (ch *Chain) GetRequestReceipt(reqID isc.RequestID, nodeIndex ...int) (*isc.Receipt, error) {
-	idx := 0
-	if len(nodeIndex) > 0 {
-		idx = nodeIndex[0]
-	}
-	rec, err := ch.Cluster.WaspClient(idx).RequestReceipt(ch.ChainID, reqID)
-	return rec, err
-}
+	result, _, err := ch.Cluster.WaspClient(nodeIndex...).ChainsApi.
+		GetStateValue(context.Background(), ch.ChainID.String(), key).
+		Execute()
 
-func (ch *Chain) GetRequestReceiptsForBlock(blockIndex *uint32, nodeIndex ...int) ([]*blocklog.RequestReceipt, error) {
-	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
-	params := dict.Dict{}
-	if blockIndex != nil {
-		params = dict.Dict{
-			blocklog.ParamBlockIndex: codec.EncodeUint32(*blockIndex),
-		}
-	}
-	res, err := cl.CallView(blocklog.ViewGetRequestReceiptsForBlock.Name, params)
 	if err != nil {
 		return nil, err
 	}
-	returnedBlockIndex := codec.MustDecodeUint32(res.MustGet(blocklog.ParamBlockIndex))
-	recs := collections.NewArray16ReadOnly(res, blocklog.ParamRequestRecord)
-	ret := make([]*blocklog.RequestReceipt, recs.MustLen())
-	for i := range ret {
-		data, err := recs.GetAt(uint16(i))
-		if err != nil {
-			return nil, err
-		}
-		ret[i], err = blocklog.RequestReceiptFromBytes(data)
-		if err != nil {
-			return nil, err
-		}
-		ret[i].WithBlockData(returnedBlockIndex, uint16(i))
+
+	return cl.StateGet(context.Background(), result.State)
+}
+
+func (ch *Chain) GetRequestReceipt(reqID isc.RequestID, nodeIndex ...int) (*apiclient.ReceiptResponse, error) {
+	receipt, _, err := ch.Cluster.WaspClient(nodeIndex...).RequestsApi.GetReceipt(context.Background(), ch.ChainID.String(), reqID.String()).
+		Execute()
+
+	return receipt, err
+}
+
+func (ch *Chain) GetRequestReceiptsForBlock(blockIndex *uint32, nodeIndex ...int) ([]apiclient.RequestReceiptResponse, error) {
+	var err error
+	var receipts *apiclient.BlockReceiptsResponse
+
+	if blockIndex != nil {
+		receipts, _, err = ch.Cluster.WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetRequestReceiptsOfBlock(context.Background(), ch.ChainID.String(), int32(*blockIndex)).
+			Execute()
+	} else {
+		receipts, _, err = ch.Cluster.WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetRequestReceiptsOfLatestBlock(context.Background(), ch.ChainID.String()).
+			Execute()
 	}
-	return ret, nil
+
+	if err != nil {
+		return nil, err
+	}
+
+	return receipts.Receipts, nil
 }

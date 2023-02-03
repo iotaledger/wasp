@@ -81,6 +81,12 @@ type PeeringService interface {
 	TrustPeer(peer *cryptolib.PublicKey, netID string) (*dto2.PeeringNodeIdentity, error)
 }
 
+var ErrUnableToGetLatestState = errors.New("unable to get latest state")
+var ErrUnableToGetReceipt = errors.New("unable to get request receipt from block state")
+var ErrAlreadyProcessed = errors.New("request already processed")
+var ErrNoBalanceOnAccount = errors.New("no balance on account")
+var ErrInvalidNonce = errors.New("invalid nonce")
+
 type OffLedgerService interface {
 	EnqueueOffLedgerRequest(chainID isc.ChainID, request []byte) error
 	ParseRequest(payload []byte) (isc.OffLedgerRequest, error)

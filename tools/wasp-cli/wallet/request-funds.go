@@ -4,7 +4,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -14,8 +15,8 @@ func initRequestFundsCmd() *cobra.Command {
 		Short: "Request funds from the faucet",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			address := Load().Address()
-			log.Check(config.L1Client().RequestFunds(address))
+			address := wallet.Load().Address()
+			log.Check(cliclients.L1Client().RequestFunds(address))
 
 			model := &RequestFundsModel{
 				Address: address.Bech32(parameters.L1().Protocol.Bech32HRP),

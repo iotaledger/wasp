@@ -12,9 +12,10 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
-	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 )
 
 func initListAccountsCmd() *cobra.Command {
@@ -24,12 +25,12 @@ func initListAccountsCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			client := cliclients.WaspClientForIndex()
-			chainID := GetCurrentChainID()
+			chainID := config.GetCurrentChainID()
 
 			accountList, _, err := client.CorecontractsApi.AccountsGetAccounts(context.Background(), chainID.String()).Execute()
 			log.Check(err)
 
-			log.Printf("Total %d account(s) in chain %s\n", len(accountList.Accounts), GetCurrentChainID().String())
+			log.Printf("Total %d account(s) in chain %s\n", len(accountList.Accounts), config.GetCurrentChainID().String())
 
 			header := []string{"agentid"}
 			rows := make([][]string, len(accountList.Accounts))
@@ -58,7 +59,7 @@ func initBalanceCmd() *cobra.Command {
 			}
 
 			client := cliclients.WaspClientForIndex()
-			chainID := GetCurrentChainID()
+			chainID := config.GetCurrentChainID()
 			balance, _, err := client.CorecontractsApi.AccountsGetAccountBalance(context.Background(), chainID.String(), agentID.String()).Execute()
 
 			log.Check(err)
@@ -86,7 +87,7 @@ func initDepositCmd() *cobra.Command {
 			if strings.Contains(args[0], ":") {
 				// deposit to own agentID
 				tokens := util.ParseFungibleTokens(args)
-				util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
+				util.WithSCTransaction(config.GetCurrentChainID(), func() (*iotago.Transaction, error) {
 					client := cliclients.WaspClientForIndex()
 
 					return cliclients.SCClient(client, accounts.Contract.Hname()).PostRequest(
@@ -105,7 +106,7 @@ func initDepositCmd() *cobra.Command {
 				tokens := util.ParseFungibleTokens(tokensStr)
 				allowance := tokens.Clone()
 
-				util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
+				util.WithSCTransaction(config.GetCurrentChainID(), func() (*iotago.Transaction, error) {
 					client := cliclients.WaspClientForIndex()
 
 					return cliclients.SCClient(client, accounts.Contract.Hname()).PostRequest(
