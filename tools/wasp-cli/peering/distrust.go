@@ -25,7 +25,8 @@ func initDistrustCmd() *cobra.Command {
 
 			if peering.CheckNetID(pubKeyOrNetID) != nil {
 				_, err := client.NodeApi.DistrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
-					NetId: pubKeyOrNetID,
+					NetId:     pubKeyOrNetID,
+					PublicKey: pubKeyOrNetID,
 				}).Execute()
 				log.Check(err)
 				log.Printf("# Distrusted PubKey: %v\n", pubKeyOrNetID)
@@ -36,7 +37,7 @@ func initDistrustCmd() *cobra.Command {
 			log.Check(err)
 
 			for _, t := range trustedList {
-				if t.NetId == pubKeyOrNetID {
+				if t.PublicKey == pubKeyOrNetID {
 					_, err := client.NodeApi.DistrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
 						PublicKey: t.PublicKey,
 					}).Execute()
