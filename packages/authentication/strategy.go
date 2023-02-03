@@ -110,8 +110,8 @@ func AddV2Authentication(apiRoot echoswagger.ApiRoot,
 	userManager *users.UserManager,
 	nodeIdentityProvider registry.NodeIdentityProvider,
 	authConfig AuthConfiguration,
-	claimValidator ClaimValidator) {
-
+	claimValidator ClaimValidator,
+) {
 	echoRoot := apiRoot.Echo()
 	authGroup := apiRoot.Group("auth", "")
 

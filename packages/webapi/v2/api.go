@@ -25,7 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/services"
 )
 
-func loadControllers(server echoswagger.ApiRoot, userManager *userspkg.UserManager, nodeIdentityProvider registry.NodeIdentityProvider, authConfig authentication.AuthConfiguration, mocker *Mocker, controllersToLoad []interfaces.APIController) {
+func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLoad []interfaces.APIController) {
 	for _, controller := range controllersToLoad {
 		publicGroup := server.Group(controller.Name(), "/v2")
 
@@ -90,5 +90,5 @@ func Init(
 		corecontracts.NewCoreContractsController(vmService),
 	}
 
-	loadControllers(server, userManager, nodeIdentityProvider, authConfig, mocker, controllersToLoad)
+	loadControllers(server, mocker, controllersToLoad)
 }
