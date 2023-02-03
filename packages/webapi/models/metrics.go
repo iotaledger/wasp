@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/dto"
 )
 
