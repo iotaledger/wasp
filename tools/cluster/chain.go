@@ -89,11 +89,11 @@ func (ch *Chain) SCClient(contractHname isc.Hname, sigScheme *cryptolib.KeyPair,
 }
 
 func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
-	return multiclient.New(ch.CommitteeAPIHosts()).WithLogFunc(ch.Cluster.t.Logf)
+	return multiclient.New(ch.CommitteeAPIHosts()).WithLogFunc(ch.Cluster.Logf)
 }
 
 func (ch *Chain) AllNodesMultiClient() *multiclient.MultiClient {
-	return multiclient.New(ch.AllAPIHosts()).WithLogFunc(ch.Cluster.t.Logf)
+	return multiclient.New(ch.AllAPIHosts()).WithLogFunc(ch.Cluster.Logf)
 }
 
 func (ch *Chain) DeployContract(name, progHashStr, description string, initParams map[string]interface{}) (*iotago.Transaction, error) {

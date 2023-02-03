@@ -50,6 +50,7 @@ type Cluster struct {
 	l1               l1connection.Client
 	waspCmds         []*waspCmd
 	t                *testing.T
+	log              *logger.Logger
 }
 
 type waspCmd struct {
@@ -74,9 +75,18 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 		ValidatorKeyPair: validatorKp,
 		waspCmds:         make([]*waspCmd, len(config.Wasp)),
 		t:                t,
+		log:              log,
 		l1:               l1connection.NewClient(config.L1, log),
 		DataPath:         dataPath,
 	}
+}
+
+func (clu *Cluster) Logf(format string, args ...any) {
+	if clu.t != nil {
+		clu.t.Logf(format, args...)
+		return
+	}
+	clu.log.Infof(format, args...)
 }
 
 func (clu *Cluster) ValidatorAddress() iotago.Address {
@@ -245,7 +255,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 		addAccessNodesRequests[i] = tx
 	}
 
-	peers := multiclient.New(chain.CommitteeAPIHosts()).WithLogFunc(clu.t.Logf)
+	peers := multiclient.New(chain.CommitteeAPIHosts()).WithLogFunc(clu.Logf)
 
 	for _, tx := range addAccessNodesRequests {
 		// ---------- wait until the requests are processed in all committee nodes
@@ -332,11 +342,11 @@ func (clu *Cluster) IsNodeUp(i int) bool {
 }
 
 func (clu *Cluster) MultiClient() *multiclient.MultiClient {
-	return multiclient.New(clu.Config.APIHosts()).WithLogFunc(clu.t.Logf)
+	return multiclient.New(clu.Config.APIHosts()).WithLogFunc(clu.Logf)
 }
 
 func (clu *Cluster) WaspClient(nodeIndex int) *client.WaspClient {
-	return client.NewWaspClient(clu.Config.APIHost(nodeIndex)).WithLogFunc(clu.t.Logf)
+	return client.NewWaspClient(clu.Config.APIHost(nodeIndex)).WithLogFunc(clu.Logf)
 }
 
 func (clu *Cluster) NodeDataPath(i int) string {
