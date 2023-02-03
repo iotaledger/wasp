@@ -6,7 +6,7 @@
     "description": "",
     "gasFeePolicy": {
       "gasFeeTokenId": "",
-      "gasPerToken": "100",
+      "gasPerToken": 100,
       "validatorFeeShare": 0
     },
     "maxBlobSize": 2000000,

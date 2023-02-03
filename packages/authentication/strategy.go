@@ -99,9 +99,12 @@ func AddV1Authentication(
 }
 
 // TODO: After deprecating V1 we can slim down this whole strategy handler.
-// Get rid off basic/ip auth and only keeping 'none' and 'JWT'
-// Properly document the routes with echoSwagger
-// Keep only one AddV1Authentication method
+// It is currently needed as the current authentication scheme does not support echoSwagger,
+// which leaves authentication out of the client code generator.
+// After v1 gets removed:
+// * Get rid off basic/ip auth and only keeping 'none' and 'JWT'
+// * Properly document the routes with echoSwagger
+// * Keep only one AddAuthentication method
 
 func AddV2Authentication(apiRoot echoswagger.ApiRoot,
 	userManager *users.UserManager,

@@ -52,7 +52,7 @@ type ContractInfoResponse struct {
 
 type gasFeePolicy struct {
 	GasFeeTokenID     string `json:"gasFeeTokenId" swagger:"desc(The gas fee token id. Empty if base token.),required"`
-	GasPerToken       uint64 `json:"gasPerToken,string" swagger:"desc(The amount of gas per token.),required"`
+	GasPerToken       uint64 `json:"gasPerToken" swagger:"desc(The amount of gas per token.),required"`
 	ValidatorFeeShare uint8  `json:"validatorFeeShare" swagger:"desc(The validator fee share.),required,min(1)"`
 }
 

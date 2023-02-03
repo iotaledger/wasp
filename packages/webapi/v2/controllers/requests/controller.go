@@ -61,7 +61,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 
 	publicAPI.GET("chains/:chainID/requests/:requestID/wait", c.waitForRequestToFinish).
 		SetSummary("Wait until the given request has been processed by the node").
-		SetOperationId("waitForTransaction").
+		SetOperationId("waitForRequest").
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "requestID", "RequestID (Hex)").
 		AddResponse(http.StatusNotFound, "The chain or request id is invalid", nil, nil).

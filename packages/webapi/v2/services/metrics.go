@@ -25,17 +25,23 @@ func (c *MetricsService) GetAllChainsMetrics() *dto.ChainMetrics {
 	}
 
 	metrics := chain.GetNodeConnectionMetrics()
+	registered := metrics.GetRegistered()
 
 	return &dto.ChainMetrics{
-		InAliasOutput:                   dto.MapMetricItem(metrics.GetInAliasOutput()),
-		InOnLedgerRequest:               dto.MapMetricItem(metrics.GetInOnLedgerRequest()),
-		InOutput:                        dto.MapMetricItem(metrics.GetInOutput()),
-		InStateOutput:                   dto.MapMetricItem(metrics.GetInStateOutput()),
-		InTxInclusionState:              dto.MapMetricItem(metrics.GetInTxInclusionState()),
+		InAliasOutput:      dto.MapMetricItem(metrics.GetInAliasOutput()),
+		InOnLedgerRequest:  dto.MapMetricItem(metrics.GetInOnLedgerRequest()),
+		InOutput:           dto.MapMetricItem(metrics.GetInOutput()),
+		InStateOutput:      dto.MapMetricItem(metrics.GetInStateOutput()),
+		InTxInclusionState: dto.MapMetricItem(metrics.GetInTxInclusionState()),
+		InMilestone:        dto.MapMetricItem(metrics.GetInMilestone()),
+
 		OutPublishGovernanceTransaction: dto.MapMetricItem(metrics.GetOutPublishGovernanceTransaction()),
 		OutPullLatestOutput:             dto.MapMetricItem(metrics.GetOutPullLatestOutput()),
 		OutPullOutputByID:               dto.MapMetricItem(metrics.GetOutPullOutputByID()),
 		OutPullTxInclusionState:         dto.MapMetricItem(metrics.GetOutPullTxInclusionState()),
+		OutPublisherStateTransaction:    dto.MapMetricItem(metrics.GetOutPublishStateTransaction()),
+
+		RegisteredChainIDs: registered,
 	}
 }
 
@@ -46,6 +52,7 @@ func (c *MetricsService) GetChainMetrics(chainID isc.ChainID) *dto.ChainMetrics 
 	}
 
 	metrics := chain.GetNodeConnectionMetrics()
+	registered := metrics.GetRegistered()
 
 	return &dto.ChainMetrics{
 		InAliasOutput:                   dto.MapMetricItem(metrics.GetInAliasOutput()),
@@ -53,10 +60,15 @@ func (c *MetricsService) GetChainMetrics(chainID isc.ChainID) *dto.ChainMetrics 
 		InOutput:                        dto.MapMetricItem(metrics.GetInOutput()),
 		InStateOutput:                   dto.MapMetricItem(metrics.GetInStateOutput()),
 		InTxInclusionState:              dto.MapMetricItem(metrics.GetInTxInclusionState()),
+		InMilestone:                     dto.MapMetricItem(metrics.GetInMilestone()),
 		OutPublishGovernanceTransaction: dto.MapMetricItem(metrics.GetOutPublishGovernanceTransaction()),
-		OutPullLatestOutput:             dto.MapMetricItem(metrics.GetOutPullLatestOutput()),
-		OutPullOutputByID:               dto.MapMetricItem(metrics.GetOutPullOutputByID()),
-		OutPullTxInclusionState:         dto.MapMetricItem(metrics.GetOutPullTxInclusionState()),
+
+		OutPullLatestOutput:          dto.MapMetricItem(metrics.GetOutPullLatestOutput()),
+		OutPullOutputByID:            dto.MapMetricItem(metrics.GetOutPullOutputByID()),
+		OutPullTxInclusionState:      dto.MapMetricItem(metrics.GetOutPullTxInclusionState()),
+		OutPublisherStateTransaction: dto.MapMetricItem(metrics.GetOutPublishStateTransaction()),
+
+		RegisteredChainIDs: registered,
 	}
 }
 

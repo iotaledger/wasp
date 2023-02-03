@@ -79,7 +79,7 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 	adminAPI.POST("node/dks", c.generateDKS, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddParamBody(mocker.Get(models.DKSharesPostRequest{}), "DKSharesPostRequest", "Request parameters", true).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "DK shares info", mocker.Get(models.DKSharesPostRequest{}), nil).
+		AddResponse(http.StatusOK, "DK shares info", mocker.Get(models.DKSharesInfo{}), nil).
 		SetSummary("Generate a new distributed key").
 		SetOperationId("generateDKS")
 
