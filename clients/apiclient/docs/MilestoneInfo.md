@@ -4,9 +4,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Index** | Pointer to **int32** |  | [optional] 
+**Index** | Pointer to **uint32** |  | [optional] 
 **MilestoneId** | Pointer to **string** |  | [optional] 
-**Timestamp** | Pointer to **int32** |  | [optional] 
+**Timestamp** | Pointer to **uint32** |  | [optional] 
 
 ## Methods
 
@@ -29,20 +29,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetIndex
 
-`func (o *MilestoneInfo) GetIndex() int32`
+`func (o *MilestoneInfo) GetIndex() uint32`
 
 GetIndex returns the Index field if non-nil, zero value otherwise.
 
 ### GetIndexOk
 
-`func (o *MilestoneInfo) GetIndexOk() (*int32, bool)`
+`func (o *MilestoneInfo) GetIndexOk() (*uint32, bool)`
 
 GetIndexOk returns a tuple with the Index field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetIndex
 
-`func (o *MilestoneInfo) SetIndex(v int32)`
+`func (o *MilestoneInfo) SetIndex(v uint32)`
 
 SetIndex sets Index field to given value.
 
@@ -79,20 +79,20 @@ HasMilestoneId returns a boolean if a field has been set.
 
 ### GetTimestamp
 
-`func (o *MilestoneInfo) GetTimestamp() int32`
+`func (o *MilestoneInfo) GetTimestamp() uint32`
 
 GetTimestamp returns the Timestamp field if non-nil, zero value otherwise.
 
 ### GetTimestampOk
 
-`func (o *MilestoneInfo) GetTimestampOk() (*int32, bool)`
+`func (o *MilestoneInfo) GetTimestampOk() (*uint32, bool)`
 
 GetTimestampOk returns a tuple with the Timestamp field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetTimestamp
 
-`func (o *MilestoneInfo) SetTimestamp(v int32)`
+`func (o *MilestoneInfo) SetTimestamp(v uint32)`
 
 SetTimestamp sets Timestamp field to given value.
 

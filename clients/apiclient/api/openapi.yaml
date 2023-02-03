@@ -752,7 +752,7 @@ paths:
         name: blockIndex
         required: true
         schema:
-          format: int32
+          format: uint32
           type: integer
       responses:
         "200":
@@ -786,7 +786,7 @@ paths:
         name: blockIndex
         required: true
         schema:
-          format: int32
+          format: uint32
           type: integer
       responses:
         "200":
@@ -820,7 +820,7 @@ paths:
         name: blockIndex
         required: true
         schema:
-          format: int32
+          format: uint32
           type: integer
       responses:
         "200":
@@ -908,7 +908,7 @@ paths:
         name: blockIndex
         required: true
         schema:
-          format: int32
+          format: uint32
           type: integer
       responses:
         "200":
@@ -2017,7 +2017,7 @@ components:
         lastMessage:
           $ref: '#/components/schemas/Output'
         messages:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -2134,7 +2134,7 @@ components:
         decimals:
           description: The token decimals
           example: 6
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: Decimals
@@ -2193,7 +2193,7 @@ components:
           xml:
             name: Hash
         size:
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: Size
@@ -2210,7 +2210,7 @@ components:
       properties:
         fields:
           additionalProperties:
-            format: int32
+            format: uint32
             type: integer
           type: object
           xml:
@@ -2274,7 +2274,7 @@ components:
           xml:
             name: AnchorTransactionID
         blockIndex:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -2295,13 +2295,13 @@ components:
           xml:
             name: L1CommitmentHash
         numOffLedgerRequests:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
             name: NumOffLedgerRequests
         numSuccessfulRequests:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -2322,7 +2322,7 @@ components:
           xml:
             name: TotalBaseTokensInL2Accounts
         totalRequests:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -2527,7 +2527,7 @@ components:
         gasBurned: 5
       properties:
         code:
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: Code
@@ -2548,12 +2548,12 @@ components:
         entryPoint: 3
       properties:
         contract:
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: Contract
         entryPoint:
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: EntryPoint
@@ -2601,7 +2601,7 @@ components:
         evmChainId:
           description: The EVM chain ID
           example: 1074
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -2617,7 +2617,7 @@ components:
         maxBlobSize:
           description: The maximum contract blob size.
           example: 2000000
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -2625,7 +2625,7 @@ components:
         maxEventSize:
           description: The maximum event size.
           example: 2000
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -2633,7 +2633,7 @@ components:
         maxEventsPerReq:
           description: The maximum amount of events per request.
           example: 50
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -2958,27 +2958,27 @@ components:
         eventTimerMsgPipeSize: 5
       properties:
         eventACSMsgPipeSize:
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: EventACSMsgPipeSize
         eventPeerLogIndexMsgPipeSize:
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: EventPeerLogIndexMsgPipeSize
         eventStateTransitionMsgPipeSize:
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: EventStateTransitionMsgPipeSize
         eventTimerMsgPipeSize:
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: EventTimerMsgPipeSize
         eventVMResultMsgPipeSize:
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: EventVMResultMsgPipeSize
@@ -3014,7 +3014,7 @@ components:
       properties:
         currentStateIndex:
           description: Shows current state index of the consensus
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -3245,7 +3245,7 @@ components:
           description: The hash of the contract.
           items:
             example: 193
-            format: int32
+            format: uint32
             type: integer
           type: array
           xml:
@@ -3271,7 +3271,7 @@ components:
           xml:
             name: GoverningAddress
         sinceBlockIndex:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -3317,7 +3317,7 @@ components:
             name: PeerIdentities
             wrapped: true
         peerIndex:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -3338,7 +3338,7 @@ components:
             name: PublicKeyShares
             wrapped: true
         threshold:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -3371,14 +3371,14 @@ components:
             wrapped: true
         threshold:
           description: Should be =< len(PeerPublicIdentities)
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
             name: Threshold
         timeoutMS:
           description: Timeout in milliseconds.
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -3482,19 +3482,19 @@ components:
           $ref: '#/components/schemas/gasFeePolicy_'
         maxBlobSize:
           description: The maximum contract blob size.
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: MaxBlobSize
         maxEventSize:
           description: The maximum event size.
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: MaxEventSize
         maxEventsPerReq:
           description: The maximum amount of events per request.
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: MaxEventsPerReq
@@ -3543,7 +3543,7 @@ components:
         lastMessage:
           $ref: '#/components/schemas/InOutput'
         messages:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -3594,7 +3594,7 @@ components:
         lastMessage:
           $ref: '#/components/schemas/InStateOutput'
         messages:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -3680,7 +3680,7 @@ components:
           xml:
             name: LastMessage
         messages:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -3808,7 +3808,7 @@ components:
         maxPayloadSize:
           description: The max payload size
           example: 32498
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: MaxPayloadSize
@@ -3870,7 +3870,7 @@ components:
         timestamp: 5
       properties:
         index:
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: Index
@@ -3880,7 +3880,7 @@ components:
           xml:
             name: MilestoneID
         timestamp:
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: Timestamp
@@ -3899,7 +3899,7 @@ components:
         lastMessage:
           $ref: '#/components/schemas/MilestoneInfo'
         messages:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -4105,7 +4105,7 @@ components:
         lastMessage:
           $ref: '#/components/schemas/OnLedgerRequest'
         messages:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -4129,7 +4129,7 @@ components:
       properties:
         outputType:
           description: The output type
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: OutputType
@@ -4220,7 +4220,7 @@ components:
             name: NetID
         numUsers:
           description: The amount of users attached to the peer
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: NumUsers
@@ -4266,7 +4266,7 @@ components:
             name: NetID
         numUsers:
           description: The amount of users attached to the peer
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: NumUsers
@@ -4317,7 +4317,7 @@ components:
         numUsers:
           description: The amount of users attached to the peer
           example: 1
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: NumUsers
@@ -4385,14 +4385,14 @@ components:
         belowMaxDepth:
           description: The networks max depth
           example: 15
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
             name: BelowMaxDepth
         minPowScore:
           description: The minimal PoW score
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -4416,7 +4416,7 @@ components:
         version:
           description: The protocol version
           example: 2
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: Version
@@ -4442,7 +4442,7 @@ components:
         lastMessage:
           $ref: '#/components/schemas/StateTransaction'
         messages:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -4471,7 +4471,7 @@ components:
         - parameters
       properties:
         contractId:
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: ContractID
@@ -4481,7 +4481,7 @@ components:
           xml:
             name: ErrorCode
         errorId:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -4538,7 +4538,7 @@ components:
           - parameters
       properties:
         blockIndex:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -4573,7 +4573,7 @@ components:
           xml:
             name: Request
         requestIndex:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -4598,7 +4598,7 @@ components:
         vByteCost:
           description: The virtual byte cost
           example: 500
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -4606,14 +4606,14 @@ components:
         vByteFactorData:
           description: The virtual byte factor for data fields
           example: 1
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: VBFactorData
         vByteFactorKey:
           description: The virtual byte factor for key/lookup generating fields
           example: 10
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: VBFactorKey
@@ -4828,7 +4828,7 @@ components:
           hash: hash
       properties:
         blockIndex:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -4855,7 +4855,7 @@ components:
         request:
           $ref: '#/components/schemas/RequestDetail'
         requestIndex:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -4893,7 +4893,7 @@ components:
       properties:
         stateIndex:
           description: The state index
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -4935,7 +4935,7 @@ components:
         lastMessage:
           $ref: '#/components/schemas/Transaction'
         messages:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -4962,7 +4962,7 @@ components:
         lastMessage:
           $ref: '#/components/schemas/Transaction'
         messages:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -5013,7 +5013,7 @@ components:
         lastMessage:
           $ref: '#/components/schemas/TxInclusionStateMsg'
         messages:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -5040,7 +5040,7 @@ components:
         lastMessage:
           $ref: '#/components/schemas/OutputID'
         messages:
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -5170,7 +5170,7 @@ components:
             name: GasPerToken
         validatorFeeShare:
           description: The validator fee share.
-          format: int32
+          format: uint32
           minimum: 1
           type: integer
           xml:
@@ -5202,7 +5202,7 @@ components:
             name: GasPerToken
         validatorFeeShare:
           description: The validator fee share.
-          format: int32
+          format: uint32
           type: integer
           xml:
             name: ValidatorFeeShare

@@ -21,7 +21,7 @@ var _ MappedNullable = &ConsensusWorkflowStatus{}
 // ConsensusWorkflowStatus struct for ConsensusWorkflowStatus
 type ConsensusWorkflowStatus struct {
 	// Shows current state index of the consensus
-	CurrentStateIndex *int32 `json:"currentStateIndex,omitempty"`
+	CurrentStateIndex *uint32 `json:"currentStateIndex,omitempty"`
 	// Shows if batch proposal is sent out in current consensus iteration
 	FlagBatchProposalSent *bool `json:"flagBatchProposalSent,omitempty"`
 	// Shows if consensus on batch is reached and known in current consensus iteration
@@ -76,9 +76,9 @@ func NewConsensusWorkflowStatusWithDefaults() *ConsensusWorkflowStatus {
 }
 
 // GetCurrentStateIndex returns the CurrentStateIndex field value if set, zero value otherwise.
-func (o *ConsensusWorkflowStatus) GetCurrentStateIndex() int32 {
+func (o *ConsensusWorkflowStatus) GetCurrentStateIndex() uint32 {
 	if o == nil || isNil(o.CurrentStateIndex) {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 	return *o.CurrentStateIndex
@@ -86,7 +86,7 @@ func (o *ConsensusWorkflowStatus) GetCurrentStateIndex() int32 {
 
 // GetCurrentStateIndexOk returns a tuple with the CurrentStateIndex field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *ConsensusWorkflowStatus) GetCurrentStateIndexOk() (*int32, bool) {
+func (o *ConsensusWorkflowStatus) GetCurrentStateIndexOk() (*uint32, bool) {
 	if o == nil || isNil(o.CurrentStateIndex) {
 		return nil, false
 	}
@@ -102,8 +102,8 @@ func (o *ConsensusWorkflowStatus) HasCurrentStateIndex() bool {
 	return false
 }
 
-// SetCurrentStateIndex gets a reference to the given int32 and assigns it to the CurrentStateIndex field.
-func (o *ConsensusWorkflowStatus) SetCurrentStateIndex(v int32) {
+// SetCurrentStateIndex gets a reference to the given uint32 and assigns it to the CurrentStateIndex field.
+func (o *ConsensusWorkflowStatus) SetCurrentStateIndex(v uint32) {
 	o.CurrentStateIndex = &v
 }
 

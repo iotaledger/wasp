@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Decimals** | **int32** | The token decimals | 
+**Decimals** | **uint32** | The token decimals | 
 **Name** | **string** | The base token name | 
 **Subunit** | **string** | The token subunit | 
 **TickerSymbol** | **string** | The ticker symbol | 
@@ -15,7 +15,7 @@ Name | Type | Description | Notes
 
 ### NewBaseToken
 
-`func NewBaseToken(decimals int32, name string, subunit string, tickerSymbol string, unit string, useMetricPrefix bool, ) *BaseToken`
+`func NewBaseToken(decimals uint32, name string, subunit string, tickerSymbol string, unit string, useMetricPrefix bool, ) *BaseToken`
 
 NewBaseToken instantiates a new BaseToken object
 This constructor will assign default values to properties that have it defined,
@@ -32,20 +32,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetDecimals
 
-`func (o *BaseToken) GetDecimals() int32`
+`func (o *BaseToken) GetDecimals() uint32`
 
 GetDecimals returns the Decimals field if non-nil, zero value otherwise.
 
 ### GetDecimalsOk
 
-`func (o *BaseToken) GetDecimalsOk() (*int32, bool)`
+`func (o *BaseToken) GetDecimalsOk() (*uint32, bool)`
 
 GetDecimalsOk returns a tuple with the Decimals field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetDecimals
 
-`func (o *BaseToken) SetDecimals(v int32)`
+`func (o *BaseToken) SetDecimals(v uint32)`
 
 SetDecimals sets Decimals field to given value.
 

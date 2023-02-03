@@ -24,14 +24,14 @@ type GasFeePolicy struct {
 	// The amount of gas per token.
 	GasPerToken int64 `json:"gasPerToken"`
 	// The validator fee share.
-	ValidatorFeeShare int32 `json:"validatorFeeShare"`
+	ValidatorFeeShare uint32 `json:"validatorFeeShare"`
 }
 
 // NewGasFeePolicy instantiates a new GasFeePolicy object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGasFeePolicy(gasFeeTokenId string, gasPerToken int64, validatorFeeShare int32) *GasFeePolicy {
+func NewGasFeePolicy(gasFeeTokenId string, gasPerToken int64, validatorFeeShare uint32) *GasFeePolicy {
 	this := GasFeePolicy{}
 	this.GasFeeTokenId = gasFeeTokenId
 	this.GasPerToken = gasPerToken
@@ -96,9 +96,9 @@ func (o *GasFeePolicy) SetGasPerToken(v int64) {
 }
 
 // GetValidatorFeeShare returns the ValidatorFeeShare field value
-func (o *GasFeePolicy) GetValidatorFeeShare() int32 {
+func (o *GasFeePolicy) GetValidatorFeeShare() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -107,7 +107,7 @@ func (o *GasFeePolicy) GetValidatorFeeShare() int32 {
 
 // GetValidatorFeeShareOk returns a tuple with the ValidatorFeeShare field value
 // and a boolean to check if the value has been set.
-func (o *GasFeePolicy) GetValidatorFeeShareOk() (*int32, bool) {
+func (o *GasFeePolicy) GetValidatorFeeShareOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -115,7 +115,7 @@ func (o *GasFeePolicy) GetValidatorFeeShareOk() (*int32, bool) {
 }
 
 // SetValidatorFeeShare sets field value
-func (o *GasFeePolicy) SetValidatorFeeShare(v int32) {
+func (o *GasFeePolicy) SetValidatorFeeShare(v uint32) {
 	o.ValidatorFeeShare = v
 }
 

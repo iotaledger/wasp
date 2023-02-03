@@ -21,7 +21,7 @@ var _ MappedNullable = &PeeringNodeStatus{}
 type PeeringNodeStatus struct {
 	IsAlive *bool `json:"IsAlive,omitempty"`
 	NetID *string `json:"NetID,omitempty"`
-	NumUsers *int32 `json:"NumUsers,omitempty"`
+	NumUsers *uint32 `json:"NumUsers,omitempty"`
 	PubKey *string `json:"PubKey,omitempty"`
 }
 
@@ -107,9 +107,9 @@ func (o *PeeringNodeStatus) SetNetID(v string) {
 }
 
 // GetNumUsers returns the NumUsers field value if set, zero value otherwise.
-func (o *PeeringNodeStatus) GetNumUsers() int32 {
+func (o *PeeringNodeStatus) GetNumUsers() uint32 {
 	if o == nil || isNil(o.NumUsers) {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 	return *o.NumUsers
@@ -117,7 +117,7 @@ func (o *PeeringNodeStatus) GetNumUsers() int32 {
 
 // GetNumUsersOk returns a tuple with the NumUsers field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *PeeringNodeStatus) GetNumUsersOk() (*int32, bool) {
+func (o *PeeringNodeStatus) GetNumUsersOk() (*uint32, bool) {
 	if o == nil || isNil(o.NumUsers) {
 		return nil, false
 	}
@@ -133,8 +133,8 @@ func (o *PeeringNodeStatus) HasNumUsers() bool {
 	return false
 }
 
-// SetNumUsers gets a reference to the given int32 and assigns it to the NumUsers field.
-func (o *PeeringNodeStatus) SetNumUsers(v int32) {
+// SetNumUsers gets a reference to the given uint32 and assigns it to the NumUsers field.
+func (o *PeeringNodeStatus) SetNumUsers(v uint32) {
 	o.NumUsers = &v
 }
 

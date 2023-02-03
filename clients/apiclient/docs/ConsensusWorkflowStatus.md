@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**CurrentStateIndex** | Pointer to **int32** | Shows current state index of the consensus | [optional] 
+**CurrentStateIndex** | Pointer to **uint32** | Shows current state index of the consensus | [optional] 
 **FlagBatchProposalSent** | Pointer to **bool** | Shows if batch proposal is sent out in current consensus iteration | [optional] 
 **FlagConsensusBatchKnown** | Pointer to **bool** | Shows if consensus on batch is reached and known in current consensus iteration | [optional] 
 **FlagInProgress** | Pointer to **bool** | Shows if consensus algorithm is still not completed in current consensus iteration | [optional] 
@@ -44,20 +44,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetCurrentStateIndex
 
-`func (o *ConsensusWorkflowStatus) GetCurrentStateIndex() int32`
+`func (o *ConsensusWorkflowStatus) GetCurrentStateIndex() uint32`
 
 GetCurrentStateIndex returns the CurrentStateIndex field if non-nil, zero value otherwise.
 
 ### GetCurrentStateIndexOk
 
-`func (o *ConsensusWorkflowStatus) GetCurrentStateIndexOk() (*int32, bool)`
+`func (o *ConsensusWorkflowStatus) GetCurrentStateIndexOk() (*uint32, bool)`
 
 GetCurrentStateIndexOk returns a tuple with the CurrentStateIndex field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetCurrentStateIndex
 
-`func (o *ConsensusWorkflowStatus) SetCurrentStateIndex(v int32)`
+`func (o *ConsensusWorkflowStatus) SetCurrentStateIndex(v uint32)`
 
 SetCurrentStateIndex sets CurrentStateIndex field to given value.
 

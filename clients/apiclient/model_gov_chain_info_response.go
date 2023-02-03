@@ -27,18 +27,18 @@ type GovChainInfoResponse struct {
 	Description string `json:"description"`
 	GasFeePolicy GasFeePolicy `json:"gasFeePolicy"`
 	// The maximum contract blob size.
-	MaxBlobSize int32 `json:"maxBlobSize"`
+	MaxBlobSize uint32 `json:"maxBlobSize"`
 	// The maximum event size.
-	MaxEventSize int32 `json:"maxEventSize"`
+	MaxEventSize uint32 `json:"maxEventSize"`
 	// The maximum amount of events per request.
-	MaxEventsPerReq int32 `json:"maxEventsPerReq"`
+	MaxEventsPerReq uint32 `json:"maxEventsPerReq"`
 }
 
 // NewGovChainInfoResponse instantiates a new GovChainInfoResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGovChainInfoResponse(chainID string, chainOwnerId string, description string, gasFeePolicy GasFeePolicy, maxBlobSize int32, maxEventSize int32, maxEventsPerReq int32) *GovChainInfoResponse {
+func NewGovChainInfoResponse(chainID string, chainOwnerId string, description string, gasFeePolicy GasFeePolicy, maxBlobSize uint32, maxEventSize uint32, maxEventsPerReq uint32) *GovChainInfoResponse {
 	this := GovChainInfoResponse{}
 	this.ChainID = chainID
 	this.ChainOwnerId = chainOwnerId
@@ -155,9 +155,9 @@ func (o *GovChainInfoResponse) SetGasFeePolicy(v GasFeePolicy) {
 }
 
 // GetMaxBlobSize returns the MaxBlobSize field value
-func (o *GovChainInfoResponse) GetMaxBlobSize() int32 {
+func (o *GovChainInfoResponse) GetMaxBlobSize() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -166,7 +166,7 @@ func (o *GovChainInfoResponse) GetMaxBlobSize() int32 {
 
 // GetMaxBlobSizeOk returns a tuple with the MaxBlobSize field value
 // and a boolean to check if the value has been set.
-func (o *GovChainInfoResponse) GetMaxBlobSizeOk() (*int32, bool) {
+func (o *GovChainInfoResponse) GetMaxBlobSizeOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -174,14 +174,14 @@ func (o *GovChainInfoResponse) GetMaxBlobSizeOk() (*int32, bool) {
 }
 
 // SetMaxBlobSize sets field value
-func (o *GovChainInfoResponse) SetMaxBlobSize(v int32) {
+func (o *GovChainInfoResponse) SetMaxBlobSize(v uint32) {
 	o.MaxBlobSize = v
 }
 
 // GetMaxEventSize returns the MaxEventSize field value
-func (o *GovChainInfoResponse) GetMaxEventSize() int32 {
+func (o *GovChainInfoResponse) GetMaxEventSize() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -190,7 +190,7 @@ func (o *GovChainInfoResponse) GetMaxEventSize() int32 {
 
 // GetMaxEventSizeOk returns a tuple with the MaxEventSize field value
 // and a boolean to check if the value has been set.
-func (o *GovChainInfoResponse) GetMaxEventSizeOk() (*int32, bool) {
+func (o *GovChainInfoResponse) GetMaxEventSizeOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -198,14 +198,14 @@ func (o *GovChainInfoResponse) GetMaxEventSizeOk() (*int32, bool) {
 }
 
 // SetMaxEventSize sets field value
-func (o *GovChainInfoResponse) SetMaxEventSize(v int32) {
+func (o *GovChainInfoResponse) SetMaxEventSize(v uint32) {
 	o.MaxEventSize = v
 }
 
 // GetMaxEventsPerReq returns the MaxEventsPerReq field value
-func (o *GovChainInfoResponse) GetMaxEventsPerReq() int32 {
+func (o *GovChainInfoResponse) GetMaxEventsPerReq() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -214,7 +214,7 @@ func (o *GovChainInfoResponse) GetMaxEventsPerReq() int32 {
 
 // GetMaxEventsPerReqOk returns a tuple with the MaxEventsPerReq field value
 // and a boolean to check if the value has been set.
-func (o *GovChainInfoResponse) GetMaxEventsPerReqOk() (*int32, bool) {
+func (o *GovChainInfoResponse) GetMaxEventsPerReqOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -222,7 +222,7 @@ func (o *GovChainInfoResponse) GetMaxEventsPerReqOk() (*int32, bool) {
 }
 
 // SetMaxEventsPerReq sets field value
-func (o *GovChainInfoResponse) SetMaxEventsPerReq(v int32) {
+func (o *GovChainInfoResponse) SetMaxEventsPerReq(v uint32) {
 	o.MaxEventsPerReq = v
 }
 

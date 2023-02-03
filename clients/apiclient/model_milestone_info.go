@@ -19,9 +19,9 @@ var _ MappedNullable = &MilestoneInfo{}
 
 // MilestoneInfo struct for MilestoneInfo
 type MilestoneInfo struct {
-	Index *int32 `json:"index,omitempty"`
+	Index *uint32 `json:"index,omitempty"`
 	MilestoneId *string `json:"milestoneId,omitempty"`
-	Timestamp *int32 `json:"timestamp,omitempty"`
+	Timestamp *uint32 `json:"timestamp,omitempty"`
 }
 
 // NewMilestoneInfo instantiates a new MilestoneInfo object
@@ -42,9 +42,9 @@ func NewMilestoneInfoWithDefaults() *MilestoneInfo {
 }
 
 // GetIndex returns the Index field value if set, zero value otherwise.
-func (o *MilestoneInfo) GetIndex() int32 {
+func (o *MilestoneInfo) GetIndex() uint32 {
 	if o == nil || isNil(o.Index) {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 	return *o.Index
@@ -52,7 +52,7 @@ func (o *MilestoneInfo) GetIndex() int32 {
 
 // GetIndexOk returns a tuple with the Index field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *MilestoneInfo) GetIndexOk() (*int32, bool) {
+func (o *MilestoneInfo) GetIndexOk() (*uint32, bool) {
 	if o == nil || isNil(o.Index) {
 		return nil, false
 	}
@@ -68,8 +68,8 @@ func (o *MilestoneInfo) HasIndex() bool {
 	return false
 }
 
-// SetIndex gets a reference to the given int32 and assigns it to the Index field.
-func (o *MilestoneInfo) SetIndex(v int32) {
+// SetIndex gets a reference to the given uint32 and assigns it to the Index field.
+func (o *MilestoneInfo) SetIndex(v uint32) {
 	o.Index = &v
 }
 
@@ -106,9 +106,9 @@ func (o *MilestoneInfo) SetMilestoneId(v string) {
 }
 
 // GetTimestamp returns the Timestamp field value if set, zero value otherwise.
-func (o *MilestoneInfo) GetTimestamp() int32 {
+func (o *MilestoneInfo) GetTimestamp() uint32 {
 	if o == nil || isNil(o.Timestamp) {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 	return *o.Timestamp
@@ -116,7 +116,7 @@ func (o *MilestoneInfo) GetTimestamp() int32 {
 
 // GetTimestampOk returns a tuple with the Timestamp field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *MilestoneInfo) GetTimestampOk() (*int32, bool) {
+func (o *MilestoneInfo) GetTimestampOk() (*uint32, bool) {
 	if o == nil || isNil(o.Timestamp) {
 		return nil, false
 	}
@@ -132,8 +132,8 @@ func (o *MilestoneInfo) HasTimestamp() bool {
 	return false
 }
 
-// SetTimestamp gets a reference to the given int32 and assigns it to the Timestamp field.
-func (o *MilestoneInfo) SetTimestamp(v int32) {
+// SetTimestamp gets a reference to the given uint32 and assigns it to the Timestamp field.
+func (o *MilestoneInfo) SetTimestamp(v uint32) {
 	o.Timestamp = &v
 }
 

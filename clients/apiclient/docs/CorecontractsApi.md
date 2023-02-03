@@ -825,7 +825,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    blockIndex := int32(56) // int32 | Block Index (uint32)
+    blockIndex := uint32(56) // uint32 | Block Index (uint32)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -846,7 +846,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**blockIndex** | **int32** | Block Index (uint32) | 
+**blockIndex** | **uint32** | Block Index (uint32) | 
 
 ### Other Parameters
 
@@ -964,7 +964,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    blockIndex := int32(56) // int32 | Block Index (uint32)
+    blockIndex := uint32(56) // uint32 | Block Index (uint32)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -985,7 +985,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**blockIndex** | **int32** | Block Index (uint32) | 
+**blockIndex** | **uint32** | Block Index (uint32) | 
 
 ### Other Parameters
 
@@ -1313,7 +1313,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    blockIndex := int32(56) // int32 | Block Index (uint32)
+    blockIndex := uint32(56) // uint32 | Block Index (uint32)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -1334,7 +1334,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**blockIndex** | **int32** | Block Index (uint32) | 
+**blockIndex** | **uint32** | Block Index (uint32) | 
 
 ### Other Parameters
 
@@ -1594,7 +1594,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    blockIndex := int32(56) // int32 | Block Index (uint32)
+    blockIndex := uint32(56) // uint32 | Block Index (uint32)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -1615,7 +1615,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**blockIndex** | **int32** | Block Index (uint32) | 
+**blockIndex** | **uint32** | Block Index (uint32) | 
 
 ### Other Parameters
 

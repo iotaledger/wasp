@@ -19,7 +19,7 @@ var _ MappedNullable = &BurnRecord{}
 
 // BurnRecord struct for BurnRecord
 type BurnRecord struct {
-	Code int32 `json:"code"`
+	Code uint32 `json:"code"`
 	GasBurned int64 `json:"gasBurned"`
 }
 
@@ -27,7 +27,7 @@ type BurnRecord struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBurnRecord(code int32, gasBurned int64) *BurnRecord {
+func NewBurnRecord(code uint32, gasBurned int64) *BurnRecord {
 	this := BurnRecord{}
 	this.Code = code
 	this.GasBurned = gasBurned
@@ -43,9 +43,9 @@ func NewBurnRecordWithDefaults() *BurnRecord {
 }
 
 // GetCode returns the Code field value
-func (o *BurnRecord) GetCode() int32 {
+func (o *BurnRecord) GetCode() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -54,7 +54,7 @@ func (o *BurnRecord) GetCode() int32 {
 
 // GetCodeOk returns a tuple with the Code field value
 // and a boolean to check if the value has been set.
-func (o *BurnRecord) GetCodeOk() (*int32, bool) {
+func (o *BurnRecord) GetCodeOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -62,7 +62,7 @@ func (o *BurnRecord) GetCodeOk() (*int32, bool) {
 }
 
 // SetCode sets field value
-func (o *BurnRecord) SetCode(v int32) {
+func (o *BurnRecord) SetCode(v uint32) {
 	o.Code = v
 }
 

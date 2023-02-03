@@ -4,14 +4,14 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Code** | **int32** |  | 
+**Code** | **uint32** |  | 
 **GasBurned** | **int64** |  | 
 
 ## Methods
 
 ### NewBurnRecord
 
-`func NewBurnRecord(code int32, gasBurned int64, ) *BurnRecord`
+`func NewBurnRecord(code uint32, gasBurned int64, ) *BurnRecord`
 
 NewBurnRecord instantiates a new BurnRecord object
 This constructor will assign default values to properties that have it defined,
@@ -28,20 +28,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetCode
 
-`func (o *BurnRecord) GetCode() int32`
+`func (o *BurnRecord) GetCode() uint32`
 
 GetCode returns the Code field if non-nil, zero value otherwise.
 
 ### GetCodeOk
 
-`func (o *BurnRecord) GetCodeOk() (*int32, bool)`
+`func (o *BurnRecord) GetCodeOk() (*uint32, bool)`
 
 GetCodeOk returns a tuple with the Code field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetCode
 
-`func (o *BurnRecord) SetCode(v int32)`
+`func (o *BurnRecord) SetCode(v uint32)`
 
 SetCode sets Code field to given value.
 

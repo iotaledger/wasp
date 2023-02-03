@@ -6,13 +6,13 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **GasFeeTokenId** | **string** | The gas fee token id. Empty if base token. | 
 **GasPerToken** | **int64** | The amount of gas per token. | 
-**ValidatorFeeShare** | **int32** | The validator fee share. | 
+**ValidatorFeeShare** | **uint32** | The validator fee share. | 
 
 ## Methods
 
 ### NewGasFeePolicy
 
-`func NewGasFeePolicy(gasFeeTokenId string, gasPerToken int64, validatorFeeShare int32, ) *GasFeePolicy`
+`func NewGasFeePolicy(gasFeeTokenId string, gasPerToken int64, validatorFeeShare uint32, ) *GasFeePolicy`
 
 NewGasFeePolicy instantiates a new GasFeePolicy object
 This constructor will assign default values to properties that have it defined,
@@ -69,20 +69,20 @@ SetGasPerToken sets GasPerToken field to given value.
 
 ### GetValidatorFeeShare
 
-`func (o *GasFeePolicy) GetValidatorFeeShare() int32`
+`func (o *GasFeePolicy) GetValidatorFeeShare() uint32`
 
 GetValidatorFeeShare returns the ValidatorFeeShare field if non-nil, zero value otherwise.
 
 ### GetValidatorFeeShareOk
 
-`func (o *GasFeePolicy) GetValidatorFeeShareOk() (*int32, bool)`
+`func (o *GasFeePolicy) GetValidatorFeeShareOk() (*uint32, bool)`
 
 GetValidatorFeeShareOk returns a tuple with the ValidatorFeeShare field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetValidatorFeeShare
 
-`func (o *GasFeePolicy) SetValidatorFeeShare(v int32)`
+`func (o *GasFeePolicy) SetValidatorFeeShare(v uint32)`
 
 SetValidatorFeeShare sets ValidatorFeeShare field to given value.
 

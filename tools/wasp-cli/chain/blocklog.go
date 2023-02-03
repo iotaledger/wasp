@@ -52,7 +52,7 @@ func fetchBlockInfo(args []string) *apiclient.BlockInfoResponse {
 
 	blockInfo, _, err := client.
 		CorecontractsApi.
-		BlocklogGetBlockInfo(context.Background(), config.GetCurrentChainID().String(), int32(index)).
+		BlocklogGetBlockInfo(context.Background(), config.GetCurrentChainID().String(), uint32(index)).
 		Execute()
 
 	log.Check(err)
@@ -64,7 +64,7 @@ func logRequestsInBlock(index uint32) {
 	client := cliclients.WaspClientForIndex()
 	// TODO: It should be uint32 here. Fix generator!
 	receipts, _, err := client.CorecontractsApi.
-		BlocklogGetRequestReceiptsOfBlock(context.Background(), config.GetCurrentChainID().String(), int32(index)).
+		BlocklogGetRequestReceiptsOfBlock(context.Background(), config.GetCurrentChainID().String(), index).
 		Execute()
 
 	log.Check(err)
@@ -97,8 +97,8 @@ func logReceipt(receipt *apiclient.RequestReceiptResponse, index ...int) {
 	tree := []log.TreeItem{
 		{K: "Kind", V: kind},
 		{K: "Sender", V: req.SenderAccount},
-		{K: "Contract Hname", V: req.CallTarget.Contract},
-		{K: "Entry point", V: req.CallTarget.EntryPoint},
+		{K: "Contract Hname", V: isc.Hname(req.CallTarget.Contract).String()},
+		{K: "Entry point", V: isc.Hname(req.CallTarget.EntryPoint).String()},
 		{K: "Arguments", V: argsTree},
 		{K: "Error", V: errMsg},
 	}
@@ -114,7 +114,7 @@ func logEventsInBlock(index uint32) {
 	client := cliclients.WaspClientForIndex()
 	// TODO: It should be uint32 here. Fix generator!
 	events, _, err := client.CorecontractsApi.
-		BlocklogGetEventsOfBlock(context.Background(), config.GetCurrentChainID().String(), int32(index)).
+		BlocklogGetEventsOfBlock(context.Background(), config.GetCurrentChainID().String(), index).
 		Execute()
 
 	log.Check(err)
@@ -131,7 +131,6 @@ func initRequestCmd() *cobra.Command {
 			log.Check(err)
 
 			client := cliclients.WaspClientForIndex()
-			// TODO: It should be uint32 here. Fix generator!
 			receipt, _, err := client.CorecontractsApi.
 				BlocklogGetRequestReceipt(context.Background(), config.GetCurrentChainID().String(), reqID.String()).
 				Execute()

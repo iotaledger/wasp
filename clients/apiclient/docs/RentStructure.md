@@ -5,14 +5,14 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **VByteCost** | **uint32** | The virtual byte cost | 
-**VByteFactorData** | **int32** | The virtual byte factor for data fields | 
-**VByteFactorKey** | **int32** | The virtual byte factor for key/lookup generating fields | 
+**VByteFactorData** | **uint32** | The virtual byte factor for data fields | 
+**VByteFactorKey** | **uint32** | The virtual byte factor for key/lookup generating fields | 
 
 ## Methods
 
 ### NewRentStructure
 
-`func NewRentStructure(vByteCost uint32, vByteFactorData int32, vByteFactorKey int32, ) *RentStructure`
+`func NewRentStructure(vByteCost uint32, vByteFactorData uint32, vByteFactorKey uint32, ) *RentStructure`
 
 NewRentStructure instantiates a new RentStructure object
 This constructor will assign default values to properties that have it defined,
@@ -49,40 +49,40 @@ SetVByteCost sets VByteCost field to given value.
 
 ### GetVByteFactorData
 
-`func (o *RentStructure) GetVByteFactorData() int32`
+`func (o *RentStructure) GetVByteFactorData() uint32`
 
 GetVByteFactorData returns the VByteFactorData field if non-nil, zero value otherwise.
 
 ### GetVByteFactorDataOk
 
-`func (o *RentStructure) GetVByteFactorDataOk() (*int32, bool)`
+`func (o *RentStructure) GetVByteFactorDataOk() (*uint32, bool)`
 
 GetVByteFactorDataOk returns a tuple with the VByteFactorData field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetVByteFactorData
 
-`func (o *RentStructure) SetVByteFactorData(v int32)`
+`func (o *RentStructure) SetVByteFactorData(v uint32)`
 
 SetVByteFactorData sets VByteFactorData field to given value.
 
 
 ### GetVByteFactorKey
 
-`func (o *RentStructure) GetVByteFactorKey() int32`
+`func (o *RentStructure) GetVByteFactorKey() uint32`
 
 GetVByteFactorKey returns the VByteFactorKey field if non-nil, zero value otherwise.
 
 ### GetVByteFactorKeyOk
 
-`func (o *RentStructure) GetVByteFactorKeyOk() (*int32, bool)`
+`func (o *RentStructure) GetVByteFactorKeyOk() (*uint32, bool)`
 
 GetVByteFactorKeyOk returns a tuple with the VByteFactorKey field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetVByteFactorKey
 
-`func (o *RentStructure) SetVByteFactorKey(v int32)`
+`func (o *RentStructure) SetVByteFactorKey(v uint32)`
 
 SetVByteFactorKey sets VByteFactorKey field to given value.
 

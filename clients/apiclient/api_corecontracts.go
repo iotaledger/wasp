@@ -1280,7 +1280,7 @@ type ApiBlocklogGetBlockInfoRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsApiService
 	chainID string
-	blockIndex int32
+	blockIndex uint32
 }
 
 func (r ApiBlocklogGetBlockInfoRequest) Execute() (*BlockInfoResponse, *http.Response, error) {
@@ -1295,7 +1295,7 @@ BlocklogGetBlockInfo Get the block info of a certain block index
  @param blockIndex Block Index (uint32)
  @return ApiBlocklogGetBlockInfoRequest
 */
-func (a *CorecontractsApiService) BlocklogGetBlockInfo(ctx context.Context, chainID string, blockIndex int32) ApiBlocklogGetBlockInfoRequest {
+func (a *CorecontractsApiService) BlocklogGetBlockInfo(ctx context.Context, chainID string, blockIndex uint32) ApiBlocklogGetBlockInfoRequest {
 	return ApiBlocklogGetBlockInfoRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1506,7 +1506,7 @@ type ApiBlocklogGetEventsOfBlockRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsApiService
 	chainID string
-	blockIndex int32
+	blockIndex uint32
 }
 
 func (r ApiBlocklogGetEventsOfBlockRequest) Execute() (*EventsResponse, *http.Response, error) {
@@ -1521,7 +1521,7 @@ BlocklogGetEventsOfBlock Get events of a block
  @param blockIndex Block Index (uint32)
  @return ApiBlocklogGetEventsOfBlockRequest
 */
-func (a *CorecontractsApiService) BlocklogGetEventsOfBlock(ctx context.Context, chainID string, blockIndex int32) ApiBlocklogGetEventsOfBlockRequest {
+func (a *CorecontractsApiService) BlocklogGetEventsOfBlock(ctx context.Context, chainID string, blockIndex uint32) ApiBlocklogGetEventsOfBlockRequest {
 	return ApiBlocklogGetEventsOfBlockRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -2073,7 +2073,7 @@ type ApiBlocklogGetRequestIDsForBlockRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsApiService
 	chainID string
-	blockIndex int32
+	blockIndex uint32
 }
 
 func (r ApiBlocklogGetRequestIDsForBlockRequest) Execute() (*RequestIDsResponse, *http.Response, error) {
@@ -2088,7 +2088,7 @@ BlocklogGetRequestIDsForBlock Get the request ids for a certain block index
  @param blockIndex Block Index (uint32)
  @return ApiBlocklogGetRequestIDsForBlockRequest
 */
-func (a *CorecontractsApiService) BlocklogGetRequestIDsForBlock(ctx context.Context, chainID string, blockIndex int32) ApiBlocklogGetRequestIDsForBlockRequest {
+func (a *CorecontractsApiService) BlocklogGetRequestIDsForBlock(ctx context.Context, chainID string, blockIndex uint32) ApiBlocklogGetRequestIDsForBlockRequest {
 	return ApiBlocklogGetRequestIDsForBlockRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -2529,7 +2529,7 @@ type ApiBlocklogGetRequestReceiptsOfBlockRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsApiService
 	chainID string
-	blockIndex int32
+	blockIndex uint32
 }
 
 func (r ApiBlocklogGetRequestReceiptsOfBlockRequest) Execute() (*BlockReceiptsResponse, *http.Response, error) {
@@ -2544,7 +2544,7 @@ BlocklogGetRequestReceiptsOfBlock Get all receipts of a certain block
  @param blockIndex Block Index (uint32)
  @return ApiBlocklogGetRequestReceiptsOfBlockRequest
 */
-func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlock(ctx context.Context, chainID string, blockIndex int32) ApiBlocklogGetRequestReceiptsOfBlockRequest {
+func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlock(ctx context.Context, chainID string, blockIndex uint32) ApiBlocklogGetRequestReceiptsOfBlockRequest {
 	return ApiBlocklogGetRequestReceiptsOfBlockRequest{
 		ApiService: a,
 		ctx: ctx,

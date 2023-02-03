@@ -31,14 +31,14 @@ type ProtocolParameters struct {
 	// The token supply
 	TokenSupply string `json:"tokenSupply"`
 	// The protocol version
-	Version int32 `json:"version"`
+	Version uint32 `json:"version"`
 }
 
 // NewProtocolParameters instantiates a new ProtocolParameters object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewProtocolParameters(bech32Hrp string, belowMaxDepth uint32, minPowScore uint32, networkName string, rentStructure RentStructure, tokenSupply string, version int32) *ProtocolParameters {
+func NewProtocolParameters(bech32Hrp string, belowMaxDepth uint32, minPowScore uint32, networkName string, rentStructure RentStructure, tokenSupply string, version uint32) *ProtocolParameters {
 	this := ProtocolParameters{}
 	this.Bech32Hrp = bech32Hrp
 	this.BelowMaxDepth = belowMaxDepth
@@ -203,9 +203,9 @@ func (o *ProtocolParameters) SetTokenSupply(v string) {
 }
 
 // GetVersion returns the Version field value
-func (o *ProtocolParameters) GetVersion() int32 {
+func (o *ProtocolParameters) GetVersion() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -214,7 +214,7 @@ func (o *ProtocolParameters) GetVersion() int32 {
 
 // GetVersionOk returns a tuple with the Version field value
 // and a boolean to check if the value has been set.
-func (o *ProtocolParameters) GetVersionOk() (*int32, bool) {
+func (o *ProtocolParameters) GetVersionOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -222,7 +222,7 @@ func (o *ProtocolParameters) GetVersionOk() (*int32, bool) {
 }
 
 // SetVersion sets field value
-func (o *ProtocolParameters) SetVersion(v int32) {
+func (o *ProtocolParameters) SetVersion(v uint32) {
 	o.Version = v
 }
 

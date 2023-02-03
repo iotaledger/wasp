@@ -25,7 +25,7 @@ type PeeringNodeStatusResponse struct {
 	// The NetID of the peer
 	NetId string `json:"netId"`
 	// The amount of users attached to the peer
-	NumUsers int32 `json:"numUsers"`
+	NumUsers uint32 `json:"numUsers"`
 	// The peers public key encoded in Hex
 	PublicKey string `json:"publicKey"`
 }
@@ -34,7 +34,7 @@ type PeeringNodeStatusResponse struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPeeringNodeStatusResponse(isAlive bool, isTrusted bool, netId string, numUsers int32, publicKey string) *PeeringNodeStatusResponse {
+func NewPeeringNodeStatusResponse(isAlive bool, isTrusted bool, netId string, numUsers uint32, publicKey string) *PeeringNodeStatusResponse {
 	this := PeeringNodeStatusResponse{}
 	this.IsAlive = isAlive
 	this.IsTrusted = isTrusted
@@ -125,9 +125,9 @@ func (o *PeeringNodeStatusResponse) SetNetId(v string) {
 }
 
 // GetNumUsers returns the NumUsers field value
-func (o *PeeringNodeStatusResponse) GetNumUsers() int32 {
+func (o *PeeringNodeStatusResponse) GetNumUsers() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -136,7 +136,7 @@ func (o *PeeringNodeStatusResponse) GetNumUsers() int32 {
 
 // GetNumUsersOk returns a tuple with the NumUsers field value
 // and a boolean to check if the value has been set.
-func (o *PeeringNodeStatusResponse) GetNumUsersOk() (*int32, bool) {
+func (o *PeeringNodeStatusResponse) GetNumUsersOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -144,7 +144,7 @@ func (o *PeeringNodeStatusResponse) GetNumUsersOk() (*int32, bool) {
 }
 
 // SetNumUsers sets field value
-func (o *PeeringNodeStatusResponse) SetNumUsers(v int32) {
+func (o *PeeringNodeStatusResponse) SetNumUsers(v uint32) {
 	o.NumUsers = v
 }
 

@@ -6,7 +6,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **LastEvent** | Pointer to **time.Time** | Last time the message was sent/received | [optional] 
 **LastMessage** | Pointer to **string** | The print out of the last message | [optional] 
-**Total** | Pointer to **int32** | Total number of messages sent/received | [optional] 
+**Total** | Pointer to **uint32** | Total number of messages sent/received | [optional] 
 
 ## Methods
 
@@ -79,20 +79,20 @@ HasLastMessage returns a boolean if a field has been set.
 
 ### GetTotal
 
-`func (o *NodeConnectionMessageMetrics) GetTotal() int32`
+`func (o *NodeConnectionMessageMetrics) GetTotal() uint32`
 
 GetTotal returns the Total field if non-nil, zero value otherwise.
 
 ### GetTotalOk
 
-`func (o *NodeConnectionMessageMetrics) GetTotalOk() (*int32, bool)`
+`func (o *NodeConnectionMessageMetrics) GetTotalOk() (*uint32, bool)`
 
 GetTotalOk returns a tuple with the Total field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetTotal
 
-`func (o *NodeConnectionMessageMetrics) SetTotal(v int32)`
+`func (o *NodeConnectionMessageMetrics) SetTotal(v uint32)`
 
 SetTotal sets Total field to given value.
 

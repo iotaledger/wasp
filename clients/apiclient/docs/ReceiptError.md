@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**ContractId** | **int32** |  | 
+**ContractId** | **uint32** |  | 
 **ErrorCode** | **string** |  | 
 **ErrorId** | **uint32** |  | 
 **Message** | **string** |  | 
@@ -15,7 +15,7 @@ Name | Type | Description | Notes
 
 ### NewReceiptError
 
-`func NewReceiptError(contractId int32, errorCode string, errorId uint32, message string, messageFormat string, parameters []string, ) *ReceiptError`
+`func NewReceiptError(contractId uint32, errorCode string, errorId uint32, message string, messageFormat string, parameters []string, ) *ReceiptError`
 
 NewReceiptError instantiates a new ReceiptError object
 This constructor will assign default values to properties that have it defined,
@@ -32,20 +32,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetContractId
 
-`func (o *ReceiptError) GetContractId() int32`
+`func (o *ReceiptError) GetContractId() uint32`
 
 GetContractId returns the ContractId field if non-nil, zero value otherwise.
 
 ### GetContractIdOk
 
-`func (o *ReceiptError) GetContractIdOk() (*int32, bool)`
+`func (o *ReceiptError) GetContractIdOk() (*uint32, bool)`
 
 GetContractIdOk returns a tuple with the ContractId field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetContractId
 
-`func (o *ReceiptError) SetContractId(v int32)`
+`func (o *ReceiptError) SetContractId(v uint32)`
 
 SetContractId sets ContractId field to given value.
 

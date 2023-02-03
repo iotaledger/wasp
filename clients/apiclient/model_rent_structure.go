@@ -22,16 +22,16 @@ type RentStructure struct {
 	// The virtual byte cost
 	VByteCost uint32 `json:"vByteCost"`
 	// The virtual byte factor for data fields
-	VByteFactorData int32 `json:"vByteFactorData"`
+	VByteFactorData uint32 `json:"vByteFactorData"`
 	// The virtual byte factor for key/lookup generating fields
-	VByteFactorKey int32 `json:"vByteFactorKey"`
+	VByteFactorKey uint32 `json:"vByteFactorKey"`
 }
 
 // NewRentStructure instantiates a new RentStructure object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewRentStructure(vByteCost uint32, vByteFactorData int32, vByteFactorKey int32) *RentStructure {
+func NewRentStructure(vByteCost uint32, vByteFactorData uint32, vByteFactorKey uint32) *RentStructure {
 	this := RentStructure{}
 	this.VByteCost = vByteCost
 	this.VByteFactorData = vByteFactorData
@@ -72,9 +72,9 @@ func (o *RentStructure) SetVByteCost(v uint32) {
 }
 
 // GetVByteFactorData returns the VByteFactorData field value
-func (o *RentStructure) GetVByteFactorData() int32 {
+func (o *RentStructure) GetVByteFactorData() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -83,7 +83,7 @@ func (o *RentStructure) GetVByteFactorData() int32 {
 
 // GetVByteFactorDataOk returns a tuple with the VByteFactorData field value
 // and a boolean to check if the value has been set.
-func (o *RentStructure) GetVByteFactorDataOk() (*int32, bool) {
+func (o *RentStructure) GetVByteFactorDataOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -91,14 +91,14 @@ func (o *RentStructure) GetVByteFactorDataOk() (*int32, bool) {
 }
 
 // SetVByteFactorData sets field value
-func (o *RentStructure) SetVByteFactorData(v int32) {
+func (o *RentStructure) SetVByteFactorData(v uint32) {
 	o.VByteFactorData = v
 }
 
 // GetVByteFactorKey returns the VByteFactorKey field value
-func (o *RentStructure) GetVByteFactorKey() int32 {
+func (o *RentStructure) GetVByteFactorKey() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -107,7 +107,7 @@ func (o *RentStructure) GetVByteFactorKey() int32 {
 
 // GetVByteFactorKeyOk returns a tuple with the VByteFactorKey field value
 // and a boolean to check if the value has been set.
-func (o *RentStructure) GetVByteFactorKeyOk() (*int32, bool) {
+func (o *RentStructure) GetVByteFactorKeyOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -115,7 +115,7 @@ func (o *RentStructure) GetVByteFactorKeyOk() (*int32, bool) {
 }
 
 // SetVByteFactorKey sets field value
-func (o *RentStructure) SetVByteFactorKey(v int32) {
+func (o *RentStructure) SetVByteFactorKey(v uint32) {
 	o.VByteFactorKey = v
 }
 

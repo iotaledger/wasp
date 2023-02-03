@@ -21,7 +21,7 @@ var _ MappedNullable = &L1Params{}
 type L1Params struct {
 	BaseToken BaseToken `json:"baseToken"`
 	// The max payload size
-	MaxPayloadSize int32 `json:"maxPayloadSize"`
+	MaxPayloadSize uint32 `json:"maxPayloadSize"`
 	Protocol ProtocolParameters `json:"protocol"`
 }
 
@@ -29,7 +29,7 @@ type L1Params struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewL1Params(baseToken BaseToken, maxPayloadSize int32, protocol ProtocolParameters) *L1Params {
+func NewL1Params(baseToken BaseToken, maxPayloadSize uint32, protocol ProtocolParameters) *L1Params {
 	this := L1Params{}
 	this.BaseToken = baseToken
 	this.MaxPayloadSize = maxPayloadSize
@@ -70,9 +70,9 @@ func (o *L1Params) SetBaseToken(v BaseToken) {
 }
 
 // GetMaxPayloadSize returns the MaxPayloadSize field value
-func (o *L1Params) GetMaxPayloadSize() int32 {
+func (o *L1Params) GetMaxPayloadSize() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -81,7 +81,7 @@ func (o *L1Params) GetMaxPayloadSize() int32 {
 
 // GetMaxPayloadSizeOk returns a tuple with the MaxPayloadSize field value
 // and a boolean to check if the value has been set.
-func (o *L1Params) GetMaxPayloadSizeOk() (*int32, bool) {
+func (o *L1Params) GetMaxPayloadSizeOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -89,7 +89,7 @@ func (o *L1Params) GetMaxPayloadSizeOk() (*int32, bool) {
 }
 
 // SetMaxPayloadSize sets field value
-func (o *L1Params) SetMaxPayloadSize(v int32) {
+func (o *L1Params) SetMaxPayloadSize(v uint32) {
 	o.MaxPayloadSize = v
 }
 

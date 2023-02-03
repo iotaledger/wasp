@@ -19,7 +19,7 @@ var _ MappedNullable = &ReceiptError{}
 
 // ReceiptError struct for ReceiptError
 type ReceiptError struct {
-	ContractId int32 `json:"contractId"`
+	ContractId uint32 `json:"contractId"`
 	ErrorCode string `json:"errorCode"`
 	ErrorId uint32 `json:"errorId"`
 	Message string `json:"message"`
@@ -31,7 +31,7 @@ type ReceiptError struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewReceiptError(contractId int32, errorCode string, errorId uint32, message string, messageFormat string, parameters []string) *ReceiptError {
+func NewReceiptError(contractId uint32, errorCode string, errorId uint32, message string, messageFormat string, parameters []string) *ReceiptError {
 	this := ReceiptError{}
 	this.ContractId = contractId
 	this.ErrorCode = errorCode
@@ -51,9 +51,9 @@ func NewReceiptErrorWithDefaults() *ReceiptError {
 }
 
 // GetContractId returns the ContractId field value
-func (o *ReceiptError) GetContractId() int32 {
+func (o *ReceiptError) GetContractId() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -62,7 +62,7 @@ func (o *ReceiptError) GetContractId() int32 {
 
 // GetContractIdOk returns a tuple with the ContractId field value
 // and a boolean to check if the value has been set.
-func (o *ReceiptError) GetContractIdOk() (*int32, bool) {
+func (o *ReceiptError) GetContractIdOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -70,7 +70,7 @@ func (o *ReceiptError) GetContractIdOk() (*int32, bool) {
 }
 
 // SetContractId sets field value
-func (o *ReceiptError) SetContractId(v int32) {
+func (o *ReceiptError) SetContractId(v uint32) {
 	o.ContractId = v
 }
 

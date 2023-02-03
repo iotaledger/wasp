@@ -6,7 +6,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **IsAlive** | Pointer to **bool** |  | [optional] 
 **NetID** | Pointer to **string** |  | [optional] 
-**NumUsers** | Pointer to **int32** |  | [optional] 
+**NumUsers** | Pointer to **uint32** |  | [optional] 
 **PubKey** | Pointer to **string** |  | [optional] 
 
 ## Methods
@@ -80,20 +80,20 @@ HasNetID returns a boolean if a field has been set.
 
 ### GetNumUsers
 
-`func (o *PeeringNodeStatus) GetNumUsers() int32`
+`func (o *PeeringNodeStatus) GetNumUsers() uint32`
 
 GetNumUsers returns the NumUsers field if non-nil, zero value otherwise.
 
 ### GetNumUsersOk
 
-`func (o *PeeringNodeStatus) GetNumUsersOk() (*int32, bool)`
+`func (o *PeeringNodeStatus) GetNumUsersOk() (*uint32, bool)`
 
 GetNumUsersOk returns a tuple with the NumUsers field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetNumUsers
 
-`func (o *PeeringNodeStatus) SetNumUsers(v int32)`
+`func (o *PeeringNodeStatus) SetNumUsers(v uint32)`
 
 SetNumUsers sets NumUsers field to given value.
 

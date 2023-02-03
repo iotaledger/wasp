@@ -25,7 +25,7 @@ type NodeConnectionMessageMetrics struct {
 	// The print out of the last message
 	LastMessage *string `json:"lastMessage,omitempty"`
 	// Total number of messages sent/received
-	Total *int32 `json:"total,omitempty"`
+	Total *uint32 `json:"total,omitempty"`
 }
 
 // NewNodeConnectionMessageMetrics instantiates a new NodeConnectionMessageMetrics object
@@ -110,9 +110,9 @@ func (o *NodeConnectionMessageMetrics) SetLastMessage(v string) {
 }
 
 // GetTotal returns the Total field value if set, zero value otherwise.
-func (o *NodeConnectionMessageMetrics) GetTotal() int32 {
+func (o *NodeConnectionMessageMetrics) GetTotal() uint32 {
 	if o == nil || isNil(o.Total) {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 	return *o.Total
@@ -120,7 +120,7 @@ func (o *NodeConnectionMessageMetrics) GetTotal() int32 {
 
 // GetTotalOk returns a tuple with the Total field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *NodeConnectionMessageMetrics) GetTotalOk() (*int32, bool) {
+func (o *NodeConnectionMessageMetrics) GetTotalOk() (*uint32, bool) {
 	if o == nil || isNil(o.Total) {
 		return nil, false
 	}
@@ -136,8 +136,8 @@ func (o *NodeConnectionMessageMetrics) HasTotal() bool {
 	return false
 }
 
-// SetTotal gets a reference to the given int32 and assigns it to the Total field.
-func (o *NodeConnectionMessageMetrics) SetTotal(v int32) {
+// SetTotal gets a reference to the given uint32 and assigns it to the Total field.
+func (o *NodeConnectionMessageMetrics) SetTotal(v uint32) {
 	o.Total = &v
 }
 

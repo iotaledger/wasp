@@ -20,7 +20,7 @@ var _ MappedNullable = &Output{}
 // Output struct for Output
 type Output struct {
 	// The output type
-	OutputType int32 `json:"outputType"`
+	OutputType uint32 `json:"outputType"`
 	// The raw data of the output (Hex)
 	Raw string `json:"raw"`
 }
@@ -29,7 +29,7 @@ type Output struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewOutput(outputType int32, raw string) *Output {
+func NewOutput(outputType uint32, raw string) *Output {
 	this := Output{}
 	this.OutputType = outputType
 	this.Raw = raw
@@ -45,9 +45,9 @@ func NewOutputWithDefaults() *Output {
 }
 
 // GetOutputType returns the OutputType field value
-func (o *Output) GetOutputType() int32 {
+func (o *Output) GetOutputType() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -56,7 +56,7 @@ func (o *Output) GetOutputType() int32 {
 
 // GetOutputTypeOk returns a tuple with the OutputType field value
 // and a boolean to check if the value has been set.
-func (o *Output) GetOutputTypeOk() (*int32, bool) {
+func (o *Output) GetOutputTypeOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -64,7 +64,7 @@ func (o *Output) GetOutputTypeOk() (*int32, bool) {
 }
 
 // SetOutputType sets field value
-func (o *Output) SetOutputType(v int32) {
+func (o *Output) SetOutputType(v uint32) {
 	o.OutputType = v
 }
 
