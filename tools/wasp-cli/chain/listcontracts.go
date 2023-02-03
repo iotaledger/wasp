@@ -26,6 +26,7 @@ func initListContractsCmd() *cobra.Command {
 			records, _, err := client.RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
 				ContractName: root.Contract.Name,
 				FunctionName: root.ViewGetContractRecords.Name,
+				ChainId:      config.GetCurrentChainID().String(),
 			}).Execute()
 
 			if records == nil {
