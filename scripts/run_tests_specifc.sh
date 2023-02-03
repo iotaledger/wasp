@@ -17,16 +17,14 @@ fi
 # enter the specific test you want to run here
 TESTS="^TestNodeConn$ github.com/iotaledger/wasp/tools/cluster/tests"
 
-${GO_EXECUTABLE} clean -testcache
-
 make wasm
 make install
 
 echo "Start tests... ${TESTS}"
 if [ "$OUTPUT_TO_FILE" = false ]; then
-    ${GO_EXECUTABLE} test -timeout=5m -run ${TESTS}
+    ${GO_EXECUTABLE} test -timeout=5m -run ${TESTS} -count 1 -failfast
 else
-    ${GO_EXECUTABLE} test -v -timeout=5m -run ${TESTS} 2>&1 | tee tests_output.log
+    ${GO_EXECUTABLE} test -v -timeout=5m -run ${TESTS} -count 1 -failfast 2>&1 | tee tests_output.log
 fi
 
 cd ${CURRENT_DIR}
