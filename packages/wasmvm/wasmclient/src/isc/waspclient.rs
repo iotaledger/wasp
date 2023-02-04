@@ -39,7 +39,7 @@ impl WaspClient {
         chain_id: &ScChainID,
         contract_hname: &ScHname,
         function_hname: &ScHname,
-        args: &ScDict,
+        args: &[u8],
         optimistic_read_timeout: Option<Duration>,
     ) -> errors::Result<Vec<u8>> {
         let deadline = match optimistic_read_timeout {
@@ -58,11 +58,12 @@ impl WaspClient {
             .timeout(deadline)
             .build()
             .unwrap();
-        let res = client.post(url).json(args).send();
+        let json_data = json_encode(args);
+        let res = client.post(url).json(&json_data).send();
 
         match res {
             Ok(v) => match v.status() {
-                reqwest::StatusCode::OK => {
+                StatusCode::OK => {
                     match v.json::<JsonResponse>() {
                         Ok(json_obj) => {
                             return Ok(codec::json_decode(json_obj));
@@ -74,9 +75,9 @@ impl WaspClient {
                 }
                 failed_status_code => {
                     let status_code = failed_status_code.as_u16();
-                    match v.text() {
+                    match v.json::<JsonError>() {
                         Ok(err_msg) => {
-                            return Err(format!("{status_code}: {err_msg}"));
+                            return Err(format!("{status_code}: {}", err_msg.message));
                         }
                         Err(e) => return Err(e.to_string()),
                     }
@@ -227,13 +228,12 @@ mod tests {
         let sc_chain_id = wasmlib::chain_id_from_bytes(&chain_id_bytes);
         let sc_contract_hname = wasmlib::hname_from_bytes(&wasmlib::uint32_to_bytes(0x89703a45));
         let sc_function_hname = wasmlib::hname_from_bytes(&wasmlib::uint32_to_bytes(0x78cc397a));
-        let args = wasmlib::ScDict::new(&vec![]);
         let _ = client
             .call_view_by_hname(
                 &sc_chain_id,
                 &sc_contract_hname,
                 &sc_function_hname,
-                &args,
+                &[],
                 None,
             )
             .unwrap();

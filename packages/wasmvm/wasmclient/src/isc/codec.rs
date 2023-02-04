@@ -48,14 +48,20 @@ pub struct JsonItem {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonRequest {
+    #[serde(alias = "Items")]
     items: Vec<JsonItem>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonResponse {
-    items: Vec<JsonItem>,
-    message: String,
-    status_code: u16,
+    #[serde(alias = "Items")]
+    pub(crate) items: Vec<JsonItem>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct JsonError {
+    #[serde(alias = "Message")]
+    pub(crate) message: String,
 }
 
 pub fn json_decode(dict: JsonResponse) -> Vec<u8> {
