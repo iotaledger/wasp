@@ -86,8 +86,8 @@ impl OffLedgerRequest for OffLedgerRequestData {
             &self.params,
             self.nonce,
         );
-        let mut scheme = OffLedgerSignatureScheme::new(&key_pair.to_owned());
-        scheme.signature = key_pair.clone().sign(&self.essence()).clone();
+        let mut scheme = OffLedgerSignatureScheme::new(&key_pair);
+        scheme.signature = key_pair.sign(&self.essence()).clone();
         req.signature_scheme = scheme;
         return req;
     }
@@ -96,7 +96,7 @@ impl OffLedgerRequest for OffLedgerRequestData {
 impl OffLedgerRequestData {
     pub fn id(&self) -> ScRequestID {
         let hash = Blake2b256::digest(self.to_bytes());
-        return wasmlib::request_id_from_bytes(&hash.to_vec());
+        return request_id_from_bytes(&hash.to_vec());
     }
 
     pub fn essence(&self) -> Vec<u8> {

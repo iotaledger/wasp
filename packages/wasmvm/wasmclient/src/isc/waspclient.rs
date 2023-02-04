@@ -1,8 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-pub use codec::*;
-pub use reqwest::*;
+use base64::{Engine as _, engine::general_purpose};
+
+use codec::*;
+use reqwest::*;
 use std::{
     sync::{Arc, mpsc, RwLock},
     thread::spawn,
@@ -58,8 +60,8 @@ impl WaspClient {
             .timeout(deadline)
             .build()
             .unwrap();
-        let json_data = json_encode(args);
-        let res = client.post(url).json(&json_data).send();
+        let body = json_encode(args);
+        let res = client.post(url).json(&body).send();
 
         match res {
             Ok(v) => match v.status() {
@@ -84,10 +86,11 @@ impl WaspClient {
                 }
             },
             Err(e) => {
-                return Err(format!("post request failed: {}", e.to_string()));
+                return Err(format!("call() request failed: {}", e.to_string()));
             }
         }
     }
+
     pub fn post_offledger_request(
         &self,
         chain_id: &ScChainID,
@@ -95,24 +98,25 @@ impl WaspClient {
     ) -> errors::Result<()> {
         let url = format!("{}/chain/{}/request", self.base_url, chain_id.to_string());
         let client = reqwest::blocking::Client::new();
-        let res = client.post(url).body(req.to_bytes()).send();
+        let body = JsonPostRequest { request: general_purpose::STANDARD_NO_PAD.encode(req.to_bytes()) };
+        let res = client.post(url).json(&body).send();
         match res {
             Ok(v) => match v.status() {
-                reqwest::StatusCode::OK => {
+                StatusCode::OK => {
                     return Ok(());
                 }
                 failed_status_code => {
                     let status_code = failed_status_code.as_u16();
-                    match v.text() {
+                    match v.json::<JsonError>() {
                         Ok(err_msg) => {
-                            return Err(format!("{status_code}: {err_msg}"));
+                            return Err(format!("{status_code}: {}", err_msg.message));
                         }
                         Err(e) => return Err(e.to_string()),
                     }
                 }
             },
             Err(e) => {
-                return Err(format!("request failed: {}", e.to_string()));
+                return Err(format!("post() request failed: {}", e.to_string()));
             }
         }
     }

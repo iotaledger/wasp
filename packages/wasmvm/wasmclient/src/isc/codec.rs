@@ -47,20 +47,25 @@ pub struct JsonItem {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct JsonRequest {
-    #[serde(alias = "Items")]
+pub struct JsonCallRequest {
     items: Vec<JsonItem>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct JsonPostRequest {
+    #[serde(rename = "Request")]
+    pub(crate) request: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonResponse {
-    #[serde(alias = "Items")]
+    #[serde(rename = "Items")]
     pub(crate) items: Vec<JsonItem>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonError {
-    #[serde(alias = "Message")]
+    #[serde(rename = "Message")]
     pub(crate) message: String,
 }
 
@@ -80,10 +85,10 @@ pub fn json_decode(dict: JsonResponse) -> Vec<u8> {
     return enc.buf();
 }
 
-pub fn json_encode(buf: &[u8]) -> JsonRequest {
+pub fn json_encode(buf: &[u8]) -> JsonCallRequest {
     let mut dec = WasmDecoder::new(buf);
     let items_num = uint32_from_bytes(&dec.fixed_bytes(SC_UINT32_LENGTH));
-    let mut dict = JsonRequest {
+    let mut dict = JsonCallRequest {
         items: Vec::with_capacity(items_num as usize),
     };
     for _ in 0..items_num {

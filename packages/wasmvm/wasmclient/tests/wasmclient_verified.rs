@@ -38,6 +38,10 @@ fn post_func_request() {
     ctx.fn_chain_id();
     let f = testwasmlib::ScFuncs::random(&ctx);
     f.func.post();
+    let e = ctx.error.read().unwrap();
+    if let Err(e) = &*e {
+        println!("err: {}", e);
+    }
     assert!(ctx.error.read().unwrap().is_ok());
 
     ctx.wait_request();
