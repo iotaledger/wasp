@@ -25,22 +25,14 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/services"
 )
 
-func loadControllers(server echoswagger.ApiRoot, userManager *userspkg.UserManager, nodeIdentityProvider registry.NodeIdentityProvider, authConfig authentication.AuthConfiguration, mocker *Mocker, controllersToLoad []interfaces.APIController) {
+func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLoad []interfaces.APIController) {
 	for _, controller := range controllersToLoad {
-		publicGroup := server.Group(controller.Name(), "v2/")
+		publicGroup := server.Group(controller.Name(), "/v2")
 
 		controller.RegisterPublic(publicGroup, mocker)
 
-		claimValidator := func(claims *authentication.WaspClaims) bool {
-			// The v2 api uses another way of permission handling, so we can always return true here.
-			// Permissions are now validated at the route level. See the webapi/v2/controllers/*/controller.go routes.
-			return true
-		}
-
-		adminGroup := server.Group(controller.Name(), "v2/").
+		adminGroup := server.Group(controller.Name(), "/v2").
 			SetSecurity("Authorization")
-
-		authentication.AddAuthentication(adminGroup.EchoGroup(), userManager, nodeIdentityProvider, authConfig, claimValidator)
 
 		controller.RegisterAdmin(adminGroup, mocker)
 	}
@@ -82,6 +74,13 @@ func Init(
 	userService := services.NewUserService(userManager)
 	// --
 
+	claimValidator := func(claims *authentication.WaspClaims) bool {
+		// The v2 api uses another way of permission handling, so we can always return true here.
+		// Permissions are now validated at the route level. See the webapi/v2/controllers/*/controller.go routes.
+		return true
+	}
+	authentication.AddV2Authentication(server, userManager, nodeIdentityProvider, authConfig, claimValidator)
+
 	controllersToLoad := []interfaces.APIController{
 		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, vmService),
 		metrics.NewMetricsController(metricsService),
@@ -91,5 +90,5 @@ func Init(
 		corecontracts.NewCoreContractsController(vmService),
 	}
 
-	loadControllers(server, userManager, nodeIdentityProvider, authConfig, mocker, controllersToLoad)
+	loadControllers(server, mocker, controllersToLoad)
 }

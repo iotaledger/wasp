@@ -17,7 +17,7 @@ type NodeOwnerCertificateResponse struct {
 // RentStructure defines the parameters of rent cost calculations on objects which take node resources.
 type RentStructure struct {
 	// Defines the rent of a single virtual byte denoted in IOTA tokens.
-	VByteCost uint32 `json:"vByteCost" swagger:"desc(The virtual byte cost),required"`
+	VByteCost uint32 `json:"vByteCost" swagger:"desc(The virtual byte cost),required,min(1)"`
 	// Defines the factor to be used for data only fields.
 	VBFactorData iotago.VByteCostFactor `json:"vByteFactorData" swagger:"desc(The virtual byte factor for data fields),required"`
 	// defines the factor to be used for key/lookup generating fields.
@@ -32,9 +32,9 @@ type ProtocolParameters struct {
 	// The HRP prefix used for Bech32 addresses in the network.
 	Bech32HRP iotago.NetworkPrefix `json:"bech32Hrp" swagger:"desc(The human readable network prefix),required"`
 	// The minimum pow score of the network.
-	MinPoWScore uint32 `json:"minPowScore" swagger:"desc(The minimal PoW score),required"`
+	MinPoWScore uint32 `json:"minPowScore" swagger:"desc(The minimal PoW score),required,min(1)"`
 	// The below max depth parameter of the network.
-	BelowMaxDepth uint8 `json:"belowMaxDepth" swagger:"desc(The networks max depth),required"`
+	BelowMaxDepth uint8 `json:"belowMaxDepth" swagger:"desc(The networks max depth),required,min(1)"`
 	// The rent structure used by given node/network.
 	RentStructure RentStructure `json:"rentStructure" swagger:"desc(The rent structure of the protocol),required"`
 	// TokenSupply defines the current token supply on the network.
@@ -42,16 +42,16 @@ type ProtocolParameters struct {
 }
 
 type L1Params struct {
-	MaxPayloadSize int                   `json:"maxPayloadSize" swagger:"desc(The max payload size),required"`
-	Protocol       *ProtocolParameters   `json:"protocol" swagger:"desc(The protocol parameters),required"`
-	BaseToken      *parameters.BaseToken `json:"baseToken" swagger:"desc(The base token parameters),required"`
+	MaxPayloadSize int                  `json:"maxPayloadSize" swagger:"desc(The max payload size),required"`
+	Protocol       ProtocolParameters   `json:"protocol" swagger:"desc(The protocol parameters),required"`
+	BaseToken      parameters.BaseToken `json:"baseToken" swagger:"desc(The base token parameters),required"`
 }
 
 func MapL1Params(l1 *parameters.L1Params) *L1Params {
 	params := &L1Params{
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Message fields without payload = max size of the payload
 		MaxPayloadSize: l1.MaxPayloadSize,
-		Protocol: &ProtocolParameters{
+		Protocol: ProtocolParameters{
 			Version:     l1.Protocol.Version,
 			NetworkName: l1.Protocol.NetworkName,
 			Bech32HRP:   l1.Protocol.Bech32HRP,
@@ -63,7 +63,7 @@ func MapL1Params(l1 *parameters.L1Params) *L1Params {
 			},
 			TokenSupply: iotago.EncodeUint64(l1.Protocol.TokenSupply),
 		},
-		BaseToken: &parameters.BaseToken{
+		BaseToken: parameters.BaseToken{
 			Name:            l1.BaseToken.Name,
 			TickerSymbol:    l1.BaseToken.TickerSymbol,
 			Unit:            l1.BaseToken.Unit,

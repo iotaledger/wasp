@@ -11,8 +11,8 @@ import (
 )
 
 type Blob struct {
-	Hash string
-	Size uint32
+	Hash string `json:"hash" swagger:"required"`
+	Size uint32 `json:"size" swagger:"required"`
 }
 
 type BlobListResponse struct {
@@ -45,7 +45,7 @@ func (c *Controller) listBlobs(e echo.Context) error {
 }
 
 type BlobValueResponse struct {
-	ValueData string
+	ValueData string `json:"valueData" swagger:"required"`
 }
 
 func (c *Controller) getBlobValue(e echo.Context) error {
@@ -74,7 +74,7 @@ func (c *Controller) getBlobValue(e echo.Context) error {
 }
 
 type BlobInfoResponse struct {
-	Fields map[string]uint32
+	Fields map[string]uint32 `json:"fields" swagger:"required"`
 }
 
 func (c *Controller) getBlobInfo(e echo.Context) error {

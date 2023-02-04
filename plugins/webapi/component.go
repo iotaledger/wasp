@@ -147,11 +147,6 @@ func provide(c *dig.Container) error {
 		echoSwagger.SetRequestContentType(echo.MIMEApplicationJSON)
 		echoSwagger.SetResponseContentType(echo.MIMEApplicationJSON)
 
-		echoSwagger.AddSecurityAPIKey("Authorization", "JWT Token", echoswagger.SecurityInHeader).
-			SetExternalDocs("Find out more about Wasp", "https://wiki.iota.org/smart-contracts/overview").
-			SetUI(echoswagger.UISetting{DetachSpec: false, HideTop: false}).
-			SetScheme("http", "https")
-
 		v1.Init(
 			Plugin.App().NewLogger("WebAPI/v1"),
 			echoSwagger,

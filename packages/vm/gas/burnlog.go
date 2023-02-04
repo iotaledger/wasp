@@ -6,12 +6,12 @@ import (
 )
 
 type BurnRecord struct {
-	Code      BurnCode
-	GasBurned uint64
+	Code      BurnCode `json:"code" swagger:"required"`
+	GasBurned uint64   `json:"gasBurned" swagger:"required"`
 }
 
 type BurnLog struct {
-	Records []BurnRecord
+	Records []BurnRecord `json:"records" swagger:"required"`
 }
 
 func NewGasBurnLog() *BurnLog {

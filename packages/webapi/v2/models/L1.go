@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/hive.go/core/typeutils"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 )
@@ -78,7 +79,7 @@ func InStateOutputFromISCInStateOutput(output *nodeconnmetrics.InStateOutput) *I
 }
 
 type StateTransaction struct {
-	StateIndex    uint32 `json:"stateIndex" swagger:"desc(The state index),required"`
+	StateIndex    uint32 `json:"stateIndex" swagger:"desc(The state index),required,min(1)"`
 	TransactionID string `json:"txId" swagger:"desc(The transaction ID),required"`
 }
 
@@ -108,6 +109,24 @@ func TxInclusionStateMsgFromISCTxInclusionStateMsg(inclusionState *nodeconnmetri
 	return &TxInclusionStateMsg{
 		State:         inclusionState.State,
 		TransactionID: inclusionState.TxID.ToHex(),
+	}
+}
+
+type MilestoneInfo struct {
+	Index       uint32 `json:"index"`
+	Timestamp   uint32 `json:"timestamp"`
+	MilestoneID string `json:"milestoneId"`
+}
+
+func MilestoneFromIotaGoMilestone(milestone *nodeclient.MilestoneInfo) *MilestoneInfo {
+	if milestone == nil {
+		return &MilestoneInfo{}
+	}
+
+	return &MilestoneInfo{
+		Index:       milestone.Index,
+		MilestoneID: milestone.MilestoneID,
+		Timestamp:   milestone.Timestamp,
 	}
 }
 

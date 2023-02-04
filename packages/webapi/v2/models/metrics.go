@@ -4,11 +4,12 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
 )
 
 type MetricItem[T interface{}] struct {
-	Messages    uint32    `json:"messages" swagger:"required"`
+	Messages    uint32    `json:"messages" swagger:"required,min(1)"`
 	Timestamp   time.Time `json:"timestamp" swagger:"required"`
 	LastMessage T         `json:"lastMessage" swagger:"required"`
 }
@@ -30,15 +31,22 @@ type (
 	TransactionIDMetricItem       MetricItem[*Transaction]
 	UTXOInputMetricItem           MetricItem[*OutputID]
 	InterfaceMetricItem           MetricItem[interface{}]
+	PublisherStateTransactionItem MetricItem[*StateTransaction]
+	RegisteredChainIDItems        []string
+	MilestoneMetricItem           MetricItem[*MilestoneInfo]
 )
 
 type ChainMetrics struct {
+	RegisteredChainIDs RegisteredChainIDItems `json:"registeredChainIDs" swagger:"required"`
+
 	InAliasOutput                   AliasOutputMetricItem         `json:"inAliasOutput" swagger:"required"`
 	InOnLedgerRequest               OnLedgerRequestMetricItem     `json:"inOnLedgerRequest" swagger:"required"`
 	InOutput                        InOutputMetricItem            `json:"inOutput" swagger:"required"`
 	InStateOutput                   InStateOutputMetricItem       `json:"inStateOutput" swagger:"required"`
 	InTxInclusionState              TxInclusionStateMsgMetricItem `json:"inTxInclusionState" swagger:"required"`
+	InMilestone                     MilestoneMetricItem           `json:"inMilestone" swagger:"required"`
 	OutPublishGovernanceTransaction TransactionMetricItem         `json:"outPublishGovernanceTransaction" swagger:"required"`
+	OutPublisherStateTransaction    PublisherStateTransactionItem `json:"outPublisherStateTransaction" swagger:"required"`
 	OutPullLatestOutput             InterfaceMetricItem           `json:"outPullLatestOutput" swagger:"required"`
 	OutPullOutputByID               UTXOInputMetricItem           `json:"outPullOutputByID" swagger:"required"`
 	OutPullTxInclusionState         TransactionIDMetricItem       `json:"outPullTxInclusionState" swagger:"required"`
@@ -52,8 +60,21 @@ func MapMetricItem[T any, G any](metrics *dto.MetricItem[G], value T) MetricItem
 	}
 }
 
+func MapRegisteredChainIDs(registered []isc.ChainID) []string {
+	chainIDs := make([]string, len(registered))
+
+	for k, v := range registered {
+		chainIDs[k] = v.String()
+	}
+
+	return chainIDs
+}
+
 func MapChainMetrics(metrics *dto.ChainMetrics) *ChainMetrics {
 	return &ChainMetrics{
+		RegisteredChainIDs:              MapRegisteredChainIDs(metrics.RegisteredChainIDs),
+		InMilestone:                     MilestoneMetricItem(MapMetricItem(metrics.InMilestone, MilestoneFromIotaGoMilestone(metrics.InMilestone.LastMessage))),
+		OutPublisherStateTransaction:    PublisherStateTransactionItem(MapMetricItem(metrics.OutPublisherStateTransaction, StateTransactionFromISCStateTransaction(metrics.OutPublisherStateTransaction.LastMessage))),
 		InAliasOutput:                   AliasOutputMetricItem(MapMetricItem(metrics.InAliasOutput, OutputFromIotaGoOutput(metrics.InAliasOutput.LastMessage))),
 		InOutput:                        InOutputMetricItem(MapMetricItem(metrics.InOutput, InOutputFromISCInOutput(metrics.InOutput.LastMessage))),
 		InTxInclusionState:              TxInclusionStateMsgMetricItem(MapMetricItem(metrics.InTxInclusionState, TxInclusionStateMsgFromISCTxInclusionStateMsg(metrics.InTxInclusionState.LastMessage))),
@@ -86,7 +107,7 @@ type ConsensusWorkflowMetrics struct {
 	TimeTransactionSeen      time.Time `json:"timeTransactionSeen" swagger:"desc(Shows when algorithm last noted that transaction had been seen by L1 in current consensus iteration),required"`
 	TimeCompleted            time.Time `json:"timeCompleted" swagger:"desc(Shows when algorithm was last completed in current consensus iteration),required"`
 
-	CurrentStateIndex uint32 `json:"currentStateIndex" swagger:"desc(Shows current state index of the consensus)"`
+	CurrentStateIndex uint32 `json:"currentStateIndex" swagger:"desc(Shows current state index of the consensus),min(1)"`
 }
 
 func MapConsensusWorkflowStatus(status chain.ConsensusWorkflowStatus) *ConsensusWorkflowMetrics {
