@@ -66,25 +66,24 @@ impl IClientService for WasmClientService {
     fn post_request(
         &self,
         chain_id: &ScChainID,
-        contract_hname: &ScHname,
-        function_hname: &ScHname,
+        h_contract: &ScHname,
+        h_function: &ScHname,
         args: &[u8],
         allowance: &ScAssets,
         key_pair: &keypair::KeyPair,
         nonce: u64,
     ) -> errors::Result<ScRequestID> {
-        let params = ScDict::new(args);
-        let mut req: offledgerrequest::OffLedgerRequestData =
-            offledgerrequest::OffLedgerRequest::new(
+        let mut req: OffLedgerRequestData =
+            OffLedgerRequest::new(
                 chain_id,
-                contract_hname,
-                function_hname,
-                &params,
+                h_contract,
+                h_function,
+                args,
                 nonce,
             );
         req.with_allowance(&allowance);
-        req = req.sign(key_pair);
-        self.client.post_offledger_request(&chain_id, &req)?;
+        let signed = req.sign(key_pair);
+        self.client.post_offledger_request(&chain_id, &signed)?;
         return Ok(req.id());
     }
 

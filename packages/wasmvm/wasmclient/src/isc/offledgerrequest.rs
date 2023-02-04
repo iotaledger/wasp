@@ -11,7 +11,7 @@ pub trait OffLedgerRequest {
         chain_id: &ScChainID,
         contract: &ScHname,
         entry_point: &ScHname,
-        params: &ScDict,
+        params: &[u8],
         nonce: u64,
     ) -> Self;
     fn with_nonce(&mut self, nonce: u64) -> &Self;
@@ -25,7 +25,7 @@ pub struct OffLedgerRequestData {
     chain_id: ScChainID,
     contract: ScHname,
     entry_point: ScHname,
-    params: ScDict,
+    params: Vec<u8>,
     signature_scheme: OffLedgerSignatureScheme,
     nonce: u64,
     allowance: ScAssets,
@@ -52,17 +52,17 @@ impl OffLedgerRequest for OffLedgerRequestData {
         chain_id: &ScChainID,
         contract: &ScHname,
         entry_point: &ScHname,
-        params: &ScDict,
+        params: &[u8],
         nonce: u64,
     ) -> Self {
         return OffLedgerRequestData {
             chain_id: chain_id.clone(),
             contract: contract.clone(),
             entry_point: entry_point.clone(),
-            params: params.clone(),
+            params: params.to_vec(),
             signature_scheme: OffLedgerSignatureScheme::new(&keypair::KeyPair::new(&[])),
             nonce: nonce,
-            allowance: ScAssets::new(&Vec::new()),
+            allowance: ScAssets::new(&[]),
             gas_budget: super::gas::MAX_GAS_PER_REQUEST,
         };
     }
@@ -101,17 +101,17 @@ impl OffLedgerRequestData {
 
     pub fn essence(&self) -> Vec<u8> {
         let mut data: Vec<u8> = vec![1];
-        data.append(self.chain_id.to_bytes().as_mut());
-        data.append(self.contract.to_bytes().as_mut());
-        data.append(self.entry_point.to_bytes().as_mut());
-        data.append(self.params.to_bytes().as_mut());
-        data.append(wasmlib::uint64_to_bytes(self.nonce).as_mut());
-        data.append(wasmlib::uint64_to_bytes(self.gas_budget).as_mut());
+        data.extend(self.chain_id.to_bytes());
+        data.extend(self.contract.to_bytes());
+        data.extend(self.entry_point.to_bytes());
+        data.extend(self.params.clone());
+        data.extend(wasmlib::uint64_to_bytes(self.nonce));
+        data.extend(wasmlib::uint64_to_bytes(self.gas_budget));
         let scheme = self.signature_scheme.clone();
-        let mut public_key = scheme.key_pair.public_key.to_bytes().to_vec();
+        let public_key = scheme.key_pair.public_key.to_bytes();
         data.push(public_key.len() as u8);
-        data.append(&mut public_key);
-        data.append(self.allowance.to_bytes().as_mut());
+        data.extend(public_key);
+        data.extend(self.allowance.to_bytes());
         return data;
     }
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -119,6 +119,7 @@ impl OffLedgerRequestData {
         b.append(&mut self.signature_scheme.clone().signature.to_owned().to_vec());
         return b;
     }
+
     pub fn with_allowance(&mut self, allowance: &ScAssets) {
         self.allowance = allowance.clone();
     }
