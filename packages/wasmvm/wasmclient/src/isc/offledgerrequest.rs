@@ -107,16 +107,18 @@ impl OffLedgerRequestData {
         data.extend(self.params.clone());
         data.extend(wasmlib::uint64_to_bytes(self.nonce));
         data.extend(wasmlib::uint64_to_bytes(self.gas_budget));
-        let scheme = self.signature_scheme.clone();
-        let public_key = scheme.key_pair.public_key.to_bytes();
-        data.push(public_key.len() as u8);
-        data.extend(public_key);
+        let pub_key = self.signature_scheme.key_pair.public_key.to_bytes();
+        data.push(pub_key.len() as u8);
+        data.extend(pub_key);
         data.extend(self.allowance.to_bytes());
         return data;
     }
+
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut b = self.essence();
-        b.append(&mut self.signature_scheme.clone().signature.to_owned().to_vec());
+        let sig = self.signature_scheme.signature.clone();
+        b.extend(uint16_to_bytes(sig.len() as u16));
+        b.extend( sig);
         return b;
     }
 

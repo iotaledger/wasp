@@ -98,7 +98,8 @@ impl WaspClient {
     ) -> errors::Result<()> {
         let url = format!("{}/chain/{}/request", self.base_url, chain_id.to_string());
         let client = reqwest::blocking::Client::new();
-        let body = JsonPostRequest { request: general_purpose::STANDARD_NO_PAD.encode(req.to_bytes()) };
+        let body = JsonPostRequest { request: general_purpose::STANDARD.encode(req.to_bytes()) };
+        println!("{}", body.request);
         let res = client.post(url).json(&body).send();
         match res {
             Ok(v) => match v.status() {
