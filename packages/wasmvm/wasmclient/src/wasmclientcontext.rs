@@ -98,7 +98,18 @@ impl WasmClientContext {
 
     pub fn sign_requests(&mut self, key_pair: &keypair::KeyPair) {
         self.key_pair = Some(key_pair.clone());
-        //TODO get last used nonce from accounts core contract
+        // get last used nonce from accounts core contract
+        let isc_agent = wasmlib::ScAgentID::from_address(&key_pair.address());
+        let ctx = WasmClientContext::new(
+            &self.svc_client,
+            &self.chain_id.to_string(),
+            coreaccounts::SC_NAME,
+        );
+        let n = coreaccounts::ScFuncs::get_account_nonce(&ctx);
+        n.params.agent_id().set_value(&isc_agent);
+        n.func.call();
+        let mut nonce = self.nonce.lock().unwrap();
+        *nonce = n.results.account_nonce().value();
     }
 
     pub fn unregister(&mut self, handler: Box<dyn IEventHandlers>) {
