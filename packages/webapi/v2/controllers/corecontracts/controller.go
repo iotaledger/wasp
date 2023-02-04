@@ -6,27 +6,27 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/wasp/packages/authentication"
-	corecontracts2 "github.com/iotaledger/wasp/packages/webapi/v2/corecontracts"
+	"github.com/iotaledger/wasp/packages/webapi/v2/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
 
 type Controller struct {
-	accounts   *corecontracts2.Accounts
-	blob       *corecontracts2.Blob
-	blocklog   *corecontracts2.BlockLog
-	errors     *corecontracts2.Errors
-	governance *corecontracts2.Governance
+	accounts   *corecontracts.Accounts
+	blob       *corecontracts.Blob
+	blocklog   *corecontracts.BlockLog
+	errors     *corecontracts.Errors
+	governance *corecontracts.Governance
 	vmService  interfaces.VMService
 }
 
 func NewCoreContractsController(vmService interfaces.VMService) interfaces.APIController {
 	return &Controller{
-		accounts:   corecontracts2.NewAccounts(vmService),
-		blob:       corecontracts2.NewBlob(vmService),
-		blocklog:   corecontracts2.NewBlockLog(vmService),
-		errors:     corecontracts2.NewErrors(vmService),
-		governance: corecontracts2.NewGovernance(vmService),
+		accounts:   corecontracts.NewAccounts(vmService),
+		blob:       corecontracts.NewBlob(vmService),
+		blocklog:   corecontracts.NewBlockLog(vmService),
+		errors:     corecontracts.NewErrors(vmService),
+		governance: corecontracts.NewGovernance(vmService),
 		vmService:  vmService,
 	}
 }
@@ -84,7 +84,7 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 
 	api.GET("chains/:chainID/core/accounts/foundry_output", c.getFoundryOutput).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "chainID", "Serial Number (uint32)").
+		AddParamPath(uint32(0), "serialNumber", "Serial Number (uint32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "The foundry output", mocker.Get(models.FoundryOutputResponse{}), nil).
 		SetOperationId("accountsGetFoundryOutput").
@@ -128,7 +128,7 @@ func (c *Controller) addErrorContractRoutes(api echoswagger.ApiGroup, mocker int
 	api.GET("chains/:chainID/core/errors/:contractHname/message/:errorID", c.getErrorMessageFormat).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "contractHname", "Contract (Hname as Hex)").
-		AddParamPath("", "errorID", "Error Id (uint16)").
+		AddParamPath(uint16(0), "errorID", "Error Id (uint16)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "The error message format", mocker.Get(ErrorMessageFormatResponse{}), nil).
 		SetOperationId("errorsGetErrorMessageFormat").
@@ -155,7 +155,7 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 
 	api.GET("chains/:chainID/core/blocklog/blocks/:blockIndex", c.getBlockInfo).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath(0, "blockIndex", "Block Index (uint32)").
+		AddParamPath(uint32(0), "blockIndex", "Block Index (uint32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "The block info", mocker.Get(models.BlockInfoResponse{}), nil).
 		SetOperationId("blocklogGetBlockInfo").
@@ -170,7 +170,7 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 
 	api.GET("chains/:chainID/core/blocklog/blocks/:blockIndex/requestids", c.getRequestIDsForBlock).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath(0, "blockIndex", "Block Index (uint32)").
+		AddParamPath(uint32(0), "blockIndex", "Block Index (uint32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "A list of request ids (ISCRequestID[])", mocker.Get(models.RequestIDsResponse{}), nil).
 		SetOperationId("blocklogGetRequestIDsForBlock").

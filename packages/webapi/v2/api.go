@@ -27,12 +27,11 @@ import (
 
 func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLoad []interfaces.APIController) {
 	for _, controller := range controllersToLoad {
-		publicGroup := server.Group(controller.Name(), "/v2")
+		group := server.Group(controller.Name(), "/v2/")
 
-		controller.RegisterPublic(publicGroup, mocker)
+		controller.RegisterPublic(group, mocker)
 
-		adminGroup := server.Group(controller.Name(), "/v2").
-			SetSecurity("Authorization")
+		adminGroup := group.SetSecurity("Authorization")
 
 		controller.RegisterAdmin(adminGroup, mocker)
 	}
