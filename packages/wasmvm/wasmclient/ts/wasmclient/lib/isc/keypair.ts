@@ -31,6 +31,10 @@ export class KeyPair {
         return Ed25519.sign(this.privateKey, data);
     }
 
+    public verify(data: Uint8Array, sig: Uint8Array): bool {
+        return Ed25519.verify(this.publicKey, data, sig);
+    }
+
     public static subSeed(seed: Uint8Array, n: u64): Uint8Array {
         const indexBytes = uint64ToBytes(n);
         const hashOfIndexBytes = Blake2b.sum256(indexBytes);
