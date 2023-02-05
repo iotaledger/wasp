@@ -66,19 +66,23 @@ impl OffLedgerRequest for OffLedgerRequestData {
             gas_budget: gas::MAX_GAS_PER_REQUEST,
         };
     }
+
     fn with_nonce(&mut self, nonce: u64) -> &Self {
         self.nonce = nonce;
         return self;
     }
+
     fn with_gas_budget(&mut self, gas_budget: u64) -> &Self {
         self.gas_budget = gas_budget;
         return self;
     }
+
     fn with_allowance(&mut self, allowance: &ScAssets) -> &Self {
         self.allowance = allowance.clone();
         return self;
     }
-    fn sign<'a>(&self, key_pair: &'a keypair::KeyPair) -> Self {
+
+    fn sign(&self, key_pair: &keypair::KeyPair) -> Self {
         let mut req = OffLedgerRequestData::new(
             &self.chain_id,
             &self.contract,
@@ -86,9 +90,8 @@ impl OffLedgerRequest for OffLedgerRequestData {
             &self.params,
             self.nonce,
         );
-        let mut scheme = OffLedgerSignatureScheme::new(&key_pair);
-        scheme.signature = key_pair.sign(&self.essence());
-        req.signature_scheme = scheme;
+        req.signature_scheme = OffLedgerSignatureScheme::new(&key_pair);
+        req.signature_scheme.signature = key_pair.sign(&req.essence());
         return req;
     }
 }
