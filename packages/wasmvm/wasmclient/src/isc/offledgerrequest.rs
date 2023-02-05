@@ -4,7 +4,7 @@
 use crypto::hashes::{blake2b::Blake2b256, Digest};
 use wasmlib::*;
 
-use crate::keypair;
+use crate::{gas, keypair};
 
 pub trait OffLedgerRequest {
     fn new(
@@ -63,7 +63,7 @@ impl OffLedgerRequest for OffLedgerRequestData {
             signature_scheme: OffLedgerSignatureScheme::new(&keypair::KeyPair::new(&[])),
             nonce: nonce,
             allowance: ScAssets::new(&[]),
-            gas_budget: super::gas::MAX_GAS_PER_REQUEST,
+            gas_budget: gas::MAX_GAS_PER_REQUEST,
         };
     }
     fn with_nonce(&mut self, nonce: u64) -> &Self {
@@ -87,7 +87,7 @@ impl OffLedgerRequest for OffLedgerRequestData {
             self.nonce,
         );
         let mut scheme = OffLedgerSignatureScheme::new(&key_pair);
-        scheme.signature = key_pair.sign(&self.essence()).clone();
+        scheme.signature = key_pair.sign(&self.essence());
         req.signature_scheme = scheme;
         return req;
     }
@@ -95,8 +95,11 @@ impl OffLedgerRequest for OffLedgerRequestData {
 
 impl OffLedgerRequestData {
     pub fn id(&self) -> ScRequestID {
-        let hash = Blake2b256::digest(self.to_bytes());
-        return request_id_from_bytes(&hash.to_vec());
+        // req id is hash of req bytes with output index zero
+        let mut hash = Blake2b256::digest(self.to_bytes()).to_vec();
+        hash.push(0);
+        hash.push(0);
+        return request_id_from_bytes(&hash);
     }
 
     pub fn essence(&self) -> Vec<u8> {
@@ -116,7 +119,7 @@ impl OffLedgerRequestData {
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut b = self.essence();
-        let sig = self.signature_scheme.signature.clone();
+        let sig = &self.signature_scheme.signature;
         b.extend(uint16_to_bytes(sig.len() as u16));
         b.extend( sig);
         return b;

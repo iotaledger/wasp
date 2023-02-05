@@ -91,19 +91,17 @@ mod tests {
     const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
 
     #[test]
-    fn keypair_sub_seed_0() {
+    fn keypair_clone() {
         let my_seed = bytes_from_string(&MYSEED);
-        let sub_seed = KeyPair::sub_seed(&my_seed, 0);
-        println!("Seed: {}", bytes_to_string(&sub_seed));
-        assert!(bytes_to_string(&sub_seed) == "0x24642f47bd363fbd4e05f13ed6c60b04c8a4cf1d295f76fc16917532bc4cd0af");
-    }
+        let pair1 = KeyPair::new(&my_seed);
+        let pair2 = pair1.clone();
 
-    #[test]
-    fn keypair_sub_seed_1() {
-        let my_seed = bytes_from_string(&MYSEED);
-        let sub_seed = KeyPair::sub_seed(&my_seed, 1);
-        println!("Seed: {}", bytes_to_string(&sub_seed));
-        assert!(bytes_to_string(&sub_seed) == "0xb83d28550d9ee5651796eeb36027e737f0d79495b56d3d8931c716f2141017c8");
+        println!("Publ1: {}", bytes_to_string(&pair1.public_key.to_bytes()));
+        println!("Publ2: {}", bytes_to_string(&pair2.public_key.to_bytes()));
+        println!("Priv1: {}", bytes_to_string(&pair1.private_key.to_bytes()));
+        println!("Priv2: {}", bytes_to_string(&pair2.private_key.to_bytes()));
+        assert!(bytes_to_string(&pair1.public_key.to_bytes()) == bytes_to_string(&pair2.public_key.to_bytes()));
+        assert!(bytes_to_string(&pair2.private_key.to_bytes()) == bytes_to_string(&pair2.private_key.to_bytes()));
     }
 
     #[test]
@@ -145,5 +143,21 @@ mod tests {
         println!("Sign: {}", bytes_to_string(&signed_seed));
         assert!(bytes_to_string(&signed_seed) == "0xa9571cc0c8612a63feaa325372a33c2f4ff6c414def18eb85ce4afe9b7cf01b84dba089278ca992e76fad8a50a76e3bf157216c445a404dc9e0424c250640906");
         assert!(pair.verify(&my_seed, &signed_seed));
+    }
+
+    #[test]
+    fn keypair_sub_seed_0() {
+        let my_seed = bytes_from_string(&MYSEED);
+        let sub_seed = KeyPair::sub_seed(&my_seed, 0);
+        println!("Seed: {}", bytes_to_string(&sub_seed));
+        assert!(bytes_to_string(&sub_seed) == "0x24642f47bd363fbd4e05f13ed6c60b04c8a4cf1d295f76fc16917532bc4cd0af");
+    }
+
+    #[test]
+    fn keypair_sub_seed_1() {
+        let my_seed = bytes_from_string(&MYSEED);
+        let sub_seed = KeyPair::sub_seed(&my_seed, 1);
+        println!("Seed: {}", bytes_to_string(&sub_seed));
+        assert!(bytes_to_string(&sub_seed) == "0xb83d28550d9ee5651796eeb36027e737f0d79495b56d3d8931c716f2141017c8");
     }
 }
