@@ -19,6 +19,18 @@ function setupClient() {
 
 describe('keypair tests', function () {
     const mySeed = bytesFromString(MYSEED);
+    it('construct proper sub-seed 0', () => {
+        const subSeed = KeyPair.subSeed(mySeed, 0n);
+        console.log('Seed: ' + bytesToString(subSeed));
+        expect(bytesToString(subSeed) == '0x24642f47bd363fbd4e05f13ed6c60b04c8a4cf1d295f76fc16917532bc4cd0af').toBeTruthy();
+    });
+
+    it('construct proper sub-seed 1', () => {
+        const subSeed = KeyPair.subSeed(mySeed, 1n);
+        console.log('Seed: ' + bytesToString(subSeed));
+        expect(bytesToString(subSeed) == '0xb83d28550d9ee5651796eeb36027e737f0d79495b56d3d8931c716f2141017c8').toBeTruthy();
+    });
+
     it('should construct a proper pair', () => {
         const pair = new KeyPair(mySeed);
         console.log('Publ: ' + bytesToString(pair.publicKey));
@@ -27,7 +39,7 @@ describe('keypair tests', function () {
         expect(bytesToString(pair.privateKey) == '0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f330adc0bd555d56ed51895528e47dcb403e36e0026fe49b6ae59e9adcea5f9a87').toBeTruthy();
     });
 
-    it('should construct subseed pair 0', () => {
+    it('should construct sub-seed pair 0', () => {
         const pair = KeyPair.fromSubSeed(mySeed, 0n);
         console.log('Publ: ' + bytesToString(pair.publicKey));
         console.log('Priv: ' + bytesToString(pair.privateKey));
@@ -35,7 +47,7 @@ describe('keypair tests', function () {
         expect(bytesToString(pair.privateKey) == '0x24642f47bd363fbd4e05f13ed6c60b04c8a4cf1d295f76fc16917532bc4cd0af40a757d26f6ef94dccee5b4f947faa78532286fe18117f2150a80acf2a95a8e2').toBeTruthy();
     });
 
-    it('should construct subseed pair 1', () => {
+    it('should construct sub-seed pair 1', () => {
         const pair = KeyPair.fromSubSeed(mySeed, 1n);
         console.log('Publ: ' + bytesToString(pair.publicKey));
         console.log('Priv: ' + bytesToString(pair.privateKey));

@@ -31,12 +31,17 @@ export class KeyPair {
         return Ed25519.sign(this.privateKey, data);
     }
 
-    public static fromSubSeed(seed: Uint8Array, n: u64): KeyPair {
+    public static subSeed(seed: Uint8Array, n: u64): Uint8Array {
         const indexBytes = uint64ToBytes(n);
         const hashOfIndexBytes = Blake2b.sum256(indexBytes);
         for (let i = 0; i < seed.length; i++) {
             hashOfIndexBytes[i] ^= seed[i];
         }
-        return new KeyPair(hashOfIndexBytes);
+        return hashOfIndexBytes;
+    }
+
+    public static fromSubSeed(seed: Uint8Array, n: u64): KeyPair {
+        const subSeed = this.subSeed(seed, n);
+        return new KeyPair(subSeed);
     }
 }
