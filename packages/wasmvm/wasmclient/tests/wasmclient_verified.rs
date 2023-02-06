@@ -1,11 +1,11 @@
 use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};
 use wasmlib::ScViewCallContext;
 
-const MYCHAIN: &str = "tst1ppx8hf6vl7ak6xk2phxhx3xf6vd2r5zyulkgaf20kmfev9xusy4t2tku6he";
-const MYSEED: &str = "0x927fc9c0502ca9acc4a2ae15fabb7248d054b319423862873088c92d9b835c15";
+const MYCHAIN: &str = "atoi1pq48s2dnudsjpsrljlrahkur6250ey26sqxfv8hsmks23lnhkkqmy0h98sl";
+const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
 
 fn setup_client() -> wasmclient::wasmclientcontext::WasmClientContext {
-    let svc = WasmClientService::new("http://127.0.0.1:14265", "127.0.0.1:15550");
+    let svc = WasmClientService::new("http://127.0.0.1:19090", "127.0.0.1:15550");
     let mut ctx = WasmClientContext::new(&svc, MYCHAIN, "testwasmlib");
     ctx.sign_requests(&keypair::KeyPair::from_sub_seed(
         &wasmlib::bytes_from_string(MYSEED),
@@ -26,7 +26,7 @@ fn call_view() {
     if let Err(e) = &*e {
         println!("err: {}", e);
     }
-    assert!(ctx.error.read().unwrap().is_ok());
+    assert!(e.is_ok());
     let rnd = v.results.random().value();
     println!("rnd: {}", rnd);
     assert!(rnd != 0);
@@ -38,10 +38,19 @@ fn post_func_request() {
     ctx.fn_chain_id();
     let f = testwasmlib::ScFuncs::random(&ctx);
     f.func.post();
-    assert!(ctx.error.read().unwrap().is_ok());
+    let e = ctx.error.read().unwrap();
+    if let Err(e) = &*e {
+        println!("err: {}", e);
+    }
+    assert!(e.is_ok());
 
+    println!("Waiting");
     ctx.wait_request();
-    assert!(ctx.error.read().unwrap().is_ok());
+    let e = ctx.error.read().unwrap();
+    if let Err(e) = &*e {
+        println!("err: {}", e);
+    }
+    assert!(e.is_ok());
 
     let v = testwasmlib::ScFuncs::get_random(&ctx);
     v.func.call();

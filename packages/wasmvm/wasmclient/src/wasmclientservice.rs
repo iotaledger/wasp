@@ -1,11 +1,16 @@
 // // Copyright 2020 IOTA Stiftung
 // // SPDX-License-Identifier: Apache-2.0
 
-use isc::{offledgerrequest::*, waspclient::*};
-use std::sync::{mpsc, Arc, RwLock};
+use std::sync::{Arc, mpsc, RwLock};
 use std::time::Duration;
 
+use wasmlib::*;
+
+use isc::offledgerrequest::*;
+
 use crate::*;
+use crate::keypair::KeyPair;
+use crate::waspclient::WaspClient;
 
 pub trait IClientService {
     fn call_view_by_hname(
@@ -15,6 +20,7 @@ pub trait IClientService {
         function_hname: &ScHname,
         args: &[u8],
     ) -> errors::Result<Vec<u8>>;
+
     fn post_request(
         &self,
         chain_id: &ScChainID,
@@ -22,14 +28,16 @@ pub trait IClientService {
         function_hname: &ScHname,
         args: &[u8],
         allowance: &ScAssets,
-        key_pair: &keypair::KeyPair,
+        key_pair: &KeyPair,
         nonce: u64,
     ) -> errors::Result<ScRequestID>;
+
     fn subscribe_events(
         &self,
         tx: mpsc::Sender<Vec<String>>,
         done: Arc<RwLock<bool>>,
     ) -> errors::Result<()>;
+
     fn wait_until_request_processed(
         &self,
         chain_id: &ScChainID,
@@ -40,7 +48,7 @@ pub trait IClientService {
 
 #[derive(Clone, PartialEq)]
 pub struct WasmClientService {
-    client: waspclient::WaspClient,
+    client: WaspClient,
     event_port: String,
     last_err: errors::Result<()>,
 }
@@ -53,13 +61,11 @@ impl IClientService for WasmClientService {
         function_hname: &ScHname,
         args: &[u8],
     ) -> errors::Result<Vec<u8>> {
-        let params = ScDict::new(args);
-
         return self.client.call_view_by_hname(
             chain_id,
             contract_hname,
             function_hname,
-            &params,
+            args,
             None,
         );
     }
@@ -67,26 +73,28 @@ impl IClientService for WasmClientService {
     fn post_request(
         &self,
         chain_id: &ScChainID,
-        contract_hname: &ScHname,
-        function_hname: &ScHname,
+        h_contract: &ScHname,
+        h_function: &ScHname,
         args: &[u8],
         allowance: &ScAssets,
-        key_pair: &keypair::KeyPair,
+        key_pair: &KeyPair,
         nonce: u64,
     ) -> errors::Result<ScRequestID> {
-        let params = ScDict::new(args);
-        let mut req: offledgerrequest::OffLedgerRequestData =
-            offledgerrequest::OffLedgerRequest::new(
+        let mut req: OffLedgerRequestData =
+            OffLedgerRequest::new(
                 chain_id,
-                contract_hname,
-                function_hname,
-                &params,
+                h_contract,
+                h_function,
+                args,
                 nonce,
             );
         req.with_allowance(&allowance);
-        req = req.sign(key_pair);
-        self.client.post_offledger_request(&chain_id, &req)?;
-        return Ok(req.id());
+        let signed = req.sign(key_pair);
+        let res = self.client.post_offledger_request(&chain_id, &signed);
+        if let Err(e) = res {
+            return Err(e);
+        }
+        Ok(signed.id())
     }
 
     fn subscribe_events(
@@ -113,7 +121,7 @@ impl IClientService for WasmClientService {
 impl WasmClientService {
     pub fn new(wasp_api: &str, event_port: &str) -> Self {
         return WasmClientService {
-            client: waspclient::WaspClient::new(wasp_api, &event_port),
+            client: WaspClient::new(wasp_api, &event_port),
             event_port: event_port.to_string(),
             last_err: Ok(()),
         };
@@ -123,7 +131,7 @@ impl WasmClientService {
 impl Default for WasmClientService {
     fn default() -> Self {
         return WasmClientService {
-            client: waspclient::WaspClient::new("127.0.0.1:19090", "127.0.0.1:15550"),
+            client: WaspClient::new("127.0.0.1:19090", "127.0.0.1:15550"),
             event_port: "127.0.0.1:15550".to_string(),
             last_err: Ok(()),
         };
@@ -143,12 +151,13 @@ impl Default for WasmClientService {
 mod tests {
     use crate::isc::waspclient;
     use crate::WasmClientService;
+    use crate::waspclient::WaspClient;
 
     #[test]
     fn service_default() {
         let service = WasmClientService::default();
         let default_service = WasmClientService {
-            client: waspclient::WaspClient::new("127.0.0.1:19090", "127.0.0.1:15550"),
+            client: WaspClient::new("127.0.0.1:19090", "127.0.0.1:15550"),
             event_port: "127.0.0.1:15550".to_string(),
             last_err: Ok(()),
         };

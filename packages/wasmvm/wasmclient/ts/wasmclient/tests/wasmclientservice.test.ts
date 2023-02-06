@@ -1,9 +1,9 @@
 import {WasmClientContext, WasmClientService} from '../lib';
 import * as testwasmlib from 'testwasmlib';
-import {bytesFromString} from 'wasmlib';
+import {bytesFromString, bytesToString} from 'wasmlib';
 import {KeyPair} from '../lib/isc';
 
-const MYCHAIN = 'atoi1pzd0ztmwrzej87prae7mz48pn9gezxq9taduxtntjepx29jlhhn2z5vd30k';
+const MYCHAIN = 'atoi1pq48s2dnudsjpsrljlrahkur6250ey26sqxfv8hsmks23lnhkkqmy0h98sl';
 const MYSEED = '0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3';
 
 function setupClient() {
@@ -16,6 +16,54 @@ function setupClient() {
 
 // describe('wasmclient unverified', function () {
 // });
+
+describe('keypair tests', function () {
+    const mySeed = bytesFromString(MYSEED);
+    it('construct proper sub-seed 0', () => {
+        const subSeed = KeyPair.subSeed(mySeed, 0n);
+        console.log('Seed: ' + bytesToString(subSeed));
+        expect(bytesToString(subSeed) == '0x24642f47bd363fbd4e05f13ed6c60b04c8a4cf1d295f76fc16917532bc4cd0af').toBeTruthy();
+    });
+
+    it('construct proper sub-seed 1', () => {
+        const subSeed = KeyPair.subSeed(mySeed, 1n);
+        console.log('Seed: ' + bytesToString(subSeed));
+        expect(bytesToString(subSeed) == '0xb83d28550d9ee5651796eeb36027e737f0d79495b56d3d8931c716f2141017c8').toBeTruthy();
+    });
+
+    it('should construct a proper pair', () => {
+        const pair = new KeyPair(mySeed);
+        console.log('Publ: ' + bytesToString(pair.publicKey));
+        console.log('Priv: ' + bytesToString(pair.privateKey));
+        expect(bytesToString(pair.publicKey) == '0x30adc0bd555d56ed51895528e47dcb403e36e0026fe49b6ae59e9adcea5f9a87').toBeTruthy();
+        expect(bytesToString(pair.privateKey.slice(0, 32)) == '0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3').toBeTruthy();
+    });
+
+    it('should construct sub-seed pair 0', () => {
+        const pair = KeyPair.fromSubSeed(mySeed, 0n);
+        console.log('Publ: ' + bytesToString(pair.publicKey));
+        console.log('Priv: ' + bytesToString(pair.privateKey));
+        expect(bytesToString(pair.publicKey) == '0x40a757d26f6ef94dccee5b4f947faa78532286fe18117f2150a80acf2a95a8e2').toBeTruthy();
+        expect(bytesToString(pair.privateKey.slice(0, 32)) == '0x24642f47bd363fbd4e05f13ed6c60b04c8a4cf1d295f76fc16917532bc4cd0af').toBeTruthy();
+    });
+
+    it('should construct sub-seed pair 1', () => {
+        const pair = KeyPair.fromSubSeed(mySeed, 1n);
+        console.log('Publ: ' + bytesToString(pair.publicKey));
+        console.log('Priv: ' + bytesToString(pair.privateKey));
+        expect(bytesToString(pair.publicKey) == '0x120d2b26fc1b1d53bb916b8a277bcc2efa09e92c95be1a8fd5c6b3adbc795679').toBeTruthy();
+        expect(bytesToString(pair.privateKey.slice(0, 32)) == '0xb83d28550d9ee5651796eeb36027e737f0d79495b56d3d8931c716f2141017c8').toBeTruthy();
+    });
+
+    it('should sign and verify', () => {
+        const pair = new KeyPair(mySeed);
+        const signedSeed = pair.sign(mySeed);
+        console.log('Seed: ' + bytesToString(mySeed));
+        console.log('Sign: ' + bytesToString(signedSeed));
+        expect(bytesToString(signedSeed) == '0xa9571cc0c8612a63feaa325372a33c2f4ff6c414def18eb85ce4afe9b7cf01b84dba089278ca992e76fad8a50a76e3bf157216c445a404dc9e0424c250640906').toBeTruthy();
+        expect(pair.verify(mySeed, signedSeed)).toBeTruthy();
+    });
+});
 
 describe('wasmclient verified', function () {
     describe('call() view', function () {
