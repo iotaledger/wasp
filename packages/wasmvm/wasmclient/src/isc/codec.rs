@@ -1,11 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use bech32::*;
+use bech32::{FromBase32, ToBase32, Variant};
 use crypto::hashes::{blake2b::Blake2b256, Digest};
 use serde::{Deserialize, Serialize};
 use wasmlib::*;
-pub use wasmtypes::*;
 
 use crate::errors;
 
@@ -33,7 +32,7 @@ pub fn bech32_encode(hrp: &str, addr: &ScAddress) -> errors::Result<String> {
 pub fn hname_bytes(name: &str) -> Vec<u8> {
     let hash = Blake2b256::digest(name.as_bytes());
     let mut slice = &hash[0..4];
-    let hname = wasmlib::uint32_from_bytes(slice);
+    let hname = uint32_from_bytes(slice);
     if hname == 0 || hname == 0xffff {
         slice = &hash[4..8];
     }

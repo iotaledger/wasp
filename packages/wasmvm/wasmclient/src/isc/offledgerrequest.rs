@@ -5,6 +5,7 @@ use crypto::hashes::{blake2b::Blake2b256, Digest};
 use wasmlib::*;
 
 use crate::{gas, keypair};
+use crate::keypair::KeyPair;
 
 pub trait OffLedgerRequest {
     fn new(
@@ -34,12 +35,12 @@ pub struct OffLedgerRequestData {
 
 #[derive(Clone)]
 pub struct OffLedgerSignatureScheme {
-    key_pair: keypair::KeyPair,
+    key_pair: KeyPair,
     pub signature: Vec<u8>,
 }
 
 impl OffLedgerSignatureScheme {
-    pub fn new(key_pair: &keypair::KeyPair) -> Self {
+    pub fn new(key_pair: &KeyPair) -> Self {
         return OffLedgerSignatureScheme {
             key_pair: key_pair.clone(),
             signature: Vec::new(),
@@ -60,7 +61,7 @@ impl OffLedgerRequest for OffLedgerRequestData {
             contract: contract.clone(),
             entry_point: entry_point.clone(),
             params: params.to_vec(),
-            signature_scheme: OffLedgerSignatureScheme::new(&keypair::KeyPair::new(&[])),
+            signature_scheme: OffLedgerSignatureScheme::new(&KeyPair::new(&[])),
             nonce: nonce,
             allowance: ScAssets::new(&[]),
             gas_budget: gas::MAX_GAS_PER_REQUEST,
@@ -82,7 +83,7 @@ impl OffLedgerRequest for OffLedgerRequestData {
         return self;
     }
 
-    fn sign(&self, key_pair: &keypair::KeyPair) -> Self {
+    fn sign(&self, key_pair: &KeyPair) -> Self {
         let mut req = OffLedgerRequestData::new(
             &self.chain_id,
             &self.contract,
@@ -111,8 +112,8 @@ impl OffLedgerRequestData {
         data.extend(self.contract.to_bytes());
         data.extend(self.entry_point.to_bytes());
         data.extend(self.params.clone());
-        data.extend(wasmlib::uint64_to_bytes(self.nonce));
-        data.extend(wasmlib::uint64_to_bytes(self.gas_budget));
+        data.extend(uint64_to_bytes(self.nonce));
+        data.extend(uint64_to_bytes(self.gas_budget));
         let pub_key = self.signature_scheme.key_pair.public_key.to_bytes();
         data.push(pub_key.len() as u8);
         data.extend(pub_key);
@@ -124,7 +125,7 @@ impl OffLedgerRequestData {
         let mut b = self.essence();
         let sig = &self.signature_scheme.signature;
         b.extend(uint16_to_bytes(sig.len() as u16));
-        b.extend( sig);
+        b.extend(sig);
         return b;
     }
 

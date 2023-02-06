@@ -1,18 +1,20 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use base64::{Engine as _, engine::general_purpose};
-
-use codec::*;
-use reqwest::*;
 use std::{
     sync::{Arc, mpsc, RwLock},
     thread::spawn,
     time::*,
 };
-pub use wasmlib::*;
 
-pub use crate::*;
+use base64::{Engine as _, engine::general_purpose};
+use reqwest::*;
+use wasmlib::*;
+
+use codec::*;
+
+use crate::*;
+use crate::offledgerrequest::OffLedgerRequestData;
 
 const DEFAULT_OPTIMISTIC_READ_TIMEOUT: Duration = Duration::from_millis(1100);
 
@@ -57,7 +59,7 @@ impl WaspClient {
             function_hname.to_string()
         );
 
-        let client = reqwest::blocking::Client::builder()
+        let client = blocking::Client::builder()
             .timeout(deadline)
             .build()
             .unwrap();
@@ -69,7 +71,7 @@ impl WaspClient {
                 StatusCode::OK => {
                     match v.json::<JsonResponse>() {
                         Ok(json_obj) => {
-                            return Ok(codec::json_decode(json_obj));
+                            return Ok(json_decode(json_obj));
                         }
                         Err(e) => {
                             return Err(format!("parse post response failed: {}", e.to_string()));
@@ -95,11 +97,10 @@ impl WaspClient {
     pub fn post_offledger_request(
         &self,
         chain_id: &ScChainID,
-        req: &offledgerrequest::OffLedgerRequestData,
+        req: &OffLedgerRequestData,
     ) -> errors::Result<()> {
         let url = format!("{}/chain/{}/request", self.base_url, chain_id.to_string());
-        println!("{}", url);
-        let client = reqwest::blocking::Client::new();
+        let client = blocking::Client::new();
         let body = JsonPostRequest { request: general_purpose::STANDARD.encode(req.to_bytes()) };
         let res = client.post(url).json(&body).send();
         match res {
@@ -112,7 +113,7 @@ impl WaspClient {
                 }
                 failed_status_code => {
                     let status_code = failed_status_code.as_u16();
-                     match v.json::<JsonError>() {
+                    match v.json::<JsonError>() {
                         Ok(err_msg) => {
                             return Err(format!("{status_code}: {}", err_msg.message));
                         }
@@ -138,8 +139,7 @@ impl WaspClient {
             chain_id.to_string(),
             req_id.to_string()
         );
-        println!("{}", url);
-        let client = reqwest::blocking::Client::builder()
+        let client = blocking::Client::builder()
             .timeout(timeout)
             .build()
             .unwrap();
@@ -200,19 +200,21 @@ impl WaspClient {
 
 #[cfg(test)]
 mod tests {
-    use httpmock::prelude::*;
     use std::{
         net::TcpListener,
         sync::{Arc, mpsc, RwLock},
         thread::spawn,
     };
-    use tungstenite::accept;
 
-    use crate::waspclient;
+    use httpmock::prelude::*;
+    use tungstenite::accept;
+    use wasmlib::*;
+
+    use crate::waspclient::WaspClient;
 
     #[test]
     fn waspclient_new() {
-        let client = waspclient::WaspClient::new("http://localhost:19090", "ws://localhost:15550");
+        let client = WaspClient::new("http://localhost:19090", "ws://localhost:15550");
         assert!(client.base_url == "http://localhost:19090");
         assert!(client.event_port == "ws://localhost:15550");
     }
@@ -236,10 +238,10 @@ mod tests {
             then.status(200);
         });
 
-        let client = waspclient::WaspClient::new(&mock_server.base_url(), "");
-        let sc_chain_id = wasmlib::chain_id_from_bytes(&chain_id_bytes);
-        let sc_contract_hname = wasmlib::hname_from_bytes(&wasmlib::uint32_to_bytes(0x89703a45));
-        let sc_function_hname = wasmlib::hname_from_bytes(&wasmlib::uint32_to_bytes(0x78cc397a));
+        let client = WaspClient::new(&mock_server.base_url(), "");
+        let sc_chain_id = chain_id_from_bytes(&chain_id_bytes);
+        let sc_contract_hname = hname_from_bytes(&uint32_to_bytes(0x89703a45));
+        let sc_function_hname = hname_from_bytes(&uint32_to_bytes(0x78cc397a));
         let _ = client
             .call_view_by_hname(
                 &sc_chain_id,
@@ -269,7 +271,7 @@ mod tests {
                 count: 3,
             }),
         );
-        let client = waspclient::WaspClient::new("", &url);
+        let client = WaspClient::new("", &url);
         let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
         let lock = Arc::new(RwLock::new(false));
         client.subscribe(tx, lock);
@@ -295,7 +297,7 @@ mod tests {
                 count: 3,
             }),
         );
-        let client = waspclient::WaspClient::new("", &url);
+        let client = WaspClient::new("", &url);
         let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
         let lock = Arc::new(RwLock::new(true));
         let sub_lock = Arc::clone(&lock);
