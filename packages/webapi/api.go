@@ -22,7 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/controllers/requests"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/users"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
-	services2 "github.com/iotaledger/wasp/packages/webapi/services"
+	"github.com/iotaledger/wasp/packages/webapi/services"
 )
 
 func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLoad []interfaces.APIController) {
@@ -61,17 +61,17 @@ func Init(
 	mocker := NewMocker()
 	mocker.LoadMockFiles()
 
-	vmService := services2.NewVMService(chainsProvider)
-	chainService := services2.NewChainService(chainsProvider, nodeConnectionMetrics, chainRecordRegistryProvider, vmService)
-	committeeService := services2.NewCommitteeService(chainsProvider, networkProvider, dkShareRegistryProvider)
-	registryService := services2.NewRegistryService(chainsProvider, chainRecordRegistryProvider)
-	offLedgerService := services2.NewOffLedgerService(chainService, networkProvider, requestCacheTTL)
-	metricsService := services2.NewMetricsService(chainsProvider)
-	peeringService := services2.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
-	evmService := services2.NewEVMService(chainService, networkProvider)
-	nodeService := services2.NewNodeService(chainRecordRegistryProvider, nodeOwnerAddresses, nodeIdentityProvider, shutdownHandler, trustedNetworkManager)
-	dkgService := services2.NewDKGService(dkShareRegistryProvider, dkgNodeProvider)
-	userService := services2.NewUserService(userManager)
+	vmService := services.NewVMService(chainsProvider)
+	chainService := services.NewChainService(chainsProvider, nodeConnectionMetrics, chainRecordRegistryProvider, vmService)
+	committeeService := services.NewCommitteeService(chainsProvider, networkProvider, dkShareRegistryProvider)
+	registryService := services.NewRegistryService(chainsProvider, chainRecordRegistryProvider)
+	offLedgerService := services.NewOffLedgerService(chainService, networkProvider, requestCacheTTL)
+	metricsService := services.NewMetricsService(chainsProvider)
+	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
+	evmService := services.NewEVMService(chainService, networkProvider)
+	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeOwnerAddresses, nodeIdentityProvider, shutdownHandler, trustedNetworkManager)
+	dkgService := services.NewDKGService(dkShareRegistryProvider, dkgNodeProvider)
+	userService := services.NewUserService(userManager)
 	// --
 
 	claimValidator := func(claims *authentication.WaspClaims) bool {
