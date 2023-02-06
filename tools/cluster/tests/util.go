@@ -2,12 +2,14 @@ package tests
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -104,14 +106,12 @@ func (e *ChainEnv) checkBalanceOnChain(agentID isc.AgentID, assetID []byte, expe
 }
 
 func (e *ChainEnv) getAccountsOnChain() []isc.AgentID {
-	r, err := e.Chain.Cluster.WaspClient(0).CallView(
-		e.Chain.ChainID, accounts.Contract.Hname(), accounts.ViewAccounts.Name, nil,
-	)
+	accounts, _, err := e.Chain.Cluster.WaspClient(0).CorecontractsApi.AccountsGetAccounts(context.Background(), e.Chain.ChainID.String()).Execute()
 	require.NoError(e.t, err)
 
 	ret := make([]isc.AgentID, 0)
-	for key := range r {
-		aid, err := isc.AgentIDFromBytes([]byte(key))
+	for _, address := range accounts.Accounts {
+		aid, err := isc.NewAgentIDFromString(address)
 		require.NoError(e.t, err)
 
 		ret = append(ret, aid)
@@ -125,13 +125,16 @@ func (e *ChainEnv) getBalancesOnChain() map[string]*isc.Assets {
 	ret := make(map[string]*isc.Assets)
 	acc := e.getAccountsOnChain()
 	for _, agentID := range acc {
-		r, err := e.Chain.Cluster.WaspClient(0).CallView(
-			e.Chain.ChainID, accounts.Contract.Hname(), accounts.ViewBalance.Name,
-			dict.Dict{
-				accounts.ParamAgentID: agentID.Bytes(),
-			},
-		)
+		balance, _, err := e.Chain.Cluster.
+			WaspClient(0).
+			CorecontractsApi.
+			AccountsGetAccountBalance(context.Background(), e.Chain.ChainID.String(), agentID.String()).
+			Execute()
+
 		require.NoError(e.t, err)
+
+		isc.NewAssets(balance.BaseTokens, balance.NativeTokens.([]*iotago.NativeToken), nil)
+
 		ret[string(agentID.Bytes())], err = isc.AssetsFromDict(r)
 		require.NoError(e.t, err)
 	}

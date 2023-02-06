@@ -14,7 +14,7 @@ import (
 	// without this import it won't work, no messages will be received by the client socket...
 	_ "go.nanomsg.org/mangos/v3/transport/all"
 
-	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"

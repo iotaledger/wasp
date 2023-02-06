@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
@@ -8,7 +9,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/clients"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -16,30 +19,53 @@ import (
 )
 
 func (e *ChainEnv) getBlobInfo(hash hashing.HashValue) map[string]uint32 {
-	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
-		e.Chain.ChainID, blob.Contract.Hname(), blob.ViewGetBlobInfo.Name,
-		dict.Dict{
-			blob.ParamHash: hash[:],
-		})
+	args := dict.Dict{
+		blob.ParamHash: hash[:],
+	}
+
+	jsonArgs := clients.JSONDictToAPIJSONDict(args.JSONDict())
+
+	result, _, err := e.Chain.Cluster.WaspClient().RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
+		ChainId:       e.Chain.ChainID.String(),
+		ContractHName: blob.Contract.Hname().String(),
+		FunctionHName: blob.ViewGetBlobInfo.Hname().String(),
+		Arguments:     jsonArgs,
+	}).Execute()
+
 	require.NoError(e.t, err)
-	decoded, err := blob.DecodeSizesMap(ret)
+	decodedDict, err := clients.APIJsonDictToDict(*result)
+	require.NoError(e.t, err)
+
+	decoded, err := blob.DecodeSizesMap(decodedDict)
 	require.NoError(e.t, err)
 	return decoded
 }
 
 func (e *ChainEnv) getBlobFieldValue(blobHash hashing.HashValue, field string) []byte {
-	v, err := e.Chain.Cluster.WaspClient(0).CallView(
-		e.Chain.ChainID, blob.Contract.Hname(), blob.ViewGetBlobField.Name,
-		dict.Dict{
-			blob.ParamHash:  blobHash[:],
-			blob.ParamField: []byte(field),
-		})
+	args := dict.Dict{
+		blob.ParamHash:  blobHash[:],
+		blob.ParamField: []byte(field),
+	}
+
+	jsonArgs := clients.JSONDictToAPIJSONDict(args.JSONDict())
+
+	result, _, err := e.Chain.Cluster.WaspClient().RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
+		ChainId:       e.Chain.ChainID.String(),
+		ContractHName: blob.Contract.Hname().String(),
+		FunctionHName: blob.ViewGetBlobField.Hname().String(),
+		Arguments:     jsonArgs,
+	}).Execute()
+
+	decodedDict, err := clients.APIJsonDictToDict(*result)
 	require.NoError(e.t, err)
-	if v.IsEmpty() {
+
+	require.NoError(e.t, err)
+	if decodedDict.IsEmpty() {
 		return nil
 	}
-	ret, err := v.Get(blob.ParamBytes)
+	ret, err := decodedDict.Get(blob.ParamBytes)
 	require.NoError(e.t, err)
+
 	return ret
 }
 
@@ -108,9 +134,9 @@ func testBlobStoreManyBlobsNoEncoding(t *testing.T, e *ChainEnv) {
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 
-	expectedHash, _, receipt, err := chClient.UploadBlob(fv)
+	expectedHash, _, receipt, err := chClient.UploadBlob(context.Background(), fv)
 	require.NoError(t, err)
-	require.Empty(t, receipt.ResolvedError)
+	require.Empty(t, receipt.Error)
 	t.Logf("expected hash: %s", expectedHash.String())
 
 	sizes := e.getBlobInfo(expectedHash)

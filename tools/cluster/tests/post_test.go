@@ -1,13 +1,16 @@
 package tests
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/clients"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -48,15 +51,25 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 		require.EqualValues(e.t, 42, counterValue)
 	}
 
-	// test calling root.FuncFindContractByName view function using client
-	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
-		e.Chain.ChainID, root.Contract.Hname(), root.ViewFindContract.Name,
-		dict.Dict{
-			root.ParamHname: hname.Bytes(),
-		})
+	args := dict.Dict{
+		root.ParamHname: hname.Bytes(),
+	}
+
+	jsonArgs := clients.JSONDictToAPIJSONDict(args.JSONDict())
+
+	result, _, err := e.Chain.Cluster.WaspClient().RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
+		ChainId:       e.Chain.ChainID.String(),
+		ContractHName: root.Contract.Hname().String(),
+		FunctionHName: root.ViewFindContract.Hname().String(),
+		Arguments:     jsonArgs,
+	}).Execute()
+
+	decodedDict, err := clients.APIJsonDictToDict(*result)
 	require.NoError(e.t, err)
-	recb, err := ret.Get(root.ParamContractRecData)
+
+	recb, err := decodedDict.Get(root.ParamContractRecData)
 	require.NoError(e.t, err)
+
 	rec, err := root.ContractRecordFromBytes(recb)
 	require.NoError(e.t, err)
 	require.EqualValues(e.t, description, rec.Description)
@@ -75,12 +88,16 @@ func (e *ChainEnv) getNativeContractCounter(hname isc.Hname) int64 {
 }
 
 func (e *ChainEnv) getCounterForNode(hname isc.Hname, nodeIndex int) int64 {
-	ret, err := e.Chain.Cluster.WaspClient(nodeIndex).CallView(
-		e.Chain.ChainID, hname, "getCounter", nil,
-	)
+	result, _, err := e.Chain.Cluster.WaspClient().RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
+		ChainId:       e.Chain.ChainID.String(),
+		ContractHName: hname.String(),
+		FunctionName:  "getCounter",
+	}).Execute()
+
+	decodedDict, err := clients.APIJsonDictToDict(*result)
 	require.NoError(e.t, err)
 
-	counter, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
+	counter, err := codec.DecodeInt64(decodedDict.MustGet(inccounter.VarCounter), 0)
 	require.NoError(e.t, err)
 
 	return counter
@@ -182,7 +199,7 @@ func testPost5Requests(t *testing.T, e *ChainEnv) {
 		require.NoError(t, err)
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
-		onChainBalance += baseTokesSent - receipts[0].GasFeeCharged
+		onChainBalance += baseTokesSent - uint64(receipts[0].GasFeeCharged)
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)
@@ -215,7 +232,7 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 	for i := 0; i < 5; i++ {
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx[i], 30*time.Second)
 		require.NoError(t, err)
-		onChainBalance += baseTokesSent - receipts[0].GasFeeCharged
+		onChainBalance += baseTokesSent - uint64(receipts[0].GasFeeCharged)
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)
