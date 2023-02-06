@@ -19,7 +19,7 @@ type NativeToken struct {
 }
 
 type AssetsResponse struct {
-	BaseTokens   uint64         `json:"baseTokens" swagger:"required"`
+	BaseTokens   string         `json:"baseTokens" swagger:"required,desc(The base tokens (uint64 as string))"`
 	NativeTokens []*NativeToken `json:"nativeTokens" swagger:"required"`
 }
 
@@ -45,7 +45,7 @@ type AccountNFTsResponse struct {
 }
 
 type AccountNonceResponse struct {
-	Nonce uint64 `json:"nonce" swagger:"required"`
+	Nonce string `json:"nonce" swagger:"required,desc(The nonce (uint64 as string))"`
 }
 
 type NFTDataResponse struct {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
@@ -44,7 +45,7 @@ func (c *Controller) getTotalAssets(e echo.Context) error {
 	}
 
 	assetsResponse := &models.AssetsResponse{
-		BaseTokens:   assets.BaseTokens,
+		BaseTokens:   iotago.EncodeUint64(assets.BaseTokens),
 		NativeTokens: models.MapNativeTokens(assets.NativeTokens),
 	}
 
@@ -68,7 +69,7 @@ func (c *Controller) getAccountBalance(e echo.Context) error {
 	}
 
 	assetsResponse := &models.AssetsResponse{
-		BaseTokens:   assets.BaseTokens,
+		BaseTokens:   iotago.EncodeUint64(assets.BaseTokens),
 		NativeTokens: models.MapNativeTokens(assets.NativeTokens),
 	}
 
@@ -119,7 +120,7 @@ func (c *Controller) getAccountNonce(e echo.Context) error {
 	}
 
 	nonceResponse := &models.AccountNonceResponse{
-		Nonce: nonce,
+		Nonce: iotago.EncodeUint64(nonce),
 	}
 
 	return e.JSON(http.StatusOK, nonceResponse)
@@ -192,7 +193,7 @@ func (c *Controller) getFoundryOutput(e echo.Context) error {
 	foundryOutputResponse := &models.FoundryOutputResponse{
 		FoundryID: foundryOutputID.ToHex(),
 		Assets: models.AssetsResponse{
-			BaseTokens:   foundryOutput.Amount,
+			BaseTokens:   iotago.EncodeUint64(foundryOutput.Amount),
 			NativeTokens: models.MapNativeTokens(foundryOutput.NativeTokens),
 		},
 	}

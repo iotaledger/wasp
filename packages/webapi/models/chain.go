@@ -1,6 +1,7 @@
 package models
 
 import (
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	dto2 "github.com/iotaledger/wasp/packages/webapi/dto"
@@ -52,7 +53,7 @@ type ContractInfoResponse struct {
 
 type gasFeePolicy struct {
 	GasFeeTokenID     string `json:"gasFeeTokenId" swagger:"desc(The gas fee token id. Empty if base token.),required"`
-	GasPerToken       uint64 `json:"gasPerToken" swagger:"desc(The amount of gas per token.),required"`
+	GasPerToken       string `json:"gasPerToken" swagger:"desc(The amount of gas per token. (uint64 as string)),required"`
 	ValidatorFeeShare uint8  `json:"validatorFeeShare" swagger:"desc(The validator fee share.),required,min(1)"`
 }
 
@@ -87,7 +88,7 @@ func MapChainInfoResponse(chainInfo *dto2.ChainInfo, evmChainID uint16) ChainInf
 		Description:  chainInfo.Description,
 		GasFeePolicy: gasFeePolicy{
 			GasFeeTokenID:     gasFeeTokenID,
-			GasPerToken:       chainInfo.GasFeePolicy.GasPerToken,
+			GasPerToken:       iotago.EncodeUint64(chainInfo.GasFeePolicy.GasPerToken),
 			ValidatorFeeShare: chainInfo.GasFeePolicy.ValidatorFeeShare,
 		},
 		MaxBlobSize:     chainInfo.MaxBlobSize,

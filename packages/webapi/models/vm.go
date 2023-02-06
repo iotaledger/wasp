@@ -33,9 +33,9 @@ func MapReceiptError(err *isc.VMError) *ReceiptError {
 type ReceiptResponse struct {
 	Request       string           `json:"request" swagger:"required"`
 	Error         *ReceiptError    `json:"error"`
-	GasBudget     uint64           `json:"gasBudget" swagger:"required"`
-	GasBurned     uint64           `json:"gasBurned" swagger:"required"`
-	GasFeeCharged uint64           `json:"gasFeeCharged" swagger:"required"`
+	GasBudget     string           `json:"gasBudget" swagger:"required,desc(The gas budget (uint64 as string))"`
+	GasBurned     string           `json:"gasBurned" swagger:"required,desc(The burned gas (uint64 as string))"`
+	GasFeeCharged string           `json:"gasFeeCharged" swagger:"required,desc(The charged gas fee (uint64 as string))"`
 	BlockIndex    uint32           `json:"blockIndex" swagger:"required,min(1)"`
 	RequestIndex  uint16           `json:"requestIndex" swagger:"required,min(1)"`
 	GasBurnLog    []gas.BurnRecord `json:"gasBurnLog" swagger:"required"`
@@ -53,9 +53,9 @@ func MapReceiptResponse(receipt *isc.Receipt, resolvedError *isc.VMError) *Recei
 		Error:         MapReceiptError(resolvedError),
 		BlockIndex:    receipt.BlockIndex,
 		RequestIndex:  receipt.RequestIndex,
-		GasBudget:     receipt.GasBudget,
-		GasBurned:     receipt.GasBurned,
-		GasFeeCharged: receipt.GasFeeCharged,
+		GasBudget:     iotago.EncodeUint64(receipt.GasBudget),
+		GasBurned:     iotago.EncodeUint64(receipt.GasBurned),
+		GasFeeCharged: iotago.EncodeUint64(receipt.GasFeeCharged),
 		GasBurnLog:    burnRecords,
 	}
 }

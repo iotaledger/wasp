@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -106,10 +107,10 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 func MapRequestReceiptResponse(vmService interfaces.VMService, chainID isc.ChainID, receipt *blocklog.RequestReceipt) (*models.RequestReceiptResponse, error) {
 	response := &models.RequestReceiptResponse{
 		BlockIndex:    receipt.BlockIndex,
-		GasBudget:     receipt.GasBudget,
+		GasBudget:     iotago.EncodeUint64(receipt.GasBudget),
 		GasBurnLog:    receipt.GasBurnLog,
-		GasBurned:     receipt.GasBurned,
-		GasFeeCharged: receipt.GasFeeCharged,
+		GasBurned:     iotago.EncodeUint64(receipt.GasBurned),
+		GasFeeCharged: iotago.EncodeUint64(receipt.GasFeeCharged),
 		Request:       models.MapRequestDetail(receipt.Request),
 		RequestIndex:  receipt.RequestIndex,
 	}

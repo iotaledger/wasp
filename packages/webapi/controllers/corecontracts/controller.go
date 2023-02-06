@@ -82,9 +82,14 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 		SetOperationId("accountsGetNativeTokenIDRegistry").
 		SetSummary("Get a list of all registries")
 
-	api.GET("chains/:chainID/core/accounts/foundry_output", c.getFoundryOutput).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath(uint32(0), "serialNumber", "Serial Number (uint32)").
+	//nolint:unused
+	type foundryOutputParams struct {
+		chainID      string `swagger:"required,desc(ChainID (Bech32))"`
+		serialNumber uint32 `swagger:"required,min(1),desc(Serial Number (uint32))"`
+	}
+
+	api.GET("chains/:chainID/core/accounts/foundry_output/:serialNumber", c.getFoundryOutput).
+		AddParamPathNested(foundryOutputParams{}).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "The foundry output", mocker.Get(models.FoundryOutputResponse{}), nil).
 		SetOperationId("accountsGetFoundryOutput").
@@ -125,10 +130,15 @@ func (c *Controller) addBlobContractRoutes(api echoswagger.ApiGroup, mocker inte
 }
 
 func (c *Controller) addErrorContractRoutes(api echoswagger.ApiGroup, mocker interfaces.Mocker) {
+	//nolint:unused
+	type errorMessageFormat struct {
+		chainID       string `swagger:"required,desc(ChainID (Bech32))"`
+		contractHname string `swagger:"required,desc(Contract (Hname as Hex))"`
+		errorID       uint16 `swagger:"required,min(1),desc(Error Id (uint16))"`
+	}
+
 	api.GET("chains/:chainID/core/errors/:contractHname/message/:errorID", c.getErrorMessageFormat).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "contractHname", "Contract (Hname as Hex)").
-		AddParamPath(uint16(0), "errorID", "Error Id (uint16)").
+		AddParamPathNested(errorMessageFormat{}).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "The error message format", mocker.Get(ErrorMessageFormatResponse{}), nil).
 		SetOperationId("errorsGetErrorMessageFormat").
@@ -153,9 +163,14 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		SetOperationId("blocklogGetControlAddresses").
 		SetSummary("Get the control addresses")
 
+	//nolint:unused
+	type blocks struct {
+		chainID    string `swagger:"required,desc(ChainID (Bech32))"`
+		blockIndex uint32 `swagger:"required,min(1),desc(BlockIndex (uint32))"`
+	}
+
 	api.GET("chains/:chainID/core/blocklog/blocks/:blockIndex", c.getBlockInfo).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath(uint32(0), "blockIndex", "Block Index (uint32)").
+		AddParamPathNested(blocks{}).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "The block info", mocker.Get(models.BlockInfoResponse{}), nil).
 		SetOperationId("blocklogGetBlockInfo").
@@ -169,8 +184,7 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		SetSummary("Get the block info of the latest block")
 
 	api.GET("chains/:chainID/core/blocklog/blocks/:blockIndex/requestids", c.getRequestIDsForBlock).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath(uint32(0), "blockIndex", "Block Index (uint32)").
+		AddParamPathNested(blocks{}).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "A list of request ids (ISCRequestID[])", mocker.Get(models.RequestIDsResponse{}), nil).
 		SetOperationId("blocklogGetRequestIDsForBlock").
@@ -215,8 +229,7 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		SetSummary("Get the request processing status")
 
 	api.GET("chains/:chainID/core/blocklog/events/block/:blockIndex", c.getBlockEvents).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath(0, "blockIndex", "Block Index (uint32)").
+		AddParamPathNested(blocks{}).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "The events", mocker.Get(models.EventsResponse{}), nil).
 		SetOperationId("blocklogGetEventsOfBlock").

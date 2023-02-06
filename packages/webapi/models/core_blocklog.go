@@ -20,16 +20,16 @@ type ControlAddressesResponse struct {
 type BlockInfoResponse struct {
 	AnchorTransactionID         string    `json:"anchorTransactionId" swagger:"required"`
 	BlockIndex                  uint32    `json:"blockIndex" swagger:"required,min(1)"`
-	GasBurned                   uint64    `json:"gasBurned" swagger:"required"`
-	GasFeeCharged               uint64    `json:"gasFeeCharged" swagger:"required"`
+	GasBurned                   string    `json:"gasBurned" swagger:"required,desc(The burned gas (uint64 as string))"`
+	GasFeeCharged               string    `json:"gasFeeCharged" swagger:"required,desc(The charged gas fee (uint64 as string))"`
 	L1CommitmentHash            string    `json:"l1CommitmentHash" swagger:"required"`
 	NumOffLedgerRequests        uint16    `json:"numOffLedgerRequests" swagger:"required,min(1)"`
 	NumSuccessfulRequests       uint16    `json:"numSuccessfulRequests" swagger:"required,min(1)"`
 	PreviousL1CommitmentHash    string    `json:"previousL1CommitmentHash" swagger:"required"`
 	Timestamp                   time.Time `json:"timestamp" swagger:"required"`
-	TotalBaseTokensInL2Accounts uint64    `json:"totalBaseTokensInL2Accounts" swagger:"required"`
+	TotalBaseTokensInL2Accounts string    `json:"totalBaseTokensInL2Accounts" swagger:"required,desc(The total L2 base tokens (uint64 as string))"`
 	TotalRequests               uint16    `json:"totalRequests" swagger:"required,min(1)"`
-	TotalStorageDeposit         uint64    `json:"totalStorageDeposit" swagger:"required"`
+	TotalStorageDeposit         string    `json:"totalStorageDeposit" swagger:"required,desc(The total storage deposit (uint64 as string))"`
 	TransactionSubEssenceHash   string    `json:"transactionSubEssenceHash" swagger:"required"`
 }
 
@@ -44,16 +44,16 @@ func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
 	return &BlockInfoResponse{
 		AnchorTransactionID:         info.AnchorTransactionID.ToHex(),
 		BlockIndex:                  info.BlockIndex,
-		GasBurned:                   info.GasBurned,
-		GasFeeCharged:               info.GasFeeCharged,
+		GasBurned:                   iotago.EncodeUint64(info.GasBurned),
+		GasFeeCharged:               iotago.EncodeUint64(info.GasFeeCharged),
 		L1CommitmentHash:            commitmentHash,
 		NumOffLedgerRequests:        info.NumOffLedgerRequests,
 		NumSuccessfulRequests:       info.NumSuccessfulRequests,
 		PreviousL1CommitmentHash:    info.PreviousL1Commitment.BlockHash().String(),
 		Timestamp:                   info.Timestamp,
-		TotalBaseTokensInL2Accounts: info.TotalBaseTokensInL2Accounts,
+		TotalBaseTokensInL2Accounts: iotago.EncodeUint64(info.TotalBaseTokensInL2Accounts),
 		TotalRequests:               info.TotalRequests,
-		TotalStorageDeposit:         info.TotalStorageDeposit,
+		TotalStorageDeposit:         iotago.EncodeUint64(info.TotalStorageDeposit),
 		TransactionSubEssenceHash:   transactionEssenceHash,
 	}
 }
@@ -68,7 +68,7 @@ type BlockReceiptError struct {
 }
 
 type Assets struct {
-	BaseTokens   uint64         `json:"baseTokens" swagger:"required"`
+	BaseTokens   string         `json:"baseTokens" swagger:"required,desc(The base tokens (uint64 as string))"`
 	NativeTokens []*NativeToken `json:"nativeTokens" swagger:"required"`
 	NFTs         []string       `json:"nfts" swagger:"required"`
 }
@@ -79,7 +79,7 @@ func mapAssets(assets *isc.Assets) *Assets {
 	}
 
 	ret := &Assets{
-		BaseTokens:   assets.BaseTokens,
+		BaseTokens:   iotago.EncodeUint64(assets.BaseTokens),
 		NativeTokens: MapNativeTokens(assets.NativeTokens),
 		NFTs:         make([]string, len(assets.NFTs)),
 	}
@@ -94,7 +94,7 @@ type RequestDetail struct {
 	Allowance     *Assets          `json:"allowance" swagger:"required"`
 	CallTarget    isc.CallTarget   `json:"callTarget" swagger:"required"`
 	Assets        *Assets          `json:"fungibleTokens" swagger:"required"`
-	GasGudget     uint64           `json:"gasGudget" swagger:"required"`
+	GasGudget     string           `json:"gasGudget,string" swagger:"required,desc(The gas budget (uint64 as string))"`
 	IsEVM         bool             `json:"isEVM" swagger:"required"`
 	IsOffLedger   bool             `json:"isOffLedger" swagger:"required"`
 	NFT           *NFTDataResponse `json:"nft" swagger:"required"`
@@ -111,7 +111,7 @@ func MapRequestDetail(request isc.Request) *RequestDetail {
 		Allowance:     mapAssets(request.Allowance()),
 		CallTarget:    request.CallTarget(),
 		Assets:        mapAssets(request.Assets()),
-		GasGudget:     gasBudget,
+		GasGudget:     iotago.EncodeUint64(gasBudget),
 		IsEVM:         isEVM,
 		IsOffLedger:   request.IsOffLedger(),
 		NFT:           MapNFTDataResponse(request.NFT()),
@@ -125,10 +125,10 @@ func MapRequestDetail(request isc.Request) *RequestDetail {
 type RequestReceiptResponse struct {
 	BlockIndex    uint32             `json:"blockIndex" swagger:"required,min(1)"`
 	Error         *BlockReceiptError `json:"error" swagger:""`
-	GasBudget     uint64             `json:"gasBudget" swagger:"required"`
+	GasBudget     string             `json:"gasBudget" swagger:"required,desc(The gas budget (uint64 as string))"`
 	GasBurnLog    *gas.BurnLog       `json:"gasBurnLog" swagger:"required"`
-	GasBurned     uint64             `json:"gasBurned" swagger:"required"`
-	GasFeeCharged uint64             `json:"gasFeeCharged" swagger:"required"`
+	GasBurned     string             `json:"gasBurned" swagger:"required,desc(The burned gas (uint64 as string))"`
+	GasFeeCharged string             `json:"gasFeeCharged" swagger:"required,desc(The charged gas fee (uint64 as string))"`
 	Request       *RequestDetail     `json:"request" swagger:"required"`
 	RequestIndex  uint16             `json:"requestIndex" swagger:"required,min(1)"`
 }
