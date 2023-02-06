@@ -3,7 +3,7 @@
 
 use std::{
     any::Any,
-    sync::{Arc, mpsc, Mutex, RwLock},
+    sync::{mpsc, Arc, Mutex, RwLock},
     thread::spawn,
 };
 
@@ -11,8 +11,8 @@ use wasmlib::*;
 
 use wasmclientsandbox::*;
 
-use crate::*;
 use crate::keypair::KeyPair;
+use crate::*;
 
 // TODO to handle the request in parallel, WasmClientContext must be static now.
 // We need to solve this problem. By copying the vector of event_handlers, we may solve this problem
@@ -49,7 +49,7 @@ impl WasmClientContext {
             },
             Err(e) => {
                 let ctx = WasmClientContext::default();
-                ctx.err("failed to init", e.as_str());
+                ctx.set_err("failed to init", e.as_str());
                 return ctx;
             }
         };
@@ -140,7 +140,7 @@ impl WasmClientContext {
             std::thread::sleep(std::time::Duration::from_millis(msec));
         }
         let err_msg = String::from("event wait timeout");
-        self.err(&err_msg, "");
+        self.set_err(&err_msg, "");
         return Err(err_msg);
     }
 
@@ -157,7 +157,7 @@ impl WasmClientContext {
         );
 
         if let Err(e) = res {
-            self.err("WasmClientContext init err: ", &e)
+            self.set_err("WasmClientContext init err: ", &e)
         }
     }
 
@@ -225,10 +225,15 @@ impl WasmClientContext {
         }
     }
 
-    pub fn err(&self, current_layer_msg: &str, e: &str) {
+    pub fn set_err(&self, current_layer_msg: &str, e: &str) {
         let mut err = self.error.write().unwrap();
         *err = Err(current_layer_msg.to_string() + e);
         drop(err);
+    }
+
+    pub fn err(&self) -> errors::Result<()> {
+        let err = self.error.read().unwrap().clone();
+        return err;
     }
 }
 
@@ -254,8 +259,8 @@ impl Default for WasmClientContext {
 mod tests {
     use wasmlib::*;
 
-    use crate::*;
     use crate::keypair::KeyPair;
+    use crate::*;
 
     #[derive(Debug)]
     struct FakeEventHandler {}
@@ -286,11 +291,8 @@ mod tests {
     fn setup_client() -> WasmClientContext {
         let svc = WasmClientService::new("127.0.0.1:19090", "127.0.0.1:15550");
         let mut ctx = WasmClientContext::new(&svc, MYCHAIN, "testwasmlib");
-        ctx.sign_requests(&KeyPair::from_sub_seed(
-            &bytes_from_string(MYSEED),
-            0,
-        ));
-        assert!(ctx.error.read().unwrap().is_ok());
+        ctx.sign_requests(&KeyPair::from_sub_seed(&bytes_from_string(MYSEED), 0));
+        assert!(ctx.err().is_ok());
         return ctx;
     }
 
