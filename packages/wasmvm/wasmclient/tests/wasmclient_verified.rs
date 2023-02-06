@@ -11,7 +11,7 @@ fn setup_client() -> wasmclient::wasmclientcontext::WasmClientContext {
         &wasmlib::bytes_from_string(MYSEED),
         0,
     ));
-    assert!(ctx.error.read().unwrap().is_ok());
+    assert!(ctx.err().is_ok());
     return ctx;
 }
 
@@ -22,8 +22,8 @@ fn call_view() {
     let v = testwasmlib::ScFuncs::get_random(&ctx);
     v.func.call();
 
-    let e = ctx.error.read().unwrap();
-    if let Err(e) = &*e {
+    let e = ctx.err();
+    if let Err(e) = e.clone() {
         println!("err: {}", e);
     }
     assert!(e.is_ok());
@@ -38,16 +38,16 @@ fn post_func_request() {
     ctx.fn_chain_id();
     let f = testwasmlib::ScFuncs::random(&ctx);
     f.func.post();
-    let e = ctx.error.read().unwrap();
-    if let Err(e) = &*e {
+    let e = ctx.err();
+    if let Err(e) = e.clone() {
         println!("err: {}", e);
     }
     assert!(e.is_ok());
 
     println!("Waiting");
     ctx.wait_request();
-    let e = ctx.error.read().unwrap();
-    if let Err(e) = &*e {
+    let e = ctx.err();
+    if let Err(e) = e.clone() {
         println!("err: {}", e);
     }
     assert!(e.is_ok());
@@ -55,7 +55,7 @@ fn post_func_request() {
     let v = testwasmlib::ScFuncs::get_random(&ctx);
     v.func.call();
 
-    assert!(ctx.error.read().unwrap().is_ok());
+    assert!(ctx.err().is_ok());
     let rnd = v.results.random().value();
     println!("rnd: {}", rnd);
     assert!(rnd != 0);

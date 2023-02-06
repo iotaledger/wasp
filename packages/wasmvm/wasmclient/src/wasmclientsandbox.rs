@@ -12,7 +12,7 @@ impl ScViewCallContext for WasmClientContext {
         *received = false;
 
         if req.contract != self.sc_hname {
-            self.err("unknown contract: ", &req.contract.to_string());
+            self.set_err("unknown contract: ", &req.contract.to_string());
             return Vec::new();
         }
 
@@ -24,7 +24,7 @@ impl ScViewCallContext for WasmClientContext {
         );
 
         if let Err(e) = &res {
-            self.err("fn_call: ", &e);
+            self.set_err("fn_call: ", &e);
             return Vec::new();
         }
 
@@ -47,17 +47,17 @@ impl ScFuncCallContext for WasmClientContext {
         *received = false;
 
         if self.key_pair.is_none() {
-            self.err("fn_post: ", "missing key pair");
+            self.set_err("fn_post: ", "missing key pair");
             return Vec::new();
         }
 
         if req.chain_id != self.chain_id {
-            self.err("unknown chain id: ", &req.chain_id.to_string());
+            self.set_err("unknown chain id: ", &req.chain_id.to_string());
             return Vec::new();
         }
 
         if req.contract != self.sc_hname {
-            self.err("unknown contract: ", &req.contract.to_string());
+            self.set_err("unknown contract: ", &req.contract.to_string());
             return Vec::new();
         }
 
@@ -79,7 +79,7 @@ impl ScFuncCallContext for WasmClientContext {
                 let mut ctx_req_id = self.req_id.write().unwrap();
                 *ctx_req_id = req_id;
             }
-            Err(e) => self.err("", &e),
+            Err(e) => self.set_err("", &e),
         }
         Vec::new()
     }
