@@ -14,6 +14,18 @@ export class JsonReq {
     Items: JsonItem[] = [];
 }
 
+export interface APICallViewRequest {
+    contractHName: string;
+    functionHName: string;
+    chainId: string;
+    arguments: JsonReq;
+}
+
+export interface APIOffLedgerRequest {
+    chainId: string;
+    request: string;
+}
+
 export class JsonResp {
     Items: JsonItem[] = [];
     Message = '';
