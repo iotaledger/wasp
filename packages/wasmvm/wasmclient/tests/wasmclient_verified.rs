@@ -1,7 +1,7 @@
 use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};
 use wasmlib::ScViewCallContext;
 
-const MYCHAIN: &str = "atoi1prj5xunmvc8uka9qznnpu4yrhn3ftm3ya0wr2jvurwr209llw7xdyztcr6g";
+const MYCHAIN: &str = "atoi1pq48s2dnudsjpsrljlrahkur6250ey26sqxfv8hsmks23lnhkkqmy0h98sl";
 const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
 
 fn setup_client() -> wasmclient::wasmclientcontext::WasmClientContext {
@@ -26,7 +26,7 @@ fn call_view() {
     if let Err(e) = &*e {
         println!("err: {}", e);
     }
-    assert!(ctx.error.read().unwrap().is_ok());
+    assert!(e.is_ok());
     let rnd = v.results.random().value();
     println!("rnd: {}", rnd);
     assert!(rnd != 0);
@@ -42,10 +42,15 @@ fn post_func_request() {
     if let Err(e) = &*e {
         println!("err: {}", e);
     }
-    assert!(ctx.error.read().unwrap().is_ok());
+    assert!(e.is_ok());
 
+    println!("Waiting");
     ctx.wait_request();
-    assert!(ctx.error.read().unwrap().is_ok());
+    let e = ctx.error.read().unwrap();
+    if let Err(e) = &*e {
+        println!("err: {}", e);
+    }
+    assert!(e.is_ok());
 
     let v = testwasmlib::ScFuncs::get_random(&ctx);
     v.func.call();

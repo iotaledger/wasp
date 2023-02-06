@@ -36,6 +36,7 @@ impl WaspClient {
             token: String::from(""),
         };
     }
+
     pub fn call_view_by_hname(
         &self,
         chain_id: &ScChainID,
@@ -97,18 +98,21 @@ impl WaspClient {
         req: &offledgerrequest::OffLedgerRequestData,
     ) -> errors::Result<()> {
         let url = format!("{}/chain/{}/request", self.base_url, chain_id.to_string());
+        println!("{}", url);
         let client = reqwest::blocking::Client::new();
         let body = JsonPostRequest { request: general_purpose::STANDARD.encode(req.to_bytes()) };
-        println!("{}", body.request);
         let res = client.post(url).json(&body).send();
         match res {
             Ok(v) => match v.status() {
                 StatusCode::OK => {
                     return Ok(());
                 }
+                StatusCode::ACCEPTED => {
+                    return Ok(());
+                }
                 failed_status_code => {
                     let status_code = failed_status_code.as_u16();
-                    match v.json::<JsonError>() {
+                     match v.json::<JsonError>() {
                         Ok(err_msg) => {
                             return Err(format!("{status_code}: {}", err_msg.message));
                         }
@@ -121,6 +125,7 @@ impl WaspClient {
             }
         }
     }
+
     pub fn wait_until_request_processed(
         &self,
         chain_id: &ScChainID,
@@ -133,14 +138,15 @@ impl WaspClient {
             chain_id.to_string(),
             req_id.to_string()
         );
+        println!("{}", url);
         let client = reqwest::blocking::Client::builder()
             .timeout(timeout)
             .build()
             .unwrap();
-        let res = client.get(url).send();
+        let res = client.get(url).header("Content-Type", "application/json").send();
         match res {
             Ok(v) => match v.status() {
-                reqwest::StatusCode::OK => {
+                StatusCode::OK => {
                     return Ok(());
                 }
                 failed_status_code => {
@@ -158,6 +164,7 @@ impl WaspClient {
             }
         }
     }
+
     pub fn subscribe(&self, ch: mpsc::Sender<Vec<String>>, done: Arc<RwLock<bool>>) {
         // FIXME should not reconnect every time
         let (mut socket, _) = tungstenite::connect(&self.event_port).unwrap();

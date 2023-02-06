@@ -16,6 +16,7 @@ pub trait IClientService {
         function_hname: &ScHname,
         args: &[u8],
     ) -> errors::Result<Vec<u8>>;
+
     fn post_request(
         &self,
         chain_id: &ScChainID,
@@ -26,11 +27,13 @@ pub trait IClientService {
         key_pair: &keypair::KeyPair,
         nonce: u64,
     ) -> errors::Result<ScRequestID>;
+
     fn subscribe_events(
         &self,
         tx: mpsc::Sender<Vec<String>>,
         done: Arc<RwLock<bool>>,
     ) -> errors::Result<()>;
+
     fn wait_until_request_processed(
         &self,
         chain_id: &ScChainID,
@@ -83,8 +86,11 @@ impl IClientService for WasmClientService {
             );
         req.with_allowance(&allowance);
         let signed = req.sign(key_pair);
-        self.client.post_offledger_request(&chain_id, &signed)?;
-        return Ok(req.id());
+        let res = self.client.post_offledger_request(&chain_id, &signed);
+        if let Err(e) = res {
+            return Err(e);
+        }
+        Ok(signed.id())
     }
 
     fn subscribe_events(

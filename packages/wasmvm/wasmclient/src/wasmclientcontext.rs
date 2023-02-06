@@ -143,22 +143,13 @@ impl WasmClientContext {
 
     pub fn wait_request(&self) {
         let req_id = self.req_id.read().unwrap().to_owned();
-        self.wait_request_id(Some(&req_id));
+        self.wait_request_id(&req_id);
     }
 
-    pub fn wait_request_id(&self, req_id: Option<&ScRequestID>) {
-        let r_id;
-        let binding;
-        match req_id {
-            Some(id) => r_id = id,
-            None => {
-                binding = self.req_id.read().unwrap().to_owned();
-                r_id = &binding;
-            }
-        };
+    pub fn wait_request_id(&self, req_id: &ScRequestID) {
         let res = self.svc_client.wait_until_request_processed(
             &self.chain_id,
-            &r_id,
+            req_id,
             std::time::Duration::new(60, 0),
         );
 
