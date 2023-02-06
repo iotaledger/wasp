@@ -4,8 +4,12 @@
 package wasmclient
 
 import (
+	"context"
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients"
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -22,15 +26,19 @@ type IClientService interface {
 }
 
 type WasmClientService struct {
-	cvt        wasmhost.WasmConvertor
-	waspClient *clients.WaspClient
+	waspClient *apiclient.APIClient
 	eventPort  string
 }
 
 var _ IClientService = new(WasmClientService)
 
 func NewWasmClientService(waspAPI, eventPort string) *WasmClientService {
-	return &WasmClientService{waspClient: clients.NewWaspClient(waspAPI), eventPort: eventPort}
+	client, err := clients.WaspAPIClientByHostName(waspAPI)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return &WasmClientService{waspClient: client, eventPort: eventPort}
 }
 
 func DefaultWasmClientService() *WasmClientService {
@@ -45,11 +53,23 @@ func (sc *WasmClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContr
 	if err != nil {
 		return nil, err
 	}
-	res, err := sc.waspClient.CallViewByHname(iscChainID, iscContract, iscFunction, params)
+	res, _, err := sc.waspClient.RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
+		ContractHName: iscContract.String(),
+		FunctionHName: iscFunction.String(),
+		ChainId:       iscChainID.String(),
+		Arguments:     clients.JSONDictToAPIJSONDict(params.JSONDict()),
+	}).Execute()
+
 	if err != nil {
 		return nil, err
 	}
-	return res.Bytes(), nil
+
+	decodedParams, err := clients.APIJsonDictToDict(*res)
+	if err != nil {
+		return nil, err
+	}
+
+	return decodedParams.Bytes(), nil
 }
 
 func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair, nonce uint64) (reqID wasmtypes.ScRequestID, err error) {
@@ -65,7 +85,12 @@ func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract,
 	req.WithAllowance(iscAllowance)
 	signed := req.Sign(keyPair)
 	reqID = cvt.ScRequestID(signed.ID())
-	err = sc.waspClient.PostOffLedgerRequest(iscChainID, signed)
+
+	_, err = sc.waspClient.RequestsApi.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
+		ChainId: iscChainID.String(),
+		Request: iotago.EncodeHex(signed.Bytes()),
+	}).Execute()
+
 	return reqID, err
 }
 
@@ -76,6 +101,11 @@ func (sc *WasmClientService) SubscribeEvents(msg chan []string, done chan bool) 
 func (sc *WasmClientService) WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error {
 	iscChainID := cvt.IscChainID(&chainID)
 	iscReqID := cvt.IscRequestID(&reqID)
-	_, err := sc.waspClient.WaitUntilRequestProcessed(iscChainID, iscReqID, timeout)
+
+	_, _, err := sc.waspClient.RequestsApi.
+		WaitForRequest(context.Background(), iscChainID.String(), iscReqID.String()).
+		TimeoutSeconds(int32(timeout.Seconds())).
+		Execute()
+
 	return err
 }

@@ -77,3 +77,18 @@ func WaspAPIClientByHostName(hostname string) (*apiclient.APIClient, error) {
 
 	return apiclient.NewAPIClient(config), nil
 }
+
+func CallView(context context.Context, client *apiclient.APIClient, request apiclient.ContractCallViewRequest) (dict.Dict, error) {
+	result, _, err := client.RequestsApi.
+		CallView(context).
+		ContractCallViewRequest(request).
+		Execute()
+
+	if err != nil {
+		return nil, err
+	}
+
+	dictResult, err := dict.FromJSONDict(APIJsonDictToJSONDict(*result))
+
+	return dictResult, err
+}

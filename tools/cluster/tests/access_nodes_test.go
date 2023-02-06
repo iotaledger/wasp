@@ -1,17 +1,17 @@
 package tests
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/scclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
@@ -51,18 +51,21 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	// adds node #0 from cluster2 as access node of node #0 from cluster1
 
 	// trust setup between the two nodes
-	node0peerInfo, err := nodeClient.GetPeeringSelf()
+	node0peerInfo, _, err := nodeClient.NodeApi.GetPeeringIdentity(context.Background()).Execute()
 	require.NoError(t, err)
 	err = clu2.AddTrustedNode(node0peerInfo)
 	require.NoError(t, err)
 
-	accessNodePeerInfo, err := accessNodeClient.GetPeeringSelf()
+	accessNodePeerInfo, _, err := accessNodeClient.NodeApi.GetPeeringIdentity(context.Background()).Execute()
 	require.NoError(t, err)
 	err = env.Clu.AddTrustedNode(accessNodePeerInfo, []int{0})
 	require.NoError(t, err)
 
 	// activate the chain on the access node
-	err = accessNodeClient.PutChainRecord(registry.NewChainRecord(env.Chain.ChainID, true, []*cryptolib.PublicKey{}))
+	_, err = accessNodeClient.ChainsApi.SetChainRecord(context.Background(), env.Chain.ChainID.String()).ChainRecord(apiclient.ChainRecord{
+		IsActive:    true,
+		AccessNodes: []string{},
+	}).Execute()
 	require.NoError(t, err)
 
 	// add node 0 from cluster 2 as a *permitionless* access node

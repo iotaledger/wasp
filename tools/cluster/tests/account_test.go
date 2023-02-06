@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -90,7 +91,9 @@ func testAccounts(e *ChainEnv) {
 	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 10*time.Second)
 	require.NoError(e.t, err)
 
-	fees := uint64(receipts[0].GasFeeCharged)
+	fees, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
+	require.NoError(e.t, err)
+	
 	e.checkBalanceOnChain(isc.NewAgentID(myAddress), isc.BaseTokenID, transferBaseTokens-fees)
 
 	for i := range e.Chain.CommitteeNodes {

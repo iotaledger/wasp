@@ -46,7 +46,17 @@ func (c *Controller) Name() string {
 }
 
 func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
-	publicAPI.EchoGroup().Any("chains/:chainID/evm", c.handleJSONRPC)
+	// Echoswagger does not support ANY, so create a fake route, and overwrite it with Echo ANY afterwords.
+	evmURL := "chains/:chainID/evm"
+	publicAPI.
+		GET(evmURL, c.handleJSONRPC).
+		AddParamPath("", "chainID", "ChainID (Bech32)").
+		AddResponse(http.StatusOK, "", "", nil).
+		AddResponse(http.StatusNotFound, "", "", nil)
+
+	publicAPI.
+		EchoGroup().Any("chains/:chainID/evm", c.handleJSONRPC)
+
 	publicAPI.GET("chains/:chainID/evm/tx/:txHash", c.getRequestID).
 		SetSummary("Get the ISC request ID for the given Ethereum transaction hash").
 		SetOperationId("getRequestIDFromEVMTransactionID").

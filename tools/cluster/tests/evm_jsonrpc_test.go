@@ -4,7 +4,10 @@
 package tests
 
 import (
+	"context"
 	"crypto/ecdsa"
+	"errors"
+	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -21,11 +24,8 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 )
 
 type clusterTestEnv struct {
@@ -36,7 +36,8 @@ type clusterTestEnv struct {
 func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestEnv {
 	evmtest.InitGoEthLogger(t)
 
-	jsonRPCEndpoint := "http://" + env.Clu.Config.APIHost(nodeIndex) + routes.EVMJSONRPC(env.Chain.ChainID.String())
+	evmJsonRPCPath := fmt.Sprintf("/chains/%v/evm", env.Chain.ChainID.String())
+	jsonRPCEndpoint := "http://" + env.Clu.Config.APIHost(nodeIndex) + evmJsonRPCPath
 	rawClient, err := rpc.DialHTTP(jsonRPCEndpoint)
 	require.NoError(t, err)
 	client := ethclient.NewClient(rawClient)
@@ -44,23 +45,23 @@ func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestE
 
 	waitTxConfirmed := func(txHash common.Hash) error {
 		c := env.Chain.Client(nil, nodeIndex)
-		reqID, err := c.RequestIDByEVMTransactionHash(txHash)
+		reqID, err := c.RequestIDByEVMTransactionHash(context.Background(), txHash)
 		if err != nil {
 			return err
 		}
-		receipt, err := c.WaspClient.WaitUntilRequestProcessed(env.Chain.ChainID, reqID, 1*time.Minute)
+		receipt, _, err := c.WaspClient.RequestsApi.
+			WaitForRequest(context.Background(), env.Chain.ChainID.String(), reqID.String()).
+			TimeoutSeconds(60).
+			Execute()
+
 		if err != nil {
 			return err
 		}
+
 		if receipt.Error != nil {
-			resolved, err := errors.Resolve(receipt.Error, func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
-				return c.CallView(isc.Hn(contractName), funcName, params)
-			})
-			if err != nil {
-				return err
-			}
-			return resolved
+			return errors.New(receipt.Error.Message)
 		}
+
 		return nil
 	}
 
