@@ -1,15 +1,15 @@
 # \UsersApi
 
-All URIs are relative to *http://localhost:9090*
+All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**AddUser**](UsersApi.md#AddUser) | **Post** /users | Add a user
-[**ChangeUserPassword**](UsersApi.md#ChangeUserPassword) | **Put** /users/{username}/password | Change user password
-[**ChangeUserPermissions**](UsersApi.md#ChangeUserPermissions) | **Put** /users/{username}/permissions | Change user permissions
-[**DeleteUser**](UsersApi.md#DeleteUser) | **Delete** /users/{username} | Deletes a user
-[**GetUser**](UsersApi.md#GetUser) | **Get** /users/{username} | Get a user
-[**GetUsers**](UsersApi.md#GetUsers) | **Get** /users | Get a list of all users
+[**AddUser**](UsersApi.md#AddUser) | **Post** /v2/users | Add a user
+[**ChangeUserPassword**](UsersApi.md#ChangeUserPassword) | **Put** /v2/users/{username}/password | Change user password
+[**ChangeUserPermissions**](UsersApi.md#ChangeUserPermissions) | **Put** /v2/users/{username}/permissions | Change user permissions
+[**DeleteUser**](UsersApi.md#DeleteUser) | **Delete** /v2/users/{username} | Deletes a user
+[**GetUser**](UsersApi.md#GetUser) | **Get** /v2/users/{username} | Get a user
+[**GetUsers**](UsersApi.md#GetUsers) | **Get** /v2/users | Get a list of all users
 
 
 

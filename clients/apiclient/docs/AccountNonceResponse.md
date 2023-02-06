@@ -4,13 +4,13 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Nonce** | **int64** |  | 
+**Nonce** | **string** | The nonce (uint64 as string) | 
 
 ## Methods
 
 ### NewAccountNonceResponse
 
-`func NewAccountNonceResponse(nonce int64, ) *AccountNonceResponse`
+`func NewAccountNonceResponse(nonce string, ) *AccountNonceResponse`
 
 NewAccountNonceResponse instantiates a new AccountNonceResponse object
 This constructor will assign default values to properties that have it defined,
@@ -27,20 +27,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetNonce
 
-`func (o *AccountNonceResponse) GetNonce() int64`
+`func (o *AccountNonceResponse) GetNonce() string`
 
 GetNonce returns the Nonce field if non-nil, zero value otherwise.
 
 ### GetNonceOk
 
-`func (o *AccountNonceResponse) GetNonceOk() (*int64, bool)`
+`func (o *AccountNonceResponse) GetNonceOk() (*string, bool)`
 
 GetNonceOk returns a tuple with the Nonce field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetNonce
 
-`func (o *AccountNonceResponse) SetNonce(v int64)`
+`func (o *AccountNonceResponse) SetNonce(v string)`
 
 SetNonce sets Nonce field to given value.
 

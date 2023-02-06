@@ -4,14 +4,14 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**BaseTokens** | **int64** |  | 
+**BaseTokens** | **string** | The base tokens (uint64 as string) | 
 **NativeTokens** | [**[]NativeToken**](NativeToken.md) |  | 
 
 ## Methods
 
 ### NewAssetsResponse
 
-`func NewAssetsResponse(baseTokens int64, nativeTokens []NativeToken, ) *AssetsResponse`
+`func NewAssetsResponse(baseTokens string, nativeTokens []NativeToken, ) *AssetsResponse`
 
 NewAssetsResponse instantiates a new AssetsResponse object
 This constructor will assign default values to properties that have it defined,
@@ -28,20 +28,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetBaseTokens
 
-`func (o *AssetsResponse) GetBaseTokens() int64`
+`func (o *AssetsResponse) GetBaseTokens() string`
 
 GetBaseTokens returns the BaseTokens field if non-nil, zero value otherwise.
 
 ### GetBaseTokensOk
 
-`func (o *AssetsResponse) GetBaseTokensOk() (*int64, bool)`
+`func (o *AssetsResponse) GetBaseTokensOk() (*string, bool)`
 
 GetBaseTokensOk returns a tuple with the BaseTokens field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetBaseTokens
 
-`func (o *AssetsResponse) SetBaseTokens(v int64)`
+`func (o *AssetsResponse) SetBaseTokens(v string)`
 
 SetBaseTokens sets BaseTokens field to given value.
 

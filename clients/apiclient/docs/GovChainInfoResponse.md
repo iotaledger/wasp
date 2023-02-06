@@ -8,15 +8,15 @@ Name | Type | Description | Notes
 **ChainOwnerId** | **string** | The chain owner address (Bech32-encoded). | 
 **Description** | **string** | The description of the chain. | 
 **GasFeePolicy** | [**GasFeePolicy**](GasFeePolicy.md) |  | 
-**MaxBlobSize** | **uint32** | The maximum contract blob size. | 
-**MaxEventSize** | **uint32** | The maximum event size. | 
-**MaxEventsPerReq** | **uint32** | The maximum amount of events per request. | 
+**MaxBlobSize** | **int32** | The maximum contract blob size. | 
+**MaxEventSize** | **int32** | The maximum event size. | 
+**MaxEventsPerReq** | **int32** | The maximum amount of events per request. | 
 
 ## Methods
 
 ### NewGovChainInfoResponse
 
-`func NewGovChainInfoResponse(chainID string, chainOwnerId string, description string, gasFeePolicy GasFeePolicy, maxBlobSize uint32, maxEventSize uint32, maxEventsPerReq uint32, ) *GovChainInfoResponse`
+`func NewGovChainInfoResponse(chainID string, chainOwnerId string, description string, gasFeePolicy GasFeePolicy, maxBlobSize int32, maxEventSize int32, maxEventsPerReq int32, ) *GovChainInfoResponse`
 
 NewGovChainInfoResponse instantiates a new GovChainInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -113,60 +113,60 @@ SetGasFeePolicy sets GasFeePolicy field to given value.
 
 ### GetMaxBlobSize
 
-`func (o *GovChainInfoResponse) GetMaxBlobSize() uint32`
+`func (o *GovChainInfoResponse) GetMaxBlobSize() int32`
 
 GetMaxBlobSize returns the MaxBlobSize field if non-nil, zero value otherwise.
 
 ### GetMaxBlobSizeOk
 
-`func (o *GovChainInfoResponse) GetMaxBlobSizeOk() (*uint32, bool)`
+`func (o *GovChainInfoResponse) GetMaxBlobSizeOk() (*int32, bool)`
 
 GetMaxBlobSizeOk returns a tuple with the MaxBlobSize field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetMaxBlobSize
 
-`func (o *GovChainInfoResponse) SetMaxBlobSize(v uint32)`
+`func (o *GovChainInfoResponse) SetMaxBlobSize(v int32)`
 
 SetMaxBlobSize sets MaxBlobSize field to given value.
 
 
 ### GetMaxEventSize
 
-`func (o *GovChainInfoResponse) GetMaxEventSize() uint32`
+`func (o *GovChainInfoResponse) GetMaxEventSize() int32`
 
 GetMaxEventSize returns the MaxEventSize field if non-nil, zero value otherwise.
 
 ### GetMaxEventSizeOk
 
-`func (o *GovChainInfoResponse) GetMaxEventSizeOk() (*uint32, bool)`
+`func (o *GovChainInfoResponse) GetMaxEventSizeOk() (*int32, bool)`
 
 GetMaxEventSizeOk returns a tuple with the MaxEventSize field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetMaxEventSize
 
-`func (o *GovChainInfoResponse) SetMaxEventSize(v uint32)`
+`func (o *GovChainInfoResponse) SetMaxEventSize(v int32)`
 
 SetMaxEventSize sets MaxEventSize field to given value.
 
 
 ### GetMaxEventsPerReq
 
-`func (o *GovChainInfoResponse) GetMaxEventsPerReq() uint32`
+`func (o *GovChainInfoResponse) GetMaxEventsPerReq() int32`
 
 GetMaxEventsPerReq returns the MaxEventsPerReq field if non-nil, zero value otherwise.
 
 ### GetMaxEventsPerReqOk
 
-`func (o *GovChainInfoResponse) GetMaxEventsPerReqOk() (*uint32, bool)`
+`func (o *GovChainInfoResponse) GetMaxEventsPerReqOk() (*int32, bool)`
 
 GetMaxEventsPerReqOk returns a tuple with the MaxEventsPerReq field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetMaxEventsPerReq
 
-`func (o *GovChainInfoResponse) SetMaxEventsPerReq(v uint32)`
+`func (o *GovChainInfoResponse) SetMaxEventsPerReq(v int32)`
 
 SetMaxEventsPerReq sets MaxEventsPerReq field to given value.
 

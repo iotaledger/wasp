@@ -6,23 +6,23 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **AnchorTransactionId** | **string** |  | 
 **BlockIndex** | **uint32** |  | 
-**GasBurned** | **int64** |  | 
-**GasFeeCharged** | **int64** |  | 
+**GasBurned** | **string** | The burned gas (uint64 as string) | 
+**GasFeeCharged** | **string** | The charged gas fee (uint64 as string) | 
 **L1CommitmentHash** | **string** |  | 
 **NumOffLedgerRequests** | **uint32** |  | 
 **NumSuccessfulRequests** | **uint32** |  | 
 **PreviousL1CommitmentHash** | **string** |  | 
 **Timestamp** | **time.Time** |  | 
-**TotalBaseTokensInL2Accounts** | **int64** |  | 
+**TotalBaseTokensInL2Accounts** | **string** | The total L2 base tokens (uint64 as string) | 
 **TotalRequests** | **uint32** |  | 
-**TotalStorageDeposit** | **int64** |  | 
+**TotalStorageDeposit** | **string** | The total storage deposit (uint64 as string) | 
 **TransactionSubEssenceHash** | **string** |  | 
 
 ## Methods
 
 ### NewBlockInfoResponse
 
-`func NewBlockInfoResponse(anchorTransactionId string, blockIndex uint32, gasBurned int64, gasFeeCharged int64, l1CommitmentHash string, numOffLedgerRequests uint32, numSuccessfulRequests uint32, previousL1CommitmentHash string, timestamp time.Time, totalBaseTokensInL2Accounts int64, totalRequests uint32, totalStorageDeposit int64, transactionSubEssenceHash string, ) *BlockInfoResponse`
+`func NewBlockInfoResponse(anchorTransactionId string, blockIndex uint32, gasBurned string, gasFeeCharged string, l1CommitmentHash string, numOffLedgerRequests uint32, numSuccessfulRequests uint32, previousL1CommitmentHash string, timestamp time.Time, totalBaseTokensInL2Accounts string, totalRequests uint32, totalStorageDeposit string, transactionSubEssenceHash string, ) *BlockInfoResponse`
 
 NewBlockInfoResponse instantiates a new BlockInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -79,40 +79,40 @@ SetBlockIndex sets BlockIndex field to given value.
 
 ### GetGasBurned
 
-`func (o *BlockInfoResponse) GetGasBurned() int64`
+`func (o *BlockInfoResponse) GetGasBurned() string`
 
 GetGasBurned returns the GasBurned field if non-nil, zero value otherwise.
 
 ### GetGasBurnedOk
 
-`func (o *BlockInfoResponse) GetGasBurnedOk() (*int64, bool)`
+`func (o *BlockInfoResponse) GetGasBurnedOk() (*string, bool)`
 
 GetGasBurnedOk returns a tuple with the GasBurned field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetGasBurned
 
-`func (o *BlockInfoResponse) SetGasBurned(v int64)`
+`func (o *BlockInfoResponse) SetGasBurned(v string)`
 
 SetGasBurned sets GasBurned field to given value.
 
 
 ### GetGasFeeCharged
 
-`func (o *BlockInfoResponse) GetGasFeeCharged() int64`
+`func (o *BlockInfoResponse) GetGasFeeCharged() string`
 
 GetGasFeeCharged returns the GasFeeCharged field if non-nil, zero value otherwise.
 
 ### GetGasFeeChargedOk
 
-`func (o *BlockInfoResponse) GetGasFeeChargedOk() (*int64, bool)`
+`func (o *BlockInfoResponse) GetGasFeeChargedOk() (*string, bool)`
 
 GetGasFeeChargedOk returns a tuple with the GasFeeCharged field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetGasFeeCharged
 
-`func (o *BlockInfoResponse) SetGasFeeCharged(v int64)`
+`func (o *BlockInfoResponse) SetGasFeeCharged(v string)`
 
 SetGasFeeCharged sets GasFeeCharged field to given value.
 
@@ -219,20 +219,20 @@ SetTimestamp sets Timestamp field to given value.
 
 ### GetTotalBaseTokensInL2Accounts
 
-`func (o *BlockInfoResponse) GetTotalBaseTokensInL2Accounts() int64`
+`func (o *BlockInfoResponse) GetTotalBaseTokensInL2Accounts() string`
 
 GetTotalBaseTokensInL2Accounts returns the TotalBaseTokensInL2Accounts field if non-nil, zero value otherwise.
 
 ### GetTotalBaseTokensInL2AccountsOk
 
-`func (o *BlockInfoResponse) GetTotalBaseTokensInL2AccountsOk() (*int64, bool)`
+`func (o *BlockInfoResponse) GetTotalBaseTokensInL2AccountsOk() (*string, bool)`
 
 GetTotalBaseTokensInL2AccountsOk returns a tuple with the TotalBaseTokensInL2Accounts field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetTotalBaseTokensInL2Accounts
 
-`func (o *BlockInfoResponse) SetTotalBaseTokensInL2Accounts(v int64)`
+`func (o *BlockInfoResponse) SetTotalBaseTokensInL2Accounts(v string)`
 
 SetTotalBaseTokensInL2Accounts sets TotalBaseTokensInL2Accounts field to given value.
 
@@ -259,20 +259,20 @@ SetTotalRequests sets TotalRequests field to given value.
 
 ### GetTotalStorageDeposit
 
-`func (o *BlockInfoResponse) GetTotalStorageDeposit() int64`
+`func (o *BlockInfoResponse) GetTotalStorageDeposit() string`
 
 GetTotalStorageDeposit returns the TotalStorageDeposit field if non-nil, zero value otherwise.
 
 ### GetTotalStorageDepositOk
 
-`func (o *BlockInfoResponse) GetTotalStorageDepositOk() (*int64, bool)`
+`func (o *BlockInfoResponse) GetTotalStorageDepositOk() (*string, bool)`
 
 GetTotalStorageDepositOk returns a tuple with the TotalStorageDeposit field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetTotalStorageDeposit
 
-`func (o *BlockInfoResponse) SetTotalStorageDeposit(v int64)`
+`func (o *BlockInfoResponse) SetTotalStorageDeposit(v string)`
 
 SetTotalStorageDeposit sets TotalStorageDeposit field to given value.
 

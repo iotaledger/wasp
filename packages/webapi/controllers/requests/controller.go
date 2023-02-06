@@ -64,6 +64,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		SetOperationId("waitForRequest").
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "requestID", "RequestID (Hex)").
+		AddParamQuery(0, "timeoutSeconds", "The timeout in seconds", false).
 		AddResponse(http.StatusNotFound, "The chain or request id is invalid", nil, nil).
 		AddResponse(http.StatusRequestTimeout, "The waiting time has reached the defined limit", nil, nil).
 		AddResponse(http.StatusOK, "The request receipt", mocker.Get(models.ReceiptResponse{}), nil)

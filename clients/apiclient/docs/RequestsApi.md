@@ -1,13 +1,13 @@
 # \RequestsApi
 
-All URIs are relative to *http://localhost:9090*
+All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**CallView**](RequestsApi.md#CallView) | **Post** /requests/callview | Call a view function on a contract by Hname
-[**GetReceipt**](RequestsApi.md#GetReceipt) | **Get** /chains/{chainID}/receipts/{requestID} | Get a receipt from a request ID
-[**OffLedger**](RequestsApi.md#OffLedger) | **Post** /requests/offledger | Post an off-ledger request
-[**WaitForRequest**](RequestsApi.md#WaitForRequest) | **Get** /chains/{chainID}/requests/{requestID}/wait | Wait until the given request has been processed by the node
+[**CallView**](RequestsApi.md#CallView) | **Post** /v2/requests/callview | Call a view function on a contract by Hname
+[**GetReceipt**](RequestsApi.md#GetReceipt) | **Get** /v2/chains/{chainID}/receipts/{requestID} | Get a receipt from a request ID
+[**OffLedger**](RequestsApi.md#OffLedger) | **Post** /v2/requests/offledger | Post an off-ledger request
+[**WaitForRequest**](RequestsApi.md#WaitForRequest) | **Get** /v2/chains/{chainID}/requests/{requestID}/wait | Wait until the given request has been processed by the node
 
 
 
@@ -65,7 +65,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -136,7 +136,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -198,7 +198,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -212,7 +212,7 @@ No authorization required
 
 ## WaitForRequest
 
-> ReceiptResponse WaitForRequest(ctx, chainID, requestID).Execute()
+> ReceiptResponse WaitForRequest(ctx, chainID, requestID).TimeoutSeconds(timeoutSeconds).Execute()
 
 Wait until the given request has been processed by the node
 
@@ -231,10 +231,11 @@ import (
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
     requestID := "requestID_example" // string | RequestID (Hex)
+    timeoutSeconds := int32(56) // int32 | The timeout in seconds (optional)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.RequestsApi.WaitForRequest(context.Background(), chainID, requestID).Execute()
+    resp, r, err := apiClient.RequestsApi.WaitForRequest(context.Background(), chainID, requestID).TimeoutSeconds(timeoutSeconds).Execute()
     if err != nil {
         fmt.Fprintf(os.Stderr, "Error when calling `RequestsApi.WaitForRequest``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -262,6 +263,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 
 
+ **timeoutSeconds** | **int32** | The timeout in seconds | 
 
 ### Return type
 
@@ -269,7 +271,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 

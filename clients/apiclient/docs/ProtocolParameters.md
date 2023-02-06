@@ -10,13 +10,13 @@ Name | Type | Description | Notes
 **NetworkName** | **string** | The network name | 
 **RentStructure** | [**RentStructure**](RentStructure.md) |  | 
 **TokenSupply** | **string** | The token supply | 
-**Version** | **uint32** | The protocol version | 
+**Version** | **int32** | The protocol version | 
 
 ## Methods
 
 ### NewProtocolParameters
 
-`func NewProtocolParameters(bech32Hrp string, belowMaxDepth uint32, minPowScore uint32, networkName string, rentStructure RentStructure, tokenSupply string, version uint32, ) *ProtocolParameters`
+`func NewProtocolParameters(bech32Hrp string, belowMaxDepth uint32, minPowScore uint32, networkName string, rentStructure RentStructure, tokenSupply string, version int32, ) *ProtocolParameters`
 
 NewProtocolParameters instantiates a new ProtocolParameters object
 This constructor will assign default values to properties that have it defined,
@@ -153,20 +153,20 @@ SetTokenSupply sets TokenSupply field to given value.
 
 ### GetVersion
 
-`func (o *ProtocolParameters) GetVersion() uint32`
+`func (o *ProtocolParameters) GetVersion() int32`
 
 GetVersion returns the Version field if non-nil, zero value otherwise.
 
 ### GetVersionOk
 
-`func (o *ProtocolParameters) GetVersionOk() (*uint32, bool)`
+`func (o *ProtocolParameters) GetVersionOk() (*int32, bool)`
 
 GetVersionOk returns a tuple with the Version field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetVersion
 
-`func (o *ProtocolParameters) SetVersion(v uint32)`
+`func (o *ProtocolParameters) SetVersion(v int32)`
 
 SetVersion sets Version field to given value.
 

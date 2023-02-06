@@ -2,6 +2,7 @@ package requests
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -11,6 +12,9 @@ import (
 )
 
 func (c *Controller) waitForRequestToFinish(e echo.Context) error {
+	const maximumTimeoutSeconds = 60
+	const defaultTimeoutSeconds = 30
+
 	chainID, err := params.DecodeChainID(e)
 	if err != nil {
 		return err
@@ -21,7 +25,22 @@ func (c *Controller) waitForRequestToFinish(e echo.Context) error {
 		return err
 	}
 
-	receipt, vmError, err := c.chainService.WaitForRequestProcessed(e.Request().Context(), chainID, requestID, 30*time.Second)
+	timeout := defaultTimeoutSeconds * time.Second
+
+	timeoutInSeconds := e.QueryParam("timeoutSeconds")
+	if len(timeoutInSeconds) > 0 {
+		parsedTimeout, _ := strconv.Atoi(timeoutInSeconds)
+
+		if err != nil {
+			if parsedTimeout > maximumTimeoutSeconds {
+				parsedTimeout = maximumTimeoutSeconds
+			}
+
+			timeout = time.Duration(parsedTimeout) * time.Second
+		}
+	}
+
+	receipt, vmError, err := c.chainService.WaitForRequestProcessed(e.Request().Context(), chainID, requestID, timeout)
 	if err != nil {
 		return err
 	}

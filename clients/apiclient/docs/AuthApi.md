@@ -1,6 +1,6 @@
 # \AuthApi
 
-All URIs are relative to *http://localhost:9090*
+All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------

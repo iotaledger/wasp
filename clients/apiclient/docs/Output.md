@@ -4,14 +4,14 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**OutputType** | **uint32** | The output type | 
+**OutputType** | **int32** | The output type | 
 **Raw** | **string** | The raw data of the output (Hex) | 
 
 ## Methods
 
 ### NewOutput
 
-`func NewOutput(outputType uint32, raw string, ) *Output`
+`func NewOutput(outputType int32, raw string, ) *Output`
 
 NewOutput instantiates a new Output object
 This constructor will assign default values to properties that have it defined,
@@ -28,20 +28,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetOutputType
 
-`func (o *Output) GetOutputType() uint32`
+`func (o *Output) GetOutputType() int32`
 
 GetOutputType returns the OutputType field if non-nil, zero value otherwise.
 
 ### GetOutputTypeOk
 
-`func (o *Output) GetOutputTypeOk() (*uint32, bool)`
+`func (o *Output) GetOutputTypeOk() (*int32, bool)`
 
 GetOutputTypeOk returns a tuple with the OutputType field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetOutputType
 
-`func (o *Output) SetOutputType(v uint32)`
+`func (o *Output) SetOutputType(v int32)`
 
 SetOutputType sets OutputType field to given value.
 

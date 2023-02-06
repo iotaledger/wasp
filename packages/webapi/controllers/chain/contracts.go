@@ -27,7 +27,7 @@ func (c *Controller) getContracts(e echo.Context) error {
 			Description: contract.Description,
 			HName:       hName.String(),
 			Name:        contract.Name,
-			ProgramHash: contract.ProgramHash,
+			ProgramHash: contract.ProgramHash.String(),
 		}
 
 		contractList = append(contractList, contractInfo)

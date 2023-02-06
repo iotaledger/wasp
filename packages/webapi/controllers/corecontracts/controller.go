@@ -198,8 +198,7 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		SetSummary("Get the request ids for the latest block")
 
 	api.GET("chains/:chainID/core/blocklog/blocks/:blockIndex/receipts", c.getRequestReceiptsForBlock).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath(0, "blockIndex", "Block Index (uint32)").
+		AddParamPathNested(blocks{}).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "The receipts", mocker.Get(models.BlockReceiptsResponse{}), nil).
 		SetOperationId("blocklogGetRequestReceiptsOfBlock").

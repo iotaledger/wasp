@@ -1,35 +1,35 @@
 # \CorecontractsApi
 
-All URIs are relative to *http://localhost:9090*
+All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**AccountsGetAccountBalance**](CorecontractsApi.md#AccountsGetAccountBalance) | **Get** /chains/{chainID}/core/accounts/account/{agentID}/balance | Get all assets belonging to an account
-[**AccountsGetAccountNFTIDs**](CorecontractsApi.md#AccountsGetAccountNFTIDs) | **Get** /chains/{chainID}/core/accounts/account/{agentID}/nfts | Get all NFT ids belonging to an account
-[**AccountsGetAccountNonce**](CorecontractsApi.md#AccountsGetAccountNonce) | **Get** /chains/{chainID}/core/accounts/account/{agentID}/nonce | Get the current nonce of an account
-[**AccountsGetAccounts**](CorecontractsApi.md#AccountsGetAccounts) | **Get** /chains/{chainID}/core/accounts | Get a list of all accounts
-[**AccountsGetFoundryOutput**](CorecontractsApi.md#AccountsGetFoundryOutput) | **Get** /chains/{chainID}/core/accounts/foundry_output | Get the foundry output
-[**AccountsGetNFTData**](CorecontractsApi.md#AccountsGetNFTData) | **Get** /chains/{chainID}/core/accounts/nftdata | Get the NFT data by an ID
-[**AccountsGetNativeTokenIDRegistry**](CorecontractsApi.md#AccountsGetNativeTokenIDRegistry) | **Get** /chains/{chainID}/core/accounts/token_registry | Get a list of all registries
-[**AccountsGetTotalAssets**](CorecontractsApi.md#AccountsGetTotalAssets) | **Get** /chains/{chainID}/core/accounts/total_assets | Get all stored assets
-[**BlobsGetAllBlobs**](CorecontractsApi.md#BlobsGetAllBlobs) | **Get** /chains/{chainID}/core/blobs | Get all stored blobs
-[**BlobsGetBlobInfo**](CorecontractsApi.md#BlobsGetBlobInfo) | **Get** /chains/{chainID}/core/blobs/{blobHash} | Get all fields of a blob
-[**BlobsGetBlobValue**](CorecontractsApi.md#BlobsGetBlobValue) | **Get** /chains/{chainID}/core/blobs/{blobHash}/data/{fieldKey} | Get the value of the supplied field (key)
-[**BlocklogGetBlockInfo**](CorecontractsApi.md#BlocklogGetBlockInfo) | **Get** /chains/{chainID}/core/blocklog/blocks/{blockIndex} | Get the block info of a certain block index
-[**BlocklogGetControlAddresses**](CorecontractsApi.md#BlocklogGetControlAddresses) | **Get** /chains/{chainID}/core/blocklog/controladdresses | Get the control addresses
-[**BlocklogGetEventsOfBlock**](CorecontractsApi.md#BlocklogGetEventsOfBlock) | **Get** /chains/{chainID}/core/blocklog/events/block/{blockIndex} | Get events of a block
-[**BlocklogGetEventsOfContract**](CorecontractsApi.md#BlocklogGetEventsOfContract) | **Get** /chains/{chainID}/core/blocklog/events/contract/{contractHname} | Get events of a contract
-[**BlocklogGetEventsOfLatestBlock**](CorecontractsApi.md#BlocklogGetEventsOfLatestBlock) | **Get** /chains/{chainID}/core/blocklog/events/block/latest | Get events of the latest block
-[**BlocklogGetEventsOfRequest**](CorecontractsApi.md#BlocklogGetEventsOfRequest) | **Get** /chains/{chainID}/core/blocklog/events/request/{requestID} | Get events of a request
-[**BlocklogGetLatestBlockInfo**](CorecontractsApi.md#BlocklogGetLatestBlockInfo) | **Get** /chains/{chainID}/core/blocklog/blocks/latest | Get the block info of the latest block
-[**BlocklogGetRequestIDsForBlock**](CorecontractsApi.md#BlocklogGetRequestIDsForBlock) | **Get** /chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids | Get the request ids for a certain block index
-[**BlocklogGetRequestIDsForLatestBlock**](CorecontractsApi.md#BlocklogGetRequestIDsForLatestBlock) | **Get** /chains/{chainID}/core/blocklog/blocks/latest/requestids | Get the request ids for the latest block
-[**BlocklogGetRequestIsProcessed**](CorecontractsApi.md#BlocklogGetRequestIsProcessed) | **Get** /chains/{chainID}/core/blocklog/requests/{requestID}/is_processed | Get the request processing status
-[**BlocklogGetRequestReceipt**](CorecontractsApi.md#BlocklogGetRequestReceipt) | **Get** /chains/{chainID}/core/blocklog/requests/{requestID} | Get the receipt of a certain request id
-[**BlocklogGetRequestReceiptsOfBlock**](CorecontractsApi.md#BlocklogGetRequestReceiptsOfBlock) | **Get** /chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts | Get all receipts of a certain block
-[**BlocklogGetRequestReceiptsOfLatestBlock**](CorecontractsApi.md#BlocklogGetRequestReceiptsOfLatestBlock) | **Get** /chains/{chainID}/core/blocklog/blocks/latest/receipts | Get all receipts of the latest block
-[**ErrorsGetErrorMessageFormat**](CorecontractsApi.md#ErrorsGetErrorMessageFormat) | **Get** /chains/{chainID}/core/errors/{contractHname}/message/{errorID} | Get the error message format of a specific error id
-[**GovernanceGetChainInfo**](CorecontractsApi.md#GovernanceGetChainInfo) | **Get** /chains/{chainID}/core/governance/chaininfo | Get the chain info
+[**AccountsGetAccountBalance**](CorecontractsApi.md#AccountsGetAccountBalance) | **Get** /v2/chains/{chainID}/core/accounts/account/{agentID}/balance | Get all assets belonging to an account
+[**AccountsGetAccountNFTIDs**](CorecontractsApi.md#AccountsGetAccountNFTIDs) | **Get** /v2/chains/{chainID}/core/accounts/account/{agentID}/nfts | Get all NFT ids belonging to an account
+[**AccountsGetAccountNonce**](CorecontractsApi.md#AccountsGetAccountNonce) | **Get** /v2/chains/{chainID}/core/accounts/account/{agentID}/nonce | Get the current nonce of an account
+[**AccountsGetAccounts**](CorecontractsApi.md#AccountsGetAccounts) | **Get** /v2/chains/{chainID}/core/accounts | Get a list of all accounts
+[**AccountsGetFoundryOutput**](CorecontractsApi.md#AccountsGetFoundryOutput) | **Get** /v2/chains/{chainID}/core/accounts/foundry_output/{serialNumber} | Get the foundry output
+[**AccountsGetNFTData**](CorecontractsApi.md#AccountsGetNFTData) | **Get** /v2/chains/{chainID}/core/accounts/nftdata | Get the NFT data by an ID
+[**AccountsGetNativeTokenIDRegistry**](CorecontractsApi.md#AccountsGetNativeTokenIDRegistry) | **Get** /v2/chains/{chainID}/core/accounts/token_registry | Get a list of all registries
+[**AccountsGetTotalAssets**](CorecontractsApi.md#AccountsGetTotalAssets) | **Get** /v2/chains/{chainID}/core/accounts/total_assets | Get all stored assets
+[**BlobsGetAllBlobs**](CorecontractsApi.md#BlobsGetAllBlobs) | **Get** /v2/chains/{chainID}/core/blobs | Get all stored blobs
+[**BlobsGetBlobInfo**](CorecontractsApi.md#BlobsGetBlobInfo) | **Get** /v2/chains/{chainID}/core/blobs/{blobHash} | Get all fields of a blob
+[**BlobsGetBlobValue**](CorecontractsApi.md#BlobsGetBlobValue) | **Get** /v2/chains/{chainID}/core/blobs/{blobHash}/data/{fieldKey} | Get the value of the supplied field (key)
+[**BlocklogGetBlockInfo**](CorecontractsApi.md#BlocklogGetBlockInfo) | **Get** /v2/chains/{chainID}/core/blocklog/blocks/{blockIndex} | Get the block info of a certain block index
+[**BlocklogGetControlAddresses**](CorecontractsApi.md#BlocklogGetControlAddresses) | **Get** /v2/chains/{chainID}/core/blocklog/controladdresses | Get the control addresses
+[**BlocklogGetEventsOfBlock**](CorecontractsApi.md#BlocklogGetEventsOfBlock) | **Get** /v2/chains/{chainID}/core/blocklog/events/block/{blockIndex} | Get events of a block
+[**BlocklogGetEventsOfContract**](CorecontractsApi.md#BlocklogGetEventsOfContract) | **Get** /v2/chains/{chainID}/core/blocklog/events/contract/{contractHname} | Get events of a contract
+[**BlocklogGetEventsOfLatestBlock**](CorecontractsApi.md#BlocklogGetEventsOfLatestBlock) | **Get** /v2/chains/{chainID}/core/blocklog/events/block/latest | Get events of the latest block
+[**BlocklogGetEventsOfRequest**](CorecontractsApi.md#BlocklogGetEventsOfRequest) | **Get** /v2/chains/{chainID}/core/blocklog/events/request/{requestID} | Get events of a request
+[**BlocklogGetLatestBlockInfo**](CorecontractsApi.md#BlocklogGetLatestBlockInfo) | **Get** /v2/chains/{chainID}/core/blocklog/blocks/latest | Get the block info of the latest block
+[**BlocklogGetRequestIDsForBlock**](CorecontractsApi.md#BlocklogGetRequestIDsForBlock) | **Get** /v2/chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids | Get the request ids for a certain block index
+[**BlocklogGetRequestIDsForLatestBlock**](CorecontractsApi.md#BlocklogGetRequestIDsForLatestBlock) | **Get** /v2/chains/{chainID}/core/blocklog/blocks/latest/requestids | Get the request ids for the latest block
+[**BlocklogGetRequestIsProcessed**](CorecontractsApi.md#BlocklogGetRequestIsProcessed) | **Get** /v2/chains/{chainID}/core/blocklog/requests/{requestID}/is_processed | Get the request processing status
+[**BlocklogGetRequestReceipt**](CorecontractsApi.md#BlocklogGetRequestReceipt) | **Get** /v2/chains/{chainID}/core/blocklog/requests/{requestID} | Get the receipt of a certain request id
+[**BlocklogGetRequestReceiptsOfBlock**](CorecontractsApi.md#BlocklogGetRequestReceiptsOfBlock) | **Get** /v2/chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts | Get all receipts of a certain block
+[**BlocklogGetRequestReceiptsOfLatestBlock**](CorecontractsApi.md#BlocklogGetRequestReceiptsOfLatestBlock) | **Get** /v2/chains/{chainID}/core/blocklog/blocks/latest/receipts | Get all receipts of the latest block
+[**ErrorsGetErrorMessageFormat**](CorecontractsApi.md#ErrorsGetErrorMessageFormat) | **Get** /v2/chains/{chainID}/core/errors/{contractHname}/message/{errorID} | Get the error message format of a specific error id
+[**GovernanceGetChainInfo**](CorecontractsApi.md#GovernanceGetChainInfo) | **Get** /v2/chains/{chainID}/core/governance/chaininfo | Get the chain info
 
 
 
@@ -92,7 +92,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -163,7 +163,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -234,7 +234,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -302,7 +302,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -316,7 +316,7 @@ No authorization required
 
 ## AccountsGetFoundryOutput
 
-> FoundryOutputResponse AccountsGetFoundryOutput(ctx, chainID, chainID2).Execute()
+> FoundryOutputResponse AccountsGetFoundryOutput(ctx, chainID, serialNumber).Execute()
 
 Get the foundry output
 
@@ -334,11 +334,11 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    chainID2 := "chainID_example" // string | Serial Number (uint32)
+    serialNumber := uint32(56) // uint32 | Serial Number (uint32)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.AccountsGetFoundryOutput(context.Background(), chainID, chainID2).Execute()
+    resp, r, err := apiClient.CorecontractsApi.AccountsGetFoundryOutput(context.Background(), chainID, serialNumber).Execute()
     if err != nil {
         fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.AccountsGetFoundryOutput``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -355,7 +355,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**chainID2** | **string** | Serial Number (uint32) | 
+**serialNumber** | **uint32** | Serial Number (uint32) | 
 
 ### Other Parameters
 
@@ -373,7 +373,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -444,7 +444,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -512,7 +512,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -580,7 +580,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -648,7 +648,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -719,7 +719,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -793,7 +793,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -825,7 +825,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    blockIndex := uint32(56) // uint32 | Block Index (uint32)
+    blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -846,7 +846,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**blockIndex** | **uint32** | Block Index (uint32) | 
+**blockIndex** | **uint32** | BlockIndex (uint32) | 
 
 ### Other Parameters
 
@@ -864,7 +864,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -932,7 +932,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -964,7 +964,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    blockIndex := uint32(56) // uint32 | Block Index (uint32)
+    blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -985,7 +985,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**blockIndex** | **uint32** | Block Index (uint32) | 
+**blockIndex** | **uint32** | BlockIndex (uint32) | 
 
 ### Other Parameters
 
@@ -1003,7 +1003,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -1074,7 +1074,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -1142,7 +1142,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -1213,7 +1213,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -1281,7 +1281,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -1313,7 +1313,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    blockIndex := uint32(56) // uint32 | Block Index (uint32)
+    blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -1334,7 +1334,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**blockIndex** | **uint32** | Block Index (uint32) | 
+**blockIndex** | **uint32** | BlockIndex (uint32) | 
 
 ### Other Parameters
 
@@ -1352,7 +1352,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -1420,7 +1420,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -1491,7 +1491,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -1562,7 +1562,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -1594,7 +1594,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    blockIndex := uint32(56) // uint32 | Block Index (uint32)
+    blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -1615,7 +1615,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**blockIndex** | **uint32** | Block Index (uint32) | 
+**blockIndex** | **uint32** | BlockIndex (uint32) | 
 
 ### Other Parameters
 
@@ -1633,7 +1633,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -1701,7 +1701,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -1734,7 +1734,7 @@ import (
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
     contractHname := "contractHname_example" // string | Contract (Hname as Hex)
-    errorID := "errorID_example" // string | Error Id (uint16)
+    errorID := uint32(56) // uint32 | Error Id (uint16)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -1756,7 +1756,7 @@ Name | Type | Description  | Notes
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
 **contractHname** | **string** | Contract (Hname as Hex) | 
-**errorID** | **string** | Error Id (uint16) | 
+**errorID** | **uint32** | Error Id (uint16) | 
 
 ### Other Parameters
 
@@ -1775,7 +1775,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 
@@ -1845,7 +1845,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[Authorization](../README.md#Authorization)
 
 ### HTTP request headers
 

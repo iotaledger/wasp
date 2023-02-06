@@ -7,14 +7,14 @@ Name | Type | Description | Notes
 **IsAlive** | **bool** | Whether or not the peer is activated | 
 **IsTrusted** | **bool** |  | 
 **NetId** | **string** | The NetID of the peer | 
-**NumUsers** | **uint32** | The amount of users attached to the peer | 
+**NumUsers** | **int32** | The amount of users attached to the peer | 
 **PublicKey** | **string** | The peers public key encoded in Hex | 
 
 ## Methods
 
 ### NewPeeringNodeStatusResponse
 
-`func NewPeeringNodeStatusResponse(isAlive bool, isTrusted bool, netId string, numUsers uint32, publicKey string, ) *PeeringNodeStatusResponse`
+`func NewPeeringNodeStatusResponse(isAlive bool, isTrusted bool, netId string, numUsers int32, publicKey string, ) *PeeringNodeStatusResponse`
 
 NewPeeringNodeStatusResponse instantiates a new PeeringNodeStatusResponse object
 This constructor will assign default values to properties that have it defined,
@@ -91,20 +91,20 @@ SetNetId sets NetId field to given value.
 
 ### GetNumUsers
 
-`func (o *PeeringNodeStatusResponse) GetNumUsers() uint32`
+`func (o *PeeringNodeStatusResponse) GetNumUsers() int32`
 
 GetNumUsers returns the NumUsers field if non-nil, zero value otherwise.
 
 ### GetNumUsersOk
 
-`func (o *PeeringNodeStatusResponse) GetNumUsersOk() (*uint32, bool)`
+`func (o *PeeringNodeStatusResponse) GetNumUsersOk() (*int32, bool)`
 
 GetNumUsersOk returns a tuple with the NumUsers field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetNumUsers
 
-`func (o *PeeringNodeStatusResponse) SetNumUsers(v uint32)`
+`func (o *PeeringNodeStatusResponse) SetNumUsers(v int32)`
 
 SetNumUsers sets NumUsers field to given value.
 

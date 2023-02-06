@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**BaseTokens** | **int64** |  | 
+**BaseTokens** | **string** | The base tokens (uint64 as string) | 
 **NativeTokens** | [**[]NativeToken**](NativeToken.md) |  | 
 **Nfts** | **[]string** |  | 
 
@@ -12,7 +12,7 @@ Name | Type | Description | Notes
 
 ### NewAssets
 
-`func NewAssets(baseTokens int64, nativeTokens []NativeToken, nfts []string, ) *Assets`
+`func NewAssets(baseTokens string, nativeTokens []NativeToken, nfts []string, ) *Assets`
 
 NewAssets instantiates a new Assets object
 This constructor will assign default values to properties that have it defined,
@@ -29,20 +29,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetBaseTokens
 
-`func (o *Assets) GetBaseTokens() int64`
+`func (o *Assets) GetBaseTokens() string`
 
 GetBaseTokens returns the BaseTokens field if non-nil, zero value otherwise.
 
 ### GetBaseTokensOk
 
-`func (o *Assets) GetBaseTokensOk() (*int64, bool)`
+`func (o *Assets) GetBaseTokensOk() (*string, bool)`
 
 GetBaseTokensOk returns a tuple with the BaseTokens field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetBaseTokens
 
-`func (o *Assets) SetBaseTokens(v int64)`
+`func (o *Assets) SetBaseTokens(v string)`
 
 SetBaseTokens sets BaseTokens field to given value.
 

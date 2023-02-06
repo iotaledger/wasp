@@ -20,8 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 )
 
-const MaxTimeout = 30 * time.Second
-
 type ChainService struct {
 	governance                  *corecontracts.Governance
 	chainsProvider              chains.Provider
@@ -186,13 +184,7 @@ func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.
 		return receipt, vmError, nil
 	}
 
-	adjustedTimeout := timeout
-
-	if timeout > MaxTimeout {
-		adjustedTimeout = MaxTimeout
-	}
-
-	timeoutCtx, cancelCtx := context.WithTimeout(ctx, adjustedTimeout)
+	timeoutCtx, cancelCtx := context.WithTimeout(ctx, timeout)
 	defer cancelCtx()
 	receiptResponse := <-chain.AwaitRequestProcessed(timeoutCtx, requestID, true)
 

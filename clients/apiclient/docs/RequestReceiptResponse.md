@@ -6,10 +6,10 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **BlockIndex** | **uint32** |  | 
 **Error** | Pointer to [**BlockReceiptError**](BlockReceiptError.md) |  | [optional] 
-**GasBudget** | **int64** |  | 
+**GasBudget** | **string** | The gas budget (uint64 as string) | 
 **GasBurnLog** | [**BurnLog**](BurnLog.md) |  | 
-**GasBurned** | **int64** |  | 
-**GasFeeCharged** | **int64** |  | 
+**GasBurned** | **string** | The burned gas (uint64 as string) | 
+**GasFeeCharged** | **string** | The charged gas fee (uint64 as string) | 
 **Request** | [**RequestDetail**](RequestDetail.md) |  | 
 **RequestIndex** | **uint32** |  | 
 
@@ -17,7 +17,7 @@ Name | Type | Description | Notes
 
 ### NewRequestReceiptResponse
 
-`func NewRequestReceiptResponse(blockIndex uint32, gasBudget int64, gasBurnLog BurnLog, gasBurned int64, gasFeeCharged int64, request RequestDetail, requestIndex uint32, ) *RequestReceiptResponse`
+`func NewRequestReceiptResponse(blockIndex uint32, gasBudget string, gasBurnLog BurnLog, gasBurned string, gasFeeCharged string, request RequestDetail, requestIndex uint32, ) *RequestReceiptResponse`
 
 NewRequestReceiptResponse instantiates a new RequestReceiptResponse object
 This constructor will assign default values to properties that have it defined,
@@ -79,20 +79,20 @@ HasError returns a boolean if a field has been set.
 
 ### GetGasBudget
 
-`func (o *RequestReceiptResponse) GetGasBudget() int64`
+`func (o *RequestReceiptResponse) GetGasBudget() string`
 
 GetGasBudget returns the GasBudget field if non-nil, zero value otherwise.
 
 ### GetGasBudgetOk
 
-`func (o *RequestReceiptResponse) GetGasBudgetOk() (*int64, bool)`
+`func (o *RequestReceiptResponse) GetGasBudgetOk() (*string, bool)`
 
 GetGasBudgetOk returns a tuple with the GasBudget field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetGasBudget
 
-`func (o *RequestReceiptResponse) SetGasBudget(v int64)`
+`func (o *RequestReceiptResponse) SetGasBudget(v string)`
 
 SetGasBudget sets GasBudget field to given value.
 
@@ -119,40 +119,40 @@ SetGasBurnLog sets GasBurnLog field to given value.
 
 ### GetGasBurned
 
-`func (o *RequestReceiptResponse) GetGasBurned() int64`
+`func (o *RequestReceiptResponse) GetGasBurned() string`
 
 GetGasBurned returns the GasBurned field if non-nil, zero value otherwise.
 
 ### GetGasBurnedOk
 
-`func (o *RequestReceiptResponse) GetGasBurnedOk() (*int64, bool)`
+`func (o *RequestReceiptResponse) GetGasBurnedOk() (*string, bool)`
 
 GetGasBurnedOk returns a tuple with the GasBurned field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetGasBurned
 
-`func (o *RequestReceiptResponse) SetGasBurned(v int64)`
+`func (o *RequestReceiptResponse) SetGasBurned(v string)`
 
 SetGasBurned sets GasBurned field to given value.
 
 
 ### GetGasFeeCharged
 
-`func (o *RequestReceiptResponse) GetGasFeeCharged() int64`
+`func (o *RequestReceiptResponse) GetGasFeeCharged() string`
 
 GetGasFeeCharged returns the GasFeeCharged field if non-nil, zero value otherwise.
 
 ### GetGasFeeChargedOk
 
-`func (o *RequestReceiptResponse) GetGasFeeChargedOk() (*int64, bool)`
+`func (o *RequestReceiptResponse) GetGasFeeChargedOk() (*string, bool)`
 
 GetGasFeeChargedOk returns a tuple with the GasFeeCharged field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetGasFeeCharged
 
-`func (o *RequestReceiptResponse) SetGasFeeCharged(v int64)`
+`func (o *RequestReceiptResponse) SetGasFeeCharged(v string)`
 
 SetGasFeeCharged sets GasFeeCharged field to given value.
 

@@ -7,13 +7,13 @@ Name | Type | Description | Notes
 **Description** | **string** | The description of the contract. | 
 **HName** | **string** | The id (HName as Hex)) of the contract. | 
 **Name** | **string** | The name of the contract. | 
-**ProgramHash** | **[]int32** | The hash of the contract. | 
+**ProgramHash** | **string** | The hash of the contract. (Hex encoded) | 
 
 ## Methods
 
 ### NewContractInfoResponse
 
-`func NewContractInfoResponse(description string, hName string, name string, programHash []int32, ) *ContractInfoResponse`
+`func NewContractInfoResponse(description string, hName string, name string, programHash string, ) *ContractInfoResponse`
 
 NewContractInfoResponse instantiates a new ContractInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -90,20 +90,20 @@ SetName sets Name field to given value.
 
 ### GetProgramHash
 
-`func (o *ContractInfoResponse) GetProgramHash() []int32`
+`func (o *ContractInfoResponse) GetProgramHash() string`
 
 GetProgramHash returns the ProgramHash field if non-nil, zero value otherwise.
 
 ### GetProgramHashOk
 
-`func (o *ContractInfoResponse) GetProgramHashOk() (*[]int32, bool)`
+`func (o *ContractInfoResponse) GetProgramHashOk() (*string, bool)`
 
 GetProgramHashOk returns a tuple with the ProgramHash field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetProgramHash
 
-`func (o *ContractInfoResponse) SetProgramHash(v []int32)`
+`func (o *ContractInfoResponse) SetProgramHash(v string)`
 
 SetProgramHash sets ProgramHash field to given value.
 
