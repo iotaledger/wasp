@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   description: REST API for the Wasp node
   title: Wasp API
-  version: v0.4.0-alpha.8-60-g8b0f75e6d
+  version: "0"
 externalDocs:
   description: Find out more about Wasp
   url: https://wiki.iota.org/smart-contracts/overview
@@ -1488,7 +1488,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: info
+                  example: "true"
                   format: string
                   type: string
                 type: object
