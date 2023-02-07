@@ -29,7 +29,7 @@ func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLo
 	for _, controller := range controllersToLoad {
 		group := server.Group(controller.Name(), "/")
 
-		controller.RegisterPublic(publicGroup, mocker)
+		controller.RegisterPublic(group, mocker)
 
 		adminGroup := server.Group(controller.Name(), "/").
 			SetSecurity("Authorization")
