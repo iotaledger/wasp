@@ -161,7 +161,11 @@ func testOffledgerNonce(t *testing.T, e *ChainEnv) {
 			Nonce: 1,
 		},
 	)
-	require.Regexp(t, "invalid nonce", err.Error())
+
+	apiError, ok := apiextensions.AsAPIError(err)
+	require.True(t, ok)
+	require.NotNil(t, apiError.DetailError)
+	require.Regexp(t, "invalid nonce", apiError.DetailError.Error)
 
 	// try replaying the initial request
 	_, err = chClient.PostOffLedgerRequest(
@@ -171,7 +175,11 @@ func testOffledgerNonce(t *testing.T, e *ChainEnv) {
 			Nonce: 1_000_000,
 		},
 	)
-	require.Regexp(t, "request already processed", err.Error())
+
+	apiError, ok = apiextensions.AsAPIError(err)
+	require.True(t, ok)
+	require.NotNil(t, apiError.DetailError)
+	require.Regexp(t, "request already processed", apiError.DetailError.Error)
 
 	// send a request with a higher nonce
 	offledgerReq, err = chClient.PostOffLedgerRequest(

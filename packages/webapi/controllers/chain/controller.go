@@ -62,7 +62,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		SetOperationId("getRequestIDFromEVMTransactionID").
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "txHash", "Transaction hash (Hex-encoded)").
-		AddResponse(http.StatusOK, "Request ID", "", nil).
+		AddResponse(http.StatusOK, "Request ID", mocker.Get(models.RequestIDResponse{}), nil).
 		AddResponse(http.StatusNotFound, "Request ID not found", "", nil)
 
 	publicAPI.GET("chains/:chainID/state/:stateKey", c.getState).

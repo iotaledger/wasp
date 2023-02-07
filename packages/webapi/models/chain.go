@@ -99,7 +99,7 @@ func MapChainInfoResponse(chainInfo *dto2.ChainInfo, evmChainID uint16) ChainInf
 }
 
 type RequestIDResponse struct {
-	RequestID string `json:"requestId" swagger:"desc(The request ID of the given transaction ID.)"`
+	RequestID string `json:"requestId" swagger:"desc(The request ID of the given transaction ID. (Hex)),required"`
 }
 
 type ChainRecord struct {

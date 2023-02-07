@@ -12,6 +12,7 @@ import (
 
 func JSONDictToAPIJSONDict(jsonDict dict.JSONDict) apiclient.JSONDict {
 	apiJSONDict := apiclient.NewJSONDict()
+	apiJSONDict.Items = make([]apiclient.Item, len(jsonDict.Items))
 
 	for k, v := range jsonDict.Items {
 		apiJSONDict.Items[k] = apiclient.Item{

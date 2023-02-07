@@ -142,9 +142,13 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 		require.NoError(t, err)
 
 		t.Logf("%+v", contractRegistry)
-		cr := contractRegistry[hname]
+		cr, ok := lo.Find(contractRegistry, func(item apiclient.ContractInfoResponse) bool {
+			return item.HName == hname.String()
+		})
+		require.True(t, ok)
+		require.NotNil(t, cr)
 
-		require.EqualValues(t, programHash1, cr.ProgramHash)
+		require.EqualValues(t, programHash1.Hex(), cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
 		require.EqualValues(t, nativeIncCounterSCName, cr.Name)
 

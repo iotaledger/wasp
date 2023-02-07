@@ -7,7 +7,7 @@ import (
 )
 
 type ReceiptError struct {
-	ContractID    isc.Hname     `json:"contractId" swagger:"required"`
+	ContractHName string        `json:"contractHName" swagger:"required,desc(The contract hname (Hex))"`
 	ErrorID       uint16        `json:"errorId" swagger:"required,min(1)"`
 	ErrorCode     string        `json:"errorCode" swagger:"required"`
 	Message       string        `json:"message" swagger:"required"`
@@ -21,7 +21,7 @@ func MapReceiptError(err *isc.VMError) *ReceiptError {
 	}
 
 	return &ReceiptError{
-		ContractID:    err.Code().ContractID,
+		ContractHName: err.Code().ContractID.String(),
 		ErrorID:       err.Code().ID,
 		ErrorCode:     err.Code().String(),
 		Message:       err.Error(),

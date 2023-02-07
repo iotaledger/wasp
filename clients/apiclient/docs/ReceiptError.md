@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**ContractId** | **int32** |  | 
+**ContractHName** | **string** | The contract hname (Hex) | 
 **ErrorCode** | **string** |  | 
 **ErrorId** | **uint32** |  | 
 **Message** | **string** |  | 
@@ -15,7 +15,7 @@ Name | Type | Description | Notes
 
 ### NewReceiptError
 
-`func NewReceiptError(contractId int32, errorCode string, errorId uint32, message string, messageFormat string, parameters []string, ) *ReceiptError`
+`func NewReceiptError(contractHName string, errorCode string, errorId uint32, message string, messageFormat string, parameters []string, ) *ReceiptError`
 
 NewReceiptError instantiates a new ReceiptError object
 This constructor will assign default values to properties that have it defined,
@@ -30,24 +30,24 @@ NewReceiptErrorWithDefaults instantiates a new ReceiptError object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
 
-### GetContractId
+### GetContractHName
 
-`func (o *ReceiptError) GetContractId() int32`
+`func (o *ReceiptError) GetContractHName() string`
 
-GetContractId returns the ContractId field if non-nil, zero value otherwise.
+GetContractHName returns the ContractHName field if non-nil, zero value otherwise.
 
-### GetContractIdOk
+### GetContractHNameOk
 
-`func (o *ReceiptError) GetContractIdOk() (*int32, bool)`
+`func (o *ReceiptError) GetContractHNameOk() (*string, bool)`
 
-GetContractIdOk returns a tuple with the ContractId field if it's non-nil, zero value otherwise
+GetContractHNameOk returns a tuple with the ContractHName field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetContractId
+### SetContractHName
 
-`func (o *ReceiptError) SetContractId(v int32)`
+`func (o *ReceiptError) SetContractHName(v string)`
 
-SetContractId sets ContractId field to given value.
+SetContractHName sets ContractHName field to given value.
 
 
 ### GetErrorCode

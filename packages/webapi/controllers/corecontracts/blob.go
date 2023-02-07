@@ -1,6 +1,7 @@
 package corecontracts
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -78,6 +79,8 @@ type BlobInfoResponse struct {
 }
 
 func (c *Controller) getBlobInfo(e echo.Context) error {
+	fmt.Println("GET BLOB INFO")
+
 	chainID, err := params.DecodeChainID(e)
 	if err != nil {
 		return err
@@ -93,12 +96,16 @@ func (c *Controller) getBlobInfo(e echo.Context) error {
 		return apierrors.ContractExecutionError(err)
 	}
 
-	if !ok {
-		return e.NoContent(http.StatusNotFound)
-	}
+	fmt.Printf("GET BLOB INFO: ok:%v, err:%v", ok, err)
 
 	blobInfoResponse := &BlobInfoResponse{
 		Fields: map[string]uint32{},
+	}
+
+	// TODO: Validate this logic. Should an empty blob info result in a different http error code?
+	if !ok {
+		fmt.Printf("GET BLOB INFO return empty blobInfoResponse")
+		return e.JSON(http.StatusOK, blobInfoResponse)
 	}
 
 	for k, v := range blobInfo {

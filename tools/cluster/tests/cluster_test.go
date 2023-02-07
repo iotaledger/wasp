@@ -32,7 +32,7 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping cluster tests in short mode")
 	}
-	// setup a cluster with a 4 nodes
+	// setup a cluster with 4 nodes
 	run := createTestWrapper(t, 4, []int{0, 1, 2, 3})
 
 	t.Run("deploy basic", func(t *testing.T) { run(t, testDeployChain) })

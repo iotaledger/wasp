@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -32,10 +33,13 @@ func (e *ChainEnv) getBlobFieldValue(blobHash hashing.HashValue, field string) [
 	require.NoError(e.t, err)
 
 	if blobField.ValueData == "" {
-		return nil
+		return []byte{}
 	}
 
-	return []byte(blobField.ValueData)
+	value, err := iotago.DecodeHex(blobField.ValueData)
+
+	require.NoError(e.t, err)
+	return value
 }
 
 // executed in cluster_test.go

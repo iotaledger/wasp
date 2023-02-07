@@ -20,7 +20,7 @@ func NewBlob(vmService interfaces.VMService) *Blob {
 
 func (b *Blob) GetBlobInfo(chainID isc.ChainID, blobHash hashing.HashValue) (map[string]uint32, bool, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blob.Contract.Hname(), blob.ViewGetBlobInfo.Hname(), codec.MakeDict(map[string]interface{}{
-		blob.ParamHash: blobHash[:],
+		blob.ParamHash: blobHash.Bytes(),
 	}))
 	if err != nil {
 		return nil, false, err
@@ -39,8 +39,8 @@ func (b *Blob) GetBlobInfo(chainID isc.ChainID, blobHash hashing.HashValue) (map
 }
 
 func (b *Blob) GetBlobValue(chainID isc.ChainID, blobHash hashing.HashValue, key string) ([]byte, error) {
-	ret, err := b.vmService.CallViewByChainID(chainID, blob.Contract.Hname(), blob.ViewGetBlobInfo.Hname(), codec.MakeDict(map[string]interface{}{
-		blob.ParamHash:  blobHash[:],
+	ret, err := b.vmService.CallViewByChainID(chainID, blob.Contract.Hname(), blob.ViewGetBlobField.Hname(), codec.MakeDict(map[string]interface{}{
+		blob.ParamHash:  blobHash.Bytes(),
 		blob.ParamField: []byte(key),
 	}))
 	if err != nil {

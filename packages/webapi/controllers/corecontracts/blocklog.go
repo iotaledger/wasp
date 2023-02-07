@@ -1,6 +1,7 @@
 package corecontracts
 
 import (
+	goerrors "errors"
 	"net/http"
 	"strconv"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
@@ -145,6 +147,9 @@ func (c *Controller) getRequestReceipt(e echo.Context) error {
 
 	receipt, err := c.blocklog.GetRequestReceipt(chainID, requestID)
 	if err != nil {
+		if goerrors.Is(err, corecontracts.ErrNoRecord) {
+			return apierrors.NoRecordFoundErrror(err)
+		}
 		return apierrors.ContractExecutionError(err)
 	}
 

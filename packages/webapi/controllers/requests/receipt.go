@@ -1,11 +1,13 @@
 package requests
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
@@ -23,6 +25,9 @@ func (c *Controller) getReceipt(e echo.Context) error {
 
 	receipt, vmError, err := c.vmService.GetReceipt(chainID, requestID)
 	if err != nil {
+		if errors.Is(err, corecontracts.ErrNoRecord) {
+			return apierrors.NoRecordFoundErrror(err)
+		}
 		return apierrors.ReceiptError(err)
 	}
 

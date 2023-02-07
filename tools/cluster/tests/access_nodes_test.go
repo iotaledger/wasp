@@ -63,17 +63,19 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	accessNodePeerInfo, _, err := accessNodeClient.NodeApi.GetPeeringIdentity(context.Background()).Execute()
 	require.NoError(t, err)
 
-	err = clu2.AddTrustedNode(apiclient.PeeringTrustRequest{
+	err = env.Clu.AddTrustedNode(apiclient.PeeringTrustRequest{
 		PublicKey: accessNodePeerInfo.PublicKey,
 		NetId:     accessNodePeerInfo.NetId,
 	}, []int{0})
 	require.NoError(t, err)
 
 	// activate the chain on the access node
-	_, err = accessNodeClient.ChainsApi.SetChainRecord(context.Background(), env.Chain.ChainID.String()).ChainRecord(apiclient.ChainRecord{
-		IsActive:    true,
-		AccessNodes: []string{},
-	}).Execute()
+	_, err = accessNodeClient.ChainsApi.
+		SetChainRecord(context.Background(), env.Chain.ChainID.String()).
+		ChainRecord(apiclient.ChainRecord{
+			IsActive:    true,
+			AccessNodes: []string{},
+		}).Execute()
 	require.NoError(t, err)
 
 	// add node 0 from cluster 2 as a *permitionless* access node
@@ -115,6 +117,6 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	receipt, _, err := nodeClient.RequestsApi.GetReceipt(context.Background(), env.Chain.ChainID.String(), req.ID().String()).Execute()
 
 	require.Error(t, err)
-	require.Regexp(t, `"Code":404`, err.Error())
+	require.Regexp(t, `404`, err.Error())
 	require.Nil(t, receipt)
 }

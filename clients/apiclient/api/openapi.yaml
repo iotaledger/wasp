@@ -1324,8 +1324,7 @@ paths:
           content:
             application/json:
               schema:
-                format: string
-                type: string
+                $ref: '#/components/schemas/RequestIDResponse'
           description: Request ID
         "404":
           content:
@@ -1577,7 +1576,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "true"
+                  example: "30"
                   format: string
                   type: string
                 type: object
@@ -1710,7 +1709,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/PeeringNodeStatusResponse_'
+                  $ref: '#/components/schemas/PeeringNodeStatusResponse__'
                 type: array
           description: A list of all peers
         "401":
@@ -2989,16 +2988,16 @@ components:
         committeeNodes:
         - node:
             isAlive: true
-            netId: localhost:4000
-            publicKey: 0x0000
-            numUsers: 1
+            netId: netId
+            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+            numUsers: 6
             isTrusted: true
           accessAPI: accessAPI
         - node:
             isAlive: true
-            netId: localhost:4000
-            publicKey: 0x0000
-            numUsers: 1
+            netId: netId
+            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+            numUsers: 6
             isTrusted: true
           accessAPI: accessAPI
         chainId: tst1pqm5ckama06xhkl080mmvz6l3xy8c8lulrwy7mx4ll0fc69krxfgka70j0e
@@ -3101,9 +3100,9 @@ components:
       example:
         node:
           isAlive: true
-          netId: localhost:4000
-          publicKey: 0x0000
-          numUsers: 1
+          netId: netId
+          publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+          numUsers: 6
           isTrusted: true
         accessAPI: accessAPI
       properties:
@@ -3642,10 +3641,10 @@ components:
         description: description
         gasFeePolicy:
           gasFeeTokenId: gasFeeTokenId
-          gasPerToken: 0
-          validatorFeeShare: 6
-        maxBlobSize: 1
-        maxEventSize: 5
+          gasPerToken: gasPerToken
+          validatorFeeShare: 0
+        maxBlobSize: 6
+        maxEventSize: 1
       properties:
         chainID:
           description: ChainID (Bech32-encoded).
@@ -4442,6 +4441,53 @@ components:
     PeeringNodeStatusResponse_:
       example:
         isAlive: true
+        netId: netId
+        publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+        numUsers: 6
+        isTrusted: true
+      properties:
+        isAlive:
+          description: Whether or not the peer is activated
+          format: boolean
+          type: boolean
+          xml:
+            name: IsAlive
+        isTrusted:
+          format: boolean
+          type: boolean
+          xml:
+            name: IsTrusted
+        netId:
+          description: The NetID of the peer
+          format: string
+          type: string
+          xml:
+            name: NetID
+        numUsers:
+          description: The amount of users attached to the peer
+          format: int32
+          type: integer
+          xml:
+            name: NumUsers
+        publicKey:
+          description: The peers public key encoded in Hex
+          example: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+          format: string
+          type: string
+          xml:
+            name: PublicKey
+      required:
+      - isAlive
+      - isTrusted
+      - netId
+      - numUsers
+      - publicKey
+      type: object
+      xml:
+        name: PeeringNodeStatusResponse
+    PeeringNodeStatusResponse__:
+      example:
+        isAlive: true
         netId: localhost:4000
         publicKey: 0x0000
         numUsers: 1
@@ -4614,8 +4660,8 @@ components:
         name: PublisherStateTransactionItem
     ReceiptError:
       example:
+        contractHName: contractHName
         messageFormat: messageFormat
-        contractId: 6
         errorCode: errorCode
         errorId: 1
         message: message
@@ -4623,11 +4669,12 @@ components:
         - parameters
         - parameters
       properties:
-        contractId:
-          format: int32
-          type: integer
+        contractHName:
+          description: The contract hname (Hex)
+          format: string
+          type: string
           xml:
-            name: ContractID
+            name: ContractHName
         errorCode:
           format: string
           type: string
@@ -4658,7 +4705,7 @@ components:
             name: Parameters
             wrapped: true
       required:
-      - contractId
+      - contractHName
       - errorCode
       - errorId
       - message
@@ -4681,8 +4728,8 @@ components:
         gasBudget: gasBudget
         gasBurned: gasBurned
         error:
+          contractHName: contractHName
           messageFormat: messageFormat
-          contractId: 6
           errorCode: errorCode
           errorId: 1
           message: message
@@ -4879,6 +4926,21 @@ components:
       type: object
       xml:
         name: RequestDetail
+    RequestIDResponse:
+      example:
+        requestId: requestId
+      properties:
+        requestId:
+          description: The request ID of the given transaction ID. (Hex)
+          format: string
+          type: string
+          xml:
+            name: RequestID
+      required:
+      - requestId
+      type: object
+      xml:
+        name: RequestIDResponse
     RequestIDsResponse:
       example:
         requestIds:
@@ -5345,8 +5407,8 @@ components:
     gasFeePolicy_:
       example:
         gasFeeTokenId: gasFeeTokenId
-        gasPerToken: 0
-        validatorFeeShare: 6
+        gasPerToken: gasPerToken
+        validatorFeeShare: 0
       properties:
         gasFeeTokenId:
           description: The gas fee token id. Empty if base token.
@@ -5355,9 +5417,9 @@ components:
           xml:
             name: GasFeeTokenID
         gasPerToken:
-          description: The amount of gas per token.
-          format: int64
-          type: integer
+          description: The amount of gas per token. (uint64 as string)
+          format: string
+          type: string
           xml:
             name: GasPerToken
         validatorFeeShare:

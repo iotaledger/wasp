@@ -1,6 +1,8 @@
 package corecontracts
 
 import (
+	"errors"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -137,6 +139,8 @@ func (b *BlockLog) GetRequestIDsForBlock(chainID isc.ChainID, blockIndex uint32)
 	return handleRequestIDs(ret)
 }
 
+var ErrNoRecord = errors.New("no request record")
+
 func (b *BlockLog) GetRequestReceipt(chainID isc.ChainID, requestID isc.RequestID) (*blocklog.RequestReceipt, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceipt.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamRequestID: requestID,
@@ -148,7 +152,7 @@ func (b *BlockLog) GetRequestReceipt(chainID isc.ChainID, requestID isc.RequestI
 	resultDecoder := kvdecoder.New(ret)
 	binRec, err := resultDecoder.GetBytes(blocklog.ParamRequestRecord)
 	if err != nil || binRec == nil {
-		return nil, err
+		return nil, ErrNoRecord
 	}
 
 	requestReceipt, err := blocklog.RequestReceiptFromBytes(binRec)

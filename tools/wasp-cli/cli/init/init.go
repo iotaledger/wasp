@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 )
 
@@ -47,6 +48,8 @@ func Init(rootCmd *cobra.Command, waspVersion string) {
 
 	// The first time parameters.L1() is called, it will be initialized with this function
 	parameters.InitL1Lazy(func() {
+		cliclients.L1Client()
+
 		if config.L1ParamsExpired() {
 			config.RefreshL1ParamsFromNode()
 		} else {

@@ -19,7 +19,8 @@ var _ MappedNullable = &ReceiptError{}
 
 // ReceiptError struct for ReceiptError
 type ReceiptError struct {
-	ContractId int32 `json:"contractId"`
+	// The contract hname (Hex)
+	ContractHName string `json:"contractHName"`
 	ErrorCode string `json:"errorCode"`
 	ErrorId uint32 `json:"errorId"`
 	Message string `json:"message"`
@@ -31,9 +32,9 @@ type ReceiptError struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewReceiptError(contractId int32, errorCode string, errorId uint32, message string, messageFormat string, parameters []string) *ReceiptError {
+func NewReceiptError(contractHName string, errorCode string, errorId uint32, message string, messageFormat string, parameters []string) *ReceiptError {
 	this := ReceiptError{}
-	this.ContractId = contractId
+	this.ContractHName = contractHName
 	this.ErrorCode = errorCode
 	this.ErrorId = errorId
 	this.Message = message
@@ -50,28 +51,28 @@ func NewReceiptErrorWithDefaults() *ReceiptError {
 	return &this
 }
 
-// GetContractId returns the ContractId field value
-func (o *ReceiptError) GetContractId() int32 {
+// GetContractHName returns the ContractHName field value
+func (o *ReceiptError) GetContractHName() string {
 	if o == nil {
-		var ret int32
+		var ret string
 		return ret
 	}
 
-	return o.ContractId
+	return o.ContractHName
 }
 
-// GetContractIdOk returns a tuple with the ContractId field value
+// GetContractHNameOk returns a tuple with the ContractHName field value
 // and a boolean to check if the value has been set.
-func (o *ReceiptError) GetContractIdOk() (*int32, bool) {
+func (o *ReceiptError) GetContractHNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ContractId, true
+	return &o.ContractHName, true
 }
 
-// SetContractId sets field value
-func (o *ReceiptError) SetContractId(v int32) {
-	o.ContractId = v
+// SetContractHName sets field value
+func (o *ReceiptError) SetContractHName(v string) {
+	o.ContractHName = v
 }
 
 // GetErrorCode returns the ErrorCode field value
@@ -204,7 +205,7 @@ func (o ReceiptError) MarshalJSON() ([]byte, error) {
 
 func (o ReceiptError) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["contractId"] = o.ContractId
+	toSerialize["contractHName"] = o.ContractHName
 	toSerialize["errorCode"] = o.ErrorCode
 	toSerialize["errorId"] = o.ErrorId
 	toSerialize["message"] = o.Message

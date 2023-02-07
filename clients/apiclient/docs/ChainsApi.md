@@ -620,7 +620,7 @@ Name | Type | Description  | Notes
 
 ## GetRequestIDFromEVMTransactionID
 
-> string GetRequestIDFromEVMTransactionID(ctx, chainID, txHash).Execute()
+> RequestIDResponse GetRequestIDFromEVMTransactionID(ctx, chainID, txHash).Execute()
 
 Get the ISC request ID for the given Ethereum transaction hash
 
@@ -647,7 +647,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetRequestIDFromEVMTransactionID``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `GetRequestIDFromEVMTransactionID`: string
+    // response from `GetRequestIDFromEVMTransactionID`: RequestIDResponse
     fmt.Fprintf(os.Stdout, "Response from `ChainsApi.GetRequestIDFromEVMTransactionID`: %v\n", resp)
 }
 ```
@@ -673,7 +673,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-**string**
+[**RequestIDResponse**](RequestIDResponse.md)
 
 ### Authorization
 

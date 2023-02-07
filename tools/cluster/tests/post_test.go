@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -40,9 +41,14 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 
 		contractRegistry, err := e.Chain.ContractRegistry(i)
 		require.NoError(e.t, err)
-		cr := contractRegistry[hname]
 
-		require.EqualValues(e.t, programHash, cr.ProgramHash)
+		cr, ok := lo.Find(contractRegistry, func(item apiclient.ContractInfoResponse) bool {
+			return item.HName == hname.String()
+		})
+		require.True(e.t, ok)
+		require.NotNil(e.t, cr)
+
+		require.EqualValues(e.t, programHash.Hex(), cr.ProgramHash)
 		require.EqualValues(e.t, description, cr.Description)
 		require.EqualValues(e.t, cr.Name, inccounterName)
 

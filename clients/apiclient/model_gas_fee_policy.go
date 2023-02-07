@@ -21,8 +21,8 @@ var _ MappedNullable = &GasFeePolicy{}
 type GasFeePolicy struct {
 	// The gas fee token id. Empty if base token.
 	GasFeeTokenId string `json:"gasFeeTokenId"`
-	// The amount of gas per token.
-	GasPerToken int64 `json:"gasPerToken"`
+	// The amount of gas per token. (uint64 as string)
+	GasPerToken string `json:"gasPerToken"`
 	// The validator fee share.
 	ValidatorFeeShare int32 `json:"validatorFeeShare"`
 }
@@ -31,7 +31,7 @@ type GasFeePolicy struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGasFeePolicy(gasFeeTokenId string, gasPerToken int64, validatorFeeShare int32) *GasFeePolicy {
+func NewGasFeePolicy(gasFeeTokenId string, gasPerToken string, validatorFeeShare int32) *GasFeePolicy {
 	this := GasFeePolicy{}
 	this.GasFeeTokenId = gasFeeTokenId
 	this.GasPerToken = gasPerToken
@@ -72,9 +72,9 @@ func (o *GasFeePolicy) SetGasFeeTokenId(v string) {
 }
 
 // GetGasPerToken returns the GasPerToken field value
-func (o *GasFeePolicy) GetGasPerToken() int64 {
+func (o *GasFeePolicy) GetGasPerToken() string {
 	if o == nil {
-		var ret int64
+		var ret string
 		return ret
 	}
 
@@ -83,7 +83,7 @@ func (o *GasFeePolicy) GetGasPerToken() int64 {
 
 // GetGasPerTokenOk returns a tuple with the GasPerToken field value
 // and a boolean to check if the value has been set.
-func (o *GasFeePolicy) GetGasPerTokenOk() (*int64, bool) {
+func (o *GasFeePolicy) GetGasPerTokenOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -91,7 +91,7 @@ func (o *GasFeePolicy) GetGasPerTokenOk() (*int64, bool) {
 }
 
 // SetGasPerToken sets field value
-func (o *GasFeePolicy) SetGasPerToken(v int64) {
+func (o *GasFeePolicy) SetGasPerToken(v string) {
 	o.GasPerToken = v
 }
 

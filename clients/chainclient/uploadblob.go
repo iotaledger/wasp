@@ -17,6 +17,7 @@ func (c *Client) UploadBlob(ctx context.Context, fields dict.Dict) (hashing.Hash
 	req, err := c.PostOffLedgerRequest(
 		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
+
 		PostRequestParams{
 			Args: fields,
 		},

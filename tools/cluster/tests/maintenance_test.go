@@ -94,7 +94,8 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 	time.Sleep(10 * time.Second) // not ideal, but I don't think there is a good way to wait for something that will NOT be processed
 	rec, err := env.Chain.GetRequestReceipt(notProccessedReq1.ID())
-	require.Regexp(t, `.*"Code":404.*`, err.Error())
+
+	require.EqualValues(t, `404 Not Found`, err.Error())
 	require.Nil(t, rec)
 
 	// calls to non-maintenance endpoints are not processed, even when done by the chain owner
@@ -102,7 +103,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 	time.Sleep(10 * time.Second) // not ideal, but I don't think there is a good way to wait for something that will NOT be processed
 	rec, err = env.Chain.GetRequestReceipt(notProccessedReq2.ID())
-	require.Regexp(t, `.*"Code":404.*`, err.Error())
+	require.EqualValues(t, `404 Not Found`, err.Error())
 	require.Nil(t, rec)
 
 	// assert that block number is still the same

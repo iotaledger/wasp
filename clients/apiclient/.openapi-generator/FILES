@@ -85,6 +85,7 @@ docs/ReceiptError.md
 docs/ReceiptResponse.md
 docs/RentStructure.md
 docs/RequestDetail.md
+docs/RequestIDResponse.md
 docs/RequestIDsResponse.md
 docs/RequestProcessedResponse.md
 docs/RequestReceiptResponse.md
@@ -175,6 +176,7 @@ model_receipt_error.go
 model_receipt_response.go
 model_rent_structure.go
 model_request_detail.go
+model_request_id_response.go
 model_request_ids_response.go
 model_request_processed_response.go
 model_request_receipt_response.go

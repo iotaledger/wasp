@@ -1101,7 +1101,7 @@ type ApiGetRequestIDFromEVMTransactionIDRequest struct {
 	txHash string
 }
 
-func (r ApiGetRequestIDFromEVMTransactionIDRequest) Execute() (string, *http.Response, error) {
+func (r ApiGetRequestIDFromEVMTransactionIDRequest) Execute() (*RequestIDResponse, *http.Response, error) {
 	return r.ApiService.GetRequestIDFromEVMTransactionIDExecute(r)
 }
 
@@ -1123,13 +1123,13 @@ func (a *ChainsApiService) GetRequestIDFromEVMTransactionID(ctx context.Context,
 }
 
 // Execute executes the request
-//  @return string
-func (a *ChainsApiService) GetRequestIDFromEVMTransactionIDExecute(r ApiGetRequestIDFromEVMTransactionIDRequest) (string, *http.Response, error) {
+//  @return RequestIDResponse
+func (a *ChainsApiService) GetRequestIDFromEVMTransactionIDExecute(r ApiGetRequestIDFromEVMTransactionIDRequest) (*RequestIDResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  string
+		localVarReturnValue  *RequestIDResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.GetRequestIDFromEVMTransactionID")

@@ -5,7 +5,9 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
@@ -26,9 +28,12 @@ func (c *Controller) getRequestID(e echo.Context) error {
 
 	txHash := e.Param("txHash")
 	requestID, err := c.evmService.GetRequestID(chainID, txHash)
+
 	if err != nil {
 		return apierrors.InvalidPropertyError("txHash", err)
 	}
 
-	return e.JSON(http.StatusOK, requestID)
+	return e.JSON(http.StatusOK, models.RequestIDResponse{
+		RequestID: iotago.EncodeHex(requestID.Bytes()),
+	})
 }

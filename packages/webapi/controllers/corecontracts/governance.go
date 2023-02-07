@@ -5,6 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -14,7 +15,7 @@ import (
 
 type gasFeePolicy struct {
 	GasFeeTokenID     string `json:"gasFeeTokenId" swagger:"desc(The gas fee token id. Empty if base token.),required"`
-	GasPerToken       uint64 `json:"gasPerToken" swagger:"desc(The amount of gas per token.),required"`
+	GasPerToken       string `json:"gasPerToken" swagger:"desc(The amount of gas per token. (uint64 as string)),min(0),required"`
 	ValidatorFeeShare uint8  `json:"validatorFeeShare" swagger:"desc(The validator fee share.),required"`
 }
 
@@ -49,7 +50,7 @@ func MapGovChainInfoResponse(chainInfo *governance.ChainInfo) GovChainInfoRespon
 		Description:  chainInfo.Description,
 		GasFeePolicy: gasFeePolicy{
 			GasFeeTokenID:     gasFeeTokenID,
-			GasPerToken:       chainInfo.GasFeePolicy.GasPerToken,
+			GasPerToken:       iotago.EncodeUint64(chainInfo.GasFeePolicy.GasPerToken),
 			ValidatorFeeShare: chainInfo.GasFeePolicy.ValidatorFeeShare,
 		},
 		MaxBlobSize:     chainInfo.MaxBlobSize,

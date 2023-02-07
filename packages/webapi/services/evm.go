@@ -32,6 +32,8 @@ type EVMService struct {
 func NewEVMService(chainService interfaces.ChainService, networkProvider peering.NetworkProvider) interfaces.EVMService {
 	return &EVMService{
 		chainService:    chainService,
+		evmChainServers: map[isc.ChainID]*chainServer{},
+		evmBackendMutex: sync.Mutex{},
 		networkProvider: networkProvider,
 	}
 }
