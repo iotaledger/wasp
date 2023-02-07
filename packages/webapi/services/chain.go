@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/iotaledger/hive.go/core/logger"
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -21,6 +22,7 @@ import (
 )
 
 type ChainService struct {
+	log                         *logger.Logger
 	governance                  *corecontracts.Governance
 	chainsProvider              chains.Provider
 	nodeConnectionMetrics       nodeconnmetrics.NodeConnectionMetrics
@@ -28,8 +30,9 @@ type ChainService struct {
 	vmService                   interfaces.VMService
 }
 
-func NewChainService(chainsProvider chains.Provider, nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics, chainRecordRegistryProvider registry.ChainRecordRegistryProvider, vmService interfaces.VMService) interfaces.ChainService {
+func NewChainService(logger *logger.Logger, chainsProvider chains.Provider, nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics, chainRecordRegistryProvider registry.ChainRecordRegistryProvider, vmService interfaces.VMService) interfaces.ChainService {
 	return &ChainService{
+		log:                         logger,
 		governance:                  corecontracts.NewGovernance(vmService),
 		chainsProvider:              chainsProvider,
 		nodeConnectionMetrics:       nodeConnectionMetrics,
@@ -57,15 +60,12 @@ func (c *ChainService) DeactivateChain(chainID isc.ChainID) error {
 }
 
 func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
-	err := c.chainRecordRegistryProvider.AddChainRecord(chainRecord)
-	if err != nil {
-		return err
-	}
-
 	storedChainRec, err := c.chainRecordRegistryProvider.ChainRecord(chainRecord.ChainID())
 	if err != nil {
 		return err
 	}
+	
+	c.log.Infof("StoredChainRec %v %v", storedChainRec, err)
 
 	if storedChainRec != nil {
 		_, err = c.chainRecordRegistryProvider.UpdateChainRecord(
@@ -76,16 +76,22 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 				return true
 			},
 		)
+		c.log.Infof("UpdatechainRec %v %v", chainRecord, err)
+
 		if err != nil {
 			return err
 		}
 	} else {
 		if err := c.chainRecordRegistryProvider.AddChainRecord(chainRecord); err != nil {
+			c.log.Infof("AddChainRec %v %v", chainRecord, err)
+
 			return err
 		}
 	}
 
 	// Activate/deactivate the chain accordingly.
+	c.log.Infof("Chainrecord active %v", chainRecord.Active)
+
 	if chainRecord.Active {
 		if err := c.chainsProvider().Activate(chainRecord.ChainID()); err != nil {
 			return err

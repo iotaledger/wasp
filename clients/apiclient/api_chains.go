@@ -61,7 +61,7 @@ func (a *ChainsApiService) ActivateChainExecute(r ApiActivateChainRequest) (*htt
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/activate"
+	localVarPath := localBasePath + "/chains/{chainID}/activate"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -178,7 +178,7 @@ func (a *ChainsApiService) AddAccessNodeExecute(r ApiAddAccessNodeRequest) (*htt
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/access-node/{publicKey}"
+	localVarPath := localBasePath + "/chains/{chainID}/access-node/{publicKey}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"publicKey"+"}", url.PathEscape(parameterValueToString(r.publicKey, "publicKey")), -1)
 
@@ -293,7 +293,7 @@ func (a *ChainsApiService) AttachToWebsocketExecute(r ApiAttachToWebsocketReques
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/ws"
+	localVarPath := localBasePath + "/chains/{chainID}/ws"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -359,6 +359,131 @@ func (a *ChainsApiService) AttachToWebsocketExecute(r ApiAttachToWebsocketReques
 	return localVarHTTPResponse, nil
 }
 
+type ApiChainsChainIDEvmGetRequest struct {
+	ctx context.Context
+	ApiService *ChainsApiService
+	chainID string
+}
+
+func (r ApiChainsChainIDEvmGetRequest) Execute() (string, *http.Response, error) {
+	return r.ApiService.ChainsChainIDEvmGetExecute(r)
+}
+
+/*
+ChainsChainIDEvmGet Method for ChainsChainIDEvmGet
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param chainID ChainID (Bech32)
+ @return ApiChainsChainIDEvmGetRequest
+*/
+func (a *ChainsApiService) ChainsChainIDEvmGet(ctx context.Context, chainID string) ApiChainsChainIDEvmGetRequest {
+	return ApiChainsChainIDEvmGetRequest{
+		ApiService: a,
+		ctx: ctx,
+		chainID: chainID,
+	}
+}
+
+// Execute executes the request
+//  @return string
+func (a *ChainsApiService) ChainsChainIDEvmGetExecute(r ApiChainsChainIDEvmGetRequest) (string, *http.Response, error) {
+	var (
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  string
+	)
+
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.ChainsChainIDEvmGet")
+	if err != nil {
+		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/chains/{chainID}/evm"
+	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := url.Values{}
+	localVarFormParams := url.Values{}
+
+	// to determine the Content-Type header
+	localVarHTTPContentTypes := []string{}
+
+	// set Content-Type header
+	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
+	if localVarHTTPContentType != "" {
+		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
+	}
+
+	// to determine the Accept header
+	localVarHTTPHeaderAccepts := []string{"application/json"}
+
+	// set Accept header
+	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
+	if localVarHTTPHeaderAccept != "" {
+		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
+	}
+	if r.ctx != nil {
+		// API Key Authentication
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["Authorization"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["Authorization"] = key
+			}
+		}
+	}
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHTTPResponse, err := a.client.callAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarHTTPResponse.Body.Close()
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	if err != nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 404 {
+			var v string
+			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
 type ApiDeactivateChainRequest struct {
 	ctx context.Context
 	ApiService *ChainsApiService
@@ -397,7 +522,7 @@ func (a *ChainsApiService) DeactivateChainExecute(r ApiDeactivateChainRequest) (
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/deactivate"
+	localVarPath := localBasePath + "/chains/{chainID}/deactivate"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -513,7 +638,7 @@ func (a *ChainsApiService) GetChainInfoExecute(r ApiGetChainInfoRequest) (*Chain
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}"
+	localVarPath := localBasePath + "/chains/{chainID}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -635,7 +760,7 @@ func (a *ChainsApiService) GetChainsExecute(r ApiGetChainsRequest) ([]ChainInfoR
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains"
+	localVarPath := localBasePath + "/chains"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -759,7 +884,7 @@ func (a *ChainsApiService) GetCommitteeInfoExecute(r ApiGetCommitteeInfoRequest)
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/committee"
+	localVarPath := localBasePath + "/chains/{chainID}/committee"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -884,7 +1009,7 @@ func (a *ChainsApiService) GetContractsExecute(r ApiGetContractsRequest) ([]Cont
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/contracts"
+	localVarPath := localBasePath + "/chains/{chainID}/contracts"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -1012,7 +1137,7 @@ func (a *ChainsApiService) GetRequestIDFromEVMTransactionIDExecute(r ApiGetReque
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/evm/tx/{txHash}"
+	localVarPath := localBasePath + "/chains/{chainID}/evm/tx/{txHash}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"txHash"+"}", url.PathEscape(parameterValueToString(r.txHash, "txHash")), -1)
 
@@ -1141,7 +1266,7 @@ func (a *ChainsApiService) GetStateValueExecute(r ApiGetStateValueRequest) (*Sta
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/state/{stateKey}"
+	localVarPath := localBasePath + "/chains/{chainID}/state/{stateKey}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"stateKey"+"}", url.PathEscape(parameterValueToString(r.stateKey, "stateKey")), -1)
 
@@ -1258,7 +1383,7 @@ func (a *ChainsApiService) RemoveAccessNodeExecute(r ApiRemoveAccessNodeRequest)
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/access-node/{publicKey}"
+	localVarPath := localBasePath + "/chains/{chainID}/access-node/{publicKey}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"publicKey"+"}", url.PathEscape(parameterValueToString(r.publicKey, "publicKey")), -1)
 
@@ -1380,7 +1505,7 @@ func (a *ChainsApiService) SetChainRecordExecute(r ApiSetChainRecordRequest) (*h
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/chainrecord"
+	localVarPath := localBasePath + "/chains/{chainID}/chainrecord"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -1459,129 +1584,4 @@ func (a *ChainsApiService) SetChainRecordExecute(r ApiSetChainRecordRequest) (*h
 	}
 
 	return localVarHTTPResponse, nil
-}
-
-type ApiV2ChainsChainIDEvmGetRequest struct {
-	ctx context.Context
-	ApiService *ChainsApiService
-	chainID string
-}
-
-func (r ApiV2ChainsChainIDEvmGetRequest) Execute() (string, *http.Response, error) {
-	return r.ApiService.V2ChainsChainIDEvmGetExecute(r)
-}
-
-/*
-V2ChainsChainIDEvmGet Method for V2ChainsChainIDEvmGet
-
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
- @return ApiV2ChainsChainIDEvmGetRequest
-*/
-func (a *ChainsApiService) V2ChainsChainIDEvmGet(ctx context.Context, chainID string) ApiV2ChainsChainIDEvmGetRequest {
-	return ApiV2ChainsChainIDEvmGetRequest{
-		ApiService: a,
-		ctx: ctx,
-		chainID: chainID,
-	}
-}
-
-// Execute executes the request
-//  @return string
-func (a *ChainsApiService) V2ChainsChainIDEvmGetExecute(r ApiV2ChainsChainIDEvmGetRequest) (string, *http.Response, error) {
-	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  string
-	)
-
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.V2ChainsChainIDEvmGet")
-	if err != nil {
-		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
-	}
-
-	localVarPath := localBasePath + "/v2/chains/{chainID}/evm"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
-
-	localVarHeaderParams := make(map[string]string)
-	localVarQueryParams := url.Values{}
-	localVarFormParams := url.Values{}
-
-	// to determine the Content-Type header
-	localVarHTTPContentTypes := []string{}
-
-	// set Content-Type header
-	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
-	if localVarHTTPContentType != "" {
-		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
-	}
-
-	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{"application/json"}
-
-	// set Accept header
-	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
-	if localVarHTTPHeaderAccept != "" {
-		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
-	}
-	if r.ctx != nil {
-		// API Key Authentication
-		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
-			if apiKey, ok := auth["Authorization"]; ok {
-				var key string
-				if apiKey.Prefix != "" {
-					key = apiKey.Prefix + " " + apiKey.Key
-				} else {
-					key = apiKey.Key
-				}
-				localVarHeaderParams["Authorization"] = key
-			}
-		}
-	}
-	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
-	if err != nil {
-		return localVarReturnValue, nil, err
-	}
-
-	localVarHTTPResponse, err := a.client.callAPI(req)
-	if err != nil || localVarHTTPResponse == nil {
-		return localVarReturnValue, localVarHTTPResponse, err
-	}
-
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
-	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
-	if err != nil {
-		return localVarReturnValue, localVarHTTPResponse, err
-	}
-
-	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
-		if localVarHTTPResponse.StatusCode == 404 {
-			var v string
-			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHTTPResponse, newErr
-			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHTTPResponse, nil
 }

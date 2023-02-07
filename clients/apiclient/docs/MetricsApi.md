@@ -4,10 +4,10 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**GetChainMetrics**](MetricsApi.md#GetChainMetrics) | **Get** /v2/metrics/chain/{chainID} | Get chain specific metrics.
-[**GetChainPipeMetrics**](MetricsApi.md#GetChainPipeMetrics) | **Get** /v2/metrics/chain/{chainID}/pipe | Get chain pipe event metrics.
-[**GetChainWorkflowMetrics**](MetricsApi.md#GetChainWorkflowMetrics) | **Get** /v2/metrics/chain/{chainID}/workflow | Get chain workflow metrics.
-[**GetL1Metrics**](MetricsApi.md#GetL1Metrics) | **Get** /v2/metrics/l1 | Get accumulated metrics.
+[**GetChainMetrics**](MetricsApi.md#GetChainMetrics) | **Get** /metrics/chain/{chainID} | Get chain specific metrics.
+[**GetChainPipeMetrics**](MetricsApi.md#GetChainPipeMetrics) | **Get** /metrics/chain/{chainID}/pipe | Get chain pipe event metrics.
+[**GetChainWorkflowMetrics**](MetricsApi.md#GetChainWorkflowMetrics) | **Get** /metrics/chain/{chainID}/workflow | Get chain workflow metrics.
+[**GetL1Metrics**](MetricsApi.md#GetL1Metrics) | **Get** /metrics/l1 | Get accumulated metrics.
 
 
 

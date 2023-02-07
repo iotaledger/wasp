@@ -66,7 +66,7 @@ func (a *CorecontractsApiService) AccountsGetAccountBalanceExecute(r ApiAccounts
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/accounts/account/{agentID}/balance"
+	localVarPath := localBasePath + "/chains/{chainID}/core/accounts/account/{agentID}/balance"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"agentID"+"}", url.PathEscape(parameterValueToString(r.agentID, "agentID")), -1)
 
@@ -195,7 +195,7 @@ func (a *CorecontractsApiService) AccountsGetAccountNFTIDsExecute(r ApiAccountsG
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/accounts/account/{agentID}/nfts"
+	localVarPath := localBasePath + "/chains/{chainID}/core/accounts/account/{agentID}/nfts"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"agentID"+"}", url.PathEscape(parameterValueToString(r.agentID, "agentID")), -1)
 
@@ -324,7 +324,7 @@ func (a *CorecontractsApiService) AccountsGetAccountNonceExecute(r ApiAccountsGe
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/accounts/account/{agentID}/nonce"
+	localVarPath := localBasePath + "/chains/{chainID}/core/accounts/account/{agentID}/nonce"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"agentID"+"}", url.PathEscape(parameterValueToString(r.agentID, "agentID")), -1)
 
@@ -450,7 +450,7 @@ func (a *CorecontractsApiService) AccountsGetAccountsExecute(r ApiAccountsGetAcc
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/accounts"
+	localVarPath := localBasePath + "/chains/{chainID}/core/accounts"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -578,7 +578,7 @@ func (a *CorecontractsApiService) AccountsGetFoundryOutputExecute(r ApiAccountsG
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/accounts/foundry_output/{serialNumber}"
+	localVarPath := localBasePath + "/chains/{chainID}/core/accounts/foundry_output/{serialNumber}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"serialNumber"+"}", url.PathEscape(parameterValueToString(r.serialNumber, "serialNumber")), -1)
 
@@ -710,7 +710,7 @@ func (a *CorecontractsApiService) AccountsGetNFTDataExecute(r ApiAccountsGetNFTD
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/accounts/nftdata"
+	localVarPath := localBasePath + "/chains/{chainID}/core/accounts/nftdata"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"nftID"+"}", url.PathEscape(parameterValueToString(r.nftID, "nftID")), -1)
 
@@ -836,7 +836,7 @@ func (a *CorecontractsApiService) AccountsGetNativeTokenIDRegistryExecute(r ApiA
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/accounts/token_registry"
+	localVarPath := localBasePath + "/chains/{chainID}/core/accounts/token_registry"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -961,7 +961,7 @@ func (a *CorecontractsApiService) AccountsGetTotalAssetsExecute(r ApiAccountsGet
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/accounts/total_assets"
+	localVarPath := localBasePath + "/chains/{chainID}/core/accounts/total_assets"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -1086,7 +1086,7 @@ func (a *CorecontractsApiService) BlobsGetAllBlobsExecute(r ApiBlobsGetAllBlobsR
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/blobs"
+	localVarPath := localBasePath + "/chains/{chainID}/core/blobs"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -1214,7 +1214,7 @@ func (a *CorecontractsApiService) BlobsGetBlobInfoExecute(r ApiBlobsGetBlobInfoR
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/blobs/{blobHash}"
+	localVarPath := localBasePath + "/chains/{chainID}/core/blobs/{blobHash}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"blobHash"+"}", url.PathEscape(parameterValueToString(r.blobHash, "blobHash")), -1)
 
@@ -1346,7 +1346,7 @@ func (a *CorecontractsApiService) BlobsGetBlobValueExecute(r ApiBlobsGetBlobValu
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/blobs/{blobHash}/data/{fieldKey}"
+	localVarPath := localBasePath + "/chains/{chainID}/core/blobs/{blobHash}/data/{fieldKey}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"blobHash"+"}", url.PathEscape(parameterValueToString(r.blobHash, "blobHash")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"fieldKey"+"}", url.PathEscape(parameterValueToString(r.fieldKey, "fieldKey")), -1)
@@ -1476,7 +1476,7 @@ func (a *CorecontractsApiService) BlocklogGetBlockInfoExecute(r ApiBlocklogGetBl
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/blocklog/blocks/{blockIndex}"
+	localVarPath := localBasePath + "/chains/{chainID}/core/blocklog/blocks/{blockIndex}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"blockIndex"+"}", url.PathEscape(parameterValueToString(r.blockIndex, "blockIndex")), -1)
 
@@ -1605,7 +1605,7 @@ func (a *CorecontractsApiService) BlocklogGetControlAddressesExecute(r ApiBlockl
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/blocklog/controladdresses"
+	localVarPath := localBasePath + "/chains/{chainID}/core/blocklog/controladdresses"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -1733,7 +1733,7 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfBlockExecute(r ApiBlocklogG
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/blocklog/events/block/{blockIndex}"
+	localVarPath := localBasePath + "/chains/{chainID}/core/blocklog/events/block/{blockIndex}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"blockIndex"+"}", url.PathEscape(parameterValueToString(r.blockIndex, "blockIndex")), -1)
 
@@ -1865,7 +1865,7 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfContractExecute(r ApiBlockl
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/blocklog/events/contract/{contractHname}"
+	localVarPath := localBasePath + "/chains/{chainID}/core/blocklog/events/contract/{contractHname}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"contractHname"+"}", url.PathEscape(parameterValueToString(r.contractHname, "contractHname")), -1)
 
@@ -1991,7 +1991,7 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfLatestBlockExecute(r ApiBlo
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/blocklog/events/block/latest"
+	localVarPath := localBasePath + "/chains/{chainID}/core/blocklog/events/block/latest"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -2119,7 +2119,7 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfRequestExecute(r ApiBlocklo
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/blocklog/events/request/{requestID}"
+	localVarPath := localBasePath + "/chains/{chainID}/core/blocklog/events/request/{requestID}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"requestID"+"}", url.PathEscape(parameterValueToString(r.requestID, "requestID")), -1)
 
@@ -2245,7 +2245,7 @@ func (a *CorecontractsApiService) BlocklogGetLatestBlockInfoExecute(r ApiBlocklo
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/blocklog/blocks/latest"
+	localVarPath := localBasePath + "/chains/{chainID}/core/blocklog/blocks/latest"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -2373,7 +2373,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestIDsForBlockExecute(r ApiBloc
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids"
+	localVarPath := localBasePath + "/chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"blockIndex"+"}", url.PathEscape(parameterValueToString(r.blockIndex, "blockIndex")), -1)
 
@@ -2502,7 +2502,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestIDsForLatestBlockExecute(r A
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/blocklog/blocks/latest/requestids"
+	localVarPath := localBasePath + "/chains/{chainID}/core/blocklog/blocks/latest/requestids"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -2630,7 +2630,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestIsProcessedExecute(r ApiBloc
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/blocklog/requests/{requestID}/is_processed"
+	localVarPath := localBasePath + "/chains/{chainID}/core/blocklog/requests/{requestID}/is_processed"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"requestID"+"}", url.PathEscape(parameterValueToString(r.requestID, "requestID")), -1)
 
@@ -2759,7 +2759,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptExecute(r ApiBlocklog
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/blocklog/requests/{requestID}"
+	localVarPath := localBasePath + "/chains/{chainID}/core/blocklog/requests/{requestID}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"requestID"+"}", url.PathEscape(parameterValueToString(r.requestID, "requestID")), -1)
 
@@ -2888,7 +2888,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlockExecute(r Api
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts"
+	localVarPath := localBasePath + "/chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"blockIndex"+"}", url.PathEscape(parameterValueToString(r.blockIndex, "blockIndex")), -1)
 
@@ -3017,7 +3017,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlockExecute
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/blocklog/blocks/latest/receipts"
+	localVarPath := localBasePath + "/chains/{chainID}/core/blocklog/blocks/latest/receipts"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -3148,7 +3148,7 @@ func (a *CorecontractsApiService) ErrorsGetErrorMessageFormatExecute(r ApiErrors
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/errors/{contractHname}/message/{errorID}"
+	localVarPath := localBasePath + "/chains/{chainID}/core/errors/{contractHname}/message/{errorID}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"contractHname"+"}", url.PathEscape(parameterValueToString(r.contractHname, "contractHname")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"errorID"+"}", url.PathEscape(parameterValueToString(r.errorID, "errorID")), -1)
@@ -3280,7 +3280,7 @@ func (a *CorecontractsApiService) GovernanceGetAllowedStateControllerAddressesEx
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/governance/allowedstatecontrollers"
+	localVarPath := localBasePath + "/chains/{chainID}/core/governance/allowedstatecontrollers"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -3407,7 +3407,7 @@ func (a *CorecontractsApiService) GovernanceGetChainInfoExecute(r ApiGovernanceG
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/governance/chaininfo"
+	localVarPath := localBasePath + "/chains/{chainID}/core/governance/chaininfo"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -3534,7 +3534,7 @@ func (a *CorecontractsApiService) GovernanceGetChainOwnerExecute(r ApiGovernance
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/core/governance/chainowner"
+	localVarPath := localBasePath + "/chains/{chainID}/core/governance/chainowner"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)

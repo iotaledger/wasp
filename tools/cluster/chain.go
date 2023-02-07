@@ -266,15 +266,7 @@ func (ch *Chain) GetCounterValue(inccounterSCHname isc.Hname, nodeIndex ...int) 
 func (ch *Chain) GetStateVariable(contractHname isc.Hname, key string, nodeIndex ...int) ([]byte, error) {
 	cl := ch.SCClient(contractHname, nil, nodeIndex...)
 
-	result, _, err := ch.Cluster.WaspClient(nodeIndex...).ChainsApi.
-		GetStateValue(context.Background(), ch.ChainID.String(), key).
-		Execute()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return cl.StateGet(context.Background(), result.State)
+	return cl.StateGet(context.Background(), key)
 }
 
 func (ch *Chain) GetRequestReceipt(reqID isc.RequestID, nodeIndex ...int) (*apiclient.ReceiptResponse, error) {

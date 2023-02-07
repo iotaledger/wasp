@@ -27,7 +27,7 @@ import (
 
 func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLoad []interfaces.APIController) {
 	for _, controller := range controllersToLoad {
-		publicGroup := server.Group(controller.Name(), "/")
+		group := server.Group(controller.Name(), "/")
 
 		controller.RegisterPublic(publicGroup, mocker)
 
@@ -62,7 +62,7 @@ func Init(
 	mocker.LoadMockFiles()
 
 	vmService := services.NewVMService(chainsProvider)
-	chainService := services.NewChainService(chainsProvider, nodeConnectionMetrics, chainRecordRegistryProvider, vmService)
+	chainService := services.NewChainService(logger, chainsProvider, nodeConnectionMetrics, chainRecordRegistryProvider, vmService)
 	committeeService := services.NewCommitteeService(chainsProvider, networkProvider, dkShareRegistryProvider)
 	registryService := services.NewRegistryService(chainsProvider, chainRecordRegistryProvider)
 	offLedgerService := services.NewOffLedgerService(chainService, networkProvider, requestCacheTTL)

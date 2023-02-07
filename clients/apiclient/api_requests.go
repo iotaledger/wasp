@@ -69,7 +69,7 @@ func (a *RequestsApiService) CallViewExecute(r ApiCallViewRequest) (*JSONDict, *
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/requests/callview"
+	localVarPath := localBasePath + "/requests/callview"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -191,7 +191,7 @@ func (a *RequestsApiService) GetReceiptExecute(r ApiGetReceiptRequest) (*Receipt
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/receipts/{requestID}"
+	localVarPath := localBasePath + "/chains/{chainID}/receipts/{requestID}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"requestID"+"}", url.PathEscape(parameterValueToString(r.requestID, "requestID")), -1)
 
@@ -309,7 +309,7 @@ func (a *RequestsApiService) OffLedgerExecute(r ApiOffLedgerRequest) (*http.Resp
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/requests/offledger"
+	localVarPath := localBasePath + "/requests/offledger"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -429,7 +429,7 @@ func (a *RequestsApiService) WaitForRequestExecute(r ApiWaitForRequestRequest) (
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/chains/{chainID}/requests/{requestID}/wait"
+	localVarPath := localBasePath + "/chains/{chainID}/requests/{requestID}/wait"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"requestID"+"}", url.PathEscape(parameterValueToString(r.requestID, "requestID")), -1)
 

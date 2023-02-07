@@ -63,7 +63,7 @@ func (a *MetricsApiService) GetChainMetricsExecute(r ApiGetChainMetricsRequest) 
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/metrics/chain/{chainID}"
+	localVarPath := localBasePath + "/metrics/chain/{chainID}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -188,7 +188,7 @@ func (a *MetricsApiService) GetChainPipeMetricsExecute(r ApiGetChainPipeMetricsR
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/metrics/chain/{chainID}/pipe"
+	localVarPath := localBasePath + "/metrics/chain/{chainID}/pipe"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -313,7 +313,7 @@ func (a *MetricsApiService) GetChainWorkflowMetricsExecute(r ApiGetChainWorkflow
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/metrics/chain/{chainID}/workflow"
+	localVarPath := localBasePath + "/metrics/chain/{chainID}/workflow"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -435,7 +435,7 @@ func (a *MetricsApiService) GetL1MetricsExecute(r ApiGetL1MetricsRequest) (*Chai
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/metrics/l1"
+	localVarPath := localBasePath + "/metrics/l1"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}

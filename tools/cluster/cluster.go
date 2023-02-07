@@ -323,9 +323,10 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 		return nil, err
 	}
 
+	clu.log.Infof("Node owner bech32: %v", chain.OriginatorAddress().Bech32(parameters.L1().Protocol.Bech32HRP))
 	cert, _, err := waspClient.NodeApi.SetNodeOwner(context.Background()).NodeOwnerCertificateRequest(apiclient.NodeOwnerCertificateRequest{
 		PublicKey:    accessNodePubKey.String(),
-		OwnerAddress: chain.OriginatorAddress().String(),
+		OwnerAddress: chain.OriginatorAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
 	}).Execute()
 
 	if err != nil {

@@ -4,10 +4,10 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**CallView**](RequestsApi.md#CallView) | **Post** /v2/requests/callview | Call a view function on a contract by Hname
-[**GetReceipt**](RequestsApi.md#GetReceipt) | **Get** /v2/chains/{chainID}/receipts/{requestID} | Get a receipt from a request ID
-[**OffLedger**](RequestsApi.md#OffLedger) | **Post** /v2/requests/offledger | Post an off-ledger request
-[**WaitForRequest**](RequestsApi.md#WaitForRequest) | **Get** /v2/chains/{chainID}/requests/{requestID}/wait | Wait until the given request has been processed by the node
+[**CallView**](RequestsApi.md#CallView) | **Post** /requests/callview | Call a view function on a contract by Hname
+[**GetReceipt**](RequestsApi.md#GetReceipt) | **Get** /chains/{chainID}/receipts/{requestID} | Get a receipt from a request ID
+[**OffLedger**](RequestsApi.md#OffLedger) | **Post** /requests/offledger | Post an off-ledger request
+[**WaitForRequest**](RequestsApi.md#WaitForRequest) | **Get** /chains/{chainID}/requests/{requestID}/wait | Wait until the given request has been processed by the node
 
 
 

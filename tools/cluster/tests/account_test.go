@@ -5,9 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -67,9 +69,12 @@ func testAccounts(e *ChainEnv) {
 		contractRegistry, err := e.Chain.ContractRegistry(i)
 		require.NoError(e.t, err)
 
-		cr := contractRegistry[hname]
+		cr, ok := lo.Find(contractRegistry, func(item apiclient.ContractInfoResponse) bool {
+			return item.HName == hname.String()
+		})
+		require.True(e.t, ok)
 
-		require.EqualValues(e.t, programHash1, cr.ProgramHash)
+		require.EqualValues(e.t, programHash1.Hex(), cr.ProgramHash)
 		require.EqualValues(e.t, description, cr.Description)
 		require.EqualValues(e.t, nativeIncCounterSCName, cr.Name)
 
@@ -93,7 +98,7 @@ func testAccounts(e *ChainEnv) {
 
 	fees, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
 	require.NoError(e.t, err)
-	
+
 	e.checkBalanceOnChain(isc.NewAgentID(myAddress), isc.BaseTokenID, transferBaseTokens-fees)
 
 	for i := range e.Chain.CommitteeNodes {
