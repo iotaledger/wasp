@@ -128,20 +128,18 @@ impl WasmClientContext {
         }
     }
 
-    pub fn wait_event(&self) -> errors::Result<()> {
-        return self.wait_event_timeout(10000);
+    pub fn wait_event(&self) {
+        self.wait_event_timeout(10000);
     }
 
-    pub fn wait_event_timeout(&self, msec: u64) -> errors::Result<()> {
+    pub fn wait_event_timeout(&self, msec: u64) {
         for _ in 0..100 {
             if *self.event_received.read().unwrap() {
-                return Ok(());
+                return;
             }
             std::thread::sleep(std::time::Duration::from_millis(msec));
         }
-        let err_msg = String::from("event wait timeout");
-        self.set_err(&err_msg, "");
-        return Err(err_msg);
+        self.set_err("event wait timeout", "");
     }
 
     pub fn wait_request(&self) {
