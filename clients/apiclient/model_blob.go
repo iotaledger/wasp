@@ -20,14 +20,14 @@ var _ MappedNullable = &Blob{}
 // Blob struct for Blob
 type Blob struct {
 	Hash string `json:"hash"`
-	Size int32 `json:"size"`
+	Size uint32 `json:"size"`
 }
 
 // NewBlob instantiates a new Blob object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBlob(hash string, size int32) *Blob {
+func NewBlob(hash string, size uint32) *Blob {
 	this := Blob{}
 	this.Hash = hash
 	this.Size = size
@@ -67,9 +67,9 @@ func (o *Blob) SetHash(v string) {
 }
 
 // GetSize returns the Size field value
-func (o *Blob) GetSize() int32 {
+func (o *Blob) GetSize() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -78,7 +78,7 @@ func (o *Blob) GetSize() int32 {
 
 // GetSizeOk returns a tuple with the Size field value
 // and a boolean to check if the value has been set.
-func (o *Blob) GetSizeOk() (*int32, bool) {
+func (o *Blob) GetSizeOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -86,7 +86,7 @@ func (o *Blob) GetSizeOk() (*int32, bool) {
 }
 
 // SetSize sets field value
-func (o *Blob) SetSize(v int32) {
+func (o *Blob) SetSize(v uint32) {
 	o.Size = v
 }
 

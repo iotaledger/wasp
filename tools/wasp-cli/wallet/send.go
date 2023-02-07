@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
+	cliwallet "github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
@@ -28,7 +28,7 @@ func initSendFundsCmd() *cobra.Command {
 
 			log.Printf("\nSending \n\t%v \n\tto: %v\n\n", tokens, args[0])
 
-			wallet := wallet.Load()
+			wallet := cliwallet.Load()
 			senderAddress := wallet.Address()
 			client := cliclients.L1Client()
 

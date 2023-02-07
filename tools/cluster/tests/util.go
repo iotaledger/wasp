@@ -9,15 +9,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -79,33 +78,29 @@ func (e *ChainEnv) getBalanceOnChain(agentID isc.AgentID, assetID []byte, nodeIn
 		idx = nodeIndex[0]
 	}
 
-	args := dict.Dict{
-		accounts.ParamAgentID: agentID.Bytes(),
-	}
+	balance, _, err := e.Chain.Cluster.WaspClient(idx).CorecontractsApi.
+		AccountsGetAccountBalance(context.Background(), e.Chain.ChainID.String(), agentID.String()).
+		Execute()
+	require.NoError(e.t, err)
 
-	ret, err := clients.CallView(context.Background(), e.Chain.Cluster.WaspClient(idx), apiclient.ContractCallViewRequest{
-		ChainId:       e.Chain.ChainID.String(),
-		ContractHName: accounts.Contract.Hname().String(),
-		FunctionHName: accounts.ViewBalance.Hname().String(),
-		Arguments:     clients.JSONDictToAPIJSONDict(args.JSONDict()),
-	})
-
-	if err != nil {
-		return 0
-	}
-
-	actual, err := isc.AssetsFromDict(ret)
+	assets, err := apiextensions.NewAssetsFromAPIResponse(balance)
 	require.NoError(e.t, err)
 
 	if bytes.Equal(assetID, isc.BaseTokenID) {
-		return actual.BaseTokens
+		return assets.BaseTokens
 	}
 
-	nativeTokensSet, err := actual.NativeTokens.Set()
-	require.NoError(e.t, err)
 	nativeTokenID, err := isc.NativeTokenIDFromBytes(assetID)
 	require.NoError(e.t, err)
-	return nativeTokensSet[nativeTokenID].Amount.Uint64()
+
+	for _, nativeToken := range assets.NativeTokens {
+		if nativeToken.ID.Matches(nativeTokenID) {
+			// TODO: Validate bigint to uint64 behavior
+			return nativeToken.Amount.Uint64()
+		}
+	}
+	//TODO: Throw error when native token id wasn't found?
+	return 0
 }
 
 func (e *ChainEnv) checkBalanceOnChain(agentID isc.AgentID, assetID []byte, expected uint64) {
@@ -114,7 +109,10 @@ func (e *ChainEnv) checkBalanceOnChain(agentID isc.AgentID, assetID []byte, expe
 }
 
 func (e *ChainEnv) getAccountsOnChain() []isc.AgentID {
-	accounts, _, err := e.Chain.Cluster.WaspClient(0).CorecontractsApi.AccountsGetAccounts(context.Background(), e.Chain.ChainID.String()).Execute()
+	accounts, _, err := e.Chain.Cluster.WaspClient(0).CorecontractsApi.
+		AccountsGetAccounts(context.Background(), e.Chain.ChainID.String()).
+		Execute()
+
 	require.NoError(e.t, err)
 
 	ret := make([]isc.AgentID, 0)
@@ -132,43 +130,31 @@ func (e *ChainEnv) getAccountsOnChain() []isc.AgentID {
 func (e *ChainEnv) getBalancesOnChain() map[string]*isc.Assets {
 	ret := make(map[string]*isc.Assets)
 	acc := e.getAccountsOnChain()
+
 	for _, agentID := range acc {
-		args := dict.Dict{
-			accounts.ParamAgentID: agentID.Bytes(),
-		}
-
-		// TODO: Validate with develop
-		r, err := clients.CallView(context.Background(), e.Chain.Cluster.WaspClient(0), apiclient.ContractCallViewRequest{
-			ChainId:       e.Chain.ChainID.String(),
-			ContractHName: accounts.Contract.Hname().String(),
-			FunctionHName: accounts.ViewBalance.Hname().String(),
-			Arguments:     clients.JSONDictToAPIJSONDict(args.JSONDict()),
-		})
-
+		balance, _, err := e.Chain.Cluster.WaspClient().CorecontractsApi.
+			AccountsGetAccountBalance(context.Background(), e.Chain.ChainID.String(), agentID.String()).
+			Execute()
 		require.NoError(e.t, err)
 
-		ret[string(agentID.Bytes())], err = isc.AssetsFromDict(r)
-
+		assets, err := apiextensions.NewAssetsFromAPIResponse(balance)
 		require.NoError(e.t, err)
+
+		ret[string(agentID.Bytes())] = assets
 	}
 	return ret
 }
 
 func (e *ChainEnv) getTotalBalance() *isc.Assets {
-	r, err := clients.CallView(context.Background(), e.Chain.Cluster.WaspClient(0), apiclient.ContractCallViewRequest{
-		ChainId:       e.Chain.ChainID.String(),
-		ContractHName: accounts.Contract.Hname().String(),
-		FunctionHName: accounts.ViewTotalAssets.Hname().String(),
-	})
-
-	if err != nil {
-		return nil
-	}
-
+	totalAssets, _, err := e.Chain.Cluster.WaspClient().CorecontractsApi.
+		AccountsGetTotalAssets(context.Background(), e.Chain.ChainID.String()).
+		Execute()
 	require.NoError(e.t, err)
-	ret, err := isc.AssetsFromDict(r)
+
+	assets, err := apiextensions.NewAssetsFromAPIResponse(totalAssets)
 	require.NoError(e.t, err)
-	return ret
+
+	return assets
 }
 
 func (e *ChainEnv) printAccounts(title string) {
@@ -193,19 +179,17 @@ func (e *ChainEnv) checkLedger() {
 }
 
 func (e *ChainEnv) getChainInfo() (isc.ChainID, isc.AgentID) {
-	ret, err := clients.CallView(context.Background(), e.Chain.Cluster.WaspClient(0), apiclient.ContractCallViewRequest{
-		ChainId:       e.Chain.ChainID.String(),
-		ContractHName: governance.Contract.Hname().String(),
-		FunctionHName: governance.ViewGetChainInfo.Hname().String(),
-	})
-
+	chainInfo, _, err := e.Chain.Cluster.WaspClient(0).ChainsApi.
+		GetChainInfo(context.Background(), e.Chain.ChainID.String()).
+		Execute()
 	require.NoError(e.t, err)
 
-	chainID, err := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
+	chainID, err := isc.ChainIDFromString(chainInfo.ChainID)
 	require.NoError(e.t, err)
 
-	ownerID, err := codec.DecodeAgentID(ret.MustGet(governance.VarChainOwnerID))
+	ownerID, err := isc.NewAgentIDFromString(chainInfo.ChainOwnerId)
 	require.NoError(e.t, err)
+
 	return chainID, ownerID
 }
 
@@ -222,11 +206,11 @@ func (e *ChainEnv) findContract(name string, nodeIndex ...int) (*root.ContractRe
 	}
 
 	// TODO: Validate with develop
-	ret, err := clients.CallView(context.Background(), e.Chain.Cluster.WaspClient(i), apiclient.ContractCallViewRequest{
+	ret, err := apiextensions.CallView(context.Background(), e.Chain.Cluster.WaspClient(i), apiclient.ContractCallViewRequest{
 		ChainId:       e.Chain.ChainID.String(),
 		ContractHName: root.Contract.Hname().String(),
 		FunctionHName: root.ViewFindContract.Hname().String(),
-		Arguments:     clients.JSONDictToAPIJSONDict(args.JSONDict()),
+		Arguments:     apiextensions.JSONDictToAPIJSONDict(args.JSONDict()),
 	})
 
 	require.NoError(e.t, err)
@@ -235,6 +219,7 @@ func (e *ChainEnv) findContract(name string, nodeIndex ...int) (*root.ContractRe
 	if err != nil {
 		return nil, err
 	}
+
 	return root.ContractRecordFromBytes(recBin)
 }
 
@@ -257,12 +242,12 @@ func waitTrue(timeout time.Duration, fun func() bool) bool {
 
 func (e *ChainEnv) counterEquals(expected int64) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
-		ret, err := clients.CallView(context.Background(), e.Chain.Cluster.WaspClient(nodeIndex), apiclient.ContractCallViewRequest{
+		ret, err := apiextensions.CallView(context.Background(), e.Chain.Cluster.WaspClient(nodeIndex), apiclient.ContractCallViewRequest{
 			ChainId:       e.Chain.ChainID.String(),
 			ContractHName: nativeIncCounterSCHname.String(),
 			FunctionHName: inccounter.ViewGetCounter.Hname().String(),
 		})
-		
+
 		if err != nil {
 			e.t.Logf("chainEnv::counterEquals: failed to call GetCounter: %v", err)
 			return false

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
@@ -51,7 +51,7 @@ func (m *MultiClient) WaitUntilAllRequestsProcessed(chainID isc.ChainID, tx *iot
 	var receipts []*apiclient.ReceiptResponse
 	var err error
 	err = m.Do(func(i int, w *apiclient.APIClient) error {
-		receipts, err = clients.APIWaitUntilAllRequestsProcessed(w, chainID, tx, timeout)
+		receipts, err = apiextensions.APIWaitUntilAllRequestsProcessed(w, chainID, tx, timeout)
 		return err
 	})
 

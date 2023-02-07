@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -30,11 +30,11 @@ func initCallViewCmd() *cobra.Command {
 				ChainId:      config.GetCurrentChainID().String(),
 				ContractName: contractName,
 				FunctionName: funcName,
-				Arguments:    clients.JSONDictToAPIJSONDict(params.JSONDict()),
+				Arguments:    apiextensions.JSONDictToAPIJSONDict(params.JSONDict()),
 			}).Execute()
 			log.Check(err)
 
-			decodedResult, err := clients.APIJsonDictToDict(*result)
+			decodedResult, err := apiextensions.APIJsonDictToDict(*result)
 			log.Check(err)
 
 			util.PrintDictAsJSON(decodedResult)

@@ -19,14 +19,14 @@ var _ MappedNullable = &BlobInfoResponse{}
 
 // BlobInfoResponse struct for BlobInfoResponse
 type BlobInfoResponse struct {
-	Fields map[string]int32 `json:"fields"`
+	Fields map[string]uint32 `json:"fields"`
 }
 
 // NewBlobInfoResponse instantiates a new BlobInfoResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBlobInfoResponse(fields map[string]int32) *BlobInfoResponse {
+func NewBlobInfoResponse(fields map[string]uint32) *BlobInfoResponse {
 	this := BlobInfoResponse{}
 	this.Fields = fields
 	return &this
@@ -41,9 +41,9 @@ func NewBlobInfoResponseWithDefaults() *BlobInfoResponse {
 }
 
 // GetFields returns the Fields field value
-func (o *BlobInfoResponse) GetFields() map[string]int32 {
+func (o *BlobInfoResponse) GetFields() map[string]uint32 {
 	if o == nil {
-		var ret map[string]int32
+		var ret map[string]uint32
 		return ret
 	}
 
@@ -52,7 +52,7 @@ func (o *BlobInfoResponse) GetFields() map[string]int32 {
 
 // GetFieldsOk returns a tuple with the Fields field value
 // and a boolean to check if the value has been set.
-func (o *BlobInfoResponse) GetFieldsOk() (*map[string]int32, bool) {
+func (o *BlobInfoResponse) GetFieldsOk() (*map[string]uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -60,7 +60,7 @@ func (o *BlobInfoResponse) GetFieldsOk() (*map[string]int32, bool) {
 }
 
 // SetFields sets field value
-func (o *BlobInfoResponse) SetFields(v map[string]int32) {
+func (o *BlobInfoResponse) SetFields(v map[string]uint32) {
 	o.Fields = v
 }
 

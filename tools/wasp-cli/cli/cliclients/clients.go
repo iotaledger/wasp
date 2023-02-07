@@ -1,8 +1,8 @@
 package cliclients
 
 import (
-	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/scclient"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -16,7 +16,7 @@ func WaspClientForHostName(apiAddress string) *apiclient.APIClient {
 	L1Client() // this will fill parameters.L1() with data from the L1 node
 	log.Verbosef("using Wasp host %s\n", apiAddress)
 
-	client, err := clients.WaspAPIClientByHostName(apiAddress)
+	client, err := apiextensions.WaspAPIClientByHostName(apiAddress)
 	log.Check(err)
 
 	client.GetConfig().AddDefaultHeader("Authorization", "Bearer "+config.GetToken())

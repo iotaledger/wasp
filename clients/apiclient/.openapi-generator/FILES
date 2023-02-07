@@ -48,7 +48,9 @@ docs/ErrorMessageFormatResponse.md
 docs/EventsResponse.md
 docs/FoundryOutputResponse.md
 docs/GasFeePolicy.md
+docs/GovAllowedStateControllerAddressesResponse.md
 docs/GovChainInfoResponse.md
+docs/GovChainOwnerResponse.md
 docs/InOutput.md
 docs/InOutputMetricItem.md
 docs/InStateOutput.md
@@ -138,7 +140,9 @@ model_error_message_format_response.go
 model_events_response.go
 model_foundry_output_response.go
 model_gas_fee_policy.go
+model_gov_allowed_state_controller_addresses_response.go
 model_gov_chain_info_response.go
+model_gov_chain_owner_response.go
 model_in_output.go
 model_in_output_metric_item.go
 model_in_state_output.go

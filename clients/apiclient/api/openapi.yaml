@@ -1152,6 +1152,36 @@ paths:
       summary: Get the error message format of a specific error id
       tags:
       - corecontracts
+  /v2/chains/{chainID}/core/governance/allowedstatecontrollers:
+    get:
+      description: Returns the allowed state controller addresses
+      operationId: governanceGetAllowedStateControllerAddresses
+      parameters:
+      - description: ChainID (Bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovAllowedStateControllerAddressesResponse'
+          description: The state controller addresses
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: "Unauthorized (Wrong permissions, missing token)"
+      security:
+      - Authorization: []
+      summary: Get the allowed state controller addresses
+      tags:
+      - corecontracts
   /v2/chains/{chainID}/core/governance/chaininfo:
     get:
       description: "If you are using the common API functions, you most likely rather\
@@ -1183,6 +1213,36 @@ paths:
       summary: Get the chain info
       tags:
       - corecontracts
+  /v2/chains/{chainID}/core/governance/chainowner:
+    get:
+      description: Returns the chain owner
+      operationId: governanceGetChainOwner
+      parameters:
+      - description: ChainID (Bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovChainOwnerResponse'
+          description: The chain owner
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: "Unauthorized (Wrong permissions, missing token)"
+      security:
+      - Authorization: []
+      summary: Get the chain owner
+      tags:
+      - corecontracts
   /v2/chains/{chainID}/deactivate:
     post:
       operationId: deactivateChain
@@ -1210,6 +1270,35 @@ paths:
       security:
       - Authorization: []
       summary: Deactivate a chain
+      tags:
+      - chains
+  /v2/chains/{chainID}/evm:
+    get:
+      parameters:
+      - description: ChainID (Bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                format: string
+                type: string
+          description: The evm json RPC
+        "404":
+          content:
+            application/json:
+              schema:
+                format: string
+                type: string
+          description: The evm json RPC failure
+      security:
+      - Authorization: []
       tags:
       - chains
   /v2/chains/{chainID}/evm/tx/{txHash}:
@@ -2260,7 +2349,7 @@ components:
         name: BaseToken
     Blob:
       example:
-        size: 0
+        size: 1
         hash: hash
       properties:
         hash:
@@ -2270,6 +2359,7 @@ components:
             name: Hash
         size:
           format: int32
+          minimum: 1
           type: integer
           xml:
             name: Size
@@ -2299,9 +2389,9 @@ components:
     BlobListResponse:
       example:
         Blobs:
-        - size: 0
+        - size: 1
           hash: hash
-        - size: 0
+        - size: 1
           hash: hash
       properties:
         Blobs:
@@ -2319,6 +2409,7 @@ components:
         valueData: valueData
       properties:
         valueData:
+          description: The blob data (Hex)
           format: string
           type: string
           xml:
@@ -3341,17 +3432,20 @@ components:
         stateAddress: stateAddress
       properties:
         governingAddress:
+          description: The governing address (Bech32)
           format: string
           type: string
           xml:
             name: GoverningAddress
         sinceBlockIndex:
+          description: The block index (uint32
           format: int32
           minimum: 1
           type: integer
           xml:
             name: SinceBlockIndex
         stateAddress:
+          description: The state address (Bech32)
           format: string
           type: string
           xml:
@@ -3522,6 +3616,24 @@ components:
       type: object
       xml:
         name: FoundryOutputResponse
+    GovAllowedStateControllerAddressesResponse:
+      example:
+        addresses:
+        - addresses
+        - addresses
+      properties:
+        addresses:
+          description: The allowed state controller addresses (Bech32-encoded)
+          items:
+            format: string
+            type: string
+          type: array
+          xml:
+            name: Addresses
+            wrapped: true
+      type: object
+      xml:
+        name: GovAllowedStateControllerAddressesResponse
     GovChainInfoResponse:
       example:
         chainOwnerId: chainOwnerId
@@ -3584,6 +3696,19 @@ components:
       type: object
       xml:
         name: GovChainInfoResponse
+    GovChainOwnerResponse:
+      example:
+        chainOwner: chainOwner
+      properties:
+        chainOwner:
+          description: The chain owner (Bech32-encoded)
+          format: string
+          type: string
+          xml:
+            name: ChainOwner
+      type: object
+      xml:
+        name: GovChainOwnerResponse
     InOutput:
       example:
         output:

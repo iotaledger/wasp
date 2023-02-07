@@ -6,7 +6,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
@@ -37,7 +37,7 @@ func WithSCTransaction(chainID isc.ChainID, f func() (*iotago.Transaction, error
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
 		client := cliclients.WaspClientForIndex()
-		_, err := clients.APIWaitUntilAllRequestsProcessed(client, chainID, tx, 1*time.Minute)
+		_, err := apiextensions.APIWaitUntilAllRequestsProcessed(client, chainID, tx, 1*time.Minute)
 		log.Check(err)
 	}
 

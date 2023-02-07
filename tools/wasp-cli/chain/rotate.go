@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
+	cliwallet "github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -31,7 +31,7 @@ func initRotateCmd() *cobra.Command {
 				log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.L1().Protocol.Bech32HRP, prefix)
 			}
 
-			wallet := wallet.Load()
+			wallet := cliwallet.Load()
 			aliasID := config.GetCurrentChainID().AsAliasID()
 
 			chainOutputID, chainOutput, err := l1Client.GetAliasOutput(aliasID)

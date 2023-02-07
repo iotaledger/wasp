@@ -8,8 +8,8 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -33,7 +33,7 @@ type WasmClientService struct {
 var _ IClientService = new(WasmClientService)
 
 func NewWasmClientService(waspAPI, eventPort string) *WasmClientService {
-	client, err := clients.WaspAPIClientByHostName(waspAPI)
+	client, err := apiextensions.WaspAPIClientByHostName(waspAPI)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -57,14 +57,14 @@ func (sc *WasmClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContr
 		ContractHName: iscContract.String(),
 		FunctionHName: iscFunction.String(),
 		ChainId:       iscChainID.String(),
-		Arguments:     clients.JSONDictToAPIJSONDict(params.JSONDict()),
+		Arguments:     apiextensions.JSONDictToAPIJSONDict(params.JSONDict()),
 	}).Execute()
 
 	if err != nil {
 		return nil, err
 	}
 
-	decodedParams, err := clients.APIJsonDictToDict(*res)
+	decodedParams, err := apiextensions.APIJsonDictToDict(*res)
 	if err != nil {
 		return nil, err
 	}

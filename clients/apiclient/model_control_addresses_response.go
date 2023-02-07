@@ -19,8 +19,11 @@ var _ MappedNullable = &ControlAddressesResponse{}
 
 // ControlAddressesResponse struct for ControlAddressesResponse
 type ControlAddressesResponse struct {
+	// The governing address (Bech32)
 	GoverningAddress string `json:"governingAddress"`
+	// The block index (uint32
 	SinceBlockIndex uint32 `json:"sinceBlockIndex"`
+	// The state address (Bech32)
 	StateAddress string `json:"stateAddress"`
 }
 

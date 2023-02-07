@@ -1,12 +1,16 @@
 package tests
 
 import (
+	"context"
 	"crypto/rand"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -46,9 +50,12 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 	waitUntil(t, e.counterEquals(43), clu.Config.AllNodes(), 30*time.Second)
 
 	// check off-ledger request was successfully processed (check by asking another access node)
-	ret, err := clu.WaspClient(6).CallView(
-		e.Chain.ChainID, nativeIncCounterSCHname, inccounter.ViewGetCounter.Name, nil,
-	)
+	ret, err := apiextensions.CallView(context.Background(), clu.WaspClient(6), apiclient.ContractCallViewRequest{
+		ChainId:       e.Chain.ChainID.String(),
+		ContractHName: nativeIncCounterSCHname.String(),
+		FunctionHName: inccounter.ViewGetCounter.Hname().String(),
+	})
+
 	require.NoError(t, err)
 	resultint64, _ := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
 	require.EqualValues(t, 43, resultint64)
@@ -69,10 +76,12 @@ func testOffledgerRequest(t *testing.T, e *ChainEnv) {
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(e.Chain.ChainID, offledgerReq.ID(), 30*time.Second)
 	require.NoError(t, err)
 
-	// check off-ledger request was successfully processed
-	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
-		e.Chain.ChainID, nativeIncCounterSCHname, inccounter.ViewGetCounter.Name, nil,
-	)
+	ret, err := apiextensions.CallView(context.Background(), e.Chain.Cluster.WaspClient(0), apiclient.ContractCallViewRequest{
+		ChainId:       e.Chain.ChainID.String(),
+		ContractHName: nativeIncCounterSCHname.String(),
+		FunctionHName: inccounter.ViewGetCounter.Hname().String(),
+	})
+
 	require.NoError(t, err)
 	resultint64, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
 	require.NoError(t, err)
@@ -104,14 +113,12 @@ func testOffledgerRequest900KB(t *testing.T, e *ChainEnv) {
 	require.NoError(t, err)
 
 	// ensure blob was stored by the cluster
-	res, err := e.Chain.Cluster.WaspClient(2).CallView(
-		e.Chain.ChainID, blob.Contract.Hname(), blob.ViewGetBlobField.Name,
-		dict.Dict{
-			blob.ParamHash:  expectedHash[:],
-			blob.ParamField: []byte("data"),
-		})
+	res, _, err := e.Chain.Cluster.WaspClient(2).CorecontractsApi.
+		BlobsGetBlobValue(context.Background(), e.Chain.ChainID.String(), expectedHash.Hex(), "data").
+		Execute()
 	require.NoError(t, err)
-	binaryData, err := res.Get(blob.ParamBytes)
+
+	binaryData, err := iotago.DecodeHex(res.ValueData)
 	require.NoError(t, err)
 	require.EqualValues(t, binaryData, randomData)
 }
@@ -192,9 +199,14 @@ func newWalletWithFunds(e *ChainEnv, waspnode int, waitOnNodes ...int) *chaincli
 		Transfer: isc.NewAssetsBaseTokens(baseTokes),
 	})
 	require.NoError(e.t, err)
+
 	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(e.t, err)
-	expectedBaseTokens := baseTokes - receipts[0].GasFeeCharged
+
+	gasFeeCharged, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
+	require.NoError(e.t, err)
+
+	expectedBaseTokens := baseTokes - gasFeeCharged
 	e.checkBalanceOnChain(userAgentID, isc.BaseTokenID, expectedBaseTokens)
 
 	// wait until access node syncs with account

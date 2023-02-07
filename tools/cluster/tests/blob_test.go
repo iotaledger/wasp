@@ -9,64 +9,33 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients"
-	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 )
 
 func (e *ChainEnv) getBlobInfo(hash hashing.HashValue) map[string]uint32 {
-	args := dict.Dict{
-		blob.ParamHash: hash[:],
-	}
-
-	jsonArgs := clients.JSONDictToAPIJSONDict(args.JSONDict())
-
-	result, _, err := e.Chain.Cluster.WaspClient().RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
-		ChainId:       e.Chain.ChainID.String(),
-		ContractHName: blob.Contract.Hname().String(),
-		FunctionHName: blob.ViewGetBlobInfo.Hname().String(),
-		Arguments:     jsonArgs,
-	}).Execute()
+	blobInfo, _, err := e.Chain.Cluster.WaspClient().CorecontractsApi.
+		BlobsGetBlobInfo(context.Background(), e.Chain.ChainID.String(), hash.Hex()).
+		Execute()
 
 	require.NoError(e.t, err)
-	decodedDict, err := clients.APIJsonDictToDict(*result)
-	require.NoError(e.t, err)
 
-	decoded, err := blob.DecodeSizesMap(decodedDict)
-	require.NoError(e.t, err)
-	return decoded
+	return blobInfo.Fields
 }
 
 func (e *ChainEnv) getBlobFieldValue(blobHash hashing.HashValue, field string) []byte {
-	args := dict.Dict{
-		blob.ParamHash:  blobHash[:],
-		blob.ParamField: []byte(field),
-	}
-
-	jsonArgs := clients.JSONDictToAPIJSONDict(args.JSONDict())
-
-	result, _, err := e.Chain.Cluster.WaspClient().RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
-		ChainId:       e.Chain.ChainID.String(),
-		ContractHName: blob.Contract.Hname().String(),
-		FunctionHName: blob.ViewGetBlobField.Hname().String(),
-		Arguments:     jsonArgs,
-	}).Execute()
-
-	decodedDict, err := clients.APIJsonDictToDict(*result)
+	blobField, _, err := e.Chain.Cluster.WaspClient().CorecontractsApi.
+		BlobsGetBlobValue(context.Background(), e.Chain.ChainID.String(), blobHash.Hex(), field).
+		Execute()
 	require.NoError(e.t, err)
 
-	require.NoError(e.t, err)
-	if decodedDict.IsEmpty() {
+	if blobField.ValueData == "" {
 		return nil
 	}
-	ret, err := decodedDict.Get(blob.ParamBytes)
-	require.NoError(e.t, err)
 
-	return ret
+	return []byte(blobField.ValueData)
 }
 
 // executed in cluster_test.go

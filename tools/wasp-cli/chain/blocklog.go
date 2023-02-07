@@ -7,8 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
@@ -82,7 +82,7 @@ func logReceipt(receipt *apiclient.RequestReceiptResponse, index ...int) {
 		kind = "off-ledger"
 	}
 
-	args, err := clients.APIJsonDictToDict(req.Params)
+	args, err := apiextensions.APIJsonDictToDict(req.Params)
 	log.Check(err)
 
 	var argsTree interface{} = "(empty)"

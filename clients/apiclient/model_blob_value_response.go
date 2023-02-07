@@ -19,6 +19,7 @@ var _ MappedNullable = &BlobValueResponse{}
 
 // BlobValueResponse struct for BlobValueResponse
 type BlobValueResponse struct {
+	// The blob data (Hex)
 	ValueData string `json:"valueData"`
 }
 

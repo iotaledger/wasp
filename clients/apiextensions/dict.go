@@ -1,8 +1,7 @@
-package clients
+package apiextensions
 
 import (
 	"context"
-	"net/url"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -22,6 +21,10 @@ func JSONDictToAPIJSONDict(jsonDict dict.JSONDict) apiclient.JSONDict {
 	}
 
 	return *apiJSONDict
+}
+
+func DictToAPIJsonDict(dict dict.Dict) apiclient.JSONDict {
+	return JSONDictToAPIJSONDict(dict.JSONDict())
 }
 
 func APIJsonDictToJSONDict(apiJSONDict apiclient.JSONDict) dict.JSONDict {
@@ -54,6 +57,7 @@ func APIWaitUntilAllRequestsProcessed(client *apiclient.APIClient, chainID isc.C
 	for i, req := range reqs[chainID] {
 		receipt, _, err := client.RequestsApi.
 			WaitForRequest(context.Background(), chainID.String(), req.ID().String()).
+			TimeoutSeconds(int32(timeout.Seconds())).
 			Execute()
 		if err != nil {
 			return nil, err
@@ -62,33 +66,4 @@ func APIWaitUntilAllRequestsProcessed(client *apiclient.APIClient, chainID isc.C
 		ret[i] = receipt
 	}
 	return ret, nil
-}
-
-func WaspAPIClientByHostName(hostname string) (*apiclient.APIClient, error) {
-	parsed, err := url.Parse(hostname)
-
-	if err != nil {
-		return nil, err
-	}
-
-	config := apiclient.NewConfiguration()
-	config.Host = parsed.Host
-	config.Scheme = parsed.Scheme
-
-	return apiclient.NewAPIClient(config), nil
-}
-
-func CallView(context context.Context, client *apiclient.APIClient, request apiclient.ContractCallViewRequest) (dict.Dict, error) {
-	result, _, err := client.RequestsApi.
-		CallView(context).
-		ContractCallViewRequest(request).
-		Execute()
-
-	if err != nil {
-		return nil, err
-	}
-
-	dictResult, err := dict.FromJSONDict(APIJsonDictToJSONDict(*result))
-
-	return dictResult, err
 }

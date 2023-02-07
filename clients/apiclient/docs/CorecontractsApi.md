@@ -29,7 +29,9 @@ Method | HTTP request | Description
 [**BlocklogGetRequestReceiptsOfBlock**](CorecontractsApi.md#BlocklogGetRequestReceiptsOfBlock) | **Get** /v2/chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts | Get all receipts of a certain block
 [**BlocklogGetRequestReceiptsOfLatestBlock**](CorecontractsApi.md#BlocklogGetRequestReceiptsOfLatestBlock) | **Get** /v2/chains/{chainID}/core/blocklog/blocks/latest/receipts | Get all receipts of the latest block
 [**ErrorsGetErrorMessageFormat**](CorecontractsApi.md#ErrorsGetErrorMessageFormat) | **Get** /v2/chains/{chainID}/core/errors/{contractHname}/message/{errorID} | Get the error message format of a specific error id
+[**GovernanceGetAllowedStateControllerAddresses**](CorecontractsApi.md#GovernanceGetAllowedStateControllerAddresses) | **Get** /v2/chains/{chainID}/core/governance/allowedstatecontrollers | Get the allowed state controller addresses
 [**GovernanceGetChainInfo**](CorecontractsApi.md#GovernanceGetChainInfo) | **Get** /v2/chains/{chainID}/core/governance/chaininfo | Get the chain info
+[**GovernanceGetChainOwner**](CorecontractsApi.md#GovernanceGetChainOwner) | **Get** /v2/chains/{chainID}/core/governance/chainowner | Get the chain owner
 
 
 
@@ -1787,6 +1789,76 @@ Name | Type | Description  | Notes
 [[Back to README]](../README.md)
 
 
+## GovernanceGetAllowedStateControllerAddresses
+
+> GovAllowedStateControllerAddressesResponse GovernanceGetAllowedStateControllerAddresses(ctx, chainID).Execute()
+
+Get the allowed state controller addresses
+
+
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    chainID := "chainID_example" // string | ChainID (Bech32)
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.CorecontractsApi.GovernanceGetAllowedStateControllerAddresses(context.Background(), chainID).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.GovernanceGetAllowedStateControllerAddresses``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GovernanceGetAllowedStateControllerAddresses`: GovAllowedStateControllerAddressesResponse
+    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.GovernanceGetAllowedStateControllerAddresses`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**chainID** | **string** | ChainID (Bech32) | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGovernanceGetAllowedStateControllerAddressesRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+
+### Return type
+
+[**GovAllowedStateControllerAddressesResponse**](GovAllowedStateControllerAddressesResponse.md)
+
+### Authorization
+
+[Authorization](../README.md#Authorization)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
 ## GovernanceGetChainInfo
 
 > GovChainInfoResponse GovernanceGetChainInfo(ctx, chainID).Execute()
@@ -1842,6 +1914,76 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**GovChainInfoResponse**](GovChainInfoResponse.md)
+
+### Authorization
+
+[Authorization](../README.md#Authorization)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
+## GovernanceGetChainOwner
+
+> GovChainOwnerResponse GovernanceGetChainOwner(ctx, chainID).Execute()
+
+Get the chain owner
+
+
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    chainID := "chainID_example" // string | ChainID (Bech32)
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.CorecontractsApi.GovernanceGetChainOwner(context.Background(), chainID).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.GovernanceGetChainOwner``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GovernanceGetChainOwner`: GovChainOwnerResponse
+    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.GovernanceGetChainOwner`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**chainID** | **string** | ChainID (Bech32) | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGovernanceGetChainOwnerRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+
+### Return type
+
+[**GovChainOwnerResponse**](GovChainOwnerResponse.md)
 
 ### Authorization
 

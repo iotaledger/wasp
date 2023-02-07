@@ -53,12 +53,20 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	// trust setup between the two nodes
 	node0peerInfo, _, err := nodeClient.NodeApi.GetPeeringIdentity(context.Background()).Execute()
 	require.NoError(t, err)
-	err = clu2.AddTrustedNode(node0peerInfo)
+
+	err = clu2.AddTrustedNode(apiclient.PeeringTrustRequest{
+		PublicKey: node0peerInfo.PublicKey,
+		NetId:     node0peerInfo.NetId,
+	})
 	require.NoError(t, err)
 
 	accessNodePeerInfo, _, err := accessNodeClient.NodeApi.GetPeeringIdentity(context.Background()).Execute()
 	require.NoError(t, err)
-	err = env.Clu.AddTrustedNode(accessNodePeerInfo, []int{0})
+
+	err = clu2.AddTrustedNode(apiclient.PeeringTrustRequest{
+		PublicKey: accessNodePeerInfo.PublicKey,
+		NetId:     accessNodePeerInfo.NetId,
+	}, []int{0})
 	require.NoError(t, err)
 
 	// activate the chain on the access node
@@ -69,7 +77,7 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 
 	// add node 0 from cluster 2 as a *permitionless* access node
-	err = nodeClient.AddAccessNode(env.Chain.ChainID, accessNodePeerInfo.PubKey)
+	_, err = nodeClient.ChainsApi.AddAccessNode(context.Background(), env.Chain.ChainID.String(), accessNodePeerInfo.PublicKey).Execute()
 	require.NoError(t, err)
 
 	// give some time for the access node to sync
@@ -93,8 +101,9 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 
 	// remove the access node from cluster1 node 0
-	err = nodeClient.RemoveAccessNode(env.Chain.ChainID, accessNodePeerInfo.PubKey)
+	_, err = nodeClient.ChainsApi.RemoveAccessNode(context.Background(), env.Chain.ChainID.String(), accessNodePeerInfo.PublicKey).Execute()
 	require.NoError(t, err)
+
 	time.Sleep(1 * time.Second) // Access/Server node info is exchanged asynchronously.
 
 	// try sending the request again
@@ -103,8 +112,9 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 
 	// request is not processed after a while
 	time.Sleep(2 * time.Second)
-	rec, err := nodeClient.RequestReceipt(env.Chain.ChainID, req.ID())
+	receipt, _, err := nodeClient.RequestsApi.GetReceipt(context.Background(), env.Chain.ChainID.String(), req.ID().String()).Execute()
+
 	require.Error(t, err)
 	require.Regexp(t, `"Code":404`, err.Error())
-	require.Nil(t, rec)
+	require.Nil(t, receipt)
 }

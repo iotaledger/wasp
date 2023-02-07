@@ -24,8 +24,8 @@ import (
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
@@ -107,7 +107,7 @@ func (clu *Cluster) L1Client() l1connection.Client {
 	return clu.l1
 }
 
-func (clu *Cluster) AddTrustedNode(peerInfo *apiclient.PeeringTrustedNode, onNodes ...[]int) error {
+func (clu *Cluster) AddTrustedNode(peerInfo apiclient.PeeringTrustRequest, onNodes ...[]int) error {
 	nodes := clu.Config.AllNodes()
 	if len(onNodes) > 0 {
 		nodes = onNodes[0]
@@ -116,10 +116,7 @@ func (clu *Cluster) AddTrustedNode(peerInfo *apiclient.PeeringTrustedNode, onNod
 	for ni := range nodes {
 		var err error
 		if _, err = clu.WaspClient(
-			nodes[ni]).NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
-			PublicKey: *peerInfo.PubKey,
-			NetId:     *peerInfo.NetId,
-		}).Execute(); err != nil {
+			nodes[ni]).NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(peerInfo).Execute(); err != nil {
 			return err
 		}
 	}
@@ -376,7 +373,7 @@ func (clu *Cluster) MultiClient() *multiclient.MultiClient {
 }
 
 func (clu *Cluster) WaspClientFromHostName(hostName string) *apiclient.APIClient {
-	client, err := clients.WaspAPIClientByHostName(hostName)
+	client, err := apiextensions.WaspAPIClientByHostName(hostName)
 
 	if err != nil {
 		panic(err.Error())

@@ -3,8 +3,8 @@ package chainclient
 import (
 	"context"
 
-	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -15,8 +15,8 @@ func (c *Client) CallView(ctx context.Context, hContract isc.Hname, functionName
 		ChainId:       c.ChainID.String(),
 		ContractHName: hContract.String(),
 		FunctionName:  functionName,
-		Arguments:     clients.JSONDictToAPIJSONDict(args.JSONDict()),
+		Arguments:     apiextensions.JSONDictToAPIJSONDict(args.JSONDict()),
 	}
 
-	return clients.CallView(ctx, c.WaspClient, request)
+	return apiextensions.CallView(ctx, c.WaspClient, request)
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/params"
@@ -25,6 +26,14 @@ type GovChainInfoResponse struct {
 	MaxBlobSize     uint32       `json:"maxBlobSize" swagger:"desc(The maximum contract blob size.),required"`
 	MaxEventSize    uint16       `json:"maxEventSize" swagger:"desc(The maximum event size.),required"`                      // TODO: Clarify
 	MaxEventsPerReq uint16       `json:"maxEventsPerReq" swagger:"desc(The maximum amount of events per request.),required"` // TODO: Clarify
+}
+
+type GovAllowedStateControllerAddressesResponse struct {
+	Addresses []string `json:"addresses" swagger:"desc(The allowed state controller addresses (Bech32-encoded))"`
+}
+
+type GovChainOwnerResponse struct {
+	ChainOwner string `json:"chainOwner" swagger:"desc(The chain owner (Bech32-encoded))"`
 }
 
 func MapGovChainInfoResponse(chainInfo *governance.ChainInfo) GovChainInfoResponse {
@@ -65,4 +74,46 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 	chainInfoResponse := MapGovChainInfoResponse(chainInfo)
 
 	return e.JSON(http.StatusOK, chainInfoResponse)
+}
+
+func (c *Controller) getChainOwner(e echo.Context) error {
+	chainID, err := params.DecodeChainID(e)
+	if err != nil {
+		return err
+	}
+
+	chainOwner, err := c.governance.GetChainOwner(chainID)
+	if err != nil {
+		return apierrors.ContractExecutionError(err)
+	}
+
+	chainOwnerResponse := GovChainOwnerResponse{
+		ChainOwner: chainOwner.String(),
+	}
+
+	return e.JSON(http.StatusOK, chainOwnerResponse)
+}
+
+func (c *Controller) getAllowedStateControllerAddresses(e echo.Context) error {
+	chainID, err := params.DecodeChainID(e)
+	if err != nil {
+		return err
+	}
+
+	addresses, err := c.governance.GetAllowedStateControllerAddresses(chainID)
+	if err != nil {
+		return apierrors.ContractExecutionError(err)
+	}
+
+	encodedAddresses := make([]string, len(addresses))
+
+	for k, v := range addresses {
+		encodedAddresses[k] = v.Bech32(parameters.L1().Protocol.Bech32HRP)
+	}
+
+	addressesResponse := GovAllowedStateControllerAddressesResponse{
+		Addresses: encodedAddresses,
+	}
+
+	return e.JSON(http.StatusOK, addressesResponse)
 }

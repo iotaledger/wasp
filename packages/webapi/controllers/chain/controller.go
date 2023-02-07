@@ -51,8 +51,8 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 	publicAPI.
 		GET(evmURL, c.handleJSONRPC).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusOK, "", "", nil).
-		AddResponse(http.StatusNotFound, "", "", nil)
+		AddResponse(http.StatusOK, "The evm json RPC", "", nil).
+		AddResponse(http.StatusNotFound, "The evm json RPC failure", "", nil)
 
 	publicAPI.
 		EchoGroup().Any("chains/:chainID/evm", c.handleJSONRPC)

@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**ValueData** | **string** |  | 
+**ValueData** | **string** | The blob data (Hex) | 
 
 ## Methods
 

@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -52,7 +53,8 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 
 	// call the gov "maintenance status view", check it is OFF
 	{
-		ret, err := ownerSCClient.CallView(governance.ViewGetMaintenanceStatus.Name, nil)
+		//TODO: Add maintenance status to wrapped core contracts
+		ret, err := ownerSCClient.CallView(context.Background(), governance.ViewGetMaintenanceStatus.Name, nil)
 		require.NoError(t, err)
 		maintenanceStatus := codec.MustDecodeBool(ret.MustGet(governance.VarMaintenanceStatus))
 		require.False(t, maintenanceStatus)
@@ -64,7 +66,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 		require.NoError(t, err)
 		rec, err := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
 		require.NoError(t, err)
-		require.Error(t, rec.Error)
+		require.NotNil(t, rec.Error)
 	}
 
 	// owner can start maintenance mode
@@ -77,7 +79,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 
 	// call the gov "maintenance status view", check it is ON
 	{
-		ret, err := ownerSCClient.CallView(governance.ViewGetMaintenanceStatus.Name, nil)
+		ret, err := ownerSCClient.CallView(context.Background(), governance.ViewGetMaintenanceStatus.Name, nil)
 		require.NoError(t, err)
 		maintenanceStatus := codec.MustDecodeBool(ret.MustGet(governance.VarMaintenanceStatus))
 		require.True(t, maintenanceStatus)
@@ -135,7 +137,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 		require.NoError(t, err)
 		receipt, err := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
 		require.NoError(t, err)
-		require.Error(t, receipt.Error)
+		require.NotNil(t, receipt.Error)
 	}
 
 	// test non-chain owner cannot call stop maintenance
@@ -144,7 +146,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 		require.NoError(t, err)
 		rec, err := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
 		require.NoError(t, err)
-		require.Error(t, rec.Error)
+		require.NotNil(t, rec.Error)
 	}
 
 	// owner can stop maintenance mode

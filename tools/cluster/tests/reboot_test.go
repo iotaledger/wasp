@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -8,6 +9,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/scclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -27,27 +30,34 @@ func TestReboot(t *testing.T) {
 	client := env.createNewClient()
 
 	// ------ TODO why does this make the test fail?
-	er := env.Clu.WaspClient(0).DeactivateChain(env.Chain.ChainID)
+	_, er := env.Clu.WaspClient(0).ChainsApi.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
-	er = env.Clu.WaspClient(0).ActivateChain(env.Chain.ChainID)
+	_, er = env.Clu.WaspClient(0).ChainsApi.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 
-	er = env.Clu.WaspClient(1).DeactivateChain(env.Chain.ChainID)
+	_, er = env.Clu.WaspClient(1).ChainsApi.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
-	er = env.Clu.WaspClient(1).ActivateChain(env.Chain.ChainID)
+	_, er = env.Clu.WaspClient(1).ChainsApi.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 	//-------
 
 	tx, err := client.PostRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
-	_, err = env.Clu.WaspClient(0).WaitUntilAllRequestsProcessed(env.Chain.ChainID, tx, 10*time.Second)
+
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, 10*time.Second)
 	require.NoError(t, err)
+
 	env.expectCounter(nativeIncCounterSCHname, 1)
 
 	req, err := client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
-	_, err = env.Clu.WaspClient(0).WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
+
+	_, _, err = env.Clu.WaspClient(0).RequestsApi.
+		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
+		TimeoutSeconds(10).
+		Execute()
 	require.NoError(t, err)
+
 	env.expectCounter(nativeIncCounterSCHname, 2)
 
 	// // ------ TODO why does this make the test fail?
@@ -75,13 +85,19 @@ func TestReboot(t *testing.T) {
 	// after rebooting, the chain should resume processing requests without issues
 	tx, err = client.PostRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
-	_, err = env.Clu.WaspClient(0).WaitUntilAllRequestsProcessed(env.Chain.ChainID, tx, 10*time.Second)
+
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, 10*time.Second)
 	require.NoError(t, err)
 	env.expectCounter(nativeIncCounterSCHname, 3)
+
 	// ensure offledger requests are still working
 	req, err = client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
-	_, err = env.Clu.WaspClient(0).WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
+
+	_, _, err = env.Clu.WaspClient(0).RequestsApi.
+		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
+		TimeoutSeconds(10).
+		Execute()
 	require.NoError(t, err)
 	env.expectCounter(nativeIncCounterSCHname, 4)
 }
@@ -93,25 +109,33 @@ func TestReboot2(t *testing.T) {
 
 	tx, err := client.PostRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
-	_, err = env.Clu.WaspClient(0).WaitUntilAllRequestsProcessed(env.Chain.ChainID, tx, 10*time.Second)
+
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, 10*time.Second)
 	require.NoError(t, err)
+
 	env.expectCounter(nativeIncCounterSCHname, 1)
 
 	req, err := client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
-	_, err = env.Clu.WaspClient(0).WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
+
+	_, _, err = env.Clu.WaspClient(0).RequestsApi.
+		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
+		TimeoutSeconds(10).
+		Execute()
 	require.NoError(t, err)
+
 	env.expectCounter(nativeIncCounterSCHname, 2)
 
 	// ------ TODO why does this make the test fail?
-	er := env.Clu.WaspClient(0).DeactivateChain(env.Chain.ChainID)
-	require.NoError(t, er)
-	er = env.Clu.WaspClient(0).ActivateChain(env.Chain.ChainID)
+	_, er := env.Clu.WaspClient(0).ChainsApi.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 
-	er = env.Clu.WaspClient(1).DeactivateChain(env.Chain.ChainID)
+	_, er = env.Clu.WaspClient(0).ChainsApi.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
-	er = env.Clu.WaspClient(1).ActivateChain(env.Chain.ChainID)
+
+	_, er = env.Clu.WaspClient(1).ChainsApi.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	require.NoError(t, er)
+	_, er = env.Clu.WaspClient(1).ChainsApi.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 	//-------
 
@@ -140,14 +164,21 @@ func TestReboot2(t *testing.T) {
 	// after rebooting, the chain should resume processing requests without issues
 	tx, err = client.PostRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
-	_, err = env.Clu.WaspClient(0).WaitUntilAllRequestsProcessed(env.Chain.ChainID, tx, 10*time.Second)
+
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, 10*time.Second)
 	require.NoError(t, err)
+
 	env.expectCounter(nativeIncCounterSCHname, 3)
 	// ensure off-ledger requests are still working
 	req, err = client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
-	_, err = env.Clu.WaspClient(0).WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
+
+	_, _, err = env.Clu.WaspClient(0).RequestsApi.
+		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
+		TimeoutSeconds(10).
+		Execute()
 	require.NoError(t, err)
+
 	env.expectCounter(nativeIncCounterSCHname, 4)
 }
 
@@ -165,8 +196,10 @@ func newIncCounterClient(t *testing.T, env *ChainEnv, client *scclient.SCClient)
 func (icc *incCounterClient) MustIncOnLedger() {
 	tx, err := icc.client.PostRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(icc.t, err)
-	_, err = icc.env.Clu.WaspClient(0).WaitUntilAllRequestsProcessed(icc.env.Chain.ChainID, tx, 10*time.Second)
+
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(icc.env.Clu.WaspClient(0), icc.env.Chain.ChainID, tx, 10*time.Second)
 	require.NoError(icc.t, err)
+
 	icc.expected++
 	icc.env.expectCounter(nativeIncCounterSCHname, icc.expected)
 }
@@ -174,8 +207,13 @@ func (icc *incCounterClient) MustIncOnLedger() {
 func (icc *incCounterClient) MustIncOffLedger() {
 	req, err := icc.client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(icc.t, err)
-	_, err = icc.env.Clu.WaspClient(0).WaitUntilRequestProcessed(icc.env.Chain.ChainID, req.ID(), 10*time.Second)
+
+	_, _, err = icc.env.Clu.WaspClient(0).RequestsApi.
+		WaitForRequest(context.Background(), icc.env.Chain.ChainID.String(), req.ID().String()).
+		TimeoutSeconds(10).
+		Execute()
 	require.NoError(icc.t, err)
+
 	icc.expected++
 	icc.env.expectCounter(nativeIncCounterSCHname, icc.expected)
 }
@@ -284,15 +322,18 @@ func TestRebootDuringTasks(t *testing.T) {
 		require.NoError(t, err)
 		time.Sleep(20 * time.Second)
 
-		// after rebooting, the chain should resume processing requests/views without issues
-		ret, err := env.Clu.WaspClient(0).CallView(
-			env.Chain.ChainID, nativeIncCounterSCHname, inccounter.ViewGetCounter.Name, nil,
-		)
-		require.NoError(t, err)
-		counter, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
-		require.NoError(t, err)
-		require.Greater(t, counter, lastCounter)
-		lastCounter = counter
+	// after rebooting, the chain should resume processing requests/views without issues
+	ret, err := apiextensions.CallView(context.Background(), env.Clu.WaspClient(0), apiclient.ContractCallViewRequest{
+		ChainId:       env.Chain.ChainID.String(),
+		ContractHName: nativeIncCounterSCHname.String(),
+		FunctionHName: inccounter.ViewGetCounter.Hname().String(),
+	})
+	require.NoError(t, err)
+
+	counter, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
+	require.NoError(t, err)
+	require.Greater(t, counter, lastCounter)
+	lastCounter = counter
 
 		// assert the node still processes on/off-ledger requests
 		keyPair2, _, err := env.Clu.NewKeyPairWithFunds()

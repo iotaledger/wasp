@@ -1,11 +1,14 @@
 package tests
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -40,11 +43,15 @@ func testDeployContractOnly(t *testing.T, env *ChainEnv) {
 	env.deployNativeIncCounterSC()
 
 	// test calling root.FuncFindContractByName view function using client
-	ret, err := env.Chain.Cluster.WaspClient(0).CallView(
-		env.Chain.ChainID, root.Contract.Hname(), root.ViewFindContract.Name,
-		dict.Dict{
+	ret, err := apiextensions.CallView(context.Background(), env.Chain.Cluster.WaspClient(), apiclient.ContractCallViewRequest{
+		ChainId:       env.Chain.ChainID.String(),
+		ContractHName: root.Contract.Hname().String(),
+		FunctionHName: root.ViewFindContract.Hname().String(),
+		Arguments: apiextensions.DictToAPIJsonDict(dict.Dict{
 			root.ParamHname: isc.Hn(nativeIncCounterSCName).Bytes(),
-		})
+		}),
+	})
+
 	require.NoError(t, err)
 	recb, err := ret.Get(root.ParamContractRecData)
 	require.NoError(t, err)

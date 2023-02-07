@@ -4,9 +4,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**GoverningAddress** | **string** |  | 
-**SinceBlockIndex** | **uint32** |  | 
-**StateAddress** | **string** |  | 
+**GoverningAddress** | **string** | The governing address (Bech32) | 
+**SinceBlockIndex** | **uint32** | The block index (uint32 | 
+**StateAddress** | **string** | The state address (Bech32) | 
 
 ## Methods
 

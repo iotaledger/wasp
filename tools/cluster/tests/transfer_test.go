@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/utxodb"
@@ -48,7 +49,9 @@ func TestDepositWithdraw(t *testing.T) {
 	chEnv.checkLedger()
 
 	// chEnv.checkBalanceOnChain(origAgentID, isc.BaseTokenID, 0)
-	gasFees1 := receipts[0].GasFeeCharged
+	gasFees1, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
+	require.NoError(t, err)
+
 	onChainBalance := depositBaseTokens - gasFees1
 	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance)
 
@@ -68,7 +71,9 @@ func TestDepositWithdraw(t *testing.T) {
 	require.NoError(t, err)
 
 	chEnv.checkLedger()
-	gasFees2 := receipt.GasFeeCharged
+	gasFees2, err := iotago.DecodeUint64(receipt.GasFeeCharged)
+	require.NoError(t, err)
+
 	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance-baseTokensToWithdraw-gasFees2)
 	require.True(t,
 		e.Clu.AssertAddressBalances(myAddress, isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-depositBaseTokens+baseTokensToWithdraw)),

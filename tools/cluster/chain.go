@@ -7,8 +7,8 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/clients/scclient"
@@ -185,7 +185,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 
 func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]byte, error) {
 	v, _, err := ch.Cluster.WaspClient(0).CorecontractsApi.
-		BlobsGetBlobValue(context.Background(), ch.ChainID.String(), iotago.EncodeHex(blobHash[:]), field).
+		BlobsGetBlobValue(context.Background(), ch.ChainID.String(), blobHash.Hex(), field).
 		Execute()
 
 	if err != nil {
@@ -255,7 +255,7 @@ func (ch *Chain) GetCounterValue(inccounterSCHname isc.Hname, nodeIndex ...int) 
 		return 0, err
 	}
 
-	parsedDict, err := clients.APIJsonDictToDict(*result)
+	parsedDict, err := apiextensions.APIJsonDictToDict(*result)
 	if err != nil {
 		return 0, err
 	}

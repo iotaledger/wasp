@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -51,23 +51,16 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 		require.EqualValues(e.t, 42, counterValue)
 	}
 
-	args := dict.Dict{
-		root.ParamHname: hname.Bytes(),
-	}
-
-	jsonArgs := clients.JSONDictToAPIJSONDict(args.JSONDict())
-
-	result, _, err := e.Chain.Cluster.WaspClient().RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
+	result, err := apiextensions.CallView(context.Background(), e.Chain.Cluster.WaspClient(), apiclient.ContractCallViewRequest{
 		ChainId:       e.Chain.ChainID.String(),
 		ContractHName: root.Contract.Hname().String(),
 		FunctionHName: root.ViewFindContract.Hname().String(),
-		Arguments:     jsonArgs,
-	}).Execute()
+		Arguments: apiextensions.DictToAPIJsonDict(dict.Dict{
+			root.ParamHname: hname.Bytes(),
+		}),
+	})
 
-	decodedDict, err := clients.APIJsonDictToDict(*result)
-	require.NoError(e.t, err)
-
-	recb, err := decodedDict.Get(root.ParamContractRecData)
+	recb, err := result.Get(root.ParamContractRecData)
 	require.NoError(e.t, err)
 
 	rec, err := root.ContractRecordFromBytes(recb)
@@ -94,7 +87,7 @@ func (e *ChainEnv) getCounterForNode(hname isc.Hname, nodeIndex int) int64 {
 		FunctionName:  "getCounter",
 	}).Execute()
 
-	decodedDict, err := clients.APIJsonDictToDict(*result)
+	decodedDict, err := apiextensions.APIJsonDictToDict(*result)
 	require.NoError(e.t, err)
 
 	counter, err := codec.DecodeInt64(decodedDict.MustGet(inccounter.VarCounter), 0)
@@ -197,9 +190,14 @@ func testPost5Requests(t *testing.T, e *ChainEnv) {
 			Transfer: isc.NewAssets(baseTokesSent, nil),
 		})
 		require.NoError(t, err)
+
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
-		onChainBalance += baseTokesSent - uint64(receipts[0].GasFeeCharged)
+
+		gasFeeCharged, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
+		require.NoError(t, err)
+
+		onChainBalance += baseTokesSent - gasFeeCharged
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)
@@ -232,7 +230,11 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 	for i := 0; i < 5; i++ {
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx[i], 30*time.Second)
 		require.NoError(t, err)
-		onChainBalance += baseTokesSent - uint64(receipts[0].GasFeeCharged)
+
+		gasFeeCharged, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
+		require.NoError(t, err)
+
+		onChainBalance += baseTokesSent - gasFeeCharged
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)

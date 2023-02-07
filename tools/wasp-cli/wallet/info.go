@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
+	cliwallet "github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -17,8 +17,7 @@ func initAddressCmd() *cobra.Command {
 		Short: "Show the wallet address",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			wallet := wallet.Load()
-
+			wallet := cliwallet.Load()
 			address := wallet.Address()
 
 			model := &AddressModel{Address: address.Bech32(parameters.L1().Protocol.Bech32HRP)}
@@ -59,7 +58,7 @@ func initBalanceCmd() *cobra.Command {
 		Short: "Show the wallet balance",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			wallet := wallet.Load()
+			wallet := cliwallet.Load()
 			address := wallet.Address()
 
 			outs, err := cliclients.L1Client().OutputMap(address)

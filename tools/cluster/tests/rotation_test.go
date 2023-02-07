@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -13,10 +14,8 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
@@ -323,18 +322,14 @@ func (e *ChainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeo
 }
 
 func (e *ChainEnv) callGetStateController(nodeIndex int) (iotago.Address, error) {
-	ret, err := e.Chain.Cluster.WaspClient(nodeIndex).CallView(
-		e.Chain.ChainID,
-		blocklog.Contract.Hname(),
-		blocklog.ViewControlAddresses.Name,
-		nil,
-	)
-	if err != nil {
-		return nil, err
-	}
-	addr, err := codec.DecodeAddress(ret.MustGet(blocklog.ParamStateControllerAddress))
+	controlAddresses, _, err := e.Chain.Cluster.WaspClient(nodeIndex).CorecontractsApi.
+		BlocklogGetControlAddresses(context.Background(), e.Chain.ChainID.String()).
+		Execute()
+
+	_, address, err := iotago.ParseBech32(controlAddresses.StateAddress)
 	require.NoError(e.t, err)
-	return addr, nil
+
+	return address, nil
 }
 
 func (e *ChainEnv) checkAllowedStateControllerAddressInAllNodes(addr iotago.Address) error {
@@ -347,24 +342,23 @@ func (e *ChainEnv) checkAllowedStateControllerAddressInAllNodes(addr iotago.Addr
 }
 
 func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeIndex int, addr iotago.Address) bool {
-	ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
-		chain.ChainID,
-		governance.Contract.Hname(),
-		governance.ViewGetAllowedStateControllerAddresses.Name,
-		nil,
-	)
+	addresses, _, err := chain.Cluster.WaspClient(nodeIndex).CorecontractsApi.
+		GovernanceGetAllowedStateControllerAddresses(context.Background(), chain.ChainID.String()).
+		Execute()
 	require.NoError(t, err)
-	arr := collections.NewArray16ReadOnly(ret, governance.ParamAllowedStateControllerAddresses)
-	arrlen := arr.MustLen()
-	if arrlen == 0 {
+
+	if len(addresses.Addresses) == 0 {
 		return false
 	}
-	for i := uint16(0); i < arrlen; i++ {
-		a, err := codec.DecodeAddress(arr.MustGetAt(i))
+
+	for _, addressBech32 := range addresses.Addresses {
+		_, address, err := iotago.ParseBech32(addressBech32)
 		require.NoError(t, err)
-		if a.Equal(addr) {
+
+		if address.Equal(addr) {
 			return true
 		}
 	}
+
 	return false
 }

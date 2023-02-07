@@ -153,6 +153,22 @@ func (c *Controller) addGovernanceContractRoutes(api echoswagger.ApiGroup, mocke
 		SetOperationId("governanceGetChainInfo").
 		SetDescription("If you are using the common API functions, you most likely rather want to use '/chains/:chainID' to get information about a chain.").
 		SetSummary("Get the chain info")
+
+	api.GET("chains/:chainID/core/governance/chainowner", c.getChainOwner).
+		AddParamPath("", "chainID", "ChainID (Bech32)").
+		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
+		AddResponse(http.StatusOK, "The chain owner", mocker.Get(GovChainOwnerResponse{}), nil).
+		SetOperationId("governanceGetChainOwner").
+		SetDescription("Returns the chain owner").
+		SetSummary("Get the chain owner")
+
+	api.GET("chains/:chainID/core/governance/allowedstatecontrollers", c.getAllowedStateControllerAddresses).
+		AddParamPath("", "chainID", "ChainID (Bech32)").
+		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
+		AddResponse(http.StatusOK, "The state controller addresses", mocker.Get(GovAllowedStateControllerAddressesResponse{}), nil).
+		SetOperationId("governanceGetAllowedStateControllerAddresses").
+		SetDescription("Returns the allowed state controller addresses").
+		SetSummary("Get the allowed state controller addresses")
 }
 
 func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker interfaces.Mocker) {

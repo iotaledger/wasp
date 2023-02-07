@@ -12,9 +12,9 @@ import (
 )
 
 type ControlAddressesResponse struct {
-	GoverningAddress string `json:"governingAddress" swagger:"required"`
-	SinceBlockIndex  uint32 `json:"sinceBlockIndex" swagger:"required,min(1)"`
-	StateAddress     string `json:"stateAddress" swagger:"required"`
+	GoverningAddress string `json:"governingAddress" swagger:"required,desc(The governing address (Bech32))"`
+	SinceBlockIndex  uint32 `json:"sinceBlockIndex" swagger:"required,min(1),desc(The block index (uint32)"`
+	StateAddress     string `json:"stateAddress" swagger:"required,desc(The state address (Bech32))"`
 }
 
 type BlockInfoResponse struct {
