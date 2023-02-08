@@ -1,7 +1,17 @@
+use std::cell::Cell;
+use std::rc::Rc;
+
 use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};
 
 const MYCHAIN: &str = "atoi1pr2y08306jpza3fd6d3fzgzggpy88jtqvkyjjt05ulv048ukry2xwf8hx4v";
 const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
+
+fn check_error(ctx: &WasmClientContext) {
+    if let Err(e) = ctx.err() {
+        println!("err: {}", e);
+        assert!(false);
+    }
+}
 
 fn setup_client() -> wasmclient::wasmclientcontext::WasmClientContext {
     let svc = WasmClientService::new("http://127.0.0.1:19090", "127.0.0.1:15550");
@@ -10,7 +20,7 @@ fn setup_client() -> wasmclient::wasmclientcontext::WasmClientContext {
         &wasmlib::bytes_from_string(MYSEED),
         0,
     ));
-    assert!(ctx.err().is_ok());
+    check_error(&ctx);
     return ctx;
 }
 
@@ -19,12 +29,7 @@ fn call_view() {
     let ctx = setup_client();
     let v = testwasmlib::ScFuncs::get_random(&ctx);
     v.func.call();
-
-    let e = ctx.err();
-    if let Err(e) = e.clone() {
-        println!("err: {}", e);
-    }
-    assert!(e.is_ok());
+    check_error(&ctx);
     let rnd = v.results.random().value();
     println!("rnd: {}", rnd);
     assert!(rnd != 0);
@@ -35,63 +40,70 @@ fn post_func_request() {
     let ctx = setup_client();
     let f = testwasmlib::ScFuncs::random(&ctx);
     f.func.post();
-    let e = ctx.err();
-    if let Err(e) = e.clone() {
-        println!("err: {}", e);
-    }
-    assert!(e.is_ok());
+    check_error(&ctx);
 
     ctx.wait_request();
-    let e = ctx.err();
-    if let Err(e) = e.clone() {
-        println!("err: {}", e);
-    }
-    assert!(e.is_ok());
+    check_error(&ctx);
 
     let v = testwasmlib::ScFuncs::get_random(&ctx);
     v.func.call();
-
-    assert!(ctx.err().is_ok());
+    check_error(&ctx);
     let rnd = v.results.random().value();
     println!("rnd: {}", rnd);
     assert!(rnd != 0);
 }
 
+struct X {
+    name: Rc<Cell<String>>,
+}
+
 #[test]
 fn event_handling() {
-    let ctx = setup_client();
-    let mut events = testwasmlib::TestWasmLibEventHandlers::new();
+    let mut ctx = setup_client();
+    let mut events = testwasmlib::TestWasmLibEventHandlers::new("");
 
-    let mut name = String::new();
-    // events.on_test_wasm_lib_test(|e|  name = e.name);
-    ctx.register(&events);
+    let x = X::new();
+    {
+        let name = x.name.clone();
+        events.on_test_wasm_lib_test(move |e| {
+            name.set(e.name.clone());
+        });
+    }
+    ctx.register(Box::new(events));
+    check_error(&ctx);
 
-    let event = || name;
+    x.test_client_events_param(&ctx, "Lala");
+    x.test_client_events_param(&ctx, "Trala");
+    x.test_client_events_param(&ctx, "Bar|Bar");
+    x.test_client_events_param(&ctx, "Bar~|~Bar");
+    x.test_client_events_param(&ctx, "Tilde~Tilde");
+    x.test_client_events_param(&ctx, "Tilde~~ Bar~/ Space~_");
 
-    test_client_events_param(&ctx, "Lala", event);
-    test_client_events_param(&ctx, "Trala", event);
-    test_client_events_param(&ctx, "Bar|Bar", event);
-    test_client_events_param(&ctx, "Bar~|~Bar", event);
-    test_client_events_param(&ctx, "Tilde~Tilde", event);
-    test_client_events_param(&ctx, "Tilde~~ Bar~/ Space~_", event);
-
-    ctx.unregister(&events);
-    assert!(ctx.err().is_ok());
+    ctx.unregister("");
+    check_error(&ctx);
 }
 
-fn test_client_events_param(ctx: &WasmClientContext, name: &str, event: fn() -> String) {
-    let f = testwasmlib::ScFuncs::trigger_event(ctx);
-    f.params.name().set_value(name);
-    f.params.address().set_value(&ctx.current_chain_id().address());
-    f.func.post();
-    assert!(ctx.err().is_ok());
+impl X {
+    fn new() -> X {
+        X {
+            name: Rc::new(Cell::new(String::new())),
+        }
+    }
 
-    ctx.wait_request();
-    assert!(ctx.err().is_ok());
+    fn test_client_events_param(&self, ctx: &WasmClientContext, name: &str) {
+        let f = testwasmlib::ScFuncs::trigger_event(ctx);
+        f.params.name().set_value(name);
+        f.params.address().set_value(&ctx.current_chain_id().address());
+        f.func.post();
+        check_error(&ctx);
 
-    ctx.wait_event();
-    assert!(ctx.err().is_ok());
+        ctx.wait_request();
+        check_error(&ctx);
 
-    assert!(name == event());
+        ctx.wait_event();
+        check_error(&ctx);
+
+        let x = self.name.clone();
+        assert!(name == x.take());
+    }
 }
-
