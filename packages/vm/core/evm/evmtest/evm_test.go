@@ -236,6 +236,54 @@ func TestLoop(t *testing.T) {
 	}
 }
 
+func TestLoopWithGasLeft(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+
+	gasRatio := env.getGasRatio()
+	var usedGas []uint64
+	for _, gasLimit := range []uint64{50000, 200000} {
+		baseTokensSent := evmtypes.EVMGasToISC(gasLimit, &gasRatio)
+		ethKey2, _ := env.soloChain.NewEthereumAccountWithL2Funds(baseTokensSent)
+		res, err := iscTest.callFn([]ethCallOptions{{
+			sender:   ethKey2,
+			gasLimit: gasLimit,
+		}}, "loopWithGasLeft")
+		require.NoError(t, err)
+		require.NotEmpty(t, res.evmReceipt.Logs)
+		usedGas = append(usedGas, res.evmReceipt.GasUsed)
+	}
+	require.Greater(t, usedGas[1], usedGas[0])
+}
+
+func TestLoopWithGasLeftEstimateGas(t *testing.T) {
+	env := initEVM(t)
+	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+
+	callData, err := iscTest.abi.Pack("loopWithGasLeft")
+	require.NoError(t, err)
+	estimatedGas, err := env.evmChain.EstimateGas(ethereum.CallMsg{
+		From: ethAddr,
+		To:   &iscTest.address,
+		Data: callData,
+	})
+	require.NoError(t, err)
+	require.NotZero(t, estimatedGas)
+	t.Log(estimatedGas)
+
+	gasRatio := env.getGasRatio()
+	baseTokensSent := evmtypes.EVMGasToISC(estimatedGas, &gasRatio)
+	ethKey2, _ := env.soloChain.NewEthereumAccountWithL2Funds(baseTokensSent)
+	res, err := iscTest.callFn([]ethCallOptions{{
+		sender:   ethKey2,
+		gasLimit: estimatedGas,
+	}}, "loopWithGasLeft")
+	require.NoError(t, err)
+	require.LessOrEqual(t, res.evmReceipt.GasUsed, estimatedGas)
+}
+
 func TestCallViewGasLimit(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
