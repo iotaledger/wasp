@@ -2,6 +2,7 @@
 
 function finish {
   rm -f "$SCRIPTPATH/wasp_swagger_schema.json"
+  echo "Done"
 }
 trap finish EXIT
 
@@ -24,5 +25,7 @@ openapi-generator-cli generate -i "$SCRIPTPATH/wasp_swagger_schema.json" \
 ## This is a temporary fix for the blob info response.
 ## The Schema generator does not properly handle the uint32 type and this is adjusted manually for now.
 
-sed -i 's/int32/uint32/' "$SCRIPTPATH/model_blob_info_response.go"
-sed -i 's/int32/uint32/' "$SCRIPTPATH/docs/BlobInfoResponse.md"
+echo "Patching blob info response int=>uint"
+
+sed -i "/uint32/! s/int32/uint32/g" "$SCRIPTPATH/model_blob_info_response.go"
+sed -i "/uint32/! s/int32/uint32/g" "$SCRIPTPATH/docs/BlobInfoResponse.md"

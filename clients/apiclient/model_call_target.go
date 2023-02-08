@@ -19,18 +19,20 @@ var _ MappedNullable = &CallTarget{}
 
 // CallTarget struct for CallTarget
 type CallTarget struct {
-	Contract int32 `json:"contract"`
-	EntryPoint int32 `json:"entryPoint"`
+	// The contract name as HName (Hex)
+	ContractHName string `json:"contractHName"`
+	// The function name as HName (Hex)
+	FunctionHName string `json:"functionHName"`
 }
 
 // NewCallTarget instantiates a new CallTarget object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCallTarget(contract int32, entryPoint int32) *CallTarget {
+func NewCallTarget(contractHName string, functionHName string) *CallTarget {
 	this := CallTarget{}
-	this.Contract = contract
-	this.EntryPoint = entryPoint
+	this.ContractHName = contractHName
+	this.FunctionHName = functionHName
 	return &this
 }
 
@@ -42,52 +44,52 @@ func NewCallTargetWithDefaults() *CallTarget {
 	return &this
 }
 
-// GetContract returns the Contract field value
-func (o *CallTarget) GetContract() int32 {
+// GetContractHName returns the ContractHName field value
+func (o *CallTarget) GetContractHName() string {
 	if o == nil {
-		var ret int32
+		var ret string
 		return ret
 	}
 
-	return o.Contract
+	return o.ContractHName
 }
 
-// GetContractOk returns a tuple with the Contract field value
+// GetContractHNameOk returns a tuple with the ContractHName field value
 // and a boolean to check if the value has been set.
-func (o *CallTarget) GetContractOk() (*int32, bool) {
+func (o *CallTarget) GetContractHNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Contract, true
+	return &o.ContractHName, true
 }
 
-// SetContract sets field value
-func (o *CallTarget) SetContract(v int32) {
-	o.Contract = v
+// SetContractHName sets field value
+func (o *CallTarget) SetContractHName(v string) {
+	o.ContractHName = v
 }
 
-// GetEntryPoint returns the EntryPoint field value
-func (o *CallTarget) GetEntryPoint() int32 {
+// GetFunctionHName returns the FunctionHName field value
+func (o *CallTarget) GetFunctionHName() string {
 	if o == nil {
-		var ret int32
+		var ret string
 		return ret
 	}
 
-	return o.EntryPoint
+	return o.FunctionHName
 }
 
-// GetEntryPointOk returns a tuple with the EntryPoint field value
+// GetFunctionHNameOk returns a tuple with the FunctionHName field value
 // and a boolean to check if the value has been set.
-func (o *CallTarget) GetEntryPointOk() (*int32, bool) {
+func (o *CallTarget) GetFunctionHNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.EntryPoint, true
+	return &o.FunctionHName, true
 }
 
-// SetEntryPoint sets field value
-func (o *CallTarget) SetEntryPoint(v int32) {
-	o.EntryPoint = v
+// SetFunctionHName sets field value
+func (o *CallTarget) SetFunctionHName(v string) {
+	o.FunctionHName = v
 }
 
 func (o CallTarget) MarshalJSON() ([]byte, error) {
@@ -100,8 +102,8 @@ func (o CallTarget) MarshalJSON() ([]byte, error) {
 
 func (o CallTarget) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["contract"] = o.Contract
-	toSerialize["entryPoint"] = o.EntryPoint
+	toSerialize["contractHName"] = o.ContractHName
+	toSerialize["functionHName"] = o.FunctionHName
 	return toSerialize, nil
 }
 

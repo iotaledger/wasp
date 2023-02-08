@@ -4,14 +4,14 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Contract** | **int32** |  | 
-**EntryPoint** | **int32** |  | 
+**ContractHName** | **string** | The contract name as HName (Hex) | 
+**FunctionHName** | **string** | The function name as HName (Hex) | 
 
 ## Methods
 
 ### NewCallTarget
 
-`func NewCallTarget(contract int32, entryPoint int32, ) *CallTarget`
+`func NewCallTarget(contractHName string, functionHName string, ) *CallTarget`
 
 NewCallTarget instantiates a new CallTarget object
 This constructor will assign default values to properties that have it defined,
@@ -26,44 +26,44 @@ NewCallTargetWithDefaults instantiates a new CallTarget object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
 
-### GetContract
+### GetContractHName
 
-`func (o *CallTarget) GetContract() int32`
+`func (o *CallTarget) GetContractHName() string`
 
-GetContract returns the Contract field if non-nil, zero value otherwise.
+GetContractHName returns the ContractHName field if non-nil, zero value otherwise.
 
-### GetContractOk
+### GetContractHNameOk
 
-`func (o *CallTarget) GetContractOk() (*int32, bool)`
+`func (o *CallTarget) GetContractHNameOk() (*string, bool)`
 
-GetContractOk returns a tuple with the Contract field if it's non-nil, zero value otherwise
+GetContractHNameOk returns a tuple with the ContractHName field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetContract
+### SetContractHName
 
-`func (o *CallTarget) SetContract(v int32)`
+`func (o *CallTarget) SetContractHName(v string)`
 
-SetContract sets Contract field to given value.
+SetContractHName sets ContractHName field to given value.
 
 
-### GetEntryPoint
+### GetFunctionHName
 
-`func (o *CallTarget) GetEntryPoint() int32`
+`func (o *CallTarget) GetFunctionHName() string`
 
-GetEntryPoint returns the EntryPoint field if non-nil, zero value otherwise.
+GetFunctionHName returns the FunctionHName field if non-nil, zero value otherwise.
 
-### GetEntryPointOk
+### GetFunctionHNameOk
 
-`func (o *CallTarget) GetEntryPointOk() (*int32, bool)`
+`func (o *CallTarget) GetFunctionHNameOk() (*string, bool)`
 
-GetEntryPointOk returns a tuple with the EntryPoint field if it's non-nil, zero value otherwise
+GetFunctionHNameOk returns a tuple with the FunctionHName field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetEntryPoint
+### SetFunctionHName
 
-`func (o *CallTarget) SetEntryPoint(v int32)`
+`func (o *CallTarget) SetFunctionHName(v string)`
 
-SetEntryPoint sets EntryPoint field to given value.
+SetFunctionHName sets FunctionHName field to given value.
 
 
 

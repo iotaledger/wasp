@@ -1576,7 +1576,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "30"
+                  example: "true"
                   format: string
                   type: string
                 type: object
@@ -2570,8 +2570,8 @@ components:
             gasGudget: gasGudget
             requestId: requestId
             callTarget:
-              contract: 5
-              entryPoint: 5
+              contractHName: contractHName
+              functionHName: functionHName
             targetAddress: targetAddress
             allowance:
               nfts:
@@ -2625,8 +2625,8 @@ components:
             gasGudget: gasGudget
             requestId: requestId
             callTarget:
-              contract: 5
-              entryPoint: 5
+              contractHName: contractHName
+              functionHName: functionHName
             targetAddress: targetAddress
             allowance:
               nfts:
@@ -2714,22 +2714,24 @@ components:
         name: BurnRecord
     CallTarget:
       example:
-        contract: 5
-        entryPoint: 5
+        contractHName: contractHName
+        functionHName: functionHName
       properties:
-        contract:
-          format: int32
-          type: integer
+        contractHName:
+          description: The contract name as HName (Hex)
+          format: string
+          type: string
           xml:
-            name: Contract
-        entryPoint:
-          format: int32
-          type: integer
+            name: ContractHName
+        functionHName:
+          description: The function name as HName (Hex)
+          format: string
+          type: string
           xml:
-            name: EntryPoint
+            name: FunctionHName
       required:
-      - contract
-      - entryPoint
+      - contractHName
+      - functionHName
       type: object
       xml:
         name: CallTarget
@@ -4846,8 +4848,8 @@ components:
         gasGudget: gasGudget
         requestId: requestId
         callTarget:
-          contract: 5
-          entryPoint: 5
+          contractHName: contractHName
+          functionHName: functionHName
         targetAddress: targetAddress
         allowance:
           nfts:
@@ -5014,8 +5016,8 @@ components:
           gasGudget: gasGudget
           requestId: requestId
           callTarget:
-            contract: 5
-            entryPoint: 5
+            contractHName: contractHName
+            functionHName: functionHName
           targetAddress: targetAddress
           allowance:
             nfts:
