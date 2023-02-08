@@ -2,17 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::{
-    any::Any,
-    sync::{Arc, mpsc, Mutex, RwLock},
-    thread::spawn,
+    sync::{mpsc, Arc, Mutex, RwLock},
 };
 
 use wasmlib::*;
 
 use wasmclientsandbox::*;
 
-use crate::*;
 use crate::keypair::KeyPair;
+use crate::*;
 
 // TODO to handle the request in parallel, WasmClientContext must be static now.
 // We need to solve this problem. By copying the vector of event_handlers, we may solve this problem
@@ -49,7 +47,7 @@ impl WasmClientContext {
             },
             Err(e) => {
                 let ctx = WasmClientContext::default();
-                ctx.err("failed to init", e.as_str());
+                ctx.set_err("failed to init", e.as_str());
                 return ctx;
             }
         };
@@ -81,17 +79,21 @@ impl WasmClientContext {
         return self.svc_client.clone();
     }
 
-    pub fn register(&'static mut self, handler: Box<dyn IEventHandlers>) -> errors::Result<()> {
+    pub fn register(&mut self, handler: Box<dyn IEventHandlers>) {
+        let target = handler.id();
         for h in self.event_handlers.iter() {
-            if handler.type_id() == h.as_ref().type_id() {
-                return Ok(());
+            if h.id() == target {
+                return;
             }
         }
         self.event_handlers.push(handler);
         if self.event_handlers.len() > 1 {
-            return Ok(());
+            return;
         }
-        return self.start_event_handlers();
+        let res = self.start_event_handlers();
+        if let Err(e) = res {
+            self.set_err("WasmClientContext register err: ", &e)
+        }
     }
 
     // overrides default contract name
@@ -115,33 +117,27 @@ impl WasmClientContext {
         *nonce = n.results.account_nonce().value();
     }
 
-    pub fn unregister(&mut self, handler: Box<dyn IEventHandlers>) {
+    pub fn unregister(&mut self, id: &str) {
         self.event_handlers.retain(|h| {
-            if handler.type_id() == h.as_ref().type_id() {
-                return false;
-            } else {
-                return true;
-            }
+            h.id() != id
         });
         if self.event_handlers.len() == 0 {
             self.stop_event_handlers();
         }
     }
 
-    pub fn wait_event(&self) -> errors::Result<()> {
-        return self.wait_event_timeout(10000);
+    pub fn wait_event(&self) {
+        self.wait_event_timeout(10000);
     }
 
-    pub fn wait_event_timeout(&self, msec: u64) -> errors::Result<()> {
+    pub fn wait_event_timeout(&self, msec: u64) {
         for _ in 0..100 {
             if *self.event_received.read().unwrap() {
-                return Ok(());
+                return;
             }
             std::thread::sleep(std::time::Duration::from_millis(msec));
         }
-        let err_msg = String::from("event wait timeout");
-        self.err(&err_msg, "");
-        return Err(err_msg);
+        self.set_err("event wait timeout", "");
     }
 
     pub fn wait_request(&self) {
@@ -157,46 +153,46 @@ impl WasmClientContext {
         );
 
         if let Err(e) = res {
-            self.err("WasmClientContext init err: ", &e)
+            self.set_err("WasmClientContext init err: ", &e)
         }
     }
 
-    fn process_event(&'static self, rx: mpsc::Receiver<Vec<String>>) -> errors::Result<()> {
-        for msg in rx {
-            spawn(move || {
-                let lock_received = self.event_received.clone();
-                if msg[0] == waspclient::ISC_EVENT_KIND_ERROR {
-                    let mut received = lock_received.write().unwrap();
-                    *received = true;
-                    return Err(msg[1].clone());
-                }
-
-                if msg[0] != waspclient::ISC_EVENT_KIND_SMART_CONTRACT
-                    && msg[1] != self.chain_id.to_string()
-                {
-                    // not intended for us
-                    return Ok(());
-                }
-                let mut params: Vec<String> = msg[6].split("|").map(|s| s.into()).collect();
-                for i in 0..params.len() {
-                    params[i] = self.unescape(&params[i]);
-                }
-                let topic = params.remove(0);
-
-                for handler in self.event_handlers.iter() {
-                    handler.as_ref().call_handler(&topic, &params);
-                }
-
-                let mut received = lock_received.write().unwrap();
-                *received = true;
-                return Ok(());
-            });
-        }
-
+    fn process_event(&self, _rx: mpsc::Receiver<Vec<String>>) -> errors::Result<()> {
+        // for msg in rx {
+        //     spawn(move || {
+        //         let lock_received = self.event_received.clone();
+        //         if msg[0] == waspclient::ISC_EVENT_KIND_ERROR {
+        //             let mut received = lock_received.write().unwrap();
+        //             *received = true;
+        //             return Err(msg[1].clone());
+        //         }
+        //
+        //         if msg[0] != waspclient::ISC_EVENT_KIND_SMART_CONTRACT
+        //             && msg[1] != self.chain_id.to_string()
+        //         {
+        //             // not intended for us
+        //             return Ok(());
+        //         }
+        //         let mut params: Vec<String> = msg[6].split("|").map(|s| s.into()).collect();
+        //         for i in 0..params.len() {
+        //             params[i] = self.unescape(&params[i]);
+        //         }
+        //         let topic = params.remove(0);
+        //
+        //         for handler in self.event_handlers.iter() {
+        //             handler.as_ref().call_handler(&topic, &params);
+        //         }
+        //
+        //         let mut received = lock_received.write().unwrap();
+        //         *received = true;
+        //         return Ok(());
+        //     });
+        // }
+        //
         return Ok(());
     }
 
-    pub fn start_event_handlers(&'static self) -> errors::Result<()> {
+    pub fn start_event_handlers(&self) -> errors::Result<()> {
         let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
         let done = Arc::clone(&self.event_done);
         self.svc_client.subscribe_events(tx, done)?;
@@ -225,10 +221,15 @@ impl WasmClientContext {
         }
     }
 
-    pub fn err(&self, current_layer_msg: &str, e: &str) {
+    pub fn set_err(&self, current_layer_msg: &str, e: &str) {
         let mut err = self.error.write().unwrap();
         *err = Err(current_layer_msg.to_string() + e);
         drop(err);
+    }
+
+    pub fn err(&self) -> errors::Result<()> {
+        let err = self.error.read().unwrap().clone();
+        return err;
     }
 }
 
@@ -254,14 +255,18 @@ impl Default for WasmClientContext {
 mod tests {
     use wasmlib::*;
 
-    use crate::*;
     use crate::keypair::KeyPair;
+    use crate::*;
 
     #[derive(Debug)]
     struct FakeEventHandler {}
 
     impl IEventHandlers for FakeEventHandler {
         fn call_handler(&self, _topic: &str, _params: &Vec<String>) {}
+
+        fn id(&self) -> String {
+            todo!()
+        }
     }
 
     const MYCHAIN: &str = "atoi1prj5xunmvc8uka9qznnpu4yrhn3ftm3ya0wr2jvurwr209llw7xdyztcr6g";
@@ -286,11 +291,8 @@ mod tests {
     fn setup_client() -> WasmClientContext {
         let svc = WasmClientService::new("127.0.0.1:19090", "127.0.0.1:15550");
         let mut ctx = WasmClientContext::new(&svc, MYCHAIN, "testwasmlib");
-        ctx.sign_requests(&KeyPair::from_sub_seed(
-            &bytes_from_string(MYSEED),
-            0,
-        ));
-        assert!(ctx.error.read().unwrap().is_ok());
+        ctx.sign_requests(&KeyPair::from_sub_seed(&bytes_from_string(MYSEED), 0));
+        assert!(ctx.err().is_ok());
         return ctx;
     }
 

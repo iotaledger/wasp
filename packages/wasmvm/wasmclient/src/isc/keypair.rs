@@ -77,8 +77,8 @@ impl Clone for KeyPair {
 
 impl PartialEq for KeyPair {
     fn eq(&self, other: &Self) -> bool {
-        // FIXME this may not be enough
-        return self.public_key == other.public_key;
+        return self.private_key.as_slice() == other.private_key.as_slice()
+            && self.public_key == other.public_key;
     }
 }
 

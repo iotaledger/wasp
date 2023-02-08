@@ -212,6 +212,8 @@ func (pt *PrivTangle) startCoordinator(i int) *exec.Cmd {
 		"--cooStartIndex=0",
 		"--coordinator.interval=100ms",
 		"--coordinator.debugFakeMilestoneTimestamps=true",
+		// no need to keep a backup of the coo milestones
+		"--coordinator.blockBackups.enabled=false",
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
 	}
 	return pt.startINXPlugin(i, "inx-coordinator", args, env)
