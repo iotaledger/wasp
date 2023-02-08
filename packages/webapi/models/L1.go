@@ -113,8 +113,8 @@ func TxInclusionStateMsgFromISCTxInclusionStateMsg(inclusionState *nodeconnmetri
 }
 
 type MilestoneInfo struct {
-	Index       uint32 `json:"index"`
-	Timestamp   uint32 `json:"timestamp"`
+	Index       uint32 `json:"index" swagger:"min(0)"`
+	Timestamp   uint32 `json:"timestamp" swagger:"min(0)"`
 	MilestoneID string `json:"milestoneId"`
 }
 
