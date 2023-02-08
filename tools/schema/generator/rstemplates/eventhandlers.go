@@ -7,12 +7,12 @@ var eventhandlersRs = map[string]string{
 	// *******************************
 	"eventhandlers.rs": `
 use std::collections::HashMap;
-
 use wasmlib::*;
 
 use crate::*;
 
 pub struct $PkgName$+EventHandlers {
+    id: String,
     $pkg_name$+_handlers: HashMap<&'static str, fn(evt: &$PkgName$+EventHandlers, msg: &Vec<String>)>,
 
 $#each events eventHandlerMember
@@ -24,13 +24,18 @@ impl IEventHandlers for $PkgName$+EventHandlers {
             handler(self, params);
         }
     }
+
+    fn id(&self) -> String {
+        self.id.clone()
+    }
 }
 
 impl $PkgName$+EventHandlers {
-    pub fn new() -> $PkgName$+EventHandlers {
+    pub fn new(id: &str) -> $PkgName$+EventHandlers {
         let mut handlers: HashMap<&str, fn(evt: &$PkgName$+EventHandlers, msg: &Vec<String>)> = HashMap::new();
 $#each events eventHandler
         return $PkgName$+EventHandlers {
+            id: id.to_string(),
             $pkg_name$+_handlers: handlers,
 $#each events eventHandlerMemberInit
         };
@@ -41,17 +46,18 @@ $#each events eventClass
 `,
 	// *******************************
 	"eventHandlerMember": `
-    pub $evt_name: fn(e: &Event$EvtName),
+    $evt_name: Box<dyn Fn(&Event$EvtName)>,
 `,
 	// *******************************
 	"eventHandlerMemberInit": `
-            $evt_name: |_e| {},
+            $evt_name: Box::new(|_e| {}),
 `,
 	// *******************************
 	"eventFuncSignature": `
 
-    pub fn on_$pkg_name$+_$evt_name(&mut self, handler: fn(e: &Event$EvtName)) {
-        self.$evt_name = handler;
+    pub fn on_$pkg_name$+_$evt_name<F>(&mut self, handler: F)
+        where F: Fn(&Event$EvtName) + 'static {
+        self.$evt_name = Box::new(handler);
     }
 `,
 	// *******************************
