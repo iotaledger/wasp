@@ -247,66 +247,78 @@ func TestRebootN3TwoNodes(t *testing.T) {
 // Test rebooting nodes during operation.
 func TestRebootDuringTasks(t *testing.T) {
 	testutil.RunHeavy(t)
-	env := setupNativeInccounterTest(t, 3, []int{0, 1, 2})
+	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 
-	// deposit funds for off-ledger requests
-	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
-	require.NoError(t, err)
+	// keep the nodes spammed
+	{
+		// deposit funds for off-ledger requests
+		keyPair, _, err := env.Clu.NewKeyPairWithFunds()
+		require.NoError(t, err)
 
-	env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair)
-	client := env.Chain.SCClient(nativeIncCounterSCHname, keyPair)
+		env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair)
+		client := env.Chain.SCClient(nativeIncCounterSCHname, keyPair)
 
-	for i := 0; i < 10000; i++ {
+		for i := 0; i < 10000; i++ {
+			go func() {
+				// ignore any error (nodes might be down when sending)
+				client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
+			}()
+		}
+
 		go func() {
-			// ignore any error
-			client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
-			// require.NoError(t, err)
+			keyPair, _, err := env.Clu.NewKeyPairWithFunds()
+			require.NoError(t, err)
+			client := env.Chain.SCClient(nativeIncCounterSCHname, keyPair)
+			for i := 0; i < 1000; i++ {
+				_, err = client.PostRequest(inccounter.FuncIncCounter.Name)
+				require.NoError(t, err)
+			}
 		}()
 	}
 
-	go func() {
-		keyPair, _, err := env.Clu.NewKeyPairWithFunds()
-		require.NoError(t, err)
-		client := env.Chain.SCClient(nativeIncCounterSCHname, keyPair)
-		for i := 0; i < 1000; i++ {
-			_, err = client.PostRequest(inccounter.FuncIncCounter.Name)
-			require.NoError(t, err)
-		}
-	}()
-	for i := 0; i < 10; i++ {
+	lastCounter := int64(0)
+
+	restart := func(indexes ...int) {
 		// restart the nodes
-		// TODO test rebooting only 1 node and see if the consensus breaks
-		err := env.Clu.RestartNodes(0, 1, 2)
+		err := env.Clu.RestartNodes(indexes...)
 		require.NoError(t, err)
 		time.Sleep(20 * time.Second)
+
+		// after rebooting, the chain should resume processing requests/views without issues
+		ret, err := env.Clu.WaspClient(0).CallView(
+			env.Chain.ChainID, nativeIncCounterSCHname, inccounter.ViewGetCounter.Name, nil,
+		)
+		require.NoError(t, err)
+		counter, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
+		require.NoError(t, err)
+		require.Greater(t, counter, lastCounter)
+		lastCounter = counter
+
+		// assert the node still processes on/off-ledger requests
+		keyPair2, _, err := env.Clu.NewKeyPairWithFunds()
+		require.NoError(t, err)
+		// deposit funds, then move them via off-ledger request
+		env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair2)
+		accountsClient := env.Chain.SCClient(accounts.Contract.Hname(), keyPair2)
+		targetAgentID := isc.NewRandomAgentID()
+		req, err := accountsClient.PostOffLedgerRequest(accounts.FuncTransferAllowanceTo.Name, chainclient.PostRequestParams{
+			Args: map[kv.Key][]byte{
+				accounts.ParamAgentID: targetAgentID.Bytes(),
+			},
+			Allowance: &isc.Assets{
+				BaseTokens: 5000,
+			},
+		})
+		require.NoError(t, err)
+		_, err = env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
+		require.NoError(t, err)
+		env.checkBalanceOnChain(targetAgentID, isc.BaseTokenID, 5000)
 	}
 
-	// after rebooting, the chain should resume processing requests/views without issues
-	ret, err := env.Clu.WaspClient(0).CallView(
-		env.Chain.ChainID, nativeIncCounterSCHname, inccounter.ViewGetCounter.Name, nil,
-	)
-	require.NoError(t, err)
-	counter, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
-	require.NoError(t, err)
-	require.Greater(t, counter, int64(0))
-
-	// assert the node still processes on and off-ledger request
-	keyPair2, _, err := env.Clu.NewKeyPairWithFunds()
-	require.NoError(t, err)
-	// deposit funds, then move them via off-ledger request
-	env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair2)
-	accountsClient := env.Chain.SCClient(accounts.Contract.Hname(), keyPair2)
-	targetAgentID := isc.NewRandomAgentID()
-	req, err := accountsClient.PostOffLedgerRequest(accounts.FuncTransferAllowanceTo.Name, chainclient.PostRequestParams{
-		Args: map[kv.Key][]byte{
-			accounts.ParamAgentID: targetAgentID.Bytes(),
-		},
-		Allowance: &isc.Assets{
-			BaseTokens: 5000,
-		},
-	})
-	require.NoError(t, err)
-	_, err = env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
-	require.NoError(t, err)
-	env.checkBalanceOnChain(targetAgentID, isc.BaseTokenID, 5000)
+	restart(0)
+	restart(0, 1)
+	restart(2, 3)
+	restart(1, 2, 3)
+	restart(3)
+	restart(0, 1, 2, 3)
 }
