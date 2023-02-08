@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+
+	"github.com/iotaledger/hive.go/core/logger"
 )
 
 type GenericError struct {
@@ -12,7 +14,7 @@ type GenericError struct {
 
 // HTTPErrorHandler must be hooked to an echo server to render instances
 // of HTTPError as JSON
-func HTTPErrorHandler(err error, c echo.Context) error {
+func HTTPErrorHandler(logger *logger.Logger, err error, c echo.Context) error {
 	if echoError, ok := err.(*echo.HTTPError); ok {
 		mappedError := HTTPErrorFromEchoError(echoError)
 		return c.JSON(mappedError.HTTPCode, mappedError.GetErrorResult())
@@ -23,6 +25,7 @@ func HTTPErrorHandler(err error, c echo.Context) error {
 			if c.Request().Method == http.MethodHead { // Issue #608
 				return c.NoContent(apiError.HTTPCode)
 			}
+			logger.Errorf("HTTP Error: code:[%v], msg:[%v], detail:[%v]", apiError.HTTPCode, apiError.Message, apiError.AdditionalError)
 			return c.JSON(apiError.HTTPCode, apiError.GetErrorResult())
 		}
 	}

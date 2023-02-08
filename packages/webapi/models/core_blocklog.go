@@ -90,9 +90,21 @@ func mapAssets(assets *isc.Assets) *Assets {
 	return ret
 }
 
+type CallTarget struct {
+	ContractHName string `json:"contractHName" swagger:"desc(The contract name as HName (Hex)),required"`
+	FunctionHName string `json:"functionHName" swagger:"desc(The function name as HName (Hex)),required"`
+}
+
+func MapCallTarget(target isc.CallTarget) CallTarget {
+	return CallTarget{
+		ContractHName: target.Contract.String(),
+		FunctionHName: target.EntryPoint.String(),
+	}
+}
+
 type RequestDetail struct {
 	Allowance     *Assets          `json:"allowance" swagger:"required"`
-	CallTarget    isc.CallTarget   `json:"callTarget" swagger:"required"`
+	CallTarget    CallTarget       `json:"callTarget" swagger:"required"`
 	Assets        *Assets          `json:"fungibleTokens" swagger:"required"`
 	GasGudget     string           `json:"gasGudget,string" swagger:"required,desc(The gas budget (uint64 as string))"`
 	IsEVM         bool             `json:"isEVM" swagger:"required"`
@@ -109,7 +121,7 @@ func MapRequestDetail(request isc.Request) *RequestDetail {
 
 	return &RequestDetail{
 		Allowance:     mapAssets(request.Allowance()),
-		CallTarget:    request.CallTarget(),
+		CallTarget:    MapCallTarget(request.CallTarget()),
 		Assets:        mapAssets(request.Assets()),
 		GasGudget:     iotago.EncodeUint64(gasBudget),
 		IsEVM:         isEVM,

@@ -60,7 +60,7 @@ func Init(
 	mocker := NewMocker()
 	mocker.LoadMockFiles()
 
-	vmService := services.NewVMService(chainsProvider)
+	vmService := services.NewVMService(chainsProvider, chainRecordRegistryProvider)
 	chainService := services.NewChainService(logger, chainsProvider, nodeConnectionMetrics, chainRecordRegistryProvider, vmService)
 	committeeService := services.NewCommitteeService(chainsProvider, networkProvider, dkShareRegistryProvider)
 	registryService := services.NewRegistryService(chainsProvider, chainRecordRegistryProvider)

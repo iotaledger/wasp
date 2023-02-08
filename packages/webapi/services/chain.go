@@ -64,7 +64,7 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 	if err != nil {
 		return err
 	}
-	
+
 	c.log.Infof("StoredChainRec %v %v", storedChainRec, err)
 
 	if storedChainRec != nil {
@@ -138,13 +138,17 @@ func (c *ChainService) GetAllChainIDs() ([]isc.ChainID, error) {
 }
 
 func (c *ChainService) GetChainInfoByChainID(chainID isc.ChainID) (*dto.ChainInfo, error) {
-	governanceChainInfo, err := c.governance.GetChainInfo(chainID)
+	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord(chainID)
 	if err != nil {
 		return nil, err
 	}
 
-	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord(chainID)
+	governanceChainInfo, err := c.governance.GetChainInfo(chainID)
 	if err != nil {
+		if chainRecord != nil && errors.Is(err, interfaces.ErrChainNotFound) {
+			return &dto.ChainInfo{ChainID: chainID, IsActive: false}, nil
+		}
+
 		return nil, err
 	}
 

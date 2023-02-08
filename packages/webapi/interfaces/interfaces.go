@@ -8,8 +8,8 @@ import (
 
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	dto2 "github.com/iotaledger/wasp/packages/webapi/dto"
-	models2 "github.com/iotaledger/wasp/packages/webapi/models"
+	"github.com/iotaledger/wasp/packages/webapi/dto"
+	"github.com/iotaledger/wasp/packages/webapi/models"
 
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -22,6 +22,13 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
 )
+
+var ErrUnableToGetLatestState = errors.New("unable to get latest state")
+var ErrUnableToGetReceipt = errors.New("unable to get request receipt from block state")
+var ErrAlreadyProcessed = errors.New("request already processed")
+var ErrNoBalanceOnAccount = errors.New("no balance on account")
+var ErrInvalidNonce = errors.New("invalid nonce")
+var ErrChainNotFound = errors.New("chain not found")
 
 type APIController interface {
 	Name() string
@@ -36,8 +43,8 @@ type ChainService interface {
 	GetAllChainIDs() ([]isc.ChainID, error)
 	HasChain(chainID isc.ChainID) bool
 	GetChainByID(chainID isc.ChainID) chain.Chain
-	GetChainInfoByChainID(chainID isc.ChainID) (*dto2.ChainInfo, error)
-	GetContracts(chainID isc.ChainID) (dto2.ContractsMap, error)
+	GetChainInfoByChainID(chainID isc.ChainID) (*dto.ChainInfo, error)
+	GetContracts(chainID isc.ChainID) (dto.ContractsMap, error)
 	GetEVMChainID(chainID isc.ChainID) (uint16, error)
 	GetState(chainID isc.ChainID, stateKey []byte) (state []byte, err error)
 	WaitForRequestProcessed(ctx context.Context, chainID isc.ChainID, requestID isc.RequestID, timeout time.Duration) (*isc.Receipt, *isc.VMError, error)
@@ -49,10 +56,10 @@ type EVMService interface {
 }
 
 type MetricsService interface {
-	GetAllChainsMetrics() *dto2.ChainMetrics
-	GetChainConsensusPipeMetrics(chainID isc.ChainID) *models2.ConsensusPipeMetrics
-	GetChainConsensusWorkflowMetrics(chainID isc.ChainID) *models2.ConsensusWorkflowMetrics
-	GetChainMetrics(chainID isc.ChainID) *dto2.ChainMetrics
+	GetAllChainsMetrics() *dto.ChainMetrics
+	GetChainConsensusPipeMetrics(chainID isc.ChainID) *models.ConsensusPipeMetrics
+	GetChainConsensusWorkflowMetrics(chainID isc.ChainID) *models.ConsensusWorkflowMetrics
+	GetChainMetrics(chainID isc.ChainID) *dto.ChainMetrics
 }
 
 var ErrPeerNotFound = errors.New("couldn't find peer")
@@ -69,24 +76,18 @@ type RegistryService interface {
 }
 
 type CommitteeService interface {
-	GetCommitteeInfo(chainID isc.ChainID) (*dto2.ChainNodeInfo, error)
+	GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNodeInfo, error)
 	GetPublicKey() *cryptolib.PublicKey
 }
 
 type PeeringService interface {
-	DistrustPeer(publicKey *cryptolib.PublicKey) (*dto2.PeeringNodeIdentity, error)
-	GetIdentity() *dto2.PeeringNodeIdentity
-	GetRegisteredPeers() []*dto2.PeeringNodeStatus
-	GetTrustedPeers() ([]*dto2.PeeringNodeIdentity, error)
+	DistrustPeer(publicKey *cryptolib.PublicKey) (*dto.PeeringNodeIdentity, error)
+	GetIdentity() *dto.PeeringNodeIdentity
+	GetRegisteredPeers() []*dto.PeeringNodeStatus
+	GetTrustedPeers() ([]*dto.PeeringNodeIdentity, error)
 	IsPeerTrusted(publicKey *cryptolib.PublicKey) error
-	TrustPeer(peer *cryptolib.PublicKey, netID string) (*dto2.PeeringNodeIdentity, error)
+	TrustPeer(peer *cryptolib.PublicKey, netID string) (*dto.PeeringNodeIdentity, error)
 }
-
-var ErrUnableToGetLatestState = errors.New("unable to get latest state")
-var ErrUnableToGetReceipt = errors.New("unable to get request receipt from block state")
-var ErrAlreadyProcessed = errors.New("request already processed")
-var ErrNoBalanceOnAccount = errors.New("no balance on account")
-var ErrInvalidNonce = errors.New("invalid nonce")
 
 type OffLedgerService interface {
 	EnqueueOffLedgerRequest(chainID isc.ChainID, request []byte) error
@@ -96,8 +97,8 @@ type OffLedgerService interface {
 type UserService interface {
 	AddUser(username string, password string, permissions []string) error
 	DeleteUser(username string) error
-	GetUser(username string) (*models2.User, error)
-	GetUsers() []*models2.User
+	GetUser(username string) (*models.User, error)
+	GetUsers() []*models.User
 	UpdateUserPassword(username string, password string) error
 	UpdateUserPermissions(username string, permissions []string) error
 }

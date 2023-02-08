@@ -1,12 +1,14 @@
 package chain
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
@@ -46,13 +48,18 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 	}
 
 	chainInfo, err := c.chainService.GetChainInfoByChainID(chainID)
-	if err != nil {
+	if errors.Is(err, interfaces.ErrChainNotFound) {
+		return e.NoContent(http.StatusNotFound)
+	} else if err != nil {
 		return err
 	}
 
-	evmChainID, err := c.chainService.GetEVMChainID(chainID)
-	if err != nil {
-		return err
+	evmChainID := uint16(0)
+	if chainInfo.IsActive {
+		evmChainID, err = c.chainService.GetEVMChainID(chainID)
+		if err != nil {
+			return err
+		}
 	}
 
 	chainInfoResponse := models.MapChainInfoResponse(chainInfo, evmChainID)
@@ -62,6 +69,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 
 func (c *Controller) getChainList(e echo.Context) error {
 	chainIDs, err := c.chainService.GetAllChainIDs()
+	c.log.Info("After allChainIDS %v", err)
 	if err != nil {
 		return err
 	}
@@ -70,16 +78,31 @@ func (c *Controller) getChainList(e echo.Context) error {
 
 	for _, chainID := range chainIDs {
 		chainInfo, err := c.chainService.GetChainInfoByChainID(chainID)
-		if err != nil {
+		c.log.Info("getchaininfo %v", err)
+
+		if errors.Is(err, interfaces.ErrChainNotFound) {
+			// TODO: Validate this logic here. Is it possible to still get more chain info?
+			chainList = append(chainList, models.ChainInfoResponse{
+				IsActive: false,
+				ChainID:  chainID.String(),
+			})
+			continue
+		} else if err != nil {
 			return err
 		}
 
-		evmChainID, err := c.chainService.GetEVMChainID(chainID)
-		if err != nil {
-			return err
+		evmChainID := uint16(0)
+		if chainInfo.IsActive {
+			evmChainID, err = c.chainService.GetEVMChainID(chainID)
+			c.log.Info("getevmchainid %v", err)
+
+			if err != nil {
+				return err
+			}
 		}
 
 		chainInfoResponse := models.MapChainInfoResponse(chainInfo, evmChainID)
+		c.log.Info("mapchaininfo %v", err)
 
 		chainList = append(chainList, chainInfoResponse)
 	}

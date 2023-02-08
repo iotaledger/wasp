@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
@@ -15,12 +16,14 @@ import (
 )
 
 type VMService struct {
-	chainsProvider chains.Provider
+	chainsProvider              chains.Provider
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 }
 
-func NewVMService(chainsProvider chains.Provider) interfaces.VMService {
+func NewVMService(chainsProvider chains.Provider, chainRecordRegistryProvider registry.ChainRecordRegistryProvider) interfaces.VMService {
 	return &VMService{
-		chainsProvider: chainsProvider,
+		chainsProvider:              chainsProvider,
+		chainRecordRegistryProvider: chainRecordRegistryProvider,
 	}
 }
 
@@ -52,8 +55,9 @@ func (v *VMService) GetReceipt(chainID isc.ChainID, requestID isc.RequestID) (*i
 
 func (v *VMService) CallViewByChainID(chainID isc.ChainID, contractName, functionName isc.Hname, params dict.Dict) (dict.Dict, error) {
 	ch := v.chainsProvider().Get(chainID)
+
 	if ch == nil {
-		return nil, errors.New("chain not found")
+		return nil, interfaces.ErrChainNotFound
 	}
 
 	// TODO: should blockIndex be an optional parameter of this endpoint?

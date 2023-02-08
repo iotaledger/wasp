@@ -248,7 +248,7 @@ func eventsFromViewResult(viewResult dict.Dict) ([]string, error) {
 
 func (b *BlockLog) GetEventsForRequest(chainID isc.ChainID, requestID isc.RequestID) ([]string, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetEventsForRequest.Hname(), codec.MakeDict(map[string]interface{}{
-		blocklog.ParamRequestRecord: requestID,
+		blocklog.ParamRequestID: requestID,
 	}))
 	if err != nil {
 		return nil, err

@@ -12,6 +12,6 @@ func CompatibilityHTTPErrorHandler(logger *logger.Logger) func(error, echo.Conte
 	return func(err error, c echo.Context) {
 		logger.Errorf("Compatibility Error Handler: %v", err)
 		// Use V2 error handler otherwise. This is also a catch-all for any other error type.
-		_ = apierrors.HTTPErrorHandler(err, c)
+		_ = apierrors.HTTPErrorHandler(logger, err, c)
 	}
 }

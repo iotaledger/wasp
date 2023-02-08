@@ -3,7 +3,7 @@ package models
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	dto2 "github.com/iotaledger/wasp/packages/webapi/dto"
+	"github.com/iotaledger/wasp/packages/webapi/dto"
 )
 
 type CommitteeNode struct {
@@ -11,7 +11,7 @@ type CommitteeNode struct {
 	Node      PeeringNodeStatusResponse `json:"node" swagger:"required"`
 }
 
-func MapCommitteeNode(status *dto2.ChainNodeStatus) CommitteeNode {
+func MapCommitteeNode(status *dto.ChainNodeStatus) CommitteeNode {
 	return CommitteeNode{
 		AccessAPI: status.AccessAPI,
 		Node: PeeringNodeStatusResponse{
@@ -24,7 +24,7 @@ func MapCommitteeNode(status *dto2.ChainNodeStatus) CommitteeNode {
 	}
 }
 
-func MapCommitteeNodes(status []*dto2.ChainNodeStatus) []CommitteeNode {
+func MapCommitteeNodes(status []*dto.ChainNodeStatus) []CommitteeNode {
 	nodes := make([]CommitteeNode, 0)
 
 	for _, node := range status {
@@ -72,27 +72,33 @@ type StateResponse struct {
 	State string `json:"state" swagger:"desc(The state of the requested key (Hex-encoded)),required"`
 }
 
-func MapChainInfoResponse(chainInfo *dto2.ChainInfo, evmChainID uint16) ChainInfoResponse {
-	gasFeeTokenID := ""
-
-	if !isc.IsEmptyNativeTokenID(chainInfo.GasFeePolicy.GasFeeTokenID) {
-		gasFeeTokenID = chainInfo.GasFeePolicy.GasFeeTokenID.String()
-	}
-
+func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfoResponse {
 	chainInfoResponse := ChainInfoResponse{
-		IsActive:     chainInfo.IsActive,
-		ChainID:      chainInfo.ChainID.String(),
-		EVMChainID:   evmChainID,
-		ChainOwnerID: chainInfo.ChainOwnerID.String(),
-		Description:  chainInfo.Description,
-		GasFeePolicy: gasFeePolicy{
-			GasFeeTokenID:     gasFeeTokenID,
-			GasPerToken:       iotago.EncodeUint64(chainInfo.GasFeePolicy.GasPerToken),
-			ValidatorFeeShare: chainInfo.GasFeePolicy.ValidatorFeeShare,
-		},
+		IsActive:        chainInfo.IsActive,
+		ChainID:         chainInfo.ChainID.String(),
+		EVMChainID:      evmChainID,
+		Description:     chainInfo.Description,
 		MaxBlobSize:     chainInfo.MaxBlobSize,
 		MaxEventSize:    chainInfo.MaxEventSize,
 		MaxEventsPerReq: chainInfo.MaxEventsPerReq,
+	}
+
+	if chainInfo.ChainOwnerID != nil {
+		chainInfoResponse.ChainOwnerID = chainInfo.ChainOwnerID.String()
+	}
+
+	if chainInfo.GasFeePolicy != nil {
+		gasFeeTokenID := ""
+
+		if !isc.IsEmptyNativeTokenID(chainInfo.GasFeePolicy.GasFeeTokenID) {
+			gasFeeTokenID = chainInfo.GasFeePolicy.GasFeeTokenID.String()
+		}
+
+		chainInfoResponse.GasFeePolicy = gasFeePolicy{
+			GasFeeTokenID:     gasFeeTokenID,
+			GasPerToken:       iotago.EncodeUint64(chainInfo.GasFeePolicy.GasPerToken),
+			ValidatorFeeShare: chainInfo.GasFeePolicy.ValidatorFeeShare,
+		}
 	}
 
 	return chainInfoResponse

@@ -6,50 +6,50 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	v2 "github.com/iotaledger/wasp/packages/webapi"
-	models2 "github.com/iotaledger/wasp/packages/webapi/models"
+	"github.com/iotaledger/wasp/packages/webapi"
+	"github.com/iotaledger/wasp/packages/webapi/models"
 )
 
 func TestMockingOfPtrStructure(t *testing.T) {
-	mock := v2.NewMocker()
+	mock := webapi.NewMocker()
 	mock.LoadMockFiles()
-	mockedChainInfoResponse := mock.Get(&models2.PeeringNodeStatusResponse{})
+	mockedChainInfoResponse := mock.Get(&models.PeeringNodeStatusResponse{})
 
 	_, err := json.Marshal(mockedChainInfoResponse)
 	require.NoError(t, err)
 }
 
 func TestMockingOfStructure(t *testing.T) {
-	mock := v2.NewMocker()
+	mock := webapi.NewMocker()
 	mock.LoadMockFiles()
-	mockedChainInfoResponse := mock.Get(models2.PeeringNodeStatusResponse{})
+	mockedChainInfoResponse := mock.Get(models.PeeringNodeStatusResponse{})
 
 	_, err := json.Marshal(mockedChainInfoResponse)
 	require.NoError(t, err)
 }
 
 func TestMockingOfStructureArray(t *testing.T) {
-	mock := v2.NewMocker()
+	mock := webapi.NewMocker()
 	mock.LoadMockFiles()
-	mockedChainInfoResponse := mock.Get([]models2.PeeringNodeStatusResponse{})
+	mockedChainInfoResponse := mock.Get([]models.PeeringNodeStatusResponse{})
 
 	_, err := json.Marshal(mockedChainInfoResponse)
 	require.NoError(t, err)
 }
 
 func TestMockingOfChainInfo(t *testing.T) {
-	mock := v2.NewMocker()
+	mock := webapi.NewMocker()
 	mock.LoadMockFiles()
-	mockedChainInfoResponse := mock.Get([]models2.ChainInfoResponse{})
+	mockedChainInfoResponse := mock.Get([]models.ChainInfoResponse{})
 
 	_, err := json.Marshal(mockedChainInfoResponse)
 	require.NoError(t, err)
 }
 
 func TestMockingOfCommitteeInfo(t *testing.T) {
-	mock := v2.NewMocker()
+	mock := webapi.NewMocker()
 	mock.LoadMockFiles()
-	mockedChainInfoResponse := mock.Get(models2.CommitteeInfoResponse{})
+	mockedChainInfoResponse := mock.Get(models.CommitteeInfoResponse{})
 
 	_, err := json.Marshal(mockedChainInfoResponse)
 	require.NoError(t, err)

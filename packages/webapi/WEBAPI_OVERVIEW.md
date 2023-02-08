@@ -106,7 +106,7 @@ Therefore, a `//nolint:unused` is required in these cases.
 
 All number types above 58 bit are unsupported in JavaScript when consumed via JSON. Therefore, those types need to be sent as strings by the server. 
 
-Unfortunately, this means the client has to decode these string numbers as a proper integer types. 
+Unfortunately, this means the client has to decode these string numbers as a proper integer type. 
 
 The documentation should point out that these strings are actually numbers and should be treated as such. 
 
