@@ -2,6 +2,7 @@ package chainclient
 
 import (
 	"context"
+	"sync"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
@@ -22,6 +23,7 @@ type Client struct {
 	ChainID      isc.ChainID
 	KeyPair      *cryptolib.KeyPair
 	nonces       map[string]uint64
+	noncesMutex  sync.Mutex
 }
 
 // New creates a new chainclient.Client
@@ -158,8 +160,10 @@ func (c *Client) PostOffLedgerRequest(
 ) (isc.OffLedgerRequest, error) {
 	par := defaultParams(params...)
 	if par.Nonce == 0 {
+		c.noncesMutex.Lock()
 		c.nonces[c.KeyPair.Address().Key()]++
 		par.Nonce = c.nonces[c.KeyPair.Address().Key()]
+		c.noncesMutex.Unlock()
 	}
 	var gasBudget uint64
 	if par.GasBudget == nil {
