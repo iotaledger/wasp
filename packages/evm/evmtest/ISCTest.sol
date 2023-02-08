@@ -161,4 +161,12 @@ contract ISCTest {
     function testSelfDestruct(address payable beneficiary) public {
         selfdestruct(beneficiary);
     }
+
+    event LoopEvent();
+
+    function loopWithGasLeft() public {
+        while (gasleft() >= 10000) {
+            emit LoopEvent();
+        }
+    }
 }
