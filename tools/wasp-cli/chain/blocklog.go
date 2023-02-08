@@ -98,8 +98,8 @@ func logReceipt(receipt *apiclient.RequestReceiptResponse, index ...int) {
 	tree := []log.TreeItem{
 		{K: "Kind", V: kind},
 		{K: "Sender", V: req.SenderAccount},
-		{K: "Contract Hname", V: isc.Hname(req.CallTarget.Contract).String()},
-		{K: "Entry point", V: isc.Hname(req.CallTarget.EntryPoint).String()},
+		{K: "Contract Hname", V: req.CallTarget.ContractHName},
+		{K: "Function Hname", V: req.CallTarget.FunctionHName},
 		{K: "Arguments", V: argsTree},
 		{K: "Error", V: errMsg},
 	}

@@ -13,6 +13,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -147,6 +148,15 @@ func Check(err error) {
 		}*/
 
 		errorModel := &ErrorModel{err.Error()}
+		apiError, ok := apiextensions.AsAPIError(err)
+		if ok {
+			errorModel.Error = apiError.Error
+
+			if apiError.DetailError != nil {
+				errorModel.Error += "\n" + apiError.DetailError.Error + "\n" + apiError.DetailError.Message
+			}
+		}
+
 		message, _ := GetCLIOutputText(errorModel)
 		Fatalf("%v", message)
 	}

@@ -2,16 +2,15 @@ package chain
 
 import (
 	"context"
-	"regexp"
+	"net/http"
 
 	"github.com/spf13/cobra"
 
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
-
-var HTTP404ErrRegexp = regexp.MustCompile(`"Code":404`)
 
 func initActivateCmd() *cobra.Command {
 	var nodes []int
@@ -27,9 +26,9 @@ func initActivateCmd() *cobra.Command {
 			for _, nodeIdx := range nodes {
 				client := cliclients.WaspClientForIndex(nodeIdx)
 
-				r, _, err := client.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute()
+				r, httpStatus, err := client.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute()
 
-				if err != nil && !HTTP404ErrRegexp.MatchString(err.Error()) {
+				if err != nil && httpStatus.StatusCode != http.StatusNotFound {
 					log.Check(err)
 				}
 
@@ -37,9 +36,21 @@ func initActivateCmd() *cobra.Command {
 					continue
 				}
 
-				_, err = client.ChainsApi.ActivateChain(context.Background(), chainID.String()).Execute()
-				log.Check(err)
+				if r == nil {
+					_, err := client.ChainsApi.SetChainRecord(context.Background(), chainID.String()).ChainRecord(apiclient.ChainRecord{
+						IsActive:    true,
+						AccessNodes: []string{},
+					}).Execute()
+
+					log.Check(err)
+				} else {
+					_, err = client.ChainsApi.ActivateChain(context.Background(), chainID.String()).Execute()
+
+					log.Check(err)
+				}
 			}
+
+			log.Printf("Chain activated")
 		},
 	}
 

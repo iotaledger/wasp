@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -68,7 +69,11 @@ func initShowBlobCmd() *cobra.Command {
 					Execute()
 
 				log.Check(err)
-				values.Set(kv.Key(field), []byte(value.ValueData))
+
+				decodedValue, err := iotago.DecodeHex(value.ValueData)
+				log.Check(err)
+
+				values.Set(kv.Key(field), []byte(decodedValue))
 			}
 			util.PrintDictAsJSON(values)
 		},
