@@ -31,20 +31,20 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 
 	e.checkCoreContracts()
 	for i := range e.Chain.CommitteeNodes {
-		blockIndex, err := e.Chain.BlockIndex(i)
-		require.NoError(e.t, err)
+		blockIndex, err2 := e.Chain.BlockIndex(i)
+		require.NoError(e.t, err2)
 		require.Greater(e.t, blockIndex, uint32(2))
 
-		contractRegistry, err := e.Chain.ContractRegistry(i)
-		require.NoError(e.t, err)
+		contractRegistry, err2 := e.Chain.ContractRegistry(i)
+		require.NoError(e.t, err2)
 		cr := contractRegistry[hname]
 
 		require.EqualValues(e.t, programHash, cr.ProgramHash)
 		require.EqualValues(e.t, description, cr.Description)
 		require.EqualValues(e.t, cr.Name, inccounterName)
 
-		counterValue, err := e.Chain.GetCounterValue(hname, i)
-		require.NoError(e.t, err)
+		counterValue, err2 := e.Chain.GetCounterValue(hname, i)
+		require.NoError(e.t, err2)
 		require.EqualValues(e.t, 42, counterValue)
 	}
 

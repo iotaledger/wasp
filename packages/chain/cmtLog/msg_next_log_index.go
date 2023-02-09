@@ -52,8 +52,8 @@ func (m *msgNextLogIndex) UnmarshalBinary(data []byte) error {
 		return fmt.Errorf("unexpected msgType=%v in cmtLog.msgNextLogIndex", msgType)
 	}
 	var nextLogIndex uint32
-	if err := util.ReadUint32(r, &nextLogIndex); err != nil {
-		return fmt.Errorf("cannot unmarshal msgNextLogIndex.nextLogIndex: %w", err)
+	if err2 := util.ReadUint32(r, &nextLogIndex); err2 != nil {
+		return fmt.Errorf("cannot unmarshal msgNextLogIndex.nextLogIndex: %w", err2)
 	}
 	m.nextLogIndex = LogIndex(nextLogIndex)
 	nextAOBin, err := util.ReadBytes16(r)

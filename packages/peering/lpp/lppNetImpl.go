@@ -162,9 +162,9 @@ func (n *netImpl) lppAddToPeerStore(trustedPeer *peering.TrustedPeer) (libp2ppee
 			} else {
 				ipVer, ipStr = "ip6", peerIPs[j].String()
 			}
-			addr, err := multiaddr.NewMultiaddr(fmt.Sprintf(addrPatterns[i], ipVer, ipStr, peerPort))
-			if err != nil {
-				return "", fmt.Errorf("failed to make libp2p address for NetID=%v, error: %w", trustedPeer.NetID, err)
+			addr, err2 := multiaddr.NewMultiaddr(fmt.Sprintf(addrPatterns[i], ipVer, ipStr, peerPort))
+			if err2 != nil {
+				return "", fmt.Errorf("failed to make libp2p address for NetID=%v, error: %w", trustedPeer.NetID, err2)
 			}
 			addrs = append(addrs, addr)
 		}

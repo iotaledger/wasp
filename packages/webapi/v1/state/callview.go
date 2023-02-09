@@ -86,7 +86,7 @@ func (s *callViewService) handleCallView(c echo.Context, functionHname isc.Hname
 
 	var params dict.Dict
 	if c.Request().Body != http.NoBody {
-		if err := json.NewDecoder(c.Request().Body).Decode(&params); err != nil {
+		if err2 := json.NewDecoder(c.Request().Body).Decode(&params); err2 != nil {
 			return httperrors.BadRequest("Invalid request body")
 		}
 	}

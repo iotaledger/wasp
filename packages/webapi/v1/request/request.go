@@ -71,9 +71,9 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	o.requestsCache.Set(reqID, true)
 
 	// check req signature
-	if err := req.VerifySignature(); err != nil {
+	if err2 := req.VerifySignature(); err2 != nil {
 		o.requestsCache.Set(reqID, true)
-		return httperrors.BadRequest(fmt.Sprintf("could not verify: %s", err.Error()))
+		return httperrors.BadRequest(fmt.Sprintf("could not verify: %s", err2.Error()))
 	}
 
 	// check req is for the correct chain
@@ -110,15 +110,15 @@ func parseParams(c echo.Context) (chainID isc.ChainID, req isc.OffLedgerRequest,
 		if err = c.Bind(r); err != nil {
 			return isc.ChainID{}, nil, httperrors.BadRequest("error parsing request from payload")
 		}
-		rGeneric, err := isc.NewRequestFromMarshalUtil(marshalutil.New(r.Request.Bytes()))
-		if err != nil {
-			return isc.ChainID{}, nil, httperrors.BadRequest(fmt.Sprintf("cannot decode off-ledger request: %v", err))
+		rGeneric, err2 := isc.NewRequestFromMarshalUtil(marshalutil.New(r.Request.Bytes()))
+		if err2 != nil {
+			return isc.ChainID{}, nil, httperrors.BadRequest(fmt.Sprintf("cannot decode off-ledger request: %v", err2))
 		}
 		var ok bool
 		if req, ok = rGeneric.(isc.OffLedgerRequest); !ok {
 			return isc.ChainID{}, nil, httperrors.BadRequest("error parsing request: off-ledger request is expected")
 		}
-		return chainID, req, err
+		return chainID, req, err2
 	}
 
 	// binary format

@@ -62,12 +62,12 @@ func (m *msgPartialSig) UnmarshalBinary(data []byte) error {
 		return fmt.Errorf("unexpected msgType=%v in dss.msgPartialSig", msgType)
 	}
 	var partialI uint16
-	if err := util.ReadUint16(r, &partialI); err != nil {
-		return err
+	if err2 := util.ReadUint16(r, &partialI); err2 != nil {
+		return err2
 	}
 	partialV := m.suite.Scalar()
-	if err := util.ReadMarshaled(r, partialV); err != nil {
-		return fmt.Errorf("cannot unmarshal partialSig.V: %w", err)
+	if err2 := util.ReadMarshaled(r, partialV); err2 != nil {
+		return fmt.Errorf("cannot unmarshal partialSig.V: %w", err2)
 	}
 	m.partialSig = &dss.PartialSig{
 		Partial: &share.PriShare{I: int(partialI), V: partialV},

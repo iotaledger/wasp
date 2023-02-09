@@ -595,11 +595,11 @@ func TestERC721NFTs(t *testing.T) {
 	receiverKey, receiverAddr := env.soloChain.NewEthereumAccountWithL2Funds()
 
 	{
-		_, err := erc721.callFn([]ethCallOptions{{
+		_, err2 := erc721.callFn([]ethCallOptions{{
 			sender:   receiverKey,
 			gasLimit: 100_000, // skip estimate gas (which will fail)
 		}}, "transferFrom", ethAddr, receiverAddr, iscmagic.WrapNFTID(nft.ID).TokenID())
-		require.Error(t, err)
+		require.Error(t, err2)
 	}
 
 	_, err = erc721.callFn(nil, "approve", receiverAddr, iscmagic.WrapNFTID(nft.ID).TokenID())
@@ -692,8 +692,8 @@ func TestERC721NFTCollection(t *testing.T) {
 
 	// minted NFTs are in random order; find the first one in nftMetadatas
 	nft, ok := lo.Find(nfts, func(item *isc.NFT) bool {
-		metadata, err := transaction.IRC27NFTMetadataFromBytes(item.Metadata)
-		require.NoError(t, err)
+		metadata, err2 := transaction.IRC27NFTMetadataFromBytes(item.Metadata)
+		require.NoError(t, err2)
 		return metadata.URI == nftMetadatas[0].URI
 	})
 	require.True(t, ok)
@@ -722,11 +722,11 @@ func TestERC721NFTCollection(t *testing.T) {
 	receiverKey, receiverAddr := env.soloChain.NewEthereumAccountWithL2Funds()
 
 	{
-		_, err := erc721.callFn([]ethCallOptions{{
+		_, err2 := erc721.callFn([]ethCallOptions{{
 			sender:   receiverKey,
 			gasLimit: 100_000, // skip estimate gas (which will fail)
 		}}, "transferFrom", ethAddr, receiverAddr, iscmagic.WrapNFTID(nft.ID).TokenID())
-		require.Error(t, err)
+		require.Error(t, err2)
 	}
 
 	_, err = erc721.callFn(nil, "approve", receiverAddr, iscmagic.WrapNFTID(nft.ID).TokenID())
@@ -850,8 +850,8 @@ func TestISCSendWithArgs(t *testing.T) {
 	require.NoError(t, err)
 
 	checkCounter := func(c int) {
-		ret, err := env.soloChain.CallView(inccounter.Contract.Name, inccounter.ViewGetCounter.Name)
-		require.NoError(t, err)
+		ret, err2 := env.soloChain.CallView(inccounter.Contract.Name, inccounter.ViewGetCounter.Name)
+		require.NoError(t, err2)
 		counter := codec.MustDecodeUint64(ret.MustGet(inccounter.VarCounter))
 		require.EqualValues(t, c, counter)
 	}

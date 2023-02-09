@@ -278,8 +278,8 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 	store := state.InitChainStore(kvStore)
 
 	{
-		block, err := store.LatestBlock()
-		require.NoError(env.T, err)
+		block, err2 := store.LatestBlock()
+		require.NoError(env.T, err2)
 		env.logger.Infof("     chain '%s'. origin trie root: %s", chainID.String(), block.TrieRoot())
 	}
 

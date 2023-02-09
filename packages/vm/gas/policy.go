@@ -92,14 +92,14 @@ func FeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
 		return nil, err
 	}
 	if gasNativeToken {
-		b, err := mu.ReadBytes(iotago.NativeTokenIDLength)
-		if err != nil {
-			return nil, err
+		b, err2 := mu.ReadBytes(iotago.NativeTokenIDLength)
+		if err2 != nil {
+			return nil, err2
 		}
 		ret.GasFeeTokenID = iotago.NativeTokenID{}
 		copy(ret.GasFeeTokenID[:], b)
-		if ret.GasFeeTokenDecimals, err = mu.ReadUint32(); err != nil {
-			return nil, err
+		if ret.GasFeeTokenDecimals, err2 = mu.ReadUint32(); err2 != nil {
+			return nil, err2
 		}
 	}
 	if ret.GasPerToken, err = mu.ReadUint64(); err != nil {

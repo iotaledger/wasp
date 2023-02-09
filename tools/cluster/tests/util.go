@@ -111,8 +111,8 @@ func (e *ChainEnv) getAccountsOnChain() []isc.AgentID {
 
 	ret := make([]isc.AgentID, 0)
 	for key := range r {
-		aid, err := isc.AgentIDFromBytes([]byte(key))
-		require.NoError(e.t, err)
+		aid, err2 := isc.AgentIDFromBytes([]byte(key))
+		require.NoError(e.t, err2)
 
 		ret = append(ret, aid)
 	}

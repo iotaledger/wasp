@@ -40,8 +40,8 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) {
 	retries := 0
 	for i := 1; i < len(e.Chain.AllPeers); i++ {
 		peerIdx := e.Chain.AllPeers[i]
-		b, err := e.Chain.BlockIndex(peerIdx)
-		if err != nil || b < blockIndex {
+		b, err2 := e.Chain.BlockIndex(peerIdx)
+		if err2 != nil || b < blockIndex {
 			if retries >= 10 {
 				e.t.Fatalf("error on deployIncCounterSC, failed to wait for all peers to be on the same block index after 10 retries. Peer index: %d", peerIdx)
 			}
@@ -56,8 +56,8 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) {
 	e.checkCoreContracts()
 
 	for i := range e.Chain.AllPeers {
-		contractRegistry, err := e.Chain.ContractRegistry(i)
-		require.NoError(e.t, err)
+		contractRegistry, err2 := e.Chain.ContractRegistry(i)
+		require.NoError(e.t, err2)
 
 		cr := contractRegistry[nativeIncCounterSCHname]
 		require.NotNil(e.t, cr)
@@ -66,8 +66,8 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) {
 		require.EqualValues(e.t, description, cr.Description)
 		require.EqualValues(e.t, cr.Name, nativeIncCounterSCName)
 
-		counterValue, err := e.Chain.GetCounterValue(nativeIncCounterSCHname, i)
-		require.NoError(e.t, err)
+		counterValue, err2 := e.Chain.GetCounterValue(nativeIncCounterSCHname, i)
+		require.NoError(e.t, err2)
 		require.EqualValues(e.t, counterStartValue, counterValue)
 	}
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 10*time.Second)

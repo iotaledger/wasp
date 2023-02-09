@@ -301,10 +301,10 @@ func TestEstimateGas(t *testing.T) {
 	}
 
 	getResult := func() int64 {
-		res, err := ch.CallView(sbtestsc.Contract.Name, sbtestsc.FuncViewCalcFibonacciResult.Name)
-		require.NoError(t, err)
-		n, err := codec.DecodeInt64(res.MustGet(sbtestsc.ParamN), 0)
-		require.NoError(t, err)
+		res, err2 := ch.CallView(sbtestsc.Contract.Name, sbtestsc.FuncViewCalcFibonacciResult.Name)
+		require.NoError(t, err2)
+		n, err2 := codec.DecodeInt64(res.MustGet(sbtestsc.ParamN), 0)
+		require.NoError(t, err2)
 		return n
 	}
 

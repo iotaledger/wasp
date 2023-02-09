@@ -81,8 +81,8 @@ func (s *dkSharesService) handleDKSharesPost(c echo.Context) error {
 	if req.PeerPubKeys != nil {
 		peerPubKeys = make([]*cryptolib.PublicKey, len(req.PeerPubKeys))
 		for i := range req.PeerPubKeys {
-			peerPubKey, err := cryptolib.NewPublicKeyFromString(req.PeerPubKeys[i])
-			if err != nil {
+			peerPubKey, err2 := cryptolib.NewPublicKeyFromString(req.PeerPubKeys[i])
+			if err2 != nil {
 				return httperrors.BadRequest(fmt.Sprintf("Invalid PeerPubKeys[%v]=%v", i, req.PeerPubKeys[i]))
 			}
 			peerPubKeys[i] = peerPubKey

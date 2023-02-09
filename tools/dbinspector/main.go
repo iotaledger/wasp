@@ -57,8 +57,8 @@ func printDbEntries(dbDir fs.DirEntry, dbpath string) {
 		accLen += usedSpace
 		dbKeysUsedSpace[k[0]] += usedSpace
 		if len(k) >= 5 {
-			hn, err := isc.HnameFromBytes(k[1:5])
-			if err == nil {
+			hn, err2 := isc.HnameFromBytes(k[1:5])
+			if err2 == nil {
 				fmt.Printf("HName: %s, key len: %d \t", hn, len(k))
 				hnameUsedSpace[hn] += usedSpace
 				hnameCount[hn]++

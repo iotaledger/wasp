@@ -48,8 +48,8 @@ func testPregenerateDKS(t *testing.T, n, f uint16) {
 	for i := range dksRegistries {
 		var dki tcrypto.DKShare
 		var dkb []byte
-		dki, err := dksRegistries[i].LoadDKShare(dksAddr)
-		require.Nil(t, err)
+		dki, err2 := dksRegistries[i].LoadDKShare(dksAddr)
+		require.Nil(t, err2)
 		if i > 0 {
 			// Remove it here to make serialized object smaller.
 			// Will restore it from dks[0].
