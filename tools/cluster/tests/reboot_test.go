@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -284,7 +283,7 @@ func TestRebootN3TwoNodes(t *testing.T) {
 
 // Test rebooting nodes during operation.
 func TestRebootDuringTasks(t *testing.T) {
-	testutil.RunHeavy(t)
+	//	testutil.RunHeavy(t)
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 
 	// keep the nodes spammed
@@ -322,18 +321,18 @@ func TestRebootDuringTasks(t *testing.T) {
 		require.NoError(t, err)
 		time.Sleep(20 * time.Second)
 
-	// after rebooting, the chain should resume processing requests/views without issues
-	ret, err := apiextensions.CallView(context.Background(), env.Clu.WaspClient(0), apiclient.ContractCallViewRequest{
-		ChainId:       env.Chain.ChainID.String(),
-		ContractHName: nativeIncCounterSCHname.String(),
-		FunctionHName: inccounter.ViewGetCounter.Hname().String(),
-	})
-	require.NoError(t, err)
+		// after rebooting, the chain should resume processing requests/views without issues
+		ret, err := apiextensions.CallView(context.Background(), env.Clu.WaspClient(0), apiclient.ContractCallViewRequest{
+			ChainId:       env.Chain.ChainID.String(),
+			ContractHName: nativeIncCounterSCHname.String(),
+			FunctionHName: inccounter.ViewGetCounter.Hname().String(),
+		})
+		require.NoError(t, err)
 
-	counter, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
-	require.NoError(t, err)
-	require.Greater(t, counter, lastCounter)
-	lastCounter = counter
+		counter, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
+		require.NoError(t, err)
+		require.Greater(t, counter, lastCounter)
+		lastCounter = counter
 
 		// assert the node still processes on/off-ledger requests
 		keyPair2, _, err := env.Clu.NewKeyPairWithFunds()
