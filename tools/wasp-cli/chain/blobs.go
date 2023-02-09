@@ -1,15 +1,18 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
@@ -26,13 +29,15 @@ func initStoreBlobCmd() *cobra.Command {
 		Short: "Store a blob in the chain",
 		Args:  cobra.MinimumNArgs(4),
 		Run: func(cmd *cobra.Command, args []string) {
-			uploadBlob(util.EncodeParams(args), config.MustWaspAPI())
+			uploadBlob(cliclients.WaspClientForIndex(), util.EncodeParams(args))
 		},
 	}
 }
 
-func uploadBlob(fieldValues dict.Dict, apiAddress string) (hash hashing.HashValue) {
-	hash, _, _, err := Client(apiAddress).UploadBlob(fieldValues)
+func uploadBlob(client *apiclient.APIClient, fieldValues dict.Dict) (hash hashing.HashValue) {
+	chainClient := cliclients.ChainClient(client)
+
+	hash, _, _, err := chainClient.UploadBlob(context.Background(), fieldValues)
 	log.Check(err)
 	log.Printf("uploaded blob to chain -- hash: %s", hash)
 	// TODO print receipt?
@@ -47,23 +52,28 @@ func initShowBlobCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			hash, err := hashing.HashValueFromHex(args[0])
 			log.Check(err)
-			fields, err := SCClient(blob.Contract.Hname()).CallView(
-				blob.ViewGetBlobInfo.Name,
-				dict.Dict{blob.ParamHash: hash.Bytes()},
-			)
+
+			client := cliclients.WaspClientForIndex()
+
+			blobInfo, _, err := client.
+				CorecontractsApi.
+				BlobsGetBlobInfo(context.Background(), config.GetCurrentChainID().String(), hash.Hex()).
+				Execute()
 			log.Check(err)
 
 			values := dict.New()
-			for field := range fields {
-				value, err := SCClient(blob.Contract.Hname()).CallView(
-					blob.ViewGetBlobField.Name,
-					dict.Dict{
-						blob.ParamHash:  hash.Bytes(),
-						blob.ParamField: []byte(field),
-					},
-				)
+			for field := range blobInfo.Fields {
+				value, _, err := client.
+					CorecontractsApi.
+					BlobsGetBlobValue(context.Background(), config.GetCurrentChainID().String(), hash.Hex(), field).
+					Execute()
+
 				log.Check(err)
-				values.Set(field, value[blob.ParamBytes])
+
+				decodedValue, err := iotago.DecodeHex(value.ValueData)
+				log.Check(err)
+
+				values.Set(kv.Key(field), []byte(decodedValue))
 			}
 			util.PrintDictAsJSON(values)
 		},
@@ -76,23 +86,24 @@ func initListBlobsCmd() *cobra.Command {
 		Short: "List blobs in chain",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			ret, err := SCClient(blob.Contract.Hname()).CallView(blob.ViewListBlobs.Name, nil)
+			client := cliclients.WaspClientForIndex()
+
+			blobsResponse, _, err := client.
+				CorecontractsApi.
+				BlobsGetAllBlobs(context.Background(), config.GetCurrentChainID().String()).
+				Execute()
+
 			log.Check(err)
 
-			blobs, err := blob.DecodeSizesMap(ret)
-			log.Check(err)
-
-			log.Printf("Total %d blob(s) in chain %s\n", len(ret), GetCurrentChainID())
+			log.Printf("Total %d blob(s) in chain %s\n", len(blobsResponse.Blobs), config.GetCurrentChainID())
 
 			header := []string{"hash", "size"}
-			rows := make([][]string, len(ret))
-			i := 0
-			for k, size := range blobs {
-				hash, err := codec.DecodeHashValue([]byte(k))
-				log.Check(err)
-				rows[i] = []string{hash.String(), fmt.Sprintf("%d", size)}
-				i++
+			rows := make([][]string, len(blobsResponse.Blobs))
+
+			for i, blob := range blobsResponse.Blobs {
+				rows[i] = []string{blob.Hash, fmt.Sprintf("%d", blob.Size)}
 			}
+
 			log.PrintTable(header, rows)
 		},
 	}

@@ -25,8 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi"
-	v1 "github.com/iotaledger/wasp/packages/webapi/v1"
-	v2 "github.com/iotaledger/wasp/packages/webapi/v2"
 )
 
 func init() {
@@ -91,7 +89,6 @@ func CreateEchoSwagger(e *echo.Echo, version string) echoswagger.ApiRoot {
 	return echoSwagger
 }
 
-//nolint:funlen
 func provide(c *dig.Container) error {
 	type webapiServerDeps struct {
 		dig.In
@@ -153,33 +150,7 @@ func provide(c *dig.Container) error {
 
 		echoSwagger := CreateEchoSwagger(e, deps.AppInfo.Version)
 
-		v1.Init(
-			Plugin.App().NewLogger("WebAPI/v1"),
-			echoSwagger,
-			deps.AppInfo.Version,
-			deps.NetworkProvider,
-			deps.TrustedNetworkManager,
-			deps.UserManager,
-			deps.ChainRecordRegistryProvider,
-			deps.DKShareRegistryProvider,
-			deps.NodeIdentityProvider,
-			func() *chains.Chains {
-				return deps.Chains
-			},
-			func() *dkg.Node {
-				return deps.Node
-			},
-			func() {
-				deps.ShutdownHandler.SelfShutdown("wasp was shutdown via API", false)
-			},
-			deps.NodeConnectionMetrics,
-			ParamsWebAPI.Auth,
-			ParamsWebAPI.NodeOwnerAddresses,
-			deps.APICacheTTL,
-			deps.PublisherPort,
-		)
-
-		v2.Init(
+		webapi.Init(
 			Plugin.App().NewLogger("WebAPI/v2"),
 			echoSwagger,
 			deps.AppInfo.Version,

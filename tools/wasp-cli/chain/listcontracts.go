@@ -1,10 +1,12 @@
 package chain
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -14,12 +16,14 @@ func initListContractsCmd() *cobra.Command {
 		Short: "List deployed contracts in chain",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			records, err := SCClient(root.Contract.Hname()).CallView(root.ViewGetContractRecords.Name, nil)
-			log.Check(err)
-			contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(records, root.StateVarContractRegistry))
+			client := cliclients.WaspClientForIndex()
+			contracts, _, err := client.ChainsApi.
+				GetContracts(context.Background(), config.GetCurrentChainID().String()).
+				Execute()
+
 			log.Check(err)
 
-			log.Printf("Total %d contracts in chain %s\n", len(contracts), GetCurrentChainID())
+			log.Printf("Total %d contracts in chain %s\n", len(contracts), config.GetCurrentChainID())
 
 			header := []string{
 				"hname",
@@ -31,12 +35,12 @@ func initListContractsCmd() *cobra.Command {
 			}
 			rows := make([][]string, len(contracts))
 			i := 0
-			for hname, c := range contracts {
+			for _, contract := range contracts {
 				rows[i] = []string{
-					hname.String(),
-					c.Name,
-					c.Description,
-					c.ProgramHash.String(),
+					contract.HName,
+					contract.Name,
+					contract.Description,
+					contract.ProgramHash,
 				}
 				i++
 			}

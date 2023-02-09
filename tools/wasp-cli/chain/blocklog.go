@@ -1,17 +1,17 @@
 package chain
 
 import (
+	"context"
 	"strconv"
 	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -35,49 +35,56 @@ func initBlockCmd() *cobra.Command {
 	}
 }
 
-func fetchBlockInfo(args []string) *blocklog.BlockInfo {
+func fetchBlockInfo(args []string) *apiclient.BlockInfoResponse {
+	client := cliclients.WaspClientForIndex()
+
 	if len(args) == 0 {
-		ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetBlockInfo.Name, nil)
+		blockInfo, _, err := client.
+			CorecontractsApi.
+			BlocklogGetLatestBlockInfo(context.Background(), config.GetCurrentChainID().String()).
+			Execute()
+
 		log.Check(err)
-		index, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
-		log.Check(err)
-		b, err := blocklog.BlockInfoFromBytes(index, ret.MustGet(blocklog.ParamBlockInfo))
-		log.Check(err)
-		return b
+		return blockInfo
 	}
+
 	index, err := strconv.Atoi(args[0])
 	log.Check(err)
-	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetBlockInfo.Name, dict.Dict{
-		blocklog.ParamBlockIndex: codec.EncodeUint32(uint32(index)),
-	})
+
+	blockInfo, _, err := client.
+		CorecontractsApi.
+		BlocklogGetBlockInfo(context.Background(), config.GetCurrentChainID().String(), uint32(index)).
+		Execute()
+
 	log.Check(err)
-	b, err := blocklog.BlockInfoFromBytes(uint32(index), ret.MustGet(blocklog.ParamBlockInfo))
-	log.Check(err)
-	return b
+
+	return blockInfo
 }
 
 func logRequestsInBlock(index uint32) {
-	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetRequestReceiptsForBlock.Name, dict.Dict{
-		blocklog.ParamBlockIndex: codec.EncodeUint32(index),
-	})
+	client := cliclients.WaspClientForIndex()
+	receipts, _, err := client.CorecontractsApi.
+		BlocklogGetRequestReceiptsOfBlock(context.Background(), config.GetCurrentChainID().String(), index).
+		Execute()
+
 	log.Check(err)
-	arr := collections.NewArray16ReadOnly(ret, blocklog.ParamRequestRecord)
-	for i := uint16(0); i < arr.MustLen(); i++ {
-		receipt, err := blocklog.RequestReceiptFromBytes(arr.MustGetAt(i))
-		log.Check(err)
-		logReceipt(receipt, i)
+
+	for i, receipt := range receipts.Receipts {
+		logReceipt(&receipt, i)
 	}
 }
 
-func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
+func logReceipt(receipt *apiclient.RequestReceiptResponse, index ...int) {
 	req := receipt.Request
 
 	kind := "on-ledger"
-	if req.IsOffLedger() {
+	if req.IsOffLedger {
 		kind = "off-ledger"
 	}
 
-	args := req.Params()
+	args, err := apiextensions.APIJsonDictToDict(req.Params)
+	log.Check(err)
+
 	var argsTree interface{} = "(empty)"
 	if len(args) > 0 {
 		argsTree = args
@@ -85,35 +92,33 @@ func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 
 	errMsg := "(empty)"
 	if receipt.Error != nil {
-		resolved, err := errors.Resolve(receipt.Error, func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
-			return SCClient(isc.Hn(contractName)).CallView(funcName, params)
-		})
-		log.Check(err)
-		errMsg = resolved.Error()
+		errMsg = receipt.Error.ErrorMessage
 	}
 
 	tree := []log.TreeItem{
 		{K: "Kind", V: kind},
-		{K: "Sender", V: req.SenderAccount().String()},
-		{K: "Contract Hname", V: req.CallTarget().Contract.String()},
-		{K: "Entry point", V: req.CallTarget().EntryPoint.String()},
+		{K: "Sender", V: req.SenderAccount},
+		{K: "Contract Hname", V: req.CallTarget.ContractHName},
+		{K: "Function Hname", V: req.CallTarget.FunctionHName},
 		{K: "Arguments", V: argsTree},
 		{K: "Error", V: errMsg},
 	}
 	if len(index) > 0 {
-		log.Printf("Request #%d (%s):\n", index[0], req.ID().String())
+		log.Printf("Request #%d (%s):\n", index[0], req.RequestId)
 	} else {
-		log.Printf("Request %s:\n", req.ID().String())
+		log.Printf("Request %s:\n", req.RequestId)
 	}
 	log.PrintTree(tree, 2, 2)
 }
 
 func logEventsInBlock(index uint32) {
-	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetEventsForBlock.Name, dict.Dict{
-		blocklog.ParamBlockIndex: codec.EncodeUint32(index),
-	})
+	client := cliclients.WaspClientForIndex()
+	events, _, err := client.CorecontractsApi.
+		BlocklogGetEventsOfBlock(context.Background(), config.GetCurrentChainID().String(), index).
+		Execute()
+
 	log.Check(err)
-	logEvents(ret)
+	logEvents(events)
 }
 
 func initRequestCmd() *cobra.Command {
@@ -124,18 +129,17 @@ func initRequestCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			reqID, err := isc.RequestIDFromString(args[0])
 			log.Check(err)
-			ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetRequestReceipt.Name, dict.Dict{
-				blocklog.ParamRequestID: codec.EncodeRequestID(reqID),
-			})
+
+			client := cliclients.WaspClientForIndex()
+			receipt, _, err := client.CorecontractsApi.
+				BlocklogGetRequestReceipt(context.Background(), config.GetCurrentChainID().String(), reqID.String()).
+				Execute()
+
 			log.Check(err)
 
-			blockIndex, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
-			log.Check(err)
-			receipt, err := blocklog.RequestReceiptFromBytes(ret.MustGet(blocklog.ParamRequestRecord))
-			log.Check(err)
-
-			log.Printf("Request found in block %d\n\n", blockIndex)
+			log.Printf("Request found in block %d\n\n", receipt.BlockIndex)
 			logReceipt(receipt)
+
 			log.Printf("\n")
 			logEventsInRequest(reqID)
 			log.Printf("\n")
@@ -144,20 +148,23 @@ func initRequestCmd() *cobra.Command {
 }
 
 func logEventsInRequest(reqID isc.RequestID) {
-	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetEventsForRequest.Name, dict.Dict{
-		blocklog.ParamRequestID: codec.EncodeRequestID(reqID),
-	})
+	client := cliclients.WaspClientForIndex()
+	events, _, err := client.CorecontractsApi.
+		BlocklogGetEventsOfRequest(context.Background(), config.GetCurrentChainID().String(), reqID.String()).
+		Execute()
+
 	log.Check(err)
-	logEvents(ret)
+	logEvents(events)
 }
 
-func logEvents(ret dict.Dict) {
-	arr := collections.NewArray16ReadOnly(ret, blocklog.ParamEvent)
+func logEvents(ret *apiclient.EventsResponse) {
 	header := []string{"event"}
-	rows := make([][]string, arr.MustLen())
-	for i := uint16(0); i < arr.MustLen(); i++ {
-		rows[i] = []string{string(arr.MustGetAt(i))}
+	rows := make([][]string, len(ret.Events))
+
+	for i, event := range ret.Events {
+		rows[i] = []string{event}
 	}
-	log.Printf("Total %d events\n", arr.MustLen())
+
+	log.Printf("Total %d events\n", len(ret.Events))
 	log.PrintTable(header, rows)
 }

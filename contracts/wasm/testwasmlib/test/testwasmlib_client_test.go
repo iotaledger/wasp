@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
 	"github.com/iotaledger/wasp/packages/cryptolib"

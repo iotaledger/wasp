@@ -4,9 +4,11 @@
 package peering
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -16,14 +18,16 @@ func initListTrustedCmd() *cobra.Command {
 		Short: "List trusted wasp nodes.",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			trustedList, err := config.WaspClient(config.MustWaspAPI()).GetPeeringTrustedList()
+			client := cliclients.WaspClientForIndex()
+			trustedList, _, err := client.NodeApi.GetTrustedPeers(context.Background()).Execute()
 			log.Check(err)
+
 			header := []string{"PubKey", "NetID"}
 			rows := make([][]string, len(trustedList))
 			for i := range rows {
 				rows[i] = []string{
-					trustedList[i].PubKey,
-					trustedList[i].NetID,
+					trustedList[i].PublicKey,
+					trustedList[i].NetId,
 				}
 			}
 			log.PrintTable(header, rows)

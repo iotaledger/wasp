@@ -4,9 +4,12 @@
 package chain
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -21,18 +24,22 @@ func initPermitionlessAccessNodesCmd() *cobra.Command {
 			if nodes == nil {
 				nodes = GetAllWaspNodes()
 			}
-			chainID := GetCurrentChainID()
+			chainID := config.GetCurrentChainID()
 			action := args[0]
 			pubKey := args[1]
 
 			for _, i := range nodes {
-				client := config.WaspClient(config.MustWaspAPI(i))
+				client := cliclients.WaspClientForIndex(i)
 				switch action {
 				case "add":
-					err := client.AddAccessNode(chainID, pubKey)
+					_, err := client.ChainsApi.
+						AddAccessNode(context.Background(), chainID.String(), pubKey).
+						Execute()
 					log.Check(err)
 				case "remove":
-					err := client.RemoveAccessNode(chainID, pubKey)
+					_, err := client.ChainsApi.
+						RemoveAccessNode(context.Background(), chainID.String(), pubKey).
+						Execute()
 					log.Check(err)
 				default:
 					log.Fatalf("unknown action: %s", action)

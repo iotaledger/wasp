@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/core/app"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	v2 "github.com/iotaledger/wasp/packages/webapi/v2"
+	v2 "github.com/iotaledger/wasp/packages/webapi"
 	"github.com/iotaledger/wasp/plugins/webapi"
 )
 

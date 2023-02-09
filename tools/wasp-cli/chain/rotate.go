@@ -12,9 +12,10 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
+	cliwallet "github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 )
 
 func initRotateCmd() *cobra.Command {
@@ -23,16 +24,15 @@ func initRotateCmd() *cobra.Command {
 		Short: "Issues a tx that changes the chain state controller",
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			l1Client := config.L1Client()
+			l1Client := cliclients.L1Client()
 			prefix, newStateControllerAddr, err := iotago.ParseBech32(args[0])
 			log.Check(err)
 			if parameters.L1().Protocol.Bech32HRP != prefix {
 				log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.L1().Protocol.Bech32HRP, prefix)
 			}
 
-			wallet := wallet.Load()
-
-			aliasID := GetCurrentChainID().AsAliasID()
+			wallet := cliwallet.Load()
+			aliasID := config.GetCurrentChainID().AsAliasID()
 
 			chainOutputID, chainOutput, err := l1Client.GetAliasOutput(aliasID)
 			log.Check(err)

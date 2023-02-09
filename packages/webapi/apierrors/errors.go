@@ -1,0 +1,55 @@
+package apierrors
+
+import (
+	"errors"
+	"fmt"
+	"net/http"
+	"strings"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
+)
+
+func ChainNotFoundError(chainID string) *HTTPError {
+	return NewHTTPError(http.StatusNotFound, fmt.Sprintf("Chain ID: %v not found", chainID), nil)
+}
+
+func UserNotFoundError(username string) *HTTPError {
+	return NewHTTPError(http.StatusNotFound, fmt.Sprintf("User: %v not found", username), nil)
+}
+
+func BodyIsEmptyError() *HTTPError {
+	return InvalidPropertyError("body", errors.New("a valid body is required"))
+}
+
+func InvalidPeerPublicKeys(invalidPeerPubKeys []string) *HTTPError {
+	joinedKeys := strings.Join(invalidPeerPubKeys, ";")
+	return NewHTTPError(http.StatusBadRequest, "invalid peer public keys", errors.New(joinedKeys))
+}
+
+func InvalidPropertyError(propertyName string, err error) *HTTPError {
+	return NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid property: %v", propertyName), err)
+}
+
+func PeerNotFoundError(publicKey *cryptolib.PublicKey) *HTTPError {
+	return NewHTTPError(http.StatusNotFound, fmt.Sprintf("couldn't find peer with public key %s", publicKey.String()), nil)
+}
+
+func ContractExecutionError(err error) *HTTPError {
+	return NewHTTPError(http.StatusBadRequest, "Failed to execute contract request", err)
+}
+
+func InvalidOffLedgerRequestError(err error) *HTTPError {
+	return NewHTTPError(http.StatusBadRequest, "Supplied offledger request is invalid", err)
+}
+
+func NoRecordFoundErrror(err error) *HTTPError {
+	return NewHTTPError(http.StatusNotFound, "Record not found", err)
+}
+
+func ReceiptError(err error) *HTTPError {
+	return NewHTTPError(http.StatusBadRequest, "Failed to get receipt", err)
+}
+
+func InternalServerError(err error) *HTTPError {
+	return NewHTTPError(http.StatusInternalServerError, "Unknown error has occoured", err)
+}

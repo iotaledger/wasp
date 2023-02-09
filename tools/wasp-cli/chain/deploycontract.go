@@ -1,9 +1,12 @@
 package chain
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -11,7 +14,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
@@ -22,7 +26,7 @@ func initDeployContractCmd() *cobra.Command {
 		Short: "Deploy a contract in the chain",
 		Args:  cobra.MinimumNArgs(4),
 		Run: func(cmd *cobra.Command, args []string) {
-			apiAddress := config.MustWaspAPI()
+			client := cliclients.WaspClientForIndex()
 			vmtype := args[0]
 			name := args[1]
 			description := args[2]
@@ -46,22 +50,22 @@ func initDeployContractCmd() *cobra.Command {
 					blob.VarFieldProgramDescription: description,
 					blob.VarFieldProgramBinary:      util.ReadFile(filename),
 				})
-				progHash = uploadBlob(blobFieldValues, apiAddress)
+				progHash = uploadBlob(client, blobFieldValues)
 			}
-			deployContract(name, description, progHash, initParams, apiAddress)
+			deployContract(client, name, description, progHash, initParams)
 		},
 	}
 }
 
-func deployContract(name, description string, progHash hashing.HashValue, initParams dict.Dict, apiAddress string) {
-	util.WithOffLedgerRequest(GetCurrentChainID(), func() (isc.OffLedgerRequest, error) {
+func deployContract(client *apiclient.APIClient, name, description string, progHash hashing.HashValue, initParams dict.Dict) {
+	util.WithOffLedgerRequest(config.GetCurrentChainID(), func() (isc.OffLedgerRequest, error) {
 		args := codec.MakeDict(map[string]interface{}{
 			root.ParamName:        name,
 			root.ParamDescription: description,
 			root.ParamProgramHash: progHash,
 		})
 		args.Extend(initParams)
-		return Client(apiAddress).PostOffLedgerRequest(
+		return cliclients.ChainClient(client).PostOffLedgerRequest(context.Background(),
 			root.Contract.Hname(),
 			root.FuncDeployContract.Hname(),
 			chainclient.PostRequestParams{

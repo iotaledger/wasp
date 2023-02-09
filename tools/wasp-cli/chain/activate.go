@@ -1,17 +1,16 @@
 package chain
 
 import (
-	"regexp"
+	"context"
+	"net/http"
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
-
-var HTTP404ErrRegexp = regexp.MustCompile(`"Code":404`)
 
 func initActivateCmd() *cobra.Command {
 	var nodes []int
@@ -20,26 +19,38 @@ func initActivateCmd() *cobra.Command {
 		Short: "Activates the chain on selected nodes",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			chainID := GetCurrentChainID()
+			chainID := config.GetCurrentChainID()
 			if nodes == nil {
 				nodes = GetAllWaspNodes()
 			}
 			for _, nodeIdx := range nodes {
-				client := Client(config.WaspAPI(nodeIdx))
-				r, err := client.WaspClient.GetChainInfo(chainID)
+				client := cliclients.WaspClientForIndex(nodeIdx)
 
-				if err != nil && !HTTP404ErrRegexp.MatchString(err.Error()) {
+				r, httpStatus, err := client.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute()
+
+				if err != nil && httpStatus.StatusCode != http.StatusNotFound {
 					log.Check(err)
 				}
-				if r != nil && r.Active {
+
+				if r != nil && r.IsActive {
 					continue
 				}
+
 				if r == nil {
-					log.Check(client.WaspClient.PutChainRecord(registry.NewChainRecord(chainID, true, []*cryptolib.PublicKey{})))
+					_, err := client.ChainsApi.SetChainRecord(context.Background(), chainID.String()).ChainRecord(apiclient.ChainRecord{
+						IsActive:    true,
+						AccessNodes: []string{},
+					}).Execute()
+
+					log.Check(err)
 				} else {
-					log.Check(client.WaspClient.ActivateChain(chainID))
+					_, err = client.ChainsApi.ActivateChain(context.Background(), chainID.String()).Execute()
+
+					log.Check(err)
 				}
 			}
+
+			log.Printf("Chain activated")
 		},
 	}
 
@@ -55,12 +66,15 @@ func initDeactivateCmd() *cobra.Command {
 		Short: "Deactivates the chain on selected nodes",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			chainID := GetCurrentChainID()
+			chainID := config.GetCurrentChainID()
 			if nodes == nil {
 				nodes = GetAllWaspNodes()
 			}
 			for _, nodeIdx := range nodes {
-				log.Check(Client(config.WaspAPI(nodeIdx)).WaspClient.DeactivateChain(chainID))
+				client := cliclients.WaspClientForIndex(nodeIdx)
+
+				_, err := client.ChainsApi.DeactivateChain(context.Background(), chainID.String()).Execute()
+				log.Check(err)
 			}
 		},
 	}

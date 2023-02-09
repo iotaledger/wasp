@@ -3,8 +3,10 @@ package tests
 import (
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -59,10 +61,13 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) {
 		contractRegistry, err := e.Chain.ContractRegistry(i)
 		require.NoError(e.t, err)
 
-		cr := contractRegistry[nativeIncCounterSCHname]
+		cr, ok := lo.Find(contractRegistry, func(item apiclient.ContractInfoResponse) bool {
+			return item.HName == nativeIncCounterSCHname.String()
+		})
+		require.True(e.t, ok)
 		require.NotNil(e.t, cr)
 
-		require.EqualValues(e.t, programHash, cr.ProgramHash)
+		require.EqualValues(e.t, programHash.Hex(), cr.ProgramHash)
 		require.EqualValues(e.t, description, cr.Description)
 		require.EqualValues(e.t, cr.Name, nativeIncCounterSCName)
 

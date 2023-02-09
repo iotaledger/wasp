@@ -1,6 +1,10 @@
 package chain
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/spf13/cobra"
+
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
+)
 
 func initAddChainCmd() *cobra.Command {
 	return &cobra.Command{
@@ -8,7 +12,7 @@ func initAddChainCmd() *cobra.Command {
 		Short: "adds a chain to the list of chains",
 		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			AddChainAlias(args[0], args[1])
+			config.AddChainAlias(args[0], args[1])
 		},
 	}
 }

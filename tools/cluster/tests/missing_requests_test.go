@@ -1,12 +1,15 @@
 package tests
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/client/chainclient"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -44,18 +47,24 @@ func TestMissingRequests(t *testing.T) {
 	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 
+	// TODO: Validate offleder logic
 	// send off-ledger request to all nodes except #3
 	req := isc.NewOffLedgerRequest(chainID, nativeIncCounterSCHname, inccounter.FuncIncCounter.Hname(), dict.Dict{}, 0).Sign(userWallet)
 
-	err = clu.WaspClient(0).PostOffLedgerRequest(chainID, req)
-	require.NoError(t, err)
-	err = clu.WaspClient(1).PostOffLedgerRequest(chainID, req)
+	_, err = clu.WaspClient(0).RequestsApi.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
+		ChainId: chainID.String(),
+		Request: iotago.EncodeHex(req.Bytes()),
+	}).Execute()
 	require.NoError(t, err)
 
 	//------
 	// send a dummy request to node #3, so that it proposes a batch and the consensus hang is broken
 	req2 := isc.NewOffLedgerRequest(chainID, isc.Hn("foo"), isc.Hn("bar"), nil, 1).Sign(userWallet)
-	err = clu.WaspClient(3).PostOffLedgerRequest(chainID, req2)
+
+	_, err = clu.WaspClient(0).RequestsApi.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
+		ChainId: chainID.String(),
+		Request: iotago.EncodeHex(req2.Bytes()),
+	}).Execute()
 	require.NoError(t, err)
 	//-------
 

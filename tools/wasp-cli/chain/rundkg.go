@@ -4,16 +4,19 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"os"
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -36,14 +39,20 @@ func initRunDKGCmd() *cobra.Command {
 			}
 
 			committeePubKeys := make([]string, 0)
-			for _, api := range config.CommitteeAPI(committee) {
-				peerInfo, err := client.NewWaspClient(api).GetPeeringSelf()
+			for _, apiIndex := range committee {
+				peerInfo, _, err := cliclients.WaspClientForIndex(apiIndex).NodeApi.GetPeeringIdentity(context.Background()).Execute()
 				log.Check(err)
-				committeePubKeys = append(committeePubKeys, peerInfo.PubKey)
+
+				committeePubKeys = append(committeePubKeys, peerInfo.PublicKey)
 			}
 
 			dkgInitiatorIndex := uint16(rand.Intn(len(committee)))
-			stateControllerAddr, err := apilib.RunDKG(config.GetToken(), config.CommitteeAPI(committee), committeePubKeys, uint16(quorum), dkgInitiatorIndex)
+
+			var clientResolver multiclient.ClientResolver = func(apiHost string) *apiclient.APIClient {
+				return cliclients.WaspClientForHostName(apiHost)
+			}
+
+			stateControllerAddr, err := apilib.RunDKG(clientResolver, config.CommitteeAPIURL(committee), committeePubKeys, uint16(quorum), dkgInitiatorIndex)
 			log.Check(err)
 
 			fmt.Fprintf(os.Stdout, "DKG successful, address: %s", stateControllerAddr.Bech32(parameters.L1().Protocol.Bech32HRP))

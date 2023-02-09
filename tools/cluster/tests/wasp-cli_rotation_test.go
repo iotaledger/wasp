@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -82,23 +84,33 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 	// adds node #0 from cluster2 as access node of the chain
 	{
-		node0peerInfo, err := w2.Cluster.WaspClient(0).GetPeeringSelf()
+		node0peerInfo, _, err := w2.Cluster.WaspClient(0).NodeApi.
+			GetPeeringIdentity(context.Background()).
+			Execute()
 		require.NoError(t, err)
 
 		// set trust relations between node0 of cluster 2 and all nodes of cluster 1
-		w.Cluster.AddTrustedNode(node0peerInfo)
+		err = w.Cluster.AddTrustedNode(apiclient.PeeringTrustRequest{
+			PublicKey: node0peerInfo.PublicKey,
+			NetId:     node0peerInfo.NetId,
+		})
+		require.NoError(t, err)
+
 		cluster1PubKeys := make([]*cryptolib.PublicKey, len(w.Cluster.AllNodes()))
 		for _, nodeIndex := range w.Cluster.Config.AllNodes() {
 			// equivalent of "wasp-cli peer info"
-			peerInfo, err := w.Cluster.WaspClient(nodeIndex).GetPeeringSelf()
+			peerInfo, _, err := w.Cluster.WaspClient(nodeIndex).NodeApi.
+				GetPeeringIdentity(context.Background()).
+				Execute()
 			require.NoError(t, err)
-			w2.MustRun("peering", "trust", peerInfo.PubKey, peerInfo.NetID)
-			cluster1PubKeys[nodeIndex], err = cryptolib.NewPublicKeyFromString(peerInfo.PubKey)
+
+			w2.MustRun("peering", "trust", peerInfo.PublicKey, peerInfo.NetId)
+			cluster1PubKeys[nodeIndex], err = cryptolib.NewPublicKeyFromString(peerInfo.PublicKey)
 			require.NoError(t, err)
 		}
 
 		// add node 0 from cluster 2 as an access node in the governance contract
-		pubKey, err := cryptolib.NewPublicKeyFromString(node0peerInfo.PubKey)
+		pubKey, err := cryptolib.NewPublicKeyFromString(node0peerInfo.PublicKey)
 		require.NoError(t, err)
 
 		addAccessNode(w, pubKey.String())

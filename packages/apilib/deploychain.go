@@ -10,7 +10,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client/multiclient"
+	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -34,14 +34,13 @@ type CreateChainParams struct {
 	Prefix               string
 	InitParams           dict.Dict
 	GovernanceController iotago.Address
-	AuthenticationToken  string
 }
 
 // DeployChainWithDKG performs all actions needed to deploy the chain
 // TODO: [KP] Shouldn't that be in the client packages?
-func DeployChainWithDKG(par CreateChainParams) (isc.ChainID, iotago.Address, error) {
+func DeployChainWithDKG(clientResolver multiclient.ClientResolver, par CreateChainParams) (isc.ChainID, iotago.Address, error) {
 	dkgInitiatorIndex := uint16(rand.Intn(len(par.CommitteeAPIHosts)))
-	stateControllerAddr, err := RunDKG(par.AuthenticationToken, par.CommitteeAPIHosts, par.CommitteePubKeys, par.T, dkgInitiatorIndex)
+	stateControllerAddr, err := RunDKG(clientResolver, par.CommitteeAPIHosts, par.CommitteePubKeys, par.T, dkgInitiatorIndex)
 	if err != nil {
 		return isc.ChainID{}, nil, err
 	}
@@ -49,7 +48,7 @@ func DeployChainWithDKG(par CreateChainParams) (isc.ChainID, iotago.Address, err
 	if par.GovernanceController != nil {
 		govControllerAddr = par.GovernanceController
 	}
-	chainID, err := DeployChain(par, stateControllerAddr, govControllerAddr)
+	chainID, err := DeployChain(clientResolver, par, stateControllerAddr, govControllerAddr)
 	if err != nil {
 		return isc.ChainID{}, nil, err
 	}
@@ -59,7 +58,7 @@ func DeployChainWithDKG(par CreateChainParams) (isc.ChainID, iotago.Address, err
 // DeployChain creates a new chain on specified committee address
 // noinspection ALL
 
-func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr iotago.Address) (isc.ChainID, error) {
+func DeployChain(clientResolver multiclient.ClientResolver, par CreateChainParams, stateControllerAddr, govControllerAddr iotago.Address) (isc.ChainID, error) {
 	var err error
 	textout := io.Discard
 	if par.Textout != nil {
@@ -93,7 +92,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 	fmt.Fprintf(textout, "creating chain origin and init transaction %s.. OK\n", txID.ToHex())
 	fmt.Fprint(textout, "sending committee record to nodes.. OK\n")
 
-	err = ActivateChainOnNodes(par.AuthenticationToken, par.CommitteeAPIHosts, chainID)
+	err = ActivateChainOnNodes(clientResolver, par.CommitteeAPIHosts, chainID)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.String(), err)
@@ -102,9 +101,9 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 	fmt.Fprintf(textout, "activating chain %s.. OK.\n", chainID.String())
 
 	// ---------- wait until the request is processed at least in all committee nodes
-	_, err = multiclient.New(par.CommitteeAPIHosts).
-		WithToken(par.AuthenticationToken).
+	_, err = multiclient.New(clientResolver, par.CommitteeAPIHosts).
 		WaitUntilAllRequestsProcessedSuccessfully(chainID, initRequestTx, 30*time.Second)
+
 	if err != nil {
 		fmt.Fprintf(textout, "waiting root init request transaction.. FAILED: %v\n", err)
 		return isc.ChainID{}, fmt.Errorf("DeployChain: %w", err)
@@ -188,8 +187,8 @@ func CreateChainOrigin(
 }
 
 // ActivateChainOnNodes puts chain records into nodes and activates its
-func ActivateChainOnNodes(authToken string, apiHosts []string, chainID isc.ChainID) error {
-	nodes := multiclient.New(apiHosts).WithToken(authToken)
+func ActivateChainOnNodes(clientResolver multiclient.ClientResolver, apiHosts []string, chainID isc.ChainID) error {
+	nodes := multiclient.New(clientResolver, apiHosts)
 	// ------------ put chain records to hosts
 	return nodes.PutChainRecord(registry.NewChainRecord(chainID, true, []*cryptolib.PublicKey{}))
 }

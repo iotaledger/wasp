@@ -1,0 +1,16 @@
+[
+  {
+    "chainId": "tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v",
+    "chainOwnerId": "tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e",
+    "evmChainId": 1074,
+    "description": "",
+    "gasFeePolicy": {
+      "gasFeeTokenId": "",
+      "gasPerToken": "100",
+      "validatorFeeShare": 0
+    },
+    "maxBlobSize": 2000000,
+    "maxEventSize": 2000,
+    "maxEventsPerReq": 50
+  }
+]

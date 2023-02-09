@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -8,7 +9,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -20,14 +21,21 @@ func initConsensusMetricsCmd() *cobra.Command {
 		Short: "Show current value of collected metrics of consensus",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := config.WaspClient(config.MustWaspAPI())
+			client := cliclients.WaspClientForIndex()
 			_, chainAddress, err := iotago.ParseBech32(chainAlias)
 			log.Check(err)
+
 			chainID := isc.ChainIDFromAddress(chainAddress.(*iotago.AliasAddress))
-			workflowStatus, err := client.GetChainConsensusWorkflowStatus(chainID)
+			workflowStatus, _, err := client.MetricsApi.
+				GetChainWorkflowMetrics(context.Background(), chainID.String()).
+				Execute()
 			log.Check(err)
-			pipeMetrics, err := client.GetChainConsensusPipeMetrics(chainID)
+
+			pipeMetrics, _, err := client.MetricsApi.
+				GetChainPipeMetrics(context.Background(), chainID.String()).
+				Execute()
 			log.Check(err)
+
 			header := []string{"Flag name", "Value", "Last time set"}
 			table := make([][]string, 15)
 			table[0] = makeWorkflowTableRow("State received", workflowStatus.FlagStateReceived, time.Time{})

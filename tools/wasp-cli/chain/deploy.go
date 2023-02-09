@@ -4,6 +4,7 @@
 package chain
 
 import (
+	"context"
 	"math"
 	"os"
 	"strconv"
@@ -12,6 +13,8 @@ import (
 	"github.com/spf13/viper"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -19,9 +22,10 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 )
 
 func GetAllWaspNodes() []int {
@@ -73,7 +77,7 @@ func initDeployCmd() *cobra.Command {
 		Short: "Deploy a new chain",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			l1Client := config.L1Client()
+			l1Client := cliclients.L1Client()
 
 			if committee == nil {
 				committee = GetAllWaspNodes()
@@ -88,16 +92,19 @@ func initDeployCmd() *cobra.Command {
 			}
 
 			committeePubKeys := make([]string, 0)
-			for _, api := range config.CommitteeAPI(committee) {
-				peerInfo, err := config.WaspClient(api).GetPeeringSelf()
+			for _, apiIndex := range committee {
+				peerInfo, _, err := cliclients.WaspClientForIndex(apiIndex).NodeApi.GetPeeringIdentity(context.Background()).Execute()
 				log.Check(err)
-				committeePubKeys = append(committeePubKeys, peerInfo.PubKey)
+				committeePubKeys = append(committeePubKeys, peerInfo.PublicKey)
 			}
 
-			chainid, _, err := apilib.DeployChainWithDKG(apilib.CreateChainParams{
-				AuthenticationToken:  config.GetToken(),
+			var clientResolver multiclient.ClientResolver = func(apiHost string) *apiclient.APIClient {
+				return cliclients.WaspClientForHostName(apiHost)
+			}
+
+			chainid, _, err := apilib.DeployChainWithDKG(clientResolver, apilib.CreateChainParams{
 				Layer1Client:         l1Client,
-				CommitteeAPIHosts:    config.CommitteeAPI(committee),
+				CommitteeAPIHosts:    config.CommitteeAPIURL(committee),
 				CommitteePubKeys:     committeePubKeys,
 				N:                    uint16(len(committee)),
 				T:                    uint16(quorum),
@@ -116,11 +123,11 @@ func initDeployCmd() *cobra.Command {
 
 			var alias string
 			if len(args) == 0 {
-				alias = GetChainAlias()
+				alias = config.GetChainAlias()
 			} else {
 				alias = args[0]
 			}
-			AddChainAlias(alias, chainid.String())
+			config.AddChainAlias(alias, chainid.String())
 		},
 	}
 

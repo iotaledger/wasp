@@ -14,7 +14,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -143,11 +143,21 @@ func PrintCLIOutput(output CLIOutput) {
 
 func Check(err error) {
 	if err != nil {
-		if errors.Is(err, client.ErrNotAuthorized) {
-			err = errors.New("unauthorized request: are you logged in? (wasp-cli login)")
+		errorModel := &ErrorModel{err.Error()}
+		apiError, ok := apiextensions.AsAPIError(err)
+
+		if ok {
+			if strings.Contains(apiError.Error, "404") {
+				err = errors.New("unauthorized request: are you logged in? (wasp-cli login)")
+			} else {
+				errorModel.Error = apiError.Error
+
+				if apiError.DetailError != nil {
+					errorModel.Error += "\n" + apiError.DetailError.Error + "\n" + apiError.DetailError.Message
+				}
+			}
 		}
 
-		errorModel := &ErrorModel{err.Error()}
 		message, _ := GetCLIOutputText(errorModel)
 		Fatalf("%v", message)
 	}

@@ -1,19 +1,21 @@
 package chain
 
 import (
+	"context"
 	"strings"
 
 	"github.com/spf13/cobra"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
-	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 )
 
 func initListAccountsCmd() *cobra.Command {
@@ -22,18 +24,18 @@ func initListAccountsCmd() *cobra.Command {
 		Short: "List L2 accounts",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.ViewAccounts.Name, nil)
+			client := cliclients.WaspClientForIndex()
+			chainID := config.GetCurrentChainID()
+
+			accountList, _, err := client.CorecontractsApi.AccountsGetAccounts(context.Background(), chainID.String()).Execute()
 			log.Check(err)
 
-			log.Printf("Total %d account(s) in chain %s\n", len(ret), GetCurrentChainID().String())
+			log.Printf("Total %d account(s) in chain %s\n", len(accountList.Accounts), config.GetCurrentChainID().String())
 
 			header := []string{"agentid"}
-			rows := make([][]string, len(ret))
-			i := 0
-			for k := range ret {
-				agentID, err := codec.DecodeAgentID([]byte(k))
-				log.Check(err)
-				rows[i] = []string{agentID.String()}
+			rows := make([][]string, len(accountList.Accounts))
+			for i, account := range accountList.Accounts {
+				rows[i] = []string{account}
 				i++
 			}
 			log.PrintTable(header, rows)
@@ -56,25 +58,20 @@ func initBalanceCmd() *cobra.Command {
 				log.Check(err)
 			}
 
-			ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.ViewBalance.Name, dict.Dict{
-				accounts.ParamAgentID: agentID.Bytes(),
-			})
+			client := cliclients.WaspClientForIndex()
+			chainID := config.GetCurrentChainID()
+			balance, _, err := client.CorecontractsApi.AccountsGetAccountBalance(context.Background(), chainID.String(), agentID.String()).Execute()
+
 			log.Check(err)
 
 			header := []string{"token", "amount"}
-			rows := make([][]string, len(ret))
-			i := 0
-			for k, v := range ret {
-				tokenStr := util.BaseTokenStr
-				if !isc.IsBaseToken([]byte(k)) {
-					tokenStr = codec.MustDecodeNativeTokenID([]byte(k)).String()
-				}
-				bal, err := codec.DecodeBigIntAbs(v)
-				log.Check(err)
+			rows := make([][]string, len(balance.NativeTokens)+1)
 
-				rows[i] = []string{tokenStr, bal.String()}
-				i++
+			rows[0] = []string{"base", balance.BaseTokens}
+			for k, v := range balance.NativeTokens {
+				rows[k+1] = []string{v.Id, v.Amount}
 			}
+
 			log.PrintTable(header, rows)
 		},
 	}
@@ -91,8 +88,10 @@ func initDepositCmd() *cobra.Command {
 			if strings.Contains(args[0], ":") {
 				// deposit to own agentID
 				tokens := util.ParseFungibleTokens(args)
-				util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
-					return SCClient(accounts.Contract.Hname()).PostRequest(
+				util.WithSCTransaction(config.GetCurrentChainID(), func() (*iotago.Transaction, error) {
+					client := cliclients.WaspClientForIndex()
+
+					return cliclients.SCClient(client, accounts.Contract.Hname()).PostRequest(
 						accounts.FuncDeposit.Name,
 						chainclient.PostRequestParams{
 							Transfer:                 tokens,
@@ -108,8 +107,10 @@ func initDepositCmd() *cobra.Command {
 				tokens := util.ParseFungibleTokens(tokensStr)
 				allowance := tokens.Clone()
 
-				util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
-					return SCClient(accounts.Contract.Hname()).PostRequest(
+				util.WithSCTransaction(config.GetCurrentChainID(), func() (*iotago.Transaction, error) {
+					client := cliclients.WaspClientForIndex()
+
+					return cliclients.SCClient(client, accounts.Contract.Hname()).PostRequest(
 						accounts.FuncTransferAllowanceTo.Name,
 						chainclient.PostRequestParams{
 							Args: dict.Dict{
