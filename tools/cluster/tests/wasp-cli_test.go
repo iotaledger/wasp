@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/big"
 	"os"
@@ -495,7 +494,7 @@ func TestWaspCLITrustListImport(t *testing.T) {
 	// import the trust from cluster2/node0 to cluster2/node1
 	trustedOut := w2.MustRun("peering", "list-trusted", "--node=0", "--json")
 	// create temporary file to be consumed by the import command
-	file, err := ioutil.TempFile("", "tmp-trusted-peers.*.json")
+	file, err := os.CreateTemp("", "tmp-trusted-peers.*.json")
 	if err != nil {
 		log.Fatal(err)
 	}
