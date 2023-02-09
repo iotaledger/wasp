@@ -100,7 +100,7 @@ func WaspAPIURL(nameOpt ...string) string {
 	if len(nameOpt) > 0 {
 		nodeName = nameOpt[0]
 	} else {
-		nodeName = GetDefaultWaspNode()
+		nodeName = MustGetDefaultWaspNode()
 	}
 	return viper.GetString(fmt.Sprintf("wasp.%s.%s", nodeName, HostKindAPI))
 }

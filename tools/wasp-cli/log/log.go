@@ -3,9 +3,9 @@ package log
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"strings"
 	"text/tabwriter"
 	"text/template"
@@ -65,28 +65,15 @@ func Verbosef(format string, args ...interface{}) {
 	}
 }
 
-func addNL(s string) string {
-	if s[len(s)-1] != '\n' {
-		return s + "\n"
-	}
-	return s
-}
-
 func Fatal(args ...any) {
 	s := fmt.Sprint(args...)
-	if DebugFlag {
-		panic(s)
-	}
-	Printf("error: " + addNL(s))
+	Printf(fmt.Sprintf("error: %s\n%s", s, string(debug.Stack())))
 	os.Exit(1)
 }
 
 func Fatalf(format string, args ...any) {
 	s := fmt.Sprintf(format, args...)
-	if DebugFlag {
-		panic(s)
-	}
-	Printf("error: " + addNL(s))
+	Printf(fmt.Sprintf("error: %s\n%s", s, string(debug.Stack())))
 	os.Exit(1)
 }
 
@@ -142,25 +129,26 @@ func PrintCLIOutput(output CLIOutput) {
 }
 
 func Check(err error) {
-	if err != nil {
-		errorModel := &ErrorModel{err.Error()}
-		apiError, ok := apiextensions.AsAPIError(err)
+	if err == nil {
+		return
+	}
+	errorModel := &ErrorModel{err.Error()}
+	apiError, ok := apiextensions.AsAPIError(err)
 
-		if ok {
-			if strings.Contains(apiError.Error, "404") {
-				err = errors.New("unauthorized request: are you logged in? (wasp-cli login)")
-			} else {
-				errorModel.Error = apiError.Error
+	if ok {
+		if strings.Contains(apiError.Error, "404") {
+			errorModel = &ErrorModel{"unauthorized request: are you logged in? (wasp-cli login)"}
+		} else {
+			errorModel.Error = apiError.Error
 
-				if apiError.DetailError != nil {
-					errorModel.Error += "\n" + apiError.DetailError.Error + "\n" + apiError.DetailError.Message
-				}
+			if apiError.DetailError != nil {
+				errorModel.Error += "\n" + apiError.DetailError.Error + "\n" + apiError.DetailError.Message
 			}
 		}
-
-		message, _ := GetCLIOutputText(errorModel)
-		Fatalf("%v", message)
 	}
+
+	message, _ := GetCLIOutputText(errorModel)
+	Fatalf("%v", message)
 }
 
 func PrintTable(header []string, rows [][]string) {

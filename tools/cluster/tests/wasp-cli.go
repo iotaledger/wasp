@@ -45,8 +45,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	w.MustRun("set", "l1.apiAddress", clu.Config.L1.APIAddress)
 	w.MustRun("set", "l1.faucetAddress", clu.Config.L1.FaucetAddress)
 	for _, node := range clu.Config.AllNodes() {
-		w.MustRun("set", fmt.Sprintf("wasp.%d.api", node), clu.Config.APIHost(node))
-		w.MustRun("set", fmt.Sprintf("wasp.%d.nanomsg", node), clu.Config.NanomsgHost(node))
+		w.MustRun("wasp", "add", fmt.Sprintf("%d", node), clu.Config.APIHost(node))
 		w.MustRun("set", fmt.Sprintf("wasp.%d.peering", node), clu.Config.PeeringHost(node))
 	}
 
@@ -163,18 +162,21 @@ func (w *WaspCLITest) CopyFile(srcFile string) {
 	require.NoError(w.T, err)
 }
 
-func (w *WaspCLITest) CommitteeConfig() (string, string) {
-	var committee []string
+func (w *WaspCLITest) AllNodesArg() string {
+	var nodes []string
 	for i := 0; i < len(w.Cluster.Config.Wasp); i++ {
-		committee = append(committee, fmt.Sprintf("%d", i))
+		nodes = append(nodes, fmt.Sprintf("%d", i))
 	}
+	return "--nodes=" + strings.Join(nodes, ",")
+}
 
+func (w *WaspCLITest) CommitteeConfigArgs() (string, string) {
 	quorum := 3 * len(w.Cluster.Config.Wasp) / 4
 	if quorum < 1 {
 		quorum = 1
 	}
 
-	return "--committee=" + strings.Join(committee, ","), fmt.Sprintf("--quorum=%d", quorum)
+	return w.AllNodesArg(), fmt.Sprintf("--quorum=%d", quorum)
 }
 
 func (w *WaspCLITest) Address() iotago.Address {

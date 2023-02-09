@@ -11,6 +11,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
@@ -59,6 +60,9 @@ func initImportTrustedJSONCmd() *cobra.Command {
 		Short: "imports a JSON of trusted peers and makes a node trust them.",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			if len(nodes) == 0 {
+				nodes = []string{config.MustGetDefaultWaspNode()}
+			}
 			bytes := util.ReadFile(args[0])
 			var trustedList []apiclient.PeeringNodeIdentityResponse
 			log.Check(json.Unmarshal(bytes, &trustedList))

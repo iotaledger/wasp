@@ -38,7 +38,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 
 	alias := "chain1"
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.CommitteeConfigArgs()
 
 	// test chain deploy command
 	w.MustRun("chain", "deploy", "--chain="+alias, committee, quorum)
@@ -55,7 +55,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 	require.Contains(t, out[4], chainID)
 
 	// unnecessary, since it is the latest deployed chain
-	w.MustRun("set", "chain", alias)
+	w.MustRun("set", "defaultchain", alias)
 
 	// test chain list-contracts command
 	out = w.MustRun("chain", "list-contracts")
@@ -124,7 +124,7 @@ func TestWaspCLISendFunds(t *testing.T) {
 func TestWaspCLIDeposit(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.CommitteeConfigArgs()
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	t.Run("deposit to own account", func(t *testing.T) {
@@ -209,7 +209,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 func TestWaspCLIContract(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.CommitteeConfigArgs()
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	// for running off-ledger requests
@@ -275,7 +275,7 @@ func findRequestIDInOutput(out []string) string {
 func TestWaspCLIBlockLog(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.CommitteeConfigArgs()
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	out := w.MustRun("chain", "deposit", "base:100")
@@ -338,7 +338,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 func TestWaspCLIBlobContract(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.CommitteeConfigArgs()
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	// for running off-ledger requests
@@ -380,12 +380,12 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 	require.Panics(
 		t,
 		func() {
-			w.MustRun("chain", "deploy", "--chain=chain1", "--committee=0,1,2,3,4,5", "--quorum=4")
+			w.MustRun("chain", "deploy", "--chain=chain1", "--nodes=0,1,2,3,4,5", "--quorum=4")
 		})
 
 	alias := "chain1"
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.CommitteeConfigArgs()
 
 	// test chain deploy command
 	w.MustRun("chain", "deploy", "--chain="+alias, committee, quorum)
@@ -402,7 +402,7 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 	require.Contains(t, out[4], chainID)
 
 	// deactivate chain and check that the chain was deactivated
-	w.MustRun("chain", "deactivate")
+	w.MustRun("chain", "deactivate", w.AllNodesArg())
 	out = w.MustRun("chain", "list")
 	require.Contains(t, out[0], "Total 1 chain(s)")
 	require.Contains(t, out[4], chainID)
@@ -412,7 +412,7 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 	require.False(t, active)
 
 	// activate chain and check that it was activated
-	w.MustRun("chain", "activate")
+	w.MustRun("chain", "activate", w.AllNodesArg())
 	out = w.MustRun("chain", "list")
 	require.Contains(t, out[0], "Total 1 chain(s)")
 	require.Contains(t, out[4], chainID)
@@ -425,7 +425,7 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 func TestWaspCLILongParam(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.CommitteeConfigArgs()
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	// create foundry
@@ -450,3 +450,5 @@ func TestWaspCLILongParam(t *testing.T) {
 	out = w.MustRun("chain", "request", reqID)
 	require.Contains(t, strings.Join(out, "\n"), "too long")
 }
+
+// TODO missing a test to export/import trusted peers

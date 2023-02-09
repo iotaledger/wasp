@@ -10,12 +10,16 @@ import (
 
 const defaultWasp = "defaultWasp"
 
-func GetDefaultWaspNode() string {
-	defaultWaspNode := viper.GetString(defaultWasp)
+func MustGetDefaultWaspNode() string {
+	defaultWaspNode := GetDefaultWaspNode()
 	if defaultWaspNode == "" {
 		log.Fatalf("No default wasp node set. Call `nodes add <name> <api> --default` or `set %s <name>`", defaultWasp)
 	}
 	return defaultWaspNode
+}
+
+func GetDefaultWaspNode() string {
+	return viper.GetString(defaultWasp)
 }
 
 func SetDefaultWaspNode(nodeName string) {

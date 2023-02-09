@@ -59,7 +59,7 @@ To create a chain:
 
 ```shell
 wasp-cli request-funds
-wasp-cli chain deploy --committee=0 --quorum=1 --chain=testchain --description="Test Chain"
+wasp-cli chain deploy --nodes=0 --quorum=1 --chain=testchain --description="Test Chain"
 ```
 
 After a chain has been created, the EVM JSON-RPC can be accessed via:

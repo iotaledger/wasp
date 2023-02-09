@@ -23,11 +23,9 @@ Default values for node locations:
 goshimmer.api: 127.0.0.1:8080
 
 wasp.0.api: 127.0.0.1:9090
-wasp.0.nanomsg: 127.0.0.1:5550
 wasp.0.peering: 127.0.0.1:4000
 
 wasp.1.api: 127.0.0.1:9091
-wasp.1.nanomsg: 127.0.0.1:5551
 wasp.1.peering: 127.0.0.1:4001
 
 ...etc
@@ -64,12 +62,12 @@ Example: `wasp-cli set wasp.1.api wasp1.example.com:9091`
 * List the currently deployed chains: `wasp-cli chain list`
 
 * Deploy a
-  chain: `wasp-cli chain deploy --chain=<alias> --committee=<node indices> --quorum=<T>`
+  chain: `wasp-cli chain deploy --chain=<alias> --nodes=<node indices> --quorum=<T>`
 
 Example:
 
 ```
-wasp-cli chain deploy --chain=mychain --committee='0,1,2,3' --quorum=3 --description="My chain"
+wasp-cli chain deploy --chain=mychain --nodes='0,1,2,3' --quorum=3 --description="My chain"
 ```
 
 * Set the chain alias for future commands (automatically done after deploying a

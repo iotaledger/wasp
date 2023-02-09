@@ -25,6 +25,9 @@ func initPermitionlessAccessNodesCmd() *cobra.Command {
 			chainID := config.GetCurrentChainID()
 			action := args[0]
 			pubKey := args[1]
+			if len(nodes) == 0 {
+				nodes = []string{config.MustGetDefaultWaspNode()}
+			}
 
 			for _, name := range nodes {
 				client := cliclients.WaspClient(name)

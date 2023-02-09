@@ -8,11 +8,13 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
+const defaultChain = "defaultchain"
+
 var chainAlias string
 
 func GetChainAlias() string {
 	if chainAlias == "" {
-		chainAlias = viper.GetString("chain")
+		chainAlias = viper.GetString(defaultChain)
 	}
 	if chainAlias == "" {
 		log.Fatal("No current chain. Call `chain deploy --chain=<alias>` or `set chain <alias>`")
@@ -21,11 +23,11 @@ func GetChainAlias() string {
 }
 
 func SetCurrentChain(chainAlias string) {
-	Set("chain", chainAlias)
+	Set(defaultChain, chainAlias)
 }
 
 func InitAliasFlags(chainCmd *cobra.Command) {
-	chainCmd.PersistentFlags().StringVarP(&chainAlias, "chain", "a", "", "chain alias")
+	chainCmd.PersistentFlags().StringVarP(&chainAlias, defaultChain, "a", "", "chain alias")
 }
 
 func AddChainAlias(chainAlias, id string) {
