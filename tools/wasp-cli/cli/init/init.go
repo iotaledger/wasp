@@ -42,14 +42,14 @@ func Init(rootCmd *cobra.Command, waspVersion string) {
 	rootCmd.PersistentFlags().StringVarP(&config.ConfigPath, "config", "c", "wasp-cli.json", "path to wasp-cli.json")
 	rootCmd.PersistentFlags().BoolVarP(&config.WaitForCompletion, "wait", "w", true, "wait for request completion")
 
-	cliclients.L1Client()
-
 	rootCmd.AddCommand(initCheckVersionsCmd(waspVersion))
 	rootCmd.AddCommand(initConfigSetCmd())
 	rootCmd.AddCommand(initRefreshL1ParamsCmd())
 
 	// The first time parameters.L1() is called, it will be initialized with this function
 	parameters.InitL1Lazy(func() {
+		cliclients.L1Client()
+		
 		if config.L1ParamsExpired() {
 			config.RefreshL1ParamsFromNode()
 		} else {
