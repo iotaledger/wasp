@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
@@ -22,6 +23,7 @@ const (
 	addressKindERC20NativeTokens
 	addressKindERC721NFTs
 	addressKindERC721NFTCollection
+	addressKindERC20ExternalNativeTokens
 	addressKindInvalid
 )
 
@@ -34,8 +36,32 @@ var (
 	maxPayloadLength = common.AddressLength - headerLength
 )
 
+// ERC20NativeTokensAddress returns the Ethereum address of the ERC20 contract for
+// native tokens with an on-chain foundry.
 func ERC20NativeTokensAddress(foundrySN uint32) common.Address {
 	return packMagicAddress(addressKindERC20NativeTokens, codec.EncodeUint32(foundrySN))
+}
+
+// ERC20ExternalNativeTokensAddress creates an Ethereum address for an ERC20 contract for
+// native tokens with an off-chain foundry.
+// NOTE: since len(NativeTokenID) == 38 and len(Address) == 20, it is not possible to assign
+// a unique address to every native token. This function tries to form the ERC20 address
+// from the first 17 bytes of hash(nativeTokenID). In case of a collision, it reapplies the
+// hash and checks for a collision again, repeating until it gives up.
+func ERC20ExternalNativeTokensAddress(
+	nativeTokenID iotago.NativeTokenID,
+	isTaken func(common.Address) bool,
+) (common.Address, error) {
+	const maxAttempts = 10
+	hash := hashing.HashData(nativeTokenID[:])
+	for i := 0; i < maxAttempts; i++ {
+		addr := packMagicAddress(addressKindERC20ExternalNativeTokens, hash[:maxPayloadLength])
+		if !isTaken(addr) {
+			return addr, nil
+		}
+		hash = hashing.HashData(hash[:])
+	}
+	return common.Address{}, errors.New("all suitable addresses are taken")
 }
 
 func ERC20NativeTokensFoundrySN(addr common.Address) (uint32, error) {

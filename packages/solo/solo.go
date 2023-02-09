@@ -248,6 +248,8 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 	originatorAddr := chainOriginator.GetPublicKey().AsEd25519Address()
 	originatorAgentID := isc.NewAgentID(originatorAddr)
 
+	initialL1Balance := env.L1BaseTokens(originatorAddr)
+
 	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
 		chainOriginator,
@@ -264,7 +266,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 
 	err = env.utxoDB.AddToLedger(originTx)
 	require.NoError(env.T, err)
-	env.AssertL1BaseTokens(originatorAddr, utxodb.FundsFromFaucetAmount-anchor.Deposit)
+	env.AssertL1BaseTokens(originatorAddr, initialL1Balance-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
 		name, chainID.String(), stateControllerAddr.Bech32(parameters.L1().Protocol.Bech32HRP))

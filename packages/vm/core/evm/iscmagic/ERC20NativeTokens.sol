@@ -8,7 +8,7 @@ import "@iscmagic/ISCSandbox.sol";
 import "@iscmagic/ISCAccounts.sol";
 import "@iscmagic/ISCPrivileged.sol";
 
-// The ERC20 contract for ISC L2 native tokens.
+// The ERC20 contract for ISC L2 native tokens (on-chain foundry).
 contract ERC20NativeTokens {
     uint256 constant MAX_UINT64 = 1 << (64 - 1);
 
@@ -23,11 +23,11 @@ contract ERC20NativeTokens {
     );
     event Transfer(address indexed from, address indexed to, uint256 tokens);
 
-    function foundrySerialNumber() public view returns (uint32) {
+    function foundrySerialNumber() internal view returns (uint32) {
         return __iscSandbox.erc20NativeTokensFoundrySerialNumber(address(this));
     }
 
-    function nativeTokenID() public view returns (NativeTokenID memory) {
+    function nativeTokenID() public virtual view returns (NativeTokenID memory) {
         return __iscSandbox.getNativeTokenID(foundrySerialNumber());
     }
 
@@ -43,7 +43,7 @@ contract ERC20NativeTokens {
         return _decimals;
     }
 
-    function totalSupply() public view returns (uint256) {
+    function totalSupply() public virtual view returns (uint256) {
         return
             __iscSandbox
                 .getNativeTokenScheme(foundrySerialNumber())

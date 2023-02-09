@@ -365,6 +365,18 @@ func (ch *Chain) MustDepositNFT(nft *isc.NFT, to isc.AgentID, owner *cryptolib.K
 	require.NoError(ch.Env.T, err)
 }
 
+// Withdraw sends assets from the L2 account to L1
+func (ch *Chain) Withdraw(assets *isc.Assets, user *cryptolib.KeyPair) error {
+	_, err := ch.PostRequestSync(
+		NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
+			AddAllowance(assets).
+			AddAllowance(isc.NewAssetsBaseTokens(1*isc.Million)). // for storage deposit
+			WithGasBudget(math.MaxUint64),
+		user,
+	)
+	return err
+}
+
 // SendFromL1ToL2Account sends ftokens from L1 address to the target account on L2
 // Sender pays the gas fee
 func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens uint64, toSend *isc.Assets, target isc.AgentID, user *cryptolib.KeyPair) error {
