@@ -96,6 +96,11 @@ func (h *magicContractViewHandler) Erc20NativeTokensAddress(foundrySN uint32) co
 	return iscmagic.ERC20NativeTokensAddress(foundrySN)
 }
 
+// handler for ISCSandbox::erc721NFTCollectionAddress
+func (h *magicContractViewHandler) Erc721NFTCollectionAddress(collectionID iscmagic.NFTID) common.Address {
+	return iscmagic.ERC721NFTCollectionAddress(collectionID.Unwrap())
+}
+
 // handler for ISCSandbox::erc20NativeTokensFoundrySerialNumber
 func (h *magicContractViewHandler) Erc20NativeTokensFoundrySerialNumber(addr common.Address) uint32 {
 	sn, err := iscmagic.ERC20NativeTokensFoundrySN(addr)

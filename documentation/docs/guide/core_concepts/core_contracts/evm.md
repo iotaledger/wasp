@@ -72,6 +72,71 @@ Only the foundry owner can call this endpoint.
 - `t` (`string`): The ticker symbol
 - `d` (`uint8`): The token decimals
 
+### `registerERC20NativeTokenOnChain`
+
+Registers an ERC20 contract to act as a proxy for the native tokens **on another
+chain**.
+
+The foundry must be controlled by the chain. Only the foundry owner can call
+this endpoint.
+
+After a few minutes, call
+[`getERC20ExternalNativeTokensAddress`](#geterc20externalnativetokensaddress)
+on the **target chain** to find out the address of the ERC20 contract.
+
+#### Parameters
+
+- `fs` (`uint32`): The foundry serial number
+- `n` (`string`): The token name
+- `t` (`string`): The ticker symbol
+- `d` (`uint8`): The token decimals
+- `A` (`uint8`): The target chain address, where the ERC20 contract will be
+  registered.
+
+### `registerERC20ExternalNativeToken`
+
+Registers an ERC20 contract to act as a proxy for the native tokens.
+
+Only an alias address can call this endpoint. End users should call
+[`registerERC20NativeTokenOnChain`](#registererc20nativetokenonchain)
+on the chain that controls the foundry.
+
+#### Parameters
+
+- `fs` (`uint32`): The foundry serial number
+- `n` (`string`): The token name
+- `t` (`string`): The ticker symbol
+- `d` (`uint8`): The token decimals
+- `T` (`TokenScheme`): The native token scheme
+
+### `registerERC721NFTCollection`
+
+Registers an ERC20 contract to act as a proxy for an NFT collection, at address
+`0x107404xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`, where `xxx...` is the first 17
+bytes of the collection ID.
+
+The call will fail if the address is taken by another collection with the same prefix.
+
+#### Parameters
+
+- `C` (`NTFID`): The collection ID
+
+---
+
+## Views
+
+### `getERC20ExternalNativeTokensAddress`
+
+Returns the address of an ERC20 contract registered with
+[`registerERC20NativeTokenOnChain`](#registererc20nativetokenonchain).
+
+Only the foundry owner can call this endpoint.
+
+#### Parameters
+
+- `N` (`NativeTokenID`): The native token ID
+
+
 ---
 
 ## Schemas

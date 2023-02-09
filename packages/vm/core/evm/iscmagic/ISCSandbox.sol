@@ -114,6 +114,12 @@ interface ISCSandbox {
         view
         returns (address);
 
+    // Get the address of an ERC721NFTCollection contract for the given collection ID
+    function erc721NFTCollectionAddress(NFTID collectionID)
+        external
+        view
+        returns (address);
+
     // Extract the foundry serial number from an ERC20NativeTokens contract's address
     function erc20NativeTokensFoundrySerialNumber(address addr)
         external
