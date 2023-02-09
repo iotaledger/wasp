@@ -7,7 +7,6 @@ use std::{
     time::*,
 };
 
-use base64::{Engine as _, engine::general_purpose};
 use reqwest::*;
 use wasmlib::*;
 
@@ -51,19 +50,18 @@ impl WaspClient {
             Some(duration) => duration,
             None => DEFAULT_OPTIMISTIC_READ_TIMEOUT,
         };
-        let url = format!(
-            "{}/chain/{}/contract/{}/callviewbyhname/{}",
-            self.base_url,
-            chain_id.to_string(),
-            contract_hname.to_string(),
-            function_hname.to_string()
-        );
+        let url = format!("{}/requests/callview", self.base_url);
 
         let client = blocking::Client::builder()
             .timeout(deadline)
             .build()
             .unwrap();
-        let body = json_encode(args);
+        let body = APICallViewRequest {
+            arguments: json_encode(args),
+            chain_id: chain_id.to_string(),
+            contract_hname: contract_hname.to_string(),
+            function_hname: function_hname.to_string(),
+        };
         let res = client.post(url).json(&body).send();
 
         match res {
@@ -99,9 +97,12 @@ impl WaspClient {
         chain_id: &ScChainID,
         req: &OffLedgerRequestData,
     ) -> errors::Result<()> {
-        let url = format!("{}/chain/{}/request", self.base_url, chain_id.to_string());
+        let url = format!("{}/requests/offledger", self.base_url);
         let client = blocking::Client::new();
-        let body = JsonPostRequest { request: general_purpose::STANDARD.encode(req.to_bytes()) };
+        let body = APIOffLedgerRequest {
+            chain_id: chain_id.to_string(),
+            request: hex_encode(&req.to_bytes()),
+        };
         let res = client.post(url).json(&body).send();
         match res {
             Ok(v) => match v.status() {
@@ -134,7 +135,7 @@ impl WaspClient {
         timeout: Duration,
     ) -> errors::Result<()> {
         let url = format!(
-            "{}/chain/{}/request/{}/wait",
+            "{}/chains/{}/requests/{}/wait",
             self.base_url,
             chain_id.to_string(),
             req_id.to_string()
