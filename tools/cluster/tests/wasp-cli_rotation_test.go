@@ -173,7 +173,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 	// stop maintenance
 	// set the new nodes as the default (so querying the receipt doesn't fail)
-	w.MustRun("set", "wasp.0.api", w2.Cluster.Config.APIHost(0))
+	w.MustRun("set", "wasp.0", w2.Cluster.Config.APIHost(0))
 	out = w.PostRequestGetReceipt("governance", "stopMaintenance")
 	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 

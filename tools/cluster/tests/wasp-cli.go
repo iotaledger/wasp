@@ -46,7 +46,6 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	w.MustRun("set", "l1.faucetAddress", clu.Config.L1.FaucetAddress)
 	for _, node := range clu.Config.AllNodes() {
 		w.MustRun("wasp", "add", fmt.Sprintf("%d", node), clu.Config.APIHost(node))
-		w.MustRun("set", fmt.Sprintf("wasp.%d.peering", node), clu.Config.PeeringHost(node))
 	}
 
 	requestFundstext := w.MustRun("request-funds")

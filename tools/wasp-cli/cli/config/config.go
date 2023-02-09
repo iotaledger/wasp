@@ -17,10 +17,6 @@ var (
 )
 
 const (
-	HostKindAPI     = "api"
-	HostKindPeering = "peering"
-	HostKindNanomsg = "nanomsg"
-
 	l1ParamsKey          = "l1.params"
 	l1ParamsTimestampKey = "l1.timestamp"
 	l1ParamsExpiration   = 24 * time.Hour
@@ -102,7 +98,7 @@ func WaspAPIURL(nameOpt ...string) string {
 	} else {
 		nodeName = MustGetDefaultWaspNode()
 	}
-	return viper.GetString(fmt.Sprintf("wasp.%s.%s", nodeName, HostKindAPI))
+	return viper.GetString(fmt.Sprintf("wasp.%s", nodeName))
 }
 
 func NodeAPIURLs(nodeNames []string) []string {
@@ -111,18 +107,6 @@ func NodeAPIURLs(nodeNames []string) []string {
 		hosts = append(hosts, WaspAPIURL(nodeName))
 	}
 	return hosts
-}
-
-func defaultWaspPort(kind string, i int) int {
-	switch kind {
-	case HostKindNanomsg:
-		return 5550 + i
-	case HostKindPeering:
-		return 4000 + i
-	case HostKindAPI:
-		return 9090 + i
-	}
-	panic(fmt.Sprintf("no handler for kind %s", kind))
 }
 
 func Set(key string, value interface{}) {

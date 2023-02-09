@@ -27,7 +27,7 @@ func SetDefaultWaspNode(nodeName string) {
 }
 
 func AddWaspNode(nodeName, api string) {
-	Set(fmt.Sprintf("wasp.%s.api", nodeName), api)
+	Set(fmt.Sprintf("wasp.%s", nodeName), api)
 	if GetDefaultWaspNode() == "" {
 		SetDefaultWaspNode(nodeName)
 	}
