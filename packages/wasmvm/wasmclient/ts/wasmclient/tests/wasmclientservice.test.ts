@@ -3,11 +3,11 @@ import * as testwasmlib from 'testwasmlib';
 import {bytesFromString, bytesToString} from 'wasmlib';
 import {KeyPair} from '../lib/isc';
 
-const MYCHAIN = 'atoi1pq48s2dnudsjpsrljlrahkur6250ey26sqxfv8hsmks23lnhkkqmy0h98sl';
+const MYCHAIN = 'atoi1ppcj6fmmedfzljgckme2w6520m2qnv8mw7a8cejqvyvhfc0shtvv522uq46';
 const MYSEED = '0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3';
 
 function setupClient() {
-    const svc = new WasmClientService('127.0.0.1:19090', '127.0.0.1:15550');
+    const svc = new WasmClientService('http://localhost:19090', '127.0.0.1:15550');
     const ctx = new WasmClientContext(svc, MYCHAIN, 'testwasmlib');
     ctx.signRequests(KeyPair.fromSubSeed(bytesFromString(MYSEED), 0n));
     expect(ctx.Err == null).toBeTruthy();
