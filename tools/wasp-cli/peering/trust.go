@@ -17,7 +17,7 @@ import (
 )
 
 func initTrustCmd() *cobra.Command {
-	var nodes []string
+	var node string
 
 	cmd := &cobra.Command{
 		Use:   "trust <pubKey> <netID>",
@@ -26,25 +26,22 @@ func initTrustCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			pubKey := args[0]
 			netID := args[1]
-			nodes = waspcmd.DefaultNodesFallback(nodes)
+			node = waspcmd.DefaultSingleNodeFallback(node)
 
 			_, err := iotago.DecodeHex(pubKey) // Assert it can be decoded.
 			log.Check(err)
 			log.Check(peering.CheckNetID(netID))
 
-			for _, node := range nodes {
-				client := cliclients.WaspClient(node)
+			client := cliclients.WaspClient(node)
 
-				_, err = client.NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
-					NetId:     netID,
-					PublicKey: pubKey,
-				}).Execute()
-				log.Check(err)
-			}
+			_, err = client.NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
+				NetId:     netID,
+				PublicKey: pubKey,
+			}).Execute()
+			log.Check(err)
 		},
 	}
 
-	waspcmd.WithWaspNodesFlag(cmd, &nodes)
-
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
 	return cmd
 }

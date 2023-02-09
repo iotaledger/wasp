@@ -56,35 +56,32 @@ func initListTrustedCmd() *cobra.Command {
 }
 
 func initImportTrustedJSONCmd() *cobra.Command {
-	var nodes []string
+	var node string
 
 	cmd := &cobra.Command{
 		Use:   "import-trusted",
 		Short: "imports a JSON of trusted peers and makes a node trust them.",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			nodes = waspcmd.DefaultNodesFallback(nodes)
-
+			node = waspcmd.DefaultSingleNodeFallback(node)
 			bytes := util.ReadFile(args[0])
 			var trustedList []apiclient.PeeringNodeIdentityResponse
 			log.Check(json.Unmarshal(bytes, &trustedList))
-			for _, node := range nodes {
-				for _, t := range trustedList {
-					client := cliclients.WaspClient(node)
-					if !t.IsTrusted {
-						continue // avoid importing untrusted peers by mistake
-					}
-					_, err := client.NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
-						NetId:     t.NetId,
-						PublicKey: t.PublicKey,
-					}).Execute()
-					log.Check(err)
+			for _, t := range trustedList {
+				client := cliclients.WaspClient(node)
+				if !t.IsTrusted {
+					continue // avoid importing untrusted peers by mistake
 				}
+				_, err := client.NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
+					NetId:     t.NetId,
+					PublicKey: t.PublicKey,
+				}).Execute()
+				log.Check(err)
 			}
 		},
 	}
 
-	waspcmd.WithWaspNodesFlag(cmd, &nodes)
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
 
 	return cmd
 }

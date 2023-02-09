@@ -2,16 +2,22 @@ package tests
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"math/big"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -482,11 +488,37 @@ func TestWaspCLITrustListImport(t *testing.T) {
 			Execute()
 		require.NoError(t, err)
 
-		w2.MustRun("peering", "trust", peerInfo.PublicKey, peerInfo.NetId, "--nodes=0")
+		w2.MustRun("peering", "trust", peerInfo.PublicKey, peerInfo.NetId, "--node=0")
 		require.NoError(t, err)
 	}
 
 	// import the trust from cluster2/node0 to cluster2/node1
-	out := w2.MustRun("peering", "list-trusted", "--nodes=0", "--json")
-	println(out)
+	trustedOut := w2.MustRun("peering", "list-trusted", "--node=0", "--json")
+	// create temporary file to be consumed by the import command
+	file, err := ioutil.TempFile("", "tmp-trusted-peers.*.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	file.WriteString(trustedOut[0])
+	w2.MustRun("peering", "import-trusted", file.Name(), "--node=1")
+
+	trustedOut2 := w2.MustRun("peering", "list-trusted", "--node=1", "--json")
+	println(trustedOut2)
+
+	var trustedList1 []apiclient.PeeringNodeIdentityResponse
+	require.NoError(t, json.Unmarshal([]byte(trustedOut[0]), &trustedList1))
+
+	var trustedList2 []apiclient.PeeringNodeIdentityResponse
+	require.NoError(t, json.Unmarshal([]byte(trustedOut2[0]), &trustedList2))
+
+	require.Equal(t, len(trustedList1), len(trustedList2))
+
+	for _, trustedPeer := range trustedList1 {
+		require.True(t,
+			lo.ContainsBy(trustedList2, func(tp apiclient.PeeringNodeIdentityResponse) bool {
+				return tp.NetId == trustedPeer.NetId && tp.PublicKey == trustedPeer.PublicKey && tp.IsTrusted == trustedPeer.IsTrusted
+			}),
+		)
+	}
 }
