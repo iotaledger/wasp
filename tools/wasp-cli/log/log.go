@@ -3,6 +3,7 @@ package log
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -142,18 +143,18 @@ func PrintCLIOutput(output CLIOutput) {
 
 func Check(err error) {
 	if err != nil {
-		// TODO: Debug error type here.
-		/*if errors.Is(err, apiclient.error) {
-			err = errors.New("unauthorized request: are you logged in? (wasp-cli login)")
-		}*/
-
 		errorModel := &ErrorModel{err.Error()}
 		apiError, ok := apiextensions.AsAPIError(err)
-		if ok {
-			errorModel.Error = apiError.Error
 
-			if apiError.DetailError != nil {
-				errorModel.Error += "\n" + apiError.DetailError.Error + "\n" + apiError.DetailError.Message
+		if ok {
+			if strings.Contains(apiError.Error, "404") {
+				err = errors.New("unauthorized request: are you logged in? (wasp-cli login)")
+			} else {
+				errorModel.Error = apiError.Error
+
+				if apiError.DetailError != nil {
+					errorModel.Error += "\n" + apiError.DetailError.Error + "\n" + apiError.DetailError.Message
+				}
 			}
 		}
 
