@@ -1709,7 +1709,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/PeeringNodeStatusResponse__'
+                  $ref: '#/components/schemas/PeeringNodeStatusResponse_'
                 type: array
           description: A list of all peers
         "401":
@@ -2990,16 +2990,16 @@ components:
         committeeNodes:
         - node:
             isAlive: true
-            netId: netId
-            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-            numUsers: 6
+            netId: localhost:4000
+            publicKey: 0x0000
+            numUsers: 1
             isTrusted: true
           accessAPI: accessAPI
         - node:
             isAlive: true
-            netId: netId
-            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-            numUsers: 6
+            netId: localhost:4000
+            publicKey: 0x0000
+            numUsers: 1
             isTrusted: true
           accessAPI: accessAPI
         chainId: tst1pqm5ckama06xhkl080mmvz6l3xy8c8lulrwy7mx4ll0fc69krxfgka70j0e
@@ -3102,9 +3102,9 @@ components:
       example:
         node:
           isAlive: true
-          netId: netId
-          publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-          numUsers: 6
+          netId: localhost:4000
+          publicKey: 0x0000
+          numUsers: 1
           isTrusted: true
         accessAPI: accessAPI
       properties:
@@ -4443,53 +4443,6 @@ components:
       xml:
         name: PeeringNodeStatusResponse
     PeeringNodeStatusResponse_:
-      example:
-        isAlive: true
-        netId: netId
-        publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-        numUsers: 6
-        isTrusted: true
-      properties:
-        isAlive:
-          description: Whether or not the peer is activated
-          format: boolean
-          type: boolean
-          xml:
-            name: IsAlive
-        isTrusted:
-          format: boolean
-          type: boolean
-          xml:
-            name: IsTrusted
-        netId:
-          description: The NetID of the peer
-          format: string
-          type: string
-          xml:
-            name: NetID
-        numUsers:
-          description: The amount of users attached to the peer
-          format: int32
-          type: integer
-          xml:
-            name: NumUsers
-        publicKey:
-          description: The peers public key encoded in Hex
-          example: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-          format: string
-          type: string
-          xml:
-            name: PublicKey
-      required:
-      - isAlive
-      - isTrusted
-      - netId
-      - numUsers
-      - publicKey
-      type: object
-      xml:
-        name: PeeringNodeStatusResponse
-    PeeringNodeStatusResponse__:
       example:
         isAlive: true
         netId: localhost:4000
