@@ -37,9 +37,8 @@ func initTrustCmd() *cobra.Command {
 					NetId:     netID,
 					PublicKey: pubKey,
 				}).Execute()
+				log.Check(err)
 			}
-
-			log.Check(err)
 		},
 	}
 
