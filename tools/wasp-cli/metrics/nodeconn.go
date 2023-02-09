@@ -12,17 +12,20 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 const maxMessageLen = 80
 
 func initNodeconnMetricsCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	cmd := &cobra.Command{
 		Use:   "nodeconn",
 		Short: "Show current value of collected metrics of connection to L1",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClient()
+			node = waspcmd.DefaultSingleNodeFallback(node)
+			client := cliclients.WaspClient(node)
 
 			if chainAlias == "" {
 				nodeconnMetrics, _, err := client.MetricsApi.GetL1Metrics(context.Background()).Execute()
@@ -51,6 +54,8 @@ func initNodeconnMetricsCmd() *cobra.Command {
 			}
 		},
 	}
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	return cmd
 }
 
 func mapMetricItem(messages uint32, timestamp time.Time, message string) *apiclient.InterfaceMetricItem {

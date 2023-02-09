@@ -83,21 +83,15 @@ func SetToken(token string) {
 	Set("authentication.token", token)
 }
 
-func MustWaspAPIURL(nameOpt ...string) string {
-	apiAddress := WaspAPIURL(nameOpt...)
+func MustWaspAPIURL(nodeName string) string {
+	apiAddress := WaspAPIURL(nodeName)
 	if apiAddress == "" {
-		panic("wasp webapi not defined")
+		log.Fatalf("wasp webapi not defined for node: %s", nodeName)
 	}
 	return apiAddress
 }
 
-func WaspAPIURL(nameOpt ...string) string {
-	var nodeName string
-	if len(nameOpt) > 0 {
-		nodeName = nameOpt[0]
-	} else {
-		nodeName = MustGetDefaultWaspNode()
-	}
+func WaspAPIURL(nodeName string) string {
 	return viper.GetString(fmt.Sprintf("wasp.%s", nodeName))
 }
 

@@ -16,15 +16,18 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func initInfoCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	cmd := &cobra.Command{
 		Use:   "info",
 		Short: "Show information about the chain",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClient()
+			node = waspcmd.DefaultSingleNodeFallback(node)
+			client := cliclients.WaspClient(node)
 
 			chainInfo, _, err := client.ChainsApi.
 				GetChainInfo(context.Background(), config.GetCurrentChainID().String()).
@@ -102,4 +105,6 @@ func initInfoCmd() *cobra.Command {
 			}
 		},
 	}
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	return cmd
 }

@@ -8,15 +8,18 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func initListContractsCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	cmd := &cobra.Command{
 		Use:   "list-contracts",
 		Short: "List deployed contracts in chain",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClient()
+			node = waspcmd.DefaultSingleNodeFallback(node)
+			client := cliclients.WaspClient(node)
 			contracts, _, err := client.ChainsApi.
 				GetContracts(context.Background(), config.GetCurrentChainID().String()).
 				Execute()
@@ -47,4 +50,6 @@ func initListContractsCmd() *cobra.Command {
 			log.PrintTable(header, rows)
 		},
 	}
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	return cmd
 }

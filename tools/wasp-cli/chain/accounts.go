@@ -16,15 +16,18 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func initListAccountsCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	cmd := &cobra.Command{
 		Use:   "list-accounts",
 		Short: "List L2 accounts",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClient()
+			node = waspcmd.DefaultSingleNodeFallback(node)
+			client := cliclients.WaspClient(node)
 			chainID := config.GetCurrentChainID()
 
 			accountList, _, err := client.CorecontractsApi.AccountsGetAccounts(context.Background(), chainID.String()).Execute()
@@ -41,14 +44,19 @@ func initListAccountsCmd() *cobra.Command {
 			log.PrintTable(header, rows)
 		},
 	}
+
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	return cmd
 }
 
 func initBalanceCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	cmd := &cobra.Command{
 		Use:   "balance [<agentid>]",
 		Short: "Show the L2 balance of the given account",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			node = waspcmd.DefaultSingleNodeFallback(node)
 			var agentID isc.AgentID
 			if len(args) == 0 {
 				agentID = isc.NewAgentID(wallet.Load().Address())
@@ -58,7 +66,7 @@ func initBalanceCmd() *cobra.Command {
 				log.Check(err)
 			}
 
-			client := cliclients.WaspClient()
+			client := cliclients.WaspClient(node)
 			chainID := config.GetCurrentChainID()
 			balance, _, err := client.CorecontractsApi.AccountsGetAccountBalance(context.Background(), chainID.String(), agentID.String()).Execute()
 
@@ -75,21 +83,26 @@ func initBalanceCmd() *cobra.Command {
 			log.PrintTable(header, rows)
 		},
 	}
+
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	return cmd
 }
 
 func initDepositCmd() *cobra.Command {
 	var adjustStorageDeposit bool
+	var node string
 
 	cmd := &cobra.Command{
 		Use:   "deposit [<agentid>] <token-id>:<amount>, [<token-id>:amount ...]",
 		Short: "Deposit L1 funds into the given (default: your) L2 account",
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			node = waspcmd.DefaultSingleNodeFallback(node)
 			if strings.Contains(args[0], ":") {
 				// deposit to own agentID
 				tokens := util.ParseFungibleTokens(args)
-				util.WithSCTransaction(config.GetCurrentChainID(), func() (*iotago.Transaction, error) {
-					client := cliclients.WaspClient()
+				util.WithSCTransaction(config.GetCurrentChainID(), node, func() (*iotago.Transaction, error) {
+					client := cliclients.WaspClient(node)
 
 					return cliclients.SCClient(client, accounts.Contract.Hname()).PostRequest(
 						accounts.FuncDeposit.Name,
@@ -107,8 +120,8 @@ func initDepositCmd() *cobra.Command {
 				tokens := util.ParseFungibleTokens(tokensStr)
 				allowance := tokens.Clone()
 
-				util.WithSCTransaction(config.GetCurrentChainID(), func() (*iotago.Transaction, error) {
-					client := cliclients.WaspClient()
+				util.WithSCTransaction(config.GetCurrentChainID(), node, func() (*iotago.Transaction, error) {
+					client := cliclients.WaspClient(node)
 
 					return cliclients.SCClient(client, accounts.Contract.Hname()).PostRequest(
 						accounts.FuncTransferAllowanceTo.Name,
@@ -127,6 +140,7 @@ func initDepositCmd() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVarP(&adjustStorageDeposit, "adjust-storage-deposit", "s", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
 
 	return cmd
 }

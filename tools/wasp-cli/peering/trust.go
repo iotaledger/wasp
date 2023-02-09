@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
@@ -27,9 +26,8 @@ func initTrustCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			pubKey := args[0]
 			netID := args[1]
-			if len(nodes) == 0 {
-				nodes = []string{config.MustGetDefaultWaspNode()}
-			}
+			nodes = waspcmd.DefaultNodesFallback(nodes)
+
 			_, err := iotago.DecodeHex(pubKey) // Assert it can be decoded.
 			log.Check(err)
 			log.Check(peering.CheckNetID(netID))

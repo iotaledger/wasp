@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 	"regexp"
@@ -15,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
 const file = "inccounter_bg.wasm"
@@ -451,4 +453,40 @@ func TestWaspCLILongParam(t *testing.T) {
 	require.Contains(t, strings.Join(out, "\n"), "too long")
 }
 
-// TODO missing a test to export/import trusted peers
+func TestWaspCLITrustListImport(t *testing.T) {
+	w := newWaspCLITest(t, waspClusterOpts{
+		nNodes:  4,
+		dirName: "wasp-cluster-initial",
+	})
+
+	w2 := newWaspCLITest(t, waspClusterOpts{
+		nNodes:  2,
+		dirName: "wasp-cluster-new-gov",
+		modifyConfig: func(nodeIndex int, configParams templates.WaspConfigParams) templates.WaspConfigParams {
+			// avoid port conflicts when running everything on localhost
+			configParams.APIPort += 100
+			configParams.DashboardPort += 100
+			configParams.MetricsPort += 100
+			configParams.NanomsgPort += 100
+			configParams.PeeringPort += 100
+			configParams.ProfilingPort += 100
+			return configParams
+		},
+	})
+	// set cluster2/node0 to trust all nodes from cluster 1
+
+	for _, nodeIndex := range w.Cluster.Config.AllNodes() {
+		// equivalent of "wasp-cli peer info"
+		peerInfo, _, err := w.Cluster.WaspClient(nodeIndex).NodeApi.
+			GetPeeringIdentity(context.Background()).
+			Execute()
+		require.NoError(t, err)
+
+		w2.MustRun("peering", "trust", peerInfo.PublicKey, peerInfo.NetId, "--nodes=0")
+		require.NoError(t, err)
+	}
+
+	// import the trust from cluster2/node0 to cluster2/node1
+	out := w2.MustRun("peering", "list-trusted", "--nodes=0", "--json")
+	println(out)
+}

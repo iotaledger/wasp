@@ -96,7 +96,6 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		})
 		require.NoError(t, err)
 
-		cluster1PubKeys := make([]*cryptolib.PublicKey, len(w.Cluster.AllNodes()))
 		for _, nodeIndex := range w.Cluster.Config.AllNodes() {
 			// equivalent of "wasp-cli peer info"
 			peerInfo, _, err := w.Cluster.WaspClient(nodeIndex).NodeApi.
@@ -105,7 +104,6 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 			require.NoError(t, err)
 
 			w2.MustRun("peering", "trust", peerInfo.PublicKey, peerInfo.NetId, "--nodes=0")
-			cluster1PubKeys[nodeIndex], err = cryptolib.NewPublicKeyFromString(peerInfo.PublicKey)
 			require.NoError(t, err)
 		}
 

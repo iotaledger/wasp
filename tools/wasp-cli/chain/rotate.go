@@ -46,9 +46,8 @@ func initRotateWithDKGCmd() *cobra.Command {
 		Short: "Runs the DKG on the selected nodes, then issues a tx that changes the chain state controller",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			if len(nodes) == 0 {
-				nodes = []string{config.MustGetDefaultWaspNode()}
-			}
+			nodes = waspcmd.DefaultNodesFallback(nodes)
+
 			controllerAddr := doDKG(nodes, quorum)
 			rotateTo(controllerAddr)
 		},

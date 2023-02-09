@@ -55,3 +55,21 @@ func initAddWaspNodeCmd() *cobra.Command {
 func WithWaspNodesFlag(cmd *cobra.Command, nodes *[]string) {
 	cmd.Flags().StringSliceVar(nodes, "nodes", nil, "wasp nodes to execute the command in (ex: bob,alice,foo,bar) (default: the default wasp node)")
 }
+
+func DefaultNodesFallback(nodes []string) []string {
+	if len(nodes) == 0 {
+		return []string{config.MustGetDefaultWaspNode()}
+	}
+	return nodes
+}
+
+func WithSingleWaspNodesFlag(cmd *cobra.Command, node *string) {
+	cmd.Flags().StringVar(node, "node", "", "wasp node to execute the command in (ex: wasp-0) (default: the default wasp node)")
+}
+
+func DefaultSingleNodeFallback(node string) string {
+	if node == "" {
+		return config.MustGetDefaultWaspNode()
+	}
+	return node
+}

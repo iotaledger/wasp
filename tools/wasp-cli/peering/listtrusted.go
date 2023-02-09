@@ -11,7 +11,6 @@ import (
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
@@ -19,20 +18,23 @@ import (
 
 func initListTrustedCmd() *cobra.Command {
 	var printJSON bool
+	var node string
 
 	cmd := &cobra.Command{
 		Use:   "list-trusted",
 		Short: "List trusted wasp nodes.",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClient()
+			node = waspcmd.DefaultSingleNodeFallback(node)
+
+			client := cliclients.WaspClient(node)
 			trustedList, _, err := client.NodeApi.GetTrustedPeers(context.Background()).Execute()
 			log.Check(err)
 
 			if printJSON {
 				data, err := json.Marshal(trustedList)
 				log.Check(err)
-				log.Printf("%s", data)
+				log.Printf("%s\n", data)
 				return
 			}
 			header := []string{"PubKey", "NetID"}
@@ -47,6 +49,7 @@ func initListTrustedCmd() *cobra.Command {
 		},
 	}
 
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
 	cmd.Flags().BoolVar(&printJSON, "json", false, "output in JSON")
 
 	return cmd
@@ -60,9 +63,8 @@ func initImportTrustedJSONCmd() *cobra.Command {
 		Short: "imports a JSON of trusted peers and makes a node trust them.",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if len(nodes) == 0 {
-				nodes = []string{config.MustGetDefaultWaspNode()}
-			}
+			nodes = waspcmd.DefaultNodesFallback(nodes)
+
 			bytes := util.ReadFile(args[0])
 			var trustedList []apiclient.PeeringNodeIdentityResponse
 			log.Check(json.Unmarshal(bytes, &trustedList))

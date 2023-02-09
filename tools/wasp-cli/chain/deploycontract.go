@@ -18,15 +18,18 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func initDeployContractCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	cmd := &cobra.Command{
 		Use:   "deploy-contract <vmtype> <name> <description> <filename|program-hash> [init-params]",
 		Short: "Deploy a contract in the chain",
 		Args:  cobra.MinimumNArgs(4),
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClient()
+			node = waspcmd.DefaultSingleNodeFallback(node)
+			client := cliclients.WaspClient(node)
 			vmtype := args[0]
 			name := args[1]
 			description := args[2]
@@ -52,13 +55,15 @@ func initDeployContractCmd() *cobra.Command {
 				})
 				progHash = uploadBlob(client, blobFieldValues)
 			}
-			deployContract(client, name, description, progHash, initParams)
+			deployContract(client, node, name, description, progHash, initParams)
 		},
 	}
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	return cmd
 }
 
-func deployContract(client *apiclient.APIClient, name, description string, progHash hashing.HashValue, initParams dict.Dict) {
-	util.WithOffLedgerRequest(config.GetCurrentChainID(), func() (isc.OffLedgerRequest, error) {
+func deployContract(client *apiclient.APIClient, node, name, description string, progHash hashing.HashValue, initParams dict.Dict) {
+	util.WithOffLedgerRequest(config.GetCurrentChainID(), node, func() (isc.OffLedgerRequest, error) {
 		args := codec.MakeDict(map[string]interface{}{
 			root.ParamName:        name,
 			root.ParamDescription: description,

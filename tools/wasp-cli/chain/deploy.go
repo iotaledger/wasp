@@ -78,9 +78,7 @@ func initDeployCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			l1Client := cliclients.L1Client()
-			if len(nodes) == 0 {
-				nodes = []string{config.MustGetDefaultWaspNode()}
-			}
+			nodes = waspcmd.DefaultNodesFallback(nodes)
 
 			if quorum == 0 {
 				quorum = defaultQuorum(len(nodes))
