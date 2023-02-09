@@ -46,13 +46,25 @@ pub struct JsonItem {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct JsonCallRequest {
+pub struct JsonDict {
     items: Vec<JsonItem>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct JsonPostRequest {
-    #[serde(rename = "Request")]
+pub(crate) struct APICallViewRequest {
+    pub(crate) arguments: JsonDict,
+    #[serde(rename = "chainId")]
+    pub(crate) chain_id: String,
+    #[serde(rename = "contractHName")]
+    pub(crate) contract_hname: String,
+    #[serde(rename = "functionHName")]
+    pub(crate) function_hname: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub(crate) struct APIOffLedgerRequest {
+    #[serde(rename = "chainId")]
+    pub(crate) chain_id: String,
     pub(crate) request: String,
 }
 
@@ -84,10 +96,10 @@ pub fn json_decode(dict: JsonResponse) -> Vec<u8> {
     return enc.buf();
 }
 
-pub fn json_encode(buf: &[u8]) -> JsonCallRequest {
+pub fn json_encode(buf: &[u8]) -> JsonDict {
     let mut dec = WasmDecoder::new(buf);
     let items_num = uint32_from_bytes(&dec.fixed_bytes(SC_UINT32_LENGTH));
-    let mut dict = JsonCallRequest {
+    let mut dict = JsonDict {
         items: Vec::with_capacity(items_num as usize),
     };
     for _ in 0..items_num {

@@ -42,8 +42,6 @@ export class WaspClient {
         }
     }
 
-
-
     public postOffLedgerRequest(chainID: wasmlib.ScChainID, signed: OffLedgerRequest): Error {
         const url = this.baseURL + '/requests/offledger';
         const req = new SyncRequestClient();
@@ -51,7 +49,6 @@ export class WaspClient {
 
         const offLedgerRequest: APIOffLedgerRequest = {
             chainId: chainID.toString(),
-            // Validate if this is actually valid to do. This byte array needs to be sent as hex.
             request: wasmlib.hexEncode(signed.bytes()),
         };
 
@@ -67,7 +64,7 @@ export class WaspClient {
     }
 
     public waitUntilRequestProcessed(chainID: wasmlib.ScChainID, reqID: wasmlib.ScRequestID, timeout: u32): Error {
-        // Timeout of the wait can be set with `/wait?timeoutSeconds=`. Max seconds are 60secs.
+        //TODO Timeout of the wait can be set with `/wait?timeoutSeconds=`. Max seconds are 60secs.
         const url = this.baseURL + '/chains/' + chainID.toString() + '/requests/' + reqID.toString() + '/wait';
         const response = new SyncRequestClient().get(url);
         return null;
