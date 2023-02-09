@@ -27,7 +27,7 @@ import (
 
 const (
 	useCluster    = false
-	useDisposable = true
+	useDisposable = false
 )
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
