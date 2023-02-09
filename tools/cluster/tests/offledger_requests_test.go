@@ -41,7 +41,7 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 	chClient := newWalletWithFunds(e, 5, 0, 2, 4, 5, 7)
 
 	// send off-ledger request via Web API (to the access node)
-	_, err = chClient.PostOffLedgerRequest(
+	_, err = chClient.PostOffLedgerRequest(context.Background(),
 		nativeIncCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
 	)
@@ -68,7 +68,7 @@ func testOffledgerRequest(t *testing.T, e *ChainEnv) {
 	chClient := newWalletWithFunds(e, 0, 0, 1, 2, 3)
 
 	// send off-ledger request via Web API
-	offledgerReq, err := chClient.PostOffLedgerRequest(
+	offledgerReq, err := chClient.PostOffLedgerRequest(context.Background(),
 		nativeIncCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
 	)
@@ -101,7 +101,7 @@ func testOffledgerRequest900KB(t *testing.T, e *ChainEnv) {
 	paramsDict := dict.Dict{"data": randomData}
 	expectedHash := blob.MustGetBlobHash(paramsDict)
 
-	offledgerReq, err := chClient.PostOffLedgerRequest(
+	offledgerReq, err := chClient.PostOffLedgerRequest(context.Background(),
 		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
 		chainclient.PostRequestParams{
@@ -130,7 +130,7 @@ func testOffledgerNonce(t *testing.T, e *ChainEnv) {
 	chClient := newWalletWithFunds(e, 0, 0, 1, 2, 3)
 
 	// send off-ledger request with a high nonce
-	offledgerReq, err := chClient.PostOffLedgerRequest(
+	offledgerReq, err := chClient.PostOffLedgerRequest(context.Background(),
 		nativeIncCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
 		chainclient.PostRequestParams{
@@ -142,7 +142,7 @@ func testOffledgerNonce(t *testing.T, e *ChainEnv) {
 	require.NoError(t, err)
 
 	// send off-ledger request with a high nonce -1
-	offledgerReq, err = chClient.PostOffLedgerRequest(
+	offledgerReq, err = chClient.PostOffLedgerRequest(context.Background(),
 		nativeIncCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
 		chainclient.PostRequestParams{
@@ -154,7 +154,7 @@ func testOffledgerNonce(t *testing.T, e *ChainEnv) {
 	require.NoError(t, err)
 
 	// send off-ledger request with a much lower nonce
-	_, err = chClient.PostOffLedgerRequest(
+	_, err = chClient.PostOffLedgerRequest(context.Background(),
 		nativeIncCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
 		chainclient.PostRequestParams{
@@ -168,7 +168,7 @@ func testOffledgerNonce(t *testing.T, e *ChainEnv) {
 	require.Regexp(t, "invalid nonce", apiError.DetailError.Error)
 
 	// try replaying the initial request
-	_, err = chClient.PostOffLedgerRequest(
+	_, err = chClient.PostOffLedgerRequest(context.Background(),
 		nativeIncCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
 		chainclient.PostRequestParams{
@@ -182,7 +182,7 @@ func testOffledgerNonce(t *testing.T, e *ChainEnv) {
 	require.Regexp(t, "request already processed", apiError.DetailError.Error)
 
 	// send a request with a higher nonce
-	offledgerReq, err = chClient.PostOffLedgerRequest(
+	offledgerReq, err = chClient.PostOffLedgerRequest(context.Background(),
 		nativeIncCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
 		chainclient.PostRequestParams{

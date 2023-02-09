@@ -1,6 +1,8 @@
 package chain
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/clients/apiclient"
@@ -63,7 +65,7 @@ func deployContract(client *apiclient.APIClient, name, description string, progH
 			root.ParamProgramHash: progHash,
 		})
 		args.Extend(initParams)
-		return cliclients.ChainClient(client).PostOffLedgerRequest(
+		return cliclients.ChainClient(client).PostOffLedgerRequest(context.Background(),
 			root.Contract.Hname(),
 			root.FuncDeployContract.Hname(),
 			chainclient.PostRequestParams{

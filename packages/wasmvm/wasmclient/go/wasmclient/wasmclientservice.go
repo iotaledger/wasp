@@ -59,7 +59,6 @@ func (sc *WasmClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContr
 		ChainId:       iscChainID.String(),
 		Arguments:     apiextensions.JSONDictToAPIJSONDict(params.JSONDict()),
 	}).Execute()
-
 	if err != nil {
 		return nil, err
 	}

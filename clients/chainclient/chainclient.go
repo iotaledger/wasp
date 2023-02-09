@@ -153,7 +153,7 @@ func (c *Client) post1RequestWithOutputs(
 }
 
 // PostOffLedgerRequest sends an off-ledger tx via the wasp node web api
-func (c *Client) PostOffLedgerRequest(
+func (c *Client) PostOffLedgerRequest(context context.Context,
 	contractHname isc.Hname,
 	entrypoint isc.Hname,
 	params ...PostRequestParams,
@@ -186,7 +186,7 @@ func (c *Client) PostOffLedgerRequest(
 		Request: request,
 	}
 	_, err := c.WaspClient.RequestsApi.
-		OffLedger(context.Background()).
+		OffLedger(context).
 		OffLedgerRequest(offLedgerRequest).
 		Execute()
 

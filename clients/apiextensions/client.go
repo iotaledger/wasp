@@ -10,7 +10,6 @@ import (
 
 func WaspAPIClientByHostName(hostname string) (*apiclient.APIClient, error) {
 	parsed, err := url.Parse(hostname)
-
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +26,6 @@ func CallView(context context.Context, client *apiclient.APIClient, request apic
 		CallView(context).
 		ContractCallViewRequest(request).
 		Execute()
-
 	if err != nil {
 		return nil, err
 	}

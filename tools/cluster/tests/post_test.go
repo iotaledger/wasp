@@ -65,6 +65,7 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 			root.ParamHname: hname.Bytes(),
 		}),
 	})
+	require.NoError(e.t, err)
 
 	recb, err := result.Get(root.ParamContractRecData)
 	require.NoError(e.t, err)
@@ -87,11 +88,13 @@ func (e *ChainEnv) getNativeContractCounter(hname isc.Hname) int64 {
 }
 
 func (e *ChainEnv) getCounterForNode(hname isc.Hname, nodeIndex int) int64 {
-	result, _, err := e.Chain.Cluster.WaspClient().RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
+	result, _, err := e.Chain.Cluster.WaspClient(nodeIndex).RequestsApi.
+		CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
 		ChainId:       e.Chain.ChainID.String(),
 		ContractHName: hname.String(),
 		FunctionName:  "getCounter",
 	}).Execute()
+	require.NoError(e.t, err)
 
 	decodedDict, err := apiextensions.APIJsonDictToDict(*result)
 	require.NoError(e.t, err)

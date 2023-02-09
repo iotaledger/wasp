@@ -36,8 +36,8 @@ type clusterTestEnv struct {
 func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestEnv {
 	evmtest.InitGoEthLogger(t)
 
-	evmJsonRPCPath := fmt.Sprintf("/chains/%v/evm", env.Chain.ChainID.String())
-	jsonRPCEndpoint := env.Clu.Config.APIHost(nodeIndex) + evmJsonRPCPath
+	evmJSONRPCPath := fmt.Sprintf("/chains/%v/evm", env.Chain.ChainID.String())
+	jsonRPCEndpoint := env.Clu.Config.APIHost(nodeIndex) + evmJSONRPCPath
 	rawClient, err := rpc.DialHTTP(jsonRPCEndpoint)
 	require.NoError(t, err)
 	client := ethclient.NewClient(rawClient)
@@ -53,7 +53,6 @@ func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestE
 			WaitForRequest(context.Background(), env.Chain.ChainID.String(), reqID.String()).
 			TimeoutSeconds(60).
 			Execute()
-
 		if err != nil {
 			return err
 		}

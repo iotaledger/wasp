@@ -35,7 +35,6 @@ func RunDKG(clientResolver multiclient.ClientResolver, apiHosts, peerPubKeys []s
 		TimeoutMS:      to,
 		PeerIdentities: peerPubKeys,
 	}).Execute()
-
 	if err != nil {
 		return nil, err
 	}

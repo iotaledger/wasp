@@ -1,6 +1,8 @@
 package scclient
 
 import (
+	"context"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -15,5 +17,5 @@ func (c *SCClient) PostNRequests(fname string, n int, params ...chainclient.Post
 }
 
 func (c *SCClient) PostOffLedgerRequest(fname string, params ...chainclient.PostRequestParams) (isc.OffLedgerRequest, error) {
-	return c.ChainClient.PostOffLedgerRequest(c.ContractHname, isc.Hn(fname), params...)
+	return c.ChainClient.PostOffLedgerRequest(context.Background(), c.ContractHname, isc.Hn(fname), params...)
 }

@@ -23,12 +23,14 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 )
 
-var ErrUnableToGetLatestState = errors.New("unable to get latest state")
-var ErrUnableToGetReceipt = errors.New("unable to get request receipt from block state")
-var ErrAlreadyProcessed = errors.New("request already processed")
-var ErrNoBalanceOnAccount = errors.New("no balance on account")
-var ErrInvalidNonce = errors.New("invalid nonce")
-var ErrChainNotFound = errors.New("chain not found")
+var (
+	ErrUnableToGetLatestState = errors.New("unable to get latest state")
+	ErrUnableToGetReceipt     = errors.New("unable to get request receipt from block state")
+	ErrAlreadyProcessed       = errors.New("request already processed")
+	ErrNoBalanceOnAccount     = errors.New("no balance on account")
+	ErrInvalidNonce           = errors.New("invalid nonce")
+	ErrChainNotFound          = errors.New("chain not found")
+)
 
 type APIController interface {
 	Name() string

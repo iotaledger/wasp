@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -192,7 +193,7 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	origL1Balance := env.Clu.AddressBalances(originatorAddress).BaseTokens
 	originatorClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), chain.ChainID, originatorSigScheme)
 	allowanceBaseTokens := uint64(800_000)
-	req2, err := originatorClient.PostOffLedgerRequest(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
+	req2, err := originatorClient.PostOffLedgerRequest(context.Background(), accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
 		chainclient.PostRequestParams{
 			Allowance: isc.NewAssetsBaseTokens(allowanceBaseTokens),
 		},

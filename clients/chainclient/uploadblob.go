@@ -14,7 +14,7 @@ import (
 func (c *Client) UploadBlob(ctx context.Context, fields dict.Dict) (hashing.HashValue, isc.OffLedgerRequest, *apiclient.ReceiptResponse, error) {
 	blobHash := blob.MustGetBlobHash(fields)
 
-	req, err := c.PostOffLedgerRequest(
+	req, err := c.PostOffLedgerRequest(ctx,
 		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
 

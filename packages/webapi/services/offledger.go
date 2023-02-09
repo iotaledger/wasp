@@ -89,19 +89,19 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 func ShouldBeProcessed(ch chain.ChainCore, req isc.OffLedgerRequest) error {
 	state, err := ch.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
-		//ServerError
+		// ServerError
 		return interfaces.ErrUnableToGetLatestState
 	}
 	// query blocklog contract
 
 	processed, err := blocklog.IsRequestProcessed(state, req.ID())
 	if err != nil {
-		//ServerError
+		// ServerError
 
 		return interfaces.ErrUnableToGetReceipt
 	}
 	if processed {
-		//BadRequest
+		// BadRequest
 
 		return interfaces.ErrAlreadyProcessed
 	}
@@ -110,14 +110,14 @@ func ShouldBeProcessed(ch chain.ChainCore, req isc.OffLedgerRequest) error {
 	accountsPartition := subrealm.NewReadOnly(state, kv.Key(accounts.Contract.Hname().Bytes()))
 	// check user has on-chain balance
 	if !accounts.AccountExists(accountsPartition, req.SenderAccount()) {
-		//BadRequest
+		// BadRequest
 
 		return interfaces.ErrNoBalanceOnAccount
 	}
 
 	accountNonce := accounts.GetMaxAssumedNonce(accountsPartition, req.SenderAccount())
 	if err := vmcontext.CheckNonce(req, accountNonce); err != nil {
-		//BadRequest
+		// BadRequest
 
 		return interfaces.ErrInvalidNonce
 	}

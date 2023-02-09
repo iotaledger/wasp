@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -61,7 +62,7 @@ func TestDepositWithdraw(t *testing.T) {
 
 	// withdraw some base tokens back
 	baseTokensToWithdraw := 1 * isc.Million
-	req, err := chClient.PostOffLedgerRequest(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
+	req, err := chClient.PostOffLedgerRequest(context.Background(), accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
 		chainclient.PostRequestParams{
 			Allowance: isc.NewAssetsBaseTokens(baseTokensToWithdraw),
 		},

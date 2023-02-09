@@ -74,7 +74,7 @@ func CallWebAPIRequestHandler(
 	if exptectedStatus >= 400 {
 		require.Error(t, err)
 		// TODO: Add error declaration
-		//require.Equal(t, exptectedStatus, err.(*httperrors.HTTPError).Code)
+		// require.Equal(t, exptectedStatus, err.(*httperrors.HTTPError).Code)
 	} else {
 		require.NoError(t, err)
 		require.Equal(t, exptectedStatus, rec.Code)

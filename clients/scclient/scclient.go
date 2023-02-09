@@ -1,15 +1,12 @@
 package scclient
 
 import (
-	"context"
-
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
 // SCClient allows to send webapi requests targeted to a specific contract
 type SCClient struct {
-	context       context.Context
 	ChainClient   *chainclient.Client
 	ContractHname isc.Hname
 }

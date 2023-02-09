@@ -19,6 +19,6 @@ func (c *Client) CheckRequestResult(ctx context.Context, reqID isc.RequestID) er
 	if receipt.Error != nil {
 		return fmt.Errorf("the request was rejected: %v", receipt.Error.ErrorMessage)
 	}
-	
+
 	return nil
 }

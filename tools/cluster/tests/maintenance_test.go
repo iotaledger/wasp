@@ -53,7 +53,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 
 	// call the gov "maintenance status view", check it is OFF
 	{
-		//TODO: Add maintenance status to wrapped core contracts
+		// TODO: Add maintenance status to wrapped core contracts
 		ret, err := ownerSCClient.CallView(context.Background(), governance.ViewGetMaintenanceStatus.Name, nil)
 		require.NoError(t, err)
 		maintenanceStatus := codec.MustDecodeBool(ret.MustGet(governance.VarMaintenanceStatus))

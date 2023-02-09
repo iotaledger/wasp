@@ -186,8 +186,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]byte, error) {
 	v, _, err := ch.Cluster.WaspClient(0).CorecontractsApi.
 		BlobsGetBlobValue(context.Background(), ch.ChainID.String(), blobHash.Hex(), field).
-		Execute()
-
+		Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		return nil, err
 	}
@@ -203,8 +202,7 @@ func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]
 func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {
 	blockInfo, _, err := ch.Cluster.
 		WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetLatestBlockInfo(context.Background(), ch.ChainID.String()).
-		Execute()
-
+		Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		return 0, err
 	}
@@ -221,8 +219,7 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*apiclient.B
 	for idx := int(blockIndex); idx >= 0; idx-- {
 		blockInfo, _, err := ch.Cluster.
 			WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetBlockInfo(context.Background(), ch.ChainID.String(), uint32(idx)).
-			Execute()
-
+			Execute() //nolint:bodyclose // false positive
 		if err != nil {
 			return nil, err
 		}
@@ -235,8 +232,7 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*apiclient.B
 func (ch *Chain) ContractRegistry(nodeIndex ...int) ([]apiclient.ContractInfoResponse, error) {
 	contracts, _, err := ch.Cluster.
 		WaspClient(nodeIndex...).ChainsApi.GetContracts(context.Background(), ch.ChainID.String()).
-		Execute()
-
+		Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +246,7 @@ func (ch *Chain) GetCounterValue(inccounterSCHname isc.Hname, nodeIndex ...int) 
 		ChainId:       ch.ChainID.String(),
 		ContractHName: inccounterSCHname.String(),
 		FunctionHName: inccounter.ViewGetCounter.Hname().String(),
-	}).Execute()
+	}).Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		return 0, err
 	}
@@ -271,7 +267,7 @@ func (ch *Chain) GetStateVariable(contractHname isc.Hname, key string, nodeIndex
 
 func (ch *Chain) GetRequestReceipt(reqID isc.RequestID, nodeIndex ...int) (*apiclient.ReceiptResponse, error) {
 	receipt, _, err := ch.Cluster.WaspClient(nodeIndex...).RequestsApi.GetReceipt(context.Background(), ch.ChainID.String(), reqID.String()).
-		Execute()
+		Execute() //nolint:bodyclose // false positive
 
 	return receipt, err
 }
@@ -282,10 +278,10 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex *uint32, nodeIndex ...int
 
 	if blockIndex != nil {
 		receipts, _, err = ch.Cluster.WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetRequestReceiptsOfBlock(context.Background(), ch.ChainID.String(), *blockIndex).
-			Execute()
+			Execute() //nolint:bodyclose // false positive
 	} else {
 		receipts, _, err = ch.Cluster.WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetRequestReceiptsOfLatestBlock(context.Background(), ch.ChainID.String()).
-			Execute()
+			Execute() //nolint:bodyclose // false positive
 	}
 
 	if err != nil {

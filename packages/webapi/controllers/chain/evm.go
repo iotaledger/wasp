@@ -28,7 +28,6 @@ func (c *Controller) getRequestID(e echo.Context) error {
 
 	txHash := e.Param("txHash")
 	requestID, err := c.evmService.GetRequestID(chainID, txHash)
-
 	if err != nil {
 		return apierrors.InvalidPropertyError("txHash", err)
 	}

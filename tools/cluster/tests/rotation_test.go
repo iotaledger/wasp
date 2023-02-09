@@ -325,6 +325,9 @@ func (e *ChainEnv) callGetStateController(nodeIndex int) (iotago.Address, error)
 	controlAddresses, _, err := e.Chain.Cluster.WaspClient(nodeIndex).CorecontractsApi.
 		BlocklogGetControlAddresses(context.Background(), e.Chain.ChainID.String()).
 		Execute()
+	if err != nil {
+		return nil, err
+	}
 
 	_, address, err := iotago.ParseBech32(controlAddresses.StateAddress)
 	require.NoError(e.t, err)

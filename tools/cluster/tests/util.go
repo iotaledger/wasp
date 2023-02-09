@@ -99,7 +99,7 @@ func (e *ChainEnv) getBalanceOnChain(agentID isc.AgentID, assetID []byte, nodeIn
 			return nativeToken.Amount.Uint64()
 		}
 	}
-	//TODO: Throw error when native token id wasn't found?
+	// TODO: Throw error when native token id wasn't found?
 	return 0
 }
 
@@ -247,7 +247,6 @@ func (e *ChainEnv) counterEquals(expected int64) conditionFn {
 			ContractHName: nativeIncCounterSCHname.String(),
 			FunctionHName: inccounter.ViewGetCounter.Hname().String(),
 		})
-
 		if err != nil {
 			e.t.Logf("chainEnv::counterEquals: failed to call GetCounter: %v", err)
 			return false
