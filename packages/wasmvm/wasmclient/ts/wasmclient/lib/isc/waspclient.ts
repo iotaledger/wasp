@@ -1,12 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {Base64} from '@iota/util.js';
 import * as wasmlib from 'wasmlib';
 import {SyncRequestClient} from './ts-sync-request';
 import {OffLedgerRequest} from './offledgerrequest';
 import {APICallViewRequest, APIOffLedgerRequest, Codec, JsonReq, JsonResp} from './codec';
-import { encode, decode } from 'as-hex';
 
 export type Error = string | null;
 
@@ -54,7 +52,7 @@ export class WaspClient {
         const offLedgerRequest: APIOffLedgerRequest = {
             chainId: chainID.toString(),
             // Validate if this is actually valid to do. This byte array needs to be sent as hex.
-            request: encode(signed.bytes().toString()),
+            request: wasmlib.hexEncode(signed.bytes()),
         };
 
         try {
