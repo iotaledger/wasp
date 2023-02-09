@@ -18,7 +18,7 @@ func initListTrustedCmd() *cobra.Command {
 		Short: "List trusted wasp nodes.",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClientForIndex()
+			client := cliclients.WaspClient()
 			trustedList, _, err := client.NodeApi.GetTrustedPeers(context.Background()).Execute()
 			log.Check(err)
 

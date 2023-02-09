@@ -21,7 +21,7 @@ func initConsensusMetricsCmd() *cobra.Command {
 		Short: "Show current value of collected metrics of consensus",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClientForIndex()
+			client := cliclients.WaspClient()
 			_, chainAddress, err := iotago.ParseBech32(chainAlias)
 			log.Check(err)
 

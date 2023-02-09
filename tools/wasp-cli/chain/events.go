@@ -17,7 +17,7 @@ func initEventsCmd() *cobra.Command {
 		Short: "Show events of contract <name>",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClientForIndex()
+			client := cliclients.WaspClient()
 			contractHName := isc.Hn(args[0]).String()
 
 			events, _, err := client.CorecontractsApi.

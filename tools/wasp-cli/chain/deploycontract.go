@@ -26,7 +26,7 @@ func initDeployContractCmd() *cobra.Command {
 		Short: "Deploy a contract in the chain",
 		Args:  cobra.MinimumNArgs(4),
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClientForIndex()
+			client := cliclients.WaspClient()
 			vmtype := args[0]
 			name := args[1]
 			description := args[2]

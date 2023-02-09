@@ -24,8 +24,8 @@ func WaspClientForHostName(apiAddress string) *apiclient.APIClient {
 	return client
 }
 
-func WaspClientForIndex(i ...int) *apiclient.APIClient {
-	return WaspClientForHostName(config.MustWaspAPIURL(i...))
+func WaspClient(name ...string) *apiclient.APIClient {
+	return WaspClientForHostName(config.MustWaspAPIURL(name...))
 }
 
 func L1Client() l1connection.Client {

@@ -24,7 +24,7 @@ func initListAccountsCmd() *cobra.Command {
 		Short: "List L2 accounts",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClientForIndex()
+			client := cliclients.WaspClient()
 			chainID := config.GetCurrentChainID()
 
 			accountList, _, err := client.CorecontractsApi.AccountsGetAccounts(context.Background(), chainID.String()).Execute()
@@ -58,7 +58,7 @@ func initBalanceCmd() *cobra.Command {
 				log.Check(err)
 			}
 
-			client := cliclients.WaspClientForIndex()
+			client := cliclients.WaspClient()
 			chainID := config.GetCurrentChainID()
 			balance, _, err := client.CorecontractsApi.AccountsGetAccountBalance(context.Background(), chainID.String(), agentID.String()).Execute()
 
@@ -89,7 +89,7 @@ func initDepositCmd() *cobra.Command {
 				// deposit to own agentID
 				tokens := util.ParseFungibleTokens(args)
 				util.WithSCTransaction(config.GetCurrentChainID(), func() (*iotago.Transaction, error) {
-					client := cliclients.WaspClientForIndex()
+					client := cliclients.WaspClient()
 
 					return cliclients.SCClient(client, accounts.Contract.Hname()).PostRequest(
 						accounts.FuncDeposit.Name,
@@ -108,7 +108,7 @@ func initDepositCmd() *cobra.Command {
 				allowance := tokens.Clone()
 
 				util.WithSCTransaction(config.GetCurrentChainID(), func() (*iotago.Transaction, error) {
-					client := cliclients.WaspClientForIndex()
+					client := cliclients.WaspClient()
 
 					return cliclients.SCClient(client, accounts.Contract.Hname()).PostRequest(
 						accounts.FuncTransferAllowanceTo.Name,

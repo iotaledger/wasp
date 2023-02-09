@@ -21,7 +21,7 @@ func initDistrustCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			pubKeyOrNetID := args[0]
-			client := cliclients.WaspClientForIndex()
+			client := cliclients.WaspClient()
 
 			if peering.CheckNetID(pubKeyOrNetID) != nil {
 				_, err := client.NodeApi.DistrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{

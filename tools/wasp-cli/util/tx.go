@@ -18,8 +18,7 @@ func WithOffLedgerRequest(chainID isc.ChainID, f func() (isc.OffLedgerRequest, e
 	log.Check(err)
 	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().String())
 	if config.WaitForCompletion {
-
-		_, _, err = cliclients.WaspClientForIndex().RequestsApi.
+		_, _, err = cliclients.WaspClient().RequestsApi.
 			WaitForRequest(context.Background(), chainID.String(), req.ID().String()).
 			TimeoutSeconds(60).
 			Execute()
@@ -36,7 +35,7 @@ func WithSCTransaction(chainID isc.ChainID, f func() (*iotago.Transaction, error
 
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
-		client := cliclients.WaspClientForIndex()
+		client := cliclients.WaspClient()
 		_, err := apiextensions.APIWaitUntilAllRequestsProcessed(client, chainID, tx, 1*time.Minute)
 		log.Check(err)
 	}

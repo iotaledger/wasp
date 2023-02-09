@@ -17,7 +17,7 @@ func initListCmd() *cobra.Command {
 		Short: "List deployed chains",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClientForIndex()
+			client := cliclients.WaspClient()
 			chains, _, err := client.ChainsApi.GetChains(context.Background()).Execute()
 			log.Check(err)
 

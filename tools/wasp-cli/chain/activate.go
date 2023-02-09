@@ -10,21 +10,19 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func initActivateCmd() *cobra.Command {
-	var nodes []int
+	var nodes []string
 	cmd := &cobra.Command{
 		Use:   "activate",
 		Short: "Activates the chain on selected nodes",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			chainID := config.GetCurrentChainID()
-			if nodes == nil {
-				nodes = GetAllWaspNodes()
-			}
 			for _, nodeIdx := range nodes {
-				client := cliclients.WaspClientForIndex(nodeIdx)
+				client := cliclients.WaspClient(nodeIdx)
 
 				r, httpStatus, err := client.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute()
 
@@ -54,30 +52,27 @@ func initActivateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().IntSliceVarP(&nodes, "nodes", "", nil, "nodes to activate the chain on (ex: 0,1,2,3) (default: all nodes)")
+	waspcmd.WithWaspNodesFlag(cmd, &nodes)
 
 	return cmd
 }
 
 func initDeactivateCmd() *cobra.Command {
-	var nodes []int
+	var nodes []string
 	cmd := &cobra.Command{
 		Use:   "deactivate",
 		Short: "Deactivates the chain on selected nodes",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			chainID := config.GetCurrentChainID()
-			if nodes == nil {
-				nodes = GetAllWaspNodes()
-			}
 			for _, nodeIdx := range nodes {
-				client := cliclients.WaspClientForIndex(nodeIdx)
+				client := cliclients.WaspClient(nodeIdx)
 
 				_, err := client.ChainsApi.DeactivateChain(context.Background(), chainID.String()).Execute()
 				log.Check(err)
 			}
 		},
 	}
-	cmd.Flags().IntSliceVarP(&nodes, "nodes", "", nil, "nodes to deactivate the chain on (ex: 0,1,2,3) (default: all nodes)")
+	waspcmd.WithWaspNodesFlag(cmd, &nodes)
 	return cmd
 }

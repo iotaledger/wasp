@@ -24,7 +24,7 @@ func initInfoCmd() *cobra.Command {
 		Short: "Show information about the chain",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClientForIndex()
+			client := cliclients.WaspClient()
 
 			chainInfo, _, err := client.ChainsApi.
 				GetChainInfo(context.Background(), config.GetCurrentChainID().String()).

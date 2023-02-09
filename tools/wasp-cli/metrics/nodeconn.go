@@ -22,10 +22,9 @@ func initNodeconnMetricsCmd() *cobra.Command {
 		Short: "Show current value of collected metrics of connection to L1",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClientForIndex()
+			client := cliclients.WaspClient()
 
 			if chainAlias == "" {
-
 				nodeconnMetrics, _, err := client.MetricsApi.GetL1Metrics(context.Background()).Execute()
 				log.Check(err)
 				log.Printf("Following chains are registered for L1 events:\n")

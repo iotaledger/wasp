@@ -20,7 +20,7 @@ func initCallViewCmd() *cobra.Command {
 		Long:  "Call contract <name>, view function <funcname> with given params.",
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClientForIndex()
+			client := cliclients.WaspClient()
 
 			contractName := args[0]
 			funcName := args[1]

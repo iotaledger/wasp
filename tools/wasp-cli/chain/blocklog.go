@@ -36,7 +36,7 @@ func initBlockCmd() *cobra.Command {
 }
 
 func fetchBlockInfo(args []string) *apiclient.BlockInfoResponse {
-	client := cliclients.WaspClientForIndex()
+	client := cliclients.WaspClient()
 
 	if len(args) == 0 {
 		blockInfo, _, err := client.
@@ -62,7 +62,7 @@ func fetchBlockInfo(args []string) *apiclient.BlockInfoResponse {
 }
 
 func logRequestsInBlock(index uint32) {
-	client := cliclients.WaspClientForIndex()
+	client := cliclients.WaspClient()
 	receipts, _, err := client.CorecontractsApi.
 		BlocklogGetRequestReceiptsOfBlock(context.Background(), config.GetCurrentChainID().String(), index).
 		Execute()
@@ -112,7 +112,7 @@ func logReceipt(receipt *apiclient.RequestReceiptResponse, index ...int) {
 }
 
 func logEventsInBlock(index uint32) {
-	client := cliclients.WaspClientForIndex()
+	client := cliclients.WaspClient()
 	events, _, err := client.CorecontractsApi.
 		BlocklogGetEventsOfBlock(context.Background(), config.GetCurrentChainID().String(), index).
 		Execute()
@@ -130,7 +130,7 @@ func initRequestCmd() *cobra.Command {
 			reqID, err := isc.RequestIDFromString(args[0])
 			log.Check(err)
 
-			client := cliclients.WaspClientForIndex()
+			client := cliclients.WaspClient()
 			receipt, _, err := client.CorecontractsApi.
 				BlocklogGetRequestReceipt(context.Background(), config.GetCurrentChainID().String(), reqID.String()).
 				Execute()
@@ -148,7 +148,7 @@ func initRequestCmd() *cobra.Command {
 }
 
 func logEventsInRequest(reqID isc.RequestID) {
-	client := cliclients.WaspClientForIndex()
+	client := cliclients.WaspClient()
 	events, _, err := client.CorecontractsApi.
 		BlocklogGetEventsOfRequest(context.Background(), config.GetCurrentChainID().String(), reqID.String()).
 		Execute()

@@ -29,7 +29,7 @@ func initStoreBlobCmd() *cobra.Command {
 		Short: "Store a blob in the chain",
 		Args:  cobra.MinimumNArgs(4),
 		Run: func(cmd *cobra.Command, args []string) {
-			uploadBlob(cliclients.WaspClientForIndex(), util.EncodeParams(args))
+			uploadBlob(cliclients.WaspClient(), util.EncodeParams(args))
 		},
 	}
 }
@@ -53,7 +53,7 @@ func initShowBlobCmd() *cobra.Command {
 			hash, err := hashing.HashValueFromHex(args[0])
 			log.Check(err)
 
-			client := cliclients.WaspClientForIndex()
+			client := cliclients.WaspClient()
 
 			blobInfo, _, err := client.
 				CorecontractsApi.
@@ -86,7 +86,7 @@ func initListBlobsCmd() *cobra.Command {
 		Short: "List blobs in chain",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClientForIndex()
+			client := cliclients.WaspClient()
 
 			blobsResponse, _, err := client.
 				CorecontractsApi.

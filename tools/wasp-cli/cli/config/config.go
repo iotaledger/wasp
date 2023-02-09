@@ -87,49 +87,28 @@ func SetToken(token string) {
 	Set("authentication.token", token)
 }
 
-func MustWaspAPIURL(i ...int) string {
-	apiAddress := WaspAPIURL(i...)
+func MustWaspAPIURL(nameOpt ...string) string {
+	apiAddress := WaspAPIURL(nameOpt...)
 	if apiAddress == "" {
 		panic("wasp webapi not defined")
 	}
 	return apiAddress
 }
 
-func WaspAPIURL(i ...int) string {
-	index := 0
-	if len(i) > 0 {
-		index = i[0]
+func WaspAPIURL(nameOpt ...string) string {
+	nodeName := GetDefaultWaspNode()
+	if len(nameOpt) > 0 {
+		nodeName = nameOpt[0]
 	}
-	return viper.GetString(fmt.Sprintf("wasp.%d.%s", index, HostKindAPI))
+	return viper.GetString(fmt.Sprintf("wasp.%s.%s", nodeName, HostKindAPI))
 }
 
-func CommitteeAPIURL(indices []int) []string {
-	return committeeHosts(HostKindAPI, indices)
-}
-
-func committeeHosts(kind string, indices []int) []string {
+func NodeAPIURLs(nodeNames []string) []string {
 	hosts := make([]string, 0)
-	for _, i := range indices {
-		hosts = append(hosts, committeeHost(kind, i))
+	for _, nodeName := range nodeNames {
+		hosts = append(hosts, WaspAPIURL(nodeName))
 	}
 	return hosts
-}
-
-func committeeConfigVar(kind string, i int) string {
-	return fmt.Sprintf("wasp.%d.%s", i, kind)
-}
-
-func committeeHost(kind string, i int) string {
-	r := viper.GetString(committeeConfigVar(kind, i))
-	if r != "" {
-		return r
-	}
-	defaultPort := defaultWaspPort(kind, i)
-	return fmt.Sprintf("127.0.0.1:%d", defaultPort)
-}
-
-func TotalNumberOfWaspNodes() int {
-	return len(viper.Sub("wasp").AllSettings())
 }
 
 func defaultWaspPort(kind string, i int) int {

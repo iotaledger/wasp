@@ -18,7 +18,7 @@ func initInfoCmd() *cobra.Command {
 		Short: "Node info.",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClientForIndex()
+			client := cliclients.WaspClient()
 			info, _, err := client.NodeApi.GetPeeringIdentity(context.Background()).Execute()
 			log.Check(err)
 

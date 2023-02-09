@@ -16,7 +16,7 @@ import (
 )
 
 func postRequest(hname, fname string, params chainclient.PostRequestParams, offLedger, adjustStorageDeposit bool) {
-	apiClient := cliclients.WaspClientForIndex()
+	apiClient := cliclients.WaspClient()
 	scClient := cliclients.SCClient(apiClient, isc.Hn(hname))
 
 	if offLedger {
