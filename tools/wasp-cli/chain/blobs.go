@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 var uploadQuorum int
@@ -24,14 +25,18 @@ func initUploadFlags(chainCmd *cobra.Command) {
 }
 
 func initStoreBlobCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	cmd := &cobra.Command{
 		Use:   "store-blob <type> <field> <type> <value> ...",
 		Short: "Store a blob in the chain",
 		Args:  cobra.MinimumNArgs(4),
 		Run: func(cmd *cobra.Command, args []string) {
-			uploadBlob(cliclients.WaspClientForIndex(), util.EncodeParams(args))
+			node = waspcmd.DefaultSingleNodeFallback(node)
+			uploadBlob(cliclients.WaspClient(node), util.EncodeParams(args))
 		},
 	}
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	return cmd
 }
 
 func uploadBlob(client *apiclient.APIClient, fieldValues dict.Dict) (hash hashing.HashValue) {
@@ -45,7 +50,8 @@ func uploadBlob(client *apiclient.APIClient, fieldValues dict.Dict) (hash hashin
 }
 
 func initShowBlobCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	cmd := &cobra.Command{
 		Use:   "show-blob <hash>",
 		Short: "Show a blob in chain",
 		Args:  cobra.ExactArgs(1),
@@ -53,7 +59,8 @@ func initShowBlobCmd() *cobra.Command {
 			hash, err := hashing.HashValueFromHex(args[0])
 			log.Check(err)
 
-			client := cliclients.WaspClientForIndex()
+			node = waspcmd.DefaultSingleNodeFallback(node)
+			client := cliclients.WaspClient(node)
 
 			blobInfo, _, err := client.
 				CorecontractsApi.
@@ -78,15 +85,19 @@ func initShowBlobCmd() *cobra.Command {
 			util.PrintDictAsJSON(values)
 		},
 	}
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	return cmd
 }
 
 func initListBlobsCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	cmd := &cobra.Command{
 		Use:   "list-blobs",
 		Short: "List blobs in chain",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClientForIndex()
+			node = waspcmd.DefaultSingleNodeFallback(node)
+			client := cliclients.WaspClient(node)
 
 			blobsResponse, _, err := client.
 				CorecontractsApi.
@@ -107,4 +118,6 @@ func initListBlobsCmd() *cobra.Command {
 			log.PrintTable(header, rows)
 		},
 	}
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	return cmd
 }

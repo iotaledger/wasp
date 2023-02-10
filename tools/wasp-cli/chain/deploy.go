@@ -13,8 +13,6 @@ import (
 	"github.com/spf13/viper"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -26,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func GetAllWaspNodes() []int {
@@ -65,48 +64,42 @@ func controllerAddr(addr string) iotago.Address {
 
 func initDeployCmd() *cobra.Command {
 	var (
-		committee        []int
+		nodes            []string
 		quorum           int
 		description      string
 		evmParams        evmDeployParams
 		govControllerStr string
+		chainAlias       string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "deploy [<alias>]",
 		Short: "Deploy a new chain",
-		Args:  cobra.MaximumNArgs(1),
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			l1Client := cliclients.L1Client()
-
-			if committee == nil {
-				committee = GetAllWaspNodes()
-			}
+			nodes = waspcmd.DefaultNodesFallback(nodes)
 
 			if quorum == 0 {
-				quorum = defaultQuorum(len(committee))
+				quorum = defaultQuorum(len(nodes))
 			}
 
-			if ok, _ := isEnoughQuorum(len(committee), quorum); !ok {
+			if ok, _ := isEnoughQuorum(len(nodes), quorum); !ok {
 				log.Fatal("quorum needs to be bigger than 1/3 of committee size")
 			}
 
 			committeePubKeys := make([]string, 0)
-			for _, apiIndex := range committee {
-				peerInfo, _, err := cliclients.WaspClientForIndex(apiIndex).NodeApi.GetPeeringIdentity(context.Background()).Execute()
+			for _, apiIndex := range nodes {
+				peerInfo, _, err := cliclients.WaspClient(apiIndex).NodeApi.GetPeeringIdentity(context.Background()).Execute()
 				log.Check(err)
 				committeePubKeys = append(committeePubKeys, peerInfo.PublicKey)
 			}
 
-			var clientResolver multiclient.ClientResolver = func(apiHost string) *apiclient.APIClient {
-				return cliclients.WaspClientForHostName(apiHost)
-			}
-
-			chainid, _, err := apilib.DeployChainWithDKG(clientResolver, apilib.CreateChainParams{
+			chainid, _, err := apilib.DeployChainWithDKG(cliclients.WaspClientForHostName, apilib.CreateChainParams{
 				Layer1Client:         l1Client,
-				CommitteeAPIHosts:    config.CommitteeAPIURL(committee),
+				CommitteeAPIHosts:    config.NodeAPIURLs(nodes),
 				CommitteePubKeys:     committeePubKeys,
-				N:                    uint16(len(committee)),
+				N:                    uint16(len(nodes)),
 				T:                    uint16(quorum),
 				OriginatorKeyPair:    wallet.Load().KeyPair,
 				Description:          description,
@@ -121,20 +114,16 @@ func initDeployCmd() *cobra.Command {
 			})
 			log.Check(err)
 
-			var alias string
-			if len(args) == 0 {
-				alias = config.GetChainAlias()
-			} else {
-				alias = args[0]
-			}
-			config.AddChainAlias(alias, chainid.String())
+			config.AddChainAlias(chainAlias, chainid.String())
 		},
 	}
 
-	cmd.Flags().IntSliceVarP(&committee, "committee", "", nil, "peers acting as committee nodes (ex: 0,1,2,3) (default: all nodes)")
-	cmd.Flags().IntVarP(&quorum, "quorum", "", 0, "quorum (default: 3/4s of the number of committee nodes)")
-	cmd.Flags().StringVarP(&description, "description", "", "", "description")
-	cmd.Flags().StringVarP(&govControllerStr, "gov-controller", "", "", "governance controller address")
+	waspcmd.WithWaspNodesFlag(cmd, &nodes)
+	cmd.Flags().StringVar(&chainAlias, "chain", "", "name of the chain)")
+	log.Check(cmd.MarkFlagRequired("chain"))
+	cmd.Flags().IntVar(&quorum, "quorum", 0, "quorum (default: 3/4s of the number of committee nodes)")
+	cmd.Flags().StringVar(&description, "description", "", "description")
+	cmd.Flags().StringVar(&govControllerStr, "gov-controller", "", "governance controller address")
 
 	evmParams.initFlags(cmd)
 	return cmd

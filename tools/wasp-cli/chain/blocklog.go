@@ -13,30 +13,35 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func initBlockCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	cmd := &cobra.Command{
 		Use:   "block [index]",
 		Short: "Get information about a block given its index, or latest block if missing",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			bi := fetchBlockInfo(args)
+			node = waspcmd.DefaultSingleNodeFallback(node)
+			bi := fetchBlockInfo(args, node)
 			log.Printf("Block index: %d\n", bi.BlockIndex)
 			log.Printf("Timestamp: %s\n", bi.Timestamp.UTC().Format(time.RFC3339))
 			log.Printf("Total requests: %d\n", bi.TotalRequests)
 			log.Printf("Successful requests: %d\n", bi.NumSuccessfulRequests)
 			log.Printf("Off-ledger requests: %d\n", bi.NumOffLedgerRequests)
 			log.Printf("\n")
-			logRequestsInBlock(bi.BlockIndex)
+			logRequestsInBlock(bi.BlockIndex, node)
 			log.Printf("\n")
-			logEventsInBlock(bi.BlockIndex)
+			logEventsInBlock(bi.BlockIndex, node)
 		},
 	}
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	return cmd
 }
 
-func fetchBlockInfo(args []string) *apiclient.BlockInfoResponse {
-	client := cliclients.WaspClientForIndex()
+func fetchBlockInfo(args []string, node string) *apiclient.BlockInfoResponse {
+	client := cliclients.WaspClient(node)
 
 	if len(args) == 0 {
 		blockInfo, _, err := client.
@@ -61,8 +66,8 @@ func fetchBlockInfo(args []string) *apiclient.BlockInfoResponse {
 	return blockInfo
 }
 
-func logRequestsInBlock(index uint32) {
-	client := cliclients.WaspClientForIndex()
+func logRequestsInBlock(index uint32, node string) {
+	client := cliclients.WaspClient(node)
 	receipts, _, err := client.CorecontractsApi.
 		BlocklogGetRequestReceiptsOfBlock(context.Background(), config.GetCurrentChainID().String(), index).
 		Execute()
@@ -111,8 +116,8 @@ func logReceipt(receipt *apiclient.RequestReceiptResponse, index ...int) {
 	log.PrintTree(tree, 2, 2)
 }
 
-func logEventsInBlock(index uint32) {
-	client := cliclients.WaspClientForIndex()
+func logEventsInBlock(index uint32, node string) {
+	client := cliclients.WaspClient(node)
 	events, _, err := client.CorecontractsApi.
 		BlocklogGetEventsOfBlock(context.Background(), config.GetCurrentChainID().String(), index).
 		Execute()
@@ -122,15 +127,17 @@ func logEventsInBlock(index uint32) {
 }
 
 func initRequestCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	cmd := &cobra.Command{
 		Use:   "request <request-id>",
 		Short: "Get information about a request given its ID",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			node = waspcmd.DefaultSingleNodeFallback(node)
 			reqID, err := isc.RequestIDFromString(args[0])
 			log.Check(err)
 
-			client := cliclients.WaspClientForIndex()
+			client := cliclients.WaspClient(node)
 			receipt, _, err := client.CorecontractsApi.
 				BlocklogGetRequestReceipt(context.Background(), config.GetCurrentChainID().String(), reqID.String()).
 				Execute()
@@ -141,14 +148,16 @@ func initRequestCmd() *cobra.Command {
 			logReceipt(receipt)
 
 			log.Printf("\n")
-			logEventsInRequest(reqID)
+			logEventsInRequest(reqID, node)
 			log.Printf("\n")
 		},
 	}
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	return cmd
 }
 
-func logEventsInRequest(reqID isc.RequestID) {
-	client := cliclients.WaspClientForIndex()
+func logEventsInRequest(reqID isc.RequestID, node string) {
+	client := cliclients.WaspClient(node)
 	events, _, err := client.CorecontractsApi.
 		BlocklogGetEventsOfRequest(context.Background(), config.GetCurrentChainID().String(), reqID.String()).
 		Execute()

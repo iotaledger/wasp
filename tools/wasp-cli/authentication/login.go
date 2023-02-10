@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 var (
@@ -21,11 +22,13 @@ var (
 )
 
 func initLoginCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	cmd := &cobra.Command{
 		Use:   "login",
 		Short: "Authenticate against a Wasp node",
 		// Args:  cobra.ArbitraryArgs,
 		Run: func(cmd *cobra.Command, args []string) {
+			node = waspcmd.DefaultSingleNodeFallback(node)
 			if username == "" || password == "" {
 				scanner := bufio.NewScanner(os.Stdin)
 
@@ -48,7 +51,7 @@ func initLoginCmd() *cobra.Command {
 				return
 			}
 
-			token, _, err := cliclients.WaspClientForIndex().AuthApi.
+			token, _, err := cliclients.WaspClient(node).AuthApi.
 				Authenticate(context.Background()).
 				LoginRequest(apiclient.LoginRequest{
 					Username: username,
@@ -62,4 +65,6 @@ func initLoginCmd() *cobra.Command {
 			log.Printf("\nSuccessfully authenticated\n")
 		},
 	}
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	return cmd
 }

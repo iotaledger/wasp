@@ -55,7 +55,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		require.Regexp(t, fmt.Sprintf(`(?m)counter:\s+%d$`, n), out[0])
 	}
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.CommitteeConfigArgs()
 	out := w.MustRun(
 		"chain",
 		"deploy",
@@ -96,7 +96,6 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		})
 		require.NoError(t, err)
 
-		cluster1PubKeys := make([]*cryptolib.PublicKey, len(w.Cluster.AllNodes()))
 		for _, nodeIndex := range w.Cluster.Config.AllNodes() {
 			// equivalent of "wasp-cli peer info"
 			peerInfo, _, err := w.Cluster.WaspClient(nodeIndex).NodeApi.
@@ -104,12 +103,11 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 				Execute()
 			require.NoError(t, err)
 
-			w2.MustRun("peering", "trust", peerInfo.PublicKey, peerInfo.NetId)
-			cluster1PubKeys[nodeIndex], err = cryptolib.NewPublicKeyFromString(peerInfo.PublicKey)
+			w2.MustRun("peering", "trust", peerInfo.PublicKey, peerInfo.NetId, "--node=0")
 			require.NoError(t, err)
 		}
 
-		// add node 0 from cluster 2 as an access node in the governance contract
+		// add node 0 from cluster 2 as an access node
 		pubKey, err := cryptolib.NewPublicKeyFromString(node0peerInfo.PublicKey)
 		require.NoError(t, err)
 
@@ -118,8 +116,8 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 	// activate the chain on the new nodes
 	w2.MustRun("chain", "add", "chain1", chainID)
-	w2.MustRun("set", "chain", "chain1")
-	w2.MustRun("chain", "activate")
+	w2.MustRun("set", "defaultchain", "chain1")
+	w2.MustRun("chain", "activate", w2.AllNodesArg())
 
 	// deploy a contract, test its working
 	{
@@ -164,7 +162,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 	w.Cluster.Stop()
 
 	// run DKG on the new cluster, obtain the new state controller address
-	out = w2.MustRun("chain", "rundkg")
+	out = w2.MustRun("chain", "rundkg", w2.AllNodesArg())
 	newStateControllerAddr := regexp.MustCompile(`(.*):\s*([a-zA-Z0-9_]*)$`).FindStringSubmatch(out[0])[2]
 
 	// issue a governance rotatation via CLI
@@ -173,7 +171,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 	// stop maintenance
 	// set the new nodes as the default (so querying the receipt doesn't fail)
-	w.MustRun("set", "wasp.0.api", w2.Cluster.Config.APIHost(0))
+	w.MustRun("set", "wasp.0", w2.Cluster.Config.APIHost(0))
 	out = w.PostRequestGetReceipt("governance", "stopMaintenance")
 	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 

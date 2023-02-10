@@ -17,10 +17,6 @@ var (
 )
 
 const (
-	HostKindAPI     = "api"
-	HostKindPeering = "peering"
-	HostKindNanomsg = "nanomsg"
-
 	l1ParamsKey          = "l1.params"
 	l1ParamsTimestampKey = "l1.timestamp"
 	l1ParamsExpiration   = 24 * time.Hour
@@ -87,61 +83,24 @@ func SetToken(token string) {
 	Set("authentication.token", token)
 }
 
-func MustWaspAPIURL(i ...int) string {
-	apiAddress := WaspAPIURL(i...)
+func MustWaspAPIURL(nodeName string) string {
+	apiAddress := WaspAPIURL(nodeName)
 	if apiAddress == "" {
-		panic("wasp webapi not defined")
+		log.Fatalf("wasp webapi not defined for node: %s", nodeName)
 	}
 	return apiAddress
 }
 
-func WaspAPIURL(i ...int) string {
-	index := 0
-	if len(i) > 0 {
-		index = i[0]
-	}
-	return viper.GetString(fmt.Sprintf("wasp.%d.%s", index, HostKindAPI))
+func WaspAPIURL(nodeName string) string {
+	return viper.GetString(fmt.Sprintf("wasp.%s", nodeName))
 }
 
-func CommitteeAPIURL(indices []int) []string {
-	return committeeHosts(HostKindAPI, indices)
-}
-
-func committeeHosts(kind string, indices []int) []string {
+func NodeAPIURLs(nodeNames []string) []string {
 	hosts := make([]string, 0)
-	for _, i := range indices {
-		hosts = append(hosts, committeeHost(kind, i))
+	for _, nodeName := range nodeNames {
+		hosts = append(hosts, WaspAPIURL(nodeName))
 	}
 	return hosts
-}
-
-func committeeConfigVar(kind string, i int) string {
-	return fmt.Sprintf("wasp.%d.%s", i, kind)
-}
-
-func committeeHost(kind string, i int) string {
-	r := viper.GetString(committeeConfigVar(kind, i))
-	if r != "" {
-		return r
-	}
-	defaultPort := defaultWaspPort(kind, i)
-	return fmt.Sprintf("127.0.0.1:%d", defaultPort)
-}
-
-func TotalNumberOfWaspNodes() int {
-	return len(viper.Sub("wasp").AllSettings())
-}
-
-func defaultWaspPort(kind string, i int) int {
-	switch kind {
-	case HostKindNanomsg:
-		return 5550 + i
-	case HostKindPeering:
-		return 4000 + i
-	case HostKindAPI:
-		return 9090 + i
-	}
-	panic(fmt.Sprintf("no handler for kind %s", kind))
 }
 
 func Set(key string, value interface{}) {

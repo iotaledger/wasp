@@ -1,20 +1,27 @@
 package tests
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	"math/big"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
 const file = "inccounter_bg.wasm"
@@ -38,7 +45,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 
 	alias := "chain1"
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.CommitteeConfigArgs()
 
 	// test chain deploy command
 	w.MustRun("chain", "deploy", "--chain="+alias, committee, quorum)
@@ -55,7 +62,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 	require.Contains(t, out[4], chainID)
 
 	// unnecessary, since it is the latest deployed chain
-	w.MustRun("set", "chain", alias)
+	w.MustRun("set", "defaultchain", alias)
 
 	// test chain list-contracts command
 	out = w.MustRun("chain", "list-contracts")
@@ -124,7 +131,7 @@ func TestWaspCLISendFunds(t *testing.T) {
 func TestWaspCLIDeposit(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.CommitteeConfigArgs()
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	t.Run("deposit to own account", func(t *testing.T) {
@@ -209,7 +216,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 func TestWaspCLIContract(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.CommitteeConfigArgs()
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	// for running off-ledger requests
@@ -275,7 +282,7 @@ func findRequestIDInOutput(out []string) string {
 func TestWaspCLIBlockLog(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.CommitteeConfigArgs()
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	out := w.MustRun("chain", "deposit", "base:100")
@@ -338,7 +345,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 func TestWaspCLIBlobContract(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.CommitteeConfigArgs()
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	// for running off-ledger requests
@@ -380,12 +387,12 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 	require.Panics(
 		t,
 		func() {
-			w.MustRun("chain", "deploy", "--chain=chain1", "--committee=0,1,2,3,4,5", "--quorum=4")
+			w.MustRun("chain", "deploy", "--chain=chain1", "--nodes=0,1,2,3,4,5", "--quorum=4")
 		})
 
 	alias := "chain1"
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.CommitteeConfigArgs()
 
 	// test chain deploy command
 	w.MustRun("chain", "deploy", "--chain="+alias, committee, quorum)
@@ -402,7 +409,7 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 	require.Contains(t, out[4], chainID)
 
 	// deactivate chain and check that the chain was deactivated
-	w.MustRun("chain", "deactivate")
+	w.MustRun("chain", "deactivate", w.AllNodesArg())
 	out = w.MustRun("chain", "list")
 	require.Contains(t, out[0], "Total 1 chain(s)")
 	require.Contains(t, out[4], chainID)
@@ -412,7 +419,7 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 	require.False(t, active)
 
 	// activate chain and check that it was activated
-	w.MustRun("chain", "activate")
+	w.MustRun("chain", "activate", w.AllNodesArg())
 	out = w.MustRun("chain", "list")
 	require.Contains(t, out[0], "Total 1 chain(s)")
 	require.Contains(t, out[4], chainID)
@@ -425,7 +432,7 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 func TestWaspCLILongParam(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.CommitteeConfigArgs()
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	// create foundry
@@ -449,4 +456,68 @@ func TestWaspCLILongParam(t *testing.T) {
 
 	out = w.MustRun("chain", "request", reqID)
 	require.Contains(t, strings.Join(out, "\n"), "too long")
+}
+
+func TestWaspCLITrustListImport(t *testing.T) {
+	w := newWaspCLITest(t, waspClusterOpts{
+		nNodes:  4,
+		dirName: "wasp-cluster-initial",
+	})
+
+	w2 := newWaspCLITest(t, waspClusterOpts{
+		nNodes:  2,
+		dirName: "wasp-cluster-new-gov",
+		modifyConfig: func(nodeIndex int, configParams templates.WaspConfigParams) templates.WaspConfigParams {
+			// avoid port conflicts when running everything on localhost
+			configParams.APIPort += 100
+			configParams.DashboardPort += 100
+			configParams.MetricsPort += 100
+			configParams.NanomsgPort += 100
+			configParams.PeeringPort += 100
+			configParams.ProfilingPort += 100
+			return configParams
+		},
+	})
+	// set cluster2/node0 to trust all nodes from cluster 1
+
+	for _, nodeIndex := range w.Cluster.Config.AllNodes() {
+		// equivalent of "wasp-cli peer info"
+		peerInfo, _, err := w.Cluster.WaspClient(nodeIndex).NodeApi.
+			GetPeeringIdentity(context.Background()).
+			Execute()
+		require.NoError(t, err)
+
+		w2.MustRun("peering", "trust", peerInfo.PublicKey, peerInfo.NetId, "--node=0")
+		require.NoError(t, err)
+	}
+
+	// import the trust from cluster2/node0 to cluster2/node1
+	trustedOut := w2.MustRun("peering", "list-trusted", "--node=0", "--json")
+	// create temporary file to be consumed by the import command
+	file, err := os.CreateTemp("", "tmp-trusted-peers.*.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	file.WriteString(trustedOut[0])
+	w2.MustRun("peering", "import-trusted", file.Name(), "--node=1")
+
+	trustedOut2 := w2.MustRun("peering", "list-trusted", "--node=1", "--json")
+	println(trustedOut2)
+
+	var trustedList1 []apiclient.PeeringNodeIdentityResponse
+	require.NoError(t, json.Unmarshal([]byte(trustedOut[0]), &trustedList1))
+
+	var trustedList2 []apiclient.PeeringNodeIdentityResponse
+	require.NoError(t, json.Unmarshal([]byte(trustedOut2[0]), &trustedList2))
+
+	require.Equal(t, len(trustedList1), len(trustedList2))
+
+	for _, trustedPeer := range trustedList1 {
+		require.True(t,
+			lo.ContainsBy(trustedList2, func(tp apiclient.PeeringNodeIdentityResponse) bool {
+				return tp.NetId == trustedPeer.NetId && tp.PublicKey == trustedPeer.PublicKey && tp.IsTrusted == trustedPeer.IsTrusted
+			}),
+		)
+	}
 }

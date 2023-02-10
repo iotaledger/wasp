@@ -13,15 +13,16 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
-func postRequest(hname, fname string, params chainclient.PostRequestParams, offLedger, adjustStorageDeposit bool) {
-	apiClient := cliclients.WaspClientForIndex()
+func postRequest(nodeName, hname, fname string, params chainclient.PostRequestParams, offLedger, adjustStorageDeposit bool) {
+	apiClient := cliclients.WaspClient(nodeName)
 	scClient := cliclients.SCClient(apiClient, isc.Hn(hname))
 
 	if offLedger {
 		params.Nonce = uint64(time.Now().UnixNano())
-		util.WithOffLedgerRequest(config.GetCurrentChainID(), func() (isc.OffLedgerRequest, error) {
+		util.WithOffLedgerRequest(config.GetCurrentChainID(), nodeName, func() (isc.OffLedgerRequest, error) {
 			return scClient.PostOffLedgerRequest(fname, params)
 		})
 		return
@@ -47,7 +48,7 @@ func postRequest(hname, fname string, params chainclient.PostRequestParams, offL
 		util.SDAdjustmentPrompt(output)
 	}
 
-	util.WithSCTransaction(config.GetCurrentChainID(), func() (*iotago.Transaction, error) {
+	util.WithSCTransaction(config.GetCurrentChainID(), nodeName, func() (*iotago.Transaction, error) {
 		return scClient.PostRequest(fname, params)
 	})
 }
@@ -57,6 +58,7 @@ func initPostRequestCmd() *cobra.Command {
 	var allowance []string
 	var offLedger bool
 	var adjustStorageDeposit bool
+	var node string
 
 	cmd := &cobra.Command{
 		Use:   "post-request <name> <funcname> [params]",
@@ -64,6 +66,7 @@ func initPostRequestCmd() *cobra.Command {
 		Long:  "Post a request to contract <name>, function <funcname> with given params.",
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
+			node = waspcmd.DefaultSingleNodeFallback(node)
 			hname := args[0]
 			fname := args[1]
 
@@ -73,7 +76,7 @@ func initPostRequestCmd() *cobra.Command {
 				Transfer:  util.ParseFungibleTokens(transfer),
 				Allowance: allowanceTokens,
 			}
-			postRequest(hname, fname, params, offLedger, adjustStorageDeposit)
+			postRequest(node, hname, fname, params, offLedger, adjustStorageDeposit)
 		},
 	}
 
@@ -87,6 +90,8 @@ func initPostRequestCmd() *cobra.Command {
 		"post an off-ledger request",
 	)
 	cmd.Flags().BoolVarP(&adjustStorageDeposit, "adjust-storage-deposit", "s", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
+
+	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
 
 	return cmd
 }
