@@ -34,7 +34,7 @@ func initListAccountsCmd() *cobra.Command {
 			client := cliclients.WaspClient(node)
 			chainID := config.GetChain(chain)
 
-			accountList, _, err := client.CorecontractsApi.AccountsGetAccounts(context.Background(), chainID.String()).Execute()
+			accountList, _, err := client.CorecontractsApi.AccountsGetAccounts(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
 			log.Printf("Total %d account(s) in chain %s\n", len(accountList.Accounts), config.GetChain(chain).String())
@@ -75,7 +75,7 @@ func initBalanceCmd() *cobra.Command {
 
 			client := cliclients.WaspClient(node)
 			chainID := config.GetChain(chain)
-			balance, _, err := client.CorecontractsApi.AccountsGetAccountBalance(context.Background(), chainID.String(), agentID.String()).Execute()
+			balance, _, err := client.CorecontractsApi.AccountsGetAccountBalance(context.Background(), chainID.String(), agentID.String()).Execute() //nolint:bodyclose // false positive
 
 			log.Check(err)
 

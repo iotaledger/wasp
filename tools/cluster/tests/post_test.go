@@ -39,8 +39,8 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 		require.NoError(e.t, err2)
 		require.Greater(e.t, blockIndex, uint32(2))
 
-		contractRegistry, err := e.Chain.ContractRegistry(i)
-		require.NoError(e.t, err)
+		contractRegistry, err2 := e.Chain.ContractRegistry(i)
+		require.NoError(e.t, err2)
 
 		cr, ok := lo.Find(contractRegistry, func(item apiclient.ContractInfoResponse) bool {
 			return item.HName == hname.String()

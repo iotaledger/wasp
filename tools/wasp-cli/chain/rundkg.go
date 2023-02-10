@@ -63,7 +63,7 @@ func doDKG(node string, peers []string, quorum int) iotago.Address {
 	// grab the peering info of the peers from the node
 	filteredPeers := make([]apiclient.PeeringNodeIdentityResponse, 0)
 	{
-		trustedPeers, _, err := client.NodeApi.GetTrustedPeers(context.Background()).Execute()
+		trustedPeers, _, err := client.NodeApi.GetTrustedPeers(context.Background()).Execute() //nolint:bodyclose // false positive
 		log.Check(err)
 
 		for _, peer := range peers {
@@ -78,7 +78,7 @@ func doDKG(node string, peers []string, quorum int) iotago.Address {
 	}
 
 	// construct a list that includes the own node pub key and the peers
-	info, _, err := client.NodeApi.GetPeeringIdentity(context.Background()).Execute()
+	info, _, err := client.NodeApi.GetPeeringIdentity(context.Background()).Execute() //nolint:bodyclose // false positive
 	log.Check(err)
 
 	committeePubKeys := []string{info.PublicKey}

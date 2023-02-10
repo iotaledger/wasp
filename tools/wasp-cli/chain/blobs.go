@@ -74,7 +74,7 @@ func initShowBlobCmd() *cobra.Command {
 			blobInfo, _, err := client.
 				CorecontractsApi.
 				BlobsGetBlobInfo(context.Background(), config.GetChain(chain).String(), hash.Hex()).
-				Execute()
+				Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
 			values := dict.New()
@@ -82,14 +82,14 @@ func initShowBlobCmd() *cobra.Command {
 				value, _, err := client.
 					CorecontractsApi.
 					BlobsGetBlobValue(context.Background(), config.GetChain(chain).String(), hash.Hex(), field).
-					Execute()
+					Execute() //nolint:bodyclose // false positive
 
 				log.Check(err)
 
 				decodedValue, err := iotago.DecodeHex(value.ValueData)
 				log.Check(err)
 
-				values.Set(kv.Key(field), []byte(decodedValue))
+				values.Set(kv.Key(field), decodedValue)
 			}
 			util.PrintDictAsJSON(values)
 		},
@@ -114,7 +114,7 @@ func initListBlobsCmd() *cobra.Command {
 			blobsResponse, _, err := client.
 				CorecontractsApi.
 				BlobsGetAllBlobs(context.Background(), config.GetChain(chain).String()).
-				Execute()
+				Execute() //nolint:bodyclose // false positive
 
 			log.Check(err)
 

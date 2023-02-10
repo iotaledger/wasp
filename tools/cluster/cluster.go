@@ -227,9 +227,9 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	committeePubKeys := make([]string, len(chain.CommitteeNodes))
 	for i, nodeIndex := range chain.CommitteeNodes {
 		//nolint:bodyclose // false positive
-		peeringNode, _, err := clu.WaspClient(nodeIndex).NodeApi.GetPeeringIdentity(context.Background()).Execute()
-		if err != nil {
-			return nil, err
+		peeringNode, _, err2 := clu.WaspClient(nodeIndex).NodeApi.GetPeeringIdentity(context.Background()).Execute()
+		if err2 != nil {
+			return nil, err2
 		}
 
 		committeePubKeys[i] = peeringNode.PublicKey
