@@ -4,25 +4,36 @@
 package peering
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func initInfoCmd() *cobra.Command {
-	return &cobra.Command{
+	var nodes []string
+	cmd := &cobra.Command{
 		Use:   "info",
 		Short: "Node info.",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			info, err := config.WaspClient(config.MustWaspAPI()).GetPeeringSelf()
-			log.Check(err)
+			nodes = waspcmd.DefaultNodesFallback(nodes)
 
-			model := &InfoModel{PubKey: info.PubKey, NetID: info.NetID}
-			log.PrintCLIOutput(model)
+			for _, node := range nodes {
+				client := cliclients.WaspClient(node)
+				info, _, err := client.NodeApi.GetPeeringIdentity(context.Background()).Execute()
+				log.Check(err)
+
+				model := &InfoModel{PubKey: info.PublicKey, NetID: info.NetId}
+				log.PrintCLIOutput(model)
+			}
 		},
 	}
+	waspcmd.WithWaspNodesFlag(cmd, &nodes)
+	return cmd
 }
 
 type InfoModel struct {

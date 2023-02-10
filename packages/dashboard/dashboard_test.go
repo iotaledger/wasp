@@ -8,11 +8,11 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/packages/dashboard/testutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/webapi/v1/testutil"
 )
 
 func checkProperConversionsToString(t *testing.T, html *goquery.Document) {

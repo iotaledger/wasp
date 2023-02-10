@@ -1,13 +1,17 @@
 package tests
 
 import (
+	"context"
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -37,9 +41,14 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 
 		contractRegistry, err := e.Chain.ContractRegistry(i)
 		require.NoError(e.t, err)
-		cr := contractRegistry[hname]
 
-		require.EqualValues(e.t, programHash, cr.ProgramHash)
+		cr, ok := lo.Find(contractRegistry, func(item apiclient.ContractInfoResponse) bool {
+			return item.HName == hname.String()
+		})
+		require.True(e.t, ok)
+		require.NotNil(e.t, cr)
+
+		require.EqualValues(e.t, programHash.Hex(), cr.ProgramHash)
 		require.EqualValues(e.t, description, cr.Description)
 		require.EqualValues(e.t, cr.Name, inccounterName)
 
@@ -48,15 +57,19 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 		require.EqualValues(e.t, 42, counterValue)
 	}
 
-	// test calling root.FuncFindContractByName view function using client
-	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
-		e.Chain.ChainID, root.Contract.Hname(), root.ViewFindContract.Name,
-		dict.Dict{
+	result, err := apiextensions.CallView(context.Background(), e.Chain.Cluster.WaspClient(), apiclient.ContractCallViewRequest{
+		ChainId:       e.Chain.ChainID.String(),
+		ContractHName: root.Contract.Hname().String(),
+		FunctionHName: root.ViewFindContract.Hname().String(),
+		Arguments: apiextensions.DictToAPIJsonDict(dict.Dict{
 			root.ParamHname: hname.Bytes(),
-		})
+		}),
+	})
 	require.NoError(e.t, err)
-	recb, err := ret.Get(root.ParamContractRecData)
+
+	recb, err := result.Get(root.ParamContractRecData)
 	require.NoError(e.t, err)
+
 	rec, err := root.ContractRecordFromBytes(recb)
 	require.NoError(e.t, err)
 	require.EqualValues(e.t, description, rec.Description)
@@ -75,12 +88,18 @@ func (e *ChainEnv) getNativeContractCounter(hname isc.Hname) int64 {
 }
 
 func (e *ChainEnv) getCounterForNode(hname isc.Hname, nodeIndex int) int64 {
-	ret, err := e.Chain.Cluster.WaspClient(nodeIndex).CallView(
-		e.Chain.ChainID, hname, "getCounter", nil,
-	)
+	result, _, err := e.Chain.Cluster.WaspClient(nodeIndex).RequestsApi.
+		CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
+		ChainId:       e.Chain.ChainID.String(),
+		ContractHName: hname.String(),
+		FunctionName:  "getCounter",
+	}).Execute()
 	require.NoError(e.t, err)
 
-	counter, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
+	decodedDict, err := apiextensions.APIJsonDictToDict(*result)
+	require.NoError(e.t, err)
+
+	counter, err := codec.DecodeInt64(decodedDict.MustGet(inccounter.VarCounter), 0)
 	require.NoError(e.t, err)
 
 	return counter
@@ -180,9 +199,14 @@ func testPost5Requests(t *testing.T, e *ChainEnv) {
 			Transfer: isc.NewAssets(baseTokesSent, nil),
 		})
 		require.NoError(t, err)
+
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
-		onChainBalance += baseTokesSent - receipts[0].GasFeeCharged
+
+		gasFeeCharged, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
+		require.NoError(t, err)
+
+		onChainBalance += baseTokesSent - gasFeeCharged
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)
@@ -215,7 +239,11 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 	for i := 0; i < 5; i++ {
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx[i], 30*time.Second)
 		require.NoError(t, err)
-		onChainBalance += baseTokesSent - receipts[0].GasFeeCharged
+
+		gasFeeCharged, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
+		require.NoError(t, err)
+
+		onChainBalance += baseTokesSent - gasFeeCharged
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)

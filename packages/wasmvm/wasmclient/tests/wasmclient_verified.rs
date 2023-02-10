@@ -1,32 +1,35 @@
-use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};
-use wasmlib::ScViewCallContext;
+use std::cell::Cell;
+use std::rc::Rc;
 
-const MYCHAIN: &str = "tst1ppx8hf6vl7ak6xk2phxhx3xf6vd2r5zyulkgaf20kmfev9xusy4t2tku6he";
-const MYSEED: &str = "0x927fc9c0502ca9acc4a2ae15fabb7248d054b319423862873088c92d9b835c15";
+use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};
+
+const MYCHAIN: &str = "atoi1ppcj6fmmedfzljgckme2w6520m2qnv8mw7a8cejqvyvhfc0shtvv522uq46";
+const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
+
+fn check_error(ctx: &WasmClientContext) {
+    if let Err(e) = ctx.err() {
+        println!("err: {}", e);
+        assert!(false);
+    }
+}
 
 fn setup_client() -> wasmclient::wasmclientcontext::WasmClientContext {
-    let svc = WasmClientService::new("http://127.0.0.1:14265", "127.0.0.1:15550");
+    let svc = WasmClientService::new("http://127.0.0.1:19090", "127.0.0.1:15550");
     let mut ctx = WasmClientContext::new(&svc, MYCHAIN, "testwasmlib");
     ctx.sign_requests(&keypair::KeyPair::from_sub_seed(
         &wasmlib::bytes_from_string(MYSEED),
         0,
     ));
-    assert!(ctx.error.read().unwrap().is_ok());
+    check_error(&ctx);
     return ctx;
 }
 
 #[test]
 fn call_view() {
     let ctx = setup_client();
-    ctx.fn_chain_id();
     let v = testwasmlib::ScFuncs::get_random(&ctx);
     v.func.call();
-
-    let e = ctx.error.read().unwrap();
-    if let Err(e) = &*e {
-        println!("err: {}", e);
-    }
-    assert!(ctx.error.read().unwrap().is_ok());
+    check_error(&ctx);
     let rnd = v.results.random().value();
     println!("rnd: {}", rnd);
     assert!(rnd != 0);
@@ -35,50 +38,72 @@ fn call_view() {
 #[test]
 fn post_func_request() {
     let ctx = setup_client();
-    ctx.fn_chain_id();
     let f = testwasmlib::ScFuncs::random(&ctx);
     f.func.post();
-    assert!(ctx.error.read().unwrap().is_ok());
+    check_error(&ctx);
 
     ctx.wait_request();
-    assert!(ctx.error.read().unwrap().is_ok());
+    check_error(&ctx);
 
     let v = testwasmlib::ScFuncs::get_random(&ctx);
     v.func.call();
-
-    assert!(ctx.error.read().unwrap().is_ok());
+    check_error(&ctx);
     let rnd = v.results.random().value();
     println!("rnd: {}", rnd);
     assert!(rnd != 0);
 }
 
+struct X {
+    name: Rc<Cell<String>>,
+}
+
 #[test]
-fn event_handling() {}
+fn event_handling() {
+    let mut ctx = setup_client();
+    let mut events = testwasmlib::TestWasmLibEventHandlers::new("");
 
-//     describe('event handling', function () {
-//         jest.setTimeout(20000);
-//         it('should receive multiple events', async () => {
-//             const ctx = setupClient();
+    let x = X::new();
+    {
+        let name = x.name.clone();
+        events.on_test_wasm_lib_test(move |e| {
+            name.set(e.name.clone());
+        });
+    }
+    ctx.register(Box::new(events));
+    check_error(&ctx);
 
-//             const events = new testwasmlib.TestWasmLibEventHandlers();
-//             let name = '';
-//             events.onTestWasmLibTest((e) => {
-//                 console.log(e.name);
-//                 name = e.name;
-//             });
-//             ctx.register(events);
+    x.test_client_events_param(&ctx, "Lala");
+    x.test_client_events_param(&ctx, "Trala");
+    x.test_client_events_param(&ctx, "Bar|Bar");
+    x.test_client_events_param(&ctx, "Bar~|~Bar");
+    x.test_client_events_param(&ctx, "Tilde~Tilde");
+    x.test_client_events_param(&ctx, "Tilde~~ Bar~/ Space~_");
 
-//             const event = () => name;
+    ctx.unregister("");
+    check_error(&ctx);
+}
 
-//             await testClientEventsParam(ctx, 'Lala', event);
-//             await testClientEventsParam(ctx, 'Trala', event);
-//             await testClientEventsParam(ctx, 'Bar|Bar', event);
-//             await testClientEventsParam(ctx, 'Bar~|~Bar', event);
-//             await testClientEventsParam(ctx, 'Tilde~Tilde', event);
-//             await testClientEventsParam(ctx, 'Tilde~~ Bar~/ Space~_', event);
+impl X {
+    fn new() -> X {
+        X {
+            name: Rc::new(Cell::new(String::new())),
+        }
+    }
 
-//             ctx.unregister(events);
-//             expect(ctx.Err == null).toBeTruthy();
-//         });
-//     });
-// });
+    fn test_client_events_param(&self, ctx: &WasmClientContext, name: &str) {
+        let f = testwasmlib::ScFuncs::trigger_event(ctx);
+        f.params.name().set_value(name);
+        f.params.address().set_value(&ctx.current_chain_id().address());
+        f.func.post();
+        check_error(&ctx);
+
+        ctx.wait_request();
+        check_error(&ctx);
+
+        ctx.wait_event();
+        check_error(&ctx);
+
+        let x = self.name.clone();
+        assert!(name == x.take());
+    }
+}

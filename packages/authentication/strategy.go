@@ -2,9 +2,11 @@ package authentication
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/wasp/packages/authentication/shared"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -61,7 +63,7 @@ func AddNoneAuth(webAPI WebAPI) {
 	webAPI.Use(noneFunc)
 }
 
-func AddAuthentication(
+func AddV1Authentication(
 	webAPI WebAPI,
 	userManager *users.UserManager,
 	nodeIdentityProvider registry.NodeIdentityProvider,
@@ -78,10 +80,11 @@ func AddAuthentication(
 		privateKey := nodeIdentity.GetPrivateKey().AsBytes()
 
 		// The primary claim is the one mandatory claim that gives access to api/webapi/alike
-		jwtAuth := AddJWTAuth(webAPI, authConfig.JWTConfig, privateKey, userManager, claimValidator)
+		jwtAuth, authMiddleware := AddJWTAuth(authConfig.JWTConfig, privateKey, userManager, claimValidator)
 
 		authHandler := &AuthHandler{Jwt: jwtAuth, UserManager: userManager}
 		webAPI.POST(shared.AuthRoute(), authHandler.CrossAPIAuthHandler)
+		webAPI.Use(authMiddleware())
 
 	case AuthIPWhitelist:
 		AddIPWhiteListAuth(webAPI, authConfig.IPWhitelistConfig)
@@ -94,6 +97,61 @@ func AddAuthentication(
 	}
 
 	addAuthenticationStatus(webAPI, authConfig)
+}
+
+// TODO: After deprecating V1 we can slim down this whole strategy handler.
+// It is currently needed as the current authentication scheme does not support echoSwagger,
+// which leaves authentication out of the client code generator.
+// After v1 gets removed:
+// * Get rid off basic/ip auth and only keeping 'none' and 'JWT'
+// * Properly document the routes with echoSwagger
+// * Keep only one AddAuthentication method
+
+func AddV2Authentication(apiRoot echoswagger.ApiRoot,
+	userManager *users.UserManager,
+	nodeIdentityProvider registry.NodeIdentityProvider,
+	authConfig AuthConfiguration,
+	claimValidator ClaimValidator,
+) func() echo.MiddlewareFunc {
+	echoRoot := apiRoot.Echo()
+	authGroup := apiRoot.Group("auth", "")
+
+	addAuthContext(echoRoot, authConfig)
+
+	c := &StatusWebAPIModel{
+		config: authConfig,
+	}
+
+	authGroup.GET(shared.AuthInfoRoute(), c.handleAuthenticationStatus).
+		AddResponse(http.StatusOK, "Login was successful", shared.AuthInfoModel{}, nil).
+		SetOperationId("authInfo").
+		SetSummary("Get information about the current authentication mode")
+
+	switch authConfig.Scheme {
+	case AuthJWT:
+		nodeIdentity := nodeIdentityProvider.NodeIdentity()
+		privateKey := nodeIdentity.GetPrivateKey().AsBytes()
+
+		// The primary claim is the one mandatory claim that gives access to api/webapi/alike
+		jwtAuth, jwtMiddleware := AddJWTAuth(authConfig.JWTConfig, privateKey, userManager, claimValidator)
+
+		authHandler := &AuthHandler{Jwt: jwtAuth, UserManager: userManager}
+		authGroup.POST(shared.AuthRoute(), authHandler.CrossAPIAuthHandler).
+			AddParamBody(shared.LoginRequest{}, "", "The login request", true).
+			AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", nil, nil).
+			AddResponse(http.StatusOK, "Login was successful", shared.LoginResponse{}, nil).
+			SetOperationId("authenticate").
+			SetSummary("Authenticate towards the node")
+
+		return jwtMiddleware
+
+	case AuthNone:
+		AddNoneAuth(echoRoot)
+		return nil
+
+	default:
+		panic(fmt.Sprintf("Unknown auth scheme %s", authConfig.Scheme))
+	}
 }
 
 func addAuthContext(webAPI WebAPI, config AuthConfiguration) {

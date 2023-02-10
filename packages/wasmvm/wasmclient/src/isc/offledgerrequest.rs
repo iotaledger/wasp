@@ -4,14 +4,15 @@
 use crypto::hashes::{blake2b::Blake2b256, Digest};
 use wasmlib::*;
 
-use crate::keypair;
+use crate::{gas, keypair};
+use crate::keypair::KeyPair;
 
 pub trait OffLedgerRequest {
     fn new(
         chain_id: &ScChainID,
         contract: &ScHname,
         entry_point: &ScHname,
-        params: &ScDict,
+        params: &[u8],
         nonce: u64,
     ) -> Self;
     fn with_nonce(&mut self, nonce: u64) -> &Self;
@@ -25,7 +26,7 @@ pub struct OffLedgerRequestData {
     chain_id: ScChainID,
     contract: ScHname,
     entry_point: ScHname,
-    params: ScDict,
+    params: Vec<u8>,
     signature_scheme: OffLedgerSignatureScheme,
     nonce: u64,
     allowance: ScAssets,
@@ -34,12 +35,12 @@ pub struct OffLedgerRequestData {
 
 #[derive(Clone)]
 pub struct OffLedgerSignatureScheme {
-    key_pair: keypair::KeyPair,
+    key_pair: KeyPair,
     pub signature: Vec<u8>,
 }
 
 impl OffLedgerSignatureScheme {
-    pub fn new(key_pair: &keypair::KeyPair) -> Self {
+    pub fn new(key_pair: &KeyPair) -> Self {
         return OffLedgerSignatureScheme {
             key_pair: key_pair.clone(),
             signature: Vec::new(),
@@ -52,33 +53,37 @@ impl OffLedgerRequest for OffLedgerRequestData {
         chain_id: &ScChainID,
         contract: &ScHname,
         entry_point: &ScHname,
-        params: &ScDict,
+        params: &[u8],
         nonce: u64,
     ) -> Self {
         return OffLedgerRequestData {
             chain_id: chain_id.clone(),
             contract: contract.clone(),
             entry_point: entry_point.clone(),
-            params: params.clone(),
-            signature_scheme: OffLedgerSignatureScheme::new(&keypair::KeyPair::new(&[])),
+            params: params.to_vec(),
+            signature_scheme: OffLedgerSignatureScheme::new(&KeyPair::new(&[])),
             nonce: nonce,
-            allowance: ScAssets::new(&Vec::new()),
-            gas_budget: super::gas::MAX_GAS_PER_REQUEST,
+            allowance: ScAssets::new(&[]),
+            gas_budget: gas::MAX_GAS_PER_REQUEST,
         };
     }
+
     fn with_nonce(&mut self, nonce: u64) -> &Self {
         self.nonce = nonce;
         return self;
     }
+
     fn with_gas_budget(&mut self, gas_budget: u64) -> &Self {
         self.gas_budget = gas_budget;
         return self;
     }
+
     fn with_allowance(&mut self, allowance: &ScAssets) -> &Self {
         self.allowance = allowance.clone();
         return self;
     }
-    fn sign<'a>(&self, key_pair: &'a keypair::KeyPair) -> Self {
+
+    fn sign(&self, key_pair: &KeyPair) -> Self {
         let mut req = OffLedgerRequestData::new(
             &self.chain_id,
             &self.contract,
@@ -86,39 +91,44 @@ impl OffLedgerRequest for OffLedgerRequestData {
             &self.params,
             self.nonce,
         );
-        let mut scheme = OffLedgerSignatureScheme::new(&key_pair.to_owned());
-        scheme.signature = key_pair.clone().sign(&self.essence()).clone();
-        req.signature_scheme = scheme;
+        req.signature_scheme = OffLedgerSignatureScheme::new(&key_pair);
+        req.signature_scheme.signature = key_pair.sign(&req.essence());
         return req;
     }
 }
 
 impl OffLedgerRequestData {
     pub fn id(&self) -> ScRequestID {
-        let hash = Blake2b256::digest(self.to_bytes());
-        return wasmlib::request_id_from_bytes(&hash.to_vec());
+        // req id is hash of req bytes with output index zero
+        let mut hash = Blake2b256::digest(self.to_bytes()).to_vec();
+        hash.push(0);
+        hash.push(0);
+        return request_id_from_bytes(&hash);
     }
 
     pub fn essence(&self) -> Vec<u8> {
         let mut data: Vec<u8> = vec![1];
-        data.append(self.chain_id.to_bytes().as_mut());
-        data.append(self.contract.to_bytes().as_mut());
-        data.append(self.entry_point.to_bytes().as_mut());
-        data.append(self.params.to_bytes().as_mut());
-        data.append(wasmlib::uint64_to_bytes(self.nonce).as_mut());
-        data.append(wasmlib::uint64_to_bytes(self.gas_budget).as_mut());
-        let scheme = self.signature_scheme.clone();
-        let mut public_key = scheme.key_pair.public_key.to_bytes().to_vec();
-        data.push(public_key.len() as u8);
-        data.append(&mut public_key);
-        data.append(self.allowance.to_bytes().as_mut());
+        data.extend(self.chain_id.to_bytes());
+        data.extend(self.contract.to_bytes());
+        data.extend(self.entry_point.to_bytes());
+        data.extend(self.params.clone());
+        data.extend(uint64_to_bytes(self.nonce));
+        data.extend(uint64_to_bytes(self.gas_budget));
+        let pub_key = self.signature_scheme.key_pair.public_key.to_bytes();
+        data.push(pub_key.len() as u8);
+        data.extend(pub_key);
+        data.extend(self.allowance.to_bytes());
         return data;
     }
+
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut b = self.essence();
-        b.append(&mut self.signature_scheme.clone().signature.to_owned().to_vec());
+        let sig = &self.signature_scheme.signature;
+        b.extend(uint16_to_bytes(sig.len() as u16));
+        b.extend(sig);
         return b;
     }
+
     pub fn with_allowance(&mut self, allowance: &ScAssets) {
         self.allowance = allowance.clone();
     }

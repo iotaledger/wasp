@@ -1,12 +1,15 @@
 package tests
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -76,7 +79,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 		require.Greater(e.t, blockIndex, uint32(numRequests+4))
 
 		cl := e.Chain.SCClient(governance.Contract.Hname(), nil, i)
-		info, err := cl.CallView(governance.ViewGetChainInfo.Name, nil)
+		info, err := cl.CallView(context.Background(), governance.ViewGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
 		chainID, err := codec.DecodeChainID(info.MustGet(governance.VarChainID))
@@ -91,7 +94,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, e.Chain.Description, desc)
 
-		recs, err := e.Chain.SCClient(root.Contract.Hname(), nil, i).CallView(root.ViewGetContractRecords.Name, nil)
+		recs, err := e.Chain.SCClient(root.Contract.Hname(), nil, i).CallView(context.Background(), root.ViewGetContractRecords.Name, nil)
 		require.NoError(e.t, err)
 
 		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.StateVarContractRegistry))
@@ -125,7 +128,7 @@ func testInvalidEntrypoint(t *testing.T, env *ChainEnv) {
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.Chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(receipts))
-		require.Contains(t, receipts[0].ResolvedError, vm.ErrTargetEntryPointNotFound.MessageFormat())
+		require.Contains(t, receipts[0].Error.MessageFormat, vm.ErrTargetEntryPointNotFound.MessageFormat())
 	}
 
 	e.checkSC(numRequests)
@@ -247,9 +250,12 @@ func testIncViewCounter(t *testing.T, env *ChainEnv) {
 	entryPoint := isc.Hn("increment")
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkWasmContractCounter(1)
-	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
-		e.Chain.ChainID, incHname, "getCounter", nil,
-	)
+
+	ret, err := apiextensions.CallView(context.Background(), e.Chain.Cluster.WaspClient(0), apiclient.ContractCallViewRequest{
+		ChainId:       e.Chain.ChainID.String(),
+		ContractHName: incHname.String(),
+		FunctionName:  "getCounter",
+	})
 	require.NoError(t, err)
 
 	counter, err := codec.DecodeInt64(ret.MustGet(varCounter), 0)

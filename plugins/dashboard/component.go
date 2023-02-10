@@ -84,7 +84,7 @@ func provide(c *dig.Container) error {
 			return claims.HasPermission(permissions.Dashboard)
 		}
 
-		authentication.AddAuthentication(
+		authentication.AddV1Authentication(
 			e,
 			deps.UserManager,
 			deps.NodeIdentityProvider,

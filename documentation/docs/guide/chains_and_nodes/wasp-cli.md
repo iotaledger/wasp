@@ -35,20 +35,10 @@ After this, you will need to tell the `wasp-cli` the location of the Hornet node
 wasp-cli set l1.apiaddress http://localhost:14265
 wasp-cli set l1.faucetaddress http://localhost:8091
 
-wasp-cli set wasp.0.api 127.0.0.1:9090
-wasp-cli set wasp.0.nanomsg 127.0.0.1:5550
-wasp-cli set wasp.0.peering 127.0.0.1:4000
+wasp-cli wasp add wasp-0 127.0.0.1:9090
 
-## You can add as many nodes as you like in your committee
-wasp-cli set wasp.1.api 127.0.0.1:9091
-wasp-cli set wasp.1.nanomsg 127.0.0.1:5551
-wasp-cli set wasp.1.peering 127.0.0.1:4001
-
-...shell
-
-wasp-cli set wasp.N.api 127.0.0.1:9091
-wasp-cli set wasp.N.nanomsg 127.0.0.1:5551
-wasp-cli set wasp.N.peering 127.0.0.1:4001
+## You can add as many nodes as you'd like
+wasp-cli wasp add wasp-1 127.0.0.1:9091
 ```
 
 Alternatively, you can edit the `wasp-cli.json` file and include the desired server locations:
@@ -66,14 +56,9 @@ Alternatively, you can edit the `wasp-cli.json` file and include the desired ser
 
   ```json
   "wasp": {
-      "0": {
-        "api": "127.0.0.1:9090",
-        "nanomsg": "127.0.0.1:5550",
-        "peering": "127.0.0.1:4000"
-      },
-      "1": {
-        ...
-      },
+      "0": "127.0.0.1:9090",
+      "1": "127.0.0.1:9091",
+      ...
     }
   ```
 

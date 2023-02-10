@@ -2,8 +2,8 @@ package isc
 
 // CallTarget the target representation of the request
 type CallTarget struct {
-	Contract   Hname `json:"contract" swagger:"required"`
-	EntryPoint Hname `json:"entryPoint" swagger:"required"`
+	Contract   Hname `json:"contract"`
+	EntryPoint Hname `json:"entryPoint"`
 }
 
 func NewCallTarget(contract, entryPoint Hname) CallTarget {

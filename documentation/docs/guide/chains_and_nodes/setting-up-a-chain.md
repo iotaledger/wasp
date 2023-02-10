@@ -95,10 +95,10 @@ wasp-cli chain deposit IOTA:10000
 You can deploy your IOTA Smart Contracts chain by running:
 
 ```shell
-wasp-cli chain deploy --committee=0,1,2,3 --quorum=3 --chain=mychain --description="My chain"
+wasp-cli chain deploy --nodes=0,1,2,3 --quorum=3 --chain=mychain --description="My chain"
 ```
 
-The indices in `--committee=0,1,2,3` will correspond to `wasp.0`, `wasp.1`, etc. in `wasp-cli.json`.
+The indices in `--nodes=0,1,2,3` will correspond to `wasp.0`, `wasp.1`, etc. in `wasp-cli.json`.
 
 The `--chain=mychain` flag sets up an alias for the chain. From now on all chain commands will be targeted to this
 chain.

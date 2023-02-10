@@ -18,7 +18,7 @@ Copy the public key and pass that to the `--gov-contraller` flag on the `wasp-cl
 Before starting a chain, all nodes need to trust each other. See [Trust setup](./setting-up-a-chain.md#trust-setup) for instructions on chain peering. Deploy a new chain with the command below
 
 ```bash
-wasp-cli chain deploy --description "Test Chain" --gov-controller ${wallet_public_key} --committee 0,1 --evm-chainid 1076
+wasp-cli chain deploy --description "Test Chain" --gov-controller ${wallet_public_key} --nodes 0,1 --evm-chainid 1076
 ```
 
 ## Add access nodes
@@ -33,7 +33,7 @@ To learn more about adding access nodes see [chain management](./chain-managemen
 Update your `wasp-cli` config and run the dkg command with the indices for the new committee members
 
 ```bash
-wasp-cli chain rundkg --committee=0,2 --quorum=2
+wasp-cli chain rundkg --nodes=0,2 --quorum=2
 ```
 
 Copy the new public key

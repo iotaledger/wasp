@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -53,7 +55,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		require.Regexp(t, fmt.Sprintf(`(?m)counter:\s+%d$`, n), out[0])
 	}
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.CommitteeConfigArgs()
 	out := w.MustRun(
 		"chain",
 		"deploy",
@@ -82,23 +84,31 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 	// adds node #0 from cluster2 as access node of the chain
 	{
-		node0peerInfo, err := w2.Cluster.WaspClient(0).GetPeeringSelf()
+		node0peerInfo, _, err := w2.Cluster.WaspClient(0).NodeApi.
+			GetPeeringIdentity(context.Background()).
+			Execute()
 		require.NoError(t, err)
 
 		// set trust relations between node0 of cluster 2 and all nodes of cluster 1
-		w.Cluster.AddTrustedNode(node0peerInfo)
-		cluster1PubKeys := make([]*cryptolib.PublicKey, len(w.Cluster.AllNodes()))
+		err = w.Cluster.AddTrustedNode(apiclient.PeeringTrustRequest{
+			PublicKey: node0peerInfo.PublicKey,
+			NetId:     node0peerInfo.NetId,
+		})
+		require.NoError(t, err)
+
 		for _, nodeIndex := range w.Cluster.Config.AllNodes() {
 			// equivalent of "wasp-cli peer info"
-			peerInfo, err := w.Cluster.WaspClient(nodeIndex).GetPeeringSelf()
+			peerInfo, _, err := w.Cluster.WaspClient(nodeIndex).NodeApi.
+				GetPeeringIdentity(context.Background()).
+				Execute()
 			require.NoError(t, err)
-			w2.MustRun("peering", "trust", peerInfo.PubKey, peerInfo.NetID)
-			cluster1PubKeys[nodeIndex], err = cryptolib.NewPublicKeyFromString(peerInfo.PubKey)
+
+			w2.MustRun("peering", "trust", peerInfo.PublicKey, peerInfo.NetId, "--node=0")
 			require.NoError(t, err)
 		}
 
-		// add node 0 from cluster 2 as an access node in the governance contract
-		pubKey, err := cryptolib.NewPublicKeyFromString(node0peerInfo.PubKey)
+		// add node 0 from cluster 2 as an access node
+		pubKey, err := cryptolib.NewPublicKeyFromString(node0peerInfo.PublicKey)
 		require.NoError(t, err)
 
 		addAccessNode(w, pubKey.String())
@@ -106,8 +116,8 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 	// activate the chain on the new nodes
 	w2.MustRun("chain", "add", "chain1", chainID)
-	w2.MustRun("set", "chain", "chain1")
-	w2.MustRun("chain", "activate")
+	w2.MustRun("set", "defaultchain", "chain1")
+	w2.MustRun("chain", "activate", w2.AllNodesArg())
 
 	// deploy a contract, test its working
 	{
@@ -152,7 +162,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 	w.Cluster.Stop()
 
 	// run DKG on the new cluster, obtain the new state controller address
-	out = w2.MustRun("chain", "rundkg")
+	out = w2.MustRun("chain", "rundkg", w2.AllNodesArg())
 	newStateControllerAddr := regexp.MustCompile(`(.*):\s*([a-zA-Z0-9_]*)$`).FindStringSubmatch(out[0])[2]
 
 	// issue a governance rotatation via CLI
@@ -161,7 +171,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 	// stop maintenance
 	// set the new nodes as the default (so querying the receipt doesn't fail)
-	w.MustRun("set", "wasp.0.api", w2.Cluster.Config.APIHost(0))
+	w.MustRun("set", "wasp.0", w2.Cluster.Config.APIHost(0))
 	out = w.PostRequestGetReceipt("governance", "stopMaintenance")
 	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 

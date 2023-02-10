@@ -1,8 +1,9 @@
 if [ ! -f "wasp-cli.json" ]; then
     wasp-cli init
 fi
+set -e
 wasp-cli request-funds
-wasp-cli chain deploy --committee=0 --quorum=1 --chain=mychain --description="My chain"
+wasp-cli chain deploy --nodes=0 --quorum=1 --chain=mychain --description="My chain"
 wasp-cli chain deposit base:500000000
 wasp-cli balance
 wasp-cli chain balance

@@ -130,7 +130,7 @@ func (c *ClusterConfig) APIHosts(nodeIndexes ...[]int) []string {
 }
 
 func (c *ClusterConfig) APIHost(nodeIndex int) string {
-	return fmt.Sprintf("127.0.0.1:%d", c.APIPort(nodeIndex))
+	return fmt.Sprintf("http://127.0.0.1:%d", c.APIPort(nodeIndex))
 }
 
 func (c *ClusterConfig) APIPort(nodeIndex int) int {

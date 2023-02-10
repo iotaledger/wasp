@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -104,7 +104,7 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 	service := wasmclient.DefaultWasmClientService()
 	if cfgWaspApi0[len(cfgWaspApi0)-6:] != ":19090" {
 		// test against Docker container, make sure to pass the correct args to test (top of file)
-		service = wasmclient.NewWasmClientService("127.0.0.1:9090", "127.0.0.1:5550")
+		service = wasmclient.NewWasmClientService("http://localhost:9090", "127.0.0.1:5550")
 	}
 	return newClient(t, service, chain, wallet)
 }

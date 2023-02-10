@@ -271,7 +271,13 @@ func (c *consImpl) AsGPA() gpa.GPA {
 }
 
 func (c *consImpl) Input(input gpa.Input) gpa.OutMessages {
-	c.log.Debugf("Input %T: %+v", input, input)
+	switch input := input.(type) {
+	case *inputTimeData:
+		// ignore this to filter out ridiculously excessive logging
+	default:
+		c.log.Debugf("Input %T: %+v", input, input)
+	}
+
 	switch input := input.(type) {
 	case *inputProposal:
 		c.log.Debugf("received %v", input.String())

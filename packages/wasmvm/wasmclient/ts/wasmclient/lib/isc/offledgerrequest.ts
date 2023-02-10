@@ -58,9 +58,10 @@ export class OffLedgerRequest {
     }
 
     public ID(): wasmlib.ScRequestID {
-        // req id is hash of req bytes
+        // req id is hash of req bytes with output index zero
+        const hash = Blake2b.sum256(this.bytes());
         const reqId = new wasmlib.ScRequestID();
-        reqId.id.set(Blake2b.sum256(this.bytes()), 0);
+        reqId.id.set(hash, 0);
         return reqId;
     }
 
