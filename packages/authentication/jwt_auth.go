@@ -230,7 +230,7 @@ func initJWT(duration time.Duration, nodeID string, privateKey []byte, userManag
 	return jwtAuth, jwtAuthSkipper, jwtAuthAllow, nil
 }
 
-func AddJWTAuth(webAPI WebAPI, config JWTAuthConfiguration, privateKey []byte, userManager *users.UserManager, claimValidator ClaimValidator) *JWTAuth {
+func AddJWTAuth(config JWTAuthConfiguration, privateKey []byte, userManager *users.UserManager, claimValidator ClaimValidator) (*JWTAuth, func() echo.MiddlewareFunc) {
 	duration := config.Duration
 
 	// If durationHours is 0, we set 24h as the default duration
@@ -240,7 +240,9 @@ func AddJWTAuth(webAPI WebAPI, config JWTAuthConfiguration, privateKey []byte, u
 
 	jwtAuth, jwtSkipper, jwtAuthAllow, _ := initJWT(duration, "wasp0", privateKey, userManager, claimValidator)
 
-	webAPI.Use(jwtAuth.Middleware(jwtSkipper, jwtAuthAllow))
+	authMiddleware := func() echo.MiddlewareFunc {
+		return jwtAuth.Middleware(jwtSkipper, jwtAuthAllow)
+	}
 
-	return jwtAuth
+	return jwtAuth, authMiddleware
 }
