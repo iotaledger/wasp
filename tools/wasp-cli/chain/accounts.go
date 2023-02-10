@@ -43,7 +43,6 @@ func initListAccountsCmd() *cobra.Command {
 			rows := make([][]string, len(accountList.Accounts))
 			for i, account := range accountList.Accounts {
 				rows[i] = []string{account}
-				i++
 			}
 			log.PrintTable(header, rows)
 		},
