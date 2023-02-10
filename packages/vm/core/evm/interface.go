@@ -34,11 +34,11 @@ var (
 	FuncGetChainID                          = coreutil.ViewFunc(evmnames.FuncGetChainID)
 	FuncGetCallGasLimit                     = coreutil.ViewFunc(evmnames.FuncGetCallGasLimit)
 
-	FuncRegisterERC20NativeToken           = coreutil.Func(evmnames.FuncRegisterERC20NativeToken)
-	FuncRegisterERC20NativeTokenOnChain    = coreutil.Func(evmnames.FuncRegisterERC20NativeTokenOnChain)
-	FuncRegisterERC20ExternalNativeToken   = coreutil.Func(evmnames.FuncRegisterERC20ExternalNativeToken)
-	FuncGetERC20ExternalNativeTokenAddress = coreutil.ViewFunc(evmnames.FuncGetERC20ExternalNativeTokenAddress)
-	FuncRegisterERC721NFTCollection        = coreutil.Func(evmnames.FuncRegisterERC721NFTCollection)
+	FuncRegisterERC20NativeToken              = coreutil.Func(evmnames.FuncRegisterERC20NativeToken)
+	FuncRegisterERC20NativeTokenOnRemoteChain = coreutil.Func(evmnames.FuncRegisterERC20NativeTokenOnRemoteChain)
+	FuncRegisterERC20ExternalNativeToken      = coreutil.Func(evmnames.FuncRegisterERC20ExternalNativeToken)
+	FuncGetERC20ExternalNativeTokenAddress    = coreutil.ViewFunc(evmnames.FuncGetERC20ExternalNativeTokenAddress)
+	FuncRegisterERC721NFTCollection           = coreutil.Func(evmnames.FuncRegisterERC721NFTCollection)
 
 	// block context
 	FuncOpenBlockContext  = coreutil.Func(evmnames.FuncOpenBlockContext)

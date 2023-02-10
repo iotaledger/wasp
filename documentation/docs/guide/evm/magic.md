@@ -108,7 +108,7 @@ contract MyEVMContract {
 * [ERC20ExternalNativeTokens](https://github.com/iotaledger/wasp/blob/develop/packages/vm/core/evm/iscmagic/ERC20ExternalNativeTokens.sol)
   contract, available at a dynamically assigned address after being registered
   by the foundry owner by calling
-  [`registerERC20NativeTokenOnChain`](../core_concepts/core_contracts/evm.md#registerERC20NativeTokenOnChain)
+  [`registerERC20NativeTokenOnRemoteChain`](../core_concepts/core_contracts/evm.md#registerERC20NativeTokenOnRemoteChain)
   on the chain that controls the foundry.
 * [ERC721NFTs](https://github.com/iotaledger/wasp/blob/develop/packages/vm/core/evm/iscmagic/ERC721NFTs.sol)
   contract, available at `ISC.nfts`

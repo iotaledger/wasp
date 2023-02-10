@@ -27,11 +27,11 @@ const (
 	FuncGetChainID                          = "getChainID"
 	FuncGetCallGasLimit                     = "getCallGasLimit"
 
-	FuncRegisterERC20NativeToken           = "registerERC20NativeToken"
-	FuncRegisterERC20NativeTokenOnChain    = "registerERC20NativeTokenOnChain"
-	FuncRegisterERC20ExternalNativeToken   = "registerERC20ExternalNativeToken"
-	FuncGetERC20ExternalNativeTokenAddress = "getERC20ExternalNativeTokenAddress"
-	FuncRegisterERC721NFTCollection        = "registerERC721NFTCollection"
+	FuncRegisterERC20NativeToken              = "registerERC20NativeToken"
+	FuncRegisterERC20NativeTokenOnRemoteChain = "registerERC20NativeTokenOnRemoteChain"
+	FuncRegisterERC20ExternalNativeToken      = "registerERC20ExternalNativeToken"
+	FuncGetERC20ExternalNativeTokenAddress    = "getERC20ExternalNativeTokenAddress"
+	FuncRegisterERC721NFTCollection           = "registerERC721NFTCollection"
 
 	// block context
 	FuncOpenBlockContext  = "openBlockContext"

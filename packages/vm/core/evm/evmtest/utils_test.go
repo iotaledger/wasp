@@ -354,7 +354,7 @@ func (e *soloChainEnv) registerERC20ExternalNativeToken(
 	tokenName, tokenTickerSymbol string,
 	tokenDecimals uint8,
 ) (ret common.Address, err error) {
-	_, err = fromChain.PostRequestOffLedger(solo.NewCallParams(evm.Contract.Name, evm.FuncRegisterERC20NativeTokenOnChain.Name, dict.Dict{
+	_, err = fromChain.PostRequestOffLedger(solo.NewCallParams(evm.Contract.Name, evm.FuncRegisterERC20NativeTokenOnRemoteChain.Name, dict.Dict{
 		evm.FieldFoundrySN:         codec.EncodeUint32(foundrySN),
 		evm.FieldTokenName:         codec.EncodeString(tokenName),
 		evm.FieldTokenTickerSymbol: codec.EncodeString(tokenTickerSymbol),

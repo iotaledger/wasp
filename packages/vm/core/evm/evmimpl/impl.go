@@ -37,7 +37,7 @@ var Processor = evm.Contract.Processor(initialize,
 	evm.FuncSendTransaction.WithHandler(restricted(applyTransaction)),
 	evm.FuncEstimateGas.WithHandler(restricted(estimateGas)),
 	evm.FuncRegisterERC20NativeToken.WithHandler(restricted(registerERC20NativeToken)),
-	evm.FuncRegisterERC20NativeTokenOnChain.WithHandler(restricted(registerERC20NativeTokenOnChain)),
+	evm.FuncRegisterERC20NativeTokenOnRemoteChain.WithHandler(restricted(registerERC20NativeTokenOnRemoteChain)),
 	evm.FuncRegisterERC20ExternalNativeToken.WithHandler(registerERC20ExternalNativeToken),
 	evm.FuncRegisterERC721NFTCollection.WithHandler(restricted(registerERC721NFTCollection)),
 
@@ -197,7 +197,7 @@ func registerERC20NativeToken(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
-func registerERC20NativeTokenOnChain(ctx isc.Sandbox) dict.Dict {
+func registerERC20NativeTokenOnRemoteChain(ctx isc.Sandbox) dict.Dict {
 	foundrySN := codec.MustDecodeUint32(ctx.Params().MustGet(evm.FieldFoundrySN))
 	name := codec.MustDecodeString(ctx.Params().MustGet(evm.FieldTokenName))
 	tickerSymbol := codec.MustDecodeString(ctx.Params().MustGet(evm.FieldTokenTickerSymbol))

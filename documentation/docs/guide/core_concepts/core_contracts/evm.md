@@ -72,17 +72,21 @@ Only the foundry owner can call this endpoint.
 - `t` (`string`): The ticker symbol
 - `d` (`uint8`): The token decimals
 
-### `registerERC20NativeTokenOnChain`
+### `registerERC20NativeTokenOnRemoteChain`
 
 Registers an ERC20 contract to act as a proxy for the native tokens **on another
 chain**.
 
-The foundry must be controlled by the chain. Only the foundry owner can call
+The foundry must be controlled by this chain. Only the foundry owner can call
 this endpoint.
 
+This endpoint is intended to be used in case the foundry is controlled by chain
+A, and the owner of the foundry wishes to register the ERC20 contract on chain
+B. In that case, the owner must call this endpoint on chain A with `target =
+chain B`. The request to chain B is then sent as an on-ledger request.
 After a few minutes, call
 [`getERC20ExternalNativeTokensAddress`](#geterc20externalnativetokensaddress)
-on the **target chain** to find out the address of the ERC20 contract.
+on chain B to find out the address of the ERC20 contract.
 
 #### Parameters
 
@@ -97,9 +101,12 @@ on the **target chain** to find out the address of the ERC20 contract.
 
 Registers an ERC20 contract to act as a proxy for the native tokens.
 
-Only an alias address can call this endpoint. End users should call
-[`registerERC20NativeTokenOnChain`](#registererc20nativetokenonchain)
-on the chain that controls the foundry.
+Only an alias address can call this endpoint.
+
+If the foundry is controlled by another ISC chain, the foundry owner can call
+[`registerERC20NativeTokenOnRemoteChain`](#registererc20nativetokenonchain)
+on that chain, which will automatically call this endpoint on the chain set as
+target.
 
 #### Parameters
 
@@ -128,7 +135,7 @@ The call will fail if the address is taken by another collection with the same p
 ### `getERC20ExternalNativeTokensAddress`
 
 Returns the address of an ERC20 contract registered with
-[`registerERC20NativeTokenOnChain`](#registererc20nativetokenonchain).
+[`registerERC20NativeTokenOnRemoteChain`](#registererc20nativetokenonchain).
 
 Only the foundry owner can call this endpoint.
 
