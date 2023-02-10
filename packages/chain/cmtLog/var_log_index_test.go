@@ -25,12 +25,12 @@ func TestVarLogIndex(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(4)
 	initLI := NilLogIndex().Next()
 	//
-	vli := NewVarLogIndex(nodeIDs, n, f, initLI, log)
+	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, log)
 	//
 	nextLI := initLI.Next()
 	vliLI, _ := vli.Value()
 	require.NotEqual(t, nextLI, vliLI)
-	nextLIMsg := newMsgNextLogIndex(nodeIDs[0], nextLI, ao)
+	nextLIMsg := newMsgNextLogIndex(nodeIDs[0], nextLI, ao, false)
 	for i := 0; i < n-f; i++ {
 		nextLIMsg.SetSender(nodeIDs[i])
 		vli.MsgNextLogIndexReceived(nextLIMsg)
@@ -49,7 +49,7 @@ func TestVarLogIndexV2(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(4)
 	initLI := NilLogIndex().Next()
 	//
-	vli := NewVarLogIndex(nodeIDs, n, f, initLI, log)
+	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, log)
 	vliValueLI := func() LogIndex {
 		li, _ := vli.Value()
 		return li
@@ -57,19 +57,19 @@ func TestVarLogIndexV2(t *testing.T) {
 	li15 := LogIndex(15)
 	li16 := LogIndex(16)
 	li18 := LogIndex(18)
-	require.Equal(t, initLI, vliValueLI())
+	require.Equal(t, NilLogIndex(), vliValueLI())
 
 	msgWithSender := func(sender gpa.NodeID, li LogIndex) *msgNextLogIndex {
-		msg := newMsgNextLogIndex(nodeIDs[0], li, ao)
+		msg := newMsgNextLogIndex(nodeIDs[0], li, ao, false)
 		msg.SetSender(sender)
 		return msg
 	}
 
 	vli.MsgNextLogIndexReceived(msgWithSender(nodeIDs[0], li15))
-	require.Equal(t, initLI, vliValueLI())
+	require.Equal(t, NilLogIndex(), vliValueLI())
 
 	vli.MsgNextLogIndexReceived(msgWithSender(nodeIDs[1], li18))
-	require.Equal(t, initLI, vliValueLI())
+	require.Equal(t, NilLogIndex(), vliValueLI())
 
 	vli.MsgNextLogIndexReceived(msgWithSender(nodeIDs[2], li16))
 	require.Equal(t, li15, vliValueLI())

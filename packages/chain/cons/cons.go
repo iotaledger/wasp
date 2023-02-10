@@ -181,11 +181,12 @@ func New(
 		panic(fmt.Errorf("cannot convert node's SK to kyber.Scalar: %w", err))
 	}
 	longTermDKS := dkShare.DSS()
+	acsLog := log.Named("ACS")
 	acsCCInstFunc := func(nodeID gpa.NodeID, round int) gpa.GPA {
 		var roundBin [4]byte
 		binary.BigEndian.PutUint32(roundBin[:], uint32(round))
 		sid := hashing.HashDataBlake2b(instID, nodeID[:], roundBin[:]).Bytes()
-		realCC := blssig.New(blsSuite, nodeIDs, dkShare.BLSCommits(), dkShare.BLSPriShare(), int(dkShare.BLSThreshold()), me, sid, log)
+		realCC := blssig.New(blsSuite, nodeIDs, dkShare.BLSCommits(), dkShare.BLSPriShare(), int(dkShare.BLSThreshold()), me, sid, acsLog)
 		return semi.New(round, realCC)
 	}
 	c := &consImpl{
@@ -198,8 +199,8 @@ func New(
 		nodeIDs:        nodeIDs,
 		me:             me,
 		f:              f,
-		dss:            dss.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log),
-		acs:            acs.New(nodeIDs, me, f, acsCCInstFunc, log),
+		dss:            dss.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log.Named("DSS")),
+		acs:            acs.New(nodeIDs, me, f, acsCCInstFunc, acsLog),
 		output:         &Output{Status: Running},
 		log:            log,
 	}
@@ -423,7 +424,7 @@ func (c *consImpl) uponDSSIndexProposalReady(indexProposal []int) gpa.OutMessage
 }
 
 func (c *consImpl) uponDSSSigningInputsReceived(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.OutMessages {
-	c.log.Debugf("uponDSSSigningInputsReceived")
+	c.log.Debugf("uponDSSSigningInputsReceived(decidedIndexProposals=%+v, H(messageToSign)=%v)", decidedIndexProposals, hashing.HashDataBlake2b(messageToSign))
 	dssDecidedInput := dss.NewInputDecided(decidedIndexProposals, messageToSign)
 	subDSS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, dssDecidedInput)
 	if err != nil {
