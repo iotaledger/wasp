@@ -213,39 +213,63 @@ func TestClientRandom(t *testing.T) {
 	doit()
 }
 
+type EventProcessor struct {
+	ctx  *wasmclient.WasmClientContext
+	t    *testing.T
+	name string
+}
+
+var params = []string{
+	"Lala",
+	"Trala",
+	"Bar|Bar",
+	"Bar~|~Bar",
+	"Tilde~Tilde",
+	"Tilde~~ Bar~/ Space~_",
+}
+
 func TestClientEvents(t *testing.T) {
 	ctx := setupClient(t)
+
 	events := &testwasmlib.TestWasmLibEventHandlers{}
-	name := ""
+	proc := EventProcessor{ctx, t, ""}
 	events.OnTestWasmLibTest(func(e *testwasmlib.EventTest) {
-		name = e.Name
+		proc.name = e.Name
 	})
 	ctx.Register(events)
 
-	event := func() string {
-		return name
+	for _, param := range params {
+		proc.sendClientEventsParam(param)
+		proc.waitClientEventsParam(param)
 	}
 
-	testClientEventsParam(t, ctx, "Lala", event)
-	testClientEventsParam(t, ctx, "Trala", event)
-	testClientEventsParam(t, ctx, "Bar|Bar", event)
-	testClientEventsParam(t, ctx, "Bar~|~Bar", event)
-	testClientEventsParam(t, ctx, "Tilde~Tilde", event)
-	testClientEventsParam(t, ctx, "Tilde~~ Bar~/ Space~_", event)
+	for _, param := range params {
+		proc.sendClientEventsParam(param)
+		ctx.WaitRequest()
+		require.NoError(t, ctx.Err)
+	}
+
+	for _, param := range params {
+		proc.waitClientEventsParam(param)
+	}
 }
 
-func testClientEventsParam(t *testing.T, ctx *wasmclient.WasmClientContext, name string, event func() string) {
+func (proc *EventProcessor) sendClientEventsParam(name string) {
+	ctx := proc.ctx
+	t := proc.t
 	f := testwasmlib.ScFuncs.TriggerEvent(ctx)
 	f.Params.Name().SetValue(name)
 	f.Params.Address().SetValue(ctx.CurrentChainID().Address())
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
+}
 
-	ctx.WaitRequest()
-	require.NoError(t, ctx.Err)
+func (proc *EventProcessor) waitClientEventsParam(name string) {
+	ctx := proc.ctx
+	t := proc.t
 
 	ctx.WaitEvent()
 	require.NoError(t, ctx.Err)
 
-	require.EqualValues(t, name, event())
+	require.EqualValues(t, name, proc.name)
 }
