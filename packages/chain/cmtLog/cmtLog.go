@@ -294,9 +294,9 @@ func (cl *cmtLogImpl) handleInputConsensusOutputSkip(input *inputConsensusOutput
 // NOTE: Consensus has not finished in long time, try recover by voting
 // for the next LogIndex. This actually breaks the asynchronous assumption.
 func (cl *cmtLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
-	cl.varLogIndex.ConsensusTimeoutReceived(input.logIndex)
+	msgs := cl.varLogIndex.ConsensusTimeoutReceived(input.logIndex)
 	cl.tryProposeConsensus()
-	return nil
+	return msgs
 }
 
 // > ON Suspend:
