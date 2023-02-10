@@ -19,19 +19,21 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/iotaledger/wasp/core/app"
 	"github.com/iotaledger/wasp/tools/schema/generator"
 	"github.com/iotaledger/wasp/tools/schema/model"
 	wasp_yaml "github.com/iotaledger/wasp/tools/schema/model/yaml"
 )
 
 var (
-	flagClean = flag.Bool("clean", false, "clean up (re-)generated files")
-	flagCore  = flag.Bool("core", false, "generate core contract interface")
-	flagForce = flag.Bool("force", false, "force code generation")
-	flagGo    = flag.Bool("go", false, "generate Go code")
-	flagInit  = flag.String("init", "", "generate new schema file for smart contract named <string>")
-	flagRust  = flag.Bool("rs", false, "generate Rust code")
-	flagTs    = flag.Bool("ts", false, "generate TypScript code")
+	flagVersion = flag.Bool("version", false, "show schema tool version")
+	flagClean   = flag.Bool("clean", false, "clean up (re-)generated files")
+	flagCore    = flag.Bool("core", false, "generate core contract interface")
+	flagForce   = flag.Bool("force", false, "force code generation")
+	flagGo      = flag.Bool("go", false, "generate Go code")
+	flagInit    = flag.String("init", "", "generate new schema file for smart contract named <string>")
+	flagRust    = flag.Bool("rs", false, "generate Rust code")
+	flagTs      = flag.Bool("ts", false, "generate TypScript code")
 )
 
 func init() {
@@ -39,6 +41,11 @@ func init() {
 }
 
 func main() {
+	if *flagVersion {
+		fmt.Println(app.Version)
+		return
+	}
+
 	err := generator.FindModulePath()
 	if err != nil && *flagGo {
 		log.Panic(err)
