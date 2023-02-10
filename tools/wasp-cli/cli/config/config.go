@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/viper"
 
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -106,4 +107,18 @@ func NodeAPIURLs(nodeNames []string) []string {
 func Set(key string, value interface{}) {
 	viper.Set(key, value)
 	log.Check(viper.WriteConfig())
+}
+
+func AddWaspNode(name, apiUrl string) {
+	Set("wasp."+name, apiUrl)
+}
+
+func AddChain(name, chainID string) {
+	Set("chains."+name, chainID)
+}
+
+func GetChain(name string) isc.ChainID {
+	chainID, err := isc.ChainIDFromString(viper.GetString("chains." + name))
+	log.Check(err)
+	return chainID
 }

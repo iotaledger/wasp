@@ -20,25 +20,31 @@ import (
 )
 
 func initRotateCmd() *cobra.Command {
-	return &cobra.Command{
+	var chain string
+	cmd := &cobra.Command{
 		Use:   "rotate <new state controller address>",
 		Short: "Issues a tx that changes the chain state controller",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			chain = defaultChainFallback(chain)
+
 			prefix, newStateControllerAddr, err := iotago.ParseBech32(args[0])
 			log.Check(err)
 			if parameters.L1().Protocol.Bech32HRP != prefix {
 				log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.L1().Protocol.Bech32HRP, prefix)
 			}
-			rotateTo(newStateControllerAddr)
+			rotateTo(chain, newStateControllerAddr)
 		},
 	}
+	withChainFlag(cmd, &chain)
+	return cmd
 }
 
 func initRotateWithDKGCmd() *cobra.Command {
 	var (
 		nodes  []string
 		quorum int
+		chain  string
 	)
 
 	cmd := &cobra.Command{
@@ -47,23 +53,25 @@ func initRotateWithDKGCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			nodes = waspcmd.DefaultNodesFallback(nodes)
+			chain = defaultChainFallback(chain)
 
 			controllerAddr := doDKG(nodes, quorum)
-			rotateTo(controllerAddr)
+			rotateTo(chain, controllerAddr)
 		},
 	}
 
 	waspcmd.WithWaspNodesFlag(cmd, &nodes)
 	log.Check(cmd.MarkFlagRequired("nodes"))
+	withChainFlag(cmd, &chain)
 	cmd.Flags().IntVarP(&quorum, "quorum", "", 0, "quorum (default: 3/4s of the number of committee nodes)")
 	return cmd
 }
 
-func rotateTo(newStateControllerAddr iotago.Address) {
+func rotateTo(chain string, newStateControllerAddr iotago.Address) {
 	l1Client := cliclients.L1Client()
 
 	wallet := cliwallet.Load()
-	aliasID := config.GetCurrentChainID().AsAliasID()
+	aliasID := config.GetChain(chain).AsAliasID()
 
 	chainOutputID, chainOutput, err := l1Client.GetAliasOutput(aliasID)
 	log.Check(err)

@@ -21,21 +21,25 @@ import (
 
 func initInfoCmd() *cobra.Command {
 	var node string
+	var chain string
 	cmd := &cobra.Command{
 		Use:   "info",
 		Short: "Show information about the chain",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
+
+			chainID := config.GetChain(chain)
 			client := cliclients.WaspClient(node)
 
 			chainInfo, _, err := client.ChainsApi.
-				GetChainInfo(context.Background(), config.GetCurrentChainID().String()).
+				GetChainInfo(context.Background(), chainID.String()).
 				Execute()
 			log.Check(err)
 
 			committeeInfo, _, err := client.ChainsApi.
-				GetCommitteeInfo(context.Background(), config.GetCurrentChainID().String()).
+				GetCommitteeInfo(context.Background(), chainID.String()).
 				Execute()
 			log.Check(err)
 
@@ -73,7 +77,7 @@ func initInfoCmd() *cobra.Command {
 
 				log.Printf("Description: %s\n", chainInfo.Description)
 
-				contracts, _, err := client.ChainsApi.GetContracts(context.Background(), config.GetCurrentChainID().String()).Execute()
+				contracts, _, err := client.ChainsApi.GetContracts(context.Background(), chainID.String()).Execute()
 				log.Check(err)
 				log.Printf("#Contracts: %d\n", len(contracts))
 
@@ -106,5 +110,6 @@ func initInfoCmd() *cobra.Command {
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
+	withChainFlag(cmd, &chain)
 	return cmd
 }

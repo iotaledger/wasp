@@ -40,15 +40,15 @@ func L1Client() l1connection.Client {
 	)
 }
 
-func ChainClient(waspClient *apiclient.APIClient) *chainclient.Client {
+func ChainClient(waspClient *apiclient.APIClient, chainID isc.ChainID) *chainclient.Client {
 	return chainclient.New(
 		L1Client(),
 		waspClient,
-		config.GetCurrentChainID(),
+		chainID,
 		wallet.Load().KeyPair,
 	)
 }
 
-func SCClient(apiClient *apiclient.APIClient, contractHname isc.Hname) *scclient.SCClient {
-	return scclient.New(ChainClient(apiClient), contractHname)
+func SCClient(apiClient *apiclient.APIClient, chainID isc.ChainID, contractHname isc.Hname) *scclient.SCClient {
+	return scclient.New(ChainClient(apiClient, chainID), contractHname)
 }

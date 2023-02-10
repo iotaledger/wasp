@@ -14,17 +14,21 @@ import (
 
 func initEventsCmd() *cobra.Command {
 	var node string
+	var chain string
+
 	cmd := &cobra.Command{
 		Use:   "events <name>",
 		Short: "Show events of contract <name>",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
+
 			client := cliclients.WaspClient(node)
 			contractHName := isc.Hn(args[0]).String()
 
 			events, _, err := client.CorecontractsApi.
-				BlocklogGetEventsOfContract(context.Background(), config.GetCurrentChainID().String(), contractHName).
+				BlocklogGetEventsOfContract(context.Background(), config.GetChain(chain).String(), contractHName).
 				Execute()
 
 			log.Check(err)
@@ -32,5 +36,6 @@ func initEventsCmd() *cobra.Command {
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
+	withChainFlag(cmd, &chain)
 	return cmd
 }

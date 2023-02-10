@@ -69,7 +69,7 @@ func initDeployCmd() *cobra.Command {
 		description      string
 		evmParams        evmDeployParams
 		govControllerStr string
-		chainAlias       string
+		chainName        string
 	)
 
 	cmd := &cobra.Command{
@@ -114,12 +114,12 @@ func initDeployCmd() *cobra.Command {
 			})
 			log.Check(err)
 
-			config.AddChainAlias(chainAlias, chainid.String())
+			config.AddChain(chainName, chainid.String())
 		},
 	}
 
 	waspcmd.WithWaspNodesFlag(cmd, &node)
-	cmd.Flags().StringVar(&chainAlias, "chain", "", "name of the chain)")
+	cmd.Flags().StringVar(&chainName, "chain", "", "name of the chain)")
 	log.Check(cmd.MarkFlagRequired("chain"))
 	cmd.Flags().IntVar(&quorum, "quorum", 0, "quorum (default: 3/4s of the number of committee nodes)")
 	cmd.Flags().StringVar(&description, "description", "", "description")

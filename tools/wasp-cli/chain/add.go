@@ -12,7 +12,7 @@ func initAddChainCmd() *cobra.Command {
 		Short: "adds a chain to the list of chains",
 		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			config.AddChainAlias(args[0], args[1])
+			config.AddChain(args[0], args[1])
 		},
 	}
 }

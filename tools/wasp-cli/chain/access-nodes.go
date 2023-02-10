@@ -16,13 +16,17 @@ import (
 
 func initPermitionlessAccessNodesCmd() *cobra.Command {
 	var node string
+	var chain string
 
 	cmd := &cobra.Command{
 		Use:   "access-nodes <action (add|remove)> <pubkey>",
 		Short: "Changes the access nodes of a chain for the target node.",
 		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			chainID := config.GetCurrentChainID()
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
+
+			chainID := config.GetChain(chain)
 			action := args[0]
 			pubKey := args[1]
 			node = waspcmd.DefaultWaspNodeFallback(node)
@@ -45,7 +49,8 @@ func initPermitionlessAccessNodesCmd() *cobra.Command {
 		},
 	}
 
-	waspcmd.WithWaspNodeFlag(cmd, &nodes)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	withChainFlag(cmd, &chain)
 
 	return cmd
 }

@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -30,8 +31,6 @@ func Init(rootCmd *cobra.Command) {
 }
 
 func initAddWaspNodeCmd() *cobra.Command {
-	var setAsDefault bool
-
 	cmd := &cobra.Command{
 		Use:   "add <name> <api url>",
 		Short: "adds a wasp node",
@@ -42,13 +41,9 @@ func initAddWaspNodeCmd() *cobra.Command {
 				log.Fatalf("invalid node name: %s, must be in slug format, only lowercase and hypens, example: foo-bar", nodeName)
 			}
 			config.AddWaspNode(nodeName, args[1])
-			if setAsDefault {
-				config.SetDefaultWaspNode(nodeName)
-			}
 		},
 	}
 
-	cmd.Flags().BoolVar(&setAsDefault, "default", false, "sets this as the default node")
 	return cmd
 }
 
@@ -58,7 +53,7 @@ func WithWaspNodesFlag(cmd *cobra.Command, nodes *[]string) {
 
 func DefaultNodesFallback(nodes []string) []string {
 	if len(nodes) == 0 {
-		return []string{config.MustGetDefaultWaspNode()}
+		return []string{getDefaultWaspNode()}
 	}
 	return nodes
 }
@@ -68,8 +63,23 @@ func WithWaspNodeFlag(cmd *cobra.Command, node *string) {
 }
 
 func DefaultWaspNodeFallback(node string) string {
-	if node == "" {
-		return config.MustGetDefaultWaspNode()
+	if node != "" {
+		return node
 	}
-	return node
+	return getDefaultWaspNode()
+}
+
+func getDefaultWaspNode() string {
+	waspSettings := viper.Sub("wasp").AllSettings()
+	switch len(waspSettings) {
+	case 0:
+		log.Fatalf("no wasp node configured, you can add a node with `wasp-cli wasp add <name> <api url>`")
+	case 1:
+		for nodeName := range waspSettings {
+			return nodeName
+		}
+	default:
+		log.Fatalf("more than 1 wasp node in the configuration, you can specify the target node with `--node=<name>`")
+	}
+	panic("unreachable")
 }
