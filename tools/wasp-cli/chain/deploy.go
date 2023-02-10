@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
@@ -73,6 +74,11 @@ func initDeployCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
+
+			if !util.IsSlug(chainName) {
+				log.Fatalf("invalid chain name: %s, must be in slug format, only lowercase and hypens, example: foo-bar", chainName)
+			}
+
 			l1Client := cliclients.L1Client()
 
 			govController := controllerAddrDefaultFallback(govControllerStr)

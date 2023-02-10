@@ -1,16 +1,13 @@
 package waspcmd
 
 import (
-	"regexp"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
-
-var slugRegex = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
 func initWaspNodesCmd() *cobra.Command {
 	return &cobra.Command{
@@ -37,7 +34,7 @@ func initAddWaspNodeCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			nodeName := args[0]
-			if !slugRegex.Match([]byte(nodeName)) {
+			if !util.IsSlug(nodeName) {
 				log.Fatalf("invalid node name: %s, must be in slug format, only lowercase and hypens, example: foo-bar", nodeName)
 			}
 			config.AddWaspNode(nodeName, args[1])
