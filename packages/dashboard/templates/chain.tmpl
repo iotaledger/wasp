@@ -97,7 +97,7 @@
 					<tr>
 						<th>Index</th>
 						<th>PubKey</th>
-						<th>NetID</th>
+						<th>PeeringURL</th>
 						<th>Status</th>
 					</tr>
 				</thead>
@@ -106,7 +106,7 @@
 					<tr>
 						<td>{{$s.Index}}</td>
 						<td><code>{{$s.PubKey.String}}</code></td>
-						<td><code>{{$s.NetID}}</code></td>
+						<td><code>{{$s.PeeringURL}}</code></td>
 						<td>{{if $s.Connected}}up{{else}}down{{end}}</td>
 					</tr>
 				{{end}}

@@ -27,14 +27,14 @@ type PeeringNetwork struct {
 
 // NewPeeringNetwork creates new test network, it can then be used to create network nodes.
 func NewPeeringNetwork(
-	netIDs []string,
+	peeringURLs []string,
 	nodeIdentities []*cryptolib.KeyPair,
 	bufSize int,
 	behavior PeeringNetBehavior,
 	log *logger.Logger,
 ) *PeeringNetwork {
-	nodes := make([]*peeringNode, len(netIDs))
-	providers := make([]*peeringNetworkProvider, len(netIDs))
+	nodes := make([]*peeringNode, len(peeringURLs))
+	providers := make([]*peeringNetworkProvider, len(peeringURLs))
 	network := PeeringNetwork{
 		nodes:     nodes,
 		providers: providers,
@@ -43,7 +43,7 @@ func NewPeeringNetwork(
 		log:       log,
 	}
 	for i := range nodes {
-		nodes[i] = newPeeringNode(netIDs[i], nodeIdentities[i], &network)
+		nodes[i] = newPeeringNode(peeringURLs[i], nodeIdentities[i], &network)
 	}
 	for i := range nodes {
 		providers[i] = newPeeringNetworkProvider(nodes[i], &network)
@@ -84,13 +84,13 @@ func (p *PeeringNetwork) Close() error {
 // It does NOT implement the peering.PeerSender, because the source
 // node should be known for the sender.
 type peeringNode struct {
-	netID    string
-	identity *cryptolib.KeyPair
-	sendCh   chan *peeringMsg
-	recvCh   chan *peeringMsg
-	recvCbs  []*peeringCb
-	network  *PeeringNetwork
-	log      *logger.Logger
+	peeringURL string
+	identity   *cryptolib.KeyPair
+	sendCh     chan *peeringMsg
+	recvCh     chan *peeringMsg
+	recvCbs    []*peeringCb
+	network    *PeeringNetwork
+	log        *logger.Logger
 }
 
 type peeringMsg struct {
@@ -106,18 +106,18 @@ type peeringCb struct {
 	receiver  byte
 }
 
-func newPeeringNode(netID string, identity *cryptolib.KeyPair, network *PeeringNetwork) *peeringNode {
+func newPeeringNode(peeringURL string, identity *cryptolib.KeyPair, network *PeeringNetwork) *peeringNode {
 	sendCh := make(chan *peeringMsg, network.bufSize)
 	recvCh := make(chan *peeringMsg, network.bufSize)
 	recvCbs := make([]*peeringCb, 0)
 	n := peeringNode{
-		netID:    netID,
-		identity: identity,
-		sendCh:   sendCh,
-		recvCh:   recvCh,
-		recvCbs:  recvCbs,
-		network:  network,
-		log:      network.log.With("loc", netID),
+		peeringURL: peeringURL,
+		identity:   identity,
+		sendCh:     sendCh,
+		recvCh:     recvCh,
+		recvCbs:    recvCbs,
+		network:    network,
+		log:        network.log.With("loc", peeringURL),
 	}
 	network.behavior.AddLink(sendCh, recvCh, identity.GetPublicKey())
 	go n.recvLoop()
@@ -167,7 +167,7 @@ func newPeeringNetworkProvider(self *peeringNode, network *PeeringNetwork) *peer
 		self:    self,
 		network: network,
 		senders: senders,
-		log:     network.log.Named(self.netID),
+		log:     network.log.Named(self.peeringURL),
 	}
 	for i := range network.nodes {
 		senders[i] = newPeeringSender(network.nodes[i], &netProvider)
@@ -238,15 +238,15 @@ func (p *peeringNetworkProvider) SendMsgByPubKey(peerPubKey *cryptolib.PublicKey
 	}
 }
 
-// PeerByNetID implements peering.NetworkProvider.
-func (p *peeringNetworkProvider) PeerByNetID(peerNetID string) (peering.PeerSender, error) {
-	if s := p.senderByNetID(peerNetID); s != nil {
+// PeerByPeeringURL implements peering.NetworkProvider.
+func (p *peeringNetworkProvider) PeerByPeeringURL(peeringURL string) (peering.PeerSender, error) {
+	if s := p.senderByPeeringURL(peeringURL); s != nil {
 		return s, nil
 	}
-	return nil, errors.New("peer not found by NetID")
+	return nil, errors.New("peer not found by PeeringURL")
 }
 
-// PeerByNetID implements peering.NetworkProvider.
+// PeerByPubKey implements peering.NetworkProvider.
 func (p *peeringNetworkProvider) PeerByPubKey(peerPub *cryptolib.PublicKey) (peering.PeerSender, error) {
 	for i := range p.senders {
 		if p.senders[i].node.identity.GetPublicKey().Equals(peerPub) {
@@ -265,9 +265,9 @@ func (p *peeringNetworkProvider) PeerStatus() []peering.PeerStatusProvider {
 	return peerStatus
 }
 
-func (p *peeringNetworkProvider) senderByNetID(peerNetID string) *peeringSender {
+func (p *peeringNetworkProvider) senderByPeeringURL(peeringURL string) *peeringSender {
 	for i := range p.senders {
-		if p.senders[i].node.netID == peerNetID {
+		if p.senders[i].node.peeringURL == peeringURL {
 			return p.senders[i]
 		}
 	}
@@ -290,9 +290,14 @@ func newPeeringSender(node *peeringNode, netProvider *peeringNetworkProvider) *p
 	}
 }
 
-// NetID implements peering.PeerSender.
-func (p *peeringSender) NetID() string {
-	return p.node.netID
+// PeeringURL implements peering.PeerSender.
+func (p *peeringSender) PeeringURL() string {
+	return p.node.peeringURL
+}
+
+// PubKey implements peering.PeerSender.
+func (p *peeringSender) Name() string {
+	return p.node.identity.GetPublicKey().String()
 }
 
 // PubKey implements peering.PeerSender.

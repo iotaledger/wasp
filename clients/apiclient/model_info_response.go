@@ -21,7 +21,7 @@ var _ MappedNullable = &InfoResponse{}
 type InfoResponse struct {
 	L1Params L1Params `json:"l1Params"`
 	// The net id of the node
-	NetID string `json:"netID"`
+	PeeringURL string `json:"peeringURL"`
 	// The public key of the node (Hex)
 	PublicKey string `json:"publicKey"`
 	// The version of the node
@@ -32,10 +32,10 @@ type InfoResponse struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewInfoResponse(l1Params L1Params, netID string, publicKey string, version string) *InfoResponse {
+func NewInfoResponse(l1Params L1Params, peeringURL string, publicKey string, version string) *InfoResponse {
 	this := InfoResponse{}
 	this.L1Params = l1Params
-	this.NetID = netID
+	this.PeeringURL = peeringURL
 	this.PublicKey = publicKey
 	this.Version = version
 	return &this
@@ -73,28 +73,28 @@ func (o *InfoResponse) SetL1Params(v L1Params) {
 	o.L1Params = v
 }
 
-// GetNetID returns the NetID field value
-func (o *InfoResponse) GetNetID() string {
+// GetPeeringURL returns the PeeringURL field value
+func (o *InfoResponse) GetPeeringURL() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.NetID
+	return o.PeeringURL
 }
 
-// GetNetIDOk returns a tuple with the NetID field value
+// GetPeeringURLOk returns a tuple with the PeeringURL field value
 // and a boolean to check if the value has been set.
-func (o *InfoResponse) GetNetIDOk() (*string, bool) {
+func (o *InfoResponse) GetPeeringURLOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.NetID, true
+	return &o.PeeringURL, true
 }
 
-// SetNetID sets field value
-func (o *InfoResponse) SetNetID(v string) {
-	o.NetID = v
+// SetPeeringURL sets field value
+func (o *InfoResponse) SetPeeringURL(v string) {
+	o.PeeringURL = v
 }
 
 // GetPublicKey returns the PublicKey field value
@@ -156,7 +156,7 @@ func (o InfoResponse) MarshalJSON() ([]byte, error) {
 func (o InfoResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["l1Params"] = o.L1Params
-	toSerialize["netID"] = o.NetID
+	toSerialize["peeringURL"] = o.PeeringURL
 	toSerialize["publicKey"] = o.PublicKey
 	toSerialize["version"] = o.Version
 	return toSerialize, nil

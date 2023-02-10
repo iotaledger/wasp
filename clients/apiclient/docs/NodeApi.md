@@ -38,7 +38,7 @@ import (
 )
 
 func main() {
-    peeringTrustRequest := *openapiclient.NewPeeringTrustRequest("localhost:4000", "0x0000") // PeeringTrustRequest | Info of the peer to distrust
+    peeringTrustRequest := *openapiclient.NewPeeringTrustRequest("Name_example", "PeeringURL_example", "0x0000") // PeeringTrustRequest | Info of the peer to distrust
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -707,7 +707,7 @@ import (
 )
 
 func main() {
-    peeringTrustRequest := *openapiclient.NewPeeringTrustRequest("localhost:4000", "0x0000") // PeeringTrustRequest | Info of the peer to trust
+    peeringTrustRequest := *openapiclient.NewPeeringTrustRequest("Name_example", "PeeringURL_example", "0x0000") // PeeringTrustRequest | Info of the peer to trust
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)

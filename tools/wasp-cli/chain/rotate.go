@@ -42,26 +42,28 @@ func initRotateCmd() *cobra.Command {
 
 func initRotateWithDKGCmd() *cobra.Command {
 	var (
-		nodes  []string
+		node   string
+		peers  []string
 		quorum int
 		chain  string
 	)
 
 	cmd := &cobra.Command{
-		Use:   "rotate-with-dkg --nodes=<...>",
-		Short: "Runs the DKG on the selected nodes, then issues a tx that changes the chain state controller",
+		Use:   "rotate-with-dkg --peers=<...>",
+		Short: "Runs the DKG on the selected peers, then issues a tx that changes the chain state controller",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			nodes = waspcmd.DefaultNodesFallback(nodes)
 			chain = defaultChainFallback(chain)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 
-			controllerAddr := doDKG(nodes, quorum)
+			controllerAddr := doDKG(node, peers, quorum)
 			rotateTo(chain, controllerAddr)
 		},
 	}
 
-	waspcmd.WithWaspNodesFlag(cmd, &nodes)
-	log.Check(cmd.MarkFlagRequired("nodes"))
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	waspcmd.WithPeersFlag(cmd, &peers)
+	log.Check(cmd.MarkFlagRequired("peers"))
 	withChainFlag(cmd, &chain)
 	cmd.Flags().IntVarP(&quorum, "quorum", "", 0, "quorum (default: 3/4s of the number of committee nodes)")
 	return cmd

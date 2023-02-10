@@ -88,7 +88,7 @@ type PeeringService interface {
 	GetRegisteredPeers() []*dto.PeeringNodeStatus
 	GetTrustedPeers() ([]*dto.PeeringNodeIdentity, error)
 	IsPeerTrusted(publicKey *cryptolib.PublicKey) error
-	TrustPeer(peer *cryptolib.PublicKey, netID string) (*dto.PeeringNodeIdentity, error)
+	TrustPeer(name string, pubkey *cryptolib.PublicKey, peeringURL string) (*dto.PeeringNodeIdentity, error)
 }
 
 type OffLedgerService interface {

@@ -43,12 +43,13 @@ func TestWaspCLINoChains(t *testing.T) {
 func TestWaspCLI1Chain(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	alias := "chain1"
+	chainName := "chain1"
 
-	committee, quorum := w.CommitteeConfigArgs()
+	committee, quorum := w.ArgCommitteeConfig(0)
 
 	// test chain deploy command
-	w.MustRun("chain", "deploy", "--chain="+alias, committee, quorum)
+	w.MustRun("chain", "deploy", "--chain="+chainName, committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes(chainName)
 
 	// test chain info command
 	out := w.MustRun("chain", "info", "--node=0")
@@ -128,8 +129,9 @@ func TestWaspCLISendFunds(t *testing.T) {
 func TestWaspCLIDeposit(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfigArgs()
-	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
+	committee, quorum := w.ArgCommitteeConfig(0)
+	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain1")
 
 	t.Run("deposit to own account", func(t *testing.T) {
 		w.MustRun("chain", "deposit", "base:1000000", "--node=0")
@@ -218,8 +220,9 @@ func TestWaspCLIDeposit(t *testing.T) {
 func TestWaspCLIContract(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfigArgs()
-	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
+	committee, quorum := w.ArgCommitteeConfig(0)
+	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain1")
 
 	// for running off-ledger requests
 	w.MustRun("chain", "deposit", "base:10000000", "--node=0")
@@ -285,8 +288,9 @@ func findRequestIDInOutput(out []string) string {
 func TestWaspCLIBlockLog(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfigArgs()
-	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
+	committee, quorum := w.ArgCommitteeConfig(0)
+	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain1")
 
 	out := w.MustRun("chain", "deposit", "base:100", "--node=0")
 	reqID := findRequestIDInOutput(out)
@@ -348,8 +352,9 @@ func TestWaspCLIBlockLog(t *testing.T) {
 func TestWaspCLIBlobContract(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfigArgs()
-	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
+	committee, quorum := w.ArgCommitteeConfig(0)
+	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain1")
 
 	// for running off-ledger requests
 	w.MustRun("chain", "deposit", "base:10", "--node=0")
@@ -391,15 +396,17 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 	require.Panics(
 		t,
 		func() {
-			w.MustRun("chain", "deploy", "--chain=chain1", "--nodes=0,1,2,3,4,5", "--quorum=4")
+			w.MustRun("chain", "deploy", "--chain=chain1", "--peers=0,1,2,3,4,5", "--quorum=4", "--node=0")
+			w.ActivateChainOnAllNodes("chain1")
 		})
 
-	alias := "chain1"
+	chainName := "chain1"
 
-	committee, quorum := w.CommitteeConfigArgs()
+	committee, quorum := w.ArgCommitteeConfig(0)
 
 	// test chain deploy command
-	w.MustRun("chain", "deploy", "--chain="+alias, committee, quorum)
+	w.MustRun("chain", "deploy", "--chain="+chainName, committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes(chainName)
 
 	var chainID string
 	for _, idx := range w.Cluster.AllNodes() {
@@ -445,8 +452,9 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 func TestWaspCLILongParam(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfigArgs()
-	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
+	committee, quorum := w.ArgCommitteeConfig(0)
+	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain1")
 
 	// create foundry
 	w.MustRun(
@@ -502,7 +510,7 @@ func TestWaspCLITrustListImport(t *testing.T) {
 			Execute()
 		require.NoError(t, err)
 
-		w2.MustRun("peering", "trust", peerInfo.PublicKey, peerInfo.NetId, "--node=0")
+		w2.MustRun("peering", "trust", fmt.Sprintf("external-peer-%d", nodeIndex), peerInfo.PublicKey, peerInfo.PeeringURL, "--node=0")
 		require.NoError(t, err)
 	}
 
@@ -531,7 +539,7 @@ func TestWaspCLITrustListImport(t *testing.T) {
 	for _, trustedPeer := range trustedList1 {
 		require.True(t,
 			lo.ContainsBy(trustedList2, func(tp apiclient.PeeringNodeIdentityResponse) bool {
-				return tp.NetId == trustedPeer.NetId && tp.PublicKey == trustedPeer.PublicKey && tp.IsTrusted == trustedPeer.IsTrusted
+				return tp.PeeringURL == trustedPeer.PeeringURL && tp.PublicKey == trustedPeer.PublicKey && tp.IsTrusted == trustedPeer.IsTrusted
 			}),
 		)
 	}

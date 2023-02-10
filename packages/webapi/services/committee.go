@@ -171,7 +171,7 @@ func makeChainNodeStatus(
 	}
 
 	if n, ok := peeringStatus[pubKey.AsKey()]; ok {
-		cns.Node.NetID = n.NetID()
+		cns.Node.PeeringURL = n.PeeringURL()
 		cns.Node.IsAlive = n.IsAlive()
 		cns.Node.NumUsers = n.NumUsers()
 	}

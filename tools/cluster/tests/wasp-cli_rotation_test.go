@@ -57,7 +57,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		require.Regexp(t, fmt.Sprintf(`(?m)counter:\s+%d$`, n), out[0])
 	}
 
-	committee, quorum := w.CommitteeConfigArgs()
+	committee, quorum := w.ArgCommitteeConfig(0)
 	out := w.MustRun(
 		"chain",
 		"deploy",
@@ -65,8 +65,10 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		committee,
 		quorum,
 		fmt.Sprintf("--gov-controller=%s", w.WaspCliAddress.Bech32(parameters.L1().Protocol.Bech32HRP)),
+		"--node=0",
 	)
-	chainID := regexp.MustCompile(`(.*)ChainID:\s*([a-zA-Z0-9_]*),`).FindStringSubmatch(out[len(out)-1])[2]
+	chainID := regexp.MustCompile(`(.*)ChainID:\s*([a-zA-Z0-9_]*),`).FindStringSubmatch(strings.Join(out, ""))[2]
+	w.ActivateChainOnAllNodes("chain1")
 
 	// start a new wasp cluster
 	w2 := newWaspCLITest(t, waspClusterOpts{
@@ -93,8 +95,9 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 		// set trust relations between node0 of cluster 2 and all nodes of cluster 1
 		err = w.Cluster.AddTrustedNode(apiclient.PeeringTrustRequest{
-			PublicKey: node0peerInfo.PublicKey,
-			NetId:     node0peerInfo.NetId,
+			Name:       "next-committee-member",
+			PublicKey:  node0peerInfo.PublicKey,
+			PeeringURL: node0peerInfo.PeeringURL,
 		})
 		require.NoError(t, err)
 
@@ -105,7 +108,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 				Execute()
 			require.NoError(t, err)
 
-			w2.MustRun("peering", "trust", peerInfo.PublicKey, peerInfo.NetId, "--node=0")
+			w2.MustRun("peering", "trust", fmt.Sprintf("old-committee-%d", nodeIndex), peerInfo.PublicKey, peerInfo.PeeringURL, "--node=0")
 			require.NoError(t, err)
 		}
 
@@ -117,8 +120,8 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 	}
 
 	// activate the chain on the new nodes
+	w2.MustRun("chain", "add", "chain1", chainID)
 	for _, idx := range w2.Cluster.AllNodes() {
-		w2.MustRun("chain", "add", "chain1", chainID)
 		w2.MustRun("chain", "activate", fmt.Sprintf("--node=%d", idx))
 	}
 
@@ -166,7 +169,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 	w.Cluster.Stop()
 
 	// run DKG on the new cluster, obtain the new state controller address
-	out = w2.MustRun("chain", "rundkg", w2.AllNodesArg())
+	out = w2.MustRun("chain", "rundkg", w2.ArgAllNodesExcept(0), "--node=0")
 	newStateControllerAddr := regexp.MustCompile(`(.*):\s*([a-zA-Z0-9_]*)$`).FindStringSubmatch(out[0])[2]
 
 	// issue a governance rotatation via CLI

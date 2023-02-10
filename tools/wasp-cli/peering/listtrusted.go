@@ -6,6 +6,7 @@ package peering
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -37,12 +38,14 @@ func initListTrustedCmd() *cobra.Command {
 				log.Printf("%s\n", data)
 				return
 			}
-			header := []string{"PubKey", "NetID"}
+			header := []string{"Name", "PubKey", "PeeringURL", "Trusted"}
 			rows := make([][]string, len(trustedList))
 			for i := range rows {
 				rows[i] = []string{
+					trustedList[i].Name,
 					trustedList[i].PublicKey,
-					trustedList[i].NetId,
+					trustedList[i].PeeringURL,
+					fmt.Sprintf("%v", trustedList[i].IsTrusted),
 				}
 			}
 			log.PrintTable(header, rows)
@@ -73,8 +76,9 @@ func initImportTrustedJSONCmd() *cobra.Command {
 					continue // avoid importing untrusted peers by mistake
 				}
 				_, err := client.NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
-					NetId:     t.NetId,
-					PublicKey: t.PublicKey,
+					Name:       t.Name,
+					PeeringURL: t.PeeringURL,
+					PublicKey:  t.PublicKey,
 				}).Execute()
 				log.Check(err)
 			}

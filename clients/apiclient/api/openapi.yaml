@@ -1709,7 +1709,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/PeeringNodeStatusResponse_'
+                  $ref: '#/components/schemas/PeeringNodeStatusResponse__'
                 type: array
           description: A list of all peers
         "401":
@@ -2975,14 +2975,16 @@ components:
         candidateNodes:
         - node:
             isAlive: true
-            netId: netId
+            peeringURL: peeringURL
+            name: name
             publicKey: publicKey
             numUsers: 0
             isTrusted: true
           accessAPI: accessAPI
         - node:
             isAlive: true
-            netId: netId
+            peeringURL: peeringURL
+            name: name
             publicKey: publicKey
             numUsers: 0
             isTrusted: true
@@ -2990,30 +2992,34 @@ components:
         committeeNodes:
         - node:
             isAlive: true
-            netId: localhost:4000
-            publicKey: 0x0000
-            numUsers: 1
+            peeringURL: peeringURL
+            name: name
+            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+            numUsers: 6
             isTrusted: true
           accessAPI: accessAPI
         - node:
             isAlive: true
-            netId: localhost:4000
-            publicKey: 0x0000
-            numUsers: 1
+            peeringURL: peeringURL
+            name: name
+            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+            numUsers: 6
             isTrusted: true
           accessAPI: accessAPI
         chainId: tst1pqm5ckama06xhkl080mmvz6l3xy8c8lulrwy7mx4ll0fc69krxfgka70j0e
         accessNodes:
         - node:
             isAlive: true
-            netId: netId
+            peeringURL: peeringURL
+            name: name
             publicKey: publicKey
             numUsers: 0
             isTrusted: true
           accessAPI: accessAPI
         - node:
             isAlive: true
-            netId: netId
+            peeringURL: peeringURL
+            name: name
             publicKey: publicKey
             numUsers: 0
             isTrusted: true
@@ -3079,7 +3085,8 @@ components:
       example:
         node:
           isAlive: true
-          netId: netId
+          peeringURL: peeringURL
+          name: name
           publicKey: publicKey
           numUsers: 0
           isTrusted: true
@@ -3102,9 +3109,10 @@ components:
       example:
         node:
           isAlive: true
-          netId: localhost:4000
-          publicKey: 0x0000
-          numUsers: 1
+          peeringURL: peeringURL
+          name: name
+          publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+          numUsers: 6
           isTrusted: true
         accessAPI: accessAPI
       properties:
@@ -3814,7 +3822,7 @@ components:
         name: InStateOutputMetricItem
     InfoResponse:
       example:
-        netID: 0.0.0.0:4000
+        peeringURL: peeringURL
         l1Params:
           protocol:
             rentStructure:
@@ -3840,13 +3848,12 @@ components:
       properties:
         l1Params:
           $ref: '#/components/schemas/L1Params'
-        netID:
+        peeringURL:
           description: The net id of the node
-          example: 0.0.0.0:4000
           format: string
           type: string
           xml:
-            name: NetID
+            name: PeeringURL
         publicKey:
           description: The public key of the node (Hex)
           example: 0x8fb9555a17393f0e01aadd90f8b6bc8a64b1c5c37c99915942e40b2af99e72d6
@@ -3863,7 +3870,7 @@ components:
             name: Version
       required:
       - l1Params
-      - netID
+      - peeringURL
       - publicKey
       - version
       type: object
@@ -4365,7 +4372,8 @@ components:
         name: OutputID
     PeeringNodeIdentityResponse:
       example:
-        netId: localhost:4000
+        peeringURL: peeringURL
+        name: name
         publicKey: 0x0000
         isTrusted: true
       properties:
@@ -4375,13 +4383,17 @@ components:
           type: boolean
           xml:
             name: IsTrusted
-        netId:
-          description: The NetID of the peer
-          example: localhost:4000
+        name:
           format: string
           type: string
           xml:
-            name: NetID
+            name: Name
+        peeringURL:
+          description: The peering URL of the peer
+          format: string
+          type: string
+          xml:
+            name: PeeringURL
         publicKey:
           description: The peers public key encoded in Hex
           example: 0x0000
@@ -4391,7 +4403,8 @@ components:
             name: PublicKey
       required:
       - isTrusted
-      - netId
+      - name
+      - peeringURL
       - publicKey
       type: object
       xml:
@@ -4399,7 +4412,8 @@ components:
     PeeringNodeStatusResponse:
       example:
         isAlive: true
-        netId: netId
+        peeringURL: peeringURL
+        name: name
         publicKey: publicKey
         numUsers: 0
         isTrusted: true
@@ -4415,18 +4429,23 @@ components:
           type: boolean
           xml:
             name: IsTrusted
-        netId:
-          description: The NetID of the peer
+        name:
           format: string
           type: string
           xml:
-            name: NetID
+            name: Name
         numUsers:
           description: The amount of users attached to the peer
           format: int32
           type: integer
           xml:
             name: NumUsers
+        peeringURL:
+          description: The peering URL of the peer
+          format: string
+          type: string
+          xml:
+            name: PeeringURL
         publicKey:
           description: The peers public key encoded in Hex
           format: string
@@ -4436,8 +4455,9 @@ components:
       required:
       - isAlive
       - isTrusted
-      - netId
+      - name
       - numUsers
+      - peeringURL
       - publicKey
       type: object
       xml:
@@ -4445,7 +4465,62 @@ components:
     PeeringNodeStatusResponse_:
       example:
         isAlive: true
-        netId: localhost:4000
+        peeringURL: peeringURL
+        name: name
+        publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+        numUsers: 6
+        isTrusted: true
+      properties:
+        isAlive:
+          description: Whether or not the peer is activated
+          format: boolean
+          type: boolean
+          xml:
+            name: IsAlive
+        isTrusted:
+          format: boolean
+          type: boolean
+          xml:
+            name: IsTrusted
+        name:
+          format: string
+          type: string
+          xml:
+            name: Name
+        numUsers:
+          description: The amount of users attached to the peer
+          format: int32
+          type: integer
+          xml:
+            name: NumUsers
+        peeringURL:
+          description: The peering URL of the peer
+          format: string
+          type: string
+          xml:
+            name: PeeringURL
+        publicKey:
+          description: The peers public key encoded in Hex
+          example: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+          format: string
+          type: string
+          xml:
+            name: PublicKey
+      required:
+      - isAlive
+      - isTrusted
+      - name
+      - numUsers
+      - peeringURL
+      - publicKey
+      type: object
+      xml:
+        name: PeeringNodeStatusResponse
+    PeeringNodeStatusResponse__:
+      example:
+        isAlive: true
+        peeringURL: peeringURL
+        name: name
         publicKey: 0x0000
         numUsers: 1
         isTrusted: true
@@ -4463,13 +4538,11 @@ components:
           type: boolean
           xml:
             name: IsTrusted
-        netId:
-          description: The NetID of the peer
-          example: localhost:4000
+        name:
           format: string
           type: string
           xml:
-            name: NetID
+            name: Name
         numUsers:
           description: The amount of users attached to the peer
           example: 1
@@ -4477,6 +4550,12 @@ components:
           type: integer
           xml:
             name: NumUsers
+        peeringURL:
+          description: The peering URL of the peer
+          format: string
+          type: string
+          xml:
+            name: PeeringURL
         publicKey:
           description: The peers public key encoded in Hex
           example: 0x0000
@@ -4487,24 +4566,30 @@ components:
       required:
       - isAlive
       - isTrusted
-      - netId
+      - name
       - numUsers
+      - peeringURL
       - publicKey
       type: object
       xml:
         name: PeeringNodeStatusResponse
     PeeringTrustRequest:
       example:
-        netId: localhost:4000
+        peeringURL: peeringURL
+        name: name
         publicKey: 0x0000
       properties:
-        netId:
-          description: The NetID of the peer
-          example: localhost:4000
+        name:
           format: string
           type: string
           xml:
-            name: NetID
+            name: Name
+        peeringURL:
+          description: The peering URL of the peer
+          format: string
+          type: string
+          xml:
+            name: PeeringURL
         publicKey:
           description: The peers public key encoded in Hex
           example: 0x0000
@@ -4513,7 +4598,8 @@ components:
           xml:
             name: PublicKey
       required:
-      - netId
+      - name
+      - peeringURL
       - publicKey
       type: object
       xml:

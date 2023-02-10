@@ -70,6 +70,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 }
 
 func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) ([]string, error) {
+	w.T.Helper()
 	// -w: wait for requests
 	// -d: debug output
 	cmd := exec.Command("wasp-cli", append([]string{"-w", "-d"}, args...)...) //nolint:gosec
@@ -107,10 +108,12 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) ([]string, error)
 }
 
 func (w *WaspCLITest) Run(args ...string) ([]string, error) {
+	w.T.Helper()
 	return w.runCmd(args, nil)
 }
 
 func (w *WaspCLITest) MustRun(args ...string) []string {
+	w.T.Helper()
 	lines, err := w.Run(args...)
 	if err != nil {
 		panic(err)
@@ -162,21 +165,23 @@ func (w *WaspCLITest) CopyFile(srcFile string) {
 	require.NoError(w.T, err)
 }
 
-func (w *WaspCLITest) AllNodesArg() string {
+func (w *WaspCLITest) ArgAllNodesExcept(idx int) string {
 	var nodes []string
 	for i := 0; i < len(w.Cluster.Config.Wasp); i++ {
-		nodes = append(nodes, fmt.Sprintf("%d", i))
+		if i != idx {
+			nodes = append(nodes, fmt.Sprintf("%d", i))
+		}
 	}
-	return "--nodes=" + strings.Join(nodes, ",")
+	return "--peers=" + strings.Join(nodes, ",")
 }
 
-func (w *WaspCLITest) CommitteeConfigArgs() (string, string) {
+func (w *WaspCLITest) ArgCommitteeConfig(initiatorIndex int) (string, string) {
 	quorum := 3 * len(w.Cluster.Config.Wasp) / 4
 	if quorum < 1 {
 		quorum = 1
 	}
 
-	return w.AllNodesArg(), fmt.Sprintf("--quorum=%d", quorum)
+	return w.ArgAllNodesExcept(initiatorIndex), fmt.Sprintf("--quorum=%d", quorum)
 }
 
 func (w *WaspCLITest) Address() iotago.Address {
@@ -185,4 +190,10 @@ func (w *WaspCLITest) Address() iotago.Address {
 	_, addr, err := iotago.ParseBech32(s)
 	require.NoError(w.T, err)
 	return addr
+}
+
+func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string) {
+	for _, idx := range w.Cluster.AllNodes() {
+		w.MustRun("chain", "activate", "--chain="+chainName, fmt.Sprintf("--node=%d", idx))
+	}
 }

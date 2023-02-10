@@ -43,11 +43,11 @@ func initInfoCmd() *cobra.Command {
 				Execute()
 			log.Check(err)
 
-			printNodesRowHdr := []string{"PubKey", "NetID", "Alive", "Committee", "Access", "AccessAPI"}
+			printNodesRowHdr := []string{"PubKey", "PeeringURL", "Alive", "Committee", "Access", "AccessAPI"}
 			printNodesRowFmt := func(n apiclient.CommitteeNode, isCommitteeNode, isAccessNode bool) []string {
 				return []string{
 					n.Node.PublicKey,
-					n.Node.NetId,
+					n.Node.PeeringURL,
 					strconv.FormatBool(n.Node.IsAlive),
 					strconv.FormatBool(isCommitteeNode),
 					strconv.FormatBool(isAccessNode),

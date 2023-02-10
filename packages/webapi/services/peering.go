@@ -26,9 +26,9 @@ func (p *PeeringService) GetIdentity() *dto.PeeringNodeIdentity {
 	isTrustedErr := p.trustedNetworkManager.IsTrustedPeer(publicKey)
 
 	return &dto.PeeringNodeIdentity{
-		PublicKey: publicKey,
-		NetID:     p.networkProvider.Self().NetID(),
-		IsTrusted: isTrustedErr == nil,
+		PublicKey:  publicKey,
+		PeeringURL: p.networkProvider.Self().PeeringURL(),
+		IsTrusted:  isTrustedErr == nil,
 	}
 }
 
@@ -40,11 +40,12 @@ func (p *PeeringService) GetRegisteredPeers() []*dto.PeeringNodeStatus {
 		isTrustedErr := p.trustedNetworkManager.IsTrustedPeer(v.PubKey())
 
 		peerModels[k] = &dto.PeeringNodeStatus{
-			PublicKey: v.PubKey(),
-			NetID:     v.NetID(),
-			IsAlive:   v.IsAlive(),
-			NumUsers:  v.NumUsers(),
-			IsTrusted: isTrustedErr == nil,
+			Name:       v.Name(),
+			PublicKey:  v.PubKey(),
+			PeeringURL: v.PeeringURL(),
+			IsAlive:    v.IsAlive(),
+			NumUsers:   v.NumUsers(),
+			IsTrusted:  isTrustedErr == nil,
 		}
 	}
 
@@ -60,25 +61,27 @@ func (p *PeeringService) GetTrustedPeers() ([]*dto.PeeringNodeIdentity, error) {
 	peers := make([]*dto.PeeringNodeIdentity, len(trustedPeers))
 	for k, v := range trustedPeers {
 		peers[k] = &dto.PeeringNodeIdentity{
-			PublicKey: v.PubKey(),
-			NetID:     v.NetID,
-			IsTrusted: true,
+			Name:       v.Name,
+			PublicKey:  v.PubKey(),
+			PeeringURL: v.PeeringURL,
+			IsTrusted:  true,
 		}
 	}
 
 	return peers, nil
 }
 
-func (p *PeeringService) TrustPeer(publicKey *cryptolib.PublicKey, netID string) (*dto.PeeringNodeIdentity, error) {
-	identity, err := p.trustedNetworkManager.TrustPeer(publicKey, netID)
+func (p *PeeringService) TrustPeer(name string, publicKey *cryptolib.PublicKey, peeringURL string) (*dto.PeeringNodeIdentity, error) {
+	identity, err := p.trustedNetworkManager.TrustPeer(name, publicKey, peeringURL)
 	if err != nil {
 		return nil, err
 	}
 
 	mappedIdentity := &dto.PeeringNodeIdentity{
-		PublicKey: identity.PubKey(),
-		NetID:     identity.NetID,
-		IsTrusted: true,
+		Name:       name,
+		PublicKey:  identity.PubKey(),
+		PeeringURL: identity.PeeringURL,
+		IsTrusted:  true,
 	}
 
 	return mappedIdentity, nil
@@ -91,9 +94,9 @@ func (p *PeeringService) DistrustPeer(publicKey *cryptolib.PublicKey) (*dto.Peer
 	}
 
 	mappedIdentity := &dto.PeeringNodeIdentity{
-		PublicKey: identity.PubKey(),
-		NetID:     identity.NetID,
-		IsTrusted: false,
+		PublicKey:  identity.PubKey(),
+		PeeringURL: identity.PeeringURL,
+		IsTrusted:  false,
 	}
 
 	return mappedIdentity, nil

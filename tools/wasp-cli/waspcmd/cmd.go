@@ -47,15 +47,8 @@ func initAddWaspNodeCmd() *cobra.Command {
 	return cmd
 }
 
-func WithWaspNodesFlag(cmd *cobra.Command, nodes *[]string) {
-	cmd.Flags().StringSliceVar(nodes, "nodes", nil, "wasp nodes to execute the command in (ex: bob,alice,foo,bar) (default: the default wasp node)")
-}
-
-func DefaultNodesFallback(nodes []string) []string {
-	if len(nodes) == 0 {
-		return []string{getDefaultWaspNode()}
-	}
-	return nodes
+func WithPeersFlag(cmd *cobra.Command, peers *[]string) {
+	cmd.Flags().StringSliceVar(peers, "peers", nil, "peers to be included the command in (ex: bob,alice,foo,bar) (default: no peers)")
 }
 
 func WithWaspNodeFlag(cmd *cobra.Command, node *string) {
