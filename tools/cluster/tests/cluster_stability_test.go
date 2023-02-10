@@ -82,7 +82,7 @@ func (e *SabotageEnv) sabotageNodes(startDelay, inBetweenDelay time.Duration) *s
 		for _, nodeID := range e.SabotageList {
 			e.chainEnv.t.Logf("Breaking node: %v (%s)", nodeID, time.Now())
 
-			err := e.chainEnv.Clu.KillNodeProcess(nodeID)
+			err := e.chainEnv.Clu.KillNodeProcess(nodeID, false)
 
 			require.NoError(e.chainEnv.t, err)
 
