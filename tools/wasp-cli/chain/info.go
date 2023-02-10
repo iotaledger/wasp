@@ -35,12 +35,12 @@ func initInfoCmd() *cobra.Command {
 
 			chainInfo, _, err := client.ChainsApi.
 				GetChainInfo(context.Background(), chainID.String()).
-				Execute()
+				Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
 			committeeInfo, _, err := client.ChainsApi.
 				GetCommitteeInfo(context.Background(), chainID.String()).
-				Execute()
+				Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
 			printNodesRowHdr := []string{"PubKey", "PeeringURL", "Alive", "Committee", "Access", "AccessAPI"}
@@ -77,7 +77,7 @@ func initInfoCmd() *cobra.Command {
 
 				log.Printf("Description: %s\n", chainInfo.Description)
 
-				contracts, _, err := client.ChainsApi.GetContracts(context.Background(), chainID.String()).Execute()
+				contracts, _, err := client.ChainsApi.GetContracts(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
 				log.Check(err)
 				log.Printf("#Contracts: %d\n", len(contracts))
 
@@ -99,7 +99,7 @@ func initInfoCmd() *cobra.Command {
 						}
 					}
 
-					log.Printf("Gas fee: 1 %s = %d gas units\n", gasFeeToken, chainInfo.GasFeePolicy.GasPerToken)
+					log.Printf("Gas fee: 1 %s = %v gas units\n", gasFeeToken, chainInfo.GasFeePolicy.GasPerToken)
 					log.Printf("Validator fee share: %d%%\n", chainInfo.GasFeePolicy.ValidatorFeeShare)
 				}
 

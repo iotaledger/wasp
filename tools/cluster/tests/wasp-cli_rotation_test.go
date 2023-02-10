@@ -103,13 +103,13 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 		for _, nodeIndex := range w.Cluster.Config.AllNodes() {
 			// equivalent of "wasp-cli peer info"
-			peerInfo, _, err := w.Cluster.WaspClient(nodeIndex).NodeApi.
+			peerInfo, _, err2 := w.Cluster.WaspClient(nodeIndex).NodeApi.
 				GetPeeringIdentity(context.Background()).
 				Execute()
-			require.NoError(t, err)
+			require.NoError(t, err2)
 
 			w2.MustRun("peering", "trust", fmt.Sprintf("old-committee-%d", nodeIndex), peerInfo.PublicKey, peerInfo.PeeringURL, "--node=0")
-			require.NoError(t, err)
+			require.NoError(t, err2)
 		}
 
 		// add node 0 from cluster 2 as an access node

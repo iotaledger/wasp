@@ -65,9 +65,9 @@ func run() error {
 			select {
 			case msg := <-messages:
 				if socket != nil {
-					err := socket.Send(msg)
-					if err != nil {
-						Plugin.LogErrorf("failed to publish message: %w", err)
+					err2 := socket.Send(msg)
+					if err2 != nil {
+						Plugin.LogErrorf("failed to publish message: %w", err2)
 					}
 				}
 			case <-ctx.Done():

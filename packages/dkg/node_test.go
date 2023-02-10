@@ -71,15 +71,15 @@ func TestBasic(t *testing.T) {
 	blsPartSigs := make([][]byte, len(peeringURLs))
 	var aggrDks tcrypto.DKShare
 	for i, r := range dkShareRegistryProviders {
-		dks, err := r.LoadDKShare(dkShare.GetAddress())
+		dks, err2 := r.LoadDKShare(dkShare.GetAddress())
 		if i == 0 {
 			aggrDks = dks
 		}
-		require.NoError(t, err)
+		require.NoError(t, err2)
 		// dssPartSigs[i], err = dks.DSSSignShare(dataToSign) // TODO: Check the signature.
 		// require.NoError(t, err)
-		blsPartSigs[i], err = dks.BLSSignShare(dataToSign)
-		require.NoError(t, err)
+		blsPartSigs[i], err2 = dks.BLSSignShare(dataToSign)
+		require.NoError(t, err2)
 	}
 	//
 	// Aggregate the signatures: check the DSS signature. // TODO: Check the signature.

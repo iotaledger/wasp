@@ -63,12 +63,12 @@ func testAccounts(e *ChainEnv) {
 	e.checkCoreContracts()
 
 	for i := range e.Chain.CommitteeNodes {
-		blockIndex, err := e.Chain.BlockIndex(i)
-		require.NoError(e.t, err)
+		blockIndex, err2 := e.Chain.BlockIndex(i)
+		require.NoError(e.t, err2)
 		require.Greater(e.t, blockIndex, uint32(2))
 
-		contractRegistry, err := e.Chain.ContractRegistry(i)
-		require.NoError(e.t, err)
+		contractRegistry, err2 := e.Chain.ContractRegistry(i)
+		require.NoError(e.t, err2)
 
 		cr, ok := lo.Find(contractRegistry, func(item apiclient.ContractInfoResponse) bool {
 			return item.HName == hname.String()
@@ -79,8 +79,8 @@ func testAccounts(e *ChainEnv) {
 		require.EqualValues(e.t, description, cr.Description)
 		require.EqualValues(e.t, nativeIncCounterSCName, cr.Name)
 
-		counterValue, err := e.Chain.GetCounterValue(hname, i)
-		require.NoError(e.t, err)
+		counterValue, err2 := e.Chain.GetCounterValue(hname, i)
+		require.NoError(e.t, err2)
 		require.EqualValues(e.t, 42, counterValue)
 	}
 
@@ -135,12 +135,12 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	env.checkCoreContracts()
 
 	for _, i := range chain.CommitteeNodes {
-		blockIndex, err := chain.BlockIndex(i)
-		require.NoError(t, err)
+		blockIndex, err2 := chain.BlockIndex(i)
+		require.NoError(t, err2)
 		require.Greater(t, blockIndex, uint32(2))
 
-		contractRegistry, err := chain.ContractRegistry(i)
-		require.NoError(t, err)
+		contractRegistry, err2 := chain.ContractRegistry(i)
+		require.NoError(t, err2)
 
 		t.Logf("%+v", contractRegistry)
 		cr, ok := lo.Find(contractRegistry, func(item apiclient.ContractInfoResponse) bool {
@@ -153,8 +153,8 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 		require.EqualValues(t, description, cr.Description)
 		require.EqualValues(t, nativeIncCounterSCName, cr.Name)
 
-		counterValue, err := chain.GetCounterValue(hname, i)
-		require.NoError(t, err)
+		counterValue, err2 := chain.GetCounterValue(hname, i)
+		require.NoError(t, err2)
 		require.EqualValues(t, 42, counterValue)
 	}
 
@@ -178,8 +178,8 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	env.checkLedger()
 
 	for _, i := range chain.CommitteeNodes {
-		counterValue, err := chain.GetCounterValue(hname, i)
-		require.NoError(t, err)
+		counterValue, err2 := chain.GetCounterValue(hname, i)
+		require.NoError(t, err2)
 		require.EqualValues(t, 43, counterValue)
 	}
 	if !env.Clu.AssertAddressBalances(myAddress, isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {

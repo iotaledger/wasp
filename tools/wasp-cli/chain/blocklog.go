@@ -51,7 +51,7 @@ func fetchBlockInfo(args []string, node, chain string) *apiclient.BlockInfoRespo
 		blockInfo, _, err := client.
 			CorecontractsApi.
 			BlocklogGetLatestBlockInfo(context.Background(), config.GetChain(chain).String()).
-			Execute()
+			Execute() //nolint:bodyclose // false positive
 
 		log.Check(err)
 		return blockInfo
@@ -63,7 +63,7 @@ func fetchBlockInfo(args []string, node, chain string) *apiclient.BlockInfoRespo
 	blockInfo, _, err := client.
 		CorecontractsApi.
 		BlocklogGetBlockInfo(context.Background(), config.GetChain(chain).String(), uint32(index)).
-		Execute()
+		Execute() //nolint:bodyclose // false positive
 
 	log.Check(err)
 
@@ -74,12 +74,13 @@ func logRequestsInBlock(index uint32, node, chain string) {
 	client := cliclients.WaspClient(node)
 	receipts, _, err := client.CorecontractsApi.
 		BlocklogGetRequestReceiptsOfBlock(context.Background(), config.GetChain(chain).String(), index).
-		Execute()
+		Execute() //nolint:bodyclose // false positive
 
 	log.Check(err)
 
 	for i, receipt := range receipts.Receipts {
-		logReceipt(&receipt, i)
+		r := receipt
+		logReceipt(&r, i)
 	}
 }
 
@@ -124,7 +125,7 @@ func logEventsInBlock(index uint32, node, chain string) {
 	client := cliclients.WaspClient(node)
 	events, _, err := client.CorecontractsApi.
 		BlocklogGetEventsOfBlock(context.Background(), config.GetChain(chain).String(), index).
-		Execute()
+		Execute() //nolint:bodyclose // false positive
 
 	log.Check(err)
 	logEvents(events)
@@ -147,7 +148,7 @@ func initRequestCmd() *cobra.Command {
 			client := cliclients.WaspClient(node)
 			receipt, _, err := client.CorecontractsApi.
 				BlocklogGetRequestReceipt(context.Background(), config.GetChain(chain).String(), reqID.String()).
-				Execute()
+				Execute() //nolint:bodyclose // false positive
 
 			log.Check(err)
 
@@ -168,7 +169,7 @@ func logEventsInRequest(reqID isc.RequestID, node, chain string) {
 	client := cliclients.WaspClient(node)
 	events, _, err := client.CorecontractsApi.
 		BlocklogGetEventsOfRequest(context.Background(), config.GetChain(chain).String(), reqID.String()).
-		Execute()
+		Execute() //nolint:bodyclose // false positive
 
 	log.Check(err)
 	logEvents(events)

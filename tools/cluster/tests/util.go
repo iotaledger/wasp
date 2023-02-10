@@ -117,8 +117,8 @@ func (e *ChainEnv) getAccountsOnChain() []isc.AgentID {
 
 	ret := make([]isc.AgentID, 0)
 	for _, address := range accounts.Accounts {
-		aid, err := isc.NewAgentIDFromString(address)
-		require.NoError(e.t, err)
+		aid, err2 := isc.NewAgentIDFromString(address)
+		require.NoError(e.t, err2)
 
 		ret = append(ret, aid)
 	}

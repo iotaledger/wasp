@@ -17,19 +17,19 @@ func NewAssetsFromAPIResponse(assetsResponse *apiclient.AssetsResponse) (*isc.As
 	assets.BaseTokens = baseTokens
 
 	for _, nativeToken := range assetsResponse.NativeTokens {
-		nativeTokenIDHex, err := iotago.DecodeHex(nativeToken.Id)
-		if err != nil {
-			return nil, err
+		nativeTokenIDHex, err2 := iotago.DecodeHex(nativeToken.Id)
+		if err2 != nil {
+			return nil, err2
 		}
 
-		nativeTokenID, err := isc.NativeTokenIDFromBytes(nativeTokenIDHex)
-		if err != nil {
-			return nil, err
+		nativeTokenID, err2 := isc.NativeTokenIDFromBytes(nativeTokenIDHex)
+		if err2 != nil {
+			return nil, err2
 		}
 
-		amount, err := iotago.DecodeUint256(nativeToken.Amount)
-		if err != nil {
-			return nil, err
+		amount, err2 := iotago.DecodeUint256(nativeToken.Amount)
+		if err2 != nil {
+			return nil, err2
 		}
 
 		assets.NativeTokens = append(assets.NativeTokens, &iotago.NativeToken{

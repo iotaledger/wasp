@@ -29,7 +29,7 @@ func initEventsCmd() *cobra.Command {
 
 			events, _, err := client.CorecontractsApi.
 				BlocklogGetEventsOfContract(context.Background(), config.GetChain(chain).String(), contractHName).
-				Execute()
+				Execute() //nolint:bodyclose // false positive
 
 			log.Check(err)
 			logEvents(events)

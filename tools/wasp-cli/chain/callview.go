@@ -38,7 +38,7 @@ func initCallViewCmd() *cobra.Command {
 				ContractName: contractName,
 				FunctionName: funcName,
 				Arguments:    apiextensions.JSONDictToAPIJSONDict(params.JSONDict()),
-			}).Execute()
+			}).Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
 			decodedResult, err := apiextensions.APIJsonDictToDict(*result)

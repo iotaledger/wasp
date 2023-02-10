@@ -368,20 +368,20 @@ func (s *dkShareImpl) Read(r io.Reader) error {
 	s.address = util.NewComparableAddress(address)
 
 	var index uint16
-	if err := util.ReadUint16(r, &index); err != nil {
-		return err
+	if err2 := util.ReadUint16(r, &index); err2 != nil {
+		return err2
 	}
 	s.index = &index
-	if err := util.ReadUint16(r, &s.n); err != nil {
-		return err
+	if err2 := util.ReadUint16(r, &s.n); err2 != nil {
+		return err2
 	}
-	if err := util.ReadUint16(r, &s.t); err != nil {
-		return err
+	if err2 := util.ReadUint16(r, &s.t); err2 != nil {
+		return err2
 	}
 	//
 	// NodePubKeys
-	if err := util.ReadUint16(r, &arrLen); err != nil {
-		return err
+	if err2 := util.ReadUint16(r, &arrLen); err2 != nil {
+		return err2
 	}
 	s.nodePubKeys = make([]*cryptolib.PublicKey, arrLen)
 	for i := range s.nodePubKeys {
@@ -886,9 +886,9 @@ func (s *dkShareImpl) UnmarshalJSON(bytes []byte) error {
 
 	s.nodePubKeys = make([]*cryptolib.PublicKey, len(j.NodePubKeys))
 	for i, nodePubKeyHex := range j.NodePubKeys {
-		nodePubKey, err := cryptolib.NewPublicKeyFromString(nodePubKeyHex)
-		if err != nil {
-			return err
+		nodePubKey, err2 := cryptolib.NewPublicKeyFromString(nodePubKeyHex)
+		if err2 != nil {
+			return err2
 		}
 
 		s.nodePubKeys[i] = nodePubKey

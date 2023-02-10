@@ -40,8 +40,8 @@ func (msg *msgCmtLog) MarshalBinary() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := util.WriteBytes16(w, committeeAddrBytes); err != nil {
-		return nil, err
+	if err2 := util.WriteBytes16(w, committeeAddrBytes); err2 != nil {
+		return nil, err2
 	}
 	bin, err := msg.wrapped.MarshalBinary()
 	if err != nil {

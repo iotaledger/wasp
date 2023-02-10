@@ -278,8 +278,8 @@ func (tnc *testNodeConn) PublishTX(
 	txID, err := tx.ID()
 	require.NoError(tnc.t, err)
 	existing := lo.ContainsBy(tnc.published, func(publishedTX *iotago.Transaction) bool {
-		publishedID, err := publishedTX.ID()
-		require.NoError(tnc.t, err)
+		publishedID, err2 := publishedTX.ID()
+		require.NoError(tnc.t, err2)
 		return txID == publishedID
 	})
 	if existing {

@@ -109,8 +109,8 @@ func Set(key string, value interface{}) {
 	log.Check(viper.WriteConfig())
 }
 
-func AddWaspNode(name, apiUrl string) {
-	Set("wasp."+name, apiUrl)
+func AddWaspNode(name, apiURL string) {
+	Set("wasp."+name, apiURL)
 }
 
 func AddChain(name, chainID string) {

@@ -91,8 +91,8 @@ func testNanoPublisher(t *testing.T, env *ChainEnv) {
 
 	reqIDs := make([]isc.RequestID, numRequests)
 	for i := 0; i < numRequests; i++ {
-		req, err := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
-		require.NoError(t, err)
+		req, err2 := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
+		require.NoError(t, err2)
 
 		reqIDs[i] = req.ID()
 	}
@@ -118,8 +118,8 @@ func testNanoPublisher(t *testing.T, env *ChainEnv) {
 
 	reqIDs = make([]isc.RequestID, numRequests)
 	for i := 0; i < numRequests; i++ {
-		req, err := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 101)})
-		require.NoError(t, err)
+		req, err2 := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 101)})
+		require.NoError(t, err2)
 
 		reqIDs[i] = req.ID()
 	}
