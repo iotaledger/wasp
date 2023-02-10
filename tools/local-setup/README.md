@@ -52,7 +52,7 @@ You can either use a wasp-cli installed on your system, or use the one built-in 
 wasp-cli init
 wasp-cli set l1.apiaddress http://localhost:14265
 wasp-cli set l1.faucetaddress http://localhost:8091
-wasp-cli set wasp.0.api http://localhost:9090
+wasp-cli wasp add 0 http://localhost:9090
 ```
 
 To create a chain:

@@ -103,7 +103,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 				Execute()
 			require.NoError(t, err)
 
-			w2.MustRun("peering", "trust", peerInfo.PublicKey, peerInfo.NetId, "--nodes=0")
+			w2.MustRun("peering", "trust", peerInfo.PublicKey, peerInfo.NetId, "--node=0")
 			require.NoError(t, err)
 		}
 

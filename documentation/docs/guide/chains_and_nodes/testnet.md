@@ -59,9 +59,7 @@ Next, you should tell `wasp-cli` how to reach our test chain:
 ```shell
 wasp-cli set l1.apiaddress https://api.testnet.shimmer.network
 wasp-cli set l1.faucetaddress https://faucet.testnet.shimmer.network
-wasp-cli set chains.testchain rms1prr4r7az8e46qhagz5atugjm6x0xrg27d84677e3lurg0s6s76jr59dw4ls
-wasp-cli set chain testchain
-
+wasp-cli chain add testchain rms1prr4r7az8e46qhagz5atugjm6x0xrg27d84677e3lurg0s6s76jr59dw4ls
 ```
 
 ### Request Funds
@@ -78,10 +76,10 @@ wasp-cli request-funds
 We have deployed an experimental EVM chain that you can interact with. To begin, add a custom network to Metamask with
 the following configuration:
 
-| Key                | Value                                                                                                                     |
-|--------------------|---------------------------------------------------------------------------------------------------------------------------|
-| RPC URL            | https://api.sc.testnet.shimmer.network/evm/jsonrpc  |
-| Chain ID           | 1076                                                                                                                      |
+| Key      | Value                                              |
+| -------- | -------------------------------------------------- |
+| RPC URL  | https://api.sc.testnet.shimmer.network/evm/jsonrpc |
+| Chain ID | 1076                                               |
 
 
 :::note
