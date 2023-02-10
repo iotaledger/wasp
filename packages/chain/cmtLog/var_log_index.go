@@ -96,8 +96,8 @@ type VarLogIndex interface {
 // >     ELSE RETURN 0
 // >
 //
-// TODO: Repeat/echo a NextLI message, if we get NextLI older than ours. To help a node to recover after a restart without waiting next consensus to happen.
-// TODO: When latestAO can be NIL and what to do with that?
+// Additionally, to recover after a reboot faster, a ⟨NextLI, -, -⟩ message includes the pleaseRepeat flag,
+// which is sent while a node has not heard from a peer a message. The peer should resend its last message, if any.
 type varLogIndexImpl struct {
 	nodeIDs    []gpa.NodeID                        // All the peers in this committee.
 	n          int                                 // Total number of nodes.
@@ -110,6 +110,7 @@ type varLogIndexImpl struct {
 	consAggrAO map[LogIndex]*isc.AliasOutputWithID // Recent outputs, to filter L1ReplacedBaseAliasOutput.
 	consDoneLI LogIndex                            // Highest LI for which consensus has completed at this node.
 	outputCB   func(li LogIndex, ao *isc.AliasOutputWithID)
+	lastMsgs   map[gpa.NodeID]*msgNextLogIndex
 	log        *logger.Logger
 }
 
@@ -139,6 +140,7 @@ func NewVarLogIndex(
 		consAggrAO: map[LogIndex]*isc.AliasOutputWithID{},
 		consDoneLI: NilLogIndex(),
 		outputCB:   outputCB,
+		lastMsgs:   map[gpa.NodeID]*msgNextLogIndex{},
 		log:        log,
 	}
 }
@@ -217,6 +219,9 @@ func (v *varLogIndexImpl) MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutM
 		v.log.Warnf("MsgNextLogIndex from unknown sender: %+v", msg)
 		return nil
 	}
+	if lastMsg, ok := v.lastMsgs[msg.Sender()]; ok && msg.pleaseRepeat {
+		msgs.Add(lastMsg.AsResent())
+	}
 	var prevPeerLI LogIndex
 	if prevPeerNLI, ok := v.maxPeerLIs[sender]; ok {
 		prevPeerLI = prevPeerNLI.nextLogIndex
@@ -252,8 +257,11 @@ func (v *varLogIndexImpl) tryPropose(li LogIndex) gpa.OutMessages {
 	derivedAO := v.deriveAO(v.proposedLI)
 	v.log.Debugf("Sending NextLogIndex=%v, baseAO=%v", v.proposedLI, derivedAO)
 	msgs := gpa.NoMessages()
-	for i := range v.nodeIDs {
-		msgs.Add(newMsgNextLogIndex(v.nodeIDs[i], v.proposedLI, derivedAO))
+	for _, nodeID := range v.nodeIDs {
+		_, haveMsgFrom := v.maxPeerLIs[nodeID] // It might happen, that we rebooted and lost the state.
+		msg := newMsgNextLogIndex(nodeID, v.proposedLI, derivedAO, !haveMsgFrom)
+		v.lastMsgs[nodeID] = msg
+		msgs.Add(msg)
 	}
 	return msgs
 }
