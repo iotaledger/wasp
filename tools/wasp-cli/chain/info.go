@@ -26,7 +26,7 @@ func initInfoCmd() *cobra.Command {
 		Short: "Show information about the chain",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 			client := cliclients.WaspClient(node)
 
 			chainInfo, _, err := client.ChainsApi.
@@ -105,6 +105,6 @@ func initInfoCmd() *cobra.Command {
 			}
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }

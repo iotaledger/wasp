@@ -43,9 +43,7 @@ func initRunDKGCmd() *cobra.Command {
 }
 
 func doDKG(nodes []string, quorum int) iotago.Address {
-	if len(nodes) == 0 {
-		nodes = []string{config.MustGetDefaultWaspNode()}
-	}
+	nodes = waspcmd.DefaultNodesFallback(nodes)
 	if quorum == 0 {
 		quorum = defaultQuorum(len(nodes))
 	}

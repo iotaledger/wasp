@@ -23,7 +23,7 @@ func initConsensusMetricsCmd() *cobra.Command {
 		Short: "Show current value of collected metrics of consensus",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 			client := cliclients.WaspClient(node)
 			_, chainAddress, err := iotago.ParseBech32(chainAlias)
 			log.Check(err)
@@ -58,7 +58,7 @@ func initConsensusMetricsCmd() *cobra.Command {
 			log.PrintTable(header, table)
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }
 

@@ -24,7 +24,7 @@ func initNodeconnMetricsCmd() *cobra.Command {
 		Short: "Show current value of collected metrics of connection to L1",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 			client := cliclients.WaspClient(node)
 
 			if chainAlias == "" {
@@ -54,7 +54,7 @@ func initNodeconnMetricsCmd() *cobra.Command {
 			}
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }
 

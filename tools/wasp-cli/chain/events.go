@@ -19,7 +19,7 @@ func initEventsCmd() *cobra.Command {
 		Short: "Show events of contract <name>",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 			client := cliclients.WaspClient(node)
 			contractHName := isc.Hn(args[0]).String()
 
@@ -31,6 +31,6 @@ func initEventsCmd() *cobra.Command {
 			logEvents(events)
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }

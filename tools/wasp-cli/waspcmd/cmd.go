@@ -63,11 +63,11 @@ func DefaultNodesFallback(nodes []string) []string {
 	return nodes
 }
 
-func WithSingleWaspNodesFlag(cmd *cobra.Command, node *string) {
+func WithWaspNodeFlag(cmd *cobra.Command, node *string) {
 	cmd.Flags().StringVar(node, "node", "", "wasp node to execute the command in (ex: wasp-0) (default: the default wasp node)")
 }
 
-func DefaultSingleNodeFallback(node string) string {
+func DefaultWaspNodeFallback(node string) string {
 	if node == "" {
 		return config.MustGetDefaultWaspNode()
 	}

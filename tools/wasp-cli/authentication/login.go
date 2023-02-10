@@ -28,7 +28,7 @@ func initLoginCmd() *cobra.Command {
 		Short: "Authenticate against a Wasp node",
 		// Args:  cobra.ArbitraryArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 			if username == "" || password == "" {
 				scanner := bufio.NewScanner(os.Stdin)
 
@@ -65,6 +65,6 @@ func initLoginCmd() *cobra.Command {
 			log.Printf("\nSuccessfully authenticated\n")
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }

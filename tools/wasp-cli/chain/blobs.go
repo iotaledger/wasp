@@ -31,11 +31,11 @@ func initStoreBlobCmd() *cobra.Command {
 		Short: "Store a blob in the chain",
 		Args:  cobra.MinimumNArgs(4),
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 			uploadBlob(cliclients.WaspClient(node), util.EncodeParams(args))
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }
 
@@ -59,7 +59,7 @@ func initShowBlobCmd() *cobra.Command {
 			hash, err := hashing.HashValueFromHex(args[0])
 			log.Check(err)
 
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 			client := cliclients.WaspClient(node)
 
 			blobInfo, _, err := client.
@@ -85,7 +85,7 @@ func initShowBlobCmd() *cobra.Command {
 			util.PrintDictAsJSON(values)
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }
 
@@ -96,7 +96,7 @@ func initListBlobsCmd() *cobra.Command {
 		Short: "List blobs in chain",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 			client := cliclients.WaspClient(node)
 
 			blobsResponse, _, err := client.
@@ -118,6 +118,6 @@ func initListBlobsCmd() *cobra.Command {
 			log.PrintTable(header, rows)
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }

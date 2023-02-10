@@ -66,7 +66,7 @@ func initPostRequestCmd() *cobra.Command {
 		Long:  "Post a request to contract <name>, function <funcname> with given params.",
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 			hname := args[0]
 			fname := args[1]
 
@@ -91,7 +91,7 @@ func initPostRequestCmd() *cobra.Command {
 	)
 	cmd.Flags().BoolVarP(&adjustStorageDeposit, "adjust-storage-deposit", "s", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
 
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 
 	return cmd
 }

@@ -28,7 +28,7 @@ func initDeployContractCmd() *cobra.Command {
 		Short: "Deploy a contract in the chain",
 		Args:  cobra.MinimumNArgs(4),
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 			client := cliclients.WaspClient(node)
 			vmtype := args[0]
 			name := args[1]
@@ -58,7 +58,7 @@ func initDeployContractCmd() *cobra.Command {
 			deployContract(client, node, name, description, progHash, initParams)
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }
 

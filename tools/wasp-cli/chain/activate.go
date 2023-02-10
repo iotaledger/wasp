@@ -14,69 +14,63 @@ import (
 )
 
 func initActivateCmd() *cobra.Command {
-	var nodes []string
+	var node string
 	cmd := &cobra.Command{
 		Use:   "activate",
 		Short: "Activates the chain on selected nodes",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			chainID := config.GetCurrentChainID()
-			nodes = waspcmd.DefaultNodesFallback(nodes)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 
-			for _, nodeIdx := range nodes {
-				client := cliclients.WaspClient(nodeIdx)
+			client := cliclients.WaspClient(node)
 
-				r, httpStatus, err := client.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute()
+			r, httpStatus, err := client.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute()
 
-				if err != nil && httpStatus.StatusCode != http.StatusNotFound {
-					log.Check(err)
-				}
+			if err != nil && httpStatus.StatusCode != http.StatusNotFound {
+				log.Check(err)
+			}
 
-				if r != nil && r.IsActive {
-					continue
-				}
+			if r != nil && r.IsActive {
+				return
+			}
 
-				if r == nil {
-					_, err := client.ChainsApi.SetChainRecord(context.Background(), chainID.String()).ChainRecord(apiclient.ChainRecord{
-						IsActive:    true,
-						AccessNodes: []string{},
-					}).Execute()
+			if r == nil {
+				_, err := client.ChainsApi.SetChainRecord(context.Background(), chainID.String()).ChainRecord(apiclient.ChainRecord{
+					IsActive:    true,
+					AccessNodes: []string{},
+				}).Execute()
 
-					log.Check(err)
-				} else {
-					_, err = client.ChainsApi.ActivateChain(context.Background(), chainID.String()).Execute()
+				log.Check(err)
+			} else {
+				_, err = client.ChainsApi.ActivateChain(context.Background(), chainID.String()).Execute()
 
-					log.Check(err)
-				}
+				log.Check(err)
 			}
 
 			log.Printf("Chain activated")
 		},
 	}
 
-	waspcmd.WithWaspNodesFlag(cmd, &nodes)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 
 	return cmd
 }
 
 func initDeactivateCmd() *cobra.Command {
-	var nodes []string
+	var node string
 	cmd := &cobra.Command{
 		Use:   "deactivate",
 		Short: "Deactivates the chain on selected nodes",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			chainID := config.GetCurrentChainID()
-			nodes = waspcmd.DefaultNodesFallback(nodes)
-
-			for _, nodeName := range nodes {
-				client := cliclients.WaspClient(nodeName)
-
-				_, err := client.ChainsApi.DeactivateChain(context.Background(), chainID.String()).Execute()
-				log.Check(err)
-			}
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			client := cliclients.WaspClient(node)
+			_, err := client.ChainsApi.DeactivateChain(context.Background(), chainID.String()).Execute()
+			log.Check(err)
 		},
 	}
-	waspcmd.WithWaspNodesFlag(cmd, &nodes)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }

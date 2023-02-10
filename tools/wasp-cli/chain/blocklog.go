@@ -23,7 +23,7 @@ func initBlockCmd() *cobra.Command {
 		Short: "Get information about a block given its index, or latest block if missing",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 			bi := fetchBlockInfo(args, node)
 			log.Printf("Block index: %d\n", bi.BlockIndex)
 			log.Printf("Timestamp: %s\n", bi.Timestamp.UTC().Format(time.RFC3339))
@@ -36,7 +36,7 @@ func initBlockCmd() *cobra.Command {
 			logEventsInBlock(bi.BlockIndex, node)
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }
 
@@ -133,7 +133,7 @@ func initRequestCmd() *cobra.Command {
 		Short: "Get information about a request given its ID",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 			reqID, err := isc.RequestIDFromString(args[0])
 			log.Check(err)
 
@@ -152,7 +152,7 @@ func initRequestCmd() *cobra.Command {
 			log.Printf("\n")
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }
 

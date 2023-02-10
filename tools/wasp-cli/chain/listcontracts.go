@@ -18,7 +18,7 @@ func initListContractsCmd() *cobra.Command {
 		Short: "List deployed contracts in chain",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 			client := cliclients.WaspClient(node)
 			contracts, _, err := client.ChainsApi.
 				GetContracts(context.Background(), config.GetCurrentChainID().String()).
@@ -50,6 +50,6 @@ func initListContractsCmd() *cobra.Command {
 			log.PrintTable(header, rows)
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }

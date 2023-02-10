@@ -22,7 +22,7 @@ func initCallViewCmd() *cobra.Command {
 		Long:  "Call contract <name>, view function <funcname> with given params.",
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 			client := cliclients.WaspClient(node)
 
 			contractName := args[0]
@@ -43,6 +43,6 @@ func initCallViewCmd() *cobra.Command {
 			util.PrintDictAsJSON(decodedResult)
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }
