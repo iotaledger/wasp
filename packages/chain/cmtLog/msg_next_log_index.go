@@ -28,6 +28,10 @@ func newMsgNextLogIndex(recipient gpa.NodeID, nextLogIndex LogIndex, nextBaseAO 
 	}
 }
 
+func (m *msgNextLogIndex) String() string {
+	return fmt.Sprintf("{msgNextLogIndex, sender=%v, nextLogIndex=%v, nextBaseAO=%v", m.Sender().ShortString(), m.nextLogIndex, m.nextBaseAO)
+}
+
 func (m *msgNextLogIndex) MarshalBinary() ([]byte, error) {
 	w := &bytes.Buffer{}
 	if err := util.WriteByte(w, msgTypeNextLogIndex); err != nil {

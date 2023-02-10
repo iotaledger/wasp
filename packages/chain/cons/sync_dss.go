@@ -104,7 +104,7 @@ func (sub *syncDSSImpl) String() string {
 	if sub.indexProposalReady {
 		str += "/idx=OK"
 	} else {
-		str += fmt.Sprintf("/idx[initialInputsReady=%v]", sub.initialInputsReady)
+		str += fmt.Sprintf("/idx[initialInputsReady=%v,indexProposalReady=%v]", sub.initialInputsReady, sub.indexProposalReady)
 	}
 	if sub.outputReady {
 		str += "/sig=OK"

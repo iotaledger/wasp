@@ -75,6 +75,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -174,6 +175,7 @@ func New(
 	nodePKs := dkShare.GetNodePubKeys()
 	nodeIDs := make([]gpa.NodeID, len(nodePKs))
 	for i := range nodeIDs {
+		log.Infof("Committee node[%v]=%v", i, nodePKs[i])
 		nodeIDs[i] = nodeIDFromPubKey(nodePKs[i])
 	}
 	//
@@ -183,6 +185,7 @@ func New(
 	if f > (n-1)/3 {
 		panic(fmt.Errorf("invalid f=%v for n=%v", n, f))
 	}
+	log.Infof("Committee size: N=%v, F=%v", n, f)
 	minLogIndex := prevLI.Next()
 	cl := &cmtLogImpl{
 		chainID:                chainID,
@@ -191,7 +194,7 @@ func New(
 		suspended:              false,
 		minLI:                  minLogIndex,
 		consensusLI:            NilLogIndex(),
-		varLogIndex:            NewVarLogIndex(nodeIDs, n, f, prevLI, log.Named("VLI")),
+		varLogIndex:            NewVarLogIndex(nodeIDs, n, f, prevLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, log.Named("VLI")),
 		varLocalView:           NewVarLocalView(),
 		log:                    log,
 	}
@@ -268,7 +271,7 @@ func (cl *cmtLogImpl) handleInputAliasOutputRejected(input *inputAliasOutputReje
 // >         TryProposeConsensus()
 func (cl *cmtLogImpl) handleInputConsensusOutputDone(input *inputConsensusOutputDone) gpa.OutMessages {
 	if cl.varLocalView.ConsensusOutputDone(input.baseAliasOutputID, input.nextAliasOutput) {
-		msgs := cl.varLogIndex.ConsensusOutputReceived(input.logIndex, cl.varLocalView.GetBaseAliasOutput())
+		msgs := cl.varLogIndex.ConsensusOutputReceived(input.logIndex, cons.Completed, cl.varLocalView.GetBaseAliasOutput())
 		cl.tryProposeConsensus()
 		return msgs
 	}
@@ -279,7 +282,7 @@ func (cl *cmtLogImpl) handleInputConsensusOutputDone(input *inputConsensusOutput
 // >     LogIndex.ConsensusOutput(CS.LogIndex)
 // >     TryProposeConsensus()
 func (cl *cmtLogImpl) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
-	msgs := cl.varLogIndex.ConsensusOutputReceived(input.logIndex, cl.varLocalView.GetBaseAliasOutput())
+	msgs := cl.varLogIndex.ConsensusOutputReceived(input.logIndex, cons.Skipped, cl.varLocalView.GetBaseAliasOutput())
 	cl.tryProposeConsensus()
 	return msgs
 }

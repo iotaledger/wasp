@@ -39,6 +39,8 @@ import (
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acss"
@@ -245,6 +247,7 @@ func (n *nonceDKGImpl) tryMakeFinalOutput() gpa.OutMessages {
 	sum := n.suite.Scalar().Zero()
 	for _, j := range n.agreedT {
 		if _, ok := n.st[j]; !ok {
+			n.log.Debugf("Don't have S/T[%v] yet, have to wait, agreedT=%+v, have S/T indexes: %v.", j, n.agreedT, lo.Keys(n.st))
 			return nil
 		}
 		sum.Add(sum.Clone(), n.st[j].V)
