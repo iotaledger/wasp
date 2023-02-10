@@ -22,7 +22,7 @@ func initDistrustCmd() *cobra.Command {
 		Short: "Remove the specified node from a list of trusted nodes. All related public keys are distrusted, if netID is provided.",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 
 			pubKeyOrNetID := args[0]
 			client := cliclients.WaspClient(node)
@@ -56,6 +56,6 @@ func initDistrustCmd() *cobra.Command {
 		},
 	}
 
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }

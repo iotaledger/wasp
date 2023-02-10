@@ -25,7 +25,7 @@ func initListTrustedCmd() *cobra.Command {
 		Short: "List trusted wasp nodes.",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 
 			client := cliclients.WaspClient(node)
 			trustedList, _, err := client.NodeApi.GetTrustedPeers(context.Background()).Execute()
@@ -49,7 +49,7 @@ func initListTrustedCmd() *cobra.Command {
 		},
 	}
 
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	cmd.Flags().BoolVar(&printJSON, "json", false, "output in JSON")
 
 	return cmd
@@ -63,7 +63,7 @@ func initImportTrustedJSONCmd() *cobra.Command {
 		Short: "imports a JSON of trusted peers and makes a node trust them.",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 			bytes := util.ReadFile(args[0])
 			var trustedList []apiclient.PeeringNodeIdentityResponse
 			log.Check(json.Unmarshal(bytes, &trustedList))
@@ -81,7 +81,7 @@ func initImportTrustedJSONCmd() *cobra.Command {
 		},
 	}
 
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 
 	return cmd
 }

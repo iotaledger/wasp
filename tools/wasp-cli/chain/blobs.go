@@ -9,6 +9,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
@@ -26,21 +27,26 @@ func initUploadFlags(chainCmd *cobra.Command) {
 
 func initStoreBlobCmd() *cobra.Command {
 	var node string
+	var chain string
 	cmd := &cobra.Command{
 		Use:   "store-blob <type> <field> <type> <value> ...",
 		Short: "Store a blob in the chain",
 		Args:  cobra.MinimumNArgs(4),
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
-			uploadBlob(cliclients.WaspClient(node), util.EncodeParams(args))
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
+
+			chainID := config.GetChain(chain)
+			uploadBlob(cliclients.WaspClient(node), chainID, util.EncodeParams(args))
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	withChainFlag(cmd, &chain)
 	return cmd
 }
 
-func uploadBlob(client *apiclient.APIClient, fieldValues dict.Dict) (hash hashing.HashValue) {
-	chainClient := cliclients.ChainClient(client)
+func uploadBlob(client *apiclient.APIClient, chainID isc.ChainID, fieldValues dict.Dict) (hash hashing.HashValue) {
+	chainClient := cliclients.ChainClient(client, chainID)
 
 	hash, _, _, err := chainClient.UploadBlob(context.Background(), fieldValues)
 	log.Check(err)
@@ -51,20 +57,23 @@ func uploadBlob(client *apiclient.APIClient, fieldValues dict.Dict) (hash hashin
 
 func initShowBlobCmd() *cobra.Command {
 	var node string
+	var chain string
 	cmd := &cobra.Command{
 		Use:   "show-blob <hash>",
 		Short: "Show a blob in chain",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
+
 			hash, err := hashing.HashValueFromHex(args[0])
 			log.Check(err)
 
-			node = waspcmd.DefaultSingleNodeFallback(node)
 			client := cliclients.WaspClient(node)
 
 			blobInfo, _, err := client.
 				CorecontractsApi.
-				BlobsGetBlobInfo(context.Background(), config.GetCurrentChainID().String(), hash.Hex()).
+				BlobsGetBlobInfo(context.Background(), config.GetChain(chain).String(), hash.Hex()).
 				Execute()
 			log.Check(err)
 
@@ -72,7 +81,7 @@ func initShowBlobCmd() *cobra.Command {
 			for field := range blobInfo.Fields {
 				value, _, err := client.
 					CorecontractsApi.
-					BlobsGetBlobValue(context.Background(), config.GetCurrentChainID().String(), hash.Hex(), field).
+					BlobsGetBlobValue(context.Background(), config.GetChain(chain).String(), hash.Hex(), field).
 					Execute()
 
 				log.Check(err)
@@ -85,28 +94,31 @@ func initShowBlobCmd() *cobra.Command {
 			util.PrintDictAsJSON(values)
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	withChainFlag(cmd, &chain)
 	return cmd
 }
 
 func initListBlobsCmd() *cobra.Command {
 	var node string
+	var chain string
 	cmd := &cobra.Command{
 		Use:   "list-blobs",
 		Short: "List blobs in chain",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
 			client := cliclients.WaspClient(node)
 
 			blobsResponse, _, err := client.
 				CorecontractsApi.
-				BlobsGetAllBlobs(context.Background(), config.GetCurrentChainID().String()).
+				BlobsGetAllBlobs(context.Background(), config.GetChain(chain).String()).
 				Execute()
 
 			log.Check(err)
 
-			log.Printf("Total %d blob(s) in chain %s\n", len(blobsResponse.Blobs), config.GetCurrentChainID())
+			log.Printf("Total %d blob(s) in chain %s\n", len(blobsResponse.Blobs), config.GetChain(chain))
 
 			header := []string{"hash", "size"}
 			rows := make([][]string, len(blobsResponse.Blobs))
@@ -118,6 +130,7 @@ func initListBlobsCmd() *cobra.Command {
 			log.PrintTable(header, rows)
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	withChainFlag(cmd, &chain)
 	return cmd
 }

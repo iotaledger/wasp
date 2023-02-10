@@ -26,7 +26,7 @@ func initTrustCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			pubKey := args[0]
 			netID := args[1]
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 
 			_, err := iotago.DecodeHex(pubKey) // Assert it can be decoded.
 			log.Check(err)
@@ -42,6 +42,6 @@ func initTrustCmd() *cobra.Command {
 		},
 	}
 
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }

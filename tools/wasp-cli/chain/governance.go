@@ -16,13 +16,16 @@ import (
 func initChangeAccessNodesCmd() *cobra.Command {
 	var offLedger bool
 	var node string
+	var chain string
 
 	cmd := &cobra.Command{
 		Use:   "gov-change-access-nodes <action (accept|remove|drop)> <pubkey>",
 		Short: "Changes the access nodes of a chain on the governance contract.",
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
+
 			if len(args)%2 != 0 {
 				log.Fatal("wrong number of arguments")
 			}
@@ -45,6 +48,7 @@ func initChangeAccessNodesCmd() *cobra.Command {
 			}
 			postRequest(
 				node,
+				chain,
 				governance.Contract.Name,
 				governance.FuncChangeAccessNodes.Name,
 				params,
@@ -53,7 +57,8 @@ func initChangeAccessNodesCmd() *cobra.Command {
 		},
 	}
 
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	withChainFlag(cmd, &chain)
 	cmd.Flags().BoolVarP(&offLedger, "off-ledger", "o", false,
 		"post an off-ledger request",
 	)

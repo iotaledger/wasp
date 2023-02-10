@@ -23,12 +23,17 @@ import (
 
 func initDeployContractCmd() *cobra.Command {
 	var node string
+	var chain string
+
 	cmd := &cobra.Command{
 		Use:   "deploy-contract <vmtype> <name> <description> <filename|program-hash> [init-params]",
 		Short: "Deploy a contract in the chain",
 		Args:  cobra.MinimumNArgs(4),
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
+
+			chainID := config.GetChain(chain)
 			client := cliclients.WaspClient(node)
 			vmtype := args[0]
 			name := args[1]
@@ -53,24 +58,25 @@ func initDeployContractCmd() *cobra.Command {
 					blob.VarFieldProgramDescription: description,
 					blob.VarFieldProgramBinary:      util.ReadFile(filename),
 				})
-				progHash = uploadBlob(client, blobFieldValues)
+				progHash = uploadBlob(client, chainID, blobFieldValues)
 			}
-			deployContract(client, node, name, description, progHash, initParams)
+			deployContract(client, chainID, node, name, description, progHash, initParams)
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	withChainFlag(cmd, &chain)
 	return cmd
 }
 
-func deployContract(client *apiclient.APIClient, node, name, description string, progHash hashing.HashValue, initParams dict.Dict) {
-	util.WithOffLedgerRequest(config.GetCurrentChainID(), node, func() (isc.OffLedgerRequest, error) {
+func deployContract(client *apiclient.APIClient, chainID isc.ChainID, node, name, description string, progHash hashing.HashValue, initParams dict.Dict) {
+	util.WithOffLedgerRequest(chainID, node, func() (isc.OffLedgerRequest, error) {
 		args := codec.MakeDict(map[string]interface{}{
 			root.ParamName:        name,
 			root.ParamDescription: description,
 			root.ParamProgramHash: progHash,
 		})
 		args.Extend(initParams)
-		return cliclients.ChainClient(client).PostOffLedgerRequest(context.Background(),
+		return cliclients.ChainClient(client, chainID).PostOffLedgerRequest(context.Background(),
 			root.Contract.Hname(),
 			root.FuncDeployContract.Hname(),
 			chainclient.PostRequestParams{

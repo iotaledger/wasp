@@ -20,7 +20,7 @@ import (
 
 func TestWaspCLIExternalRotationGovAccessNodes(t *testing.T) {
 	addAccessNode := func(w *WaspCLITest, pubKey string) {
-		out := w.MustRun("chain", "gov-change-access-nodes", "accept", pubKey)
+		out := w.MustRun("chain", "gov-change-access-nodes", "accept", pubKey, "--node=0")
 		out = w.GetReceiptFromRunPostRequestOutput(out)
 		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 	}
@@ -29,7 +29,9 @@ func TestWaspCLIExternalRotationGovAccessNodes(t *testing.T) {
 
 func TestWaspCLIExternalRotationPermitionlessAccessNodes(t *testing.T) {
 	addAccessNode := func(w *WaspCLITest, pubKey string) {
-		w.MustRun("chain", "access-nodes", "add", pubKey)
+		for _, idx := range w.Cluster.AllNodes() {
+			w.MustRun("chain", "access-nodes", "add", pubKey, fmt.Sprintf("--node=%d", idx))
+		}
 	}
 	testWaspCLIExternalRotation(t, addAccessNode)
 }
@@ -50,7 +52,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 	inccounterSCName := "inccounter"
 	checkCounter := func(wTest *WaspCLITest, n int) {
 		// test chain call-view command
-		out := wTest.MustRun("chain", "call-view", inccounterSCName, "getCounter")
+		out := wTest.MustRun("chain", "call-view", inccounterSCName, "getCounter", "--node=0")
 		out = wTest.MustPipe(out, "decode", "string", "counter", "int")
 		require.Regexp(t, fmt.Sprintf(`(?m)counter:\s+%d$`, n), out[0])
 	}
@@ -115,9 +117,10 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 	}
 
 	// activate the chain on the new nodes
-	w2.MustRun("chain", "add", "chain1", chainID)
-	w2.MustRun("set", "defaultchain", "chain1")
-	w2.MustRun("chain", "activate", w2.AllNodesArg())
+	for _, idx := range w2.Cluster.AllNodes() {
+		w2.MustRun("chain", "add", "chain1", chainID)
+		w2.MustRun("chain", "activate", fmt.Sprintf("--node=%d", idx))
+	}
 
 	// deploy a contract, test its working
 	{
@@ -127,13 +130,14 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		// test chain deploy-contract command
 		w.MustRun("chain", "deploy-contract", vmtype, inccounterSCName, "inccounter SC", file,
 			"string", "counter", "int64", "42",
+			"--node=0",
 		)
 
 		checkCounter(w, 42)
 	}
 
 	// init maintenance
-	out = w.PostRequestGetReceipt("governance", "startMaintenance")
+	out = w.PostRequestGetReceipt("governance", "startMaintenance", "--node=0")
 	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
 	// check that node0 from clust2 is synced and maintenance is on
@@ -143,7 +147,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		}
 		time.Sleep(1 * time.Second)
 		var err error
-		out, err = w2.Run("chain", "call-view", governance.Contract.Name, governance.ViewGetMaintenanceStatus.Name)
+		out, err = w2.Run("chain", "call-view", governance.Contract.Name, governance.ViewGetMaintenanceStatus.Name, "--node=0")
 		if err != nil {
 			t.Logf("Warning: call failed to ViewGetMaintenanceStatus: %v", err)
 			continue
@@ -172,10 +176,10 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 	// stop maintenance
 	// set the new nodes as the default (so querying the receipt doesn't fail)
 	w.MustRun("set", "wasp.0", w2.Cluster.Config.APIHost(0))
-	out = w.PostRequestGetReceipt("governance", "stopMaintenance")
+	out = w.PostRequestGetReceipt("governance", "stopMaintenance", "--node=0")
 	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
 	// chain still works
-	w2.MustRun("chain", "post-request", "-s", inccounterSCName, "increment")
+	w2.MustRun("chain", "post-request", "-s", inccounterSCName, "increment", "--node=0")
 	checkCounter(w2, 43)
 }

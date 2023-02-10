@@ -19,7 +19,7 @@ func initListCmd() *cobra.Command {
 		Short: "List deployed chains",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultSingleNodeFallback(node)
+			node = waspcmd.DefaultWaspNodeFallback(node)
 			client := cliclients.WaspClient(node)
 			chains, _, err := client.ChainsApi.GetChains(context.Background()).Execute()
 			log.Check(err)
@@ -39,7 +39,7 @@ func initListCmd() *cobra.Command {
 			showChainList(chains)
 		},
 	}
-	waspcmd.WithSingleWaspNodesFlag(cmd, &node)
+	waspcmd.WithWaspNodeFlag(cmd, &node)
 	return cmd
 }
 

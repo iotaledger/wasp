@@ -64,12 +64,12 @@ func controllerAddr(addr string) iotago.Address {
 
 func initDeployCmd() *cobra.Command {
 	var (
-		nodes            []string
+		node             []string
 		quorum           int
 		description      string
 		evmParams        evmDeployParams
 		govControllerStr string
-		chainAlias       string
+		chainName        string
 	)
 
 	cmd := &cobra.Command{
@@ -78,18 +78,18 @@ func initDeployCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			l1Client := cliclients.L1Client()
-			nodes = waspcmd.DefaultNodesFallback(nodes)
+			node = waspcmd.DefaultNodesFallback(node)
 
 			if quorum == 0 {
-				quorum = defaultQuorum(len(nodes))
+				quorum = defaultQuorum(len(node))
 			}
 
-			if ok, _ := isEnoughQuorum(len(nodes), quorum); !ok {
+			if ok, _ := isEnoughQuorum(len(node), quorum); !ok {
 				log.Fatal("quorum needs to be bigger than 1/3 of committee size")
 			}
 
 			committeePubKeys := make([]string, 0)
-			for _, apiIndex := range nodes {
+			for _, apiIndex := range node {
 				peerInfo, _, err := cliclients.WaspClient(apiIndex).NodeApi.GetPeeringIdentity(context.Background()).Execute()
 				log.Check(err)
 				committeePubKeys = append(committeePubKeys, peerInfo.PublicKey)
@@ -97,9 +97,9 @@ func initDeployCmd() *cobra.Command {
 
 			chainid, _, err := apilib.DeployChainWithDKG(cliclients.WaspClientForHostName, apilib.CreateChainParams{
 				Layer1Client:         l1Client,
-				CommitteeAPIHosts:    config.NodeAPIURLs(nodes),
+				CommitteeAPIHosts:    config.NodeAPIURLs(node),
 				CommitteePubKeys:     committeePubKeys,
-				N:                    uint16(len(nodes)),
+				N:                    uint16(len(node)),
 				T:                    uint16(quorum),
 				OriginatorKeyPair:    wallet.Load().KeyPair,
 				Description:          description,
@@ -114,12 +114,12 @@ func initDeployCmd() *cobra.Command {
 			})
 			log.Check(err)
 
-			config.AddChainAlias(chainAlias, chainid.String())
+			config.AddChain(chainName, chainid.String())
 		},
 	}
 
-	waspcmd.WithWaspNodesFlag(cmd, &nodes)
-	cmd.Flags().StringVar(&chainAlias, "chain", "", "name of the chain)")
+	waspcmd.WithWaspNodesFlag(cmd, &node)
+	cmd.Flags().StringVar(&chainName, "chain", "", "name of the chain)")
 	log.Check(cmd.MarkFlagRequired("chain"))
 	cmd.Flags().IntVar(&quorum, "quorum", 0, "quorum (default: 3/4s of the number of committee nodes)")
 	cmd.Flags().StringVar(&description, "description", "", "description")
