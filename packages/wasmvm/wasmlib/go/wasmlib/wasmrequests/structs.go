@@ -21,9 +21,9 @@ func NewCallRequestFromBytes(buf []byte) *CallRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &CallRequest{}
 	data.Allowance = wasmtypes.BytesDecode(dec)
-	data.Contract = wasmtypes.HnameDecode(dec)
-	data.Function = wasmtypes.HnameDecode(dec)
-	data.Params = wasmtypes.BytesDecode(dec)
+	data.Contract  = wasmtypes.HnameDecode(dec)
+	data.Function  = wasmtypes.HnameDecode(dec)
+	data.Params    = wasmtypes.BytesDecode(dec)
 	dec.Close()
 	return data
 }
@@ -80,9 +80,9 @@ func NewDeployRequestFromBytes(buf []byte) *DeployRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &DeployRequest{}
 	data.Description = wasmtypes.StringDecode(dec)
-	data.Name = wasmtypes.StringDecode(dec)
-	data.Params = wasmtypes.BytesDecode(dec)
-	data.ProgHash = wasmtypes.HashDecode(dec)
+	data.Name        = wasmtypes.StringDecode(dec)
+	data.Params      = wasmtypes.BytesDecode(dec)
+	data.ProgHash    = wasmtypes.HashDecode(dec)
 	dec.Close()
 	return data
 }
@@ -137,19 +137,19 @@ type PostRequest struct {
 	Function  wasmtypes.ScHname
 	Params    []byte
 	// assets that are transferred into caller account
-	Transfer []byte
+	Transfer  []byte
 }
 
 func NewPostRequestFromBytes(buf []byte) *PostRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &PostRequest{}
 	data.Allowance = wasmtypes.BytesDecode(dec)
-	data.ChainID = wasmtypes.ChainIDDecode(dec)
-	data.Contract = wasmtypes.HnameDecode(dec)
-	data.Delay = wasmtypes.Uint32Decode(dec)
-	data.Function = wasmtypes.HnameDecode(dec)
-	data.Params = wasmtypes.BytesDecode(dec)
-	data.Transfer = wasmtypes.BytesDecode(dec)
+	data.ChainID   = wasmtypes.ChainIDDecode(dec)
+	data.Contract  = wasmtypes.HnameDecode(dec)
+	data.Delay     = wasmtypes.Uint32Decode(dec)
+	data.Function  = wasmtypes.HnameDecode(dec)
+	data.Params    = wasmtypes.BytesDecode(dec)
+	data.Transfer  = wasmtypes.BytesDecode(dec)
 	dec.Close()
 	return data
 }
@@ -206,7 +206,7 @@ type SendRequest struct {
 func NewSendRequestFromBytes(buf []byte) *SendRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &SendRequest{}
-	data.Address = wasmtypes.AddressDecode(dec)
+	data.Address  = wasmtypes.AddressDecode(dec)
 	data.Transfer = wasmtypes.BytesDecode(dec)
 	dec.Close()
 	return data
@@ -259,7 +259,7 @@ type TransferRequest struct {
 func NewTransferRequestFromBytes(buf []byte) *TransferRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &TransferRequest{}
-	data.AgentID = wasmtypes.AgentIDDecode(dec)
+	data.AgentID  = wasmtypes.AgentIDDecode(dec)
 	data.Transfer = wasmtypes.BytesDecode(dec)
 	dec.Close()
 	return data

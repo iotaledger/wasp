@@ -283,7 +283,6 @@ func TestRebootN3TwoNodes(t *testing.T) {
 
 // Test rebooting nodes during operation.
 func TestRebootDuringTasks(t *testing.T) {
-	//	testutil.RunHeavy(t)
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 
 	// keep the nodes spammed
@@ -316,6 +315,7 @@ func TestRebootDuringTasks(t *testing.T) {
 	lastCounter := int64(0)
 
 	restart := func(indexes ...int) {
+		println("restarting nodes: " + lo.Reduce(indexes, func(aggr string, _, i int) string { return fmt.Sprintf("%s %d ", aggr, i) }, ""))
 		// restart the nodes
 		err := env.Clu.RestartNodes(indexes...)
 		require.NoError(t, err)

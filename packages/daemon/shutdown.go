@@ -10,7 +10,6 @@ const (
 	PriorityPeering
 	PriorityChains
 	PriorityWebAPI
-	PriorityDBGarbageCollection
 	PriorityPrometheus
 	PriorityPublisher
 	PriorityNanoMsg
