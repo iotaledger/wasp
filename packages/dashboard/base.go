@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 )
 
 //go:embed templates/base.tmpl
@@ -106,6 +105,10 @@ func (d *Dashboard) BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateP
 	}
 }
 
+func EVMJSONRPC(chainIDBech32 string) string {
+	return "/chains/" + chainIDBech32 + "/evm/jsonrpc"
+}
+
 func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Template {
 	t := template.New("").Funcs(template.FuncMap{
 		"formatTimestamp":        formatTimestamp,
@@ -130,7 +133,7 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 		"hex":                    iotago.EncodeHex,
 		"replace":                strings.Replace,
 		"webapiPort":             d.wasp.WebAPIPort,
-		"evmJSONRPCEndpoint":     routes.EVMJSONRPC,
+		"evmJSONRPCEndpoint":     EVMJSONRPC,
 		"uri":                    func(s string, p ...interface{}) string { return e.Reverse(s, p...) },
 		"href":                   func(s string) string { return s },
 	})

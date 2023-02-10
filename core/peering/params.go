@@ -5,8 +5,8 @@ import (
 )
 
 type ParametersPeering struct {
-	NetID string `default:"0.0.0.0:4000" usage:"node host address as it is recognized by other peers"`
-	Port  int    `default:"4000" usage:"port for Wasp committee connection/peering"`
+	PeeringURL string `default:"0.0.0.0:4000" usage:"node host address as it is recognized by other peers"`
+	Port       int    `default:"4000" usage:"port for Wasp committee connection/peering"`
 }
 
 var ParamsPeering = &ParametersPeering{}

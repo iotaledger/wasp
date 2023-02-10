@@ -111,6 +111,7 @@ func (d *dssImpl) AsGPA() gpa.GPA {
 
 // Handle the input to the protocol.
 func (d *dssImpl) Input(input gpa.Input) gpa.OutMessages {
+	d.log.Debugf("Input %+v", input)
 	switch input := input.(type) {
 	case *inputStart:
 		msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Input(nonce.NewInputStart()))
@@ -125,6 +126,7 @@ func (d *dssImpl) Input(input gpa.Input) gpa.OutMessages {
 func (d *dssImpl) Message(msg gpa.Message) gpa.OutMessages {
 	switch msgT := msg.(type) {
 	case *msgPartialSig:
+		d.log.Debugf("Message %+v", msg)
 		return d.handlePartialSig(msgT)
 	case *gpa.WrappingMsg:
 		if msgT.Subsystem() == subsystemDKG && msgT.Index() == 0 {
@@ -239,6 +241,7 @@ func (d *dssImpl) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
 	sig, err := d.dssSigner.Signature()
 	if err != nil {
 		d.log.Errorf("unable to aggregate the signature: %v", err)
+		return nil
 	}
 	d.signature = sig
 	return nil

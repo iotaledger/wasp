@@ -12,13 +12,15 @@ import (
 	"github.com/iotaledger/wasp/core/app"
 	"github.com/iotaledger/wasp/tools/wasp-cli/authentication"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
+	cliinit "github.com/iotaledger/wasp/tools/wasp-cli/cli/init"
 	"github.com/iotaledger/wasp/tools/wasp-cli/completion"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/decode"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/metrics"
 	"github.com/iotaledger/wasp/tools/wasp-cli/peering"
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 var rootCmd *cobra.Command
@@ -54,12 +56,11 @@ func init() {
 	}
 
 	rootCmd = initRootCmd(waspVersion)
-
-	rootCmd.AddCommand(completion.InitCompletionCommand(rootCmd.Root().Name()))
-
-	authentication.Init(rootCmd)
 	log.Init(rootCmd)
-	config.Init(rootCmd, waspVersion)
+	rootCmd.AddCommand(completion.InitCompletionCommand(rootCmd.Root().Name()))
+	cliinit.Init(rootCmd, waspVersion)
+	authentication.Init(rootCmd)
+	waspcmd.Init(rootCmd)
 	wallet.Init(rootCmd)
 	chain.Init(rootCmd)
 	decode.Init(rootCmd)

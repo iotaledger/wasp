@@ -5,6 +5,7 @@ package registry
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -64,7 +65,7 @@ func (p *TrustedPeersRegistryImpl) loadTrustedPeersJSON() error {
 	}
 
 	for _, trustedPeer := range tmpTrustedPeers.TrustedPeers {
-		if _, err := p.TrustPeer(trustedPeer.PubKey(), trustedPeer.NetID); err != nil {
+		if _, err := p.TrustPeer(trustedPeer.Name, trustedPeer.PubKey(), trustedPeer.PeeringURL); err != nil {
 			return fmt.Errorf("unable to add trusted peer (%s): %w", p.filePath, err)
 		}
 	}
@@ -103,12 +104,20 @@ func (p *TrustedPeersRegistryImpl) IsTrustedPeer(pubKey *cryptolib.PublicKey) er
 	return nil
 }
 
-func (p *TrustedPeersRegistryImpl) TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error) {
-	trustedPeer := peering.NewTrustedPeer(pubKey, netID)
+func (p *TrustedPeersRegistryImpl) TrustPeer(name string, pubKey *cryptolib.PublicKey, peeringURL string) (*peering.TrustedPeer, error) {
+	if name == "" {
+		return nil, errors.New("empty name for trusted peer")
+	}
+	for _, existingPeer := range p.onChangeMap.All() {
+		if existingPeer.Name == name && !existingPeer.PubKey().Equals(pubKey) {
+			return nil, fmt.Errorf("peer with name \"%s\" already exists", name)
+		}
+	}
+	trustedPeer := peering.NewTrustedPeer(name, pubKey, peeringURL)
 	if err := p.onChangeMap.Add(trustedPeer); err != nil {
 		// already exists, modify the existing
 		return p.onChangeMap.Modify(peering.NewComparablePubKey(pubKey), func(item *peering.TrustedPeer) bool {
-			*item = *peering.NewTrustedPeer(pubKey, netID)
+			*item = *peering.NewTrustedPeer(name, pubKey, peeringURL)
 			return true
 		})
 	}

@@ -51,7 +51,7 @@ func (e *SabotageEnv) sendRequests(numRequests int, messageDelay time.Duration) 
 	}
 }
 
-func (e *SabotageEnv) setSabotageValidators(breakCount int) { //nolint:unused // false positive
+func (e *SabotageEnv) setSabotageValidators(breakCount int) {
 	clusterSize := len(e.chainEnv.Clu.Config.Wasp)
 
 	from := clusterSize - e.NumValidators
@@ -82,7 +82,7 @@ func (e *SabotageEnv) sabotageNodes(startDelay, inBetweenDelay time.Duration) *s
 		for _, nodeID := range e.SabotageList {
 			e.chainEnv.t.Logf("Breaking node: %v (%s)", nodeID, time.Now())
 
-			err := e.chainEnv.Clu.KillNodeProcess(nodeID)
+			err := e.chainEnv.Clu.KillNodeProcess(nodeID, false)
 
 			require.NoError(e.chainEnv.t, err)
 
@@ -95,7 +95,7 @@ func (e *SabotageEnv) sabotageNodes(startDelay, inBetweenDelay time.Duration) *s
 	return &wg
 }
 
-func (e *SabotageEnv) getActiveNodeList() []int { //nolint:unused // false positive
+func (e *SabotageEnv) getActiveNodeList() []int {
 	contains := func(x int) bool {
 		for _, n := range e.SabotageList {
 			if n == x {

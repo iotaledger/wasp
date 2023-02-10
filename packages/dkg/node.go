@@ -105,7 +105,7 @@ func (n *Node) GenerateDistributedKey(
 	stepRetry time.Duration, // Retry for Initiator -> Peer communication.
 	timeout time.Duration, // Timeout for the entire procedure.
 ) (tcrypto.DKShare, error) {
-	n.log.Infof("Starting new DKG procedure, initiator=%v, peers=%+v", n.netProvider.Self().NetID(), peerPubs)
+	n.log.Infof("Starting new DKG procedure, initiator=%v, peers=%+v", n.netProvider.Self().PeeringURL(), peerPubs)
 	var err error
 	peerCount := uint16(len(peerPubs))
 	//
@@ -142,7 +142,7 @@ func (n *Node) GenerateDistributedKey(
 			}
 			nPub := n.PubKey()
 			if nPub == nil {
-				return nil, fmt.Errorf("have no public key for %v", n.NetID())
+				return nil, fmt.Errorf("have no public key for %v", n.PeeringURL())
 			}
 			peerPubs[i] = nPub
 		}
@@ -151,7 +151,7 @@ func (n *Node) GenerateDistributedKey(
 	// Initialize the peers.
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep0Initialize,
 		func(peerIdx uint16, peer peering.PeerSender) {
-			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep0Initialize, peer.NetID())
+			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep0Initialize, peer.PeeringURL())
 			peer.SendMsg(makePeerMessage(initPeeringID, peering.PeerMessageReceiverDkgInit, rabinStep0Initialize, &initiatorInitMsg{
 				dkgRef:       dkgID.String(), // It could be some other identifier.
 				peeringID:    dkgID,
@@ -191,7 +191,7 @@ func (n *Node) GenerateDistributedKey(
 	pubShareResponses := map[int]*initiatorPubShareMsg{}
 	if err = n.exchangeInitiatorMsgs(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep6R6SendReconstructCommits,
 		func(peerIdx uint16, peer peering.PeerSender) {
-			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep6R6SendReconstructCommits, peer.NetID())
+			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep6R6SendReconstructCommits, peer.PeeringURL())
 			peer.SendMsg(makePeerMessage(dkgID, peering.PeerMessageReceiverDkg, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{}))
 		},
 		func(recv *peering.PeerMessageGroupIn, initMsg initiatorMsg) (bool, error) {
@@ -230,7 +230,7 @@ func (n *Node) GenerateDistributedKey(
 	// CommitToNode the keys to persistent storage.
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep7CommitAndTerminate,
 		func(peerIdx uint16, peer peering.PeerSender) {
-			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep7CommitAndTerminate, peer.NetID())
+			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep7CommitAndTerminate, peer.PeeringURL())
 			peer.SendMsg(makePeerMessage(dkgID, peering.PeerMessageReceiverDkg, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
 				edPubShares:  edPublicShares,
 				blsPubShares: blsPublicShares,
@@ -344,7 +344,7 @@ func (n *Node) exchangeInitiatorStep(
 	step byte,
 ) error {
 	sendCB := func(peerIdx uint16, peer peering.PeerSender) {
-		n.log.Debugf("Initiator sends step=%v command to %v", step, peer.NetID())
+		n.log.Debugf("Initiator sends step=%v command to %v", step, peer.PeeringURL())
 		peer.SendMsg(makePeerMessage(dkgID, peering.PeerMessageReceiverDkg, step, &initiatorStepMsg{}))
 	}
 	return n.exchangeInitiatorAcks(netGroup, peers, recvCh, retryTimeout, giveUpTimeout, step, sendCB)

@@ -4,89 +4,112 @@
 package chain
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/spf13/cobra"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/webapi/v1/model"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func initInfoCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	var chain string
+	cmd := &cobra.Command{
 		Use:   "info",
 		Short: "Show information about the chain",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			chainInfo, err := config.WaspClient(config.MustWaspAPI()).GetChainInfo(GetCurrentChainID())
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
+
+			chainID := config.GetChain(chain)
+			client := cliclients.WaspClient(node)
+
+			chainInfo, _, err := client.ChainsApi.
+				GetChainInfo(context.Background(), chainID.String()).
+				Execute()
 			log.Check(err)
 
-			printNodesRowHdr := []string{"PubKey", "NetID", "Alive", "Committee", "Access", "AccessAPI"}
-			printNodesRowFmt := func(n *model.ChainNodeStatus) []string {
+			committeeInfo, _, err := client.ChainsApi.
+				GetCommitteeInfo(context.Background(), chainID.String()).
+				Execute()
+			log.Check(err)
+
+			printNodesRowHdr := []string{"PubKey", "PeeringURL", "Alive", "Committee", "Access", "AccessAPI"}
+			printNodesRowFmt := func(n apiclient.CommitteeNode, isCommitteeNode, isAccessNode bool) []string {
 				return []string{
-					n.Node.PubKey,
-					n.Node.NetID,
+					n.Node.PublicKey,
+					n.Node.PeeringURL,
 					strconv.FormatBool(n.Node.IsAlive),
-					strconv.FormatBool(n.ForCommittee),
-					strconv.FormatBool(n.ForAccess),
+					strconv.FormatBool(isCommitteeNode),
+					strconv.FormatBool(isAccessNode),
 					n.AccessAPI,
 				}
 			}
-			printNodes := func(label string, nodes []*model.ChainNodeStatus) {
+			printNodes := func(label string, nodes []apiclient.CommitteeNode, isCommitteeNode, isAccessNode bool) {
 				if nodes == nil {
 					log.Printf("%s: N/A\n", label)
 				}
 				log.Printf("%s: %v\n", label, len(nodes))
 				rows := make([][]string, 0)
 				for _, n := range nodes {
-					rows = append(rows, printNodesRowFmt(n))
+					rows = append(rows, printNodesRowFmt(n, isCommitteeNode, isAccessNode))
 				}
 				log.PrintTable(printNodesRowHdr, rows)
 			}
 
 			log.Printf("Chain ID: %s\n", chainInfo.ChainID)
-			log.Printf("Active: %v\n", chainInfo.Active)
+			log.Printf("Active: %v\n", chainInfo.IsActive)
 
-			if chainInfo.Active {
-				log.Printf("State address: %v\n", chainInfo.StateAddress)
-				printNodes("Committee nodes", chainInfo.CommitteeNodes)
-				printNodes("Access nodes", chainInfo.AccessNodes)
-				printNodes("Candidate nodes", chainInfo.CandidateNodes)
+			if chainInfo.IsActive {
+				log.Printf("State address: %v\n", committeeInfo.StateAddress)
+				printNodes("Committee nodes", committeeInfo.CommitteeNodes, true, false)
+				printNodes("Access nodes", committeeInfo.AccessNodes, false, true)
+				printNodes("Candidate nodes", committeeInfo.CandidateNodes, false, false)
 
-				ret, err := SCClient(governance.Contract.Hname()).CallView(governance.ViewGetChainInfo.Name, nil)
-				log.Check(err)
-				govInfo, err := governance.GetChainInfo(ret)
-				log.Check(err)
+				log.Printf("Description: %s\n", chainInfo.Description)
 
-				log.Printf("Description: %s\n", govInfo.Description)
-
-				recs, err := SCClient(root.Contract.Hname()).CallView(root.ViewGetContractRecords.Name, nil)
-				log.Check(err)
-				contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.StateVarContractRegistry))
+				contracts, _, err := client.ChainsApi.GetContracts(context.Background(), chainID.String()).Execute()
 				log.Check(err)
 				log.Printf("#Contracts: %d\n", len(contracts))
 
-				log.Printf("Owner: %s\n", govInfo.ChainOwnerID.String())
+				log.Printf("Owner: %s\n", chainInfo.ChainOwnerId)
 
-				if govInfo.GasFeePolicy != nil {
+				// TODO: Validate the gas fee token id logic
+				if chainInfo.GasFeePolicy != nil {
 					gasFeeToken := util.BaseTokenStr
-					if !isc.IsEmptyNativeTokenID(govInfo.GasFeePolicy.GasFeeTokenID) {
-						gasFeeToken = govInfo.GasFeePolicy.GasFeeTokenID.String()
+
+					if chainInfo.GasFeePolicy.GasFeeTokenId != "" {
+						decodedToken, err := iotago.DecodeHex(chainInfo.GasFeePolicy.GasFeeTokenId)
+						log.Check(err)
+
+						tokenID, err := isc.NativeTokenIDFromBytes(decodedToken)
+						log.Check(err)
+
+						if !isc.IsEmptyNativeTokenID(tokenID) {
+							gasFeeToken = tokenID.String()
+						}
 					}
-					log.Printf("Gas fee: 1 %s = %d gas units\n", gasFeeToken, govInfo.GasFeePolicy.GasPerToken)
-					log.Printf("Validator fee share: %d%%\n", govInfo.GasFeePolicy.ValidatorFeeShare)
+
+					log.Printf("Gas fee: 1 %s = %d gas units\n", gasFeeToken, chainInfo.GasFeePolicy.GasPerToken)
+					log.Printf("Validator fee share: %d%%\n", chainInfo.GasFeePolicy.ValidatorFeeShare)
 				}
 
-				log.Printf("Maximum blob size: %d bytes\n", govInfo.MaxBlobSize)
-				log.Printf("Maximum event size: %d bytes\n", govInfo.MaxEventSize)
-				log.Printf("Maximum events per request: %d\n", govInfo.MaxEventsPerReq)
+				log.Printf("Maximum blob size: %d bytes\n", chainInfo.MaxBlobSize)
+				log.Printf("Maximum event size: %d bytes\n", chainInfo.MaxEventSize)
+				log.Printf("Maximum events per request: %d\n", chainInfo.MaxEventsPerReq)
 			}
 		},
 	}
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	withChainFlag(cmd, &chain)
+	return cmd
 }

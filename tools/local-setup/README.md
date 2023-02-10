@@ -52,14 +52,14 @@ You can either use a wasp-cli installed on your system, or use the one built-in 
 wasp-cli init
 wasp-cli set l1.apiaddress http://localhost:14265
 wasp-cli set l1.faucetaddress http://localhost:8091
-wasp-cli set wasp.0.api http://localhost:9090
+wasp-cli wasp add 0 http://localhost:9090
 ```
 
 To create a chain:
 
 ```shell
 wasp-cli request-funds
-wasp-cli chain deploy --committee=0 --quorum=1 --chain=testchain --description="Test Chain"
+wasp-cli chain deploy --nodes=0 --quorum=1 --chain=testchain --description="Test Chain"
 ```
 
 After a chain has been created, the EVM JSON-RPC can be accessed via:

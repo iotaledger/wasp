@@ -1,13 +1,14 @@
 package tests
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -52,19 +53,20 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 
 	// call the gov "maintenance status view", check it is OFF
 	{
-		ret, err2 := ownerSCClient.CallView(governance.ViewGetMaintenanceStatus.Name, nil)
-		require.NoError(t, err2)
+		// TODO: Add maintenance status to wrapped core contracts
+		ret, err := ownerSCClient.CallView(context.Background(), governance.ViewGetMaintenanceStatus.Name, nil)
+		require.NoError(t, err)
 		maintenanceStatus := codec.MustDecodeBool(ret.MustGet(governance.VarMaintenanceStatus))
 		require.False(t, maintenanceStatus)
 	}
 
 	// test non-chain owner cannot call init maintenance
 	{
-		req, err2 := userSCClient.PostOffLedgerRequest(governance.FuncStartMaintenance.Name)
-		require.NoError(t, err2)
-		rec, err2 := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
-		require.NoError(t, err2)
-		require.Error(t, rec.Error)
+		req, err := userSCClient.PostOffLedgerRequest(governance.FuncStartMaintenance.Name)
+		require.NoError(t, err)
+		rec, err := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
+		require.NoError(t, err)
+		require.NotNil(t, rec.Error)
 	}
 
 	// owner can start maintenance mode
@@ -77,8 +79,8 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 
 	// call the gov "maintenance status view", check it is ON
 	{
-		ret, err2 := ownerSCClient.CallView(governance.ViewGetMaintenanceStatus.Name, nil)
-		require.NoError(t, err2)
+		ret, err := ownerSCClient.CallView(context.Background(), governance.ViewGetMaintenanceStatus.Name, nil)
+		require.NoError(t, err)
 		maintenanceStatus := codec.MustDecodeBool(ret.MustGet(governance.VarMaintenanceStatus))
 		require.True(t, maintenanceStatus)
 	}
@@ -92,7 +94,8 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 	time.Sleep(10 * time.Second) // not ideal, but I don't think there is a good way to wait for something that will NOT be processed
 	rec, err := env.Chain.GetRequestReceipt(notProccessedReq1.ID())
-	require.Regexp(t, `.*"Code":404.*`, err.Error())
+
+	require.EqualValues(t, `404 Not Found`, err.Error())
 	require.Nil(t, rec)
 
 	// calls to non-maintenance endpoints are not processed, even when done by the chain owner
@@ -100,7 +103,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 	time.Sleep(10 * time.Second) // not ideal, but I don't think there is a good way to wait for something that will NOT be processed
 	rec, err = env.Chain.GetRequestReceipt(notProccessedReq2.ID())
-	require.Regexp(t, `.*"Code":404.*`, err.Error())
+	require.EqualValues(t, `404 Not Found`, err.Error())
 	require.Nil(t, rec)
 
 	// assert that block number is still the same
@@ -132,19 +135,19 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 				governance.ParamFeePolicyBytes: newGasFeePolicy.Bytes(),
 			},
 		})
-		require.NoError(t, err2)
-		receipt, err2 := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
-		require.NoError(t, err2)
-		require.Error(t, receipt.Error)
+		require.NoError(t, err)
+		receipt, err := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
+		require.NoError(t, err)
+		require.NotNil(t, receipt.Error)
 	}
 
 	// test non-chain owner cannot call stop maintenance
 	{
-		req, err2 := userSCClient.PostOffLedgerRequest(governance.FuncStopMaintenance.Name)
-		require.NoError(t, err2)
-		rec, err2 := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
-		require.NoError(t, err2)
-		require.Error(t, rec.Error)
+		req, err := userSCClient.PostOffLedgerRequest(governance.FuncStopMaintenance.Name)
+		require.NoError(t, err)
+		rec, err := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
+		require.NoError(t, err)
+		require.NotNil(t, rec.Error)
 	}
 
 	// owner can stop maintenance mode

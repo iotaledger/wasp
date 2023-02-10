@@ -45,9 +45,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	w.MustRun("set", "l1.apiAddress", clu.Config.L1.APIAddress)
 	w.MustRun("set", "l1.faucetAddress", clu.Config.L1.FaucetAddress)
 	for _, node := range clu.Config.AllNodes() {
-		w.MustRun("set", fmt.Sprintf("wasp.%d.api", node), clu.Config.APIHost(node))
-		w.MustRun("set", fmt.Sprintf("wasp.%d.nanomsg", node), clu.Config.NanomsgHost(node))
-		w.MustRun("set", fmt.Sprintf("wasp.%d.peering", node), clu.Config.PeeringHost(node))
+		w.MustRun("wasp", "add", fmt.Sprintf("%d", node), clu.Config.APIHost(node))
 	}
 
 	requestFundstext := w.MustRun("request-funds")
@@ -72,6 +70,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 }
 
 func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) ([]string, error) {
+	w.T.Helper()
 	// -w: wait for requests
 	// -d: debug output
 	cmd := exec.Command("wasp-cli", append([]string{"-w", "-d"}, args...)...) //nolint:gosec
@@ -109,10 +108,12 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) ([]string, error)
 }
 
 func (w *WaspCLITest) Run(args ...string) ([]string, error) {
+	w.T.Helper()
 	return w.runCmd(args, nil)
 }
 
 func (w *WaspCLITest) MustRun(args ...string) []string {
+	w.T.Helper()
 	lines, err := w.Run(args...)
 	if err != nil {
 		panic(err)
@@ -130,8 +131,9 @@ func (w *WaspCLITest) PostRequestGetReceipt(args ...string) []string {
 func (w *WaspCLITest) GetReceiptFromRunPostRequestOutput(out []string) []string {
 	r := regexp.MustCompile(`(.*)\(check result with:\s*wasp-cli (.*)\).*$`).
 		FindStringSubmatch(strings.Join(out, ""))
-	command := r[2]
-	return w.MustRun(strings.Split(command, " ")...)
+	checkReceiptCommand := strings.Split(r[2], " ")
+	checkReceiptCommand = append(checkReceiptCommand, "--node=0")
+	return w.MustRun(checkReceiptCommand...)
 }
 
 func (w *WaspCLITest) Pipe(in []string, args ...string) ([]string, error) {
@@ -163,18 +165,23 @@ func (w *WaspCLITest) CopyFile(srcFile string) {
 	require.NoError(w.T, err)
 }
 
-func (w *WaspCLITest) CommitteeConfig() (string, string) {
-	var committee []string
+func (w *WaspCLITest) ArgAllNodesExcept(idx int) string {
+	var nodes []string
 	for i := 0; i < len(w.Cluster.Config.Wasp); i++ {
-		committee = append(committee, fmt.Sprintf("%d", i))
+		if i != idx {
+			nodes = append(nodes, fmt.Sprintf("%d", i))
+		}
 	}
+	return "--peers=" + strings.Join(nodes, ",")
+}
 
+func (w *WaspCLITest) ArgCommitteeConfig(initiatorIndex int) (string, string) {
 	quorum := 3 * len(w.Cluster.Config.Wasp) / 4
 	if quorum < 1 {
 		quorum = 1
 	}
 
-	return "--committee=" + strings.Join(committee, ","), fmt.Sprintf("--quorum=%d", quorum)
+	return w.ArgAllNodesExcept(initiatorIndex), fmt.Sprintf("--quorum=%d", quorum)
 }
 
 func (w *WaspCLITest) Address() iotago.Address {
@@ -183,4 +190,10 @@ func (w *WaspCLITest) Address() iotago.Address {
 	_, addr, err := iotago.ParseBech32(s)
 	require.NoError(w.T, err)
 	return addr
+}
+
+func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string) {
+	for _, idx := range w.Cluster.AllNodes() {
+		w.MustRun("chain", "activate", "--chain="+chainName, fmt.Sprintf("--node=%d", idx))
+	}
 }

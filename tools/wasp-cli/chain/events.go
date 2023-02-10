@@ -1,25 +1,41 @@
 package chain
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func initEventsCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	var chain string
+
+	cmd := &cobra.Command{
 		Use:   "events <name>",
 		Short: "Show events of contract <name>",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			r, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetEventsForContract.Name, dict.Dict{
-				blocklog.ParamContractHname: isc.Hn(args[0]).Bytes(),
-			})
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
+
+			client := cliclients.WaspClient(node)
+			contractHName := isc.Hn(args[0]).String()
+
+			events, _, err := client.CorecontractsApi.
+				BlocklogGetEventsOfContract(context.Background(), config.GetChain(chain).String(), contractHName).
+				Execute()
+
 			log.Check(err)
-			logEvents(r)
+			logEvents(events)
 		},
 	}
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	withChainFlag(cmd, &chain)
+	return cmd
 }

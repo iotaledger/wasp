@@ -57,7 +57,7 @@ func testBasic(t *testing.T, n int, reliable bool) {
 	defer log.Sync()
 	defer ctxCancel()
 
-	peerNetIDs, peerIdentities := testpeers.SetupKeys(uint16(n))
+	peeringURLs, peerIdentities := testpeers.SetupKeys(uint16(n))
 	peerPubKeys := testpeers.PublicKeys(peerIdentities)
 	var networkBehaviour testutil.PeeringNetBehavior
 	if reliable {
@@ -67,7 +67,7 @@ func testBasic(t *testing.T, n int, reliable bool) {
 		networkBehaviour = testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 200*time.Millisecond, netLogger)
 	}
 	peeringNetwork := testutil.NewPeeringNetwork(
-		peerNetIDs, peerIdentities, 10000,
+		peeringURLs, peerIdentities, 10000,
 		networkBehaviour,
 		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)

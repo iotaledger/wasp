@@ -21,7 +21,6 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd := initChainCmd()
 	rootCmd.AddCommand(chainCmd)
 
-	initAliasFlags(chainCmd)
 	initUploadFlags(chainCmd)
 
 	chainCmd.AddCommand(initListCmd())
@@ -44,6 +43,7 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(initDeactivateCmd())
 	chainCmd.AddCommand(initRunDKGCmd())
 	chainCmd.AddCommand(initRotateCmd())
+	chainCmd.AddCommand(initRotateWithDKGCmd())
 	chainCmd.AddCommand(initChangeAccessNodesCmd())
 	chainCmd.AddCommand(initPermitionlessAccessNodesCmd())
 	chainCmd.AddCommand(initAddChainCmd())

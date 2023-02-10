@@ -1,12 +1,14 @@
 package tests
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/client/chainclient"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -48,7 +50,9 @@ func TestDepositWithdraw(t *testing.T) {
 	chEnv.checkLedger()
 
 	// chEnv.checkBalanceOnChain(origAgentID, isc.BaseTokenID, 0)
-	gasFees1 := receipts[0].GasFeeCharged
+	gasFees1, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
+	require.NoError(t, err)
+
 	onChainBalance := depositBaseTokens - gasFees1
 	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance)
 
@@ -58,7 +62,7 @@ func TestDepositWithdraw(t *testing.T) {
 
 	// withdraw some base tokens back
 	baseTokensToWithdraw := 1 * isc.Million
-	req, err := chClient.PostOffLedgerRequest(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
+	req, err := chClient.PostOffLedgerRequest(context.Background(), accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
 		chainclient.PostRequestParams{
 			Allowance: isc.NewAssetsBaseTokens(baseTokensToWithdraw),
 		},
@@ -68,7 +72,9 @@ func TestDepositWithdraw(t *testing.T) {
 	require.NoError(t, err)
 
 	chEnv.checkLedger()
-	gasFees2 := receipt.GasFeeCharged
+	gasFees2, err := iotago.DecodeUint64(receipt.GasFeeCharged)
+	require.NoError(t, err)
+
 	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance-baseTokensToWithdraw-gasFees2)
 	require.True(t,
 		e.Clu.AssertAddressBalances(myAddress, isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-depositBaseTokens+baseTokensToWithdraw)),

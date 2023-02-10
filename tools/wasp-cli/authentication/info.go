@@ -1,31 +1,47 @@
 package authentication
 
 import (
-	"encoding/json"
+	"context"
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
+type AuthInfoOutput struct {
+	AuthenticationMethod string
+	AuthenticationURL    string
+}
+
+var _ log.CLIOutput = &AuthInfoOutput{}
+
+func (l *AuthInfoOutput) AsText() (string, error) {
+	template := `Authentication Method: {{ .AuthenticationMethod }}
+Authentication URL: {{ .AuthenticationURL }}`
+	return log.ParseCLIOutputTemplate(l, template)
+}
+
 func initInfoCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	cmd := &cobra.Command{
 		Use:   "info",
 		Short: "Receive information about the authentication methods",
 		Run: func(cmd *cobra.Command, args []string) {
-			client := config.WaspClient(config.MustWaspAPI())
-			authInfo, err := client.AuthInfo()
-			if err != nil {
-				panic(err)
-			}
+			// Auth is currently not inside Swagger, so this is a temporary change
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			client := cliclients.WaspClient(node)
+			authInfo, _, err := client.AuthApi.AuthInfo(context.Background()).Execute()
 
-			authInfoJSON, err := json.MarshalIndent(authInfo, "", "  ")
-			if err != nil {
-				panic(err)
-			}
+			log.Check(err)
 
-			log.Printf(string(authInfoJSON))
+			log.PrintCLIOutput(&AuthInfoOutput{
+				AuthenticationMethod: authInfo.Scheme,
+				AuthenticationURL:    authInfo.AuthURL,
+			})
 		},
 	}
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	return cmd
 }

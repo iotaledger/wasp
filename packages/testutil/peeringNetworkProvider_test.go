@@ -20,8 +20,8 @@ func TestFakeNetwork(t *testing.T) {
 	chain1 := peering.RandomPeeringID()
 	chain2 := peering.RandomPeeringID()
 	receiver := byte(0)
-	peerNetIDs, nodeIdentities := testpeers.SetupKeys(3)
-	network := testutil.NewPeeringNetwork(peerNetIDs, nodeIdentities, 100, testutil.NewPeeringNetReliable(log), log)
+	peeringURLs, nodeIdentities := testpeers.SetupKeys(3)
+	network := testutil.NewPeeringNetwork(peeringURLs, nodeIdentities, 100, testutil.NewPeeringNetReliable(log), log)
 	netProviders := network.NetworkProviders()
 	//
 	// Node "a" listens for chain1 messages.

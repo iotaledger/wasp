@@ -19,9 +19,12 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
+	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func GetAllWaspNodes() []int {
@@ -42,12 +45,7 @@ func defaultQuorum(n int) int {
 	return quorum
 }
 
-func isEnoughQuorum(n, t int) (bool, int) {
-	maxF := (n - 1) / 3
-	return t >= (n - maxF), maxF
-}
-
-func controllerAddr(addr string) iotago.Address {
+func controllerAddrDefaultFallback(addr string) iotago.Address {
 	if addr == "" {
 		return wallet.Load().Address()
 	}
@@ -61,74 +59,63 @@ func controllerAddr(addr string) iotago.Address {
 
 func initDeployCmd() *cobra.Command {
 	var (
-		committee        []int
+		node             string
+		peers            []string
 		quorum           int
 		description      string
 		evmParams        evmDeployParams
 		govControllerStr string
+		chainName        string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "deploy [<alias>]",
 		Short: "Deploy a new chain",
-		Args:  cobra.MaximumNArgs(1),
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			l1Client := config.L1Client()
+			node = waspcmd.DefaultWaspNodeFallback(node)
 
-			if committee == nil {
-				committee = GetAllWaspNodes()
+			if !util.IsSlug(chainName) {
+				log.Fatalf("invalid chain name: %s, must be in slug format, only lowercase and hypens, example: foo-bar", chainName)
 			}
 
-			if quorum == 0 {
-				quorum = defaultQuorum(len(committee))
-			}
+			l1Client := cliclients.L1Client()
 
-			if ok, _ := isEnoughQuorum(len(committee), quorum); !ok {
-				log.Fatal("quorum needs to be bigger than 1/3 of committee size")
-			}
+			govController := controllerAddrDefaultFallback(govControllerStr)
 
-			committeePubKeys := make([]string, 0)
-			for _, api := range config.CommitteeAPI(committee) {
-				peerInfo, err := config.WaspClient(api).GetPeeringSelf()
-				log.Check(err)
-				committeePubKeys = append(committeePubKeys, peerInfo.PubKey)
-			}
+			stateController := doDKG(node, peers, quorum)
 
-			chainid, _, err := apilib.DeployChainWithDKG(apilib.CreateChainParams{
-				AuthenticationToken:  config.GetToken(),
+			par := apilib.CreateChainParams{
 				Layer1Client:         l1Client,
-				CommitteeAPIHosts:    config.CommitteeAPI(committee),
-				CommitteePubKeys:     committeePubKeys,
-				N:                    uint16(len(committee)),
+				CommitteeAPIHosts:    config.NodeAPIURLs([]string{node}),
+				N:                    uint16(len(node)),
 				T:                    uint16(quorum),
 				OriginatorKeyPair:    wallet.Load().KeyPair,
 				Description:          description,
 				Textout:              os.Stdout,
-				GovernanceController: controllerAddr(govControllerStr),
+				GovernanceController: govController,
 				InitParams: dict.Dict{
 					root.ParamEVM(evm.FieldChainID):         codec.EncodeUint16(evmParams.ChainID),
 					root.ParamEVM(evm.FieldGenesisAlloc):    evmtypes.EncodeGenesisAlloc(evmParams.getGenesis(nil)),
 					root.ParamEVM(evm.FieldBlockGasLimit):   codec.EncodeUint64(evmParams.BlockGasLimit),
 					root.ParamEVM(evm.FieldBlockKeepAmount): codec.EncodeInt32(evmParams.BlockKeepAmount),
 				},
-			})
+			}
+
+			chainid, _, err := apilib.DeployChain(par, stateController, govController)
 			log.Check(err)
 
-			var alias string
-			if len(args) == 0 {
-				alias = GetChainAlias()
-			} else {
-				alias = args[0]
-			}
-			AddChainAlias(alias, chainid.String())
+			config.AddChain(chainName, chainid.String())
 		},
 	}
 
-	cmd.Flags().IntSliceVarP(&committee, "committee", "", nil, "peers acting as committee nodes (ex: 0,1,2,3) (default: all nodes)")
-	cmd.Flags().IntVarP(&quorum, "quorum", "", 0, "quorum (default: 3/4s of the number of committee nodes)")
-	cmd.Flags().StringVarP(&description, "description", "", "", "description")
-	cmd.Flags().StringVarP(&govControllerStr, "gov-controller", "", "", "governance controller address")
-
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	waspcmd.WithPeersFlag(cmd, &peers)
 	evmParams.initFlags(cmd)
+	cmd.Flags().StringVar(&chainName, "chain", "", "name of the chain)")
+	log.Check(cmd.MarkFlagRequired("chain"))
+	cmd.Flags().IntVar(&quorum, "quorum", 0, "quorum (default: 3/4s of the number of committee nodes)")
+	cmd.Flags().StringVar(&description, "description", "", "description")
+	cmd.Flags().StringVar(&govControllerStr, "gov-controller", "", "governance controller address")
 	return cmd
 }

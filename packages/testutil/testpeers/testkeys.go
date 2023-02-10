@@ -26,13 +26,13 @@ import (
 )
 
 func SetupKeys(peerCount uint16) ([]string, []*cryptolib.KeyPair) {
-	peerNetIDs := make([]string, peerCount)
+	peeringURLs := make([]string, peerCount)
 	peerIdentities := make([]*cryptolib.KeyPair, peerCount)
-	for i := range peerNetIDs {
+	for i := range peeringURLs {
 		peerIdentities[i] = cryptolib.NewKeyPair()
-		peerNetIDs[i] = fmt.Sprintf("P%02d", i)
+		peeringURLs[i] = fmt.Sprintf("P%02d", i)
 	}
-	return peerNetIDs, peerIdentities
+	return peeringURLs, peerIdentities
 }
 
 func PublicKeys(peerIdentities []*cryptolib.KeyPair) []*cryptolib.PublicKey {
@@ -46,22 +46,22 @@ func PublicKeys(peerIdentities []*cryptolib.KeyPair) []*cryptolib.PublicKey {
 func SetupDkg(
 	t *testing.T,
 	threshold uint16,
-	peerNetIDs []string,
+	peeringURLs []string,
 	peerIdentities []*cryptolib.KeyPair,
 	suite tcrypto.Suite,
 	log *logger.Logger,
 ) (iotago.Address, []registry.DKShareRegistryProvider) {
 	timeout := 300 * time.Second
-	networkProviders, networkCloser := SetupNet(peerNetIDs, peerIdentities, testutil.NewPeeringNetReliable(log), log)
+	networkProviders, networkCloser := SetupNet(peeringURLs, peerIdentities, testutil.NewPeeringNetReliable(log), log)
 	//
 	// Initialize the DKG subsystem in each node.
-	dkgNodes := make([]*dkg.Node, len(peerNetIDs))
-	dkShareRegistryProviders := make([]registry.DKShareRegistryProvider, len(peerNetIDs))
-	for i := range peerNetIDs {
+	dkgNodes := make([]*dkg.Node, len(peeringURLs))
+	dkShareRegistryProviders := make([]registry.DKShareRegistryProvider, len(peeringURLs))
+	for i := range peeringURLs {
 		dkShareRegistryProviders[i] = testutil.NewDkgRegistryProvider(peerIdentities[i].GetPrivateKey())
 		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], dkShareRegistryProviders[i],
-			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelError, false),
+			testlogger.WithLevel(log.With("peeringURL", peeringURLs[i]), logger.LevelError, false),
 		)
 		require.NoError(t, err)
 		dkgNodes[i] = dkgNode
@@ -183,13 +183,13 @@ func SetupDkgPregenerated( // TODO: Remove.
 }
 
 func SetupNet(
-	peerNetIDs []string,
+	peeringURLs []string,
 	peerIdentities []*cryptolib.KeyPair,
 	behavior testutil.PeeringNetBehavior,
 	log *logger.Logger,
 ) ([]peering.NetworkProvider, io.Closer) {
 	peeringNetwork := testutil.NewPeeringNetwork(
-		peerNetIDs, peerIdentities, 10000, behavior,
+		peeringURLs, peerIdentities, 10000, behavior,
 		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)
 	networkProviders := peeringNetwork.NetworkProviders()

@@ -91,10 +91,11 @@ type CommitteeInfo struct {
 }
 
 type PeerStatus struct {
-	Index     uint16
-	PubKey    *cryptolib.PublicKey
-	NetID     string
-	Connected bool
+	Name       string
+	Index      uint16
+	PubKey     *cryptolib.PublicKey
+	PeeringURL string
+	Connected  bool
 }
 
 type RequestOutputHandler = func(outputInfo *isc.OutputInfo)
@@ -940,18 +941,18 @@ func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
 		})
 		if index == -1 {
 			peerStatus[i] = &PeerStatus{
-				Index:     uint16(i),
-				PubKey:    nodePubKey,
-				NetID:     "",
-				Connected: false,
+				Index:      uint16(i),
+				PubKey:     nodePubKey,
+				PeeringURL: "",
+				Connected:  false,
 			}
 			continue
 		}
 		peerStatus[i] = &PeerStatus{
-			Index:     uint16(i),
-			PubKey:    nodePubKey,
-			NetID:     netPeerStatus[index].NetID(),
-			Connected: netPeerStatus[index].IsAlive(),
+			Index:      uint16(i),
+			PubKey:     nodePubKey,
+			PeeringURL: netPeerStatus[index].PeeringURL(),
+			Connected:  netPeerStatus[index].IsAlive(),
 		}
 		if netPeerStatus[index].IsAlive() {
 			connectedCount++
