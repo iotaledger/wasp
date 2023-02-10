@@ -67,10 +67,10 @@ func TestNodeConn(t *testing.T) {
 	//
 	// Start a peering network.
 	// peeringID := peering.RandomPeeringID()
-	peerNetIDs, peerIdentities := testpeers.SetupKeys(uint16(peerCount))
+	peeringURLs, peerIdentities := testpeers.SetupKeys(uint16(peerCount))
 	networkLog := testlogger.WithLevel(log.Named("Network"), 0, false)
 	_, networkCloser := testpeers.SetupNet(
-		peerNetIDs,
+		peeringURLs,
 		peerIdentities,
 		testutil.NewPeeringNetReliable(networkLog),
 		networkLog,

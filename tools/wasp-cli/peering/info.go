@@ -14,35 +14,33 @@ import (
 )
 
 func initInfoCmd() *cobra.Command {
-	var nodes []string
+	var peers []string
 	cmd := &cobra.Command{
 		Use:   "info",
 		Short: "Node info.",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			nodes = waspcmd.DefaultNodesFallback(nodes)
-
-			for _, node := range nodes {
+			for _, node := range peers {
 				client := cliclients.WaspClient(node)
 				info, _, err := client.NodeApi.GetPeeringIdentity(context.Background()).Execute()
 				log.Check(err)
 
-				model := &InfoModel{PubKey: info.PublicKey, NetID: info.NetId}
+				model := &InfoModel{PubKey: info.PublicKey, PeeringURL: info.PeeringURL}
 				log.PrintCLIOutput(model)
 			}
 		},
 	}
-	waspcmd.WithWaspNodesFlag(cmd, &nodes)
+	waspcmd.WithPeersFlag(cmd, &peers)
 	return cmd
 }
 
 type InfoModel struct {
-	PubKey string
-	NetID  string
+	PubKey     string
+	PeeringURL string
 }
 
 func (i *InfoModel) AsText() (string, error) {
 	infoTemplate := `PubKey: {{ .PubKey }}
-NetID: {{ .NetID }}`
+peeringURL: {{ .peeringURL }}`
 	return log.ParseCLIOutputTemplate(i, infoTemplate)
 }

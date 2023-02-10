@@ -20,8 +20,8 @@ func TestGroupProvider(t *testing.T) {
 	defer log.Sync()
 
 	nodeCount := 4
-	netIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
-	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
+	peeringURLs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
+	nodes, netCloser := testpeers.SetupNet(peeringURLs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
 	for i := range nodes {
 		go nodes[i].Run(context.Background())
 	}

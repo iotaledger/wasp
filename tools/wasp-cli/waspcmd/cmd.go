@@ -1,16 +1,13 @@
 package waspcmd
 
 import (
-	"regexp"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
-
-var slugRegex = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
 func initWaspNodesCmd() *cobra.Command {
 	return &cobra.Command{
@@ -37,7 +34,7 @@ func initAddWaspNodeCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			nodeName := args[0]
-			if !slugRegex.Match([]byte(nodeName)) {
+			if !util.IsSlug(nodeName) {
 				log.Fatalf("invalid node name: %s, must be in slug format, only lowercase and hypens, example: foo-bar", nodeName)
 			}
 			config.AddWaspNode(nodeName, args[1])
@@ -47,15 +44,8 @@ func initAddWaspNodeCmd() *cobra.Command {
 	return cmd
 }
 
-func WithWaspNodesFlag(cmd *cobra.Command, nodes *[]string) {
-	cmd.Flags().StringSliceVar(nodes, "nodes", nil, "wasp nodes to execute the command in (ex: bob,alice,foo,bar) (default: the default wasp node)")
-}
-
-func DefaultNodesFallback(nodes []string) []string {
-	if len(nodes) == 0 {
-		return []string{getDefaultWaspNode()}
-	}
-	return nodes
+func WithPeersFlag(cmd *cobra.Command, peers *[]string) {
+	cmd.Flags().StringSliceVar(peers, "peers", nil, "peers to be included the command in (ex: bob,alice,foo,bar) (default: no peers)")
 }
 
 func WithWaspNodeFlag(cmd *cobra.Command, node *string) {

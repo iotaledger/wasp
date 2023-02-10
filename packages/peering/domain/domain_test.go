@@ -21,8 +21,8 @@ func TestDomainProvider(t *testing.T) {
 	defer log.Sync()
 
 	nodeCount := 3
-	netIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
-	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
+	peeringURLs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
+	nodes, netCloser := testpeers.SetupNet(peeringURLs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
 	nodePubKeys := testpeers.PublicKeys(nodeIdentities)
 	for i := range nodes {
 		go nodes[i].Run(context.Background())
@@ -69,8 +69,8 @@ func TestRandom(t *testing.T) {
 	defer log.Sync()
 
 	nodeCount := 5
-	netIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
-	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
+	peeringURLs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
+	nodes, netCloser := testpeers.SetupNet(peeringURLs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
 	nodePubKeys := testpeers.PublicKeys(nodeIdentities)
 	for i := range nodes {
 		go nodes[i].Run(context.Background())
@@ -131,8 +131,8 @@ func TestGetRandomOtherPeers(t *testing.T) {
 	nodeCount := 8 // 7 excluding self
 	peersToGet := 5
 	iterationCount := 13
-	netIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
-	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
+	peeringURLs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
+	nodes, netCloser := testpeers.SetupNet(peeringURLs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
 	nodePubKeys := testpeers.PublicKeys(nodeIdentities)
 	peeringID := peering.RandomPeeringID()
 

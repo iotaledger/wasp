@@ -31,9 +31,9 @@ func (c *Controller) getInfo(e echo.Context) error {
 	l1Params := parameters.L1()
 
 	return e.JSON(http.StatusOK, &models.InfoResponse{
-		Version:   c.waspVersion,
-		PublicKey: identity.PublicKey.String(),
-		NetID:     identity.NetID,
-		L1Params:  models.MapL1Params(l1Params),
+		Version:    c.waspVersion,
+		PublicKey:  identity.PublicKey.String(),
+		PeeringURL: identity.PeeringURL,
+		L1Params:   models.MapL1Params(l1Params),
 	})
 }

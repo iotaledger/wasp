@@ -55,8 +55,9 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 
 	err = clu2.AddTrustedNode(apiclient.PeeringTrustRequest{
-		PublicKey: node0peerInfo.PublicKey,
-		NetId:     node0peerInfo.NetId,
+		Name:       "node-from-other-cluster",
+		PublicKey:  node0peerInfo.PublicKey,
+		PeeringURL: node0peerInfo.PeeringURL,
 	})
 	require.NoError(t, err)
 
@@ -64,8 +65,9 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 
 	err = env.Clu.AddTrustedNode(apiclient.PeeringTrustRequest{
-		PublicKey: accessNodePeerInfo.PublicKey,
-		NetId:     accessNodePeerInfo.NetId,
+		Name:       "node-from-other-cluster",
+		PublicKey:  accessNodePeerInfo.PublicKey,
+		PeeringURL: accessNodePeerInfo.PeeringURL,
 	}, []int{0})
 	require.NoError(t, err)
 

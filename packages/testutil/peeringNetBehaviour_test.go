@@ -26,7 +26,7 @@ func TestPeeringNetReliable(t *testing.T) {
 	}()
 	srcPeerIdentity := cryptolib.NewKeyPair()
 	dstPeerIdentity := cryptolib.NewKeyPair()
-	someNode := peeringNode{netID: "src", identity: srcPeerIdentity}
+	someNode := peeringNode{peeringURL: "src", identity: srcPeerIdentity}
 	behavior := NewPeeringNetReliable(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
 	behavior.AddLink(inCh, outCh, dstPeerIdentity.GetPublicKey())
 	for i := 0; i < 10; i++ {
@@ -60,7 +60,7 @@ func TestPeeringNetUnreliable(t *testing.T) {
 	// Run the test.
 	srcPeerIdentity := cryptolib.NewKeyPair()
 	dstPeerIdentity := cryptolib.NewKeyPair()
-	someNode := peeringNode{netID: "src", identity: srcPeerIdentity}
+	someNode := peeringNode{peeringURL: "src", identity: srcPeerIdentity}
 	behavior := NewPeeringNetUnreliable(50, 50, 50*time.Millisecond, 100*time.Millisecond, testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
 	behavior.AddLink(inCh, outCh, dstPeerIdentity.GetPublicKey())
 	for i := 0; i < 1000; i++ {
@@ -110,7 +110,7 @@ func TestPeeringNetGoodQuality(t *testing.T) {
 	// Run the test.
 	srcPeerIdentity := cryptolib.NewKeyPair()
 	dstPeerIdentity := cryptolib.NewKeyPair()
-	someNode := peeringNode{netID: "src", identity: srcPeerIdentity}
+	someNode := peeringNode{peeringURL: "src", identity: srcPeerIdentity}
 	behavior := NewPeeringNetUnreliable(100, 0, 0*time.Microsecond, 0*time.Millisecond, testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)) // NOTE: No drops, duplicates, delays.
 	behavior.AddLink(inCh, outCh, dstPeerIdentity.GetPublicKey())
 	for i := 0; i < 1000; i++ {

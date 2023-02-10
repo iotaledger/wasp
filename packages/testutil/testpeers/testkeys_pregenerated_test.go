@@ -41,8 +41,8 @@ func testPregenerateDKS(t *testing.T, n, f uint16) {
 	defer log.Sync()
 	threshold := n - f
 	require.GreaterOrEqual(t, threshold, (n*2)/3+1)
-	netIDs, identities := testpeers.SetupKeys(n)
-	dksAddr, dksRegistries := testpeers.SetupDkg(t, threshold, netIDs, identities, tcrypto.DefaultBLSSuite(), log.Named("dkg"))
+	peeringURLs, identities := testpeers.SetupKeys(n)
+	dksAddr, dksRegistries := testpeers.SetupDkg(t, threshold, peeringURLs, identities, tcrypto.DefaultBLSSuite(), log.Named("dkg"))
 	var buf bytes.Buffer
 	util.WriteUint16(&buf, uint16(len(dksRegistries)))
 	for i := range dksRegistries {

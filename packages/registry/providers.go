@@ -37,7 +37,7 @@ type ChainRecordRegistryProvider interface {
 
 type TrustedPeersRegistryProvider interface {
 	IsTrustedPeer(pubKey *cryptolib.PublicKey) error
-	TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error)
+	TrustPeer(name string, pubKey *cryptolib.PublicKey, accountURL string) (*peering.TrustedPeer, error)
 	DistrustPeer(pubKey *cryptolib.PublicKey) (*peering.TrustedPeer, error)
 	TrustedPeers() ([]*peering.TrustedPeer, error)
 	TrustedPeersListener(callback func([]*peering.TrustedPeer)) context.CancelFunc

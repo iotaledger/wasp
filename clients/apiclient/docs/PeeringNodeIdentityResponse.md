@@ -5,14 +5,15 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **IsTrusted** | **bool** |  | 
-**NetId** | **string** | The NetID of the peer | 
+**Name** | **string** |  | 
+**PeeringURL** | **string** | The peering URL of the peer | 
 **PublicKey** | **string** | The peers public key encoded in Hex | 
 
 ## Methods
 
 ### NewPeeringNodeIdentityResponse
 
-`func NewPeeringNodeIdentityResponse(isTrusted bool, netId string, publicKey string, ) *PeeringNodeIdentityResponse`
+`func NewPeeringNodeIdentityResponse(isTrusted bool, name string, peeringURL string, publicKey string, ) *PeeringNodeIdentityResponse`
 
 NewPeeringNodeIdentityResponse instantiates a new PeeringNodeIdentityResponse object
 This constructor will assign default values to properties that have it defined,
@@ -47,24 +48,44 @@ and a boolean to check if the value has been set.
 SetIsTrusted sets IsTrusted field to given value.
 
 
-### GetNetId
+### GetName
 
-`func (o *PeeringNodeIdentityResponse) GetNetId() string`
+`func (o *PeeringNodeIdentityResponse) GetName() string`
 
-GetNetId returns the NetId field if non-nil, zero value otherwise.
+GetName returns the Name field if non-nil, zero value otherwise.
 
-### GetNetIdOk
+### GetNameOk
 
-`func (o *PeeringNodeIdentityResponse) GetNetIdOk() (*string, bool)`
+`func (o *PeeringNodeIdentityResponse) GetNameOk() (*string, bool)`
 
-GetNetIdOk returns a tuple with the NetId field if it's non-nil, zero value otherwise
+GetNameOk returns a tuple with the Name field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetNetId
+### SetName
 
-`func (o *PeeringNodeIdentityResponse) SetNetId(v string)`
+`func (o *PeeringNodeIdentityResponse) SetName(v string)`
 
-SetNetId sets NetId field to given value.
+SetName sets Name field to given value.
+
+
+### GetPeeringURL
+
+`func (o *PeeringNodeIdentityResponse) GetPeeringURL() string`
+
+GetPeeringURL returns the PeeringURL field if non-nil, zero value otherwise.
+
+### GetPeeringURLOk
+
+`func (o *PeeringNodeIdentityResponse) GetPeeringURLOk() (*string, bool)`
+
+GetPeeringURLOk returns a tuple with the PeeringURL field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetPeeringURL
+
+`func (o *PeeringNodeIdentityResponse) SetPeeringURL(v string)`
+
+SetPeeringURL sets PeeringURL field to given value.
 
 
 ### GetPublicKey

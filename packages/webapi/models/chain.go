@@ -15,11 +15,12 @@ func MapCommitteeNode(status *dto.ChainNodeStatus) CommitteeNode {
 	return CommitteeNode{
 		AccessAPI: status.AccessAPI,
 		Node: PeeringNodeStatusResponse{
-			IsAlive:   status.Node.IsAlive,
-			NetID:     status.Node.NetID,
-			NumUsers:  status.Node.NumUsers,
-			PublicKey: status.Node.PublicKey.String(),
-			IsTrusted: status.Node.IsTrusted,
+			Name:       status.Node.Name,
+			IsAlive:    status.Node.IsAlive,
+			PeeringURL: status.Node.PeeringURL,
+			NumUsers:   status.Node.NumUsers,
+			PublicKey:  status.Node.PublicKey.String(),
+			IsTrusted:  status.Node.IsTrusted,
 		},
 	}
 }

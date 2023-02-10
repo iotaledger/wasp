@@ -20,8 +20,9 @@ var _ MappedNullable = &PeeringNodeIdentityResponse{}
 // PeeringNodeIdentityResponse struct for PeeringNodeIdentityResponse
 type PeeringNodeIdentityResponse struct {
 	IsTrusted bool `json:"isTrusted"`
-	// The NetID of the peer
-	NetId string `json:"netId"`
+	Name string `json:"name"`
+	// The peering URL of the peer
+	PeeringURL string `json:"peeringURL"`
 	// The peers public key encoded in Hex
 	PublicKey string `json:"publicKey"`
 }
@@ -30,10 +31,11 @@ type PeeringNodeIdentityResponse struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPeeringNodeIdentityResponse(isTrusted bool, netId string, publicKey string) *PeeringNodeIdentityResponse {
+func NewPeeringNodeIdentityResponse(isTrusted bool, name string, peeringURL string, publicKey string) *PeeringNodeIdentityResponse {
 	this := PeeringNodeIdentityResponse{}
 	this.IsTrusted = isTrusted
-	this.NetId = netId
+	this.Name = name
+	this.PeeringURL = peeringURL
 	this.PublicKey = publicKey
 	return &this
 }
@@ -70,28 +72,52 @@ func (o *PeeringNodeIdentityResponse) SetIsTrusted(v bool) {
 	o.IsTrusted = v
 }
 
-// GetNetId returns the NetId field value
-func (o *PeeringNodeIdentityResponse) GetNetId() string {
+// GetName returns the Name field value
+func (o *PeeringNodeIdentityResponse) GetName() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.NetId
+	return o.Name
 }
 
-// GetNetIdOk returns a tuple with the NetId field value
+// GetNameOk returns a tuple with the Name field value
 // and a boolean to check if the value has been set.
-func (o *PeeringNodeIdentityResponse) GetNetIdOk() (*string, bool) {
+func (o *PeeringNodeIdentityResponse) GetNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.NetId, true
+	return &o.Name, true
 }
 
-// SetNetId sets field value
-func (o *PeeringNodeIdentityResponse) SetNetId(v string) {
-	o.NetId = v
+// SetName sets field value
+func (o *PeeringNodeIdentityResponse) SetName(v string) {
+	o.Name = v
+}
+
+// GetPeeringURL returns the PeeringURL field value
+func (o *PeeringNodeIdentityResponse) GetPeeringURL() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.PeeringURL
+}
+
+// GetPeeringURLOk returns a tuple with the PeeringURL field value
+// and a boolean to check if the value has been set.
+func (o *PeeringNodeIdentityResponse) GetPeeringURLOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.PeeringURL, true
+}
+
+// SetPeeringURL sets field value
+func (o *PeeringNodeIdentityResponse) SetPeeringURL(v string) {
+	o.PeeringURL = v
 }
 
 // GetPublicKey returns the PublicKey field value
@@ -129,7 +155,8 @@ func (o PeeringNodeIdentityResponse) MarshalJSON() ([]byte, error) {
 func (o PeeringNodeIdentityResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["isTrusted"] = o.IsTrusted
-	toSerialize["netId"] = o.NetId
+	toSerialize["name"] = o.Name
+	toSerialize["peeringURL"] = o.PeeringURL
 	toSerialize["publicKey"] = o.PublicKey
 	return toSerialize, nil
 }

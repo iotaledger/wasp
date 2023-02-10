@@ -5,7 +5,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **L1Params** | [**L1Params**](L1Params.md) |  | 
-**NetID** | **string** | The net id of the node | 
+**PeeringURL** | **string** | The net id of the node | 
 **PublicKey** | **string** | The public key of the node (Hex) | 
 **Version** | **string** | The version of the node | 
 
@@ -13,7 +13,7 @@ Name | Type | Description | Notes
 
 ### NewInfoResponse
 
-`func NewInfoResponse(l1Params L1Params, netID string, publicKey string, version string, ) *InfoResponse`
+`func NewInfoResponse(l1Params L1Params, peeringURL string, publicKey string, version string, ) *InfoResponse`
 
 NewInfoResponse instantiates a new InfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -48,24 +48,24 @@ and a boolean to check if the value has been set.
 SetL1Params sets L1Params field to given value.
 
 
-### GetNetID
+### GetPeeringURL
 
-`func (o *InfoResponse) GetNetID() string`
+`func (o *InfoResponse) GetPeeringURL() string`
 
-GetNetID returns the NetID field if non-nil, zero value otherwise.
+GetPeeringURL returns the PeeringURL field if non-nil, zero value otherwise.
 
-### GetNetIDOk
+### GetPeeringURLOk
 
-`func (o *InfoResponse) GetNetIDOk() (*string, bool)`
+`func (o *InfoResponse) GetPeeringURLOk() (*string, bool)`
 
-GetNetIDOk returns a tuple with the NetID field if it's non-nil, zero value otherwise
+GetPeeringURLOk returns a tuple with the PeeringURL field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetNetID
+### SetPeeringURL
 
-`func (o *InfoResponse) SetNetID(v string)`
+`func (o *InfoResponse) SetPeeringURL(v string)`
 
-SetNetID sets NetID field to given value.
+SetPeeringURL sets PeeringURL field to given value.
 
 
 ### GetPublicKey

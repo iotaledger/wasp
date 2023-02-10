@@ -6,15 +6,16 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **IsAlive** | **bool** | Whether or not the peer is activated | 
 **IsTrusted** | **bool** |  | 
-**NetId** | **string** | The NetID of the peer | 
+**Name** | **string** |  | 
 **NumUsers** | **int32** | The amount of users attached to the peer | 
+**PeeringURL** | **string** | The peering URL of the peer | 
 **PublicKey** | **string** | The peers public key encoded in Hex | 
 
 ## Methods
 
 ### NewPeeringNodeStatusResponse
 
-`func NewPeeringNodeStatusResponse(isAlive bool, isTrusted bool, netId string, numUsers int32, publicKey string, ) *PeeringNodeStatusResponse`
+`func NewPeeringNodeStatusResponse(isAlive bool, isTrusted bool, name string, numUsers int32, peeringURL string, publicKey string, ) *PeeringNodeStatusResponse`
 
 NewPeeringNodeStatusResponse instantiates a new PeeringNodeStatusResponse object
 This constructor will assign default values to properties that have it defined,
@@ -69,24 +70,24 @@ and a boolean to check if the value has been set.
 SetIsTrusted sets IsTrusted field to given value.
 
 
-### GetNetId
+### GetName
 
-`func (o *PeeringNodeStatusResponse) GetNetId() string`
+`func (o *PeeringNodeStatusResponse) GetName() string`
 
-GetNetId returns the NetId field if non-nil, zero value otherwise.
+GetName returns the Name field if non-nil, zero value otherwise.
 
-### GetNetIdOk
+### GetNameOk
 
-`func (o *PeeringNodeStatusResponse) GetNetIdOk() (*string, bool)`
+`func (o *PeeringNodeStatusResponse) GetNameOk() (*string, bool)`
 
-GetNetIdOk returns a tuple with the NetId field if it's non-nil, zero value otherwise
+GetNameOk returns a tuple with the Name field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetNetId
+### SetName
 
-`func (o *PeeringNodeStatusResponse) SetNetId(v string)`
+`func (o *PeeringNodeStatusResponse) SetName(v string)`
 
-SetNetId sets NetId field to given value.
+SetName sets Name field to given value.
 
 
 ### GetNumUsers
@@ -107,6 +108,26 @@ and a boolean to check if the value has been set.
 `func (o *PeeringNodeStatusResponse) SetNumUsers(v int32)`
 
 SetNumUsers sets NumUsers field to given value.
+
+
+### GetPeeringURL
+
+`func (o *PeeringNodeStatusResponse) GetPeeringURL() string`
+
+GetPeeringURL returns the PeeringURL field if non-nil, zero value otherwise.
+
+### GetPeeringURLOk
+
+`func (o *PeeringNodeStatusResponse) GetPeeringURLOk() (*string, bool)`
+
+GetPeeringURLOk returns a tuple with the PeeringURL field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetPeeringURL
+
+`func (o *PeeringNodeStatusResponse) SetPeeringURL(v string)`
+
+SetPeeringURL sets PeeringURL field to given value.
 
 
 ### GetPublicKey
