@@ -1,26 +1,34 @@
 # Local Setup
 
-This Directory contains a Docker-based setup to run your own Wasp development setup.
+This Directory contains a Docker-based setup to run your own Wasp development
+setup.
 
 ## Usage
 
 ### Starting
 
+**Note** You need to build the wasp container using `build_container.sh` if
+you're on Mac/Linux or `build_container.cmd` on windows so that the `wasp`
+version is properly set.
+
 Run `docker-compose up` to start the setup.
 
 ### Stopping
 
-Press `Ctrl-C` to shut down the setup, but don't press it twice to force it. Otherwise, you can corrupt the Hornet database.
+Press `Ctrl-C` to shut down the setup, but don't press it twice to force it.
+Otherwise, you can corrupt the Hornet database.
 
 You can also shut down the setup with `docker-compose down` in a new terminal.
 
 ### Reset
 
-Run `docker-compose down --volumes` to shut down the nodes and to remove all databases.
+Run `docker-compose down --volumes` to shut down the nodes and to remove all
+databases.
 
 ### Recreation
 
-If you made changes to the Wasp code and want to use it inside the setup, you need to recreate the Wasp image.
+If you made changes to the Wasp code and want to use it inside the setup, you
+need to recreate the Wasp image.
 
 Run `docker-compose build`
 
@@ -42,7 +50,8 @@ To configure a new wasp-cli you can use the following commands:
 
 :::note
 
-You can either use a wasp-cli installed on your system, or use the one built-in to the wasp docker container by doing: `docker exec  wasp /app/wasp-cli init`
+You can either use a wasp-cli installed on your system, or use the one built-in
+to the wasp docker container by doing: `docker exec  wasp /app/wasp-cli init`
 
 :::
 
