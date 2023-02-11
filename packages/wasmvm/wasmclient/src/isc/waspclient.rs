@@ -166,36 +166,36 @@ impl WaspClient {
         }
     }
 
-    pub fn subscribe(&self, ch: mpsc::Sender<Vec<String>>, done: Arc<RwLock<bool>>) {
-        // FIXME should not reconnect every time
-        let (mut socket, _) = tungstenite::connect(&self.event_port).unwrap();
-        let read_done = Arc::clone(&done);
-        spawn(move || loop {
-            match socket.read_message() {
-                Ok(raw_msg) => {
-                    let raw_msg_str = raw_msg.to_string();
-                    if raw_msg_str != "" {
-                        let msg: Vec<String> = raw_msg_str.split(" ").map(|s| s.into()).collect();
-                        if msg[0] == ISC_EVENT_KIND_SMART_CONTRACT {
-                            ch.send(msg).unwrap();
-                        }
-                    }
-                }
-                Err(tungstenite::Error::ConnectionClosed) => {
-                    return Ok(());
-                }
-                Err(e) => {
-                    return Err(format!("subscribe err: {}", e));
-                }
-            };
-
-            if *read_done.read().unwrap() {
-                socket.close(None).unwrap();
-                let mut mut_done = read_done.write().unwrap();
-                *mut_done = false;
-                return Ok(());
-            }
-        });
+    pub fn subscribe(&self, ch: mpsc::Sender<String>, done: Arc<RwLock<bool>>) {
+        // // FIXME should not reconnect every time
+        // let (mut socket, _) = tungstenite::connect(&self.event_port).unwrap();
+        // let read_done = Arc::clone(&done);
+        // spawn(move || loop {
+        //     match socket.read_message() {
+        //         Ok(raw_msg) => {
+        //             let raw_msg_str = raw_msg.to_string();
+        //             if raw_msg_str != "" {
+        //                 let msg: Vec<String> = raw_msg_str.split(" ").map(|s| s.into()).collect();
+        //                 if msg[0] == ISC_EVENT_KIND_SMART_CONTRACT {
+        //                     ch.send(msg).unwrap();
+        //                 }
+        //             }
+        //         }
+        //         Err(tungstenite::Error::ConnectionClosed) => {
+        //             return Ok(());
+        //         }
+        //         Err(e) => {
+        //             return Err(format!("subscribe err: {}", e));
+        //         }
+        //     };
+        //
+        //     if *read_done.read().unwrap() {
+        //         socket.close(None).unwrap();
+        //         let mut mut_done = read_done.write().unwrap();
+        //         *mut_done = false;
+        //         return Ok(());
+        //     }
+        // });
     }
 }
 

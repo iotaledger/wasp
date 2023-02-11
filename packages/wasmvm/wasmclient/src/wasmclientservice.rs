@@ -34,7 +34,7 @@ pub trait IClientService {
 
     fn subscribe_events(
         &self,
-        tx: mpsc::Sender<Vec<String>>,
+        tx: mpsc::Sender<String>,
         done: Arc<RwLock<bool>>,
     ) -> errors::Result<()>;
 
@@ -99,7 +99,7 @@ impl IClientService for WasmClientService {
 
     fn subscribe_events(
         &self,
-        tx: mpsc::Sender<Vec<String>>,
+        tx: mpsc::Sender<String>,
         done: Arc<RwLock<bool>>,
     ) -> errors::Result<()> {
         self.client.subscribe(tx, done);

@@ -3,8 +3,43 @@ import * as testwasmlib from 'testwasmlib';
 import {bytesFromString, bytesToString} from 'wasmlib';
 import {KeyPair} from '../lib/isc';
 
-const MYCHAIN = 'atoi1ppcj6fmmedfzljgckme2w6520m2qnv8mw7a8cejqvyvhfc0shtvv522uq46';
+const MYCHAIN = 'atoi1pra0cee8rfx5s06avkhvqzvs4ewdd4c8zdnzg4eqgdg2eyu66fnwk23hupm';
 const MYSEED = '0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3';
+
+const params = [
+    'Lala',
+    'Trala',
+    'Bar|Bar',
+    'Bar~|~Bar',
+    'Tilde~Tilde',
+    'Tilde~~ Bar~/ Space~_',
+];
+
+class EventProcessor {
+    ctx: WasmClientContext;
+    name = '';
+
+    constructor(ctx: WasmClientContext) {
+        this.ctx = ctx;
+    }
+
+    sendClientEventsParam(name: string) {
+        const ctx = this.ctx;
+        const f = testwasmlib.ScFuncs.triggerEvent(ctx);
+        f.params.name().setValue(name);
+        f.params.address().setValue(ctx.currentChainID().address());
+        f.func.post();
+        expect(ctx.Err == null).toBeTruthy();
+    }
+
+    async waitClientEventsParam(name: string) {
+        const ctx = this.ctx;
+        await ctx.waitEvent();
+        expect(ctx.Err == null).toBeTruthy();
+
+        expect(name == this.name).toBeTruthy();
+    }
+}
 
 function setupClient() {
     const svc = new WasmClientService('http://localhost:19090', '127.0.0.1:15550');
@@ -105,21 +140,17 @@ describe('wasmclient verified', function () {
             const ctx = setupClient();
 
             const events = new testwasmlib.TestWasmLibEventHandlers();
-            let name = '';
+            const proc = new EventProcessor(ctx);
             events.onTestWasmLibTest((e) => {
                 console.log(e.name);
-                name = e.name;
+                proc.name = e.name;
             });
             ctx.register(events);
 
-            const event = () => name;
-
-            await testClientEventsParam(ctx, 'Lala', event);
-            await testClientEventsParam(ctx, 'Trala', event);
-            await testClientEventsParam(ctx, 'Bar|Bar', event);
-            await testClientEventsParam(ctx, 'Bar~|~Bar', event);
-            await testClientEventsParam(ctx, 'Tilde~Tilde', event);
-            await testClientEventsParam(ctx, 'Tilde~~ Bar~/ Space~_', event);
+            for (const param of params) {
+                proc.sendClientEventsParam(param);
+                await proc.waitClientEventsParam(param);
+            }
 
             ctx.unregister(events);
             expect(ctx.Err == null).toBeTruthy();

@@ -3,6 +3,7 @@
 
 use std::{
     sync::{mpsc, Arc, Mutex, RwLock},
+    thread::spawn,
 };
 
 use wasmlib::*;
@@ -23,6 +24,7 @@ pub struct WasmClientContext {
     pub key_pair: Option<KeyPair>,
     pub nonce: Mutex<u64>,
     pub req_id: Arc<RwLock<ScRequestID>>,
+    rx: Option<mpsc::Receiver<String>>,
     pub sc_name: String,
     pub sc_hname: ScHname,
     pub svc_client: WasmClientService, //TODO Maybe  use 'dyn IClientService' for 'svc_client' instead of a struct
@@ -61,6 +63,7 @@ impl WasmClientContext {
             key_pair: None,
             nonce: Mutex::new(0),
             req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
+            rx: None,
             sc_name: sc_name.to_string(),
             sc_hname: hname_from_bytes(&codec::hname_bytes(&sc_name)),
             svc_client: svc_client.clone(),
@@ -192,12 +195,14 @@ impl WasmClientContext {
         return Ok(());
     }
 
-    pub fn start_event_handlers(&self) -> errors::Result<()> {
-        let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
+    pub fn start_event_handlers(&mut self) -> errors::Result<()> {
+        let (tx, mut rx): (mpsc::Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
+        self.rx = Some(rx);
         let done = Arc::clone(&self.event_done);
-        self.svc_client.subscribe_events(tx, done)?;
-        self.process_event(rx)?;
-        return Ok(());
+        self.svc_client.subscribe_events(rx, done);
+        spawn(move || {
+            tx.send("lala".to_string()).unwrap();
+        });
     }
 
     pub fn stop_event_handlers(&self) {
@@ -269,7 +274,7 @@ mod tests {
         }
     }
 
-    const MYCHAIN: &str = "atoi1prj5xunmvc8uka9qznnpu4yrhn3ftm3ya0wr2jvurwr209llw7xdyztcr6g";
+    const MYCHAIN: &str = "atoi1pz2e0rtqje9qc4ksu3khhmm7c62f908e03t3cq35l68m3e7kjr8tjhet7sd";
     const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
 
     #[test]
