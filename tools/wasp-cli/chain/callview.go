@@ -11,27 +11,34 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func initCallViewCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	var chain string
+
+	cmd := &cobra.Command{
 		Use:   "call-view <name> <funcname> [params]",
 		Short: "Call a contract view function",
 		Long:  "Call contract <name>, view function <funcname> with given params.",
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClientForIndex()
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
+
+			client := cliclients.WaspClient(node)
 
 			contractName := args[0]
 			funcName := args[1]
 			params := util.EncodeParams(args[2:])
 
 			result, _, err := client.RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
-				ChainId:      config.GetCurrentChainID().String(),
+				ChainId:      config.GetChain(chain).String(),
 				ContractName: contractName,
 				FunctionName: funcName,
 				Arguments:    apiextensions.JSONDictToAPIJSONDict(params.JSONDict()),
-			}).Execute()
+			}).Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
 			decodedResult, err := apiextensions.APIJsonDictToDict(*result)
@@ -40,4 +47,8 @@ func initCallViewCmd() *cobra.Command {
 			util.PrintDictAsJSON(decodedResult)
 		},
 	}
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	withChainFlag(cmd, &chain)
+
+	return cmd
 }

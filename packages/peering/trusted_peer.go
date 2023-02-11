@@ -41,14 +41,16 @@ func (c *ComparablePubKey) String() string {
 
 // TrustedPeer carries a peer information we use to trust it.
 type TrustedPeer struct {
-	id    *ComparablePubKey
-	NetID string
+	Name       string
+	id         *ComparablePubKey
+	PeeringURL string
 }
 
-func NewTrustedPeer(pubKey *cryptolib.PublicKey, netID string) *TrustedPeer {
+func NewTrustedPeer(name string, pubKey *cryptolib.PublicKey, peeringURL string) *TrustedPeer {
 	return &TrustedPeer{
-		id:    NewComparablePubKey(pubKey),
-		NetID: netID,
+		Name:       name,
+		id:         NewComparablePubKey(pubKey),
+		PeeringURL: peeringURL,
 	}
 }
 
@@ -58,8 +60,9 @@ func (tp *TrustedPeer) ID() *ComparablePubKey {
 
 func (tp *TrustedPeer) Clone() onchangemap.Item[string, *ComparablePubKey] {
 	return &TrustedPeer{
-		id:    NewComparablePubKey(tp.PubKey().Clone()),
-		NetID: tp.NetID,
+		Name:       tp.Name,
+		id:         NewComparablePubKey(tp.PubKey().Clone()),
+		PeeringURL: tp.PeeringURL,
 	}
 }
 
@@ -68,14 +71,16 @@ func (tp *TrustedPeer) PubKey() *cryptolib.PublicKey {
 }
 
 type jsonTrustedPeer struct {
-	PubKey string `json:"publicKey"`
-	NetID  string `json:"netID"`
+	Name       string `json:"name"`
+	PubKey     string `json:"publicKey"`
+	PeeringURL string `json:"peeringURL"`
 }
 
 func (tp *TrustedPeer) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&jsonTrustedPeer{
-		PubKey: tp.PubKey().String(),
-		NetID:  tp.NetID,
+		Name:       tp.Name,
+		PubKey:     tp.PubKey().String(),
+		PeeringURL: tp.PeeringURL,
 	})
 }
 
@@ -90,7 +95,7 @@ func (tp *TrustedPeer) UnmarshalJSON(bytes []byte) error {
 		return err
 	}
 
-	*tp = *NewTrustedPeer(nodePubKey, j.NetID)
+	*tp = *NewTrustedPeer(j.Name, nodePubKey, j.PeeringURL)
 
 	return nil
 }

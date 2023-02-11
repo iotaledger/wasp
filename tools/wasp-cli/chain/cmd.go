@@ -3,7 +3,6 @@ package chain
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -22,7 +21,6 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd := initChainCmd()
 	rootCmd.AddCommand(chainCmd)
 
-	config.InitAliasFlags(chainCmd)
 	initUploadFlags(chainCmd)
 
 	chainCmd.AddCommand(initListCmd())
@@ -45,6 +43,7 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(initDeactivateCmd())
 	chainCmd.AddCommand(initRunDKGCmd())
 	chainCmd.AddCommand(initRotateCmd())
+	chainCmd.AddCommand(initRotateWithDKGCmd())
 	chainCmd.AddCommand(initChangeAccessNodesCmd())
 	chainCmd.AddCommand(initPermitionlessAccessNodesCmd())
 	chainCmd.AddCommand(initAddChainCmd())

@@ -193,11 +193,11 @@ func (r *offLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.Marsha
 	if r.chainID, err = ChainIDFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	if err := r.contract.ReadFromMarshalUtil(mu); err != nil {
-		return err
+	if err2 := r.contract.ReadFromMarshalUtil(mu); err2 != nil {
+		return err2
 	}
-	if err := r.entryPoint.ReadFromMarshalUtil(mu); err != nil {
-		return err
+	if err2 := r.entryPoint.ReadFromMarshalUtil(mu); err2 != nil {
+		return err2
 	}
 	r.params, err = dict.FromMarshalUtil(mu)
 	if err != nil {
@@ -210,8 +210,8 @@ func (r *offLedgerRequestData) readEssenceFromMarshalUtil(mu *marshalutil.Marsha
 		return err
 	}
 	r.signatureScheme = &offLedgerSignatureScheme{}
-	if err := r.signatureScheme.readEssence(mu); err != nil {
-		return err
+	if err2 := r.signatureScheme.readEssence(mu); err2 != nil {
+		return err2
 	}
 	if r.allowance, err = AssetsFromMarshalUtil(mu); err != nil {
 		return err

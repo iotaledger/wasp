@@ -3,6 +3,7 @@ package webapi
 import (
 	"time"
 
+	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
@@ -25,13 +26,17 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/services"
 )
 
-func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLoad []interfaces.APIController) {
+func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLoad []interfaces.APIController, authMiddleware func() echo.MiddlewareFunc) {
 	for _, controller := range controllersToLoad {
 		group := server.Group(controller.Name(), "/")
 
 		controller.RegisterPublic(group, mocker)
 
 		adminGroup := group.SetSecurity("Authorization")
+
+		if authMiddleware != nil {
+			adminGroup.EchoGroup().Use(authMiddleware())
+		}
 
 		controller.RegisterAdmin(adminGroup, mocker)
 	}
@@ -78,7 +83,8 @@ func Init(
 		// Permissions are now validated at the route level. See the webapi/v2/controllers/*/controller.go routes.
 		return true
 	}
-	authentication.AddV2Authentication(server, userManager, nodeIdentityProvider, authConfig, claimValidator)
+
+	authMiddleware := authentication.AddV2Authentication(server, userManager, nodeIdentityProvider, authConfig, claimValidator)
 
 	controllersToLoad := []interfaces.APIController{
 		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, vmService),
@@ -89,5 +95,5 @@ func Init(
 		corecontracts.NewCoreContractsController(vmService),
 	}
 
-	loadControllers(server, mocker, controllersToLoad)
+	loadControllers(server, mocker, controllersToLoad, authMiddleware)
 }

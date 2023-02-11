@@ -13,13 +13,12 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
-func WithOffLedgerRequest(chainID isc.ChainID, f func() (isc.OffLedgerRequest, error)) {
+func WithOffLedgerRequest(chainID isc.ChainID, nodeName string, f func() (isc.OffLedgerRequest, error)) {
 	req, err := f()
 	log.Check(err)
 	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().String())
 	if config.WaitForCompletion {
-
-		_, _, err = cliclients.WaspClientForIndex().RequestsApi.
+		_, _, err = cliclients.WaspClient(nodeName).RequestsApi.
 			WaitForRequest(context.Background(), chainID.String(), req.ID().String()).
 			TimeoutSeconds(60).
 			Execute()
@@ -29,14 +28,14 @@ func WithOffLedgerRequest(chainID isc.ChainID, f func() (isc.OffLedgerRequest, e
 	// TODO print receipt?
 }
 
-func WithSCTransaction(chainID isc.ChainID, f func() (*iotago.Transaction, error), forceWait ...bool) *iotago.Transaction {
+func WithSCTransaction(chainID isc.ChainID, nodeName string, f func() (*iotago.Transaction, error), forceWait ...bool) *iotago.Transaction {
 	tx, err := f()
 	log.Check(err)
 	logTx(chainID, tx)
 
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
-		client := cliclients.WaspClientForIndex()
+		client := cliclients.WaspClient(nodeName)
 		_, err := apiextensions.APIWaitUntilAllRequestsProcessed(client, chainID, tx, 1*time.Minute)
 		log.Check(err)
 	}

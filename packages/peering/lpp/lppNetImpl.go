@@ -13,7 +13,7 @@
 //     with additional runtime data needed for a fast lookup of peers by
 //     their libp2p IDs, as well as for authentication etc.
 //
-// The main identification of a peer is its public key. The address (NetID)
+// The main identification of a peer is its public key. The address (peeringURL)
 // may change over time (because of NAT, and similar reasons).
 package lpp
 
@@ -54,17 +54,17 @@ const (
 
 // netImpl implements a peering.NetworkProvider interface.
 type netImpl struct {
-	myNetID     string                  // NetID of this node.
-	lppHost     host.Host               // The instance of the libp2p to use.
-	port        int                     // Port to use for peering.
-	ctx         context.Context         // Context for the libp2p
-	ctxCancel   context.CancelFunc      // A way to close the context.
-	peers       map[libp2ppeer.ID]*peer // By remotePeer.ID()
-	peersLock   *sync.RWMutex
-	recvEvents  *events.Event // Used to publish events to all attached clients.
-	nodeKeyPair *cryptolib.KeyPair
-	trusted     peering.TrustedNetworkManager
-	log         *logger.Logger
+	myPeeringURL string                  // peeringURL of this node.
+	lppHost      host.Host               // The instance of the libp2p to use.
+	port         int                     // Port to use for peering.
+	ctx          context.Context         // Context for the libp2p
+	ctxCancel    context.CancelFunc      // A way to close the context.
+	peers        map[libp2ppeer.ID]*peer // By remotePeer.ID()
+	peersLock    *sync.RWMutex
+	recvEvents   *events.Event // Used to publish events to all attached clients.
+	nodeKeyPair  *cryptolib.KeyPair
+	trusted      peering.TrustedNetworkManager
+	log          *logger.Logger
 }
 
 var (
@@ -75,7 +75,7 @@ var (
 // NewNetworkProvider is a constructor for the TCP based
 // peering network implementation.
 func NewNetworkProvider(
-	myNetID string,
+	myPeeringURL string,
 	port int,
 	nodeKeyPair *cryptolib.KeyPair,
 	trusted peering.TrustedNetworkManager,
@@ -100,17 +100,17 @@ func NewNetworkProvider(
 		return nil, nil, fmt.Errorf("failed to construct libp2p host: %w", err)
 	}
 	n := netImpl{
-		myNetID:     myNetID,
-		lppHost:     lppHost,
-		ctx:         ctx,
-		ctxCancel:   ctxCancel,
-		port:        port,
-		peers:       make(map[libp2ppeer.ID]*peer),
-		peersLock:   &sync.RWMutex{},
-		recvEvents:  nil, // Initialized bellow.
-		nodeKeyPair: nodeKeyPair,
-		trusted:     trusted,
-		log:         log,
+		myPeeringURL: myPeeringURL,
+		lppHost:      lppHost,
+		ctx:          ctx,
+		ctxCancel:    ctxCancel,
+		port:         port,
+		peers:        make(map[libp2ppeer.ID]*peer),
+		peersLock:    &sync.RWMutex{},
+		recvEvents:   nil, // Initialized bellow.
+		nodeKeyPair:  nodeKeyPair,
+		trusted:      trusted,
+		log:          log,
 	}
 	n.recvEvents = events.NewEvent(n.eventHandler)
 	//
@@ -136,15 +136,15 @@ func (n *netImpl) lppAddToPeerStore(trustedPeer *peering.TrustedPeer) (libp2ppee
 	if err != nil {
 		return "", err
 	}
-	peerHost, peerPort, err := peering.ParseNetID(trustedPeer.NetID)
+	peerHost, peerPort, err := peering.ParsePeeringURL(trustedPeer.PeeringURL)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse trusted peer NetID=%v, error: %w", trustedPeer.NetID, err)
+		return "", fmt.Errorf("failed to parse trusted peer peeringURL=%v, error: %w", trustedPeer.PeeringURL, err)
 	}
 	//
 	// Resolve IP addresses.
 	peerIPs, err := net.LookupIP(peerHost)
 	if err != nil {
-		return "", fmt.Errorf("failed to lookup IPs for NetID=%v, error: %w", trustedPeer.NetID, err)
+		return "", fmt.Errorf("failed to lookup IPs for peeringURL=%v, error: %w", trustedPeer.PeeringURL, err)
 	}
 	//
 	// Create multiaddresses.
@@ -162,18 +162,18 @@ func (n *netImpl) lppAddToPeerStore(trustedPeer *peering.TrustedPeer) (libp2ppee
 			} else {
 				ipVer, ipStr = "ip6", peerIPs[j].String()
 			}
-			addr, err := multiaddr.NewMultiaddr(fmt.Sprintf(addrPatterns[i], ipVer, ipStr, peerPort))
-			if err != nil {
-				return "", fmt.Errorf("failed to make libp2p address for NetID=%v, error: %w", trustedPeer.NetID, err)
+			addr, err2 := multiaddr.NewMultiaddr(fmt.Sprintf(addrPatterns[i], ipVer, ipStr, peerPort))
+			if err2 != nil {
+				return "", fmt.Errorf("failed to make libp2p address for peeringURL=%v, error: %w", trustedPeer.PeeringURL, err2)
 			}
 			addrs = append(addrs, addr)
 		}
 	}
-	n.log.Infof("Registering %v as libp2p PeerID=%v with addresses: %+v", trustedPeer.NetID, lppPeerID, addrs)
+	n.log.Infof("Registering %v as libp2p PeerID=%v with addresses: %+v", trustedPeer.PeeringURL, lppPeerID, addrs)
 	n.lppHost.Peerstore().AddAddrs(lppPeerID, addrs, peerstore.PermanentAddrTTL)
 	err = n.lppHost.Peerstore().AddPubKey(lppPeerID, lppPeerPub)
 	if err != nil {
-		return "", fmt.Errorf("failed add PubKey for NetID=%v, error: %w", trustedPeer.NetID, err)
+		return "", fmt.Errorf("failed add PubKey for peeringURL=%v, error: %w", trustedPeer.PeeringURL, err)
 	}
 	return lppPeerID, nil
 }
@@ -206,7 +206,7 @@ func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 	}
 	payload, err := readFrame(stream)
 	if err != nil {
-		n.log.Warnf("Failed to read incoming payload from %v, reason=%v", remotePeer.remoteNetID, err)
+		n.log.Warnf("Failed to read incoming payload from %v, reason=%v", remotePeer.remotePeeringURL, err)
 		return
 	}
 	peerMsg, err := peering.NewPeerMessageNetFromBytes(payload) // Do not use the signatures, we have TLS.
@@ -228,11 +228,11 @@ func (n *netImpl) lppHeartbeatProtocolHandler(stream network.Stream) {
 	}
 	payload, err := readFrame(stream)
 	if err != nil {
-		n.log.Warnf("Failed to read incoming heartbeat payload from %v, reason=%v", remotePeer.remoteNetID, err)
+		n.log.Warnf("Failed to read incoming heartbeat payload from %v, reason=%v", remotePeer.remotePeeringURL, err)
 		return
 	}
 	if len(payload) != 1 {
-		n.log.Warnf("Failed to read incoming heartbeat payload from %v, invalid payload size=%v", remotePeer.remoteNetID, len(payload))
+		n.log.Warnf("Failed to read incoming heartbeat payload from %v, invalid payload size=%v", remotePeer.remotePeeringURL, len(payload))
 		return
 	}
 	remotePeer.noteReceived()
@@ -244,7 +244,7 @@ func (n *netImpl) lppHeartbeatProtocolHandler(stream network.Stream) {
 func (n *netImpl) lppHeartbeatSend(peer *peer, ackNeeded bool) {
 	stream, err := n.lppHost.NewStream(n.ctx, peer.remoteLppID, lppProtocolHeartbeat)
 	if err != nil {
-		n.log.Warnf("Failed to send heartbeat to %v, cannot allocate stream, reason: %v", peer.remoteNetID, err)
+		n.log.Warnf("Failed to send heartbeat to %v, cannot allocate stream, reason: %v", peer.remotePeeringURL, err)
 		return
 	}
 	defer stream.Close()
@@ -253,7 +253,7 @@ func (n *netImpl) lppHeartbeatSend(peer *peer, ackNeeded bool) {
 		frame[0] = 1
 	}
 	if err := writeFrame(stream, frame); err != nil {
-		n.log.Warnf("Failed to send heartbeat to %v, reason: %v", peer.remoteNetID, err)
+		n.log.Warnf("Failed to send heartbeat to %v, reason: %v", peer.remotePeeringURL, err)
 		return
 	}
 }
@@ -272,10 +272,10 @@ func (n *netImpl) addPeer(trustedPeer *peering.TrustedPeer) error {
 	var p *peer
 	var ok bool
 	if p, ok = n.peers[lppPeerID]; ok {
-		p.trust(true)                 // It might be distrusted previously.
-		p.setNetID(trustedPeer.NetID) // It might be changed.
+		p.trust(true)                           // It might be distrusted previously.
+		p.setPeeringURL(trustedPeer.PeeringURL) // It might be changed.
 	} else {
-		p = newPeer(trustedPeer.NetID, trustedPeer.PubKey(), lppPeerID, n)
+		p = newPeer(trustedPeer.Name, trustedPeer.PeeringURL, trustedPeer.PubKey(), lppPeerID, n)
 		n.peers[lppPeerID] = p
 	}
 	return nil
@@ -387,9 +387,14 @@ func (n *netImpl) PeerStatus() []peering.PeerStatusProvider {
 	return peerStatus
 }
 
-// NetID implements peering.PeerSender for the Self() node.
-func (n *netImpl) NetID() string {
-	return n.myNetID
+// PeeringURL implements peering.PeerSender for the Self() node.
+func (n *netImpl) Name() string {
+	return ""
+}
+
+// PeeringURL implements peering.PeerSender for the Self() node.
+func (n *netImpl) PeeringURL() string {
+	return n.myPeeringURL
 }
 
 // PubKey implements peering.PeerSender for the Self() node.
@@ -442,8 +447,8 @@ func (n *netImpl) IsTrustedPeer(pubKey *cryptolib.PublicKey) error {
 
 // TrustPeer implements the peering.TrustedNetworkManager interface.
 // It delegates everything to other implementation and updates the connections accordingly.
-func (n *netImpl) TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error) {
-	trustedPeer, err := n.trusted.TrustPeer(pubKey, netID)
+func (n *netImpl) TrustPeer(name string, pubKey *cryptolib.PublicKey, peeringURL string) (*peering.TrustedPeer, error) {
+	trustedPeer, err := n.trusted.TrustPeer(name, pubKey, peeringURL)
 	if err != nil {
 		return trustedPeer, err
 	}

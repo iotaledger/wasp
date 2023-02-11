@@ -56,7 +56,7 @@ type NetworkProvider interface {
 // e.g. when we distrust some peer, all the connections to it should be cut immediately.
 type TrustedNetworkManager interface {
 	IsTrustedPeer(pubKey *cryptolib.PublicKey) error
-	TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*TrustedPeer, error)
+	TrustPeer(name string, pubKey *cryptolib.PublicKey, peeringURL string) (*TrustedPeer, error)
 	DistrustPeer(pubKey *cryptolib.PublicKey) (*TrustedPeer, error)
 	TrustedPeers() ([]*TrustedPeer, error)
 	// The following has to register a callback receiving updates to a set of trusted peers.
@@ -94,7 +94,7 @@ type GroupProvider interface {
 }
 
 // PeerDomainProvider implements unordered set of peers which can dynamically change
-// All peers in the domain shares same peeringID. Each peer within domain is identified via its netID
+// All peers in the domain shares same peeringID. Each peer within domain is identified via its peeringURL
 type PeerDomainProvider interface {
 	ReshufflePeers()
 	GetRandomOtherPeers(upToNumPeers int) []*cryptolib.PublicKey
@@ -108,8 +108,8 @@ type PeerDomainProvider interface {
 
 // PeerSender represents an interface to some remote peer.
 type PeerSender interface {
-	// NetID identifies the peer.
-	NetID() string
+	// PeeringURL identifies the peer.
+	PeeringURL() string
 
 	// PubKey of the peer is only available, when it is
 	// authenticated, therefore it can return nil, if pub
@@ -143,21 +143,22 @@ type PeerSender interface {
 // overlaps with the PeerSender, and most probably they both will be implemented
 // by the same object.
 type PeerStatusProvider interface {
-	NetID() string
+	Name() string
+	PeeringURL() string
 	PubKey() *cryptolib.PublicKey
 	IsAlive() bool
 	NumUsers() int
 }
 
-// ParseNetID parses the NetID and returns the corresponding host and port.
-func ParseNetID(netID string) (string, int, error) {
-	parts := strings.Split(netID, ":")
+// ParsePeeringURL parses the peeringURL and returns the corresponding host and port.
+func ParsePeeringURL(url string) (string, int, error) {
+	parts := strings.Split(url, ":")
 	if len(parts) != 2 {
-		return "", 0, fmt.Errorf("invalid NetID: %v", netID)
+		return "", 0, fmt.Errorf("invalid peeringURL: %v", url)
 	}
 	port, err := strconv.Atoi(parts[1])
 	if err != nil {
-		return "", 0, fmt.Errorf("invalid port in NetID: %v", netID)
+		return "", 0, fmt.Errorf("invalid port in peeringURL: %v", url)
 	}
 	return parts[0], port, nil
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 type AuthInfoOutput struct {
@@ -23,13 +24,14 @@ Authentication URL: {{ .AuthenticationURL }}`
 }
 
 func initInfoCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	cmd := &cobra.Command{
 		Use:   "info",
 		Short: "Receive information about the authentication methods",
 		Run: func(cmd *cobra.Command, args []string) {
-
 			// Auth is currently not inside Swagger, so this is a temporary change
-			client := cliclients.WaspClientForIndex()
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			client := cliclients.WaspClient(node)
 			authInfo, _, err := client.AuthApi.AuthInfo(context.Background()).Execute()
 
 			log.Check(err)
@@ -40,4 +42,6 @@ func initInfoCmd() *cobra.Command {
 			})
 		},
 	}
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	return cmd
 }

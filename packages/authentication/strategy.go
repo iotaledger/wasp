@@ -80,10 +80,11 @@ func AddV1Authentication(
 		privateKey := nodeIdentity.GetPrivateKey().AsBytes()
 
 		// The primary claim is the one mandatory claim that gives access to api/webapi/alike
-		jwtAuth := AddJWTAuth(webAPI, authConfig.JWTConfig, privateKey, userManager, claimValidator)
+		jwtAuth, authMiddleware := AddJWTAuth(authConfig.JWTConfig, privateKey, userManager, claimValidator)
 
 		authHandler := &AuthHandler{Jwt: jwtAuth, UserManager: userManager}
 		webAPI.POST(shared.AuthRoute(), authHandler.CrossAPIAuthHandler)
+		webAPI.Use(authMiddleware())
 
 	case AuthIPWhitelist:
 		AddIPWhiteListAuth(webAPI, authConfig.IPWhitelistConfig)
@@ -111,34 +112,11 @@ func AddV2Authentication(apiRoot echoswagger.ApiRoot,
 	nodeIdentityProvider registry.NodeIdentityProvider,
 	authConfig AuthConfiguration,
 	claimValidator ClaimValidator,
-) {
+) func() echo.MiddlewareFunc {
 	echoRoot := apiRoot.Echo()
 	authGroup := apiRoot.Group("auth", "")
 
 	addAuthContext(echoRoot, authConfig)
-
-	switch authConfig.Scheme {
-	case AuthJWT:
-		nodeIdentity := nodeIdentityProvider.NodeIdentity()
-		privateKey := nodeIdentity.GetPrivateKey().AsBytes()
-
-		// The primary claim is the one mandatory claim that gives access to api/webapi/alike
-		jwtAuth := AddJWTAuth(echoRoot, authConfig.JWTConfig, privateKey, userManager, claimValidator)
-
-		authHandler := &AuthHandler{Jwt: jwtAuth, UserManager: userManager}
-		authGroup.POST(shared.AuthRoute(), authHandler.CrossAPIAuthHandler).
-			AddParamBody(shared.LoginRequest{}, "", "The login request", true).
-			AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", nil, nil).
-			AddResponse(http.StatusOK, "Login was successful", shared.LoginResponse{}, nil).
-			SetOperationId("authenticate").
-			SetSummary("Authenticate towards the node")
-
-	case AuthNone:
-		AddNoneAuth(echoRoot)
-
-	default:
-		panic(fmt.Sprintf("Unknown auth scheme %s", authConfig.Scheme))
-	}
 
 	c := &StatusWebAPIModel{
 		config: authConfig,
@@ -148,6 +126,32 @@ func AddV2Authentication(apiRoot echoswagger.ApiRoot,
 		AddResponse(http.StatusOK, "Login was successful", shared.AuthInfoModel{}, nil).
 		SetOperationId("authInfo").
 		SetSummary("Get information about the current authentication mode")
+
+	switch authConfig.Scheme {
+	case AuthJWT:
+		nodeIdentity := nodeIdentityProvider.NodeIdentity()
+		privateKey := nodeIdentity.GetPrivateKey().AsBytes()
+
+		// The primary claim is the one mandatory claim that gives access to api/webapi/alike
+		jwtAuth, jwtMiddleware := AddJWTAuth(authConfig.JWTConfig, privateKey, userManager, claimValidator)
+
+		authHandler := &AuthHandler{Jwt: jwtAuth, UserManager: userManager}
+		authGroup.POST(shared.AuthRoute(), authHandler.CrossAPIAuthHandler).
+			AddParamBody(shared.LoginRequest{}, "", "The login request", true).
+			AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", nil, nil).
+			AddResponse(http.StatusOK, "Login was successful", shared.LoginResponse{}, nil).
+			SetOperationId("authenticate").
+			SetSummary("Authenticate towards the node")
+
+		return jwtMiddleware
+
+	case AuthNone:
+		AddNoneAuth(echoRoot)
+		return nil
+
+	default:
+		panic(fmt.Sprintf("Unknown auth scheme %s", authConfig.Scheme))
+	}
 }
 
 func addAuthContext(webAPI WebAPI, config AuthConfiguration) {

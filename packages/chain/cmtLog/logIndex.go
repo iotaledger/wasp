@@ -28,6 +28,21 @@ func (li LogIndex) Next() LogIndex {
 	return LogIndex(li.AsUint32() + 1)
 }
 
+func (li LogIndex) GreaterThan(other LogIndex) bool {
+	return li.AsUint32() > other.AsUint32()
+}
+
+func (li LogIndex) GreaterOrEqualTo(other LogIndex) bool {
+	return li.AsUint32() >= other.AsUint32()
+}
+
 func NilLogIndex() LogIndex {
 	return LogIndex(0)
+}
+
+func MaxLogIndex(a, b LogIndex) LogIndex {
+	if a.AsUint32() > b.AsUint32() {
+		return a
+	}
+	return b
 }

@@ -76,6 +76,8 @@ chain is.
 wasp-cli chain rotate <new controller address>
 ```
 
+or
 
-
-
+```bash
+wasp-cli chain rotate-with-dkg --peers=<...>
+```

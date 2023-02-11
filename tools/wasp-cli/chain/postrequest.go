@@ -13,15 +13,18 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
-func postRequest(hname, fname string, params chainclient.PostRequestParams, offLedger, adjustStorageDeposit bool) {
-	apiClient := cliclients.WaspClientForIndex()
-	scClient := cliclients.SCClient(apiClient, isc.Hn(hname))
+func postRequest(nodeName, chain, hname, fname string, params chainclient.PostRequestParams, offLedger, adjustStorageDeposit bool) {
+	chainID := config.GetChain(chain)
+
+	apiClient := cliclients.WaspClient(nodeName)
+	scClient := cliclients.SCClient(apiClient, chainID, isc.Hn(hname))
 
 	if offLedger {
 		params.Nonce = uint64(time.Now().UnixNano())
-		util.WithOffLedgerRequest(config.GetCurrentChainID(), func() (isc.OffLedgerRequest, error) {
+		util.WithOffLedgerRequest(chainID, nodeName, func() (isc.OffLedgerRequest, error) {
 			return scClient.PostOffLedgerRequest(fname, params)
 		})
 		return
@@ -30,7 +33,7 @@ func postRequest(hname, fname string, params chainclient.PostRequestParams, offL
 	if !adjustStorageDeposit {
 		// check if there are enough funds for SD
 		output := transaction.MakeBasicOutput(
-			config.GetCurrentChainID().AsAddress(),
+			chainID.AsAddress(),
 			scClient.ChainClient.KeyPair.Address(),
 			params.Transfer,
 			&isc.RequestMetadata{
@@ -47,7 +50,7 @@ func postRequest(hname, fname string, params chainclient.PostRequestParams, offL
 		util.SDAdjustmentPrompt(output)
 	}
 
-	util.WithSCTransaction(config.GetCurrentChainID(), func() (*iotago.Transaction, error) {
+	util.WithSCTransaction(config.GetChain(chain), nodeName, func() (*iotago.Transaction, error) {
 		return scClient.PostRequest(fname, params)
 	})
 }
@@ -57,6 +60,8 @@ func initPostRequestCmd() *cobra.Command {
 	var allowance []string
 	var offLedger bool
 	var adjustStorageDeposit bool
+	var node string
+	var chain string
 
 	cmd := &cobra.Command{
 		Use:   "post-request <name> <funcname> [params]",
@@ -64,6 +69,8 @@ func initPostRequestCmd() *cobra.Command {
 		Long:  "Post a request to contract <name>, function <funcname> with given params.",
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
 			hname := args[0]
 			fname := args[1]
 
@@ -73,7 +80,7 @@ func initPostRequestCmd() *cobra.Command {
 				Transfer:  util.ParseFungibleTokens(transfer),
 				Allowance: allowanceTokens,
 			}
-			postRequest(hname, fname, params, offLedger, adjustStorageDeposit)
+			postRequest(node, chain, hname, fname, params, offLedger, adjustStorageDeposit)
 		},
 	}
 
@@ -87,6 +94,9 @@ func initPostRequestCmd() *cobra.Command {
 		"post an off-ledger request",
 	)
 	cmd.Flags().BoolVarP(&adjustStorageDeposit, "adjust-storage-deposit", "s", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
+
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	withChainFlag(cmd, &chain)
 
 	return cmd
 }

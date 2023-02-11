@@ -21,8 +21,8 @@ func TestSerializeRequestData(t *testing.T) {
 		req = NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337).WithGasBudget(100).Sign(cryptolib.NewKeyPair())
 
 		serialized := req.Bytes()
-		req2, err := NewRequestFromMarshalUtil(marshalutil.New(serialized))
-		require.NoError(t, err)
+		req2, err2 := NewRequestFromMarshalUtil(marshalutil.New(serialized))
+		require.NoError(t, err2)
 
 		reqBack := req2.(*offLedgerRequestData)
 		require.EqualValues(t, req.ID(), reqBack.ID())

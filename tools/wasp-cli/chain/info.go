@@ -16,31 +16,38 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func initInfoCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	var chain string
+	cmd := &cobra.Command{
 		Use:   "info",
 		Short: "Show information about the chain",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClientForIndex()
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
+
+			chainID := config.GetChain(chain)
+			client := cliclients.WaspClient(node)
 
 			chainInfo, _, err := client.ChainsApi.
-				GetChainInfo(context.Background(), config.GetCurrentChainID().String()).
-				Execute()
+				GetChainInfo(context.Background(), chainID.String()).
+				Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
 			committeeInfo, _, err := client.ChainsApi.
-				GetCommitteeInfo(context.Background(), config.GetCurrentChainID().String()).
-				Execute()
+				GetCommitteeInfo(context.Background(), chainID.String()).
+				Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
-			printNodesRowHdr := []string{"PubKey", "NetID", "Alive", "Committee", "Access", "AccessAPI"}
+			printNodesRowHdr := []string{"PubKey", "PeeringURL", "Alive", "Committee", "Access", "AccessAPI"}
 			printNodesRowFmt := func(n apiclient.CommitteeNode, isCommitteeNode, isAccessNode bool) []string {
 				return []string{
 					n.Node.PublicKey,
-					n.Node.NetId,
+					n.Node.PeeringURL,
 					strconv.FormatBool(n.Node.IsAlive),
 					strconv.FormatBool(isCommitteeNode),
 					strconv.FormatBool(isAccessNode),
@@ -70,7 +77,7 @@ func initInfoCmd() *cobra.Command {
 
 				log.Printf("Description: %s\n", chainInfo.Description)
 
-				contracts, _, err := client.ChainsApi.GetContracts(context.Background(), config.GetCurrentChainID().String()).Execute()
+				contracts, _, err := client.ChainsApi.GetContracts(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
 				log.Check(err)
 				log.Printf("#Contracts: %d\n", len(contracts))
 
@@ -92,7 +99,7 @@ func initInfoCmd() *cobra.Command {
 						}
 					}
 
-					log.Printf("Gas fee: 1 %s = %d gas units\n", gasFeeToken, chainInfo.GasFeePolicy.GasPerToken)
+					log.Printf("Gas fee: 1 %s = %v gas units\n", gasFeeToken, chainInfo.GasFeePolicy.GasPerToken)
 					log.Printf("Validator fee share: %d%%\n", chainInfo.GasFeePolicy.ValidatorFeeShare)
 				}
 
@@ -102,4 +109,7 @@ func initInfoCmd() *cobra.Command {
 			}
 		},
 	}
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	withChainFlag(cmd, &chain)
+	return cmd
 }

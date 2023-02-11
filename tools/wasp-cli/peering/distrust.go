@@ -12,24 +12,29 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func initDistrustCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "distrust <pubKey|netID>",
-		Short: "Remove the specified node from a list of trusted nodes. All related public keys are distrusted, if netID is provided.",
+	var node string
+	cmd := &cobra.Command{
+		Use:   "distrust <name|pubKey|peeringURL>",
+		Short: "Remove the specified node from a list of trusted nodes. All related public keys are distrusted, if peeringURL is provided.",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			pubKeyOrNetID := args[0]
-			client := cliclients.WaspClientForIndex()
+			node = waspcmd.DefaultWaspNodeFallback(node)
 
-			if peering.CheckNetID(pubKeyOrNetID) != nil {
+			input := args[0]
+			client := cliclients.WaspClient(node)
+
+			if peering.CheckPeeringURL(input) != nil {
 				_, err := client.NodeApi.DistrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
-					NetId:     pubKeyOrNetID,
-					PublicKey: pubKeyOrNetID,
+					Name:       input,
+					PeeringURL: input,
+					PublicKey:  input,
 				}).Execute()
 				log.Check(err)
-				log.Printf("# Distrusted PubKey: %v\n", pubKeyOrNetID)
+				log.Printf("# Distrusted PubKey: %v\n", input)
 				return
 			}
 
@@ -37,13 +42,13 @@ func initDistrustCmd() *cobra.Command {
 			log.Check(err)
 
 			for _, t := range trustedList {
-				if t.PublicKey == pubKeyOrNetID {
+				if t.PublicKey == input {
 					_, err := client.NodeApi.DistrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
 						PublicKey: t.PublicKey,
 					}).Execute()
 
 					if err != nil {
-						log.Printf("error: failed to distrust %v/%v, reason=%v\n", t.PublicKey, t.NetId, err)
+						log.Printf("error: failed to distrust %v/%v, reason=%v\n", t.PublicKey, t.PeeringURL, err)
 					} else {
 						log.Printf("# Distrusted PubKey: %v\n", t.PublicKey)
 					}
@@ -51,4 +56,7 @@ func initDistrustCmd() *cobra.Command {
 			}
 		},
 	}
+
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	return cmd
 }

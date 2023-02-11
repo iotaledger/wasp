@@ -16,11 +16,12 @@ func (c *Controller) getRegisteredPeers(e echo.Context) error {
 
 	for k, v := range peers {
 		peerModels[k] = models.PeeringNodeStatusResponse{
-			IsAlive:   v.IsAlive,
-			NetID:     v.NetID,
-			NumUsers:  v.NumUsers,
-			PublicKey: v.PublicKey.String(),
-			IsTrusted: v.IsTrusted,
+			Name:       v.Name,
+			IsAlive:    v.IsAlive,
+			PeeringURL: v.PeeringURL,
+			NumUsers:   v.NumUsers,
+			PublicKey:  v.PublicKey.String(),
+			IsTrusted:  v.IsTrusted,
 		}
 	}
 
@@ -36,9 +37,10 @@ func (c *Controller) getTrustedPeers(e echo.Context) error {
 	peerModels := make([]models.PeeringNodeIdentityResponse, len(peers))
 	for k, v := range peers {
 		peerModels[k] = models.PeeringNodeIdentityResponse{
-			NetID:     v.NetID,
-			PublicKey: v.PublicKey.String(),
-			IsTrusted: v.IsTrusted,
+			Name:       v.Name,
+			PeeringURL: v.PeeringURL,
+			PublicKey:  v.PublicKey.String(),
+			IsTrusted:  v.IsTrusted,
 		}
 	}
 
@@ -49,9 +51,9 @@ func (c *Controller) getIdentity(e echo.Context) error {
 	self := c.peeringService.GetIdentity()
 
 	peerModel := models.PeeringNodeIdentityResponse{
-		NetID:     self.NetID,
-		PublicKey: self.PublicKey.String(),
-		IsTrusted: self.IsTrusted,
+		PeeringURL: self.PeeringURL,
+		PublicKey:  self.PublicKey.String(),
+		IsTrusted:  self.IsTrusted,
 	}
 
 	return e.JSON(http.StatusOK, peerModel)
@@ -69,7 +71,7 @@ func (c *Controller) trustPeer(e echo.Context) error {
 		return apierrors.InvalidPropertyError("publicKey", err)
 	}
 
-	_, err = c.peeringService.TrustPeer(publicKey, trustedPeer.NetID)
+	_, err = c.peeringService.TrustPeer(trustedPeer.Name, publicKey, trustedPeer.PeeringURL)
 	if err != nil {
 		return apierrors.InternalServerError(err)
 	}

@@ -9,16 +9,19 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func initListCmd() *cobra.Command {
-	return &cobra.Command{
+	var node string
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List deployed chains",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := cliclients.WaspClientForIndex()
-			chains, _, err := client.ChainsApi.GetChains(context.Background()).Execute()
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			client := cliclients.WaspClient(node)
+			chains, _, err := client.ChainsApi.GetChains(context.Background()).Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
 			model := &ListChainModel{
@@ -36,6 +39,8 @@ func initListCmd() *cobra.Command {
 			showChainList(chains)
 		},
 	}
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	return cmd
 }
 
 func showChainList(chains []apiclient.ChainInfoResponse) {

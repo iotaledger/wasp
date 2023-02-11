@@ -166,17 +166,17 @@ func TestRotationFromSingle(t *testing.T) {
 	incCounterResultChan := make(chan error)
 
 	go func() {
-		keyPair, _, err := clu.NewKeyPairWithFunds()
-		if err != nil {
-			incCounterResultChan <- fmt.Errorf("failed to create a key pair: %w", err)
+		keyPair, _, err2 := clu.NewKeyPairWithFunds()
+		if err2 != nil {
+			incCounterResultChan <- fmt.Errorf("failed to create a key pair: %w", err2)
 			return
 		}
 		myClient := chain.SCClient(nativeIncCounterSCHname, keyPair)
 		for i := 0; i < numRequests; i++ {
 			t.Logf("Posting inccounter request number %v", i)
-			_, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
-			if err != nil {
-				incCounterResultChan <- fmt.Errorf("failed to post inccounter request number %v: %w", i, err)
+			_, err2 = myClient.PostRequest(inccounter.FuncIncCounter.Name)
+			if err2 != nil {
+				incCounterResultChan <- fmt.Errorf("failed to post inccounter request number %v: %w", i, err2)
 				return
 			}
 			time.Sleep(100 * time.Millisecond)
@@ -261,10 +261,10 @@ func TestRotationMany(t *testing.T) {
 	for _, rotation := range rotations {
 		t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation.Address, rotation.Committee)
 		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation.Address).WithBaseTokens(1 * isc.Million)
-		tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *par)
-		require.NoError(t, err)
-		_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, waitTimeout)
-		require.NoError(t, err)
+		tx, err2 := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *par)
+		require.NoError(t, err2)
+		_, err2 = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, waitTimeout)
+		require.NoError(t, err2)
 		require.NoError(t, chEnv.checkAllowedStateControllerAddressInAllNodes(rotation.Address))
 	}
 

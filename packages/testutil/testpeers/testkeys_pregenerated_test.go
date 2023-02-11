@@ -41,15 +41,15 @@ func testPregenerateDKS(t *testing.T, n, f uint16) {
 	defer log.Sync()
 	threshold := n - f
 	require.GreaterOrEqual(t, threshold, (n*2)/3+1)
-	netIDs, identities := testpeers.SetupKeys(n)
-	dksAddr, dksRegistries := testpeers.SetupDkg(t, threshold, netIDs, identities, tcrypto.DefaultBLSSuite(), log.Named("dkg"))
+	peeringURLs, identities := testpeers.SetupKeys(n)
+	dksAddr, dksRegistries := testpeers.SetupDkg(t, threshold, peeringURLs, identities, tcrypto.DefaultBLSSuite(), log.Named("dkg"))
 	var buf bytes.Buffer
 	util.WriteUint16(&buf, uint16(len(dksRegistries)))
 	for i := range dksRegistries {
 		var dki tcrypto.DKShare
 		var dkb []byte
-		dki, err := dksRegistries[i].LoadDKShare(dksAddr)
-		require.Nil(t, err)
+		dki, err2 := dksRegistries[i].LoadDKShare(dksAddr)
+		require.Nil(t, err2)
 		if i > 0 {
 			// Remove it here to make serialized object smaller.
 			// Will restore it from dks[0].

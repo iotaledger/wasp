@@ -400,15 +400,15 @@ func TestERC20Contract(t *testing.T) {
 	)
 
 	callIntViewFn := func(name string, args ...interface{}) *big.Int {
-		callArguments, err := contractABI.Pack(name, args...)
-		require.NoError(t, err)
+		callArguments, err2 := contractABI.Pack(name, args...)
+		require.NoError(t, err2)
 
-		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, nil)
-		require.NoError(t, err)
+		res, err2 := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, nil)
+		require.NoError(t, err2)
 
 		v := new(big.Int)
-		err = contractABI.UnpackIntoInterface(&v, name, res.Return())
-		require.NoError(t, err)
+		err2 = contractABI.UnpackIntoInterface(&v, name, res.Return())
+		require.NoError(t, err2)
 		return v
 	}
 

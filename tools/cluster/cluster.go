@@ -138,11 +138,13 @@ func (clu *Cluster) TrustAll() error {
 	for ni := range allNodes {
 		for pi := range allPeers {
 			var err error
-			if _, err = clu.WaspClient(
-				allNodes[ni]).NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
-				PublicKey: allPeers[pi].PublicKey,
-				NetId:     allPeers[pi].NetId,
-			}).Execute(); err != nil { //nolint:bodyclose // false positive
+			if _, err = clu.WaspClient(allNodes[ni]).NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(
+				apiclient.PeeringTrustRequest{
+					Name:       fmt.Sprintf("%d", pi),
+					PublicKey:  allPeers[pi].PublicKey,
+					PeeringURL: allPeers[pi].PeeringURL,
+				},
+			).Execute(); err != nil { //nolint:bodyclose // false positive
 				return err
 			}
 		}
@@ -187,9 +189,10 @@ func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...ti
 		peerPubKeys = append(peerPubKeys, peeringNodeInfo.PublicKey)
 	}
 
-	dkgInitiatorIndex := uint16(rand.Intn(len(apiHosts)))
+	dkgInitiatorIndex := rand.Intn(len(apiHosts))
+	client := clu.WaspClientFromHostName(apiHosts[dkgInitiatorIndex])
 
-	return apilib.RunDKG(clu.WaspClientFromHostName, apiHosts, peerPubKeys, threshold, dkgInitiatorIndex, timeout...)
+	return apilib.RunDKG(client, peerPubKeys, threshold, timeout...)
 }
 
 func (clu *Cluster) DeployChainWithDKG(description string, allPeers, committeeNodes []int, quorum uint16) (*Chain, error) {
@@ -224,27 +227,45 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	committeePubKeys := make([]string, len(chain.CommitteeNodes))
 	for i, nodeIndex := range chain.CommitteeNodes {
 		//nolint:bodyclose // false positive
-		peeringNode, _, err := clu.WaspClient(nodeIndex).NodeApi.GetPeeringIdentity(context.Background()).Execute()
-		if err != nil {
-			return nil, err
+		peeringNode, _, err2 := clu.WaspClient(nodeIndex).NodeApi.GetPeeringIdentity(context.Background()).Execute()
+		if err2 != nil {
+			return nil, err2
 		}
 
 		committeePubKeys[i] = peeringNode.PublicKey
 	}
 
-	chainID, err := apilib.DeployChain(clu.WaspClientFromHostName, apilib.CreateChainParams{
-		Layer1Client:      clu.L1Client(),
-		CommitteeAPIHosts: chain.CommitteeAPIHosts(),
-		CommitteePubKeys:  committeePubKeys,
-		N:                 uint16(len(committeeNodes)),
-		T:                 quorum,
-		OriginatorKeyPair: chain.OriginatorKeyPair,
-		Description:       description,
-		Textout:           os.Stdout,
-		Prefix:            "[cluster] ",
-	}, stateAddr, stateAddr)
+	chainID, initRequestTx, err := apilib.DeployChain(
+		apilib.CreateChainParams{
+			Layer1Client:      clu.L1Client(),
+			CommitteeAPIHosts: chain.CommitteeAPIHosts(),
+			N:                 uint16(len(committeeNodes)),
+			T:                 quorum,
+			OriginatorKeyPair: chain.OriginatorKeyPair,
+			Description:       description,
+			Textout:           os.Stdout,
+			Prefix:            "[cluster] ",
+		},
+		stateAddr,
+		stateAddr,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("DeployChain: %w", err)
+	}
+
+	// activate chain on nodes
+	err = apilib.ActivateChainOnNodes(clu.WaspClientFromHostName, chain.CommitteeAPIHosts(), chainID)
+	if err != nil {
+		clu.t.Fatalf("activating chain %s.. FAILED: %v\n", chainID.String(), err)
+	}
+	fmt.Printf("activating chain %s.. OK.\n", chainID.String())
+
+	// ---------- wait until the request is processed at least in all committee nodes
+	_, err = multiclient.New(clu.WaspClientFromHostName, chain.CommitteeAPIHosts()).
+		WaitUntilAllRequestsProcessedSuccessfully(chainID, initRequestTx, 30*time.Second)
+
+	if err != nil {
+		clu.t.Fatalf("waiting root init request transaction.. FAILED: %v\n", err)
 	}
 
 	chain.StateAddress = stateAddr
@@ -521,7 +542,7 @@ func (clu *Cluster) start() error {
 	return nil
 }
 
-func (clu *Cluster) KillNodeProcess(nodeIndex int) error {
+func (clu *Cluster) KillNodeProcess(nodeIndex int, gracefully bool) error {
 	if nodeIndex >= len(clu.waspCmds) {
 		return fmt.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
 	}
@@ -531,8 +552,17 @@ func (clu *Cluster) KillNodeProcess(nodeIndex int) error {
 		return nil
 	}
 
-	if err := wcmd.cmd.Process.Kill(); err != nil {
-		return err
+	if gracefully {
+		if err := wcmd.cmd.Process.Signal(os.Interrupt); err != nil {
+			return err
+		}
+		if _, err := wcmd.cmd.Process.Wait(); err != nil {
+			return err
+		}
+	} else {
+		if err := wcmd.cmd.Process.Kill(); err != nil {
+			return err
+		}
 	}
 
 	clu.waspCmds[nodeIndex] = nil
@@ -694,7 +724,7 @@ func (clu *Cluster) stopNode(nodeIndex int) {
 	}
 	fmt.Printf("[cluster] Sending shutdown to wasp node %d\n", nodeIndex)
 
-	err := clu.KillNodeProcess(nodeIndex)
+	err := clu.KillNodeProcess(nodeIndex, true)
 	if err != nil {
 		fmt.Println(err)
 	}

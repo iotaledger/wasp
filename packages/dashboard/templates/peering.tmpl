@@ -12,7 +12,7 @@
 	<table>
 		<thead>
 			<tr>
-				<th>NetID</th>
+				<th>PeeringURL</th>
 				<th>Status</th>
 				<th>#Users</th>
 			</tr>
@@ -20,7 +20,7 @@
 		<tbody>
 		{{range $_, $ps := .Peers}}
 			<tr>
-				<td data-label="NetID"><code>{{$ps.NetID}}</code></td>
+				<td data-label="PeeringURL"><code>{{$ps.PeeringURL}}</code></td>
 				<td data-label="Status">{{if $ps.IsAlive}}up{{else}}down{{end}}</td>
 				<td data-label="#Users">{{$ps.NumUsers}}</td>
 			</tr>
@@ -32,14 +32,14 @@
 		<thead>
 			<tr>
 				<th>PublicKey</th>
-				<th>NetID</th>
+				<th>PeeringURL</th>
 			</tr>
 		</thead>
 		<tbody>
 		{{range $_, $t := .TrustedPeers}}
 			<tr>
 				<td data-label="PublicKey"><code>{{$t.PubKey.String}}</code></td>
-				<td data-label="NetID"><code>{{$t.NetID}}</code></td>
+				<td data-label="PeeringURL"><code>{{$t.PeeringURL}}</code></td>
 			</tr>
 		{{end}}
 		</tbody>

@@ -81,8 +81,8 @@ type VersionResponse struct {
 }
 
 type InfoResponse struct {
-	Version   string    `json:"version" swagger:"desc(The version of the node),required"`
-	PublicKey string    `json:"publicKey" swagger:"desc(The public key of the node (Hex)),required"`
-	NetID     string    `json:"netID" swagger:"desc(The net id of the node),required"`
-	L1Params  *L1Params `json:"l1Params" swagger:"desc(The L1 parameters),required"`
+	Version    string    `json:"version" swagger:"desc(The version of the node),required"`
+	PublicKey  string    `json:"publicKey" swagger:"desc(The public key of the node (Hex)),required"`
+	PeeringURL string    `json:"peeringURL" swagger:"desc(The net id of the node),required"`
+	L1Params   *L1Params `json:"l1Params" swagger:"desc(The L1 parameters),required"`
 }

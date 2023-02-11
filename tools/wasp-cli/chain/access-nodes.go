@@ -11,44 +11,46 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func initPermitionlessAccessNodesCmd() *cobra.Command {
-	var nodes []int
+	var node string
+	var chain string
 
 	cmd := &cobra.Command{
 		Use:   "access-nodes <action (add|remove)> <pubkey>",
 		Short: "Changes the access nodes of a chain for the target node.",
 		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			if nodes == nil {
-				nodes = GetAllWaspNodes()
-			}
-			chainID := config.GetCurrentChainID()
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
+
+			chainID := config.GetChain(chain)
 			action := args[0]
 			pubKey := args[1]
+			node = waspcmd.DefaultWaspNodeFallback(node)
 
-			for _, i := range nodes {
-				client := cliclients.WaspClientForIndex(i)
-				switch action {
-				case "add":
-					_, err := client.ChainsApi.
-						AddAccessNode(context.Background(), chainID.String(), pubKey).
-						Execute()
-					log.Check(err)
-				case "remove":
-					_, err := client.ChainsApi.
-						RemoveAccessNode(context.Background(), chainID.String(), pubKey).
-						Execute()
-					log.Check(err)
-				default:
-					log.Fatalf("unknown action: %s", action)
-				}
+			client := cliclients.WaspClient(node)
+			switch action {
+			case "add":
+				_, err := client.ChainsApi.
+					AddAccessNode(context.Background(), chainID.String(), pubKey).
+					Execute() //nolint:bodyclose // false positive
+				log.Check(err)
+			case "remove":
+				_, err := client.ChainsApi.
+					RemoveAccessNode(context.Background(), chainID.String(), pubKey).
+					Execute() //nolint:bodyclose // false positive
+				log.Check(err)
+			default:
+				log.Fatalf("unknown action: %s", action)
 			}
 		},
 	}
 
-	cmd.Flags().IntSliceVarP(&nodes, "nodes", "", nil, "wasp nodes to execute the command in (ex: 0,1,2,3) (default: all nodes)")
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	withChainFlag(cmd, &chain)
 
 	return cmd
 }

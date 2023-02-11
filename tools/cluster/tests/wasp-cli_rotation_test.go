@@ -20,7 +20,7 @@ import (
 
 func TestWaspCLIExternalRotationGovAccessNodes(t *testing.T) {
 	addAccessNode := func(w *WaspCLITest, pubKey string) {
-		out := w.MustRun("chain", "gov-change-access-nodes", "accept", pubKey)
+		out := w.MustRun("chain", "gov-change-access-nodes", "accept", pubKey, "--node=0")
 		out = w.GetReceiptFromRunPostRequestOutput(out)
 		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 	}
@@ -29,7 +29,9 @@ func TestWaspCLIExternalRotationGovAccessNodes(t *testing.T) {
 
 func TestWaspCLIExternalRotationPermitionlessAccessNodes(t *testing.T) {
 	addAccessNode := func(w *WaspCLITest, pubKey string) {
-		w.MustRun("chain", "access-nodes", "add", pubKey)
+		for _, idx := range w.Cluster.AllNodes() {
+			w.MustRun("chain", "access-nodes", "add", pubKey, fmt.Sprintf("--node=%d", idx))
+		}
 	}
 	testWaspCLIExternalRotation(t, addAccessNode)
 }
@@ -50,12 +52,12 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 	inccounterSCName := "inccounter"
 	checkCounter := func(wTest *WaspCLITest, n int) {
 		// test chain call-view command
-		out := wTest.MustRun("chain", "call-view", inccounterSCName, "getCounter")
+		out := wTest.MustRun("chain", "call-view", inccounterSCName, "getCounter", "--node=0")
 		out = wTest.MustPipe(out, "decode", "string", "counter", "int")
 		require.Regexp(t, fmt.Sprintf(`(?m)counter:\s+%d$`, n), out[0])
 	}
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.ArgCommitteeConfig(0)
 	out := w.MustRun(
 		"chain",
 		"deploy",
@@ -63,8 +65,10 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		committee,
 		quorum,
 		fmt.Sprintf("--gov-controller=%s", w.WaspCliAddress.Bech32(parameters.L1().Protocol.Bech32HRP)),
+		"--node=0",
 	)
-	chainID := regexp.MustCompile(`(.*)ChainID:\s*([a-zA-Z0-9_]*),`).FindStringSubmatch(out[len(out)-1])[2]
+	chainID := regexp.MustCompile(`(.*)ChainID:\s*([a-zA-Z0-9_]*),`).FindStringSubmatch(strings.Join(out, ""))[2]
+	w.ActivateChainOnAllNodes("chain1")
 
 	// start a new wasp cluster
 	w2 := newWaspCLITest(t, waspClusterOpts{
@@ -91,25 +95,24 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 		// set trust relations between node0 of cluster 2 and all nodes of cluster 1
 		err = w.Cluster.AddTrustedNode(apiclient.PeeringTrustRequest{
-			PublicKey: node0peerInfo.PublicKey,
-			NetId:     node0peerInfo.NetId,
+			Name:       "next-committee-member",
+			PublicKey:  node0peerInfo.PublicKey,
+			PeeringURL: node0peerInfo.PeeringURL,
 		})
 		require.NoError(t, err)
 
-		cluster1PubKeys := make([]*cryptolib.PublicKey, len(w.Cluster.AllNodes()))
 		for _, nodeIndex := range w.Cluster.Config.AllNodes() {
 			// equivalent of "wasp-cli peer info"
-			peerInfo, _, err := w.Cluster.WaspClient(nodeIndex).NodeApi.
+			peerInfo, _, err2 := w.Cluster.WaspClient(nodeIndex).NodeApi.
 				GetPeeringIdentity(context.Background()).
 				Execute()
-			require.NoError(t, err)
+			require.NoError(t, err2)
 
-			w2.MustRun("peering", "trust", peerInfo.PublicKey, peerInfo.NetId)
-			cluster1PubKeys[nodeIndex], err = cryptolib.NewPublicKeyFromString(peerInfo.PublicKey)
-			require.NoError(t, err)
+			w2.MustRun("peering", "trust", fmt.Sprintf("old-committee-%d", nodeIndex), peerInfo.PublicKey, peerInfo.PeeringURL, "--node=0")
+			require.NoError(t, err2)
 		}
 
-		// add node 0 from cluster 2 as an access node in the governance contract
+		// add node 0 from cluster 2 as an access node
 		pubKey, err := cryptolib.NewPublicKeyFromString(node0peerInfo.PublicKey)
 		require.NoError(t, err)
 
@@ -118,8 +121,9 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 	// activate the chain on the new nodes
 	w2.MustRun("chain", "add", "chain1", chainID)
-	w2.MustRun("set", "chain", "chain1")
-	w2.MustRun("chain", "activate")
+	for _, idx := range w2.Cluster.AllNodes() {
+		w2.MustRun("chain", "activate", fmt.Sprintf("--node=%d", idx))
+	}
 
 	// deploy a contract, test its working
 	{
@@ -129,13 +133,14 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		// test chain deploy-contract command
 		w.MustRun("chain", "deploy-contract", vmtype, inccounterSCName, "inccounter SC", file,
 			"string", "counter", "int64", "42",
+			"--node=0",
 		)
 
 		checkCounter(w, 42)
 	}
 
 	// init maintenance
-	out = w.PostRequestGetReceipt("governance", "startMaintenance")
+	out = w.PostRequestGetReceipt("governance", "startMaintenance", "--node=0")
 	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
 	// check that node0 from clust2 is synced and maintenance is on
@@ -145,7 +150,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		}
 		time.Sleep(1 * time.Second)
 		var err error
-		out, err = w2.Run("chain", "call-view", governance.Contract.Name, governance.ViewGetMaintenanceStatus.Name)
+		out, err = w2.Run("chain", "call-view", governance.Contract.Name, governance.ViewGetMaintenanceStatus.Name, "--node=0")
 		if err != nil {
 			t.Logf("Warning: call failed to ViewGetMaintenanceStatus: %v", err)
 			continue
@@ -164,7 +169,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 	w.Cluster.Stop()
 
 	// run DKG on the new cluster, obtain the new state controller address
-	out = w2.MustRun("chain", "rundkg")
+	out = w2.MustRun("chain", "rundkg", w2.ArgAllNodesExcept(0), "--node=0")
 	newStateControllerAddr := regexp.MustCompile(`(.*):\s*([a-zA-Z0-9_]*)$`).FindStringSubmatch(out[0])[2]
 
 	// issue a governance rotatation via CLI
@@ -173,11 +178,11 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 	// stop maintenance
 	// set the new nodes as the default (so querying the receipt doesn't fail)
-	w.MustRun("set", "wasp.0.api", w2.Cluster.Config.APIHost(0))
-	out = w.PostRequestGetReceipt("governance", "stopMaintenance")
+	w.MustRun("set", "wasp.0", w2.Cluster.Config.APIHost(0))
+	out = w.PostRequestGetReceipt("governance", "stopMaintenance", "--node=0")
 	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
 	// chain still works
-	w2.MustRun("chain", "post-request", "-s", inccounterSCName, "increment")
+	w2.MustRun("chain", "post-request", "-s", inccounterSCName, "increment", "--node=0")
 	checkCounter(w2, 43)
 }

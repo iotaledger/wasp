@@ -1,20 +1,27 @@
 package tests
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	"math/big"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
 const file = "inccounter_bg.wasm"
@@ -29,47 +36,45 @@ func TestWaspCLINoChains(t *testing.T) {
 	ownerAddr := regexp.MustCompile(`(?m)Address:\s+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1]
 	require.NotEmpty(t, ownerAddr)
 
-	out = w.MustRun("chain", "list")
+	out = w.MustRun("chain", "list", "--node=0", "--node=0")
 	require.Contains(t, out[0], "Total 0 chain(s)")
 }
 
 func TestWaspCLI1Chain(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	alias := "chain1"
+	chainName := "chain1"
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.ArgCommitteeConfig(0)
 
 	// test chain deploy command
-	w.MustRun("chain", "deploy", "--chain="+alias, committee, quorum)
+	w.MustRun("chain", "deploy", "--chain="+chainName, committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes(chainName)
 
 	// test chain info command
-	out := w.MustRun("chain", "info")
+	out := w.MustRun("chain", "info", "--node=0")
 	chainID := regexp.MustCompile(`(?m)Chain ID:\s+([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]
 	require.NotEmpty(t, chainID)
 	t.Logf("Chain ID: %s", chainID)
 
 	// test chain list command
-	out = w.MustRun("chain", "list")
+	out = w.MustRun("chain", "list", "--node=0")
 	require.Contains(t, out[0], "Total 1 chain(s)")
 	require.Contains(t, out[4], chainID)
 
-	// unnecessary, since it is the latest deployed chain
-	w.MustRun("set", "chain", alias)
-
 	// test chain list-contracts command
-	out = w.MustRun("chain", "list-contracts")
+	out = w.MustRun("chain", "list-contracts", "--node=0")
 	require.Regexp(t, `Total \d+ contracts in chain .{64}`, out[0])
 
 	// test chain list-accounts command
-	out = w.MustRun("chain", "list-accounts")
+	out = w.MustRun("chain", "list-accounts", "--node=0")
 	require.Contains(t, out[0], "Total 1 account(s)")
 	agentID := strings.TrimSpace(out[4])
 	require.NotEmpty(t, agentID)
 	t.Logf("Agent ID: %s", agentID)
 
 	// test chain balance command
-	out = w.MustRun("chain", "balance", agentID)
+	out = w.MustRun("chain", "balance", agentID, "--node=0")
 	// check that the chain balance of owner is > 0
 	r := regexp.MustCompile(`(?m)base\s+(\d+)$`).FindStringSubmatch(out[len(out)-1])
 	require.Len(t, r, 2)
@@ -78,7 +83,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 	require.Positive(t, bal)
 
 	// same test, this time calling the view function manually
-	out = w.MustRun("chain", "call-view", "accounts", "balance", "string", "a", "agentid", agentID)
+	out = w.MustRun("chain", "call-view", "accounts", "balance", "string", "a", "agentid", agentID, "--node=0")
 	out = w.MustPipe(out, "decode", "bytes", "bigint")
 
 	r = regexp.MustCompile(`(?m):\s+(\d+)$`).FindStringSubmatch(out[0])
@@ -87,7 +92,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 	require.EqualValues(t, bal, bal2)
 
 	// test the chainlog
-	out = w.MustRun("chain", "events", "root")
+	out = w.MustRun("chain", "events", "root", "--node=0")
 	require.Len(t, out, 1)
 }
 
@@ -124,18 +129,19 @@ func TestWaspCLISendFunds(t *testing.T) {
 func TestWaspCLIDeposit(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfig()
-	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
+	committee, quorum := w.ArgCommitteeConfig(0)
+	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain1")
 
 	t.Run("deposit to own account", func(t *testing.T) {
-		w.MustRun("chain", "deposit", "base:1000000")
-		checkBalance(t, w.MustRun("chain", "balance"), 1000000)
+		w.MustRun("chain", "deposit", "base:1000000", "--node=0")
+		checkBalance(t, w.MustRun("chain", "balance", "--node=0"), 1000000)
 	})
 
 	t.Run("deposit to ethereum account", func(t *testing.T) {
 		_, eth := newEthereumAccount()
-		w.MustRun("chain", "deposit", eth.String(), "base:1000000")
-		checkBalance(t, w.MustRun("chain", "balance", eth.String()), 1000000-100) //-100 for the fee
+		w.MustRun("chain", "deposit", eth.String(), "base:1000000", "--node=0")
+		checkBalance(t, w.MustRun("chain", "balance", eth.String(), "--node=0"), 1000000-100) //-100 for the fee
 	})
 
 	t.Run("mint and deposit native tokens to an ethereum account", func(t *testing.T) {
@@ -150,6 +156,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 			"accounts", accounts.FuncFoundryCreateNew.Name,
 			"string", accounts.ParamTokenScheme, "bytes", iotago.EncodeHex(tokenScheme), "-l", "base:1000000",
 			"-t", "base:100000000",
+			"--node=0",
 		)
 		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
@@ -164,11 +171,12 @@ func TestWaspCLIDeposit(t *testing.T) {
 			"string", accounts.ParamDestroyTokens, "bool", "false",
 			"-l", "base:1000000",
 			"--off-ledger",
+			"--node=0",
 		)
 		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
 		// withdraw this token to the wasp-cli L1 address
-		out = w.MustRun("chain", "balance")
+		out = w.MustRun("chain", "balance", "--node=0")
 		tokenID := ""
 		for _, line := range out {
 			if strings.Contains(line, "0x") {
@@ -180,6 +188,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 			"accounts", accounts.FuncWithdraw.Name,
 			"-l", fmt.Sprintf("base:1000000, %s:2", tokenID),
 			"--off-ledger",
+			"--node=0",
 		)
 		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
@@ -188,8 +197,9 @@ func TestWaspCLIDeposit(t *testing.T) {
 			"chain", "deposit", eth.String(),
 			fmt.Sprintf("%s:1", tokenID),
 			"--adjust-storage-deposit",
+			"--node=0",
 		)
-		out = w.MustRun("chain", "balance", eth.String())
+		out = w.MustRun("chain", "balance", eth.String(), "--node=0")
 		require.Contains(t, strings.Join(out, ""), tokenID)
 
 		// deposit the native token to the chain (to the cli account)
@@ -197,8 +207,9 @@ func TestWaspCLIDeposit(t *testing.T) {
 			"chain", "deposit",
 			fmt.Sprintf("%s:1", tokenID),
 			"--adjust-storage-deposit",
+			"--node=0",
 		)
-		out = w.MustRun("chain", "balance")
+		out = w.MustRun("chain", "balance", "--node=0")
 		require.Contains(t, strings.Join(out, ""), tokenID)
 		// no token balance on L1
 		out = w.MustRun("balance")
@@ -209,11 +220,12 @@ func TestWaspCLIDeposit(t *testing.T) {
 func TestWaspCLIContract(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfig()
-	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
+	committee, quorum := w.ArgCommitteeConfig(0)
+	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain1")
 
 	// for running off-ledger requests
-	w.MustRun("chain", "deposit", "base:10000000")
+	w.MustRun("chain", "deposit", "base:10000000", "--node=0")
 
 	vmtype := vmtypes.WasmTime
 	name := "inccounter"
@@ -223,9 +235,10 @@ func TestWaspCLIContract(t *testing.T) {
 	// test chain deploy-contract command
 	w.MustRun("chain", "deploy-contract", vmtype, name, description, file,
 		"string", "counter", "int64", "42",
+		"--node=0",
 	)
 
-	out := w.MustRun("chain", "list-contracts")
+	out := w.MustRun("chain", "list-contracts", "--node=0")
 	found := false
 	for _, s := range out {
 		if strings.Contains(s, name) {
@@ -237,7 +250,7 @@ func TestWaspCLIContract(t *testing.T) {
 
 	checkCounter := func(n int) {
 		// test chain call-view command
-		out = w.MustRun("chain", "call-view", name, "getCounter")
+		out = w.MustRun("chain", "call-view", name, "getCounter", "--node=0")
 		out = w.MustPipe(out, "decode", "string", "counter", "int")
 		require.Regexp(t, fmt.Sprintf(`(?m)counter:\s+%d$`, n), out[0])
 	}
@@ -245,19 +258,19 @@ func TestWaspCLIContract(t *testing.T) {
 	checkCounter(42)
 
 	// test chain post-request command
-	w.MustRun("chain", "post-request", "-s", name, "increment")
+	w.MustRun("chain", "post-request", "-s", name, "increment", "--node=0")
 	checkCounter(43)
 
 	// include a funds transfer
-	w.MustRun("chain", "post-request", "-s", name, "increment", "--transfer=base:10000000")
+	w.MustRun("chain", "post-request", "-s", name, "increment", "--transfer=base:10000000", "--node=0")
 	checkCounter(44)
 
 	// test off-ledger request
-	w.MustRun("chain", "post-request", "-s", name, "increment", "--off-ledger")
+	w.MustRun("chain", "post-request", "-s", name, "increment", "--off-ledger", "--node=0")
 	checkCounter(45)
 
 	// include an allowance transfer
-	w.MustRun("chain", "post-request", "-s", name, "increment", "--transfer=base:10000000", "--allowance=base:10000000")
+	w.MustRun("chain", "post-request", "-s", name, "increment", "--transfer=base:10000000", "--allowance=base:10000000", "--node=0")
 	checkCounter(46)
 }
 
@@ -275,14 +288,15 @@ func findRequestIDInOutput(out []string) string {
 func TestWaspCLIBlockLog(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfig()
-	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
+	committee, quorum := w.ArgCommitteeConfig(0)
+	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain1")
 
-	out := w.MustRun("chain", "deposit", "base:100")
+	out := w.MustRun("chain", "deposit", "base:100", "--node=0")
 	reqID := findRequestIDInOutput(out)
 	require.NotEmpty(t, reqID)
 
-	out = w.MustRun("chain", "block")
+	out = w.MustRun("chain", "block", "--node=0")
 	require.Equal(t, "Block index: 2", out[0])
 	found := false
 	for _, line := range out {
@@ -293,10 +307,10 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	}
 	require.True(t, found)
 
-	out = w.MustRun("chain", "block", "2")
+	out = w.MustRun("chain", "block", "2", "--node=0")
 	require.Equal(t, "Block index: 2", out[0])
 
-	out = w.MustRun("chain", "request", reqID)
+	out = w.MustRun("chain", "request", reqID, "--node=0")
 	t.Log(out)
 	found = false
 	for _, line := range out {
@@ -308,11 +322,11 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	require.True(t, found)
 
 	// try an unsuccessful request (missing params)
-	out = w.MustRun("chain", "post-request", "-s", "root", "deployContract", "string", "foo", "string", "bar")
+	out = w.MustRun("chain", "post-request", "-s", "root", "deployContract", "string", "foo", "string", "bar", "--node=0")
 	reqID = findRequestIDInOutput(out)
 	require.NotEmpty(t, reqID)
 
-	out = w.MustRun("chain", "request", reqID)
+	out = w.MustRun("chain", "request", reqID, "--node=0")
 
 	found = false
 	for _, line := range out {
@@ -338,14 +352,15 @@ func TestWaspCLIBlockLog(t *testing.T) {
 func TestWaspCLIBlobContract(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfig()
-	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
+	committee, quorum := w.ArgCommitteeConfig(0)
+	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain1")
 
 	// for running off-ledger requests
-	w.MustRun("chain", "deposit", "base:10")
+	w.MustRun("chain", "deposit", "base:10", "--node=0")
 
 	// test chain list-blobs command
-	out := w.MustRun("chain", "list-blobs")
+	out := w.MustRun("chain", "list-blobs", "--node=0")
 	require.Contains(t, out[0], "Total 0 blob(s)")
 
 	vmtype := vmtypes.WasmTime
@@ -358,9 +373,10 @@ func TestWaspCLIBlobContract(t *testing.T) {
 		"string", blob.VarFieldProgramBinary, "file", file,
 		"string", blob.VarFieldVMType, "string", vmtype,
 		"string", blob.VarFieldProgramDescription, "string", description,
+		"--node=0",
 	)
 
-	out = w.MustRun("chain", "list-blobs")
+	out = w.MustRun("chain", "list-blobs", "--node=0")
 	require.Contains(t, out[0], "Total 1 blob(s)")
 
 	blobHash := regexp.MustCompile(`(?m)([[:alnum:]]+)\s`).FindStringSubmatch(out[4])[1]
@@ -368,7 +384,7 @@ func TestWaspCLIBlobContract(t *testing.T) {
 	t.Logf("Blob hash: %s", blobHash)
 
 	// test chain show-blob command
-	out = w.MustRun("chain", "show-blob", blobHash)
+	out = w.MustRun("chain", "show-blob", blobHash, "--node=0")
 	out = w.MustPipe(out, "decode", "string", blob.VarFieldProgramDescription, "string")
 	require.Contains(t, out[0], description)
 }
@@ -380,59 +396,72 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 	require.Panics(
 		t,
 		func() {
-			w.MustRun("chain", "deploy", "--chain=chain1", "--committee=0,1,2,3,4,5", "--quorum=4")
+			w.MustRun("chain", "deploy", "--chain=chain1", "--peers=0,1,2,3,4,5", "--quorum=4", "--node=0")
+			w.ActivateChainOnAllNodes("chain1")
 		})
 
-	alias := "chain1"
+	chainName := "chain1"
 
-	committee, quorum := w.CommitteeConfig()
+	committee, quorum := w.ArgCommitteeConfig(0)
 
 	// test chain deploy command
-	w.MustRun("chain", "deploy", "--chain="+alias, committee, quorum)
+	w.MustRun("chain", "deploy", "--chain="+chainName, committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes(chainName)
 
-	// test chain info command
-	out := w.MustRun("chain", "info")
-	chainID := regexp.MustCompile(`(?m)Chain ID:\s+([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]
-	require.NotEmpty(t, chainID)
-	t.Logf("Chain ID: %s", chainID)
+	var chainID string
+	for _, idx := range w.Cluster.AllNodes() {
+		// test chain info command
+		out := w.MustRun("chain", "info", fmt.Sprintf("--node=%d", idx))
+		chainID = regexp.MustCompile(`(?m)Chain ID:\s+([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]
+		require.NotEmpty(t, chainID)
+		t.Logf("Chain ID: %s", chainID)
+	}
 
 	// test chain list command
-	out = w.MustRun("chain", "list")
-	require.Contains(t, out[0], "Total 1 chain(s)")
-	require.Contains(t, out[4], chainID)
+	for _, idx := range w.Cluster.AllNodes() {
+		out := w.MustRun("chain", "list", fmt.Sprintf("--node=%d", idx))
+		require.Contains(t, out[0], "Total 1 chain(s)")
+		require.Contains(t, out[4], chainID)
+	}
 
-	// deactivate chain and check that the chain was deactivated
-	w.MustRun("chain", "deactivate")
-	out = w.MustRun("chain", "list")
-	require.Contains(t, out[0], "Total 1 chain(s)")
-	require.Contains(t, out[4], chainID)
+	for _, idx := range w.Cluster.AllNodes() {
+		// deactivate chain and check that the chain was deactivated
+		w.MustRun("chain", "deactivate", fmt.Sprintf("--node=%d", idx))
+		out := w.MustRun("chain", "list", fmt.Sprintf("--node=%d", idx))
+		require.Contains(t, out[0], "Total 1 chain(s)")
+		require.Contains(t, out[4], chainID)
 
-	chOut := strings.Fields(out[4])
-	active, _ := strconv.ParseBool(chOut[1])
-	require.False(t, active)
+		chOut := strings.Fields(out[4])
+		active, _ := strconv.ParseBool(chOut[1])
+		require.False(t, active)
+	}
 
-	// activate chain and check that it was activated
-	w.MustRun("chain", "activate")
-	out = w.MustRun("chain", "list")
-	require.Contains(t, out[0], "Total 1 chain(s)")
-	require.Contains(t, out[4], chainID)
+	for _, idx := range w.Cluster.AllNodes() {
+		// activate chain and check that it was activated
+		w.MustRun("chain", "activate", fmt.Sprintf("--node=%d", idx))
+		out := w.MustRun("chain", "list", fmt.Sprintf("--node=%d", idx))
+		require.Contains(t, out[0], "Total 1 chain(s)")
+		require.Contains(t, out[4], chainID)
 
-	chOut = strings.Fields(out[4])
-	active, _ = strconv.ParseBool(chOut[1])
-	require.True(t, active)
+		chOut := strings.Fields(out[4])
+		active, _ := strconv.ParseBool(chOut[1])
+		require.True(t, active)
+	}
 }
 
 func TestWaspCLILongParam(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	committee, quorum := w.CommitteeConfig()
-	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum)
+	committee, quorum := w.ArgCommitteeConfig(0)
+	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain1")
 
 	// create foundry
 	w.MustRun(
 		"chain", "post-request", "accounts", accounts.FuncFoundryCreateNew.Name,
 		"string", accounts.ParamTokenScheme, "bytes", "0x00d107000000000000000000000000000000000000000000000000000000000000d207000000000000000000000000000000000000000000000000000000000000d30700000000000000000000000000000000000000000000000000000000000000", "-l", "base:1000000",
 		"-t", "base:1000000",
+		"--node=0",
 	)
 
 	veryLongTokenName := strings.Repeat("A", 100_000)
@@ -442,11 +471,76 @@ func TestWaspCLILongParam(t *testing.T) {
 		"string", "n", "string", veryLongTokenName,
 		"string", "t", "string", "test_symbol",
 		"string", "d", "uint8", "1",
+		"--node=0",
 	)
 
 	reqID := findRequestIDInOutput(out)
 	require.NotEmpty(t, reqID)
 
-	out = w.MustRun("chain", "request", reqID)
+	out = w.MustRun("chain", "request", reqID, "--node=0")
 	require.Contains(t, strings.Join(out, "\n"), "too long")
+}
+
+func TestWaspCLITrustListImport(t *testing.T) {
+	w := newWaspCLITest(t, waspClusterOpts{
+		nNodes:  4,
+		dirName: "wasp-cluster-initial",
+	})
+
+	w2 := newWaspCLITest(t, waspClusterOpts{
+		nNodes:  2,
+		dirName: "wasp-cluster-new-gov",
+		modifyConfig: func(nodeIndex int, configParams templates.WaspConfigParams) templates.WaspConfigParams {
+			// avoid port conflicts when running everything on localhost
+			configParams.APIPort += 100
+			configParams.DashboardPort += 100
+			configParams.MetricsPort += 100
+			configParams.NanomsgPort += 100
+			configParams.PeeringPort += 100
+			configParams.ProfilingPort += 100
+			return configParams
+		},
+	})
+	// set cluster2/node0 to trust all nodes from cluster 1
+
+	for _, nodeIndex := range w.Cluster.Config.AllNodes() {
+		// equivalent of "wasp-cli peer info"
+		peerInfo, _, err := w.Cluster.WaspClient(nodeIndex).NodeApi.
+			GetPeeringIdentity(context.Background()).
+			Execute()
+		require.NoError(t, err)
+
+		w2.MustRun("peering", "trust", fmt.Sprintf("external-peer-%d", nodeIndex), peerInfo.PublicKey, peerInfo.PeeringURL, "--node=0")
+		require.NoError(t, err)
+	}
+
+	// import the trust from cluster2/node0 to cluster2/node1
+	trustedOut := w2.MustRun("peering", "list-trusted", "--node=0", "--json")
+	// create temporary file to be consumed by the import command
+	file, err := os.CreateTemp("", "tmp-trusted-peers.*.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	file.WriteString(trustedOut[0])
+	w2.MustRun("peering", "import-trusted", file.Name(), "--node=1")
+
+	trustedOut2 := w2.MustRun("peering", "list-trusted", "--node=1", "--json")
+	println(trustedOut2)
+
+	var trustedList1 []apiclient.PeeringNodeIdentityResponse
+	require.NoError(t, json.Unmarshal([]byte(trustedOut[0]), &trustedList1))
+
+	var trustedList2 []apiclient.PeeringNodeIdentityResponse
+	require.NoError(t, json.Unmarshal([]byte(trustedOut2[0]), &trustedList2))
+
+	require.Equal(t, len(trustedList1), len(trustedList2))
+
+	for _, trustedPeer := range trustedList1 {
+		require.True(t,
+			lo.ContainsBy(trustedList2, func(tp apiclient.PeeringNodeIdentityResponse) bool {
+				return tp.PeeringURL == trustedPeer.PeeringURL && tp.PublicKey == trustedPeer.PublicKey && tp.IsTrusted == trustedPeer.IsTrusted
+			}),
+		)
+	}
 }

@@ -37,11 +37,11 @@ func TestBlockWALBasic(t *testing.T) {
 	require.False(t, walGood.Contains(blocks[4].Hash()))
 	require.False(t, walBad.Contains(blocks[4].Hash()))
 	for i := range blocksInWAL {
-		block, err := walGood.Read(blocks[i].Hash())
-		require.NoError(t, err)
+		block, err2 := walGood.Read(blocks[i].Hash())
+		require.NoError(t, err2)
 		require.True(t, blocks[i].Hash().Equals(block.Hash())) // Should be Equals instead of Hash().Equals()
-		_, err = walBad.Read(blocks[i].Hash())
-		require.Error(t, err)
+		_, err2 = walBad.Read(blocks[i].Hash())
+		require.Error(t, err2)
 	}
 	_, err = walGood.Read(blocks[4].Hash())
 	require.Error(t, err)

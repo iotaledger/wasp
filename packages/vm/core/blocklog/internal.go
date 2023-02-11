@@ -81,12 +81,12 @@ func SaveRequestReceipt(partition kv.KVStore, rec *RequestReceipt, key RequestLo
 		lst = make(RequestLookupKeyList, 0, 1)
 	} else {
 		// existing digest (should happen not often)
-		bin, err := lookupTable.GetAt(digest[:])
-		if err != nil {
-			return fmt.Errorf("SaveRequestReceipt: %w", err)
+		bin, err2 := lookupTable.GetAt(digest[:])
+		if err2 != nil {
+			return fmt.Errorf("SaveRequestReceipt: %w", err2)
 		}
-		if lst, err = RequestLookupKeyListFromBytes(bin); err != nil {
-			return fmt.Errorf("SaveRequestReceipt: %w", err)
+		if lst, err2 = RequestLookupKeyListFromBytes(bin); err2 != nil {
+			return fmt.Errorf("SaveRequestReceipt: %w", err2)
 		}
 	}
 	for i := range lst {
@@ -96,8 +96,8 @@ func SaveRequestReceipt(partition kv.KVStore, rec *RequestReceipt, key RequestLo
 		}
 	}
 	lst = append(lst, key)
-	if err := lookupTable.SetAt(digest[:], lst.Bytes()); err != nil {
-		return fmt.Errorf("SaveRequestReceipt: %w", err)
+	if err2 := lookupTable.SetAt(digest[:], lst.Bytes()); err2 != nil {
+		return fmt.Errorf("SaveRequestReceipt: %w", err2)
 	}
 	// save the record. Key is a LookupKey
 	data := rec.Bytes()
