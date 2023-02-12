@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -15,6 +16,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
@@ -196,4 +199,24 @@ func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string) {
 	for _, idx := range w.Cluster.AllNodes() {
 		w.MustRun("chain", "activate", "--chain="+chainName, fmt.Sprintf("--node=%d", idx))
 	}
+
+	// Hack to get the chainID that was deployed
+	data, err := os.ReadFile(w.dir + "/wasp-cli.json")
+	require.NoError(w.T, err)
+	chainIDStr := regexp.MustCompile(fmt.Sprintf(`%q:\s?"(.*)"`, chainName)).
+		FindStringSubmatch(string(data))[1]
+
+	chainIsUpAndRunning := func(t *testing.T, nodeIndex int) bool {
+		_, _, err := w.Cluster.WaspClient(nodeIndex).RequestsApi.
+			CallView(context.Background()).
+			ContractCallViewRequest(apiclient.ContractCallViewRequest{
+				ChainId:       chainIDStr,
+				ContractHName: governance.Contract.Hname().String(),
+				FunctionHName: governance.ViewGetChainInfo.Hname().String(),
+			}).
+			Execute()
+		return err == nil
+	}
+	// wait until the chain is synced on the nodes, otherwise we get a race condition on the next test commands
+	waitUntil(w.T, chainIsUpAndRunning, w.Cluster.AllNodes(), 30*time.Second)
 }
