@@ -205,7 +205,7 @@ func (v *varLogIndexImpl) L1ReplacedBaseAliasOutput(nextBaseAO *isc.AliasOutputW
 		return nil
 	}
 	v.latestAO = nextBaseAO // We can set nil here, means we don't know the last AO from our L1.
-	return v.tryPropose(MaxLogIndex(v.enoughVotes(v.agreedLI, v.f+1).Next(), v.minLI))
+	return v.tryPropose(MaxLogIndex(v.enoughVotes(v.agreedLI, v.n-v.f).Next(), v.minLI))
 }
 
 // > UPON Reception ⟨NextLI, li, ao⟩ from peer p:
