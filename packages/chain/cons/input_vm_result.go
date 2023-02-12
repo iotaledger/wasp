@@ -4,6 +4,8 @@
 package cons
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/vm"
 )
@@ -14,4 +16,8 @@ type inputVMResult struct {
 
 func NewInputVMResult(task *vm.VMTask) gpa.Input {
 	return &inputVMResult{task: task}
+}
+
+func (inp *inputVMResult) String() string {
+	return fmt.Sprintf("{cons.inputVMResult: %+v}", inp.task)
 }

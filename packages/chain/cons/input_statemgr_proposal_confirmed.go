@@ -12,3 +12,7 @@ type inputStateMgrProposalConfirmed struct{}
 func NewInputStateMgrProposalConfirmed() gpa.Input {
 	return &inputStateMgrProposalConfirmed{}
 }
+
+func (inp *inputStateMgrProposalConfirmed) String() string {
+	return "{cons.inputStateMgrProposalConfirmed}"
+}
