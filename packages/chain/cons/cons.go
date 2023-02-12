@@ -280,7 +280,7 @@ func (c *consImpl) Input(input gpa.Input) gpa.OutMessages {
 
 	switch input := input.(type) {
 	case *inputProposal:
-		c.log.Debugf("received %v", input.String())
+		c.log.Infof("Consensus started, received %v", input.String())
 		return gpa.NoMessages().
 			AddAll(c.subMP.BaseAliasOutputReceived(input.baseAliasOutput)).
 			AddAll(c.subSM.ProposedBaseAliasOutputReceived(input.baseAliasOutput)).
@@ -593,6 +593,10 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.
 		Essence: resultTxEssence,
 		Unlocks: transaction.MakeSignatureAndAliasUnlockFeatures(len(resultTxEssence.Inputs), signatureForUnlock),
 	}
+	txID, err := tx.ID()
+	if err != nil {
+		panic(fmt.Errorf("cannot get ID from the produced TX: %w", err))
+	}
 	chained, err := transaction.GetAliasOutput(tx, c.chainID.AsAddress())
 	if err != nil {
 		panic(fmt.Errorf("cannot get AliasOutput from produced TX: %w", err))
@@ -601,6 +605,7 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.
 	c.output.ResultNextAliasOutput = chained
 	c.output.ResultState = resultState
 	c.output.Status = Completed
+	c.log.Infof("Consensus done, produced tx.ID=%v, nextAO.ID=%v, baseAO.ID=%v", txID.ToHex(), chained.OutputID().ToHex(), vmResult.AnchorOutputID.ToHex())
 	c.term.haveOutputProduced()
 	return nil
 }

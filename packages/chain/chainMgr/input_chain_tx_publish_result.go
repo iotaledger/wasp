@@ -1,6 +1,8 @@
 package chainMgr
 
 import (
+	"fmt"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -20,4 +22,14 @@ func NewInputChainTxPublishResult(committeeAddr iotago.Ed25519Address, txID iota
 		aliasOutput:   aliasOutput,
 		confirmed:     confirmed,
 	}
+}
+
+func (i *inputChainTxPublishResult) String() string {
+	return fmt.Sprintf(
+		"{chainMgr.inputChainTxPublishResult, committeeAddr=%v, txID=%v, aliasOutput=%v, confirmed=%v}",
+		i.committeeAddr.String(),
+		i.txID.ToHex(),
+		i.aliasOutput.OutputID().ToHex(),
+		i.confirmed,
+	)
 }

@@ -545,7 +545,7 @@ func (cni *chainNodeImpl) handleAccessNodesConfigUpdated(accessNodesFromNode []*
 	})
 }
 
-func (cni chainNodeImpl) handleServersUpdated(serverNodes []*cryptolib.PublicKey) {
+func (cni *chainNodeImpl) handleServersUpdated(serverNodes []*cryptolib.PublicKey) {
 	cni.log.Debugf("handleServersUpdated")
 	cni.updateServerNodes(serverNodes)
 }
@@ -845,10 +845,10 @@ func (cni *chainNodeImpl) updateAccessNodes(update func()) {
 	}
 }
 
-func (cni chainNodeImpl) updateServerNodes(serverNodes []*cryptolib.PublicKey) {
+func (cni *chainNodeImpl) updateServerNodes(serverNodes []*cryptolib.PublicKey) {
 	cni.accessLock.Lock()
 	oldServerNodes := cni.serverNodes
-	cni.serverNodes = serverNodes //nolint:staticcheck
+	cni.serverNodes = serverNodes
 	activeAccessNodes := cni.activeAccessNodes
 	activeCommitteeNodes := cni.activeCommitteeNodes
 	cni.accessLock.Unlock()

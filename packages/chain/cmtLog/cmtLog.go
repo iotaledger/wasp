@@ -243,7 +243,7 @@ func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 // >         TryProposeConsensus()
 func (cl *cmtLogImpl) handleInputAliasOutputConfirmed(input *inputAliasOutputConfirmed) gpa.OutMessages {
 	if cl.varLocalView.AliasOutputConfirmed(input.aliasOutput) {
-		msgs := cl.varLogIndex.L1ReplacedBaseAliasOutput(input.aliasOutput)
+		msgs := cl.varLogIndex.L1ReplacedBaseAliasOutput(cl.varLocalView.GetBaseAliasOutput())
 		cl.tryProposeConsensus()
 		return msgs
 	}
@@ -349,6 +349,10 @@ func (cl *cmtLogImpl) StatusString() string {
 // >         Don't propose any consensus.
 func (cl *cmtLogImpl) tryProposeConsensus() {
 	logIndex, baseAO := cl.varLogIndex.Value()
+	if logIndex == NilLogIndex() {
+		// No log index decided yet.
+		return
+	}
 	//
 	// Check, maybe it is already started.
 	if cl.output != nil && cl.output.logIndex == logIndex {
