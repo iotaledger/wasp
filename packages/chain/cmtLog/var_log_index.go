@@ -75,7 +75,7 @@ type VarLogIndex interface {
 // > UPON Reception of L1ReplacedBaseAliasOutput(nextAO):
 // >   IF nextAO was not agreed for LI > ConsensusOutputDONE THEN
 // >     latestAO ← nextAO
-// >     TryPropose(max(agreedLI + 1, minLI))
+// >     TryPropose(max(agreedLI + 1, minLI)) // TODO: agreedLI --> EnoughVotes(agreedLI, N-F) --> EnoughVotes(agreedLI, F+1)
 // >
 // > UPON Reception ⟨NextLI, li, ao⟩ from peer p:
 // >   IF maxPeerLIs[p].li < li THEN
@@ -198,14 +198,14 @@ func (v *varLogIndexImpl) ConsensusTimeoutReceived(consensusLI LogIndex) gpa.Out
 // > UPON Reception of L1ReplacedBaseAliasOutput(nextAO):
 // >   IF nextAO was not agreed for LI > ConsensusOutputDONE THEN
 // >     latestAO ← nextAO
-// >     TryPropose(max(agreedLI + 1, minLI))
+// >     TryPropose(max(agreedLI + 1, minLI)) // TODO: agreedLI --> EnoughVotes(agreedLI, N-F) --> EnoughVotes(agreedLI, F+1)
 func (v *varLogIndexImpl) L1ReplacedBaseAliasOutput(nextBaseAO *isc.AliasOutputWithID) gpa.OutMessages {
 	v.log.Debugf("L1ReplacedBaseAliasOutput, nextBaseAO=%v", nextBaseAO)
 	if nextBaseAO != nil && v.wasRecentlyAgreed(nextBaseAO) {
 		return nil
 	}
 	v.latestAO = nextBaseAO // We can set nil here, means we don't know the last AO from our L1.
-	return v.tryPropose(MaxLogIndex(v.agreedLI.Next(), v.minLI))
+	return v.tryPropose(MaxLogIndex(v.enoughVotes(v.agreedLI, v.f+1).Next(), v.minLI))
 }
 
 // > UPON Reception ⟨NextLI, li, ao⟩ from peer p:
