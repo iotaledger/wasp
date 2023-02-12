@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -504,14 +503,10 @@ func TestWaspCLITrustListImport(t *testing.T) {
 	// set cluster2/node0 to trust all nodes from cluster 1
 
 	for _, nodeIndex := range w.Cluster.Config.AllNodes() {
-		// equivalent of "wasp-cli peer info"
-		peerInfo, _, err := w.Cluster.WaspClient(nodeIndex).NodeApi.
-			GetPeeringIdentity(context.Background()).
-			Execute()
-		require.NoError(t, err)
-
-		w2.MustRun("peering", "trust", fmt.Sprintf("external-peer-%d", nodeIndex), peerInfo.PublicKey, peerInfo.PeeringURL, "--node=0")
-		require.NoError(t, err)
+		peeringInforOutput := w.MustRun("peering", "info", fmt.Sprintf("--node=%d", nodeIndex))
+		pubKey := regexp.MustCompile(`PubKey:\s+([[:alnum:]]+)$`).FindStringSubmatch(peeringInforOutput[0])[1]
+		peeringURL := regexp.MustCompile(`PeeringURL:\s+(.+)$`).FindStringSubmatch(peeringInforOutput[1])[1]
+		w2.MustRun("peering", "trust", fmt.Sprintf("external-peer-%d", nodeIndex), pubKey, peeringURL, "--node=0")
 	}
 
 	// import the trust from cluster2/node0 to cluster2/node1
