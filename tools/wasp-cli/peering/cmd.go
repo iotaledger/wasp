@@ -27,5 +27,6 @@ func Init(rootCmd *cobra.Command) {
 	peeringCmd.AddCommand(initTrustCmd())
 	peeringCmd.AddCommand(initDistrustCmd())
 	peeringCmd.AddCommand(initListTrustedCmd())
+	peeringCmd.AddCommand(initExportTrustedJSONCmd())
 	peeringCmd.AddCommand(initImportTrustedJSONCmd())
 }

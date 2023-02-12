@@ -3,7 +3,7 @@ package tests
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"io"
 	"math/big"
 	"os"
 	"regexp"
@@ -510,30 +510,34 @@ func TestWaspCLITrustListImport(t *testing.T) {
 	}
 
 	// import the trust from cluster2/node0 to cluster2/node1
-	trustedOut := w2.MustRun("peering", "list-trusted", "--node=0", "--json")
-	// create temporary file to be consumed by the import command
-	file, err := os.CreateTemp("", "tmp-trusted-peers.*.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer os.Remove(file.Name())
-	file.WriteString(trustedOut[0])
-	w2.MustRun("peering", "import-trusted", file.Name(), "--node=1")
+	trustedFile0, err := os.CreateTemp("", "tmp-trusted-peers.*.json")
+	require.NoError(t, err)
+	defer os.Remove(trustedFile0.Name())
+	w2.MustRun("peering", "export-trusted", "--node=0", "-o="+trustedFile0.Name())
+	w2.MustRun("peering", "import-trusted", trustedFile0.Name(), "--node=1")
 
-	trustedOut2 := w2.MustRun("peering", "list-trusted", "--node=1", "--json")
-	println(trustedOut2)
+	// export the trusted nodes from cluster2/node1 and assert the expected result
+	trustedFile1, err := os.CreateTemp("", "tmp-trusted-peers.*.json")
+	require.NoError(t, err)
+	defer os.Remove(trustedFile1.Name())
+	w2.MustRun("peering", "export-trusted", "--node=1", "-o="+trustedFile1.Name())
+
+	trustedBytes0, err := io.ReadAll(trustedFile0)
+	require.NoError(t, err)
+	trustedBytes1, err := io.ReadAll(trustedFile1)
+	require.NoError(t, err)
+
+	var trustedList0 []apiclient.PeeringNodeIdentityResponse
+	require.NoError(t, json.Unmarshal(trustedBytes0, &trustedList0))
 
 	var trustedList1 []apiclient.PeeringNodeIdentityResponse
-	require.NoError(t, json.Unmarshal([]byte(trustedOut[0]), &trustedList1))
+	require.NoError(t, json.Unmarshal(trustedBytes1, &trustedList1))
 
-	var trustedList2 []apiclient.PeeringNodeIdentityResponse
-	require.NoError(t, json.Unmarshal([]byte(trustedOut2[0]), &trustedList2))
+	require.Equal(t, len(trustedList0), len(trustedList1))
 
-	require.Equal(t, len(trustedList1), len(trustedList2))
-
-	for _, trustedPeer := range trustedList1 {
+	for _, trustedPeer := range trustedList0 {
 		require.True(t,
-			lo.ContainsBy(trustedList2, func(tp apiclient.PeeringNodeIdentityResponse) bool {
+			lo.ContainsBy(trustedList1, func(tp apiclient.PeeringNodeIdentityResponse) bool {
 				return tp.PeeringURL == trustedPeer.PeeringURL && tp.PublicKey == trustedPeer.PublicKey && tp.IsTrusted == trustedPeer.IsTrusted
 			}),
 		)
