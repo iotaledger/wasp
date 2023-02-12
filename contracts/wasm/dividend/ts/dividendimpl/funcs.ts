@@ -26,7 +26,7 @@ export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
     // allows us to access call parameters and state storage in a type-safe manner.
 
     // First we set up a default value for the owner in case the optional 'owner'
-    // parameter was omitted. We use the agent that sent the deploy request.
+    // parameter was omitted. We use the agent that sent the deployment request.
     let owner: wasmlib.ScAgentID = ctx.requestSender();
 
     // Now we check if the optional 'owner' parameter is present in the params map.
@@ -81,10 +81,10 @@ export function funcMember(ctx: wasmlib.ScFuncContext, f: sc.MemberContext): voi
 
     // We check to see if this key/value combination exists in the 'members' map.
     if (!currentFactor.exists()) {
-        // If it does not exist yet then we have to add this new address to the
+        // If it does not exist yet, then we have to add this new address to the
         // 'memberList' array that keeps track of all address keys used in the
         // 'members' map. The schema tool has again created the appropriate type
-        // for us already. Here too, if the address array was not present yet it
+        // for us already. Here too, if the address array was not present yet, it
         // will automatically be created on the host.
         let memberList: sc.ArrayOfMutableAddress = f.state.memberList();
 
@@ -98,7 +98,7 @@ export function funcMember(ctx: wasmlib.ScFuncContext, f: sc.MemberContext): voi
         newAddress.setValue(address);
 
         // Note that we could have achieved the last 3 lines of code in a single line:
-        // memberList.getAddress(memberList.length()).setValue(address);
+        // f.state.memberList().appendAddress().setValue(address);
     }
 
     // Create an ScMutableUint64 proxy named 'totalFactor' for an Uint64 value in
@@ -110,7 +110,7 @@ export function funcMember(ctx: wasmlib.ScFuncContext, f: sc.MemberContext): voi
     // current value of 'totalFactor' from the state storage, then subtracting the
     // current value of the factor associated with the 'address' parameter, if any
     // exists. Again, if the associated value doesn't exist, WasmLib will assume it
-    // to be zero. Finally we add the factor retrieved from the parameters,
+    // to be zero. Finally, we add the factor retrieved from the parameters,
     // resulting in the new totalFactor.
     let newTotalFactor: u64 = totalFactor.value() - currentFactor.value() + factor;
 
@@ -125,7 +125,7 @@ export function funcMember(ctx: wasmlib.ScFuncContext, f: sc.MemberContext): voi
 // 'divide' is a function that will take any iotas it receives and properly
 // disperse them to the accounts in the member list according to the dispersion
 // factors associated with these accounts.
-// Anyone can send iotas to this function and they will automatically be
+// Anyone can send iotas to this function, and they will automatically be
 // divided over the member list. Note that this function does not deal with
 // fractions. It simply truncates the calculated amount to the nearest lower
 // integer and keeps any remaining tokens in its own account. They will be added
