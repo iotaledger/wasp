@@ -53,8 +53,8 @@ func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[isc
 			return false
 		}
 
-		cr, err := ContractRecordFromBytes(v)
-		if err != nil {
+		cr, err2 := ContractRecordFromBytes(v)
+		if err2 != nil {
 			return false
 		}
 

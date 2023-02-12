@@ -12,3 +12,7 @@ type inputStateMgrBlockSaved struct{}
 func NewInputStateMgrBlockSaved() gpa.Input {
 	return &inputStateMgrBlockSaved{}
 }
+
+func (inp *inputStateMgrBlockSaved) String() string {
+	return "{cons.inputStateMgrBlockSaved}"
+}

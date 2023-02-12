@@ -35,6 +35,5 @@
     "typescript": "^4.8.4"
   },
   "dependencies": {
-    "as-hex": "^1.0.1"
   }
 }

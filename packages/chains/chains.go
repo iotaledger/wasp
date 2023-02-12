@@ -203,8 +203,8 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		return fmt.Errorf("cannot get chain record for %v: %w", chainID, err)
 	}
 	if !chainRecord.Active {
-		if _, err := c.chainRecordRegistryProvider.ActivateChainRecord(chainID); err != nil {
-			return fmt.Errorf("cannot activate chain: %w", err)
+		if _, err2 := c.chainRecordRegistryProvider.ActivateChainRecord(chainID); err2 != nil {
+			return fmt.Errorf("cannot activate chain: %w", err2)
 		}
 	}
 	//

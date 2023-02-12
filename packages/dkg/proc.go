@@ -74,8 +74,8 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 		kyberPeerPubs := make([]kyber.Point, len(msg.peerPubs))
 		for i := range kyberPeerPubs {
 			kyberPeerPubs[i] = node.edSuite.Point()
-			if err := kyberPeerPubs[i].UnmarshalBinary(msg.peerPubs[i].AsBytes()); err != nil {
-				return nil, err
+			if err2 := kyberPeerPubs[i].UnmarshalBinary(msg.peerPubs[i].AsBytes()); err2 != nil {
+				return nil, err2
 			}
 		}
 		if dkgImpl[keySetTypeEd25519], err = rabin_dkg.NewDistKeyGenerator(node.edSuite, node.edSuite, node.secKey, kyberPeerPubs, int(msg.threshold)); err != nil {
@@ -255,8 +255,8 @@ func (p *proc) rabinStep2R22SendResponsesMakeSent(step byte, kst keySetType, ini
 	recvDeals := make(map[uint16]*rabinDealMsg, len(prevMsgs))
 	for i := range prevMsgs {
 		peerDealMsg := rabinDealMsg{}
-		if err := peerDealMsg.fromBytes(prevMsgs[i].MsgData, p.node.edSuite); err != nil {
-			return nil, err
+		if err2 := peerDealMsg.fromBytes(prevMsgs[i].MsgData, p.node.edSuite); err2 != nil {
+			return nil, err2
 		}
 		recvDeals[i] = &peerDealMsg
 	}
@@ -421,8 +421,8 @@ func (p *proc) rabinStep5R5SendComplaintCommitsMakeSent(step byte, kst keySetTyp
 	recvSecretCommits := make(map[uint16]*rabinSecretCommitsMsg)
 	for i := range prevMsgs {
 		peerSecretCommitsMsg := rabinSecretCommitsMsg{}
-		if err := peerSecretCommitsMsg.fromBytes(prevMsgs[i].MsgData, p.keySetSuite(kst)); err != nil {
-			return nil, err
+		if err2 := peerSecretCommitsMsg.fromBytes(prevMsgs[i].MsgData, p.keySetSuite(kst)); err2 != nil {
+			return nil, err2
 		}
 		recvSecretCommits[i] = &peerSecretCommitsMsg
 	}
@@ -479,8 +479,8 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeSent(step byte, kst keySetT
 	recvComplaintCommits := make(map[uint16]*rabinComplaintCommitsMsg)
 	for i := range prevMsgs {
 		peerComplaintCommitsMsg := rabinComplaintCommitsMsg{}
-		if err := peerComplaintCommitsMsg.fromBytes(prevMsgs[i].MsgData, p.keySetSuite(kst)); err != nil {
-			return nil, err
+		if err2 := peerComplaintCommitsMsg.fromBytes(prevMsgs[i].MsgData, p.keySetSuite(kst)); err2 != nil {
+			return nil, err2
 		}
 		recvComplaintCommits[i] = &peerComplaintCommitsMsg
 	}
@@ -557,12 +557,12 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 		// Process the received reconstruct commits.
 		for _, recvMsg := range recvMsgs {
 			peerReconstructCommitsMsgEd := rabinReconstructCommitsMsg{}
-			if err := peerReconstructCommitsMsgEd.fromBytes(recvMsg.edMsg.MsgData); err != nil {
-				return nil, err
+			if err2 := peerReconstructCommitsMsgEd.fromBytes(recvMsg.edMsg.MsgData); err2 != nil {
+				return nil, err2
 			}
 			peerReconstructCommitsMsgBLS := rabinReconstructCommitsMsg{}
-			if err := peerReconstructCommitsMsgBLS.fromBytes(recvMsg.blsMsg.MsgData); err != nil {
-				return nil, err
+			if err2 := peerReconstructCommitsMsgBLS.fromBytes(recvMsg.blsMsg.MsgData); err2 != nil {
+				return nil, err2
 			}
 			p.dkgLock.Lock()
 			for _, rc := range peerReconstructCommitsMsgEd.reconstructCommits {

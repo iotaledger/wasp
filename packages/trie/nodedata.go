@@ -156,23 +156,23 @@ func (n *nodeData) Write(w io.Writer) error {
 			return err
 		}
 	}
-	if err := writeByte(w, smallFlags); err != nil {
-		return err
+	if err2 := writeByte(w, smallFlags); err2 != nil {
+		return err2
 	}
 	if smallFlags&isExtensionNodeFlag != 0 {
-		if err := writeBytes16(w, pathExtensionEncoded); err != nil {
-			return err
+		if err2 := writeBytes16(w, pathExtensionEncoded); err2 != nil {
+			return err2
 		}
 	}
 	if smallFlags&isTerminalNodeFlag != 0 {
-		if err := n.terminal.Write(w); err != nil {
-			return err
+		if err2 := n.terminal.Write(w); err2 != nil {
+			return err2
 		}
 	}
 	// write child commitments if any
 	if smallFlags&hasChildrenFlag != 0 {
-		if err := writeUint16(w, uint16(childrenFlags)); err != nil {
-			return err
+		if err2 := writeUint16(w, uint16(childrenFlags)); err2 != nil {
+			return err2
 		}
 		n.iterateChildren(func(_ byte, h Hash) bool {
 			if err = h.Write(w); err != nil {
@@ -195,12 +195,12 @@ func (n *nodeData) Read(r io.Reader) error {
 		return err
 	}
 	if smallFlags&isExtensionNodeFlag != 0 {
-		encoded, err := readBytes16(r)
-		if err != nil {
-			return err
+		encoded, err2 := readBytes16(r)
+		if err2 != nil {
+			return err2
 		}
-		if n.pathExtension, err = decodeToUnpackedBytes(encoded); err != nil {
-			return err
+		if n.pathExtension, err2 = decodeToUnpackedBytes(encoded); err2 != nil {
+			return err2
 		}
 	} else {
 		n.pathExtension = nil
@@ -208,8 +208,8 @@ func (n *nodeData) Read(r io.Reader) error {
 	n.terminal = nil
 	if smallFlags&isTerminalNodeFlag != 0 {
 		n.terminal = newTerminalCommitment()
-		if err := n.terminal.Read(r); err != nil {
-			return err
+		if err2 := n.terminal.Read(r); err2 != nil {
+			return err2
 		}
 	}
 	if smallFlags&hasChildrenFlag != 0 {

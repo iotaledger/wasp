@@ -42,7 +42,7 @@ func NewWasmClientService(waspAPI, eventPort string) *WasmClientService {
 }
 
 func DefaultWasmClientService() *WasmClientService {
-	return NewWasmClientService("127.0.0.1:19090", "127.0.0.1:15550")
+	return NewWasmClientService("http://localhost:19090", "127.0.0.1:15550")
 }
 
 func (sc *WasmClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error) {

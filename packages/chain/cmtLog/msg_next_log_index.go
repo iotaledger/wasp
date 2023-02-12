@@ -16,16 +16,33 @@ type msgNextLogIndex struct {
 	gpa.BasicMessage
 	nextLogIndex LogIndex               // Proposal is to go to this LI without waiting for a consensus.
 	nextBaseAO   *isc.AliasOutputWithID // Using this AO as a base.
+	pleaseRepeat bool                   // If true, the receiver should resend its latest message back to the sender.
 }
 
 var _ gpa.Message = &msgNextLogIndex{}
 
-func newMsgNextLogIndex(recipient gpa.NodeID, nextLogIndex LogIndex, nextBaseAO *isc.AliasOutputWithID) *msgNextLogIndex {
+func newMsgNextLogIndex(recipient gpa.NodeID, nextLogIndex LogIndex, nextBaseAO *isc.AliasOutputWithID, pleaseRepeat bool) *msgNextLogIndex {
 	return &msgNextLogIndex{
 		BasicMessage: gpa.NewBasicMessage(recipient),
 		nextLogIndex: nextLogIndex,
 		nextBaseAO:   nextBaseAO,
+		pleaseRepeat: pleaseRepeat,
 	}
+}
+
+// Make a copy for re-sending the message.
+// We set pleaseResend to false to avoid accidental loops.
+func (m *msgNextLogIndex) AsResent() *msgNextLogIndex {
+	return &msgNextLogIndex{
+		BasicMessage: gpa.NewBasicMessage(m.Recipient()),
+		nextLogIndex: m.nextLogIndex,
+		nextBaseAO:   m.nextBaseAO,
+		pleaseRepeat: false,
+	}
+}
+
+func (m *msgNextLogIndex) String() string {
+	return fmt.Sprintf("{msgNextLogIndex, sender=%v, nextLogIndex=%v, nextBaseAO=%v", m.Sender().ShortString(), m.nextLogIndex, m.nextBaseAO)
 }
 
 func (m *msgNextLogIndex) MarshalBinary() ([]byte, error) {
@@ -38,6 +55,9 @@ func (m *msgNextLogIndex) MarshalBinary() ([]byte, error) {
 	}
 	if err := util.WriteBytes16(w, m.nextBaseAO.Bytes()); err != nil {
 		return nil, fmt.Errorf("cannot marshal msgNextLogIndex.nextBaseAO: %w", err)
+	}
+	if err := util.WriteBoolByte(w, m.pleaseRepeat); err != nil {
+		return nil, fmt.Errorf("cannot marshal msgNextLogIndex.pleaseRepeat: %w", err)
 	}
 	return w.Bytes(), nil
 }
@@ -52,8 +72,8 @@ func (m *msgNextLogIndex) UnmarshalBinary(data []byte) error {
 		return fmt.Errorf("unexpected msgType=%v in cmtLog.msgNextLogIndex", msgType)
 	}
 	var nextLogIndex uint32
-	if err := util.ReadUint32(r, &nextLogIndex); err != nil {
-		return fmt.Errorf("cannot unmarshal msgNextLogIndex.nextLogIndex: %w", err)
+	if err2 := util.ReadUint32(r, &nextLogIndex); err2 != nil {
+		return fmt.Errorf("cannot unmarshal msgNextLogIndex.nextLogIndex: %w", err2)
 	}
 	m.nextLogIndex = LogIndex(nextLogIndex)
 	nextAOBin, err := util.ReadBytes16(r)
@@ -63,6 +83,9 @@ func (m *msgNextLogIndex) UnmarshalBinary(data []byte) error {
 	m.nextBaseAO, err = isc.NewAliasOutputWithIDFromBytes(nextAOBin)
 	if err != nil {
 		return fmt.Errorf("cannot decode msgNextLogIndex.nextBaseAO: %w", err)
+	}
+	if err := util.ReadBoolByte(r, &m.pleaseRepeat); err != nil {
+		return fmt.Errorf("cannot unmarshal msgNextLogIndex.pleaseRepeat: %w", err)
 	}
 	return nil
 }

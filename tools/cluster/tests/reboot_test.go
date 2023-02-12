@@ -284,6 +284,17 @@ func TestRebootN3TwoNodes(t *testing.T) {
 // Test rebooting nodes during operation.
 func TestRebootDuringTasks(t *testing.T) {
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
+	restartDelay := 20 * time.Second
+	restartCases := [][]int{
+		{0},
+		{0, 1},
+		{2, 3},
+		{1, 2, 3},
+		{3},
+		{0, 1, 2, 3},
+	}
+	postDelay := 200 * time.Millisecond
+	postCount := int(restartDelay/postDelay) * len(restartCases) // To have enough posts for all restarts.
 
 	// keep the nodes spammed
 	{
@@ -294,20 +305,22 @@ func TestRebootDuringTasks(t *testing.T) {
 		env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair)
 		client := env.Chain.SCClient(nativeIncCounterSCHname, keyPair)
 
-		for i := 0; i < 10000; i++ {
-			go func() {
+		go func() {
+			for i := 0; i < postCount; i++ {
 				// ignore any error (nodes might be down when sending)
 				client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
-			}()
-		}
+				time.Sleep(postDelay)
+			}
+		}()
 
 		go func() {
 			keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 			require.NoError(t, err)
 			client := env.Chain.SCClient(nativeIncCounterSCHname, keyPair)
-			for i := 0; i < 1000; i++ {
+			for i := 0; i < postCount; i++ {
 				_, err = client.PostRequest(inccounter.FuncIncCounter.Name)
 				require.NoError(t, err)
+				time.Sleep(postDelay)
 			}
 		}()
 	}
@@ -315,11 +328,11 @@ func TestRebootDuringTasks(t *testing.T) {
 	lastCounter := int64(0)
 
 	restart := func(indexes ...int) {
-		println("restarting nodes: " + lo.Reduce(indexes, func(aggr string, _, i int) string { return fmt.Sprintf("%s %d ", aggr, i) }, ""))
+		t.Logf("restart, indexes=%v", indexes)
 		// restart the nodes
 		err := env.Clu.RestartNodes(indexes...)
 		require.NoError(t, err)
-		time.Sleep(20 * time.Second)
+		time.Sleep(restartDelay)
 
 		// after rebooting, the chain should resume processing requests/views without issues
 		ret, err := apiextensions.CallView(context.Background(), env.Clu.WaspClient(0), apiclient.ContractCallViewRequest{
@@ -355,10 +368,7 @@ func TestRebootDuringTasks(t *testing.T) {
 		env.checkBalanceOnChain(targetAgentID, isc.BaseTokenID, 5000)
 	}
 
-	restart(0)
-	restart(0, 1)
-	restart(2, 3)
-	restart(1, 2, 3)
-	restart(3)
-	restart(0, 1, 2, 3)
+	for _, restartIndexes := range restartCases {
+		restart(restartIndexes...)
+	}
 }

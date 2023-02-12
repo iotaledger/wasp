@@ -2,6 +2,7 @@ package statemanager
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/samber/lo"
@@ -40,6 +41,19 @@ type reqChainNodesUpdated struct {
 	serverNodes    []*cryptolib.PublicKey
 	accessNodes    []*cryptolib.PublicKey
 	committeeNodes []*cryptolib.PublicKey
+}
+
+func (r *reqChainNodesUpdated) String() string {
+	short := func(pkList []*cryptolib.PublicKey) string {
+		return lo.Reduce(pkList, func(acc string, item *cryptolib.PublicKey, _ int) string {
+			return acc + " " + gpa.NodeIDFromPublicKey(item).ShortString()
+		}, "")
+	}
+	return fmt.Sprintf("{reqChainNodesUpdated, serverNodes=%s, accessNodes=%s, committeeNodes=%s",
+		short(r.serverNodes),
+		short(r.accessNodes),
+		short(r.committeeNodes),
+	)
 }
 
 type stateManager struct {
@@ -252,6 +266,7 @@ func (smT *stateManager) handleMessage(peerMsg *peering.PeerMessageIn) {
 }
 
 func (smT *stateManager) handleNodePublicKeys(req *reqChainNodesUpdated) {
+	smT.log.Debugf("handleNodePublicKeys: %v", req)
 	smT.nodeIDToPubKey = map[gpa.NodeID]*cryptolib.PublicKey{}
 	peerNodeIDs := []gpa.NodeID{}
 	for _, pubKey := range req.serverNodes {

@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};
 
-const MYCHAIN: &str = "atoi1pr2y08306jpza3fd6d3fzgzggpy88jtqvkyjjt05ulv048ukry2xwf8hx4v";
+const MYCHAIN: &str = "atoi1ppcj6fmmedfzljgckme2w6520m2qnv8mw7a8cejqvyvhfc0shtvv522uq46";
 const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
 
 fn check_error(ctx: &WasmClientContext) {

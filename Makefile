@@ -58,8 +58,12 @@ install-full: compile-solidity install-cli
 install: compile-solidity install-cli
 	$(INSTALL_CMD) $(BUILD_PKGS)
 
-lint:
+lint: lint-wasp-cli
 	golangci-lint run --timeout 5m
+
+lint-wasp-cli:
+	cd ./tools/wasp-cli && golangci-lint run --timeout 5m
+
 
 gofumpt-list:
 	gofumpt -l ./

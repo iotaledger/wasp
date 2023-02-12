@@ -26,7 +26,7 @@ func initListContractsCmd() *cobra.Command {
 			client := cliclients.WaspClient(node)
 			contracts, _, err := client.ChainsApi.
 				GetContracts(context.Background(), config.GetChain(chain).String()).
-				Execute()
+				Execute() //nolint:bodyclose // false positive
 
 			log.Check(err)
 

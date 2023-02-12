@@ -36,12 +36,12 @@ func initPermitionlessAccessNodesCmd() *cobra.Command {
 			case "add":
 				_, err := client.ChainsApi.
 					AddAccessNode(context.Background(), chainID.String(), pubKey).
-					Execute()
+					Execute() //nolint:bodyclose // false positive
 				log.Check(err)
 			case "remove":
 				_, err := client.ChainsApi.
 					RemoveAccessNode(context.Background(), chainID.String(), pubKey).
-					Execute()
+					Execute() //nolint:bodyclose // false positive
 				log.Check(err)
 			default:
 				log.Fatalf("unknown action: %s", action)

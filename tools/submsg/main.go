@@ -38,7 +38,7 @@ func main() {
 	}()
 
 	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM) //nolint:govet // TODO check: sigchanyzer: misuse of unbuffered os.Signal channel as argument to signal.Notify
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM) //nolint:nolintlint,govet,staticcheck // TODO check: sigchanyzer: misuse of unbuffered os.Signal channel as argument to signal.Notify
 
 	go func() {
 		<-c

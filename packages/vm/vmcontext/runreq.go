@@ -51,8 +51,8 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (res
 	}
 	defer func() { vmctx.currentStateUpdate = nil }()
 
-	if err := vmctx.earlyCheckReasonToSkip(); err != nil {
-		return nil, err
+	if err2 := vmctx.earlyCheckReasonToSkip(); err2 != nil {
+		return nil, err2
 	}
 	vmctx.loadChainConfig()
 

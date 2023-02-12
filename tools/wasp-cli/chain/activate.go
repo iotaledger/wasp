@@ -27,7 +27,7 @@ func initActivateCmd() *cobra.Command {
 			chainID := config.GetChain(chain)
 			client := cliclients.WaspClient(node)
 
-			r, httpStatus, err := client.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute()
+			r, httpStatus, err := client.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
 
 			if err != nil && httpStatus.StatusCode != http.StatusNotFound {
 				log.Check(err)
@@ -38,14 +38,14 @@ func initActivateCmd() *cobra.Command {
 			}
 
 			if r == nil {
-				_, err := client.ChainsApi.SetChainRecord(context.Background(), chainID.String()).ChainRecord(apiclient.ChainRecord{
+				_, err2 := client.ChainsApi.SetChainRecord(context.Background(), chainID.String()).ChainRecord(apiclient.ChainRecord{
 					IsActive:    true,
 					AccessNodes: []string{},
-				}).Execute()
+				}).Execute() //nolint:bodyclose // false positive
 
-				log.Check(err)
+				log.Check(err2)
 			} else {
-				_, err = client.ChainsApi.ActivateChain(context.Background(), chainID.String()).Execute()
+				_, err = client.ChainsApi.ActivateChain(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
 
 				log.Check(err)
 			}
@@ -74,7 +74,7 @@ func initDeactivateCmd() *cobra.Command {
 			chainID := config.GetChain(chain)
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			client := cliclients.WaspClient(node)
-			_, err := client.ChainsApi.DeactivateChain(context.Background(), chainID.String()).Execute()
+			_, err := client.ChainsApi.DeactivateChain(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 		},
 	}

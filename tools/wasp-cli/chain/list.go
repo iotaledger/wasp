@@ -21,7 +21,7 @@ func initListCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			client := cliclients.WaspClient(node)
-			chains, _, err := client.ChainsApi.GetChains(context.Background()).Execute()
+			chains, _, err := client.ChainsApi.GetChains(context.Background()).Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
 			model := &ListChainModel{
