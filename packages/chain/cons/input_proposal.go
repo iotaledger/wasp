@@ -25,5 +25,5 @@ func (ip *inputProposal) String() string {
 	if err != nil {
 		panic(fmt.Errorf("cannot extract L1 commitment from alias output: %w", err))
 	}
-	return fmt.Sprintf("{inputProposal: baseAliasOutput.ID=%v, l1Commitment=%v}", ip.baseAliasOutput.OutputID().ToHex(), l1Commitment)
+	return fmt.Sprintf("{cons.inputProposal: baseAliasOutput.ID=%v, l1Commitment=%v}", ip.baseAliasOutput.OutputID().ToHex(), l1Commitment)
 }

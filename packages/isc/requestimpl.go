@@ -651,6 +651,10 @@ func (rr *RequestRef) Bytes() []byte {
 	return ret
 }
 
+func (rr *RequestRef) String() string {
+	return fmt.Sprintf("{requestRef, id=%v, hash=%v}", rr.ID.String(), rr.Hash.Hex())
+}
+
 func RequestRefFromBytes(data []byte) (*RequestRef, error) {
 	reqID, err := RequestIDFromBytes(data[hashing.HashSize:])
 	if err != nil {
