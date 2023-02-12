@@ -143,10 +143,10 @@ func provide(c *dig.Container) error {
 		}))
 
 		// TODO using this middleware hides the stack trace https://github.com/golang/go/issues/27375
-		e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
-			ErrorMessage: "request timeout exceeded",
-			Timeout:      1 * time.Minute,
-		}))
+		// e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
+		// 	ErrorMessage: "request timeout exceeded",
+		// 	Timeout:      1 * time.Minute,
+		// }))
 
 		echoSwagger := CreateEchoSwagger(e, deps.AppInfo.Version)
 
