@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -26,8 +25,6 @@ type WasmClientContext struct {
 	eventReceived bool
 	keyPair       *cryptolib.KeyPair
 	nonce         uint64
-	queue         []string
-	queueLock     sync.Mutex
 	ReqID         wasmtypes.ScRequestID
 	scName        string
 	scHname       wasmtypes.ScHname
@@ -135,9 +132,7 @@ func (s *WasmClientContext) Unregister(handler wasmlib.IEventHandlers) {
 func (s *WasmClientContext) WaitEvent() {
 	s.Err = nil
 	for i := 0; i < 100; i++ {
-		msg := s.dequeueEvent()
-		if msg != "" {
-			s.processEvent(msg)
+		if s.eventReceived {
 			return
 		}
 		time.Sleep(100 * time.Millisecond)
@@ -153,30 +148,17 @@ func (s *WasmClientContext) WaitRequest(reqID ...wasmtypes.ScRequestID) {
 	s.Err = s.svcClient.WaitUntilRequestProcessed(s.chainID, requestID, 1*time.Minute)
 }
 
-func (s *WasmClientContext) dequeueEvent() string {
-	s.queueLock.Lock()
-	defer s.queueLock.Unlock()
-	if len(s.queue) == 0 {
-		return ""
-	}
-	msg := s.queue[0]
-	s.queue = s.queue[1:]
-	return msg
-}
-
-func (s *WasmClientContext) enqueueEvent(msg []string) {
+func (s *WasmClientContext) processEvent(msg []string) {
 	fmt.Printf("%s\n", strings.Join(msg, " "))
+
 	if msg[0] != "contract" {
 		// not intended for us
 		return
 	}
-	s.queueLock.Lock()
-	defer s.queueLock.Unlock()
-	s.queue = append(s.queue, msg[6])
-}
 
-func (s *WasmClientContext) processEvent(msg string) {
-	params := strings.Split(msg, "|")
+	s.eventReceived = true
+
+	params := strings.Split(msg[6], "|")
 	for i, param := range params {
 		params[i] = unescape(param)
 	}
@@ -197,7 +179,7 @@ func (s *WasmClientContext) startEventHandlers() error {
 	go func() {
 		for {
 			for msg := range chMsg {
-				s.enqueueEvent(msg)
+				s.processEvent(msg)
 			}
 		}
 	}()
@@ -207,10 +189,6 @@ func (s *WasmClientContext) startEventHandlers() error {
 func (s *WasmClientContext) stopEventHandlers() {
 	if len(s.eventHandlers) > 0 {
 		s.eventDone <- true
-		s.queueLock.Lock()
-		defer s.queueLock.Unlock()
-		// no more handlers, drop anything still in queue
-		s.queue = nil
 	}
 }
 

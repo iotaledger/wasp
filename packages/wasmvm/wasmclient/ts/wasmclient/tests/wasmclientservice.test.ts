@@ -3,7 +3,7 @@ import * as testwasmlib from 'testwasmlib';
 import {bytesFromString, bytesToString} from 'wasmlib';
 import {KeyPair} from '../lib/isc';
 
-const MYCHAIN = 'atoi1pra0cee8rfx5s06avkhvqzvs4ewdd4c8zdnzg4eqgdg2eyu66fnwk23hupm';
+const MYCHAIN = 'atoi1pqtyn6jy8g749lukj2sm4qlwu5hq77sgge3kft20ar5axt87pvcsvv5v07a';
 const MYSEED = '0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3';
 
 const params = [
@@ -16,15 +16,9 @@ const params = [
 ];
 
 class EventProcessor {
-    ctx: WasmClientContext;
     name = '';
 
-    constructor(ctx: WasmClientContext) {
-        this.ctx = ctx;
-    }
-
-    sendClientEventsParam(name: string) {
-        const ctx = this.ctx;
+    sendClientEventsParam(ctx: WasmClientContext, name: string) {
         const f = testwasmlib.ScFuncs.triggerEvent(ctx);
         f.params.name().setValue(name);
         f.params.address().setValue(ctx.currentChainID().address());
@@ -32,8 +26,7 @@ class EventProcessor {
         expect(ctx.Err == null).toBeTruthy();
     }
 
-    async waitClientEventsParam(name: string) {
-        const ctx = this.ctx;
+    async waitClientEventsParam(ctx: WasmClientContext, name: string) {
         await ctx.waitEvent();
         expect(ctx.Err == null).toBeTruthy();
 
@@ -48,9 +41,6 @@ function setupClient() {
     expect(ctx.Err == null).toBeTruthy();
     return ctx;
 }
-
-// describe('wasmclient unverified', function () {
-// });
 
 describe('keypair tests', function () {
     const mySeed = bytesFromString(MYSEED);
@@ -100,7 +90,7 @@ describe('keypair tests', function () {
     });
 });
 
-describe('wasmclient verified', function () {
+describe('wasmclient', function () {
     describe('call() view', function () {
         it('should call through web API', () => {
             const ctx = setupClient();
@@ -140,7 +130,7 @@ describe('wasmclient verified', function () {
             const ctx = setupClient();
 
             const events = new testwasmlib.TestWasmLibEventHandlers();
-            const proc = new EventProcessor(ctx);
+            const proc = new EventProcessor();
             events.onTestWasmLibTest((e) => {
                 console.log(e.name);
                 proc.name = e.name;
@@ -148,8 +138,8 @@ describe('wasmclient verified', function () {
             ctx.register(events);
 
             for (const param of params) {
-                proc.sendClientEventsParam(param);
-                await proc.waitClientEventsParam(param);
+                proc.sendClientEventsParam(ctx, param);
+                await proc.waitClientEventsParam(ctx, param);
             }
 
             ctx.unregister(events);
@@ -157,19 +147,3 @@ describe('wasmclient verified', function () {
         });
     });
 });
-
-async function testClientEventsParam(ctx: WasmClientContext, name: string, event: () => string) {
-    const f = testwasmlib.ScFuncs.triggerEvent(ctx);
-    f.params.name().setValue(name);
-    f.params.address().setValue(ctx.currentChainID().address());
-    f.func.post();
-    expect(ctx.Err == null).toBeTruthy();
-
-    ctx.waitRequest();
-    expect(ctx.Err == null).toBeTruthy();
-
-    await ctx.waitEvent();
-    expect(ctx.Err == null).toBeTruthy();
-
-    expect(name == event()).toBeTruthy();
-}

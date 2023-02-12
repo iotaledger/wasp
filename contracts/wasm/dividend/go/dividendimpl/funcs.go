@@ -32,7 +32,7 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 	// allows us to access call parameters and state storage in a type-safe manner.
 
 	// First we set up a default value for the owner in case the optional 'owner'
-	// parameter was omitted. We use the agent that sent the deploy request.
+	// parameter was omitted. We use the agent that sent the deployment request.
 	var owner wasmtypes.ScAgentID = ctx.RequestSender()
 
 	// Now we check if the optional 'owner' parameter is present in the params map.
@@ -88,10 +88,10 @@ func funcMember(_ wasmlib.ScFuncContext, f *MemberContext) {
 
 	// We check to see if this key/value combination exists in the 'members' map.
 	if !currentFactor.Exists() {
-		// If it does not exist yet then we have to add this new address to the
+		// If it does not exist yet, then we have to add this new address to the
 		// 'memberList' array that keeps track of all address keys used in the
 		// 'members' map. The schema tool has again created the appropriate type
-		// for us already. Here too, if the address array was not present yet it
+		// for us already. Here too, if the address array was not present yet, it
 		// will automatically be created on the host.
 		var memberList dividend.ArrayOfMutableAddress = f.State.MemberList()
 
@@ -105,7 +105,7 @@ func funcMember(_ wasmlib.ScFuncContext, f *MemberContext) {
 		newAddress.SetValue(address)
 
 		// Note that we could have achieved the last 3 lines of code in a single line:
-		// memberList.GetAddress(memberList.Length()).SetValue(&address)
+		// f.State.MemberList().AppendAddress().SetValue(address)
 	}
 
 	// Create an ScMutableUint64 proxy named 'totalFactor' for an Uint64 value in
@@ -117,7 +117,7 @@ func funcMember(_ wasmlib.ScFuncContext, f *MemberContext) {
 	// current value of 'totalFactor' from the state storage, then subtracting the
 	// current value of the factor associated with the 'address' parameter, if any
 	// exists. Again, if the associated value doesn't exist, WasmLib will assume it
-	// to be zero. Finally we add the factor retrieved from the parameters,
+	// to be zero. Finally, we add the factor retrieved from the parameters,
 	// resulting in the new totalFactor.
 	var newTotalFactor uint64 = totalFactor.Value() - currentFactor.Value() + factor
 
@@ -165,7 +165,7 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 		var factor uint64 = members.GetUint64(address).Value()
 
 		// Calculate the fair share of tokens to disperse to this member based on the
-		// factor we just retrieved. Note that the result will been truncated.
+		// factor we just retrieved. Note that the result will be truncated.
 		var share uint64 = amount * factor / totalFactor
 
 		// Is there anything to disperse to this member?
