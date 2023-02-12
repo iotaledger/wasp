@@ -4,6 +4,8 @@
 package cons
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 )
@@ -14,4 +16,17 @@ type inputMempoolRequests struct {
 
 func NewInputMempoolRequests(requests []isc.Request) gpa.Input {
 	return &inputMempoolRequests{requests: requests}
+}
+
+func (inp *inputMempoolRequests) String() string {
+	acc := "{cons.inputMempoolRequests: "
+	for i, req := range inp.requests {
+		if i > 3 {
+			acc += fmt.Sprintf("..., %v in total", len(inp.requests))
+			break
+		}
+		acc += fmt.Sprintf(" {request, id=%v}", req.ID().String())
+	}
+	acc += "}"
+	return acc
 }
