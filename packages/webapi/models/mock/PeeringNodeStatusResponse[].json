@@ -1,7 +1,7 @@
 [
   {
     "isAlive": true,
-    "PeeringURL": "localhost:4000",
+    "peeringURL": "localhost:4000",
     "numUsers": 1,
     "publicKey": "0x0000",
     "isTrusted": true

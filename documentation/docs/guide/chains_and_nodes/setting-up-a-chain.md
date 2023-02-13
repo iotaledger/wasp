@@ -97,7 +97,7 @@ You can check that the chain was properly deployed in the Wasp node dashboard
 (e.g. `127.0.0.1:7000`). Note that the chain was deployed with
 some [core contracts](../core_concepts/core_contracts/overview.md).
 
-you should have an EVM-JSONRPC server opened on:
+You should also have an EVM-JSONRPC server opened on:
 
 ```info
 <wasp API URL>/chain/<CHAINID>/evm/jsonrpc
@@ -106,7 +106,7 @@ you should have an EVM-JSONRPC server opened on:
 ### Deploying a Wasm Contract
 
 :::warning
-The WASM VM is experimental, however, similar commands can be used to interact with the core contracts
+The WASM VM is experimental. However, similar commands can be used to interact with the core contracts
 :::
 
 Now you can deploy a Wasm contract to the chain:

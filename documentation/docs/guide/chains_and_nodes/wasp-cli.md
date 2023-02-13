@@ -17,7 +17,7 @@ Step-by-step instructions on how to use wasp-cli to interact with Wasp nodes on 
 ## Download wasp-cli
 
 Download the latest wasp-cli binary from the repo [relases page](https://github.com/iotaledger/wasp/releases).
-(for ease of use, its recommend adding wasp-cli to your system PATH)
+(For ease of use, it is recommend to add `wasp-cli` to your system `PATH`).
 
 ## Configuration
 
