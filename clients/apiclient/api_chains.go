@@ -141,7 +141,7 @@ type ApiAddAccessNodeRequest struct {
 	ctx context.Context
 	ApiService *ChainsApiService
 	chainID string
-	publicKey string
+	peer string
 }
 
 func (r ApiAddAccessNodeRequest) Execute() (*http.Response, error) {
@@ -153,15 +153,15 @@ AddAccessNode Configure a trusted node to be an access node.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @param chainID ChainID (Bech32)
- @param publicKey Nodes public key (Hex)
+ @param peer Name of the peer to add as access node
  @return ApiAddAccessNodeRequest
 */
-func (a *ChainsApiService) AddAccessNode(ctx context.Context, chainID string, publicKey string) ApiAddAccessNodeRequest {
+func (a *ChainsApiService) AddAccessNode(ctx context.Context, chainID string, peer string) ApiAddAccessNodeRequest {
 	return ApiAddAccessNodeRequest{
 		ApiService: a,
 		ctx: ctx,
 		chainID: chainID,
-		publicKey: publicKey,
+		peer: peer,
 	}
 }
 
@@ -178,9 +178,9 @@ func (a *ChainsApiService) AddAccessNodeExecute(r ApiAddAccessNodeRequest) (*htt
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/chains/{chainID}/access-node/{publicKey}"
+	localVarPath := localBasePath + "/chains/{chainID}/access-node/{peer}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
-	localVarPath = strings.Replace(localVarPath, "{"+"publicKey"+"}", url.PathEscape(parameterValueToString(r.publicKey, "publicKey")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"peer"+"}", url.PathEscape(parameterValueToString(r.peer, "peer")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1346,7 +1346,7 @@ type ApiRemoveAccessNodeRequest struct {
 	ctx context.Context
 	ApiService *ChainsApiService
 	chainID string
-	publicKey string
+	peer string
 }
 
 func (r ApiRemoveAccessNodeRequest) Execute() (*http.Response, error) {
@@ -1358,15 +1358,15 @@ RemoveAccessNode Remove an access node.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @param chainID ChainID (Bech32)
- @param publicKey Nodes public key (Hex)
+ @param peer Name of the peer to remove as access node
  @return ApiRemoveAccessNodeRequest
 */
-func (a *ChainsApiService) RemoveAccessNode(ctx context.Context, chainID string, publicKey string) ApiRemoveAccessNodeRequest {
+func (a *ChainsApiService) RemoveAccessNode(ctx context.Context, chainID string, peer string) ApiRemoveAccessNodeRequest {
 	return ApiRemoveAccessNodeRequest{
 		ApiService: a,
 		ctx: ctx,
 		chainID: chainID,
-		publicKey: publicKey,
+		peer: peer,
 	}
 }
 
@@ -1383,9 +1383,9 @@ func (a *ChainsApiService) RemoveAccessNodeExecute(r ApiRemoveAccessNodeRequest)
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/chains/{chainID}/access-node/{publicKey}"
+	localVarPath := localBasePath + "/chains/{chainID}/access-node/{peer}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
-	localVarPath = strings.Replace(localVarPath, "{"+"publicKey"+"}", url.PathEscape(parameterValueToString(r.publicKey, "publicKey")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"peer"+"}", url.PathEscape(parameterValueToString(r.peer, "peer")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}

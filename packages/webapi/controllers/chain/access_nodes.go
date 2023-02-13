@@ -6,29 +6,28 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
-func decodeAccessNodeRequest(e echo.Context) (isc.ChainID, *cryptolib.PublicKey, error) {
+func decodeAccessNodeRequest(e echo.Context) (isc.ChainID, string, error) {
 	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return isc.EmptyChainID(), nil, err
+		return isc.EmptyChainID(), "", err
 	}
 
-	publicKey, err := params.DecodePublicKey(e)
-	if err != nil {
-		return isc.EmptyChainID(), nil, err
+	peer := e.Param("peer")
+	if peer == "" {
+		return isc.EmptyChainID(), "", errors.New("no peer provided")
 	}
 
-	return chainID, publicKey, nil
+	return chainID, peer, nil
 }
 
 func (c *Controller) addAccessNode(e echo.Context) error {
-	chainID, publicKey, err := decodeAccessNodeRequest(e)
+	chainID, peer, err := decodeAccessNodeRequest(e)
 	if err != nil {
 		return err
 	}
@@ -37,9 +36,9 @@ func (c *Controller) addAccessNode(e echo.Context) error {
 		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
-	if err := c.nodeService.AddAccessNode(chainID, publicKey); err != nil {
+	if err := c.nodeService.AddAccessNode(chainID, peer); err != nil {
 		if errors.Is(err, interfaces.ErrPeerNotFound) {
-			return apierrors.PeerNotFoundError(publicKey)
+			return apierrors.PeerNameNotFoundError(peer)
 		}
 
 		return err
@@ -49,7 +48,7 @@ func (c *Controller) addAccessNode(e echo.Context) error {
 }
 
 func (c *Controller) removeAccessNode(e echo.Context) error {
-	chainID, publicKey, err := decodeAccessNodeRequest(e)
+	chainID, peer, err := decodeAccessNodeRequest(e)
 	if err != nil {
 		return err
 	}
@@ -58,7 +57,7 @@ func (c *Controller) removeAccessNode(e echo.Context) error {
 		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
-	if err := c.nodeService.DeleteAccessNode(chainID, publicKey); err != nil {
+	if err := c.nodeService.DeleteAccessNode(chainID, peer); err != nil {
 		return err
 	}
 

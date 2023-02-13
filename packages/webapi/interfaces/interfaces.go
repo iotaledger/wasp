@@ -67,8 +67,8 @@ type MetricsService interface {
 var ErrPeerNotFound = errors.New("couldn't find peer")
 
 type NodeService interface {
-	AddAccessNode(chainID isc.ChainID, publicKey *cryptolib.PublicKey) error
-	DeleteAccessNode(chainID isc.ChainID, publicKey *cryptolib.PublicKey) error
+	AddAccessNode(chainID isc.ChainID, peer string) error
+	DeleteAccessNode(chainID isc.ChainID, peer string) error
 	SetNodeOwnerCertificate(publicKey *cryptolib.PublicKey, ownerAddress iotago.Address) ([]byte, error)
 	ShutdownNode()
 }

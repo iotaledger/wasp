@@ -30,7 +30,7 @@ func TestWaspCLIExternalRotationGovAccessNodes(t *testing.T) {
 func TestWaspCLIExternalRotationPermitionlessAccessNodes(t *testing.T) {
 	addAccessNode := func(w *WaspCLITest, pubKey string) {
 		for _, idx := range w.Cluster.AllNodes() {
-			w.MustRun("chain", "access-nodes", "add", pubKey, fmt.Sprintf("--node=%d", idx))
+			w.MustRun("chain", "access-nodes", "add", "--peers=next-committee-member", fmt.Sprintf("--node=%d", idx))
 		}
 	}
 	testWaspCLIExternalRotation(t, addAccessNode)

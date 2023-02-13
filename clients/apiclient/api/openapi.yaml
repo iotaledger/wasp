@@ -106,7 +106,7 @@ paths:
       summary: Get information about a specific chain
       tags:
       - chains
-  /chains/{chainID}/access-node/{publicKey}:
+  /chains/{chainID}/access-node/{peer}:
     delete:
       operationId: removeAccessNode
       parameters:
@@ -117,9 +117,9 @@ paths:
         schema:
           format: string
           type: string
-      - description: Nodes public key (Hex)
+      - description: Name of the peer to remove as access node
         in: path
-        name: publicKey
+        name: peer
         required: true
         schema:
           format: string
@@ -149,9 +149,9 @@ paths:
         schema:
           format: string
           type: string
-      - description: Nodes public key (Hex)
+      - description: Name of the peer to add as access node
         in: path
-        name: publicKey
+        name: peer
         required: true
         schema:
           format: string
@@ -3843,7 +3843,7 @@ components:
         name: InStateOutputMetricItem
     InfoResponse:
       example:
-        peeringURL: peeringURL
+        peeringURL: 0.0.0.0:4000
         l1Params:
           protocol:
             rentStructure:
@@ -3871,6 +3871,7 @@ components:
           $ref: '#/components/schemas/L1Params'
         peeringURL:
           description: The net id of the node
+          example: 0.0.0.0:4000
           format: string
           type: string
           xml:
@@ -4393,7 +4394,7 @@ components:
         name: OutputID
     PeeringNodeIdentityResponse:
       example:
-        peeringURL: peeringURL
+        peeringURL: localhost:4000
         name: name
         publicKey: 0x0000
         isTrusted: true
@@ -4411,6 +4412,7 @@ components:
             name: Name
         peeringURL:
           description: The peering URL of the peer
+          example: localhost:4000
           format: string
           type: string
           xml:
@@ -4540,7 +4542,7 @@ components:
     PeeringNodeStatusResponse__:
       example:
         isAlive: true
-        peeringURL: peeringURL
+        peeringURL: localhost:4000
         name: name
         publicKey: 0x0000
         numUsers: 1
@@ -4573,6 +4575,7 @@ components:
             name: NumUsers
         peeringURL:
           description: The peering URL of the peer
+          example: localhost:4000
           format: string
           type: string
           xml:
@@ -4596,7 +4599,7 @@ components:
         name: PeeringNodeStatusResponse
     PeeringTrustRequest:
       example:
-        peeringURL: peeringURL
+        peeringURL: localhost:4000
         name: name
         publicKey: 0x0000
       properties:
@@ -4607,6 +4610,7 @@ components:
             name: Name
         peeringURL:
           description: The peering URL of the peer
+          example: localhost:4000
           format: string
           type: string
           xml:

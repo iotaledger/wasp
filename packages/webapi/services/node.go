@@ -34,20 +34,29 @@ func NewNodeService(chainRecordRegistryProvider registry.ChainRecordRegistryProv
 	}
 }
 
-func (n *NodeService) AddAccessNode(chainID isc.ChainID, publicKey *cryptolib.PublicKey) error {
-	peers, err := n.trustedNetworkManager.TrustedPeers()
+func findPeerByName(tnm peering.TrustedNetworkManager, peerName string) (*peering.TrustedPeer, error) {
+	peers, err := tnm.TrustedPeers()
 	if err != nil {
-		return errors.New("error getting trusted peers")
+		return nil, errors.New("error getting trusted peers")
 	}
 
-	if _, ok := lo.Find(peers, func(p *peering.TrustedPeer) bool {
-		return p.PubKey().Equals(publicKey)
-	}); !ok {
-		return interfaces.ErrPeerNotFound
+	peer, ok := lo.Find(peers, func(p *peering.TrustedPeer) bool {
+		return p.Name == peerName
+	})
+	if !ok {
+		return nil, interfaces.ErrPeerNotFound
+	}
+	return peer, nil
+}
+
+func (n *NodeService) AddAccessNode(chainID isc.ChainID, peerName string) error {
+	peer, err := findPeerByName(n.trustedNetworkManager, peerName)
+	if err != nil {
+		return err
 	}
 
 	if _, err = n.chainRecordRegistryProvider.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
-		return rec.AddAccessNode(publicKey)
+		return rec.AddAccessNode(peer.PubKey())
 	}); err != nil {
 		return errors.New("error saving chain record")
 	}
@@ -55,9 +64,13 @@ func (n *NodeService) AddAccessNode(chainID isc.ChainID, publicKey *cryptolib.Pu
 	return nil
 }
 
-func (n *NodeService) DeleteAccessNode(chainID isc.ChainID, publicKey *cryptolib.PublicKey) error {
+func (n *NodeService) DeleteAccessNode(chainID isc.ChainID, peerName string) error {
+	peer, err := findPeerByName(n.trustedNetworkManager, peerName)
+	if err != nil {
+		return err
+	}
 	if _, err := n.chainRecordRegistryProvider.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
-		return rec.RemoveAccessNode(publicKey)
+		return rec.RemoveAccessNode(peer.PubKey())
 	}); err != nil {
 		return errors.New("error saving chain record")
 	}

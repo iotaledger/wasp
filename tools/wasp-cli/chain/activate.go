@@ -56,7 +56,6 @@ func activateChain(node string, chainID isc.ChainID) {
 		log.Check(err2)
 	} else {
 		_, err = client.ChainsApi.ActivateChain(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
-
 		log.Check(err)
 	}
 
