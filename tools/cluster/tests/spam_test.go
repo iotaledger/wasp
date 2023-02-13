@@ -22,6 +22,7 @@ import (
 // executed in cluster_test.go
 func testSpamOnledger(t *testing.T, env *ChainEnv) {
 	testutil.RunHeavy(t)
+	env.deployNativeIncCounterSC(0)
 	// in the privtangle setup, with 1s milestones, this test takes ~50m to process 10k requests
 	const numRequests = 10_000
 
@@ -92,6 +93,7 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 // executed in cluster_test.go
 func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 	testutil.RunHeavy(t)
+	env.deployNativeIncCounterSC(0)
 
 	// we need to cap the limit of parallel requests, otherwise some reqs will fail due to local tcp limits: `dial tcp 127.0.0.1:9090: socket: too many open files`
 	const maxParallelRequests = 700

@@ -83,7 +83,8 @@ func TestNodeConn(t *testing.T) {
 	ctxInit, cancelInit := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancelInit()
 
-	nodeBridge, err := nodebridge.NewNodeBridge(ctxInit, l1.Config.INXAddress, 10, log.Named("NodeBridge"))
+	nodeBridge := nodebridge.NewNodeBridge(log.Named("NodeBridge"))
+	err := nodeBridge.Connect(ctxInit, l1.Config.INXAddress, 10)
 	require.NoError(t, err)
 
 	go nodeBridge.Run(ctx)
