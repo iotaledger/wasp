@@ -11,7 +11,6 @@ export class WasmClientSandbox {
 
     chainID: wasmlib.ScChainID = new wasmlib.ScChainID();
     Err: isc.Error = null;
-    eventReceived: bool = false;
     keyPair: isc.KeyPair | null = null;
     nonce: u64 = 0n;
     ReqID: wasmlib.ScRequestID = new wasmlib.ScRequestID();
@@ -43,8 +42,6 @@ export class WasmClientSandbox {
     }
 
     public fnCall(req: wasmlib.CallRequest): Uint8Array {
-        this.eventReceived = false;
-
         if (!req.contract.equals(this.scHname)) {
             this.Err = 'unknown contract: ' + req.contract.toString();
             return new Uint8Array(0);
@@ -60,8 +57,6 @@ export class WasmClientSandbox {
     }
 
     public fnPost(req: wasmlib.PostRequest): Uint8Array {
-        this.eventReceived = false;
-
         if (this.keyPair == null) {
             this.Err = 'missing key pair';
             return new Uint8Array(0);

@@ -1,9 +1,10 @@
+use std::borrow::Borrow;
 use std::cell::Cell;
 use std::rc::Rc;
 
 use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};
 
-const MYCHAIN: &str = "atoi1pqtyn6jy8g749lukj2sm4qlwu5hq77sgge3kft20ar5axt87pvcsvv5v07a";
+const MYCHAIN: &str = "atoi1pqgpd9j9x55k8m8lmuw0mscdz6wswtlw6xvl6tp06j3q7n0s68z368htpty";
 const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
 
 const PARAMS: &[&str] = &[
@@ -35,11 +36,21 @@ impl EventProcessor {
     }
 
     fn wait_client_events_param(&self, ctx: &WasmClientContext, name: &str) {
-        ctx.wait_event();
+        self.wait_event(ctx);
         check_error(ctx);
 
         let x = self.name.clone();
         assert!(name == x.take());
+    }
+
+    fn wait_event(&self, ctx: &WasmClientContext) {
+        for _ in 0..100 {
+            let name = self.name.borrow().get_mut();
+            if name.len() != 0 || ctx.err().is_err() {
+                return;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
     }
 }
 

@@ -19,7 +19,6 @@ pub struct WasmClientContext {
     pub error: Arc<RwLock<errors::Result<()>>>,
     event_done: Arc<RwLock<bool>>,
     pub event_handlers: Vec<Box<dyn IEventHandlers>>,
-    pub event_received: Arc<RwLock<bool>>,
     pub key_pair: Option<KeyPair>,
     pub nonce: Mutex<u64>,
     pub req_id: Arc<RwLock<ScRequestID>>,
@@ -57,7 +56,6 @@ impl WasmClientContext {
             error: Arc::new(RwLock::new(Ok(()))),
             event_done: Arc::new(RwLock::new(false)),
             event_handlers: Vec::new(),
-            event_received: Arc::new(RwLock::new(false)),
             key_pair: None,
             nonce: Mutex::new(0),
             req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
@@ -124,20 +122,6 @@ impl WasmClientContext {
         if self.event_handlers.len() == 0 {
             self.stop_event_handlers();
         }
-    }
-
-    pub fn wait_event(&self) {
-        self.wait_event_timeout(10000);
-    }
-
-    pub fn wait_event_timeout(&self, msec: u64) {
-        for _ in 0..100 {
-            if *self.event_received.read().unwrap() {
-                return;
-            }
-            std::thread::sleep(std::time::Duration::from_millis(msec));
-        }
-        self.set_err("event wait timeout", "");
     }
 
     pub fn wait_request(&self) {
@@ -240,7 +224,6 @@ impl Default for WasmClientContext {
             error: Arc::new(RwLock::new(Ok(()))),
             event_done: Arc::default(),
             event_handlers: Vec::new(),
-            event_received: Arc::default(),
             key_pair: None,
             nonce: Mutex::default(),
             req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),

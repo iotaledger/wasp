@@ -3,7 +3,7 @@ import * as testwasmlib from 'testwasmlib';
 import {bytesFromString, bytesToString} from 'wasmlib';
 import {KeyPair} from '../lib/isc';
 
-const MYCHAIN = 'atoi1pqtyn6jy8g749lukj2sm4qlwu5hq77sgge3kft20ar5axt87pvcsvv5v07a';
+const MYCHAIN = 'atoi1pqgpd9j9x55k8m8lmuw0mscdz6wswtlw6xvl6tp06j3q7n0s68z368htpty';
 const MYSEED = '0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3';
 
 const params = [
@@ -23,22 +23,46 @@ class EventProcessor {
         f.params.name().setValue(name);
         f.params.address().setValue(ctx.currentChainID().address());
         f.func.post();
-        expect(ctx.Err == null).toBeTruthy();
+        checkError(ctx);
     }
 
     async waitClientEventsParam(ctx: WasmClientContext, name: string) {
-        await ctx.waitEvent();
-        expect(ctx.Err == null).toBeTruthy();
-
+        await this.waitEvent(ctx, 10000);
+        checkError(ctx);
         expect(name == this.name).toBeTruthy();
+        this.name = '';
     }
+
+    private async waitEvent(ctx: WasmClientContext, msec: number): Promise<void> {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const self = this;
+        return new Promise(function (resolve) {
+            setTimeout(function () {
+                if (self.name != '' || ctx.Err != null) {
+                    resolve();
+                } else if (msec <= 0) {
+                    ctx.Err = 'event wait timeout';
+                    resolve();
+                } else {
+                    self.waitEvent(ctx, msec - 100).then(resolve);
+                }
+            }, 100);
+        });
+    }
+}
+
+function checkError(ctx: WasmClientContext) {
+    if (ctx.Err != null) {
+        console.log('ERROR: ' + ctx.Err);
+    }
+    expect(ctx.Err == null).toBeTruthy();
 }
 
 function setupClient() {
     const svc = new WasmClientService('http://localhost:19090', '127.0.0.1:15550');
     const ctx = new WasmClientContext(svc, MYCHAIN, 'testwasmlib');
     ctx.signRequests(KeyPair.fromSubSeed(bytesFromString(MYSEED), 0n));
-    expect(ctx.Err == null).toBeTruthy();
+    checkError(ctx);
     return ctx;
 }
 
@@ -97,7 +121,7 @@ describe('wasmclient', function () {
 
             const v = testwasmlib.ScFuncs.getRandom(ctx);
             v.func.call();
-            expect(ctx.Err == null).toBeTruthy();
+            checkError(ctx);
             const rnd = v.results.random().value();
             console.log('Rnd: ' + rnd);
             expect(rnd != 0n).toBeTruthy();
@@ -110,14 +134,14 @@ describe('wasmclient', function () {
 
             const f = testwasmlib.ScFuncs.random(ctx);
             f.func.post();
-            expect(ctx.Err == null).toBeTruthy();
+            checkError(ctx);
 
             ctx.waitRequest();
-            expect(ctx.Err == null).toBeTruthy();
+            checkError(ctx);
 
             const v = testwasmlib.ScFuncs.getRandom(ctx);
             v.func.call();
-            expect(ctx.Err == null).toBeTruthy();
+            checkError(ctx);
             const rnd = v.results.random().value();
             console.log('Rnd: ' + rnd);
             expect(rnd != 0n).toBeTruthy();
@@ -143,7 +167,7 @@ describe('wasmclient', function () {
             }
 
             ctx.unregister(events);
-            expect(ctx.Err == null).toBeTruthy();
+            checkError(ctx);
         });
     });
 });
