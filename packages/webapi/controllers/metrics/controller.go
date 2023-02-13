@@ -12,11 +12,13 @@ import (
 )
 
 type Controller struct {
+	chainService   interfaces.ChainService
 	metricsService interfaces.MetricsService
 }
 
-func NewMetricsController(metricsService interfaces.MetricsService) interfaces.APIController {
+func NewMetricsController(chainService interfaces.ChainService, metricsService interfaces.MetricsService) interfaces.APIController {
 	return &Controller{
+		chainService:   chainService,
 		metricsService: metricsService,
 	}
 }

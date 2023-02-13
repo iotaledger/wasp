@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
+	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
@@ -27,6 +28,9 @@ func (c *Controller) getReceipt(e echo.Context) error {
 	if err != nil {
 		if errors.Is(err, corecontracts.ErrNoRecord) {
 			return apierrors.NoRecordFoundErrror(err)
+		}
+		if errors.Is(err, interfaces.ErrChainNotFound) {
+			return apierrors.ChainNotFoundError(chainID.String())
 		}
 		return apierrors.ReceiptError(err)
 	}

@@ -3582,6 +3582,27 @@ components:
       type: object
       xml:
         name: ErrorMessageFormatResponse
+    ErrorParameter:
+      example:
+        type: type
+        value: value
+      properties:
+        type:
+          format: string
+          type: string
+          xml:
+            name: Type
+        value:
+          format: string
+          type: string
+          xml:
+            name: Value
+      required:
+      - type
+      - value
+      type: object
+      xml:
+        name: ErrorParameter
     EventsResponse:
       example:
         events:
@@ -4709,8 +4730,10 @@ components:
         errorId: 1
         message: message
         parameters:
-        - parameters
-        - parameters
+        - type: type
+          value: value
+        - type: type
+          value: value
       properties:
         contractHName:
           description: The contract hname (Hex)
@@ -4741,8 +4764,7 @@ components:
             name: MessageFormat
         parameters:
           items:
-            format: string
-            type: string
+            $ref: '#/components/schemas/ErrorParameter'
           type: array
           xml:
             name: Parameters
@@ -4753,7 +4775,6 @@ components:
       - errorId
       - message
       - messageFormat
-      - parameters
       type: object
       xml:
         name: ReceiptError
@@ -4777,8 +4798,10 @@ components:
           errorId: 1
           message: message
           parameters:
-          - parameters
-          - parameters
+          - type: type
+            value: value
+          - type: type
+            value: value
       properties:
         blockIndex:
           format: int32

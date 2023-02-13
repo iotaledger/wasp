@@ -5,7 +5,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
@@ -31,7 +30,7 @@ func (c *Controller) getErrorMessageFormat(e echo.Context) error {
 
 	messageFormat, err := c.errors.GetMessageFormat(chainID, contractHname, uint16(errorID))
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	errorMessageFormatResponse := &ErrorMessageFormatResponse{

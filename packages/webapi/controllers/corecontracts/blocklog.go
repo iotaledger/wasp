@@ -1,7 +1,6 @@
 package corecontracts
 
 import (
-	goerrors "errors"
 	"net/http"
 	"strconv"
 
@@ -15,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
-	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
@@ -29,7 +27,7 @@ func (c *Controller) getControlAddresses(e echo.Context) error {
 
 	controlAddresses, err := c.blocklog.GetControlAddresses(chainID)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	controlAddressesResponse := &models.ControlAddressesResponse{
@@ -62,7 +60,7 @@ func (c *Controller) getBlockInfo(e echo.Context) error {
 		blockInfo, err = c.blocklog.GetBlockInfo(chainID, uint32(blockIndexNum))
 	}
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	blockInfoResponse := models.MapBlockInfoResponse(blockInfo)
@@ -92,7 +90,7 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 	}
 
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	requestIDsResponse := &models.RequestIDsResponse{
@@ -147,15 +145,12 @@ func (c *Controller) getRequestReceipt(e echo.Context) error {
 
 	receipt, err := c.blocklog.GetRequestReceipt(chainID, requestID)
 	if err != nil {
-		if goerrors.Is(err, corecontracts.ErrNoRecord) {
-			return apierrors.NoRecordFoundErrror(err)
-		}
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	mappedReceiptResponse, err := MapRequestReceiptResponse(c.vmService, chainID, receipt)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	return e.JSON(http.StatusOK, mappedReceiptResponse)
@@ -174,7 +169,7 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 		var blockInfo *blocklog.BlockInfo
 		blockInfo, err = c.blocklog.GetLatestBlockInfo(chainID)
 		if err != nil {
-			return apierrors.ContractExecutionError(err)
+			return c.handleViewCallError(err, chainID)
 		}
 
 		receipts, err = c.blocklog.GetRequestReceiptsForBlock(chainID, blockInfo.BlockIndex)
@@ -188,7 +183,7 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 		receipts, err = c.blocklog.GetRequestReceiptsForBlock(chainID, uint32(blockIndexNum))
 	}
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	receiptsResponse := models.BlockReceiptsResponse{
@@ -220,7 +215,7 @@ func (c *Controller) getIsRequestProcessed(e echo.Context) error {
 
 	requestProcessed, err := c.blocklog.IsRequestProcessed(chainID, requestID)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	requestProcessedResponse := models.RequestProcessedResponse{
@@ -241,25 +236,26 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 	var events []string
 	blockIndex := e.Param("blockIndex")
 
-	if blockIndex == "" {
-		var blockInfo *blocklog.BlockInfo
-		blockInfo, err = c.blocklog.GetLatestBlockInfo(chainID)
-		if err != nil {
-			return apierrors.ContractExecutionError(err)
-		}
-
-		events, err = c.blocklog.GetEventsForBlock(chainID, blockInfo.BlockIndex)
-	} else {
-		var blockIndexNum uint64
-		blockIndexNum, err = params.DecodeUInt(e, "blockIndex")
+	if blockIndex != "" {
+		blockIndexNum, err := params.DecodeUInt(e, "blockIndex")
 		if err != nil {
 			return err
 		}
 
 		events, err = c.blocklog.GetEventsForBlock(chainID, uint32(blockIndexNum))
-	}
-	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		if err != nil {
+			return c.handleViewCallError(err, chainID)
+		}
+	} else {
+		blockInfo, err := c.blocklog.GetLatestBlockInfo(chainID)
+		if err != nil {
+			return c.handleViewCallError(err, chainID)
+		}
+
+		events, err = c.blocklog.GetEventsForBlock(chainID, blockInfo.BlockIndex)
+		if err != nil {
+			return c.handleViewCallError(err, chainID)
+		}
 	}
 
 	eventsResponse := models.EventsResponse{
@@ -282,7 +278,7 @@ func (c *Controller) getContractEvents(e echo.Context) error {
 
 	events, err := c.blocklog.GetEventsForContract(chainID, contractHname)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	eventsResponse := models.EventsResponse{
@@ -305,7 +301,7 @@ func (c *Controller) getRequestEvents(e echo.Context) error {
 
 	events, err := c.blocklog.GetEventsForRequest(chainID, requestID)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	eventsResponse := models.EventsResponse{

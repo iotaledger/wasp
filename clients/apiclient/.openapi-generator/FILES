@@ -45,6 +45,7 @@ docs/CorecontractsApi.md
 docs/DKSharesInfo.md
 docs/DKSharesPostRequest.md
 docs/ErrorMessageFormatResponse.md
+docs/ErrorParameter.md
 docs/EventsResponse.md
 docs/FoundryOutputResponse.md
 docs/GasFeePolicy.md
@@ -138,6 +139,7 @@ model_control_addresses_response.go
 model_dk_shares_info.go
 model_dk_shares_post_request.go
 model_error_message_format_response.go
+model_error_parameter.go
 model_events_response.go
 model_foundry_output_response.go
 model_gas_fee_policy.go

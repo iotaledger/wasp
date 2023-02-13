@@ -107,7 +107,13 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 }
 
 func (c *ChainService) HasChain(chainID isc.ChainID) bool {
-	return c.GetChainByID(chainID) != nil
+	storedChainRec, err := c.chainRecordRegistryProvider.ChainRecord(chainID)
+	if err != nil {
+		c.log.Infof("hasChain err:[%v]", err)
+		return false
+	}
+
+	return storedChainRec != nil
 }
 
 func (c *ChainService) GetChainByID(chainID isc.ChainID) chainpkg.Chain {

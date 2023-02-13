@@ -41,7 +41,7 @@ func (v *VMService) ParseReceipt(chain chainpkg.Chain, receipt *blocklog.Request
 func (v *VMService) GetReceipt(chainID isc.ChainID, requestID isc.RequestID) (*isc.Receipt, *isc.VMError, error) {
 	ch := v.chainsProvider().Get(chainID)
 	if ch == nil {
-		return nil, nil, errors.New("chain does not exist")
+		return nil, nil, interfaces.ErrChainNotFound
 	}
 
 	blocklog := corecontracts.NewBlockLog(v)

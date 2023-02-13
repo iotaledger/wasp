@@ -18,6 +18,10 @@ func (c *Controller) activateChain(e echo.Context) error {
 		return err
 	}
 
+	if !c.chainService.HasChain(chainID) {
+		return apierrors.ChainNotFoundError(chainID.String())
+	}
+
 	if err := c.chainService.ActivateChain(chainID); err != nil {
 		return err
 	}
@@ -29,6 +33,10 @@ func (c *Controller) deactivateChain(e echo.Context) error {
 	chainID, err := params.DecodeChainID(e)
 	if err != nil {
 		return err
+	}
+
+	if !c.chainService.HasChain(chainID) {
+		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
 	if err := c.chainService.DeactivateChain(chainID); err != nil {
@@ -43,6 +51,8 @@ func (c *Controller) setChainRecord(e echo.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// No need to validate the chain existence here (like above), as the service will create a chain record if it does not exist.
 
 	var request models.ChainRecord
 	if err := e.Bind(&request); err != nil {

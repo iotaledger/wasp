@@ -1,11 +1,14 @@
 package corecontracts
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/wasp/packages/authentication"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
@@ -33,6 +36,17 @@ func NewCoreContractsController(vmService interfaces.VMService) interfaces.APICo
 
 func (c *Controller) Name() string {
 	return "corecontracts"
+}
+
+func (c *Controller) handleViewCallError(err error, chainID isc.ChainID) error {
+	if errors.Is(err, interfaces.ErrChainNotFound) {
+		return apierrors.ChainNotFoundError(chainID.String())
+	}
+	if errors.Is(err, corecontracts.ErrNoRecord) {
+		return apierrors.NoRecordFoundErrror(err)
+	}
+
+	return apierrors.ContractExecutionError(err)
 }
 
 func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker interfaces.Mocker) {
