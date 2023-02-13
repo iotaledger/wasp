@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 const comparableConsensusIDKeyLength = isc.ChainIDLength + iotago.Ed25519AddressBytesLength
@@ -132,6 +133,11 @@ var _ cmtLog.ConsensusStateRegistry = &ConsensusStateRegistry{}
 
 // NewConsensusStateRegistry creates new instance of the consensus state registry implementation.
 func NewConsensusStateRegistry(folderPath string) (*ConsensusStateRegistry, error) {
+	// create the target directory during initialization
+	if err := ioutils.CreateDirectory(folderPath, 0o770); err != nil {
+		return nil, err
+	}
+
 	registry := &ConsensusStateRegistry{
 		folderPath: folderPath,
 	}
@@ -274,8 +280,8 @@ func (p *ConsensusStateRegistry) writeConsensusStateJSON(state *consensusState) 
 
 	filePath := p.getConsensusStateFilePath(state)
 
-	if err := os.MkdirAll(path.Dir(filePath), 0o770); err != nil {
-		return fmt.Errorf("unable to create folder \"%s\": %w", path.Dir(filePath), err)
+	if err := util.CreateDirectoryForFilePath(filePath, 0o770); err != nil {
+		return err
 	}
 
 	if err := ioutils.WriteJSONToFile(filePath, state, 0o600); err != nil {
