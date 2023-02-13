@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-
-	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
 func ChainNotFoundError(chainID string) *HTTPError {
@@ -30,8 +28,16 @@ func InvalidPropertyError(propertyName string, err error) *HTTPError {
 	return NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid property: %v", propertyName), err)
 }
 
-func PeerNotFoundError(publicKey *cryptolib.PublicKey) *HTTPError {
-	return NewHTTPError(http.StatusNotFound, fmt.Sprintf("couldn't find peer with public key %s", publicKey.String()), nil)
+func PeerNameNotFoundError(name string) *HTTPError {
+	return NewHTTPError(http.StatusNotFound, fmt.Sprintf("couldn't find peer with name %s", name), nil)
+}
+
+func SelfAsPeerError() *HTTPError {
+	return NewHTTPError(http.StatusBadRequest, "cannot add self as a peer", nil)
+}
+
+func InvalidPeerName() *HTTPError {
+	return NewHTTPError(http.StatusBadRequest, "name must be in slug format (lowecase and hyphens only)", nil)
 }
 
 func ContractExecutionError(err error) *HTTPError {

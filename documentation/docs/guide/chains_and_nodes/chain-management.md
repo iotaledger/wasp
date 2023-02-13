@@ -68,7 +68,7 @@ chain is.
 wasp-cli chain rotate <new controller address>
 ```
 
-or, if you control the governor address and wish to relinquish the control of the alias output to the chain committe:
+or:
 
 ```shell
 wasp-cli chain rotate-with-dkg --peers=<...>

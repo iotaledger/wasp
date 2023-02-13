@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
@@ -195,9 +196,14 @@ func (w *WaspCLITest) Address() iotago.Address {
 	return addr
 }
 
-func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string) {
+// TODO there is a small issue if we try to activate the chain twice (deploy command also activates the chain)
+// if this happens, the node will return an error on `getChainInfo` because there is no state yet.
+// as a temporary fix, we add `skipOnNodes`, so to not run the activate command on that node
+func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string, skipOnNodes ...int) {
 	for _, idx := range w.Cluster.AllNodes() {
-		w.MustRun("chain", "activate", "--chain="+chainName, fmt.Sprintf("--node=%d", idx))
+		if !slices.Contains(skipOnNodes, idx) {
+			w.MustRun("chain", "activate", "--chain="+chainName, fmt.Sprintf("--node=%d", idx))
+		}
 	}
 
 	// Hack to get the chainID that was deployed

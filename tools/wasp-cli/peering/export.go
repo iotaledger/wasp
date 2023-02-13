@@ -87,7 +87,7 @@ func initImportTrustedJSONCmd() *cobra.Command {
 	var node string
 
 	cmd := &cobra.Command{
-		Use:   "import-trusted",
+		Use:   "import-trusted <file path>",
 		Short: "imports a JSON of trusted peers and makes a node trust them.",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {

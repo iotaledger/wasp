@@ -100,7 +100,7 @@ some [core contracts](../core_concepts/core_contracts/overview.md).
 You should also have an EVM-JSONRPC server opened on:
 
 ```info
-<wasp API URL>/chain/<CHAINID>/evm/jsonrpc
+<wasp API URL>/chain/<CHAINID>/evm
 ```
 
 ### Deploying a Wasm Contract

@@ -18,7 +18,7 @@ import (
 func initDistrustCmd() *cobra.Command {
 	var node string
 	cmd := &cobra.Command{
-		Use:   "distrust <name|pubKey|peeringURL>",
+		Use:   "distrust <name|pubKey>",
 		Short: "Remove the specified node from a list of trusted nodes. All related public keys are distrusted, if peeringURL is provided.",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {

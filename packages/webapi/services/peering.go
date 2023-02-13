@@ -1,9 +1,12 @@
 package services
 
 import (
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/dto"
 )
 
@@ -87,13 +90,27 @@ func (p *PeeringService) TrustPeer(name string, publicKey *cryptolib.PublicKey, 
 	return mappedIdentity, nil
 }
 
-func (p *PeeringService) DistrustPeer(publicKey *cryptolib.PublicKey) (*dto.PeeringNodeIdentity, error) {
-	identity, err := p.trustedNetworkManager.DistrustPeer(publicKey)
+func (p *PeeringService) DistrustPeer(name string) (*dto.PeeringNodeIdentity, error) {
+	peers, err := p.trustedNetworkManager.TrustedPeers()
+	if err != nil {
+		return nil, err
+	}
+
+	peerToDistrust, exists := lo.Find(peers, func(p *peering.TrustedPeer) bool {
+		return p.Name == name
+	})
+
+	if !exists {
+		return nil, apierrors.PeerNameNotFoundError(name)
+	}
+
+	identity, err := p.trustedNetworkManager.DistrustPeer(peerToDistrust.PubKey())
 	if err != nil {
 		return nil, err
 	}
 
 	mappedIdentity := &dto.PeeringNodeIdentity{
+		Name:       identity.Name,
 		PublicKey:  identity.PubKey(),
 		PeeringURL: identity.PeeringURL,
 		IsTrusted:  false,
