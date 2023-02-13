@@ -13,14 +13,31 @@ APIGEN_SCRIPT="apigen.sh"
 SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
 
+GENERATE_MODE=${1:-cli}
+
+GENERATE_ARGS="\
+    --global-property=models,supportingFiles,apis,modelTests=false,apiTests=false \
+    -g go \
+    --package-name=apiclient \
+    --additional-properties preferUnsignedInt=TRUE
+"
+
 (cd "$SCRIPTPATH/$APIGEN_FOLDER"; sh -c "./$APIGEN_SCRIPT >| $SCRIPTPATH/wasp_swagger_schema.json")
 
-openapi-generator-cli generate -i "$SCRIPTPATH/wasp_swagger_schema.json" \
-  --global-property=models,supportingFiles,apis,modelTests=false,apiTests=false \
-  -g go \
-  -o "$SCRIPTPATH" \
-  --package-name=apiclient \
-  --additional-properties preferUnsignedInt=TRUE
+if [ $GENERATE_MODE = "docker" ]; then
+
+  docker run -v "$SCRIPTPATH"/wasp_swagger_schema.json:/tmp/schema.json:ro \
+    -v "$SCRIPTPATH":/tmp/apiclient \
+    lukasmoe/openapi-generator \
+    generate -i "/tmp/schema.json" \
+    -o "/tmp/apiclient" \
+    $GENERATE_ARGS
+
+else
+
+  openapi-generator-cli generate -i "$SCRIPTPATH/wasp_swagger_schema.json" -o "$SCRIPTPATH" \
+    $GENERATE_ARGS
+fi
 
 ## This is a temporary fix for the blob info response.
 ## The Schema generator does not properly handle the uint32 type and this is adjusted manually for now.
