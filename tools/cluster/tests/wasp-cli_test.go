@@ -48,7 +48,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 
 	// test chain deploy command
 	w.MustRun("chain", "deploy", "--chain="+chainName, committee, quorum, "--node=0")
-	w.ActivateChainOnAllNodes(chainName)
+	w.ActivateChainOnAllNodes(chainName, 0)
 
 	// test chain info command
 	out := w.MustRun("chain", "info", "--node=0")
@@ -506,21 +506,21 @@ func TestWaspCLITrustListImport(t *testing.T) {
 		peeringInfoOutput := w.MustRun("peering", "info", fmt.Sprintf("--node=%d", nodeIndex))
 		pubKey := regexp.MustCompile(`PubKey:\s+([[:alnum:]]+)$`).FindStringSubmatch(peeringInfoOutput[0])[1]
 		peeringURL := regexp.MustCompile(`PeeringURL:\s+(.+)$`).FindStringSubmatch(peeringInfoOutput[1])[1]
-		w2.MustRun("peering", "trust", fmt.Sprintf("external-peer-%d", nodeIndex), pubKey, peeringURL, "--node=0")
+		w2.MustRun("peering", "trust", fmt.Sprintf("x%d", nodeIndex), pubKey, peeringURL, "--node=0")
 	}
 
 	// import the trust from cluster2/node0 to cluster2/node1
 	trustedFile0, err := os.CreateTemp("", "tmp-trusted-peers.*.json")
 	require.NoError(t, err)
 	defer os.Remove(trustedFile0.Name())
-	w2.MustRun("peering", "export-trusted", "--node=0", "-o="+trustedFile0.Name())
+	w2.MustRun("peering", "export-trusted", "--node=0", "--peers=x0,x1,x2,x3", "-o="+trustedFile0.Name())
 	w2.MustRun("peering", "import-trusted", trustedFile0.Name(), "--node=1")
 
 	// export the trusted nodes from cluster2/node1 and assert the expected result
 	trustedFile1, err := os.CreateTemp("", "tmp-trusted-peers.*.json")
 	require.NoError(t, err)
 	defer os.Remove(trustedFile1.Name())
-	w2.MustRun("peering", "export-trusted", "--node=1", "-o="+trustedFile1.Name())
+	w2.MustRun("peering", "export-trusted", "--peers=x0,x1,x2,x3", "--node=1", "-o="+trustedFile1.Name())
 
 	trustedBytes0, err := io.ReadAll(trustedFile0)
 	require.NoError(t, err)

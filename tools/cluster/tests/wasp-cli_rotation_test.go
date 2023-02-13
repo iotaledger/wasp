@@ -68,7 +68,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		"--node=0",
 	)
 	chainID := regexp.MustCompile(`(.*)ChainID:\s*([a-zA-Z0-9_]*),`).FindStringSubmatch(strings.Join(out, ""))[2]
-	w.ActivateChainOnAllNodes("chain1")
+	w.ActivateChainOnAllNodes("chain1", 0)
 
 	// start a new wasp cluster
 	w2 := newWaspCLITest(t, waspClusterOpts{
