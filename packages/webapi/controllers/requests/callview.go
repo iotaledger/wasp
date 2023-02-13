@@ -24,6 +24,10 @@ func (c *Controller) executeCallView(e echo.Context) error {
 		return apierrors.InvalidPropertyError("chainID", err)
 	}
 
+	if !c.chainService.HasChain(chainID) {
+		return apierrors.ChainNotFoundError(chainID.String())
+	}
+
 	// Get contract and function. The request model supports HName and common string names. HNames are preferred.
 	var contractHName isc.Hname
 	var functionHName isc.Hname

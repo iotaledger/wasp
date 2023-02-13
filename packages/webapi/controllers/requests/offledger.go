@@ -22,6 +22,10 @@ func (c *Controller) handleOffLedgerRequest(e echo.Context) error {
 		return apierrors.InvalidPropertyError("ChainID", err)
 	}
 
+	if !c.chainService.HasChain(chainID) {
+		return apierrors.ChainNotFoundError(chainID.String())
+	}
+
 	requestDecoded, err := iotago.DecodeHex(request.Request)
 	if err != nil {
 		return apierrors.InvalidPropertyError("Request", err)

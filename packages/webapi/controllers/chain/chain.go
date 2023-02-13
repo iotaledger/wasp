@@ -19,9 +19,13 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 		return err
 	}
 
+	if !c.chainService.HasChain(chainID) {
+		return apierrors.ChainNotFoundError(chainID.String())
+	}
+
 	chain, err := c.chainService.GetChainInfoByChainID(chainID)
 	if err != nil {
-		return apierrors.ChainNotFoundError(e.Param("chainID"))
+		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
 	chainNodeInfo, err := c.committeeService.GetCommitteeInfo(chainID)
@@ -45,6 +49,10 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 	chainID, err := params.DecodeChainID(e)
 	if err != nil {
 		return err
+	}
+
+	if !c.chainService.HasChain(chainID) {
+		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
 	chainInfo, err := c.chainService.GetChainInfoByChainID(chainID)
@@ -114,6 +122,10 @@ func (c *Controller) getState(e echo.Context) error {
 	chainID, err := params.DecodeChainID(e)
 	if err != nil {
 		return err
+	}
+
+	if !c.chainService.HasChain(chainID) {
+		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
 	stateKey, err := iotago.DecodeHex(e.Param("stateKey"))

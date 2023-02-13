@@ -19,7 +19,7 @@ func (c *Controller) getAccounts(e echo.Context) error {
 
 	accounts, err := c.accounts.GetAccounts(chainID)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	accountsResponse := &models.AccountListResponse{
@@ -41,7 +41,7 @@ func (c *Controller) getTotalAssets(e echo.Context) error {
 
 	assets, err := c.accounts.GetTotalAssets(chainID)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	assetsResponse := &models.AssetsResponse{
@@ -65,7 +65,7 @@ func (c *Controller) getAccountBalance(e echo.Context) error {
 
 	assets, err := c.accounts.GetAccountBalance(chainID, agentID)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	assetsResponse := &models.AssetsResponse{
@@ -89,7 +89,7 @@ func (c *Controller) getAccountNFTs(e echo.Context) error {
 
 	nfts, err := c.accounts.GetAccountNFTs(chainID, agentID)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	nftsResponse := &models.AccountNFTsResponse{
@@ -116,7 +116,7 @@ func (c *Controller) getAccountNonce(e echo.Context) error {
 
 	nonce, err := c.accounts.GetAccountNonce(chainID, agentID)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	nonceResponse := &models.AccountNonceResponse{
@@ -139,7 +139,7 @@ func (c *Controller) getNFTData(e echo.Context) error {
 
 	nftData, err := c.accounts.GetNFTData(chainID, *nftID)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	nftDataResponse := models.MapNFTDataResponse(nftData)
@@ -155,7 +155,7 @@ func (c *Controller) getNativeTokenIDRegistry(e echo.Context) error {
 
 	registries, err := c.accounts.GetNativeTokenIDRegistry(chainID)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	nativeTokenIDRegistryResponse := &models.NativeTokenIDRegistryResponse{
@@ -182,7 +182,7 @@ func (c *Controller) getFoundryOutput(e echo.Context) error {
 
 	foundryOutput, err := c.accounts.GetFoundryOutput(chainID, uint32(serialNumber))
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	foundryOutputID, err := foundryOutput.ID()

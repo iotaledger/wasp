@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
@@ -69,7 +68,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 
 	chainInfo, err := c.governance.GetChainInfo(chainID)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	chainInfoResponse := MapGovChainInfoResponse(chainInfo)
@@ -85,7 +84,7 @@ func (c *Controller) getChainOwner(e echo.Context) error {
 
 	chainOwner, err := c.governance.GetChainOwner(chainID)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	chainOwnerResponse := GovChainOwnerResponse{
@@ -103,9 +102,9 @@ func (c *Controller) getAllowedStateControllerAddresses(e echo.Context) error {
 
 	addresses, err := c.governance.GetAllowedStateControllerAddresses(chainID)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
-
+	
 	encodedAddresses := make([]string, len(addresses))
 
 	for k, v := range addresses {

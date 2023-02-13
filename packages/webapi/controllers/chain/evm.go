@@ -17,6 +17,10 @@ func (c *Controller) handleJSONRPC(e echo.Context) error {
 		return err
 	}
 
+	if !c.chainService.HasChain(chainID) {
+		return apierrors.ChainNotFoundError(chainID.String())
+	}
+
 	return c.evmService.HandleJSONRPC(chainID, e.Request(), e.Response())
 }
 
@@ -24,6 +28,10 @@ func (c *Controller) getRequestID(e echo.Context) error {
 	chainID, err := params.DecodeChainID(e)
 	if err != nil {
 		return err
+	}
+
+	if !c.chainService.HasChain(chainID) {
+		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
 	txHash := e.Param("txHash")

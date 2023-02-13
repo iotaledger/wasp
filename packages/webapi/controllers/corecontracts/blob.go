@@ -7,7 +7,6 @@ import (
 	"github.com/labstack/echo/v4"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
@@ -28,7 +27,7 @@ func (c *Controller) listBlobs(e echo.Context) error {
 
 	blobList, err := c.blob.ListBlobs(chainID)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	blobListResponse := &BlobListResponse{
@@ -64,7 +63,7 @@ func (c *Controller) getBlobValue(e echo.Context) error {
 
 	blobValueBytes, err := c.blob.GetBlobValue(chainID, *blobHash, fieldKey)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	blobValueResponse := &BlobValueResponse{
@@ -93,7 +92,7 @@ func (c *Controller) getBlobInfo(e echo.Context) error {
 
 	blobInfo, ok, err := c.blob.GetBlobInfo(chainID, *blobHash)
 	if err != nil {
-		return apierrors.ContractExecutionError(err)
+		return c.handleViewCallError(err, chainID)
 	}
 
 	fmt.Printf("GET BLOB INFO: ok:%v, err:%v", ok, err)
