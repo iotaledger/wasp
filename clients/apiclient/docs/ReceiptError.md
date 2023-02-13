@@ -9,13 +9,13 @@ Name | Type | Description | Notes
 **ErrorId** | **uint32** |  | 
 **Message** | **string** |  | 
 **MessageFormat** | **string** |  | 
-**Parameters** | **[]string** |  | 
+**Parameters** | Pointer to [**[]ErrorParameter**](ErrorParameter.md) |  | [optional] 
 
 ## Methods
 
 ### NewReceiptError
 
-`func NewReceiptError(contractHName string, errorCode string, errorId uint32, message string, messageFormat string, parameters []string, ) *ReceiptError`
+`func NewReceiptError(contractHName string, errorCode string, errorId uint32, message string, messageFormat string, ) *ReceiptError`
 
 NewReceiptError instantiates a new ReceiptError object
 This constructor will assign default values to properties that have it defined,
@@ -132,23 +132,28 @@ SetMessageFormat sets MessageFormat field to given value.
 
 ### GetParameters
 
-`func (o *ReceiptError) GetParameters() []string`
+`func (o *ReceiptError) GetParameters() []ErrorParameter`
 
 GetParameters returns the Parameters field if non-nil, zero value otherwise.
 
 ### GetParametersOk
 
-`func (o *ReceiptError) GetParametersOk() (*[]string, bool)`
+`func (o *ReceiptError) GetParametersOk() (*[]ErrorParameter, bool)`
 
 GetParametersOk returns a tuple with the Parameters field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetParameters
 
-`func (o *ReceiptError) SetParameters(v []string)`
+`func (o *ReceiptError) SetParameters(v []ErrorParameter)`
 
 SetParameters sets Parameters field to given value.
 
+### HasParameters
+
+`func (o *ReceiptError) HasParameters() bool`
+
+HasParameters returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

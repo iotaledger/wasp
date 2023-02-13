@@ -25,21 +25,20 @@ type ReceiptError struct {
 	ErrorId uint32 `json:"errorId"`
 	Message string `json:"message"`
 	MessageFormat string `json:"messageFormat"`
-	Parameters []string `json:"parameters"`
+	Parameters []ErrorParameter `json:"parameters,omitempty"`
 }
 
 // NewReceiptError instantiates a new ReceiptError object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewReceiptError(contractHName string, errorCode string, errorId uint32, message string, messageFormat string, parameters []string) *ReceiptError {
+func NewReceiptError(contractHName string, errorCode string, errorId uint32, message string, messageFormat string) *ReceiptError {
 	this := ReceiptError{}
 	this.ContractHName = contractHName
 	this.ErrorCode = errorCode
 	this.ErrorId = errorId
 	this.Message = message
 	this.MessageFormat = messageFormat
-	this.Parameters = parameters
 	return &this
 }
 
@@ -171,27 +170,35 @@ func (o *ReceiptError) SetMessageFormat(v string) {
 	o.MessageFormat = v
 }
 
-// GetParameters returns the Parameters field value
-func (o *ReceiptError) GetParameters() []string {
-	if o == nil {
-		var ret []string
+// GetParameters returns the Parameters field value if set, zero value otherwise.
+func (o *ReceiptError) GetParameters() []ErrorParameter {
+	if o == nil || isNil(o.Parameters) {
+		var ret []ErrorParameter
 		return ret
 	}
-
 	return o.Parameters
 }
 
-// GetParametersOk returns a tuple with the Parameters field value
+// GetParametersOk returns a tuple with the Parameters field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *ReceiptError) GetParametersOk() ([]string, bool) {
-	if o == nil {
+func (o *ReceiptError) GetParametersOk() ([]ErrorParameter, bool) {
+	if o == nil || isNil(o.Parameters) {
 		return nil, false
 	}
 	return o.Parameters, true
 }
 
-// SetParameters sets field value
-func (o *ReceiptError) SetParameters(v []string) {
+// HasParameters returns a boolean if a field has been set.
+func (o *ReceiptError) HasParameters() bool {
+	if o != nil && !isNil(o.Parameters) {
+		return true
+	}
+
+	return false
+}
+
+// SetParameters gets a reference to the given []ErrorParameter and assigns it to the Parameters field.
+func (o *ReceiptError) SetParameters(v []ErrorParameter) {
 	o.Parameters = v
 }
 
@@ -210,7 +217,9 @@ func (o ReceiptError) ToMap() (map[string]interface{}, error) {
 	toSerialize["errorId"] = o.ErrorId
 	toSerialize["message"] = o.Message
 	toSerialize["messageFormat"] = o.MessageFormat
-	toSerialize["parameters"] = o.Parameters
+	if !isNil(o.Parameters) {
+		toSerialize["parameters"] = o.Parameters
+	}
 	return toSerialize, nil
 }
 
