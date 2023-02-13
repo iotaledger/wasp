@@ -558,3 +558,26 @@ func TestWaspCLICantPeerWithSelf(t *testing.T) {
 			w.MustRun("peering", "trust", "self", pubKey, "0.0.0.0:4000")
 		})
 }
+
+func TestWaspCLIListTrustDistrust(t *testing.T) {
+	w := newWaspCLITest(t)
+	out := w.MustRun("peering", "list-trusted", "--node=0")
+	// one of the entries starts with "1", meaning node 0 trusts node 1
+	containsNode1 := func(output []string) bool {
+		for _, line := range output {
+			if strings.HasPrefix(line, "1") {
+				return true
+			}
+		}
+		return false
+	}
+	require.True(t, containsNode1(out))
+
+	// distrust node 1
+	w.MustRun("peering", "distrust", "1", "--node=0")
+
+	// 1 is not included anymore in the trusted list
+	out = w.MustRun("peering", "list-trusted", "--node=0")
+	// one of the entries starts with "1", meaning node 0 trusts node 1
+	require.False(t, containsNode1(out))
+}

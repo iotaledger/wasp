@@ -83,7 +83,7 @@ type CommitteeService interface {
 }
 
 type PeeringService interface {
-	DistrustPeer(publicKey *cryptolib.PublicKey) (*dto.PeeringNodeIdentity, error)
+	DistrustPeer(name string) (*dto.PeeringNodeIdentity, error)
 	GetIdentity() *dto.PeeringNodeIdentity
 	GetRegisteredPeers() []*dto.PeeringNodeStatus
 	GetTrustedPeers() ([]*dto.PeeringNodeIdentity, error)

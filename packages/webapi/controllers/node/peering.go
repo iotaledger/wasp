@@ -91,13 +91,7 @@ func (c *Controller) distrustPeer(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	publicKey, err := cryptolib.NewPublicKeyFromString(trustedPeer.PublicKey)
-	if err != nil {
-		return apierrors.InvalidPropertyError("publicKey", err)
-	}
-
-	_, err = c.peeringService.DistrustPeer(publicKey)
-	if err != nil {
+	if _, err := c.peeringService.DistrustPeer(trustedPeer.Name); err != nil {
 		return apierrors.InternalServerError(err)
 	}
 
