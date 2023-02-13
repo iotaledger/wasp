@@ -56,7 +56,7 @@
     }
   },
   "peering": {
-    "PeeringURL": "0.0.0.0:4000",
+    "peeringUrl": "0.0.0.0:4000",
     "port": 4000
   },
   "chains": {
