@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"runtime"
 	"strconv"
 	"sync"
 	"testing"
@@ -552,7 +553,7 @@ func (clu *Cluster) KillNodeProcess(nodeIndex int, gracefully bool) error {
 		return nil
 	}
 
-	if gracefully {
+	if gracefully && runtime.GOOS != "windows" {
 		if err := wcmd.cmd.Process.Signal(os.Interrupt); err != nil {
 			return err
 		}
