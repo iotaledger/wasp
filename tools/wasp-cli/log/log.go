@@ -136,7 +136,7 @@ func Check(err error) {
 	apiError, ok := apiextensions.AsAPIError(err)
 
 	if ok {
-		if strings.Contains(apiError.Error, "404") {
+		if strings.Contains(apiError.Error, "401") {
 			errorModel = &ErrorModel{"unauthorized request: are you logged in? (wasp-cli login)"}
 		} else {
 			errorModel.Error = apiError.Error
