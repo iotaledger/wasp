@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/hive.go/core/generics/lo"
 	"github.com/iotaledger/hive.go/core/generics/shrinkingmap"
 	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/core/timeutil"
 	"github.com/iotaledger/hive.go/core/workerpool"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/inx-app/pkg/nodebridge"
@@ -25,6 +26,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/common"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -87,7 +89,51 @@ func newCtxWithTimeout(ctx context.Context, defaultTimeout time.Duration, timeou
 	return context.WithTimeout(ctx, t)
 }
 
+func waitForL1ToBeSynced(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBridge) error {
+	getNodeSynced := func() bool {
+		nodeStatus := nodeBridge.NodeStatus()
+
+		// this flag also checks if the node has seen recent milestones.
+		// in case the L1 network is halted, even if the node is "synced", we will wait forever.
+		if !nodeStatus.GetIsSynced() {
+			var cmi, lsmi uint32
+			if nodeStatus.GetConfirmedMilestone() != nil && nodeStatus.GetConfirmedMilestone().GetMilestoneInfo() != nil {
+				cmi = nodeStatus.GetConfirmedMilestone().GetMilestoneInfo().MilestoneIndex
+			}
+			if nodeStatus.GetLatestMilestone() != nil && nodeStatus.GetLatestMilestone().GetMilestoneInfo() != nil {
+				lsmi = nodeStatus.GetLatestMilestone().GetMilestoneInfo().MilestoneIndex
+			}
+
+			log.Infof("waiting for L1 to be fully synced... (%d/%d)", cmi, lsmi)
+
+			return false
+		}
+
+		return true
+	}
+
+	ticker := time.NewTicker(1 * time.Second)
+	defer timeutil.CleanupTicker(ticker)
+
+	for {
+		select {
+		case <-ticker.C:
+			if getNodeSynced() {
+				// node is synced
+				return nil
+			}
+		case <-ctx.Done():
+			// context was canceled
+			return common.ErrOperationAborted
+		}
+	}
+}
+
 func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBridge, nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics) (chain.NodeConnection, error) {
+	if err := waitForL1ToBeSynced(ctx, log, nodeBridge); err != nil {
+		return nil, err
+	}
+
 	inxNodeClient := nodeBridge.INXNodeClient()
 
 	ctxInfo, cancelInfo := context.WithTimeout(ctx, inxTimeoutInfo)
