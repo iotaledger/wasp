@@ -71,6 +71,11 @@ func (c *Controller) trustPeer(e echo.Context) error {
 		return apierrors.InvalidPropertyError("publicKey", err)
 	}
 
+	selfPubKey := c.peeringService.GetIdentity().PublicKey
+	if publicKey.Equals(selfPubKey) {
+		return apierrors.SelfAsPeerError()
+	}
+
 	_, err = c.peeringService.TrustPeer(trustedPeer.Name, publicKey, trustedPeer.PeeringURL)
 	if err != nil {
 		return apierrors.InternalServerError(err)

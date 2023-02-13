@@ -500,12 +500,12 @@ func TestWaspCLITrustListImport(t *testing.T) {
 			return configParams
 		},
 	})
-	// set cluster2/node0 to trust all nodes from cluster 1
 
+	// set cluster2/node0 to trust all nodes from cluster 1
 	for _, nodeIndex := range w.Cluster.Config.AllNodes() {
-		peeringInforOutput := w.MustRun("peering", "info", fmt.Sprintf("--node=%d", nodeIndex))
-		pubKey := regexp.MustCompile(`PubKey:\s+([[:alnum:]]+)$`).FindStringSubmatch(peeringInforOutput[0])[1]
-		peeringURL := regexp.MustCompile(`PeeringURL:\s+(.+)$`).FindStringSubmatch(peeringInforOutput[1])[1]
+		peeringInfoOutput := w.MustRun("peering", "info", fmt.Sprintf("--node=%d", nodeIndex))
+		pubKey := regexp.MustCompile(`PubKey:\s+([[:alnum:]]+)$`).FindStringSubmatch(peeringInfoOutput[0])[1]
+		peeringURL := regexp.MustCompile(`PeeringURL:\s+(.+)$`).FindStringSubmatch(peeringInfoOutput[1])[1]
 		w2.MustRun("peering", "trust", fmt.Sprintf("external-peer-%d", nodeIndex), pubKey, peeringURL, "--node=0")
 	}
 
@@ -542,4 +542,19 @@ func TestWaspCLITrustListImport(t *testing.T) {
 			}),
 		)
 	}
+}
+
+func TestWaspCLICantPeerWithSelf(t *testing.T) {
+	w := newWaspCLITest(t, waspClusterOpts{
+		nNodes: 1,
+	})
+
+	peeringInfoOutput := w.MustRun("peering", "info")
+	pubKey := regexp.MustCompile(`PubKey:\s+([[:alnum:]]+)$`).FindStringSubmatch(peeringInfoOutput[0])[1]
+
+	require.Panics(
+		t,
+		func() {
+			w.MustRun("peering", "trust", "self", pubKey, "0.0.0.0:4000")
+		})
 }

@@ -32,6 +32,10 @@ func PeerNameNotFoundError(name string) *HTTPError {
 	return NewHTTPError(http.StatusNotFound, fmt.Sprintf("couldn't find peer with name %s", name), nil)
 }
 
+func SelfAsPeerError() *HTTPError {
+	return NewHTTPError(http.StatusBadRequest, "cannot add self as a peer", nil)
+}
+
 func ContractExecutionError(err error) *HTTPError {
 	return NewHTTPError(http.StatusBadRequest, "Failed to execute contract request", err)
 }
