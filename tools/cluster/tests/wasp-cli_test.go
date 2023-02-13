@@ -130,7 +130,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 
 	committee, quorum := w.ArgCommitteeConfig(0)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
-	w.ActivateChainOnAllNodes("chain1")
+	w.ActivateChainOnAllNodes("chain1", 0)
 
 	t.Run("deposit to own account", func(t *testing.T) {
 		w.MustRun("chain", "deposit", "base:1000000", "--node=0")
@@ -221,7 +221,7 @@ func TestWaspCLIContract(t *testing.T) {
 
 	committee, quorum := w.ArgCommitteeConfig(0)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
-	w.ActivateChainOnAllNodes("chain1")
+	w.ActivateChainOnAllNodes("chain1", 0)
 
 	// for running off-ledger requests
 	w.MustRun("chain", "deposit", "base:10000000", "--node=0")
@@ -289,7 +289,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 
 	committee, quorum := w.ArgCommitteeConfig(0)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
-	w.ActivateChainOnAllNodes("chain1")
+	w.ActivateChainOnAllNodes("chain1", 0)
 
 	out := w.MustRun("chain", "deposit", "base:100", "--node=0")
 	reqID := findRequestIDInOutput(out)
@@ -353,7 +353,7 @@ func TestWaspCLIBlobContract(t *testing.T) {
 
 	committee, quorum := w.ArgCommitteeConfig(0)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
-	w.ActivateChainOnAllNodes("chain1")
+	w.ActivateChainOnAllNodes("chain1", 0)
 
 	// for running off-ledger requests
 	w.MustRun("chain", "deposit", "base:10", "--node=0")
@@ -396,7 +396,7 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 		t,
 		func() {
 			w.MustRun("chain", "deploy", "--chain=chain1", "--peers=0,1,2,3,4,5", "--quorum=4", "--node=0")
-			w.ActivateChainOnAllNodes("chain1")
+			w.ActivateChainOnAllNodes("chain1", 0)
 		})
 
 	chainName := "chain1"
@@ -405,7 +405,7 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 
 	// test chain deploy command
 	w.MustRun("chain", "deploy", "--chain="+chainName, committee, quorum, "--node=0")
-	w.ActivateChainOnAllNodes(chainName)
+	w.ActivateChainOnAllNodes(chainName, 0)
 
 	var chainID string
 	for _, idx := range w.Cluster.AllNodes() {
@@ -453,7 +453,7 @@ func TestWaspCLILongParam(t *testing.T) {
 
 	committee, quorum := w.ArgCommitteeConfig(0)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
-	w.ActivateChainOnAllNodes("chain1")
+	w.ActivateChainOnAllNodes("chain1", 0)
 
 	// create foundry
 	w.MustRun(
