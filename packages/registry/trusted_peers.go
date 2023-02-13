@@ -8,13 +8,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
 
 	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/hive.go/core/generics/lo"
 	"github.com/iotaledger/hive.go/core/generics/onchangemap"
 	"github.com/iotaledger/hive.go/core/ioutils"
 	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/wasp/packages/common"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 )
@@ -34,6 +34,11 @@ var _ TrustedPeersRegistryProvider = &TrustedPeersRegistryImpl{}
 
 // NewTrustedPeersRegistryImpl creates new instance of the trusted peers registry implementation.
 func NewTrustedPeersRegistryImpl(filePath string) (*TrustedPeersRegistryImpl, error) {
+	// create the target directory during initialization
+	if err := common.CreateDirectoryForFilePath(filePath, 0o770); err != nil {
+		return nil, err
+	}
+
 	registry := &TrustedPeersRegistryImpl{
 		filePath:     filePath,
 		changeEvents: event.New[[]*peering.TrustedPeer](),
@@ -84,8 +89,8 @@ func (p *TrustedPeersRegistryImpl) writeTrustedPeersJSON(trustedPeers []*peering
 		return nil
 	}
 
-	if err := os.MkdirAll(path.Dir(p.filePath), 0o770); err != nil {
-		return fmt.Errorf("unable to create folder \"%s\": %w", path.Dir(p.filePath), err)
+	if err := common.CreateDirectoryForFilePath(p.filePath, 0o770); err != nil {
+		return err
 	}
 
 	if err := ioutils.WriteJSONToFile(p.filePath, &jsonTrustedPeers{TrustedPeers: trustedPeers}, 0o600); err != nil {

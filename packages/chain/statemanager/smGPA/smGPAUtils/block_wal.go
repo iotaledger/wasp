@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/iotaledger/hive.go/core/ioutils"
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
@@ -22,9 +23,10 @@ const constFileSuffix = ".blk"
 
 func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metrics *BlockWALMetrics) (BlockWAL, error) {
 	dir := filepath.Join(baseDir, chainID.String())
-	if err := os.MkdirAll(dir, 0o777); err != nil {
+	if err := ioutils.CreateDirectory(dir, 0o777); err != nil {
 		return nil, fmt.Errorf("BlockWAL cannot create folder %v: %w", dir, err)
 	}
+
 	result := &blockWAL{
 		WrappedLogger: logger.NewWrappedLogger(log.Named("wal")),
 		dir:           dir,

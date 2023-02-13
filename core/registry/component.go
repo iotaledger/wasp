@@ -4,12 +4,12 @@
 package registry
 
 import (
-	"os"
 	"path"
 
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/core/app"
+	"github.com/iotaledger/hive.go/core/ioutils"
 	hivep2p "github.com/iotaledger/hive.go/core/p2p"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -79,7 +79,7 @@ func provide(c *dig.Container) error {
 }
 
 func nodeIdentityRegistry() *registry.NodeIdentity {
-	if err := os.MkdirAll(ParamsP2P.Database.Path, 0o700); err != nil {
+	if err := ioutils.CreateDirectory(ParamsP2P.Database.Path, 0o700); err != nil {
 		CoreComponent.LogPanicf("could not create peer store database dir '%s': %w", ParamsP2P.Database.Path, err)
 	}
 

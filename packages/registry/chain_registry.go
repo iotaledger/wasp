@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
 
 	"github.com/samber/lo"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/iotaledger/hive.go/core/generics/onchangemap"
 	"github.com/iotaledger/hive.go/core/ioutils"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/common"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
@@ -164,6 +164,11 @@ var _ ChainRecordRegistryProvider = &ChainRecordRegistryImpl{}
 
 // NewChainRecordRegistryImpl creates new instance of the chain registry implementation.
 func NewChainRecordRegistryImpl(filePath string) (*ChainRecordRegistryImpl, error) {
+	// create the target directory during initialization
+	if err := common.CreateDirectoryForFilePath(filePath, 0o770); err != nil {
+		return nil, err
+	}
+
 	registry := &ChainRecordRegistryImpl{
 		filePath: filePath,
 		events: &ChainRecordRegistryEvents{
@@ -211,8 +216,8 @@ func (p *ChainRecordRegistryImpl) writeChainRecordsJSON(chainRecords []*ChainRec
 		return nil
 	}
 
-	if err := os.MkdirAll(path.Dir(p.filePath), 0o770); err != nil {
-		return fmt.Errorf("unable to create folder \"%s\": %w", path.Dir(p.filePath), err)
+	if err := common.CreateDirectoryForFilePath(p.filePath, 0o770); err != nil {
+		return err
 	}
 
 	if err := ioutils.WriteJSONToFile(p.filePath, &jsonChainRecords{ChainRecords: chainRecords}, 0o600); err != nil {
