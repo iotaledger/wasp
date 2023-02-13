@@ -36,6 +36,10 @@ func SelfAsPeerError() *HTTPError {
 	return NewHTTPError(http.StatusBadRequest, "cannot add self as a peer", nil)
 }
 
+func InvalidPeerName() *HTTPError {
+	return NewHTTPError(http.StatusBadRequest, "name must be in slug format (lowecase and hyphens only)", nil)
+}
+
 func ContractExecutionError(err error) *HTTPError {
 	return NewHTTPError(http.StatusBadRequest, "Failed to execute contract request", err)
 }

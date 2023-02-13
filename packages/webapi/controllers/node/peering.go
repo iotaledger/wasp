@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 )
@@ -76,6 +77,9 @@ func (c *Controller) trustPeer(e echo.Context) error {
 		return apierrors.SelfAsPeerError()
 	}
 
+	if !util.IsSlug(trustedPeer.Name) {
+		return apierrors.InvalidPeerName()
+	}
 	_, err = c.peeringService.TrustPeer(trustedPeer.Name, publicKey, trustedPeer.PeeringURL)
 	if err != nil {
 		return apierrors.InternalServerError(err)
