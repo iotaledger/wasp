@@ -104,7 +104,7 @@ func (c *Controller) getAllowedStateControllerAddresses(e echo.Context) error {
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
-	
+
 	encodedAddresses := make([]string, len(addresses))
 
 	for k, v := range addresses {
