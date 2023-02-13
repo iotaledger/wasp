@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/core/timeutil"
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -195,12 +196,9 @@ func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.
 	}
 
 	delay := time.NewTimer(timeout)
+	defer timeutil.CleanupTimer(delay)
 	select {
 	case receiptResponse := <-chain.AwaitRequestProcessed(ctx, requestID, true):
-		if !delay.Stop() {
-			// empty the channel to avoid leak
-			<-delay.C
-		}
 		return c.vmService.ParseReceipt(chain, receiptResponse)
 	case <-delay.C:
 		return nil, nil, errors.New("timeout while waiting for request to be processed")
