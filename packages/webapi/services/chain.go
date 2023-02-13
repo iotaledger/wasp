@@ -194,20 +194,15 @@ func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.
 		return receipt, vmError, nil
 	}
 
-	timeoutCtx, cancelCtx := context.WithTimeout(ctx, timeout)
-	defer cancelCtx()
-	receiptResponse := <-chain.AwaitRequestProcessed(timeoutCtx, requestID, true)
-
-	// If receipt is available, return it
-	if receiptResponse != nil {
+	delay := time.NewTimer(timeout)
+	select {
+	case receiptResponse := <-chain.AwaitRequestProcessed(ctx, requestID, true):
+		if !delay.Stop() {
+			// empty the channel to avoid leak
+			<-delay.C
+		}
 		return c.vmService.ParseReceipt(chain, receiptResponse)
+	case <-delay.C:
+		return nil, nil, errors.New("timeout while waiting for request to be processed")
 	}
-
-	// Otherwise, poll it again one last time before failing.
-	receipt, vmError, err := c.vmService.GetReceipt(chainID, requestID)
-	if receipt != nil {
-		return receipt, vmError, err
-	}
-
-	return nil, nil, errors.New("timeout while waiting for request to be processed")
 }

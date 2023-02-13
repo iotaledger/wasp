@@ -569,21 +569,21 @@ func (clu *Cluster) KillNodeProcess(nodeIndex int, gracefully bool) error {
 	return nil
 }
 
-func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
-	for _, ni := range nodeIndex {
+func (clu *Cluster) RestartNodes(nodeIndexes ...int) error {
+	for _, ni := range nodeIndexes {
 		if !lo.Contains(clu.AllNodes(), ni) {
 			panic(fmt.Errorf("unexpected node index specified for a restart: %v", ni))
 		}
 	}
 
 	// send stop commands
-	for _, i := range nodeIndex {
+	for _, i := range nodeIndexes {
 		clu.stopNode(i)
 	}
 
 	// wait until all nodes are stopped
 	exitedWaitGroup := sync.WaitGroup{}
-	exitedWaitGroup.Add(len(nodeIndex))
+	exitedWaitGroup.Add(len(nodeIndexes))
 
 	exited := make(chan struct{})
 	go func() {
@@ -591,7 +591,7 @@ func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
 		close(exited)
 	}()
 
-	for _, i := range nodeIndex {
+	for _, i := range nodeIndexes {
 		go func(cmd *waspCmd) {
 			waitCmd(cmd)
 			// mark process as finished
@@ -607,9 +607,9 @@ func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
 	}
 
 	// start nodes
-	initOk := make(chan bool, len(nodeIndex))
+	initOk := make(chan bool, len(nodeIndexes))
 	okCount := 0
-	for _, i := range nodeIndex {
+	for _, i := range nodeIndexes {
 		err := clu.startWaspNode(i, initOk)
 		if err != nil {
 			return err
@@ -617,7 +617,7 @@ func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
 		select {
 		case <-initOk:
 			okCount++
-			if okCount == len(nodeIndex) {
+			if okCount == len(nodeIndexes) {
 				return nil
 			}
 		case <-time.After(5 * time.Second):

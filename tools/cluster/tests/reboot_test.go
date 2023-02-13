@@ -283,7 +283,6 @@ func TestRebootN3TwoNodes(t *testing.T) {
 
 // Test rebooting nodes during operation.
 func TestRebootDuringTasks(t *testing.T) {
-	//	testutil.RunHeavy(t)
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 	restartDelay := 20 * time.Second
 	restartCases := [][]int{
