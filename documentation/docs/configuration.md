@@ -23,13 +23,13 @@ WASP uses a JSON standard format as a config file. If you are unsure about JSON 
 You can change the path of the config file by using the `-c` or `--config` argument while executing `wasp` executable.
 
 For example:
-```bash
+```shell
 wasp -c config_defaults.json
 ```
 
 You can always get the most up-to-date description of the config parameters by running:
 
-```bash
+```shell
 wasp -h --full
 ```
 
@@ -241,17 +241,17 @@ Example:
 
 ## <a id="peering"></a> 7. Peering
 
-| Name  | Description                                          | Type   | Default value  |
-| ----- | ---------------------------------------------------- | ------ | -------------- |
-| netID | Node host address as it is recognized by other peers | string | "0.0.0.0:4000" |
-| port  | Port for Wasp committee connection/peering           | int    | 4000           |
+| Name       | Description                                          | Type   | Default value  |
+| ---------- | ---------------------------------------------------- | ------ | -------------- |
+| PeeringURL | Node host address as it is recognized by other peers | string | "0.0.0.0:4000" |
+| port       | Port for Wasp committee connection/peering           | int    | 4000           |
 
 Example:
 
 ```json
   {
     "peering": {
-      "netID": "0.0.0.0:4000",
+      "PeeringURL": "0.0.0.0:4000",
       "port": 4000
     }
   }

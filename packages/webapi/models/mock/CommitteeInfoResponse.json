@@ -8,7 +8,7 @@
       "accessAPI": "",
       "node": {
         "isAlive": false,
-        "netId": "",
+        "PeeringURL": "",
         "numUsers": 0,
         "publicKey": "61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7",
         "isTrusted": false

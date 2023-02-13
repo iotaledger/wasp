@@ -1,7 +1,7 @@
 {
   "version": "0.4.0-alpha.2-390-g5470f1925",
   "publicKey": "0x8fb9555a17393f0e01aadd90f8b6bc8a64b1c5c37c99915942e40b2af99e72d6",
-  "netID": "0.0.0.0:4000",
+  "PeeringURL": "0.0.0.0:4000",
   "l1Params": {
     "maxPayloadSize": 32498,
     "protocol": {

@@ -195,23 +195,8 @@ module.exports = {
             items: [
                 {
                     type: 'doc',
-                    label: 'Installing Wasp',
-                    id: 'guide/chains_and_nodes/installing-wasp',
-                },
-                {
-                    type: 'doc',
                     label: 'Running a Node',
                     id: 'guide/chains_and_nodes/running-a-node',
-                },
-                {
-                    type: 'doc',
-                    label: 'Node Configuration',
-                    id: 'guide/chains_and_nodes/node-config',
-                },
-                {
-                    type: 'doc',
-                    label: 'Using Docker (Standalone)',
-                    id: 'guide/chains_and_nodes/docker_standalone',
                 },
                 {
                     type: 'doc',
@@ -230,11 +215,6 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'Chain Rotation',
-                    id: 'guide/chains_and_nodes/chain-rotation',
-                },
-                {
-                    type: 'doc',
                     label: 'Testnet',
                     id: 'guide/chains_and_nodes/testnet',
                 },
@@ -242,7 +222,7 @@ module.exports = {
         },
         {
             type: 'category',
-            label: 'Wasm VM',
+            label: 'Wasm VM (Experimental)',
             items: [
                 {
                     type: 'doc',
@@ -254,7 +234,7 @@ module.exports = {
                     label: 'Smart Contract Concepts',
                     id: 'guide/wasm_vm/concepts',
                 },
-                 {
+                {
                     type: 'doc',
                     label: 'Call Context',
                     id: 'guide/wasm_vm/context',
@@ -369,7 +349,7 @@ module.exports = {
                     label: 'Colored Tokens and Time Locks',
                     id: 'guide/wasm_vm/timelock',
                 },
-             ]
+            ]
         },
         {
             type: 'category',

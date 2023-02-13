@@ -74,7 +74,7 @@ the [Wasp repository](https://github.com/iotaledger/wasp/tree/develop/documentat
 
 You can run `*_test` files by moving to their directory and running the following command:
 
-```bash
+```shell
 go test
 ```
 
