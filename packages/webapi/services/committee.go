@@ -46,7 +46,7 @@ func (c *CommitteeService) GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNode
 	}
 
 	peeringStatus := peeringStatusIncludeSelf(c.networkProvider)
-	candidateNodes, err := getCandidateNodesAccessNodeInfo(chain.GetCandidateNodes())
+	candidateNodes, err := c.getCandidateNodesAccessNodeInfo(chain.GetCandidateNodes())
 	if err != nil {
 		return nil, err
 	}
@@ -55,16 +55,16 @@ func (c *CommitteeService) GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNode
 
 	//
 	// Committee nodes.
-	committeeNodes := getCommitteeNodes(dkShare, peeringStatus, candidateNodes, inChainNodes)
+	committeeNodes := c.getCommitteeNodes(dkShare, peeringStatus, candidateNodes, inChainNodes)
 
 	//
 	// Access nodes: accepted as access nodes and not included in the committee.
-	accessNodes := getAccessNodes(dkShare, chainNodes, peeringStatus, candidateNodes, inChainNodes)
+	accessNodes := c.getAccessNodes(dkShare, chainNodes, peeringStatus, candidateNodes, inChainNodes)
 
 	//
 	// Candidate nodes have supplied applications, but are not included
 	// in the committee and to the set of the access nodes.
-	filteredCandidateNodes, err := getCandidateNodes(peeringStatus, candidateNodes, inChainNodes)
+	filteredCandidateNodes, err := c.getCandidateNodes(peeringStatus, candidateNodes, inChainNodes)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (c *CommitteeService) GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNode
 	return &chainNodeInfo, nil
 }
 
-func getCommitteeNodes(
+func (c *CommitteeService) getCommitteeNodes(
 	dkShare tcrypto.DKShare,
 	peeringStatus map[cryptolib.PublicKeyKey]peering.PeerStatusProvider,
 	candidateNodes map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo,
@@ -88,14 +88,16 @@ func getCommitteeNodes(
 	nodes := make([]*dto.ChainNodeStatus, 0)
 
 	for _, cmtNodePubKey := range dkShare.GetNodePubKeys() {
-		nodes = append(nodes, makeChainNodeStatus(cmtNodePubKey, peeringStatus, candidateNodes))
+		nodeStatus := c.makeChainNodeStatus(cmtNodePubKey, peeringStatus, candidateNodes)
+
+		nodes = append(nodes, nodeStatus)
 		inChainNodes[cmtNodePubKey.AsKey()] = true
 	}
 
 	return nodes
 }
 
-func getAccessNodes(
+func (c *CommitteeService) getAccessNodes(
 	dkShare tcrypto.DKShare,
 	chainNodes []peering.PeerStatusProvider,
 	peeringStatus map[cryptolib.PublicKeyKey]peering.PeerStatusProvider,
@@ -116,22 +118,22 @@ func getAccessNodes(
 		if skip {
 			continue
 		}
-		nodes = append(nodes, makeChainNodeStatus(acnPubKey, peeringStatus, candidateNodes))
+		nodes = append(nodes, c.makeChainNodeStatus(acnPubKey, peeringStatus, candidateNodes))
 		inChainNodes[acnPubKey.AsKey()] = true
 	}
 
 	return nodes
 }
 
-func getCandidateNodes(
+func (c *CommitteeService) getCandidateNodes(
 	peeringStatus map[cryptolib.PublicKeyKey]peering.PeerStatusProvider,
 	candidateNodes map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo,
 	inChainNodes map[cryptolib.PublicKeyKey]bool,
 ) ([]*dto.ChainNodeStatus, error) {
 	nodes := make([]*dto.ChainNodeStatus, 0)
 
-	for _, c := range candidateNodes {
-		pubKey, err := cryptolib.NewPublicKeyFromBytes(c.NodePubKey)
+	for _, node := range candidateNodes {
+		pubKey, err := cryptolib.NewPublicKeyFromBytes(node.NodePubKey)
 		if err != nil {
 			return nil, err
 		}
@@ -140,13 +142,13 @@ func getCandidateNodes(
 			continue // Only include unused candidates here.
 		}
 
-		nodes = append(nodes, makeChainNodeStatus(pubKey, peeringStatus, candidateNodes))
+		nodes = append(nodes, c.makeChainNodeStatus(pubKey, peeringStatus, candidateNodes))
 	}
 
 	return nodes, nil
 }
 
-func getCandidateNodesAccessNodeInfo(chainCandidateNodes []*governance.AccessNodeInfo) (map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo, error) {
+func (c *CommitteeService) getCandidateNodesAccessNodeInfo(chainCandidateNodes []*governance.AccessNodeInfo) (map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo, error) {
 	candidateNodes := make(map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo)
 	for _, chainCandidateNode := range chainCandidateNodes {
 		pubKey, err := cryptolib.NewPublicKeyFromBytes(chainCandidateNode.NodePubKey)
@@ -159,7 +161,7 @@ func getCandidateNodesAccessNodeInfo(chainCandidateNodes []*governance.AccessNod
 	return candidateNodes, nil
 }
 
-func makeChainNodeStatus(
+func (c *CommitteeService) makeChainNodeStatus(
 	pubKey *cryptolib.PublicKey,
 	peeringStatus map[cryptolib.PublicKeyKey]peering.PeerStatusProvider,
 	candidateNodes map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo,
@@ -174,6 +176,10 @@ func makeChainNodeStatus(
 		cns.Node.PeeringURL = n.PeeringURL()
 		cns.Node.IsAlive = n.IsAlive()
 		cns.Node.NumUsers = n.NumUsers()
+
+		if c.networkProvider.Self().PubKey().Equals(cns.Node.PublicKey) {
+			cns.Node.IsTrusted = true
+		}
 	}
 
 	if n, ok := candidateNodes[pubKey.AsKey()]; ok {
@@ -191,5 +197,6 @@ func peeringStatusIncludeSelf(networkProvider peering.NetworkProvider) map[crypt
 		peeringStatus[n.PubKey().AsKey()] = n
 	}
 	peeringStatus[networkProvider.Self().PubKey().AsKey()] = networkProvider.Self().Status()
+
 	return peeringStatus
 }

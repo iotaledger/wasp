@@ -152,7 +152,7 @@ func (c *ChainService) GetChainInfoByChainID(chainID isc.ChainID) (*dto.ChainInf
 
 	governanceChainInfo, err := c.governance.GetChainInfo(chainID)
 	if err != nil {
-		if chainRecord != nil && errors.Is(err, interfaces.ErrChainNotFound) {
+		if errors.Is(err, interfaces.ErrChainNotFound) {
 			return &dto.ChainInfo{ChainID: chainID, IsActive: false}, nil
 		}
 
