@@ -14,9 +14,9 @@ import (
 	"github.com/iotaledger/hive.go/core/generics/onchangemap"
 	"github.com/iotaledger/hive.go/core/ioutils"
 	"github.com/iotaledger/hive.go/core/kvstore"
-	"github.com/iotaledger/wasp/packages/common"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type jsonTrustedPeers struct {
@@ -35,7 +35,7 @@ var _ TrustedPeersRegistryProvider = &TrustedPeersRegistryImpl{}
 // NewTrustedPeersRegistryImpl creates new instance of the trusted peers registry implementation.
 func NewTrustedPeersRegistryImpl(filePath string) (*TrustedPeersRegistryImpl, error) {
 	// create the target directory during initialization
-	if err := common.CreateDirectoryForFilePath(filePath, 0o770); err != nil {
+	if err := util.CreateDirectoryForFilePath(filePath, 0o770); err != nil {
 		return nil, err
 	}
 
@@ -89,7 +89,7 @@ func (p *TrustedPeersRegistryImpl) writeTrustedPeersJSON(trustedPeers []*peering
 		return nil
 	}
 
-	if err := common.CreateDirectoryForFilePath(p.filePath, 0o770); err != nil {
+	if err := util.CreateDirectoryForFilePath(p.filePath, 0o770); err != nil {
 		return err
 	}
 

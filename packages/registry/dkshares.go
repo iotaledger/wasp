@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/hive.go/core/generics/onchangemap"
 	"github.com/iotaledger/hive.go/core/ioutils"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/common"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -122,7 +121,7 @@ func (p *DKSharesRegistry) writeDKShareJSONToFolder(dkShare tcrypto.DKShare) err
 	}
 
 	filePath := p.getDKShareFilePath(dkShare)
-	if err := common.CreateDirectoryForFilePath(filePath, 0o770); err != nil {
+	if err := util.CreateDirectoryForFilePath(filePath, 0o770); err != nil {
 		return err
 	}
 

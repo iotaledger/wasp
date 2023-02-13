@@ -16,9 +16,9 @@ import (
 	"github.com/iotaledger/hive.go/core/ioutils"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
-	"github.com/iotaledger/wasp/packages/common"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 const comparableConsensusIDKeyLength = isc.ChainIDLength + iotago.Ed25519AddressBytesLength
@@ -280,7 +280,7 @@ func (p *ConsensusStateRegistry) writeConsensusStateJSON(state *consensusState) 
 
 	filePath := p.getConsensusStateFilePath(state)
 
-	if err := common.CreateDirectoryForFilePath(filePath, 0o770); err != nil {
+	if err := util.CreateDirectoryForFilePath(filePath, 0o770); err != nil {
 		return err
 	}
 

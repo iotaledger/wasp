@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/hive.go/core/generics/onchangemap"
 	"github.com/iotaledger/hive.go/core/ioutils"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/common"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
@@ -165,7 +164,7 @@ var _ ChainRecordRegistryProvider = &ChainRecordRegistryImpl{}
 // NewChainRecordRegistryImpl creates new instance of the chain registry implementation.
 func NewChainRecordRegistryImpl(filePath string) (*ChainRecordRegistryImpl, error) {
 	// create the target directory during initialization
-	if err := common.CreateDirectoryForFilePath(filePath, 0o770); err != nil {
+	if err := util.CreateDirectoryForFilePath(filePath, 0o770); err != nil {
 		return nil, err
 	}
 
@@ -216,7 +215,7 @@ func (p *ChainRecordRegistryImpl) writeChainRecordsJSON(chainRecords []*ChainRec
 		return nil
 	}
 
-	if err := common.CreateDirectoryForFilePath(p.filePath, 0o770); err != nil {
+	if err := util.CreateDirectoryForFilePath(p.filePath, 0o770); err != nil {
 		return err
 	}
 
