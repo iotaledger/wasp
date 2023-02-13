@@ -275,15 +275,16 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 			redeliveryTickCh = time.After(cgr.redeliveryPeriod)
 			cgr.handleRedeliveryTick(t)
 		case _, ok := <-recoveryTimeoutCh:
-			if !ok || cgr.recoverCB == nil {
+			if !ok {
 				recoveryTimeoutCh = nil
 				continue
 			}
-			cgr.recoverCB = nil
-			if cgr.outputReady {
-				cgr.log.Warn("Recovery timeout reached.")
-				cgr.recoverCB()
+			if cgr.outputReady || cgr.recoverCB == nil {
+				continue
 			}
+			cgr.log.Warn("Recovery timeout reached.")
+			cgr.recoverCB()
+			cgr.recoverCB = nil
 			// Don't terminate, maybe output is still needed. // TODO: Reconsider it.
 		case <-printStatusCh:
 			printStatusCh = time.After(cgr.printStatusPeriod)
