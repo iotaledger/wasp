@@ -14,10 +14,10 @@ keywords:
 
 Step-by-step instructions on how to use wasp-cli to interact with Wasp nodes on the Hornet network.
 
-## Requirements
+## Download wasp-cli
 
-After going through the instructions on [Running a node](./running-a-node.md), you should have the `wasp-cli` binary
-available in your system.
+Download the latest wasp-cli binary from the repo [relases page](https://github.com/iotaledger/wasp/releases).
+(for ease of use, its recommend adding wasp-cli to your system PATH)
 
 ## Configuration
 
@@ -33,38 +33,17 @@ After this, you will need to tell the `wasp-cli` the location of the Hornet node
 
 ```shell
 wasp-cli set l1.apiaddress http://localhost:14265
+# the faucet only exists for test networks
 wasp-cli set l1.faucetaddress http://localhost:8091
 
+# You can add as many nodes as you'd like
 wasp-cli wasp add wasp-0 127.0.0.1:9090
-
-## You can add as many nodes as you'd like
 wasp-cli wasp add wasp-1 127.0.0.1:9091
 ```
 
-Alternatively, you can edit the `wasp-cli.json` file and include the desired server locations:
-
-- The Hornet api address:
-
-  ```json
-  "l1": {
-    "apiaddress": "http://localhost:14265",
-    "faucetaddress": "http://localhost:8091"
-  },
-  ```
-
-- The API/nanomsg/peering address for each Wasp node:
-
-  ```json
-  "wasp": {
-      "0": "127.0.0.1:9090",
-      "1": "127.0.0.1:9091",
-      ...
-    }
-  ```
-
-If you configure the Wasp node to use the experimental [JWT authentication](node-config.md#jwt), you will need to log in
+If you configure the Wasp node to use JWT authentication, you will need to log in
 after you save the configuration.
 
 ```shell
 wasp-cli login
-``` 
+```
