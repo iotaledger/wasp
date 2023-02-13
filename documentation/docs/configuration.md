@@ -243,7 +243,7 @@ Example:
 
 | Name       | Description                                          | Type   | Default value  |
 | ---------- | ---------------------------------------------------- | ------ | -------------- |
-| PeeringURL | Node host address as it is recognized by other peers | string | "0.0.0.0:4000" |
+| peeringURL | Node host address as it is recognized by other peers | string | "0.0.0.0:4000" |
 | port       | Port for Wasp committee connection/peering           | int    | 4000           |
 
 Example:
@@ -251,7 +251,7 @@ Example:
 ```json
   {
     "peering": {
-      "PeeringURL": "0.0.0.0:4000",
+      "peeringURL": "0.0.0.0:4000",
       "port": 4000
     }
   }
@@ -279,20 +279,20 @@ Example:
   }
 ```
 
-## <a id="rawblocks"></a> 9. Raw Blocks
+## <a id="wal"></a> 9. Write-Ahead Logging
 
-| Name      | Description                              | Type    | Default value |
-| --------- | ---------------------------------------- | ------- | ------------- |
-| enabled   | Whether the raw blocks plugin is enabled | boolean | false         |
-| directory | The raw blocks path                      | string  | "blocks"      |
+| Name      | Description                | Type    | Default value |
+| --------- | -------------------------- | ------- | ------------- |
+| enabled   | Whether the WAL is enabled | boolean | true          |
+| directory | The path for WAL blocks    | string  | "wal"         |
 
 Example:
 
 ```json
   {
-    "rawBlocks": {
-      "enabled": false,
-      "directory": "blocks"
+    "wal": {
+      "enabled": true,
+      "directory": "wal"
     }
   }
 ```

@@ -56,7 +56,7 @@
     }
   },
   "peering": {
-    "peeringUrl": "0.0.0.0:4000",
+    "peeringURL": "0.0.0.0:4000",
     "port": 4000
   },
   "chains": {
@@ -65,9 +65,9 @@
     "apiCacheTTL": "5m",
     "pullMissingRequestsFromCommittee": true
   },
-  "rawBlocks": {
-    "enabled": false,
-    "directory": "blocks"
+  "wal": {
+    "enabled": true,
+    "directory": "wal"
   },
   "profiling": {
     "enabled": false,
