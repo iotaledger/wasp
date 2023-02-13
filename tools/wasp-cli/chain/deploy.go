@@ -106,6 +106,8 @@ func initDeployCmd() *cobra.Command {
 			log.Check(err)
 
 			config.AddChain(chainName, chainid.String())
+
+			activateChain(node, chainid)
 		},
 	}
 
