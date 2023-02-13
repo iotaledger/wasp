@@ -41,6 +41,7 @@ const (
 	inxTimeoutIndexerQuery        = 2 * time.Second
 	inxTimeoutMilestone           = 2 * time.Second
 	inxTimeoutOutput              = 2 * time.Second
+	inxTimeoutGetPeers            = 2 * time.Second
 	reattachWorkerPoolQueueSize   = 100
 
 	chainsCleanupThresholdRatio              = 50.0
@@ -89,27 +90,84 @@ func newCtxWithTimeout(ctx context.Context, defaultTimeout time.Duration, timeou
 	return context.WithTimeout(ctx, t)
 }
 
-func waitForL1ToBeSynced(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBridge) error {
-	getNodeSynced := func() bool {
-		nodeStatus := nodeBridge.NodeStatus()
+func waitForL1ToBeConnected(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBridge) error {
+	inxGetPeers := func(ctx context.Context) ([]*nodeclient.PeerResponse, error) {
+		ctx, cancel := context.WithTimeout(ctx, inxTimeoutGetPeers)
+		defer cancel()
 
-		// this flag also checks if the node has seen recent milestones.
-		// in case the L1 network is halted, even if the node is "synced", we will wait forever.
-		if !nodeStatus.GetIsSynced() {
-			var cmi, lsmi uint32
-			if nodeStatus.GetConfirmedMilestone() != nil && nodeStatus.GetConfirmedMilestone().GetMilestoneInfo() != nil {
-				cmi = nodeStatus.GetConfirmedMilestone().GetMilestoneInfo().MilestoneIndex
-			}
-			if nodeStatus.GetLatestMilestone() != nil && nodeStatus.GetLatestMilestone().GetMilestoneInfo() != nil {
-				lsmi = nodeStatus.GetLatestMilestone().GetMilestoneInfo().MilestoneIndex
-			}
+		return nodeBridge.INXNodeClient().Peers(ctx)
+	}
 
-			log.Infof("waiting for L1 to be fully synced... (%d/%d)", cmi, lsmi)
-
-			return false
+	getNodeConnected := func() (bool, error) {
+		peers, err := inxGetPeers(ctx)
+		if err != nil {
+			return false, fmt.Errorf("failed to get peers: %w", err)
 		}
 
-		return true
+		// check for at least one connected peer
+		for _, peer := range peers {
+			if peer.Connected {
+				return true, nil
+			}
+		}
+
+		log.Info("waiting for L1 to be connected to other peers...")
+		return false, nil
+	}
+
+	ticker := time.NewTicker(1 * time.Second)
+	defer timeutil.CleanupTicker(ticker)
+
+	for {
+		select {
+		case <-ticker.C:
+			nodeConnected, err := getNodeConnected()
+			if err != nil {
+				return err
+			}
+
+			if nodeConnected {
+				// node is connected to other peers
+				return nil
+			}
+
+		case <-ctx.Done():
+			// context was canceled
+			return common.ErrOperationAborted
+		}
+	}
+}
+
+func waitForL1ToBeSynced(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBridge) error {
+	getMilestoneIndex := func() (uint32, uint32) {
+		nodeStatus := nodeBridge.NodeStatus()
+
+		var lsmi, cmi uint32
+		if nodeStatus.GetLatestMilestone() != nil && nodeStatus.GetLatestMilestone().GetMilestoneInfo() != nil {
+			lsmi = nodeStatus.GetLatestMilestone().GetMilestoneInfo().MilestoneIndex
+		}
+		if nodeStatus.GetConfirmedMilestone() != nil && nodeStatus.GetConfirmedMilestone().GetMilestoneInfo() != nil {
+			cmi = nodeStatus.GetConfirmedMilestone().GetMilestoneInfo().MilestoneIndex
+		}
+
+		return lsmi, cmi
+	}
+
+	getNodeSynced := func() bool {
+		// we can't use the "GetIsSynced()", because this flag also checks if the node has seen recent milestones.
+		// in case the L1 network is halted, even if the node is "synced", we would wait forever.
+		// we need another indicator if the L1 saw milestones from other peers recently.
+		// lsmi != 0 indicates that the L1 saw heartbeat messages from peers after bootup, and len(peers) > 0
+
+		lsmi, cmi := getMilestoneIndex()
+		if lsmi > 0 && lsmi == cmi {
+			// node seems to be synced
+			return true
+		}
+
+		log.Infof("waiting for L1 to be fully synced... (%d/%d)", cmi, lsmi)
+
+		return false
 	}
 
 	ticker := time.NewTicker(1 * time.Second)
@@ -130,6 +188,12 @@ func waitForL1ToBeSynced(ctx context.Context, log *logger.Logger, nodeBridge *no
 }
 
 func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBridge, nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics) (chain.NodeConnection, error) {
+	// make sure the node is connected to at least one other peer
+	// otherwise the node status may not reflect the network status
+	if err := waitForL1ToBeConnected(ctx, log, nodeBridge); err != nil {
+		return nil, err
+	}
+
 	if err := waitForL1ToBeSynced(ctx, log, nodeBridge); err != nil {
 		return nil, err
 	}
