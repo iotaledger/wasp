@@ -41,7 +41,7 @@ wasp-cli wasp add wasp-0 127.0.0.1:9090
 wasp-cli wasp add wasp-1 127.0.0.1:9091
 ```
 
-If you configure the Wasp node to use the experimental [JWT authentication](node-config.md#jwt), you will need to log in
+If you configure the Wasp node to use JWT authentication, you will need to log in
 after you save the configuration.
 
 ```shell
