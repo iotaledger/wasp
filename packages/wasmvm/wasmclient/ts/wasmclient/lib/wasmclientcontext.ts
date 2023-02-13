@@ -61,6 +61,9 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         const n = coreaccounts.ScFuncs.getAccountNonce(ctx);
         n.params.agentID().setValue(agent);
         n.func.call();
+        if (ctx.Err != null) {
+            panic(ctx.Err);
+        }
         this.nonce = n.results.accountNonce().value();
     }
 
@@ -77,29 +80,6 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         }
     }
 
-    public async waitEvent(): Promise<void> {
-        this.Err = null;
-        await this.waitEventTimeout(10000);
-    }
-
-    private async waitEventTimeout(msec: number): Promise<void> {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const self = this;
-        return new Promise(function (resolve) {
-            setTimeout(function () {
-                if (self.eventReceived) {
-                    self.eventReceived = false;
-                    resolve();
-                } else if (msec <= 0) {
-                    self.Err = 'event wait timeout';
-                    resolve();
-                } else {
-                    self.waitEventTimeout(msec - 100).then(resolve);
-                }
-            }, 5);
-        });
-    }
-
     public waitRequest(): void {
         this.waitRequestID(this.ReqID);
     }
@@ -111,7 +91,6 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
     private processEvent(msg: string[]): void {
         if (msg[0] == 'error') {
             this.Err = msg[1];
-            this.eventReceived = true;
             return;
         }
 
@@ -129,8 +108,6 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         for (let i = 0; i < this.eventHandlers.length; i++) {
             this.eventHandlers[i].callHandler(topic, params);
         }
-
-        this.eventReceived = true;
     }
 
     public startEventHandlers(): isc.Error {

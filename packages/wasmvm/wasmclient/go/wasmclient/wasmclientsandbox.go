@@ -21,8 +21,6 @@ var (
 )
 
 func (s *WasmClientContext) FnCall(req *wasmrequests.CallRequest) []byte {
-	s.eventReceived = false
-
 	if req.Contract != s.scHname {
 		s.Err = fmt.Errorf("unknown contract: %s", req.Contract.String())
 		return nil
@@ -41,8 +39,6 @@ func (s *WasmClientContext) FnChainID() wasmtypes.ScChainID {
 }
 
 func (s *WasmClientContext) FnPost(req *wasmrequests.PostRequest) []byte {
-	s.eventReceived = false
-
 	if s.keyPair == nil {
 		s.Err = errors.New("missing key pair")
 		return nil

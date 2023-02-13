@@ -4,7 +4,6 @@
 package wasmclient
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -22,7 +21,6 @@ type WasmClientContext struct {
 	Err           error
 	eventDone     chan bool
 	eventHandlers []wasmlib.IEventHandlers
-	eventReceived bool
 	keyPair       *cryptolib.KeyPair
 	nonce         uint64
 	ReqID         wasmtypes.ScRequestID
@@ -129,17 +127,6 @@ func (s *WasmClientContext) Unregister(handler wasmlib.IEventHandlers) {
 	}
 }
 
-func (s *WasmClientContext) WaitEvent() {
-	s.Err = nil
-	for i := 0; i < 100; i++ {
-		if s.eventReceived {
-			return
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	s.Err = errors.New("event wait timeout")
-}
-
 func (s *WasmClientContext) WaitRequest(reqID ...wasmtypes.ScRequestID) {
 	requestID := s.ReqID
 	if len(reqID) == 1 {
@@ -155,8 +142,6 @@ func (s *WasmClientContext) processEvent(msg []string) {
 		// not intended for us
 		return
 	}
-
-	s.eventReceived = true
 
 	params := strings.Split(msg[6], "|")
 	for i, param := range params {

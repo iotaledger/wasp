@@ -52,10 +52,12 @@ func (proc *EventProcessor) sendClientEventsParam(t *testing.T, ctx *wasmclient.
 }
 
 func (proc *EventProcessor) waitClientEventsParam(t *testing.T, ctx *wasmclient.WasmClientContext, name string) {
-	ctx.WaitEvent()
+	for i := 0; i < 100 && proc.name == "" && ctx.Err == nil; i++ {
+		time.Sleep(100 * time.Millisecond)
+	}
 	require.NoError(t, ctx.Err)
-
 	require.EqualValues(t, name, proc.name)
+	proc.name = ""
 }
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {

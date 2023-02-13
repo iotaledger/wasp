@@ -7,10 +7,6 @@ use crate::*;
 
 impl ScViewCallContext for WasmClientContext {
     fn fn_call(&self, req: &wasmrequests::CallRequest) -> Vec<u8> {
-        let lock_received = self.event_received.clone();
-        let mut received = lock_received.write().unwrap();
-        *received = false;
-
         if req.contract != self.sc_hname {
             self.set_err("unknown contract: ", &req.contract.to_string());
             return Vec::new();
@@ -42,10 +38,6 @@ impl ScViewCallContext for WasmClientContext {
 
 impl ScFuncCallContext for WasmClientContext {
     fn fn_post(&self, req: &wasmrequests::PostRequest) -> Vec<u8> {
-        let lock_received = self.event_received.clone();
-        let mut received = lock_received.write().unwrap();
-        *received = false;
-
         if self.key_pair.is_none() {
             self.set_err("fn_post: ", "missing key pair");
             return Vec::new();
