@@ -25,6 +25,7 @@ GENERATE_ARGS="\
 (cd "$SCRIPTPATH/$APIGEN_FOLDER"; sh -c "./$APIGEN_SCRIPT >| $SCRIPTPATH/wasp_swagger_schema.json")
 
 if [ $GENERATE_MODE = "docker" ]; then
+  echo "Generating client with Docker"
 
   docker run -v "$SCRIPTPATH"/wasp_swagger_schema.json:/tmp/schema.json:ro \
     -v "$SCRIPTPATH":/tmp/apiclient \
@@ -34,6 +35,7 @@ if [ $GENERATE_MODE = "docker" ]; then
     $GENERATE_ARGS
 
 else
+  echo "Generating client with local CLI"
 
   openapi-generator-cli generate -i "$SCRIPTPATH/wasp_swagger_schema.json" -o "$SCRIPTPATH" \
     $GENERATE_ARGS
