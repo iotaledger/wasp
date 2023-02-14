@@ -66,7 +66,7 @@ lint-wasp-cli:
 	cd ./tools/wasp-cli && golangci-lint run --timeout 5m
 
 apiclient:
-	./clients/apiclient/generate_client.sh $(runargs)
+	./clients/apiclient/generate_client.sh
 
 apiclient-docker:
 	./clients/apiclient/generate_client.sh docker
