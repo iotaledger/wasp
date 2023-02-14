@@ -68,7 +68,7 @@ impl ScFuncCallContext for WasmClientContext {
 
         match res {
             Ok(req_id) => {
-                let mut ctx_req_id = self.req_id.write().unwrap();
+                let mut ctx_req_id = self.req_id.lock().unwrap();
                 *ctx_req_id = req_id;
             }
             Err(e) => self.set_err("", &e),
