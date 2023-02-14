@@ -5,10 +5,15 @@ import (
 	"errors"
 	"fmt"
 
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
+
 	"github.com/iotaledger/hive.go/core/basicauth"
 	"github.com/iotaledger/hive.go/core/generics/onchangemap"
 	"github.com/iotaledger/wasp/packages/util"
 )
+
+var AllowedPermissions = []string{"read", "write"}
 
 // UserManager handles the list of users that are stored in the user config.
 // It calls a function if the list changed.
@@ -23,6 +28,22 @@ func NewUserManager(storeCallback func([]*User) error) *UserManager {
 			onchangemap.WithChangedCallback[string, util.ComparableString](storeCallback),
 		),
 	}
+}
+
+func isPermissionAllowed(permission string) bool {
+	return slices.Contains(AllowedPermissions, permission)
+}
+
+func (m *UserManager) SanitizePermissions(permissions map[string]struct{}) map[string]struct{} {
+	sanitizedPermissions := map[string]struct{}{}
+
+	for _, permission := range maps.Keys(permissions) {
+		if isPermissionAllowed(permission) {
+			sanitizedPermissions[permission] = struct{}{}
+		}
+	}
+
+	return sanitizedPermissions
 }
 
 func (m *UserManager) EnableStoreOnChange() {
@@ -41,11 +62,15 @@ func (m *UserManager) User(name string) (*User, error) {
 
 // AddUser adds a user to the user manager.
 func (m *UserManager) AddUser(user *User) error {
+	user.Permissions = m.SanitizePermissions(user.Permissions)
+
 	return m.onChangeMap.Add(user)
 }
 
 // ModifyUser modifies a user in the user manager.
 func (m *UserManager) ModifyUser(user *User) error {
+	user.Permissions = m.SanitizePermissions(user.Permissions)
+
 	_, err := m.onChangeMap.Modify(user.ID(), func(item *User) bool {
 		*item = *user
 		return true
@@ -77,7 +102,7 @@ func (m *UserManager) ChangeUserPermissions(name string, permissions map[string]
 		return fmt.Errorf("unable to change permissions for user \"%s\": user does not exist", name)
 	}
 
-	user.Permissions = permissions
+	user.Permissions = m.SanitizePermissions(permissions)
 
 	if err := m.ModifyUser(user); err != nil {
 		return fmt.Errorf("unable to change permissions for user \"%s\": %w", name, err)

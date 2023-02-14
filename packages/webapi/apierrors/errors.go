@@ -15,6 +15,10 @@ func UserNotFoundError(username string) *HTTPError {
 	return NewHTTPError(http.StatusNotFound, fmt.Sprintf("User: %v not found", username), nil)
 }
 
+func UserCanNotBeDeleted(username string, explanation string) *HTTPError {
+	return NewHTTPError(http.StatusBadRequest, fmt.Sprintf("User: %v not be deleted. Reason: %v", username, explanation), nil)
+}
+
 func BodyIsEmptyError() *HTTPError {
 	return InvalidPropertyError("body", errors.New("a valid body is required"))
 }
