@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
@@ -454,14 +455,13 @@ func TestWaspCLILongParam(t *testing.T) {
 	committee, quorum := w.ArgCommitteeConfig(0)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
+	w.MustRun("chain", "deposit", "base:1000000")
 
-	// create foundry
-	w.MustRun(
-		"chain", "post-request", "accounts", accounts.FuncFoundryCreateNew.Name,
-		"string", accounts.ParamTokenScheme, "bytes", "0x00d107000000000000000000000000000000000000000000000000000000000000d207000000000000000000000000000000000000000000000000000000000000d30700000000000000000000000000000000000000000000000000000000000000", "-l", "base:1000000",
-		"-t", "base:1000000",
-		"--node=0",
-	)
+	w.CreateFoundry(&iotago.SimpleTokenScheme{
+		MaximumSupply: big.NewInt(1000000),
+		MeltedTokens:  big.NewInt(0),
+		MintedTokens:  big.NewInt(0),
+	})
 
 	veryLongTokenName := strings.Repeat("A", 100_000)
 	out := w.MustRun(

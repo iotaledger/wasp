@@ -3,6 +3,7 @@ package tests
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -19,6 +20,8 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
@@ -225,4 +228,14 @@ func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string, skipOnNodes ...i
 	}
 	// wait until the chain is synced on the nodes, otherwise we get a race condition on the next test commands
 	waitUntil(w.T, chainIsUpAndRunning, w.Cluster.AllNodes(), 30*time.Second)
+}
+
+func (w *WaspCLITest) CreateFoundry(tokenScheme iotago.TokenScheme) {
+	tokenSchemeBytes := codec.EncodeTokenScheme(tokenScheme)
+	out := w.PostRequestGetReceipt(
+		"-o", "accounts", accounts.FuncFoundryCreateNew.Name,
+		"string", accounts.ParamTokenScheme, "bytes", "0x"+hex.EncodeToString(tokenSchemeBytes),
+		"--allowance", "base:1000000",
+	)
+	require.Regexp(w.T, `.*Error: \(empty\).*`, strings.Join(out, "\n"))
 }
