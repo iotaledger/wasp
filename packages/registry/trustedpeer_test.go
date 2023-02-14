@@ -9,7 +9,6 @@ import (
 )
 
 func TestTrustedPeer(t *testing.T) {
-	// var err error
 	trustedPeersRegistry, err := NewTrustedPeersRegistryImpl("")
 	require.Nil(t, err)
 

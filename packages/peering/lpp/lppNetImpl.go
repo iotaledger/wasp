@@ -99,7 +99,7 @@ func NewNetworkProvider(
 		ctxCancel()
 		return nil, nil, fmt.Errorf("failed to construct libp2p host: %w", err)
 	}
-	n := netImpl{
+	n := &netImpl{
 		myPeeringURL: myPeeringURL,
 		lppHost:      lppHost,
 		ctx:          ctx,
@@ -117,6 +117,16 @@ func NewNetworkProvider(
 	// Finish initialization of the libp2p node.
 	lppHost.SetStreamHandler(lppProtocolPeering, n.lppPeeringProtocolHandler)
 	lppHost.SetStreamHandler(lppProtocolHeartbeat, n.lppHeartbeatProtocolHandler)
+
+	if trusted.IsTrustedPeer(n.PubKey()) != nil {
+		selfName := "me"
+		log.Infof("Adding this node as trusted for itself, name=%v, pubKey=%v, peeringURL=%v", selfName, n.PubKey(), n.myPeeringURL)
+		if _, err = trusted.TrustPeer(selfName, n.PubKey(), n.myPeeringURL); err != nil {
+			ctxCancel()
+			return nil, nil, fmt.Errorf("unable to add self to trusted peers: %w", err)
+		}
+	}
+
 	trustedPeers, err := trusted.TrustedPeers()
 	if err != nil {
 		ctxCancel()
@@ -128,7 +138,7 @@ func NewNetworkProvider(
 			return nil, nil, fmt.Errorf("unable to setup trusted peer: %w", err)
 		}
 	}
-	return &n, &n, nil
+	return n, n, nil
 }
 
 func (n *netImpl) lppAddToPeerStore(trustedPeer *peering.TrustedPeer) (libp2ppeer.ID, error) {
@@ -448,6 +458,9 @@ func (n *netImpl) IsTrustedPeer(pubKey *cryptolib.PublicKey) error {
 // TrustPeer implements the peering.TrustedNetworkManager interface.
 // It delegates everything to other implementation and updates the connections accordingly.
 func (n *netImpl) TrustPeer(name string, pubKey *cryptolib.PublicKey, peeringURL string) (*peering.TrustedPeer, error) {
+	if err := peering.ValidateTrustedPeerParams(name, pubKey, peeringURL); err != nil {
+		return nil, err
+	}
 	trustedPeer, err := n.trusted.TrustPeer(name, pubKey, peeringURL)
 	if err != nil {
 		return trustedPeer, err
@@ -474,6 +487,10 @@ func (n *netImpl) DistrustPeer(pubKey *cryptolib.PublicKey) (*peering.TrustedPee
 // TrustedPeers implements the peering.TrustedNetworkManager interface.
 func (n *netImpl) TrustedPeers() ([]*peering.TrustedPeer, error) {
 	return n.trusted.TrustedPeers()
+}
+
+func (n *netImpl) TrustedPeersByPubKeyOrName(pubKeysOrNames []string) ([]*peering.TrustedPeer, error) {
+	return n.trusted.TrustedPeersByPubKeyOrName(pubKeysOrNames)
 }
 
 // TrustedPeersListener implements the peering.TrustedNetworkManager interface.

@@ -74,7 +74,7 @@ func Init(
 	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
 	evmService := services.NewEVMService(chainService, networkProvider)
 	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeOwnerAddresses, nodeIdentityProvider, shutdownHandler, trustedNetworkManager)
-	dkgService := services.NewDKGService(dkShareRegistryProvider, dkgNodeProvider)
+	dkgService := services.NewDKGService(dkShareRegistryProvider, dkgNodeProvider, trustedNetworkManager)
 	userService := services.NewUserService(userManager)
 	// --
 

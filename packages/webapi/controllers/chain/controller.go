@@ -131,7 +131,7 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 
 	adminAPI.PUT("chains/:chainID/access-node/:peer", c.addAccessNode, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "peer", "Name of the peer to add as access node").
+		AddParamPath("", "peer", "Name or PubKey (hex) of the trusted peer to add as access node").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusCreated, "Access node was successfully added", nil, nil).
 		SetSummary("Configure a trusted node to be an access node.").
@@ -139,7 +139,7 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 
 	adminAPI.DELETE("chains/:chainID/access-node/:peer", c.removeAccessNode, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "peer", "Name of the peer to remove as access node").
+		AddParamPath("", "peer", "Name or PubKey (hex) of the trusted peer to remove as access node").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "Access node was successfully removed", nil, nil).
 		SetSummary("Remove an access node.").

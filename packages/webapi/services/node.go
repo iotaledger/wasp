@@ -3,10 +3,6 @@ package services
 import (
 	"bytes"
 	"errors"
-	"fmt"
-	"strings"
-
-	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -36,42 +32,14 @@ func NewNodeService(chainRecordRegistryProvider registry.ChainRecordRegistryProv
 	}
 }
 
-func findPeerByName(tnm peering.TrustedNetworkManager, peerName string) (*peering.TrustedPeer, error) {
-	paramIsPubKey := strings.HasPrefix(peerName, "0x")
-	var peerPubKey *cryptolib.PublicKey
-	var err error
-	if paramIsPubKey {
-		peerPubKey, err = cryptolib.NewPublicKeyFromString(peerName)
-		if err != nil {
-			return nil, fmt.Errorf("cannot parse %v as pubKey: %w", peerName, err)
-		}
-	}
-
-	peers, err := tnm.TrustedPeers()
-	if err != nil {
-		return nil, errors.New("error getting trusted peers")
-	}
-
-	peer, ok := lo.Find(peers, func(p *peering.TrustedPeer) bool {
-		if paramIsPubKey {
-			return peerPubKey.Equals(p.PubKey())
-		}
-		return p.Name == peerName
-	})
-	if !ok {
-		return nil, interfaces.ErrPeerNotFound
-	}
-	return peer, nil
-}
-
-func (n *NodeService) AddAccessNode(chainID isc.ChainID, peerName string) error {
-	peer, err := findPeerByName(n.trustedNetworkManager, peerName)
+func (n *NodeService) AddAccessNode(chainID isc.ChainID, peerPubKeyOrName string) error { // TODO: Check the caller for param names.
+	peers, err := n.trustedNetworkManager.TrustedPeersByPubKeyOrName([]string{peerPubKeyOrName})
 	if err != nil {
 		return err
 	}
 
 	if _, err = n.chainRecordRegistryProvider.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
-		return rec.AddAccessNode(peer.PubKey())
+		return rec.AddAccessNode(peers[0].PubKey())
 	}); err != nil {
 		return errors.New("error saving chain record")
 	}
@@ -79,13 +47,14 @@ func (n *NodeService) AddAccessNode(chainID isc.ChainID, peerName string) error 
 	return nil
 }
 
-func (n *NodeService) DeleteAccessNode(chainID isc.ChainID, peerName string) error {
-	peer, err := findPeerByName(n.trustedNetworkManager, peerName)
+func (n *NodeService) DeleteAccessNode(chainID isc.ChainID, peerPubKeyOrName string) error { // TODO: Check the caller for param names.
+	peers, err := n.trustedNetworkManager.TrustedPeersByPubKeyOrName([]string{peerPubKeyOrName})
 	if err != nil {
 		return err
 	}
+
 	if _, err := n.chainRecordRegistryProvider.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
-		return rec.RemoveAccessNode(peer.PubKey())
+		return rec.RemoveAccessNode(peers[0].PubKey())
 	}); err != nil {
 		return errors.New("error saving chain record")
 	}
