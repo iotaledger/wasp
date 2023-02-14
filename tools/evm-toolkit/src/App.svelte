@@ -1,13 +1,13 @@
 <script>
-  import Deposit from "./components/deposit/Deposit.svelte";
+  import Faucet from "./components/faucet/Faucet.svelte";
   import Withdraw from "./components/withdraw/Withdraw.svelte";
   import { SvelteToast } from "@zerodevx/svelte-toast";
 </script>
 
 <main>
   <div class="item">
-    <h2>Deposit</h2>
-    <Deposit />
+    <h2>Faucet</h2>
+    <Faucet />
   </div>
   <div class="item">
     <h2>Withdraw</h2>
