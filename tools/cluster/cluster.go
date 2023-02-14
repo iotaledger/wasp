@@ -139,6 +139,9 @@ func (clu *Cluster) TrustAll() error {
 	for ni := range allNodes {
 		for pi := range allPeers {
 			var err error
+			if ni == pi {
+				continue // dont trust self
+			}
 			if _, err = clu.WaspClient(allNodes[ni]).NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(
 				apiclient.PeeringTrustRequest{
 					Name:       fmt.Sprintf("%d", pi),

@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 )
@@ -71,6 +72,14 @@ func (c *Controller) trustPeer(e echo.Context) error {
 		return apierrors.InvalidPropertyError("publicKey", err)
 	}
 
+	selfPubKey := c.peeringService.GetIdentity().PublicKey
+	if publicKey.Equals(selfPubKey) {
+		return apierrors.SelfAsPeerError()
+	}
+
+	if !util.IsSlug(trustedPeer.Name) {
+		return apierrors.InvalidPeerName()
+	}
 	_, err = c.peeringService.TrustPeer(trustedPeer.Name, publicKey, trustedPeer.PeeringURL)
 	if err != nil {
 		return apierrors.InternalServerError(err)
@@ -86,13 +95,7 @@ func (c *Controller) distrustPeer(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	publicKey, err := cryptolib.NewPublicKeyFromString(trustedPeer.PublicKey)
-	if err != nil {
-		return apierrors.InvalidPropertyError("publicKey", err)
-	}
-
-	_, err = c.peeringService.DistrustPeer(publicKey)
-	if err != nil {
+	if _, err := c.peeringService.DistrustPeer(trustedPeer.Name); err != nil {
 		return apierrors.InternalServerError(err)
 	}
 

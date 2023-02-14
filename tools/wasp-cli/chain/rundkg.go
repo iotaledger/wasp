@@ -28,7 +28,7 @@ func initRunDKGCmd() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "rundkg",
+		Use:   "rundkg --peers=...",
 		Short: "Runs the DKG on specified nodes",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {

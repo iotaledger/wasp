@@ -106,7 +106,7 @@ paths:
       summary: Get information about a specific chain
       tags:
       - chains
-  /chains/{chainID}/access-node/{publicKey}:
+  /chains/{chainID}/access-node/{peer}:
     delete:
       operationId: removeAccessNode
       parameters:
@@ -117,9 +117,9 @@ paths:
         schema:
           format: string
           type: string
-      - description: Nodes public key (Hex)
+      - description: Name of the peer to remove as access node
         in: path
-        name: publicKey
+        name: peer
         required: true
         schema:
           format: string
@@ -149,9 +149,9 @@ paths:
         schema:
           format: string
           type: string
-      - description: Nodes public key (Hex)
+      - description: Name of the peer to add as access node
         in: path
-        name: publicKey
+        name: peer
         required: true
         schema:
           format: string
@@ -1576,7 +1576,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "true"
+                  example: info
                   format: string
                   type: string
                 type: object
@@ -1709,7 +1709,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/PeeringNodeStatusResponse__'
+                  $ref: '#/components/schemas/PeeringNodeStatusResponse_'
                 type: array
           description: A list of all peers
         "401":
@@ -2992,18 +2992,18 @@ components:
         committeeNodes:
         - node:
             isAlive: true
-            peeringURL: peeringURL
+            peeringURL: localhost:4000
             name: name
-            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-            numUsers: 6
+            publicKey: 0x0000
+            numUsers: 1
             isTrusted: true
           accessAPI: accessAPI
         - node:
             isAlive: true
-            peeringURL: peeringURL
+            peeringURL: localhost:4000
             name: name
-            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-            numUsers: 6
+            publicKey: 0x0000
+            numUsers: 1
             isTrusted: true
           accessAPI: accessAPI
         chainId: tst1pqm5ckama06xhkl080mmvz6l3xy8c8lulrwy7mx4ll0fc69krxfgka70j0e
@@ -3109,10 +3109,10 @@ components:
       example:
         node:
           isAlive: true
-          peeringURL: peeringURL
+          peeringURL: localhost:4000
           name: name
-          publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-          numUsers: 6
+          publicKey: 0x0000
+          numUsers: 1
           isTrusted: true
         accessAPI: accessAPI
       properties:
@@ -3843,7 +3843,7 @@ components:
         name: InStateOutputMetricItem
     InfoResponse:
       example:
-        peeringURL: peeringURL
+        peeringURL: 0.0.0.0:4000
         l1Params:
           protocol:
             rentStructure:
@@ -3871,6 +3871,7 @@ components:
           $ref: '#/components/schemas/L1Params'
         peeringURL:
           description: The net id of the node
+          example: 0.0.0.0:4000
           format: string
           type: string
           xml:
@@ -4393,7 +4394,7 @@ components:
         name: OutputID
     PeeringNodeIdentityResponse:
       example:
-        peeringURL: peeringURL
+        peeringURL: localhost:4000
         name: name
         publicKey: 0x0000
         isTrusted: true
@@ -4411,6 +4412,7 @@ components:
             name: Name
         peeringURL:
           description: The peering URL of the peer
+          example: localhost:4000
           format: string
           type: string
           xml:
@@ -4486,61 +4488,7 @@ components:
     PeeringNodeStatusResponse_:
       example:
         isAlive: true
-        peeringURL: peeringURL
-        name: name
-        publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-        numUsers: 6
-        isTrusted: true
-      properties:
-        isAlive:
-          description: Whether or not the peer is activated
-          format: boolean
-          type: boolean
-          xml:
-            name: IsAlive
-        isTrusted:
-          format: boolean
-          type: boolean
-          xml:
-            name: IsTrusted
-        name:
-          format: string
-          type: string
-          xml:
-            name: Name
-        numUsers:
-          description: The amount of users attached to the peer
-          format: int32
-          type: integer
-          xml:
-            name: NumUsers
-        peeringURL:
-          description: The peering URL of the peer
-          format: string
-          type: string
-          xml:
-            name: PeeringURL
-        publicKey:
-          description: The peers public key encoded in Hex
-          example: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-          format: string
-          type: string
-          xml:
-            name: PublicKey
-      required:
-      - isAlive
-      - isTrusted
-      - name
-      - numUsers
-      - peeringURL
-      - publicKey
-      type: object
-      xml:
-        name: PeeringNodeStatusResponse
-    PeeringNodeStatusResponse__:
-      example:
-        isAlive: true
-        peeringURL: peeringURL
+        peeringURL: localhost:4000
         name: name
         publicKey: 0x0000
         numUsers: 1
@@ -4573,6 +4521,7 @@ components:
             name: NumUsers
         peeringURL:
           description: The peering URL of the peer
+          example: localhost:4000
           format: string
           type: string
           xml:
@@ -4596,7 +4545,7 @@ components:
         name: PeeringNodeStatusResponse
     PeeringTrustRequest:
       example:
-        peeringURL: peeringURL
+        peeringURL: localhost:4000
         name: name
         publicKey: 0x0000
       properties:
@@ -4607,6 +4556,7 @@ components:
             name: Name
         peeringURL:
           description: The peering URL of the peer
+          example: localhost:4000
           format: string
           type: string
           xml:

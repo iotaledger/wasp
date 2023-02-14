@@ -30,7 +30,7 @@ func TestWaspCLIExternalRotationGovAccessNodes(t *testing.T) {
 func TestWaspCLIExternalRotationPermitionlessAccessNodes(t *testing.T) {
 	addAccessNode := func(w *WaspCLITest, pubKey string) {
 		for _, idx := range w.Cluster.AllNodes() {
-			w.MustRun("chain", "access-nodes", "add", pubKey, fmt.Sprintf("--node=%d", idx))
+			w.MustRun("chain", "access-nodes", "add", "--peers=next-committee-member", fmt.Sprintf("--node=%d", idx))
 		}
 	}
 	testWaspCLIExternalRotation(t, addAccessNode)
@@ -68,7 +68,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		"--node=0",
 	)
 	chainID := regexp.MustCompile(`(.*)ChainID:\s*([a-zA-Z0-9_]*),`).FindStringSubmatch(strings.Join(out, ""))[2]
-	w.ActivateChainOnAllNodes("chain1")
+	w.ActivateChainOnAllNodes("chain1", 0)
 
 	// start a new wasp cluster
 	w2 := newWaspCLITest(t, waspClusterOpts{

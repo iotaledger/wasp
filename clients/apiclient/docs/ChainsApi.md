@@ -5,7 +5,7 @@ All URIs are relative to *http://localhost*
 Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**ActivateChain**](ChainsApi.md#ActivateChain) | **Post** /chains/{chainID}/activate | Activate a chain
-[**AddAccessNode**](ChainsApi.md#AddAccessNode) | **Put** /chains/{chainID}/access-node/{publicKey} | Configure a trusted node to be an access node.
+[**AddAccessNode**](ChainsApi.md#AddAccessNode) | **Put** /chains/{chainID}/access-node/{peer} | Configure a trusted node to be an access node.
 [**AttachToWebsocket**](ChainsApi.md#AttachToWebsocket) | **Get** /chains/{chainID}/ws | 
 [**ChainsChainIDEvmGet**](ChainsApi.md#ChainsChainIDEvmGet) | **Get** /chains/{chainID}/evm | 
 [**DeactivateChain**](ChainsApi.md#DeactivateChain) | **Post** /chains/{chainID}/deactivate | Deactivate a chain
@@ -15,7 +15,7 @@ Method | HTTP request | Description
 [**GetContracts**](ChainsApi.md#GetContracts) | **Get** /chains/{chainID}/contracts | Get all available chain contracts
 [**GetRequestIDFromEVMTransactionID**](ChainsApi.md#GetRequestIDFromEVMTransactionID) | **Get** /chains/{chainID}/evm/tx/{txHash} | Get the ISC request ID for the given Ethereum transaction hash
 [**GetStateValue**](ChainsApi.md#GetStateValue) | **Get** /chains/{chainID}/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
-[**RemoveAccessNode**](ChainsApi.md#RemoveAccessNode) | **Delete** /chains/{chainID}/access-node/{publicKey} | Remove an access node.
+[**RemoveAccessNode**](ChainsApi.md#RemoveAccessNode) | **Delete** /chains/{chainID}/access-node/{peer} | Remove an access node.
 [**SetChainRecord**](ChainsApi.md#SetChainRecord) | **Post** /chains/{chainID}/chainrecord | Sets the chain record.
 
 
@@ -88,7 +88,7 @@ Name | Type | Description  | Notes
 
 ## AddAccessNode
 
-> AddAccessNode(ctx, chainID, publicKey).Execute()
+> AddAccessNode(ctx, chainID, peer).Execute()
 
 Configure a trusted node to be an access node.
 
@@ -106,11 +106,11 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    publicKey := "publicKey_example" // string | Nodes public key (Hex)
+    peer := "peer_example" // string | Name of the peer to add as access node
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.AddAccessNode(context.Background(), chainID, publicKey).Execute()
+    resp, r, err := apiClient.ChainsApi.AddAccessNode(context.Background(), chainID, peer).Execute()
     if err != nil {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.AddAccessNode``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -125,7 +125,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**publicKey** | **string** | Nodes public key (Hex) | 
+**peer** | **string** | Name of the peer to add as access node | 
 
 ### Other Parameters
 
@@ -762,7 +762,7 @@ Name | Type | Description  | Notes
 
 ## RemoveAccessNode
 
-> RemoveAccessNode(ctx, chainID, publicKey).Execute()
+> RemoveAccessNode(ctx, chainID, peer).Execute()
 
 Remove an access node.
 
@@ -780,11 +780,11 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    publicKey := "publicKey_example" // string | Nodes public key (Hex)
+    peer := "peer_example" // string | Name of the peer to remove as access node
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.RemoveAccessNode(context.Background(), chainID, publicKey).Execute()
+    resp, r, err := apiClient.ChainsApi.RemoveAccessNode(context.Background(), chainID, peer).Execute()
     if err != nil {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.RemoveAccessNode``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -799,7 +799,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**publicKey** | **string** | Nodes public key (Hex) | 
+**peer** | **string** | Name of the peer to remove as access node | 
 
 ### Other Parameters
 
