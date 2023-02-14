@@ -25,6 +25,14 @@ func DecodeTokenScheme(b []byte, def ...iotago.TokenScheme) (iotago.TokenScheme,
 	return ts, nil
 }
 
+func MustDecodeTokenScheme(b []byte, def ...iotago.TokenScheme) iotago.TokenScheme {
+	t, err := DecodeTokenScheme(b, def...)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
 func EncodeTokenScheme(value iotago.TokenScheme) []byte {
 	ret, err := value.Serialize(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {

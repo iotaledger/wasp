@@ -61,6 +61,16 @@ func StorageEncodeString(slotNumber uint8, s string) (ret map[common.Hash]common
 	return
 }
 
+// StorageEncodeBytes encodes a byte array according to the storage spec.
+func StorageEncodeBytes(slotNumber uint8, b []byte) (ret map[common.Hash]common.Hash) {
+	return StorageEncodeString(slotNumber, string(b))
+}
+
+// StorageEncodeUint256 encodes a uint256 value according to the storage spec.
+func StorageEncodeUint256(n *big.Int) (ret common.Hash) {
+	return common.BigToHash(n)
+}
+
 // StorageEncodeBytes32 encodes a bytes32 value according to the storage spec.
 func StorageEncodeBytes32(b []byte) (ret common.Hash) {
 	if len(b) != 32 {

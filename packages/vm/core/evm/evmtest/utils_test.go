@@ -228,6 +228,19 @@ func (e *soloChainEnv) ERC20NativeTokens(defaultSender *ecdsa.PrivateKey, foundr
 	}
 }
 
+func (e *soloChainEnv) ERC20ExternalNativeTokens(defaultSender *ecdsa.PrivateKey, addr common.Address) *iscContractInstance {
+	erc20BaseABI, err := abi.JSON(strings.NewReader(iscmagic.ERC20ExternalNativeTokensABI))
+	require.NoError(e.t, err)
+	return &iscContractInstance{
+		evmContractInstance: &evmContractInstance{
+			chain:         e,
+			defaultSender: defaultSender,
+			address:       addr,
+			abi:           erc20BaseABI,
+		},
+	}
+}
+
 func (e *soloChainEnv) ERC721NFTs(defaultSender *ecdsa.PrivateKey) *iscContractInstance {
 	erc721ABI, err := abi.JSON(strings.NewReader(iscmagic.ERC721NFTsABI))
 	require.NoError(e.t, err)
@@ -320,7 +333,12 @@ func (e *soloChainEnv) deployContract(creator *ecdsa.PrivateKey, abiJSON string,
 	}
 }
 
-func (e *soloChainEnv) registerERC20NativeToken(foundryOwner *cryptolib.KeyPair, foundrySN uint32, tokenName, tokenTickerSymbol string, tokenDecimals uint8) error {
+func (e *soloChainEnv) registerERC20NativeToken(
+	foundryOwner *cryptolib.KeyPair,
+	foundrySN uint32,
+	tokenName, tokenTickerSymbol string,
+	tokenDecimals uint8,
+) error {
 	_, err := e.soloChain.PostRequestOffLedger(solo.NewCallParams(evm.Contract.Name, evm.FuncRegisterERC20NativeToken.Name, dict.Dict{
 		evm.FieldFoundrySN:         codec.EncodeUint32(foundrySN),
 		evm.FieldTokenName:         codec.EncodeString(tokenName),
@@ -328,6 +346,44 @@ func (e *soloChainEnv) registerERC20NativeToken(foundryOwner *cryptolib.KeyPair,
 		evm.FieldTokenDecimals:     codec.EncodeUint8(tokenDecimals),
 	}).WithMaxAffordableGasBudget(), foundryOwner)
 	return err
+}
+
+func (e *soloChainEnv) registerERC20ExternalNativeToken(
+	fromChain *solo.Chain,
+	foundrySN uint32,
+	tokenName, tokenTickerSymbol string,
+	tokenDecimals uint8,
+) (ret common.Address, err error) {
+	_, err = fromChain.PostRequestOffLedger(solo.NewCallParams(evm.Contract.Name, evm.FuncRegisterERC20NativeTokenOnRemoteChain.Name, dict.Dict{
+		evm.FieldFoundrySN:         codec.EncodeUint32(foundrySN),
+		evm.FieldTokenName:         codec.EncodeString(tokenName),
+		evm.FieldTokenTickerSymbol: codec.EncodeString(tokenTickerSymbol),
+		evm.FieldTokenDecimals:     codec.EncodeUint8(tokenDecimals),
+		evm.FieldTargetAddress:     codec.EncodeAddress(e.soloChain.ChainID.AsAddress()),
+	}).WithMaxAffordableGasBudget().WithAllowance(isc.NewAssetsBaseTokens(1*isc.Million)), fromChain.OriginatorPrivateKey)
+	if err != nil {
+		return ret, err
+	}
+
+	foundryOutput, err := fromChain.GetFoundryOutput(foundrySN)
+	require.NoError(e.t, err)
+	nativeTokenID, err := foundryOutput.ID()
+	require.NoError(e.t, err)
+
+	if !e.soloChain.WaitUntil(func(solo.MempoolInfo) bool {
+		res, err := e.soloChain.CallView(evm.Contract.Name, evm.FuncGetERC20ExternalNativeTokenAddress.Name,
+			evm.FieldNativeTokenID, nativeTokenID[:],
+		)
+		require.NoError(e.t, err)
+		if len(res[evm.FieldResult]) == 0 {
+			return false
+		}
+		copy(ret[:], res[evm.FieldResult])
+		return true
+	}) {
+		require.FailNow(e.t, "could not get ERC20 address on target chain")
+	}
+	return ret, err
 }
 
 func (e *soloChainEnv) registerERC721NFTCollection(collectionOwner *cryptolib.KeyPair, collectionID iotago.NFTID) error {

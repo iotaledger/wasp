@@ -54,6 +54,16 @@ var (
 	ERC20NativeTokensRuntimeBytecode    = common.FromHex(strings.TrimSpace(erc20NativeTokensRuntimeBytecodeHex))
 )
 
+//go:generate sh -c "solc --abi --bin-runtime --storage-layout --overwrite @iscmagic=`realpath .` ERC20ExternalNativeTokens.sol -o ."
+var (
+	//go:embed ERC20ExternalNativeTokens.abi
+	ERC20ExternalNativeTokensABI string
+
+	//go:embed ERC20ExternalNativeTokens.bin-runtime
+	erc20ExternalNativeTokensRuntimeBytecodeHex string
+	ERC20ExternalNativeTokensRuntimeBytecode    = common.FromHex(strings.TrimSpace(erc20ExternalNativeTokensRuntimeBytecodeHex))
+)
+
 //go:generate sh -c "solc --abi --bin-runtime --overwrite @iscmagic=`realpath .` ERC721NFTs.sol -o ."
 var (
 	//go:embed ERC721NFTs.abi

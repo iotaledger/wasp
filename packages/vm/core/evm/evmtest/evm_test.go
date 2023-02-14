@@ -1018,10 +1018,6 @@ func TestERC20NativeTokens(t *testing.T) {
 	err = env.registerERC20NativeToken(foundryOwner, foundrySN, tokenName, tokenTickerSymbol, tokenDecimals)
 	require.ErrorContains(t, err, "already exists")
 
-	l2Balance := func(agentID isc.AgentID) uint64 {
-		return env.soloChain.L2NativeTokens(agentID, nativeTokenID).Uint64()
-	}
-
 	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
 	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
 
@@ -1039,11 +1035,85 @@ func TestERC20NativeTokens(t *testing.T) {
 
 	erc20 := env.ERC20NativeTokens(ethKey, foundrySN)
 
+	testERC20NativeTokens(
+		env,
+		erc20,
+		nativeTokenID,
+		tokenName, tokenTickerSymbol,
+		tokenDecimals,
+		supply,
+		ethAgentID,
+	)
+}
+
+func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
+	env := initEVM(t)
+
+	const (
+		tokenName         = "ERC20 Native Token Test"
+		tokenTickerSymbol = "ERC20NT"
+		tokenDecimals     = 8
+	)
+
+	foundryOwner, foundryOwnerAddr := env.solo.NewKeyPairWithFunds()
+	err := env.soloChain.DepositBaseTokensToL2(env.solo.L1BaseTokens(foundryOwnerAddr)/2, foundryOwner)
+	require.NoError(t, err)
+
+	// need an alias to create a foundry; the easiest way is to create a "disposable" ISC chain
+	foundryChain, _, _ := env.solo.NewChainExt(foundryOwner, 0, "foundryChain")
+	err = foundryChain.DepositBaseTokensToL2(env.solo.L1BaseTokens(foundryOwnerAddr)/2, foundryOwner)
+	require.NoError(t, err)
+	supply := big.NewInt(int64(10 * isc.Million))
+	foundrySN, nativeTokenID, err := foundryChain.NewFoundryParams(supply).WithUser(foundryOwner).CreateFoundry()
+	require.NoError(t, err)
+	err = foundryChain.MintTokens(foundrySN, supply, foundryOwner)
+	require.NoError(t, err)
+
+	erc20addr, err := env.registerERC20ExternalNativeToken(foundryChain, foundrySN, tokenName, tokenTickerSymbol, tokenDecimals)
+	require.NoError(t, err)
+
+	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
+
 	{
-		var sn uint32
-		require.NoError(t, erc20.callView("foundrySerialNumber", nil, &sn))
-		require.Equal(t, foundrySN, sn)
+		assets := isc.NewAssets(0, iotago.NativeTokens{
+			&iotago.NativeToken{ID: nativeTokenID, Amount: supply},
+		})
+		err = foundryChain.Withdraw(assets, foundryOwner)
+		require.NoError(t, err)
+		err = env.soloChain.SendFromL1ToL2Account(0, assets, ethAgentID, foundryOwner)
+		require.NoError(t, err)
 	}
+
+	erc20 := env.ERC20ExternalNativeTokens(ethKey, erc20addr)
+
+	testERC20NativeTokens(
+		env,
+		erc20,
+		nativeTokenID,
+		tokenName, tokenTickerSymbol,
+		tokenDecimals,
+		supply,
+		ethAgentID,
+	)
+}
+
+func testERC20NativeTokens(
+	env *soloChainEnv,
+	erc20 *iscContractInstance,
+	nativeTokenID iotago.NativeTokenID,
+	tokenName, tokenTickerSymbol string,
+	tokenDecimals uint8,
+	supply *big.Int,
+	ethAgentID isc.AgentID,
+) {
+	t := env.t
+	ethAddr := ethAgentID.(*isc.EthereumAddressAgentID).EthAddress()
+
+	l2Balance := func(agentID isc.AgentID) uint64 {
+		return env.soloChain.L2NativeTokens(agentID, nativeTokenID).Uint64()
+	}
+
 	{
 		var id struct{ iscmagic.NativeTokenID }
 		require.NoError(t, erc20.callView("nativeTokenID", nil, &id))
