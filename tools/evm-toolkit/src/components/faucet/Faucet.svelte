@@ -99,15 +99,15 @@
       <span class="header">Faucet API endpoint</span>
       <input type="text" bind:value={selectedNetworkOption.faucetEndpoint} />
     </div>
+
+    <div class="input_container">
+      <span class="header">Chain Address</span>
+      <input type="text" bind:value={selectedNetworkOption.chainAddress} />
+    </div>
   {/if}
 
   <div class="input_container">
-    <span class="header">Chain Address</span>
-    <input type="text" bind:value={selectedNetworkOption.chainAddress} />
-  </div>
-
-  <div class="input_container">
-    <span class="header">EVM Address</span>
+    <span class="header">Your EVM Address</span>
     <input type="text" bind:value={evmAddress} />
   </div>
 
@@ -139,7 +139,7 @@
     border: 2px solid #991c0d78;
     border-radius: 10px;
     padding: 15px;
-    max-width: 386px;
+    
   }
 
   .error_title {

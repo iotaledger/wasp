@@ -30,6 +30,7 @@ var (
 	ErrNoBalanceOnAccount     = errors.New("no balance on account")
 	ErrInvalidNonce           = errors.New("invalid nonce")
 	ErrChainNotFound          = errors.New("chain not found")
+	ErrCantDeleteLastUser     = errors.New("you can't delete the last user")
 )
 
 type APIController interface {

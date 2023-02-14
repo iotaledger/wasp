@@ -66,6 +66,10 @@ func (u *UserService) UpdateUserPermissions(username string, permissions []strin
 }
 
 func (u *UserService) DeleteUser(username string) error {
+	if len(u.GetUsers()) == 1 {
+		return interfaces.ErrCantDeleteLastUser
+	}
+
 	return u.userManager.RemoveUser(username)
 }
 
