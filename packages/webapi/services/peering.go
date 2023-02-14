@@ -63,7 +63,6 @@ func (p *PeeringService) GetTrustedPeers() ([]*dto.PeeringNodeIdentity, error) {
 
 	peers := make([]*dto.PeeringNodeIdentity, len(trustedPeers))
 	for k, v := range trustedPeers {
-
 		peers[k] = &dto.PeeringNodeIdentity{
 			Name:       v.Name,
 			PublicKey:  v.PubKey(),

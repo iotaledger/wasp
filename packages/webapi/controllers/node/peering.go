@@ -37,7 +37,6 @@ func (c *Controller) getTrustedPeers(e echo.Context) error {
 
 	peerModels := make([]models.PeeringNodeIdentityResponse, len(peers))
 	for k, v := range peers {
-
 		peerModels[k] = models.PeeringNodeIdentityResponse{
 			Name:       v.Name,
 			PeeringURL: v.PeeringURL,
