@@ -38,6 +38,26 @@ jobs:
       - name: Test
         run: make test-full
 
+      - name: The job has failed
+        if: ${{ failure() }}
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload: |
+            {
+              "job": "${{ github.job }}",
+              "steps": "${{ steps }}",
+              "run_number": "${{ github.run_number }}",
+              "run_attempt": "${{ github.run_attempt }}",
+              "workflow": "${{ github.workflow }}",
+              "sha": "${{ github.sha }}",
+              "ref": "${{ github.ref }}",
+              "run_id": "${{ github.run_id }}",
+              "server_url": "${{ github.server_url }}",
+              "repository": "${{ github.repository }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
   contract-test:
     name: Wasm contract tests
     runs-on: [self-hosted, linux]
@@ -120,6 +140,26 @@ jobs:
             go test ./... -rswasm  -p 1
           fi
 
+      - name: The job has failed
+        if: ${{ failure() }}
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload: |
+            {
+              "job": "${{ github.job }}",
+              "steps": "${{ steps }}",
+              "run_number": "${{ github.run_number }}",
+              "run_attempt": "${{ github.run_attempt }}",
+              "workflow": "${{ github.workflow }}",
+              "sha": "${{ github.sha }}",
+              "ref": "${{ github.ref }}",
+              "run_id": "${{ github.run_id }}",
+              "server_url": "${{ github.server_url }}",
+              "repository": "${{ github.repository }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
   golangci:
     name: Lint
     runs-on: [self-hosted, linux]
@@ -159,3 +199,23 @@ jobs:
           version: v1.51.1
           args: --timeout 10m0s
           skip-pkg-cache: true
+
+      - name: The job has failed
+        if: ${{ failure() }}
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload: |
+            {
+              "job": "${{ github.job }}",
+              "steps": "${{ steps }}",
+              "run_number": "${{ github.run_number }}",
+              "run_attempt": "${{ github.run_attempt }}",
+              "workflow": "${{ github.workflow }}",
+              "sha": "${{ github.sha }}",
+              "ref": "${{ github.ref }}",
+              "run_id": "${{ github.run_id }}",
+              "server_url": "${{ github.server_url }}",
+              "repository": "${{ github.repository }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
