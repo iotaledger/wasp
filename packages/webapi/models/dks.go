@@ -2,9 +2,9 @@ package models
 
 // DKSharesPostRequest is a POST request for creating new DKShare.
 type DKSharesPostRequest struct {
-	PeerIdentities []string `json:"peerIdentities" swagger:"desc(Optional, Hex encoded public keys of the peers generating the DKS. (Hex)),required"`
-	Threshold      uint16   `json:"threshold" swagger:"desc(Should be =< len(PeerPublicIdentities)),required,min(1)"`
-	TimeoutMS      uint32   `json:"timeoutMS" swagger:"desc(Timeout in milliseconds.),required,min(1)"`
+	PeerPubKeysOrNames []string `json:"peerIdentities" swagger:"desc(Names or hex encoded public keys of trusted peers to run DKG on.),required"`
+	Threshold          uint16   `json:"threshold" swagger:"desc(Should be =< len(PeerPublicIdentities)),required,min(1)"`
+	TimeoutMS          uint32   `json:"timeoutMS" swagger:"desc(Timeout in milliseconds.),required,min(1)"`
 }
 
 // DKSharesInfo stands for the DKShare representation, returned by the GET and POST methods.

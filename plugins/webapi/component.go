@@ -12,6 +12,7 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 	"go.elastic.co/apm/module/apmechov4"
 	"go.uber.org/dig"
+	"go.uber.org/zap"
 
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
@@ -127,7 +128,7 @@ func provide(c *dig.Container) error {
 		e.Server.WriteTimeout = ParamsWebAPI.WriteTimeout
 
 		e.HidePort = true
-		e.HTTPErrorHandler = webapi.CompatibilityHTTPErrorHandler(Plugin.Logger())
+		e.HTTPErrorHandler = webapi.CompatibilityHTTPErrorHandler(Plugin.Logger().WithOptions(zap.AddStacktrace(zap.ErrorLevel)))
 
 		e.Use(apmechov4.Middleware())
 

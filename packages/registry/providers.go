@@ -40,5 +40,6 @@ type TrustedPeersRegistryProvider interface {
 	TrustPeer(name string, pubKey *cryptolib.PublicKey, accountURL string) (*peering.TrustedPeer, error)
 	DistrustPeer(pubKey *cryptolib.PublicKey) (*peering.TrustedPeer, error)
 	TrustedPeers() ([]*peering.TrustedPeer, error)
+	TrustedPeersByPubKeyOrName(pubKeysOrNames []string) ([]*peering.TrustedPeer, error)
 	TrustedPeersListener(callback func([]*peering.TrustedPeer)) context.CancelFunc
 }

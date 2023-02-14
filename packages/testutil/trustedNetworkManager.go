@@ -42,6 +42,9 @@ func (tnm *trustedNetworkManager) IsTrustedPeer(pubKey *cryptolib.PublicKey) err
 
 // TrustPeer implements the peering.TrustedNetworkManager interface.
 func (tnm *trustedNetworkManager) TrustPeer(name string, pubKey *cryptolib.PublicKey, peeringURL string) (*peering.TrustedPeer, error) {
+	if err := peering.ValidateTrustedPeerParams(name, pubKey, peeringURL); err != nil {
+		return nil, err
+	}
 	tnm.data[pubKey.AsKey()] = trustedNetworkDataEntry{name, pubKey, peeringURL}
 	tnm.changeEvents.Trigger(tnm.mustTrustedPeers())
 	return peering.NewTrustedPeer(name, pubKey, peeringURL), nil
@@ -57,6 +60,10 @@ func (tnm *trustedNetworkManager) DistrustPeer(pubKey *cryptolib.PublicKey) (*pe
 // TrustedPeers implements the peering.TrustedNetworkManager interface.
 func (tnm *trustedNetworkManager) TrustedPeers() ([]*peering.TrustedPeer, error) {
 	return tnm.mustTrustedPeers(), nil
+}
+
+func (tnm *trustedNetworkManager) TrustedPeersByPubKeyOrName(pubKeysOrNames []string) ([]*peering.TrustedPeer, error) {
+	return peering.QueryByPubKeyOrName(tnm.mustTrustedPeers(), pubKeysOrNames)
 }
 
 func (tnm *trustedNetworkManager) mustTrustedPeers() []*peering.TrustedPeer {

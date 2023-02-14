@@ -5,7 +5,6 @@ package registry
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 
@@ -110,8 +109,8 @@ func (p *TrustedPeersRegistryImpl) IsTrustedPeer(pubKey *cryptolib.PublicKey) er
 }
 
 func (p *TrustedPeersRegistryImpl) TrustPeer(name string, pubKey *cryptolib.PublicKey, peeringURL string) (*peering.TrustedPeer, error) {
-	if name == "" {
-		return nil, errors.New("empty name for trusted peer")
+	if err := peering.ValidateTrustedPeerParams(name, pubKey, peeringURL); err != nil {
+		return nil, err
 	}
 	for _, existingPeer := range p.onChangeMap.All() {
 		if existingPeer.Name == name && !existingPeer.PubKey().Equals(pubKey) {
@@ -147,6 +146,10 @@ func (p *TrustedPeersRegistryImpl) DistrustPeer(pubKey *cryptolib.PublicKey) (*p
 
 func (p *TrustedPeersRegistryImpl) TrustedPeers() ([]*peering.TrustedPeer, error) {
 	return lo.Values(p.onChangeMap.All()), nil
+}
+
+func (p *TrustedPeersRegistryImpl) TrustedPeersByPubKeyOrName(pubKeysOrNames []string) ([]*peering.TrustedPeer, error) {
+	return peering.QueryByPubKeyOrName(lo.Values(p.onChangeMap.All()), pubKeysOrNames)
 }
 
 func (p *TrustedPeersRegistryImpl) mustTrustedPeers() []*peering.TrustedPeer {
