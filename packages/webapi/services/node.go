@@ -3,6 +3,8 @@ package services
 import (
 	"bytes"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/samber/lo"
 
@@ -35,12 +37,25 @@ func NewNodeService(chainRecordRegistryProvider registry.ChainRecordRegistryProv
 }
 
 func findPeerByName(tnm peering.TrustedNetworkManager, peerName string) (*peering.TrustedPeer, error) {
+	paramIsPubKey := strings.HasPrefix(peerName, "0x")
+	var peerPubKey *cryptolib.PublicKey
+	var err error
+	if paramIsPubKey {
+		peerPubKey, err = cryptolib.NewPublicKeyFromString(peerName)
+		if err != nil {
+			return nil, fmt.Errorf("cannot parse %v as pubKey: %w", peerName, err)
+		}
+	}
+
 	peers, err := tnm.TrustedPeers()
 	if err != nil {
 		return nil, errors.New("error getting trusted peers")
 	}
 
 	peer, ok := lo.Find(peers, func(p *peering.TrustedPeer) bool {
+		if paramIsPubKey {
+			return peerPubKey.Equals(p.PubKey())
+		}
 		return p.Name == peerName
 	})
 	if !ok {
