@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
@@ -457,7 +456,7 @@ func TestWaspCLILongParam(t *testing.T) {
 	w.ActivateChainOnAllNodes("chain1", 0)
 	w.MustRun("chain", "deposit", "base:1000000")
 
-	w.CreateFoundry(&iotago.SimpleTokenScheme{
+	w.CreateL2Foundry(&iotago.SimpleTokenScheme{
 		MaximumSupply: big.NewInt(1000000),
 		MeltedTokens:  big.NewInt(0),
 		MintedTokens:  big.NewInt(0),

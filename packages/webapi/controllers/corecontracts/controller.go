@@ -73,6 +73,14 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 		SetOperationId("accountsGetAccountNFTIDs").
 		SetSummary("Get all NFT ids belonging to an account")
 
+	api.GET("chains/:chainID/core/accounts/account/:agentID/foundries", c.getAccountFoundries).
+		AddParamPath("", "chainID", "ChainID (Bech32)").
+		AddParamPath("", "agentID", "AgentID (Bech32 for WasmVM | Hex for EVM)").
+		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
+		AddResponse(http.StatusOK, "All foundries owned by an account", mocker.Get(models.AccountFoundriesResponse{}), nil).
+		SetOperationId("accountsGetAccountFoundries").
+		SetSummary("Get all foundries owned by an account")
+
 	api.GET("chains/:chainID/core/accounts/account/:agentID/nonce", c.getAccountNonce).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "agentID", "AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses require urlencode)").

@@ -5,6 +5,7 @@ All URIs are relative to *http://localhost*
 Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**AccountsGetAccountBalance**](CorecontractsApi.md#AccountsGetAccountBalance) | **Get** /chains/{chainID}/core/accounts/account/{agentID}/balance | Get all assets belonging to an account
+[**AccountsGetAccountFoundries**](CorecontractsApi.md#AccountsGetAccountFoundries) | **Get** /chains/{chainID}/core/accounts/account/{agentID}/foundries | Get all foundries owned by an account
 [**AccountsGetAccountNFTIDs**](CorecontractsApi.md#AccountsGetAccountNFTIDs) | **Get** /chains/{chainID}/core/accounts/account/{agentID}/nfts | Get all NFT ids belonging to an account
 [**AccountsGetAccountNonce**](CorecontractsApi.md#AccountsGetAccountNonce) | **Get** /chains/{chainID}/core/accounts/account/{agentID}/nonce | Get the current nonce of an account
 [**AccountsGetAccounts**](CorecontractsApi.md#AccountsGetAccounts) | **Get** /chains/{chainID}/core/accounts | Get a list of all accounts
@@ -91,6 +92,77 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**AssetsResponse**](AssetsResponse.md)
+
+### Authorization
+
+[Authorization](../README.md#Authorization)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
+## AccountsGetAccountFoundries
+
+> AccountFoundriesResponse AccountsGetAccountFoundries(ctx, chainID, agentID).Execute()
+
+Get all foundries owned by an account
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    chainID := "chainID_example" // string | ChainID (Bech32)
+    agentID := "agentID_example" // string | AgentID (Bech32 for WasmVM | Hex for EVM)
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.CorecontractsApi.AccountsGetAccountFoundries(context.Background(), chainID, agentID).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.AccountsGetAccountFoundries``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `AccountsGetAccountFoundries`: AccountFoundriesResponse
+    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.AccountsGetAccountFoundries`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**chainID** | **string** | ChainID (Bech32) | 
+**agentID** | **string** | AgentID (Bech32 for WasmVM | Hex for EVM) | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiAccountsGetAccountFoundriesRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+
+
+### Return type
+
+[**AccountFoundriesResponse**](AccountFoundriesResponse.md)
 
 ### Authorization
 

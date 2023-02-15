@@ -359,6 +359,42 @@ paths:
       summary: Get all assets belonging to an account
       tags:
       - corecontracts
+  /chains/{chainID}/core/accounts/account/{agentID}/foundries:
+    get:
+      operationId: accountsGetAccountFoundries
+      parameters:
+      - description: ChainID (Bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      - description: AgentID (Bech32 for WasmVM | Hex for EVM)
+        in: path
+        name: agentID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountFoundriesResponse'
+          description: All foundries owned by an account
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: "Unauthorized (Wrong permissions, missing token)"
+      security:
+      - Authorization: []
+      summary: Get all foundries owned by an account
+      tags:
+      - corecontracts
   /chains/{chainID}/core/accounts/account/{agentID}/nfts:
     get:
       operationId: accountsGetAccountNFTIDs
@@ -1576,7 +1612,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: info
+                  example: "true"
                   format: string
                   type: string
                 type: object
@@ -2082,6 +2118,25 @@ paths:
       x-codegen-request-body-name: ""
 components:
   schemas:
+    AccountFoundriesResponse:
+      example:
+        foundrySerialNumbers:
+        - 0
+        - 0
+      properties:
+        foundrySerialNumbers:
+          items:
+            format: int32
+            type: integer
+          type: array
+          xml:
+            name: FoundrySerialNumbers
+            wrapped: true
+      required:
+      - foundrySerialNumbers
+      type: object
+      xml:
+        name: AccountFoundriesResponse
     AccountListResponse:
       example:
         accounts:

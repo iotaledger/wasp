@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 )
@@ -89,6 +90,24 @@ func (a *Accounts) GetAccountNFTs(chainID isc.ChainID, agentID isc.AgentID) ([]i
 	}
 
 	return nftIDs, nil
+}
+
+func (a *Accounts) GetAccountFoundries(chainID isc.ChainID, agentID isc.AgentID) ([]uint32, error) {
+	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewAccountFoundries.Hname(), dict.Dict{
+		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
+	})
+	if err != nil {
+		return nil, err
+	}
+	sns := make([]uint32, 0, len(ret))
+	for k := range ret {
+		sn, err := codec.DecodeUint32([]byte(k))
+		if err != nil {
+			return nil, err
+		}
+		sns = append(sns, sn)
+	}
+	return sns, nil
 }
 
 func (a *Accounts) GetAccountNonce(chainID isc.ChainID, agentID isc.AgentID) (uint64, error) {

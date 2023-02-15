@@ -19,9 +19,9 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
@@ -230,7 +230,7 @@ func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string, skipOnNodes ...i
 	waitUntil(w.T, chainIsUpAndRunning, w.Cluster.AllNodes(), 30*time.Second)
 }
 
-func (w *WaspCLITest) CreateFoundry(tokenScheme iotago.TokenScheme) {
+func (w *WaspCLITest) CreateL2Foundry(tokenScheme iotago.TokenScheme) {
 	tokenSchemeBytes := codec.EncodeTokenScheme(tokenScheme)
 	out := w.PostRequestGetReceipt(
 		"-o", "accounts", accounts.FuncFoundryCreateNew.Name,
