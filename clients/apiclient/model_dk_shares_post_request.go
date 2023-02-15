@@ -19,6 +19,7 @@ var _ MappedNullable = &DKSharesPostRequest{}
 
 // DKSharesPostRequest struct for DKSharesPostRequest
 type DKSharesPostRequest struct {
+	// Names or hex encoded public keys of trusted peers to run DKG on.
 	PeerIdentities []string `json:"peerIdentities"`
 	// Should be =< len(PeerPublicIdentities)
 	Threshold uint32 `json:"threshold"`

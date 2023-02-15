@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 function finish {
   rm -f "$SCRIPTPATH/wasp_swagger_schema.json"

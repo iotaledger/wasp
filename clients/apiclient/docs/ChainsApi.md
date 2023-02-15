@@ -106,7 +106,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    peer := "peer_example" // string | Name of the peer to add as access node
+    peer := "peer_example" // string | Name or PubKey (hex) of the trusted peer to add as access node
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -125,7 +125,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**peer** | **string** | Name of the peer to add as access node | 
+**peer** | **string** | Name or PubKey (hex) of the trusted peer to add as access node | 
 
 ### Other Parameters
 
@@ -780,7 +780,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    peer := "peer_example" // string | Name of the peer to remove as access node
+    peer := "peer_example" // string | Name or PubKey (hex) of the trusted peer to remove as access node
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -799,7 +799,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**peer** | **string** | Name of the peer to remove as access node | 
+**peer** | **string** | Name or PubKey (hex) of the trusted peer to remove as access node | 
 
 ### Other Parameters
 

@@ -153,7 +153,7 @@ AddAccessNode Configure a trusted node to be an access node.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @param chainID ChainID (Bech32)
- @param peer Name of the peer to add as access node
+ @param peer Name or PubKey (hex) of the trusted peer to add as access node
  @return ApiAddAccessNodeRequest
 */
 func (a *ChainsApiService) AddAccessNode(ctx context.Context, chainID string, peer string) ApiAddAccessNodeRequest {
@@ -1358,7 +1358,7 @@ RemoveAccessNode Remove an access node.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @param chainID ChainID (Bech32)
- @param peer Name of the peer to remove as access node
+ @param peer Name or PubKey (hex) of the trusted peer to remove as access node
  @return ApiRemoveAccessNodeRequest
 */
 func (a *ChainsApiService) RemoveAccessNode(ctx context.Context, chainID string, peer string) ApiRemoveAccessNodeRequest {
