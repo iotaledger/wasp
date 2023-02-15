@@ -727,7 +727,9 @@ func (nc *nodeConnection) AttachChain(
 
 	if err := chain.SyncChainStateWithL1(ctx); err != nil {
 		nc.LogError("synchronizing chain state %s failed: %s", chainID, err.Error())
-		nc.shutdownHandler.SelfShutdown(fmt.Sprintf("Cannot sync chain %s with L1", chain.chainID), true)
+		nc.shutdownHandler.SelfShutdown(
+			fmt.Sprintf("Cannot sync chain %s with L1, %s", chain.chainID, err.Error()),
+			true)
 	}
 
 	// disconnect the chain after the context is done

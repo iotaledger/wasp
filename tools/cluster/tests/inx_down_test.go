@@ -12,7 +12,6 @@ import (
 
 // ensures a nodes resumes normal operation after rebooting
 func TestInxShutdownTest(t *testing.T) {
-	t.Skip()
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 
 	// restart the privtangle, this will cause an INX disconnection on wasp
@@ -34,7 +33,7 @@ func TestInxShutdownTest(t *testing.T) {
 	_, err = env.Clu.MultiClient().NodeVersion()
 	require.NoError(t, err)
 
-	// assert everything works
+	// assert requests are processed
 	client := env.createNewClient()
 
 	tx, err := client.PostRequest(inccounter.FuncIncCounter.Name)

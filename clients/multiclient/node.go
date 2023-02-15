@@ -6,13 +6,13 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 )
 
-// ActivateChain sends a request to activate a chain in all wasp nodes
-func (m *MultiClient) NodeVersion() (*apiclient.VersionResponse, error) {
-	var resp *apiclient.VersionResponse
+// NodeVersion returns the versions of all the nodes
+func (m *MultiClient) NodeVersion() ([]*apiclient.VersionResponse, error) {
+	ret := make([]*apiclient.VersionResponse, len(m.nodes))
 	err := m.Do(func(i int, w *apiclient.APIClient) error {
 		versionResponse, _, err := w.NodeApi.GetVersion(context.Background()).Execute()
-		resp = versionResponse
+		ret[i] = versionResponse
 		return err
 	})
-	return resp, err
+	return ret, err
 }
