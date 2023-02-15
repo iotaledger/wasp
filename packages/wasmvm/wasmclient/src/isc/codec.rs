@@ -30,13 +30,17 @@ pub fn bech32_encode(hrp: &str, addr: &ScAddress) -> errors::Result<String> {
 }
 
 pub fn hname_bytes(name: &str) -> Vec<u8> {
-    let hash = Blake2b256::digest(name.as_bytes());
-    let mut slice = &hash[0..4];
-    let hname = uint32_from_bytes(slice);
-    if hname == 0 || hname == 0xffff {
-        slice = &hash[4..8];
+    let mut name = name.to_string();
+    for _i in 0..10 {
+        let hash = Blake2b256::digest(name.as_bytes());
+        let slice = &hash[0..4];
+        let hname = uint32_from_bytes(slice);
+        if hname != 0 {
+            return slice.to_vec();
+        }
+        name.push('*');
     }
-    return slice.to_vec();
+    return uint32_to_bytes(1);
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

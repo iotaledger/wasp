@@ -166,7 +166,7 @@ impl WaspClient {
         }
     }
 
-    pub fn subscribe(&self, ch: mpsc::Sender<Vec<String>>, done: Arc<RwLock<bool>>) {
+    pub fn subscribe(&self, _ch: mpsc::Sender<Vec<String>>, _done: Arc<RwLock<bool>>) {
         // // FIXME should not reconnect every time
         // let (mut socket, _) = tungstenite::connect(&self.event_port).unwrap();
         // let read_done = Arc::clone(&done);
