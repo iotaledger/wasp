@@ -298,10 +298,17 @@ func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Dur
 
 // endregion ///////////////////////////////////////////////////////////////
 
-func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int) *ChainEnv {
+func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int, dirnameOpt ...string) *ChainEnv {
 	quorum := uint16((2*len(committee))/3 + 1)
 
-	clu := newCluster(t, waspClusterOpts{nNodes: clusterSize})
+	dirname := ""
+	if len(dirnameOpt) > 0 {
+		dirname = dirnameOpt[0]
+	}
+	clu := newCluster(t, waspClusterOpts{
+		nNodes:  clusterSize,
+		dirName: dirname,
+	})
 
 	addr, err := clu.RunDKG(committee, quorum)
 	require.NoError(t, err)

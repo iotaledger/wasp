@@ -6,6 +6,7 @@ import (
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/core/app"
+	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	"github.com/iotaledger/inx-app/pkg/nodebridge"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/daemon"
@@ -55,6 +56,7 @@ func provide(c *dig.Container) error {
 
 		NodeBridge            *nodebridge.NodeBridge
 		NodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
+		ShutdownHandler       *shutdown.ShutdownHandler
 	}
 
 	type nodeConnectionResult struct {
@@ -69,6 +71,7 @@ func provide(c *dig.Container) error {
 			CoreComponent.Logger().Named("nc"),
 			deps.NodeBridge,
 			deps.NodeConnectionMetrics,
+			deps.ShutdownHandler,
 		)
 		if err != nil {
 			CoreComponent.LogPanicf("Creating NodeConnection failed: %s", err.Error())

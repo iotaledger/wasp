@@ -103,7 +103,6 @@ func TestReboot(t *testing.T) {
 
 func TestReboot2(t *testing.T) {
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
-	// env := setupNativeInccounterTest(t, 3, []int{0, 1, 2})
 	client := env.createNewClient()
 
 	tx, err := client.PostRequest(inccounter.FuncIncCounter.Name)
