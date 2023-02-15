@@ -31,13 +31,18 @@ import (
 func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLoad []interfaces.APIController, authMiddleware func() echo.MiddlewareFunc) {
 	for _, controller := range controllersToLoad {
 		group := server.Group(controller.Name(), "/")
-
 		controller.RegisterPublic(group, mocker)
 
-		adminGroup := group.SetSecurity("Authorization")
+		adminGroup := &ApiGroupModifier{
+			group: group,
+			OverrideHandler: func(api echoswagger.Api) {
+				// Force each route to set the security rule 'Authorization'
+				api.SetSecurity("Authorization")
+			},
+		}
 
 		if authMiddleware != nil {
-			adminGroup.EchoGroup().Use(authMiddleware())
+			group.EchoGroup().Use(authMiddleware())
 		}
 
 		controller.RegisterAdmin(adminGroup, mocker)
