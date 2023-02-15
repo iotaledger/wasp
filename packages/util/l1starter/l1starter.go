@@ -53,8 +53,8 @@ func (s *L1Starter) Stop() {
 	}
 }
 
-func (s *L1Starter) StartServers() {
+func (s *L1Starter) StartExistingServers() {
 	if s.Privtangle != nil {
-		s.Privtangle.StartServers()
+		s.Privtangle.StartServers(false)
 	}
 }

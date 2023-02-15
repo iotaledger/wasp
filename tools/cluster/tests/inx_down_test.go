@@ -12,7 +12,6 @@ import (
 
 // ensures a nodes resumes normal operation after rebooting
 func TestInxShutdownTest(t *testing.T) {
-	t.Skip()
 	dataPath := "test-inx-down"
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3}, dataPath)
 
@@ -25,7 +24,7 @@ func TestInxShutdownTest(t *testing.T) {
 	require.Regexp(t, `connection refused`, err.Error())
 
 	// start privatangle again
-	l1.StartServers()
+	l1.StartExistingServers()
 
 	// start the nodes again
 	err = env.Clu.Start()
