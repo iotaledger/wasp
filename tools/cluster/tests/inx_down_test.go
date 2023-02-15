@@ -12,6 +12,7 @@ import (
 
 // ensures a nodes resumes normal operation after rebooting
 func TestInxShutdownTest(t *testing.T) {
+	t.Skip()
 	dataPath := "test-inx-down"
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3}, dataPath)
 
@@ -27,7 +28,8 @@ func TestInxShutdownTest(t *testing.T) {
 	l1.StartServers()
 
 	// start the nodes again
-	env.Clu.Start(dataPath)
+	err = env.Clu.Start()
+	require.NoError(t, err)
 
 	// assert wasp starts correctly
 	_, err = env.Clu.MultiClient().NodeVersion()

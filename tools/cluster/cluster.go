@@ -500,8 +500,8 @@ func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params
 	return configTmpl.Execute(f, params)
 }
 
-// Start launches all wasp nodes in the cluster, each running in its own directory
-func (clu *Cluster) Start(dataPath string) error {
+// StartAndTrustAll launches all wasp nodes in the cluster, each running in its own directory
+func (clu *Cluster) StartAndTrustAll(dataPath string) error {
 	exists, err := fileExists(dataPath)
 	if err != nil {
 		return err
@@ -510,7 +510,7 @@ func (clu *Cluster) Start(dataPath string) error {
 		return fmt.Errorf("data path %s does not exist", dataPath)
 	}
 
-	if err := clu.start(); err != nil {
+	if err := clu.Start(); err != nil {
 		return err
 	}
 
@@ -522,7 +522,7 @@ func (clu *Cluster) Start(dataPath string) error {
 	return nil
 }
 
-func (clu *Cluster) start() error {
+func (clu *Cluster) Start() error {
 	start := time.Now()
 	fmt.Printf("[cluster] starting %d Wasp nodes...\n", len(clu.Config.Wasp))
 
@@ -583,31 +583,6 @@ func (clu *Cluster) RestartNodes(nodeIndexes ...int) error {
 	// send stop commands
 	for _, i := range nodeIndexes {
 		clu.stopNode(i)
-	}
-
-	// wait until all nodes are stopped
-	exitedWaitGroup := sync.WaitGroup{}
-	exitedWaitGroup.Add(len(nodeIndexes))
-
-	exited := make(chan struct{})
-	go func() {
-		exitedWaitGroup.Wait()
-		close(exited)
-	}()
-
-	for _, i := range nodeIndexes {
-		go func(cmd *waspCmd) {
-			waitCmd(cmd)
-			// mark process as finished
-			exitedWaitGroup.Done()
-		}(clu.waspCmds[i])
-	}
-
-	select {
-	case <-time.After(20 * time.Second):
-		return errors.New("[cluster] Wasp nodes did not shutdown in time")
-	case <-exited:
-		// nodes stopped
 	}
 
 	// start nodes
