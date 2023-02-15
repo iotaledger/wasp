@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	"github.com/iotaledger/hive.go/core/generics/lo"
 	"github.com/iotaledger/hive.go/core/generics/shrinkingmap"
 	"github.com/iotaledger/hive.go/core/logger"
@@ -70,6 +71,8 @@ type nodeConnection struct {
 	pendingTransactionsMap  *shrinkingmap.ShrinkingMap[iotago.TransactionID, *pendingTransaction]
 	pendingTransactionsLock sync.Mutex
 	reattachWorkerPool      *workerpool.WorkerPool
+
+	shutdownHandler *shutdown.ShutdownHandler
 }
 
 func setL1ProtocolParams(protocolParameters *iotago.ProtocolParameters, baseToken *nodeclient.InfoResBaseToken) {
@@ -187,7 +190,13 @@ func waitForL1ToBeSynced(ctx context.Context, log *logger.Logger, nodeBridge *no
 	}
 }
 
-func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBridge, nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics) (chain.NodeConnection, error) {
+func New(
+	ctx context.Context,
+	log *logger.Logger,
+	nodeBridge *nodebridge.NodeBridge,
+	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics,
+	shutdownHandler *shutdown.ShutdownHandler,
+) (chain.NodeConnection, error) {
 	// make sure the node is connected to at least one other peer
 	// otherwise the node status may not reflect the network status
 	if err := waitForL1ToBeConnected(ctx, log, nodeBridge); err != nil {
@@ -234,6 +243,7 @@ func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBri
 			shrinkingmap.WithShrinkingThresholdCount(pendingTransactionsCleanupThresholdCount),
 		),
 		pendingTransactionsLock: sync.Mutex{},
+		shutdownHandler:         shutdownHandler,
 	}
 
 	nc.reattachWorkerPool = workerpool.New(nc.reattachWorkerpoolFunc, workerpool.WorkerCount(1), workerpool.QueueSize(reattachWorkerPoolQueueSize))
@@ -252,7 +262,8 @@ func (nc *nodeConnection) Run(ctx context.Context) {
 func (nc *nodeConnection) subscribeToLedgerUpdates() {
 	err := nc.nodeBridge.ListenToLedgerUpdates(nc.ctx, 0, 0, nc.handleLedgerUpdate)
 	if err != nil {
-		nc.LogPanic(err)
+		nc.LogError(err)
+		nc.shutdownHandler.SelfShutdown("INX connection error", true)
 	}
 }
 
@@ -707,7 +718,8 @@ func (nc *nodeConnection) AttachChain(
 	}()
 
 	if err := chain.SyncChainStateWithL1(ctx); err != nil {
-		nc.LogPanicf("synchronizing chain state %s failed: %s", chainID, err.Error())
+		nc.LogError("synchronizing chain state %s failed: %s", chainID, err.Error())
+		nc.shutdownHandler.SelfShutdown(fmt.Sprintf("Cannot sync chain %s with L1", chain.chainID), true)
 	}
 
 	// disconnect the chain after the context is done
