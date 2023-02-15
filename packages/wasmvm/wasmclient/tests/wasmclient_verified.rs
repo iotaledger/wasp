@@ -1,8 +1,10 @@
+use std::io::Read;
 use std::sync::{Arc, Mutex};
+use nanomsg::{Protocol, Socket};
 
 use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};
 
-const MYCHAIN: &str = "atoi1pp59teeya4t89h270f4vpf4fdeud4d2dpry3dk74aqnxepj5garyxqnga5s";
+const MYCHAIN: &str = "atoi1prtgcxv7d93er3y2q6ecnawwptmqlh4jjry7nh6lqwq07vql3sg4s9y82wk";
 const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
 
 const PARAMS: &[&str] = &[
@@ -120,4 +122,18 @@ fn event_handling() {
 
     ctx.unregister("");
     check_error(&ctx);
+}
+
+#[test]
+fn tcp_socket() {
+    let mut socket = Socket::new(Protocol::Pull).unwrap();
+    let mut endpoint = socket.bind("tcp://127.0.0.1:15550").unwrap();
+    // Loop forever, handling parsing each message
+    let mut msg = String::new();
+    for _i in 1..100 {
+        socket.read_to_string(&mut msg).unwrap();
+        println!("{}", msg);
+        msg.clear();
+    }
+    endpoint.shutdown().unwrap();
 }

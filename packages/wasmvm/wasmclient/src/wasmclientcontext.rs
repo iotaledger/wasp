@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::{
-    sync::{mpsc, Arc, Mutex},
+    sync::{Arc, mpsc, Mutex},
 };
 
 use wasmlib::*;
 
 use wasmclientsandbox::*;
 
-use crate::keypair::KeyPair;
 use crate::*;
+use crate::keypair::KeyPair;
 
 // TODO to handle the request in parallel, WasmClientContext must be static now.
 // We need to solve this problem. By copying the vector of event_handlers, we may solve this problem
@@ -46,7 +46,7 @@ impl WasmClientContext {
             },
             Err(e) => {
                 let ctx = WasmClientContext::default();
-                ctx.set_err("failed to init", e.as_str());
+                ctx.set_err(&e, "");
                 return ctx;
             }
         };
@@ -90,7 +90,7 @@ impl WasmClientContext {
         }
         let res = self.start_event_handlers();
         if let Err(e) = res {
-            self.set_err("WasmClientContext register err: ", &e)
+            self.set_err(&e, "")
         }
     }
 
@@ -137,7 +137,7 @@ impl WasmClientContext {
         );
 
         if let Err(e) = res {
-            self.set_err("WasmClientContext init err: ", &e)
+            self.set_err(&e, "")
         }
     }
 
@@ -205,9 +205,9 @@ impl WasmClientContext {
         }
     }
 
-    pub fn set_err(&self, current_layer_msg: &str, e: &str) {
+    pub fn set_err(&self, e1: &str, e2: &str) {
         let mut err = self.error.lock().unwrap();
-        *err = Err(current_layer_msg.to_string() + e);
+        *err = Err(e1.to_string() + e2);
     }
 
     pub fn err(&self) -> errors::Result<()> {
@@ -237,8 +237,8 @@ impl Default for WasmClientContext {
 mod tests {
     use wasmlib::*;
 
-    use crate::keypair::KeyPair;
     use crate::*;
+    use crate::keypair::KeyPair;
 
     #[derive(Debug)]
     struct FakeEventHandler {}
