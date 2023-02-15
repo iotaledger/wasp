@@ -11,6 +11,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"sync"
 	"time"
 
@@ -261,9 +262,16 @@ func (nc *nodeConnection) Run(ctx context.Context) {
 
 func (nc *nodeConnection) subscribeToLedgerUpdates() {
 	err := nc.nodeBridge.ListenToLedgerUpdates(nc.ctx, 0, 0, nc.handleLedgerUpdate)
-	if err != nil {
+	if err != nil && !errors.Is(err, io.EOF) {
 		nc.LogError(err)
-		nc.shutdownHandler.SelfShutdown("INX connection error", true)
+		nc.shutdownHandler.SelfShutdown(
+			fmt.Sprintf("INX connection unexpected error: %s", err.Error()),
+			true)
+		return
+	}
+	if nc.ctx.Err() == nil {
+		// shutdown in case there isn't a shutdown already in progress
+		nc.shutdownHandler.SelfShutdown("INX connection closed", true)
 	}
 }
 
