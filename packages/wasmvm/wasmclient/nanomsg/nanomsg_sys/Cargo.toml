@@ -1,0 +1,30 @@
+[package]
+
+name = "nanomsg-sys"
+version = "0.7.2"
+authors = [
+  "Daniel Fagnan <dnfagnan@gmail.com>",
+  "Benoît Labaere <benoit.labaere@gmail.com>",
+  "Chip Collier"
+]
+
+license = "MIT"
+description = "The low-level bindings that is used by the nanomsg library."
+homepage = "https://github.com/thehydroimpulse/nanomsg.rs"
+documentation = "https://github.com/thehydroimpulse/nanomsg.rs"
+repository = "https://github.com/thehydroimpulse/nanomsg.rs"
+keywords = ["binding", "nanomsg"]
+links = "nanomsg"
+build = "build.rs"
+
+[features]
+bundled = []
+no_anl = []
+
+[dependencies]
+libc = "0.2.*"
+
+[build-dependencies]
+gcc = "0.3.*"
+cmake = "0.1.*"
+pkg-config = "0.3.*"

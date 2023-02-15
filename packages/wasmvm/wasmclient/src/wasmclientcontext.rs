@@ -2,29 +2,29 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::{
-    sync::{mpsc, Arc, Mutex, RwLock},
+    sync::{Arc, mpsc, Mutex},
 };
 
 use wasmlib::*;
 
 use wasmclientsandbox::*;
 
-use crate::keypair::KeyPair;
 use crate::*;
+use crate::keypair::KeyPair;
 
 // TODO to handle the request in parallel, WasmClientContext must be static now.
 // We need to solve this problem. By copying the vector of event_handlers, we may solve this problem
 pub struct WasmClientContext {
-    pub chain_id: ScChainID,
-    pub error: Arc<RwLock<errors::Result<()>>>,
-    event_done: Arc<RwLock<bool>>,
-    pub event_handlers: Vec<Box<dyn IEventHandlers>>,
-    pub key_pair: Option<KeyPair>,
-    pub nonce: Mutex<u64>,
-    pub req_id: Arc<RwLock<ScRequestID>>,
-    pub sc_name: String,
-    pub sc_hname: ScHname,
-    pub svc_client: WasmClientService, //TODO Maybe  use 'dyn IClientService' for 'svc_client' instead of a struct
+    pub(crate) chain_id: ScChainID,
+    pub(crate) error: Arc<Mutex<errors::Result<()>>>,
+    pub(crate) event_done: Arc<Mutex<bool>>,
+    pub(crate) event_handlers: Vec<Box<dyn IEventHandlers>>,
+    pub(crate) key_pair: Option<KeyPair>,
+    pub(crate) nonce: Arc<Mutex<u64>>,
+    pub(crate) req_id: Arc<Mutex<ScRequestID>>,
+    pub(crate) sc_name: String,
+    pub(crate) sc_hname: ScHname,
+    pub(crate) svc_client: WasmClientService, //TODO Maybe  use 'dyn IClientService' for 'svc_client' instead of a struct
 }
 
 impl WasmClientContext {
@@ -46,19 +46,19 @@ impl WasmClientContext {
             },
             Err(e) => {
                 let ctx = WasmClientContext::default();
-                ctx.set_err("failed to init", e.as_str());
+                ctx.set_err(&e, "");
                 return ctx;
             }
         };
 
         WasmClientContext {
             chain_id: chain_id_from_string(chain_id),
-            error: Arc::new(RwLock::new(Ok(()))),
-            event_done: Arc::new(RwLock::new(false)),
+            error: Arc::new(Mutex::new(Ok(()))),
+            event_done: Arc::default(),
             event_handlers: Vec::new(),
             key_pair: None,
-            nonce: Mutex::new(0),
-            req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
+            nonce: Arc::default(),
+            req_id: Arc::new(Mutex::new(request_id_from_bytes(&[]))),
             sc_name: sc_name.to_string(),
             sc_hname: hname_from_bytes(&codec::hname_bytes(&sc_name)),
             svc_client: svc_client.clone(),
@@ -90,7 +90,7 @@ impl WasmClientContext {
         }
         let res = self.start_event_handlers();
         if let Err(e) = res {
-            self.set_err("WasmClientContext register err: ", &e)
+            self.set_err(&e, "")
         }
     }
 
@@ -125,8 +125,8 @@ impl WasmClientContext {
     }
 
     pub fn wait_request(&self) {
-        let req_id = self.req_id.read().unwrap().to_owned();
-        self.wait_request_id(&req_id);
+        let req_id = self.req_id.lock().unwrap();
+        self.wait_request_id(&*req_id);
     }
 
     pub fn wait_request_id(&self, req_id: &ScRequestID) {
@@ -137,7 +137,7 @@ impl WasmClientContext {
         );
 
         if let Err(e) = res {
-            self.set_err("WasmClientContext init err: ", &e)
+            self.set_err(&e, "")
         }
     }
 
@@ -177,15 +177,15 @@ impl WasmClientContext {
     }
 
     pub fn start_event_handlers(&self) -> errors::Result<()> {
-        let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
-        let done = Arc::clone(&self.event_done);
-        self.svc_client.subscribe_events(tx, done)?;
-        self.process_event(rx)?;
+        // let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
+        // let done = Arc::clone(&self.event_done);
+        // self.svc_client.subscribe_events(tx, done)?;
+        // self.process_event(rx)?;
         return Ok(());
     }
 
     pub fn stop_event_handlers(&self) {
-        let mut done = self.event_done.write().unwrap();
+        let mut done = self.event_done.lock().unwrap();
         *done = true;
     }
 
@@ -205,15 +205,14 @@ impl WasmClientContext {
         }
     }
 
-    pub fn set_err(&self, current_layer_msg: &str, e: &str) {
-        let mut err = self.error.write().unwrap();
-        *err = Err(current_layer_msg.to_string() + e);
-        drop(err);
+    pub fn set_err(&self, e1: &str, e2: &str) {
+        let mut err = self.error.lock().unwrap();
+        *err = Err(e1.to_string() + e2);
     }
 
     pub fn err(&self) -> errors::Result<()> {
-        let err = self.error.read().unwrap().clone();
-        return err;
+        let err = self.error.lock().unwrap();
+        return err.clone();
     }
 }
 
@@ -221,12 +220,12 @@ impl Default for WasmClientContext {
     fn default() -> WasmClientContext {
         WasmClientContext {
             chain_id: chain_id_from_bytes(&[]),
-            error: Arc::new(RwLock::new(Ok(()))),
+            error: Arc::new(Mutex::new(Ok(()))),
             event_done: Arc::default(),
             event_handlers: Vec::new(),
             key_pair: None,
-            nonce: Mutex::default(),
-            req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
+            nonce: Arc::default(),
+            req_id: Arc::new(Mutex::new(request_id_from_bytes(&[]))),
             sc_name: String::new(),
             sc_hname: ScHname(0),
             svc_client: WasmClientService::default(),
@@ -238,8 +237,8 @@ impl Default for WasmClientContext {
 mod tests {
     use wasmlib::*;
 
-    use crate::keypair::KeyPair;
     use crate::*;
+    use crate::keypair::KeyPair;
 
     #[derive(Debug)]
     struct FakeEventHandler {}
@@ -263,12 +262,12 @@ mod tests {
         let sc_name = "testwasmlib";
         let ctx = WasmClientContext::new(&svc_client, MYCHAIN, sc_name);
         assert!(svc_client == ctx.svc_client);
-        assert!(sc_name == ctx.sc_name);
+        assert_eq!(sc_name, ctx.sc_name);
         assert!(ScHname::new(sc_name) == ctx.sc_hname);
-        assert!(MYCHAIN == ctx.chain_id.to_string());
-        assert!(0 == ctx.event_handlers.len());
+        assert_eq!(MYCHAIN, ctx.chain_id.to_string());
+        assert_eq!(0, ctx.event_handlers.len());
         assert!(None == ctx.key_pair);
-        assert!(request_id_from_bytes(&[]) == *ctx.req_id.read().unwrap());
+        assert!(request_id_from_bytes(&[]) == *ctx.req_id.lock().unwrap());
     }
 
     fn setup_client() -> WasmClientContext {
@@ -290,10 +289,10 @@ mod tests {
         let ctx = WasmClientContext::default();
         let res = ctx.unescape(r"before~~/after");
         println!("res: {}", res);
-        assert!(res == "before~/after");
+        assert_eq!(res, "before~/after");
         let res = ctx.unescape(r"before~/after");
-        assert!(res == "before|after");
+        assert_eq!(res, "before|after");
         let res = ctx.unescape(r"before~_after");
-        assert!(res == "before after");
+        assert_eq!(res, "before after");
     }
 }
