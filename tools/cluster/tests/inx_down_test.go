@@ -15,7 +15,7 @@ func TestInxShutdownTest(t *testing.T) {
 	t.Skip()
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 
-	// restart the privtangle, this should cause INX
+	// restart the privtangle, this will cause an INX disconnection on wasp
 	l1.Stop()
 
 	// assert wasp nodes are down
