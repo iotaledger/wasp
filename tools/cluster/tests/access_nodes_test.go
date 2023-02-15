@@ -28,7 +28,7 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair)
 
 	// spin a new node
-	clu2 := newCluster(t, waspClusterOpts{
+	clu2, _ := newCluster(t, waspClusterOpts{
 		nNodes:  1,
 		dirName: "wasp-cluster-access-node",
 		modifyConfig: func(nodeIndex int, configParams templates.WaspConfigParams) templates.WaspConfigParams {

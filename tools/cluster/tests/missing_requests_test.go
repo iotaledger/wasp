@@ -22,7 +22,7 @@ func TestMissingRequests(t *testing.T) {
 		configParams.OffledgerBroadcastUpToNPeers = 0
 		return configParams
 	}
-	clu := newCluster(t, waspClusterOpts{nNodes: 4, modifyConfig: modifyConfig})
+	clu, _ := newCluster(t, waspClusterOpts{nNodes: 4, modifyConfig: modifyConfig})
 	cmt := []int{0, 1, 2, 3}
 	threshold := uint16(4)
 	addr, err := clu.RunDKG(cmt, threshold)

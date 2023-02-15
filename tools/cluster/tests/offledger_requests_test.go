@@ -22,7 +22,7 @@ import (
 
 func TestOffledgerRequestAccessNode(t *testing.T) {
 	const clusterSize = 10
-	clu := newCluster(t, waspClusterOpts{nNodes: clusterSize})
+	clu, _ := newCluster(t, waspClusterOpts{nNodes: clusterSize})
 
 	cmt := []int{0, 1, 2, 3}
 

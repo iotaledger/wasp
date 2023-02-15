@@ -75,7 +75,7 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 
 func createTestWrapper(tt *testing.T, clusterSize int, committee []int) func(t *testing.T, f func(*testing.T, *ChainEnv)) {
 	dkgQuorum := uint16((2*len(committee))/3 + 1)
-	clu := newCluster(tt, waspClusterOpts{nNodes: clusterSize})
+	clu, _ := newCluster(tt, waspClusterOpts{nNodes: clusterSize})
 	dkgAddr, err := clu.RunDKG(committee, dkgQuorum)
 	require.NoError(tt, err)
 

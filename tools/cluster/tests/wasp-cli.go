@@ -30,7 +30,7 @@ type WaspCLITest struct {
 }
 
 func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
-	clu := newCluster(t, opt...)
+	clu, _ := newCluster(t, opt...)
 
 	dir, err := os.MkdirTemp(os.TempDir(), "wasp-cli-test-*")
 	t.Logf("Using temporary directory %s", dir)

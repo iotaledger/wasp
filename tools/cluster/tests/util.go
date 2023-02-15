@@ -301,7 +301,7 @@ func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Dur
 func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int) *ChainEnv {
 	quorum := uint16((2*len(committee))/3 + 1)
 
-	clu := newCluster(t, waspClusterOpts{nNodes: clusterSize})
+	clu, dataPath := newCluster(t, waspClusterOpts{nNodes: clusterSize})
 
 	addr, err := clu.RunDKG(committee, quorum)
 	require.NoError(t, err)
@@ -313,9 +313,10 @@ func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int) *
 	t.Logf("deployed chainID: %s", chain.ChainID)
 
 	e := &ChainEnv{
-		t:     t,
-		Clu:   clu,
-		Chain: chain,
+		t:        t,
+		Clu:      clu,
+		Chain:    chain,
+		dataPath: dataPath,
 	}
 	e.deployNativeIncCounterSC(0)
 	return e

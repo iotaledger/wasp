@@ -128,7 +128,7 @@ func testEVMJsonRPCCluster(t *testing.T, env *ChainEnv) {
 }
 
 func TestEVMJsonRPCClusterAccessNode(t *testing.T) {
-	clu := newCluster(t, waspClusterOpts{nNodes: 5})
+	clu, _ := newCluster(t, waspClusterOpts{nNodes: 5})
 	chain, err := clu.DeployChainWithDKG("testchain", clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3))
 	require.NoError(t, err)
 	env := newChainEnv(t, clu, chain)

@@ -79,7 +79,12 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 	}
 
 	pt.generateSnapshot()
+	pt.StartServers()
 
+	return &pt
+}
+
+func (pt *PrivTangle) StartServers() {
 	for i := range pt.NodeKeyPairs {
 		pt.startNode(i)
 		time.Sleep(500 * time.Millisecond) // TODO: Remove?
@@ -103,8 +108,6 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 
 	pt.startFaucet(0) // faucet needs to be started after the indexer, otherwise it will take 1 milestone for the faucet get the correct balance
 	pt.waitInxPluginsFaucet()
-
-	return &pt
 }
 
 func (pt *PrivTangle) generateSnapshot() {
