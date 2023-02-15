@@ -1,6 +1,7 @@
 package webapi
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -33,11 +34,15 @@ func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLo
 		group := server.Group(controller.Name(), "/")
 		controller.RegisterPublic(group, mocker)
 
-		adminGroup := &ApiGroupModifier{
+		adminGroup := &APIGroupModifier{
 			group: group,
 			OverrideHandler: func(api echoswagger.Api) {
 				// Force each route to set the security rule 'Authorization'
 				api.SetSecurity("Authorization")
+
+				// Any route in this group can fail due to invalid authorization
+				api.AddResponse(http.StatusUnauthorized,
+					"Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil)
 			},
 		}
 
