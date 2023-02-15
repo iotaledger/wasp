@@ -126,11 +126,11 @@ fn event_handling() {
 
 #[test]
 fn tcp_socket() {
-    let mut socket = Socket::new(Protocol::Pull).unwrap();
-    let mut endpoint = socket.bind("tcp://127.0.0.1:15550").unwrap();
-    // Loop forever, handling parsing each message
+    let mut socket = Socket::new(Protocol::Sub).unwrap();
+    socket.subscribe(b"contract").unwrap();
+    let mut endpoint = socket.connect("tcp://127.0.0.1:15550").unwrap();
     let mut msg = String::new();
-    for _i in 1..100 {
+    for _i in 0..6 {
         socket.read_to_string(&mut msg).unwrap();
         println!("{}", msg);
         msg.clear();
