@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**PeerIdentities** | **[]string** |  | 
+**PeerIdentities** | **[]string** | Names or hex encoded public keys of trusted peers to run DKG on. | 
 **Threshold** | **uint32** | Should be &#x3D;&lt; len(PeerPublicIdentities) | 
 **TimeoutMS** | **uint32** | Timeout in milliseconds. | 
 

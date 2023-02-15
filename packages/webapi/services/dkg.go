@@ -3,10 +3,13 @@ package services
 import (
 	"time"
 
+	"github.com/samber/lo"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/webapi/models"
@@ -20,17 +23,27 @@ const (
 type DKGService struct {
 	dkShareRegistryProvider registry.DKShareRegistryProvider
 	dkgNodeProvider         dkg.NodeProvider
+	trustedNetworkManager   peering.TrustedNetworkManager
 }
 
-func NewDKGService(dkShareRegistryProvider registry.DKShareRegistryProvider, dkgNodeProvider dkg.NodeProvider) *DKGService {
+func NewDKGService(dkShareRegistryProvider registry.DKShareRegistryProvider, dkgNodeProvider dkg.NodeProvider, trustedNetworkManager peering.TrustedNetworkManager) *DKGService {
 	return &DKGService{
 		dkShareRegistryProvider: dkShareRegistryProvider,
 		dkgNodeProvider:         dkgNodeProvider,
+		trustedNetworkManager:   trustedNetworkManager,
 	}
 }
 
-func (d *DKGService) GenerateDistributedKey(peerPublicKeys []*cryptolib.PublicKey, threshold uint16, timeout time.Duration) (*models.DKSharesInfo, error) {
-	dkShare, err := d.dkgNodeProvider().GenerateDistributedKey(peerPublicKeys, threshold, roundRetry, stepRetry, timeout)
+func (d *DKGService) GenerateDistributedKey(peerPubKeysOrNames []string, threshold uint16, timeout time.Duration) (*models.DKSharesInfo, error) {
+	trustedPeers, err := d.trustedNetworkManager.TrustedPeersByPubKeyOrName(peerPubKeysOrNames)
+	if err != nil {
+		return nil, err
+	}
+	peerPubKeys := lo.Map(trustedPeers, func(tp *peering.TrustedPeer, _ int) *cryptolib.PublicKey {
+		return tp.PubKey()
+	})
+
+	dkShare, err := d.dkgNodeProvider().GenerateDistributedKey(peerPubKeys, threshold, roundRetry, stepRetry, timeout)
 	if err != nil {
 		return nil, err
 	}

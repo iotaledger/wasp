@@ -89,7 +89,7 @@ func TestNodeConn(t *testing.T) {
 
 	go nodeBridge.Run(ctx)
 
-	nc, err := nodeconn.New(ctxInit, log, nodeBridge, nodeconnmetrics.NewEmptyNodeConnectionMetrics())
+	nc, err := nodeconn.New(ctxInit, log, nodeBridge, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), nil)
 	require.NoError(t, err)
 
 	defer cancelInit()

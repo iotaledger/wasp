@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 )
 
@@ -76,7 +77,7 @@ func (c *Controller) deleteUser(e echo.Context) error {
 	authContext := e.Get("auth").(*authentication.AuthContext)
 
 	if userName == authContext.Name() {
-		return apierrors.InvalidPropertyError("username", errors.New("you can't remove yourself"))
+		return apierrors.InvalidPropertyError("username", errors.New("you can't delete yourself"))
 	}
 
 	if userName == "" {
@@ -84,6 +85,9 @@ func (c *Controller) deleteUser(e echo.Context) error {
 	}
 
 	if err := c.userService.DeleteUser(userName); err != nil {
+		if errors.Is(err, interfaces.ErrCantDeleteLastUser) {
+			return apierrors.UserCanNotBeDeleted(userName, err.Error())
+		}
 		return apierrors.UserNotFoundError(userName)
 	}
 

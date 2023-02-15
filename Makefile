@@ -1,6 +1,7 @@
 GIT_REF_TAG := $(shell git describe --tags)
 BUILD_TAGS = rocksdb
 BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/core/app.Version=$(GIT_REF_TAG)"
+DOCKER_BUILD_ARGS = # E.g. make docker-build "DOCKER_BUILD_ARGS=--tag wasp:devel"
 
 #
 # You can override these e.g. as
@@ -64,14 +65,17 @@ lint: lint-wasp-cli
 lint-wasp-cli:
 	cd ./tools/wasp-cli && golangci-lint run --timeout 5m
 
-apiclient: 
-	clients/apiclient/generate_client.sh
+apiclient:
+	./clients/apiclient/generate_client.sh
+
+apiclient-docker:
+	./clients/apiclient/generate_client.sh docker
 
 gofumpt-list:
 	gofumpt -l ./
 
 docker-build: compile-solidity
-	DOCKER_BUILDKIT=1 docker build \
+	DOCKER_BUILDKIT=1 docker build ${DOCKER_BUILD_ARGS} \
 		--build-arg BUILD_TAGS=${BUILD_TAGS} \
 		--build-arg BUILD_LD_FLAGS=${BUILD_LD_FLAGS} \
 		.

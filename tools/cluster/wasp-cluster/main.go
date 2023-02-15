@@ -166,7 +166,7 @@ func main() {
 			defer os.RemoveAll(dataPath)
 		}
 
-		err = clu.Start(dataPath)
+		err = clu.StartAndTrustAll(dataPath)
 		check(err)
 		fmt.Printf("-----------------------------------------------------------------\n")
 		fmt.Printf("           The cluster started\n")

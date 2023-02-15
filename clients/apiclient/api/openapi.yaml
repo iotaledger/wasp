@@ -117,7 +117,8 @@ paths:
         schema:
           format: string
           type: string
-      - description: Name of the peer to remove as access node
+      - description: Name or PubKey (hex) of the trusted peer to remove as access
+          node
         in: path
         name: peer
         required: true
@@ -149,7 +150,7 @@ paths:
         schema:
           format: string
           type: string
-      - description: Name of the peer to add as access node
+      - description: Name or PubKey (hex) of the trusted peer to add as access node
         in: path
         name: peer
         required: true
@@ -1459,6 +1460,18 @@ paths:
       - Authorization: []
       tags:
       - chains
+  /health:
+    get:
+      operationId: getHealth
+      responses:
+        "200":
+          content: {}
+          description: The node is healthy.
+      security:
+      - Authorization: []
+      summary: Returns 200 if the node health is healthy.
+      tags:
+      - node
   /metrics/chain/{chainID}:
     get:
       operationId: getChainMetrics
@@ -1576,7 +1589,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: info
+                  example: "true"
                   format: string
                   type: string
                 type: object
@@ -3540,12 +3553,14 @@ components:
         threshold: 1
       properties:
         peerIdentities:
+          description: Names or hex encoded public keys of trusted peers to run DKG
+            on.
           items:
             format: string
             type: string
           type: array
           xml:
-            name: PeerIdentities
+            name: PeerPubKeysOrNames
             wrapped: true
         threshold:
           description: Should be =< len(PeerPublicIdentities)

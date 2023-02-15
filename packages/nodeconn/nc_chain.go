@@ -24,7 +24,7 @@ import (
 var ErrChainShutdown = errors.New("chain is shutting down")
 
 const (
-	inxInitialStateRetries = 5
+	inxInitialStateRetries = 500
 )
 
 type pendingLedgerUpdateType int
@@ -592,7 +592,7 @@ func (ncc *ncChain) SyncChainStateWithL1(ctx context.Context) error {
 				}
 
 				ncc.LogDebugf("failed to query initial chain state: %s, retrying...", err.Error())
-				time.Sleep(50 * time.Millisecond)
+				time.Sleep(1 * time.Second)
 				continue
 			}
 			return ledgerIndex, milestoneTimestamp, aliasOutput, nil

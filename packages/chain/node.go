@@ -761,6 +761,7 @@ func (cni *chainNodeImpl) cleanupConsensusInsts(keepCommitteeAddr *iotago.Ed2551
 				// We can cancel an instance, if input was not yet provided.
 				ci.cancelFunc() // TODO: Somehow cancel hanging instances, maybe with old LogIndex, etc.
 				ci.cancelFunc = nil
+				delete(cni.consensusInsts[cmtAddr], li)
 			}
 		}
 	}
