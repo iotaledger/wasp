@@ -34,10 +34,10 @@ func (c *Controller) getRequestID(e echo.Context) error {
 		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
-	txHash := e.Param("txHash")
+	txHash := e.Param(params.ParamTxHash)
 	requestID, err := c.evmService.GetRequestID(chainID, txHash)
 	if err != nil {
-		return apierrors.InvalidPropertyError("txHash", err)
+		return apierrors.InvalidPropertyError(params.ParamTxHash, err)
 	}
 
 	return e.JSON(http.StatusOK, models.RequestIDResponse{

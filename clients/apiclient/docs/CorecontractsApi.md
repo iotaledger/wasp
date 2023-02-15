@@ -10,7 +10,7 @@ Method | HTTP request | Description
 [**AccountsGetAccountNonce**](CorecontractsApi.md#AccountsGetAccountNonce) | **Get** /chains/{chainID}/core/accounts/account/{agentID}/nonce | Get the current nonce of an account
 [**AccountsGetAccounts**](CorecontractsApi.md#AccountsGetAccounts) | **Get** /chains/{chainID}/core/accounts | Get a list of all accounts
 [**AccountsGetFoundryOutput**](CorecontractsApi.md#AccountsGetFoundryOutput) | **Get** /chains/{chainID}/core/accounts/foundry_output/{serialNumber} | Get the foundry output
-[**AccountsGetNFTData**](CorecontractsApi.md#AccountsGetNFTData) | **Get** /chains/{chainID}/core/accounts/nftdata | Get the NFT data by an ID
+[**AccountsGetNFTData**](CorecontractsApi.md#AccountsGetNFTData) | **Get** /chains/{chainID}/core/accounts/nftdata/{nftID} | Get the NFT data by an ID
 [**AccountsGetNativeTokenIDRegistry**](CorecontractsApi.md#AccountsGetNativeTokenIDRegistry) | **Get** /chains/{chainID}/core/accounts/token_registry | Get a list of all registries
 [**AccountsGetTotalAssets**](CorecontractsApi.md#AccountsGetTotalAssets) | **Get** /chains/{chainID}/core/accounts/total_assets | Get all stored assets
 [**BlobsGetAllBlobs**](CorecontractsApi.md#BlobsGetAllBlobs) | **Get** /chains/{chainID}/core/blobs | Get all stored blobs
@@ -56,7 +56,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    agentID := "agentID_example" // string | AgentID (Bech32 for WasmVM | Hex for EVM)
+    agentID := "agentID_example" // string | AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses require urlencode)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -77,7 +77,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**agentID** | **string** | AgentID (Bech32 for WasmVM | Hex for EVM) | 
+**agentID** | **string** | AgentID (Bech32 for WasmVM | Hex for EVM | &#39;000000@Bech32&#39; Addresses require urlencode) | 
 
 ### Other Parameters
 
@@ -95,7 +95,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -198,7 +198,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    agentID := "agentID_example" // string | AgentID (Bech32 for WasmVM | Hex for EVM)
+    agentID := "agentID_example" // string | AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses require urlencode)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -219,7 +219,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**agentID** | **string** | AgentID (Bech32 for WasmVM | Hex for EVM) | 
+**agentID** | **string** | AgentID (Bech32 for WasmVM | Hex for EVM | &#39;000000@Bech32&#39; Addresses require urlencode) | 
 
 ### Other Parameters
 
@@ -237,7 +237,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -308,7 +308,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -376,7 +376,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -447,7 +447,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -518,7 +518,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -586,7 +586,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -654,7 +654,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -722,7 +722,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -793,7 +793,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -867,7 +867,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -938,7 +938,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -1006,7 +1006,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -1077,7 +1077,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -1109,7 +1109,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    contractHname := "contractHname_example" // string | Contract (Hname)
+    contractHname := "contractHname_example" // string | The contract hname (Hex)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -1130,7 +1130,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**contractHname** | **string** | Contract (Hname) | 
+**contractHname** | **string** | The contract hname (Hex) | 
 
 ### Other Parameters
 
@@ -1148,7 +1148,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -1216,7 +1216,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -1248,7 +1248,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    requestID := "requestID_example" // string | Request ID (ISCRequestID)
+    requestID := "requestID_example" // string | RequestID (Hex)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -1269,7 +1269,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**requestID** | **string** | Request ID (ISCRequestID) | 
+**requestID** | **string** | RequestID (Hex) | 
 
 ### Other Parameters
 
@@ -1287,7 +1287,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -1355,7 +1355,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -1426,7 +1426,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -1494,7 +1494,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -1526,7 +1526,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    requestID := "requestID_example" // string | Request ID (ISCRequestID)
+    requestID := "requestID_example" // string | RequestID (Hex)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -1547,7 +1547,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**requestID** | **string** | Request ID (ISCRequestID) | 
+**requestID** | **string** | RequestID (Hex) | 
 
 ### Other Parameters
 
@@ -1565,7 +1565,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -1597,7 +1597,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    requestID := "requestID_example" // string | Request ID (ISCRequestID)
+    requestID := "requestID_example" // string | RequestID (Hex)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -1618,7 +1618,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**requestID** | **string** | Request ID (ISCRequestID) | 
+**requestID** | **string** | RequestID (Hex) | 
 
 ### Other Parameters
 
@@ -1636,7 +1636,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -1707,7 +1707,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -1775,7 +1775,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -1849,7 +1849,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -1919,7 +1919,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -1989,7 +1989,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -2059,7 +2059,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 

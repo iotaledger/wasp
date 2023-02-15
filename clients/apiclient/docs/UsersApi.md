@@ -94,7 +94,7 @@ import (
 )
 
 func main() {
-    username := "username_example" // string | The username.
+    username := "username_example" // string | The username
     updateUserPasswordRequest := *openapiclient.NewUpdateUserPasswordRequest("Password_example") // UpdateUserPasswordRequest | The users new password
 
     configuration := openapiclient.NewConfiguration()
@@ -113,7 +113,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**username** | **string** | The username. | 
+**username** | **string** | The username | 
 
 ### Other Parameters
 
@@ -162,7 +162,7 @@ import (
 )
 
 func main() {
-    username := "username_example" // string | The username.
+    username := "username_example" // string | The username
     updateUserPermissionsRequest := *openapiclient.NewUpdateUserPermissionsRequest([]string{"Permissions_example"}) // UpdateUserPermissionsRequest | The users new permissions
 
     configuration := openapiclient.NewConfiguration()
@@ -181,7 +181,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**username** | **string** | The username. | 
+**username** | **string** | The username | 
 
 ### Other Parameters
 

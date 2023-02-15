@@ -166,7 +166,7 @@ func (r ApiChangeUserPasswordRequest) Execute() (*http.Response, error) {
 ChangeUserPassword Change user password
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param username The username.
+ @param username The username
  @return ApiChangeUserPasswordRequest
 */
 func (a *UsersApiService) ChangeUserPassword(ctx context.Context, username string) ApiChangeUserPasswordRequest {
@@ -264,6 +264,7 @@ func (a *UsersApiService) ChangeUserPasswordExecute(r ApiChangeUserPasswordReque
 			}
 					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
 					newErr.model = v
+			return localVarHTTPResponse, newErr
 		}
 		return localVarHTTPResponse, newErr
 	}
@@ -292,7 +293,7 @@ func (r ApiChangeUserPermissionsRequest) Execute() (*http.Response, error) {
 ChangeUserPermissions Change user permissions
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param username The username.
+ @param username The username
  @return ApiChangeUserPermissionsRequest
 */
 func (a *UsersApiService) ChangeUserPermissions(ctx context.Context, username string) ApiChangeUserPermissionsRequest {
@@ -390,6 +391,7 @@ func (a *UsersApiService) ChangeUserPermissionsExecute(r ApiChangeUserPermission
 			}
 					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
 					newErr.model = v
+			return localVarHTTPResponse, newErr
 		}
 		return localVarHTTPResponse, newErr
 	}

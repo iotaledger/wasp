@@ -153,7 +153,7 @@ AddAccessNode Configure a trusted node to be an access node.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @param chainID ChainID (Bech32)
- @param peer Name or PubKey (hex) of the trusted peer to add as access node
+ @param peer Name or PubKey (hex) of the trusted peer
  @return ApiAddAccessNodeRequest
 */
 func (a *ChainsApiService) AddAccessNode(ctx context.Context, chainID string, peer string) ApiAddAccessNodeRequest {
@@ -269,7 +269,7 @@ func (r ApiAttachToWebsocketRequest) Execute() (*http.Response, error) {
 AttachToWebsocket Method for AttachToWebsocket
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32-encoded)
+ @param chainID ChainID (Bech32)
  @return ApiAttachToWebsocketRequest
 */
 func (a *ChainsApiService) AttachToWebsocket(ctx context.Context, chainID string) ApiAttachToWebsocketRequest {
@@ -316,20 +316,6 @@ func (a *ChainsApiService) AttachToWebsocketExecute(r ApiAttachToWebsocketReques
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
-	}
-	if r.ctx != nil {
-		// API Key Authentication
-		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
-			if apiKey, ok := auth["Authorization"]; ok {
-				var key string
-				if apiKey.Prefix != "" {
-					key = apiKey.Prefix + " " + apiKey.Key
-				} else {
-					key = apiKey.Key
-				}
-				localVarHeaderParams["Authorization"] = key
-			}
-		}
 	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
@@ -422,20 +408,6 @@ func (a *ChainsApiService) ChainsChainIDEvmGetExecute(r ApiChainsChainIDEvmGetRe
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
-	}
-	if r.ctx != nil {
-		// API Key Authentication
-		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
-			if apiKey, ok := auth["Authorization"]; ok {
-				var key string
-				if apiKey.Prefix != "" {
-					key = apiKey.Prefix + " " + apiKey.Key
-				} else {
-					key = apiKey.Key
-				}
-				localVarHeaderParams["Authorization"] = key
-			}
-		}
 	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
@@ -1110,7 +1082,7 @@ GetRequestIDFromEVMTransactionID Get the ISC request ID for the given Ethereum t
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @param chainID ChainID (Bech32)
- @param txHash Transaction hash (Hex-encoded)
+ @param txHash Transaction hash (Hex)
  @return ApiGetRequestIDFromEVMTransactionIDRequest
 */
 func (a *ChainsApiService) GetRequestIDFromEVMTransactionID(ctx context.Context, chainID string, txHash string) ApiGetRequestIDFromEVMTransactionIDRequest {
@@ -1161,20 +1133,6 @@ func (a *ChainsApiService) GetRequestIDFromEVMTransactionIDExecute(r ApiGetReque
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
-	}
-	if r.ctx != nil {
-		// API Key Authentication
-		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
-			if apiKey, ok := auth["Authorization"]; ok {
-				var key string
-				if apiKey.Prefix != "" {
-					key = apiKey.Prefix + " " + apiKey.Key
-				} else {
-					key = apiKey.Key
-				}
-				localVarHeaderParams["Authorization"] = key
-			}
-		}
 	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
@@ -1239,7 +1197,7 @@ GetStateValue Fetch the raw value associated with the given key in the chain sta
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @param chainID ChainID (Bech32)
- @param stateKey Key (Hex-encoded)
+ @param stateKey Key (Hex)
  @return ApiGetStateValueRequest
 */
 func (a *ChainsApiService) GetStateValue(ctx context.Context, chainID string, stateKey string) ApiGetStateValueRequest {
@@ -1290,20 +1248,6 @@ func (a *ChainsApiService) GetStateValueExecute(r ApiGetStateValueRequest) (*Sta
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
-	}
-	if r.ctx != nil {
-		// API Key Authentication
-		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
-			if apiKey, ok := auth["Authorization"]; ok {
-				var key string
-				if apiKey.Prefix != "" {
-					key = apiKey.Prefix + " " + apiKey.Key
-				} else {
-					key = apiKey.Key
-				}
-				localVarHeaderParams["Authorization"] = key
-			}
-		}
 	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
@@ -1358,7 +1302,7 @@ RemoveAccessNode Remove an access node.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @param chainID ChainID (Bech32)
- @param peer Name or PubKey (hex) of the trusted peer to remove as access node
+ @param peer Name or PubKey (hex) of the trusted peer
  @return ApiRemoveAccessNodeRequest
 */
 func (a *ChainsApiService) RemoveAccessNode(ctx context.Context, chainID string, peer string) ApiRemoveAccessNodeRequest {

@@ -117,8 +117,7 @@ paths:
         schema:
           format: string
           type: string
-      - description: Name or PubKey (hex) of the trusted peer to remove as access
-          node
+      - description: Name or PubKey (hex) of the trusted peer
         in: path
         name: peer
         required: true
@@ -150,7 +149,7 @@ paths:
         schema:
           format: string
           type: string
-      - description: Name or PubKey (hex) of the trusted peer to add as access node
+      - description: Name or PubKey (hex) of the trusted peer
         in: path
         name: peer
         required: true
@@ -319,8 +318,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get a list of all accounts
       tags:
       - corecontracts
@@ -335,7 +332,8 @@ paths:
         schema:
           format: string
           type: string
-      - description: AgentID (Bech32 for WasmVM | Hex for EVM)
+      - description: AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses
+          require urlencode)
         in: path
         name: agentID
         required: true
@@ -355,8 +353,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get all assets belonging to an account
       tags:
       - corecontracts
@@ -407,7 +403,8 @@ paths:
         schema:
           format: string
           type: string
-      - description: AgentID (Bech32 for WasmVM | Hex for EVM)
+      - description: AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses
+          require urlencode)
         in: path
         name: agentID
         required: true
@@ -427,8 +424,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get all NFT ids belonging to an account
       tags:
       - corecontracts
@@ -464,8 +459,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get the current nonce of an account
       tags:
       - corecontracts
@@ -501,12 +494,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get the foundry output
       tags:
       - corecontracts
-  /chains/{chainID}/core/accounts/nftdata:
+  /chains/{chainID}/core/accounts/nftdata/{nftID}:
     get:
       operationId: accountsGetNFTData
       parameters:
@@ -537,8 +528,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get the NFT data by an ID
       tags:
       - corecontracts
@@ -566,8 +555,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get a list of all registries
       tags:
       - corecontracts
@@ -595,8 +582,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get all stored assets
       tags:
       - corecontracts
@@ -624,8 +609,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get all stored blobs
       tags:
       - corecontracts
@@ -660,8 +643,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get all fields of a blob
       tags:
       - corecontracts
@@ -703,8 +684,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get the value of the supplied field (key)
       tags:
       - corecontracts
@@ -732,8 +711,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get the block info of the latest block
       tags:
       - corecontracts
@@ -761,8 +738,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get all receipts of the latest block
       tags:
       - corecontracts
@@ -790,8 +765,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get the request ids for the latest block
       tags:
       - corecontracts
@@ -827,8 +800,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get the block info of a certain block index
       tags:
       - corecontracts
@@ -864,8 +835,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get all receipts of a certain block
       tags:
       - corecontracts
@@ -901,8 +870,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get the request ids for a certain block index
       tags:
       - corecontracts
@@ -930,8 +897,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get the control addresses
       tags:
       - corecontracts
@@ -959,8 +924,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get events of the latest block
       tags:
       - corecontracts
@@ -996,8 +959,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get events of a block
       tags:
       - corecontracts
@@ -1012,7 +973,7 @@ paths:
         schema:
           format: string
           type: string
-      - description: Contract (Hname)
+      - description: The contract hname (Hex)
         in: path
         name: contractHname
         required: true
@@ -1032,8 +993,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get events of a contract
       tags:
       - corecontracts
@@ -1048,7 +1007,7 @@ paths:
         schema:
           format: string
           type: string
-      - description: Request ID (ISCRequestID)
+      - description: RequestID (Hex)
         in: path
         name: requestID
         required: true
@@ -1068,8 +1027,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get events of a request
       tags:
       - corecontracts
@@ -1084,7 +1041,7 @@ paths:
         schema:
           format: string
           type: string
-      - description: Request ID (ISCRequestID)
+      - description: RequestID (Hex)
         in: path
         name: requestID
         required: true
@@ -1104,8 +1061,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get the receipt of a certain request id
       tags:
       - corecontracts
@@ -1120,7 +1075,7 @@ paths:
         schema:
           format: string
           type: string
-      - description: Request ID (ISCRequestID)
+      - description: RequestID (Hex)
         in: path
         name: requestID
         required: true
@@ -1140,8 +1095,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get the request processing status
       tags:
       - corecontracts
@@ -1184,8 +1137,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get the error message format of a specific error id
       tags:
       - corecontracts
@@ -1214,8 +1165,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get the allowed state controller addresses
       tags:
       - corecontracts
@@ -1245,8 +1194,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get the chain info
       tags:
       - corecontracts
@@ -1275,8 +1222,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get the chain owner
       tags:
       - corecontracts
@@ -1334,8 +1279,6 @@ paths:
                 format: string
                 type: string
           description: The evm json RPC failure
-      security:
-      - Authorization: []
       tags:
       - chains
   /chains/{chainID}/evm/tx/{txHash}:
@@ -1349,7 +1292,7 @@ paths:
         schema:
           format: string
           type: string
-      - description: Transaction hash (Hex-encoded)
+      - description: Transaction hash (Hex)
         in: path
         name: txHash
         required: true
@@ -1370,8 +1313,6 @@ paths:
                 format: string
                 type: string
           description: Request ID not found
-      security:
-      - Authorization: []
       summary: Get the ISC request ID for the given Ethereum transaction hash
       tags:
       - chains
@@ -1400,8 +1341,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ReceiptResponse'
           description: ReceiptResponse
-      security:
-      - Authorization: []
+        "404":
+          content: {}
+          description: Chain or request id not found
       summary: Get a receipt from a request ID
       tags:
       - requests
@@ -1438,12 +1380,10 @@ paths:
           description: The request receipt
         "404":
           content: {}
-          description: The chain or request id is invalid
+          description: The chain or request id not found
         "408":
           content: {}
           description: The waiting time has reached the defined limit
-      security:
-      - Authorization: []
       summary: Wait until the given request has been processed by the node
       tags:
       - requests
@@ -1458,7 +1398,7 @@ paths:
         schema:
           format: string
           type: string
-      - description: Key (Hex-encoded)
+      - description: Key (Hex)
         in: path
         name: stateKey
         required: true
@@ -1472,8 +1412,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/StateResponse'
           description: Result
-      security:
-      - Authorization: []
       summary: Fetch the raw value associated with the given key in the chain state
       tags:
       - chains
@@ -1481,7 +1419,7 @@ paths:
     get:
       operationId: attachToWebsocket
       parameters:
-      - description: ChainID (Bech32-encoded)
+      - description: ChainID (Bech32)
         in: path
         name: chainID
         required: true
@@ -1492,8 +1430,6 @@ paths:
         default:
           content: {}
           description: successful operation
-      security:
-      - Authorization: []
       tags:
       - chains
   /health:
@@ -1532,6 +1468,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
+        "404":
+          content: {}
+          description: Chain not found
       security:
       - Authorization: []
       summary: Get chain specific metrics.
@@ -1561,6 +1500,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
+        "404":
+          content: {}
+          description: Chain not found
       security:
       - Authorization: []
       summary: Get chain pipe event metrics.
@@ -1590,6 +1532,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
+        "404":
+          content: {}
+          description: Chain not found
       security:
       - Authorization: []
       summary: Get chain workflow metrics.
@@ -1694,6 +1639,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
+        "404":
+          content: {}
+          description: Shared address not found
       security:
       - Authorization: []
       summary: Get information about the shared address DKS configuration
@@ -1794,31 +1742,6 @@ paths:
       tags:
       - node
   /node/peers/trusted:
-    delete:
-      operationId: distrustPeer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PeeringTrustRequest'
-        description: Info of the peer to distrust
-        required: true
-      responses:
-        "200":
-          content: {}
-          description: Peer was successfully distrusted
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
-      summary: Distrust a peering node
-      tags:
-      - node
-      x-codegen-request-body-name: ""
     get:
       operationId: getTrustedPeers
       responses:
@@ -1866,6 +1789,35 @@ paths:
       tags:
       - node
       x-codegen-request-body-name: ""
+  /node/peers/trusted/{peer}:
+    delete:
+      operationId: distrustPeer
+      parameters:
+      - description: Name or PubKey (hex) of the trusted peer
+        in: path
+        name: peer
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        "200":
+          content: {}
+          description: Peer was successfully distrusted
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: "Unauthorized (Wrong permissions, missing token)"
+        "404":
+          content: {}
+          description: Peer not found
+      security:
+      - Authorization: []
+      summary: Distrust a peering node
+      tags:
+      - node
   /node/shutdown:
     post:
       operationId: shutdownNode
@@ -1894,8 +1846,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/VersionResponse'
           description: Returns the version of the node.
-      security:
-      - Authorization: []
       summary: Returns the node version.
       tags:
       - node
@@ -1918,8 +1868,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/JSONDict_'
           description: Result
-      security:
-      - Authorization: []
       summary: Call a view function on a contract by Hname
       tags:
       - requests
@@ -1938,8 +1886,6 @@ paths:
         "202":
           content: {}
           description: Request submitted
-      security:
-      - Authorization: []
       summary: Post an off-ledger request
       tags:
       - requests
@@ -2059,7 +2005,7 @@ paths:
     put:
       operationId: changeUserPassword
       parameters:
-      - description: The username.
+      - description: The username
         in: path
         name: username
         required: true
@@ -2086,6 +2032,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
+        "404":
+          content: {}
+          description: User not found
       security:
       - Authorization: []
       summary: Change user password
@@ -2096,7 +2045,7 @@ paths:
     put:
       operationId: changeUserPermissions
       parameters:
-      - description: The username.
+      - description: The username
         in: path
         name: username
         required: true
@@ -2123,6 +2072,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
+        "404":
+          content: {}
+          description: User not found
       security:
       - Authorization: []
       summary: Change user permissions

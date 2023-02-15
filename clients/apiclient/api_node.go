@@ -26,13 +26,7 @@ type NodeApiService service
 type ApiDistrustPeerRequest struct {
 	ctx context.Context
 	ApiService *NodeApiService
-	peeringTrustRequest *PeeringTrustRequest
-}
-
-// Info of the peer to distrust
-func (r ApiDistrustPeerRequest) PeeringTrustRequest(peeringTrustRequest PeeringTrustRequest) ApiDistrustPeerRequest {
-	r.peeringTrustRequest = &peeringTrustRequest
-	return r
+	peer string
 }
 
 func (r ApiDistrustPeerRequest) Execute() (*http.Response, error) {
@@ -43,12 +37,14 @@ func (r ApiDistrustPeerRequest) Execute() (*http.Response, error) {
 DistrustPeer Distrust a peering node
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param peer Name or PubKey (hex) of the trusted peer
  @return ApiDistrustPeerRequest
 */
-func (a *NodeApiService) DistrustPeer(ctx context.Context) ApiDistrustPeerRequest {
+func (a *NodeApiService) DistrustPeer(ctx context.Context, peer string) ApiDistrustPeerRequest {
 	return ApiDistrustPeerRequest{
 		ApiService: a,
 		ctx: ctx,
+		peer: peer,
 	}
 }
 
@@ -65,17 +61,15 @@ func (a *NodeApiService) DistrustPeerExecute(r ApiDistrustPeerRequest) (*http.Re
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/node/peers/trusted"
+	localVarPath := localBasePath + "/node/peers/trusted/{peer}"
+	localVarPath = strings.Replace(localVarPath, "{"+"peer"+"}", url.PathEscape(parameterValueToString(r.peer, "peer")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
-	if r.peeringTrustRequest == nil {
-		return nil, reportError("peeringTrustRequest is required and must be specified")
-	}
 
 	// to determine the Content-Type header
-	localVarHTTPContentTypes := []string{"application/json"}
+	localVarHTTPContentTypes := []string{}
 
 	// set Content-Type header
 	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
@@ -91,8 +85,6 @@ func (a *NodeApiService) DistrustPeerExecute(r ApiDistrustPeerRequest) (*http.Re
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	// body params
-	localVarPostBody = r.peeringTrustRequest
 	if r.ctx != nil {
 		// API Key Authentication
 		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
@@ -138,6 +130,7 @@ func (a *NodeApiService) DistrustPeerExecute(r ApiDistrustPeerRequest) (*http.Re
 			}
 					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
 					newErr.model = v
+			return localVarHTTPResponse, newErr
 		}
 		return localVarHTTPResponse, newErr
 	}
@@ -629,6 +622,7 @@ func (a *NodeApiService) GetDKSInfoExecute(r ApiGetDKSInfoRequest) (*DKSharesInf
 			}
 					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
 					newErr.model = v
+			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -1167,20 +1161,6 @@ func (a *NodeApiService) GetVersionExecute(r ApiGetVersionRequest) (*VersionResp
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
-	}
-	if r.ctx != nil {
-		// API Key Authentication
-		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
-			if apiKey, ok := auth["Authorization"]; ok {
-				var key string
-				if apiKey.Prefix != "" {
-					key = apiKey.Prefix + " " + apiKey.Key
-				} else {
-					key = apiKey.Key
-				}
-				localVarHeaderParams["Authorization"] = key
-			}
-		}
 	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {

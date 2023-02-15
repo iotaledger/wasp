@@ -4,7 +4,7 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**DistrustPeer**](NodeApi.md#DistrustPeer) | **Delete** /node/peers/trusted | Distrust a peering node
+[**DistrustPeer**](NodeApi.md#DistrustPeer) | **Delete** /node/peers/trusted/{peer} | Distrust a peering node
 [**GenerateDKS**](NodeApi.md#GenerateDKS) | **Post** /node/dks | Generate a new distributed key
 [**GetAllPeers**](NodeApi.md#GetAllPeers) | **Get** /node/peers | Get basic information about all configured peers
 [**GetConfiguration**](NodeApi.md#GetConfiguration) | **Get** /node/config | Return the Wasp configuration
@@ -22,7 +22,7 @@ Method | HTTP request | Description
 
 ## DistrustPeer
 
-> DistrustPeer(ctx).PeeringTrustRequest(peeringTrustRequest).Execute()
+> DistrustPeer(ctx, peer).Execute()
 
 Distrust a peering node
 
@@ -39,11 +39,11 @@ import (
 )
 
 func main() {
-    peeringTrustRequest := *openapiclient.NewPeeringTrustRequest("Name_example", "localhost:4000", "0x0000") // PeeringTrustRequest | Info of the peer to distrust
+    peer := "peer_example" // string | Name or PubKey (hex) of the trusted peer
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.NodeApi.DistrustPeer(context.Background()).PeeringTrustRequest(peeringTrustRequest).Execute()
+    resp, r, err := apiClient.NodeApi.DistrustPeer(context.Background(), peer).Execute()
     if err != nil {
         fmt.Fprintf(os.Stderr, "Error when calling `NodeApi.DistrustPeer``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -54,6 +54,10 @@ func main() {
 ### Path Parameters
 
 
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**peer** | **string** | Name or PubKey (hex) of the trusted peer | 
 
 ### Other Parameters
 
@@ -62,7 +66,7 @@ Other parameters are passed through a pointer to a apiDistrustPeerRequest struct
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **peeringTrustRequest** | [**PeeringTrustRequest**](PeeringTrustRequest.md) | Info of the peer to distrust | 
+
 
 ### Return type
 
@@ -74,7 +78,7 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
-- **Content-Type**: application/json
+- **Content-Type**: Not defined
 - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
@@ -613,7 +617,7 @@ Other parameters are passed through a pointer to a apiGetVersionRequest struct v
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
