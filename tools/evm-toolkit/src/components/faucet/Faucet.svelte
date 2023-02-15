@@ -1,15 +1,23 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { IotaWallet } from "./iota_wallet";
   import { SendFundsTransaction } from "./send_funds_transaction";
 
   import { toast } from "@zerodevx/svelte-toast";
-  import { networkOptions } from "../../../networks";
   import { hornetAPI } from "../../store";
+
+  let networkOptions: any;
+  let selectedNetworkOption: any;
+  
+  onMount(async () => {
+    const networkOptionsFile = await fetch("./networks.json");
+    networkOptions = await networkOptionsFile.json();
+    selectedNetworkOption = networkOptions[0];
+  });
 
   const ChainAddressLength: number = 63;
   const EVMAddressLength: number = 42;
 
-  let selectedNetworkOption = networkOptions[0];
   let isSendingFunds: boolean;
   let errorMessage: string;
 
@@ -73,11 +81,16 @@
     isSendingFunds = false;
   }
 
-  $: selectedNetworkOption.apiEndpoint,
-    hornetAPI.set(selectedNetworkOption.apiEndpoint);
+  $: {
+    if (selectedNetworkOption && selectedNetworkOption.apiEndpoint) {
+      hornetAPI.set(selectedNetworkOption.apiEndpoint);
+    }
+  }
+    
 </script>
 
 <component>
+  {#if selectedNetworkOption}
   <div class="input_container">
     <span class="header">Network</span>
     <select bind:value={selectedNetworkOption}>
@@ -131,6 +144,9 @@
       {/if}
     </button>
   </div>
+  {:else}
+    <p>Loading Network Config File...</p>
+  {/if}
 </component>
 
 <style>

@@ -8,7 +8,7 @@ Funds will be requested from a faucet and be sent to the selected address.
 
 ## Setup
 
-To configure the endpoints to be used, you need to edit the `network.ts` file in this directory.
+To configure the endpoints to be used, you need to edit the `networks.json` file in this directory.
 
 ## Installation
 ```
