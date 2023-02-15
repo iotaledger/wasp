@@ -162,7 +162,7 @@ describe('wasmclient', function () {
             ctx.register(events);
 
             for (const param of params) {
-                liproc.sendClientEventsParam(ctx, param);
+                proc.sendClientEventsParam(ctx, param);
                 await proc.waitClientEventsParam(ctx, param);
             }
 
