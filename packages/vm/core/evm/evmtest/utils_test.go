@@ -371,7 +371,8 @@ func (e *soloChainEnv) registerERC20ExternalNativeToken(
 	require.NoError(e.t, err)
 
 	if !e.soloChain.WaitUntil(func(solo.MempoolInfo) bool {
-		res, err := e.soloChain.CallView(evm.Contract.Name, evm.FuncGetERC20ExternalNativeTokenAddress.Name,
+		var res dict.Dict
+		res, err = e.soloChain.CallView(evm.Contract.Name, evm.FuncGetERC20ExternalNativeTokenAddress.Name,
 			evm.FieldNativeTokenID, nativeTokenID[:],
 		)
 		require.NoError(e.t, err)
