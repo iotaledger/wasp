@@ -18,15 +18,14 @@ import (
 
 // TODO remove this?
 func setupWithNoChain(t *testing.T, opt ...waspClusterOpts) *ChainEnv {
-	clu, _ := newCluster(t, opt...)
+	clu := newCluster(t, opt...)
 	return &ChainEnv{t: t, Clu: clu}
 }
 
 type ChainEnv struct {
-	t        *testing.T
-	Clu      *cluster.Cluster
-	dataPath string
-	Chain    *cluster.Chain
+	t     *testing.T
+	Clu   *cluster.Cluster
+	Chain *cluster.Chain
 }
 
 func newChainEnv(t *testing.T, clu *cluster.Cluster, chain *cluster.Chain) *ChainEnv {

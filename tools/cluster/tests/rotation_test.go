@@ -86,7 +86,7 @@ func TestBasicRotation(t *testing.T) {
 func TestRotation(t *testing.T) {
 	numRequests := 8
 
-	clu, _ := newCluster(t, waspClusterOpts{nNodes: 10})
+	clu := newCluster(t, waspClusterOpts{nNodes: 10})
 	rotation1 := newTestRotationSingleRotation(t, clu, []int{0, 1, 2, 3}, 3)
 	rotation2 := newTestRotationSingleRotation(t, clu, []int{2, 3, 4, 5}, 3)
 
@@ -149,7 +149,7 @@ func TestRotation(t *testing.T) {
 func TestRotationFromSingle(t *testing.T) {
 	numRequests := 16
 
-	clu, _ := newCluster(t, waspClusterOpts{nNodes: 10})
+	clu := newCluster(t, waspClusterOpts{nNodes: 10})
 	rotation1 := newTestRotationSingleRotation(t, clu, []int{0}, 1)
 	rotation2 := newTestRotationSingleRotation(t, clu, []int{1, 2, 3, 4}, 3)
 
@@ -240,7 +240,7 @@ func TestRotationMany(t *testing.T) {
 	const numRequests = 2
 	const waitTimeout = 180 * time.Second
 
-	clu, _ := newCluster(t, waspClusterOpts{nNodes: 10})
+	clu := newCluster(t, waspClusterOpts{nNodes: 10})
 	rotations := []testRotationSingleRotation{
 		newTestRotationSingleRotation(t, clu, []int{0, 1, 2, 3}, 3),
 		newTestRotationSingleRotation(t, clu, []int{2, 3, 4, 5}, 3),

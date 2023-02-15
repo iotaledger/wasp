@@ -28,7 +28,7 @@ var l1 = l1starter.New(flag.CommandLine, flag.CommandLine)
 // newCluster starts a new cluster environment for tests.
 // It is a private function because cluster tests cannot be run in parallel,
 // so all cluster tests MUST be in this same package.
-func newCluster(t *testing.T, opt ...waspClusterOpts) (*cluster.Cluster, string) {
+func newCluster(t *testing.T, opt ...waspClusterOpts) *cluster.Cluster {
 	if testing.Short() {
 		t.Skip("Skipping cluster test in short mode")
 	}
@@ -66,5 +66,5 @@ func newCluster(t *testing.T, opt ...waspClusterOpts) (*cluster.Cluster, string)
 
 	t.Cleanup(clu.Stop)
 
-	return clu, dataPath
+	return clu
 }

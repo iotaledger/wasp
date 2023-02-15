@@ -12,22 +12,22 @@ import (
 
 // ensures a nodes resumes normal operation after rebooting
 func TestInxShutdownTest(t *testing.T) {
-	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
+	dataPath := "test-inx-down"
+	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3}, dataPath)
 
 	// restart the privtangle, this will cause an INX disconnection on wasp
 	l1.Stop()
 
 	// assert wasp nodes are down
-	r, err := env.Clu.MultiClient().NodeVersion()
+	_, err := env.Clu.MultiClient().NodeVersion()
 	require.Error(t, err)
 	require.Regexp(t, `connection refused`, err.Error())
-	require.Nil(t, r)
 
 	// start privatangle again
 	l1.StartServers()
 
 	// start the nodes again
-	env.Clu.Start(env.dataPath)
+	env.Clu.Start(dataPath)
 
 	// assert wasp starts correctly
 	_, err = env.Clu.MultiClient().NodeVersion()
