@@ -37,7 +37,7 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (res
 	vmctx.NumPostedOutputs = 0
 	vmctx.requestIndex = requestIndex
 	vmctx.requestEventIndex = 0
-	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
+	vmctx.entropy = hashing.HashData(append(codec.EncodeUint16(requestIndex), vmctx.task.Entropy[:]...))
 	vmctx.callStack = vmctx.callStack[:0]
 	vmctx.gasBudgetAdjusted = 0
 	vmctx.gasBurned = 0
