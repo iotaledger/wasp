@@ -17,7 +17,6 @@ INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 all: build-lint
 
 wasm:
-	go install ./tools/schema
 	bash contracts/wasm/scripts/generate_wasm.sh
 
 compile-solidity:
@@ -32,6 +31,9 @@ endif
 
 build-cli:
 	cd tools/wasp-cli && go mod tidy && go build -ldflags $(BUILD_LD_FLAGS) -o ../../
+
+build-schema:
+	cd tools/schema && go mod tidy && go build -ldflags $(BUILD_LD_FLAGS) -o ../../
 
 build-full: compile-solidity build-cli
 	$(BUILD_CMD) ./...
