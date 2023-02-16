@@ -1,7 +1,6 @@
 // // Copyright 2020 IOTA Stiftung
 // // SPDX-License-Identifier: Apache-2.0
 
-use std::sync::{Arc, mpsc, RwLock};
 use std::time::Duration;
 
 use wasmlib::*;
@@ -32,12 +31,6 @@ pub trait IClientService {
         nonce: u64,
     ) -> errors::Result<ScRequestID>;
 
-    fn subscribe_events(
-        &self,
-        tx: mpsc::Sender<Vec<String>>,
-        done: Arc<RwLock<bool>>,
-    ) -> errors::Result<()>;
-
     fn wait_until_request_processed(
         &self,
         chain_id: &ScChainID,
@@ -49,7 +42,6 @@ pub trait IClientService {
 #[derive(Clone, PartialEq)]
 pub struct WasmClientService {
     client: WaspClient,
-    event_port: String,
     last_err: errors::Result<()>,
 }
 
@@ -97,15 +89,6 @@ impl IClientService for WasmClientService {
         Ok(signed.id())
     }
 
-    fn subscribe_events(
-        &self,
-        tx: mpsc::Sender<Vec<String>>,
-        done: Arc<RwLock<bool>>,
-    ) -> errors::Result<()> {
-        self.client.subscribe(tx, done);
-        return Ok(());
-    }
-
     fn wait_until_request_processed(
         &self,
         chain_id: &ScChainID,
@@ -121,8 +104,7 @@ impl IClientService for WasmClientService {
 impl WasmClientService {
     pub fn new(wasp_api: &str, event_port: &str) -> Self {
         return WasmClientService {
-            client: WaspClient::new(wasp_api, &event_port),
-            event_port: event_port.to_string(),
+            client: WaspClient::new(wasp_api, event_port),
             last_err: Ok(()),
         };
     }
@@ -132,7 +114,6 @@ impl Default for WasmClientService {
     fn default() -> Self {
         return WasmClientService {
             client: WaspClient::new("127.0.0.1:19090", "127.0.0.1:15550"),
-            event_port: "127.0.0.1:15550".to_string(),
             last_err: Ok(()),
         };
     }
@@ -158,7 +139,6 @@ mod tests {
         let service = WasmClientService::default();
         let default_service = WasmClientService {
             client: WaspClient::new("127.0.0.1:19090", "127.0.0.1:15550"),
-            event_port: "127.0.0.1:15550".to_string(),
             last_err: Ok(()),
         };
         assert!(default_service.event_port == service.event_port);
