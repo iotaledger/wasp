@@ -1,6 +1,7 @@
 package gas
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
@@ -126,4 +127,20 @@ func (p *GasFeePolicy) Bytes() []byte {
 	mu.WriteUint8(p.ValidatorFeeShare)
 	mu.WriteBytes(p.EVMGasRatio.Bytes())
 	return mu.Bytes()
+}
+
+func (p *GasFeePolicy) String() string {
+	return fmt.Sprintf(`
+	GasFeeTokenID: %s
+	GasFeeTokenDecimals %d
+	GasPerToken %d
+	EVMGasRatio %s
+	ValidatorFeeShare %d
+	`,
+		p.GasFeeTokenID,
+		p.GasFeeTokenDecimals,
+		p.GasPerToken,
+		p.EVMGasRatio.String(),
+		p.ValidatorFeeShare,
+	)
 }

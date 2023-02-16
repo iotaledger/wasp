@@ -6,8 +6,10 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
@@ -15,6 +17,7 @@ import (
 func Init(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(initDecodeCmd())
 	rootCmd.AddCommand(initDecodeMetadataCmd())
+	rootCmd.AddCommand(initDecodeGasFeePolicy())
 }
 
 func initDecodeCmd() *cobra.Command {
@@ -70,6 +73,19 @@ func initDecodeMetadataCmd() *cobra.Command {
 			jsonBytes, err := json.MarshalIndent(metadata, "", "  ")
 			log.Check(err)
 			log.Printf("%s\n", jsonBytes)
+		},
+	}
+}
+
+func initDecodeGasFeePolicy() *cobra.Command {
+	return &cobra.Command{
+		Use:   "decode-gaspolicy <0x...>",
+		Short: "Translates gas fee policy from Hex to a humanly-readable format",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			bytes, err := iotago.DecodeHex(args[0])
+			log.Check(err)
+			log.Printf(gas.MustGasFeePolicyFromBytes(bytes).String())
 		},
 	}
 }
