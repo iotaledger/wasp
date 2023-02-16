@@ -103,6 +103,26 @@ func (c *Controller) getAccountNFTs(e echo.Context) error {
 	return e.JSON(http.StatusOK, nftsResponse)
 }
 
+func (c *Controller) getAccountFoundries(e echo.Context) error {
+	chainID, err := params.DecodeChainID(e)
+	if err != nil {
+		return err
+	}
+	agentID, err := params.DecodeAgentID(e)
+	if err != nil {
+		return err
+	}
+
+	foundries, err := c.accounts.GetAccountFoundries(chainID, agentID)
+	if err != nil {
+		return c.handleViewCallError(err, chainID)
+	}
+
+	return e.JSON(http.StatusOK, &models.AccountFoundriesResponse{
+		FoundrySerialNumbers: foundries,
+	})
+}
+
 func (c *Controller) getAccountNonce(e echo.Context) error {
 	chainID, err := params.DecodeChainID(e)
 	if err != nil {
