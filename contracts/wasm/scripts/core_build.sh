@@ -3,7 +3,9 @@ root_path=$(git rev-parse --show-toplevel)
 cd $root_path/contracts/wasm
 npm install
 
-go install $root_path/tools/schema
+GIT_REF_TAG=$(git describe --tags)
+BUILD_LD_FLAGS="-X=github.com/iotaledger/wasp/core/app.Version=${GIT_REF_TAG}"
+go install -ldflags ${BUILD_LD_FLAGS} $root_path/tools/schema
 cd $root_path/packages/wasmvm/wasmlib
 schema -core -go -rs -ts -force
 cd $root_path/contracts/wasm
