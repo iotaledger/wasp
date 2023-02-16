@@ -12,12 +12,12 @@ import (
 	"github.com/iotaledger/wasp/packages/publisher/publisherws"
 )
 
-func addWebSocketEndpoint(e echoswagger.ApiRoot, hub *websockethub.Hub, log *logger.Logger) {
+func addWebSocketEndpoint(e echoswagger.ApiRoot, hub *websockethub.Hub, log *logger.Logger, pub *publisher.Publisher) {
 	pws := publisherws.New(log, hub, []string{
 		publisher.ISCEventKindNewBlock,
 		publisher.ISCEventKindReceipt,
 		publisher.ISCEventIssuerVM,
-	})
+	}, pub)
 
 	e.GET("/ws", pws.ServeHTTP)
 }

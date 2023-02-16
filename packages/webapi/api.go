@@ -99,6 +99,6 @@ func Init(
 		corecontracts.NewCoreContractsController(vmService),
 	}
 
-	addWebSocketEndpoint(server, hub, logger)
+	addWebSocketEndpoint(server, hub, logger, publisher)
 	loadControllers(server, mocker, controllersToLoad, authMiddleware)
 }

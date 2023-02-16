@@ -21,7 +21,7 @@ type PublishedEvent struct {
 }
 
 type Events struct {
-	Published *event.Event[*PublishedEvent]
+	Published *event.Event[*ISCEvent]
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -47,7 +47,7 @@ func New(log *logger.Logger) *Publisher {
 		mutex:            &sync.RWMutex{},
 		log:              log,
 		Events: &Events{
-			Published: event.New[*PublishedEvent](),
+			Published: event.New[*ISCEvent](),
 		},
 	}
 
@@ -98,9 +98,5 @@ func (p *Publisher) handleBlockApplied(blockApplied *publisherBlockApplied) {
 func (p *Publisher) publish(e *ISCEvent) {
 	p.log.Debugf("Publishing %v", e.String())
 
-	p.Events.Published.Trigger(&PublishedEvent{
-		MsgType: e.Kind,
-		ChainID: e.ChainID,
-		Parts:   []string{e.String()},
-	})
+	p.Events.Published.Trigger(e)
 }

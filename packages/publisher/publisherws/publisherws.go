@@ -11,7 +11,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/hive.go/core/subscriptionmanager"
 	"github.com/iotaledger/hive.go/core/websockethub"
@@ -24,9 +24,10 @@ type PublisherWebSocket struct {
 	log                 *logger.Logger
 	msgTypes            map[string]bool
 	subscriptionManager *subscriptionmanager.SubscriptionManager[websockethub.ClientID, string]
+	publisher           *publisher.Publisher
 }
 
-func New(log *logger.Logger, hub *websockethub.Hub, msgTypes []string) *PublisherWebSocket {
+func New(log *logger.Logger, hub *websockethub.Hub, msgTypes []string, publisher *publisher.Publisher) *PublisherWebSocket {
 	msgTypesMap := make(map[string]bool)
 	for _, t := range msgTypes {
 		msgTypesMap[t] = true
@@ -41,6 +42,7 @@ func New(log *logger.Logger, hub *websockethub.Hub, msgTypes []string) *Publishe
 		log:                 log.Named("PublisherWebSocket"),
 		msgTypes:            msgTypesMap,
 		subscriptionManager: subscriptionManager,
+		publisher:           publisher,
 	}
 }
 
@@ -52,8 +54,8 @@ func (p *PublisherWebSocket) hasSubscribedToSingleChain(client *websockethub.Cli
 	return p.subscriptionManager.ClientSubscribedToTopic(client.ID(), fmt.Sprintf("chains/%s", chainID.String()))
 }
 
-func (p *PublisherWebSocket) createEventWriter(ctx context.Context, client *websockethub.Client) *events.Closure {
-	eventClosure := events.NewClosure(func(event *publisher.ISCEvent) {
+func (p *PublisherWebSocket) createEventWriter(ctx context.Context, client *websockethub.Client) *event.Closure[*publisher.ISCEvent] {
+	eventClosure := event.NewClosure(func(event *publisher.ISCEvent) {
 		if event == nil {
 			return
 		}
@@ -145,8 +147,8 @@ func (p *PublisherWebSocket) OnClientCreated(ctx context.Context, client *websoc
 	client.ReceiveChan = make(chan *websockethub.WebsocketMsg, 100)
 
 	eventWriter := p.createEventWriter(ctx, client)
-	publisher.Event.Hook(eventWriter)
-	defer publisher.Event.Detach(eventWriter)
+	p.publisher.Events.Published.Hook(eventWriter)
+	defer p.publisher.Events.Published.Detach(eventWriter)
 
 	for {
 		select {
