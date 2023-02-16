@@ -34,7 +34,6 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 		modifyConfig: func(nodeIndex int, configParams templates.WaspConfigParams) templates.WaspConfigParams {
 			// avoid port conflicts when running everything on localhost
 			configParams.APIPort += 100
-			configParams.DashboardPort += 100
 			configParams.MetricsPort += 100
 			configParams.NanomsgPort += 100
 			configParams.PeeringPort += 100

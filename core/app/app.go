@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/core/registry"
 	"github.com/iotaledger/wasp/core/users"
 	"github.com/iotaledger/wasp/core/wasmtimevm"
-	"github.com/iotaledger/wasp/plugins/dashboard"
 	"github.com/iotaledger/wasp/plugins/profilingrecorder"
 	"github.com/iotaledger/wasp/plugins/prometheus"
 	"github.com/iotaledger/wasp/plugins/publishernano"
@@ -59,7 +58,6 @@ func App() *app.App {
 			prometheus.Plugin,
 			webapi.Plugin,
 			publishernano.Plugin,
-			dashboard.Plugin,
 		}...),
 	)
 }
