@@ -8,6 +8,7 @@ import (
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/publisher/publisherws"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
@@ -27,7 +28,16 @@ type Controller struct {
 	webSocketHandler *publisherws.PublisherWebSocket
 }
 
-func NewChainController(log *loggerpkg.Logger, chainService interfaces.ChainService, committeeService interfaces.CommitteeService, evmService interfaces.EVMService, nodeService interfaces.NodeService, offLedgerService interfaces.OffLedgerService, registryService interfaces.RegistryService, vmService interfaces.VMService) interfaces.APIController {
+func NewChainController(log *loggerpkg.Logger,
+	chainService interfaces.ChainService,
+	committeeService interfaces.CommitteeService,
+	evmService interfaces.EVMService,
+	nodeService interfaces.NodeService,
+	offLedgerService interfaces.OffLedgerService,
+	registryService interfaces.RegistryService,
+	vmService interfaces.VMService,
+	publisher *publisher.Publisher,
+) interfaces.APIController {
 	return &Controller{
 		log:              log,
 		chainService:     chainService,
@@ -37,7 +47,7 @@ func NewChainController(log *loggerpkg.Logger, chainService interfaces.ChainServ
 		offLedgerService: offLedgerService,
 		registryService:  registryService,
 		vmService:        vmService,
-		webSocketHandler: publisherws.New(log, []string{"vmmsg"}),
+		webSocketHandler: publisherws.New(log, publisher, []string{"vmmsg"}),
 	}
 }
 

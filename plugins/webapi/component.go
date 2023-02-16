@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi"
@@ -108,6 +109,7 @@ func provide(c *dig.Container) error {
 		TrustedNetworkManager       peering.TrustedNetworkManager `name:"trustedNetworkManager"`
 		Node                        *dkg.Node
 		UserManager                 *users.UserManager
+		Publisher                   *publisher.Publisher
 	}
 
 	type webapiServerResult struct {
@@ -173,6 +175,7 @@ func provide(c *dig.Container) error {
 			ParamsWebAPI.Auth,
 			ParamsWebAPI.NodeOwnerAddresses,
 			deps.APICacheTTL,
+			deps.Publisher,
 		)
 
 		return webapiServerResult{

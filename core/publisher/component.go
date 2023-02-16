@@ -30,22 +30,17 @@ type dependencies struct {
 }
 
 func provide(c *dig.Container) error {
-	type subDeps struct {
-		dig.In
-	}
-
-	type subResult struct {
+	type publisherResult struct {
 		dig.Out
 
 		Publisher *publisher.Publisher
 	}
 
-	if err := c.Provide(func(deps subDeps) subResult {
-		publ := publisher.NewPublisher(
-			CoreComponent.Logger(),
-		)
-		return subResult{
-			Publisher: publ,
+	if err := c.Provide(func() publisherResult {
+		return publisherResult{
+			Publisher: publisher.New(
+				CoreComponent.Logger(),
+			),
 		}
 	}); err != nil {
 		CoreComponent.LogPanic(err)

@@ -11,7 +11,7 @@ import (
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/core/app"
-	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/publisher"
 )
@@ -20,6 +20,7 @@ func init() {
 	Plugin = &app.Plugin{
 		Component: &app.Component{
 			Name:           "PublisherNano",
+			DepsFunc:       func(cDeps dependencies) { deps = cDeps },
 			Params:         params,
 			InitConfigPars: initConfigPars,
 			Run:            run,
@@ -30,7 +31,16 @@ func init() {
 	}
 }
 
-var Plugin *app.Plugin
+var (
+	Plugin *app.Plugin
+	deps   dependencies
+)
+
+type dependencies struct {
+	dig.In
+
+	Publisher *publisher.Publisher
+}
 
 func initConfigPars(c *dig.Container) error {
 	type cfgResult struct {
@@ -83,8 +93,8 @@ func run() error {
 		panic(err)
 	}
 
-	publisher.Event.Hook(events.NewClosure(func(msgType string, parts []string) {
-		msg := msgType + " " + strings.Join(parts, " ")
+	deps.Publisher.Events.Published.Hook(event.NewClosure(func(ev *publisher.PublishedEvent) {
+		msg := ev.MsgType + " " + strings.Join(ev.Parts, " ")
 		select {
 		case messages <- []byte(msg):
 		default:
