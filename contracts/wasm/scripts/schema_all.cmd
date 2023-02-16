@@ -1,6 +1,6 @@
 @echo off
 
-go install ../../tools/schema
+go install ../../../tools/schema
 
 cd ..
 for /d %%f in (*.) do call scripts\schema_build.cmd %%f %1

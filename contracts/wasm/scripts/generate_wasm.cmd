@@ -2,7 +2,6 @@
 if exist go.mod goto :root
 if not exist schema_all.cmd goto :xit
 
-go install ../../../tools/schema
 call schema_all.cmd
 cd ..
 golangci-lint run --fix
