@@ -264,8 +264,8 @@ github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/iotaledger/go-ethereum v1.10.26-wasp h1:OycFPMpnmGli5La0SdYzgnn4xqC8OARJ9e1HXa1gFNQ=
 github.com/iotaledger/go-ethereum v1.10.26-wasp/go.mod h1:EYFyF19u3ezGLD4RqOkLq+ZCXzYbLoNDdZlMt7kyKFg=
-github.com/iotaledger/hive.go/core v1.0.0-rc.3.0.20230213103350-6f15236edb99 h1:gXqIImhVjxDJlAoYvu2j/wv2thYWDvYoFV0RVmLgBpc=
-github.com/iotaledger/hive.go/core v1.0.0-rc.3.0.20230213103350-6f15236edb99/go.mod h1:cnX6n4vl7xfP9e8i7oGPTnOlS9vRnMbNklYOcUzLs4M=
+github.com/iotaledger/hive.go/core v1.0.0-rc.3.0.20230216171018-0729d5be5600 h1:o7gVe2dx1pVb/fs5Lli2mJPvXznykESVYXJDA3Z7tLU=
+github.com/iotaledger/hive.go/core v1.0.0-rc.3.0.20230216171018-0729d5be5600/go.mod h1:cnX6n4vl7xfP9e8i7oGPTnOlS9vRnMbNklYOcUzLs4M=
 github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1 h1:x3xsI32h+1wTIzLWInC+AcwrUyk9/l7z2RFMQiuua2E=
 github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1/go.mod h1:jkV//O5d+HHm32qDmTy6AWZUgxuZaXazTUVqox+5z4g=
 github.com/iotaledger/iota.go v1.0.0 h1:tqm1FxJ/zOdzbrAaQ5BQpVF8dUy2eeGlSeWlNG8GoXY=

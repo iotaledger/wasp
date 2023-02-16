@@ -48,7 +48,7 @@ require (
 	github.com/holiman/uint256 v1.2.1 // indirect
 	github.com/iancoleman/orderedmap v0.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/iotaledger/hive.go/core v1.0.0-rc.3.0.20230213103350-6f15236edb99 // indirect
+	github.com/iotaledger/hive.go/core v1.0.0-rc.3.0.20230216171018-0729d5be5600 // indirect
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1 // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.1.0.20221212191201-0105a0847e96 // indirect
