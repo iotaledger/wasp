@@ -31,21 +31,14 @@ pub fn bech32_encode(hrp: &str, addr: &ScAddress) -> errors::Result<String> {
 
 pub fn hname_bytes(name: &str) -> Vec<u8> {
     let hash = Blake2b256::digest(name.as_bytes());
-    let slice = &hash[0..4];
-    let hname = uint32_from_bytes(slice);
-    if hname != 0 {
-        return slice.to_vec();
-    }
-    let mut name = name.to_string();
-    for _i in 1..10 {
-        name.push('*');
-        let hash = Blake2b256::digest(name.as_bytes());
-        let slice = &hash[0..4];
+    for i in (0..hash.len()).step_by(SC_HNAME_LENGTH) {
+        let slice = &hash[i..i+SC_HNAME_LENGTH];
         let hname = uint32_from_bytes(slice);
         if hname != 0 {
             return slice.to_vec();
         }
     }
+    // astronomically unlikely to end up here
     return uint32_to_bytes(1);
 }
 

@@ -6,12 +6,12 @@ import * as wasmlib from 'wasmlib';
 import {panic} from 'wasmlib';
 import * as coreaccounts from 'wasmlib/coreaccounts';
 import {WasmClientSandbox} from './wasmclientsandbox';
-import {IClientService} from './wasmclientservice';
+import {WasmClientService} from './wasmclientservice';
 
 export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFuncCallContext {
     private eventHandlers: wasmlib.IEventHandlers[] = [];
 
-    public constructor(svcClient: IClientService, chain: string, scName: string) {
+    public constructor(svcClient: WasmClientService, chain: string, scName: string) {
         super(svcClient, chain, scName);
     }
 
@@ -23,7 +23,7 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         return this.keyPair;
     }
 
-    public currentSvcClient(): IClientService {
+    public currentSvcClient(): WasmClientService {
         return this.svcClient;
     }
 

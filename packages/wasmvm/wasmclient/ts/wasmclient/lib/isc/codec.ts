@@ -4,7 +4,6 @@
 import {Bech32, Blake2b} from '@iota/crypto.js';
 import * as wasmlib from 'wasmlib';
 import * as isc from './';
-import {uint32ToBytes} from "wasmlib";
 
 export class JsonItem {
     key = '';
@@ -48,16 +47,16 @@ export class Codec {
     }
 
     public static hNameBytes(name: string): Uint8Array {
-        for (let i = 0; i < 10; i++) {
-            const data = wasmlib.stringToBytes(name);
-            const hash = Blake2b.sum256(data);
-            const slice = hash.slice(0, 4);
+        const data = wasmlib.stringToBytes(name);
+        const hash = Blake2b.sum256(data);
+        for (let i = 0; i < hash.length; i += wasmlib.ScHnameLength) {
+            const slice = hash.slice(i, i + wasmlib.ScHnameLength);
             const hName = wasmlib.uint32FromBytes(slice);
             if (hName != 0) {
                 return slice;
             }
-            name += '*';
         }
+        // astronomically unlikely to end up here
         return wasmlib.uint32ToBytes(1);
     }
 
