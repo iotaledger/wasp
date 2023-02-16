@@ -9,6 +9,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	wasp_util "github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
@@ -18,6 +19,7 @@ func Init(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(initDecodeCmd())
 	rootCmd.AddCommand(initDecodeMetadataCmd())
 	rootCmd.AddCommand(initDecodeGasFeePolicy())
+	rootCmd.AddCommand(initEncodeGasFeePolicy())
 }
 
 func initDecodeCmd() *cobra.Command {
@@ -88,4 +90,52 @@ func initDecodeGasFeePolicy() *cobra.Command {
 			log.Printf(gas.MustGasFeePolicyFromBytes(bytes).String())
 		},
 	}
+}
+
+func initEncodeGasFeePolicy() *cobra.Command {
+	var (
+		tokenID           string
+		gasPerToken       uint64
+		evmGasRatio       string
+		validatorFeeShare uint8
+	)
+
+	cmd := &cobra.Command{
+		Use:   "encode-gaspolicy",
+		Short: "Translates metadata from Hex to a humanly-readable format",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			gasPolicy := gas.DefaultGasFeePolicy()
+
+			if tokenID != "" {
+				tokenIDBytes := util.TokenIDFromString(tokenID)
+				nativeTokenID, err := isc.NativeTokenIDFromBytes(tokenIDBytes)
+				log.Check(err)
+				gasPolicy.GasFeeTokenID = nativeTokenID
+			}
+
+			if gasPerToken != 0 {
+				gasPolicy.GasPerToken = gasPerToken
+			}
+
+			if evmGasRatio != "" {
+				ratio, err := wasp_util.Ratio32FromString(evmGasRatio)
+				log.Check(err)
+				gasPolicy.EVMGasRatio = ratio
+			}
+
+			if validatorFeeShare <= 100 {
+				gasPolicy.ValidatorFeeShare = validatorFeeShare
+			}
+
+			log.Printf(iotago.EncodeHex(gasPolicy.Bytes()))
+		},
+	}
+
+	cmd.Flags().StringVar(&tokenID, "tokenID", "", "TokenID for the gas fee")
+	cmd.Flags().Uint64Var(&gasPerToken, "gasPerToken", 0, "gas per token")
+	cmd.Flags().StringVar(&evmGasRatio, "evmGasRatio", "", "evm gas ratio (format: a:b)")
+	cmd.Flags().Uint8Var(&validatorFeeShare, "validatorFeeShare", 101, "validator fee share (between 0 and 100)")
+
+	return cmd
 }
