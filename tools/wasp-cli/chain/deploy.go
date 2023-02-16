@@ -97,7 +97,6 @@ func initDeployCmd() *cobra.Command {
 				InitParams: dict.Dict{
 					root.ParamEVM(evm.FieldChainID):         codec.EncodeUint16(evmParams.ChainID),
 					root.ParamEVM(evm.FieldGenesisAlloc):    evmtypes.EncodeGenesisAlloc(evmParams.getGenesis(nil)),
-					root.ParamEVM(evm.FieldBlockGasLimit):   codec.EncodeUint64(evmParams.BlockGasLimit),
 					root.ParamEVM(evm.FieldBlockKeepAmount): codec.EncodeInt32(evmParams.BlockKeepAmount),
 				},
 			}

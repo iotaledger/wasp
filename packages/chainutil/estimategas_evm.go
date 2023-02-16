@@ -15,7 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 )
 
@@ -60,11 +61,10 @@ func EstimateGas(ch chain.ChainCore, call ethereum.CallMsg) (uint64, error) { //
 		gasCap uint64
 	)
 
-	ret, err := CallView(mustLatestState(ch), ch, evm.Contract.Hname(), evm.FuncGetCallGasLimit.Hname(), nil)
+	maximumPossibleGas, err := getMaxCallGasLimit(ch)
 	if err != nil {
 		return 0, err
 	}
-	maximumPossibleGas := codec.MustDecodeUint64(ret.MustGet(evm.FieldResult))
 
 	if call.Gas >= params.TxGas {
 		hi = call.Gas
@@ -102,11 +102,19 @@ func EstimateGas(ch chain.ChainCore, call ethereum.CallMsg) (uint64, error) { //
 
 	// Execute the binary search and hone in on an executable gas limit
 	var lastUsed uint64
+
+	const maxLastUsedAttempts = 2
+	lastUsedAttempts := 0
+
 	for lo+1 < hi {
 		mid := (hi + lo) / 2
-		if lastUsed > lo && lastUsed != mid && lastUsed < hi {
+		if lastUsed > lo && lastUsed != mid && lastUsed < hi && lastUsedAttempts < maxLastUsedAttempts {
 			// use the last used gas as a better estimation to home in faster
 			mid = lastUsed
+			// this may turn the binary search into a linear search for some
+			// edge cases. We put a limit and after that we default to the
+			// binary search.
+			lastUsedAttempts++
 		}
 
 		var failed bool
@@ -137,11 +145,29 @@ func EstimateGas(ch chain.ChainCore, call ethereum.CallMsg) (uint64, error) { //
 		}
 		if failed {
 			if hi == maximumPossibleGas {
-				return 0, fmt.Errorf("request might require more gas than it is allowed by the VM, or will never succeed (%d)", gasCap)
+				return 0, fmt.Errorf("request might require more gas than it is allowed by the VM (%d), or will never succeed", gasCap)
 			}
 			// the specified gas cap is too low
 			return 0, fmt.Errorf("gas required exceeds allowance (%d)", gasCap)
 		}
 	}
 	return hi, nil
+}
+
+func getMaxCallGasLimit(ch chain.ChainCore) (uint64, error) {
+	ret, err := CallView(
+		mustLatestState(ch),
+		ch,
+		governance.Contract.Hname(),
+		governance.ViewGetEVMGasRatio.Hname(),
+		nil,
+	)
+	if err != nil {
+		return 0, err
+	}
+	gasRatio, err := codec.DecodeRatio32(ret.MustGet(governance.ParamEVMGasRatio))
+	if err != nil {
+		return 0, err
+	}
+	return gas.EVMCallGasLimit(&gasRatio), nil
 }

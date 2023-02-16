@@ -1,9 +1,9 @@
-package evmtypes
+package gas
 
 import "github.com/iotaledger/wasp/packages/util"
 
 // <ISC gas> = <EVM Gas> * <A> / <B>
-var DefaultGasRatio = util.Ratio32{A: 1, B: 1}
+var DefaultEVMGasRatio = util.Ratio32{A: 1, B: 1}
 
 func ISCGasBudgetToEVM(iscGasBudget uint64, gasRatio *util.Ratio32) uint64 {
 	// EVM gas budget = floor(ISC gas budget * B / A)
@@ -18,4 +18,14 @@ func ISCGasBurnedToEVM(iscGasBurned uint64, gasRatio *util.Ratio32) uint64 {
 func EVMGasToISC(evmGas uint64, gasRatio *util.Ratio32) uint64 {
 	// ISC gas burned = ceil(EVM gas * A / B)
 	return gasRatio.XCeil64(evmGas)
+}
+
+// EVMBlockGasLimit returns the ISC block gas limit converted to EVM gas units
+func EVMBlockGasLimit(gasRatio *util.Ratio32) uint64 {
+	return ISCGasBudgetToEVM(MaxGasPerBlock, gasRatio)
+}
+
+// EVMCallGasLimit returns the maximum gas limit accepted for an EVM tx
+func EVMCallGasLimit(gasRatio *util.Ratio32) uint64 {
+	return ISCGasBudgetToEVM(MaxGasPerRequest, gasRatio)
 }
