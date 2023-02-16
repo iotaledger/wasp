@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	hivedb "github.com/iotaledger/hive.go/core/database"
-	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -60,6 +60,7 @@ type Solo struct {
 	processorConfig                 *processors.Config
 	disableAutoAdjustStorageDeposit bool
 	seed                            cryptolib.Seed
+	publisher                       *publisher.Publisher
 }
 
 // Chain represents state of individual chain.
@@ -170,6 +171,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		processorConfig:                 coreprocessors.NewConfigWithCoreContracts(),
 		disableAutoAdjustStorageDeposit: !opt.AutoAdjustStorageDeposit,
 		seed:                            opt.Seed,
+		publisher:                       publisher.New(opt.Log.Named("publisher")),
 	}
 	globalTime := ret.utxoDB.GlobalTime()
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v",
@@ -180,8 +182,8 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	})
 	require.NoError(t, err)
 
-	publisher.Event.Hook(events.NewClosure(func(msgType string, parts []string) {
-		ret.logger.Infof("solo publisher: %s %v", msgType, parts)
+	ret.publisher.Events.Published.Hook(event.NewClosure(func(ev *publisher.PublishedEvent) {
+		ret.logger.Infof("solo publisher: %s %s %v", ev.MsgType, ev.ChainID.ShortString(), ev.Parts)
 	}))
 
 	return ret

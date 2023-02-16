@@ -9,26 +9,28 @@ import (
 
 	"nhooyr.io/websocket"
 
-	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/publisher"
 )
 
 type PublisherWebSocket struct {
-	log      *logger.Logger
-	msgTypes map[string]bool
+	log       *logger.Logger
+	publisher *publisher.Publisher
+	msgTypes  map[string]bool
 }
 
-func New(log *logger.Logger, msgTypes []string) *PublisherWebSocket {
+func New(log *logger.Logger, publisher *publisher.Publisher, msgTypes []string) *PublisherWebSocket {
 	msgTypesMap := make(map[string]bool)
 	for _, t := range msgTypes {
 		msgTypesMap[t] = true
 	}
 
 	return &PublisherWebSocket{
-		log:      log.Named("PublisherWebSocket"),
-		msgTypes: msgTypesMap,
+		log:       log.Named("PublisherWebSocket"),
+		publisher: publisher,
+		msgTypes:  msgTypesMap,
 	}
 }
 
@@ -47,25 +49,28 @@ func (p *PublisherWebSocket) ServeHTTP(chainID isc.ChainID, w http.ResponseWrite
 
 	ch := make(chan string, 10)
 
-	cl := events.NewClosure(func(msgType string, parts []string) {
-		if !p.msgTypes[msgType] {
+	cl := event.NewClosure(func(ev *publisher.PublishedEvent) {
+		if !p.msgTypes[ev.MsgType] {
 			return
 		}
-		if len(parts) < 1 {
+		if len(ev.MsgType) < 1 {
 			return
 		}
-		if parts[0] != chainID.String() {
+		if ev.ChainID != chainID {
 			return
 		}
 
 		select {
-		case ch <- msgType + " " + strings.Join(parts, " "):
+		case ch <- ev.MsgType + " " + strings.Join(ev.Parts, " "):
 		default:
 			p.log.Warnf("dropping websocket message for %s", r.RemoteAddr)
 		}
 	})
-	publisher.Event.Hook(cl)
-	defer publisher.Event.Detach(cl)
+
+	if p.publisher != nil {
+		p.publisher.Events.Published.Hook(cl)
+		defer p.publisher.Events.Published.Detach(cl)
+	}
 
 	for {
 		msg := <-ch

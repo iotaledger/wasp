@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	userspkg "github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/chain"
@@ -60,6 +61,7 @@ func Init(
 	authConfig authentication.AuthConfiguration,
 	nodeOwnerAddresses []string,
 	requestCacheTTL time.Duration,
+	publisher *publisher.Publisher,
 ) {
 	// load mock files to generate correct echo swagger documentation
 	mocker := NewMocker()
@@ -87,7 +89,7 @@ func Init(
 	authMiddleware := authentication.AddV2Authentication(server, userManager, nodeIdentityProvider, authConfig, claimValidator)
 
 	controllersToLoad := []interfaces.APIController{
-		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, vmService),
+		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, vmService, publisher),
 		metrics.NewMetricsController(chainService, metricsService),
 		node.NewNodeController(waspVersion, config, dkgService, nodeService, peeringService),
 		requests.NewRequestsController(chainService, offLedgerService, peeringService, vmService),
