@@ -1,4 +1,4 @@
-![Wasp logo](WASP_logo_dark.png)
+![Wasp logo](documentation/static/img/logo/WASP_logo_dark.png)
 
 # Welcome to the Wasp repository!
 
