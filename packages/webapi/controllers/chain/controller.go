@@ -47,7 +47,6 @@ func NewChainController(log *loggerpkg.Logger,
 		offLedgerService: offLedgerService,
 		registryService:  registryService,
 		vmService:        vmService,
-		webSocketHandler: publisherws.New(log, publisher, []string{"vmmsg"}),
 	}
 }
 
@@ -81,10 +80,6 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "stateKey", "Key (Hex-encoded)").
 		AddResponse(http.StatusOK, "Result", mocker.Get(models.StateResponse{}), nil)
-
-	publicAPI.GET("chains/:chainID/ws", c.handleWebSocket).
-		SetOperationId("attachToWebsocket").
-		AddParamPath("", "chainID", "ChainID (Bech32-encoded)")
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
