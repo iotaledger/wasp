@@ -110,7 +110,7 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 	// por las dudas
 	ctx.Requiref(remains.IsEmpty(), "internal: allowance left after must be empty")
 
-	if callerContract != nil && callerContract.Hname() != 0 {
+	if callerContract != nil && !callerContract.Hname().IsNil() {
 		// deduct the deposit fee from the allowance, so that there are enough tokens to pay for the deposit on the target chain
 		allowance := isc.NewAssetsBaseTokens(fundsToWithdraw.BaseTokens - ConstDepositFeeTmp)
 		// send funds to a contract on another chain
