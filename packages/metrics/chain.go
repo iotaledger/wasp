@@ -10,28 +10,29 @@ import (
 )
 
 type StateManagerMetrics interface {
-	RecordBlockSize(blockIndex uint32, size float64)
-	LastSeenStateIndex(stateIndex uint32)
+	SetBlockSize(blockIndex uint32, size float64)
+	SetLastSeenStateIndex(stateIndex uint32)
 }
 
 type ChainMetrics interface {
-	CountMessages()
-	CurrentStateIndex(stateIndex uint32)
+	IncRequestsAckMessages()
+	IncMessagesReceived()
+	SetCurrentStateIndex(stateIndex uint32)
 	MempoolMetrics
 	ConsensusMetrics
 	StateManagerMetrics
 }
 
 type MempoolMetrics interface {
-	CountRequestIn(isc.Request)
-	CountRequestOut()
-	RecordRequestProcessingTime(isc.RequestID, time.Duration)
-	CountBlocksPerChain()
+	IncRequestsReceived(isc.Request)
+	IncRequestsProcessed()
+	SetRequestProcessingTime(isc.RequestID, time.Duration)
+	IncBlocksPerChain()
 }
 
 type ConsensusMetrics interface {
-	RecordVMRunTime(time.Duration)
-	CountVMRuns()
+	SetVMRunTime(time.Duration)
+	IncVMRunsCounter()
 }
 
 type chainMetricsObj struct {
@@ -44,52 +45,56 @@ var (
 	_ ChainMetrics = &emptyChainMetrics{}
 )
 
-func (c *chainMetricsObj) CountRequestIn(req isc.Request) {
+func (c *chainMetricsObj) IncRequestsReceived(req isc.Request) {
 	if req.IsOffLedger() {
-		c.metrics.offLedgerRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
+		c.metrics.requestsReceivedOffLedger.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 	} else {
-		c.metrics.onLedgerRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
+		c.metrics.requestsReceivedOnLedger.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 	}
 }
 
-func (c *chainMetricsObj) CountRequestOut() {
-	c.metrics.processedRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
+func (c *chainMetricsObj) IncRequestsProcessed() {
+	c.metrics.requestsProcessed.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 }
 
-func (c *chainMetricsObj) CountMessages() {
+func (c *chainMetricsObj) IncRequestsAckMessages() {
+	c.metrics.requestsAckMessages.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
+}
+
+func (c *chainMetricsObj) SetRequestProcessingTime(reqID isc.RequestID, elapse time.Duration) {
+	c.metrics.requestsProcessingTime.With(prometheus.Labels{"chain": c.chainID.String(), "request": reqID.String()}).Set(elapse.Seconds())
+}
+
+func (c *chainMetricsObj) IncMessagesReceived() {
 	c.metrics.messagesReceived.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 }
 
-func (c *chainMetricsObj) CurrentStateIndex(stateIndex uint32) {
-	c.metrics.currentStateIndex.With(prometheus.Labels{"chain": c.chainID.String()}).Set(float64(stateIndex))
-}
-
-func (c *chainMetricsObj) RecordRequestProcessingTime(reqID isc.RequestID, elapse time.Duration) {
-	c.metrics.requestProcessingTime.With(prometheus.Labels{"chain": c.chainID.String(), "request": reqID.String()}).Set(elapse.Seconds())
-}
-
-func (c *chainMetricsObj) RecordVMRunTime(elapse time.Duration) {
+func (c *chainMetricsObj) SetVMRunTime(elapse time.Duration) {
 	c.metrics.vmRunTime.With(prometheus.Labels{"chain": c.chainID.String()}).Set(elapse.Seconds())
 }
 
-func (c *chainMetricsObj) CountVMRuns() {
-	c.metrics.vmRunCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
+func (c *chainMetricsObj) IncVMRunsCounter() {
+	c.metrics.vmRunsTotal.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 }
 
-func (c *chainMetricsObj) CountBlocksPerChain() {
-	c.metrics.blocksPerChain.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
+func (c *chainMetricsObj) IncBlocksPerChain() {
+	c.metrics.blocksTotalPerChain.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 }
 
-func (c *chainMetricsObj) RecordBlockSize(blockIndex uint32, blockSize float64) {
-	c.metrics.blockSizes.With(prometheus.Labels{"chain": c.chainID.String(), "block_index": fmt.Sprintf("%d", blockIndex)}).Set(blockSize)
+func (c *chainMetricsObj) SetBlockSize(blockIndex uint32, blockSize float64) {
+	c.metrics.blockSizesPerChain.With(prometheus.Labels{"chain": c.chainID.String(), "block_index": fmt.Sprintf("%d", blockIndex)}).Set(blockSize)
 }
 
-func (c *chainMetricsObj) LastSeenStateIndex(stateIndex uint32) {
+func (c *chainMetricsObj) SetCurrentStateIndex(stateIndex uint32) {
+	c.metrics.stateIndexCurrent.With(prometheus.Labels{"chain": c.chainID.String()}).Set(float64(stateIndex))
+}
+
+func (c *chainMetricsObj) SetLastSeenStateIndex(stateIndex uint32) {
 	if c.metrics.lastSeenStateIndexVal >= stateIndex {
 		return
 	}
 	c.metrics.lastSeenStateIndexVal = stateIndex
-	c.metrics.lastSeenStateIndex.With(prometheus.Labels{"chain": c.chainID.String()}).Set(float64(stateIndex))
+	c.metrics.stateIndexLatestSeen.With(prometheus.Labels{"chain": c.chainID.String()}).Set(float64(stateIndex))
 }
 
 type emptyChainMetrics struct{}
@@ -98,22 +103,24 @@ func EmptyChainMetrics() ChainMetrics {
 	return &emptyChainMetrics{}
 }
 
-func (m *emptyChainMetrics) CountRequestIn(_ isc.Request) {}
+func (m *emptyChainMetrics) IncRequestsReceived(_ isc.Request) {}
 
-func (m *emptyChainMetrics) CountRequestOut() {}
+func (m *emptyChainMetrics) IncRequestsProcessed() {}
 
-func (m *emptyChainMetrics) CountMessages() {}
+func (m *emptyChainMetrics) IncRequestsAckMessages() {}
 
-func (m *emptyChainMetrics) CurrentStateIndex(stateIndex uint32) {}
+func (m *emptyChainMetrics) SetRequestProcessingTime(_ isc.RequestID, _ time.Duration) {}
 
-func (m *emptyChainMetrics) RecordRequestProcessingTime(_ isc.RequestID, _ time.Duration) {}
+func (m *emptyChainMetrics) IncMessagesReceived() {}
 
-func (m *emptyChainMetrics) RecordVMRunTime(_ time.Duration) {}
+func (m *emptyChainMetrics) SetVMRunTime(_ time.Duration) {}
 
-func (m *emptyChainMetrics) CountVMRuns() {}
+func (m *emptyChainMetrics) IncVMRunsCounter() {}
 
-func (m *emptyChainMetrics) CountBlocksPerChain() {}
+func (m *emptyChainMetrics) IncBlocksPerChain() {}
 
-func (m *emptyChainMetrics) RecordBlockSize(_ uint32, _ float64) {}
+func (m *emptyChainMetrics) SetBlockSize(_ uint32, _ float64) {}
 
-func (m *emptyChainMetrics) LastSeenStateIndex(stateIndex uint32) {}
+func (m *emptyChainMetrics) SetCurrentStateIndex(stateIndex uint32) {}
+
+func (m *emptyChainMetrics) SetLastSeenStateIndex(stateIndex uint32) {}

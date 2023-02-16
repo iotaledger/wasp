@@ -24,22 +24,22 @@ func (c *MetricsService) GetAllChainsMetrics() *dto.ChainMetrics {
 		return nil
 	}
 
-	metrics := chain.GetNodeConnectionMetrics()
-	registered := metrics.GetRegistered()
+	nodeConnMetrics := chain.GetNodeConnectionMetrics()
+	registered := nodeConnMetrics.GetRegistered()
 
 	return &dto.ChainMetrics{
-		InAliasOutput:      dto.MapMetricItem(metrics.GetInAliasOutput()),
-		InOnLedgerRequest:  dto.MapMetricItem(metrics.GetInOnLedgerRequest()),
-		InOutput:           dto.MapMetricItem(metrics.GetInOutput()),
-		InStateOutput:      dto.MapMetricItem(metrics.GetInStateOutput()),
-		InTxInclusionState: dto.MapMetricItem(metrics.GetInTxInclusionState()),
-		InMilestone:        dto.MapMetricItem(metrics.GetInMilestone()),
+		InAliasOutput:      dto.MapMetricItem(nodeConnMetrics.GetInAliasOutput()),
+		InOnLedgerRequest:  dto.MapMetricItem(nodeConnMetrics.GetInOnLedgerRequest()),
+		InOutput:           dto.MapMetricItem(nodeConnMetrics.GetInOutput()),
+		InStateOutput:      dto.MapMetricItem(nodeConnMetrics.GetInStateOutput()),
+		InTxInclusionState: dto.MapMetricItem(nodeConnMetrics.GetInTxInclusionState()),
+		InMilestone:        dto.MapMetricItem(nodeConnMetrics.GetInMilestone()),
 
-		OutPublishGovernanceTransaction: dto.MapMetricItem(metrics.GetOutPublishGovernanceTransaction()),
-		OutPullLatestOutput:             dto.MapMetricItem(metrics.GetOutPullLatestOutput()),
-		OutPullOutputByID:               dto.MapMetricItem(metrics.GetOutPullOutputByID()),
-		OutPullTxInclusionState:         dto.MapMetricItem(metrics.GetOutPullTxInclusionState()),
-		OutPublisherStateTransaction:    dto.MapMetricItem(metrics.GetOutPublishStateTransaction()),
+		OutPublishGovernanceTransaction: dto.MapMetricItem(nodeConnMetrics.GetOutPublishGovernanceTransaction()),
+		OutPullLatestOutput:             dto.MapMetricItem(nodeConnMetrics.GetOutPullLatestOutput()),
+		OutPullOutputByID:               dto.MapMetricItem(nodeConnMetrics.GetOutPullOutputByID()),
+		OutPullTxInclusionState:         dto.MapMetricItem(nodeConnMetrics.GetOutPullTxInclusionState()),
+		OutPublisherStateTransaction:    dto.MapMetricItem(nodeConnMetrics.GetOutPublishStateTransaction()),
 
 		RegisteredChainIDs: registered,
 	}
@@ -51,22 +51,22 @@ func (c *MetricsService) GetChainMetrics(chainID isc.ChainID) *dto.ChainMetrics 
 		return nil
 	}
 
-	metrics := chain.GetNodeConnectionMetrics()
-	registered := metrics.GetRegistered()
+	nodeConnMetrics := chain.GetNodeConnectionMetrics()
+	registered := nodeConnMetrics.GetRegistered()
 
 	return &dto.ChainMetrics{
-		InAliasOutput:                   dto.MapMetricItem(metrics.GetInAliasOutput()),
-		InOnLedgerRequest:               dto.MapMetricItem(metrics.GetInOnLedgerRequest()),
-		InOutput:                        dto.MapMetricItem(metrics.GetInOutput()),
-		InStateOutput:                   dto.MapMetricItem(metrics.GetInStateOutput()),
-		InTxInclusionState:              dto.MapMetricItem(metrics.GetInTxInclusionState()),
-		InMilestone:                     dto.MapMetricItem(metrics.GetInMilestone()),
-		OutPublishGovernanceTransaction: dto.MapMetricItem(metrics.GetOutPublishGovernanceTransaction()),
+		InAliasOutput:                   dto.MapMetricItem(nodeConnMetrics.GetInAliasOutput()),
+		InOnLedgerRequest:               dto.MapMetricItem(nodeConnMetrics.GetInOnLedgerRequest()),
+		InOutput:                        dto.MapMetricItem(nodeConnMetrics.GetInOutput()),
+		InStateOutput:                   dto.MapMetricItem(nodeConnMetrics.GetInStateOutput()),
+		InTxInclusionState:              dto.MapMetricItem(nodeConnMetrics.GetInTxInclusionState()),
+		InMilestone:                     dto.MapMetricItem(nodeConnMetrics.GetInMilestone()),
+		OutPublishGovernanceTransaction: dto.MapMetricItem(nodeConnMetrics.GetOutPublishGovernanceTransaction()),
 
-		OutPullLatestOutput:          dto.MapMetricItem(metrics.GetOutPullLatestOutput()),
-		OutPullOutputByID:            dto.MapMetricItem(metrics.GetOutPullOutputByID()),
-		OutPullTxInclusionState:      dto.MapMetricItem(metrics.GetOutPullTxInclusionState()),
-		OutPublisherStateTransaction: dto.MapMetricItem(metrics.GetOutPublishStateTransaction()),
+		OutPullLatestOutput:          dto.MapMetricItem(nodeConnMetrics.GetOutPullLatestOutput()),
+		OutPullOutputByID:            dto.MapMetricItem(nodeConnMetrics.GetOutPullOutputByID()),
+		OutPullTxInclusionState:      dto.MapMetricItem(nodeConnMetrics.GetOutPullTxInclusionState()),
+		OutPublisherStateTransaction: dto.MapMetricItem(nodeConnMetrics.GetOutPublishStateTransaction()),
 
 		RegisteredChainIDs: registered,
 	}

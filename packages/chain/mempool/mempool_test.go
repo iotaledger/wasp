@@ -492,7 +492,7 @@ type MockMempoolMetrics struct {
 	processedRequestCounter int
 }
 
-func (m *MockMempoolMetrics) CountRequestIn(req isc.Request) {
+func (m *MockMempoolMetrics) IncRequestsReceived(req isc.Request) {
 	if req.IsOffLedger() {
 		m.offLedgerRequestCounter++
 	} else {
@@ -500,13 +500,13 @@ func (m *MockMempoolMetrics) CountRequestIn(req isc.Request) {
 	}
 }
 
-func (m *MockMempoolMetrics) CountRequestOut() {
+func (m *MockMempoolMetrics) IncRequestsProcessed() {
 	m.processedRequestCounter++
 }
 
-func (m *MockMempoolMetrics) RecordRequestProcessingTime(reqID isc.RequestID, elapse time.Duration) {}
+func (m *MockMempoolMetrics) SetRequestProcessingTime(reqID isc.RequestID, elapse time.Duration) {}
 
-func (m *MockMempoolMetrics) CountBlocksPerChain() {}
+func (m *MockMempoolMetrics) IncBlocksPerChain() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 

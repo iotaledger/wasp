@@ -14,19 +14,19 @@ func newNodeConnectionMessageRelatedMetrics[T any](metrics, related NodeConnecti
 	}
 }
 
-func (ncmrmi *nodeConnectionMessageRelatedMetricsImpl[T]) GetMessageTotal() uint32 {
-	return ncmrmi.NodeConnectionMessageMetrics.GetMessageTotal()
+func (ncmrmi *nodeConnectionMessageRelatedMetricsImpl[T]) GetL1MessagesTotal() uint32 {
+	return ncmrmi.NodeConnectionMessageMetrics.GetL1MessagesTotal()
 }
 
-func (ncmrmi *nodeConnectionMessageRelatedMetricsImpl[T]) GetLastEvent() time.Time {
-	return ncmrmi.NodeConnectionMessageMetrics.GetLastEvent()
+func (ncmrmi *nodeConnectionMessageRelatedMetricsImpl[T]) GetLastL1MessageTime() time.Time {
+	return ncmrmi.NodeConnectionMessageMetrics.GetLastL1MessageTime()
 }
 
-func (ncmrmi *nodeConnectionMessageRelatedMetricsImpl[T]) GetLastMessage() T {
-	return ncmrmi.NodeConnectionMessageMetrics.GetLastMessage()
+func (ncmrmi *nodeConnectionMessageRelatedMetricsImpl[T]) GetLastL1Message() T {
+	return ncmrmi.NodeConnectionMessageMetrics.GetLastL1Message()
 }
 
-func (ncmrmi *nodeConnectionMessageRelatedMetricsImpl[T]) CountLastMessage(msg T) {
-	ncmrmi.NodeConnectionMessageMetrics.CountLastMessage(msg)
-	ncmrmi.related.CountLastMessage(msg)
+func (ncmrmi *nodeConnectionMessageRelatedMetricsImpl[T]) IncL1Messages(msg T) {
+	ncmrmi.NodeConnectionMessageMetrics.IncL1Messages(msg)
+	ncmrmi.related.IncL1Messages(msg)
 }

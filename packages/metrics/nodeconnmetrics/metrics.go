@@ -11,8 +11,8 @@ type nodeConnectionMetricsImpl struct {
 	NodeConnectionMessagesMetrics
 	registered []isc.ChainID
 
-	messageTotalCounter *prometheus.CounterVec
-	lastEventTimeGauge  *prometheus.GaugeVec
+	messagesL1        *prometheus.CounterVec
+	lastL1MessageTime *prometheus.GaugeVec
 
 	inMilestoneMetrics NodeConnectionMessageMetrics[*nodeclient.MilestoneInfo]
 }
@@ -22,19 +22,18 @@ var _ NodeConnectionMetrics = &nodeConnectionMetricsImpl{}
 func New() NodeConnectionMetrics {
 	ret := &nodeConnectionMetricsImpl{
 		registered: make([]isc.ChainID, 0),
-
-		messageTotalCounter: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_nodeconn",
-			Name:      "message_total_counter",
-			Help:      "Number of messages send/received by node connection of the chain",
+		messagesL1: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "l1",
+			Name:      "messages_total",
+			Help:      "Number of messages sent/received by L1 connection of the chain",
 		}, []string{chainLabelNameConst, msgTypeLabelNameConst}),
 
-		lastEventTimeGauge: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_nodeconn",
-			Name:      "last_event_time_gauge",
-			Help:      "Last time when the message was sent/received by node connection of the chain",
+		lastL1MessageTime: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "l1",
+			Name:      "last_message_time",
+			Help:      "Last time when a message was sent/received by L1 connection of the chain",
 		}, []string{chainLabelNameConst, msgTypeLabelNameConst}),
 	}
 	ret.NodeConnectionMessagesMetrics = newNodeConnectionMessagesMetrics(ret, isc.ChainID{})
@@ -44,8 +43,8 @@ func New() NodeConnectionMetrics {
 
 func (ncmiT *nodeConnectionMetricsImpl) Register(registry *prometheus.Registry) {
 	registry.MustRegister(
-		ncmiT.messageTotalCounter,
-		ncmiT.lastEventTimeGauge,
+		ncmiT.messagesL1,
+		ncmiT.lastL1MessageTime,
 	)
 }
 
@@ -60,9 +59,9 @@ func (ncmiT *nodeConnectionMetricsImpl) SetRegistered(chainID isc.ChainID) {
 
 // TODO: connect registered to Prometheus
 func (ncmiT *nodeConnectionMetricsImpl) SetUnregistered(chainID isc.ChainID) {
-	var i int
-	for i = 0; i < len(ncmiT.registered); i++ {
+	for i := 0; i < len(ncmiT.registered); i++ {
 		if ncmiT.registered[i] == chainID {
+			// remove the found chain from the slice and return
 			ncmiT.registered = append(ncmiT.registered[:i], ncmiT.registered[i+1:]...)
 			return
 		}
@@ -77,10 +76,10 @@ func (ncmiT *nodeConnectionMetricsImpl) GetInMilestone() NodeConnectionMessageMe
 	return ncmiT.inMilestoneMetrics
 }
 
-func (ncmiT *nodeConnectionMetricsImpl) incTotalPrometheusCounter(label prometheus.Labels) {
-	ncmiT.messageTotalCounter.With(label).Inc()
+func (ncmiT *nodeConnectionMetricsImpl) incL1Messages(label prometheus.Labels) {
+	ncmiT.messagesL1.With(label).Inc()
 }
 
-func (ncmiT *nodeConnectionMetricsImpl) setLastEventPrometheusGaugeToNow(label prometheus.Labels) {
-	ncmiT.lastEventTimeGauge.With(label).SetToCurrentTime()
+func (ncmiT *nodeConnectionMetricsImpl) setLastL1MessageTimeToNow(label prometheus.Labels) {
+	ncmiT.lastL1MessageTime.With(label).SetToCurrentTime()
 }

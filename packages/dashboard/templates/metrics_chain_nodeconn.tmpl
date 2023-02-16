@@ -14,72 +14,72 @@
 			<tr>
 				<td>Pull latest output</td>
 				<td>OUT</td>
-				<td>{{ (($metrics.GetOutPullLatestOutput).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever (($metrics.GetOutPullLatestOutput).GetLastEvent)) }}</td>
-				{{ template "longStringCell" (($metrics.GetOutPullLatestOutput).GetLastMessage)}}
+				<td>{{ (($metrics.GetOutPullLatestOutput).GetL1MessagesTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetOutPullLatestOutput).GetLastL1MessageTime)) }}</td>
+				{{ template "longStringCell" (($metrics.GetOutPullLatestOutput).GetLastL1Message)}}
 			</tr>
 			<tr>
 				<td>Pull tx inclusion state</td>
 				<td>OUT</td>
-				<td>{{ (($metrics.GetOutPullTxInclusionState).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever (($metrics.GetOutPullTxInclusionState).GetLastEvent)) }}</td>
-				{{ template "longStringCell" (($metrics.GetOutPullTxInclusionState).GetLastMessage)}}
+				<td>{{ (($metrics.GetOutPullTxInclusionState).GetL1MessagesTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetOutPullTxInclusionState).GetLastL1MessageTime)) }}</td>
+				{{ template "longStringCell" (($metrics.GetOutPullTxInclusionState).GetLastL1Message)}}
 			</tr>
 			<tr>
 				<td>Pull output by ID</td>
 				<td>OUT</td>
-				<td>{{ (($metrics.GetOutPullOutputByID).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever (($metrics.GetOutPullOutputByID).GetLastEvent)) }}</td>
-				{{ template "longStringCell" (($metrics.GetOutPullOutputByID).GetLastMessage)}}
+				<td>{{ (($metrics.GetOutPullOutputByID).GetL1MessagesTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetOutPullOutputByID).GetLastL1MessageTime)) }}</td>
+				{{ template "longStringCell" (($metrics.GetOutPullOutputByID).GetLastL1Message)}}
 			</tr>
 			<tr>
 				<td>Publish state tx</td>
 				<td>OUT</td>
-				<td>{{ (($metrics.GetOutPublishStateTransaction).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever (($metrics.GetOutPublishStateTransaction).GetLastEvent)) }}</td>
-				{{ template "longStringCell" (($metrics.GetOutPublishStateTransaction).GetLastMessage)}}
+				<td>{{ (($metrics.GetOutPublishStateTransaction).GetL1MessagesTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetOutPublishStateTransaction).GetLastL1MessageTime)) }}</td>
+				{{ template "longStringCell" (($metrics.GetOutPublishStateTransaction).GetLastL1Message)}}
 			</tr>
 			<tr>
 				<td>Publish governance tx</td>
 				<td>OUT</td>
-				<td>{{ (($metrics.GetOutPublishGovernanceTransaction).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever (($metrics.GetOutPublishGovernanceTransaction).GetLastEvent)) }}</td>
-				{{ template "longStringCell" (($metrics.GetOutPublishGovernanceTransaction).GetLastMessage)}}
+				<td>{{ (($metrics.GetOutPublishGovernanceTransaction).GetL1MessagesTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetOutPublishGovernanceTransaction).GetLastL1MessageTime)) }}</td>
+				{{ template "longStringCell" (($metrics.GetOutPublishGovernanceTransaction).GetLastL1Message)}}
 			</tr>
 			<tr>
 				<td>TX inclusion state</td>
 				<td>IN</td>
-				<td>{{ (($metrics.GetInTxInclusionState).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever (($metrics.GetInTxInclusionState).GetLastEvent)) }}</td>
-				{{ template "longStringCell" (($metrics.GetInTxInclusionState).GetLastMessage)}}
+				<td>{{ (($metrics.GetInTxInclusionState).GetL1MessagesTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetInTxInclusionState).GetLastL1MessageTime)) }}</td>
+				{{ template "longStringCell" (($metrics.GetInTxInclusionState).GetLastL1Message)}}
 			</tr>
 			<tr>
 				<td>State output</td>
 				<td>IN</td>
-				<td>{{ (($metrics.GetInStateOutput).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever (($metrics.GetInStateOutput).GetLastEvent)) }}</td>
-				{{ template "longStringCell" (($metrics.GetInStateOutput).GetLastMessage)}}
+				<td>{{ (($metrics.GetInStateOutput).GetL1MessagesTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetInStateOutput).GetLastL1MessageTime)) }}</td>
+				{{ template "longStringCell" (($metrics.GetInStateOutput).GetLastL1Message)}}
 			</tr>
 			<tr>
 				<td>Alias output</td>
 				<td>IN</td>
-				<td>{{ (($metrics.GetInAliasOutput).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever (($metrics.GetInAliasOutput).GetLastEvent)) }}</td>
-				{{ template "longStringCell" (($metrics.GetInAliasOutput).GetLastMessage)}}
+				<td>{{ (($metrics.GetInAliasOutput).GetL1MessagesTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetInAliasOutput).GetLastL1MessageTime)) }}</td>
+				{{ template "longStringCell" (($metrics.GetInAliasOutput).GetLastL1Message)}}
 			</tr>
 			<tr>
 				<td>Output</td>
 				<td>IN</td>
-				<td>{{ (($metrics.GetInOutput).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever (($metrics.GetInOutput).GetLastEvent)) }}</td>
-				{{ template "longStringCell" (($metrics.GetInOutput).GetLastMessage)}}
+				<td>{{ (($metrics.GetInOutput).GetL1MessagesTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetInOutput).GetLastL1MessageTime)) }}</td>
+				{{ template "longStringCell" (($metrics.GetInOutput).GetLastL1Message)}}
 			</tr>
 			<tr>
 				<td>On ledger request</td>
 				<td>IN</td>
-				<td>{{ (($metrics.GetInOnLedgerRequest).GetMessageTotal) }}</td>
-				<td>{{ (formatTimestampOrNever (($metrics.GetInOnLedgerRequest).GetLastEvent)) }}</td>
-				{{ template "longStringCell" (($metrics.GetInOnLedgerRequest).GetLastMessage)}}
+				<td>{{ (($metrics.GetInOnLedgerRequest).GetL1MessagesTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetInOnLedgerRequest).GetLastL1MessageTime)) }}</td>
+				{{ template "longStringCell" (($metrics.GetInOnLedgerRequest).GetLastL1Message)}}
 			</tr>
 		</tbody>
 	</table>
