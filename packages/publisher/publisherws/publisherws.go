@@ -9,7 +9,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/hive.go/core/generics/event"
+	"github.com/labstack/echo/v4"
+
+	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/hive.go/core/subscriptionmanager"
 	"github.com/iotaledger/hive.go/core/websockethub"
@@ -42,15 +44,15 @@ func New(log *logger.Logger, hub *websockethub.Hub, msgTypes []string) *Publishe
 	}
 }
 
-func (p *PublisherWebSocket) hasSubscribedToAllChains(session *websockethub.Client) bool {
-	return p.subscriptionManager.ClientSubscribedToTopic(session.ID(), "chains")
+func (p *PublisherWebSocket) hasSubscribedToAllChains(client *websockethub.Client) bool {
+	return p.subscriptionManager.ClientSubscribedToTopic(client.ID(), "chains")
 }
 
-func (p *PublisherWebSocket) hasSubscribedToSingleChain(session *websockethub.Client, chainID isc.ChainID) bool {
-	return p.subscriptionManager.ClientSubscribedToTopic(session.ID(), fmt.Sprintf("chains/%s", chainID.String()))
+func (p *PublisherWebSocket) hasSubscribedToSingleChain(client *websockethub.Client, chainID isc.ChainID) bool {
+	return p.subscriptionManager.ClientSubscribedToTopic(client.ID(), fmt.Sprintf("chains/%s", chainID.String()))
 }
 
-func (p *PublisherWebSocket) createEventWriter(ctx context.Context, session *websockethub.Client) *events.Closure {
+func (p *PublisherWebSocket) createEventWriter(ctx context.Context, client *websockethub.Client) *events.Closure {
 	eventClosure := events.NewClosure(func(event *publisher.ISCEvent) {
 		if event == nil {
 			return
@@ -60,15 +62,17 @@ func (p *PublisherWebSocket) createEventWriter(ctx context.Context, session *web
 			return
 		}
 
-		if !p.hasSubscribedToAllChains(session) && !p.hasSubscribedToSingleChain(session, event.ChainID) {
+		if !p.hasSubscribedToAllChains(client) && !p.hasSubscribedToSingleChain(client, event.ChainID) {
 			return
 		}
 
-		if !p.subscriptionManager.ClientSubscribedToTopic(session.ID(), event.Kind) {
+		if !p.subscriptionManager.ClientSubscribedToTopic(client.ID(), event.Kind) {
 			return
 		}
 
-		session.Send(ctx, event)
+		if err := client.Send(ctx, event); err != nil {
+			p.log.Warnf("error sending message: %v", err)
+		}
 	})
 
 	return eventClosure
@@ -118,7 +122,7 @@ func (p *PublisherWebSocket) handleSubscriptionCommand(ctx context.Context, clie
 	}
 
 	if err != nil {
-		p.log.Warnf("Failed to send response: %v %v %v", err, ctx.Err(), ctx)
+		p.log.Warnf("error sending message: %v", err)
 	}
 }
 
@@ -144,23 +148,21 @@ func (p *PublisherWebSocket) OnClientCreated(ctx context.Context, client *websoc
 	publisher.Event.Hook(eventWriter)
 	defer publisher.Event.Detach(eventWriter)
 
-	go func() {
-		for {
-			select {
-			case <-client.ExitSignal:
+	for {
+		select {
+		case <-client.ExitSignal:
+			// client was disconnected
+			return
+
+		case msg, ok := <-client.ReceiveChan:
+			if !ok {
 				// client was disconnected
 				return
-
-			case msg, ok := <-client.ReceiveChan:
-				if !ok {
-					// client was disconnected
-					return
-				}
-
-				p.handleNodeCommands(ctx, client, msg.Data)
 			}
+
+			p.handleNodeCommands(ctx, client, msg.Data)
 		}
-	}()
+	}
 }
 
 func (p *PublisherWebSocket) OnConnect(client *websockethub.Client, request *http.Request) {
@@ -175,13 +177,26 @@ func (p *PublisherWebSocket) OnDisconnect(client *websockethub.Client, request *
 
 // ServeHTTP serves the websocket.
 // Provide a chainID to filter for a certain chain, provide an empty chain id to get all chain events.
-func (p *PublisherWebSocket) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) error {
-	return p.hub.ServeWebsocket(responseWriter, request,
+func (p *PublisherWebSocket) ServeHTTP(c echo.Context) error {
+	p.log.Infof("ServeHTTP ctx: %v %v", c.Request().Context(), c.Request().Context().Err())
+
+	ctx, cancel := context.WithCancel(c.Request().Context())
+
+	err := p.hub.ServeWebsocket(c.Response(), c.Request(),
 		func(client *websockethub.Client) {
-			p.OnClientCreated(request.Context(), client)
+			go p.OnClientCreated(ctx, client)
 		}, func(client *websockethub.Client) {
-			p.OnConnect(client, request)
+			p.OnConnect(client, c.Request())
 		}, func(client *websockethub.Client) {
-			p.OnDisconnect(client, request)
+			p.OnDisconnect(client, c.Request())
+			cancel()
 		})
+
+	for {
+		select {
+		case <-ctx.Done():
+			p.log.Infof("ServeHTTP stop ctx: %v %v, websocket serve err: %v", c.Request().Context(), c.Request().Context().Err(), err)
+			return err
+		}
+	}
 }

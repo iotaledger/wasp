@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pangpanglabs/echoswagger/v2"
+	"go.elastic.co/apm/module/apmechov4"
 	"go.uber.org/dig"
 	"go.uber.org/zap"
 	"nhooyr.io/websocket"
@@ -61,7 +62,6 @@ const (
 type dependencies struct {
 	dig.In
 
-	Echo         *echo.Echo          `name:"webapiEcho"`
 	EchoSwagger  echoswagger.ApiRoot `name:"webapiServer"`
 	WebsocketHub *websockethub.Hub   `name:"websocketHub"`
 }
@@ -206,7 +206,6 @@ func provide(c *dig.Container) error {
 		)
 
 		return webapiServerResult{
-			Echo:         e,
 			EchoSwagger:  echoSwagger,
 			WebsocketHub: hub,
 		}
@@ -223,19 +222,14 @@ func run() error {
 		Plugin.LogInfof("Starting %s server ... done", Plugin.Name)
 
 		go func() {
-			Plugin.LogInfof("You can now access the WebAPI using: http://%s", ParamsWebAPI.BindAddress)
-			if err := deps.EchoSwagger.Echo().Start(ParamsWebAPI.BindAddress); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				Plugin.LogWarnf("Stopped %s server due to an error (%s)", Plugin.Name, err)
-			}
-
-			deps.Echo.Server.BaseContext = func(_ net.Listener) context.Context {
-				// set BaseContext to be the same as the plugin, so that requests being processed don't hang the shutdown procedure
-				return ctx
-			}
-
 			deps.EchoSwagger.Echo().Server.BaseContext = func(_ net.Listener) context.Context {
 				// set BaseContext to be the same as the plugin, so that requests being processed don't hang the shutdown procedure
 				return ctx
+			}
+
+			Plugin.LogInfof("You can now access the WebAPI using: http://%s", ParamsWebAPI.BindAddress)
+			if err := deps.EchoSwagger.Echo().Start(ParamsWebAPI.BindAddress); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				Plugin.LogWarnf("Stopped %s server due to an error (%s)", Plugin.Name, err)
 			}
 		}()
 
@@ -256,11 +250,9 @@ func run() error {
 	}
 
 	if err := Plugin.Daemon().BackgroundWorker("WebsocketHub", func(ctx context.Context) {
-		go func() {
-			go deps.WebsocketHub.Run(ctx)
-			<-ctx.Done()
-			Plugin.LogInfo("Stopping WebAPI[WS]")
-		}()
+		go deps.WebsocketHub.Run(ctx)
+		<-ctx.Done()
+		Plugin.LogInfo("Stopping WebAPI[WS]")
 	}, daemon.PriorityWebAPI); err != nil {
 		Plugin.LogPanicf("failed to start worker: %s", err)
 	}
