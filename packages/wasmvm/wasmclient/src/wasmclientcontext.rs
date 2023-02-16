@@ -2,9 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::{
-    sync::{Arc, mpsc, Mutex},
+    sync::{Arc, Mutex},
 };
+use std::io::Read;
+use std::thread::spawn;
 
+use nanomsg::{Protocol, Socket};
 use wasmlib::*;
 
 use wasmclientsandbox::*;
@@ -18,7 +21,7 @@ pub struct WasmClientContext {
     pub(crate) chain_id: ScChainID,
     pub(crate) error: Arc<Mutex<errors::Result<()>>>,
     pub(crate) event_done: Arc<Mutex<bool>>,
-    pub(crate) event_handlers: Vec<Box<dyn IEventHandlers>>,
+    pub(crate) event_handlers: Arc<Mutex<Vec<Box<dyn IEventHandlers>>>>,
     pub(crate) key_pair: Option<KeyPair>,
     pub(crate) nonce: Arc<Mutex<u64>>,
     pub(crate) req_id: Arc<Mutex<ScRequestID>>,
@@ -55,7 +58,7 @@ impl WasmClientContext {
             chain_id: chain_id_from_string(chain_id),
             error: Arc::new(Mutex::new(Ok(()))),
             event_done: Arc::default(),
-            event_handlers: Vec::new(),
+            event_handlers: Arc::default(),
             key_pair: None,
             nonce: Arc::default(),
             req_id: Arc::new(Mutex::new(request_id_from_bytes(&[]))),
@@ -78,15 +81,18 @@ impl WasmClientContext {
     }
 
     pub fn register(&mut self, handler: Box<dyn IEventHandlers>) {
-        let target = handler.id();
-        for h in self.event_handlers.iter() {
-            if h.id() == target {
+        {
+            let target = handler.id();
+            let mut event_handlers = self.event_handlers.lock().unwrap();
+            for h in event_handlers.iter() {
+                if h.id() == target {
+                    return;
+                }
+            }
+            event_handlers.push(handler);
+            if event_handlers.len() > 1 {
                 return;
             }
-        }
-        self.event_handlers.push(handler);
-        if self.event_handlers.len() > 1 {
-            return;
         }
         let res = self.start_event_handlers();
         if let Err(e) = res {
@@ -116,10 +122,11 @@ impl WasmClientContext {
     }
 
     pub fn unregister(&mut self, id: &str) {
-        self.event_handlers.retain(|h| {
+        let mut event_handlers = self.event_handlers.lock().unwrap();
+        event_handlers.retain(|h| {
             h.id() != id
         });
-        if self.event_handlers.len() == 0 {
+        if event_handlers.len() == 0 {
             self.stop_event_handlers();
         }
     }
@@ -141,43 +148,35 @@ impl WasmClientContext {
         }
     }
 
-    fn process_event(&self, _rx: mpsc::Receiver<Vec<String>>) -> errors::Result<()> {
-        // for msg in rx {
-        //     spawn(move || {
-        //         let lock_received = self.event_received.clone();
-        //         if msg[0] == waspclient::ISC_EVENT_KIND_ERROR {
-        //             let mut received = lock_received.write().unwrap();
-        //             *received = true;
-        //             return Err(msg[1].clone());
-        //         }
-        //
-        //         if msg[0] != waspclient::ISC_EVENT_KIND_SMART_CONTRACT
-        //             && msg[1] != self.chain_id.to_string()
-        //         {
-        //             // not intended for us
-        //             return Ok(());
-        //         }
-        //         let mut params: Vec<String> = msg[6].split("|").map(|s| s.into()).collect();
-        //         for i in 0..params.len() {
-        //             params[i] = self.unescape(&params[i]);
-        //         }
-        //         let topic = params.remove(0);
-        //
-        //         for handler in self.event_handlers.iter() {
-        //             handler.as_ref().call_handler(&topic, &params);
-        //         }
-        //
-        //         let mut received = lock_received.write().unwrap();
-        //         *received = true;
-        //         return Ok(());
-        //     });
-        // }
-        //
-        return Ok(());
-    }
-
     pub fn start_event_handlers(&self) -> errors::Result<()> {
-        // let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
+        let event_done = self.event_done.clone();
+        let event_handlers = self.event_handlers.clone();
+        spawn(move || {
+            let mut socket = Socket::new(Protocol::Sub).unwrap();
+            socket.subscribe(b"contract").unwrap();
+            let mut endpoint = socket.connect("tcp://127.0.0.1:15550").unwrap();
+            let mut msg = String::new();
+            let mut done = false;
+            while !done {
+                socket.read_to_string(&mut msg).unwrap();
+                println!("{}", msg);
+                let parts: Vec<String> = msg.split(" ").map(|s| s.into()).collect();
+                let mut params: Vec<String> = parts[6].split("|").map(|s| s.into()).collect();
+                for i in 0..params.len() {
+                    params[i] = Self::unescape(&params[i]);
+                }
+                let topic = params.remove(0);
+
+                let event_handlers = event_handlers.lock().unwrap();
+                for handler in event_handlers.iter() {
+                    handler.as_ref().call_handler(&topic, &params);
+                }
+                msg.clear();
+                done = *event_done.lock().unwrap();
+            }
+            endpoint.shutdown().unwrap();
+        });
+        // let (tx, rx): (mpsc::Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
         // let done = Arc::clone(&self.event_done);
         // self.svc_client.subscribe_events(tx, done)?;
         // self.process_event(rx)?;
@@ -189,18 +188,18 @@ impl WasmClientContext {
         *done = true;
     }
 
-    fn unescape(&self, param: &str) -> String {
+    fn unescape(param: &str) -> String {
         let idx = match param.find("~") {
             Some(idx) => idx,
             None => return String::from(param),
         };
         match param.chars().nth(idx + 1) {
             // escaped escape character
-            Some('~') => param[0..idx].to_string() + "~" + &self.unescape(&param[idx + 2..]),
+            Some('~') => param[0..idx].to_string() + "~" + &Self::unescape(&param[idx + 2..]),
             // escaped vertical bar
-            Some('/') => param[0..idx].to_string() + "|" + &self.unescape(&param[idx + 2..]),
+            Some('/') => param[0..idx].to_string() + "|" + &Self::unescape(&param[idx + 2..]),
             // escaped space
-            Some('_') => param[0..idx].to_string() + " " + &self.unescape(&param[idx + 2..]),
+            Some('_') => param[0..idx].to_string() + " " + &Self::unescape(&param[idx + 2..]),
             _ => panic!("invalid event encoding"),
         }
     }
@@ -222,7 +221,7 @@ impl Default for WasmClientContext {
             chain_id: chain_id_from_bytes(&[]),
             error: Arc::new(Mutex::new(Ok(()))),
             event_done: Arc::default(),
-            event_handlers: Vec::new(),
+            event_handlers: Arc::default(),
             key_pair: None,
             nonce: Arc::default(),
             req_id: Arc::new(Mutex::new(request_id_from_bytes(&[]))),

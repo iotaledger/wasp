@@ -1,7 +1,6 @@
 // // Copyright 2020 IOTA Stiftung
 // // SPDX-License-Identifier: Apache-2.0
 
-use std::sync::{Arc, mpsc, RwLock};
 use std::time::Duration;
 
 use wasmlib::*;
@@ -12,49 +11,21 @@ use crate::*;
 use crate::keypair::KeyPair;
 use crate::waspclient::WaspClient;
 
-pub trait IClientService {
-    fn call_view_by_hname(
-        &self,
-        chain_id: &ScChainID,
-        contract_hname: &ScHname,
-        function_hname: &ScHname,
-        args: &[u8],
-    ) -> errors::Result<Vec<u8>>;
-
-    fn post_request(
-        &self,
-        chain_id: &ScChainID,
-        contract_hname: &ScHname,
-        function_hname: &ScHname,
-        args: &[u8],
-        allowance: &ScAssets,
-        key_pair: &KeyPair,
-        nonce: u64,
-    ) -> errors::Result<ScRequestID>;
-
-    fn subscribe_events(
-        &self,
-        tx: mpsc::Sender<Vec<String>>,
-        done: Arc<RwLock<bool>>,
-    ) -> errors::Result<()>;
-
-    fn wait_until_request_processed(
-        &self,
-        chain_id: &ScChainID,
-        req_id: &ScRequestID,
-        timeout: Duration,
-    ) -> errors::Result<()>;
-}
-
 #[derive(Clone, PartialEq)]
 pub struct WasmClientService {
     client: WaspClient,
-    event_port: String,
     last_err: errors::Result<()>,
 }
 
-impl IClientService for WasmClientService {
-    fn call_view_by_hname(
+impl WasmClientService {
+    pub fn new(wasp_api: &str, event_port: &str) -> Self {
+        return WasmClientService {
+            client: WaspClient::new(wasp_api, event_port),
+            last_err: Ok(()),
+        };
+    }
+
+    pub fn call_view_by_hname(
         &self,
         chain_id: &ScChainID,
         contract_hname: &ScHname,
@@ -70,7 +41,7 @@ impl IClientService for WasmClientService {
         );
     }
 
-    fn post_request(
+    pub fn post_request(
         &self,
         chain_id: &ScChainID,
         h_contract: &ScHname,
@@ -97,16 +68,7 @@ impl IClientService for WasmClientService {
         Ok(signed.id())
     }
 
-    fn subscribe_events(
-        &self,
-        tx: mpsc::Sender<Vec<String>>,
-        done: Arc<RwLock<bool>>,
-    ) -> errors::Result<()> {
-        self.client.subscribe(tx, done);
-        return Ok(());
-    }
-
-    fn wait_until_request_processed(
+    pub fn wait_until_request_processed(
         &self,
         chain_id: &ScChainID,
         req_id: &ScRequestID,
@@ -118,34 +80,14 @@ impl IClientService for WasmClientService {
     }
 }
 
-impl WasmClientService {
-    pub fn new(wasp_api: &str, event_port: &str) -> Self {
-        return WasmClientService {
-            client: WaspClient::new(wasp_api, &event_port),
-            event_port: event_port.to_string(),
-            last_err: Ok(()),
-        };
-    }
-}
-
 impl Default for WasmClientService {
     fn default() -> Self {
         return WasmClientService {
             client: WaspClient::new("127.0.0.1:19090", "127.0.0.1:15550"),
-            event_port: "127.0.0.1:15550".to_string(),
             last_err: Ok(()),
         };
     }
 }
-
-// impl std::fmt::Debug for WasmClientService {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> core::result::Result<(), std::fmt::Error> {
-//         f.debug_tuple("WasmClientService")
-//             .field(&self.client)
-//             .field(&self.event_port)
-//             .finish()
-//     }
-// }
 
 #[cfg(test)]
 mod tests {
@@ -158,7 +100,6 @@ mod tests {
         let service = WasmClientService::default();
         let default_service = WasmClientService {
             client: WaspClient::new("127.0.0.1:19090", "127.0.0.1:15550"),
-            event_port: "127.0.0.1:15550".to_string(),
             last_err: Ok(()),
         };
         assert!(default_service.event_port == service.event_port);

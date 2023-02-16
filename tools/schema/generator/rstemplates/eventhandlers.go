@@ -30,6 +30,9 @@ impl IEventHandlers for $PkgName$+EventHandlers {
     }
 }
 
+unsafe impl Send for $PkgName$+EventHandlers {}
+unsafe impl Sync for $PkgName$+EventHandlers {}
+
 impl $PkgName$+EventHandlers {
     pub fn new(id: &str) -> $PkgName$+EventHandlers {
         let mut handlers: HashMap<&str, fn(evt: &$PkgName$+EventHandlers, msg: &Vec<String>)> = HashMap::new();
