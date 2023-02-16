@@ -10,6 +10,7 @@ api_requests.go
 api_users.go
 client.go
 configuration.go
+docs/AccountFoundriesResponse.md
 docs/AccountListResponse.md
 docs/AccountNFTsResponse.md
 docs/AccountNonceResponse.md
@@ -107,6 +108,7 @@ docs/ValidationError.md
 docs/VersionResponse.md
 git_push.sh
 go.sum
+model_account_foundries_response.go
 model_account_list_response.go
 model_account_nfts_response.go
 model_account_nonce_response.go

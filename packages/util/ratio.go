@@ -17,6 +17,22 @@ func (r Ratio32) String() string {
 	return fmt.Sprintf("%d:%d", r.A, r.B)
 }
 
+func Ratio32FromString(s string) (Ratio32, error) {
+	parts := strings.Split(s, ":")
+	if len(parts) != 2 {
+		return Ratio32{}, fmt.Errorf("invalid string")
+	}
+	a, err := strconv.ParseUint(parts[0], 10, 32)
+	if err != nil {
+		return Ratio32{}, err
+	}
+	b, err := strconv.ParseUint(parts[1], 10, 32)
+	if err != nil {
+		return Ratio32{}, err
+	}
+	return Ratio32{A: uint32(a), B: uint32(b)}, nil
+}
+
 func (r Ratio32) Bytes() []byte {
 	var b [8]byte
 	copy(b[:4], Uint32To4Bytes(r.A))

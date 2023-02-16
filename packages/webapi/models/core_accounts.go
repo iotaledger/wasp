@@ -44,6 +44,10 @@ type AccountNFTsResponse struct {
 	NFTIDs []string `json:"nftIds" swagger:"required"`
 }
 
+type AccountFoundriesResponse struct {
+	FoundrySerialNumbers []uint32 `json:"foundrySerialNumbers" swagger:"required"`
+}
+
 type AccountNonceResponse struct {
 	Nonce string `json:"nonce" swagger:"required,desc(The nonce (uint64 as string))"`
 }

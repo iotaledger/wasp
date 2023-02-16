@@ -6,8 +6,11 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	wasp_util "github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
@@ -15,6 +18,8 @@ import (
 func Init(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(initDecodeCmd())
 	rootCmd.AddCommand(initDecodeMetadataCmd())
+	rootCmd.AddCommand(initDecodeGasFeePolicy())
+	rootCmd.AddCommand(initEncodeGasFeePolicy())
 }
 
 func initDecodeCmd() *cobra.Command {
@@ -72,4 +77,71 @@ func initDecodeMetadataCmd() *cobra.Command {
 			log.Printf("%s\n", jsonBytes)
 		},
 	}
+}
+
+func initDecodeGasFeePolicy() *cobra.Command {
+	return &cobra.Command{
+		Use:   "decode-gaspolicy <0x...>",
+		Short: "Translates gas fee policy from Hex to a humanly-readable format",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			bytes, err := iotago.DecodeHex(args[0])
+			log.Check(err)
+			log.Printf(gas.MustGasFeePolicyFromBytes(bytes).String())
+		},
+	}
+}
+
+func initEncodeGasFeePolicy() *cobra.Command {
+	var (
+		tokenID           string
+		tokenDecimals     uint32
+		gasPerToken       uint64
+		evmGasRatio       string
+		validatorFeeShare uint8
+	)
+
+	cmd := &cobra.Command{
+		Use:   "encode-gaspolicy",
+		Short: "Translates metadata from Hex to a humanly-readable format",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			gasPolicy := gas.DefaultGasFeePolicy()
+
+			if tokenID != "" {
+				tokenIDBytes := util.TokenIDFromString(tokenID)
+				nativeTokenID, err := isc.NativeTokenIDFromBytes(tokenIDBytes)
+				log.Check(err)
+				gasPolicy.GasFeeTokenID = nativeTokenID
+			}
+
+			if tokenDecimals != 0 {
+				gasPolicy.GasFeeTokenDecimals = tokenDecimals
+			}
+
+			if gasPerToken != 0 {
+				gasPolicy.GasPerToken = gasPerToken
+			}
+
+			if evmGasRatio != "" {
+				ratio, err := wasp_util.Ratio32FromString(evmGasRatio)
+				log.Check(err)
+				gasPolicy.EVMGasRatio = ratio
+			}
+
+			if validatorFeeShare <= 100 {
+				gasPolicy.ValidatorFeeShare = validatorFeeShare
+			}
+
+			log.Printf(iotago.EncodeHex(gasPolicy.Bytes()))
+		},
+	}
+
+	cmd.Flags().StringVar(&tokenID, "tokenID", "", "TokenID for the gas fee")
+	cmd.Flags().Uint32Var(&tokenDecimals, "tokenDecimals", 0, "decimals for the fee token")
+	cmd.Flags().Uint64Var(&gasPerToken, "gasPerToken", 0, "gas per token")
+	cmd.Flags().StringVar(&evmGasRatio, "evmGasRatio", "", "evm gas ratio (format: a:b)")
+	cmd.Flags().Uint8Var(&validatorFeeShare, "validatorFeeShare", 101, "validator fee share (between 0 and 100)")
+
+	return cmd
 }

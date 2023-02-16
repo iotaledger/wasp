@@ -58,7 +58,7 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 	senderAddress, _ := isc.AddressFromAgentID(sender)
 	initConditionsCorrect := stateAnchor.IsOrigin &&
 		state.MustGet(root.StateVarStateInitialized) == nil &&
-		senderHname == 0 &&
+		senderHname.IsNil() &&
 		creator != nil &&
 		creator.Equal(senderAddress) &&
 		contractRegistry.MustLen() == 0

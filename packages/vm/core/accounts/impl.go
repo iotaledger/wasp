@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -81,9 +82,8 @@ func transferAllowanceTo(ctx isc.Sandbox) dict.Dict {
 // TODO this is just a temporary value, we need to make deposits fee constant across chains.
 const ConstDepositFeeTmp = 1 * isc.Million
 
-// withdraw sends caller's funds to the caller on-ledger (cross chain)
-// The caller explicitly specify the funds to withdraw via the allowance in the request
-// Btw: the whole code of entry point is generic, i.e. not specific to the accounts TODO use this feature
+// withdraw sends the allowed funds to the caller's L1 address, or if the caller is a
+// cross-chain contract, to its account.
 func withdraw(ctx isc.Sandbox) dict.Dict {
 	ctx.Requiref(!ctx.AllowanceAvailable().IsEmpty(), "Allowance can't be empty in 'accounts.withdraw'")
 
@@ -110,11 +110,11 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 	// por las dudas
 	ctx.Requiref(remains.IsEmpty(), "internal: allowance left after must be empty")
 
-	if callerContract != nil && callerContract.Hname() != 0 {
+	if callerContract != nil && !callerContract.Hname().IsNil() {
 		// deduct the deposit fee from the allowance, so that there are enough tokens to pay for the deposit on the target chain
 		allowance := isc.NewAssetsBaseTokens(fundsToWithdraw.BaseTokens - ConstDepositFeeTmp)
 		// send funds to a contract on another chain
-		tx := isc.RequestParameters{
+		ctx.Send(isc.RequestParameters{
 			TargetAddress: callerAddress,
 			Assets:        fundsToWithdraw,
 			Metadata: &isc.SendMetadata{
@@ -124,18 +124,17 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 				Params:         dict.Dict{ParamAgentID: codec.EncodeAgentID(callerContract)},
 				GasBudget:      math.MaxUint64, // TODO This call will fail if not enough gas, and the funds will be lost (credited to this accounts on the target chain)
 			},
-		}
-
-		ctx.Send(tx)
-		ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.AllowanceAvailable().String())
-		return nil
+		})
+	} else {
+		ctx.Send(isc.RequestParameters{
+			TargetAddress: callerAddress,
+			Assets:        fundsToWithdraw,
+		})
 	}
-	tx := isc.RequestParameters{
-		TargetAddress: callerAddress,
-		Assets:        fundsToWithdraw,
-	}
-	ctx.Send(tx)
-	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.AllowanceAvailable().String())
+	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s: %s",
+		callerAddress.Bech32(parameters.L1ForTesting.Protocol.Bech32HRP),
+		ctx.AllowanceAvailable().String(),
+	)
 	return nil
 }
 
