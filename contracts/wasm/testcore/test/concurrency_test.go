@@ -70,8 +70,11 @@ func TestSynchronous(t *testing.T) {
 }
 
 func TestConcurrency(t *testing.T) {
-	t.SkipNow()
 	run2(t, func(t *testing.T, w bool) {
+		if *wasmsolo.TsWasm {
+			t.SkipNow()
+		}
+		
 		ctx := deployTestCore(t, w)
 
 		repeats := []int{300, 100, 100, 100, 200, 100, 100}
@@ -119,8 +122,11 @@ func TestConcurrency(t *testing.T) {
 }
 
 func TestConcurrency2(t *testing.T) {
-	t.SkipNow()
 	run2(t, func(t *testing.T, w bool) {
+		if *wasmsolo.TsWasm {
+			t.SkipNow()
+		}
+
 		ctx := deployTestCore(t, w)
 
 		// note that because SoloContext is not thread-safe we cannot use

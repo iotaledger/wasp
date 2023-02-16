@@ -42,8 +42,8 @@ type CallParams struct {
 
 // NewCallParams creates structure which wraps in one object call parameters, used in PostRequestSync and callViewFull
 // calls:
-//   - 'scName' is a a name of the target smart contract
-//   - 'funName' is a name of the target entry point (the function) of he smart contract program
+//   - 'scName' is a name of the target smart contract
+//   - 'funName' is a name of the target entry point (the function) of the smart contract program
 //   - 'params' is either a dict.Dict, or a sequence of pairs 'paramName', 'paramValue' which constitute call parameters
 //     The 'paramName' must be a string and 'paramValue' must different types (encoded based on type)
 //
