@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -20,17 +19,17 @@ const ISCEventIssuerVM = "vm"
 
 type ISCEvent struct {
 	Kind      string
-	Issuer    isc.AgentID // nil means issued by the VM
-	RequestID isc.RequestID
-	ChainID   isc.ChainID
+	Issuer    string // (AgentID) nil means issued by the VM
+	RequestID string // (isc.RequestID)
+	ChainID   string // (isc.ChainID)
 	Content   interface{}
 }
 
 // kind is not printed right now, because it is added when calling p.publish
 func (e *ISCEvent) String() string {
 	issuerStr := "vm"
-	if e.Issuer != nil {
-		issuerStr = e.Issuer.String()
+	if e.Issuer != "" {
+		issuerStr = e.Issuer
 	}
 	// chainid | issuer (kind):
 	return fmt.Sprintf("%s | %s (%s): %v", e.ChainID, issuerStr, e.Kind, e.Content)
@@ -50,26 +49,26 @@ func PublishBlockEvents(blockApplied *publisherBlockApplied, publish func(*ISCEv
 	}
 	publish(&ISCEvent{
 		Kind:   ISCEventKindNewBlock,
-		Issuer: nil,
-		// TODO should probably be JSON? right now its just some printed strings
+		Issuer: "",
 		// TODO the L1 commitment will be nil (on the blocklog), but at this point the L1 commitment has already been calculated, so we could potentially add it to blockInfo
 		Content: blockInfo,
-		ChainID: chainID,
+		ChainID: chainID.String(),
 	})
 
 	//
 	// Publish receipts of processed requests.
 	receipts, err := blocklog.RequestReceiptsFromBlock(block)
+
 	if err != nil {
 		log.Errorf("unable to get receipts from a block: %w", err)
 	} else {
 		for _, receipt := range receipts {
 			publish(&ISCEvent{
 				Kind:      ISCEventKindReceipt,
-				Issuer:    receipt.Request.SenderAccount(),
+				Issuer:    receipt.Request.SenderAccount().String(),
 				Content:   receipt,
-				RequestID: receipt.Request.ID(),
-				ChainID:   chainID,
+				RequestID: receipt.Request.ID().String(),
+				ChainID:   chainID.String(),
 			})
 		}
 	}
@@ -80,17 +79,15 @@ func PublishBlockEvents(blockApplied *publisherBlockApplied, publish func(*ISCEv
 	if err != nil {
 		log.Errorf("unable to get events from a block: %w", err)
 	} else {
-		for _, event := range events {
-			publish(&ISCEvent{
-				Kind: ISCEventKindSmartContract,
-				// TODO should be the contract Hname, but right now events are just stored as strings.
-				// must be refactored so its possible to filter by "events from a contract"
-				Issuer: nil,
-				// TODO should be possible to filter by request ID (not possible with current events impl)
-				// RequestID: event.RequestID,
-				Content: event,
-				ChainID: chainID,
-			})
-		}
+		publish(&ISCEvent{
+			Kind: ISCEventKindSmartContract,
+			// TODO should be the contract Hname, but right now events are just stored as strings.
+			// must be refactored so its possible to filter by "events from a contract"
+			Issuer: "",
+			// TODO should be possible to filter by request ID (not possible with current events impl)
+			// RequestID: event.RequestID,
+			Content: events,
+			ChainID: chainID.String(),
+		})
 	}
 }

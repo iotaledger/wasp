@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/hive.go/core/subscriptionmanager"
 	"github.com/iotaledger/hive.go/core/websockethub"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/publisher"
 )
 
@@ -50,8 +49,8 @@ func (p *PublisherWebSocket) hasSubscribedToAllChains(client *websockethub.Clien
 	return p.subscriptionManager.ClientSubscribedToTopic(client.ID(), "chains")
 }
 
-func (p *PublisherWebSocket) hasSubscribedToSingleChain(client *websockethub.Client, chainID isc.ChainID) bool {
-	return p.subscriptionManager.ClientSubscribedToTopic(client.ID(), fmt.Sprintf("chains/%s", chainID.String()))
+func (p *PublisherWebSocket) hasSubscribedToSingleChain(client *websockethub.Client, chainID string) bool {
+	return p.subscriptionManager.ClientSubscribedToTopic(client.ID(), fmt.Sprintf("chains/%s", chainID))
 }
 
 func (p *PublisherWebSocket) createEventWriter(ctx context.Context, client *websockethub.Client) *event.Closure[*publisher.ISCEvent] {
