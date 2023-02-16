@@ -61,6 +61,9 @@ func test2Chains(t *testing.T, w bool) {
 	chain1TotalBaseTokens := chain1.L2TotalBaseTokens()
 	chain2TotalBaseTokens := chain2.L2TotalBaseTokens()
 
+	chain1.WaitForRequestsMark()
+	chain2.WaitForRequestsMark()
+
 	// send base tokens to contractAgentID (that is an entity of chain2) on chain1
 	const baseTokensToSend = 11 * isc.Million
 	const baseTokensCreditedToScOnChain1 = 10 * isc.Million
@@ -115,12 +118,8 @@ func test2Chains(t *testing.T, w bool) {
 	require.NoError(t, err)
 	chain2SendWithdrawalReceipt := chain2.LastReceipt()
 
-	extra := 0
-	if w {
-		extra = 1
-	}
-	require.True(t, chain1.WaitForRequestsThrough(5+extra, 10*time.Second))
-	require.True(t, chain2.WaitForRequestsThrough(5+extra, 10*time.Second))
+	require.True(t, chain1.WaitForRequestsThrough(2, 10*time.Second))
+	require.True(t, chain2.WaitForRequestsThrough(2, 10*time.Second))
 
 	println("----chain1------------------------------------------")
 	println(chain1.DumpAccounts())

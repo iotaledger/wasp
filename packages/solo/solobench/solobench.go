@@ -33,11 +33,11 @@ func RunBenchmarkAsync(b *testing.B, chain *solo.Chain, reqs []*solo.CallParams,
 		require.NoError(b, err)
 	}
 
-	nreq := chain.MempoolInfo().InPoolCounter
+	chain.WaitForRequestsMark()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		go chain.Env.EnqueueRequests(txs[i])
 	}
-	require.True(b, chain.WaitForRequestsThrough(nreq+b.N, 20*time.Second))
+	require.True(b, chain.WaitForRequestsThrough(b.N, 20*time.Second))
 }

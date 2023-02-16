@@ -70,7 +70,6 @@ type SoloContext struct {
 	isRequest      bool
 	IsWasm         bool
 	keyPair        *cryptolib.KeyPair
-	mark           int
 	nfts           map[iotago.NFTID]*isc.NFT
 	offLedger      bool
 	scName         string
@@ -492,7 +491,7 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 		timeout = maxWait[0]
 	}
 
-	allDone := ctx.Chain.WaitForRequestsThrough(ctx.mark+expectedRequests, timeout)
+	allDone := ctx.Chain.WaitForRequestsThrough(expectedRequests, timeout)
 	if !allDone {
 		info := ctx.Chain.MempoolInfo()
 		ctx.Chain.Env.T.Logf("In: %d, out: %d, pool: %d\n", info.InPoolCounter, info.OutPoolCounter, info.TotalPool)
@@ -503,7 +502,7 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 // WaitForPendingRequestsMark marks the current InPoolCounter to be used by
 // a subsequent call to WaitForPendingRequests()
 func (ctx *SoloContext) WaitForPendingRequestsMark() {
-	ctx.mark = ctx.Chain.MempoolInfo().InPoolCounter
+	ctx.Chain.WaitForRequestsMark()
 }
 
 func (ctx *SoloContext) UpdateGasFees() {

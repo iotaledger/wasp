@@ -588,11 +588,19 @@ func (ch *Chain) WaitUntilMempoolIsEmpty(timeout ...time.Duration) bool {
 	}
 }
 
-// WaitForRequestsThrough waits for the moment when counters for incoming requests and removed
-// requests in the mempool of the chain both become equal to the specified number
+// WaitForRequestsMark marks the amount of requests processed until now
+// This allows the WaitForRequestsThrough() function to wait for the
+// specified of number of requests after the mark point.
+func (ch *Chain) WaitForRequestsMark() {
+	ch.RequestsMark = ch.RequestsDone
+}
+
+// WaitForRequestsThrough waits until the specified number of requests
+// have been processed since the last call to WaitForRequestsMark()
 func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
+	numReq += ch.RequestsMark
 	return ch.WaitUntil(func(mstats MempoolInfo) bool {
-		return mstats.OutPoolCounter == numReq
+		return ch.RequestsDone >= numReq
 	}, maxWait...)
 }
 

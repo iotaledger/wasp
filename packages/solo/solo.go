@@ -102,6 +102,10 @@ type Chain struct {
 	runVMMutex sync.Mutex
 	// mempool of the chain is used in Solo to mimic a real node
 	mempool Mempool
+
+	RequestsDone int
+	RequestsMark int
+
 	// used for non-standard VMs
 	bypassStardustVM bool
 }

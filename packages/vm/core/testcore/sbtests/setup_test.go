@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcoreimpl"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -78,19 +80,19 @@ func deployContract(chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) er
 	}
 
 	// enable this code to be able to debug using Go version of Wasm testcore SC
-	//if forceGoNoWasm {
-	//	// run non-Wasm go version of testcore
-	//	wasmhost.GoWasmVM = func() wasmhost.WasmVM {
-	//		return wasmhost.NewWasmGoVM(ScName, testcore.OnDispatch)
-	//	}
-	//	hProg, err := chain.UploadWasm(user, []byte("go:"+ScName))
-	//	if err != nil {
-	//		return err
-	//	}
-	//	err = chain.DeployContract(user, ScName, hProg)
-	//	wasmhost.GoWasmVM = nil
-	//	return err
-	//}
+	if forceGoNoWasm {
+		// run non-Wasm go version of testcore
+		wasmhost.GoWasmVM = func() wasmhost.WasmVM {
+			return wasmhost.NewWasmGoVM(ScName, testcoreimpl.OnDispatch)
+		}
+		hProg, err := chain.UploadWasm(user, []byte("go:"+ScName))
+		if err != nil {
+			return err
+		}
+		err = chain.DeployContract(user, ScName, hProg)
+		wasmhost.GoWasmVM = nil
+		return err
+	}
 
 	// run Rust Wasm version of testcore
 	return chain.DeployWasmContract(user, ScName, WasmFileTestcore)

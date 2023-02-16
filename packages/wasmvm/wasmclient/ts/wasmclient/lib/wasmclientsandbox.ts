@@ -4,7 +4,7 @@
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
 import {panic} from 'wasmlib';
-import {IClientService} from './';
+import {WasmClientService} from './';
 
 export class WasmClientSandbox {
     static hrpForClient = '';
@@ -16,9 +16,9 @@ export class WasmClientSandbox {
     ReqID: wasmlib.ScRequestID = new wasmlib.ScRequestID();
     scName: string;
     scHname: wasmlib.ScHname;
-    svcClient: IClientService;
+    svcClient: WasmClientService;
 
-    public constructor(svcClient: IClientService, chain: string, scName: string) {
+    public constructor(svcClient: WasmClientService, chain: string, scName: string) {
         // local client implementations for sandboxed functions
         wasmlib.sandboxWrappers(clientBech32Decode, clientBech32Encode, clientHashName);
 

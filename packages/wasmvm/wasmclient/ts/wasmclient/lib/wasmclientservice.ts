@@ -5,21 +5,9 @@ import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
 import nano, {Socket} from 'nanomsg';
 
-export interface IClientService {
-    callViewByHname(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): [Uint8Array, isc.Error];
-
-    postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array, allowance: wasmlib.ScAssets, keyPair: isc.KeyPair, nonce: u64): [wasmlib.ScRequestID, isc.Error];
-
-    subscribeEvents(who: any, callback: (msg: string[]) => void): isc.Error;
-
-    unsubscribeEvents(who: any): void;
-
-    waitUntilRequestProcessed(chainID: wasmlib.ScChainID, reqID: wasmlib.ScRequestID, timeout: u32): isc.Error;
-}
-
 type ClientCallBack = (msg: string[]) => void;
 
-export class WasmClientService implements IClientService {
+export class WasmClientService {
     private callbacks: ClientCallBack[] = [];
     private eventPort: string;
     private eventListener: Socket = nano.socket('sub');

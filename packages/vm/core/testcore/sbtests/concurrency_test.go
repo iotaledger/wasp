@@ -40,11 +40,6 @@ func testConcurrency(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	extra := 0
-	if w {
-		extra = 1
-	}
-
 	commonAccountInitialBalance := chain.L2BaseTokens(chain.CommonAccount())
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).
@@ -58,6 +53,8 @@ func testConcurrency(t *testing.T, w bool) {
 	for _, i := range repeats {
 		sum += i
 	}
+
+	chain.WaitForRequestsMark()
 	for r, n := range repeats {
 		go func(_, n int) {
 			for i := 0; i < n; i++ {
@@ -67,7 +64,7 @@ func testConcurrency(t *testing.T, w bool) {
 			}
 		}(r, n)
 	}
-	require.True(t, chain.WaitForRequestsThrough(sum+4+extra, 180*time.Second))
+	require.True(t, chain.WaitForRequestsThrough(sum, 180*time.Second))
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
@@ -88,11 +85,6 @@ func testConcurrency2(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	extra := 0
-	if w {
-		extra = 1
-	}
-
 	commonAccountInitialBalance := chain.L2BaseTokens(chain.CommonAccount())
 
 	baseTokensSentPerRequest := 1 * isc.Million
@@ -109,6 +101,8 @@ func testConcurrency2(t *testing.T, w bool) {
 	for _, i := range repeats {
 		sum += i
 	}
+
+	chain.WaitForRequestsMark()
 	for r, n := range repeats {
 		go func(r, n int) {
 			users[r], userAddr[r] = chain.Env.NewKeyPairWithFunds()
@@ -119,7 +113,7 @@ func testConcurrency2(t *testing.T, w bool) {
 			}
 		}(r, n)
 	}
-	require.True(t, chain.WaitForRequestsThrough(sum+4+extra, 180*time.Second))
+	require.True(t, chain.WaitForRequestsThrough(sum, 180*time.Second))
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)

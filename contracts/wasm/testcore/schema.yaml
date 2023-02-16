@@ -77,7 +77,6 @@ funcs:
     params:
       chainID: ChainID
       baseTokensWithdrawal: Uint64
-      gasBudget: Uint64
 views:
   checkContextFromViewEP:
     params:
