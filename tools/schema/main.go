@@ -19,11 +19,12 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/iotaledger/wasp/core/app"
 	"github.com/iotaledger/wasp/tools/schema/generator"
 	"github.com/iotaledger/wasp/tools/schema/model"
 	wasp_yaml "github.com/iotaledger/wasp/tools/schema/model/yaml"
 )
+
+const version = "1.0.0"
 
 var (
 	flagVersion = flag.Bool("version", false, "show schema tool version")
@@ -42,7 +43,7 @@ func init() {
 
 func main() {
 	if *flagVersion {
-		fmt.Println(app.Version)
+		fmt.Println(version)
 		return
 	}
 
