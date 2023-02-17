@@ -119,25 +119,5 @@
   "nanomsg": {
     "enabled": true,
     "port": 5550
-  },
-  "dashboard": {
-    "enabled": true,
-    "bindAddress": "0.0.0.0:7000",
-    "exploreAddressURL": "",
-    "debugRequestLoggerEnabled": false,
-    "auth": {
-      "scheme": "basic",
-      "jwt": {
-        "duration": "24h"
-      },
-      "basic": {
-        "username": "wasp"
-      },
-      "ip": {
-        "whitelist": [
-          "0.0.0.0"
-        ]
-      }
-    }
   }
 }

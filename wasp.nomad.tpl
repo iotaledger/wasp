@@ -108,24 +108,6 @@ variable "wasp_config" {
   "nanomsg": {
     "enabled": true,
     "port": {{ env "NOMAD_PORT_nanomsg" }}
-  },
-  "dashboard": {
-    "enabled": true,
-    "bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_dashboard" }}"
-    "exploreAddressURL": "",
-    "debugRequestLoggerEnabled": false,
-    "auth": {
-      "scheme": "basic",
-      "jwt": {
-        "duration": "24h"
-      },
-      "basic": {
-        "username": "wasp"
-      },
-      "ip": {
-        "whitelist": ${adminWhitelist}
-      }
-    }
   }
 }
 EOH
@@ -157,9 +139,6 @@ job "isc-${workspace}" {
     network {
       mode = "host"
 
-      port "dashboard" {
-        host_network = "private"
-      }
       port "api" {
         host_network = "private"
       }
@@ -185,7 +164,6 @@ job "isc-${workspace}" {
         image        = "${artifact.image}:${artifact.tag}"
         entrypoint   = ["wasp", "-c", "/local/config.json"]
         ports = [
-          "dashboard",
           "api",
           "nanomsg",
           "peering",
@@ -226,10 +204,6 @@ job "isc-${workspace}" {
         }
       }
       service {
-        tags = ["wasp", "dashboard"]
-        port = "dashboard"
-      }
-      service {
         tags = ["wasp", "nanomsg"]
         port = "nanomsg"
       }
@@ -266,9 +240,6 @@ job "isc-${workspace}" {
     network {
       mode = "host"
 
-      port "dashboard" {
-        host_network = "private"
-      }
       port "api" {
         host_network = "private"
       }
@@ -298,7 +269,6 @@ job "isc-${workspace}" {
         image        = "${artifact.image}:${artifact.tag}"
         entrypoint   = ["wasp", "-c", "/local/config.json"]
         ports = [
-          "dashboard",
           "api",
           "nanomsg",
           "peering",
@@ -338,10 +308,6 @@ job "isc-${workspace}" {
           interval = "5s"
           timeout  = "2s"
         }
-      }
-      service {
-        tags = ["wasp", "dashboard"]
-        port = "dashboard"
       }
       service {
         tags = ["wasp", "nanomsg"]
