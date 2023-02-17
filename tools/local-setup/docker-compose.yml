@@ -20,7 +20,6 @@ services:
         - BUILD_TAGS
         - BUILD_LD_FLAGS
     command:
-      - "--dashboard.auth.scheme=none"
       - "--webapi.auth.scheme=none"
       - "--inx.address=hornet-nest:9029"
       - "--logger.level=debug"
