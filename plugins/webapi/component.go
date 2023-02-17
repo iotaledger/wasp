@@ -126,12 +126,24 @@ func provide(c *dig.Container) error {
 			ParamsWebAPI.DebugRequestLoggerEnabled,
 		)
 
-		e.Server.ReadTimeout = ParamsWebAPI.ReadTimeout
-		e.Server.WriteTimeout = ParamsWebAPI.WriteTimeout
+		e.Server.ReadTimeout = ParamsWebAPI.Limits.ReadTimeout
+		e.Server.WriteTimeout = ParamsWebAPI.Limits.WriteTimeout
 
 		e.HidePort = true
 		e.HTTPErrorHandler = webapi.CompatibilityHTTPErrorHandler(Plugin.Logger().WithOptions(zap.AddStacktrace(zap.ErrorLevel)))
 
+		// timeout middleware
+		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c echo.Context) error {
+				timeoutCtx, cancel := context.WithTimeout(c.Request().Context(), ParamsWebAPI.Limits.Timeout)
+				defer cancel()
+
+				c.SetRequest(c.Request().WithContext(timeoutCtx))
+
+				return next(c)
+			}
+		})
+		e.Use(middleware.BodyLimit(ParamsWebAPI.Limits.MaxBodyLength))
 		e.Use(apmechov4.Middleware())
 
 		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
@@ -144,12 +156,6 @@ func provide(c *dig.Container) error {
 			AllowMethods:     []string{"*"},
 			AllowCredentials: true,
 		}))
-
-		// TODO using this middleware hides the stack trace https://github.com/golang/go/issues/27375
-		// e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
-		// 	ErrorMessage: "request timeout exceeded",
-		// 	Timeout:      1 * time.Minute,
-		// }))
 
 		echoSwagger := CreateEchoSwagger(e, deps.AppInfo.Version)
 

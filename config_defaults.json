@@ -92,9 +92,8 @@
   },
   "webapi": {
     "enabled": true,
-    "nodeOwnerAddresses": [],
     "bindAddress": "0.0.0.0:9090",
-    "debugRequestLoggerEnabled": false,
+    "nodeOwnerAddresses": [],
     "auth": {
       "scheme": "jwt",
       "jwt": {
@@ -109,8 +108,13 @@
         ]
       }
     },
-    "readTimeout": "20s",
-    "writeTimeout": "30s"
+    "limits": {
+      "timeout": "30s",
+      "readTimeout": "10s",
+      "writeTimeout": "10s",
+      "maxBodyLength": "1M"
+    },
+    "debugRequestLoggerEnabled": false
   },
   "nanomsg": {
     "enabled": true,
