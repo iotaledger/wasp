@@ -225,9 +225,10 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	}
 
 	// Initialize WAL
+	chainLog := c.log.Named(chainID.ShortString())
 	var chainWAL smGPAUtils.BlockWAL
 	if c.walEnabled {
-		chainWAL, err = smGPAUtils.NewBlockWAL(c.log, c.walDir, chainID, smGPAUtils.NewBlockWALMetrics())
+		chainWAL, err = smGPAUtils.NewBlockWAL(chainLog, c.walDir, chainID, smGPAUtils.NewBlockWALMetrics())
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}
@@ -250,7 +251,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		chainRecord.AccessNodes,
 		c.networkProvider,
 		c.shutdownCoordinator.Nested(fmt.Sprintf("Chain-%s", chainID.AsAddress().String())),
-		c.log.Named(chainID.ShortString()),
+		chainLog,
 	)
 	if err != nil {
 		chainCancel()
