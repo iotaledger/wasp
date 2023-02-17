@@ -6,7 +6,6 @@ import (
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -72,7 +71,7 @@ func DefaultGasFeePolicy() *GasFeePolicy {
 		GasFeeTokenID:     iotago.NativeTokenID{}, // default is base token
 		GasPerToken:       100,                    // each token pays for 100 units of gas
 		ValidatorFeeShare: 0,                      // by default all goes to the governor
-		EVMGasRatio:       evmtypes.DefaultGasRatio,
+		EVMGasRatio:       DefaultEVMGasRatio,
 	}
 }
 

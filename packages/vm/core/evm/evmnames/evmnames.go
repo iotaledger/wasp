@@ -25,7 +25,6 @@ const (
 	FuncGetStorage                          = "getStorage"
 	FuncGetLogs                             = "getLogs"
 	FuncGetChainID                          = "getChainID"
-	FuncGetCallGasLimit                     = "getCallGasLimit"
 
 	FuncRegisterERC20NativeToken              = "registerERC20NativeToken"
 	FuncRegisterERC20NativeTokenOnRemoteChain = "registerERC20NativeTokenOnRemoteChain"
@@ -50,7 +49,6 @@ const (
 	FieldBlockNumber      = "bn"
 	FieldBlockHash        = "bh"
 	FieldGasRatio         = "w"
-	FieldBlockGasLimit    = "gl"
 	FieldFilterQuery      = "fq"
 	FieldBlockKeepAmount  = "bk"
 

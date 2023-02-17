@@ -37,8 +37,6 @@ below:
 
 * `--evm-block-keep-amount <n>`: Amount of blocks to keep in storage. By default, ISC will keep all blocks.
 
-* `--evm-gas-limit <n>`: Block gas limit (15000000 gas units by default).
-
 * `--evm-gas-ratio <a>:<b>`: ISC gas : EVM gas ratio (1:1 by default). You can change the gas ratio after deployment by
   calling the `setGasRatio` function of
   the [`evm`](../core_concepts/core_contracts/evm.md) [core contract](../core_concepts/core_contracts/overview.md).

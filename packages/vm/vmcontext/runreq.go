@@ -7,7 +7,6 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -240,7 +239,7 @@ func (vmctx *VMContext) getGasBudget() uint64 {
 	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
 		gasRatio = governance.MustGetGasFeePolicy(s).EVMGasRatio
 	})
-	return evmtypes.EVMGasToISC(gasBudget, &gasRatio)
+	return gas.EVMGasToISC(gasBudget, &gasRatio)
 }
 
 // calculateAffordableGasBudget checks the account of the sender and calculates affordable gas budget

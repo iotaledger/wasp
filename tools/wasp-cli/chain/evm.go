@@ -28,7 +28,6 @@ func (d *evmDeployParams) initFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&d.allocBase64, "evm-alloc", "", "", "Genesis allocation (base64-encoded)")
 	d.GasRatio = util.Ratio32{A: 1, B: 1}
 	cmd.Flags().VarP(&d.GasRatio, "evm-gas-ratio", "", "ISC Gas : EVM gas ratio")
-	cmd.Flags().Uint64VarP(&d.BlockGasLimit, "evm-gas-limit", "", evm.BlockGasLimitDefault, "Block gas limit")
 	cmd.Flags().Int32VarP(&d.BlockKeepAmount, "evm-block-keep-amount", "", evm.BlockKeepAmountDefault, "Amount of blocks to keep in DB (-1: keep all blocks)")
 }
 

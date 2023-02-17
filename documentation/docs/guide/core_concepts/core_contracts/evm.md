@@ -43,7 +43,6 @@ Some parameters of the `evm` contract can be specified by passing them to the
 [`root` contract `init` entry point](root.md#init):
 
 - `evmg` (optional [`GenesisAlloc`](#genesisalloc)): The genesis allocation. The balance of all accounts must be 0.
-- `evmgl` (optional `uint64` - default: 15000000): The EVM block gas limit (EVM gas units)
 - `evmbk` (optional `int32` - default: keep all): Amount of EVM blocks to keep in the state.
 - `evmchid` (optional `uint16` - default: 1074): EVM chain iD
 

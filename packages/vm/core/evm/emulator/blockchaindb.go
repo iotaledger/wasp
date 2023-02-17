@@ -24,8 +24,6 @@ const (
 
 	// EVM chain ID
 	keyChainID = "c"
-	// Block gas limit
-	keyGasLimit = "g"
 	// Amount of blocks to keep in DB. Older blocks will be pruned every time a transaction is added
 	keyKeepAmount = "k"
 
@@ -47,20 +45,20 @@ const (
 // BlockchainDB contains logic for storing a fake blockchain (more like a list of blocks),
 // intended for satisfying EVM tools that depend on the concept of a block.
 type BlockchainDB struct {
-	kv kv.KVStore
+	kv            kv.KVStore
+	blockGasLimit uint64
 }
 
-func NewBlockchainDB(store kv.KVStore) *BlockchainDB {
-	return &BlockchainDB{kv: store}
+func NewBlockchainDB(store kv.KVStore, blockGasLimit uint64) *BlockchainDB {
+	return &BlockchainDB{kv: store, blockGasLimit: blockGasLimit}
 }
 
 func (bc *BlockchainDB) Initialized() bool {
 	return bc.kv.MustGet(keyChainID) != nil
 }
 
-func (bc *BlockchainDB) Init(chainID uint16, keepAmount int32, gasLimit, timestamp uint64) {
+func (bc *BlockchainDB) Init(chainID uint16, keepAmount int32, timestamp uint64) {
 	bc.SetChainID(chainID)
-	bc.SetGasLimit(gasLimit)
 	bc.SetKeepAmount(keepAmount)
 	bc.addBlock(bc.makeHeader(nil, nil, 0, timestamp), timestamp+1)
 }
@@ -75,18 +73,6 @@ func (bc *BlockchainDB) GetChainID() uint16 {
 		panic(err)
 	}
 	return chainID
-}
-
-func (bc *BlockchainDB) SetGasLimit(gas uint64) {
-	bc.kv.Set(keyGasLimit, codec.EncodeUint64(gas))
-}
-
-func (bc *BlockchainDB) GetGasLimit() uint64 {
-	gas, err := codec.DecodeUint64(bc.kv.MustGet(keyGasLimit))
-	if err != nil {
-		panic(err)
-	}
-	return gas
 }
 
 func (bc *BlockchainDB) SetKeepAmount(keepAmount int32) {
@@ -165,7 +151,7 @@ func (bc *BlockchainDB) GetPendingHeader() *types.Header {
 	return &types.Header{
 		Difficulty: &big.Int{},
 		Number:     new(big.Int).SetUint64(bc.GetPendingBlockNumber()),
-		GasLimit:   bc.GetGasLimit(),
+		GasLimit:   bc.blockGasLimit,
 		Time:       bc.getPendingTimestamp(),
 	}
 }
@@ -293,7 +279,7 @@ func (bc *BlockchainDB) headerFromGob(g *headerGob, blockNumber uint64) *types.H
 	return &types.Header{
 		Difficulty:  &big.Int{},
 		Number:      new(big.Int).SetUint64(blockNumber),
-		GasLimit:    bc.GetGasLimit(),
+		GasLimit:    bc.blockGasLimit,
 		Time:        g.Time,
 		ParentHash:  parentHash,
 		GasUsed:     g.GasUsed,
@@ -430,7 +416,7 @@ func (bc *BlockchainDB) makeHeader(txs []*types.Transaction, receipts []*types.R
 	header := &types.Header{
 		Difficulty:  &big.Int{},
 		Number:      new(big.Int).SetUint64(blockNumber),
-		GasLimit:    bc.GetGasLimit(),
+		GasLimit:    bc.blockGasLimit,
 		Time:        timestamp,
 		TxHash:      types.EmptyRootHash,
 		ReceiptHash: types.EmptyRootHash,

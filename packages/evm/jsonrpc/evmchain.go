@@ -121,7 +121,7 @@ func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, evmGas 
 	}
 	iscGasBudgetAffordable := gasFeePolicy.AffordableGasBudgetFromAvailableTokens(balance.Uint64())
 
-	iscGasBudgetTx := evmtypes.EVMGasToISC(evmGas, &gasRatio)
+	iscGasBudgetTx := gas.EVMGasToISC(evmGas, &gasRatio)
 	if iscGasBudgetAffordable < iscGasBudgetTx {
 		return fmt.Errorf(
 			"sender doesn't have enough L2 funds to cover tx gas budget. Balance: %v, expected: %d",
