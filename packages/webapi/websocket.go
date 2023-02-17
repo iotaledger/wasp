@@ -17,6 +17,7 @@ func addWebSocketEndpoint(e echoswagger.ApiRoot, hub *websockethub.Hub, log *log
 		publisher.ISCEventKindNewBlock,
 		publisher.ISCEventKindReceipt,
 		publisher.ISCEventIssuerVM,
+		publisher.ISCEventKindSmartContract,
 	}, pub)
 
 	e.GET("/ws", pws.ServeHTTP)

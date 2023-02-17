@@ -13,7 +13,7 @@ require (
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/hashicorp/golang-lru/v2 v2.0.1
-	github.com/iotaledger/hive.go/core v1.0.0-rc.3.0.20230216171018-0729d5be5600
+	github.com/iotaledger/hive.go/core v1.0.0-rc.3.0.20230217135120-e907aac0262d
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1
 	github.com/iotaledger/inx-app v1.0.0-rc.3
 	github.com/iotaledger/inx/go v1.0.0-rc.1

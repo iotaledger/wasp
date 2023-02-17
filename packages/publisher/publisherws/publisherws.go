@@ -127,7 +127,7 @@ func (p *PublisherWebSocket) handleSubscriptionCommand(ctx context.Context, clie
 	}
 }
 
-func (p *PublisherWebSocket) handleNodeCommands(ctx context.Context, client *websockethub.Client, message []byte) {
+func (p *PublisherWebSocket) handleNodeCommands(client *websockethub.Client, message []byte) {
 	var baseCommand BaseCommand
 	if err := json.Unmarshal(message, &baseCommand); err != nil {
 		p.log.Warnf("Could not deserialize message to type BaseCommand")
@@ -136,16 +136,16 @@ func (p *PublisherWebSocket) handleNodeCommands(ctx context.Context, client *web
 
 	switch baseCommand.Command {
 	case CommandSubscribe, CommandUnsubscribe:
-		p.handleSubscriptionCommand(ctx, client, message)
+		p.handleSubscriptionCommand(client.Context(), client, message)
 	default:
 		p.log.Warnf("Could not deserialize message")
 	}
 }
 
-func (p *PublisherWebSocket) OnClientCreated(ctx context.Context, client *websockethub.Client) {
+func (p *PublisherWebSocket) OnClientCreated(client *websockethub.Client) {
 	client.ReceiveChan = make(chan *websockethub.WebsocketMsg, 100)
 
-	eventWriter := p.createEventWriter(ctx, client)
+	eventWriter := p.createEventWriter(client.Context(), client)
 	p.publisher.Events.Published.Hook(eventWriter)
 	defer p.publisher.Events.Published.Detach(eventWriter)
 
@@ -161,7 +161,7 @@ func (p *PublisherWebSocket) OnClientCreated(ctx context.Context, client *websoc
 				return
 			}
 
-			p.handleNodeCommands(ctx, client, msg.Data)
+			p.handleNodeCommands(client, msg.Data)
 		}
 	}
 }
@@ -181,23 +181,12 @@ func (p *PublisherWebSocket) OnDisconnect(client *websockethub.Client, request *
 func (p *PublisherWebSocket) ServeHTTP(c echo.Context) error {
 	p.log.Infof("ServeHTTP ctx: %v %v", c.Request().Context(), c.Request().Context().Err())
 
-	ctx, cancel := context.WithCancel(c.Request().Context())
-
-	err := p.hub.ServeWebsocket(c.Response(), c.Request(),
+	return p.hub.ServeWebsocket(c.Response(), c.Request(),
 		func(client *websockethub.Client) {
-			go p.OnClientCreated(ctx, client)
+			go p.OnClientCreated(client)
 		}, func(client *websockethub.Client) {
 			p.OnConnect(client, c.Request())
 		}, func(client *websockethub.Client) {
 			p.OnDisconnect(client, c.Request())
-			cancel()
 		})
-
-	for {
-		select {
-		case <-ctx.Done():
-			p.log.Infof("ServeHTTP stop ctx: %v %v, websocket serve err: %v", c.Request().Context(), c.Request().Context().Err(), err)
-			return err
-		}
-	}
 }
