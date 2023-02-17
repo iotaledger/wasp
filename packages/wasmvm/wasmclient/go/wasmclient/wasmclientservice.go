@@ -3,17 +3,13 @@
 
 package wasmclient
 
+// for some reason we cannot use the import name mangos, so we rename those packages
+// for some other reason if the third mamgos import is missing things won't work
 import (
 	"context"
 	"fmt"
 	"strings"
 	"time"
-
-	// for some reason we cannot use the name mangos, so we rename the packages
-	nanomsg "go.nanomsg.org/mangos/v3"
-	nanomsgsub "go.nanomsg.org/mangos/v3/protocol/sub"
-	// for some reason if this import is missing things won't work
-	_ "go.nanomsg.org/mangos/v3/transport/all"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
@@ -23,6 +19,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+	nanomsg "go.nanomsg.org/mangos/v3"
+	nanomsgsub "go.nanomsg.org/mangos/v3/protocol/sub"
+	_ "go.nanomsg.org/mangos/v3/transport/all"
 )
 
 type ContractEvent struct {
