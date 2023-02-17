@@ -32,8 +32,8 @@ type ChainMetrics struct {
 
 func MapMetricItem[T interface{}](metrics nodeconnmetrics.NodeConnectionMessageMetrics[T]) *MetricItem[T] {
 	return &MetricItem[T]{
-		Messages:    metrics.GetMessageTotal(),
-		Timestamp:   metrics.GetLastEvent(),
-		LastMessage: metrics.GetLastMessage(),
+		Messages:    metrics.GetL1MessagesTotal(),
+		Timestamp:   metrics.GetLastL1MessageTime(),
+		LastMessage: metrics.GetLastL1Message(),
 	}
 }

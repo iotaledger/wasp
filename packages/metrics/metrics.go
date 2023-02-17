@@ -11,107 +11,123 @@ type Metrics struct {
 	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
 	lastSeenStateIndexVal uint32
 
-	offLedgerRequestCounter *prometheus.CounterVec
-	onLedgerRequestCounter  *prometheus.CounterVec
-	processedRequestCounter *prometheus.CounterVec
-	messagesReceived        *prometheus.CounterVec
-	requestAckMessages      *prometheus.CounterVec
-	currentStateIndex       *prometheus.GaugeVec
-	requestProcessingTime   *prometheus.GaugeVec
-	vmRunTime               *prometheus.GaugeVec
-	vmRunCounter            *prometheus.CounterVec
-	blocksPerChain          *prometheus.CounterVec
-	blockSizes              *prometheus.GaugeVec
-	lastSeenStateIndex      *prometheus.GaugeVec
+	requestsReceivedOffLedger *prometheus.CounterVec
+	requestsReceivedOnLedger  *prometheus.CounterVec
+	requestsProcessed         *prometheus.CounterVec
+	requestsAckMessages       *prometheus.CounterVec
+	requestsProcessingTime    *prometheus.GaugeVec
+	messagesReceived          *prometheus.CounterVec
+	vmRunTime                 *prometheus.GaugeVec
+	vmRunsTotal               *prometheus.CounterVec
+	blocksTotalPerChain       *prometheus.CounterVec
+	blockSizesPerChain        *prometheus.GaugeVec
+	stateIndexCurrent         *prometheus.GaugeVec
+	stateIndexLatestSeen      *prometheus.GaugeVec
 }
 
+//nolint:funlen
 func New(nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics) *Metrics {
 	return &Metrics{
 		nodeConnectionMetrics: nodeConnectionMetrics,
 		lastSeenStateIndexVal: 0,
 
-		offLedgerRequestCounter: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_stats",
-			Name:      "off_ledger_request_counter",
+		//
+		// requests
+		//
+		requestsReceivedOffLedger: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "requests",
+			Name:      "off_ledger_total",
 			Help:      "Number of off-ledger requests made to chain",
 		}, []string{"chain"}),
 
-		onLedgerRequestCounter: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_stats",
-			Name:      "on_ledger_request_counter",
+		requestsReceivedOnLedger: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "requests",
+			Name:      "on_ledger_total",
 			Help:      "Number of on-ledger requests made to the chain",
 		}, []string{"chain"}),
 
-		processedRequestCounter: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_stats",
-			Name:      "processed_request_counter",
-			Help:      "Number of requests processed",
+		requestsProcessed: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "requests",
+			Name:      "processed_total",
+			Help:      "Number of requests processed per chain",
 		}, []string{"chain"}),
 
-		messagesReceived: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_stats",
-			Name:      "messages_received_per_chain",
-			Help:      "Number of messages received",
+		requestsAckMessages: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "requests",
+			Name:      "received_acks_total",
+			Help:      "Number of received request acknowledgements per chain",
 		}, []string{"chain"}),
 
-		requestAckMessages: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_stats",
-			Name:      "receive_requests_acknowledgement_message",
-			Help:      "Receive request acknowledgement messages per chain",
-		}, []string{"chain"}),
-
-		currentStateIndex: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_stats",
-			Name:      "current_state_index",
-			Help:      "The current chain state index.",
-		}, []string{"chain"}),
-
-		requestProcessingTime: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_stats",
-			Name:      "request_processing_time",
-			Help:      "Time to process request",
+		requestsProcessingTime: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "requests",
+			Name:      "processing_time",
+			Help:      "Time to process requests per chain",
 		}, []string{"chain", "request"}),
 
+		//
+		// Messages
+		//
+		messagesReceived: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "messages",
+			Name:      "received_total",
+			Help:      "Number of messages received per chain",
+		}, []string{"chain"}),
+
+		//
+		// VM
+		//
 		vmRunTime: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_stats",
-			Name:      "vm_run_time",
-			Help:      "Time it takes to run the vm",
+			Namespace: "iota_wasp",
+			Subsystem: "vm",
+			Name:      "run_time",
+			Help:      "Time it takes to run the vm per chain",
 		}, []string{"chain"}),
 
-		vmRunCounter: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_stats",
-			Name:      "vm_run_counter",
-			Help:      "Time it takes to run the vm",
+		vmRunsTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "vm",
+			Name:      "runs_total",
+			Help:      "Number of vm runs per chain",
 		}, []string{"chain"}),
 
-		blocksPerChain: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_stats",
-			Name:      "block_counter",
+		//
+		// Blocks
+		//
+		blocksTotalPerChain: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "blocks",
+			Name:      "total",
 			Help:      "Number of blocks per chain",
 		}, []string{"chain"}),
 
-		blockSizes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_stats",
-			Name:      "block_size",
-			Help:      "Block sizes",
+		blockSizesPerChain: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "blocks",
+			Name:      "sizes",
+			Help:      "Block sizes per chain",
 		}, []string{"block_index", "chain"}),
 
-		lastSeenStateIndex: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_stats",
-			Name:      "last_seen_state_index",
-			Help:      "Last seen state index",
+		//
+		// State
+		//
+		stateIndexCurrent: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "state",
+			Name:      "index_current",
+			Help:      "The current state index per chain",
+		}, []string{"chain"}),
+
+		stateIndexLatestSeen: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "state",
+			Name:      "index_latest_seen",
+			Help:      "Latest seen state index per chain",
 		}, []string{"chain"}),
 	}
 }
@@ -127,18 +143,18 @@ func (m *Metrics) Register(registry *prometheus.Registry) {
 	m.nodeConnectionMetrics.Register(registry)
 
 	registry.MustRegister(
-		m.offLedgerRequestCounter,
-		m.onLedgerRequestCounter,
-		m.processedRequestCounter,
+		m.requestsReceivedOffLedger,
+		m.requestsReceivedOnLedger,
+		m.requestsProcessed,
+		m.requestsAckMessages,
+		m.requestsProcessingTime,
 		m.messagesReceived,
-		m.requestAckMessages,
-		m.currentStateIndex,
-		m.requestProcessingTime,
 		m.vmRunTime,
-		m.vmRunCounter,
-		m.blocksPerChain,
-		m.blockSizes,
-		m.lastSeenStateIndex,
+		m.vmRunsTotal,
+		m.blocksTotalPerChain,
+		m.blockSizesPerChain,
+		m.stateIndexCurrent,
+		m.stateIndexLatestSeen,
 	)
 }
 
