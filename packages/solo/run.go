@@ -80,7 +80,6 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTask 
 
 	err := ch.vmRunner.Run(task)
 	require.NoError(ch.Env.T, err)
-
 	return task
 }
 
@@ -134,6 +133,7 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 	rootC := ch.GetRootCommitment()
 	l1C := ch.GetL1Commitment()
 	require.Equal(ch.Env.T, rootC, l1C.TrieRoot())
+	ch.RequestsDone += len(reqs)
 
 	return task.Results
 }

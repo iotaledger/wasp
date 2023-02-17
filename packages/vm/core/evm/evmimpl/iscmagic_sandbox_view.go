@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
@@ -31,7 +32,18 @@ func (h *magicContractViewHandler) GetChainOwnerID() iscmagic.ISCAgentID {
 // handler for ISCSandbox::getNFTData
 func (h *magicContractViewHandler) GetNFTData(nftID iscmagic.NFTID) iscmagic.ISCNFT {
 	nft := h.ctx.GetNFTData(nftID.Unwrap())
-	return iscmagic.WrapISCNFT(&nft)
+	return iscmagic.WrapISCNFT(nft)
+}
+
+// handler for ISCSandbox::getIRC27NFTData
+func (h *magicContractViewHandler) GetIRC27NFTData(nftID iscmagic.NFTID) iscmagic.IRC27NFT {
+	nft := h.ctx.GetNFTData(nftID.Unwrap())
+	metadata, err := transaction.IRC27NFTMetadataFromBytes(nft.Metadata)
+	h.ctx.RequireNoError(err)
+	return iscmagic.IRC27NFT{
+		Nft:      iscmagic.WrapISCNFT(nft),
+		Metadata: iscmagic.WrapIRC27NFTMetadata(metadata),
+	}
 }
 
 // handler for ISCSandbox::getTimestampUnixSeconds
@@ -54,18 +66,18 @@ func (h *magicContractViewHandler) CallView(
 }
 
 // handler for ISCSandbox::getAllowanceFrom
-func (h *magicContractViewHandler) GetAllowanceFrom(addr common.Address) iscmagic.ISCAllowance {
-	return iscmagic.WrapISCAllowance(getAllowance(h.ctx, addr, h.caller.Address()))
+func (h *magicContractViewHandler) GetAllowanceFrom(addr common.Address) iscmagic.ISCAssets {
+	return iscmagic.WrapISCAssets(getAllowance(h.ctx, addr, h.caller.Address()))
 }
 
 // handler for ISCSandbox::getAllowanceTo
-func (h *magicContractViewHandler) GetAllowanceTo(target common.Address) iscmagic.ISCAllowance {
-	return iscmagic.WrapISCAllowance(getAllowance(h.ctx, h.caller.Address(), target))
+func (h *magicContractViewHandler) GetAllowanceTo(target common.Address) iscmagic.ISCAssets {
+	return iscmagic.WrapISCAssets(getAllowance(h.ctx, h.caller.Address(), target))
 }
 
 // handler for ISCSandbox::getAllowance
-func (h *magicContractViewHandler) GetAllowance(from, to common.Address) iscmagic.ISCAllowance {
-	return iscmagic.WrapISCAllowance(getAllowance(h.ctx, from, to))
+func (h *magicContractViewHandler) GetAllowance(from, to common.Address) iscmagic.ISCAssets {
+	return iscmagic.WrapISCAssets(getAllowance(h.ctx, from, to))
 }
 
 // handler for ISCSandbox::getBaseTokenProperties
@@ -82,6 +94,11 @@ func (h *magicContractViewHandler) GetBaseTokenProperties() iscmagic.ISCTokenPro
 // handler for ISCSandbox::erc20NativeTokensAddress
 func (h *magicContractViewHandler) Erc20NativeTokensAddress(foundrySN uint32) common.Address {
 	return iscmagic.ERC20NativeTokensAddress(foundrySN)
+}
+
+// handler for ISCSandbox::erc721NFTCollectionAddress
+func (h *magicContractViewHandler) Erc721NFTCollectionAddress(collectionID iscmagic.NFTID) common.Address {
+	return iscmagic.ERC721NFTCollectionAddress(collectionID.Unwrap())
 }
 
 // handler for ISCSandbox::erc20NativeTokensFoundrySerialNumber

@@ -29,7 +29,6 @@ structs:
 
   TransferRequest:
     agentID: AgentID
-    create: Bool
     transfer: Bytes
 
 typedefs: {}

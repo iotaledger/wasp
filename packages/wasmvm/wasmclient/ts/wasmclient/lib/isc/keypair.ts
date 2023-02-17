@@ -3,7 +3,7 @@
 
 import {Blake2b, Ed25519} from '@iota/crypto.js';
 import * as wasmlib from 'wasmlib';
-import {ScAddress, ScLengthEd25519, uint64ToBytes} from "wasmlib";
+import {ScAddress, uint64ToBytes} from 'wasmlib';
 
 export class KeyPair {
     publicKey: Uint8Array;
@@ -22,7 +22,7 @@ export class KeyPair {
 
     public address(): ScAddress {
         const addr = new Uint8Array(wasmlib.ScLengthEd25519);
-        addr[0] = wasmlib.ScAddressEd25519
+        addr[0] = wasmlib.ScAddressEd25519;
         addr.set(Blake2b.sum256(this.publicKey), 1);
         return wasmlib.addressFromBytes(addr);
     }
@@ -31,12 +31,21 @@ export class KeyPair {
         return Ed25519.sign(this.privateKey, data);
     }
 
-    public static fromSubSeed(seed: Uint8Array, n: u64): KeyPair {
+    public verify(data: Uint8Array, sig: Uint8Array): bool {
+        return Ed25519.verify(this.publicKey, data, sig);
+    }
+
+    public static subSeed(seed: Uint8Array, n: u64): Uint8Array {
         const indexBytes = uint64ToBytes(n);
         const hashOfIndexBytes = Blake2b.sum256(indexBytes);
         for (let i = 0; i < seed.length; i++) {
             hashOfIndexBytes[i] ^= seed[i];
         }
-        return new KeyPair(hashOfIndexBytes);
+        return hashOfIndexBytes;
+    }
+
+    public static fromSubSeed(seed: Uint8Array, n: u64): KeyPair {
+        const subSeed = this.subSeed(seed, n);
+        return new KeyPair(subSeed);
     }
 }

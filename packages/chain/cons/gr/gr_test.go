@@ -78,7 +78,7 @@ func testGeneric(t *testing.T, n, f int, reliable bool) {
 	require.NoError(t, err)
 	//
 	// Create a fake network and keys for the tests.
-	peerNetIDs, peerIdentities := testpeers.SetupKeys(uint16(n))
+	peeringURL, peerIdentities := testpeers.SetupKeys(uint16(n))
 	peerPubKeys := make([]*cryptolib.PublicKey, len(peerIdentities))
 	for i := range peerPubKeys {
 		peerPubKeys[i] = peerIdentities[i].GetPublicKey()
@@ -91,7 +91,7 @@ func testGeneric(t *testing.T, n, f int, reliable bool) {
 		networkBehaviour = testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 200*time.Millisecond, netLogger)
 	}
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
-		peerNetIDs, peerIdentities, 10000,
+		peeringURL, peerIdentities, 10000,
 		networkBehaviour,
 		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)

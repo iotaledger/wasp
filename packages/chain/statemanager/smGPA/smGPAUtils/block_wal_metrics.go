@@ -13,21 +13,21 @@ type BlockWALMetrics struct {
 func NewBlockWALMetrics() *BlockWALMetrics {
 	return &BlockWALMetrics{
 		segments: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_wal",
-			Name:      "total_segments",
+			Namespace: "iota_wasp",
+			Subsystem: "wal",
+			Name:      "segment_files_total",
 			Help:      "Total number of segment files",
 		}),
 		failedWrites: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_wal",
-			Name:      "failed_writes",
+			Namespace: "iota_wasp",
+			Subsystem: "wal",
+			Name:      "failed_writes_total",
 			Help:      "Total number of writes to WAL that failed",
 		}),
 		failedReads: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: "iota",
-			Subsystem: "wasp_wal",
-			Name:      "failed_reads",
+			Namespace: "iota_wasp",
+			Subsystem: "wal",
+			Name:      "failed_reads_total",
 			Help:      "Total number of reads failed while replaying WAL",
 		}),
 	}

@@ -3,8 +3,10 @@ package tests
 import (
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -29,19 +31,19 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) {
 	})
 	require.NoError(e.t, err)
 
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.Chain.ChainID, tx, 10*time.Second)
+	require.NoError(e.t, err)
+
 	blockIndex, err := e.Chain.BlockIndex()
 	require.NoError(e.t, err)
 	require.Greater(e.t, blockIndex, uint32(1))
-
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.Chain.ChainID, tx, 10*time.Second)
-	require.NoError(e.t, err)
 
 	// wait until all nodes (including access nodes) are at least at block `blockIndex`
 	retries := 0
 	for i := 1; i < len(e.Chain.AllPeers); i++ {
 		peerIdx := e.Chain.AllPeers[i]
-		b, err := e.Chain.BlockIndex(peerIdx)
-		if err != nil || b < blockIndex {
+		b, err2 := e.Chain.BlockIndex(peerIdx)
+		if err2 != nil || b < blockIndex {
 			if retries >= 10 {
 				e.t.Fatalf("error on deployIncCounterSC, failed to wait for all peers to be on the same block index after 10 retries. Peer index: %d", peerIdx)
 			}
@@ -56,18 +58,21 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) {
 	e.checkCoreContracts()
 
 	for i := range e.Chain.AllPeers {
-		contractRegistry, err := e.Chain.ContractRegistry(i)
-		require.NoError(e.t, err)
+		contractRegistry, err2 := e.Chain.ContractRegistry(i)
+		require.NoError(e.t, err2)
 
-		cr := contractRegistry[nativeIncCounterSCHname]
+		cr, ok := lo.Find(contractRegistry, func(item apiclient.ContractInfoResponse) bool {
+			return item.HName == nativeIncCounterSCHname.String()
+		})
+		require.True(e.t, ok)
 		require.NotNil(e.t, cr)
 
-		require.EqualValues(e.t, programHash, cr.ProgramHash)
+		require.EqualValues(e.t, programHash.Hex(), cr.ProgramHash)
 		require.EqualValues(e.t, description, cr.Description)
 		require.EqualValues(e.t, cr.Name, nativeIncCounterSCName)
 
-		counterValue, err := e.Chain.GetCounterValue(nativeIncCounterSCHname, i)
-		require.NoError(e.t, err)
+		counterValue, err2 := e.Chain.GetCounterValue(nativeIncCounterSCHname, i)
+		require.NoError(e.t, err2)
 		require.EqualValues(e.t, counterStartValue, counterValue)
 	}
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 10*time.Second)

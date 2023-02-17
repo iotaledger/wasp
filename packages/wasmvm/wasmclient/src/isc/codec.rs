@@ -1,33 +1,45 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use bech32::*;
+use bech32::{FromBase32, ToBase32, Variant};
+use crypto::hashes::{blake2b::Blake2b256, Digest};
 use serde::{Deserialize, Serialize};
 use wasmlib::*;
-pub use wasmtypes::*;
+
+use crate::errors;
 
 const BECH32_PREFIX: &'static str = "smr";
 
-pub fn bech32_decode(input: &str) -> Result<ScAddress, String> {
-    let (_hrp, data, _v) = bech32::decode(&input).unwrap();
-    let buf: Vec<u8> = data.iter().map(|&e| e.to_u8()).collect();
-    return Ok(address_from_bytes(&buf));
+pub fn bech32_decode(input: &str) -> errors::Result<(String, ScAddress)> {
+    let (hrp, data, _v) = match bech32::decode(&input) {
+        Ok(v) => v,
+        Err(_) => return Err(String::from(format!("invalid bech32 string: {}", input))),
+    };
+    let buf = match Vec::<u8>::from_base32(&data) {
+        Ok(b) => b,
+        Err(e) => return Err(e.to_string()),
+    };
+    return Ok((hrp, address_from_bytes(&buf)));
 }
 
-pub fn bech32_encode(addr: &ScAddress) -> String {
-    return bech32::encode(BECH32_PREFIX, addr.to_bytes().to_base32(), Variant::Bech32).unwrap();
+pub fn bech32_encode(hrp: &str, addr: &ScAddress) -> errors::Result<String> {
+    match bech32::encode(hrp, addr.to_bytes().to_base32(), Variant::Bech32) {
+        Ok(v) => Ok(v),
+        Err(e) => Err(e.to_string()),
+    }
 }
-
-use crypto::hashes::{blake2b::Blake2b256, Digest};
 
 pub fn hname_bytes(name: &str) -> Vec<u8> {
     let hash = Blake2b256::digest(name.as_bytes());
-    let mut slice = &hash[0..4];
-    let hname = wasmlib::uint32_from_bytes(slice);
-    if hname == 0 || hname == 0xffff {
-        slice = &hash[4..8];
+    for i in (0..hash.len()).step_by(SC_HNAME_LENGTH) {
+        let slice = &hash[i..i+SC_HNAME_LENGTH];
+        let hname = uint32_from_bytes(slice);
+        if hname != 0 {
+            return slice.to_vec();
+        }
     }
-    return slice.to_vec();
+    // astronomically unlikely to end up here
+    return uint32_to_bytes(1);
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -37,15 +49,38 @@ pub struct JsonItem {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct JsonRequest {
+pub struct JsonDict {
     items: Vec<JsonItem>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub(crate) struct APICallViewRequest {
+    pub(crate) arguments: JsonDict,
+    #[serde(rename = "chainId")]
+    pub(crate) chain_id: String,
+    #[serde(rename = "contractHName")]
+    pub(crate) contract_hname: String,
+    #[serde(rename = "functionHName")]
+    pub(crate) function_hname: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub(crate) struct APIOffLedgerRequest {
+    #[serde(rename = "chainId")]
+    pub(crate) chain_id: String,
+    pub(crate) request: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonResponse {
-    items: Vec<JsonItem>,
-    message: String,
-    status_code: u16,
+    #[serde(rename = "Items")]
+    pub(crate) items: Vec<JsonItem>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct JsonError {
+    #[serde(rename = "Message")]
+    pub(crate) message: String,
 }
 
 pub fn json_decode(dict: JsonResponse) -> Vec<u8> {
@@ -64,10 +99,10 @@ pub fn json_decode(dict: JsonResponse) -> Vec<u8> {
     return enc.buf();
 }
 
-pub fn json_encode(buf: &[u8]) -> JsonRequest {
+pub fn json_encode(buf: &[u8]) -> JsonDict {
     let mut dec = WasmDecoder::new(buf);
     let items_num = uint32_from_bytes(&dec.fixed_bytes(SC_UINT32_LENGTH));
-    let mut dict = JsonRequest {
+    let mut dict = JsonDict {
         items: Vec::with_capacity(items_num as usize),
     };
     for _ in 0..items_num {

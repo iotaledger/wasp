@@ -2,6 +2,8 @@ package tests
 
 import (
 	"bytes"
+	"context"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -13,8 +15,13 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
@@ -45,9 +52,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	w.MustRun("set", "l1.apiAddress", clu.Config.L1.APIAddress)
 	w.MustRun("set", "l1.faucetAddress", clu.Config.L1.FaucetAddress)
 	for _, node := range clu.Config.AllNodes() {
-		w.MustRun("set", fmt.Sprintf("wasp.%d.api", node), clu.Config.APIHost(node))
-		w.MustRun("set", fmt.Sprintf("wasp.%d.nanomsg", node), clu.Config.NanomsgHost(node))
-		w.MustRun("set", fmt.Sprintf("wasp.%d.peering", node), clu.Config.PeeringHost(node))
+		w.MustRun("wasp", "add", fmt.Sprintf("%d", node), clu.Config.APIHost(node))
 	}
 
 	requestFundstext := w.MustRun("request-funds")
@@ -72,6 +77,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 }
 
 func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) ([]string, error) {
+	w.T.Helper()
 	// -w: wait for requests
 	// -d: debug output
 	cmd := exec.Command("wasp-cli", append([]string{"-w", "-d"}, args...)...) //nolint:gosec
@@ -109,10 +115,12 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) ([]string, error)
 }
 
 func (w *WaspCLITest) Run(args ...string) ([]string, error) {
+	w.T.Helper()
 	return w.runCmd(args, nil)
 }
 
 func (w *WaspCLITest) MustRun(args ...string) []string {
+	w.T.Helper()
 	lines, err := w.Run(args...)
 	if err != nil {
 		panic(err)
@@ -130,8 +138,9 @@ func (w *WaspCLITest) PostRequestGetReceipt(args ...string) []string {
 func (w *WaspCLITest) GetReceiptFromRunPostRequestOutput(out []string) []string {
 	r := regexp.MustCompile(`(.*)\(check result with:\s*wasp-cli (.*)\).*$`).
 		FindStringSubmatch(strings.Join(out, ""))
-	command := r[2]
-	return w.MustRun(strings.Split(command, " ")...)
+	checkReceiptCommand := strings.Split(r[2], " ")
+	checkReceiptCommand = append(checkReceiptCommand, "--node=0")
+	return w.MustRun(checkReceiptCommand...)
 }
 
 func (w *WaspCLITest) Pipe(in []string, args ...string) ([]string, error) {
@@ -163,18 +172,23 @@ func (w *WaspCLITest) CopyFile(srcFile string) {
 	require.NoError(w.T, err)
 }
 
-func (w *WaspCLITest) CommitteeConfig() (string, string) {
-	var committee []string
+func (w *WaspCLITest) ArgAllNodesExcept(idx int) string {
+	var nodes []string
 	for i := 0; i < len(w.Cluster.Config.Wasp); i++ {
-		committee = append(committee, fmt.Sprintf("%d", i))
+		if i != idx {
+			nodes = append(nodes, fmt.Sprintf("%d", i))
+		}
 	}
+	return "--peers=" + strings.Join(nodes, ",")
+}
 
+func (w *WaspCLITest) ArgCommitteeConfig(initiatorIndex int) (string, string) {
 	quorum := 3 * len(w.Cluster.Config.Wasp) / 4
 	if quorum < 1 {
 		quorum = 1
 	}
 
-	return "--committee=" + strings.Join(committee, ","), fmt.Sprintf("--quorum=%d", quorum)
+	return w.ArgAllNodesExcept(initiatorIndex), fmt.Sprintf("--quorum=%d", quorum)
 }
 
 func (w *WaspCLITest) Address() iotago.Address {
@@ -183,4 +197,45 @@ func (w *WaspCLITest) Address() iotago.Address {
 	_, addr, err := iotago.ParseBech32(s)
 	require.NoError(w.T, err)
 	return addr
+}
+
+// TODO there is a small issue if we try to activate the chain twice (deploy command also activates the chain)
+// if this happens, the node will return an error on `getChainInfo` because there is no state yet.
+// as a temporary fix, we add `skipOnNodes`, so to not run the activate command on that node
+func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string, skipOnNodes ...int) {
+	for _, idx := range w.Cluster.AllNodes() {
+		if !slices.Contains(skipOnNodes, idx) {
+			w.MustRun("chain", "activate", "--chain="+chainName, fmt.Sprintf("--node=%d", idx))
+		}
+	}
+
+	// Hack to get the chainID that was deployed
+	data, err := os.ReadFile(w.dir + "/wasp-cli.json")
+	require.NoError(w.T, err)
+	chainIDStr := regexp.MustCompile(fmt.Sprintf(`%q:\s?"(.*)"`, chainName)).
+		FindStringSubmatch(string(data))[1]
+
+	chainIsUpAndRunning := func(t *testing.T, nodeIndex int) bool {
+		_, _, err := w.Cluster.WaspClient(nodeIndex).RequestsApi.
+			CallView(context.Background()).
+			ContractCallViewRequest(apiclient.ContractCallViewRequest{
+				ChainId:       chainIDStr,
+				ContractHName: governance.Contract.Hname().String(),
+				FunctionHName: governance.ViewGetChainInfo.Hname().String(),
+			}).
+			Execute()
+		return err == nil
+	}
+	// wait until the chain is synced on the nodes, otherwise we get a race condition on the next test commands
+	waitUntil(w.T, chainIsUpAndRunning, w.Cluster.AllNodes(), 30*time.Second)
+}
+
+func (w *WaspCLITest) CreateL2Foundry(tokenScheme iotago.TokenScheme) {
+	tokenSchemeBytes := codec.EncodeTokenScheme(tokenScheme)
+	out := w.PostRequestGetReceipt(
+		"-o", "accounts", accounts.FuncFoundryCreateNew.Name,
+		"string", accounts.ParamTokenScheme, "bytes", "0x"+hex.EncodeToString(tokenSchemeBytes),
+		"--allowance", "base:1000000",
+	)
+	require.Regexp(w.T, `.*Error: \(empty\).*`, strings.Join(out, "\n"))
 }

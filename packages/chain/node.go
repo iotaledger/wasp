@@ -40,6 +40,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -52,8 +53,8 @@ import (
 
 const (
 	recoveryTimeout          time.Duration = 15 * time.Minute // TODO: Make it configurable?
-	redeliveryPeriod         time.Duration = 3 * time.Second  // TODO: Make it configurable?
-	printStatusPeriod        time.Duration = 10 * time.Second // TODO: Make it configurable?
+	redeliveryPeriod         time.Duration = 1 * time.Second  // TODO: Make it configurable?
+	printStatusPeriod        time.Duration = 3 * time.Second  // TODO: Make it configurable?
 	consensusInstsInAdvance  int           = 3                // TODO: Make it configurable?
 	awaitReceiptCleanupEvery int           = 100              // TODO: Make it configurable?
 
@@ -90,10 +91,11 @@ type CommitteeInfo struct {
 }
 
 type PeerStatus struct {
-	Index     uint16
-	PubKey    *cryptolib.PublicKey
-	NetID     string
-	Connected bool
+	Name       string
+	Index      uint16
+	PubKey     *cryptolib.PublicKey
+	PeeringURL string
+	Connected  bool
 }
 
 type RequestOutputHandler = func(outputInfo *isc.OutputInfo)
@@ -137,7 +139,7 @@ type chainNodeImpl struct {
 	me                  gpa.NodeID
 	nodeIdentity        *cryptolib.KeyPair
 	chainID             isc.ChainID
-	chainMgr            chainMgr.ChainMgr
+	chainMgr            gpa.AckHandler
 	chainStore          state.Store
 	nodeConn            NodeConnection
 	mempool             mempool.Mempool
@@ -172,18 +174,20 @@ type chainNodeImpl struct {
 	latestActiveState      state.State            // State corresponding to latestActiveAO, for performance reasons.
 	//
 	// Infrastructure.
-	netRecvPipe  pipe.Pipe[*peering.PeerMessageIn]
-	netPeeringID peering.PeeringID
-	netPeerPubs  map[gpa.NodeID]*cryptolib.PublicKey
-	net          peering.NetworkProvider
-	log          *logger.Logger
+	netRecvPipe         pipe.Pipe[*peering.PeerMessageIn]
+	netPeeringID        peering.PeeringID
+	netPeerPubs         map[gpa.NodeID]*cryptolib.PublicKey
+	net                 peering.NetworkProvider
+	shutdownCoordinator *shutdown.Coordinator
+	log                 *logger.Logger
 }
 
 type consensusInst struct {
-	request    *chainMgr.NeedConsensus
-	cancelFunc context.CancelFunc
-	consensus  *consGR.ConsGr
-	committee  []*cryptolib.PublicKey
+	request             *chainMgr.NeedConsensus
+	cancelFunc          context.CancelFunc
+	consensus           *consGR.ConsGr
+	committee           []*cryptolib.PublicKey
+	shutdownCoordinator *shutdown.Coordinator
 }
 
 // Used to correlate consensus request with its output.
@@ -230,8 +234,10 @@ func New(
 	listener ChainListener,
 	accessNodesFromNode []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
+	shutdownCoordinator *shutdown.Coordinator,
 	log *logger.Logger,
 ) (Chain, error) {
+	log.Debugf("Starting the chain, chainID=%v", chainID)
 	if listener == nil {
 		listener = NewEmptyChainListener()
 	}
@@ -274,6 +280,7 @@ func New(
 		netPeeringID:           netPeeringID,
 		netPeerPubs:            map[gpa.NodeID]*cryptolib.PublicKey{},
 		net:                    net,
+		shutdownCoordinator:    shutdownCoordinator,
 		log:                    log,
 	}
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
@@ -303,6 +310,7 @@ func New(
 		net,
 		blockWAL,
 		chainStore,
+		shutdownCoordinator.Nested("StateMgr"),
 		cni.log.Named("SM"),
 	)
 	if err != nil {
@@ -317,11 +325,11 @@ func New(
 		chainMetrics,
 		cni.listener,
 	)
-	cni.chainMgr = chainMgr
+	cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr.AsGPA(), redeliveryPeriod)
 	cni.stateMgr = stateMgr
 	cni.mempool = mempool
-	cni.stateTrackerAct = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerActCB)
-	cni.stateTrackerCnf = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerCnfCB)
+	cni.stateTrackerAct = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerActCB, cni.log.Named("STAct"))
+	cni.stateTrackerCnf = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerCnfCB, cni.log.Named("STCnf"))
 	cni.updateAccessNodes(func() {
 		cni.accessNodesFromNode = accessNodesFromNode
 		cni.accessNodesFromChain = []*cryptolib.PublicKey{}
@@ -340,6 +348,7 @@ func New(
 	//
 	// Attach to the L1.
 	recvRequestCB := func(outputInfo *isc.OutputInfo) {
+		log.Debugf("recvRequestCB[%p], %v", cni, outputInfo.OutputID.ToHex())
 		req, err := isc.OnLedgerFromUTXO(outputInfo.Output, outputInfo.OutputID)
 		if err != nil {
 			cni.log.Warnf("Cannot create OnLedgerRequest from output: %v", err)
@@ -349,6 +358,7 @@ func New(
 	}
 	recvAliasOutputPipeInCh := cni.recvAliasOutputPipe.In()
 	recvAliasOutputCB := func(outputInfo *isc.OutputInfo) {
+		log.Debugf("recvAliasOutputCB[%p], %v", cni, outputInfo.OutputID.ToHex())
 		if outputInfo.Consumed() {
 			// we don't need to send consumed alias outputs to the pipe
 			return
@@ -357,11 +367,13 @@ func New(
 	}
 	recvMilestonePipeInCh := cni.recvMilestonePipe.In()
 	recvMilestoneCB := func(timestamp time.Time) {
+		log.Debugf("recvMilestoneCB[%p], %v", cni, timestamp)
 		recvMilestonePipeInCh <- timestamp
 	}
 	nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAliasOutputCB, recvMilestoneCB)
 	//
 	// Run the main thread.
+
 	go cni.run(ctx, netAttachID)
 	return cni, nil
 }
@@ -391,6 +403,7 @@ func (cni *chainNodeImpl) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
 
 //nolint:gocyclo
 func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
+	defer cni.net.Detach(netAttachID)
 	recvAliasOutputPipeOutCh := cni.recvAliasOutputPipe.Out()
 	recvTxPublishedPipeOutCh := cni.recvTxPublishedPipe.Out()
 	recvMilestonePipeOutCh := cni.recvMilestonePipe.Out()
@@ -398,7 +411,19 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 	consOutputPipeOutCh := cni.consOutputPipe.Out()
 	consRecoverPipeOutCh := cni.consRecoverPipe.Out()
 	serversUpdatedPipeOutCh := cni.serversUpdatedPipe.Out()
+	redeliveryPeriodTicker := time.NewTicker(redeliveryPeriod)
 	for {
+		if ctx.Err() != nil {
+			if cni.shutdownCoordinator == nil {
+				return
+			}
+			// needs to wait for state mgr and consensusInst
+			if cni.shutdownCoordinator.CheckNestedDone() {
+				cni.net.Detach(netAttachID)
+				cni.shutdownCoordinator.Done()
+				return
+			}
+		}
 		select {
 		case txPublishResult, ok := <-recvTxPublishedPipeOutCh:
 			if !ok {
@@ -452,7 +477,7 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 				cni.awaitReceiptActCh = nil
 				continue
 			}
-			cni.stateTrackerAct.AwaitRequestReceipt(query)
+			cni.stateTrackerAct.AwaitRequestReceipt(query) // TODO: Actually have to wait for both: the ACT and CNF, because the node can become access node while waiting for the request.
 		case query, ok := <-cni.awaitReceiptCnfCh:
 			if !ok {
 				cni.awaitReceiptCnfCh = nil
@@ -467,15 +492,17 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 			if ok {
 				cni.stateTrackerCnf.ChainNodeStateMgrResponse(resp)
 			}
+		case t := <-redeliveryPeriodTicker.C:
+			cni.sendMessages(cni.chainMgr.Input(cni.chainMgr.MakeTickInput(t)))
 		case <-ctx.Done():
-			cni.net.Detach(netAttachID)
-			return
+			continue
 		}
 	}
 }
 
 // This will always run in the main thread, because that's a callback for the chainMgr.
 func (cni *chainNodeImpl) handleAccessNodesOnChainUpdatedCB(accessNodesFromChain []*cryptolib.PublicKey) {
+	cni.log.Debugf("handleAccessNodesOnChainUpdatedCB")
 	cni.updateAccessNodes(func() {
 		cni.accessNodesFromChain = accessNodesFromChain
 	})
@@ -484,6 +511,7 @@ func (cni *chainNodeImpl) handleAccessNodesOnChainUpdatedCB(accessNodesFromChain
 // The active state is needed by the mempool to cleanup the processed requests, etc.
 // The request/receipt awaits are already handled in the StateTracker.
 func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
+	cni.log.Debugf("handleStateTrackerActCB")
 	cni.accessLock.Lock()
 	cni.latestActiveState = st
 	cni.accessLock.Unlock()
@@ -496,6 +524,7 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 //
 // The request/receipt awaits are already handled in the StateTracker.
 func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
+	cni.log.Debugf("handleStateTrackerCnfCB")
 	cni.accessLock.Lock()
 	cni.latestConfirmedState = st
 	cni.accessLock.Unlock()
@@ -510,37 +539,42 @@ func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *is
 }
 
 func (cni *chainNodeImpl) handleAccessNodesConfigUpdated(accessNodesFromNode []*cryptolib.PublicKey) {
+	cni.log.Debugf("handleAccessNodesConfigUpdated")
 	cni.updateAccessNodes(func() {
 		cni.accessNodesFromNode = accessNodesFromNode
 	})
 }
 
-func (cni chainNodeImpl) handleServersUpdated(serverNodes []*cryptolib.PublicKey) {
+func (cni *chainNodeImpl) handleServersUpdated(serverNodes []*cryptolib.PublicKey) {
+	cni.log.Debugf("handleServersUpdated")
 	cni.updateServerNodes(serverNodes)
 }
 
 func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *txPublished) {
+	cni.log.Debugf("handleTxPublished")
 	if _, ok := cni.publishingTXes[txPubResult.txID]; !ok {
 		return
 	}
 	delete(cni.publishingTXes, txPubResult.txID)
-	outMsgs := cni.chainMgr.AsGPA().Input(
+	outMsgs := cni.chainMgr.Input(
 		chainMgr.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.txID, txPubResult.nextAliasOutput, txPubResult.confirmed),
 	)
 	cni.sendMessages(outMsgs)
-	cni.handleChainMgrOutput(ctx, cni.chainMgr.AsGPA().Output())
+	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
 func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
+	cni.log.Debugf("handleAliasOutput")
 	cni.stateTrackerCnf.TrackAliasOutput(aliasOutput)
-	outMsgs := cni.chainMgr.AsGPA().Input(
+	outMsgs := cni.chainMgr.Input(
 		chainMgr.NewInputAliasOutputConfirmed(aliasOutput),
 	)
 	cni.sendMessages(outMsgs)
-	cni.handleChainMgrOutput(ctx, cni.chainMgr.AsGPA().Output())
+	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
 func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
+	cni.log.Debugf("handleMilestoneTimestamp")
 	cni.mempool.TangleTimeUpdated(timestamp)
 	for ji := range cni.consensusInsts {
 		for li := range cni.consensusInsts[ji] {
@@ -553,18 +587,18 @@ func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
 }
 
 func (cni *chainNodeImpl) handleNetMessage(ctx context.Context, recv *peering.PeerMessageIn) {
-	msg, err := cni.chainMgr.AsGPA().UnmarshalMessage(recv.MsgData)
+	msg, err := cni.chainMgr.UnmarshalMessage(recv.MsgData)
 	if err != nil {
 		cni.log.Warnf("cannot parse message: %v", err)
 		return
 	}
 	msg.SetSender(cni.pubKeyAsNodeID(recv.SenderPubKey))
-	outMsgs := cni.chainMgr.AsGPA().Message(msg)
-	cni.sendMessages(outMsgs)
-	cni.handleChainMgrOutput(ctx, cni.chainMgr.AsGPA().Output())
+	cni.sendMessages(cni.chainMgr.Message(msg))
+	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
 func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntyped gpa.Output) {
+	cni.log.Debugf("handleChainMgrOutput: %v", outputUntyped)
 	if outputUntyped == nil {
 		cni.cleanupConsensusInsts(nil, nil)
 		cni.cleanupPublishingTXes(map[iotago.TransactionID]*chainMgr.NeedPublishTX{})
@@ -611,6 +645,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 }
 
 func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOutput) {
+	cni.log.Debugf("handleConsensusOutput")
 	var chainMgrInput gpa.Input
 	switch out.output.Status {
 	case cons.Completed:
@@ -636,17 +671,18 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 	default:
 		panic(fmt.Errorf("unexpected output state from consensus: %+v", out))
 	}
-	cni.sendMessages(cni.chainMgr.AsGPA().Input(chainMgrInput))
-	cni.handleChainMgrOutput(ctx, cni.chainMgr.AsGPA().Output())
+	cni.sendMessages(cni.chainMgr.Input(chainMgrInput))
+	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
 func (cni *chainNodeImpl) handleConsensusRecover(ctx context.Context, out *consRecover) {
+	cni.log.Debugf("handleConsensusRecover")
 	chainMgrInput := chainMgr.NewInputConsensusTimeout(
 		out.request.CommitteeAddr,
 		out.request.LogIndex,
 	)
-	cni.sendMessages(cni.chainMgr.AsGPA().Input(chainMgrInput))
-	cni.handleChainMgrOutput(ctx, cni.chainMgr.AsGPA().Output())
+	cni.sendMessages(cni.chainMgr.Input(chainMgrInput))
+	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
 func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensus *chainMgr.NeedConsensus) {
@@ -694,10 +730,15 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 				recoveryTimeout, redeliveryPeriod, printStatusPeriod,
 				cni.log.Named(fmt.Sprintf("C-%v.LI-%v", committeeAddr.String()[:10], logIndexCopy)),
 			)
-			cni.consensusInsts[committeeAddr][addLogIndex] = &consensusInst{ // TODO: Handle terminations somehow.
+			cni.consensusInsts[committeeAddr][addLogIndex] = &consensusInst{
 				cancelFunc: consGrCancel,
 				consensus:  cgr,
 				committee:  dkShare.GetNodePubKeys(),
+				// TODO when to call Done() on this?
+				// shutdownCoordinator: cni.shutdownCoordinator.Sub(
+				// 	fmt.Sprintf("consensusInst - %s, %s, %d", cni.chainID, committeeAddr.String(), addLogIndex),
+				// ),
+				shutdownCoordinator: nil,
 			}
 			added = true
 		}
@@ -720,6 +761,7 @@ func (cni *chainNodeImpl) cleanupConsensusInsts(keepCommitteeAddr *iotago.Ed2551
 				// We can cancel an instance, if input was not yet provided.
 				ci.cancelFunc() // TODO: Somehow cancel hanging instances, maybe with old LogIndex, etc.
 				ci.cancelFunc = nil
+				delete(cni.consensusInsts[cmtAddr], li)
 			}
 		}
 	}
@@ -804,10 +846,10 @@ func (cni *chainNodeImpl) updateAccessNodes(update func()) {
 	}
 }
 
-func (cni chainNodeImpl) updateServerNodes(serverNodes []*cryptolib.PublicKey) {
+func (cni *chainNodeImpl) updateServerNodes(serverNodes []*cryptolib.PublicKey) {
 	cni.accessLock.Lock()
 	oldServerNodes := cni.serverNodes
-	cni.serverNodes = serverNodes //nolint:staticcheck
+	cni.serverNodes = serverNodes
 	activeAccessNodes := cni.activeAccessNodes
 	activeCommitteeNodes := cni.activeCommitteeNodes
 	cni.accessLock.Unlock()
@@ -900,18 +942,18 @@ func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
 		})
 		if index == -1 {
 			peerStatus[i] = &PeerStatus{
-				Index:     uint16(i),
-				PubKey:    nodePubKey,
-				NetID:     "",
-				Connected: false,
+				Index:      uint16(i),
+				PubKey:     nodePubKey,
+				PeeringURL: "",
+				Connected:  false,
 			}
 			continue
 		}
 		peerStatus[i] = &PeerStatus{
-			Index:     uint16(i),
-			PubKey:    nodePubKey,
-			NetID:     netPeerStatus[index].NetID(),
-			Connected: netPeerStatus[index].IsAlive(),
+			Index:      uint16(i),
+			PubKey:     nodePubKey,
+			PeeringURL: netPeerStatus[index].PeeringURL(),
+			Connected:  netPeerStatus[index].IsAlive(),
 		}
 		if netPeerStatus[index].IsAlive() {
 			connectedCount++

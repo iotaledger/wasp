@@ -12,6 +12,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/iotaledger/wasp/packages/authentication/shared"
+	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/users"
 )
 
@@ -44,7 +45,19 @@ type WaspClaims struct {
 
 func (c *WaspClaims) HasPermission(permission string) bool {
 	_, exists := c.Permissions[permission]
-	return exists
+
+	if exists {
+		return true
+	}
+
+	if permission == permissions.Read {
+		// If a user only has write permissions, it should still be able to read.
+		_, exists = c.Permissions[permissions.Write]
+
+		return exists
+	}
+
+	return false
 }
 
 func (c *WaspClaims) compare(field, expected string) bool {
@@ -82,6 +95,7 @@ func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidat
 			}
 
 			// use the default JWT middleware to verify and extract the JWT
+			//nolint:staticcheck // TODO: replace with https://github.com/labstack/echo-jwt instead
 			handler := middleware.JWTWithConfig(config)(func(c echo.Context) error {
 				return nil
 			})
@@ -100,6 +114,8 @@ func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidat
 
 			// read the claims set by the JWT middleware on the context
 			authContext.claims = token.Claims.(*WaspClaims)
+
+			authContext.name = authContext.claims.Subject
 
 			// do extended authClaims validation
 			if !authContext.claims.VerifyAudience(j.nodeID, true) {
@@ -214,7 +230,7 @@ func initJWT(duration time.Duration, nodeID string, privateKey []byte, userManag
 	return jwtAuth, jwtAuthSkipper, jwtAuthAllow, nil
 }
 
-func AddJWTAuth(webAPI WebAPI, config JWTAuthConfiguration, privateKey []byte, userManager *users.UserManager, claimValidator ClaimValidator) *JWTAuth {
+func AddJWTAuth(config JWTAuthConfiguration, privateKey []byte, userManager *users.UserManager, claimValidator ClaimValidator) (*JWTAuth, func() echo.MiddlewareFunc) {
 	duration := config.Duration
 
 	// If durationHours is 0, we set 24h as the default duration
@@ -224,7 +240,9 @@ func AddJWTAuth(webAPI WebAPI, config JWTAuthConfiguration, privateKey []byte, u
 
 	jwtAuth, jwtSkipper, jwtAuthAllow, _ := initJWT(duration, "wasp0", privateKey, userManager, claimValidator)
 
-	webAPI.Use(jwtAuth.Middleware(jwtSkipper, jwtAuthAllow))
+	authMiddleware := func() echo.MiddlewareFunc {
+		return jwtAuth.Middleware(jwtSkipper, jwtAuthAllow)
+	}
 
-	return jwtAuth
+	return jwtAuth, authMiddleware
 }

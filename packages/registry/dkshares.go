@@ -29,6 +29,11 @@ var _ DKShareRegistryProvider = &DKSharesRegistry{}
 
 // NewDKSharesRegistry creates new instance of the DKShare registry implementation.
 func NewDKSharesRegistry(folderPath string, nodePrivKey *cryptolib.PrivateKey) (*DKSharesRegistry, error) {
+	// create the target directory during initialization
+	if err := ioutils.CreateDirectory(folderPath, 0o770); err != nil {
+		return nil, err
+	}
+
 	registry := &DKSharesRegistry{
 		folderPath: folderPath,
 	}
@@ -116,9 +121,8 @@ func (p *DKSharesRegistry) writeDKShareJSONToFolder(dkShare tcrypto.DKShare) err
 	}
 
 	filePath := p.getDKShareFilePath(dkShare)
-
-	if err := os.MkdirAll(path.Dir(filePath), 0o770); err != nil {
-		return fmt.Errorf("unable to create folder \"%s\": %w", path.Dir(filePath), err)
+	if err := util.CreateDirectoryForFilePath(filePath, 0o770); err != nil {
+		return err
 	}
 
 	if err := ioutils.WriteJSONToFile(filePath, dkShare, 0o600); err != nil {

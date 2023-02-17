@@ -181,11 +181,12 @@ func New(
 		panic(fmt.Errorf("cannot convert node's SK to kyber.Scalar: %w", err))
 	}
 	longTermDKS := dkShare.DSS()
+	acsLog := log.Named("ACS")
 	acsCCInstFunc := func(nodeID gpa.NodeID, round int) gpa.GPA {
 		var roundBin [4]byte
 		binary.BigEndian.PutUint32(roundBin[:], uint32(round))
 		sid := hashing.HashDataBlake2b(instID, nodeID[:], roundBin[:]).Bytes()
-		realCC := blssig.New(blsSuite, nodeIDs, dkShare.BLSCommits(), dkShare.BLSPriShare(), int(dkShare.BLSThreshold()), me, sid, log)
+		realCC := blssig.New(blsSuite, nodeIDs, dkShare.BLSCommits(), dkShare.BLSPriShare(), int(dkShare.BLSThreshold()), me, sid, acsLog)
 		return semi.New(round, realCC)
 	}
 	c := &consImpl{
@@ -198,8 +199,8 @@ func New(
 		nodeIDs:        nodeIDs,
 		me:             me,
 		f:              f,
-		dss:            dss.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log),
-		acs:            acs.New(nodeIDs, me, f, acsCCInstFunc, log),
+		dss:            dss.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log.Named("DSS")),
+		acs:            acs.New(nodeIDs, me, f, acsCCInstFunc, acsLog),
 		output:         &Output{Status: Running},
 		log:            log,
 	}
@@ -271,8 +272,15 @@ func (c *consImpl) AsGPA() gpa.GPA {
 
 func (c *consImpl) Input(input gpa.Input) gpa.OutMessages {
 	switch input := input.(type) {
+	case *inputTimeData:
+		// ignore this to filter out ridiculously excessive logging
+	default:
+		c.log.Debugf("Input %T: %+v", input, input)
+	}
+
+	switch input := input.(type) {
 	case *inputProposal:
-		c.log.Debugf("received %v", input.String())
+		c.log.Infof("Consensus started, received %v", input.String())
 		return gpa.NoMessages().
 			AddAll(c.subMP.BaseAliasOutputReceived(input.baseAliasOutput)).
 			AddAll(c.subSM.ProposedBaseAliasOutputReceived(input.baseAliasOutput)).
@@ -400,6 +408,7 @@ func (c *consImpl) uponSMSaveProducedBlockDone() gpa.OutMessages {
 // DSS
 
 func (c *consImpl) uponDSSInitialInputsReady() gpa.OutMessages {
+	c.log.Debugf("uponDSSInitialInputsReady")
 	sub, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, dss.NewInputStart())
 	if err != nil {
 		panic(fmt.Errorf("cannot provide input to DSS: %w", err))
@@ -410,10 +419,12 @@ func (c *consImpl) uponDSSInitialInputsReady() gpa.OutMessages {
 }
 
 func (c *consImpl) uponDSSIndexProposalReady(indexProposal []int) gpa.OutMessages {
+	c.log.Debugf("uponDSSIndexProposalReady")
 	return c.subACS.DSSIndexProposalReceived(indexProposal)
 }
 
 func (c *consImpl) uponDSSSigningInputsReceived(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.OutMessages {
+	c.log.Debugf("uponDSSSigningInputsReceived(decidedIndexProposals=%+v, H(messageToSign)=%v)", decidedIndexProposals, hashing.HashDataBlake2b(messageToSign))
 	dssDecidedInput := dss.NewInputDecided(decidedIndexProposals, messageToSign)
 	subDSS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, dssDecidedInput)
 	if err != nil {
@@ -425,6 +436,7 @@ func (c *consImpl) uponDSSSigningInputsReceived(decidedIndexProposals map[gpa.No
 }
 
 func (c *consImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
+	c.log.Debugf("uponDSSOutputReady")
 	return c.subTX.SignatureReceived(signature)
 }
 
@@ -581,6 +593,10 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.
 		Essence: resultTxEssence,
 		Unlocks: transaction.MakeSignatureAndAliasUnlockFeatures(len(resultTxEssence.Inputs), signatureForUnlock),
 	}
+	txID, err := tx.ID()
+	if err != nil {
+		panic(fmt.Errorf("cannot get ID from the produced TX: %w", err))
+	}
 	chained, err := transaction.GetAliasOutput(tx, c.chainID.AsAddress())
 	if err != nil {
 		panic(fmt.Errorf("cannot get AliasOutput from produced TX: %w", err))
@@ -589,6 +605,7 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.
 	c.output.ResultNextAliasOutput = chained
 	c.output.ResultState = resultState
 	c.output.Status = Completed
+	c.log.Infof("Consensus done, produced tx.ID=%v, nextAO.ID=%v, baseAO.ID=%v", txID.ToHex(), chained.OutputID().ToHex(), vmResult.AnchorOutputID.ToHex())
 	c.term.haveOutputProduced()
 	return nil
 }

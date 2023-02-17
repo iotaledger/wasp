@@ -1,0 +1,19 @@
+{
+  "accessNodes": [],
+  "active": true,
+  "candidateNodes": [],
+  "chainId": "tst1pqm5ckama06xhkl080mmvz6l3xy8c8lulrwy7mx4ll0fc69krxfgka70j0e",
+  "committeeNodes": [
+    {
+      "accessAPI": "",
+      "node": {
+        "isAlive": false,
+        "peeringURL": "",
+        "numUsers": 0,
+        "publicKey": "61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7",
+        "isTrusted": false
+      }
+    }
+  ],
+  "stateAddress": "0xff97a3eb5c56f6a3bc4fb729dedff9bffe37583d81d6c72ac12f2438cc94fb43"
+}

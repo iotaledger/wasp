@@ -6,13 +6,11 @@ import (
 
 // nodeStore immutable node store
 type nodeStore struct {
-	trieStore        KVReader
-	valueStore       KVReader
-	cache            map[string]*nodeData
-	clearCacheAtSize int
+	trieStore  KVReader
+	valueStore KVReader
 }
 
-const defaultClearCacheEveryGets = 1000
+const defaultCacheSize = 10_000
 
 const (
 	partitionTrieNodes = byte(iota)
@@ -31,32 +29,21 @@ func MustInitRoot(store KVWriter) Hash {
 	return n.nodeData.commitment
 }
 
-func openNodeStore(store KVReader, clearCacheAtSize ...int) *nodeStore {
-	ret := &nodeStore{
-		trieStore:        makeReaderPartition(store, partitionTrieNodes),
-		valueStore:       makeReaderPartition(store, partitionValues),
-		cache:            make(map[string]*nodeData),
-		clearCacheAtSize: defaultClearCacheEveryGets,
+func openNodeStore(store KVReader, cacheSize ...int) *nodeStore {
+	size := defaultCacheSize
+	if len(cacheSize) > 0 {
+		size = cacheSize[0]
 	}
-	if len(clearCacheAtSize) > 0 {
-		ret.clearCacheAtSize = clearCacheAtSize[0]
+
+	store = makeCachedKVReader(store, size)
+	return &nodeStore{
+		trieStore:  makeReaderPartition(store, partitionTrieNodes),
+		valueStore: makeReaderPartition(store, partitionValues),
 	}
-	return ret
 }
 
 func (ns *nodeStore) FetchNodeData(nodeCommitment Hash) (*nodeData, bool) {
 	dbKey := nodeCommitment.Bytes()
-	if ns.clearCacheAtSize > 0 {
-		// if caching is used at all
-		if ret, inCache := ns.cache[string(dbKey)]; inCache {
-			return ret, true
-		}
-		if len(ns.cache) > ns.clearCacheAtSize {
-			// GC the whole cache when cache reaches specified size
-			// TODO: improve
-			ns.cache = make(map[string]*nodeData)
-		}
-	}
 	nodeBin := ns.trieStore.Get(dbKey)
 	if len(nodeBin) == 0 {
 		return nil, false
@@ -85,8 +72,4 @@ func (ns *nodeStore) FetchChild(n *nodeData, childIdx byte, trieKey []byte) (*no
 	assertf(ok, "immutable::FetchChild: failed to fetch node. trieKey: '%s', childIndex: %d",
 		hex.EncodeToString(trieKey), childIdx)
 	return ret, childTriePath
-}
-
-func (ns *nodeStore) clearCache() {
-	ns.cache = make(map[string]*nodeData)
 }

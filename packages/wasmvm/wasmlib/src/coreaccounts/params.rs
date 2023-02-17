@@ -154,10 +154,6 @@ impl ImmutableTransferAllowanceToParams {
     pub fn agent_id(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
     }
-
-    pub fn force_open_account(&self) -> ScImmutableBool {
-        ScImmutableBool::new(self.proxy.root(PARAM_FORCE_OPEN_ACCOUNT))
-    }
 }
 
 #[derive(Clone)]
@@ -168,10 +164,6 @@ pub struct MutableTransferAllowanceToParams {
 impl MutableTransferAllowanceToParams {
     pub fn agent_id(&self) -> ScMutableAgentID {
         ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
-    }
-
-    pub fn force_open_account(&self) -> ScMutableBool {
-        ScMutableBool::new(self.proxy.root(PARAM_FORCE_OPEN_ACCOUNT))
     }
 }
 

@@ -12,3 +12,7 @@ type inputStart struct{}
 func NewInputStart() gpa.Input {
 	return &inputStart{}
 }
+
+func (inp *inputStart) String() string {
+	return "{chain.dss.inputStart}"
+}

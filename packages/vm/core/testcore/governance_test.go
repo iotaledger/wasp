@@ -95,6 +95,8 @@ func TestRotate(t *testing.T) {
 		chain := env.NewChain()
 		// defer chain.Log.Sync()
 
+		chain.WaitForRequestsMark()
+
 		newKP, newAddr := env.NewKeyPair()
 		err := chain.AddAllowedStateController(newAddr, nil)
 		require.NoError(t, err)
@@ -107,11 +109,13 @@ func TestRotate(t *testing.T) {
 		ca := chain.GetControlAddresses()
 		require.True(t, ca.StateAddress.Equal(newAddr))
 
+		chain.WaitForRequestsMark()
+
 		req := solo.NewCallParams("dummy", "dummy").WithMaxAffordableGasBudget()
 		_, err = chain.PostRequestSync(req, nil)
 		testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
 
-		require.True(t, chain.WaitForRequestsThrough(4))
+		require.True(t, chain.WaitForRequestsThrough(1))
 	})
 }
 

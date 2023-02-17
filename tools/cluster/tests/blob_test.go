@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
@@ -8,39 +9,37 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/client/chainclient"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 )
 
 func (e *ChainEnv) getBlobInfo(hash hashing.HashValue) map[string]uint32 {
-	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
-		e.Chain.ChainID, blob.Contract.Hname(), blob.ViewGetBlobInfo.Name,
-		dict.Dict{
-			blob.ParamHash: hash[:],
-		})
+	blobInfo, _, err := e.Chain.Cluster.WaspClient().CorecontractsApi.
+		BlobsGetBlobInfo(context.Background(), e.Chain.ChainID.String(), hash.Hex()).
+		Execute()
+
 	require.NoError(e.t, err)
-	decoded, err := blob.DecodeSizesMap(ret)
-	require.NoError(e.t, err)
-	return decoded
+
+	return blobInfo.Fields
 }
 
 func (e *ChainEnv) getBlobFieldValue(blobHash hashing.HashValue, field string) []byte {
-	v, err := e.Chain.Cluster.WaspClient(0).CallView(
-		e.Chain.ChainID, blob.Contract.Hname(), blob.ViewGetBlobField.Name,
-		dict.Dict{
-			blob.ParamHash:  blobHash[:],
-			blob.ParamField: []byte(field),
-		})
+	blobField, _, err := e.Chain.Cluster.WaspClient().CorecontractsApi.
+		BlobsGetBlobValue(context.Background(), e.Chain.ChainID.String(), blobHash.Hex(), field).
+		Execute()
 	require.NoError(e.t, err)
-	if v.IsEmpty() {
-		return nil
+
+	if blobField.ValueData == "" {
+		return []byte{}
 	}
-	ret, err := v.Get(blob.ParamBytes)
+
+	value, err := iotago.DecodeHex(blobField.ValueData)
+
 	require.NoError(e.t, err)
-	return ret
+	return value
 }
 
 // executed in cluster_test.go
@@ -108,9 +107,9 @@ func testBlobStoreManyBlobsNoEncoding(t *testing.T, e *ChainEnv) {
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 
-	expectedHash, _, receipt, err := chClient.UploadBlob(fv)
+	expectedHash, _, receipt, err := chClient.UploadBlob(context.Background(), fv)
 	require.NoError(t, err)
-	require.Empty(t, receipt.ResolvedError)
+	require.Empty(t, receipt.Error)
 	t.Logf("expected hash: %s", expectedHash.String())
 
 	sizes := e.getBlobInfo(expectedHash)

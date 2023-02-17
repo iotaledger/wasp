@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -10,20 +11,18 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/utxodb"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore"
 )
 
 // executed in cluster_test.go
 func testSpamOnledger(t *testing.T, env *ChainEnv) {
 	testutil.RunHeavy(t)
+	env.deployNativeIncCounterSC(0)
 	// in the privtangle setup, with 1s milestones, this test takes ~50m to process 10k requests
 	const numRequests = 10_000
 
@@ -85,16 +84,16 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 
 	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 5*time.Minute)
 
-	res, err := env.Chain.Cluster.WaspClient(0).CallView(env.Chain.ChainID, blocklog.Contract.Hname(), blocklog.ViewGetEventsForBlock.Name, dict.Dict{})
+	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsApi.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, err)
-	events, err := testcore.EventsViewResultToStringArray(res)
-	require.NoError(t, err)
-	println(events)
+
+	println(res.Events)
 }
 
 // executed in cluster_test.go
 func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 	testutil.RunHeavy(t)
+	env.deployNativeIncCounterSC(0)
 
 	// we need to cap the limit of parallel requests, otherwise some reqs will fail due to local tcp limits: `dial tcp 127.0.0.1:9090: socket: too many open files`
 	const maxParallelRequests = 700
@@ -165,11 +164,10 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 
 	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 5*time.Minute)
 
-	res, err := env.Chain.Cluster.WaspClient(0).CallView(env.Chain.ChainID, blocklog.Contract.Hname(), blocklog.ViewGetEventsForBlock.Name, dict.Dict{})
+	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsApi.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, err)
-	events, err := testcore.EventsViewResultToStringArray(res)
-	require.NoError(t, err)
-	require.Regexp(t, fmt.Sprintf("counter = %d", numRequests), events[len(events)-1])
+
+	require.Regexp(t, fmt.Sprintf("counter = %d", numRequests), res.Events[len(res.Events)-1])
 	avgProcessingDuration := processingDurationsSum / numRequests
 	fmt.Printf("avg processing duration: %ds\n max: %ds\n", avgProcessingDuration, maxProcessingDuration)
 }
@@ -194,7 +192,7 @@ func testSpamCallViewWasm(t *testing.T, env *ChainEnv) {
 
 	for i := 0; i < n; i++ {
 		go func() {
-			r, err := client.CallView("getCounter", nil)
+			r, err := client.CallView(context.Background(), "getCounter", nil)
 			if err != nil {
 				ch <- err
 				return

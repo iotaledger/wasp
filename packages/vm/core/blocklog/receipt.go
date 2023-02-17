@@ -53,8 +53,8 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 		return nil, fmt.Errorf("cannot read Request: %w", err)
 	}
 
-	if isError, err := mu.ReadBool(); err != nil {
-		return nil, fmt.Errorf("cannot read isError: %w", err)
+	if isError, err2 := mu.ReadBool(); err2 != nil {
+		return nil, fmt.Errorf("cannot read isError: %w", err2)
 	} else if !isError {
 		return ret, nil
 	}

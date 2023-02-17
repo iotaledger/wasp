@@ -78,11 +78,7 @@ As all ports are locally available, this `wasp-cli.json` configuration is to be 
     "faucetaddress": "http://localhost:8091"
   },
   "wasp": {
-    "0": {
-      "api": "127.0.0.1:9090",
-      "nanomsg": "127.0.0.1:5550",
-      "peering": "127.0.0.1:4000"
-    }
+    "0": "127.0.0.1:9090"
   }
 }
 ```

@@ -79,7 +79,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
     // take custody of deposit and NFT
     let mut transfer = ScTransfer::base_tokens(deposit);
     transfer.add_nft(&auction_nft);
-    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer);
 
     let fa = ScFuncs::finalize_auction(ctx);
     fa.params.nft().set_value(&auction.nft);

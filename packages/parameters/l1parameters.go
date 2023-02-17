@@ -12,18 +12,18 @@ import (
 
 // L1Params describes parameters coming from the L1Params node
 type L1Params struct {
-	MaxPayloadSize int                        `json:"maxPayloadSize"`
-	Protocol       *iotago.ProtocolParameters `json:"protocol"`
-	BaseToken      *BaseToken                 `json:"baseToken"`
+	MaxPayloadSize int                        `json:"maxPayloadSize" swagger:"required"`
+	Protocol       *iotago.ProtocolParameters `json:"protocol" swagger:"required"`
+	BaseToken      *BaseToken                 `json:"baseToken" swagger:"required"`
 }
 
 type BaseToken struct {
-	Name            string `json:"name"`
-	TickerSymbol    string `json:"tickerSymbol"`
-	Unit            string `json:"unit"`
-	Subunit         string `json:"subunit"`
-	Decimals        uint32 `json:"decimals"`
-	UseMetricPrefix bool   `json:"useMetricPrefix"`
+	Name            string `json:"name" swagger:"desc(The base token name),required"`
+	TickerSymbol    string `json:"tickerSymbol" swagger:"desc(The ticker symbol),required"`
+	Unit            string `json:"unit" swagger:"desc(The token unit),required"`
+	Subunit         string `json:"subunit" swagger:"desc(The token subunit),required"`
+	Decimals        uint32 `json:"decimals" swagger:"desc(The token decimals),required"`
+	UseMetricPrefix bool   `json:"useMetricPrefix" swagger:"desc(Whether or not the token uses a metric prefix),required"`
 }
 
 const MaxPayloadSize = iotago.BlockBinSerializedMaxSize - // BlockSizeMax

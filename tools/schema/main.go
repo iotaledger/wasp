@@ -24,14 +24,17 @@ import (
 	wasp_yaml "github.com/iotaledger/wasp/tools/schema/model/yaml"
 )
 
+const version = "1.0.0"
+
 var (
-	flagClean = flag.Bool("clean", false, "clean up (re-)generated files")
-	flagCore  = flag.Bool("core", false, "generate core contract interface")
-	flagForce = flag.Bool("force", false, "force code generation")
-	flagGo    = flag.Bool("go", false, "generate Go code")
-	flagInit  = flag.String("init", "", "generate new schema file for smart contract named <string>")
-	flagRust  = flag.Bool("rs", false, "generate Rust code")
-	flagTs    = flag.Bool("ts", false, "generate TypScript code")
+	flagVersion = flag.Bool("version", false, "show schema tool version")
+	flagClean   = flag.Bool("clean", false, "clean up (re-)generated files")
+	flagCore    = flag.Bool("core", false, "generate core contract interface")
+	flagForce   = flag.Bool("force", false, "force code generation")
+	flagGo      = flag.Bool("go", false, "generate Go code")
+	flagInit    = flag.String("init", "", "generate new schema file for smart contract named <string>")
+	flagRust    = flag.Bool("rs", false, "generate Rust code")
+	flagTs      = flag.Bool("ts", false, "generate TypScript code")
 )
 
 func init() {
@@ -39,6 +42,11 @@ func init() {
 }
 
 func main() {
+	if *flagVersion {
+		fmt.Println(version)
+		return
+	}
+
 	err := generator.FindModulePath()
 	if err != nil && *flagGo {
 		log.Panic(err)
@@ -65,7 +73,7 @@ func main() {
 	if *flagInit != "" {
 		err = generateSchemaNew()
 		if err != nil {
-			if _, err := os.Stat(*flagInit); err == nil {
+			if _, err2 := os.Stat(*flagInit); err2 == nil {
 				log.Println("schema already exists")
 				return
 			}
@@ -108,20 +116,20 @@ func generateSchema(file *os.File) error {
 	s.SchemaTime = time.Now()
 	if !*flagForce {
 		// force regeneration when schema definition file is newer
-		info, err := file.Stat()
-		if err != nil {
-			return err
+		info, err2 := file.Stat()
+		if err2 != nil {
+			return err2
 		}
 		s.SchemaTime = info.ModTime()
 
 		// also force regeneration when schema tool itself is newer
-		exe, err := os.Executable()
-		if err != nil {
-			return err
+		exe, err2 := os.Executable()
+		if err2 != nil {
+			return err2
 		}
-		info, err = os.Stat(exe)
-		if err != nil {
-			return err
+		info, err2 = os.Stat(exe)
+		if err2 != nil {
+			return err2
 		}
 		if info.ModTime().After(s.SchemaTime) {
 			s.SchemaTime = info.ModTime()

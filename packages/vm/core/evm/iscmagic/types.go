@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 // ISCChainID matches the type definition in ISCTypes.sol
@@ -210,33 +211,58 @@ func (n ISCNFT) MustUnwrap() *isc.NFT {
 	return ret
 }
 
-// ISCAllowance matches the struct definition in ISCTypes.sol
-type ISCAllowance struct {
+// IRC27NFTMetadata matches the struct definition in ISCTypes.sol
+type IRC27NFTMetadata struct {
+	Standard string
+	Version  string
+	MimeType string
+	Uri      string //nolint:revive // false positive
+	Name     string
+}
+
+func WrapIRC27NFTMetadata(m *transaction.IRC27NFTMetadata) IRC27NFTMetadata {
+	return IRC27NFTMetadata{
+		Standard: m.Standard,
+		Version:  m.Version,
+		MimeType: m.MIMEType,
+		Uri:      m.URI,
+		Name:     m.Name,
+	}
+}
+
+// IRC27NFT matches the struct definition in ISCTypes.sol
+type IRC27NFT struct {
+	Nft      ISCNFT
+	Metadata IRC27NFTMetadata
+}
+
+// ISCAssets matches the struct definition in ISCTypes.sol
+type ISCAssets struct {
 	BaseTokens   uint64
 	NativeTokens []NativeToken
 	Nfts         []NFTID
 }
 
-func WrapISCAllowance(a *isc.Allowance) ISCAllowance {
+func WrapISCAssets(a *isc.Assets) ISCAssets {
 	if a == nil {
-		return WrapISCAllowance(isc.NewEmptyAllowance())
+		return WrapISCAssets(isc.NewEmptyAssets())
 	}
-	tokens := make([]NativeToken, len(a.Assets.NativeTokens))
-	for i, nativeToken := range a.Assets.NativeTokens {
+	tokens := make([]NativeToken, len(a.NativeTokens))
+	for i, nativeToken := range a.NativeTokens {
 		tokens[i] = WrapNativeToken(nativeToken)
 	}
 	nfts := make([]NFTID, len(a.NFTs))
 	for i, id := range a.NFTs {
 		nfts[i] = WrapNFTID(id)
 	}
-	return ISCAllowance{
-		BaseTokens:   a.Assets.BaseTokens,
+	return ISCAssets{
+		BaseTokens:   a.BaseTokens,
 		NativeTokens: tokens,
 		Nfts:         nfts,
 	}
 }
 
-func (a ISCAllowance) Unwrap() *isc.Allowance {
+func (a ISCAssets) Unwrap() *isc.Assets {
 	tokens := make(iotago.NativeTokens, len(a.NativeTokens))
 	for i, nativeToken := range a.NativeTokens {
 		tokens[i] = nativeToken.Unwrap()
@@ -245,7 +271,7 @@ func (a ISCAllowance) Unwrap() *isc.Allowance {
 	for i, id := range a.Nfts {
 		nfts[i] = id.Unwrap()
 	}
-	return isc.NewAllowance(a.BaseTokens, tokens, nfts)
+	return isc.NewAssets(a.BaseTokens, tokens, nfts...)
 }
 
 // ISCDictItem matches the struct definition in ISCTypes.sol
@@ -275,48 +301,11 @@ func (d ISCDict) Unwrap() dict.Dict {
 	return ret
 }
 
-type ISCFungibleTokens struct {
-	BaseTokens   uint64
-	NativeTokens []NativeToken
-}
-
-func WrapISCFungibleTokens(fungibleTokens isc.FungibleTokens) ISCFungibleTokens {
-	ret := ISCFungibleTokens{
-		BaseTokens:   fungibleTokens.BaseTokens,
-		NativeTokens: make([]NativeToken, len(fungibleTokens.NativeTokens)),
-	}
-
-	for i, nativeToken := range fungibleTokens.NativeTokens {
-		ret.NativeTokens[i].ID = WrapNativeTokenID(nativeToken.ID)
-		ret.NativeTokens[i].Amount = nativeToken.Amount
-	}
-
-	return ret
-}
-
-func (t ISCFungibleTokens) Unwrap() *isc.FungibleTokens {
-	ret := isc.FungibleTokens{
-		BaseTokens:   t.BaseTokens,
-		NativeTokens: make(iotago.NativeTokens, len(t.NativeTokens)),
-	}
-
-	for i, nativeToken := range t.NativeTokens {
-		nativeToken := iotago.NativeToken{
-			ID:     nativeToken.ID.Unwrap(),
-			Amount: nativeToken.Amount,
-		}
-
-		ret.NativeTokens[i] = &nativeToken
-	}
-
-	return &ret
-}
-
 type ISCSendMetadata struct {
 	TargetContract uint32
 	Entrypoint     uint32
 	Params         ISCDict
-	Allowance      ISCAllowance
+	Allowance      ISCAssets
 	GasBudget      uint64
 }
 
@@ -325,7 +314,7 @@ func WrapISCSendMetadata(metadata isc.SendMetadata) ISCSendMetadata {
 		GasBudget:      metadata.GasBudget,
 		Entrypoint:     uint32(metadata.EntryPoint),
 		TargetContract: uint32(metadata.TargetContract),
-		Allowance:      WrapISCAllowance(metadata.Allowance),
+		Allowance:      WrapISCAssets(metadata.Allowance),
 		Params:         WrapISCDict(metadata.Params),
 	}
 

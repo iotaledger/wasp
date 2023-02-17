@@ -6,14 +6,21 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
+// May be used in tests or (very unlikely) in production as a memory only WAL.
 type mockedBlockWAL struct {
 	walContents map[state.BlockHash]state.Block
 }
 
-var _ BlockWAL = &mockedBlockWAL{}
+var (
+	_ BlockWAL     = &mockedBlockWAL{}
+	_ TestBlockWAL = &mockedBlockWAL{}
+)
 
-// For tests only
 func NewMockedBlockWAL() BlockWAL {
+	return NewMockedTestBlockWAL()
+}
+
+func NewMockedTestBlockWAL() TestBlockWAL {
 	return &mockedBlockWAL{walContents: make(map[state.BlockHash]state.Block)}
 }
 
@@ -33,4 +40,12 @@ func (mbwT *mockedBlockWAL) Read(blockHash state.BlockHash) (state.Block, error)
 		return block, nil
 	}
 	return nil, errors.New("not found")
+}
+
+func (mbwT *mockedBlockWAL) Delete(blockHash state.BlockHash) bool {
+	contains := mbwT.Contains(blockHash)
+	if contains {
+		delete(mbwT.walContents, blockHash)
+	}
+	return contains
 }

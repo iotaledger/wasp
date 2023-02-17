@@ -8,7 +8,7 @@ use crate::*;
 pub fn func_donate(ctx: &ScFuncContext, f: &DonateContext) {
     let amount = ctx.allowance().base_tokens();
     let transfer = ScTransfer::base_tokens(amount);
-    ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer);
     let mut donation = Donation {
         amount: amount,
         donator: ctx.caller(),

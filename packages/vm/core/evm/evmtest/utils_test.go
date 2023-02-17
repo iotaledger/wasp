@@ -27,10 +27,8 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -230,6 +228,19 @@ func (e *soloChainEnv) ERC20NativeTokens(defaultSender *ecdsa.PrivateKey, foundr
 	}
 }
 
+func (e *soloChainEnv) ERC20ExternalNativeTokens(defaultSender *ecdsa.PrivateKey, addr common.Address) *iscContractInstance {
+	erc20BaseABI, err := abi.JSON(strings.NewReader(iscmagic.ERC20ExternalNativeTokensABI))
+	require.NoError(e.t, err)
+	return &iscContractInstance{
+		evmContractInstance: &evmContractInstance{
+			chain:         e,
+			defaultSender: defaultSender,
+			address:       addr,
+			abi:           erc20BaseABI,
+		},
+	}
+}
+
 func (e *soloChainEnv) ERC721NFTs(defaultSender *ecdsa.PrivateKey) *iscContractInstance {
 	erc721ABI, err := abi.JSON(strings.NewReader(iscmagic.ERC721NFTsABI))
 	require.NoError(e.t, err)
@@ -239,6 +250,19 @@ func (e *soloChainEnv) ERC721NFTs(defaultSender *ecdsa.PrivateKey) *iscContractI
 			defaultSender: defaultSender,
 			address:       iscmagic.ERC721NFTsAddress,
 			abi:           erc721ABI,
+		},
+	}
+}
+
+func (e *soloChainEnv) ERC721NFTCollection(defaultSender *ecdsa.PrivateKey, collectionID iotago.NFTID) *iscContractInstance {
+	erc721NFTCollectionABI, err := abi.JSON(strings.NewReader(iscmagic.ERC721NFTCollectionABI))
+	require.NoError(e.t, err)
+	return &iscContractInstance{
+		evmContractInstance: &evmContractInstance{
+			chain:         e,
+			defaultSender: defaultSender,
+			address:       iscmagic.ERC721NFTCollectionAddress(collectionID),
+			abi:           erc721NFTCollectionABI,
 		},
 	}
 }
@@ -309,64 +333,63 @@ func (e *soloChainEnv) deployContract(creator *ecdsa.PrivateKey, abiJSON string,
 	}
 }
 
-func (e *soloChainEnv) mintNFTAndSendToL2(to isc.AgentID) *isc.NFT {
-	issuerWallet, issuerAddress := e.solo.NewKeyPairWithFunds()
-	metadata := []byte("foobar")
-	nft, _, err := e.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
-	require.NoError(e.t, err)
-
-	_, err = e.soloChain.PostRequestSync(
-		solo.NewCallParams(
-			accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
-			dict.Dict{
-				accounts.ParamAgentID:          codec.EncodeAgentID(to),
-				accounts.ParamForceOpenAccount: codec.EncodeBool(true),
-			},
-		).
-			WithNFT(nft).
-			WithAllowance(isc.NewAllowance(0, nil, []iotago.NFTID{nft.ID})).
-			AddBaseTokens(1*isc.Million). // for storage deposit
-			WithMaxAffordableGasBudget(),
-		issuerWallet,
-	)
-	require.NoError(e.t, err)
-
-	require.Equal(e.t, []iotago.NFTID{nft.ID}, e.soloChain.L2NFTs(to))
-
-	return nft
-}
-
-func (e *soloChainEnv) createFoundry(foundryOwner *cryptolib.KeyPair, supply *big.Int) (uint32, iotago.NativeTokenID) {
-	res, err := e.soloChain.PostRequestSync(
-		solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
-			accounts.ParamTokenScheme, codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
-				MaximumSupply: supply,
-				MintedTokens:  util.Big0,
-				MeltedTokens:  util.Big0,
-			}),
-		).
-			WithMaxAffordableGasBudget().
-			WithAllowance(isc.NewAllowanceBaseTokens(1*isc.Million)), // for storage deposit
-		foundryOwner,
-	)
-	require.NoError(e.t, err)
-	foundrySN := kvdecoder.New(res).MustGetUint32(accounts.ParamFoundrySN)
-	nativeTokenID, err := e.soloChain.GetNativeTokenIDByFoundrySN(foundrySN)
-	require.NoError(e.t, err)
-
-	err = e.soloChain.MintTokens(foundrySN, supply, foundryOwner)
-	require.NoError(e.t, err)
-
-	return foundrySN, nativeTokenID
-}
-
-func (e *soloChainEnv) registerERC20NativeToken(foundryOwner *cryptolib.KeyPair, foundrySN uint32, tokenName, tokenTickerSymbol string, tokenDecimals uint8) error {
+func (e *soloChainEnv) registerERC20NativeToken(
+	foundryOwner *cryptolib.KeyPair,
+	foundrySN uint32,
+	tokenName, tokenTickerSymbol string,
+	tokenDecimals uint8,
+) error {
 	_, err := e.soloChain.PostRequestOffLedger(solo.NewCallParams(evm.Contract.Name, evm.FuncRegisterERC20NativeToken.Name, dict.Dict{
 		evm.FieldFoundrySN:         codec.EncodeUint32(foundrySN),
 		evm.FieldTokenName:         codec.EncodeString(tokenName),
 		evm.FieldTokenTickerSymbol: codec.EncodeString(tokenTickerSymbol),
 		evm.FieldTokenDecimals:     codec.EncodeUint8(tokenDecimals),
 	}).WithMaxAffordableGasBudget(), foundryOwner)
+	return err
+}
+
+func (e *soloChainEnv) registerERC20ExternalNativeToken(
+	fromChain *solo.Chain,
+	foundrySN uint32,
+	tokenName, tokenTickerSymbol string,
+	tokenDecimals uint8,
+) (ret common.Address, err error) {
+	_, err = fromChain.PostRequestOffLedger(solo.NewCallParams(evm.Contract.Name, evm.FuncRegisterERC20NativeTokenOnRemoteChain.Name, dict.Dict{
+		evm.FieldFoundrySN:         codec.EncodeUint32(foundrySN),
+		evm.FieldTokenName:         codec.EncodeString(tokenName),
+		evm.FieldTokenTickerSymbol: codec.EncodeString(tokenTickerSymbol),
+		evm.FieldTokenDecimals:     codec.EncodeUint8(tokenDecimals),
+		evm.FieldTargetAddress:     codec.EncodeAddress(e.soloChain.ChainID.AsAddress()),
+	}).WithMaxAffordableGasBudget().WithAllowance(isc.NewAssetsBaseTokens(1*isc.Million)), fromChain.OriginatorPrivateKey)
+	if err != nil {
+		return ret, err
+	}
+
+	foundryOutput, err := fromChain.GetFoundryOutput(foundrySN)
+	require.NoError(e.t, err)
+	nativeTokenID, err := foundryOutput.ID()
+	require.NoError(e.t, err)
+
+	if !e.soloChain.WaitUntil(func(solo.MempoolInfo) bool {
+		res, err2 := e.soloChain.CallView(evm.Contract.Name, evm.FuncGetERC20ExternalNativeTokenAddress.Name,
+			evm.FieldNativeTokenID, nativeTokenID[:],
+		)
+		require.NoError(e.t, err2)
+		if len(res[evm.FieldResult]) == 0 {
+			return false
+		}
+		copy(ret[:], res[evm.FieldResult])
+		return true
+	}) {
+		require.FailNow(e.t, "could not get ERC20 address on target chain")
+	}
+	return ret, err
+}
+
+func (e *soloChainEnv) registerERC721NFTCollection(collectionOwner *cryptolib.KeyPair, collectionID iotago.NFTID) error {
+	_, err := e.soloChain.PostRequestOffLedger(solo.NewCallParams(evm.Contract.Name, evm.FuncRegisterERC721NFTCollection.Name, dict.Dict{
+		evm.FieldNFTCollectionID: codec.EncodeNFTID(collectionID),
+	}).WithMaxAffordableGasBudget(), collectionOwner)
 	return err
 }
 

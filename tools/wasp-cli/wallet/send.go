@@ -6,12 +6,13 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	cliwallet "github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
 
-func sendFundsCmd() *cobra.Command {
+func initSendFundsCmd() *cobra.Command {
 	var adjustStorageDeposit bool
 
 	cmd := &cobra.Command{
@@ -27,9 +28,9 @@ func sendFundsCmd() *cobra.Command {
 
 			log.Printf("\nSending \n\t%v \n\tto: %v\n\n", tokens, args[0])
 
-			wallet := Load()
+			wallet := cliwallet.Load()
 			senderAddress := wallet.Address()
-			client := config.L1Client()
+			client := cliclients.L1Client()
 
 			outputSet, err := client.OutputMap(senderAddress)
 			log.Check(err)

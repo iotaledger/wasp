@@ -1,134 +1,89 @@
 // // Copyright 2020 IOTA Stiftung
 // // SPDX-License-Identifier: Apache-2.0
 
-use crate::*;
-use isc::{offledgerrequest::*, waspclient::*};
-use std::sync::{mpsc, Arc, RwLock};
 use std::time::Duration;
 
-pub trait IClientService {
-    fn call_view_by_hname(
-        &self,
-        chain_id: &ScChainID,
-        contract_hname: &ScHname,
-        function_hname: &ScHname,
-        args: &[u8],
-    ) -> errors::Result<Vec<u8>>;
-    fn post_request(
-        &self,
-        chain_id: &ScChainID,
-        contract_hname: &ScHname,
-        function_hname: &ScHname,
-        args: &[u8],
-        allowance: &ScAssets,
-        key_pair: &keypair::KeyPair,
-        nonce: u64,
-    ) -> errors::Result<ScRequestID>;
-    fn subscribe_events(
-        &self,
-        tx: mpsc::Sender<Vec<String>>,
-        done: Arc<RwLock<bool>>,
-    ) -> errors::Result<()>;
-    fn wait_until_request_processed(
-        &self,
-        chain_id: &ScChainID,
-        req_id: &ScRequestID,
-        timeout: Duration,
-    ) -> errors::Result<()>;
-}
+use wasmlib::*;
+
+use isc::offledgerrequest::*;
+
+use crate::*;
+use crate::keypair::KeyPair;
+use crate::waspclient::WaspClient;
 
 #[derive(Clone, PartialEq)]
 pub struct WasmClientService {
-    client: waspclient::WaspClient,
-    websocket: Option<websocket::Client>,
-    event_port: String,
+    client: WaspClient,
     last_err: errors::Result<()>,
 }
 
-impl IClientService for WasmClientService {
-    fn call_view_by_hname(
+impl WasmClientService {
+    pub fn new(wasp_api: &str, event_port: &str) -> Self {
+        return WasmClientService {
+            client: WaspClient::new(wasp_api, event_port),
+            last_err: Ok(()),
+        };
+    }
+
+    pub fn call_view_by_hname(
         &self,
         chain_id: &ScChainID,
         contract_hname: &ScHname,
         function_hname: &ScHname,
         args: &[u8],
     ) -> errors::Result<Vec<u8>> {
-        let params = ScDict::new(args);
-
         return self.client.call_view_by_hname(
             chain_id,
             contract_hname,
             function_hname,
-            &params,
+            args,
             None,
         );
     }
 
-    fn post_request(
+    pub fn post_request(
         &self,
         chain_id: &ScChainID,
-        contract_hname: &ScHname,
-        function_hname: &ScHname,
+        h_contract: &ScHname,
+        h_function: &ScHname,
         args: &[u8],
         allowance: &ScAssets,
-        key_pair: &keypair::KeyPair,
+        key_pair: &KeyPair,
         nonce: u64,
     ) -> errors::Result<ScRequestID> {
-        let params = ScDict::new(args);
-        let mut req: offledgerrequest::OffLedgerRequestData =
-            offledgerrequest::OffLedgerRequest::new(
+        let mut req: OffLedgerRequestData =
+            OffLedgerRequest::new(
                 chain_id,
-                contract_hname,
-                function_hname,
-                &params,
+                h_contract,
+                h_function,
+                args,
                 nonce,
             );
         req.with_allowance(&allowance);
-        req.sign(key_pair);
-        self.client.post_offledger_request(&chain_id, &req)?;
-        return Ok(req.id());
+        let signed = req.sign(key_pair);
+        let res = self.client.post_offledger_request(&chain_id, &signed);
+        if let Err(e) = res {
+            return Err(e);
+        }
+        Ok(signed.id())
     }
 
-    fn subscribe_events(
-        &self,
-        tx: mpsc::Sender<Vec<String>>,
-        done: Arc<RwLock<bool>>,
-    ) -> errors::Result<()> {
-        self.websocket.clone().unwrap().subscribe(tx, done); // TODO remove clone
-        return Ok(());
-    }
-
-    fn wait_until_request_processed(
+    pub fn wait_until_request_processed(
         &self,
         chain_id: &ScChainID,
         req_id: &ScRequestID,
         timeout: Duration,
     ) -> errors::Result<()> {
-        let _ = self
+        return self
             .client
-            .wait_until_request_processed(&chain_id, req_id, timeout)?;
-
-        return Ok(());
-    }
-}
-
-impl WasmClientService {
-    pub fn new(wasp_api: &str, event_port: &str, websocket_url: &str) -> Self {
-        return WasmClientService {
-            client: waspclient::WaspClient::new(wasp_api),
-            websocket: Some(websocket::Client::new(websocket_url).unwrap()),
-            event_port: event_port.to_string(),
-            last_err: Ok(()),
-        };
+            .wait_until_request_processed(&chain_id, req_id, timeout);
     }
 }
 
 impl Default for WasmClientService {
     fn default() -> Self {
         return WasmClientService {
-            client: waspclient::WaspClient::new("127.0.0.1:19090"),
-            event_port: "127.0.0.1:15550".to_string(),
-            websocket: None, // TODO set an empty object
+            client: WaspClient::new("127.0.0.1:19090", "127.0.0.1:15550"),
             last_err: Ok(()),
         };
     }
@@ -138,14 +93,13 @@ impl Default for WasmClientService {
 mod tests {
     use crate::isc::waspclient;
     use crate::WasmClientService;
+    use crate::waspclient::WaspClient;
 
     #[test]
     fn service_default() {
         let service = WasmClientService::default();
         let default_service = WasmClientService {
-            client: waspclient::WaspClient::new("127.0.0.1:19090"),
-            websocket: None,
-            event_port: "127.0.0.1:15550".to_string(),
+            client: WaspClient::new("127.0.0.1:19090", "127.0.0.1:15550"),
             last_err: Ok(()),
         };
         assert!(default_service.event_port == service.event_port);

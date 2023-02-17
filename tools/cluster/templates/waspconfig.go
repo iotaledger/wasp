@@ -77,7 +77,7 @@ var WaspConfig = `
     }
   },
   "peering": {
-    "netID": "0.0.0.0:{{.PeeringPort}}",
+    "peeringURL": "0.0.0.0:{{.PeeringPort}}",
     "port": {{.PeeringPort}}
   },
   "chains": {

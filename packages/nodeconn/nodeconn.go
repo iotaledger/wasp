@@ -11,13 +11,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/core/contextutils"
+	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	"github.com/iotaledger/hive.go/core/generics/lo"
 	"github.com/iotaledger/hive.go/core/generics/shrinkingmap"
 	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/core/timeutil"
 	"github.com/iotaledger/hive.go/core/workerpool"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/inx-app/pkg/nodebridge"
@@ -26,6 +28,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/common"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -40,6 +43,7 @@ const (
 	inxTimeoutIndexerQuery        = 2 * time.Second
 	inxTimeoutMilestone           = 2 * time.Second
 	inxTimeoutOutput              = 2 * time.Second
+	inxTimeoutGetPeers            = 2 * time.Second
 	reattachWorkerPoolQueueSize   = 100
 
 	chainsCleanupThresholdRatio              = 50.0
@@ -68,6 +72,8 @@ type nodeConnection struct {
 	pendingTransactionsMap  *shrinkingmap.ShrinkingMap[iotago.TransactionID, *pendingTransaction]
 	pendingTransactionsLock sync.Mutex
 	reattachWorkerPool      *workerpool.WorkerPool
+
+	shutdownHandler *shutdown.ShutdownHandler
 }
 
 func setL1ProtocolParams(protocolParameters *iotago.ProtocolParameters, baseToken *nodeclient.InfoResBaseToken) {
@@ -88,7 +94,120 @@ func newCtxWithTimeout(ctx context.Context, defaultTimeout time.Duration, timeou
 	return context.WithTimeout(ctx, t)
 }
 
-func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBridge, nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics) (chain.NodeConnection, error) {
+func waitForL1ToBeConnected(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBridge) error {
+	inxGetPeers := func(ctx context.Context) ([]*nodeclient.PeerResponse, error) {
+		ctx, cancel := context.WithTimeout(ctx, inxTimeoutGetPeers)
+		defer cancel()
+
+		return nodeBridge.INXNodeClient().Peers(ctx)
+	}
+
+	getNodeConnected := func() (bool, error) {
+		peers, err := inxGetPeers(ctx)
+		if err != nil {
+			return false, fmt.Errorf("failed to get peers: %w", err)
+		}
+
+		// check for at least one connected peer
+		for _, peer := range peers {
+			if peer.Connected {
+				return true, nil
+			}
+		}
+
+		log.Info("waiting for L1 to be connected to other peers...")
+		return false, nil
+	}
+
+	ticker := time.NewTicker(1 * time.Second)
+	defer timeutil.CleanupTicker(ticker)
+
+	for {
+		select {
+		case <-ticker.C:
+			nodeConnected, err := getNodeConnected()
+			if err != nil {
+				return err
+			}
+
+			if nodeConnected {
+				// node is connected to other peers
+				return nil
+			}
+
+		case <-ctx.Done():
+			// context was canceled
+			return common.ErrOperationAborted
+		}
+	}
+}
+
+func waitForL1ToBeSynced(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBridge) error {
+	getMilestoneIndex := func() (uint32, uint32) {
+		nodeStatus := nodeBridge.NodeStatus()
+
+		var lsmi, cmi uint32
+		if nodeStatus.GetLatestMilestone() != nil && nodeStatus.GetLatestMilestone().GetMilestoneInfo() != nil {
+			lsmi = nodeStatus.GetLatestMilestone().GetMilestoneInfo().MilestoneIndex
+		}
+		if nodeStatus.GetConfirmedMilestone() != nil && nodeStatus.GetConfirmedMilestone().GetMilestoneInfo() != nil {
+			cmi = nodeStatus.GetConfirmedMilestone().GetMilestoneInfo().MilestoneIndex
+		}
+
+		return lsmi, cmi
+	}
+
+	getNodeSynced := func() bool {
+		// we can't use the "GetIsSynced()", because this flag also checks if the node has seen recent milestones.
+		// in case the L1 network is halted, even if the node is "synced", we would wait forever.
+		// we need another indicator if the L1 saw milestones from other peers recently.
+		// lsmi != 0 indicates that the L1 saw heartbeat messages from peers after bootup, and len(peers) > 0
+
+		lsmi, cmi := getMilestoneIndex()
+		if lsmi > 0 && lsmi == cmi {
+			// node seems to be synced
+			return true
+		}
+
+		log.Infof("waiting for L1 to be fully synced... (%d/%d)", cmi, lsmi)
+
+		return false
+	}
+
+	ticker := time.NewTicker(1 * time.Second)
+	defer timeutil.CleanupTicker(ticker)
+
+	for {
+		select {
+		case <-ticker.C:
+			if getNodeSynced() {
+				// node is synced
+				return nil
+			}
+		case <-ctx.Done():
+			// context was canceled
+			return common.ErrOperationAborted
+		}
+	}
+}
+
+func New(
+	ctx context.Context,
+	log *logger.Logger,
+	nodeBridge *nodebridge.NodeBridge,
+	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics,
+	shutdownHandler *shutdown.ShutdownHandler,
+) (chain.NodeConnection, error) {
+	// make sure the node is connected to at least one other peer
+	// otherwise the node status may not reflect the network status
+	if err := waitForL1ToBeConnected(ctx, log, nodeBridge); err != nil {
+		return nil, err
+	}
+
+	if err := waitForL1ToBeSynced(ctx, log, nodeBridge); err != nil {
+		return nil, err
+	}
+
 	inxNodeClient := nodeBridge.INXNodeClient()
 
 	ctxInfo, cancelInfo := context.WithTimeout(ctx, inxTimeoutInfo)
@@ -125,6 +244,7 @@ func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBri
 			shrinkingmap.WithShrinkingThresholdCount(pendingTransactionsCleanupThresholdCount),
 		),
 		pendingTransactionsLock: sync.Mutex{},
+		shutdownHandler:         shutdownHandler,
 	}
 
 	nc.reattachWorkerPool = workerpool.New(nc.reattachWorkerpoolFunc, workerpool.WorkerCount(1), workerpool.QueueSize(reattachWorkerPoolQueueSize))
@@ -142,8 +262,16 @@ func (nc *nodeConnection) Run(ctx context.Context) {
 
 func (nc *nodeConnection) subscribeToLedgerUpdates() {
 	err := nc.nodeBridge.ListenToLedgerUpdates(nc.ctx, 0, 0, nc.handleLedgerUpdate)
-	if err != nil {
-		nc.LogPanic(err)
+	if err != nil && !errors.Is(err, io.EOF) {
+		nc.LogError(err)
+		nc.shutdownHandler.SelfShutdown(
+			fmt.Sprintf("INX connection unexpected error: %s", err.Error()),
+			true)
+		return
+	}
+	if nc.ctx.Err() == nil {
+		// shutdown in case there isn't a shutdown already in progress
+		nc.shutdownHandler.SelfShutdown("INX connection closed", true)
 	}
 }
 
@@ -364,7 +492,14 @@ func (nc *nodeConnection) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 	return nc.nodeConnectionMetrics
 }
 
+// doPostTx posts the transaction on layer 1 including tipselection and proof of work.
+// this function does not wait until the transaction gets confirmed on L1.
 func (nc *nodeConnection) doPostTx(ctx context.Context, tx *iotago.Transaction, tipsAdditional ...iotago.BlockID) (iotago.BlockID, error) {
+	if ctx.Err() != nil {
+		// context may have already been canceled
+		return iotago.EmptyBlockID(), ctx.Err()
+	}
+
 	var parents iotago.BlockIDs
 
 	// if no tips are given, we use empty parents, the node will do the tipselection in that case.
@@ -413,25 +548,44 @@ func (nc *nodeConnection) addPendingTransaction(pending *pendingTransaction) {
 	nc.pendingTransactionsMap.Set(pending.ID(), pending)
 }
 
+// hasPendingTransaction returns true if a pending transaction exists.
+func (nc *nodeConnection) hasPendingTransaction(txID iotago.TransactionID) bool {
+	nc.pendingTransactionsLock.Lock()
+	defer nc.pendingTransactionsLock.Unlock()
+
+	return nc.pendingTransactionsMap.Has(txID)
+}
+
 // clearPendingTransactionWithoutLocking removes tracking of a pending transaction.
 // write lock must be acquired outside.
 func (nc *nodeConnection) clearPendingTransactionWithoutLocking(transactionID iotago.TransactionID) {
 	nc.pendingTransactionsMap.Delete(transactionID)
 }
 
+// clearPendingTransaction removes tracking of a pending transaction.
+func (nc *nodeConnection) clearPendingTransaction(transactionID iotago.TransactionID) {
+	nc.pendingTransactionsLock.Lock()
+	defer nc.pendingTransactionsLock.Unlock()
+
+	nc.clearPendingTransactionWithoutLocking(transactionID)
+}
+
+// reattachWorkerpoolFunc is triggered by handleLedgerUpdate for every pending transaction,
+// if the inputs of the pending transaction were not consumed in the ledger update.
 func (nc *nodeConnection) reattachWorkerpoolFunc(task workerpool.Task) {
 	defer task.Return(nil)
 
 	pendingTx := task.Param(0).(*pendingTransaction)
-
 	if pendingTx.Conflicting() || pendingTx.Confirmed() {
 		// no need to reattach
+		// we can remove the tracking of the pending transaction
+		nc.clearPendingTransaction(pendingTx.transactionID)
 		return
 	}
 
 	blockID := pendingTx.BlockID()
-	if blockID == iotago.EmptyBlockID() {
-		// no need to check because no block was posted by this node
+	if blockID.Empty() {
+		// no need to check because no block was posted by this node yet (maybe busy with doPostTx)
 		return
 	}
 
@@ -463,19 +617,7 @@ func (nc *nodeConnection) reattachWorkerpoolFunc(task workerpool.Task) {
 	}
 
 	if blockMetadata.ShouldReattach {
-		nc.LogDebugf("reattaching transaction %s", pendingTx.ID().ToHex())
-
-		ctxSubmitBlock, cancelSubmitBlock := context.WithTimeout(nc.ctx, inxTimeoutSubmitBlock)
-		defer cancelSubmitBlock()
-
-		newBlockID, err := nc.doPostTx(ctxSubmitBlock, pendingTx.Transaction())
-		if err != nil {
-			nc.LogDebugf("reattaching transaction %s failed, error: %w", pendingTx.ID().ToHex(), err)
-			return
-		}
-
-		// set the new blockID for promote/reattach checks
-		pendingTx.SetBlockID(newBlockID)
+		pendingTx.Reattach()
 
 		return
 	}
@@ -515,24 +657,31 @@ func (nc *nodeConnection) promoteBlock(ctx context.Context, blockID iotago.Block
 	return nil
 }
 
+// PublishTX handles promoting and reattachments until the tx is confirmed or the context is canceled.
 // Publishing can be canceled via the context.
 // The result must be returned via the callback, unless ctx is canceled first.
-// PublishTX handles promoting and reattachments until the tx is confirmed or the context is canceled.
-// TODO: is it ok to call the callback if the context was canceled?
+// It is fine to call the callback, even if the ctx is already canceled.
+// PublishTX could be called multiple times in parallel, but only once per chain.
 func (nc *nodeConnection) PublishTX(
 	ctx context.Context,
 	chainID isc.ChainID,
 	tx *iotago.Transaction,
 	callback chain.TxPostHandler,
 ) error {
+	// check if the chain exists
 	ncc, err := nc.GetChain(chainID)
+	if err != nil {
+		return err
+	}
+
+	pendingTx, err := ncc.createPendingTransaction(ctx, tx)
 	if err != nil {
 		return err
 	}
 
 	// transactions are published asynchronously
 	go func() {
-		err = ncc.publishTX(ctx, tx)
+		err = ncc.publishTX(pendingTx)
 		if err != nil {
 			nc.LogDebug(err.Error())
 		}
@@ -553,45 +702,46 @@ func (nc *nodeConnection) PublishTX(
 //
 // NOTE: Any out-of-order AO will be considered as a rollback or AO by the chain impl.
 func (nc *nodeConnection) AttachChain(
-	ctx context.Context,
+	ctx context.Context, // ctx is the context given by a backgroundworker with PriorityChains
 	chainID isc.ChainID,
 	recvRequestCB chain.RequestOutputHandler,
 	recvAliasOutput chain.AliasOutputHandler,
 	recvMilestone chain.MilestoneHandler,
 ) {
-	mergedCtx, mergedCancel := contextutils.MergeContexts(nc.ctx, ctx)
-
 	chain := func() *ncChain {
 		// we need to lock until the chain init is done,
 		// otherwise there could be race conditions with new ledger updates in parallel
 		nc.chainsLock.Lock()
 		defer nc.chainsLock.Unlock()
 
-		chain := newNCChain(nc, chainID, recvRequestCB, recvAliasOutput, recvMilestone)
+		chain := newNCChain(ctx, nc, chainID, recvRequestCB, recvAliasOutput, recvMilestone)
 
 		// the chain is added to the map, even if not synchronzied yet,
 		// so we can track all pending ledger updates until the chain is synchronized.
 		nc.chainsMap.Set(chainID, chain)
 		nc.nodeConnectionMetrics.SetRegistered(chainID)
-		nc.LogDebugf("chain registered: %s", chainID)
+		nc.LogDebugf("chain registered: %s = %s", chainID.ShortString(), chainID)
 
 		return chain
 	}()
 
-	if err := chain.SyncChainStateWithL1(mergedCtx); err != nil {
-		nc.LogPanicf("synchronizing chain state %s failed: %s", chainID, err.Error())
+	if err := chain.SyncChainStateWithL1(ctx); err != nil {
+		nc.LogError(fmt.Sprintf("synchronizing chain state %s failed: %s", chainID, err.Error()))
+		nc.shutdownHandler.SelfShutdown(
+			fmt.Sprintf("Cannot sync chain %s with L1, %s", chain.chainID, err.Error()),
+			true)
 	}
 
 	// disconnect the chain after the context is done
 	go func() {
-		<-mergedCtx.Done()
-		defer mergedCancel()
+		<-ctx.Done()
+		chain.WaitUntilStopped()
 
 		nc.chainsLock.Lock()
 		defer nc.chainsLock.Unlock()
 
 		nc.chainsMap.Delete(chainID)
 		nc.nodeConnectionMetrics.SetUnregistered(chainID)
-		nc.LogDebugf("chain unregistered: %s", chainID)
+		nc.LogDebugf("chain unregistered: %s = %s, |remaining|=%v", chainID.ShortString(), chainID, nc.chainsMap.Size())
 	}()
 }

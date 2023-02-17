@@ -5,6 +5,7 @@ package cluster
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -13,17 +14,21 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"runtime"
 	"strconv"
 	"sync"
 	"testing"
 	"text/template"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/client/multiclient"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
+	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -34,8 +39,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/webapi/v1/model"
-	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -48,6 +51,7 @@ type Cluster struct {
 	l1               l1connection.Client
 	waspCmds         []*waspCmd
 	t                *testing.T
+	log              *logger.Logger
 }
 
 type waspCmd struct {
@@ -72,9 +76,18 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 		ValidatorKeyPair: validatorKp,
 		waspCmds:         make([]*waspCmd, len(config.Wasp)),
 		t:                t,
+		log:              log,
 		l1:               l1connection.NewClient(config.L1, log),
 		DataPath:         dataPath,
 	}
+}
+
+func (clu *Cluster) Logf(format string, args ...any) {
+	if clu.t != nil {
+		clu.t.Logf(format, args...)
+		return
+	}
+	clu.log.Infof(format, args...)
 }
 
 func (clu *Cluster) ValidatorAddress() iotago.Address {
@@ -95,7 +108,7 @@ func (clu *Cluster) L1Client() l1connection.Client {
 	return clu.l1
 }
 
-func (clu *Cluster) AddTrustedNode(peerInfo *model.PeeringTrustedNode, onNodes ...[]int) error {
+func (clu *Cluster) AddTrustedNode(peerInfo apiclient.PeeringTrustRequest, onNodes ...[]int) error {
 	nodes := clu.Config.AllNodes()
 	if len(onNodes) > 0 {
 		nodes = onNodes[0]
@@ -103,8 +116,10 @@ func (clu *Cluster) AddTrustedNode(peerInfo *model.PeeringTrustedNode, onNodes .
 
 	for ni := range nodes {
 		var err error
+
 		if _, err = clu.WaspClient(
-			nodes[ni]).PostPeeringTrusted(peerInfo.PubKey, peerInfo.NetID); err != nil {
+			//nolint:bodyclose // false positive
+			nodes[ni]).NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(peerInfo).Execute(); err != nil {
 			return err
 		}
 	}
@@ -113,17 +128,27 @@ func (clu *Cluster) AddTrustedNode(peerInfo *model.PeeringTrustedNode, onNodes .
 
 func (clu *Cluster) TrustAll() error {
 	allNodes := clu.Config.AllNodes()
-	allPeers := make([]*model.PeeringTrustedNode, len(allNodes))
+	allPeers := make([]*apiclient.PeeringNodeIdentityResponse, len(allNodes))
 	for ni := range allNodes {
 		var err error
-		if allPeers[ni], err = clu.WaspClient(allNodes[ni]).GetPeeringSelf(); err != nil {
+		//nolint:bodyclose // false positive
+		if allPeers[ni], _, err = clu.WaspClient(allNodes[ni]).NodeApi.GetPeeringIdentity(context.Background()).Execute(); err != nil {
 			return err
 		}
 	}
 	for ni := range allNodes {
 		for pi := range allPeers {
 			var err error
-			if _, err = clu.WaspClient(allNodes[ni]).PostPeeringTrusted(allPeers[pi].PubKey, allPeers[pi].NetID); err != nil {
+			if ni == pi {
+				continue // dont trust self
+			}
+			if _, err = clu.WaspClient(allNodes[ni]).NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(
+				apiclient.PeeringTrustRequest{
+					Name:       fmt.Sprintf("%d", pi),
+					PublicKey:  allPeers[pi].PublicKey,
+					PeeringURL: allPeers[pi].PeeringURL,
+				},
+			).Execute(); err != nil { //nolint:bodyclose // false positive
 				return err
 			}
 		}
@@ -159,15 +184,19 @@ func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...ti
 
 	peerPubKeys := make([]string, 0)
 	for _, i := range committeeNodes {
-		peeringNodeInfo, err := clu.WaspClient(i).GetPeeringSelf()
+		//nolint:bodyclose // false positive
+		peeringNodeInfo, _, err := clu.WaspClient(i).NodeApi.GetPeeringIdentity(context.Background()).Execute()
 		if err != nil {
 			return nil, err
 		}
-		peerPubKeys = append(peerPubKeys, peeringNodeInfo.PubKey)
+
+		peerPubKeys = append(peerPubKeys, peeringNodeInfo.PublicKey)
 	}
 
-	dkgInitiatorIndex := uint16(rand.Intn(len(apiHosts)))
-	return apilib.RunDKG("", apiHosts, peerPubKeys, threshold, dkgInitiatorIndex, timeout...)
+	dkgInitiatorIndex := rand.Intn(len(apiHosts))
+	client := clu.WaspClientFromHostName(apiHosts[dkgInitiatorIndex])
+
+	return apilib.RunDKG(client, peerPubKeys, threshold, timeout...)
 }
 
 func (clu *Cluster) DeployChainWithDKG(description string, allPeers, committeeNodes []int, quorum uint16) (*Chain, error) {
@@ -201,26 +230,46 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 
 	committeePubKeys := make([]string, len(chain.CommitteeNodes))
 	for i, nodeIndex := range chain.CommitteeNodes {
-		peeringNode, err := clu.WaspClient(nodeIndex).GetPeeringSelf()
-		if err != nil {
-			return nil, err
+		//nolint:bodyclose // false positive
+		peeringNode, _, err2 := clu.WaspClient(nodeIndex).NodeApi.GetPeeringIdentity(context.Background()).Execute()
+		if err2 != nil {
+			return nil, err2
 		}
-		committeePubKeys[i] = peeringNode.PubKey
+
+		committeePubKeys[i] = peeringNode.PublicKey
 	}
 
-	chainID, err := apilib.DeployChain(apilib.CreateChainParams{
-		Layer1Client:      clu.L1Client(),
-		CommitteeAPIHosts: chain.CommitteeAPIHosts(),
-		CommitteePubKeys:  committeePubKeys,
-		N:                 uint16(len(committeeNodes)),
-		T:                 quorum,
-		OriginatorKeyPair: chain.OriginatorKeyPair,
-		Description:       description,
-		Textout:           os.Stdout,
-		Prefix:            "[cluster] ",
-	}, stateAddr, stateAddr)
+	chainID, initRequestTx, err := apilib.DeployChain(
+		apilib.CreateChainParams{
+			Layer1Client:      clu.L1Client(),
+			CommitteeAPIHosts: chain.CommitteeAPIHosts(),
+			N:                 uint16(len(committeeNodes)),
+			T:                 quorum,
+			OriginatorKeyPair: chain.OriginatorKeyPair,
+			Description:       description,
+			Textout:           os.Stdout,
+			Prefix:            "[cluster] ",
+		},
+		stateAddr,
+		stateAddr,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("DeployChain: %w", err)
+	}
+
+	// activate chain on nodes
+	err = apilib.ActivateChainOnNodes(clu.WaspClientFromHostName, chain.CommitteeAPIHosts(), chainID)
+	if err != nil {
+		clu.t.Fatalf("activating chain %s.. FAILED: %v\n", chainID.String(), err)
+	}
+	fmt.Printf("activating chain %s.. OK.\n", chainID.String())
+
+	// ---------- wait until the request is processed at least in all committee nodes
+	_, err = multiclient.New(clu.WaspClientFromHostName, chain.CommitteeAPIHosts()).
+		WaitUntilAllRequestsProcessedSuccessfully(chainID, initRequestTx, 30*time.Second)
+
+	if err != nil {
+		clu.t.Fatalf("waiting root init request transaction.. FAILED: %v\n", err)
 	}
 
 	chain.StateAddress = stateAddr
@@ -243,10 +292,11 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 		addAccessNodesRequests[i] = tx
 	}
 
-	peers := multiclient.New(chain.CommitteeAPIHosts())
+	peers := multiclient.New(clu.WaspClientFromHostName, chain.CommitteeAPIHosts()) //.WithLogFunc(clu.t.Logf)
 
 	for _, tx := range addAccessNodesRequests {
 		// ---------- wait until the requests are processed in all committee nodes
+
 		if _, err := peers.WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, 30*time.Second); err != nil {
 			return fmt.Errorf("WaitAddAccessNode: %w", err)
 		}
@@ -255,11 +305,14 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	scArgs := governance.NewChangeAccessNodesRequest()
 	for _, a := range accessNodes {
 		waspClient := clu.WaspClient(a)
-		accessNodePeering, err := waspClient.GetPeeringSelf()
+
+		//nolint:bodyclose // false positive
+		accessNodePeering, _, err := waspClient.NodeApi.GetPeeringIdentity(context.Background()).Execute()
 		if err != nil {
 			return err
 		}
-		accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePeering.PubKey)
+
+		accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePeering.PublicKey)
 		if err != nil {
 			return err
 		}
@@ -269,6 +322,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 		NewPostRequestParams(scArgs.AsDict()).
 		WithBaseTokens(1 * isc.Million)
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
+
 	tx, err := govClient.PostRequest(governance.FuncChangeAccessNodes.Name, *scParams)
 	if err != nil {
 		return err
@@ -286,40 +340,58 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 // to consider it as an access node.
 func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Transaction, error) {
 	waspClient := clu.WaspClient(accessNodeIndex)
-	if err := apilib.ActivateChainOnAccessNodes("", clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
+	if err := apilib.ActivateChainOnNodes(clu.WaspClientFromHostName, clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
 		return nil, err
 	}
-	accessNodePeering, err := waspClient.GetPeeringSelf()
+
+	//nolint:bodyclose // false positive
+	accessNodePeering, _, err := waspClient.NodeApi.GetPeeringIdentity(context.Background()).Execute()
 	if err != nil {
 		return nil, err
 	}
-	accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePeering.PubKey)
+
+	accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePeering.PublicKey)
 	if err != nil {
 		return nil, err
 	}
-	cert, err := waspClient.NodeOwnershipCertificate(accessNodePubKey, chain.OriginatorAddress())
+
+	clu.log.Infof("Node owner bech32: %v", chain.OriginatorAddress().Bech32(parameters.L1().Protocol.Bech32HRP))
+	cert, _, err := waspClient.NodeApi.SetNodeOwner(context.Background()).NodeOwnerCertificateRequest(apiclient.NodeOwnerCertificateRequest{
+		PublicKey:    accessNodePubKey.String(),
+		OwnerAddress: chain.OriginatorAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
+	}).Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		return nil, err
 	}
+
+	decodedCert, err := iotago.DecodeHex(cert.Certificate)
+	if err != nil {
+		return nil, err
+	}
+
 	scArgs := governance.AccessNodeInfo{
 		NodePubKey:    accessNodePubKey.AsBytes(),
 		ValidatorAddr: isc.BytesFromAddress(chain.OriginatorAddress()),
-		Certificate:   cert.Bytes(),
+		Certificate:   decodedCert,
 		ForCommittee:  false,
 		AccessAPI:     clu.Config.APIHost(accessNodeIndex),
 	}
 	scParams := chainclient.
 		NewPostRequestParams(scArgs.ToAddCandidateNodeParams()).
 		WithBaseTokens(1000)
+
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
+
 	tx, err := govClient.PostRequest(governance.FuncAddCandidateNode.Name, *scParams)
 	if err != nil {
 		return nil, err
 	}
+
 	txID, err := tx.ID()
 	if err != nil {
 		return nil, err
 	}
+
 	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, id=%v, args=%+v\n", txID, scArgs)
 	return tx, nil
 }
@@ -329,11 +401,25 @@ func (clu *Cluster) IsNodeUp(i int) bool {
 }
 
 func (clu *Cluster) MultiClient() *multiclient.MultiClient {
-	return multiclient.New(clu.Config.APIHosts())
+	return multiclient.New(clu.WaspClientFromHostName, clu.Config.APIHosts()) //.WithLogFunc(clu.t.Logf)
 }
 
-func (clu *Cluster) WaspClient(nodeIndex int) *client.WaspClient {
-	return client.NewWaspClient(clu.Config.APIHost(nodeIndex))
+func (clu *Cluster) WaspClientFromHostName(hostName string) *apiclient.APIClient {
+	client, err := apiextensions.WaspAPIClientByHostName(hostName)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return client
+}
+
+func (clu *Cluster) WaspClient(nodeIndex ...int) *apiclient.APIClient {
+	idx := 0
+	if len(nodeIndex) == 1 {
+		idx = nodeIndex[0]
+	}
+
+	return clu.WaspClientFromHostName(clu.Config.APIHost(idx))
 }
 
 func (clu *Cluster) NodeDataPath(i int) string {
@@ -414,8 +500,8 @@ func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params
 	return configTmpl.Execute(f, params)
 }
 
-// Start launches all wasp nodes in the cluster, each running in its own directory
-func (clu *Cluster) Start(dataPath string) error {
+// StartAndTrustAll launches all wasp nodes in the cluster, each running in its own directory
+func (clu *Cluster) StartAndTrustAll(dataPath string) error {
 	exists, err := fileExists(dataPath)
 	if err != nil {
 		return err
@@ -424,7 +510,7 @@ func (clu *Cluster) Start(dataPath string) error {
 		return fmt.Errorf("data path %s does not exist", dataPath)
 	}
 
-	if err := clu.start(); err != nil {
+	if err := clu.Start(); err != nil {
 		return err
 	}
 
@@ -436,7 +522,7 @@ func (clu *Cluster) Start(dataPath string) error {
 	return nil
 }
 
-func (clu *Cluster) start() error {
+func (clu *Cluster) Start() error {
 	start := time.Now()
 	fmt.Printf("[cluster] starting %d Wasp nodes...\n", len(clu.Config.Wasp))
 
@@ -460,7 +546,7 @@ func (clu *Cluster) start() error {
 	return nil
 }
 
-func (clu *Cluster) KillNodeProcess(nodeIndex int) error {
+func (clu *Cluster) KillNodeProcess(nodeIndex int, gracefully bool) error {
 	if nodeIndex >= len(clu.waspCmds) {
 		return fmt.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
 	}
@@ -470,58 +556,39 @@ func (clu *Cluster) KillNodeProcess(nodeIndex int) error {
 		return nil
 	}
 
-	if err := wcmd.cmd.Process.Kill(); err != nil {
-		return err
+	if gracefully && runtime.GOOS != "windows" {
+		if err := wcmd.cmd.Process.Signal(os.Interrupt); err != nil {
+			return err
+		}
+		if _, err := wcmd.cmd.Process.Wait(); err != nil {
+			return err
+		}
+	} else {
+		if err := wcmd.cmd.Process.Kill(); err != nil {
+			return err
+		}
 	}
 
 	clu.waspCmds[nodeIndex] = nil
 	return nil
 }
 
-func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
-	waspNodesCount := len(clu.waspCmds)
+func (clu *Cluster) RestartNodes(nodeIndexes ...int) error {
+	for _, ni := range nodeIndexes {
+		if !lo.Contains(clu.AllNodes(), ni) {
+			panic(fmt.Errorf("unexpected node index specified for a restart: %v", ni))
+		}
+	}
 
 	// send stop commands
-	for _, i := range nodeIndex {
-		if i >= waspNodesCount {
-			return fmt.Errorf("[cluster] Wasp node with index %d not found", i)
-		}
+	for _, i := range nodeIndexes {
 		clu.stopNode(i)
 	}
 
-	// wait until all nodes are stopped
-	exitedWaitGroup := sync.WaitGroup{}
-	exitedWaitGroup.Add(waspNodesCount)
-
-	exited := make(chan struct{})
-	go func() {
-		exitedWaitGroup.Wait()
-		close(exited)
-	}()
-
-	for _, i := range nodeIndex {
-		if i >= waspNodesCount {
-			return fmt.Errorf("[cluster] Wasp node with index %d not found", i)
-		}
-
-		go func(cmd *waspCmd) {
-			waitCmd(cmd)
-			// mark process as finished
-			exitedWaitGroup.Done()
-		}(clu.waspCmds[i])
-	}
-
-	select {
-	case <-time.After(20 * time.Second):
-		return errors.New("[cluster] Wasp nodes did not shutdown in time")
-	case <-exited:
-		// nodes stopped
-	}
-
 	// start nodes
-	initOk := make(chan bool, len(nodeIndex))
+	initOk := make(chan bool, len(nodeIndexes))
 	okCount := 0
-	for _, i := range nodeIndex {
+	for _, i := range nodeIndexes {
 		err := clu.startWaspNode(i, initOk)
 		if err != nil {
 			return err
@@ -529,7 +596,7 @@ func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
 		select {
 		case <-initOk:
 			okCount++
-			if okCount == len(nodeIndex) {
+			if okCount == len(nodeIndexes) {
 				return nil
 			}
 		case <-time.After(5 * time.Second):
@@ -578,12 +645,13 @@ const pollAPIInterval = 500 * time.Millisecond
 
 // waits until API for a given WASP node is ready
 func waitForAPIReady(initOk chan<- bool, apiURL string) {
-	infoEndpointURL := fmt.Sprintf("%s%s", apiURL, routes.Info())
+	infoEndpointURL := fmt.Sprintf("%s%s", apiURL, "/node/version")
 
 	ticker := time.NewTicker(pollAPIInterval)
 	go func() {
 		for {
 			<-ticker.C
+
 			rsp, err := http.Get(infoEndpointURL) //nolint:gosec,noctx
 			if err != nil {
 				fmt.Printf("Error Polling node API %s ready status: %v\n", apiURL, err)
@@ -634,7 +702,8 @@ func (clu *Cluster) stopNode(nodeIndex int) {
 		return
 	}
 	fmt.Printf("[cluster] Sending shutdown to wasp node %d\n", nodeIndex)
-	err := clu.WaspClient(nodeIndex).Shutdown()
+
+	err := clu.KillNodeProcess(nodeIndex, true)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -696,14 +765,14 @@ func (clu *Cluster) PostTransaction(tx *iotago.Transaction) error {
 	return err
 }
 
-func (clu *Cluster) AddressBalances(addr iotago.Address) *isc.FungibleTokens {
+func (clu *Cluster) AddressBalances(addr iotago.Address) *isc.Assets {
 	// get funds controlled by addr
 	outputMap, err := clu.l1.OutputMap(addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
 		return nil
 	}
-	balance := isc.NewEmptyFungibleTokens()
+	balance := isc.NewEmptyAssets()
 	for _, out := range outputMap {
 		balance.Add(transaction.AssetsFromOutput(out))
 	}
@@ -725,7 +794,7 @@ func (clu *Cluster) L1BaseTokens(addr iotago.Address) uint64 {
 	return tokens.BaseTokens
 }
 
-func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *isc.FungibleTokens) bool {
+func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *isc.Assets) bool {
 	return clu.AddressBalances(addr).Equals(expected)
 }
 

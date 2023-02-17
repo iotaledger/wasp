@@ -44,7 +44,7 @@ func initConfigPars(c *dig.Container) error {
 	}
 
 	if err := c.Provide(func() cfgResult {
-		dbEngine, err := hivedb.EngineFromStringAllowed(ParamsDatabase.Engine, database.AllowedEnginesDefault...)
+		dbEngine, err := hivedb.EngineFromStringAllowed(ParamsDatabase.Engine, database.AllowedEnginesDefault)
 		if err != nil {
 			CoreComponent.LogPanic(err)
 		}
@@ -129,9 +129,9 @@ You need to resolve this situation manually.
 	}
 
 	if !correctStoresVersion {
-		storesVersionUpdated, err := deps.ChainStateDatabaseManager.UpdateStoresVersion()
-		if err != nil {
-			CoreComponent.LogPanic(err)
+		storesVersionUpdated, err2 := deps.ChainStateDatabaseManager.UpdateStoresVersion()
+		if err2 != nil {
+			CoreComponent.LogPanic(err2)
 		}
 
 		if !storesVersionUpdated {

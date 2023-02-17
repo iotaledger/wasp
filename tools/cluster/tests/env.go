@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/scclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -18,7 +18,8 @@ import (
 
 // TODO remove this?
 func setupWithNoChain(t *testing.T, opt ...waspClusterOpts) *ChainEnv {
-	return &ChainEnv{t: t, Clu: newCluster(t, opt...)}
+	clu := newCluster(t, opt...)
+	return &ChainEnv{t: t, Clu: clu}
 }
 
 type ChainEnv struct {
@@ -96,7 +97,7 @@ func (e *ChainEnv) NewChainClient() *chainclient.Client {
 func (e *ChainEnv) DepositFunds(amount uint64, keyPair *cryptolib.KeyPair) {
 	accountsClient := e.Chain.SCClient(accounts.Contract.Hname(), keyPair)
 	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: isc.NewFungibleBaseTokens(amount),
+		Transfer: isc.NewAssetsBaseTokens(amount),
 	})
 	require.NoError(e.t, err)
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)

@@ -29,10 +29,10 @@ type Calldata interface {
 	Params() dict.Dict
 	SenderAccount() AgentID
 	CallTarget() CallTarget
-	TargetAddress() iotago.Address   // TODO implement properly. Target depends on time assumptions and UTXO type
-	FungibleTokens() *FungibleTokens // attached assets for the UTXO request, nil for off-ledger. All goes to sender
-	NFT() *NFT                       // Not nil if the request is an NFT request
-	Allowance() *Allowance           // transfer of assets to the smart contract. Debited from sender account
+	TargetAddress() iotago.Address // TODO implement properly. Target depends on time assumptions and UTXO type
+	Assets() *Assets               // attached assets for the UTXO request, nil for off-ledger. All goes to sender
+	NFT() *NFT                     // Not nil if the request is an NFT request
+	Allowance() *Assets            // transfer of assets to the smart contract. Debited from sender account
 	GasBudget() (gas uint64, isEVM bool)
 }
 
@@ -52,7 +52,7 @@ type OffLedgerRequestData interface {
 type UnsignedOffLedgerRequest interface {
 	WithNonce(nonce uint64) UnsignedOffLedgerRequest
 	WithGasBudget(gasBudget uint64) UnsignedOffLedgerRequest
-	WithAllowance(allowance *Allowance) UnsignedOffLedgerRequest
+	WithAllowance(allowance *Assets) UnsignedOffLedgerRequest
 	Sign(key *cryptolib.KeyPair) OffLedgerRequest
 }
 

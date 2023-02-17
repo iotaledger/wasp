@@ -1,8 +1,7 @@
-GIT_COMMIT_SHA := $(shell git rev-list -1 HEAD)
-GIT_VERSION := $(shell git describe --tags)
+GIT_REF_TAG := $(shell git describe --tags)
 BUILD_TAGS = rocksdb
-BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/packages/wasp.VersionHash=$(GIT_COMMIT_SHA)\
-				  -X=github.com/iotaledger/wasp/packages/wasp.Version=$(GIT_VERSION)"
+BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/core/app.Version=$(GIT_REF_TAG)"
+DOCKER_BUILD_ARGS = # E.g. make docker-build "DOCKER_BUILD_ARGS=--tag wasp:devel"
 
 #
 # You can override these e.g. as
@@ -18,7 +17,6 @@ INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 all: build-lint
 
 wasm:
-	go install ./tools/schema
 	bash contracts/wasm/scripts/generate_wasm.sh
 
 compile-solidity:
@@ -34,6 +32,9 @@ endif
 build-cli:
 	cd tools/wasp-cli && go mod tidy && go build -ldflags $(BUILD_LD_FLAGS) -o ../../
 
+build-schema:
+	cd tools/schema && go mod tidy && go build -ldflags $(BUILD_LD_FLAGS) -o ../../
+
 build-full: compile-solidity build-cli
 	$(BUILD_CMD) ./...
 
@@ -43,13 +44,13 @@ build: compile-solidity build-cli
 build-lint: build lint
 
 test-full: install
-	go test -tags $(BUILD_TAGS),runheavy ./... --timeout 60m --count 1 -failfast
+	go test -tags $(BUILD_TAGS),runheavy ./... --timeout 60m --count 1 -failfast -p 1
 
 test: install
-	go test -tags $(BUILD_TAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast $(TEST_ARG)
+	go test -tags $(BUILD_TAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast -p 1  $(TEST_ARG)
 
 test-short:
-	go test -tags $(BUILD_TAGS) --short --count 1 -failfast $(shell go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm)
+	go test -tags $(BUILD_TAGS) --short --count 1 -failfast -p 1 $(shell go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm)
 
 install-cli:
 	cd tools/wasp-cli && go mod tidy && go install -ldflags $(BUILD_LD_FLAGS)
@@ -60,14 +61,23 @@ install-full: compile-solidity install-cli
 install: compile-solidity install-cli
 	$(INSTALL_CMD) $(BUILD_PKGS)
 
-lint:
+lint: lint-wasp-cli
 	golangci-lint run --timeout 5m
+
+lint-wasp-cli:
+	cd ./tools/wasp-cli && golangci-lint run --timeout 5m
+
+apiclient:
+	./clients/apiclient/generate_client.sh
+
+apiclient-docker:
+	./clients/apiclient/generate_client.sh docker
 
 gofumpt-list:
 	gofumpt -l ./
 
 docker-build: compile-solidity
-	DOCKER_BUILDKIT=1 docker build \
+	DOCKER_BUILDKIT=1 docker build ${DOCKER_BUILD_ARGS} \
 		--build-arg BUILD_TAGS=${BUILD_TAGS} \
 		--build-arg BUILD_LD_FLAGS=${BUILD_LD_FLAGS} \
 		.

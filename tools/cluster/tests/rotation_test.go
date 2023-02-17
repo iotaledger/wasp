@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -8,15 +9,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
@@ -167,17 +166,17 @@ func TestRotationFromSingle(t *testing.T) {
 	incCounterResultChan := make(chan error)
 
 	go func() {
-		keyPair, _, err := clu.NewKeyPairWithFunds()
-		if err != nil {
-			incCounterResultChan <- fmt.Errorf("failed to create a key pair: %w", err)
+		keyPair, _, err2 := clu.NewKeyPairWithFunds()
+		if err2 != nil {
+			incCounterResultChan <- fmt.Errorf("failed to create a key pair: %w", err2)
 			return
 		}
 		myClient := chain.SCClient(nativeIncCounterSCHname, keyPair)
 		for i := 0; i < numRequests; i++ {
 			t.Logf("Posting inccounter request number %v", i)
-			_, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
-			if err != nil {
-				incCounterResultChan <- fmt.Errorf("failed to post inccounter request number %v: %w", i, err)
+			_, err2 = myClient.PostRequest(inccounter.FuncIncCounter.Name)
+			if err2 != nil {
+				incCounterResultChan <- fmt.Errorf("failed to post inccounter request number %v: %w", i, err2)
 				return
 			}
 			time.Sleep(100 * time.Millisecond)
@@ -262,10 +261,10 @@ func TestRotationMany(t *testing.T) {
 	for _, rotation := range rotations {
 		t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation.Address, rotation.Committee)
 		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation.Address).WithBaseTokens(1 * isc.Million)
-		tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *par)
-		require.NoError(t, err)
-		_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, waitTimeout)
-		require.NoError(t, err)
+		tx, err2 := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *par)
+		require.NoError(t, err2)
+		_, err2 = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, waitTimeout)
+		require.NoError(t, err2)
 		require.NoError(t, chEnv.checkAllowedStateControllerAddressInAllNodes(rotation.Address))
 	}
 
@@ -323,18 +322,17 @@ func (e *ChainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeo
 }
 
 func (e *ChainEnv) callGetStateController(nodeIndex int) (iotago.Address, error) {
-	ret, err := e.Chain.Cluster.WaspClient(nodeIndex).CallView(
-		e.Chain.ChainID,
-		blocklog.Contract.Hname(),
-		blocklog.ViewControlAddresses.Name,
-		nil,
-	)
+	controlAddresses, _, err := e.Chain.Cluster.WaspClient(nodeIndex).CorecontractsApi.
+		BlocklogGetControlAddresses(context.Background(), e.Chain.ChainID.String()).
+		Execute()
 	if err != nil {
 		return nil, err
 	}
-	addr, err := codec.DecodeAddress(ret.MustGet(blocklog.ParamStateControllerAddress))
+
+	_, address, err := iotago.ParseBech32(controlAddresses.StateAddress)
 	require.NoError(e.t, err)
-	return addr, nil
+
+	return address, nil
 }
 
 func (e *ChainEnv) checkAllowedStateControllerAddressInAllNodes(addr iotago.Address) error {
@@ -347,24 +345,23 @@ func (e *ChainEnv) checkAllowedStateControllerAddressInAllNodes(addr iotago.Addr
 }
 
 func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeIndex int, addr iotago.Address) bool {
-	ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
-		chain.ChainID,
-		governance.Contract.Hname(),
-		governance.ViewGetAllowedStateControllerAddresses.Name,
-		nil,
-	)
+	addresses, _, err := chain.Cluster.WaspClient(nodeIndex).CorecontractsApi.
+		GovernanceGetAllowedStateControllerAddresses(context.Background(), chain.ChainID.String()).
+		Execute()
 	require.NoError(t, err)
-	arr := collections.NewArray16ReadOnly(ret, governance.ParamAllowedStateControllerAddresses)
-	arrlen := arr.MustLen()
-	if arrlen == 0 {
+
+	if len(addresses.Addresses) == 0 {
 		return false
 	}
-	for i := uint16(0); i < arrlen; i++ {
-		a, err := codec.DecodeAddress(arr.MustGetAt(i))
+
+	for _, addressBech32 := range addresses.Addresses {
+		_, address, err := iotago.ParseBech32(addressBech32)
 		require.NoError(t, err)
-		if a.Equal(addr) {
+
+		if address.Equal(addr) {
 			return true
 		}
 	}
+
 	return false
 }

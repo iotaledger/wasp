@@ -21,6 +21,7 @@ import (
 )
 
 type WaspServices struct {
+	waspVersion                 string
 	webAPIBindAddress           string
 	exploreAddressURL           string
 	config                      *configuration.Configuration
@@ -31,6 +32,7 @@ type WaspServices struct {
 }
 
 func NewWaspServices(
+	waspVersion string,
 	webAPIBindAddress string,
 	exploreAddressURL string,
 	config *configuration.Configuration,
@@ -40,6 +42,7 @@ func NewWaspServices(
 	trustedNetworkManager peering.TrustedNetworkManager,
 ) *WaspServices {
 	return &WaspServices{
+		waspVersion:                 waspVersion,
 		webAPIBindAddress:           webAPIBindAddress,
 		exploreAddressURL:           exploreAddressURL,
 		config:                      config,
@@ -48,6 +51,10 @@ func NewWaspServices(
 		networkProvider:             networkProvider,
 		trustedNetworkManager:       trustedNetworkManager,
 	}
+}
+
+func (w *WaspServices) WaspVersion() string {
+	return w.waspVersion
 }
 
 func (w *WaspServices) ConfigDump() map[string]interface{} {
@@ -73,9 +80,9 @@ func (w *WaspServices) PeeringStats() (*PeeringStats, error) {
 	ret.Peers = make([]Peer, len(peers))
 	for i, p := range peers {
 		ret.Peers[i] = Peer{
-			NumUsers: p.NumUsers(),
-			NetID:    p.NetID(),
-			IsAlive:  p.IsAlive(),
+			NumUsers:   p.NumUsers(),
+			PeeringURL: p.PeeringURL(),
+			IsAlive:    p.IsAlive(),
 		}
 	}
 	tpeers, err := w.trustedNetworkManager.TrustedPeers()
@@ -85,15 +92,15 @@ func (w *WaspServices) PeeringStats() (*PeeringStats, error) {
 	ret.TrustedPeers = make([]TrustedPeer, len(tpeers))
 	for i, t := range tpeers {
 		ret.TrustedPeers[i] = TrustedPeer{
-			NetID:  t.NetID,
-			PubKey: *t.PubKey(),
+			PeeringURL: t.PeeringURL,
+			PubKey:     *t.PubKey(),
 		}
 	}
 	return ret, nil
 }
 
 func (w *WaspServices) MyNetworkID() string {
-	return w.networkProvider.Self().NetID()
+	return w.networkProvider.Self().PeeringURL()
 }
 
 func (w *WaspServices) ChainRecords() ([]*registry.ChainRecord, error) {

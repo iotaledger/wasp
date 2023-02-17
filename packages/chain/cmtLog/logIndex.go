@@ -31,3 +31,10 @@ func (li LogIndex) Next() LogIndex {
 func NilLogIndex() LogIndex {
 	return LogIndex(0)
 }
+
+func MaxLogIndex(a, b LogIndex) LogIndex {
+	if a.AsUint32() > b.AsUint32() {
+		return a
+	}
+	return b
+}

@@ -253,7 +253,6 @@ func (o MutableSendRequest) Value() *SendRequest {
 
 type TransferRequest struct {
 	AgentID  wasmtypes.ScAgentID
-	Create   bool
 	Transfer []byte
 }
 
@@ -261,7 +260,6 @@ func NewTransferRequestFromBytes(buf []byte) *TransferRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &TransferRequest{}
 	data.AgentID = wasmtypes.AgentIDDecode(dec)
-	data.Create = wasmtypes.BoolDecode(dec)
 	data.Transfer = wasmtypes.BytesDecode(dec)
 	dec.Close()
 	return data
@@ -270,7 +268,6 @@ func NewTransferRequestFromBytes(buf []byte) *TransferRequest {
 func (o *TransferRequest) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
 	wasmtypes.AgentIDEncode(enc, o.AgentID)
-	wasmtypes.BoolEncode(enc, o.Create)
 	wasmtypes.BytesEncode(enc, o.Transfer)
 	return enc.Buf()
 }

@@ -197,7 +197,7 @@ func (cgr *ConsGr) Time(t time.Time) {
 	cgr.inputTimeCh <- t
 }
 
-func (cgr *ConsGr) run() { //nolint:gocyclo
+func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 	defer cgr.netDisconnect()
 	ctxClose := cgr.ctx.Done()
 	netRecvPipeOutCh := cgr.netRecvPipe.Out()
@@ -217,7 +217,12 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 				cgr.inputCh = nil
 				continue
 			}
-			recoveryTimeoutCh = time.After(cgr.recoveryTimeout)
+			// The recoveryTimeout was before initiated here. The problem is that in the case
+			// of an idle chain, the recovery timeout can be fired even with no reason for that.
+			// So we moved the recovery timeout to the MempoolProposal event.
+			// Not sure, if that's safe, because mempool can fail to get the correct state and
+			// return the proposal. Maybe we can give it some timeout, but then there would be
+			// yet another aspect breaking the asynchrony.
 			printStatusCh = time.After(cgr.printStatusPeriod)
 			cgr.outputCB = inp.outputCB
 			cgr.recoverCB = inp.recoverCB
@@ -233,6 +238,7 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 				cgr.mempoolProposalsRespCh = nil
 				continue
 			}
+			recoveryTimeoutCh = time.After(cgr.recoveryTimeout) // See comment for the InputProposal.
 			cgr.handleConsInput(cons.NewInputMempoolProposal(resp))
 		case resp, ok := <-cgr.mempoolRequestsRespCh:
 			if !ok {
@@ -275,13 +281,16 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 			redeliveryTickCh = time.After(cgr.redeliveryPeriod)
 			cgr.handleRedeliveryTick(t)
 		case _, ok := <-recoveryTimeoutCh:
-			if !ok || cgr.recoverCB == nil {
+			if !ok {
 				recoveryTimeoutCh = nil
 				continue
 			}
+			if cgr.outputReady || cgr.recoverCB == nil {
+				continue
+			}
+			cgr.log.Warn("Recovery timeout reached.")
 			cgr.recoverCB()
 			cgr.recoverCB = nil
-			cgr.log.Warn("Recovery timeout reached.")
 			// Don't terminate, maybe output is still needed. // TODO: Reconsider it.
 		case <-printStatusCh:
 			printStatusCh = time.After(cgr.printStatusPeriod)

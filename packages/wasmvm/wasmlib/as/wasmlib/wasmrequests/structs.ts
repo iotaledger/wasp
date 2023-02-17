@@ -243,14 +243,12 @@ export class MutableSendRequest extends wasmtypes.ScProxy {
 
 export class TransferRequest {
     agentID  : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes(null);
-    create   : bool = false;
     transfer : Uint8Array = new Uint8Array(0);
 
     static fromBytes(buf: Uint8Array): TransferRequest {
         const dec = new wasmtypes.WasmDecoder(buf);
         const data = new TransferRequest();
         data.agentID  = wasmtypes.agentIDDecode(dec);
-        data.create   = wasmtypes.boolDecode(dec);
         data.transfer = wasmtypes.bytesDecode(dec);
         dec.close();
         return data;
@@ -259,7 +257,6 @@ export class TransferRequest {
     bytes(): Uint8Array {
         const enc = new wasmtypes.WasmEncoder();
         wasmtypes.agentIDEncode(enc, this.agentID);
-        wasmtypes.boolEncode(enc, this.create);
         wasmtypes.bytesEncode(enc, this.transfer);
         return enc.buf();
     }

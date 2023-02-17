@@ -1,11 +1,14 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::*;
-use std::any::Any;
+use core::any::Any;
+use core::marker::{Send, Sync};
 
-pub trait IEventHandlers: Any + Send + Sync {
+use crate::*;
+
+pub trait IEventHandlers: Any + Sync + Send {
     fn call_handler(&self, topic: &str, params: &Vec<String>);
+    fn id(&self) -> String;
 }
 
 pub struct EventEncoder {

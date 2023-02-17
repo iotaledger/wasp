@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path"
 
 	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/hive.go/core/generics/lo"
@@ -16,6 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type jsonTrustedPeers struct {
@@ -33,6 +33,11 @@ var _ TrustedPeersRegistryProvider = &TrustedPeersRegistryImpl{}
 
 // NewTrustedPeersRegistryImpl creates new instance of the trusted peers registry implementation.
 func NewTrustedPeersRegistryImpl(filePath string) (*TrustedPeersRegistryImpl, error) {
+	// create the target directory during initialization
+	if err := util.CreateDirectoryForFilePath(filePath, 0o770); err != nil {
+		return nil, err
+	}
+
 	registry := &TrustedPeersRegistryImpl{
 		filePath:     filePath,
 		changeEvents: event.New[[]*peering.TrustedPeer](),
@@ -64,7 +69,7 @@ func (p *TrustedPeersRegistryImpl) loadTrustedPeersJSON() error {
 	}
 
 	for _, trustedPeer := range tmpTrustedPeers.TrustedPeers {
-		if _, err := p.TrustPeer(trustedPeer.PubKey(), trustedPeer.NetID); err != nil {
+		if _, err := p.TrustPeer(trustedPeer.Name, trustedPeer.PubKey(), trustedPeer.PeeringURL); err != nil {
 			return fmt.Errorf("unable to add trusted peer (%s): %w", p.filePath, err)
 		}
 	}
@@ -83,8 +88,8 @@ func (p *TrustedPeersRegistryImpl) writeTrustedPeersJSON(trustedPeers []*peering
 		return nil
 	}
 
-	if err := os.MkdirAll(path.Dir(p.filePath), 0o770); err != nil {
-		return fmt.Errorf("unable to create folder \"%s\": %w", path.Dir(p.filePath), err)
+	if err := util.CreateDirectoryForFilePath(p.filePath, 0o770); err != nil {
+		return err
 	}
 
 	if err := ioutils.WriteJSONToFile(p.filePath, &jsonTrustedPeers{TrustedPeers: trustedPeers}, 0o600); err != nil {
@@ -103,12 +108,20 @@ func (p *TrustedPeersRegistryImpl) IsTrustedPeer(pubKey *cryptolib.PublicKey) er
 	return nil
 }
 
-func (p *TrustedPeersRegistryImpl) TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error) {
-	trustedPeer := peering.NewTrustedPeer(pubKey, netID)
+func (p *TrustedPeersRegistryImpl) TrustPeer(name string, pubKey *cryptolib.PublicKey, peeringURL string) (*peering.TrustedPeer, error) {
+	if err := peering.ValidateTrustedPeerParams(name, pubKey, peeringURL); err != nil {
+		return nil, err
+	}
+	for _, existingPeer := range p.onChangeMap.All() {
+		if existingPeer.Name == name && !existingPeer.PubKey().Equals(pubKey) {
+			return nil, fmt.Errorf("peer with name \"%s\" already exists", name)
+		}
+	}
+	trustedPeer := peering.NewTrustedPeer(name, pubKey, peeringURL)
 	if err := p.onChangeMap.Add(trustedPeer); err != nil {
 		// already exists, modify the existing
 		return p.onChangeMap.Modify(peering.NewComparablePubKey(pubKey), func(item *peering.TrustedPeer) bool {
-			*item = *peering.NewTrustedPeer(pubKey, netID)
+			*item = *peering.NewTrustedPeer(name, pubKey, peeringURL)
 			return true
 		})
 	}
@@ -133,6 +146,10 @@ func (p *TrustedPeersRegistryImpl) DistrustPeer(pubKey *cryptolib.PublicKey) (*p
 
 func (p *TrustedPeersRegistryImpl) TrustedPeers() ([]*peering.TrustedPeer, error) {
 	return lo.Values(p.onChangeMap.All()), nil
+}
+
+func (p *TrustedPeersRegistryImpl) TrustedPeersByPubKeyOrName(pubKeysOrNames []string) ([]*peering.TrustedPeer, error) {
+	return peering.QueryByPubKeyOrName(lo.Values(p.onChangeMap.All()), pubKeysOrNames)
 }
 
 func (p *TrustedPeersRegistryImpl) mustTrustedPeers() []*peering.TrustedPeer {

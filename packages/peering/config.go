@@ -10,28 +10,28 @@ import (
 	"strconv"
 )
 
-// Check, if NetID is of proper format.
-func CheckNetID(netID string) error {
-	sHost, sPort, err := net.SplitHostPort(netID)
+// Check, if peeringURL is of proper format.
+func CheckPeeringURL(url string) error {
+	sHost, sPort, err := net.SplitHostPort(url)
 	if err != nil {
 		return err
 	}
 	if sHost == "" {
-		return errors.New("netID: host part missing")
+		return errors.New("peeringURL: host part missing")
 	}
 	port, err := strconv.Atoi(sPort)
 	if err != nil {
 		return err
 	}
 	if port == 0 {
-		return errors.New("netID: invalid port")
+		return errors.New("peeringURL: invalid port")
 	}
 	return nil
 }
 
-// CheckMyNetID checks if NetID from the committee list represents current node.
-func CheckMyNetID(myNetID string, configPort int) error {
-	sHost, sPort, err := net.SplitHostPort(myNetID)
+// CheckMyPeeringURL checks if PeeringURL from the committee list represents current node.
+func CheckMyPeeringURL(myPeeringURL string, configPort int) error {
+	sHost, sPort, err := net.SplitHostPort(myPeeringURL)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func CheckMyNetID(myNetID string, configPort int) error {
 		return err
 	}
 	if port != configPort {
-		return fmt.Errorf("wrong own network port in %s", myNetID)
+		return fmt.Errorf("wrong own network port in %s", myPeeringURL)
 	}
 	myIPs, err := myIPs()
 	if err != nil {
@@ -60,7 +60,7 @@ func CheckMyNetID(myNetID string, configPort int) error {
 			}
 		}
 	}
-	return fmt.Errorf("NetID %s doesn't represent current node", myNetID)
+	return fmt.Errorf("peeringURL %s doesn't represent current node", myPeeringURL)
 }
 
 func myIPs() ([]string, error) {

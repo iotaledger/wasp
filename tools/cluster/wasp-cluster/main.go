@@ -140,14 +140,14 @@ func main() {
 
 		var clusterConfig *cluster.ClusterConfig
 		if !*disposable {
-			exists, err := cluster.ConfigExists(dataPath)
-			check(err)
+			exists, err2 := cluster.ConfigExists(dataPath)
+			check(err2)
 			if !exists {
 				check(fmt.Errorf("%s/cluster.json not found. Call `%s init` first", dataPath, os.Args[0]))
 			}
 
-			clusterConfig, err = cluster.LoadConfig(dataPath)
-			check(err)
+			clusterConfig, err2 = cluster.LoadConfig(dataPath)
+			check(err2)
 		} else {
 			l1.StartPrivtangleIfNecessary(log.Printf)
 			defer l1.Stop()
@@ -166,7 +166,7 @@ func main() {
 			defer os.RemoveAll(dataPath)
 		}
 
-		err = clu.Start(dataPath)
+		err = clu.StartAndTrustAll(dataPath)
 		check(err)
 		fmt.Printf("-----------------------------------------------------------------\n")
 		fmt.Printf("           The cluster started\n")

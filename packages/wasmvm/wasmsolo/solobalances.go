@@ -65,19 +65,19 @@ func (bal *SoloBalances) dumpBalances() {
 	for _, acc := range accs {
 		l2 := ctx.Chain.L2Assets(acc)
 		addr, ok := isc.AddressFromAgentID(acc)
-		l1 := isc.NewEmptyFungibleTokens()
+		l1 := isc.NewEmptyAssets()
 		if ok {
 			l1 = ctx.Chain.Env.L1Assets(addr)
 		}
 		txt += fmt.Sprintf("\n%s\n\tL2: %10d", acc.String(), l2.BaseTokens)
 		hname, _ := isc.HnameFromAgentID(acc)
-		if hname == 0 {
+		if hname.IsNil() {
 			txt += fmt.Sprintf(",\tL1: %10d", l1.BaseTokens)
 		}
 		for _, nativeToken := range l2.NativeTokens {
 			txt += fmt.Sprintf("\n\tL2: %10d", nativeToken.Amount)
 			tokTxt := ",\t           "
-			if hname == 0 {
+			if hname.IsNil() {
 				for i := range l1.NativeTokens {
 					if *l1.NativeTokens[i] == *nativeToken {
 						l1.NativeTokens = append(l1.NativeTokens[:i], l1.NativeTokens[i+1:]...)

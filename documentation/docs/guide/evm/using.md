@@ -44,7 +44,7 @@ below:
   the [`evm`](../core_concepts/core_contracts/evm.md) [core contract](../core_concepts/core_contracts/overview.md).
 
 You can verify that the EVM support is enabled by visiting
-the [Wasp dashboard](../chains_and_nodes/node-config#dashboard) and checking the "EVM" section on your ISC chain page.
+the Wasp dashboard and checking the "EVM" section on your ISC chain page.
 You should see the EVM chain ID and the JSON-RPC endpoint.
 
 ## 2. Fund an Ethereum Account on Your IOTA Smart Contracts Chain

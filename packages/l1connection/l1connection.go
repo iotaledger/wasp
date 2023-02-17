@@ -125,7 +125,6 @@ func (c *l1client) postBlock(ctx context.Context, block *iotago.Block) (*iotago.
 			return nil, fmt.Errorf("failed during local PoW: %w", err)
 		}
 	}
-
 	block, err := c.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1().Protocol)
 	if err != nil {
 		return nil, fmt.Errorf("failed to submit block: %w", err)
@@ -212,8 +211,8 @@ func (c *l1client) waitUntilBlockConfirmed(ctx context.Context, block *iotago.Bl
 	}
 
 	checkAndPromote := func(metadata *nodeclient.BlockMetadataResponse) error {
-		if err := checkContext(); err != nil {
-			return err
+		if err2 := checkContext(); err2 != nil {
+			return err2
 		}
 
 		if metadata.ShouldPromote != nil && *metadata.ShouldPromote {
@@ -225,13 +224,13 @@ func (c *l1client) waitUntilBlockConfirmed(ctx context.Context, block *iotago.Bl
 
 			c.log.Debugf("promoting blockID: %s", blockID.ToHex())
 			// create an empty Block and the BlockID as one of the parents
-			tipsResp, err := c.nodeAPIClient.Tips(ctx)
-			if err != nil {
-				return fmt.Errorf("failed to fetch tips: %w", err)
+			tipsResp, err2 := c.nodeAPIClient.Tips(ctx)
+			if err2 != nil {
+				return fmt.Errorf("failed to fetch tips: %w", err2)
 			}
-			tips, err := tipsResp.Tips()
-			if err != nil {
-				return fmt.Errorf("failed to get tips from tips response: %w", err)
+			tips, err2 := tipsResp.Tips()
+			if err2 != nil {
+				return fmt.Errorf("failed to get tips from tips response: %w", err2)
 			}
 			if len(tips) > 7 {
 				tips = tips[:7] // max 8 parents
@@ -242,13 +241,13 @@ func (c *l1client) waitUntilBlockConfirmed(ctx context.Context, block *iotago.Bl
 			}
 			parents = append(parents, tips...)
 
-			promotionBlock, err := builder.NewBlockBuilder().Parents(parents).Build()
-			if err != nil {
-				return fmt.Errorf("failed to build promotion Block: %w", err)
+			promotionBlock, err2 := builder.NewBlockBuilder().Parents(parents).Build()
+			if err2 != nil {
+				return fmt.Errorf("failed to build promotion Block: %w", err2)
 			}
 
-			if _, err := c.postBlock(ctx, promotionBlock); err != nil {
-				return fmt.Errorf("failed to promote block: %w", err)
+			if _, err2 := c.postBlock(ctx, promotionBlock); err2 != nil {
+				return fmt.Errorf("failed to promote block: %w", err2)
 			}
 		}
 
@@ -256,8 +255,8 @@ func (c *l1client) waitUntilBlockConfirmed(ctx context.Context, block *iotago.Bl
 	}
 
 	checkAndReattach := func(metadata *nodeclient.BlockMetadataResponse) error {
-		if err := checkContext(); err != nil {
-			return err
+		if err2 := checkContext(); err2 != nil {
+			return err2
 		}
 
 		if metadata.ShouldReattach != nil && *metadata.ShouldReattach {

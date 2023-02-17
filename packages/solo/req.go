@@ -31,9 +31,9 @@ type CallParams struct {
 	target     isc.Hname
 	epName     string
 	entryPoint isc.Hname
-	ftokens    *isc.FungibleTokens // ignored off-ledger
+	ftokens    *isc.Assets // ignored off-ledger
 	nft        *isc.NFT
-	allowance  *isc.Allowance
+	allowance  *isc.Assets
 	gasBudget  uint64
 	nonce      uint64 // ignored for on-ledger
 	params     dict.Dict
@@ -42,8 +42,8 @@ type CallParams struct {
 
 // NewCallParams creates structure which wraps in one object call parameters, used in PostRequestSync and callViewFull
 // calls:
-//   - 'scName' is a a name of the target smart contract
-//   - 'funName' is a name of the target entry point (the function) of he smart contract program
+//   - 'scName' is a name of the target smart contract
+//   - 'funName' is a name of the target entry point (the function) of the smart contract program
 //   - 'params' is either a dict.Dict, or a sequence of pairs 'paramName', 'paramValue' which constitute call parameters
 //     The 'paramName' must be a string and 'paramValue' must different types (encoded based on type)
 //
@@ -72,12 +72,12 @@ func NewCallParamsFromDictByHname(hContract, hFunction isc.Hname, par dict.Dict)
 	return ret
 }
 
-func (r *CallParams) WithAllowance(allowance *isc.Allowance) *CallParams {
+func (r *CallParams) WithAllowance(allowance *isc.Assets) *CallParams {
 	r.allowance = allowance.Clone()
 	return r
 }
 
-func (r *CallParams) AddAllowance(allowance *isc.Allowance) *CallParams {
+func (r *CallParams) AddAllowance(allowance *isc.Assets) *CallParams {
 	if r.allowance == nil {
 		r.allowance = allowance.Clone()
 	} else {
@@ -87,14 +87,14 @@ func (r *CallParams) AddAllowance(allowance *isc.Allowance) *CallParams {
 }
 
 func (r *CallParams) AddAllowanceBaseTokens(amount uint64) *CallParams {
-	return r.AddAllowance(isc.NewAllowance(amount, nil, nil))
+	return r.AddAllowance(isc.NewAssetsBaseTokens(amount))
 }
 
 func (r *CallParams) AddAllowanceNativeTokensVect(nativeTokens ...*iotago.NativeToken) *CallParams {
 	if r.allowance == nil {
-		r.allowance = isc.NewEmptyAllowance()
+		r.allowance = isc.NewEmptyAssets()
 	}
-	r.allowance.Assets.Add(&isc.FungibleTokens{
+	r.allowance.Add(&isc.Assets{
 		NativeTokens: nativeTokens,
 	})
 	return r
@@ -102,9 +102,9 @@ func (r *CallParams) AddAllowanceNativeTokensVect(nativeTokens ...*iotago.Native
 
 func (r *CallParams) AddAllowanceNativeTokens(nativeTokenID iotago.NativeTokenID, amount interface{}) *CallParams {
 	if r.allowance == nil {
-		r.allowance = isc.NewEmptyAllowance()
+		r.allowance = isc.NewEmptyAssets()
 	}
-	r.allowance.Assets.Add(&isc.FungibleTokens{
+	r.allowance.Add(&isc.Assets{
 		NativeTokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     nativeTokenID,
 			Amount: util.ToBigInt(amount),
@@ -114,15 +114,15 @@ func (r *CallParams) AddAllowanceNativeTokens(nativeTokenID iotago.NativeTokenID
 }
 
 func (r *CallParams) AddAllowanceNFTs(nfts ...iotago.NFTID) *CallParams {
-	return r.AddAllowance(isc.NewAllowance(0, nil, nfts))
+	return r.AddAllowance(isc.NewEmptyAssets().AddNFTs(nfts...))
 }
 
-func (r *CallParams) WithFungibleTokens(assets *isc.FungibleTokens) *CallParams {
+func (r *CallParams) WithFungibleTokens(assets *isc.Assets) *CallParams {
 	r.ftokens = assets.Clone()
 	return r
 }
 
-func (r *CallParams) AddFungibleTokens(assets *isc.FungibleTokens) *CallParams {
+func (r *CallParams) AddFungibleTokens(assets *isc.Assets) *CallParams {
 	if r.ftokens == nil {
 		r.ftokens = assets.Clone()
 	} else {
@@ -132,17 +132,17 @@ func (r *CallParams) AddFungibleTokens(assets *isc.FungibleTokens) *CallParams {
 }
 
 func (r *CallParams) AddBaseTokens(amount uint64) *CallParams {
-	return r.AddFungibleTokens(isc.NewFungibleTokens(amount, nil))
+	return r.AddFungibleTokens(isc.NewAssets(amount, nil))
 }
 
 func (r *CallParams) AddNativeTokensVect(nativeTokens ...*iotago.NativeToken) *CallParams {
-	return r.AddFungibleTokens(&isc.FungibleTokens{
+	return r.AddFungibleTokens(&isc.Assets{
 		NativeTokens: nativeTokens,
 	})
 }
 
 func (r *CallParams) AddNativeTokens(nativeTokenID iotago.NativeTokenID, amount interface{}) *CallParams {
-	return r.AddFungibleTokens(&isc.FungibleTokens{
+	return r.AddFungibleTokens(&isc.Assets{
 		NativeTokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     nativeTokenID,
 			Amount: util.ToBigInt(amount),
@@ -247,8 +247,8 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 		UnspentOutputs:   allOuts,
 		UnspentOutputIDs: allOutIDs,
 		Request: &isc.RequestParameters{
-			TargetAddress:  ch.ChainID.AsAddress(),
-			FungibleTokens: req.ftokens,
+			TargetAddress: ch.ChainID.AsAddress(),
+			Assets:        req.ftokens,
 			Metadata: &isc.SendMetadata{
 				TargetContract: req.target,
 				EntryPoint:     req.entryPoint,
@@ -518,7 +518,7 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie.Me
 
 // GetMerkleProof return the merkle proof of the key in the smart contract. Assumes Merkle model is used
 func (ch *Chain) GetMerkleProof(scHname isc.Hname, key []byte) *trie.MerkleProof {
-	return ch.GetMerkleProofRaw(kv.Concat(scHname, key))
+	return ch.GetMerkleProofRaw(append(scHname.Bytes(), key...))
 }
 
 // GetL1Commitment returns state commitment taken from the anchor output
@@ -588,11 +588,19 @@ func (ch *Chain) WaitUntilMempoolIsEmpty(timeout ...time.Duration) bool {
 	}
 }
 
-// WaitForRequestsThrough waits for the moment when counters for incoming requests and removed
-// requests in the mempool of the chain both become equal to the specified number
+// WaitForRequestsMark marks the amount of requests processed until now
+// This allows the WaitForRequestsThrough() function to wait for the
+// specified of number of requests after the mark point.
+func (ch *Chain) WaitForRequestsMark() {
+	ch.RequestsMark = ch.RequestsDone
+}
+
+// WaitForRequestsThrough waits until the specified number of requests
+// have been processed since the last call to WaitForRequestsMark()
 func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
+	numReq += ch.RequestsMark
 	return ch.WaitUntil(func(mstats MempoolInfo) bool {
-		return mstats.OutPoolCounter == numReq
+		return ch.RequestsDone >= numReq
 	}, maxWait...)
 }
 

@@ -10,39 +10,39 @@
 use crate::*;
 use crate::coreroot::*;
 
-pub struct DeployContractCall {
-    pub func:   ScFunc,
+pub struct DeployContractCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableDeployContractParams,
 }
 
-pub struct GrantDeployPermissionCall {
-    pub func:   ScFunc,
+pub struct GrantDeployPermissionCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableGrantDeployPermissionParams,
 }
 
-pub struct RequireDeployPermissionsCall {
-    pub func:   ScFunc,
+pub struct RequireDeployPermissionsCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableRequireDeployPermissionsParams,
 }
 
-pub struct RevokeDeployPermissionCall {
-    pub func:   ScFunc,
+pub struct RevokeDeployPermissionCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableRevokeDeployPermissionParams,
 }
 
-pub struct SubscribeBlockContextCall {
-    pub func:   ScFunc,
+pub struct SubscribeBlockContextCall<'a> {
+    pub func:   ScFunc<'a>,
     pub params: MutableSubscribeBlockContextParams,
 }
 
-pub struct FindContractCall {
-    pub func:    ScView,
+pub struct FindContractCall<'a> {
+    pub func:    ScView<'a>,
     pub params:  MutableFindContractParams,
     pub results: ImmutableFindContractResults,
 }
 
-pub struct GetContractRecordsCall {
-    pub func:    ScView,
+pub struct GetContractRecordsCall<'a> {
+    pub func:    ScView<'a>,
     pub results: ImmutableGetContractRecordsResults,
 }
 
@@ -50,54 +50,54 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn deploy_contract(_ctx: &dyn ScFuncCallContext) -> DeployContractCall {
+    pub fn deploy_contract(ctx: &impl ScFuncCallContext) -> DeployContractCall {
         let mut f = DeployContractCall {
-            func:    ScFunc::new(HSC_NAME, HFUNC_DEPLOY_CONTRACT),
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_DEPLOY_CONTRACT),
             params:  MutableDeployContractParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn grant_deploy_permission(_ctx: &dyn ScFuncCallContext) -> GrantDeployPermissionCall {
+    pub fn grant_deploy_permission(ctx: &impl ScFuncCallContext) -> GrantDeployPermissionCall {
         let mut f = GrantDeployPermissionCall {
-            func:    ScFunc::new(HSC_NAME, HFUNC_GRANT_DEPLOY_PERMISSION),
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_GRANT_DEPLOY_PERMISSION),
             params:  MutableGrantDeployPermissionParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn require_deploy_permissions(_ctx: &dyn ScFuncCallContext) -> RequireDeployPermissionsCall {
+    pub fn require_deploy_permissions(ctx: &impl ScFuncCallContext) -> RequireDeployPermissionsCall {
         let mut f = RequireDeployPermissionsCall {
-            func:    ScFunc::new(HSC_NAME, HFUNC_REQUIRE_DEPLOY_PERMISSIONS),
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_REQUIRE_DEPLOY_PERMISSIONS),
             params:  MutableRequireDeployPermissionsParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn revoke_deploy_permission(_ctx: &dyn ScFuncCallContext) -> RevokeDeployPermissionCall {
+    pub fn revoke_deploy_permission(ctx: &impl ScFuncCallContext) -> RevokeDeployPermissionCall {
         let mut f = RevokeDeployPermissionCall {
-            func:    ScFunc::new(HSC_NAME, HFUNC_REVOKE_DEPLOY_PERMISSION),
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_REVOKE_DEPLOY_PERMISSION),
             params:  MutableRevokeDeployPermissionParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn subscribe_block_context(_ctx: &dyn ScFuncCallContext) -> SubscribeBlockContextCall {
+    pub fn subscribe_block_context(ctx: &impl ScFuncCallContext) -> SubscribeBlockContextCall {
         let mut f = SubscribeBlockContextCall {
-            func:    ScFunc::new(HSC_NAME, HFUNC_SUBSCRIBE_BLOCK_CONTEXT),
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_SUBSCRIBE_BLOCK_CONTEXT),
             params:  MutableSubscribeBlockContextParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
-    pub fn find_contract(_ctx: &dyn ScViewCallContext) -> FindContractCall {
+    pub fn find_contract(ctx: &impl ScViewCallContext) -> FindContractCall {
         let mut f = FindContractCall {
-            func:    ScView::new(HSC_NAME, HVIEW_FIND_CONTRACT),
+            func:    ScView::new(ctx, HSC_NAME, HVIEW_FIND_CONTRACT),
             params:  MutableFindContractParams { proxy: Proxy::nil() },
             results: ImmutableFindContractResults { proxy: Proxy::nil() },
         };
@@ -106,9 +106,9 @@ impl ScFuncs {
         f
     }
 
-    pub fn get_contract_records(_ctx: &dyn ScViewCallContext) -> GetContractRecordsCall {
+    pub fn get_contract_records(ctx: &impl ScViewCallContext) -> GetContractRecordsCall {
         let mut f = GetContractRecordsCall {
-            func:    ScView::new(HSC_NAME, HVIEW_GET_CONTRACT_RECORDS),
+            func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_CONTRACT_RECORDS),
             results: ImmutableGetContractRecordsResults { proxy: Proxy::nil() },
         };
         ScView::link_results(&mut f.results.proxy, &f.func);

@@ -6,11 +6,9 @@ package apilib
 import (
 	"fmt"
 	"io"
-	"math/rand"
-	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client/multiclient"
+	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -25,7 +23,6 @@ import (
 type CreateChainParams struct {
 	Layer1Client         l1connection.Client
 	CommitteeAPIHosts    []string
-	CommitteePubKeys     []string
 	N                    uint16
 	T                    uint16
 	OriginatorKeyPair    *cryptolib.KeyPair
@@ -34,32 +31,12 @@ type CreateChainParams struct {
 	Prefix               string
 	InitParams           dict.Dict
 	GovernanceController iotago.Address
-	AuthenticationToken  string
-}
-
-// DeployChainWithDKG performs all actions needed to deploy the chain
-// TODO: [KP] Shouldn't that be in the client packages?
-func DeployChainWithDKG(par CreateChainParams) (isc.ChainID, iotago.Address, error) {
-	dkgInitiatorIndex := uint16(rand.Intn(len(par.CommitteeAPIHosts)))
-	stateControllerAddr, err := RunDKG(par.AuthenticationToken, par.CommitteeAPIHosts, par.CommitteePubKeys, par.T, dkgInitiatorIndex)
-	if err != nil {
-		return isc.ChainID{}, nil, err
-	}
-	govControllerAddr := stateControllerAddr
-	if par.GovernanceController != nil {
-		govControllerAddr = par.GovernanceController
-	}
-	chainID, err := DeployChain(par, stateControllerAddr, govControllerAddr)
-	if err != nil {
-		return isc.ChainID{}, nil, err
-	}
-	return chainID, stateControllerAddr, nil
 }
 
 // DeployChain creates a new chain on specified committee address
 // noinspection ALL
 
-func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr iotago.Address) (isc.ChainID, error) {
+func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr iotago.Address) (isc.ChainID, *iotago.Transaction, error) {
 	var err error
 	textout := io.Discard
 	if par.Textout != nil {
@@ -83,38 +60,22 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "creating chain origin and init transaction.. FAILED: %v\n", err)
-		return isc.ChainID{}, fmt.Errorf("DeployChain: %w", err)
+		return isc.ChainID{}, nil, fmt.Errorf("DeployChain: %w", err)
 	}
 	txID, err := initRequestTx.ID()
 	if err != nil {
 		fmt.Fprintf(textout, "creating chain origin and init transaction.. FAILED: %v\n", err)
-		return isc.ChainID{}, fmt.Errorf("DeployChain: %w", err)
+		return isc.ChainID{}, nil, fmt.Errorf("DeployChain: %w", err)
 	}
-	fmt.Fprintf(textout, "creating chain origin and init transaction %s.. OK\n", txID.ToHex())
-	fmt.Fprint(textout, "sending committee record to nodes.. OK\n")
-
-	err = ActivateChainOnAccessNodes(par.AuthenticationToken, par.CommitteeAPIHosts, chainID)
-	fmt.Fprint(textout, par.Prefix)
-	if err != nil {
-		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.String(), err)
-		return isc.ChainID{}, fmt.Errorf("DeployChain: %w", err)
-	}
-	fmt.Fprintf(textout, "activating chain %s.. OK.\n", chainID.String())
-
-	// ---------- wait until the request is processed at least in all committee nodes
-	_, err = multiclient.New(par.CommitteeAPIHosts).
-		WithToken(par.AuthenticationToken).
-		WaitUntilAllRequestsProcessedSuccessfully(chainID, initRequestTx, 30*time.Second)
-	if err != nil {
-		fmt.Fprintf(textout, "waiting root init request transaction.. FAILED: %v\n", err)
-		return isc.ChainID{}, fmt.Errorf("DeployChain: %w", err)
-	}
+	fmt.Fprintf(textout, "created chain origin and init transaction %s.. OK\n", txID.ToHex())
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "chain has been created successfully on the Tangle. ChainID: %s, State address: %s, N = %d, T = %d\n",
 		chainID.String(), stateControllerAddr.Bech32(parameters.L1().Protocol.Bech32HRP), par.N, par.T)
 
-	return chainID, err
+	fmt.Fprintf(textout, "make sure to activate the sure on all committee nodes\n")
+
+	return chainID, initRequestTx, err
 }
 
 func utxoIDsFromUtxoMap(utxoMap iotago.OutputSet) iotago.OutputIDs {
@@ -187,19 +148,9 @@ func CreateChainOrigin(
 	return chainID, reqTx, nil
 }
 
-// ActivateChainOnAccessNodes puts chain records into nodes and activates its
-// TODO needs refactoring and optimization
-func ActivateChainOnAccessNodes(authToken string, apiHosts []string, chainID isc.ChainID) error {
-	nodes := multiclient.New(apiHosts).WithToken(authToken)
+// ActivateChainOnNodes puts chain records into nodes and activates its
+func ActivateChainOnNodes(clientResolver multiclient.ClientResolver, apiHosts []string, chainID isc.ChainID) error {
+	nodes := multiclient.New(clientResolver, apiHosts)
 	// ------------ put chain records to hosts
-	err := nodes.PutChainRecord(registry.NewChainRecord(chainID, false, []*cryptolib.PublicKey{}))
-	if err != nil {
-		return fmt.Errorf("ActivateChainOnAccessNodes: %w", err)
-	}
-	// ------------- activate chain
-	err = nodes.ActivateChain(chainID)
-	if err != nil {
-		return fmt.Errorf("ActivateChainOnAccessNodes: %w", err)
-	}
-	return nil
+	return nodes.PutChainRecord(registry.NewChainRecord(chainID, true, []*cryptolib.PublicKey{}))
 }

@@ -78,6 +78,11 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 		return err
 	}
 
+	// skip ISC nonce check for EVM requests
+	if vmctx.req.SenderAccount().Kind() == isc.AgentIDKindEthereumAddress {
+		return nil
+	}
+
 	var maxAssumed uint64
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		// this is a replay protection measure for off-ledger requests assuming in the batch order of requests is random.

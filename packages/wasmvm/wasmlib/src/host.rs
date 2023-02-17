@@ -10,10 +10,42 @@ pub trait ScHost {
     fn state_set(&self, key: &[u8], value: &[u8]);
 }
 
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+pub struct NullVmHost {}
+
+impl ScHost for NullVmHost {
+    fn export_name(&self, _index: i32, _name: &str) {
+        panic!("NullVmHost::export_name");
+    }
+
+    fn sandbox(&self, _func_nr: i32, _params: &[u8]) -> Vec<u8> {
+        panic!("NullVmHost::sandbox");
+    }
+
+    fn state_delete(&self, _key: &[u8]) {
+        panic!("NullVmHost::state_delete");
+    }
+
+    fn state_exists(&self, _key: &[u8]) -> bool {
+        panic!("NullVmHost::state_exists");
+    }
+
+    fn state_get(&self, _key: &[u8]) -> Vec<u8> {
+        panic!("NullVmHost::state_get");
+    }
+
+    fn state_set(&self, _key: &[u8], _value: &[u8]) {
+        panic!("NullVmHost::state_set");
+    }
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
 static NULL_VM_HOST: NullVmHost = NullVmHost {};
 static mut HOST: &dyn ScHost = &NULL_VM_HOST;
 
-pub fn connect_host(h: &'static dyn ScHost) -> &dyn ScHost {
+pub fn connect_host(h: &'static impl ScHost) -> &dyn ScHost {
     unsafe {
         let old_host = HOST;
         HOST = h;
@@ -48,35 +80,5 @@ pub fn state_get(key: &[u8]) -> Vec<u8> {
 pub fn state_set(key: &[u8], value: &[u8]) {
     unsafe {
         HOST.state_set(key, value);
-    }
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-pub struct NullVmHost {}
-
-impl ScHost for NullVmHost {
-    fn export_name(&self, _index: i32, _name: &str) {
-        panic!("NullVmHost::export_name");
-    }
-
-    fn sandbox(&self, _func_nr: i32, _params: &[u8]) -> Vec<u8> {
-        panic!("NullVmHost::sandbox");
-    }
-
-    fn state_delete(&self, _key: &[u8]) {
-        panic!("NullVmHost::state_delete");
-    }
-
-    fn state_exists(&self, _key: &[u8]) -> bool {
-        panic!("NullVmHost::state_exists");
-    }
-
-    fn state_get(&self, _key: &[u8]) -> Vec<u8> {
-        panic!("NullVmHost::state_get");
-    }
-
-    fn state_set(&self, _key: &[u8], _value: &[u8]) {
-        panic!("NullVmHost::state_set");
     }
 }

@@ -6,9 +6,9 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -25,6 +25,9 @@ var Processor = Contract.Processor(initialize,
 
 	// views
 	ViewAccountNFTs.WithHandler(viewAccountNFTs),
+	ViewAccountNFTAmount.WithHandler(viewAccountNFTAmount),
+	ViewAccountNFTsInCollection.WithHandler(viewAccountNFTsInCollection),
+	ViewAccountNFTAmountInCollection.WithHandler(viewAccountNFTAmountInCollection),
 	ViewAccountFoundries.WithHandler(viewAccountFoundries),
 	ViewAccounts.WithHandler(viewAccounts),
 	ViewBalance.WithHandler(viewBalance),
@@ -45,13 +48,13 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 	// checking if assumptions are consistent
 	ctx.Requiref(err == nil && baseTokensOnAnchor >= storageDepositAssumptions.AnchorOutput,
 		"accounts.initialize.fail: %v", ErrStorageDepositAssumptionsWrong)
-	ctx.State().Set(kv.Key(stateVarMinimumStorageDepositAssumptionsBin), storageDepositAssumptionsBin)
+	ctx.State().Set(keyStorageDepositAssumptions, storageDepositAssumptionsBin)
 	// storing hname as a terminal value of the contract's state root.
 	// This way we will be able to retrieve commitment to the contract's state
 	ctx.State().Set("", ctx.Contract().Bytes())
 
 	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption
-	initialLoadBaseTokens := isc.NewFungibleTokens(baseTokensOnAnchor-storageDepositAssumptions.AnchorOutput, nil)
+	initialLoadBaseTokens := isc.NewAssets(baseTokensOnAnchor-storageDepositAssumptions.AnchorOutput, nil)
 	CreditToAccount(ctx.State(), ctx.ChainID().CommonAccount(), initialLoadBaseTokens)
 	return nil
 }
@@ -68,19 +71,10 @@ func deposit(ctx isc.Sandbox) dict.Dict {
 // Can be sent as a request (sender is the caller) or can be called
 // Params:
 // - ParamAgentID. AgentID. Required
-// - ParamForceOpenAccount Bool. Optional, default: false
 func transferAllowanceTo(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.AllowanceAvailable())
-
 	targetAccount := ctx.Params().MustGetAgentID(ParamAgentID)
-	forceOpenAccount := ctx.Params().MustGetBool(ParamForceOpenAccount, false)
-
-	if forceOpenAccount {
-		ctx.TransferAllowedFundsForceCreateTarget(targetAccount)
-	} else {
-		ctx.TransferAllowedFunds(targetAccount)
-	}
-
+	ctx.TransferAllowedFunds(targetAccount)
 	ctx.Log().Debugf("accounts.transferAllowanceTo.success: target: %s\n%s", targetAccount, ctx.AllowanceAvailable())
 	return nil
 }
@@ -88,9 +82,8 @@ func transferAllowanceTo(ctx isc.Sandbox) dict.Dict {
 // TODO this is just a temporary value, we need to make deposits fee constant across chains.
 const ConstDepositFeeTmp = 1 * isc.Million
 
-// withdraw sends caller's funds to the caller on-ledger (cross chain)
-// The caller explicitly specify the funds to withdraw via the allowance in the request
-// Btw: the whole code of entry point is generic, i.e. not specific to the accounts TODO use this feature
+// withdraw sends the allowed funds to the caller's L1 address, or if the caller is a
+// cross-chain contract, to its account.
 func withdraw(ctx isc.Sandbox) dict.Dict {
 	ctx.Requiref(!ctx.AllowanceAvailable().IsEmpty(), "Allowance can't be empty in 'accounts.withdraw'")
 
@@ -106,28 +99,24 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 	// move all allowed funds to the account of the current contract context
 	// before saving the allowance budget because after the transfer it is mutated
 	allowance := ctx.AllowanceAvailable()
-	fundsToWithdraw := allowance.Assets
-	var nftID *iotago.NFTID
+	fundsToWithdraw := allowance
 	if len(allowance.NFTs) > 0 {
 		if len(allowance.NFTs) > 1 {
 			panic(ErrTooManyNFTsInAllowance)
 		}
-		nftID = &allowance.NFTs[0]
 	}
 	remains := ctx.TransferAllowedFunds(ctx.AccountID())
 
 	// por las dudas
 	ctx.Requiref(remains.IsEmpty(), "internal: allowance left after must be empty")
 
-	if callerContract != nil && callerContract.Hname() != 0 {
+	if callerContract != nil && !callerContract.Hname().IsNil() {
 		// deduct the deposit fee from the allowance, so that there are enough tokens to pay for the deposit on the target chain
-		allowance := isc.NewAllowanceFungibleTokens(
-			isc.NewFungibleBaseTokens(fundsToWithdraw.BaseTokens - ConstDepositFeeTmp),
-		)
+		allowance := isc.NewAssetsBaseTokens(fundsToWithdraw.BaseTokens - ConstDepositFeeTmp)
 		// send funds to a contract on another chain
-		tx := isc.RequestParameters{
-			TargetAddress:  callerAddress,
-			FungibleTokens: fundsToWithdraw,
+		ctx.Send(isc.RequestParameters{
+			TargetAddress: callerAddress,
+			Assets:        fundsToWithdraw,
 			Metadata: &isc.SendMetadata{
 				TargetContract: Contract.Hname(),
 				EntryPoint:     FuncTransferAllowanceTo.Hname(),
@@ -135,26 +124,17 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 				Params:         dict.Dict{ParamAgentID: codec.EncodeAgentID(callerContract)},
 				GasBudget:      math.MaxUint64, // TODO This call will fail if not enough gas, and the funds will be lost (credited to this accounts on the target chain)
 			},
-		}
-
-		if nftID != nil {
-			ctx.SendAsNFT(tx, *nftID)
-		} else {
-			ctx.Send(tx)
-		}
-		ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.AllowanceAvailable().String())
-		return nil
-	}
-	tx := isc.RequestParameters{
-		TargetAddress:  callerAddress,
-		FungibleTokens: fundsToWithdraw,
-	}
-	if nftID != nil {
-		ctx.SendAsNFT(tx, *nftID)
+		})
 	} else {
-		ctx.Send(tx)
+		ctx.Send(isc.RequestParameters{
+			TargetAddress: callerAddress,
+			Assets:        fundsToWithdraw,
+		})
 	}
-	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", ctx.AllowanceAvailable().String())
+	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s: %s",
+		callerAddress.Bech32(parameters.L1ForTesting.Protocol.Bech32HRP),
+		ctx.AllowanceAvailable().String(),
+	)
 	return nil
 }
 
@@ -174,14 +154,14 @@ func harvest(ctx isc.Sandbox) dict.Dict {
 		bottomBaseTokens = MinimumBaseTokensOnCommonAccount
 	}
 	commonAccount := ctx.ChainID().CommonAccount()
-	toWithdraw := GetAccountAssets(state, commonAccount)
+	toWithdraw := GetAccountFungibleTokens(state, commonAccount)
 	if toWithdraw.BaseTokens <= bottomBaseTokens {
 		// below minimum, nothing to withdraw
 		return nil
 	}
 	ctx.Requiref(toWithdraw.BaseTokens > bottomBaseTokens, "assertion failed: toWithdraw.BaseTokens > availableBaseTokens")
 	toWithdraw.BaseTokens -= bottomBaseTokens
-	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw, nil)
+	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw)
 	return nil
 }
 
@@ -203,7 +183,7 @@ func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
 	debitBaseTokensFromAllowance(ctx, storageDepositConsumed)
 
 	// add to the ownership list of the account
-	AddFoundryToAccount(ctx.State(), ctx.Caller(), sn)
+	addFoundryToAccount(ctx.State(), ctx.Caller(), sn)
 
 	ret := dict.New()
 	ret.Set(ParamFoundrySN, util.Uint32To4Bytes(sn))
@@ -215,7 +195,7 @@ func foundryDestroy(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryDestroy")
 	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
 	// check if foundry is controlled by the caller
-	ctx.Requiref(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
+	ctx.Requiref(hasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	simpleTokenScheme := util.MustTokenScheme(out.TokenScheme)
@@ -223,10 +203,10 @@ func foundryDestroy(ctx isc.Sandbox) dict.Dict {
 
 	storageDepositReleased := ctx.Privileged().DestroyFoundry(sn)
 
-	deleteFoundryFromAccount(getAccountFoundries(ctx.State(), ctx.Caller()), sn)
+	deleteFoundryFromAccount(ctx.State(), ctx.Caller(), sn)
 	DeleteFoundryOutput(ctx.State(), sn)
 	// the storage deposit goes to the caller's account
-	CreditToAccount(ctx.State(), ctx.Caller(), &isc.FungibleTokens{
+	CreditToAccount(ctx.State(), ctx.Caller(), &isc.Assets{
 		BaseTokens: storageDepositReleased,
 	})
 	return nil
@@ -246,7 +226,7 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 	}
 	destroy := ctx.Params().MustGetBool(ParamDestroyTokens, false)
 	// check if foundry is controlled by the caller
-	ctx.Requiref(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
+	ctx.Requiref(hasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
 	nativeTokenID, err := out.NativeTokenID()
@@ -255,16 +235,16 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 	// accrue change on the caller's account
 	// update native tokens on L2 ledger and transit foundry UTXO
 	var storageDepositAdjustment int64
-	if deltaAssets := isc.NewEmptyFungibleTokens().AddNativeTokens(nativeTokenID, delta); destroy {
+	if deltaAssets := isc.NewEmptyAssets().AddNativeTokens(nativeTokenID, delta); destroy {
 		// take tokens to destroy from allowance
-		ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAllowanceFungibleTokens(
-			isc.NewFungibleTokens(0, iotago.NativeTokens{
+		ctx.TransferAllowedFunds(ctx.AccountID(),
+			isc.NewAssets(0, iotago.NativeTokens{
 				&iotago.NativeToken{
 					ID:     nativeTokenID,
 					Amount: delta,
 				},
 			}),
-		))
+		)
 		DebitFromAccount(ctx.State(), ctx.AccountID(), deltaAssets)
 		storageDepositAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta.Neg(delta))
 	} else {
@@ -279,7 +259,7 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 		debitBaseTokensFromAllowance(ctx, uint64(-storageDepositAdjustment))
 	case storageDepositAdjustment > 0:
 		// storage deposit is returned to the caller account
-		CreditToAccount(ctx.State(), ctx.Caller(), isc.NewFungibleBaseTokens(uint64(storageDepositAdjustment)))
+		CreditToAccount(ctx.State(), ctx.Caller(), isc.NewAssetsBaseTokens(uint64(storageDepositAdjustment)))
 	}
 	return nil
 }

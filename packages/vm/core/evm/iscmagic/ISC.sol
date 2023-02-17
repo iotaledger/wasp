@@ -10,6 +10,7 @@ import "@iscmagic/ISCPrivileged.sol";
 import "@iscmagic/ERC20BaseTokens.sol";
 import "@iscmagic/ERC20NativeTokens.sol";
 import "@iscmagic/ERC721NFTs.sol";
+import "@iscmagic/ERC721NFTCollection.sol";
 
 library ISC {
     ISCSandbox constant sandbox = __iscSandbox;
@@ -21,13 +22,15 @@ library ISC {
     ERC20BaseTokens constant baseTokens = __erc20BaseTokens;
 
     // Get the ERC20NativeTokens contract for the given foundry serial number
-    function nativeTokens(uint32 foundrySN)
-        internal
-        view
-        returns (ERC20NativeTokens)
-    {
+    function nativeTokens(uint32 foundrySN) internal view returns (ERC20NativeTokens) {
         return ERC20NativeTokens(sandbox.erc20NativeTokensAddress(foundrySN));
     }
 
     ERC721NFTs constant nfts = __erc721NFTs;
+
+    // Get the ERC721NFTCollection contract for the given collection
+    function erc721NFTCollection(NFTID collectionID) internal view returns (ERC721NFTCollection) {
+        return ERC721NFTCollection(sandbox.erc721NFTCollectionAddress(collectionID));
+    }
+
 }

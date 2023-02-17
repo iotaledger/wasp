@@ -1,44 +1,55 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List deployed chains",
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		client := config.WaspClient(config.MustWaspAPI())
-		chains, err := client.GetChainRecordList()
-		log.Check(err)
-		model := &ListChainModel{
-			Length:  len(chains),
-			BaseURL: client.BaseURL(),
-		}
-		model.Chains = make(map[string]bool)
+func initListCmd() *cobra.Command {
+	var node string
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "List deployed chains",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			client := cliclients.WaspClient(node)
+			chains, _, err := client.ChainsApi.GetChains(context.Background()).Execute() //nolint:bodyclose // false positive
+			log.Check(err)
 
-		for _, chain := range chains {
-			model.Chains[chain.ChainID().String()] = chain.Active
-		}
-		log.PrintCLIOutput(model)
-		showChainList(chains)
-	},
+			model := &ListChainModel{
+				Length:  len(chains),
+				BaseURL: client.GetConfig().Host,
+			}
+
+			model.Chains = make(map[string]bool)
+
+			for _, chain := range chains {
+				model.Chains[chain.ChainID] = chain.IsActive
+			}
+
+			log.PrintCLIOutput(model)
+			showChainList(chains)
+		},
+	}
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	return cmd
 }
 
-func showChainList(chains []*registry.ChainRecord) {
+func showChainList(chains []apiclient.ChainInfoResponse) {
 	header := []string{"chainid", "active"}
 	rows := make([][]string, len(chains))
 	for i, chain := range chains {
 		rows[i] = []string{
-			chain.ChainID().String(),
-			fmt.Sprintf("%v", chain.Active),
+			chain.ChainID,
+			fmt.Sprintf("%v", chain.IsActive),
 		}
 	}
 	log.PrintTable(header, rows)

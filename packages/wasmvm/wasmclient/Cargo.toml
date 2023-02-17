@@ -10,9 +10,6 @@ authors = ["Eric Hop <eric@iota.org>"]
 edition = "2018"
 repository = "https://github.com/iotaledger/wasp"
 
-[lib]
-crate-type = ["cdylib", "rlib"]
-
 [features]
 default = ["console_error_panic_hook"]
 
@@ -21,21 +18,20 @@ iota-client = { git = "https://github.com/iotaledger/iota.rs", branch = "develop
 iota-crypto = { git = "https://github.com/iotaledger/crypto.rs", branch = "dev", default-features = false, features = [ "std", "chacha", "blake2b", "ed25519", "random", "slip10", "bip39", "bip39-en" ] }
 wasmlib = { path = "../wasmlib" }
 #wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "develop" }
-tokio = { version = "1", features = ["full"] }
-wasm-bindgen = "0.2.63"
-serde = { version = "1.0.144", features = ["derive"] }
-serde_json = "1.0.86"
+testwasmlib = { path = "../../../contracts/wasm/testwasmlib/rs/testwasmlib" }
+wasm-bindgen = "0.2.84"
+serde = { version = "1.0.152", features = ["derive"] }
+serde_json = "1.0.91"
 bech32 = "0.9.1"
-reqwest = { version = "0.11.12", features = ["blocking", "json"] }
-httpmock = "0.6"
-tungstenite = "0.17.3"
-url = { version = "2.1.0", optional = true }
+reqwest = { version = "0.11.14", features = ["blocking", "json"] }
+url = "2.3.1"
+nanomsg = { path = "./nanomsg", features = ["bundled" ] }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
 # all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
 # code size when deploying.
-console_error_panic_hook = { version = "0.1.6", optional = true }
+console_error_panic_hook = { version = "0.1.7", optional = true }
 
 # `wee_alloc` is a tiny allocator for wasm that is only ~1K in code size
 # compared to the default allocator's ~10K. It is slower than the default
@@ -45,4 +41,5 @@ console_error_panic_hook = { version = "0.1.6", optional = true }
 wee_alloc = { version = "0.4.5", optional = true }
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.13"
+wasm-bindgen-test = "0.3.34"
+testwasmlib = { path = "../../../contracts/wasm/testwasmlib/rs/testwasmlib" }

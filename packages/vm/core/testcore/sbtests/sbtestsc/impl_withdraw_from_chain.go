@@ -15,16 +15,16 @@ func withdrawFromChain(ctx isc.Sandbox) dict.Dict {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	targetChain := params.MustGetChainID(ParamChainID)
 	baseTokensToWithdrawal := params.MustGetUint64(ParamBaseTokensToWithdrawal)
-	availableBaseTokens := ctx.AllowanceAvailable().Assets.BaseTokens
+	availableBaseTokens := ctx.AllowanceAvailable().BaseTokens
 
 	request := isc.RequestParameters{
-		TargetAddress:  targetChain.AsAddress(),
-		FungibleTokens: isc.NewFungibleBaseTokens(availableBaseTokens),
+		TargetAddress: targetChain.AsAddress(),
+		Assets:        isc.NewAssetsBaseTokens(availableBaseTokens),
 		Metadata: &isc.SendMetadata{
 			TargetContract: accounts.Contract.Hname(),
 			EntryPoint:     accounts.FuncWithdraw.Hname(),
 			GasBudget:      math.MaxUint64,
-			Allowance:      isc.NewAllowanceBaseTokens(baseTokensToWithdrawal),
+			Allowance:      isc.NewAssetsBaseTokens(baseTokensToWithdrawal),
 		},
 	}
 	requiredStorageDeposit := ctx.EstimateRequiredStorageDeposit(request)

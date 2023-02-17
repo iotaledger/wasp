@@ -419,7 +419,7 @@ func TestIterate(t *testing.T) {
 			checklist, root := runUpdateScenario(tr, store, scenario)
 			checkResult(t, tr, checklist)
 
-			trr, err := NewTrieReader(store, root, 0)
+			trr, err := NewTrieReader(store, root)
 			require.NoError(t, err)
 			var iteratedKeys1 [][]byte
 			trr.Iterate(func(k []byte, v []byte) bool {
@@ -472,7 +472,7 @@ func TestIteratePrefix(t *testing.T) {
 
 			_, root := runUpdateScenario(tr, store, scenario)
 
-			trr, err := NewTrieReader(store, root, 0)
+			trr, err := NewTrieReader(store, root)
 			require.NoError(t, err)
 
 			countIter := 0
@@ -531,7 +531,7 @@ func TestDeletePrefix(t *testing.T) {
 
 			_, root := runUpdateScenario(tr, store, scenario)
 
-			tr, err = NewTrieUpdatable(store, root, 0)
+			tr, err = NewTrieUpdatable(store, root)
 			require.NoError(t, err)
 
 			deleted := tr.DeletePrefix([]byte(prefix))

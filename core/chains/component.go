@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -95,13 +96,14 @@ func provide(c *dig.Container) error {
 				deps.NetworkProvider,
 				deps.TrustedNetworkManager,
 				deps.ChainStateDatabaseManager.ChainStateKVStore,
-				ParamsRawBlocks.Enabled,
-				ParamsRawBlocks.Directory,
+				ParamsWAL.Enabled,
+				ParamsWAL.Directory,
 				deps.ChainRecordRegistryProvider,
 				deps.DKShareRegistryProvider,
 				deps.NodeIdentityProvider,
 				deps.ConsensusStateRegistry,
 				deps.ChainListener,
+				shutdown.NewCoordinator("chains", CoreComponent.Logger().Named("Shutdown")),
 			),
 		}
 	}); err != nil {

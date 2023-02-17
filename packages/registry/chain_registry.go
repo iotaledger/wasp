@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
 
 	"github.com/samber/lo"
 
@@ -164,6 +163,11 @@ var _ ChainRecordRegistryProvider = &ChainRecordRegistryImpl{}
 
 // NewChainRecordRegistryImpl creates new instance of the chain registry implementation.
 func NewChainRecordRegistryImpl(filePath string) (*ChainRecordRegistryImpl, error) {
+	// create the target directory during initialization
+	if err := util.CreateDirectoryForFilePath(filePath, 0o770); err != nil {
+		return nil, err
+	}
+
 	registry := &ChainRecordRegistryImpl{
 		filePath: filePath,
 		events: &ChainRecordRegistryEvents{
@@ -211,8 +215,8 @@ func (p *ChainRecordRegistryImpl) writeChainRecordsJSON(chainRecords []*ChainRec
 		return nil
 	}
 
-	if err := os.MkdirAll(path.Dir(p.filePath), 0o770); err != nil {
-		return fmt.Errorf("unable to create folder \"%s\": %w", path.Dir(p.filePath), err)
+	if err := util.CreateDirectoryForFilePath(p.filePath, 0o770); err != nil {
+		return err
 	}
 
 	if err := ioutils.WriteJSONToFile(p.filePath, &jsonChainRecords{ChainRecords: chainRecords}, 0o600); err != nil {

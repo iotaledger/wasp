@@ -59,7 +59,7 @@ variable "wasp_config" {
     }
   },
   "peering": {
-    "netID": "{{ env "NOMAD_ADDR_peering" }}",
+    "peeringURL": "{{ env "NOMAD_ADDR_peering" }}",
     "port": {{ env "NOMAD_PORT_peering" }}
   },
   "chains": {

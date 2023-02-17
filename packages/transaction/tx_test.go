@@ -28,8 +28,8 @@ func TestCreateOrigin(t *testing.T) {
 		u = utxodb.New()
 		userKey = cryptolib.NewKeyPair()
 		userAddr = userKey.GetPublicKey().AsEd25519Address()
-		_, err := u.GetFundsFromFaucet(userAddr)
-		require.NoError(t, err)
+		_, err2 := u.GetFundsFromFaucet(userAddr)
+		require.NoError(t, err2)
 
 		stateKey := cryptolib.NewKeyPair()
 		stateAddr = stateKey.GetPublicKey().AsEd25519Address()
@@ -58,8 +58,8 @@ func TestCreateOrigin(t *testing.T) {
 
 		txBack, ok := u.GetTransaction(originTxID)
 		require.True(t, ok)
-		txidBack, err := txBack.ID()
-		require.NoError(t, err)
+		txidBack, err2 := txBack.ID()
+		require.NoError(t, err2)
 		require.EqualValues(t, originTxID, txidBack)
 
 		t.Logf("New chain ID: %s", chainID.String())

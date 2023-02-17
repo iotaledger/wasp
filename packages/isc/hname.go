@@ -15,8 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
-// Hname is 4 bytes of blake2b hash of any string interpreted as little-endian uint32.
-// 0 and not ^0 are reserved values and the isc.Hn ensures it is not returned
+// Hname is calculated as the first 4 bytes of the blake2b hash of a string, interpreted as
+// a little-endian uint32.
 type Hname uint32
 
 const HnameLength = 4
@@ -29,6 +29,9 @@ var (
 	EntryPointInit = Hn(FuncInit)
 )
 
+// HnameNil is the value used to represent a non-existent Hname.
+const HnameNil = Hname(0)
+
 // HnameFromBytes constructor, unmarshalling
 func HnameFromMarshalUtil(mu *marshalutil.MarshalUtil) (ret Hname, err error) {
 	err = ret.ReadFromMarshalUtil(mu)
@@ -40,15 +43,22 @@ func HnameFromBytes(data []byte) (ret Hname, err error) {
 	return
 }
 
-// Hn create hname from arbitrary string.
+// Hn calculates the hname for the given string.
+// For any given string s, it is guaranteed that Hn(s) != HnaneNil.
 func Hn(name string) (ret Hname) {
 	h := hashing.HashStrings(name)
-	_ = ret.Read(bytes.NewReader(h[:HnameLength]))
-	if ret == 0 || ret == Hname(^uint32(0)) {
-		// ensure 0 and ^0 are impossible
-		_ = ret.Read(bytes.NewReader(h[HnameLength : 2*HnameLength]))
+	for i := byte(0); i < hashing.HashSize; i += HnameLength {
+		_ = ret.Read(bytes.NewReader(h[i : i+HnameLength]))
+		if ret != HnameNil {
+			return ret
+		}
 	}
-	return ret
+	// astronomically unlikely to end up here
+	return 1
+}
+
+func (hn Hname) IsNil() bool {
+	return hn == HnameNil
 }
 
 func (hn Hname) Bytes() []byte {

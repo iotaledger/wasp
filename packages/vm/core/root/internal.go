@@ -2,7 +2,6 @@ package root
 
 import (
 	"fmt"
-	"sort"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -54,8 +53,8 @@ func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[isc
 			return false
 		}
 
-		cr, err := ContractRecordFromBytes(v)
-		if err != nil {
+		cr, err2 := ContractRecordFromBytes(v)
+		if err2 != nil {
 			return false
 		}
 
@@ -65,51 +64,55 @@ func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[isc
 	return ret, err
 }
 
-func getBlockContextSubscriptions(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, StateVarBlockContextSubscriptions)
-}
-
-func getBlockContextSubscriptionsR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, StateVarBlockContextSubscriptions)
-}
-
-func encodeOpenClosePair(openFunc, closeFunc isc.Hname) []byte {
-	return append(codec.EncodeHname(openFunc), codec.EncodeHname(closeFunc)...)
-}
-
-func mustDecodeOpenCLosePair(b []byte) (openFunc, closeFunc isc.Hname) {
-	if len(b) != 8 {
-		panic("invalid length")
-	}
-	openFunc = codec.MustDecodeHname(b[0:4])
-	closeFunc = codec.MustDecodeHname(b[4:8])
-	return
-}
-
-func SubscribeBlockContext(state kv.KVStore, contract, openFunc, closeFunc isc.Hname) {
-	getBlockContextSubscriptions(state).MustSetAt(codec.EncodeHname(contract), encodeOpenClosePair(openFunc, closeFunc))
-}
-
 type BlockContextSubscription struct {
 	Contract  isc.Hname
 	OpenFunc  isc.Hname
 	CloseFunc isc.Hname
 }
 
+func (s *BlockContextSubscription) Encode() []byte {
+	b := make([]byte, 0, 12)
+	b = append(b, codec.EncodeHname(s.Contract)...)
+	b = append(b, codec.EncodeHname(s.OpenFunc)...)
+	b = append(b, codec.EncodeHname(s.CloseFunc)...)
+	return b
+}
+
+func mustDecodeBlockContextSubscription(b []byte) (s BlockContextSubscription) {
+	if len(b) != 12 {
+		panic("invalid length")
+	}
+	s.Contract = codec.MustDecodeHname(b[0:4])
+	s.OpenFunc = codec.MustDecodeHname(b[4:8])
+	s.CloseFunc = codec.MustDecodeHname(b[8:12])
+	return
+}
+
+func getBlockContextSubscriptions(state kv.KVStore) *collections.Array16 {
+	return collections.NewArray16(state, StateVarBlockContextSubscriptions)
+}
+
+func getBlockContextSubscriptionsR(state kv.KVStoreReader) *collections.ImmutableArray16 {
+	return collections.NewArray16ReadOnly(state, StateVarBlockContextSubscriptions)
+}
+
+func SubscribeBlockContext(state kv.KVStore, contract, openFunc, closeFunc isc.Hname) {
+	s := BlockContextSubscription{
+		Contract:  contract,
+		OpenFunc:  openFunc,
+		CloseFunc: closeFunc,
+	}
+	getBlockContextSubscriptions(state).MustPush(s.Encode())
+}
+
 // GetBlockContextSubscriptions returns all contracts that are subscribed to block context,
 // in deterministic order
 func GetBlockContextSubscriptions(state kv.KVStoreReader) []BlockContextSubscription {
-	subsMap := getBlockContextSubscriptionsR(state)
-	r := make([]BlockContextSubscription, 0, subsMap.MustLen())
-	subsMap.MustIterate(func(k []byte, v []byte) bool {
-		openFunc, closeFunc := mustDecodeOpenCLosePair(v)
-		r = append(r, BlockContextSubscription{
-			Contract:  codec.MustDecodeHname(k),
-			OpenFunc:  openFunc,
-			CloseFunc: closeFunc,
-		})
-		return true
-	})
-	sort.Slice(r, func(i, j int) bool { return r[i].Contract < r[j].Contract })
+	subs := getBlockContextSubscriptionsR(state)
+	n := subs.MustLen()
+	r := make([]BlockContextSubscription, 0, n)
+	for i := uint16(0); i < n; i++ {
+		r = append(r, mustDecodeBlockContextSubscription(subs.MustGetAt(i)))
+	}
 	return r
 }

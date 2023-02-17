@@ -15,6 +15,9 @@
     "disableStacktrace": false,
     "stacktraceLevel": "panic",
     "encoding": "console",
+    "encodingConfig": {
+      "timeEncoder": "rfc3339"
+    },
     "outputPaths": [
       "stdout"
     ],
@@ -56,7 +59,7 @@
     }
   },
   "peering": {
-    "netID": "0.0.0.0:4000",
+    "peeringURL": "0.0.0.0:4000",
     "port": 4000
   },
   "chains": {
@@ -65,17 +68,20 @@
     "apiCacheTTL": "5m",
     "pullMissingRequestsFromCommittee": true
   },
-  "rawBlocks": {
-    "enabled": false,
-    "directory": "blocks"
+  "wal": {
+    "enabled": true,
+    "directory": "wal"
   },
   "profiling": {
     "enabled": false,
     "bindAddress": "localhost:6060"
   },
+  "profilingRecorder": {
+    "enabled": false
+  },
   "prometheus": {
     "enabled": true,
-    "bindAddress": "127.0.0.1:2112",
+    "bindAddress": "0.0.0.0:2112",
     "nodeMetrics": true,
     "nodeConnMetrics": true,
     "blockWALMetrics": true,
@@ -86,9 +92,8 @@
   },
   "webapi": {
     "enabled": true,
+    "bindAddress": "0.0.0.0:9090",
     "nodeOwnerAddresses": [],
-    "bindAddress": "127.0.0.1:9090",
-    "debugRequestLoggerEnabled": false,
     "auth": {
       "scheme": "jwt",
       "jwt": {
@@ -99,10 +104,17 @@
       },
       "ip": {
         "whitelist": [
-          "127.0.0.1"
+          "0.0.0.0"
         ]
       }
-    }
+    },
+    "limits": {
+      "timeout": "30s",
+      "readTimeout": "10s",
+      "writeTimeout": "10s",
+      "maxBodyLength": "1M"
+    },
+    "debugRequestLoggerEnabled": false
   },
   "nanomsg": {
     "enabled": true,
@@ -110,7 +122,7 @@
   },
   "dashboard": {
     "enabled": true,
-    "bindAddress": "127.0.0.1:7000",
+    "bindAddress": "0.0.0.0:7000",
     "exploreAddressURL": "",
     "debugRequestLoggerEnabled": false,
     "auth": {
@@ -123,7 +135,7 @@
       },
       "ip": {
         "whitelist": [
-          "127.0.0.1"
+          "0.0.0.0"
         ]
       }
     }

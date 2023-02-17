@@ -21,8 +21,8 @@ func TestSerializeRequestData(t *testing.T) {
 		req = NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337).WithGasBudget(100).Sign(cryptolib.NewKeyPair())
 
 		serialized := req.Bytes()
-		req2, err := NewRequestFromMarshalUtil(marshalutil.New(serialized))
-		require.NoError(t, err)
+		req2, err2 := NewRequestFromMarshalUtil(marshalutil.New(serialized))
+		require.NoError(t, err2)
 
 		reqBack := req2.(*offLedgerRequestData)
 		require.EqualValues(t, req.ID(), reqBack.ID())
@@ -38,7 +38,7 @@ func TestSerializeRequestData(t *testing.T) {
 			SenderContract: Hn("sender_contract"),
 			TargetContract: Hn("target_contract"),
 			EntryPoint:     Hn("entrypoint"),
-			Allowance:      NewAllowanceBaseTokens(1),
+			Allowance:      NewAssetsBaseTokens(1),
 			GasBudget:      1000,
 		}
 		basicOutput := &iotago.BasicOutput{

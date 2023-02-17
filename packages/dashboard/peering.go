@@ -50,12 +50,13 @@ type PeeringStats struct {
 }
 
 type Peer struct {
-	NumUsers int
-	NetID    string
-	IsAlive  bool
+	NumUsers   int
+	PeeringURL string
+	IsAlive    bool
 }
 
 type TrustedPeer struct {
-	NetID  string
-	PubKey cryptolib.PublicKey
+	Name       string
+	PeeringURL string
+	PubKey     cryptolib.PublicKey
 }

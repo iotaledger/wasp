@@ -134,8 +134,8 @@ func TestProofStateTerminals(t *testing.T) {
 			t.Fatalf("core contract '%s' does not contain it's hname '%s' at its nil key",
 				ci.Name, ci.Hname())
 		}
-		cS, err := ch.GetContractStateCommitment(ci.Hname())
-		require.NoError(t, err)
+		cS, err2 := ch.GetContractStateCommitment(ci.Hname())
+		require.NoError(t, err2)
 		t.Logf("BEFORE: commitment to the state of the contract '%s': %s", ci.Name, hex.EncodeToString(cS))
 	}
 

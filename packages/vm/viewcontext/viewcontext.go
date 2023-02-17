@@ -106,16 +106,16 @@ func (ctx *ViewContext) Processors() *processors.Cache {
 	return ctx.processors
 }
 
-func (ctx *ViewContext) GetAssets(agentID isc.AgentID) *isc.FungibleTokens {
-	return accounts.GetAccountAssets(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
+func (ctx *ViewContext) GetNativeTokens(agentID isc.AgentID) iotago.NativeTokens {
+	return accounts.GetNativeTokens(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
 func (ctx *ViewContext) GetAccountNFTs(agentID isc.AgentID) []iotago.NFTID {
 	return accounts.GetAccountNFTs(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
-func (ctx *ViewContext) GetNFTData(nftID iotago.NFTID) isc.NFT {
-	return accounts.GetNFTData(ctx.contractStateReader(accounts.Contract.Hname()), nftID)
+func (ctx *ViewContext) GetNFTData(nftID iotago.NFTID) *isc.NFT {
+	return accounts.MustGetNFTData(ctx.contractStateReader(accounts.Contract.Hname()), nftID)
 }
 
 func (ctx *ViewContext) Timestamp() time.Time {
@@ -133,7 +133,7 @@ func (ctx *ViewContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID
 		nativeTokenID)
 }
 
-func (ctx *ViewContext) Call(targetContract, epCode isc.Hname, params dict.Dict, _ *isc.Allowance) dict.Dict {
+func (ctx *ViewContext) Call(targetContract, epCode isc.Hname, params dict.Dict, _ *isc.Assets) dict.Dict {
 	ctx.log.Debugf("Call. TargetContract: %s entry point: %s", targetContract, epCode)
 	return ctx.callView(targetContract, epCode, params)
 }

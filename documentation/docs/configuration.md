@@ -23,13 +23,13 @@ WASP uses a JSON standard format as a config file. If you are unsure about JSON 
 You can change the path of the config file by using the `-c` or `--config` argument while executing `wasp` executable.
 
 For example:
-```bash
+```shell
 wasp -c config_defaults.json
 ```
 
 You can always get the most up-to-date description of the config parameters by running:
 
-```bash
+```shell
 wasp -h --full
 ```
 
@@ -73,15 +73,22 @@ Example:
 
 ## <a id="logger"></a> 2. Logger
 
-| Name              | Description                                                                 | Type    | Default value |
-| ----------------- | --------------------------------------------------------------------------- | ------- | ------------- |
-| level             | The minimum enabled logging level                                           | string  | "info"        |
-| disableCaller     | Stops annotating logs with the calling function's file name and line number | boolean | true          |
-| disableStacktrace | Disables automatic stacktrace capturing                                     | boolean | false         |
-| stacktraceLevel   | The level stacktraces are captured and above                                | string  | "panic"       |
-| encoding          | The logger's encoding (options: "json", "console")                          | string  | "console"     |
-| outputPaths       | A list of URLs, file paths or stdout/stderr to write logging output to      | array   | stdout        |
-| disableEvents     | Prevents log messages from being raced as events                            | boolean | true          |
+| Name                                     | Description                                                                 | Type    | Default value |
+| ---------------------------------------- | --------------------------------------------------------------------------- | ------- | ------------- |
+| level                                    | The minimum enabled logging level                                           | string  | "info"        |
+| disableCaller                            | Stops annotating logs with the calling function's file name and line number | boolean | true          |
+| disableStacktrace                        | Disables automatic stacktrace capturing                                     | boolean | false         |
+| stacktraceLevel                          | The level stacktraces are captured and above                                | string  | "panic"       |
+| encoding                                 | The logger's encoding (options: "json", "console")                          | string  | "console"     |
+| [encodingConfig](#logger_encodingconfig) | Configuration for encodingConfig                                            | object  |               |
+| outputPaths                              | A list of URLs, file paths or stdout/stderr to write logging output to      | array   | stdout        |
+| disableEvents                            | Prevents log messages from being raced as events                            | boolean | true          |
+
+### <a id="logger_encodingconfig"></a> EncodingConfig
+
+| Name        | Description                                                                                                | Type   | Default value |
+| ----------- | ---------------------------------------------------------------------------------------------------------- | ------ | ------------- |
+| timeEncoder | Sets the logger's timestamp encoding. (options: "nanos", "millis", "iso8601", "rfc3339" and "rfc3339nano") | string | "rfc3339"     |
 
 Example:
 
@@ -93,6 +100,9 @@ Example:
       "disableStacktrace": false,
       "stacktraceLevel": "panic",
       "encoding": "console",
+      "encodingConfig": {
+        "timeEncoder": "rfc3339"
+      },
       "outputPaths": [
         "stdout"
       ],
@@ -161,7 +171,7 @@ Example:
 | Name       | Description                                             | Type   | Default value                  |
 | ---------- | ------------------------------------------------------- | ------ | ------------------------------ |
 | privateKey | Private key used to derive the node identity (optional) | string | ""                             |
-| filePath   | Private key used to derive the node identity (optional) | string | "waspdb/identity/identity.key" |
+| filePath   | The path to the node identity PEM file                  | string | "waspdb/identity/identity.key" |
 
 ### <a id="p2p_db"></a> Database
 
@@ -241,17 +251,17 @@ Example:
 
 ## <a id="peering"></a> 7. Peering
 
-| Name  | Description                                          | Type   | Default value  |
-| ----- | ---------------------------------------------------- | ------ | -------------- |
-| netID | Node host address as it is recognized by other peers | string | "0.0.0.0:4000" |
-| port  | Port for Wasp committee connection/peering           | int    | 4000           |
+| Name       | Description                                          | Type   | Default value  |
+| ---------- | ---------------------------------------------------- | ------ | -------------- |
+| peeringURL | Node host address as it is recognized by other peers | string | "0.0.0.0:4000" |
+| port       | Port for Wasp committee connection/peering           | int    | 4000           |
 
 Example:
 
 ```json
   {
     "peering": {
-      "netID": "0.0.0.0:4000",
+      "peeringURL": "0.0.0.0:4000",
       "port": 4000
     }
   }
@@ -279,20 +289,20 @@ Example:
   }
 ```
 
-## <a id="rawblocks"></a> 9. Raw Blocks
+## <a id="wal"></a> 9. Write-Ahead Logging
 
-| Name      | Description                              | Type    | Default value |
-| --------- | ---------------------------------------- | ------- | ------------- |
-| enabled   | Whether the raw blocks plugin is enabled | boolean | false         |
-| directory | The raw blocks path                      | string  | "blocks"      |
+| Name      | Description                | Type    | Default value |
+| --------- | -------------------------- | ------- | ------------- |
+| enabled   | Whether the WAL is enabled | boolean | true          |
+| directory | The path for WAL blocks    | string  | "wal"         |
 
 Example:
 
 ```json
   {
-    "rawBlocks": {
-      "enabled": false,
-      "directory": "blocks"
+    "wal": {
+      "enabled": true,
+      "directory": "wal"
     }
   }
 ```
@@ -315,19 +325,35 @@ Example:
   }
 ```
 
-## <a id="prometheus"></a> 11. Prometheus
+## <a id="profilingrecorder"></a> 11. ProfilingRecorder
 
-| Name            | Description                                                  | Type    | Default value    |
-| --------------- | ------------------------------------------------------------ | ------- | ---------------- |
-| enabled         | Whether the prometheus plugin is enabled                     | boolean | true             |
-| bindAddress     | The bind address on which the Prometheus exporter listens on | string  | "127.0.0.1:2112" |
-| nodeMetrics     | Whether to include node metrics                              | boolean | true             |
-| nodeConnMetrics | Whether to include node connection metrics                   | boolean | true             |
-| blockWALMetrics | Whether to include block Write-Ahead Log (WAL) metrics       | boolean | true             |
-| restAPIMetrics  | Whether to include restAPI metrics                           | boolean | true             |
-| goMetrics       | Whether to include go metrics                                | boolean | true             |
-| processMetrics  | Whether to include process metrics                           | boolean | true             |
-| promhttpMetrics | Whether to include promhttp metrics                          | boolean | true             |
+| Name    | Description                                     | Type    | Default value |
+| ------- | ----------------------------------------------- | ------- | ------------- |
+| enabled | Whether the ProfilingRecorder plugin is enabled | boolean | false         |
+
+Example:
+
+```json
+  {
+    "profilingRecorder": {
+      "enabled": false
+    }
+  }
+```
+
+## <a id="prometheus"></a> 12. Prometheus
+
+| Name            | Description                                                  | Type    | Default value  |
+| --------------- | ------------------------------------------------------------ | ------- | -------------- |
+| enabled         | Whether the prometheus plugin is enabled                     | boolean | true           |
+| bindAddress     | The bind address on which the Prometheus exporter listens on | string  | "0.0.0.0:2112" |
+| nodeMetrics     | Whether to include node metrics                              | boolean | true           |
+| nodeConnMetrics | Whether to include node connection metrics                   | boolean | true           |
+| blockWALMetrics | Whether to include block Write-Ahead Log (WAL) metrics       | boolean | true           |
+| restAPIMetrics  | Whether to include restAPI metrics                           | boolean | true           |
+| goMetrics       | Whether to include go metrics                                | boolean | true           |
+| processMetrics  | Whether to include process metrics                           | boolean | true           |
+| promhttpMetrics | Whether to include promhttp metrics                          | boolean | true           |
 
 Example:
 
@@ -335,7 +361,7 @@ Example:
   {
     "prometheus": {
       "enabled": true,
-      "bindAddress": "127.0.0.1:2112",
+      "bindAddress": "0.0.0.0:2112",
       "nodeMetrics": true,
       "nodeConnMetrics": true,
       "blockWALMetrics": true,
@@ -347,15 +373,16 @@ Example:
   }
 ```
 
-## <a id="webapi"></a> 12. Web API
+## <a id="webapi"></a> 13. Web API
 
-| Name                      | Description                                              | Type    | Default value    |
-| ------------------------- | -------------------------------------------------------- | ------- | ---------------- |
-| enabled                   | Whether the web api plugin is enabled                    | boolean | true             |
-| nodeOwnerAddresses        | Defines a list of node owner addresses (bech32)          | array   |                  |
-| bindAddress               | The bind address for the node web api                    | string  | "127.0.0.1:9090" |
-| debugRequestLoggerEnabled | Whether the debug logging for requests should be enabled | boolean | false            |
-| [auth](#webapi_auth)      | Configuration for auth                                   | object  |                  |
+| Name                      | Description                                              | Type    | Default value  |
+| ------------------------- | -------------------------------------------------------- | ------- | -------------- |
+| enabled                   | Whether the web api plugin is enabled                    | boolean | true           |
+| bindAddress               | The bind address for the node web api                    | string  | "0.0.0.0:9090" |
+| nodeOwnerAddresses        | Defines a list of node owner addresses (bech32)          | array   |                |
+| [auth](#webapi_auth)      | Configuration for auth                                   | object  |                |
+| [limits](#webapi_limits)  | Configuration for limits                                 | object  |                |
+| debugRequestLoggerEnabled | Whether the debug logging for requests should be enabled | boolean | false          |
 
 ### <a id="webapi_auth"></a> Auth
 
@@ -382,7 +409,16 @@ Example:
 
 | Name      | Description                                          | Type  | Default value |
 | --------- | ---------------------------------------------------- | ----- | ------------- |
-| whitelist | A list of ips that are allowed to access the service | array | 127.0.0.1     |
+| whitelist | A list of ips that are allowed to access the service | array | 0.0.0.0       |
+
+### <a id="webapi_limits"></a> Limits
+
+| Name          | Description                                                               | Type   | Default value |
+| ------------- | ------------------------------------------------------------------------- | ------ | ------------- |
+| timeout       | The timeout after which a long running operation will be canceled         | string | "30s"         |
+| readTimeout   | The read timeout for the HTTP request body                                | string | "10s"         |
+| writeTimeout  | The write timeout for the HTTP response body                              | string | "10s"         |
+| maxBodyLength | The maximum number of characters that the body of an API call may contain | string | "1M"          |
 
 Example:
 
@@ -390,9 +426,8 @@ Example:
   {
     "webapi": {
       "enabled": true,
+      "bindAddress": "0.0.0.0:9090",
       "nodeOwnerAddresses": [],
-      "bindAddress": "127.0.0.1:9090",
-      "debugRequestLoggerEnabled": false,
       "auth": {
         "scheme": "jwt",
         "jwt": {
@@ -403,15 +438,22 @@ Example:
         },
         "ip": {
           "whitelist": [
-            "127.0.0.1"
+            "0.0.0.0"
           ]
         }
-      }
+      },
+      "limits": {
+        "timeout": "30s",
+        "readTimeout": "10s",
+        "writeTimeout": "10s",
+        "maxBodyLength": "1M"
+      },
+      "debugRequestLoggerEnabled": false
     }
   }
 ```
 
-## <a id="nanomsg"></a> 13. nanomsg
+## <a id="nanomsg"></a> 14. nanomsg
 
 | Name    | Description                              | Type    | Default value |
 | ------- | ---------------------------------------- | ------- | ------------- |
@@ -429,15 +471,15 @@ Example:
   }
 ```
 
-## <a id="dashboard"></a> 14. Dashboard
+## <a id="dashboard"></a> 15. Dashboard
 
-| Name                      | Description                                              | Type    | Default value    |
-| ------------------------- | -------------------------------------------------------- | ------- | ---------------- |
-| enabled                   | Whether the dashboard plugin is enabled                  | boolean | true             |
-| bindAddress               | The bind address for the node dashboard                  | string  | "127.0.0.1:7000" |
-| exploreAddressURL         | URL to add as href to addresses in the dashboard         | string  | ""               |
-| debugRequestLoggerEnabled | Whether the debug logging for requests should be enabled | boolean | false            |
-| [auth](#dashboard_auth)   | Configuration for auth                                   | object  |                  |
+| Name                      | Description                                              | Type    | Default value  |
+| ------------------------- | -------------------------------------------------------- | ------- | -------------- |
+| enabled                   | Whether the dashboard plugin is enabled                  | boolean | true           |
+| bindAddress               | The bind address for the node dashboard                  | string  | "0.0.0.0:7000" |
+| exploreAddressURL         | URL to add as href to addresses in the dashboard         | string  | ""             |
+| debugRequestLoggerEnabled | Whether the debug logging for requests should be enabled | boolean | false          |
+| [auth](#dashboard_auth)   | Configuration for auth                                   | object  |                |
 
 ### <a id="dashboard_auth"></a> Auth
 
@@ -464,7 +506,7 @@ Example:
 
 | Name      | Description                                          | Type  | Default value |
 | --------- | ---------------------------------------------------- | ----- | ------------- |
-| whitelist | A list of ips that are allowed to access the service | array | 127.0.0.1     |
+| whitelist | A list of ips that are allowed to access the service | array | 0.0.0.0       |
 
 Example:
 
@@ -472,7 +514,7 @@ Example:
   {
     "dashboard": {
       "enabled": true,
-      "bindAddress": "127.0.0.1:7000",
+      "bindAddress": "0.0.0.0:7000",
       "exploreAddressURL": "",
       "debugRequestLoggerEnabled": false,
       "auth": {
@@ -485,7 +527,7 @@ Example:
         },
         "ip": {
           "whitelist": [
-            "127.0.0.1"
+            "0.0.0.0"
           ]
         }
       }

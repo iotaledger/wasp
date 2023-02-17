@@ -2,6 +2,7 @@ package statemanager
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/samber/lo"
@@ -16,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 )
@@ -41,20 +43,34 @@ type reqChainNodesUpdated struct {
 	committeeNodes []*cryptolib.PublicKey
 }
 
+func (r *reqChainNodesUpdated) String() string {
+	short := func(pkList []*cryptolib.PublicKey) string {
+		return lo.Reduce(pkList, func(acc string, item *cryptolib.PublicKey, _ int) string {
+			return acc + " " + gpa.NodeIDFromPublicKey(item).ShortString()
+		}, "")
+	}
+	return fmt.Sprintf("{reqChainNodesUpdated, serverNodes=%s, accessNodes=%s, committeeNodes=%s",
+		short(r.serverNodes),
+		short(r.accessNodes),
+		short(r.committeeNodes),
+	)
+}
+
 type stateManager struct {
-	log             *logger.Logger
-	chainID         isc.ChainID
-	stateManagerGPA gpa.GPA
-	nodeRandomiser  smUtils.NodeRandomiser
-	nodeIDToPubKey  map[gpa.NodeID]*cryptolib.PublicKey
-	inputPipe       pipe.Pipe[gpa.Input]
-	messagePipe     pipe.Pipe[*peering.PeerMessageIn]
-	nodePubKeysPipe pipe.Pipe[*reqChainNodesUpdated]
-	net             peering.NetworkProvider
-	netPeeringID    peering.PeeringID
-	timers          smGPA.StateManagerTimers
-	ctx             context.Context
-	cleanupFun      func()
+	log                 *logger.Logger
+	chainID             isc.ChainID
+	stateManagerGPA     gpa.GPA
+	nodeRandomiser      smUtils.NodeRandomiser
+	nodeIDToPubKey      map[gpa.NodeID]*cryptolib.PublicKey
+	inputPipe           pipe.Pipe[gpa.Input]
+	messagePipe         pipe.Pipe[*peering.PeerMessageIn]
+	nodePubKeysPipe     pipe.Pipe[*reqChainNodesUpdated]
+	net                 peering.NetworkProvider
+	netPeeringID        peering.PeeringID
+	timers              smGPA.StateManagerTimers
+	ctx                 context.Context
+	cleanupFun          func()
+	shutdownCoordinator *shutdown.Coordinator
 }
 
 var (
@@ -75,6 +91,7 @@ func New(
 	net peering.NetworkProvider,
 	wal smGPAUtils.BlockWAL,
 	store state.Store,
+	shutdownCoordinator *shutdown.Coordinator,
 	log *logger.Logger,
 	timersOpt ...smGPA.StateManagerTimers,
 ) (StateMgr, error) {
@@ -92,17 +109,18 @@ func New(
 		return nil, err
 	}
 	result := &stateManager{
-		log:             log,
-		chainID:         chainID,
-		stateManagerGPA: stateManagerGPA,
-		nodeRandomiser:  nr,
-		inputPipe:       pipe.NewInfinitePipe[gpa.Input](),
-		messagePipe:     pipe.NewInfinitePipe[*peering.PeerMessageIn](),
-		nodePubKeysPipe: pipe.NewInfinitePipe[*reqChainNodesUpdated](),
-		net:             net,
-		netPeeringID:    peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("StateManager")), // ChainID × StateManager
-		timers:          timers,
-		ctx:             ctx,
+		log:                 log,
+		chainID:             chainID,
+		stateManagerGPA:     stateManagerGPA,
+		nodeRandomiser:      nr,
+		inputPipe:           pipe.NewInfinitePipe[gpa.Input](),
+		messagePipe:         pipe.NewInfinitePipe[*peering.PeerMessageIn](),
+		nodePubKeysPipe:     pipe.NewInfinitePipe[*reqChainNodesUpdated](),
+		net:                 net,
+		netPeeringID:        peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("StateManager")), // ChainID × StateManager
+		timers:              timers,
+		ctx:                 ctx,
+		shutdownCoordinator: shutdownCoordinator,
 	}
 	result.handleNodePublicKeys(&reqChainNodesUpdated{
 		serverNodes:    peerPubKeys,
@@ -181,7 +199,6 @@ func (smT *stateManager) addInput(input gpa.Input) {
 
 func (smT *stateManager) run() {
 	defer smT.cleanupFun()
-	ctxCloseCh := smT.ctx.Done()
 	inputPipeCh := smT.inputPipe.Out()
 	messagePipeCh := smT.messagePipe.Out()
 	nodePubKeysPipeCh := smT.nodePubKeysPipe.Out()
@@ -189,6 +206,17 @@ func (smT *stateManager) run() {
 	for {
 		smT.log.Debugf("State manager loop iteration; there are %v inputs, %v messages, %v public key changes waiting to be handled",
 			smT.inputPipe.Len(), smT.messagePipe.Len(), smT.nodePubKeysPipe.Len())
+		if smT.ctx.Err() != nil {
+			if smT.shutdownCoordinator == nil {
+				return
+			}
+			// TODO what should the statemgr wait for?
+			if smT.shutdownCoordinator.CheckNestedDone() {
+				smT.log.Debugf("Stopping state manager, because context was closed")
+				smT.shutdownCoordinator.Done()
+				return
+			}
+		}
 		select {
 		case input, ok := <-inputPipeCh:
 			if ok {
@@ -215,9 +243,8 @@ func (smT *stateManager) run() {
 			} else {
 				timerTickCh = nil
 			}
-		case <-ctxCloseCh:
-			smT.log.Debugf("Stopping state manager, because context was closed")
-			return
+		case <-smT.ctx.Done():
+			continue
 		}
 	}
 }
@@ -239,6 +266,7 @@ func (smT *stateManager) handleMessage(peerMsg *peering.PeerMessageIn) {
 }
 
 func (smT *stateManager) handleNodePublicKeys(req *reqChainNodesUpdated) {
+	smT.log.Debugf("handleNodePublicKeys: %v", req)
 	smT.nodeIDToPubKey = map[gpa.NodeID]*cryptolib.PublicKey{}
 	peerNodeIDs := []gpa.NodeID{}
 	for _, pubKey := range req.serverNodes {

@@ -24,41 +24,43 @@ const (
 )
 
 type peer struct {
-	remoteNetID  string
-	remotePubKey *cryptolib.PublicKey
-	remoteLppID  libp2ppeer.ID
-	accessLock   *sync.RWMutex
-	sendPipe     pipe.Pipe[*peering.PeerMessageNet]
-	recvPipe     pipe.Pipe[*peering.PeerMessageNet]
-	lastMsgSent  time.Time
-	lastMsgRecv  time.Time
-	numUsers     int
-	trusted      bool
-	net          *netImpl
-	log          *logger.Logger
+	name             string
+	remotePeeringURL string
+	remotePubKey     *cryptolib.PublicKey
+	remoteLppID      libp2ppeer.ID
+	accessLock       *sync.RWMutex
+	sendPipe         pipe.Pipe[*peering.PeerMessageNet]
+	recvPipe         pipe.Pipe[*peering.PeerMessageNet]
+	lastMsgSent      time.Time
+	lastMsgRecv      time.Time
+	numUsers         int
+	trusted          bool
+	net              *netImpl
+	log              *logger.Logger
 }
 
 var _ peering.PeerSender = &peer{}
 
-func newPeer(remoteNetID string, remotePubKey *cryptolib.PublicKey, remoteLppID libp2ppeer.ID, n *netImpl) *peer {
-	log := n.log.Named("peer:" + remoteNetID)
+func newPeer(name, peeringURL string, remotePubKey *cryptolib.PublicKey, remoteLppID libp2ppeer.ID, n *netImpl) *peer {
+	log := n.log.Named("peer:" + peeringURL)
 	messagePriorityFun := func(msg *peering.PeerMessageNet) bool {
 		// TODO: decide if prioritetisation is needed and implement it then.
 		return false
 	}
 	p := &peer{
-		remoteNetID:  remoteNetID,
-		remotePubKey: remotePubKey,
-		remoteLppID:  remoteLppID,
-		accessLock:   &sync.RWMutex{},
-		sendPipe:     pipe.NewLimitPriorityHashInfinitePipe(messagePriorityFun, maxPeerMsgBuffer),
-		recvPipe:     pipe.NewLimitPriorityHashInfinitePipe(messagePriorityFun, maxPeerMsgBuffer),
-		lastMsgSent:  time.Time{},
-		lastMsgRecv:  time.Time{},
-		numUsers:     0,
-		trusted:      true,
-		net:          n,
-		log:          log,
+		name:             name,
+		remotePeeringURL: peeringURL,
+		remotePubKey:     remotePubKey,
+		remoteLppID:      remoteLppID,
+		accessLock:       &sync.RWMutex{},
+		sendPipe:         pipe.NewLimitPriorityHashInfinitePipe(messagePriorityFun, maxPeerMsgBuffer),
+		recvPipe:         pipe.NewLimitPriorityHashInfinitePipe(messagePriorityFun, maxPeerMsgBuffer),
+		lastMsgSent:      time.Time{},
+		lastMsgRecv:      time.Time{},
+		numUsers:         0,
+		trusted:          true,
+		net:              n,
+		log:              log,
 	}
 	go p.sendLoop()
 	go p.recvLoop()
@@ -92,17 +94,24 @@ func (p *peer) maintenanceCheck() {
 		p.net.lppHeartbeatSend(p, true)
 	}
 	if numUsers == 0 && !trusted && lastMsgOld {
-		p.net.delPeer(p)
+		p.net.delPeerWithoutLock(p)
 		p.sendPipe.Close()
 		p.recvPipe.Close()
 	}
 }
 
-// NetID implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
-func (p *peer) NetID() string {
+// PeeringURL implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
+func (p *peer) Name() string {
 	p.accessLock.RLock()
 	defer p.accessLock.RUnlock()
-	return p.remoteNetID
+	return p.name
+}
+
+// PeeringURL implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
+func (p *peer) PeeringURL() string {
+	p.accessLock.RLock()
+	defer p.accessLock.RUnlock()
+	return p.remotePeeringURL
 }
 
 // PubKey implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
@@ -132,7 +141,7 @@ func (p *peer) SendMsg(msg *peering.PeerMessageData) {
 func (p *peer) RecvMsg(msg *peering.PeerMessageNet) {
 	if traceMessages {
 		p.log.Debugf("Peer message received from peer %v, peeringID %v, receiver %v, type %v, length %v, first bytes %v",
-			p.NetID(), msg.PeeringID, msg.MsgReceiver, msg.MsgType, len(msg.MsgData), firstBytes(16, msg.MsgData))
+			p.PeeringURL(), msg.PeeringID, msg.MsgReceiver, msg.MsgType, len(msg.MsgData), firstBytes(16, msg.MsgData))
 	}
 	p.noteReceived()
 	p.recvPipe.In() <- msg
@@ -164,7 +173,7 @@ func (p *peer) sendMsgDirect(msg *peering.PeerMessageNet) {
 		return
 	}
 	if err := writeFrame(stream, msgBytes); err != nil {
-		p.log.Warnf("Failed to send outgoing message to %s, send failed with reason=%v", p.remoteNetID, err)
+		p.log.Warnf("Failed to send outgoing message to %s, send failed with reason=%v", p.remotePeeringURL, err)
 		return
 	}
 	p.accessLock.Lock()
@@ -172,7 +181,7 @@ func (p *peer) sendMsgDirect(msg *peering.PeerMessageNet) {
 	p.accessLock.Unlock()
 	if traceMessages {
 		p.log.Debugf("Peer message sent to peer %v, peeringID %v, receiver %v, type %v, length %v, first bytes %v",
-			p.NetID(), msg.PeeringID, msg.MsgReceiver, msg.MsgType, len(msg.MsgData), firstBytes(16, msg.MsgData))
+			p.PeeringURL(), msg.PeeringID, msg.MsgReceiver, msg.MsgType, len(msg.MsgData), firstBytes(16, msg.MsgData))
 	}
 }
 
@@ -206,7 +215,7 @@ func (p *peer) Await(timeout time.Duration) error {
 func (p *peer) IsInbound() bool {
 	p.accessLock.RLock()
 	defer p.accessLock.RUnlock()
-	return p.remoteNetID < p.net.myNetID
+	return p.remotePeeringURL < p.net.myPeeringURL
 }
 
 // NumUsers implements peering.PeerStatusProvider.
@@ -235,8 +244,8 @@ func (p *peer) trust(trusted bool) {
 	p.trusted = trusted
 }
 
-func (p *peer) setNetID(netID string) {
+func (p *peer) setPeeringURL(url string) {
 	p.accessLock.Lock()
 	defer p.accessLock.Unlock()
-	p.remoteNetID = netID
+	p.remotePeeringURL = url
 }

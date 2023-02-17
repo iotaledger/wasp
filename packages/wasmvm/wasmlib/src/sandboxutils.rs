@@ -8,8 +8,8 @@ pub struct ScSandboxUtils {}
 
 impl ScSandboxUtils {
     // decodes the specified bech32-encoded string value to its original address
-    pub fn bech32_decode(&self, value: &str) -> ScAddress {
-        address_from_bytes(&sandbox(FN_UTILS_BECH32_DECODE, &string_to_bytes(value)))
+    pub fn bech32_decode(&self, bech32: &str) -> ScAddress {
+        address_from_bytes(&sandbox(FN_UTILS_BECH32_DECODE, &string_to_bytes(bech32)))
     }
 
     // encodes the specified address to a bech32-encoded string
@@ -61,13 +61,13 @@ impl ScSandboxUtils {
         hash_from_bytes(&sandbox(FN_UTILS_HASH_BLAKE2B, value))
     }
 
+    // hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
+    pub fn hash_name(&self, name: &str) -> ScHname {
+        hname_from_bytes(&sandbox(FN_UTILS_HASH_NAME, &string_to_bytes(name)))
+    }
+
     // hashes the specified value bytes using sha3 hashing and returns the resulting 32-byte hash
     pub fn hash_sha3(&self, value: &[u8]) -> ScHash {
         hash_from_bytes(&sandbox(FN_UTILS_HASH_SHA3, value))
-    }
-
-    // hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
-    pub fn hash_name(&self, value: &str) -> ScHname {
-        hname_from_bytes(&sandbox(FN_UTILS_HASH_NAME, &string_to_bytes(value)))
     }
 }

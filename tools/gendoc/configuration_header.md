@@ -21,13 +21,13 @@ WASP uses a JSON standard format as a config file. If you are unsure about JSON 
 You can change the path of the config file by using the `-c` or `--config` argument while executing `wasp` executable.
 
 For example:
-```bash
+```shell
 wasp -c config_defaults.json
 ```
 
 You can always get the most up-to-date description of the config parameters by running:
 
-```bash
+```shell
 wasp -h --full
 ```
 

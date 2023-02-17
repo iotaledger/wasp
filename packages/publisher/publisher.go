@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -13,12 +13,16 @@ import (
 	"github.com/iotaledger/wasp/packages/util/pipe"
 )
 
-var Event = events.NewEvent(func(handler interface{}, params ...interface{}) {
-	callback := handler.(func(msgType string, parts []string))
-	msgType := params[0].(string)
-	parts := params[1].([]string)
-	callback(msgType, parts)
-})
+// PublishedEvent contains the information about the published message.
+type PublishedEvent struct {
+	MsgType string
+	ChainID isc.ChainID
+	Parts   []string
+}
+
+type Events struct {
+	Published *event.Event[*PublishedEvent]
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Publisher
@@ -27,6 +31,7 @@ type Publisher struct {
 	blockAppliedPipe pipe.Pipe[*publisherBlockApplied]
 	mutex            *sync.RWMutex
 	log              *logger.Logger
+	Events           *Events
 }
 
 var _ chain.ChainListener = &Publisher{}
@@ -36,12 +41,16 @@ type publisherBlockApplied struct {
 	block   state.Block
 }
 
-func NewPublisher(log *logger.Logger) *Publisher {
+func New(log *logger.Logger) *Publisher {
 	p := &Publisher{
 		blockAppliedPipe: pipe.NewInfinitePipe[*publisherBlockApplied](),
 		mutex:            &sync.RWMutex{},
 		log:              log,
+		Events: &Events{
+			Published: event.New[*PublishedEvent](),
+		},
 	}
+
 	return p
 }
 
@@ -88,5 +97,10 @@ func (p *Publisher) handleBlockApplied(blockApplied *publisherBlockApplied) {
 
 func (p *Publisher) publish(e *ISCEvent) {
 	p.log.Debugf("Publishing %v", e.String())
-	Event.Trigger(e.Kind, []string{e.String()})
+
+	p.Events.Published.Trigger(&PublishedEvent{
+		MsgType: e.Kind,
+		ChainID: e.ChainID,
+		Parts:   []string{e.String()},
+	})
 }

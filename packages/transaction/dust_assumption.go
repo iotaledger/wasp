@@ -57,19 +57,29 @@ func (d *StorageDepositAssumption) String() string {
 		d.AnchorOutput, d.NativeTokenOutput)
 }
 
+var storageDepositEstimateOutputs = struct {
+	alias       iotago.Output
+	nativeToken iotago.Output
+	nft         iotago.Output
+}{
+	alias:       aliasOutputStorageDeposit(),
+	nativeToken: nativeTokenOutputStorageDeposit(),
+	nft:         nftOutputStorageDeposit(),
+}
+
 func NewStorageDepositEstimate() *StorageDepositAssumption {
+	l1Params := parameters.L1()
 	return &StorageDepositAssumption{
-		AnchorOutput:      aliasOutputStorageDeposit(),
-		NativeTokenOutput: nativeTokenOutputStorageDeposit(),
-		NFTOutput:         nftOutputStorageDeposit(),
+		AnchorOutput:      l1Params.Protocol.RentStructure.MinRent(storageDepositEstimateOutputs.alias),
+		NativeTokenOutput: l1Params.Protocol.RentStructure.MinRent(storageDepositEstimateOutputs.nativeToken),
+		NFTOutput:         l1Params.Protocol.RentStructure.MinRent(storageDepositEstimateOutputs.nft),
 	}
 }
 
-func aliasOutputStorageDeposit() uint64 {
+func aliasOutputStorageDeposit() iotago.Output {
 	keyPair := cryptolib.NewKeyPairFromSeed([32]byte{})
 	addr := keyPair.GetPublicKey().AsEd25519Address()
-
-	aliasOutput := &iotago.AliasOutput{
+	return &iotago.AliasOutput{
 		AliasID:       iotago.AliasID{},
 		Amount:        1000,
 		StateMetadata: state.L1CommitmentNil.Bytes(),
@@ -83,15 +93,14 @@ func aliasOutputStorageDeposit() uint64 {
 			},
 		},
 	}
-	return parameters.L1().Protocol.RentStructure.MinRent(aliasOutput)
 }
 
-func nativeTokenOutputStorageDeposit() uint64 {
+func nativeTokenOutputStorageDeposit() iotago.Output {
 	addr := iotago.AliasAddressFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, 0))
-	o := MakeBasicOutput(
+	return MakeBasicOutput(
 		&addr,
 		&addr,
-		&isc.FungibleTokens{
+		&isc.Assets{
 			BaseTokens: 1,
 			NativeTokens: iotago.NativeTokens{&iotago.NativeToken{
 				ID:     iotago.NativeTokenID{},
@@ -100,16 +109,16 @@ func nativeTokenOutputStorageDeposit() uint64 {
 		},
 		nil,
 		isc.SendOptions{},
+		true,
 	)
-	return parameters.L1().Protocol.RentStructure.MinRent(o)
 }
 
-func nftOutputStorageDeposit() uint64 {
+func nftOutputStorageDeposit() iotago.Output {
 	addr := iotago.AliasAddressFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, 0))
 	basicOut := MakeBasicOutput(
 		&addr,
 		&addr,
-		&isc.FungibleTokens{
+		&isc.Assets{
 			BaseTokens: 1,
 			NativeTokens: iotago.NativeTokens{&iotago.NativeToken{
 				ID:     iotago.NativeTokenID{},
@@ -118,12 +127,11 @@ func nftOutputStorageDeposit() uint64 {
 		},
 		nil,
 		isc.SendOptions{},
+		true,
 	)
-	out := NftOutputFromBasicOutput(basicOut, &isc.NFT{
+	return NftOutputFromBasicOutput(basicOut, &isc.NFT{
 		ID:       iotago.NFTID{0},
 		Issuer:   tpkg.RandEd25519Address(),
 		Metadata: make([]byte, iotago.MaxMetadataLength),
 	})
-
-	return parameters.L1().Protocol.RentStructure.MinRent(out)
 }

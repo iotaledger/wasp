@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
+	lru "github.com/hashicorp/golang-lru/v2"
 
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -29,13 +30,24 @@ type EVMEmulator struct {
 	chainConfig *params.ChainConfig
 	kv          kv.KVStore
 	vmConfig    vm.Config
-	getBalance  GetBalanceFunc
-	subBalance  SubBalanceFunc
-	addBalance  AddBalanceFunc
+	l2Balance   L2Balance
 }
 
-func makeConfig(chainID int) *params.ChainConfig {
-	return &params.ChainConfig{
+var configCache *lru.Cache[int, *params.ChainConfig]
+
+func init() {
+	var err error
+	configCache, err = lru.New[int, *params.ChainConfig](100)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func getConfig(chainID int) *params.ChainConfig {
+	if c, ok := configCache.Get(chainID); ok {
+		return c
+	}
+	c := &params.ChainConfig{
 		ChainID:             big.NewInt(int64(chainID)),
 		HomesteadBlock:      big.NewInt(0),
 		EIP150Block:         big.NewInt(0),
@@ -50,6 +62,8 @@ func makeConfig(chainID int) *params.ChainConfig {
 		BerlinBlock:         big.NewInt(0),
 		Ethash:              &params.EthashConfig{},
 	}
+	configCache.Add(chainID, c)
+	return c
 }
 
 const (
@@ -57,13 +71,8 @@ const (
 	keyBlockchainDB = "b"
 )
 
-func newStateDB(
-	store kv.KVStore,
-	getBalance GetBalanceFunc,
-	addBalance SubBalanceFunc,
-	subBalance AddBalanceFunc,
-) *StateDB {
-	return NewStateDB(subrealm.New(store, keyStateDB), getBalance, addBalance, subBalance)
+func newStateDB(store kv.KVStore, l2Balance L2Balance) *StateDB {
+	return NewStateDB(subrealm.New(store, keyStateDB), l2Balance)
 }
 
 func newBlockchainDB(store kv.KVStore) *BlockchainDB {
@@ -78,9 +87,7 @@ func Init(
 	gasLimit,
 	timestamp uint64,
 	alloc core.GenesisAlloc,
-	getBalance GetBalanceFunc,
-	debitFromAccount SubBalanceFunc,
-	creditToAccount AddBalanceFunc,
+	l2Balance L2Balance,
 ) {
 	bdb := newBlockchainDB(store)
 	if bdb.Initialized() {
@@ -88,7 +95,7 @@ func Init(
 	}
 	bdb.Init(chainID, blockKeepAmount, gasLimit, timestamp)
 
-	statedb := newStateDB(store, getBalance, debitFromAccount, creditToAccount)
+	statedb := newStateDB(store, l2Balance)
 	for addr, account := range alloc {
 		statedb.CreateAccount(addr)
 		if account.Balance != nil {
@@ -108,9 +115,7 @@ func NewEVMEmulator(
 	store kv.KVStore,
 	timestamp uint64,
 	magicContracts map[common.Address]vm.ISCMagicContract,
-	getBalance GetBalanceFunc,
-	subBalance SubBalanceFunc,
-	addBalance AddBalanceFunc,
+	l2Balance L2Balance,
 ) *EVMEmulator {
 	bdb := newBlockchainDB(store)
 	if !bdb.Initialized() {
@@ -119,17 +124,15 @@ func NewEVMEmulator(
 
 	return &EVMEmulator{
 		timestamp:   timestamp,
-		chainConfig: makeConfig(int(bdb.GetChainID())),
+		chainConfig: getConfig(int(bdb.GetChainID())),
 		kv:          store,
 		vmConfig:    vm.Config{MagicContracts: magicContracts},
-		getBalance:  getBalance,
-		subBalance:  subBalance,
-		addBalance:  addBalance,
+		l2Balance:   l2Balance,
 	}
 }
 
 func (e *EVMEmulator) StateDB() *StateDB {
-	return newStateDB(e.kv, e.getBalance, e.subBalance, e.addBalance)
+	return newStateDB(e.kv, e.l2Balance)
 }
 
 func (e *EVMEmulator) BlockchainDB() *BlockchainDB {

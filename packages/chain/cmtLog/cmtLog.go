@@ -75,6 +75,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -117,6 +118,10 @@ func (o *Output) GetLogIndex() LogIndex {
 
 func (o *Output) GetBaseAliasOutput() *isc.AliasOutputWithID {
 	return o.baseAliasOutput
+}
+
+func (o *Output) String() string {
+	return fmt.Sprintf("{Output, logIndex=%v, baseAliasOutput=%v}", o.logIndex, o.baseAliasOutput)
 }
 
 // Protocol implementation.
@@ -170,6 +175,7 @@ func New(
 	nodePKs := dkShare.GetNodePubKeys()
 	nodeIDs := make([]gpa.NodeID, len(nodePKs))
 	for i := range nodeIDs {
+		log.Infof("Committee node[%v]=%v", i, nodePKs[i])
 		nodeIDs[i] = nodeIDFromPubKey(nodePKs[i])
 	}
 	//
@@ -177,8 +183,9 @@ func New(
 	n := len(nodeIDs)
 	f := dkShare.DSS().MaxFaulty()
 	if f > (n-1)/3 {
-		panic(fmt.Errorf("invalid f=%v for n=%v", n, f))
+		log.Panicf("invalid f=%v for n=%v", n, f)
 	}
+	log.Infof("Committee size: N=%v, F=%v", n, f)
 	minLogIndex := prevLI.Next()
 	cl := &cmtLogImpl{
 		chainID:                chainID,
@@ -187,7 +194,7 @@ func New(
 		suspended:              false,
 		minLI:                  minLogIndex,
 		consensusLI:            NilLogIndex(),
-		varLogIndex:            NewVarLogIndex(nodeIDs, n, f, prevLI, log),
+		varLogIndex:            NewVarLogIndex(nodeIDs, n, f, prevLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, log.Named("VLI")),
 		varLocalView:           NewVarLocalView(),
 		log:                    log,
 	}
@@ -203,8 +210,6 @@ func (cl *cmtLogImpl) AsGPA() gpa.GPA {
 // Implements the gpa.GPA interface.
 func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
 	switch input := input.(type) {
-	case *inputStart:
-		return cl.handleInputStart()
 	case *inputAliasOutputConfirmed:
 		return cl.handleInputAliasOutputConfirmed(input)
 	case *inputAliasOutputRejected:
@@ -231,16 +236,6 @@ func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 	return cl.handleMsgNextLogIndex(msgNLI)
 }
 
-// > ON Startup:
-// >     ...
-// >     LogIndex.Start(prevLI)
-// >     TryProposeConsensus()
-func (cl *cmtLogImpl) handleInputStart() gpa.OutMessages {
-	msgs := cl.varLogIndex.StartReceived()
-	cl.tryProposeConsensus()
-	return msgs
-}
-
 // > UPON AliasOutput (AO) {Confirmed | Rejected} by L1:
 // >     LocalView.Update(AO)
 // >     IF LocalView changed THEN
@@ -248,8 +243,9 @@ func (cl *cmtLogImpl) handleInputStart() gpa.OutMessages {
 // >         TryProposeConsensus()
 func (cl *cmtLogImpl) handleInputAliasOutputConfirmed(input *inputAliasOutputConfirmed) gpa.OutMessages {
 	if cl.varLocalView.AliasOutputConfirmed(input.aliasOutput) {
-		cl.varLogIndex.L1ReplacedBaseAliasOutput()
+		msgs := cl.varLogIndex.L1ReplacedBaseAliasOutput(cl.varLocalView.GetBaseAliasOutput())
 		cl.tryProposeConsensus()
+		return msgs
 	}
 	return nil
 }
@@ -261,8 +257,9 @@ func (cl *cmtLogImpl) handleInputAliasOutputConfirmed(input *inputAliasOutputCon
 // >         TryProposeConsensus()
 func (cl *cmtLogImpl) handleInputAliasOutputRejected(input *inputAliasOutputRejected) gpa.OutMessages {
 	if cl.varLocalView.AliasOutputRejected(input.aliasOutput) {
-		cl.varLogIndex.L1ReplacedBaseAliasOutput()
+		msgs := cl.varLogIndex.L1ReplacedBaseAliasOutput(cl.varLocalView.GetBaseAliasOutput())
 		cl.tryProposeConsensus()
+		return msgs
 	}
 	return nil
 }
@@ -274,8 +271,9 @@ func (cl *cmtLogImpl) handleInputAliasOutputRejected(input *inputAliasOutputReje
 // >         TryProposeConsensus()
 func (cl *cmtLogImpl) handleInputConsensusOutputDone(input *inputConsensusOutputDone) gpa.OutMessages {
 	if cl.varLocalView.ConsensusOutputDone(input.baseAliasOutputID, input.nextAliasOutput) {
-		cl.varLogIndex.ConsensusOutputReceived(input.logIndex)
+		msgs := cl.varLogIndex.ConsensusOutputReceived(input.logIndex, cons.Completed, cl.varLocalView.GetBaseAliasOutput())
 		cl.tryProposeConsensus()
+		return msgs
 	}
 	return nil
 }
@@ -284,9 +282,9 @@ func (cl *cmtLogImpl) handleInputConsensusOutputDone(input *inputConsensusOutput
 // >     LogIndex.ConsensusOutput(CS.LogIndex)
 // >     TryProposeConsensus()
 func (cl *cmtLogImpl) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
-	cl.varLogIndex.ConsensusOutputReceived(input.logIndex)
+	msgs := cl.varLogIndex.ConsensusOutputReceived(input.logIndex, cons.Skipped, cl.varLocalView.GetBaseAliasOutput())
 	cl.tryProposeConsensus()
-	return nil
+	return msgs
 }
 
 // > ON ConsensusTimeout (CT)
@@ -296,9 +294,9 @@ func (cl *cmtLogImpl) handleInputConsensusOutputSkip(input *inputConsensusOutput
 // NOTE: Consensus has not finished in long time, try recover by voting
 // for the next LogIndex. This actually breaks the asynchronous assumption.
 func (cl *cmtLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
-	cl.varLogIndex.ConsensusTimeoutReceived(input.logIndex)
+	msgs := cl.varLogIndex.ConsensusTimeoutReceived(input.logIndex)
 	cl.tryProposeConsensus()
-	return nil
+	return msgs
 }
 
 // > ON Suspend:
@@ -334,7 +332,8 @@ func (cl *cmtLogImpl) Output() gpa.Output {
 
 // Implements the gpa.GPA interface.
 func (cl *cmtLogImpl) StatusString() string {
-	return fmt.Sprintf("{cmtLogImpl, LogIndex=%v, output=%+v}", cl.varLogIndex.Value(), cl.output)
+	vliLI, _ := cl.varLogIndex.Value()
+	return fmt.Sprintf("{cmtLogImpl, LogIndex=%v, output=%+v}", vliLI, cl.output)
 }
 
 // > PROCEDURE TryProposeConsensus:
@@ -349,7 +348,11 @@ func (cl *cmtLogImpl) StatusString() string {
 // >     ELSE
 // >         Don't propose any consensus.
 func (cl *cmtLogImpl) tryProposeConsensus() {
-	logIndex := cl.varLogIndex.Value()
+	logIndex, baseAO := cl.varLogIndex.Value()
+	if logIndex == NilLogIndex() {
+		// No log index decided yet.
+		return
+	}
 	//
 	// Check, maybe it is already started.
 	if cl.output != nil && cl.output.logIndex == logIndex {
@@ -361,7 +364,7 @@ func (cl *cmtLogImpl) tryProposeConsensus() {
 	// >        ∧ LogIndex > ConsensusLI
 	// >        ∧ LogIndex ≥ MinLI // ⇒ LogIndex ≠ NIL
 	// >        ∧ ¬ Suspended
-	baseAO := cl.varLocalView.GetBaseAliasOutput()
+	// TODO: previously was: baseAO := cl.varLocalView.GetBaseAliasOutput()
 	if baseAO != nil && logIndex > cl.consensusLI && logIndex >= cl.minLI && !cl.suspended {
 		// >     THEN
 		// >         Persist LogIndex

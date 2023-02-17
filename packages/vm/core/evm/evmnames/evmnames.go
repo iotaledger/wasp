@@ -27,7 +27,11 @@ const (
 	FuncGetChainID                          = "getChainID"
 	FuncGetCallGasLimit                     = "getCallGasLimit"
 
-	FuncRegisterERC20NativeToken = "registerERC20NativeToken"
+	FuncRegisterERC20NativeToken              = "registerERC20NativeToken"
+	FuncRegisterERC20NativeTokenOnRemoteChain = "registerERC20NativeTokenOnRemoteChain"
+	FuncRegisterERC20ExternalNativeToken      = "registerERC20ExternalNativeToken"
+	FuncGetERC20ExternalNativeTokenAddress    = "getERC20ExternalNativeTokenAddress"
+	FuncRegisterERC721NFTCollection           = "registerERC721NFTCollection"
 
 	// block context
 	FuncOpenBlockContext  = "openBlockContext"
@@ -50,8 +54,12 @@ const (
 	FieldFilterQuery      = "fq"
 	FieldBlockKeepAmount  = "bk"
 
-	FieldFoundrySN         = "fs"
-	FieldTokenName         = "n"
-	FieldTokenTickerSymbol = "t"
-	FieldTokenDecimals     = "d"
+	FieldNativeTokenID      = "N"
+	FieldFoundrySN          = "fs"
+	FieldTokenName          = "n"
+	FieldTokenTickerSymbol  = "t"
+	FieldTokenDecimals      = "d"
+	FieldNFTCollectionID    = "C"
+	FieldFoundryTokenScheme = "T"
+	FieldTargetAddress      = "A"
 )

@@ -64,7 +64,7 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 		SenderContract: isc.Hn("sender_contract"),
 		TargetContract: isc.Hn("target_contract"),
 		EntryPoint:     isc.Hn("entrypoint"),
-		Allowance:      isc.NewAllowanceBaseTokens(1),
+		Allowance:      isc.NewAssetsBaseTokens(1),
 		GasBudget:      1000,
 	}
 
@@ -100,9 +100,9 @@ func TestMessageMetrics(t *testing.T) {
 	outputID2 := &InStateOutput{OutputID: iotago.OutputID{2}}
 	outputID3 := &InStateOutput{OutputID: iotago.OutputID{3}}
 
-	cncm1.GetInStateOutput().CountLastMessage(outputID1)
-	cncm1.GetInStateOutput().CountLastMessage(outputID2)
-	cncm1.GetInStateOutput().CountLastMessage(outputID3)
+	cncm1.GetInStateOutput().IncL1Messages(outputID1)
+	cncm1.GetInStateOutput().IncL1Messages(outputID2)
+	cncm1.GetInStateOutput().IncL1Messages(outputID3)
 
 	checkMetricsValues(t, 3, outputID3, cncm1.GetInStateOutput())
 	checkMetricsValues(t, 0, new(InStateOutput), cncm2.GetInStateOutput())
@@ -113,9 +113,9 @@ func TestMessageMetrics(t *testing.T) {
 	aliasOutput2 := &iotago.AliasOutput{StateIndex: 2}
 	aliasOutput3 := &iotago.AliasOutput{StateIndex: 3}
 
-	ncm.GetInAliasOutput().CountLastMessage(aliasOutput1)
-	cncm1.GetInAliasOutput().CountLastMessage(aliasOutput2)
-	cncm1.GetInAliasOutput().CountLastMessage(aliasOutput3)
+	ncm.GetInAliasOutput().IncL1Messages(aliasOutput1)
+	cncm1.GetInAliasOutput().IncL1Messages(aliasOutput2)
+	cncm1.GetInAliasOutput().IncL1Messages(aliasOutput3)
 
 	checkMetricsValues(t, 2, aliasOutput3, cncm1.GetInAliasOutput())
 	checkMetricsValues(t, 0, new(iotago.AliasOutput), cncm2.GetInAliasOutput())
@@ -126,9 +126,9 @@ func TestMessageMetrics(t *testing.T) {
 	inOutput2 := &InOutput{OutputID: iotago.OutputID{2}}
 	inOutput3 := &InOutput{OutputID: iotago.OutputID{3}}
 
-	cncm1.GetInOutput().CountLastMessage(inOutput1)
-	cncm2.GetInOutput().CountLastMessage(inOutput2)
-	ncm.GetInOutput().CountLastMessage(inOutput3)
+	cncm1.GetInOutput().IncL1Messages(inOutput1)
+	cncm2.GetInOutput().IncL1Messages(inOutput2)
+	ncm.GetInOutput().IncL1Messages(inOutput3)
 
 	checkMetricsValues(t, 1, inOutput1, cncm1.GetInOutput())
 	checkMetricsValues(t, 1, inOutput2, cncm2.GetInOutput())
@@ -139,9 +139,9 @@ func TestMessageMetrics(t *testing.T) {
 	txInclusionState2 := &TxInclusionStateMsg{TxID: iotago.TransactionID{2}}
 	txInclusionState3 := &TxInclusionStateMsg{TxID: iotago.TransactionID{3}}
 
-	cncm1.GetInTxInclusionState().CountLastMessage(txInclusionState1)
-	cncm1.GetInTxInclusionState().CountLastMessage(txInclusionState2)
-	cncm2.GetInTxInclusionState().CountLastMessage(txInclusionState3)
+	cncm1.GetInTxInclusionState().IncL1Messages(txInclusionState1)
+	cncm1.GetInTxInclusionState().IncL1Messages(txInclusionState2)
+	cncm2.GetInTxInclusionState().IncL1Messages(txInclusionState3)
 
 	checkMetricsValues(t, 2, txInclusionState2, cncm1.GetInTxInclusionState())
 	checkMetricsValues(t, 1, txInclusionState3, cncm2.GetInTxInclusionState())
@@ -153,9 +153,9 @@ func TestMessageMetrics(t *testing.T) {
 	onLedgerRequest2 := createOnLedgerRequest()
 	onLedgerRequest3 := createOnLedgerRequest()
 
-	cncm1.GetInOnLedgerRequest().CountLastMessage(onLedgerRequest1)
-	cncm2.GetInOnLedgerRequest().CountLastMessage(onLedgerRequest2)
-	cncm1.GetInOnLedgerRequest().CountLastMessage(onLedgerRequest3)
+	cncm1.GetInOnLedgerRequest().IncL1Messages(onLedgerRequest1)
+	cncm2.GetInOnLedgerRequest().IncL1Messages(onLedgerRequest2)
+	cncm1.GetInOnLedgerRequest().IncL1Messages(onLedgerRequest3)
 
 	checkMetricsValues(t, 2, onLedgerRequest3, cncm1.GetInOnLedgerRequest())
 	checkMetricsValues(t, 1, onLedgerRequest2, cncm2.GetInOnLedgerRequest())
@@ -166,9 +166,9 @@ func TestMessageMetrics(t *testing.T) {
 	stateTransaction2 := &StateTransaction{StateIndex: 1}
 	stateTransaction3 := &StateTransaction{StateIndex: 1}
 
-	cncm1.GetOutPublishStateTransaction().CountLastMessage(stateTransaction1)
-	cncm2.GetOutPublishStateTransaction().CountLastMessage(stateTransaction2)
-	cncm2.GetOutPublishStateTransaction().CountLastMessage(stateTransaction3)
+	cncm1.GetOutPublishStateTransaction().IncL1Messages(stateTransaction1)
+	cncm2.GetOutPublishStateTransaction().IncL1Messages(stateTransaction2)
+	cncm2.GetOutPublishStateTransaction().IncL1Messages(stateTransaction3)
 
 	checkMetricsValues(t, 1, stateTransaction1, cncm1.GetOutPublishStateTransaction())
 	checkMetricsValues(t, 2, stateTransaction3, cncm2.GetOutPublishStateTransaction())
@@ -188,18 +188,18 @@ func TestMessageMetrics(t *testing.T) {
 		Unlocks: nil,
 	}
 
-	cncm2.GetOutPublishGovernanceTransaction().CountLastMessage(publishStateTransaction1)
-	cncm2.GetOutPublishGovernanceTransaction().CountLastMessage(publishStateTransaction2)
-	cncm1.GetOutPublishGovernanceTransaction().CountLastMessage(publishStateTransaction3)
+	cncm2.GetOutPublishGovernanceTransaction().IncL1Messages(publishStateTransaction1)
+	cncm2.GetOutPublishGovernanceTransaction().IncL1Messages(publishStateTransaction2)
+	cncm1.GetOutPublishGovernanceTransaction().IncL1Messages(publishStateTransaction3)
 
 	checkMetricsValues(t, 1, publishStateTransaction3, cncm1.GetOutPublishGovernanceTransaction())
 	checkMetricsValues(t, 2, publishStateTransaction2, cncm2.GetOutPublishGovernanceTransaction())
 	checkMetricsValues(t, 3, publishStateTransaction3, ncm.GetOutPublishGovernanceTransaction())
 
 	// OUT Pull latest output
-	ncm.GetOutPullLatestOutput().CountLastMessage("OutPullLatestOutput1")
-	cncm1.GetOutPullLatestOutput().CountLastMessage("OutPullLatestOutput2")
-	cncm2.GetOutPullLatestOutput().CountLastMessage("OutPullLatestOutput3")
+	ncm.GetOutPullLatestOutput().IncL1Messages("OutPullLatestOutput1")
+	cncm1.GetOutPullLatestOutput().IncL1Messages("OutPullLatestOutput2")
+	cncm2.GetOutPullLatestOutput().IncL1Messages("OutPullLatestOutput3")
 
 	checkMetricsValues(t, 1, "OutPullLatestOutput2", cncm1.GetOutPullLatestOutput())
 	checkMetricsValues(t, 1, "OutPullLatestOutput3", cncm2.GetOutPullLatestOutput())
@@ -210,9 +210,9 @@ func TestMessageMetrics(t *testing.T) {
 	transactionID2 := iotago.TransactionID{2}
 	transactionID3 := iotago.TransactionID{3}
 
-	cncm1.GetOutPullTxInclusionState().CountLastMessage(transactionID1)
-	ncm.GetOutPullTxInclusionState().CountLastMessage(transactionID2)
-	cncm2.GetOutPullTxInclusionState().CountLastMessage(transactionID3)
+	cncm1.GetOutPullTxInclusionState().IncL1Messages(transactionID1)
+	ncm.GetOutPullTxInclusionState().IncL1Messages(transactionID2)
+	cncm2.GetOutPullTxInclusionState().IncL1Messages(transactionID3)
 
 	checkMetricsValues(t, 1, transactionID1, cncm1.GetOutPullTxInclusionState())
 	checkMetricsValues(t, 1, transactionID3, cncm2.GetOutPullTxInclusionState())
@@ -223,9 +223,9 @@ func TestMessageMetrics(t *testing.T) {
 	utxoInput2 := &iotago.UTXOInput{TransactionID: iotago.TransactionID{1}}
 	utxoInput3 := &iotago.UTXOInput{TransactionID: iotago.TransactionID{1}}
 
-	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput1.ID())
-	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput2.ID())
-	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput3.ID())
+	cncm1.GetOutPullOutputByID().IncL1Messages(utxoInput1.ID())
+	cncm1.GetOutPullOutputByID().IncL1Messages(utxoInput2.ID())
+	cncm1.GetOutPullOutputByID().IncL1Messages(utxoInput3.ID())
 
 	checkMetricsValues(t, 3, utxoInput3.ID(), cncm1.GetOutPullOutputByID())
 	checkMetricsValues(t, 0, iotago.OutputID{}, cncm2.GetOutPullOutputByID())
@@ -235,18 +235,18 @@ func TestMessageMetrics(t *testing.T) {
 	milestoneInfo1 := &nodeclient.MilestoneInfo{Index: 0}
 	milestoneInfo2 := &nodeclient.MilestoneInfo{Index: 0}
 
-	ncm.GetInMilestone().CountLastMessage(milestoneInfo1)
-	ncm.GetInMilestone().CountLastMessage(milestoneInfo2)
+	ncm.GetInMilestone().IncL1Messages(milestoneInfo1)
+	ncm.GetInMilestone().IncL1Messages(milestoneInfo2)
 
 	checkMetricsValues(t, 2, milestoneInfo2, ncm.GetInMilestone())
 }
 
 func checkMetricsValues[T any, V any](t *testing.T, expectedTotal uint32, expectedLastMessage V, metrics NodeConnectionMessageMetrics[T]) {
-	require.Equal(t, expectedTotal, metrics.GetMessageTotal())
+	require.Equal(t, expectedTotal, metrics.GetL1MessagesTotal())
 	if expectedTotal == 0 {
 		var zeroValue V
-		require.Equal(t, zeroValue, metrics.GetLastMessage())
+		require.Equal(t, zeroValue, metrics.GetLastL1Message())
 	} else {
-		require.Equal(t, expectedLastMessage, metrics.GetLastMessage())
+		require.Equal(t, expectedLastMessage, metrics.GetLastL1Message())
 	}
 }

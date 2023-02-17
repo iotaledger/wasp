@@ -18,8 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/wasp"
-	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 )
 
 //go:embed templates/base.tmpl
@@ -42,6 +40,7 @@ type BaseTemplateParams struct {
 }
 
 type WaspServicesInterface interface {
+	WaspVersion() string
 	ConfigDump() map[string]interface{}
 	ExploreAddressBaseURL() string
 	WebAPIPort() string
@@ -102,8 +101,12 @@ func (d *Dashboard) BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateP
 		Breadcrumbs:     breadcrumbs,
 		Path:            c.Path(),
 		MyNetworkID:     d.wasp.MyNetworkID(),
-		Version:         wasp.Version,
+		Version:         d.wasp.WaspVersion(),
 	}
+}
+
+func EVMJSONRPC(chainIDBech32 string) string {
+	return "/chains/" + chainIDBech32 + "/evm/jsonrpc"
 }
 
 func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Template {
@@ -130,7 +133,7 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 		"hex":                    iotago.EncodeHex,
 		"replace":                strings.Replace,
 		"webapiPort":             d.wasp.WebAPIPort,
-		"evmJSONRPCEndpoint":     routes.EVMJSONRPC,
+		"evmJSONRPCEndpoint":     EVMJSONRPC,
 		"uri":                    func(s string, p ...interface{}) string { return e.Reverse(s, p...) },
 		"href":                   func(s string) string { return s },
 	})

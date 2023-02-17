@@ -60,7 +60,7 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	})
 	// sum up all explicitly consumed outputs, except anchor output
 	for _, out := range txb.consumed {
-		a := out.FungibleTokens()
+		a := out.Assets()
 		ret.TotalBaseTokensInL2Accounts += a.BaseTokens
 		for _, nativeToken := range a.NativeTokens {
 			s, ok := ret.NativeTokenBalances[nativeToken.ID]
@@ -180,7 +180,7 @@ func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
 	}
 }
 
-func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *isc.FungibleTokens, checkpoint string) {
+func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *isc.Assets, checkpoint string) {
 	_, outTotal, err := txb.Totals()
 	if err != nil {
 		panic(fmt.Errorf("%v: %w", vm.ErrFatalTxBuilderNotBalanced, err))

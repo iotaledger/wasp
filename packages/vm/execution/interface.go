@@ -24,13 +24,13 @@ type WaspContext interface {
 
 	// needed for sandbox
 	isc.LogInterface
-	GetAssets(agentID isc.AgentID) *isc.FungibleTokens
 	Timestamp() time.Time
 	AccountID() isc.AgentID
 	Caller() isc.AgentID
+	GetNativeTokens(agentID isc.AgentID) iotago.NativeTokens
 	GetBaseTokensBalance(agentID isc.AgentID) uint64
 	GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID) *big.Int
-	Call(contractHname, entryPoint isc.Hname, params dict.Dict, allowance *isc.Allowance) dict.Dict
+	Call(contractHname, entryPoint isc.Hname, params dict.Dict, allowance *isc.Assets) dict.Dict
 	ChainID() isc.ChainID
 	ChainOwnerID() isc.AgentID
 	CurrentContractHname() isc.Hname
@@ -39,5 +39,5 @@ type WaspContext interface {
 	GasBurned() uint64
 	GasBudgetLeft() uint64
 	GetAccountNFTs(agentID isc.AgentID) []iotago.NFTID
-	GetNFTData(nftID iotago.NFTID) isc.NFT
+	GetNFTData(nftID iotago.NFTID) *isc.NFT
 }

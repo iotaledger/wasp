@@ -36,7 +36,7 @@ func NewPeeringGroupProvider(netProvider peering.NetworkProvider, peeringID peer
 	selfFound := false
 	selfIndex := uint16(0)
 	for i := range nodes {
-		if nodes[i].NetID() == netProvider.Self().NetID() {
+		if nodes[i].PeeringURL() == netProvider.Self().PeeringURL() {
 			selfIndex = uint16(i)
 			selfFound = true
 		} else {
@@ -67,7 +67,7 @@ func (g *groupImpl) PeerIndex(peer peering.PeerSender) (uint16, error) {
 	return g.PeerIndexByPubKey(peer.PubKey())
 }
 
-// PeerIndexByNetID implements peering.GroupProvider.
+// PeerIndexByPubKey implements peering.GroupProvider.
 func (g *groupImpl) PeerIndexByPubKey(peerPubKey *cryptolib.PublicKey) (uint16, error) {
 	for i := range g.nodes {
 		if g.nodes[i].PubKey().Equals(peerPubKey) {

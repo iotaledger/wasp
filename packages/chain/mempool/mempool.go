@@ -431,7 +431,7 @@ func (mpi *mempoolImpl) addOffLedgerRequestIfUnseen(request isc.OffLedgerRequest
 	}
 	if !mpi.offLedgerPool.Has(isc.RequestRefFromRequest(request)) {
 		mpi.offLedgerPool.Add(request)
-		mpi.metrics.CountRequestIn(request)
+		mpi.metrics.IncRequestsReceived(request)
 		mpi.log.Debugf("accepted by the mempool, requestID: %s", request.ID().String())
 		return true
 	}
@@ -579,7 +579,7 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 		}
 	}
 	mpi.onLedgerPool.Add(request)
-	mpi.metrics.CountRequestIn(request)
+	mpi.metrics.IncRequestsReceived(request)
 }
 
 func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
@@ -598,10 +598,10 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 		switch req := reqs[i].(type) {
 		case isc.OnLedgerRequest:
 			mpi.onLedgerPool.Add(req)
-			mpi.metrics.CountRequestIn(req)
+			mpi.metrics.IncRequestsReceived(req)
 		case isc.OffLedgerRequest:
 			mpi.offLedgerPool.Add(req)
-			mpi.metrics.CountRequestIn(req)
+			mpi.metrics.IncRequestsReceived(req)
 		default:
 			panic(fmt.Errorf("unexpected request type: %T, %+v", req, req))
 		}
@@ -642,10 +642,10 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 		if err != nil {
 			panic(fmt.Errorf("cannot extract receipts from block: %w", err))
 		}
-		mpi.metrics.CountBlocksPerChain()
+		mpi.metrics.IncBlocksPerChain()
 		mpi.listener.BlockApplied(mpi.chainID, block)
 		for _, receipt := range blockReceipts {
-			mpi.metrics.CountRequestOut()
+			mpi.metrics.IncRequestsProcessed()
 			mpi.tryRemoveRequest(receipt.Request)
 			mpi.log.Debugf("removed from mempool: %s", receipt.Request.ID().String())
 		}

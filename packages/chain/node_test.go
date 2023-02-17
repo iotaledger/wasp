@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
@@ -25,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
@@ -273,6 +275,17 @@ func (tnc *testNodeConn) PublishTX(
 	if !tnc.chainID.Equals(chainID) {
 		tnc.t.Error("unexpected chain id")
 	}
+	txID, err := tx.ID()
+	require.NoError(tnc.t, err)
+	existing := lo.ContainsBy(tnc.published, func(publishedTX *iotago.Transaction) bool {
+		publishedID, err2 := publishedTX.ID()
+		require.NoError(tnc.t, err2)
+		return txID == publishedID
+	})
+	if existing {
+		tnc.t.Logf("Already seen a TX with ID=%v", txID)
+		return nil
+	}
 	tnc.published = append(tnc.published, tx)
 	callback(tx, true)
 
@@ -326,7 +339,7 @@ type testEnv struct {
 	utxoDB           *utxodb.UtxoDB
 	governor         *cryptolib.KeyPair
 	originator       *cryptolib.KeyPair
-	peerNetIDs       []string
+	peeringURLs      []string
 	peerIdentities   []*cryptolib.KeyPair
 	peerPubKeys      []*cryptolib.PublicKey
 	peeringNetwork   *testutil.PeeringNetwork
@@ -354,7 +367,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	require.NoError(t, err)
 	//
 	// Create a fake network and keys for the tests.
-	te.peerNetIDs, te.peerIdentities = testpeers.SetupKeys(uint16(n))
+	te.peeringURLs, te.peerIdentities = testpeers.SetupKeys(uint16(n))
 	te.peerPubKeys = make([]*cryptolib.PublicKey, len(te.peerIdentities))
 	for i := range te.peerPubKeys {
 		te.peerPubKeys[i] = te.peerIdentities[i].GetPublicKey()
@@ -367,7 +380,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 		networkBehaviour = testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 200*time.Millisecond, netLogger)
 	}
 	te.peeringNetwork = testutil.NewPeeringNetwork(
-		te.peerNetIDs, te.peerIdentities, 10000,
+		te.peeringURLs, te.peerIdentities, 10000,
 		networkBehaviour,
 		testlogger.WithLevel(te.log, logger.LevelWarn, false),
 	)
@@ -382,6 +395,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.nodes = make([]chain.Chain, len(te.peerIdentities))
 	for i := range te.peerIdentities {
 		te.nodeConns[i] = newTestNodeConn(t)
+		log := te.log.Named(fmt.Sprintf("N#%v", i))
 		te.nodes[i], err = chain.New(
 			te.ctx,
 			te.chainID,
@@ -391,11 +405,12 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor),
 			dkShareProviders[i],
 			testutil.NewConsensusStateRegistry(),
-			smGPAUtils.NewMockedBlockWAL(),
+			smGPAUtils.NewMockedTestBlockWAL(),
 			chain.NewEmptyChainListener(),
 			[]*cryptolib.PublicKey{}, // Access nodes.
 			te.networkProviders[i],
-			te.log.Named(fmt.Sprintf("N#%v", i)),
+			shutdown.NewCoordinator("test", log),
+			log,
 		)
 		require.NoError(t, err)
 		te.nodes[i].ServersUpdated(te.peerPubKeys)

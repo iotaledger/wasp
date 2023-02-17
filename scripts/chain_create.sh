@@ -6,7 +6,7 @@ cd ${PARENT_DIR}
 echo -e "\nrequesting funds..."
 ./wasp-cli request-funds
 echo -e "\ndeploying chain..."
-./wasp-cli chain deploy --chain=testchain --quorum=1 --committee=0 --verbose
+./wasp-cli chain deploy --chain=testchain --quorum=1 --peers=0 --verbose
 echo -e "\ndepositing to chain..."
 ./wasp-cli chain deposit 0x8B65DD08C7784017fe6B8Af20904e61916506fD4 base:100000 -w=false
 

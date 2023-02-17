@@ -61,13 +61,15 @@ func test2Chains(t *testing.T, w bool) {
 	chain1TotalBaseTokens := chain1.L2TotalBaseTokens()
 	chain2TotalBaseTokens := chain2.L2TotalBaseTokens()
 
+	chain1.WaitForRequestsMark()
+	chain2.WaitForRequestsMark()
+
 	// send base tokens to contractAgentID (that is an entity of chain2) on chain1
 	const baseTokensToSend = 11 * isc.Million
 	const baseTokensCreditedToScOnChain1 = 10 * isc.Million
 	req := solo.NewCallParams(
 		accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 		accounts.ParamAgentID, contractAgentID,
-		accounts.ParamForceOpenAccount, true,
 	).
 		AddBaseTokens(baseTokensToSend).
 		AddAllowanceBaseTokens(baseTokensCreditedToScOnChain1).
@@ -109,19 +111,15 @@ func test2Chains(t *testing.T, w bool) {
 		sbtestsc.ParamChainID, chain1.ChainID,
 		sbtestsc.ParamBaseTokensToWithdrawal, baseTokensToWithdrawalFromChain1).
 		AddBaseTokens(baseTokensToSend2).
-		WithAllowance(isc.NewAllowanceBaseTokens(reqAllowance)).
+		WithAllowance(isc.NewAssetsBaseTokens(reqAllowance)).
 		WithGasBudget(math.MaxUint64)
 
 	_, err = chain2.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 	chain2SendWithdrawalReceipt := chain2.LastReceipt()
 
-	extra := 0
-	if w {
-		extra = 1
-	}
-	require.True(t, chain1.WaitForRequestsThrough(5+extra, 10*time.Second))
-	require.True(t, chain2.WaitForRequestsThrough(5+extra, 10*time.Second))
+	require.True(t, chain1.WaitForRequestsThrough(2, 10*time.Second))
+	require.True(t, chain2.WaitForRequestsThrough(2, 10*time.Second))
 
 	println("----chain1------------------------------------------")
 	println(chain1.DumpAccounts())

@@ -28,6 +28,10 @@ type waspServicesMock struct {
 
 var _ WaspServicesInterface = &waspServicesMock{}
 
+func (w *waspServicesMock) WaspVersion() string {
+	return "mockVersion"
+}
+
 func (w *waspServicesMock) ConfigDump() map[string]interface{} {
 	return map[string]interface{}{
 		"foo": "bar",
@@ -46,29 +50,29 @@ func (w *waspServicesMock) PeeringStats() (*PeeringStats, error) {
 	return &PeeringStats{
 		Peers: []Peer{
 			{
-				NumUsers: 2,
-				NetID:    "127.0.0.1:4001",
-				IsAlive:  false,
+				NumUsers:   2,
+				PeeringURL: "127.0.0.1:4001",
+				IsAlive:    false,
 			},
 			{
-				NumUsers: 2,
-				NetID:    "127.0.0.1:4002",
-				IsAlive:  false,
+				NumUsers:   2,
+				PeeringURL: "127.0.0.1:4002",
+				IsAlive:    false,
 			},
 			{
-				NumUsers: 3,
-				NetID:    "127.0.0.1:4002",
-				IsAlive:  true,
+				NumUsers:   3,
+				PeeringURL: "127.0.0.1:4002",
+				IsAlive:    true,
 			},
 		},
 		TrustedPeers: []TrustedPeer{
 			{
-				NetID:  "127.0.0.1:4000",
-				PubKey: cryptolib.PublicKey{},
+				PeeringURL: "127.0.0.1:4000",
+				PubKey:     cryptolib.PublicKey{},
 			},
 			{
-				NetID:  "127.0.0.1:4001",
-				PubKey: cryptolib.PublicKey{},
+				PeeringURL: "127.0.0.1:4001",
+				PubKey:     cryptolib.PublicKey{},
 			},
 		},
 	}, nil
@@ -117,16 +121,16 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID isc.ChainID) (*chain.Co
 		QuorumIsAlive: true,
 		PeerStatus: []*chain.PeerStatus{
 			{
-				Index:     0,
-				NetID:     "localhost:2000",
-				PubKey:    cryptolib.NewKeyPair().GetPublicKey(),
-				Connected: true,
+				Index:      0,
+				PeeringURL: "localhost:2000",
+				PubKey:     cryptolib.NewKeyPair().GetPublicKey(),
+				Connected:  true,
 			},
 			{
-				Index:     1,
-				NetID:     "localhost:2001",
-				PubKey:    cryptolib.NewKeyPair().GetPublicKey(),
-				Connected: true,
+				Index:      1,
+				PeeringURL: "localhost:2001",
+				PubKey:     cryptolib.NewKeyPair().GetPublicKey(),
+				Connected:  true,
 			},
 		},
 	}, nil

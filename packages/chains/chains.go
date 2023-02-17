@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -49,8 +50,8 @@ type Chains struct {
 	trustedNetworkManager            peering.TrustedNetworkManager
 	trustedNetworkListenerCancel     context.CancelFunc
 	chainStateStoreProvider          database.ChainStateKVStoreProvider
-	rawBlocksEnabled                 bool
-	rawBlocksDir                     string
+	walEnabled                       bool
+	walDir                           string
 
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
@@ -61,6 +62,8 @@ type Chains struct {
 	mutex     sync.RWMutex
 	allChains map[isc.ChainID]*activeChain
 	accessMgr accessMgr.AccessMgr
+
+	shutdownCoordinator *shutdown.Coordinator
 }
 
 type activeChain struct {
@@ -78,13 +81,14 @@ func New(
 	networkProvider peering.NetworkProvider,
 	trustedNetworkManager peering.TrustedNetworkManager,
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
-	rawBlocksEnabled bool,
-	rawBlocksDir string,
+	walEnabled bool,
+	walDir string,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
 	consensusStateRegistry cmtLog.ConsensusStateRegistry,
 	chainListener chain.ChainListener,
+	shutdownCoordinator *shutdown.Coordinator,
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
@@ -97,13 +101,14 @@ func New(
 		networkProvider:                  networkProvider,
 		trustedNetworkManager:            trustedNetworkManager,
 		chainStateStoreProvider:          chainStateStoreProvider,
-		rawBlocksEnabled:                 rawBlocksEnabled,
-		rawBlocksDir:                     rawBlocksDir,
+		walEnabled:                       walEnabled,
+		walDir:                           walDir,
 		chainRecordRegistryProvider:      chainRecordRegistryProvider,
 		dkShareRegistryProvider:          dkShareRegistryProvider,
 		nodeIdentityProvider:             nodeIdentityProvider,
 		chainListener:                    nil, // See bellow.
 		consensusStateRegistry:           consensusStateRegistry,
+		shutdownCoordinator:              shutdownCoordinator,
 	}
 	ret.chainListener = NewChainsListener(chainListener, ret.chainAccessUpdatedCB)
 	return ret
@@ -133,6 +138,11 @@ func (c *Chains) Run(ctx context.Context) error {
 }
 
 func (c *Chains) Close() {
+	for _, c := range c.allChains {
+		c.cancelFunc()
+	}
+	c.shutdownCoordinator.WaitNestedWithLogging(1 * time.Second)
+	c.shutdownCoordinator.Done()
 	if c.trustedNetworkListenerCancel != nil {
 		c.trustedNetworkListenerCancel()
 		c.trustedNetworkListenerCancel = nil
@@ -183,7 +193,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	//
 	// Check, maybe it is already running.
 	if _, ok := c.allChains[chainID]; ok {
-		c.log.Debugf("Chain %v is already activated", chainID.String())
+		c.log.Debugf("Chain %v = %v is already activated", chainID.ShortString(), chainID.String())
 		return nil
 	}
 	//
@@ -193,8 +203,8 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		return fmt.Errorf("cannot get chain record for %v: %w", chainID, err)
 	}
 	if !chainRecord.Active {
-		if _, err := c.chainRecordRegistryProvider.ActivateChainRecord(chainID); err != nil {
-			return fmt.Errorf("cannot activate chain: %w", err)
+		if _, err2 := c.chainRecordRegistryProvider.ActivateChainRecord(chainID); err2 != nil {
+			return fmt.Errorf("cannot activate chain: %w", err2)
 		}
 	}
 	//
@@ -214,9 +224,10 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		}
 	}
 
+	// Initialize WAL
 	var chainWAL smGPAUtils.BlockWAL
-	if c.rawBlocksEnabled {
-		chainWAL, err = smGPAUtils.NewBlockWAL(c.log, c.rawBlocksDir, chainID, smGPAUtils.NewBlockWALMetrics())
+	if c.walEnabled {
+		chainWAL, err = smGPAUtils.NewBlockWAL(c.log, c.walDir, chainID, smGPAUtils.NewBlockWALMetrics())
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}
@@ -238,6 +249,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.chainListener,
 		chainRecord.AccessNodes,
 		c.networkProvider,
+		c.shutdownCoordinator.Nested(fmt.Sprintf("Chain-%s", chainID.AsAddress().String())),
 		c.log.Named(chainID.ShortString()),
 	)
 	if err != nil {
@@ -249,7 +261,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		cancelFunc: chainCancel,
 	}
 
-	c.log.Infof("activated chain: %s", chainID.String())
+	c.log.Infof("activated chain: %v = %s", chainID.ShortString(), chainID.String())
 	return nil
 }
 
@@ -272,13 +284,13 @@ func (c *Chains) Deactivate(chainID isc.ChainID) error {
 
 	ch, ok := c.allChains[chainID]
 	if !ok {
-		c.log.Debugf("chain is not active: %s", chainID.String())
+		c.log.Debugf("chain is not active: %v = %s", chainID.ShortString(), chainID.String())
 		return nil
 	}
 	ch.cancelFunc()
 	c.accessMgr.ChainDismissed(chainID)
 	delete(c.allChains, chainID)
-	c.log.Debugf("chain has been deactivated: %s", chainID.String())
+	c.log.Debugf("chain has been deactivated: %v = %s", chainID.ShortString(), chainID.String())
 	return nil
 }
 

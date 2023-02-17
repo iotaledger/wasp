@@ -1,6 +1,7 @@
 package gas
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
@@ -92,14 +93,14 @@ func FeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
 		return nil, err
 	}
 	if gasNativeToken {
-		b, err := mu.ReadBytes(iotago.NativeTokenIDLength)
-		if err != nil {
-			return nil, err
+		b, err2 := mu.ReadBytes(iotago.NativeTokenIDLength)
+		if err2 != nil {
+			return nil, err2
 		}
 		ret.GasFeeTokenID = iotago.NativeTokenID{}
 		copy(ret.GasFeeTokenID[:], b)
-		if ret.GasFeeTokenDecimals, err = mu.ReadUint32(); err != nil {
-			return nil, err
+		if ret.GasFeeTokenDecimals, err2 = mu.ReadUint32(); err2 != nil {
+			return nil, err2
 		}
 	}
 	if ret.GasPerToken, err = mu.ReadUint64(); err != nil {
@@ -126,4 +127,20 @@ func (p *GasFeePolicy) Bytes() []byte {
 	mu.WriteUint8(p.ValidatorFeeShare)
 	mu.WriteBytes(p.EVMGasRatio.Bytes())
 	return mu.Bytes()
+}
+
+func (p *GasFeePolicy) String() string {
+	return fmt.Sprintf(`
+	GasFeeTokenID: %s
+	GasFeeTokenDecimals %d
+	GasPerToken %d
+	EVMGasRatio %s
+	ValidatorFeeShare %d
+	`,
+		p.GasFeeTokenID,
+		p.GasFeeTokenDecimals,
+		p.GasPerToken,
+		p.EVMGasRatio.String(),
+		p.ValidatorFeeShare,
+	)
 }

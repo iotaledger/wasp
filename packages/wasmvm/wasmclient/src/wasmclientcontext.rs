@@ -1,63 +1,69 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::*;
 use std::{
-    any::Any,
-    sync::{mpsc, Arc, RwLock},
-    thread::spawn,
+    sync::{Arc, Mutex},
 };
+use std::io::Read;
+use std::thread::spawn;
+
+use nanomsg::{Protocol, Socket};
 use wasmlib::*;
 
-const ISC_EVENT_KIND_NEW_BLOCK: &str = "new_block";
-const ISC_EVENT_KIND_RECEIPT: &str = "receipt"; // issuer will be the request sender
-const ISC_EVENT_KIND_SMART_CONTRACT: &str = "contract";
-const ISC_EVENT_KIND_ERROR: &str = "error";
+use wasmclientsandbox::*;
+
+use crate::*;
+use crate::keypair::KeyPair;
 
 // TODO to handle the request in parallel, WasmClientContext must be static now.
 // We need to solve this problem. By copying the vector of event_handlers, we may solve this problem
 pub struct WasmClientContext {
-    pub chain_id: ScChainID,
-    pub error: Arc<RwLock<errors::Result<()>>>,
-    event_done: Arc<RwLock<bool>>, // Set `done` to true to close the ongoing `subscribe()`
-    pub event_handlers: Vec<Box<dyn IEventHandlers>>,
-    pub event_received: Arc<RwLock<bool>>,
-    pub hrp: String,
-    pub key_pair: Option<keypair::KeyPair>,
-    pub nonce: Arc<RwLock<u64>>,
-    pub req_id: Arc<RwLock<ScRequestID>>,
-    pub sc_name: String,
-    pub sc_hname: ScHname,
-    pub svc_client: WasmClientService, //TODO Maybe  use 'dyn IClientService' for 'svc_client' instead of a struct
+    pub(crate) chain_id: ScChainID,
+    pub(crate) error: Arc<Mutex<errors::Result<()>>>,
+    pub(crate) event_done: Arc<Mutex<bool>>,
+    pub(crate) event_handlers: Arc<Mutex<Vec<Box<dyn IEventHandlers>>>>,
+    pub(crate) key_pair: Option<KeyPair>,
+    pub(crate) nonce: Arc<Mutex<u64>>,
+    pub(crate) req_id: Arc<Mutex<ScRequestID>>,
+    pub(crate) sc_name: String,
+    pub(crate) sc_hname: ScHname,
+    pub(crate) svc_client: WasmClientService, //TODO Maybe  use 'dyn IClientService' for 'svc_client' instead of a struct
 }
 
 impl WasmClientContext {
-    pub fn new(
-        svc_client: &WasmClientService,
-        chain_id: &wasmlib::ScChainID,
-        sc_name: &str,
-    ) -> WasmClientContext {
-        let (hrp, _data, _v) = match bech32::decode(sc_name) {
-            Ok(vals) => vals,
+    pub fn new(svc_client: &WasmClientService, chain_id: &str, sc_name: &str) -> WasmClientContext {
+        unsafe {
+            // local client implementations for sandboxed functions
+            BECH32_DECODE = client_bech32_decode;
+            BECH32_ENCODE = client_bech32_encode;
+            HASH_NAME = client_hash_name;
+        }
+
+        // set the network prefix for the current network
+        match codec::bech32_decode(chain_id) {
+            Ok((hrp, _)) => unsafe {
+                if HRP_FOR_CLIENT != hrp && HRP_FOR_CLIENT != "" {
+                    panic!("WasmClient can only connect to one Tangle network per app");
+                }
+                HRP_FOR_CLIENT = hrp;
+            },
             Err(e) => {
                 let ctx = WasmClientContext::default();
-                ctx.err("WasmClientContext init err: ", &e.to_string());
+                ctx.set_err(&e, "");
                 return ctx;
             }
         };
 
         WasmClientContext {
-            chain_id: chain_id.clone(),
-            error: Arc::new(RwLock::new(Ok(()))),
-            event_done: Arc::new(RwLock::new(false)),
-            event_handlers: Vec::new(),
-            event_received: Arc::new(RwLock::new(false)),
-            hrp: hrp.to_string(),
+            chain_id: chain_id_from_string(chain_id),
+            error: Arc::new(Mutex::new(Ok(()))),
+            event_done: Arc::default(),
+            event_handlers: Arc::default(),
             key_pair: None,
-            nonce: Arc::new(RwLock::new(0)),
-            req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
+            nonce: Arc::default(),
+            req_id: Arc::new(Mutex::new(request_id_from_bytes(&[]))),
             sc_name: sc_name.to_string(),
-            sc_hname: ScHname::new(sc_name),
+            sc_hname: hname_from_bytes(&codec::hname_bytes(&sc_name)),
             svc_client: svc_client.clone(),
         }
     }
@@ -66,150 +72,146 @@ impl WasmClientContext {
         return self.chain_id;
     }
 
-    pub fn init_func_call_context(&'static self) {
-        wasmlib::host::connect_host(self);
+    pub fn current_keypair(&self) -> Option<KeyPair> {
+        return self.key_pair.clone();
     }
 
-    pub fn init_view_call_context(&'static self, _contract_hname: &ScHname) -> ScHname {
-        wasmlib::host::connect_host(self);
-        return self.sc_hname;
+    pub fn current_svc_client(&self) -> WasmClientService {
+        return self.svc_client.clone();
     }
 
-    pub fn register(&'static mut self, handler: Box<dyn IEventHandlers>) -> errors::Result<()> {
-        for h in self.event_handlers.iter() {
-            if handler.type_id() == h.as_ref().type_id() {
-                return Ok(());
+    pub fn register(&mut self, handler: Box<dyn IEventHandlers>) {
+        {
+            let target = handler.id();
+            let mut event_handlers = self.event_handlers.lock().unwrap();
+            for h in event_handlers.iter() {
+                if h.id() == target {
+                    return;
+                }
+            }
+            event_handlers.push(handler);
+            if event_handlers.len() > 1 {
+                return;
             }
         }
-        self.event_handlers.push(handler);
-        if self.event_handlers.len() > 1 {
-            return Ok(());
+        let res = self.start_event_handlers();
+        if let Err(e) = res {
+            self.set_err(&e, "")
         }
-        return self.start_event_handlers();
     }
 
     // overrides default contract name
     pub fn service_contract_name(&mut self, contract_name: &str) {
-        self.sc_hname = wasmlib::ScHname::new(contract_name);
+        self.sc_hname = ScHname::new(contract_name);
     }
 
-    pub fn sign_requests(&mut self, key_pair: &keypair::KeyPair) {
+    pub fn sign_requests(&mut self, key_pair: &KeyPair) {
         self.key_pair = Some(key_pair.clone());
+        // get last used nonce from accounts core contract
+        let isc_agent = ScAgentID::from_address(&key_pair.address());
+        let ctx = WasmClientContext::new(
+            &self.svc_client,
+            &self.chain_id.to_string(),
+            coreaccounts::SC_NAME,
+        );
+        let n = coreaccounts::ScFuncs::get_account_nonce(&ctx);
+        n.params.agent_id().set_value(&isc_agent);
+        n.func.call();
+        let mut nonce = self.nonce.lock().unwrap();
+        *nonce = n.results.account_nonce().value();
     }
 
-    pub fn unregister(&mut self, handler: Box<dyn IEventHandlers>) {
-        self.event_handlers.retain(|h| {
-            if handler.type_id() == h.as_ref().type_id() {
-                return false;
-            } else {
-                return true;
-            }
+    pub fn unregister(&mut self, id: &str) {
+        let mut event_handlers = self.event_handlers.lock().unwrap();
+        event_handlers.retain(|h| {
+            h.id() != id
         });
-        if self.event_handlers.len() == 0 {
+        if event_handlers.len() == 0 {
             self.stop_event_handlers();
         }
     }
 
-    pub fn wait_request(&mut self, req_id: Option<&ScRequestID>) {
-        let r_id;
-        let binding;
-        match req_id {
-            Some(id) => r_id = id,
-            None => {
-                binding = self.req_id.read().unwrap().to_owned();
-                r_id = &binding;
-            }
-        };
+    pub fn wait_request(&self) {
+        let req_id = self.req_id.lock().unwrap();
+        self.wait_request_id(&*req_id);
+    }
+
+    pub fn wait_request_id(&self, req_id: &ScRequestID) {
         let res = self.svc_client.wait_until_request_processed(
             &self.chain_id,
-            &r_id,
+            req_id,
             std::time::Duration::new(60, 0),
         );
 
         if let Err(e) = res {
-            self.err("WasmClientContext init err: ", &e)
+            self.set_err(&e, "")
         }
     }
 
-    pub fn start_event_handlers(&'static self) -> errors::Result<()> {
-        let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
-        let done = Arc::clone(&self.event_done);
-        self.svc_client.subscribe_events(tx, done).unwrap();
+    pub fn start_event_handlers(&self) -> errors::Result<()> {
+        let event_done = self.event_done.clone();
+        let event_handlers = self.event_handlers.clone();
+        spawn(move || {
+            let mut socket = Socket::new(Protocol::Sub).unwrap();
+            socket.subscribe(b"contract").unwrap();
+            let mut endpoint = socket.connect("tcp://127.0.0.1:15550").unwrap();
+            let mut msg = String::new();
+            let mut done = false;
+            while !done {
+                socket.read_to_string(&mut msg).unwrap();
+                println!("{}", msg);
+                let parts: Vec<String> = msg.split(" ").map(|s| s.into()).collect();
+                let mut params: Vec<String> = parts[6].split("|").map(|s| s.into()).collect();
+                for i in 0..params.len() {
+                    params[i] = Self::unescape(&params[i]);
+                }
+                let topic = params.remove(0);
 
-        self.process_event(rx).unwrap();
-
+                let event_handlers = event_handlers.lock().unwrap();
+                for handler in event_handlers.iter() {
+                    handler.as_ref().call_handler(&topic, &params);
+                }
+                msg.clear();
+                done = *event_done.lock().unwrap();
+            }
+            endpoint.shutdown().unwrap();
+        });
+        // let (tx, rx): (mpsc::Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
+        // let done = Arc::clone(&self.event_done);
+        // self.svc_client.subscribe_events(tx, done)?;
+        // self.process_event(rx)?;
         return Ok(());
     }
 
     pub fn stop_event_handlers(&self) {
-        let mut done = self.event_done.write().unwrap();
+        let mut done = self.event_done.lock().unwrap();
         *done = true;
     }
 
-    fn process_event(&'static self, rx: mpsc::Receiver<Vec<String>>) -> errors::Result<()> {
-        for msg in rx {
-            spawn(move || {
-                let l = self.event_received.clone();
-                if msg[0] == ISC_EVENT_KIND_ERROR {
-                    let mut received = l.write().unwrap();
-                    *received = true;
-                    return Err(msg[1].clone());
-                }
-
-                if msg[0] != ISC_EVENT_KIND_SMART_CONTRACT && msg[1] != self.chain_id.to_string() {
-                    // not intended for us
-                    return Ok(());
-                }
-                let mut params: Vec<String> = msg[6].split("|").map(|s| s.into()).collect();
-                for i in 0..params.len() {
-                    params[i] = self.unescape(&params[i]);
-                }
-                let topic = params.remove(0);
-
-                for handler in self.event_handlers.iter() {
-                    handler.as_ref().call_handler(&topic, &params);
-                }
-
-                let mut received = l.write().unwrap();
-                *received = true;
-                return Ok(());
-            });
-        }
-
-        return Ok(());
-    }
-
-    pub fn wait_event(&self) -> errors::Result<()> {
-        for _ in 0..100 {
-            if *self.event_received.read().unwrap() {
-                return Ok(());
-            }
-            std::thread::sleep(std::time::Duration::from_millis(100));
-        }
-        let err_msg = String::from("event wait timeout");
-        self.err(&err_msg, "");
-        return Err(err_msg);
-    }
-
-    fn unescape(&self, param: &str) -> String {
+    fn unescape(param: &str) -> String {
         let idx = match param.find("~") {
             Some(idx) => idx,
             None => return String::from(param),
         };
-        match param.chars().nth(idx + 1).unwrap() {
+        match param.chars().nth(idx + 1) {
             // escaped escape character
-            '~' => param[0..idx].to_string() + "~" + &self.unescape(&param[idx + 2..]),
+            Some('~') => param[0..idx].to_string() + "~" + &Self::unescape(&param[idx + 2..]),
             // escaped vertical bar
-            '/' => param[0..idx].to_string() + "|" + &self.unescape(&param[idx + 2..]),
+            Some('/') => param[0..idx].to_string() + "|" + &Self::unescape(&param[idx + 2..]),
             // escaped space
-            '_' => param[0..idx].to_string() + " " + &self.unescape(&param[idx + 2..]),
+            Some('_') => param[0..idx].to_string() + " " + &Self::unescape(&param[idx + 2..]),
             _ => panic!("invalid event encoding"),
         }
     }
-    pub fn err(&self, current_layer_msg: &str, e: &str) {
-        let mut err = self.error.write().unwrap();
-        *err = Err(current_layer_msg.to_string() + e);
-        drop(err);
+
+    pub fn set_err(&self, e1: &str, e2: &str) {
+        let mut err = self.error.lock().unwrap();
+        *err = Err(e1.to_string() + e2);
+    }
+
+    pub fn err(&self) -> errors::Result<()> {
+        let err = self.error.lock().unwrap();
+        return err.clone();
     }
 }
 
@@ -217,14 +219,12 @@ impl Default for WasmClientContext {
     fn default() -> WasmClientContext {
         WasmClientContext {
             chain_id: chain_id_from_bytes(&[]),
-            error: Arc::new(RwLock::new(Ok(()))),
+            error: Arc::new(Mutex::new(Ok(()))),
             event_done: Arc::default(),
-            event_handlers: Vec::new(),
-            event_received: Arc::default(),
-            hrp: String::from(""),
+            event_handlers: Arc::default(),
             key_pair: None,
-            nonce: Arc::new(RwLock::new(0)),
-            req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
+            nonce: Arc::default(),
+            req_id: Arc::new(Mutex::new(request_id_from_bytes(&[]))),
             sc_name: String::new(),
             sc_hname: ScHname(0),
             svc_client: WasmClientService::default(),
@@ -234,30 +234,47 @@ impl Default for WasmClientContext {
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
     use wasmlib::*;
 
+    use crate::*;
+    use crate::keypair::KeyPair;
+
+    #[derive(Debug)]
     struct FakeEventHandler {}
+
     impl IEventHandlers for FakeEventHandler {
         fn call_handler(&self, _topic: &str, _params: &Vec<String>) {}
+
+        fn id(&self) -> String {
+            todo!()
+        }
     }
+
+    const MYCHAIN: &str = "atoi1prj5xunmvc8uka9qznnpu4yrhn3ftm3ya0wr2jvurwr209llw7xdyztcr6g";
+    const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
 
     #[test]
     fn test_wasm_client_context_new() {
-        let svc_client = wasmclientservice::WasmClientService::default();
-        let chain_id = wasmlib::chain_id_from_bytes(&vec![
-            41, 180, 220, 182, 186, 38, 166, 60, 91, 105, 181, 183, 219, 243, 200, 162, 131, 181,
-            57, 142, 41, 30, 236, 92, 178, 1, 116, 229, 174, 86, 156, 210,
-        ]);
-        let sc_name = "sc_name";
-        let ctx = wasmclientcontext::WasmClientContext::new(&svc_client, &chain_id, sc_name);
-        assert!(ctx.svc_client == svc_client);
-        assert!(ctx.sc_name == sc_name);
-        assert!(ctx.sc_hname == wasmlib::ScHname::new(sc_name));
-        assert!(ctx.chain_id == chain_id);
-        assert!(ctx.event_handlers.len() == 0);
-        // assert!(ctx.key_pair == None);
-        assert!(*ctx.req_id.read().unwrap() == wasmlib::request_id_from_bytes(&[]));
+        let svc_client = WasmClientService::default();
+
+        // FIXME use valid sc_name which meets the requirement of bech32
+        let sc_name = "testwasmlib";
+        let ctx = WasmClientContext::new(&svc_client, MYCHAIN, sc_name);
+        assert!(svc_client == ctx.svc_client);
+        assert_eq!(sc_name, ctx.sc_name);
+        assert!(ScHname::new(sc_name) == ctx.sc_hname);
+        assert_eq!(MYCHAIN, ctx.chain_id.to_string());
+        assert_eq!(0, ctx.event_handlers.len());
+        assert!(None == ctx.key_pair);
+        assert!(request_id_from_bytes(&[]) == *ctx.req_id.lock().unwrap());
+    }
+
+    fn setup_client() -> WasmClientContext {
+        let svc = WasmClientService::new("127.0.0.1:19090", "127.0.0.1:15550");
+        let mut ctx = WasmClientContext::new(&svc, MYCHAIN, "testwasmlib");
+        ctx.sign_requests(&KeyPair::from_sub_seed(&bytes_from_string(MYSEED), 0));
+        assert!(ctx.err().is_ok());
+        return ctx;
     }
 
     #[test]
@@ -271,10 +288,10 @@ mod tests {
         let ctx = WasmClientContext::default();
         let res = ctx.unescape(r"before~~/after");
         println!("res: {}", res);
-        assert!(res == "before~/after");
+        assert_eq!(res, "before~/after");
         let res = ctx.unescape(r"before~/after");
-        assert!(res == "before|after");
+        assert_eq!(res, "before|after");
         let res = ctx.unescape(r"before~_after");
-        assert!(res == "before after");
+        assert_eq!(res, "before after");
     }
 }

@@ -36,7 +36,7 @@ func MakeTestDistributedKey(
 		sk := suite.Scalar().Pick(suite.RandomStream())
 		pk := suite.Point().Mul(sk, nil)
 		dkss := map[gpa.NodeID]tcrypto.SecretShare{
-			nodeIDs[0]: tcrypto.NewDistKeyShare(&share.PriShare{I: 0, V: sk}, []kyber.Point{pk}, threshold),
+			nodeIDs[0]: tcrypto.NewDistKeyShare(&share.PriShare{I: 0, V: sk}, []kyber.Point{pk}, n, threshold),
 		}
 		return pk, dkss
 	}
@@ -88,14 +88,14 @@ func MakeTestDistributedKey(
 	// Check the FINAL result.
 	var pubKey kyber.Point
 	dkss := map[gpa.NodeID]tcrypto.SecretShare{}
-	for nid, n := range nodes {
-		o := n.Output()
+	for nid, node := range nodes {
+		o := node.Output()
 		require.NotNil(t, o)
 		require.NotNil(t, o.(*nonce.Output).PubKey)
 		require.NotNil(t, o.(*nonce.Output).PriShare)
 		require.NotNil(t, o.(*nonce.Output).Commits)
 		require.Equal(t, threshold, o.(*nonce.Output).Threshold)
-		dkss[nid] = tcrypto.NewDistKeyShare(o.(*nonce.Output).PriShare, o.(*nonce.Output).Commits, threshold)
+		dkss[nid] = tcrypto.NewDistKeyShare(o.(*nonce.Output).PriShare, o.(*nonce.Output).Commits, n, threshold)
 		if pubKey == nil {
 			pubKey = o.(*nonce.Output).Commits[0]
 		}
@@ -125,7 +125,7 @@ func VerifyPriShares(
 			nodePKArray[j] = nodePKs[nodeIDs[j]]
 		}
 		threshold := n - f
-		long := tcrypto.NewDistKeyShare(priShares[nodeIDs[i]], commits, threshold) // We use long key for nonce as well. Insecure, but OK for this test.
+		long := tcrypto.NewDistKeyShare(priShares[nodeIDs[i]], commits, n, threshold) // We use long key for nonce as well. Insecure, but OK for this test.
 		signer, err := dss.NewDSS(suite, nodeSKs[nodeIDs[i]], nodePKArray, long, long, messageToSign, threshold)
 		require.NoError(t, err)
 		signers[i] = signer

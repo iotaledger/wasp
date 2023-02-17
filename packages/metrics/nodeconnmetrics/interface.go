@@ -31,10 +31,10 @@ type TxInclusionStateMsg struct {
 }
 
 type NodeConnectionMessageMetrics[T any] interface {
-	CountLastMessage(T)
-	GetMessageTotal() uint32
-	GetLastEvent() time.Time
-	GetLastMessage() T
+	IncL1Messages(T)
+	GetL1MessagesTotal() uint32
+	GetLastL1MessageTime() time.Time
+	GetLastL1Message() T
 }
 
 type NodeConnectionMessagesMetrics interface {

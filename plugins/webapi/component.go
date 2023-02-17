@@ -10,7 +10,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pangpanglabs/echoswagger/v2"
+	"go.elastic.co/apm/module/apmechov4"
 	"go.uber.org/dig"
+	"go.uber.org/zap"
 
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
@@ -21,12 +23,10 @@ import (
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
-	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/packages/webapi"
-	v1 "github.com/iotaledger/wasp/packages/webapi/v1"
-	v2 "github.com/iotaledger/wasp/packages/webapi/v2"
 )
 
 func init() {
@@ -73,11 +73,30 @@ func initConfigPars(c *dig.Container) error {
 	return nil
 }
 
+func CreateEchoSwagger(e *echo.Echo, version string) echoswagger.ApiRoot {
+	echoSwagger := echoswagger.New(e, "/doc", &echoswagger.Info{
+		Title:       "Wasp API",
+		Description: "REST API for the Wasp node",
+		Version:     version,
+	})
+
+	echoSwagger.AddSecurityAPIKey("Authorization", "JWT Token", echoswagger.SecurityInHeader).
+		SetExternalDocs("Find out more about Wasp", "https://wiki.iota.org/smart-contracts/overview").
+		SetUI(echoswagger.UISetting{DetachSpec: false, HideTop: false}).
+		SetScheme("http", "https")
+
+	echoSwagger.SetRequestContentType(echo.MIMEApplicationJSON)
+	echoSwagger.SetResponseContentType(echo.MIMEApplicationJSON)
+
+	return echoSwagger
+}
+
 //nolint:funlen
 func provide(c *dig.Container) error {
 	type webapiServerDeps struct {
 		dig.In
 
+		AppInfo                     *app.Info
 		AppConfig                   *configuration.Configuration `name:"appConfig"`
 		ShutdownHandler             *shutdown.ShutdownHandler
 		APICacheTTL                 time.Duration `name:"apiCacheTTL"`
@@ -91,6 +110,7 @@ func provide(c *dig.Container) error {
 		TrustedNetworkManager       peering.TrustedNetworkManager `name:"trustedNetworkManager"`
 		Node                        *dkg.Node
 		UserManager                 *users.UserManager
+		Publisher                   *publisher.Publisher
 	}
 
 	type webapiServerResult struct {
@@ -107,11 +127,25 @@ func provide(c *dig.Container) error {
 			ParamsWebAPI.DebugRequestLoggerEnabled,
 		)
 
-		e.Server.ReadTimeout = ParamsWebAPI.ReadTimeout
-		e.Server.WriteTimeout = ParamsWebAPI.WriteTimeout
+		e.Server.ReadTimeout = ParamsWebAPI.Limits.ReadTimeout
+		e.Server.WriteTimeout = ParamsWebAPI.Limits.WriteTimeout
 
 		e.HidePort = true
-		e.HTTPErrorHandler = webapi.CompatibilityHTTPErrorHandler(Plugin.Logger())
+		e.HTTPErrorHandler = webapi.CompatibilityHTTPErrorHandler(Plugin.Logger().WithOptions(zap.AddStacktrace(zap.ErrorLevel)))
+
+		// timeout middleware
+		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c echo.Context) error {
+				timeoutCtx, cancel := context.WithTimeout(c.Request().Context(), ParamsWebAPI.Limits.Timeout)
+				defer cancel()
+
+				c.SetRequest(c.Request().WithContext(timeoutCtx))
+
+				return next(c)
+			}
+		})
+		e.Use(middleware.BodyLimit(ParamsWebAPI.Limits.MaxBodyLength))
+		e.Use(apmechov4.Middleware())
 
 		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 			Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
@@ -124,59 +158,12 @@ func provide(c *dig.Container) error {
 			AllowCredentials: true,
 		}))
 
-		// TODO using this middleware hides the stack trace https://github.com/golang/go/issues/27375
-		e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
-			ErrorMessage: "request timeout exceeded",
-			Timeout:      1 * time.Minute,
-		}))
+		echoSwagger := CreateEchoSwagger(e, deps.AppInfo.Version)
 
-		echoSwagger := echoswagger.New(e, "/doc", &echoswagger.Info{
-			Title:       "Wasp API",
-			Description: "REST API for the Wasp node",
-			Version:     wasp.Version,
-		})
-
-		echoSwagger.AddSecurityAPIKey("Authorization", "JWT Token", echoswagger.SecurityInHeader).
-			SetExternalDocs("Find out more about Wasp", "https://wiki.iota.org/smart-contracts/overview").
-			SetUI(echoswagger.UISetting{DetachSpec: false, HideTop: false}).
-			SetScheme("http", "https")
-
-		echoSwagger.SetRequestContentType(echo.MIMEApplicationJSON)
-		echoSwagger.SetResponseContentType(echo.MIMEApplicationJSON)
-
-		echoSwagger.AddSecurityAPIKey("Authorization", "JWT Token", echoswagger.SecurityInHeader).
-			SetExternalDocs("Find out more about Wasp", "https://wiki.iota.org/smart-contracts/overview").
-			SetUI(echoswagger.UISetting{DetachSpec: false, HideTop: false}).
-			SetScheme("http", "https")
-
-		v1.Init(
-			Plugin.App().NewLogger("WebAPI/v1"),
-			echoSwagger,
-			deps.NetworkProvider,
-			deps.TrustedNetworkManager,
-			deps.UserManager,
-			deps.ChainRecordRegistryProvider,
-			deps.DKShareRegistryProvider,
-			deps.NodeIdentityProvider,
-			func() *chains.Chains {
-				return deps.Chains
-			},
-			func() *dkg.Node {
-				return deps.Node
-			},
-			func() {
-				deps.ShutdownHandler.SelfShutdown("wasp was shutdown via API", false)
-			},
-			deps.NodeConnectionMetrics,
-			ParamsWebAPI.Auth,
-			ParamsWebAPI.NodeOwnerAddresses,
-			deps.APICacheTTL,
-			deps.PublisherPort,
-		)
-
-		v2.Init(
+		webapi.Init(
 			Plugin.App().NewLogger("WebAPI/v2"),
 			echoSwagger,
+			deps.AppInfo.Version,
 			deps.AppConfig,
 			deps.NetworkProvider,
 			deps.TrustedNetworkManager,
@@ -195,6 +182,7 @@ func provide(c *dig.Container) error {
 			ParamsWebAPI.Auth,
 			ParamsWebAPI.NodeOwnerAddresses,
 			deps.APICacheTTL,
+			deps.Publisher,
 		)
 
 		return webapiServerResult{

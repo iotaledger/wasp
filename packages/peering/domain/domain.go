@@ -104,7 +104,7 @@ func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*cryptolib.PublicKey) {
 		}
 		changed = true
 		nodes[newPeerSender.PubKey().AsKey()] = newPeerSender
-		d.log.Infof("Domain peer added, pubKey=%v, netID=%v", newPeerSender.PubKey().String(), newPeerSender.NetID())
+		d.log.Infof("Domain peer added, pubKey=%v, peeringURL=%v", newPeerSender.PubKey().String(), newPeerSender.PeeringURL())
 	}
 	//
 	// Remove peers that are not needed anymore and retain others.
@@ -125,7 +125,7 @@ func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*cryptolib.PublicKey) {
 		}
 		if oldPeerDropped {
 			changed = true
-			d.log.Infof("Domain peer removed, pubKey=%v, netID=%v", oldPeer.PubKey().String(), oldPeer.NetID())
+			d.log.Infof("Domain peer removed, pubKey=%v, peeringURL=%v", oldPeer.PubKey().String(), oldPeer.PeeringURL())
 		}
 	}
 	if changed {

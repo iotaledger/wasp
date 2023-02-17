@@ -7,8 +7,8 @@ import (
 )
 
 type ValidationError struct {
-	MissingPermission string
-	Error             string
+	MissingPermission string `json:"missingPermission" swagger:"required"`
+	Error             string `json:"error" swagger:"required"`
 }
 
 func ValidatePermissions(permissions []string) func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -26,6 +26,10 @@ func ValidatePermissions(permissions []string) func(next echo.HandlerFunc) echo.
 
 			if authContext.scheme == AuthNone {
 				return next(e)
+			}
+
+			if !authContext.IsAuthenticated() {
+				return e.JSON(http.StatusUnauthorized, ValidationError{Error: "Invalid token"})
 			}
 
 			for _, permission := range permissions {

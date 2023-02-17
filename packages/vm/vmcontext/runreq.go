@@ -37,7 +37,7 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (res
 	vmctx.NumPostedOutputs = 0
 	vmctx.requestIndex = requestIndex
 	vmctx.requestEventIndex = 0
-	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
+	vmctx.entropy = hashing.HashData(append(codec.EncodeUint16(requestIndex), vmctx.task.Entropy[:]...))
 	vmctx.callStack = vmctx.callStack[:0]
 	vmctx.gasBudgetAdjusted = 0
 	vmctx.gasBurned = 0
@@ -51,8 +51,8 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (res
 	}
 	defer func() { vmctx.currentStateUpdate = nil }()
 
-	if err := vmctx.earlyCheckReasonToSkip(); err != nil {
-		return nil, err
+	if err2 := vmctx.earlyCheckReasonToSkip(); err2 != nil {
+		return nil, err2
 	}
 	vmctx.loadChainConfig()
 
@@ -108,7 +108,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	if account == nil {
 		account = vmctx.ChainID().CommonAccount()
 	}
-	vmctx.creditToAccount(account, vmctx.req.FungibleTokens())
+	vmctx.creditToAccount(account, vmctx.req.Assets())
 	vmctx.creditNFTToAccount(account, vmctx.req.NFT())
 
 	// adjust the sender's account with the storage deposit consumed or returned by internal UTXOs
@@ -285,10 +285,10 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 		tokensGuaranteed = vmctx.GetBaseTokensBalance(vmctx.req.SenderAccount())
 		// safely subtract the allowed from the sender to the target
 		if allowed := vmctx.req.Allowance(); allowed != nil {
-			if tokensGuaranteed < allowed.Assets.BaseTokens {
+			if tokensGuaranteed < allowed.BaseTokens {
 				tokensGuaranteed = 0
 			} else {
-				tokensGuaranteed -= allowed.Assets.BaseTokens
+				tokensGuaranteed -= allowed.BaseTokens
 			}
 		}
 		return tokensGuaranteed
@@ -300,7 +300,7 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 	if tokensAvailableBig != nil {
 		// safely subtract the transfer from the sender to the target
 		if transfer := vmctx.req.Allowance(); transfer != nil {
-			if transferTokens := isc.FindNativeTokenBalance(transfer.Assets.NativeTokens, nativeTokenID); transferTokens != nil {
+			if transferTokens := transfer.AmountNativeToken(nativeTokenID); !util.IsZeroBigInt(transferTokens) {
 				if tokensAvailableBig.Cmp(transferTokens) < 0 {
 					tokensAvailableBig.SetUint64(0)
 				} else {
@@ -357,8 +357,8 @@ func (vmctx *VMContext) chargeGasFee() {
 		return
 	}
 
-	transferToValidator := &isc.FungibleTokens{}
-	transferToOwner := &isc.FungibleTokens{}
+	transferToValidator := &isc.Assets{}
+	transferToOwner := &isc.Assets{}
 	if !isc.IsEmptyNativeTokenID(vmctx.chainInfo.GasFeePolicy.GasFeeTokenID) {
 		transferToValidator.NativeTokens = iotago.NativeTokens{
 			&iotago.NativeToken{ID: vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToValidator))},
@@ -372,8 +372,8 @@ func (vmctx *VMContext) chargeGasFee() {
 	}
 	sender := vmctx.req.SenderAccount()
 
-	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator, nil)
-	vmctx.mustMoveBetweenAccounts(sender, vmctx.ChainID().CommonAccount(), transferToOwner, nil)
+	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
+	vmctx.mustMoveBetweenAccounts(sender, vmctx.ChainID().CommonAccount(), transferToOwner)
 }
 
 func (vmctx *VMContext) GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {

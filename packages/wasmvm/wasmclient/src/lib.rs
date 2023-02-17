@@ -5,7 +5,6 @@
 
 pub use isc::*;
 pub use wasmclientcontext::*;
-pub use wasmclientsandbox::*;
 pub use wasmclientservice::*;
 
 pub mod isc;

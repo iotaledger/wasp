@@ -86,6 +86,30 @@ func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, r
 	return receipt
 }
 
+type mockL2Balance map[common.Address]*big.Int
+
+func (b mockL2Balance) Get(addr common.Address) *big.Int {
+	bal, ok := b[addr]
+	if ok {
+		return bal
+	}
+	return new(big.Int)
+}
+
+func (b mockL2Balance) Add(addr common.Address, amount *big.Int) {
+	n := b.Get(addr)
+	n.Add(n, amount)
+	b[addr] = n
+}
+
+func (b mockL2Balance) Sub(addr common.Address, amount *big.Int) {
+	n := b.Get(addr)
+	n.Sub(n, amount)
+	b[addr] = n
+}
+
+var _ L2Balance = mockL2Balance{}
+
 func TestBlockchain(t *testing.T) {
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
@@ -94,20 +118,13 @@ func TestBlockchain(t *testing.T) {
 	faucetSupply := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
 
 	genesisAlloc := map[common.Address]core.GenesisAccount{}
-	balances := map[common.Address]*big.Int{
+	l2Balance := mockL2Balance{
 		faucetAddress: faucetSupply,
-	}
-	getBalance := func(addr common.Address) *big.Int {
-		bal, ok := balances[addr]
-		if ok {
-			return bal
-		}
-		return new(big.Int)
 	}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance, nil, nil)
-	emu := NewEVMEmulator(db, 1, nil, getBalance, nil, nil)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, l2Balance)
+	emu := NewEVMEmulator(db, 1, nil, l2Balance)
 
 	// some assertions
 	{
@@ -176,15 +193,15 @@ func TestBlockchainPersistence(t *testing.T) {
 	require.NoError(t, err)
 
 	genesisAlloc := map[common.Address]core.GenesisAccount{}
-	getBalance := func(addr common.Address) *big.Int { return new(big.Int) }
+	l2Balance := mockL2Balance{}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance, nil, nil)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, l2Balance)
 
 	// deploy a contract using one instance of EVMEmulator
 	var contractAddress common.Address
 	func() {
-		emu := NewEVMEmulator(db, 1, nil, getBalance, nil, nil)
+		emu := NewEVMEmulator(db, 1, nil, l2Balance)
 		contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 		require.NoError(t, err)
 
@@ -200,7 +217,7 @@ func TestBlockchainPersistence(t *testing.T) {
 
 	// initialize a new EVMEmulator using the same DB and check the state
 	{
-		emu := NewEVMEmulator(db, 2, nil, getBalance, nil, nil)
+		emu := NewEVMEmulator(db, 2, nil, l2Balance)
 		// check the contract address
 		require.NotEmpty(t, emu.StateDB().GetCode(contractAddress))
 	}
@@ -292,11 +309,11 @@ func TestStorageContract(t *testing.T) {
 	require.NoError(t, err)
 
 	genesisAlloc := map[common.Address]core.GenesisAccount{}
-	getBalance := func(addr common.Address) *big.Int { return new(big.Int) }
+	l2Balance := mockL2Balance{}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance, nil, nil)
-	emu := NewEVMEmulator(db, 1, nil, getBalance, nil, nil)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, l2Balance)
+	emu := NewEVMEmulator(db, 1, nil, l2Balance)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(t, err)
@@ -359,11 +376,11 @@ func TestStorageContract(t *testing.T) {
 
 func TestERC20Contract(t *testing.T) {
 	genesisAlloc := map[common.Address]core.GenesisAccount{}
-	getBalance := func(addr common.Address) *big.Int { return new(big.Int) }
+	l2Balance := mockL2Balance{}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance, nil, nil)
-	emu := NewEVMEmulator(db, 1, nil, getBalance, nil, nil)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, l2Balance)
+	emu := NewEVMEmulator(db, 1, nil, l2Balance)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
 	require.NoError(t, err)
@@ -383,15 +400,15 @@ func TestERC20Contract(t *testing.T) {
 	)
 
 	callIntViewFn := func(name string, args ...interface{}) *big.Int {
-		callArguments, err := contractABI.Pack(name, args...)
-		require.NoError(t, err)
+		callArguments, err2 := contractABI.Pack(name, args...)
+		require.NoError(t, err2)
 
-		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, nil)
-		require.NoError(t, err)
+		res, err2 := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, nil)
+		require.NoError(t, err2)
 
 		v := new(big.Int)
-		err = contractABI.UnpackIntoInterface(&v, name, res.Return())
-		require.NoError(t, err)
+		err2 = contractABI.UnpackIntoInterface(&v, name, res.Return())
+		require.NoError(t, err2)
 		return v
 	}
 
@@ -447,11 +464,11 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 	require.NoError(b, err)
 
 	genesisAlloc := map[common.Address]core.GenesisAccount{}
-	getBalance := func(addr common.Address) *big.Int { return new(big.Int) }
+	l2Balance := mockL2Balance{}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance, nil, nil)
-	emu := NewEVMEmulator(db, 1, nil, getBalance, nil, nil)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, l2Balance)
+	emu := NewEVMEmulator(db, 1, nil, l2Balance)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(b, err)

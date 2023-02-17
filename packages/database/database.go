@@ -87,7 +87,7 @@ func CheckEngine(dbPath string, createDatabaseIfNotExists bool, dbEngine hivedb.
 		tmpAllowedEngines = allowedEngines
 	}
 
-	targetEngine, err := hivedb.CheckEngine(dbPath, createDatabaseIfNotExists, dbEngine, tmpAllowedEngines...)
+	targetEngine, err := hivedb.CheckEngine(dbPath, createDatabaseIfNotExists, dbEngine, tmpAllowedEngines)
 	if err != nil {
 		if errors.Is(err, hivedb.ErrEngineMismatch) {
 			//nolint:stylecheck // this error message is shown to the user

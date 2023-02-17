@@ -4,16 +4,30 @@
 package cmtLog
 
 import (
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/core/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type VarLogIndex interface {
-	Value() LogIndex
-	StartReceived() gpa.OutMessages
-	ConsensusOutputReceived(consensusLI LogIndex)
+	// Returns the latest agreed LI/AO.
+	// There is no output value, if LogIndex=⊥.
+	Value() (LogIndex, *isc.AliasOutputWithID)
+	// Consensus terminated with either with DONE or SKIP.
+	// NextAO is the same as before for the SKIP case.
+	// NextAO = nil means we don't know the latest AO from L1 (either startup or reject of a chain is happening).
+	ConsensusOutputReceived(consensusLI LogIndex, consensusStatus cons.OutputStatus, nextBaseAO *isc.AliasOutputWithID) gpa.OutMessages
+	// Consensus decided, that its maybe time to attempt another run.
+	// The timeout-ed consensus will be still running, so they will race for the result.
 	ConsensusTimeoutReceived(consensusLI LogIndex) gpa.OutMessages
-	L1ReplacedBaseAliasOutput()
+	// This might get a nil alias output in the case when a TX gets rejected and it was not the latest TX in the active chain.
+	// NextAO = nil means we don't know the latest AO from L1 (either startup or reject of a chain is happening).
+	L1ReplacedBaseAliasOutput(nextBaseAO *isc.AliasOutputWithID) gpa.OutMessages
+	// Messages are exchanged, so this function handles them.
 	MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutMessages
 }
 
@@ -21,93 +35,189 @@ type VarLogIndex interface {
 // a consensus is completed or an unexpected AliasOutput is received from
 // the ledger or if nodes agree to proceed to next LogIndex.
 //
-// > UPON Reception of Start:
-// >    Send ⟨NextLI, LogIndex⟩, if not sent for LogIndex or later.
-// > UPON Reception of ConsensusOutput{DONE | SKIP}:
-// >    Ignore if outdated.
-// > 	LogIndex <- max(LogIndex, ConsensusOutput.LogIndex) + 1
-// > UPON Reception of ConsensusTimeout:
-// >    Ignore if outdated.
-// >    Let ProposalToSkip = max(LogIndex, ConsensusOutput.LogIndex) + 1
-// >    Send ⟨NextLI, ProposalToSkip⟩, if not sent for ProposalToSkip or later.
-// > UPON Reception of L1ReplacedBaseAliasOutput:
-// >	LogIndex <- LogIndex + 1
-// > UPON Reception of F+1 ⟨NextLI, li⟩ for li > LogIndex:
-// >	Send ⟨NextLI, li⟩, if not sent for li or later.
-// > UPON Reception of N-F ⟨NextLI, li⟩ for li > LogIndex:
-// >	LogIndex <- li
+// There is non-commutative race condition on a lagging nodes.
+// In the case of successful consensus round:
+//   - It receives NextLI messages from the non-lagging nodes.
+//     That makes the lagging node to advance its LI.
+//   - Additionally the lagging node receives a ConfirmedAO from L1.
+//     That makes the node to advance the LI again, if the ConfirmedAO
+//     is received after a quorum of NextLI.
+//
+// To cope with this the NextLI messages carry the next baseAO (optionally),
+// and we have to consider this information upon reception of
+// L1ReplacedBaseAliasOutput and other events. This makes all the operations
+// commutative, thus convergent.
+//
+// This algorithm don't has to be consensus with a strict single correct answer,
+// but it must converge fast, assuming L1 converges. Additionally, in the good
+// conditions, it should not de-synchronize itself (like the race condition above).
+//
+// > VARIABLES
+// >   • latestAO   -- Latest AO, as reported by our LocalView.
+// >   • proposedLI -- Max LI for which ⟨NextLI, li, xAO⟩ is already sent.
+// >   • agreedLI   -- LI proposed for the consensus.
+// >   • minLI      -- Do not participate in LI lower than this.
+// >   • maxPeerLIs -- Maximal LIs and their AOs received from peers.
+// >
+// > ON Init(persistedLI):
+// >   latestAO ← ⊥
+// >   proposedLI, agreedLI ← 0
+// >   minLI ← persistedLI + 1
+// >   maxPeerLIs ← ∅
+// >
+// > UPON Reception of ConsensusOutput<DONE|SKIP>(consensusLI, nextAO):
+// >   latestAO ← nextAO
+// >   TryPropose(consensusLI + 1)
+// >
+// > UPON Reception of ConsensusTimeout(consensusLI):
+// >   TryPropose(consensusLI + 1)
+// >
+// > UPON Reception of L1ReplacedBaseAliasOutput(nextAO):
+// >   IF nextAO was not agreed for LI > ConsensusOutputDONE THEN
+// >     latestAO ← nextAO
+// >     TryPropose(max(agreedLI + 1, minLI)) // TODO: agreedLI --> EnoughVotes(agreedLI, N-F) --> EnoughVotes(agreedLI, F+1)
+// >
+// > UPON Reception ⟨NextLI, li, ao⟩ from peer p:
+// >   IF maxPeerLIs[p].li < li THEN
+// >     maxPeerLIs[p] = ⟨li, ao⟩
+// >   IF sli = EnoughVotes(proposedLI, F+1) ∧ sli ≠ 0 THEN
+// >     TryPropose(sli)
+// >   IF ali = EnoughVotes(agreedLI, N-F) ∧ ali ≠ 0 ∧ DerivedAO(ali) ≠ ⊥ THEN
+// >     agreedLI ← ali
+// >     OUTPUT(ali, DerivedAO(ali))
+// >
+// > FUNCTION TryPropose(li)
+// >   IF proposedLI < li ∧ DerivedAO(li) ≠ ⊥ THEN
+// >     proposedLI ← li
+// >     Send ⟨NextLI, proposedLI, DerivedAO(li)⟩
+// >
+// > FUNCTION DerivedAO(li)
+// >   RETURN IF ∃! ao: ∃(F+1) ⟨NextLI, ≥li, ao⟩
+// >            THEN ao       // Can't be ⊥.
+// >            ELSE latestAO // Can be ⊥, thus no derived AO
+// >
+// > FUNCTION EnoughVotes(aboveLI, quorum)
+// >   IF ∃(max) x > aboveLI: ∃(quorum) j: maxPeerLIs[j].li ≥ x
+// >     THEN RETURN x
+// >     ELSE RETURN 0
+// >
+//
+// Additionally, to recover after a reboot faster, a ⟨NextLI, -, -⟩ message includes the pleaseRepeat flag,
+// which is sent while a node has not heard from a peer a message. The peer should resend its last message, if any.
+//
+// Moreover, we have to cope with the cases, when our latest AO is not known (is nil). That can happen on a startup,
+// when AO is not yet received from the L1, and in the case of rejections, when several AOs are pending and some of them got reverted.
+// In that case (the latestAO=⊥) the node should not propose to increase the LI, but should support proposals by others.
+// As a consequence, it might happen that this variable will provide output even without getting an input from this node.
 type varLogIndexImpl struct {
-	nodeIDs    []gpa.NodeID // All the peers in this committee.
-	n          int          // Total number of nodes.
-	f          int          // Maximal number of faulty nodes to tolerate.
-	logIndex   LogIndex
-	sentNextLI LogIndex                // LogIndex for which the MsgNextLogIndex was sent.
-	maxPeerLIs map[gpa.NodeID]LogIndex // Latest peer indexes received from peers.
+	nodeIDs    []gpa.NodeID                        // All the peers in this committee.
+	n          int                                 // Total number of nodes.
+	f          int                                 // Maximal number of faulty nodes to tolerate.
+	latestAO   *isc.AliasOutputWithID              // Latest known AO, as reported by the varLocalView, can be nil (means we suspend proposing LIs).
+	proposedLI LogIndex                            // Highest LI send by this node with a ⟨NextLI, li⟩ message.
+	agreedLI   LogIndex                            // LI for which we have N-F proposals (when reached, consensus starts, the LI is persisted).
+	minLI      LogIndex                            // Minimal LI at which this node can participate (set on boot).
+	maxPeerLIs map[gpa.NodeID]*msgNextLogIndex     // Latest peer indexes received from peers.
+	consAggrAO map[LogIndex]*isc.AliasOutputWithID // Recent outputs, to filter L1ReplacedBaseAliasOutput.
+	consDoneLI LogIndex                            // Highest LI for which consensus has completed at this node.
+	outputCB   func(li LogIndex, ao *isc.AliasOutputWithID)
+	lastMsgs   map[gpa.NodeID]*msgNextLogIndex
 	log        *logger.Logger
 }
 
+// > ON Init(persistedLI):
+// >   latestAO ← ⊥
+// >   proposedLI, agreedLI ← 0
+// >   minLI ← persistedLI + 1
+// >   maxPeerLIs ← ∅
 func NewVarLogIndex(
 	nodeIDs []gpa.NodeID,
 	n int,
 	f int,
-	initLI LogIndex,
+	persistedLI LogIndex,
+	outputCB func(li LogIndex, ao *isc.AliasOutputWithID),
 	log *logger.Logger,
 ) VarLogIndex {
+	log.Debugf("NewVarLogIndex, n=%v, f=%v, persistedLI=%v", n, f, persistedLI)
 	return &varLogIndexImpl{
 		nodeIDs:    nodeIDs,
 		n:          n,
 		f:          f,
-		logIndex:   initLI,
-		sentNextLI: NilLogIndex(),
-		maxPeerLIs: map[gpa.NodeID]LogIndex{},
+		latestAO:   nil,
+		proposedLI: NilLogIndex(),
+		agreedLI:   NilLogIndex(),
+		minLI:      persistedLI.Next(),
+		maxPeerLIs: map[gpa.NodeID]*msgNextLogIndex{},
+		consAggrAO: map[LogIndex]*isc.AliasOutputWithID{},
+		consDoneLI: NilLogIndex(),
+		outputCB:   outputCB,
+		lastMsgs:   map[gpa.NodeID]*msgNextLogIndex{},
 		log:        log,
 	}
 }
 
-func (v *varLogIndexImpl) Value() LogIndex {
-	return v.logIndex
-}
-
-// > UPON Reception of Start:
-// >    Send ⟨NextLI, LogIndex⟩, if not sent for LogIndex or later.
-func (v *varLogIndexImpl) StartReceived() gpa.OutMessages {
-	return v.maybeSendNextLogIndex(v.logIndex)
-}
-
-// > UPON Reception of ConsensusOutput{DONE | SKIP}:
-// >    Ignore if outdated.
-// > 	LogIndex <- max(LogIndex, ConsensusOutput.LogIndex) + 1
-func (v *varLogIndexImpl) ConsensusOutputReceived(consensusLI LogIndex) {
-	if consensusLI < v.logIndex {
-		return
+func (v *varLogIndexImpl) Value() (LogIndex, *isc.AliasOutputWithID) {
+	if ao, ok := v.consAggrAO[v.agreedLI]; ok {
+		return v.agreedLI, ao
 	}
-	v.logIndex = consensusLI.Next()
+	return NilLogIndex(), nil
 }
 
-// > UPON Reception of ConsensusTimeout:
-// >    Ignore if outdated.
-// >    Let ProposalToSkip = max(LogIndex, ConsensusOutput.LogIndex) + 1
-// >    Send ⟨NextLI, ProposalToSkip⟩, if not sent for ProposalToSkip or later.
-func (v *varLogIndexImpl) ConsensusTimeoutReceived(consensusLI LogIndex) gpa.OutMessages {
-	if consensusLI < v.logIndex {
+// > UPON Reception of ConsensusOutput<DONE|SKIP>(consensusLI, nextAO):
+// >   latestAO ← nextAO
+// >   TryPropose(consensusLI + 1)
+func (v *varLogIndexImpl) ConsensusOutputReceived(consensusLI LogIndex, consensusStatus cons.OutputStatus, nextBaseAO *isc.AliasOutputWithID) gpa.OutMessages {
+	v.log.Debugf("ConsensusOutputReceived: consensusLI=%v, nextBaseAO=%v", consensusLI, nextBaseAO)
+	if consensusLI < v.agreedLI {
 		return nil
 	}
-	return v.maybeSendNextLogIndex(consensusLI.Next())
+	v.latestAO = nextBaseAO // We can set nil here, means we don't know the last AO from our L1.
+	if consensusStatus == cons.Completed && consensusLI > v.consDoneLI {
+		// Cleanup information before the successful consensus.
+		v.consDoneLI = consensusLI
+		for li := range v.consAggrAO {
+			if li < v.consDoneLI {
+				delete(v.consAggrAO, li)
+			}
+		}
+	}
+	return v.tryPropose(consensusLI.Next())
 }
 
-// Only call this if the LocalView returns new BaseAO after AliasOutput Confirmed/Rejected.
-//
-// > UPON Reception of L1ReplacedBaseAliasOutput:
-// >	LogIndex <- LogIndex + 1
-func (v *varLogIndexImpl) L1ReplacedBaseAliasOutput() {
-	v.logIndex++
+// > UPON Reception of ConsensusTimeout(consensusLI):
+// >   TryPropose(consensusLI + 1)
+func (v *varLogIndexImpl) ConsensusTimeoutReceived(consensusLI LogIndex) gpa.OutMessages {
+	v.log.Debugf("ConsensusTimeoutReceived: consensusLI=%v", consensusLI)
+	if consensusLI < v.agreedLI {
+		return nil
+	}
+	// NOTE: v.latestAO remains the same.
+	return v.tryPropose(consensusLI.Next())
 }
 
-// > UPON Reception of F+1 ⟨NextLI, li⟩ for li > LogIndex:
-// >	Send ⟨NextLI, li⟩, if not sent for li or later.
-// > UPON Reception of N-F ⟨NextLI, li⟩ for li > LogIndex:
-// >	LogIndex <- li
+// > UPON Reception of L1ReplacedBaseAliasOutput(nextAO):
+// >   IF nextAO was not agreed for LI > ConsensusOutputDONE THEN
+// >     latestAO ← nextAO
+// >     TryPropose(max(agreedLI + 1, minLI)) // TODO: agreedLI --> EnoughVotes(agreedLI, N-F) --> EnoughVotes(agreedLI, F+1)
+func (v *varLogIndexImpl) L1ReplacedBaseAliasOutput(nextBaseAO *isc.AliasOutputWithID) gpa.OutMessages {
+	v.log.Debugf("L1ReplacedBaseAliasOutput, nextBaseAO=%v", nextBaseAO)
+	if nextBaseAO != nil && v.wasRecentlyAgreed(nextBaseAO) {
+		return nil
+	}
+	v.latestAO = nextBaseAO // We can set nil here, means we don't know the last AO from our L1.
+	return v.tryPropose(MaxLogIndex(v.enoughVotes(v.agreedLI, v.n-v.f).Next(), v.minLI))
+}
+
+// > UPON Reception ⟨NextLI, li, ao⟩ from peer p:
+// >   IF maxPeerLIs[p].li < li THEN
+// >     maxPeerLIs[p] = ⟨li, ao⟩
+// >   IF sli = EnoughVotes(proposedLI, F+1) ∧ sli ≠ 0 THEN
+// >     TryPropose(sli)
+// >   IF ali = EnoughVotes(agreedLI, N-F) ∧ ali ≠ 0 ∧ DerivedAO(ali) ≠ ⊥ THEN
+// >     agreedLI ← ali
+// >     OUTPUT(ali, DerivedAO(ali))
 func (v *varLogIndexImpl) MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutMessages {
+	v.log.Debugf("MsgNextLogIndexReceived, %v", msg)
 	msgs := gpa.NoMessages()
 	sender := msg.Sender()
 	//
@@ -116,66 +226,130 @@ func (v *varLogIndexImpl) MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutM
 		v.log.Warnf("MsgNextLogIndex from unknown sender: %+v", msg)
 		return nil
 	}
-	var prevPeerLogIndex LogIndex
-	var found bool
-	if prevPeerLogIndex, found = v.maxPeerLIs[sender]; !found {
-		prevPeerLogIndex = NilLogIndex()
+	if lastMsg, ok := v.lastMsgs[msg.Sender()]; ok && msg.pleaseRepeat {
+		msgs.Add(lastMsg.AsResent())
 	}
-	if prevPeerLogIndex.AsUint32() >= msg.nextLogIndex.AsUint32() {
+	var prevPeerLI LogIndex
+	if prevPeerNLI, ok := v.maxPeerLIs[sender]; ok {
+		prevPeerLI = prevPeerNLI.nextLogIndex
+	} else {
+		prevPeerLI = NilLogIndex()
+	}
+	if prevPeerLI.AsUint32() >= msg.nextLogIndex.AsUint32() {
 		return nil
 	}
-	v.maxPeerLIs[sender] = msg.nextLogIndex
-	//
-	// Support log indexes, if there are F+1 votes for that log index.
-	supportLogIndex := v.votedFor(v.f + 1)
-	if supportLogIndex > v.logIndex {
-		msgs.AddAll(v.maybeSendNextLogIndex(supportLogIndex))
+	v.maxPeerLIs[sender] = msg
+	if sli := v.enoughVotes(v.proposedLI, v.f+1); sli != NilLogIndex() {
+		msgs.AddAll(v.tryPropose(sli))
 	}
-	//
-	// Proceed to the next log index, if needed.
-	newLogIndex := v.votedFor(v.n - v.f)
-	if newLogIndex > v.logIndex {
-		v.logIndex = newLogIndex
+	if ali := v.enoughVotes(v.agreedLI, v.n-v.f); ali != NilLogIndex() {
+		if derivedAO := v.deriveAO(ali); derivedAO != nil {
+			v.agreedLI = ali
+			v.consAggrAO[v.agreedLI] = derivedAO
+			v.log.Debugf("Output, agreedLI=%v, derivedAO=%v", v.agreedLI, derivedAO)
+			v.outputCB(v.agreedLI, derivedAO)
+		}
 	}
 	return msgs
 }
 
-func (v *varLogIndexImpl) knownNodeID(nodeID gpa.NodeID) bool {
-	for i := range v.nodeIDs {
-		if v.nodeIDs[i] == nodeID {
+// > FUNCTION TryPropose(li)
+// >   IF proposedLI < li ∧ DerivedAO(li) ≠ ⊥ THEN
+// >     proposedLI ← li
+// >     Send ⟨NextLI, proposedLI, DerivedAO(li)⟩
+func (v *varLogIndexImpl) tryPropose(li LogIndex) gpa.OutMessages {
+	if v.proposedLI >= li {
+		return nil
+	}
+	derivedAO := v.deriveAO(li)
+	if derivedAO == nil {
+		return nil
+	}
+	v.proposedLI = li
+	v.log.Debugf("Sending NextLogIndex=%v, baseAO=%v", v.proposedLI, derivedAO)
+	msgs := gpa.NoMessages()
+	for _, nodeID := range v.nodeIDs {
+		_, haveMsgFrom := v.maxPeerLIs[nodeID] // It might happen, that we rebooted and lost the state.
+		msg := newMsgNextLogIndex(nodeID, v.proposedLI, derivedAO, !haveMsgFrom)
+		v.lastMsgs[nodeID] = msg
+		msgs.Add(msg)
+	}
+	return msgs
+}
+
+// > FUNCTION DerivedAO(li)
+// >   RETURN IF ∃! ao: ∃(F+1) ⟨NextLI, ≥li, ao⟩
+// >            THEN ao       // Can't be ⊥.
+// >            ELSE latestAO // Can be ⊥, thus no derived AO
+func (v *varLogIndexImpl) deriveAO(li LogIndex) *isc.AliasOutputWithID {
+	// TODO: Reconsider the stuff bellow. It interferes with the LocalView, at least in the case of rejections.
+	countsAOMap := map[iotago.OutputID]*isc.AliasOutputWithID{}
+	countsAO := map[iotago.OutputID]int{}
+	for _, msg := range v.maxPeerLIs {
+		if msg.nextLogIndex < li {
+			continue
+		}
+		countsAOMap[msg.nextBaseAO.OutputID()] = msg.nextBaseAO
+		countsAO[msg.nextBaseAO.OutputID()]++
+	}
+
+	var q1fAO *isc.AliasOutputWithID
+	var found bool
+	for aoID, c := range countsAO {
+		if c >= v.f+1 {
+			if found {
+				// Non unique, return out value.
+				return v.latestAO
+			}
+			q1fAO = countsAOMap[aoID]
+			found = true
+		}
+	}
+	if found {
+		return q1fAO
+	}
+	return v.latestAO
+}
+
+// Find highest LogIndex for which N-F nodes have voted.
+// Returns 0, if not found.
+// > FUNCTION EnoughVotes(aboveLI, quorum)
+// >   IF ∃(max) x > aboveLI: ∃(quorum) j: maxPeerLIs[j].li ≥ x
+// >     THEN RETURN x
+// >     ELSE RETURN 0
+func (v *varLogIndexImpl) enoughVotes(aboveLI LogIndex, quorum int) LogIndex {
+	countsLI := map[LogIndex]int{}
+	for _, msg := range v.maxPeerLIs {
+		if msg.nextLogIndex > aboveLI {
+			countsLI[msg.nextLogIndex]++
+		}
+	}
+	maxLI := NilLogIndex()
+	for li := range countsLI {
+		// Count votes: all vote for this LI, if votes for it or higher LI.
+		c := 0
+		for li2, c2 := range countsLI {
+			if li2 >= li {
+				c += c2
+			}
+		}
+		// If quorum reached and it is higher than we had before, take it.
+		if c >= quorum && li > maxLI {
+			maxLI = li
+		}
+	}
+	return maxLI
+}
+
+func (v *varLogIndexImpl) wasRecentlyAgreed(ao *isc.AliasOutputWithID) bool {
+	for _, liAO := range v.consAggrAO {
+		if ao.Equals(liAO) {
 			return true
 		}
 	}
 	return false
 }
 
-// Find highest LogIndex for which N-F nodes have voted.
-// Returns 0, if not found.
-func (v *varLogIndexImpl) votedFor(quorum int) LogIndex {
-	counts := map[LogIndex]int{}
-	for _, li := range v.maxPeerLIs {
-		counts[li]++
-	}
-	max := NilLogIndex()
-	for li, c := range counts {
-		if c >= quorum && li.AsUint32() > max.AsUint32() {
-			max = li
-		}
-	}
-	return max
-}
-
-func (v *varLogIndexImpl) maybeSendNextLogIndex(logIndex LogIndex) gpa.OutMessages {
-	if logIndex < v.logIndex {
-		return nil
-	}
-	if v.sentNextLI.AsUint32() >= logIndex.AsUint32() {
-		return nil
-	}
-	v.sentNextLI = logIndex
-	msgs := gpa.NoMessages()
-	for i := range v.nodeIDs {
-		msgs.Add(newMsgNextLogIndex(v.nodeIDs[i], logIndex))
-	}
-	return msgs
+func (v *varLogIndexImpl) knownNodeID(nodeID gpa.NodeID) bool {
+	return lo.Contains(v.nodeIDs, nodeID)
 }

@@ -29,7 +29,7 @@ app "wasp-evm" {
             dockerfile = "./Dockerfile.dlv"
             build_args = {
                 BUILD_TAGS = "rocksdb"
-                BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/packages/wasp.VersionHash=${gitrefpretty()}"
+                BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/core/app.Version=${gitreftag()}"
             }
         }
 

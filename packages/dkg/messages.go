@@ -271,9 +271,9 @@ func (m *initiatorInitMsg) Read(r io.Reader) error {
 		if peerPubBytes, err = util.ReadBytes16(r); err != nil {
 			return err
 		}
-		peerPubKey, err := cryptolib.NewPublicKeyFromBytes(peerPubBytes)
-		if err != nil {
-			return err
+		peerPubKey, err2 := cryptolib.NewPublicKeyFromBytes(peerPubBytes)
+		if err2 != nil {
+			return err2
 		}
 		m.peerPubs[i] = peerPubKey
 	}

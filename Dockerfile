@@ -36,15 +36,6 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
   --mount=type=cache,target=/root/go/pkg/mod \
   go build -o /app/wasp -a -tags=${BUILD_TAGS} -ldflags=${BUILD_LD_FLAGS} .
 
-WORKDIR /scratch/tools/wasp-cli
-
-RUN --mount=type=cache,target=/root/.cache/go-build \
-  --mount=type=cache,target=/root/go/pkg/mod \
-  go build -o /app/wasp-cli -a -tags=${BUILD_TAGS} -ldflags=${BUILD_LD_FLAGS} .
-
-# Wasp build
-FROM gcr.io/distroless/cc
-
 ############################
 # Image
 ############################
@@ -57,6 +48,7 @@ EXPOSE 9090/tcp
 EXPOSE 5550/tcp
 EXPOSE 6060/tcp
 EXPOSE 4000/udp
+EXPOSE 4000/tcp
 
 # Copy the app dir into distroless image
 COPY --chown=nonroot:nonroot --from=build /app /app

@@ -68,7 +68,6 @@ func TestTransferAllowanceTo(t *testing.T) {
 
 	f := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.OffLedger(user0))
 	f.Params.AgentID().SetValue(user1.ScAgentID())
-	f.Params.ForceOpenAccount().SetValue(false)
 	f.Func.AllowanceBaseTokens(transferAmountBaseTokens).Post()
 	require.NoError(t, ctx.Err)
 
@@ -98,7 +97,6 @@ func TestTransferAllowanceTo(t *testing.T) {
 	balanceOldUser1L2 := ctx.Chain.L2NativeTokens(user1.AgentID(), nativeTokenID)
 
 	f.Params.AgentID().SetValue(user1.ScAgentID())
-	f.Params.ForceOpenAccount().SetValue(false)
 	transfer := wasmlib.NewScTransfer()
 	transfer.Set(&scTokenID, wasmtypes.NewScBigInt(transferAmount))
 	f.Func.Allowance(transfer).Post()
@@ -164,7 +162,7 @@ func TestHarvest(t *testing.T) {
 	commonAccountBal2 := ctx.Chain.L2Assets(commonAccount)
 	creatorBal1 := ctx.Chain.L2Assets(creatorAgentID)
 	assert.Equal(t, minimumBaseTokensOnCommonAccount+ctx.GasFee, commonAccountBal2.BaseTokens)
-	assert.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+isc.Million, creatorBal1.BaseTokens)
+	assert.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+ctx.StorageDeposit, creatorBal1.BaseTokens)
 	assert.Equal(t, big.NewInt(int64(transferAmount)), creatorBal1.NativeTokens[0].Amount)
 }
 
@@ -325,7 +323,7 @@ func TestBalanceBaseToken(t *testing.T) {
 	fbal.Func.Call()
 	require.NoError(t, ctx.Err)
 	user1Balance1 := fbal.Results.Balance().Value()
-	require.Equal(t, user0Balance0+1*isc.Million-transferAmt-gasFee, user0Balance1)
+	require.Equal(t, user0Balance0+ctx.StorageDeposit-transferAmt-gasFee, user0Balance1)
 	require.Equal(t, user1Balance0+transferAmt, user1Balance1)
 }
 
@@ -438,7 +436,6 @@ func TestGetAccountNonce(t *testing.T) {
 
 	ftrans := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.OffLedger(user0))
 	ftrans.Params.AgentID().SetValue(user0.ScAgentID())
-	ftrans.Params.ForceOpenAccount().SetValue(false)
 	ftrans.Func.TransferBaseTokens(1000).Post()
 	require.NoError(t, ctx.Err)
 

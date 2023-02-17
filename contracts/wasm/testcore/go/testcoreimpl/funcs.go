@@ -64,7 +64,7 @@ func funcCheckContextFromFullEP(ctx wasmlib.ScFuncContext, f *CheckContextFromFu
 func funcClaimAllowance(ctx wasmlib.ScFuncContext, _ *ClaimAllowanceContext) {
 	allowance := ctx.Allowance()
 	transfer := wasmlib.NewScTransferFromBalances(allowance)
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	ctx.TransferAllowed(ctx.AccountID(), transfer)
 }
 
 func funcDoNothing(ctx wasmlib.ScFuncContext, _ *DoNothingContext) {
@@ -98,7 +98,7 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 func funcPassTypesFull(ctx wasmlib.ScFuncContext, f *PassTypesFullContext) {
 	hash := ctx.Utility().HashBlake2b([]byte(testcore.ParamHash))
 	ctx.Require(f.Params.Hash().Value() == hash, "wrong hash")
-	ctx.Require(f.Params.Hname().Value() == ctx.Utility().Hname(testcore.ParamHname), "wrong hname")
+	ctx.Require(f.Params.Hname().Value() == wasmtypes.NewScHname(testcore.ParamHname), "wrong hname")
 	ctx.Require(f.Params.HnameZero().Value() == 0, "wrong hname-0")
 	ctx.Require(f.Params.Int64().Value() == 42, "wrong int64")
 	ctx.Require(f.Params.Int64Zero().Value() == 0, "wrong int64-0")
@@ -111,7 +111,7 @@ func funcPingAllowanceBack(ctx wasmlib.ScFuncContext, _ *PingAllowanceBackContex
 	caller := ctx.Caller()
 	ctx.Require(caller.IsAddress(), "pingAllowanceBack: caller expected to be a L1 address")
 	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	ctx.TransferAllowed(ctx.AccountID(), transfer)
 	ctx.Send(caller.Address(), transfer)
 }
 
@@ -136,7 +136,7 @@ func funcSendNFTsBack(ctx wasmlib.ScFuncContext, _ *SendNFTsBackContext) {
 	address := ctx.Caller().Address()
 	allowance := ctx.Allowance()
 	transfer := wasmlib.NewScTransferFromBalances(allowance)
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	ctx.TransferAllowed(ctx.AccountID(), transfer)
 	for nftID := range allowance.NftIDs() {
 		transfer = wasmlib.NewScTransferNFT(&nftID)
 		ctx.Send(address, transfer)
@@ -170,7 +170,7 @@ func funcSplitFunds(ctx wasmlib.ScFuncContext, _ *SplitFundsContext) {
 	tokensToTransfer := uint64(1_000_000)
 	transfer := wasmlib.NewScTransferBaseTokens(tokensToTransfer)
 	for ; tokens >= tokensToTransfer; tokens -= tokensToTransfer {
-		ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+		ctx.TransferAllowed(ctx.AccountID(), transfer)
 		ctx.Send(address, transfer)
 	}
 }
@@ -179,13 +179,13 @@ func funcSplitFundsNativeTokens(ctx wasmlib.ScFuncContext, _ *SplitFundsNativeTo
 	tokens := ctx.Allowance().BaseTokens()
 	address := ctx.Caller().Address()
 	transfer := wasmlib.NewScTransferBaseTokens(tokens)
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	ctx.TransferAllowed(ctx.AccountID(), transfer)
 	for _, token := range ctx.Allowance().TokenIDs() {
 		one := wasmtypes.NewScBigInt(1)
 		transfer = wasmlib.NewScTransferTokens(token, one)
 		tokens := ctx.Allowance().Balance(token)
 		for ; tokens.Cmp(one) >= 0; tokens = tokens.Sub(one) {
-			ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+			ctx.TransferAllowed(ctx.AccountID(), transfer)
 			ctx.Send(address, transfer)
 		}
 	}
@@ -244,7 +244,7 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 		ctx.Panic("not enough base tokens sent to cover StorageDeposit deposit")
 	}
 	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	ctx.TransferAllowed(ctx.AccountID(), transfer)
 
 	//request := isc.RequestParameters{
 	//	TargetAddress:  targetChain.AsAddress(),
@@ -252,8 +252,8 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 	//	Metadata: &isc.SendMetadata{
 	//		TargetContract: accounts.Contract.Hname(),
 	//		EntryPoint:     accounts.FuncWithdraw.Hname(),
-	//		GasBudget:      gasBudget,
-	//		Allowance:      isc.NewAllowanceBaseTokens(withdrawal),
+	//		GasBudget:      math.MaxUint64,
+	//		Allowance:      isc.NewAssetsBaseTokens(withdrawal),
 	//	},
 	//}
 
@@ -330,7 +330,7 @@ func viewJustView(ctx wasmlib.ScViewContext, _ *JustViewContext) {
 func viewPassTypesView(ctx wasmlib.ScViewContext, f *PassTypesViewContext) {
 	hash := ctx.Utility().HashBlake2b([]byte(testcore.ParamHash))
 	ctx.Require(f.Params.Hash().Value() == hash, "wrong hash")
-	ctx.Require(f.Params.Hname().Value() == ctx.Utility().Hname(testcore.ParamHname), "wrong hname")
+	ctx.Require(f.Params.Hname().Value() == wasmtypes.NewScHname(testcore.ParamHname), "wrong hname")
 	ctx.Require(f.Params.HnameZero().Value() == 0, "wrong hname-0")
 	ctx.Require(f.Params.Int64().Value() == 42, "wrong int64")
 	ctx.Require(f.Params.Int64Zero().Value() == 0, "wrong int64-0")

@@ -1,13 +1,17 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/client/chainclient"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -59,21 +63,24 @@ func testAccounts(e *ChainEnv) {
 	e.checkCoreContracts()
 
 	for i := range e.Chain.CommitteeNodes {
-		blockIndex, err := e.Chain.BlockIndex(i)
-		require.NoError(e.t, err)
+		blockIndex, err2 := e.Chain.BlockIndex(i)
+		require.NoError(e.t, err2)
 		require.Greater(e.t, blockIndex, uint32(2))
 
-		contractRegistry, err := e.Chain.ContractRegistry(i)
-		require.NoError(e.t, err)
+		contractRegistry, err2 := e.Chain.ContractRegistry(i)
+		require.NoError(e.t, err2)
 
-		cr := contractRegistry[hname]
+		cr, ok := lo.Find(contractRegistry, func(item apiclient.ContractInfoResponse) bool {
+			return item.HName == hname.String()
+		})
+		require.True(e.t, ok)
 
-		require.EqualValues(e.t, programHash1, cr.ProgramHash)
+		require.EqualValues(e.t, programHash1.Hex(), cr.ProgramHash)
 		require.EqualValues(e.t, description, cr.Description)
 		require.EqualValues(e.t, nativeIncCounterSCName, cr.Name)
 
-		counterValue, err := e.Chain.GetCounterValue(hname, i)
-		require.NoError(e.t, err)
+		counterValue, err2 := e.Chain.GetCounterValue(hname, i)
+		require.NoError(e.t, err2)
 		require.EqualValues(e.t, 42, counterValue)
 	}
 
@@ -90,7 +97,9 @@ func testAccounts(e *ChainEnv) {
 	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 10*time.Second)
 	require.NoError(e.t, err)
 
-	fees := receipts[0].GasFeeCharged
+	fees, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
+	require.NoError(e.t, err)
+
 	e.checkBalanceOnChain(isc.NewAgentID(myAddress), isc.BaseTokenID, transferBaseTokens-fees)
 
 	for i := range e.Chain.CommitteeNodes {
@@ -99,7 +108,7 @@ func testAccounts(e *ChainEnv) {
 		require.EqualValues(e.t, 43, counterValue)
 	}
 
-	if !e.Clu.AssertAddressBalances(myAddress, isc.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
+	if !e.Clu.AssertAddressBalances(myAddress, isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
 		e.t.Fatal()
 	}
 
@@ -126,22 +135,26 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	env.checkCoreContracts()
 
 	for _, i := range chain.CommitteeNodes {
-		blockIndex, err := chain.BlockIndex(i)
-		require.NoError(t, err)
+		blockIndex, err2 := chain.BlockIndex(i)
+		require.NoError(t, err2)
 		require.Greater(t, blockIndex, uint32(2))
 
-		contractRegistry, err := chain.ContractRegistry(i)
-		require.NoError(t, err)
+		contractRegistry, err2 := chain.ContractRegistry(i)
+		require.NoError(t, err2)
 
 		t.Logf("%+v", contractRegistry)
-		cr := contractRegistry[hname]
+		cr, ok := lo.Find(contractRegistry, func(item apiclient.ContractInfoResponse) bool {
+			return item.HName == hname.String()
+		})
+		require.True(t, ok)
+		require.NotNil(t, cr)
 
-		require.EqualValues(t, programHash1, cr.ProgramHash)
+		require.EqualValues(t, programHash1.Hex(), cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
 		require.EqualValues(t, nativeIncCounterSCName, cr.Name)
 
-		counterValue, err := chain.GetCounterValue(hname, i)
-		require.NoError(t, err)
+		counterValue, err2 := chain.GetCounterValue(hname, i)
+		require.NoError(t, err2)
 		require.EqualValues(t, 42, counterValue)
 	}
 
@@ -165,11 +178,11 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	env.checkLedger()
 
 	for _, i := range chain.CommitteeNodes {
-		counterValue, err := chain.GetCounterValue(hname, i)
-		require.NoError(t, err)
+		counterValue, err2 := chain.GetCounterValue(hname, i)
+		require.NoError(t, err2)
 		require.EqualValues(t, 43, counterValue)
 	}
-	if !env.Clu.AssertAddressBalances(myAddress, isc.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
+	if !env.Clu.AssertAddressBalances(myAddress, isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
 		t.Fatal()
 	}
 
@@ -180,9 +193,9 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	origL1Balance := env.Clu.AddressBalances(originatorAddress).BaseTokens
 	originatorClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), chain.ChainID, originatorSigScheme)
 	allowanceBaseTokens := uint64(800_000)
-	req2, err := originatorClient.PostOffLedgerRequest(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
+	req2, err := originatorClient.PostOffLedgerRequest(context.Background(), accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
 		chainclient.PostRequestParams{
-			Allowance: isc.NewAllowanceBaseTokens(allowanceBaseTokens),
+			Allowance: isc.NewAssetsBaseTokens(allowanceBaseTokens),
 		},
 	)
 	require.NoError(t, err)

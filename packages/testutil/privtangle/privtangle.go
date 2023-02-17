@@ -79,16 +79,21 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 	}
 
 	pt.generateSnapshot()
+	pt.StartServers(true)
 
+	return &pt
+}
+
+func (pt *PrivTangle) StartServers(deleteExisting bool) {
 	for i := range pt.NodeKeyPairs {
-		pt.startNode(i)
+		pt.startNode(i, deleteExisting)
 		time.Sleep(500 * time.Millisecond) // TODO: Remove?
 	}
 	pt.logf("Starting... all nodes started.")
 
 	pt.waitAllReady(20 * time.Second)
 	pt.logf("Starting... all nodes are up and running, starting coordinator.")
-	pt.startCoordinator(0)
+	pt.startCoordinator(0, deleteExisting)
 
 	pt.waitAllHealthy(20 * time.Second)
 	pt.logf("Starting... coordinator started, all nodes are healthy.")
@@ -103,8 +108,6 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 
 	pt.startFaucet(0) // faucet needs to be started after the indexer, otherwise it will take 1 milestone for the faucet get the correct balance
 	pt.waitInxPluginsFaucet()
-
-	return &pt
 }
 
 func (pt *PrivTangle) generateSnapshot() {
@@ -130,7 +133,7 @@ func (pt *PrivTangle) generateSnapshot() {
 	}
 }
 
-func (pt *PrivTangle) startNode(i int) {
+func (pt *PrivTangle) startNode(i int, deleteExisting bool) {
 	env := []string{}
 	nodePath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i))
 	nodePathDB := "db"               // Relative from nodePath.
@@ -139,28 +142,30 @@ func (pt *PrivTangle) startNode(i int) {
 	nodePathSnapFull := fmt.Sprintf("%s/full_snapshot.bin", nodePathSnapshots)
 	nodePathSnapDelta := fmt.Sprintf("%s/delta_snapshot.bin", nodePathSnapshots)
 
-	if err := os.RemoveAll(nodePath); err != nil {
-		panic(fmt.Errorf("unable to delete dir %v: %w", nodePath, err))
-	}
-	if err := os.MkdirAll(nodePath, 0o755); err != nil {
-		panic(fmt.Errorf("unable to create dir %v: %w", nodePath, err))
-	}
-	if err := os.MkdirAll(filepath.Join(nodePath, nodePathDB), 0o755); err != nil {
-		panic(fmt.Errorf("unable to create dir %v: %w", nodePathDB, err))
-	}
-	if err := os.MkdirAll(filepath.Join(nodePath, nodePathSnapshots), 0o755); err != nil {
-		panic(fmt.Errorf("unable to create dir %v: %w", nodePathSnapshots, err))
-	}
-	if err := os.WriteFile(filepath.Join(nodePath, pt.ConfigFile), []byte(pt.configFileContent()), 0o600); err != nil {
-		panic(fmt.Errorf("unable to create %s: %w", pt.ConfigFile, err))
-	}
+	if deleteExisting {
+		if err := os.RemoveAll(nodePath); err != nil {
+			panic(fmt.Errorf("unable to delete dir %v: %w", nodePath, err))
+		}
+		if err := os.MkdirAll(nodePath, 0o755); err != nil {
+			panic(fmt.Errorf("unable to create dir %v: %w", nodePath, err))
+		}
+		if err := os.MkdirAll(filepath.Join(nodePath, nodePathDB), 0o755); err != nil {
+			panic(fmt.Errorf("unable to create dir %v: %w", nodePathDB, err))
+		}
+		if err := os.MkdirAll(filepath.Join(nodePath, nodePathSnapshots), 0o755); err != nil {
+			panic(fmt.Errorf("unable to create dir %v: %w", nodePathSnapshots, err))
+		}
+		if err := os.WriteFile(filepath.Join(nodePath, pt.ConfigFile), []byte(pt.configFileContent()), 0o600); err != nil {
+			panic(fmt.Errorf("unable to create %s: %w", pt.ConfigFile, err))
+		}
 
-	snapContents, err := os.ReadFile(filepath.Join(pt.BaseDir, pt.SnapshotInit))
-	if err != nil {
-		panic(fmt.Errorf("unable to read initial snapshot : %w", err))
-	}
-	if err := os.WriteFile(filepath.Join(nodePath, nodePathSnapFull), snapContents, 0o600); err != nil {
-		panic(fmt.Errorf("unable to copy the initial snapshot : %w", err))
+		snapContents, err := os.ReadFile(filepath.Join(pt.BaseDir, pt.SnapshotInit))
+		if err != nil {
+			panic(fmt.Errorf("unable to read initial snapshot : %w", err))
+		}
+		if err := os.WriteFile(filepath.Join(nodePath, nodePathSnapFull), snapContents, 0o600); err != nil {
+			panic(fmt.Errorf("unable to copy the initial snapshot : %w", err))
+		}
 	}
 
 	args := []string{
@@ -176,6 +181,10 @@ func (pt *PrivTangle) startNode(i int) {
 		fmt.Sprintf("--prometheus.fileServiceDiscovery.target=localhost:%d", pt.NodePortPrometheus(i)),
 		fmt.Sprintf("--inx.bindAddress=localhost:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--p2p.db.path=%s", nodeP2PStore),
+		// nodes almost start at the same time in the clustertests,
+		// causing them to try to connect to each other at the same time, which ends up in "duplicated stream" errors.
+		// we can only fix that by a reconnect.
+		"--p2p.reconnectInterval=2s",
 		fmt.Sprintf("--p2p.identityPrivateKey=%s", hex.EncodeToString(pt.NodeKeyPairs[i].GetPrivateKey().AsBytes())),
 		fmt.Sprintf("--p2p.peers=%s", strings.Join(pt.NodeMultiAddrsWoIndex(i), ",")),
 	}
@@ -196,7 +205,7 @@ func (pt *PrivTangle) startNode(i int) {
 	}
 }
 
-func (pt *PrivTangle) startCoordinator(i int) *exec.Cmd {
+func (pt *PrivTangle) startCoordinator(i int, deleteExisting bool) *exec.Cmd {
 	env := []string{
 		fmt.Sprintf("COO_PRV_KEYS=%s,%s",
 			hex.EncodeToString(pt.CooKeyPair1.GetPrivateKey().AsBytes()),
@@ -204,11 +213,15 @@ func (pt *PrivTangle) startCoordinator(i int) *exec.Cmd {
 		),
 	}
 	args := []string{
-		"--cooBootstrap",
 		"--cooStartIndex=0",
 		"--coordinator.interval=100ms",
 		"--coordinator.debugFakeMilestoneTimestamps=true",
+		// no need to keep a backup of the coo milestones
+		"--coordinator.blockBackups.enabled=false",
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
+	}
+	if deleteExisting {
+		args = append(args, "--cooBootstrap")
 	}
 	return pt.startINXPlugin(i, "inx-coordinator", args, env)
 }
@@ -222,6 +235,7 @@ func (pt *PrivTangle) startFaucet(i int) *exec.Cmd {
 	args := []string{
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--faucet.bindAddress=localhost:%d", pt.NodePortFaucet(i)),
+		"--faucet.rateLimit.enabled=false",
 	}
 	return pt.startINXPlugin(i, "inx-faucet", args, env)
 }

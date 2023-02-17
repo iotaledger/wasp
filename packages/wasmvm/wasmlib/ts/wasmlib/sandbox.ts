@@ -1,24 +1,6 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {ScAssets, ScBalances, ScTransfer} from './assets';
-import {ScDict, ScImmutableDict} from './dict';
-import {sandbox} from './host';
-import {ScSandboxUtils} from './sandboxutils';
-import {ScImmutableState, ScState} from './state';
-import {ScFunc} from './contract';
-import {CallRequest, DeployRequest, PostRequest, SendRequest, TransferRequest} from './wasmrequests';
-import {requestIDFromBytes, ScRequestID} from './wasmtypes/screquestid';
-import {ScTokenID} from './wasmtypes/sctokenid';
-import {chainIDFromBytes, ScChainID} from './wasmtypes/scchainid';
-import {hashFromBytes, ScHash} from './wasmtypes/schash';
-import {agentIDFromBytes, ScAgentID} from './wasmtypes/scagentid';
-import {ScAddress} from './wasmtypes/scaddress';
-import {Proxy} from './wasmtypes/proxy';
-import {hnameFromBytes, ScHname} from './wasmtypes/schname';
-import {uint64FromBytes} from './wasmtypes/scuint64';
-import {stringToBytes} from './wasmtypes/scstring';
-
 // @formatter:off
 export const FnAccountID              : i32 = -1;
 export const FnAllowance              : i32 = -2;
@@ -59,6 +41,24 @@ export const FnUtilsHashBlake2b       : i32 = -36;
 export const FnUtilsHashName          : i32 = -37;
 export const FnUtilsHashSha3          : i32 = -38;
 // @formatter:on
+
+import {ScAssets, ScBalances, ScTransfer} from './assets';
+import {ScDict, ScImmutableDict} from './dict';
+import {sandbox} from './host';
+import {ScSandboxUtils} from './sandboxutils';
+import {ScImmutableState, ScState} from './state';
+import {ScFunc} from './contract';
+import {CallRequest, DeployRequest, PostRequest, SendRequest, TransferRequest} from './wasmrequests';
+import {requestIDFromBytes, ScRequestID} from './wasmtypes/screquestid';
+import {ScTokenID} from './wasmtypes/sctokenid';
+import {chainIDFromBytes, ScChainID} from './wasmtypes/scchainid';
+import {hashFromBytes, ScHash} from './wasmtypes/schash';
+import {agentIDFromBytes, ScAgentID} from './wasmtypes/scagentid';
+import {ScAddress} from './wasmtypes/scaddress';
+import {Proxy} from './wasmtypes/proxy';
+import {hnameFromBytes, ScHname} from './wasmtypes/schname';
+import {uint64FromBytes} from './wasmtypes/scuint64';
+import {stringToBytes} from './wasmtypes/scstring';
 
 export let traceOn: bool = false;
 
@@ -111,8 +111,12 @@ export class ScSandbox {
             allowance = new ScTransfer();
         }
         req.allowance = allowance.toBytes();
-        const res = sandbox(FnCall, req.bytes());
+        const res = this.fnCall(req);
         return new ScDict(res).immutable();
+    }
+
+    fnCall(req: CallRequest): Uint8Array {
+        return sandbox(FnCall, req.bytes());
     }
 
     // retrieve the agent id of the owner of the chain this contract lives on
@@ -127,6 +131,10 @@ export class ScSandbox {
 
     // retrieve the chain id of the chain this contract lives on
     public currentChainID(): ScChainID {
+        return this.fnChainID();
+    }
+
+    fnChainID(): ScChainID {
         return chainIDFromBytes(sandbox(FnChainID, null));
     }
 
@@ -264,7 +272,11 @@ export class ScSandboxFunc extends ScSandbox {
         req.allowance = allowance.toBytes();
         req.transfer = transfer.toBytes();
         req.delay = delay;
-        sandbox(FnPost, req.bytes());
+        this.fnPost(req);
+    }
+
+    fnPost(req: PostRequest): Uint8Array {
+        return sandbox(FnPost, req.bytes());
     }
 
     // generates a random value from 0 to max (exclusive: max) using a deterministic RNG
@@ -325,7 +337,7 @@ export class ScSandboxFunc extends ScSandbox {
     //}
 
     // TransferAllowed transfers allowed assets from caller to the specified account
-    public transferAllowed(agentID: ScAgentID, transfer: ScTransfer, create: bool): void {
+    public transferAllowed(agentID: ScAgentID, transfer: ScTransfer): void {
         // we need some assets to send
         if (transfer.isEmpty()) {
             return;
@@ -333,7 +345,6 @@ export class ScSandboxFunc extends ScSandbox {
 
         const req = new TransferRequest();
         req.agentID = agentID;
-        req.create = create;
         req.transfer = transfer.toBytes();
         sandbox(FnTransferAllowed, req.bytes());
     }

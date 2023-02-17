@@ -4,7 +4,6 @@
 package solo
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -15,7 +14,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	hivedb "github.com/iotaledger/hive.go/core/database"
-	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -31,6 +30,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
@@ -60,6 +60,7 @@ type Solo struct {
 	processorConfig                 *processors.Config
 	disableAutoAdjustStorageDeposit bool
 	seed                            cryptolib.Seed
+	publisher                       *publisher.Publisher
 }
 
 // Chain represents state of individual chain.
@@ -101,6 +102,10 @@ type Chain struct {
 	runVMMutex sync.Mutex
 	// mempool of the chain is used in Solo to mimic a real node
 	mempool Mempool
+
+	RequestsDone int
+	RequestsMark int
+
 	// used for non-standard VMs
 	bypassStardustVM bool
 }
@@ -170,6 +175,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		processorConfig:                 coreprocessors.NewConfigWithCoreContracts(),
 		disableAutoAdjustStorageDeposit: !opt.AutoAdjustStorageDeposit,
 		seed:                            opt.Seed,
+		publisher:                       publisher.New(opt.Log.Named("publisher")),
 	}
 	globalTime := ret.utxoDB.GlobalTime()
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v",
@@ -180,8 +186,8 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	})
 	require.NoError(t, err)
 
-	publisher.Event.Hook(events.NewClosure(func(msgType string, parts []string) {
-		ret.logger.Infof("solo publisher: %s %v", msgType, parts)
+	ret.publisher.Events.Published.Hook(event.NewClosure(func(ev *publisher.PublishedEvent) {
+		ret.logger.Infof("solo publisher: %s %s %v", ev.MsgType, ev.ChainID.ShortString(), ev.Parts)
 	}))
 
 	return ret
@@ -248,6 +254,8 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 	originatorAddr := chainOriginator.GetPublicKey().AsEd25519Address()
 	originatorAgentID := isc.NewAgentID(originatorAddr)
 
+	initialL1Balance := env.L1BaseTokens(originatorAddr)
+
 	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
 		chainOriginator,
@@ -264,7 +272,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 
 	err = env.utxoDB.AddToLedger(originTx)
 	require.NoError(env.T, err)
-	env.AssertL1BaseTokens(originatorAddr, utxodb.FundsFromFaucetAmount-anchor.Deposit)
+	env.AssertL1BaseTokens(originatorAddr, initialL1Balance-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
 		name, chainID.String(), stateControllerAddr.Bech32(parameters.L1().Protocol.Bech32HRP))
@@ -278,8 +286,8 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 	store := state.InitChainStore(kvStore)
 
 	{
-		block, err := store.LatestBlock()
-		require.NoError(env.T, err)
+		block, err2 := store.LatestBlock()
+		require.NoError(env.T, err2)
 		env.logger.Infof("     chain '%s'. origin trie root: %s", chainID.String(), block.TrieRoot())
 	}
 
@@ -533,7 +541,7 @@ func (env *Solo) L1BaseTokens(addr iotago.Address) uint64 {
 }
 
 // L1Assets returns all ftokens of the address contained in the UTXODB ledger
-func (env *Solo) L1Assets(addr iotago.Address) *isc.FungibleTokens {
+func (env *Solo) L1Assets(addr iotago.Address) *isc.Assets {
 	return env.utxoDB.GetAddressBalances(addr)
 }
 
@@ -547,17 +555,34 @@ type NFTMintedInfo struct {
 	NFTID    iotago.NFTID
 }
 
-// MintNFTL1 mints an NFT with the `issuer` account and sends it to a `target` account.
-// base tokens in the NFT output are sent to the minimum storage deposit and are taken from the issuer account
+// MintNFTL1 mints a single NFT with the `issuer` account and sends it to a `target` account.
+// Base tokens in the NFT output are sent to the minimum storage deposit and are taken from the issuer account.
 func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) (*isc.NFT, *NFTMintedInfo, error) {
+	nfts, infos, err := env.MintNFTsL1(issuer, target, nil, [][]byte{immutableMetadata})
+	if err != nil {
+		return nil, nil, err
+	}
+	return nfts[0], infos[0], nil
+}
+
+// MintNFTsL1 mints len(immutableMetadata) NFTs with the `issuer` account and sends them
+// to a `target` account.
+//
+// If collectionOutputID is not nil, it must be an outputID of an NFTOutput owned by the issuer.
+// All minted NFTs will belong to the given collection.
+// See: https://github.com/iotaledger/tips/blob/main/tips/TIP-0027/tip-0027.md
+//
+// Base tokens in the NFT outputs are sent to the minimum storage deposit and are taken from the issuer account.
+func (env *Solo) MintNFTsL1(issuer *cryptolib.KeyPair, target iotago.Address, collectionOutputID *iotago.OutputID, immutableMetadata [][]byte) ([]*isc.NFT, []*NFTMintedInfo, error) {
 	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
 
-	tx, err := transaction.NewMintNFTTransaction(transaction.MintNFTTransactionParams{
-		IssuerKeyPair:     issuer,
-		Target:            target,
-		UnspentOutputs:    allOuts,
-		UnspentOutputIDs:  allOutIDs,
-		ImmutableMetadata: immutableMetadata,
+	tx, err := transaction.NewMintNFTsTransaction(transaction.MintNFTsTransactionParams{
+		IssuerKeyPair:      issuer,
+		CollectionOutputID: collectionOutputID,
+		Target:             target,
+		ImmutableMetadata:  immutableMetadata,
+		UnspentOutputs:     allOuts,
+		UnspentOutputIDs:   allOutIDs,
 	})
 	if err != nil {
 		return nil, nil, err
@@ -571,22 +596,25 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, imm
 	if err != nil {
 		return nil, nil, err
 	}
+
+	var nfts []*isc.NFT
+	var infos []*NFTMintedInfo
 	for id, out := range outSet {
-		// we know that the tx will only produce 1 NFT output
-		if _, ok := out.(*iotago.NFTOutput); ok {
+		if out, ok := out.(*iotago.NFTOutput); ok { //nolint:gocritic // false positive
+			nftID := util.NFTIDFromNFTOutput(out, id)
 			info := &NFTMintedInfo{
 				OutputID: id,
 				Output:   out,
-				NFTID:    iotago.NFTIDFromOutputID(id),
+				NFTID:    nftID,
 			}
-			iscNFT := &isc.NFT{
+			nft := &isc.NFT{
 				ID:       info.NFTID,
-				Issuer:   issuer.Address(),
-				Metadata: immutableMetadata,
+				Issuer:   out.ImmutableFeatureSet().IssuerFeature().Address,
+				Metadata: out.ImmutableFeatureSet().MetadataFeature().Data,
 			}
-			return iscNFT, info, nil
+			nfts = append(nfts, nft)
+			infos = append(infos, info)
 		}
 	}
-
-	return nil, nil, errors.New("NFT output not found in resulting tx")
+	return nfts, infos, nil
 }

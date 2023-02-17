@@ -4,7 +4,6 @@
 package wasmclient
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -12,7 +11,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -23,8 +21,6 @@ type WasmClientContext struct {
 	Err           error
 	eventDone     chan bool
 	eventHandlers []wasmlib.IEventHandlers
-	eventReceived bool
-	hrp           string
 	keyPair       *cryptolib.KeyPair
 	nonce         uint64
 	ReqID         wasmtypes.ScRequestID
@@ -34,23 +30,37 @@ type WasmClientContext struct {
 }
 
 var (
-	_ wasmlib.ScHost            = new(WasmClientContext)
 	_ wasmlib.ScFuncCallContext = new(WasmClientContext)
 	_ wasmlib.ScViewCallContext = new(WasmClientContext)
 )
 
 func NewWasmClientContext(svcClient IClientService, chain string, scName string) *WasmClientContext {
+	if HrpForClient == "" {
+		// local client implementations for sandboxed functions
+		wasmtypes.Bech32Decode = ClientBech32Decode
+		wasmtypes.Bech32Encode = ClientBech32Encode
+		wasmtypes.HashName = ClientHashName
+	}
+
 	s := &WasmClientContext{}
 	s.svcClient = svcClient
 	s.scName = scName
 	s.ServiceContractName(scName)
-	hrp, _, err := iotago.ParseBech32(chain)
-	if err != nil {
-		s.Err = err
-		return s
+
+	if HrpForClient == "" {
+		// set the network prefix for the current network
+		hrp, _, err := iotago.ParseBech32(chain)
+		if err != nil {
+			s.Err = err
+			return s
+		}
+		if HrpForClient != hrp && HrpForClient != "" {
+			panic("WasmClient can only connect to one Tangle network per app")
+		}
+		HrpForClient = hrp
 	}
-	s.hrp = string(hrp)
-	_ = wasmhost.Connect(s)
+
+	// note that HrpForClient needs to be set
 	s.chainID = wasmtypes.ChainIDFromString(chain)
 	return s
 }
@@ -68,12 +78,10 @@ func (s *WasmClientContext) CurrentSvcClient() IClientService {
 }
 
 func (s *WasmClientContext) InitFuncCallContext() {
-	_ = wasmhost.Connect(s)
 }
 
 func (s *WasmClientContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
 	_ = hContract
-	_ = wasmhost.Connect(s)
 	return s.scHname
 }
 
@@ -119,17 +127,6 @@ func (s *WasmClientContext) Unregister(handler wasmlib.IEventHandlers) {
 	}
 }
 
-func (s *WasmClientContext) WaitEvent() {
-	s.Err = nil
-	for i := 0; i < 100; i++ {
-		if s.eventReceived {
-			return
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	s.Err = errors.New("event wait timeout")
-}
-
 func (s *WasmClientContext) WaitRequest(reqID ...wasmtypes.ScRequestID) {
 	requestID := s.ReqID
 	if len(reqID) == 1 {
@@ -145,8 +142,6 @@ func (s *WasmClientContext) processEvent(msg []string) {
 		// not intended for us
 		return
 	}
-
-	s.eventReceived = true
 
 	params := strings.Split(msg[6], "|")
 	for i, param := range params {

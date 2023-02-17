@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"os"
 	"strconv"
+	"strings"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -19,7 +20,7 @@ import (
 
 //nolint:funlen,gocyclo
 func ValueFromString(vtype, s string) []byte {
-	switch vtype {
+	switch strings.ToLower(vtype) {
 	case "address":
 		prefix, addr, err := iotago.ParseBech32(s)
 		log.Check(err)
@@ -32,6 +33,12 @@ func ValueFromString(vtype, s string) []byte {
 		agentid, err := isc.NewAgentIDFromString(s)
 		log.Check(err)
 		return agentid.Bytes()
+	case "bigint":
+		n, ok := new(big.Int).SetString(s, 10)
+		if !ok {
+			log.Fatal("error converting to bigint")
+		}
+		return n.Bytes()
 	case "bool":
 		b, err := strconv.ParseBool(s)
 		log.Check(err)
@@ -44,6 +51,11 @@ func ValueFromString(vtype, s string) []byte {
 		chainid, err := isc.ChainIDFromString(s)
 		log.Check(err)
 		return chainid.Bytes()
+	case "dict":
+		d := dict.Dict{}
+		err := d.UnmarshalJSON([]byte(s))
+		log.Check(err)
+		return codec.EncodeDict(d)
 	case "file":
 		return ReadFile(s)
 	case "hash":
@@ -70,18 +82,26 @@ func ValueFromString(vtype, s string) []byte {
 		n, err := strconv.ParseInt(s, 10, 64)
 		log.Check(err)
 		return codec.EncodeInt64(n)
-	case "bigint":
-		n, ok := new(big.Int).SetString(s, 10)
-		if !ok {
-			log.Fatal("error converting to bigint")
+	case "nftid":
+		nid, err := iotago.DecodeHex(s)
+		log.Check(err)
+		if len(nid) != iotago.NFTIDLength {
+			log.Fatal("invalid nftid length")
 		}
-		return n.Bytes()
+		return nid
 	case "requestid":
 		rid, err := isc.RequestIDFromString(s)
 		log.Check(err)
 		return rid.Bytes()
 	case "string":
 		return []byte(s)
+	case "tokenid":
+		tid, err := iotago.DecodeHex(s)
+		log.Check(err)
+		if len(tid) != iotago.FoundryIDLength {
+			log.Fatal("invalid tokenid length")
+		}
+		return tid
 	case "uint8":
 		n, err := strconv.ParseUint(s, 10, 8)
 		log.Check(err)
@@ -98,11 +118,6 @@ func ValueFromString(vtype, s string) []byte {
 		n, err := strconv.ParseUint(s, 10, 64)
 		log.Check(err)
 		return codec.EncodeUint64(n)
-	case "dict":
-		d := dict.Dict{}
-		err := d.UnmarshalJSON([]byte(s))
-		log.Check(err)
-		return codec.EncodeDict(d)
 	}
 	log.Fatalf("ValueFromString: No handler for type %s", vtype)
 	return nil
@@ -110,7 +125,7 @@ func ValueFromString(vtype, s string) []byte {
 
 //nolint:funlen,gocyclo
 func ValueToString(vtype string, v []byte) string {
-	switch vtype {
+	switch strings.ToLower(vtype) {
 	case "address":
 		addr, err := codec.DecodeAddress(v)
 		log.Check(err)
@@ -119,6 +134,9 @@ func ValueToString(vtype string, v []byte) string {
 		aid, err := codec.DecodeAgentID(v)
 		log.Check(err)
 		return aid.String()
+	case "bigint":
+		n := new(big.Int).SetBytes(v)
+		return n.String()
 	case "bool":
 		b, err := codec.DecodeBool(v)
 		log.Check(err)
@@ -132,6 +150,12 @@ func ValueToString(vtype string, v []byte) string {
 		cid, err := codec.DecodeChainID(v)
 		log.Check(err)
 		return cid.String()
+	case "dict":
+		d, err := codec.DecodeDict(v)
+		log.Check(err)
+		s, err := d.MarshalJSON()
+		log.Check(err)
+		return string(s)
 	case "hash":
 		hash, err := codec.DecodeHashValue(v)
 		log.Check(err)
@@ -156,15 +180,20 @@ func ValueToString(vtype string, v []byte) string {
 		n, err := codec.DecodeInt64(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
-	case "bigint":
-		n := new(big.Int).SetBytes(v)
-		return n.String()
+	case "nftid":
+		nid, err := codec.DecodeNFTID(v)
+		log.Check(err)
+		return nid.String()
 	case "requestid":
 		rid, err := codec.DecodeRequestID(v)
 		log.Check(err)
 		return rid.String()
 	case "string":
 		return fmt.Sprintf("%q", string(v))
+	case "tokenid":
+		tid, err := codec.DecodeNativeTokenID(v)
+		log.Check(err)
+		return tid.String()
 	case "uint8":
 		n, err := codec.DecodeUint8(v)
 		log.Check(err)
@@ -181,12 +210,6 @@ func ValueToString(vtype string, v []byte) string {
 		n, err := codec.DecodeUint64(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
-	case "dict":
-		d, err := codec.DecodeDict(v)
-		log.Check(err)
-		s, err := d.MarshalJSON()
-		log.Check(err)
-		return string(s)
 	}
 
 	log.Fatalf("ValueToString: No handler for type %s", vtype)

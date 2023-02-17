@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -30,7 +30,38 @@ const (
 	useDisposable = false
 )
 
+var params = []string{
+	"Lala",
+	"Trala",
+	"Bar|Bar",
+	"Bar~|~Bar",
+	"Tilde~Tilde",
+	"Tilde~~ Bar~/ Space~_",
+}
+
+type EventProcessor struct {
+	name string
+}
+
+func (proc *EventProcessor) sendClientEventsParam(t *testing.T, ctx *wasmclient.WasmClientContext, name string) {
+	f := testwasmlib.ScFuncs.TriggerEvent(ctx)
+	f.Params.Name().SetValue(name)
+	f.Params.Address().SetValue(ctx.CurrentChainID().Address())
+	f.Func.Post()
+	require.NoError(t, ctx.Err)
+}
+
+func (proc *EventProcessor) waitClientEventsParam(t *testing.T, ctx *wasmclient.WasmClientContext, name string) {
+	for i := 0; i < 100 && proc.name == "" && ctx.Err == nil; i++ {
+		time.Sleep(100 * time.Millisecond)
+	}
+	require.NoError(t, ctx.Err)
+	require.EqualValues(t, name, proc.name)
+	proc.name = ""
+}
+
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
+	wasmclient.HrpForClient = ""
 	if useCluster {
 		return setupClientCluster(t)
 	}
@@ -89,8 +120,7 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 	cfgSeed := cfgWallet["seed"].(string)
 
 	cfgWasp := config["wasp"].(map[string]interface{})
-	cfgWasp0 := cfgWasp["0"].(map[string]interface{})
-	cfgWaspApi0 := cfgWasp0["api"].(string)
+	cfgWasp0 := cfgWasp["0"].(string)
 
 	// we'll use the seed keypair to sign requests
 	seedBytes, err := iotago.DecodeHex(cfgSeed)
@@ -101,16 +131,16 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 
 	// we're testing against disposable wasp-cluster, so defaults will do
 	service := wasmclient.DefaultWasmClientService()
-	if cfgWaspApi0[len(cfgWaspApi0)-6:] != ":19090" {
+	if cfgWasp0[len(cfgWasp0)-6:] != ":19090" {
 		// test against Docker container, make sure to pass the correct args to test (top of file)
-		service = wasmclient.NewWasmClientService("127.0.0.1:9090", "127.0.0.1:5550")
+		service = wasmclient.NewWasmClientService("http://localhost:9090", "127.0.0.1:5550")
 	}
 	return newClient(t, service, chain, wallet)
 }
 
 func setupClientSolo(t solo.TestContext) *wasmclient.WasmClientContext {
 	ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlibimpl.OnDispatch)
-	chain := ctx.CurrentChainID().String()
+	chain := ctx.Chain.ChainID.String()
 	wallet := ctx.Chain.OriginatorPrivateKey
 
 	// use Solo as fake Wasp cluster
@@ -146,6 +176,13 @@ func TestClientAccountBalance(t *testing.T) {
 func TestClientArray(t *testing.T) {
 	ctx := setupClient(t)
 
+	c := testwasmlib.ScFuncs.StringMapOfStringArrayClear(ctx)
+	c.Params.Name().SetValue("Bands")
+	c.Func.Post()
+	require.NoError(t, ctx.Err)
+	ctx.WaitRequest()
+	require.NoError(t, ctx.Err)
+
 	v := testwasmlib.ScFuncs.StringMapOfStringArrayLength(ctx)
 	v.Params.Name().SetValue("Bands")
 	v.Func.Call()
@@ -166,7 +203,7 @@ func TestClientArray(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	require.EqualValues(t, 1, v.Results.Length().Value())
 
-	c := testwasmlib.ScFuncs.StringMapOfStringArrayClear(ctx)
+	c = testwasmlib.ScFuncs.StringMapOfStringArrayClear(ctx)
 	c.Params.Name().SetValue("Bands")
 	c.Func.Post()
 	require.NoError(t, ctx.Err)
@@ -207,37 +244,26 @@ func TestClientRandom(t *testing.T) {
 
 func TestClientEvents(t *testing.T) {
 	ctx := setupClient(t)
+
 	events := &testwasmlib.TestWasmLibEventHandlers{}
-	name := ""
+	proc := new(EventProcessor)
 	events.OnTestWasmLibTest(func(e *testwasmlib.EventTest) {
-		name = e.Name
+		proc.name = e.Name
 	})
 	ctx.Register(events)
 
-	event := func() string {
-		return name
+	for _, param := range params {
+		proc.sendClientEventsParam(t, ctx, param)
+		proc.waitClientEventsParam(t, ctx, param)
 	}
 
-	testClientEventsParam(t, ctx, "Lala", event)
-	testClientEventsParam(t, ctx, "Trala", event)
-	testClientEventsParam(t, ctx, "Bar|Bar", event)
-	testClientEventsParam(t, ctx, "Bar~|~Bar", event)
-	testClientEventsParam(t, ctx, "Tilde~Tilde", event)
-	testClientEventsParam(t, ctx, "Tilde~~ Bar~/ Space~_", event)
-}
-
-func testClientEventsParam(t *testing.T, ctx *wasmclient.WasmClientContext, name string, event func() string) {
-	f := testwasmlib.ScFuncs.TriggerEvent(ctx)
-	f.Params.Name().SetValue(name)
-	f.Params.Address().SetValue(ctx.CurrentChainID().Address())
-	f.Func.Post()
-	require.NoError(t, ctx.Err)
-
-	ctx.WaitRequest()
-	require.NoError(t, ctx.Err)
-
-	ctx.WaitEvent()
-	require.NoError(t, ctx.Err)
-
-	require.EqualValues(t, name, event())
+	//for _, param := range params {
+	//	proc.sendClientEventsParam(param)
+	//	ctx.WaitRequest()
+	//	require.NoError(t, ctx.Err)
+	//}
+	//
+	//for _, param := range params {
+	//	proc.waitClientEventsParam(param)
+	//}
 }

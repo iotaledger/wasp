@@ -75,8 +75,8 @@ func NFTFromMarshalUtil(mu *marshalutil.MarshalUtil, withID ...bool) (*NFT, erro
 	if err != nil {
 		return nil, err
 	}
-	if done, err := mu.DoneReading(); err != nil {
-		return nil, err
+	if done, err2 := mu.DoneReading(); err2 != nil {
+		return nil, err2
 	} else if done {
 		return ret, nil
 	}

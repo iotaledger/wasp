@@ -98,16 +98,18 @@ func TestIncWith1Post(t *testing.T) {
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
+	chain.WaitForRequestsMark()
+
 	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter2s.Name).
 		AddBaseTokens(2 * isc.Million).
-		WithAllowance(isc.NewAllowanceBaseTokens(1 * isc.Million)).
+		WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
 		WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	// advance logical clock to unlock that timelocked request
 	env.AdvanceClockBy(6 * time.Second)
-	require.True(t, chain.WaitForRequestsThrough(4))
+	require.True(t, chain.WaitForRequestsThrough(2))
 
 	checkCounter(chain, 19)
 	chain.CheckAccountLedger()

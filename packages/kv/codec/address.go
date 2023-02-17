@@ -29,6 +29,14 @@ func DecodeAddress(b []byte, def ...iotago.Address) (iotago.Address, error) {
 	return addr, nil
 }
 
+func MustDecodeAddress(b []byte, def ...iotago.Address) iotago.Address {
+	a, err := DecodeAddress(b, def...)
+	if err != nil {
+		panic(err)
+	}
+	return a
+}
+
 func EncodeAddress(addr iotago.Address) []byte {
 	addressInBytes, err := addr.Serialize(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {

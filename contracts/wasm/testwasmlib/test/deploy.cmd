@@ -1,6 +1,7 @@
 if not exist wasp-cli.json wasp-cli init
 wasp-cli request-funds
-wasp-cli chain deploy --committee=0 --quorum=1 --chain=mychain --description="My chain"
+wasp-cli chain deploy --chain=mychain
+wasp-cli chain activate
 wasp-cli chain deposit base:500000000
 wasp-cli balance
 wasp-cli chain balance

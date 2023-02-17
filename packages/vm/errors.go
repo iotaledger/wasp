@@ -21,7 +21,6 @@ var (
 	ErrContractNotFound                      = coreerrors.Register("contract not found id:%d")
 	ErrTargetEntryPointNotFound              = coreerrors.Register("entry point not found").Create()
 	ErrEntryPointCantBeAView                 = coreerrors.Register("'init' entry point can't be a view").Create()
-	ErrTransferTargetAccountDoesNotExists    = coreerrors.Register("transfer target account does not exist").Create()
 	ErrRepeatingInitCall                     = coreerrors.Register("repeating init call").Create()
 	ErrInconsistentStorageDepositAssumptions = coreerrors.Register("storage deposit requirements are not consistent with the chain assumptions").Create()
 	ErrTooManyEvents                         = coreerrors.Register("too many events issued for contract").Create()
@@ -33,4 +32,5 @@ var (
 	ErrNotEnoughTokensLeftForGas             = coreerrors.Register("not enough funds left to pay for gas")
 	ErrUnauthorized                          = coreerrors.Register("unauthorized access").Create()
 	ErrIllegalCall                           = coreerrors.Register("illegal call - entrypoint cannot be called from contracts")
+	ErrSendMultipleNFTs                      = coreerrors.Register("cannot send more than 1 NFT").Create()
 )

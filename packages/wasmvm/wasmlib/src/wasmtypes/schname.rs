@@ -14,7 +14,7 @@ pub struct ScHname(pub u32);
 
 impl ScHname {
     pub fn new(name: &str) -> ScHname {
-        hname_from_bytes(&host::sandbox(FN_UTILS_HASH_NAME, &string_to_bytes(name)))
+        hash_name(name)
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
