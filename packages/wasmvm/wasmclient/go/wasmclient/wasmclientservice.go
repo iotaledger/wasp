@@ -5,6 +5,8 @@ package wasmclient
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -13,15 +15,26 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+
+	// for some reason we cannot use the name mangos, so we rename the packages
+	nanomsg "go.nanomsg.org/mangos/v3"
+	nanomsgsub "go.nanomsg.org/mangos/v3/protocol/sub"
+	// for some reason if this import is missing things won't work
+	_ "go.nanomsg.org/mangos/v3/transport/all"
 )
+
+type ContractEvent struct {
+	ChainID    string
+	ContractID string
+	Data       string
+}
 
 type IClientService interface {
 	CallViewByHname(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error)
 	PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair, nonce uint64) (wasmtypes.ScRequestID, error)
-	SubscribeEvents(msg chan []string, done chan bool) error
+	SubscribeEvents(msg chan ContractEvent, done chan bool) error
 	WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error
 }
 
@@ -93,8 +106,47 @@ func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract,
 	return reqID, err
 }
 
-func (sc *WasmClientService) SubscribeEvents(msg chan []string, done chan bool) error {
-	return subscribe.Subscribe(sc.eventPort, msg, done, false, "contract")
+func (sc *WasmClientService) SubscribeEvents(msg chan ContractEvent, done chan bool) error {
+	socket, err := nanomsgsub.NewSocket()
+	if err != nil {
+		return err
+	}
+	err = socket.Dial("tcp://" + sc.eventPort)
+	if err != nil {
+		return fmt.Errorf("can't dial on sub socket %s: %w", sc.eventPort, err)
+	}
+	err = socket.SetOption(nanomsg.OptionSubscribe, []byte("contract"))
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for {
+			buf, err := socket.Recv()
+			if err != nil {
+				close(msg)
+				return
+			}
+			if len(buf) > 0 {
+				// contract tst1pqqf4qxh2w9x7rz2z4qqcvd0y8n22axsx82gqzmncvtsjqzwmhnjs438rhk | vm (contract): 89703a45: testwasmlib.test|1671671237|tst1pqqf4qxh2w9x7rz2z4qqcvd0y8n22axsx82gqzmncvtsjqzwmhnjs438rhk|Lala
+				s := string(buf)
+				parts := strings.Split(s, " ")
+				event := ContractEvent{
+					ChainID:    parts[1],
+					ContractID: parts[5][:len(parts[5])-1],
+					Data:       parts[6],
+				}
+				msg <- event
+			}
+		}
+	}()
+
+	go func() {
+		<-done
+		_ = socket.Close()
+	}()
+
+	return nil
 }
 
 func (sc *WasmClientService) WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error {
