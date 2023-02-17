@@ -378,12 +378,11 @@ Example:
 | Name                      | Description                                              | Type    | Default value  |
 | ------------------------- | -------------------------------------------------------- | ------- | -------------- |
 | enabled                   | Whether the web api plugin is enabled                    | boolean | true           |
-| nodeOwnerAddresses        | Defines a list of node owner addresses (bech32)          | array   |                |
 | bindAddress               | The bind address for the node web api                    | string  | "0.0.0.0:9090" |
-| debugRequestLoggerEnabled | Whether the debug logging for requests should be enabled | boolean | false          |
+| nodeOwnerAddresses        | Defines a list of node owner addresses (bech32)          | array   |                |
 | [auth](#webapi_auth)      | Configuration for auth                                   | object  |                |
-| readTimeout               | ReadTimeout for go http.Server                           | string  | "20s"          |
-| writeTimeout              | WriteTimeout for go http.Server                          | string  | "30s"          |
+| [limits](#webapi_limits)  | Configuration for limits                                 | object  |                |
+| debugRequestLoggerEnabled | Whether the debug logging for requests should be enabled | boolean | false          |
 
 ### <a id="webapi_auth"></a> Auth
 
@@ -412,15 +411,23 @@ Example:
 | --------- | ---------------------------------------------------- | ----- | ------------- |
 | whitelist | A list of ips that are allowed to access the service | array | 0.0.0.0       |
 
+### <a id="webapi_limits"></a> Limits
+
+| Name          | Description                                                               | Type   | Default value |
+| ------------- | ------------------------------------------------------------------------- | ------ | ------------- |
+| timeout       | The timeout after which a long running operation will be canceled         | string | "30s"         |
+| readTimeout   | The read timeout for the HTTP request body                                | string | "10s"         |
+| writeTimeout  | The write timeout for the HTTP response body                              | string | "10s"         |
+| maxBodyLength | The maximum number of characters that the body of an API call may contain | string | "1M"          |
+
 Example:
 
 ```json
   {
     "webapi": {
       "enabled": true,
-      "nodeOwnerAddresses": [],
       "bindAddress": "0.0.0.0:9090",
-      "debugRequestLoggerEnabled": false,
+      "nodeOwnerAddresses": [],
       "auth": {
         "scheme": "jwt",
         "jwt": {
@@ -435,8 +442,13 @@ Example:
           ]
         }
       },
-      "readTimeout": "20s",
-      "writeTimeout": "30s"
+      "limits": {
+        "timeout": "30s",
+        "readTimeout": "10s",
+        "writeTimeout": "10s",
+        "maxBodyLength": "1M"
+      },
+      "debugRequestLoggerEnabled": false
     }
   }
 ```
