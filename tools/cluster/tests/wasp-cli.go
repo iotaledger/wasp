@@ -235,7 +235,7 @@ func (w *WaspCLITest) CreateL2Foundry(tokenScheme iotago.TokenScheme) {
 	out := w.PostRequestGetReceipt(
 		"-o", "accounts", accounts.FuncFoundryCreateNew.Name,
 		"string", accounts.ParamTokenScheme, "bytes", "0x"+hex.EncodeToString(tokenSchemeBytes),
-		"--allowance", "base:1000000",
+		"--allowance", "base:1000000", "--node=0",
 	)
 	require.Regexp(w.T, `.*Error: \(empty\).*`, strings.Join(out, "\n"))
 }

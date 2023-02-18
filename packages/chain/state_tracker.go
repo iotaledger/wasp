@@ -19,7 +19,7 @@ import (
 type StateTracker interface {
 	//
 	// The main functions provided by this component.
-	TrackAliasOutput(ao *isc.AliasOutputWithID)
+	TrackAliasOutput(ao *isc.AliasOutputWithID, strict bool)
 	AwaitRequestReceipt(query *awaitReceiptReq)
 	//
 	// The following 2 functions are only to move the channel receive loop to the main ChainNode thread.
@@ -64,8 +64,11 @@ func NewStateTracker(
 	}
 }
 
-func (sti *stateTrackerImpl) TrackAliasOutput(ao *isc.AliasOutputWithID) {
-	sti.log.Debugf("TrackAliasOutput, ao=%v, haveAO=%v, nextAO=%v", ao, sti.haveAO, sti.nextAO)
+func (sti *stateTrackerImpl) TrackAliasOutput(ao *isc.AliasOutputWithID, strict bool) {
+	sti.log.Debugf("TrackAliasOutput[strict=%v], ao=%v, haveAO=%v, nextAO=%v", strict, ao, sti.haveAO, sti.nextAO)
+	if !strict && sti.haveAO != nil && sti.haveAO.GetStateIndex() >= ao.GetStateIndex() {
+		return
+	}
 	if ao.Equals(sti.nextAO) {
 		return
 	}
