@@ -135,15 +135,10 @@ func (s *WasmClientContext) WaitRequest(reqID ...wasmtypes.ScRequestID) {
 	s.Err = s.svcClient.WaitUntilRequestProcessed(s.chainID, requestID, 1*time.Minute)
 }
 
-func (s *WasmClientContext) processEvent(msg []string) {
-	fmt.Printf("%s\n", strings.Join(msg, " "))
+func (s *WasmClientContext) processEvent(msg ContractEvent) {
+	fmt.Printf("%s %s %s\n", msg.ChainID, msg.ContractID, msg.Data)
 
-	if msg[0] != "contract" {
-		// not intended for us
-		return
-	}
-
-	params := strings.Split(msg[6], "|")
+	params := strings.Split(msg.Data, "|")
 	for i, param := range params {
 		params[i] = unescape(param)
 	}
@@ -155,7 +150,7 @@ func (s *WasmClientContext) processEvent(msg []string) {
 }
 
 func (s *WasmClientContext) startEventHandlers() error {
-	chMsg := make(chan []string, 20)
+	chMsg := make(chan ContractEvent, 20)
 	s.eventDone = make(chan bool)
 	err := s.svcClient.SubscribeEvents(chMsg, s.eventDone)
 	if err != nil {
