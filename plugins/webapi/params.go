@@ -17,7 +17,7 @@ type ParametersWebAPI struct {
 		Timeout       time.Duration `default:"30s" usage:"the timeout after which a long running operation will be canceled"`
 		ReadTimeout   time.Duration `default:"10s" usage:"the read timeout for the HTTP request body"`
 		WriteTimeout  time.Duration `default:"10s" usage:"the write timeout for the HTTP response body"`
-		MaxBodyLength string        `default:"1M" usage:"the maximum number of characters that the body of an API call may contain"`
+		MaxBodyLength string        `default:"2M" usage:"the maximum number of characters that the body of an API call may contain"`
 	}
 
 	DebugRequestLoggerEnabled bool `default:"false" usage:"whether the debug logging for requests should be enabled"`
