@@ -125,7 +125,7 @@ func TestFinalizedOneBidTooLow(t *testing.T) {
 
 	// wait for finalize_auction
 	ctx.AdvanceClockBy(61 * time.Minute)
-	require.True(t, ctx.WaitForPendingRequests(1))
+	require.True(t, ctx.WaitForPendingRequests(2))
 
 	info := fairauction.ScFuncs.GetAuctionInfo(ctx)
 	info.Params.Nft().SetValue(nftID)
@@ -156,7 +156,7 @@ func TestFinalizedOneBid(t *testing.T) {
 
 	// wait for finalize_auction
 	ctx.AdvanceClockBy(61 * time.Minute)
-	require.True(t, ctx.WaitForPendingRequests(2))
+	require.True(t, ctx.WaitForPendingRequests(3))
 
 	info := fairauction.ScFuncs.GetAuctionInfo(ctx)
 	info.Params.Nft().SetValue(nftID)
