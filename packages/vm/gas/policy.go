@@ -1,6 +1,7 @@
 package gas
 
 import (
+	"errors"
 	"fmt"
 	"math"
 
@@ -83,6 +84,8 @@ func MustGasFeePolicyFromBytes(data []byte) *GasFeePolicy {
 	return ret
 }
 
+var ErrInvalidEVMGasRatio = errors.New("EVM gas ratio must have both components != 0")
+
 func FeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
 	ret := &GasFeePolicy{}
 	mu := marshalutil.New(data)
@@ -110,6 +113,9 @@ func FeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
 	}
 	if ret.EVMGasRatio, err = util.Ratio32FromBytes(mu.ReadRemainingBytes()); err != nil {
 		return nil, err
+	}
+	if ret.EVMGasRatio.A == 0 || ret.EVMGasRatio.B == 0 {
+		return nil, ErrInvalidEVMGasRatio
 	}
 	return ret, nil
 }

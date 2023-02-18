@@ -65,7 +65,9 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 	state.Set(governance.VarMaxEventSize, codec.Encode(governance.DefaultMaxEventSize))
 	state.Set(governance.VarMaxEventsPerReq, codec.Encode(governance.DefaultMaxEventsPerRequest))
 
-	state.Set(governance.VarGasFeePolicyBytes, feePolicyBytes)
+	feePolicy, err := gas.FeePolicyFromBytes(feePolicyBytes)
+	ctx.RequireNoError(err)
+	state.Set(governance.VarGasFeePolicyBytes, feePolicy.Bytes())
 
 	state.Set(governance.VarMaintenanceStatus, codec.Encode(false))
 

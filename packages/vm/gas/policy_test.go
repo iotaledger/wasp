@@ -21,6 +21,7 @@ func TestFeePolicySerde(t *testing.T) {
 		GasFeeTokenID:     tpkg.RandNativeToken().ID,
 		GasPerToken:       uint64(100),
 		ValidatorFeeShare: 10,
+		EVMGasRatio:       DefaultEVMGasRatio,
 	}
 	feePolicyBin = feePolicy.Bytes()
 	feePolicyBack, err = FeePolicyFromBytes(feePolicyBin)
