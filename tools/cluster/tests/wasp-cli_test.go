@@ -454,7 +454,7 @@ func TestWaspCLILongParam(t *testing.T) {
 	committee, quorum := w.ArgCommitteeConfig(0)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
-	w.MustRun("chain", "deposit", "base:1000000")
+	w.MustRun("chain", "deposit", "base:1000000", "--node=0")
 
 	w.CreateL2Foundry(&iotago.SimpleTokenScheme{
 		MaximumSupply: big.NewInt(1000000),
