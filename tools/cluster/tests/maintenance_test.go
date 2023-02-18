@@ -116,6 +116,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 		GasFeeTokenID:     iotago.NativeTokenID{},
 		GasPerToken:       10,
 		ValidatorFeeShare: 1,
+		EVMGasRatio:       gas.DefaultEVMGasRatio,
 	}
 	{
 		req, err2 := ownerSCClient.PostOffLedgerRequest(governance.FuncSetFeePolicy.Name, chainclient.PostRequestParams{
