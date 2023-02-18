@@ -564,8 +564,9 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 }
 
 func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
-	cni.log.Debugf("handleAliasOutput")
-	cni.stateTrackerCnf.TrackAliasOutput(aliasOutput)
+	cni.log.Debugf("handleAliasOutput, aliasOutput[StateIndex=%v].ID=", aliasOutput.GetStateIndex(), aliasOutput.OutputID().ToHex())
+	cni.stateTrackerCnf.TrackAliasOutput(aliasOutput, true)
+	cni.stateTrackerAct.TrackAliasOutput(aliasOutput, false) // ACT state will be equal to CNF or ahead of it.
 	outMsgs := cni.chainMgr.Input(
 		chainMgr.NewInputAliasOutputConfirmed(aliasOutput),
 	)
@@ -695,7 +696,7 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 			cni.consRecoverPipe.In() <- &consRecover{request: needConsensus}
 		}
 		ci.request = needConsensus
-		cni.stateTrackerAct.TrackAliasOutput(needConsensus.BaseAliasOutput)
+		cni.stateTrackerAct.TrackAliasOutput(needConsensus.BaseAliasOutput, true)
 		ci.consensus.Input(needConsensus.BaseAliasOutput, outputCB, recoverCB)
 		//
 		// Update committee nodes, if changed.
