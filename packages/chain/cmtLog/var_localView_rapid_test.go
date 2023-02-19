@@ -13,6 +13,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
 // A State Machine for for the property based test.
@@ -34,7 +35,7 @@ type varLocalViewSM struct {
 }
 
 func (sm *varLocalViewSM) Init(t *rapid.T) {
-	sm.lv = cmtLog.NewVarLocalView()
+	sm.lv = cmtLog.NewVarLocalView(testlogger.NewLogger(t))
 	sm.confirmed = []*isc.AliasOutputWithID{}
 	sm.pending = []*isc.AliasOutputWithID{}
 	sm.rejected = []*isc.AliasOutputWithID{}
@@ -49,8 +50,10 @@ func (sm *varLocalViewSM) L1ExternalAOConfirmed(t *rapid.T) {
 	//
 	// The AO from L1 is always respected as the correct one.
 	newAO := sm.nextAO()
-	require.True(t, sm.lv.AliasOutputConfirmed(newAO))  // BaseAO is replaced or set.
-	require.Equal(t, newAO, sm.lv.GetBaseAliasOutput()) // BaseAO is replaced or set.
+	tipAO, tipChanged := sm.lv.AliasOutputConfirmed(newAO)
+	require.True(t, tipChanged)            // BaseAO is replaced or set.
+	require.Equal(t, newAO, tipAO)         // BaseAO is replaced or set.
+	require.Equal(t, newAO, sm.lv.Value()) // BaseAO is replaced or set.
 	//
 	// Update the model (add confirmed, move pending to rejected).
 	sm.confirmed = append(sm.confirmed, newAO)
@@ -71,8 +74,8 @@ func (sm *varLocalViewSM) L1PendingApproved(t *rapid.T) {
 	//
 	// Notify the LocalView on the CNF.
 	cnfAO := sm.pending[0]
-	prevAO := sm.lv.GetBaseAliasOutput()
-	changed := sm.lv.AliasOutputConfirmed(cnfAO)
+	prevAO := sm.lv.Value()
+	_, tipChanged := sm.lv.AliasOutputConfirmed(cnfAO)
 	//
 	// Update the model.
 	sm.confirmed = append(sm.confirmed, cnfAO)
@@ -81,8 +84,8 @@ func (sm *varLocalViewSM) L1PendingApproved(t *rapid.T) {
 	//
 	// Post-condition: If there was no rejection, then the BaseAO has to be left unchanged.
 	if !sm.rejSync && prevAO != nil {
-		require.False(t, changed)                            // BaseAO is not replaced.
-		require.Equal(t, prevAO, sm.lv.GetBaseAliasOutput()) // BaseAO is not replaced.
+		require.False(t, tipChanged)            // BaseAO is not replaced.
+		require.Equal(t, prevAO, sm.lv.Value()) // BaseAO is not replaced.
 	}
 }
 
@@ -98,10 +101,9 @@ func (sm *varLocalViewSM) L1PendingRejected(t *rapid.T) {
 	//
 	// Notify the LocalView on the rejection.
 	rejectFrom := rapid.IntRange(0, len(sm.pending)-1).Draw(t, "reject.idx")
-	require.Equal(t,
-		rejectFrom == 0,
-		sm.lv.AliasOutputRejected(sm.pending[rejectFrom]),
-	)
+	newTip, _ := sm.lv.AliasOutputRejected(sm.pending[rejectFrom])
+	require.Equal(t, rejectFrom != 0, newTip == nil, "If that't not the first of the pending, then there are pending left, so the new tip is undefined.")
+	require.Equal(t, rejectFrom == 0, newTip != nil, "In this case, all the pending are marked as rejected, so we have the tip (the confirmed one).")
 	//
 	// Update the model.
 	sm.rejected = append(sm.rejected, sm.pending[rejectFrom+1:]...)
@@ -120,7 +122,8 @@ func (sm *varLocalViewSM) OutdatedRejectHandled(t *rapid.T) {
 	selectedAO := sm.rejected[selectedIdx]
 	//
 	// Perform the action.
-	require.False(t, sm.lv.AliasOutputRejected(selectedAO))
+	_, tipChanged := sm.lv.AliasOutputRejected(selectedAO)
+	require.False(t, tipChanged)
 	//
 	// Update the model.
 	sm.rejected = append(sm.rejected[:selectedIdx], sm.rejected[selectedIdx+1:]...)
@@ -135,11 +138,13 @@ func (sm *varLocalViewSM) ConsensusOutput(t *rapid.T) {
 	}
 	//
 	// Perform the action.
-	prevAO := sm.lv.GetBaseAliasOutput()
+	prevAO := sm.lv.Value()
 	require.NotNil(t, prevAO)
-	newAO := sm.nextAO()
-	require.True(t, sm.lv.ConsensusOutputDone(prevAO.OutputID(), newAO))
-	require.Equal(t, newAO, sm.lv.GetBaseAliasOutput())
+	newAO := sm.nextAO(prevAO)
+	tipAO, tipChanged := sm.lv.ConsensusOutputDone(prevAO.OutputID(), newAO)
+	require.True(t, tipChanged)
+	require.Equal(t, newAO, tipAO)
+	require.Equal(t, newAO, sm.lv.Value())
 	//
 	// Update the model.
 	sm.pending = append(sm.pending, newAO)
@@ -154,13 +159,22 @@ func (sm *varLocalViewSM) Check(t *rapid.T) {
 }
 
 // We don't use randomness to generate AOs because they have to be unique.
-func (sm *varLocalViewSM) nextAO() *isc.AliasOutputWithID {
+func (sm *varLocalViewSM) nextAO(prevAO ...*isc.AliasOutputWithID) *isc.AliasOutputWithID {
 	sm.utxoIDCounter++
 	txIDBytes := []byte(fmt.Sprintf("%v", sm.utxoIDCounter))
 	utxoInput := iotago.UTXOInput{}
 	copy(utxoInput.TransactionID[:], txIDBytes)
 	utxoInput.TransactionOutputIndex = 0
-	return isc.NewAliasOutputWithID(nil, utxoInput.ID())
+	if len(prevAO) > 1 {
+		panic("0/1 prevAO can be provided")
+	}
+	var stateIndex uint32
+	if len(prevAO) == 1 {
+		stateIndex = prevAO[0].GetStateIndex() + 1
+	} else {
+		stateIndex = uint32(sm.utxoIDCounter)
+	}
+	return isc.NewAliasOutputWithID(&iotago.AliasOutput{StateIndex: stateIndex}, utxoInput.ID())
 }
 
 // Alias output can be proposed, if there is at least one AO confirmed and there is no
@@ -174,7 +188,7 @@ func (sm *varLocalViewSM) nextChainStepPossible() bool {
 func (sm *varLocalViewSM) propBaseAOProposedIfPossible(t *rapid.T) {
 	require.Equal(t,
 		sm.nextChainStepPossible(),
-		sm.lv.GetBaseAliasOutput() != nil,
+		sm.lv.Value() != nil,
 	)
 }
 
@@ -182,9 +196,9 @@ func (sm *varLocalViewSM) propBaseAOProposedIfPossible(t *rapid.T) {
 func (sm *varLocalViewSM) propBaseAOProposedCorrect(t *rapid.T) {
 	if sm.nextChainStepPossible() {
 		if len(sm.pending) != 0 {
-			require.Equal(t, sm.pending[len(sm.pending)-1], sm.lv.GetBaseAliasOutput())
+			require.Equal(t, sm.pending[len(sm.pending)-1], sm.lv.Value())
 		} else {
-			require.Equal(t, sm.confirmed[len(sm.confirmed)-1], sm.lv.GetBaseAliasOutput())
+			require.Equal(t, sm.confirmed[len(sm.confirmed)-1], sm.lv.Value())
 		}
 	}
 }
@@ -208,6 +222,6 @@ var _ rapid.StateMachine = &varLocalViewSM{}
 
 // E.g. for special parameters for reproducibility, etc.
 // `go test ./packages/chain/cmtLog/ --run TestPropsRapid -v -rapid.seed=13061922091840831492 -rapid.checks=100`
-func TestPropsRapid(t *testing.T) {
+func TestVarLocalViewRapid(t *testing.T) {
 	rapid.Check(t, rapid.Run[*varLocalViewSM]())
 }

@@ -242,13 +242,13 @@ func testBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedMempoolRequests)
 		require.Nil(t, out.NeedStateMgrDecidedState)
 		require.Nil(t, out.NeedVMResult)
-		require.NotNil(t, out.ResultTransaction)
-		require.NotNil(t, out.ResultNextAliasOutput)
-		require.NotNil(t, out.ResultState)
-		block := chainStates[nid].Commit(out.ResultState)
+		require.NotNil(t, out.Result.Transaction)
+		require.NotNil(t, out.Result.NextAliasOutput)
+		require.NotNil(t, out.Result.StateDraft)
+		block := chainStates[nid].Commit(out.Result.StateDraft)
 		require.NotNil(t, block)
 		if nid == nodeIDs[0] { // Just do this once.
-			require.NoError(t, utxoDB.AddToLedger(out.ResultTransaction))
+			require.NoError(t, utxoDB.AddToLedger(out.Result.Transaction))
 		}
 	}
 }
@@ -580,12 +580,12 @@ func (tci *testConsInst) tryHandleOutput(nodeID gpa.NodeID) { //nolint: gocyclo
 		if tci.done[nodeID] {
 			return
 		}
-		resultBlock := tci.nodeStates[nodeID].Commit(out.ResultState)
+		resultBlock := tci.nodeStates[nodeID].Commit(out.Result.StateDraft)
 		resultState, err := tci.nodeStates[nodeID].StateByTrieRoot(resultBlock.TrieRoot())
 		require.NoError(tci.t, err)
 		tci.doneCB(&testInstInput{
 			nodeID:          nodeID,
-			baseAliasOutput: out.ResultNextAliasOutput,
+			baseAliasOutput: out.Result.NextAliasOutput,
 			baseState:       resultState,
 		})
 		tci.done[nodeID] = true

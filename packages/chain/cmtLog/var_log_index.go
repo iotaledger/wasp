@@ -4,6 +4,8 @@
 package cmtLog
 
 import (
+	"fmt"
+
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/core/logger"
@@ -29,6 +31,8 @@ type VarLogIndex interface {
 	L1ReplacedBaseAliasOutput(nextBaseAO *isc.AliasOutputWithID) gpa.OutMessages
 	// Messages are exchanged, so this function handles them.
 	MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutMessages
+	// Summary of the internal state.
+	StatusString() string
 }
 
 // Models the current logIndex variable. The LogIndex advances each time
@@ -154,6 +158,13 @@ func NewVarLogIndex(
 		lastMsgs:   map[gpa.NodeID]*msgNextLogIndex{},
 		log:        log,
 	}
+}
+
+func (v *varLogIndexImpl) StatusString() string {
+	return fmt.Sprintf(
+		"{varLogIndex: proposedLI=%v, agreedLI=%v, consDoneLI=%v, minLI=%v}",
+		v.proposedLI, v.agreedLI, v.consDoneLI, v.minLI,
+	)
 }
 
 func (v *varLogIndexImpl) Value() (LogIndex, *isc.AliasOutputWithID) {

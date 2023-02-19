@@ -142,7 +142,7 @@ func (a *AliasOutputWithID) String() string {
 	if a == nil {
 		return "nil"
 	}
-	return fmt.Sprintf("AO[si=%v]%v", a.GetStateIndex(), a.outputID.ToHex())
+	return fmt.Sprintf("AO[si#%v]%v", a.GetStateIndex(), a.outputID.ToHex())
 }
 
 func AliasOutputsEqual(ao1, ao2 *iotago.AliasOutput) bool {

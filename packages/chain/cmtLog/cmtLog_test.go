@@ -74,7 +74,7 @@ func testBasic(t *testing.T, n, f int) {
 	gpaTC.PrintAllStatusStrings("Initial", t.Logf)
 	//
 	// Provide first alias output. Consensus should be sent now.
-	ao1 := randomAliasOutputWithID(aliasID, governor.Address(), committeeAddress)
+	ao1 := randomAliasOutputWithID(aliasID, governor.Address(), committeeAddress, 1)
 	gpaTC.WithInputs(inputAliasOutputConfirmed(gpaNodes, ao1)).RunAll()
 	gpaTC.PrintAllStatusStrings("After AO1Recv", t.Logf)
 	cons1 := gpaNodes[gpaNodeIDs[0]].Output().(*cmtLog.Output)
@@ -84,7 +84,7 @@ func testBasic(t *testing.T, n, f int) {
 	}
 	//
 	// Consensus results received (consumed ao1, produced ao2).
-	ao2 := randomAliasOutputWithID(aliasID, governor.Address(), committeeAddress)
+	ao2 := randomAliasOutputWithID(aliasID, governor.Address(), committeeAddress, 2)
 	gpaTC.WithInputs(inputConsensusOutput(gpaNodes, cons1, ao2)).RunAll()
 	gpaTC.PrintAllStatusStrings("After gpaMsgsAO2Cons", t.Logf)
 	cons2 := gpaNodes[gpaNodeIDs[0]].Output().(*cmtLog.Output)
@@ -120,15 +120,16 @@ func inputAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.AliasOut
 func inputConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmtLog.Output, nextAO *isc.AliasOutputWithID) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
-		inputs[n] = cmtLog.NewInputConsensusOutputDone(consReq.GetLogIndex(), consReq.GetBaseAliasOutput().OutputID(), nextAO)
+		inputs[n] = cmtLog.NewInputConsensusOutputDone(consReq.GetLogIndex(), consReq.GetBaseAliasOutput().OutputID(), consReq.GetBaseAliasOutput().OutputID(), nextAO)
 	}
 	return inputs
 }
 
-func randomAliasOutputWithID(aliasID iotago.AliasID, governorAddress, stateAddress iotago.Address) *isc.AliasOutputWithID {
+func randomAliasOutputWithID(aliasID iotago.AliasID, governorAddress, stateAddress iotago.Address, stateIndex uint32) *isc.AliasOutputWithID {
 	outputID := testiotago.RandOutputID()
 	aliasOutput := &iotago.AliasOutput{
-		AliasID: aliasID,
+		AliasID:    aliasID,
+		StateIndex: stateIndex,
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress},
 			&iotago.GovernorAddressUnlockCondition{Address: governorAddress},

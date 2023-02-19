@@ -108,9 +108,22 @@ type Output struct {
 	//
 	// Following is the final result.
 	// All the fields are filled, if State == Completed.
-	ResultTransaction     *iotago.Transaction
-	ResultNextAliasOutput *isc.AliasOutputWithID
-	ResultState           state.StateDraft
+	Result *Result
+}
+
+type Result struct {
+	Transaction     *iotago.Transaction    // The TX for committing the block.
+	BaseAliasOutput iotago.OutputID        // AO consumed in the TX.
+	NextAliasOutput *isc.AliasOutputWithID // AO produced in the TX.
+	StateDraft      state.StateDraft       // The state diff produced.
+}
+
+func (r *Result) String() string {
+	txID, err := r.Transaction.ID()
+	if err != nil {
+		txID = iotago.TransactionID{}
+	}
+	return fmt.Sprintf("{cons.Result, txID=%v, baseAO=%v, nextAO=%v}", txID, r.BaseAliasOutput.ToHex(), r.NextAliasOutput)
 }
 
 type consImpl struct {
@@ -603,9 +616,12 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.
 	if err != nil {
 		panic(fmt.Errorf("cannot get AliasOutput from produced TX: %w", err))
 	}
-	c.output.ResultTransaction = tx
-	c.output.ResultNextAliasOutput = chained
-	c.output.ResultState = resultState
+	c.output.Result = &Result{
+		Transaction:     tx,
+		BaseAliasOutput: vmResult.AnchorOutputID,
+		NextAliasOutput: chained,
+		StateDraft:      resultState,
+	}
 	c.output.Status = Completed
 	c.log.Infof("Terminating consensus with status=Completed, produced tx.ID=%v, nextAO=%v, baseAO.ID=%v", txID.ToHex(), chained, vmResult.AnchorOutputID.ToHex())
 	c.term.haveOutputProduced()

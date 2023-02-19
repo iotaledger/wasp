@@ -43,7 +43,6 @@ import (
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -650,18 +649,11 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 	var chainMgrInput gpa.Input
 	switch out.output.Status {
 	case cons.Completed:
-		stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(out.output.TX)
-		if err != nil {
-			panic(fmt.Errorf("cannot extract next AliasOutput from TX: %w", err))
-		}
-		nextAO := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
 		chainMgrInput = chainMgr.NewInputConsensusOutputDone(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
 			out.request.BaseAliasOutput.OutputID(),
-			nextAO,
-			out.output.NextState,
-			out.output.TX,
+			out.output.Result,
 		)
 	case cons.Skipped:
 		chainMgrInput = chainMgr.NewInputConsensusOutputSkip(
@@ -707,7 +699,7 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 			cni.updateAccessNodes(func() {
 				cni.activeCommitteeNodes = ci.committee
 			})
-			cni.log.Infof("Committee nodes updated: %+v", ci.committee)
+			cni.log.Infof("Committee nodes updated: %+v", ci.committee) // TODO: Not updated on chain rotation for some reason!!! We don't have the input?
 		}
 	}
 }

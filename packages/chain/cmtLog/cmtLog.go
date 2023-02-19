@@ -79,6 +79,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
@@ -169,13 +170,11 @@ func New(
 		// Don't participate in the last stored LI, because maybe we have already sent some messages.
 		prevLI = state.LogIndex
 	}
-
 	//
 	// Make node IDs.
 	nodePKs := dkShare.GetNodePubKeys()
 	nodeIDs := make([]gpa.NodeID, len(nodePKs))
 	for i := range nodeIDs {
-		log.Infof("Committee node[%v]=%v", i, nodePKs[i])
 		nodeIDs[i] = nodeIDFromPubKey(nodePKs[i])
 	}
 	//
@@ -185,7 +184,14 @@ func New(
 	if f > (n-1)/3 {
 		log.Panicf("invalid f=%v for n=%v", n, f)
 	}
-	log.Infof("Committee size: N=%v, F=%v", n, f)
+	//
+	// Log important info.
+	log.Infof("Committee: N=%v, F=%v, address=%v, betch32=%v", n, f, cmtAddr.String(), cmtAddr.Bech32(parameters.L1().Protocol.Bech32HRP))
+	for i := range nodePKs {
+		log.Infof("Committee node[%v]=%v", i, nodePKs[i])
+	}
+	//
+	// Create it.
 	minLogIndex := prevLI.Next()
 	cl := &cmtLogImpl{
 		chainID:                chainID,
@@ -195,7 +201,7 @@ func New(
 		minLI:                  minLogIndex,
 		consensusLI:            NilLogIndex(),
 		varLogIndex:            NewVarLogIndex(nodeIDs, n, f, prevLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, log.Named("VLI")),
-		varLocalView:           NewVarLocalView(),
+		varLocalView:           NewVarLocalView(log.Named("VLV")),
 		log:                    log,
 	}
 	cl.asGPA = gpa.NewOwnHandler(me, cl)
@@ -209,6 +215,7 @@ func (cl *cmtLogImpl) AsGPA() gpa.GPA {
 
 // Implements the gpa.GPA interface.
 func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
+	cl.log.Debugf("Input %T: %+v", input, input)
 	switch input := input.(type) {
 	case *inputAliasOutputConfirmed:
 		return cl.handleInputAliasOutputConfirmed(input)
@@ -242,8 +249,8 @@ func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 // >         LogIndex.L1ReplacedBaseAliasOutput()
 // >         TryProposeConsensus()
 func (cl *cmtLogImpl) handleInputAliasOutputConfirmed(input *inputAliasOutputConfirmed) gpa.OutMessages {
-	if cl.varLocalView.AliasOutputConfirmed(input.aliasOutput) {
-		msgs := cl.varLogIndex.L1ReplacedBaseAliasOutput(cl.varLocalView.GetBaseAliasOutput())
+	if tipAO, ok := cl.varLocalView.AliasOutputConfirmed(input.aliasOutput); ok {
+		msgs := cl.varLogIndex.L1ReplacedBaseAliasOutput(tipAO)
 		cl.tryProposeConsensus()
 		return msgs
 	}
@@ -256,8 +263,8 @@ func (cl *cmtLogImpl) handleInputAliasOutputConfirmed(input *inputAliasOutputCon
 // >         LogIndex.L1ReplacedBaseAliasOutput()
 // >         TryProposeConsensus()
 func (cl *cmtLogImpl) handleInputAliasOutputRejected(input *inputAliasOutputRejected) gpa.OutMessages {
-	if cl.varLocalView.AliasOutputRejected(input.aliasOutput) {
-		msgs := cl.varLogIndex.L1ReplacedBaseAliasOutput(cl.varLocalView.GetBaseAliasOutput())
+	if tipAO, ok := cl.varLocalView.AliasOutputRejected(input.aliasOutput); ok {
+		msgs := cl.varLogIndex.L1ReplacedBaseAliasOutput(tipAO)
 		cl.tryProposeConsensus()
 		return msgs
 	}
@@ -270,8 +277,8 @@ func (cl *cmtLogImpl) handleInputAliasOutputRejected(input *inputAliasOutputReje
 // >         LogIndex.ConsensusOutput(CD.LogIndex)
 // >         TryProposeConsensus()
 func (cl *cmtLogImpl) handleInputConsensusOutputDone(input *inputConsensusOutputDone) gpa.OutMessages {
-	if cl.varLocalView.ConsensusOutputDone(input.baseAliasOutputID, input.nextAliasOutput) {
-		msgs := cl.varLogIndex.ConsensusOutputReceived(input.logIndex, cons.Completed, cl.varLocalView.GetBaseAliasOutput())
+	if tipAO, ok := cl.varLocalView.ConsensusOutputDone(input.baseAliasOutputID, input.nextAliasOutput); ok {
+		msgs := cl.varLogIndex.ConsensusOutputReceived(input.logIndex, cons.Completed, tipAO)
 		cl.tryProposeConsensus()
 		return msgs
 	}
@@ -282,7 +289,7 @@ func (cl *cmtLogImpl) handleInputConsensusOutputDone(input *inputConsensusOutput
 // >     LogIndex.ConsensusOutput(CS.LogIndex)
 // >     TryProposeConsensus()
 func (cl *cmtLogImpl) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
-	msgs := cl.varLogIndex.ConsensusOutputReceived(input.logIndex, cons.Skipped, cl.varLocalView.GetBaseAliasOutput())
+	msgs := cl.varLogIndex.ConsensusOutputReceived(input.logIndex, cons.Skipped, cl.varLocalView.Value())
 	cl.tryProposeConsensus()
 	return msgs
 }
@@ -308,6 +315,7 @@ func (cl *cmtLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) 
 // by the chain, if an alias output with different state controller
 // is received.
 func (cl *cmtLogImpl) handleInputSuspend() gpa.OutMessages {
+	cl.log.Infof("Committee suspended.")
 	cl.suspended = true
 	cl.tryProposeConsensus()
 	return nil
@@ -317,7 +325,7 @@ func (cl *cmtLogImpl) handleInputSuspend() gpa.OutMessages {
 // >     LogIndex.Receive(⟨NextLI, •⟩ message).
 // >     TryProposeConsensus()
 func (cl *cmtLogImpl) handleMsgNextLogIndex(msg *msgNextLogIndex) gpa.OutMessages {
-	msgs := cl.varLogIndex.MsgNextLogIndexReceived(msg)
+	msgs := cl.varLogIndex.MsgNextLogIndexReceived(msg) // TODO: for some reason, this cmt was not suspended, and overcame the current committee.
 	cl.tryProposeConsensus()
 	return msgs
 }
@@ -333,7 +341,7 @@ func (cl *cmtLogImpl) Output() gpa.Output {
 // Implements the gpa.GPA interface.
 func (cl *cmtLogImpl) StatusString() string {
 	vliLI, _ := cl.varLogIndex.Value()
-	return fmt.Sprintf("{cmtLogImpl, LogIndex=%v, output=%+v}", vliLI, cl.output)
+	return fmt.Sprintf("{cmtLogImpl, LogIndex=%v, output=%+v, %v, %v}", vliLI, cl.output, cl.varLocalView.StatusString(), cl.varLogIndex.StatusString())
 }
 
 // > PROCEDURE TryProposeConsensus:

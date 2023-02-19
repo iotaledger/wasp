@@ -13,7 +13,6 @@ import (
 	"go.uber.org/atomic"
 
 	"github.com/iotaledger/hive.go/core/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -70,9 +69,8 @@ type VM interface {
 // Implementation.
 
 type Output struct {
-	Status    cons.OutputStatus   // Can only be Completed | Skipped.
-	TX        *iotago.Transaction // The produced TX.
-	NextState state.StateDraft    // Virtual state at the end of transition.
+	Status cons.OutputStatus // Can only be Completed | Skipped.
+	Result *cons.Result      // Result of the consensus.
 }
 
 type input struct {
@@ -367,7 +365,7 @@ func (cgr *ConsGr) provideOutput(output *cons.Output) {
 	case cons.Skipped:
 		cgr.outputCB(&Output{Status: output.Status})
 	case cons.Completed:
-		cgr.outputCB(&Output{Status: output.Status, TX: output.ResultTransaction, NextState: output.ResultState})
+		cgr.outputCB(&Output{Status: output.Status, Result: output.Result})
 	default:
 		panic(fmt.Errorf("unexpected cons.Output.Status=%v", output.Status))
 	}
