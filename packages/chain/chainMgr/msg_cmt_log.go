@@ -2,6 +2,7 @@ package chainMgr
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -24,6 +25,10 @@ func NewMsgCmtLog(committeeAddr iotago.Ed25519Address, wrapped gpa.Message) gpa.
 		committeeAddr: committeeAddr,
 		wrapped:       wrapped,
 	}
+}
+
+func (msg *msgCmtLog) String() string {
+	return fmt.Sprintf("{chainMgr.msgCmtLog, committeeAddr=%v, wrapped=%+v}", msg.committeeAddr.String(), msg.wrapped)
 }
 
 func (msg *msgCmtLog) Recipient() gpa.NodeID {

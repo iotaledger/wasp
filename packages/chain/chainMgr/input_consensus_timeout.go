@@ -4,6 +4,8 @@
 package chainMgr
 
 import (
+	"fmt"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -19,4 +21,12 @@ func NewInputConsensusTimeout(committeeAddr iotago.Ed25519Address, logIndex cmtL
 		committeeAddr: committeeAddr,
 		logIndex:      logIndex,
 	}
+}
+
+func (inp *inputConsensusTimeout) String() string {
+	return fmt.Sprintf(
+		"{chainMgr.inputConsensusTimeout, committeeAddr=%v, logIndex=%v}",
+		inp.committeeAddr.String(),
+		inp.logIndex,
+	)
 }

@@ -4,6 +4,8 @@
 package chainMgr
 
 import (
+	"fmt"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -25,4 +27,13 @@ func NewInputConsensusOutputSkip(
 		logIndex:          logIndex,
 		baseAliasOutputID: baseAliasOutputID,
 	}
+}
+
+func (inp *inputConsensusOutputSkip) String() string {
+	return fmt.Sprintf(
+		"{chainMgr.inputConsensusOutputSkip, committeeAddr=%v, logIndex=%v, baseAliasOutputID=%v}",
+		inp.committeeAddr.String(),
+		inp.logIndex,
+		inp.baseAliasOutputID.ToHex(),
+	)
 }
