@@ -51,7 +51,7 @@ type Chains struct {
 	trustedNetworkListenerCancel     context.CancelFunc
 	chainStateStoreProvider          database.ChainStateKVStoreProvider
 	walEnabled                       bool
-	walDir                           string
+	walFolderPath                    string
 
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
@@ -82,7 +82,7 @@ func New(
 	trustedNetworkManager peering.TrustedNetworkManager,
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
 	walEnabled bool,
-	walDir string,
+	walFolderPath string,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
@@ -102,7 +102,7 @@ func New(
 		trustedNetworkManager:            trustedNetworkManager,
 		chainStateStoreProvider:          chainStateStoreProvider,
 		walEnabled:                       walEnabled,
-		walDir:                           walDir,
+		walFolderPath:                    walFolderPath,
 		chainRecordRegistryProvider:      chainRecordRegistryProvider,
 		dkShareRegistryProvider:          dkShareRegistryProvider,
 		nodeIdentityProvider:             nodeIdentityProvider,
@@ -228,7 +228,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	chainLog := c.log.Named(chainID.ShortString())
 	var chainWAL smGPAUtils.BlockWAL
 	if c.walEnabled {
-		chainWAL, err = smGPAUtils.NewBlockWAL(chainLog, c.walDir, chainID, smGPAUtils.NewBlockWALMetrics())
+		chainWAL, err = smGPAUtils.NewBlockWAL(chainLog, c.walFolderPath, chainID, smGPAUtils.NewBlockWALMetrics())
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}
