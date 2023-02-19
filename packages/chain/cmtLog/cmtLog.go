@@ -251,6 +251,10 @@ func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 func (cl *cmtLogImpl) handleInputAliasOutputConfirmed(input *inputAliasOutputConfirmed) gpa.OutMessages {
 	if tipAO, ok := cl.varLocalView.AliasOutputConfirmed(input.aliasOutput); ok {
 		msgs := cl.varLogIndex.L1ReplacedBaseAliasOutput(tipAO)
+		if cl.suspended {
+			cl.log.Infof("Committee resumed, tip replaced by L1 to %v", tipAO)
+			cl.suspended = false
+		}
 		cl.tryProposeConsensus()
 		return msgs
 	}
@@ -317,6 +321,7 @@ func (cl *cmtLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) 
 func (cl *cmtLogImpl) handleInputSuspend() gpa.OutMessages {
 	cl.log.Infof("Committee suspended.")
 	cl.suspended = true
+	cl.output = nil
 	cl.tryProposeConsensus()
 	return nil
 }
@@ -325,7 +330,7 @@ func (cl *cmtLogImpl) handleInputSuspend() gpa.OutMessages {
 // >     LogIndex.Receive(⟨NextLI, •⟩ message).
 // >     TryProposeConsensus()
 func (cl *cmtLogImpl) handleMsgNextLogIndex(msg *msgNextLogIndex) gpa.OutMessages {
-	msgs := cl.varLogIndex.MsgNextLogIndexReceived(msg) // TODO: for some reason, this cmt was not suspended, and overcame the current committee.
+	msgs := cl.varLogIndex.MsgNextLogIndexReceived(msg)
 	cl.tryProposeConsensus()
 	return msgs
 }
