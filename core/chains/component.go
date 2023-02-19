@@ -97,7 +97,7 @@ func provide(c *dig.Container) error {
 				deps.TrustedNetworkManager,
 				deps.ChainStateDatabaseManager.ChainStateKVStore,
 				ParamsWAL.Enabled,
-				ParamsWAL.Directory,
+				ParamsWAL.Path,
 				deps.ChainRecordRegistryProvider,
 				deps.DKShareRegistryProvider,
 				deps.NodeIdentityProvider,

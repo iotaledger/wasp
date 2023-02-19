@@ -291,10 +291,10 @@ Example:
 
 ## <a id="wal"></a> 9. Write-Ahead Logging
 
-| Name      | Description                | Type    | Default value |
-| --------- | -------------------------- | ------- | ------------- |
-| enabled   | Whether the WAL is enabled | boolean | true          |
-| directory | The path for WAL blocks    | string  | "wal"         |
+| Name    | Description                                  | Type    | Default value |
+| ------- | -------------------------------------------- | ------- | ------------- |
+| enabled | Whether the "write-ahead logging" is enabled | boolean | true          |
+| path    | The path to the "write-ahead logging" folder | string  | "waspdb/wal"  |
 
 Example:
 
@@ -302,7 +302,7 @@ Example:
   {
     "wal": {
       "enabled": true,
-      "directory": "wal"
+      "path": "waspdb/wal"
     }
   }
 ```

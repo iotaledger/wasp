@@ -362,10 +362,14 @@ func New(
 	//
 	// Attach to the L1.
 	recvRequestCB := func(outputInfo *isc.OutputInfo) {
-		log.Debugf("recvRequestCB[%p], %v", cni, outputInfo.OutputID.ToHex())
+		log.Debugf("recvRequestCB[%p], consumed=%v, outputID=%v", cni, outputInfo.Consumed(), outputInfo.OutputID.ToHex())
 		req, err := isc.OnLedgerFromUTXO(outputInfo.Output, outputInfo.OutputID)
 		if err != nil {
 			cni.log.Warnf("Cannot create OnLedgerRequest from output: %v", err)
+			return
+		}
+		if req.IsInternalUTXO(cni.chainID) {
+			cni.log.Debugf("Ignoring internal UTXO with ID=%v, will not consider it a request: %v", outputInfo.OutputID.ToHex(), req.String())
 			return
 		}
 		cni.mempool.ReceiveOnLedgerRequest(req)
