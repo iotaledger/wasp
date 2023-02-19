@@ -32,9 +32,12 @@ func NilLogIndex() LogIndex {
 	return LogIndex(0)
 }
 
-func MaxLogIndex(a, b LogIndex) LogIndex {
-	if a.AsUint32() > b.AsUint32() {
-		return a
+func MaxLogIndex(lis ...LogIndex) LogIndex {
+	max := NilLogIndex()
+	for _, li := range lis {
+		if li > max {
+			max = li
+		}
 	}
-	return b
+	return max
 }
