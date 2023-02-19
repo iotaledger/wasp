@@ -88,6 +88,19 @@ type Cons interface {
 
 type OutputStatus byte
 
+func (os OutputStatus) String() string {
+	switch os {
+	case Running:
+		return "Running"
+	case Completed:
+		return "Completed"
+	case Skipped:
+		return "Skipped"
+	default:
+		return fmt.Sprintf("Unexpected-%v", byte(os))
+	}
+}
+
 const (
 	Running   OutputStatus = iota // Instance is still running.
 	Completed                     // Consensus reached, TX is prepared for publication.

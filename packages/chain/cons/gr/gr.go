@@ -73,6 +73,10 @@ type Output struct {
 	Result *cons.Result      // Result of the consensus.
 }
 
+func (o *Output) String() string {
+	return fmt.Sprintf("{cons.gr.Output, status=%v, result=%v}", o.Status, o.Result)
+}
+
 type input struct {
 	baseAliasOutput *isc.AliasOutputWithID
 	outputCB        func(*Output)
