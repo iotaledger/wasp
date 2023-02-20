@@ -64,7 +64,6 @@ func (proc *EventProcessor) waitClientEventsParam(t *testing.T, ctx *wasmclient.
 }
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
-	wasmclient.HrpForClient = ""
 	if useCluster {
 		return setupClientCluster(t)
 	}

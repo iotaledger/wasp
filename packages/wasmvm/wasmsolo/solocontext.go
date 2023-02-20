@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/utxodb"
@@ -205,21 +204,16 @@ func NewSoloContextForNative(t solo.TestContext, chain *solo.Chain, creator *Sol
 }
 
 func soloContext(t solo.TestContext, chain *solo.Chain, scName string, creator *SoloAgent) *SoloContext {
-	if wasmclient.HrpForClient == "" {
-		// local client implementations for sandboxed functions
-		wasmtypes.Bech32Decode = wasmclient.ClientBech32Decode
-		wasmtypes.Bech32Encode = wasmclient.ClientBech32Encode
-		wasmtypes.HashName = wasmclient.ClientHashName
-
-		// set the network prefix for the current network
-		wasmclient.HrpForClient = parameters.L1().Protocol.Bech32HRP
-	}
-
-	ctx := &SoloContext{scName: scName, Chain: chain, creator: creator, StorageDeposit: wasmhost.WasmStorageDeposit}
 	if chain == nil {
-		ctx.Chain = StartChain(t, "chain1")
+		chain = StartChain(t, "chain1")
 	}
-	return ctx
+	return &SoloContext{
+		scName:         scName,
+		Chain:          chain,
+		creator:        creator,
+		Err:            wasmclient.SetSandboxWrappers(chain.ChainID.String()),
+		StorageDeposit: wasmhost.WasmStorageDeposit,
+	}
 }
 
 // StartChain starts a new chain named chainName.

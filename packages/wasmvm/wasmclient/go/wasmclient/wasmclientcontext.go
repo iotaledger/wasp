@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
@@ -33,34 +32,17 @@ var (
 	_ wasmlib.ScViewCallContext = new(WasmClientContext)
 )
 
-func NewWasmClientContext(svcClient IClientService, chain string, scName string) *WasmClientContext {
-	if HrpForClient == "" {
-		// local client implementations for some sandbox functions
-		wasmtypes.Bech32Decode = ClientBech32Decode
-		wasmtypes.Bech32Encode = ClientBech32Encode
-		wasmtypes.HashName = ClientHashName
+func NewWasmClientContext(svcClient IClientService, chainID string, scName string) *WasmClientContext {
+	s := &WasmClientContext{
+		svcClient: svcClient,
+		scName:    scName,
+		Err:       SetSandboxWrappers(chainID),
 	}
-
-	s := &WasmClientContext{}
-	s.svcClient = svcClient
-	s.scName = scName
 	s.ServiceContractName(scName)
-
-	if HrpForClient == "" {
-		// set the network prefix for the current network
-		hrp, _, err := iotago.ParseBech32(chain)
-		if err != nil {
-			s.Err = err
-			return s
-		}
-		if HrpForClient != hrp && HrpForClient != "" {
-			panic("WasmClient can only connect to one Tangle network per app")
-		}
-		HrpForClient = hrp
+	if s.Err == nil {
+		// only do this when SetSandboxWrappers() was successful
+		s.chainID = wasmtypes.ChainIDFromString(chainID)
 	}
-
-	// note that HrpForClient needs to be set
-	s.chainID = wasmtypes.ChainIDFromString(chain)
 	return s
 }
 

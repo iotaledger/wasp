@@ -60,7 +60,7 @@ func (s *WasmClientContext) FnPost(req *wasmrequests.PostRequest) []byte {
 	return nil
 }
 
-func ClientBech32Decode(bech32 string) wasmtypes.ScAddress {
+func clientBech32Decode(bech32 string) wasmtypes.ScAddress {
 	hrp, addr, err := iotago.ParseBech32(bech32)
 	if err != nil {
 		panic(err)
@@ -71,12 +71,34 @@ func ClientBech32Decode(bech32 string) wasmtypes.ScAddress {
 	return cvt.ScAddress(addr)
 }
 
-func ClientBech32Encode(scAddress wasmtypes.ScAddress) string {
+func clientBech32Encode(scAddress wasmtypes.ScAddress) string {
 	addr := cvt.IscAddress(&scAddress)
 	return addr.Bech32(HrpForClient)
 }
 
-func ClientHashName(name string) wasmtypes.ScHname {
+func clientHashName(name string) wasmtypes.ScHname {
 	hName := isc.Hn(name)
 	return cvt.ScHname(hName)
+}
+
+func SetSandboxWrappers(chainID string) error {
+	if HrpForClient != "" {
+		return nil
+	}
+
+	// local client implementations for some sandbox functions
+	wasmtypes.Bech32Decode = clientBech32Decode
+	wasmtypes.Bech32Encode = clientBech32Encode
+	wasmtypes.HashName = clientHashName
+
+	// set the network prefix for the current network
+	hrp, _, err := iotago.ParseBech32(chainID)
+	if err != nil {
+		return err
+	}
+	if HrpForClient != hrp && HrpForClient != "" {
+		panic("WasmClient can only connect to one Tangle network per app")
+	}
+	HrpForClient = hrp
+	return nil
 }

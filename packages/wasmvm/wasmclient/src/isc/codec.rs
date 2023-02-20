@@ -49,8 +49,6 @@ pub struct JsonError {
     pub(crate) message: String,
 }
 
-const BECH32_PREFIX: &'static str = "smr";
-
 pub fn bech32_decode(input: &str) -> Result<(String, ScAddress)> {
     let (hrp, data, _v) = match bech32::decode(&input) {
         Ok(v) => v,
@@ -121,7 +119,7 @@ pub fn json_encode(buf: &[u8]) -> JsonDict {
     return dict;
 }
 
-pub(crate) static mut HRP_FOR_CLIENT: String = String::new();
+static mut HRP_FOR_CLIENT: String = String::new();
 
 pub(crate) fn client_bech32_decode(bech32: &str) -> ScAddress {
     match bech32_decode(&bech32) {
@@ -153,4 +151,25 @@ pub(crate) fn client_bech32_encode(addr: &ScAddress) -> String {
 
 pub(crate) fn client_hash_name(name: &str) -> ScHname {
     hname_from_bytes(&hname_bytes(name))
+}
+
+pub(crate) fn set_sandbox_wrappers(chain_id: &str) -> Result<()> {
+    unsafe {
+        // local client implementations for some sandbox  functions
+        BECH32_DECODE = client_bech32_decode;
+        BECH32_ENCODE = client_bech32_encode;
+        HASH_NAME = client_hash_name;
+    }
+
+    // set the network prefix for the current network
+    match bech32_decode(chain_id) {
+        Ok((hrp, _)) => unsafe {
+            if HRP_FOR_CLIENT.len() != 0 && HRP_FOR_CLIENT != hrp {
+                panic!("WasmClient can only connect to one Tangle network per app");
+            }
+            HRP_FOR_CLIENT = hrp;
+        },
+        Err(e) => return Err(e),
+    };
+    Ok(())
 }
