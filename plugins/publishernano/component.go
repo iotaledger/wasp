@@ -95,7 +95,6 @@ func run() error {
 
 	deps.Publisher.Events.Published.Hook(event.NewClosure(func(ev *publisher.ISCEvent) {
 		msg, err := json.Marshal(ev)
-
 		if err != nil {
 			Plugin.LogWarnf("Could not marshal ISCEvent %s", ev.Kind)
 			return
