@@ -321,7 +321,7 @@ func (tnc *testNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 	panic("should be unused in test")
 }
 
-func (tnc *testNodeConn) Run(ctx context.Context) {
+func (tnc *testNodeConn) Run(ctx context.Context) error {
 	panic("should be unused in test")
 }
 

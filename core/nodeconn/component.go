@@ -2,6 +2,7 @@ package nodeconn
 
 import (
 	"context"
+	"fmt"
 
 	"go.uber.org/dig"
 
@@ -33,7 +34,8 @@ var (
 type dependencies struct {
 	dig.In
 
-	NodeConnection chain.NodeConnection
+	NodeConnection  chain.NodeConnection
+	ShutdownHandler *shutdown.ShutdownHandler
 }
 
 func provide(c *dig.Container) error {
@@ -89,7 +91,9 @@ func provide(c *dig.Container) error {
 func configure() error {
 	if err := CoreComponent.Daemon().BackgroundWorker(CoreComponent.Name, func(ctx context.Context) {
 		CoreComponent.LogInfof("Starting %s ... done", CoreComponent.Name)
-		deps.NodeConnection.Run(ctx)
+		if err := deps.NodeConnection.Run(ctx); err != nil {
+			deps.ShutdownHandler.SelfShutdown(fmt.Sprintf("Starting %s failed, error: %s", CoreComponent.Name, err.Error()), true)
+		}
 		CoreComponent.LogInfof("Stopping %s ... done", CoreComponent.Name)
 	}, daemon.PriorityNodeConnection); err != nil {
 		CoreComponent.LogPanicf("failed to start worker: %s", err)

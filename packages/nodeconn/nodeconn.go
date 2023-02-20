@@ -36,6 +36,7 @@ import (
 
 const (
 	indexerPluginAvailableTimeout = 30 * time.Second
+	l1NodeSyncWaitTimeout         = 2 * time.Minute
 	inxTimeoutInfo                = 500 * time.Millisecond
 	inxTimeoutBlockMetadata       = 500 * time.Millisecond
 	inxTimeoutSubmitBlock         = 60 * time.Second
@@ -198,8 +199,6 @@ func New(
 	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics,
 	shutdownHandler *shutdown.ShutdownHandler,
 ) (chain.NodeConnection, error) {
-	inxNodeClient := nodeBridge.INXNodeClient()
-
 	ctxIndexer, cancelIndexer := context.WithTimeout(ctx, indexerPluginAvailableTimeout)
 	defer cancelIndexer()
 
@@ -219,7 +218,7 @@ func New(
 		indexerClient:         indexerClient,
 		nodeBridge:            nodeBridge,
 		nodeConnectionMetrics: nodeConnectionMetrics,
-		nodeClient:            inxNodeClient,
+		nodeClient:            nodeBridge.INXNodeClient(),
 		pendingTransactionsMap: shrinkingmap.New[iotago.TransactionID, *pendingTransaction](
 			shrinkingmap.WithShrinkingThresholdRatio(pendingTransactionsCleanupThresholdRatio),
 			shrinkingmap.WithShrinkingThresholdCount(pendingTransactionsCleanupThresholdCount),
@@ -233,17 +232,20 @@ func New(
 	return nc, nil
 }
 
-func (nc *nodeConnection) Run(ctx context.Context) {
+func (nc *nodeConnection) Run(ctx context.Context) error {
 	nc.ctx = ctx
 
 	syncAndSetProtocolParameters := func() error {
+		ctxWaitNodeSynced, cancelWaitNodeSynced := context.WithTimeout(ctx, l1NodeSyncWaitTimeout)
+		defer cancelWaitNodeSynced()
+
 		// make sure the node is connected to at least one other peer
 		// otherwise the node status may not reflect the network status
-		if err := waitForL1ToBeConnected(ctx, nc.WrappedLogger.Logger(), nc.nodeBridge); err != nil {
+		if err := waitForL1ToBeConnected(ctxWaitNodeSynced, nc.WrappedLogger.Logger(), nc.nodeBridge); err != nil {
 			return err
 		}
 
-		if err := waitForL1ToBeSynced(ctx, nc.WrappedLogger.Logger(), nc.nodeBridge); err != nil {
+		if err := waitForL1ToBeSynced(ctxWaitNodeSynced, nc.WrappedLogger.Logger(), nc.nodeBridge); err != nil {
 			return err
 		}
 
@@ -260,14 +262,15 @@ func (nc *nodeConnection) Run(ctx context.Context) {
 	}
 
 	if err := syncAndSetProtocolParameters(); err != nil {
-		nc.shutdownHandler.SelfShutdown(fmt.Sprintf("Getting latest L1 protocol parameters failed, error: %s", err.Error()), true)
-		return
+		return fmt.Errorf("Getting latest L1 protocol parameters failed, error: %w", err)
 	}
 
 	nc.reattachWorkerPool.Start()
 	go nc.subscribeToLedgerUpdates()
 	<-ctx.Done()
 	nc.reattachWorkerPool.StopAndWait()
+
+	return nil
 }
 
 func (nc *nodeConnection) subscribeToLedgerUpdates() {

@@ -19,7 +19,7 @@ import (
 type NodeConnection interface {
 	ChainNodeConn
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
-	Run(ctx context.Context)
+	Run(ctx context.Context) error
 }
 
 type StateFreshness byte
