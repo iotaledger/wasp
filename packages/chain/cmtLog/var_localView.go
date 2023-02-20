@@ -50,7 +50,7 @@
 //     In this case all our produced/pending transactions are not meaningful anymore and we
 //     have to start building all the chain from the newly received AO.
 //
-//   - Recovery notice is received from a consensus (with SI/LI...) a new new consensus will
+//   - Recovery notice is received from a consensus (with SI/LI...) a new consensus will
 //     be started after agreeing on the next LI. The new consensus will take the same AO as
 //     an input and therefore will race with the existing one (maybe it has stuck for some
 //     reason, that's a fallback). In this case we stop building an unconfirmed chain for
