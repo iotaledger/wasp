@@ -535,14 +535,17 @@ func (r *onLedgerRequestData) Features() Features {
 }
 
 func (r *onLedgerRequestData) String() string {
-	req := r.requestMetadata
+	metadata := r.requestMetadata
+	if metadata == nil {
+		return "onledger request without metadata"
+	}
 	return fmt.Sprintf("onLedgerRequestData::{ ID: %s, sender: %s, target: %s, entrypoint: %s, Params: %s, GasBudget: %d }",
 		r.ID().String(),
-		req.SenderContract.String(),
-		req.TargetContract.String(),
-		req.EntryPoint.String(),
-		req.Params.String(),
-		req.GasBudget,
+		metadata.SenderContract.String(),
+		metadata.TargetContract.String(),
+		metadata.EntryPoint.String(),
+		metadata.Params.String(),
+		metadata.GasBudget,
 	)
 }
 
