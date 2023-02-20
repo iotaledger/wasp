@@ -31,7 +31,6 @@ type VMContext struct {
 	task *vm.VMTask
 	// same for the block
 	chainOwnerID              isc.AgentID
-	stateDraft                state.StateDraft
 	finalStateTimestamp       time.Time
 	blockContext              map[isc.Hname]interface{}
 	storageDepositAssumptions *transaction.StorageDepositAssumption
@@ -97,7 +96,6 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 
 	ret := &VMContext{
 		task:                task,
-		stateDraft:          task.StateDraft,
 		finalStateTimestamp: task.TimeAssumption.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond),
 		blockContext:        make(map[isc.Hname]interface{}),
 		entropy:             task.Entropy,
@@ -164,14 +162,14 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 		vmctx.closeBlockContexts()
 	}
 	vmctx.saveInternalUTXOs()
-	vmctx.currentStateUpdate.Mutations.ApplyTo(vmctx.stateDraft)
+	vmctx.currentStateUpdate.Mutations.ApplyTo(vmctx.task.StateDraft)
 
-	block := vmctx.task.Store.ExtractBlock(vmctx.stateDraft)
+	block := vmctx.task.Store.ExtractBlock(vmctx.task.StateDraft)
 
 	l1Commitment := block.L1Commitment()
 
-	blockIndex := vmctx.stateDraft.BlockIndex()
-	timestamp := vmctx.stateDraft.Timestamp()
+	blockIndex := vmctx.task.StateDraft.BlockIndex()
+	timestamp := vmctx.task.StateDraft.Timestamp()
 
 	return blockIndex, l1Commitment, timestamp, rotationAddr
 }
@@ -200,8 +198,8 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 	subEssenceHash := vmctx.CalcTransactionSubEssenceHash()
 	totalBaseTokensInContracts, totalStorageDepositOnChain := vmctx.txbuilder.TotalBaseTokensInOutputs()
 	blockInfo := &blocklog.BlockInfo{
-		BlockIndex:                  vmctx.stateDraft.BlockIndex(),
-		Timestamp:                   vmctx.stateDraft.Timestamp(),
+		BlockIndex:                  vmctx.task.StateDraft.BlockIndex(),
+		Timestamp:                   vmctx.task.StateDraft.Timestamp(),
 		TotalRequests:               numRequests,
 		NumSuccessfulRequests:       numSuccess,
 		NumOffLedgerRequests:        numOffLedger,
@@ -246,7 +244,7 @@ func (vmctx *VMContext) OpenBlockContexts() {
 	}
 	vmctx.callerIsVM = false
 
-	vmctx.currentStateUpdate.Mutations.ApplyTo(vmctx.stateDraft)
+	vmctx.currentStateUpdate.Mutations.ApplyTo(vmctx.task.StateDraft)
 }
 
 // closeBlockContexts closes block contexts in deterministic FIFO sequence

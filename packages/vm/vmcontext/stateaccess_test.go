@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm"
 )
 
 func TestSetThenGet(t *testing.T) {
@@ -26,7 +27,7 @@ func TestSetThenGet(t *testing.T) {
 	hname := isc.Hn("test")
 
 	vmctx := &VMContext{
-		stateDraft:         stateDraft,
+		task:               &vm.VMTask{StateDraft: stateDraft},
 		currentStateUpdate: stateUpdate,
 		callStack:          []*callContext{{contract: hname}},
 	}
@@ -89,7 +90,7 @@ func TestIterate(t *testing.T) {
 	hname := isc.Hn("test")
 
 	vmctx := &VMContext{
-		stateDraft:         stateDraft,
+		task:               &vm.VMTask{StateDraft: stateDraft},
 		currentStateUpdate: stateUpdate,
 		callStack:          []*callContext{{contract: hname}},
 	}
@@ -131,7 +132,7 @@ func TestVmctxStateDeletion(t *testing.T) {
 	assert.NoError(t, err)
 	stateUpdate := NewStateUpdate()
 	vmctx := &VMContext{
-		stateDraft:         stateDraft,
+		task:               &vm.VMTask{StateDraft: stateDraft},
 		currentStateUpdate: stateUpdate,
 	}
 	vmctxStore := vmctx.chainState()

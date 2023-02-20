@@ -23,7 +23,7 @@ func (s chainStateWrapper) Has(name kv.Key) (bool, error) {
 	if _, wasDeleted := s.vmctx.currentStateUpdate.Mutations.Dels[name]; wasDeleted {
 		return false, nil
 	}
-	return s.vmctx.stateDraft.Has(name)
+	return s.vmctx.task.StateDraft.Has(name)
 }
 
 func (s chainStateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) error {
@@ -50,7 +50,7 @@ func (s chainStateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) e
 			}
 		}
 	}
-	return s.vmctx.stateDraft.IterateKeys(prefix, func(k kv.Key) bool {
+	return s.vmctx.task.StateDraft.IterateKeys(prefix, func(k kv.Key) bool {
 		if !s.vmctx.currentStateUpdate.Mutations.Contains(k) {
 			return f(k)
 		}
@@ -81,7 +81,7 @@ func (s chainStateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) b
 			keys = append(keys, k)
 		}
 	}
-	err := s.vmctx.stateDraft.IterateKeysSorted(prefix, func(k kv.Key) bool {
+	err := s.vmctx.task.StateDraft.IterateKeysSorted(prefix, func(k kv.Key) bool {
 		if !s.vmctx.currentStateUpdate.Mutations.Contains(k) {
 			keys = append(keys, k)
 		}
@@ -107,7 +107,7 @@ func (s chainStateWrapper) Get(name kv.Key) ([]byte, error) {
 	if _, wasDeleted := s.vmctx.currentStateUpdate.Mutations.Dels[name]; wasDeleted {
 		return nil, nil
 	}
-	ret, err := s.vmctx.stateDraft.Get(name)
+	ret, err := s.vmctx.task.StateDraft.Get(name)
 	s.vmctx.GasBurn(gas.BurnCodeReadFromState1P, uint64(len(ret)/100)+1) // minimum 1
 	return ret, err
 }
@@ -129,15 +129,6 @@ func (vmctx *VMContext) State() kv.KVStore {
 func (vmctx *VMContext) StateReader() kv.KVStoreReader {
 	return subrealm.NewReadOnly(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
 }
-
-// Disabled because of recursive calls
-//func (vmctx *VMContext) State(burnGas ...kv.BurnGasFn) kv.KVStore {
-//	store := subrealm.New(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
-//	if len(burnGas) > 0 {
-//		return kv.WithGas(store, burnGas[0])
-//	}
-//	return store
-//}
 
 func (s chainStateWrapper) MustGet(key kv.Key) []byte {
 	return kv.MustGet(s, key)
@@ -161,4 +152,8 @@ func (s chainStateWrapper) MustIterateSorted(prefix kv.Key, f func(key kv.Key, v
 
 func (s chainStateWrapper) MustIterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
 	kv.MustIterateKeysSorted(s, prefix, f)
+}
+
+func (s chainStateWrapper) Apply() {
+	s.vmctx.currentStateUpdate.Mutations.ApplyTo(s.vmctx.task.StateDraft)
 }

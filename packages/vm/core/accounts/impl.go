@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -132,7 +131,7 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 		})
 	}
 	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s: %s",
-		callerAddress.Bech32(parameters.L1ForTesting.Protocol.Bech32HRP),
+		callerAddress,
 		ctx.AllowanceAvailable().String(),
 	)
 	return nil

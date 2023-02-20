@@ -44,7 +44,7 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (res
 	vmctx.GasBurnEnable(false)
 
 	vmctx.currentStateUpdate = NewStateUpdate()
-	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.stateDraft.Timestamp().Add(1*time.Nanosecond)))
+	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.task.StateDraft.Timestamp().Add(1*time.Nanosecond)))
 	if vmctx.isInitChainRequest() {
 		vmctx.chainState().Set(state.KeyChainID, vmctx.ChainID().Bytes())
 	}
@@ -82,7 +82,7 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (res
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
 		return nil, err
 	}
-	vmctx.currentStateUpdate.Mutations.ApplyTo(vmctx.stateDraft)
+	vmctx.chainState().Apply()
 	vmctx.assertConsistentL2WithL1TxBuilder("end RunTheRequest")
 	return result, nil
 }
