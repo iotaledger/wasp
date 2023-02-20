@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
-func PostRequest(nodeName, chain, hname, fname string, params chainclient.PostRequestParams, offLedger, adjustStorageDeposit bool) {
+func postRequest(nodeName, chain, hname, fname string, params chainclient.PostRequestParams, offLedger, adjustStorageDeposit bool) {
 	chainID := config.GetChain(chain)
 
 	apiClient := cliclients.WaspClient(nodeName)
@@ -80,7 +80,7 @@ func initPostRequestCmd() *cobra.Command {
 				Transfer:  util.ParseFungibleTokens(transfer),
 				Allowance: allowanceTokens,
 			}
-			PostRequest(node, chain, hname, fname, params, offLedger, adjustStorageDeposit)
+			postRequest(node, chain, hname, fname, params, offLedger, adjustStorageDeposit)
 		},
 	}
 

@@ -1,27 +1,11 @@
-package corecontractscmd
+package chain
 
 import (
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	chaincmd "github.com/iotaledger/wasp/tools/wasp-cli/chain"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 	"github.com/spf13/cobra"
 )
-
-func initEvmCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "evm <entryPoint>",
-		Short: "Call an entry point on the evm core contract",
-		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			log.Check(cmd.Help())
-		},
-	}
-
-	cmd.AddCommand(initRegisterERC20NativeTokenCmd())
-	return cmd
-}
 
 func initRegisterERC20NativeTokenCmd() *cobra.Command {
 	var (
@@ -31,20 +15,24 @@ func initRegisterERC20NativeTokenCmd() *cobra.Command {
 		tokenDecimals        uint8
 		allowance            []string
 		adjustStorageDeposit bool
+		chain                string
+		node                 string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "register-erc20-native-token",
-		Short: "Call evm core contract registerERC20NativeToken entry point",
+		Short: "Call evm core contract registerERC20Nativetoken entry point",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			n := waspcmd.DefaultWaspNodeFallback(node)
-			c := chaincmd.DefaultChainFallback(chain)
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
 
 			params := chainclient.PostRequestParams{}
-			chaincmd.PostRequest(n, c, evm.Contract.Hname().String(), "registerERC20NativeToken", params, true, adjustStorageDeposit)
+			postRequest(node, chain, evm.Contract.Hname().String(), "registerERC20NativeToken", params, true, adjustStorageDeposit)
 		},
 	}
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	withChainFlag(cmd, &chain)
 
 	cmd.Flags().Uint32Var(&foundrySerialNumber, "foundry-sn", 0, "Foundry serial number")
 	cmd.Flags().StringVar(&tokenName, "token-name", "", "Token name")
