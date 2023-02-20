@@ -19,8 +19,8 @@ import (
 )
 
 type SoloClientService struct {
-	ctx *SoloContext
-	msg chan wasmclient.ContractEvent
+	ctx      *SoloContext
+	callback wasmclient.EventProcessor
 }
 
 var _ wasmclient.IClientService = new(SoloClientService)
@@ -59,14 +59,11 @@ func (s *SoloClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContra
 }
 
 func (s *SoloClientService) Event(msg string) {
-	event := wasmclient.ContractEvent{
+	s.callback(&wasmclient.ContractEvent{
 		ChainID:    s.ctx.CurrentChainID().String(),
 		ContractID: isc.Hn(s.ctx.scName).String(),
 		Data:       msg,
-	}
-	// contract tst1pqqf4qxh2w9x7rz2z4qqcvd0y8n22axsx82gqzmncvtsjqzwmhnjs438rhk | vm (contract): 89703a45: testwasmlib.test|1671671237|tst1pqqf4qxh2w9x7rz2z4qqcvd0y8n22axsx82gqzmncvtsjqzwmhnjs438rhk|Lala
-	// msg = "contract " + event.ChainID + " | vm (contract): " + event.ContractID + ": " + event.Data
-	s.msg <- event
+	})
 }
 
 func (s *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair, nonce uint64) (reqID wasmtypes.ScRequestID, err error) {
@@ -89,12 +86,12 @@ func (s *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, 
 	return reqID, err
 }
 
-func (s *SoloClientService) SubscribeEvents(msg chan wasmclient.ContractEvent, done chan bool) error {
-	s.msg = msg
-	go func() {
-		<-done
-	}()
+func (s *SoloClientService) SubscribeEvents(callback wasmclient.EventProcessor) error {
+	s.callback = callback
 	return nil
+}
+
+func (s *SoloClientService) UnsubscribeEvents() {
 }
 
 func (s *SoloClientService) WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error {

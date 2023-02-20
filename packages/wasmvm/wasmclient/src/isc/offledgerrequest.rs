@@ -4,25 +4,15 @@
 use crypto::hashes::{blake2b::Blake2b256, Digest};
 use wasmlib::*;
 
-use crate::{gas, keypair};
 use crate::keypair::KeyPair;
 
-pub trait OffLedgerRequest {
-    fn new(
-        chain_id: &ScChainID,
-        contract: &ScHname,
-        entry_point: &ScHname,
-        params: &[u8],
-        nonce: u64,
-    ) -> Self;
-    fn with_nonce(&mut self, nonce: u64) -> &Self;
-    fn with_gas_budget(&mut self, gas_budget: u64) -> &Self;
-    fn with_allowance(&mut self, allowance: &ScAssets) -> &Self;
-    fn sign(&self, key: &keypair::KeyPair) -> Self;
-}
+pub const MAX_GAS_PER_BLOCK: u64 = 1_000_000_000;
+pub const MIN_GAS_PER_REQUEST: u64 = 10000;
+pub const MAX_GAS_PER_REQUEST: u64 = MAX_GAS_PER_BLOCK / 20;
+pub const MAX_GAS_EXTERNAL_VIEW_CALL: u64 = MIN_GAS_PER_REQUEST;
 
 #[derive(Clone)]
-pub struct OffLedgerRequestData {
+pub struct OffLedgerRequest {
     chain_id: ScChainID,
     contract: ScHname,
     entry_point: ScHname,
@@ -48,15 +38,15 @@ impl OffLedgerSignatureScheme {
     }
 }
 
-impl OffLedgerRequest for OffLedgerRequestData {
-    fn new(
+impl OffLedgerRequest {
+    pub fn new(
         chain_id: &ScChainID,
         contract: &ScHname,
         entry_point: &ScHname,
         params: &[u8],
         nonce: u64,
     ) -> Self {
-        return OffLedgerRequestData {
+        return OffLedgerRequest {
             chain_id: chain_id.clone(),
             contract: contract.clone(),
             entry_point: entry_point.clone(),
@@ -64,46 +54,8 @@ impl OffLedgerRequest for OffLedgerRequestData {
             signature_scheme: OffLedgerSignatureScheme::new(&KeyPair::new(&[])),
             nonce: nonce,
             allowance: ScAssets::new(&[]),
-            gas_budget: gas::MAX_GAS_PER_REQUEST,
+            gas_budget: MAX_GAS_PER_REQUEST,
         };
-    }
-
-    fn with_nonce(&mut self, nonce: u64) -> &Self {
-        self.nonce = nonce;
-        return self;
-    }
-
-    fn with_gas_budget(&mut self, gas_budget: u64) -> &Self {
-        self.gas_budget = gas_budget;
-        return self;
-    }
-
-    fn with_allowance(&mut self, allowance: &ScAssets) -> &Self {
-        self.allowance = allowance.clone();
-        return self;
-    }
-
-    fn sign(&self, key_pair: &KeyPair) -> Self {
-        let mut req = OffLedgerRequestData::new(
-            &self.chain_id,
-            &self.contract,
-            &self.entry_point,
-            &self.params,
-            self.nonce,
-        );
-        req.signature_scheme = OffLedgerSignatureScheme::new(&key_pair);
-        req.signature_scheme.signature = key_pair.sign(&req.essence());
-        return req;
-    }
-}
-
-impl OffLedgerRequestData {
-    pub fn id(&self) -> ScRequestID {
-        // req id is hash of req bytes with output index zero
-        let mut hash = Blake2b256::digest(self.to_bytes()).to_vec();
-        hash.push(0);
-        hash.push(0);
-        return request_id_from_bytes(&hash);
     }
 
     pub fn essence(&self) -> Vec<u8> {
@@ -121,6 +73,27 @@ impl OffLedgerRequestData {
         return data;
     }
 
+    pub fn id(&self) -> ScRequestID {
+        // req id is hash of req bytes with output index zero
+        let mut hash = Blake2b256::digest(self.to_bytes()).to_vec();
+        hash.push(0);
+        hash.push(0);
+        return request_id_from_bytes(&hash);
+    }
+
+    pub fn sign(&self, key_pair: &KeyPair) -> Self {
+        let mut req = OffLedgerRequest::new(
+            &self.chain_id,
+            &self.contract,
+            &self.entry_point,
+            &self.params,
+            self.nonce,
+        );
+        req.signature_scheme = OffLedgerSignatureScheme::new(&key_pair);
+        req.signature_scheme.signature = key_pair.sign(&req.essence());
+        return req;
+    }
+
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut b = self.essence();
         let sig = &self.signature_scheme.signature;
@@ -129,7 +102,8 @@ impl OffLedgerRequestData {
         return b;
     }
 
-    pub fn with_allowance(&mut self, allowance: &ScAssets) {
+    pub fn with_allowance(&mut self, allowance: &ScAssets) -> &Self {
         self.allowance = allowance.clone();
+        return self;
     }
 }

@@ -20,6 +20,20 @@ export class KeyPair {
         this.publicKey = keyPair.publicKey;
     }
 
+    public static subSeed(seed: Uint8Array, n: u64): Uint8Array {
+        const indexBytes = uint64ToBytes(n);
+        const hashOfIndexBytes = Blake2b.sum256(indexBytes);
+        for (let i = 0; i < seed.length; i++) {
+            hashOfIndexBytes[i] ^= seed[i];
+        }
+        return hashOfIndexBytes;
+    }
+
+    public static fromSubSeed(seed: Uint8Array, n: u64): KeyPair {
+        const subSeed = this.subSeed(seed, n);
+        return new KeyPair(subSeed);
+    }
+
     public address(): ScAddress {
         const addr = new Uint8Array(wasmlib.ScLengthEd25519);
         addr[0] = wasmlib.ScAddressEd25519;
@@ -33,19 +47,5 @@ export class KeyPair {
 
     public verify(data: Uint8Array, sig: Uint8Array): bool {
         return Ed25519.verify(this.publicKey, data, sig);
-    }
-
-    public static subSeed(seed: Uint8Array, n: u64): Uint8Array {
-        const indexBytes = uint64ToBytes(n);
-        const hashOfIndexBytes = Blake2b.sum256(indexBytes);
-        for (let i = 0; i < seed.length; i++) {
-            hashOfIndexBytes[i] ^= seed[i];
-        }
-        return hashOfIndexBytes;
-    }
-
-    public static fromSubSeed(seed: Uint8Array, n: u64): KeyPair {
-        const subSeed = this.subSeed(seed, n);
-        return new KeyPair(subSeed);
     }
 }

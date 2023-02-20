@@ -5,6 +5,8 @@ import {Bech32, Blake2b} from '@iota/crypto.js';
 import * as wasmlib from 'wasmlib';
 import * as isc from './';
 
+export type Error = string | null;
+
 export class JsonItem {
     key = '';
     value = '';

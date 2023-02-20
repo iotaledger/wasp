@@ -191,11 +191,11 @@ export class SyncRequestService {
 }
 
 export class SyncRequestHeader {
-    constructor(private key: string, private val: string) {
-    }
-
     Key: string = this.key;
     Value: string = this.val;
+
+    constructor(private key: string, private val: string) {
+    }
 }
 
 export class SyncRequestOptions {

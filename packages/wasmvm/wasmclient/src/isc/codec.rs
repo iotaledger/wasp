@@ -6,41 +6,7 @@ use crypto::hashes::{blake2b::Blake2b256, Digest};
 use serde::{Deserialize, Serialize};
 use wasmlib::*;
 
-use crate::errors;
-
-const BECH32_PREFIX: &'static str = "smr";
-
-pub fn bech32_decode(input: &str) -> errors::Result<(String, ScAddress)> {
-    let (hrp, data, _v) = match bech32::decode(&input) {
-        Ok(v) => v,
-        Err(_) => return Err(String::from(format!("invalid bech32 string: {}", input))),
-    };
-    let buf = match Vec::<u8>::from_base32(&data) {
-        Ok(b) => b,
-        Err(e) => return Err(e.to_string()),
-    };
-    return Ok((hrp, address_from_bytes(&buf)));
-}
-
-pub fn bech32_encode(hrp: &str, addr: &ScAddress) -> errors::Result<String> {
-    match bech32::encode(hrp, addr.to_bytes().to_base32(), Variant::Bech32) {
-        Ok(v) => Ok(v),
-        Err(e) => Err(e.to_string()),
-    }
-}
-
-pub fn hname_bytes(name: &str) -> Vec<u8> {
-    let hash = Blake2b256::digest(name.as_bytes());
-    for i in (0..hash.len()).step_by(SC_HNAME_LENGTH) {
-        let slice = &hash[i..i+SC_HNAME_LENGTH];
-        let hname = uint32_from_bytes(slice);
-        if hname != 0 {
-            return slice.to_vec();
-        }
-    }
-    // astronomically unlikely to end up here
-    return uint32_to_bytes(1);
-}
+pub type Result<T> = std::result::Result<T, String>;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonItem {
@@ -83,6 +49,40 @@ pub struct JsonError {
     pub(crate) message: String,
 }
 
+const BECH32_PREFIX: &'static str = "smr";
+
+pub fn bech32_decode(input: &str) -> Result<(String, ScAddress)> {
+    let (hrp, data, _v) = match bech32::decode(&input) {
+        Ok(v) => v,
+        Err(_) => return Err(String::from(format!("invalid bech32 string: {}", input))),
+    };
+    let buf = match Vec::<u8>::from_base32(&data) {
+        Ok(b) => b,
+        Err(e) => return Err(e.to_string()),
+    };
+    return Ok((hrp, address_from_bytes(&buf)));
+}
+
+pub fn bech32_encode(hrp: &str, addr: &ScAddress) -> Result<String> {
+    match bech32::encode(hrp, addr.to_bytes().to_base32(), Variant::Bech32) {
+        Ok(v) => Ok(v),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+pub fn hname_bytes(name: &str) -> Vec<u8> {
+    let hash = Blake2b256::digest(name.as_bytes());
+    for i in (0..hash.len()).step_by(SC_HNAME_LENGTH) {
+        let slice = &hash[i..i + SC_HNAME_LENGTH];
+        let hname = uint32_from_bytes(slice);
+        if hname != 0 {
+            return slice.to_vec();
+        }
+    }
+    // astronomically unlikely to end up here
+    return uint32_to_bytes(1);
+}
+
 pub fn json_decode(dict: JsonResponse) -> Vec<u8> {
     let mut enc = WasmEncoder::new();
     let items_num = dict.items.len();
@@ -119,4 +119,38 @@ pub fn json_encode(buf: &[u8]) -> JsonDict {
         dict.items.push(item);
     }
     return dict;
+}
+
+pub(crate) static mut HRP_FOR_CLIENT: String = String::new();
+
+pub(crate) fn client_bech32_decode(bech32: &str) -> ScAddress {
+    match bech32_decode(&bech32) {
+        Ok((hrp, addr)) => unsafe {
+            if hrp != HRP_FOR_CLIENT {
+                panic(&("invalid protocol prefix: ".to_owned() + &hrp));
+                return address_from_bytes(&[]);
+            }
+            return addr;
+        },
+        Err(e) => {
+            panic(&e.to_string());
+            return address_from_bytes(&[]);
+        }
+    }
+}
+
+pub(crate) fn client_bech32_encode(addr: &ScAddress) -> String {
+    unsafe {
+        match bech32_encode(&HRP_FOR_CLIENT, &addr) {
+            Ok(v) => return v,
+            Err(e) => {
+                panic(&e.to_string());
+                return String::new();
+            }
+        }
+    }
+}
+
+pub(crate) fn client_hash_name(name: &str) -> ScHname {
+    hname_from_bytes(&hname_bytes(name))
 }

@@ -103,11 +103,10 @@ func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
 
 	// we're testing against wasp-cluster, so defaults will do
 	chainID := e.Chain.ChainID.String()
-	return newClient(t, wasmclient.DefaultWasmClientService(), chainID, wallet)
+	return newClient(t, wasmclient.NewWasmClientService("http://localhost:19090"), chainID, wallet)
 }
 
 func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
-	// load config file
 	configBytes, err := os.ReadFile("wasp-cli.json")
 	require.NoError(t, err)
 
@@ -123,22 +122,15 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 	cfgSeed := cfgWallet["seed"].(string)
 
 	cfgWasp := config["wasp"].(map[string]interface{})
-	cfgWasp0 := cfgWasp["0"].(string)
+	cfgWaspAPI := cfgWasp["0"].(string)
 
 	// we'll use the seed keypair to sign requests
 	seedBytes, err := iotago.DecodeHex(cfgSeed)
 	require.NoError(t, err)
-
 	seed := cryptolib.NewSeedFromBytes(seedBytes)
 	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(0))
 
-	// we're testing against disposable wasp-cluster, so defaults will do
-	service := wasmclient.DefaultWasmClientService()
-	if cfgWasp0[len(cfgWasp0)-6:] != ":19090" {
-		// test against Docker container, make sure to pass the correct args to test (top of file)
-		service = wasmclient.NewWasmClientService("http://localhost:9090", "127.0.0.1:5550")
-	}
-	return newClient(t, service, chain, wallet)
+	return newClient(t, wasmclient.NewWasmClientService(cfgWaspAPI), chain, wallet)
 }
 
 func setupClientSolo(t solo.TestContext) *wasmclient.WasmClientContext {

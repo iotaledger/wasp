@@ -19,7 +19,7 @@ export class WasmClientSandbox {
     svcClient: WasmClientService;
 
     public constructor(svcClient: WasmClientService, chain: string, scName: string) {
-        // local client implementations for sandboxed functions
+        // local client implementations for some sandbox functions
         wasmlib.sandboxWrappers(clientBech32Decode, clientBech32Encode, clientHashName);
 
         this.svcClient = svcClient;

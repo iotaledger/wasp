@@ -6,7 +6,7 @@ import * as wasmlib from 'wasmlib';
 import {panic} from 'wasmlib';
 import * as coreaccounts from 'wasmlib/coreaccounts';
 import {WasmClientSandbox} from './wasmclientsandbox';
-import {WasmClientService} from './wasmclientservice';
+import {ContractEvent, WasmClientService} from './wasmclientservice';
 
 export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFuncCallContext {
     private eventHandlers: wasmlib.IEventHandlers[] = [];
@@ -31,6 +31,7 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
     public initFuncCallContext(): void {
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public initViewCallContext(_hContract: wasmlib.ScHname): wasmlib.ScHname {
         return this.scHname;
     }
@@ -45,7 +46,7 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         if (this.eventHandlers.length > 1) {
             return null;
         }
-        return this.startEventHandlers();
+        return this.svcClient.subscribeEvents(this, (event) => this.processEvent(event));
     }
 
     public serviceContractName(contractName: string) {
@@ -55,16 +56,17 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
     public signRequests(keyPair: isc.KeyPair) {
         this.keyPair = keyPair;
 
+        // TODO not here
         // get last used nonce from accounts core contract
         const agent = wasmlib.ScAgentID.fromAddress(keyPair.address());
         const ctx = new WasmClientContext(this.svcClient, this.chainID.toString(), coreaccounts.ScName);
         const n = coreaccounts.ScFuncs.getAccountNonce(ctx);
         n.params.agentID().setValue(agent);
         n.func.call();
-        if (ctx.Err != null) {
-            panic(ctx.Err);
+        this.Err = ctx.Err;
+        if (this.Err == null) {
+            this.nonce = n.results.accountNonce().value();
         }
-        this.nonce = n.results.accountNonce().value();
     }
 
     public unregister(handler: wasmlib.IEventHandlers): void {
@@ -73,7 +75,7 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
                 const handlers = this.eventHandlers;
                 this.eventHandlers = handlers.slice(0, i).concat(handlers.slice(i + 1));
                 if (this.eventHandlers.length == 0) {
-                    this.stopEventHandlers();
+                    this.svcClient.unsubscribeEvents(this);
                 }
                 return;
             }
@@ -88,18 +90,8 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         this.Err = this.svcClient.waitUntilRequestProcessed(this.chainID, reqID, 60);
     }
 
-    private processEvent(msg: string[]): void {
-        if (msg[0] == 'error') {
-            this.Err = msg[1];
-            return;
-        }
-
-        if (msg[0] != 'contract' || msg[1] != this.chainID.toString()) {
-            // not intended for us
-            return;
-        }
-
-        const params = msg[6].split('|');
+    private processEvent(event: ContractEvent): void {
+        const params = event.data.split('|');
         for (let i = 0; i < params.length; i++) {
             params[i] = this.unescape(params[i]);
         }
@@ -107,21 +99,6 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         params.shift();
         for (let i = 0; i < this.eventHandlers.length; i++) {
             this.eventHandlers[i].callHandler(topic, params);
-        }
-    }
-
-    public startEventHandlers(): isc.Error {
-        if (this.eventHandlers.length != 1) {
-            return null;
-        }
-        return this.svcClient.subscribeEvents(this, (msg: string[]) => {
-            this.processEvent(msg);
-        });
-    }
-
-    public stopEventHandlers(): void {
-        if (this.eventHandlers.length == 0) {
-            this.svcClient.unsubscribeEvents(this);
         }
     }
 

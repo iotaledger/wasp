@@ -7,13 +7,11 @@ package wasmclient
 // for some other reason if the third mamgos import is missing things won't work
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
-	nanomsg "go.nanomsg.org/mangos/v3"
-	nanomsgsub "go.nanomsg.org/mangos/v3/protocol/sub"
-	_ "go.nanomsg.org/mangos/v3/transport/all"
+	"nhooyr.io/websocket"
+	"nhooyr.io/websocket/wsjson"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
@@ -21,6 +19,8 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/publisher"
+	"github.com/iotaledger/wasp/packages/publisher/publisherws"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
@@ -31,45 +31,47 @@ type ContractEvent struct {
 	Data       string
 }
 
+type EventProcessor func(event *ContractEvent)
+
 type IClientService interface {
 	CallViewByHname(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error)
 	PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair, nonce uint64) (wasmtypes.ScRequestID, error)
-	SubscribeEvents(msg chan ContractEvent, done chan bool) error
+	SubscribeEvents(callback EventProcessor) error
+	UnsubscribeEvents()
 	WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error
 }
 
+// WasmClientService TODO should be linked to a chain and holds the nonces for signers for that chain
 type WasmClientService struct {
+	callback   EventProcessor
+	eventDone  chan bool
 	waspClient *apiclient.APIClient
-	eventPort  string
+	webSocket  string
 }
 
 var _ IClientService = new(WasmClientService)
 
-func NewWasmClientService(waspAPI, eventPort string) *WasmClientService {
+func NewWasmClientService(waspAPI string) *WasmClientService {
 	client, err := apiextensions.WaspAPIClientByHostName(waspAPI)
 	if err != nil {
 		panic(err.Error())
 	}
-
-	return &WasmClientService{waspClient: client, eventPort: eventPort}
-}
-
-func DefaultWasmClientService() *WasmClientService {
-	return NewWasmClientService("http://localhost:19090", "127.0.0.1:15550")
+	return &WasmClientService{
+		waspClient: client,
+		webSocket:  strings.Replace(waspAPI, "http:", "ws:", 1) + "/ws",
+	}
 }
 
 func (sc *WasmClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error) {
-	iscChainID := cvt.IscChainID(&chainID)
-	iscContract := cvt.IscHname(hContract)
-	iscFunction := cvt.IscHname(hFunction)
 	params, err := dict.FromBytes(args)
 	if err != nil {
 		return nil, err
 	}
+
 	res, _, err := sc.waspClient.RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
-		ContractHName: iscContract.String(),
-		FunctionHName: iscFunction.String(),
-		ChainId:       iscChainID.String(),
+		ChainId:       cvt.IscChainID(&chainID).String(),
+		ContractHName: cvt.IscHname(hContract).String(),
+		FunctionHName: cvt.IscHname(hFunction).String(),
 		Arguments:     apiextensions.JSONDictToAPIJSONDict(params.JSONDict()),
 	}).Execute()
 	if err != nil {
@@ -92,6 +94,7 @@ func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract,
 	if err != nil {
 		return reqID, err
 	}
+
 	req := isc.NewOffLedgerRequest(iscChainID, iscContract, iscFunction, params, nonce)
 	iscAllowance := cvt.IscAllowance(allowance)
 	req.WithAllowance(iscAllowance)
@@ -102,51 +105,40 @@ func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract,
 		ChainId: iscChainID.String(),
 		Request: iotago.EncodeHex(signed.Bytes()),
 	}).Execute()
-
 	return reqID, err
 }
 
-func (sc *WasmClientService) SubscribeEvents(msg chan ContractEvent, done chan bool) error {
-	socket, err := nanomsgsub.NewSocket()
+func (sc *WasmClientService) SubscribeEvents(callback EventProcessor) error {
+	// TODO multiple callbacks, see TS version
+	sc.callback = callback
+
+	ctx := context.Background()
+	ws, _, err := websocket.Dial(ctx, sc.webSocket, nil)
 	if err != nil {
 		return err
 	}
-	err = socket.Dial("tcp://" + sc.eventPort)
+	err = eventSubscribe(ctx, ws, "chains")
 	if err != nil {
-		return fmt.Errorf("can't dial on sub socket %s: %w", sc.eventPort, err)
+		return err
 	}
-	err = socket.SetOption(nanomsg.OptionSubscribe, []byte("contract"))
+	err = eventSubscribe(ctx, ws, publisher.ISCEventKindSmartContract)
 	if err != nil {
 		return err
 	}
 
+	sc.eventDone = make(chan bool)
 	go func() {
-		for {
-			buf, err := socket.Recv()
-			if err != nil {
-				close(msg)
-				return
-			}
-			if len(buf) > 0 {
-				// contract tst1pqqf4qxh2w9x7rz2z4qqcvd0y8n22axsx82gqzmncvtsjqzwmhnjs438rhk | vm (contract): 89703a45: testwasmlib.test|1671671237|tst1pqqf4qxh2w9x7rz2z4qqcvd0y8n22axsx82gqzmncvtsjqzwmhnjs438rhk|Lala
-				s := string(buf)
-				parts := strings.Split(s, " ")
-				event := ContractEvent{
-					ChainID:    parts[1],
-					ContractID: parts[5][:len(parts[5])-1],
-					Data:       parts[6],
-				}
-				msg <- event
-			}
-		}
+		<-sc.eventDone
+		_ = ws.Close(websocket.StatusNormalClosure, "intentional close")
 	}()
 
-	go func() {
-		<-done
-		_ = socket.Close()
-	}()
+	go sc.eventLoop(ctx, ws)
 
 	return nil
+}
+
+func (sc *WasmClientService) UnsubscribeEvents() {
+	sc.eventDone <- true
 }
 
 func (sc *WasmClientService) WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error {
@@ -159,4 +151,37 @@ func (sc *WasmClientService) WaitUntilRequestProcessed(chainID wasmtypes.ScChain
 		Execute()
 
 	return err
+}
+
+func (sc *WasmClientService) eventLoop(ctx context.Context, ws *websocket.Conn) {
+	for {
+		evt := publisher.ISCEvent{}
+		err := wsjson.Read(ctx, ws, &evt)
+		if err != nil {
+			sc.callback = nil
+			return
+		}
+		items := evt.Content.([]interface{})
+		for _, item := range items {
+			parts := strings.Split(item.(string), ": ")
+			event := ContractEvent{
+				ChainID:    evt.ChainID,
+				ContractID: parts[0],
+				Data:       parts[1],
+			}
+			sc.callback(&event)
+		}
+	}
+}
+
+func eventSubscribe(ctx context.Context, ws *websocket.Conn, topic string) error {
+	msg := publisherws.SubscriptionCommand{
+		Command: publisherws.CommandSubscribe,
+		Topic:   topic,
+	}
+	err := wsjson.Write(ctx, ws, msg)
+	if err != nil {
+		return err
+	}
+	return wsjson.Read(ctx, ws, &msg)
 }
