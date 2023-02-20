@@ -198,26 +198,7 @@ func New(
 	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics,
 	shutdownHandler *shutdown.ShutdownHandler,
 ) (chain.NodeConnection, error) {
-	// make sure the node is connected to at least one other peer
-	// otherwise the node status may not reflect the network status
-	if err := waitForL1ToBeConnected(ctx, log, nodeBridge); err != nil {
-		return nil, err
-	}
-
-	if err := waitForL1ToBeSynced(ctx, log, nodeBridge); err != nil {
-		return nil, err
-	}
-
 	inxNodeClient := nodeBridge.INXNodeClient()
-
-	ctxInfo, cancelInfo := context.WithTimeout(ctx, inxTimeoutInfo)
-	defer cancelInfo()
-
-	nodeInfo, err := inxNodeClient.Info(ctxInfo)
-	if err != nil {
-		return nil, fmt.Errorf("error getting node info: %w", err)
-	}
-	setL1ProtocolParams(nodeBridge.ProtocolParameters(), nodeInfo.BaseToken)
 
 	ctxIndexer, cancelIndexer := context.WithTimeout(ctx, indexerPluginAvailableTimeout)
 	defer cancelIndexer()
@@ -254,6 +235,35 @@ func New(
 
 func (nc *nodeConnection) Run(ctx context.Context) {
 	nc.ctx = ctx
+
+	syncAndSetProtocolParameters := func() error {
+		// make sure the node is connected to at least one other peer
+		// otherwise the node status may not reflect the network status
+		if err := waitForL1ToBeConnected(ctx, nc.WrappedLogger.Logger(), nc.nodeBridge); err != nil {
+			return err
+		}
+
+		if err := waitForL1ToBeSynced(ctx, nc.WrappedLogger.Logger(), nc.nodeBridge); err != nil {
+			return err
+		}
+
+		ctxInfo, cancelInfo := context.WithTimeout(ctx, inxTimeoutInfo)
+		defer cancelInfo()
+
+		nodeInfo, err := nc.nodeClient.Info(ctxInfo)
+		if err != nil {
+			return fmt.Errorf("error getting node info: %w", err)
+		}
+		setL1ProtocolParams(nc.nodeBridge.ProtocolParameters(), nodeInfo.BaseToken)
+
+		return nil
+	}
+
+	if err := syncAndSetProtocolParameters(); err != nil {
+		nc.shutdownHandler.SelfShutdown(fmt.Sprintf("Getting latest L1 protocol parameters failed, error: %s", err.Error()), true)
+		return
+	}
+
 	nc.reattachWorkerPool.Start()
 	go nc.subscribeToLedgerUpdates()
 	<-ctx.Done()
