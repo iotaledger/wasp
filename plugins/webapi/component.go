@@ -250,8 +250,7 @@ func run() error {
 	}
 
 	if err := Plugin.Daemon().BackgroundWorker("WebsocketHub", func(ctx context.Context) {
-		go deps.WebsocketHub.Run(ctx)
-		<-ctx.Done()
+		deps.WebsocketHub.Run(ctx)
 		Plugin.LogInfo("Stopping WebAPI[WS]")
 	}, daemon.PriorityWebAPI); err != nil {
 		Plugin.LogPanicf("failed to start worker: %s", err)
