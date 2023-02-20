@@ -46,7 +46,7 @@ func initChangeAccessNodesCmd() *cobra.Command {
 			params := chainclient.PostRequestParams{
 				Args: pars.AsDict(),
 			}
-			PostRequest(
+			postRequest(
 				node,
 				chain,
 				governance.Contract.Name,
