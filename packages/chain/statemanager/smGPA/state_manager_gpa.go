@@ -50,7 +50,7 @@ const (
 func New(chainID isc.ChainID, nr smUtils.NodeRandomiser, wal smGPAUtils.BlockWAL, store state.Store, log *logger.Logger, timers StateManagerTimers) (gpa.GPA, error) {
 	var err error
 	smLog := log.Named("gpa")
-	blockCache, err := smGPAUtils.NewBlockCache(timers.TimeProvider, wal, smLog)
+	blockCache, err := smGPAUtils.NewBlockCache(timers.TimeProvider, timers.BlockCacheMaxSize, wal, smLog)
 	if err != nil {
 		smLog.Errorf("Error creating block cache: %v", err)
 		return nil, err

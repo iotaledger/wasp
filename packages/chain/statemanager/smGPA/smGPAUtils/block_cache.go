@@ -15,6 +15,7 @@ type blockTime struct {
 type blockCache struct {
 	log          *logger.Logger
 	blocks       map[BlockKey]state.Block
+	maxCacheSize int
 	wal          BlockWAL
 	times        []*blockTime
 	timeProvider TimeProvider
@@ -22,10 +23,11 @@ type blockCache struct {
 
 var _ BlockCache = &blockCache{}
 
-func NewBlockCache(tp TimeProvider, wal BlockWAL, log *logger.Logger) (BlockCache, error) {
+func NewBlockCache(tp TimeProvider, maxCacheSize int, wal BlockWAL, log *logger.Logger) (BlockCache, error) {
 	return &blockCache{
 		log:          log.Named("bc"),
 		blocks:       make(map[BlockKey]state.Block),
+		maxCacheSize: maxCacheSize,
 		wal:          wal,
 		times:        make([]*blockTime, 0),
 		timeProvider: tp,
@@ -49,6 +51,13 @@ func (bcT *blockCache) AddBlock(block state.Block) {
 		blockKey: blockKey,
 	})
 	bcT.log.Debugf("Block %s added to cache", commitment)
+
+	if bcT.Size() > bcT.maxCacheSize {
+		bt := bcT.times[0]
+		bcT.times = bcT.times[1:]
+		delete(bcT.blocks, bt.blockKey)
+		bcT.log.Debugf("Block %s deleted from cache, because cache is too large", bt.blockKey)
+	}
 }
 
 func (bcT *blockCache) GetBlock(commitment *state.L1Commitment) state.Block {
@@ -85,7 +94,11 @@ func (bcT *blockCache) CleanOlderThan(limit time.Time) {
 			return
 		}
 		delete(bcT.blocks, bt.blockKey)
-		bcT.log.Debugf("Block %s deleted from cache", bt.blockKey)
+		bcT.log.Debugf("Block %s deleted from cache, because it is too old", bt.blockKey)
 	}
 	bcT.times = make([]*blockTime, 0) // All the blocks were deleted
+}
+
+func (bcT *blockCache) Size() int {
+	return len(bcT.blocks)
 }

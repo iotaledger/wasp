@@ -21,16 +21,20 @@ type blockCacheNoWALTestSM struct { // State machine for block cache no WAL prop
 	blocks              map[BlockKey]state.Block
 	blockTimes          []*blockTime
 	blocksInCache       []BlockKey
+	blockCacheMaxSize   int
 	addBlockCallback    func(state.Block)
 	log                 *logger.Logger
 }
 
-func (bcnwtsmT *blockCacheNoWALTestSM) initStateMachine(t *rapid.T, wal BlockWAL, addBlockCallback func(state.Block)) {
+var _ rapid.StateMachine = &blockCacheNoWALTestSM{}
+
+func (bcnwtsmT *blockCacheNoWALTestSM) initStateMachine(t *rapid.T, bcms int, wal BlockWAL, addBlockCallback func(state.Block)) {
 	var err error
 	bcnwtsmT.factory = NewBlockFactory(t)
 	bcnwtsmT.lastBlockCommitment = state.OriginL1Commitment()
 	bcnwtsmT.log = testlogger.NewLogger(t)
-	bcnwtsmT.bc, err = NewBlockCache(NewDefaultTimeProvider(), wal, bcnwtsmT.log)
+	bcnwtsmT.blockCacheMaxSize = bcms
+	bcnwtsmT.bc, err = NewBlockCache(NewDefaultTimeProvider(), bcnwtsmT.blockCacheMaxSize, wal, bcnwtsmT.log)
 	require.NoError(t, err)
 	bcnwtsmT.blockTimes = make([]*blockTime, 0)
 	bcnwtsmT.blocks = make(map[BlockKey]state.Block)
@@ -39,7 +43,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) initStateMachine(t *rapid.T, wal BlockWAL
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) Init(t *rapid.T) {
-	bcnwtsmT.initStateMachine(t, NewEmptyTestBlockWAL(), func(state.Block) {})
+	bcnwtsmT.initStateMachine(t, 10, NewEmptyTestBlockWAL(), func(state.Block) {})
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) Cleanup() {
@@ -47,6 +51,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) Cleanup() {
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) Check(t *rapid.T) {
+	bcnwtsmT.invariantBlockCacheSize(t)
 	bcnwtsmT.invariantAllBlocksInCacheDifferent(t)
 	bcnwtsmT.invariantBlocksInCacheBijectionToBlockTimes(t)
 }
@@ -100,11 +105,16 @@ func (bcnwtsmT *blockCacheNoWALTestSM) tstGetBlockFromCache(t *rapid.T, blockKey
 
 func (bcnwtsmT *blockCacheNoWALTestSM) Restart(t *rapid.T) {
 	var err error
-	bcnwtsmT.bc, err = NewBlockCache(NewDefaultTimeProvider(), bcnwtsmT.bc.(*blockCache).wal, bcnwtsmT.log)
+	bcnwtsmT.bc, err = NewBlockCache(NewDefaultTimeProvider(), bcnwtsmT.blockCacheMaxSize, bcnwtsmT.bc.(*blockCache).wal, bcnwtsmT.log)
 	require.NoError(t, err)
 	bcnwtsmT.blocksInCache = make([]BlockKey, 0)
 	bcnwtsmT.blockTimes = make([]*blockTime, 0)
 	t.Log("Block cache was restarted")
+}
+
+func (bcnwtsmT *blockCacheNoWALTestSM) invariantBlockCacheSize(t *rapid.T) {
+	require.Equal(t, len(bcnwtsmT.blocksInCache), bcnwtsmT.bc.Size())
+	require.GreaterOrEqual(t, bcnwtsmT.blockCacheMaxSize, bcnwtsmT.bc.Size())
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) invariantAllBlocksInCacheDifferent(t *rapid.T) {
@@ -132,6 +142,12 @@ func (bcnwtsmT *blockCacheNoWALTestSM) addBlock(t *rapid.T, block state.Block) {
 		time:     time.Now(),
 		blockKey: blockKey,
 	})
+	if len(bcnwtsmT.blocksInCache) > bcnwtsmT.blockCacheMaxSize {
+		blockKey := bcnwtsmT.blockTimes[0].blockKey
+		bcnwtsmT.blocksInCache = lo.Without(bcnwtsmT.blocksInCache, blockKey)
+		bcnwtsmT.blockTimes = bcnwtsmT.blockTimes[1:]
+		t.Logf("Block %s deleted from cache", blockKey)
+	}
 	bcnwtsmT.addBlockCallback(block)
 }
 

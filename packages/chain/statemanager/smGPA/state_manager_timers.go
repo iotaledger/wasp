@@ -10,6 +10,8 @@ import (
 )
 
 type StateManagerTimers struct {
+	// How many blocks may be stored in cache before old ones start being deleted
+	BlockCacheMaxSize int
 	// How long should the block stay in block cache before being deleted
 	BlockCacheBlocksInCacheDuration time.Duration
 	// How often should the block cache be cleaned
@@ -32,6 +34,7 @@ func NewStateManagerTimers(tpOpt ...smGPAUtils.TimeProvider) StateManagerTimers 
 		tp = smGPAUtils.NewDefaultTimeProvider()
 	}
 	return StateManagerTimers{
+		BlockCacheMaxSize:                 1000,
 		BlockCacheBlocksInCacheDuration:   1 * time.Hour,
 		BlockCacheBlockCleaningPeriod:     1 * time.Minute,
 		StateManagerGetBlockRetry:         3 * time.Second,
