@@ -78,37 +78,3 @@ impl ScFuncCallContext for WasmClientContext {
 
     fn init_func_call_context(&self) {}
 }
-
-pub(crate) static mut HRP_FOR_CLIENT: String = String::new();
-
-pub(crate) fn client_bech32_decode(bech32: &str) -> ScAddress {
-    match codec::bech32_decode(&bech32) {
-        Ok((hrp, addr)) => unsafe {
-            if hrp != HRP_FOR_CLIENT {
-                panic(&("invalid protocol prefix: ".to_owned() + &hrp));
-                return address_from_bytes(&[]);
-            }
-            return addr;
-        },
-        Err(e) => {
-            panic(&e.to_string());
-            return address_from_bytes(&[]);
-        }
-    }
-}
-
-pub(crate) fn client_bech32_encode(addr: &ScAddress) -> String {
-    unsafe {
-        match codec::bech32_encode(&HRP_FOR_CLIENT, &addr) {
-            Ok(v) => return v,
-            Err(e) => {
-                panic(&e.to_string());
-                return String::new();
-            }
-        }
-    }
-}
-
-pub(crate) fn client_hash_name(name: &str) -> ScHname {
-    hname_from_bytes(&codec::hname_bytes(name))
-}

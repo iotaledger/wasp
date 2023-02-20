@@ -3,7 +3,7 @@ import * as testwasmlib from 'testwasmlib';
 import {bytesFromString, bytesToString} from 'wasmlib';
 import {KeyPair} from '../lib/isc';
 
-const MYCHAIN = 'atoi1pq485q0m933gxwtl3hhmfvx43h6c76pe29jfvzqaquyrjudrgjnhw7j00st';
+const MYCHAIN = 'atoi1pzeqjkcqf7pcxs706nykw760wy4250vpa44hfajdrv20kczlwras6v6c2vv';
 const MYSEED = '0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3';
 
 const params = [
@@ -59,7 +59,7 @@ function checkError(ctx: WasmClientContext) {
 }
 
 function setupClient() {
-    const svc = new WasmClientService('http://localhost:19090', '127.0.0.1:15550');
+    const svc = new WasmClientService('http://localhost:19090');
     const ctx = new WasmClientContext(svc, MYCHAIN, 'testwasmlib');
     ctx.signRequests(KeyPair.fromSubSeed(bytesFromString(MYSEED), 0n));
     checkError(ctx);

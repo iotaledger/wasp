@@ -19,7 +19,6 @@ import (
 type WasmClientContext struct {
 	chainID       wasmtypes.ScChainID
 	Err           error
-	eventDone     chan bool
 	eventHandlers []wasmlib.IEventHandlers
 	keyPair       *cryptolib.KeyPair
 	nonce         uint64
@@ -36,7 +35,7 @@ var (
 
 func NewWasmClientContext(svcClient IClientService, chain string, scName string) *WasmClientContext {
 	if HrpForClient == "" {
-		// local client implementations for sandboxed functions
+		// local client implementations for some sandbox functions
 		wasmtypes.Bech32Decode = ClientBech32Decode
 		wasmtypes.Bech32Encode = ClientBech32Encode
 		wasmtypes.HashName = ClientHashName
@@ -95,7 +94,7 @@ func (s *WasmClientContext) Register(handler wasmlib.IEventHandlers) error {
 	if len(s.eventHandlers) > 1 {
 		return nil
 	}
-	return s.startEventHandlers()
+	return s.svcClient.SubscribeEvents(s.processEvent)
 }
 
 func (s *WasmClientContext) ServiceContractName(contractName string) {
@@ -105,6 +104,7 @@ func (s *WasmClientContext) ServiceContractName(contractName string) {
 func (s *WasmClientContext) SignRequests(keyPair *cryptolib.KeyPair) {
 	s.keyPair = keyPair
 
+	// TODO not here
 	// get last used nonce from accounts core contract
 	iscAgent := isc.NewAgentID(keyPair.Address())
 	agent := wasmtypes.AgentIDFromBytes(iscAgent.Bytes())
@@ -112,7 +112,10 @@ func (s *WasmClientContext) SignRequests(keyPair *cryptolib.KeyPair) {
 	n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
 	n.Params.AgentID().SetValue(agent)
 	n.Func.Call()
-	s.nonce = n.Results.AccountNonce().Value()
+	s.Err = ctx.Err
+	if s.Err == nil {
+		s.nonce = n.Results.AccountNonce().Value()
+	}
 }
 
 func (s *WasmClientContext) Unregister(handler wasmlib.IEventHandlers) {
@@ -120,7 +123,7 @@ func (s *WasmClientContext) Unregister(handler wasmlib.IEventHandlers) {
 		if h == handler {
 			s.eventHandlers = append(s.eventHandlers[:i], s.eventHandlers[i+1:]...)
 			if len(s.eventHandlers) == 0 {
-				s.stopEventHandlers()
+				s.svcClient.UnsubscribeEvents()
 			}
 			return
 		}
@@ -132,10 +135,10 @@ func (s *WasmClientContext) WaitRequest(reqID ...wasmtypes.ScRequestID) {
 	if len(reqID) == 1 {
 		requestID = reqID[0]
 	}
-	s.Err = s.svcClient.WaitUntilRequestProcessed(s.chainID, requestID, 1*time.Minute)
+	s.Err = s.svcClient.WaitUntilRequestProcessed(s.chainID, requestID, 60*time.Second)
 }
 
-func (s *WasmClientContext) processEvent(msg ContractEvent) {
+func (s *WasmClientContext) processEvent(msg *ContractEvent) {
 	fmt.Printf("%s %s %s\n", msg.ChainID, msg.ContractID, msg.Data)
 
 	params := strings.Split(msg.Data, "|")
@@ -146,29 +149,6 @@ func (s *WasmClientContext) processEvent(msg ContractEvent) {
 	params = params[1:]
 	for _, handler := range s.eventHandlers {
 		handler.CallHandler(topic, params)
-	}
-}
-
-func (s *WasmClientContext) startEventHandlers() error {
-	chMsg := make(chan ContractEvent, 20)
-	s.eventDone = make(chan bool)
-	err := s.svcClient.SubscribeEvents(chMsg, s.eventDone)
-	if err != nil {
-		return err
-	}
-	go func() {
-		for {
-			for msg := range chMsg {
-				s.processEvent(msg)
-			}
-		}
-	}()
-	return nil
-}
-
-func (s *WasmClientContext) stopEventHandlers() {
-	if len(s.eventHandlers) > 0 {
-		s.eventDone <- true
 	}
 }
 
