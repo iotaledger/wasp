@@ -91,7 +91,7 @@ func Init(
 	authMiddleware := authentication.AddV2Authentication(server, userManager, nodeIdentityProvider, authConfig, claimValidator)
 
 	controllersToLoad := []interfaces.APIController{
-		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, vmService, publisher),
+		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, vmService),
 		metrics.NewMetricsController(chainService, metricsService),
 		node.NewNodeController(waspVersion, config, dkgService, nodeService, peeringService),
 		requests.NewRequestsController(chainService, offLedgerService, peeringService, vmService),

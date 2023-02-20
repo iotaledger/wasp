@@ -8,8 +8,6 @@ import (
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
-	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/publisher/publisherws"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 )
@@ -24,8 +22,6 @@ type Controller struct {
 	offLedgerService interfaces.OffLedgerService
 	registryService  interfaces.RegistryService
 	vmService        interfaces.VMService
-
-	webSocketHandler *publisherws.PublisherWebSocket
 }
 
 func NewChainController(log *loggerpkg.Logger,
@@ -36,7 +32,6 @@ func NewChainController(log *loggerpkg.Logger,
 	offLedgerService interfaces.OffLedgerService,
 	registryService interfaces.RegistryService,
 	vmService interfaces.VMService,
-	publisher *publisher.Publisher,
 ) interfaces.APIController {
 	return &Controller{
 		log:              log,
