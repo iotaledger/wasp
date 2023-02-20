@@ -34,6 +34,9 @@ var WaspConfig = `
     "disableStacktrace": false,
     "stacktraceLevel": "panic",
     "encoding": "console",
+    "encodingConfig": {
+      "timeEncoder": "rfc3339nano"
+    },
     "outputPaths": [
       "stdout",
       "wasp.log"

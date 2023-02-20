@@ -9,17 +9,17 @@ import (
 )
 
 type inputConsensusOutputSkip struct {
-	logIndex          LogIndex
-	baseAliasOutputID iotago.OutputID
+	logIndex       LogIndex
+	proposedBaseAO iotago.OutputID
 }
 
 // This message is internal one, but should be sent by other components (e.g. consensus or the chain).
 func NewInputConsensusOutputSkip(
 	logIndex LogIndex,
-	baseAliasOutputID iotago.OutputID,
+	proposedBaseAO iotago.OutputID,
 ) gpa.Input {
 	return &inputConsensusOutputSkip{
-		logIndex:          logIndex,
-		baseAliasOutputID: baseAliasOutputID,
+		logIndex:       logIndex,
+		proposedBaseAO: proposedBaseAO,
 	}
 }

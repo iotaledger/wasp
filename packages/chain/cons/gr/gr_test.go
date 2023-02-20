@@ -150,7 +150,7 @@ func testGeneric(t *testing.T, n, f int, reliable bool) {
 		if firstOutput == nil {
 			firstOutput = output
 		}
-		require.Equal(t, firstOutput.TX, output.TX)
+		require.Equal(t, firstOutput.Result.Transaction, output.Result.Transaction)
 	}
 	ctxCancel()
 }

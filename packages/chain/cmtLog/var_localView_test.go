@@ -11,11 +11,17 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
-func TestLocalView(t *testing.T) {
-	j := cmtLog.NewVarLocalView()
-	require.Nil(t, j.GetBaseAliasOutput())
-	require.True(t, j.AliasOutputConfirmed(isc.NewAliasOutputWithID(&iotago.AliasOutput{}, iotago.OutputID{})))
-	require.NotNil(t, j.GetBaseAliasOutput())
+func TestVarLocalView(t *testing.T) {
+	log := testlogger.NewLogger(t)
+	defer log.Sync()
+	j := cmtLog.NewVarLocalView(log)
+	require.Nil(t, j.Value())
+	tipAO, ok := j.AliasOutputConfirmed(isc.NewAliasOutputWithID(&iotago.AliasOutput{}, iotago.OutputID{}))
+	require.True(t, ok)
+	require.NotNil(t, tipAO)
+	require.NotNil(t, j.Value())
+	require.Equal(t, tipAO, j.Value())
 }

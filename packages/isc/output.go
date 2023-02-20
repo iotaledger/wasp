@@ -5,6 +5,7 @@ package isc
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -141,7 +142,7 @@ func (a *AliasOutputWithID) String() string {
 	if a == nil {
 		return "nil"
 	}
-	return a.outputID.ToHex()
+	return fmt.Sprintf("AO[si#%v]%v", a.GetStateIndex(), a.outputID.ToHex())
 }
 
 func AliasOutputsEqual(ao1, ao2 *iotago.AliasOutput) bool {

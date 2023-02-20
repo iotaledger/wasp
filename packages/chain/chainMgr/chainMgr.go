@@ -69,6 +69,8 @@
 // >             Suspend(LatestActiveCmt)
 // >         Set LatestActiveCmt <- cmt
 // >         Set NeedConsensus <- output.NeedConsensus
+//
+// TODO: Why AM is not notified on the committee nodes after rotation?
 package chainMgr
 
 import (
@@ -307,25 +309,25 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 	cmi.log.Debugf("handleInputConsensusOutputDone: %+v", input)
 	// >     IF ConsensusOutput.BaseAO == NeedConsensus THEN
 	// >         Add ConsensusOutput.TX to NeedPublishTX
-	if true || cmi.needConsensus.BaseAliasOutput.OutputID() == input.baseAliasOutputID { // TODO: Reconsider this condition. Several recent consensus instances should be published, if we run consensus instances in parallel.
-		txID := input.nextAliasOutput.TransactionID()
+	if true { // TODO: Reconsider this condition. Several recent consensus instances should be published, if we run consensus instances in parallel.
+		txID := input.consensusResult.NextAliasOutput.TransactionID()
 		cmi.needPublishTX[txID] = &NeedPublishTX{
 			CommitteeAddr:     input.committeeAddr,
 			TxID:              txID,
-			Tx:                input.transaction,
-			BaseAliasOutputID: input.baseAliasOutputID,
-			NextAliasOutput:   input.nextAliasOutput,
+			Tx:                input.consensusResult.Transaction,
+			BaseAliasOutputID: input.consensusResult.BaseAliasOutput,
+			NextAliasOutput:   input.consensusResult.NextAliasOutput,
 		}
 	}
 	//
 	// >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.
 	msgs := cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-		return cl.Input(cmtLog.NewInputConsensusOutputDone(input.logIndex, input.baseAliasOutputID, input.nextAliasOutput))
+		return cl.Input(cmtLog.NewInputConsensusOutputDone(input.logIndex, input.proposedBaseAO, input.consensusResult.BaseAliasOutput, input.consensusResult.NextAliasOutput))
 	})
 	//
 	// >     Update AccessNodes.
-	if input.nextState != nil { // It is nil in the case of self-governed rotation.
-		newAccessNodes := governance.NewStateAccess(input.nextState).GetAccessNodes()
+	if input.consensusResult.StateDraft != nil { // It is nil in the case of self-governed rotation.
+		newAccessNodes := governance.NewStateAccess(input.consensusResult.StateDraft).GetAccessNodes()
 		if !util.Same(newAccessNodes, cmi.activeAccessNodes) {
 			cmi.activeAccessNodesCB(newAccessNodes)
 			cmi.activeAccessNodes = newAccessNodes
@@ -339,7 +341,7 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 // >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.
 func (cmi *chainMgrImpl) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
 	return cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-		return cl.Input(cmtLog.NewInputConsensusOutputSkip(input.logIndex, input.baseAliasOutputID))
+		return cl.Input(cmtLog.NewInputConsensusOutputSkip(input.logIndex, input.proposedBaseAO))
 	})
 }
 
@@ -439,7 +441,7 @@ func (cmi *chainMgrImpl) Output() gpa.Output {
 }
 
 // Implements the gpa.GPA interface.
-func (cmi *chainMgrImpl) StatusString() string {
+func (cmi *chainMgrImpl) StatusString() string { // TODO: Call it periodically. Show the active committee.
 	return fmt.Sprintf("{ChainMgr,confirmedAO=%v,activeAO=%v}",
 		cmi.output.LatestConfirmedAliasOutput().String(),
 		cmi.output.LatestActiveAliasOutput().String(),
@@ -491,7 +493,10 @@ func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr iotago.Ed25519Address) (*cmt
 		return nil, fmt.Errorf("ensureCmtLog cannot load DKShare for committeeAddress=%v: %w", committeeAddr, err)
 	}
 
-	clInst, err := cmtLog.New(cmi.me, cmi.chainID, dkShare, cmi.consensusStateRegistry, cmi.nodeIDFromPubKey, cmi.log)
+	clInst, err := cmtLog.New(
+		cmi.me, cmi.chainID, dkShare, cmi.consensusStateRegistry, cmi.nodeIDFromPubKey,
+		cmi.log.Named(fmt.Sprintf("CL-%v", dkShare.GetSharedPublic().AsEd25519Address().String()[:10])),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cmtLog for committeeAddress=%v: %w", committeeAddr, err)
 	}

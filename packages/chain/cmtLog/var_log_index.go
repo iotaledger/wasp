@@ -4,6 +4,8 @@
 package cmtLog
 
 import (
+	"fmt"
+
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/core/logger"
@@ -29,6 +31,8 @@ type VarLogIndex interface {
 	L1ReplacedBaseAliasOutput(nextBaseAO *isc.AliasOutputWithID) gpa.OutMessages
 	// Messages are exchanged, so this function handles them.
 	MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutMessages
+	// Summary of the internal state.
+	StatusString() string
 }
 
 // Models the current logIndex variable. The LogIndex advances each time
@@ -75,7 +79,7 @@ type VarLogIndex interface {
 // > UPON Reception of L1ReplacedBaseAliasOutput(nextAO):
 // >   IF nextAO was not agreed for LI > ConsensusOutputDONE THEN
 // >     latestAO ← nextAO
-// >     TryPropose(max(agreedLI + 1, minLI)) // TODO: agreedLI --> EnoughVotes(agreedLI, N-F) --> EnoughVotes(agreedLI, F+1)
+// >     TryPropose(max(agreedLI+1, EnoughVotes(agreedLI, N-F)+1, EnoughVotes(agreedLI, F+1), minLI))
 // >
 // > UPON Reception ⟨NextLI, li, ao⟩ from peer p:
 // >   IF maxPeerLIs[p].li < li THEN
@@ -156,6 +160,13 @@ func NewVarLogIndex(
 	}
 }
 
+func (v *varLogIndexImpl) StatusString() string {
+	return fmt.Sprintf(
+		"{varLogIndex: proposedLI=%v, agreedLI=%v, consDoneLI=%v, minLI=%v}",
+		v.proposedLI, v.agreedLI, v.consDoneLI, v.minLI,
+	)
+}
+
 func (v *varLogIndexImpl) Value() (LogIndex, *isc.AliasOutputWithID) {
 	if ao, ok := v.consAggrAO[v.agreedLI]; ok {
 		return v.agreedLI, ao
@@ -198,14 +209,20 @@ func (v *varLogIndexImpl) ConsensusTimeoutReceived(consensusLI LogIndex) gpa.Out
 // > UPON Reception of L1ReplacedBaseAliasOutput(nextAO):
 // >   IF nextAO was not agreed for LI > ConsensusOutputDONE THEN
 // >     latestAO ← nextAO
-// >     TryPropose(max(agreedLI + 1, minLI)) // TODO: agreedLI --> EnoughVotes(agreedLI, N-F) --> EnoughVotes(agreedLI, F+1)
+// >     TryPropose(max(agreedLI+1, EnoughVotes(agreedLI, N-F)+1, EnoughVotes(agreedLI, F+1), minLI))
 func (v *varLogIndexImpl) L1ReplacedBaseAliasOutput(nextBaseAO *isc.AliasOutputWithID) gpa.OutMessages {
 	v.log.Debugf("L1ReplacedBaseAliasOutput, nextBaseAO=%v", nextBaseAO)
 	if nextBaseAO != nil && v.wasRecentlyAgreed(nextBaseAO) {
+		v.log.Debugf("skipping, wasRecentlyAgreed: %v", nextBaseAO)
 		return nil
 	}
 	v.latestAO = nextBaseAO // We can set nil here, means we don't know the last AO from our L1.
-	return v.tryPropose(MaxLogIndex(v.enoughVotes(v.agreedLI, v.n-v.f).Next(), v.minLI))
+	return v.tryPropose(MaxLogIndex(
+		v.agreedLI.Next(),                         // Either propose next.
+		v.enoughVotes(v.agreedLI, v.n-v.f).Next(), // Or we have skipped some round, and now we propose to go to next.
+		v.enoughVotes(v.agreedLI, v.f+1),          // Or support the exiting, maybe we had no latestAO before.
+		v.minLI,                                   // And, LI is not smaller than the minimal.
+	))
 }
 
 // > UPON Reception ⟨NextLI, li, ao⟩ from peer p:
@@ -258,11 +275,14 @@ func (v *varLogIndexImpl) MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutM
 // >     proposedLI ← li
 // >     Send ⟨NextLI, proposedLI, DerivedAO(li)⟩
 func (v *varLogIndexImpl) tryPropose(li LogIndex) gpa.OutMessages {
+	v.log.Debugf("tryPropose: li=%v", li)
 	if v.proposedLI >= li {
+		v.log.Debugf("tryPropose: skip, v.proposedLI=%v >= li=%v", v.proposedLI, li)
 		return nil
 	}
 	derivedAO := v.deriveAO(li)
 	if derivedAO == nil {
+		v.log.Debugf("tryPropose: skip, derivedAO=%v, v.latestAO=%v", derivedAO, v.latestAO)
 		return nil
 	}
 	v.proposedLI = li
@@ -282,7 +302,6 @@ func (v *varLogIndexImpl) tryPropose(li LogIndex) gpa.OutMessages {
 // >            THEN ao       // Can't be ⊥.
 // >            ELSE latestAO // Can be ⊥, thus no derived AO
 func (v *varLogIndexImpl) deriveAO(li LogIndex) *isc.AliasOutputWithID {
-	// TODO: Reconsider the stuff bellow. It interferes with the LocalView, at least in the case of rejections.
 	countsAOMap := map[iotago.OutputID]*isc.AliasOutputWithID{}
 	countsAO := map[iotago.OutputID]int{}
 	for _, msg := range v.maxPeerLIs {
@@ -298,7 +317,7 @@ func (v *varLogIndexImpl) deriveAO(li LogIndex) *isc.AliasOutputWithID {
 	for aoID, c := range countsAO {
 		if c >= v.f+1 {
 			if found {
-				// Non unique, return out value.
+				// Non unique, return our value.
 				return v.latestAO
 			}
 			q1fAO = countsAOMap[aoID]

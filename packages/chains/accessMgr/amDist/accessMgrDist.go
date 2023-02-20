@@ -131,7 +131,7 @@ func (amd *accessMgrDist) handleInputAccessNodes(input *inputAccessNodes) gpa.Ou
 				initialServers = append(initialServers, node.pubKey)
 			}
 		}
-		chain = newAccessMgrChain(input.chainID, amd.pubKeyToNodeID, initialServers, amd.serversUpdatedCB)
+		chain = newAccessMgrChain(input.chainID, amd.pubKeyToNodeID, initialServers, amd.serversUpdatedCB, amd.log)
 		amd.chains[input.chainID] = chain
 	}
 	chain.AccessGrantedFor(input.accessNodes)
@@ -203,6 +203,7 @@ type accessMgrChain struct {
 	server           map[gpa.NodeID]*cryptolib.PublicKey
 	pubKeyToNodeID   func(*cryptolib.PublicKey) gpa.NodeID
 	serversUpdatedCB func(isc.ChainID, []*cryptolib.PublicKey)
+	log              *logger.Logger
 }
 
 func newAccessMgrChain(
@@ -210,6 +211,7 @@ func newAccessMgrChain(
 	pubKeyToNodeID func(*cryptolib.PublicKey) gpa.NodeID,
 	initialServers []*cryptolib.PublicKey,
 	serversUpdatedCB func(isc.ChainID, []*cryptolib.PublicKey),
+	log *logger.Logger,
 ) *accessMgrChain {
 	amc := &accessMgrChain{
 		chainID:          chainID,
@@ -217,12 +219,15 @@ func newAccessMgrChain(
 		server:           map[gpa.NodeID]*cryptolib.PublicKey{},
 		pubKeyToNodeID:   pubKeyToNodeID,
 		serversUpdatedCB: serversUpdatedCB,
+		log:              log,
 	}
 	for i := range initialServers {
 		nodeID := pubKeyToNodeID(initialServers[i])
 		amc.server[nodeID] = initialServers[i]
 	}
-	amc.serversUpdatedCB(amc.chainID, lo.Values(amc.server))
+	serverNodes := lo.Values(amc.server)
+	amc.log.Debugf("Chain %v server nodes updated to %+v on init.", amc.chainID.ShortString(), serverNodes)
+	amc.serversUpdatedCB(amc.chainID, serverNodes)
 	return amc
 }
 
@@ -243,7 +248,9 @@ func (amc *accessMgrChain) MarkAsServerFor(nodePubKey *cryptolib.PublicKey, gran
 		delete(amc.server, nodeID)
 	}
 	if wasServer != granted {
-		amc.serversUpdatedCB(amc.chainID, lo.Values(amc.server))
+		serverNodes := lo.Values(amc.server)
+		amc.log.Debugf("Chain %v server nodes updated to %+v.", amc.chainID.ShortString(), serverNodes)
+		amc.serversUpdatedCB(amc.chainID, serverNodes)
 	}
 }
 
@@ -256,6 +263,7 @@ func (amc *accessMgrChain) Disabled() {
 	if len(amc.server) == 0 {
 		return
 	}
+	amc.log.Debugf("Chain %v server nodes updated to [] on dismiss.", amc.chainID.ShortString())
 	amc.serversUpdatedCB(amc.chainID, []*cryptolib.PublicKey{})
 }
 

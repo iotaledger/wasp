@@ -8,49 +8,37 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
+	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
 )
 
 type inputConsensusOutputDone struct {
-	committeeAddr     iotago.Ed25519Address
-	logIndex          cmtLog.LogIndex
-	baseAliasOutputID iotago.OutputID
-	nextAliasOutput   *isc.AliasOutputWithID
-	nextState         state.StateDraft
-	transaction       *iotago.Transaction
+	committeeAddr   iotago.Ed25519Address
+	logIndex        cmtLog.LogIndex
+	proposedBaseAO  iotago.OutputID
+	consensusResult *cons.Result
 }
 
 func NewInputConsensusOutputDone(
 	committeeAddr iotago.Ed25519Address,
 	logIndex cmtLog.LogIndex,
-	baseAliasOutputID iotago.OutputID,
-	nextAliasOutput *isc.AliasOutputWithID,
-	nextState state.StateDraft,
-	transaction *iotago.Transaction,
+	proposedBaseAO iotago.OutputID,
+	consensusResult *cons.Result,
 ) gpa.Input {
 	return &inputConsensusOutputDone{
-		committeeAddr:     committeeAddr,
-		logIndex:          logIndex,
-		baseAliasOutputID: baseAliasOutputID,
-		nextAliasOutput:   nextAliasOutput,
-		nextState:         nextState,
-		transaction:       transaction,
+		committeeAddr:   committeeAddr,
+		logIndex:        logIndex,
+		proposedBaseAO:  proposedBaseAO,
+		consensusResult: consensusResult,
 	}
 }
 
 func (inp *inputConsensusOutputDone) String() string {
-	txID, err := inp.transaction.ID()
-	if err != nil {
-		txID = iotago.TransactionID{}
-	}
 	return fmt.Sprintf(
-		"{chainMgr.inputConsensusOutputDone, committeeAddr=%v, logIndex=%v, baseAliasOutputID=%v, nextAliasOutput.ID=%v, transaction=%v}",
+		"{chainMgr.inputConsensusOutputDone, committeeAddr=%v, logIndex=%v, proposedBaseAO=%v, consensusResult=%v}",
 		inp.committeeAddr.String(),
 		inp.logIndex,
-		inp.baseAliasOutputID.ToHex(),
-		inp.nextAliasOutput.OutputID().ToHex(),
-		txID.ToHex(),
+		inp.proposedBaseAO.ToHex(),
+		inp.consensusResult,
 	)
 }

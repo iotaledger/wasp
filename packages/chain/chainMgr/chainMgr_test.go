@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/chainMgr"
+	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
@@ -112,9 +113,12 @@ func testBasic(t *testing.T, n, f int) {
 		tc.WithInput(nid, chainMgr.NewInputConsensusOutputDone( // TODO: Consider the SKIP cases as well.
 			*cmtAddrA.(*iotago.Ed25519Address),
 			consReq.LogIndex, consReq.BaseAliasOutput.OutputID(),
-			step2AO,
-			fake2ST,
-			step2TX,
+			&cons.Result{
+				Transaction:     step2TX,
+				StateDraft:      fake2ST,
+				BaseAliasOutput: consReq.BaseAliasOutput.OutputID(),
+				NextAliasOutput: step2AO,
+			},
 		))
 	}
 	tc.RunAll()

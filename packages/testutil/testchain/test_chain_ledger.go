@@ -150,7 +150,9 @@ func (tcl *TestChainLedger) FakeTX(baseAO *isc.AliasOutputWithID, nextCommitteeA
 	}
 	for outputID, output := range outputs {
 		if output.Type() == iotago.OutputAlias {
-			return isc.NewAliasOutputWithID(output.(*iotago.AliasOutput), outputID), tx
+			ao := output.(*iotago.AliasOutput)
+			ao.StateIndex = baseAO.GetStateIndex() + 1 // Fake next state index, just for tests.
+			return isc.NewAliasOutputWithID(ao, outputID), tx
 		}
 	}
 	panic("alias output not found")

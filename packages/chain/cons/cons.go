@@ -88,6 +88,19 @@ type Cons interface {
 
 type OutputStatus byte
 
+func (os OutputStatus) String() string {
+	switch os {
+	case Running:
+		return "Running"
+	case Completed:
+		return "Completed"
+	case Skipped:
+		return "Skipped"
+	default:
+		return fmt.Sprintf("Unexpected-%v", byte(os))
+	}
+}
+
 const (
 	Running   OutputStatus = iota // Instance is still running.
 	Completed                     // Consensus reached, TX is prepared for publication.
@@ -108,9 +121,22 @@ type Output struct {
 	//
 	// Following is the final result.
 	// All the fields are filled, if State == Completed.
-	ResultTransaction     *iotago.Transaction
-	ResultNextAliasOutput *isc.AliasOutputWithID
-	ResultState           state.StateDraft
+	Result *Result
+}
+
+type Result struct {
+	Transaction     *iotago.Transaction    // The TX for committing the block.
+	BaseAliasOutput iotago.OutputID        // AO consumed in the TX.
+	NextAliasOutput *isc.AliasOutputWithID // AO produced in the TX.
+	StateDraft      state.StateDraft       // The state diff produced.
+}
+
+func (r *Result) String() string {
+	txID, err := r.Transaction.ID()
+	if err != nil {
+		txID = iotago.TransactionID{}
+	}
+	return fmt.Sprintf("{cons.Result, txID=%v, baseAO=%v, nextAO=%v}", txID, r.BaseAliasOutput.ToHex(), r.NextAliasOutput)
 }
 
 type consImpl struct {
@@ -466,6 +492,7 @@ func (c *consImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte) gpa
 	if aggr.ShouldBeSkipped() {
 		// Cannot proceed with such proposals.
 		// Have to retry the consensus after some time with the next log index.
+		c.log.Infof("Terminating consensus with status=Skipped, there is no way to aggregate batch proposal.")
 		c.output.Status = Skipped
 		c.term.haveOutputProduced()
 		return nil
@@ -541,6 +568,7 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 	if len(vmResult.Results) == 0 {
 		// No requests were processed, don't have what to do.
 		// Will need to retry the consensus with the next log index some time later.
+		c.log.Infof("Terminating consensus with status=Skipped, 0 requests processed.")
 		c.output.Status = Skipped
 		c.term.haveOutputProduced()
 		return nil
@@ -556,7 +584,7 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 			identity.ID{},
 		)
 		if err != nil {
-			c.log.Warnf("cannot create rotation TX, failed to make TX essence: %w", err)
+			c.log.Warnf("Cannot create rotation TX, failed to make TX essence: %w", err)
 			c.output.Status = Skipped
 			c.term.haveOutputProduced()
 			return nil
@@ -601,11 +629,14 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.
 	if err != nil {
 		panic(fmt.Errorf("cannot get AliasOutput from produced TX: %w", err))
 	}
-	c.output.ResultTransaction = tx
-	c.output.ResultNextAliasOutput = chained
-	c.output.ResultState = resultState
+	c.output.Result = &Result{
+		Transaction:     tx,
+		BaseAliasOutput: vmResult.AnchorOutputID,
+		NextAliasOutput: chained,
+		StateDraft:      resultState,
+	}
 	c.output.Status = Completed
-	c.log.Infof("Consensus done, produced tx.ID=%v, nextAO.ID=%v, baseAO.ID=%v", txID.ToHex(), chained.OutputID().ToHex(), vmResult.AnchorOutputID.ToHex())
+	c.log.Infof("Terminating consensus with status=Completed, produced tx.ID=%v, nextAO=%v, baseAO.ID=%v", txID.ToHex(), chained, vmResult.AnchorOutputID.ToHex())
 	c.term.haveOutputProduced()
 	return nil
 }

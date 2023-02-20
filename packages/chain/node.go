@@ -43,7 +43,6 @@ import (
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -183,11 +182,18 @@ type chainNodeImpl struct {
 }
 
 type consensusInst struct {
-	request             *chainMgr.NeedConsensus
-	cancelFunc          context.CancelFunc
-	consensus           *consGR.ConsGr
-	committee           []*cryptolib.PublicKey
-	shutdownCoordinator *shutdown.Coordinator
+	request    *chainMgr.NeedConsensus
+	cancelFunc context.CancelFunc
+	consensus  *consGR.ConsGr
+	committee  []*cryptolib.PublicKey
+}
+
+func (ci *consensusInst) Cancel() {
+	if ci.cancelFunc == nil {
+		return
+	}
+	ci.cancelFunc()
+	ci.cancelFunc = nil
 }
 
 // Used to correlate consensus request with its output.
@@ -196,9 +202,17 @@ type consOutput struct {
 	output  *consGR.Output
 }
 
+func (co *consOutput) String() string {
+	return fmt.Sprintf("{cons.consOutput, request=%v, output=%v}", co.request, co.output)
+}
+
 // Used to correlate consensus request with its output.
 type consRecover struct {
 	request *chainMgr.NeedConsensus
+}
+
+func (cr *consRecover) String() string {
+	return fmt.Sprintf("{cons.consRecover, request=%v}", cr.request)
 }
 
 // This is event received from the NodeConn as response to PublishTX
@@ -579,7 +593,7 @@ func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *is
 }
 
 func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
-	cni.log.Debugf("handleMilestoneTimestamp")
+	cni.log.Debugf("handleMilestoneTimestamp: %v", timestamp)
 	cni.mempool.TangleTimeUpdated(timestamp)
 	for ji := range cni.consensusInsts {
 		for li := range cni.consensusInsts[ji] {
@@ -605,7 +619,9 @@ func (cni *chainNodeImpl) handleNetMessage(ctx context.Context, recv *peering.Pe
 func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntyped gpa.Output) {
 	cni.log.Debugf("handleChainMgrOutput: %v", outputUntyped)
 	if outputUntyped == nil {
-		cni.cleanupConsensusInsts(nil, nil)
+		// TODO: Cleanup consensus instances for all the committees after some time.
+		// Not sure, if it is OK to terminate them immediately at this point.
+		// This is for the case, if the current node is not in a committee of a chain anymore.
 		cni.cleanupPublishingTXes(map[iotago.TransactionID]*chainMgr.NeedPublishTX{})
 		return
 	}
@@ -650,22 +666,15 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 }
 
 func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOutput) {
-	cni.log.Debugf("handleConsensusOutput")
+	cni.log.Debugf("handleConsensusOutput, %v", out)
 	var chainMgrInput gpa.Input
 	switch out.output.Status {
 	case cons.Completed:
-		stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(out.output.TX)
-		if err != nil {
-			panic(fmt.Errorf("cannot extract next AliasOutput from TX: %w", err))
-		}
-		nextAO := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
 		chainMgrInput = chainMgr.NewInputConsensusOutputDone(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
 			out.request.BaseAliasOutput.OutputID(),
-			nextAO,
-			out.output.NextState,
-			out.output.TX,
+			out.output.Result,
 		)
 	case cons.Skipped:
 		chainMgrInput = chainMgr.NewInputConsensusOutputSkip(
@@ -676,12 +685,16 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 	default:
 		panic(fmt.Errorf("unexpected output state from consensus: %+v", out))
 	}
+	// We can cleanup the instances that are BEFORE the instance that produced
+	// an output, because all the nodes will eventually get the NextLI messages,
+	// and will switch to newer instances.
+	cni.cleanupConsensusInsts(out.request.CommitteeAddr, out.request.LogIndex)
 	cni.sendMessages(cni.chainMgr.Input(chainMgrInput))
 	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
 func (cni *chainNodeImpl) handleConsensusRecover(ctx context.Context, out *consRecover) {
-	cni.log.Debugf("handleConsensusRecover")
+	cni.log.Debugf("handleConsensusRecover: %v", out)
 	chainMgrInput := chainMgr.NewInputConsensusTimeout(
 		out.request.CommitteeAddr,
 		out.request.LogIndex,
@@ -711,7 +724,7 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 			cni.updateAccessNodes(func() {
 				cni.activeCommitteeNodes = ci.committee
 			})
-			cni.log.Infof("Committee nodes updated: %+v", ci.committee)
+			cni.log.Infof("Committee nodes updated: %+v", ci.committee) // TODO: Not updated on chain rotation for some reason!!! We don't have the input?
 		}
 	}
 }
@@ -724,7 +737,6 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 		cni.consensusInsts[committeeAddr] = map[cmtLog.LogIndex]*consensusInst{}
 	}
 	addLogIndex := logIndex
-	added := false
 	for i := 0; i < consensusInstsInAdvance; i++ {
 		if _, ok := cni.consensusInsts[committeeAddr][addLogIndex]; !ok {
 			consGrCtx, consGrCancel := context.WithCancel(ctx)
@@ -739,36 +751,30 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 				cancelFunc: consGrCancel,
 				consensus:  cgr,
 				committee:  dkShare.GetNodePubKeys(),
-				// TODO when to call Done() on this?
-				// shutdownCoordinator: cni.shutdownCoordinator.Sub(
-				// 	fmt.Sprintf("consensusInst - %s, %s, %d", cni.chainID, committeeAddr.String(), addLogIndex),
-				// ),
-				shutdownCoordinator: nil,
 			}
-			added = true
 		}
 		addLogIndex = addLogIndex.Next()
-	}
-	if added {
-		cni.cleanupConsensusInsts(&committeeAddr, &logIndex)
 	}
 	return cni.consensusInsts[committeeAddr][logIndex]
 }
 
-func (cni *chainNodeImpl) cleanupConsensusInsts(keepCommitteeAddr *iotago.Ed25519Address, keepLogIndex *cmtLog.LogIndex) {
-	for cmtAddr := range cni.consensusInsts {
-		for li := range cni.consensusInsts[cmtAddr] {
-			if keepCommitteeAddr != nil && keepLogIndex != nil && cmtAddr.Equal(keepCommitteeAddr) && li >= *keepLogIndex {
-				continue
-			}
-			ci := cni.consensusInsts[cmtAddr][li]
-			if ci.request == nil && ci.cancelFunc != nil {
-				// We can cancel an instance, if input was not yet provided.
-				ci.cancelFunc() // TODO: Somehow cancel hanging instances, maybe with old LogIndex, etc.
-				ci.cancelFunc = nil
-				delete(cni.consensusInsts[cmtAddr], li)
-			}
+// Cleanup consensus instances, except the instances with LogIndexes above the specified for a particular committee.
+// If nils are provided for the keep* variables, all the instances are cleaned up.
+func (cni *chainNodeImpl) cleanupConsensusInsts(committeeAddr iotago.Ed25519Address, keepLogIndex cmtLog.LogIndex) {
+	cmtInsts, ok := cni.consensusInsts[committeeAddr]
+	if !ok {
+		return
+	}
+	for li, ci := range cmtInsts {
+		if li >= keepLogIndex {
+			continue
 		}
+		cni.log.Debugf("Canceling consensus instance for Committee=%v, LogIndex=%v", committeeAddr.String(), li)
+		ci.Cancel()
+		delete(cmtInsts, li)
+	}
+	if len(cmtInsts) == 0 {
+		delete(cni.consensusInsts, committeeAddr)
 	}
 }
 
