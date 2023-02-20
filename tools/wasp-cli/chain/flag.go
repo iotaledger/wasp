@@ -11,6 +11,10 @@ func withChainFlag(cmd *cobra.Command, chainName *string) {
 	cmd.Flags().StringVar(chainName, "chain", "", "target chain name")
 }
 
+func DefaultChainFallback(chainName string) string {
+	return defaultChainFallback(chainName)
+}
+
 func defaultChainFallback(chainName string) string {
 	if chainName != "" {
 		return chainName
