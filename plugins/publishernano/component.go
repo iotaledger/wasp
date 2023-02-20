@@ -2,8 +2,8 @@ package publishernano
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"strings"
 
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pub"
@@ -93,10 +93,15 @@ func run() error {
 		panic(err)
 	}
 
-	deps.Publisher.Events.Published.Hook(event.NewClosure(func(ev *publisher.PublishedEvent) {
-		msg := ev.MsgType + " " + strings.Join(ev.Parts, " ")
+	deps.Publisher.Events.Published.Hook(event.NewClosure(func(ev *publisher.ISCEvent) {
+		msg, err := json.Marshal(ev)
+		if err != nil {
+			Plugin.LogWarnf("Could not marshal ISCEvent %s", ev.Kind)
+			return
+		}
+
 		select {
-		case messages <- []byte(msg):
+		case messages <- msg:
 		default:
 			Plugin.LogWarnf("Failed to publish message: [%s]", msg)
 		}

@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	"github.com/iotaledger/hive.go/core/configuration"
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/core/websockethub"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
@@ -46,6 +47,7 @@ func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLo
 func Init(
 	logger *loggerpkg.Logger,
 	server echoswagger.ApiRoot,
+	hub *websockethub.Hub,
 	waspVersion string,
 	config *configuration.Configuration,
 	networkProvider peering.NetworkProvider,
@@ -89,7 +91,7 @@ func Init(
 	authMiddleware := authentication.AddV2Authentication(server, userManager, nodeIdentityProvider, authConfig, claimValidator)
 
 	controllersToLoad := []interfaces.APIController{
-		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, vmService, publisher),
+		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, vmService),
 		metrics.NewMetricsController(chainService, metricsService),
 		node.NewNodeController(waspVersion, config, dkgService, nodeService, peeringService),
 		requests.NewRequestsController(chainService, offLedgerService, peeringService, vmService),
@@ -97,5 +99,6 @@ func Init(
 		corecontracts.NewCoreContractsController(vmService),
 	}
 
+	addWebSocketEndpoint(server, hub, logger, publisher)
 	loadControllers(server, mocker, controllersToLoad, authMiddleware)
 }

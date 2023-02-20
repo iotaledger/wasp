@@ -13,10 +13,12 @@ import (
 	"go.elastic.co/apm/module/apmechov4"
 	"go.uber.org/dig"
 	"go.uber.org/zap"
+	"nhooyr.io/websocket"
 
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	"github.com/iotaledger/hive.go/core/configuration"
+	"github.com/iotaledger/hive.go/core/websockethub"
 	"github.com/iotaledger/inx-app/pkg/httpserver"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/daemon"
@@ -50,10 +52,18 @@ var (
 	deps   dependencies
 )
 
+const (
+	broadcastQueueSize            = 20000
+	clientSendChannelSize         = 1000
+	webSocketWriteTimeout         = time.Duration(3) * time.Second
+	maxWebsocketMessageSize int64 = 510
+)
+
 type dependencies struct {
 	dig.In
 
-	EchoSwagger echoswagger.ApiRoot `name:"webapiServer"`
+	EchoSwagger  echoswagger.ApiRoot `name:"webapiServer"`
+	WebsocketHub *websockethub.Hub   `name:"websocketHub"`
 }
 
 func initConfigPars(c *dig.Container) error {
@@ -116,8 +126,9 @@ func provide(c *dig.Container) error {
 	type webapiServerResult struct {
 		dig.Out
 
-		Echo        *echo.Echo          `name:"webapiEcho"`
-		EchoSwagger echoswagger.ApiRoot `name:"webapiServer"`
+		Echo         *echo.Echo          `name:"webapiEcho"`
+		EchoSwagger  echoswagger.ApiRoot `name:"webapiServer"`
+		WebsocketHub *websockethub.Hub   `name:"websocketHub"`
 	}
 
 	if err := c.Provide(func(deps webapiServerDeps) webapiServerResult {
@@ -159,10 +170,19 @@ func provide(c *dig.Container) error {
 		}))
 
 		echoSwagger := CreateEchoSwagger(e, deps.AppInfo.Version)
+		websocketOptions := websocket.AcceptOptions{
+			InsecureSkipVerify: true,
+			// Disable compression due to incompatibilities with the latest Safari browsers:
+			// https://github.com/tilt-dev/tilt/issues/4746
+			CompressionMode: websocket.CompressionDisabled,
+		}
+
+		hub := websockethub.NewHub(Plugin.Logger(), &websocketOptions, broadcastQueueSize, clientSendChannelSize, maxWebsocketMessageSize)
 
 		webapi.Init(
 			Plugin.App().NewLogger("WebAPI/v2"),
 			echoSwagger,
+			hub,
 			deps.AppInfo.Version,
 			deps.AppConfig,
 			deps.NetworkProvider,
@@ -186,8 +206,8 @@ func provide(c *dig.Container) error {
 		)
 
 		return webapiServerResult{
-			Echo:        e,
-			EchoSwagger: echoSwagger,
+			EchoSwagger:  echoSwagger,
+			WebsocketHub: hub,
 		}
 	}); err != nil {
 		Plugin.LogPanic(err)
@@ -202,13 +222,14 @@ func run() error {
 		Plugin.LogInfof("Starting %s server ... done", Plugin.Name)
 
 		go func() {
-			Plugin.LogInfof("You can now access the WebAPI using: http://%s", ParamsWebAPI.BindAddress)
-			if err := deps.EchoSwagger.Echo().Start(ParamsWebAPI.BindAddress); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				Plugin.LogWarnf("Stopped %s server due to an error (%s)", Plugin.Name, err)
-			}
 			deps.EchoSwagger.Echo().Server.BaseContext = func(_ net.Listener) context.Context {
 				// set BaseContext to be the same as the plugin, so that requests being processed don't hang the shutdown procedure
 				return ctx
+			}
+
+			Plugin.LogInfof("You can now access the WebAPI using: http://%s", ParamsWebAPI.BindAddress)
+			if err := deps.EchoSwagger.Echo().Start(ParamsWebAPI.BindAddress); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				Plugin.LogWarnf("Stopped %s server due to an error (%s)", Plugin.Name, err)
 			}
 		}()
 
@@ -224,6 +245,13 @@ func run() error {
 		}
 
 		Plugin.LogInfof("Stopping %s server ... done", Plugin.Name)
+	}, daemon.PriorityWebAPI); err != nil {
+		Plugin.LogPanicf("failed to start worker: %s", err)
+	}
+
+	if err := Plugin.Daemon().BackgroundWorker("WebsocketHub", func(ctx context.Context) {
+		deps.WebsocketHub.Run(ctx)
+		Plugin.LogInfo("Stopping WebAPI[WS]")
 	}, daemon.PriorityWebAPI); err != nil {
 		Plugin.LogPanicf("failed to start worker: %s", err)
 	}

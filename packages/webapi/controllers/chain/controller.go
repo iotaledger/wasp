@@ -8,8 +8,6 @@ import (
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
-	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/publisher/publisherws"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 )
@@ -24,8 +22,6 @@ type Controller struct {
 	offLedgerService interfaces.OffLedgerService
 	registryService  interfaces.RegistryService
 	vmService        interfaces.VMService
-
-	webSocketHandler *publisherws.PublisherWebSocket
 }
 
 func NewChainController(log *loggerpkg.Logger,
@@ -36,7 +32,6 @@ func NewChainController(log *loggerpkg.Logger,
 	offLedgerService interfaces.OffLedgerService,
 	registryService interfaces.RegistryService,
 	vmService interfaces.VMService,
-	publisher *publisher.Publisher,
 ) interfaces.APIController {
 	return &Controller{
 		log:              log,
@@ -47,7 +42,6 @@ func NewChainController(log *loggerpkg.Logger,
 		offLedgerService: offLedgerService,
 		registryService:  registryService,
 		vmService:        vmService,
-		webSocketHandler: publisherws.New(log, publisher, []string{"vmmsg"}),
 	}
 }
 
@@ -81,10 +75,6 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "stateKey", "Key (Hex-encoded)").
 		AddResponse(http.StatusOK, "Result", mocker.Get(models.StateResponse{}), nil)
-
-	publicAPI.GET("chains/:chainID/ws", c.handleWebSocket).
-		SetOperationId("attachToWebsocket").
-		AddParamPath("", "chainID", "ChainID (Bech32-encoded)")
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
