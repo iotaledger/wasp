@@ -106,7 +106,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    peer := "peer_example" // string | Name or PubKey (hex) of the trusted peer to add as access node
+    peer := "peer_example" // string | Name or PubKey (hex) of the trusted peer
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -125,7 +125,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**peer** | **string** | Name or PubKey (hex) of the trusted peer to add as access node | 
+**peer** | **string** | Name or PubKey (hex) of the trusted peer | 
 
 ### Other Parameters
 
@@ -174,7 +174,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32-encoded)
+    chainID := "chainID_example" // string | ChainID (Bech32)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -192,7 +192,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32-encoded) | 
+**chainID** | **string** | ChainID (Bech32) | 
 
 ### Other Parameters
 
@@ -209,7 +209,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -277,7 +277,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -638,7 +638,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    txHash := "txHash_example" // string | Transaction hash (Hex-encoded)
+    txHash := "txHash_example" // string | Transaction hash (Hex)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -659,7 +659,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**txHash** | **string** | Transaction hash (Hex-encoded) | 
+**txHash** | **string** | Transaction hash (Hex) | 
 
 ### Other Parameters
 
@@ -677,7 +677,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -709,7 +709,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    stateKey := "stateKey_example" // string | Key (Hex-encoded)
+    stateKey := "stateKey_example" // string | Key (Hex)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -730,7 +730,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**stateKey** | **string** | Key (Hex-encoded) | 
+**stateKey** | **string** | Key (Hex) | 
 
 ### Other Parameters
 
@@ -748,7 +748,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -780,7 +780,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    peer := "peer_example" // string | Name or PubKey (hex) of the trusted peer to remove as access node
+    peer := "peer_example" // string | Name or PubKey (hex) of the trusted peer
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -799,7 +799,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**peer** | **string** | Name or PubKey (hex) of the trusted peer to remove as access node | 
+**peer** | **string** | Name or PubKey (hex) of the trusted peer | 
 
 ### Other Parameters
 

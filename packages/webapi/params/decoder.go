@@ -1,7 +1,6 @@
 package params
 
 import (
-	"net/url"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
@@ -14,25 +13,25 @@ import (
 )
 
 func DecodeChainID(e echo.Context) (isc.ChainID, error) {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := isc.ChainIDFromString(e.Param(ParamChainID))
 	if err != nil {
-		return isc.ChainID{}, apierrors.InvalidPropertyError("chainID", err)
+		return isc.ChainID{}, apierrors.InvalidPropertyError(ParamChainID, err)
 	}
 	return chainID, nil
 }
 
 func DecodePublicKey(e echo.Context) (*cryptolib.PublicKey, error) {
-	publicKey, err := cryptolib.NewPublicKeyFromString(e.Param("publicKey"))
+	publicKey, err := cryptolib.NewPublicKeyFromString(e.Param(ParamPublicKey))
 	if err != nil {
-		return nil, apierrors.InvalidPropertyError("publicKey", err)
+		return nil, apierrors.InvalidPropertyError(ParamPublicKey, err)
 	}
 	return publicKey, nil
 }
 
 func DecodeRequestID(e echo.Context) (isc.RequestID, error) {
-	requestID, err := isc.RequestIDFromString(e.Param("requestID"))
+	requestID, err := isc.RequestIDFromString(e.Param(ParamRequestID))
 	if err != nil {
-		return isc.RequestID{}, apierrors.InvalidPropertyError("requestID", err)
+		return isc.RequestID{}, apierrors.InvalidPropertyError(ParamRequestID, err)
 	}
 
 	return requestID, nil
@@ -48,43 +47,38 @@ func DecodeHNameFromHNameHexString(e echo.Context, key string) (isc.Hname, error
 }
 
 func DecodeAgentID(e echo.Context) (isc.AgentID, error) {
-	agentIDDecoded, err := url.QueryUnescape(e.Param("agentID"))
+	agentID, err := isc.NewAgentIDFromString(e.Param(ParamAgentID))
 	if err != nil {
-		return nil, apierrors.InvalidPropertyError("agentID", err)
-	}
-
-	agentID, err := isc.NewAgentIDFromString(agentIDDecoded)
-	if err != nil {
-		return nil, apierrors.InvalidPropertyError("agentID", err)
+		return nil, apierrors.InvalidPropertyError(ParamAgentID, err)
 	}
 
 	return agentID, nil
 }
 
 func DecodeNFTID(e echo.Context) (*iotago.NFTID, error) {
-	nftIDBytes, err := iotago.DecodeHex(e.Param("nftID"))
+	nftIDBytes, err := iotago.DecodeHex(e.Param(ParamNFTID))
 	if err != nil {
-		return nil, apierrors.InvalidPropertyError("nftID", err)
+		return nil, apierrors.InvalidPropertyError(ParamNFTID, err)
 	}
 
 	if len(nftIDBytes) != iotago.NFTIDLength {
-		return nil, apierrors.InvalidPropertyError("nftID", err)
+		return nil, apierrors.InvalidPropertyError(ParamNFTID, err)
 	}
 
 	var nftID iotago.NFTID
 	copy(nftID[:], nftIDBytes)
 
 	if err != nil {
-		return nil, apierrors.InvalidPropertyError("nftID", err)
+		return nil, apierrors.InvalidPropertyError(ParamNFTID, err)
 	}
 
 	return &nftID, nil
 }
 
 func DecodeBlobHash(e echo.Context) (*hashing.HashValue, error) {
-	blobHash, err := hashing.HashValueFromHex(e.Param("blobHash"))
+	blobHash, err := hashing.HashValueFromHex(e.Param(ParamBlobHash))
 	if err != nil {
-		return nil, apierrors.InvalidPropertyError("blobHash", err)
+		return nil, apierrors.InvalidPropertyError(ParamBlobHash, err)
 	}
 
 	return &blobHash, nil

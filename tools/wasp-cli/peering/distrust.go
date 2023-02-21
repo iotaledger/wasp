@@ -8,7 +8,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -28,11 +27,7 @@ func initDistrustCmd() *cobra.Command {
 			client := cliclients.WaspClient(node)
 
 			if peering.CheckPeeringURL(input) != nil {
-				_, err := client.NodeApi.DistrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
-					Name:       input,
-					PeeringURL: input,
-					PublicKey:  input,
-				}).Execute()
+				_, err := client.NodeApi.DistrustPeer(context.Background(), input).Execute()
 				log.Check(err)
 				log.Printf("# Distrusted PubKey: %v\n", input)
 				return
@@ -43,9 +38,7 @@ func initDistrustCmd() *cobra.Command {
 
 			for _, t := range trustedList {
 				if t.PublicKey == input {
-					_, err := client.NodeApi.DistrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
-						PublicKey: t.PublicKey,
-					}).Execute()
+					_, err := client.NodeApi.DistrustPeer(context.Background(), t.PublicKey).Execute()
 
 					if err != nil {
 						log.Printf("error: failed to distrust %v/%v, reason=%v\n", t.PublicKey, t.PeeringURL, err)
