@@ -1,7 +1,6 @@
 package params
 
 import (
-	"net/url"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
@@ -48,12 +47,7 @@ func DecodeHNameFromHNameHexString(e echo.Context, key string) (isc.Hname, error
 }
 
 func DecodeAgentID(e echo.Context) (isc.AgentID, error) {
-	agentIDDecoded, err := url.QueryUnescape(e.Param(ParamAgentID))
-	if err != nil {
-		return nil, apierrors.InvalidPropertyError(ParamAgentID, err)
-	}
-
-	agentID, err := isc.NewAgentIDFromString(agentIDDecoded)
+	agentID, err := isc.NewAgentIDFromString(e.Param(ParamAgentID))
 	if err != nil {
 		return nil, apierrors.InvalidPropertyError(ParamAgentID, err)
 	}

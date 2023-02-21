@@ -18,7 +18,7 @@ const (
 )
 
 const (
-	DescriptionAgentID       = "AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses require urlencode)"
+	DescriptionAgentID       = "AgentID (Bech32 for WasmVM | Hex for EVM)"
 	DescriptionBlobHash      = "BlobHash (Hex)"
 	DescriptionChainID       = "ChainID (Bech32)"
 	DescriptionContractHName = "The contract hname (Hex)"
@@ -27,7 +27,7 @@ const (
 	DescriptionPeer          = "Name or PubKey (hex) of the trusted peer"
 	DescriptionRequestID     = "RequestID (Hex)"
 	DescriptionSharedAddress = "SharedAddress (Bech32)"
-	DescriptionStateKey      = "Key (Hex)"
+	DescriptionStateKey      = "State Key (Hex)"
 	DescriptionTxHash        = "Transaction hash (Hex)"
 	DescriptionUsername      = "The username"
 )
