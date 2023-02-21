@@ -578,3 +578,34 @@ func TestWaspCLIListTrustDistrust(t *testing.T) {
 	// one of the entries starts with "1", meaning node 0 trusts node 1
 	require.False(t, containsNode1(out))
 }
+
+func TestWaspCLIRegisterERC20NativeToken(t *testing.T) {
+	w := newWaspCLITest(t)
+
+	committee, quorum := w.ArgCommitteeConfig(0)
+	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain1", 0)
+	w.MustRun("chain", "deposit", "base:1000000", "--node=0")
+
+	w.CreateL2Foundry(&iotago.SimpleTokenScheme{
+		MaximumSupply: big.NewInt(1000000),
+		MeltedTokens:  big.NewInt(0),
+		MintedTokens:  big.NewInt(0),
+	})
+
+	veryLongTokenName := strings.Repeat("A", 100_000)
+	out := w.MustRun(
+		"chain", "register-erc20-native-token",
+		"--foundry-sn=1",
+		"--token-name", veryLongTokenName,
+		"--ticker-symbol=test_symbol",
+		"--token-decimals=1",
+		"--node=0",
+	)
+
+	reqID := findRequestIDInOutput(out)
+	require.NotEmpty(t, reqID)
+
+	out = w.MustRun("chain", "request", reqID, "--node=0")
+	require.Contains(t, strings.Join(out, "\n"), "too long")
+}
