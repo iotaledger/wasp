@@ -17,8 +17,8 @@ services:
       context: ../../
       dockerfile: Dockerfile.noncached
       args:
-        BUILD_LD_FLAGS: "-X=github.com/iotaledger/wasp/core/app.Version=v0.0.0-testing"
-
+        BUILD_TAGS: "${BUILD_TAGS:-rocksdb}"
+        BUILD_LD_FLAGS: "${BUILD_LD_FLAGS:--X=github.com/iotaledger/wasp/core/app.Version=v0.0.0-testing}"
     command:
       - "--webapi.auth.scheme=none"
       - "--inx.address=hornet-nest:9029"
