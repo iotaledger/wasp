@@ -6,8 +6,8 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/dto"
+	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 )
 
 type PeeringService struct {
@@ -101,7 +101,7 @@ func (p *PeeringService) DistrustPeer(name string) (*dto.PeeringNodeIdentity, er
 	})
 
 	if !exists {
-		return nil, apierrors.PeerNameNotFoundError(name)
+		return nil, interfaces.ErrPeerNotFound
 	}
 
 	identity, err := p.trustedNetworkManager.DistrustPeer(peerToDistrust.PubKey())

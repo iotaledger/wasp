@@ -132,6 +132,7 @@ func (a *MetricsApiService) GetChainMetricsExecute(r ApiGetChainMetricsRequest) 
 			}
 					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
 					newErr.model = v
+			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -257,6 +258,7 @@ func (a *MetricsApiService) GetChainPipeMetricsExecute(r ApiGetChainPipeMetricsR
 			}
 					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
 					newErr.model = v
+			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -382,6 +384,7 @@ func (a *MetricsApiService) GetChainWorkflowMetricsExecute(r ApiGetChainWorkflow
 			}
 					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
 					newErr.model = v
+			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}

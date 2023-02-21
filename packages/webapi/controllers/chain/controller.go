@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
+	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
 type Controller struct {
@@ -54,7 +55,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 	evmURL := "chains/:chainID/evm"
 	publicAPI.
 		GET(evmURL, c.handleJSONRPC).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddResponse(http.StatusOK, "The evm json RPC", "", nil).
 		AddResponse(http.StatusNotFound, "The evm json RPC failure", "", nil)
 
@@ -62,85 +63,76 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		EchoGroup().Any("chains/:chainID/evm", c.handleJSONRPC)
 
 	publicAPI.GET("chains/:chainID/evm/tx/:txHash", c.getRequestID).
-		SetSummary("Get the ISC request ID for the given Ethereum transaction hash").
-		SetOperationId("getRequestIDFromEVMTransactionID").
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "txHash", "Transaction hash (Hex-encoded)").
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddParamPath("", params.ParamTxHash, params.DescriptionTxHash).
 		AddResponse(http.StatusOK, "Request ID", mocker.Get(models.RequestIDResponse{}), nil).
-		AddResponse(http.StatusNotFound, "Request ID not found", "", nil)
+		AddResponse(http.StatusNotFound, "Request ID not found", "", nil).
+		SetSummary("Get the ISC request ID for the given Ethereum transaction hash").
+		SetOperationId("getRequestIDFromEVMTransactionID")
 
 	publicAPI.GET("chains/:chainID/state/:stateKey", c.getState).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddParamPath("", params.ParamStateKey, params.DescriptionStateKey).
+		AddResponse(http.StatusOK, "Result", mocker.Get(models.StateResponse{}), nil).
 		SetSummary("Fetch the raw value associated with the given key in the chain state").
-		SetOperationId("getStateValue").
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "stateKey", "Key (Hex-encoded)").
-		AddResponse(http.StatusOK, "Result", mocker.Get(models.StateResponse{}), nil)
+		SetOperationId("getStateValue")
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	adminAPI.GET("chains", c.getChainList, authentication.ValidatePermissions([]string{permissions.Read})).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "A list of all available chains", mocker.Get([]models.ChainInfoResponse{}), nil).
 		SetOperationId("getChains").
 		SetSummary("Get a list of all chains")
 
 	adminAPI.POST("chains/:chainID/activate", c.activateChain, authentication.ValidatePermissions([]string{permissions.Write})).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddResponse(http.StatusNotModified, "Chain was not activated", nil, nil).
 		AddResponse(http.StatusOK, "Chain was successfully activated", nil, nil).
 		SetOperationId("activateChain").
 		SetSummary("Activate a chain")
 
 	adminAPI.POST("chains/:chainID/deactivate", c.deactivateChain, authentication.ValidatePermissions([]string{permissions.Write})).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddResponse(http.StatusNotModified, "Chain was not deactivated", nil, nil).
 		AddResponse(http.StatusOK, "Chain was successfully deactivated", nil, nil).
 		SetOperationId("deactivateChain").
 		SetSummary("Deactivate a chain")
 
 	adminAPI.GET("chains/:chainID", c.getChainInfo, authentication.ValidatePermissions([]string{permissions.Read})).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddResponse(http.StatusOK, "Information about a specific chain", mocker.Get(models.ChainInfoResponse{}), nil).
 		SetOperationId("getChainInfo").
 		SetSummary("Get information about a specific chain")
 
 	adminAPI.GET("chains/:chainID/committee", c.getCommitteeInfo, authentication.ValidatePermissions([]string{permissions.Read})).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddResponse(http.StatusOK, "A list of all nodes tied to the chain", mocker.Get(models.CommitteeInfoResponse{}), nil).
 		SetOperationId("getCommitteeInfo").
 		SetSummary("Get information about the deployed committee")
 
 	adminAPI.GET("chains/:chainID/contracts", c.getContracts, authentication.ValidatePermissions([]string{permissions.Read})).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddResponse(http.StatusOK, "A list of all available contracts", mocker.Get([]models.ContractInfoResponse{}), nil).
 		SetOperationId("getContracts").
 		SetSummary("Get all available chain contracts")
 
 	adminAPI.POST("chains/:chainID/chainrecord", c.setChainRecord, authentication.ValidatePermissions([]string{permissions.Write})).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamBody(mocker.Get(models.ChainRecord{}), "ChainRecord", "Chain Record", true).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusCreated, "Chain record was saved", nil, nil).
 		SetSummary("Sets the chain record.").
 		SetOperationId("setChainRecord")
 
 	adminAPI.PUT("chains/:chainID/access-node/:peer", c.addAccessNode, authentication.ValidatePermissions([]string{permissions.Write})).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "peer", "Name or PubKey (hex) of the trusted peer to add as access node").
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddParamPath("", params.ParamPeer, params.DescriptionPeer).
 		AddResponse(http.StatusCreated, "Access node was successfully added", nil, nil).
 		SetSummary("Configure a trusted node to be an access node.").
 		SetOperationId("addAccessNode")
 
 	adminAPI.DELETE("chains/:chainID/access-node/:peer", c.removeAccessNode, authentication.ValidatePermissions([]string{permissions.Write})).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "peer", "Name or PubKey (hex) of the trusted peer to remove as access node").
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddParamPath("", params.ParamPeer, params.DescriptionPeer).
 		AddResponse(http.StatusOK, "Access node was successfully removed", nil, nil).
 		SetSummary("Remove an access node.").
 		SetOperationId("removeAccessNode")

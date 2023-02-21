@@ -128,9 +128,9 @@ func (c *Controller) getState(e echo.Context) error {
 		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
-	stateKey, err := iotago.DecodeHex(e.Param("stateKey"))
+	stateKey, err := iotago.DecodeHex(e.Param(params.ParamStateKey))
 	if err != nil {
-		return apierrors.InvalidPropertyError("stateKey", err)
+		return apierrors.InvalidPropertyError(params.ParamStateKey, err)
 	}
 
 	state, err := c.chainService.GetState(chainID, stateKey)

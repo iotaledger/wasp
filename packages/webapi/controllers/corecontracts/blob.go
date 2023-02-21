@@ -59,7 +59,7 @@ func (c *Controller) getBlobValue(e echo.Context) error {
 		return err
 	}
 
-	fieldKey := e.Param("fieldKey")
+	fieldKey := e.Param(params.ParamFieldKey)
 
 	blobValueBytes, err := c.blob.GetBlobValue(chainID, *blobHash, fieldKey)
 	if err != nil {
