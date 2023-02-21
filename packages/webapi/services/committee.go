@@ -39,6 +39,9 @@ func (c *CommitteeService) GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNode
 	}
 
 	committeeInfo := chain.GetCommitteeInfo()
+	if committeeInfo == nil {
+		return nil, errors.New("this node is not in the committee for the chain")
+	}
 
 	dkShare, err := c.dkShareRegistryProvider.LoadDKShare(committeeInfo.Address)
 	if err != nil {
