@@ -24,11 +24,13 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
+	testparameters "github.com/iotaledger/wasp/packages/testutil/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
@@ -327,6 +329,18 @@ func (tnc *testNodeConn) Run(ctx context.Context) error {
 
 func (tnc *testNodeConn) waitAttached() {
 	tnc.attachWG.Wait()
+}
+
+func (tnc *testNodeConn) GetBech32HRP() iotago.NetworkPrefix {
+	return testparameters.GetBech32HRP()
+}
+
+func (tnc *testNodeConn) GetL1Params() *parameters.L1Params {
+	return testparameters.GetL1ParamsForTesting()
+}
+
+func (tnc *testNodeConn) GetL1ProtocolParams() *iotago.ProtocolParameters {
+	return testparameters.GetL1ProtocolParamsForTesting()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
