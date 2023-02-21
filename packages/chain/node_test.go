@@ -64,17 +64,21 @@ func TestBasic(t *testing.T) {
 	for _, tst := range tests {
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
-			func(tt *testing.T) { testBasic(tt, tst.n, tst.f, tst.reliable) },
+			func(tt *testing.T) { testBasic(tt, tst.n, tst.f, tst.reliable, 90*time.Second) },
 		)
 	}
 }
 
 //nolint:gocyclo
-func testBasic(t *testing.T, n, f int, reliable bool) {
+func testBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration) {
 	t.Parallel()
 	rand.Seed(time.Now().UnixNano())
 	te := newEnv(t, n, f, reliable)
 	defer te.close()
+
+	ctxTimeout, ctxTimeoutCancel := context.WithTimeout(te.ctx, timeout)
+	defer ctxTimeoutCancel()
+
 	te.log.Debugf("All started.")
 	for _, tnc := range te.nodeConns {
 		tnc.waitAttached()
@@ -110,8 +114,8 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 			)
 		}
 	}
-	awaitRequestsProcessed(te, initRequests, "initRequests")
-	awaitPredicate(te, "len(published) > 0", func() bool {
+	awaitRequestsProcessed(te, ctxTimeout, initRequests, "initRequests")
+	awaitPredicate(te, ctxTimeout, "len(published) > 0", func() bool {
 		for _, tnc := range te.nodeConns {
 			if len(tnc.published) == 0 {
 				return false
@@ -139,8 +143,8 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 			)
 		}
 	}
-	awaitRequestsProcessed(te, deployReqs, "deployReqs")
-	awaitPredicate(te, "len(tnc.published) > 1", func() bool {
+	awaitRequestsProcessed(te, ctxTimeout, deployReqs, "deployReqs")
+	awaitPredicate(te, ctxTimeout, "len(tnc.published) > 1", func() bool {
 		for _, tnc := range te.nodeConns {
 			if len(tnc.published) <= 1 {
 				return false
@@ -198,7 +202,7 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 			time.Sleep(100 * time.Millisecond)
 		}
 		// Check if LastAliasOutput() works as expected.
-		awaitPredicate(te, "LatestAliasOutput", func() bool {
+		awaitPredicate(te, ctxTimeout, "LatestAliasOutput", func() bool {
 			confirmedAO, activeAO := node.LatestAliasOutput()
 			lastPublishedTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
 			lastPublishedAO, err := transaction.GetAliasOutput(lastPublishedTX, te.chainID.AsAddress())
@@ -216,29 +220,49 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	}
 	//
 	// Check if all requests were processed.
-	awaitRequestsProcessed(te, incRequests, "incRequests")
+	awaitRequestsProcessed(te, ctxTimeout, incRequests, "incRequests")
 }
 
-func awaitRequestsProcessed(te *testEnv, requests []isc.Request, desc string) {
+//nolint:revive
+func awaitRequestsProcessed(te *testEnv, ctx context.Context, requests []isc.Request, desc string) {
 	reqRefs := isc.RequestRefsFromRequests(requests)
 	for i, node := range te.nodes {
 		for reqNum, reqRef := range reqRefs {
 			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...", desc, i, reqNum, reqRef.ID.String())
-			<-node.AwaitRequestProcessed(te.ctx, reqRef.ID, false)
-			<-node.AwaitRequestProcessed(te.ctx, reqRef.ID, true)
+
+			select {
+			case <-ctx.Done():
+				require.FailNowf(te.t, "awaitRequestsProcessed failed: %s", desc)
+			case <-node.AwaitRequestProcessed(ctx, reqRef.ID, false):
+				require.NoError(te.t, ctx.Err(), "awaitRequestsProcessed failed, context timeout")
+			}
+
+			select {
+			case <-ctx.Done():
+				require.FailNowf(te.t, "awaitRequestsProcessed failed: %s", desc)
+			case <-node.AwaitRequestProcessed(ctx, reqRef.ID, true):
+				require.NoError(te.t, ctx.Err(), "awaitRequestsProcessed failed, context timeout")
+			}
+
 			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...Done", desc, i, reqNum, reqRef.ID.String())
 		}
 	}
 }
 
-func awaitPredicate(te *testEnv, desc string, predicate func() bool) {
+//nolint:revive
+func awaitPredicate(te *testEnv, ctx context.Context, desc string, predicate func() bool) {
 	for {
-		if predicate() {
-			te.log.Debugf("Predicate %v become true.", desc)
-			return
+		select {
+		case <-ctx.Done():
+			require.FailNowf(te.t, "awaitPredicate failed: %s", desc)
+		default:
+			if predicate() {
+				te.log.Debugf("Predicate %v become true.", desc)
+				return
+			}
+			te.log.Debugf("Predicate %v still false, will retry.", desc)
+			time.Sleep(100 * time.Millisecond)
 		}
-		te.log.Debugf("Predicate %v still false, will retry.", desc)
-		time.Sleep(100 * time.Millisecond)
 	}
 }
 
@@ -351,6 +375,7 @@ func (tnc *testNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 // testEnv
 
 type testEnv struct {
+	t                *testing.T
 	ctx              context.Context
 	ctxCancel        context.CancelFunc
 	log              *logger.Logger
@@ -371,7 +396,7 @@ type testEnv struct {
 }
 
 func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
-	te := &testEnv{}
+	te := &testEnv{t: t}
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
 	te.log = testlogger.NewLogger(t).Named(fmt.Sprintf("%04d", rand.Intn(10000))) // For test instance ID.
 	//
