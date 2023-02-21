@@ -34,16 +34,18 @@ type ContractEvent struct {
 type EventProcessor func(event *ContractEvent)
 
 type IClientService interface {
-	CallViewByHname(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error)
+	CallViewByHname(hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error)
+	CurrentChainID() wasmtypes.ScChainID
 	PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair, nonce uint64) (wasmtypes.ScRequestID, error)
 	SubscribeEvents(callback EventProcessor) error
 	UnsubscribeEvents()
-	WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error
+	WaitUntilRequestProcessed(reqID wasmtypes.ScRequestID, timeout time.Duration) error
 }
 
 // WasmClientService TODO should be linked to a chain and holds the nonces for signers for that chain
 type WasmClientService struct {
 	callback   EventProcessor
+	chainID    wasmtypes.ScChainID
 	eventDone  chan bool
 	waspClient *apiclient.APIClient
 	webSocket  string
@@ -51,25 +53,30 @@ type WasmClientService struct {
 
 var _ IClientService = new(WasmClientService)
 
-func NewWasmClientService(waspAPI string) *WasmClientService {
+func NewWasmClientService(waspAPI string, chainID string) *WasmClientService {
+	err := SetSandboxWrappers(chainID)
+	if err != nil {
+		panic(err)
+	}
 	client, err := apiextensions.WaspAPIClientByHostName(waspAPI)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 	return &WasmClientService{
+		chainID:    wasmtypes.ChainIDFromString(chainID),
 		waspClient: client,
 		webSocket:  strings.Replace(waspAPI, "http:", "ws:", 1) + "/ws",
 	}
 }
 
-func (sc *WasmClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error) {
+func (sc *WasmClientService) CallViewByHname(hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error) {
 	params, err := dict.FromBytes(args)
 	if err != nil {
 		return nil, err
 	}
 
 	res, _, err := sc.waspClient.RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
-		ChainId:       cvt.IscChainID(&chainID).String(),
+		ChainId:       cvt.IscChainID(&sc.chainID).String(),
 		ContractHName: cvt.IscHname(hContract).String(),
 		FunctionHName: cvt.IscHname(hFunction).String(),
 		Arguments:     apiextensions.JSONDictToAPIJSONDict(params.JSONDict()),
@@ -84,6 +91,10 @@ func (sc *WasmClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContr
 	}
 
 	return decodedParams.Bytes(), nil
+}
+
+func (sc *WasmClientService) CurrentChainID() wasmtypes.ScChainID {
+	return sc.chainID
 }
 
 func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair, nonce uint64) (reqID wasmtypes.ScRequestID, err error) {
@@ -141,8 +152,8 @@ func (sc *WasmClientService) UnsubscribeEvents() {
 	sc.eventDone <- true
 }
 
-func (sc *WasmClientService) WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error {
-	iscChainID := cvt.IscChainID(&chainID)
+func (sc *WasmClientService) WaitUntilRequestProcessed(reqID wasmtypes.ScRequestID, timeout time.Duration) error {
+	iscChainID := cvt.IscChainID(&sc.chainID)
 	iscReqID := cvt.IscRequestID(&reqID)
 
 	_, _, err := sc.waspClient.RequestsApi.

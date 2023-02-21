@@ -14,7 +14,6 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721"
 	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721impl"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -93,7 +92,6 @@ var (
 )
 
 func setupTest(t *testing.T) *wasmsolo.SoloContext {
-	wasmclient.HrpForClient = ""
 	return wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlibimpl.OnDispatch)
 }
 

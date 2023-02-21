@@ -38,7 +38,7 @@ func (olp *typedPool[V]) Get(reqRef *isc.RequestRef) V {
 	if entry, ok := olp.requests[reqRef.AsKey()]; ok {
 		return entry.req
 	}
-	return *new(V) //nolint:gocritic
+	return *new(V)
 }
 
 func (olp *typedPool[V]) Add(request V) {

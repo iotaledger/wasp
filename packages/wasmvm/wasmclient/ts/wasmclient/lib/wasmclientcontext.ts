@@ -11,12 +11,8 @@ import {ContractEvent, WasmClientService} from './wasmclientservice';
 export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFuncCallContext {
     private eventHandlers: wasmlib.IEventHandlers[] = [];
 
-    public constructor(svcClient: WasmClientService, chain: string, scName: string) {
-        super(svcClient, chain, scName);
-    }
-
-    public currentChainID(): wasmlib.ScChainID {
-        return this.chainID;
+    public constructor(svcClient: WasmClientService, scName: string) {
+        super(svcClient, scName);
     }
 
     public currentKeyPair(): isc.KeyPair | null {
@@ -59,7 +55,7 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         // TODO not here
         // get last used nonce from accounts core contract
         const agent = wasmlib.ScAgentID.fromAddress(keyPair.address());
-        const ctx = new WasmClientContext(this.svcClient, this.chainID.toString(), coreaccounts.ScName);
+        const ctx = new WasmClientContext(this.svcClient, coreaccounts.ScName);
         const n = coreaccounts.ScFuncs.getAccountNonce(ctx);
         n.params.agentID().setValue(agent);
         n.func.call();
@@ -87,7 +83,7 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
     }
 
     public waitRequestID(reqID: wasmlib.ScRequestID): void {
-        this.Err = this.svcClient.waitUntilRequestProcessed(this.chainID, reqID, 60);
+        this.Err = this.svcClient.waitUntilRequestProcessed(reqID, 60);
     }
 
     private processEvent(event: ContractEvent): void {
