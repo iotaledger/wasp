@@ -55,8 +55,7 @@ func (s *WasmClientContext) FnPost(req *wasmrequests.PostRequest) []byte {
 	}
 
 	scAssets := wasmlib.NewScAssets(req.Transfer)
-	s.nonce++
-	s.ReqID, s.Err = s.svcClient.PostRequest(req.ChainID, req.Contract, req.Function, req.Params, scAssets, s.keyPair, s.nonce)
+	s.ReqID, s.Err = s.svcClient.PostRequest(req.ChainID, req.Contract, req.Function, req.Params, scAssets, s.keyPair)
 	return nil
 }
 

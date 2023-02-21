@@ -22,6 +22,7 @@ type SoloClientService struct {
 	chainID  wasmtypes.ScChainID
 	ctx      *SoloContext
 	callback wasmclient.EventProcessor
+	nonces   map[string]uint64
 }
 
 var _ wasmclient.IClientService = new(SoloClientService)
@@ -31,7 +32,12 @@ var _ wasmclient.IClientService = new(SoloClientService)
 // To prevent this when testing with multiple SoloClients,
 // use the optional extra flag to indicate the extra clients.
 func NewSoloClientService(ctx *SoloContext, chainID string, extra ...bool) *SoloClientService {
-	s := &SoloClientService{ctx: ctx, chainID: wasmtypes.ChainIDFromString(chainID)}
+	s := &SoloClientService{
+		chainID:  wasmtypes.ChainIDFromString(chainID),
+		ctx:      ctx,
+		callback: nil,
+		nonces:   make(map[string]uint64),
+	}
 	if len(extra) != 1 || !extra[0] {
 		wasmhost.EventSubscribers = nil
 	}
@@ -71,7 +77,7 @@ func (s *SoloClientService) Event(msg string) {
 	})
 }
 
-func (s *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair, nonce uint64) (reqID wasmtypes.ScRequestID, err error) {
+func (s *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (reqID wasmtypes.ScRequestID, err error) {
 	iscChainID := cvt.IscChainID(&chainID)
 	iscContract := cvt.IscHname(hContract)
 	iscFunction := cvt.IscHname(hFunction)
@@ -83,7 +89,13 @@ func (s *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, 
 		return reqID, errors.New("SoloClientService.PostRequest chain ID mismatch")
 	}
 	req := solo.NewCallParamsFromDictByHname(iscContract, iscFunction, params)
+
+	key := string(keyPair.GetPublicKey().AsBytes())
+	nonce := s.nonces[key]
+	nonce++
+	s.nonces[key] = nonce
 	req.WithNonce(nonce)
+
 	iscAllowance := cvt.IscAllowance(allowance)
 	req.WithAllowance(iscAllowance)
 	req.WithGasBudget(gas.MaxGasPerRequest)
