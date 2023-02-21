@@ -115,9 +115,5 @@
       "maxBodyLength": "2M"
     },
     "debugRequestLoggerEnabled": false
-  },
-  "nanomsg": {
-    "enabled": true,
-    "port": 5550
   }
 }

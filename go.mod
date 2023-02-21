@@ -32,7 +32,6 @@ require (
 	github.com/wasmerio/wasmer-go v1.0.4
 	go.dedis.ch/kyber/v3 v3.0.14
 	go.elastic.co/apm/module/apmechov4 v1.15.0
-	go.nanomsg.org/mangos/v3 v3.4.2
 	go.uber.org/atomic v1.10.0
 	go.uber.org/dig v1.16.1
 	go.uber.org/zap v1.24.0
@@ -45,7 +44,6 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.0.0 // indirect
-	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.0 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect

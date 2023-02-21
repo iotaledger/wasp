@@ -453,21 +453,3 @@ Example:
   }
 ```
 
-## <a id="nanomsg"></a> 14. nanomsg
-
-| Name    | Description                              | Type    | Default value |
-| ------- | ---------------------------------------- | ------- | ------------- |
-| enabled | Whether the publisher plugin is enabled  | boolean | true          |
-| port    | The port for the nanomsg event publisher | int     | 5550          |
-
-Example:
-
-```json
-  {
-    "nanomsg": {
-      "enabled": true,
-      "port": 5550
-    }
-  }
-```
-

@@ -93,9 +93,8 @@ wasp-cli chain activate --chain=<name>
 
 ## Testing If It Works
 
-You can check that the chain was properly deployed in the Wasp node dashboard
-(e.g. `127.0.0.1:7000`). Note that the chain was deployed with
-some [core contracts](../core_concepts/core_contracts/overview.md).
+You can check that the chain was properly deployed in the Wasp node dashboard (`<URL>/wasp/dashboard` when using `node-docker-setup`).
+Note that the chain was deployed with some [core contracts](../core_concepts/core_contracts/overview.md).
 
 You should also have an EVM-JSONRPC server opened on:
 
