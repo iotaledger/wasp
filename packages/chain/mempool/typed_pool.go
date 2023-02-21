@@ -38,6 +38,7 @@ func (olp *typedPool[V]) Get(reqRef *isc.RequestRef) V {
 	if entry, ok := olp.requests[reqRef.AsKey()]; ok {
 		return entry.req
 	}
+	//nolint:gocritic
 	return *new(V)
 }
 

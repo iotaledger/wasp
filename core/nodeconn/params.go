@@ -1,4 +1,4 @@
-package inx
+package nodeconn
 
 import (
 	"github.com/iotaledger/hive.go/core/app"

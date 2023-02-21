@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/core/chains"
 	"github.com/iotaledger/wasp/core/database"
 	"github.com/iotaledger/wasp/core/dkg"
-	"github.com/iotaledger/wasp/core/inx"
 	"github.com/iotaledger/wasp/core/logger"
 	"github.com/iotaledger/wasp/core/nodeconn"
 	"github.com/iotaledger/wasp/core/peering"
@@ -37,7 +36,6 @@ func App() *app.App {
 		app.WithVersionCheck("iotaledger", "wasp"),
 		app.WithInitComponent(InitComponent),
 		app.WithCoreComponents([]*app.CoreComponent{
-			inx.CoreComponent,
 			shutdown.CoreComponent,
 			nodeconn.CoreComponent,
 			users.CoreComponent,

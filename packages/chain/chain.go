@@ -20,11 +20,12 @@ import (
 
 type NodeConnection interface {
 	ChainNodeConn
+	Run(ctx context.Context) error
+	WaitUntilInitiallySynced(context.Context) error
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
 	GetBech32HRP() iotago.NetworkPrefix
 	GetL1Params() *parameters.L1Params
 	GetL1ProtocolParams() *iotago.ProtocolParameters
-	Run(ctx context.Context) error
 }
 
 type StateFreshness byte

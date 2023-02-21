@@ -6,7 +6,6 @@ package daemon
 const (
 	PriorityCloseDatabase = iota // no dependencies
 	PriorityDatabaseHealth
-	PriorityDisconnectINX
 	PriorityNodeConnection
 	PriorityPeering
 	PriorityChains

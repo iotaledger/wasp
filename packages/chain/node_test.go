@@ -319,16 +319,16 @@ func (tnc *testNodeConn) AttachChain(
 	tnc.attachWG.Done()
 }
 
-func (tnc *testNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
-	panic("should be unused in test")
-}
-
 func (tnc *testNodeConn) Run(ctx context.Context) error {
 	panic("should be unused in test")
 }
 
 func (tnc *testNodeConn) waitAttached() {
 	tnc.attachWG.Wait()
+}
+
+func (tnc *testNodeConn) WaitUntilInitiallySynced(ctx context.Context) error {
+	panic("should be unused in test")
 }
 
 func (tnc *testNodeConn) GetBech32HRP() iotago.NetworkPrefix {
@@ -341,6 +341,10 @@ func (tnc *testNodeConn) GetL1Params() *parameters.L1Params {
 
 func (tnc *testNodeConn) GetL1ProtocolParams() *iotago.ProtocolParameters {
 	return testparameters.GetL1ProtocolParamsForTesting()
+}
+
+func (tnc *testNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
+	panic("should be unused in test")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
