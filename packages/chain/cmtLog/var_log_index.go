@@ -235,7 +235,6 @@ func (v *varLogIndexImpl) L1ReplacedBaseAliasOutput(nextBaseAO *isc.AliasOutputW
 // >     OUTPUT(ali, DerivedAO(ali))
 func (v *varLogIndexImpl) MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutMessages {
 	v.log.Debugf("MsgNextLogIndexReceived, %v", msg)
-	msgs := gpa.NoMessages()
 	sender := msg.Sender()
 	//
 	// Validate and record the vote.
@@ -243,6 +242,7 @@ func (v *varLogIndexImpl) MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutM
 		v.log.Warnf("MsgNextLogIndex from unknown sender: %+v", msg)
 		return nil
 	}
+	msgs := gpa.NoMessages()
 	if lastMsg, ok := v.lastMsgs[msg.Sender()]; ok && msg.pleaseRepeat {
 		msgs.Add(lastMsg.AsResent())
 	}
@@ -253,13 +253,13 @@ func (v *varLogIndexImpl) MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutM
 		prevPeerLI = NilLogIndex()
 	}
 	if prevPeerLI.AsUint32() >= msg.nextLogIndex.AsUint32() {
-		return nil
+		return msgs
 	}
 	v.maxPeerLIs[sender] = msg
-	if sli := v.enoughVotes(v.proposedLI, v.f+1); sli != NilLogIndex() {
+	if sli := v.enoughVotes(v.proposedLI, v.f+1); sli >= v.minLI {
 		msgs.AddAll(v.tryPropose(sli))
 	}
-	if ali := v.enoughVotes(v.agreedLI, v.n-v.f); ali != NilLogIndex() {
+	if ali := v.enoughVotes(v.agreedLI, v.n-v.f); ali >= v.minLI {
 		if derivedAO := v.deriveAO(ali); derivedAO != nil {
 			v.agreedLI = ali
 			v.consAggrAO[v.agreedLI] = derivedAO
