@@ -11,7 +11,6 @@ import (
 )
 
 func createMarkdownFile(app *app.App, markdownHeaderPath string, markdownFilePath string, ignoreFlags map[string]struct{}, replaceTopicNames map[string]string) {
-
 	markdownHeader := ""
 
 	if markdownHeaderPath != "" {
@@ -56,7 +55,6 @@ func createDefaultConfigFile(app *app.App, configFilePath string, ignoreFlags ma
 }
 
 func main() {
-
 	// MUST BE LOWER CASE
 	ignoreFlags := make(map[string]struct{})
 
@@ -71,7 +69,6 @@ func main() {
 	replaceTopicNames["webapi"] = "Web API"
 	replaceTopicNames["wal"] = "Write-Ahead Logging"
 	replaceTopicNames["rawBlocks"] = "Raw Blocks"
-	replaceTopicNames["nanomsg"] = "nanomsg"
 
 	application := waspApp.App()
 

@@ -104,10 +104,6 @@ variable "wasp_config" {
         "whitelist": ${adminWhitelist}
       }
     }
-  },
-  "nanomsg": {
-    "enabled": true,
-    "port": {{ env "NOMAD_PORT_nanomsg" }}
   }
 }
 EOH
@@ -142,9 +138,6 @@ job "isc-${workspace}" {
       port "api" {
         host_network = "private"
       }
-      port "nanomsg" {
-        host_network = "private"
-      }
       port "peering" {
         host_network = "private"
       }
@@ -165,7 +158,6 @@ job "isc-${workspace}" {
         entrypoint   = ["wasp", "-c", "/local/config.json"]
         ports = [
           "api",
-          "nanomsg",
           "peering",
           "metrics",
           "profiling"
@@ -204,10 +196,6 @@ job "isc-${workspace}" {
         }
       }
       service {
-        tags = ["wasp", "nanomsg"]
-        port = "nanomsg"
-      }
-      service {
         tags = ["wasp", "peering"]
         port = "peering"
       }
@@ -243,9 +231,6 @@ job "isc-${workspace}" {
       port "api" {
         host_network = "private"
       }
-      port "nanomsg" {
-        host_network = "private"
-      }
       port "peering" {
         host_network = "private"
       }
@@ -270,7 +255,6 @@ job "isc-${workspace}" {
         entrypoint   = ["wasp", "-c", "/local/config.json"]
         ports = [
           "api",
-          "nanomsg",
           "peering",
           "metrics",
           "profiling"
@@ -308,10 +292,6 @@ job "isc-${workspace}" {
           interval = "5s"
           timeout  = "2s"
         }
-      }
-      service {
-        tags = ["wasp", "nanomsg"]
-        port = "nanomsg"
       }
       service {
         tags = ["wasp", "peering"]

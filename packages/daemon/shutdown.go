@@ -12,7 +12,6 @@ const (
 	PriorityWebAPI
 	PriorityPrometheus
 	PriorityPublisher
-	PriorityNanoMsg
 	PriorityDashboard
 	PriorityProfilingRecorder
 )

@@ -43,9 +43,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # using distroless cc "nonroot" image, which includes everything in the base image (glibc, libssl and openssl)
 FROM gcr.io/distroless/cc-debian11:nonroot
 
-EXPOSE 7000/tcp
 EXPOSE 9090/tcp
-EXPOSE 5550/tcp
 EXPOSE 6060/tcp
 EXPOSE 4000/udp
 EXPOSE 4000/tcp
