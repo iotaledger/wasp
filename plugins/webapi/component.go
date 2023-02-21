@@ -110,7 +110,6 @@ func provide(c *dig.Container) error {
 		AppConfig                   *configuration.Configuration `name:"appConfig"`
 		ShutdownHandler             *shutdown.ShutdownHandler
 		APICacheTTL                 time.Duration `name:"apiCacheTTL"`
-		PublisherPort               int           `name:"publisherPort"`
 		Chains                      *chains.Chains
 		NodeConnectionMetrics       nodeconnmetrics.NodeConnectionMetrics
 		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
