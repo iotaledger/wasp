@@ -21,9 +21,9 @@ make wasm
 make install
 
 if [ "$OUTPUT_TO_FILE" = false ]; then
-    ${GO_EXECUTABLE} test --short --count 1 -failfast -timeout=5h ${FILES}
+    ${GO_EXECUTABLE} test -p 1 -failfast -count=1 -timeout=90m -short ${FILES}
 else
-    ${GO_EXECUTABLE} test --short --count 1 -failfast -v -timeout=5h ${FILES} 2>&1 | tee tests_output.log
+    ${GO_EXECUTABLE} test -p 1 -failfast -count=1 -timeout=90m -short -v ${FILES} 2>&1 | tee tests_output.log
 fi
 
 cd ${CURRENT_DIR}
