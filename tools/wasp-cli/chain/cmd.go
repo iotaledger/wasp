@@ -47,4 +47,5 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(initChangeAccessNodesCmd())
 	chainCmd.AddCommand(initPermitionlessAccessNodesCmd())
 	chainCmd.AddCommand(initAddChainCmd())
+	chainCmd.AddCommand(initRegisterERC20NativeTokenCmd())
 }
