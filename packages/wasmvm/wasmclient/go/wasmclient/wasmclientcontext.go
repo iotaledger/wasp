@@ -41,7 +41,7 @@ func NewWasmClientContext(svcClient IClientService, scName string) *WasmClientCo
 }
 
 func (s *WasmClientContext) CurrentChainID() wasmtypes.ScChainID {
-	return s.svcClient.ChainID()
+	return s.svcClient.CurrentChainID()
 }
 
 func (s *WasmClientContext) CurrentKeyPair() *cryptolib.KeyPair {

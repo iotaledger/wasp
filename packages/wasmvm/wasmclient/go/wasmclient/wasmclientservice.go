@@ -35,7 +35,7 @@ type EventProcessor func(event *ContractEvent)
 
 type IClientService interface {
 	CallViewByHname(hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error)
-	ChainID() wasmtypes.ScChainID
+	CurrentChainID() wasmtypes.ScChainID
 	PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair, nonce uint64) (wasmtypes.ScRequestID, error)
 	SubscribeEvents(callback EventProcessor) error
 	UnsubscribeEvents()
@@ -93,7 +93,7 @@ func (sc *WasmClientService) CallViewByHname(hContract, hFunction wasmtypes.ScHn
 	return decodedParams.Bytes(), nil
 }
 
-func (sc *WasmClientService) ChainID() wasmtypes.ScChainID {
+func (sc *WasmClientService) CurrentChainID() wasmtypes.ScChainID {
 	return sc.chainID
 }
 

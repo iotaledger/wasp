@@ -3,9 +3,9 @@
 
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
+import {panic, ScChainID} from 'wasmlib';
 import {RawData, WebSocket} from 'ws';
 import {WasmClientContext} from './wasmclientcontext';
-import {panic, ScChainID} from "wasmlib";
 
 export class ContractEvent {
     chainID = '';

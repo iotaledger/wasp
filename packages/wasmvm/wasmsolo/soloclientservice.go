@@ -63,7 +63,7 @@ func (s *SoloClientService) CallViewByHname(hContract, hFunction wasmtypes.ScHna
 	return res.Bytes(), nil
 }
 
-func (s *SoloClientService) ChainID() wasmtypes.ScChainID {
+func (s *SoloClientService) CurrentChainID() wasmtypes.ScChainID {
 	return s.chainID
 }
 

@@ -13,7 +13,6 @@ impl ScViewCallContext for WasmClientContext {
         }
 
         let res = self.svc_client.call_view_by_hname(
-            &self.chain_id,
             &req.contract,
             &req.function,
             &req.params,
@@ -28,7 +27,7 @@ impl ScViewCallContext for WasmClientContext {
     }
 
     fn fn_chain_id(&self) -> ScChainID {
-        self.chain_id
+        self.current_chain_id()
     }
 
     fn init_view_call_context(&self, _contract_hname: ScHname) -> ScHname {
@@ -43,7 +42,7 @@ impl ScFuncCallContext for WasmClientContext {
             return Vec::new();
         }
 
-        if req.chain_id != self.chain_id {
+        if req.chain_id != self.current_chain_id() {
             self.set_err("unknown chain id: ", &req.chain_id.to_string());
             return Vec::new();
         }

@@ -10,7 +10,6 @@ use crate::codec::*;
 use crate::keypair::KeyPair;
 
 pub struct WasmClientContext {
-    pub(crate) chain_id: ScChainID,
     pub(crate) error: Arc<Mutex<Result<()>>>,
     pub(crate) event_done: Arc<Mutex<bool>>,
     pub(crate) event_handlers: Arc<Mutex<Vec<Box<dyn IEventHandlers>>>>,
@@ -23,9 +22,8 @@ pub struct WasmClientContext {
 }
 
 impl WasmClientContext {
-    pub fn new(svc_client: &WasmClientService, chain_id: &str, sc_name: &str) -> WasmClientContext {
-        let mut ctx = WasmClientContext {
-            chain_id: chain_id_from_bytes(&[]),
+    pub fn new(svc_client: &WasmClientService, sc_name: &str) -> WasmClientContext {
+        WasmClientContext {
             error: Arc::new(Mutex::new(Ok(()))),
             event_done: Arc::default(),
             event_handlers: Arc::default(),
@@ -35,27 +33,19 @@ impl WasmClientContext {
             sc_name: String::from(sc_name),
             sc_hname: hname_from_bytes(&hname_bytes(&sc_name)),
             svc_client: svc_client.clone(),
-        };
-
-        if let Err(e) = set_sandbox_wrappers(chain_id) {
-            ctx.set_err(&e, "");
-            return ctx;
         }
-
-        ctx.chain_id = chain_id_from_string(chain_id);
-        ctx
     }
 
     pub fn current_chain_id(&self) -> ScChainID {
-        return self.chain_id;
+        self.svc_client.current_chain_id()
     }
 
     pub fn current_keypair(&self) -> Option<KeyPair> {
-        return self.key_pair.clone();
+        self.key_pair.clone()
     }
 
     pub fn current_svc_client(&self) -> WasmClientService {
-        return self.svc_client.clone();
+        self.svc_client.clone()
     }
 
     pub fn register(&mut self, handler: Box<dyn IEventHandlers>) {
@@ -89,7 +79,6 @@ impl WasmClientContext {
         let isc_agent = ScAgentID::from_address(&key_pair.address());
         let ctx = WasmClientContext::new(
             &self.svc_client,
-            &self.chain_id.to_string(),
             coreaccounts::SC_NAME,
         );
         let n = coreaccounts::ScFuncs::get_account_nonce(&ctx);
@@ -116,7 +105,6 @@ impl WasmClientContext {
 
     pub fn wait_request_id(&self, req_id: &ScRequestID) {
         let res = self.svc_client.wait_until_request_processed(
-            &self.chain_id,
             req_id,
             std::time::Duration::new(60, 0),
         );
@@ -167,6 +155,6 @@ impl WasmClientContext {
 
     pub fn err(&self) -> Result<()> {
         let err = self.error.lock().unwrap();
-        return err.clone();
+        err.clone()
     }
 }

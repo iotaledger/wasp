@@ -46,21 +46,23 @@ pub struct ContractEvent {
     pub data: String,
 }
 
-#[derive(Clone, PartialEq, Default)]
+#[derive(Clone, PartialEq)]
 pub struct WasmClientService {
+    chain_id: ScChainID,
     wasp_api: String,
 }
 
 impl WasmClientService {
-    pub fn new(wasp_api: &str) -> Self {
-        return WasmClientService {
+    pub fn new(wasp_api: &str, chain_id: &str) -> Self {
+        set_sandbox_wrappers(chain_id).unwrap();
+        WasmClientService {
+            chain_id: chain_id_from_string(chain_id),
             wasp_api: String::from(wasp_api),
-        };
+        }
     }
 
     pub(crate) fn call_view_by_hname(
         &self,
-        chain_id: &ScChainID,
         contract_hname: &ScHname,
         function_hname: &ScHname,
         args: &[u8],
@@ -72,7 +74,7 @@ impl WasmClientService {
             .unwrap();
         let body = APICallViewRequest {
             arguments: json_encode(args),
-            chain_id: chain_id.to_string(),
+            chain_id: self.chain_id.to_string(),
             contract_hname: contract_hname.to_string(),
             function_hname: function_hname.to_string(),
         };
@@ -103,6 +105,10 @@ impl WasmClientService {
                 return Err(format!("call() request failed: {}", e.to_string()));
             }
         }
+    }
+
+    pub fn current_chain_id(&self) -> ScChainID {
+        self.chain_id
     }
 
     pub(crate) fn post_request(
@@ -199,14 +205,13 @@ impl WasmClientService {
 
     pub(crate) fn wait_until_request_processed(
         &self,
-        chain_id: &ScChainID,
         req_id: &ScRequestID,
         timeout: Duration,
     ) -> Result<()> {
         let url = format!(
             "{}/chains/{}/requests/{}/wait",
             self.wasp_api,
-            chain_id.to_string(),
+            self.chain_id.to_string(),
             req_id.to_string()
         );
         let client = blocking::Client::builder()
