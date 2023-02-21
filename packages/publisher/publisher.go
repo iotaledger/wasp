@@ -21,14 +21,14 @@ type PublishedEvent struct {
 }
 
 type Events struct {
-	Published *event.Event[*ISCEvent]
+	BlockApplied *event.Event[*BlockApplied]
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Publisher
 
 type Publisher struct {
-	blockAppliedPipe pipe.Pipe[*publisherBlockApplied]
+	blockAppliedPipe pipe.Pipe[*BlockApplied]
 	mutex            *sync.RWMutex
 	log              *logger.Logger
 	Events           *Events
@@ -36,18 +36,18 @@ type Publisher struct {
 
 var _ chain.ChainListener = &Publisher{}
 
-type publisherBlockApplied struct {
-	chainID isc.ChainID
-	block   state.Block
+type BlockApplied struct {
+	ChainID isc.ChainID
+	Block   state.Block
 }
 
 func New(log *logger.Logger) *Publisher {
 	p := &Publisher{
-		blockAppliedPipe: pipe.NewInfinitePipe[*publisherBlockApplied](),
+		blockAppliedPipe: pipe.NewInfinitePipe[*BlockApplied](),
 		mutex:            &sync.RWMutex{},
 		log:              log,
 		Events: &Events{
-			Published: event.New[*ISCEvent](),
+			BlockApplied: event.New[*BlockApplied](),
 		},
 	}
 
@@ -55,19 +55,19 @@ func New(log *logger.Logger) *Publisher {
 }
 
 // Implements the chain.ChainListener interface.
-// NOTE: Do not block the caller!
+// NOTE: Do not Block the caller!
 func (p *Publisher) BlockApplied(chainID isc.ChainID, block state.Block) {
-	p.blockAppliedPipe.In() <- &publisherBlockApplied{chainID: chainID, block: block}
+	p.blockAppliedPipe.In() <- &BlockApplied{ChainID: chainID, Block: block}
 }
 
 // Implements the chain.ChainListener interface.
-// NOTE: Do not block the caller!
+// NOTE: Do not Block the caller!
 func (p *Publisher) AccessNodesUpdated(chainID isc.ChainID, accessNodes []*cryptolib.PublicKey) {
 	// We don't need this event.
 }
 
 // Implements the chain.ChainListener interface.
-// NOTE: Do not block the caller!
+// NOTE: Do not Block the caller!
 func (p *Publisher) ServerNodesUpdated(chainID isc.ChainID, serverNodes []*cryptolib.PublicKey) {
 	// We don't need this event.
 }
@@ -82,21 +82,10 @@ func (p *Publisher) Run(ctx context.Context) {
 				blockAppliedPipeOutCh = nil
 				continue
 			}
-			p.handleBlockApplied(blockAppliedUntyped)
+
+			p.Events.BlockApplied.Trigger(blockAppliedUntyped)
 		case <-ctx.Done():
 			return
 		}
 	}
-}
-
-func (p *Publisher) handleBlockApplied(blockApplied *publisherBlockApplied) {
-	stateIndex := blockApplied.block.StateIndex()
-	p.log.Debugf("BlockApplied, chainID=%v, stateIndex=%v", blockApplied.chainID.String(), stateIndex)
-	PublishBlockEvents(blockApplied, p.publish, p.log)
-}
-
-func (p *Publisher) publish(e *ISCEvent) {
-	p.log.Debugf("Publishing %v", e.String())
-
-	p.Events.Published.Trigger(e)
 }
