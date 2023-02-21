@@ -16,7 +16,6 @@ import (
 )
 
 type WasmClientContext struct {
-	chainID       wasmtypes.ScChainID
 	Err           error
 	eventHandlers []wasmlib.IEventHandlers
 	keyPair       *cryptolib.KeyPair
@@ -32,22 +31,17 @@ var (
 	_ wasmlib.ScViewCallContext = new(WasmClientContext)
 )
 
-func NewWasmClientContext(svcClient IClientService, chainID string, scName string) *WasmClientContext {
+func NewWasmClientContext(svcClient IClientService, scName string) *WasmClientContext {
 	s := &WasmClientContext{
 		svcClient: svcClient,
 		scName:    scName,
-		Err:       SetSandboxWrappers(chainID),
 	}
 	s.ServiceContractName(scName)
-	if s.Err == nil {
-		// only do this when SetSandboxWrappers() was successful
-		s.chainID = wasmtypes.ChainIDFromString(chainID)
-	}
 	return s
 }
 
 func (s *WasmClientContext) CurrentChainID() wasmtypes.ScChainID {
-	return s.chainID
+	return s.svcClient.ChainID()
 }
 
 func (s *WasmClientContext) CurrentKeyPair() *cryptolib.KeyPair {
@@ -66,17 +60,18 @@ func (s *WasmClientContext) InitViewCallContext(hContract wasmtypes.ScHname) was
 	return s.scHname
 }
 
-func (s *WasmClientContext) Register(handler wasmlib.IEventHandlers) error {
+func (s *WasmClientContext) Register(handler wasmlib.IEventHandlers) {
+	s.Err = nil
 	for _, h := range s.eventHandlers {
 		if h == handler {
-			return nil
+			return
 		}
 	}
 	s.eventHandlers = append(s.eventHandlers, handler)
 	if len(s.eventHandlers) > 1 {
-		return nil
+		return
 	}
-	return s.svcClient.SubscribeEvents(s.processEvent)
+	s.Err = s.svcClient.SubscribeEvents(s.processEvent)
 }
 
 func (s *WasmClientContext) ServiceContractName(contractName string) {
@@ -90,7 +85,7 @@ func (s *WasmClientContext) SignRequests(keyPair *cryptolib.KeyPair) {
 	// get last used nonce from accounts core contract
 	iscAgent := isc.NewAgentID(keyPair.Address())
 	agent := wasmtypes.AgentIDFromBytes(iscAgent.Bytes())
-	ctx := NewWasmClientContext(s.svcClient, s.chainID.String(), coreaccounts.ScName)
+	ctx := NewWasmClientContext(s.svcClient, coreaccounts.ScName)
 	n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
 	n.Params.AgentID().SetValue(agent)
 	n.Func.Call()
@@ -117,7 +112,7 @@ func (s *WasmClientContext) WaitRequest(reqID ...wasmtypes.ScRequestID) {
 	if len(reqID) == 1 {
 		requestID = reqID[0]
 	}
-	s.Err = s.svcClient.WaitUntilRequestProcessed(s.chainID, requestID, 60*time.Second)
+	s.Err = s.svcClient.WaitUntilRequestProcessed(requestID, 60*time.Second)
 }
 
 func (s *WasmClientContext) processEvent(msg *ContractEvent) {

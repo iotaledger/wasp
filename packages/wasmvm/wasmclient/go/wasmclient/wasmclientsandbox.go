@@ -26,7 +26,7 @@ func (s *WasmClientContext) FnCall(req *wasmrequests.CallRequest) []byte {
 		return nil
 	}
 
-	res, err := s.svcClient.CallViewByHname(s.chainID, req.Contract, req.Function, req.Params)
+	res, err := s.svcClient.CallViewByHname(req.Contract, req.Function, req.Params)
 	if err != nil {
 		s.Err = err
 		return nil
@@ -35,7 +35,7 @@ func (s *WasmClientContext) FnCall(req *wasmrequests.CallRequest) []byte {
 }
 
 func (s *WasmClientContext) FnChainID() wasmtypes.ScChainID {
-	return s.chainID
+	return s.CurrentChainID()
 }
 
 func (s *WasmClientContext) FnPost(req *wasmrequests.PostRequest) []byte {
@@ -44,7 +44,7 @@ func (s *WasmClientContext) FnPost(req *wasmrequests.PostRequest) []byte {
 		return nil
 	}
 
-	if req.ChainID != s.chainID {
+	if req.ChainID != s.CurrentChainID() {
 		s.Err = fmt.Errorf("unknown chain id: %s", req.ChainID.String())
 		return nil
 	}

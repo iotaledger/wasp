@@ -102,7 +102,7 @@ func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
 
 	// we're testing against wasp-cluster, so defaults will do
 	chainID := e.Chain.ChainID.String()
-	return newClient(t, wasmclient.NewWasmClientService("http://localhost:19090"), chainID, wallet)
+	return newClient(t, wasmclient.NewWasmClientService("http://localhost:19090", chainID), wallet)
 }
 
 func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
@@ -115,7 +115,7 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 
 	cfgChain := config["chain"].(string)
 	cfgChains := config["chains"].(map[string]interface{})
-	chain := cfgChains[cfgChain].(string)
+	chainID := cfgChains[cfgChain].(string)
 
 	cfgWallet := config["wallet"].(map[string]interface{})
 	cfgSeed := cfgWallet["seed"].(string)
@@ -129,20 +129,20 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 	seed := cryptolib.NewSeedFromBytes(seedBytes)
 	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(0))
 
-	return newClient(t, wasmclient.NewWasmClientService(cfgWaspAPI), chain, wallet)
+	return newClient(t, wasmclient.NewWasmClientService(cfgWaspAPI, chainID), wallet)
 }
 
 func setupClientSolo(t solo.TestContext) *wasmclient.WasmClientContext {
 	ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlibimpl.OnDispatch)
-	chain := ctx.Chain.ChainID.String()
+	chainID := ctx.Chain.ChainID.String()
 	wallet := ctx.Chain.OriginatorPrivateKey
 
 	// use Solo as fake Wasp cluster
-	return newClient(t, wasmsolo.NewSoloClientService(ctx), chain, wallet)
+	return newClient(t, wasmsolo.NewSoloClientService(ctx, chainID), wallet)
 }
 
-func newClient(t solo.TestContext, svcClient wasmclient.IClientService, chain string, wallet *cryptolib.KeyPair) *wasmclient.WasmClientContext {
-	ctx := wasmclient.NewWasmClientContext(svcClient, chain, testwasmlib.ScName)
+func newClient(t solo.TestContext, svcClient wasmclient.IClientService, wallet *cryptolib.KeyPair) *wasmclient.WasmClientContext {
+	ctx := wasmclient.NewWasmClientContext(svcClient, testwasmlib.ScName)
 	require.NoError(t, ctx.Err)
 	ctx.SignRequests(wallet)
 	return ctx
@@ -153,7 +153,7 @@ func TestClientAccountBalance(t *testing.T) {
 	wallet := ctx.CurrentKeyPair()
 
 	// note: this calls core accounts contract instead of testwasmlib
-	ctx = wasmclient.NewWasmClientContext(ctx.CurrentSvcClient(), ctx.CurrentChainID().String(), coreaccounts.ScName)
+	ctx = wasmclient.NewWasmClientContext(ctx.CurrentSvcClient(), coreaccounts.ScName)
 	ctx.SignRequests(wallet)
 
 	addr := isc.NewAgentID(wallet.Address())
@@ -245,6 +245,7 @@ func TestClientEvents(t *testing.T) {
 		proc.name = e.Name
 	})
 	ctx.Register(events)
+	require.NoError(t, ctx.Err)
 
 	for _, param := range params {
 		proc.sendClientEventsParam(t, ctx, param)

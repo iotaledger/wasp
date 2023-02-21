@@ -5,6 +5,7 @@ import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
 import {RawData, WebSocket} from 'ws';
 import {WasmClientContext} from './wasmclientcontext';
+import {panic, ScChainID} from "wasmlib";
 
 export class ContractEvent {
     chainID = '';
@@ -16,23 +17,29 @@ type ClientCallBack = (event: ContractEvent) => void;
 
 export class WasmClientService {
     private callbacks: ClientCallBack[] = [];
+    private chainID: ScChainID
     private ws: WebSocket;
     private subscribers: WasmClientContext[] = [];
     private waspAPI: string;
 
-    public constructor(waspAPI: string) {
+    public constructor(waspAPI: string, chainID: string) {
+        const err = isc.setSandboxWrappers(chainID);
+        if (err != null) {
+            panic(err);
+        }
         this.waspAPI = waspAPI;
+        this.chainID = wasmlib.chainIDFromString(chainID);
         const eventPort = waspAPI.replace('http:', 'ws:') + '/ws';
         this.ws = new WebSocket(eventPort, {
             perMessageDeflate: false
         });
     }
 
-    public callViewByHname(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): [Uint8Array, isc.Error] {
+    public callViewByHname(hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): [Uint8Array, isc.Error] {
         const callViewRequest: isc.APICallViewRequest = {
             contractHName: hContract.toString(),
             functionHName: hFunction.toString(),
-            chainId: chainID.toString(),
+            chainId: this.chainID.toString(),
             arguments: isc.Codec.jsonEncode(args),
         };
 
@@ -49,6 +56,10 @@ export class WasmClientService {
             else message = String(error);
             return [new Uint8Array(0), message];
         }
+    }
+
+    public currentChainID(): ScChainID {
+        return this.chainID;
     }
 
     public postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array, allowance: wasmlib.ScAssets, keyPair: isc.KeyPair, nonce: u64): [wasmlib.ScRequestID, isc.Error] {
@@ -106,9 +117,9 @@ export class WasmClientService {
         }
     }
 
-    public waitUntilRequestProcessed(chainID: wasmlib.ScChainID, reqID: wasmlib.ScRequestID, timeout: u32): isc.Error {
+    public waitUntilRequestProcessed(reqID: wasmlib.ScRequestID, timeout: u32): isc.Error {
         //TODO Timeout of the wait can be set with `/wait?timeoutSeconds=`. Max seconds are 60secs.
-        const url = this.waspAPI + '/chains/' + chainID.toString() + '/requests/' + reqID.toString() + '/wait';
+        const url = this.waspAPI + '/chains/' + this.chainID.toString() + '/requests/' + reqID.toString() + '/wait';
         new isc.SyncRequestClient().get(url);
         return null;
     }

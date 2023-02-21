@@ -6,7 +6,6 @@ import * as wasmlib from 'wasmlib';
 import {WasmClientService} from './';
 
 export class WasmClientSandbox {
-    chainID: wasmlib.ScChainID = new wasmlib.ScChainID();
     Err: isc.Error = null;
     keyPair: isc.KeyPair | null = null;
     nonce: u64 = 0n;
@@ -15,15 +14,14 @@ export class WasmClientSandbox {
     scHname: wasmlib.ScHname;
     svcClient: WasmClientService;
 
-    public constructor(svcClient: WasmClientService, chainID: string, scName: string) {
-        this.Err = isc.setSandboxWrappers(chainID);
+    public constructor(svcClient: WasmClientService, scName: string) {
         this.svcClient = svcClient;
         this.scName = scName;
         this.scHname = wasmlib.hnameFromBytes(isc.Codec.hNameBytes(scName));
-        if (this.Err == null) {
-            // only do this when setSandboxWrappers() was successful
-            this.chainID = wasmlib.chainIDFromString(chainID);
-        }
+    }
+
+    public currentChainID(): wasmlib.ScChainID {
+        return this.svcClient.currentChainID();
     }
 
     public fnCall(req: wasmlib.CallRequest): Uint8Array {
@@ -32,13 +30,13 @@ export class WasmClientSandbox {
             return new Uint8Array(0);
         }
 
-        const [res, err] = this.svcClient.callViewByHname(this.chainID, req.contract, req.function, req.params);
+        const [res, err] = this.svcClient.callViewByHname(req.contract, req.function, req.params);
         this.Err = err;
         return res;
     }
 
     public fnChainID(): wasmlib.ScChainID {
-        return this.chainID;
+        return this.currentChainID();
     }
 
     public fnPost(req: wasmlib.PostRequest): Uint8Array {
@@ -47,7 +45,7 @@ export class WasmClientSandbox {
             return new Uint8Array(0);
         }
 
-        if (!req.chainID.equals(this.chainID)) {
+        if (!req.chainID.equals(this.currentChainID())) {
             this.Err = 'unknown chain id: ' + req.chainID.toString();
             return new Uint8Array(0);
         }

@@ -59,8 +59,8 @@ function checkError(ctx: WasmClientContext) {
 }
 
 function setupClient() {
-    const svc = new WasmClientService('http://localhost:19090');
-    const ctx = new WasmClientContext(svc, MYCHAIN, 'testwasmlib');
+    const svc = new WasmClientService('http://localhost:19090', MYCHAIN);
+    const ctx = new WasmClientContext(svc, 'testwasmlib');
     ctx.signRequests(KeyPair.fromSubSeed(bytesFromString(MYSEED), 0n));
     checkError(ctx);
     return ctx;

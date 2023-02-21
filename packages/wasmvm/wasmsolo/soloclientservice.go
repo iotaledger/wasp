@@ -19,6 +19,7 @@ import (
 )
 
 type SoloClientService struct {
+	chainID  wasmtypes.ScChainID
 	ctx      *SoloContext
 	callback wasmclient.EventProcessor
 }
@@ -29,8 +30,12 @@ var _ wasmclient.IClientService = new(SoloClientService)
 // Normally we reset the subscribers, assuming a new test.
 // To prevent this when testing with multiple SoloClients,
 // use the optional extra flag to indicate the extra clients.
-func NewSoloClientService(ctx *SoloContext, extra ...bool) *SoloClientService {
-	s := &SoloClientService{ctx: ctx}
+func NewSoloClientService(ctx *SoloContext, chainID string, extra ...bool) *SoloClientService {
+	err := wasmclient.SetSandboxWrappers(chainID)
+	if err != nil {
+		panic(err)
+	}
+	s := &SoloClientService{ctx: ctx, chainID: wasmtypes.ChainIDFromString(chainID)}
 	if len(extra) != 1 || !extra[0] {
 		wasmhost.EventSubscribers = nil
 	}
@@ -40,8 +45,8 @@ func NewSoloClientService(ctx *SoloContext, extra ...bool) *SoloClientService {
 	return s
 }
 
-func (s *SoloClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error) {
-	iscChainID := cvt.IscChainID(&chainID)
+func (s *SoloClientService) CallViewByHname(hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error) {
+	iscChainID := cvt.IscChainID(&s.chainID)
 	iscContract := cvt.IscHname(hContract)
 	iscFunction := cvt.IscHname(hFunction)
 	params, err := dict.FromBytes(args)
@@ -56,6 +61,10 @@ func (s *SoloClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContra
 		return nil, err
 	}
 	return res.Bytes(), nil
+}
+
+func (s *SoloClientService) ChainID() wasmtypes.ScChainID {
+	return s.chainID
 }
 
 func (s *SoloClientService) Event(msg string) {
@@ -94,8 +103,7 @@ func (s *SoloClientService) SubscribeEvents(callback wasmclient.EventProcessor) 
 func (s *SoloClientService) UnsubscribeEvents() {
 }
 
-func (s *SoloClientService) WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error {
-	_ = chainID
+func (s *SoloClientService) WaitUntilRequestProcessed(reqID wasmtypes.ScRequestID, timeout time.Duration) error {
 	_ = reqID
 	_ = timeout
 	return nil
