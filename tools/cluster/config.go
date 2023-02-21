@@ -16,7 +16,6 @@ type WaspConfig struct {
 	// node ports are calculated as these values + node index
 	FirstAPIPort       int
 	FirstPeeringPort   int
-	FirstNanomsgPort   int
 	FirstProfilingPort int
 	FirstMetricsPort   int
 }
@@ -25,7 +24,6 @@ func (w *WaspConfig) WaspConfigTemplateParams(i int) templates.WaspConfigParams 
 	return templates.WaspConfigParams{
 		APIPort:                      w.FirstAPIPort + i,
 		PeeringPort:                  w.FirstPeeringPort + i,
-		NanomsgPort:                  w.FirstNanomsgPort + i,
 		ProfilingPort:                w.FirstProfilingPort + i,
 		MetricsPort:                  w.FirstMetricsPort + i,
 		OffledgerBroadcastUpToNPeers: 10,
@@ -42,7 +40,6 @@ func DefaultWaspConfig() WaspConfig {
 		NumNodes:           4,
 		FirstAPIPort:       19090,
 		FirstPeeringPort:   14000,
-		FirstNanomsgPort:   15550,
 		FirstProfilingPort: 11060,
 		FirstMetricsPort:   12112,
 	}
@@ -148,22 +145,6 @@ func (c *ClusterConfig) PeeringHost(nodeIndex int) string {
 
 func (c *ClusterConfig) PeeringPort(nodeIndex int) int {
 	return c.Wasp[nodeIndex].PeeringPort
-}
-
-func (c *ClusterConfig) NanomsgHosts(nodeIndexes ...[]int) []string {
-	nodes := c.AllNodes()
-	if len(nodeIndexes) == 1 {
-		nodes = nodeIndexes[0]
-	}
-	return c.waspHosts(nodes, func(i int) string { return c.NanomsgHost(i) })
-}
-
-func (c *ClusterConfig) NanomsgHost(nodeIndex int) string {
-	return fmt.Sprintf("127.0.0.1:%d", c.NanomsgPort(nodeIndex))
-}
-
-func (c *ClusterConfig) NanomsgPort(nodeIndex int) int {
-	return c.Wasp[nodeIndex].NanomsgPort
 }
 
 func (c *ClusterConfig) L1APIAddress(nodeIndex int) string {

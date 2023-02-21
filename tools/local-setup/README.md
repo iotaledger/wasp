@@ -30,8 +30,6 @@ The nodes will then be reachable under these ports:
 
 - Wasp:
   - API: <http://localhost:9090>
-  - Dashboard: <http://localhost:7000> (username: wasp, password: wasp)
-  - Nanomsg: tcp://localhost:5550
 
 - Hornet:
   - API: <http://localhost:14265>

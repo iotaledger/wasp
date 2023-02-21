@@ -59,7 +59,6 @@ Wasp is configured to allow any connection coming from wasp-cli. This is fine fo
 
 Besides this, everything should simply work as expected. Faucet requests will be handled accordingly, you will be able to deploy and run smart contracts. All useful ports such as:
 
-- Wasp Dashboard (7000) (username: wasp, password: wasp)
 - Wasp API (9090)
 - Hornet Dashboard (8081) (username: admin, password: admin)
 - Hornet API (14265)

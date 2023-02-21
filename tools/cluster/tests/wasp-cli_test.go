@@ -492,7 +492,6 @@ func TestWaspCLITrustListImport(t *testing.T) {
 			// avoid port conflicts when running everything on localhost
 			configParams.APIPort += 100
 			configParams.MetricsPort += 100
-			configParams.NanomsgPort += 100
 			configParams.PeeringPort += 100
 			configParams.ProfilingPort += 100
 			return configParams

@@ -21,8 +21,6 @@ func TestClusterSingleNode(t *testing.T) {
 
 	t.Run("SDRUC", func(t *testing.T) { run(t, testSDRUC) })
 
-	t.Run("publisher", func(t *testing.T) { run(t, testNanoPublisher) })
-
 	t.Run("spam onledger", func(t *testing.T) { run(t, testSpamOnledger) })
 	t.Run("spam offledger", func(t *testing.T) { run(t, testSpamOffLedger) })
 	t.Run("spam call wasm views", func(t *testing.T) { run(t, testSpamCallViewWasm) })
