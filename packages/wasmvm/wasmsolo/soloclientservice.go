@@ -31,10 +31,6 @@ var _ wasmclient.IClientService = new(SoloClientService)
 // To prevent this when testing with multiple SoloClients,
 // use the optional extra flag to indicate the extra clients.
 func NewSoloClientService(ctx *SoloContext, chainID string, extra ...bool) *SoloClientService {
-	err := wasmclient.SetSandboxWrappers(chainID)
-	if err != nil {
-		panic(err)
-	}
 	s := &SoloClientService{ctx: ctx, chainID: wasmtypes.ChainIDFromString(chainID)}
 	if len(extra) != 1 || !extra[0] {
 		wasmhost.EventSubscribers = nil

@@ -8,6 +8,7 @@ import (
 	"flag"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -205,6 +206,10 @@ func NewSoloContextForNative(t solo.TestContext, chain *solo.Chain, creator *Sol
 func soloContext(t solo.TestContext, chain *solo.Chain, scName string, creator *SoloAgent) *SoloContext {
 	if chain == nil {
 		chain = StartChain(t, "chain1")
+	}
+	err := wasmclient.SetSandboxWrappers(chain.ChainID.String())
+	if err != nil {
+		panic(err)
 	}
 	return &SoloContext{
 		scName:         scName,
