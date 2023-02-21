@@ -85,29 +85,23 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 }
 
 func (pt *PrivTangle) StartServers(deleteExisting bool) {
+	ts := time.Now()
+	pt.logf("Starting all HORNET nodes...")
 	for i := range pt.NodeKeyPairs {
 		pt.startNode(i, deleteExisting)
-		time.Sleep(500 * time.Millisecond) // TODO: Remove?
 	}
-	pt.logf("Starting... all nodes started.")
+	pt.logf("Starting all HORNET nodes... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
 
 	pt.waitAllReady(20 * time.Second)
-	pt.logf("Starting... all nodes are up and running, starting coordinator.")
 	pt.startCoordinator(0, deleteExisting)
-
 	pt.waitAllHealthy(20 * time.Second)
-	pt.logf("Starting... coordinator started, all nodes are healthy.")
-
 	pt.waitAllReturnTips(20 * time.Second)
-	pt.logf("Starting... Done, all nodes alive and returning tips.")
-
 	for i := range pt.NodeKeyPairs {
 		pt.startIndexer(i)
 	}
 	pt.waitInxPluginsIndexer(20 * time.Second)
-
 	pt.startFaucet(0) // faucet needs to be started after the indexer, otherwise it will take 1 milestone for the faucet get the correct balance
-	pt.waitInxPluginsFaucet()
+	pt.waitInxPluginsFaucet(20 * time.Second)
 }
 
 func (pt *PrivTangle) generateSnapshot() {
@@ -291,61 +285,33 @@ func (pt *PrivTangle) nodeClient(i int) *nodeclient.Client {
 	return nodeclient.New(fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(i)))
 }
 
-func (pt *PrivTangle) waitAllReturnTips(timeout time.Duration) {
-	ctx, cancel := context.WithTimeout(pt.ctx, timeout)
-	defer cancel()
-
-	for {
-		if ctx.Err() != nil {
-			panic("nodes not ready to return tips")
-		}
-
-		allOK := true
-		for i := range pt.NodeCommands {
-			_, err := pt.nodeClient(i).Tips(pt.ctx)
-			if err != nil {
-				pt.logf("Node[%d] is not ready yet: %v", i, err)
-			}
-			if err != nil {
-				allOK = false
-			}
-		}
-
-		if allOK {
-			return
-		}
-
-		pt.logf("Waiting for all nodes to start.")
-		time.Sleep(100 * time.Millisecond)
-	}
-}
-
 func (pt *PrivTangle) waitAllReady(timeout time.Duration) {
 	ctx, cancel := context.WithTimeout(pt.ctx, timeout)
 	defer cancel()
 
+	ts := time.Now()
+	pt.logf("Waiting for all HORNET nodes to start...")
+
 	for {
-		if ctx.Err() != nil {
-			panic("nodes not ready")
-		}
+		select {
+		case <-ctx.Done():
+			panic("nodes didn't start in time")
 
-		allOK := true
-		for i := range pt.NodeCommands {
-			_, err := pt.nodeClient(i).Info(pt.ctx)
-			if err != nil {
-				pt.logf("Failed to check Node[%d] health: %v", i, err)
+		default:
+			allOK := true
+			for i := range pt.NodeCommands {
+				_, err := pt.nodeClient(i).Info(pt.ctx)
+				if err != nil {
+					allOK = false
+				}
 			}
-			if err != nil {
-				allOK = false
+			if allOK {
+				pt.logf("Waiting for all HORNET nodes to start... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
+				return
 			}
-		}
 
-		if allOK {
-			return
+			time.Sleep(100 * time.Millisecond)
 		}
-
-		pt.logf("Waiting for all nodes to start.")
-		time.Sleep(100 * time.Millisecond)
 	}
 }
 
@@ -353,28 +319,59 @@ func (pt *PrivTangle) waitAllHealthy(timeout time.Duration) {
 	ctx, cancel := context.WithTimeout(pt.ctx, timeout)
 	defer cancel()
 
+	ts := time.Now()
+	pt.logf("Waiting for all HORNET nodes to become healthy...")
+
 	for {
-		if ctx.Err() != nil {
-			panic("nodes not healthy")
-		}
+		select {
+		case <-ctx.Done():
+			panic("nodes didn't become healthy in time")
 
-		allOK := true
-		for i := range pt.NodeCommands {
-			ok, err := pt.nodeClient(i).Health(pt.ctx)
-			if err != nil {
-				pt.logf("Failed to check Node[%d] health: %v", i, err)
+		default:
+			allOK := true
+			for i := range pt.NodeCommands {
+				ok, err := pt.nodeClient(i).Health(pt.ctx)
+				if err != nil || !ok {
+					allOK = false
+				}
 			}
-			if err != nil || !ok {
-				allOK = false
+			if allOK {
+				pt.logf("Waiting for all HORNET nodes to become healthy... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
+				return
 			}
-		}
 
-		if allOK {
-			return
+			time.Sleep(100 * time.Millisecond)
 		}
+	}
+}
 
-		pt.logf("Waiting for all nodes to start.")
-		time.Sleep(100 * time.Millisecond)
+func (pt *PrivTangle) waitAllReturnTips(timeout time.Duration) {
+	ctx, cancel := context.WithTimeout(pt.ctx, timeout)
+	defer cancel()
+
+	ts := time.Now()
+	pt.logf("Waiting for all HORNET nodes to return tips...")
+
+	for {
+		select {
+		case <-ctx.Done():
+			panic("nodes didn't return tips in time")
+
+		default:
+			allOK := true
+			for i := range pt.NodeCommands {
+				_, err := pt.nodeClient(i).Tips(pt.ctx)
+				if err != nil {
+					allOK = false
+				}
+			}
+			if allOK {
+				pt.logf("Waiting for all HORNET nodes to return tips... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
+				return
+			}
+
+			time.Sleep(100 * time.Millisecond)
+		}
 	}
 }
 
@@ -382,39 +379,52 @@ func (pt *PrivTangle) waitInxPluginsIndexer(timeout time.Duration) {
 	ctx, cancel := context.WithTimeout(pt.ctx, timeout)
 	defer cancel()
 
+	ts := time.Now()
+	pt.logf("Waiting for all nodes INX Indexer plugins to start...")
+
 	for {
-		if ctx.Err() != nil {
-			panic("indexer not ready")
-		}
+		select {
+		case <-ctx.Done():
+			panic("indexer didn't start in time")
 
-		allOK := true
-		for i := range pt.NodeCommands {
-			_, err := pt.nodeClient(i).Indexer(pt.ctx)
-			if err != nil {
-				pt.logf("Waiting for INX: Indexer, err=%v", err)
-				allOK = false
-				continue
+		default:
+			allOK := true
+			for i := range pt.NodeCommands {
+				_, err := pt.nodeClient(i).Indexer(pt.ctx)
+				if err != nil {
+					allOK = false
+					continue
+				}
 			}
-		}
+			if allOK {
+				pt.logf("Waiting for all nodes INX Indexer plugins to start... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
+				return
+			}
 
-		if allOK {
-			return
+			time.Sleep(100 * time.Millisecond)
 		}
-
-		pt.logf("Waiting for all nodes INX Indexer plugins to start.")
-		time.Sleep(100 * time.Millisecond)
 	}
 }
 
-func (pt *PrivTangle) waitInxPluginsFaucet() {
+func (pt *PrivTangle) waitInxPluginsFaucet(timeout time.Duration) {
+	ctx, cancel := context.WithTimeout(pt.ctx, timeout)
+	defer cancel()
+
+	pt.logf("Waiting for the faucet to start...")
+
 	for {
-		err := pt.queryFaucetInfo()
-		if err != nil {
-			pt.logf("Waiting for INX: Faucet, err=%v", err)
-			time.Sleep(100 * time.Millisecond)
-			continue
+		select {
+		case <-ctx.Done():
+			panic("faucet didn't start in time")
+
+		default:
+			err := pt.queryFaucetInfo()
+			if err != nil {
+				time.Sleep(100 * time.Millisecond)
+				continue
+			}
+			return
 		}
-		return
 	}
 }
 
