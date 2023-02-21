@@ -28,7 +28,7 @@ func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metric
 	}
 
 	result := &blockWAL{
-		WrappedLogger: logger.NewWrappedLogger(log.Named("wal")),
+		WrappedLogger: logger.NewWrappedLogger(log),
 		dir:           dir,
 		metrics:       metrics,
 	}

@@ -260,11 +260,17 @@ func (mpi *mempoolImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
 }
 
 func (mpi *mempoolImpl) ServerNodesUpdated(committeePubKeys, serverNodePubKeys []*cryptolib.PublicKey) {
-	mpi.serverNodesUpdatedPipe.In() <- &reqServerNodesUpdated{committeePubKeys, serverNodePubKeys}
+	mpi.serverNodesUpdatedPipe.In() <- &reqServerNodesUpdated{
+		committeePubKeys:  committeePubKeys,
+		serverNodePubKeys: serverNodePubKeys,
+	}
 }
 
 func (mpi *mempoolImpl) AccessNodesUpdated(committeePubKeys, accessNodePubKeys []*cryptolib.PublicKey) {
-	mpi.accessNodesUpdatedPipe.In() <- &reqAccessNodesUpdated{committeePubKeys, accessNodePubKeys}
+	mpi.accessNodesUpdatedPipe.In() <- &reqAccessNodesUpdated{
+		committeePubKeys:  committeePubKeys,
+		accessNodePubKeys: accessNodePubKeys,
+	}
 }
 
 func (mpi *mempoolImpl) ConsensusProposalsAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan []*isc.RequestRef {

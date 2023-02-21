@@ -228,7 +228,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	chainLog := c.log.Named(chainID.ShortString())
 	var chainWAL smGPAUtils.BlockWAL
 	if c.walEnabled {
-		chainWAL, err = smGPAUtils.NewBlockWAL(chainLog, c.walFolderPath, chainID, smGPAUtils.NewBlockWALMetrics())
+		chainWAL, err = smGPAUtils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, smGPAUtils.NewBlockWALMetrics())
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}
