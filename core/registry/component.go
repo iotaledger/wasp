@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/hive.go/core/ioutils"
 	hivep2p "github.com/iotaledger/hive.go/core/p2p"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -45,8 +46,14 @@ func provide(c *dig.Container) error {
 		CoreComponent.LogPanic(err)
 	}
 
-	if err := c.Provide(func() cmtLog.ConsensusStateRegistry {
-		consensusStateRegistry, err := registry.NewConsensusStateRegistry(ParamsRegistries.ConsensusState.Path)
+	type consensusRegistryDeps struct {
+		dig.In
+
+		NodeConnection chain.NodeConnection
+	}
+
+	if err := c.Provide(func(deps consensusRegistryDeps) cmtLog.ConsensusStateRegistry {
+		consensusStateRegistry, err := registry.NewConsensusStateRegistry(ParamsRegistries.ConsensusState.Path, deps.NodeConnection.GetBech32HRP())
 		if err != nil {
 			CoreComponent.LogPanic(err)
 		}
@@ -55,8 +62,15 @@ func provide(c *dig.Container) error {
 		CoreComponent.LogPanic(err)
 	}
 
-	if err := c.Provide(func(nodeIdentityProvider registry.NodeIdentityProvider) registry.DKShareRegistryProvider {
-		dkSharesRegistry, err := registry.NewDKSharesRegistry(ParamsRegistries.DKShares.Path, nodeIdentityProvider.NodeIdentity().GetPrivateKey())
+	type dkSharesRegistryDeps struct {
+		dig.In
+
+		NodeIdentityProvider registry.NodeIdentityProvider
+		NodeConnection       chain.NodeConnection
+	}
+
+	if err := c.Provide(func(deps dkSharesRegistryDeps) registry.DKShareRegistryProvider {
+		dkSharesRegistry, err := registry.NewDKSharesRegistry(ParamsRegistries.DKShares.Path, deps.NodeIdentityProvider.NodeIdentity().GetPrivateKey(), deps.NodeConnection.GetBech32HRP())
 		if err != nil {
 			CoreComponent.LogPanic(err)
 		}

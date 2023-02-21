@@ -68,6 +68,7 @@ type nodeConnection struct {
 	nodeBridge            *nodebridge.NodeBridge
 	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
 	nodeClient            *nodeclient.Client
+	l1Params              *parameters.L1Params
 
 	// pendingTransactionsMap is a map of sent transactions that are pending.
 	pendingTransactionsMap  *shrinkingmap.ShrinkingMap[iotago.TransactionID, *pendingTransaction]
@@ -227,9 +228,49 @@ func New(
 		shutdownHandler:         shutdownHandler,
 	}
 
+	ctxInfo, cancelInfo := context.WithTimeout(ctx, inxTimeoutInfo)
+	defer cancelInfo()
+
+	nodeInfo, err := nc.nodeClient.Info(ctxInfo)
+	if err != nil {
+		return nil, fmt.Errorf("error getting node info: %w", err)
+	}
+	nc.setL1ProtocolParams(nodeBridge.ProtocolParameters(), nodeInfo.BaseToken)
+
 	nc.reattachWorkerPool = workerpool.New(nc.reattachWorkerpoolFunc, workerpool.WorkerCount(1), workerpool.QueueSize(reattachWorkerPoolQueueSize))
 
 	return nc, nil
+}
+
+func (nc *nodeConnection) setL1ProtocolParams(protocolParameters *iotago.ProtocolParameters, baseToken *nodeclient.InfoResBaseToken) {
+	nc.l1Params = &parameters.L1Params{
+		// There are no limits on how big from a size perspective an essence can be,
+		// so it is just derived from 32KB - Block fields without payload = max size of the payload
+		MaxPayloadSize: parameters.MaxPayloadSize,
+		Protocol:       protocolParameters,
+		BaseToken:      (*parameters.BaseToken)(baseToken),
+	}
+}
+
+func (nc *nodeConnection) GetBech32HRP() iotago.NetworkPrefix {
+	protoParams := nc.GetL1ProtocolParams()
+	if protoParams == nil {
+		panic("L1 protocol parameters unknown")
+	}
+
+	return protoParams.Bech32HRP
+}
+
+func (nc *nodeConnection) GetL1Params() *parameters.L1Params {
+	return nc.l1Params
+}
+
+func (nc *nodeConnection) GetL1ProtocolParams() *iotago.ProtocolParameters {
+	if nc.l1Params == nil {
+		panic("L1 parameters unknown")
+	}
+
+	return nc.l1Params.Protocol
 }
 
 func (nc *nodeConnection) Run(ctx context.Context) error {

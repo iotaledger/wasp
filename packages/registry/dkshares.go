@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/hive.go/core/ioutils"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -22,20 +21,22 @@ import (
 type DKSharesRegistry struct {
 	onChangeMap *onchangemap.OnChangeMap[string, *util.ComparableAddress, tcrypto.DKShare]
 
-	folderPath string
+	folderPath    string
+	networkPrefix iotago.NetworkPrefix
 }
 
 var _ DKShareRegistryProvider = &DKSharesRegistry{}
 
 // NewDKSharesRegistry creates new instance of the DKShare registry implementation.
-func NewDKSharesRegistry(folderPath string, nodePrivKey *cryptolib.PrivateKey) (*DKSharesRegistry, error) {
+func NewDKSharesRegistry(folderPath string, nodePrivKey *cryptolib.PrivateKey, networkPrefix iotago.NetworkPrefix) (*DKSharesRegistry, error) {
 	// create the target directory during initialization
 	if err := ioutils.CreateDirectory(folderPath, 0o770); err != nil {
 		return nil, err
 	}
 
 	registry := &DKSharesRegistry{
-		folderPath: folderPath,
+		folderPath:    folderPath,
+		networkPrefix: networkPrefix,
 	}
 
 	registry.onChangeMap = onchangemap.NewOnChangeMap(
@@ -109,7 +110,7 @@ func (p *DKSharesRegistry) loadDKSharesJSONFromFolder(nodePrivKey *cryptolib.Pri
 }
 
 func (p *DKSharesRegistry) getDKShareFilePath(dkShare tcrypto.DKShare) string {
-	sharedAddressBech32 := dkShare.GetAddress().Bech32(parameters.L1().Protocol.Bech32HRP)
+	sharedAddressBech32 := dkShare.GetAddress().Bech32(p.networkPrefix)
 
 	return path.Join(p.folderPath, fmt.Sprintf("%s.json", sharedAddressBech32))
 }
