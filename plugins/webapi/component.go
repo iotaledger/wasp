@@ -12,7 +12,6 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 	"go.elastic.co/apm/module/apmechov4"
 	"go.uber.org/dig"
-	"go.uber.org/zap"
 	"nhooyr.io/websocket"
 
 	"github.com/iotaledger/hive.go/core/app"
@@ -29,6 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi"
+	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 )
 
 func init() {
@@ -141,7 +141,7 @@ func provide(c *dig.Container) error {
 		e.Server.WriteTimeout = ParamsWebAPI.Limits.WriteTimeout
 
 		e.HidePort = true
-		e.HTTPErrorHandler = webapi.CompatibilityHTTPErrorHandler(Plugin.Logger().WithOptions(zap.AddStacktrace(zap.ErrorLevel)))
+		e.HTTPErrorHandler = apierrors.HTTPErrorHandler()
 
 		// timeout middleware
 		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
