@@ -24,7 +24,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/hive.go/core/timeutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
@@ -541,7 +540,7 @@ func (clu *Cluster) Start() error {
 	for i := 0; i < len(clu.Config.Wasp); i++ {
 		select {
 		case <-initOk:
-		case <-time.After(10 * time.Second):
+		case <-time.After(20 * time.Second):
 			return errors.New("timeout starting wasp nodes")
 		}
 	}
@@ -592,24 +591,23 @@ func (clu *Cluster) RestartNodes(nodeIndexes ...int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	// start nodes
+	// restart nodes
 	initOk := make(chan bool, len(nodeIndexes))
-	okCount := 0
 	for _, i := range nodeIndexes {
 		err := clu.startWaspNode(ctx, i, initOk)
 		if err != nil {
 			return err
 		}
+	}
+
+	for range nodeIndexes {
 		select {
 		case <-initOk:
-			okCount++
-			if okCount == len(nodeIndexes) {
-				return nil
-			}
-		case <-time.After(10 * time.Second):
-			return errors.New("timeout starting wasp nodes")
+		case <-time.After(20 * time.Second):
+			return errors.New("timeout restarting wasp nodes")
 		}
 	}
+
 	return nil
 }
 
@@ -652,30 +650,28 @@ const pollAPIInterval = 500 * time.Millisecond
 
 // waits until API for a given WASP node is ready
 func waitForAPIReady(ctx context.Context, initOk chan<- bool, apiURL string) {
-	infoEndpointURL := fmt.Sprintf("%s%s", apiURL, "/node/version")
-
-	ticker := time.NewTicker(pollAPIInterval)
-	defer timeutil.CleanupTicker(ticker)
+	waspHealthEndpointURL := fmt.Sprintf("%s%s", apiURL, "/health")
 
 	go func() {
 		for {
 			select {
-			case <-ticker.C:
-				rsp, err := http.Get(infoEndpointURL) //nolint:gosec,noctx
+			case <-ctx.Done():
+				return
+
+			default:
+				rsp, err := http.Get(waspHealthEndpointURL) //nolint:gosec,noctx
 				if err != nil {
-					fmt.Printf("Error Polling node API %s ready status: %v\n", apiURL, err)
+					time.Sleep(pollAPIInterval)
 					continue
 				}
-				fmt.Printf("Polling node API %s ready status: %s %s\n", apiURL, infoEndpointURL, rsp.Status)
 				_ = rsp.Body.Close()
 
-				if err == nil && rsp.StatusCode != 404 {
-					initOk <- true
-					ticker.Stop()
-					return
+				if rsp.StatusCode != http.StatusOK {
+					time.Sleep(pollAPIInterval)
+					continue
 				}
 
-			case <-ctx.Done():
+				initOk <- true
 				return
 			}
 		}
