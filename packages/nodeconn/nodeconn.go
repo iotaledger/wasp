@@ -36,6 +36,7 @@ import (
 
 const (
 	indexerPluginAvailableTimeout = 30 * time.Second
+	l1NodeSyncWaitTimeout         = 2 * time.Minute
 	inxTimeoutInfo                = 500 * time.Millisecond
 	inxTimeoutBlockMetadata       = 500 * time.Millisecond
 	inxTimeoutSubmitBlock         = 60 * time.Second
@@ -61,12 +62,15 @@ type nodeConnection struct {
 	*logger.WrappedLogger
 
 	ctx                   context.Context
+	syncedCtx             context.Context
+	syncedCtxCancel       context.CancelFunc
 	chainsLock            sync.RWMutex
 	chainsMap             *shrinkingmap.ShrinkingMap[isc.ChainID, *ncChain]
 	indexerClient         nodeclient.IndexerClient
 	nodeBridge            *nodebridge.NodeBridge
 	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
 	nodeClient            *nodeclient.Client
+	l1Params              *parameters.L1Params
 
 	// pendingTransactionsMap is a map of sent transactions that are pending.
 	pendingTransactionsMap  *shrinkingmap.ShrinkingMap[iotago.TransactionID, *pendingTransaction]
@@ -76,14 +80,56 @@ type nodeConnection struct {
 	shutdownHandler *shutdown.ShutdownHandler
 }
 
-func setL1ProtocolParams(protocolParameters *iotago.ProtocolParameters, baseToken *nodeclient.InfoResBaseToken) {
-	parameters.InitL1(&parameters.L1Params{
-		// There are no limits on how big from a size perspective an essence can be,
-		// so it is just derived from 32KB - Block fields without payload = max size of the payload
-		MaxPayloadSize: parameters.MaxPayloadSize,
-		Protocol:       protocolParameters,
-		BaseToken:      (*parameters.BaseToken)(baseToken),
-	})
+func New(
+	ctx context.Context,
+	log *logger.Logger,
+	nodeBridge *nodebridge.NodeBridge,
+	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics,
+	shutdownHandler *shutdown.ShutdownHandler,
+) (chain.NodeConnection, error) {
+	ctxIndexer, cancelIndexer := context.WithTimeout(ctx, indexerPluginAvailableTimeout)
+	defer cancelIndexer()
+
+	indexerClient, err := nodeBridge.Indexer(ctxIndexer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get nodeclient indexer: %w", err)
+	}
+
+	syncedCtx, syncedCtxCancel := context.WithCancel(ctx)
+	nc := &nodeConnection{
+		WrappedLogger:   logger.NewWrappedLogger(log),
+		ctx:             nil,
+		syncedCtx:       syncedCtx,
+		syncedCtxCancel: syncedCtxCancel,
+		chainsMap: shrinkingmap.New[isc.ChainID, *ncChain](
+			shrinkingmap.WithShrinkingThresholdRatio(chainsCleanupThresholdRatio),
+			shrinkingmap.WithShrinkingThresholdCount(chainsCleanupThresholdCount),
+		),
+		chainsLock:            sync.RWMutex{},
+		indexerClient:         indexerClient,
+		nodeBridge:            nodeBridge,
+		nodeConnectionMetrics: nodeConnectionMetrics,
+		nodeClient:            nodeBridge.INXNodeClient(),
+		pendingTransactionsMap: shrinkingmap.New[iotago.TransactionID, *pendingTransaction](
+			shrinkingmap.WithShrinkingThresholdRatio(pendingTransactionsCleanupThresholdRatio),
+			shrinkingmap.WithShrinkingThresholdCount(pendingTransactionsCleanupThresholdCount),
+		),
+		pendingTransactionsLock: sync.Mutex{},
+		shutdownHandler:         shutdownHandler,
+	}
+
+	ctxInfo, cancelInfo := context.WithTimeout(ctx, inxTimeoutInfo)
+	defer cancelInfo()
+
+	nodeInfo, err := nc.nodeClient.Info(ctxInfo)
+	if err != nil {
+		return nil, fmt.Errorf("error getting node info: %w", err)
+	}
+	nc.setL1ProtocolParams(nodeBridge.ProtocolParameters(), nodeInfo.BaseToken)
+
+	nc.reattachWorkerPool = workerpool.New(nc.reattachWorkerpoolFunc, workerpool.WorkerCount(1), workerpool.QueueSize(reattachWorkerPoolQueueSize))
+
+	return nc, nil
 }
 
 func newCtxWithTimeout(ctx context.Context, defaultTimeout time.Duration, timeout ...time.Duration) (context.Context, context.CancelFunc) {
@@ -191,73 +237,107 @@ func waitForL1ToBeSynced(ctx context.Context, log *logger.Logger, nodeBridge *no
 	}
 }
 
-func New(
-	ctx context.Context,
-	log *logger.Logger,
-	nodeBridge *nodebridge.NodeBridge,
-	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics,
-	shutdownHandler *shutdown.ShutdownHandler,
-) (chain.NodeConnection, error) {
-	// make sure the node is connected to at least one other peer
-	// otherwise the node status may not reflect the network status
-	if err := waitForL1ToBeConnected(ctx, log, nodeBridge); err != nil {
-		return nil, err
+func (nc *nodeConnection) setL1ProtocolParams(protocolParameters *iotago.ProtocolParameters, baseToken *nodeclient.InfoResBaseToken) {
+	nc.l1Params = &parameters.L1Params{
+		// There are no limits on how big from a size perspective an essence can be,
+		// so it is just derived from 32KB - Block fields without payload = max size of the payload
+		MaxPayloadSize: parameters.MaxPayloadSize,
+		Protocol:       protocolParameters,
+		BaseToken:      (*parameters.BaseToken)(baseToken),
 	}
-
-	if err := waitForL1ToBeSynced(ctx, log, nodeBridge); err != nil {
-		return nil, err
-	}
-
-	inxNodeClient := nodeBridge.INXNodeClient()
-
-	ctxInfo, cancelInfo := context.WithTimeout(ctx, inxTimeoutInfo)
-	defer cancelInfo()
-
-	nodeInfo, err := inxNodeClient.Info(ctxInfo)
-	if err != nil {
-		return nil, fmt.Errorf("error getting node info: %w", err)
-	}
-	setL1ProtocolParams(nodeBridge.ProtocolParameters(), nodeInfo.BaseToken)
-
-	ctxIndexer, cancelIndexer := context.WithTimeout(ctx, indexerPluginAvailableTimeout)
-	defer cancelIndexer()
-
-	indexerClient, err := nodeBridge.Indexer(ctxIndexer)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get nodeclient indexer: %w", err)
-	}
-
-	nc := &nodeConnection{
-		WrappedLogger: logger.NewWrappedLogger(log),
-		ctx:           nil,
-		chainsMap: shrinkingmap.New[isc.ChainID, *ncChain](
-			shrinkingmap.WithShrinkingThresholdRatio(chainsCleanupThresholdRatio),
-			shrinkingmap.WithShrinkingThresholdCount(chainsCleanupThresholdCount),
-		),
-		chainsLock:            sync.RWMutex{},
-		indexerClient:         indexerClient,
-		nodeBridge:            nodeBridge,
-		nodeConnectionMetrics: nodeConnectionMetrics,
-		nodeClient:            inxNodeClient,
-		pendingTransactionsMap: shrinkingmap.New[iotago.TransactionID, *pendingTransaction](
-			shrinkingmap.WithShrinkingThresholdRatio(pendingTransactionsCleanupThresholdRatio),
-			shrinkingmap.WithShrinkingThresholdCount(pendingTransactionsCleanupThresholdCount),
-		),
-		pendingTransactionsLock: sync.Mutex{},
-		shutdownHandler:         shutdownHandler,
-	}
-
-	nc.reattachWorkerPool = workerpool.New(nc.reattachWorkerpoolFunc, workerpool.WorkerCount(1), workerpool.QueueSize(reattachWorkerPoolQueueSize))
-
-	return nc, nil
+	parameters.InitL1(nc.l1Params)
 }
 
-func (nc *nodeConnection) Run(ctx context.Context) {
+func (nc *nodeConnection) Run(ctx context.Context) error {
 	nc.ctx = ctx
+
+	// the node bridge needs to be started before waiting for L1 to become synced,
+	// otherwise the NodeStatus would never be updated and "syncAndSetProtocolParameters" would be stuck
+	// in an inifinite loop
+	go func() {
+		nc.nodeBridge.Run(ctx)
+
+		// if the Run function returns before the context was actually canceled,
+		// it means that the connection to L1 node must have failed.
+		if !errors.Is(ctx.Err(), context.Canceled) {
+			nc.shutdownHandler.SelfShutdown("INX connection to node dropped", true)
+		}
+	}()
+
+	syncAndSetProtocolParameters := func() error {
+		ctxWaitNodeSynced, cancelWaitNodeSynced := context.WithTimeout(ctx, l1NodeSyncWaitTimeout)
+		defer cancelWaitNodeSynced()
+
+		// make sure the node is connected to at least one other peer
+		// otherwise the node status may not reflect the network status
+		if err := waitForL1ToBeConnected(ctxWaitNodeSynced, nc.WrappedLogger.Logger(), nc.nodeBridge); err != nil {
+			return err
+		}
+
+		if err := waitForL1ToBeSynced(ctxWaitNodeSynced, nc.WrappedLogger.Logger(), nc.nodeBridge); err != nil {
+			return err
+		}
+
+		ctxInfo, cancelInfo := context.WithTimeout(ctx, inxTimeoutInfo)
+		defer cancelInfo()
+
+		nodeInfo, err := nc.nodeClient.Info(ctxInfo)
+		if err != nil {
+			return fmt.Errorf("error getting node info: %w", err)
+		}
+		nc.setL1ProtocolParams(nc.nodeBridge.ProtocolParameters(), nodeInfo.BaseToken)
+
+		return nil
+	}
+
+	if err := syncAndSetProtocolParameters(); err != nil {
+		return fmt.Errorf("Getting latest L1 protocol parameters failed, error: %w", err)
+	}
+
 	nc.reattachWorkerPool.Start()
 	go nc.subscribeToLedgerUpdates()
+
+	// mark the node connection as synced
+	nc.syncedCtxCancel()
+
 	<-ctx.Done()
 	nc.reattachWorkerPool.StopAndWait()
+
+	return nil
+}
+
+// WaitUntilInitiallySynced waits until the layer 1 node was initially synced.
+func (nc *nodeConnection) WaitUntilInitiallySynced(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		// the given context was canceled
+		return ctx.Err()
+
+	case <-nc.syncedCtx.Done():
+		// node was initially synced
+		return nil
+	}
+}
+
+func (nc *nodeConnection) GetBech32HRP() iotago.NetworkPrefix {
+	protoParams := nc.GetL1ProtocolParams()
+	if protoParams == nil {
+		panic("L1 protocol parameters unknown")
+	}
+
+	return protoParams.Bech32HRP
+}
+
+func (nc *nodeConnection) GetL1Params() *parameters.L1Params {
+	return nc.l1Params
+}
+
+func (nc *nodeConnection) GetL1ProtocolParams() *iotago.ProtocolParameters {
+	if nc.l1Params == nil {
+		panic("L1 parameters unknown")
+	}
+
+	return nc.l1Params.Protocol
 }
 
 func (nc *nodeConnection) subscribeToLedgerUpdates() {

@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/hive.go/core/app/core/shutdown"
 	"github.com/iotaledger/hive.go/core/app/plugins/profiling"
-	"github.com/iotaledger/inx-app/core/inx"
 	"github.com/iotaledger/wasp/core/chains"
 	"github.com/iotaledger/wasp/core/database"
 	"github.com/iotaledger/wasp/core/dkg"
@@ -37,7 +36,6 @@ func App() *app.App {
 		app.WithVersionCheck("iotaledger", "wasp"),
 		app.WithInitComponent(InitComponent),
 		app.WithCoreComponents([]*app.CoreComponent{
-			inx.CoreComponent,
 			shutdown.CoreComponent,
 			nodeconn.CoreComponent,
 			users.CoreComponent,

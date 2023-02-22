@@ -8,8 +8,10 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/core/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -18,8 +20,12 @@ import (
 
 type NodeConnection interface {
 	ChainNodeConn
+	Run(ctx context.Context) error
+	WaitUntilInitiallySynced(context.Context) error
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
-	Run(ctx context.Context)
+	GetBech32HRP() iotago.NetworkPrefix
+	GetL1Params() *parameters.L1Params
+	GetL1ProtocolParams() *iotago.ProtocolParameters
 }
 
 type StateFreshness byte

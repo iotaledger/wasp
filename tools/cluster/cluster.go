@@ -526,10 +526,12 @@ func (clu *Cluster) Start() error {
 	start := time.Now()
 	fmt.Printf("[cluster] starting %d Wasp nodes...\n", len(clu.Config.Wasp))
 
-	initOk := make(chan bool, len(clu.Config.Wasp))
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
 
+	initOk := make(chan bool, len(clu.Config.Wasp))
 	for i := 0; i < len(clu.Config.Wasp); i++ {
-		err := clu.startWaspNode(i, initOk)
+		err := clu.startWaspNode(ctx, i, initOk)
 		if err != nil {
 			return err
 		}
@@ -538,10 +540,11 @@ func (clu *Cluster) Start() error {
 	for i := 0; i < len(clu.Config.Wasp); i++ {
 		select {
 		case <-initOk:
-		case <-time.After(10 * time.Second):
+		case <-time.After(20 * time.Second):
 			return errors.New("timeout starting wasp nodes")
 		}
 	}
+
 	fmt.Printf("[cluster] started %d Wasp nodes in %v\n", len(clu.Config.Wasp), time.Since(start))
 	return nil
 }
@@ -585,28 +588,30 @@ func (clu *Cluster) RestartNodes(nodeIndexes ...int) error {
 		clu.stopNode(i)
 	}
 
-	// start nodes
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	// restart nodes
 	initOk := make(chan bool, len(nodeIndexes))
-	okCount := 0
 	for _, i := range nodeIndexes {
-		err := clu.startWaspNode(i, initOk)
+		err := clu.startWaspNode(ctx, i, initOk)
 		if err != nil {
 			return err
 		}
+	}
+
+	for range nodeIndexes {
 		select {
 		case <-initOk:
-			okCount++
-			if okCount == len(nodeIndexes) {
-				return nil
-			}
-		case <-time.After(5 * time.Second):
-			return errors.New("timeout starting wasp nodes")
+		case <-time.After(20 * time.Second):
+			return errors.New("timeout restarting wasp nodes")
 		}
 	}
+
 	return nil
 }
 
-func (clu *Cluster) startWaspNode(nodeIndex int, initOk chan<- bool) error {
+func (clu *Cluster) startWaspNode(ctx context.Context, nodeIndex int, initOk chan<- bool) error {
 	wcmd := &waspCmd{}
 
 	cmd := exec.Command("wasp", "-c", "config.json")
@@ -634,7 +639,7 @@ func (clu *Cluster) startWaspNode(nodeIndex int, initOk chan<- bool) error {
 	go scanLog(stdoutPipe, &wcmd.logScanner, fmt.Sprintf(" %s", name))
 
 	nodeAPIURL := fmt.Sprintf("http://localhost:%s", strconv.Itoa(clu.Config.APIPort(nodeIndex)))
-	go waitForAPIReady(initOk, nodeAPIURL)
+	go waitForAPIReady(ctx, initOk, nodeAPIURL)
 
 	wcmd.cmd = cmd
 	clu.waspCmds[nodeIndex] = wcmd
@@ -644,25 +649,29 @@ func (clu *Cluster) startWaspNode(nodeIndex int, initOk chan<- bool) error {
 const pollAPIInterval = 500 * time.Millisecond
 
 // waits until API for a given WASP node is ready
-func waitForAPIReady(initOk chan<- bool, apiURL string) {
-	infoEndpointURL := fmt.Sprintf("%s%s", apiURL, "/node/version")
+func waitForAPIReady(ctx context.Context, initOk chan<- bool, apiURL string) {
+	waspHealthEndpointURL := fmt.Sprintf("%s%s", apiURL, "/health")
 
-	ticker := time.NewTicker(pollAPIInterval)
 	go func() {
 		for {
-			<-ticker.C
+			select {
+			case <-ctx.Done():
+				return
 
-			rsp, err := http.Get(infoEndpointURL) //nolint:gosec,noctx
-			if err != nil {
-				fmt.Printf("Error Polling node API %s ready status: %v\n", apiURL, err)
-				continue
-			}
-			fmt.Printf("Polling node API %s ready status: %s %s\n", apiURL, infoEndpointURL, rsp.Status)
-			//goland:noinspection GoUnhandledErrorResult
-			rsp.Body.Close()
-			if err == nil && rsp.StatusCode != 404 {
+			default:
+				rsp, err := http.Get(waspHealthEndpointURL) //nolint:gosec,noctx
+				if err != nil {
+					time.Sleep(pollAPIInterval)
+					continue
+				}
+				_ = rsp.Body.Close()
+
+				if rsp.StatusCode != http.StatusOK {
+					time.Sleep(pollAPIInterval)
+					continue
+				}
+
 				initOk <- true
-				ticker.Stop()
 				return
 			}
 		}

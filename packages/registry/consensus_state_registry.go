@@ -126,20 +126,22 @@ func (c *consensusState) UnmarshalJSON(bytes []byte) error {
 type ConsensusStateRegistry struct {
 	onChangeMap *onchangemap.OnChangeMap[comparableConsensusIDKey, *comparableConsensusID, *consensusState]
 
-	folderPath string
+	folderPath    string
+	networkPrefix iotago.NetworkPrefix
 }
 
 var _ cmtLog.ConsensusStateRegistry = &ConsensusStateRegistry{}
 
 // NewConsensusStateRegistry creates new instance of the consensus state registry implementation.
-func NewConsensusStateRegistry(folderPath string) (*ConsensusStateRegistry, error) {
+func NewConsensusStateRegistry(folderPath string, networkPrefix iotago.NetworkPrefix) (*ConsensusStateRegistry, error) {
 	// create the target directory during initialization
 	if err := ioutils.CreateDirectory(folderPath, 0o770); err != nil {
 		return nil, err
 	}
 
 	registry := &ConsensusStateRegistry{
-		folderPath: folderPath,
+		folderPath:    folderPath,
+		networkPrefix: networkPrefix,
 	}
 
 	registry.onChangeMap = onchangemap.NewOnChangeMap(
@@ -266,8 +268,8 @@ func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 }
 
 func (p *ConsensusStateRegistry) getConsensusStateFilePath(state *consensusState) string {
-	chainAddressBech32 := state.ChainID().AsAddress().Bech32(parameters.L1().Protocol.Bech32HRP)
-	committeeAddressBech32 := state.Address().Bech32(parameters.L1().Protocol.Bech32HRP)
+	chainAddressBech32 := state.ChainID().AsAddress().Bech32(p.networkPrefix)
+	committeeAddressBech32 := state.Address().Bech32(p.networkPrefix)
 
 	return path.Join(p.folderPath, chainAddressBech32, fmt.Sprintf("%s.json", committeeAddressBech32))
 }

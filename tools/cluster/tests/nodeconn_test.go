@@ -29,7 +29,9 @@ import (
 func createChain(t *testing.T) isc.ChainID {
 	originator := cryptolib.NewKeyPair()
 	layer1Client := l1connection.NewClient(l1.Config, testlogger.NewLogger(t))
-	layer1Client.RequestFunds(originator.Address())
+	err := layer1Client.RequestFunds(originator.Address())
+	require.NoError(t, err)
+
 	utxoMap, err := layer1Client.OutputMap(originator.Address())
 	require.NoError(t, err)
 
@@ -92,10 +94,10 @@ func TestNodeConn(t *testing.T) {
 	nc, err := nodeconn.New(ctxInit, log, nodeBridge, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), nil)
 	require.NoError(t, err)
 
-	defer cancelInit()
-
 	// run the node connection
 	go nc.Run(ctx)
+
+	nc.WaitUntilInitiallySynced(ctxInit)
 
 	//
 	// Check the chain operations.

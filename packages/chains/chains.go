@@ -115,6 +115,10 @@ func New(
 }
 
 func (c *Chains) Run(ctx context.Context) error {
+	if err := c.nodeConnection.WaitUntilInitiallySynced(ctx); err != nil {
+		return fmt.Errorf("waiting for L1 node to become sync failed, error: %w", err)
+	}
+
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 

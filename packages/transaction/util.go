@@ -67,7 +67,9 @@ func computeInputsAndRemainder(
 
 	var remainder *iotago.BasicOutput
 
-	var errLast error
+	// we need to start with a predefined error, otherwise we won't return a failure
+	// even if not a single unspentOutputID was given and we never run into the following loop.
+	errLast := errors.New("no valid inputs found to create transaction")
 
 	var inputIDs iotago.OutputIDs
 

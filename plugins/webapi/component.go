@@ -12,7 +12,6 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 	"go.elastic.co/apm/module/apmechov4"
 	"go.uber.org/dig"
-	"go.uber.org/zap"
 	"nhooyr.io/websocket"
 
 	"github.com/iotaledger/hive.go/core/app"
@@ -20,6 +19,7 @@ import (
 	"github.com/iotaledger/hive.go/core/configuration"
 	"github.com/iotaledger/hive.go/core/websockethub"
 	"github.com/iotaledger/inx-app/pkg/httpserver"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/dkg"
@@ -29,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi"
+	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 )
 
 func init() {
@@ -62,8 +63,9 @@ const (
 type dependencies struct {
 	dig.In
 
-	EchoSwagger  echoswagger.ApiRoot `name:"webapiServer"`
-	WebsocketHub *websockethub.Hub   `name:"websocketHub"`
+	EchoSwagger    echoswagger.ApiRoot `name:"webapiServer"`
+	WebsocketHub   *websockethub.Hub   `name:"websocketHub"`
+	NodeConnection chain.NodeConnection
 }
 
 func initConfigPars(c *dig.Container) error {
@@ -141,7 +143,7 @@ func provide(c *dig.Container) error {
 		e.Server.WriteTimeout = ParamsWebAPI.Limits.WriteTimeout
 
 		e.HidePort = true
-		e.HTTPErrorHandler = webapi.CompatibilityHTTPErrorHandler(Plugin.Logger().WithOptions(zap.AddStacktrace(zap.ErrorLevel)))
+		e.HTTPErrorHandler = apierrors.HTTPErrorHandler()
 
 		// timeout middleware
 		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -218,6 +220,12 @@ func provide(c *dig.Container) error {
 func run() error {
 	Plugin.LogInfof("Starting %s server ...", Plugin.Name)
 	if err := Plugin.Daemon().BackgroundWorker(Plugin.Name, func(ctx context.Context) {
+		Plugin.LogInfof("Starting %s server ...", Plugin.Name)
+		if err := deps.NodeConnection.WaitUntilInitiallySynced(ctx); err != nil {
+			Plugin.LogErrorf("failed to start %s, waiting for L1 node to become sync failed, error: %s", err.Error())
+			return
+		}
+
 		Plugin.LogInfof("Starting %s server ... done", Plugin.Name)
 
 		go func() {
