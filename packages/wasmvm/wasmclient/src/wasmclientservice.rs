@@ -1,10 +1,12 @@
 // // Copyright 2020 IOTA Stiftung
 // // SPDX-License-Identifier: Apache-2.0
 
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::thread::spawn;
 use std::time::Duration;
 
+use crypto::signatures::ed25519::PublicKey;
 use reqwest::{blocking, StatusCode};
 use serde::{Deserialize, Serialize};
 use wasmlib::*;
@@ -12,6 +14,7 @@ use ws::{CloseCode, connect, Message, Sender};
 
 use crate::*;
 use crate::codec::*;
+use crate::keypair::KeyPair;
 
 pub const ISC_EVENT_KIND_NEW_BLOCK: &str = "new_block";
 pub const ISC_EVENT_KIND_RECEIPT: &str = "receipt";
@@ -46,9 +49,9 @@ pub struct ContractEvent {
     pub data: String,
 }
 
-#[derive(Clone, PartialEq)]
 pub struct WasmClientService {
     chain_id: ScChainID,
+    nonces: Arc<Mutex<HashMap<PublicKey, u64>>>,
     wasp_api: String,
 }
 
@@ -57,6 +60,7 @@ impl WasmClientService {
         set_sandbox_wrappers(chain_id).unwrap();
         WasmClientService {
             chain_id: chain_id_from_string(chain_id),
+            nonces: Arc::default(),
             wasp_api: String::from(wasp_api),
         }
     }
@@ -95,7 +99,7 @@ impl WasmClientService {
                     let status_code = failed_status_code.as_u16();
                     match v.json::<JsonError>() {
                         Ok(err_msg) => {
-                            return Err(format!("{status_code}: {}", err_msg.message));
+                            return Err(format!("{}: {}", status_code, err_msg.message));
                         }
                         Err(e) => return Err(e.to_string()),
                     }
@@ -119,8 +123,12 @@ impl WasmClientService {
         args: &[u8],
         allowance: &ScAssets,
         key_pair: &keypair::KeyPair,
-        nonce: u64,
     ) -> Result<ScRequestID> {
+        let nonce: u64;
+        match self.cache_nonce(key_pair) {
+            Ok(n) => nonce = n,
+            Err(e) => return Err(e),
+        }
         let mut req =
             offledgerrequest::OffLedgerRequest::new(
                 chain_id,
@@ -147,7 +155,7 @@ impl WasmClientService {
                     let status_code = failed_status_code.as_u16();
                     match v.json::<JsonError>() {
                         Ok(err_msg) => {
-                            return Err(format!("{status_code}: {}", err_msg.message));
+                            return Err(format!("{}: {}", status_code, err_msg.message));
                         }
                         Err(e) => return Err(e.to_string()),
                     }
@@ -228,7 +236,7 @@ impl WasmClientService {
                     let status_code = failed_status_code.as_u16();
                     match v.text() {
                         Ok(err_msg) => {
-                            return Err(format!("{status_code}: {err_msg}"));
+                            return Err(format!("{}: {}", status_code, err_msg));
                         }
                         Err(e) => return Err(e.to_string()),
                     }
@@ -238,5 +246,31 @@ impl WasmClientService {
                 return Err(format!("request failed: {}", e.to_string()));
             }
         }
+    }
+
+    fn cache_nonce(&self, key_pair: &KeyPair) -> Result<u64> {
+        let key = key_pair.public_key;
+        let mut nonces = self.nonces.lock().unwrap();
+        let mut nonce: u64;
+        match nonces.get(&key) {
+            None => {
+                // get last used nonce from accounts core contract
+                let isc_agent = ScAgentID::from_address(&key_pair.address());
+                let chain_id = self.chain_id.to_string();
+                let wcs = Arc::new(WasmClientService::new(&self.wasp_api, &chain_id));
+                let ctx = WasmClientContext::new(wcs, coreaccounts::SC_NAME);
+                let n = coreaccounts::ScFuncs::get_account_nonce(&ctx);
+                n.params.agent_id().set_value(&isc_agent);
+                n.func.call();
+                match ctx.err() {
+                    Ok(_) => nonce = n.results.account_nonce().value(),
+                    Err(e) => return Err(e),
+                }
+            }
+            Some(n) => nonce = *n,
+        }
+        nonce += 1;
+        nonces.insert(key, nonce);
+        Ok(nonce)
     }
 }

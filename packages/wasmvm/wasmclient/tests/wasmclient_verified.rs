@@ -59,8 +59,8 @@ fn check_error(ctx: &WasmClientContext) {
 }
 
 fn setup_client() -> WasmClientContext {
-    let svc = WasmClientService::new("http://localhost:19090", MYCHAIN);
-    let mut ctx = WasmClientContext::new(&svc, "testwasmlib");
+    let svc = Arc::new(WasmClientService::new("http://localhost:19090", MYCHAIN));
+    let mut ctx = WasmClientContext::new(svc.clone(), "testwasmlib");
     ctx.sign_requests(&keypair::KeyPair::from_sub_seed(
         &wasmlib::bytes_from_string(MYSEED),
         0,

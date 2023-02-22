@@ -53,8 +53,6 @@ impl ScFuncCallContext for WasmClientContext {
         }
 
         let sc_assets = ScAssets::new(&req.transfer);
-        let mut nonce = self.nonce.lock().unwrap();
-        *nonce += 1;
         let res = self.svc_client.post_request(
             &req.chain_id,
             &req.contract,
@@ -62,7 +60,6 @@ impl ScFuncCallContext for WasmClientContext {
             &req.params,
             &sc_assets,
             self.key_pair.as_ref().unwrap(),
-            *nonce,
         );
 
         match res {

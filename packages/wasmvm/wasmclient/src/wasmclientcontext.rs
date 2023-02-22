@@ -14,25 +14,23 @@ pub struct WasmClientContext {
     pub(crate) event_done: Arc<Mutex<bool>>,
     pub(crate) event_handlers: Arc<Mutex<Vec<Box<dyn IEventHandlers>>>>,
     pub(crate) key_pair: Option<KeyPair>,
-    pub(crate) nonce: Arc<Mutex<u64>>,
     pub(crate) req_id: Arc<Mutex<ScRequestID>>,
     pub(crate) sc_name: String,
     pub(crate) sc_hname: ScHname,
-    pub(crate) svc_client: WasmClientService,
+    pub(crate) svc_client: Arc<WasmClientService>,
 }
 
 impl WasmClientContext {
-    pub fn new(svc_client: &WasmClientService, sc_name: &str) -> WasmClientContext {
+    pub fn new(svc_client: Arc<WasmClientService>, sc_name: &str) -> WasmClientContext {
         WasmClientContext {
             error: Arc::new(Mutex::new(Ok(()))),
             event_done: Arc::default(),
             event_handlers: Arc::default(),
             key_pair: None,
-            nonce: Arc::default(),
             req_id: Arc::new(Mutex::new(request_id_from_bytes(&[]))),
             sc_name: String::from(sc_name),
             sc_hname: hname_from_bytes(&hname_bytes(&sc_name)),
-            svc_client: svc_client.clone(),
+            svc_client: svc_client,
         }
     }
 
@@ -44,7 +42,7 @@ impl WasmClientContext {
         self.key_pair.clone()
     }
 
-    pub fn current_svc_client(&self) -> WasmClientService {
+    pub fn current_svc_client(&self) -> Arc<WasmClientService> {
         self.svc_client.clone()
     }
 
@@ -75,17 +73,6 @@ impl WasmClientContext {
 
     pub fn sign_requests(&mut self, key_pair: &KeyPair) {
         self.key_pair = Some(key_pair.clone());
-        // get last used nonce from accounts core contract
-        let isc_agent = ScAgentID::from_address(&key_pair.address());
-        let ctx = WasmClientContext::new(
-            &self.svc_client,
-            coreaccounts::SC_NAME,
-        );
-        let n = coreaccounts::ScFuncs::get_account_nonce(&ctx);
-        n.params.agent_id().set_value(&isc_agent);
-        n.func.call();
-        let mut nonce = self.nonce.lock().unwrap();
-        *nonce = n.results.account_nonce().value();
     }
 
     pub fn unregister(&mut self, id: &str) {
