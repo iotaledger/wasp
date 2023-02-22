@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -114,7 +115,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 	// calls to governance are processed (try changing fees for example)
 	newGasFeePolicy := gas.GasFeePolicy{
 		GasFeeTokenID:     iotago.NativeTokenID{},
-		GasPerToken:       10,
+		GasPerToken:       util.Ratio32{A: 1, B: 10},
 		ValidatorFeeShare: 1,
 		EVMGasRatio:       gas.DefaultEVMGasRatio,
 	}

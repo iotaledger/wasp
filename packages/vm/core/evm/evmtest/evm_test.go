@@ -1491,10 +1491,10 @@ func TestSendEntireBalance(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	gasPerToken := env.soloChain.GetGasFeePolicy().GasPerToken
-	tokensForGasBudget := uint64(math.Ceil(float64(estimatedGas) / float64(gasPerToken)))
+	feePolicy := env.soloChain.GetGasFeePolicy()
+	tokensForGasBudget := feePolicy.FeeFromGas(estimatedGas)
 
-	gasLimit := env.soloChain.GetGasFeePolicy().GasPerToken * tokensForGasBudget
+	gasLimit := feePolicy.GasBudgetFromTokens(tokensForGasBudget)
 
 	valueToSendInEthDecimals := util.CustomTokensDecimalsToEthereumDecimals(
 		new(big.Int).SetUint64(currentBalance-tokensForGasBudget),
@@ -1560,9 +1560,9 @@ func TestSolidityTransferCustomBaseTokens(t *testing.T) {
 	env.setFeePolicy(gas.GasFeePolicy{
 		GasFeeTokenID:       nativeTokenID,
 		GasFeeTokenDecimals: customTokenDecimals,
-		GasPerToken:         100,
+		GasPerToken:         gas.DefaultGasPerToken,
 		ValidatorFeeShare:   0,
-		EVMGasRatio:         gas.DefaultGasFeePolicy().EVMGasRatio,
+		EVMGasRatio:         gas.DefaultEVMGasRatio,
 	}, iscCallOptions{
 		wallet: env.soloChain.OriginatorPrivateKey,
 	})

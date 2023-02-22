@@ -96,7 +96,7 @@ func initEncodeGasFeePolicy() *cobra.Command {
 	var (
 		tokenID           string
 		tokenDecimals     uint32
-		gasPerToken       uint64
+		gasPerToken       string
 		evmGasRatio       string
 		validatorFeeShare uint8
 	)
@@ -119,8 +119,10 @@ func initEncodeGasFeePolicy() *cobra.Command {
 				gasPolicy.GasFeeTokenDecimals = tokenDecimals
 			}
 
-			if gasPerToken != 0 {
-				gasPolicy.GasPerToken = gasPerToken
+			if gasPerToken != "" {
+				ratio, err := wasp_util.Ratio32FromString(evmGasRatio)
+				log.Check(err)
+				gasPolicy.GasPerToken = ratio
 			}
 
 			if evmGasRatio != "" {
@@ -139,7 +141,7 @@ func initEncodeGasFeePolicy() *cobra.Command {
 
 	cmd.Flags().StringVar(&tokenID, "tokenID", "", "TokenID for the gas fee")
 	cmd.Flags().Uint32Var(&tokenDecimals, "tokenDecimals", 0, "decimals for the fee token")
-	cmd.Flags().Uint64Var(&gasPerToken, "gasPerToken", 0, "gas per token")
+	cmd.Flags().StringVar(&gasPerToken, "gasPerToken", "", "gas per token ratio (format: a:b)")
 	cmd.Flags().StringVar(&evmGasRatio, "evmGasRatio", "", "evm gas ratio (format: a:b)")
 	cmd.Flags().Uint8Var(&validatorFeeShare, "validatorFeeShare", 101, "validator fee share (between 0 and 100)")
 

@@ -99,7 +99,7 @@ func initInfoCmd() *cobra.Command {
 						}
 					}
 
-					log.Printf("Gas fee: 1 %s = %v gas units\n", gasFeeToken, chainInfo.GasFeePolicy.GasPerToken)
+					log.Printf("Gas fee (%s): fee = gas units * (%d/%d)\n", gasFeeToken, chainInfo.GasFeePolicy.GasPerToken.A, chainInfo.GasFeePolicy.GasPerToken.B)
 					log.Printf("Validator fee share: %d%%\n", chainInfo.GasFeePolicy.ValidatorFeeShare)
 				}
 

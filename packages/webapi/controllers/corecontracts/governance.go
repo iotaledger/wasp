@@ -5,52 +5,29 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
-type gasFeePolicy struct {
-	GasFeeTokenID     string `json:"gasFeeTokenId" swagger:"desc(The gas fee token id. Empty if base token.),required"`
-	GasPerToken       string `json:"gasPerToken" swagger:"desc(The amount of gas per token. (uint64 as string)),min(0),required"`
-	ValidatorFeeShare uint8  `json:"validatorFeeShare" swagger:"desc(The validator fee share.),required"`
-}
-
-type GovChainInfoResponse struct {
-	ChainID         string       `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
-	ChainOwnerID    string       `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
-	Description     string       `json:"description" swagger:"desc(The description of the chain.),required"`
-	GasFeePolicy    gasFeePolicy `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
-	MaxBlobSize     uint32       `json:"maxBlobSize" swagger:"desc(The maximum contract blob size.),required"`
-	MaxEventSize    uint16       `json:"maxEventSize" swagger:"desc(The maximum event size.),required"`                      // TODO: Clarify
-	MaxEventsPerReq uint16       `json:"maxEventsPerReq" swagger:"desc(The maximum amount of events per request.),required"` // TODO: Clarify
-}
-
-type GovAllowedStateControllerAddressesResponse struct {
-	Addresses []string `json:"addresses" swagger:"desc(The allowed state controller addresses (Bech32-encoded))"`
-}
-
-type GovChainOwnerResponse struct {
-	ChainOwner string `json:"chainOwner" swagger:"desc(The chain owner (Bech32-encoded))"`
-}
-
-func MapGovChainInfoResponse(chainInfo *governance.ChainInfo) GovChainInfoResponse {
+func MapGovChainInfoResponse(chainInfo *governance.ChainInfo) models.GovChainInfoResponse {
 	gasFeeTokenID := ""
 
 	if !isc.IsEmptyNativeTokenID(chainInfo.GasFeePolicy.GasFeeTokenID) {
 		gasFeeTokenID = chainInfo.GasFeePolicy.GasFeeTokenID.String()
 	}
 
-	chainInfoResponse := GovChainInfoResponse{
+	chainInfoResponse := models.GovChainInfoResponse{
 		ChainID:      chainInfo.ChainID.String(),
 		ChainOwnerID: chainInfo.ChainOwnerID.String(),
 		Description:  chainInfo.Description,
-		GasFeePolicy: gasFeePolicy{
+		GasFeePolicy: models.GasFeePolicy{
 			GasFeeTokenID:     gasFeeTokenID,
-			GasPerToken:       iotago.EncodeUint64(chainInfo.GasFeePolicy.GasPerToken),
+			GasPerToken:       chainInfo.GasFeePolicy.GasPerToken,
 			ValidatorFeeShare: chainInfo.GasFeePolicy.ValidatorFeeShare,
+			EVMGasRatio:       chainInfo.GasFeePolicy.EVMGasRatio,
 		},
 		MaxBlobSize:     chainInfo.MaxBlobSize,
 		MaxEventSize:    chainInfo.MaxEventSize,
@@ -87,7 +64,7 @@ func (c *Controller) getChainOwner(e echo.Context) error {
 		return c.handleViewCallError(err, chainID)
 	}
 
-	chainOwnerResponse := GovChainOwnerResponse{
+	chainOwnerResponse := models.GovChainOwnerResponse{
 		ChainOwner: chainOwner.String(),
 	}
 
@@ -111,7 +88,7 @@ func (c *Controller) getAllowedStateControllerAddresses(e echo.Context) error {
 		encodedAddresses[k] = v.Bech32(parameters.L1().Protocol.Bech32HRP)
 	}
 
-	addressesResponse := GovAllowedStateControllerAddressesResponse{
+	addressesResponse := models.GovAllowedStateControllerAddressesResponse{
 		Addresses: encodedAddresses,
 	}
 

@@ -4,15 +4,16 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**EvmGasRatio** | [**Ratio32**](Ratio32.md) |  | 
 **GasFeeTokenId** | **string** | The gas fee token id. Empty if base token. | 
-**GasPerToken** | **string** | The amount of gas per token. (uint64 as string) | 
+**GasPerToken** | [**Ratio32**](Ratio32.md) |  | 
 **ValidatorFeeShare** | **int32** | The validator fee share. | 
 
 ## Methods
 
 ### NewGasFeePolicy
 
-`func NewGasFeePolicy(gasFeeTokenId string, gasPerToken string, validatorFeeShare int32, ) *GasFeePolicy`
+`func NewGasFeePolicy(evmGasRatio Ratio32, gasFeeTokenId string, gasPerToken Ratio32, validatorFeeShare int32, ) *GasFeePolicy`
 
 NewGasFeePolicy instantiates a new GasFeePolicy object
 This constructor will assign default values to properties that have it defined,
@@ -26,6 +27,26 @@ will change when the set of required properties is changed
 NewGasFeePolicyWithDefaults instantiates a new GasFeePolicy object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
+
+### GetEvmGasRatio
+
+`func (o *GasFeePolicy) GetEvmGasRatio() Ratio32`
+
+GetEvmGasRatio returns the EvmGasRatio field if non-nil, zero value otherwise.
+
+### GetEvmGasRatioOk
+
+`func (o *GasFeePolicy) GetEvmGasRatioOk() (*Ratio32, bool)`
+
+GetEvmGasRatioOk returns a tuple with the EvmGasRatio field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetEvmGasRatio
+
+`func (o *GasFeePolicy) SetEvmGasRatio(v Ratio32)`
+
+SetEvmGasRatio sets EvmGasRatio field to given value.
+
 
 ### GetGasFeeTokenId
 
@@ -49,20 +70,20 @@ SetGasFeeTokenId sets GasFeeTokenId field to given value.
 
 ### GetGasPerToken
 
-`func (o *GasFeePolicy) GetGasPerToken() string`
+`func (o *GasFeePolicy) GetGasPerToken() Ratio32`
 
 GetGasPerToken returns the GasPerToken field if non-nil, zero value otherwise.
 
 ### GetGasPerTokenOk
 
-`func (o *GasFeePolicy) GetGasPerTokenOk() (*string, bool)`
+`func (o *GasFeePolicy) GetGasPerTokenOk() (*Ratio32, bool)`
 
 GetGasPerTokenOk returns a tuple with the GasPerToken field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetGasPerToken
 
-`func (o *GasFeePolicy) SetGasPerToken(v string)`
+`func (o *GasFeePolicy) SetGasPerToken(v Ratio32)`
 
 SetGasPerToken sets GasPerToken field to given value.
 

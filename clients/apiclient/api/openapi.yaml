@@ -332,8 +332,7 @@ paths:
         schema:
           format: string
           type: string
-      - description: AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses
-          require urlencode)
+      - description: AgentID (Bech32 for WasmVM | Hex for EVM)
         in: path
         name: agentID
         required: true
@@ -387,8 +386,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get all foundries owned by an account
       tags:
       - corecontracts
@@ -403,8 +400,7 @@ paths:
         schema:
           format: string
           type: string
-      - description: AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses
-          require urlencode)
+      - description: AgentID (Bech32 for WasmVM | Hex for EVM)
         in: path
         name: agentID
         required: true
@@ -438,8 +434,7 @@ paths:
         schema:
           format: string
           type: string
-      - description: AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses
-          require urlencode)
+      - description: AgentID (Bech32 for WasmVM | Hex for EVM)
         in: path
         name: agentID
         required: true
@@ -1398,7 +1393,7 @@ paths:
         schema:
           format: string
           type: string
-      - description: Key (Hex)
+      - description: State Key (Hex)
         in: path
         name: stateKey
         required: true
@@ -1413,23 +1408,6 @@ paths:
                 $ref: '#/components/schemas/StateResponse'
           description: Result
       summary: Fetch the raw value associated with the given key in the chain state
-      tags:
-      - chains
-  /chains/{chainID}/ws:
-    get:
-      operationId: attachToWebsocket
-      parameters:
-      - description: ChainID (Bech32)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
-      responses:
-        default:
-          content: {}
-          description: successful operation
       tags:
       - chains
   /health:
@@ -1704,7 +1682,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/PeeringNodeStatusResponse__'
+                  $ref: '#/components/schemas/PeeringNodeStatusResponse_'
                 type: array
           description: A list of all peers
         "401":
@@ -2079,6 +2057,12 @@ paths:
       tags:
       - users
       x-codegen-request-body-name: ""
+  /ws:
+    get:
+      responses:
+        default:
+          content: {}
+          description: successful operation
 components:
   schemas:
     AccountFoundriesResponse:
@@ -2762,8 +2746,13 @@ components:
         description: description
         gasFeePolicy:
           gasFeeTokenId: gasFeeTokenId
-          gasPerToken: "100"
+          gasPerToken:
+            a: 1
+            b: 100
           validatorFeeShare: 1
+          evmGasRatio:
+            a: 0
+            b: 0
         isActive: true
         maxBlobSize: 2000000
         maxEventSize: 2000
@@ -2797,7 +2786,7 @@ components:
           xml:
             name: EVMChainID
         gasFeePolicy:
-          $ref: '#/components/schemas/gasFeePolicy'
+          $ref: '#/components/schemas/GasFeePolicy'
         isActive:
           description: Whether or not the chain is active.
           format: boolean
@@ -3010,18 +2999,18 @@ components:
         committeeNodes:
         - node:
             isAlive: true
-            peeringURL: peeringURL
+            peeringURL: localhost:4000
             name: name
-            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-            numUsers: 6
+            publicKey: 0x0000
+            numUsers: 1
             isTrusted: true
           accessAPI: accessAPI
         - node:
             isAlive: true
-            peeringURL: peeringURL
+            peeringURL: localhost:4000
             name: name
-            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-            numUsers: 6
+            publicKey: 0x0000
+            numUsers: 1
             isTrusted: true
           accessAPI: accessAPI
         chainId: tst1pqm5ckama06xhkl080mmvz6l3xy8c8lulrwy7mx4ll0fc69krxfgka70j0e
@@ -3127,10 +3116,10 @@ components:
       example:
         node:
           isAlive: true
-          peeringURL: peeringURL
+          peeringURL: localhost:4000
           name: name
-          publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-          numUsers: 6
+          publicKey: 0x0000
+          numUsers: 1
           isTrusted: true
         accessAPI: accessAPI
       properties:
@@ -3666,6 +3655,76 @@ components:
       type: object
       xml:
         name: FoundryOutputResponse
+    GasFeePolicy:
+      example:
+        gasFeeTokenId: gasFeeTokenId
+        gasPerToken:
+          a: 1
+          b: 100
+        validatorFeeShare: 1
+        evmGasRatio:
+          a: 0
+          b: 0
+      properties:
+        evmGasRatio:
+          $ref: '#/components/schemas/Ratio32_'
+        gasFeeTokenId:
+          description: The gas fee token id. Empty if base token.
+          format: string
+          type: string
+          xml:
+            name: GasFeeTokenID
+        gasPerToken:
+          $ref: '#/components/schemas/Ratio32'
+        validatorFeeShare:
+          description: The validator fee share.
+          format: int32
+          type: integer
+          xml:
+            name: ValidatorFeeShare
+      required:
+      - evmGasRatio
+      - gasFeeTokenId
+      - gasPerToken
+      - validatorFeeShare
+      type: object
+      xml:
+        name: GasFeePolicy
+    GasFeePolicy_:
+      example:
+        gasFeeTokenId: gasFeeTokenId
+        gasPerToken:
+          a: 0
+          b: 0
+        validatorFeeShare: 0
+        evmGasRatio:
+          a: 0
+          b: 0
+      properties:
+        evmGasRatio:
+          $ref: '#/components/schemas/Ratio32_'
+        gasFeeTokenId:
+          description: The gas fee token id. Empty if base token.
+          format: string
+          type: string
+          xml:
+            name: GasFeeTokenID
+        gasPerToken:
+          $ref: '#/components/schemas/Ratio32_'
+        validatorFeeShare:
+          description: The validator fee share.
+          format: int32
+          type: integer
+          xml:
+            name: ValidatorFeeShare
+      required:
+      - evmGasRatio
+      - gasFeeTokenId
+      - gasPerToken
+      - validatorFeeShare
+      type: object
+      xml:
+        name: GasFeePolicy
     GovAllowedStateControllerAddressesResponse:
       example:
         addresses:
@@ -3692,8 +3751,13 @@ components:
         description: description
         gasFeePolicy:
           gasFeeTokenId: gasFeeTokenId
-          gasPerToken: gasPerToken
+          gasPerToken:
+            a: 0
+            b: 0
           validatorFeeShare: 0
+          evmGasRatio:
+            a: 0
+            b: 0
         maxBlobSize: 6
         maxEventSize: 1
       properties:
@@ -3716,7 +3780,7 @@ components:
           xml:
             name: Description
         gasFeePolicy:
-          $ref: '#/components/schemas/gasFeePolicy_'
+          $ref: '#/components/schemas/GasFeePolicy_'
         maxBlobSize:
           description: The maximum contract blob size.
           format: int32
@@ -4508,60 +4572,6 @@ components:
     PeeringNodeStatusResponse_:
       example:
         isAlive: true
-        peeringURL: peeringURL
-        name: name
-        publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-        numUsers: 6
-        isTrusted: true
-      properties:
-        isAlive:
-          description: Whether or not the peer is activated
-          format: boolean
-          type: boolean
-          xml:
-            name: IsAlive
-        isTrusted:
-          format: boolean
-          type: boolean
-          xml:
-            name: IsTrusted
-        name:
-          format: string
-          type: string
-          xml:
-            name: Name
-        numUsers:
-          description: The amount of users attached to the peer
-          format: int32
-          type: integer
-          xml:
-            name: NumUsers
-        peeringURL:
-          description: The peering URL of the peer
-          format: string
-          type: string
-          xml:
-            name: PeeringURL
-        publicKey:
-          description: The peers public key encoded in Hex
-          example: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-          format: string
-          type: string
-          xml:
-            name: PublicKey
-      required:
-      - isAlive
-      - isTrusted
-      - name
-      - numUsers
-      - peeringURL
-      - publicKey
-      type: object
-      xml:
-        name: PeeringNodeStatusResponse
-    PeeringNodeStatusResponse__:
-      example:
-        isAlive: true
         peeringURL: localhost:4000
         name: name
         publicKey: 0x0000
@@ -4746,6 +4756,54 @@ components:
       type: object
       xml:
         name: PublisherStateTransactionItem
+    Ratio32:
+      example:
+        a: 1
+        b: 100
+      properties:
+        a:
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: A
+        b:
+          example: 100
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: B
+      required:
+      - a
+      - b
+      type: object
+      xml:
+        name: Ratio32
+    Ratio32_:
+      example:
+        a: 0
+        b: 0
+      properties:
+        a:
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: A
+        b:
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: B
+      required:
+      - a
+      - b
+      type: object
+      xml:
+        name: Ratio32
     ReceiptError:
       example:
         contractHName: contractHName
@@ -5461,70 +5519,6 @@ components:
       type: object
       xml:
         name: VersionResponse
-    gasFeePolicy:
-      example:
-        gasFeeTokenId: gasFeeTokenId
-        gasPerToken: "100"
-        validatorFeeShare: 1
-      properties:
-        gasFeeTokenId:
-          description: The gas fee token id. Empty if base token.
-          format: string
-          type: string
-          xml:
-            name: GasFeeTokenID
-        gasPerToken:
-          description: The amount of gas per token. (uint64 as string)
-          example: "100"
-          format: string
-          type: string
-          xml:
-            name: GasPerToken
-        validatorFeeShare:
-          description: The validator fee share.
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: ValidatorFeeShare
-      required:
-      - gasFeeTokenId
-      - gasPerToken
-      - validatorFeeShare
-      type: object
-      xml:
-        name: gasFeePolicy
-    gasFeePolicy_:
-      example:
-        gasFeeTokenId: gasFeeTokenId
-        gasPerToken: gasPerToken
-        validatorFeeShare: 0
-      properties:
-        gasFeeTokenId:
-          description: The gas fee token id. Empty if base token.
-          format: string
-          type: string
-          xml:
-            name: GasFeeTokenID
-        gasPerToken:
-          description: The amount of gas per token. (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: GasPerToken
-        validatorFeeShare:
-          description: The validator fee share.
-          format: int32
-          type: integer
-          xml:
-            name: ValidatorFeeShare
-      required:
-      - gasFeeTokenId
-      - gasPerToken
-      - validatorFeeShare
-      type: object
-      xml:
-        name: gasFeePolicy
   securitySchemes:
     Authorization:
       description: JWT Token
