@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+import * as coreaccounts from 'wasmlib/coreaccounts';
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
 import {panic, ScChainID} from 'wasmlib';
@@ -17,10 +18,11 @@ type ClientCallBack = (event: ContractEvent) => void;
 
 export class WasmClientService {
     private callbacks: ClientCallBack[] = [];
-    private chainID: ScChainID
-    private ws: WebSocket;
+    private chainID: ScChainID;
+    private nonces = new Map<Uint8Array, u64>();
     private subscribers: WasmClientContext[] = [];
     private waspAPI: string;
+    private ws: WebSocket;
 
     public constructor(waspAPI: string, chainID: string) {
         const err = isc.setSandboxWrappers(chainID);
@@ -62,7 +64,11 @@ export class WasmClientService {
         return this.chainID;
     }
 
-    public postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array, allowance: wasmlib.ScAssets, keyPair: isc.KeyPair, nonce: u64): [wasmlib.ScRequestID, isc.Error] {
+    public postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array, allowance: wasmlib.ScAssets, keyPair: isc.KeyPair): [wasmlib.ScRequestID, isc.Error] {
+        const [nonce, err] = this.cachedNonce(keyPair);
+        if (err != null) {
+            return [new wasmlib.ScRequestID(), err];
+        }
         const req = new isc.OffLedgerRequest(chainID, hContract, hFunction, args, nonce);
         req.withAllowance(allowance);
         const signed = req.sign(keyPair);
@@ -122,6 +128,26 @@ export class WasmClientService {
         const url = this.waspAPI + '/chains/' + this.chainID.toString() + '/requests/' + reqID.toString() + '/wait';
         new isc.SyncRequestClient().get(url);
         return null;
+    }
+
+    private cachedNonce(keyPair: isc.KeyPair): [u64, isc.Error] {
+        //TODO do we need to lock a nonceLock mutex here?
+        const key = keyPair.publicKey;
+        let nonce = this.nonces.get(key);
+        if (nonce === undefined) {
+            const agent = wasmlib.ScAgentID.fromAddress(keyPair.address());
+            const ctx = new WasmClientContext(this, coreaccounts.ScName);
+            const n = coreaccounts.ScFuncs.getAccountNonce(ctx);
+            n.params.agentID().setValue(agent);
+            n.func.call();
+            if (ctx.Err != null) {
+                return [0n, ctx.Err];
+            }
+            nonce = n.results.accountNonce().value();
+        }
+        nonce++;
+        this.nonces.set(key, nonce);
+        return [nonce, null];
     }
 
     private eventLoop(data: RawData) {

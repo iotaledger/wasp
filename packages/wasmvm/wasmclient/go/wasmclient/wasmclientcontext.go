@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
@@ -19,7 +18,6 @@ type WasmClientContext struct {
 	Err           error
 	eventHandlers []wasmlib.IEventHandlers
 	keyPair       *cryptolib.KeyPair
-	nonce         uint64
 	ReqID         wasmtypes.ScRequestID
 	scName        string
 	scHname       wasmtypes.ScHname
@@ -80,19 +78,6 @@ func (s *WasmClientContext) ServiceContractName(contractName string) {
 
 func (s *WasmClientContext) SignRequests(keyPair *cryptolib.KeyPair) {
 	s.keyPair = keyPair
-
-	// TODO not here
-	// get last used nonce from accounts core contract
-	iscAgent := isc.NewAgentID(keyPair.Address())
-	agent := wasmtypes.AgentIDFromBytes(iscAgent.Bytes())
-	ctx := NewWasmClientContext(s.svcClient, coreaccounts.ScName)
-	n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
-	n.Params.AgentID().SetValue(agent)
-	n.Func.Call()
-	s.Err = ctx.Err
-	if s.Err == nil {
-		s.nonce = n.Results.AccountNonce().Value()
-	}
 }
 
 func (s *WasmClientContext) Unregister(handler wasmlib.IEventHandlers) {

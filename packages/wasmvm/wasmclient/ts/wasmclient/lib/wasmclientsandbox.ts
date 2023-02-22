@@ -56,8 +56,7 @@ export class WasmClientSandbox {
         }
 
         const scAssets = new wasmlib.ScAssets(req.transfer);
-        this.nonce++;
-        [this.ReqID, this.Err] = this.svcClient.postRequest(req.chainID, req.contract, req.function, req.params, scAssets, this.keyPair, this.nonce);
+        [this.ReqID, this.Err] = this.svcClient.postRequest(req.chainID, req.contract, req.function, req.params, scAssets, this.keyPair);
         return new Uint8Array(0);
     }
 }

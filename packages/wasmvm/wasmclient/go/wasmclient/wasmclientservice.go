@@ -8,6 +8,7 @@ package wasmclient
 import (
 	"context"
 	"strings"
+	"sync"
 	"time"
 
 	"nhooyr.io/websocket"
@@ -22,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/publisher/publisherws"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
@@ -36,7 +38,7 @@ type EventProcessor func(event *ContractEvent)
 type IClientService interface {
 	CallViewByHname(hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error)
 	CurrentChainID() wasmtypes.ScChainID
-	PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair, nonce uint64) (wasmtypes.ScRequestID, error)
+	PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (wasmtypes.ScRequestID, error)
 	SubscribeEvents(callback EventProcessor) error
 	UnsubscribeEvents()
 	WaitUntilRequestProcessed(reqID wasmtypes.ScRequestID, timeout time.Duration) error
@@ -47,6 +49,8 @@ type WasmClientService struct {
 	callback   EventProcessor
 	chainID    wasmtypes.ScChainID
 	eventDone  chan bool
+	nonceLock  sync.Mutex
+	nonces     map[string]uint64
 	waspClient *apiclient.APIClient
 	webSocket  string
 }
@@ -64,6 +68,7 @@ func NewWasmClientService(waspAPI string, chainID string) *WasmClientService {
 	}
 	return &WasmClientService{
 		chainID:    wasmtypes.ChainIDFromString(chainID),
+		nonces:     make(map[string]uint64),
 		waspClient: client,
 		webSocket:  strings.Replace(waspAPI, "http:", "ws:", 1) + "/ws",
 	}
@@ -97,11 +102,16 @@ func (sc *WasmClientService) CurrentChainID() wasmtypes.ScChainID {
 	return sc.chainID
 }
 
-func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair, nonce uint64) (reqID wasmtypes.ScRequestID, err error) {
+func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (reqID wasmtypes.ScRequestID, err error) {
 	iscChainID := cvt.IscChainID(&chainID)
 	iscContract := cvt.IscHname(hContract)
 	iscFunction := cvt.IscHname(hFunction)
 	params, err := dict.FromBytes(args)
+	if err != nil {
+		return reqID, err
+	}
+
+	nonce, err := sc.cachedNonce(keyPair)
 	if err != nil {
 		return reqID, err
 	}
@@ -162,6 +172,31 @@ func (sc *WasmClientService) WaitUntilRequestProcessed(reqID wasmtypes.ScRequest
 		Execute()
 
 	return err
+}
+
+func (sc *WasmClientService) cachedNonce(keyPair *cryptolib.KeyPair) (uint64, error) {
+	sc.nonceLock.Lock()
+	defer sc.nonceLock.Unlock()
+
+	key := string(keyPair.GetPublicKey().AsBytes())
+	nonce, ok := sc.nonces[key]
+	if !ok {
+		// note that even while getting the current nonce we keep the lock active
+		// that way prevent other potential contenders to do the same in parallel
+		iscAgent := isc.NewAgentID(keyPair.Address())
+		agent := wasmtypes.AgentIDFromBytes(iscAgent.Bytes())
+		ctx := NewWasmClientContext(sc, coreaccounts.ScName)
+		n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
+		n.Params.AgentID().SetValue(agent)
+		n.Func.Call()
+		if ctx.Err != nil {
+			return 0, ctx.Err
+		}
+		nonce = n.Results.AccountNonce().Value()
+	}
+	nonce++
+	sc.nonces[key] = nonce
+	return nonce, nil
 }
 
 func (sc *WasmClientService) eventLoop(ctx context.Context, ws *websocket.Conn) {

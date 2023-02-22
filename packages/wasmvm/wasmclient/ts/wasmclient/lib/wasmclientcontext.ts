@@ -4,7 +4,6 @@
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
 import {panic} from 'wasmlib';
-import * as coreaccounts from 'wasmlib/coreaccounts';
 import {WasmClientSandbox} from './wasmclientsandbox';
 import {ContractEvent, WasmClientService} from './wasmclientservice';
 
@@ -51,18 +50,6 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
 
     public signRequests(keyPair: isc.KeyPair) {
         this.keyPair = keyPair;
-
-        // TODO not here
-        // get last used nonce from accounts core contract
-        const agent = wasmlib.ScAgentID.fromAddress(keyPair.address());
-        const ctx = new WasmClientContext(this.svcClient, coreaccounts.ScName);
-        const n = coreaccounts.ScFuncs.getAccountNonce(ctx);
-        n.params.agentID().setValue(agent);
-        n.func.call();
-        this.Err = ctx.Err;
-        if (this.Err == null) {
-            this.nonce = n.results.accountNonce().value();
-        }
     }
 
     public unregister(handler: wasmlib.IEventHandlers): void {
