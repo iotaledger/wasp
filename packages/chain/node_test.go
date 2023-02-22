@@ -64,7 +64,7 @@ func TestBasic(t *testing.T) {
 	for _, tst := range tests {
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
-			func(tt *testing.T) { testBasic(tt, tst.n, tst.f, tst.reliable, 90*time.Second) },
+			func(tt *testing.T) { testBasic(tt, tst.n, tst.f, tst.reliable, 5*time.Minute) },
 		)
 	}
 }

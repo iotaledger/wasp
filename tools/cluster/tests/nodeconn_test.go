@@ -94,10 +94,10 @@ func TestNodeConn(t *testing.T) {
 	nc, err := nodeconn.New(ctxInit, log, nodeBridge, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), nil)
 	require.NoError(t, err)
 
-	defer cancelInit()
-
 	// run the node connection
 	go nc.Run(ctx)
+
+	nc.WaitUntilInitiallySynced(ctxInit)
 
 	//
 	// Check the chain operations.
