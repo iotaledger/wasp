@@ -29,7 +29,9 @@ import (
 func createChain(t *testing.T) isc.ChainID {
 	originator := cryptolib.NewKeyPair()
 	layer1Client := l1connection.NewClient(l1.Config, testlogger.NewLogger(t))
-	layer1Client.RequestFunds(originator.Address())
+	err := layer1Client.RequestFunds(originator.Address())
+	require.NoError(t, err)
+
 	utxoMap, err := layer1Client.OutputMap(originator.Address())
 	require.NoError(t, err)
 
