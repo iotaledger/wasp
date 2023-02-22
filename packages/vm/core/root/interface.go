@@ -10,6 +10,8 @@ var Contract = coreutil.NewContract(coreutil.CoreContractRoot, "Root Contract")
 
 // state variables
 const (
+	StateVarSchemaVersion = "v"
+
 	StateVarContractRegistry          = "r"
 	StateVarDeployPermissionsEnabled  = "a"
 	StateVarDeployPermissions         = "p"

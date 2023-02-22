@@ -115,19 +115,19 @@ func FeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
 			return nil, err2
 		}
 	}
-	if ret.GasPerToken, err = readRatio32(mu); err != nil {
+	if ret.GasPerToken, err = ReadRatio32(mu); err != nil {
 		return nil, err
 	}
 	if ret.ValidatorFeeShare, err = mu.ReadUint8(); err != nil {
 		return nil, err
 	}
-	if ret.EVMGasRatio, err = readRatio32(mu); err != nil {
+	if ret.EVMGasRatio, err = ReadRatio32(mu); err != nil {
 		return nil, err
 	}
 	return ret, nil
 }
 
-func readRatio32(mu *marshalutil.MarshalUtil) (ret util.Ratio32, err error) {
+func ReadRatio32(mu *marshalutil.MarshalUtil) (ret util.Ratio32, err error) {
 	b, err := mu.ReadBytes(8)
 	if err != nil {
 		return ret, err
