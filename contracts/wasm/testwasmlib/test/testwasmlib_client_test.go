@@ -30,7 +30,7 @@ import (
 
 const (
 	useCluster    = false
-	useDisposable = true
+	useDisposable = false
 )
 
 var params = []string{
