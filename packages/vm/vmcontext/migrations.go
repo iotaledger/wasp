@@ -32,7 +32,10 @@ func (vmctx *VMContext) runMigrations() {
 		migration := migrations.Migrations[schemaVersion-migrations.BaseSchemaVersion]
 
 		vmctx.callCore(migration.Contract, func(s kv.KVStore) {
-			migration.Apply(s, vmctx.task.Log)
+			err := migration.Apply(s, vmctx.task.Log)
+			if err != nil {
+				panic(fmt.Sprintf("failed applying migration: %s", err))
+			}
 		})
 
 		schemaVersion++

@@ -3,11 +3,12 @@ package chain
 import (
 	"strconv"
 
+	"github.com/spf13/cobra"
+
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
-	"github.com/spf13/cobra"
 )
 
 func initRegisterERC20NativeTokenCmd() *cobra.Command {
