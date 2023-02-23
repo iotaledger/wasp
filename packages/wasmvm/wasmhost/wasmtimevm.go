@@ -32,7 +32,7 @@ func NewWasmTimeVM() WasmVM {
 
 // GasBudget sets the gas budget for the VM.
 func (vm *WasmTimeVM) GasBudget(budget uint64) {
-	// save budget so we can later determine how much the VM burned
+	// save budget, so we can later determine how much the VM burned
 	vm.lastBudget = budget
 
 	// new budget for VM, top up to desired budget
