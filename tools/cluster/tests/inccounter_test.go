@@ -108,7 +108,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 	}
 }
 
-func (e *ChainEnv) checkWasmContractCounter(expected int) {
+func (e *ChainEnv) checkWasmContractCounter(expected int64) {
 	for i := range e.Chain.CommitteeNodes {
 		counterValue, err := e.Chain.GetCounterValue(incHname, i)
 		require.NoError(e.t, err)
@@ -150,7 +150,7 @@ func testIncrement(t *testing.T, env *ChainEnv) {
 	}
 
 	e.checkSC(numRequests)
-	e.checkWasmContractCounter(numRequests)
+	e.checkWasmContractCounter(int64(numRequests))
 }
 
 // executed in cluster_test.go

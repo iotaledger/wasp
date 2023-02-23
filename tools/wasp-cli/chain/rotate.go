@@ -98,5 +98,5 @@ func rotateTo(chain string, newStateControllerAddr iotago.Address) {
 
 	txID, err := tx.ID()
 	log.Check(err)
-	fmt.Fprintf(os.Stdout, "chain rotation transaction issued successfully. TXID: %s", txID.ToHex())
+	fmt.Fprintf(os.Stdout, "Chain rotation transaction issued successfully.\nTXID: %s\n", txID.ToHex())
 }

@@ -168,7 +168,14 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 	// run DKG on the new cluster, obtain the new state controller address
 	out = w2.MustRun("chain", "rundkg", w2.ArgAllNodesExcept(0), "--node=0")
-	newStateControllerAddr := regexp.MustCompile(`(.*):\s*([a-zA-Z0-9_]*)$`).FindStringSubmatch(out[0])[2]
+	var newStateControllerAddr string
+	for _, line := range out {
+		matches := regexp.MustCompile(`Address: ([a-zA-Z0-9_]+)`).FindStringSubmatch(line)
+		if len(matches) > 1 {
+			newStateControllerAddr = matches[1]
+		}
+	}
+	t.Logf("DKG generated state controller address: %v", newStateControllerAddr)
 
 	// issue a governance rotatation via CLI
 	out = w.MustRun("chain", "rotate", newStateControllerAddr)

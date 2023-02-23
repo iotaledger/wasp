@@ -582,7 +582,7 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 }
 
 func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
-	cni.log.Debugf("handleAliasOutput, aliasOutput[StateIndex=%v].ID=", aliasOutput.GetStateIndex(), aliasOutput.OutputID().ToHex())
+	cni.log.Debugf("handleAliasOutput: %v", aliasOutput)
 	cni.stateTrackerCnf.TrackAliasOutput(aliasOutput, true)
 	cni.stateTrackerAct.TrackAliasOutput(aliasOutput, false) // ACT state will be equal to CNF or ahead of it.
 	outMsgs := cni.chainMgr.Input(
@@ -724,7 +724,6 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 			cni.updateAccessNodes(func() {
 				cni.activeCommitteeNodes = ci.committee
 			})
-			cni.log.Infof("Committee nodes updated: %+v", ci.committee) // TODO: Not updated on chain rotation for some reason!!! We don't have the input?
 		}
 	}
 }
@@ -843,17 +842,25 @@ func (cni *chainNodeImpl) deriveActiveAccessNodes() {
 func (cni *chainNodeImpl) updateAccessNodes(update func()) {
 	cni.accessLock.Lock()
 	oldAccessNodes := cni.activeAccessNodes
+	oldCommitteeNodes := cni.activeCommitteeNodes
 	update()
 	cni.deriveActiveAccessNodes()
 	serverNodes := cni.serverNodes
 	activeAccessNodes := cni.activeAccessNodes
 	activeCommitteeNodes := cni.activeCommitteeNodes
 	cni.accessLock.Unlock()
-	if oldAccessNodes == nil || !util.Same(oldAccessNodes, activeAccessNodes) {
+	anSame := util.Same(oldAccessNodes, activeAccessNodes)
+	cnSame := util.Same(oldCommitteeNodes, activeCommitteeNodes)
+	if !anSame {
 		cni.log.Infof("Access nodes updated, active=%+v", activeAccessNodes)
+		cni.listener.AccessNodesUpdated(cni.chainID, activeAccessNodes)
+	}
+	if !anSame || !cnSame {
+		if !cnSame {
+			cni.log.Infof("Committee nodes updated, active=%+v", activeCommitteeNodes)
+		}
 		cni.mempool.AccessNodesUpdated(activeCommitteeNodes, activeAccessNodes)
 		cni.stateMgr.ChainNodesUpdated(serverNodes, activeAccessNodes, activeCommitteeNodes)
-		cni.listener.AccessNodesUpdated(cni.chainID, activeAccessNodes)
 	}
 }
 
