@@ -19,10 +19,10 @@ var _ MappedNullable = &GasFeePolicy{}
 
 // GasFeePolicy struct for GasFeePolicy
 type GasFeePolicy struct {
+	EvmGasRatio Ratio32 `json:"evmGasRatio"`
 	// The gas fee token id. Empty if base token.
 	GasFeeTokenId string `json:"gasFeeTokenId"`
-	// The amount of gas per token. (uint64 as string)
-	GasPerToken string `json:"gasPerToken"`
+	GasPerToken Ratio32 `json:"gasPerToken"`
 	// The validator fee share.
 	ValidatorFeeShare int32 `json:"validatorFeeShare"`
 }
@@ -31,8 +31,9 @@ type GasFeePolicy struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGasFeePolicy(gasFeeTokenId string, gasPerToken string, validatorFeeShare int32) *GasFeePolicy {
+func NewGasFeePolicy(evmGasRatio Ratio32, gasFeeTokenId string, gasPerToken Ratio32, validatorFeeShare int32) *GasFeePolicy {
 	this := GasFeePolicy{}
+	this.EvmGasRatio = evmGasRatio
 	this.GasFeeTokenId = gasFeeTokenId
 	this.GasPerToken = gasPerToken
 	this.ValidatorFeeShare = validatorFeeShare
@@ -45,6 +46,30 @@ func NewGasFeePolicy(gasFeeTokenId string, gasPerToken string, validatorFeeShare
 func NewGasFeePolicyWithDefaults() *GasFeePolicy {
 	this := GasFeePolicy{}
 	return &this
+}
+
+// GetEvmGasRatio returns the EvmGasRatio field value
+func (o *GasFeePolicy) GetEvmGasRatio() Ratio32 {
+	if o == nil {
+		var ret Ratio32
+		return ret
+	}
+
+	return o.EvmGasRatio
+}
+
+// GetEvmGasRatioOk returns a tuple with the EvmGasRatio field value
+// and a boolean to check if the value has been set.
+func (o *GasFeePolicy) GetEvmGasRatioOk() (*Ratio32, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.EvmGasRatio, true
+}
+
+// SetEvmGasRatio sets field value
+func (o *GasFeePolicy) SetEvmGasRatio(v Ratio32) {
+	o.EvmGasRatio = v
 }
 
 // GetGasFeeTokenId returns the GasFeeTokenId field value
@@ -72,9 +97,9 @@ func (o *GasFeePolicy) SetGasFeeTokenId(v string) {
 }
 
 // GetGasPerToken returns the GasPerToken field value
-func (o *GasFeePolicy) GetGasPerToken() string {
+func (o *GasFeePolicy) GetGasPerToken() Ratio32 {
 	if o == nil {
-		var ret string
+		var ret Ratio32
 		return ret
 	}
 
@@ -83,7 +108,7 @@ func (o *GasFeePolicy) GetGasPerToken() string {
 
 // GetGasPerTokenOk returns a tuple with the GasPerToken field value
 // and a boolean to check if the value has been set.
-func (o *GasFeePolicy) GetGasPerTokenOk() (*string, bool) {
+func (o *GasFeePolicy) GetGasPerTokenOk() (*Ratio32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -91,7 +116,7 @@ func (o *GasFeePolicy) GetGasPerTokenOk() (*string, bool) {
 }
 
 // SetGasPerToken sets field value
-func (o *GasFeePolicy) SetGasPerToken(v string) {
+func (o *GasFeePolicy) SetGasPerToken(v Ratio32) {
 	o.GasPerToken = v
 }
 
@@ -129,6 +154,7 @@ func (o GasFeePolicy) MarshalJSON() ([]byte, error) {
 
 func (o GasFeePolicy) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
+	toSerialize["evmGasRatio"] = o.EvmGasRatio
 	toSerialize["gasFeeTokenId"] = o.GasFeeTokenId
 	toSerialize["gasPerToken"] = o.GasPerToken
 	toSerialize["validatorFeeShare"] = o.ValidatorFeeShare

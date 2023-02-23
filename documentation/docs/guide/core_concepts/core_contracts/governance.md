@@ -44,7 +44,7 @@ The Fee Policy looks like the following:
 {
   TokenID []byte // id of the token used to pay for gas (nil if the base token should be used (iota/shimmer)) 
   
-  GasPerToken uint64 // how many gas units are paid for each token
+  GasPerToken Ratio32 // how many gas units are paid for each token
   
   ValidatorFeeShare uint8 // percentage of the fees that are credited to the validators (0 - 100)
 }
@@ -187,7 +187,7 @@ Changes the ISC : EVM gas ratio.
 
 #### Parameters
 
-- `e` ([`GasRatio`](#evm-gas-ratio)): The ISC : EVM gas ratio.
+- `e` ([`Ratio32`](#ratio32)): The ISC : EVM gas ratio.
 
 ---
 
@@ -237,7 +237,7 @@ Returns the ISC : EVM gas ratio.
 
 #### Returns
 
-- `e` ([`GasRatio`](#evm-gas-ratio)): The ISC : EVM gas ratio.
+- `e` ([`Ratio32`](#ratio32)): The ISC : EVM gas ratio.
 
 ### `getChainNodes()`
 
@@ -259,11 +259,11 @@ Returns whether the chain is ongoing maintenance.
 ## Schemas
 
 
-### `EVM gas ratio`
+### `Ratio32`
 
-ISC : EVM gas ratio is expressed as an `a : b` ratio, where `<ISC gas> = <EVM gas> * <a> / <b>`.
+A ratio between two values `x` and `y`, expressed as two `int32` numbers `a:b`, where `y = x * b/a`.
 
-`GasRatio` is encoded as the concatenation of the two `uint32` values `a` & `b`.
+`Ratio32` is encoded as the concatenation of the two `uint32` values `a` & `b`.
 
 
 ### `FeePolicy`
@@ -272,10 +272,10 @@ ISC : EVM gas ratio is expressed as an `a : b` ratio, where `<ISC gas> = <EVM ga
 
 - The [`TokenID`](accounts.md#tokenid) of the token used to charge for gas. (`iotago.NativeTokenID`)
   - If this value is `nil`, the gas fee token is the base token.
-- Gas per token, i.e. how many units of gas a token pays for. (`uint64`)
+- Gas per token ([`Ratio32`](#ratio32)): expressed as an `a:b` ratio such that `fee = gas * a/b`.
 - Validator fee share. Must be between 0 and 100, meaning the percentage of the gas fees distributed to the
   validators. (`uint8`)
-- The [EVM gas ratio](#evm-gas-ratio)
+- The ISC:EVM gas ratio ([`Ratio32`](#ratio32)): such that `ISC gas = EVM gas * a/b`.
 
 ### `AccessNodeInfo`
 

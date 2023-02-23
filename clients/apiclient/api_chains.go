@@ -255,96 +255,6 @@ func (a *ChainsApiService) AddAccessNodeExecute(r ApiAddAccessNodeRequest) (*htt
 	return localVarHTTPResponse, nil
 }
 
-type ApiAttachToWebsocketRequest struct {
-	ctx context.Context
-	ApiService *ChainsApiService
-	chainID string
-}
-
-func (r ApiAttachToWebsocketRequest) Execute() (*http.Response, error) {
-	return r.ApiService.AttachToWebsocketExecute(r)
-}
-
-/*
-AttachToWebsocket Method for AttachToWebsocket
-
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
- @return ApiAttachToWebsocketRequest
-*/
-func (a *ChainsApiService) AttachToWebsocket(ctx context.Context, chainID string) ApiAttachToWebsocketRequest {
-	return ApiAttachToWebsocketRequest{
-		ApiService: a,
-		ctx: ctx,
-		chainID: chainID,
-	}
-}
-
-// Execute executes the request
-func (a *ChainsApiService) AttachToWebsocketExecute(r ApiAttachToWebsocketRequest) (*http.Response, error) {
-	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-	)
-
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.AttachToWebsocket")
-	if err != nil {
-		return nil, &GenericOpenAPIError{error: err.Error()}
-	}
-
-	localVarPath := localBasePath + "/chains/{chainID}/ws"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
-
-	localVarHeaderParams := make(map[string]string)
-	localVarQueryParams := url.Values{}
-	localVarFormParams := url.Values{}
-
-	// to determine the Content-Type header
-	localVarHTTPContentTypes := []string{}
-
-	// set Content-Type header
-	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
-	if localVarHTTPContentType != "" {
-		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
-	}
-
-	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{}
-
-	// set Accept header
-	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
-	if localVarHTTPHeaderAccept != "" {
-		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
-	}
-	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
-	if err != nil {
-		return nil, err
-	}
-
-	localVarHTTPResponse, err := a.client.callAPI(req)
-	if err != nil || localVarHTTPResponse == nil {
-		return localVarHTTPResponse, err
-	}
-
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
-	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
-	if err != nil {
-		return localVarHTTPResponse, err
-	}
-
-	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
-		return localVarHTTPResponse, newErr
-	}
-
-	return localVarHTTPResponse, nil
-}
-
 type ApiChainsChainIDEvmGetRequest struct {
 	ctx context.Context
 	ApiService *ChainsApiService
@@ -1197,7 +1107,7 @@ GetStateValue Fetch the raw value associated with the given key in the chain sta
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @param chainID ChainID (Bech32)
- @param stateKey Key (Hex)
+ @param stateKey State Key (Hex)
  @return ApiGetStateValueRequest
 */
 func (a *ChainsApiService) GetStateValue(ctx context.Context, chainID string, stateKey string) ApiGetStateValueRequest {

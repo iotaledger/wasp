@@ -4,6 +4,7 @@ api/openapi.yaml
 api_auth.go
 api_chains.go
 api_corecontracts.go
+api_default.go
 api_metrics.go
 api_node.go
 api_requests.go
@@ -45,6 +46,7 @@ docs/ControlAddressesResponse.md
 docs/CorecontractsApi.md
 docs/DKSharesInfo.md
 docs/DKSharesPostRequest.md
+docs/DefaultApi.md
 docs/ErrorMessageFormatResponse.md
 docs/ErrorParameter.md
 docs/EventsResponse.md
@@ -83,6 +85,7 @@ docs/PeeringNodeStatusResponse.md
 docs/PeeringTrustRequest.md
 docs/ProtocolParameters.md
 docs/PublisherStateTransactionItem.md
+docs/Ratio32.md
 docs/ReceiptError.md
 docs/ReceiptResponse.md
 docs/RentStructure.md
@@ -176,6 +179,7 @@ model_peering_node_status_response.go
 model_peering_trust_request.go
 model_protocol_parameters.go
 model_publisher_state_transaction_item.go
+model_ratio32.go
 model_receipt_error.go
 model_receipt_response.go
 model_rent_structure.go
