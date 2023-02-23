@@ -5,9 +5,7 @@ package dss_test
 
 import (
 	"bytes"
-	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
@@ -22,7 +20,6 @@ import (
 )
 
 func TestBasic(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
 	log := testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelWarn, false)
 	defer log.Sync()
 	suite := tcrypto.DefaultEd25519Suite()

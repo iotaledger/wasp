@@ -6,7 +6,6 @@ package cons_test
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -65,7 +64,6 @@ func TestBasic(t *testing.T) {
 
 func testBasic(t *testing.T, n, f int) {
 	t.Parallel()
-	rand.Seed(time.Now().UnixNano())
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	//
@@ -295,7 +293,6 @@ func TestChained(t *testing.T) {
 
 func testChained(t *testing.T, n, f, b int) {
 	t.Parallel()
-	rand.Seed(time.Now().UnixNano())
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	//

@@ -5,9 +5,7 @@ package mempool_test
 
 import (
 	"context"
-	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -17,7 +15,6 @@ import (
 )
 
 func TestWaitReq(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
 	kp := cryptolib.NewKeyPair()
 
 	ctxA := context.Background()

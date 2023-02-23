@@ -8,9 +8,7 @@
 package dss_test
 
 import (
-	"math/rand"
 	"testing"
-	"time"
 
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
@@ -26,7 +24,6 @@ import (
 func TestDSS(t *testing.T) {
 	n := 4
 	f := 1
-	rand.Seed(time.Now().UnixNano())
 	suite := tcrypto.DefaultEd25519Suite()
 	nodeIDs := gpa.MakeTestNodeIDs(n)
 	nodeSKs := map[gpa.NodeID]kyber.Scalar{}
