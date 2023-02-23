@@ -124,7 +124,7 @@ func GetChain(name string) isc.ChainID {
 	log.Check(err)
 
 	if networkPrefix != parameters.L1().Protocol.Bech32HRP {
-		err = fmt.Errorf("target network not matches wasp-cli config")
+		err = fmt.Errorf("target network of the L1 node does not match the wasp-cli config")
 	}
 	log.Check(err)
 
