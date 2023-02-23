@@ -125,29 +125,18 @@ func (c *l1client) postBlock(ctx context.Context, block *iotago.Block) (*iotago.
 			return nil, fmt.Errorf("failed during local PoW: %w", err)
 		}
 	}
-
-	var postedBlock *iotago.Block
-	maxRetries := 10
-	for i := 0; ; i++ {
-		var err error
-		postedBlock, err = c.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1().Protocol)
-		if err == nil {
-			break
-		}
-		if i >= maxRetries {
-			return nil, fmt.Errorf("failed to submit block: %w", err)
-		}
-		c.log.Debugf("Retry %v/%v failed to submit block: %w", i, maxRetries, err)
-		time.Sleep(1 * time.Second)
+	block, err := c.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1().Protocol)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit block: %w", err)
 	}
 
-	blockID, err := postedBlock.ID()
+	blockID, err := block.ID()
 	if err != nil {
 		return nil, err
 	}
 	c.log.Infof("Posted blockID %v", blockID.ToHex())
 
-	return postedBlock, nil
+	return block, nil
 }
 
 // PostBlock sends a block (including tipselection and local PoW if necessary).
