@@ -1666,3 +1666,29 @@ func TestSelfDestruct(t *testing.T) {
 	require.Zero(t, env.soloChain.L2BaseTokens(iscTestAgentID))
 	require.EqualValues(t, 1*isc.Million, env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(beneficiary)))
 }
+
+func TestChangeGasLimit(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	storage := env.deployStorageContract(ethKey)
+
+	var blockHashes []common.Hash
+	for i := 0; i < 10; i++ {
+		res, err := storage.store(uint32(i))
+		blockHashes = append(blockHashes, res.evmReceipt.BlockHash)
+		require.NoError(t, err)
+	}
+
+	{
+		feePolicy := env.soloChain.GetGasFeePolicy()
+		feePolicy.EVMGasRatio.B *= 2
+		err := env.setFeePolicy(*feePolicy)
+		require.NoError(t, err)
+	}
+
+	for _, h := range blockHashes {
+		b, err := env.evmChain.BlockByHash(h)
+		require.NoError(t, err)
+		require.Equal(t, b.Hash(), h)
+	}
+}
