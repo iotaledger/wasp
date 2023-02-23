@@ -119,6 +119,7 @@ func (bwtsmT *blockWALTestSM) DamageBlock(t *rapid.T) {
 	blockHash := rapid.SampledFrom(blockHashes).Example()
 	filePath := bwtsmT.pathFromHash(blockHash)
 	data := make([]byte, 50)
+	//nolint:staticcheck // we don't care about weak random numbers here
 	_, err := rand.Read(data)
 	require.NoError(t, err)
 	err = os.WriteFile(filePath, data, 0o644)

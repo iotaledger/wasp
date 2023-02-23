@@ -123,7 +123,7 @@ func HashStrings(str ...string) HashValue {
 	return HashData(tarr...)
 }
 
-func RandomHash(rnd *rand.Rand) HashValue {
+func PseudoRandomHash(rnd *rand.Rand) HashValue {
 	s := ""
 	if rnd == nil {
 		s = fmt.Sprintf("%d", rand.Int())

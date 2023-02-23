@@ -6,7 +6,6 @@ package distSync_test
 import (
 	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -25,7 +24,6 @@ func testBasic(t *testing.T, n, cmtN, cmtF int) {
 	require.GreaterOrEqual(t, n, cmtN)
 	log := testlogger.NewLogger(t)
 	kp := cryptolib.NewKeyPair()
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	recv := map[gpa.NodeID]isc.Request{}
 	nodeIDs := gpa.MakeTestNodeIDs(n)
@@ -47,7 +45,7 @@ func testBasic(t *testing.T, n, cmtN, cmtF int) {
 	req := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), nil, 0).Sign(kp)
 	reqRef := isc.RequestRefFromRequest(req)
 	cmtNodes := []gpa.NodeID{} // Random subset of all nodes.
-	for pos, idx := range rnd.Perm(cmtN) {
+	for pos, idx := range rand.Perm(cmtN) {
 		if pos >= cmtN {
 			break
 		}

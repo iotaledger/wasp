@@ -12,11 +12,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721"
-	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721impl"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721"
+	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721impl"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
 	"github.com/iotaledger/wasp/packages/hashing"

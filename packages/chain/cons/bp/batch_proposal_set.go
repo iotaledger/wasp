@@ -4,13 +4,13 @@
 package bp
 
 import (
-	"math/rand"
 	"sort"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type batchProposalSet map[gpa.NodeID]*BatchProposal
@@ -103,7 +103,7 @@ func (bps batchProposalSet) selectedProposal(aggregatedTime time.Time) gpa.NodeI
 	for nid := range bps {
 		peers = append(peers, nid)
 	}
-	rnd := rand.New(rand.NewSource(aggregatedTime.UnixNano()))
+	rnd := util.NewPseudoRand(aggregatedTime.UnixNano())
 	return peers[rnd.Intn(len(bps))]
 }
 

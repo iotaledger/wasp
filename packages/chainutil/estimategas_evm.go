@@ -33,7 +33,7 @@ func executeIscVM(ch chain.ChainCore, req isc.Request) (*vm.RequestResult, error
 		Store:                ch.Store(),
 		Requests:             []isc.Request{req},
 		TimeAssumption:       time.Now(),
-		Entropy:              hashing.RandomHash(nil),
+		Entropy:              hashing.PseudoRandomHash(nil),
 		ValidatorFeeTarget:   isc.NewContractAgentID(ch.ID(), 0),
 		Log:                  ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 		EnableGasBurnLogging: false,
