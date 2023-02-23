@@ -36,7 +36,7 @@ type Client interface {
 	// requests funds from faucet, waits for confirmation
 	RequestFunds(addr iotago.Address, timeout ...time.Duration) error
 	// sends a tx (including tipselection and local PoW if necessary) and waits for confirmation
-	PostTxAndWaitUntilConfirmation(tx *iotago.Transaction, timeout ...time.Duration) (*iotago.Block, error)
+	PostTxAndWaitUntilConfirmation(tx *iotago.Transaction, timeout ...time.Duration) (iotago.BlockID, error)
 	// returns the outputs owned by a given address
 	OutputMap(myAddress iotago.Address, timeout ...time.Duration) (iotago.OutputSet, error)
 	// output
@@ -119,91 +119,66 @@ func (c *l1client) OutputMap(myAddress iotago.Address, timeout ...time.Duration)
 }
 
 // postBlock sends a block (including tipselection and local PoW if necessary).
-func (c *l1client) postBlock(ctx context.Context, block *iotago.Block) (*iotago.Block, error) {
+func (c *l1client) postBlock(ctx context.Context, block *iotago.Block) (iotago.BlockID, error) {
 	if !c.config.UseRemotePoW {
 		if err := doBlockPow(ctx, block, c.nodeAPIClient); err != nil {
-			return nil, fmt.Errorf("failed during local PoW: %w", err)
+			return iotago.EmptyBlockID(), fmt.Errorf("failed during local PoW: %w", err)
 		}
 	}
-	block, err := c.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1().Protocol)
+	blockID, err := c.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1().Protocol)
 	if err != nil {
-		return nil, fmt.Errorf("failed to submit block: %w", err)
+		return iotago.EmptyBlockID(), fmt.Errorf("failed to submit block: %w", err)
 	}
 
-	blockID, err := block.ID()
-	if err != nil {
-		return nil, err
-	}
 	c.log.Infof("Posted blockID %v", blockID.ToHex())
 
-	return block, nil
-}
-
-// PostBlock sends a block (including tipselection and local PoW if necessary).
-func (c *l1client) PostBlock(block *iotago.Block, timeout ...time.Duration) (*iotago.Block, error) {
-	ctxWithTimeout, cancelContext := newCtx(c.ctx, timeout...)
-	defer cancelContext()
-
-	return c.postBlock(ctxWithTimeout, block)
+	return blockID, nil
 }
 
 // PostTx sends a tx (including tipselection and local PoW if necessary).
-func (c *l1client) postTx(ctx context.Context, tx *iotago.Transaction) (*iotago.Block, error) {
+func (c *l1client) postTx(ctx context.Context, tx *iotago.Transaction) (iotago.BlockID, error) {
 	// Build a Block and post it.
 	block, err := builder.NewBlockBuilder().Payload(tx).Build()
 	if err != nil {
-		return nil, fmt.Errorf("failed to build block: %w", err)
+		return iotago.EmptyBlockID(), fmt.Errorf("failed to build block: %w", err)
 	}
 
-	block, err = c.postBlock(ctx, block)
+	blockID, err := c.postBlock(ctx, block)
 	if err != nil {
-		return nil, err
+		return iotago.EmptyBlockID(), err
 	}
 
 	txID, err := tx.ID()
 	if err != nil {
-		return nil, err
+		return iotago.EmptyBlockID(), err
 	}
 	c.log.Infof("Posted transaction id %v", txID.ToHex())
 
-	return block, nil
-}
-
-// PostTx sends a tx (including tipselection and local PoW if necessary).
-func (c *l1client) PostTx(tx *iotago.Transaction, timeout ...time.Duration) (*iotago.Block, error) {
-	ctxWithTimeout, cancelContext := newCtx(c.ctx, timeout...)
-	defer cancelContext()
-
-	return c.postTx(ctxWithTimeout, tx)
+	return blockID, nil
 }
 
 // PostTxAndWaitUntilConfirmation sends a tx (including tipselection and local PoW if necessary) and waits for confirmation.
-func (c *l1client) PostTxAndWaitUntilConfirmation(tx *iotago.Transaction, timeout ...time.Duration) (*iotago.Block, error) {
+func (c *l1client) PostTxAndWaitUntilConfirmation(tx *iotago.Transaction, timeout ...time.Duration) (iotago.BlockID, error) {
 	ctxWithTimeout, cancelContext := newCtx(c.ctx, timeout...)
 	defer cancelContext()
 
-	block, err := c.postTx(ctxWithTimeout, tx)
+	blockID, err := c.postTx(ctxWithTimeout, tx)
 	if err != nil {
-		return nil, err
+		return iotago.EmptyBlockID(), err
 	}
 
-	return c.waitUntilBlockConfirmed(ctxWithTimeout, block)
+	return c.waitUntilBlockConfirmed(ctxWithTimeout, blockID, tx)
 }
 
 // waitUntilBlockConfirmed waits until a given block is confirmed, it takes care of promotions/re-attachments for that block
 //
 //nolint:gocyclo,funlen
-func (c *l1client) waitUntilBlockConfirmed(ctx context.Context, block *iotago.Block) (*iotago.Block, error) {
-	blockID, err := block.ID()
-	if err != nil {
-		return nil, fmt.Errorf("failed to calculate blockID: %w", err)
-	}
-
-	_, isTransactionPayload := block.Payload.(*iotago.Transaction)
+func (c *l1client) waitUntilBlockConfirmed(ctx context.Context, blockID iotago.BlockID, payload iotago.Payload) (iotago.BlockID, error) {
+	_, isTransactionPayload := payload.(*iotago.Transaction)
 	var lastPromotionTime time.Time
 
 	checkContext := func() error {
-		if err = ctx.Err(); err != nil {
+		if err := ctx.Err(); err != nil {
 			return fmt.Errorf("failed to wait for block confimation within timeout: %w", err)
 		}
 
@@ -211,8 +186,8 @@ func (c *l1client) waitUntilBlockConfirmed(ctx context.Context, block *iotago.Bl
 	}
 
 	checkAndPromote := func(metadata *nodeclient.BlockMetadataResponse) error {
-		if err2 := checkContext(); err2 != nil {
-			return err2
+		if err := checkContext(); err != nil {
+			return err
 		}
 
 		if metadata.ShouldPromote != nil && *metadata.ShouldPromote {
@@ -224,13 +199,13 @@ func (c *l1client) waitUntilBlockConfirmed(ctx context.Context, block *iotago.Bl
 
 			c.log.Debugf("promoting blockID: %s", blockID.ToHex())
 			// create an empty Block and the BlockID as one of the parents
-			tipsResp, err2 := c.nodeAPIClient.Tips(ctx)
-			if err2 != nil {
-				return fmt.Errorf("failed to fetch tips: %w", err2)
+			tipsResp, err := c.nodeAPIClient.Tips(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to fetch tips: %w", err)
 			}
-			tips, err2 := tipsResp.Tips()
-			if err2 != nil {
-				return fmt.Errorf("failed to get tips from tips response: %w", err2)
+			tips, err := tipsResp.Tips()
+			if err != nil {
+				return fmt.Errorf("failed to get tips from tips response: %w", err)
 			}
 			if len(tips) > 7 {
 				tips = tips[:7] // max 8 parents
@@ -241,13 +216,13 @@ func (c *l1client) waitUntilBlockConfirmed(ctx context.Context, block *iotago.Bl
 			}
 			parents = append(parents, tips...)
 
-			promotionBlock, err2 := builder.NewBlockBuilder().Parents(parents).Build()
-			if err2 != nil {
-				return fmt.Errorf("failed to build promotion Block: %w", err2)
+			promotionBlock, err := builder.NewBlockBuilder().Parents(parents).Build()
+			if err != nil {
+				return fmt.Errorf("failed to build promotion Block: %w", err)
 			}
 
-			if _, err2 := c.postBlock(ctx, promotionBlock); err2 != nil {
-				return fmt.Errorf("failed to promote block: %w", err2)
+			if _, err := c.postBlock(ctx, promotionBlock); err != nil {
+				return fmt.Errorf("failed to promote block: %w", err)
 			}
 		}
 
@@ -255,30 +230,27 @@ func (c *l1client) waitUntilBlockConfirmed(ctx context.Context, block *iotago.Bl
 	}
 
 	checkAndReattach := func(metadata *nodeclient.BlockMetadataResponse) error {
-		if err2 := checkContext(); err2 != nil {
-			return err2
+		if err := checkContext(); err != nil {
+			return err
 		}
 
 		if metadata.ShouldReattach != nil && *metadata.ShouldReattach {
-			c.log.Debugf("reattaching block: %v", block)
+			c.log.Debugf("reattaching block: %v", blockID.ToHex())
 
 			// build new block with same payload
-			block, err = builder.NewBlockBuilder().Payload(block.Payload).Build()
+			block, err := builder.NewBlockBuilder().Payload(payload).Build()
 			if err != nil {
 				return fmt.Errorf("failed to reattach block: %w", err)
 			}
 
 			// reattach the block
-			block, err = c.postBlock(ctx, block)
+			reattachedBlockID, err := c.postBlock(ctx, block)
 			if err != nil {
 				return err
 			}
 
 			// update the tracked blockID
-			blockID, err = block.ID()
-			if err != nil {
-				return fmt.Errorf("failed to calculate blockID: %w", err)
-			}
+			blockID = reattachedBlockID
 		}
 
 		return nil
@@ -286,13 +258,13 @@ func (c *l1client) waitUntilBlockConfirmed(ctx context.Context, block *iotago.Bl
 
 	for {
 		if err := checkContext(); err != nil {
-			return nil, err
+			return iotago.EmptyBlockID(), err
 		}
 
 		// poll the node for block confirmation state
 		metadata, err := c.nodeAPIClient.BlockMetadataByBlockID(ctx, blockID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get block metadata: %w", err)
+			return iotago.EmptyBlockID(), fmt.Errorf("failed to get block metadata: %w", err)
 		}
 
 		// check if block was included
@@ -300,27 +272,27 @@ func (c *l1client) waitUntilBlockConfirmed(ctx context.Context, block *iotago.Bl
 			if metadata.LedgerInclusionState != "" {
 				if isTransactionPayload {
 					if metadata.LedgerInclusionState == "included" {
-						return block, nil // success
+						return blockID, nil // success
 					}
 				} else {
 					if metadata.LedgerInclusionState == "noTransaction" {
-						return block, nil // success
+						return blockID, nil // success
 					}
 				}
 			}
 
-			return nil, fmt.Errorf("block was not included in the ledger. IsTransaction: %t, LedgerInclusionState: %s, ConflictReason: %d",
+			return iotago.EmptyBlockID(), fmt.Errorf("block was not included in the ledger. IsTransaction: %t, LedgerInclusionState: %s, ConflictReason: %d",
 				isTransactionPayload, metadata.LedgerInclusionState, metadata.ConflictReason)
 		}
 
 		// promote if needed
 		if err := checkAndPromote(metadata); err != nil {
-			return nil, err
+			return iotago.EmptyBlockID(), err
 		}
 
 		// reattach if needed
 		if err := checkAndReattach(metadata); err != nil {
-			return nil, err
+			return iotago.EmptyBlockID(), err
 		}
 
 		time.Sleep(pollConfirmedBlockInterval)
