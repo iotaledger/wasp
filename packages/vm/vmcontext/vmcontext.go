@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -106,26 +107,27 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	}
 	// at the beginning of each block
 
+	ret.withStateUpdate(func() {
+		ret.runMigrations(migrations.BaseSchemaVersion, migrations.Migrations)
+	})
+
 	if task.AnchorOutput.StateIndex > 0 {
-		ret.currentStateUpdate = NewStateUpdate()
+		ret.withStateUpdate(func() {
+			// load and validate chain's storage deposit assumptions about internal outputs. They must not get bigger!
+			ret.callCore(accounts.Contract, func(s kv.KVStore) {
+				ret.storageDepositAssumptions = accounts.GetStorageDepositAssumptions(s)
+			})
+			currentStorageDepositValues := transaction.NewStorageDepositEstimate()
+			if currentStorageDepositValues.AnchorOutput > ret.storageDepositAssumptions.AnchorOutput ||
+				currentStorageDepositValues.NativeTokenOutput > ret.storageDepositAssumptions.NativeTokenOutput {
+				panic(vm.ErrInconsistentStorageDepositAssumptions)
+			}
 
-		// load and validate chain's storage deposit assumptions about internal outputs. They must not get bigger!
-		ret.callCore(accounts.Contract, func(s kv.KVStore) {
-			ret.storageDepositAssumptions = accounts.GetStorageDepositAssumptions(s)
+			// save the anchor tx ID of the current state
+			ret.callCore(blocklog.Contract, func(s kv.KVStore) {
+				blocklog.UpdateLatestBlockInfo(s, ret.task.AnchorOutputID.TransactionID(), l1Commitment)
+			})
 		})
-		currentStorageDepositValues := transaction.NewStorageDepositEstimate()
-		if currentStorageDepositValues.AnchorOutput > ret.storageDepositAssumptions.AnchorOutput ||
-			currentStorageDepositValues.NativeTokenOutput > ret.storageDepositAssumptions.NativeTokenOutput {
-			panic(vm.ErrInconsistentStorageDepositAssumptions)
-		}
-
-		// save the anchor tx ID of the current state
-		ret.callCore(blocklog.Contract, func(s kv.KVStore) {
-			blocklog.UpdateLatestBlockInfo(s, ret.task.AnchorOutputID.TransactionID(), l1Commitment)
-		})
-
-		ret.currentStateUpdate.Mutations.ApplyTo(task.StateDraft)
-		ret.currentStateUpdate = nil
 	} else {
 		// assuming storage deposit assumptions for the first block. It must be consistent with parameters in the init request
 		ret.storageDepositAssumptions = transaction.NewStorageDepositEstimate()
@@ -152,17 +154,25 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	return ret
 }
 
+func (vmctx *VMContext) withStateUpdate(f func()) {
+	vmctx.currentStateUpdate = NewStateUpdate()
+	f()
+	vmctx.currentStateUpdate.Mutations.ApplyTo(vmctx.task.StateDraft)
+	vmctx.currentStateUpdate = nil
+}
+
 // CloseVMContext does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
 func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, *state.L1Commitment, time.Time, iotago.Address) {
 	vmctx.GasBurnEnable(false)
-	vmctx.currentStateUpdate = NewStateUpdate() // need this before to make state valid
-	rotationAddr := vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
-	if vmctx.task.AnchorOutput.StateIndex > 0 {
-		vmctx.closeBlockContexts()
-	}
-	vmctx.saveInternalUTXOs()
-	vmctx.currentStateUpdate.Mutations.ApplyTo(vmctx.task.StateDraft)
+	var rotationAddr iotago.Address
+	vmctx.withStateUpdate(func() {
+		rotationAddr = vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
+		if vmctx.task.AnchorOutput.StateIndex > 0 {
+			vmctx.closeBlockContexts()
+		}
+		vmctx.saveInternalUTXOs()
+	})
 
 	block := vmctx.task.Store.ExtractBlock(vmctx.task.StateDraft)
 
@@ -231,20 +241,19 @@ func (vmctx *VMContext) OpenBlockContexts() {
 		panic("expected gasBurnEnabled == false")
 	}
 
-	vmctx.currentStateUpdate = NewStateUpdate()
-	vmctx.loadChainConfig()
+	vmctx.withStateUpdate(func() {
+		vmctx.loadChainConfig()
 
-	var subs []root.BlockContextSubscription
-	vmctx.callCore(root.Contract, func(s kv.KVStore) {
-		subs = root.GetBlockContextSubscriptions(s)
+		var subs []root.BlockContextSubscription
+		vmctx.callCore(root.Contract, func(s kv.KVStore) {
+			subs = root.GetBlockContextSubscriptions(s)
+		})
+		vmctx.callerIsVM = true
+		for _, sub := range subs {
+			vmctx.callProgram(sub.Contract, sub.OpenFunc, nil, nil)
+		}
+		vmctx.callerIsVM = false
 	})
-	vmctx.callerIsVM = true
-	for _, sub := range subs {
-		vmctx.callProgram(sub.Contract, sub.OpenFunc, nil, nil)
-	}
-	vmctx.callerIsVM = false
-
-	vmctx.currentStateUpdate.Mutations.ApplyTo(vmctx.task.StateDraft)
 }
 
 // closeBlockContexts closes block contexts in deterministic FIFO sequence

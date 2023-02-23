@@ -119,14 +119,14 @@ func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, evmGas 
 	if err != nil {
 		return fmt.Errorf("could not fetch the gas fee policy: %w", err)
 	}
-	iscGasBudgetAffordable := gasFeePolicy.AffordableGasBudgetFromAvailableTokens(balance.Uint64())
+	iscGasBudgetAffordable := gasFeePolicy.GasBudgetFromTokens(balance.Uint64())
 
 	iscGasBudgetTx := gas.EVMGasToISC(evmGas, &gasRatio)
 	if iscGasBudgetAffordable < iscGasBudgetTx {
 		return fmt.Errorf(
 			"sender doesn't have enough L2 funds to cover tx gas budget. Balance: %v, expected: %d",
 			balance.String(),
-			iscGasBudgetTx/gasFeePolicy.GasPerToken,
+			gasFeePolicy.FeeFromGas(iscGasBudgetTx),
 		)
 	}
 	return nil

@@ -6,7 +6,6 @@ Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**ActivateChain**](ChainsApi.md#ActivateChain) | **Post** /chains/{chainID}/activate | Activate a chain
 [**AddAccessNode**](ChainsApi.md#AddAccessNode) | **Put** /chains/{chainID}/access-node/{peer} | Configure a trusted node to be an access node.
-[**AttachToWebsocket**](ChainsApi.md#AttachToWebsocket) | **Get** /chains/{chainID}/ws | 
 [**ChainsChainIDEvmGet**](ChainsApi.md#ChainsChainIDEvmGet) | **Get** /chains/{chainID}/evm | 
 [**DeactivateChain**](ChainsApi.md#DeactivateChain) | **Post** /chains/{chainID}/deactivate | Deactivate a chain
 [**GetChainInfo**](ChainsApi.md#GetChainInfo) | **Get** /chains/{chainID} | Get information about a specific chain
@@ -149,72 +148,6 @@ Name | Type | Description  | Notes
 
 - **Content-Type**: Not defined
 - **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
-## AttachToWebsocket
-
-> AttachToWebsocket(ctx, chainID).Execute()
-
-
-
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
-
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.AttachToWebsocket(context.Background(), chainID).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.AttachToWebsocket``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-}
-```
-
-### Path Parameters
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiAttachToWebsocketRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
-
-### Return type
-
- (empty response body)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: Not defined
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)
@@ -709,7 +642,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    stateKey := "stateKey_example" // string | Key (Hex)
+    stateKey := "stateKey_example" // string | State Key (Hex)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -730,7 +663,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**stateKey** | **string** | Key (Hex) | 
+**stateKey** | **string** | State Key (Hex) | 
 
 ### Other Parameters
 

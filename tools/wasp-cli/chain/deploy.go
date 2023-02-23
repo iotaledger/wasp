@@ -4,7 +4,6 @@
 package chain
 
 import (
-	"math"
 	"os"
 	"strconv"
 
@@ -35,14 +34,6 @@ func GetAllWaspNodes() []int {
 		ret = append(ret, i)
 	}
 	return ret
-}
-
-func defaultQuorum(n int) int {
-	quorum := int(math.Ceil(3 * float64(n) / 4))
-	if quorum < 1 {
-		quorum = 1
-	}
-	return quorum
 }
 
 func controllerAddrDefaultFallback(addr string) iotago.Address {

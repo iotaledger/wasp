@@ -119,7 +119,8 @@ func (b *WaspEVMBackend) EVMGasPrice() *big.Int {
 
 	price.Mul(price, new(big.Int).SetUint64(uint64(gasRatio.A)))
 	price.Div(price, new(big.Int).SetUint64(uint64(gasRatio.B)))
-	price.Div(price, new(big.Int).SetUint64(feePolicy.GasPerToken))
+	price.Mul(price, new(big.Int).SetUint64(uint64(feePolicy.GasPerToken.A)))
+	price.Div(price, new(big.Int).SetUint64(uint64(feePolicy.GasPerToken.B)))
 
 	return price
 }

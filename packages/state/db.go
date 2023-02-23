@@ -7,7 +7,6 @@ import (
 	"errors"
 
 	"github.com/iotaledger/hive.go/core/kvstore"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/trie"
 )
@@ -19,7 +18,7 @@ const (
 
 	// KeyChainID is the key used to store the chain ID in the state.
 	// It should not collide with any hname prefix (which are 32 bits long).
-	KeyChainID = kv.Key(rune(0))
+	KeyChainID = "\x00"
 )
 
 var (

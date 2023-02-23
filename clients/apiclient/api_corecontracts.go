@@ -39,7 +39,7 @@ AccountsGetAccountBalance Get all assets belonging to an account
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @param chainID ChainID (Bech32)
- @param agentID AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses require urlencode)
+ @param agentID AgentID (Bech32 for WasmVM | Hex for EVM)
  @return ApiAccountsGetAccountBalanceRequest
 */
 func (a *CorecontractsApiService) AccountsGetAccountBalance(ctx context.Context, chainID string, agentID string) ApiAccountsGetAccountBalanceRequest {
@@ -206,20 +206,6 @@ func (a *CorecontractsApiService) AccountsGetAccountFoundriesExecute(r ApiAccoun
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if r.ctx != nil {
-		// API Key Authentication
-		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
-			if apiKey, ok := auth["Authorization"]; ok {
-				var key string
-				if apiKey.Prefix != "" {
-					key = apiKey.Prefix + " " + apiKey.Key
-				} else {
-					key = apiKey.Key
-				}
-				localVarHeaderParams["Authorization"] = key
-			}
-		}
-	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
 		return localVarReturnValue, nil, err
@@ -283,7 +269,7 @@ AccountsGetAccountNFTIDs Get all NFT ids belonging to an account
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @param chainID ChainID (Bech32)
- @param agentID AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses require urlencode)
+ @param agentID AgentID (Bech32 for WasmVM | Hex for EVM)
  @return ApiAccountsGetAccountNFTIDsRequest
 */
 func (a *CorecontractsApiService) AccountsGetAccountNFTIDs(ctx context.Context, chainID string, agentID string) ApiAccountsGetAccountNFTIDsRequest {
@@ -398,7 +384,7 @@ AccountsGetAccountNonce Get the current nonce of an account
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @param chainID ChainID (Bech32)
- @param agentID AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses require urlencode)
+ @param agentID AgentID (Bech32 for WasmVM | Hex for EVM)
  @return ApiAccountsGetAccountNonceRequest
 */
 func (a *CorecontractsApiService) AccountsGetAccountNonce(ctx context.Context, chainID string, agentID string) ApiAccountsGetAccountNonceRequest {

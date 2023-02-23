@@ -172,7 +172,7 @@ func (c *Controller) addGovernanceContractRoutes(api echoswagger.ApiGroup, mocke
 	api.GET("chains/:chainID/core/governance/chaininfo", c.getChainInfo).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The chain info", mocker.Get(GovChainInfoResponse{}), nil).
+		AddResponse(http.StatusOK, "The chain info", mocker.Get(models.GovChainInfoResponse{}), nil).
 		SetOperationId("governanceGetChainInfo").
 		SetDescription("If you are using the common API functions, you most likely rather want to use '/chains/:chainID' to get information about a chain.").
 		SetSummary("Get the chain info")
@@ -180,7 +180,7 @@ func (c *Controller) addGovernanceContractRoutes(api echoswagger.ApiGroup, mocke
 	api.GET("chains/:chainID/core/governance/chainowner", c.getChainOwner).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The chain owner", mocker.Get(GovChainOwnerResponse{}), nil).
+		AddResponse(http.StatusOK, "The chain owner", mocker.Get(models.GovChainOwnerResponse{}), nil).
 		SetOperationId("governanceGetChainOwner").
 		SetDescription("Returns the chain owner").
 		SetSummary("Get the chain owner")
@@ -188,7 +188,7 @@ func (c *Controller) addGovernanceContractRoutes(api echoswagger.ApiGroup, mocke
 	api.GET("chains/:chainID/core/governance/allowedstatecontrollers", c.getAllowedStateControllerAddresses).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The state controller addresses", mocker.Get(GovAllowedStateControllerAddressesResponse{}), nil).
+		AddResponse(http.StatusOK, "The state controller addresses", mocker.Get(models.GovAllowedStateControllerAddressesResponse{}), nil).
 		SetOperationId("governanceGetAllowedStateControllerAddresses").
 		SetDescription("Returns the allowed state controller addresses").
 		SetSummary("Get the allowed state controller addresses")

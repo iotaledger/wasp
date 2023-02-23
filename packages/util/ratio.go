@@ -9,8 +9,8 @@ import (
 
 // Ratio32 represents a ratio (a:b) between two quantities, expressed as two uint32 values.
 type Ratio32 struct {
-	A uint32
-	B uint32
+	A uint32 `json:"a" swagger:"min(0),required"`
+	B uint32 `json:"b" swagger:"min(0),required"`
 }
 
 func (r Ratio32) String() string {
@@ -101,4 +101,8 @@ func (r *Ratio32) Set(s string) error {
 // Type is part of the pflag.Value interface.
 func (r Ratio32) Type() string {
 	return "Ratio32"
+}
+
+func (r Ratio32) HasZeroComponent() bool {
+	return r.A == 0 || r.B == 0
 }

@@ -56,7 +56,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    agentID := "agentID_example" // string | AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses require urlencode)
+    agentID := "agentID_example" // string | AgentID (Bech32 for WasmVM | Hex for EVM)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -77,7 +77,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**agentID** | **string** | AgentID (Bech32 for WasmVM | Hex for EVM | &#39;000000@Bech32&#39; Addresses require urlencode) | 
+**agentID** | **string** | AgentID (Bech32 for WasmVM | Hex for EVM) | 
 
 ### Other Parameters
 
@@ -166,7 +166,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -198,7 +198,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    agentID := "agentID_example" // string | AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses require urlencode)
+    agentID := "agentID_example" // string | AgentID (Bech32 for WasmVM | Hex for EVM)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -219,7 +219,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**agentID** | **string** | AgentID (Bech32 for WasmVM | Hex for EVM | &#39;000000@Bech32&#39; Addresses require urlencode) | 
+**agentID** | **string** | AgentID (Bech32 for WasmVM | Hex for EVM) | 
 
 ### Other Parameters
 
@@ -269,7 +269,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    agentID := "agentID_example" // string | AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses require urlencode)
+    agentID := "agentID_example" // string | AgentID (Bech32 for WasmVM | Hex for EVM)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -290,7 +290,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Bech32) | 
-**agentID** | **string** | AgentID (Bech32 for WasmVM | Hex for EVM | &#39;000000@Bech32&#39; Addresses require urlencode) | 
+**agentID** | **string** | AgentID (Bech32 for WasmVM | Hex for EVM) | 
 
 ### Other Parameters
 
