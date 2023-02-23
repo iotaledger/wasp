@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -106,7 +107,9 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	}
 	// at the beginning of each block
 
-	ret.withStateUpdate(ret.runMigrations)
+	ret.withStateUpdate(func() {
+		ret.runMigrations(migrations.BaseSchemaVersion, migrations.Migrations)
+	})
 
 	if task.AnchorOutput.StateIndex > 0 {
 		ret.withStateUpdate(func() {

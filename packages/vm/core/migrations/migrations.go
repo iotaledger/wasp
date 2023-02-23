@@ -23,5 +23,3 @@ type Migration struct {
 var Migrations = []Migration{
 	m001GasPerTokenToRatio32,
 }
-
-var LatestSchemaVersion = BaseSchemaVersion + uint32(len(Migrations))

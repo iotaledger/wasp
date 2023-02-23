@@ -8,28 +8,30 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-func (vmctx *VMContext) runMigrations() {
+func (vmctx *VMContext) runMigrations(baseSchemaVersion uint32, allMigrations []migrations.Migration) {
+	latestSchemaVersion := baseSchemaVersion + uint32(len(allMigrations))
+
 	if vmctx.task.AnchorOutput.StateIndex == 0 {
 		// initializing new chain -- set the schema to latest version
 		vmctx.callCore(root.Contract, func(s kv.KVStore) {
-			root.SetSchemaVersion(s, migrations.LatestSchemaVersion)
+			root.SetSchemaVersion(s, latestSchemaVersion)
 		})
 		return
 	}
 
-	var schemaVersion uint32
+	var currentVersion uint32
 	vmctx.callCore(root.Contract, func(s kv.KVStore) {
-		schemaVersion = root.GetSchemaVersion(s)
+		currentVersion = root.GetSchemaVersion(s)
 	})
-	if schemaVersion < migrations.BaseSchemaVersion {
-		panic(fmt.Sprintf("inconsistency: schema version %d should be >= %d", schemaVersion, migrations.BaseSchemaVersion))
+	if currentVersion < baseSchemaVersion {
+		panic(fmt.Sprintf("inconsistency: node with schema version %d is behind pruned migrations (should be >= %d)", currentVersion, baseSchemaVersion))
 	}
-	if schemaVersion > migrations.LatestSchemaVersion {
-		panic(fmt.Sprintf("inconsistency: schema version %d should be <= %d", schemaVersion, migrations.LatestSchemaVersion))
+	if currentVersion > latestSchemaVersion {
+		panic(fmt.Sprintf("inconsistency: node with schema version %d is ahead latest schema version (should be <= %d)", currentVersion, latestSchemaVersion))
 	}
 
-	for schemaVersion < migrations.LatestSchemaVersion {
-		migration := migrations.Migrations[schemaVersion-migrations.BaseSchemaVersion]
+	for currentVersion < latestSchemaVersion {
+		migration := allMigrations[currentVersion-baseSchemaVersion]
 
 		vmctx.callCore(migration.Contract, func(s kv.KVStore) {
 			err := migration.Apply(s, vmctx.task.Log)
@@ -38,9 +40,9 @@ func (vmctx *VMContext) runMigrations() {
 			}
 		})
 
-		schemaVersion++
+		currentVersion++
 		vmctx.callCore(root.Contract, func(s kv.KVStore) {
-			root.SetSchemaVersion(s, schemaVersion)
+			root.SetSchemaVersion(s, currentVersion)
 		})
 	}
 }
