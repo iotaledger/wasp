@@ -3,6 +3,8 @@ package migrations
 import (
 	"math"
 
+	"github.com/labstack/gommon/log"
+
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -16,24 +18,32 @@ var m001GasPerTokenToRatio32 = Migration{
 	Contract: governance.Contract,
 
 	Apply: func(state kv.KVStore, log *logger.Logger) error {
-		fpOld, err := feePolicyFromBytesOld(state.MustGet(governance.VarGasFeePolicyBytes))
+		fpBinOld := state.MustGet(governance.VarGasFeePolicyBytes)
+		fpNew, err := m001ConvertFeePolicy(fpBinOld)
 		if err != nil {
 			return err
-		}
-		if fpOld.GasPerToken > math.MaxUint32 {
-			log.Warn("m001GasPerTokenToRatio32: trimming gas per token")
-			fpOld.GasPerToken = math.MaxUint32
-		}
-		fpNew := &gas.GasFeePolicy{
-			GasFeeTokenID:       fpOld.GasFeeTokenID,
-			GasFeeTokenDecimals: fpOld.GasFeeTokenDecimals,
-			GasPerToken:         util.Ratio32{A: 1, B: uint32(fpOld.GasPerToken)},
-			EVMGasRatio:         fpOld.EVMGasRatio,
-			ValidatorFeeShare:   fpOld.ValidatorFeeShare,
 		}
 		state.Set(governance.VarGasFeePolicyBytes, fpNew.Bytes())
 		return nil
 	},
+}
+
+func m001ConvertFeePolicy(oldBin []byte) (*gas.GasFeePolicy, error) {
+	fpOld, err := feePolicyFromBytesOld(oldBin)
+	if err != nil {
+		return nil, err
+	}
+	if fpOld.GasPerToken > math.MaxUint32 {
+		log.Warn("m001GasPerTokenToRatio32: trimming gas per token")
+		fpOld.GasPerToken = math.MaxUint32
+	}
+	return &gas.GasFeePolicy{
+		GasFeeTokenID:       fpOld.GasFeeTokenID,
+		GasFeeTokenDecimals: fpOld.GasFeeTokenDecimals,
+		GasPerToken:         util.Ratio32{A: 1, B: uint32(fpOld.GasPerToken)},
+		EVMGasRatio:         fpOld.EVMGasRatio,
+		ValidatorFeeShare:   fpOld.ValidatorFeeShare,
+	}, nil
 }
 
 type gasFeePolicyOld struct {
