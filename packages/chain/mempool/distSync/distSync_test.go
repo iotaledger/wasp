@@ -23,7 +23,6 @@ func TestBasic(t *testing.T) {
 
 func testBasic(t *testing.T, n, cmtN, cmtF int) {
 	require.GreaterOrEqual(t, n, cmtN)
-	rand.Seed(time.Now().UnixNano())
 	log := testlogger.NewLogger(t)
 	kp := cryptolib.NewKeyPair()
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))

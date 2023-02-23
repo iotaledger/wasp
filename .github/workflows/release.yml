@@ -36,7 +36,7 @@ jobs:
     name: Release wasp-cli Binaries
     runs-on: ubuntu-latest
     container:
-      image: iotaledger/goreleaser-cgo-cross-compiler:1.19.5
+      image: iotaledger/goreleaser-cgo-cross-compiler:1.20.1
     steps:
       - name: Create dist folder
         run: mkdir /dist && cd /dist/
