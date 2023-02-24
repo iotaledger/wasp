@@ -782,7 +782,7 @@ func (nc *nodeConnection) PublishTX(
 //
 // NOTE: Any out-of-order AO will be considered as a rollback or AO by the chain impl.
 func (nc *nodeConnection) AttachChain(
-	ctx context.Context, // ctx is the context given by a backgroundworker with PriorityChains
+	ctx context.Context, // ctx is the context given by a backgroundworker with PriorityChains, it might get canceled by shutdown signal or "Chains.Deactivate"
 	chainID isc.ChainID,
 	recvRequestCB chain.RequestOutputHandler,
 	recvAliasOutput chain.AliasOutputHandler,
