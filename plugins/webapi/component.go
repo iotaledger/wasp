@@ -184,7 +184,7 @@ func provide(c *dig.Container) error {
 		logger := Plugin.App().NewLogger("WebAPI/v2")
 
 		hub := websockethub.NewHub(Plugin.Logger(), &websocketOptions, broadcastQueueSize, clientSendChannelSize, maxWebsocketMessageSize)
-		
+
 		websocketService := websocket.NewWebsocketService(logger, hub, []publisher.ISCEventType{
 			publisher.ISCEventKindNewBlock,
 			publisher.ISCEventKindReceipt,
