@@ -269,6 +269,8 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 
 	// we need to cancel all pending tasks to stop waiting on the results
 	cancelTasks := func() {
+		ncc.reattachTxTaskPipe.Close()
+		ncc.pendingTxTaskPipe.Close()
 		for task := range ncc.reattachTxTaskPipe.Out() {
 			cancelTask(task)
 		}
@@ -392,8 +394,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			// cancel all outstanding tasks
-			cancelTasks()
+			// tasks are canceled on defer.
 			return
 
 		case reattachTxTask := <-ncc.reattachTxTaskPipe.Out():
