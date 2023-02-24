@@ -21,10 +21,11 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/publisher/publisherws"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+	websocketservice "github.com/iotaledger/wasp/packages/webapi/websocket"
+	"github.com/iotaledger/wasp/packages/webapi/websocket/commands"
 )
 
 type ContractEvent struct {
@@ -142,7 +143,7 @@ func (sc *WasmClientService) SubscribeEvents(callback EventProcessor) error {
 	if err != nil {
 		return err
 	}
-	err = eventSubscribe(ctx, ws, publisher.ISCEventKindSmartContract)
+	err = eventSubscribe(ctx, ws, string(publisher.ISCEventKindBlockEvents))
 	if err != nil {
 		return err
 	}
@@ -201,13 +202,13 @@ func (sc *WasmClientService) cachedNonce(keyPair *cryptolib.KeyPair) (uint64, er
 
 func (sc *WasmClientService) eventLoop(ctx context.Context, ws *websocket.Conn) {
 	for {
-		evt := publisher.ISCEvent{}
+		evt := websocketservice.ISCEvent{}
 		err := wsjson.Read(ctx, ws, &evt)
 		if err != nil {
 			sc.callback = nil
 			return
 		}
-		items := evt.Content.([]interface{})
+		items := evt.Payload.([]interface{})
 		for _, item := range items {
 			parts := strings.Split(item.(string), ": ")
 			event := ContractEvent{
@@ -221,9 +222,11 @@ func (sc *WasmClientService) eventLoop(ctx context.Context, ws *websocket.Conn) 
 }
 
 func eventSubscribe(ctx context.Context, ws *websocket.Conn, topic string) error {
-	msg := publisherws.SubscriptionCommand{
-		Command: publisherws.CommandSubscribe,
-		Topic:   topic,
+	msg := commands.SubscriptionCommand{
+		BaseCommand: commands.BaseCommand{
+			Command: commands.CommandSubscribe,
+		},
+		Topic: topic,
 	}
 	err := wsjson.Write(ctx, ws, msg)
 	if err != nil {

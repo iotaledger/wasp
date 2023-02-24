@@ -31,16 +31,16 @@ pub struct SubscriptionCommand {
 
 #[derive(Serialize, Deserialize)]
 pub struct EventMessage {
-    #[serde(rename = "Kind")]
+    #[serde(rename = "kind")]
     pub kind: String,
-    #[serde(rename = "Issuer")]
+    #[serde(rename = "issuer")]
     pub issuer: String,
-    #[serde(rename = "RequestID")]
+    #[serde(rename = "requestID")]
     pub request_id: String,
-    #[serde(rename = "ChainID")]
+    #[serde(rename = "chainID")]
     pub chain_id: String,
-    #[serde(rename = "Content")]
-    pub content: Vec<String>,
+    #[serde(rename = "payload")]
+    pub payload: Vec<String>,
 }
 
 pub struct ContractEvent {
@@ -182,14 +182,14 @@ impl WasmClientService {
         spawn(move || {
             connect(socket_url, |out| {
                 WasmClientService::subscribe(&out, "chains");
-                WasmClientService::subscribe(&out, "contract");
+                WasmClientService::subscribe(&out, "block_events");
                 let event_handlers = event_handlers.clone();
                 let event_done = event_done.clone();
                 move |msg: Message| {
                     println!("Message: {}", msg);
                     if let Ok(text) = msg.as_text() {
                         if let Ok(json) = serde_json::from_str::<EventMessage>(text) {
-                            for item in json.content {
+                            for item in json.payload {
                                 let parts: Vec<String> = item.split(": ").map(|s| s.into()).collect();
                                 let event = ContractEvent {
                                     chain_id: json.chain_id.clone(),

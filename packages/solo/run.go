@@ -70,7 +70,7 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTask 
 		Requests:           reqs,
 		TimeAssumption:     ch.Env.GlobalTime(),
 		Store:              ch.store,
-		Entropy:            hashing.RandomHash(nil),
+		Entropy:            hashing.PseudoRandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
 		Log:                ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 		// state baseline is always valid in Solo

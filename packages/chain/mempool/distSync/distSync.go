@@ -6,13 +6,13 @@ package distSync
 import (
 	"fmt"
 	"math/rand"
-	"time"
 
 	"golang.org/x/exp/slices"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
@@ -63,7 +63,7 @@ func New(
 		nodeCountToShare:  0,
 		maxMsgsPerTick:    maxMsgsPerTick,
 		needed:            map[isc.RequestRefKey]*isc.RequestRef{},
-		rnd:               rand.New(rand.NewSource(time.Now().UnixMicro())),
+		rnd:               util.NewPseudoRand(),
 		log:               log,
 	}
 }

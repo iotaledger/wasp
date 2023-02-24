@@ -13,10 +13,13 @@ type Permutation16 struct {
 	random      *rand.Rand
 }
 
-// Seed should be provided in tests only to obtain predicted test results.
+// HINT: Seed should only be provided in tests to obtain predicted test results.
 // If used in production, the seed should not be set, because it will be generated
-// using cryptographically secure random number generator. Unless the permutations
-// must be exactly the same between different calls (probable from different nodes).
+// using cryptographically secure random number generator.
+// The seed itself will be used to initialize a pseudo random number generator
+// which is used to shuffle the permutations.
+// Unless the permutations must be exactly the same between
+// different calls (probable from different nodes).
 // In the latter case, the seed should be the same for all the calls which expect
 // the same permutation.
 // This function allways returns a permutation; error should be considered as a
@@ -37,10 +40,11 @@ func NewPermutation16(size uint16, seedOptional ...int64) (*Permutation16, error
 	} else {
 		seed = seedOptional[0]
 	}
+
 	ret := &Permutation16{
 		size:        size,
 		permutation: make([]uint16, size),
-		random:      rand.New(rand.NewSource(seed)),
+		random:      NewPseudoRand(seed),
 	}
 	for i := range ret.permutation {
 		ret.permutation[i] = uint16(i)

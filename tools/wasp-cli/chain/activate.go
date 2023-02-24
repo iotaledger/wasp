@@ -16,26 +16,26 @@ import (
 
 func initActivateCmd() *cobra.Command {
 	var node string
-	var chain string
+	var chainName string
 	cmd := &cobra.Command{
 		Use:   "activate",
 		Short: "Activates the chain on selected nodes",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
-			chain = defaultChainFallback(chain)
-			chainID := config.GetChain(chain)
-			activateChain(node, chainID)
+			chainName = defaultChainFallback(chainName)
+			chainID := config.GetChain(chainName)
+			activateChain(node, chainName, chainID)
 		},
 	}
 
 	waspcmd.WithWaspNodeFlag(cmd, &node)
 
-	withChainFlag(cmd, &chain)
+	withChainFlag(cmd, &chainName)
 	return cmd
 }
 
-func activateChain(node string, chainID isc.ChainID) {
+func activateChain(node string, chainName string, chainID isc.ChainID) {
 	client := cliclients.WaspClient(node)
 	r, httpStatus, err := client.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
 
@@ -59,28 +59,29 @@ func activateChain(node string, chainID isc.ChainID) {
 		log.Check(err)
 	}
 
-	log.Printf("Chain activated")
+	log.Printf("Chain: %v (%v)\nActivated.\n", chainID, chainName)
 }
 
 func initDeactivateCmd() *cobra.Command {
 	var node string
-	var chain string
+	var chainName string
 
 	cmd := &cobra.Command{
 		Use:   "deactivate",
 		Short: "Deactivates the chain on selected nodes",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			chain = defaultChainFallback(chain)
+			chainName = defaultChainFallback(chainName)
 
-			chainID := config.GetChain(chain)
+			chainID := config.GetChain(chainName)
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			client := cliclients.WaspClient(node)
 			_, err := client.ChainsApi.DeactivateChain(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
 			log.Check(err)
+			log.Printf("Chain: %v (%v)\nDeactivated.\n", chainID, chainName)
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
-	withChainFlag(cmd, &chain)
+	withChainFlag(cmd, &chainName)
 	return cmd
 }

@@ -10,13 +10,11 @@ import (
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	"github.com/iotaledger/hive.go/core/configuration"
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/hive.go/core/websockethub"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	userspkg "github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/chain"
@@ -27,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/controllers/users"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/services"
+	"github.com/iotaledger/wasp/packages/webapi/websocket"
 )
 
 func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLoad []interfaces.APIController, authMiddleware func() echo.MiddlewareFunc) {
@@ -57,7 +56,6 @@ func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLo
 func Init(
 	logger *loggerpkg.Logger,
 	server echoswagger.ApiRoot,
-	hub *websockethub.Hub,
 	waspVersion string,
 	config *configuration.Configuration,
 	networkProvider peering.NetworkProvider,
@@ -73,7 +71,7 @@ func Init(
 	authConfig authentication.AuthConfiguration,
 	nodeOwnerAddresses []string,
 	requestCacheTTL time.Duration,
-	publisher *publisher.Publisher,
+	websocketService *websocket.Service,
 ) {
 	// load mock files to generate correct echo swagger documentation
 	mocker := NewMocker()
@@ -109,6 +107,6 @@ func Init(
 		corecontracts.NewCoreContractsController(vmService),
 	}
 
-	addWebSocketEndpoint(server, hub, logger, publisher)
+	addWebSocketEndpoint(server, websocketService)
 	loadControllers(server, mocker, controllersToLoad, authMiddleware)
 }

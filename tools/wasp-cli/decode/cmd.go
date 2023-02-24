@@ -120,7 +120,7 @@ func initEncodeGasFeePolicy() *cobra.Command {
 			}
 
 			if gasPerToken != "" {
-				ratio, err := wasp_util.Ratio32FromString(evmGasRatio)
+				ratio, err := wasp_util.Ratio32FromString(gasPerToken)
 				log.Check(err)
 				gasPolicy.GasPerToken = ratio
 			}
