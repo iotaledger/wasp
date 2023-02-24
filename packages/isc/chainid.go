@@ -71,7 +71,7 @@ func RandomChainID(seed ...[]byte) ChainID {
 	if len(seed) > 0 {
 		h = hashing.HashData(seed[0])
 	} else {
-		h = hashing.RandomHash(nil)
+		h = hashing.PseudoRandomHash(nil)
 	}
 	chainID, err := ChainIDFromBytes(h[:ChainIDLength])
 	if err != nil {

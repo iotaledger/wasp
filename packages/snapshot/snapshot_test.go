@@ -29,7 +29,7 @@ func Test1(t *testing.T) {
 
 	seed := time.Now().UnixNano()
 	t.Log("seed:", seed)
-	rnd := rand.New(rand.NewSource(seed))
+	rnd := util.NewPseudoRand(seed)
 	for i := 0; i < 1000; i++ {
 		k := randByteSlice(rnd, 4+1, 48) // key is hname + key
 		v := randByteSlice(rnd, 1, 128)

@@ -10,9 +10,9 @@
 package peering
 
 import (
+	"crypto/rand"
 	"fmt"
 	"io"
-	"math/rand"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"

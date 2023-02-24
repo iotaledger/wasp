@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math/rand"
 
 	"golang.org/x/crypto/blake2b"
 
@@ -156,10 +155,10 @@ func init() {
 	L1CommitmentNil = zs
 }
 
-// RandL1Commitment is for testing only
-func RandL1Commitment() *L1Commitment {
+// PseudoRandL1Commitment is for testing only
+func PseudoRandL1Commitment() *L1Commitment {
 	d := make([]byte, l1CommitmentSize)
-	rand.Read(d)
+	_, _ = util.NewPseudoRand().Read(d)
 	ret, err := L1CommitmentFromBytes(d)
 	if err != nil {
 		panic(err)
