@@ -11,24 +11,22 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/pipe"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
-// PublishedEvent contains the information about the published message.
-type PublishedEvent struct {
-	MsgType string
-	ChainID isc.ChainID
-	Parts   []string
-}
-
 type Events struct {
-	BlockApplied *event.Event[*BlockApplied]
+	BlockEvents    *event.Event[*ISCEvent[[]string]]
+	NewBlock       *event.Event[*ISCEvent[*blocklog.BlockInfo]]
+	RequestReceipt *event.Event[*ISCEvent[*ReceiptWithError]]
+
+	Published *event.Event[*ISCEvent[any]]
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Publisher
 
 type Publisher struct {
-	blockAppliedPipe pipe.Pipe[*BlockApplied]
+	blockAppliedPipe pipe.Pipe[*blockApplied]
 	mutex            *sync.RWMutex
 	log              *logger.Logger
 	Events           *Events
@@ -36,18 +34,21 @@ type Publisher struct {
 
 var _ chain.ChainListener = &Publisher{}
 
-type BlockApplied struct {
-	ChainID isc.ChainID
-	Block   state.Block
+type blockApplied struct {
+	chainID isc.ChainID
+	block   state.Block
 }
 
 func New(log *logger.Logger) *Publisher {
 	p := &Publisher{
-		blockAppliedPipe: pipe.NewInfinitePipe[*BlockApplied](),
+		blockAppliedPipe: pipe.NewInfinitePipe[*blockApplied](),
 		mutex:            &sync.RWMutex{},
 		log:              log,
 		Events: &Events{
-			BlockApplied: event.New[*BlockApplied](),
+			NewBlock:       event.New[*ISCEvent[*blocklog.BlockInfo]](),
+			RequestReceipt: event.New[*ISCEvent[*ReceiptWithError]](),
+			BlockEvents:    event.New[*ISCEvent[[]string]](),
+			Published:      event.New[*ISCEvent[any]](),
 		},
 	}
 
@@ -55,19 +56,19 @@ func New(log *logger.Logger) *Publisher {
 }
 
 // Implements the chain.ChainListener interface.
-// NOTE: Do not Block the caller!
+// NOTE: Do not block the caller!
 func (p *Publisher) BlockApplied(chainID isc.ChainID, block state.Block) {
-	p.blockAppliedPipe.In() <- &BlockApplied{ChainID: chainID, Block: block}
+	p.blockAppliedPipe.In() <- &blockApplied{chainID: chainID, block: block}
 }
 
 // Implements the chain.ChainListener interface.
-// NOTE: Do not Block the caller!
+// NOTE: Do not block the caller!
 func (p *Publisher) AccessNodesUpdated(chainID isc.ChainID, accessNodes []*cryptolib.PublicKey) {
 	// We don't need this event.
 }
 
 // Implements the chain.ChainListener interface.
-// NOTE: Do not Block the caller!
+// NOTE: Do not block the caller!
 func (p *Publisher) ServerNodesUpdated(chainID isc.ChainID, serverNodes []*cryptolib.PublicKey) {
 	// We don't need this event.
 }
@@ -83,7 +84,7 @@ func (p *Publisher) Run(ctx context.Context) {
 				continue
 			}
 
-			p.Events.BlockApplied.Trigger(blockAppliedUntyped)
+			PublishBlockEvents(blockAppliedUntyped, p.Events, p.log)
 		case <-ctx.Done():
 			return
 		}

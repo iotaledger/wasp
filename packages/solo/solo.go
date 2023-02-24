@@ -186,7 +186,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	})
 	require.NoError(t, err)
 
-	ret.publisher.Events.Published.Hook(event.NewClosure(func(ev *publisher.ISCEvent) {
+	ret.publisher.Events.Published.Hook(event.NewClosure(func(ev *publisher.ISCEvent[any]) {
 		ret.logger.Infof("solo publisher: %s %s %v", ev.Kind, ev.ChainID, ev.String())
 	}))
 
@@ -195,6 +195,10 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 
 func (env *Solo) SyncLog() {
 	_ = env.logger.Sync()
+}
+
+func (env *Solo) Publisher() *publisher.Publisher {
+	return env.publisher
 }
 
 // WithNativeContract registers a native contract so that it may be deployed

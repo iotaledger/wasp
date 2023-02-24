@@ -12,7 +12,7 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 	"go.elastic.co/apm/module/apmechov4"
 	"go.uber.org/dig"
-	"nhooyr.io/websocket"
+	websocketserver "nhooyr.io/websocket"
 
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
@@ -30,6 +30,7 @@ import (
 	"github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/websocket"
 )
 
 func init() {
@@ -63,9 +64,10 @@ const (
 type dependencies struct {
 	dig.In
 
-	EchoSwagger    echoswagger.ApiRoot `name:"webapiServer"`
-	WebsocketHub   *websockethub.Hub   `name:"websocketHub"`
-	NodeConnection chain.NodeConnection
+	EchoSwagger        echoswagger.ApiRoot `name:"webapiServer"`
+	WebsocketHub       *websockethub.Hub   `name:"websocketHub"`
+	NodeConnection     chain.NodeConnection
+	WebsocketPublisher *websocket.Service `name:"websocketService"`
 }
 
 func initConfigPars(c *dig.Container) error {
@@ -127,9 +129,10 @@ func provide(c *dig.Container) error {
 	type webapiServerResult struct {
 		dig.Out
 
-		Echo         *echo.Echo          `name:"webapiEcho"`
-		EchoSwagger  echoswagger.ApiRoot `name:"webapiServer"`
-		WebsocketHub *websockethub.Hub   `name:"websocketHub"`
+		Echo               *echo.Echo          `name:"webapiEcho"`
+		EchoSwagger        echoswagger.ApiRoot `name:"webapiServer"`
+		WebsocketHub       *websockethub.Hub   `name:"websocketHub"`
+		WebsocketPublisher *websocket.Service  `name:"websocketService"`
 	}
 
 	if err := c.Provide(func(deps webapiServerDeps) webapiServerResult {
@@ -171,19 +174,27 @@ func provide(c *dig.Container) error {
 		}))
 
 		echoSwagger := CreateEchoSwagger(e, deps.AppInfo.Version)
-		websocketOptions := websocket.AcceptOptions{
+		websocketOptions := websocketserver.AcceptOptions{
 			InsecureSkipVerify: true,
 			// Disable compression due to incompatibilities with the latest Safari browsers:
 			// https://github.com/tilt-dev/tilt/issues/4746
-			CompressionMode: websocket.CompressionDisabled,
+			CompressionMode: websocketserver.CompressionDisabled,
 		}
 
+		logger := Plugin.App().NewLogger("WebAPI/v2")
+
 		hub := websockethub.NewHub(Plugin.Logger(), &websocketOptions, broadcastQueueSize, clientSendChannelSize, maxWebsocketMessageSize)
+		
+		websocketService := websocket.NewWebsocketService(logger, hub, []publisher.ISCEventType{
+			publisher.ISCEventKindNewBlock,
+			publisher.ISCEventKindReceipt,
+			publisher.ISCEventIssuerVM,
+			publisher.ISCEventKindBlockEvents,
+		}, deps.Publisher, websocket.WithMaxTopicSubscriptionsPerClient(ParamsWebAPI.Limits.MaxTopicSubscriptionsPerClient))
 
 		webapi.Init(
-			Plugin.App().NewLogger("WebAPI/v2"),
+			logger,
 			echoSwagger,
-			hub,
 			deps.AppInfo.Version,
 			deps.AppConfig,
 			deps.NetworkProvider,
@@ -203,12 +214,13 @@ func provide(c *dig.Container) error {
 			ParamsWebAPI.Auth,
 			ParamsWebAPI.NodeOwnerAddresses,
 			deps.APICacheTTL,
-			deps.Publisher,
+			websocketService,
 		)
 
 		return webapiServerResult{
-			EchoSwagger:  echoSwagger,
-			WebsocketHub: hub,
+			EchoSwagger:        echoSwagger,
+			WebsocketHub:       hub,
+			WebsocketPublisher: websocketService,
 		}
 	}); err != nil {
 		Plugin.LogPanic(err)
@@ -241,6 +253,7 @@ func run() error {
 		}()
 
 		<-ctx.Done()
+
 		Plugin.LogInfof("Stopping %s server ...", Plugin.Name)
 
 		shutdownCtx, shutdownCtxCancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -257,6 +270,9 @@ func run() error {
 	}
 
 	if err := Plugin.Daemon().BackgroundWorker("WebAPI[WS]", func(ctx context.Context) {
+		deps.WebsocketPublisher.EventHandler().AttachToEvents()
+		defer deps.WebsocketPublisher.EventHandler().DetachEvents()
+
 		deps.WebsocketHub.Run(ctx)
 		Plugin.LogInfo("Stopping WebAPI[WS]")
 	}, daemon.PriorityWebAPI); err != nil {
