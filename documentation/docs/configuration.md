@@ -413,12 +413,13 @@ Example:
 
 ### <a id="webapi_limits"></a> Limits
 
-| Name          | Description                                                               | Type   | Default value |
-| ------------- | ------------------------------------------------------------------------- | ------ | ------------- |
-| timeout       | The timeout after which a long running operation will be canceled         | string | "30s"         |
-| readTimeout   | The read timeout for the HTTP request body                                | string | "10s"         |
-| writeTimeout  | The write timeout for the HTTP response body                              | string | "10s"         |
-| maxBodyLength | The maximum number of characters that the body of an API call may contain | string | "2M"          |
+| Name                           | Description                                                                   | Type   | Default value |
+| ------------------------------ | ----------------------------------------------------------------------------- | ------ | ------------- |
+| timeout                        | The timeout after which a long running operation will be canceled             | string | "30s"         |
+| readTimeout                    | The read timeout for the HTTP request body                                    | string | "10s"         |
+| writeTimeout                   | The write timeout for the HTTP response body                                  | string | "10s"         |
+| maxBodyLength                  | The maximum number of characters that the body of an API call may contain     | string | "2M"          |
+| maxTopicSubscriptionsPerClient | Defines the max amount of subscriptions per client. 0 = deactivated (default) | int    | 0             |
 
 Example:
 
@@ -446,7 +447,8 @@ Example:
         "timeout": "30s",
         "readTimeout": "10s",
         "writeTimeout": "10s",
-        "maxBodyLength": "2M"
+        "maxBodyLength": "2M",
+        "maxTopicSubscriptionsPerClient": 0
       },
       "debugRequestLoggerEnabled": false
     }

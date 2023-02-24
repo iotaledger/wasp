@@ -100,7 +100,7 @@ export class WasmClientService {
         if (this.subscribers.length == 1) {
             this.ws.on('open', () => {
                 this.eventSubscribe('chains');
-                this.eventSubscribe('contract');
+                this.eventSubscribe('block_events');
             });
             this.ws.on('error', (err) => {
                 // callback(['error', err.toString()]);
@@ -154,7 +154,7 @@ export class WasmClientService {
         let msg: any;
         try {
             msg = JSON.parse(data.toString());
-            if (!msg.Kind) {
+            if (!msg.kind) {
                 // filter out subscribe responses
                 return;
             }
@@ -164,11 +164,11 @@ export class WasmClientService {
             return;
         }
 
-        const items: string[] = msg.Content;
+        const items: string[] = msg.payload;
         for (const item of items) {
             const parts = item.split(': ');
             const event = new ContractEvent();
-            event.chainID = msg.ChainID;
+            event.chainID = msg.chainID;
             event.contractID = parts[0];
             event.data = parts[1];
             for (const callback of this.callbacks) {
