@@ -26,7 +26,7 @@ func initRegisterERC20NativeTokenCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "register-erc20-native-token",
-		Short: "Call evm core contract registerERC20Nativetoken entry point",
+		Short: "Call evm core contract registerERC20NativeToken entry point",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
