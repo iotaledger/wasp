@@ -84,9 +84,9 @@ type VarLogIndex interface {
 // > UPON Reception ⟨NextLI, li, ao⟩ from peer p:
 // >   IF maxPeerLIs[p].li < li THEN
 // >     maxPeerLIs[p] = ⟨li, ao⟩
-// >   IF sli = EnoughVotes(proposedLI, F+1) ∧ sli ≠ 0 THEN
+// >   IF sli = EnoughVotes(proposedLI, F+1) ∧ sli ≥ minLI THEN
 // >     TryPropose(sli)
-// >   IF ali = EnoughVotes(agreedLI, N-F) ∧ ali ≠ 0 ∧ DerivedAO(ali) ≠ ⊥ THEN
+// >   IF ali = EnoughVotes(agreedLI, N-F) ∧ ali ≥ minLI ∧ DerivedAO(ali) ≠ ⊥ THEN
 // >     agreedLI ← ali
 // >     OUTPUT(ali, DerivedAO(ali))
 // >
@@ -228,9 +228,9 @@ func (v *varLogIndexImpl) L1ReplacedBaseAliasOutput(nextBaseAO *isc.AliasOutputW
 // > UPON Reception ⟨NextLI, li, ao⟩ from peer p:
 // >   IF maxPeerLIs[p].li < li THEN
 // >     maxPeerLIs[p] = ⟨li, ao⟩
-// >   IF sli = EnoughVotes(proposedLI, F+1) ∧ sli ≠ 0 THEN
+// >   IF sli = EnoughVotes(proposedLI, F+1) ∧ sli ≥ minLI THEN
 // >     TryPropose(sli)
-// >   IF ali = EnoughVotes(agreedLI, N-F) ∧ ali ≠ 0 ∧ DerivedAO(ali) ≠ ⊥ THEN
+// >   IF ali = EnoughVotes(agreedLI, N-F) ∧ ali ≥ minLI ∧ DerivedAO(ali) ≠ ⊥ THEN
 // >     agreedLI ← ali
 // >     OUTPUT(ali, DerivedAO(ali))
 func (v *varLogIndexImpl) MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutMessages {
