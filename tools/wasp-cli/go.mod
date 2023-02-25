@@ -29,7 +29,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/bygui86/multi-profile/v2 v2.1.0 // indirect
-	github.com/bytecodealliance/wasmtime-go/v5 v5.0.0 // indirect
+	github.com/bytecodealliance/wasmtime-go/v6 v6.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cockroachdb/errors v1.9.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
