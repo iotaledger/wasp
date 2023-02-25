@@ -6,7 +6,7 @@ package wasmhost
 import (
 	"errors"
 
-	"github.com/bytecodealliance/wasmtime-go/v5"
+	"github.com/bytecodealliance/wasmtime-go/v6"
 )
 
 type WasmTimeVM struct {
@@ -32,7 +32,7 @@ func NewWasmTimeVM() WasmVM {
 
 // GasBudget sets the gas budget for the VM.
 func (vm *WasmTimeVM) GasBudget(budget uint64) {
-	// save budget so we can later determine how much the VM burned
+	// save budget, so we can later determine how much the VM burned
 	vm.lastBudget = budget
 
 	// new budget for VM, top up to desired budget
