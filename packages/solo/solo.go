@@ -233,7 +233,7 @@ func (env *Solo) NewChain() *Chain {
 // Upon return, the chain is fully functional to process requests
 //
 
-// nolint: funlen
+//nolint: funlen
 func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens uint64, name string, initOptions ...InitChainOptions) (*Chain, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
@@ -247,7 +247,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 	}
 
 	originParams := dict.Dict{
-		governance.ParamChainOwner: isc.NewAgentID(chainOriginator.Address()).Bytes(),
+		origin.ParamChainOwner: isc.NewAgentID(chainOriginator.Address()).Bytes(),
 	}
 	bypassStardustVM := false
 

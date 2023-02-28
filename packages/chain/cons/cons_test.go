@@ -33,7 +33,6 @@ import (
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 )
@@ -166,7 +165,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
 		chainStates[nid] = origin.InitChain(state.NewStore(mapdb.NewMapDB()),
 			dict.Dict{
-				governance.ParamChainOwner: isc.NewAgentID(originator.Address()).Bytes(),
+				origin.ParamChainOwner: isc.NewAgentID(originator.Address()).Bytes(),
 			},
 			accounts.MinimumBaseTokensOnCommonAccount,
 		)
@@ -366,7 +365,7 @@ func testChained(t *testing.T, n, f, b int) {
 		testNodeStates[nid] = origin.InitChain(
 			state.NewStore(mapdb.NewMapDB()),
 			dict.Dict{
-				governance.ParamChainOwner: isc.NewAgentID(originator.Address()).Bytes(),
+				origin.ParamChainOwner: isc.NewAgentID(originator.Address()).Bytes(),
 			},
 			accounts.MinimumBaseTokensOnCommonAccount,
 		)

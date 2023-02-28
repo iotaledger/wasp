@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 func TestCreateOrigin(t *testing.T) {
@@ -83,7 +82,7 @@ func TestCreateOrigin(t *testing.T) {
 		require.True(t,
 			bytes.Equal(
 				origin.L1Commitment(
-					dict.Dict{governance.ParamChainOwner: isc.NewAgentID(anchor.GovernanceController).Bytes()},
+					dict.Dict{origin.ParamChainOwner: isc.NewAgentID(anchor.GovernanceController).Bytes()},
 					accounts.MinimumBaseTokensOnCommonAccount,
 				).Bytes(),
 				anchor.StateData),

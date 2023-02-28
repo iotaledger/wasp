@@ -34,6 +34,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/l1connection"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -249,7 +250,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			Textout:           os.Stdout,
 			Prefix:            "[cluster] ",
 			InitParams: dict.Dict{
-				governance.ParamChainOwner: isc.NewAgentID(chain.OriginatorAddress()).Bytes(),
+				origin.ParamChainOwner: isc.NewAgentID(chain.OriginatorAddress()).Bytes(),
 			},
 		},
 		stateAddr,

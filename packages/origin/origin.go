@@ -33,6 +33,12 @@ func L1Commitment(initParams dict.Dict, originDeposit uint64) *state.L1Commitmen
 	return block.L1Commitment()
 }
 
+const (
+	ParamEVMChainID   = "a"
+	ParamEVMBlockKeep = "b"
+	ParamChainOwner   = "c"
+)
+
 func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) state.Store {
 	if initParams == nil {
 		initParams = dict.New()
@@ -45,10 +51,10 @@ func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) st
 		return subrealm.New(d, kv.Key(contract.Hname().Bytes()))
 	}
 
-	chainOwner := codec.MustDecodeAgentID(initParams.MustGet(governance.ParamChainOwner), &isc.NilAgentID{})
+	evmChainID := evmtypes.MustDecodeChainID(initParams.MustGet(ParamEVMChainID), evm.DefaultChainID)
+	blockKeepAmount := codec.MustDecodeInt32(initParams.MustGet(ParamEVMBlockKeep), evm.BlockKeepAmountDefault)
 
-	blockKeepAmount := codec.MustDecodeInt32(initParams.MustGet(evm.FieldBlockKeepAmount), evm.BlockKeepAmountDefault)
-	evmChainID := evmtypes.MustDecodeChainID(initParams.MustGet(evm.FieldChainID), evm.DefaultChainID)
+	chainOwner := codec.MustDecodeAgentID(initParams.MustGet(ParamChainOwner), &isc.NilAgentID{})
 
 	// init the state of each core contract
 	rootimpl.SetInitialState(contractState(root.Contract))

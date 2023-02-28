@@ -37,7 +37,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 )
@@ -443,7 +442,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.stores = make([]state.Store, len(te.peerIdentities))
 	for i := range te.peerIdentities {
 		te.stores[i] = origin.InitChain(state.NewStore(mapdb.NewMapDB()), dict.Dict{
-			governance.ParamChainOwner: isc.NewAgentID(te.governor.Address()).Bytes(),
+			origin.ParamChainOwner: isc.NewAgentID(te.governor.Address()).Bytes(),
 		}, accounts.MinimumBaseTokensOnCommonAccount)
 		te.mempools[i] = mempool.New(
 			te.ctx,
