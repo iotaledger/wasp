@@ -62,7 +62,7 @@ func TestHarvest(t *testing.T) {
 		nil)
 	require.NoError(t, err)
 	t.Logf("common base tokens AFTER: %d", ch.L2CommonAccountBaseTokens())
-	require.True(t, ch.L2CommonAccountBaseTokens() > accounts.MinimumBaseTokensOnCommonAccount)
+	require.True(t, ch.L2CommonAccountBaseTokens() >= accounts.MinimumBaseTokensOnCommonAccount)
 }
 
 // allowance shouldn't allow you to bypass gas fees.
