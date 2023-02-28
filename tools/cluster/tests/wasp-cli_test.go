@@ -585,7 +585,7 @@ func TestWaspCLIRegisterERC20NativeToken(t *testing.T) {
 	committee, quorum := w.ArgCommitteeConfig(0)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
-	w.MustRun("chain", "deposit", "base:1000000", "--node=0")
+	w.MustRun("chain", "deposit", "base:100000000", "--node=0")
 
 	w.CreateL2Foundry(&iotago.SimpleTokenScheme{
 		MaximumSupply: big.NewInt(1000000),
@@ -593,11 +593,11 @@ func TestWaspCLIRegisterERC20NativeToken(t *testing.T) {
 		MintedTokens:  big.NewInt(0),
 	})
 
-	veryLongTokenName := strings.Repeat("A", 100_000)
 	out := w.MustRun(
 		"chain", "register-erc20-native-token",
+		"-o",
 		"--foundry-sn=1",
-		"--token-name", veryLongTokenName,
+		"--token-name=test",
 		"--ticker-symbol=test_symbol",
 		"--token-decimals=1",
 		"--node=0",
@@ -607,5 +607,5 @@ func TestWaspCLIRegisterERC20NativeToken(t *testing.T) {
 	require.NotEmpty(t, reqID)
 
 	out = w.MustRun("chain", "request", reqID, "--node=0")
-	require.Contains(t, strings.Join(out, "\n"), "too long")
+	require.Contains(t, strings.Join(out, "\n"), "Error: (empty)")
 }
