@@ -341,19 +341,6 @@ views:
     results:
       res: BigInt
 
-  blockRecord:
-    params:
-      blockIndex: Uint32
-      recordIndex: Uint32
-    results:
-      record: Bytes
-
-  blockRecords:
-    params:
-      blockIndex: Uint32
-    results:
-      count: Uint32
-
   tokenBalance:
     results:
       tokens: Uint64

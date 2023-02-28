@@ -247,26 +247,6 @@ func TestInvalidTypeParams(t *testing.T) {
 	}
 }
 
-func TestViewBlockRecords(t *testing.T) {
-	ctx := testValidParams(t)
-
-	recs := testwasmlib.ScFuncs.BlockRecords(ctx)
-	recs.Params.BlockIndex().SetValue(1)
-	recs.Func.Call()
-	require.NoError(t, ctx.Err)
-	count := recs.Results.Count()
-	require.True(t, count.Exists())
-	require.EqualValues(t, 1, count.Value())
-
-	rec := testwasmlib.ScFuncs.BlockRecord(ctx)
-	rec.Params.BlockIndex().SetValue(1)
-	rec.Params.RecordIndex().SetValue(0)
-	rec.Func.Call()
-	require.NoError(t, ctx.Err)
-	require.True(t, rec.Results.Record().Exists())
-	require.EqualValues(t, 230, len(rec.Results.Record().Value()))
-}
-
 func TestTakeAllowance(t *testing.T) {
 	ctx := setupTest(t)
 	bal := ctx.Balances()

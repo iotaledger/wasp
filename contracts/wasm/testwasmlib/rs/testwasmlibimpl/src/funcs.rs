@@ -127,39 +127,6 @@ pub fn func_verify_erc721(ctx: &ScFuncContext, f: &VerifyErc721Context) {
     oo.func.call();
 }
 
-pub fn view_block_record(ctx: &ScViewContext, f: &BlockRecordContext) {
-    let records = coreblocklog::ScFuncs::get_request_receipts_for_block(ctx);
-    records
-        .params
-        .block_index()
-        .set_value(f.params.block_index().value());
-    records.func.call();
-    let record_index = f.params.record_index().value();
-    ctx.require(
-        record_index < records.results.request_record().length(),
-        "invalid recordIndex",
-    );
-    f.results.record().set_value(
-        &records
-            .results
-            .request_record()
-            .get_bytes(record_index)
-            .value(),
-    );
-}
-
-pub fn view_block_records(ctx: &ScViewContext, f: &BlockRecordsContext) {
-    let records = coreblocklog::ScFuncs::get_request_receipts_for_block(ctx);
-    records
-        .params
-        .block_index()
-        .set_value(f.params.block_index().value());
-    records.func.call();
-    f.results
-        .count()
-        .set_value(records.results.request_record().length());
-}
-
 pub fn view_get_random(_ctx: &ScViewContext, f: &GetRandomContext) {
     f.results.random().set_value(f.state.random().value());
 }

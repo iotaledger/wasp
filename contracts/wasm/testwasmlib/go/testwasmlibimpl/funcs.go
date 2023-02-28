@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreblocklog"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
@@ -106,22 +105,6 @@ func funcVerifyErc721(ctx wasmlib.ScFuncContext, f *VerifyErc721Context) {
 	oo := erc721.ScFuncs.OwnerOf(ctx)
 	oo.Params.TokenID().SetValue(tokenHash)
 	oo.Func.Call()
-}
-
-func viewBlockRecord(ctx wasmlib.ScViewContext, f *BlockRecordContext) {
-	records := coreblocklog.ScFuncs.GetRequestReceiptsForBlock(ctx)
-	records.Params.BlockIndex().SetValue(f.Params.BlockIndex().Value())
-	records.Func.Call()
-	recordIndex := f.Params.RecordIndex().Value()
-	ctx.Require(recordIndex < records.Results.RequestRecord().Length(), "invalid recordIndex")
-	f.Results.Record().SetValue(records.Results.RequestRecord().GetBytes(recordIndex).Value())
-}
-
-func viewBlockRecords(ctx wasmlib.ScViewContext, f *BlockRecordsContext) {
-	records := coreblocklog.ScFuncs.GetRequestReceiptsForBlock(ctx)
-	records.Params.BlockIndex().SetValue(f.Params.BlockIndex().Value())
-	records.Func.Call()
-	f.Results.Count().SetValue(records.Results.RequestRecord().Length())
 }
 
 func viewGetRandom(_ wasmlib.ScViewContext, f *GetRandomContext) {
