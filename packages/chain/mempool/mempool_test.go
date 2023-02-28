@@ -198,7 +198,7 @@ func TestTimeLock(t *testing.T) {
 	}
 }
 
-func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint: gocyclo
+func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint:gocyclo
 	t.Parallel()
 	te := newEnv(t, n, f, reliable)
 	defer te.close()

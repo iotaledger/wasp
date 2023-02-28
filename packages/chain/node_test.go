@@ -73,7 +73,7 @@ func TestNodeBasic(t *testing.T) {
 	}
 }
 
-//nolint: gocyclo
+//nolint:gocyclo
 func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration) {
 	if reliable {
 		// takes forever to run these "unreliable" tests in parallel for some reason

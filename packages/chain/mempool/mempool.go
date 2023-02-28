@@ -295,7 +295,7 @@ func (mpi *mempoolImpl) ConsensusRequestsAsync(ctx context.Context, requestRefs 
 	return res
 }
 
-func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //nolint: gocyclo
+func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //nolint:gocyclo
 	serverNodesUpdatedPipeOutCh := mpi.serverNodesUpdatedPipe.Out()
 	accessNodesUpdatedPipeOutCh := mpi.accessNodesUpdatedPipe.Out()
 	reqConsensusProposalsPipeOutCh := mpi.reqConsensusProposalsPipe.Out()

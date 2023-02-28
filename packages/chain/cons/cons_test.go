@@ -582,7 +582,7 @@ func (tci *testConsInst) outputHandler(nodeID gpa.NodeID, out gpa.Output) {
 
 // Here we respond to the node requests to other components (provided via the output).
 // This can be executed in the TCI (on input) and TC (on output) threads.
-func (tci *testConsInst) tryHandleOutput(nodeID gpa.NodeID) { //nolint: gocyclo
+func (tci *testConsInst) tryHandleOutput(nodeID gpa.NodeID) { //nolint:gocyclo
 	tci.lock.Lock()
 	defer tci.lock.Unlock()
 	out, ok := tci.outLatest[nodeID]

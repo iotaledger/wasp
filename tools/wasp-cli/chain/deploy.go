@@ -14,10 +14,9 @@ import (
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
@@ -84,8 +83,8 @@ func initDeployCmd() *cobra.Command {
 				Textout:              os.Stdout,
 				GovernanceController: govController,
 				InitParams: dict.Dict{
-					root.ParamEVM(evm.FieldChainID):         codec.EncodeUint16(evmParams.ChainID),
-					root.ParamEVM(evm.FieldBlockKeepAmount): codec.EncodeInt32(evmParams.BlockKeepAmount),
+					origin.ParamEVMChainID:   codec.EncodeUint16(evmParams.ChainID),
+					origin.ParamEVMBlockKeep: codec.EncodeInt32(evmParams.BlockKeepAmount),
 				},
 			}
 
