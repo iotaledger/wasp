@@ -273,6 +273,13 @@ func (txb *AnchorTransactionBuilder) outputs(l1Commitment *state.L1Commitment) i
 			},
 		},
 	}
+	if metadata := txb.anchorOutput.FeatureSet().MetadataFeature(); metadata != nil {
+		anchorOutput.Features = append(anchorOutput.Features,
+			&iotago.MetadataFeature{
+				Data: metadata.Data,
+			},
+		)
+	}
 	ret = append(ret, anchorOutput)
 
 	// creating outputs for updated internal accounts

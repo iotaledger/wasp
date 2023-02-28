@@ -124,7 +124,7 @@ func TestAccessNodes(t *testing.T) {
 	node1KP, _ := env.NewKeyPairWithFunds()
 	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds()
 	chainKP, _ := env.NewKeyPairWithFunds()
-	chain, _, _ := env.NewChainExt(chainKP, 0, "chain1")
+	chain, _ := env.NewChainExt(chainKP, 0, "chain1")
 	// defer chain.Log.Sync()
 	var res dict.Dict
 	var err error

@@ -29,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
@@ -255,9 +256,6 @@ func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.Contra
 	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
-	chainID, err := codec.DecodeChainID(res.MustGet(governance.VarChainID))
-	require.NoError(ch.Env.T, err)
-
 	chainOwnerID, err := codec.DecodeAgentID(res.MustGet(governance.VarChainOwnerID))
 	require.NoError(ch.Env.T, err)
 
@@ -266,26 +264,7 @@ func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.Contra
 
 	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(res, root.StateVarContractRegistry))
 	require.NoError(ch.Env.T, err)
-	return chainID, chainOwnerID, contracts
-}
-
-type StorageDepositInfo struct {
-	TotalBaseTokensInL2Accounts uint64
-	TotalStorageDeposit         uint64
-	NumNativeTokens             int
-}
-
-func (d *StorageDepositInfo) Total() uint64 {
-	return d.TotalBaseTokensInL2Accounts + d.TotalStorageDeposit*uint64(d.NumNativeTokens)
-}
-
-func (ch *Chain) GetTotalBaseTokensInfo() *StorageDepositInfo {
-	bi := ch.GetLatestBlockInfo()
-	return &StorageDepositInfo{
-		TotalBaseTokensInL2Accounts: bi.TotalBaseTokensInL2Accounts,
-		TotalStorageDeposit:         bi.TotalStorageDeposit,
-		NumNativeTokens:             len(ch.GetOnChainTokenIDs()),
-	}
+	return ch.ChainID, chainOwnerID, contracts
 }
 
 func eventsFromViewResult(t TestContext, viewResult dict.Dict) []string {
@@ -338,7 +317,7 @@ func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]string, error) {
 
 // CommonAccount return the agentID of the common account (controlled by the owner)
 func (ch *Chain) CommonAccount() isc.AgentID {
-	return ch.ChainID.CommonAccount()
+	return accounts.CommonAccount()
 }
 
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain

@@ -128,6 +128,9 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		vmtype := vmtypes.WasmTime
 		w.CopyFile(srcFile)
 
+		// deposit funds first to run offledger requests
+		w.MustRun("chain", "deposit", "base:10000000", "--node=0")
+
 		// test chain deploy-contract command
 		w.MustRun("chain", "deploy-contract", vmtype, inccounterSCName, "inccounter SC", file,
 			"string", "counter", "int64", "42",

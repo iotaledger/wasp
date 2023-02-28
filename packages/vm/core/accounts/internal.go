@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
@@ -63,8 +62,6 @@ const (
 	keyNFTOutputRecords = "NO"
 	// keyNFTData stores a map of <NFTID> => isc.NFT
 	keyNFTData = "ND"
-	// keyStorageDepositAssumptions => transaction.StorageDepositAssumption
-	keyStorageDepositAssumptions = "S"
 )
 
 func accountKey(agentID isc.AgentID) kv.Key {
@@ -178,23 +175,13 @@ func CheckLedger(state kv.KVStoreReader, checkpoint string) {
 	}
 }
 
-func GetStorageDepositAssumptions(state kv.KVStoreReader) *transaction.StorageDepositAssumption {
-	bin := state.MustGet(kv.Key(keyStorageDepositAssumptions))
-	ret, err := transaction.StorageDepositAssumptionFromBytes(bin)
-	if err != nil {
-		panic(fmt.Errorf("GetStorageDepositAssumptions: internal: %w", err))
-	}
-	return ret
-}
-
 // debitBaseTokensFromAllowance is used for adjustment of L2 when part of base tokens are taken for storage deposit
 // It takes base tokens from allowance to the common account and then removes them from the L2 ledger
 func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount uint64) {
 	if amount == 0 {
 		return
 	}
-	commonAccount := ctx.ChainID().CommonAccount()
 	storageDepositAssets := isc.NewAssetsBaseTokens(amount)
-	ctx.TransferAllowedFunds(commonAccount, storageDepositAssets)
-	DebitFromAccount(ctx.State(), commonAccount, storageDepositAssets)
+	ctx.TransferAllowedFunds(CommonAccount(), storageDepositAssets)
+	DebitFromAccount(ctx.State(), CommonAccount(), storageDepositAssets)
 }

@@ -10,6 +10,7 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
@@ -28,7 +29,7 @@ type blockCacheNoWALTestSM struct { // State machine for block cache no WAL prop
 func (bcnwtsmT *blockCacheNoWALTestSM) initStateMachine(t *rapid.T, wal BlockWAL, addBlockCallback func(state.Block)) {
 	var err error
 	bcnwtsmT.factory = NewBlockFactory(t)
-	bcnwtsmT.lastBlockCommitment = state.OriginL1Commitment()
+	bcnwtsmT.lastBlockCommitment = origin.L1Commitment(nil, 0)
 	bcnwtsmT.log = testlogger.NewLogger(t)
 	bcnwtsmT.bc, err = NewBlockCache(NewDefaultTimeProvider(), wal, bcnwtsmT.log)
 	require.NoError(t, err)

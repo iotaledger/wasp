@@ -36,16 +36,11 @@ func (m *MultiClient) Len() int {
 
 // Do executes a callback once for each node in parallel, then wraps all error results into a single one
 func (m *MultiClient) Do(f func(int, *apiclient.APIClient) error) error {
-	return m.DoWithQuorum(f, len(m.nodes))
-}
-
-// Do executes a callback once for each node in parallel, then wraps all error results into a single one
-func (m *MultiClient) DoWithQuorum(f func(int, *apiclient.APIClient) error, quorum int) error {
 	funs := make([]func() error, len(m.nodes))
 	for i := range m.nodes {
 		j := i // duplicate variable for closure
 		funs[j] = func() error { return f(j, m.nodes[j]) }
 	}
 	errs := multicall.MultiCall(funs, m.Timeout)
-	return multicall.WrapErrorsWithQuorum(errs, quorum)
+	return multicall.WrapErrorsWithQuorum(errs, len(m.nodes))
 }

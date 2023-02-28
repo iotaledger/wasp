@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
@@ -238,7 +239,7 @@ func StartChain(t solo.TestContext, chainName string, env ...*solo.Solo) *solo.C
 			AutoAdjustStorageDeposit: true,
 		})
 	}
-	chain, _, _ := soloEnv.NewChainExt(nil, 0, chainName)
+	chain, _ := soloEnv.NewChainExt(nil, 0, chainName)
 	chain.MustDepositBaseTokensToL2(L2FundsOriginator, chain.OriginatorPrivateKey)
 	return chain
 }
@@ -292,7 +293,7 @@ func (ctx *SoloContext) ChainAccount() *SoloAgent {
 	return &SoloAgent{
 		Env:     ctx.Chain.Env,
 		Pair:    nil,
-		agentID: ctx.Chain.ChainID.CommonAccount(),
+		agentID: accounts.CommonAccount(),
 	}
 }
 

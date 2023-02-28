@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
@@ -653,7 +654,7 @@ func TestStorageDeposit(t *testing.T) {
 }
 
 func TestFoundries(t *testing.T) {
-	const initialTotalBaseTokens = 1 * isc.Million
+	const initialTotalBaseTokens = 10*isc.Million + accounts.MinimumBaseTokensOnCommonAccount
 	addr := tpkg.RandEd25519Address()
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()

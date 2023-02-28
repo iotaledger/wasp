@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -121,8 +122,8 @@ type InitOptions struct {
 }
 
 type InitChainOptions struct {
-	// optional parameters for init request call
-	InitRequestParameters dict.Dict
+	// optional parameters for the chain origin
+	OriginParameters dict.Dict
 	// optional VMRunner. Default is StardustVM
 	VMRunner vm.VMRunner
 	// flag forces bypassing any StardustVM ledger-dependent calls, such as init or blocklog
@@ -209,7 +210,10 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 
 // NewChain deploys new default chain instance.
 func (env *Solo) NewChain() *Chain {
-	ret, _, _ := env.NewChainExt(nil, 0, "chain1")
+	ret, _ := env.NewChainExt(nil, 0, "chain1")
+	// deposit some tokens for the chain originator
+	err := ret.DepositAssetsToL2(isc.NewAssetsBaseTokens(5*isc.Million), nil)
+	require.NoError(env.T, err)
 	return ret
 }
 
@@ -228,26 +232,12 @@ func (env *Solo) NewChain() *Chain {
 //
 // Upon return, the chain is fully functional to process requests
 //
-//nolint:funlen
-func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens uint64, name string, initOptions ...InitChainOptions) (*Chain, *iotago.Transaction, *iotago.Transaction) {
+
+// nolint: funlen
+func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens uint64, name string, initOptions ...InitChainOptions) (*Chain, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
 	vmRunner := runvm.NewVMRunner()
-	var initRequestParams []dict.Dict
-	bypassStardustVM := false
-
-	if len(initOptions) > 0 {
-		if initOptions[0].VMRunner != nil {
-			vmRunner = initOptions[0].VMRunner
-		}
-		if len(initOptions[0].InitRequestParameters) > 0 {
-			initRequestParams = []dict.Dict{initOptions[0].InitRequestParameters}
-		}
-		bypassStardustVM = initOptions[0].BypassStardustVM
-	}
-
-	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indices to user
-	stateControllerAddr := stateControllerKey.GetPublicKey().AsEd25519Address()
 
 	if chainOriginator == nil {
 		chainOriginator = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
@@ -255,17 +245,37 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 		_, err := env.utxoDB.GetFundsFromFaucet(originatorAddr)
 		require.NoError(env.T, err)
 	}
+
+	originParams := dict.Dict{
+		governance.ParamChainOwner: isc.NewAgentID(chainOriginator.Address()).Bytes(),
+	}
+	bypassStardustVM := false
+
+	if len(initOptions) > 0 {
+		if initOptions[0].VMRunner != nil {
+			vmRunner = initOptions[0].VMRunner
+		}
+		if initOptions[0].OriginParameters != nil {
+			originParams = initOptions[0].OriginParameters
+		}
+		bypassStardustVM = initOptions[0].BypassStardustVM
+	}
+
+	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indices to user
+	stateControllerAddr := stateControllerKey.GetPublicKey().AsEd25519Address()
+
 	originatorAddr := chainOriginator.GetPublicKey().AsEd25519Address()
 	originatorAgentID := isc.NewAgentID(originatorAddr)
 
 	initialL1Balance := env.L1BaseTokens(originatorAddr)
 
 	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
-	originTx, chainID, err := transaction.NewChainOriginTransaction(
+	originTx, originAO, chainID, err := transaction.NewChainOriginTransaction(
 		chainOriginator,
 		stateControllerAddr,
 		stateControllerAddr,
 		initBaseTokens, // will be adjusted to min storage deposit
+		originParams,
 		outs,
 		outIDs,
 	)
@@ -287,7 +297,8 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 
 	kvStore, err := env.chainStateDatabaseManager.ChainStateKVStore(chainID)
 	require.NoError(env.T, err)
-	store := state.InitChainStore(kvStore)
+	aoSD := transaction.NewStorageDepositEstimate().AnchorOutput
+	store := origin.InitChain(state.NewStore(kvStore), originParams, originAO.Amount-aoSD)
 
 	{
 		block, err2 := store.LatestBlock()
@@ -314,22 +325,6 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 
 	ret.mempool = newMempool(env.utxoDB.GlobalTime)
 
-	// creating origin transaction with the origin of the Alias chain
-	outs, ids := env.utxoDB.GetUnspentOutputs(originatorAddr)
-	initTx, err := transaction.NewRootInitRequestTransaction(
-		ret.OriginatorPrivateKey,
-		chainID,
-		"'solo' testing chain",
-		outs,
-		ids,
-		initRequestParams...,
-	)
-	require.NoError(env.T, err)
-	require.NotNil(env.T, initTx)
-
-	err = env.utxoDB.AddToLedger(initTx)
-	require.NoError(env.T, err)
-
 	env.glbMutex.Lock()
 	env.chains[chainID] = ret
 	env.glbMutex.Unlock()
@@ -338,20 +333,11 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 
 	if bypassStardustVM {
 		// force skipping the init request. It is needed for non-Stardust VMs
-		return ret, originTx, nil
+		return ret, originTx
 	}
-	// run the on-ledger init request for the chain
-	initReq, err := env.RequestsForChain(initTx, chainID)
-	require.NoError(env.T, err)
-
-	results := ret.RunRequestsSync(initReq, "new")
-	for _, res := range results {
-		require.NoError(env.T, res.Receipt.Error.AsGoError())
-	}
-	ret.logRequestLastBlock()
 
 	ret.log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID.String())
-	return ret, originTx, initTx
+	return ret, originTx
 }
 
 // AddToLedger adds (synchronously confirms) transaction to the UTXODB ledger. Return error if it is

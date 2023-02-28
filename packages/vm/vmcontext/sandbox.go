@@ -139,10 +139,6 @@ func (s *contractSandbox) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	return s.Ctx.(*VMContext).ModifyFoundrySupply(sn, delta)
 }
 
-func (s *contractSandbox) SubscribeBlockContext(openFunc, closeFunc isc.Hname) {
-	s.Ctx.(*VMContext).SubscribeBlockContext(openFunc, closeFunc)
-}
-
 func (s *contractSandbox) SetBlockContext(bctx interface{}) {
 	s.Ctx.(*VMContext).SetBlockContext(bctx)
 }

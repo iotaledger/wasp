@@ -4,6 +4,7 @@
 package state
 
 import (
+	"errors"
 	"sync"
 	"time"
 
@@ -85,6 +86,9 @@ func (s *store) NewStateDraft(timestamp time.Time, prevL1Commitment *L1Commitmen
 }
 
 func (s *store) NewEmptyStateDraft(prevL1Commitment *L1Commitment) (StateDraft, error) {
+	if prevL1Commitment == nil {
+		return nil, errors.New("nil prevL1Commitment")
+	}
 	prevState, err := s.stateByTrieRoot(prevL1Commitment.TrieRoot())
 	if err != nil {
 		return nil, err

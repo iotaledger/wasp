@@ -36,9 +36,7 @@ func runTask(task *vm.VMTask) {
 	var numOffLedger, numSuccess uint16
 	reqIndexInTheBlock := 0
 
-	if task.AnchorOutput.StateIndex > 0 {
-		vmctx.OpenBlockContexts()
-	}
+	vmctx.OpenBlockContexts()
 
 	// main loop over the batch of requests
 	for _, req := range task.Requests {

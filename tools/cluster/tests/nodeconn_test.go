@@ -40,11 +40,12 @@ func createChain(t *testing.T) isc.ChainID {
 		utxoIDs = append(utxoIDs, id)
 	}
 
-	originTx, chainID, err := transaction.NewChainOriginTransaction(
+	originTx, _, chainID, err := transaction.NewChainOriginTransaction(
 		originator,
 		originator.Address(),
 		originator.Address(),
 		0,
+		nil,
 		utxoMap,
 		utxoIDs,
 	)

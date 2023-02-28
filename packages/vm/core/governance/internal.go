@@ -4,8 +4,6 @@
 package governance
 
 import (
-	"errors"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -26,21 +24,13 @@ func GetRotationAddress(state kv.KVStoreReader) iotago.Address {
 }
 
 // GetChainInfo returns global variables of the chain
-func GetChainInfo(state kv.KVStoreReader) (*ChainInfo, error) {
-	if state.MustGet(VarChainID) == nil {
-		return nil, errors.New("chainID not found in governance state")
-	}
-
+func GetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) (*ChainInfo, error) {
 	d := kvdecoder.New(state)
-	ret := &ChainInfo{}
+	ret := &ChainInfo{
+		ChainID: chainID,
+	}
 	var err error
-	if ret.ChainID, err = d.GetChainID(VarChainID); err != nil {
-		return nil, err
-	}
 	if ret.ChainOwnerID, err = d.GetAgentID(VarChainOwnerID); err != nil {
-		return nil, err
-	}
-	if ret.Description, err = d.GetString(VarDescription, ""); err != nil {
 		return nil, err
 	}
 	if ret.GasFeePolicy, err = GetGasFeePolicy(state); err != nil {
@@ -59,8 +49,8 @@ func GetChainInfo(state kv.KVStoreReader) (*ChainInfo, error) {
 }
 
 // MustGetChainInfo return global variables of the chain
-func MustGetChainInfo(state kv.KVStoreReader) *ChainInfo {
-	info, err := GetChainInfo(state)
+func MustGetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) *ChainInfo {
+	info, err := GetChainInfo(state, chainID)
 	if err != nil {
 		panic(err)
 	}

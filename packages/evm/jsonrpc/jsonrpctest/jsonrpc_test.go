@@ -51,7 +51,7 @@ func newSoloTestEnv(t testing.TB) *soloTestEnv {
 		Log:                      log,
 	})
 	chainOwner, _ := s.NewKeyPairWithFunds()
-	chain, _, _ := s.NewChainExt(chainOwner, 0, "chain1")
+	chain, _ := s.NewChainExt(chainOwner, 0, "chain1")
 
 	accounts := jsonrpc.NewAccountManager(nil)
 	rpcsrv := jsonrpc.NewServer(chain.EVM(), accounts)

@@ -38,7 +38,7 @@ func test2Chains(t *testing.T, w bool) {
 	}).
 		WithNativeContract(sbtestsc.Processor)
 	chain1 := env.NewChain()
-	chain2, _, _ := env.NewChainExt(nil, 0, "chain2")
+	chain2, _ := env.NewChainExt(nil, 0, "chain2")
 	chain1.CheckAccountLedger()
 	chain2.CheckAccountLedger()
 

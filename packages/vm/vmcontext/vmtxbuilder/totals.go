@@ -96,8 +96,9 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 		TokenCirculatingSupplies:        make(map[iotago.NativeTokenID]*big.Int),
 		TotalBaseTokensInL2Accounts:     txb.totalBaseTokensInL2Accounts,
 		TotalBaseTokensInStorageDeposit: txb.storageDepositAssumption.AnchorOutput,
-		SentOutBaseTokens:               0,
-		SentOutTokenBalances:            make(map[iotago.NativeTokenID]*big.Int),
+		// TotalBaseTokensInStorageDeposit: parameters.L1().Protocol.RentStructure.MinRent(txb.anchorOutput),
+		SentOutBaseTokens:    0,
+		SentOutTokenBalances: make(map[iotago.NativeTokenID]*big.Int),
 	}
 	// sum over native tokens which produce outputs
 	txb.sumNativeTokens(ret, func(ntb *nativeTokenBalance) *big.Int {

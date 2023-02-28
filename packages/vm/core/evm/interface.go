@@ -48,7 +48,6 @@ const (
 	FieldTransaction      = evmnames.FieldTransaction
 	FieldCallMsg          = evmnames.FieldCallMsg
 	FieldChainID          = evmnames.FieldChainID
-	FieldGenesisAlloc     = evmnames.FieldGenesisAlloc
 	FieldAddress          = evmnames.FieldAddress
 	FieldKey              = evmnames.FieldKey
 	FieldAgentID          = evmnames.FieldAgentID
@@ -75,7 +74,7 @@ const (
 	DefaultChainID = uint16(1074) // IOTA -- get it?
 
 	BlockKeepAll           = -1
-	BlockKeepAmountDefault = BlockKeepAll
+	BlockKeepAmountDefault = int32(BlockKeepAll)
 )
 
 // Gas is charged in isc VM (L1 currencies), not ETH

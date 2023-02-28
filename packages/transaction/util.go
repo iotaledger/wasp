@@ -267,28 +267,3 @@ func CreateAndSignTx(inputs iotago.OutputIDs, inputsCommitment []byte, outputs i
 		Unlocks: MakeSignatureAndReferenceUnlocks(len(inputs), sigs[0]),
 	}, nil
 }
-
-func GetAliasOutput(tx *iotago.Transaction, aliasAddr iotago.Address) (*isc.AliasOutputWithID, error) {
-	txID, err := tx.ID()
-	if err != nil {
-		return nil, err
-	}
-
-	for index, output := range tx.Essence.Outputs {
-		if aliasOutput, ok := output.(*iotago.AliasOutput); ok {
-			outputID := iotago.OutputIDFromTransactionIDAndIndex(txID, uint16(index))
-
-			aliasID := aliasOutput.AliasID
-			if aliasID.Empty() {
-				aliasID = iotago.AliasIDFromOutputID(outputID)
-			}
-
-			if aliasID.ToAddress().Equal(aliasAddr) {
-				// output found
-				return isc.NewAliasOutputWithID(aliasOutput, outputID), nil
-			}
-		}
-	}
-
-	return nil, fmt.Errorf("cannot find alias output for address %v in transaction", aliasAddr.String())
-}

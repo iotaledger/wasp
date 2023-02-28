@@ -99,7 +99,7 @@ func initEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *solo
 }
 
 func initEVMWithSolo(t testing.TB, env *solo.Solo) *soloChainEnv {
-	soloChain := env.NewChain()
+	soloChain, _ := env.NewChainExt(nil, 0, "evmchain")
 	return &soloChainEnv{
 		t:          t,
 		solo:       env,

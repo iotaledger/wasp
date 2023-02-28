@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smInputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smUtils"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
@@ -48,7 +49,7 @@ func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() smGPAUti
 		smLog := log.Named(nodeID.ShortString())
 		nr := smUtils.NewNodeRandomiser(nodeID, nodeIDs, smLog)
 		wal := createWALFun()
-		store := state.InitChainStore(mapdb.NewMapDB())
+		store := origin.InitChain(state.NewStore(mapdb.NewMapDB()), nil, 0)
 		stores[nodeID] = store
 		sms[nodeID], err = New(chainID, nr, wal, store, smLog, timers)
 		require.NoError(t, err)

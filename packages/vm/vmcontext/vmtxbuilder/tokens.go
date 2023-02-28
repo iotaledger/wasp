@@ -219,7 +219,7 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(nativeTokenID iota
 
 	var basicOutputOut *iotago.BasicOutput
 	if basicOutputIn == nil {
-		basicOutputOut = txb.newInternalTokenOutput(txb.anchorOutput.AliasID, nativeTokenID)
+		basicOutputOut = txb.newInternalTokenOutput(util.AliasIDFromAliasOutput(txb.anchorOutput, txb.anchorOutputID), nativeTokenID)
 	} else {
 		basicOutputOut = cloneInternalBasicOutputOrNil(basicOutputIn)
 	}

@@ -1,4 +1,4 @@
-package state
+package origin_test
 
 import (
 	"testing"
@@ -6,11 +6,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/state"
 )
 
 func TestOrigin(t *testing.T) {
-	store := InitChainStore(mapdb.NewMapDB())
-	l1commitment := OriginL1Commitment()
+	store := origin.InitChain(state.NewStore(mapdb.NewMapDB()), nil, 0)
+	l1commitment := origin.L1Commitment(nil, 0)
 	block, err := store.LatestBlock()
 	require.NoError(t, err)
 	require.True(t, l1commitment.Equals(block.L1Commitment()))

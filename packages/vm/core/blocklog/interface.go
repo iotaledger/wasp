@@ -18,6 +18,7 @@ const (
 )
 
 var (
+	// TODO feels like controlAddresses could be deprecated - controller addresses can be derived from the AO
 	ViewControlAddresses           = coreutil.ViewFunc("controlAddresses")
 	ViewGetBlockInfo               = coreutil.ViewFunc("getBlockInfo")
 	ViewGetRequestIDsForBlock      = coreutil.ViewFunc("getRequestIDsForBlock")
