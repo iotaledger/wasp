@@ -63,8 +63,8 @@ func (bh BlockHash) Equals(other BlockHash) bool {
 }
 
 func L1CommitmentFromBytes(data []byte) (*L1Commitment, error) {
-	if len(data) != l1CommitmentSize {
-		return nil, errors.New("L1CommitmentFromBytes: wrong data length")
+	if len(data) < l1CommitmentSize {
+		return nil, errors.New("L1CommitmentFromBytes: not enough bytes")
 	}
 	ret := L1Commitment{}
 	if err := ret.Read(bytes.NewReader(data)); err != nil {

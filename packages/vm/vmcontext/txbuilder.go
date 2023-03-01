@@ -11,16 +11,28 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 )
 
-func (vmctx *VMContext) BuildTransactionEssence(stateData *state.L1Commitment) (*iotago.TransactionEssence, []byte) {
-	return vmctx.txbuilder.BuildTransactionEssence(stateData)
+func (vmctx *VMContext) StateMetadata(stateCommitment *state.L1Commitment) []byte {
+	stateMetadata := stateCommitment.Bytes()
+	if vmctx.chainInfo == nil {
+		// TODO this should only happen during originTx, can be removed after #2034 is merged
+		return stateMetadata
+	}
+	feePolicyBytes := vmctx.chainInfo.GasFeePolicy.Bytes()
+	stateMetadata = append(stateMetadata, feePolicyBytes...)
+	return stateMetadata
+}
+
+func (vmctx *VMContext) BuildTransactionEssence(stateCommitment *state.L1Commitment) (*iotago.TransactionEssence, []byte) {
+	stateMetadata := vmctx.StateMetadata(stateCommitment)
+	return vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
 }
 
 // CalcTransactionSubEssenceHash builds transaction essence from tx builder
 // data assuming all zeroes in the L1 commitment. Returns hash of it.
 // It is needed for fraud proofs
 func (vmctx *VMContext) CalcTransactionSubEssenceHash() blocklog.TransactionEssenceHash {
-	essence, _ := vmctx.txbuilder.BuildTransactionEssence(state.L1CommitmentNil)
-
+	stateMetadata := vmctx.StateMetadata(state.L1CommitmentNil)
+	essence, _ := vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
 	return blocklog.CalcTransactionEssenceHash(essence)
 }
 
