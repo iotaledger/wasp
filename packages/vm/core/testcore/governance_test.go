@@ -279,3 +279,13 @@ func TestDisallowMaintenanceDeadlock(t *testing.T) {
 	)
 	require.Error(t, err)
 }
+
+func TestGovernanceGasFee(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
+	ch := env.NewChain()
+	fp := ch.GetGasFeePolicy()
+	fp.GasPerToken.A *= 1000000
+	ch.SetGasFeePolicy(nil, fp)
+	fp.GasPerToken.A /= 1000000
+	ch.SetGasFeePolicy(nil, fp) // should not fail with "gas budget exceeded"
+}

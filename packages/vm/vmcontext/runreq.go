@@ -129,11 +129,21 @@ func (vmctx *VMContext) checkAllowance() {
 	}
 }
 
-func (vmctx *VMContext) prepareGasBudget() {
+func (vmctx *VMContext) shouldChargeGasFee() bool {
 	if vmctx.req.SenderAccount() == nil {
-		return
+		return false
+	}
+	if vmctx.req.SenderAccount().Equals(vmctx.chainOwnerID) && vmctx.req.CallTarget().Contract == governance.Contract.Hname() {
+		return false
 	}
 	if vmctx.isInitChainRequest() {
+		return false
+	}
+	return true
+}
+
+func (vmctx *VMContext) prepareGasBudget() {
+	if !vmctx.shouldChargeGasFee() {
 		return
 	}
 	vmctx.gasSetBudget(vmctx.calculateAffordableGasBudget())
@@ -327,14 +337,9 @@ func (vmctx *VMContext) chargeGasFee() {
 		vmctx.gasBurnedTotal += minGas - currentGas
 	}
 
-	// disable gas burn
 	vmctx.GasBurnEnable(false)
-	if vmctx.req.SenderAccount() == nil {
-		// no charging if sender is unknown
-		return
-	}
-	if vmctx.isInitChainRequest() {
-		// do not charge gas fees if init request
+
+	if !vmctx.shouldChargeGasFee() {
 		return
 	}
 
