@@ -28,6 +28,7 @@ func (s *StateMetadata) Bytes() []byte {
 	mu.WriteBytes(s.L1Commitment.Bytes())
 	mu.WriteUint32(s.SchemaVersion)
 	mu.WriteBytes(s.GasFeePolicy.Bytes())
+	mu.WriteUint8(uint8(len(s.CustomMetadata)))
 	mu.WriteBytes([]byte(s.CustomMetadata))
 	return mu.Bytes()
 }
@@ -51,7 +52,15 @@ func StateMetadataFromBytes(data []byte) (*StateMetadata, error) {
 	if err != nil {
 		return nil, err
 	}
-	ret.CustomMetadata = string(mu.ReadRemainingBytes())
+	customMetadataLength, err := mu.ReadUint8()
+	if err != nil {
+		return nil, err
+	}
+	customMetadataBytes, err := mu.ReadBytes(int(customMetadataLength))
+	if err != nil {
+		return nil, err
+	}
+	ret.CustomMetadata = string(customMetadataBytes)
 	return ret, nil
 }
 
