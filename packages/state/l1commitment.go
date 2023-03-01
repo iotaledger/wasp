@@ -26,7 +26,7 @@ type L1Commitment struct {
 	blockHash BlockHash
 }
 
-var l1CommitmentSize = trie.HashSizeBytes + BlockHashSize
+var L1CommitmentSize = trie.HashSizeBytes + BlockHashSize
 
 func BlockHashFromData(data []byte) (ret BlockHash) {
 	r := blake2b.Sum256(data)
@@ -63,7 +63,7 @@ func (bh BlockHash) Equals(other BlockHash) bool {
 }
 
 func L1CommitmentFromBytes(data []byte) (*L1Commitment, error) {
-	if len(data) < l1CommitmentSize {
+	if len(data) < L1CommitmentSize {
 		return nil, errors.New("L1CommitmentFromBytes: not enough bytes")
 	}
 	ret := L1Commitment{}
@@ -145,10 +145,10 @@ func L1CommitmentFromAnchorOutput(o *iotago.AliasOutput) (*L1Commitment, error) 
 	return L1CommitmentFromBytes(o.StateMetadata)
 }
 
-var L1CommitmentNil *L1Commitment
+var L1CommitmentNil = &L1Commitment{}
 
 func init() {
-	zs, err := L1CommitmentFromBytes(make([]byte, l1CommitmentSize))
+	zs, err := L1CommitmentFromBytes(make([]byte, L1CommitmentSize))
 	if err != nil {
 		panic(err)
 	}
@@ -157,7 +157,7 @@ func init() {
 
 // PseudoRandL1Commitment is for testing only
 func PseudoRandL1Commitment() *L1Commitment {
-	d := make([]byte, l1CommitmentSize)
+	d := make([]byte, L1CommitmentSize)
 	_, _ = util.NewPseudoRand().Read(d)
 	ret, err := L1CommitmentFromBytes(d)
 	if err != nil {

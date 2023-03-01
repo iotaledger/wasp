@@ -44,6 +44,10 @@ var Processor = governance.Contract.Processor(initialize,
 	governance.FuncStartMaintenance.WithHandler(setMaintenanceOn),
 	governance.FuncStopMaintenance.WithHandler(setMaintenanceOff),
 	governance.ViewGetMaintenanceStatus.WithHandler(getMaintenanceStatus),
+
+	// L1 meadata
+	governance.FuncSetCustomMetadata.WithHandler(setCustomMetadata),
+	governance.ViewGetCustomMetadata.WithHandler(getCustomMetadata),
 )
 
 func initialize(ctx isc.Sandbox) dict.Dict {

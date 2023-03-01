@@ -3,23 +3,78 @@ package vmcontext
 import (
 	"fmt"
 
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/governance/governanceimpl"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 )
 
-func (vmctx *VMContext) StateMetadata(stateCommitment *state.L1Commitment) []byte {
-	stateMetadata := stateCommitment.Bytes()
-	if vmctx.chainInfo == nil {
-		// TODO this should only happen during originTx, can be removed after #2034 is merged
-		return stateMetadata
+type StateMetadata struct {
+	L1Commitment   *state.L1Commitment
+	GasFeePolicy   *gas.GasFeePolicy
+	SchemaVersion  uint32
+	CustomMetadata string
+}
+
+func (s *StateMetadata) Bytes() []byte {
+	mu := marshalutil.New()
+	mu.WriteBytes(s.L1Commitment.Bytes())
+	mu.WriteUint32(s.SchemaVersion)
+	mu.WriteBytes(s.GasFeePolicy.Bytes())
+	mu.WriteBytes([]byte(s.CustomMetadata))
+	return mu.Bytes()
+}
+
+func StateMetadataFromBytes(data []byte) (*StateMetadata, error) {
+	ret := &StateMetadata{}
+	mu := marshalutil.New(data)
+	l1CommitmentBytes, err := mu.ReadBytes(state.L1CommitmentSize)
+	if err != nil {
+		return nil, err
 	}
-	feePolicyBytes := vmctx.chainInfo.GasFeePolicy.Bytes()
-	stateMetadata = append(stateMetadata, feePolicyBytes...)
-	return stateMetadata
+	ret.L1Commitment, err = state.L1CommitmentFromBytes(l1CommitmentBytes)
+	if err != nil {
+		return nil, err
+	}
+	ret.SchemaVersion, err = mu.ReadUint32()
+	if err != nil {
+		return nil, err
+	}
+	ret.GasFeePolicy, err = gas.FeePolicyFromMarshalUtil(mu)
+	if err != nil {
+		return nil, err
+	}
+	ret.CustomMetadata = string(mu.ReadRemainingBytes())
+	return ret, nil
+}
+
+func (vmctx *VMContext) StateMetadata(stateCommitment *state.L1Commitment) []byte {
+	stateMetadata := StateMetadata{
+		L1Commitment: stateCommitment,
+	}
+	if vmctx.currentStateUpdate == nil {
+		// create a temporary empty state update, so that vmctx.callCore works
+		vmctx.currentStateUpdate = NewStateUpdate()
+		defer func() { vmctx.currentStateUpdate = nil }()
+	}
+
+	vmctx.callCore(root.Contract, func(s kv.KVStore) {
+		stateMetadata.SchemaVersion = root.GetSchemaVersion(s)
+	})
+
+	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
+		stateMetadata.CustomMetadata = governanceimpl.GetCustomMetadata(s)
+		stateMetadata.GasFeePolicy = governance.MustGetGasFeePolicy(s)
+	})
+
+	return stateMetadata.Bytes()
 }
 
 func (vmctx *VMContext) BuildTransactionEssence(stateCommitment *state.L1Commitment) (*iotago.TransactionEssence, []byte) {

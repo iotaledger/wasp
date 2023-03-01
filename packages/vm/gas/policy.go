@@ -97,8 +97,11 @@ func MustGasFeePolicyFromBytes(data []byte) *GasFeePolicy {
 var ErrInvalidRatio = errors.New("ratio must have both components != 0")
 
 func FeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
+	return FeePolicyFromMarshalUtil(marshalutil.New(data))
+}
+
+func FeePolicyFromMarshalUtil(mu *marshalutil.MarshalUtil) (*GasFeePolicy, error) {
 	ret := &GasFeePolicy{}
-	mu := marshalutil.New(data)
 	var gasNativeToken bool
 	var err error
 	if gasNativeToken, err = mu.ReadBool(); err != nil {
