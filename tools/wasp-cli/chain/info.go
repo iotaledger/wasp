@@ -67,7 +67,7 @@ func initInfoCmd() *cobra.Command {
 			}
 
 			log.Printf("Chain ID: %s\n", chainInfo.ChainID)
-			log.Printf("EVM Chain ID: %s\n", chainInfo.EvmChainId)
+			log.Printf("EVM Chain ID: %d\n", chainInfo.EvmChainId)
 			log.Printf("Active: %v\n", chainInfo.IsActive)
 
 			if chainInfo.IsActive {

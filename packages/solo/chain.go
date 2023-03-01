@@ -120,6 +120,17 @@ func (ch *Chain) GetGasFeePolicy() *gas.GasFeePolicy {
 	return feePolicy
 }
 
+func (ch *Chain) SetGasFeePolicy(user *cryptolib.KeyPair, fp *gas.GasFeePolicy) {
+	_, err := ch.PostRequestOffLedger(NewCallParams(
+		governance.Contract.Name,
+		governance.FuncSetFeePolicy.Name,
+		dict.Dict{
+			governance.ParamFeePolicyBytes: fp.Bytes(),
+		},
+	), user)
+	require.NoError(ch.Env.T, err)
+}
+
 // UploadBlob calls core 'blob' smart contract blob.FuncStoreBlob entry point to upload blob
 // data to the chain. It returns hash of the blob, the unique identifier of it.
 // The parameters must be either a dict.Dict, or a sequence of pairs 'fieldName': 'fieldValue'

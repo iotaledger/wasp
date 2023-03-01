@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
@@ -164,9 +165,6 @@ func (e *EVMEmulator) ChainContext() core.ChainContext {
 // CallContract executes a contract call, without committing changes to the state
 func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(bool)) (*core.ExecutionResult, error) {
 	// Ensure message is initialized properly.
-	if call.GasPrice == nil {
-		call.GasPrice = big.NewInt(0)
-	}
 	if call.Gas == 0 {
 		call.Gas = e.gasLimits.Call
 	}
@@ -174,13 +172,12 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(boo
 		call.Value = big.NewInt(0)
 	}
 
-	msg := callMsg{call}
 	pendingHeader := e.BlockchainDB().GetPendingHeader()
 
 	// run the EVM code on a buffered state (so that writes are not committed)
 	statedb := e.StateDB().Buffered().StateDB()
 
-	return e.applyMessage(msg, statedb, pendingHeader, gasBurnEnable)
+	return e.applyMessage(callMsg{call}, statedb, pendingHeader, gasBurnEnable)
 }
 
 func (e *EVMEmulator) applyMessage(msg callMsg, statedb vm.StateDB, header *types.Header, gasBurnEnable func(bool)) (res *core.ExecutionResult, err error) {
@@ -421,7 +418,7 @@ func (m callMsg) From() common.Address         { return m.CallMsg.From }
 func (m callMsg) Nonce() uint64                { return 0 }
 func (m callMsg) IsFake() bool                 { return true }
 func (m callMsg) To() *common.Address          { return m.CallMsg.To }
-func (m callMsg) GasPrice() *big.Int           { return m.CallMsg.GasPrice }
+func (m callMsg) GasPrice() *big.Int           { return evm.GasPrice } // we ignore the gas price set by the sender
 func (m callMsg) GasFeeCap() *big.Int          { return m.CallMsg.GasFeeCap }
 func (m callMsg) GasTipCap() *big.Int          { return m.CallMsg.GasTipCap }
 func (m callMsg) Gas() uint64                  { return m.CallMsg.Gas }

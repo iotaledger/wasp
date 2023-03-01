@@ -106,19 +106,14 @@ func (b *WaspEVMBackend) EVMGasPrice() *big.Int {
 	if err != nil {
 		panic(fmt.Sprintf("couldn't decode fee policy: %s ", err.Error()))
 	}
-	res, err = chainutil.CallView(latestState, b.chain, governance.Contract.Hname(), governance.ViewGetEVMGasRatio.Hname(), nil)
-	if err != nil {
-		panic(fmt.Sprintf("couldn't call getGasRatio view: %s ", err.Error()))
-	}
-	gasRatio := codec.MustDecodeRatio32(res.MustGet(governance.ParamEVMGasRatio))
 
 	// convert to wei (18 decimals)
 	decimalsDifference := 18 - parameters.L1().BaseToken.Decimals
 	price := big.NewInt(10)
 	price.Exp(price, new(big.Int).SetUint64(uint64(decimalsDifference)), nil)
 
-	price.Mul(price, new(big.Int).SetUint64(uint64(gasRatio.A)))
-	price.Div(price, new(big.Int).SetUint64(uint64(gasRatio.B)))
+	price.Mul(price, new(big.Int).SetUint64(uint64(feePolicy.EVMGasRatio.A)))
+	price.Div(price, new(big.Int).SetUint64(uint64(feePolicy.EVMGasRatio.B)))
 	price.Mul(price, new(big.Int).SetUint64(uint64(feePolicy.GasPerToken.A)))
 	price.Div(price, new(big.Int).SetUint64(uint64(feePolicy.GasPerToken.B)))
 

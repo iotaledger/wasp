@@ -341,3 +341,13 @@ func TestCustomL1Metadata(t *testing.T) {
 	require.Equal(t, sm.CustomMetadata, customMetadata)
 	require.True(t, reflect.DeepEqual(sm.GasFeePolicy, newFeePolicy))
 }
+
+func TestGovernanceGasFee(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
+	ch := env.NewChain()
+	fp := ch.GetGasFeePolicy()
+	fp.GasPerToken.A *= 1000000
+	ch.SetGasFeePolicy(nil, fp)
+	fp.GasPerToken.A /= 1000000
+	ch.SetGasFeePolicy(nil, fp) // should not fail with "gas budget exceeded"
+}
