@@ -8,11 +8,11 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/hive.go/core/generics/event"
-	"github.com/iotaledger/hive.go/core/generics/options"
-	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/hive.go/core/subscriptionmanager"
-	"github.com/iotaledger/hive.go/core/websockethub"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/runtime/event"
+	"github.com/iotaledger/hive.go/runtime/options"
+	"github.com/iotaledger/hive.go/web/subscriptionmanager"
+	"github.com/iotaledger/hive.go/web/websockethub"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/webapi/websocket/commands"
 )
@@ -22,7 +22,7 @@ type Service struct {
 	eventHandler          *EventHandler
 	hub                   *websockethub.Hub
 	log                   *logger.Logger
-	publisherEvent        *event.Event[*ISCEvent]
+	publisherEvent        *event.Event1[*ISCEvent]
 	subscriptionManager   *subscriptionmanager.SubscriptionManager[websockethub.ClientID, string]
 	subscriptionValidator *SubscriptionValidator
 
@@ -45,7 +45,7 @@ func NewWebsocketService(log *logger.Logger, hub *websockethub.Hub, msgTypes []p
 		msgTypesMap[t] = true
 	}
 
-	publishEvent := event.New[*ISCEvent]()
+	publishEvent := event.New1[*ISCEvent]()
 
 	subscriptionManager := subscriptionmanager.New(
 		subscriptionmanager.WithMaxTopicSubscriptionsPerClient[websockethub.ClientID, string](serviceOptions.maxTopicSubscriptionsPerClient),
@@ -70,7 +70,7 @@ func (p *Service) onClientCreated(client *websockethub.Client) {
 	client.ReceiveChan = make(chan *websockethub.WebsocketMsg, 100)
 
 	go func() {
-		eventWriter := event.NewClosure(func(iscEvent *ISCEvent) {
+		unhook := p.publisherEvent.Hook(func(iscEvent *ISCEvent) {
 			if !p.subscriptionValidator.isClientAllowed(client, iscEvent.ChainID, iscEvent.Kind) {
 				return
 			}
@@ -78,10 +78,8 @@ func (p *Service) onClientCreated(client *websockethub.Client) {
 			if err := client.Send(client.Context(), iscEvent); err != nil {
 				p.log.Warnf("error sending message to client:[%d], err:[%v]", client.ID(), err)
 			}
-		})
-
-		p.publisherEvent.Hook(eventWriter)
-		defer p.publisherEvent.Detach(eventWriter)
+		}).Unhook
+		defer unhook()
 
 		for {
 			// we need to nest the client.ReceiveChan into the default case because

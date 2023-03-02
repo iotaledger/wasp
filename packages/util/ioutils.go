@@ -5,7 +5,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/iotaledger/hive.go/core/ioutils"
+	"github.com/iotaledger/hive.go/runtime/ioutils"
 )
 
 // ExistsFilePath returns whether the given file or directory exists.

@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
@@ -25,7 +24,8 @@ func TestNewChainStateDatabaseManager(t *testing.T) {
 		active = ev.ChainRecord.Active
 	}
 
-	chainRecordRegistry.Events().ChainRecordModified.Hook(event.NewClosure(chainRecordModified))
+	unhook := chainRecordRegistry.Events().ChainRecordModified.Hook(chainRecordModified).Unhook
+	defer unhook()
 
 	_, err = chainRecordRegistry.ActivateChainRecord(chainID)
 	require.NoError(t, err)

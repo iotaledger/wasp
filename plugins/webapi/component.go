@@ -14,10 +14,10 @@ import (
 	"go.uber.org/dig"
 	websocketserver "nhooyr.io/websocket"
 
-	"github.com/iotaledger/hive.go/core/app"
-	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
-	"github.com/iotaledger/hive.go/core/configuration"
-	"github.com/iotaledger/hive.go/core/websockethub"
+	"github.com/iotaledger/hive.go/app"
+	"github.com/iotaledger/hive.go/app/configuration"
+	"github.com/iotaledger/hive.go/app/shutdown"
+	"github.com/iotaledger/hive.go/web/websockethub"
 	"github.com/iotaledger/inx-app/pkg/httpserver"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
@@ -270,8 +270,8 @@ func run() error {
 	}
 
 	if err := Plugin.Daemon().BackgroundWorker("WebAPI[WS]", func(ctx context.Context) {
-		deps.WebsocketPublisher.EventHandler().AttachToEvents()
-		defer deps.WebsocketPublisher.EventHandler().DetachEvents()
+		unhook := deps.WebsocketPublisher.EventHandler().AttachToEvents()
+		defer unhook()
 
 		deps.WebsocketHub.Run(ctx)
 		Plugin.LogInfo("Stopping WebAPI[WS]")

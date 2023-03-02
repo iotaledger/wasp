@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"runtime"
 
-	hivedb "github.com/iotaledger/hive.go/core/database"
-	"github.com/iotaledger/hive.go/core/kvstore/flushkv"
-	"github.com/iotaledger/hive.go/core/kvstore/rocksdb"
+	hivedb "github.com/iotaledger/hive.go/kvstore/database"
+	"github.com/iotaledger/hive.go/kvstore/flushkv"
+	"github.com/iotaledger/hive.go/kvstore/rocksdb"
 )
 
 // NewRocksDB creates a new RocksDB instance.

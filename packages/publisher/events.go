@@ -3,8 +3,8 @@ package publisher
 import (
 	"fmt"
 
-	"github.com/iotaledger/hive.go/core/generics/event"
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
@@ -44,7 +44,7 @@ type ReceiptWithError struct {
 	Error          *isc.VMError
 }
 
-func triggerEvent[T any](events *Events, event *event.Event[*ISCEvent[T]], obj *ISCEvent[T]) {
+func triggerEvent[T any](events *Events, event *event.Event1[*ISCEvent[T]], obj *ISCEvent[T]) {
 	event.Trigger(obj)
 
 	// To support Solo and other consumers, push each event into the Published event
