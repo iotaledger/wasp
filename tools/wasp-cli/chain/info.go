@@ -9,13 +9,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
@@ -84,23 +81,8 @@ func initInfoCmd() *cobra.Command {
 
 				log.Printf("Owner: %s\n", chainInfo.ChainOwnerId)
 
-				// TODO: Validate the gas fee token id logic
 				if chainInfo.GasFeePolicy != nil {
-					gasFeeToken := util.BaseTokenStr
-
-					if chainInfo.GasFeePolicy.GasFeeTokenId != "" {
-						decodedToken, err := iotago.DecodeHex(chainInfo.GasFeePolicy.GasFeeTokenId)
-						log.Check(err)
-
-						tokenID, err := isc.NativeTokenIDFromBytes(decodedToken)
-						log.Check(err)
-
-						if !isc.IsEmptyNativeTokenID(tokenID) {
-							gasFeeToken = tokenID.String()
-						}
-					}
-
-					log.Printf("Gas fee (%s): fee = gas units * (%d/%d)\n", gasFeeToken, chainInfo.GasFeePolicy.GasPerToken.A, chainInfo.GasFeePolicy.GasPerToken.B)
+					log.Printf("Gas fee: gas units * (%d/%d)\n", chainInfo.GasFeePolicy.GasPerToken.A, chainInfo.GasFeePolicy.GasPerToken.B)
 					log.Printf("Validator fee share: %d%%\n", chainInfo.GasFeePolicy.ValidatorFeeShare)
 				}
 

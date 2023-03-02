@@ -172,12 +172,5 @@ func (s *contractSandbox) TotalGasTokens() *isc.Assets {
 		return isc.NewEmptyAssets()
 	}
 	amount := s.Ctx.(*VMContext).gasMaxTokensToSpendForGasFee
-	nativeTokenID := s.Ctx.(*VMContext).chainInfo.GasFeePolicy.GasFeeTokenID
-	if isc.IsEmptyNativeTokenID(nativeTokenID) {
-		return isc.NewAssetsBaseTokens(amount)
-	}
-	return isc.NewAssets(0, iotago.NativeTokens{&iotago.NativeToken{
-		ID:     nativeTokenID,
-		Amount: new(big.Int).SetUint64(amount),
-	}})
+	return isc.NewAssetsBaseTokens(amount)
 }

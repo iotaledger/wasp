@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -95,7 +94,7 @@ func TestSetFeePolicy(t *testing.T) {
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
 
-	gfp0 := gas.DefaultGasFeePolicy()
+	gfp0 := gas.DefaultFeePolicy()
 	gfp0.GasPerToken = util.Ratio32{A: 1, B: 10}
 	f := coregovernance.ScFuncs.SetFeePolicy(ctx)
 	f.Params.FeePolicyBytes().SetValue(gfp0.Bytes())
@@ -171,7 +170,6 @@ func TestGetFeePolicy(t *testing.T) {
 	fpBin := f.Results.FeePolicyBytes().Value()
 	gfp, err := gas.FeePolicyFromBytes(fpBin)
 	require.NoError(t, err)
-	require.True(t, isc.IsEmptyNativeTokenID(gfp.GasFeeTokenID)) // default fee token ID is empty
 	require.Equal(t, gas.DefaultGasPerToken, gfp.GasPerToken)
 	require.Equal(t, uint8(0), gfp.ValidatorFeeShare) // default fee share is 0
 }

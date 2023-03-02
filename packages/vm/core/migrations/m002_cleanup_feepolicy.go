@@ -1,10 +1,6 @@
 package migrations
 
 import (
-	"math"
-
-	"github.com/labstack/gommon/log"
-
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -14,12 +10,12 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-var m001GasPerTokenToRatio32 = Migration{
+var m002CleanupFeePolicy = Migration{
 	Contract: governance.Contract,
 
 	Apply: func(state kv.KVStore, log *logger.Logger) error {
 		fpBinOld := state.MustGet(governance.VarGasFeePolicyBytes)
-		fpNew, err := m001ConvertFeePolicy(fpBinOld)
+		fpNew, err := m002ConvertFeePolicy(fpBinOld)
 		if err != nil {
 			return err
 		}
@@ -28,32 +24,28 @@ var m001GasPerTokenToRatio32 = Migration{
 	},
 }
 
-func m001ConvertFeePolicy(oldBin []byte) (*gas.FeePolicy, error) {
-	fpOld, err := feePolicyFromBytesOld(oldBin)
+func m002ConvertFeePolicy(oldBin []byte) (*gas.FeePolicy, error) {
+	fpOld, err := feePolicyPreCleanupFromBytes(oldBin)
 	if err != nil {
 		return nil, err
 	}
-	if fpOld.GasPerToken > math.MaxUint32 {
-		log.Warn("m001GasPerTokenToRatio32: trimming gas per token")
-		fpOld.GasPerToken = math.MaxUint32
-	}
 	return &gas.FeePolicy{
-		GasPerToken:       util.Ratio32{A: 1, B: uint32(fpOld.GasPerToken)},
+		GasPerToken:       fpOld.GasPerToken,
 		EVMGasRatio:       fpOld.EVMGasRatio,
 		ValidatorFeeShare: fpOld.ValidatorFeeShare,
 	}, nil
 }
 
-type gasFeePolicyOld struct {
+type feePolicyPreCleanup struct {
 	GasFeeTokenID       iotago.NativeTokenID
 	GasFeeTokenDecimals uint32
-	GasPerToken         uint64
+	GasPerToken         util.Ratio32
 	EVMGasRatio         util.Ratio32
 	ValidatorFeeShare   uint8
 }
 
-func feePolicyFromBytesOld(data []byte) (*gasFeePolicyOld, error) {
-	ret := &gasFeePolicyOld{}
+func feePolicyPreCleanupFromBytes(data []byte) (*feePolicyPreCleanup, error) {
+	ret := &feePolicyPreCleanup{}
 	mu := marshalutil.New(data)
 	var gasNativeToken bool
 	var err error
@@ -71,7 +63,7 @@ func feePolicyFromBytesOld(data []byte) (*gasFeePolicyOld, error) {
 			return nil, err2
 		}
 	}
-	if ret.GasPerToken, err = mu.ReadUint64(); err != nil {
+	if ret.GasPerToken, err = gas.ReadRatio32(mu); err != nil {
 		return nil, err
 	}
 	if ret.ValidatorFeeShare, err = mu.ReadUint8(); err != nil {

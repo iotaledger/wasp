@@ -22,4 +22,5 @@ type Migration struct {
 // BaseSchemaVersion by one.
 var Migrations = []Migration{
 	m001GasPerTokenToRatio32,
+	m002CleanupFeePolicy,
 }

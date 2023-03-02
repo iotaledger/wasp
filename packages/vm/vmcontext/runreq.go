@@ -2,7 +2,6 @@ package vmcontext
 
 import (
 	"math"
-	"math/big"
 	"runtime/debug"
 	"time"
 
@@ -285,42 +284,14 @@ func (vmctx *VMContext) calculateAffordableGasBudget() uint64 {
 
 // calcGuaranteedFeeTokens return the maximum tokens (base tokens or native) can be guaranteed for the fee,
 // taking into account allowance (which must be 'reserved')
-// TODO this could be potentially problematic when using custom tokens that are expressed in "big.int"
 func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
-	var tokensGuaranteed uint64
-
-	if isc.IsEmptyNativeTokenID(vmctx.chainInfo.GasFeePolicy.GasFeeTokenID) {
-		// base tokens are used as gas tokens
-		tokensGuaranteed = vmctx.GetBaseTokensBalance(vmctx.req.SenderAccount())
-		// safely subtract the allowed from the sender to the target
-		if allowed := vmctx.req.Allowance(); allowed != nil {
-			if tokensGuaranteed < allowed.BaseTokens {
-				tokensGuaranteed = 0
-			} else {
-				tokensGuaranteed -= allowed.BaseTokens
-			}
-		}
-		return tokensGuaranteed
-	}
-	// native tokens are used for gas fee
-	nativeTokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
-	// to pay for gas chain is configured to use some native token, not base tokens
-	tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), nativeTokenID)
-	if tokensAvailableBig != nil {
-		// safely subtract the transfer from the sender to the target
-		if transfer := vmctx.req.Allowance(); transfer != nil {
-			if transferTokens := transfer.AmountNativeToken(nativeTokenID); !util.IsZeroBigInt(transferTokens) {
-				if tokensAvailableBig.Cmp(transferTokens) < 0 {
-					tokensAvailableBig.SetUint64(0)
-				} else {
-					tokensAvailableBig.Sub(tokensAvailableBig, transferTokens)
-				}
-			}
-		}
-		if tokensAvailableBig.IsUint64() {
-			tokensGuaranteed = tokensAvailableBig.Uint64()
+	tokensGuaranteed := vmctx.GetBaseTokensBalance(vmctx.req.SenderAccount())
+	// safely subtract the allowed from the sender to the target
+	if allowed := vmctx.req.Allowance(); allowed != nil {
+		if tokensGuaranteed < allowed.BaseTokens {
+			tokensGuaranteed = 0
 		} else {
-			tokensGuaranteed = math.MaxUint64
+			tokensGuaranteed -= allowed.BaseTokens
 		}
 	}
 	return tokensGuaranteed
@@ -363,17 +334,8 @@ func (vmctx *VMContext) chargeGasFee() {
 
 	transferToValidator := &isc.Assets{}
 	transferToOwner := &isc.Assets{}
-	if !isc.IsEmptyNativeTokenID(vmctx.chainInfo.GasFeePolicy.GasFeeTokenID) {
-		transferToValidator.NativeTokens = iotago.NativeTokens{
-			&iotago.NativeToken{ID: vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToValidator))},
-		}
-		transferToOwner.NativeTokens = iotago.NativeTokens{
-			&iotago.NativeToken{ID: vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToOwner))},
-		}
-	} else {
-		transferToValidator.BaseTokens = sendToValidator
-		transferToOwner.BaseTokens = sendToOwner
-	}
+	transferToValidator.BaseTokens = sendToValidator
+	transferToOwner.BaseTokens = sendToOwner
 	sender := vmctx.req.SenderAccount()
 
 	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)

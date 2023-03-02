@@ -167,7 +167,7 @@ func (e *soloChainEnv) setGasRatio(newGasRatio util.Ratio32, opts ...iscCallOpti
 	return err
 }
 
-func (e *soloChainEnv) setFeePolicy(p gas.GasFeePolicy, opts ...iscCallOptions) error {
+func (e *soloChainEnv) setFeePolicy(p gas.FeePolicy, opts ...iscCallOptions) error {
 	opt := e.parseISCCallOptions(opts)
 	req := solo.NewCallParams(
 		governance.Contract.Name, governance.FuncSetFeePolicy.Name,

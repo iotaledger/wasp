@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -113,8 +112,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 	require.EqualValues(t, blockIndex, blockIndex2)
 
 	// calls to governance are processed (try changing fees for example)
-	newGasFeePolicy := gas.GasFeePolicy{
-		GasFeeTokenID:     iotago.NativeTokenID{},
+	newGasFeePolicy := gas.FeePolicy{
 		GasPerToken:       util.Ratio32{A: 1, B: 10},
 		ValidatorFeeShare: 1,
 		EVMGasRatio:       gas.DefaultEVMGasRatio,
