@@ -1,7 +1,7 @@
 package nodeconn
 
 import (
-	"github.com/iotaledger/hive.go/core/app"
+	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/inx-app/core/inx"
 )
 

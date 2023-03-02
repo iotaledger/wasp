@@ -14,7 +14,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/events"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -617,12 +616,7 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...uint64)
 }
 
 // AttachToRequestProcessed implements chain.Chain
-func (*Chain) AttachToRequestProcessed(func(isc.RequestID)) (attachID *events.Closure) {
-	panic("unimplemented")
-}
-
-// DetachFromRequestProcessed implements chain.Chain
-func (*Chain) DetachFromRequestProcessed(attachID *events.Closure) {
+func (*Chain) AttachToRequestProcessed(func(isc.RequestID)) context.CancelFunc {
 	panic("unimplemented")
 }
 

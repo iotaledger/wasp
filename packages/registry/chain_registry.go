@@ -10,12 +10,12 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/hive.go/core/generics/event"
-	"github.com/iotaledger/hive.go/core/generics/onchangemap"
-	"github.com/iotaledger/hive.go/core/ioutils"
+	"github.com/iotaledger/hive.go/runtime/event"
+	"github.com/iotaledger/hive.go/runtime/ioutils"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/onchangemap"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -148,7 +148,7 @@ type ChainRecordModifiedEvent struct {
 // ChainRecordRegistryEvents contain all events of the ChainRecordRegistry.
 type ChainRecordRegistryEvents struct {
 	// A ChainRecordModified event is triggered, when a chain record was modified.
-	ChainRecordModified *event.Event[*ChainRecordModifiedEvent]
+	ChainRecordModified *event.Event1[*ChainRecordModifiedEvent]
 }
 
 type ChainRecordRegistryImpl struct {
@@ -171,7 +171,7 @@ func NewChainRecordRegistryImpl(filePath string) (*ChainRecordRegistryImpl, erro
 	registry := &ChainRecordRegistryImpl{
 		filePath: filePath,
 		events: &ChainRecordRegistryEvents{
-			ChainRecordModified: event.New[*ChainRecordModifiedEvent](),
+			ChainRecordModified: event.New1[*ChainRecordModifiedEvent](),
 		},
 	}
 

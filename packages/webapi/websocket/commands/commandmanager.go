@@ -5,10 +5,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 
-	"github.com/iotaledger/hive.go/core/subscriptionmanager"
-	"github.com/iotaledger/hive.go/core/websockethub"
+	"github.com/iotaledger/hive.go/web/subscriptionmanager"
+	"github.com/iotaledger/hive.go/web/websockethub"
 )
 
 type CommandType string

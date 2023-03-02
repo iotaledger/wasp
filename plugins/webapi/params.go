@@ -3,7 +3,7 @@ package webapi
 import (
 	"time"
 
-	"github.com/iotaledger/hive.go/core/app"
+	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/wasp/packages/authentication"
 )
 

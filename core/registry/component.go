@@ -8,9 +8,9 @@ import (
 
 	"go.uber.org/dig"
 
-	"github.com/iotaledger/hive.go/core/app"
-	"github.com/iotaledger/hive.go/core/ioutils"
-	hivep2p "github.com/iotaledger/hive.go/core/p2p"
+	"github.com/iotaledger/hive.go/app"
+	hivep2p "github.com/iotaledger/hive.go/crypto/p2p"
+	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/cryptolib"

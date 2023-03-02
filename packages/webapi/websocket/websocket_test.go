@@ -8,16 +8,16 @@ import (
 	"golang.org/x/net/context"
 	websocketserver "nhooyr.io/websocket"
 
-	"github.com/iotaledger/hive.go/core/configuration"
-	"github.com/iotaledger/hive.go/core/generics/event"
-	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/hive.go/core/websockethub"
+	"github.com/iotaledger/hive.go/app/configuration"
+	appLogger "github.com/iotaledger/hive.go/app/logger"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/web/websockethub"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/solo"
 )
 
 func InitWebsocket(ctx context.Context, t *testing.T, eventsToSubscribe []publisher.ISCEventType) (*Service, *websockethub.Hub, *solo.Chain, *publisher.Publisher) {
-	logger.InitGlobalLogger(configuration.New())
+	_ = appLogger.InitGlobalLogger(configuration.New())
 	log := logger.NewLogger("Test")
 
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Log: log})
@@ -63,7 +63,7 @@ func TestWebsocketEvents(t *testing.T) {
 	//
 	// It's the last step before the events get send via the websocket to the client.
 	// It's also the last step to validate the events without actually connecting with a websocket client.
-	ws.publisherEvent.Attach(event.NewClosure(func(iscEvent *ISCEvent) {
+	ws.publisherEvent.Hook(func(iscEvent *ISCEvent) {
 		require.Exactly(t, iscEvent.ChainID, chain.ChainID.String())
 
 		if iscEvent.Kind == publisher.ISCEventKindNewBlock {
@@ -71,7 +71,7 @@ func TestWebsocketEvents(t *testing.T) {
 		} else {
 			require.FailNow(t, "Invalid event was sent out")
 		}
-	}))
+	})
 
 	block, _ := chain.Store().LatestBlock()
 	pub.BlockApplied(chain.ChainID, block)

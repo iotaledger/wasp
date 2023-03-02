@@ -6,7 +6,7 @@ import (
 
 	profile "github.com/bygui86/multi-profile/v2"
 
-	"github.com/iotaledger/hive.go/core/app"
+	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/wasp/packages/daemon"
 )
 
