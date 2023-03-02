@@ -133,8 +133,6 @@ type Privileged interface {
 	SubscribeBlockContext(openFunc Hname, closeFunc Hname)
 	SetBlockContext(bctx interface{})
 	BlockContext() interface{}
-	// the amount of tokens available to pay for the gas of the current request
-	TotalGasTokens() *Assets
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
