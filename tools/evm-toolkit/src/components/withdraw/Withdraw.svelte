@@ -5,21 +5,23 @@
     selectedAccount,
     chainId,
     chainData,
-    defaultEvmStores,
+    defaultEvmStores
   } from "svelte-web3";
+  import type {Contract} from 'web3-eth-contract';
   import { hornetAPI } from "../../store";
   import { waspAddrBinaryFromBech32 } from "../../lib/bech32";
   import { SingleNodeClient } from "@iota/iota.js";
   import { gasFee, iscAbi, iscContractAddress } from "./constants";
-    import { hNameFromString } from "../../lib/hname";
-    import { Converter } from "@iota/util.js";
-    import { evmAddressToAgentID } from "../../lib/evm";
+  import { hNameFromString } from "../../lib/hname";
+  import { Converter } from "@iota/util.js";
+  import { evmAddressToAgentID } from "../../lib/evm";
 
-  let chainID;
-  let contract;
+  let chainID: string;
+  let contract: Contract;
   let balance = 0;
   let amountToSend = 0;
-  let addrInput = "";
+
+  let addrInput: string = "";
 
   $: formattedBalance = (balance / 1e6).toFixed(2);
   $: formattedAmountToSend = (amountToSend / 1e6).toFixed(2);
