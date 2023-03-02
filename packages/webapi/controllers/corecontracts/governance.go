@@ -5,7 +5,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/webapi/models"
@@ -13,18 +12,11 @@ import (
 )
 
 func MapGovChainInfoResponse(chainInfo *governance.ChainInfo) models.GovChainInfoResponse {
-	gasFeeTokenID := ""
-
-	if !isc.IsEmptyNativeTokenID(chainInfo.GasFeePolicy.GasFeeTokenID) {
-		gasFeeTokenID = chainInfo.GasFeePolicy.GasFeeTokenID.String()
-	}
-
-	chainInfoResponse := models.GovChainInfoResponse{
+	return models.GovChainInfoResponse{
 		ChainID:      chainInfo.ChainID.String(),
 		ChainOwnerID: chainInfo.ChainOwnerID.String(),
 		Description:  chainInfo.Description,
 		GasFeePolicy: models.GasFeePolicy{
-			GasFeeTokenID:     gasFeeTokenID,
 			GasPerToken:       chainInfo.GasFeePolicy.GasPerToken,
 			ValidatorFeeShare: chainInfo.GasFeePolicy.ValidatorFeeShare,
 			EVMGasRatio:       chainInfo.GasFeePolicy.EVMGasRatio,
@@ -33,8 +25,6 @@ func MapGovChainInfoResponse(chainInfo *governance.ChainInfo) models.GovChainInf
 		MaxEventSize:    chainInfo.MaxEventSize,
 		MaxEventsPerReq: chainInfo.MaxEventsPerReq,
 	}
-
-	return chainInfoResponse
 }
 
 func (c *Controller) getChainInfo(e echo.Context) error {

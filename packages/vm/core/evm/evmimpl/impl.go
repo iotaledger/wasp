@@ -93,7 +93,7 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 
 	chainID := evmtypes.MustDecodeChainID(ctx.Params().MustGet(evm.FieldChainID), evm.DefaultChainID)
 
-	getFeePolicy := func() *gas.GasFeePolicy { return getFeePolicy(ctx) }
+	getFeePolicy := func() *gas.FeePolicy { return getFeePolicy(ctx) }
 	gasRatio := getFeePolicy().EVMGasRatio
 	emulator.Init(
 		evmStateSubrealm(ctx.State()),

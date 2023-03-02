@@ -4,7 +4,7 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**WsGet**](DefaultApi.md#WsGet) | **Get** /ws | 
+[**WsGet**](DefaultApi.md#WsGet) | **Get** /ws | The websocket connection service
 
 
 
@@ -12,7 +12,7 @@ Method | HTTP request | Description
 
 > WsGet(ctx).Execute()
 
-
+The websocket connection service
 
 ### Example
 

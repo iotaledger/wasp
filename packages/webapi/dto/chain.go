@@ -16,7 +16,7 @@ type ChainInfo struct {
 	ChainID         isc.ChainID
 	ChainOwnerID    isc.AgentID
 	Description     string
-	GasFeePolicy    *gas.GasFeePolicy
+	GasFeePolicy    *gas.FeePolicy
 	MaxBlobSize     uint32
 	MaxEventSize    uint16
 	MaxEventsPerReq uint16

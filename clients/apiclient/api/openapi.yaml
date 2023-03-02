@@ -1546,7 +1546,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "true"
+                  example: info
                   format: string
                   type: string
                 type: object
@@ -2063,6 +2063,7 @@ paths:
         default:
           content: {}
           description: successful operation
+      summary: The websocket connection service
 components:
   schemas:
     AccountFoundriesResponse:
@@ -2745,7 +2746,6 @@ components:
         evmChainId: 1074
         description: description
         gasFeePolicy:
-          gasFeeTokenId: gasFeeTokenId
           gasPerToken:
             a: 1
             b: 100
@@ -3657,7 +3657,6 @@ components:
         name: FoundryOutputResponse
     GasFeePolicy:
       example:
-        gasFeeTokenId: gasFeeTokenId
         gasPerToken:
           a: 1
           b: 100
@@ -3668,12 +3667,6 @@ components:
       properties:
         evmGasRatio:
           $ref: '#/components/schemas/Ratio32_'
-        gasFeeTokenId:
-          description: The gas fee token id. Empty if base token.
-          format: string
-          type: string
-          xml:
-            name: GasFeeTokenID
         gasPerToken:
           $ref: '#/components/schemas/Ratio32'
         validatorFeeShare:
@@ -3684,7 +3677,6 @@ components:
             name: ValidatorFeeShare
       required:
       - evmGasRatio
-      - gasFeeTokenId
       - gasPerToken
       - validatorFeeShare
       type: object
@@ -3692,7 +3684,6 @@ components:
         name: GasFeePolicy
     GasFeePolicy_:
       example:
-        gasFeeTokenId: gasFeeTokenId
         gasPerToken:
           a: 0
           b: 0
@@ -3703,12 +3694,6 @@ components:
       properties:
         evmGasRatio:
           $ref: '#/components/schemas/Ratio32_'
-        gasFeeTokenId:
-          description: The gas fee token id. Empty if base token.
-          format: string
-          type: string
-          xml:
-            name: GasFeeTokenID
         gasPerToken:
           $ref: '#/components/schemas/Ratio32_'
         validatorFeeShare:
@@ -3719,7 +3704,6 @@ components:
             name: ValidatorFeeShare
       required:
       - evmGasRatio
-      - gasFeeTokenId
       - gasPerToken
       - validatorFeeShare
       type: object
@@ -3750,7 +3734,6 @@ components:
         chainID: chainID
         description: description
         gasFeePolicy:
-          gasFeeTokenId: gasFeeTokenId
           gasPerToken:
             a: 0
             b: 0

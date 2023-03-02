@@ -110,7 +110,7 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 	return ret, true
 }
 
-func (ch *Chain) GetGasFeePolicy() *gas.GasFeePolicy {
+func (ch *Chain) GetGasFeePolicy() *gas.FeePolicy {
 	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetFeePolicy.Name)
 	require.NoError(ch.Env.T, err)
 	fpBin := res.MustGet(governance.ParamFeePolicyBytes)
@@ -119,7 +119,7 @@ func (ch *Chain) GetGasFeePolicy() *gas.GasFeePolicy {
 	return feePolicy
 }
 
-func (ch *Chain) SetGasFeePolicy(user *cryptolib.KeyPair, fp *gas.GasFeePolicy) {
+func (ch *Chain) SetGasFeePolicy(user *cryptolib.KeyPair, fp *gas.FeePolicy) {
 	_, err := ch.PostRequestOffLedger(NewCallParams(
 		governance.Contract.Name,
 		governance.FuncSetFeePolicy.Name,
