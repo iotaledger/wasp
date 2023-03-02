@@ -56,12 +56,11 @@ func postRequest(nodeName, chain, hname, fname string, params chainclient.PostRe
 }
 
 func initPostRequestCmd() *cobra.Command {
-	var transfer []string
-	var allowance []string
-	var offLedger bool
-	var adjustStorageDeposit bool
-	var node string
-	var chain string
+	var (
+		postRequestParams postRequestParams
+		node              string
+		chain             string
+	)
 
 	cmd := &cobra.Command{
 		Use:   "post-request <name> <funcname> [params]",
@@ -74,29 +73,39 @@ func initPostRequestCmd() *cobra.Command {
 			hname := args[0]
 			fname := args[1]
 
-			allowanceTokens := util.ParseFungibleTokens(allowance)
+			allowanceTokens := util.ParseFungibleTokens(postRequestParams.allowance)
 			params := chainclient.PostRequestParams{
 				Args:      util.EncodeParams(args[2:]),
-				Transfer:  util.ParseFungibleTokens(transfer),
+				Transfer:  util.ParseFungibleTokens(postRequestParams.transfer),
 				Allowance: allowanceTokens,
 			}
-			postRequest(node, chain, hname, fname, params, offLedger, adjustStorageDeposit)
+			postRequest(node, chain, hname, fname, params, postRequestParams.offLedger, postRequestParams.adjustStorageDeposit)
 		},
 	}
 
-	cmd.Flags().StringSliceVarP(&allowance, "allowance", "l", []string{},
-		"include allowance as part of the transaction. Format: <token-id>:<amount>,<token-id>:amount...")
-
-	cmd.Flags().StringSliceVarP(&transfer, "transfer", "t", []string{},
-		"include a funds transfer as part of the transaction. Format: <token-id>:<amount>,<token-id>:amount...",
-	)
-	cmd.Flags().BoolVarP(&offLedger, "off-ledger", "o", false,
-		"post an off-ledger request",
-	)
-	cmd.Flags().BoolVarP(&adjustStorageDeposit, "adjust-storage-deposit", "s", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
-
 	waspcmd.WithWaspNodeFlag(cmd, &node)
 	withChainFlag(cmd, &chain)
+	postRequestParams.initFlags(cmd)
 
 	return cmd
+}
+
+type postRequestParams struct {
+	transfer             []string
+	allowance            []string
+	offLedger            bool
+	adjustStorageDeposit bool
+}
+
+func (p *postRequestParams) initFlags(cmd *cobra.Command) {
+	cmd.Flags().StringSliceVarP(&p.allowance, "allowance", "l", []string{},
+		"include allowance as part of the transaction. Format: <token-id>:<amount>,<token-id>:amount...")
+
+	cmd.Flags().StringSliceVarP(&p.transfer, "transfer", "t", []string{},
+		"include a funds transfer as part of the transaction. Format: <token-id>:<amount>,<token-id>:amount...",
+	)
+	cmd.Flags().BoolVarP(&p.offLedger, "off-ledger", "o", false,
+		"post an off-ledger request",
+	)
+	cmd.Flags().BoolVarP(&p.adjustStorageDeposit, "adjust-storage-deposit", "s", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
 }
