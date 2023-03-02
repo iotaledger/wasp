@@ -38,7 +38,7 @@ func m001ConvertFeePolicy(oldBin []byte) (*gas.FeePolicy, error) {
 		fpOld.GasPerToken = math.MaxUint32
 	}
 	return &gas.FeePolicy{
-		GasPerToken:       util.Ratio32{A: 1, B: uint32(fpOld.GasPerToken)},
+		GasPerToken:       util.Ratio32{A: uint32(fpOld.GasPerToken), B: 1},
 		EVMGasRatio:       fpOld.EVMGasRatio,
 		ValidatorFeeShare: fpOld.ValidatorFeeShare,
 	}, nil

@@ -9,11 +9,11 @@ import (
 )
 
 // By default each token pays for 100 units of gas
-var DefaultGasPerToken = util.Ratio32{A: 1, B: 100}
+var DefaultGasPerToken = util.Ratio32{A: 100, B: 1}
 
 type FeePolicy struct {
 	// GasPerToken specifies how many gas units are paid for each token.
-	GasPerToken util.Ratio32 // X = fee, Y = gas => fee = gas * A/B
+	GasPerToken util.Ratio32
 
 	// EVMGasRatio expresses the ratio at which EVM gas is converted to ISC gas
 	EVMGasRatio util.Ratio32 // X = ISC gas, Y = EVM gas => ISC gas = EVM gas * A/B
@@ -22,15 +22,6 @@ type FeePolicy struct {
 	// 0 mean all goes to Governor
 	// >=100 all goes to Validator
 	ValidatorFeeShare uint8
-}
-
-// FeeFromGas calculates fee = gas * A/B
-func FeeFromGas(gasUnits uint64, gasPerToken util.Ratio32) uint64 {
-	return gasPerToken.XCeil64(gasUnits)
-}
-
-func (p *FeePolicy) FeeFromGas(gasUnits uint64) uint64 {
-	return FeeFromGas(gasUnits, p.GasPerToken)
 }
 
 // FeeFromGasBurned calculates the how many tokens to take and where
@@ -55,6 +46,14 @@ func (p *FeePolicy) FeeFromGasBurned(gasUnits, availableTokens uint64) (sendToOw
 	return fee - sendToValidator, sendToValidator
 }
 
+func FeeFromGas(gasUnits uint64, gasPerToken util.Ratio32) uint64 {
+	return gasPerToken.YCeil64(gasUnits)
+}
+
+func (p *FeePolicy) FeeFromGas(gasUnits uint64) uint64 {
+	return FeeFromGas(gasUnits, p.GasPerToken)
+}
+
 func (p *FeePolicy) MinFee() uint64 {
 	return p.FeeFromGas(BurnCodeMinimumGasPerRequest1P.Cost())
 }
@@ -64,7 +63,7 @@ func (p *FeePolicy) IsEnoughForMinimumFee(availableTokens uint64) bool {
 }
 
 func (p *FeePolicy) GasBudgetFromTokens(availableTokens uint64) uint64 {
-	return p.GasPerToken.YFloor64(availableTokens)
+	return p.GasPerToken.XFloor64(availableTokens)
 }
 
 func DefaultFeePolicy() *FeePolicy {
