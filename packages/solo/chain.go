@@ -35,6 +35,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -678,7 +679,7 @@ func (ch *Chain) LatestState(freshness chain.StateFreshness) (state.State, error
 	if ao == nil {
 		return ch.store.LatestState()
 	}
-	l1c, err := state.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
+	l1c, err := vmcontext.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
 	if err != nil {
 		panic(err)
 	}

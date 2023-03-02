@@ -25,8 +25,8 @@ type StateMetadata struct {
 
 func (s *StateMetadata) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.WriteBytes(s.L1Commitment.Bytes())
 	mu.WriteUint32(s.SchemaVersion)
+	mu.WriteBytes(s.L1Commitment.Bytes())
 	mu.WriteBytes(s.GasFeePolicy.Bytes())
 	mu.WriteUint8(uint8(len(s.CustomMetadata)))
 	mu.WriteBytes([]byte(s.CustomMetadata))
@@ -36,15 +36,16 @@ func (s *StateMetadata) Bytes() []byte {
 func StateMetadataFromBytes(data []byte) (*StateMetadata, error) {
 	ret := &StateMetadata{}
 	mu := marshalutil.New(data)
+	var err error
+	ret.SchemaVersion, err = mu.ReadUint32()
+	if err != nil {
+		return nil, err
+	}
 	l1CommitmentBytes, err := mu.ReadBytes(state.L1CommitmentSize)
 	if err != nil {
 		return nil, err
 	}
 	ret.L1Commitment, err = state.L1CommitmentFromBytes(l1CommitmentBytes)
-	if err != nil {
-		return nil, err
-	}
-	ret.SchemaVersion, err = mu.ReadUint32()
 	if err != nil {
 		return nil, err
 	}
@@ -62,6 +63,17 @@ func StateMetadataFromBytes(data []byte) (*StateMetadata, error) {
 	}
 	ret.CustomMetadata = string(customMetadataBytes)
 	return ret, nil
+}
+
+func L1CommitmentFromAliasOutput(ao *iotago.AliasOutput) (*state.L1Commitment, error) {
+	if len(ao.StateMetadata) == state.L1CommitmentSize {
+		return state.L1CommitmentFromBytes(ao.StateMetadata)
+	}
+	s, err := StateMetadataFromBytes(ao.StateMetadata)
+	if err != nil {
+		return nil, err
+	}
+	return s.L1Commitment, nil
 }
 
 func (vmctx *VMContext) StateMetadata(stateCommitment *state.L1Commitment) []byte {

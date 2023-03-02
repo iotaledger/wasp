@@ -8,7 +8,6 @@ import (
 
 	"golang.org/x/crypto/blake2b"
 
-	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
@@ -63,38 +62,14 @@ func (bh BlockHash) Equals(other BlockHash) bool {
 }
 
 func L1CommitmentFromBytes(data []byte) (*L1Commitment, error) {
-	if len(data) < L1CommitmentSize {
-		return nil, errors.New("L1CommitmentFromBytes: not enough bytes")
+	if len(data) != L1CommitmentSize {
+		return nil, errors.New("L1CommitmentFromBytes: wrong data length")
 	}
 	ret := L1Commitment{}
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, err
 	}
 	return &ret, nil
-}
-
-func L1CommitmentFromMarshalUtil(mu *marshalutil.MarshalUtil) (*L1Commitment, error) {
-	byteCount, err := mu.ReadUint16()
-	if err != nil {
-		return nil, err
-	}
-	data, err := mu.ReadBytes(int(byteCount))
-	if err != nil {
-		return nil, err
-	}
-	l1c, err := L1CommitmentFromBytes(data)
-	if err != nil {
-		return nil, err
-	}
-	return l1c, nil
-}
-
-func L1CommitmentFromAliasOutput(output *iotago.AliasOutput) (*L1Commitment, error) {
-	l1c, err := L1CommitmentFromBytes(output.StateMetadata)
-	if err != nil {
-		return nil, err
-	}
-	return l1c, nil
 }
 
 func (s *L1Commitment) TrieRoot() trie.Hash {
@@ -139,10 +114,6 @@ func (s *L1Commitment) Read(r io.Reader) error {
 
 func (s *L1Commitment) String() string {
 	return fmt.Sprintf("<%s;%s>", s.TrieRoot(), s.BlockHash())
-}
-
-func L1CommitmentFromAnchorOutput(o *iotago.AliasOutput) (*L1Commitment, error) {
-	return L1CommitmentFromBytes(o.StateMetadata)
 }
 
 var L1CommitmentNil = &L1Commitment{}
