@@ -54,7 +54,8 @@ func newSoloTestEnv(t testing.TB) *soloTestEnv {
 	chain, _, _ := s.NewChainExt(chainOwner, 0, "chain1")
 
 	accounts := jsonrpc.NewAccountManager(nil)
-	rpcsrv := jsonrpc.NewServer(chain.EVM(), accounts)
+	rpcsrv, err := jsonrpc.NewServer(chain.EVM(), accounts)
+	require.NoError(t, err)
 	t.Cleanup(rpcsrv.Stop)
 
 	rawClient := rpc.DialInProc(rpcsrv)

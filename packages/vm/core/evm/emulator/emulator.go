@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	lru "github.com/hashicorp/golang-lru/v2"
 
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
@@ -331,78 +332,17 @@ func (e *EVMEmulator) getReceiptsInFilterRange(query *ethereum.FilterQuery) []*t
 func (e *EVMEmulator) filterLogs(query *ethereum.FilterQuery, receipts []*types.Receipt) []*types.Log {
 	var logs []*types.Log
 	for _, r := range receipts {
-		if !bloomFilter(r.Bloom, query.Addresses, query.Topics) {
+		if !evmtypes.BloomFilter(r.Bloom, query.Addresses, query.Topics) {
 			continue
 		}
 		for _, log := range r.Logs {
-			if !logMatches(log, query.Addresses, query.Topics) {
+			if !evmtypes.LogMatches(log, query.Addresses, query.Topics) {
 				continue
 			}
 			logs = append(logs, log)
 		}
 	}
 	return logs
-}
-
-func bloomFilter(bloom types.Bloom, addresses []common.Address, topics [][]common.Hash) bool {
-	if len(addresses) > 0 {
-		var included bool
-		for _, addr := range addresses {
-			if types.BloomLookup(bloom, addr) {
-				included = true
-				break
-			}
-		}
-		if !included {
-			return false
-		}
-	}
-
-	for _, sub := range topics {
-		included := len(sub) == 0 // empty rule set == wildcard
-		for _, topic := range sub {
-			if types.BloomLookup(bloom, topic) {
-				included = true
-				break
-			}
-		}
-		if !included {
-			return false
-		}
-	}
-	return true
-}
-
-func logMatches(log *types.Log, addresses []common.Address, topics [][]common.Hash) bool {
-	if len(addresses) > 0 {
-		found := false
-		for _, a := range addresses {
-			if log.Address == a {
-				found = true
-			}
-		}
-		if !found {
-			return false
-		}
-	}
-	if len(topics) > 0 {
-		if len(topics) > len(log.Topics) {
-			return false
-		}
-		for i, sub := range topics {
-			match := len(sub) == 0 // empty rule set == wildcard
-			for _, topic := range sub {
-				if log.Topics[i] == topic {
-					match = true
-					break
-				}
-			}
-			if !match {
-				return false
-			}
-		}
-	}
-	return true
 }
 
 func (e *EVMEmulator) Signer() types.Signer {

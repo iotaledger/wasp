@@ -215,6 +215,7 @@ func provide(c *dig.Container) error {
 			ParamsWebAPI.NodeOwnerAddresses,
 			deps.APICacheTTL,
 			websocketService,
+			deps.Publisher,
 		)
 
 		return webapiServerResult{

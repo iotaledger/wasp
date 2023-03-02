@@ -144,6 +144,7 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc
 	if err != nil {
 		panic(err)
 	}
+	ch.Env.Publisher().BlockApplied(ch.ChainID, block)
 
 	ch.Log().Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
 		stateDraft.BlockIndex(), len(reqids), len(stateTx.Essence.Outputs))
