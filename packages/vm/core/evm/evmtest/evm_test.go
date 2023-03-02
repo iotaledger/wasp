@@ -1641,7 +1641,7 @@ func TestChangeGasPerToken(t *testing.T) {
 
 	{
 		feePolicy := env.soloChain.GetGasFeePolicy()
-		feePolicy.GasPerToken.A *= 2
+		feePolicy.GasPerToken.B *= 2
 		err := env.setFeePolicy(*feePolicy)
 		require.NoError(t, err)
 	}
