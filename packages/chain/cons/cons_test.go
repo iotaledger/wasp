@@ -33,6 +33,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 // Here we run a single consensus instance, step by step with
@@ -188,7 +189,7 @@ func testBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedStateMgrStateProposal)
 		require.NotNil(t, out.NeedMempoolRequests)
 		require.NotNil(t, out.NeedStateMgrDecidedState)
-		l1Commitment, err := state.L1CommitmentFromAliasOutput(out.NeedStateMgrDecidedState.GetAliasOutput())
+		l1Commitment, err := vmcontext.L1CommitmentFromAliasOutput(out.NeedStateMgrDecidedState.GetAliasOutput())
 		require.NoError(t, err)
 		chainState, err := chainStates[nid].StateByTrieRoot(l1Commitment.TrieRoot())
 		require.NoError(t, err)
@@ -372,7 +373,7 @@ func testChained(t *testing.T, n, f, b int) {
 	// Start the process by providing input to the first instance.
 	for _, nid := range nodeIDs {
 		t.Log("Going to provide inputs.")
-		originL1Commitment, err := state.L1CommitmentFromAliasOutput(originAO.GetAliasOutput())
+		originL1Commitment, err := vmcontext.L1CommitmentFromAliasOutput(originAO.GetAliasOutput())
 		require.NoError(t, err)
 		originState, err := testNodeStates[nid].StateByTrieRoot(originL1Commitment.TrieRoot())
 		require.NoError(t, err)

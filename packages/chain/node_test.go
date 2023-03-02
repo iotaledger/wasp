@@ -178,7 +178,7 @@ func testBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration) {
 					latestTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
 					_, latestAONoID, err := transaction.GetAnchorFromTransaction(latestTX)
 					require.NoError(t, err)
-					latestL1Commitment, err := state.L1CommitmentFromAliasOutput(latestAONoID)
+					latestL1Commitment, err := vmcontext.L1CommitmentFromAliasOutput(latestAONoID)
 					require.NoError(t, err)
 					st, err := node.GetStateReader().StateByTrieRoot(latestL1Commitment.GetTrieRoot())
 					require.NoError(t, err)

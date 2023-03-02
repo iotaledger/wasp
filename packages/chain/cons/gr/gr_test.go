@@ -30,6 +30,7 @@ import (
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 func TestBasic(t *testing.T) {
@@ -294,7 +295,7 @@ func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutput 
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
 	resp := make(chan state.State, 1)
-	stateCommitment, err := state.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
+	stateCommitment, err := vmcontext.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
 	if err != nil {
 		panic(err)
 	}
@@ -331,7 +332,7 @@ func (tsm *testStateMgr) tryRespond(hash hashing.HashValue) {
 }
 
 func commitmentHashFromAO(aliasOutput *isc.AliasOutputWithID) hashing.HashValue {
-	commitment, err := state.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
+	commitment, err := vmcontext.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
 	if err != nil {
 		panic(err)
 	}

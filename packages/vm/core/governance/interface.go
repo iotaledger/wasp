@@ -54,6 +54,10 @@ var (
 	FuncStartMaintenance     = coreutil.Func("startMaintenance")
 	FuncStopMaintenance      = coreutil.Func("stopMaintenance")
 	ViewGetMaintenanceStatus = coreutil.ViewFunc("getMaintenanceStatus")
+
+	// L1 metadata
+	FuncSetCustomMetadata = coreutil.Func("setCustomMetadata")
+	ViewGetCustomMetadata = coreutil.ViewFunc("getCustomMetadata")
 )
 
 // state variables
@@ -82,6 +86,9 @@ const (
 
 	// maintenance
 	VarMaintenanceStatus = "m"
+
+	// L1 metadata
+	VarCustomMetadata = "x"
 )
 
 // params
@@ -115,4 +122,7 @@ const (
 
 	// access nodes: changeAccessNodes
 	ParamChangeAccessNodesActions = "n"
+
+	// L1 metadata
+	ParamCustomMetadata = "x"
 )

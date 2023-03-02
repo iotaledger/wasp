@@ -7,7 +7,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -179,13 +178,13 @@ func (txb *AnchorTransactionBuilder) InputsAreFull() bool {
 }
 
 // BuildTransactionEssence builds transaction essence from tx builder data
-func (txb *AnchorTransactionBuilder) BuildTransactionEssence(l1Commitment *state.L1Commitment) (*iotago.TransactionEssence, []byte) {
+func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byte) (*iotago.TransactionEssence, []byte) {
 	txb.MustBalanced("BuildTransactionEssence IN")
 	inputs, inputIDs := txb.inputs()
 	essence := &iotago.TransactionEssence{
 		NetworkID: parameters.L1().Protocol.NetworkID(),
 		Inputs:    inputIDs.UTXOInputs(),
-		Outputs:   txb.outputs(l1Commitment),
+		Outputs:   txb.outputs(stateMetadata),
 		Payload:   nil,
 	}
 
@@ -249,7 +248,7 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 }
 
 // outputs generates outputs for the transaction essence
-func (txb *AnchorTransactionBuilder) outputs(l1Commitment *state.L1Commitment) iotago.Outputs {
+func (txb *AnchorTransactionBuilder) outputs(stateMetadata []byte) iotago.Outputs {
 	ret := make(iotago.Outputs, 0, 1+len(txb.balanceNativeTokens)+len(txb.postedOutputs))
 	// creating the anchor output
 	aliasID := txb.anchorOutput.AliasID
@@ -261,7 +260,7 @@ func (txb *AnchorTransactionBuilder) outputs(l1Commitment *state.L1Commitment) i
 		NativeTokens:   nil, // anchor output does not contain native tokens
 		AliasID:        aliasID,
 		StateIndex:     txb.anchorOutput.StateIndex + 1,
-		StateMetadata:  l1Commitment.Bytes(),
+		StateMetadata:  stateMetadata,
 		FoundryCounter: txb.nextFoundryCounter(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: txb.anchorOutput.StateController()},

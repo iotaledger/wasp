@@ -189,6 +189,14 @@ Changes the ISC : EVM gas ratio.
 
 - `e` ([`Ratio32`](#ratio32)): The ISC : EVM gas ratio.
 
+### `setCustomMetadata`
+
+Changes optional extra metadata that is appended to the L1 AliasOutput
+
+#### Parameters
+
+- `e` (`string`): the optional metadata
+
 ---
 
 ## Views
@@ -255,6 +263,14 @@ Returns the current access nodes and candidates.
 Returns whether the chain is ongoing maintenance.
 
 - `m` (`bool`): `true` if the chain is in maintenance mode
+
+
+### `getCustomMetadata()`
+
+Returns the extra metadata that is added to the chain AliasOutput
+
+- `x` (`string`): the optional metadata
+
 
 ## Schemas
 
