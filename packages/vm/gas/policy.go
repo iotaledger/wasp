@@ -13,7 +13,7 @@ var (
 	emptyNativeTokenID = iotago.NativeTokenID{}
 
 	// By default each token pays for 100 units of gas
-	DefaultGasPerToken = util.Ratio32{A: 1, B: 100}
+	DefaultGasPerToken = util.Ratio32{A: 100, B: 1}
 )
 
 type GasFeePolicy struct {
@@ -23,7 +23,7 @@ type GasFeePolicy struct {
 	GasFeeTokenDecimals uint32
 
 	// GasPerToken specifies how many gas units are paid for each token.
-	GasPerToken util.Ratio32 // X = fee, Y = gas => fee = gas * A/B
+	GasPerToken util.Ratio32
 
 	// EVMGasRatio expresses the ratio at which EVM gas is converted to ISC gas
 	EVMGasRatio util.Ratio32 // X = ISC gas, Y = EVM gas => ISC gas = EVM gas * A/B
@@ -32,15 +32,6 @@ type GasFeePolicy struct {
 	// 0 mean all goes to Governor
 	// >=100 all goes to Validator
 	ValidatorFeeShare uint8
-}
-
-// FeeFromGas calculates fee = gas * A/B
-func FeeFromGas(gasUnits uint64, gasPerToken util.Ratio32) uint64 {
-	return gasPerToken.XCeil64(gasUnits)
-}
-
-func (p *GasFeePolicy) FeeFromGas(gasUnits uint64) uint64 {
-	return FeeFromGas(gasUnits, p.GasPerToken)
 }
 
 // FeeFromGasBurned calculates the how many tokens to take and where
@@ -65,6 +56,14 @@ func (p *GasFeePolicy) FeeFromGasBurned(gasUnits, availableTokens uint64) (sendT
 	return fee - sendToValidator, sendToValidator
 }
 
+func FeeFromGas(gasUnits uint64, gasPerToken util.Ratio32) uint64 {
+	return gasPerToken.YCeil64(gasUnits)
+}
+
+func (p *GasFeePolicy) FeeFromGas(gasUnits uint64) uint64 {
+	return FeeFromGas(gasUnits, p.GasPerToken)
+}
+
 func (p *GasFeePolicy) MinFee() uint64 {
 	return p.FeeFromGas(BurnCodeMinimumGasPerRequest1P.Cost())
 }
@@ -74,7 +73,7 @@ func (p *GasFeePolicy) IsEnoughForMinimumFee(availableTokens uint64) bool {
 }
 
 func (p *GasFeePolicy) GasBudgetFromTokens(availableTokens uint64) uint64 {
-	return p.GasPerToken.YFloor64(availableTokens)
+	return p.GasPerToken.XFloor64(availableTokens)
 }
 
 func DefaultGasFeePolicy() *GasFeePolicy {

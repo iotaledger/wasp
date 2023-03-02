@@ -40,7 +40,7 @@ func m001ConvertFeePolicy(oldBin []byte) (*gas.GasFeePolicy, error) {
 	return &gas.GasFeePolicy{
 		GasFeeTokenID:       fpOld.GasFeeTokenID,
 		GasFeeTokenDecimals: fpOld.GasFeeTokenDecimals,
-		GasPerToken:         util.Ratio32{A: 1, B: uint32(fpOld.GasPerToken)},
+		GasPerToken:         util.Ratio32{A: uint32(fpOld.GasPerToken), B: 1},
 		EVMGasRatio:         fpOld.EVMGasRatio,
 		ValidatorFeeShare:   fpOld.ValidatorFeeShare,
 	}, nil
