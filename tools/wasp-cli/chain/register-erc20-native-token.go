@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
@@ -25,6 +26,8 @@ func initRegisterERC20NativeTokenCmd() *cobra.Command {
 }
 
 func initRegisterERC20NativeTokenOnRemoteChainCmd() *cobra.Command {
+	var targetChain string
+
 	return buildPostRequestCmd(
 		"register-erc20-native-token-on-remote-chain",
 		"Call evm core contract registerERC20NativeTokenOnRemoteChain entry point",
@@ -32,10 +35,11 @@ func initRegisterERC20NativeTokenOnRemoteChainCmd() *cobra.Command {
 		evm.FuncRegisterERC20NativeTokenOnRemoteChain.Name,
 		func(cmd *cobra.Command) {
 			initRegisterERC20NativeTokenParams(cmd)
-			cmd.Flags().Uint8P("target", "A", 0, "Target chain ID")
+			cmd.Flags().StringVarP(&targetChain, "target", "A", "", "Target chain ID")
 		},
 		func(cmd *cobra.Command) []string {
-			extraArgs := []string{"string", "A", "uint8", cmd.Flag("target").Value.String()}
+			chainID := config.GetChain(targetChain).String()
+			extraArgs := []string{"string", "A", "string", chainID}
 			return append(getRegisterERC20NativeTokenArgs(cmd), extraArgs...)
 		},
 	)

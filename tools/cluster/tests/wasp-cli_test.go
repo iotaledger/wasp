@@ -579,6 +579,31 @@ func TestWaspCLIListTrustDistrust(t *testing.T) {
 	require.False(t, containsNode1(out))
 }
 
+func TestWaspCLICreateFoundry(t *testing.T) {
+	w := newWaspCLITest(t)
+
+	committee, quorum := w.ArgCommitteeConfig(0)
+	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain1", 0)
+	w.MustRun("chain", "deposit", "base:100000000", "--node=0")
+
+	out := w.MustRun(
+		"chain", "create-foundry",
+		"--max-supply=1000000",
+		"--melted-tokens=0",
+		"--minted-tokens=0",
+		"--allowance=base:1000000",
+		"--node=0",
+		"-o",
+	)
+
+	reqID := findRequestIDInOutput(out)
+	require.NotEmpty(t, reqID)
+
+	out = w.MustRun("chain", "request", reqID, "--node=0")
+	require.Contains(t, strings.Join(out, "\n"), "Error: (empty)")
+}
+
 func TestWaspCLIRegisterERC20NativeToken(t *testing.T) {
 	w := newWaspCLITest(t)
 
@@ -607,5 +632,42 @@ func TestWaspCLIRegisterERC20NativeToken(t *testing.T) {
 	require.NotEmpty(t, reqID)
 
 	out = w.MustRun("chain", "request", reqID, "--node=0")
+	require.Contains(t, strings.Join(out, "\n"), "Error: (empty)")
+}
+
+func TestWaspCLIRegisterERC20NativeTokenOnRemoteChain(t *testing.T) {
+	w := newWaspCLITest(t)
+
+	committee, quorum := w.ArgCommitteeConfig(0)
+	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain1", 0)
+	w.MustRun("chain", "deposit", "base:100000000", "--node=0")
+
+	w.CreateL2Foundry(&iotago.SimpleTokenScheme{
+		MaximumSupply: big.NewInt(1000000),
+		MeltedTokens:  big.NewInt(0),
+		MintedTokens:  big.NewInt(0),
+	})
+
+	w.MustRun("chain", "deploy", "--chain=chain2", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain2", 0)
+	w.MustRun("chain", "deposit", "base:100000000", "--node=0", "--chain=chain2")
+
+	out := w.MustRun(
+		"chain", "register-erc20-native-token-on-remote-chain",
+		"-o",
+		"--foundry-sn=1",
+		"--token-name=test",
+		"--ticker-symbol=test_symbol",
+		"--token-decimals=1",
+		"--target=chain2",
+		"--node=0",
+		"--chain=chain1",
+	)
+
+	reqID := findRequestIDInOutput(out)
+	require.NotEmpty(t, reqID)
+
+	out = w.MustRun("chain", "request", reqID, "--node=0", "--chain=chain1")
 	require.Contains(t, strings.Join(out, "\n"), "Error: (empty)")
 }
