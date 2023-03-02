@@ -22,7 +22,7 @@ import {
 } from "@iota/iota.js";
 import { Converter, WriteStream } from "@iota/util.js";
 import type { IotaWallet } from './iota_wallet';
-import { SimpleBufferCursor } from './simple_buffer_cursor';
+import { SimpleBufferCursor } from '../../lib/simple_buffer_cursor';
 
 export class SendFundsTransaction {
   private wallet: IotaWallet;

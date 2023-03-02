@@ -8,53 +8,25 @@
     defaultEvmStores,
   } from "svelte-web3";
   import { hornetAPI } from "../../store";
-
-  import {
-    SingleNodeClient,
-    Bech32Helper,
-    type IEd25519Address,
-  } from "@iota/iota.js";
-
-  import iscAbiAsText from "../../assets/ISCSandbox.abi?raw";
-
-  const waspAddrBinaryFromBech32 = async (bech32String: string) => {
-    const protocolInfo = await new SingleNodeClient($hornetAPI).info();
-
-    let receiverAddr = Bech32Helper.addressFromBech32(
-      bech32String,
-      protocolInfo.protocol.bech32Hrp
-    );
-
-    const address: IEd25519Address = receiverAddr as IEd25519Address;
-
-    let receiverAddrBinary = $web3.utils.hexToBytes(address.pubKeyHash);
-    //  // AddressEd25519 denotes an Ed25519 address.
-    // AddressEd25519 AddressType = 0
-    // // AddressAlias denotes an Alias address.
-    // AddressAlias AddressType = 8
-    // // AddressNFT denotes an NFT address.
-    // AddressNFT AddressType = 16
-    //
-    // 0 is the ed25519 prefix
-    return new Uint8Array([0, ...receiverAddrBinary]);
-  };
-
-  const gasFee = 300;
-  const iscAbi = JSON.parse(iscAbiAsText);
-  const iscContractAddress: string =
-    "0x1074000000000000000000000000000000000000";
+  import { waspAddrBinaryFromBech32 } from "../../lib/bech32";
+  import { SingleNodeClient } from "@iota/iota.js";
+  import { gasFee, iscAbi, iscContractAddress } from "./constants";
+    import { hNameFromString } from "../../lib/hname";
+    import { Converter } from "@iota/util.js";
+    import { evmAddressToAgentID } from "../../lib/evm";
 
   let chainID;
   let contract;
   let balance = 0;
   let amountToSend = 0;
+  let addrInput = "";
 
   $: formattedBalance = (balance / 1e6).toFixed(2);
   $: formattedAmountToSend = (amountToSend / 1e6).toFixed(2);
   $: canSendFunds = balance > 0 && amountToSend > 0;
   $: canSetAmountToSend = balance > gasFee + 1;
 
-  let addrInput = "";
+  console.log(hNameFromString("accounts"))
 
   async function pollBalance() {
     const addressBalance = await $web3.eth.getBalance(
@@ -65,6 +37,30 @@
     if (amountToSend > balance) {
       amountToSend = 0;
     }
+  }
+
+  async function getNativeTokens() {
+    if (!defaultEvmStores.$selectedAccount) {
+      console.log("no account selected");
+      return;
+    }
+
+    const accountsCoreContract = hNameFromString("accounts");
+    const getBalanceFunc = hNameFromString("balance");
+
+    const agentID = evmAddressToAgentID(defaultEvmStores.$selectedAccount)
+    
+    let parameters = {
+      items: [
+        {
+          key: Converter.utf8ToBytes("a"),
+          value: agentID,
+        }
+      ],
+    };
+
+    const result = await contract.methods.callView(accountsCoreContract, getBalanceFunc, parameters).call();
+    console.log(result);
   }
 
   function subscribeBalance() {
@@ -82,6 +78,9 @@
     });
 
     await pollBalance();
+    await getNativeTokens();
+
+
     subscribeBalance();
   }
 
@@ -91,10 +90,12 @@
       return;
     }
 
+    const client = new SingleNodeClient($hornetAPI);
+
     let parameters = [
       {
         // Receiver
-        data: await waspAddrBinaryFromBech32(addrInput),
+        data: await waspAddrBinaryFromBech32(client, addrInput),
       },
       {
         // Fungible Tokens
