@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -188,6 +189,10 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	_ = ret.publisher.Events.Published.Hook(func(ev *publisher.ISCEvent[any]) {
 		ret.logger.Infof("solo publisher: %s %s %v", ev.Kind, ev.ChainID, ev.String())
 	})
+	go func() {
+		// TODO: cancel the context when the test finishes
+		ret.publisher.Run(context.Background())
+	}()
 
 	return ret
 }

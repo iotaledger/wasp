@@ -56,11 +56,15 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 	publicAPI.
 		GET(evmURL, c.handleJSONRPC).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
-		AddResponse(http.StatusOK, "The evm json RPC", "", nil).
-		AddResponse(http.StatusNotFound, "The evm json RPC failure", "", nil)
+		SetSummary("Ethereum JSON-RPC")
 
 	publicAPI.
-		EchoGroup().Any("chains/:chainID/evm", c.handleJSONRPC)
+		EchoGroup().Any(evmURL, c.handleJSONRPC)
+
+	publicAPI.
+		GET("chains/:chainID/evm/ws", c.handleWebsocket).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		SetSummary("Ethereum JSON-RPC (Websocket transport)")
 
 	publicAPI.GET("chains/:chainID/evm/tx/:txHash", c.getRequestID).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).

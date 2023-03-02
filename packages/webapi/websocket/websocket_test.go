@@ -16,11 +16,11 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 )
 
-func InitWebsocket(ctx context.Context, t *testing.T, eventsToSubscribe []publisher.ISCEventType) (*Service, *websockethub.Hub, *solo.Chain, *publisher.Publisher) {
+func InitWebsocket(ctx context.Context, t *testing.T, eventsToSubscribe []publisher.ISCEventType) (*Service, *websockethub.Hub, *solo.Chain) {
 	_ = appLogger.InitGlobalLogger(configuration.New())
 	log := logger.NewLogger("Test")
 
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Log: log})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Log: log}) //nolint:contextcheck
 
 	websocketHub := websockethub.NewHub(log.Named("Hub"), &websocketserver.AcceptOptions{InsecureSkipVerify: true}, 500, 500, 500)
 	ws := NewWebsocketService(log.Named("Service"), websocketHub, []publisher.ISCEventType{
@@ -42,19 +42,15 @@ func InitWebsocket(ctx context.Context, t *testing.T, eventsToSubscribe []publis
 	chain := env.NewChain()
 
 	go func() {
-		env.Publisher().Run(ctx)
-	}()
-
-	go func() {
 		websocketHub.Run(ctx)
 	}()
 
-	return ws, websocketHub, chain, env.Publisher()
+	return ws, websocketHub, chain
 }
 
 func TestWebsocketEvents(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	ws, _, chain, pub := InitWebsocket(ctx, t, []publisher.ISCEventType{publisher.ISCEventKindNewBlock})
+	ws, _, chain := InitWebsocket(ctx, t, []publisher.ISCEventType{publisher.ISCEventKindNewBlock})
 
 	// publisherEvent is the event that gets called from the websocket event handlers.
 	//
@@ -73,8 +69,8 @@ func TestWebsocketEvents(t *testing.T) {
 		}
 	})
 
-	block, _ := chain.Store().LatestBlock()
-	pub.BlockApplied(chain.ChainID, block)
+	// provoke a new block to be created
+	chain.DepositBaseTokensToL2(1, nil)
 
 	<-ctx.Done()
 

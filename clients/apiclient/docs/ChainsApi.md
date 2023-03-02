@@ -6,7 +6,8 @@ Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**ActivateChain**](ChainsApi.md#ActivateChain) | **Post** /chains/{chainID}/activate | Activate a chain
 [**AddAccessNode**](ChainsApi.md#AddAccessNode) | **Put** /chains/{chainID}/access-node/{peer} | Configure a trusted node to be an access node.
-[**ChainsChainIDEvmGet**](ChainsApi.md#ChainsChainIDEvmGet) | **Get** /chains/{chainID}/evm | 
+[**ChainsChainIDEvmGet**](ChainsApi.md#ChainsChainIDEvmGet) | **Get** /chains/{chainID}/evm | Ethereum JSON-RPC
+[**ChainsChainIDEvmWsGet**](ChainsApi.md#ChainsChainIDEvmWsGet) | **Get** /chains/{chainID}/evm/ws | Ethereum JSON-RPC (Websocket transport)
 [**DeactivateChain**](ChainsApi.md#DeactivateChain) | **Post** /chains/{chainID}/deactivate | Deactivate a chain
 [**GetChainInfo**](ChainsApi.md#GetChainInfo) | **Get** /chains/{chainID} | Get information about a specific chain
 [**GetChains**](ChainsApi.md#GetChains) | **Get** /chains | Get a list of all chains
@@ -156,9 +157,9 @@ Name | Type | Description  | Notes
 
 ## ChainsChainIDEvmGet
 
-> string ChainsChainIDEvmGet(ctx, chainID).Execute()
+> ChainsChainIDEvmGet(ctx, chainID).Execute()
 
-
+Ethereum JSON-RPC
 
 ### Example
 
@@ -182,8 +183,6 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.ChainsChainIDEvmGet``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `ChainsChainIDEvmGet`: string
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.ChainsChainIDEvmGet`: %v\n", resp)
 }
 ```
 
@@ -206,7 +205,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-**string**
+ (empty response body)
 
 ### Authorization
 
@@ -215,7 +214,73 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: Not defined
-- **Accept**: application/json
+- **Accept**: Not defined
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
+## ChainsChainIDEvmWsGet
+
+> ChainsChainIDEvmWsGet(ctx, chainID).Execute()
+
+Ethereum JSON-RPC (Websocket transport)
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    chainID := "chainID_example" // string | ChainID (Bech32)
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.ChainsApi.ChainsChainIDEvmWsGet(context.Background(), chainID).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.ChainsChainIDEvmWsGet``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**chainID** | **string** | ChainID (Bech32) | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiChainsChainIDEvmWsGetRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+
+### Return type
+
+ (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: Not defined
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)

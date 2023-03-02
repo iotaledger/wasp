@@ -128,7 +128,6 @@ func (b *WaspEVMBackend) BaseToken() *parameters.BaseToken {
 	return b.baseToken
 }
 
-// ISCLatestState implements jsonrpc.ChainBackend
 func (b *WaspEVMBackend) ISCLatestState() state.State {
 	latestState, err := b.chain.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
@@ -137,7 +136,6 @@ func (b *WaspEVMBackend) ISCLatestState() state.State {
 	return latestState
 }
 
-// ISCStateByBlockIndex implements jsonrpc.ChainBackend
 func (b *WaspEVMBackend) ISCStateByBlockIndex(blockIndex uint32) (state.State, error) {
 	latestState, err := b.chain.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
@@ -147,4 +145,9 @@ func (b *WaspEVMBackend) ISCStateByBlockIndex(blockIndex uint32) (state.State, e
 		return latestState, nil
 	}
 	return b.chain.Store().StateByIndex(blockIndex)
+}
+
+func (b *WaspEVMBackend) ISCChainID() *isc.ChainID {
+	chID := b.chain.ID()
+	return &chID
 }

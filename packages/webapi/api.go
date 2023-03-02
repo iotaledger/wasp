@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	userspkg "github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/chain"
@@ -72,6 +73,7 @@ func Init(
 	nodeOwnerAddresses []string,
 	requestCacheTTL time.Duration,
 	websocketService *websocket.Service,
+	pub *publisher.Publisher,
 ) {
 	// load mock files to generate correct echo swagger documentation
 	mocker := NewMocker()
@@ -84,7 +86,7 @@ func Init(
 	offLedgerService := services.NewOffLedgerService(chainService, networkProvider, requestCacheTTL)
 	metricsService := services.NewMetricsService(chainsProvider)
 	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
-	evmService := services.NewEVMService(chainService, networkProvider)
+	evmService := services.NewEVMService(chainService, networkProvider, pub, logger)
 	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeOwnerAddresses, nodeIdentityProvider, shutdownHandler, trustedNetworkManager)
 	dkgService := services.NewDKGService(dkShareRegistryProvider, dkgNodeProvider, trustedNetworkManager)
 	userService := services.NewUserService(userManager)

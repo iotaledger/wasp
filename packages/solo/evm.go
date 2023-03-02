@@ -12,7 +12,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -20,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
@@ -66,12 +64,15 @@ func (b *jsonRPCSoloBackend) BaseToken() *parameters.BaseToken {
 	return b.baseToken
 }
 
+func (b *jsonRPCSoloBackend) ISCChainID() *isc.ChainID {
+	return &b.Chain.ChainID
+}
+
 func (ch *Chain) EVM() *jsonrpc.EVMChain {
-	ret, err := ch.CallView(evm.Contract.Name, evm.FuncGetChainID.Name)
-	require.NoError(ch.Env.T, err)
 	return jsonrpc.NewEVMChain(
 		newJSONRPCSoloBackend(ch, parameters.L1().BaseToken),
-		evmtypes.MustDecodeChainID(ret.MustGet(evm.FieldResult)),
+		ch.Env.publisher,
+		ch.log,
 	)
 }
 
