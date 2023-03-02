@@ -3,8 +3,8 @@ package websocket
 import (
 	"fmt"
 
-	"github.com/iotaledger/hive.go/core/subscriptionmanager"
-	"github.com/iotaledger/hive.go/core/websockethub"
+	"github.com/iotaledger/hive.go/web/subscriptionmanager"
+	"github.com/iotaledger/hive.go/web/websockethub"
 	"github.com/iotaledger/wasp/packages/publisher"
 )
 

@@ -1,7 +1,10 @@
 package websocket
 
 import (
-	"github.com/iotaledger/hive.go/core/generics/event"
+	"context"
+
+	"github.com/iotaledger/hive.go/lo"
+	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/webapi/models"
@@ -34,16 +37,11 @@ func MapISCEvent[T any](iscEvent *publisher.ISCEvent[T], mappedPayload any) *ISC
 
 type EventHandler struct {
 	publisher             *publisher.Publisher
-	publishEvent          *event.Event[*ISCEvent]
+	publishEvent          *event.Event1[*ISCEvent]
 	subscriptionValidator *SubscriptionValidator
-
-	// We need to store the closures to be able to Detach the hooks on shutdown.
-	newBlockClosure       *event.Closure[*publisher.ISCEvent[*blocklog.BlockInfo]]
-	requestReceiptClosure *event.Closure[*publisher.ISCEvent[*publisher.ReceiptWithError]]
-	blockEventsClosure    *event.Closure[*publisher.ISCEvent[[]string]]
 }
 
-func NewEventHandler(pub *publisher.Publisher, publishEvent *event.Event[*ISCEvent], subscriptionValidator *SubscriptionValidator) *EventHandler {
+func NewEventHandler(pub *publisher.Publisher, publishEvent *event.Event1[*ISCEvent], subscriptionValidator *SubscriptionValidator) *EventHandler {
 	return &EventHandler{
 		publisher:             pub,
 		publishEvent:          publishEvent,
@@ -51,55 +49,36 @@ func NewEventHandler(pub *publisher.Publisher, publishEvent *event.Event[*ISCEve
 	}
 }
 
-func (p *EventHandler) attachToNewBlockEvent() {
-	p.newBlockClosure = event.NewClosure(func(block *publisher.ISCEvent[*blocklog.BlockInfo]) {
-		if !p.subscriptionValidator.shouldProcessEvent(block.ChainID.String(), block.Kind) {
-			return
-		}
+func (p *EventHandler) AttachToEvents() context.CancelFunc {
+	return lo.Batch(
 
-		blockInfo := models.MapBlockInfoResponse(block.Payload)
-		iscEvent := MapISCEvent(block, blockInfo)
-		p.publishEvent.Trigger(iscEvent)
-	})
+		p.publisher.Events.NewBlock.Hook(func(block *publisher.ISCEvent[*blocklog.BlockInfo]) {
+			if !p.subscriptionValidator.shouldProcessEvent(block.ChainID.String(), block.Kind) {
+				return
+			}
 
-	p.publisher.Events.NewBlock.Attach(p.newBlockClosure)
-}
+			blockInfo := models.MapBlockInfoResponse(block.Payload)
+			iscEvent := MapISCEvent(block, blockInfo)
+			p.publishEvent.Trigger(iscEvent)
+		}).Unhook,
 
-func (p *EventHandler) attachToRequestReceiptEvent() {
-	p.requestReceiptClosure = event.NewClosure(func(block *publisher.ISCEvent[*publisher.ReceiptWithError]) {
-		if !p.subscriptionValidator.shouldProcessEvent(block.ChainID.String(), block.Kind) {
-			return
-		}
+		p.publisher.Events.RequestReceipt.Hook(func(block *publisher.ISCEvent[*publisher.ReceiptWithError]) {
+			if !p.subscriptionValidator.shouldProcessEvent(block.ChainID.String(), block.Kind) {
+				return
+			}
 
-		receipt := models.MapReceiptResponse(block.Payload.RequestReceipt, block.Payload.Error)
-		iscEvent := MapISCEvent(block, receipt)
-		p.publishEvent.Trigger(iscEvent)
-	})
+			receipt := models.MapReceiptResponse(block.Payload.RequestReceipt, block.Payload.Error)
+			iscEvent := MapISCEvent(block, receipt)
+			p.publishEvent.Trigger(iscEvent)
+		}).Unhook,
 
-	p.publisher.Events.RequestReceipt.Attach(p.requestReceiptClosure)
-}
+		p.publisher.Events.BlockEvents.Hook(func(block *publisher.ISCEvent[[]string]) {
+			if !p.subscriptionValidator.shouldProcessEvent(block.ChainID.String(), block.Kind) {
+				return
+			}
 
-func (p *EventHandler) attachToBlockEventsEvent() {
-	p.blockEventsClosure = event.NewClosure(func(block *publisher.ISCEvent[[]string]) {
-		if !p.subscriptionValidator.shouldProcessEvent(block.ChainID.String(), block.Kind) {
-			return
-		}
-
-		iscEvent := MapISCEvent(block, block.Payload)
-		p.publishEvent.Trigger(iscEvent)
-	})
-
-	p.publisher.Events.BlockEvents.Attach(p.blockEventsClosure)
-}
-
-func (p *EventHandler) AttachToEvents() {
-	p.attachToNewBlockEvent()
-	p.attachToRequestReceiptEvent()
-	p.attachToBlockEventsEvent()
-}
-
-func (p *EventHandler) DetachEvents() {
-	p.publisher.Events.NewBlock.Detach(p.newBlockClosure)
-	p.publisher.Events.RequestReceipt.Detach(p.requestReceiptClosure)
-	p.publisher.Events.BlockEvents.Detach(p.blockEventsClosure)
+			iscEvent := MapISCEvent(block, block.Payload)
+			p.publishEvent.Trigger(iscEvent)
+		}).Unhook,
+	)
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 )
 
@@ -128,7 +129,7 @@ func New(
 		committeeNodes: []*cryptolib.PublicKey{},
 	})
 
-	attachID := result.net.Attach(&result.netPeeringID, peering.PeerMessageReceiverStateManager, func(recv *peering.PeerMessageIn) {
+	unhook := result.net.Attach(&result.netPeeringID, peering.PeerMessageReceiverStateManager, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != constMsgTypeStm {
 			result.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
@@ -139,7 +140,7 @@ func New(
 	result.cleanupFun = func() {
 		// result.inputPipe.Close() // TODO: Uncomment it.
 		// result.messagePipe.Close() // TODO: Uncomment it.
-		result.net.Detach(attachID)
+		util.ExecuteIfNotNil(unhook)
 	}
 
 	go result.run()

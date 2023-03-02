@@ -7,14 +7,14 @@ import (
 	"context"
 	"errors"
 
-	"github.com/iotaledger/hive.go/core/generics/event"
+	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 )
 
 type trustedNetworkManager struct {
 	data         map[cryptolib.PublicKeyKey]trustedNetworkDataEntry
-	changeEvents *event.Event[[]*peering.TrustedPeer]
+	changeEvents *event.Event1[[]*peering.TrustedPeer]
 }
 
 type trustedNetworkDataEntry struct {
@@ -28,7 +28,7 @@ var _ peering.TrustedNetworkManager = &trustedNetworkManager{}
 func NewTrustedNetworkManager() peering.TrustedNetworkManager {
 	return &trustedNetworkManager{
 		data:         map[cryptolib.PublicKeyKey]trustedNetworkDataEntry{},
-		changeEvents: event.New[[]*peering.TrustedPeer](),
+		changeEvents: event.New1[[]*peering.TrustedPeer](),
 	}
 }
 
@@ -76,7 +76,6 @@ func (tnm *trustedNetworkManager) mustTrustedPeers() []*peering.TrustedPeer {
 
 func (tnm *trustedNetworkManager) TrustedPeersListener(callback func([]*peering.TrustedPeer)) context.CancelFunc {
 	callback(tnm.mustTrustedPeers())
-	closure := event.NewClosure(callback)
-	tnm.changeEvents.Attach(closure)
-	return func() { tnm.changeEvents.Detach(closure) }
+	unhook := tnm.changeEvents.Hook(callback).Unhook
+	return unhook
 }

@@ -8,8 +8,8 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
-	"github.com/iotaledger/hive.go/core/basicauth"
-	"github.com/iotaledger/hive.go/core/generics/onchangemap"
+	"github.com/iotaledger/hive.go/web/basicauth"
+	"github.com/iotaledger/wasp/packages/onchangemap"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
