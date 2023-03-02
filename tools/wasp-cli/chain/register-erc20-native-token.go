@@ -1,9 +1,12 @@
 package chain
 
 import (
+	"encoding/hex"
+
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
@@ -38,8 +41,8 @@ func initRegisterERC20NativeTokenOnRemoteChainCmd() *cobra.Command {
 			cmd.Flags().StringVarP(&targetChain, "target", "A", "", "Target chain ID")
 		},
 		func(cmd *cobra.Command) []string {
-			chainID := config.GetChain(targetChain).String()
-			extraArgs := []string{"string", "A", "string", chainID}
+			chainID := codec.EncodeAddress(config.GetChain(targetChain).AsAddress())
+			extraArgs := []string{"string", "A", "bytes", "0x" + hex.EncodeToString(chainID)}
 			return append(getRegisterERC20NativeTokenArgs(cmd), extraArgs...)
 		},
 	)

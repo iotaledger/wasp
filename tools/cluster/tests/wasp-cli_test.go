@@ -663,6 +663,7 @@ func TestWaspCLIRegisterERC20NativeTokenOnRemoteChain(t *testing.T) {
 		"--target=chain2",
 		"--node=0",
 		"--chain=chain1",
+		"--allowance=base:1000000",
 	)
 
 	reqID := findRequestIDInOutput(out)
