@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
@@ -324,12 +323,4 @@ func (b *l2Balance) Sub(addr common.Address, amount *big.Int) {
 	feePolicy := b.getFeePolicy()
 	tokens := assetsForFeeFromEthereumDecimals(feePolicy, amount)
 	b.ctx.Privileged().DebitFromAccount(isc.NewEthereumAddressAgentID(addr), tokens)
-
-	// assert that remaining tokens in the sender's account are enough to pay for the gas budget
-	if !b.ctx.HasInAccount(
-		b.ctx.Request().SenderAccount(),
-		b.ctx.Privileged().TotalGasTokens(),
-	) {
-		panic(vm.ErrNotEnoughTokensLeftForGas)
-	}
 }
