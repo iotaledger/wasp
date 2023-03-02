@@ -59,7 +59,7 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 
 	chainID := ctx.Params().MustGetChainID(governance.ParamChainID)
 	chainDescription := ctx.Params().MustGetString(governance.ParamDescription, "N/A")
-	feePolicyBytes := ctx.Params().MustGetBytes(governance.ParamFeePolicyBytes, gas.DefaultGasFeePolicy().Bytes())
+	feePolicyBytes := ctx.Params().MustGetBytes(governance.ParamFeePolicyBytes, gas.DefaultFeePolicy().Bytes())
 
 	state.Set(governance.VarChainID, codec.EncodeChainID(chainID))
 	state.Set(governance.VarChainOwnerID, ctx.Params().MustGetAgentID(governance.ParamChainOwner).Bytes())

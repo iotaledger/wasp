@@ -11,8 +11,9 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/iotaledger/hive.go/core/configuration"
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/app/configuration"
+	appLogger "github.com/iotaledger/hive.go/app/logger"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/util/l1starter"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -67,7 +68,7 @@ func main() {
 		panic(err)
 	}
 
-	if err := logger.InitGlobalLogger(cfg); err != nil {
+	if err := appLogger.InitGlobalLogger(cfg); err != nil {
 		panic(err)
 	}
 

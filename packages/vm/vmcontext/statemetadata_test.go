@@ -15,9 +15,7 @@ import (
 func TestStateMetadataSerialization(t *testing.T) {
 	s := &vmcontext.StateMetadata{
 		L1Commitment: state.PseudoRandL1Commitment(),
-		GasFeePolicy: &gas.GasFeePolicy{
-			GasFeeTokenID:       [38]byte{},
-			GasFeeTokenDecimals: 0,
+		GasFeePolicy: &gas.FeePolicy{
 			GasPerToken: util.Ratio32{
 				A: 1,
 				B: 2,

@@ -14,7 +14,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/events"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -112,7 +111,7 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 	return ret, true
 }
 
-func (ch *Chain) GetGasFeePolicy() *gas.GasFeePolicy {
+func (ch *Chain) GetGasFeePolicy() *gas.FeePolicy {
 	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetFeePolicy.Name)
 	require.NoError(ch.Env.T, err)
 	fpBin := res.MustGet(governance.ParamFeePolicyBytes)
@@ -121,7 +120,7 @@ func (ch *Chain) GetGasFeePolicy() *gas.GasFeePolicy {
 	return feePolicy
 }
 
-func (ch *Chain) SetGasFeePolicy(user *cryptolib.KeyPair, fp *gas.GasFeePolicy) {
+func (ch *Chain) SetGasFeePolicy(user *cryptolib.KeyPair, fp *gas.FeePolicy) {
 	_, err := ch.PostRequestOffLedger(NewCallParams(
 		governance.Contract.Name,
 		governance.FuncSetFeePolicy.Name,
@@ -618,12 +617,7 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...uint64)
 }
 
 // AttachToRequestProcessed implements chain.Chain
-func (*Chain) AttachToRequestProcessed(func(isc.RequestID)) (attachID *events.Closure) {
-	panic("unimplemented")
-}
-
-// DetachFromRequestProcessed implements chain.Chain
-func (*Chain) DetachFromRequestProcessed(attachID *events.Closure) {
+func (*Chain) AttachToRequestProcessed(func(isc.RequestID)) context.CancelFunc {
 	panic("unimplemented")
 }
 

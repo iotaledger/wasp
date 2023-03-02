@@ -70,7 +70,7 @@ func (e *EVMChain) GasRatio() (util.Ratio32, error) {
 	return codec.DecodeRatio32(ret.MustGet(governance.ParamEVMGasRatio))
 }
 
-func (e *EVMChain) GasFeePolicy() (*gas.GasFeePolicy, error) {
+func (e *EVMChain) GasFeePolicy() (*gas.FeePolicy, error) {
 	res, err := e.backend.ISCCallView(e.backend.ISCLatestState(), governance.Contract.Name, governance.ViewGetFeePolicy.Name, nil)
 	if err != nil {
 		return nil, err

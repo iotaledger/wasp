@@ -7,12 +7,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chains/accessMgr/amDist"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 )
 
@@ -87,14 +88,14 @@ func New(
 	), resendPeriod)
 
 	netRecvPipeInCh := ami.netRecvPipe.In()
-	netAttachID := net.Attach(&netPeeringID, peering.PeerMessageReceiverAccessMgr, func(recv *peering.PeerMessageIn) {
+	unhook := net.Attach(&netPeeringID, peering.PeerMessageReceiverAccessMgr, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeAccessMgr {
 			ami.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
 		}
 		netRecvPipeInCh <- recv
 	})
-	go ami.run(ctx, netAttachID)
+	go ami.run(ctx, unhook)
 
 	return ami
 }
@@ -120,7 +121,7 @@ func (ami *accessMgrImpl) dismissPeerCB(peerPubKey *cryptolib.PublicKey) {
 	ami.dismissPeerBuf = append(ami.dismissPeerBuf, peerPubKey)
 }
 
-func (ami *accessMgrImpl) run(ctx context.Context, netAttachID interface{}) {
+func (ami *accessMgrImpl) run(ctx context.Context, cleanupFunc context.CancelFunc) {
 	reqTrustedNodesOutCh := ami.reqTrustedNodesPipe.Out()
 	reqChainAccessNodesPipeOutCh := ami.reqChainAccessNodesPipe.Out()
 	reqChainDismissedPipeOutCh := ami.reqChainDismissedPipe.Out()
@@ -163,7 +164,7 @@ func (ami *accessMgrImpl) run(ctx context.Context, netAttachID interface{}) {
 			// close(reqChainDismissedOutCh)
 			debugTicker.Stop()
 			timeTicker.Stop()
-			ami.net.Detach(netAttachID)
+			util.ExecuteIfNotNil(cleanupFunc)
 			return
 		}
 	}

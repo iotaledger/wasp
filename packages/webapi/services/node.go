@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
+	"github.com/iotaledger/hive.go/app/shutdown"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"

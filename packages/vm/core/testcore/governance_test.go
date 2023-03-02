@@ -309,10 +309,10 @@ func TestCustomL1Metadata(t *testing.T) {
 	sm, err := vmcontext.StateMetadataFromBytes(ao.GetStateMetadata())
 	require.NoError(t, err)
 	require.Equal(t, sm.CustomMetadata, customMetadata)
-	require.True(t, reflect.DeepEqual(sm.GasFeePolicy, gas.DefaultGasFeePolicy()))
+	require.True(t, reflect.DeepEqual(sm.GasFeePolicy, gas.DefaultFeePolicy()))
 
 	// try changing the gas policy
-	newFeePolicy := &gas.GasFeePolicy{
+	newFeePolicy := &gas.FeePolicy{
 		GasPerToken: util.Ratio32{
 			A: 1,
 			B: 2,

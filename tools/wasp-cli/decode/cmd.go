@@ -87,15 +87,13 @@ func initDecodeGasFeePolicy() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			bytes, err := iotago.DecodeHex(args[0])
 			log.Check(err)
-			log.Printf(gas.MustGasFeePolicyFromBytes(bytes).String())
+			log.Printf(gas.MustFeePolicyFromBytes(bytes).String())
 		},
 	}
 }
 
 func initEncodeGasFeePolicy() *cobra.Command {
 	var (
-		tokenID           string
-		tokenDecimals     uint32
 		gasPerToken       string
 		evmGasRatio       string
 		validatorFeeShare uint8
@@ -106,18 +104,7 @@ func initEncodeGasFeePolicy() *cobra.Command {
 		Short: "Translates metadata from Hex to a humanly-readable format",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			gasPolicy := gas.DefaultGasFeePolicy()
-
-			if tokenID != "" {
-				tokenIDBytes := util.TokenIDFromString(tokenID)
-				nativeTokenID, err := isc.NativeTokenIDFromBytes(tokenIDBytes)
-				log.Check(err)
-				gasPolicy.GasFeeTokenID = nativeTokenID
-			}
-
-			if tokenDecimals != 0 {
-				gasPolicy.GasFeeTokenDecimals = tokenDecimals
-			}
+			gasPolicy := gas.DefaultFeePolicy()
 
 			if gasPerToken != "" {
 				ratio, err := wasp_util.Ratio32FromString(gasPerToken)
@@ -139,8 +126,6 @@ func initEncodeGasFeePolicy() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&tokenID, "tokenID", "", "TokenID for the gas fee")
-	cmd.Flags().Uint32Var(&tokenDecimals, "tokenDecimals", 0, "decimals for the fee token")
 	cmd.Flags().StringVar(&gasPerToken, "gasPerToken", "", "gas per token ratio (format: a:b)")
 	cmd.Flags().StringVar(&evmGasRatio, "evmGasRatio", "", "evm gas ratio (format: a:b)")
 	cmd.Flags().Uint8Var(&validatorFeeShare, "validatorFeeShare", 101, "validator fee share (between 0 and 100)")

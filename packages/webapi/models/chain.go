@@ -1,7 +1,6 @@
 package models
 
 import (
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/dto"
 )
 
@@ -82,14 +81,7 @@ func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfo
 	}
 
 	if chainInfo.GasFeePolicy != nil {
-		gasFeeTokenID := ""
-
-		if !isc.IsEmptyNativeTokenID(chainInfo.GasFeePolicy.GasFeeTokenID) {
-			gasFeeTokenID = chainInfo.GasFeePolicy.GasFeeTokenID.String()
-		}
-
 		chainInfoResponse.GasFeePolicy = GasFeePolicy{
-			GasFeeTokenID:     gasFeeTokenID,
 			GasPerToken:       chainInfo.GasFeePolicy.GasPerToken,
 			ValidatorFeeShare: chainInfo.GasFeePolicy.ValidatorFeeShare,
 			EVMGasRatio:       chainInfo.GasFeePolicy.EVMGasRatio,

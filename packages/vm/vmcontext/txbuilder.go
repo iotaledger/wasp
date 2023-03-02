@@ -3,7 +3,7 @@ package vmcontext
 import (
 	"fmt"
 
-	"github.com/iotaledger/hive.go/core/marshalutil"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
@@ -18,7 +18,7 @@ import (
 
 type StateMetadata struct {
 	L1Commitment   *state.L1Commitment
-	GasFeePolicy   *gas.GasFeePolicy
+	GasFeePolicy   *gas.FeePolicy
 	SchemaVersion  uint32
 	CustomMetadata string
 }

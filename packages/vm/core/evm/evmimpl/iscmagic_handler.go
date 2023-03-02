@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/core/vm"
 
-	"github.com/iotaledger/hive.go/core/generics/lo"
+	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 

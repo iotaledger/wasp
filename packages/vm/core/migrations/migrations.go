@@ -1,7 +1,7 @@
 package migrations
 
 import (
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 )
@@ -22,4 +22,5 @@ type Migration struct {
 // BaseSchemaVersion by one.
 var Migrations = []Migration{
 	m001GasPerTokenToRatio32,
+	m002CleanupFeePolicy,
 }
