@@ -519,6 +519,45 @@ func TestSendBaseTokens(t *testing.T) {
 	require.True(t, getAllowanceTo(iscTest.address).IsEmpty())
 }
 
+func TestCannotDepleteAccount(t *testing.T) {
+	env := initEVM(t)
+
+	ethKey, ethAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	_, receiver := env.solo.NewKeyPair()
+
+	iscTest := env.deployISCTestContract(ethKey)
+
+	require.Zero(t, env.solo.L1BaseTokens(receiver))
+	senderInitialBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddress))
+
+	// we eill attempt to transfer so much that we are left with no funds for gas
+	transfer := senderInitialBalance - 300
+
+	// allow ISCTest to take the tokens
+	_, err := env.ISCMagicSandbox(ethKey).callFn(
+		[]ethCallOptions{{sender: ethKey}},
+		"allow",
+		iscTest.address,
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(transfer)),
+	)
+	require.NoError(t, err)
+
+	getAllowanceTo := func(target common.Address) *isc.Assets {
+		var ret struct{ Allowance iscmagic.ISCAssets }
+		env.ISCMagicSandbox(ethKey).callView("getAllowanceTo", []interface{}{target}, &ret)
+		return ret.Allowance.Unwrap()
+	}
+
+	// stored allowance should be == transfer
+	require.Equal(t, transfer, getAllowanceTo(iscTest.address).BaseTokens)
+
+	const allAllowed = uint64(0)
+	_, err = iscTest.callFn([]ethCallOptions{{
+		gasLimit: 100_000, // skip estimate gas (which will fail)
+	}}, "sendBaseTokens", iscmagic.WrapL1Address(receiver), allAllowed)
+	require.ErrorContains(t, err, vm.ErrNotEnoughTokensLeftForGas.Error())
+}
+
 func TestSendNFT(t *testing.T) {
 	env := initEVM(t)
 	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
