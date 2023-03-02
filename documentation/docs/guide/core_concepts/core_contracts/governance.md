@@ -288,7 +288,7 @@ A ratio between two values `x` and `y`, expressed as two `int32` numbers `a:b`, 
 
 - The [`TokenID`](accounts.md#tokenid) of the token used to charge for gas. (`iotago.NativeTokenID`)
   - If this value is `nil`, the gas fee token is the base token.
-- Gas per token ([`Ratio32`](#ratio32)): expressed as an `a:b` ratio such that `fee = gas * a/b`.
+- Gas per token ([`Ratio32`](#ratio32)): expressed as an `a:b` (`gas/token`) ratio, meaning how many gas units each token pays for.
 - Validator fee share. Must be between 0 and 100, meaning the percentage of the gas fees distributed to the
   validators. (`uint8`)
 - The ISC:EVM gas ratio ([`Ratio32`](#ratio32)): such that `ISC gas = EVM gas * a/b`.
