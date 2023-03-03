@@ -153,7 +153,9 @@ export class WasmClientService {
     private eventLoop(data: RawData) {
         let msg: any;
         try {
-            msg = JSON.parse(data.toString());
+            const json = data.toString();
+            // console.log(json);
+            msg = JSON.parse(json);
             if (!msg.kind) {
                 // filter out subscribe responses
                 return;
