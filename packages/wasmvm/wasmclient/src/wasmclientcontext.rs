@@ -79,7 +79,7 @@ impl WasmClientContext {
             h.id() != id
         });
         if event_handlers.len() == 0 {
-            self.svc_client.unsubscribe();
+            self.svc_client.unsubscribe_events();
         }
     }
 

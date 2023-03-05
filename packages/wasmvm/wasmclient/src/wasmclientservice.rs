@@ -217,7 +217,7 @@ impl WasmClientService {
         return Ok(());
     }
 
-    pub(crate) fn unsubscribe(&self) {
+    pub(crate) fn unsubscribe_events(&self) {
         if let Some(handle) = self.handle.take() {
             self.close_tx.send(true).unwrap();
             handle.join().unwrap();
