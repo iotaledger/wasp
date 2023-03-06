@@ -25,7 +25,7 @@ type L1Commitment struct {
 	blockHash BlockHash
 }
 
-var L1CommitmentSize = trie.HashSizeBytes + BlockHashSize
+const L1CommitmentSize = trie.HashSizeBytes + BlockHashSize
 
 func BlockHashFromData(data []byte) (ret BlockHash) {
 	r := blake2b.Sum256(data)

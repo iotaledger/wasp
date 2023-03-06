@@ -283,7 +283,7 @@ func TestCustomL1Metadata(t *testing.T) {
 	ch := env.NewChain()
 
 	// set custom metadata
-	customMetadata := "http://foobar.com"
+	customMetadata := []byte("http://foobar.com")
 	_, err := ch.PostRequestSync(
 		solo.NewCallParams(
 			governance.Contract.Name,
@@ -302,13 +302,13 @@ func TestCustomL1Metadata(t *testing.T) {
 	)
 	require.NoError(t, err)
 	resMetadata := res.MustGet(governance.ParamCustomMetadata)
-	require.Equal(t, customMetadata, string(resMetadata))
+	require.Equal(t, customMetadata, resMetadata)
 
 	// assert metadata is correct on L1 alias output
 	ao, _ := ch.LatestAliasOutput()
 	sm, err := vmcontext.StateMetadataFromBytes(ao.GetStateMetadata())
 	require.NoError(t, err)
-	require.Equal(t, sm.CustomMetadata, customMetadata)
+	require.Equal(t, customMetadata, sm.CustomMetadata)
 	require.True(t, reflect.DeepEqual(sm.GasFeePolicy, gas.DefaultFeePolicy()))
 
 	// try changing the gas policy
@@ -338,7 +338,7 @@ func TestCustomL1Metadata(t *testing.T) {
 	ao, _ = ch.LatestAliasOutput()
 	sm, err = vmcontext.StateMetadataFromBytes(ao.GetStateMetadata())
 	require.NoError(t, err)
-	require.Equal(t, sm.CustomMetadata, customMetadata)
+	require.Equal(t, customMetadata, sm.CustomMetadata)
 	require.True(t, reflect.DeepEqual(sm.GasFeePolicy, newFeePolicy))
 }
 

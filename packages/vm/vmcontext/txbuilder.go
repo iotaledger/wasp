@@ -24,7 +24,7 @@ type StateMetadata struct {
 	L1Commitment   *state.L1Commitment
 	GasFeePolicy   *gas.FeePolicy
 	SchemaVersion  uint32
-	CustomMetadata string
+	CustomMetadata []byte
 }
 
 func (s *StateMetadata) Bytes() []byte {
@@ -33,8 +33,8 @@ func (s *StateMetadata) Bytes() []byte {
 	mu.WriteUint32(s.SchemaVersion)
 	mu.WriteBytes(s.L1Commitment.Bytes())
 	mu.WriteBytes(s.GasFeePolicy.Bytes())
-	mu.WriteUint8(uint8(len(s.CustomMetadata)))
-	mu.WriteBytes([]byte(s.CustomMetadata))
+	mu.WriteUint16(uint16(len(s.CustomMetadata)))
+	mu.WriteBytes(s.CustomMetadata)
 	return mu.Bytes()
 }
 
@@ -53,29 +53,35 @@ func StateMetadataFromBytes(data []byte) (*StateMetadata, error) {
 
 	ret.SchemaVersion, err = mu.ReadUint32()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to parse schema version, error: %w", err)
 	}
+
 	l1CommitmentBytes, err := mu.ReadBytes(state.L1CommitmentSize)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to parse l1 commitment, error: %w", err)
 	}
+
 	ret.L1Commitment, err = state.L1CommitmentFromBytes(l1CommitmentBytes)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to parse l1 commitment, error: %w", err)
 	}
+
 	ret.GasFeePolicy, err = gas.FeePolicyFromMarshalUtil(mu)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to parse gas fee policy, error: %w", err)
 	}
-	customMetadataLength, err := mu.ReadUint8()
+
+	customMetadataLength, err := mu.ReadUint16()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to parse custom metadata length, error: %w", err)
 	}
+
 	customMetadataBytes, err := mu.ReadBytes(int(customMetadataLength))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to parse custom metadata, error: %w", err)
 	}
-	ret.CustomMetadata = string(customMetadataBytes)
+	ret.CustomMetadata = customMetadataBytes
+
 	return ret, nil
 }
 
