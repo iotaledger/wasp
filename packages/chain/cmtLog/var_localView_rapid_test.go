@@ -141,7 +141,7 @@ func (sm *varLocalViewSM) ConsensusOutput(t *rapid.T) {
 	prevAO := sm.lv.Value()
 	require.NotNil(t, prevAO)
 	newAO := sm.nextAO(prevAO)
-	tipAO, tipChanged := sm.lv.ConsensusOutputDone(prevAO.OutputID(), newAO)
+	tipAO, tipChanged := sm.lv.ConsensusOutputDone(cmtLog.NilLogIndex(), prevAO.OutputID(), newAO) // TODO: LogIndex.
 	require.True(t, tipChanged)
 	require.Equal(t, newAO, tipAO)
 	require.Equal(t, newAO, sm.lv.Value())

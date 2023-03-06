@@ -4,6 +4,8 @@
 package cmtLog
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 )
@@ -16,4 +18,8 @@ func NewInputAliasOutputRejected(aliasOutput *isc.AliasOutputWithID) gpa.Input {
 	return &inputAliasOutputRejected{
 		aliasOutput: aliasOutput,
 	}
+}
+
+func (inp *inputAliasOutputRejected) String() string {
+	return fmt.Sprintf("{cmtLog.inputAliasOutputRejected, %v}", inp.aliasOutput)
 }

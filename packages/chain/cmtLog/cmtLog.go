@@ -255,8 +255,7 @@ func (cl *cmtLogImpl) handleInputAliasOutputConfirmed(input *inputAliasOutputCon
 			cl.log.Infof("Committee resumed, tip replaced by L1 to %v", tipAO)
 			cl.suspended = false
 		}
-		cl.tryProposeConsensus()
-		return msgs
+		return cl.tryProposeConsensus(msgs)
 	}
 	return nil
 }
@@ -269,8 +268,7 @@ func (cl *cmtLogImpl) handleInputAliasOutputConfirmed(input *inputAliasOutputCon
 func (cl *cmtLogImpl) handleInputAliasOutputRejected(input *inputAliasOutputRejected) gpa.OutMessages {
 	if tipAO, ok := cl.varLocalView.AliasOutputRejected(input.aliasOutput); ok {
 		msgs := cl.varLogIndex.L1ReplacedBaseAliasOutput(tipAO)
-		cl.tryProposeConsensus()
-		return msgs
+		return cl.tryProposeConsensus(msgs)
 	}
 	return nil
 }
@@ -281,10 +279,9 @@ func (cl *cmtLogImpl) handleInputAliasOutputRejected(input *inputAliasOutputReje
 // >         LogIndex.ConsensusOutput(CD.LogIndex)
 // >         TryProposeConsensus()
 func (cl *cmtLogImpl) handleInputConsensusOutputDone(input *inputConsensusOutputDone) gpa.OutMessages {
-	if tipAO, ok := cl.varLocalView.ConsensusOutputDone(input.baseAliasOutputID, input.nextAliasOutput); ok {
+	if tipAO, ok := cl.varLocalView.ConsensusOutputDone(input.logIndex, input.baseAliasOutputID, input.nextAliasOutput); ok {
 		msgs := cl.varLogIndex.ConsensusOutputReceived(input.logIndex, cons.Completed, tipAO)
-		cl.tryProposeConsensus()
-		return msgs
+		return cl.tryProposeConsensus(msgs)
 	}
 	return nil
 }
@@ -294,8 +291,7 @@ func (cl *cmtLogImpl) handleInputConsensusOutputDone(input *inputConsensusOutput
 // >     TryProposeConsensus()
 func (cl *cmtLogImpl) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
 	msgs := cl.varLogIndex.ConsensusOutputReceived(input.logIndex, cons.Skipped, cl.varLocalView.Value())
-	cl.tryProposeConsensus()
-	return msgs
+	return cl.tryProposeConsensus(msgs)
 }
 
 // > ON ConsensusTimeout (CT)
@@ -306,8 +302,7 @@ func (cl *cmtLogImpl) handleInputConsensusOutputSkip(input *inputConsensusOutput
 // for the next LogIndex. This actually breaks the asynchronous assumption.
 func (cl *cmtLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
 	msgs := cl.varLogIndex.ConsensusTimeoutReceived(input.logIndex)
-	cl.tryProposeConsensus()
-	return msgs
+	return cl.tryProposeConsensus(msgs)
 }
 
 // > ON Suspend:
@@ -322,8 +317,7 @@ func (cl *cmtLogImpl) handleInputSuspend() gpa.OutMessages {
 	cl.log.Infof("Committee suspended.")
 	cl.suspended = true
 	cl.output = nil
-	cl.tryProposeConsensus()
-	return nil
+	return cl.tryProposeConsensus(nil)
 }
 
 // > ON Reception of ⟨NextLI, •⟩ message:
@@ -331,8 +325,7 @@ func (cl *cmtLogImpl) handleInputSuspend() gpa.OutMessages {
 // >     TryProposeConsensus()
 func (cl *cmtLogImpl) handleMsgNextLogIndex(msg *msgNextLogIndex) gpa.OutMessages {
 	msgs := cl.varLogIndex.MsgNextLogIndexReceived(msg)
-	cl.tryProposeConsensus()
-	return msgs
+	return cl.tryProposeConsensus(msgs)
 }
 
 // Implements the gpa.GPA interface.
@@ -360,17 +353,17 @@ func (cl *cmtLogImpl) StatusString() string {
 // >         Propose LocalView.BaseAO for LogIndex
 // >     ELSE
 // >         Don't propose any consensus.
-func (cl *cmtLogImpl) tryProposeConsensus() {
+func (cl *cmtLogImpl) tryProposeConsensus(msgs gpa.OutMessages) gpa.OutMessages {
 	logIndex, baseAO := cl.varLogIndex.Value()
 	if logIndex == NilLogIndex() {
 		// No log index decided yet.
-		return
+		return msgs
 	}
 	//
 	// Check, maybe it is already started.
 	if cl.output != nil && cl.output.logIndex == logIndex {
 		// Already started, keep it as is.
-		return
+		return msgs
 	}
 	//
 	// >     IF ∧ LocalView.BaseAO ≠ NIL
@@ -394,9 +387,17 @@ func (cl *cmtLogImpl) tryProposeConsensus() {
 		// Start the consensus (ask the upper layer to start it).
 		cl.consensusLI = logIndex
 		cl.output = makeOutput(cl.consensusLI, baseAO)
+		if tipAO, ok := cl.varLocalView.ConsensusProposed(cl.consensusLI, baseAO); ok {
+			if msgs == nil {
+				msgs = gpa.NoMessages()
+			}
+			msgs.AddAll(cl.varLogIndex.L1ReplacedBaseAliasOutput(tipAO))
+			return cl.tryProposeConsensus(msgs)
+		}
 	} else {
 		// >     ELSE
 		// >         Don't propose any consensus.
 		cl.output = nil // Outdated, clear it away.
 	}
+	return msgs
 }

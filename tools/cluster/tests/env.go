@@ -100,6 +100,8 @@ func (e *ChainEnv) DepositFunds(amount uint64, keyPair *cryptolib.KeyPair) {
 		Transfer: isc.NewAssetsBaseTokens(amount),
 	})
 	require.NoError(e.t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	txID, err := tx.ID()
 	require.NoError(e.t, err)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	require.NoError(e.t, err, "Error while WaitUntilAllRequestsProcessedSuccessfully for tx.ID=%v", txID.ToHex())
 }

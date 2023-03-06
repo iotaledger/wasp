@@ -13,3 +13,7 @@ type inputSuspend struct{}
 func NewInputSuspend() gpa.Input {
 	return &inputSuspend{}
 }
+
+func (inp *inputSuspend) String() string {
+	return "{cmtLog.inputSuspend}"
+}
