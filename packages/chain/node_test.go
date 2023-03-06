@@ -59,7 +59,7 @@ func TestNodeBasic(t *testing.T) {
 	if !testing.Short() {
 		timeout = 5 * time.Minute
 		tests = append(tests,
-			// TODO these "unreliable" tests are crazy, they either run in 10~20s or run forever...
+			// TODO these "unreliable" tests are crazy, they either succeed in 10~20s or run forever...
 			// tc{n: 4, f: 1, reliable: false},  // Minimal robust config.
 			// tc{n: 10, f: 3, reliable: false}, // Typical config.
 			tc{n: 31, f: 10, reliable: true}, // Large cluster, reliable - to make test faster.
@@ -75,10 +75,7 @@ func TestNodeBasic(t *testing.T) {
 
 //nolint:gocyclo
 func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration) {
-	if reliable {
-		// takes forever to run these "unreliable" tests in parallel for some reason
-		t.Parallel()
-	}
+	t.Parallel()
 	te := newEnv(t, n, f, reliable)
 	defer te.close()
 
@@ -105,12 +102,6 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 		}
 	}()
 
-	//
-	// Create SC Client account with some deposit, deploy a contract, wait for a confirming TX.
-	scClient := cryptolib.NewKeyPair()
-	_, err := te.utxoDB.GetFundsFromFaucet(scClient.Address(), 150_000_000)
-	require.NoError(t, err)
-	deployReqs := append(te.tcl.MakeTxDeployIncCounterContract(), te.tcl.MakeTxAccountsDeposit(scClient)...)
 	deployBaseAnchor, deployBaseAONoID, err := transaction.GetAnchorFromTransaction(te.originTx)
 	require.NoError(t, err)
 	deployBaseAO := isc.NewAliasOutputWithID(deployBaseAONoID, deployBaseAnchor.OutputID)
@@ -118,22 +109,41 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 		tnc.recvAliasOutput(
 			isc.NewOutputInfo(deployBaseAO.OutputID(), deployBaseAO.GetAliasOutput(), iotago.TransactionID{}),
 		)
-		for _, req := range deployReqs {
-			onLedgerRequest := req.(isc.OnLedgerRequest)
-			tnc.recvRequestCB(
-				isc.NewOutputInfo(onLedgerRequest.ID().OutputID(), onLedgerRequest.Output(), iotago.TransactionID{}),
-			)
-		}
 	}
-	awaitRequestsProcessed(ctxTimeout, te, deployReqs, "deployReqs")
-	awaitPredicate(te, ctxTimeout, "len(tnc.published) >= 1", func() bool {
+
+	sendAndAwait := func(reqs []isc.Request, expectedBlockIndex int, desc string) {
 		for _, tnc := range te.nodeConns {
-			if len(tnc.published) < 1 {
-				return false
+			for _, req := range reqs {
+				onLedgerRequest := req.(isc.OnLedgerRequest)
+				tnc.recvRequestCB(
+					isc.NewOutputInfo(onLedgerRequest.ID().OutputID(), onLedgerRequest.Output(), iotago.TransactionID{}),
+				)
 			}
 		}
-		return true
-	})
+		awaitRequestsProcessed(ctxTimeout, te, reqs, desc)
+		awaitPredicate(te, ctxTimeout, fmt.Sprintf("len(tnc.published) >= %d", expectedBlockIndex), func() bool {
+			for _, tnc := range te.nodeConns {
+				if len(tnc.published) < expectedBlockIndex {
+					return false
+				}
+			}
+			return true
+		})
+	}
+
+	//
+	// Create SC Client account with some deposit
+	scClient := cryptolib.NewKeyPair()
+	_, err = te.utxoDB.GetFundsFromFaucet(scClient.Address(), 150_000_000)
+	require.NoError(t, err)
+	depositReqs := te.tcl.MakeTxAccountsDeposit(scClient)
+	sendAndAwait(depositReqs, 1, "depositReqs")
+
+	//
+	// Deploy a contract, wait for a confirming TX.
+	deployReqs := te.tcl.MakeTxDeployIncCounterContract()
+	sendAndAwait(deployReqs, 2, "deployReqs")
+
 	//
 	// Invoke off-ledger requests on the contract, wait for the counter to reach the expected value.
 	// We only send the requests to the first node. Mempool has to disseminate them.
@@ -216,7 +226,7 @@ func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Req
 			await := func(confirmed bool) {
 				select {
 				case <-ctx.Done():
-					require.FailNowf(te.t, "awaitRequestsProcessed failed: %s", desc)
+					te.t.Fatalf("awaitRequestsProcessed failed: %s", desc)
 				case rec := <-node.AwaitRequestProcessed(ctx, reqRef.ID, confirmed):
 					if ctx.Err() != nil {
 						te.t.Fatal("awaitRequestsProcessed failed, context timeout")
