@@ -63,10 +63,10 @@ func MustGetChainOwnerID(state kv.KVStoreReader) isc.AgentID {
 }
 
 // GetGasFeePolicy returns gas policy from the state
-func GetGasFeePolicy(state kv.KVStoreReader) (*gas.GasFeePolicy, error) {
+func GetGasFeePolicy(state kv.KVStoreReader) (*gas.FeePolicy, error) {
 	return gas.FeePolicyFromBytes(state.MustGet(VarGasFeePolicyBytes))
 }
 
-func MustGetGasFeePolicy(state kv.KVStoreReader) *gas.GasFeePolicy {
-	return gas.MustGasFeePolicyFromBytes(state.MustGet(VarGasFeePolicyBytes))
+func MustGetGasFeePolicy(state kv.KVStoreReader) *gas.FeePolicy {
+	return gas.MustFeePolicyFromBytes(state.MustGet(VarGasFeePolicyBytes))
 }

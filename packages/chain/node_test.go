@@ -14,8 +14,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -166,7 +166,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 					latestTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
 					_, latestAONoID, err := transaction.GetAnchorFromTransaction(latestTX)
 					require.NoError(t, err)
-					latestL1Commitment, err := state.L1CommitmentFromAliasOutput(latestAONoID)
+					latestL1Commitment, err := vmcontext.L1CommitmentFromAliasOutput(latestAONoID)
 					require.NoError(t, err)
 					st, err := node.GetStateReader().StateByTrieRoot(latestL1Commitment.GetTrieRoot())
 					require.NoError(t, err)

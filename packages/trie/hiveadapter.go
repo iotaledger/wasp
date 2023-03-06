@@ -3,7 +3,7 @@ package trie
 import (
 	"errors"
 
-	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/hive.go/kvstore"
 )
 
 // HiveKVStoreAdapter maps a partition of the Hive KVStore to trie_go.KVStore

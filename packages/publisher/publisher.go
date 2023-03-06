@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/iotaledger/hive.go/core/generics/event"
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -15,11 +15,11 @@ import (
 )
 
 type Events struct {
-	BlockEvents    *event.Event[*ISCEvent[[]string]]
-	NewBlock       *event.Event[*ISCEvent[*blocklog.BlockInfo]]
-	RequestReceipt *event.Event[*ISCEvent[*ReceiptWithError]]
+	BlockEvents    *event.Event1[*ISCEvent[[]string]]
+	NewBlock       *event.Event1[*ISCEvent[*blocklog.BlockInfo]]
+	RequestReceipt *event.Event1[*ISCEvent[*ReceiptWithError]]
 
-	Published *event.Event[*ISCEvent[any]]
+	Published *event.Event1[*ISCEvent[any]]
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -45,10 +45,10 @@ func New(log *logger.Logger) *Publisher {
 		mutex:            &sync.RWMutex{},
 		log:              log,
 		Events: &Events{
-			NewBlock:       event.New[*ISCEvent[*blocklog.BlockInfo]](),
-			RequestReceipt: event.New[*ISCEvent[*ReceiptWithError]](),
-			BlockEvents:    event.New[*ISCEvent[[]string]](),
-			Published:      event.New[*ISCEvent[any]](),
+			NewBlock:       event.New1[*ISCEvent[*blocklog.BlockInfo]](),
+			RequestReceipt: event.New1[*ISCEvent[*ReceiptWithError]](),
+			BlockEvents:    event.New1[*ISCEvent[[]string]](),
+			Published:      event.New1[*ISCEvent[any]](),
 		},
 	}
 

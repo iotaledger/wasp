@@ -6,6 +6,7 @@ package dkg
 // TODO: [KP] Check, if error responses are considered gracefully at the initiator.
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -17,11 +18,12 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/key"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
@@ -49,7 +51,7 @@ type proc struct {
 	netGroup     peering.GroupProvider                      // A group for which the distributed key is generated.
 	dkgImpl      map[keySetType]*rabin_dkg.DistKeyGenerator // The cryptographic implementation to use.
 	dkgLock      *sync.RWMutex                              // Guard access to dkgImpl
-	attachID     interface{}                                // We keep it here to be able to detach from the network.
+	cleanupFunc  context.CancelFunc                         // We keep it here to be able to detach from the network.
 	peerMsgCh    chan *peering.PeerMessageGroupIn           // A buffer for the received peer messages.
 	log          *logger.Logger                             // A logger to use.
 	myPubKey     *cryptolib.PublicKey                       // Just to make logging easier.
@@ -153,7 +155,8 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 		)
 	}
 	go p.processLoop(msg.timeout, p.steps[rabinStep7CommitAndTerminate].doneCh)
-	p.attachID = p.netGroup.Attach(peering.PeerMessageReceiverDkg, p.onPeerMessage)
+	unhook := p.netGroup.Attach(peering.PeerMessageReceiverDkg, p.onPeerMessage)
+	p.cleanupFunc = unhook
 	stepsStart <- make(multiKeySetMsgs)
 	return &p, nil
 }
@@ -201,7 +204,7 @@ func (p *proc) processLoop(timeout time.Duration, doneCh chan multiKeySetMsgs) {
 			// to resend some messages. We will wait until the timeout.
 			done = true
 		case <-timeoutCh:
-			p.netGroup.Detach(p.attachID)
+			util.ExecuteIfNotNil(p.cleanupFunc)
 			for i := range p.steps {
 				p.steps[i].close()
 			}

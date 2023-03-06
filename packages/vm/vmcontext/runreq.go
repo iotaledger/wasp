@@ -2,7 +2,6 @@ package vmcontext
 
 import (
 	"math"
-	"math/big"
 	"runtime/debug"
 	"time"
 
@@ -127,8 +126,18 @@ func (vmctx *VMContext) checkAllowance() {
 	}
 }
 
-func (vmctx *VMContext) prepareGasBudget() {
+func (vmctx *VMContext) shouldChargeGasFee() bool {
 	if vmctx.req.SenderAccount() == nil {
+		return false
+	}
+	if vmctx.req.SenderAccount().Equals(vmctx.chainOwnerID) && vmctx.req.CallTarget().Contract == governance.Contract.Hname() {
+		return false
+	}
+	return true
+}
+
+func (vmctx *VMContext) prepareGasBudget() {
+	if !vmctx.shouldChargeGasFee() {
 		return
 	}
 	vmctx.gasSetBudget(vmctx.calculateAffordableGasBudget())
@@ -270,42 +279,14 @@ func (vmctx *VMContext) calculateAffordableGasBudget() uint64 {
 
 // calcGuaranteedFeeTokens return the maximum tokens (base tokens or native) can be guaranteed for the fee,
 // taking into account allowance (which must be 'reserved')
-// TODO this could be potentially problematic when using custom tokens that are expressed in "big.int"
 func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
-	var tokensGuaranteed uint64
-
-	if isc.IsEmptyNativeTokenID(vmctx.chainInfo.GasFeePolicy.GasFeeTokenID) {
-		// base tokens are used as gas tokens
-		tokensGuaranteed = vmctx.GetBaseTokensBalance(vmctx.req.SenderAccount())
-		// safely subtract the allowed from the sender to the target
-		if allowed := vmctx.req.Allowance(); allowed != nil {
-			if tokensGuaranteed < allowed.BaseTokens {
-				tokensGuaranteed = 0
-			} else {
-				tokensGuaranteed -= allowed.BaseTokens
-			}
-		}
-		return tokensGuaranteed
-	}
-	// native tokens are used for gas fee
-	nativeTokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
-	// to pay for gas chain is configured to use some native token, not base tokens
-	tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), nativeTokenID)
-	if tokensAvailableBig != nil {
-		// safely subtract the transfer from the sender to the target
-		if transfer := vmctx.req.Allowance(); transfer != nil {
-			if transferTokens := transfer.AmountNativeToken(nativeTokenID); !util.IsZeroBigInt(transferTokens) {
-				if tokensAvailableBig.Cmp(transferTokens) < 0 {
-					tokensAvailableBig.SetUint64(0)
-				} else {
-					tokensAvailableBig.Sub(tokensAvailableBig, transferTokens)
-				}
-			}
-		}
-		if tokensAvailableBig.IsUint64() {
-			tokensGuaranteed = tokensAvailableBig.Uint64()
+	tokensGuaranteed := vmctx.GetBaseTokensBalance(vmctx.req.SenderAccount())
+	// safely subtract the allowed from the sender to the target
+	if allowed := vmctx.req.Allowance(); allowed != nil {
+		if tokensGuaranteed < allowed.BaseTokens {
+			tokensGuaranteed = 0
 		} else {
-			tokensGuaranteed = math.MaxUint64
+			tokensGuaranteed -= allowed.BaseTokens
 		}
 	}
 	return tokensGuaranteed
@@ -322,10 +303,9 @@ func (vmctx *VMContext) chargeGasFee() {
 		vmctx.gasBurnedTotal += minGas - currentGas
 	}
 
-	// disable gas burn
 	vmctx.GasBurnEnable(false)
-	if vmctx.req.SenderAccount() == nil {
-		// no charging if sender is unknown
+
+	if !vmctx.shouldChargeGasFee() {
 		return
 	}
 
@@ -349,17 +329,8 @@ func (vmctx *VMContext) chargeGasFee() {
 
 	transferToValidator := &isc.Assets{}
 	transferToOwner := &isc.Assets{}
-	if !isc.IsEmptyNativeTokenID(vmctx.chainInfo.GasFeePolicy.GasFeeTokenID) {
-		transferToValidator.NativeTokens = iotago.NativeTokens{
-			&iotago.NativeToken{ID: vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToValidator))},
-		}
-		transferToOwner.NativeTokens = iotago.NativeTokens{
-			&iotago.NativeToken{ID: vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToOwner))},
-		}
-	} else {
-		transferToValidator.BaseTokens = sendToValidator
-		transferToOwner.BaseTokens = sendToOwner
-	}
+	transferToValidator.BaseTokens = sendToValidator
+	transferToOwner.BaseTokens = sendToOwner
 	sender := vmctx.req.SenderAccount()
 
 	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
@@ -387,7 +358,8 @@ func (vmctx *VMContext) loadChainConfig() {
 
 // mustCheckTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
 func (vmctx *VMContext) mustCheckTransactionSize() {
-	essence, _ := vmctx.txbuilder.BuildTransactionEssence(state.L1CommitmentNil)
+	stateMetadata := vmctx.StateMetadata(state.L1CommitmentNil)
+	essence, _ := vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
 	tx := transaction.MakeAnchorTransaction(essence, &iotago.Ed25519Signature{})
 	if tx.Size() > parameters.L1().MaxPayloadSize {
 		panic(vmexceptions.ErrMaxTransactionSizeExceeded)

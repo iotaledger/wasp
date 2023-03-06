@@ -11,7 +11,6 @@ use crate::keypair::KeyPair;
 
 pub struct WasmClientContext {
     pub(crate) error: Arc<Mutex<Result<()>>>,
-    pub(crate) event_done: Arc<Mutex<bool>>,
     pub(crate) event_handlers: Arc<Mutex<Vec<Box<dyn IEventHandlers>>>>,
     pub(crate) key_pair: Option<KeyPair>,
     pub(crate) req_id: Arc<Mutex<ScRequestID>>,
@@ -24,13 +23,12 @@ impl WasmClientContext {
     pub fn new(svc_client: Arc<WasmClientService>, sc_name: &str) -> WasmClientContext {
         WasmClientContext {
             error: Arc::new(Mutex::new(Ok(()))),
-            event_done: Arc::default(),
             event_handlers: Arc::default(),
             key_pair: None,
             req_id: Arc::new(Mutex::new(request_id_from_bytes(&[]))),
             sc_name: String::from(sc_name),
             sc_hname: hname_from_bytes(&hname_bytes(&sc_name)),
-            svc_client: svc_client,
+            svc_client,
         }
     }
 
@@ -60,7 +58,7 @@ impl WasmClientContext {
                 return;
             }
         }
-        let res = self.svc_client.subscribe_events(self.event_handlers.clone(), self.event_done.clone());
+        let res = self.svc_client.subscribe_events(self.event_handlers.clone());
         if let Err(e) = res {
             self.set_err(&e, "")
         }
@@ -81,7 +79,7 @@ impl WasmClientContext {
             h.id() != id
         });
         if event_handlers.len() == 0 {
-            self.stop_event_handlers();
+            self.svc_client.unsubscribe_events();
         }
     }
 
@@ -112,11 +110,6 @@ impl WasmClientContext {
         for handler in event_handlers.iter() {
             handler.as_ref().call_handler(&topic, &params);
         }
-    }
-
-    pub fn stop_event_handlers(&self) {
-        let mut done = self.event_done.lock().unwrap();
-        *done = true;
     }
 
     fn unescape(param: &str) -> String {

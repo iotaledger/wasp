@@ -4,26 +4,16 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/hive.go/core/marshalutil"
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-var (
-	emptyNativeTokenID = iotago.NativeTokenID{}
+// By default each token pays for 100 units of gas
+var DefaultGasPerToken = util.Ratio32{A: 100, B: 1}
 
-	// By default each token pays for 100 units of gas
-	DefaultGasPerToken = util.Ratio32{A: 1, B: 100}
-)
-
-type GasFeePolicy struct {
-	// GasFeeTokenID contains iotago.NativeTokenID used to pay for gas, or nil if base token are used for gas fee
-	GasFeeTokenID iotago.NativeTokenID
-	// GasFeeTokenDecimals the number of decimals in the native token used to pay for gas fees. Only considered if GasFeeTokenID != nil
-	GasFeeTokenDecimals uint32
-
+type FeePolicy struct {
 	// GasPerToken specifies how many gas units are paid for each token.
-	GasPerToken util.Ratio32 // X = fee, Y = gas => fee = gas * A/B
+	GasPerToken util.Ratio32
 
 	// EVMGasRatio expresses the ratio at which EVM gas is converted to ISC gas
 	EVMGasRatio util.Ratio32 // X = ISC gas, Y = EVM gas => ISC gas = EVM gas * A/B
@@ -34,18 +24,9 @@ type GasFeePolicy struct {
 	ValidatorFeeShare uint8
 }
 
-// FeeFromGas calculates fee = gas * A/B
-func FeeFromGas(gasUnits uint64, gasPerToken util.Ratio32) uint64 {
-	return gasPerToken.XCeil64(gasUnits)
-}
-
-func (p *GasFeePolicy) FeeFromGas(gasUnits uint64) uint64 {
-	return FeeFromGas(gasUnits, p.GasPerToken)
-}
-
 // FeeFromGasBurned calculates the how many tokens to take and where
 // to deposit them.
-func (p *GasFeePolicy) FeeFromGasBurned(gasUnits, availableTokens uint64) (sendToOwner, sendToValidator uint64) {
+func (p *FeePolicy) FeeFromGasBurned(gasUnits, availableTokens uint64) (sendToOwner, sendToValidator uint64) {
 	var fee uint64
 
 	// round up
@@ -65,28 +46,35 @@ func (p *GasFeePolicy) FeeFromGasBurned(gasUnits, availableTokens uint64) (sendT
 	return fee - sendToValidator, sendToValidator
 }
 
-func (p *GasFeePolicy) MinFee() uint64 {
+func FeeFromGas(gasUnits uint64, gasPerToken util.Ratio32) uint64 {
+	return gasPerToken.YCeil64(gasUnits)
+}
+
+func (p *FeePolicy) FeeFromGas(gasUnits uint64) uint64 {
+	return FeeFromGas(gasUnits, p.GasPerToken)
+}
+
+func (p *FeePolicy) MinFee() uint64 {
 	return p.FeeFromGas(BurnCodeMinimumGasPerRequest1P.Cost())
 }
 
-func (p *GasFeePolicy) IsEnoughForMinimumFee(availableTokens uint64) bool {
+func (p *FeePolicy) IsEnoughForMinimumFee(availableTokens uint64) bool {
 	return availableTokens >= p.MinFee()
 }
 
-func (p *GasFeePolicy) GasBudgetFromTokens(availableTokens uint64) uint64 {
-	return p.GasPerToken.YFloor64(availableTokens)
+func (p *FeePolicy) GasBudgetFromTokens(availableTokens uint64) uint64 {
+	return p.GasPerToken.XFloor64(availableTokens)
 }
 
-func DefaultGasFeePolicy() *GasFeePolicy {
-	return &GasFeePolicy{
-		GasFeeTokenID:     iotago.NativeTokenID{}, // default is base token
+func DefaultFeePolicy() *FeePolicy {
+	return &FeePolicy{
 		GasPerToken:       DefaultGasPerToken,
 		ValidatorFeeShare: 0, // by default all goes to the governor
 		EVMGasRatio:       DefaultEVMGasRatio,
 	}
 }
 
-func MustGasFeePolicyFromBytes(data []byte) *GasFeePolicy {
+func MustFeePolicyFromBytes(data []byte) *FeePolicy {
 	ret, err := FeePolicyFromBytes(data)
 	if err != nil {
 		panic(err)
@@ -96,25 +84,13 @@ func MustGasFeePolicyFromBytes(data []byte) *GasFeePolicy {
 
 var ErrInvalidRatio = errors.New("ratio must have both components != 0")
 
-func FeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
-	ret := &GasFeePolicy{}
-	mu := marshalutil.New(data)
-	var gasNativeToken bool
+func FeePolicyFromBytes(data []byte) (*FeePolicy, error) {
+	return FeePolicyFromMarshalUtil(marshalutil.New(data))
+}
+
+func FeePolicyFromMarshalUtil(mu *marshalutil.MarshalUtil) (*FeePolicy, error) {
+	ret := &FeePolicy{}
 	var err error
-	if gasNativeToken, err = mu.ReadBool(); err != nil {
-		return nil, err
-	}
-	if gasNativeToken {
-		b, err2 := mu.ReadBytes(iotago.NativeTokenIDLength)
-		if err2 != nil {
-			return nil, err2
-		}
-		ret.GasFeeTokenID = iotago.NativeTokenID{}
-		copy(ret.GasFeeTokenID[:], b)
-		if ret.GasFeeTokenDecimals, err2 = mu.ReadUint32(); err2 != nil {
-			return nil, err2
-		}
-	}
 	if ret.GasPerToken, err = ReadRatio32(mu); err != nil {
 		return nil, err
 	}
@@ -141,30 +117,20 @@ func ReadRatio32(mu *marshalutil.MarshalUtil) (ret util.Ratio32, err error) {
 	return ret, nil
 }
 
-func (p *GasFeePolicy) Bytes() []byte {
+func (p *FeePolicy) Bytes() []byte {
 	mu := marshalutil.New()
-	hasGasFeeToken := p.GasFeeTokenID != emptyNativeTokenID
-	mu.WriteBool(hasGasFeeToken)
-	if hasGasFeeToken {
-		mu.WriteBytes(p.GasFeeTokenID[:])
-		mu.WriteUint32(p.GasFeeTokenDecimals)
-	}
 	mu.WriteBytes(p.GasPerToken.Bytes())
 	mu.WriteUint8(p.ValidatorFeeShare)
 	mu.WriteBytes(p.EVMGasRatio.Bytes())
 	return mu.Bytes()
 }
 
-func (p *GasFeePolicy) String() string {
+func (p *FeePolicy) String() string {
 	return fmt.Sprintf(`
-	GasFeeTokenID: %s
-	GasFeeTokenDecimals %d
 	GasPerToken %s
 	EVMGasRatio %s
 	ValidatorFeeShare %d
 	`,
-		p.GasFeeTokenID,
-		p.GasFeeTokenDecimals,
 		p.GasPerToken,
 		p.EVMGasRatio,
 		p.ValidatorFeeShare,

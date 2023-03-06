@@ -1,6 +1,7 @@
 package testcore
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -12,9 +13,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 func TestGovernance1(t *testing.T) {
@@ -23,7 +27,6 @@ func TestGovernance1(t *testing.T) {
 	t.Run("empty list of allowed rotation addresses", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		chain := env.NewChain()
-		// defer chain.Log.Sync()
 
 		lst := chain.GetAllowedStateControllerAddresses()
 		require.EqualValues(t, 0, len(lst))
@@ -31,7 +34,6 @@ func TestGovernance1(t *testing.T) {
 	t.Run("add/remove allowed rotation addresses", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		chain := env.NewChain()
-		// defer chain.Log.Sync()
 
 		_, addr1 := env.NewKeyPair()
 		err := chain.AddAllowedStateController(addr1, nil)
@@ -73,7 +75,6 @@ func TestRotate(t *testing.T) {
 	t.Run("not allowed address", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		chain := env.NewChain()
-		// defer chain.Log.Sync()
 
 		kp, addr := env.NewKeyPair()
 		err := chain.RotateStateController(addr, kp, nil)
@@ -83,7 +84,6 @@ func TestRotate(t *testing.T) {
 	t.Run("unauthorized", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		chain := env.NewChain()
-		// defer chain.Log.Sync()
 
 		kp, addr := env.NewKeyPairWithFunds()
 		err := chain.RotateStateController(addr, kp, kp)
@@ -93,7 +93,6 @@ func TestRotate(t *testing.T) {
 	t.Run("rotate success", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		chain := env.NewChain()
-		// defer chain.Log.Sync()
 
 		chain.WaitForRequestsMark()
 
@@ -125,7 +124,6 @@ func TestAccessNodes(t *testing.T) {
 	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds()
 	chainKP, _ := env.NewKeyPairWithFunds()
 	chain, _ := env.NewChainExt(chainKP, 0, "chain1")
-	// defer chain.Log.Sync()
 	var res dict.Dict
 	var err error
 
@@ -278,4 +276,78 @@ func TestDisallowMaintenanceDeadlock(t *testing.T) {
 		userWallet,
 	)
 	require.Error(t, err)
+}
+
+func TestCustomL1Metadata(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	ch := env.NewChain()
+
+	// set custom metadata
+	customMetadata := "http://foobar.com"
+	_, err := ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetCustomMetadata.Name,
+			governance.ParamCustomMetadata,
+			customMetadata,
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	// assert metadata is correct on view call
+	res, err := ch.CallView(
+		governance.Contract.Name,
+		governance.ViewGetCustomMetadata.Name,
+	)
+	require.NoError(t, err)
+	resMetadata := res.MustGet(governance.ParamCustomMetadata)
+	require.Equal(t, customMetadata, string(resMetadata))
+
+	// assert metadata is correct on L1 alias output
+	ao, _ := ch.LatestAliasOutput()
+	sm, err := vmcontext.StateMetadataFromBytes(ao.GetStateMetadata())
+	require.NoError(t, err)
+	require.Equal(t, sm.CustomMetadata, customMetadata)
+	require.True(t, reflect.DeepEqual(sm.GasFeePolicy, gas.DefaultFeePolicy()))
+
+	// try changing the gas policy
+	newFeePolicy := &gas.FeePolicy{
+		GasPerToken: util.Ratio32{
+			A: 1,
+			B: 2,
+		},
+		EVMGasRatio: util.Ratio32{
+			A: 3,
+			B: 4,
+		},
+		ValidatorFeeShare: 5,
+	}
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetFeePolicy.Name,
+			governance.ParamFeePolicyBytes,
+			newFeePolicy.Bytes(),
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	// assert gas policy changed on L1 metadata
+	ao, _ = ch.LatestAliasOutput()
+	sm, err = vmcontext.StateMetadataFromBytes(ao.GetStateMetadata())
+	require.NoError(t, err)
+	require.Equal(t, sm.CustomMetadata, customMetadata)
+	require.True(t, reflect.DeepEqual(sm.GasFeePolicy, newFeePolicy))
+}
+
+func TestGovernanceGasFee(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
+	ch := env.NewChain()
+	fp := ch.GetGasFeePolicy()
+	fp.GasPerToken.A *= 1000000
+	ch.SetGasFeePolicy(nil, fp)
+	fp.GasPerToken.A /= 1000000
+	ch.SetGasFeePolicy(nil, fp) // should not fail with "gas budget exceeded"
 }

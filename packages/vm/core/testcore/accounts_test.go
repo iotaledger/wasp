@@ -63,7 +63,7 @@ func TestHarvest(t *testing.T) {
 		nil)
 	require.NoError(t, err)
 	t.Logf("common base tokens AFTER: %d", ch.L2CommonAccountBaseTokens())
-	require.True(t, ch.L2CommonAccountBaseTokens() > accounts.MinimumBaseTokensOnCommonAccount)
+	require.True(t, ch.L2CommonAccountBaseTokens() >= accounts.MinimumBaseTokensOnCommonAccount)
 }
 
 // allowance shouldn't allow you to bypass gas fees.
@@ -1164,7 +1164,7 @@ func TestDepositRandomContractMinFee(t *testing.T) {
 	receipt := ch.LastReceipt()
 	require.Error(t, receipt.Error)
 
-	require.EqualValues(t, gas.DefaultGasFeePolicy().MinFee(), receipt.GasFeeCharged)
+	require.EqualValues(t, gas.DefaultFeePolicy().MinFee(), receipt.GasFeeCharged)
 	require.EqualValues(t, sent-receipt.GasFeeCharged, ch.L2BaseTokens(agentID))
 }
 
@@ -1194,7 +1194,7 @@ func TestAllowanceNotEnoughFunds(t *testing.T) {
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vm.ErrNotEnoughFundsForAllowance)
 		receipt := ch.LastReceipt()
-		require.EqualValues(t, gas.DefaultGasFeePolicy().MinFee(), receipt.GasFeeCharged)
+		require.EqualValues(t, gas.DefaultFeePolicy().MinFee(), receipt.GasFeeCharged)
 	}
 }
 

@@ -14,7 +14,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/events"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -36,6 +35,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -112,13 +112,24 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 	return ret, true
 }
 
-func (ch *Chain) GetGasFeePolicy() *gas.GasFeePolicy {
+func (ch *Chain) GetGasFeePolicy() *gas.FeePolicy {
 	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetFeePolicy.Name)
 	require.NoError(ch.Env.T, err)
 	fpBin := res.MustGet(governance.ParamFeePolicyBytes)
 	feePolicy, err := gas.FeePolicyFromBytes(fpBin)
 	require.NoError(ch.Env.T, err)
 	return feePolicy
+}
+
+func (ch *Chain) SetGasFeePolicy(user *cryptolib.KeyPair, fp *gas.FeePolicy) {
+	_, err := ch.PostRequestOffLedger(NewCallParams(
+		governance.Contract.Name,
+		governance.FuncSetFeePolicy.Name,
+		dict.Dict{
+			governance.ParamFeePolicyBytes: fp.Bytes(),
+		},
+	), user)
+	require.NoError(ch.Env.T, err)
 }
 
 // UploadBlob calls core 'blob' smart contract blob.FuncStoreBlob entry point to upload blob
@@ -585,12 +596,7 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...uint64)
 }
 
 // AttachToRequestProcessed implements chain.Chain
-func (*Chain) AttachToRequestProcessed(func(isc.RequestID)) (attachID *events.Closure) {
-	panic("unimplemented")
-}
-
-// DetachFromRequestProcessed implements chain.Chain
-func (*Chain) DetachFromRequestProcessed(attachID *events.Closure) {
+func (*Chain) AttachToRequestProcessed(func(isc.RequestID)) context.CancelFunc {
 	panic("unimplemented")
 }
 
@@ -646,7 +652,7 @@ func (ch *Chain) LatestState(freshness chain.StateFreshness) (state.State, error
 	if ao == nil {
 		return ch.store.LatestState()
 	}
-	l1c, err := state.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
+	l1c, err := vmcontext.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
 	if err != nil {
 		panic(err)
 	}

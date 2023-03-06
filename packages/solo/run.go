@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"github.com/iotaledger/hive.go/core/identity"
+	"github.com/iotaledger/hive.go/crypto/identity"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -144,6 +144,7 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc
 	if err != nil {
 		panic(err)
 	}
+	ch.Env.Publisher().BlockApplied(ch.ChainID, block)
 
 	ch.Log().Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
 		stateDraft.BlockIndex(), len(reqids), len(stateTx.Essence.Outputs))

@@ -7,6 +7,9 @@ import (
 )
 
 func (vmctx *VMContext) GasBurnEnable(enable bool) {
+	if enable && !vmctx.shouldChargeGasFee() {
+		return
+	}
 	vmctx.gasBurnEnabled = enable
 }
 

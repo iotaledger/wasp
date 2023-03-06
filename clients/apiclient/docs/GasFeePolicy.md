@@ -5,7 +5,6 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **EvmGasRatio** | [**Ratio32**](Ratio32.md) |  | 
-**GasFeeTokenId** | **string** | The gas fee token id. Empty if base token. | 
 **GasPerToken** | [**Ratio32**](Ratio32.md) |  | 
 **ValidatorFeeShare** | **int32** | The validator fee share. | 
 
@@ -13,7 +12,7 @@ Name | Type | Description | Notes
 
 ### NewGasFeePolicy
 
-`func NewGasFeePolicy(evmGasRatio Ratio32, gasFeeTokenId string, gasPerToken Ratio32, validatorFeeShare int32, ) *GasFeePolicy`
+`func NewGasFeePolicy(evmGasRatio Ratio32, gasPerToken Ratio32, validatorFeeShare int32, ) *GasFeePolicy`
 
 NewGasFeePolicy instantiates a new GasFeePolicy object
 This constructor will assign default values to properties that have it defined,
@@ -46,26 +45,6 @@ and a boolean to check if the value has been set.
 `func (o *GasFeePolicy) SetEvmGasRatio(v Ratio32)`
 
 SetEvmGasRatio sets EvmGasRatio field to given value.
-
-
-### GetGasFeeTokenId
-
-`func (o *GasFeePolicy) GetGasFeeTokenId() string`
-
-GetGasFeeTokenId returns the GasFeeTokenId field if non-nil, zero value otherwise.
-
-### GetGasFeeTokenIdOk
-
-`func (o *GasFeePolicy) GetGasFeeTokenIdOk() (*string, bool)`
-
-GetGasFeeTokenIdOk returns a tuple with the GasFeeTokenId field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetGasFeeTokenId
-
-`func (o *GasFeePolicy) SetGasFeeTokenId(v string)`
-
-SetGasFeeTokenId sets GasFeeTokenId field to given value.
 
 
 ### GetGasPerToken

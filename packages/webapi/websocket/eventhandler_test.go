@@ -7,18 +7,19 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/configuration"
-	"github.com/iotaledger/hive.go/core/generics/event"
-	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/hive.go/core/subscriptionmanager"
-	"github.com/iotaledger/hive.go/core/websockethub"
+	"github.com/iotaledger/hive.go/app/configuration"
+	appLogger "github.com/iotaledger/hive.go/app/logger"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/runtime/event"
+	"github.com/iotaledger/hive.go/web/subscriptionmanager"
+	"github.com/iotaledger/hive.go/web/websockethub"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
-func initTest(ctx context.Context) (*publisher.Publisher, *EventHandler, *event.Event[*ISCEvent], *subscriptionmanager.SubscriptionManager[websockethub.ClientID, string]) {
-	logger.InitGlobalLogger(configuration.New())
+func initTest(ctx context.Context) (*publisher.Publisher, *EventHandler, *event.Event1[*ISCEvent], *subscriptionmanager.SubscriptionManager[websockethub.ClientID, string]) {
+	_ = appLogger.InitGlobalLogger(configuration.New())
 	log := logger.NewLogger("Test")
 
 	pub := publisher.New(log)
@@ -27,7 +28,7 @@ func initTest(ctx context.Context) (*publisher.Publisher, *EventHandler, *event.
 		pub.Run(ctx)
 	}()
 
-	publisherEvent := event.New[*ISCEvent]()
+	publisherEvent := event.New1[*ISCEvent]()
 
 	subscriptionManager := subscriptionmanager.New[websockethub.ClientID, string]()
 	subscriptionManager.Connect(1)
@@ -51,10 +52,10 @@ func TestSuccessfulEventHandling(t *testing.T) {
 
 	chainID := isc.RandomChainID()
 
-	publisherEvent.Attach(event.NewClosure(func(iscEvent *ISCEvent) {
+	publisherEvent.Hook(func(iscEvent *ISCEvent) {
 		require.Exactly(t, iscEvent.ChainID, chainID.String())
 		cancel()
-	}))
+	})
 
 	pub.Events.NewBlock.Trigger(&publisher.ISCEvent[*blocklog.BlockInfo]{
 		Kind:    publisher.ISCEventKindNewBlock,

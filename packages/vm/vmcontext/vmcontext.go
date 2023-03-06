@@ -83,7 +83,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		// should never happen
 		panic(errors.New("CreateVMContext.invalid params: must be at least 1 request"))
 	}
-	prevL1Commitment, err := state.L1CommitmentFromBytes(task.AnchorOutput.StateMetadata)
+	prevL1Commitment, err := L1CommitmentFromAliasOutput(task.AnchorOutput)
 	if err != nil {
 		// should never happen
 		panic(fmt.Errorf("CreateVMContext: can't parse state data as L1Commitment from chain input %w", err))
@@ -106,7 +106,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.gasBurnLog = gas.NewGasBurnLog()
 	}
 	// at the beginning of each block
-	l1Commitment, err := state.L1CommitmentFromBytes(task.AnchorOutput.StateMetadata)
+	l1Commitment, err := L1CommitmentFromAliasOutput(task.AnchorOutput)
 	if err != nil {
 		// should never happen
 		panic(err)
@@ -188,7 +188,7 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		return rotationAddress
 	}
 	// block info will be stored into the separate state update
-	prevL1Commitment, err := state.L1CommitmentFromBytes(vmctx.task.AnchorOutput.StateMetadata)
+	prevL1Commitment, err := L1CommitmentFromAliasOutput(vmctx.task.AnchorOutput)
 	if err != nil {
 		panic(err)
 	}

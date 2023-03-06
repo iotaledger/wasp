@@ -82,7 +82,7 @@ func SetInitialState(state kv.KVStore, evmChainID uint16, blockKeepAmount int32)
 	addToPrivileged(state, iscmagic.ERC721NFTsAddress)
 
 	// chain always starts with default gas policy
-	gasRatio := gas.DefaultGasFeePolicy().EVMGasRatio
+	gasRatio := gas.DefaultFeePolicy().EVMGasRatio
 	emulator.Init(
 		evmStateSubrealm(state),
 		evmChainID,

@@ -44,6 +44,10 @@ var Processor = governance.Contract.Processor(nil,
 	governance.FuncStartMaintenance.WithHandler(setMaintenanceOn),
 	governance.FuncStopMaintenance.WithHandler(setMaintenanceOff),
 	governance.ViewGetMaintenanceStatus.WithHandler(getMaintenanceStatus),
+
+	// L1 meadata
+	governance.FuncSetCustomMetadata.WithHandler(setCustomMetadata),
+	governance.ViewGetCustomMetadata.WithHandler(getCustomMetadata),
 )
 
 func SetInitialState(state kv.KVStore, chainOwner isc.AgentID) {
@@ -53,7 +57,7 @@ func SetInitialState(state kv.KVStore, chainOwner isc.AgentID) {
 	state.Set(governance.VarMaxEventSize, codec.Encode(governance.DefaultMaxEventSize))
 	state.Set(governance.VarMaxEventsPerReq, codec.Encode(governance.DefaultMaxEventsPerRequest))
 
-	state.Set(governance.VarGasFeePolicyBytes, gas.DefaultGasFeePolicy().Bytes())
+	state.Set(governance.VarGasFeePolicyBytes, gas.DefaultFeePolicy().Bytes())
 
 	state.Set(governance.VarMaintenanceStatus, codec.Encode(false))
 }

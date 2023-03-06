@@ -153,27 +153,32 @@ func (s *contractSandbox) GasBurnEnable(enable bool) {
 
 func (s *contractSandbox) MustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, assets *isc.Assets) {
 	s.Ctx.(*VMContext).mustMoveBetweenAccounts(fromAgentID, toAgentID, assets)
+	s.checkRemainingTokens(fromAgentID)
 }
 
 func (s *contractSandbox) DebitFromAccount(agentID isc.AgentID, tokens *isc.Assets) {
 	s.Ctx.(*VMContext).debitFromAccount(agentID, tokens)
+	s.checkRemainingTokens(agentID)
+}
+
+func (s *contractSandbox) checkRemainingTokens(debitedAccount isc.AgentID) {
+	// assert that remaining tokens in the sender's account are enough to pay for the gas budget
+	if debitedAccount.Equals(s.Request().SenderAccount()) && !s.HasInAccount(
+		debitedAccount,
+		s.totalGasTokens(),
+	) {
+		panic(vm.ErrNotEnoughTokensLeftForGas)
+	}
 }
 
 func (s *contractSandbox) CreditToAccount(agentID isc.AgentID, tokens *isc.Assets) {
 	s.Ctx.(*VMContext).creditToAccount(agentID, tokens)
 }
 
-func (s *contractSandbox) TotalGasTokens() *isc.Assets {
+func (s *contractSandbox) totalGasTokens() *isc.Assets {
 	if s.Ctx.(*VMContext).task.EstimateGasMode {
 		return isc.NewEmptyAssets()
 	}
 	amount := s.Ctx.(*VMContext).gasMaxTokensToSpendForGasFee
-	nativeTokenID := s.Ctx.(*VMContext).chainInfo.GasFeePolicy.GasFeeTokenID
-	if isc.IsEmptyNativeTokenID(nativeTokenID) {
-		return isc.NewAssetsBaseTokens(amount)
-	}
-	return isc.NewAssets(0, iotago.NativeTokens{&iotago.NativeToken{
-		ID:     nativeTokenID,
-		Amount: new(big.Int).SetUint64(amount),
-	}})
+	return isc.NewAssetsBaseTokens(amount)
 }

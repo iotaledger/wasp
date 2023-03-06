@@ -1260,20 +1260,10 @@ paths:
           format: string
           type: string
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                format: string
-                type: string
-          description: The evm json RPC
-        "404":
-          content:
-            application/json:
-              schema:
-                format: string
-                type: string
-          description: The evm json RPC failure
+        default:
+          content: {}
+          description: successful operation
+      summary: Ethereum JSON-RPC
       tags:
       - chains
   /chains/{chainID}/evm/tx/{txHash}:
@@ -1309,6 +1299,23 @@ paths:
                 type: string
           description: Request ID not found
       summary: Get the ISC request ID for the given Ethereum transaction hash
+      tags:
+      - chains
+  /chains/{chainID}/evm/ws:
+    get:
+      parameters:
+      - description: ChainID (Bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        default:
+          content: {}
+          description: successful operation
+      summary: Ethereum JSON-RPC (Websocket transport)
       tags:
       - chains
   /chains/{chainID}/receipts/{requestID}:
@@ -2063,6 +2070,7 @@ paths:
         default:
           content: {}
           description: successful operation
+      summary: The websocket connection service
 components:
   schemas:
     AccountFoundriesResponse:
@@ -2745,14 +2753,13 @@ components:
         evmChainId: 1074
         description: description
         gasFeePolicy:
-          gasFeeTokenId: gasFeeTokenId
           gasPerToken:
             a: 1
             b: 100
-          validatorFeeShare: 1
+          validatorFeeShare: 0
           evmGasRatio:
-            a: 0
-            b: 0
+            a: 1
+            b: 1
         isActive: true
         maxBlobSize: 2000000
         maxEventSize: 2000
@@ -3657,23 +3664,16 @@ components:
         name: FoundryOutputResponse
     GasFeePolicy:
       example:
-        gasFeeTokenId: gasFeeTokenId
         gasPerToken:
           a: 1
           b: 100
-        validatorFeeShare: 1
+        validatorFeeShare: 0
         evmGasRatio:
-          a: 0
-          b: 0
+          a: 1
+          b: 1
       properties:
         evmGasRatio:
           $ref: '#/components/schemas/Ratio32_'
-        gasFeeTokenId:
-          description: The gas fee token id. Empty if base token.
-          format: string
-          type: string
-          xml:
-            name: GasFeeTokenID
         gasPerToken:
           $ref: '#/components/schemas/Ratio32'
         validatorFeeShare:
@@ -3684,7 +3684,6 @@ components:
             name: ValidatorFeeShare
       required:
       - evmGasRatio
-      - gasFeeTokenId
       - gasPerToken
       - validatorFeeShare
       type: object
@@ -3692,25 +3691,18 @@ components:
         name: GasFeePolicy
     GasFeePolicy_:
       example:
-        gasFeeTokenId: gasFeeTokenId
         gasPerToken:
           a: 0
           b: 0
-        validatorFeeShare: 0
+        validatorFeeShare: 1
         evmGasRatio:
           a: 0
           b: 0
       properties:
         evmGasRatio:
-          $ref: '#/components/schemas/Ratio32_'
-        gasFeeTokenId:
-          description: The gas fee token id. Empty if base token.
-          format: string
-          type: string
-          xml:
-            name: GasFeeTokenID
+          $ref: '#/components/schemas/Ratio32__'
         gasPerToken:
-          $ref: '#/components/schemas/Ratio32_'
+          $ref: '#/components/schemas/Ratio32__'
         validatorFeeShare:
           description: The validator fee share.
           format: int32
@@ -3719,7 +3711,6 @@ components:
             name: ValidatorFeeShare
       required:
       - evmGasRatio
-      - gasFeeTokenId
       - gasPerToken
       - validatorFeeShare
       type: object
@@ -3746,20 +3737,19 @@ components:
     GovChainInfoResponse:
       example:
         chainOwnerId: chainOwnerId
-        maxEventsPerReq: 5
+        maxEventsPerReq: 2
         chainID: chainID
         description: description
         gasFeePolicy:
-          gasFeeTokenId: gasFeeTokenId
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 0
+          validatorFeeShare: 1
           evmGasRatio:
             a: 0
             b: 0
-        maxBlobSize: 6
-        maxEventSize: 1
+        maxBlobSize: 5
+        maxEventSize: 5
       properties:
         chainID:
           description: ChainID (Bech32-encoded).
@@ -4782,6 +4772,31 @@ components:
       xml:
         name: Ratio32
     Ratio32_:
+      example:
+        a: 1
+        b: 1
+      properties:
+        a:
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: A
+        b:
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: B
+      required:
+      - a
+      - b
+      type: object
+      xml:
+        name: Ratio32
+    Ratio32__:
       example:
         a: 0
         b: 0

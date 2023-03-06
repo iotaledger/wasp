@@ -1,9 +1,11 @@
 // // Copyright 2020 IOTA Stiftung
 // // SPDX-License-Identifier: Apache-2.0
 
+use std::cell::Cell;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use std::thread::spawn;
+use std::sync::{Arc, mpsc, Mutex};
+use std::sync::mpsc::channel;
+use std::thread::{JoinHandle, spawn};
 use std::time::Duration;
 
 use crypto::signatures::ed25519::PublicKey;
@@ -51,6 +53,9 @@ pub struct ContractEvent {
 
 pub struct WasmClientService {
     chain_id: ScChainID,
+    close_rx: Arc<Mutex<mpsc::Receiver<bool>>>,
+    close_tx: mpsc::Sender<bool>,
+    handle: Cell<Option<JoinHandle<()>>>,
     nonces: Arc<Mutex<HashMap<PublicKey, u64>>>,
     wasp_api: String,
 }
@@ -58,8 +63,12 @@ pub struct WasmClientService {
 impl WasmClientService {
     pub fn new(wasp_api: &str, chain_id: &str) -> Self {
         set_sandbox_wrappers(chain_id).unwrap();
+        let (tx, rx) = channel();
         WasmClientService {
             chain_id: chain_id_from_string(chain_id),
+            close_rx: Arc::new(Mutex::new(rx)),
+            close_tx: tx,
+            handle: Cell::new(None),
             nonces: Arc::default(),
             wasp_api: String::from(wasp_api),
         }
@@ -82,32 +91,23 @@ impl WasmClientService {
             contract_hname: contract_hname.to_string(),
             function_hname: function_hname.to_string(),
         };
-        let res = client.post(url).json(&body).send();
-        match res {
+        match client.post(url).json(&body).send() {
             Ok(v) => match v.status() {
                 StatusCode::OK => {
                     match v.json::<JsonResponse>() {
-                        Ok(json_obj) => {
-                            return Ok(json_decode(json_obj));
-                        }
-                        Err(e) => {
-                            return Err(format!("call() response failed: {}", e.to_string()));
-                        }
-                    };
+                        Ok(json_obj) => Ok(json_decode(json_obj)),
+                        Err(e) => Err(format!("call() response failed: {}", e.to_string())),
+                    }
                 }
                 failed_status_code => {
                     let status_code = failed_status_code.as_u16();
                     match v.json::<JsonError>() {
-                        Ok(err_msg) => {
-                            return Err(format!("{}: {}", status_code, err_msg.message));
-                        }
-                        Err(e) => return Err(e.to_string()),
+                        Ok(err_msg) => Err(format!("{}: {}", status_code, err_msg.message)),
+                        Err(e) => Err(e.to_string()),
                     }
                 }
             },
-            Err(e) => {
-                return Err(format!("call() request failed: {}", e.to_string()));
-            }
+            Err(e) => Err(format!("call() request failed: {}", e.to_string())),
         }
     }
 
@@ -122,7 +122,7 @@ impl WasmClientService {
         h_function: &ScHname,
         args: &[u8],
         allowance: &ScAssets,
-        key_pair: &keypair::KeyPair,
+        key_pair: &KeyPair,
     ) -> Result<ScRequestID> {
         let nonce: u64;
         match self.cache_nonce(key_pair) {
@@ -146,26 +146,20 @@ impl WasmClientService {
             chain_id: chain_id.to_string(),
             request: hex_encode(&signed.to_bytes()),
         };
-        let res = client.post(url).json(&body).send();
-        match res {
+        match client.post(url).json(&body).send() {
             Ok(v) => match v.status() {
-                StatusCode::OK => {}
-                StatusCode::ACCEPTED => {}
+                StatusCode::OK => Ok(signed.id()),
+                StatusCode::ACCEPTED => Ok(signed.id()),
                 failed_status_code => {
                     let status_code = failed_status_code.as_u16();
                     match v.json::<JsonError>() {
-                        Ok(err_msg) => {
-                            return Err(format!("{}: {}", status_code, err_msg.message));
-                        }
-                        Err(e) => return Err(e.to_string()),
+                        Ok(err_msg) => Err(format!("{}: {}", status_code, err_msg.message)),
+                        Err(e) => Err(e.to_string()),
                     }
                 }
             },
-            Err(e) => {
-                return Err(format!("post() request failed: {}", e.to_string()));
-            }
+            Err(e) => Err(format!("post() request failed: {}", e.to_string())),
         }
-        Ok(signed.id())
     }
 
     fn subscribe(sender: &Sender, topic: &str) {
@@ -177,14 +171,28 @@ impl WasmClientService {
         let _ = sender.send(json);
     }
 
-    pub(crate) fn subscribe_events(&self, event_handlers: Arc<Mutex<Vec<Box<dyn IEventHandlers>>>>, event_done: Arc<Mutex<bool>>) -> Result<()> {
+    pub(crate) fn subscribe_events(&self, event_handlers: Arc<Mutex<Vec<Box<dyn IEventHandlers>>>>) -> Result<()> {
         let socket_url = self.wasp_api.replace("http:", "ws:") + "/ws";
-        spawn(move || {
+        let close_rx = self.close_rx.clone();
+        let handle = spawn(move || {
             connect(socket_url, |out| {
+                // on connect start the thread that allows interrupting the message handler thread
+                // note that we did not know the `out` websocket until this point, so we use an
+                // external channel to this thread to signal that the websocket can be closed
+                let close_rx = close_rx.clone();
+                let socket = out.clone();
+                spawn(move || {
+                    close_rx.lock().unwrap().recv().unwrap();
+                    println!("Closing websocket");
+                    socket.close(CloseCode::Normal).unwrap();
+                });
+
+                // tell API to send us block events for all chains
                 WasmClientService::subscribe(&out, "chains");
                 WasmClientService::subscribe(&out, "block_events");
+
+                // return the message handler closure that will be called from the message loop
                 let event_handlers = event_handlers.clone();
-                let event_done = event_done.clone();
                 move |msg: Message| {
                     println!("Message: {}", msg);
                     if let Ok(text) = msg.as_text() {
@@ -200,15 +208,21 @@ impl WasmClientService {
                             }
                         }
                     }
-                    let done = *event_done.lock().unwrap();
-                    if done {
-                        return out.close(CloseCode::Normal);
-                    }
                     return Ok(());
                 }
             }).unwrap();
+            println!("Exiting message handler");
         });
+        self.handle.set(Some(handle));
         return Ok(());
+    }
+
+    pub(crate) fn unsubscribe_events(&self) {
+        if let Some(handle) = self.handle.take() {
+            self.close_tx.send(true).unwrap();
+            handle.join().unwrap();
+            self.handle.set(None);
+        }
     }
 
     pub(crate) fn wait_until_request_processed(
@@ -227,25 +241,25 @@ impl WasmClientService {
             .build()
             .unwrap();
         let res = client.get(url).header("Content-Type", "application/json").send();
-        match res {
+        return match res {
             Ok(v) => match v.status() {
                 StatusCode::OK => {
-                    return Ok(());
+                    Ok(())
                 }
                 failed_status_code => {
                     let status_code = failed_status_code.as_u16();
                     match v.text() {
                         Ok(err_msg) => {
-                            return Err(format!("{}: {}", status_code, err_msg));
+                            Err(format!("{}: {}", status_code, err_msg))
                         }
-                        Err(e) => return Err(e.to_string()),
+                        Err(e) => Err(e.to_string()),
                     }
                 }
             },
             Err(e) => {
-                return Err(format!("request failed: {}", e.to_string()));
+                Err(format!("request failed: {}", e.to_string()))
             }
-        }
+        };
     }
 
     fn cache_nonce(&self, key_pair: &KeyPair) -> Result<u64> {

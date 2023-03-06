@@ -3,8 +3,7 @@ package models
 import "github.com/iotaledger/wasp/packages/util"
 
 type GasFeePolicy struct {
-	GasFeeTokenID     string       `json:"gasFeeTokenId" swagger:"desc(The gas fee token id. Empty if base token.),required"`
-	GasPerToken       util.Ratio32 `json:"gasPerToken" swagger:"desc(The gas per token ratio (fee = gas * A/B)),required"`
+	GasPerToken       util.Ratio32 `json:"gasPerToken" swagger:"desc(The gas per token ratio (A/B) (gas/token)),required"`
 	ValidatorFeeShare uint8        `json:"validatorFeeShare" swagger:"desc(The validator fee share.),required"`
 	EVMGasRatio       util.Ratio32 `json:"evmGasRatio" swagger:"desc(The EVM gas ratio (ISC gas = EVM gas * A/B)),required"`
 }

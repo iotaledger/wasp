@@ -24,7 +24,7 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/chainMgr"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
@@ -51,6 +51,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 const (
@@ -355,7 +356,7 @@ func New(
 	//
 	// Connect to the peering network.
 	netRecvPipeInCh := cni.netRecvPipe.In()
-	netAttachID := net.Attach(&netPeeringID, peering.PeerMessageReceiverChain, func(recv *peering.PeerMessageIn) {
+	unhook := net.Attach(&netPeeringID, peering.PeerMessageReceiverChain, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeChainMgr {
 			cni.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
@@ -395,7 +396,7 @@ func New(
 	//
 	// Run the main thread.
 
-	go cni.run(ctx, netAttachID)
+	go cni.run(ctx, unhook)
 	return cni, nil
 }
 
@@ -423,8 +424,9 @@ func (cni *chainNodeImpl) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
 }
 
 //nolint:gocyclo
-func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
-	defer cni.net.Detach(netAttachID)
+func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFunc) {
+	defer util.ExecuteIfNotNil(cleanupFunc)
+
 	recvAliasOutputPipeOutCh := cni.recvAliasOutputPipe.Out()
 	recvTxPublishedPipeOutCh := cni.recvTxPublishedPipe.Out()
 	recvMilestonePipeOutCh := cni.recvMilestonePipe.Out()
@@ -440,7 +442,6 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 			}
 			// needs to wait for state mgr and consensusInst
 			if cni.shutdownCoordinator.CheckNestedDone() {
-				cni.net.Detach(netAttachID)
 				cni.shutdownCoordinator.Done()
 				return
 			}
@@ -549,7 +550,7 @@ func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *is
 	cni.accessLock.Lock()
 	cni.latestConfirmedState = st
 	cni.accessLock.Unlock()
-	l1Commitment, err := state.L1CommitmentFromAliasOutput(till.GetAliasOutput())
+	l1Commitment, err := vmcontext.L1CommitmentFromAliasOutput(till.GetAliasOutput())
 	if err != nil {
 		panic(fmt.Errorf("cannot get L1Commitment from alias output: %w", err))
 	}

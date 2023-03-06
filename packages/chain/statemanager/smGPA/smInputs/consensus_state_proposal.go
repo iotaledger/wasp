@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 type ConsensusStateProposal struct {
@@ -17,7 +18,7 @@ type ConsensusStateProposal struct {
 var _ gpa.Input = &ConsensusStateProposal{}
 
 func NewConsensusStateProposal(ctx context.Context, aliasOutput *isc.AliasOutputWithID) (*ConsensusStateProposal, <-chan interface{}) {
-	commitment, err := state.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
+	commitment, err := vmcontext.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
 	if err != nil {
 		panic("Cannot make L1 commitment from alias output")
 	}

@@ -1,7 +1,6 @@
 package vmcontext
 
 import (
-	"math"
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -128,18 +127,7 @@ func (vmctx *VMContext) GetSenderTokenBalanceForFees() uint64 {
 	if sender == nil {
 		return 0
 	}
-	if isc.IsEmptyNativeTokenID(vmctx.chainInfo.GasFeePolicy.GasFeeTokenID) {
-		// base tokens are used as gas tokens
-		return vmctx.GetBaseTokensBalance(sender)
-	}
-	// native tokens are used for gas fee
-	nativeTokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
-	// to pay for gas chain is configured to use some native token, not base tokens
-	tokensAvailableBig := vmctx.GetNativeTokenBalance(sender, nativeTokenID)
-	if tokensAvailableBig.IsUint64() {
-		return tokensAvailableBig.Uint64()
-	}
-	return math.MaxUint64
+	return vmctx.GetBaseTokensBalance(sender)
 }
 
 func (vmctx *VMContext) requestLookupKey() blocklog.RequestLookupKey {

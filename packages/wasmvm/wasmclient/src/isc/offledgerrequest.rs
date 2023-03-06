@@ -52,7 +52,7 @@ impl OffLedgerRequest {
             entry_point: entry_point.clone(),
             params: params.to_vec(),
             signature_scheme: OffLedgerSignatureScheme::new(&KeyPair::new(&[])),
-            nonce: nonce,
+            nonce,
             allowance: ScAssets::new(&[]),
             gas_budget: MAX_GAS_PER_REQUEST,
         };
