@@ -16,6 +16,10 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
 )
 
+const (
+	StateMetadataSupportedVersion = 0
+)
+
 type StateMetadata struct {
 	L1Commitment   *state.L1Commitment
 	GasFeePolicy   *gas.FeePolicy
@@ -25,6 +29,7 @@ type StateMetadata struct {
 
 func (s *StateMetadata) Bytes() []byte {
 	mu := marshalutil.New()
+	mu.WriteByte(StateMetadataSupportedVersion)
 	mu.WriteUint32(s.SchemaVersion)
 	mu.WriteBytes(s.L1Commitment.Bytes())
 	mu.WriteBytes(s.GasFeePolicy.Bytes())
@@ -37,6 +42,15 @@ func StateMetadataFromBytes(data []byte) (*StateMetadata, error) {
 	ret := &StateMetadata{}
 	mu := marshalutil.New(data)
 	var err error
+
+	version, err := mu.ReadByte()
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse state metadata version, error: %w", err)
+	}
+	if version != StateMetadataSupportedVersion {
+		return nil, fmt.Errorf("unsupported state metadata version: %d", version)
+	}
+
 	ret.SchemaVersion, err = mu.ReadUint32()
 	if err != nil {
 		return nil, err
