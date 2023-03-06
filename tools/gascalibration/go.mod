@@ -47,14 +47,14 @@ require (
 	github.com/holiman/uint256 v1.2.1 // indirect
 	github.com/iancoleman/orderedmap v0.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/iotaledger/hive.go/constraints v0.0.0-20230306144843-79d26328a77c // indirect
-	github.com/iotaledger/hive.go/crypto v0.0.0-20230306144843-79d26328a77c // indirect
-	github.com/iotaledger/hive.go/ds v0.0.0-20230306144843-79d26328a77c // indirect
-	github.com/iotaledger/hive.go/kvstore v0.0.0-20230306144843-79d26328a77c // indirect
-	github.com/iotaledger/hive.go/lo v0.0.0-20230306144843-79d26328a77c // indirect
-	github.com/iotaledger/hive.go/logger v0.0.0-20230306144843-79d26328a77c // indirect
-	github.com/iotaledger/hive.go/runtime v0.0.0-20230306144843-79d26328a77c // indirect
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20230306144843-79d26328a77c // indirect
+	github.com/iotaledger/hive.go/constraints v0.0.0-20230306152651-c96d32e6baec // indirect
+	github.com/iotaledger/hive.go/crypto v0.0.0-20230306152651-c96d32e6baec // indirect
+	github.com/iotaledger/hive.go/ds v0.0.0-20230306152651-c96d32e6baec // indirect
+	github.com/iotaledger/hive.go/kvstore v0.0.0-20230306152651-c96d32e6baec // indirect
+	github.com/iotaledger/hive.go/lo v0.0.0-20230306152651-c96d32e6baec // indirect
+	github.com/iotaledger/hive.go/logger v0.0.0-20230306152651-c96d32e6baec // indirect
+	github.com/iotaledger/hive.go/runtime v0.0.0-20230306152651-c96d32e6baec // indirect
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20230306152651-c96d32e6baec // indirect
 	github.com/iotaledger/hive.go/stringify v0.0.0-20230306144843-79d26328a77c // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.1.0.20230223105330-ef33ea7fe34f // indirect
