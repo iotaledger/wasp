@@ -22,7 +22,8 @@ import {
 } from "@iota/iota.js";
 import { Converter, WriteStream } from "@iota/util.js";
 import type { IotaWallet } from './iota_wallet';
-import { SimpleBufferCursor } from '../../lib/simple_buffer_cursor';
+// eslint-disable-next-line import/no-unresolved
+import { SimpleBufferCursor } from './../../lib/simple_buffer_cursor';
 
 export class SendFundsTransaction {
   private wallet: IotaWallet;
@@ -44,7 +45,6 @@ export class SendFundsTransaction {
     const evmAddressBuffer = new SimpleBufferCursor();
     evmAddressBuffer.writeInt8(3); // EVM address type (3)   
     evmAddressBuffer.writeUint8Array(Converter.hexToBytes(evmAddress.toLowerCase())); // EVM address
-
 
     /* Write contract arguments */
     metadata.writeUInt32LE(2);

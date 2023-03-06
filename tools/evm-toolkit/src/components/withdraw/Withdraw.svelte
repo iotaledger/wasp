@@ -5,64 +5,116 @@
     selectedAccount,
     chainId,
     chainData,
-    defaultEvmStores
-  } from "svelte-web3";
-  import type {Contract} from 'web3-eth-contract';
-  import { hornetAPI } from "../../store";
-  import { waspAddrBinaryFromBech32 } from "../../lib/bech32";
-  import { SingleNodeClient } from "@iota/iota.js";
-  import { gasFee, iscAbi, iscContractAddress } from "./constants";
-  import { hNameFromString } from "../../lib/hname";
-  import { Converter } from "@iota/util.js";
-  import { evmAddressToAgentID } from "../../lib/evm";
+    defaultEvmStores,
+  } from 'svelte-web3';
+  import type { Contract } from 'web3-eth-contract';
+  import { network } from '../../store';
+  import { SingleNodeClient, type INativeToken } from '@iota/iota.js';
+  import { gasFee, iscAbi, iscContractAddress } from './constants';
+  import { hNameFromString } from '../../lib/hname';
+  import { evmAddressToAgentID } from '../../lib/evm';
+  import { getBalanceParameters, withdrawParameters } from './parameters';
+  import { Bech32AddressLength, EVMAddressLength }  from '../../lib/constants';
+    import { INSPECT_MAX_BYTES } from 'buffer';
 
-  let chainID: string;
-  let contract: Contract;
-  let balance = 0;
-  let amountToSend = 0;
+  interface WithdrawState {
+    /**
+     * The current balance of the user
+     */
+    balance: number;
 
-  let addrInput: string = "";
+    /**
+     * The reference to the ISC magic contract used for contract invocations
+     */
+    contract: Contract;
 
-  $: formattedBalance = (balance / 1e6).toFixed(2);
-  $: formattedAmountToSend = (amountToSend / 1e6).toFixed(2);
-  $: canSendFunds = balance > 0 && amountToSend > 0;
-  $: canSetAmountToSend = balance > gasFee + 1;
+    /**
+     * The EVM chain ID
+     */
+    evmChainID: number;
+  }
 
-  console.log(hNameFromString("accounts"))
+  const state: WithdrawState = {
+    balance: 0,
+    contract: undefined,
+    evmChainID: 0,
+  };
+
+  interface WithdrawFormInput {
+    /**
+     * [Form] The address to send funds to
+     */
+    receiverAddress: string;
+
+    /**
+     * [Form] The amount of base tokens to send.
+     */
+    baseTokensToSend: number;
+  }
+
+  const formInput: WithdrawFormInput = {
+    receiverAddress: '',
+    baseTokensToSend: 0,
+  };
+
+  $: formattedBalance = (state.balance / 1e6).toFixed(2);
+  $: formattedAmountToSend = (formInput.baseTokensToSend / 1e6).toFixed(2);
+  $: canSendFunds = state.balance > 0 && 
+    formInput.baseTokensToSend > 0 && 
+    formInput.receiverAddress.length == Bech32AddressLength;
+  $: canSetAmountToSend = state.balance > gasFee + 1;
 
   async function pollBalance() {
     const addressBalance = await $web3.eth.getBalance(
-      defaultEvmStores.$selectedAccount
+      defaultEvmStores.$selectedAccount,
     );
-    balance = Number(BigInt(addressBalance) / BigInt(1e12));
 
-    if (amountToSend > balance) {
-      amountToSend = 0;
+    state.balance = Number(BigInt(addressBalance) / BigInt(1e12));
+
+    if (formInput.baseTokensToSend > state.balance) {
+      formInput.baseTokensToSend = 0;
     }
   }
 
-  async function getNativeTokens() {
+  async function getNativeTokenIDs(): Promise<INativeToken[]> {
     if (!defaultEvmStores.$selectedAccount) {
-      console.log("no account selected");
+      console.log('no account selected');
       return;
     }
 
-    const accountsCoreContract = hNameFromString("accounts");
-    const getBalanceFunc = hNameFromString("balance");
+    const accountsCoreContract = hNameFromString('accounts');
+    const getBalanceFunc = hNameFromString('balance');
+    const agentID = evmAddressToAgentID(defaultEvmStores.$selectedAccount);
 
-    const agentID = evmAddressToAgentID(defaultEvmStores.$selectedAccount)
-    
-    let parameters = {
-      items: [
-        {
-          key: Converter.utf8ToBytes("a"),
-          value: agentID,
-        }
-      ],
-    };
+    let parameters = getBalanceParameters(agentID);
 
-    const result = await contract.methods.callView(accountsCoreContract, getBalanceFunc, parameters).call();
-    console.log(result);
+    const result = await state.contract.methods
+      .callView(accountsCoreContract, getBalanceFunc, parameters)
+      .call();
+
+      console.log(result)
+
+    const nativeTokens = [];
+    for (let item of result.items) {
+      const id = item.key;
+
+      // Ignore base token
+      if (id.length <= 2) {
+        continue;
+      }
+      
+      const amount = BigInt(item.value);
+
+      var nativeToken: INativeToken = {
+        amount: amount.toString(),
+        id: id,
+      };
+
+      nativeTokens.push(nativeToken);      
+    }
+
+    console.log(nativeTokens);
+    return nativeTokens;
   }
 
   function subscribeBalance() {
@@ -74,64 +126,28 @@
 
   async function connectToWallet() {
     await defaultEvmStores.setProvider();
-    chainID = await $web3.eth.getChainId();
-    contract = new $web3.eth.Contract(iscAbi, iscContractAddress, {
+
+    state.evmChainID = await $web3.eth.getChainId();
+    state.contract = new $web3.eth.Contract(iscAbi, iscContractAddress, {
       from: defaultEvmStores.$selectedAccount,
     });
 
     await pollBalance();
-    await getNativeTokens();
-
+    await getNativeTokenIDs();
 
     subscribeBalance();
   }
 
   async function onWithdrawClick() {
     if (!defaultEvmStores.$selectedAccount) {
-      console.log("no account selected");
+      console.log('no account selected');
       return;
     }
 
-    const client = new SingleNodeClient($hornetAPI);
+    const client = new SingleNodeClient($network.apiEndpoint);
+    let parameters = await withdrawParameters(client, formInput.receiverAddress, formInput.baseTokensToSend, gasFee);
 
-    let parameters = [
-      {
-        // Receiver
-        data: await waspAddrBinaryFromBech32(client, addrInput),
-      },
-      {
-        // Fungible Tokens
-        baseTokens: amountToSend - gasFee,
-        tokens: [],
-      },
-      false,
-      {
-        // Metadata
-        targetContract: 0,
-        entrypoint: 0,
-        gasBudget: 0,
-        params: {
-          items: [],
-        },
-        allowance: {
-          nfts: [],
-          baseTokens: 0,
-          tokens: [],
-        },
-      },
-      {
-        // Options
-        timelock: 0,
-        expiration: {
-          time: 0,
-          returnAddress: {
-            data: [],
-          },
-        },
-      },
-    ];
-
-    const result = await contract.methods.send(...parameters).send();
+    const result = await state.contract.methods.send(...parameters).send();
     console.log(result);
   }
 </script>
@@ -145,7 +161,7 @@
     <div class="account_container">
       <div class="chain_container">
         <div>Chain ID</div>
-        <div class="chainid">{$chainId}</div>
+        <div class="chainid">{state.evmChainID}</div>
       </div>
       <div class="balance_container">
         <div>Balance</div>
@@ -158,7 +174,7 @@
       <input
         type="text"
         placeholder="L1 address starting with (rms/tst/...)"
-        bind:value={addrInput}
+        bind:value={formInput.receiverAddress}
       />
     </div>
 
@@ -170,8 +186,8 @@
         type="range"
         disabled={!canSetAmountToSend}
         min="0"
-        max={balance}
-        bind:value={amountToSend}
+        max={state.balance}
+        bind:value={formInput.baseTokensToSend}
       />
     </div>
 
@@ -190,7 +206,7 @@
     flex-direction: column;
   }
 
-  input[type="range"] {
+  input[type='range'] {
     width: 100%;
     padding: 10px 0 0 0;
     margin: 0;

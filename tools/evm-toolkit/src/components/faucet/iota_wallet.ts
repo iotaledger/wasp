@@ -30,7 +30,7 @@ export class IotaWallet {
 
   constructor(apiEndpointUrl: string, faucetEndpointUrl: string) {
     this.faucetEndpointUrl = faucetEndpointUrl;
-    this.client = new SingleNodeClient(apiEndpointUrl);
+    this.client = new SingleNodeClient(apiEndpointUrl, {});
     this.indexer = new IndexerPluginClient(this.client);
   }
 
@@ -78,10 +78,10 @@ export class IotaWallet {
   }
 
   private async getFaucetRequestOutputID(addressBech32: string): Promise<IOutputsResponse> {
-    const maxRetries: number = 20;
+    const maxRetries = 20;
 
     for (let i = 0; i < maxRetries; i++) {
-      let output = await this.indexer.basicOutputs({
+      const output = await this.indexer.basicOutputs({
         addressBech32: addressBech32,
         hasExpiration: false,
         hasStorageDepositReturn: false,
@@ -100,7 +100,7 @@ export class IotaWallet {
   }
 
   private async getBalance(outputId: string): Promise<bigint> {
-    let output = await this.client.output(outputId);
+    const output = await this.client.output(outputId);
 
     if (output != null) {
       return BigInt(output.output.amount);
@@ -110,7 +110,7 @@ export class IotaWallet {
   }
 
   public async requestFunds(): Promise<bigint> {
-    let addressBech32 = Bech32Helper.toBech32(ED25519_ADDRESS_TYPE, this.address.toAddress(), this.nodeInfo.protocol.bech32Hrp);
+    const addressBech32 = Bech32Helper.toBech32(ED25519_ADDRESS_TYPE, this.address.toAddress(), this.nodeInfo.protocol.bech32Hrp);
 
     await this.sendFaucetRequest(addressBech32);
     const output = await this.getFaucetRequestOutputID(addressBech32);

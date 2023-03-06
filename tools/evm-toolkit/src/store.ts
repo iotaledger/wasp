@@ -1,3 +1,4 @@
 import { writable } from 'svelte/store'
+import type { NetworkOption } from './lib/network_option'
 
-export const hornetAPI = writable('')
+export const network = writable<NetworkOption>();

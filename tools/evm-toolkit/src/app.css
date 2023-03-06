@@ -55,7 +55,7 @@ button:disabled {
   margin: 15px;
 }
 
-input[type=text],
+input[type='text'],
 select {
   background: #1b2d4b;
   box-sizing: border-box;
