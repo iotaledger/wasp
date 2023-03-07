@@ -27,7 +27,7 @@ import (
 const version = "1.0.0"
 
 var (
-	flagVersion = flag.Bool("version", false, "show schema tool version")
+	flagBuild   = flag.Bool("build", false, "build wasm target")
 	flagClean   = flag.Bool("clean", false, "clean up (re-)generated files")
 	flagCore    = flag.Bool("core", false, "generate core contract interface")
 	flagForce   = flag.Bool("force", false, "force code generation")
@@ -35,6 +35,7 @@ var (
 	flagInit    = flag.String("init", "", "generate new schema file for smart contract named <string>")
 	flagRust    = flag.Bool("rs", false, "generate Rust code")
 	flagTs      = flag.Bool("ts", false, "generate TypScript code")
+	flagVersion = flag.Bool("version", false, "show schema tool version")
 )
 
 func init() {
@@ -82,7 +83,11 @@ func main() {
 		return
 	}
 
-	flag.Usage()
+	// No schema file in current folder, walk all subfolders to see if there are
+	// schema files and do what's needed there instead.
+	if !walkSubFolders() {
+		flag.Usage()
+	}
 }
 
 func generateCoreInterfaces() {
@@ -140,7 +145,7 @@ func generateSchema(file *os.File) error {
 	// comments are still preserved during generation
 	if *flagGo {
 		g := generator.NewGoGenerator(s)
-		err = g.Generate(g, *flagClean)
+		err = g.Generate(g, *flagBuild, *flagClean)
 		if err != nil {
 			return err
 		}
@@ -148,7 +153,7 @@ func generateSchema(file *os.File) error {
 
 	if *flagRust {
 		g := generator.NewRustGenerator(s)
-		err = g.Generate(g, *flagClean)
+		err = g.Generate(g, *flagBuild, *flagClean)
 		if err != nil {
 			return err
 		}
@@ -156,7 +161,7 @@ func generateSchema(file *os.File) error {
 
 	if *flagTs {
 		g := generator.NewTypeScriptGenerator(s, "ts")
-		err = g.Generate(g, *flagClean)
+		err = g.Generate(g, *flagBuild, *flagClean)
 		if err != nil {
 			return err
 		}
@@ -164,7 +169,7 @@ func generateSchema(file *os.File) error {
 			// note that we have a separate WasmLib for AssemblyScript
 			// core contracts are identical except for package.json
 			g = generator.NewTypeScriptGenerator(s, "as")
-			err = g.Generate(g, *flagClean)
+			err = g.Generate(g, false, *flagClean)
 			if err != nil {
 				return err
 			}
@@ -225,7 +230,13 @@ func generateSchemaNew() error {
 }
 
 func loadSchema(file *os.File) (s *model.Schema, err error) {
-	fmt.Println("loading " + file.Name())
+	name := file.Name()
+	if name == "schema.yaml" {
+		cwd, _ := os.Getwd()
+		folder := filepath.Base(cwd)
+		name = folder + "/" + name
+	}
+	fmt.Println("loading " + name)
 	fileByteArray, _ := io.ReadAll(file)
 	schemaDef := model.NewSchemaDef()
 	err = wasp_yaml.Unmarshal(fileByteArray, schemaDef)
@@ -239,6 +250,44 @@ func loadSchema(file *os.File) (s *model.Schema, err error) {
 		return nil, err
 	}
 	return s, nil
+}
+
+func walkSubFolders() bool {
+	generated := false
+	err := filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.Name() != "schema.yaml" {
+			return nil
+		}
+		cwd, err := os.Getwd()
+		if err != nil {
+			log.Panic(err)
+		}
+		defer func() { _ = os.Chdir(cwd) }()
+
+		sub := path[0 : len(path)-len(d.Name())-1]
+		err = os.Chdir(sub)
+		if err != nil {
+			return err
+		}
+		file, err := os.Open(d.Name())
+		if err != nil {
+			return err
+		}
+		defer func() { _ = file.Close() }()
+		generated = true
+		err = generator.FindModulePath()
+		if err != nil {
+			return err
+		}
+		return generateSchema(file)
+	})
+	if err != nil {
+		log.Panic(err)
+	}
+	return generated
 }
 
 func WriteYAMLSchema(schemaDef *model.SchemaDef) error {

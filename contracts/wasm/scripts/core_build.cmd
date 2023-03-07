@@ -3,7 +3,7 @@
 go install ../../../tools/schema
 
 cd ..\..\..\packages\wasmvm\wasmlib
-schema -core -go -rs -ts -force
+schema -go -rs -ts -force -core
 
 cd ..\..\..\contracts\wasm
 del /s /q d:\work\node_modules\wasmlib\*.* >nul:
