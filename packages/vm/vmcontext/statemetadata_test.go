@@ -27,7 +27,7 @@ func TestStateMetadataSerialization(t *testing.T) {
 			ValidatorFeeShare: 5,
 		},
 		SchemaVersion:  6,
-		CustomMetadata: "foo",
+		CustomMetadata: []byte("foo"),
 	}
 	data := s.Bytes()
 	s2, err := vmcontext.StateMetadataFromBytes(data)

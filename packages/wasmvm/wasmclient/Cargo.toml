@@ -16,8 +16,7 @@ default = ["console_error_panic_hook"]
 [dependencies]
 iota-client = { git = "https://github.com/iotaledger/iota.rs", branch = "develop" }
 iota-crypto = { git = "https://github.com/iotaledger/crypto.rs", branch = "dev", default-features = false, features = [ "std", "chacha", "blake2b", "ed25519", "random", "slip10", "bip39", "bip39-en" ] }
-wasmlib = { path = "../wasmlib" }
-#wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "develop" }
+wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "develop" }
 wasm-bindgen = "0.2.84"
 serde = { version = "1.0.152", features = ["derive"] }
 serde_json = "1.0.94"

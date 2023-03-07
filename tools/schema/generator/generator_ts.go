@@ -4,6 +4,7 @@
 package generator
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/iotaledger/wasp/tools/schema/generator/tstemplates"
@@ -29,11 +30,23 @@ func NewTypeScriptGenerator(s *model.Schema, rootFolder string) *TypeScriptGener
 	return g
 }
 
+func (g *TypeScriptGenerator) Build() error {
+	err := os.MkdirAll("ts/pkg", 0o755)
+	if err != nil {
+		return err
+	}
+	wasm := g.s.PackageName + "_ts.wasm"
+	fmt.Printf("building %s\n", wasm)
+	args := "asc ts/main.ts --lib d:/work/node_modules -O --outFile ts/pkg/" + wasm
+	return g.build("npx", args)
+}
+
 func (g *TypeScriptGenerator) Cleanup() {
 	g.cleanCommonFiles()
 
 	// now clean up language-specific files
-	g.cleanSourceFile("index")
+	g.cleanSourceFileIfSame(g.createImplIndex)
+	g.cleanSourceFileIfSame(g.createImplTsConfig)
 	_ = os.Remove(g.folder + "../" + tsconfigJSON)
 }
 
@@ -42,15 +55,23 @@ func (g *TypeScriptGenerator) GenerateImplementation() error {
 	if err != nil {
 		return err
 	}
-	err = g.createSourceFile("index", true, "indexImpl")
+	err = g.createImplIndex()
 	if err != nil {
 		return err
 	}
-	err = g.generateConfig("", tsconfigJSON)
+	err = g.createImplTsConfig()
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (g *TypeScriptGenerator) createImplTsConfig() error {
+	return g.generateConfig("", tsconfigJSON)
+}
+
+func (g *TypeScriptGenerator) createImplIndex() error {
+	return g.createSourceFile("index", true, "indexImpl")
 }
 
 func (g *TypeScriptGenerator) GenerateInterface() error {

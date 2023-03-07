@@ -4,12 +4,16 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 // By default each token pays for 100 units of gas
 var DefaultGasPerToken = util.Ratio32{A: 100, B: 1}
+
+// GasPerToken + ValidatorFeeShare + EVMGasRatio
+const GasPolicyByteSize = util.RatioByteSize + serializer.OneByte + util.RatioByteSize
 
 type FeePolicy struct {
 	// GasPerToken specifies how many gas units are paid for each token.
@@ -92,19 +96,19 @@ func FeePolicyFromMarshalUtil(mu *marshalutil.MarshalUtil) (*FeePolicy, error) {
 	ret := &FeePolicy{}
 	var err error
 	if ret.GasPerToken, err = ReadRatio32(mu); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to parse GasPerToken, error: %w", err)
 	}
 	if ret.ValidatorFeeShare, err = mu.ReadUint8(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to parse ValidatorFeeShare, error: %w", err)
 	}
 	if ret.EVMGasRatio, err = ReadRatio32(mu); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to parse EVMGasRatio, error: %w", err)
 	}
 	return ret, nil
 }
 
 func ReadRatio32(mu *marshalutil.MarshalUtil) (ret util.Ratio32, err error) {
-	b, err := mu.ReadBytes(8)
+	b, err := mu.ReadBytes(util.RatioByteSize)
 	if err != nil {
 		return ret, err
 	}

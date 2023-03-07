@@ -7,11 +7,12 @@ setup.
 
 ### Starting
 
-**Note** You need to build the wasp container using `build_container.sh` if
-you're on Mac/Linux or `build_container.cmd` on windows so that the `wasp`
-version is properly set.
+Run `docker-compose pull` to fetch the dependencies.
 
 Run `docker-compose up` to start the setup.
+
+After startup, you should be able to see the wasp dashboard on:
+http://localhost/wasp/dashboard/
 
 ### Stopping
 
@@ -25,12 +26,9 @@ You can also shut down the setup with `docker-compose down` in a new terminal.
 Run `docker-compose down --volumes` to shut down the nodes and to remove all
 databases.
 
-### Recreation
+### Re-build
 
-If you made changes to the Wasp code and want to use it inside the setup, you
-need to recreate the Wasp image.
-
-Run `docker-compose build`
+If you made changes to the Wasp code and want to use it inside the setup, you can re-build the Wasp image using `build_container.sh` or `build_container.cmd`.
 
 ## Ports
 
@@ -46,14 +44,9 @@ The nodes will then be reachable under these ports:
 
 ## Wasp-cli setup
 
+Download the wasp cli from the [releases page](https://github.com/iotaledger/wasp/releases)
+
 To configure a new wasp-cli you can use the following commands:
-
-:::note
-
-You can either use a wasp-cli installed on your system, or use the one built-in
-to the wasp docker container by doing: `docker exec  wasp /app/wasp-cli init`
-
-:::
 
 ```shell
 wasp-cli init
@@ -66,7 +59,7 @@ To create a chain:
 
 ```shell
 wasp-cli request-funds
-wasp-cli chain deploy --nodes=0 --quorum=1 --chain=testchain --description="Test Chain"
+wasp-cli chain deploy --chain=testchain
 ```
 
 After a chain has been created, the EVM JSON-RPC can be accessed via:
