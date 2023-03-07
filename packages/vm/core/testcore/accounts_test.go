@@ -1150,11 +1150,12 @@ func TestTransferNFTAllowance(t *testing.T) {
 	require.Regexp(t, "NFTID not found", err.Error())
 }
 
-func TestDepositNFT(t *testing.T) {
+func TestDepositNFTWithMinStorageDeposit(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: false, Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 
 	// transfer assets to the chain so that it has enough for SD
+	// TODO: removing this causes the VM to crash
 	ch.TransferAllowanceTo(isc.NewAssetsBaseTokens(1*isc.Million), isc.NewContractAgentID(ch.ChainID, 0), ch.OriginatorPrivateKey)
 
 	issuerWallet, issuerAddress := env.NewKeyPairWithFunds()
@@ -1165,10 +1166,9 @@ func TestDepositNFT(t *testing.T) {
 		WithNFT(nft).
 		WithMaxAffordableGasBudget().
 		WithSender(nft.ID.ToAddress())
-	sd, err := ch.EstimateNeededStorageDeposit(req, issuerWallet)
-	require.NoError(t, err)
+	req.AddBaseTokens(ch.EstimateNeededStorageDeposit(req, issuerWallet))
 
-	_, err = ch.PostRequestSync(req.AddBaseTokens(sd), issuerWallet)
+	_, err = ch.PostRequestSync(req, issuerWallet)
 	require.ErrorContains(t, err, "request has been skipped")
 }
 
