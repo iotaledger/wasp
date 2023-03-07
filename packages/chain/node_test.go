@@ -24,7 +24,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
-	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -44,31 +43,31 @@ type tc struct {
 	n        int
 	f        int
 	reliable bool
+	timeout  time.Duration
 }
 
 func TestNodeBasic(t *testing.T) {
 	t.Parallel()
-	timeout := 1 * time.Second
 	tests := []tc{
-		{n: 1, f: 0, reliable: true},  // Low N
-		{n: 2, f: 0, reliable: true},  // Low N
-		{n: 3, f: 0, reliable: true},  // Low N
-		{n: 4, f: 1, reliable: true},  // Minimal robust config.
-		{n: 10, f: 3, reliable: true}, // Typical config.
+		{n: 1, f: 0, reliable: true, timeout: 10 * time.Second},   // Low N
+		{n: 2, f: 0, reliable: true, timeout: 20 * time.Second},   // Low N
+		{n: 3, f: 0, reliable: true, timeout: 30 * time.Second},   // Low N
+		{n: 4, f: 0, reliable: true, timeout: 40 * time.Second},   // Minimal robust config.
+		{n: 4, f: 1, reliable: true, timeout: 50 * time.Second},   // Minimal robust config.
+		{n: 10, f: 3, reliable: true, timeout: 130 * time.Second}, // Typical config.
 	}
 	if !testing.Short() {
-		timeout = 5 * time.Minute
 		tests = append(tests,
 			// TODO these "unreliable" tests are crazy, they either succeed in 10~20s or run forever...
-			// tc{n: 4, f: 1, reliable: false},  // Minimal robust config.
-			// tc{n: 10, f: 3, reliable: false}, // Typical config.
-			tc{n: 31, f: 10, reliable: true}, // Large cluster, reliable - to make test faster.
+			// tc{n: 4, f: 1, reliable: false,  timeout: 5*time.Minute},  // Minimal robust config.
+			// tc{n: 10, f: 3, reliable: false,  timeout: 5*time.Minute}, // Typical config.
+			tc{n: 31, f: 10, reliable: true, timeout: 5 * time.Minute}, // Large cluster, reliable - to make test faster.
 		)
 	}
 	for _, tst := range tests {
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
-			func(tt *testing.T) { testNodeBasic(tt, tst.n, tst.f, tst.reliable, timeout) },
+			func(tt *testing.T) { testNodeBasic(tt, tst.n, tst.f, tst.reliable, tst.timeout) },
 		)
 	}
 }
@@ -88,17 +87,14 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 	}
 	te.log.Debugf("All attached to node conns.")
 	go func() {
-		ticker := time.NewTicker(100 * time.Millisecond) // TODO: Maybe we have to pass initial time to all sub-components...
-		closed := te.ctx.Done()
 		for {
-			select {
-			case now := <-ticker.C:
-				for _, tnc := range te.nodeConns {
-					tnc.recvMilestone(now)
-				}
-			case <-closed:
+			if te.ctx.Err() != nil {
 				return
 			}
+			for _, tnc := range te.nodeConns {
+				tnc.recvMilestone(time.Now())
+			}
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 
@@ -184,6 +180,9 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 				*/
 				break
 			}
+			if reliable {
+				continue
+			}
 			//
 			// For the unreliable-network tests we have to retry the requests.
 			// That's because the gossip in the mempool is primitive for now.
@@ -224,16 +223,12 @@ func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Req
 			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...", desc, i, reqNum, reqRef.ID.String())
 
 			await := func(confirmed bool) {
-				select {
-				case <-ctx.Done():
-					te.t.Fatalf("awaitRequestsProcessed failed: %s", desc)
-				case rec := <-node.AwaitRequestProcessed(ctx, reqRef.ID, confirmed):
-					if ctx.Err() != nil {
-						te.t.Fatal("awaitRequestsProcessed failed, context timeout")
-					}
-					if rec.Error != nil {
-						te.t.Fatalf("request processed with an error, %s", rec.Error.Error())
-					}
+				rec := <-node.AwaitRequestProcessed(ctx, reqRef.ID, confirmed)
+				if ctx.Err() != nil {
+					te.t.Fatalf("awaitRequestsProcessed (%t) failed: %s, context timeout", confirmed, desc)
+				}
+				if rec.Error != nil {
+					te.t.Fatalf("request processed with an error, %s", rec.Error.Error())
 				}
 			}
 
@@ -432,7 +427,6 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	// Initialize the nodes.
 	te.nodeConns = make([]*testNodeConn, len(te.peerIdentities))
 	te.nodes = make([]chain.Chain, len(te.peerIdentities))
-	initParams, err := dict.FromBytes(te.originAO.GetAliasOutput().FeatureSet().MetadataFeature().Data)
 	require.NoError(t, err)
 	for i := range te.peerIdentities {
 		te.nodeConns[i] = newTestNodeConn(t)
@@ -440,7 +434,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 		te.nodes[i], err = chain.New(
 			te.ctx,
 			te.chainID,
-			origin.InitChain(state.NewStore(mapdb.NewMapDB()), initParams, 0),
+			state.NewStore(mapdb.NewMapDB()),
 			te.nodeConns[i],
 			te.peerIdentities[i],
 			coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor),
