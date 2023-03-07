@@ -109,7 +109,6 @@ func nativeTokenOutputStorageDeposit() iotago.Output {
 		},
 		nil,
 		isc.SendOptions{},
-		true,
 	)
 }
 
@@ -127,7 +126,6 @@ func nftOutputStorageDeposit() iotago.Output {
 		},
 		nil,
 		isc.SendOptions{},
-		true,
 	)
 	return NftOutputFromBasicOutput(basicOut, &isc.NFT{
 		ID:       iotago.NFTID{0},

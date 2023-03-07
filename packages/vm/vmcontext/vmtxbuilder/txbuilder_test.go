@@ -37,13 +37,13 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 			NativeTokens: iotago.NativeTokens{{ID: id, Amount: big.NewInt(int64(amountNative))}},
 		}
 	}
-	basicOutput := transaction.MakeBasicOutput(
+	basicOutput := transaction.AdjustToMinimumStorageDeposit(transaction.MakeBasicOutput(
 		txb.anchorOutput.AliasID.ToAddress(),
 		nil,
 		assets,
 		nil,
 		isc.SendOptions{},
-	)
+	))
 	if len(addBaseTokensToStorageDepositMinimum) > 0 {
 		basicOutput.Amount += addBaseTokensToStorageDepositMinimum[0]
 	}
@@ -629,25 +629,25 @@ func TestStorageDeposit(t *testing.T) {
 	})
 	t.Run("adjusts the output amount to the correct storage deposit when needed", func(t *testing.T) {
 		assets := isc.NewEmptyAssets()
-		out := transaction.MakeBasicOutput(
+		out := transaction.AdjustToMinimumStorageDeposit(transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
 			&reqMetadata,
 			isc.SendOptions{},
-		)
+		))
 		expected := parameters.L1().Protocol.RentStructure.MinRent(out)
 		require.Equal(t, out.Deposit(), expected)
 	})
 	t.Run("keeps the same amount of base tokens when enough for storage deposit cost", func(t *testing.T) {
 		assets := isc.NewAssets(10000, nil)
-		out := transaction.MakeBasicOutput(
+		out := transaction.AdjustToMinimumStorageDeposit(transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
 			&reqMetadata,
 			isc.SendOptions{},
-		)
+		))
 		require.GreaterOrEqual(t, out.Deposit(), out.VBytes(&parameters.L1().Protocol.RentStructure, nil))
 	})
 }
@@ -744,13 +744,13 @@ func TestSerDe(t *testing.T) {
 			GasBudget:      0,
 		}
 		assets := isc.NewEmptyAssets()
-		out := transaction.MakeBasicOutput(
+		out := transaction.AdjustToMinimumStorageDeposit(transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
 			&reqMetadata,
 			isc.SendOptions{},
-		)
+		))
 		data, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
 		outBack := &iotago.BasicOutput{}

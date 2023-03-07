@@ -40,8 +40,10 @@ func NewTransferTransaction(params NewTransferTransactionParams) (*iotago.Transa
 		params.FungibleTokens,
 		nil,
 		params.SendOptions,
-		params.DisableAutoAdjustStorageDeposit,
 	)
+	if !params.DisableAutoAdjustStorageDeposit {
+		output = AdjustToMinimumStorageDeposit(output)
+	}
 
 	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(output)
 	if output.Deposit() < storageDeposit {
@@ -113,10 +115,12 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			GasBudget:      req.Metadata.GasBudget,
 		},
 		req.Options,
-		par.DisableAutoAdjustStorageDeposit,
 	)
 	if par.NFT != nil {
 		out = NftOutputFromBasicOutput(out.(*iotago.BasicOutput), par.NFT)
+	}
+	if !par.DisableAutoAdjustStorageDeposit {
+		out = AdjustToMinimumStorageDeposit(out)
 	}
 
 	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(out)
