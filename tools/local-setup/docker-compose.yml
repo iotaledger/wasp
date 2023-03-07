@@ -1,6 +1,5 @@
 version: "3.9"
 services:
-
   #####################################################
   # Reverse Proxy (needed to rewrite dashboard route) #
   #####################################################
@@ -18,7 +17,7 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
   ###############
-  # HORNET nest #                                         
+  # HORNET nest #
   ###############
 
   hornet-nest:
@@ -65,23 +64,23 @@ services:
       - ALL
 
   ########
-  # WASP #                                         
+  # WASP #
   ########
 
   wasp:
     container_name: wasp
     image: iotaledger/wasp:latest
+
     build:
       context: ../../
       dockerfile: Dockerfile.noncached
       args:
-        BUILD_TAGS: "${BUILD_TAGS:-rocksdb}"
         BUILD_LD_FLAGS: "${BUILD_LD_FLAGS:--X=github.com/iotaledger/wasp/core/app.Version=v0.0.0-testing}"
     ulimits:
       nofile:
         soft: 16384
         hard: 16384
-    restart: on-failure:10
+    restart: on-failure:1
     stop_grace_period: 5m
     depends_on:
       traefik:
