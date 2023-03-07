@@ -1,8 +1,9 @@
 #!/bin/bash
+contracts_path=$(git rev-parse --show-toplevel)/contracts/wasm
 root_path=$(git rev-parse --show-toplevel)/contracts/wasm/scripts
 bash $root_path/core_build.sh
-bash $root_path/schema_all.sh -force
-bash $root_path/go_all.sh
-bash $root_path/ts_all.sh
-bash $root_path/rust_all.sh
+cd $contracts_path
+schema -go -rs -ts -force
+schema -go -rs -ts -build
+cd ../..
 bash $root_path/update_hardcoded.sh

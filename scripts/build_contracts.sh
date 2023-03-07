@@ -4,7 +4,7 @@ PARENT_DIR="$( builtin cd ${CURRENT_DIR}/.. >/dev/null 2>&1 ; pwd -P )"
 cd ${PARENT_DIR}
 
 cd contracts/wasm/scripts
-./cleanup_all.sh
+./cleanup.sh
 ./all_build.sh
 ./update_hardcoded.sh
 
