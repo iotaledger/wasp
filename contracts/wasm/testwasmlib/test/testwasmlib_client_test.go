@@ -13,7 +13,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
@@ -124,9 +123,7 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 	cfgWaspAPI := cfgWasp["0"].(string)
 
 	// we'll use the seed keypair to sign requests
-	seedBytes, err := iotago.DecodeHex(cfgSeed)
-	require.NoError(t, err)
-	seed := cryptolib.NewSeedFromBytes(seedBytes)
+	seed := cryptolib.NewSeedFromBytes(wasmtypes.BytesFromString(cfgSeed))
 	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(0))
 
 	return newClient(t, wasmclient.NewWasmClientService(cfgWaspAPI, chainID), wallet)
@@ -145,6 +142,7 @@ func newClient(t solo.TestContext, svcClient wasmclient.IClientService, wallet *
 	ctx := wasmclient.NewWasmClientContext(svcClient, testwasmlib.ScName)
 	require.NoError(t, ctx.Err)
 	ctx.SignRequests(wallet)
+	require.NoError(t, ctx.Err)
 	return ctx
 }
 
