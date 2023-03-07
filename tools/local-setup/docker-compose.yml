@@ -80,7 +80,7 @@ services:
       nofile:
         soft: 16384
         hard: 16384
-    restart: on-failure:10
+    restart: on-failure:1
     stop_grace_period: 5m
     depends_on:
       traefik:
