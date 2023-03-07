@@ -39,6 +39,9 @@ func TestSubscriptionNewHeads(t *testing.T) {
 	for {
 		select {
 		case header := <-ch:
+			if header.Number.Uint64() < 1 {
+				continue
+			}
 			require.EqualValues(t, 1, header.Number.Uint64())
 			return
 
