@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/governance/governanceimpl"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
@@ -282,9 +283,21 @@ func TestCustomL1Metadata(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	ch := env.NewChain()
 
-	// set custom metadata
-	customMetadata := "http://foobar.com"
+	// set max valid size custom metadata
 	_, err := ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetCustomMetadata.Name,
+			governance.ParamCustomMetadata,
+			[]byte(strings.Repeat("9", governanceimpl.MaxCustomMetadataLength)),
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	// set custom metadata
+	customMetadata := []byte("http://foobar.com")
+	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
 			governance.Contract.Name,
 			governance.FuncSetCustomMetadata.Name,
@@ -295,6 +308,18 @@ func TestCustomL1Metadata(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	// set invalid custom metadata
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetCustomMetadata.Name,
+			governance.ParamCustomMetadata,
+			[]byte(strings.Repeat("9", governanceimpl.MaxCustomMetadataLength+1)),
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.Error(t, err)
+
 	// assert metadata is correct on view call
 	res, err := ch.CallView(
 		governance.Contract.Name,
@@ -302,13 +327,13 @@ func TestCustomL1Metadata(t *testing.T) {
 	)
 	require.NoError(t, err)
 	resMetadata := res.MustGet(governance.ParamCustomMetadata)
-	require.Equal(t, customMetadata, string(resMetadata))
+	require.Equal(t, customMetadata, resMetadata)
 
 	// assert metadata is correct on L1 alias output
 	ao, _ := ch.LatestAliasOutput()
 	sm, err := vmcontext.StateMetadataFromBytes(ao.GetStateMetadata())
 	require.NoError(t, err)
-	require.Equal(t, sm.CustomMetadata, customMetadata)
+	require.Equal(t, customMetadata, sm.CustomMetadata)
 	require.True(t, reflect.DeepEqual(sm.GasFeePolicy, gas.DefaultFeePolicy()))
 
 	// try changing the gas policy
@@ -338,7 +363,7 @@ func TestCustomL1Metadata(t *testing.T) {
 	ao, _ = ch.LatestAliasOutput()
 	sm, err = vmcontext.StateMetadataFromBytes(ao.GetStateMetadata())
 	require.NoError(t, err)
-	require.Equal(t, sm.CustomMetadata, customMetadata)
+	require.Equal(t, customMetadata, sm.CustomMetadata)
 	require.True(t, reflect.DeepEqual(sm.GasFeePolicy, newFeePolicy))
 }
 
