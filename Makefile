@@ -17,8 +17,7 @@ INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 all: build-lint
 
 wasm:
-	go install tools/schema
-	cd contracts/wasm && schema -go -rs -ts
+	bash contracts/wasm/scripts/schema_all.sh
 
 compile-solidity:
 ifdef SKIP_SOLIDITY
