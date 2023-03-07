@@ -367,7 +367,7 @@ func TestISCNFTData(t *testing.T) {
 	// mint an NFT and send it to the chain
 	issuerWallet, issuerAddress := env.solo.NewKeyPairWithFunds()
 	metadata := []byte("foobar")
-	nft, _, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, []byte("foobar"))
+	nft, _, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
 	require.NoError(t, err)
 	_, err = env.soloChain.PostRequestSync(
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).

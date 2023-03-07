@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/trie"
@@ -234,15 +235,31 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 	if L1BaseTokens == 0 {
 		return nil, errors.New("PostRequestSync - Signer doesn't own any base tokens on L1")
 	}
-	addr := keyPair.Address()
-	allOuts, allOutIDs := ch.Env.utxoDB.GetUnspentOutputs(addr)
 
+	tx, err := transaction.NewRequestTransaction(ch.requestTransactionParams(req, keyPair))
+	if err != nil {
+		return nil, err
+	}
+
+	if tx.Essence.Outputs[0].Deposit() == 0 {
+		return nil, errors.New("createRequestTx: amount == 0. Consider: solo.InitOptions{AutoAdjustStorageDeposit: true}")
+	}
+	return tx, err
+}
+
+func (ch *Chain) requestTransactionParams(req *CallParams, keyPair *cryptolib.KeyPair) transaction.NewRequestTransactionParams {
+	if keyPair == nil {
+		keyPair = ch.OriginatorPrivateKey
+	}
 	sender := req.sender
 	if sender == nil {
 		sender = keyPair.Address()
 	}
 
-	tx, err := transaction.NewRequestTransaction(transaction.NewRequestTransactionParams{
+	addr := keyPair.Address()
+	allOuts, allOutIDs := ch.Env.utxoDB.GetUnspentOutputs(addr)
+
+	return transaction.NewRequestTransactionParams{
 		SenderKeyPair:    keyPair,
 		SenderAddress:    sender,
 		UnspentOutputs:   allOuts,
@@ -261,15 +278,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 		},
 		NFT:                             req.nft,
 		DisableAutoAdjustStorageDeposit: ch.Env.disableAutoAdjustStorageDeposit,
-	})
-	if err != nil {
-		return nil, err
 	}
-
-	if tx.Essence.Outputs[0].Deposit() == 0 {
-		return nil, errors.New("createRequestTx: amount == 0. Consider: solo.InitOptions{AutoAdjustStorageDeposit: true}")
-	}
-	return tx, err
 }
 
 // requestFromParams creates an on-ledger request without posting the transaction. It is intended
@@ -414,17 +423,19 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 // EstimateNeededStorageDeposit estimates the amount of base tokens that will be
 // needed to add to the request (if any) in order to cover for the storage
 // deposit.
-func (ch *Chain) EstimateNeededStorageDeposit(req *CallParams, keyPair *cryptolib.KeyPair) (uint64, error) {
+func (ch *Chain) EstimateNeededStorageDeposit(req *CallParams, keyPair *cryptolib.KeyPair) uint64 {
+	out := transaction.MakeRequestTransactionOutput(ch.requestTransactionParams(req, keyPair))
+	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(out)
+
 	reqDeposit := uint64(0)
 	if req.ftokens != nil {
 		reqDeposit = req.ftokens.BaseTokens
 	}
-	tx, err := ch.createRequestTx(req, keyPair)
-	if err != nil {
-		return 0, err
+
+	if reqDeposit >= storageDeposit {
+		return 0
 	}
-	require.GreaterOrEqual(ch.Env.T, tx.Essence.Outputs[0].Deposit(), reqDeposit)
-	return tx.Essence.Outputs[0].Deposit() - reqDeposit, nil
+	return storageDeposit - reqDeposit
 }
 
 func (ch *Chain) ResolveVMError(e *isc.UnresolvedVMError) *isc.VMError {
