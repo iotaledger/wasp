@@ -40,8 +40,10 @@ func NewTransferTransaction(params NewTransferTransactionParams) (*iotago.Transa
 		params.FungibleTokens,
 		nil,
 		params.SendOptions,
-		params.DisableAutoAdjustStorageDeposit,
 	)
+	if !params.DisableAutoAdjustStorageDeposit {
+		output = AdjustToMinimumStorageDeposit(output)
+	}
 
 	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(output)
 	if output.Deposit() < storageDeposit {
@@ -90,33 +92,9 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	sumTokensOut := make(map[iotago.NativeTokenID]*big.Int)
 	sumNFTsOut := make(map[iotago.NFTID]bool)
 
-	req := par.Request
-
-	// create outputs, sum totals needed
-	assets := req.Assets
-	if assets == nil {
-		// if assets not specified, the minimum storage deposit will be adjusted by vmtxbuilder.MakeBasicOutput
-		assets = &isc.Assets{}
-	}
-	var out iotago.Output
-	// will adjust to minimum storage deposit
-	out = MakeBasicOutput(
-		req.TargetAddress,
-		par.SenderAddress,
-		assets,
-		&isc.RequestMetadata{
-			SenderContract: 0,
-			TargetContract: req.Metadata.TargetContract,
-			EntryPoint:     req.Metadata.EntryPoint,
-			Params:         req.Metadata.Params,
-			Allowance:      req.Metadata.Allowance,
-			GasBudget:      req.Metadata.GasBudget,
-		},
-		req.Options,
-		par.DisableAutoAdjustStorageDeposit,
-	)
-	if par.NFT != nil {
-		out = NftOutputFromBasicOutput(out.(*iotago.BasicOutput), par.NFT)
+	out := MakeRequestTransactionOutput(par)
+	if !par.DisableAutoAdjustStorageDeposit {
+		out = AdjustToMinimumStorageDeposit(out)
 	}
 
 	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(out)
@@ -144,6 +122,35 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 
 	inputsCommitment := inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment()
 	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.SenderKeyPair, parameters.L1().Protocol.NetworkID())
+}
+
+func MakeRequestTransactionOutput(par NewRequestTransactionParams) iotago.Output {
+	req := par.Request
+
+	assets := req.Assets
+	if assets == nil {
+		assets = isc.NewEmptyAssets()
+	}
+
+	var out iotago.Output
+	out = MakeBasicOutput(
+		req.TargetAddress,
+		par.SenderAddress,
+		assets,
+		&isc.RequestMetadata{
+			SenderContract: 0,
+			TargetContract: req.Metadata.TargetContract,
+			EntryPoint:     req.Metadata.EntryPoint,
+			Params:         req.Metadata.Params,
+			Allowance:      req.Metadata.Allowance,
+			GasBudget:      req.Metadata.GasBudget,
+		},
+		req.Options,
+	)
+	if par.NFT != nil {
+		out = NftOutputFromBasicOutput(out.(*iotago.BasicOutput), par.NFT)
+	}
+	return out
 }
 
 func outputMatchesSendAsAddress(output iotago.Output, outputID iotago.OutputID, address iotago.Address) bool {

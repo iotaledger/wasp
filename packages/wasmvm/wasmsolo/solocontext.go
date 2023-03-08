@@ -380,6 +380,27 @@ func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtyp
 	return cvt.ScHname(isc.Hn(ctx.scName))
 }
 
+// MintNFT tells SoloContext to mint a new NFT issued/owned by the specified agent
+// note that SoloContext will cache the NFT data to be able to use it
+// in Post()s that go through the *SAME* SoloContext
+func (ctx *SoloContext) MintNFT(agent *SoloAgent, metadata []byte) wasmtypes.ScNftID {
+	addr, ok := isc.AddressFromAgentID(agent.AgentID())
+	if !ok {
+		ctx.Err = errors.New("agent should be an address")
+		return wasmtypes.NftIDFromBytes(nil)
+	}
+	nft, _, err := ctx.Chain.Env.MintNFTL1(agent.Pair, addr, metadata)
+	if err != nil {
+		ctx.Err = err
+		return wasmtypes.NftIDFromBytes(nil)
+	}
+	if ctx.nfts == nil {
+		ctx.nfts = make(map[iotago.NFTID]*isc.NFT)
+	}
+	ctx.nfts[nft.ID] = nft
+	return cvt.ScNftID(&nft.ID)
+}
+
 // NewSoloAgent creates a new SoloAgent with utxodb.FundsFromFaucetAmount (1 Gi)
 // tokens in its address and pre-deposits 10Mi into the corresponding chain account
 func (ctx *SoloContext) NewSoloAgent() *SoloAgent {
@@ -413,27 +434,6 @@ func (ctx *SoloContext) OffLedger(agent *SoloAgent) wasmlib.ScFuncCallContext {
 	return ctx
 }
 
-// MintNFT tells SoloContext to mint a new NFT issued/owned by the specified agent
-// note that SoloContext will cache the NFT data to be able to use it
-// in Post()s that go through the *SAME* SoloContext
-func (ctx *SoloContext) MintNFT(agent *SoloAgent, metadata []byte) wasmtypes.ScNftID {
-	addr, ok := isc.AddressFromAgentID(agent.AgentID())
-	if !ok {
-		ctx.Err = errors.New("agent should be an address")
-		return wasmtypes.NftIDFromBytes(nil)
-	}
-	nft, _, err := ctx.Chain.Env.MintNFTL1(agent.Pair, addr, metadata)
-	if err != nil {
-		ctx.Err = err
-		return wasmtypes.NftIDFromBytes(nil)
-	}
-	if ctx.nfts == nil {
-		ctx.nfts = make(map[iotago.NFTID]*isc.NFT)
-	}
-	ctx.nfts[nft.ID] = nft
-	return cvt.ScNftID(&nft.ID)
-}
-
 // Originator returns a SoloAgent representing the chain originator
 func (ctx *SoloContext) Originator() *SoloAgent {
 	return &SoloAgent{
@@ -451,6 +451,15 @@ func (ctx *SoloContext) Sign(agent *SoloAgent) wasmlib.ScFuncCallContext {
 
 func (ctx *SoloContext) SoloContextForCore(t solo.TestContext, scName string, onLoad wasmhost.ScOnloadFunc) *SoloContext {
 	return soloContext(t, ctx.Chain, scName, nil).init(onLoad)
+}
+
+func (ctx *SoloContext) UpdateGasFees() {
+	receipt := ctx.Chain.LastReceipt()
+	if receipt == nil {
+		panic("UpdateGasFees: missing last receipt")
+	}
+	ctx.Gas = receipt.GasBurned
+	ctx.GasFee = receipt.GasFeeCharged
 }
 
 func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {
@@ -501,13 +510,4 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 // a subsequent call to WaitForPendingRequests()
 func (ctx *SoloContext) WaitForPendingRequestsMark() {
 	ctx.Chain.WaitForRequestsMark()
-}
-
-func (ctx *SoloContext) UpdateGasFees() {
-	receipt := ctx.Chain.LastReceipt()
-	if receipt == nil {
-		panic("UpdateGasFees: missing last receipt")
-	}
-	ctx.Gas = receipt.GasBurned
-	ctx.GasFee = receipt.GasFeeCharged
 }

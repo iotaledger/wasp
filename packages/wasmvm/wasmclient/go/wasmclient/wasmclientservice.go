@@ -7,6 +7,7 @@ package wasmclient
 // for some other reason if the third mamgos import is missing things won't work
 import (
 	"context"
+	"errors"
 	"strings"
 	"sync"
 	"time"
@@ -88,7 +89,7 @@ func (sc *WasmClientService) CallViewByHname(hContract, hFunction wasmtypes.ScHn
 		Arguments:     apiextensions.JSONDictToAPIJSONDict(params.JSONDict()),
 	}).Execute()
 	if err != nil {
-		return nil, err
+		return nil, apiError(err)
 	}
 
 	decodedParams, err := apiextensions.APIJsonDictToDict(*res)
@@ -127,7 +128,7 @@ func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract,
 		ChainId: iscChainID.String(),
 		Request: iotago.EncodeHex(signed.Bytes()),
 	}).Execute()
-	return reqID, err
+	return reqID, apiError(err)
 }
 
 func (sc *WasmClientService) SubscribeEvents(callback EventProcessor) error {
@@ -172,6 +173,16 @@ func (sc *WasmClientService) WaitUntilRequestProcessed(reqID wasmtypes.ScRequest
 		TimeoutSeconds(int32(timeout.Seconds())).
 		Execute()
 
+	return apiError(err)
+}
+
+func apiError(err error) error {
+	if err != nil {
+		reqErr, ok := err.(*apiclient.GenericOpenAPIError)
+		if ok {
+			err = errors.New(reqErr.Error() + ": " + string(reqErr.Body()))
+		}
+	}
 	return err
 }
 
