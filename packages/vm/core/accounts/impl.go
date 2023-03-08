@@ -6,13 +6,19 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-var Processor = Contract.Processor(initialize,
+func CommonAccount() isc.AgentID {
+	return isc.NewAgentID(
+		&iotago.Ed25519Address{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+	)
+}
+
+var Processor = Contract.Processor(nil,
 	// funcs
 	FuncDeposit.WithHandler(deposit),
 	FuncFoundryCreateNew.WithHandler(foundryCreateNew),
@@ -39,23 +45,10 @@ var Processor = Contract.Processor(initialize,
 	ViewTotalAssets.WithHandler(viewTotalAssets),
 )
 
-func initialize(ctx isc.Sandbox) dict.Dict {
-	// validating and storing storage deposit assumption constants
-	baseTokensOnAnchor := ctx.StateAnchor().Deposit
-	storageDepositAssumptionsBin := ctx.Params().MustGet(ParamStorageDepositAssumptionsBin)
-	storageDepositAssumptions, err := transaction.StorageDepositAssumptionFromBytes(storageDepositAssumptionsBin)
-	// checking if assumptions are consistent
-	ctx.Requiref(err == nil && baseTokensOnAnchor >= storageDepositAssumptions.AnchorOutput,
-		"accounts.initialize.fail: %v", ErrStorageDepositAssumptionsWrong)
-	ctx.State().Set(keyStorageDepositAssumptions, storageDepositAssumptionsBin)
-	// storing hname as a terminal value of the contract's state root.
-	// This way we will be able to retrieve commitment to the contract's state
-	ctx.State().Set("", ctx.Contract().Bytes())
-
+// this expects the origin amount minus SD
+func SetInitialState(state kv.KVStore, baseTokensOnAnchor uint64) {
 	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption
-	initialLoadBaseTokens := isc.NewAssets(baseTokensOnAnchor-storageDepositAssumptions.AnchorOutput, nil)
-	CreditToAccount(ctx.State(), ctx.ChainID().CommonAccount(), initialLoadBaseTokens)
-	return nil
+	CreditToAccount(state, CommonAccount(), isc.NewAssetsBaseTokens(baseTokensOnAnchor))
 }
 
 // deposit is a function to deposit attached assets to the sender's chain account
@@ -152,15 +145,14 @@ func harvest(ctx isc.Sandbox) dict.Dict {
 	if bottomBaseTokens > MinimumBaseTokensOnCommonAccount {
 		bottomBaseTokens = MinimumBaseTokensOnCommonAccount
 	}
-	commonAccount := ctx.ChainID().CommonAccount()
-	toWithdraw := GetAccountFungibleTokens(state, commonAccount)
+	toWithdraw := GetAccountFungibleTokens(state, CommonAccount())
 	if toWithdraw.BaseTokens <= bottomBaseTokens {
 		// below minimum, nothing to withdraw
 		return nil
 	}
 	ctx.Requiref(toWithdraw.BaseTokens > bottomBaseTokens, "assertion failed: toWithdraw.BaseTokens > availableBaseTokens")
 	toWithdraw.BaseTokens -= bottomBaseTokens
-	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw)
+	MustMoveBetweenAccounts(state, CommonAccount(), ctx.Caller(), toWithdraw)
 	return nil
 }
 

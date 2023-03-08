@@ -6,7 +6,6 @@ package state
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -51,10 +50,6 @@ func (s *stateDraft) Mutations() *buffered.Mutations {
 
 func (s *stateDraft) BlockIndex() uint32 {
 	return loadBlockIndexFromState(s)
-}
-
-func (s *stateDraft) ChainID() isc.ChainID {
-	return loadChainIDFromState(s)
 }
 
 func (s *stateDraft) Timestamp() time.Time {

@@ -82,17 +82,9 @@ func (e *contractEnv) checkSC(numRequests int) {
 		info, err := cl.CallView(context.Background(), governance.ViewGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
-		chainID, err := codec.DecodeChainID(info.MustGet(governance.VarChainID))
-		require.NoError(e.t, err)
-		require.EqualValues(e.t, e.Chain.ChainID, chainID)
-
 		aid, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerID))
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, e.Chain.OriginatorID(), aid)
-
-		desc, err := codec.DecodeString(info.MustGet(governance.VarDescription), "")
-		require.NoError(e.t, err)
-		require.EqualValues(e.t, e.Chain.Description, desc)
 
 		recs, err := e.Chain.SCClient(root.Contract.Hname(), nil, i).CallView(context.Background(), root.ViewGetContractRecords.Name, nil)
 		require.NoError(e.t, err)

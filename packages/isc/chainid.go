@@ -118,10 +118,6 @@ func (id ChainID) AsAliasAddress() iotago.AliasAddress {
 	return iotago.AliasAddress(id)
 }
 
-func (id ChainID) CommonAccount() AgentID {
-	return NewContractAgentID(id, 0)
-}
-
 func (id ChainID) IsSameChain(agentID AgentID) bool {
 	contract, ok := agentID.(*ContractAgentID)
 	if !ok {

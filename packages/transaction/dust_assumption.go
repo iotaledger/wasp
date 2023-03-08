@@ -91,6 +91,9 @@ func aliasOutputStorageDeposit() iotago.Output {
 			&iotago.SenderFeature{
 				Address: addr,
 			},
+			&iotago.MetadataFeature{
+				Data: make([]byte, 99999),
+			},
 		},
 	}
 }

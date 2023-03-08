@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -26,17 +27,15 @@ type TestChainLedger struct {
 	t           *testing.T
 	utxoDB      *utxodb.UtxoDB
 	governor    *cryptolib.KeyPair
-	originator  *cryptolib.KeyPair
 	chainID     isc.ChainID
 	fetchedReqs map[iotago.Address]map[iotago.OutputID]bool
 }
 
-func NewTestChainLedger(t *testing.T, utxoDB *utxodb.UtxoDB, governor, originator *cryptolib.KeyPair) *TestChainLedger {
+func NewTestChainLedger(t *testing.T, utxoDB *utxodb.UtxoDB, originator *cryptolib.KeyPair) *TestChainLedger {
 	return &TestChainLedger{
 		t:           t,
 		utxoDB:      utxoDB,
-		governor:    governor,
-		originator:  originator,
+		governor:    originator,
 		fetchedReqs: map[iotago.Address]map[iotago.OutputID]bool{},
 	}
 }
@@ -46,13 +45,14 @@ func (tcl *TestChainLedger) ChainID() isc.ChainID {
 	return tcl.chainID
 }
 
-func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress iotago.Address) (*isc.AliasOutputWithID, isc.ChainID) {
-	outs, outIDs := tcl.utxoDB.GetUnspentOutputs(tcl.originator.Address())
-	originTX, chainID, err := transaction.NewChainOriginTransaction(
-		tcl.originator,
+func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress iotago.Address) (*iotago.Transaction, *isc.AliasOutputWithID, isc.ChainID) {
+	outs, outIDs := tcl.utxoDB.GetUnspentOutputs(tcl.governor.Address())
+	originTX, _, chainID, err := origin.NewChainOriginTransaction(
+		tcl.governor,
 		committeeAddress,
 		tcl.governor.Address(),
-		1_000_000,
+		0,
+		nil,
 		outs,
 		outIDs,
 	)
@@ -64,16 +64,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress iotago.Address) (
 	originAO := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
 	require.NoError(tcl.t, tcl.utxoDB.AddToLedger(originTX))
 	tcl.chainID = chainID
-	return originAO, chainID
-}
-
-func (tcl *TestChainLedger) MakeTxChainInit() []isc.Request {
-	outs, outIDs := tcl.utxoDB.GetUnspentOutputs(tcl.originator.Address())
-	initTX, err := transaction.NewRootInitRequestTransaction(tcl.originator, tcl.chainID, "my test chain", outs, outIDs)
-	require.NoError(tcl.t, err)
-	require.NotNil(tcl.t, initTX)
-	require.NoError(tcl.t, tcl.utxoDB.AddToLedger(initTX))
-	return tcl.findChainRequests(initTX)
+	return originTX, originAO, chainID
 }
 
 func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) []isc.Request {
@@ -102,7 +93,7 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) []
 }
 
 func (tcl *TestChainLedger) MakeTxDeployIncCounterContract() []isc.Request {
-	sender := tcl.originator
+	sender := tcl.governor
 	outs, outIDs := tcl.utxoDB.GetUnspentOutputs(sender.Address())
 	tx, err := transaction.NewRequestTransaction(
 		transaction.NewRequestTransactionParams{

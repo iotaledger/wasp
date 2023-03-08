@@ -74,8 +74,6 @@ const (
 	VarGasFeePolicyBytes = "g"
 
 	// chain info
-	VarChainID         = "c"
-	VarDescription     = "d"
 	VarMaxBlobSize     = "mb"
 	VarMaxEventSize    = "me"
 	VarMaxEventsPerReq = "mr"
@@ -106,7 +104,6 @@ const (
 
 	// chain info
 	ParamChainID                   = "c"
-	ParamDescription               = "d"
 	ParamMaxBlobSizeUint32         = "mb"
 	ParamMaxEventSizeUint16        = "me"
 	ParamMaxEventsPerRequestUint16 = "mr"

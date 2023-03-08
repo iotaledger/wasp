@@ -49,7 +49,7 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*isc.StateAnchor, *iotago
 // The inputs are consumed one by one in the order provided in the parameters.
 // Consumes only what is needed to cover output balances
 // Returned reminder is nil if not needed
-func computeInputsAndRemainder(
+func ComputeInputsAndRemainder(
 	senderAddress iotago.Address,
 	baseTokenOut uint64,
 	tokensOut map[iotago.NativeTokenID]*big.Int,
@@ -266,29 +266,4 @@ func CreateAndSignTx(inputs iotago.OutputIDs, inputsCommitment []byte, outputs i
 		Essence: essence,
 		Unlocks: MakeSignatureAndReferenceUnlocks(len(inputs), sigs[0]),
 	}, nil
-}
-
-func GetAliasOutput(tx *iotago.Transaction, aliasAddr iotago.Address) (*isc.AliasOutputWithID, error) {
-	txID, err := tx.ID()
-	if err != nil {
-		return nil, err
-	}
-
-	for index, output := range tx.Essence.Outputs {
-		if aliasOutput, ok := output.(*iotago.AliasOutput); ok {
-			outputID := iotago.OutputIDFromTransactionIDAndIndex(txID, uint16(index))
-
-			aliasID := aliasOutput.AliasID
-			if aliasID.Empty() {
-				aliasID = iotago.AliasIDFromOutputID(outputID)
-			}
-
-			if aliasID.ToAddress().Equal(aliasAddr) {
-				// output found
-				return isc.NewAliasOutputWithID(aliasOutput, outputID), nil
-			}
-		}
-	}
-
-	return nil, fmt.Errorf("cannot find alias output for address %v in transaction", aliasAddr.String())
 }

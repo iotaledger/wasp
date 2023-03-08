@@ -22,9 +22,7 @@ func initRegisterERC20NativeTokenCmd() *cobra.Command {
 		func(cmd *cobra.Command) {
 			initRegisterERC20NativeTokenParams(cmd)
 		},
-		func(cmd *cobra.Command) []string {
-			return getRegisterERC20NativeTokenArgs(cmd)
-		},
+		getRegisterERC20NativeTokenArgs,
 	)
 }
 
@@ -60,8 +58,8 @@ func buildPostRequestCmd(name, desc, hname, fname string, initFlags func(cmd *co
 		Short: desc,
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			node := waspcmd.DefaultWaspNodeFallback(node)
-			chain := defaultChainFallback(chain)
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
 
 			allowanceTokens := util.ParseFungibleTokens(postrequestParams.allowance)
 

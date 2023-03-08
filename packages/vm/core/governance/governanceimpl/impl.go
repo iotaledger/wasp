@@ -5,13 +5,13 @@ package governanceimpl
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-var Processor = governance.Contract.Processor(initialize,
+var Processor = governance.Contract.Processor(nil,
 	// state controller
 	governance.FuncAddAllowedStateControllerAddress.WithHandler(addAllowedStateControllerAddress),
 	governance.FuncRemoveAllowedStateControllerAddress.WithHandler(removeAllowedStateControllerAddress),
@@ -50,34 +50,14 @@ var Processor = governance.Contract.Processor(initialize,
 	governance.ViewGetCustomMetadata.WithHandler(getCustomMetadata),
 )
 
-func initialize(ctx isc.Sandbox) dict.Dict {
-	ctx.Log().Debugf("governance.initialize.begin")
-	state := ctx.State()
-
-	// retrieving init parameters
-	// -- chain ID
-
-	chainID := ctx.Params().MustGetChainID(governance.ParamChainID)
-	chainDescription := ctx.Params().MustGetString(governance.ParamDescription, "N/A")
-	feePolicyBytes := ctx.Params().MustGetBytes(governance.ParamFeePolicyBytes, gas.DefaultFeePolicy().Bytes())
-
-	state.Set(governance.VarChainID, codec.EncodeChainID(chainID))
-	state.Set(governance.VarChainOwnerID, ctx.Params().MustGetAgentID(governance.ParamChainOwner).Bytes())
-	state.Set(governance.VarDescription, codec.EncodeString(chainDescription))
+func SetInitialState(state kv.KVStore, chainOwner isc.AgentID) {
+	state.Set(governance.VarChainOwnerID, chainOwner.Bytes())
 
 	state.Set(governance.VarMaxBlobSize, codec.Encode(governance.DefaultMaxBlobSize))
 	state.Set(governance.VarMaxEventSize, codec.Encode(governance.DefaultMaxEventSize))
 	state.Set(governance.VarMaxEventsPerReq, codec.Encode(governance.DefaultMaxEventsPerRequest))
 
-	feePolicy, err := gas.FeePolicyFromBytes(feePolicyBytes)
-	ctx.RequireNoError(err)
-	state.Set(governance.VarGasFeePolicyBytes, feePolicy.Bytes())
+	state.Set(governance.VarGasFeePolicyBytes, gas.DefaultFeePolicy().Bytes())
 
 	state.Set(governance.VarMaintenanceStatus, codec.Encode(false))
-
-	// storing hname as a terminal value of the contract's state root.
-	// This way we will be able to retrieve commitment to the contract's state
-	ctx.State().Set("", ctx.Contract().Bytes())
-
-	return nil
 }

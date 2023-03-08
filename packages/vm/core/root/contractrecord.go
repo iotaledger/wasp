@@ -26,7 +26,6 @@ type ContractRecord struct {
 func ContractRecordFromContractInfo(itf *coreutil.ContractInfo) *ContractRecord {
 	return &ContractRecord{
 		ProgramHash: itf.ProgramHash,
-		Description: itf.Description,
 		Name:        itf.Name,
 	}
 }

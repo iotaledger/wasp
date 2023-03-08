@@ -37,6 +37,5 @@ func TestSandboxCall(t *testing.T) {
 		f := testcore.ScFuncs.TestSandboxCall(ctx)
 		f.Func.Call()
 		require.NoError(t, ctx.Err)
-		require.EqualValues(t, "'solo' testing chain", f.Results.SandboxCall().Value())
 	})
 }
