@@ -11,7 +11,7 @@
     const networkOptionsFile = await fetch('./networks.json');
     const networkOptions: NetworkOption[] = await networkOptionsFile.json();
     networks.set(networkOptions);
-    selectedNetwork.set(networkOptions[1]);
+    selectedNetwork.set(networkOptions[0]);
   });
 </script>
 

@@ -1,17 +1,17 @@
-import { Converter } from "@iota/util.js";
-import { waspAddrBinaryFromBech32 } from "./../../lib/bech32";
-import type { SingleNodeClient } from "@iota/iota.js";
-import type { INativeToken } from "../../lib/native_token";
+import { Converter } from '@iota/util.js';
+import { waspAddrBinaryFromBech32 } from './../../lib/bech32';
+import type { SingleNodeClient } from '@iota/iota.js';
+import type { INativeToken } from '../../lib/native_token';
 
 export function getBalanceParameters(agentID: Uint8Array) {
   return {
     items: [
       {
-        key: Converter.utf8ToBytes("a"),
+        key: Converter.utf8ToBytes('a'),
         value: agentID,
-      }
+      },
     ],
-  }
+  };
 }
 
 export interface INativeTokenWithdraw {
@@ -25,15 +25,27 @@ export interface INativeTokenWithdraw {
   amount: bigint;
 }
 
-export async function withdrawParameters(nodeClient: SingleNodeClient, receiverAddressBech32: string, gasFee: number, baseTokensToWithdraw: number, nativeTokens: INativeToken[]) {
-  const binaryAddress = await waspAddrBinaryFromBech32(nodeClient, receiverAddressBech32);
+export async function withdrawParameters(
+  nodeClient: SingleNodeClient,
+  receiverAddressBech32: string,
+  gasFee: number,
+  baseTokensToWithdraw: number,
+  nativeTokens: INativeToken[],
+) {
+  const binaryAddress = await waspAddrBinaryFromBech32(
+    nodeClient,
+    receiverAddressBech32,
+  );
 
   /*
     NativeToken[]:
       ID: Tuple[tokenID(string)] (Not just `ID: tokenID`)
       amount: uint256
   */
-  const nativeTokenTuple = nativeTokens.map((x) => ({ ID: [x.id], amount: x.amount }));
+  const nativeTokenTuple = nativeTokens.map(x => ({
+    ID: [x.id],
+    amount: x.amount,
+  }));
 
   const parameters = [
     {

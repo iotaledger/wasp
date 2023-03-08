@@ -1,5 +1,5 @@
-import type { SetIntervalAsyncTimer } from "set-interval-async";
-import type { INativeToken } from "../../lib/native_token";
+import type { SetIntervalAsyncTimer } from 'set-interval-async';
+import type { INativeToken } from '../../lib/native_token';
 import type { Contract } from 'web3-eth-contract';
 
 export interface WithdrawState {
