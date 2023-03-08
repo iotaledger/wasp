@@ -95,7 +95,7 @@ func TestRotate(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		chain := env.NewChain()
 
-		chain.WaitForRequestsMark()
+		chain.WaitUntilMempoolIsEmpty()
 
 		newKP, newAddr := env.NewKeyPair()
 		err := chain.AddAllowedStateController(newAddr, nil)
@@ -104,18 +104,14 @@ func TestRotate(t *testing.T) {
 		err = chain.RotateStateController(newAddr, newKP, nil)
 		require.NoError(t, err)
 
-		require.True(t, chain.WaitForRequestsThrough(3))
+		chain.WaitUntilMempoolIsEmpty()
 
 		ca := chain.GetControlAddresses()
 		require.True(t, ca.StateAddress.Equal(newAddr))
 
-		chain.WaitForRequestsMark()
-
 		req := solo.NewCallParams("dummy", "dummy").WithMaxAffordableGasBudget()
 		_, err = chain.PostRequestSync(req, nil)
 		testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
-
-		require.True(t, chain.WaitForRequestsThrough(1))
 	})
 }
 
