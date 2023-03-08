@@ -59,9 +59,9 @@ func TestNodeBasic(t *testing.T) {
 	if !testing.Short() {
 		tests = append(tests,
 			// TODO these "unreliable" tests are crazy, they either succeed in 10~20s or run forever...
-			// tc{n: 4, f: 1, reliable: false,  timeout: 5*time.Minute},  // Minimal robust config.
-			// tc{n: 10, f: 3, reliable: false,  timeout: 5*time.Minute}, // Typical config.
-			tc{n: 31, f: 10, reliable: true, timeout: 5 * time.Minute}, // Large cluster, reliable - to make test faster.
+			tc{n: 4, f: 1, reliable: false, timeout: 5 * time.Minute},   // Minimal robust config.
+			tc{n: 10, f: 3, reliable: false, timeout: 15 * time.Minute}, // Typical config.
+			tc{n: 31, f: 10, reliable: true, timeout: 25 * time.Minute}, // Large cluster, reliable - to make test faster.
 		)
 	}
 	for _, tst := range tests {
