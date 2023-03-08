@@ -13,9 +13,9 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/l1connection"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 // TODO DeployChain on peering domain, not on committee
@@ -93,7 +93,7 @@ func CreateChainOrigin(
 	}
 
 	// ----------- create origin transaction
-	originTx, _, chainID, err := transaction.NewChainOriginTransaction(
+	originTx, _, chainID, err := origin.NewChainOriginTransaction(
 		originator,
 		stateController,
 		governanceController,

@@ -49,7 +49,7 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*isc.StateAnchor, *iotago
 // The inputs are consumed one by one in the order provided in the parameters.
 // Consumes only what is needed to cover output balances
 // Returned reminder is nil if not needed
-func computeInputsAndRemainder(
+func ComputeInputsAndRemainder(
 	senderAddress iotago.Address,
 	baseTokenOut uint64,
 	tokensOut map[iotago.NativeTokenID]*big.Int,

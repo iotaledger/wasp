@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -46,7 +47,7 @@ func (tcl *TestChainLedger) ChainID() isc.ChainID {
 
 func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress iotago.Address) (*iotago.Transaction, *isc.AliasOutputWithID, isc.ChainID) {
 	outs, outIDs := tcl.utxoDB.GetUnspentOutputs(tcl.governor.Address())
-	originTX, _, chainID, err := transaction.NewChainOriginTransaction(
+	originTX, _, chainID, err := origin.NewChainOriginTransaction(
 		tcl.governor,
 		committeeAddress,
 		tcl.governor.Address(),

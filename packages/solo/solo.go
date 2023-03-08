@@ -274,7 +274,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 	initialL1Balance := env.L1BaseTokens(originatorAddr)
 
 	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
-	originTx, originAO, chainID, err := transaction.NewChainOriginTransaction(
+	originTx, originAO, chainID, err := origin.NewChainOriginTransaction(
 		chainOriginator,
 		stateControllerAddr,
 		stateControllerAddr,

@@ -20,10 +20,10 @@ import (
 	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 func createChain(t *testing.T) isc.ChainID {
@@ -40,7 +40,7 @@ func createChain(t *testing.T) isc.ChainID {
 		utxoIDs = append(utxoIDs, id)
 	}
 
-	originTx, _, chainID, err := transaction.NewChainOriginTransaction(
+	originTx, _, chainID, err := origin.NewChainOriginTransaction(
 		originator,
 		originator.Address(),
 		originator.Address(),

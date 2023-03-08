@@ -84,7 +84,7 @@ func testConsBasic(t *testing.T, n, f int) {
 	//
 	// Construct the chain on L1: Create the origin TX.
 	outputs, outIDs := utxoDB.GetUnspentOutputs(originator.Address())
-	originTX, _, chainID, err := transaction.NewChainOriginTransaction(
+	originTX, _, chainID, err := origin.NewChainOriginTransaction(
 		originator,
 		committeeAddress,
 		originator.Address(),
