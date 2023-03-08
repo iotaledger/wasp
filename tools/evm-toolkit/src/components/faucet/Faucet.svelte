@@ -4,8 +4,8 @@
   import { SendFundsTransaction } from './send_funds_transaction';
 
   import { toast } from '@zerodevx/svelte-toast';
-  import { network } from '../../store';
-  import { Bech32AddressLength, EVMAddressLength }  from '../../lib/constants';
+  import { selectedNetwork, nodeClient, indexerClient } from '../../store';
+  import { Bech32AddressLength, EVMAddressLength } from '../../lib/constants';
 
   let isSendingFunds: boolean;
   let errorMessage: string;
@@ -15,8 +15,8 @@
 
   $: enableSendFunds =
     evmAddress.length == EVMAddressLength &&
-    $network != null &&
-    $network.chainAddress.length == Bech32AddressLength &&
+    $selectedNetwork != null &&
+    $selectedNetwork.chainAddress.length == Bech32AddressLength &&
     !isSendingFunds;
 
   async function sendFunds() {
@@ -28,8 +28,9 @@
     isSendingFunds = true;
 
     let wallet: IotaWallet = new IotaWallet(
-      $network.apiEndpoint,
-      $network.faucetEndpoint,
+      $nodeClient,
+      $indexerClient,
+      $selectedNetwork.faucetEndpoint,
     );
 
     let toastId: number;
@@ -49,7 +50,7 @@
       const transaction = new SendFundsTransaction(wallet);
       await transaction.sendFundsToEVMAddress(
         evmAddress,
-        $network.chainAddress,
+        $selectedNetwork.chainAddress,
         balance,
         BigInt(500000),
       );
@@ -72,7 +73,7 @@
 </script>
 
 <component>
-  {#if $network}
+  {#if $selectedNetwork}
     <div class="input_container">
       <span class="header">Your EVM Address</span>
       <input type="text" bind:value={evmAddress} />

@@ -1,29 +1,14 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { network } from '../../store';
-
-  let networkOptions: any;
-  let selectedNetworkOption: any;
-
-  onMount(async () => {
-    const networkOptionsFile = await fetch('./networks.json');
-    networkOptions = await networkOptionsFile.json();
-    selectedNetworkOption = networkOptions[1];
-  });
-
-  $: {
-    if (selectedNetworkOption && selectedNetworkOption.apiEndpoint) {
-      network.set(selectedNetworkOption);
-    }
-  }
+  import { selectedNetwork, networks } from '../../store';
 </script>
 
 <component>
-  {#if selectedNetworkOption}
+  {#if $selectedNetwork}
     <div class="input_container">
       <span class="header">Network</span>
-      <select bind:value={selectedNetworkOption}>
-        {#each networkOptions as network}
+      <select bind:value={$selectedNetwork}>
+        {#each $networks as network}
           <option value={network}>
             {network.text}
           </option>
@@ -31,20 +16,20 @@
       </select>
     </div>
 
-    {#if selectedNetworkOption.id == 1}
+    {#if $selectedNetwork.id == 1}
       <div class="input_container">
         <span class="header">Hornet API endpoint</span>
-        <input type="text" bind:value={selectedNetworkOption.apiEndpoint} />
+        <input type="text" bind:value={$selectedNetwork.apiEndpoint} />
       </div>
 
       <div class="input_container">
         <span class="header">Faucet API endpoint</span>
-        <input type="text" bind:value={selectedNetworkOption.faucetEndpoint} />
+        <input type="text" bind:value={$selectedNetwork.faucetEndpoint} />
       </div>
 
       <div class="input_container">
         <span class="header">Chain Address</span>
-        <input type="text" bind:value={selectedNetworkOption.chainAddress} />
+        <input type="text" bind:value={$selectedNetwork.chainAddress} />
       </div>
     {/if}
   {:else}

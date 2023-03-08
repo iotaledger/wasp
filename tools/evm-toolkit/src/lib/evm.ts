@@ -1,5 +1,4 @@
-import { Converter } from "@iota/util.js";
-
+import { Converter } from '@iota/util.js';
 
 export function evmAddressToAgentID(evmStoreAccount: string): Uint8Array {
   // This function constructs an AgentID that is required to be used with contracts
@@ -8,7 +7,10 @@ export function evmAddressToAgentID(evmStoreAccount: string): Uint8Array {
   const agentIDKindEthereumAddress = 3;
 
   const receiverAddrBinary = Converter.hexToBytes(evmStoreAccount);
-  const addressBytes = new Uint8Array([agentIDKindEthereumAddress, ...receiverAddrBinary]);
+  const addressBytes = new Uint8Array([
+    agentIDKindEthereumAddress,
+    ...receiverAddrBinary,
+  ]);
 
   return addressBytes;
 }

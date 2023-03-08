@@ -4,14 +4,14 @@
   import { SvelteToast } from '@zerodevx/svelte-toast';
   import { onMount } from 'svelte';
   import type { NetworkOption } from './lib/network_option';
-  import { network } from './store';
-    import NetworkSettings from './components/network_settings/network_settings.svelte';
-    import { IndexerPluginClient, SingleNodeClient } from '@iota/iota.js';
+  import { networks, selectedNetwork } from './store';
+  import NetworkSettings from './components/network_settings/network_settings.svelte';
 
   onMount(async () => {
     const networkOptionsFile = await fetch('./networks.json');
     const networkOptions: NetworkOption[] = await networkOptionsFile.json();
-    network.set(networkOptions[0]);
+    networks.set(networkOptions);
+    selectedNetwork.set(networkOptions[1]);
   });
 </script>
 
@@ -20,15 +20,20 @@
     <h2>Network settings</h2>
     <NetworkSettings />
   </div>
-  {#if $network}
+  {#if $selectedNetwork}
     <div class="item">
-      <h2>Faucet</h2>
-      <Faucet />
+      <div class="control">
+        <h2>Faucet</h2>
+        <Faucet />
+      </div>
 
-      <h2>Withdraw</h2>
-      <Withdraw />
+      <div class="seperator" />
+
+      <div class="control">
+        <h2>Withdraw</h2>
+        <Withdraw />
+      </div>
     </div>
-
   {/if}
 </main>
 <SvelteToast />
@@ -42,6 +47,12 @@
     flex: 1 1 auto;
     flex-direction: row;
     justify-content: center;
+  }
+
+  .seperator {
+    border: 2px solid gray;
+    margin: 50px auto 50px auto;
+    width: 50%;
   }
 
   .item {
