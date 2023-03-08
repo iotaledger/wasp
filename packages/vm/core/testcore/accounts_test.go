@@ -1045,7 +1045,7 @@ func TestNFTAccount(t *testing.T) {
 	// deposit funds on behalf of the NFT
 	const baseTokensToSend = 10 * isc.Million
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-		AddFungibleTokens(isc.NewAssetsBaseTokens(baseTokensToSend)).
+		AddBaseTokens(baseTokensToSend).
 		WithMaxAffordableGasBudget().
 		WithSender(nftAddress)
 
@@ -1149,6 +1149,28 @@ func TestTransferNFTAllowance(t *testing.T) {
 	})
 	require.Error(t, err)
 	require.Regexp(t, "NFTID not found", err.Error())
+}
+
+func TestDepositNFTWithMinStorageDeposit(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: false, Debug: true, PrintStackTrace: true})
+	ch := env.NewChain()
+
+	// transfer assets to the chain so that it has enough for SD
+	// TODO: removing this causes the VM to crash
+	ch.TransferAllowanceTo(isc.NewAssetsBaseTokens(1*isc.Million), isc.NewContractAgentID(ch.ChainID, 0), ch.OriginatorPrivateKey)
+
+	issuerWallet, issuerAddress := env.NewKeyPairWithFunds()
+
+	nft, _, err := env.MintNFTL1(issuerWallet, issuerAddress, []byte("foobar"))
+	require.NoError(t, err)
+	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+		WithNFT(nft).
+		WithMaxAffordableGasBudget().
+		WithSender(nft.ID.ToAddress())
+	req.AddBaseTokens(ch.EstimateNeededStorageDeposit(req, issuerWallet))
+
+	_, err = ch.PostRequestSync(req, issuerWallet)
+	require.ErrorContains(t, err, "request has been skipped")
 }
 
 func TestDepositRandomContractMinFee(t *testing.T) {
