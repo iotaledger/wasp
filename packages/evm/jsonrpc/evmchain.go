@@ -508,10 +508,10 @@ func iscBlockIndexByEVMBlockNumber(n uint64) (uint32, error) {
 	if n > math.MaxUint32-1 {
 		return 0, fmt.Errorf("block number is too large: %d", n)
 	}
-	return uint32(n) + 1, nil
+	return uint32(n), nil
 }
 
 // the first EVM block (number 0) is "minted" at ISC block index 1 (init chain)
 func evmBlockNumberByISCBlockIndex(n uint32) uint64 {
-	return uint64(n) - 1
+	return uint64(n)
 }

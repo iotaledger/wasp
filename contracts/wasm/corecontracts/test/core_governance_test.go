@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coregovernance"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 )
 
@@ -181,9 +180,7 @@ func TestGetChainInfo(t *testing.T) {
 	f := coregovernance.ScFuncs.GetChainInfo(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	assert.Equal(t, wasmtypes.ChainIDFromBytes(ctx.Chain.ChainID.Bytes()), f.Results.ChainID().Value())
 	assert.Equal(t, ctx.ChainOwnerID().String(), f.Results.ChainOwnerID().Value().String())
-	assert.Equal(t, "'solo' testing chain", f.Results.Description().Value())
 	gfp, err := gas.FeePolicyFromBytes(f.Results.GasFeePolicyBytes().Value())
 	require.NoError(t, err)
 	assert.Equal(t, ctx.Chain.GetGasFeePolicy(), gfp)

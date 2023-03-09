@@ -66,7 +66,7 @@ func (vmctx *VMContext) Request() isc.Calldata {
 func (vmctx *VMContext) AccountID() isc.AgentID {
 	hname := vmctx.CurrentContractHname()
 	if corecontracts.IsCoreHname(hname) {
-		return vmctx.ChainID().CommonAccount()
+		return accounts.CommonAccount()
 	}
 	return isc.NewContractAgentID(vmctx.ChainID(), hname)
 }
@@ -97,7 +97,7 @@ func (vmctx *VMContext) spendAllowedBudget(toSpend *isc.Assets) {
 func (vmctx *VMContext) TransferAllowedFunds(target isc.AgentID, transfer ...*isc.Assets) *isc.Assets {
 	if vmctx.IsCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
-		target = vmctx.ChainID().CommonAccount()
+		target = accounts.CommonAccount()
 	}
 
 	var toMove *isc.Assets
@@ -113,7 +113,7 @@ func (vmctx *VMContext) TransferAllowedFunds(target isc.AgentID, transfer ...*is
 
 	// if the caller is a core contract, funds should be taken from the common account
 	if vmctx.IsCoreAccount(caller) {
-		caller = vmctx.ChainID().CommonAccount()
+		caller = accounts.CommonAccount()
 	}
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		if err := accounts.MoveBetweenAccounts(s, caller, target, toMove); err != nil {

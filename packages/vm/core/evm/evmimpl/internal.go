@@ -5,6 +5,7 @@ package evmimpl
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -93,7 +94,7 @@ func (bctx *blockContext) mintBlock() {
 func createEmulator(ctx isc.Sandbox, feePolicy *gas.FeePolicy, l2Balance *l2Balance) *emulator.EVMEmulator {
 	return emulator.NewEVMEmulator(
 		evmStateSubrealm(ctx.State()),
-		timestamp(ctx),
+		timestamp(ctx.Timestamp()),
 		emulator.GasLimits{
 			Block: gas.EVMBlockGasLimit(&feePolicy.EVMGasRatio),
 			Call:  gas.EVMCallGasLimit(&feePolicy.EVMGasRatio),
@@ -107,7 +108,7 @@ func createEmulatorR(ctx isc.SandboxView) *emulator.EVMEmulator {
 	feePolicy := getFeePolicy(ctx)
 	return emulator.NewEVMEmulator(
 		evmStateSubrealm(buffered.NewBufferedKVStore(ctx.StateR())),
-		timestamp(ctx),
+		timestamp(ctx.Timestamp()),
 		emulator.GasLimits{
 			Block: gas.EVMBlockGasLimit(&feePolicy.EVMGasRatio),
 			Call:  gas.EVMCallGasLimit(&feePolicy.EVMGasRatio),
@@ -118,8 +119,8 @@ func createEmulatorR(ctx isc.SandboxView) *emulator.EVMEmulator {
 }
 
 // timestamp returns the current timestamp in seconds since epoch
-func timestamp(ctx isc.SandboxBase) uint64 {
-	return uint64(ctx.Timestamp().Unix())
+func timestamp(t time.Time) uint64 {
+	return uint64(t.Unix())
 }
 
 func result(value []byte) dict.Dict {

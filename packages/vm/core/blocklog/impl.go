@@ -2,15 +2,17 @@ package blocklog
 
 import (
 	"math"
+	"time"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-var Processor = Contract.Processor(initialize,
+var Processor = Contract.Processor(nil,
 	ViewControlAddresses.WithHandler(viewControlAddresses),
 	ViewGetBlockInfo.WithHandler(viewGetBlockInfo),
 	ViewGetEventsForBlock.WithHandler(viewGetEventsForBlock),
@@ -22,22 +24,16 @@ var Processor = Contract.Processor(initialize,
 	ViewIsRequestProcessed.WithHandler(viewIsRequestProcessed),
 )
 
-func initialize(ctx isc.Sandbox) dict.Dict {
-	SaveNextBlockInfo(ctx.State(), &BlockInfo{
+func SetInitialState(s kv.KVStore) {
+	SaveNextBlockInfo(s, &BlockInfo{
 		BlockIndex:            0,
-		Timestamp:             ctx.Timestamp(),
+		Timestamp:             time.Time{},
 		TotalRequests:         1,
 		NumSuccessfulRequests: 1,
 		NumOffLedgerRequests:  0,
-		PreviousL1Commitment:  *state.OriginL1Commitment(),
-		L1Commitment:          nil, // not known yet
+		PreviousL1Commitment:  state.L1Commitment{}, // doesn't exist
+		L1Commitment:          nil,                  // not known yet
 	})
-	// storing hname as a terminal value of the contract's state root.
-	// This way we will be able to retrieve commitment to the contract's state
-	ctx.State().Set("", ctx.Contract().Bytes())
-
-	ctx.Log().Debugf("blocklog.initialize.success hname = %s", Contract.Hname().String())
-	return nil
 }
 
 func viewControlAddresses(ctx isc.SandboxView) dict.Dict {

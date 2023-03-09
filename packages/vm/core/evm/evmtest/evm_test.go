@@ -32,7 +32,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	testparameters "github.com/iotaledger/wasp/packages/testutil/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -367,7 +366,7 @@ func TestISCNFTData(t *testing.T) {
 	// mint an NFT and send it to the chain
 	issuerWallet, issuerAddress := env.solo.NewKeyPairWithFunds()
 	metadata := []byte("foobar")
-	nft, _, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, []byte("foobar"))
+	nft, _, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
 	require.NoError(t, err)
 	_, err = env.soloChain.PostRequestSync(
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
@@ -680,7 +679,7 @@ func TestERC721NFTCollection(t *testing.T) {
 	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
 	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
 
-	collectionMetadata := transaction.NewIRC27NFTMetadata(
+	collectionMetadata := isc.NewIRC27NFTMetadata(
 		"text/html",
 		"https://my-awesome-nft-project.com",
 		"a string that is longer than 32 bytes",
@@ -689,20 +688,20 @@ func TestERC721NFTCollection(t *testing.T) {
 	collection, collectionInfo, err := env.solo.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.MustBytes())
 	require.NoError(t, err)
 
-	nftMetadatas := []*transaction.IRC27NFTMetadata{
-		transaction.NewIRC27NFTMetadata(
+	nftMetadatas := []*isc.IRC27NFTMetadata{
+		isc.NewIRC27NFTMetadata(
 			"application/json",
 			"https://my-awesome-nft-project.com/1.json",
 			"nft1",
 		),
-		transaction.NewIRC27NFTMetadata(
+		isc.NewIRC27NFTMetadata(
 			"application/json",
 			"https://my-awesome-nft-project.com/2.json",
 			"nft2",
 		),
 	}
 	allNFTs, _, err := env.solo.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID,
-		lo.Map(nftMetadatas, func(item *transaction.IRC27NFTMetadata, index int) []byte {
+		lo.Map(nftMetadatas, func(item *isc.IRC27NFTMetadata, index int) []byte {
 			return item.MustBytes()
 		}),
 	)
@@ -732,7 +731,7 @@ func TestERC721NFTCollection(t *testing.T) {
 
 	// minted NFTs are in random order; find the first one in nftMetadatas
 	nft, ok := lo.Find(nfts, func(item *isc.NFT) bool {
-		metadata, err2 := transaction.IRC27NFTMetadataFromBytes(item.Metadata)
+		metadata, err2 := isc.IRC27NFTMetadataFromBytes(item.Metadata)
 		require.NoError(t, err2)
 		return metadata.URI == nftMetadatas[0].URI
 	})
@@ -1100,7 +1099,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 	require.NoError(t, err)
 
 	// need an alias to create a foundry; the easiest way is to create a "disposable" ISC chain
-	foundryChain, _, _ := env.solo.NewChainExt(foundryOwner, 0, "foundryChain")
+	foundryChain, _ := env.solo.NewChainExt(foundryOwner, 0, "foundryChain")
 	err = foundryChain.DepositBaseTokensToL2(env.solo.L1BaseTokens(foundryOwnerAddr)/2, foundryOwner)
 	require.NoError(t, err)
 	supply := big.NewInt(int64(10 * isc.Million))

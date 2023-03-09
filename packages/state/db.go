@@ -15,10 +15,6 @@ const (
 	prefixBlockByTrieRoot = iota
 	prefixTrie
 	prefixLatestTrieRoot
-
-	// KeyChainID is the key used to store the chain ID in the state.
-	// It should not collide with any hname prefix (which are 32 bits long).
-	KeyChainID = "\x00"
 )
 
 var (

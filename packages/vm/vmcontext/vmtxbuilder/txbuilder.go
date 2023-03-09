@@ -272,6 +272,13 @@ func (txb *AnchorTransactionBuilder) outputs(stateMetadata []byte) iotago.Output
 			},
 		},
 	}
+	if metadata := txb.anchorOutput.FeatureSet().MetadataFeature(); metadata != nil {
+		anchorOutput.Features = append(anchorOutput.Features,
+			&iotago.MetadataFeature{
+				Data: metadata.Data,
+			},
+		)
+	}
 	ret = append(ret, anchorOutput)
 
 	// creating outputs for updated internal accounts

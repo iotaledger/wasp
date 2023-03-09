@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
@@ -38,7 +37,7 @@ func (h *magicContractViewHandler) GetNFTData(nftID iscmagic.NFTID) iscmagic.ISC
 // handler for ISCSandbox::getIRC27NFTData
 func (h *magicContractViewHandler) GetIRC27NFTData(nftID iscmagic.NFTID) iscmagic.IRC27NFT {
 	nft := h.ctx.GetNFTData(nftID.Unwrap())
-	metadata, err := transaction.IRC27NFTMetadataFromBytes(nft.Metadata)
+	metadata, err := isc.IRC27NFTMetadataFromBytes(nft.Metadata)
 	h.ctx.RequireNoError(err)
 	return iscmagic.IRC27NFT{
 		Nft:      iscmagic.WrapISCNFT(nft),

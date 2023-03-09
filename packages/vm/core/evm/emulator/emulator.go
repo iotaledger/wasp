@@ -95,7 +95,6 @@ func Init(
 	gasLimits GasLimits,
 	timestamp uint64,
 	alloc core.GenesisAlloc,
-	l2Balance L2Balance,
 ) {
 	bdb := newBlockchainDB(store, gasLimits.Block)
 	if bdb.Initialized() {
@@ -103,11 +102,11 @@ func Init(
 	}
 	bdb.Init(chainID, blockKeepAmount, timestamp)
 
-	statedb := newStateDB(store, l2Balance)
+	statedb := newStateDB(store, nil)
 	for addr, account := range alloc {
 		statedb.CreateAccount(addr)
 		if account.Balance != nil {
-			statedb.AddBalance(addr, account.Balance)
+			panic("balances must be 0 at genesis")
 		}
 		if account.Code != nil {
 			statedb.SetCode(addr, account.Code)

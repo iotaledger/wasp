@@ -32,7 +32,9 @@ import (
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/l1connection"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -164,7 +166,7 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	if quorum < minQuorum {
 		quorum = minQuorum
 	}
-	return clu.DeployChainWithDKG("Default chain", committee, committee, uint16(quorum))
+	return clu.DeployChainWithDKG(committee, committee, uint16(quorum))
 }
 
 func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, iotago.Address, error) {
@@ -199,21 +201,20 @@ func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...ti
 	return apilib.RunDKG(client, peerPubKeys, threshold, timeout...)
 }
 
-func (clu *Cluster) DeployChainWithDKG(description string, allPeers, committeeNodes []int, quorum uint16) (*Chain, error) {
+func (clu *Cluster) DeployChainWithDKG(allPeers, committeeNodes []int, quorum uint16) (*Chain, error) {
 	stateAddr, err := clu.RunDKG(committeeNodes, quorum)
 	if err != nil {
 		return nil, err
 	}
-	return clu.DeployChain(description, allPeers, committeeNodes, quorum, stateAddr)
+	return clu.DeployChain(allPeers, committeeNodes, quorum, stateAddr)
 }
 
-func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []int, quorum uint16, stateAddr iotago.Address) (*Chain, error) {
+func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, stateAddr iotago.Address) (*Chain, error) {
 	if len(allPeers) == 0 {
 		allPeers = clu.Config.AllNodes()
 	}
 
 	chain := &Chain{
-		Description:       description,
 		OriginatorKeyPair: clu.ValidatorKeyPair,
 		AllPeers:          allPeers,
 		CommitteeNodes:    committeeNodes,
@@ -239,16 +240,18 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 		committeePubKeys[i] = peeringNode.PublicKey
 	}
 
-	chainID, initRequestTx, err := apilib.DeployChain(
+	chainID, err := apilib.DeployChain(
 		apilib.CreateChainParams{
 			Layer1Client:      clu.L1Client(),
 			CommitteeAPIHosts: chain.CommitteeAPIHosts(),
 			N:                 uint16(len(committeeNodes)),
 			T:                 quorum,
 			OriginatorKeyPair: chain.OriginatorKeyPair,
-			Description:       description,
 			Textout:           os.Stdout,
 			Prefix:            "[cluster] ",
+			InitParams: dict.Dict{
+				origin.ParamChainOwner: isc.NewAgentID(chain.OriginatorAddress()).Bytes(),
+			},
 		},
 		stateAddr,
 		stateAddr,
@@ -265,11 +268,28 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	fmt.Printf("activating chain %s.. OK.\n", chainID.String())
 
 	// ---------- wait until the request is processed at least in all committee nodes
-	_, err = multiclient.New(clu.WaspClientFromHostName, chain.CommitteeAPIHosts()).
-		WaitUntilAllRequestsProcessedSuccessfully(chainID, initRequestTx, 30*time.Second)
+	{
+		fmt.Printf("waiting until nodes receive the origin output..\n")
 
-	if err != nil {
-		clu.t.Fatalf("waiting root init request transaction.. FAILED: %v\n", err)
+		retries := 10
+		for {
+			time.Sleep(200 * time.Millisecond)
+			err = multiclient.New(clu.WaspClientFromHostName, chain.CommitteeAPIHosts()).Do(
+				func(_ int, a *apiclient.APIClient) error {
+					_, _, err2 := a.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
+					return err2
+				})
+			if err != nil {
+				if retries > 0 {
+					retries--
+					continue
+				}
+				return nil, err
+			}
+			break
+		}
+
+		fmt.Printf("waiting until nodes receive the origin output.. DONE\n")
 	}
 
 	chain.StateAddress = stateAddr

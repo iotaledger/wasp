@@ -38,13 +38,14 @@ func TestDeposit(t *testing.T) {
 	require.NoError(t, err)
 
 	rec := ch.LastReceipt()
+	require.NotNil(t, rec)
 	t.Logf("========= receipt: %s", rec)
 	t.Logf("========= burn log:\n%s", rec.GasBurnLog)
 }
 
 func TestHarvest(t *testing.T) {
 	env := solo.New(t)
-	ch, _, _ := env.NewChainExt(nil, 10_000, "chain1")
+	ch, _ := env.NewChainExt(nil, 10_000, "chain1")
 	_ = ch.Log().Sync()
 
 	t.Logf("common base tokens BEFORE: %d", ch.L2CommonAccountBaseTokens())
@@ -137,7 +138,7 @@ func TestFoundries(t *testing.T) {
 
 	initTest := func() {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch, _, _ = env.NewChainExt(nil, 10*isc.Million, "chain1")
+		ch, _ = env.NewChainExt(nil, 10*isc.Million, "chain1")
 		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID = isc.NewAgentID(senderAddr)
 
@@ -145,7 +146,7 @@ func TestFoundries(t *testing.T) {
 	}
 	t.Run("newFoundry fails when no allowance is provided", func(t *testing.T) {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch, _, _ = env.NewChainExt(nil, 100_000, "chain1")
+		ch, _ = env.NewChainExt(nil, 100_000, "chain1")
 
 		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
 			accounts.ParamTokenScheme, codec.EncodeTokenScheme(
@@ -160,7 +161,7 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("newFoundry overrides bad melted/minted token counters in tokenscheme", func(t *testing.T) {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch, _, _ = env.NewChainExt(nil, 100_000, "chain1")
+		ch, _ = env.NewChainExt(nil, 100_000, "chain1")
 
 		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
 			accounts.ParamTokenScheme, codec.EncodeTokenScheme(
@@ -493,7 +494,7 @@ func TestAccountBalances(t *testing.T) {
 	l1BaseTokens := func(addr iotago.Address) uint64 { return env.L1Assets(addr).BaseTokens }
 	totalBaseTokens := l1BaseTokens(chainOwnerAddr) + l1BaseTokens(senderAddr)
 
-	ch, _, _ := env.NewChainExt(chainOwner, 0, "chain1")
+	ch, _ := env.NewChainExt(chainOwner, 0, "chain1")
 
 	l2BaseTokens := func(agentID isc.AgentID) uint64 { return ch.L2BaseTokens(agentID) }
 	totalGasFeeCharged := uint64(0)
@@ -528,7 +529,7 @@ func TestAccountBalances(t *testing.T) {
 		totalGasFeeCharged += bi.GasFeeCharged
 		require.EqualValues(t,
 			int(l2BaseTokens(ch.CommonAccount())),
-			int(totalGasFeeCharged),
+			int(totalGasFeeCharged+accounts.MinimumBaseTokensOnCommonAccount),
 		)
 
 		require.EqualValues(t,
@@ -583,7 +584,7 @@ func initDepositTest(t *testing.T, initLoad ...uint64) *testParams {
 	if len(initLoad) != 0 {
 		initBaseTokens = initLoad[0]
 	}
-	ret.ch, _, _ = ret.env.NewChainExt(ret.chainOwner, initBaseTokens, "chain1")
+	ret.ch, _ = ret.env.NewChainExt(ret.chainOwner, initBaseTokens, "chain1")
 
 	ret.req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 	return ret
@@ -1044,7 +1045,7 @@ func TestNFTAccount(t *testing.T) {
 	// deposit funds on behalf of the NFT
 	const baseTokensToSend = 10 * isc.Million
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-		AddFungibleTokens(isc.NewAssetsBaseTokens(baseTokensToSend)).
+		AddBaseTokens(baseTokensToSend).
 		WithMaxAffordableGasBudget().
 		WithSender(nftAddress)
 
@@ -1148,6 +1149,28 @@ func TestTransferNFTAllowance(t *testing.T) {
 	})
 	require.Error(t, err)
 	require.Regexp(t, "NFTID not found", err.Error())
+}
+
+func TestDepositNFTWithMinStorageDeposit(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: false, Debug: true, PrintStackTrace: true})
+	ch := env.NewChain()
+
+	// transfer assets to the chain so that it has enough for SD
+	// TODO: removing this causes the VM to crash
+	ch.TransferAllowanceTo(isc.NewAssetsBaseTokens(1*isc.Million), isc.NewContractAgentID(ch.ChainID, 0), ch.OriginatorPrivateKey)
+
+	issuerWallet, issuerAddress := env.NewKeyPairWithFunds()
+
+	nft, _, err := env.MintNFTL1(issuerWallet, issuerAddress, []byte("foobar"))
+	require.NoError(t, err)
+	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+		WithNFT(nft).
+		WithMaxAffordableGasBudget().
+		WithSender(nft.ID.ToAddress())
+	req.AddBaseTokens(ch.EstimateNeededStorageDeposit(req, issuerWallet))
+
+	_, err = ch.PostRequestSync(req, issuerWallet)
+	require.ErrorContains(t, err, "request has been skipped")
 }
 
 func TestDepositRandomContractMinFee(t *testing.T) {

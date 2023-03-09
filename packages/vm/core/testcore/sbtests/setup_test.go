@@ -40,7 +40,7 @@ func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo,
 		AutoAdjustStorageDeposit: true,
 	}).
 		WithNativeContract(sbtestsc.Processor)
-	chain, _, _ := env.NewChainExt(keyPairOriginator, 10_000, "chain1")
+	chain, _ := env.NewChainExt(keyPairOriginator, 10_000, "chain1")
 	err := chain.SendFromL1ToL2AccountBaseTokens(1000, utxodb.FundsFromFaucetAmount/2, chain.OriginatorAgentID, chain.OriginatorPrivateKey)
 	require.NoError(t, err)
 	return env, chain

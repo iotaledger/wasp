@@ -4,7 +4,6 @@
 package evmimpl
 
 import (
-	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -157,6 +156,6 @@ func deployMagicContractOnGenesis(genesisAlloc core.GenesisAlloc) {
 		// the contract; the code itself will never get executed
 		Code:    common.Hex2Bytes("600180808053f3"),
 		Storage: map[common.Hash]common.Hash{},
-		Balance: &big.Int{},
+		Balance: nil,
 	}
 }

@@ -91,6 +91,9 @@ func aliasOutputStorageDeposit() iotago.Output {
 			&iotago.SenderFeature{
 				Address: addr,
 			},
+			&iotago.MetadataFeature{
+				Data: make([]byte, 99999),
+			},
 		},
 	}
 }
@@ -109,7 +112,6 @@ func nativeTokenOutputStorageDeposit() iotago.Output {
 		},
 		nil,
 		isc.SendOptions{},
-		true,
 	)
 }
 
@@ -127,7 +129,6 @@ func nftOutputStorageDeposit() iotago.Output {
 		},
 		nil,
 		isc.SendOptions{},
-		true,
 	)
 	return NftOutputFromBasicOutput(basicOut, &isc.NFT{
 		ID:       iotago.NFTID{0},

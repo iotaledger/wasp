@@ -31,8 +31,8 @@ func (vmctx *VMContext) callProgram(targetContract, epCode isc.Hname, params dic
 	if ep.IsView() {
 		return ep.Call(sandbox.NewSandboxView(vmctx))
 	}
-	// prevent calling 'init' not from root contract or not while initializing root
-	if epCode == isc.EntryPointInit && targetContract != root.Contract.Hname() {
+	// prevent calling 'init' not from root contract
+	if epCode == isc.EntryPointInit {
 		if !vmctx.callerIsRoot() {
 			panic(fmt.Errorf("%v: target=(%s, %s)",
 				vm.ErrRepeatingInitCall, vmctx.req.CallTarget().Contract, epCode))

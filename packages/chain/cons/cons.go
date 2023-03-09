@@ -625,7 +625,7 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.
 	if err != nil {
 		panic(fmt.Errorf("cannot get ID from the produced TX: %w", err))
 	}
-	chained, err := transaction.GetAliasOutput(tx, c.chainID.AsAddress())
+	chained, err := isc.AliasOutputWithIDFromTx(tx, c.chainID.AsAddress())
 	if err != nil {
 		panic(fmt.Errorf("cannot get AliasOutput from produced TX: %w", err))
 	}

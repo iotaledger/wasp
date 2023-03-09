@@ -53,11 +53,9 @@ func setChainInfo(ctx isc.Sandbox) dict.Dict {
 
 // getChainInfo view returns general info about the chain: chain ID, chain owner ID, limits and default fees
 func getChainInfo(ctx isc.SandboxView) dict.Dict {
-	info := governance.MustGetChainInfo(ctx.StateR())
+	info := governance.MustGetChainInfo(ctx.StateR(), ctx.ChainID())
 	ret := dict.New()
-	ret.Set(governance.VarChainID, codec.EncodeChainID(info.ChainID))
 	ret.Set(governance.VarChainOwnerID, codec.EncodeAgentID(info.ChainOwnerID))
-	ret.Set(governance.VarDescription, codec.EncodeString(info.Description))
 	ret.Set(governance.VarGasFeePolicyBytes, info.GasFeePolicy.Bytes())
 	ret.Set(governance.VarMaxBlobSize, codec.EncodeUint32(info.MaxBlobSize))
 	ret.Set(governance.VarMaxEventSize, codec.EncodeUint16(info.MaxEventSize))

@@ -45,7 +45,6 @@ func postRequest(nodeName, chain, hname, fname string, params chainclient.PostRe
 				GasBudget:      gas.MaxGasPerRequest,
 			},
 			isc.SendOptions{},
-			true,
 		)
 		util.SDAdjustmentPrompt(output)
 	}

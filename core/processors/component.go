@@ -37,8 +37,8 @@ func provide(c *dig.Container) error {
 
 		for _, c := range nativeContracts {
 			CoreComponent.LogDebugf(
-				"Registering native contract: name: '%s', program hash: %s, description: '%s'\n",
-				c.Contract.Name, c.Contract.ProgramHash.String(), c.Contract.Description,
+				"Registering native contract: name: '%s', program hash: %s\n",
+				c.Contract.Name, c.Contract.ProgramHash.String(),
 			)
 		}
 

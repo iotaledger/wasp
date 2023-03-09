@@ -83,13 +83,13 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		// should never happen
 		panic(errors.New("CreateVMContext.invalid params: must be at least 1 request"))
 	}
-	l1Commitment, err := L1CommitmentFromAliasOutput(task.AnchorOutput)
+	prevL1Commitment, err := L1CommitmentFromAliasOutput(task.AnchorOutput)
 	if err != nil {
 		// should never happen
 		panic(fmt.Errorf("CreateVMContext: can't parse state data as L1Commitment from chain input %w", err))
 	}
 
-	task.StateDraft, err = task.Store.NewStateDraft(task.TimeAssumption, l1Commitment)
+	task.StateDraft, err = task.Store.NewStateDraft(task.TimeAssumption, prevL1Commitment)
 	if err != nil {
 		// should never happen
 		panic(err)
@@ -106,32 +106,22 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.gasBurnLog = gas.NewGasBurnLog()
 	}
 	// at the beginning of each block
+	l1Commitment, err := L1CommitmentFromAliasOutput(task.AnchorOutput)
+	if err != nil {
+		// should never happen
+		panic(err)
+	}
 
 	ret.withStateUpdate(func() {
 		ret.runMigrations(migrations.BaseSchemaVersion, migrations.Migrations)
+
+		// save the anchor tx ID of the current state
+		ret.callCore(blocklog.Contract, func(s kv.KVStore) {
+			blocklog.UpdateLatestBlockInfo(s, ret.task.AnchorOutputID.TransactionID(), l1Commitment)
+		})
 	})
 
-	if task.AnchorOutput.StateIndex > 0 {
-		ret.withStateUpdate(func() {
-			// load and validate chain's storage deposit assumptions about internal outputs. They must not get bigger!
-			ret.callCore(accounts.Contract, func(s kv.KVStore) {
-				ret.storageDepositAssumptions = accounts.GetStorageDepositAssumptions(s)
-			})
-			currentStorageDepositValues := transaction.NewStorageDepositEstimate()
-			if currentStorageDepositValues.AnchorOutput > ret.storageDepositAssumptions.AnchorOutput ||
-				currentStorageDepositValues.NativeTokenOutput > ret.storageDepositAssumptions.NativeTokenOutput {
-				panic(vm.ErrInconsistentStorageDepositAssumptions)
-			}
-
-			// save the anchor tx ID of the current state
-			ret.callCore(blocklog.Contract, func(s kv.KVStore) {
-				blocklog.UpdateLatestBlockInfo(s, ret.task.AnchorOutputID.TransactionID(), l1Commitment)
-			})
-		})
-	} else {
-		// assuming storage deposit assumptions for the first block. It must be consistent with parameters in the init request
-		ret.storageDepositAssumptions = transaction.NewStorageDepositEstimate()
-	}
+	ret.storageDepositAssumptions = transaction.NewStorageDepositEstimate()
 
 	nativeTokenBalanceLoader := func(nativeTokenID iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID) {
 		return ret.loadNativeTokenOutput(nativeTokenID)
@@ -168,9 +158,7 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	var rotationAddr iotago.Address
 	vmctx.withStateUpdate(func() {
 		rotationAddr = vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
-		if vmctx.task.AnchorOutput.StateIndex > 0 {
-			vmctx.closeBlockContexts()
-		}
+		vmctx.closeBlockContexts()
 		vmctx.saveInternalUTXOs()
 	})
 
@@ -320,9 +308,6 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 }
 
 func (vmctx *VMContext) assertConsistentL2WithL1TxBuilder(checkpoint string) {
-	if vmctx.task.AnchorOutput.StateIndex == 0 && vmctx.isInitChainRequest() {
-		return
-	}
 	var totalL2Assets *isc.Assets
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		totalL2Assets = accounts.GetTotalL2FungibleTokens(s)
