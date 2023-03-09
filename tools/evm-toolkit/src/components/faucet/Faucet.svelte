@@ -52,7 +52,7 @@
         evmAddress,
         $selectedNetwork.chainAddress,
         balance,
-        BigInt(500000),
+        BigInt(5000000),
       );
       toast.pop(toastId);
 

@@ -52,15 +52,15 @@ export class SendFundsTransaction {
       Converter.hexToBytes(evmAddress.toLowerCase()),
     ); // EVM address
 
-    /* Write contract arguments */
-    metadata.writeUInt32LE(2);
+    /* Write length of contract arguments (1) */
+    metadata.writeUInt32LE(1);
 
     // Write evm address (arg1)
-    metadata.writeUInt16LE(1);
-    metadata.writeInt8('a'.charCodeAt(0));
-    metadata.writeUInt32LE(evmAddressBuffer.buffer.length);
-    metadata.writeBytes(evmAddressBuffer.buffer);
-
+    metadata.writeUInt16LE(1); // Length of key (len(a) == 1)
+    metadata.writeInt8('a'.charCodeAt(0)); // Write key (a == 'agentID')
+    metadata.writeUInt32LE(evmAddressBuffer.buffer.length); // Length of value (len(agentID) == 21 for evm address)
+    metadata.writeBytes(evmAddressBuffer.buffer); //  Write value (bytes(agentID))
+    console.log(evmAddressBuffer.buffer.length)
     /* Write allowance */
     metadata.writeUInt8(0); // Has allowance (255 if no allowance is set)
     metadata.writeUInt64LE(amount - gas); // IOTA amount to send
