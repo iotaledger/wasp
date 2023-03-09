@@ -1,6 +1,7 @@
 package corecontracts
 
 import (
+	"encoding/base64"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -15,15 +16,12 @@ func MapGovChainInfoResponse(chainInfo *governance.ChainInfo) models.GovChainInf
 	return models.GovChainInfoResponse{
 		ChainID:      chainInfo.ChainID.String(),
 		ChainOwnerID: chainInfo.ChainOwnerID.String(),
-		Description:  chainInfo.Description,
 		GasFeePolicy: models.GasFeePolicy{
 			GasPerToken:       chainInfo.GasFeePolicy.GasPerToken,
 			ValidatorFeeShare: chainInfo.GasFeePolicy.ValidatorFeeShare,
 			EVMGasRatio:       chainInfo.GasFeePolicy.EVMGasRatio,
 		},
-		MaxBlobSize:     chainInfo.MaxBlobSize,
-		MaxEventSize:    chainInfo.MaxEventSize,
-		MaxEventsPerReq: chainInfo.MaxEventsPerReq,
+		CustomMetadata: base64.StdEncoding.EncodeToString(chainInfo.CustomMetadata),
 	}
 }
 

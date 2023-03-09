@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coregovernance"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
@@ -101,18 +100,6 @@ func TestSetFeePolicy(t *testing.T) {
 	require.NoError(t, ctx.Err)
 }
 
-func TestSetChainInfo(t *testing.T) {
-	ctx := setupGovernance(t)
-	require.NoError(t, ctx.Err)
-
-	f := coregovernance.ScFuncs.SetChainInfo(ctx)
-	f.Params.MaxBlobSize().SetValue(10)
-	f.Params.MaxEventSize().SetValue(11)
-	f.Params.MaxEventsPerReq().SetValue(12)
-	f.Func.Post()
-	require.NoError(t, ctx.Err)
-}
-
 func TestAddCandidateNode(t *testing.T) {
 	t.SkipNow()
 	ctx := setupGovernance(t)
@@ -184,25 +171,4 @@ func TestGetChainInfo(t *testing.T) {
 	gfp, err := gas.FeePolicyFromBytes(f.Results.GasFeePolicyBytes().Value())
 	require.NoError(t, err)
 	assert.Equal(t, ctx.Chain.GetGasFeePolicy(), gfp)
-	assert.Equal(t, governance.DefaultMaxBlobSize, f.Results.MaxBlobSize().Value())
-	assert.Equal(t, governance.DefaultMaxEventSize, f.Results.MaxEventSize().Value())
-	assert.Equal(t, governance.DefaultMaxEventsPerRequest, f.Results.MaxEventsPerReq().Value())
-}
-
-func TestGetMaxBlobSize(t *testing.T) {
-	ctx := setupGovernance(t)
-	require.NoError(t, ctx.Err)
-
-	var maxBlobSize uint32 = 10
-	fset := coregovernance.ScFuncs.SetChainInfo(ctx)
-	fset.Params.MaxBlobSize().SetValue(maxBlobSize)
-	fset.Params.MaxEventSize().SetValue(11)
-	fset.Params.MaxEventsPerReq().SetValue(12)
-	fset.Func.Post()
-	require.NoError(t, ctx.Err)
-
-	fget := coregovernance.ScFuncs.GetMaxBlobSize(ctx)
-	fget.Func.Call()
-	require.NoError(t, ctx.Err)
-	require.Equal(t, maxBlobSize, fget.Results.MaxBlobSize().Value())
 }

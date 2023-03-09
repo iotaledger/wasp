@@ -24,7 +24,6 @@ var (
 	ErrRepeatingInitCall                     = coreerrors.Register("repeating init call").Create()
 	ErrInconsistentStorageDepositAssumptions = coreerrors.Register("storage deposit requirements are not consistent with the chain assumptions").Create()
 	ErrTooManyEvents                         = coreerrors.Register("too many events issued for contract").Create()
-	ErrTooLargeEvent                         = coreerrors.Register("event data is too large").Create()
 	ErrPrivilegedCallFailed                  = coreerrors.Register("privileged call failed").Create()
 	ErrExceededPostedOutputLimit             = coreerrors.Register("exceeded maximum number of %d posted outputs in one request").Create(42)
 	ErrGasBudgetExceeded                     = coreerrors.Register("gas budget exceeded").Create()

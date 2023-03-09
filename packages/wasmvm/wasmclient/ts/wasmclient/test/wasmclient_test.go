@@ -9,13 +9,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 	clustertests "github.com/iotaledger/wasp/tools/cluster/tests"
 )

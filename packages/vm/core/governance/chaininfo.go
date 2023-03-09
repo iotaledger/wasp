@@ -8,13 +8,10 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-// ChainInfo is an API structure which contains main properties of the chain in on place
+// ChainInfo is an API structure containing the main properties of the chain
 type ChainInfo struct {
-	ChainID         isc.ChainID
-	ChainOwnerID    isc.AgentID
-	Description     string
-	GasFeePolicy    *gas.FeePolicy
-	MaxBlobSize     uint32
-	MaxEventSize    uint16
-	MaxEventsPerReq uint16
+	ChainID        isc.ChainID
+	ChainOwnerID   isc.AgentID
+	GasFeePolicy   *gas.FeePolicy
+	CustomMetadata []byte
 }

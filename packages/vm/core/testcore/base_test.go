@@ -269,16 +269,6 @@ func TestNoTargetView(t *testing.T) {
 	})
 }
 
-func TestOkCall(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	ch := env.NewChain()
-
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
-		WithGasBudget(100_000)
-	_, err := ch.PostRequestSync(req, nil)
-	require.NoError(t, err)
-}
-
 func TestEstimateGas(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
 		WithNativeContract(sbtestsc.Processor)
@@ -451,7 +441,6 @@ func TestDeployNativeContract(t *testing.T) {
 	ch := env.NewChain()
 
 	senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-	// userAgentID := isc.NewAgentID(userAddr, 0)
 
 	err := ch.DepositBaseTokensToL2(10_000, senderKeyPair)
 	require.NoError(t, err)
@@ -471,9 +460,6 @@ func TestDeployNativeContract(t *testing.T) {
 
 	err = ch.DeployContract(senderKeyPair, "sctest", sbtestsc.Contract.ProgramHash)
 	require.NoError(t, err)
-	//
-	//req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name)
-	//_, err := ch.PostRequestSync(req, nil)
 }
 
 func TestFeeBasic(t *testing.T) {

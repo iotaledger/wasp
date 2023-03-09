@@ -30,9 +30,7 @@ var Processor = governance.Contract.Processor(nil,
 	governance.ViewGetEVMGasRatio.WithHandler(getEVMGasRatio),
 
 	// chain info
-	governance.FuncSetChainInfo.WithHandler(setChainInfo),
 	governance.ViewGetChainInfo.WithHandler(getChainInfo),
-	governance.ViewGetMaxBlobSize.WithHandler(getMaxBlobSize),
 
 	// access nodes
 	governance.FuncAddCandidateNode.WithHandler(addCandidateNode),
@@ -52,12 +50,6 @@ var Processor = governance.Contract.Processor(nil,
 
 func SetInitialState(state kv.KVStore, chainOwner isc.AgentID) {
 	state.Set(governance.VarChainOwnerID, chainOwner.Bytes())
-
-	state.Set(governance.VarMaxBlobSize, codec.Encode(governance.DefaultMaxBlobSize))
-	state.Set(governance.VarMaxEventSize, codec.Encode(governance.DefaultMaxEventSize))
-	state.Set(governance.VarMaxEventsPerReq, codec.Encode(governance.DefaultMaxEventsPerRequest))
-
 	state.Set(governance.VarGasFeePolicyBytes, gas.DefaultFeePolicy().Bytes())
-
 	state.Set(governance.VarMaintenanceStatus, codec.Encode(false))
 }
