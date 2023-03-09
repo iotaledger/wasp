@@ -61,11 +61,11 @@ func buildPostRequestCmd(name, desc, hname, fname string, initFlags func(cmd *co
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
 
-			allowanceTokens := util.ParseFungibleTokens(postrequestParams.allowance)
+			allowanceTokens := util.ParseAssetArgs(postrequestParams.allowance)
 
 			params := chainclient.PostRequestParams{
 				Args:      util.EncodeParams(funcArgs(cmd)),
-				Transfer:  util.ParseFungibleTokens(postrequestParams.transfer),
+				Transfer:  util.ParseAssetArgs(postrequestParams.transfer),
 				Allowance: allowanceTokens,
 			}
 			postRequest(

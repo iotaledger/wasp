@@ -36,8 +36,21 @@ func WithSCTransaction(chainID isc.ChainID, nodeName string, f func() (*iotago.T
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
 		client := cliclients.WaspClient(nodeName)
-		_, err := apiextensions.APIWaitUntilAllRequestsProcessed(client, chainID, tx, 1*time.Minute)
+		receipts, err := apiextensions.APIWaitUntilAllRequestsProcessed(client, chainID, tx, 1*time.Minute)
+
 		log.Check(err)
+
+		success := true
+		for _, receiept := range receipts {
+			if receiept.Error != nil {
+				log.Printf("Request with index[%v] failed with error: '%v'", receiept.RequestIndex, receiept.Error.Message)
+				success = false
+			}
+		}
+
+		if success {
+			log.Printf("Requests successfully sent")
+		}
 	}
 
 	return tx

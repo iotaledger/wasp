@@ -102,7 +102,7 @@ func initDepositCmd() *cobra.Command {
 	var chain string
 
 	cmd := &cobra.Command{
-		Use:   "deposit [<agentid>] <token-id>:<amount>, [<token-id>:amount ...]",
+		Use:   "deposit [<agentid>] <token-id>:<amount>, [<token-id>:amount ...], <nft>:nftID, [<nft>:nftID ...]",
 		Short: "Deposit L1 funds into the given (default: your) L2 account",
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -112,7 +112,7 @@ func initDepositCmd() *cobra.Command {
 			chainID := config.GetChain(chain)
 			if strings.Contains(args[0], ":") {
 				// deposit to own agentID
-				tokens := util.ParseFungibleTokens(args)
+				tokens := util.ParseAssetArgs(args)
 				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotago.Transaction, error) {
 					client := cliclients.WaspClient(node)
 
@@ -129,7 +129,7 @@ func initDepositCmd() *cobra.Command {
 				agentID, err := isc.NewAgentIDFromString(args[0])
 				log.Check(err)
 				tokensStr := strings.Split(strings.Join(args[1:], ""), ",")
-				tokens := util.ParseFungibleTokens(tokensStr)
+				tokens := util.ParseAssetArgs(tokensStr)
 				allowance := tokens.Clone()
 
 				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotago.Transaction, error) {

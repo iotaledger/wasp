@@ -23,7 +23,7 @@ func initSendFundsCmd() *cobra.Command {
 			_, targetAddress, err := iotago.ParseBech32(args[0])
 			log.Check(err)
 
-			tokens := util.ParseFungibleTokens(args[1:])
+			tokens := util.ParseAssetArgs(args[1:])
 			log.Check(err)
 
 			log.Printf("\nSending \n\t%v \n\tto: %v\n\n", tokens, args[0])
