@@ -61,12 +61,6 @@ export class SendFundsTransaction {
     metadata.writeUInt32LE(evmAddressBuffer.buffer.length);
     metadata.writeBytes(evmAddressBuffer.buffer);
 
-    // Write account creation flag (arg2)
-    metadata.writeUInt16LE(1);
-    metadata.writeInt8('c'.charCodeAt(0));
-    metadata.writeUInt32LE(1);
-    metadata.writeUInt8(1);
-
     /* Write allowance */
     metadata.writeUInt8(0); // Has allowance (255 if no allowance is set)
     metadata.writeUInt64LE(amount - gas); // IOTA amount to send
