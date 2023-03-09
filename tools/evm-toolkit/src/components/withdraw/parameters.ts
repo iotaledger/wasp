@@ -1,7 +1,7 @@
 import { Converter } from '@iota/util.js';
 import { waspAddrBinaryFromBech32 } from './../../lib/bech32';
 import type { SingleNodeClient } from '@iota/iota.js';
-import type { INativeToken } from '../../lib/native_token';
+import type { INFT, INativeToken } from '../../lib/native_token';
 
 export function getBalanceParameters(agentID: Uint8Array) {
   return {
@@ -31,6 +31,7 @@ export async function withdrawParameters(
   gasFee: number,
   baseTokensToWithdraw: number,
   nativeTokens: INativeToken[],
+  nft: INFT,
 ) {
   const binaryAddress = await waspAddrBinaryFromBech32(
     nodeClient,
@@ -47,6 +48,11 @@ export async function withdrawParameters(
     amount: x.amount,
   }));
 
+  const nftID = []
+  if (nft) {
+    nftID.push(nft.id);
+  }
+
   const parameters = [
     {
       // Receiver
@@ -56,7 +62,7 @@ export async function withdrawParameters(
       // Fungible Tokens
       baseTokens: baseTokensToWithdraw - gasFee,
       nativeTokens: nativeTokenTuple,
-      nfts: [],
+      nfts: nftID,
     },
     false,
     {
@@ -84,6 +90,6 @@ export async function withdrawParameters(
       },
     },
   ];
-
+  console.log(parameters)
   return parameters;
 }

@@ -1,5 +1,5 @@
 import type { SetIntervalAsyncTimer } from 'set-interval-async';
-import type { INativeToken } from '../../lib/native_token';
+import type { INFT, INativeToken } from '../../lib/native_token';
 import type { Contract } from 'web3-eth-contract';
 
 export interface WithdrawState {
@@ -12,6 +12,11 @@ export interface WithdrawState {
    * The current available native tokens and balance of the user.
    */
   availableNativeTokens: INativeToken[];
+
+  /**
+   * The current available NFTs of the user.
+   */
+  availableNFTs: INFT[];
 
   /**
    * The reference to the ISC magic contract used for contract invocations.

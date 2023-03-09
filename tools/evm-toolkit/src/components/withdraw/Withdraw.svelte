@@ -20,6 +20,7 @@
   import {
     getNativeTokenMetaData,
     type INativeToken,
+    type INFT,
   } from '../../lib/native_token';
   import { onDestroy, onMount } from 'svelte';
   import { toast } from '@zerodevx/svelte-toast';
@@ -28,6 +29,7 @@
   const state: WithdrawState = {
     availableBaseTokens: 0,
     availableNativeTokens: [],
+    availableNFTs: [],
     contract: undefined,
     evmChainID: 0,
 
@@ -44,11 +46,13 @@
 
   $: formattedBalance = (state.availableBaseTokens / 1e6).toFixed(2);
   $: formattedAmountToSend = (formInput.baseTokensToSend / 1e6).toFixed(2);
-  $: canSendFunds =
+  $: isValidAddress = formInput.receiverAddress.length == Bech32AddressLength;
+  $: canWithdraw =
     state.availableBaseTokens > 0 &&
     formInput.baseTokensToSend > 0 &&
-    formInput.receiverAddress.length == Bech32AddressLength;
-  $: canSetAmountToSend = state.availableBaseTokens > gasFee + 1;
+    isValidAddress;
+  $: canWithdrawEverything = isValidAddress;
+  $: canSetAmountToWithdraw = state.availableBaseTokens > gasFee + 1;
   $: state.isMetamaskConnected = window.ethereum
     ? window.ethereum.isConnected()
     : false;
@@ -89,13 +93,14 @@
 
     let parameters = getBalanceParameters(agentID);
 
-    const result = await state.contract.methods
+    const nativeTokenResult = await state.contract.methods
       .callView(accountsCoreContract, getBalanceFunc, parameters)
       .call();
 
+    console.log('nativeToken', nativeTokenResult);
     const nativeTokens: INativeToken[] = [];
 
-    for (let item of result.items) {
+    for (let item of nativeTokenResult.items) {
       const id = item.key;
       const idBytes = Converter.hexToBytes(id);
 
@@ -122,8 +127,36 @@
     }
   }
 
+  type Dict = [string, string][];
+
+  async function pollNFTs() {
+    if (!$selectedAccount) {
+      return;
+    }
+
+    console.log('pollNFT');
+
+    const accountsCoreContract = hNameFromString('accounts');
+    const getAccountNFTsFunc = hNameFromString('accountNFTs');
+    const agentID = evmAddressToAgentID($selectedAccount);
+
+    let parameters = getBalanceParameters(agentID);
+
+    const NFTsResult = await state.contract.methods
+      .callView(accountsCoreContract, getAccountNFTsFunc, parameters)
+      .call();
+
+    const nfts = NFTsResult.items as Dict;
+
+    // The 'i' parameter returns the length of the nft id array, but we can just filter that out
+    // and go through the list dynamically.
+    const nftIds = nfts.filter(x => Converter.hexToUtf8(x[0]) != 'i');
+
+    state.availableNFTs = nftIds.map(x => <INFT>{ id: x[1] });
+  }
+
   async function pollAccount() {
-    await Promise.all([pollBalance(), pollNativeTokens()]);
+    await Promise.all([pollBalance(), pollNativeTokens(), pollNFTs()]);
   }
 
   async function subscribeBalance() {
@@ -164,11 +197,56 @@
     state.isLoading = false;
   }
 
-  async function onWithdrawClick() {
+  async function withdraw(
+    baseTokens: number,
+    nativeTokens: INativeToken[],
+    nft: INFT,
+  ) {
     if (!$selectedAccount) {
       return;
     }
 
+    let parameters = await withdrawParameters(
+      $nodeClient,
+      formInput.receiverAddress,
+      gasFee,
+      baseTokens,
+      nativeTokens,
+      nft,
+    );
+
+    let result: any;
+
+    try {
+      result = await state.contract.methods.send(...parameters).send();
+    } catch (ex) {
+      toast.push(
+        `Failed to send withdraw request: ${JSON.stringify(ex, null, 4)}`,
+        {
+          duration: 8000,
+        },
+      );
+      console.log(ex);
+      return;
+    }
+
+    console.log(result);
+
+    if (result.status) {
+      toast.push(`Withdraw request sent. BlockIndex: ${result.blockNumber}`, {
+        duration: 4000,
+      });
+    } else {
+      toast.push(
+        `Failed to send withdraw request: ${JSON.stringify(result, null, 4)}`,
+        {
+          duration: 8000,
+        },
+      );
+    }
+  }
+
+  async function onWithdrawClick() {
     const nativeTokensToSend: INativeToken[] = [];
 
     for (const tokenID of Object.keys(formInput.nativeTokensToSend)) {
@@ -184,41 +262,21 @@
       }
     }
 
-    let parameters = await withdrawParameters(
-      $nodeClient,
-      formInput.receiverAddress,
-      gasFee,
-      formInput.baseTokensToSend,
-      nativeTokensToSend,
+    await withdraw(formInput.baseTokensToSend, nativeTokensToSend, undefined);
+  }
+
+  async function onWithdrawEverythingClick() {
+    for (let nft of state.availableNFTs) {
+      await pollBalance();
+      await withdraw(900000, [], nft);
+    }
+
+    await pollBalance();
+    await withdraw(
+      state.availableBaseTokens,
+      state.availableNativeTokens,
+      null,
     );
-
-    let result: any;
-
-    try {
-      result = await state.contract.methods.send(...parameters).send();
-    } catch (ex) {
-      toast.push(
-        `Failed to send withdraw request: ${JSON.stringify(ex, null, 4)}`,
-        {
-          duration: 8000,
-        },
-      );
-
-      return;
-    }
-
-    if (result.status) {
-      toast.push(`Withdraw request sent. BlockIndex: ${result.blockNumber}`, {
-        duration: 4000,
-      });
-    } else {
-      toast.push(
-        `Failed to send withdraw request: ${JSON.stringify(result, null, 4)}`,
-        {
-          duration: 8000,
-        },
-      );
-    }
   }
 </script>
 
@@ -235,12 +293,12 @@
       </div>
       <div class="balance_container">
         <div>Balance</div>
-        <div class="balance">{formattedBalance}Mi</div>
+        <div class="balance">{formattedBalance}</div>
       </div>
     </div>
 
     <div class="input_container">
-      <span class="header">Receiver address </span>
+      <span class="header">Receiver address</span>
       <input
         type="text"
         placeholder="L1 address starting with (rms/tst/...)"
@@ -259,7 +317,7 @@
 
           <input
             type="range"
-            disabled={!canSetAmountToSend}
+            disabled={!canSetAmountToWithdraw}
             min="0"
             max={state.availableBaseTokens}
             bind:value={formInput.baseTokensToSend}
@@ -285,14 +343,47 @@
     </div>
 
     <div class="input_container">
-      <button disabled={!canSendFunds} on:click={onWithdrawClick}
-        >Withdraw</button
-      ><br />
+      <div class="header">NFTs</div>
+
+      <div class="token_list">
+        {#each state.availableNFTs as nft}
+          <div class="token_list-item">
+            <div class="header">
+              {nft.id}
+            </div>
+          </div>
+        {/each}
+      </div>
+    </div>
+
+    <div class="input_container">
+      <button disabled={!canWithdraw} on:click={onWithdrawClick}>
+        Withdraw
+      </button>
+    </div>
+    <div class="input_container">
+      <button
+        class="warning"
+        disabled={!canWithdrawEverything}
+        on:click={onWithdrawEverythingClick}
+      >
+        Withdraw everything at once
+      </button>
     </div>
   {/if}
 </component>
 
 <style>
+  .warning:disabled {
+    background-color: #6a1b1e;
+  }
+
+  .warning {
+    background-color: #b92e34;
+    border-color: red;
+    color: white;
+  }
+
   .token_list {
     display: flex;
     flex-direction: column;
