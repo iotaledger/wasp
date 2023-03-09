@@ -42,7 +42,10 @@ export class SimpleBufferCursor {
   }
 
   readBytes(length: number): Uint8Array {
-    const subBuffer = this._buffer.subarray(this._traverse, this._traverse + length);
+    const subBuffer = this._buffer.subarray(
+      this._traverse,
+      this._traverse + length,
+    );
     this._traverse += length;
 
     return subBuffer;
@@ -92,7 +95,7 @@ export class SimpleBufferCursor {
 
   writeUint8Array(bytes: Uint8Array) {
     for (let i = 0; i < bytes.length; i++) {
-      this.writeUInt8(bytes[i])
+      this.writeUInt8(bytes[i]);
     }
   }
 

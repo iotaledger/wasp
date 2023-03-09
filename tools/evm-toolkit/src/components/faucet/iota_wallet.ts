@@ -1,4 +1,4 @@
-import { Bip32Path, Bip39, Ed25519 } from "@iota/crypto.js";
+import { Bip32Path, Bip39, Ed25519 } from '@iota/crypto.js';
 import {
   Bech32Helper,
   Ed25519Address,
@@ -11,8 +11,8 @@ import {
   type IClient,
   type IKeyPair,
   type INodeInfo,
-  type IOutputsResponse
-} from "@iota/iota.js";
+  type IOutputsResponse,
+} from '@iota/iota.js';
 
 export class IotaWallet {
   private faucetEndpointUrl: string;
@@ -28,14 +28,18 @@ export class IotaWallet {
     return this.keyPair.publicKey;
   }
 
-  constructor(apiEndpointUrl: string, faucetEndpointUrl: string) {
+  constructor(
+    client: SingleNodeClient,
+    indexer: IndexerPluginClient,
+    faucetEndpointUrl: string,
+  ) {
     this.faucetEndpointUrl = faucetEndpointUrl;
-    this.client = new SingleNodeClient(apiEndpointUrl);
-    this.indexer = new IndexerPluginClient(this.client);
+    this.client = client;
+    this.indexer = indexer;
   }
 
   private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   private getKeyPairFromMnemonic(mnemonic: string): IKeyPair {
@@ -56,10 +60,10 @@ export class IotaWallet {
   private async sendFaucetRequest(addressBech32: string): Promise<void> {
     const requestObj = JSON.stringify({ address: addressBech32 });
     const response = await fetch(`${this.faucetEndpointUrl}/api/enqueue`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
       },
       body: requestObj,
     });
@@ -70,18 +74,20 @@ export class IotaWallet {
 
     // Future error handling
     if (response.status === 429) {
-      throw new Error("Too many requests. Please, try again later.");
+      throw new Error('Too many requests. Please, try again later.');
     } else {
       const result = await response.json();
       throw new Error(result.error.message);
     }
   }
 
-  private async getFaucetRequestOutputID(addressBech32: string): Promise<IOutputsResponse> {
-    const maxRetries: number = 20;
+  private async getFaucetRequestOutputID(
+    addressBech32: string,
+  ): Promise<IOutputsResponse> {
+    const maxRetries = 20;
 
     for (let i = 0; i < maxRetries; i++) {
-      let output = await this.indexer.basicOutputs({
+      const output = await this.indexer.basicOutputs({
         addressBech32: addressBech32,
         hasExpiration: false,
         hasStorageDepositReturn: false,
@@ -96,28 +102,32 @@ export class IotaWallet {
       await this.delay(2000);
     }
 
-    throw new Error("Failed to find faucet output");
+    throw new Error('Failed to find faucet output');
   }
 
   private async getBalance(outputId: string): Promise<bigint> {
-    let output = await this.client.output(outputId);
+    const output = await this.client.output(outputId);
 
     if (output != null) {
       return BigInt(output.output.amount);
     }
 
-    throw new Error("Failed to fetch output");
+    throw new Error('Failed to fetch output');
   }
 
   public async requestFunds(): Promise<bigint> {
-    let addressBech32 = Bech32Helper.toBech32(ED25519_ADDRESS_TYPE, this.address.toAddress(), this.nodeInfo.protocol.bech32Hrp);
+    const addressBech32 = Bech32Helper.toBech32(
+      ED25519_ADDRESS_TYPE,
+      this.address.toAddress(),
+      this.nodeInfo.protocol.bech32Hrp,
+    );
 
     await this.sendFaucetRequest(addressBech32);
     const output = await this.getFaucetRequestOutputID(addressBech32);
-    const balance = await this.getBalance(output.items[0])
+    const balance = await this.getBalance(output.items[0]);
 
     if (balance == BigInt(0)) {
-      throw new Error("Requested balance is zero");
+      throw new Error('Requested balance is zero');
     }
 
     return balance;
