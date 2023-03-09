@@ -103,8 +103,8 @@ type Chain struct {
 	// mempool of the chain is used in Solo to mimic a real node
 	mempool Mempool
 
-	RequestsDone int
-	RequestsMark int
+	RequestsBlock     uint32
+	RequestsRemaining int
 
 	// used for non-standard VMs
 	bypassStardustVM bool
@@ -481,12 +481,6 @@ func (ch *Chain) collateAndRunBatch() bool {
 		return true
 	}
 	return false
-}
-
-// BacklogLen is a thread-safe function to return size of the current backlog
-func (ch *Chain) BacklogLen() int {
-	mstats := ch.MempoolInfo()
-	return mstats.OutPoolCounter
 }
 
 func (ch *Chain) GetCandidateNodes() []*governance.AccessNodeInfo {

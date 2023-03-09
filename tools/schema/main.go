@@ -24,7 +24,7 @@ import (
 	wasp_yaml "github.com/iotaledger/wasp/tools/schema/model/yaml"
 )
 
-const version = "1.0.0"
+const version = "schema version 1.1.0"
 
 var (
 	flagBuild   = flag.Bool("build", false, "build wasm target")

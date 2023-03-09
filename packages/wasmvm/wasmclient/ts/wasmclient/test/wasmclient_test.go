@@ -56,7 +56,12 @@ func (proc *EventProcessor) waitClientEventsParam(t *testing.T, ctx *wasmclient.
 }
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
+	// note that testing the WasmClient code requires a running cluster
+	// with a preloaded chain that contains the testwasmlib demo contract
+	// therefore we skip all these tests when in the github repo
+	// to run these tests, set up the chain, update myChainID, and uncomment the next line
 	t.SkipNow()
+
 	svc := wasmclient.NewWasmClientService("http://localhost:19090", myChainID)
 	ctx := wasmclient.NewWasmClientContext(svc, testwasmlib.ScName)
 	require.NoError(t, ctx.Err)

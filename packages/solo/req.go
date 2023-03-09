@@ -349,7 +349,7 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 	return tx, res, ch.ResolveVMError(receipt.Error).AsGoError()
 }
 
-// LastReceipt returns the receipt fot the latest request processed by the chain, will return nil if the last block is empty
+// LastReceipt returns the receipt for the latest request processed by the chain, will return nil if the last block is empty
 func (ch *Chain) LastReceipt() *isc.Receipt {
 	ch.mustStardustVM()
 
@@ -549,7 +549,7 @@ func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
 }
 
 // WaitUntil waits until the condition specified by the given predicate yields true
-func (ch *Chain) WaitUntil(p func(MempoolInfo) bool, maxWait ...time.Duration) bool {
+func (ch *Chain) WaitUntil(p func() bool, maxWait ...time.Duration) bool {
 	maxw := 10 * time.Second
 	var deadline time.Time
 	if len(maxWait) > 0 {
@@ -557,8 +557,7 @@ func (ch *Chain) WaitUntil(p func(MempoolInfo) bool, maxWait ...time.Duration) b
 	}
 	deadline = time.Now().Add(maxw)
 	for {
-		mstats := ch.MempoolInfo()
-		if p(mstats) {
+		if p() {
 			return true
 		}
 		if time.Now().After(deadline) {
@@ -593,19 +592,19 @@ func (ch *Chain) WaitUntilMempoolIsEmpty(timeout ...time.Duration) bool {
 // This allows the WaitForRequestsThrough() function to wait for the
 // specified of number of requests after the mark point.
 func (ch *Chain) WaitForRequestsMark() {
-	ch.RequestsMark = ch.RequestsDone
+	ch.RequestsBlock = ch.LatestBlockIndex()
 }
 
 // WaitForRequestsThrough waits until the specified number of requests
 // have been processed since the last call to WaitForRequestsMark()
 func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
-	numReq += ch.RequestsMark
-	return ch.WaitUntil(func(mstats MempoolInfo) bool {
-		return ch.RequestsDone >= numReq
+	ch.RequestsRemaining = numReq
+	return ch.WaitUntil(func() bool {
+		latest := ch.LatestBlockIndex()
+		for ; ch.RequestsBlock < latest; ch.RequestsBlock++ {
+			receipts := ch.GetRequestReceiptsForBlock(ch.RequestsBlock + 1)
+			ch.RequestsRemaining -= len(receipts)
+		}
+		return ch.RequestsRemaining <= 0
 	}, maxWait...)
-}
-
-// MempoolInfo returns stats about the chain mempool
-func (ch *Chain) MempoolInfo() MempoolInfo {
-	return ch.mempool.Info()
 }

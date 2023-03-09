@@ -496,13 +496,7 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 	if len(maxWait) > 0 {
 		timeout = maxWait[0]
 	}
-
-	allDone := ctx.Chain.WaitForRequestsThrough(expectedRequests, timeout)
-	if !allDone {
-		info := ctx.Chain.MempoolInfo()
-		ctx.Chain.Env.T.Logf("In: %d, out: %d, pool: %d\n", info.InPoolCounter, info.OutPoolCounter, info.TotalPool)
-	}
-	return allDone
+	return ctx.Chain.WaitForRequestsThrough(expectedRequests, timeout)
 }
 
 // WaitForPendingRequestsMark marks the current InPoolCounter to be used by
