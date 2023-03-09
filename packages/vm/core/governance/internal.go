@@ -36,15 +36,7 @@ func GetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) (*ChainInfo, erro
 	if ret.GasFeePolicy, err = GetGasFeePolicy(state); err != nil {
 		return nil, err
 	}
-	if ret.MaxBlobSize, err = d.GetUint32(VarMaxBlobSize, 0); err != nil {
-		return nil, err
-	}
-	if ret.MaxEventSize, err = d.GetUint16(VarMaxEventSize, 0); err != nil {
-		return nil, err
-	}
-	if ret.MaxEventsPerReq, err = d.GetUint16(VarMaxEventsPerReq, 0); err != nil {
-		return nil, err
-	}
+	ret.CustomMetadata = GetCustomMetadata(state)
 	return ret, nil
 }
 
@@ -69,4 +61,12 @@ func GetGasFeePolicy(state kv.KVStoreReader) (*gas.FeePolicy, error) {
 
 func MustGetGasFeePolicy(state kv.KVStoreReader) *gas.FeePolicy {
 	return gas.MustFeePolicyFromBytes(state.MustGet(VarGasFeePolicyBytes))
+}
+
+func SetCustomMetadata(state kv.KVStore, data []byte) {
+	state.Set(VarCustomMetadata, data)
+}
+
+func GetCustomMetadata(state kv.KVStoreReader) []byte {
+	return state.MustGet(VarCustomMetadata)
 }

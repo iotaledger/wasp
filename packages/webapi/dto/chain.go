@@ -12,25 +12,19 @@ type (
 )
 
 type ChainInfo struct {
-	IsActive        bool
-	ChainID         isc.ChainID
-	ChainOwnerID    isc.AgentID
-	Description     string
-	GasFeePolicy    *gas.FeePolicy
-	MaxBlobSize     uint32
-	MaxEventSize    uint16
-	MaxEventsPerReq uint16
+	IsActive       bool
+	ChainID        isc.ChainID
+	ChainOwnerID   isc.AgentID
+	GasFeePolicy   *gas.FeePolicy
+	CustomMetadata []byte
 }
 
 func MapChainInfo(info *governance.ChainInfo, isActive bool) *ChainInfo {
 	return &ChainInfo{
-		IsActive:        isActive,
-		ChainID:         info.ChainID,
-		ChainOwnerID:    info.ChainOwnerID,
-		Description:     info.Description,
-		GasFeePolicy:    info.GasFeePolicy,
-		MaxBlobSize:     info.MaxBlobSize,
-		MaxEventSize:    info.MaxEventSize,
-		MaxEventsPerReq: info.MaxEventsPerReq,
+		IsActive:       isActive,
+		ChainID:        info.ChainID,
+		ChainOwnerID:   info.ChainOwnerID,
+		GasFeePolicy:   info.GasFeePolicy,
+		CustomMetadata: info.CustomMetadata,
 	}
 }

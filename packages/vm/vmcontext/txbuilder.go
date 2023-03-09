@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/governance/governanceimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
@@ -111,7 +110,7 @@ func (vmctx *VMContext) StateMetadata(stateCommitment *state.L1Commitment) []byt
 	})
 
 	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
-		stateMetadata.CustomMetadata = governanceimpl.GetCustomMetadata(s)
+		stateMetadata.CustomMetadata = governance.GetCustomMetadata(s)
 		stateMetadata.GasFeePolicy = governance.MustGetGasFeePolicy(s)
 	})
 

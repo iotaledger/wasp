@@ -6,19 +6,16 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **ChainID** | **string** | ChainID (Bech32-encoded). | 
 **ChainOwnerId** | **string** | The chain owner address (Bech32-encoded). | 
-**Description** | **string** | The description of the chain. | 
+**CustomMetadata** | Pointer to **string** | (base64) Optional extra metadata that is appended to the L1 AliasOutput | [optional] 
 **EvmChainId** | **uint32** | The EVM chain ID | 
 **GasFeePolicy** | Pointer to [**GasFeePolicy**](GasFeePolicy.md) |  | [optional] 
 **IsActive** | **bool** | Whether or not the chain is active. | 
-**MaxBlobSize** | **uint32** | The maximum contract blob size. | 
-**MaxEventSize** | **uint32** | The maximum event size. | 
-**MaxEventsPerReq** | **uint32** | The maximum amount of events per request. | 
 
 ## Methods
 
 ### NewChainInfoResponse
 
-`func NewChainInfoResponse(chainID string, chainOwnerId string, description string, evmChainId uint32, isActive bool, maxBlobSize uint32, maxEventSize uint32, maxEventsPerReq uint32, ) *ChainInfoResponse`
+`func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, isActive bool, ) *ChainInfoResponse`
 
 NewChainInfoResponse instantiates a new ChainInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -73,25 +70,30 @@ and a boolean to check if the value has been set.
 SetChainOwnerId sets ChainOwnerId field to given value.
 
 
-### GetDescription
+### GetCustomMetadata
 
-`func (o *ChainInfoResponse) GetDescription() string`
+`func (o *ChainInfoResponse) GetCustomMetadata() string`
 
-GetDescription returns the Description field if non-nil, zero value otherwise.
+GetCustomMetadata returns the CustomMetadata field if non-nil, zero value otherwise.
 
-### GetDescriptionOk
+### GetCustomMetadataOk
 
-`func (o *ChainInfoResponse) GetDescriptionOk() (*string, bool)`
+`func (o *ChainInfoResponse) GetCustomMetadataOk() (*string, bool)`
 
-GetDescriptionOk returns a tuple with the Description field if it's non-nil, zero value otherwise
+GetCustomMetadataOk returns a tuple with the CustomMetadata field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetDescription
+### SetCustomMetadata
 
-`func (o *ChainInfoResponse) SetDescription(v string)`
+`func (o *ChainInfoResponse) SetCustomMetadata(v string)`
 
-SetDescription sets Description field to given value.
+SetCustomMetadata sets CustomMetadata field to given value.
 
+### HasCustomMetadata
+
+`func (o *ChainInfoResponse) HasCustomMetadata() bool`
+
+HasCustomMetadata returns a boolean if a field has been set.
 
 ### GetEvmChainId
 
@@ -156,66 +158,6 @@ and a boolean to check if the value has been set.
 `func (o *ChainInfoResponse) SetIsActive(v bool)`
 
 SetIsActive sets IsActive field to given value.
-
-
-### GetMaxBlobSize
-
-`func (o *ChainInfoResponse) GetMaxBlobSize() uint32`
-
-GetMaxBlobSize returns the MaxBlobSize field if non-nil, zero value otherwise.
-
-### GetMaxBlobSizeOk
-
-`func (o *ChainInfoResponse) GetMaxBlobSizeOk() (*uint32, bool)`
-
-GetMaxBlobSizeOk returns a tuple with the MaxBlobSize field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetMaxBlobSize
-
-`func (o *ChainInfoResponse) SetMaxBlobSize(v uint32)`
-
-SetMaxBlobSize sets MaxBlobSize field to given value.
-
-
-### GetMaxEventSize
-
-`func (o *ChainInfoResponse) GetMaxEventSize() uint32`
-
-GetMaxEventSize returns the MaxEventSize field if non-nil, zero value otherwise.
-
-### GetMaxEventSizeOk
-
-`func (o *ChainInfoResponse) GetMaxEventSizeOk() (*uint32, bool)`
-
-GetMaxEventSizeOk returns a tuple with the MaxEventSize field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetMaxEventSize
-
-`func (o *ChainInfoResponse) SetMaxEventSize(v uint32)`
-
-SetMaxEventSize sets MaxEventSize field to given value.
-
-
-### GetMaxEventsPerReq
-
-`func (o *ChainInfoResponse) GetMaxEventsPerReq() uint32`
-
-GetMaxEventsPerReq returns the MaxEventsPerReq field if non-nil, zero value otherwise.
-
-### GetMaxEventsPerReqOk
-
-`func (o *ChainInfoResponse) GetMaxEventsPerReqOk() (*uint32, bool)`
-
-GetMaxEventsPerReqOk returns a tuple with the MaxEventsPerReq field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetMaxEventsPerReq
-
-`func (o *ChainInfoResponse) SetMaxEventsPerReq(v uint32)`
-
-SetMaxEventsPerReq sets MaxEventsPerReq field to given value.
 
 
 

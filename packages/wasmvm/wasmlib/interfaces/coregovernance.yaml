@@ -23,12 +23,6 @@ funcs:
   setFeePolicy:
     params:
       feePolicyBytes=g: Bytes
-  # chain info
-  setChainInfo:
-    params:
-      maxBlobSize=mb: Uint32? # default maximum size of a blob
-      maxEventSize=ms: Uint16? # default maximum size of a single event
-      maxEventsPerReq=mr: Uint16? # default maximum number of events per request
   # access nodes
   addCandidateNode:
     params:
@@ -62,14 +56,8 @@ views:
     results:
       chainID=c: ChainID
       chainOwnerID=o: AgentID
-      description=d: String
       gasFeePolicyBytes=g: Bytes
-      maxBlobSize=mb: Uint32
-      maxEventSize=me: Uint16
-      maxEventsPerReq=mr: Uint16
-  getMaxBlobSize:
-    results:
-      maxBlobSize=mb: Uint32
+      customMetadata=x: Bytes?
   # access nodes
   getChainNodes:
     results:

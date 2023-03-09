@@ -4,7 +4,6 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -18,20 +17,12 @@ func setCustomMetadata(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	customMetadata := ctx.Params().MustGet(governance.ParamCustomMetadata)
 	ctx.Requiref(len(customMetadata) <= MaxCustomMetadataLength, "custom metadata size too big (%d>%d)", len(customMetadata), MaxCustomMetadataLength)
-	SetCustomMetadata(ctx.State(), customMetadata)
+	governance.SetCustomMetadata(ctx.State(), customMetadata)
 	return nil
 }
 
 func getCustomMetadata(ctx isc.SandboxView) dict.Dict {
 	return dict.Dict{
-		governance.ParamCustomMetadata: ctx.StateR().MustGet(governance.VarCustomMetadata),
+		governance.ParamCustomMetadata: governance.GetCustomMetadata(ctx.StateR()),
 	}
-}
-
-func SetCustomMetadata(state kv.KVStore, data []byte) {
-	state.Set(governance.VarCustomMetadata, data)
-}
-
-func GetCustomMetadata(state kv.KVStoreReader) []byte {
-	return state.MustGet(governance.VarCustomMetadata)
 }

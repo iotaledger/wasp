@@ -9,15 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
-// constants
-const (
-	MinEventSize               = uint16(200)
-	MinEventsPerRequest        = uint16(10)
-	DefaultMaxEventsPerRequest = uint16(50)
-	DefaultMaxEventSize        = uint16(2000)      // 2Kb
-	DefaultMaxBlobSize         = uint32(2_000_000) // 2Mb
-)
-
 var Contract = coreutil.NewContract(coreutil.CoreContractGovernance, "Governance contract")
 
 var (
@@ -40,9 +31,7 @@ var (
 	ViewGetEVMGasRatio = coreutil.ViewFunc("getGasRatio")
 
 	// chain info
-	FuncSetChainInfo   = coreutil.Func("setChainInfo")
-	ViewGetChainInfo   = coreutil.ViewFunc("getChainInfo")
-	ViewGetMaxBlobSize = coreutil.ViewFunc("getMaxBlobSize")
+	ViewGetChainInfo = coreutil.ViewFunc("getChainInfo")
 
 	// access nodes
 	FuncAddCandidateNode  = coreutil.Func("addCandidateNode")
@@ -73,11 +62,6 @@ const (
 	// fees
 	VarGasFeePolicyBytes = "g"
 
-	// chain info
-	VarMaxBlobSize     = "mb"
-	VarMaxEventSize    = "me"
-	VarMaxEventsPerReq = "mr"
-
 	// access nodes
 	VarAccessNodes          = "an"
 	VarAccessNodeCandidates = "ac"
@@ -103,10 +87,7 @@ const (
 	ParamEVMGasRatio    = "e"
 
 	// chain info
-	ParamChainID                   = "c"
-	ParamMaxBlobSizeUint32         = "mb"
-	ParamMaxEventSizeUint16        = "me"
-	ParamMaxEventsPerRequestUint16 = "mr"
+	ParamChainID = "c"
 
 	ParamGetChainNodesAccessNodeCandidates = "an"
 	ParamGetChainNodesAccessNodes          = "ac"

@@ -7,12 +7,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 const (
@@ -144,25 +143,18 @@ func TestUploadWasm(t *testing.T) {
 func TestBigBlob(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	ch := env.NewChain()
+	ch.MustDepositBaseTokensToL2(1*isc.Million, nil)
 
-	// upload a blob that is too big
-	bigblobSize := governance.DefaultMaxBlobSize + 100
-	blobBin := make([]byte, bigblobSize)
+	upload := func(n int) uint64 {
+		blobBin := make([]byte, n)
+		_, err := ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
+		require.NoError(t, err)
+		return ch.LastReceipt().GasBurned
+	}
 
-	_, err := ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
+	gas1k := upload(100_000)
+	gas2k := upload(200_000)
 
-	testmisc.RequireErrorToBe(t, err, "blob too big")
-
-	ch.MustDepositBaseTokensToL2(100_000, nil)
-	req := solo.NewCallParams(
-		governance.Contract.Name, governance.FuncSetChainInfo.Name,
-		governance.ParamMaxBlobSizeUint32, bigblobSize,
-	).WithGasBudget(10_000)
-	// update max blob size to allow for bigger blobs_
-	_, err = ch.PostRequestSync(req, nil)
-	require.NoError(t, err)
-
-	// blob upload must now succeed
-	_, err = ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
-	require.NoError(t, err)
+	t.Log(gas1k, gas2k)
+	require.Greater(t, gas2k, gas1k)
 }
