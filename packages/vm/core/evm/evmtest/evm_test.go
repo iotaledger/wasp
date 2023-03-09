@@ -925,7 +925,7 @@ func TestISCSendWithArgs(t *testing.T) {
 	require.Less(t, senderFinalBalance, senderInitialBalance-sendBaseTokens)
 
 	// wait a bit for the request going out of EVM to be processed by ISC
-	env.soloChain.WaitUntil(func(solo.MempoolInfo) bool {
+	env.soloChain.WaitUntil(func() bool {
 		return env.soloChain.GetLatestBlockInfo().BlockIndex == blockIndex+2
 	})
 

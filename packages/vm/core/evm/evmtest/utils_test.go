@@ -383,7 +383,7 @@ func (e *soloChainEnv) registerERC20ExternalNativeToken(
 	nativeTokenID, err := foundryOutput.ID()
 	require.NoError(e.t, err)
 
-	if !e.soloChain.WaitUntil(func(solo.MempoolInfo) bool {
+	if !e.soloChain.WaitUntil(func() bool {
 		res, err2 := e.soloChain.CallView(evm.Contract.Name, evm.FuncGetERC20ExternalNativeTokenAddress.Name,
 			evm.FieldNativeTokenID, nativeTokenID[:],
 		)

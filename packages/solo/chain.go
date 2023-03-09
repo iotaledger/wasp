@@ -674,7 +674,8 @@ func (*Chain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID
 }
 
 func (ch *Chain) LatestBlockIndex() uint32 {
-	i, err := ch.store.LatestBlockIndex()
+	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name)
 	require.NoError(ch.Env.T, err)
-	return i
+	resultDecoder := kvdecoder.New(ret, ch.Log())
+	return resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
 }
