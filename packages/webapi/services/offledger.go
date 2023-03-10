@@ -21,14 +21,14 @@ import (
 type OffLedgerService struct {
 	chainService    interfaces.ChainService
 	networkProvider peering.NetworkProvider
-	requestCache    *expiringcache.ExpiringCache
+	requestCache    *expiringcache.ExpiringCache[isc.RequestID, bool]
 }
 
 func NewOffLedgerService(chainService interfaces.ChainService, networkProvider peering.NetworkProvider, requestCacheTTL time.Duration) interfaces.OffLedgerService {
 	return &OffLedgerService{
 		chainService:    chainService,
 		networkProvider: networkProvider,
-		requestCache:    expiringcache.New(requestCacheTTL),
+		requestCache:    expiringcache.New[isc.RequestID, bool](requestCacheTTL),
 	}
 }
 
