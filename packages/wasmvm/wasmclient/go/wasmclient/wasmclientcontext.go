@@ -58,6 +58,7 @@ func (s *WasmClientContext) InitViewCallContext(hContract wasmtypes.ScHname) was
 	return s.scHname
 }
 
+// Register the event handler. So the corresponding incoming events will be handled by this event handler
 func (s *WasmClientContext) Register(handler wasmlib.IEventHandlers) {
 	s.Err = nil
 	for _, h := range s.eventHandlers {
