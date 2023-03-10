@@ -6,6 +6,7 @@ package chain
 import (
 	"fmt"
 
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
@@ -21,7 +22,7 @@ type AwaitReceipt interface {
 
 type awaitReceiptImpl struct {
 	state          state.State
-	queries        map[isc.RequestID][]*awaitReceiptReq
+	queries        *shrinkingmap.ShrinkingMap[isc.RequestID, []*awaitReceiptReq]
 	cleanupCounter int
 	cleanupEvery   int
 	log            *logger.Logger
@@ -30,7 +31,7 @@ type awaitReceiptImpl struct {
 func NewAwaitReceipt(cleanupEvery int, log *logger.Logger) AwaitReceipt {
 	return &awaitReceiptImpl{
 		state:          nil,
-		queries:        map[isc.RequestID][]*awaitReceiptReq{},
+		queries:        shrinkingmap.New[isc.RequestID, []*awaitReceiptReq](),
 		cleanupCounter: cleanupEvery,
 		cleanupEvery:   cleanupEvery,
 		log:            log,
@@ -49,11 +50,9 @@ func (ari *awaitReceiptImpl) Await(query *awaitReceiptReq) {
 		}
 	}
 	ari.maybeCleanup()
-	if reqAwaits, ok := ari.queries[query.requestID]; ok {
-		ari.queries[query.requestID] = append(reqAwaits, query)
-		return
-	}
-	ari.queries[query.requestID] = []*awaitReceiptReq{query}
+
+	reqAwaits, _ := ari.queries.GetOrCreate(query.requestID, func() []*awaitReceiptReq { return make([]*awaitReceiptReq, 0) })
+	ari.queries.Set(query.requestID, append(reqAwaits, query))
 }
 
 func (ari *awaitReceiptImpl) ConsiderState(state state.State, addedBlocks []state.Block) {
@@ -68,19 +67,21 @@ func (ari *awaitReceiptImpl) ConsiderState(state state.State, addedBlocks []stat
 }
 
 func (ari *awaitReceiptImpl) respondByState(state state.State) {
-	for reqID, reqAwaits := range ari.queries {
+	ari.queries.ForEach(func(reqID isc.RequestID, reqAwaits []*awaitReceiptReq) bool {
 		receipt, err := blocklog.GetRequestReceipt(state, reqID)
 		if err != nil {
 			panic(fmt.Errorf("cannot read recept from state: %w", err))
 		}
 		if receipt == nil {
-			continue
+			return true
 		}
 		for _, reqAwait := range reqAwaits {
 			reqAwait.Respond(receipt)
 		}
-		delete(ari.queries, reqID)
-	}
+
+		ari.queries.Delete(reqID)
+		return true
+	})
 }
 
 func (ari *awaitReceiptImpl) respondByBlock(block state.Block) {
@@ -90,17 +91,17 @@ func (ari *awaitReceiptImpl) respondByBlock(block state.Block) {
 	}
 	for _, receipt := range blockReceipts {
 		requestID := receipt.Request.ID()
-		if reqAwaits, ok := ari.queries[requestID]; ok {
+		if reqAwaits, exists := ari.queries.Get(requestID); exists {
 			for _, reqAwait := range reqAwaits {
 				reqAwait.Respond(receipt)
 			}
-			delete(ari.queries, requestID)
+			ari.queries.Delete(requestID)
 		}
 	}
 }
 
 func (ari *awaitReceiptImpl) StatusString() string {
-	return fmt.Sprintf("{|queries|=%v}", len(ari.queries))
+	return fmt.Sprintf("{|queries|=%v}", ari.queries.Size())
 }
 
 func (ari *awaitReceiptImpl) maybeCleanup() {
@@ -109,18 +110,20 @@ func (ari *awaitReceiptImpl) maybeCleanup() {
 		return
 	}
 	ari.cleanupCounter = ari.cleanupEvery
-	for reqID, reqAwaits := range ari.queries {
+
+	ari.queries.ForEach(func(reqID isc.RequestID, reqAwaits []*awaitReceiptReq) bool {
 		newAwaits := []*awaitReceiptReq{}
 		for _, reqAwait := range reqAwaits {
 			if reqAwait.CloseIfCanceled() {
-				continue
+				return true
 			}
 			newAwaits = append(newAwaits, reqAwait)
 		}
 		if len(newAwaits) == 0 {
-			delete(ari.queries, reqID)
-			continue
+			ari.queries.Delete(reqID)
+			return true
 		}
-		ari.queries[reqID] = newAwaits
-	}
+		ari.queries.Set(reqID, newAwaits)
+		return true
+	})
 }
