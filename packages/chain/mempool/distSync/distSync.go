@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/exp/slices"
 
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -39,7 +40,7 @@ type distSyncImpl struct {
 	requestReceivedCB func(isc.Request)
 	nodeCountToShare  int // Number of nodes to share a request per iteration.
 	maxMsgsPerTick    int
-	needed            map[isc.RequestRefKey]*isc.RequestRef
+	needed            *shrinkingmap.ShrinkingMap[isc.RequestRefKey, *isc.RequestRef]
 	rnd               *rand.Rand
 	log               *logger.Logger
 }
@@ -62,7 +63,7 @@ func New(
 		requestReceivedCB: requestReceivedCB,
 		nodeCountToShare:  0,
 		maxMsgsPerTick:    maxMsgsPerTick,
-		needed:            map[isc.RequestRefKey]*isc.RequestRef{},
+		needed:            shrinkingmap.New[isc.RequestRefKey, *isc.RequestRef](),
 		rnd:               util.NewPseudoRand(),
 		log:               log,
 	}
@@ -101,7 +102,7 @@ func (dsi *distSyncImpl) Output() gpa.Output {
 }
 
 func (dsi *distSyncImpl) StatusString() string {
-	return fmt.Sprintf("{MP, neededReqs=%v, nodeCountToShare=%v}", len(dsi.needed), dsi.nodeCountToShare)
+	return fmt.Sprintf("{MP, neededReqs=%v, nodeCountToShare=%v}", dsi.needed.Size(), dsi.nodeCountToShare)
 }
 
 func (dsi *distSyncImpl) handleInputServerNodes(input *inputServerNodes) gpa.OutMessages {
@@ -156,7 +157,7 @@ func (dsi *distSyncImpl) handleInputPublishRequest(input *inputPublishRequest) g
 	// Delete the it from the "needed" list, if any.
 	// This node has the request, if it tries to publish it.
 	reqRef := isc.RequestRefFromRequest(input.request)
-	delete(dsi.needed, reqRef.AsKey())
+	dsi.needed.Delete(reqRef.AsKey())
 	return msgs
 }
 
@@ -166,10 +167,10 @@ func (dsi *distSyncImpl) handleInputPublishRequest(input *inputPublishRequest) g
 func (dsi *distSyncImpl) handleInputRequestNeeded(input *inputRequestNeeded) gpa.OutMessages {
 	reqRefKey := input.requestRef.AsKey()
 	if !input.needed {
-		delete(dsi.needed, reqRefKey)
+		dsi.needed.Delete(reqRefKey)
 		return nil
 	}
-	dsi.needed[reqRefKey] = input.requestRef
+	dsi.needed.Set(reqRefKey, input.requestRef)
 	msgs := gpa.NoMessages()
 	for _, nid := range dsi.committeeNodes {
 		msgs.Add(newMsgMissingRequest(input.requestRef, nid))
@@ -181,7 +182,7 @@ func (dsi *distSyncImpl) handleInputRequestNeeded(input *inputRequestNeeded) gpa
 //   - ...
 //   - If response not received, ask random subsets of server nodes.
 func (dsi *distSyncImpl) handleInputTimeTick() gpa.OutMessages {
-	if len(dsi.needed) == 0 {
+	if dsi.needed.Size() == 0 {
 		return nil
 	}
 	nodeCount := len(dsi.serverNodes)
@@ -191,13 +192,11 @@ func (dsi *distSyncImpl) handleInputTimeTick() gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	nodePerm := dsi.rnd.Perm(nodeCount)
 	counter := 0
-	for _, reqRef := range dsi.needed { // Access is randomized.
+	dsi.needed.ForEach(func(rrk isc.RequestRefKey, reqRef *isc.RequestRef) bool { // Access is randomized.
 		msgs.Add(newMsgMissingRequest(reqRef, dsi.serverNodes[nodePerm[counter%nodeCount]]))
 		counter++
-		if counter > dsi.maxMsgsPerTick {
-			break
-		}
-	}
+		return counter <= dsi.maxMsgsPerTick
+	})
 	return msgs
 }
 
@@ -214,7 +213,7 @@ func (dsi *distSyncImpl) handleMsgMissingRequest(msg *msgMissingRequest) gpa.Out
 func (dsi *distSyncImpl) handleMsgShareRequest(msg *msgShareRequest) gpa.OutMessages {
 	reqRefKey := isc.RequestRefFromRequest(msg.request).AsKey()
 	dsi.requestReceivedCB(msg.request)
-	delete(dsi.needed, reqRefKey)
+	dsi.needed.Delete(reqRefKey)
 	if msg.ttl > 0 {
 		ttl := msg.ttl
 		if ttl > maxTTL {
