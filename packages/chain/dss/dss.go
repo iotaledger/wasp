@@ -29,6 +29,7 @@ import (
 	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/suites"
 
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/adkg/nonce"
@@ -62,7 +63,7 @@ type dssImpl struct {
 	dkgDecidedIndexProposals map[gpa.NodeID][]int // ACS decision.
 	dkgOutNonce              dss.DistKeyShare     // Final DKG output.
 	messageToSign            []byte
-	dssPartialSigBuffer      map[gpa.NodeID]*dss.PartialSig // Accumulate early partial signatures
+	dssPartialSigBuffer      *shrinkingmap.ShrinkingMap[gpa.NodeID, *dss.PartialSig] // Accumulate early partial signatures
 	dssSigner                *dss.DSS
 	signature                []byte // The output.
 	msgWrapper               *gpa.MsgWrapper
@@ -95,7 +96,7 @@ func New(
 		dkgDecidedIndexProposals: nil, // To be received.
 		dkgOutNonce:              nil, // To be decided.
 		messageToSign:            nil, // Will be received later.
-		dssPartialSigBuffer:      map[gpa.NodeID]*dss.PartialSig{},
+		dssPartialSigBuffer:      shrinkingmap.New[gpa.NodeID, *dss.PartialSig](),
 		dssSigner:                nil, // Will be created when indexProposals and message to sign will be created.
 		log:                      log,
 	}
@@ -178,14 +179,16 @@ func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 		}
 		//
 		// Process early sent partial signatures, if any.
-		if len(d.dssPartialSigBuffer) > 0 {
-			for nid := range d.dssPartialSigBuffer {
-				err := d.dssSigner.ProcessPartialSig(d.dssPartialSigBuffer[nid])
+		if d.dssPartialSigBuffer.Size() > 0 {
+			d.dssPartialSigBuffer.ForEach(func(nid gpa.NodeID, ps *dss.PartialSig) bool {
+				err := d.dssSigner.ProcessPartialSig(ps)
 				if err != nil {
 					d.log.Warnf("Failed to process a buffered partial signature: %v", err)
 				}
-				delete(d.dssPartialSigBuffer, nid)
-			}
+
+				d.dssPartialSigBuffer.Delete(nid)
+				return true
+			})
 		}
 		//
 		// Broadcast it (except the current node).
@@ -220,11 +223,12 @@ func (d *dssImpl) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
 		return nil
 	}
 	if d.dssSigner == nil {
-		if _, ok := d.dssPartialSigBuffer[msg.sender]; ok {
+		if d.dssPartialSigBuffer.Has(msg.sender) {
 			d.log.Warn("duplicate partial signature from %v", msg.sender)
 			return nil
 		}
-		d.dssPartialSigBuffer[msg.sender] = msg.partialSig
+
+		d.dssPartialSigBuffer.Set(msg.sender, msg.partialSig)
 		return nil
 	}
 	//
