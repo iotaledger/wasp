@@ -49,7 +49,7 @@ func NewTimePool() TimePool {
 func (tpi *timePoolImpl) AddRequest(timestamp time.Time, request isc.Request) {
 	reqRefKey := isc.RequestRefFromRequest(request).AsKey()
 
-	if !tpi.requests.Has(reqRefKey) {
+	if tpi.requests.Has(reqRefKey) {
 		return
 	}
 
