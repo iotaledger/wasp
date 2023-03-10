@@ -93,7 +93,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	tc.PrintAllStatusStrings("Initial AO received", t.Logf)
 	for _, n := range nodes {
 		out := n.Output().(*chainMgr.Output)
-		require.Len(t, out.NeedPublishTX(), 0)
+		require.Equal(t, 0, out.NeedPublishTX().Size())
 		require.NotNil(t, out.NeedConsensus())
 		require.Equal(t, originAO, out.NeedConsensus().BaseAliasOutput)
 		require.Equal(t, uint32(1), out.NeedConsensus().LogIndex.AsUint32())
@@ -122,7 +122,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for nodeID, n := range nodes {
 		out := n.Output().(*chainMgr.Output)
 		t.Logf("node=%v should have 1 TX to publish, have out=%v", nodeID, out)
-		require.Len(t, out.NeedPublishTX(), 1, "node=%v should have 1 TX to publish, have out=%v", nodeID, out)
+		require.Equal(t, 1, out.NeedPublishTX().Size(), "node=%v should have 1 TX to publish, have out=%v", nodeID, out)
 		require.Equal(t, step2TX, func() *iotago.Transaction { tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID()); return tx.Tx }())
 		require.Equal(t, originAO.OutputID(), func() iotago.OutputID {
 			tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID())
@@ -147,7 +147,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	tc.PrintAllStatusStrings("TX Published", t.Logf)
 	for _, n := range nodes {
 		out := n.Output().(*chainMgr.Output)
-		require.Len(t, out.NeedPublishTX(), 0)
+		require.Equal(t, 0, out.NeedPublishTX().Size())
 		require.NotNil(t, out.NeedConsensus())
 		require.Equal(t, step2AO, out.NeedConsensus().BaseAliasOutput)
 		require.Equal(t, uint32(2), out.NeedConsensus().LogIndex.AsUint32())
@@ -162,7 +162,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	tc.PrintAllStatusStrings("TX Published and Confirmed", t.Logf)
 	for _, n := range nodes {
 		out := n.Output().(*chainMgr.Output)
-		require.Len(t, out.NeedPublishTX(), 0)
+		require.Equal(t, 0, out.NeedPublishTX().Size())
 		require.NotNil(t, out.NeedConsensus())
 		require.Equal(t, step2AO, out.NeedConsensus().BaseAliasOutput)
 		require.Equal(t, uint32(2), out.NeedConsensus().LogIndex.AsUint32())
@@ -178,7 +178,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	tc.PrintAllStatusStrings("After external rotation", t.Logf)
 	for _, n := range nodes {
 		out := n.Output().(*chainMgr.Output)
-		require.Len(t, out.NeedPublishTX(), 0)
+		require.Equal(t, 0, out.NeedPublishTX().Size())
 		require.NotNil(t, out.NeedConsensus())
 		require.Equal(t, rotateAO, out.NeedConsensus().BaseAliasOutput)
 		require.Equal(t, uint32(1), out.NeedConsensus().LogIndex.AsUint32())
