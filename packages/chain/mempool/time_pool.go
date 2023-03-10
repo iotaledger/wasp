@@ -8,6 +8,7 @@ import (
 
 	"golang.org/x/exp/slices"
 
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
@@ -23,8 +24,8 @@ type TimePool interface {
 // The list is organized in slots. Each slot contains a list of requests that fit to the
 // slot boundaries.
 type timePoolImpl struct {
-	requests map[isc.RequestRefKey]isc.Request // All the requests in this pool.
-	slots    *timeSlot                         // Structure to fetch them fast by their time.
+	requests *shrinkingmap.ShrinkingMap[isc.RequestRefKey, isc.Request] // All the requests in this pool.
+	slots    *timeSlot                                                  // Structure to fetch them fast by their time.
 }
 
 type timeSlot struct {
@@ -40,17 +41,19 @@ var _ TimePool = &timePoolImpl{}
 
 func NewTimePool() TimePool {
 	return &timePoolImpl{
-		requests: map[isc.RequestRefKey]isc.Request{},
+		requests: shrinkingmap.New[isc.RequestRefKey, isc.Request](),
 		slots:    nil,
 	}
 }
 
 func (tpi *timePoolImpl) AddRequest(timestamp time.Time, request isc.Request) {
 	reqRefKey := isc.RequestRefFromRequest(request).AsKey()
-	if _, ok := tpi.requests[reqRefKey]; ok {
+
+	if !tpi.requests.Has(reqRefKey) {
 		return
 	}
-	tpi.requests[reqRefKey] = request
+
+	tpi.requests.Set(reqRefKey, request)
 	reqFrom, reqTill := tpi.timestampSlotBounds(timestamp)
 	prevNext := &tpi.slots
 	for slot := tpi.slots; ; {
@@ -88,7 +91,7 @@ func (tpi *timePoolImpl) TakeTill(timestamp time.Time) []isc.Request {
 				delete(slot.reqs, ts)
 				for _, req := range tsReqs {
 					reqRefKey := isc.RequestRefFromRequest(req).AsKey()
-					delete(tpi.requests, reqRefKey)
+					tpi.requests.Delete(reqRefKey)
 				}
 			}
 		}
@@ -102,8 +105,7 @@ func (tpi *timePoolImpl) TakeTill(timestamp time.Time) []isc.Request {
 }
 
 func (tpi *timePoolImpl) Has(reqRef *isc.RequestRef) bool {
-	_, have := tpi.requests[reqRef.AsKey()]
-	return have
+	return tpi.requests.Has(reqRef.AsKey())
 }
 
 func (tpi *timePoolImpl) Filter(predicate func(request isc.Request, ts time.Time) bool) {
