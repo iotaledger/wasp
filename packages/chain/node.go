@@ -24,6 +24,7 @@ import (
 
 	"golang.org/x/exp/slices"
 
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/chainMgr"
@@ -152,8 +153,8 @@ type chainNodeImpl struct {
 	consensusInsts      map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst // Running consensus instances.
 	consOutputPipe      pipe.Pipe[*consOutput]
 	consRecoverPipe     pipe.Pipe[*consRecover]
-	publishingTXes      map[iotago.TransactionID]context.CancelFunc // TX'es now being published.
-	procCache           *processors.Cache                           // Cache for the SC processors.
+	publishingTXes      *shrinkingmap.ShrinkingMap[iotago.TransactionID, context.CancelFunc] // TX'es now being published.
+	procCache           *processors.Cache                                                    // Cache for the SC processors.
 	configUpdatedCh     chan *configUpdate
 	serversUpdatedPipe  pipe.Pipe[*serversUpdate]
 	awaitReceiptActCh   chan *awaitReceiptReq
@@ -279,7 +280,7 @@ func New(
 		consensusInsts:         map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst{},
 		consOutputPipe:         pipe.NewInfinitePipe[*consOutput](),
 		consRecoverPipe:        pipe.NewInfinitePipe[*consRecover](),
-		publishingTXes:         map[iotago.TransactionID]context.CancelFunc{},
+		publishingTXes:         shrinkingmap.New[iotago.TransactionID, context.CancelFunc](),
 		procCache:              processors.MustNew(processorConfig),
 		configUpdatedCh:        make(chan *configUpdate, 1),
 		serversUpdatedPipe:     pipe.NewInfinitePipe[*serversUpdate](),
@@ -581,10 +582,11 @@ func (cni *chainNodeImpl) handleServersUpdated(serverNodes []*cryptolib.PublicKe
 
 func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *txPublished) {
 	cni.log.Debugf("handleTxPublished")
-	if _, ok := cni.publishingTXes[txPubResult.txID]; !ok {
+	if !cni.publishingTXes.Has(txPubResult.txID) {
 		return
 	}
-	delete(cni.publishingTXes, txPubResult.txID)
+	cni.publishingTXes.Delete(txPubResult.txID)
+
 	outMsgs := cni.chainMgr.Input(
 		chainMgr.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.logIndex, txPubResult.txID, txPubResult.nextAliasOutput, txPubResult.confirmed),
 	)
@@ -655,9 +657,9 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 	outputNeedPostTXes := output.NeedPublishTX()
 	for i := range outputNeedPostTXes {
 		txToPost := outputNeedPostTXes[i] // Have to take a copy to be used in callback.
-		if _, ok := cni.publishingTXes[txToPost.TxID]; !ok {
+		if !cni.publishingTXes.Has(txToPost.TxID) {
 			subCtx, subCancel := context.WithCancel(ctx)
-			cni.publishingTXes[txToPost.TxID] = subCancel
+			cni.publishingTXes.Set(txToPost.TxID, subCancel)
 			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, txToPost.Tx, func(_ *iotago.Transaction, confirmed bool) {
 				// TODO: why is *iotago.Transaction unused?
 				cni.recvTxPublishedPipe.In() <- &txPublished{
@@ -798,7 +800,7 @@ func (cni *chainNodeImpl) cleanupConsensusInsts(committeeAddr iotago.Ed25519Addr
 
 // Cleanup TX'es that are not needed to be posted anymore.
 func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes map[iotago.TransactionID]*chainMgr.NeedPublishTX) {
-	for txID, cancelFunc := range cni.publishingTXes {
+	cni.publishingTXes.ForEach(func(txID iotago.TransactionID, cancelFunc context.CancelFunc) bool {
 		found := false
 		for _, npt := range neededPostTXes {
 			if npt.TxID == txID {
@@ -808,9 +810,10 @@ func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes map[iotago.Transa
 		}
 		if !found {
 			cancelFunc()
-			delete(cni.publishingTXes, txID)
+			cni.publishingTXes.Delete(txID)
 		}
-	}
+		return true
+	})
 }
 
 func (cni *chainNodeImpl) sendMessages(outMsgs gpa.OutMessages) {
