@@ -6,6 +6,7 @@ package mempool
 import (
 	"context"
 
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
@@ -18,9 +19,9 @@ type WaitReq interface {
 }
 
 type waitReq struct {
-	reqs           map[isc.RequestRefKey][]*waitReqItem // Wait for specific req.
-	any            []*waitReqItem                       // Wait for any req.
-	cleanupCounter int                                  // Perform cleanup when the counter goes to 0.
+	reqs           *shrinkingmap.ShrinkingMap[isc.RequestRefKey, []*waitReqItem] // Wait for specific req.
+	any            []*waitReqItem                                                // Wait for any req.
+	cleanupCounter int                                                           // Perform cleanup when the counter goes to 0.
 	cleanupEvery   int
 }
 
@@ -31,7 +32,7 @@ type waitReqItem struct {
 
 func NewWaitReq(cleanupEvery int) WaitReq {
 	return &waitReq{
-		reqs:           map[isc.RequestRefKey][]*waitReqItem{},
+		reqs:           shrinkingmap.New[isc.RequestRefKey, []*waitReqItem](),
 		any:            []*waitReqItem{},
 		cleanupCounter: cleanupEvery,
 		cleanupEvery:   cleanupEvery,
@@ -42,11 +43,9 @@ func (wr *waitReq) WaitMany(ctx context.Context, reqRefs []*isc.RequestRef, cb f
 	for i := range reqRefs {
 		reqRefKey := reqRefs[i].AsKey()
 		item := &waitReqItem{ctx: ctx, cb: cb}
-		if _, ok := wr.reqs[reqRefKey]; !ok {
-			wr.reqs[reqRefKey] = []*waitReqItem{item}
-		} else {
-			wr.reqs[reqRefKey] = append(wr.reqs[reqRefKey], item)
-		}
+
+		requests, _ := wr.reqs.GetOrCreate(reqRefKey, func() []*waitReqItem { return make([]*waitReqItem, 0) })
+		wr.reqs.Set(reqRefKey, append(requests, item))
 	}
 	wr.maybeCleanup()
 }
@@ -66,13 +65,13 @@ func (wr *waitReq) Have(req isc.Request) {
 		wr.any = wr.any[:0]
 	}
 	reqRefKey := isc.RequestRefFromRequest(req).AsKey()
-	if cbs, ok := wr.reqs[reqRefKey]; ok {
+	if cbs, exists := wr.reqs.Get(reqRefKey); exists {
 		for i := range cbs {
 			if cbs[i].ctx.Err() == nil {
 				cbs[i].cb(req)
 			}
 		}
-		delete(wr.reqs, reqRefKey)
+		wr.reqs.Delete(reqRefKey)
 	}
 }
 
@@ -85,17 +84,19 @@ func (wr *waitReq) maybeCleanup() {
 	//
 	// We only care about the requests for particular requests.
 	// Requests for any will be cleaned up on first request.
-	for reqRef, items := range wr.reqs {
+	wr.reqs.ForEach(func(reqRef isc.RequestRefKey, items []*waitReqItem) bool {
 		newItems := []*waitReqItem{}
 		for i := range items {
 			if items[i].ctx.Err() == nil {
 				newItems = append(newItems, items[i])
 			}
 		}
-		if len(newItems) == 0 {
-			delete(wr.reqs, reqRef)
+		if len(newItems) != 0 {
+			wr.reqs.Set(reqRef, newItems)
 		} else {
-			wr.reqs[reqRef] = newItems
+			wr.reqs.Delete(reqRef)
 		}
-	}
+
+		return true
+	})
 }
