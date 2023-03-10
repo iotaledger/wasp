@@ -179,7 +179,7 @@ func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
 
 	ret := dict.New()
 	ret.Set(ParamFoundrySN, util.Uint32To4Bytes(sn))
-	ctx.Event(fmt.Sprintf("Foundry serial number = %d", sn))
+	ctx.Event(fmt.Sprintf("Foundry created, serial number = %d", sn))
 	return ret
 }
 

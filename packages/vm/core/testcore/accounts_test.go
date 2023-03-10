@@ -491,7 +491,7 @@ func TestFoundries(t *testing.T) {
 		events, err := ch.GetEventsForContract(accounts.Contract.Name)
 		require.NoError(t, err)
 		require.Len(t, events, 1)
-		require.Contains(t, events[0], "Foundry serial number = 1")
+		require.Contains(t, events[0], "Foundry created, serial number = 1")
 	})
 }
 
