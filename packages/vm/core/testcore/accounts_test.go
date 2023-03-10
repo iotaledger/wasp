@@ -480,6 +480,19 @@ func TestFoundries(t *testing.T) {
 		commonAccountBalanceAfterLastMint := ch.L2CommonAccountBaseTokens()
 		require.Equal(t, commonAccountBalanceAfterLastMint, commonAccountBalanceBeforeLastMint+receipt.GasFeeCharged)
 	})
+	t.Run("newFoundry exposes foundry serial number in event", func(t *testing.T) {
+		initTest()
+		sn, _, err := ch.NewFoundryParams(abi.MaxUint256).
+			WithUser(senderKeyPair).
+			CreateFoundry()
+		require.NoError(t, err)
+		require.EqualValues(t, 1, sn)
+
+		events, err := ch.GetEventsForContract(accounts.Contract.Name)
+		require.NoError(t, err)
+		require.Len(t, events, 1)
+		require.Contains(t, events[0], "Foundry created, serial number = 1")
+	})
 }
 
 func TestAccountBalances(t *testing.T) {
