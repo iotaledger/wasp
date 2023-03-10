@@ -643,7 +643,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 		// TODO: Cleanup consensus instances for all the committees after some time.
 		// Not sure, if it is OK to terminate them immediately at this point.
 		// This is for the case, if the current node is not in a committee of a chain anymore.
-		cni.cleanupPublishingTXes(map[iotago.TransactionID]*chainMgr.NeedPublishTX{})
+		cni.cleanupPublishingTXes(nil)
 		return
 	}
 	output := outputUntyped.(*chainMgr.Output)
@@ -656,8 +656,8 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 	//
 	// Start publishing TX'es, if there not being posted already.
 	outputNeedPostTXes := output.NeedPublishTX()
-	for i := range outputNeedPostTXes {
-		txToPost := outputNeedPostTXes[i] // Have to take a copy to be used in callback.
+	outputNeedPostTXes.ForEach(func(ti iotago.TransactionID, npt *chainMgr.NeedPublishTX) bool {
+		txToPost := npt // Have to take a copy to be used in callback.
 		if !cni.publishingTXes.Has(txToPost.TxID) {
 			subCtx, subCancel := context.WithCancel(ctx)
 			cni.publishingTXes.Set(txToPost.TxID, subCancel)
@@ -674,7 +674,10 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 				panic(err)
 			}
 		}
-	}
+
+		return true
+	})
+
 	cni.cleanupPublishingTXes(outputNeedPostTXes)
 	//
 	// Update info for access by other components.
@@ -809,14 +812,19 @@ func (cni *chainNodeImpl) cleanupConsensusInsts(committeeAddr iotago.Ed25519Addr
 }
 
 // Cleanup TX'es that are not needed to be posted anymore.
-func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes map[iotago.TransactionID]*chainMgr.NeedPublishTX) {
+func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes *shrinkingmap.ShrinkingMap[iotago.TransactionID, *chainMgr.NeedPublishTX]) {
 	cni.publishingTXes.ForEach(func(txID iotago.TransactionID, cancelFunc context.CancelFunc) bool {
 		found := false
-		for _, npt := range neededPostTXes {
-			if npt.TxID == txID {
-				found = true
-				break
-			}
+
+		if neededPostTXes != nil {
+			neededPostTXes.ForEach(func(_ iotago.TransactionID, npt *chainMgr.NeedPublishTX) bool {
+				if npt.TxID == txID {
+					found = true
+					return false
+				}
+
+				return true
+			})
 		}
 		if !found {
 			cancelFunc()

@@ -123,9 +123,15 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		out := n.Output().(*chainMgr.Output)
 		t.Logf("node=%v should have 1 TX to publish, have out=%v", nodeID, out)
 		require.Len(t, out.NeedPublishTX(), 1, "node=%v should have 1 TX to publish, have out=%v", nodeID, out)
-		require.Equal(t, step2TX, out.NeedPublishTX()[step2AO.TransactionID()].Tx)
-		require.Equal(t, originAO.OutputID(), out.NeedPublishTX()[step2AO.TransactionID()].BaseAliasOutputID)
-		require.Equal(t, cmtAddrA, &out.NeedPublishTX()[step2AO.TransactionID()].CommitteeAddr)
+		require.Equal(t, step2TX, func() *iotago.Transaction { tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID()); return tx.Tx }())
+		require.Equal(t, originAO.OutputID(), func() iotago.OutputID {
+			tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID())
+			return tx.BaseAliasOutputID
+		}())
+		require.Equal(t, cmtAddrA, func() iotago.Address {
+			tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID())
+			return &tx.CommitteeAddr
+		}())
 		require.NotNil(t, out.NeedConsensus())
 		require.Equal(t, step2AO, out.NeedConsensus().BaseAliasOutput)
 		require.Equal(t, uint32(2), out.NeedConsensus().LogIndex.AsUint32())
@@ -134,7 +140,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	//
 	// Say TX is published
 	for nid := range nodes {
-		consReq := nodes[nid].Output().(*chainMgr.Output).NeedPublishTX()[step2AO.TransactionID()]
+		consReq, _ := nodes[nid].Output().(*chainMgr.Output).NeedPublishTX().Get(step2AO.TransactionID())
 		tc.WithInput(nid, chainMgr.NewInputChainTxPublishResult(consReq.CommitteeAddr, consReq.LogIndex, consReq.TxID, consReq.NextAliasOutput, true))
 	}
 	tc.RunAll()
