@@ -7,6 +7,7 @@ import * as wasmlib from 'wasmlib';
 import {panic, ScChainID} from 'wasmlib';
 import {RawData, WebSocket} from 'ws';
 import {WasmClientContext} from './wasmclientcontext';
+import {SyncRequestClient} from 'ts-sync-request';
 
 export class ContractEvent {
     chainID = '';
@@ -46,7 +47,7 @@ export class WasmClientService {
         };
 
         const url = this.waspAPI + '/requests/callview';
-        const client = new isc.SyncRequestClient();
+        const client = new SyncRequestClient();
         client.addHeader('Content-Type', 'application/json');
         try {
             const resp = client.post<isc.APICallViewRequest, isc.JsonResp>(url, callViewRequest);
@@ -80,7 +81,7 @@ export class WasmClientService {
         };
 
         const url = this.waspAPI + '/requests/offledger';
-        const client = new isc.SyncRequestClient();
+        const client = new SyncRequestClient();
         client.addHeader('Content-Type', 'application/json');
         try {
             client.post(url, offLedgerRequest);
@@ -126,7 +127,7 @@ export class WasmClientService {
     public waitUntilRequestProcessed(reqID: wasmlib.ScRequestID, timeout: u32): isc.Error {
         //TODO Timeout of the wait can be set with `/wait?timeoutSeconds=`. Max seconds are 60secs.
         const url = this.waspAPI + '/chains/' + this.chainID.toString() + '/requests/' + reqID.toString() + '/wait';
-        new isc.SyncRequestClient().get(url);
+        new SyncRequestClient().get(url);
         return null;
     }
 
