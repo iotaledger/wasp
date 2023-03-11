@@ -30,8 +30,8 @@ import (
 )
 
 type ContractEvent struct {
-	ChainID    string
-	ContractID string
+	ChainID    wasmtypes.ScChainID
+	ContractID wasmtypes.ScHname
 	Data       string
 }
 
@@ -223,8 +223,8 @@ func (sc *WasmClientService) eventLoop(ctx context.Context, ws *websocket.Conn) 
 		for _, item := range items {
 			parts := strings.Split(item.(string), ": ")
 			event := ContractEvent{
-				ChainID:    evt.ChainID,
-				ContractID: parts[0],
+				ChainID:    wasmtypes.ChainIDFromString(evt.ChainID),
+				ContractID: wasmtypes.HnameFromString(parts[0]),
 				Data:       parts[1],
 			}
 			sc.callback(&event)

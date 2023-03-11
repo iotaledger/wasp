@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -71,8 +70,8 @@ func (s *SoloClientService) CurrentChainID() wasmtypes.ScChainID {
 
 func (s *SoloClientService) Event(msg string) {
 	s.callback(&wasmclient.ContractEvent{
-		ChainID:    s.ctx.CurrentChainID().String(),
-		ContractID: isc.Hn(s.ctx.scName).String(),
+		ChainID:    s.ctx.CurrentChainID(),
+		ContractID: wasmtypes.NewScHname(s.ctx.scName),
 		Data:       msg,
 	})
 }

@@ -74,6 +74,11 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
     }
 
     private processEvent(event: ContractEvent): void {
+        if (!event.contractID.equals(this.scHname) ||
+            !event.chainID.equals(this.svcClient.currentChainID())) {
+            return;
+        }
+        console.log('{} {} {}', event.chainID.toString(), event.contractID.toString(), event.data);
         const params = event.data.split('|');
         for (let i = 0; i < params.length; i++) {
             params[i] = this.unescape(params[i]);

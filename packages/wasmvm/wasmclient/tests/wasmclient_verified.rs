@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};
 
-const MYCHAIN: &str = "atoi1prsl9m5kcz2vg4gs2py7u8q6y46amyqxnkzlx5xma3ndfkspgr08q4tq3js";
+const MYCHAIN: &str = "atoi1prfgpnnm3ltayyzenxvhaevw5h99p5vf0heyuefnml0tymmn6g4nz4mga3l";
 const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
 
 const PARAMS: &[&str] = &[
