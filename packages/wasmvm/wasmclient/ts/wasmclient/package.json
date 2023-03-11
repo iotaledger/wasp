@@ -12,6 +12,9 @@
   },
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "ts-sync-request": "^1.4.1"
+  },
   "devDependencies": {
     "@iota/iota.js": "^2.0.0-rc.1",
     "@types/jest": "^29.2.1",
@@ -24,8 +27,5 @@
     "tsify": "^5.0.4",
     "typescript": "^4.8.4",
     "ws": "^8.12.1"
-  },
-  "dependencies": {
-    "ts-sync-request": "^1.4.1"
   }
 }
