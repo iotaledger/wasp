@@ -46,8 +46,8 @@ pub struct EventMessage {
 }
 
 pub struct ContractEvent {
-    pub chain_id: String,
-    pub contract_id: String,
+    pub chain_id: ScChainID,
+    pub contract_id: ScHname,
     pub data: String,
 }
 
@@ -171,7 +171,7 @@ impl WasmClientService {
         let _ = sender.send(json);
     }
 
-    pub(crate) fn subscribe_events(&self, event_handlers: Arc<Mutex<Vec<Box<dyn IEventHandlers>>>>) -> Result<()> {
+    pub(crate) fn subscribe_events(&self, event_processor: EventProcessor) -> Result<()> {
         let socket_url = self.wasp_api.replace("http:", "ws:") + "/ws";
         let close_rx = self.close_rx.clone();
         let handle = spawn(move || {
@@ -192,29 +192,33 @@ impl WasmClientService {
                 WasmClientService::subscribe(&out, "block_events");
 
                 // return the message handler closure that will be called from the message loop
-                let event_handlers = event_handlers.clone();
-                move |msg: Message| {
-                    println!("Message: {}", msg);
-                    if let Ok(text) = msg.as_text() {
-                        if let Ok(json) = serde_json::from_str::<EventMessage>(text) {
-                            for item in json.payload {
-                                let parts: Vec<String> = item.split(": ").map(|s| s.into()).collect();
-                                let event = ContractEvent {
-                                    chain_id: json.chain_id.clone(),
-                                    contract_id: parts[0].clone(),
-                                    data: parts[1].clone(),
-                                };
-                                WasmClientContext::process_event(&event_handlers, &event);
-                            }
-                        }
-                    }
-                    return Ok(());
-                }
+                Self::event_loop(event_processor.clone())
             }).unwrap();
             println!("Exiting message handler");
         });
         self.handle.set(Some(handle));
         return Ok(());
+    }
+
+    fn event_loop(event_processor: EventProcessor) -> Box<dyn Fn(Message) -> ws::Result<()>> {
+        let f= Box::new(move |msg: Message| {
+            println!("Message: {}", msg);
+            if let Ok(text) = msg.as_text() {
+                if let Ok(json) = serde_json::from_str::<EventMessage>(text) {
+                    for item in json.payload {
+                        let parts: Vec<String> = item.split(": ").map(|s| s.into()).collect();
+                        let event = ContractEvent {
+                            chain_id: chain_id_from_string(&json.chain_id),
+                            contract_id: hname_from_string(&parts[0]),
+                            data: parts[1].clone(),
+                        };
+                        event_processor.process_event(&event);
+                    }
+                }
+            }
+            return Ok(());
+        });
+        f
     }
 
     pub(crate) fn unsubscribe_events(&self) {

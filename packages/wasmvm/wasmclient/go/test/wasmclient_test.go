@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	myChainID = "atoi1ppeezn9klnd2ue4dlgeyrk6nq79s8csfh6sxscygjagdnvnukp3s64nmn2j"
+	myChainID = "atoi1prfgpnnm3ltayyzenxvhaevw5h99p5vf0heyuefnml0tymmn6g4nz4mga3l"
 	mySeed    = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3"
 )
 

@@ -9,6 +9,57 @@ use crate::*;
 use crate::codec::*;
 use crate::keypair::KeyPair;
 
+pub struct EventProcessor {
+    chain_id: ScChainID,
+    contract_id: ScHname,
+    event_handlers: Arc<Mutex<Vec<Box<dyn IEventHandlers>>>>,
+}
+
+impl Clone for EventProcessor {
+    fn clone(&self) -> Self {
+        Self {
+            chain_id: self.chain_id,
+            contract_id: self.contract_id,
+            event_handlers: self.event_handlers.clone(),
+        }
+    }
+}
+
+impl EventProcessor {
+    pub(crate) fn process_event(&self, event: &ContractEvent) {
+        if event.contract_id != self.contract_id || event.chain_id != self.chain_id {
+            return;
+        }
+
+        let mut params: Vec<String> = event.data.split("|").map(|s| s.into()).collect();
+        for i in 0..params.len() {
+            params[i] = Self::unescape(&params[i]);
+        }
+        let topic = params.remove(0);
+
+        let event_handlers = self.event_handlers.lock().unwrap();
+        for handler in event_handlers.iter() {
+            handler.as_ref().call_handler(&topic, &params);
+        }
+    }
+
+    fn unescape(param: &str) -> String {
+        let idx = match param.find("~") {
+            Some(idx) => idx,
+            None => return String::from(param),
+        };
+        match param.chars().nth(idx + 1) {
+            // escaped escape character
+            Some('~') => param[0..idx].to_string() + "~" + &Self::unescape(&param[idx + 2..]),
+            // escaped vertical bar
+            Some('/') => param[0..idx].to_string() + "|" + &Self::unescape(&param[idx + 2..]),
+            // escaped space
+            Some('_') => param[0..idx].to_string() + " " + &Self::unescape(&param[idx + 2..]),
+            _ => panic!("invalid event encoding"),
+        }
+    }
+}
+
 pub struct WasmClientContext {
     pub(crate) error: Arc<Mutex<Result<()>>>,
     pub(crate) event_handlers: Arc<Mutex<Vec<Box<dyn IEventHandlers>>>>,
@@ -44,7 +95,7 @@ impl WasmClientContext {
         self.svc_client.clone()
     }
 
-    pub fn register(&mut self, handler: Box<dyn IEventHandlers>) {
+    pub fn register(&self, handler: Box<dyn IEventHandlers>) {
         {
             let target = handler.id();
             let mut event_handlers = self.event_handlers.lock().unwrap();
@@ -58,7 +109,11 @@ impl WasmClientContext {
                 return;
             }
         }
-        let res = self.svc_client.subscribe_events(self.event_handlers.clone());
+        let res = self.svc_client.subscribe_events(EventProcessor{
+            chain_id: self.svc_client.current_chain_id(),
+            contract_id: self.sc_hname,
+            event_handlers: self.event_handlers.clone(),
+        });
         if let Err(e) = res {
             self.set_err(&e, "")
         }
@@ -96,35 +151,6 @@ impl WasmClientContext {
 
         if let Err(e) = res {
             self.set_err(&e, "")
-        }
-    }
-
-    pub(crate) fn process_event(event_handlers: &Arc<Mutex<Vec<Box<dyn IEventHandlers>>>>, event: &ContractEvent) {
-        let mut params: Vec<String> = event.data.split("|").map(|s| s.into()).collect();
-        for i in 0..params.len() {
-            params[i] = Self::unescape(&params[i]);
-        }
-        let topic = params.remove(0);
-
-        let event_handlers = event_handlers.lock().unwrap();
-        for handler in event_handlers.iter() {
-            handler.as_ref().call_handler(&topic, &params);
-        }
-    }
-
-    fn unescape(param: &str) -> String {
-        let idx = match param.find("~") {
-            Some(idx) => idx,
-            None => return String::from(param),
-        };
-        match param.chars().nth(idx + 1) {
-            // escaped escape character
-            Some('~') => param[0..idx].to_string() + "~" + &Self::unescape(&param[idx + 2..]),
-            // escaped vertical bar
-            Some('/') => param[0..idx].to_string() + "|" + &Self::unescape(&param[idx + 2..]),
-            // escaped space
-            Some('_') => param[0..idx].to_string() + " " + &Self::unescape(&param[idx + 2..]),
-            _ => panic!("invalid event encoding"),
         }
     }
 

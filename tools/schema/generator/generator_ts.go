@@ -37,7 +37,7 @@ func (g *TypeScriptGenerator) Build() error {
 	}
 	wasm := g.s.PackageName + "_ts.wasm"
 	fmt.Printf("building %s\n", wasm)
-	args := "asc ts/main.ts --lib d:/work/node_modules -O --outFile ts/pkg/" + wasm
+	args := "asc ts/main.ts -O --outFile ts/pkg/" + wasm
 	return g.build("npx", args)
 }
 

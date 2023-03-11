@@ -29,6 +29,8 @@ var (
 	_ wasmlib.ScViewCallContext = new(WasmClientContext)
 )
 
+// NewWasmClientContext uses IClientService instead of WasmClientService
+// because this could also be a SoloClientService
 func NewWasmClientContext(svcClient IClientService, scName string) *WasmClientContext {
 	s := &WasmClientContext{
 		svcClient: svcClient,
@@ -102,7 +104,11 @@ func (s *WasmClientContext) WaitRequest(reqID ...wasmtypes.ScRequestID) {
 }
 
 func (s *WasmClientContext) processEvent(msg *ContractEvent) {
-	fmt.Printf("%s %s %s\n", msg.ChainID, msg.ContractID, msg.Data)
+	if msg.ContractID != s.scHname ||
+		msg.ChainID != s.svcClient.CurrentChainID() {
+		return
+	}
+	fmt.Printf("%s %s %s\n", msg.ChainID.String(), msg.ContractID.String(), msg.Data)
 
 	params := strings.Split(msg.Data, "|")
 	for i, param := range params {

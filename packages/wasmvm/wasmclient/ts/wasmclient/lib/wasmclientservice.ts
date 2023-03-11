@@ -4,21 +4,27 @@
 import * as coreaccounts from 'wasmlib/coreaccounts';
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
-import {panic, ScChainID} from 'wasmlib';
+import {panic} from 'wasmlib';
 import {RawData, WebSocket} from 'ws';
 import {WasmClientContext} from './wasmclientcontext';
 
 export class ContractEvent {
-    chainID = '';
-    contractID = '';
-    data = '';
+    chainID: wasmlib.ScChainID;
+    contractID: wasmlib.ScHname;
+    data: string;
+
+    public constructor(chainID: string, contractID: string, data: string) {
+        this.chainID = wasmlib.chainIDFromString(chainID);
+        this.contractID = wasmlib.hnameFromString(contractID);
+        this.data = data;
+    }
 }
 
 type ClientCallBack = (event: ContractEvent) => void;
 
 export class WasmClientService {
     private callbacks: ClientCallBack[] = [];
-    private chainID: ScChainID;
+    private chainID: wasmlib.ScChainID;
     private nonces = new Map<Uint8Array, u64>();
     private subscribers: WasmClientContext[] = [];
     private waspAPI: string;
@@ -60,7 +66,7 @@ export class WasmClientService {
         }
     }
 
-    public currentChainID(): ScChainID {
+    public currentChainID(): wasmlib.ScChainID {
         return this.chainID;
     }
 
@@ -169,10 +175,7 @@ export class WasmClientService {
         const items: string[] = msg.payload;
         for (const item of items) {
             const parts = item.split(': ');
-            const event = new ContractEvent();
-            event.chainID = msg.chainID;
-            event.contractID = parts[0];
-            event.data = parts[1];
+            const event = new ContractEvent(msg.chainID, parts[0], parts[1]);
             for (const callback of this.callbacks) {
                 callback(event);
             }
