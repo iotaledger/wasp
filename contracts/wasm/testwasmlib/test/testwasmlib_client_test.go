@@ -237,7 +237,7 @@ func TestClientRandom(t *testing.T) {
 func TestClientEvents(t *testing.T) {
 	ctx := setupClient(t)
 
-	events := &testwasmlib.TestWasmLibEventHandlers{}
+	events := testwasmlib.NewTestWasmLibEventHandlers()
 	proc := new(EventProcessor)
 	events.OnTestWasmLibTest(func(e *testwasmlib.EventTest) {
 		proc.name = e.Name
@@ -249,6 +249,9 @@ func TestClientEvents(t *testing.T) {
 		proc.sendClientEventsParam(t, ctx, param)
 		proc.waitClientEventsParam(t, ctx, param)
 	}
+
+	ctx.Unregister(events.ID())
+	require.NoError(t, ctx.Err)
 
 	//for _, param := range params {
 	//	proc.sendClientEventsParam(param)

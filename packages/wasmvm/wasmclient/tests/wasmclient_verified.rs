@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+
 use wasmlib::IEventHandlers;
 
 use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};

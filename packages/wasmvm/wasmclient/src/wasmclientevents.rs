@@ -39,14 +39,14 @@ pub struct ContractEvent {
     pub data: String,
 }
 
-pub struct EventProcessor {
+pub struct WasmClientEvents {
     pub(crate) chain_id: ScChainID,
     pub(crate) contract_id: ScHname,
     pub(crate) handler: Box<dyn IEventHandlers>,
 }
 
-impl EventProcessor {
-    pub(crate) fn start_event_loop(socket_url: String, close_rx: Arc<Mutex<mpsc::Receiver<bool>>>, event_handlers: Arc<Mutex<Vec<EventProcessor>>>) -> JoinHandle<()> {
+impl WasmClientEvents {
+    pub(crate) fn start_event_loop(socket_url: String, close_rx: Arc<Mutex<mpsc::Receiver<bool>>>, event_handlers: Arc<Mutex<Vec<WasmClientEvents>>>) -> JoinHandle<()> {
         spawn(move || {
             connect(socket_url, |out| {
                 // on connect start the thread that allows interrupting the message handler thread
@@ -71,7 +71,7 @@ impl EventProcessor {
         })
     }
 
-    fn event_loop(event_handlers: Arc<Mutex<Vec<EventProcessor>>>) -> Box<dyn Fn(Message) -> ws::Result<()>> {
+    fn event_loop(event_handlers: Arc<Mutex<Vec<WasmClientEvents>>>) -> Box<dyn Fn(Message) -> ws::Result<()>> {
         let f = Box::new(move |msg: Message| {
             println!("Message: {}", msg);
             if let Ok(text) = msg.as_text() {

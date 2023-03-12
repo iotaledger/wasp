@@ -22,7 +22,7 @@ pub struct WasmClientService {
     chain_id: ScChainID,
     close_rx: Arc<Mutex<mpsc::Receiver<bool>>>,
     close_tx: mpsc::Sender<bool>,
-    event_handlers: Arc<Mutex<Vec<EventProcessor>>>,
+    event_handlers: Arc<Mutex<Vec<WasmClientEvents>>>,
     handle: Cell<Option<JoinHandle<()>>>,
     nonces: Arc<Mutex<HashMap<PublicKey, u64>>>,
     wasp_api: String,
@@ -131,18 +131,19 @@ impl WasmClientService {
         }
     }
 
-    pub(crate) fn subscribe_events(&self, event_processor: EventProcessor) {
+    pub(crate) fn subscribe_events(&self, event_handler: WasmClientEvents) {
         {
             let mut event_handlers = self.event_handlers.lock().unwrap();
-            event_handlers.push(event_processor);
+            event_handlers.push(event_handler);
             if event_handlers.len() != 1 {
                 return;
             }
         }
+
         let socket_url = self.wasp_api.replace("http:", "ws:") + "/ws";
         let close_rx = self.close_rx.clone();
         let event_handlers = self.event_handlers.clone();
-        let handle = EventProcessor::start_event_loop(socket_url, close_rx, event_handlers);
+        let handle = WasmClientEvents::start_event_loop(socket_url, close_rx, event_handlers);
         self.handle.set(Some(handle));
     }
 

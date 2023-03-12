@@ -43,7 +43,7 @@ impl WasmClientContext {
     }
 
     pub fn register(&self, handler: Box<dyn IEventHandlers>) {
-        self.svc_client.subscribe_events(EventProcessor {
+        self.svc_client.subscribe_events(WasmClientEvents {
             chain_id: self.svc_client.current_chain_id(),
             contract_id: self.sc_hname,
             handler,

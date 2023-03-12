@@ -18,10 +18,10 @@ import (
 )
 
 type SoloClientService struct {
-	chainID  wasmtypes.ScChainID
-	ctx      *SoloContext
-	callback wasmclient.EventProcessor
-	nonces   map[string]uint64
+	chainID       wasmtypes.ScChainID
+	ctx           *SoloContext
+	eventHandlers []*wasmclient.WasmClientEvents
+	nonces        map[string]uint64
 }
 
 var _ wasmclient.IClientService = new(SoloClientService)
@@ -32,10 +32,9 @@ var _ wasmclient.IClientService = new(SoloClientService)
 // use the optional extra flag to indicate the extra clients.
 func NewSoloClientService(ctx *SoloContext, chainID string, extra ...bool) *SoloClientService {
 	s := &SoloClientService{
-		chainID:  wasmtypes.ChainIDFromString(chainID),
-		ctx:      ctx,
-		callback: nil,
-		nonces:   make(map[string]uint64),
+		chainID: wasmtypes.ChainIDFromString(chainID),
+		ctx:     ctx,
+		nonces:  make(map[string]uint64),
 	}
 	if len(extra) != 1 || !extra[0] {
 		wasmhost.EventSubscribers = nil
@@ -46,37 +45,40 @@ func NewSoloClientService(ctx *SoloContext, chainID string, extra ...bool) *Solo
 	return s
 }
 
-func (s *SoloClientService) CallViewByHname(hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error) {
-	iscChainID := cvt.IscChainID(&s.chainID)
+func (svc *SoloClientService) CallViewByHname(hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error) {
+	iscChainID := cvt.IscChainID(&svc.chainID)
 	iscContract := cvt.IscHname(hContract)
 	iscFunction := cvt.IscHname(hFunction)
 	params, err := dict.FromBytes(args)
 	if err != nil {
 		return nil, err
 	}
-	if !iscChainID.Equals(s.ctx.Chain.ChainID) {
+	if !iscChainID.Equals(svc.ctx.Chain.ChainID) {
 		return nil, errors.New("SoloClientService.CallViewByHname chain ID mismatch")
 	}
-	res, err := s.ctx.Chain.CallViewByHname(iscContract, iscFunction, params)
+	res, err := svc.ctx.Chain.CallViewByHname(iscContract, iscFunction, params)
 	if err != nil {
 		return nil, err
 	}
 	return res.Bytes(), nil
 }
 
-func (s *SoloClientService) CurrentChainID() wasmtypes.ScChainID {
-	return s.chainID
+func (svc *SoloClientService) CurrentChainID() wasmtypes.ScChainID {
+	return svc.chainID
 }
 
-func (s *SoloClientService) Event(msg string) {
-	s.callback(&wasmclient.ContractEvent{
-		ChainID:    s.ctx.CurrentChainID(),
-		ContractID: wasmtypes.NewScHname(s.ctx.scName),
+func (svc *SoloClientService) Event(msg string) {
+	event := wasmclient.ContractEvent{
+		ChainID:    svc.ctx.CurrentChainID(),
+		ContractID: wasmtypes.NewScHname(svc.ctx.scName),
 		Data:       msg,
-	})
+	}
+	for _, h := range svc.eventHandlers {
+		h.ProcessEvent(&event)
+	}
 }
 
-func (s *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (reqID wasmtypes.ScRequestID, err error) {
+func (svc *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (reqID wasmtypes.ScRequestID, err error) {
 	iscChainID := cvt.IscChainID(&chainID)
 	iscContract := cvt.IscHname(hContract)
 	iscFunction := cvt.IscHname(hFunction)
@@ -84,33 +86,34 @@ func (s *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, 
 	if err != nil {
 		return reqID, err
 	}
-	if !iscChainID.Equals(s.ctx.Chain.ChainID) {
+	if !iscChainID.Equals(svc.ctx.Chain.ChainID) {
 		return reqID, errors.New("SoloClientService.PostRequest chain ID mismatch")
 	}
 	req := solo.NewCallParamsFromDictByHname(iscContract, iscFunction, params)
 
 	key := string(keyPair.GetPublicKey().AsBytes())
-	nonce := s.nonces[key]
+	nonce := svc.nonces[key]
 	nonce++
-	s.nonces[key] = nonce
+	svc.nonces[key] = nonce
 	req.WithNonce(nonce)
 
 	iscAllowance := cvt.IscAllowance(allowance)
 	req.WithAllowance(iscAllowance)
 	req.WithGasBudget(gas.MaxGasPerRequest)
-	_, err = s.ctx.Chain.PostRequestOffLedger(req, keyPair)
+	_, err = svc.ctx.Chain.PostRequestOffLedger(req, keyPair)
 	return reqID, err
 }
 
-func (s *SoloClientService) SubscribeEvents(callback wasmclient.EventProcessor) error {
-	s.callback = callback
+func (svc *SoloClientService) SubscribeEvents(eventHandler *wasmclient.WasmClientEvents) error {
+	svc.eventHandlers = append(svc.eventHandlers, eventHandler)
 	return nil
 }
 
-func (s *SoloClientService) UnsubscribeEvents() {
+func (svc *SoloClientService) UnsubscribeEvents(eventsID uint32) {
+	svc.eventHandlers = wasmclient.RemoveHandler(svc.eventHandlers, eventsID)
 }
 
-func (s *SoloClientService) WaitUntilRequestProcessed(reqID wasmtypes.ScRequestID, timeout time.Duration) error {
+func (svc *SoloClientService) WaitUntilRequestProcessed(reqID wasmtypes.ScRequestID, timeout time.Duration) error {
 	_ = reqID
 	_ = timeout
 	return nil
