@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	myChainID = "atoi1pzyjf9ex6wmw2uk3936vrtq5rc6d8fkltmyvfdwnnkpqxnu6lj5uugva0qj"
+	myChainID = "atoi1pzqg69nhgudquetaej48dgj353jv8ulyjxf95z5jz06vg8a39a9tu46gk7y"
 	mySeed    = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3"
 )
 
@@ -60,7 +60,7 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	// with a preloaded chain that contains the testwasmlib demo contract
 	// therefore we skip all these tests when in the github repo
 	// to run these tests, set up the chain, update myChainID, and uncomment the next line
-	t.SkipNow()
+	// t.SkipNow()
 
 	svc := wasmclient.NewWasmClientService("http://localhost:19090", myChainID)
 	ctx := wasmclient.NewWasmClientContext(svc, testwasmlib.ScName)

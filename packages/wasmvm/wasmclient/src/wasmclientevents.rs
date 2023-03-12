@@ -122,6 +122,7 @@ impl WasmClientEvents {
             Some(idx) => idx,
             None => return String::from(param),
         };
+
         match param.chars().nth(idx + 1) {
             // escaped escape character
             Some('~') => param[0..idx].to_string() + "~" + &Self::unescape(&param[idx + 2..]),

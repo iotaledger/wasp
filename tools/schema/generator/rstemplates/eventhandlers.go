@@ -12,7 +12,7 @@ use wasmlib::*;
 use crate::*;
 
 pub struct $PkgName$+EventHandlers {
-    id: u32,
+    my_id: u32,
     $pkg_name$+_handlers: HashMap<&'static str, fn(evt: &$PkgName$+EventHandlers, msg: &Vec<String>)>,
 
 $#each events eventHandlerMember
@@ -26,7 +26,7 @@ impl IEventHandlers for $PkgName$+EventHandlers {
     }
 
     fn id(&self) -> u32 {
-        self.id
+        self.my_id
     }
 }
 
@@ -38,7 +38,7 @@ impl $PkgName$+EventHandlers {
         let mut handlers: HashMap<&str, fn(evt: &$PkgName$+EventHandlers, msg: &Vec<String>)> = HashMap::new();
 $#each events eventHandler
         return $PkgName$+EventHandlers {
-            id: EventHandlers::generate_id(),
+            my_id: EventHandlers::generate_id(),
             $pkg_name$+_handlers: handlers,
 $#each events eventHandlerMemberInit
         };
