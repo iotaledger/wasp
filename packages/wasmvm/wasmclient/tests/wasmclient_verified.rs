@@ -1,8 +1,9 @@
 use std::sync::{Arc, Mutex};
+use wasmlib::IEventHandlers;
 
 use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};
 
-const MYCHAIN: &str = "atoi1prfgpnnm3ltayyzenxvhaevw5h99p5vf0heyuefnml0tymmn6g4nz4mga3l";
+const MYCHAIN: &str = "atoi1pzyjf9ex6wmw2uk3936vrtq5rc6d8fkltmyvfdwnnkpqxnu6lj5uugva0qj";
 const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
 
 const PARAMS: &[&str] = &[
@@ -100,8 +101,8 @@ fn post_func_request() {
 
 #[test]
 fn event_handling() {
-    let mut ctx = setup_client();
-    let mut events = testwasmlib::TestWasmLibEventHandlers::new("");
+    let ctx = setup_client();
+    let mut events = testwasmlib::TestWasmLibEventHandlers::new();
 
     let proc = EventProcessor::new();
     {
@@ -111,6 +112,7 @@ fn event_handling() {
             *name = e.name.clone();
         });
     }
+    let events_id = events.id();
     ctx.register(Box::new(events));
     check_error(&ctx);
 
@@ -119,6 +121,6 @@ fn event_handling() {
         proc.wait_client_events_param(&ctx, &param);
     }
 
-    ctx.unregister("");
+    ctx.unregister(events_id);
     check_error(&ctx);
 }
