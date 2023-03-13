@@ -377,45 +377,49 @@ func (amn *accessMgrNode) handleMsgAccess(msg *msgAccess) gpa.OutMessages {
 ////////////////////////////////////////////////////////////////////////////////
 
 type chainSet struct {
-	elements map[isc.ChainID]interface{}
+	elements *shrinkingmap.ShrinkingMap[isc.ChainID, struct{}]
 }
 
 func newChainSet() *chainSet {
-	return &chainSet{elements: map[isc.ChainID]interface{}{}}
+	return &chainSet{elements: shrinkingmap.New[isc.ChainID, struct{}]()}
 }
 
 func (cs *chainSet) Add(elem isc.ChainID) {
-	cs.elements[elem] = nil
+	cs.elements.Set(elem, struct{}{})
 }
 
 func (cs *chainSet) Delete(elem isc.ChainID) {
-	delete(cs.elements, elem)
+	cs.elements.Delete(elem)
 }
 
 func (cs *chainSet) Has(elem isc.ChainID) bool {
-	_, ok := cs.elements[elem]
-	return ok
+	return cs.elements.Has(elem)
 }
 
 func (cs *chainSet) AsSlice() []isc.ChainID {
-	return lo.Keys(cs.elements)
+	return cs.elements.Keys()
 }
 
 func (cs *chainSet) FromSlice(els []isc.ChainID) {
-	cs.elements = map[isc.ChainID]interface{}{}
+	cs.elements = shrinkingmap.New[isc.ChainID, struct{}]()
 	for _, el := range els {
-		cs.elements[el] = nil
+		cs.elements.Set(el, struct{}{})
 	}
 }
 
 func (cs *chainSet) Equals(other *chainSet) bool {
-	if len(cs.elements) != len(other.elements) {
+	if cs.elements.Size() != other.elements.Size() {
 		return false
 	}
-	for e := range cs.elements {
-		if _, ok := other.elements[e]; !ok {
+
+	equal := true
+	cs.elements.ForEach(func(ci isc.ChainID, s struct{}) bool {
+		if !other.elements.Has(ci) {
+			equal = false
 			return false
 		}
-	}
-	return true
+		return true
+	})
+
+	return equal
 }
