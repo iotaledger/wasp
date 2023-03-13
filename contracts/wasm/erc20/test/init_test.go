@@ -7,7 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/wasm/erc20/go/erc20"
 	"github.com/iotaledger/wasp/contracts/wasm/erc20/go/erc20impl"
-	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 )
