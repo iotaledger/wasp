@@ -71,7 +71,7 @@ export class WasmClientEvents {
         if (!event.contractID.equals(this.contractID) || !event.chainID.equals(this.chainID)) {
             return;
         }
-        console.log('{} {} {}', event.chainID.toString(), event.contractID.toString(), event.data);
+        console.log(event.chainID.toString() + ' ' + event.contractID.toString() + ' ' + event.data);
         const params = event.data.split('|');
         for (let i = 0; i < params.length; i++) {
             params[i] = this.unescape(params[i]);

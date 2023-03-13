@@ -2,11 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {log} from './sandbox';
-import {IKvStore, Proxy} from './wasmtypes/proxy';
-import {ScUint32Length, uint32FromBytes, uint32ToBytes} from './wasmtypes/scuint32';
-import {stringFromBytes} from './wasmtypes/scstring';
-import {WasmDecoder, WasmEncoder} from './wasmtypes/codec';
-import {ScUint16Length, uint16FromBytes, uint16ToBytes} from './wasmtypes/scuint16';
+import {
+    IKvStore,
+    Proxy,
+    ScUint16Length,
+    ScUint32Length,
+    stringFromBytes,
+    uint16FromBytes,
+    uint16ToBytes,
+    uint32FromBytes,
+    uint32ToBytes,
+    WasmDecoder,
+    WasmEncoder
+} from './wasmtypes';
 
 // returns a hex string representing the byte buffer
 function hex(buf: Uint8Array): string {
@@ -93,20 +101,20 @@ export class ScDict implements IKvStore {
     exists(key: Uint8Array): bool {
         const mapKey = ScDict.toKey(key);
         const ret = this.dict.has(mapKey);
-        this.dump('exists');
-        log('dict.exists(' + keya(key) + ') = ' + ret.toString());
+        // this.dump('exists');
+        // log('dict.exists(' + keya(key) + ') = ' + ret.toString());
         return ret;
     }
 
     get(key: Uint8Array): Uint8Array {
-        this.dump('get')
+        // this.dump('get')
         const mapKey = ScDict.toKey(key);
         if (!this.dict.has(mapKey)) {
-            log('dict.get(' + keya(key) + ') = null');
+            // log('dict.get(' + keya(key) + ') = null');
             return new Uint8Array(0);
         }
         const value = this.dict.get(mapKey)!;
-        log('dict.get(' + keya(key) + ') = ' + vala(value));
+        // log('dict.get(' + keya(key) + ') = ' + vala(value));
         return value;
     }
 
@@ -115,10 +123,10 @@ export class ScDict implements IKvStore {
     }
 
     set(key: Uint8Array, value: Uint8Array): void {
-        this.dump('set')
-        log('dict.set(' + keya(key) + ', ' + vala(value) + ')');
+        // this.dump('set')
+        // log('dict.set(' + keya(key) + ', ' + vala(value) + ')');
         this.dict.set(ScDict.toKey(key), value);
-        this.dump('Set')
+        // this.dump('Set')
     }
 
     public toBytes(): Uint8Array {

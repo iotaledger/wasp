@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	myChainID = "atoi1pzqg69nhgudquetaej48dgj353jv8ulyjxf95z5jz06vg8a39a9tu46gk7y"
+	myChainID = "atoi1pqtg32l9m53m0uv69636ch474xft5uzkn54er85hc05333hvfxfj6gm6lpx"
 	mySeed    = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3"
 )
 
@@ -57,10 +57,10 @@ func (proc *EventProcessor) waitClientEventsParam(t *testing.T, ctx *wasmclient.
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	// note that testing the WasmClient code requires a running cluster
-	// with a preloaded chain that contains the testwasmlib demo contract
-	// therefore we skip all these tests when in the github repo
+	// with a preloaded chain that contains the TestWasmLib demo contract
+	// therefore we skip all these tests when in the GitHub repo
 	// to run these tests, set up the chain, update myChainID, and uncomment the next line
-	// t.SkipNow()
+	t.SkipNow()
 
 	svc := wasmclient.NewWasmClientService("http://localhost:19090", myChainID)
 	ctx := wasmclient.NewWasmClientContext(svc, testwasmlib.ScName)

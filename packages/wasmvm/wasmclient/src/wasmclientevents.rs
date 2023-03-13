@@ -73,7 +73,7 @@ impl WasmClientEvents {
 
     fn event_loop(event_handlers: Arc<Mutex<Vec<WasmClientEvents>>>) -> Box<dyn Fn(Message) -> ws::Result<()>> {
         let f = Box::new(move |msg: Message| {
-            println!("Message: {}", msg);
+            // println!("Message: {}", msg);
             if let Ok(text) = msg.as_text() {
                 if let Ok(json) = serde_json::from_str::<EventMessage>(text) {
                     for item in json.payload {
@@ -99,6 +99,7 @@ impl WasmClientEvents {
         if event.contract_id != self.contract_id || event.chain_id != self.chain_id {
             return;
         }
+        println!("{} {} {}", event.chain_id.to_string(), event.contract_id.to_string(), event.data);
 
         let mut params: Vec<String> = event.data.split("|").map(|s| s.into()).collect();
         for i in 0..params.len() {
