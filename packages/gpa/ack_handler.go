@@ -29,7 +29,7 @@ type ackHandler struct {
 	initialized  *shrinkingmap.ShrinkingMap[NodeID, bool]
 	initPending  *shrinkingmap.ShrinkingMap[NodeID, []Message]
 	counters     *shrinkingmap.ShrinkingMap[NodeID, int] // For numbering the outgoing messages.
-	sentUnacked  *shrinkingmap.ShrinkingMap[NodeID, map[int]*ackHandlerBatch]
+	sentUnacked  *shrinkingmap.ShrinkingMap[NodeID, *shrinkingmap.ShrinkingMap[int, *ackHandlerBatch]]
 	recvAcksIn   *shrinkingmap.ShrinkingMap[NodeID, map[int]*int]
 }
 
@@ -51,7 +51,7 @@ func NewAckHandler(me NodeID, nested GPA, resendPeriod time.Duration) AckHandler
 		initialized:  shrinkingmap.New[NodeID, bool](),
 		initPending:  shrinkingmap.New[NodeID, []Message](),
 		counters:     shrinkingmap.New[NodeID, int](),
-		sentUnacked:  shrinkingmap.New[NodeID, map[int]*ackHandlerBatch](),
+		sentUnacked:  shrinkingmap.New[NodeID, *shrinkingmap.ShrinkingMap[int, *ackHandlerBatch]](),
 		recvAcksIn:   shrinkingmap.New[NodeID, map[int]*int](),
 	}
 }
@@ -129,8 +129,8 @@ func (a *ackHandler) UnmarshalMessage(data []byte) (Message, error) {
 func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) OutMessages {
 	resendOlderThan := msg.timestamp.Add(-a.resendPeriod)
 	resendMsgs := NoMessages()
-	a.sentUnacked.ForEach(func(_ NodeID, nodeSentUnacked map[int]*ackHandlerBatch) bool {
-		for batchID, batch := range nodeSentUnacked {
+	a.sentUnacked.ForEach(func(_ NodeID, nodeSentUnacked *shrinkingmap.ShrinkingMap[int, *ackHandlerBatch]) bool {
+		nodeSentUnacked.ForEach(func(batchID int, batch *ackHandlerBatch) bool {
 			if batch.sent == nil {
 				// Don't resent, just mark the current timestamp.
 				// We have sent it after the previous tick.
@@ -138,9 +138,11 @@ func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) OutMessages {
 			} else if batch.sent.Before(resendOlderThan) {
 				// Resent it, timeout is already passed.
 				batch.sent = &msg.timestamp
-				resendMsgs.Add(nodeSentUnacked[batchID])
+				resendMsgs.Add(batch)
 			}
-		}
+
+			return true
+		})
 		return true
 	})
 
@@ -183,7 +185,7 @@ func (a *ackHandler) handleBatchMsg(msgBatch *ackHandlerBatch) OutMessages {
 	// Drop all the outgoing batches, that are now acknowledged.
 	for _, ackedBatchID := range msgBatch.acks {
 		if unacked, exists := a.sentUnacked.Get(msgBatch.sender); exists {
-			delete(unacked, ackedBatchID)
+			unacked.Delete(ackedBatchID)
 		}
 	}
 	//
@@ -219,7 +221,7 @@ func (a *ackHandler) handleBatchMsg(msgBatch *ackHandlerBatch) OutMessages {
 		if !exists {
 			return NoMessages()
 		}
-		ackedBatch, exists := peerSentUnacked[*batchAckedIn]
+		ackedBatch, exists := peerSentUnacked.Get(*batchAckedIn)
 		if !exists {
 			return NoMessages()
 		}
@@ -298,8 +300,10 @@ func (a *ackHandler) makeBatches(msgs OutMessages) OutMessages {
 			msgs:      batchMsgs,
 			sent:      nil, // Will be set after first resend, to avoid resend to early.
 		}
-		unackedMap, _ := a.sentUnacked.GetOrCreate(nodeID, func() map[int]*ackHandlerBatch { return make(map[int]*ackHandlerBatch, 1) })
-		unackedMap[*batch.id] = batch
+		unackedMap, _ := a.sentUnacked.GetOrCreate(nodeID, func() *shrinkingmap.ShrinkingMap[int, *ackHandlerBatch] {
+			return shrinkingmap.New[int, *ackHandlerBatch]()
+		})
+		unackedMap.Set(*batch.id, batch)
 		batches.Add(batch)
 	}
 	return batches
