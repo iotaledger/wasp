@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 )
 
@@ -16,7 +17,7 @@ type Coordinator struct {
 	parent     *Coordinator
 	nestedWG   *sync.WaitGroup
 	nestedLock *sync.RWMutex
-	nested     map[string]interface{}
+	nested     *shrinkingmap.ShrinkingMap[string, struct{}]
 	log        *logger.Logger
 }
 
@@ -35,7 +36,7 @@ func newCoordinator(name string, parent *Coordinator, log *logger.Logger) *Coord
 		parent:     parent,
 		nestedWG:   &sync.WaitGroup{},
 		nestedLock: &sync.RWMutex{},
-		nested:     make(map[string]interface{}),
+		nested:     shrinkingmap.New[string, struct{}](),
 		log:        log,
 	}
 }
@@ -44,11 +45,11 @@ func newCoordinator(name string, parent *Coordinator, log *logger.Logger) *Coord
 func (s *Coordinator) Nested(name string) *Coordinator {
 	s.nestedLock.Lock()
 	defer s.nestedLock.Unlock()
-	if _, ok := s.nested[name]; ok {
+	if s.nested.Has(name) {
 		panic(fmt.Errorf("nested context '%v' already exist at %v", name, s.path))
 	}
 	newSub := newCoordinator(name, s, s.log)
-	s.nested[name] = nil
+	s.nested.Set(name, struct{}{})
 	s.nestedWG.Add(1)
 	return newSub
 }
@@ -64,11 +65,11 @@ func (s *Coordinator) Done() {
 func (s *Coordinator) subDone(subName string) {
 	s.nestedLock.Lock()
 	defer s.nestedLock.Unlock()
-	if _, ok := s.nested[subName]; !ok {
+	if !s.nested.Has(subName) {
 		// Already marked as done.
 		return
 	}
-	delete(s.nested, subName)
+	s.nested.Delete(subName)
 	s.nestedWG.Done()
 }
 
@@ -82,9 +83,10 @@ func (s *Coordinator) WaitNestedWithLogging(logPeriod time.Duration) {
 		now := time.Now()
 		if now.After(nextLogTime) {
 			s.nestedLock.RLock()
-			for name := range s.nested {
+			s.nested.ForEachKey(func(name string) bool {
 				s.log.Debugf("context '%s' waits for '%s' to complete", s.path, name)
-			}
+				return true
+			})
 			s.nestedLock.RUnlock()
 			nextLogTime = now.Add(logPeriod)
 		}
@@ -100,5 +102,5 @@ func (s *Coordinator) WaitNested() {
 func (s *Coordinator) CheckNestedDone() bool {
 	s.nestedLock.RLock()
 	defer s.nestedLock.RUnlock()
-	return len(s.nested) == 0
+	return s.nested.Size() == 0
 }
