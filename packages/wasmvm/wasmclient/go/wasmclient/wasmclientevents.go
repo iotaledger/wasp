@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"strings"
 
+	"nhooyr.io/websocket"
+	"nhooyr.io/websocket/wsjson"
+
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	websocketservice "github.com/iotaledger/wasp/packages/webapi/websocket"
 	"github.com/iotaledger/wasp/packages/webapi/websocket/commands"
-	"nhooyr.io/websocket"
-	"nhooyr.io/websocket/wsjson"
 )
 
 type ContractEvent struct {
