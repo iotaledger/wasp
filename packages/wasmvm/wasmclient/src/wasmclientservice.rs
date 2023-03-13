@@ -68,10 +68,9 @@ impl WasmClientService {
                         Err(e) => Err(format!("call() response failed: {}", e.to_string())),
                     }
                 }
-                failed_status_code => {
-                    let status_code = failed_status_code.as_u16();
+                status => {
                     match v.json::<JsonError>() {
-                        Ok(err_msg) => Err(format!("{}: {}", status_code, err_msg.message)),
+                        Ok(err_msg) => Err(Self::api_error(status, err_msg)),
                         Err(e) => Err(e.to_string()),
                     }
                 }
@@ -119,10 +118,9 @@ impl WasmClientService {
             Ok(v) => match v.status() {
                 StatusCode::OK => Ok(signed.id()),
                 StatusCode::ACCEPTED => Ok(signed.id()),
-                failed_status_code => {
-                    let status_code = failed_status_code.as_u16();
+                status => {
                     match v.json::<JsonError>() {
-                        Ok(err_msg) => Err(format!("{}: {}", status_code, err_msg.message)),
+                        Ok(err_msg) => Err(Self::api_error(status, err_msg)),
                         Err(e) => Err(e.to_string()),
                     }
                 }
@@ -178,25 +176,22 @@ impl WasmClientService {
             .build()
             .unwrap();
         let res = client.get(url).header("Content-Type", "application/json").send();
-        return match res {
+        match res {
             Ok(v) => match v.status() {
-                StatusCode::OK => {
-                    Ok(())
-                }
-                failed_status_code => {
-                    let status_code = failed_status_code.as_u16();
+                StatusCode::OK => Ok(()),
+                status => {
                     match v.text() {
-                        Ok(err_msg) => {
-                            Err(format!("{}: {}", status_code, err_msg))
-                        }
+                        Ok(err_msg) => Err(format!("{}: {}", status, err_msg)),
                         Err(e) => Err(e.to_string()),
                     }
                 }
             },
-            Err(e) => {
-                Err(format!("request failed: {}", e.to_string()))
-            }
-        };
+            Err(e) => Err(format!("request failed: {}", e.to_string())),
+        }
+    }
+
+    fn api_error(status: StatusCode, err_msg: JsonError) -> String {
+        format!("{}: {}: {}", status, err_msg.message, err_msg.error)
     }
 
     fn cache_nonce(&self, key_pair: &KeyPair) -> Result<u64> {
