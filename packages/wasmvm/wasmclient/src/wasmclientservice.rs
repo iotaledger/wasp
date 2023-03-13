@@ -10,6 +10,7 @@ use std::time::Duration;
 
 use crypto::signatures::ed25519::PublicKey;
 use reqwest::{blocking, StatusCode};
+use serde::{Deserialize, Serialize};
 use wasmlib::*;
 
 use crate::*;
@@ -17,6 +18,12 @@ use crate::codec::*;
 use crate::keypair::KeyPair;
 
 const READ_TIMEOUT: Duration = Duration::from_millis(10000);
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct ChainInfoResponse {
+    #[serde(rename = "chainID")]
+    pub(crate) chain_id: String,
+}
 
 pub struct WasmClientService {
     chain_id: ScChainID,
@@ -29,11 +36,10 @@ pub struct WasmClientService {
 }
 
 impl WasmClientService {
-    pub fn new(wasp_api: &str, chain_id: &str) -> Self {
-        set_sandbox_wrappers(chain_id).unwrap();
+    pub fn new(wasp_api: &str) -> Self {
         let (tx, rx) = channel();
         WasmClientService {
-            chain_id: chain_id_from_string(chain_id),
+            chain_id: chain_id_from_bytes(&[]),
             close_rx: Arc::new(Mutex::new(rx)),
             close_tx: tx,
             event_handlers: Arc::default(),
@@ -83,6 +89,13 @@ impl WasmClientService {
         self.chain_id
     }
 
+    pub fn is_healthy(&self) -> bool {
+        let url = format!("{}/health", self.wasp_api);
+        let client = blocking::Client::builder().build().unwrap();
+        let res = client.get(url).header("Content-Type", "application/json").send();
+        !res.is_err() && res.unwrap().status() == StatusCode::OK
+    }
+
     pub(crate) fn post_request(
         &self,
         chain_id: &ScChainID,
@@ -126,6 +139,43 @@ impl WasmClientService {
                 }
             },
             Err(e) => Err(format!("post() request failed: {}", e.to_string())),
+        }
+    }
+
+    pub fn set_current_chain_id(&mut self, chain_id: &str) -> Result<()> {
+        set_sandbox_wrappers(chain_id).unwrap();
+        self.chain_id = chain_id_from_string(chain_id);
+        Ok(())
+    }
+
+    pub fn set_default_chain_id(&mut self) -> Result<()> {
+        let url = format!("{}/chains", self.wasp_api);
+        let client = blocking::Client::builder()
+            .build()
+            .unwrap();
+        let res = client.get(url).header("Content-Type", "application/json").send();
+        match res {
+            Ok(v) => match v.status() {
+                StatusCode::OK =>
+                    match v.json::<Vec<ChainInfoResponse>>() {
+                        Ok(chains) => {
+                            if chains.len() != 1 {
+                                return Err(String::from("expected a single chain for default chain ID"));
+                            }
+                            let chain_id = &chains[0].chain_id;
+                            println!("default chain ID: {}", chain_id);
+                            self.set_current_chain_id(chain_id)
+                        }
+                        Err(e) => Err(format!("response failed: {}", e.to_string())),
+                    },
+                status => {
+                    match v.text() {
+                        Ok(err_msg) => Err(format!("{}: {}", status, err_msg)),
+                        Err(e) => Err(e.to_string()),
+                    }
+                }
+            },
+            Err(e) => Err(format!("request failed: {}", e.to_string())),
         }
     }
 
@@ -202,9 +252,9 @@ impl WasmClientService {
             None => {
                 // get last used nonce from accounts core contract
                 let isc_agent = ScAgentID::from_address(&key_pair.address());
-                let chain_id = self.chain_id.to_string();
-                let wcs = Arc::new(WasmClientService::new(&self.wasp_api, &chain_id));
-                let ctx = WasmClientContext::new(wcs, coreaccounts::SC_NAME);
+                let mut svc = WasmClientService::new(&self.wasp_api);
+                svc.set_current_chain_id(&self.chain_id.to_string()).unwrap();
+                let ctx = WasmClientContext::new(Arc::new(svc), coreaccounts::SC_NAME);
                 let n = coreaccounts::ScFuncs::get_account_nonce(&ctx);
                 n.params.agent_id().set_value(&isc_agent);
                 n.func.call();

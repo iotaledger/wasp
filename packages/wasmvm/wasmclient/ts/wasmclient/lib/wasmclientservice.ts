@@ -4,10 +4,13 @@
 import * as coreaccounts from 'wasmlib/coreaccounts';
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
-import {panic} from 'wasmlib';
 import {WebSocket} from 'ws';
 import {WasmClientContext} from './wasmclientcontext';
-import {WasmClientEvents} from "./wasmclientevents";
+import {WasmClientEvents} from './wasmclientevents';
+
+class ChainInfoResponse {
+    chainID = '';
+}
 
 export class WasmClientService {
     private chainID: wasmlib.ScChainID;
@@ -16,19 +19,11 @@ export class WasmClientService {
     //TODO do we need to lock a mutex here?
     private nonces = new Map<Uint8Array, u64>();
     private waspAPI: string;
-    private ws: WebSocket;
+    private ws: WebSocket | null = null;
 
-    public constructor(waspAPI: string, chainID: string) {
-        const err = isc.setSandboxWrappers(chainID);
-        if (err != null) {
-            panic(err);
-        }
+    public constructor(waspAPI: string) {
         this.waspAPI = waspAPI;
-        this.chainID = wasmlib.chainIDFromString(chainID);
-        const url = waspAPI.replace('http:', 'ws:') + '/ws';
-        this.ws = new WebSocket(url, {
-            perMessageDeflate: false
-        });
+        this.chainID = wasmlib.chainIDFromBytes(null);
     }
 
     public callViewByHname(hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): [Uint8Array, isc.Error] {
@@ -56,6 +51,16 @@ export class WasmClientService {
 
     public currentChainID(): wasmlib.ScChainID {
         return this.chainID;
+    }
+
+    public isHealthy(): bool {
+        const url = this.waspAPI + '/health';
+        try {
+            new isc.SyncRequestClient().get(url);
+            return true;
+        } catch (error) {
+            return false;
+        }
     }
 
     public postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array, allowance: wasmlib.ScAssets, keyPair: isc.KeyPair): [wasmlib.ScRequestID, isc.Error] {
@@ -87,11 +92,42 @@ export class WasmClientService {
         }
     }
 
+    public setCurrentChainID(chainID: string): isc.Error {
+        const err = isc.setSandboxWrappers(chainID);
+        if (err != null) {
+            return err;
+        }
+        this.chainID = wasmlib.chainIDFromString(chainID);
+        return null;
+    }
+
+    public setDefaultChainID(): isc.Error {
+        const url = this.waspAPI + '/chains';
+        const client = new isc.SyncRequestClient();
+        client.addHeader('Content-Type', 'application/json');
+        try {
+            const chains = client.get<ChainInfoResponse[]>(url);
+            if (chains.length != 1) {
+                return 'expected a single chain for default chain ID';
+            }
+            const chainID = chains[0].chainID;
+            console.log('default chain ID: ' + chainID)
+            return this.setCurrentChainID(chainID);
+        } catch (error) {
+            if (error instanceof Error) return error.message;
+            return String(error);
+        }
+    }
+
     public subscribeEvents(eventHandler: WasmClientEvents): isc.Error {
         this.eventHandlers.push(eventHandler);
         if (this.eventHandlers.length != 1) {
             return null;
         }
+        const url = this.waspAPI.replace('http:', 'ws:') + '/ws';
+        this.ws = new WebSocket(url, {
+            perMessageDeflate: false
+        });
         return WasmClientEvents.startEventLoop(this.ws, this.eventHandlers)
     }
 
@@ -101,9 +137,10 @@ export class WasmClientService {
                 this.eventHandlers.splice(i, 1);
             }
         }
-        if (this.eventHandlers.length == 0) {
+        if (this.eventHandlers.length == 0 && this.ws != null) {
             // stop event loop
             this.ws.close();
+            this.ws = null;
         }
     }
 

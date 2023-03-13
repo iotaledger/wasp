@@ -4,7 +4,6 @@ use wasmlib::{IEventHandlers, request_id_from_bytes};
 
 use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};
 
-const MYCHAIN: &str = "atoi1prfhkqfal7xgnjxurwre6zt33vpvrkqseu6mvd3xc305zl2zpz5mcwqag3l";
 const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
 const NOCHAIN: &str = "atoi1pqtg32l9m53m0uv69636ch474xft5uzkn54er85hc05333hvfxfj6gm6lpx";
 
@@ -62,8 +61,10 @@ fn check_error(ctx: &WasmClientContext) {
 }
 
 fn setup_client() -> WasmClientContext {
-    let svc = Arc::new(WasmClientService::new("http://localhost:19090", MYCHAIN));
-    let mut ctx = WasmClientContext::new(svc.clone(), "testwasmlib");
+    let mut svc = WasmClientService::new("http://localhost:19090");
+    assert!(svc.is_healthy());
+    svc.set_default_chain_id().unwrap();
+    let mut ctx = WasmClientContext::new(Arc::new(svc), "testwasmlib");
     ctx.sign_requests(&keypair::KeyPair::from_sub_seed(
         &wasmlib::bytes_from_string(MYSEED),
         0,
@@ -109,8 +110,9 @@ fn error_handling() {
     println!("err: {}", ctx.err().err().unwrap());
 
     // wait for request on wrong chain
-    let svc = Arc::new(WasmClientService::new("http://localhost:19090", NOCHAIN));
-    let mut ctx = WasmClientContext::new(svc.clone(), "testwasmlib");
+    let mut svc = WasmClientService::new("http://localhost:19090");
+    svc.set_current_chain_id(NOCHAIN).unwrap();
+    let mut ctx = WasmClientContext::new(Arc::new(svc), "testwasmlib");
     ctx.sign_requests(&keypair::KeyPair::from_sub_seed(
         &wasmlib::bytes_from_string(MYSEED),
         0,

@@ -21,7 +21,6 @@ import (
 )
 
 const (
-	myChainID = "atoi1prfhkqfal7xgnjxurwre6zt33vpvrkqseu6mvd3xc305zl2zpz5mcwqag3l"
 	mySeed    = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3"
 	noChainID = "atoi1pqtg32l9m53m0uv69636ch474xft5uzkn54er85hc05333hvfxfj6gm6lpx"
 )
@@ -57,15 +56,21 @@ func (proc *EventProcessor) waitClientEventsParam(t *testing.T, ctx *wasmclient.
 }
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
-	// note that testing the WasmClient code requires a running cluster
-	// with a preloaded chain that contains the TestWasmLib demo contract
-	// therefore we skip all these tests when in the GitHub repo
-	// to run these tests, set up the chain, update myChainID, and uncomment the next line
-	t.SkipNow()
+	svc := wasmclient.NewWasmClientService("http://localhost:19090")
 
-	svc := wasmclient.NewWasmClientService("http://localhost:19090", myChainID)
+	// note that testing the WasmClient code requires a running wasp-cluster
+	// with a single preloaded chain that contains the TestWasmLib demo contract
+	// therefore we skip all WasmClient tests when in the GitHub repo
+	if !svc.IsHealthy() {
+		t.SkipNow()
+	}
+
+	err := svc.SetDefaultChainID()
+	require.NoError(t, err)
+
 	ctx := wasmclient.NewWasmClientContext(svc, testwasmlib.ScName)
 	require.NoError(t, ctx.Err)
+
 	seed := cryptolib.NewSeedFromBytes(wasmtypes.BytesFromString(mySeed))
 	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(0))
 	ctx.SignRequests(wallet)
@@ -103,7 +108,9 @@ func TestErrorHandling(t *testing.T) {
 	fmt.Println("Error: " + ctx.Err.Error())
 
 	// wait for request on wrong chain
-	svc := wasmclient.NewWasmClientService("http://localhost:19090", noChainID)
+	svc := wasmclient.NewWasmClientService("http://localhost:19090")
+	ctx.Err = svc.SetCurrentChainID(noChainID)
+	require.NoError(t, ctx.Err)
 	ctx = wasmclient.NewWasmClientContext(svc, testwasmlib.ScName)
 	require.NoError(t, ctx.Err)
 	ctx.SignRequests(wallet)
