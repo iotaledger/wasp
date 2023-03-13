@@ -1,9 +1,6 @@
 @echo off
 
-cd ..\..\..\contracts\wasm
-call npm i
-
-cd ..\..\packages\wasmvm\wasmlib\ts\wasmlib
+cd ..\..\..\packages\wasmvm\wasmlib\ts\wasmlib
 call npm i
 call npm link
 

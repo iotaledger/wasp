@@ -1,9 +1,12 @@
 use std::sync::{Arc, Mutex};
 
+use wasmlib::{IEventHandlers, request_id_from_bytes};
+
 use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};
 
-const MYCHAIN: &str = "atoi1prfgpnnm3ltayyzenxvhaevw5h99p5vf0heyuefnml0tymmn6g4nz4mga3l";
+const MYCHAIN: &str = "atoi1prfhkqfal7xgnjxurwre6zt33vpvrkqseu6mvd3xc305zl2zpz5mcwqag3l";
 const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
+const NOCHAIN: &str = "atoi1pqtg32l9m53m0uv69636ch474xft5uzkn54er85hc05333hvfxfj6gm6lpx";
 
 const PARAMS: &[&str] = &[
     "Lala",
@@ -81,6 +84,43 @@ fn call_view() {
 }
 
 #[test]
+fn error_handling() {
+    let mut ctx = setup_client();
+
+    // missing mandatory string parameter
+    let v = testwasmlib::ScFuncs::check_string(&ctx);
+    v.func.call();
+    assert!(ctx.err().is_err());
+    println!("err: {}", ctx.err().err().unwrap());
+
+    // // wait for nonexisting request id (time out)
+    // ctx.wait_request_id(&request_id_from_bytes(&[]));
+    // assert!(ctx.err().is_err());
+    // println!("err: {}", ctx.err().err().unwrap());
+
+    // sign with wrong wallet
+    ctx.sign_requests(&keypair::KeyPair::from_sub_seed(
+        &wasmlib::bytes_from_string(MYSEED),
+        1,
+    ));
+    let f = testwasmlib::ScFuncs::random(&ctx);
+    f.func.post();
+    assert!(ctx.err().is_err());
+    println!("err: {}", ctx.err().err().unwrap());
+
+    // wait for request on wrong chain
+    let svc = Arc::new(WasmClientService::new("http://localhost:19090", NOCHAIN));
+    let mut ctx = WasmClientContext::new(svc.clone(), "testwasmlib");
+    ctx.sign_requests(&keypair::KeyPair::from_sub_seed(
+        &wasmlib::bytes_from_string(MYSEED),
+        0,
+    ));
+    ctx.wait_request_id(&request_id_from_bytes(&[]));
+    assert!(ctx.err().is_err());
+    println!("err: {}", ctx.err().err().unwrap());
+}
+
+#[test]
 fn post_func_request() {
     let ctx = setup_client();
     let f = testwasmlib::ScFuncs::random(&ctx);
@@ -100,8 +140,8 @@ fn post_func_request() {
 
 #[test]
 fn event_handling() {
-    let mut ctx = setup_client();
-    let mut events = testwasmlib::TestWasmLibEventHandlers::new("");
+    let ctx = setup_client();
+    let mut events = testwasmlib::TestWasmLibEventHandlers::new();
 
     let proc = EventProcessor::new();
     {
@@ -111,6 +151,7 @@ fn event_handling() {
             *name = e.name.clone();
         });
     }
+    let events_id = events.id();
     ctx.register(Box::new(events));
     check_error(&ctx);
 
@@ -119,6 +160,6 @@ fn event_handling() {
         proc.wait_client_events_param(&ctx, &param);
     }
 
-    ctx.unregister("");
+    ctx.unregister(events_id);
     check_error(&ctx);
 }

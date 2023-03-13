@@ -10,13 +10,15 @@ $#emit importWasmLib
 $#emit importWasmTypes
 
 export class $PkgName$+EventHandlers implements wasmlib.IEventHandlers {
-    $pkgName$+Handlers: Map<string, (evt: $PkgName$+EventHandlers, msg: string[]) => void> = new Map();
+    private myID: u32;
+    private $pkgName$+Handlers: Map<string, (evt: $PkgName$+EventHandlers, msg: string[]) => void> = new Map();
 
     /* eslint-disable @typescript-eslint/no-empty-function */
 $#each events eventHandlerMember
     /* eslint-enable @typescript-eslint/no-empty-function */
 
     public constructor() {
+        this.myID = wasmlib.eventHandlersGenerateID();
 $#each events eventHandler
     }
 
@@ -25,6 +27,10 @@ $#each events eventHandler
         if (handler) {
             handler(this, params);
         }
+    }
+
+    public id(): u32 {
+        return this.myID;
     }
 $#each events eventFuncSignature
 }

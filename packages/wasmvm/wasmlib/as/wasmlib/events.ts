@@ -6,6 +6,14 @@ import {uint64FromString, uint64ToString} from './wasmtypes/scuint64';
 
 export interface IEventHandlers {
     callHandler(topic: string, params: string[]): void;
+    id(): u32;
+}
+
+let nextID: u32 = 0;
+
+export function eventHandlersGenerateID(): u32 {
+    nextID++;
+    return nextID;
 }
 
 export class EventEncoder {

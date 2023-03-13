@@ -2,11 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {log} from './sandbox';
-import {IKvStore, Proxy} from './wasmtypes/proxy';
-import {ScUint32Length, uint32FromBytes, uint32ToBytes} from './wasmtypes/scuint32';
-import {stringFromBytes} from './wasmtypes/scstring';
-import {WasmDecoder, WasmEncoder} from './wasmtypes/codec';
-import {ScUint16Length, uint16FromBytes, uint16ToBytes} from './wasmtypes/scuint16';
+import {
+    IKvStore,
+    Proxy,
+    ScUint16Length,
+    ScUint32Length,
+    stringFromBytes,
+    uint16FromBytes,
+    uint16ToBytes,
+    uint32FromBytes,
+    uint32ToBytes,
+    WasmDecoder,
+    WasmEncoder
+} from './wasmtypes';
 
 // returns a hex string representing the byte buffer
 function hex(buf: Uint8Array): string {
