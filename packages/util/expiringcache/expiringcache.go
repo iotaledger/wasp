@@ -4,6 +4,8 @@ import (
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 )
 
 type cacheItem[V any] struct {
@@ -16,7 +18,7 @@ type ExpiringCache[K comparable, V any] struct {
 }
 
 type cache[K comparable, V any] struct {
-	items map[K]cacheItem[V]
+	items *shrinkingmap.ShrinkingMap[K, cacheItem[V]]
 	ttl   time.Duration
 	mut   sync.RWMutex
 }
@@ -25,26 +27,27 @@ func (c *cache[K, V]) cleanup() {
 	c.mut.Lock()
 	defer c.mut.Unlock()
 	now := time.Now().UnixNano()
-	for k, v := range c.items {
+	c.items.ForEach(func(k K, v cacheItem[V]) bool {
 		if now >= v.expiry {
-			delete(c.items, k)
+			c.items.Delete(k)
 		}
-	}
+		return true
+	})
 }
 
 func (c *cache[K, V]) Set(k K, v V) {
 	c.mut.Lock()
 	defer c.mut.Unlock()
-	c.items[k] = cacheItem[V]{
+	c.items.Set(k, cacheItem[V]{
 		expiry: time.Now().Add(c.ttl).UnixNano(),
 		value:  v,
-	}
+	})
 }
 
 func (c *cache[K, V]) Get(k K) interface{} {
 	c.mut.RLock()
 	defer c.mut.RUnlock()
-	item, exists := c.items[k]
+	item, exists := c.items.Get(k)
 	if !exists {
 		return nil
 	}
@@ -63,7 +66,7 @@ func New[K comparable, V any](ttl time.Duration, cleanupInterval ...time.Duratio
 	}
 
 	c := &cache[K, V]{
-		items: make(map[K]cacheItem[V]),
+		items: shrinkingmap.New[K, cacheItem[V]](),
 	}
 
 	ret := &ExpiringCache[K, V]{c} // prevent the cleanup loop from blocking garbage collection on `c`
