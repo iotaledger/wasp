@@ -33,7 +33,7 @@ type Output interface {
 }
 
 type accessMgrDist struct {
-	nodes            map[gpa.NodeID]*accessMgrNode                            // State for each peer.
+	nodes            *shrinkingmap.ShrinkingMap[gpa.NodeID, *accessMgrNode]   // State for each peer.
 	chains           *shrinkingmap.ShrinkingMap[isc.ChainID, *accessMgrChain] // State for each chain.
 	pubKeyToNodeID   func(*cryptolib.PublicKey) gpa.NodeID                    // Convert PubKeys to NodeIDs.
 	serversUpdatedCB func(isc.ChainID, []*cryptolib.PublicKey)                // Called when a set of servers has changed for a chain.
@@ -50,7 +50,7 @@ func NewAccessMgr(
 	log *logger.Logger,
 ) AccessMgr {
 	return &accessMgrDist{
-		nodes:            map[gpa.NodeID]*accessMgrNode{},
+		nodes:            shrinkingmap.New[gpa.NodeID, *accessMgrNode](),
 		chains:           shrinkingmap.New[isc.ChainID, *accessMgrChain](),
 		pubKeyToNodeID:   pubKeyToNodeID,
 		serversUpdatedCB: serversUpdatedCB,
@@ -100,7 +100,7 @@ func (amd *accessMgrDist) Output() gpa.Output {
 
 // Implements the gpa.GPA interface.
 func (amd *accessMgrDist) StatusString() string {
-	return fmt.Sprintf("{accessMgr, |nodes|=%v, |chains|=%v}", len(amd.nodes), amd.chains.Size())
+	return fmt.Sprintf("{accessMgr, |nodes|=%v, |chains|=%v}", amd.nodes.Size(), amd.chains.Size())
 }
 
 // > Notify all the trusted access nodes, that we will not serve the requests anymore.
@@ -112,9 +112,10 @@ func (amd *accessMgrDist) handleInputChainDisabled(input *inputChainDisabled) gp
 	chain.Disabled()
 	amd.chains.Delete(input.chainID)
 	msgs := gpa.NoMessages()
-	for _, node := range amd.nodes {
+	amd.nodes.ForEach(func(_ gpa.NodeID, node *accessMgrNode) bool {
 		msgs.AddAll(node.SetChainAccess(input.chainID, false))
-	}
+		return true
+	})
 	return msgs
 }
 
@@ -128,11 +129,12 @@ func (amd *accessMgrDist) handleInputAccessNodes(input *inputAccessNodes) gpa.Ou
 	chain, exists := amd.chains.Get(input.chainID)
 	if !exists {
 		initialServers := []*cryptolib.PublicKey{}
-		for _, node := range amd.nodes {
+		amd.nodes.ForEach(func(_ gpa.NodeID, node *accessMgrNode) bool {
 			if node.serverFor.Has(input.chainID) {
 				initialServers = append(initialServers, node.pubKey)
 			}
-		}
+			return true
+		})
 		chain = newAccessMgrChain(input.chainID, amd.pubKeyToNodeID, initialServers, amd.serversUpdatedCB, amd.log)
 		amd.chains.Set(input.chainID, chain)
 	}
@@ -140,9 +142,10 @@ func (amd *accessMgrDist) handleInputAccessNodes(input *inputAccessNodes) gpa.Ou
 	//
 	// Update the info for each node.
 	msgs := gpa.NoMessages()
-	for nodeID, node := range amd.nodes {
+	amd.nodes.ForEach(func(nodeID gpa.NodeID, node *accessMgrNode) bool {
 		msgs.AddAll(node.SetChainAccess(input.chainID, chain.IsAccessGrantedFor(nodeID)))
-	}
+		return true
+	})
 	return msgs
 }
 
@@ -154,7 +157,7 @@ func (amd *accessMgrDist) handleInputTrustedNodes(input *inputTrustedNodes) gpa.
 	for _, trustedNodePubKey := range input.trustedNodes {
 		trustedNodeID := amd.pubKeyToNodeID(trustedNodePubKey)
 		trustedIndex[trustedNodeID] = true
-		if _, ok := amd.nodes[trustedNodeID]; ok {
+		if amd.nodes.Has(trustedNodeID) {
 			continue
 		}
 		accessFor := newChainSet()
@@ -166,28 +169,29 @@ func (amd *accessMgrDist) handleInputTrustedNodes(input *inputTrustedNodes) gpa.
 		})
 		trustedNode, trustedNodeMsgs := newAccessMgrNode(trustedNodeID, trustedNodePubKey, accessFor)
 		msgs.AddAll(trustedNodeMsgs)
-		amd.nodes[trustedNodeID] = trustedNode
+		amd.nodes.Set(trustedNodeID, trustedNode)
 	}
 	//
 	// Disconnect distrusted peers.
-	for nodeID, node := range amd.nodes {
+	amd.nodes.ForEach(func(nodeID gpa.NodeID, node *accessMgrNode) bool {
 		if _, ok := trustedIndex[nodeID]; ok {
-			continue
+			return true
 		}
 		amd.chains.ForEach(func(chainID isc.ChainID, chain *accessMgrChain) bool {
 			chain.MarkAsServerFor(node.pubKey, false)
 			msgs.AddAll(node.SetChainAccess(chain.chainID, false))
 			return true
 		})
-		delete(amd.nodes, nodeID)
+		amd.nodes.Delete(nodeID)
 		amd.dismissPeerCB(node.pubKey)
-	}
+		return true
+	})
 	return msgs
 }
 
 func (amd *accessMgrDist) handleMsgAccess(msg *msgAccess) gpa.OutMessages {
-	node, nodeFound := amd.nodes[msg.Sender()]
-	if !nodeFound {
+	node, exists := amd.nodes.Get(msg.Sender())
+	if !exists {
 		return nil
 	}
 	msgs := node.handleMsgAccess(msg)
