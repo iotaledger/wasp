@@ -151,7 +151,8 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 			inccounter.Contract.Hname(),
 			inccounter.FuncIncCounter.Hname(),
 			dict.New(), uint64(i),
-		).WithGasBudget(2000000).Sign(scClient)
+			2000000,
+		).Sign(scClient)
 		te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
 		incRequests[i] = scRequest
 	}
@@ -192,7 +193,8 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 					inccounter.Contract.Hname(),
 					inccounter.FuncIncCounter.Hname(),
 					dict.New(), uint64(ii),
-				).WithGasBudget(20000).Sign(scClient)
+					20000,
+				).Sign(scClient)
 				te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
 			}
 			time.Sleep(100 * time.Millisecond)

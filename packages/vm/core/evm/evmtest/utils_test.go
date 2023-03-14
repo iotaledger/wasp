@@ -304,6 +304,12 @@ func (e *soloChainEnv) signer() types.Signer {
 	return evmutil.Signer(big.NewInt(int64(e.evmChainID)))
 }
 
+func (e *soloChainEnv) maxGasLimit() uint64 {
+	fp := e.soloChain.GetGasFeePolicy()
+	gl := e.soloChain.GetGasLimits()
+	return gas.EVMCallGasLimit(gl, &fp.EVMGasRatio)
+}
+
 func (e *soloChainEnv) deployContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, args ...interface{}) *evmContractInstance {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 

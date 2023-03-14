@@ -2,10 +2,14 @@ package collections
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"math"
 
 	"github.com/iotaledger/wasp/packages/kv"
 )
+
+var ErrArray32Overflow = errors.New("Array32 overflow")
 
 // Array32 represents a dynamic array stored in a kv.KVStore
 type Array32 struct {
@@ -113,7 +117,11 @@ func (a *Array32) addToSize(amount int) (uint32, error) {
 	if err != nil {
 		return 0, err
 	}
-	a.setSize(uint32(int(prevSize) + amount))
+	newSize := uint64(prevSize) + uint64(amount)
+	if newSize > math.MaxUint32 {
+		return 0, ErrArray32Overflow
+	}
+	a.setSize(uint32(newSize))
 	return prevSize, nil
 }
 

@@ -85,6 +85,11 @@ func (s *SandboxBase) ChainOwnerID() isc.AgentID {
 	return s.Ctx.ChainOwnerID()
 }
 
+func (s *SandboxBase) ChainInfo() *isc.ChainInfo {
+	s.Ctx.GasBurn(gas.BurnCodeGetContext)
+	return s.Ctx.ChainInfo()
+}
+
 func (s *SandboxBase) Contract() isc.Hname {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.CurrentContractHname()

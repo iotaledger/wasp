@@ -37,6 +37,7 @@ func getFeePolicy(ctx isc.SandboxView) dict.Dict {
 func setEVMGasRatio(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	ratio := codec.MustDecodeRatio32(ctx.Params().MustGet(governance.ParamEVMGasRatio))
+	ctx.Requiref(!ratio.HasZeroComponent(), "invalid ratio")
 	policy := governance.MustGetGasFeePolicy(ctx.StateR())
 	policy.EVMGasRatio = ratio
 	ctx.State().Set(governance.VarGasFeePolicyBytes, policy.Bytes())
@@ -47,5 +48,22 @@ func getEVMGasRatio(ctx isc.SandboxView) dict.Dict {
 	policy := governance.MustGetGasFeePolicy(ctx.StateR())
 	return dict.Dict{
 		governance.ParamEVMGasRatio: policy.EVMGasRatio.Bytes(),
+	}
+}
+
+func setGasLimits(ctx isc.Sandbox) dict.Dict {
+	ctx.RequireCallerIsChainOwner()
+
+	data := ctx.Params().MustGetBytes(governance.ParamGasLimitsBytes)
+	_, err := gas.LimitsFromBytes(data)
+	ctx.RequireNoError(err)
+
+	ctx.State().Set(governance.VarGasLimitsBytes, data)
+	return nil
+}
+
+func getGasLimits(ctx isc.SandboxView) dict.Dict {
+	return dict.Dict{
+		governance.ParamGasLimitsBytes: governance.MustGetGasLimits(ctx.StateR()).Bytes(),
 	}
 }

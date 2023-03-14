@@ -37,6 +37,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
@@ -86,7 +87,14 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	te := newEnv(t, n, f, reliable)
 	defer te.close()
 	//
-	offLedgerReq := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), dict.New(), 0).Sign(te.governor)
+	offLedgerReq := isc.NewOffLedgerRequest(
+		isc.RandomChainID(),
+		isc.Hn("foo"),
+		isc.Hn("bar"),
+		dict.New(),
+		0,
+		gas.LimitsDefault.MaxGasPerRequest,
+	).Sign(te.governor)
 	t.Log("Sending off-ledger request")
 	chosenMempool := rand.Intn(len(te.mempools))
 	te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq)
@@ -170,7 +178,14 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	}
 	//
 	// Add a message, we should get it now.
-	offLedgerReq2 := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), dict.New(), 1).Sign(te.governor)
+	offLedgerReq2 := isc.NewOffLedgerRequest(
+		isc.RandomChainID(),
+		isc.Hn("foo"),
+		isc.Hn("bar"),
+		dict.New(),
+		1,
+		gas.LimitsDefault.MaxGasPerRequest,
+	).Sign(te.governor)
 	offLedgerRef2 := isc.RequestRefFromRequest(offLedgerReq2)
 	for i := range te.mempools {
 		te.mempools[i].ReceiveOffLedgerRequest(offLedgerReq2)

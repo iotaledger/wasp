@@ -132,6 +132,26 @@ func (ch *Chain) SetGasFeePolicy(user *cryptolib.KeyPair, fp *gas.FeePolicy) {
 	require.NoError(ch.Env.T, err)
 }
 
+func (ch *Chain) GetGasLimits() *gas.Limits {
+	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetGasLimits.Name)
+	require.NoError(ch.Env.T, err)
+	glBin := res.MustGet(governance.ParamGasLimitsBytes)
+	gasLimits, err := gas.LimitsFromBytes(glBin)
+	require.NoError(ch.Env.T, err)
+	return gasLimits
+}
+
+func (ch *Chain) SetGasLimits(user *cryptolib.KeyPair, gl *gas.Limits) {
+	_, err := ch.PostRequestOffLedger(NewCallParams(
+		governance.Contract.Name,
+		governance.FuncSetGasLimits.Name,
+		dict.Dict{
+			governance.ParamGasLimitsBytes: gl.Bytes(),
+		},
+	), user)
+	require.NoError(ch.Env.T, err)
+}
+
 // UploadBlob calls core 'blob' smart contract blob.FuncStoreBlob entry point to upload blob
 // data to the chain. It returns hash of the blob, the unique identifier of it.
 // The parameters must be either a dict.Dict, or a sequence of pairs 'fieldName': 'fieldValue'

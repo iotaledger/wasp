@@ -17,15 +17,16 @@ const GasPolicyByteSize = util.RatioByteSize + serializer.OneByte + util.RatioBy
 
 type FeePolicy struct {
 	// GasPerToken specifies how many gas units are paid for each token.
-	GasPerToken util.Ratio32
+	GasPerToken util.Ratio32 `json:"gasPerToken" swagger:"desc(The gas per token ratio (A/B) (gas/token)),required"`
 
 	// EVMGasRatio expresses the ratio at which EVM gas is converted to ISC gas
-	EVMGasRatio util.Ratio32 // X = ISC gas, Y = EVM gas => ISC gas = EVM gas * A/B
+	// X = ISC gas, Y = EVM gas => ISC gas = EVM gas * A/B
+	EVMGasRatio util.Ratio32 `json:"evmGasRatio" swagger:"desc(The EVM gas ratio (ISC gas = EVM gas * A/B)),required"`
 
 	// ValidatorFeeShare Validator/Governor fee split: percentage of fees which goes to Validator
 	// 0 mean all goes to Governor
 	// >=100 all goes to Validator
-	ValidatorFeeShare uint8
+	ValidatorFeeShare uint8 `json:"validatorFeeShare" swagger:"desc(The validator fee share.),required"`
 }
 
 // FeeFromGasBurned calculates the how many tokens to take and where

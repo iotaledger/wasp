@@ -2,6 +2,7 @@ package chainclient
 
 import (
 	"context"
+	"math"
 	"sync"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -13,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
@@ -48,8 +48,15 @@ type PostRequestParams struct {
 	Nonce                    uint64
 	NFT                      *isc.NFT
 	Allowance                *isc.Assets
-	GasBudget                *uint64
+	gasBudget                uint64
 	AutoAdjustStorageDeposit bool
+}
+
+func (par *PostRequestParams) GasBudget() uint64 {
+	if par.gasBudget == 0 {
+		return math.MaxUint64
+	}
+	return par.gasBudget
 }
 
 func defaultParams(params ...PostRequestParams) PostRequestParams {
@@ -118,12 +125,6 @@ func (c *Client) post1RequestWithOutputs(
 	params ...PostRequestParams,
 ) (*iotago.Transaction, error) {
 	par := defaultParams(params...)
-	var gasBudget uint64
-	if par.GasBudget == nil {
-		gasBudget = gas.MaxGasPerRequest
-	} else {
-		gasBudget = *par.GasBudget
-	}
 	tx, err := transaction.NewRequestTransaction(
 		transaction.NewRequestTransactionParams{
 			SenderKeyPair:    c.KeyPair,
@@ -139,7 +140,7 @@ func (c *Client) post1RequestWithOutputs(
 					EntryPoint:     entryPoint,
 					Params:         par.Args,
 					Allowance:      par.Allowance,
-					GasBudget:      gasBudget,
+					GasBudget:      par.GasBudget(),
 				},
 			},
 			NFT: par.NFT,
@@ -165,17 +166,8 @@ func (c *Client) PostOffLedgerRequest(context context.Context,
 		par.Nonce = c.nonces[c.KeyPair.Address().Key()]
 		c.noncesMutex.Unlock()
 	}
-	var gasBudget uint64
-	if par.GasBudget == nil {
-		gasBudget = gas.MaxGasPerRequest
-	} else {
-		gasBudget = *par.GasBudget
-	}
-	req := isc.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, par.Args, par.Nonce)
+	req := isc.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, par.Args, par.Nonce, par.GasBudget())
 	req.WithAllowance(par.Allowance)
-	if par.GasBudget != nil {
-		req = req.WithGasBudget(gasBudget)
-	}
 	req.WithNonce(par.Nonce)
 	signed := req.Sign(c.KeyPair)
 
@@ -219,7 +211,7 @@ func (par *PostRequestParams) WithBaseTokens(i uint64) *PostRequestParams {
 }
 
 func (par *PostRequestParams) WithGasBudget(budget uint64) *PostRequestParams {
-	par.GasBudget = &budget
+	par.gasBudget = budget
 	return par
 }
 
