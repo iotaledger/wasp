@@ -33,7 +33,7 @@ jobs:
         id: go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.20.1
+          go-version: 1.20.2
 
 
       - name: Compile solidity contracts
@@ -113,7 +113,7 @@ jobs:
         id: go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.20.1
+          go-version: 1.20.2
 
       - name: Get dependencies
         id: go_dependencies
@@ -194,7 +194,7 @@ jobs:
         id: go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.20.1
+          go-version: 1.20.2
 
       - name: install tinygo
         id: tinygo
