@@ -54,7 +54,7 @@ func TestBasic(t *testing.T) {
 		{n: 4, f: 1, reliable: true},  // Minimal robust config.
 		{n: 10, f: 3, reliable: true}, // Typical config.
 	}
-	if !testing.Short() {
+	if !testing.Short() { // TODO: Uncomment them when the CmtLog is fixed.
 		tests = append(tests,
 			tc{n: 4, f: 1, reliable: false},  // Minimal robust config.
 			tc{n: 10, f: 3, reliable: false}, // Typical config.

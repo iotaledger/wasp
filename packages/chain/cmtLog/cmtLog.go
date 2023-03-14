@@ -387,13 +387,13 @@ func (cl *cmtLogImpl) tryProposeConsensus(msgs gpa.OutMessages) gpa.OutMessages 
 		// Start the consensus (ask the upper layer to start it).
 		cl.consensusLI = logIndex
 		cl.output = makeOutput(cl.consensusLI, baseAO)
-		if tipAO, ok := cl.varLocalView.ConsensusProposed(cl.consensusLI, baseAO); ok {
-			if msgs == nil {
-				msgs = gpa.NoMessages()
-			}
-			msgs.AddAll(cl.varLogIndex.L1ReplacedBaseAliasOutput(tipAO))
-			return cl.tryProposeConsensus(msgs)
-		}
+		// if tipAO, ok := cl.varLocalView.ConsensusProposed(cl.consensusLI, baseAO); ok {
+		// 	if msgs == nil {
+		// 		msgs = gpa.NoMessages()
+		// 	}
+		// 	msgs.AddAll(cl.varLogIndex.L1ReplacedBaseAliasOutput(tipAO))
+		// 	return cl.tryProposeConsensus(msgs)
+		// }
 	} else {
 		// >     ELSE
 		// >         Don't propose any consensus.
