@@ -150,7 +150,7 @@ func (c *Chains) Run(ctx context.Context) error {
 
 func (c *Chains) Close() {
 	util.ExecuteIfNotNil(c.cleanupFunc)
-	c.allChains.ForEach(func(ci isc.ChainID, ac *activeChain) bool {
+	c.allChains.ForEach(func(_ isc.ChainID, ac *activeChain) bool {
 		ac.cancelFunc()
 		return true
 	})
@@ -203,7 +203,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	}
 	//
 	// Check, maybe it is already running.
-	if !c.allChains.Has(chainID) {
+	if c.allChains.Has(chainID) {
 		c.log.Debugf("Chain %v = %v is already activated", chainID.ShortString(), chainID.String())
 		return nil
 	}

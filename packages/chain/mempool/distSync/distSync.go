@@ -192,7 +192,7 @@ func (dsi *distSyncImpl) handleInputTimeTick() gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	nodePerm := dsi.rnd.Perm(nodeCount)
 	counter := 0
-	dsi.needed.ForEach(func(rrk isc.RequestRefKey, reqRef *isc.RequestRef) bool { // Access is randomized.
+	dsi.needed.ForEach(func(_ isc.RequestRefKey, reqRef *isc.RequestRef) bool { // Access is randomized.
 		msgs.Add(newMsgMissingRequest(reqRef, dsi.serverNodes[nodePerm[counter%nodeCount]]))
 		counter++
 		return counter <= dsi.maxMsgsPerTick

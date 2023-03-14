@@ -656,8 +656,8 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 	//
 	// Start publishing TX'es, if there not being posted already.
 	outputNeedPostTXes := output.NeedPublishTX()
-	outputNeedPostTXes.ForEach(func(ti iotago.TransactionID, npt *chainMgr.NeedPublishTX) bool {
-		txToPost := npt // Have to take a copy to be used in callback.
+	outputNeedPostTXes.ForEach(func(ti iotago.TransactionID, needPublishTx *chainMgr.NeedPublishTX) bool {
+		txToPost := needPublishTx // Have to take a copy to be used in callback.
 		if !cni.publishingTXes.Has(txToPost.TxID) {
 			subCtx, subCancel := context.WithCancel(ctx)
 			cni.publishingTXes.Set(txToPost.TxID, subCancel)
@@ -817,8 +817,8 @@ func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes *shrinkingmap.Shr
 		found := false
 
 		if neededPostTXes != nil {
-			neededPostTXes.ForEach(func(_ iotago.TransactionID, npt *chainMgr.NeedPublishTX) bool {
-				if npt.TxID == txID {
+			neededPostTXes.ForEach(func(_ iotago.TransactionID, needPublishTx *chainMgr.NeedPublishTX) bool {
+				if needPublishTx.TxID == txID {
 					found = true
 					return false
 				}

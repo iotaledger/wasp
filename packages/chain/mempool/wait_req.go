@@ -44,7 +44,7 @@ func (wr *waitReq) WaitMany(ctx context.Context, reqRefs []*isc.RequestRef, cb f
 		reqRefKey := reqRefs[i].AsKey()
 		item := &waitReqItem{ctx: ctx, cb: cb}
 
-		requests, _ := wr.reqs.GetOrCreate(reqRefKey, func() []*waitReqItem { return make([]*waitReqItem, 0) })
+		requests, _ := wr.reqs.GetOrCreate(reqRefKey, func() []*waitReqItem { return make([]*waitReqItem, 0, 1) })
 		wr.reqs.Set(reqRefKey, append(requests, item))
 	}
 	wr.maybeCleanup()

@@ -14,8 +14,6 @@ package amDist
 import (
 	"fmt"
 
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -177,7 +175,7 @@ func (amd *accessMgrDist) handleInputTrustedNodes(input *inputTrustedNodes) gpa.
 		if _, ok := trustedIndex[nodeID]; ok {
 			return true
 		}
-		amd.chains.ForEach(func(chainID isc.ChainID, chain *accessMgrChain) bool {
+		amd.chains.ForEach(func(_ isc.ChainID, chain *accessMgrChain) bool {
 			chain.MarkAsServerFor(node.pubKey, false)
 			msgs.AddAll(node.SetChainAccess(chain.chainID, false))
 			return true

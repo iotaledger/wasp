@@ -51,7 +51,7 @@ func (ari *awaitReceiptImpl) Await(query *awaitReceiptReq) {
 	}
 	ari.maybeCleanup()
 
-	reqAwaits, _ := ari.queries.GetOrCreate(query.requestID, func() []*awaitReceiptReq { return make([]*awaitReceiptReq, 0) })
+	reqAwaits, _ := ari.queries.GetOrCreate(query.requestID, func() []*awaitReceiptReq { return make([]*awaitReceiptReq, 0, 1) })
 	ari.queries.Set(query.requestID, append(reqAwaits, query))
 }
 

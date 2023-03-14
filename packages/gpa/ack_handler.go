@@ -195,10 +195,8 @@ func (a *ackHandler) handleBatchMsg(msgBatch *ackHandlerBatch) OutMessages {
 		return NoMessages()
 	}
 
-	peerRecvAcksIn, exists := a.recvAcksIn.Get(msgBatch.sender)
-	if !exists {
-		peerRecvAcksIn = map[int]*int{}
-	}
+	peerRecvAcksIn, _ := a.recvAcksIn.GetOrCreate(msgBatch.sender, func() map[int]*int { return make(map[int]*int) })
+
 	batchAckedIn, exists := peerRecvAcksIn[*msgBatch.id]
 	if exists {
 		// Was received already before.
@@ -236,7 +234,7 @@ func (a *ackHandler) handleBatchMsg(msgBatch *ackHandlerBatch) OutMessages {
 		nestedMsgs.AddAll(a.nested.Message(msgBatch.msgs[i]))
 	}
 
-	sender, _ := a.recvAcksIn.GetOrCreate(msgBatch.sender, func() map[int]*int { return map[int]*int{} })
+	sender, _ := a.recvAcksIn.GetOrCreate(msgBatch.sender, func() map[int]*int { return make(map[int]*int) })
 	sender[*msgBatch.id] = nil
 
 	return a.makeBatches(nestedMsgs)
@@ -269,7 +267,7 @@ func (a *ackHandler) makeBatches(msgs OutMessages) OutMessages {
 	batches := NoMessages()
 	for nodeID, batchMsgs := range groupedMsgs {
 		if initialized, exists := a.initialized.Get(nodeID); !exists || !initialized {
-			pending, _ := a.initPending.GetOrCreate(nodeID, func() []Message { return make([]Message, 0) })
+			pending, _ := a.initPending.GetOrCreate(nodeID, func() []Message { return make([]Message, 0, 1) })
 			a.initPending.Set(nodeID, append(pending, batchMsgs...))
 			batches.Add(&ackHandlerReset{BasicMessage: NewBasicMessage(nodeID), response: false, latestID: 0})
 			continue
