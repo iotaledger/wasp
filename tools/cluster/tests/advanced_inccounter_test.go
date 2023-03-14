@@ -44,16 +44,7 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 
 	for i := 0; i < numRequests; i++ {
 		client := e.createNewClient()
-
-		var err error
-		for i := 0; i < 5; i++ {
-			_, err = client.PostRequest(inccounter.FuncIncCounter.Name)
-			if err == nil {
-				break
-			}
-			fmt.Printf("Error posting request, will retry... %v", err)
-			time.Sleep(100 * time.Millisecond)
-		}
+		_, err := client.PostRequest(inccounter.FuncIncCounter.Name)
 		require.NoError(t, err)
 	}
 

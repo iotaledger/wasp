@@ -19,9 +19,9 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -38,13 +38,14 @@ func TestDeposit(t *testing.T) {
 	require.NoError(t, err)
 
 	rec := ch.LastReceipt()
+	require.NotNil(t, rec)
 	t.Logf("========= receipt: %s", rec)
 	t.Logf("========= burn log:\n%s", rec.GasBurnLog)
 }
 
 func TestHarvest(t *testing.T) {
 	env := solo.New(t)
-	ch, _, _ := env.NewChainExt(nil, 10_000, "chain1")
+	ch, _ := env.NewChainExt(nil, 10_000, "chain1")
 	_ = ch.Log().Sync()
 
 	t.Logf("common base tokens BEFORE: %d", ch.L2CommonAccountBaseTokens())
@@ -137,7 +138,7 @@ func TestFoundries(t *testing.T) {
 
 	initTest := func() {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch, _, _ = env.NewChainExt(nil, 10*isc.Million, "chain1")
+		ch, _ = env.NewChainExt(nil, 10*isc.Million, "chain1")
 		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID = isc.NewAgentID(senderAddr)
 
@@ -145,7 +146,7 @@ func TestFoundries(t *testing.T) {
 	}
 	t.Run("newFoundry fails when no allowance is provided", func(t *testing.T) {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch, _, _ = env.NewChainExt(nil, 100_000, "chain1")
+		ch, _ = env.NewChainExt(nil, 100_000, "chain1")
 
 		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
 			accounts.ParamTokenScheme, codec.EncodeTokenScheme(
@@ -160,7 +161,7 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("newFoundry overrides bad melted/minted token counters in tokenscheme", func(t *testing.T) {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch, _, _ = env.NewChainExt(nil, 100_000, "chain1")
+		ch, _ = env.NewChainExt(nil, 100_000, "chain1")
 
 		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
 			accounts.ParamTokenScheme, codec.EncodeTokenScheme(
@@ -479,6 +480,19 @@ func TestFoundries(t *testing.T) {
 		commonAccountBalanceAfterLastMint := ch.L2CommonAccountBaseTokens()
 		require.Equal(t, commonAccountBalanceAfterLastMint, commonAccountBalanceBeforeLastMint+receipt.GasFeeCharged)
 	})
+	t.Run("newFoundry exposes foundry serial number in event", func(t *testing.T) {
+		initTest()
+		sn, _, err := ch.NewFoundryParams(abi.MaxUint256).
+			WithUser(senderKeyPair).
+			CreateFoundry()
+		require.NoError(t, err)
+		require.EqualValues(t, 1, sn)
+
+		events, err := ch.GetEventsForContract(accounts.Contract.Name)
+		require.NoError(t, err)
+		require.Len(t, events, 1)
+		require.Contains(t, events[0], "Foundry created, serial number = 1")
+	})
 }
 
 func TestAccountBalances(t *testing.T) {
@@ -493,7 +507,7 @@ func TestAccountBalances(t *testing.T) {
 	l1BaseTokens := func(addr iotago.Address) uint64 { return env.L1Assets(addr).BaseTokens }
 	totalBaseTokens := l1BaseTokens(chainOwnerAddr) + l1BaseTokens(senderAddr)
 
-	ch, _, _ := env.NewChainExt(chainOwner, 0, "chain1")
+	ch, _ := env.NewChainExt(chainOwner, 0, "chain1")
 
 	l2BaseTokens := func(agentID isc.AgentID) uint64 { return ch.L2BaseTokens(agentID) }
 	totalGasFeeCharged := uint64(0)
@@ -528,7 +542,7 @@ func TestAccountBalances(t *testing.T) {
 		totalGasFeeCharged += bi.GasFeeCharged
 		require.EqualValues(t,
 			int(l2BaseTokens(ch.CommonAccount())),
-			int(totalGasFeeCharged),
+			int(totalGasFeeCharged+accounts.MinimumBaseTokensOnCommonAccount),
 		)
 
 		require.EqualValues(t,
@@ -583,7 +597,7 @@ func initDepositTest(t *testing.T, initLoad ...uint64) *testParams {
 	if len(initLoad) != 0 {
 		initBaseTokens = initLoad[0]
 	}
-	ret.ch, _, _ = ret.env.NewChainExt(ret.chainOwner, initBaseTokens, "chain1")
+	ret.ch, _ = ret.env.NewChainExt(ret.chainOwner, initBaseTokens, "chain1")
 
 	ret.req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 	return ret

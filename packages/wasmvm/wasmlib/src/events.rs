@@ -8,9 +8,22 @@ use crate::*;
 
 pub trait IEventHandlers: Any + Sync + Send {
     fn call_handler(&self, topic: &str, params: &Vec<String>);
-    fn id(&self) -> String;
+    fn id(&self) -> u32;
 }
 
+static mut NEXT_ID: u32 = 0;
+
+pub struct EventHandlers {
+}
+
+impl EventHandlers {
+    pub fn generate_id() -> u32 {
+        unsafe {
+            NEXT_ID += 1;
+            NEXT_ID
+        }
+    }
+}
 pub struct EventEncoder {
     event: String,
 }

@@ -9,18 +9,13 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
-var Processor = Contract.Processor(initialize,
+var Processor = Contract.Processor(nil,
 	FuncRegisterError.WithHandler(funcRegisterError),
 	ViewGetErrorMessageFormat.WithHandler(funcGetErrorMessageFormat),
 )
 
-func initialize(ctx isc.Sandbox) dict.Dict {
-	// storing hname as a terminal value of the contract's state root.
-	// This way we will be able to retrieve commitment to the contract's state
-	ctx.State().Set("", ctx.Contract().Bytes())
-
-	ctx.Log().Debugf("errors.initialize.success hname = %s", Contract.Hname().String())
-	return nil
+func SetInitialState(state kv.KVStore) {
+	// does not do anything
 }
 
 func funcRegisterError(ctx isc.Sandbox) dict.Dict {

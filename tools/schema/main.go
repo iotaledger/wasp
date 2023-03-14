@@ -24,15 +24,14 @@ import (
 	wasp_yaml "github.com/iotaledger/wasp/tools/schema/model/yaml"
 )
 
-const version = "1.0.0"
+const version = "schema tool version 1.1.1"
 
 var (
-	flagBuild   = flag.Bool("build", false, "build wasm target")
-	flagClean   = flag.Bool("clean", false, "clean up (re-)generated files")
-	flagCore    = flag.Bool("core", false, "generate core contract interface")
+	flagBuild   = flag.Bool("build", false, "build wasm target for specified languages")
+	flagClean   = flag.Bool("clean", false, "clean up files that can be re-generated for specified languages")
 	flagForce   = flag.Bool("force", false, "force code generation")
 	flagGo      = flag.Bool("go", false, "generate Go code")
-	flagInit    = flag.String("init", "", "generate new schema file for smart contract named <string>")
+	flagInit    = flag.String("init", "", "generate new folder with schema file for smart contract named <string>")
 	flagRust    = flag.Bool("rs", false, "generate Rust code")
 	flagTs      = flag.Bool("ts", false, "generate TypScript code")
 	flagVersion = flag.Bool("version", false, "show schema tool version")
@@ -53,7 +52,13 @@ func main() {
 		log.Panic(err)
 	}
 
-	if *flagCore {
+	// special case when we run in /packages/wasmvm/wasmlib
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Panic(err)
+	}
+	if strings.HasSuffix(strings.ReplaceAll(cwd, "\\", "/"), "/packages/wasmvm/wasmlib") {
+		// use schema tool to generate WasmLib's built-in core contract interfaces
 		generateCoreInterfaces()
 		return
 	}
@@ -90,34 +95,7 @@ func main() {
 	}
 }
 
-func generateCoreInterfaces() {
-	err := filepath.WalkDir("interfaces", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !strings.HasSuffix(path, ".yaml") {
-			return nil
-		}
-
-		file, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-		return generateSchema(file)
-	})
-	if err != nil {
-		log.Panic(err)
-	}
-}
-
-func generateSchema(file *os.File) error {
-	s, err := loadSchema(file)
-	if err != nil {
-		return err
-	}
-	s.CoreContracts = *flagCore
-
+func determineSchemaRegenerationTime(file *os.File, s *model.Schema) error {
 	s.SchemaTime = time.Now()
 	if !*flagForce {
 		// force regeneration when schema definition file is newer
@@ -139,6 +117,41 @@ func generateSchema(file *os.File) error {
 		if info.ModTime().After(s.SchemaTime) {
 			s.SchemaTime = info.ModTime()
 		}
+	}
+	return nil
+}
+
+func generateCoreInterfaces() {
+	err := filepath.WalkDir("interfaces", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !strings.HasSuffix(path, ".yaml") {
+			return nil
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		return generateSchema(file, true)
+	})
+	if err != nil {
+		log.Panic(err)
+	}
+}
+
+func generateSchema(file *os.File, core ...bool) error {
+	s, err := loadSchema(file)
+	if err != nil {
+		return err
+	}
+	s.CoreContracts = len(core) == 1 && core[0]
+
+	err = determineSchemaRegenerationTime(file, s)
+	if err != nil {
+		return err
 	}
 
 	// Preserve line number until here

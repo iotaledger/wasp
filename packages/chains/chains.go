@@ -213,21 +213,10 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 			return fmt.Errorf("cannot activate chain: %w", err2)
 		}
 	}
-	//
-	// Load or initialize new chain store.
+
 	chainKVStore, err := c.chainStateStoreProvider(chainID)
 	if err != nil {
 		return fmt.Errorf("error when creating chain KV store: %w", err)
-	}
-	chainStore := state.NewStore(chainKVStore)
-	chainState, err := chainStore.LatestState()
-	if err != nil {
-		chainStore = state.InitChainStore(chainKVStore)
-	} else {
-		chainIDInState, errChainID := chainState.Has(state.KeyChainID)
-		if errChainID != nil || !chainIDInState {
-			chainStore = state.InitChainStore(chainKVStore)
-		}
 	}
 
 	// Initialize WAL
@@ -246,7 +235,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	newChain, err := chain.New(
 		chainCtx,
 		chainID,
-		chainStore,
+		state.NewStore(chainKVStore),
 		c.nodeConnection,
 		c.nodeIdentityProvider.NodeIdentity(),
 		c.processorConfig,

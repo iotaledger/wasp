@@ -7,21 +7,17 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
-var Processor = Contract.Processor(initialize,
+var Processor = Contract.Processor(nil,
 	FuncStoreBlob.WithHandler(storeBlob),
 	ViewGetBlobField.WithHandler(getBlobField),
 	ViewGetBlobInfo.WithHandler(getBlobInfo),
 	ViewListBlobs.WithHandler(listBlobs),
 )
 
-func initialize(ctx isc.Sandbox) dict.Dict {
-	// storing hname as a terminal value of the contract's state root.
-	// This way we will be able to retrieve commitment to the contract's state
-	ctx.State().Set("", ctx.Contract().Bytes())
-	return nil
+func SetInitialState(state kv.KVStore) {
+	// does not do anything
 }
 
 // storeBlob treats parameters as names of fields and field values
@@ -49,9 +45,6 @@ func storeBlob(ctx isc.Sandbox) dict.Dict {
 	sizes := make([]uint32, len(kSorted))
 	for i, k := range kSorted {
 		size := uint32(len(values[i]))
-		if size > getMaxBlobSize(ctx) {
-			ctx.Log().Panicf("blob too big. received size: %d", size)
-		}
 		blbValues.MustSetAt([]byte(k), values[i])
 		blbSizes.MustSetAt([]byte(k), EncodeSize(size))
 		sizes[i] = size
@@ -107,13 +100,4 @@ func listBlobs(ctx isc.SandboxView) dict.Dict {
 		return true
 	})
 	return ret
-}
-
-func getMaxBlobSize(ctx isc.Sandbox) uint32 {
-	r := ctx.Call(governance.Contract.Hname(), governance.ViewGetMaxBlobSize.Hname(), nil, nil)
-	maxBlobSize, err := codec.DecodeUint32(r.MustGet(governance.ParamMaxBlobSizeUint32), 0)
-	if err != nil {
-		ctx.Log().Panicf("error getting max blob size, %v", err)
-	}
-	return maxBlobSize
 }

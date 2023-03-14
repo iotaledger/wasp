@@ -76,7 +76,7 @@ func (g *Governance) GetChainInfo(chainID isc.ChainID) (*governance.ChainInfo, e
 
 	var chainInfo *governance.ChainInfo
 
-	if chainInfo, err = governance.GetChainInfo(ret); err != nil {
+	if chainInfo, err = governance.GetChainInfo(ret, chainID); err != nil {
 		return nil, err
 	}
 

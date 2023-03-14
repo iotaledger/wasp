@@ -9,20 +9,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 	clustertests "github.com/iotaledger/wasp/tools/cluster/tests"
 )
 
 const (
-	myChainID = "atoi1ppeezn9klnd2ue4dlgeyrk6nq79s8csfh6sxscygjagdnvnukp3s64nmn2j"
+	myChainID = "atoi1prfhkqfal7xgnjxurwre6zt33vpvrkqseu6mvd3xc305zl2zpz5mcwqag3l"
 	mySeed    = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3"
+	noChainID = "atoi1pqtg32l9m53m0uv69636ch474xft5uzkn54er85hc05333hvfxfj6gm6lpx"
 )
 
 var params = []string{
@@ -56,7 +57,12 @@ func (proc *EventProcessor) waitClientEventsParam(t *testing.T, ctx *wasmclient.
 }
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
+	// note that testing the WasmClient code requires a running cluster
+	// with a preloaded chain that contains the TestWasmLib demo contract
+	// therefore we skip all these tests when in the GitHub repo
+	// to run these tests, set up the chain, update myChainID, and uncomment the next line
 	t.SkipNow()
+
 	svc := wasmclient.NewWasmClientService("http://localhost:19090", myChainID)
 	ctx := wasmclient.NewWasmClientContext(svc, testwasmlib.ScName)
 	require.NoError(t, ctx.Err)
@@ -70,6 +76,41 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 func TestSetup(t *testing.T) {
 	ctx := setupClient(t)
 	require.NoError(t, ctx.Err)
+}
+
+func TestErrorHandling(t *testing.T) {
+	ctx := setupClient(t)
+	require.NoError(t, ctx.Err)
+
+	// missing mandatory string parameter
+	v := testwasmlib.ScFuncs.CheckString(ctx)
+	v.Func.Call()
+	require.Error(t, ctx.Err)
+	fmt.Println("Error: " + ctx.Err.Error())
+
+	// // wait for nonexisting request id (time out)
+	// ctx.WaitRequest(wasmtypes.RequestIDFromBytes(nil))
+	// require.Error(t, ctx.Err)
+	// fmt.Println("Error: " + ctx.Err.Error())
+
+	// sign with wrong wallet
+	seed := cryptolib.NewSeedFromBytes(wasmtypes.BytesFromString(mySeed))
+	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(1))
+	ctx.SignRequests(wallet)
+	f := testwasmlib.ScFuncs.Random(ctx)
+	f.Func.Post()
+	require.Error(t, ctx.Err)
+	fmt.Println("Error: " + ctx.Err.Error())
+
+	// wait for request on wrong chain
+	svc := wasmclient.NewWasmClientService("http://localhost:19090", noChainID)
+	ctx = wasmclient.NewWasmClientContext(svc, testwasmlib.ScName)
+	require.NoError(t, ctx.Err)
+	ctx.SignRequests(wallet)
+	require.NoError(t, ctx.Err)
+	ctx.WaitRequest(wasmtypes.RequestIDFromBytes(nil))
+	require.Error(t, ctx.Err)
+	fmt.Println("Error: " + ctx.Err.Error())
 }
 
 func TestRandom(t *testing.T) {
@@ -95,7 +136,7 @@ func TestRandom(t *testing.T) {
 func TestClientEvents(t *testing.T) {
 	ctx := setupClient(t)
 
-	events := &testwasmlib.TestWasmLibEventHandlers{}
+	events := testwasmlib.NewTestWasmLibEventHandlers()
 	proc := new(EventProcessor)
 	events.OnTestWasmLibTest(func(e *testwasmlib.EventTest) {
 		proc.name = e.Name
@@ -107,6 +148,9 @@ func TestClientEvents(t *testing.T) {
 		proc.sendClientEventsParam(t, ctx, param)
 		proc.waitClientEventsParam(t, ctx, param)
 	}
+
+	ctx.Unregister(events.ID())
+	require.NoError(t, ctx.Err)
 }
 
 func TestDeploy(t *testing.T) {

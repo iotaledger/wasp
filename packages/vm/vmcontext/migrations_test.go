@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -49,7 +50,7 @@ func (e *migrationsTestEnv) setSchemaVersion(v uint32) {
 
 func newMigrationsTest(t *testing.T, stateIndex uint32) *migrationsTestEnv {
 	db := mapdb.NewMapDB()
-	cs := state.InitChainStore(db)
+	cs := origin.InitChain(state.NewStore(db), nil, 0)
 	latest, err := cs.LatestBlock()
 	assert.NoError(t, err)
 	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())

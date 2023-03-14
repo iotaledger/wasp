@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
@@ -134,7 +135,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 
 	t.Run("deposit to own account", func(t *testing.T) {
 		w.MustRun("chain", "deposit", "base:1000000", "--node=0")
-		checkBalance(t, w.MustRun("chain", "balance", "--node=0"), 1000000)
+		checkBalance(t, w.MustRun("chain", "balance", "--node=0"), 1000000-int(gas.DefaultFeePolicy().MinFee()))
 	})
 
 	t.Run("deposit to ethereum account", func(t *testing.T) {
@@ -296,7 +297,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	require.NotEmpty(t, reqID)
 
 	out = w.MustRun("chain", "block", "--node=0")
-	require.Equal(t, "Block index: 2", out[0])
+	require.Equal(t, "Block index: 1", out[0])
 	found := false
 	for _, line := range out {
 		if strings.Contains(line, reqID) {
@@ -306,8 +307,8 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	}
 	require.True(t, found)
 
-	out = w.MustRun("chain", "block", "2", "--node=0")
-	require.Equal(t, "Block index: 2", out[0])
+	out = w.MustRun("chain", "block", "1", "--node=0")
+	require.Equal(t, "Block index: 1", out[0])
 
 	out = w.MustRun("chain", "request", reqID, "--node=0")
 	t.Log(out)

@@ -130,7 +130,6 @@ type Privileged interface {
 	DebitFromAccount(AgentID, *Assets)
 	CreditToAccount(AgentID, *Assets)
 
-	SubscribeBlockContext(openFunc Hname, closeFunc Hname)
 	SetBlockContext(bctx interface{})
 	BlockContext() interface{}
 }

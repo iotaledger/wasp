@@ -11,6 +11,7 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
@@ -28,7 +29,7 @@ type blockWALTestSM struct { // State machine for block WAL property based Rapid
 func (bwtsmT *blockWALTestSM) Init(t *rapid.T) {
 	var err error
 	bwtsmT.factory = NewBlockFactory(t)
-	bwtsmT.lastBlockCommitment = state.OriginL1Commitment()
+	bwtsmT.lastBlockCommitment = origin.L1Commitment(nil, 0)
 	bwtsmT.log = testlogger.NewLogger(t)
 	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)

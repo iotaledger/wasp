@@ -16,8 +16,9 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
@@ -238,7 +239,7 @@ func StartChain(t solo.TestContext, chainName string, env ...*solo.Solo) *solo.C
 			AutoAdjustStorageDeposit: true,
 		})
 	}
-	chain, _, _ := soloEnv.NewChainExt(nil, 0, chainName)
+	chain, _ := soloEnv.NewChainExt(nil, 0, chainName)
 	chain.MustDepositBaseTokensToL2(L2FundsOriginator, chain.OriginatorPrivateKey)
 	return chain
 }
@@ -292,7 +293,7 @@ func (ctx *SoloContext) ChainAccount() *SoloAgent {
 	return &SoloAgent{
 		Env:     ctx.Chain.Env,
 		Pair:    nil,
-		agentID: ctx.Chain.ChainID.CommonAccount(),
+		agentID: accounts.CommonAccount(),
 	}
 }
 
@@ -496,13 +497,7 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 	if len(maxWait) > 0 {
 		timeout = maxWait[0]
 	}
-
-	allDone := ctx.Chain.WaitForRequestsThrough(expectedRequests, timeout)
-	if !allDone {
-		info := ctx.Chain.MempoolInfo()
-		ctx.Chain.Env.T.Logf("In: %d, out: %d, pool: %d\n", info.InPoolCounter, info.OutPoolCounter, info.TotalPool)
-	}
-	return allDone
+	return ctx.Chain.WaitForRequestsThrough(expectedRequests, timeout)
 }
 
 // WaitForPendingRequestsMark marks the current InPoolCounter to be used by

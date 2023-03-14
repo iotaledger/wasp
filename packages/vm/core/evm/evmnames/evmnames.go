@@ -39,7 +39,6 @@ const (
 	FieldTransaction      = "t"
 	FieldCallMsg          = "c"
 	FieldChainID          = "chid"
-	FieldGenesisAlloc     = "g"
 	FieldAddress          = "a"
 	FieldKey              = "k"
 	FieldAgentID          = "i"

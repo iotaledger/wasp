@@ -12,13 +12,11 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
@@ -53,7 +51,6 @@ func initDeployCmd() *cobra.Command {
 		node             string
 		peers            []string
 		quorum           int
-		description      string
 		evmParams        evmDeployParams
 		govControllerStr string
 		chainName        string
@@ -83,17 +80,15 @@ func initDeployCmd() *cobra.Command {
 				N:                    uint16(len(node)),
 				T:                    uint16(quorum),
 				OriginatorKeyPair:    wallet.Load().KeyPair,
-				Description:          description,
 				Textout:              os.Stdout,
 				GovernanceController: govController,
 				InitParams: dict.Dict{
-					root.ParamEVM(evm.FieldChainID):         codec.EncodeUint16(evmParams.ChainID),
-					root.ParamEVM(evm.FieldGenesisAlloc):    evmtypes.EncodeGenesisAlloc(evmParams.getGenesis(nil)),
-					root.ParamEVM(evm.FieldBlockKeepAmount): codec.EncodeInt32(evmParams.BlockKeepAmount),
+					origin.ParamEVMChainID:   codec.EncodeUint16(evmParams.ChainID),
+					origin.ParamEVMBlockKeep: codec.EncodeInt32(evmParams.BlockKeepAmount),
 				},
 			}
 
-			chainID, _, err := apilib.DeployChain(par, stateController, govController)
+			chainID, err := apilib.DeployChain(par, stateController, govController)
 			log.Check(err)
 
 			config.AddChain(chainName, chainID.String())
@@ -108,7 +103,6 @@ func initDeployCmd() *cobra.Command {
 	cmd.Flags().StringVar(&chainName, "chain", "", "name of the chain)")
 	log.Check(cmd.MarkFlagRequired("chain"))
 	cmd.Flags().IntVar(&quorum, "quorum", 0, "quorum (default: 3/4s of the number of committee nodes)")
-	cmd.Flags().StringVar(&description, "description", "", "description")
 	cmd.Flags().StringVar(&govControllerStr, "gov-controller", "", "governance controller address")
 	return cmd
 }

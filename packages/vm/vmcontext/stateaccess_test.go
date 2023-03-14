@@ -11,13 +11,14 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
 func TestSetThenGet(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := state.InitChainStore(db)
+	cs := origin.InitChain(state.NewStore(db), nil, 0)
 	latest, err := cs.LatestBlock()
 	assert.NoError(t, err)
 	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
@@ -80,7 +81,7 @@ func TestSetThenGet(t *testing.T) {
 
 func TestIterate(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := state.InitChainStore(db)
+	cs := origin.InitChain(state.NewStore(db), nil, 0)
 	latest, err := cs.LatestBlock()
 	assert.NoError(t, err)
 	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
@@ -112,7 +113,7 @@ func TestIterate(t *testing.T) {
 
 func TestVmctxStateDeletion(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := state.InitChainStore(db)
+	cs := origin.InitChain(state.NewStore(db), nil, 0)
 
 	foo := kv.Key("foo")
 	{

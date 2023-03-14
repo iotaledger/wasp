@@ -60,7 +60,7 @@ func NewTransferTransaction(params NewTransferTransactionParams) (*iotago.Transa
 		tokenMap[nativeToken.ID] = nativeToken.Amount
 	}
 
-	inputIDs, remainder, err := computeInputsAndRemainder(params.SenderAddress,
+	inputIDs, remainder, err := ComputeInputsAndRemainder(params.SenderAddress,
 		sumBaseTokensOut,
 		sumTokensOut,
 		map[iotago.NFTID]bool{},
@@ -111,7 +111,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 
 	outputs, sumBaseTokensOut, sumTokensOut, sumNFTsOut = updateOutputsWhenSendingOnBehalfOf(par, outputs, sumBaseTokensOut, sumTokensOut, sumNFTsOut)
 
-	inputIDs, remainder, err := computeInputsAndRemainder(par.SenderKeyPair.Address(), sumBaseTokensOut, sumTokensOut, sumNFTsOut, par.UnspentOutputs, par.UnspentOutputIDs)
+	inputIDs, remainder, err := ComputeInputsAndRemainder(par.SenderKeyPair.Address(), sumBaseTokensOut, sumTokensOut, sumNFTsOut, par.UnspentOutputs, par.UnspentOutputIDs)
 	if err != nil {
 		return nil, err
 	}

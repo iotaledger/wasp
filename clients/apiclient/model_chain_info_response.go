@@ -23,35 +23,25 @@ type ChainInfoResponse struct {
 	ChainID string `json:"chainID"`
 	// The chain owner address (Bech32-encoded).
 	ChainOwnerId string `json:"chainOwnerId"`
-	// The description of the chain.
-	Description string `json:"description"`
+	// (base64) Optional extra metadata that is appended to the L1 AliasOutput
+	CustomMetadata *string `json:"customMetadata,omitempty"`
 	// The EVM chain ID
 	EvmChainId uint32 `json:"evmChainId"`
 	GasFeePolicy *GasFeePolicy `json:"gasFeePolicy,omitempty"`
 	// Whether or not the chain is active.
 	IsActive bool `json:"isActive"`
-	// The maximum contract blob size.
-	MaxBlobSize uint32 `json:"maxBlobSize"`
-	// The maximum event size.
-	MaxEventSize uint32 `json:"maxEventSize"`
-	// The maximum amount of events per request.
-	MaxEventsPerReq uint32 `json:"maxEventsPerReq"`
 }
 
 // NewChainInfoResponse instantiates a new ChainInfoResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewChainInfoResponse(chainID string, chainOwnerId string, description string, evmChainId uint32, isActive bool, maxBlobSize uint32, maxEventSize uint32, maxEventsPerReq uint32) *ChainInfoResponse {
+func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, isActive bool) *ChainInfoResponse {
 	this := ChainInfoResponse{}
 	this.ChainID = chainID
 	this.ChainOwnerId = chainOwnerId
-	this.Description = description
 	this.EvmChainId = evmChainId
 	this.IsActive = isActive
-	this.MaxBlobSize = maxBlobSize
-	this.MaxEventSize = maxEventSize
-	this.MaxEventsPerReq = maxEventsPerReq
 	return &this
 }
 
@@ -111,28 +101,36 @@ func (o *ChainInfoResponse) SetChainOwnerId(v string) {
 	o.ChainOwnerId = v
 }
 
-// GetDescription returns the Description field value
-func (o *ChainInfoResponse) GetDescription() string {
-	if o == nil {
+// GetCustomMetadata returns the CustomMetadata field value if set, zero value otherwise.
+func (o *ChainInfoResponse) GetCustomMetadata() string {
+	if o == nil || isNil(o.CustomMetadata) {
 		var ret string
 		return ret
 	}
-
-	return o.Description
+	return *o.CustomMetadata
 }
 
-// GetDescriptionOk returns a tuple with the Description field value
+// GetCustomMetadataOk returns a tuple with the CustomMetadata field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *ChainInfoResponse) GetDescriptionOk() (*string, bool) {
-	if o == nil {
+func (o *ChainInfoResponse) GetCustomMetadataOk() (*string, bool) {
+	if o == nil || isNil(o.CustomMetadata) {
 		return nil, false
 	}
-	return &o.Description, true
+	return o.CustomMetadata, true
 }
 
-// SetDescription sets field value
-func (o *ChainInfoResponse) SetDescription(v string) {
-	o.Description = v
+// HasCustomMetadata returns a boolean if a field has been set.
+func (o *ChainInfoResponse) HasCustomMetadata() bool {
+	if o != nil && !isNil(o.CustomMetadata) {
+		return true
+	}
+
+	return false
+}
+
+// SetCustomMetadata gets a reference to the given string and assigns it to the CustomMetadata field.
+func (o *ChainInfoResponse) SetCustomMetadata(v string) {
+	o.CustomMetadata = &v
 }
 
 // GetEvmChainId returns the EvmChainId field value
@@ -215,78 +213,6 @@ func (o *ChainInfoResponse) SetIsActive(v bool) {
 	o.IsActive = v
 }
 
-// GetMaxBlobSize returns the MaxBlobSize field value
-func (o *ChainInfoResponse) GetMaxBlobSize() uint32 {
-	if o == nil {
-		var ret uint32
-		return ret
-	}
-
-	return o.MaxBlobSize
-}
-
-// GetMaxBlobSizeOk returns a tuple with the MaxBlobSize field value
-// and a boolean to check if the value has been set.
-func (o *ChainInfoResponse) GetMaxBlobSizeOk() (*uint32, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.MaxBlobSize, true
-}
-
-// SetMaxBlobSize sets field value
-func (o *ChainInfoResponse) SetMaxBlobSize(v uint32) {
-	o.MaxBlobSize = v
-}
-
-// GetMaxEventSize returns the MaxEventSize field value
-func (o *ChainInfoResponse) GetMaxEventSize() uint32 {
-	if o == nil {
-		var ret uint32
-		return ret
-	}
-
-	return o.MaxEventSize
-}
-
-// GetMaxEventSizeOk returns a tuple with the MaxEventSize field value
-// and a boolean to check if the value has been set.
-func (o *ChainInfoResponse) GetMaxEventSizeOk() (*uint32, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.MaxEventSize, true
-}
-
-// SetMaxEventSize sets field value
-func (o *ChainInfoResponse) SetMaxEventSize(v uint32) {
-	o.MaxEventSize = v
-}
-
-// GetMaxEventsPerReq returns the MaxEventsPerReq field value
-func (o *ChainInfoResponse) GetMaxEventsPerReq() uint32 {
-	if o == nil {
-		var ret uint32
-		return ret
-	}
-
-	return o.MaxEventsPerReq
-}
-
-// GetMaxEventsPerReqOk returns a tuple with the MaxEventsPerReq field value
-// and a boolean to check if the value has been set.
-func (o *ChainInfoResponse) GetMaxEventsPerReqOk() (*uint32, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.MaxEventsPerReq, true
-}
-
-// SetMaxEventsPerReq sets field value
-func (o *ChainInfoResponse) SetMaxEventsPerReq(v uint32) {
-	o.MaxEventsPerReq = v
-}
-
 func (o ChainInfoResponse) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -299,15 +225,14 @@ func (o ChainInfoResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["chainID"] = o.ChainID
 	toSerialize["chainOwnerId"] = o.ChainOwnerId
-	toSerialize["description"] = o.Description
+	if !isNil(o.CustomMetadata) {
+		toSerialize["customMetadata"] = o.CustomMetadata
+	}
 	toSerialize["evmChainId"] = o.EvmChainId
 	if !isNil(o.GasFeePolicy) {
 		toSerialize["gasFeePolicy"] = o.GasFeePolicy
 	}
 	toSerialize["isActive"] = o.IsActive
-	toSerialize["maxBlobSize"] = o.MaxBlobSize
-	toSerialize["maxEventSize"] = o.MaxEventSize
-	toSerialize["maxEventsPerReq"] = o.MaxEventsPerReq
 	return toSerialize, nil
 }
 

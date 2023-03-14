@@ -23,30 +23,20 @@ type GovChainInfoResponse struct {
 	ChainID string `json:"chainID"`
 	// The chain owner address (Bech32-encoded).
 	ChainOwnerId string `json:"chainOwnerId"`
-	// The description of the chain.
-	Description string `json:"description"`
+	// (base64) Optional extra metadata that is appended to the L1 AliasOutput
+	CustomMetadata *string `json:"customMetadata,omitempty"`
 	GasFeePolicy GasFeePolicy `json:"gasFeePolicy"`
-	// The maximum contract blob size.
-	MaxBlobSize int32 `json:"maxBlobSize"`
-	// The maximum event size.
-	MaxEventSize int32 `json:"maxEventSize"`
-	// The maximum amount of events per request.
-	MaxEventsPerReq int32 `json:"maxEventsPerReq"`
 }
 
 // NewGovChainInfoResponse instantiates a new GovChainInfoResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGovChainInfoResponse(chainID string, chainOwnerId string, description string, gasFeePolicy GasFeePolicy, maxBlobSize int32, maxEventSize int32, maxEventsPerReq int32) *GovChainInfoResponse {
+func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy GasFeePolicy) *GovChainInfoResponse {
 	this := GovChainInfoResponse{}
 	this.ChainID = chainID
 	this.ChainOwnerId = chainOwnerId
-	this.Description = description
 	this.GasFeePolicy = gasFeePolicy
-	this.MaxBlobSize = maxBlobSize
-	this.MaxEventSize = maxEventSize
-	this.MaxEventsPerReq = maxEventsPerReq
 	return &this
 }
 
@@ -106,28 +96,36 @@ func (o *GovChainInfoResponse) SetChainOwnerId(v string) {
 	o.ChainOwnerId = v
 }
 
-// GetDescription returns the Description field value
-func (o *GovChainInfoResponse) GetDescription() string {
-	if o == nil {
+// GetCustomMetadata returns the CustomMetadata field value if set, zero value otherwise.
+func (o *GovChainInfoResponse) GetCustomMetadata() string {
+	if o == nil || isNil(o.CustomMetadata) {
 		var ret string
 		return ret
 	}
-
-	return o.Description
+	return *o.CustomMetadata
 }
 
-// GetDescriptionOk returns a tuple with the Description field value
+// GetCustomMetadataOk returns a tuple with the CustomMetadata field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GovChainInfoResponse) GetDescriptionOk() (*string, bool) {
-	if o == nil {
+func (o *GovChainInfoResponse) GetCustomMetadataOk() (*string, bool) {
+	if o == nil || isNil(o.CustomMetadata) {
 		return nil, false
 	}
-	return &o.Description, true
+	return o.CustomMetadata, true
 }
 
-// SetDescription sets field value
-func (o *GovChainInfoResponse) SetDescription(v string) {
-	o.Description = v
+// HasCustomMetadata returns a boolean if a field has been set.
+func (o *GovChainInfoResponse) HasCustomMetadata() bool {
+	if o != nil && !isNil(o.CustomMetadata) {
+		return true
+	}
+
+	return false
+}
+
+// SetCustomMetadata gets a reference to the given string and assigns it to the CustomMetadata field.
+func (o *GovChainInfoResponse) SetCustomMetadata(v string) {
+	o.CustomMetadata = &v
 }
 
 // GetGasFeePolicy returns the GasFeePolicy field value
@@ -154,78 +152,6 @@ func (o *GovChainInfoResponse) SetGasFeePolicy(v GasFeePolicy) {
 	o.GasFeePolicy = v
 }
 
-// GetMaxBlobSize returns the MaxBlobSize field value
-func (o *GovChainInfoResponse) GetMaxBlobSize() int32 {
-	if o == nil {
-		var ret int32
-		return ret
-	}
-
-	return o.MaxBlobSize
-}
-
-// GetMaxBlobSizeOk returns a tuple with the MaxBlobSize field value
-// and a boolean to check if the value has been set.
-func (o *GovChainInfoResponse) GetMaxBlobSizeOk() (*int32, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.MaxBlobSize, true
-}
-
-// SetMaxBlobSize sets field value
-func (o *GovChainInfoResponse) SetMaxBlobSize(v int32) {
-	o.MaxBlobSize = v
-}
-
-// GetMaxEventSize returns the MaxEventSize field value
-func (o *GovChainInfoResponse) GetMaxEventSize() int32 {
-	if o == nil {
-		var ret int32
-		return ret
-	}
-
-	return o.MaxEventSize
-}
-
-// GetMaxEventSizeOk returns a tuple with the MaxEventSize field value
-// and a boolean to check if the value has been set.
-func (o *GovChainInfoResponse) GetMaxEventSizeOk() (*int32, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.MaxEventSize, true
-}
-
-// SetMaxEventSize sets field value
-func (o *GovChainInfoResponse) SetMaxEventSize(v int32) {
-	o.MaxEventSize = v
-}
-
-// GetMaxEventsPerReq returns the MaxEventsPerReq field value
-func (o *GovChainInfoResponse) GetMaxEventsPerReq() int32 {
-	if o == nil {
-		var ret int32
-		return ret
-	}
-
-	return o.MaxEventsPerReq
-}
-
-// GetMaxEventsPerReqOk returns a tuple with the MaxEventsPerReq field value
-// and a boolean to check if the value has been set.
-func (o *GovChainInfoResponse) GetMaxEventsPerReqOk() (*int32, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.MaxEventsPerReq, true
-}
-
-// SetMaxEventsPerReq sets field value
-func (o *GovChainInfoResponse) SetMaxEventsPerReq(v int32) {
-	o.MaxEventsPerReq = v
-}
-
 func (o GovChainInfoResponse) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -238,11 +164,10 @@ func (o GovChainInfoResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["chainID"] = o.ChainID
 	toSerialize["chainOwnerId"] = o.ChainOwnerId
-	toSerialize["description"] = o.Description
+	if !isNil(o.CustomMetadata) {
+		toSerialize["customMetadata"] = o.CustomMetadata
+	}
 	toSerialize["gasFeePolicy"] = o.GasFeePolicy
-	toSerialize["maxBlobSize"] = o.MaxBlobSize
-	toSerialize["maxEventSize"] = o.MaxEventSize
-	toSerialize["maxEventsPerReq"] = o.MaxEventsPerReq
 	return toSerialize, nil
 }
 

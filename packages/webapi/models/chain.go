@@ -1,6 +1,8 @@
 package models
 
 import (
+	"encoding/base64"
+
 	"github.com/iotaledger/wasp/packages/webapi/dto"
 )
 
@@ -50,15 +52,12 @@ type ContractInfoResponse struct {
 }
 
 type ChainInfoResponse struct {
-	IsActive        bool         `json:"isActive" swagger:"desc(Whether or not the chain is active.),required"`
-	ChainID         string       `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
-	EVMChainID      uint16       `json:"evmChainId" swagger:"desc(The EVM chain ID),required,min(1)"`
-	ChainOwnerID    string       `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
-	Description     string       `json:"description" swagger:"desc(The description of the chain.),required"`
-	GasFeePolicy    GasFeePolicy `json:"gasFeePolicy"`
-	MaxBlobSize     uint32       `json:"maxBlobSize" swagger:"desc(The maximum contract blob size.),required,min(1)"`
-	MaxEventSize    uint16       `json:"maxEventSize" swagger:"desc(The maximum event size.),required,min(1)"`                      // TODO: Clarify
-	MaxEventsPerReq uint16       `json:"maxEventsPerReq" swagger:"desc(The maximum amount of events per request.),required,min(1)"` // TODO: Clarify
+	IsActive       bool         `json:"isActive" swagger:"desc(Whether or not the chain is active.),required"`
+	ChainID        string       `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
+	EVMChainID     uint16       `json:"evmChainId" swagger:"desc(The EVM chain ID),required,min(1)"`
+	ChainOwnerID   string       `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
+	GasFeePolicy   GasFeePolicy `json:"gasFeePolicy"`
+	CustomMetadata string       `json:"customMetadata" swagger:"desc((base64) Optional extra metadata that is appended to the L1 AliasOutput)"`
 }
 
 type StateResponse struct {
@@ -67,13 +66,10 @@ type StateResponse struct {
 
 func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfoResponse {
 	chainInfoResponse := ChainInfoResponse{
-		IsActive:        chainInfo.IsActive,
-		ChainID:         chainInfo.ChainID.String(),
-		EVMChainID:      evmChainID,
-		Description:     chainInfo.Description,
-		MaxBlobSize:     chainInfo.MaxBlobSize,
-		MaxEventSize:    chainInfo.MaxEventSize,
-		MaxEventsPerReq: chainInfo.MaxEventsPerReq,
+		IsActive:       chainInfo.IsActive,
+		ChainID:        chainInfo.ChainID.String(),
+		EVMChainID:     evmChainID,
+		CustomMetadata: base64.StdEncoding.EncodeToString(chainInfo.CustomMetadata),
 	}
 
 	if chainInfo.ChainOwnerID != nil {

@@ -38,6 +38,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/shutdown"
@@ -53,7 +54,7 @@ import (
 
 const (
 	recoveryTimeout          time.Duration = 15 * time.Minute // TODO: Make it configurable?
-	redeliveryPeriod         time.Duration = 1 * time.Second  // TODO: Make it configurable?
+	redeliveryPeriod         time.Duration = 2 * time.Second  // TODO: Make it configurable?
 	printStatusPeriod        time.Duration = 3 * time.Second  // TODO: Make it configurable?
 	consensusInstsInAdvance  int           = 3                // TODO: Make it configurable?
 	awaitReceiptCleanupEvery int           = 100              // TODO: Make it configurable?
@@ -584,6 +585,10 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 
 func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
 	cni.log.Debugf("handleAliasOutput: %v", aliasOutput)
+	if aliasOutput.GetStateIndex() == 0 {
+		origin.InitChainByAliasOutput(cni.chainStore, aliasOutput)
+	}
+
 	cni.stateTrackerCnf.TrackAliasOutput(aliasOutput, true)
 	cni.stateTrackerAct.TrackAliasOutput(aliasOutput, false) // ACT state will be equal to CNF or ahead of it.
 	outMsgs := cni.chainMgr.Input(

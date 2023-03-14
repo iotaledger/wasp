@@ -45,6 +45,8 @@ pub struct JsonResponse {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonError {
+    #[serde(rename = "Error")]
+    pub(crate) error: String,
     #[serde(rename = "Message")]
     pub(crate) message: String,
 }

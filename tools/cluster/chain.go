@@ -23,8 +23,6 @@ import (
 )
 
 type Chain struct {
-	Description string
-
 	OriginatorKeyPair *cryptolib.KeyPair
 
 	AllPeers       []int

@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"math"
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -63,7 +64,7 @@ func (vmctx *VMContext) findContractByHname(contractHname isc.Hname) (ret *root.
 func (vmctx *VMContext) getChainInfo() *governance.ChainInfo {
 	var ret *governance.ChainInfo
 	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
-		ret = governance.MustGetChainInfo(s)
+		ret = governance.MustGetChainInfo(s, vmctx.ChainID())
 	})
 	return ret
 }
@@ -172,11 +173,8 @@ func (vmctx *VMContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.R
 }
 
 func (vmctx *VMContext) MustSaveEvent(contract isc.Hname, msg string) {
-	if vmctx.requestEventIndex > vmctx.chainInfo.MaxEventsPerReq {
+	if vmctx.requestEventIndex == math.MaxUint16 {
 		panic(vm.ErrTooManyEvents)
-	}
-	if len([]byte(msg)) > int(vmctx.chainInfo.MaxEventSize) {
-		panic(vm.ErrTooLargeEvent)
 	}
 	vmctx.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
 

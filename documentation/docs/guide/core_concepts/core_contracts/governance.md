@@ -42,10 +42,8 @@ The Fee Policy looks like the following:
 
 ```go
 {
-  TokenID []byte // id of the token used to pay for gas (nil if the base token should be used (iota/shimmer)) 
-  
   GasPerToken Ratio32 // how many gas units are paid for each token
-  
+  EVMGasRatio Ratio32 // the ratio at which EVM gas is converted to ISC gas
   ValidatorFeeShare uint8 // percentage of the fees that are credited to the validators (0 - 100)
 }
 ```
@@ -107,15 +105,9 @@ It can only be invoked by the chain owner.
 Claims the ownership of the chain if the caller matches the identity set
 in [`delegateChainOwnership`](#delegatechainownershipo-agentid).
 
-### `setChainInfo(mb MaxBlobSize, me MaxEventSize, mr MaxEventsPerRequest)`
+### `setMaxBlobSize(mb MaxBlobSize)`
 
-Allows some chain parameters to be set by the chain owner.
-
-Parameters:
-
-- `mb` (optional `uint32` - default: don't change): Maximum [blob](blob.md) size.
-- `me` (optional `uint16` - default: don't change): Maximum [event](blocklog.md) size.
-- `mr` (optional `uint16` - default: don't change): Maximum amount of [events](blocklog.md) per request.
+Sets the maximum [blob](blob.md) size.
 
 It can only be invoked by the chain owner.
 
@@ -195,7 +187,7 @@ Changes optional extra metadata that is appended to the L1 AliasOutput
 
 #### Parameters
 
-- `e` (`string`): the optional metadata
+- `e` (`bytes`): the optional metadata
 
 ---
 
@@ -225,11 +217,8 @@ Returns the AgentID of the chain owner.
 
 - `c` (`ChainID`): The chain ID
 - `o` (`AgentID`): The chain owner
-- `d` (`string`): The chain description
 - `g` ([`FeePolicy`](#feepolicy)): The gas fee policy
-- `mb` (`uint32`): Maximum [blob](blob.md) size
-- `me` (`uint16`): Maximum [event](blocklog.md) size
-- `mr` (`uint16`): Maximum amount of [events](blocklog.md) per request
+- `x` (`bytes`): The custom metadata
 
 ### `getFeePolicy()`
 
@@ -269,7 +258,7 @@ Returns whether the chain is ongoing maintenance.
 
 Returns the extra metadata that is added to the chain AliasOutput
 
-- `x` (`string`): the optional metadata
+- `x` (`bytes`): the optional metadata
 
 
 ## Schemas

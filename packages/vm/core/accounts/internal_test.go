@@ -25,7 +25,6 @@ func knownAgentID(b byte, h uint32) isc.AgentID {
 
 func TestBasic(t *testing.T) {
 	t.Logf("Name: %s", Contract.Name)
-	t.Logf("Description: %s", Contract.Description)
 	t.Logf("Program hash: %s", Contract.ProgramHash.String())
 	t.Logf("Hname: %s", Contract.Hname())
 }

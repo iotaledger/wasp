@@ -1,10 +1,11 @@
 import {WasmClientContext, WasmClientService} from '../lib';
 import * as testwasmlib from 'testwasmlib';
-import {bytesFromString, bytesToString} from 'wasmlib';
+import {bytesFromString, bytesToString, requestIDFromBytes} from 'wasmlib';
 import {KeyPair} from '../lib/isc';
 
-const MYCHAIN = 'atoi1prsl9m5kcz2vg4gs2py7u8q6y46amyqxnkzlx5xma3ndfkspgr08q4tq3js';
+const MYCHAIN = 'atoi1prfhkqfal7xgnjxurwre6zt33vpvrkqseu6mvd3xc305zl2zpz5mcwqag3l';
 const MYSEED = '0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3';
+const NOCHAIN = 'atoi1pqtg32l9m53m0uv69636ch474xft5uzkn54er85hc05333hvfxfj6gm6lpx';
 
 const params = [
     'Lala',
@@ -128,6 +129,38 @@ describe('wasmclient', function () {
         });
     });
 
+    describe('error handling', function () {
+        it('should generate errors', () => {
+            let ctx = setupClient();
+
+            // missing mandatory string parameter
+            const v = testwasmlib.ScFuncs.checkString(ctx);
+            v.func.call();
+            expect(ctx.Err != null).toBeTruthy();
+            console.log('Error: ' + ctx.Err);
+
+            // // wait for nonexisting request id (time out)
+            // ctx.waitRequestID(requestIDFromBytes(null));
+            // expect(ctx.Err != null).toBeTruthy();
+            // console.log('Error: ' + ctx.Err);
+
+            // sign with wrong wallet
+            ctx.signRequests(KeyPair.fromSubSeed(bytesFromString(MYSEED), 1n));
+            const f = testwasmlib.ScFuncs.random(ctx);
+            f.func.post();
+            expect(ctx.Err != null).toBeTruthy();
+            console.log('Error: ' + ctx.Err);
+
+            // wait for request on wrong chain
+            const svc = new WasmClientService('http://localhost:19090', NOCHAIN);
+            ctx = new WasmClientContext(svc, 'testwasmlib');
+            ctx.signRequests(KeyPair.fromSubSeed(bytesFromString(MYSEED), 0n));
+            ctx.waitRequestID(requestIDFromBytes(null));
+            expect(ctx.Err != null).toBeTruthy();
+            console.log('Error: ' + ctx.Err);
+        });
+    });
+
     describe('post() func request', function () {
         it('should post through web API', () => {
             const ctx = setupClient();
@@ -166,7 +199,7 @@ describe('wasmclient', function () {
                 await proc.waitClientEventsParam(ctx, param);
             }
 
-            ctx.unregister(events);
+            ctx.unregister(events.id());
             checkError(ctx);
         });
     });

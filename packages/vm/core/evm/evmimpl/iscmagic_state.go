@@ -27,8 +27,8 @@ func isCallerPrivileged(ctx isc.SandboxBase, addr common.Address) bool {
 	return state.MustHas(keyPrivileged(addr))
 }
 
-func addToPrivileged(ctx isc.Sandbox, addr common.Address) {
-	state := iscMagicSubrealm(ctx.State())
+func addToPrivileged(s kv.KVStore, addr common.Address) {
+	state := iscMagicSubrealm(s)
 	state.Set(keyPrivileged(addr), []byte{1})
 }
 

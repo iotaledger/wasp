@@ -11,7 +11,6 @@ use crate::keypair::KeyPair;
 
 pub struct WasmClientContext {
     pub(crate) error: Arc<Mutex<Result<()>>>,
-    pub(crate) event_handlers: Arc<Mutex<Vec<Box<dyn IEventHandlers>>>>,
     pub(crate) key_pair: Option<KeyPair>,
     pub(crate) req_id: Arc<Mutex<ScRequestID>>,
     pub(crate) sc_name: String,
@@ -23,7 +22,6 @@ impl WasmClientContext {
     pub fn new(svc_client: Arc<WasmClientService>, sc_name: &str) -> WasmClientContext {
         WasmClientContext {
             error: Arc::new(Mutex::new(Ok(()))),
-            event_handlers: Arc::default(),
             key_pair: None,
             req_id: Arc::new(Mutex::new(request_id_from_bytes(&[]))),
             sc_name: String::from(sc_name),
@@ -44,24 +42,12 @@ impl WasmClientContext {
         self.svc_client.clone()
     }
 
-    pub fn register(&mut self, handler: Box<dyn IEventHandlers>) {
-        {
-            let target = handler.id();
-            let mut event_handlers = self.event_handlers.lock().unwrap();
-            for h in event_handlers.iter() {
-                if h.id() == target {
-                    return;
-                }
-            }
-            event_handlers.push(handler);
-            if event_handlers.len() > 1 {
-                return;
-            }
-        }
-        let res = self.svc_client.subscribe_events(self.event_handlers.clone());
-        if let Err(e) = res {
-            self.set_err(&e, "")
-        }
+    pub fn register(&self, handler: Box<dyn IEventHandlers>) {
+        self.svc_client.subscribe_events(WasmClientEvents {
+            chain_id: self.svc_client.current_chain_id(),
+            contract_id: self.sc_hname,
+            handler,
+        });
     }
 
     // overrides default contract name
@@ -73,14 +59,8 @@ impl WasmClientContext {
         self.key_pair = Some(key_pair.clone());
     }
 
-    pub fn unregister(&mut self, id: &str) {
-        let mut event_handlers = self.event_handlers.lock().unwrap();
-        event_handlers.retain(|h| {
-            h.id() != id
-        });
-        if event_handlers.len() == 0 {
-            self.svc_client.unsubscribe_events();
-        }
+    pub fn unregister(&self, events_id: u32) {
+        self.svc_client.unsubscribe_events(events_id);
     }
 
     pub fn wait_request(&self) {
@@ -96,35 +76,6 @@ impl WasmClientContext {
 
         if let Err(e) = res {
             self.set_err(&e, "")
-        }
-    }
-
-    pub(crate) fn process_event(event_handlers: &Arc<Mutex<Vec<Box<dyn IEventHandlers>>>>, event: &ContractEvent) {
-        let mut params: Vec<String> = event.data.split("|").map(|s| s.into()).collect();
-        for i in 0..params.len() {
-            params[i] = Self::unescape(&params[i]);
-        }
-        let topic = params.remove(0);
-
-        let event_handlers = event_handlers.lock().unwrap();
-        for handler in event_handlers.iter() {
-            handler.as_ref().call_handler(&topic, &params);
-        }
-    }
-
-    fn unescape(param: &str) -> String {
-        let idx = match param.find("~") {
-            Some(idx) => idx,
-            None => return String::from(param),
-        };
-        match param.chars().nth(idx + 1) {
-            // escaped escape character
-            Some('~') => param[0..idx].to_string() + "~" + &Self::unescape(&param[idx + 2..]),
-            // escaped vertical bar
-            Some('/') => param[0..idx].to_string() + "|" + &Self::unescape(&param[idx + 2..]),
-            // escaped space
-            Some('_') => param[0..idx].to_string() + " " + &Self::unescape(&param[idx + 2..]),
-            _ => panic!("invalid event encoding"),
         }
     }
 

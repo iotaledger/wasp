@@ -100,7 +100,7 @@ func initEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *solo
 }
 
 func initEVMWithSolo(t testing.TB, env *solo.Solo) *soloChainEnv {
-	soloChain := env.NewChain()
+	soloChain, _ := env.NewChainExt(nil, 0, "evmchain")
 	return &soloChainEnv{
 		t:          t,
 		solo:       env,
@@ -383,7 +383,7 @@ func (e *soloChainEnv) registerERC20ExternalNativeToken(
 	nativeTokenID, err := foundryOutput.ID()
 	require.NoError(e.t, err)
 
-	if !e.soloChain.WaitUntil(func(solo.MempoolInfo) bool {
+	if !e.soloChain.WaitUntil(func() bool {
 		res, err2 := e.soloChain.CallView(evm.Contract.Name, evm.FuncGetERC20ExternalNativeTokenAddress.Name,
 			evm.FieldNativeTokenID, nativeTokenID[:],
 		)
