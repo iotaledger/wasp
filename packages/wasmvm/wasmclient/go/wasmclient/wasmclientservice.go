@@ -6,6 +6,7 @@ package wasmclient
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -42,17 +43,12 @@ type WasmClientService struct {
 
 var _ IClientService = new(WasmClientService)
 
-func NewWasmClientService(waspAPI string, chainID string) *WasmClientService {
-	err := SetSandboxWrappers(chainID)
-	if err != nil {
-		panic(err)
-	}
+func NewWasmClientService(waspAPI string) *WasmClientService {
 	client, err := apiextensions.WaspAPIClientByHostName(waspAPI)
 	if err != nil {
 		panic(err)
 	}
 	return &WasmClientService{
-		chainID:    wasmtypes.ChainIDFromString(chainID),
 		nonces:     make(map[string]uint64),
 		waspClient: client,
 		webSocket:  strings.Replace(waspAPI, "http:", "ws:", 1) + "/ws",
@@ -87,6 +83,12 @@ func (svc *WasmClientService) CurrentChainID() wasmtypes.ScChainID {
 	return svc.chainID
 }
 
+func (svc *WasmClientService) IsHealthy() bool {
+	_, err := svc.waspClient.NodeApi.
+		GetHealth(context.Background()).Execute()
+	return err == nil
+}
+
 func (svc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (reqID wasmtypes.ScRequestID, err error) {
 	iscChainID := cvt.IscChainID(&chainID)
 	iscContract := cvt.IscHname(hContract)
@@ -112,6 +114,30 @@ func (svc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract
 		Request: iotago.EncodeHex(signed.Bytes()),
 	}).Execute()
 	return reqID, apiError(err)
+}
+
+func (svc *WasmClientService) SetCurrentChainID(chainID string) error {
+	err := SetSandboxWrappers(chainID)
+	if err != nil {
+		return err
+	}
+
+	svc.chainID = wasmtypes.ChainIDFromString(chainID)
+	return nil
+}
+
+func (svc *WasmClientService) SetDefaultChainID() error {
+	chains, _, err := svc.waspClient.ChainsApi.
+		GetChains(context.Background()).Execute()
+	if err != nil {
+		return apiError(err)
+	}
+	if len(chains) != 1 {
+		return errors.New("expected a single chain for default chain ID")
+	}
+	chainID := chains[0].ChainID
+	fmt.Printf("default chain ID: %s\n", chainID)
+	return svc.SetCurrentChainID(chainID)
 }
 
 func (svc *WasmClientService) SubscribeEvents(eventHandler *WasmClientEvents) error {

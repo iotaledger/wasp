@@ -67,6 +67,15 @@ export class WasmClientEvents {
         }
     }
 
+    private static subscribe(ws: WebSocket, topic: string) {
+        const msg = {
+            command: 'subscribe',
+            topic: topic,
+        };
+        const rawMsg = JSON.stringify(msg);
+        ws.send(rawMsg);
+    }
+
     private processEvent(event: ContractEvent) {
         if (!event.contractID.equals(this.contractID) || !event.chainID.equals(this.chainID)) {
             return;
@@ -79,15 +88,6 @@ export class WasmClientEvents {
         const topic = params[0];
         params.shift();
         this.handler.callHandler(topic, params);
-    }
-
-    private static subscribe(ws: WebSocket, topic: string) {
-        const msg = {
-            command: 'subscribe',
-            topic: topic,
-        };
-        const rawMsg = JSON.stringify(msg);
-        ws.send(rawMsg);
     }
 
     private unescape(param: string): string {
