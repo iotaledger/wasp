@@ -31,7 +31,7 @@ export async function withdrawParameters(
   gasFee: number,
   baseTokensToWithdraw: number,
   nativeTokens: INativeToken[],
-  nft: INFT,
+  nft?: INFT,
 ) {
   const binaryAddress = await waspAddrBinaryFromBech32(
     nodeClient,

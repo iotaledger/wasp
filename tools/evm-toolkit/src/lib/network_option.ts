@@ -4,4 +4,6 @@ export interface NetworkOption {
   apiEndpoint: string;
   faucetEndpoint: string;
   chainAddress: string;
+  chainID: number;
+  multicallAddress: string;
 }

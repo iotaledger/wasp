@@ -1,6 +1,7 @@
 import type { SetIntervalAsyncTimer } from 'set-interval-async';
 import type { INFT, INativeToken } from '../../lib/native_token';
 import type { Contract } from 'web3-eth-contract';
+import type { ISCMagic } from './iscmagic';
 
 export interface WithdrawState {
   /**
@@ -22,6 +23,11 @@ export interface WithdrawState {
    * The reference to the ISC magic contract used for contract invocations.
    */
   contract: Contract;
+
+  /**
+   * The ISC Magic connector.
+   */
+  iscMagic?: ISCMagic;
 
   /**
    * The EVM chain ID.

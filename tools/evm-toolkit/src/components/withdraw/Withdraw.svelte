@@ -7,24 +7,19 @@
     defaultEvmStores,
   } from 'svelte-web3';
   import { setIntervalAsync, clearIntervalAsync } from 'set-interval-async';
-  import { nodeClient, indexerClient } from '../../store';
-  import { Converter } from '@iota/util.js';
-  import { gasFee, iscAbi, iscContractAddress } from './constants';
-  import { hNameFromString } from '../../lib/hname';
-  import { evmAddressToAgentID } from '../../lib/evm';
-  import { getBalanceParameters, withdrawParameters } from './parameters';
+  import { nodeClient, indexerClient, selectedNetwork } from '../../store';
   import {
-    Bech32AddressLength,
-    NativeTokenIDLength,
-  } from '../../lib/constants';
-  import {
-    getNativeTokenMetaData,
-    type INativeToken,
-    type INFT,
-  } from '../../lib/native_token';
+    gasFee,
+    iscAbi,
+    iscContractAddress,
+    multiCallAbi,
+  } from './constants';
+  import { Bech32AddressLength } from '../../lib/constants';
   import { onDestroy, onMount } from 'svelte';
   import { toast } from '@zerodevx/svelte-toast';
   import type { WithdrawFormInput, WithdrawState } from './component_types';
+  import { ISCMagic } from './iscmagic/iscmagic';
+  import type { INativeToken, INFT } from '../../lib/native_token';
 
   const state: WithdrawState = {
     availableBaseTokens: 0,
@@ -73,9 +68,10 @@
   });
 
   async function pollBalance() {
-    const addressBalance = await $web3.eth.getBalance($selectedAccount);
-
-    state.availableBaseTokens = Number(BigInt(addressBalance) / BigInt(1e12));
+    state.availableBaseTokens = await state.iscMagic.getBaseTokens(
+      $web3.eth,
+      $selectedAccount,
+    );
 
     if (formInput.baseTokensToSend > state.availableBaseTokens) {
       formInput.baseTokensToSend = 0;
@@ -87,72 +83,34 @@
       return;
     }
 
-    const accountsCoreContract = hNameFromString('accounts');
-    const getBalanceFunc = hNameFromString('balance');
-    const agentID = evmAddressToAgentID($selectedAccount);
+    state.availableNativeTokens = await state.iscMagic.getNativeTokens(
+      $nodeClient,
+      $indexerClient,
+      $selectedAccount,
+    );
 
-    let parameters = getBalanceParameters(agentID);
-
-    const nativeTokenResult = await state.contract.methods
-      .callView(accountsCoreContract, getBalanceFunc, parameters)
-      .call();
-
-    console.log('nativeToken', nativeTokenResult);
-    const nativeTokens: INativeToken[] = [];
-
-    for (let item of nativeTokenResult.items) {
-      const id = item.key;
-      const idBytes = Converter.hexToBytes(id);
-
-      if (idBytes.length != NativeTokenIDLength) {
-        continue;
+    // Remove native tokens marked to be sent if the token does not exist anymore.
+    for (const nativeTokenID of Object.keys(formInput.nativeTokensToSend)) {
+      if (typeof state.availableBaseTokens[nativeTokenID] == 'undefined') {
+        delete formInput.nativeTokensToSend[nativeTokenID];
       }
-
-      var nativeToken: INativeToken = {
-        // TODO: BigInt is required for native tokens, but it causes problems with the range slider. This needs to be adressed before shipping.
-        amount: BigInt(item.value),
-        id: id,
-        metadata: await getNativeTokenMetaData($nodeClient, $indexerClient, id),
-      };
-
-      nativeTokens.push(nativeToken);
     }
 
-    state.availableNativeTokens = nativeTokens;
-
-    for (const nativeToken of nativeTokens) {
+    // Add all existing native tokens to the "to be sent" array but with an amount of 0
+    // This makes it easier to connect the UI with the withdraw request.
+    for (const nativeToken of state.availableNativeTokens) {
       if (typeof formInput.nativeTokensToSend[nativeToken.id] == 'undefined') {
         formInput.nativeTokensToSend[nativeToken.id] = 0;
       }
     }
   }
 
-  type Dict = [string, string][];
-
   async function pollNFTs() {
     if (!$selectedAccount) {
       return;
     }
 
-    console.log('pollNFT');
-
-    const accountsCoreContract = hNameFromString('accounts');
-    const getAccountNFTsFunc = hNameFromString('accountNFTs');
-    const agentID = evmAddressToAgentID($selectedAccount);
-
-    let parameters = getBalanceParameters(agentID);
-
-    const NFTsResult = await state.contract.methods
-      .callView(accountsCoreContract, getAccountNFTsFunc, parameters)
-      .call();
-
-    const nfts = NFTsResult.items as Dict;
-
-    // The 'i' parameter returns the length of the nft id array, but we can just filter that out
-    // and go through the list dynamically.
-    const nftIds = nfts.filter(x => Converter.hexToUtf8(x[0]) != 'i');
-
-    state.availableNFTs = nftIds.map(x => <INFT>{ id: x[1] });
+    state.availableNFTs = await state.iscMagic.getNFTs($selectedAccount);
   }
 
   async function pollAccount() {
@@ -186,9 +144,29 @@
       state.contract = new $web3.eth.Contract(iscAbi, iscContractAddress, {
         from: $selectedAccount,
       });
+      /*console.log(multiCallAbi);
+      const multiCall = new $web3.eth.Contract(
+        multiCallAbi,
+        $selectedNetwork.multicallAddress,
+        {
+          from: $selectedAccount,
+        },
+      );*/
+
+      state.iscMagic = new ISCMagic(state.contract, null);
 
       await pollAccount();
       await subscribeBalance();
+
+      /*await state.iscMagic.withdrawMulticall(
+        $web3,
+        $selectedNetwork.multicallAddress,
+        $nodeClient,
+        'formInput.receiverAddress',
+        123123123,
+        [],
+        null,
+      );*/
     } catch (ex) {
       toast.push(`Failed to connect to wallet: ${ex}`);
       console.log('connectToWallet', ex);
@@ -200,25 +178,22 @@
   async function withdraw(
     baseTokens: number,
     nativeTokens: INativeToken[],
-    nft: INFT,
+    nft?: INFT,
   ) {
     if (!$selectedAccount) {
       return;
     }
 
-    let parameters = await withdrawParameters(
-      $nodeClient,
-      formInput.receiverAddress,
-      gasFee,
-      baseTokens,
-      nativeTokens,
-      nft,
-    );
-
     let result: any;
 
     try {
-      result = await state.contract.methods.send(...parameters).send();
+      result = await state.iscMagic.withdraw(
+        $nodeClient,
+        formInput.receiverAddress,
+        baseTokens,
+        nativeTokens,
+        nft,
+      );
     } catch (ex) {
       toast.push(
         `Failed to send withdraw request: ${JSON.stringify(ex, null, 4)}`,
@@ -266,7 +241,7 @@
   }
 
   async function onWithdrawEverythingClick() {
-    for (let nft of state.availableNFTs) {
+    /*for (let nft of state.availableNFTs) {
       await pollBalance();
       await withdraw(900000, [], nft);
     }
@@ -276,6 +251,18 @@
       state.availableBaseTokens,
       state.availableNativeTokens,
       null,
+    );*/
+
+    await pollAccount();
+
+    await state.iscMagic.withdrawMulticall(
+      $web3,
+      $selectedNetwork.multicallAddress,
+      $nodeClient,
+      formInput.receiverAddress,
+      state.availableBaseTokens,
+      state.availableNativeTokens,
+      state.availableNFTs,
     );
   }
 </script>
