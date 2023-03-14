@@ -99,7 +99,7 @@ on chain B to find out the address of the ERC20 contract.
 - `A` (`uint8`): The target chain address, where the ERC20 contract will be
   registered.
 
-You can call this endpoint with the `register-erc20-native-token-on-remote-chain` command. See 
+You can call this endpoint with the `wasp-cli register-erc20-native-token-on-remote-chain` command. See 
 `wasp-cli chain register-erc20-native-token-on-remote-chain -h` for instructions on how to use the command.
 
 
