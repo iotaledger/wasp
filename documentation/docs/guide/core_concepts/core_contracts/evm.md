@@ -71,6 +71,9 @@ Only the foundry owner can call this endpoint.
 - `t` (`string`): The ticker symbol
 - `d` (`uint8`): The token decimals
 
+You can call this endpoint with the `register-erc20-native-token` command. See 
+`wasp-cli chain register-erc20-native-token -h` for instructions on how to use the command.
+
 ### `registerERC20NativeTokenOnRemoteChain`
 
 Registers an ERC20 contract to act as a proxy for the native tokens **on another
@@ -95,6 +98,10 @@ on chain B to find out the address of the ERC20 contract.
 - `d` (`uint8`): The token decimals
 - `A` (`uint8`): The target chain address, where the ERC20 contract will be
   registered.
+
+You can call this endpoint with the `register-erc20-native-token-on-remote-chain` command. See 
+`wasp-cli chain register-erc20-native-token-on-remote-chain -h` for instructions on how to use the command.
+
 
 ### `registerERC20ExternalNativeToken`
 
