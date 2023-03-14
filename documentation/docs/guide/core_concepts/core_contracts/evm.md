@@ -71,7 +71,7 @@ Only the foundry owner can call this endpoint.
 - `t` (`string`): The ticker symbol
 - `d` (`uint8`): The token decimals
 
-You can call this endpoint with the `register-erc20-native-token` command. See 
+You can call this endpoint with the `wasp-cli register-erc20-native-token` command. See 
 `wasp-cli chain register-erc20-native-token -h` for instructions on how to use the command.
 
 ### `registerERC20NativeTokenOnRemoteChain`
