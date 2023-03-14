@@ -31,9 +31,9 @@ func concat(par ...[]byte) []byte {
 // ---------------------------------------------------------------------------
 // r/w utility functions
 
-func readBytes16(r io.Reader) ([]byte, error) {
+func ReadBytes16(r io.Reader) ([]byte, error) {
 	var length uint16
-	err := readUint16(r, &length)
+	err := ReadUint16(r, &length)
 	if err != nil {
 		return nil, err
 	}
@@ -48,11 +48,11 @@ func readBytes16(r io.Reader) ([]byte, error) {
 	return ret, nil
 }
 
-func writeBytes16(w io.Writer, data []byte) error {
+func WriteBytes16(w io.Writer, data []byte) error {
 	if len(data) > math.MaxUint16 {
 		panic(fmt.Sprintf("WriteBytes16: too long data (%v)", len(data)))
 	}
-	err := writeUint16(w, uint16(len(data)))
+	err := WriteUint16(w, uint16(len(data)))
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func writeBytes16(w io.Writer, data []byte) error {
 	return err
 }
 
-func readUint16(r io.Reader, pval *uint16) error {
+func ReadUint16(r io.Reader, pval *uint16) error {
 	var tmp2 [2]byte
 	_, err := r.Read(tmp2[:])
 	if err != nil {
@@ -72,7 +72,7 @@ func readUint16(r io.Reader, pval *uint16) error {
 	return nil
 }
 
-func writeUint16(w io.Writer, val uint16) error {
+func WriteUint16(w io.Writer, val uint16) error {
 	_, err := w.Write(uint16To2Bytes(val))
 	return err
 }
@@ -98,7 +98,7 @@ func writeByte(w io.Writer, val byte) error {
 	return err
 }
 
-func readBytes32(r io.Reader) ([]byte, error) {
+func ReadBytes32(r io.Reader) ([]byte, error) {
 	var length uint32
 	err := readUint32(r, &length)
 	if err != nil {
@@ -115,7 +115,7 @@ func readBytes32(r io.Reader) ([]byte, error) {
 	return ret, nil
 }
 
-func writeBytes32(w io.Writer, data []byte) error {
+func WriteBytes32(w io.Writer, data []byte) error {
 	if len(data) > math.MaxUint32 {
 		panic(fmt.Sprintf("WriteBytes32: too long data (%v)", len(data)))
 	}
