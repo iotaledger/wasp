@@ -67,7 +67,7 @@ func (amd *accessMgrDist) AsGPA() gpa.GPA {
 // Implements the Output interface.
 func (amd *accessMgrDist) ChainServerNodes(chainID isc.ChainID) []*cryptolib.PublicKey {
 	if chain, exists := amd.chains.Get(chainID); exists {
-		return lo.Values(chain.server)
+		return chain.server.Values()
 	}
 	return []*cryptolib.PublicKey{}
 }
@@ -209,7 +209,7 @@ func (amd *accessMgrDist) handleMsgAccess(msg *msgAccess) gpa.OutMessages {
 type accessMgrChain struct {
 	chainID          isc.ChainID
 	access           map[gpa.NodeID]*cryptolib.PublicKey
-	server           map[gpa.NodeID]*cryptolib.PublicKey
+	server           *shrinkingmap.ShrinkingMap[gpa.NodeID, *cryptolib.PublicKey]
 	pubKeyToNodeID   func(*cryptolib.PublicKey) gpa.NodeID
 	serversUpdatedCB func(isc.ChainID, []*cryptolib.PublicKey)
 	log              *logger.Logger
@@ -225,16 +225,17 @@ func newAccessMgrChain(
 	amc := &accessMgrChain{
 		chainID:          chainID,
 		access:           map[gpa.NodeID]*cryptolib.PublicKey{},
-		server:           map[gpa.NodeID]*cryptolib.PublicKey{},
+		server:           shrinkingmap.New[gpa.NodeID, *cryptolib.PublicKey](),
 		pubKeyToNodeID:   pubKeyToNodeID,
 		serversUpdatedCB: serversUpdatedCB,
 		log:              log,
 	}
 	for i := range initialServers {
 		nodeID := pubKeyToNodeID(initialServers[i])
-		amc.server[nodeID] = initialServers[i]
+		amc.server.Set(nodeID, initialServers[i])
 	}
-	serverNodes := lo.Values(amc.server)
+
+	serverNodes := amc.server.Values()
 	amc.log.Debugf("Chain %v server nodes updated to %+v on init.", amc.chainID.ShortString(), serverNodes)
 	amc.serversUpdatedCB(amc.chainID, serverNodes)
 	return amc
@@ -250,14 +251,14 @@ func (amc *accessMgrChain) AccessGrantedFor(accessPubKeys []*cryptolib.PublicKey
 
 func (amc *accessMgrChain) MarkAsServerFor(nodePubKey *cryptolib.PublicKey, granted bool) {
 	nodeID := amc.pubKeyToNodeID(nodePubKey)
-	_, wasServer := amc.server[nodeID]
+	wasServer := amc.server.Has(nodeID)
 	if granted {
-		amc.server[nodeID] = nodePubKey
+		amc.server.Set(nodeID, nodePubKey)
 	} else {
-		delete(amc.server, nodeID)
+		amc.server.Delete(nodeID)
 	}
 	if wasServer != granted {
-		serverNodes := lo.Values(amc.server)
+		serverNodes := amc.server.Values()
 		amc.log.Debugf("Chain %v server nodes updated to %+v.", amc.chainID.ShortString(), serverNodes)
 		amc.serversUpdatedCB(amc.chainID, serverNodes)
 	}
@@ -269,7 +270,7 @@ func (amc *accessMgrChain) IsAccessGrantedFor(nodeID gpa.NodeID) bool {
 }
 
 func (amc *accessMgrChain) Disabled() {
-	if len(amc.server) == 0 {
+	if amc.server.Size() == 0 {
 		return
 	}
 	amc.log.Debugf("Chain %v server nodes updated to [] on dismiss.", amc.chainID.ShortString())
