@@ -136,7 +136,7 @@ func testBasic(t *testing.T, n, f int) {
 	// Say TX is published
 	for nid := range nodes {
 		consReq := nodes[nid].Output().(*chainMgr.Output).NeedPublishTX()[step2AO.TransactionID()]
-		tc.WithInput(nid, chainMgr.NewInputChainTxPublishResult(consReq.CommitteeAddr, consReq.TxID, consReq.NextAliasOutput, true))
+		tc.WithInput(nid, chainMgr.NewInputChainTxPublishResult(consReq.CommitteeAddr, consReq.LogIndex, consReq.TxID, consReq.NextAliasOutput, true))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("TX Published", t.Logf)

@@ -25,7 +25,7 @@ type VarLogIndex interface {
 	ConsensusOutputReceived(consensusLI LogIndex, consensusStatus cons.OutputStatus, nextBaseAO *isc.AliasOutputWithID) gpa.OutMessages
 	// Consensus decided, that its maybe time to attempt another run.
 	// The timeout-ed consensus will be still running, so they will race for the result.
-	ConsensusTimeoutReceived(consensusLI LogIndex) gpa.OutMessages
+	ConsensusRecoverReceived(consensusLI LogIndex) gpa.OutMessages
 	// This might get a nil alias output in the case when a TX gets rejected and it was not the latest TX in the active chain.
 	// NextAO = nil means we don't know the latest AO from L1 (either startup or reject of a chain is happening).
 	L1ReplacedBaseAliasOutput(nextBaseAO *isc.AliasOutputWithID) gpa.OutMessages
@@ -198,8 +198,8 @@ func (v *varLogIndexImpl) ConsensusOutputReceived(consensusLI LogIndex, consensu
 
 // > UPON Reception of ConsensusTimeout(consensusLI):
 // >   TryPropose(consensusLI + 1)
-func (v *varLogIndexImpl) ConsensusTimeoutReceived(consensusLI LogIndex) gpa.OutMessages {
-	v.log.Debugf("ConsensusTimeoutReceived: consensusLI=%v", consensusLI)
+func (v *varLogIndexImpl) ConsensusRecoverReceived(consensusLI LogIndex) gpa.OutMessages {
+	v.log.Debugf("ConsensusRecoverReceived: consensusLI=%v", consensusLI)
 	if consensusLI < v.agreedLI {
 		return nil
 	}
@@ -213,10 +213,12 @@ func (v *varLogIndexImpl) ConsensusTimeoutReceived(consensusLI LogIndex) gpa.Out
 // >     TryPropose(max(agreedLI+1, EnoughVotes(agreedLI, N-F)+1, EnoughVotes(agreedLI, F+1), minLI))
 func (v *varLogIndexImpl) L1ReplacedBaseAliasOutput(nextBaseAO *isc.AliasOutputWithID) gpa.OutMessages {
 	v.log.Debugf("L1ReplacedBaseAliasOutput, nextBaseAO=%v", nextBaseAO)
-	if nextBaseAO != nil && v.wasRecentlyAgreed(nextBaseAO) {
-		v.log.Debugf("⊢ skipping, wasRecentlyAgreed: %v", nextBaseAO)
-		return nil
-	}
+
+	// if nextBaseAO != nil && v.wasRecentlyAgreed(nextBaseAO) { // TODO: KP: XXX: Do we need this????????? Cleanup
+	// 	v.log.Debugf("⊢ skipping, wasRecentlyAgreed: %v", nextBaseAO)
+	// 	return nil
+	// }
+
 	v.latestAO = nextBaseAO // We can set nil here, means we don't know the last AO from our L1.
 	return v.tryPropose(MaxLogIndex(
 		v.agreedLI.Next(),                         // Either propose next.
@@ -359,15 +361,6 @@ func (v *varLogIndexImpl) enoughVotes(aboveLI LogIndex, quorum int) LogIndex {
 		}
 	}
 	return maxLI
-}
-
-func (v *varLogIndexImpl) wasRecentlyAgreed(ao *isc.AliasOutputWithID) bool {
-	for _, liAO := range v.consAggrAO {
-		if ao.Equals(liAO) {
-			return true
-		}
-	}
-	return false
 }
 
 func (v *varLogIndexImpl) knownNodeID(nodeID gpa.NodeID) bool {

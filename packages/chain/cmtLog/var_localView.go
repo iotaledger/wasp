@@ -80,6 +80,10 @@ type VarLocalView interface {
 	// still recovering from a TX rejection.
 	Value() *isc.AliasOutputWithID
 	//
+	// Corresponds to the `tx_posted` event in the specification.
+	// Returns true, if the proposed BaseAliasOutput has changed.
+	ConsensusOutputDone(logIndex LogIndex, consumed iotago.OutputID, published *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool) // TODO: Recheck, if consumed AO is the decided one.
+	//
 	// Corresponds to the `ao_received` event in the specification.
 	// Returns true, if the proposed BaseAliasOutput has changed.
 	AliasOutputConfirmed(confirmed *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool)
@@ -87,13 +91,6 @@ type VarLocalView interface {
 	// Corresponds to the `tx_rejected` event in the specification.
 	// Returns true, if the proposed BaseAliasOutput has changed.
 	AliasOutputRejected(rejected *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool)
-	//
-	// TODO: Describe.
-	ConsensusProposed(logIndex LogIndex, proposed *isc.AliasOutputWithID) bool // (*isc.AliasOutputWithID, bool)
-	//
-	// Corresponds to the `tx_posted` event in the specification.
-	// Returns true, if the proposed BaseAliasOutput has changed.
-	ConsensusOutputDone(logIndex LogIndex, consumed iotago.OutputID, published *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool) // TODO: Recheck, if consumed AO is the decided one.
 	//
 	// Support functions.
 	StatusString() string
@@ -105,11 +102,6 @@ type varLocalViewEntry struct {
 	rejected bool                   // True, if the AO as rejected. We keep them to detect the other rejected AOs.
 }
 
-// type varLocalViewProposed struct {
-// 	output   *isc.AliasOutputWithID
-// 	logIndex LogIndex
-// }
-
 type varLocalViewImpl struct {
 	// The latest confirmed AO, as received from L1.
 	// All the pending entries are built on top ot this one.
@@ -120,21 +112,15 @@ type varLocalViewImpl struct {
 	// Recovery/Timeout notices. Then the next consensus is started o build a TX.
 	// Both of them can still produce a TX, but only one of them will be confirmed.
 	pending *shrinkingmap.ShrinkingMap[uint32, []*varLocalViewEntry]
-
-	// TODO: Describe.
-	consistent bool
-
-	// Resync is true, if we got a rejection and now we are waiting for all the
-	// pending outputs to be either confirmed or rejected.
+	// Just a logger.
 	log *logger.Logger
 }
 
 func NewVarLocalView(log *logger.Logger) VarLocalView {
 	return &varLocalViewImpl{
-		confirmed:  nil,
-		pending:    shrinkingmap.New[uint32, []*varLocalViewEntry](),
-		consistent: false,
-		log:        log,
+		confirmed: nil,
+		pending:   shrinkingmap.New[uint32, []*varLocalViewEntry](),
+		log:       log,
 	}
 }
 
@@ -142,6 +128,48 @@ func NewVarLocalView(log *logger.Logger) VarLocalView {
 // nil means we have to wait: either we have no AO, or we have some rejections and waiting until a re-sync.
 func (lvi *varLocalViewImpl) Value() *isc.AliasOutputWithID {
 	return lvi.findLatestPending()
+}
+
+func (lvi *varLocalViewImpl) ConsensusOutputDone(logIndex LogIndex, consumed iotago.OutputID, published *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool) {
+	lvi.log.Debugf("ConsensusOutputDone: logIndex=%v, consumed.ID=%v, published=%v", logIndex, consumed.ToHex(), published)
+	stateIndex := published.GetStateIndex()
+	prevLatest := lvi.findLatestPending()
+	//
+	// Check, if not outdated.
+	if lvi.confirmed == nil {
+		lvi.log.Debugf("⊳ Ignoring it, have no confirmed AO.")
+		return prevLatest, false
+	}
+	confirmedStateIndex := lvi.confirmed.GetStateIndex()
+	if stateIndex <= confirmedStateIndex {
+		lvi.log.Debugf("⊳ Ignoring it, outdated, current confirmed=%v", lvi.confirmed)
+		return prevLatest, false
+	}
+	//
+	// Add it to the pending list.
+	var entries []*varLocalViewEntry
+	entries, ok := lvi.pending.Get(stateIndex)
+	if !ok {
+		entries = []*varLocalViewEntry{}
+	}
+	if lo.ContainsBy(entries, func(e *varLocalViewEntry) bool { return e.output.Equals(published) }) {
+		lvi.log.Debugf("⊳ Ignoring it, duplicate.")
+		return prevLatest, false
+	}
+	entries = append(entries, &varLocalViewEntry{
+		output:   published,
+		consumed: consumed,
+		rejected: false,
+	})
+	lvi.pending.Set(stateIndex, entries)
+	//
+	// Check, if the added AO is a new tip for the chain.
+	if published.Equals(lvi.findLatestPending()) {
+		lvi.log.Debugf("⊳ Will consider consensusOutput=%v as a tip, the current confirmed=%v.", published, lvi.confirmed)
+		return published, true
+	}
+	lvi.log.Debugf("⊳ That's not a tip.")
+	return lvi.Value(), false
 }
 
 // A confirmed AO is received from L1. Base on that, we either truncate our local
@@ -240,95 +268,10 @@ func (lvi *varLocalViewImpl) outputIfChanged(oldTip, newTip *isc.AliasOutputWith
 	}
 	if oldTip.Equals(newTip) {
 		lvi.log.Debugf("⊳ Tip remains %v.", newTip)
-		return nil, false
+		return newTip, false
 	}
 	lvi.log.Debugf("⊳ New tip=%v, was %v", newTip, oldTip)
 	return newTip, true
-}
-
-// Proposal breaks consistency, if it is not for the tip we consider as a latest.
-func (lvi *varLocalViewImpl) ConsensusProposed(logIndex LogIndex, proposed *isc.AliasOutputWithID) bool { // (*isc.AliasOutputWithID, bool) {
-	lvi.log.Debugf("ConsensusProposed: logIndex=%v, proposed=%v", logIndex, proposed)
-	ourTip := lvi.findLatestPending()
-	consistent := proposed.Equals(ourTip)
-	if !consistent {
-		lvi.consistent = false
-		lvi.log.Debugf("⊳ Going to the inconsistent state, ourTip=%v, proposed=%v.", ourTip, proposed)
-	}
-	return consistent
-
-	// stateIndex := proposed.GetStateIndex() + 1 // The the target state index.
-	// proposals, ok := lvi.proposed.Get(stateIndex)
-	// if ok {
-	// 	proposals = append(proposals, &varLocalViewProposed{output: proposed, logIndex: logIndex})
-	// } else {
-	// 	proposals = []*varLocalViewProposed{{output: proposed, logIndex: logIndex}}
-	// }
-	// lvi.proposed.Set(stateIndex, proposals)
-	// lvi.log.Debugf("⊳ |proposed[%v]|=%v", stateIndex, len(proposals))
-	// latestPending := lvi.findLatestPending()
-	// if proposed.Equals(latestPending) {
-	// 	return nil, false
-	// }
-	// return latestPending, true
-}
-
-func (lvi *varLocalViewImpl) ConsensusOutputDone(logIndex LogIndex, consumed iotago.OutputID, published *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool) {
-	lvi.log.Debugf("ConsensusOutputDone: logIndex=%v, consumed.ID=%v, published=%v", logIndex, consumed.ToHex(), published)
-	stateIndex := published.GetStateIndex()
-	//
-	// Cleanup the list of consensus proposals.
-	// lvi.proposed.ForEach(func(si uint32, siProposed []*varLocalViewProposed) bool {
-	// 	siLen := len(siProposed)
-	// 	siProposed = lo.Filter(siProposed, func(item *varLocalViewProposed, index int) bool {
-	// 		return item.logIndex != logIndex
-	// 	})
-	// 	if siLen == len(siProposed) {
-	// 		return true
-	// 	}
-	// 	if len(siProposed) == 0 {
-	// 		lvi.proposed.Delete(si)
-	// 	} else {
-	// 		lvi.proposed.Set(si, siProposed)
-	// 	}
-	// 	return false
-	// })
-	//
-	// Check, if not outdated.
-	if lvi.confirmed == nil {
-		lvi.log.Debugf("⊳ Ignoring it, have no confirmed AO.")
-		return nil, false
-	}
-	confirmedStateIndex := lvi.confirmed.GetStateIndex()
-	if stateIndex <= confirmedStateIndex {
-		lvi.log.Debugf("⊳ Ignoring it, outdated, current confirmed=%v", lvi.confirmed)
-		return nil, false
-	}
-	//
-	// Add it to the pending list.
-	var entries []*varLocalViewEntry
-	entries, ok := lvi.pending.Get(stateIndex)
-	if !ok {
-		entries = []*varLocalViewEntry{}
-	}
-	if lo.ContainsBy(entries, func(e *varLocalViewEntry) bool { return e.output.Equals(published) }) {
-		lvi.log.Debugf("⊳ Ignoring it, duplicate.")
-		return nil, false
-	}
-	entries = append(entries, &varLocalViewEntry{
-		output:   published,
-		consumed: consumed,
-		rejected: false,
-	})
-	lvi.pending.Set(stateIndex, entries)
-	//
-	// Check, if the added AO is a new tip for the chain.
-	if published.Equals(lvi.findLatestPending()) {
-		lvi.log.Debugf("⊳ Will consider consensusOutput=%v as a tip, the current confirmed=%v.", published, lvi.confirmed)
-		return published, true
-	}
-	lvi.log.Debugf("⊳ That's not a tip.")
-	return nil, false
 }
 
 func (lvi *varLocalViewImpl) StatusString() string {
@@ -359,11 +302,6 @@ func (lvi *varLocalViewImpl) findLatestPending() *isc.AliasOutputWithID {
 		if latest.OutputID() != entries[0].consumed {
 			return nil // Don't form a chain.
 		}
-		// if prop, ok := lvi.proposed.Get(confirmedSI + i + 1); ok {
-		// 	if len(prop) > 1 {
-		// 		return nil // Have several ongoing consensus instances.
-		// 	}
-		// }
 		latest = entries[0].output
 	}
 	return latest

@@ -395,12 +395,14 @@ func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //no
 //     for them), then the state has to be accessed.
 func (mpi *mempoolImpl) distSyncRequestNeededCB(requestRef *isc.RequestRef) isc.Request {
 	if req := mpi.offLedgerPool.Get(requestRef); req != nil {
+		mpi.log.Debugf("responding to RequestNeeded(ref=%v), found in offLedgerPool", requestRef)
 		return req
 	}
 	if mpi.chainHeadState != nil {
 		requestID := requestRef.ID
 		receipt, err := blocklog.GetRequestReceipt(mpi.chainHeadState, requestID)
 		if err == nil && receipt != nil && receipt.Request.IsOffLedger() {
+			mpi.log.Debugf("responding to RequestNeeded(ref=%v), found in blockLog", requestRef)
 			return receipt.Request
 		}
 		return nil
@@ -515,6 +517,14 @@ func (mpi *mempoolImpl) handleConsensusRequests(recv *reqConsensusRequests) {
 		reqs[i] = mpi.onLedgerPool.Get(reqRef)
 		if reqs[i] == nil {
 			reqs[i] = mpi.offLedgerPool.Get(reqRef)
+		}
+		if reqs[i] == nil && mpi.chainHeadState != nil {
+			// Check also the processed backlog, to avoid consensus blocking while waiting for processed request.
+			// It will be rejected later (or state branch will change).
+			receipt, err := blocklog.GetRequestReceipt(mpi.chainHeadState, reqRef.ID)
+			if err == nil && receipt != nil {
+				reqs[i] = receipt.Request
+			}
 		}
 		if reqs[i] == nil {
 			missing = append(missing, reqRef)

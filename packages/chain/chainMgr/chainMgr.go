@@ -137,6 +137,7 @@ func (nc *NeedConsensus) String() string {
 
 type NeedPublishTX struct {
 	CommitteeAddr     iotago.Ed25519Address
+	LogIndex          cmtLog.LogIndex
 	TxID              iotago.TransactionID
 	Tx                *iotago.Transaction
 	BaseAliasOutputID iotago.OutputID        // The consumed AliasOutput.
@@ -290,13 +291,15 @@ func (cmi *chainMgrImpl) handleInputChainTxPublishResult(input *inputChainTxPubl
 	delete(cmi.needPublishTX, input.txID)
 	if input.confirmed {
 		// >     If result.confirmed = false THEN ... ELSE
-		// >         NOP // AO has to be received as Confirmed AO.
-		return nil
+		// >         NOP // AO has to be received as Confirmed AO. // TODO: Not true, anymore.
+		return cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
+			return cl.Input(cmtLog.NewInputConsensusOutputConfirmed(input.aliasOutput, input.logIndex))
+		})
 	}
 	// >     If result.confirmed = false THEN
 	// >         Forward it to ChainMgr; HandleCmtLogOutput.
 	return cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-		return cl.Input(cmtLog.NewInputAliasOutputRejected(input.aliasOutput))
+		return cl.Input(cmtLog.NewInputConsensusOutputRejected(input.aliasOutput, input.logIndex))
 	})
 }
 
@@ -313,6 +316,7 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 		txID := input.consensusResult.NextAliasOutput.TransactionID()
 		cmi.needPublishTX[txID] = &NeedPublishTX{
 			CommitteeAddr:     input.committeeAddr,
+			LogIndex:          input.logIndex,
 			TxID:              txID,
 			Tx:                input.consensusResult.Transaction,
 			BaseAliasOutputID: input.consensusResult.BaseAliasOutput,
