@@ -6,21 +6,18 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
-func MapGovChainInfoResponse(chainInfo *governance.ChainInfo) models.GovChainInfoResponse {
+func MapGovChainInfoResponse(chainInfo *isc.ChainInfo) models.GovChainInfoResponse {
 	return models.GovChainInfoResponse{
-		ChainID:      chainInfo.ChainID.String(),
-		ChainOwnerID: chainInfo.ChainOwnerID.String(),
-		GasFeePolicy: models.GasFeePolicy{
-			GasPerToken:       chainInfo.GasFeePolicy.GasPerToken,
-			ValidatorFeeShare: chainInfo.GasFeePolicy.ValidatorFeeShare,
-			EVMGasRatio:       chainInfo.GasFeePolicy.EVMGasRatio,
-		},
+		ChainID:        chainInfo.ChainID.String(),
+		ChainOwnerID:   chainInfo.ChainOwnerID.String(),
+		GasFeePolicy:   chainInfo.GasFeePolicy,
+		GasLimits:      chainInfo.GasLimits,
 		CustomMetadata: base64.StdEncoding.EncodeToString(chainInfo.CustomMetadata),
 	}
 }

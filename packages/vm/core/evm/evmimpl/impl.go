@@ -81,15 +81,16 @@ func SetInitialState(state kv.KVStore, evmChainID uint16, blockKeepAmount int32)
 	}
 	addToPrivileged(state, iscmagic.ERC721NFTsAddress)
 
-	// chain always starts with default gas policy
+	// chain always starts with default gas fee & limits configuration
+	gasLimits := gas.LimitsDefault
 	gasRatio := gas.DefaultFeePolicy().EVMGasRatio
 	emulator.Init(
 		evmStateSubrealm(state),
 		evmChainID,
 		blockKeepAmount,
 		emulator.GasLimits{
-			Block: gas.EVMBlockGasLimit(&gasRatio),
-			Call:  gas.EVMCallGasLimit(&gasRatio),
+			Block: gas.EVMBlockGasLimit(gasLimits, &gasRatio),
+			Call:  gas.EVMCallGasLimit(gasLimits, &gasRatio),
 		},
 		0,
 		genesisAlloc,
@@ -122,10 +123,14 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	var gasErr error
 	if result != nil {
 		// convert burnt EVM gas to ISC gas
+		chainInfo := ctx.ChainInfo()
 		ctx.Privileged().GasBurnEnable(true)
 		gasErr = panicutil.CatchPanic(
 			func() {
-				ctx.Gas().Burn(gas.BurnCodeEVM1P, gas.EVMGasToISC(result.UsedGas, &bctx.feePolicy.EVMGasRatio))
+				ctx.Gas().Burn(
+					gas.BurnCodeEVM1P,
+					gas.EVMGasToISC(result.UsedGas, &chainInfo.GasFeePolicy.EVMGasRatio),
+				)
 			},
 		)
 		ctx.Privileged().GasBurnEnable(false)

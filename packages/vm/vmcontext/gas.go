@@ -28,7 +28,7 @@ func (vmctx *VMContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	vmctx.gasBurned += g
 	vmctx.gasBurnedTotal += g
 
-	if vmctx.gasBurnedTotal+g > gas.MaxGasPerBlock {
+	if vmctx.gasBurnedTotal+g > vmctx.chainInfo.GasLimits.MaxGasPerBlock {
 		panic(vmexceptions.ErrBlockGasLimitExceeded)
 	}
 

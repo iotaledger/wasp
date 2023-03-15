@@ -29,6 +29,8 @@ func checkCounter(e *solo.Chain, expected int64) {
 func initSolo(t *testing.T) *solo.Solo {
 	return solo.New(t, &solo.InitOptions{
 		AutoAdjustStorageDeposit: true,
+		Debug:                    true,
+		PrintStackTrace:          true,
 	}).WithNativeContract(Processor)
 }
 

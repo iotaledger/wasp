@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/base64"
 
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/webapi/dto"
 )
 
@@ -52,12 +53,13 @@ type ContractInfoResponse struct {
 }
 
 type ChainInfoResponse struct {
-	IsActive       bool         `json:"isActive" swagger:"desc(Whether or not the chain is active.),required"`
-	ChainID        string       `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
-	EVMChainID     uint16       `json:"evmChainId" swagger:"desc(The EVM chain ID),required,min(1)"`
-	ChainOwnerID   string       `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
-	GasFeePolicy   GasFeePolicy `json:"gasFeePolicy"`
-	CustomMetadata string       `json:"customMetadata" swagger:"desc((base64) Optional extra metadata that is appended to the L1 AliasOutput)"`
+	IsActive       bool           `json:"isActive" swagger:"desc(Whether or not the chain is active.),required"`
+	ChainID        string         `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
+	EVMChainID     uint16         `json:"evmChainId" swagger:"desc(The EVM chain ID),required,min(1)"`
+	ChainOwnerID   string         `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
+	GasFeePolicy   *gas.FeePolicy `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
+	GasLimits      *gas.Limits    `json:"gasLimits" swagger:"desc(The gas limits),required"`
+	CustomMetadata string         `json:"customMetadata" swagger:"desc((base64) Optional extra metadata that is appended to the L1 AliasOutput)"`
 }
 
 type StateResponse struct {
@@ -77,11 +79,11 @@ func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfo
 	}
 
 	if chainInfo.GasFeePolicy != nil {
-		chainInfoResponse.GasFeePolicy = GasFeePolicy{
-			GasPerToken:       chainInfo.GasFeePolicy.GasPerToken,
-			ValidatorFeeShare: chainInfo.GasFeePolicy.ValidatorFeeShare,
-			EVMGasRatio:       chainInfo.GasFeePolicy.EVMGasRatio,
-		}
+		chainInfoResponse.GasFeePolicy = chainInfo.GasFeePolicy
+	}
+
+	if chainInfo.GasLimits != nil {
+		chainInfoResponse.GasLimits = chainInfo.GasLimits
 	}
 
 	return chainInfoResponse

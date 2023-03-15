@@ -1,18 +1,13 @@
 package models
 
-import "github.com/iotaledger/wasp/packages/util"
-
-type GasFeePolicy struct {
-	GasPerToken       util.Ratio32 `json:"gasPerToken" swagger:"desc(The gas per token ratio (A/B) (gas/token)),required"`
-	ValidatorFeeShare uint8        `json:"validatorFeeShare" swagger:"desc(The validator fee share.),required"`
-	EVMGasRatio       util.Ratio32 `json:"evmGasRatio" swagger:"desc(The EVM gas ratio (ISC gas = EVM gas * A/B)),required"`
-}
+import "github.com/iotaledger/wasp/packages/vm/gas"
 
 type GovChainInfoResponse struct {
-	ChainID        string       `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
-	ChainOwnerID   string       `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
-	GasFeePolicy   GasFeePolicy `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
-	CustomMetadata string       `json:"customMetadata" swagger:"desc((base64) Optional extra metadata that is appended to the L1 AliasOutput)"`
+	ChainID        string         `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
+	ChainOwnerID   string         `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
+	GasFeePolicy   *gas.FeePolicy `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
+	GasLimits      *gas.Limits    `json:"gasLimits" swagger:"desc(The gas limits),required"`
+	CustomMetadata string         `json:"customMetadata" swagger:"desc((base64) Optional extra metadata that is appended to the L1 AliasOutput)"`
 }
 
 type GovAllowedStateControllerAddressesResponse struct {

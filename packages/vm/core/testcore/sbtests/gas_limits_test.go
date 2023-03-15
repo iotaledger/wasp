@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func infiniteLoopRequest(ch *solo.Chain, gasBudget ...uint64) (*solo.CallParams, *cryptolib.KeyPair) {
@@ -45,7 +44,7 @@ func testTxWithGasOverLimit(t *testing.T, w bool) {
 	receipt := ch.LastReceipt()
 	// assert that the submitted gas budget was limited to the max per call
 	require.Less(t, receipt.GasBurned, req.GasBudget())
-	require.GreaterOrEqual(t, receipt.GasBurned, gas.MaxGasPerRequest) // should exceed MaxGasPerRequest() by 1 operation
+	require.GreaterOrEqual(t, receipt.GasBurned, ch.GetGasLimits().MaxGasPerRequest) // should exceed MaxGasPerRequest() by 1 operation
 }
 
 func TestBlockGasOverflow(t *testing.T) { run2(t, testBlockGasOverflow) }
@@ -59,7 +58,8 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 	initialBlockInfo := ch.GetLatestBlockInfo()
 
 	// produce n requests over the block gas limit (each request uses the maximum amount of gas a call can use)
-	nRequests := int(gas.MaxGasPerBlock / gas.MaxGasPerRequest)
+	limits := ch.GetGasLimits()
+	nRequests := int(limits.MaxGasPerBlock / limits.MaxGasPerRequest)
 	reqs := make([]isc.Request, nRequests)
 
 	for i := 0; i < nRequests; i++ {
@@ -77,7 +77,7 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 	// the request number #{nRequests} should overflow the block and be moved to the next one
 	require.Equal(t, int(fullGasBlockInfo.TotalRequests), nRequests-1)
 	// gas burned will be sightly below the limit
-	require.LessOrEqual(t, fullGasBlockInfo.GasBurned, gas.MaxGasPerBlock)
+	require.LessOrEqual(t, fullGasBlockInfo.GasBurned, limits.MaxGasPerBlock)
 
 	// 1 requests should be moved to the next block
 	followingBlockInfo, err := ch.GetBlockInfo(initialBlockInfo.BlockIndex + 2)
@@ -98,7 +98,8 @@ func testGasBudget(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
 
-	gasBudget := gas.MaxGasPerRequest / 2
+	limits := ch.GetGasLimits()
+	gasBudget := limits.MaxGasPerRequest / 2
 	req, wallet := infiniteLoopRequest(ch, gasBudget)
 	_, err := ch.PostRequestSync(req, wallet)
 	require.Error(t, err) // tx expected to run out of gas
@@ -113,7 +114,7 @@ func testGasBudget(t *testing.T, w bool) {
 	require.Error(t, err) // tx expected to run out of gas
 	testmisc.RequireErrorToBe(t, err, vm.ErrGasBudgetExceeded)
 	receipt = ch.LastReceipt()
-	require.EqualValues(t, gas.MinGasPerRequest, receipt.GasBudget) // gas budget should be adjusted to the minimum
+	require.EqualValues(t, limits.MinGasPerRequest, receipt.GasBudget) // gas budget should be adjusted to the minimum
 }
 
 func TestViewGasLimit(t *testing.T) { run2(t, testViewGasLimit) }

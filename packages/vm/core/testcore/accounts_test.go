@@ -1251,5 +1251,5 @@ func TestDepositWithNoGasBudget(t *testing.T) {
 	// request should succeed, while using gas > 0, the gasBudget should be correct in the receipt
 	require.Nil(t, rec.Error)
 	require.NotZero(t, rec.GasBurned)
-	require.EqualValues(t, gas.MinGasPerRequest, rec.GasBudget)
+	require.EqualValues(t, ch.GetGasLimits().MinGasPerRequest, rec.GasBudget)
 }

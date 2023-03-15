@@ -1346,7 +1346,7 @@ func TestEVMNonZeroGasPriceRequest(t *testing.T) {
 	callArguments, err := storage.abi.Pack("store", valueToStore)
 	require.NoError(t, err)
 	nonce := storage.chain.getNonce(senderAddress)
-	unsignedTx := types.NewTransaction(nonce, storage.address, util.Big0, gas.MaxGasPerRequest, gasPrice, callArguments)
+	unsignedTx := types.NewTransaction(nonce, storage.address, util.Big0, env.maxGasLimit(), gasPrice, callArguments)
 
 	tx, err := types.SignTx(unsignedTx, storage.chain.signer(), ethKey)
 	require.NoError(t, err)
@@ -1374,7 +1374,7 @@ func TestEVMTransferBaseTokens(t *testing.T) {
 
 	sendTx := func(amount *big.Int) {
 		nonce := env.getNonce(ethAddr)
-		unsignedTx := types.NewTransaction(nonce, someEthereumAddr, amount, gas.MaxGasPerRequest, util.Big0, []byte{})
+		unsignedTx := types.NewTransaction(nonce, someEthereumAddr, amount, env.maxGasLimit(), util.Big0, []byte{})
 		tx, err := types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
 		require.NoError(t, err)
 		err = env.evmChain.SendTransaction(tx)
@@ -1500,7 +1500,7 @@ func TestSendEntireBalance(t *testing.T) {
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
 
-	unsignedTx := types.NewTransaction(0, someEthereumAddr, initialBalanceInEthDecimals, gas.MaxGasPerRequest, util.Big0, []byte{})
+	unsignedTx := types.NewTransaction(0, someEthereumAddr, initialBalanceInEthDecimals, env.maxGasLimit(), util.Big0, []byte{})
 	tx, err := types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
 	require.NoError(t, err)
 	err = env.evmChain.SendTransaction(tx)

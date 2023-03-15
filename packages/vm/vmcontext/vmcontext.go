@@ -41,7 +41,7 @@ type VMContext struct {
 	gasFeeChargedTotal        uint64
 
 	// ---- request context
-	chainInfo          *governance.ChainInfo
+	chainInfo          *isc.ChainInfo
 	req                isc.Request
 	NumPostedOutputs   int // how many outputs has been posted in the request
 	requestIndex       uint16

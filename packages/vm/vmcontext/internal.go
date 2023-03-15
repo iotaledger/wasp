@@ -61,8 +61,8 @@ func (vmctx *VMContext) findContractByHname(contractHname isc.Hname) (ret *root.
 	return ret
 }
 
-func (vmctx *VMContext) getChainInfo() *governance.ChainInfo {
-	var ret *governance.ChainInfo
+func (vmctx *VMContext) getChainInfo() *isc.ChainInfo {
+	var ret *isc.ChainInfo
 	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
 		ret = governance.MustGetChainInfo(s, vmctx.ChainID())
 	})

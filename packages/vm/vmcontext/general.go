@@ -27,6 +27,10 @@ func (vmctx *VMContext) ChainID() isc.ChainID {
 	return chainID
 }
 
+func (vmctx *VMContext) ChainInfo() *isc.ChainInfo {
+	return vmctx.chainInfo
+}
+
 func (vmctx *VMContext) ChainOwnerID() isc.AgentID {
 	return vmctx.chainOwnerID
 }

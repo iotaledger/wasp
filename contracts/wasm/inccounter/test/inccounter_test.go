@@ -96,12 +96,13 @@ func TestIncrementRepeatOnce(t *testing.T) {
 
 	ctx.WaitForPendingRequestsMark()
 
+	// this post will result in 1 more post by the SC
 	repeatMany := inccounter.ScFuncs.RepeatMany(ctx)
 	repeatMany.Params.NumRepeats().SetValue(1)
 	repeatMany.Func.Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.WaitForPendingRequests(2))
+	require.True(t, ctx.WaitForPendingRequests(1+1))
 
 	checkStateCounter(t, ctx, 2)
 }
@@ -111,12 +112,13 @@ func TestIncrementRepeatThrice(t *testing.T) {
 
 	ctx.WaitForPendingRequestsMark()
 
+	// this post will result in 3 more posts by the SC
 	repeatMany := inccounter.ScFuncs.RepeatMany(ctx)
 	repeatMany.Params.NumRepeats().SetValue(3)
 	repeatMany.Func.Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.WaitForPendingRequests(4))
+	require.True(t, ctx.WaitForPendingRequests(1+3))
 
 	checkStateCounter(t, ctx, 4)
 }
@@ -146,11 +148,12 @@ func TestIncrementPostIncrement(t *testing.T) {
 
 	ctx.WaitForPendingRequestsMark()
 
+	// this post will result in 1 more post by the SC
 	postIncrement := inccounter.ScFuncs.PostIncrement(ctx)
 	postIncrement.Func.Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.WaitForPendingRequests(2))
+	require.True(t, ctx.WaitForPendingRequests(1+1))
 
 	checkStateCounter(t, ctx, 2)
 }
@@ -188,11 +191,12 @@ func TestIncrementLocalStatePost(t *testing.T) {
 
 	ctx.WaitForPendingRequestsMark()
 
+	// this post will result in 3 more posts by the SC
 	localStatePost := inccounter.ScFuncs.LocalStatePost(ctx)
 	localStatePost.Func.Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.WaitForPendingRequests(4))
+	require.True(t, ctx.WaitForPendingRequests(1+3))
 
 	if ctx.IsWasm {
 		// global var in wasm execution has no effect

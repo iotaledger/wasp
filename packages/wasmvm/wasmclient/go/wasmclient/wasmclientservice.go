@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 	"time"
@@ -103,7 +104,7 @@ func (svc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract
 		return reqID, err
 	}
 
-	req := isc.NewOffLedgerRequest(iscChainID, iscContract, iscFunction, params, nonce)
+	req := isc.NewOffLedgerRequest(iscChainID, iscContract, iscFunction, params, nonce, math.MaxUint64)
 	iscAllowance := cvt.IscAllowance(allowance)
 	req.WithAllowance(iscAllowance)
 	signed := req.Sign(keyPair)
