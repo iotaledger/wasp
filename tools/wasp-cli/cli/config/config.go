@@ -77,12 +77,12 @@ func L1FaucetAddress() string {
 	)
 }
 
-func GetToken() string {
-	return viper.GetString("authentication.token")
+func GetToken(node string) string {
+	return viper.GetString(fmt.Sprintf("authentication.wasp.%s.token", node))
 }
 
-func SetToken(token string) {
-	Set("authentication.token", token)
+func SetToken(node,token string) {
+	Set(fmt.Sprintf("authentication.wasp.%s.token", node), token)
 }
 
 func MustWaspAPIURL(nodeName string) string {
