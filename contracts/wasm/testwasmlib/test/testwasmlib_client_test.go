@@ -128,6 +128,7 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(0))
 
 	svc := wasmclient.NewWasmClientService(cfgWaspAPI)
+	require.True(t, svc.IsHealthy())
 	err = svc.SetCurrentChainID(chainID)
 	require.NoError(t, err)
 	return newClient(t, svc, wallet)
