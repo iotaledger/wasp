@@ -1,1 +1,5 @@
 export { default as Navbar } from './navbar.svelte'
+export { default as Box } from './box.svelte'
+export { default as Tabs } from './tabs.svelte'
+export { default as Faucet } from './faucet/Faucet.svelte'
+export { default as Withdraw } from './withdraw/Withdraw.svelte'
