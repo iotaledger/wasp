@@ -4,24 +4,38 @@
 
 :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
-
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #192742;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
 }
 
-#app {
-  padding: 2rem;
+html,
+body {
+    padding: 0;
+    margin: 0;
+    height: 100vh;
 }
 
+* {
+    box-sizing: border-box;
+    font-family: "Barlow", sans-serif;
+}
+
+body {
+    --navbar-height: 60px;
+    --footer-height: 64px;
+    @media screen and (min-width: 590px) {
+        --navbar-height: 72px;
+    }
+    color: white; 
+    background: #04111b;
+    background: radial-gradient(farthest-corner at top right, #00e0c7 -44%, #00121f 40%, #00121f 100%);
+   
+}
+main{
+  background-image: url('/group-ellipse.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 100%;
+  height: 100%;
+}
 /**
   Cheap UI stuff
 */
@@ -70,5 +84,3 @@ select {
   width: 100%;
 }
 
-.header {
-}
