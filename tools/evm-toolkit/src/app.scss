@@ -25,21 +25,9 @@ body {
   @apply relative;
 }
 
-button {
-  background: rgba(16, 140, 255, 0.12);
-  border: 1px solid #57aeff;
-  border-radius: 5px;
-  cursor: pointer;
-  color: rgba(255, 255, 255, 0.87);
-  font-size: 1em;
-  font-weight: 500;
-  padding: 0.6em 1.2em;
-  transition: border-color 0.25s;
-  width: 100%;
-}
-
-button:hover {
-  border-color: #646cff;
+h3 {
+  font-size: 24px;
+  font-weight: 600;
 }
 
 button:focus,
@@ -67,4 +55,9 @@ select {
   color: rgba(255, 255, 255, 0.87);
   padding: 10px;
   width: 100%;
+
+  &:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
 }

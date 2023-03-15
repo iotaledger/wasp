@@ -16,22 +16,20 @@
       </select>
     </div>
 
-    {#if $selectedNetwork.id == 1}
       <div class="input_container">
         <span class="header">Hornet API endpoint</span>
-        <input type="text" bind:value={$selectedNetwork.apiEndpoint} />
+        <input type="text" bind:value={$selectedNetwork.apiEndpoint} disabled={$selectedNetwork.id !== 1} />
       </div>
 
       <div class="input_container">
         <span class="header">Faucet API endpoint</span>
-        <input type="text" bind:value={$selectedNetwork.faucetEndpoint} />
+        <input type="text" bind:value={$selectedNetwork.faucetEndpoint} disabled={$selectedNetwork.id !== 1} />
       </div>
 
       <div class="input_container">
         <span class="header">Chain Address</span>
-        <input type="text" bind:value={$selectedNetwork.chainAddress} />
+        <input type="text" bind:value={$selectedNetwork.chainAddress} disabled={$selectedNetwork.id !== 1} />
       </div>
-    {/if}
   {:else}
     <p>Loading Network Config File...</p>
   {/if}

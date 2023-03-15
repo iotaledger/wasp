@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Navbar } from '$components';
+  import { Navbar, PopupManager } from '$components';
   import '../app.scss';
 </script>
 
@@ -8,6 +8,7 @@
   <background-radial />
   <slot />
 </main>
+<PopupManager />
 
 <style lang="scss">
   background-radial {
