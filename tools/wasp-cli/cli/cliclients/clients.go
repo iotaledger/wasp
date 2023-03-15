@@ -12,20 +12,21 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
-func WaspClientForHostName(apiAddress string) *apiclient.APIClient {
+func WaspClientForHostName(name string) *apiclient.APIClient {
+	apiAddress := config.MustWaspAPIURL(name)
 	L1Client() // this will fill parameters.L1() with data from the L1 node
 	log.Verbosef("using Wasp host %s\n", apiAddress)
 
 	client, err := apiextensions.WaspAPIClientByHostName(apiAddress)
 	log.Check(err)
 
-	client.GetConfig().AddDefaultHeader("Authorization", "Bearer "+config.GetToken())
+	client.GetConfig().AddDefaultHeader("Authorization", "Bearer "+config.GetToken(name))
 
 	return client
 }
 
 func WaspClient(name string) *apiclient.APIClient {
-	return WaspClientForHostName(config.MustWaspAPIURL(name))
+	return WaspClientForHostName(name)
 }
 
 func L1Client() l1connection.Client {
