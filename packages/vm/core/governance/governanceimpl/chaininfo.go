@@ -17,6 +17,7 @@ func getChainInfo(ctx isc.SandboxView) dict.Dict {
 	ret.Set(governance.ParamChainID, codec.EncodeChainID(info.ChainID))
 	ret.Set(governance.VarChainOwnerID, codec.EncodeAgentID(info.ChainOwnerID))
 	ret.Set(governance.VarGasFeePolicyBytes, info.GasFeePolicy.Bytes())
+	ret.Set(governance.VarGasLimitsBytes, info.GasLimits.Bytes())
 	if len(info.CustomMetadata) > 0 {
 		ret.Set(governance.VarCustomMetadata, info.CustomMetadata)
 	}

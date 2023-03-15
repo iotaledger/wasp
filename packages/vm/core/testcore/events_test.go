@@ -48,17 +48,23 @@ func setupTest(t *testing.T) *solo.Chain {
 	err := ch.DeployContract(nil, manyEventsContract.Name, manyEventsContract.ProgramHash)
 	require.NoError(t, err)
 
+	// allow "infinite" gas per request
+	limits := ch.GetGasLimits()
+	limits.MaxGasPerBlock = math.MaxUint64
+	limits.MaxGasPerRequest = math.MaxUint64
+	ch.SetGasLimits(ch.OriginatorPrivateKey, limits)
+
+	// set gas very cheap
+	fp := ch.GetGasFeePolicy()
+	fp.GasPerToken.A = 1000000
+	ch.SetGasFeePolicy(ch.OriginatorPrivateKey, fp)
+
 	ch.MustDepositBaseTokensToL2(10_000_000, nil)
 	return ch
 }
 
-func checkNEvents(t *testing.T, ch *solo.Chain, reqid isc.RequestID, n int, total int) {
-	// fetch events from blocklog
-	events, err := ch.GetEventsForContract(manyEventsContractName)
-	require.NoError(t, err)
-	require.Len(t, events, total)
-
-	events, err = ch.GetEventsForRequest(reqid)
+func checkNEvents(t *testing.T, ch *solo.Chain, reqid isc.RequestID, n int) {
+	events, err := ch.GetEventsForRequest(reqid)
 	require.NoError(t, err)
 	require.Len(t, events, n)
 }
@@ -91,26 +97,22 @@ func TestManyEvents(t *testing.T) {
 
 	gas1000, err := postEvents(1000)
 	require.NoError(t, err)
-	checkNEvents(t, ch, ch.LastReceipt().DeserializedRequest().ID(), 1000, 1000)
+	checkNEvents(t, ch, ch.LastReceipt().DeserializedRequest().ID(), 1000)
 
 	gas2000, err := postEvents(2000)
 	require.NoError(t, err)
-	checkNEvents(t, ch, ch.LastReceipt().DeserializedRequest().ID(), 2000, 3000)
+	checkNEvents(t, ch, ch.LastReceipt().DeserializedRequest().ID(), 2000)
 
 	t.Log(gas1000, gas2000)
 	require.Greater(t, gas2000, gas1000)
 
-	_, err = postEvents(math.MaxUint16 - 1)
-	require.ErrorContains(t, err, "gas budget exceeded")
-	// TODO: previous call should succeed after increasing MaxGasPerRequest
-	/*
-		require.NoError(t, err)
-		checkNEvents(t, ch, ch.LastReceipt().DeserializedRequest().ID(), math.MaxUint16-1, math.MaxUint16-1+3000)
+	_, err = postEvents(math.MaxUint16)
+	require.NoError(t, err)
+	checkNEvents(t, ch, ch.LastReceipt().DeserializedRequest().ID(), math.MaxUint16)
 
-		_, err = postEvents(math.MaxUint16)
-		require.ErrorContains(t, err, "too many events")
-		checkNEvents(t, ch, ch.LastReceipt().DeserializedRequest().ID(), 0, math.MaxUint16-1+3000)
-	*/
+	_, err = postEvents(math.MaxUint16 + 1)
+	require.ErrorContains(t, err, "too many events")
+	checkNEvents(t, ch, ch.LastReceipt().DeserializedRequest().ID(), 0)
 }
 
 func TestEventTooLarge(t *testing.T) {
@@ -128,11 +130,11 @@ func TestEventTooLarge(t *testing.T) {
 
 	gas1k, err := postEvent(100_000)
 	require.NoError(t, err)
-	checkNEvents(t, ch, ch.LastReceipt().DeserializedRequest().ID(), 1, 1)
+	checkNEvents(t, ch, ch.LastReceipt().DeserializedRequest().ID(), 1)
 
 	gas2k, err := postEvent(200_000)
 	require.NoError(t, err)
-	checkNEvents(t, ch, ch.LastReceipt().DeserializedRequest().ID(), 1, 2)
+	checkNEvents(t, ch, ch.LastReceipt().DeserializedRequest().ID(), 1)
 
 	t.Log(gas1k, gas2k)
 	require.Greater(t, gas2k, gas1k)

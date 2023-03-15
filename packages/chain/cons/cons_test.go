@@ -346,8 +346,10 @@ func testChained(t *testing.T, n, f, b int) {
 				chainID,
 				inccounter.Contract.Hname(),
 				inccounter.FuncIncCounter.Hname(),
-				dict.New(), uint64(i*reqPerBlock+ii),
-			).WithGasBudget(20000).Sign(scClient)
+				dict.New(),
+				uint64(i*reqPerBlock+ii),
+				20000,
+			).Sign(scClient)
 			reqs = append(reqs, scRequest)
 			incTotal++
 		}
