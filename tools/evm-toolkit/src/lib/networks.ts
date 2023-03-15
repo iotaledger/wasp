@@ -1,4 +1,4 @@
-[
+export const NETWORKS = [
   {
     "id": 0,
     "text": "Shimmer Beta Network",

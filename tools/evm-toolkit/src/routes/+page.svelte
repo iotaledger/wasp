@@ -1,18 +1,17 @@
 <script lang="ts">
-  import Faucet from './components/faucet/Faucet.svelte';
-  import Withdraw from './components/withdraw/Withdraw.svelte';
+  import Faucet from '$components/faucet/Faucet.svelte';
+  import Withdraw from '$components/withdraw/Withdraw.svelte';
   import { SvelteToast } from '@zerodevx/svelte-toast';
   import { onMount } from 'svelte';
-  import type { NetworkOption } from './lib/network_option';
-  import { networks, selectedNetwork } from './store';
-  import NetworkSettings from './components/network_settings/network_settings.svelte';
+  import { networks, selectedNetwork } from '../store';
+  import NetworkSettings from '$components/network_settings/network_settings.svelte';
+  import { NETWORKS } from '$lib/networks';
 
   onMount(async () => {
-    const networkOptionsFile = await fetch('./networks.json');
-    const networkOptions: NetworkOption[] = await networkOptionsFile.json();
-    networks.set(networkOptions);
-    selectedNetwork.set(networkOptions[1]);
+    networks.set(NETWORKS);
+    selectedNetwork.set(NETWORKS[1]);
   });
+
 </script>
 
 <main>
