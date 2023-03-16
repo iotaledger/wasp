@@ -9,7 +9,7 @@
 </script>
 
 <div class="flex flex-col" class:w-full={stretch}>
-  <label class="block text-12" for="country">{title}</label>
+  <label class="block text-12" for={title}>{title}</label>
   <select bind:value={index}>
       {#each options as option, i}
           <option value={i}>{option[1]}</option>

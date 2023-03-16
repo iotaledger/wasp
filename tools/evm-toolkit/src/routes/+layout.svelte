@@ -1,6 +1,15 @@
 <script lang="ts">
   import { Navbar, PopupManager } from '$components';
   import '../app.scss';
+  import { onMount } from 'svelte';
+  import { networks, selectedNetwork } from '../store';
+  import { NETWORKS } from '$lib/networks';
+
+  onMount(async () => {
+    networks.set(NETWORKS);
+    selectedNetwork.set(NETWORKS[1]);
+  });
+
 </script>
 
 <Navbar />

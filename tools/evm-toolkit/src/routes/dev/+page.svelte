@@ -1,13 +1,5 @@
 <script lang="ts">
-  import { Box, Tabs, FaucetNew, Withdraw } from '$components';
-  import { NETWORKS } from '$lib/networks';
-  import { networks, selectedNetwork } from '../../store';
-  import { onMount } from 'svelte';
-
-  onMount(async () => {
-    networks.set(NETWORKS);
-    selectedNetwork.set(NETWORKS[1]);
-  });
+  import { Box, Tabs, FaucetNew, WithdrawNew } from '$components';
 
   const TABS = [
     {
@@ -18,7 +10,8 @@
     },
     {
       label: 'Withdraw',
-      component: Withdraw,
+      // TODO: replace Withdraw component with WithdrawNew
+      component: WithdrawNew,
     },
   ];
 </script>

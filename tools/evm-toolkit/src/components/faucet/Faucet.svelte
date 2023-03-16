@@ -12,8 +12,7 @@
   $: enableSendFunds =
     evmAddress.length == EVMAddressLength &&
     $selectedNetwork != null &&
-    $selectedNetwork.chainAddress.length == Bech32AddressLength &&
-    !isSendingFunds;
+    $selectedNetwork.chainAddress.length == Bech32AddressLength && !isSendingFunds;
   async function sendFunds() {
     if (!enableSendFunds) {
       return;
