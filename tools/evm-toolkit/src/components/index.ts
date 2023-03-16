@@ -7,6 +7,8 @@ export { default as Withdraw } from './withdraw/Withdraw.svelte'
 export { default as WithdrawNew } from './withdraw.svelte'
 export { default as NetworkSettings } from './network_settings/network_settings.svelte'
 export { default as Button } from './button.svelte'
+export { default as AccountButton } from './account-button.svelte'
+export { default as Tooltip } from './tooltip.svelte'
 
 export * from './popup'
 export * from './inputs'

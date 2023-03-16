@@ -15,6 +15,7 @@ module.exports = {
           ['text-secondary']: '#738795',
           ['text-error']: '#E01A4F',
           ['background-error']: '#e01a4f29',
+          ['background-tertiary-hover']: '#122b3d',
         },
       },
     },

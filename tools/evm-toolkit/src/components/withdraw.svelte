@@ -1,97 +1,54 @@
 <script lang="ts">
-  import {
-    connected,
-    web3,
-    selectedAccount,
-    chainId,
-    defaultEvmStores,
-  } from 'svelte-web3';
-  import { setIntervalAsync, clearIntervalAsync } from 'set-interval-async';
-  import { nodeClient, indexerClient, selectedNetwork } from '../store';
-  import {
-    gasFee,
-    iscAbi,
-    iscContractAddress,
-    multiCallAbi,
-  } from './withdraw/constants';
-  import { Bech32AddressLength } from '../lib/constants';
-  import { onDestroy, onMount } from 'svelte';
-  import { toast } from '@zerodevx/svelte-toast';
-  import type { WithdrawFormInput, WithdrawState } from './withdraw/component_types';
-  import { ISCMagic } from './withdraw/iscmagic/iscmagic';
-  import type { INativeToken } from '../../lib/native_token';
-  import type { INFT } from '../../lib/nft';
-  import { Input, Button } from '.';
   import { InputType } from '$lib/enums';
-
-  const state: WithdrawState = {
-    availableBaseTokens: 0,
-    availableNativeTokens: [],
-    availableNFTs: [],
-    contract: undefined,
-    evmChainID: 0,
-
-    balancePollingHandle: undefined,
-    isMetamaskConnected: false,
-    isLoading: true,
-  };
+  import type { INativeToken } from '$lib/native_token';
+  import {
+    connectToWallet,
+    pollBalance,
+    withdrawStateStore,
+  } from '$lib/withdraw';
+  import { toast } from '@zerodevx/svelte-toast';
+  import { chainId, connected, selectedAccount } from 'svelte-web3';
+  import { Button, Input } from '.';
+  import { Bech32AddressLength } from '../lib/constants';
+  import { nodeClient } from '../store';
+  import type { WithdrawFormInput } from './withdraw/component_types';
+  import { gasFee } from './withdraw/constants';
 
   const formInput: WithdrawFormInput = {
     receiverAddress: '',
     baseTokensToSend: 0,
     nativeTokensToSend: {},
+    nftIDToSend: undefined,
   };
 
-  $: formattedBalance = (state.availableBaseTokens / 1e6).toFixed(2);
+  $: formattedBalance = ($withdrawStateStore.availableBaseTokens / 1e6).toFixed(
+    2,
+  );
   $: formattedAmountToSend = (formInput.baseTokensToSend / 1e6).toFixed(2);
   $: isValidAddress = formInput.receiverAddress.length == Bech32AddressLength;
   $: canWithdraw =
-    state.availableBaseTokens > 0 &&
+    $withdrawStateStore.availableBaseTokens > 0 &&
     formInput.baseTokensToSend > 0 &&
     isValidAddress;
   $: canWithdrawEverything = isValidAddress;
-  $: canSetAmountToWithdraw = state.availableBaseTokens > gasFee + 1;
-  $: state.isMetamaskConnected = window.ethereum
+  $: canSetAmountToWithdraw =
+    $withdrawStateStore.availableBaseTokens > gasFee + 1;
+  $: $withdrawStateStore.isMetamaskConnected = window.ethereum
     ? window.ethereum.isConnected()
     : false;
 
-  onDestroy(async () => {
-    await unsubscribeBalance();
-  });
+  $: $withdrawStateStore, updateFormInput();
 
-  onMount(async () => {
-    // It's a bit confusing:
-    // $connected does only return true if Metamask is connected to the page AND the defaultProvider is initialized.
-    // This makes us unable to automatically initialize the store as it will open a Metamask authorization request without indicating why immediately on the first visit.
-    // We can use window.ethereum.isConnected to first validate if the user already has set up a connection by clicking "Connect Wallet".
-    // Then we can automatically initialize the store and not require manual user interaction each time. (User only has to click "Connect Wallet" once).
-    if (state.isMetamaskConnected) {
-      await connectToWallet();
-    }
-  });
-
-  async function pollBalance() {
-    state.availableBaseTokens = await state.iscMagic.getBaseTokens(
-      $web3.eth,
-      $selectedAccount,
-    );
-    if (formInput.baseTokensToSend > state.availableBaseTokens) {
+  function updateFormInput() {
+    if (formInput.baseTokensToSend > $withdrawStateStore.availableBaseTokens) {
       formInput.baseTokensToSend = 0;
     }
-  }
-  async function pollNativeTokens() {
-    if (!$selectedAccount) {
-      return;
-    }
-    state.availableNativeTokens = await state.iscMagic.getNativeTokens(
-      $nodeClient,
-      $indexerClient,
-      $selectedAccount,
-    );
     // Remove native tokens marked to be sent if the token does not exist anymore.
     for (const nativeTokenID of Object.keys(formInput.nativeTokensToSend)) {
       const isNativeTokenAvailable =
-        state.availableNativeTokens.findIndex(x => x.id == nativeTokenID) >= 0;
+        $withdrawStateStore.availableNativeTokens.findIndex(
+          x => x.id == nativeTokenID,
+        ) >= 0;
 
       if (!isNativeTokenAvailable) {
         delete formInput.nativeTokensToSend[nativeTokenID];
@@ -99,56 +56,13 @@
     }
     // Add all existing native tokens to the "to be sent" array but with an amount of 0
     // This makes it easier to connect the UI with the withdraw request.
-    for (const nativeToken of state.availableNativeTokens) {
+    for (const nativeToken of $withdrawStateStore.availableNativeTokens) {
       if (typeof formInput.nativeTokensToSend[nativeToken.id] == 'undefined') {
         formInput.nativeTokensToSend[nativeToken.id] = 0;
       }
     }
   }
-  async function pollNFTs() {
-    if (!$selectedAccount) {
-      return;
-    }
 
-    state.availableNFTs = await state.iscMagic.getNFTs(
-      $nodeClient,
-      $indexerClient,
-      $selectedAccount,
-    );
-  }
-  async function pollAccount() {
-    await Promise.all([pollBalance(), pollNativeTokens(), pollNFTs()]);
-  }
-  async function subscribeBalance() {
-    if (state.balancePollingHandle) {
-      return;
-    }
-    state.balancePollingHandle = setIntervalAsync(pollAccount, 2500);
-  }
-  async function unsubscribeBalance() {
-    if (!state.balancePollingHandle) {
-      return;
-    }
-    await clearIntervalAsync(state.balancePollingHandle);
-    state.balancePollingHandle = undefined;
-  }
-  async function connectToWallet() {
-    state.isLoading = true;
-    try {
-      await defaultEvmStores.setProvider();
-      state.evmChainID = await $web3.eth.getChainId();
-      state.contract = new $web3.eth.Contract(iscAbi, iscContractAddress, {
-        from: $selectedAccount,
-      });
-      state.iscMagic = new ISCMagic(state.contract, null);
-      await pollAccount();
-      await subscribeBalance();
-    } catch (ex) {
-      toast.push(`Failed to connect to wallet: ${ex}`);
-      console.log('connectToWallet', ex);
-    }
-    state.isLoading = false;
-  }
   async function withdraw(
     baseTokens: number,
     nativeTokens: INativeToken[],
@@ -157,9 +71,11 @@
     if (!$selectedAccount) {
       return;
     }
+
     let result: any;
+
     try {
-      result = await state.iscMagic.withdraw(
+      result = await $withdrawStateStore.iscMagic.withdraw(
         $nodeClient,
         formInput.receiverAddress,
         baseTokens,
@@ -176,6 +92,7 @@
       console.log(ex);
       return;
     }
+
     if (result.status) {
       toast.push(`Withdraw request sent. BlockIndex: ${result.blockNumber}`, {
         duration: 4000,
@@ -189,10 +106,13 @@
       );
     }
   }
+
   async function onWithdrawClick() {
     const nativeTokensToSend: INativeToken[] = [];
+
     for (const tokenID of Object.keys(formInput.nativeTokensToSend)) {
       const amount = formInput.nativeTokensToSend[tokenID];
+
       if (amount > 0) {
         nativeTokensToSend.push({
           // TODO: BigInt is required for native tokens, but it causes problems with the range slider. This needs to be adressed before shipping.
@@ -213,9 +133,10 @@
   function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
+
   async function onWithdrawEverythingClick() {
     try {
-      for (let nft of state.availableNFTs.reverse()) {
+      for (let nft of $withdrawStateStore.availableNFTs.reverse()) {
         await pollBalance();
         await withdraw(gasFee * 1000, [], nft.id);
         await sleep(5 * 1000);
@@ -223,21 +144,20 @@
 
       await pollBalance();
       await withdraw(
-        state.availableBaseTokens,
-        state.availableNativeTokens,
+        $withdrawStateStore.availableBaseTokens,
+        $withdrawStateStore.availableNativeTokens,
         null,
       );
     } catch {}
   }
-
 </script>
 
 <withdraw-component class="flex flex-col space-y-6 mt-6">
-  {#if !$connected}
+  {#if !$connected && !$selectedAccount}
     <div class="input_container">
       <button on:click={connectToWallet}>Connect to Wallet</button>
     </div>
-  {:else if !state.isLoading}
+  {:else if !$withdrawStateStore.isLoading}
     <info-box>
       <div class="flex flex-col space-y-2">
         <info-item-title>Chain ID</info-item-title>
@@ -266,12 +186,12 @@
             type="range"
             disabled={!canSetAmountToWithdraw}
             min="0"
-            max={state.availableBaseTokens}
+            max={$withdrawStateStore.availableBaseTokens}
             bind:value={formInput.baseTokensToSend}
           />
         </div>
 
-        {#each state.availableNativeTokens as nativeToken}
+        {#each $withdrawStateStore.availableNativeTokens as nativeToken}
           <div>
             <info-item-title>
               {nativeToken.metadata.name} Token: {formInput.nativeTokensToSend[
@@ -288,12 +208,12 @@
         {/each}
       </info-box>
     </tokens-to-send-wrapper>
-    {#if state.availableNFTs.length > 0}
+    {#if $withdrawStateStore.availableNFTs.length > 0}
       <nfts-wrapper>
         <div class="mb-2">NFTs</div>
         <info-box>
           <div class="flex flex-col space-y-2">
-            {#each state.availableNFTs as nft}
+            {#each $withdrawStateStore.availableNFTs as nft}
               <info-item-title>
                 {nft.id}
               </info-item-title>

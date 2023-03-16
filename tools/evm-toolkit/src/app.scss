@@ -50,6 +50,18 @@ select {
   }
 }
 
+.dot-primary {
+  &::before {
+    content: "";
+    position: absolute;
+    left: 16px;
+    width: 8px;
+    height: 8px;
+    @apply bg-shimmer-action-primary;
+    border-radius: 50%;
+  }
+}
+
 /*********** Baseline, reset styles ***********/
 input[type="range"] {
   -webkit-appearance: none;

@@ -7,7 +7,9 @@
         %sveltekit.head%
     </head>
     <body data-sveltekit-preload-data="hover">
+        <!-- This step is necessary for now because the Web3.js library doesn't play well with bundlers (Vite, Rollup, Webpack, Snowpack, etc), thus we cannot simply add a dependency in package.json. -->
         <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+        <!--  -->
         <div style="display: contents">%sveltekit.body%</div>
     </body>
 </html>

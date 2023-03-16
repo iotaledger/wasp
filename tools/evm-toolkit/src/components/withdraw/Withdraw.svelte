@@ -28,16 +28,19 @@
     availableNFTs: [],
     contract: undefined,
     evmChainID: 0,
+
     balancePollingHandle: undefined,
     isMetamaskConnected: false,
     isLoading: true,
   };
+
   const formInput: WithdrawFormInput = {
     receiverAddress: '',
     baseTokensToSend: 0,
     nativeTokensToSend: {},
     nftIDToSend: undefined,
   };
+
   $: formattedBalance = (state.availableBaseTokens / 1e6).toFixed(2);
   $: formattedAmountToSend = (formInput.baseTokensToSend / 1e6).toFixed(2);
   $: isValidAddress = formInput.receiverAddress.length == Bech32AddressLength;
@@ -50,9 +53,11 @@
   $: state.isMetamaskConnected = window.ethereum
     ? window.ethereum.isConnected()
     : false;
+
   onDestroy(async () => {
     await unsubscribeBalance();
   });
+
   onMount(async () => {
     // It's a bit confusing:
     // $connected does only return true if Metamask is connected to the page AND the defaultProvider is initialized.
@@ -63,24 +68,29 @@
       await connectToWallet();
     }
   });
+
   async function pollBalance() {
     state.availableBaseTokens = await state.iscMagic.getBaseTokens(
       $web3.eth,
       $selectedAccount,
     );
+
     if (formInput.baseTokensToSend > state.availableBaseTokens) {
       formInput.baseTokensToSend = 0;
     }
   }
+
   async function pollNativeTokens() {
     if (!$selectedAccount) {
       return;
     }
+
     state.availableNativeTokens = await state.iscMagic.getNativeTokens(
       $nodeClient,
       $indexerClient,
       $selectedAccount,
     );
+
     // Remove native tokens marked to be sent if the token does not exist anymore.
     for (const nativeTokenID of Object.keys(formInput.nativeTokensToSend)) {
       const isNativeTokenAvailable =
@@ -90,6 +100,7 @@
         delete formInput.nativeTokensToSend[nativeTokenID];
       }
     }
+
     // Add all existing native tokens to the "to be sent" array but with an amount of 0
     // This makes it easier to connect the UI with the withdraw request.
     for (const nativeToken of state.availableNativeTokens) {
@@ -98,6 +109,7 @@
       }
     }
   }
+
   async function pollNFTs() {
     if (!$selectedAccount) {
       return;
@@ -109,39 +121,51 @@
       $selectedAccount,
     );
   }
+
   async function pollAccount() {
     await Promise.all([pollBalance(), pollNativeTokens(), pollNFTs()]);
   }
+
   async function subscribeBalance() {
     if (state.balancePollingHandle) {
       return;
     }
+
     state.balancePollingHandle = setIntervalAsync(pollAccount, 2500);
   }
+
   async function unsubscribeBalance() {
     if (!state.balancePollingHandle) {
       return;
     }
+
     await clearIntervalAsync(state.balancePollingHandle);
     state.balancePollingHandle = undefined;
   }
+
   async function connectToWallet() {
     state.isLoading = true;
+
     try {
       await defaultEvmStores.setProvider();
+
       state.evmChainID = await $web3.eth.getChainId();
       state.contract = new $web3.eth.Contract(iscAbi, iscContractAddress, {
         from: $selectedAccount,
       });
+
       state.iscMagic = new ISCMagic(state.contract, null);
+
       await pollAccount();
       await subscribeBalance();
     } catch (ex) {
       toast.push(`Failed to connect to wallet: ${ex}`);
       console.log('connectToWallet', ex);
     }
+
     state.isLoading = false;
   }
+
   async function withdraw(
     baseTokens: number,
     nativeTokens: INativeToken[],
@@ -150,7 +174,9 @@
     if (!$selectedAccount) {
       return;
     }
+
     let result: any;
+
     try {
       result = await state.iscMagic.withdraw(
         $nodeClient,
@@ -169,6 +195,7 @@
       console.log(ex);
       return;
     }
+
     if (result.status) {
       toast.push(`Withdraw request sent. BlockIndex: ${result.blockNumber}`, {
         duration: 4000,
@@ -182,10 +209,13 @@
       );
     }
   }
+
   async function onWithdrawClick() {
     const nativeTokensToSend: INativeToken[] = [];
+
     for (const tokenID of Object.keys(formInput.nativeTokensToSend)) {
       const amount = formInput.nativeTokensToSend[tokenID];
+
       if (amount > 0) {
         nativeTokensToSend.push({
           // TODO: BigInt is required for native tokens, but it causes problems with the range slider. This needs to be adressed before shipping.
@@ -206,6 +236,7 @@
   function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
+
   async function onWithdrawEverythingClick() {
     try {
       for (let nft of state.availableNFTs.reverse()) {
@@ -323,15 +354,18 @@
   .warning:disabled {
     background-color: #6a1b1e;
   }
+
   .warning {
     background-color: #b92e34;
     border-color: red;
     color: white;
   }
+
   .token_list {
     display: flex;
     flex-direction: column;
   }
+
   .token_list-item {
     border: 1px solid gray;
     border-radius: 4px;
@@ -339,25 +373,30 @@
     margin: 10px;
     margin-left: 0;
   }
+
   component {
     color: rgba(255, 255, 255, 0.87);
     display: flex;
     flex-direction: column;
   }
+
   input[type='range'] {
     width: 100%;
     padding: 10px 0 0 0;
     margin: 0;
   }
+
   .account_container {
     height: 64px;
     margin: 15px;
     display: flex;
     justify-content: space-between;
   }
+
   .balance_container {
     text-align: right;
   }
+
   .balance,
   .chainid {
     padding-top: 5px;

@@ -72,11 +72,10 @@
   popup-main {
     @apply absolute;
     @apply top-0;
-    @apply md:-top-1/2;
     @apply left-1/2;
     @apply -translate-x-1/2;
     @apply translate-y-1/4;
-    @apply md:translate-y-full;
+    @apply md:translate-y-1/2;
     @apply flex;
     @apply flex-col;
     @apply justify-between;
@@ -86,7 +85,6 @@
     @apply rounded-xl;
     @apply z-50;
     max-width: 500px;
-    min-height: 300px;
     popup-header {
       @apply flex;
       @apply justify-between;
