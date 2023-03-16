@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/daemon"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 )
 
@@ -55,6 +56,7 @@ type dependencies struct {
 
 	AppInfo               *app.Info
 	NodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
+	ChainsMetrics         *metrics.Metrics
 	WebAPIEcho            *echo.Echo                  `name:"webapiEcho" optional:"true"`
 	BlockWALMetrics       *smGPAUtils.BlockWALMetrics `optional:"true"`
 }
@@ -97,6 +99,9 @@ func configure() error {
 	}
 	if ParamsPrometheus.NodeConnMetrics {
 		register("node connection", deps.NodeConnectionMetrics.PrometheusCollectors()...)
+	}
+	if ParamsPrometheus.ChainMetrics {
+		register("chains", deps.ChainsMetrics.PrometheusCollectors()...)
 	}
 	if ParamsPrometheus.BlockWALMetrics && deps.BlockWALMetrics != nil {
 		register("write ahead logging", deps.BlockWALMetrics.PrometheusCollectors()...)

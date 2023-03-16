@@ -15,6 +15,8 @@ type ParametersPrometheus struct {
 	NodeMetrics bool `default:"true" usage:"whether to include node metrics"`
 	// NodeConnMetrics defines whether to include node connection metrics.
 	NodeConnMetrics bool `default:"true" usage:"whether to include node connection metrics"`
+	// ChainMetrics defines whether to include chain metrics.
+	ChainMetrics bool `default:"true" usage:"whether to include chain metrics"`
 	// BlockWALMetrics defines whether to include block Write-Ahead Log (WAL) metrics.
 	BlockWALMetrics bool `default:"true" usage:"whether to include block Write-Ahead Log (WAL) metrics"`
 	// RestAPIMetrics include restAPI metrics.
