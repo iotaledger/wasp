@@ -30,18 +30,6 @@ h3 {
   font-weight: 600;
 }
 
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-button:disabled {
-  background-color: #192742;
-  border: 1px solid #405985;
-  border-radius: 5px;
-  color: #9aadce;
-}
-
 .input_container {
   margin: 15px;
 }

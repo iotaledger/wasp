@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Box, Tabs, Faucet, Withdraw } from '$components';
+  import { Box, Tabs, FaucetNew, Withdraw } from '$components';
   import { NETWORKS } from '$lib/networks';
   import { networks, selectedNetwork } from '../../store';
   import { onMount } from 'svelte';
@@ -13,7 +13,8 @@
     {
       label: 'Faucet',
       value: 1,
-      component: Faucet,
+      // TODO: replace Faucet component with FaucetNew
+      component: FaucetNew,
     },
     {
       label: 'Withdraw',
