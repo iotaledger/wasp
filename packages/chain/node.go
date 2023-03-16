@@ -44,12 +44,12 @@ import (
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 const (
@@ -548,7 +548,7 @@ func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *is
 	cni.accessLock.Lock()
 	cni.latestConfirmedState = st
 	cni.accessLock.Unlock()
-	l1Commitment, err := vmcontext.L1CommitmentFromAliasOutput(till.GetAliasOutput())
+	l1Commitment, err := transaction.L1CommitmentFromAliasOutput(till.GetAliasOutput())
 	if err != nil {
 		panic(fmt.Errorf("cannot get L1Commitment from alias output: %w", err))
 	}

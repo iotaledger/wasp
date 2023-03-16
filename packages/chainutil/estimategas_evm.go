@@ -19,14 +19,11 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 )
 
-func executeIscVM(ch chain.ChainCore, req isc.Request) (*vm.RequestResult, error) {
+func executeISCVM(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, req isc.Request) (*vm.RequestResult, error) {
 	vmRunner := runvm.NewVMRunner()
 
-	aliasOutput, _ := ch.LatestAliasOutput()
-
 	task := &vm.VMTask{
-		Processors: ch.Processors(),
-
+		Processors:           ch.Processors(),
 		AnchorOutput:         aliasOutput.GetAliasOutput(),
 		AnchorOutputID:       aliasOutput.OutputID(),
 		Store:                ch.Store(),
@@ -34,9 +31,9 @@ func executeIscVM(ch chain.ChainCore, req isc.Request) (*vm.RequestResult, error
 		TimeAssumption:       time.Now(),
 		Entropy:              hashing.PseudoRandomHash(nil),
 		ValidatorFeeTarget:   isc.NewContractAgentID(ch.ID(), 0),
-		Log:                  ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 		EnableGasBurnLogging: false,
 		EstimateGasMode:      true,
+		Log:                  ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 	}
 	err := vmRunner.Run(task)
 	if err != nil {
@@ -52,7 +49,7 @@ var evmErrorsRegex = regexp.MustCompile("out of gas|intrinsic gas too low|(execu
 
 // EstimateGas executes the given request and discards the resulting chain state. It is useful
 // for estimating gas.
-func EstimateGas(ch chain.ChainCore, call ethereum.CallMsg) (uint64, error) { //nolint:gocyclo
+func EstimateGas(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, call ethereum.CallMsg) (uint64, error) { //nolint:gocyclo
 	// Determine the lowest and highest possible gas limits to binary search in between
 	var (
 		lo     uint64 = params.TxGas - 1
@@ -76,8 +73,8 @@ func EstimateGas(ch chain.ChainCore, call ethereum.CallMsg) (uint64, error) { //
 	// Create a helper to check if a gas allowance results in an executable transaction
 	executable := func(gas uint64) (failed bool, used uint64, err error) {
 		call.Gas = gas
-		iscReq := isc.NewEVMOffLedgerEstimateGasRequest(ch.ID(), call)
-		res, err := executeIscVM(ch, iscReq)
+		iscReq := isc.NewEVMOffLedgerCallRequest(ch.ID(), call)
+		res, err := executeISCVM(ch, aliasOutput, iscReq)
 		if err != nil {
 			return true, 0, err
 		}

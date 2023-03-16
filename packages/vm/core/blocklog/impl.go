@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/state"
 )
 
 var Processor = Contract.Processor(nil,
@@ -26,13 +25,12 @@ var Processor = Contract.Processor(nil,
 
 func SetInitialState(s kv.KVStore) {
 	SaveNextBlockInfo(s, &BlockInfo{
+		SchemaVersion:         BlockInfoLatestSchemaVersion,
 		BlockIndex:            0,
 		Timestamp:             time.Time{},
 		TotalRequests:         1,
 		NumSuccessfulRequests: 1,
 		NumOffLedgerRequests:  0,
-		PreviousL1Commitment:  state.L1Commitment{}, // doesn't exist
-		L1Commitment:          nil,                  // not known yet
 	})
 }
 

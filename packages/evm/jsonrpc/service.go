@@ -52,7 +52,7 @@ func (e *EthService) resolveError(err error) error {
 	return err
 }
 
-func (e *EthService) GetTransactionCount(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) (hexutil.Uint64, error) {
+func (e *EthService) GetTransactionCount(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Uint64, error) {
 	n, err := e.evmChain.TransactionCount(address, blockNumberOrHash)
 	if err != nil {
 		return 0, e.resolveError(err)
@@ -123,7 +123,7 @@ func (e *EthService) GetTransactionByBlockNumberAndIndex(blockNumberOrTag rpc.Bl
 	return newRPCTransaction(tx, blockHash, blockNumber, uint64(index)), err
 }
 
-func (e *EthService) GetBalance(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) (*hexutil.Big, error) {
+func (e *EthService) GetBalance(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (*hexutil.Big, error) {
 	bal, err := e.evmChain.Balance(address, blockNumberOrHash)
 	if err != nil {
 		return nil, e.resolveError(err)
@@ -131,7 +131,7 @@ func (e *EthService) GetBalance(address common.Address, blockNumberOrHash rpc.Bl
 	return (*hexutil.Big)(bal), nil
 }
 
-func (e *EthService) GetCode(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
+func (e *EthService) GetCode(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
 	code, err := e.evmChain.Code(address, blockNumberOrHash)
 	if err != nil {
 		return nil, e.resolveError(err)
@@ -165,17 +165,17 @@ func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, err
 	return tx.Hash(), nil
 }
 
-func (e *EthService) Call(args *RPCCallArgs, blockNumberOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
+func (e *EthService) Call(args *RPCCallArgs, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
 	ret, err := e.evmChain.CallContract(args.parse(), blockNumberOrHash)
 	return ret, e.resolveError(err)
 }
 
-func (e *EthService) EstimateGas(args *RPCCallArgs) (hexutil.Uint64, error) {
-	gas, err := e.evmChain.EstimateGas(args.parse())
+func (e *EthService) EstimateGas(args *RPCCallArgs, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Uint64, error) {
+	gas, err := e.evmChain.EstimateGas(args.parse(), blockNumberOrHash)
 	return hexutil.Uint64(gas), e.resolveError(err)
 }
 
-func (e *EthService) GetStorageAt(address common.Address, key common.Hash, blockNumberOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
+func (e *EthService) GetStorageAt(address common.Address, key common.Hash, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
 	ret, err := e.evmChain.StorageAt(address, key, blockNumberOrHash)
 	return ret, e.resolveError(err)
 }

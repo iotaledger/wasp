@@ -1,26 +1,44 @@
 package blocklog
 
 import (
-	"bytes"
+	"errors"
 	"fmt"
-	"io"
+	"math"
 	"time"
 
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/transaction"
+)
+
+const (
+	BlockInfoAliasOutputSchemaVersion = 1
+	BlockInfoLatestSchemaVersion      = BlockInfoAliasOutputSchemaVersion
+
+	blockInfoPreamble = math.MaxUint64
 )
 
 type BlockInfo struct {
-	BlockIndex                  uint32 // not persistent. Set from key
-	Timestamp                   time.Time
-	TotalRequests               uint16
-	NumSuccessfulRequests       uint16 // which didn't panic
-	NumOffLedgerRequests        uint16
-	PreviousL1Commitment        state.L1Commitment     // always known
-	L1Commitment                *state.L1Commitment    // nil when not known yet for the current state
-	AnchorTransactionID         iotago.TransactionID   // of the input state
+	SchemaVersion         uint8
+	BlockIndex            uint32 // not persistent. Set from key
+	Timestamp             time.Time
+	TotalRequests         uint16
+	NumSuccessfulRequests uint16 // which didn't panic
+	NumOffLedgerRequests  uint16
+
+	// schema < BlockInfoAliasOutputSchemaVersion
+	// TODO remove at some point?
+	previousL1CommitmentOld *state.L1Commitment  // if not nil => old schema version
+	l1CommitmentOld         *state.L1Commitment  // if old schema => nil when not known yet for the current state
+	anchorTransactionIDOld  iotago.TransactionID // of the input state
+
+	// schema >= BlockInfoAliasOutputSchemaVersion
+	PreviousAliasOutput *isc.AliasOutputWithID // if new schema => always not nil
+	AliasOutput         *isc.AliasOutputWithID // if new schema => nil when not known yet for the current state
+
 	TransactionSubEssenceHash   TransactionEssenceHash // always known even without state commitment. Needed for fraud proofs
 	TotalBaseTokensInL2Accounts uint64
 	TotalStorageDeposit         uint64
@@ -43,14 +61,6 @@ func CalcTransactionEssenceHash(essence *iotago.TransactionEssence) (ret Transac
 	return
 }
 
-func BlockInfoFromBytes(blockIndex uint32, data []byte) (*BlockInfo, error) {
-	ret := &BlockInfo{BlockIndex: blockIndex}
-	if err := ret.Read(bytes.NewReader(data)); err != nil {
-		return nil, err
-	}
-	return ret, nil
-}
-
 // RequestTimestamp returns timestamp which corresponds to the request with the given index
 // Timestamps of requests are incremented by 1 nanosecond in the block. The timestamp of the last one
 // is equal to the timestamp pof the block
@@ -58,10 +68,42 @@ func (bi *BlockInfo) RequestTimestamp(requestIndex uint16) time.Time {
 	return bi.Timestamp.Add(time.Duration(-(bi.TotalRequests - requestIndex - 1)) * time.Nanosecond)
 }
 
-func (bi *BlockInfo) Bytes() []byte {
-	var buf bytes.Buffer
-	_ = bi.Write(&buf)
-	return buf.Bytes()
+func (bi *BlockInfo) AnchorTransactionID() iotago.TransactionID {
+	if bi.SchemaVersion < BlockInfoAliasOutputSchemaVersion {
+		return bi.anchorTransactionIDOld
+	}
+	if bi.AliasOutput == nil {
+		return iotago.TransactionID{}
+	}
+	return bi.AliasOutput.TransactionID()
+}
+
+func (bi *BlockInfo) L1Commitment() *state.L1Commitment {
+	if bi.SchemaVersion < BlockInfoAliasOutputSchemaVersion {
+		return bi.l1CommitmentOld
+	}
+	if bi.AliasOutput == nil {
+		return nil
+	}
+	l1c, err := transaction.L1CommitmentFromAliasOutput(bi.AliasOutput.GetAliasOutput())
+	if err != nil {
+		panic(err)
+	}
+	return l1c
+}
+
+func (bi *BlockInfo) PreviousL1Commitment() *state.L1Commitment {
+	if bi.SchemaVersion < BlockInfoAliasOutputSchemaVersion {
+		return bi.previousL1CommitmentOld
+	}
+	if bi.PreviousAliasOutput == nil {
+		return nil
+	}
+	l1c, err := transaction.L1CommitmentFromAliasOutput(bi.PreviousAliasOutput.GetAliasOutput())
+	if err != nil {
+		panic(err)
+	}
+	return l1c
 }
 
 func (bi *BlockInfo) String() string {
@@ -70,8 +112,8 @@ func (bi *BlockInfo) String() string {
 	ret += fmt.Sprintf("Total requests: %d\n", bi.TotalRequests)
 	ret += fmt.Sprintf("off-ledger requests: %d\n", bi.NumOffLedgerRequests)
 	ret += fmt.Sprintf("Succesfull requests: %d\n", bi.NumSuccessfulRequests)
-	ret += fmt.Sprintf("Prev L1 commitment: %s\n", bi.PreviousL1Commitment.String())
-	ret += fmt.Sprintf("Anchor tx ID: %s\n", iotago.EncodeHex(bi.AnchorTransactionID[:]))
+	ret += fmt.Sprintf("Prev AliasOutput: %s\n", bi.PreviousAliasOutput.String())
+	ret += fmt.Sprintf("AliasOutput: %s\n", bi.AliasOutput.String())
 	ret += fmt.Sprintf("Total base tokens in contracts: %d\n", bi.TotalBaseTokensInL2Accounts)
 	ret += fmt.Sprintf("Total base tokens locked in storage deposit: %d\n", bi.TotalStorageDeposit)
 	ret += fmt.Sprintf("Gas burned: %d\n", bi.GasBurned)
@@ -79,110 +121,134 @@ func (bi *BlockInfo) String() string {
 	return ret
 }
 
-func (bi *BlockInfo) Write(w io.Writer) error {
-	if err := util.WriteTime(w, bi.Timestamp); err != nil {
-		return err
+func (bi *BlockInfo) Bytes() []byte {
+	mu := marshalutil.New()
+	if bi.SchemaVersion >= BlockInfoAliasOutputSchemaVersion {
+		// old version starts with the timestamp. Assuming here that it can never take this value
+		mu.WriteUint64(blockInfoPreamble)
+		mu.WriteUint8(bi.SchemaVersion)
 	}
-	if err := util.WriteUint16(w, bi.TotalRequests); err != nil {
-		return err
+	mu.WriteTime(bi.Timestamp)
+	mu.WriteUint16(bi.TotalRequests)
+	mu.WriteUint16(bi.NumSuccessfulRequests)
+	mu.WriteUint16(bi.NumOffLedgerRequests)
+	if bi.SchemaVersion < BlockInfoAliasOutputSchemaVersion {
+		mu.WriteBytes(bi.anchorTransactionIDOld[:])
 	}
-	if err := util.WriteUint16(w, bi.NumSuccessfulRequests); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, bi.NumOffLedgerRequests); err != nil {
-		return err
-	}
-	if _, err := w.Write(bi.AnchorTransactionID[:]); err != nil {
-		return err
-	}
-	if _, err := w.Write(bi.TransactionSubEssenceHash[:]); err != nil {
-		return err
-	}
-	if err := bi.PreviousL1Commitment.Write(w); err != nil {
-		return err
-	}
-	if err := util.WriteBoolByte(w, bi.L1Commitment != nil); err != nil {
-		return err
-	}
-	if bi.L1Commitment != nil {
-		if err := bi.L1Commitment.Write(w); err != nil {
-			return err
+	mu.WriteBytes(bi.TransactionSubEssenceHash[:])
+	if bi.SchemaVersion < BlockInfoAliasOutputSchemaVersion {
+		mu.WriteBytes(bi.previousL1CommitmentOld.Bytes())
+		mu.WriteBool(bi.l1CommitmentOld != nil)
+		if bi.l1CommitmentOld != nil {
+			mu.WriteBytes(bi.l1CommitmentOld.Bytes())
+		}
+	} else {
+		mu.WriteBool(bi.PreviousAliasOutput != nil)
+		if bi.PreviousAliasOutput != nil {
+			mu.WriteBytes(bi.PreviousAliasOutput.Bytes())
+		}
+		mu.WriteBool(bi.AliasOutput != nil)
+		if bi.AliasOutput != nil {
+			mu.WriteBytes(bi.AliasOutput.Bytes())
 		}
 	}
-	if err := util.WriteUint64(w, bi.TotalBaseTokensInL2Accounts); err != nil {
-		return err
-	}
-	if err := util.WriteUint64(w, bi.TotalStorageDeposit); err != nil {
-		return err
-	}
-	if err := util.WriteUint64(w, bi.GasBurned); err != nil {
-		return err
-	}
-	if err := util.WriteUint64(w, bi.GasFeeCharged); err != nil {
-		return err
-	}
-	return nil
+	mu.WriteUint64(bi.TotalBaseTokensInL2Accounts)
+	mu.WriteUint64(bi.TotalStorageDeposit)
+	mu.WriteUint64(bi.GasBurned)
+	mu.WriteUint64(bi.GasFeeCharged)
+	return mu.Bytes()
 }
 
-func (bi *BlockInfo) Read(r io.Reader) error {
-	if err := util.ReadTime(r, &bi.Timestamp); err != nil {
-		return err
-	}
-	if err := util.ReadUint16(r, &bi.TotalRequests); err != nil {
-		return err
-	}
-	if err := util.ReadUint16(r, &bi.NumSuccessfulRequests); err != nil {
-		return err
-	}
-	if err := util.ReadUint16(r, &bi.NumOffLedgerRequests); err != nil {
-		return err
-	}
-	if err := util.ReadTransactionID(r, &bi.AnchorTransactionID); err != nil {
-		return err
-	}
-	if err := ReadTransactionSubEssenceHash(r, &bi.TransactionSubEssenceHash); err != nil {
-		return err
-	}
-	if err := bi.PreviousL1Commitment.Read(r); err != nil {
-		return err
-	}
-	var hasL1Commitment bool
-	if err := util.ReadBoolByte(r, &hasL1Commitment); err != nil {
-		return err
-	}
-	bi.L1Commitment = nil
-	if hasL1Commitment {
-		bi.L1Commitment = &state.L1Commitment{}
-		if err := bi.L1Commitment.Read(r); err != nil {
-			return err
+//nolint:gocyclo,revive,govet
+func BlockInfoFromBytes(blockIndex uint32, data []byte) (*BlockInfo, error) {
+	mu := marshalutil.New(data)
+	var err error
+	bi := &BlockInfo{BlockIndex: blockIndex}
+	if p, err := mu.ReadUint64(); err != nil {
+		return nil, err
+	} else {
+		if p != blockInfoPreamble {
+			// old version
+			bi.SchemaVersion = 0
+			mu.ReadSeek(-marshalutil.Uint64Size)
+		} else {
+			if bi.SchemaVersion, err = mu.ReadUint8(); err != nil {
+				return nil, err
+			}
+			if bi.SchemaVersion == 0 || bi.SchemaVersion > BlockInfoLatestSchemaVersion {
+				return nil, fmt.Errorf("BlockInfoFromBytes: unexpected schema version: %d", bi.SchemaVersion)
+			}
 		}
 	}
-	if err := util.ReadUint64(r, &bi.TotalBaseTokensInL2Accounts); err != nil {
-		return err
+	if bi.Timestamp, err = mu.ReadTime(); err != nil {
+		return nil, err
 	}
-	if err := util.ReadUint64(r, &bi.TotalStorageDeposit); err != nil {
-		return err
+	if bi.TotalRequests, err = mu.ReadUint16(); err != nil {
+		return nil, err
 	}
-	if err := util.ReadUint64(r, &bi.GasBurned); err != nil {
-		return err
+	if bi.NumSuccessfulRequests, err = mu.ReadUint16(); err != nil {
+		return nil, err
 	}
-	if err := util.ReadUint64(r, &bi.GasFeeCharged); err != nil {
-		return err
+	if bi.NumOffLedgerRequests, err = mu.ReadUint16(); err != nil {
+		return nil, err
 	}
-	return nil
-}
-
-func ReadTransactionSubEssenceHash(r io.Reader, h *TransactionEssenceHash) error {
-	n, err := r.Read(h[:])
-	if err != nil {
-		return err
+	if bi.SchemaVersion < BlockInfoAliasOutputSchemaVersion {
+		if buf, err := mu.ReadBytes(iotago.TransactionIDLength); err != nil {
+			return nil, err
+		} else {
+			copy(bi.anchorTransactionIDOld[:], buf)
+		}
 	}
-
-	if n != TransactionEssenceHashLength {
-		return fmt.Errorf("error while reading transaction subessence hash: read %d bytes, expected %d bytes",
-			n, TransactionEssenceHashLength)
+	if buf, err := mu.ReadBytes(TransactionEssenceHashLength); err != nil {
+		return nil, err
+	} else {
+		copy(bi.TransactionSubEssenceHash[:], buf)
 	}
-	return nil
+	if bi.SchemaVersion < BlockInfoAliasOutputSchemaVersion {
+		if bi.previousL1CommitmentOld, err = state.L1CommitmentFromMarshalUtil(mu); err != nil {
+			return nil, err
+		}
+		if hasL1Commitment, err := mu.ReadBool(); err != nil {
+			return nil, err
+		} else if hasL1Commitment {
+			if bi.l1CommitmentOld, err = state.L1CommitmentFromMarshalUtil(mu); err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		if hasPreviousAliasOutput, err := mu.ReadBool(); err != nil {
+			return nil, err
+		} else if hasPreviousAliasOutput {
+			if bi.PreviousAliasOutput, err = isc.NewAliasOutputWithIDFromMarshalUtil(mu); err != nil {
+				return nil, err
+			}
+		}
+		if hasAliasOutput, err := mu.ReadBool(); err != nil {
+			return nil, err
+		} else if hasAliasOutput {
+			if bi.AliasOutput, err = isc.NewAliasOutputWithIDFromMarshalUtil(mu); err != nil {
+				return nil, err
+			}
+		}
+	}
+	if bi.TotalBaseTokensInL2Accounts, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	if bi.TotalStorageDeposit, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	if bi.GasBurned, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	if bi.GasFeeCharged, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	if done, err := mu.DoneReading(); err != nil {
+		return nil, err
+	} else if !done {
+		return nil, errors.New("BlockInfoFromBytes: remaining bytes")
+	}
+	return bi, nil
 }
 
 // BlockInfoKey a key to access block info record inside SC state
