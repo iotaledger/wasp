@@ -15,6 +15,8 @@ export interface INFTIRC27 {
   version: string;
   uri: string;
   name: string;
+
+  outputID: string;
 }
 
 export interface INFT {
@@ -22,6 +24,8 @@ export interface INFT {
    * Identifier of the NFT
    */
   id: string;
+
+  outputID: string;
 
   /**
    * Metadata of the NFT
@@ -56,6 +60,7 @@ export async function getNFTMetadata(client: SingleNodeClient,
 
     NFTMetadataCache[nftID] = tokenData;
 
+    tokenData.outputID = nft.items[0];
     return tokenData as INFTIRC27;
   }
 

@@ -66,4 +66,9 @@ export interface WithdrawFormInput {
    * [Form] A map of native tokens to send.
    */
   nativeTokensToSend: { [key: string]: number };
+
+  /**
+   * [Form] Any NFT to send.
+   */
+  nftIDToSend?: string;
 }

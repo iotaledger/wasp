@@ -38,6 +38,7 @@
     receiverAddress: '',
     baseTokensToSend: 0,
     nativeTokensToSend: {},
+    nftIDToSend: undefined,
   };
 
   $: formattedBalance = (state.availableBaseTokens / 1e6).toFixed(2);
@@ -92,7 +93,10 @@
 
     // Remove native tokens marked to be sent if the token does not exist anymore.
     for (const nativeTokenID of Object.keys(formInput.nativeTokensToSend)) {
-      if (typeof state.availableBaseTokens[nativeTokenID] == 'undefined') {
+      const isNativeTokenAvailable =
+        state.availableNativeTokens.findIndex(x => x.id == nativeTokenID) >= 0;
+
+      if (!isNativeTokenAvailable) {
         delete formInput.nativeTokensToSend[nativeTokenID];
       }
     }
@@ -111,7 +115,11 @@
       return;
     }
 
-    state.availableNFTs = await state.iscMagic.getNFTs($nodeClient, $indexerClient, $selectedAccount);
+    state.availableNFTs = await state.iscMagic.getNFTs(
+      $nodeClient,
+      $indexerClient,
+      $selectedAccount,
+    );
   }
 
   async function pollAccount() {
@@ -145,29 +153,11 @@
       state.contract = new $web3.eth.Contract(iscAbi, iscContractAddress, {
         from: $selectedAccount,
       });
-      /*console.log(multiCallAbi);
-      const multiCall = new $web3.eth.Contract(
-        multiCallAbi,
-        $selectedNetwork.multicallAddress,
-        {
-          from: $selectedAccount,
-        },
-      );*/
 
       state.iscMagic = new ISCMagic(state.contract, null);
 
       await pollAccount();
       await subscribeBalance();
-
-      /*await state.iscMagic.withdrawMulticall(
-        $web3,
-        $selectedNetwork.multicallAddress,
-        $nodeClient,
-        'formInput.receiverAddress',
-        123123123,
-        [],
-        null,
-      );*/
     } catch (ex) {
       toast.push(`Failed to connect to wallet: ${ex}`);
       console.log('connectToWallet', ex);
@@ -179,7 +169,7 @@
   async function withdraw(
     baseTokens: number,
     nativeTokens: INativeToken[],
-    nft?: INFT,
+    nftID?: string,
   ) {
     if (!$selectedAccount) {
       return;
@@ -193,7 +183,7 @@
         formInput.receiverAddress,
         baseTokens,
         nativeTokens,
-        nft,
+        nftID,
       );
     } catch (ex) {
       toast.push(
@@ -205,8 +195,6 @@
       console.log(ex);
       return;
     }
-
-    console.log(result);
 
     if (result.status) {
       toast.push(`Withdraw request sent. BlockIndex: ${result.blockNumber}`, {
@@ -238,33 +226,32 @@
       }
     }
 
-    await withdraw(formInput.baseTokensToSend, nativeTokensToSend, undefined);
+    await withdraw(
+      formInput.baseTokensToSend,
+      nativeTokensToSend,
+      formInput.nftIDToSend,
+    );
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   async function onWithdrawEverythingClick() {
-    /*for (let nft of state.availableNFTs) {
+    try {
+      for (let nft of state.availableNFTs.reverse()) {
+        await pollBalance();
+        await withdraw(gasFee * 1000, [], nft.id);
+        await sleep(5 * 1000);
+      }
+
       await pollBalance();
-      await withdraw(900000, [], nft);
-    }
-
-    await pollBalance();
-    await withdraw(
-      state.availableBaseTokens,
-      state.availableNativeTokens,
-      null,
-    );*/
-
-    await pollAccount();
-
-    await state.iscMagic.withdrawMulticall(
-      $web3,
-      $selectedNetwork.multicallAddress,
-      $nodeClient,
-      formInput.receiverAddress,
-      state.availableBaseTokens,
-      state.availableNativeTokens,
-      state.availableNFTs,
-    );
+      await withdraw(
+        state.availableBaseTokens,
+        state.availableNativeTokens,
+        null,
+      );
+    } catch {}
   }
 </script>
 
@@ -331,16 +318,18 @@
     </div>
 
     <div class="input_container">
-      <div class="header">NFTs</div>
+      <div class="header">NFT to send</div>
 
       <div class="token_list">
-        {#each state.availableNFTs as nft}
-          <div class="token_list-item">
-            <div class="header">
+        <select bind:value={formInput.nftIDToSend}>
+          <option value={undefined} />
+          {#each state.availableNFTs as nft}
+            <option value={nft.id}>
+              {nft.metadata.name}
               {nft.id}
-            </div>
-          </div>
-        {/each}
+            </option>
+          {/each}
+        </select>
       </div>
     </div>
 
