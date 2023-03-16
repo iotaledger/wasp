@@ -106,15 +106,16 @@ export class ISCMagic {
     const nftIds = nfts.filter(x => Converter.hexToUtf8(x[0]) != 'i');
     const availableNFTs = nftIds.map(x => <INFT>{ id: x[1] });
 
+    console.log(nftIds)
+
     for (let nft of availableNFTs) {
-      const metadata = await getNFTMetadata(nodeClient, indexerClient, nft.id);
-      console.log(nft, metadata)
+      nft.metadata = await getNFTMetadata(nodeClient, indexerClient, nft.id);
     }
 
     return availableNFTs;
   }
 
-  public async withdrawMulticall(web3Instance: Web3, multicallAddress: string, nodeClient: SingleNodeClient, receiverAddress: string, baseTokens: number, nativeTokens: INativeToken[], nfts: INFT[]) {
+  public async withdrawMulticall(web3Instance: Web3, multicallAddress: string, nodeClient: SingleNodeClient, receiverAddress: string, baseTokens: number, nativeTokens: INativeToken[], nftIDs: string[]) {
     const sendABI = iscAbi.find(x => x.name == 'send');
     const contractCallContext: ContractCallContext =
     {
@@ -127,7 +128,7 @@ export class ISCMagic {
 
     let baseTokensSent = 0;
 
-    for (let nft of nfts) {
+    for (let nft of nftIDs) {
       const parameters = await withdrawParameters(
         nodeClient,
         receiverAddress,
@@ -166,48 +167,14 @@ export class ISCMagic {
 
   }
 
-
-  public async withdrawMulticallSelfCall(web3Instance: Web3, multicallAddress: string, nodeClient: SingleNodeClient, receiverAddress: string, baseTokens: number, nativeTokens: INativeToken[], nfts: INFT[]) {
-    const sendABI = iscAbi.find(x => x.name == 'send');
-    const contractCallContext: ContractCallContext =
-    {
-      reference: 'send',
-      contractAddress: iscContractAddress,
-
-      abi: iscAbi,
-      calls: []
-    };
-
-    let baseTokensSent = 0;
-
-    const lastParameters = await withdrawParameters(
-      nodeClient,
-      receiverAddress,
-      gasFee,
-      baseTokens - baseTokensSent,
-      nativeTokens,
-      null,
-    );
-
-    contractCallContext.calls.push({
-      reference: 'send', methodName: 'send', methodParameters: lastParameters,
-    });
-
-    const multicall = new Multicall({ web3Instance: web3Instance, tryAggregate: false, multicallCustomContractAddress: multicallAddress });
-    const results: ContractCallResults = await multicall.call(contractCallContext);
-
-    console.log(results);
-
-  }
-
-  public async withdraw(nodeClient: SingleNodeClient, receiverAddress: string, baseTokens: number, nativeTokens: INativeToken[], nft?: INFT) {
+  public async withdraw(nodeClient: SingleNodeClient, receiverAddress: string, baseTokens: number, nativeTokens: INativeToken[], nftID?: string) {
     const parameters = await withdrawParameters(
       nodeClient,
       receiverAddress,
       gasFee,
       baseTokens,
       nativeTokens,
-      nft,
+      nftID,
     );
 
     let result = await this.contract.methods.send(...parameters).send();
