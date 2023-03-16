@@ -83,24 +83,32 @@ func provide(c *dig.Container) error {
 	return nil
 }
 
+func register(name string, cs ...prometheus.Collector) {
+	for _, c := range cs {
+		if err := deps.PrometheusRegistry.Register(c); err != nil {
+			Plugin.LogWarnf("failed to register %s metrics", name)
+		}
+	}
+}
+
 func configure() error {
 	if ParamsPrometheus.NodeMetrics {
-		configureNode(deps.PrometheusRegistry, deps.AppInfo)
+		register("node", newNodeCollector(deps.AppInfo))
 	}
 	if ParamsPrometheus.NodeConnMetrics {
-		deps.NodeConnectionMetrics.Register(deps.PrometheusRegistry)
+		register("node connection", deps.NodeConnectionMetrics.PrometheusCollectors()...)
 	}
 	if ParamsPrometheus.BlockWALMetrics && deps.BlockWALMetrics != nil {
-		deps.BlockWALMetrics.Register(deps.PrometheusRegistry)
+		register("write ahead logging", deps.BlockWALMetrics.PrometheusCollectors()...)
 	}
 	if ParamsPrometheus.RestAPIMetrics {
-		configureRestAPI(deps.PrometheusRegistry, deps.WebAPIEcho)
+		register("rest API", newRestAPICollector(deps.WebAPIEcho)...)
 	}
 	if ParamsPrometheus.GoMetrics {
-		deps.PrometheusRegistry.MustRegister(collectors.NewGoCollector())
+		register("go", collectors.NewGoCollector())
 	}
 	if ParamsPrometheus.ProcessMetrics {
-		deps.PrometheusRegistry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
+		register("process", collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 	}
 
 	return nil

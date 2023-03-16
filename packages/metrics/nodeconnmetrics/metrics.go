@@ -41,11 +41,11 @@ func New() NodeConnectionMetrics {
 	return ret
 }
 
-func (ncmiT *nodeConnectionMetricsImpl) Register(registry *prometheus.Registry) {
-	registry.MustRegister(
+func (ncmiT *nodeConnectionMetricsImpl) PrometheusCollectors() []prometheus.Collector {
+	return []prometheus.Collector{
 		ncmiT.messagesL1,
 		ncmiT.lastL1MessageTime,
-	)
+	}
 }
 
 func (ncmiT *nodeConnectionMetricsImpl) NewMessagesMetrics(chainID isc.ChainID) NodeConnectionMessagesMetrics {

@@ -33,10 +33,10 @@ func NewBlockWALMetrics() *BlockWALMetrics {
 	}
 }
 
-func (m *BlockWALMetrics) Register(registry *prometheus.Registry) {
-	prometheus.MustRegister(
+func (m *BlockWALMetrics) PrometheusCollectors() []prometheus.Collector {
+	return []prometheus.Collector{
 		m.segments,
 		m.failedWrites,
 		m.failedReads,
-	)
+	}
 }

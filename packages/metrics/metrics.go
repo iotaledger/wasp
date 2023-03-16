@@ -139,10 +139,8 @@ func (m *Metrics) NewChainMetrics(chainID isc.ChainID) ChainMetrics {
 	}
 }
 
-func (m *Metrics) Register(registry *prometheus.Registry) {
-	m.nodeConnectionMetrics.Register(registry)
-
-	registry.MustRegister(
+func (m *Metrics) PrometheusCollectors() []prometheus.Collector {
+	return append(m.nodeConnectionMetrics.PrometheusCollectors(),
 		m.requestsReceivedOffLedger,
 		m.requestsReceivedOnLedger,
 		m.requestsProcessed,
@@ -154,8 +152,7 @@ func (m *Metrics) Register(registry *prometheus.Registry) {
 		m.blocksTotalPerChain,
 		m.blockSizesPerChain,
 		m.stateIndexCurrent,
-		m.stateIndexLatestSeen,
-	)
+		m.stateIndexLatestSeen)
 }
 
 func (m *Metrics) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
