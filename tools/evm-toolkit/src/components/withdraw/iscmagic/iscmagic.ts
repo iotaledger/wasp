@@ -6,7 +6,8 @@ import type { Eth } from 'web3-eth';
 import { hNameFromString } from '../../../lib/hname';
 import { evmAddressToAgentID } from '../../../lib/evm';
 import { getBalanceParameters, withdrawParameters } from './../parameters';
-import { getNativeTokenMetaData, type INativeToken, type INFT } from '../../../lib/native_token';
+import { getNativeTokenMetaData, type INativeToken } from '../../../lib/native_token';
+import { type INFT, getNFTMetadata } from '../../../lib/nft';
 import { Converter } from '@iota/util.js';
 import { NativeTokenIDLength } from '../../../lib/constants';
 import type { IndexerPluginClient, SingleNodeClient } from '@iota/iota.js';
@@ -87,7 +88,7 @@ export class ISCMagic {
     return nativeTokens;
   }
 
-  public async getNFTs(account: string) {
+  public async getNFTs(nodeClient: SingleNodeClient, indexerClient: IndexerPluginClient, account: string) {
     const accountsCoreContract = hNameFromString('accounts');
     const getAccountNFTsFunc = hNameFromString('accountNFTs');
     const agentID = evmAddressToAgentID(account);
@@ -104,6 +105,11 @@ export class ISCMagic {
     // and go through the list dynamically.
     const nftIds = nfts.filter(x => Converter.hexToUtf8(x[0]) != 'i');
     const availableNFTs = nftIds.map(x => <INFT>{ id: x[1] });
+
+    for (let nft of availableNFTs) {
+      const metadata = await getNFTMetadata(nodeClient, indexerClient, nft.id);
+      console.log(nft, metadata)
+    }
 
     return availableNFTs;
   }

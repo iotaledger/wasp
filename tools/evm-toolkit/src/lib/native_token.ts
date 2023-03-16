@@ -34,13 +34,6 @@ export interface INativeToken {
   metadata?: INativeTokenIRC30;
 }
 
-export interface INFT {
-  /**
-   * Identifier of the NFT
-   */
-  id: string;
-}
-
 interface INativeTokenMetaDataCacheMap {
   [Key: string]: INativeTokenIRC30;
 }

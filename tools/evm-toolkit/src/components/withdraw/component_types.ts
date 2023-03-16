@@ -1,5 +1,6 @@
 import type { SetIntervalAsyncTimer } from 'set-interval-async';
-import type { INFT, INativeToken } from '../../lib/native_token';
+import type { INativeToken } from '../../lib/native_token';
+import type { INFT } from '../../lib/nft';
 import type { Contract } from 'web3-eth-contract';
 import type { ISCMagic } from './iscmagic';
 

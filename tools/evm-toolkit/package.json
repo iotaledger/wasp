@@ -36,7 +36,7 @@
   "dependencies": {
     "@esbuild-plugins/node-globals-polyfill": "^0.1.1",
     "@iota/iota.js": "^2.0.0-rc.2",
-    "@iota/pow-browser.js": "^2.0.0-rc.2",
+    "@iota/pow-browser.js": "^2.0.0-rc.3",
     "@iota/pow-wasm.js": "^2.0.0-rc.2",
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
