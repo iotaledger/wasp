@@ -39,11 +39,16 @@ type BlockInfo struct {
 	PreviousAliasOutput *isc.AliasOutputWithID // if new schema => always not nil
 	AliasOutput         *isc.AliasOutputWithID // if new schema => nil when not known yet for the current state
 
+	// TODO migration for:
+	// TransactionSubEssenceHash TransactionEssenceHash // always known even without state commitment. Needed for fraud proofs
+	// TotalBaseTokensInL2Accounts uint64
+	// TotalStorageDeposit         uint64
 	TransactionSubEssenceHash   TransactionEssenceHash // always known even without state commitment. Needed for fraud proofs
 	TotalBaseTokensInL2Accounts uint64
 	TotalStorageDeposit         uint64
-	GasBurned                   uint64
-	GasFeeCharged               uint64
+
+	GasBurned     uint64
+	GasFeeCharged uint64
 }
 
 // TransactionEssenceHash is a blake2b 256 bit hash of the essence of the transaction

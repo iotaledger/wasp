@@ -20,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -218,8 +217,6 @@ func TestFoundries(t *testing.T) {
 			_, _, _ = ch.NewFoundryParams(maxSupply).CreateFoundry()
 		})
 	})
-	// TODO cover all parameter options
-
 	t.Run("max supply 10, mintTokens 5", func(t *testing.T) {
 		initTest()
 		sn, nativeTokenID, err := ch.NewFoundryParams(10).
@@ -509,11 +506,12 @@ func TestAccountBalances(t *testing.T) {
 
 	ch, _ := env.NewChainExt(chainOwner, 0, "chain1")
 
-	l2BaseTokens := func(agentID isc.AgentID) uint64 { return ch.L2BaseTokens(agentID) }
+	x := ch.L2BaseTokens(ch.CommonAccount())
+	println(x)
+
 	totalGasFeeCharged := uint64(0)
 
-	checkBalance := func(numReqs int) {
-		_ = numReqs
+	checkBalance := func() {
 		require.EqualValues(t,
 			totalBaseTokens,
 			l1BaseTokens(chainOwnerAddr)+l1BaseTokens(senderAddr)+l1BaseTokens(ch.ChainID.AsAddress()),
@@ -526,32 +524,25 @@ func TestAccountBalances(t *testing.T) {
 
 		bi := ch.GetLatestBlockInfo()
 
+		anchorSD := parameters.L1().Protocol.RentStructure.MinRent(anchor)
 		require.EqualValues(t,
 			anchor.Deposit(),
-			bi.TotalBaseTokensInL2Accounts+bi.TotalStorageDeposit,
+			anchorSD+ch.L2BaseTokens(chainOwnerAgentID)+ch.L2BaseTokens(senderAgentID)+ch.L2BaseTokens(ch.CommonAccount()),
 		)
-
-		require.EqualValues(t,
-			bi.TotalBaseTokensInL2Accounts,
-			l2BaseTokens(chainOwnerAgentID)+l2BaseTokens(senderAgentID)+l2BaseTokens(ch.CommonAccount()),
-		)
-
-		// not true because of deposit preload
-		// require.Equal(t, numReqs == 0, bi.GasFeeCharged == 0)
 
 		totalGasFeeCharged += bi.GasFeeCharged
 		require.EqualValues(t,
-			int(l2BaseTokens(ch.CommonAccount())),
-			int(totalGasFeeCharged+accounts.MinimumBaseTokensOnCommonAccount),
+			int(anchor.Deposit()-anchorSD-100_000+totalGasFeeCharged),
+			int(ch.L2BaseTokens(ch.CommonAccount())),
 		)
 
 		require.EqualValues(t,
-			utxodb.FundsFromFaucetAmount+totalGasFeeCharged-bi.TotalStorageDeposit,
-			l1BaseTokens(chainOwnerAddr)+l2BaseTokens(chainOwnerAgentID)+l2BaseTokens(ch.CommonAccount()),
+			utxodb.FundsFromFaucetAmount+totalGasFeeCharged-anchorSD,
+			l1BaseTokens(chainOwnerAddr)+ch.L2BaseTokens(chainOwnerAgentID)+ch.L2BaseTokens(ch.CommonAccount()),
 		)
 		require.EqualValues(t,
 			utxodb.FundsFromFaucetAmount-totalGasFeeCharged,
-			l1BaseTokens(senderAddr)+l2BaseTokens(senderAgentID),
+			l1BaseTokens(senderAddr)+ch.L2BaseTokens(senderAgentID),
 		)
 	}
 
@@ -559,14 +550,14 @@ func TestAccountBalances(t *testing.T) {
 	err := ch.DepositBaseTokensToL2(100_000, sender)
 	require.NoError(t, err)
 
-	checkBalance(0)
+	checkBalance()
 
 	for i := 0; i < 5; i++ {
 		blobData := fmt.Sprintf("dummy blob data #%d", i+1)
 		_, err := ch.UploadBlob(sender, "field", blobData)
 		require.NoError(t, err)
 
-		checkBalance(i + 1)
+		checkBalance()
 	}
 }
 
@@ -767,14 +758,13 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		require.NoError(t, err)
 		v.printBalances("AFTER DEPOSIT 1")
 
-		// without deposit
 		err = v.ch.DestroyTokensOnL1(v.nativeTokenID, 49, v.user)
 		require.NoError(t, err)
 		v.printBalances("AFTER DESTROY")
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.nativeTokenID, 1)
 		v.env.AssertL1NativeTokens(v.userAddr, v.nativeTokenID, 50)
 	})
-	t.Run("unwrap use case", func(t *testing.T) {
+	t.Run("unwrap use case 2", func(t *testing.T) {
 		v := initWithdrawTest(t, 2*isc.Million)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
@@ -782,10 +772,11 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		require.NoError(t, err)
 		v.printBalances("AFTER MINT")
+		// no tokens on chain
 		v.env.AssertL1NativeTokens(v.userAddr, v.nativeTokenID, 100)
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.nativeTokenID, 0)
 
-		// without deposit
+		// deposit and destroy on the same req (chain currently doesn't have an internal UTXO for this tokenID)
 		err = v.ch.DestroyTokensOnL1(v.nativeTokenID, 49, v.user)
 		require.NoError(t, err)
 		v.printBalances("AFTER DESTROY")
@@ -821,9 +812,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 func TestTransferAndHarvest(t *testing.T) {
 	// initializes it all and prepares withdraw request, does not post it
 	v := initWithdrawTest(t, 10_000)
-	storageDepositCosts := transaction.NewStorageDepositEstimate()
 	commonAssets := v.ch.L2CommonAccountAssets()
-	require.True(t, commonAssets.BaseTokens+storageDepositCosts.AnchorOutput > 10_000)
 	require.EqualValues(t, 0, len(commonAssets.NativeTokens))
 
 	v.ch.AssertL2NativeTokens(v.userAgentID, v.nativeTokenID, 100)
@@ -1168,22 +1157,54 @@ func TestDepositNFTWithMinStorageDeposit(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: false, Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 
-	// transfer assets to the chain so that it has enough for SD
-	// TODO: removing this causes the VM to crash
-	ch.TransferAllowanceTo(isc.NewAssetsBaseTokens(1*isc.Million), isc.NewContractAgentID(ch.ChainID, 0), ch.OriginatorPrivateKey)
-
 	issuerWallet, issuerAddress := env.NewKeyPairWithFunds()
 
 	nft, _, err := env.MintNFTL1(issuerWallet, issuerAddress, []byte("foobar"))
 	require.NoError(t, err)
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
 		WithNFT(nft).
-		WithMaxAffordableGasBudget().
-		WithSender(nft.ID.ToAddress())
+		WithMaxAffordableGasBudget()
 	req.AddBaseTokens(ch.EstimateNeededStorageDeposit(req, issuerWallet))
-
 	_, err = ch.PostRequestSync(req, issuerWallet)
-	require.ErrorContains(t, err, "request has been skipped")
+	require.NoError(t, err)
+}
+
+func TestDepositWithoutEnoughFundsForAccountingUTXOsSD(t *testing.T) {
+	t.Skip() // TODO this will be interesting to implement
+	v := initDepositTest(t)
+	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
+	// create many foundries and mint 1 token on each
+	_, nativeTokenID1 := v.createFoundryAndMint(1, 1)
+	_, nativeTokenID2 := v.createFoundryAndMint(1, 1)
+	_, nativeTokenID3 := v.createFoundryAndMint(1, 1)
+	_, nativeTokenID4 := v.createFoundryAndMint(1, 1)
+
+	assets := isc.NewAssets(1*isc.Million, iotago.NativeTokens{
+		{ID: nativeTokenID1, Amount: big.NewInt(1)},
+		{ID: nativeTokenID2, Amount: big.NewInt(1)},
+		{ID: nativeTokenID3, Amount: big.NewInt(1)},
+		{ID: nativeTokenID4, Amount: big.NewInt(1)},
+	})
+	withdrawReq := solo.NewCallParams("accounts", "withdraw").
+		WithAllowance(assets).
+		WithMaxAffordableGasBudget()
+	_, err := v.ch.PostRequestOffLedger(withdrawReq, v.user)
+	require.NoError(t, err)
+
+	// ---
+
+	// move the native tokens to a new user that doesn't have on-chain balance
+	newUser, newUserAddress := v.env.NewKeyPairWithFunds()
+	v.env.SendL1(newUserAddress, assets, v.user)
+	require.True(t, v.env.L1Assets(newUserAddress).NativeTokens.Equal(assets.NativeTokens))
+
+	// try to deposit all native tokens in a request with just the minimum SD
+	depositReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+		WithFungibleTokens(isc.NewAssets(0, assets.NativeTokens)).
+		WithMaxAffordableGasBudget()
+
+	_, err = v.ch.PostRequestSync(depositReq, newUser)
+	require.NoError(t, err)
 }
 
 func TestDepositRandomContractMinFee(t *testing.T) {

@@ -1553,7 +1553,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "true"
+                  example: info
                   format: string
                   type: string
                 type: object
@@ -2430,19 +2430,16 @@ components:
         name: BlobValueResponse
     BlockInfoResponse:
       example:
-        anchorTransactionId: anchorTransactionId
-        gasBurned: gasBurned
-        totalRequests: 1
         l1CommitmentHash: l1CommitmentHash
         blockIndex: 1
         numSuccessfulRequests: 1
         gasFeeCharged: gasFeeCharged
-        totalStorageDeposit: totalStorageDeposit
-        transactionSubEssenceHash: transactionSubEssenceHash
+        anchorTransactionId: anchorTransactionId
+        gasBurned: gasBurned
+        totalRequests: 1
         numOffLedgerRequests: 1
         previousL1CommitmentHash: previousL1CommitmentHash
         timestamp: 2000-01-23T04:56:07.000+00:00
-        totalBaseTokensInL2Accounts: totalBaseTokensInL2Accounts
       properties:
         anchorTransactionId:
           format: string
@@ -2494,29 +2491,12 @@ components:
           type: string
           xml:
             name: Timestamp
-        totalBaseTokensInL2Accounts:
-          description: The total L2 base tokens (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: TotalBaseTokensInL2Accounts
         totalRequests:
           format: int32
           minimum: 1
           type: integer
           xml:
             name: TotalRequests
-        totalStorageDeposit:
-          description: The total storage deposit (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: TotalStorageDeposit
-        transactionSubEssenceHash:
-          format: string
-          type: string
-          xml:
-            name: TransactionSubEssenceHash
       required:
       - anchorTransactionId
       - blockIndex
@@ -2527,10 +2507,7 @@ components:
       - numSuccessfulRequests
       - previousL1CommitmentHash
       - timestamp
-      - totalBaseTokensInL2Accounts
       - totalRequests
-      - totalStorageDeposit
-      - transactionSubEssenceHash
       type: object
       xml:
         name: BlockInfoResponse
@@ -2748,6 +2725,11 @@ components:
     ChainInfoResponse:
       example:
         chainOwnerId: tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e
+        gasLimits:
+          maxGasExternalViewCall: 6
+          minGasPerRequest: 5
+          maxGasPerBlock: 1
+          maxGasPerRequest: 5
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
         customMetadata: customMetadata
@@ -2791,7 +2773,9 @@ components:
           xml:
             name: EVMChainID
         gasFeePolicy:
-          $ref: '#/components/schemas/GasFeePolicy'
+          $ref: '#/components/schemas/FeePolicy'
+        gasLimits:
+          $ref: '#/components/schemas/Limits'
         isActive:
           description: Whether or not the chain is active.
           format: boolean
@@ -2802,6 +2786,8 @@ components:
       - chainID
       - chainOwnerId
       - evmChainId
+      - gasFeePolicy
+      - gasLimits
       - isActive
       type: object
       xml:
@@ -3608,31 +3594,7 @@ components:
       type: object
       xml:
         name: EventsResponse
-    FoundryOutputResponse:
-      example:
-        assets:
-          baseTokens: baseTokens
-          nativeTokens:
-          - amount: amount
-            id: id
-          - amount: amount
-            id: id
-        foundryId: foundryId
-      properties:
-        assets:
-          $ref: '#/components/schemas/AssetsResponse'
-        foundryId:
-          format: string
-          type: string
-          xml:
-            name: FoundryID
-      required:
-      - assets
-      - foundryId
-      type: object
-      xml:
-        name: FoundryOutputResponse
-    GasFeePolicy:
+    FeePolicy:
       example:
         gasPerToken:
           a: 1
@@ -3658,8 +3620,8 @@ components:
       - validatorFeeShare
       type: object
       xml:
-        name: GasFeePolicy
-    GasFeePolicy_:
+        name: FeePolicy
+    FeePolicy_:
       example:
         gasPerToken:
           a: 0
@@ -3685,7 +3647,31 @@ components:
       - validatorFeeShare
       type: object
       xml:
-        name: GasFeePolicy
+        name: FeePolicy
+    FoundryOutputResponse:
+      example:
+        assets:
+          baseTokens: baseTokens
+          nativeTokens:
+          - amount: amount
+            id: id
+          - amount: amount
+            id: id
+        foundryId: foundryId
+      properties:
+        assets:
+          $ref: '#/components/schemas/AssetsResponse'
+        foundryId:
+          format: string
+          type: string
+          xml:
+            name: FoundryID
+      required:
+      - assets
+      - foundryId
+      type: object
+      xml:
+        name: FoundryOutputResponse
     GovAllowedStateControllerAddressesResponse:
       example:
         addresses:
@@ -3707,6 +3693,11 @@ components:
     GovChainInfoResponse:
       example:
         chainOwnerId: chainOwnerId
+        gasLimits:
+          maxGasExternalViewCall: 6
+          minGasPerRequest: 5
+          maxGasPerBlock: 1
+          maxGasPerRequest: 5
         chainID: chainID
         customMetadata: customMetadata
         gasFeePolicy:
@@ -3738,11 +3729,14 @@ components:
           xml:
             name: CustomMetadata
         gasFeePolicy:
-          $ref: '#/components/schemas/GasFeePolicy_'
+          $ref: '#/components/schemas/FeePolicy_'
+        gasLimits:
+          $ref: '#/components/schemas/Limits'
       required:
       - chainID
       - chainOwnerId
       - gasFeePolicy
+      - gasLimits
       type: object
       xml:
         name: GovChainInfoResponse
@@ -4071,6 +4065,45 @@ components:
       type: object
       xml:
         name: L1Params
+    Limits:
+      example:
+        maxGasExternalViewCall: 6
+        minGasPerRequest: 5
+        maxGasPerBlock: 1
+        maxGasPerRequest: 5
+      properties:
+        maxGasExternalViewCall:
+          description: The maximum gas per external view call
+          format: int64
+          type: integer
+          xml:
+            name: MaxGasExternalViewCall
+        maxGasPerBlock:
+          description: The maximum gas per block
+          format: int64
+          type: integer
+          xml:
+            name: MaxGasPerBlock
+        maxGasPerRequest:
+          description: The maximum gas per request
+          format: int64
+          type: integer
+          xml:
+            name: MaxGasPerRequest
+        minGasPerRequest:
+          description: The minimum gas per request
+          format: int64
+          type: integer
+          xml:
+            name: MinGasPerRequest
+      required:
+      - maxGasExternalViewCall
+      - maxGasPerBlock
+      - maxGasPerRequest
+      - minGasPerRequest
+      type: object
+      xml:
+        name: Limits
     LoginRequest:
       example:
         password: password

@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/governance/governanceimpl"
@@ -278,6 +279,9 @@ func TestDisallowMaintenanceDeadlock(t *testing.T) {
 func TestCustomL1Metadata(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	ch := env.NewChain()
+
+	// deposit some extra tokens to the common account to accommodate for the SD change
+	ch.SendFromL1ToL2AccountBaseTokens(10*isc.Million, 9*isc.Million, accounts.CommonAccount(), nil)
 
 	// set max valid size custom metadata
 	_, err := ch.PostRequestSync(

@@ -43,8 +43,6 @@ import (
 var _ chain.Chain = &Chain{}
 
 // String is string representation for main parameters of the chain
-//
-//goland:noinspection ALL
 func (ch *Chain) String() string {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)

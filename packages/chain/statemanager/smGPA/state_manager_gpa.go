@@ -536,7 +536,7 @@ func (smT *stateManagerGPA) markRequestCompleted(request blockRequest) {
 func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMessages {
 	result := gpa.NoMessages()
 	smT.log.Debugf("Input timer tick %v received...", now)
-	smT.log.Infof("Status: %s", smT.StatusString())
+	smT.log.Debugf("Status: %s", smT.StatusString())
 	nextGetBlocksTime := smT.lastGetBlocksTime.Add(smT.timers.StateManagerGetBlockRetry)
 	if now.After(nextGetBlocksTime) {
 		smT.log.Debugf("Input timer tick %v: resending get block messages...", now)

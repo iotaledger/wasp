@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -18,11 +19,6 @@ func (vmctx *VMContext) StateMetadata(stateCommitment *state.L1Commitment) []byt
 	stateMetadata := transaction.StateMetadata{
 		L1Commitment: stateCommitment,
 	}
-	if vmctx.currentStateUpdate == nil {
-		// create a temporary empty state update, so that vmctx.callCore works
-		vmctx.currentStateUpdate = NewStateUpdate()
-		defer func() { vmctx.currentStateUpdate = nil }()
-	}
 
 	vmctx.callCore(root.Contract, func(s kv.KVStore) {
 		stateMetadata.SchemaVersion = root.GetSchemaVersion(s)
@@ -36,18 +32,18 @@ func (vmctx *VMContext) StateMetadata(stateCommitment *state.L1Commitment) []byt
 	return stateMetadata.Bytes()
 }
 
-func (vmctx *VMContext) BuildTransactionEssence(stateCommitment *state.L1Commitment) (*iotago.TransactionEssence, []byte) {
+func (vmctx *VMContext) BuildTransactionEssence(stateCommitment *state.L1Commitment, assertTxbuilderBalanced bool) (*iotago.TransactionEssence, []byte) {
+	if vmctx.currentStateUpdate == nil {
+		// create a temporary empty state update, so that vmctx.callCore works and contracts state can be read
+		vmctx.currentStateUpdate = NewStateUpdate()
+		defer func() { vmctx.currentStateUpdate = nil }()
+	}
 	stateMetadata := vmctx.StateMetadata(stateCommitment)
-	return vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
-}
-
-// CalcTransactionSubEssenceHash builds transaction essence from tx builder
-// data assuming all zeroes in the L1 commitment. Returns hash of it.
-// It is needed for fraud proofs
-func (vmctx *VMContext) CalcTransactionSubEssenceHash() blocklog.TransactionEssenceHash {
-	stateMetadata := vmctx.StateMetadata(state.L1CommitmentNil)
-	essence, _ := vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
-	return blocklog.CalcTransactionEssenceHash(essence)
+	essence, inputsCommitment := vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
+	if assertTxbuilderBalanced {
+		vmctx.txbuilder.MustBalanced()
+	}
+	return essence, inputsCommitment
 }
 
 func (vmctx *VMContext) createTxBuilderSnapshot() *vmtxbuilder.AnchorTransactionBuilder {
@@ -126,4 +122,12 @@ func (vmctx *VMContext) loadNFT(id iotago.NFTID) (*iotago.NFTOutput, iotago.Outp
 	}
 
 	return nftOutput, outputID
+}
+
+func (vmctx *VMContext) loadTotalFungibleTokens() *isc.Assets {
+	var totalAssets *isc.Assets
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		totalAssets = accounts.GetTotalL2FungibleTokens(s)
+	})
+	return totalAssets
 }

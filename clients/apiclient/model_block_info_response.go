@@ -31,19 +31,14 @@ type BlockInfoResponse struct {
 	NumSuccessfulRequests uint32 `json:"numSuccessfulRequests"`
 	PreviousL1CommitmentHash string `json:"previousL1CommitmentHash"`
 	Timestamp time.Time `json:"timestamp"`
-	// The total L2 base tokens (uint64 as string)
-	TotalBaseTokensInL2Accounts string `json:"totalBaseTokensInL2Accounts"`
 	TotalRequests uint32 `json:"totalRequests"`
-	// The total storage deposit (uint64 as string)
-	TotalStorageDeposit string `json:"totalStorageDeposit"`
-	TransactionSubEssenceHash string `json:"transactionSubEssenceHash"`
 }
 
 // NewBlockInfoResponse instantiates a new BlockInfoResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBlockInfoResponse(anchorTransactionId string, blockIndex uint32, gasBurned string, gasFeeCharged string, l1CommitmentHash string, numOffLedgerRequests uint32, numSuccessfulRequests uint32, previousL1CommitmentHash string, timestamp time.Time, totalBaseTokensInL2Accounts string, totalRequests uint32, totalStorageDeposit string, transactionSubEssenceHash string) *BlockInfoResponse {
+func NewBlockInfoResponse(anchorTransactionId string, blockIndex uint32, gasBurned string, gasFeeCharged string, l1CommitmentHash string, numOffLedgerRequests uint32, numSuccessfulRequests uint32, previousL1CommitmentHash string, timestamp time.Time, totalRequests uint32) *BlockInfoResponse {
 	this := BlockInfoResponse{}
 	this.AnchorTransactionId = anchorTransactionId
 	this.BlockIndex = blockIndex
@@ -54,10 +49,7 @@ func NewBlockInfoResponse(anchorTransactionId string, blockIndex uint32, gasBurn
 	this.NumSuccessfulRequests = numSuccessfulRequests
 	this.PreviousL1CommitmentHash = previousL1CommitmentHash
 	this.Timestamp = timestamp
-	this.TotalBaseTokensInL2Accounts = totalBaseTokensInL2Accounts
 	this.TotalRequests = totalRequests
-	this.TotalStorageDeposit = totalStorageDeposit
-	this.TransactionSubEssenceHash = transactionSubEssenceHash
 	return &this
 }
 
@@ -285,30 +277,6 @@ func (o *BlockInfoResponse) SetTimestamp(v time.Time) {
 	o.Timestamp = v
 }
 
-// GetTotalBaseTokensInL2Accounts returns the TotalBaseTokensInL2Accounts field value
-func (o *BlockInfoResponse) GetTotalBaseTokensInL2Accounts() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.TotalBaseTokensInL2Accounts
-}
-
-// GetTotalBaseTokensInL2AccountsOk returns a tuple with the TotalBaseTokensInL2Accounts field value
-// and a boolean to check if the value has been set.
-func (o *BlockInfoResponse) GetTotalBaseTokensInL2AccountsOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.TotalBaseTokensInL2Accounts, true
-}
-
-// SetTotalBaseTokensInL2Accounts sets field value
-func (o *BlockInfoResponse) SetTotalBaseTokensInL2Accounts(v string) {
-	o.TotalBaseTokensInL2Accounts = v
-}
-
 // GetTotalRequests returns the TotalRequests field value
 func (o *BlockInfoResponse) GetTotalRequests() uint32 {
 	if o == nil {
@@ -333,54 +301,6 @@ func (o *BlockInfoResponse) SetTotalRequests(v uint32) {
 	o.TotalRequests = v
 }
 
-// GetTotalStorageDeposit returns the TotalStorageDeposit field value
-func (o *BlockInfoResponse) GetTotalStorageDeposit() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.TotalStorageDeposit
-}
-
-// GetTotalStorageDepositOk returns a tuple with the TotalStorageDeposit field value
-// and a boolean to check if the value has been set.
-func (o *BlockInfoResponse) GetTotalStorageDepositOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.TotalStorageDeposit, true
-}
-
-// SetTotalStorageDeposit sets field value
-func (o *BlockInfoResponse) SetTotalStorageDeposit(v string) {
-	o.TotalStorageDeposit = v
-}
-
-// GetTransactionSubEssenceHash returns the TransactionSubEssenceHash field value
-func (o *BlockInfoResponse) GetTransactionSubEssenceHash() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.TransactionSubEssenceHash
-}
-
-// GetTransactionSubEssenceHashOk returns a tuple with the TransactionSubEssenceHash field value
-// and a boolean to check if the value has been set.
-func (o *BlockInfoResponse) GetTransactionSubEssenceHashOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.TransactionSubEssenceHash, true
-}
-
-// SetTransactionSubEssenceHash sets field value
-func (o *BlockInfoResponse) SetTransactionSubEssenceHash(v string) {
-	o.TransactionSubEssenceHash = v
-}
-
 func (o BlockInfoResponse) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -400,10 +320,7 @@ func (o BlockInfoResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize["numSuccessfulRequests"] = o.NumSuccessfulRequests
 	toSerialize["previousL1CommitmentHash"] = o.PreviousL1CommitmentHash
 	toSerialize["timestamp"] = o.Timestamp
-	toSerialize["totalBaseTokensInL2Accounts"] = o.TotalBaseTokensInL2Accounts
 	toSerialize["totalRequests"] = o.TotalRequests
-	toSerialize["totalStorageDeposit"] = o.TotalStorageDeposit
-	toSerialize["transactionSubEssenceHash"] = o.TransactionSubEssenceHash
 	return toSerialize, nil
 }
 

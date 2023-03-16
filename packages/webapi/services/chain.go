@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/hive.go/runtime/timeutil"
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -201,12 +200,13 @@ func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.
 		return receipt, vmError, nil
 	}
 
-	delay := time.NewTimer(timeout)
-	defer timeutil.CleanupTimer(delay)
+	ctxTimeout, ctxCancel := context.WithTimeout(ctx, timeout)
+	defer ctxCancel()
+
 	select {
-	case receiptResponse := <-chain.AwaitRequestProcessed(ctx, requestID, true):
+	case receiptResponse := <-chain.AwaitRequestProcessed(ctxTimeout, requestID, true):
 		return c.vmService.ParseReceipt(chain, receiptResponse)
-	case <-delay.C:
+	case <-ctxTimeout.Done():
 		return nil, nil, errors.New("timeout while waiting for request to be processed")
 	}
 }
