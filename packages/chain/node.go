@@ -251,6 +251,7 @@ func New(
 	listener ChainListener,
 	accessNodesFromNode []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
+	chainMetrics metrics.ChainMetrics,
 	shutdownCoordinator *shutdown.Coordinator,
 	log *logger.Logger,
 ) (Chain, error) {
@@ -303,7 +304,6 @@ func New(
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
 	//
 	// Create sub-components.
-	chainMetrics := metrics.EmptyChainMetrics()
 	chainMgr, err := chainMgr.New(
 		cni.me,
 		cni.chainID,

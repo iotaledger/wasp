@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -66,6 +67,7 @@ type Chains struct {
 	cleanupFunc context.CancelFunc
 
 	shutdownCoordinator *shutdown.Coordinator
+	chainsMetrics       *metrics.Metrics
 }
 
 type activeChain struct {
@@ -111,6 +113,7 @@ func New(
 		chainListener:                    nil, // See bellow.
 		consensusStateRegistry:           consensusStateRegistry,
 		shutdownCoordinator:              shutdownCoordinator,
+		chainsMetrics:                    metrics.New(nodeConnection.GetMetrics()),
 	}
 	ret.chainListener = NewChainsListener(chainListener, ret.chainAccessUpdatedCB)
 	return ret
@@ -245,6 +248,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.chainListener,
 		chainRecord.AccessNodes,
 		c.networkProvider,
+		c.chainsMetrics.NewChainMetrics(chainID),
 		c.shutdownCoordinator.Nested(fmt.Sprintf("Chain-%s", chainID.AsAddress().String())),
 		chainLog,
 	)
