@@ -19,7 +19,9 @@
   import { toast } from '@zerodevx/svelte-toast';
   import type { WithdrawFormInput, WithdrawState } from './component_types';
   import { ISCMagic } from './iscmagic/iscmagic';
-  import type { INativeToken, INFT } from '../../lib/native_token';
+  import type { INativeToken } from '../../lib/native_token';
+  import type { INFT } from '../../lib/nft';
+
   const state: WithdrawState = {
     availableBaseTokens: 0,
     availableNativeTokens: [],
@@ -96,7 +98,8 @@
     if (!$selectedAccount) {
       return;
     }
-    state.availableNFTs = await state.iscMagic.getNFTs($selectedAccount);
+
+    state.availableNFTs = await state.iscMagic.getNFTs($nodeClient, $indexerClient, $selectedAccount);
   }
   async function pollAccount() {
     await Promise.all([pollBalance(), pollNativeTokens(), pollNFTs()]);
