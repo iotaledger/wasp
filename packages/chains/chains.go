@@ -93,6 +93,7 @@ func New(
 	consensusStateRegistry cmtLog.ConsensusStateRegistry,
 	chainListener chain.ChainListener,
 	shutdownCoordinator *shutdown.Coordinator,
+	chainsMetrics *metrics.Metrics,
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
@@ -113,7 +114,7 @@ func New(
 		chainListener:                    nil, // See bellow.
 		consensusStateRegistry:           consensusStateRegistry,
 		shutdownCoordinator:              shutdownCoordinator,
-		chainsMetrics:                    metrics.New(nodeConnection.GetMetrics()),
+		chainsMetrics:                    chainsMetrics,
 	}
 	ret.chainListener = NewChainsListener(chainListener, ret.chainAccessUpdatedCB)
 	return ret
@@ -290,6 +291,7 @@ func (c *Chains) Deactivate(chainID isc.ChainID) error {
 	ch.cancelFunc()
 	c.accessMgr.ChainDismissed(chainID)
 	delete(c.allChains, chainID)
+
 	c.log.Debugf("chain has been deactivated: %v = %s", chainID.ShortString(), chainID.String())
 	return nil
 }

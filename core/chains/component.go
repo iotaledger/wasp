@@ -65,6 +65,26 @@ func initConfigPars(c *dig.Container) error {
 }
 
 func provide(c *dig.Container) error {
+	type chainsMetricsDeps struct {
+		dig.In
+
+		NodeConnection chain.NodeConnection
+	}
+
+	type chainsMetricsResult struct {
+		dig.Out
+
+		ChainsMetrics *metrics.Metrics
+	}
+
+	if err := c.Provide(func(deps chainsMetricsDeps) chainsMetricsResult {
+		return chainsMetricsResult{
+			ChainsMetrics: metrics.New(deps.NodeConnection.GetMetrics()),
+		}
+	}); err != nil {
+		CoreComponent.LogPanic(err)
+	}
+
 	type chainsDeps struct {
 		dig.In
 
@@ -78,7 +98,7 @@ func provide(c *dig.Container) error {
 		NodeIdentityProvider        registry.NodeIdentityProvider
 		ConsensusStateRegistry      cmtLog.ConsensusStateRegistry
 		ChainListener               *publisher.Publisher
-		Metrics                     *metrics.Metrics `optional:"true"`
+		ChainsMetrics               *metrics.Metrics
 	}
 
 	type chainsResult struct {
@@ -107,6 +127,7 @@ func provide(c *dig.Container) error {
 				deps.ConsensusStateRegistry,
 				deps.ChainListener,
 				shutdown.NewCoordinator("chains", CoreComponent.Logger().Named("Shutdown")),
+				deps.ChainsMetrics,
 			),
 		}
 	}); err != nil {
