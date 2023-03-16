@@ -7,8 +7,7 @@
     truncateText,
   } from '$lib/utils';
   import { connectToWallet, disconnectWallet } from '$lib/withdraw';
-  import { toast } from '@zerodevx/svelte-toast';
-  import { defaultEvmStores } from 'svelte-web3';
+  import { NotificationType, showNotification } from '$lib/notification';
 
   export let account = undefined;
 
@@ -28,7 +27,10 @@
       await connectToWallet();
       closePopup(PopupId.Account);
     } catch (e) {
-      toast.push(e);
+      showNotification({
+        type: NotificationType.Error,
+        message: e,
+      });
       console.error(e);
     }
   }
@@ -38,7 +40,10 @@
       await disconnectWallet();
       closePopup(PopupId.Account);
     } catch (e) {
-      toast.push(e);
+      showNotification({
+        type: NotificationType.Error,
+        message: e,
+      });
       console.error(e);
     }
   }

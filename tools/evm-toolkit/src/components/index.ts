@@ -12,3 +12,4 @@ export { default as Tooltip } from './tooltip.svelte'
 
 export * from './popup'
 export * from './inputs'
+export * from './notification'

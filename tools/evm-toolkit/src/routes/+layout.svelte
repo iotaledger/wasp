@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Navbar, PopupManager } from '$components';
+  import { Navbar, PopupManager, NotificationManager } from '$components';
   import '../app.scss';
   import { onMount } from 'svelte';
   import { networks, selectedNetwork } from '../store';
@@ -9,7 +9,6 @@
     networks.set(NETWORKS);
     selectedNetwork.set(NETWORKS[1]);
   });
-
 </script>
 
 <Navbar />
@@ -18,6 +17,7 @@
   <slot />
 </main>
 <PopupManager />
+<NotificationManager />
 
 <style lang="scss">
   background-radial {

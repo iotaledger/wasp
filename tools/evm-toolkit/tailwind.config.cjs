@@ -15,6 +15,8 @@ module.exports = {
           ['text-secondary']: '#738795',
           ['text-error']: '#E01A4F',
           ['background-error']: '#e01a4f29',
+          ['background-success']: 'rgba(0, 245, 221, 0.08)',
+          ['background-warning']: 'rgba(255, 255, 255, 0.078)',
           ['background-tertiary-hover']: '#122b3d',
         },
       },

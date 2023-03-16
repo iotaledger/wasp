@@ -1,6 +1,6 @@
 import { iscAbi, iscContractAddress } from '$components/withdraw/constants';
 import { ISCMagic } from '$components/withdraw/iscmagic/iscmagic';
-import { toast } from '@zerodevx/svelte-toast';
+import { NotificationType, showNotification } from '$lib/notification';
 import { defaultEvmStores, selectedAccount, web3 } from 'svelte-web3';
 import { get } from 'svelte/store';
 import { subscribeBalance } from '.';
@@ -29,8 +29,11 @@ export async function connectToWallet() {
     await pollAccount();
     await subscribeBalance();
   } catch (ex) {
+    showNotification({
+      type: NotificationType.Error,
+      message: `Failed to connect to wallet: ${ex.message}`,
+    });
     console.error('Failed to connect to wallet: ', ex.message);
-    toast.push(`Failed to connect to wallet: `, ex?.message);
   }
 
   updateWithdrawStateStore({ isLoading: false });

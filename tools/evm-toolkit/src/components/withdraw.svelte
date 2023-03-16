@@ -1,12 +1,12 @@
 <script lang="ts">
   import { InputType } from '$lib/enums';
   import type { INativeToken } from '$lib/native_token';
+  import { NotificationType, showNotification } from '$lib/notification';
   import {
     connectToWallet,
     pollBalance,
     withdrawStateStore,
   } from '$lib/withdraw';
-  import { toast } from '@zerodevx/svelte-toast';
   import { chainId, connected, selectedAccount } from 'svelte-web3';
   import { Button, Input } from '.';
   import { Bech32AddressLength } from '../lib/constants';
@@ -83,27 +83,35 @@
         nftID,
       );
     } catch (ex) {
-      toast.push(
-        `Failed to send withdraw request: ${JSON.stringify(ex, null, 4)}`,
-        {
-          duration: 8000,
-        },
-      );
+      showNotification({
+        type: NotificationType.Error,
+        message: `Failed to send withdraw request: ${JSON.stringify(
+          ex,
+          null,
+          4,
+        )}`,
+        duration: 8000,
+      });
       console.log(ex);
       return;
     }
 
     if (result.status) {
-      toast.push(`Withdraw request sent. BlockIndex: ${result.blockNumber}`, {
+      showNotification({
+        type: NotificationType.Success,
+        message: `Withdraw request sent. BlockIndex: ${result.blockNumber}`,
         duration: 4000,
       });
     } else {
-      toast.push(
-        `Failed to send withdraw request: ${JSON.stringify(result, null, 4)}`,
-        {
-          duration: 8000,
-        },
-      );
+      showNotification({
+        type: NotificationType.Error,
+        message: `Failed to send withdraw request: ${JSON.stringify(
+          result,
+          null,
+          4,
+        )}`,
+        duration: 8000,
+      });
     }
   }
 
