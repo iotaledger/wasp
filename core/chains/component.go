@@ -65,21 +65,23 @@ func initConfigPars(c *dig.Container) error {
 }
 
 func provide(c *dig.Container) error {
-	type chainsMetricsDeps struct {
+	type metricsDeps struct {
 		dig.In
 
 		NodeConnection chain.NodeConnection
 	}
 
-	type chainsMetricsResult struct {
+	type metricsResult struct {
 		dig.Out
 
-		ChainsMetrics *metrics.Metrics
+		ChainMetrics    *metrics.ChainMetrics
+		BlockWALMetrics *metrics.BlockWALMetrics
 	}
 
-	if err := c.Provide(func(deps chainsMetricsDeps) chainsMetricsResult {
-		return chainsMetricsResult{
-			ChainsMetrics: metrics.New(deps.NodeConnection.GetMetrics()),
+	if err := c.Provide(func(deps metricsDeps) metricsResult {
+		return metricsResult{
+			ChainMetrics:    metrics.NewChainMetrics(deps.NodeConnection.GetMetrics()),
+			BlockWALMetrics: metrics.NewBlockWALMetrics(),
 		}
 	}); err != nil {
 		CoreComponent.LogPanic(err)
@@ -98,7 +100,8 @@ func provide(c *dig.Container) error {
 		NodeIdentityProvider        registry.NodeIdentityProvider
 		ConsensusStateRegistry      cmtLog.ConsensusStateRegistry
 		ChainListener               *publisher.Publisher
-		ChainsMetrics               *metrics.Metrics
+		ChainMetrics                *metrics.ChainMetrics
+		BlockWALMetrics             *metrics.BlockWALMetrics
 	}
 
 	type chainsResult struct {
@@ -127,7 +130,8 @@ func provide(c *dig.Container) error {
 				deps.ConsensusStateRegistry,
 				deps.ChainListener,
 				shutdown.NewCoordinator("chains", CoreComponent.Logger().Named("Shutdown")),
-				deps.ChainsMetrics,
+				deps.ChainMetrics,
+				deps.BlockWALMetrics,
 			),
 		}
 	}); err != nil {

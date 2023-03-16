@@ -67,7 +67,8 @@ type Chains struct {
 	cleanupFunc context.CancelFunc
 
 	shutdownCoordinator *shutdown.Coordinator
-	chainsMetrics       *metrics.Metrics
+	chainMetrics        *metrics.ChainMetrics
+	blockWALMetrics     *metrics.BlockWALMetrics
 }
 
 type activeChain struct {
@@ -93,7 +94,8 @@ func New(
 	consensusStateRegistry cmtLog.ConsensusStateRegistry,
 	chainListener chain.ChainListener,
 	shutdownCoordinator *shutdown.Coordinator,
-	chainsMetrics *metrics.Metrics,
+	chainMetrics *metrics.ChainMetrics,
+	blockWALMetrics *metrics.BlockWALMetrics,
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
@@ -114,7 +116,8 @@ func New(
 		chainListener:                    nil, // See bellow.
 		consensusStateRegistry:           consensusStateRegistry,
 		shutdownCoordinator:              shutdownCoordinator,
-		chainsMetrics:                    chainsMetrics,
+		chainMetrics:                     chainMetrics,
+		blockWALMetrics:                  blockWALMetrics,
 	}
 	ret.chainListener = NewChainsListener(chainListener, ret.chainAccessUpdatedCB)
 	return ret
@@ -227,7 +230,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	chainLog := c.log.Named(chainID.ShortString())
 	var chainWAL smGPAUtils.BlockWAL
 	if c.walEnabled {
-		chainWAL, err = smGPAUtils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, smGPAUtils.NewBlockWALMetrics())
+		chainWAL, err = smGPAUtils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, metrics.NewBlockWALMetric(c.blockWALMetrics, chainID))
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}
@@ -249,7 +252,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.chainListener,
 		chainRecord.AccessNodes,
 		c.networkProvider,
-		c.chainsMetrics.NewChainMetrics(chainID),
+		metrics.NewChainMetric(c.chainMetrics, chainID),
 		c.shutdownCoordinator.Nested(fmt.Sprintf("Chain-%s", chainID.AsAddress().String())),
 		chainLog,
 	)

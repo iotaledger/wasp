@@ -11,7 +11,7 @@ import (
 )
 
 func (c *Controller) getL1Metrics(e echo.Context) error {
-	metricsReport := c.metricsService.GetAllChainsMetrics()
+	metricsReport := c.metricsService.GetAllChainMetrics()
 	mappedMetrics := models.MapChainMetrics(metricsReport)
 
 	return e.JSON(http.StatusOK, mappedMetrics)

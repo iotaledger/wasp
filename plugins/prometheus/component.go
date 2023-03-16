@@ -14,7 +14,6 @@ import (
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/app"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
@@ -56,9 +55,9 @@ type dependencies struct {
 
 	AppInfo               *app.Info
 	NodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
-	ChainsMetrics         *metrics.Metrics
-	WebAPIEcho            *echo.Echo                  `name:"webapiEcho" optional:"true"`
-	BlockWALMetrics       *smGPAUtils.BlockWALMetrics `optional:"true"`
+	ChainMetrics          *metrics.ChainMetrics
+	BlockWALMetrics       *metrics.BlockWALMetrics
+	WebAPIEcho            *echo.Echo `name:"webapiEcho" optional:"true"`
 }
 
 func provide(c *dig.Container) error {
@@ -101,9 +100,9 @@ func configure() error {
 		register("node connection", deps.NodeConnectionMetrics.PrometheusCollectors()...)
 	}
 	if ParamsPrometheus.ChainMetrics {
-		register("chains", deps.ChainsMetrics.PrometheusCollectors()...)
+		register("chains", deps.ChainMetrics.PrometheusCollectors()...)
 	}
-	if ParamsPrometheus.BlockWALMetrics && deps.BlockWALMetrics != nil {
+	if ParamsPrometheus.BlockWALMetrics {
 		register("write ahead logging", deps.BlockWALMetrics.PrometheusCollectors()...)
 	}
 	if ParamsPrometheus.RestAPIMetrics {

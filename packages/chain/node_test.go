@@ -447,7 +447,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			chain.NewEmptyChainListener(),
 			[]*cryptolib.PublicKey{}, // Access nodes.
 			te.networkProviders[i],
-			metrics.EmptyChainMetrics(),
+			metrics.NewEmptyChainMetric(),
 			shutdown.NewCoordinator("test", log),
 			log,
 		)
