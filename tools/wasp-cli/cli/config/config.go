@@ -81,7 +81,7 @@ func GetToken(node string) string {
 	return viper.GetString(fmt.Sprintf("authentication.wasp.%s.token", node))
 }
 
-func SetToken(node,token string) {
+func SetToken(node, token string) {
 	Set(fmt.Sprintf("authentication.wasp.%s.token", node), token)
 }
 

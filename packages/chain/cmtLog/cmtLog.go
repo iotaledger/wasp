@@ -7,7 +7,28 @@
 //   - Track which blocks are approved, pending or reverted.
 //   - Handle startup and recovery scenarios.
 //
+// Main principles of the algorithm:
+// >   - Propose to go to the next log index when
+// >       - a) consensus for the latest known LogIndex has terminated (confirmed | rejected | skip | recover).
+// >            All the previous can be left uncompleted.
+// >       - b) confirmed alias output is received from L1, that we haven't posted in this node.
+// >       - and we have a tip AO (from the local view).
+// >   - If there is a single clean chain, we can use pipelining (consider consDone event
+// >     instead of waiting for confirmed | rejected).
+// >   - We start a consensus instance whenever VLI reports a quorum and we have not started it yet.
+// >     Even if we provided no proposal for that LI.
+//
 // The algorithm at a high level:
+//
+// > ON Startup:
+// >     Let prevLI <- TRY restoring the last started LogIndex ELSE 0
+// >     MinLI <- prevLI + 1
+// >     LogIndex.Start(prevLI)
+// > UPON AliasOutput (AO) {Confirmed | Rejected} by L1:
+// >     LocalView.Update(AO)
+// >     IF LocalView changed THEN
+// >         LogIndex.L1ReplacedBaseAliasOutput()
+// >         TryProposeConsensus()
 //
 // > ON Startup:
 // >     Let prevLI <- TRY restoring the last started LogIndex ELSE 0
@@ -135,6 +156,7 @@ type cmtLogImpl struct {
 	consensusLI            LogIndex               // Latest LogIndex for which consensus was been started.
 	varLogIndex            VarLogIndex            // Calculates the current log index.
 	varLocalView           VarLocalView           // Tracks the pending alias outputs.
+	varRunning             VarRunning             // Tracks the latest LI.
 	output                 *Output                // The current request for a consensus.
 	asGPA                  gpa.GPA                // This object, just with all the needed wrappers.
 	log                    *logger.Logger
@@ -202,6 +224,7 @@ func New(
 		consensusLI:            NilLogIndex(),
 		varLogIndex:            NewVarLogIndex(nodeIDs, n, f, prevLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, log.Named("VLI")),
 		varLocalView:           NewVarLocalView(log.Named("VLV")),
+		varRunning:             NewVarRunning(log.Named("VR")),
 		log:                    log,
 	}
 	cl.asGPA = gpa.NewOwnHandler(me, cl)
@@ -219,12 +242,14 @@ func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
 	switch input := input.(type) {
 	case *inputAliasOutputConfirmed:
 		return cl.handleInputAliasOutputConfirmed(input)
-	case *inputAliasOutputRejected:
-		return cl.handleInputAliasOutputRejected(input)
 	case *inputConsensusOutputDone:
 		return cl.handleInputConsensusOutputDone(input)
 	case *inputConsensusOutputSkip:
 		return cl.handleInputConsensusOutputSkip(input)
+	case *inputConsensusOutputConfirmed:
+		return cl.handleInputConsensusOutputConfirmed(input)
+	case *inputConsensusOutputRejected:
+		return cl.handleInputConsensusOutputRejected(input)
 	case *inputConsensusTimeout:
 		return cl.handleInputConsensusTimeout(input)
 	case *inputSuspend:
@@ -244,95 +269,79 @@ func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 }
 
 // > UPON AliasOutput (AO) {Confirmed | Rejected} by L1:
-// >     LocalView.Update(AO)
-// >     IF LocalView changed THEN
-// >         LogIndex.L1ReplacedBaseAliasOutput()
-// >         TryProposeConsensus()
+// >   ...
 func (cl *cmtLogImpl) handleInputAliasOutputConfirmed(input *inputAliasOutputConfirmed) gpa.OutMessages {
-	if tipAO, ok := cl.varLocalView.AliasOutputConfirmed(input.aliasOutput); ok {
-		msgs := cl.varLogIndex.L1ReplacedBaseAliasOutput(tipAO)
+	if tipAO, tipUpdated := cl.varLocalView.AliasOutputConfirmed(input.aliasOutput); tipUpdated {
 		if cl.suspended {
 			cl.log.Infof("Committee resumed, tip replaced by L1 to %v", tipAO)
 			cl.suspended = false
 		}
-		cl.tryProposeConsensus()
-		return msgs
+		return cl.varLogIndex.L1ReplacedBaseAliasOutput(tipAO)
 	}
 	return nil
 }
 
-// > UPON AliasOutput (AO) {Confirmed | Rejected} by L1:
-// >     LocalView.Update(AO)
-// >     IF LocalView changed THEN
-// >         LogIndex.L1ReplacedBaseAliasOutput()
-// >         TryProposeConsensus()
-func (cl *cmtLogImpl) handleInputAliasOutputRejected(input *inputAliasOutputRejected) gpa.OutMessages {
-	if tipAO, ok := cl.varLocalView.AliasOutputRejected(input.aliasOutput); ok {
-		msgs := cl.varLogIndex.L1ReplacedBaseAliasOutput(tipAO)
-		cl.tryProposeConsensus()
-		return msgs
+// >   ...
+func (cl *cmtLogImpl) handleInputConsensusOutputConfirmed(input *inputConsensusOutputConfirmed) gpa.OutMessages {
+	cl.varRunning.ConsensusOutputConfirmed(input.logIndex) // Not needed, in general.
+	return nil
+}
+
+// >   ...
+func (cl *cmtLogImpl) handleInputConsensusOutputRejected(input *inputConsensusOutputRejected) gpa.OutMessages {
+	cl.varRunning.ConsensusOutputRejected(input.logIndex)
+	if tipAO, tipUpdated := cl.varLocalView.AliasOutputRejected(input.aliasOutput); tipUpdated || cl.varRunning.IsLatest(input.logIndex) {
+		return cl.varLogIndex.L1ReplacedBaseAliasOutput(tipAO)
 	}
 	return nil
 }
 
 // > ON ConsensusOutput/DONE (CD)
-// >     LocalView.Update(CD)
-// >     IF LocalView changed THEN
-// >         LogIndex.ConsensusOutput(CD.LogIndex)
-// >         TryProposeConsensus()
+// >   ...
 func (cl *cmtLogImpl) handleInputConsensusOutputDone(input *inputConsensusOutputDone) gpa.OutMessages {
-	if tipAO, ok := cl.varLocalView.ConsensusOutputDone(input.baseAliasOutputID, input.nextAliasOutput); ok {
-		msgs := cl.varLogIndex.ConsensusOutputReceived(input.logIndex, cons.Completed, tipAO)
-		cl.tryProposeConsensus()
-		return msgs
+	cl.varRunning.ConsensusOutputDone(input.logIndex)
+	if tipAO, tipUpdated := cl.varLocalView.ConsensusOutputDone(input.logIndex, input.baseAliasOutputID, input.nextAliasOutput); tipUpdated {
+		return cl.varLogIndex.ConsensusOutputReceived(input.logIndex, cons.Completed, tipAO)
 	}
 	return nil
 }
 
 // > ON ConsensusOutput/SKIP (CS)
-// >     LogIndex.ConsensusOutput(CS.LogIndex)
-// >     TryProposeConsensus()
+// >   ...
 func (cl *cmtLogImpl) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
-	msgs := cl.varLogIndex.ConsensusOutputReceived(input.logIndex, cons.Skipped, cl.varLocalView.Value())
-	cl.tryProposeConsensus()
-	return msgs
+	latestCompleted := cl.varRunning.ConsensusOutputSkip(input.logIndex)
+	tipAO := cl.varLocalView.Value()
+	if latestCompleted && tipAO != nil {
+		return cl.varLogIndex.ConsensusOutputReceived(input.logIndex, cons.Skipped, tipAO)
+	}
+	return nil
 }
 
 // > ON ConsensusTimeout (CT)
-// >     LogIndex.ConsensusTimeout(CT.LogIndex)
-// >     TryProposeConsensus()
-//
-// NOTE: Consensus has not finished in long time, try recover by voting
-// for the next LogIndex. This actually breaks the asynchronous assumption.
+// >   ...
 func (cl *cmtLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
-	msgs := cl.varLogIndex.ConsensusTimeoutReceived(input.logIndex)
-	cl.tryProposeConsensus()
-	return msgs
+	latestCompleted := cl.varRunning.ConsensusRecover(input.logIndex)
+	tipAO := cl.varLocalView.Value()
+	if latestCompleted && tipAO != nil {
+		return cl.varLogIndex.ConsensusRecoverReceived(input.logIndex)
+	}
+	return nil
 }
 
 // > ON Suspend:
-// >     Suspended <- TRUE
-// >     TryProposeConsensus()
-//
-// NOTE: A suspended cmtLog will not start the next consensus round
-// after the current consensus will complete. Suspend will be sent
-// by the chain, if an alias output with different state controller
-// is received.
+// >   ...
 func (cl *cmtLogImpl) handleInputSuspend() gpa.OutMessages {
 	cl.log.Infof("Committee suspended.")
 	cl.suspended = true
 	cl.output = nil
-	cl.tryProposeConsensus()
-	return nil
+	return cl.tryProposeConsensus(nil)
 }
 
 // > ON Reception of ⟨NextLI, •⟩ message:
-// >     LogIndex.Receive(⟨NextLI, •⟩ message).
-// >     TryProposeConsensus()
+// >   ...
 func (cl *cmtLogImpl) handleMsgNextLogIndex(msg *msgNextLogIndex) gpa.OutMessages {
 	msgs := cl.varLogIndex.MsgNextLogIndexReceived(msg)
-	cl.tryProposeConsensus()
-	return msgs
+	return cl.tryProposeConsensus(msgs)
 }
 
 // Implements the gpa.GPA interface.
@@ -360,17 +369,17 @@ func (cl *cmtLogImpl) StatusString() string {
 // >         Propose LocalView.BaseAO for LogIndex
 // >     ELSE
 // >         Don't propose any consensus.
-func (cl *cmtLogImpl) tryProposeConsensus() {
+func (cl *cmtLogImpl) tryProposeConsensus(msgs gpa.OutMessages) gpa.OutMessages {
 	logIndex, baseAO := cl.varLogIndex.Value()
 	if logIndex == NilLogIndex() {
 		// No log index decided yet.
-		return
+		return msgs
 	}
 	//
 	// Check, maybe it is already started.
 	if cl.output != nil && cl.output.logIndex == logIndex {
 		// Already started, keep it as is.
-		return
+		return msgs
 	}
 	//
 	// >     IF ∧ LocalView.BaseAO ≠ NIL
@@ -394,9 +403,11 @@ func (cl *cmtLogImpl) tryProposeConsensus() {
 		// Start the consensus (ask the upper layer to start it).
 		cl.consensusLI = logIndex
 		cl.output = makeOutput(cl.consensusLI, baseAO)
+		cl.varRunning.ConsensusProposed(logIndex)
 	} else {
 		// >     ELSE
 		// >         Don't propose any consensus.
 		cl.output = nil // Outdated, clear it away.
 	}
+	return msgs
 }

@@ -56,14 +56,14 @@ func TestNodeBasic(t *testing.T) {
 		{n: 4, f: 1, reliable: true, timeout: 50 * time.Second},   // Minimal robust config.
 		{n: 10, f: 3, reliable: true, timeout: 130 * time.Second}, // Typical config.
 	}
-	// if !testing.Short() { // TODO: Uncomment after CmtLog is fixed!!!!!!
-	// 	tests = append(tests,
-	// 		// TODO these "unreliable" tests are crazy, they either succeed in 10~20s or run forever...
-	// 		tc{n: 4, f: 1, reliable: false, timeout: 5 * time.Minute},   // Minimal robust config.
-	// 		tc{n: 10, f: 3, reliable: false, timeout: 15 * time.Minute}, // Typical config.
-	// 		tc{n: 31, f: 10, reliable: true, timeout: 25 * time.Minute}, // Large cluster, reliable - to make test faster.
-	// 	)
-	// }
+	if !testing.Short() {
+		tests = append(tests,
+			// TODO these "unreliable" tests are crazy, they either succeed in 10~20s or run forever...
+			tc{n: 4, f: 1, reliable: false, timeout: 5 * time.Minute},   // Minimal robust config.
+			tc{n: 10, f: 3, reliable: false, timeout: 15 * time.Minute}, // Typical config.
+			tc{n: 31, f: 10, reliable: true, timeout: 25 * time.Minute}, // Large cluster, reliable - to make test faster.
+		)
+	}
 	for _, tst := range tests {
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
