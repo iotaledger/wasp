@@ -4,37 +4,26 @@
 import * as coreaccounts from 'wasmlib/coreaccounts';
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
-import {panic, ScChainID} from 'wasmlib';
-import {RawData, WebSocket} from 'ws';
+import {WebSocket} from 'ws';
 import {WasmClientContext} from './wasmclientcontext';
+import {WasmClientEvents} from './wasmclientevents';
 
-export class ContractEvent {
+class ChainInfoResponse {
     chainID = '';
-    contractID = '';
-    data = '';
 }
 
-type ClientCallBack = (event: ContractEvent) => void;
-
 export class WasmClientService {
-    private callbacks: ClientCallBack[] = [];
-    private chainID: ScChainID;
+    private chainID: wasmlib.ScChainID;
+    //TODO do we need to lock a mutex here?
+    private eventHandlers: WasmClientEvents[] = [];
+    //TODO do we need to lock a mutex here?
     private nonces = new Map<Uint8Array, u64>();
-    private subscribers: WasmClientContext[] = [];
     private waspAPI: string;
-    private ws: WebSocket;
+    private ws: WebSocket | null = null;
 
-    public constructor(waspAPI: string, chainID: string) {
-        const err = isc.setSandboxWrappers(chainID);
-        if (err != null) {
-            panic(err);
-        }
+    public constructor(waspAPI: string) {
         this.waspAPI = waspAPI;
-        this.chainID = wasmlib.chainIDFromString(chainID);
-        const eventPort = waspAPI.replace('http:', 'ws:') + '/ws';
-        this.ws = new WebSocket(eventPort, {
-            perMessageDeflate: false
-        });
+        this.chainID = wasmlib.chainIDFromBytes(null);
     }
 
     public callViewByHname(hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): [Uint8Array, isc.Error] {
@@ -60,8 +49,18 @@ export class WasmClientService {
         }
     }
 
-    public currentChainID(): ScChainID {
+    public currentChainID(): wasmlib.ScChainID {
         return this.chainID;
+    }
+
+    public isHealthy(): bool {
+        const url = this.waspAPI + '/health';
+        try {
+            new isc.SyncRequestClient().get(url);
+            return true;
+        } catch (error) {
+            return false;
+        }
     }
 
     public postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array, allowance: wasmlib.ScAssets, keyPair: isc.KeyPair): [wasmlib.ScRequestID, isc.Error] {
@@ -93,45 +92,73 @@ export class WasmClientService {
         }
     }
 
-    public subscribeEvents(who: WasmClientContext, callback: ClientCallBack): isc.Error {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        this.subscribers.push(who);
-        this.callbacks.push(callback);
-        if (this.subscribers.length == 1) {
-            this.ws.on('open', () => {
-                this.eventSubscribe('chains');
-                this.eventSubscribe('block_events');
-            });
-            this.ws.on('error', (err) => {
-                // callback(['error', err.toString()]);
-            });
-            this.ws.on('message', (data) => this.eventLoop(data));
+    public setCurrentChainID(chainID: string): isc.Error {
+        const err = isc.setSandboxWrappers(chainID);
+        if (err != null) {
+            return err;
         }
+        this.chainID = wasmlib.chainIDFromString(chainID);
         return null;
     }
 
-    public unsubscribeEvents(who: WasmClientContext): void {
-        for (let i = 0; i < this.subscribers.length; i++) {
-            if (this.subscribers[i] === who) {
-                this.subscribers.splice(i, 1);
-                this.callbacks.splice(i, 1);
-                if (this.subscribers.length == 0) {
-                    this.ws.close();
-                }
-                return;
+    public setDefaultChainID(): isc.Error {
+        const url = this.waspAPI + '/chains';
+        const client = new isc.SyncRequestClient();
+        client.addHeader('Content-Type', 'application/json');
+        try {
+            const chains = client.get<ChainInfoResponse[]>(url);
+            if (chains.length != 1) {
+                return 'expected a single chain for default chain ID';
             }
+            const chainID = chains[0].chainID;
+            console.log('default chain ID: ' + chainID)
+            return this.setCurrentChainID(chainID);
+        } catch (error) {
+            if (error instanceof Error) return error.message;
+            return String(error);
+        }
+    }
+
+    public subscribeEvents(eventHandler: WasmClientEvents): isc.Error {
+        this.eventHandlers.push(eventHandler);
+        if (this.eventHandlers.length != 1) {
+            return null;
+        }
+        const url = this.waspAPI.replace('http:', 'ws:') + '/ws';
+        this.ws = new WebSocket(url, {
+            perMessageDeflate: false
+        });
+        return WasmClientEvents.startEventLoop(this.ws, this.eventHandlers)
+    }
+
+    public unsubscribeEvents(eventsID: u32): void {
+        for (let i = 0; i < this.eventHandlers.length; i++) {
+            if (this.eventHandlers[i].handler.id() == eventsID) {
+                this.eventHandlers.splice(i, 1);
+            }
+        }
+        if (this.eventHandlers.length == 0 && this.ws != null) {
+            // stop event loop
+            this.ws.close();
+            this.ws = null;
         }
     }
 
     public waitUntilRequestProcessed(reqID: wasmlib.ScRequestID, timeout: u32): isc.Error {
         //TODO Timeout of the wait can be set with `/wait?timeoutSeconds=`. Max seconds are 60secs.
         const url = this.waspAPI + '/chains/' + this.chainID.toString() + '/requests/' + reqID.toString() + '/wait';
-        new isc.SyncRequestClient().get(url);
-        return null;
+        try {
+            new isc.SyncRequestClient().get(url);
+            return null;
+        } catch (error) {
+            let message;
+            if (error instanceof Error) message = error.message;
+            else message = String(error);
+            return message;
+        }
     }
 
     private cachedNonce(keyPair: isc.KeyPair): [u64, isc.Error] {
-        //TODO do we need to lock a nonceLock mutex here?
         const key = keyPair.publicKey;
         let nonce = this.nonces.get(key);
         if (nonce === undefined) {
@@ -148,41 +175,5 @@ export class WasmClientService {
         nonce++;
         this.nonces.set(key, nonce);
         return [nonce, null];
-    }
-
-    private eventLoop(data: RawData) {
-        let msg: any;
-        try {
-            msg = JSON.parse(data.toString());
-            if (!msg.kind) {
-                // filter out subscribe responses
-                return;
-            }
-            console.log(msg);
-        } catch (ex) {
-            console.log(`Failed to parse expected JSON message: ${data} ${ex}`);
-            return;
-        }
-
-        const items: string[] = msg.payload;
-        for (const item of items) {
-            const parts = item.split(': ');
-            const event = new ContractEvent();
-            event.chainID = msg.chainID;
-            event.contractID = parts[0];
-            event.data = parts[1];
-            for (const callback of this.callbacks) {
-                callback(event);
-            }
-        }
-    }
-
-    private eventSubscribe(topic: string) {
-        const msg = {
-            command: 'subscribe',
-            topic: topic,
-        };
-        const rawMsg = JSON.stringify(msg);
-        this.ws.send(rawMsg);
     }
 }

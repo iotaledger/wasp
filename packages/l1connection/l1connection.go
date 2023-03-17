@@ -10,18 +10,21 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/utxodb"
 )
 
 const (
 	pollConfirmedBlockInterval = 200 * time.Millisecond
 	promoteBlockCooldown       = 5 * time.Second
+
+	// fundsFromFaucetAmount is how many base tokens are returned from the faucet.
+	fundsFromFaucetAmount = 1000 * isc.Million
 )
 
 type Config struct {
@@ -311,7 +314,7 @@ func (c *l1client) RequestFunds(addr iotago.Address, timeout ...time.Duration) e
 	if c.config.FaucetKey == nil {
 		return c.FaucetRequestHTTP(addr, timeout...)
 	}
-	return c.PostSimpleValueTX(c.config.FaucetKey, addr, utxodb.FundsFromFaucetAmount)
+	return c.PostSimpleValueTX(c.config.FaucetKey, addr, fundsFromFaucetAmount)
 }
 
 // PostFaucetRequest makes a faucet request.

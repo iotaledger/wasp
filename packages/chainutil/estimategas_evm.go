@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -159,15 +158,19 @@ func getMaxCallGasLimit(ch chain.ChainCore) (uint64, error) {
 		mustLatestState(ch),
 		ch,
 		governance.Contract.Hname(),
-		governance.ViewGetEVMGasRatio.Hname(),
+		governance.ViewGetChainInfo.Hname(),
 		nil,
 	)
 	if err != nil {
 		return 0, err
 	}
-	gasRatio, err := codec.DecodeRatio32(ret.MustGet(governance.ParamEVMGasRatio))
+	fp, err := gas.FeePolicyFromBytes(ret.MustGet(governance.VarGasFeePolicyBytes))
 	if err != nil {
 		return 0, err
 	}
-	return gas.EVMCallGasLimit(&gasRatio), nil
+	gl, err := gas.LimitsFromBytes(ret.MustGet(governance.VarGasLimitsBytes))
+	if err != nil {
+		return 0, err
+	}
+	return gas.EVMCallGasLimit(gl, &fp.EVMGasRatio), nil
 }

@@ -60,8 +60,8 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/iotaledger/hive.go/core/identity"
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/crypto/identity"
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cons/bp"
 	"github.com/iotaledger/wasp/packages/chain/dss"
@@ -628,7 +628,7 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.
 	if err != nil {
 		panic(fmt.Errorf("cannot get ID from the produced TX: %w", err))
 	}
-	chained, err := transaction.GetAliasOutput(tx, c.chainID.AsAddress())
+	chained, err := isc.AliasOutputWithIDFromTx(tx, c.chainID.AsAddress())
 	if err != nil {
 		panic(fmt.Errorf("cannot get AliasOutput from produced TX: %w", err))
 	}

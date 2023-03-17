@@ -15,12 +15,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
-	"github.com/iotaledger/hive.go/core/generics/lo"
-	"github.com/iotaledger/hive.go/core/generics/shrinkingmap"
-	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/hive.go/core/timeutil"
-	"github.com/iotaledger/hive.go/core/workerpool"
+	"github.com/iotaledger/hive.go/app/shutdown"
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
+	"github.com/iotaledger/hive.go/lo"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/runtime/timeutil"
+	"github.com/iotaledger/hive.go/runtime/workerpool"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/inx-app/pkg/nodebridge"
 	inx "github.com/iotaledger/inx/go"
@@ -45,7 +45,6 @@ const (
 	inxTimeoutMilestone           = 2 * time.Second
 	inxTimeoutOutput              = 2 * time.Second
 	inxTimeoutGetPeers            = 2 * time.Second
-	reattachWorkerPoolQueueSize   = 100
 
 	chainsCleanupThresholdRatio              = 50.0
 	chainsCleanupThresholdCount              = 10
@@ -127,7 +126,7 @@ func New(
 	}
 	nc.setL1ProtocolParams(nodeBridge.ProtocolParameters(), nodeInfo.BaseToken)
 
-	nc.reattachWorkerPool = workerpool.New(nc.reattachWorkerpoolFunc, workerpool.WorkerCount(1), workerpool.QueueSize(reattachWorkerPoolQueueSize))
+	nc.reattachWorkerPool = workerpool.New("L1 reattachments", 1)
 
 	return nc, nil
 }
@@ -301,7 +300,8 @@ func (nc *nodeConnection) Run(ctx context.Context) error {
 	nc.syncedCtxCancel()
 
 	<-ctx.Done()
-	nc.reattachWorkerPool.StopAndWait()
+	nc.reattachWorkerPool.Shutdown()
+	nc.reattachWorkerPool.ShutdownComplete.Wait()
 
 	return nil
 }
@@ -414,7 +414,9 @@ func (nc *nodeConnection) checkPendingTransactions(ledgerUpdate *ledgerUpdate) {
 
 		if !inputWasConsumed {
 			// check if the transaction needs to be reattached
-			nc.reattachWorkerPool.TrySubmit(pendingTx)
+			nc.reattachWorkerPool.Submit(func() {
+				nc.reattachWorkerpoolFunc(pendingTx)
+			})
 			return true
 		}
 
@@ -652,10 +654,7 @@ func (nc *nodeConnection) clearPendingTransaction(transactionID iotago.Transacti
 
 // reattachWorkerpoolFunc is triggered by handleLedgerUpdate for every pending transaction,
 // if the inputs of the pending transaction were not consumed in the ledger update.
-func (nc *nodeConnection) reattachWorkerpoolFunc(task workerpool.Task) {
-	defer task.Return(nil)
-
-	pendingTx := task.Param(0).(*pendingTransaction)
+func (nc *nodeConnection) reattachWorkerpoolFunc(pendingTx *pendingTransaction) {
 	if pendingTx.Conflicting() || pendingTx.Confirmed() {
 		// no need to reattach
 		// we can remove the tracking of the pending transaction
@@ -782,7 +781,7 @@ func (nc *nodeConnection) PublishTX(
 //
 // NOTE: Any out-of-order AO will be considered as a rollback or AO by the chain impl.
 func (nc *nodeConnection) AttachChain(
-	ctx context.Context, // ctx is the context given by a backgroundworker with PriorityChains
+	ctx context.Context, // ctx is the context given by a backgroundworker with PriorityChains, it might get canceled by shutdown signal or "Chains.Deactivate"
 	chainID isc.ChainID,
 	recvRequestCB chain.RequestOutputHandler,
 	recvAliasOutput chain.AliasOutputHandler,

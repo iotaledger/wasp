@@ -9,12 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coregovernance"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 )
 
@@ -95,22 +92,10 @@ func TestSetFeePolicy(t *testing.T) {
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
 
-	gfp0 := gas.DefaultGasFeePolicy()
+	gfp0 := gas.DefaultFeePolicy()
 	gfp0.GasPerToken = util.Ratio32{A: 1, B: 10}
 	f := coregovernance.ScFuncs.SetFeePolicy(ctx)
 	f.Params.FeePolicyBytes().SetValue(gfp0.Bytes())
-	f.Func.Post()
-	require.NoError(t, ctx.Err)
-}
-
-func TestSetChainInfo(t *testing.T) {
-	ctx := setupGovernance(t)
-	require.NoError(t, ctx.Err)
-
-	f := coregovernance.ScFuncs.SetChainInfo(ctx)
-	f.Params.MaxBlobSize().SetValue(10)
-	f.Params.MaxEventSize().SetValue(11)
-	f.Params.MaxEventsPerReq().SetValue(12)
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
 }
@@ -171,7 +156,6 @@ func TestGetFeePolicy(t *testing.T) {
 	fpBin := f.Results.FeePolicyBytes().Value()
 	gfp, err := gas.FeePolicyFromBytes(fpBin)
 	require.NoError(t, err)
-	require.True(t, isc.IsEmptyNativeTokenID(gfp.GasFeeTokenID)) // default fee token ID is empty
 	require.Equal(t, gas.DefaultGasPerToken, gfp.GasPerToken)
 	require.Equal(t, uint8(0), gfp.ValidatorFeeShare) // default fee share is 0
 }
@@ -183,31 +167,8 @@ func TestGetChainInfo(t *testing.T) {
 	f := coregovernance.ScFuncs.GetChainInfo(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	assert.Equal(t, wasmtypes.ChainIDFromBytes(ctx.Chain.ChainID.Bytes()), f.Results.ChainID().Value())
 	assert.Equal(t, ctx.ChainOwnerID().String(), f.Results.ChainOwnerID().Value().String())
-	assert.Equal(t, "'solo' testing chain", f.Results.Description().Value())
 	gfp, err := gas.FeePolicyFromBytes(f.Results.GasFeePolicyBytes().Value())
 	require.NoError(t, err)
 	assert.Equal(t, ctx.Chain.GetGasFeePolicy(), gfp)
-	assert.Equal(t, governance.DefaultMaxBlobSize, f.Results.MaxBlobSize().Value())
-	assert.Equal(t, governance.DefaultMaxEventSize, f.Results.MaxEventSize().Value())
-	assert.Equal(t, governance.DefaultMaxEventsPerRequest, f.Results.MaxEventsPerReq().Value())
-}
-
-func TestGetMaxBlobSize(t *testing.T) {
-	ctx := setupGovernance(t)
-	require.NoError(t, ctx.Err)
-
-	var maxBlobSize uint32 = 10
-	fset := coregovernance.ScFuncs.SetChainInfo(ctx)
-	fset.Params.MaxBlobSize().SetValue(maxBlobSize)
-	fset.Params.MaxEventSize().SetValue(11)
-	fset.Params.MaxEventsPerReq().SetValue(12)
-	fset.Func.Post()
-	require.NoError(t, ctx.Err)
-
-	fget := coregovernance.ScFuncs.GetMaxBlobSize(ctx)
-	fget.Func.Call()
-	require.NoError(t, ctx.Err)
-	require.Equal(t, maxBlobSize, fget.Results.MaxBlobSize().Value())
 }

@@ -204,48 +204,6 @@ func (s MutableRotateStateControllerParams) StateControllerAddress() wasmtypes.S
 	return wasmtypes.NewScMutableAddress(s.Proxy.Root(ParamStateControllerAddress))
 }
 
-type ImmutableSetChainInfoParams struct {
-	Proxy wasmtypes.Proxy
-}
-
-func NewImmutableSetChainInfoParams() ImmutableSetChainInfoParams {
-	return ImmutableSetChainInfoParams{Proxy: wasmlib.NewParamsProxy()}
-}
-
-// default maximum size of a blob
-func (s ImmutableSetChainInfoParams) MaxBlobSize() wasmtypes.ScImmutableUint32 {
-	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ParamMaxBlobSize))
-}
-
-// default maximum size of a single event
-func (s ImmutableSetChainInfoParams) MaxEventSize() wasmtypes.ScImmutableUint16 {
-	return wasmtypes.NewScImmutableUint16(s.Proxy.Root(ParamMaxEventSize))
-}
-
-// default maximum number of events per request
-func (s ImmutableSetChainInfoParams) MaxEventsPerReq() wasmtypes.ScImmutableUint16 {
-	return wasmtypes.NewScImmutableUint16(s.Proxy.Root(ParamMaxEventsPerReq))
-}
-
-type MutableSetChainInfoParams struct {
-	Proxy wasmtypes.Proxy
-}
-
-// default maximum size of a blob
-func (s MutableSetChainInfoParams) MaxBlobSize() wasmtypes.ScMutableUint32 {
-	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamMaxBlobSize))
-}
-
-// default maximum size of a single event
-func (s MutableSetChainInfoParams) MaxEventSize() wasmtypes.ScMutableUint16 {
-	return wasmtypes.NewScMutableUint16(s.Proxy.Root(ParamMaxEventSize))
-}
-
-// default maximum number of events per request
-func (s MutableSetChainInfoParams) MaxEventsPerReq() wasmtypes.ScMutableUint16 {
-	return wasmtypes.NewScMutableUint16(s.Proxy.Root(ParamMaxEventsPerReq))
-}
-
 type ImmutableSetFeePolicyParams struct {
 	Proxy wasmtypes.Proxy
 }

@@ -1,6 +1,6 @@
 package profilingrecorder
 
-import "github.com/iotaledger/hive.go/core/app"
+import "github.com/iotaledger/hive.go/app"
 
 // ParametersProfilingRecorder contains the definition of the parameters used by ProfilingRecorder.
 type ParametersProfilingRecorder struct {

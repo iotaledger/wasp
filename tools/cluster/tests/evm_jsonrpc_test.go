@@ -8,7 +8,6 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"math"
 	"testing"
 	"time"
 
@@ -99,14 +98,12 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*e
 	} else {
 		amount = e.Clu.L1BaseTokens(walletAddr) - transferAllowanceToGasBudgetBaseTokens
 	}
-	gasBudget := uint64(math.MaxUint64)
 	tx, err := e.Chain.Client(walletKey).Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
 		Transfer: isc.NewAssets(amount+transferAllowanceToGasBudgetBaseTokens, nil),
 		Args: map[kv.Key][]byte{
 			accounts.ParamAgentID: codec.EncodeAgentID(isc.NewEthereumAddressAgentID(ethAddr)),
 		},
 		Allowance: isc.NewAssetsBaseTokens(amount),
-		GasBudget: &gasBudget,
 	})
 	require.NoError(e.T, err)
 
@@ -129,7 +126,7 @@ func testEVMJsonRPCCluster(t *testing.T, env *ChainEnv) {
 
 func TestEVMJsonRPCClusterAccessNode(t *testing.T) {
 	clu := newCluster(t, waspClusterOpts{nNodes: 5})
-	chain, err := clu.DeployChainWithDKG("testchain", clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3))
+	chain, err := clu.DeployChainWithDKG(clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3))
 	require.NoError(t, err)
 	env := newChainEnv(t, clu, chain)
 	e := newClusterTestEnv(t, env, 4) // node #4 is an access node

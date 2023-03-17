@@ -1260,20 +1260,10 @@ paths:
           format: string
           type: string
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                format: string
-                type: string
-          description: The evm json RPC
-        "404":
-          content:
-            application/json:
-              schema:
-                format: string
-                type: string
-          description: The evm json RPC failure
+        default:
+          content: {}
+          description: successful operation
+      summary: Ethereum JSON-RPC
       tags:
       - chains
   /chains/{chainID}/evm/tx/{txHash}:
@@ -1309,6 +1299,23 @@ paths:
                 type: string
           description: Request ID not found
       summary: Get the ISC request ID for the given Ethereum transaction hash
+      tags:
+      - chains
+  /chains/{chainID}/evm/ws:
+    get:
+      parameters:
+      - description: ChainID (Bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        default:
+          content: {}
+          description: successful operation
+      summary: Ethereum JSON-RPC (Websocket transport)
       tags:
       - chains
   /chains/{chainID}/receipts/{requestID}:
@@ -1682,7 +1689,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/PeeringNodeStatusResponse_'
+                  $ref: '#/components/schemas/PeeringNodeStatusResponse__'
                 type: array
           description: A list of all peers
         "401":
@@ -2063,6 +2070,7 @@ paths:
         default:
           content: {}
           description: successful operation
+      summary: The websocket connection service
 components:
   schemas:
     AccountFoundriesResponse:
@@ -2740,22 +2748,18 @@ components:
     ChainInfoResponse:
       example:
         chainOwnerId: tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e
-        maxEventsPerReq: 50
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
-        description: description
+        customMetadata: customMetadata
         gasFeePolicy:
-          gasFeeTokenId: gasFeeTokenId
           gasPerToken:
             a: 1
             b: 100
-          validatorFeeShare: 1
+          validatorFeeShare: 0
           evmGasRatio:
-            a: 0
-            b: 0
+            a: 1
+            b: 1
         isActive: true
-        maxBlobSize: 2000000
-        maxEventSize: 2000
       properties:
         chainID:
           description: ChainID (Bech32-encoded).
@@ -2771,12 +2775,13 @@ components:
           type: string
           xml:
             name: ChainOwnerID
-        description:
-          description: The description of the chain.
+        customMetadata:
+          description: (base64) Optional extra metadata that is appended to the L1
+            AliasOutput
           format: string
           type: string
           xml:
-            name: Description
+            name: CustomMetadata
         evmChainId:
           description: The EVM chain ID
           example: 1074
@@ -2793,39 +2798,11 @@ components:
           type: boolean
           xml:
             name: IsActive
-        maxBlobSize:
-          description: The maximum contract blob size.
-          example: 2000000
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: MaxBlobSize
-        maxEventSize:
-          description: The maximum event size.
-          example: 2000
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: MaxEventSize
-        maxEventsPerReq:
-          description: The maximum amount of events per request.
-          example: 50
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: MaxEventsPerReq
       required:
       - chainID
       - chainOwnerId
-      - description
       - evmChainId
       - isActive
-      - maxBlobSize
-      - maxEventSize
-      - maxEventsPerReq
       type: object
       xml:
         name: ChainInfoResponse
@@ -2999,18 +2976,18 @@ components:
         committeeNodes:
         - node:
             isAlive: true
-            peeringURL: localhost:4000
+            peeringURL: peeringURL
             name: name
-            publicKey: 0x0000
-            numUsers: 1
+            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+            numUsers: 6
             isTrusted: true
           accessAPI: accessAPI
         - node:
             isAlive: true
-            peeringURL: localhost:4000
+            peeringURL: peeringURL
             name: name
-            publicKey: 0x0000
-            numUsers: 1
+            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+            numUsers: 6
             isTrusted: true
           accessAPI: accessAPI
         chainId: tst1pqm5ckama06xhkl080mmvz6l3xy8c8lulrwy7mx4ll0fc69krxfgka70j0e
@@ -3116,10 +3093,10 @@ components:
       example:
         node:
           isAlive: true
-          peeringURL: localhost:4000
+          peeringURL: peeringURL
           name: name
-          publicKey: 0x0000
-          numUsers: 1
+          publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+          numUsers: 6
           isTrusted: true
         accessAPI: accessAPI
       properties:
@@ -3657,23 +3634,16 @@ components:
         name: FoundryOutputResponse
     GasFeePolicy:
       example:
-        gasFeeTokenId: gasFeeTokenId
         gasPerToken:
           a: 1
           b: 100
-        validatorFeeShare: 1
+        validatorFeeShare: 0
         evmGasRatio:
-          a: 0
-          b: 0
+          a: 1
+          b: 1
       properties:
         evmGasRatio:
           $ref: '#/components/schemas/Ratio32_'
-        gasFeeTokenId:
-          description: The gas fee token id. Empty if base token.
-          format: string
-          type: string
-          xml:
-            name: GasFeeTokenID
         gasPerToken:
           $ref: '#/components/schemas/Ratio32'
         validatorFeeShare:
@@ -3684,7 +3654,6 @@ components:
             name: ValidatorFeeShare
       required:
       - evmGasRatio
-      - gasFeeTokenId
       - gasPerToken
       - validatorFeeShare
       type: object
@@ -3692,25 +3661,18 @@ components:
         name: GasFeePolicy
     GasFeePolicy_:
       example:
-        gasFeeTokenId: gasFeeTokenId
         gasPerToken:
           a: 0
           b: 0
-        validatorFeeShare: 0
+        validatorFeeShare: 1
         evmGasRatio:
           a: 0
           b: 0
       properties:
         evmGasRatio:
-          $ref: '#/components/schemas/Ratio32_'
-        gasFeeTokenId:
-          description: The gas fee token id. Empty if base token.
-          format: string
-          type: string
-          xml:
-            name: GasFeeTokenID
+          $ref: '#/components/schemas/Ratio32__'
         gasPerToken:
-          $ref: '#/components/schemas/Ratio32_'
+          $ref: '#/components/schemas/Ratio32__'
         validatorFeeShare:
           description: The validator fee share.
           format: int32
@@ -3719,7 +3681,6 @@ components:
             name: ValidatorFeeShare
       required:
       - evmGasRatio
-      - gasFeeTokenId
       - gasPerToken
       - validatorFeeShare
       type: object
@@ -3746,20 +3707,16 @@ components:
     GovChainInfoResponse:
       example:
         chainOwnerId: chainOwnerId
-        maxEventsPerReq: 5
         chainID: chainID
-        description: description
+        customMetadata: customMetadata
         gasFeePolicy:
-          gasFeeTokenId: gasFeeTokenId
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 0
+          validatorFeeShare: 1
           evmGasRatio:
             a: 0
             b: 0
-        maxBlobSize: 6
-        maxEventSize: 1
       properties:
         chainID:
           description: ChainID (Bech32-encoded).
@@ -3773,40 +3730,19 @@ components:
           type: string
           xml:
             name: ChainOwnerID
-        description:
-          description: The description of the chain.
+        customMetadata:
+          description: (base64) Optional extra metadata that is appended to the L1
+            AliasOutput
           format: string
           type: string
           xml:
-            name: Description
+            name: CustomMetadata
         gasFeePolicy:
           $ref: '#/components/schemas/GasFeePolicy_'
-        maxBlobSize:
-          description: The maximum contract blob size.
-          format: int32
-          type: integer
-          xml:
-            name: MaxBlobSize
-        maxEventSize:
-          description: The maximum event size.
-          format: int32
-          type: integer
-          xml:
-            name: MaxEventSize
-        maxEventsPerReq:
-          description: The maximum amount of events per request.
-          format: int32
-          type: integer
-          xml:
-            name: MaxEventsPerReq
       required:
       - chainID
       - chainOwnerId
-      - description
       - gasFeePolicy
-      - maxBlobSize
-      - maxEventSize
-      - maxEventsPerReq
       type: object
       xml:
         name: GovChainInfoResponse
@@ -4572,6 +4508,60 @@ components:
     PeeringNodeStatusResponse_:
       example:
         isAlive: true
+        peeringURL: peeringURL
+        name: name
+        publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+        numUsers: 6
+        isTrusted: true
+      properties:
+        isAlive:
+          description: Whether or not the peer is activated
+          format: boolean
+          type: boolean
+          xml:
+            name: IsAlive
+        isTrusted:
+          format: boolean
+          type: boolean
+          xml:
+            name: IsTrusted
+        name:
+          format: string
+          type: string
+          xml:
+            name: Name
+        numUsers:
+          description: The amount of users attached to the peer
+          format: int32
+          type: integer
+          xml:
+            name: NumUsers
+        peeringURL:
+          description: The peering URL of the peer
+          format: string
+          type: string
+          xml:
+            name: PeeringURL
+        publicKey:
+          description: The peers public key encoded in Hex
+          example: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+          format: string
+          type: string
+          xml:
+            name: PublicKey
+      required:
+      - isAlive
+      - isTrusted
+      - name
+      - numUsers
+      - peeringURL
+      - publicKey
+      type: object
+      xml:
+        name: PeeringNodeStatusResponse
+    PeeringNodeStatusResponse__:
+      example:
+        isAlive: true
         peeringURL: localhost:4000
         name: name
         publicKey: 0x0000
@@ -4782,6 +4772,31 @@ components:
       xml:
         name: Ratio32
     Ratio32_:
+      example:
+        a: 1
+        b: 1
+      properties:
+        a:
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: A
+        b:
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: B
+      required:
+      - a
+      - b
+      type: object
+      xml:
+        name: Ratio32
+    Ratio32__:
       example:
         a: 0
         b: 0

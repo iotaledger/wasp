@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/core/marshalutil"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -21,14 +21,14 @@ import (
 type OffLedgerService struct {
 	chainService    interfaces.ChainService
 	networkProvider peering.NetworkProvider
-	requestCache    *expiringcache.ExpiringCache
+	requestCache    *expiringcache.ExpiringCache[isc.RequestID, bool]
 }
 
 func NewOffLedgerService(chainService interfaces.ChainService, networkProvider peering.NetworkProvider, requestCacheTTL time.Duration) interfaces.OffLedgerService {
 	return &OffLedgerService{
 		chainService:    chainService,
 		networkProvider: networkProvider,
-		requestCache:    expiringcache.New(requestCacheTTL),
+		requestCache:    expiringcache.New[isc.RequestID, bool](requestCacheTTL),
 	}
 }
 

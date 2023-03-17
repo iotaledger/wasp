@@ -33,7 +33,9 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		SerialNumber: txb.nextFoundrySerialNumber(),
 		TokenScheme:  scheme,
 		Conditions: iotago.UnlockConditions{
-			&iotago.ImmutableAliasUnlockCondition{Address: txb.anchorOutput.AliasID.ToAddress().(*iotago.AliasAddress)},
+			&iotago.ImmutableAliasUnlockCondition{
+				Address: util.AliasIDFromAliasOutput(txb.anchorOutput, txb.anchorOutputID).ToAddress().(*iotago.AliasAddress),
+			},
 		},
 		Features: nil,
 	}

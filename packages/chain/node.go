@@ -24,7 +24,7 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/chainMgr"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
@@ -38,6 +38,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/shutdown"
@@ -48,11 +49,12 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 const (
 	recoveryTimeout          time.Duration = 15 * time.Minute // TODO: Make it configurable?
-	redeliveryPeriod         time.Duration = 1 * time.Second  // TODO: Make it configurable?
+	redeliveryPeriod         time.Duration = 2 * time.Second  // TODO: Make it configurable?
 	printStatusPeriod        time.Duration = 3 * time.Second  // TODO: Make it configurable?
 	consensusInstsInAdvance  int           = 3                // TODO: Make it configurable?
 	awaitReceiptCleanupEvery int           = 100              // TODO: Make it configurable?
@@ -353,7 +355,7 @@ func New(
 	//
 	// Connect to the peering network.
 	netRecvPipeInCh := cni.netRecvPipe.In()
-	netAttachID := net.Attach(&netPeeringID, peering.PeerMessageReceiverChain, func(recv *peering.PeerMessageIn) {
+	unhook := net.Attach(&netPeeringID, peering.PeerMessageReceiverChain, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeChainMgr {
 			cni.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
@@ -393,7 +395,7 @@ func New(
 	//
 	// Run the main thread.
 
-	go cni.run(ctx, netAttachID)
+	go cni.run(ctx, unhook)
 	return cni, nil
 }
 
@@ -421,8 +423,9 @@ func (cni *chainNodeImpl) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
 }
 
 //nolint:gocyclo
-func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
-	defer cni.net.Detach(netAttachID)
+func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFunc) {
+	defer util.ExecuteIfNotNil(cleanupFunc)
+
 	recvAliasOutputPipeOutCh := cni.recvAliasOutputPipe.Out()
 	recvTxPublishedPipeOutCh := cni.recvTxPublishedPipe.Out()
 	recvMilestonePipeOutCh := cni.recvMilestonePipe.Out()
@@ -438,7 +441,6 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 			}
 			// needs to wait for state mgr and consensusInst
 			if cni.shutdownCoordinator.CheckNestedDone() {
-				cni.net.Detach(netAttachID)
 				cni.shutdownCoordinator.Done()
 				return
 			}
@@ -547,7 +549,7 @@ func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *is
 	cni.accessLock.Lock()
 	cni.latestConfirmedState = st
 	cni.accessLock.Unlock()
-	l1Commitment, err := state.L1CommitmentFromAliasOutput(till.GetAliasOutput())
+	l1Commitment, err := vmcontext.L1CommitmentFromAliasOutput(till.GetAliasOutput())
 	if err != nil {
 		panic(fmt.Errorf("cannot get L1Commitment from alias output: %w", err))
 	}
@@ -584,6 +586,10 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 
 func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
 	cni.log.Debugf("handleAliasOutput: %v", aliasOutput)
+	if aliasOutput.GetStateIndex() == 0 {
+		origin.InitChainByAliasOutput(cni.chainStore, aliasOutput)
+	}
+
 	cni.stateTrackerCnf.TrackAliasOutput(aliasOutput, true)
 	cni.stateTrackerAct.TrackAliasOutput(aliasOutput, false) // ACT state will be equal to CNF or ahead of it.
 	outMsgs := cni.chainMgr.Input(

@@ -3,8 +3,8 @@ package testchain
 import (
 	"sync"
 
-	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/hive.go/core/marshalutil"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 )
 
 type MockedACSRunner struct {

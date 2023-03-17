@@ -14,13 +14,17 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -28,16 +32,80 @@ import (
 )
 
 type EVMChain struct {
-	backend ChainBackend
-	chainID uint16
+	backend  ChainBackend
+	chainID  uint16 // cache
+	newBlock *event.Event1[*NewBlockEvent]
 }
 
-func NewEVMChain(backend ChainBackend, chainID uint16) *EVMChain {
-	return &EVMChain{backend, chainID}
+type NewBlockEvent struct {
+	block *types.Block
+	logs  []*types.Log
 }
 
-func (e *EVMChain) Signer() types.Signer {
-	return evmutil.Signer(big.NewInt(int64(e.chainID)))
+func NewEVMChain(backend ChainBackend, pub *publisher.Publisher, log *logger.Logger) *EVMChain {
+	e := &EVMChain{
+		backend:  backend,
+		newBlock: event.New1[*NewBlockEvent](),
+	}
+
+	pub.Events.NewBlock.Hook(func(ev *publisher.ISCEvent[*blocklog.BlockInfo]) {
+		if !ev.ChainID.Equals(*e.backend.ISCChainID()) {
+			return
+		}
+		state, err := e.backend.ISCStateByBlockIndex(ev.Payload.BlockIndex)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		blockNumber := new(big.Int).SetUint64(evmBlockNumberByISCBlockIndex(ev.Payload.BlockIndex))
+		block, err := e.blockByNumber(state, blockNumber)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		q := &ethereum.FilterQuery{
+			FromBlock: blockNumber,
+			ToBlock:   blockNumber,
+		}
+		ret, err := e.backend.ISCCallView(state, evm.Contract.Name, evm.FuncGetLogs.Name, dict.Dict{
+			evm.FieldFilterQuery: evmtypes.EncodeFilterQuery(q),
+		})
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		logs, err := evmtypes.DecodeLogs(ret.MustGet(evm.FieldResult))
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		e.newBlock.Trigger(&NewBlockEvent{
+			block: block,
+			logs:  logs,
+		})
+	})
+
+	return e
+}
+
+func (e *EVMChain) Signer() (types.Signer, error) {
+	chainID, err := e.ChainID()
+	if err != nil {
+		return nil, err
+	}
+	return evmutil.Signer(big.NewInt(int64(chainID))), nil
+}
+
+func (e *EVMChain) ChainID() (uint16, error) {
+	if e.chainID == 0 {
+		ret, err := e.backend.ISCCallView(e.backend.ISCLatestState(), evm.Contract.Name, evm.FuncGetChainID.Name, nil)
+		if err != nil {
+			return 0, err
+		}
+		e.chainID = codec.MustDecodeUint16(ret.MustGet(evm.FieldResult))
+	}
+	return e.chainID, nil
 }
 
 func (e *EVMChain) ViewCaller(chainState state.State) vmerrors.ViewCaller {
@@ -70,7 +138,7 @@ func (e *EVMChain) GasRatio() (util.Ratio32, error) {
 	return codec.DecodeRatio32(ret.MustGet(governance.ParamEVMGasRatio))
 }
 
-func (e *EVMChain) GasFeePolicy() (*gas.GasFeePolicy, error) {
+func (e *EVMChain) GasFeePolicy() (*gas.FeePolicy, error) {
 	res, err := e.backend.ISCCallView(e.backend.ISCLatestState(), governance.Contract.Name, governance.ViewGetFeePolicy.Name, nil)
 	if err != nil {
 		return nil, err
@@ -84,10 +152,18 @@ func (e *EVMChain) GasFeePolicy() (*gas.GasFeePolicy, error) {
 }
 
 func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
-	if tx.ChainId().Uint64() != uint64(e.chainID) {
+	chainID, err := e.ChainID()
+	if err != nil {
+		return err
+	}
+	if tx.ChainId().Uint64() != uint64(chainID) {
 		return errors.New("chain ID mismatch")
 	}
-	sender, err := types.Sender(e.Signer(), tx)
+	signer, err := e.Signer()
+	if err != nil {
+		return err
+	}
+	sender, err := types.Sender(signer, tx)
 	if err != nil {
 		return fmt.Errorf("invalid transaction: %w", err)
 	}
@@ -139,12 +215,11 @@ func (e *EVMChain) iscStateFromEVMBlockNumber(blockNumber *big.Int) (state.State
 	if !blockNumber.IsUint64() {
 		return nil, fmt.Errorf("block number is too large: %s", blockNumber)
 	}
-	n := blockNumber.Uint64()
-	if n > math.MaxUint32-1 {
-		return nil, fmt.Errorf("block number is too large: %s", blockNumber)
+	iscBlockIndex, err := iscBlockIndexByEVMBlockNumber(blockNumber.Uint64())
+	if err != nil {
+		return nil, err
 	}
-	// the first EVM block (number 0) is "minted" at ISC block index 1 (init chain)
-	return e.backend.ISCStateByBlockIndex(uint32(n) + 1)
+	return e.backend.ISCStateByBlockIndex(iscBlockIndex)
 }
 
 func (e *EVMChain) iscStateFromEVMBlockNumberOrHash(blockNumberOrHash rpc.BlockNumberOrHash) (state.State, error) {
@@ -195,6 +270,10 @@ func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
 	if err != nil {
 		return nil, err
 	}
+	return e.blockByNumber(chainState, blockNumber)
+}
+
+func (e *EVMChain) blockByNumber(chainState state.State, blockNumber *big.Int) (*types.Block, error) {
 	params := dict.Dict{}
 	if blockNumber != nil {
 		params[evm.FieldBlockNumber] = blockNumber.Bytes()
@@ -391,4 +470,48 @@ func (e *EVMChain) Logs(q *ethereum.FilterQuery) ([]*types.Log, error) {
 
 func (e *EVMChain) BaseToken() *parameters.BaseToken {
 	return e.backend.BaseToken()
+}
+
+func (e *EVMChain) SubscribeNewHeads(ch chan<- *types.Header) (unsubscribe func()) {
+	return e.newBlock.Hook(func(ev *NewBlockEvent) {
+		ch <- ev.block.Header()
+	}).Unhook
+}
+
+func (e *EVMChain) SubscribeLogs(q *ethereum.FilterQuery, ch chan<- []*types.Log) (unsubscribe func()) {
+	return e.newBlock.Hook(func(ev *NewBlockEvent) {
+		if q.BlockHash != nil && *q.BlockHash != ev.block.Hash() {
+			return
+		}
+		if q.FromBlock != nil && q.FromBlock.IsUint64() && q.FromBlock.Cmp(ev.block.Number()) > 0 {
+			return
+		}
+		if q.ToBlock != nil && q.ToBlock.IsUint64() && q.ToBlock.Cmp(ev.block.Number()) < 0 {
+			return
+		}
+
+		var matchedLogs []*types.Log
+		for _, log := range ev.logs {
+			if evmtypes.LogMatches(log, q.Addresses, q.Topics) {
+				matchedLogs = append(matchedLogs, log)
+			}
+		}
+		if len(matchedLogs) > 0 {
+			fmt.Printf("\n\n4\n\n")
+			ch <- matchedLogs
+		}
+	}).Unhook
+}
+
+// the first EVM block (number 0) is "minted" at ISC block index 1 (init chain)
+func iscBlockIndexByEVMBlockNumber(n uint64) (uint32, error) {
+	if n > math.MaxUint32-1 {
+		return 0, fmt.Errorf("block number is too large: %d", n)
+	}
+	return uint32(n), nil
+}
+
+// the first EVM block (number 0) is "minted" at ISC block index 1 (init chain)
+func evmBlockNumberByISCBlockIndex(n uint32) uint64 {
+	return uint64(n)
 }

@@ -12,8 +12,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
@@ -21,18 +21,23 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
-func TestBasic(t *testing.T) {
+func TestGrBasic(t *testing.T) {
 	t.Parallel()
 	type test struct {
 		n        int
@@ -56,23 +61,20 @@ func TestBasic(t *testing.T) {
 	for _, tst := range tests {
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
-			func(tt *testing.T) { testGeneric(tt, tst.n, tst.f, tst.reliable) },
+			func(tt *testing.T) { testGrBasic(tt, tst.n, tst.f, tst.reliable) },
 		)
 	}
 }
 
-func testGeneric(t *testing.T, n, f int, reliable bool) {
+func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	//
 	// Create ledger accounts.
 	utxoDB := utxodb.New(utxodb.DefaultInitParams())
-	governor := cryptolib.NewKeyPair()
 	originator := cryptolib.NewKeyPair()
-	_, err := utxoDB.GetFundsFromFaucet(governor.Address())
-	require.NoError(t, err)
-	_, err = utxoDB.GetFundsFromFaucet(originator.Address())
+	_, err := utxoDB.GetFundsFromFaucet(originator.Address())
 	require.NoError(t, err)
 	//
 	// Create a fake network and keys for the tests.
@@ -102,16 +104,19 @@ func testGeneric(t *testing.T, n, f int, reliable bool) {
 	mempools := make([]*testMempool, len(peerIdentities))
 	stateMgrs := make([]*testStateMgr, len(peerIdentities))
 	procConfig := coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)
-	tcl := testchain.NewTestChainLedger(t, utxoDB, governor, originator)
-	originAO, chainID := tcl.MakeTxChainOrigin(cmtAddress)
-	chainInitReqs := tcl.MakeTxChainInit()
+	tcl := testchain.NewTestChainLedger(t, utxoDB, originator)
+	_, originAO, chainID := tcl.MakeTxChainOrigin(cmtAddress)
 	ctx, ctxCancel := context.WithCancel(context.Background())
+	defer ctxCancel()
 	logIndex := cmtLog.LogIndex(0)
 	for i := range peerIdentities {
 		procCache := processors.MustNew(procConfig)
 		dkShare, err := dkShareProviders[i].LoadDKShare(cmtAddress)
 		require.NoError(t, err)
-		chainStore := state.InitChainStore(mapdb.NewMapDB())
+		chainStore := origin.InitChain(state.NewStore(mapdb.NewMapDB()),
+			dict.Dict{origin.ParamChainOwner: isc.NewAgentID(originator.Address()).Bytes()},
+			accounts.MinimumBaseTokensOnCommonAccount,
+		)
 		mempools[i] = newTestMempool(t)
 		stateMgrs[i] = newTestStateMgr(t, chainStore)
 		nodes[i] = consGR.New(
@@ -136,7 +141,9 @@ func testGeneric(t *testing.T, n, f int, reliable bool) {
 	// Provide data from Mempool and StateMgr.
 	for i := range nodes {
 		nodes[i].Time(time.Now())
-		mempools[i].addRequests(originAO.OutputID(), chainInitReqs)
+		mempools[i].addRequests(originAO.OutputID(), []isc.Request{
+			isc.NewOffLedgerRequest(chainID, isc.Hn("foo"), isc.Hn("bar"), nil, 0, gas.LimitsDefault.MaxGasPerRequest).Sign(originator),
+		})
 		stateMgrs[i].addOriginState(originAO)
 	}
 	//
@@ -150,7 +157,6 @@ func testGeneric(t *testing.T, n, f int, reliable bool) {
 		}
 		require.Equal(t, firstOutput.Result.Transaction, output.Result.Transaction)
 	}
-	ctxCancel()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -265,7 +271,12 @@ func newTestStateMgr(t *testing.T, chainStore state.Store) *testStateMgr {
 }
 
 func (tsm *testStateMgr) addOriginState(originAO *isc.AliasOutputWithID) {
-	chainState, err := tsm.chainStore.StateByTrieRoot(state.OriginL1Commitment().TrieRoot())
+	initParams := dict.Dict{
+		origin.ParamChainOwner: isc.NewAgentID(originAO.GetAliasOutput().GovernorAddress()).Bytes(),
+	}
+	chainState, err := tsm.chainStore.StateByTrieRoot(
+		origin.L1Commitment(initParams, accounts.MinimumBaseTokensOnCommonAccount).TrieRoot(),
+	)
 	require.NoError(tsm.t, err)
 	tsm.addState(originAO, chainState)
 }
@@ -294,7 +305,7 @@ func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutput 
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
 	resp := make(chan state.State, 1)
-	stateCommitment, err := state.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
+	stateCommitment, err := vmcontext.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
 	if err != nil {
 		panic(err)
 	}
@@ -331,7 +342,7 @@ func (tsm *testStateMgr) tryRespond(hash hashing.HashValue) {
 }
 
 func commitmentHashFromAO(aliasOutput *isc.AliasOutputWithID) hashing.HashValue {
-	commitment, err := state.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
+	commitment, err := vmcontext.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
 	if err != nil {
 		panic(err)
 	}

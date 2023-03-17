@@ -42,7 +42,7 @@ func testPanicCallView(t *testing.T, w bool, funName string, gasBudget uint64, p
 		extra = 1
 	}
 
-	require.EqualValues(t, 5+extra, strings.Count(receiptOutput, "Block/Request index:"))
+	require.EqualValues(t, 4+extra, strings.Count(receiptOutput, "Block/Request index:"))
 	require.EqualValues(t, 1, strings.Count(errorsAsString, panicView))
 }
 
@@ -79,7 +79,7 @@ func testPanicViewCall(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 4+extra, strings.Count(receiptOutput, "Block/Request index:"))
+	require.EqualValues(t, 3+extra, strings.Count(receiptOutput, "Block/Request index:"))
 	require.EqualValues(t, 0, strings.Count(errorsAsString, sbtestsc.MsgViewPanic))
 }
 
@@ -113,7 +113,7 @@ func testCallPanicFull(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 5+extra, strings.Count(receiptOutput, "Block/Request index:"))
+	require.EqualValues(t, 4+extra, strings.Count(receiptOutput, "Block/Request index:"))
 	require.EqualValues(t, 1, strings.Count(errorsAsString, sbtestsc.MsgFullPanic))
 }
 
@@ -154,6 +154,6 @@ func testCallPanicViewFromView(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	require.EqualValues(t, 4+extra, strings.Count(receiptOutput, "Block/Request index:"))
+	require.EqualValues(t, 3+extra, strings.Count(receiptOutput, "Block/Request index:"))
 	require.EqualValues(t, 0, strings.Count(errorsAsString, sbtestsc.MsgViewPanic))
 }

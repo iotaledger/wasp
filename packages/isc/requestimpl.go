@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 const (
@@ -102,7 +101,13 @@ func (s *offLedgerSignatureScheme) readSignature(mu *marshalutil.MarshalUtil) er
 	return err
 }
 
-func NewOffLedgerRequest(chainID ChainID, contract, entryPoint Hname, params dict.Dict, nonce uint64) UnsignedOffLedgerRequest {
+func NewOffLedgerRequest(
+	chainID ChainID,
+	contract, entryPoint Hname,
+	params dict.Dict,
+	nonce uint64,
+	gasBudget uint64,
+) UnsignedOffLedgerRequest {
 	return &offLedgerRequestData{
 		chainID:    chainID,
 		contract:   contract,
@@ -110,7 +115,7 @@ func NewOffLedgerRequest(chainID ChainID, contract, entryPoint Hname, params dic
 		params:     params,
 		nonce:      nonce,
 		allowance:  NewEmptyAssets(),
-		gasBudget:  gas.MaxGasPerRequest,
+		gasBudget:  gasBudget,
 	}
 }
 

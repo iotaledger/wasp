@@ -5,7 +5,7 @@
 name = "wasmclient"
 description = "Smart Contract interface library for Wasm clients"
 license = "Apache-2.0"
-version = "0.1.0"
+version = "1.0.1"
 authors = ["Eric Hop <eric@iota.org>"]
 edition = "2018"
 repository = "https://github.com/iotaledger/wasp"
@@ -15,12 +15,12 @@ default = ["console_error_panic_hook"]
 
 [dependencies]
 iota-client = { git = "https://github.com/iotaledger/iota.rs", branch = "develop" }
-iota-crypto = { git = "https://github.com/iotaledger/crypto.rs", branch = "dev", default-features = false, features = [ "std", "chacha", "blake2b", "ed25519", "random", "slip10", "bip39", "bip39-en" ] }
+iota-crypto = { git = "https://github.com/iotaledger/crypto.rs", branch = "dev", default-features = false, features = [ "blake2b", "ed25519" ] }
 wasmlib = { path = "../wasmlib" }
 #wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "develop" }
 wasm-bindgen = "0.2.84"
 serde = { version = "1.0.152", features = ["derive"] }
-serde_json = "1.0.93"
+serde_json = "1.0.94"
 bech32 = "0.9.1"
 reqwest = { version = "0.11.14", features = ["blocking", "json"] }
 url = "2.3.1"

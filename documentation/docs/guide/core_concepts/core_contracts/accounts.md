@@ -74,6 +74,8 @@ owner is the only one who can call this entry point.
 
 Creates a new foundry with the specified token scheme, and assigns the foundry to the sender.
 
+You can call this end point from the CLI using `wasp-cli chain create-foundry -h` 
+
 #### Parameters
 
 - `t` ([`iotago::TokenScheme`](https://github.com/iotaledger/iota.go/blob/develop/token_scheme.go)): The token scheme

@@ -1,12 +1,12 @@
 {
   "name": "wasmlib",
   "description": "WasmLib, interface library for ISC Wasm VM",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Eric Hop",
-  "devDependencies": {
-    "assemblyscript": "^0.27.0"
-  },
   "dependencies": {
     "@assemblyscript/loader": "^0.27.0"
+  },
+  "devDependencies": {
+    "assemblyscript": "^0.27.0"
   }
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"github.com/iotaledger/hive.go/core/basicauth"
+	"github.com/iotaledger/hive.go/web/basicauth"
 	"github.com/iotaledger/wasp/packages/users"
 )
 

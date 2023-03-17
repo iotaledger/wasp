@@ -6,6 +6,7 @@
 package jsonrpc
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -286,7 +287,11 @@ func (e *EthService) parseTxArgs(args *SendTxArgs) (*types.Transaction, error) {
 	if err := args.setDefaults(e); err != nil {
 		return nil, err
 	}
-	return types.SignTx(args.toTransaction(), e.evmChain.Signer(), account)
+	signer, err := e.evmChain.Signer()
+	if err != nil {
+		return nil, err
+	}
+	return types.SignTx(args.toTransaction(), signer, account)
 }
 
 func (e *EthService) GetLogs(q *RPCFilterQuery) ([]*types.Log, error) {
@@ -298,8 +303,67 @@ func (e *EthService) GetLogs(q *RPCFilterQuery) ([]*types.Log, error) {
 }
 
 // ChainID implements the eth_chainId method according to https://eips.ethereum.org/EIPS/eip-695
-func (e *EthService) ChainId() hexutil.Uint { //nolint:revive
-	return hexutil.Uint(e.evmChain.chainID)
+func (e *EthService) ChainId() (hexutil.Uint, error) { //nolint:revive
+	chainID, err := e.evmChain.ChainID()
+	return hexutil.Uint(chainID), err
+}
+
+func (e *EthService) NewHeads(ctx context.Context) (*rpc.Subscription, error) {
+	notifier, supported := rpc.NotifierFromContext(ctx)
+	if !supported {
+		return &rpc.Subscription{}, rpc.ErrNotificationsUnsupported
+	}
+
+	rpcSub := notifier.CreateSubscription()
+
+	go func() {
+		headers := make(chan *types.Header)
+		unsubscribe := e.evmChain.SubscribeNewHeads(headers)
+		defer unsubscribe()
+
+		for {
+			select {
+			case h := <-headers:
+				_ = notifier.Notify(rpcSub.ID, h)
+			case <-rpcSub.Err():
+				return
+			case <-notifier.Closed():
+				return
+			}
+		}
+	}()
+
+	return rpcSub, nil
+}
+
+func (e *EthService) Logs(ctx context.Context, q *RPCFilterQuery) (*rpc.Subscription, error) {
+	notifier, supported := rpc.NotifierFromContext(ctx)
+	if !supported {
+		return &rpc.Subscription{}, rpc.ErrNotificationsUnsupported
+	}
+
+	rpcSub := notifier.CreateSubscription()
+
+	go func() {
+		matchedLogs := make(chan []*types.Log)
+		unsubscribe := e.evmChain.SubscribeLogs((*ethereum.FilterQuery)(q), matchedLogs)
+		defer unsubscribe()
+
+		for {
+			select {
+			case logs := <-matchedLogs:
+				for _, log := range logs {
+					_ = notifier.Notify(rpcSub.ID, log)
+				}
+			case <-rpcSub.Err():
+				return
+			case <-notifier.Closed():
+				return
+			}
+		}
+	}()
+
+	return rpcSub, nil
 }
 
 /*

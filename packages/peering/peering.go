@@ -49,8 +49,7 @@ type NetworkProvider interface {
 	PeerByPubKey(peerPub *cryptolib.PublicKey) (PeerSender, error)
 	SendMsgByPubKey(pubKey *cryptolib.PublicKey, msg *PeerMessageData)
 	PeerStatus() []PeerStatusProvider
-	Attach(peeringID *PeeringID, receiver byte, callback func(recv *PeerMessageIn)) interface{}
-	Detach(attachID interface{})
+	Attach(peeringID *PeeringID, receiver byte, callback func(recv *PeerMessageIn)) context.CancelFunc
 }
 
 // TrustedNetworkManager is used maintain a configuration which peers are trusted.
@@ -125,8 +124,7 @@ type GroupProvider interface {
 	PeerIndex(peer PeerSender) (uint16, error)
 	PeerIndexByPubKey(peerPubKey *cryptolib.PublicKey) (uint16, error)
 	PubKeyByIndex(index uint16) (*cryptolib.PublicKey, error)
-	Attach(receiver byte, callback func(recv *PeerMessageGroupIn)) interface{}
-	Detach(attachID interface{})
+	Attach(receiver byte, callback func(recv *PeerMessageGroupIn)) context.CancelFunc
 	SendMsgByIndex(peerIdx uint16, msgReceiver byte, msgType byte, msgData []byte)
 	SendMsgBroadcast(msgReceiver byte, msgType byte, msgData []byte, except ...uint16)
 	ExchangeRound(
@@ -148,8 +146,7 @@ type PeerDomainProvider interface {
 	ReshufflePeers()
 	GetRandomOtherPeers(upToNumPeers int) []*cryptolib.PublicKey
 	UpdatePeers(newPeerPubKeys []*cryptolib.PublicKey)
-	Attach(receiver byte, callback func(recv *PeerMessageIn)) interface{}
-	Detach(attachID interface{})
+	Attach(receiver byte, callback func(recv *PeerMessageIn)) context.CancelFunc
 	SendMsgByPubKey(pubKey *cryptolib.PublicKey, msgReceiver byte, msgType byte, msgData []byte)
 	PeerStatus() []PeerStatusProvider
 	Close()

@@ -54,7 +54,7 @@ func DebitFromAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Assets)
 		return
 	}
 	if !debitFromAccount(state, accountKey(agentID), assets) {
-		panic(fmt.Errorf("debit from %s: %v\nassets: %s", agentID, ErrNotEnoughFunds, assets))
+		panic(fmt.Errorf("cannot debit (%s) from %s: %w", assets, agentID, ErrNotEnoughFunds))
 	}
 	if !debitFromAccount(state, l2TotalsAccount, assets) {
 		panic("debitFromAccount: inconsistent ledger state")

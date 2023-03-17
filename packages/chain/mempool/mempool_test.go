@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -24,19 +24,23 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 type tc struct {
@@ -45,7 +49,7 @@ type tc struct {
 	reliable bool
 }
 
-func TestBasic(t *testing.T) {
+func TestMempoolBasic(t *testing.T) {
 	t.Parallel()
 	tests := []tc{
 		{n: 1, f: 0, reliable: true},  // Low N
@@ -64,7 +68,7 @@ func TestBasic(t *testing.T) {
 	for _, tst := range tests {
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
-			func(tt *testing.T) { testBasic(tt, tst.n, tst.f, tst.reliable) },
+			func(tt *testing.T) { testMempoolBasic(tt, tst.n, tst.f, tst.reliable) },
 		)
 	}
 }
@@ -78,23 +82,23 @@ func TestBasic(t *testing.T) {
 //   - Get proposals -- all waiting.
 //   - Send a request.
 //   - Get proposals -- all received 1 request.
-func testBasic(t *testing.T, n, f int, reliable bool) {
+func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
 	te := newEnv(t, n, f, reliable)
 	defer te.close()
-	chainInitReqs := te.tcl.MakeTxChainInit()
-	require.Len(t, chainInitReqs, 1)
-	chainInitReq := chainInitReqs[0]
 	//
-	offLedgerReq := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), dict.New(), 0).Sign(te.governor)
+	offLedgerReq := isc.NewOffLedgerRequest(
+		isc.RandomChainID(),
+		isc.Hn("foo"),
+		isc.Hn("bar"),
+		dict.New(),
+		0,
+		gas.LimitsDefault.MaxGasPerRequest,
+	).Sign(te.governor)
 	t.Log("Sending off-ledger request")
 	chosenMempool := rand.Intn(len(te.mempools))
 	te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq)
 	te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq) // Check for duplicate receives.
-	t.Log("Sending on-ledger request")
-	for _, node := range te.mempools {
-		node.ReceiveOnLedgerRequest(chainInitReq.(isc.OnLedgerRequest))
-	}
 	t.Log("ServerNodesUpdated")
 	tangleTime := time.Now()
 	for _, node := range te.mempools {
@@ -115,12 +119,12 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	for i, node := range te.mempools {
 		proposal := <-proposals[i]
 		require.True(t, len(proposal) == 1 || len(proposal) == 2)
-		decided[i] = node.ConsensusRequestsAsync(te.ctx, isc.RequestRefsFromRequests([]isc.Request{chainInitReq, offLedgerReq}))
+		decided[i] = node.ConsensusRequestsAsync(te.ctx, isc.RequestRefsFromRequests([]isc.Request{offLedgerReq}))
 	}
 	t.Log("Wait for decided requests")
 	for i := range te.mempools {
 		nodeDecidedReqs := <-decided[i]
-		require.Len(t, nodeDecidedReqs, 2)
+		require.Len(t, nodeDecidedReqs, 1)
 	}
 	//
 	// Make a block consuming those 2 requests.
@@ -130,10 +134,10 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 		AnchorOutput:           te.originAO.GetAliasOutput(),
 		AnchorOutputID:         te.originAO.OutputID(),
 		Store:                  store,
-		Requests:               []isc.Request{chainInitReq, offLedgerReq},
+		Requests:               []isc.Request{offLedgerReq},
 		TimeAssumption:         tangleTime,
 		Entropy:                hashing.HashDataBlake2b([]byte{2, 1, 7}),
-		ValidatorFeeTarget:     te.chainID.CommonAccount(),
+		ValidatorFeeTarget:     accounts.CommonAccount(),
 		EstimateGasMode:        false,
 		EnableGasBurnLogging:   false,
 		MaintenanceModeEnabled: false,
@@ -147,12 +151,11 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	// Check if block has both requests as consumed.
 	receipts, err := blocklog.RequestReceiptsFromBlock(block)
 	require.NoError(t, err)
-	require.Len(t, receipts, 2)
+	require.Len(t, receipts, 1)
 	blockReqs := []isc.Request{}
 	for i := range receipts {
 		blockReqs = append(blockReqs, receipts[i].Request)
 	}
-	require.Contains(t, blockReqs, chainInitReq)
 	require.Contains(t, blockReqs, offLedgerReq)
 	nextAO, _ := te.tcl.FakeTX(te.originAO, te.cmtAddress)
 	//
@@ -175,7 +178,14 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	}
 	//
 	// Add a message, we should get it now.
-	offLedgerReq2 := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), dict.New(), 1).Sign(te.governor)
+	offLedgerReq2 := isc.NewOffLedgerRequest(
+		isc.RandomChainID(),
+		isc.Hn("foo"),
+		isc.Hn("bar"),
+		dict.New(),
+		1,
+		gas.LimitsDefault.MaxGasPerRequest,
+	).Sign(te.governor)
 	offLedgerRef2 := isc.RequestRefFromRequest(offLedgerReq2)
 	for i := range te.mempools {
 		te.mempools[i].ReceiveOffLedgerRequest(offLedgerReq2)
@@ -204,7 +214,7 @@ func TestTimeLock(t *testing.T) {
 	}
 }
 
-func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint: gocyclo
+func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint:gocyclo
 	t.Parallel()
 	te := newEnv(t, n, f, reliable)
 	defer te.close()
@@ -396,7 +406,6 @@ type testEnv struct {
 	log              *logger.Logger
 	utxoDB           *utxodb.UtxoDB
 	governor         *cryptolib.KeyPair
-	originator       *cryptolib.KeyPair
 	peeringURLs      []string
 	peerIdentities   []*cryptolib.KeyPair
 	peerPubKeys      []*cryptolib.PublicKey
@@ -418,10 +427,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	// Create ledger accounts.
 	te.utxoDB = utxodb.New(utxodb.DefaultInitParams())
 	te.governor = cryptolib.NewKeyPair()
-	te.originator = cryptolib.NewKeyPair()
 	_, err := te.utxoDB.GetFundsFromFaucet(te.governor.Address())
-	require.NoError(t, err)
-	_, err = te.utxoDB.GetFundsFromFaucet(te.originator.Address())
 	require.NoError(t, err)
 	//
 	// Create a fake network and keys for the tests.
@@ -444,14 +450,16 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	)
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
 	te.cmtAddress, _ = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
-	te.tcl = testchain.NewTestChainLedger(t, te.utxoDB, te.governor, te.originator)
-	te.originAO, te.chainID = te.tcl.MakeTxChainOrigin(te.cmtAddress)
+	te.tcl = testchain.NewTestChainLedger(t, te.utxoDB, te.governor)
+	_, te.originAO, te.chainID = te.tcl.MakeTxChainOrigin(te.cmtAddress)
 	//
 	// Initialize the nodes.
 	te.mempools = make([]mempool.Mempool, len(te.peerIdentities))
 	te.stores = make([]state.Store, len(te.peerIdentities))
 	for i := range te.peerIdentities {
-		te.stores[i] = state.InitChainStore(mapdb.NewMapDB())
+		te.stores[i] = origin.InitChain(state.NewStore(mapdb.NewMapDB()), dict.Dict{
+			origin.ParamChainOwner: isc.NewAgentID(te.governor.Address()).Bytes(),
+		}, accounts.MinimumBaseTokensOnCommonAccount)
 		te.mempools[i] = mempool.New(
 			te.ctx,
 			te.chainID,
@@ -466,7 +474,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 }
 
 func (te *testEnv) stateForAO(i int, ao *isc.AliasOutputWithID) state.State {
-	l1Commitment, err := state.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
+	l1Commitment, err := vmcontext.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
 	require.NoError(te.t, err)
 	st, err := te.stores[i].StateByTrieRoot(l1Commitment.TrieRoot())
 	require.NoError(te.t, err)

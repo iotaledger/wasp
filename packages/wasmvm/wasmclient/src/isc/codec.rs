@@ -45,6 +45,8 @@ pub struct JsonResponse {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonError {
+    #[serde(rename = "Error")]
+    pub(crate) error: String,
     #[serde(rename = "Message")]
     pub(crate) message: String,
 }
@@ -128,11 +130,11 @@ pub(crate) fn client_bech32_decode(bech32: &str) -> ScAddress {
                 panic(&("invalid protocol prefix: ".to_owned() + &hrp));
                 return address_from_bytes(&[]);
             }
-            return addr;
+            addr
         },
         Err(e) => {
             panic(&e.to_string());
-            return address_from_bytes(&[]);
+            address_from_bytes(&[])
         }
     }
 }
@@ -140,10 +142,10 @@ pub(crate) fn client_bech32_decode(bech32: &str) -> ScAddress {
 pub(crate) fn client_bech32_encode(addr: &ScAddress) -> String {
     unsafe {
         match bech32_encode(&HRP_FOR_CLIENT, &addr) {
-            Ok(v) => return v,
+            Ok(v) => v,
             Err(e) => {
                 panic(&e.to_string());
-                return String::new();
+                String::new()
             }
         }
     }

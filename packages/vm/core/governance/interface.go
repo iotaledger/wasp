@@ -9,15 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
-// constants
-const (
-	MinEventSize               = uint16(200)
-	MinEventsPerRequest        = uint16(10)
-	DefaultMaxEventsPerRequest = uint16(50)
-	DefaultMaxEventSize        = uint16(2000)      // 2Kb
-	DefaultMaxBlobSize         = uint32(2_000_000) // 2Mb
-)
-
 var Contract = coreutil.NewContract(coreutil.CoreContractGovernance, "Governance contract")
 
 var (
@@ -32,17 +23,18 @@ var (
 	FuncDelegateChainOwnership = coreutil.Func("delegateChainOwnership")
 	ViewGetChainOwner          = coreutil.ViewFunc("getChainOwner")
 
-	// fees
+	// gas
 	FuncSetFeePolicy = coreutil.Func("setFeePolicy")
 	ViewGetFeePolicy = coreutil.ViewFunc("getFeePolicy")
+	FuncSetGasLimits = coreutil.Func("setGasLimits")
+	ViewGetGasLimits = coreutil.ViewFunc("getGasLimits")
+
 	// evm fees
 	FuncSetEVMGasRatio = coreutil.Func("setGasRatio")
 	ViewGetEVMGasRatio = coreutil.ViewFunc("getGasRatio")
 
 	// chain info
-	FuncSetChainInfo   = coreutil.Func("setChainInfo")
-	ViewGetChainInfo   = coreutil.ViewFunc("getChainInfo")
-	ViewGetMaxBlobSize = coreutil.ViewFunc("getMaxBlobSize")
+	ViewGetChainInfo = coreutil.ViewFunc("getChainInfo")
 
 	// access nodes
 	FuncAddCandidateNode  = coreutil.Func("addCandidateNode")
@@ -54,6 +46,10 @@ var (
 	FuncStartMaintenance     = coreutil.Func("startMaintenance")
 	FuncStopMaintenance      = coreutil.Func("stopMaintenance")
 	ViewGetMaintenanceStatus = coreutil.ViewFunc("getMaintenanceStatus")
+
+	// L1 metadata
+	FuncSetCustomMetadata = coreutil.Func("setCustomMetadata")
+	ViewGetCustomMetadata = coreutil.ViewFunc("getCustomMetadata")
 )
 
 // state variables
@@ -66,15 +62,9 @@ const (
 	VarChainOwnerID          = "o"
 	VarChainOwnerIDDelegated = "n"
 
-	// fees
+	// gas
 	VarGasFeePolicyBytes = "g"
-
-	// chain info
-	VarChainID         = "c"
-	VarDescription     = "d"
-	VarMaxBlobSize     = "mb"
-	VarMaxEventSize    = "me"
-	VarMaxEventsPerReq = "mr"
+	VarGasLimitsBytes    = "l"
 
 	// access nodes
 	VarAccessNodes          = "an"
@@ -82,6 +72,9 @@ const (
 
 	// maintenance
 	VarMaintenanceStatus = "m"
+
+	// L1 metadata
+	VarCustomMetadata = "x"
 )
 
 // params
@@ -93,16 +86,13 @@ const (
 	// chain owner
 	ParamChainOwner = "o"
 
-	// fees
+	// gas
 	ParamFeePolicyBytes = "g"
 	ParamEVMGasRatio    = "e"
+	ParamGasLimitsBytes = "l"
 
 	// chain info
-	ParamChainID                   = "c"
-	ParamDescription               = "d"
-	ParamMaxBlobSizeUint32         = "mb"
-	ParamMaxEventSizeUint16        = "me"
-	ParamMaxEventsPerRequestUint16 = "mr"
+	ParamChainID = "c"
 
 	ParamGetChainNodesAccessNodeCandidates = "an"
 	ParamGetChainNodesAccessNodes          = "ac"
@@ -115,4 +105,7 @@ const (
 
 	// access nodes: changeAccessNodes
 	ParamChangeAccessNodesActions = "n"
+
+	// L1 metadata
+	ParamCustomMetadata = "x"
 )

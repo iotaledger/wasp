@@ -45,7 +45,7 @@ func TestGetBlockInfo(t *testing.T) {
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
-	for i := uint32(0); i < 6; i++ {
+	for i := uint32(0); i < 5; i++ {
 		f := coreblocklog.ScFuncs.GetBlockInfo(ctx)
 		f.Params.BlockIndex().SetValue(i)
 		f.Func.Call()
@@ -84,7 +84,7 @@ func TestGetLatestBlockInfo(t *testing.T) {
 	index := f.Results.BlockIndex().Value()
 	assert.Equal(t, expectBlockInfo.BlockIndex, index)
 
-	blockinfo, err := blocklog.BlockInfoFromBytes(5, f.Results.BlockInfo().Value())
+	blockinfo, err := blocklog.BlockInfoFromBytes(expectBlockInfo.BlockIndex, f.Results.BlockInfo().Value())
 	require.NoError(t, err)
 	assert.Equal(t, expectBlockInfo.BlockIndex, blockinfo.BlockIndex)
 	assert.Equal(t, expectBlockInfo.Timestamp, blockinfo.Timestamp)
@@ -105,7 +105,7 @@ func TestGetRequestIDsForBlock(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	f := coreblocklog.ScFuncs.GetRequestIDsForBlock(ctx)
-	for blockNum := uint32(0); blockNum < 6; blockNum++ {
+	for blockNum := uint32(0); blockNum < 5; blockNum++ {
 		f.Params.BlockIndex().SetValue(blockNum)
 		f.Func.Call()
 		require.NoError(t, ctx.Err)

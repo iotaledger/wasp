@@ -1,32 +1,17 @@
 package testcore
 
 import (
-	"encoding/hex"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 )
 
 func TestProofs(t *testing.T) {
-	t.Run("chain ID", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain()
-
-		proof := ch.GetMerkleProofRaw([]byte(state.KeyChainID))
-		l1Commitment := ch.GetL1Commitment()
-		st, err := ch.Store().LatestState()
-		require.NoError(t, err)
-		require.EqualValues(t, ch.ChainID[:], st.ChainID().Bytes())
-		err = proof.ValidateValue(l1Commitment.TrieRoot(), ch.ChainID[:])
-		require.NoError(t, err)
-	})
 	t.Run("check PoI blob", func(t *testing.T) {
 		env := solo.New(t)
 		ch := env.NewChain()
@@ -117,44 +102,4 @@ func TestProofs(t *testing.T) {
 
 		require.NoError(t, err)
 	})
-}
-
-func TestProofStateTerminals(t *testing.T) {
-	env := solo.New(t)
-	ch := env.NewChain()
-
-	err := ch.DepositBaseTokensToL2(100_000, nil)
-	require.NoError(t, err)
-
-	// core contracts must contain their hname at nil key in their state
-	for _, ci := range corecontracts.AllSortedByName() {
-		proof := ch.GetMerkleProof(ci.Hname(), nil)
-		err = proof.ValidateValue(ch.GetL1Commitment().TrieRoot(), ci.Hname().Bytes())
-		if err != nil {
-			t.Fatalf("core contract '%s' does not contain it's hname '%s' at its nil key",
-				ci.Name, ci.Hname())
-		}
-		cS, err2 := ch.GetContractStateCommitment(ci.Hname())
-		require.NoError(t, err2)
-		t.Logf("BEFORE: commitment to the state of the contract '%s': %s", ci.Name, hex.EncodeToString(cS))
-	}
-
-	_, err = ch.UploadBlobFromFile(nil, randomFile, "file")
-	require.NoError(t, err)
-
-	_, err = ch.UploadWasm(nil, []byte("1234567890"))
-	require.NoError(t, err)
-
-	// core contracts must contain their hname at nil key in their state
-	for _, ci := range corecontracts.AllSortedByName() {
-		proof := ch.GetMerkleProof(ci.Hname(), nil)
-		err = proof.ValidateValue(ch.GetL1Commitment().TrieRoot(), ci.Hname().Bytes())
-		if err != nil {
-			t.Fatalf("core contract '%s' does not contain it's hname '%s' at its nil key",
-				ci.Name, ci.Hname())
-		}
-		cS, err := ch.GetContractStateCommitment(ci.Hname())
-		require.NoError(t, err)
-		t.Logf("AFTER: commitment to the state of the contract '%s': %s", ci.Name, hex.EncodeToString(cS))
-	}
 }

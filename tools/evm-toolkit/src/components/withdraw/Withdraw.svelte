@@ -4,132 +4,221 @@
     web3,
     selectedAccount,
     chainId,
-    chainData,
     defaultEvmStores,
-  } from "svelte-web3";
-  import { hornetAPI } from "../../store";
-
+  } from 'svelte-web3';
+  import { setIntervalAsync, clearIntervalAsync } from 'set-interval-async';
+  import { nodeClient, indexerClient } from '../../store';
+  import { Converter } from '@iota/util.js';
+  import { gasFee, iscAbi, iscContractAddress } from './constants';
+  import { hNameFromString } from '../../lib/hname';
+  import { evmAddressToAgentID } from '../../lib/evm';
+  import { getBalanceParameters, withdrawParameters } from './parameters';
   import {
-    SingleNodeClient,
-    Bech32Helper,
-    type IEd25519Address,
-  } from "@iota/iota.js";
+    Bech32AddressLength,
+    NativeTokenIDLength,
+  } from '../../lib/constants';
+  import {
+    getNativeTokenMetaData,
+    type INativeToken,
+  } from '../../lib/native_token';
+  import { onDestroy, onMount } from 'svelte';
+  import { toast } from '@zerodevx/svelte-toast';
+  import type { WithdrawFormInput, WithdrawState } from './component_types';
 
-  import iscAbiAsText from "../../assets/ISCSandbox.abi?raw";
+  const state: WithdrawState = {
+    availableBaseTokens: 0,
+    availableNativeTokens: [],
+    contract: undefined,
+    evmChainID: 0,
 
-  const waspAddrBinaryFromBech32 = async (bech32String: string) => {
-    const protocolInfo = await new SingleNodeClient($hornetAPI).info();
-
-    let receiverAddr = Bech32Helper.addressFromBech32(
-      bech32String,
-      protocolInfo.protocol.bech32Hrp
-    );
-
-    const address: IEd25519Address = receiverAddr as IEd25519Address;
-
-    let receiverAddrBinary = $web3.utils.hexToBytes(address.pubKeyHash);
-    //  // AddressEd25519 denotes an Ed25519 address.
-    // AddressEd25519 AddressType = 0
-    // // AddressAlias denotes an Alias address.
-    // AddressAlias AddressType = 8
-    // // AddressNFT denotes an NFT address.
-    // AddressNFT AddressType = 16
-    //
-    // 0 is the ed25519 prefix
-    return new Uint8Array([0, ...receiverAddrBinary]);
+    balancePollingHandle: undefined,
+    isMetamaskConnected: false,
+    isLoading: true,
   };
 
-  const gasFee = 300;
-  const iscAbi = JSON.parse(iscAbiAsText);
-  const iscContractAddress: string =
-    "0x1074000000000000000000000000000000000000";
+  const formInput: WithdrawFormInput = {
+    receiverAddress: '',
+    baseTokensToSend: 0,
+    nativeTokensToSend: {},
+  };
 
-  let chainID;
-  let contract;
-  let balance = 0;
-  let amountToSend = 0;
+  $: formattedBalance = (state.availableBaseTokens / 1e6).toFixed(2);
+  $: formattedAmountToSend = (formInput.baseTokensToSend / 1e6).toFixed(2);
+  $: canSendFunds =
+    state.availableBaseTokens > 0 &&
+    formInput.baseTokensToSend > 0 &&
+    formInput.receiverAddress.length == Bech32AddressLength;
+  $: canSetAmountToSend = state.availableBaseTokens > gasFee + 1;
+  $: state.isMetamaskConnected = window.ethereum
+    ? window.ethereum.isConnected()
+    : false;
 
-  $: formattedBalance = (balance / 1e6).toFixed(2);
-  $: formattedAmountToSend = (amountToSend / 1e6).toFixed(2);
-  $: canSendFunds = balance > 0 && amountToSend > 0;
-  $: canSetAmountToSend = balance > gasFee + 1;
+  onDestroy(async () => {
+    await unsubscribeBalance();
+  });
 
-  let addrInput = "";
+  onMount(async () => {
+    // It's a bit confusing:
+    // $connected does only return true if Metamask is connected to the page AND the defaultProvider is initialized.
+    // This makes us unable to automatically initialize the store as it will open a Metamask authorization request without indicating why immediately on the first visit.
+    // We can use window.ethereum.isConnected to first validate if the user already has set up a connection by clicking "Connect Wallet".
+    // Then we can automatically initialize the store and not require manual user interaction each time. (User only has to click "Connect Wallet" once).
+    if (state.isMetamaskConnected) {
+      await connectToWallet();
+    }
+  });
 
   async function pollBalance() {
-    const addressBalance = await $web3.eth.getBalance(
-      defaultEvmStores.$selectedAccount
-    );
-    balance = Number(BigInt(addressBalance) / BigInt(1e12));
+    const addressBalance = await $web3.eth.getBalance($selectedAccount);
 
-    if (amountToSend > balance) {
-      amountToSend = 0;
+    state.availableBaseTokens = Number(BigInt(addressBalance) / BigInt(1e12));
+
+    if (formInput.baseTokensToSend > state.availableBaseTokens) {
+      formInput.baseTokensToSend = 0;
     }
   }
 
-  function subscribeBalance() {
-    setTimeout(async () => {
-      pollBalance();
-      subscribeBalance();
-    }, 2500);
-  }
-
-  async function connectToWallet() {
-    await defaultEvmStores.setProvider();
-    chainID = await $web3.eth.getChainId();
-    contract = new $web3.eth.Contract(iscAbi, iscContractAddress, {
-      from: defaultEvmStores.$selectedAccount,
-    });
-
-    await pollBalance();
-    subscribeBalance();
-  }
-
-  async function onWithdrawClick() {
-    if (!defaultEvmStores.$selectedAccount) {
-      console.log("no account selected");
+  async function pollNativeTokens() {
+    if (!$selectedAccount) {
       return;
     }
 
-    let parameters = [
-      {
-        // Receiver
-        data: await waspAddrBinaryFromBech32(addrInput),
-      },
-      {
-        // Fungible Tokens
-        baseTokens: amountToSend - gasFee,
-        tokens: [],
-      },
-      false,
-      {
-        // Metadata
-        targetContract: 0,
-        entrypoint: 0,
-        gasBudget: 0,
-        params: {
-          items: [],
-        },
-        allowance: {
-          nfts: [],
-          baseTokens: 0,
-          tokens: [],
-        },
-      },
-      {
-        // Options
-        timelock: 0,
-        expiration: {
-          time: 0,
-          returnAddress: {
-            data: [],
-          },
-        },
-      },
-    ];
+    const accountsCoreContract = hNameFromString('accounts');
+    const getBalanceFunc = hNameFromString('balance');
+    const agentID = evmAddressToAgentID($selectedAccount);
 
-    const result = await contract.methods.send(...parameters).send();
-    console.log(result);
+    let parameters = getBalanceParameters(agentID);
+
+    const result = await state.contract.methods
+      .callView(accountsCoreContract, getBalanceFunc, parameters)
+      .call();
+
+    const nativeTokens: INativeToken[] = [];
+
+    for (let item of result.items) {
+      const id = item.key;
+      const idBytes = Converter.hexToBytes(id);
+
+      if (idBytes.length != NativeTokenIDLength) {
+        continue;
+      }
+
+      var nativeToken: INativeToken = {
+        // TODO: BigInt is required for native tokens, but it causes problems with the range slider. This needs to be adressed before shipping.
+        amount: BigInt(item.value),
+        id: id,
+        metadata: await getNativeTokenMetaData($nodeClient, $indexerClient, id),
+      };
+
+      nativeTokens.push(nativeToken);
+    }
+
+    state.availableNativeTokens = nativeTokens;
+
+    for (const nativeToken of nativeTokens) {
+      if (typeof formInput.nativeTokensToSend[nativeToken.id] == 'undefined') {
+        formInput.nativeTokensToSend[nativeToken.id] = 0;
+      }
+    }
+  }
+
+  async function pollAccount() {
+    await Promise.all([pollBalance(), pollNativeTokens()]);
+  }
+
+  async function subscribeBalance() {
+    if (state.balancePollingHandle) {
+      return;
+    }
+
+    state.balancePollingHandle = setIntervalAsync(pollAccount, 2500);
+  }
+
+  async function unsubscribeBalance() {
+    if (!state.balancePollingHandle) {
+      return;
+    }
+
+    await clearIntervalAsync(state.balancePollingHandle);
+    state.balancePollingHandle = undefined;
+  }
+
+  async function connectToWallet() {
+    state.isLoading = true;
+
+    try {
+      await defaultEvmStores.setProvider();
+
+      state.evmChainID = await $web3.eth.getChainId();
+      state.contract = new $web3.eth.Contract(iscAbi, iscContractAddress, {
+        from: $selectedAccount,
+      });
+
+      await pollAccount();
+      await subscribeBalance();
+    } catch (ex) {
+      toast.push(`Failed to connect to wallet: ${ex}`);
+      console.log('connectToWallet', ex);
+    }
+
+    state.isLoading = false;
+  }
+
+  async function onWithdrawClick() {
+    if (!$selectedAccount) {
+      return;
+    }
+
+    const nativeTokensToSend: INativeToken[] = [];
+
+    for (const tokenID of Object.keys(formInput.nativeTokensToSend)) {
+      const amount = formInput.nativeTokensToSend[tokenID];
+
+      if (amount > 0) {
+        nativeTokensToSend.push({
+          // TODO: BigInt is required for native tokens, but it causes problems with the range slider. This needs to be adressed before shipping.
+          // In this function the amount is actually of type "number" not bigint, so we lose precision at 53bits which is a problem that needs to be solved.
+          amount: BigInt(amount),
+          id: tokenID,
+        });
+      }
+    }
+
+    let parameters = await withdrawParameters(
+      $nodeClient,
+      formInput.receiverAddress,
+      gasFee,
+      formInput.baseTokensToSend,
+      nativeTokensToSend,
+    );
+
+    let result: any;
+
+    try {
+      result = await state.contract.methods.send(...parameters).send();
+    } catch (ex) {
+      toast.push(
+        `Failed to send withdraw request: ${JSON.stringify(ex, null, 4)}`,
+        {
+          duration: 8000,
+        },
+      );
+
+      return;
+    }
+
+    if (result.status) {
+      toast.push(`Withdraw request sent. BlockIndex: ${result.blockNumber}`, {
+        duration: 4000,
+      });
+    } else {
+      toast.push(
+        `Failed to send withdraw request: ${JSON.stringify(result, null, 4)}`,
+        {
+          duration: 8000,
+        },
+      );
+    }
   }
 </script>
 
@@ -138,7 +227,7 @@
     <div class="input_container">
       <button on:click={connectToWallet}>Connect to Wallet</button>
     </div>
-  {:else}
+  {:else if !state.isLoading}
     <div class="account_container">
       <div class="chain_container">
         <div>Chain ID</div>
@@ -155,21 +244,44 @@
       <input
         type="text"
         placeholder="L1 address starting with (rms/tst/...)"
-        bind:value={addrInput}
+        bind:value={formInput.receiverAddress}
       />
     </div>
 
     <div class="input_container">
-      <div class="header">
-        Amount to send: {formattedAmountToSend}Mi
+      <div class="header">Tokens to send</div>
+
+      <div class="token_list">
+        <div class="token_list-item">
+          <div class="header">
+            SMR Token: {formattedAmountToSend}
+          </div>
+
+          <input
+            type="range"
+            disabled={!canSetAmountToSend}
+            min="0"
+            max={state.availableBaseTokens}
+            bind:value={formInput.baseTokensToSend}
+          />
+        </div>
+
+        {#each state.availableNativeTokens as nativeToken}
+          <div class="token_list-item">
+            <div class="header">
+              {nativeToken.metadata.name} Token: {formInput.nativeTokensToSend[
+                nativeToken.id
+              ] || 0}
+            </div>
+            <input
+              type="range"
+              min="0"
+              max={Number(nativeToken.amount)}
+              bind:value={formInput.nativeTokensToSend[nativeToken.id]}
+            />
+          </div>
+        {/each}
       </div>
-      <input
-        type="range"
-        disabled={!canSetAmountToSend}
-        min="0"
-        max={balance}
-        bind:value={amountToSend}
-      />
     </div>
 
     <div class="input_container">
@@ -181,13 +293,26 @@
 </component>
 
 <style>
+  .token_list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .token_list-item {
+    border: 1px solid gray;
+    border-radius: 4px;
+    padding: 20px;
+    margin: 10px;
+    margin-left: 0;
+  }
+
   component {
     color: rgba(255, 255, 255, 0.87);
     display: flex;
     flex-direction: column;
   }
 
-  input[type="range"] {
+  input[type='range'] {
     width: 100%;
     padding: 10px 0 0 0;
     margin: 0;

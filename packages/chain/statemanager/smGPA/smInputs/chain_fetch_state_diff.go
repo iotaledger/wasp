@@ -2,10 +2,12 @@ package smInputs
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 type ChainFetchStateDiff struct {
@@ -24,13 +26,13 @@ func NewChainFetchStateDiff(ctx context.Context, prevAO, nextAO *isc.AliasOutput
 		// Only the current state is needed, if prevAO is unknown.
 		prevAO = nextAO
 	}
-	oldCommitment, err := state.L1CommitmentFromAliasOutput(prevAO.GetAliasOutput())
+	oldCommitment, err := vmcontext.L1CommitmentFromAliasOutput(prevAO.GetAliasOutput())
 	if err != nil {
-		panic("Cannot make L1 commitment from previous alias output")
+		panic(fmt.Errorf("Cannot make L1 commitment from previous alias output, error: %w", err))
 	}
-	newCommitment, err := state.L1CommitmentFromAliasOutput(nextAO.GetAliasOutput())
+	newCommitment, err := vmcontext.L1CommitmentFromAliasOutput(nextAO.GetAliasOutput())
 	if err != nil {
-		panic("Cannot make L1 commitment from next alias output")
+		panic(fmt.Errorf("Cannot make L1 commitment from next alias output, error: %w", err))
 	}
 	resultChannel := make(chan *ChainFetchStateDiffResults, 1)
 	return &ChainFetchStateDiff{

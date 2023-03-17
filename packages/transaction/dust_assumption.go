@@ -5,7 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 
-	"github.com/iotaledger/hive.go/core/marshalutil"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -91,6 +91,9 @@ func aliasOutputStorageDeposit() iotago.Output {
 			&iotago.SenderFeature{
 				Address: addr,
 			},
+			&iotago.MetadataFeature{
+				Data: make([]byte, 99999),
+			},
 		},
 	}
 }
@@ -109,7 +112,6 @@ func nativeTokenOutputStorageDeposit() iotago.Output {
 		},
 		nil,
 		isc.SendOptions{},
-		true,
 	)
 }
 
@@ -127,7 +129,6 @@ func nftOutputStorageDeposit() iotago.Output {
 		},
 		nil,
 		isc.SendOptions{},
-		true,
 	)
 	return NftOutputFromBasicOutput(basicOut, &isc.NFT{
 		ID:       iotago.NFTID{0},

@@ -5,8 +5,10 @@ package generator
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 	"regexp"
 	"strings"
 
@@ -17,6 +19,7 @@ import (
 // TODO handle case where owner is type AgentID[]
 
 type IGenerator interface {
+	Build() error
 	Cleanup()
 	GenerateImplementation() error
 	GenerateInterface() error
@@ -37,11 +40,13 @@ type GenBase struct {
 	keys          model.StringMap
 	language      string
 	newTypes      map[string]bool
+	path          string
 	rootFolder    string
 	s             *model.Schema
 	subFolder     string
 	tab           int
 	templates     model.StringMap
+	tmp           bool
 	typeDependent model.StringMapMap
 }
 
@@ -77,6 +82,19 @@ func (g *GenBase) addTemplates(t model.StringMap) {
 	}
 }
 
+func (g *GenBase) build(exe string, args string) error {
+	//nolint:gosec
+	cmd := exec.Command(exe, strings.Split(args, " ")...)
+	var stdout strings.Builder
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stdout
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println(stdout.String())
+	}
+	return err
+}
+
 func (g *GenBase) cleanCommonFiles() {
 	g.generateCommonFolder("", false)
 	g.cleanFolder(g.folder)
@@ -97,11 +115,29 @@ func (g *GenBase) cleanSourceFile(name string) {
 	_ = os.Remove(path)
 }
 
-func (g *GenBase) close() {
-	_ = g.file.Close()
+func (g *GenBase) cleanSourceFileIfSame(generator func() error) {
+	g.tmp = true
+	err := generator()
+	g.tmp = false
+	if err != nil {
+		panic(err)
+	}
+	newFile, err := os.ReadFile(g.path + ".tmp")
+	_ = os.Remove(g.path + ".tmp")
+	if err != nil {
+		panic(err)
+	}
+	oldFile, _ := os.ReadFile(g.path)
+	if bytes.Equal(oldFile, newFile) {
+		_ = os.Remove(g.path)
+	}
 }
 
 func (g *GenBase) createFile(path string, overwrite bool, generator func()) (err error) {
+	g.path = path
+	if g.tmp {
+		path += ".tmp"
+	}
 	if !overwrite && g.exists(path) == nil {
 		return nil
 	}
@@ -109,14 +145,14 @@ func (g *GenBase) createFile(path string, overwrite bool, generator func()) (err
 	if err != nil {
 		return err
 	}
-	defer g.close()
+	defer func() { _ = g.file.Close() }()
 	generator()
 	return nil
 }
 
-func (g *GenBase) createSourceFile(name string, condition bool, macro ...string) error {
+func (g *GenBase) createSourceFile(name string, mustExist bool, macro ...string) error {
 	path := g.folder + name + g.extension
-	if !condition {
+	if !mustExist {
 		_ = os.Remove(path)
 		return nil
 	}
@@ -160,45 +196,50 @@ func (g *GenBase) IsLatest() bool {
 	return false
 }
 
-func (g *GenBase) Generate(gen IGenerator, clean bool) error {
+func (g *GenBase) Generate(gen IGenerator, build bool, clean bool) error {
 	if clean {
 		gen.Cleanup()
 		return nil
 	}
 
-	if g.IsLatest() {
-		return nil
-	}
+	if !g.IsLatest() {
+		err := os.MkdirAll(g.folder, 0o755)
+		if err != nil {
+			return err
+		}
+		err = gen.GenerateInterface()
+		if err != nil {
+			return err
+		}
 
-	err := os.MkdirAll(g.folder, 0o755)
-	if err != nil {
-		return err
-	}
-	err = gen.GenerateInterface()
-	if err != nil {
-		return err
-	}
+		if g.s.CoreContracts {
+			return nil
+		}
 
-	if g.s.CoreContracts {
-		return nil
-	}
+		g.generateCommonFolder("impl", true)
+		err = os.MkdirAll(g.folder, 0o755)
+		if err != nil {
+			return err
+		}
+		err = gen.GenerateImplementation()
+		if err != nil {
+			return err
+		}
 
-	g.generateCommonFolder("impl", true)
-	err = os.MkdirAll(g.folder, 0o755)
-	if err != nil {
-		return err
-	}
-	err = gen.GenerateImplementation()
-	if err != nil {
-		return err
-	}
+		err = g.generateTests()
+		if err != nil {
+			return err
+		}
 
-	err = g.generateTests()
-	if err != nil {
-		return err
+		err = gen.GenerateWasmStub()
+		if err != nil {
+			return err
+		}
 	}
-
-	return gen.GenerateWasmStub()
+	if build {
+		return gen.Build()
+	}
+	return nil
 }
 
 func (g *GenBase) generateCommonFolder(postfix string, withSubFolder bool) {
@@ -328,7 +369,7 @@ func (g *GenBase) openFile(path string, processor func() error) (err error) {
 	if err != nil {
 		return err
 	}
-	defer g.close()
+	defer func() { _ = g.file.Close() }()
 	return processor()
 }
 

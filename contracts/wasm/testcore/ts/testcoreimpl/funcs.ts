@@ -310,5 +310,5 @@ export function viewTestPanicViewEP(ctx: wasmlib.ScViewContext, f: sc.TestPanicV
 export function viewTestSandboxCall(ctx: wasmlib.ScViewContext, f: sc.TestSandboxCallContext): void {
     let getChainInfo = coregovernance.ScFuncs.getChainInfo(ctx);
     getChainInfo.func.call();
-    f.results.sandboxCall().setValue(getChainInfo.results.description().value());
+    f.results.sandboxCall().setValue(getChainInfo.results.chainID().value().toString());
 }

@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/trie"
@@ -24,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 type CallParams struct {
@@ -182,8 +184,7 @@ func (r *CallParams) WithSender(sender iotago.Address) *CallParams {
 
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(chainID isc.ChainID, keyPair *cryptolib.KeyPair) isc.OffLedgerRequest {
-	ret := isc.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce).
-		WithGasBudget(r.gasBudget).
+	ret := isc.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce, r.gasBudget).
 		WithAllowance(r.allowance)
 	return ret.Sign(keyPair)
 }
@@ -233,15 +234,31 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 	if L1BaseTokens == 0 {
 		return nil, errors.New("PostRequestSync - Signer doesn't own any base tokens on L1")
 	}
-	addr := keyPair.Address()
-	allOuts, allOutIDs := ch.Env.utxoDB.GetUnspentOutputs(addr)
 
+	tx, err := transaction.NewRequestTransaction(ch.requestTransactionParams(req, keyPair))
+	if err != nil {
+		return nil, err
+	}
+
+	if tx.Essence.Outputs[0].Deposit() == 0 {
+		return nil, errors.New("createRequestTx: amount == 0. Consider: solo.InitOptions{AutoAdjustStorageDeposit: true}")
+	}
+	return tx, err
+}
+
+func (ch *Chain) requestTransactionParams(req *CallParams, keyPair *cryptolib.KeyPair) transaction.NewRequestTransactionParams {
+	if keyPair == nil {
+		keyPair = ch.OriginatorPrivateKey
+	}
 	sender := req.sender
 	if sender == nil {
 		sender = keyPair.Address()
 	}
 
-	tx, err := transaction.NewRequestTransaction(transaction.NewRequestTransactionParams{
+	addr := keyPair.Address()
+	allOuts, allOutIDs := ch.Env.utxoDB.GetUnspentOutputs(addr)
+
+	return transaction.NewRequestTransactionParams{
 		SenderKeyPair:    keyPair,
 		SenderAddress:    sender,
 		UnspentOutputs:   allOuts,
@@ -260,15 +277,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 		},
 		NFT:                             req.nft,
 		DisableAutoAdjustStorageDeposit: ch.Env.disableAutoAdjustStorageDeposit,
-	})
-	if err != nil {
-		return nil, err
 	}
-
-	if tx.Essence.Outputs[0].Deposit() == 0 {
-		return nil, errors.New("createRequestTx: amount == 0. Consider: solo.InitOptions{AutoAdjustStorageDeposit: true}")
-	}
-	return tx, err
 }
 
 // requestFromParams creates an on-ledger request without posting the transaction. It is intended
@@ -348,7 +357,7 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 	return tx, res, ch.ResolveVMError(receipt.Error).AsGoError()
 }
 
-// LastReceipt returns the receipt fot the latest request processed by the chain, will return nil if the last block is empty
+// LastReceipt returns the receipt for the latest request processed by the chain, will return nil if the last block is empty
 func (ch *Chain) LastReceipt() *isc.Receipt {
 	ch.mustStardustVM()
 
@@ -413,17 +422,19 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 // EstimateNeededStorageDeposit estimates the amount of base tokens that will be
 // needed to add to the request (if any) in order to cover for the storage
 // deposit.
-func (ch *Chain) EstimateNeededStorageDeposit(req *CallParams, keyPair *cryptolib.KeyPair) (uint64, error) {
+func (ch *Chain) EstimateNeededStorageDeposit(req *CallParams, keyPair *cryptolib.KeyPair) uint64 {
+	out := transaction.MakeRequestTransactionOutput(ch.requestTransactionParams(req, keyPair))
+	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(out)
+
 	reqDeposit := uint64(0)
 	if req.ftokens != nil {
 		reqDeposit = req.ftokens.BaseTokens
 	}
-	tx, err := ch.createRequestTx(req, keyPair)
-	if err != nil {
-		return 0, err
+
+	if reqDeposit >= storageDeposit {
+		return 0
 	}
-	require.GreaterOrEqual(ch.Env.T, tx.Essence.Outputs[0].Deposit(), reqDeposit)
-	return tx.Essence.Outputs[0].Deposit() - reqDeposit, nil
+	return storageDeposit - reqDeposit
 }
 
 func (ch *Chain) ResolveVMError(e *isc.UnresolvedVMError) *isc.VMError {
@@ -524,7 +535,7 @@ func (ch *Chain) GetMerkleProof(scHname isc.Hname, key []byte) *trie.MerkleProof
 // GetL1Commitment returns state commitment taken from the anchor output
 func (ch *Chain) GetL1Commitment() *state.L1Commitment {
 	anchorOutput := ch.GetAnchorOutput()
-	ret, err := state.L1CommitmentFromAnchorOutput(anchorOutput.GetAliasOutput())
+	ret, err := vmcontext.L1CommitmentFromAliasOutput(anchorOutput.GetAliasOutput())
 	require.NoError(ch.Env.T, err)
 	return ret
 }
@@ -548,7 +559,7 @@ func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
 }
 
 // WaitUntil waits until the condition specified by the given predicate yields true
-func (ch *Chain) WaitUntil(p func(MempoolInfo) bool, maxWait ...time.Duration) bool {
+func (ch *Chain) WaitUntil(p func() bool, maxWait ...time.Duration) bool {
 	maxw := 10 * time.Second
 	var deadline time.Time
 	if len(maxWait) > 0 {
@@ -556,8 +567,7 @@ func (ch *Chain) WaitUntil(p func(MempoolInfo) bool, maxWait ...time.Duration) b
 	}
 	deadline = time.Now().Add(maxw)
 	for {
-		mstats := ch.MempoolInfo()
-		if p(mstats) {
+		if p() {
 			return true
 		}
 		if time.Now().After(deadline) {
@@ -592,19 +602,19 @@ func (ch *Chain) WaitUntilMempoolIsEmpty(timeout ...time.Duration) bool {
 // This allows the WaitForRequestsThrough() function to wait for the
 // specified of number of requests after the mark point.
 func (ch *Chain) WaitForRequestsMark() {
-	ch.RequestsMark = ch.RequestsDone
+	ch.RequestsBlock = ch.LatestBlockIndex()
 }
 
 // WaitForRequestsThrough waits until the specified number of requests
 // have been processed since the last call to WaitForRequestsMark()
 func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
-	numReq += ch.RequestsMark
-	return ch.WaitUntil(func(mstats MempoolInfo) bool {
-		return ch.RequestsDone >= numReq
+	ch.RequestsRemaining = numReq
+	return ch.WaitUntil(func() bool {
+		latest := ch.LatestBlockIndex()
+		for ; ch.RequestsBlock < latest; ch.RequestsBlock++ {
+			receipts := ch.GetRequestReceiptsForBlock(ch.RequestsBlock + 1)
+			ch.RequestsRemaining -= len(receipts)
+		}
+		return ch.RequestsRemaining <= 0
 	}, maxWait...)
-}
-
-// MempoolInfo returns stats about the chain mempool
-func (ch *Chain) MempoolInfo() MempoolInfo {
-	return ch.mempool.Info()
 }

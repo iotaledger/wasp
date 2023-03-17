@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/domain"
@@ -216,7 +216,7 @@ func (p *peeringNetworkProvider) Attach(
 	peeringID *peering.PeeringID,
 	receiver byte,
 	callback func(recv *peering.PeerMessageIn),
-) interface{} {
+) context.CancelFunc {
 	p.self.recvCbs = append(p.self.recvCbs, &peeringCb{
 		callback:  callback,
 		destNP:    p,
@@ -224,11 +224,6 @@ func (p *peeringNetworkProvider) Attach(
 		receiver:  receiver,
 	})
 	return nil // We don't care on the attachIDs for now.
-}
-
-// Detach implements peering.NetworkProvider.
-func (p *peeringNetworkProvider) Detach(attachID interface{}) {
-	// Detach is not important in tests.
 }
 
 func (p *peeringNetworkProvider) SendMsgByPubKey(peerPubKey *cryptolib.PublicKey, msg *peering.PeerMessageData) {

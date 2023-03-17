@@ -5,6 +5,7 @@ package evmtest
 
 import (
 	"bytes"
+	"fmt"
 	"math"
 	"math/big"
 	"strings"
@@ -31,7 +32,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	testparameters "github.com/iotaledger/wasp/packages/testutil/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -366,7 +366,7 @@ func TestISCNFTData(t *testing.T) {
 	// mint an NFT and send it to the chain
 	issuerWallet, issuerAddress := env.solo.NewKeyPairWithFunds()
 	metadata := []byte("foobar")
-	nft, _, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, []byte("foobar"))
+	nft, _, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
 	require.NoError(t, err)
 	_, err = env.soloChain.PostRequestSync(
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
@@ -679,7 +679,7 @@ func TestERC721NFTCollection(t *testing.T) {
 	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
 	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
 
-	collectionMetadata := transaction.NewIRC27NFTMetadata(
+	collectionMetadata := isc.NewIRC27NFTMetadata(
 		"text/html",
 		"https://my-awesome-nft-project.com",
 		"a string that is longer than 32 bytes",
@@ -688,20 +688,20 @@ func TestERC721NFTCollection(t *testing.T) {
 	collection, collectionInfo, err := env.solo.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.MustBytes())
 	require.NoError(t, err)
 
-	nftMetadatas := []*transaction.IRC27NFTMetadata{
-		transaction.NewIRC27NFTMetadata(
+	nftMetadatas := []*isc.IRC27NFTMetadata{
+		isc.NewIRC27NFTMetadata(
 			"application/json",
 			"https://my-awesome-nft-project.com/1.json",
 			"nft1",
 		),
-		transaction.NewIRC27NFTMetadata(
+		isc.NewIRC27NFTMetadata(
 			"application/json",
 			"https://my-awesome-nft-project.com/2.json",
 			"nft2",
 		),
 	}
 	allNFTs, _, err := env.solo.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID,
-		lo.Map(nftMetadatas, func(item *transaction.IRC27NFTMetadata, index int) []byte {
+		lo.Map(nftMetadatas, func(item *isc.IRC27NFTMetadata, index int) []byte {
 			return item.MustBytes()
 		}),
 	)
@@ -731,7 +731,7 @@ func TestERC721NFTCollection(t *testing.T) {
 
 	// minted NFTs are in random order; find the first one in nftMetadatas
 	nft, ok := lo.Find(nfts, func(item *isc.NFT) bool {
-		metadata, err2 := transaction.IRC27NFTMetadataFromBytes(item.Metadata)
+		metadata, err2 := isc.IRC27NFTMetadataFromBytes(item.Metadata)
 		require.NoError(t, err2)
 		return metadata.URI == nftMetadatas[0].URI
 	})
@@ -925,7 +925,7 @@ func TestISCSendWithArgs(t *testing.T) {
 	require.Less(t, senderFinalBalance, senderInitialBalance-sendBaseTokens)
 
 	// wait a bit for the request going out of EVM to be processed by ISC
-	env.soloChain.WaitUntil(func(solo.MempoolInfo) bool {
+	env.soloChain.WaitUntil(func() bool {
 		return env.soloChain.GetLatestBlockInfo().BlockIndex == blockIndex+2
 	})
 
@@ -1099,7 +1099,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 	require.NoError(t, err)
 
 	// need an alias to create a foundry; the easiest way is to create a "disposable" ISC chain
-	foundryChain, _, _ := env.solo.NewChainExt(foundryOwner, 0, "foundryChain")
+	foundryChain, _ := env.solo.NewChainExt(foundryOwner, 0, "foundryChain")
 	err = foundryChain.DepositBaseTokensToL2(env.solo.L1BaseTokens(foundryOwnerAddr)/2, foundryOwner)
 	require.NoError(t, err)
 	supply := big.NewInt(int64(10 * isc.Million))
@@ -1346,7 +1346,7 @@ func TestEVMNonZeroGasPriceRequest(t *testing.T) {
 	callArguments, err := storage.abi.Pack("store", valueToStore)
 	require.NoError(t, err)
 	nonce := storage.chain.getNonce(senderAddress)
-	unsignedTx := types.NewTransaction(nonce, storage.address, util.Big0, gas.MaxGasPerRequest, gasPrice, callArguments)
+	unsignedTx := types.NewTransaction(nonce, storage.address, util.Big0, env.maxGasLimit(), gasPrice, callArguments)
 
 	tx, err := types.SignTx(unsignedTx, storage.chain.signer(), ethKey)
 	require.NoError(t, err)
@@ -1374,7 +1374,7 @@ func TestEVMTransferBaseTokens(t *testing.T) {
 
 	sendTx := func(amount *big.Int) {
 		nonce := env.getNonce(ethAddr)
-		unsignedTx := types.NewTransaction(nonce, someEthereumAddr, amount, gas.MaxGasPerRequest, util.Big0, []byte{})
+		unsignedTx := types.NewTransaction(nonce, someEthereumAddr, amount, env.maxGasLimit(), util.Big0, []byte{})
 		tx, err := types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
 		require.NoError(t, err)
 		err = env.evmChain.SendTransaction(tx)
@@ -1500,7 +1500,7 @@ func TestSendEntireBalance(t *testing.T) {
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
 
-	unsignedTx := types.NewTransaction(0, someEthereumAddr, initialBalanceInEthDecimals, gas.MaxGasPerRequest, util.Big0, []byte{})
+	unsignedTx := types.NewTransaction(0, someEthereumAddr, initialBalanceInEthDecimals, env.maxGasLimit(), util.Big0, []byte{})
 	tx, err := types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
 	require.NoError(t, err)
 	err = env.evmChain.SendTransaction(tx)
@@ -1573,73 +1573,6 @@ func TestSolidityRevertMessage(t *testing.T) {
 	}}, "testRevertReason")
 	require.Error(t, err)
 	require.EqualValues(t, "execution reverted: foobar", res.iscReceipt.ResolvedError)
-}
-
-func TestSolidityTransferCustomBaseTokens(t *testing.T) {
-	env := initEVM(t)
-	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
-	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
-	iscTest := env.deployISCTestContract(ethKey)
-
-	// create some custom token, and set it as the chain gas token
-	customTokenDecimals := uint32(20) // 2 more decimal cases than ethereum
-
-	foundryOwner, foundryOwnerAddr := env.solo.NewKeyPairWithFunds()
-	err := env.soloChain.DepositBaseTokensToL2(env.solo.L1BaseTokens(foundryOwnerAddr)/2, foundryOwner)
-	require.NoError(t, err)
-
-	supply := big.NewInt(999999999)
-	foundrySN, nativeTokenID, err := env.soloChain.NewFoundryParams(supply).WithUser(foundryOwner).CreateFoundry()
-	require.NoError(t, err)
-
-	err = env.soloChain.MintTokens(foundrySN, big.NewInt(1_000_000), foundryOwner)
-	require.NoError(t, err)
-	env.soloChain.AssertL2NativeTokens(isc.NewAgentID(foundryOwnerAddr), nativeTokenID, big.NewInt(1_000_000))
-
-	env.setFeePolicy(gas.GasFeePolicy{
-		GasFeeTokenID:       nativeTokenID,
-		GasFeeTokenDecimals: customTokenDecimals,
-		GasPerToken:         gas.DefaultGasPerToken,
-		ValidatorFeeShare:   0,
-		EVMGasRatio:         gas.DefaultEVMGasRatio,
-	}, iscCallOptions{
-		wallet: env.soloChain.OriginatorPrivateKey,
-	})
-
-	// move some of these custom tokens into an ethereum account
-	tokensToMoveToEvmAccount := int64(500_000)
-	err = env.soloChain.SendFromL2ToL2Account(
-		isc.NewAssets(0, iotago.NativeTokens{{
-			ID:     nativeTokenID,
-			Amount: big.NewInt(tokensToMoveToEvmAccount),
-		}}),
-		ethAgentID,
-		foundryOwner,
-	)
-	require.NoError(t, err)
-	env.soloChain.AssertL2NativeTokens(ethAgentID, nativeTokenID, big.NewInt(tokensToMoveToEvmAccount))
-
-	// try sending funds to `someEthereumAddr` by sending a "value tx" to the isc test contract
-	_, someEthereumAddr := solo.NewEthereumAccount()
-	someEthereumAgentID := isc.NewEthereumAddressAgentID(someEthereumAddr)
-
-	amountOfTokensToMoveInEVMRequest := uint64(123456)
-	amountInEthDecimals := util.CustomTokensDecimalsToEthereumDecimals(
-		new(big.Int).SetUint64(amountOfTokensToMoveInEVMRequest),
-		customTokenDecimals,
-	)
-	result, err := iscTest.callFn([]ethCallOptions{{
-		sender: ethKey,
-		value:  amountInEthDecimals,
-	}}, "sendTo", someEthereumAddr, amountInEthDecimals)
-	require.NoError(t, err)
-	actualTokensMovedInEVMRequest := uint64(123400) // the last 2 decimal cases will be ignored
-	env.soloChain.AssertL2NativeTokens(someEthereumAgentID, nativeTokenID, actualTokensMovedInEVMRequest)
-	// ensure the gas fees and the tokens moved are the correct ones
-	require.EqualValues(t,
-		uint64(tokensToMoveToEvmAccount)-result.iscReceipt.GasFeeCharged-actualTokensMovedInEVMRequest,
-		env.soloChain.L2Assets(ethAgentID).NativeTokens[0].Amount.Uint64(),
-	)
 }
 
 func TestSandboxStackOverflow(t *testing.T) {
@@ -1730,4 +1663,76 @@ func TestChangeGasLimit(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, b.Hash(), h)
 	}
+}
+
+func TestChangeGasPerToken(t *testing.T) {
+	env := initEVM(t)
+
+	var fee uint64
+	{
+		ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+		storage := env.deployStorageContract(ethKey)
+		res, err := storage.store(uint32(3))
+		require.NoError(t, err)
+		fee = res.iscReceipt.GasFeeCharged
+	}
+
+	{
+		feePolicy := env.soloChain.GetGasFeePolicy()
+		feePolicy.GasPerToken.B *= 2
+		err := env.setFeePolicy(*feePolicy)
+		require.NoError(t, err)
+	}
+
+	var fee2 uint64
+	{
+		ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+		storage := env.deployStorageContract(ethKey)
+		res, err := storage.store(uint32(3))
+		require.NoError(t, err)
+		fee2 = res.iscReceipt.GasFeeCharged
+	}
+
+	t.Log(fee, fee2)
+	require.Greater(t, fee2, fee)
+}
+
+func TestGasPriceIgnored(t *testing.T) {
+	env := initEVM(t)
+
+	var gasLimit []uint64
+	var gasUsed []uint64
+
+	for _, gasPrice := range []*big.Int{
+		nil,
+		big.NewInt(0),
+		big.NewInt(10),
+		big.NewInt(100),
+	} {
+		t.Run(fmt.Sprintf("%v", gasPrice), func(t *testing.T) { //nolint:gocritic // false positive
+			ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+			storage := env.deployStorageContract(ethKey)
+
+			gas, err := storage.estimateGas([]ethCallOptions{{
+				sender:   ethKey,
+				gasPrice: gasPrice,
+			}}, "store", uint32(3))
+			require.NoError(t, err)
+
+			res, err := storage.store(uint32(3), ethCallOptions{
+				sender:   ethKey,
+				gasLimit: gas,
+				gasPrice: gasPrice,
+			})
+			require.NoError(t, err)
+
+			gasLimit = append(gasLimit, gas)
+			gasUsed = append(gasUsed, res.evmReceipt.GasUsed)
+		})
+	}
+
+	t.Log("gas limit", gasLimit)
+	t.Log("gas used", gasUsed)
+	require.Len(t, lo.Uniq(gasLimit), 1)
+	require.Len(t, lo.Uniq(gasUsed), 1)
 }

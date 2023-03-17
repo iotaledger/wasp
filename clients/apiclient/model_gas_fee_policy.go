@@ -20,8 +20,6 @@ var _ MappedNullable = &GasFeePolicy{}
 // GasFeePolicy struct for GasFeePolicy
 type GasFeePolicy struct {
 	EvmGasRatio Ratio32 `json:"evmGasRatio"`
-	// The gas fee token id. Empty if base token.
-	GasFeeTokenId string `json:"gasFeeTokenId"`
 	GasPerToken Ratio32 `json:"gasPerToken"`
 	// The validator fee share.
 	ValidatorFeeShare int32 `json:"validatorFeeShare"`
@@ -31,10 +29,9 @@ type GasFeePolicy struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGasFeePolicy(evmGasRatio Ratio32, gasFeeTokenId string, gasPerToken Ratio32, validatorFeeShare int32) *GasFeePolicy {
+func NewGasFeePolicy(evmGasRatio Ratio32, gasPerToken Ratio32, validatorFeeShare int32) *GasFeePolicy {
 	this := GasFeePolicy{}
 	this.EvmGasRatio = evmGasRatio
-	this.GasFeeTokenId = gasFeeTokenId
 	this.GasPerToken = gasPerToken
 	this.ValidatorFeeShare = validatorFeeShare
 	return &this
@@ -70,30 +67,6 @@ func (o *GasFeePolicy) GetEvmGasRatioOk() (*Ratio32, bool) {
 // SetEvmGasRatio sets field value
 func (o *GasFeePolicy) SetEvmGasRatio(v Ratio32) {
 	o.EvmGasRatio = v
-}
-
-// GetGasFeeTokenId returns the GasFeeTokenId field value
-func (o *GasFeePolicy) GetGasFeeTokenId() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.GasFeeTokenId
-}
-
-// GetGasFeeTokenIdOk returns a tuple with the GasFeeTokenId field value
-// and a boolean to check if the value has been set.
-func (o *GasFeePolicy) GetGasFeeTokenIdOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.GasFeeTokenId, true
-}
-
-// SetGasFeeTokenId sets field value
-func (o *GasFeePolicy) SetGasFeeTokenId(v string) {
-	o.GasFeeTokenId = v
 }
 
 // GetGasPerToken returns the GasPerToken field value
@@ -155,7 +128,6 @@ func (o GasFeePolicy) MarshalJSON() ([]byte, error) {
 func (o GasFeePolicy) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["evmGasRatio"] = o.EvmGasRatio
-	toSerialize["gasFeeTokenId"] = o.GasFeeTokenId
 	toSerialize["gasPerToken"] = o.GasPerToken
 	toSerialize["validatorFeeShare"] = o.ValidatorFeeShare
 	return toSerialize, nil

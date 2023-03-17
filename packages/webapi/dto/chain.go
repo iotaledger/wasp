@@ -2,7 +2,6 @@ package dto
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -12,25 +11,21 @@ type (
 )
 
 type ChainInfo struct {
-	IsActive        bool
-	ChainID         isc.ChainID
-	ChainOwnerID    isc.AgentID
-	Description     string
-	GasFeePolicy    *gas.GasFeePolicy
-	MaxBlobSize     uint32
-	MaxEventSize    uint16
-	MaxEventsPerReq uint16
+	IsActive       bool
+	ChainID        isc.ChainID
+	ChainOwnerID   isc.AgentID
+	GasFeePolicy   *gas.FeePolicy
+	GasLimits      *gas.Limits
+	CustomMetadata []byte
 }
 
-func MapChainInfo(info *governance.ChainInfo, isActive bool) *ChainInfo {
+func MapChainInfo(info *isc.ChainInfo, isActive bool) *ChainInfo {
 	return &ChainInfo{
-		IsActive:        isActive,
-		ChainID:         info.ChainID,
-		ChainOwnerID:    info.ChainOwnerID,
-		Description:     info.Description,
-		GasFeePolicy:    info.GasFeePolicy,
-		MaxBlobSize:     info.MaxBlobSize,
-		MaxEventSize:    info.MaxEventSize,
-		MaxEventsPerReq: info.MaxEventsPerReq,
+		IsActive:       isActive,
+		ChainID:        info.ChainID,
+		ChainOwnerID:   info.ChainOwnerID,
+		GasFeePolicy:   info.GasFeePolicy,
+		GasLimits:      info.GasLimits,
+		CustomMetadata: info.CustomMetadata,
 	}
 }

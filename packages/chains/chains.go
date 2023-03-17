@@ -10,9 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/core/generics/event"
-	"github.com/iotaledger/hive.go/core/generics/lo"
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/lo"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
@@ -25,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -62,6 +62,8 @@ type Chains struct {
 	mutex     sync.RWMutex
 	allChains map[isc.ChainID]*activeChain
 	accessMgr accessMgr.AccessMgr
+
+	cleanupFunc context.CancelFunc
 
 	shutdownCoordinator *shutdown.Coordinator
 }
@@ -130,27 +132,27 @@ func (c *Chains) Run(ctx context.Context) error {
 	c.accessMgr = accessMgr.New(ctx, c.chainServersUpdatedCB, c.nodeIdentityProvider.NodeIdentity(), c.networkProvider, c.log.Named("AM"))
 	c.trustedNetworkListenerCancel = c.trustedNetworkManager.TrustedPeersListener(c.trustedPeersUpdatedCB)
 
-	c.chainRecordRegistryProvider.Events().ChainRecordModified.Attach(event.NewClosure(func(event *registry.ChainRecordModifiedEvent) {
+	unhook := c.chainRecordRegistryProvider.Events().ChainRecordModified.Hook(func(event *registry.ChainRecordModifiedEvent) {
 		c.mutex.RLock()
 		defer c.mutex.RUnlock()
 		if chain, ok := c.allChains[event.ChainRecord.ChainID()]; ok {
 			chain.chain.ConfigUpdated(event.ChainRecord.AccessNodes)
 		}
-	}))
+	}).Unhook
+	c.cleanupFunc = unhook
 
 	return c.activateAllFromRegistry() //nolint:contextcheck
 }
 
 func (c *Chains) Close() {
+	util.ExecuteIfNotNil(c.cleanupFunc)
 	for _, c := range c.allChains {
 		c.cancelFunc()
 	}
 	c.shutdownCoordinator.WaitNestedWithLogging(1 * time.Second)
 	c.shutdownCoordinator.Done()
-	if c.trustedNetworkListenerCancel != nil {
-		c.trustedNetworkListenerCancel()
-		c.trustedNetworkListenerCancel = nil
-	}
+	util.ExecuteIfNotNil(c.trustedNetworkListenerCancel)
+	c.trustedNetworkListenerCancel = nil
 }
 
 func (c *Chains) trustedPeersUpdatedCB(trustedPeers []*peering.TrustedPeer) {
@@ -211,21 +213,10 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 			return fmt.Errorf("cannot activate chain: %w", err2)
 		}
 	}
-	//
-	// Load or initialize new chain store.
+
 	chainKVStore, err := c.chainStateStoreProvider(chainID)
 	if err != nil {
 		return fmt.Errorf("error when creating chain KV store: %w", err)
-	}
-	chainStore := state.NewStore(chainKVStore)
-	chainState, err := chainStore.LatestState()
-	if err != nil {
-		chainStore = state.InitChainStore(chainKVStore)
-	} else {
-		chainIDInState, errChainID := chainState.Has(state.KeyChainID)
-		if errChainID != nil || !chainIDInState {
-			chainStore = state.InitChainStore(chainKVStore)
-		}
 	}
 
 	// Initialize WAL
@@ -244,7 +235,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	newChain, err := chain.New(
 		chainCtx,
 		chainID,
-		chainStore,
+		state.NewStore(chainKVStore),
 		c.nodeConnection,
 		c.nodeIdentityProvider.NodeIdentity(),
 		c.processorConfig,

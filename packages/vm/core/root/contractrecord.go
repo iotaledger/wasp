@@ -1,7 +1,7 @@
 package root
 
 import (
-	"github.com/iotaledger/hive.go/core/marshalutil"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -26,7 +26,6 @@ type ContractRecord struct {
 func ContractRecordFromContractInfo(itf *coreutil.ContractInfo) *ContractRecord {
 	return &ContractRecord{
 		ProgramHash: itf.ProgramHash,
-		Description: itf.Description,
 		Name:        itf.Name,
 	}
 }

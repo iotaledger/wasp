@@ -12,7 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -67,13 +67,19 @@ func Verbosef(format string, args ...interface{}) {
 
 func Fatal(args ...any) {
 	s := fmt.Sprint(args...)
-	Printf(fmt.Sprintf("error: %s\n%s", s, string(debug.Stack())))
+	Printf("error: %s\n", s)
+	if DebugFlag {
+		Printf("%s", debug.Stack())
+	}
 	os.Exit(1)
 }
 
 func Fatalf(format string, args ...any) {
 	s := fmt.Sprintf(format, args...)
-	Printf(fmt.Sprintf("error: %s\n%s", s, string(debug.Stack())))
+	Printf("error: %s\n", s)
+	if DebugFlag {
+		Printf("%s", debug.Stack())
+	}
 	os.Exit(1)
 }
 

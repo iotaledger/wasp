@@ -61,10 +61,10 @@ func (vmctx *VMContext) findContractByHname(contractHname isc.Hname) (ret *root.
 	return ret
 }
 
-func (vmctx *VMContext) getChainInfo() *governance.ChainInfo {
-	var ret *governance.ChainInfo
+func (vmctx *VMContext) getChainInfo() *isc.ChainInfo {
+	var ret *isc.ChainInfo
 	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
-		ret = governance.MustGetChainInfo(s)
+		ret = governance.MustGetChainInfo(s, vmctx.ChainID())
 	})
 	return ret
 }
@@ -128,18 +128,7 @@ func (vmctx *VMContext) GetSenderTokenBalanceForFees() uint64 {
 	if sender == nil {
 		return 0
 	}
-	if isc.IsEmptyNativeTokenID(vmctx.chainInfo.GasFeePolicy.GasFeeTokenID) {
-		// base tokens are used as gas tokens
-		return vmctx.GetBaseTokensBalance(sender)
-	}
-	// native tokens are used for gas fee
-	nativeTokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
-	// to pay for gas chain is configured to use some native token, not base tokens
-	tokensAvailableBig := vmctx.GetNativeTokenBalance(sender, nativeTokenID)
-	if tokensAvailableBig.IsUint64() {
-		return tokensAvailableBig.Uint64()
-	}
-	return math.MaxUint64
+	return vmctx.GetBaseTokensBalance(sender)
 }
 
 func (vmctx *VMContext) requestLookupKey() blocklog.RequestLookupKey {
@@ -184,11 +173,8 @@ func (vmctx *VMContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.R
 }
 
 func (vmctx *VMContext) MustSaveEvent(contract isc.Hname, msg string) {
-	if vmctx.requestEventIndex > vmctx.chainInfo.MaxEventsPerReq {
+	if vmctx.requestEventIndex == math.MaxUint16 {
 		panic(vm.ErrTooManyEvents)
-	}
-	if len([]byte(msg)) > int(vmctx.chainInfo.MaxEventSize) {
-		panic(vm.ErrTooLargeEvent)
 	}
 	vmctx.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
 

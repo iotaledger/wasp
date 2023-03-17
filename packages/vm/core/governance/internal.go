@@ -4,8 +4,6 @@
 package governance
 
 import (
-	"errors"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -26,41 +24,28 @@ func GetRotationAddress(state kv.KVStoreReader) iotago.Address {
 }
 
 // GetChainInfo returns global variables of the chain
-func GetChainInfo(state kv.KVStoreReader) (*ChainInfo, error) {
-	if state.MustGet(VarChainID) == nil {
-		return nil, errors.New("chainID not found in governance state")
-	}
-
+func GetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) (*isc.ChainInfo, error) {
 	d := kvdecoder.New(state)
-	ret := &ChainInfo{}
+	ret := &isc.ChainInfo{
+		ChainID: chainID,
+	}
 	var err error
-	if ret.ChainID, err = d.GetChainID(VarChainID); err != nil {
-		return nil, err
-	}
 	if ret.ChainOwnerID, err = d.GetAgentID(VarChainOwnerID); err != nil {
-		return nil, err
-	}
-	if ret.Description, err = d.GetString(VarDescription, ""); err != nil {
 		return nil, err
 	}
 	if ret.GasFeePolicy, err = GetGasFeePolicy(state); err != nil {
 		return nil, err
 	}
-	if ret.MaxBlobSize, err = d.GetUint32(VarMaxBlobSize, 0); err != nil {
+	if ret.GasLimits, err = GetGasLimits(state); err != nil {
 		return nil, err
 	}
-	if ret.MaxEventSize, err = d.GetUint16(VarMaxEventSize, 0); err != nil {
-		return nil, err
-	}
-	if ret.MaxEventsPerReq, err = d.GetUint16(VarMaxEventsPerReq, 0); err != nil {
-		return nil, err
-	}
+	ret.CustomMetadata = GetCustomMetadata(state)
 	return ret, nil
 }
 
 // MustGetChainInfo return global variables of the chain
-func MustGetChainInfo(state kv.KVStoreReader) *ChainInfo {
-	info, err := GetChainInfo(state)
+func MustGetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) *isc.ChainInfo {
+	info, err := GetChainInfo(state, chainID)
 	if err != nil {
 		panic(err)
 	}
@@ -73,10 +58,30 @@ func MustGetChainOwnerID(state kv.KVStoreReader) isc.AgentID {
 }
 
 // GetGasFeePolicy returns gas policy from the state
-func GetGasFeePolicy(state kv.KVStoreReader) (*gas.GasFeePolicy, error) {
+func GetGasFeePolicy(state kv.KVStoreReader) (*gas.FeePolicy, error) {
 	return gas.FeePolicyFromBytes(state.MustGet(VarGasFeePolicyBytes))
 }
 
-func MustGetGasFeePolicy(state kv.KVStoreReader) *gas.GasFeePolicy {
-	return gas.MustGasFeePolicyFromBytes(state.MustGet(VarGasFeePolicyBytes))
+func MustGetGasFeePolicy(state kv.KVStoreReader) *gas.FeePolicy {
+	return gas.MustFeePolicyFromBytes(state.MustGet(VarGasFeePolicyBytes))
+}
+
+func MustGetGasLimits(state kv.KVStoreReader) *gas.Limits {
+	gl, err := gas.LimitsFromBytes(state.MustGet(VarGasLimitsBytes))
+	if err != nil {
+		panic(err)
+	}
+	return gl
+}
+
+func GetGasLimits(state kv.KVStoreReader) (*gas.Limits, error) {
+	return gas.LimitsFromBytes(state.MustGet(VarGasLimitsBytes))
+}
+
+func SetCustomMetadata(state kv.KVStore, data []byte) {
+	state.Set(VarCustomMetadata, data)
+}
+
+func GetCustomMetadata(state kv.KVStoreReader) []byte {
+	return state.MustGet(VarCustomMetadata)
 }

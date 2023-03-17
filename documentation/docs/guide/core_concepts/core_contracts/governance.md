@@ -42,10 +42,8 @@ The Fee Policy looks like the following:
 
 ```go
 {
-  TokenID []byte // id of the token used to pay for gas (nil if the base token should be used (iota/shimmer)) 
-  
   GasPerToken Ratio32 // how many gas units are paid for each token
-  
+  EVMGasRatio Ratio32 // the ratio at which EVM gas is converted to ISC gas
   ValidatorFeeShare uint8 // percentage of the fees that are credited to the validators (0 - 100)
 }
 ```
@@ -107,15 +105,9 @@ It can only be invoked by the chain owner.
 Claims the ownership of the chain if the caller matches the identity set
 in [`delegateChainOwnership`](#delegatechainownershipo-agentid).
 
-### `setChainInfo(mb MaxBlobSize, me MaxEventSize, mr MaxEventsPerRequest)`
+### `setMaxBlobSize(mb MaxBlobSize)`
 
-Allows some chain parameters to be set by the chain owner.
-
-Parameters:
-
-- `mb` (optional `uint32` - default: don't change): Maximum [blob](blob.md) size.
-- `me` (optional `uint16` - default: don't change): Maximum [event](blocklog.md) size.
-- `mr` (optional `uint16` - default: don't change): Maximum amount of [events](blocklog.md) per request.
+Sets the maximum [blob](blob.md) size.
 
 It can only be invoked by the chain owner.
 
@@ -126,6 +118,16 @@ Sets the fee policy for the chain.
 #### Parameters
 
 - `g`: ([`FeePolicy`](#feepolicy)).
+
+It can only be invoked by the chain owner.
+
+### `setGasLimits(l GasLimits)`
+
+Sets the fee policy for the chain.
+
+#### Parameters
+
+- `l`: ([`GasLimits`](#gaslimits)).
 
 It can only be invoked by the chain owner.
 
@@ -189,6 +191,14 @@ Changes the ISC : EVM gas ratio.
 
 - `e` ([`Ratio32`](#ratio32)): The ISC : EVM gas ratio.
 
+### `setCustomMetadata`
+
+Changes optional extra metadata that is appended to the L1 AliasOutput
+
+#### Parameters
+
+- `e` (`bytes`): the optional metadata
+
 ---
 
 ## Views
@@ -217,11 +227,9 @@ Returns the AgentID of the chain owner.
 
 - `c` (`ChainID`): The chain ID
 - `o` (`AgentID`): The chain owner
-- `d` (`string`): The chain description
 - `g` ([`FeePolicy`](#feepolicy)): The gas fee policy
-- `mb` (`uint32`): Maximum [blob](blob.md) size
-- `me` (`uint16`): Maximum [event](blocklog.md) size
-- `mr` (`uint16`): Maximum amount of [events](blocklog.md) per request
+- `l` ([`GasLimits`](#gaslimits)): The gas limits
+- `x` (`bytes`): The custom metadata
 
 ### `getFeePolicy()`
 
@@ -238,6 +246,14 @@ Returns the ISC : EVM gas ratio.
 #### Returns
 
 - `e` ([`Ratio32`](#ratio32)): The ISC : EVM gas ratio.
+
+### `getGasLimits()`
+
+Returns the gas limits.
+
+#### Returns
+
+- `l` ([`GasLimits`](#gaslimits)): The gas limits.
 
 ### `getChainNodes()`
 
@@ -256,6 +272,14 @@ Returns whether the chain is ongoing maintenance.
 
 - `m` (`bool`): `true` if the chain is in maintenance mode
 
+
+### `getCustomMetadata()`
+
+Returns the extra metadata that is added to the chain AliasOutput
+
+- `x` (`bytes`): the optional metadata
+
+
 ## Schemas
 
 
@@ -272,10 +296,23 @@ A ratio between two values `x` and `y`, expressed as two `int32` numbers `a:b`, 
 
 - The [`TokenID`](accounts.md#tokenid) of the token used to charge for gas. (`iotago.NativeTokenID`)
   - If this value is `nil`, the gas fee token is the base token.
-- Gas per token ([`Ratio32`](#ratio32)): expressed as an `a:b` ratio such that `fee = gas * a/b`.
+- Gas per token ([`Ratio32`](#ratio32)): expressed as an `a:b` (`gas/token`) ratio, meaning how many gas units each token pays for.
 - Validator fee share. Must be between 0 and 100, meaning the percentage of the gas fees distributed to the
   validators. (`uint8`)
 - The ISC:EVM gas ratio ([`Ratio32`](#ratio32)): such that `ISC gas = EVM gas * a/b`.
+
+### `GasLimits`
+
+`GasLimits` is encoded as the concatenation of:
+
+- The maximum gas per block (`uint64`). A request that exceeds this limit is
+  skipped and processed in the next block.
+- The minimum gas per request (`uint64`). If a request consumes less than this
+  value, it is charged for this instead.
+- The maximum gas per request (`uint64`). If a request exceeds this limit, it
+  is rejected as failed.
+- The maximum gas per external view call (`uint64). This is the gas budget
+  assigned to external view calls.
 
 ### `AccessNodeInfo`
 

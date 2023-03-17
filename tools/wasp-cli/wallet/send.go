@@ -43,7 +43,6 @@ func initSendFundsCmd() *cobra.Command {
 					tokens,
 					nil,
 					isc.SendOptions{},
-					true,
 				)
 				util.SDAdjustmentPrompt(output)
 			}

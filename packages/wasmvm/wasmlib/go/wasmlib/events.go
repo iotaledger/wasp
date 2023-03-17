@@ -11,6 +11,14 @@ import (
 
 type IEventHandlers interface {
 	CallHandler(topic string, params []string)
+	ID() uint32
+}
+
+var nextID = uint32(0)
+
+func EventHandlersGenerateID() uint32 {
+	nextID++
+	return nextID
 }
 
 type EventEncoder struct {

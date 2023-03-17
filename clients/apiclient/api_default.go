@@ -32,7 +32,7 @@ func (r ApiWsGetRequest) Execute() (*http.Response, error) {
 }
 
 /*
-WsGet Method for WsGet
+WsGet The websocket connection service
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiWsGetRequest

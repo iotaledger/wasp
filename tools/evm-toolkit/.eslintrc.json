@@ -1,0 +1,27 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+		"ecmaVersion": "latest",
+    "sourceType": "module",
+		"project": ["./tsconfig.json"],
+		"extraFileExtensions": [".svelte", ".svx"]
+	},
+  "env": {
+    "browser": true,
+    "es6": true,
+    "jest": true,
+    "node": true
+  },
+  "overrides": [
+    {
+      "files": ["**/*.svelte"],
+      "processor": "svelte3/svelte3"
+    }
+  ],
+
+  "plugins": ["@typescript-eslint", "import", "svelte3"],
+  "settings": {
+    "svelte3/typescript": true
+  },
+  "root": true
+}

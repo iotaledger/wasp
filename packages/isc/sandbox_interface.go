@@ -24,6 +24,8 @@ type SandboxBase interface {
 	ChainID() ChainID
 	// ChainOwnerID returns the AgentID of the current owner of the chain
 	ChainOwnerID() AgentID
+	// ChainInfo returns information and configuration parameters of the chain
+	ChainInfo() *ChainInfo
 	// Contract returns the Hname of the current contract in the context
 	Contract() Hname
 	// AccountID returns the agentID of the current contract (i.e. chainID + contract hname)
@@ -130,7 +132,6 @@ type Privileged interface {
 	DebitFromAccount(AgentID, *Assets)
 	CreditToAccount(AgentID, *Assets)
 
-	SubscribeBlockContext(openFunc Hname, closeFunc Hname)
 	SetBlockContext(bctx interface{})
 	BlockContext() interface{}
 }

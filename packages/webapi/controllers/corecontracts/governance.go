@@ -1,40 +1,25 @@
 package corecontracts
 
 import (
+	"encoding/base64"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
-func MapGovChainInfoResponse(chainInfo *governance.ChainInfo) models.GovChainInfoResponse {
-	gasFeeTokenID := ""
-
-	if !isc.IsEmptyNativeTokenID(chainInfo.GasFeePolicy.GasFeeTokenID) {
-		gasFeeTokenID = chainInfo.GasFeePolicy.GasFeeTokenID.String()
+func MapGovChainInfoResponse(chainInfo *isc.ChainInfo) models.GovChainInfoResponse {
+	return models.GovChainInfoResponse{
+		ChainID:        chainInfo.ChainID.String(),
+		ChainOwnerID:   chainInfo.ChainOwnerID.String(),
+		GasFeePolicy:   chainInfo.GasFeePolicy,
+		GasLimits:      chainInfo.GasLimits,
+		CustomMetadata: base64.StdEncoding.EncodeToString(chainInfo.CustomMetadata),
 	}
-
-	chainInfoResponse := models.GovChainInfoResponse{
-		ChainID:      chainInfo.ChainID.String(),
-		ChainOwnerID: chainInfo.ChainOwnerID.String(),
-		Description:  chainInfo.Description,
-		GasFeePolicy: models.GasFeePolicy{
-			GasFeeTokenID:     gasFeeTokenID,
-			GasPerToken:       chainInfo.GasFeePolicy.GasPerToken,
-			ValidatorFeeShare: chainInfo.GasFeePolicy.ValidatorFeeShare,
-			EVMGasRatio:       chainInfo.GasFeePolicy.EVMGasRatio,
-		},
-		MaxBlobSize:     chainInfo.MaxBlobSize,
-		MaxEventSize:    chainInfo.MaxEventSize,
-		MaxEventsPerReq: chainInfo.MaxEventsPerReq,
-	}
-
-	return chainInfoResponse
 }
 
 func (c *Controller) getChainInfo(e echo.Context) error {

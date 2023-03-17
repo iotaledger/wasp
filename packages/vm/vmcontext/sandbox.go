@@ -139,10 +139,6 @@ func (s *contractSandbox) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	return s.Ctx.(*VMContext).ModifyFoundrySupply(sn, delta)
 }
 
-func (s *contractSandbox) SubscribeBlockContext(openFunc, closeFunc isc.Hname) {
-	s.Ctx.(*VMContext).SubscribeBlockContext(openFunc, closeFunc)
-}
-
 func (s *contractSandbox) SetBlockContext(bctx interface{}) {
 	s.Ctx.(*VMContext).SetBlockContext(bctx)
 }
@@ -184,12 +180,5 @@ func (s *contractSandbox) totalGasTokens() *isc.Assets {
 		return isc.NewEmptyAssets()
 	}
 	amount := s.Ctx.(*VMContext).gasMaxTokensToSpendForGasFee
-	nativeTokenID := s.Ctx.(*VMContext).chainInfo.GasFeePolicy.GasFeeTokenID
-	if isc.IsEmptyNativeTokenID(nativeTokenID) {
-		return isc.NewAssetsBaseTokens(amount)
-	}
-	return isc.NewAssets(0, iotago.NativeTokens{&iotago.NativeToken{
-		ID:     nativeTokenID,
-		Amount: new(big.Int).SetUint64(amount),
-	}})
+	return isc.NewAssetsBaseTokens(amount)
 }

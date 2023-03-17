@@ -12,8 +12,8 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -35,12 +35,13 @@ func TestInitLoad(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
 	env.AssertL1BaseTokens(userAddr, utxodb.FundsFromFaucetAmount)
-	ch, _, _ := env.NewChainExt(user, 10_000, "chain1")
+	originAmount := 10 * isc.Million
+	ch, _ := env.NewChainExt(user, originAmount, "chain1")
 	_ = ch.Log().Sync()
 
 	storageDepositCosts := transaction.NewStorageDepositEstimate()
 	cassets := ch.L2CommonAccountAssets()
-	require.EqualValues(t, 10_000-storageDepositCosts.AnchorOutput, cassets.BaseTokens)
+	require.EqualValues(t, originAmount-storageDepositCosts.AnchorOutput, cassets.BaseTokens)
 	require.EqualValues(t, 0, len(cassets.NativeTokens))
 
 	t.Logf("common base tokens: %d", ch.L2CommonAccountBaseTokens())
@@ -55,11 +56,10 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	require.EqualValues(t, env.L1Ledger().Supply(), assets.BaseTokens)
 
 	// create chain
-	ch, _, initTx := env.NewChainExt(nil, 0, "chain1")
+	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1")
 	defer func() {
 		_ = ch.Log().Sync()
 	}()
-	ch.AssertControlAddresses()
 	t.Logf("originator address base tokens: %d (spent %d)",
 		env.L1BaseTokens(ch.OriginatorAddress), utxodb.FundsFromFaucetAmount-env.L1BaseTokens(ch.OriginatorAddress))
 
@@ -67,21 +67,9 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	nativeTokenIDs := ch.GetOnChainTokenIDs()
 	require.EqualValues(t, 0, len(nativeTokenIDs))
 
-	// query storage deposit parameters of the latest block
-	totalBaseTokensInfo := ch.GetTotalBaseTokensInfo()
-	totalBaseTokensOnChain := ch.L2TotalBaseTokens()
 	// all goes to storage deposit and to total base tokens on chain
-	totalSpent := totalBaseTokensInfo.TotalStorageDeposit + totalBaseTokensInfo.TotalBaseTokensInL2Accounts
-	t.Logf("total on chain: storage deposit: %d, total base tokens on chain: %d, total spent: %d",
-		totalBaseTokensInfo.TotalStorageDeposit, totalBaseTokensOnChain, totalSpent)
 	// what has left on L1 address
-	env.AssertL1BaseTokens(ch.OriginatorAddress, utxodb.FundsFromFaucetAmount-totalSpent)
-
-	// let's analise storage deposit on origin and init transactions
-	vByteCostInit := GetStorageDeposit(initTx)[0]
-	storageDepositCosts := transaction.NewStorageDepositEstimate()
-	// what we spent is only for storage deposits for those 2 transactions
-	require.EqualValues(t, int(totalSpent), int(storageDepositCosts.AnchorOutput+vByteCostInit))
+	env.AssertL1BaseTokens(ch.OriginatorAddress, utxodb.FundsFromFaucetAmount-10*isc.Million)
 
 	// check if there's a single alias output on chain's address
 	aliasOutputs := env.L1Ledger().GetAliasOutputs(ch.ChainID.AsAddress())
@@ -96,21 +84,26 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	// no native tokens expected
 	require.EqualValues(t, 0, len(totalAssets.NativeTokens))
 	// what spent all goes to the alias output
-	require.EqualValues(t, int(totalSpent), int(aliasOut.Amount))
+	// require.EqualValues(t, int(totalSpent), int(aliasOut.Amount))
 	// total base tokens on L2 must be equal to alias output base tokens - storage deposit
-	ch.AssertL2TotalBaseTokens(aliasOut.Amount - storageDepositCosts.AnchorOutput)
+	storageDepositCosts := transaction.NewStorageDepositEstimate()
+	totalAccountedL2Tokens := aliasOut.Amount - storageDepositCosts.AnchorOutput
+	ch.AssertL2TotalBaseTokens(totalAccountedL2Tokens)
 
-	// all storage deposit of the init request goes to the user account
-	ch.AssertL2BaseTokens(ch.OriginatorAgentID, vByteCostInit)
 	// common account is empty
-	require.EqualValues(t, 0, ch.L2CommonAccountBaseTokens())
+	require.EqualValues(t, 10*isc.Million-transaction.NewStorageDepositEstimate().AnchorOutput, ch.L2CommonAccountBaseTokens())
+
+	someUserWallet, _ := env.NewKeyPairWithFunds()
+	ch.DepositBaseTokensToL2(1*isc.Million, someUserWallet)
+	ch.AssertL2TotalBaseTokens(totalAccountedL2Tokens + 1*isc.Million)
+	ch.AssertControlAddresses()
 }
 
 // TestNoTargetPostOnLedger test what happens when sending requests to non-existent contract or entry point
 func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no contract,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain()
+		ch, _ := env.NewChainExt(nil, 0, "chain")
 		defer func() {
 			_ = ch.Log().Sync()
 		}()
@@ -118,7 +111,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalBaseTokensBefore := ch.L2TotalBaseTokens()
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
 		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
-		require.EqualValues(t, 0, ch.L2CommonAccountBaseTokens())
+		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
 
 		req := solo.NewCallParams("dummyContract", "dummyEP").
 			WithGasBudget(100_000)
@@ -139,11 +132,11 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// originator (user) is charged with gas fee on L2
 		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+reqStorageDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountBaseTokensAfter)
+		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged, commonAccountBaseTokensAfter)
 	})
 	t.Run("no contract,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain()
+		ch, _ := env.NewChainExt(nil, 0, "chain")
 		defer func() {
 			_ = ch.Log().Sync()
 		}()
@@ -155,7 +148,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
 		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
 		env.AssertL1BaseTokens(senderAddr, utxodb.FundsFromFaucetAmount)
-		require.EqualValues(t, 0, ch.L2CommonAccountBaseTokens())
+		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
 
 		req := solo.NewCallParams("dummyContract", "dummyEP").
 			WithGasBudget(100_000)
@@ -180,11 +173,11 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// user is charged with gas fee on L2
 		ch.AssertL2BaseTokens(senderAgentID, reqStorageDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountBaseTokensAfter)
+		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged, commonAccountBaseTokensAfter)
 	})
 	t.Run("no EP,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain()
+		ch, _ := env.NewChainExt(nil, 0, "chain")
 		defer func() {
 			_ = ch.Log().Sync()
 		}()
@@ -192,7 +185,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalBaseTokensBefore := ch.L2TotalBaseTokens()
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
 		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
-		require.EqualValues(t, 0, ch.L2CommonAccountBaseTokens())
+		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
 
 		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
 			WithGasBudget(100_000)
@@ -213,11 +206,11 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// originator (user) is charged with gas fee on L2
 		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+reqStorageDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountBaseTokensAfter)
+		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged, commonAccountBaseTokensAfter)
 	})
 	t.Run("no EP,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain()
+		ch, _ := env.NewChainExt(nil, 0, "chain")
 		defer func() {
 			_ = ch.Log().Sync()
 		}()
@@ -229,7 +222,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
 		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
 		env.AssertL1BaseTokens(senderAddr, utxodb.FundsFromFaucetAmount)
-		require.EqualValues(t, 0, ch.L2CommonAccountBaseTokens())
+		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
 
 		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
 			WithGasBudget(100_000)
@@ -253,7 +246,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// user is charged with gas fee on L2
 		ch.AssertL2BaseTokens(senderAgentID, reqStorageDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountBaseTokensAfter)
+		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged, commonAccountBaseTokensAfter)
 	})
 }
 
@@ -274,16 +267,6 @@ func TestNoTargetView(t *testing.T) {
 		_, err := chain.CallView(root.Contract.Name, "dummyEP")
 		require.Error(t, err)
 	})
-}
-
-func TestOkCall(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	ch := env.NewChain()
-
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
-		WithGasBudget(100_000)
-	_, err := ch.PostRequestSync(req, nil)
-	require.NoError(t, err)
 }
 
 func TestEstimateGas(t *testing.T) {
@@ -398,7 +381,7 @@ func TestRepeatInit(t *testing.T) {
 			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
-		testmisc.RequireErrorToBe(t, err, root.ErrChainInitConditionsFailed)
+		testmisc.RequireErrorToBe(t, err, vm.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
 	})
 	t.Run("accounts", func(t *testing.T) {
@@ -458,7 +441,6 @@ func TestDeployNativeContract(t *testing.T) {
 	ch := env.NewChain()
 
 	senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-	// userAgentID := isc.NewAgentID(userAddr, 0)
 
 	err := ch.DepositBaseTokensToL2(10_000, senderKeyPair)
 	require.NoError(t, err)
@@ -478,16 +460,12 @@ func TestDeployNativeContract(t *testing.T) {
 
 	err = ch.DeployContract(senderKeyPair, "sctest", sbtestsc.Contract.ProgramHash)
 	require.NoError(t, err)
-	//
-	//req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name)
-	//_, err := ch.PostRequestSync(req, nil)
 }
 
 func TestFeeBasic(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	chain := env.NewChain()
 	feePolicy := chain.GetGasFeePolicy()
-	require.True(t, isc.IsEmptyNativeTokenID(feePolicy.GasFeeTokenID))
 	require.EqualValues(t, 0, feePolicy.ValidatorFeeShare)
 }
 

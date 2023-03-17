@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/marshalutil"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -25,7 +25,6 @@ func knownAgentID(b byte, h uint32) isc.AgentID {
 
 func TestBasic(t *testing.T) {
 	t.Logf("Name: %s", Contract.Name)
-	t.Logf("Description: %s", Contract.Description)
 	t.Logf("Program hash: %s", Contract.ProgramHash.String())
 	t.Logf("Hname: %s", Contract.Hname())
 }

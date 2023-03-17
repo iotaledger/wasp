@@ -7,10 +7,14 @@ import (
 )
 
 func (vmctx *VMContext) GasBurnEnable(enable bool) {
+	if enable && !vmctx.shouldChargeGasFee() {
+		return
+	}
 	vmctx.gasBurnEnabled = enable
 }
 
 func (vmctx *VMContext) gasSetBudget(gasBudget uint64) {
+	vmctx.task.Log.Debugf("gas budget: %d", gasBudget)
 	vmctx.gasBudgetAdjusted = gasBudget
 	vmctx.gasBurned = 0
 }
@@ -24,7 +28,7 @@ func (vmctx *VMContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	vmctx.gasBurned += g
 	vmctx.gasBurnedTotal += g
 
-	if vmctx.gasBurnedTotal+g > gas.MaxGasPerBlock {
+	if vmctx.gasBurnedTotal+g > vmctx.chainInfo.GasLimits.MaxGasPerBlock {
 		panic(vmexceptions.ErrBlockGasLimitExceeded)
 	}
 

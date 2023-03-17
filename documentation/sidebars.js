@@ -415,17 +415,6 @@ module.exports = {
             ]
         },
         {
-            type: 'category',
-            label: 'Development tools',
-            items: [
-                {
-                    type: 'doc',
-                    label: 'Preconfigured Development Docker setup',
-                    id: 'guide/development_tools/docker_preconfigured',
-                },
-            ]
-        },
-        {
             type: 'doc',
             label: 'Configuration',
             id: 'configuration',

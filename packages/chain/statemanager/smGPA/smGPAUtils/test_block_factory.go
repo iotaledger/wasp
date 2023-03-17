@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -35,7 +36,7 @@ func NewBlockFactory(t require.TestingT) *BlockFactory {
 	aliasOutput0 := &iotago.AliasOutput{
 		Amount:        tpkg.TestTokenSupply,
 		AliasID:       chainID.AsAliasID(), // NOTE: not very correct: origin output's AliasID should be empty; left here to make mocking transitions easier
-		StateMetadata: state.OriginL1Commitment().Bytes(),
+		StateMetadata: origin.L1Commitment(nil, 0).Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress},
 			&iotago.GovernorAddressUnlockCondition{Address: stateAddress},
@@ -47,14 +48,14 @@ func NewBlockFactory(t require.TestingT) *BlockFactory {
 		},
 	}
 	aliasOutputs := make(map[state.BlockHash]*isc.AliasOutputWithID)
-	originCommitment := state.OriginL1Commitment()
+	originCommitment := origin.L1Commitment(nil, 0)
 	originOutput := isc.NewAliasOutputWithID(aliasOutput0, aliasOutput0ID)
 	aliasOutputs[originCommitment.BlockHash()] = originOutput
 	return &BlockFactory{
 		t:                   t,
-		store:               state.InitChainStore(mapdb.NewMapDB()),
+		store:               origin.InitChain(state.NewStore(mapdb.NewMapDB()), nil, 0),
 		chainID:             chainID,
-		lastBlockCommitment: state.OriginL1Commitment(),
+		lastBlockCommitment: origin.L1Commitment(nil, 0),
 		aliasOutputs:        aliasOutputs,
 	}
 }
@@ -64,7 +65,7 @@ func (bfT *BlockFactory) GetChainID() isc.ChainID {
 }
 
 func (bfT *BlockFactory) GetOriginOutput() *isc.AliasOutputWithID {
-	return bfT.GetAliasOutput(state.OriginL1Commitment())
+	return bfT.GetAliasOutput(origin.L1Commitment(nil, 0))
 }
 
 func (bfT *BlockFactory) GetBlocks(

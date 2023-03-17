@@ -1,22 +1,13 @@
 package models
 
-import "github.com/iotaledger/wasp/packages/util"
-
-type GasFeePolicy struct {
-	GasFeeTokenID     string       `json:"gasFeeTokenId" swagger:"desc(The gas fee token id. Empty if base token.),required"`
-	GasPerToken       util.Ratio32 `json:"gasPerToken" swagger:"desc(The gas per token ratio (fee = gas * A/B)),required"`
-	ValidatorFeeShare uint8        `json:"validatorFeeShare" swagger:"desc(The validator fee share.),required"`
-	EVMGasRatio       util.Ratio32 `json:"evmGasRatio" swagger:"desc(The EVM gas ratio (ISC gas = EVM gas * A/B)),required"`
-}
+import "github.com/iotaledger/wasp/packages/vm/gas"
 
 type GovChainInfoResponse struct {
-	ChainID         string       `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
-	ChainOwnerID    string       `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
-	Description     string       `json:"description" swagger:"desc(The description of the chain.),required"`
-	GasFeePolicy    GasFeePolicy `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
-	MaxBlobSize     uint32       `json:"maxBlobSize" swagger:"desc(The maximum contract blob size.),required"`
-	MaxEventSize    uint16       `json:"maxEventSize" swagger:"desc(The maximum event size.),required"`                      // TODO: Clarify
-	MaxEventsPerReq uint16       `json:"maxEventsPerReq" swagger:"desc(The maximum amount of events per request.),required"` // TODO: Clarify
+	ChainID        string         `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
+	ChainOwnerID   string         `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
+	GasFeePolicy   *gas.FeePolicy `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
+	GasLimits      *gas.Limits    `json:"gasLimits" swagger:"desc(The gas limits),required"`
+	CustomMetadata string         `json:"customMetadata" swagger:"desc((base64) Optional extra metadata that is appended to the L1 AliasOutput)"`
 }
 
 type GovAllowedStateControllerAddressesResponse struct {

@@ -84,6 +84,7 @@ type ethCallOptions struct {
 	sender   *ecdsa.PrivateKey
 	value    *big.Int
 	gasLimit uint64
+	gasPrice *big.Int
 }
 
 func initEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *soloChainEnv {
@@ -99,7 +100,7 @@ func initEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *solo
 }
 
 func initEVMWithSolo(t testing.TB, env *solo.Solo) *soloChainEnv {
-	soloChain := env.NewChain()
+	soloChain, _ := env.NewChainExt(nil, 0, "evmchain")
 	return &soloChainEnv{
 		t:          t,
 		solo:       env,
@@ -166,7 +167,7 @@ func (e *soloChainEnv) setGasRatio(newGasRatio util.Ratio32, opts ...iscCallOpti
 	return err
 }
 
-func (e *soloChainEnv) setFeePolicy(p gas.GasFeePolicy, opts ...iscCallOptions) error {
+func (e *soloChainEnv) setFeePolicy(p gas.FeePolicy, opts ...iscCallOptions) error {
 	opt := e.parseISCCallOptions(opts)
 	req := solo.NewCallParams(
 		governance.Contract.Name, governance.FuncSetFeePolicy.Name,
@@ -303,6 +304,12 @@ func (e *soloChainEnv) signer() types.Signer {
 	return evmutil.Signer(big.NewInt(int64(e.evmChainID)))
 }
 
+func (e *soloChainEnv) maxGasLimit() uint64 {
+	fp := e.soloChain.GetGasFeePolicy()
+	gl := e.soloChain.GetGasLimits()
+	return gas.EVMCallGasLimit(gl, &fp.EVMGasRatio)
+}
+
 func (e *soloChainEnv) deployContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, args ...interface{}) *evmContractInstance {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
@@ -382,7 +389,7 @@ func (e *soloChainEnv) registerERC20ExternalNativeToken(
 	nativeTokenID, err := foundryOutput.ID()
 	require.NoError(e.t, err)
 
-	if !e.soloChain.WaitUntil(func(solo.MempoolInfo) bool {
+	if !e.soloChain.WaitUntil(func() bool {
 		res, err2 := e.soloChain.CallView(evm.Contract.Name, evm.FuncGetERC20ExternalNativeTokenAddress.Name,
 			evm.FieldNativeTokenID, nativeTokenID[:],
 		)
@@ -421,13 +428,16 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 	if opt.value == nil {
 		opt.value = big.NewInt(0)
 	}
+	if opt.gasPrice == nil {
+		opt.gasPrice = evm.GasPrice
+	}
 	if opt.gasLimit == 0 {
 		var err error
 		senderAddress := crypto.PubkeyToAddress(opt.sender.PublicKey)
 		opt.gasLimit, err = e.chain.evmChain.EstimateGas(ethereum.CallMsg{
 			From:     senderAddress,
 			To:       &e.address,
-			GasPrice: evm.GasPrice,
+			GasPrice: opt.gasPrice,
 			Value:    opt.value,
 			Data:     callData,
 		})
@@ -450,7 +460,7 @@ func (e *evmContractInstance) buildEthTx(opts []ethCallOptions, fnName string, a
 
 	nonce := e.chain.getNonce(senderAddress)
 
-	unsignedTx := types.NewTransaction(nonce, e.address, opt.value, opt.gasLimit, evm.GasPrice, callData)
+	unsignedTx := types.NewTransaction(nonce, e.address, opt.value, opt.gasLimit, opt.gasPrice, callData)
 
 	return types.SignTx(unsignedTx, e.chain.signer(), opt.sender)
 }
@@ -459,6 +469,14 @@ type callFnResult struct {
 	tx         *types.Transaction
 	evmReceipt *types.Receipt
 	iscReceipt *isc.Receipt
+}
+
+func (e *evmContractInstance) estimateGas(opts []ethCallOptions, fnName string, args ...interface{}) (uint64, error) {
+	tx, err := e.buildEthTx(opts, fnName, args...)
+	if err != nil {
+		return 0, err
+	}
+	return tx.Gas(), nil
 }
 
 func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (callFnResult, error) {

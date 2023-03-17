@@ -14,7 +14,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/events"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -29,12 +28,14 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -111,13 +112,44 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 	return ret, true
 }
 
-func (ch *Chain) GetGasFeePolicy() *gas.GasFeePolicy {
+func (ch *Chain) GetGasFeePolicy() *gas.FeePolicy {
 	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetFeePolicy.Name)
 	require.NoError(ch.Env.T, err)
 	fpBin := res.MustGet(governance.ParamFeePolicyBytes)
 	feePolicy, err := gas.FeePolicyFromBytes(fpBin)
 	require.NoError(ch.Env.T, err)
 	return feePolicy
+}
+
+func (ch *Chain) SetGasFeePolicy(user *cryptolib.KeyPair, fp *gas.FeePolicy) {
+	_, err := ch.PostRequestOffLedger(NewCallParams(
+		governance.Contract.Name,
+		governance.FuncSetFeePolicy.Name,
+		dict.Dict{
+			governance.ParamFeePolicyBytes: fp.Bytes(),
+		},
+	), user)
+	require.NoError(ch.Env.T, err)
+}
+
+func (ch *Chain) GetGasLimits() *gas.Limits {
+	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetGasLimits.Name)
+	require.NoError(ch.Env.T, err)
+	glBin := res.MustGet(governance.ParamGasLimitsBytes)
+	gasLimits, err := gas.LimitsFromBytes(glBin)
+	require.NoError(ch.Env.T, err)
+	return gasLimits
+}
+
+func (ch *Chain) SetGasLimits(user *cryptolib.KeyPair, gl *gas.Limits) {
+	_, err := ch.PostRequestOffLedger(NewCallParams(
+		governance.Contract.Name,
+		governance.FuncSetGasLimits.Name,
+		dict.Dict{
+			governance.ParamGasLimitsBytes: gl.Bytes(),
+		},
+	), user)
+	require.NoError(ch.Env.T, err)
 }
 
 // UploadBlob calls core 'blob' smart contract blob.FuncStoreBlob entry point to upload blob
@@ -255,9 +287,6 @@ func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.Contra
 	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
-	chainID, err := codec.DecodeChainID(res.MustGet(governance.VarChainID))
-	require.NoError(ch.Env.T, err)
-
 	chainOwnerID, err := codec.DecodeAgentID(res.MustGet(governance.VarChainOwnerID))
 	require.NoError(ch.Env.T, err)
 
@@ -266,26 +295,7 @@ func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.Contra
 
 	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(res, root.StateVarContractRegistry))
 	require.NoError(ch.Env.T, err)
-	return chainID, chainOwnerID, contracts
-}
-
-type StorageDepositInfo struct {
-	TotalBaseTokensInL2Accounts uint64
-	TotalStorageDeposit         uint64
-	NumNativeTokens             int
-}
-
-func (d *StorageDepositInfo) Total() uint64 {
-	return d.TotalBaseTokensInL2Accounts + d.TotalStorageDeposit*uint64(d.NumNativeTokens)
-}
-
-func (ch *Chain) GetTotalBaseTokensInfo() *StorageDepositInfo {
-	bi := ch.GetLatestBlockInfo()
-	return &StorageDepositInfo{
-		TotalBaseTokensInL2Accounts: bi.TotalBaseTokensInL2Accounts,
-		TotalStorageDeposit:         bi.TotalStorageDeposit,
-		NumNativeTokens:             len(ch.GetOnChainTokenIDs()),
-	}
+	return ch.ChainID, chainOwnerID, contracts
 }
 
 func eventsFromViewResult(t TestContext, viewResult dict.Dict) []string {
@@ -338,7 +348,7 @@ func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]string, error) {
 
 // CommonAccount return the agentID of the common account (controlled by the owner)
 func (ch *Chain) CommonAccount() isc.AgentID {
-	return ch.ChainID.CommonAccount()
+	return accounts.CommonAccount()
 }
 
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain
@@ -606,12 +616,7 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...uint64)
 }
 
 // AttachToRequestProcessed implements chain.Chain
-func (*Chain) AttachToRequestProcessed(func(isc.RequestID)) (attachID *events.Closure) {
-	panic("unimplemented")
-}
-
-// DetachFromRequestProcessed implements chain.Chain
-func (*Chain) DetachFromRequestProcessed(attachID *events.Closure) {
+func (*Chain) AttachToRequestProcessed(func(isc.RequestID)) context.CancelFunc {
 	panic("unimplemented")
 }
 
@@ -667,7 +672,7 @@ func (ch *Chain) LatestState(freshness chain.StateFreshness) (state.State, error
 	if ao == nil {
 		return ch.store.LatestState()
 	}
-	l1c, err := state.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
+	l1c, err := vmcontext.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
 	if err != nil {
 		panic(err)
 	}
@@ -689,7 +694,8 @@ func (*Chain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID
 }
 
 func (ch *Chain) LatestBlockIndex() uint32 {
-	i, err := ch.store.LatestBlockIndex()
+	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name)
 	require.NoError(ch.Env.T, err)
-	return i
+	resultDecoder := kvdecoder.New(ret, ch.Log())
+	return resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
 }

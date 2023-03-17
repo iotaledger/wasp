@@ -266,56 +266,6 @@ impl MutableRotateStateControllerParams {
 }
 
 #[derive(Clone)]
-pub struct ImmutableSetChainInfoParams {
-    pub(crate) proxy: Proxy,
-}
-
-impl ImmutableSetChainInfoParams {
-    pub fn new() -> ImmutableSetChainInfoParams {
-        ImmutableSetChainInfoParams {
-            proxy: params_proxy(),
-        }
-    }
-
-    // default maximum size of a blob
-    pub fn max_blob_size(&self) -> ScImmutableUint32 {
-        ScImmutableUint32::new(self.proxy.root(PARAM_MAX_BLOB_SIZE))
-    }
-
-    // default maximum size of a single event
-    pub fn max_event_size(&self) -> ScImmutableUint16 {
-        ScImmutableUint16::new(self.proxy.root(PARAM_MAX_EVENT_SIZE))
-    }
-
-    // default maximum number of events per request
-    pub fn max_events_per_req(&self) -> ScImmutableUint16 {
-        ScImmutableUint16::new(self.proxy.root(PARAM_MAX_EVENTS_PER_REQ))
-    }
-}
-
-#[derive(Clone)]
-pub struct MutableSetChainInfoParams {
-    pub(crate) proxy: Proxy,
-}
-
-impl MutableSetChainInfoParams {
-    // default maximum size of a blob
-    pub fn max_blob_size(&self) -> ScMutableUint32 {
-        ScMutableUint32::new(self.proxy.root(PARAM_MAX_BLOB_SIZE))
-    }
-
-    // default maximum size of a single event
-    pub fn max_event_size(&self) -> ScMutableUint16 {
-        ScMutableUint16::new(self.proxy.root(PARAM_MAX_EVENT_SIZE))
-    }
-
-    // default maximum number of events per request
-    pub fn max_events_per_req(&self) -> ScMutableUint16 {
-        ScMutableUint16::new(self.proxy.root(PARAM_MAX_EVENTS_PER_REQ))
-    }
-}
-
-#[derive(Clone)]
 pub struct ImmutableSetFeePolicyParams {
     pub(crate) proxy: Proxy,
 }
