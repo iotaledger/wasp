@@ -96,6 +96,18 @@ func initBalanceCmd() *cobra.Command {
 	return cmd
 }
 
+func NFTFromNFTOutput(nftOutput *iotago.NFTOutput) *isc.NFT {
+	if nftOutput == nil {
+		return nil
+	}
+
+	return &isc.NFT{
+		ID:       nftOutput.NFTID,
+		Metadata: nftOutput.ImmutableFeatureSet().MetadataFeature().Data,
+		Issuer:   nftOutput.ImmutableFeatureSet().IssuerFeature().Address,
+	}
+}
+
 func initDepositCmd() *cobra.Command {
 	var adjustStorageDeposit bool
 	var node string
@@ -132,6 +144,20 @@ func initDepositCmd() *cobra.Command {
 				tokens := util.ParseAssetArgs(tokensStr)
 				allowance := tokens.Clone()
 
+				w := wallet.Load()
+				outputsSet, err := cliclients.L1Client().OutputMap(w.KeyPair.Address())
+				log.Check(err)
+
+				var nftOutput *iotago.NFTOutput
+
+				for _, k := range outputsSet {
+					output, ok := k.(*iotago.NFTOutput)
+
+					if ok {
+						nftOutput = output
+					}
+				}
+
 				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotago.Transaction, error) {
 					client := cliclients.WaspClient(node)
 
@@ -144,6 +170,7 @@ func initDepositCmd() *cobra.Command {
 							Transfer:                 tokens,
 							Allowance:                allowance,
 							AutoAdjustStorageDeposit: adjustStorageDeposit,
+							NFT:                      NFTFromNFTOutput(nftOutput),
 						},
 					)
 				})
