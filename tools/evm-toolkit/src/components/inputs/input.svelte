@@ -12,6 +12,7 @@
   export let minLength: number = undefined;
   export let disabled: boolean = false;
   export let stretch: boolean = false;
+  export let autofocus: boolean = false;
 
   const handleInput = (e): void => {
     value = e.target.value;
@@ -26,10 +27,11 @@
   };
 </script>
 
-<div class:w-full={stretch} class:label>
+<input-component class:w-full={stretch} class:label {disabled}>
   {#if label}
     <label for={id}>{label}{required ? '*' : ''}</label>
   {/if}
+  <!-- svelte-ignore a11y-autofocus -->
   <input
     {name}
     {id}
@@ -42,31 +44,36 @@
     {disabled}
     class:w-full={stretch}
     {required}
+    {autofocus}
   />
-</div>
+</input-component>
 
 <style lang="scss">
-  div {
-    &.label {
-      @apply space-y-2;
+  input-component {
+    @apply text-white;
+    @apply flex flex-col space-y-1;
+    @apply text-base;
+    @apply bg-shimmer-background-tertiary;
+    @apply border border-shimmer-background-secondary;
+    @apply rounded-lg;
+    @apply p-4;
+    &:disabled {
+      @apply opacity-50;
+      @apply cursor-not-allowed;
     }
   }
   input {
-    @apply bg-shimmer-background-tertiary;
-    @apply border;
-    @apply border-shimmer-background-secondary;
-    @apply rounded-lg;
-    @apply py-2;
-    @apply px-3;
-    @apply flex;
-
-    &:focus {
-      @apply border-shimmer-action-hover;
-      @apply outline-none;
+    @apply outline-none;
+    @apply border-none;
+    @apply bg-transparent;
+    @apply p-0;
+    &::placeholder {
+      @apply text-gray-500;
     }
-    &:disabled {
-      @apply bg-shimmer-background-secondary;
-      @apply cursor-not-allowed;
-    }
+  }
+  label {
+    @apply text-sm;
+    @apply font-semibold;
+    @apply text-gray-400;
   }
 </style>

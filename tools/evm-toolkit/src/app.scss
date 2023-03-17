@@ -1,9 +1,11 @@
+@import '@fontsource/barlow';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  --navbar-height: 80px;
 }
 
 html,
@@ -12,26 +14,16 @@ body {
   margin: 0;
   height: 100%;
   min-height: 100vh;
+  font-family: 'Barlow';
+  @apply text-base;
+  @apply text-white;
+  @apply relative;
+  @apply bg-shimmer-background;
+  @apply relative z-0;
 }
 
 * {
   box-sizing: border-box;
-  font-family: "Barlow", sans-serif;
-}
-
-body {
-  color: white;
-  @apply bg-shimmer-background;
-  @apply relative;
-}
-
-h3 {
-  font-size: 24px;
-  font-weight: 600;
-}
-
-.input_container {
-  margin: 15px;
 }
 
 input[type="text"],
@@ -63,7 +55,7 @@ select {
 }
 
 /*********** Baseline, reset styles ***********/
-input[type="range"] {
+input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
@@ -72,20 +64,20 @@ input[type="range"] {
 }
 
 /* Removes default focus */
-input[type="range"]:focus {
+input[type='range']:focus {
   outline: none;
 }
 
 /******** Chrome, Safari, Opera and Edge Chromium styles ********/
 /* slider track */
-input[type="range"]::-webkit-slider-runnable-track {
+input[type='range']::-webkit-slider-runnable-track {
   background-color: #061928;
   border-radius: 0.5rem;
   height: 8px;
 }
 
 /* slider thumb */
-input[type="range"]::-webkit-slider-thumb {
+input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none; /* Override default look */
   appearance: none;
   margin-top: -4px; /* Centers thumb on the track */
@@ -95,21 +87,21 @@ input[type="range"]::-webkit-slider-thumb {
   width: 1rem;
 }
 
-input[type="range"]:focus::-webkit-slider-thumb {
+input[type='range']:focus::-webkit-slider-thumb {
   outline: 3px solid #00f5dd;
   outline-offset: 0.125rem;
 }
 
 /*********** Firefox styles ***********/
 /* slider track */
-input[type="range"]::-moz-range-track {
+input[type='range']::-moz-range-track {
   background-color: #061928;
   border-radius: 0.5rem;
   height: 8px;
 }
 
 /* slider thumb */
-input[type="range"]::-moz-range-thumb {
+input[type='range']::-moz-range-thumb {
   background-color: #00f5dd;
   border: none; /*Removes extra border that FF applies*/
   border-radius: 0.5rem;
@@ -117,7 +109,7 @@ input[type="range"]::-moz-range-thumb {
   width: 1rem;
 }
 
-input[type="range"]:focus::-moz-range-thumb {
+input[type='range']:focus::-moz-range-thumb {
   outline: 3px solid #00f5dd;
   outline-offset: 0.125rem;
 }

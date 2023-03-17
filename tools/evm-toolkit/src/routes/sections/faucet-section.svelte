@@ -1,14 +1,12 @@
 <script lang="ts">
-  import { IotaWallet } from './faucet/iota_wallet';
-  import { SendFundsTransaction } from './faucet/send_funds_transaction';
-  import { selectedNetwork, nodeClient, indexerClient } from '../store';
-  import { Bech32AddressLength, EVMAddressLength } from '../lib/constants';
-  import { Input } from '.';
-  import Button from './button.svelte';
+  import { Button, Input } from '$components';
+
+  import { indexerClient, nodeClient, selectedNetwork } from '$lib/../store';
+  import { Bech32AddressLength, EVMAddressLength } from '$lib/constants';
+  import { IotaWallet, SendFundsTransaction } from '$lib/faucet';
   import { NotificationType, showNotification } from '$lib/notification';
 
   let isSendingFunds: boolean;
-  let errorMessage: string;
 
   let balance: bigint = BigInt(0);
   let evmAddress: string = '';
@@ -24,7 +22,6 @@
       return;
     }
 
-    errorMessage = undefined;
     isSendingFunds = true;
 
     let wallet: IotaWallet = new IotaWallet(
@@ -32,8 +29,6 @@
       $indexerClient,
       $selectedNetwork.faucetEndpoint,
     );
-
-    let toastId: number;
 
     try {
       await wallet.initialize();
@@ -82,20 +77,12 @@
   {#if $selectedNetwork}
     <Input
       id="evmAddress"
-      label="Your EVM Address"
+      label="EVM Address"
       bind:value={evmAddress}
+      placeholder="0x..."
       stretch
+      autofocus
     />
-
-    <!-- TODO: when we add notification manager we should replace this with a notification. -->
-    {#if errorMessage}
-      <div class="error">
-        <div class="error_title">Error</div>
-        <div class="error_message">
-          {errorMessage}
-        </div>
-      </div>
-    {/if}
 
     <Button
       title="Send funds"
@@ -103,25 +90,10 @@
       onClick={sendFunds}
       busy={isSendingFunds}
     />
+  {:else}
+    <span> Please select a network first. </span>
   {/if}
 </faucet-component>
 
-<style>
-  .error {
-    background-color: #9e534a47;
-    border: 2px solid #991c0d78;
-    border-radius: 10px;
-    padding: 15px;
-  }
-
-  .error_title {
-    font-weight: bold;
-    margin-bottom: 15px;
-  }
-
-  component {
-    color: rgba(255, 255, 255, 0.87);
-    display: flex;
-    flex-direction: column;
-  }
+<style lang="scss">
 </style>

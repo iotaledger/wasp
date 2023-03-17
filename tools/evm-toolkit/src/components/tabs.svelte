@@ -31,6 +31,7 @@
     @apply flex;
     @apply flex-wrap;
     @apply list-none;
+    @apply text-base;
   }
 
   tab-item {

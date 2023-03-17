@@ -16,6 +16,7 @@
   } from './constants';
   import { Bech32AddressLength } from '../../lib/constants';
   import { onDestroy, onMount } from 'svelte';
+  // TODO: remove @zerodevx/svelte-toast dependency after refactoring this file
   import { toast } from '@zerodevx/svelte-toast';
   import type { WithdrawFormInput, WithdrawState } from './component_types';
   import { ISCMagic } from './iscmagic/iscmagic';

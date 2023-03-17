@@ -32,77 +32,60 @@
 </script>
 
 <svelte:window on:keydown={event => handleEscapeKeyDown(event, handleClose)} />
-<popup-overlay on:click={handleClose} on:keydown />
-<popup-main>
-  <popup-header>
-    <h3 class="capitalize">{title}</h3>
-    <Button onClick={handleClose} title="X" secondary />
-  </popup-header>
-  <popup-body class="p-4">
-    <slot />
-  </popup-body>
-  {#if actions.length > 0}
-    <popup-footer class="space-x-4">
-      {#each actions as { action, title }, index}
-        <Button
-          {title}
-          onClick={() => handleActionClick(index, action)}
-          busy={actionsBusyState[index]}
-        />
-      {/each}
-    </popup-footer>
-  {/if}
-</popup-main>
+<popup-component>
+  <popup-overlay on:click|stopPropagation={handleClose} on:keydown />
+  <popup-main>
+    <popup-header>
+      <span class="capitalize">{title}</span>
+      <Button onClick={handleClose} title="x" secondary />
+    </popup-header>
+    <popup-body>
+      <slot />
+    </popup-body>
+    {#if actions?.length > 0}
+      <popup-footer>
+        {#each actions as { action, title }, index}
+          <Button
+            {title}
+            onClick={() => handleActionClick(index, action)}
+            busy={actionsBusyState[index]}
+          />
+        {/each}
+      </popup-footer>
+    {/if}
+  </popup-main>
+</popup-component>
 
 <style lang="scss">
+  popup-component {
+    @apply fixed top-0 left-0 z-50;
+    @apply w-screen h-screen;
+    @apply flex flex-col justify-center items-center;
+  }
   popup-overlay {
-    @apply fixed;
-    @apply top-0;
-    @apply left-0;
-    @apply w-full;
-    @apply h-full;
-    @apply flex;
-    @apply flex-col;
-    @apply justify-center;
-    @apply items-center;
+    @apply absolute top-0 left-0;
+    @apply w-screen h-screen;
     @apply bg-black;
-    @apply bg-opacity-50;
-    @apply z-50;
+    @apply bg-opacity-10;
+    @apply backdrop-blur-lg;
   }
   popup-main {
-    @apply absolute;
-    @apply top-0;
-    @apply left-1/2;
-    @apply -translate-x-1/2;
-    @apply translate-y-1/4;
-    @apply md:translate-y-1/2;
-    @apply flex;
-    @apply flex-col;
-    @apply justify-between;
-    @apply w-11/12;
-    @apply md:w-full;
+    @apply p-6;
+    @apply flex flex-col;
+    @apply w-11/12 md:w-full;
     @apply bg-shimmer-background;
     @apply rounded-xl;
     @apply z-50;
     max-width: 500px;
     popup-header {
-      @apply flex;
-      @apply justify-between;
-      @apply items-center;
-      @apply p-4;
-      @apply text-2xl;
-      @apply font-semibold;
-      @apply border-b;
-      @apply border-shimmer-background-tertiary;
+      @apply flex justify-between items-center;
+      @apply pb-4;
+      @apply text-2xl font-semibold;
     }
 
     popup-footer {
-      @apply flex;
-      @apply justify-end;
-      @apply p-4;
-      @apply border-t;
-      @apply border-solid;
-      @apply border-shimmer-background-tertiary;
+      @apply flex justify-end space-x-4;
+      @apply py-4;
     }
   }
 </style>

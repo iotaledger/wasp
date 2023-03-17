@@ -10,7 +10,6 @@
   function handleSettings() {
     openPopup(PopupId.Settings, {
       component: NetworkSettings,
-      actions: [],
     });
   }
   function handleAccount() {

@@ -53,7 +53,7 @@
     @apply text-center;
 
     &:disabled {
-      @apply opacity-70;
+      @apply opacity-50;
       @apply cursor-not-allowed;
     }
     &.link {

@@ -106,8 +106,6 @@ export class ISCMagic {
     const nftIds = nfts.filter(x => Converter.hexToUtf8(x[0]) != 'i');
     const availableNFTs = nftIds.map(x => <INFT>{ id: x[1] });
 
-    console.log(nftIds)
-
     for (let nft of availableNFTs) {
       nft.metadata = await getNFTMetadata(nodeClient, indexerClient, nft.id);
     }

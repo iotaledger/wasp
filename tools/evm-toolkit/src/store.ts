@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import type { NetworkOption } from './lib/network_option';
+import type { NetworkOption } from '$lib/network_option';
 import { SingleNodeClient, IndexerPluginClient } from '@iota/iota.js';
 import { BrowserPowProvider } from '@iota/pow-browser.js';
 

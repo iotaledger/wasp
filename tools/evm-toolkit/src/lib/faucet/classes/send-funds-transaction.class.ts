@@ -1,4 +1,4 @@
-import { Blake2b, Ed25519 } from '@iota/crypto.js';
+import { Blake2b } from '@iota/crypto.js';
 import {
   ADDRESS_UNLOCK_CONDITION_TYPE,
   BASIC_OUTPUT_TYPE,
@@ -21,9 +21,9 @@ import {
   type UnlockTypes,
 } from '@iota/iota.js';
 import { Converter, WriteStream } from '@iota/util.js';
-import type { IotaWallet } from './iota_wallet';
+import type { IotaWallet } from './';
 // eslint-disable-next-line import/no-unresolved
-import { SimpleBufferCursor } from './../../lib/simple_buffer_cursor';
+import { SimpleBufferCursor } from '$lib/simple_buffer_cursor';
 
 export class SendFundsTransaction {
   private wallet: IotaWallet;

@@ -1,8 +1,6 @@
 export { default as Navbar } from './navbar.svelte'
 export { default as Box } from './box.svelte'
 export { default as Tabs } from './tabs.svelte'
-export { default as FaucetNew } from './faucet.svelte'
-export { default as Faucet } from './faucet/Faucet.svelte'
 export { default as Withdraw } from './withdraw/Withdraw.svelte'
 export { default as WithdrawNew } from './withdraw.svelte'
 export { default as NetworkSettings } from './network_settings/network_settings.svelte'

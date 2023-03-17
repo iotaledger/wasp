@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
+    "@fontsource/barlow": "^4.5.9",
     "@iota/iota.js": "^2.0.0-rc.2",
     "@iota/pow-browser.js": "^2.0.0-rc.3",
     "@iota/pow-wasm.js": "^2.0.0-rc.2",

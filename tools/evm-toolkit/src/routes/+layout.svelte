@@ -2,8 +2,11 @@
   import { Navbar, PopupManager, NotificationManager } from '$components';
   import '../app.scss';
   import { onMount } from 'svelte';
-  import { networks, selectedNetwork } from '../store';
+
   import { NETWORKS } from '$lib/networks';
+  import { networks, selectedNetwork } from '../store';
+
+  import '../app.scss';
 
   onMount(async () => {
     networks.set(NETWORKS);
@@ -12,25 +15,29 @@
 </script>
 
 <Navbar />
-<main class="w-full flex items-center justify-center">
-  <background-radial />
+<main class="w-full flex flex-1 items-center justify-center">
+  <background-decorator>
+    <div />
+  </background-decorator>
   <slot />
 </main>
 <PopupManager />
 <NotificationManager />
 
 <style lang="scss">
-  background-radial {
-    @apply absolute;
-    @apply top-0;
-    @apply w-full;
-    @apply h-full;
-    @apply z-[-1];
-    background: radial-gradient(
-      farthest-corner at top right,
-      #00e0c7 -44%,
-      #061928 40%,
-      #061928 100%
-    );
+  main {
+    @apply w-full flex flex-1 items-center justify-center;
+    min-height: calc(100vh - (var(--navbar-height)));
+  }
+  background-decorator {
+    @apply bg-shimmer-background;
+    @apply w-screen h-screen fixed z-[-1] top-0 left-0;
+
+    div {
+      @apply w-screen h-screen;
+      @apply bg-no-repeat bg-cover;
+      background-position: 50% center;
+      background-image: url('/bg-shapes.svg');
+    }
   }
 </style>
