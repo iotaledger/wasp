@@ -1,35 +1,66 @@
 <script lang="ts">
-  export let options: [string, string][] = [] // [key, value][]
-  export let index: number = 0
-  export let value: string = ''
-  export let title: string = ''
-  export let stretch: boolean = false
+  import type { NetworkOption } from '$lib/network_option';
 
-  $: value = options[index][1]
+  export let options: NetworkOption[] | string[] = [];
+  export let displayValue = (option: NetworkOption) => option.text;
+  export let index: number = 0;
+  export let value: NetworkOption | string;
+
+  $: value = options[index];
 </script>
 
-<div class="flex flex-col" class:w-full={stretch}>
-  <label class="block text-12" for={title}>{title}</label>
+<select-component>
   <select bind:value={index}>
-      {#each options as option, i}
-          <option value={i}>{option[1]}</option>
-      {/each}
+    {#each options as option, i}
+      {#if typeof option === 'string'}
+        <option value={i}>{option}</option>
+      {:else}
+        <option value={i}>{displayValue(option)}</option>
+      {/if}
+    {/each}
   </select>
-</div>
+  <select-arrow />
+</select-component>
 
 <style lang="scss">
-  select {
-      @apply border;
-      @apply border-zinc-200;
-      @apply rounded-md;
-      @apply py-2;
-      @apply px-3;
-      @apply flex;
-      @apply flex-col;
-      @apply bg-white;
-      @apply h-full;
-  }
-  label {
-      @apply mb-1;
+  select-component {
+    @apply relative;
+    @apply inline-block;
+    @apply w-full;
+    select {
+      @apply inline-block;
+      @apply w-full;
+      @apply cursor-pointer;
+      @apply p-4;
+      @apply outline-0;
+      @apply border border-shimmer-background-tertiary;
+      @apply rounded-lg;
+      @apply bg-shimmer-background-tertiary;
+      @apply text-white;
+      @apply appearance-none;
+    }
+
+    select:hover,
+    select:focus {
+      @apply bg-shimmer-background-tertiary;
+    }
+    select:disabled {
+      @apply opacity-50;
+      @apply cursor-not-allowed;
+    }
+    select-arrow {
+      @apply absolute;
+      @apply top-6;
+      @apply right-5;
+      @apply w-0;
+      @apply h-0;
+      @apply border-t-0;
+      @apply border-r-2;
+      @apply border-b-2;
+      @apply border-l-0;
+      @apply inline-block;
+      @apply p-1;
+      @apply rotate-45;
+    }
   }
 </style>

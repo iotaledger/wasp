@@ -26,22 +26,6 @@ body {
   box-sizing: border-box;
 }
 
-input[type="text"],
-select {
-  background: #1b2d4b;
-  box-sizing: border-box;
-  border: 1px solid #ffffff;
-  border-radius: 5px;
-  color: rgba(255, 255, 255, 0.87);
-  padding: 10px;
-  width: 100%;
-
-  &:disabled {
-    opacity: 0.5;
-    pointer-events: none;
-  }
-}
-
 .dot-primary {
   &::before {
     content: "";

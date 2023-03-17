@@ -2,16 +2,14 @@
   import { PopupId } from '$lib/popup';
   import { openPopup } from '$lib/popup/actions';
   import { handleEnterKeyDown } from '$lib/utils';
-  import { NetworkSettings } from '.';
   import { selectedAccount, connected } from 'svelte-web3';
   import { Button, AccountButton } from '$components';
   import { truncateText } from '$lib/utils';
 
   function handleSettings() {
-    openPopup(PopupId.Settings, {
-      component: NetworkSettings,
-    });
+    openPopup(PopupId.Settings);
   }
+
   function handleAccount() {
     openPopup(PopupId.Account, {
       account: $selectedAccount,

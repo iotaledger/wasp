@@ -27,7 +27,7 @@
   };
 </script>
 
-<input-component class:w-full={stretch} class:label {disabled}>
+<input-component class:w-full={stretch} class:label class:disabled>
   {#if label}
     <label for={id}>{label}{required ? '*' : ''}</label>
   {/if}
@@ -57,9 +57,8 @@
     @apply border border-shimmer-background-secondary;
     @apply rounded-lg;
     @apply p-4;
-    &:disabled {
+    &.disabled {
       @apply opacity-50;
-      @apply cursor-not-allowed;
     }
   }
   input {
@@ -69,6 +68,9 @@
     @apply p-0;
     &::placeholder {
       @apply text-gray-500;
+    }
+    &:disabled {
+      @apply pointer-events-none;
     }
   }
   label {
