@@ -66,6 +66,20 @@ type ChainMetric struct {
 }
 
 func NewChainMetric(chainMetrics *ChainMetrics, chainID isc.ChainID) IChainMetric {
+	// init values so they appear in prometheus
+	chainMetrics.requestsReceivedOffLedger.With(prometheus.Labels{"chain": chainID.String()})
+	chainMetrics.requestsReceivedOnLedger.With(prometheus.Labels{"chain": chainID.String()})
+	chainMetrics.requestsProcessed.With(prometheus.Labels{"chain": chainID.String()})
+	chainMetrics.requestsAckMessages.With(prometheus.Labels{"chain": chainID.String()})
+	chainMetrics.requestsProcessingTime.With(prometheus.Labels{"chain": chainID.String()})
+	chainMetrics.messagesReceived.With(prometheus.Labels{"chain": chainID.String()})
+	chainMetrics.vmRunTime.With(prometheus.Labels{"chain": chainID.String()})
+	chainMetrics.vmRunsTotal.With(prometheus.Labels{"chain": chainID.String()})
+	chainMetrics.blocksTotalPerChain.With(prometheus.Labels{"chain": chainID.String()})
+	chainMetrics.blockSizesPerChain.With(prometheus.Labels{"chain": chainID.String()})
+	chainMetrics.stateIndexCurrent.With(prometheus.Labels{"chain": chainID.String()})
+	chainMetrics.stateIndexLatestSeen.With(prometheus.Labels{"chain": chainID.String()})
+
 	return &ChainMetric{
 		chainMetrics:          chainMetrics,
 		chainID:               chainID,

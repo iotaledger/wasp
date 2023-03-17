@@ -33,6 +33,11 @@ type BlockWALMetric struct {
 }
 
 func NewBlockWALMetric(blockWALMetrics *BlockWALMetrics, chainID isc.ChainID) IBlockWALMetric {
+	// init values so they appear in prometheus
+	blockWALMetrics.failedWrites.With(prometheus.Labels{"chain": chainID.String()})
+	blockWALMetrics.failedReads.With(prometheus.Labels{"chain": chainID.String()})
+	blockWALMetrics.segments.With(prometheus.Labels{"chain": chainID.String()})
+
 	return &BlockWALMetric{
 		blockWALMetrics: blockWALMetrics,
 		chainID:         chainID,
