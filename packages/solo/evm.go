@@ -2,6 +2,7 @@ package solo
 
 import (
 	"crypto/ecdsa"
+	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -36,8 +37,12 @@ func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
 	return err
 }
 
-func (b *jsonRPCSoloBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
-	return b.Chain.EstimateGasEthereum(callMsg)
+func (b *jsonRPCSoloBackend) EVMCall(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) ([]byte, error) {
+	return chainutil.Call(b.Chain, aliasOutput, callMsg)
+}
+
+func (b *jsonRPCSoloBackend) EVMEstimateGas(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) (uint64, error) {
+	return chainutil.EstimateGas(b.Chain, aliasOutput, callMsg)
 }
 
 func (b *jsonRPCSoloBackend) EVMGasPrice() *big.Int {
@@ -46,6 +51,14 @@ func (b *jsonRPCSoloBackend) EVMGasPrice() *big.Int {
 
 func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, scName, funName string, args dict.Dict) (dict.Dict, error) {
 	return b.Chain.CallViewAtState(chainState, scName, funName, args)
+}
+
+func (b *jsonRPCSoloBackend) ISCLatestAliasOutput() (*isc.AliasOutputWithID, error) {
+	aliasOutput, _ := b.Chain.LatestAliasOutput()
+	if aliasOutput == nil {
+		return nil, errors.New("could not get latest AliasOutput")
+	}
+	return aliasOutput, nil
 }
 
 func (b *jsonRPCSoloBackend) ISCLatestState() state.State {
@@ -84,15 +97,11 @@ func (ch *Chain) EVMGasRatio() util.Ratio32 {
 }
 
 func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (dict.Dict, error) {
-	req, err := isc.NewEVMOffLedgerRequest(ch.ChainID, tx)
+	req, err := isc.NewEVMOffLedgerTxRequest(ch.ChainID, tx)
 	if err != nil {
 		return nil, err
 	}
 	return ch.RunOffLedgerRequest(req)
-}
-
-func (ch *Chain) EstimateGasEthereum(callMsg ethereum.CallMsg) (uint64, error) {
-	return chainutil.EstimateGas(ch, callMsg)
 }
 
 func NewEthereumAccount() (*ecdsa.PrivateKey, common.Address) {

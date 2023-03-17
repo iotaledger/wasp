@@ -18,8 +18,8 @@ import (
 const (
 	requestKindTagOnLedger byte = iota
 	requestKindTagOffLedgerISC
-	requestKindTagOffLedgerEVM
-	requestKindTagOffLedgerEVMEstimateGas
+	requestKindTagOffLedgerEVMTx
+	requestKindTagOffLedgerEVMCall
 )
 
 func NewRequestFromBytes(data []byte) (Request, error) {
@@ -37,10 +37,10 @@ func NewRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (Request, error) {
 		r = &onLedgerRequestData{}
 	case requestKindTagOffLedgerISC:
 		r = &offLedgerRequestData{}
-	case requestKindTagOffLedgerEVM:
-		r = &evmOffLedgerRequest{}
-	case requestKindTagOffLedgerEVMEstimateGas:
-		r = &evmOffLedgerEstimateGasRequest{}
+	case requestKindTagOffLedgerEVMTx:
+		r = &evmOffLedgerTxRequest{}
+	case requestKindTagOffLedgerEVMCall:
+		r = &evmOffLedgerCallRequest{}
 	default:
 		panic(fmt.Sprintf("no handler for request kind %d", kind))
 	}

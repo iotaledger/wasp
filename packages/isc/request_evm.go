@@ -17,27 +17,28 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
 )
 
-type evmOffLedgerRequest struct {
+// evmOffLedgerTxRequest is used to wrap an EVM tx
+type evmOffLedgerTxRequest struct {
 	chainID ChainID
 	tx      *types.Transaction
 	sender  *EthereumAddressAgentID // not serialized
 }
 
-var _ OffLedgerRequest = &evmOffLedgerRequest{}
+var _ OffLedgerRequest = &evmOffLedgerTxRequest{}
 
-func NewEVMOffLedgerRequest(chainID ChainID, tx *types.Transaction) (OffLedgerRequest, error) {
+func NewEVMOffLedgerTxRequest(chainID ChainID, tx *types.Transaction) (OffLedgerRequest, error) {
 	sender, err := evmutil.GetSender(tx)
 	if err != nil {
 		return nil, err
 	}
-	return &evmOffLedgerRequest{
+	return &evmOffLedgerTxRequest{
 		chainID: chainID,
 		tx:      tx,
 		sender:  NewEthereumAddressAgentID(sender),
 	}, nil
 }
 
-func (r *evmOffLedgerRequest) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+func (r *evmOffLedgerTxRequest) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	var err error
 	if r.chainID, err = ChainIDFromMarshalUtil(mu); err != nil {
 		return err
@@ -61,80 +62,80 @@ func (r *evmOffLedgerRequest) readFromMarshalUtil(mu *marshalutil.MarshalUtil) e
 	return nil
 }
 
-func (r *evmOffLedgerRequest) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
+func (r *evmOffLedgerTxRequest) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.
-		WriteByte(requestKindTagOffLedgerEVM).
+		WriteByte(requestKindTagOffLedgerEVMTx).
 		Write(r.chainID)
 	b := evmtypes.EncodeTransaction(r.tx)
 	mu.WriteUint32(uint32(len(b)))
 	mu.WriteBytes(b)
 }
 
-func (r *evmOffLedgerRequest) Allowance() *Assets {
+func (r *evmOffLedgerTxRequest) Allowance() *Assets {
 	return NewEmptyAssets()
 }
 
-func (r *evmOffLedgerRequest) CallTarget() CallTarget {
+func (r *evmOffLedgerTxRequest) CallTarget() CallTarget {
 	return CallTarget{
 		Contract:   Hn(evmnames.Contract),
 		EntryPoint: Hn(evmnames.FuncSendTransaction),
 	}
 }
 
-func (r *evmOffLedgerRequest) Params() dict.Dict {
+func (r *evmOffLedgerTxRequest) Params() dict.Dict {
 	return dict.Dict{evmnames.FieldTransaction: evmtypes.EncodeTransaction(r.tx)}
 }
 
-func (r *evmOffLedgerRequest) Assets() *Assets {
+func (r *evmOffLedgerTxRequest) Assets() *Assets {
 	return NewEmptyAssets()
 }
 
-func (r *evmOffLedgerRequest) GasBudget() (gas uint64, isEVM bool) {
+func (r *evmOffLedgerTxRequest) GasBudget() (gas uint64, isEVM bool) {
 	return r.tx.Gas(), true
 }
 
-func (r *evmOffLedgerRequest) ID() RequestID {
+func (r *evmOffLedgerTxRequest) ID() RequestID {
 	return NewRequestID(iotago.TransactionID(hashing.HashData(r.Bytes())), 0)
 }
 
-func (r *evmOffLedgerRequest) NFT() *NFT {
+func (r *evmOffLedgerTxRequest) NFT() *NFT {
 	return nil
 }
 
-func (r *evmOffLedgerRequest) SenderAccount() AgentID {
+func (r *evmOffLedgerTxRequest) SenderAccount() AgentID {
 	if r.sender == nil {
 		panic("could not determine sender from ethereum tx")
 	}
 	return r.sender
 }
 
-func (r *evmOffLedgerRequest) TargetAddress() iotago.Address {
+func (r *evmOffLedgerTxRequest) TargetAddress() iotago.Address {
 	return r.chainID.AsAddress()
 }
 
-func (r *evmOffLedgerRequest) Bytes() []byte {
+func (r *evmOffLedgerTxRequest) Bytes() []byte {
 	mu := marshalutil.New()
 	r.WriteToMarshalUtil(mu)
 	return mu.Bytes()
 }
 
-func (r *evmOffLedgerRequest) IsOffLedger() bool {
+func (r *evmOffLedgerTxRequest) IsOffLedger() bool {
 	return true
 }
 
-func (r *evmOffLedgerRequest) String() string {
-	return fmt.Sprintf("evmOffLedgerRequest(%s)", r.ID())
+func (r *evmOffLedgerTxRequest) String() string {
+	return fmt.Sprintf("%T(%s)", r, r.ID())
 }
 
-func (r *evmOffLedgerRequest) ChainID() ChainID {
+func (r *evmOffLedgerTxRequest) ChainID() ChainID {
 	return r.chainID
 }
 
-func (r *evmOffLedgerRequest) Nonce() uint64 {
+func (r *evmOffLedgerTxRequest) Nonce() uint64 {
 	return r.tx.Nonce()
 }
 
-func (r *evmOffLedgerRequest) VerifySignature() error {
+func (r *evmOffLedgerTxRequest) VerifySignature() error {
 	sender, err := evmutil.GetSender(r.tx)
 	if err != nil {
 		return fmt.Errorf("cannot verify Ethereum tx sender: %w", err)
@@ -147,21 +148,22 @@ func (r *evmOffLedgerRequest) VerifySignature() error {
 
 // ----------------------------------------------------------------
 
-type evmOffLedgerEstimateGasRequest struct {
+// evmOffLedgerCallRequest is used to wrap an EVM call (for the eth_call or eth_estimateGas jsonrpc methods)
+type evmOffLedgerCallRequest struct {
 	chainID ChainID
 	callMsg ethereum.CallMsg
 }
 
-var _ OffLedgerRequest = &evmOffLedgerEstimateGasRequest{}
+var _ OffLedgerRequest = &evmOffLedgerCallRequest{}
 
-func NewEVMOffLedgerEstimateGasRequest(chainID ChainID, callMsg ethereum.CallMsg) OffLedgerRequest {
-	return &evmOffLedgerEstimateGasRequest{
+func NewEVMOffLedgerCallRequest(chainID ChainID, callMsg ethereum.CallMsg) OffLedgerRequest {
+	return &evmOffLedgerCallRequest{
 		chainID: chainID,
 		callMsg: callMsg,
 	}
 }
 
-func (r *evmOffLedgerEstimateGasRequest) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+func (r *evmOffLedgerCallRequest) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	var err error
 	if r.chainID, err = ChainIDFromMarshalUtil(mu); err != nil {
 		return err
@@ -180,35 +182,35 @@ func (r *evmOffLedgerEstimateGasRequest) readFromMarshalUtil(mu *marshalutil.Mar
 	return nil
 }
 
-func (r *evmOffLedgerEstimateGasRequest) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
+func (r *evmOffLedgerCallRequest) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.
-		WriteByte(requestKindTagOffLedgerEVM).
+		WriteByte(requestKindTagOffLedgerEVMTx).
 		Write(r.chainID)
 	b := evmtypes.EncodeCallMsg(r.callMsg)
 	mu.WriteUint32(uint32(len(b)))
 	mu.WriteBytes(b)
 }
 
-func (r *evmOffLedgerEstimateGasRequest) Allowance() *Assets {
+func (r *evmOffLedgerCallRequest) Allowance() *Assets {
 	return NewEmptyAssets()
 }
 
-func (r *evmOffLedgerEstimateGasRequest) CallTarget() CallTarget {
+func (r *evmOffLedgerCallRequest) CallTarget() CallTarget {
 	return CallTarget{
 		Contract:   Hn(evmnames.Contract),
-		EntryPoint: Hn(evmnames.FuncEstimateGas),
+		EntryPoint: Hn(evmnames.FuncCallContract),
 	}
 }
 
-func (r *evmOffLedgerEstimateGasRequest) Params() dict.Dict {
+func (r *evmOffLedgerCallRequest) Params() dict.Dict {
 	return dict.Dict{evmnames.FieldCallMsg: evmtypes.EncodeCallMsg(r.callMsg)}
 }
 
-func (r *evmOffLedgerEstimateGasRequest) Assets() *Assets {
+func (r *evmOffLedgerCallRequest) Assets() *Assets {
 	return NewEmptyAssets()
 }
 
-func (r *evmOffLedgerEstimateGasRequest) GasBudget() (gas uint64, isEVM bool) {
+func (r *evmOffLedgerCallRequest) GasBudget() (gas uint64, isEVM bool) {
 	if r.callMsg.Gas > 0 {
 		return r.callMsg.Gas, true
 	}
@@ -216,44 +218,44 @@ func (r *evmOffLedgerEstimateGasRequest) GasBudget() (gas uint64, isEVM bool) {
 	return math.MaxUint64, false
 }
 
-func (r *evmOffLedgerEstimateGasRequest) ID() RequestID {
+func (r *evmOffLedgerCallRequest) ID() RequestID {
 	return NewRequestID(iotago.TransactionID(hashing.HashData(r.Bytes())), 0)
 }
 
-func (r *evmOffLedgerEstimateGasRequest) NFT() *NFT {
+func (r *evmOffLedgerCallRequest) NFT() *NFT {
 	return nil
 }
 
-func (r *evmOffLedgerEstimateGasRequest) SenderAccount() AgentID {
+func (r *evmOffLedgerCallRequest) SenderAccount() AgentID {
 	return NewEthereumAddressAgentID(r.callMsg.From)
 }
 
-func (r *evmOffLedgerEstimateGasRequest) TargetAddress() iotago.Address {
+func (r *evmOffLedgerCallRequest) TargetAddress() iotago.Address {
 	return r.chainID.AsAddress()
 }
 
-func (r *evmOffLedgerEstimateGasRequest) Bytes() []byte {
+func (r *evmOffLedgerCallRequest) Bytes() []byte {
 	mu := marshalutil.New()
 	r.WriteToMarshalUtil(mu)
 	return mu.Bytes()
 }
 
-func (r *evmOffLedgerEstimateGasRequest) IsOffLedger() bool {
+func (r *evmOffLedgerCallRequest) IsOffLedger() bool {
 	return true
 }
 
-func (r *evmOffLedgerEstimateGasRequest) String() string {
-	return fmt.Sprintf("evmOffLedgerEstimateGasRequest(%s)", r.ID())
+func (r *evmOffLedgerCallRequest) String() string {
+	return fmt.Sprintf("%T(%s)", r, r.ID())
 }
 
-func (r *evmOffLedgerEstimateGasRequest) ChainID() ChainID {
+func (r *evmOffLedgerCallRequest) ChainID() ChainID {
 	return r.chainID
 }
 
-func (r *evmOffLedgerEstimateGasRequest) Nonce() uint64 {
+func (r *evmOffLedgerCallRequest) Nonce() uint64 {
 	return 0
 }
 
-func (r *evmOffLedgerEstimateGasRequest) VerifySignature() error {
-	return errors.New("evmOffLedgerEstimateGasRequest should never be used to send regular requests")
+func (r *evmOffLedgerCallRequest) VerifySignature() error {
+	return fmt.Errorf("%T should never be used to send regular requests", r)
 }

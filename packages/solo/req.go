@@ -25,7 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 type CallParams struct {
@@ -535,7 +534,7 @@ func (ch *Chain) GetMerkleProof(scHname isc.Hname, key []byte) *trie.MerkleProof
 // GetL1Commitment returns state commitment taken from the anchor output
 func (ch *Chain) GetL1Commitment() *state.L1Commitment {
 	anchorOutput := ch.GetAnchorOutput()
-	ret, err := vmcontext.L1CommitmentFromAliasOutput(anchorOutput.GetAliasOutput())
+	ret, err := transaction.L1CommitmentFromAliasOutput(anchorOutput.GetAliasOutput())
 	require.NoError(ch.Env.T, err)
 	return ret
 }

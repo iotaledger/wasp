@@ -83,7 +83,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		// should never happen
 		panic(errors.New("CreateVMContext.invalid params: must be at least 1 request"))
 	}
-	prevL1Commitment, err := L1CommitmentFromAliasOutput(task.AnchorOutput)
+	prevL1Commitment, err := transaction.L1CommitmentFromAliasOutput(task.AnchorOutput)
 	if err != nil {
 		// should never happen
 		panic(fmt.Errorf("CreateVMContext: can't parse state data as L1Commitment from chain input %w", err))
@@ -106,7 +106,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.gasBurnLog = gas.NewGasBurnLog()
 	}
 	// at the beginning of each block
-	l1Commitment, err := L1CommitmentFromAliasOutput(task.AnchorOutput)
+	l1Commitment, err := transaction.L1CommitmentFromAliasOutput(task.AnchorOutput)
 	if err != nil {
 		// should never happen
 		panic(err)
@@ -117,7 +117,12 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 
 		// save the anchor tx ID of the current state
 		ret.callCore(blocklog.Contract, func(s kv.KVStore) {
-			blocklog.UpdateLatestBlockInfo(s, ret.task.AnchorOutputID.TransactionID(), l1Commitment)
+			blocklog.UpdateLatestBlockInfo(
+				s,
+				ret.task.AnchorOutputID.TransactionID(),
+				isc.NewAliasOutputWithID(ret.task.AnchorOutput, ret.task.AnchorOutputID),
+				l1Commitment,
+			)
 		})
 	})
 
@@ -187,23 +192,17 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		// We skip saving block information in order to avoid inconsistencies
 		return rotationAddress
 	}
-	// block info will be stored into the separate state update
-	prevL1Commitment, err := L1CommitmentFromAliasOutput(vmctx.task.AnchorOutput)
-	if err != nil {
-		panic(err)
-	}
 	// sub essence hash is known without L1 commitment. It is needed for fraud proofs
 	subEssenceHash := vmctx.CalcTransactionSubEssenceHash()
 	totalBaseTokensInContracts, totalStorageDepositOnChain := vmctx.txbuilder.TotalBaseTokensInOutputs()
 	blockInfo := &blocklog.BlockInfo{
+		SchemaVersion:               blocklog.BlockInfoLatestSchemaVersion,
 		BlockIndex:                  vmctx.task.StateDraft.BlockIndex(),
 		Timestamp:                   vmctx.task.StateDraft.Timestamp(),
 		TotalRequests:               numRequests,
 		NumSuccessfulRequests:       numSuccess,
 		NumOffLedgerRequests:        numOffLedger,
-		PreviousL1Commitment:        *prevL1Commitment,
-		L1Commitment:                nil,                    // current L1Commitment not known at this point
-		AnchorTransactionID:         iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
+		PreviousAliasOutput:         isc.NewAliasOutputWithID(vmctx.task.AnchorOutput, vmctx.task.AnchorOutputID),
 		TransactionSubEssenceHash:   subEssenceHash,
 		TotalBaseTokensInL2Accounts: totalBaseTokensInContracts,
 		TotalStorageDeposit:         totalStorageDepositOnChain,

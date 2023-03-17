@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -22,7 +23,6 @@ import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -268,7 +268,7 @@ func TestLoopWithGasLeftEstimateGas(t *testing.T) {
 		From: ethAddr,
 		To:   &iscTest.address,
 		Data: callData,
-	})
+	}, nil)
 	require.NoError(t, err)
 	require.NotZero(t, estimatedGas)
 	t.Log(estimatedGas)
@@ -298,7 +298,7 @@ func TestCallViewGasLimit(t *testing.T) {
 		GasPrice: evm.GasPrice,
 		Data:     callArguments,
 	})
-	_, err = loop.chain.evmChain.CallContract(callMsg, latestBlock)
+	_, err = loop.chain.evmChain.CallContract(callMsg, nil)
 	require.Contains(t, err.Error(), "out of gas")
 }
 
@@ -339,7 +339,11 @@ func TestISCTimestamp(t *testing.T) {
 	var ret int64
 	env.ISCMagicSandbox(ethKey).callView("getTimestampUnixSeconds", nil, &ret)
 
-	require.EqualValues(t, env.soloChain.GetLatestBlockInfo().Timestamp.Unix(), ret)
+	require.WithinRange(t,
+		time.Unix(ret, 0),
+		time.Now().Add(-1*time.Hour),
+		time.Now().Add(1*time.Hour),
+	)
 }
 
 func TestISCCallView(t *testing.T) {
@@ -1527,7 +1531,7 @@ func TestSendEntireBalance(t *testing.T) {
 		GasPrice: evm.GasPrice,
 		Value:    currentBalanceInEthDecimals,
 		Data:     []byte{},
-	})
+	}, nil)
 	require.NoError(t, err)
 
 	feePolicy := env.soloChain.GetGasFeePolicy()
@@ -1556,17 +1560,14 @@ func TestSolidityRevertMessage(t *testing.T) {
 	// test the revert reason is shown when invoking eth_call
 	callData, err := iscTest.abi.Pack("testRevertReason")
 	require.NoError(t, err)
-	viewRes, err := env.soloChain.CallView(evm.Contract.Name, evm.FuncCallContract.Name, dict.Dict{
-		evm.FieldCallMsg: evmtypes.EncodeCallMsg(ethereum.CallMsg{
-			From: ethAddr,
-			To:   &iscTest.address,
-			Gas:  100_000,
-			Data: callData,
-		}),
-	})
+	_, err = env.evmChain.CallContract(ethereum.CallMsg{
+		From: ethAddr,
+		To:   &iscTest.address,
+		Gas:  100_000,
+		Data: callData,
+	}, nil)
 	require.Error(t, err)
 	require.EqualValues(t, "execution reverted: foobar", err.Error())
-	require.Nil(t, viewRes)
 
 	res, err := iscTest.callFn([]ethCallOptions{{
 		gasLimit: 100_000, // needed because gas estimation would fail

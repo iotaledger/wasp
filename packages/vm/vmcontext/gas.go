@@ -14,7 +14,6 @@ func (vmctx *VMContext) GasBurnEnable(enable bool) {
 }
 
 func (vmctx *VMContext) gasSetBudget(gasBudget uint64) {
-	vmctx.task.Log.Debugf("gas budget: %d", gasBudget)
 	vmctx.gasBudgetAdjusted = gasBudget
 	vmctx.gasBurned = 0
 }

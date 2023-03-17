@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
+	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 // That's the main/initial input for the consensus.
@@ -21,7 +21,7 @@ func NewInputProposal(baseAliasOutput *isc.AliasOutputWithID) gpa.Input {
 }
 
 func (ip *inputProposal) String() string {
-	l1Commitment, err := vmcontext.L1CommitmentFromAliasOutput(ip.baseAliasOutput.GetAliasOutput())
+	l1Commitment, err := transaction.L1CommitmentFromAliasOutput(ip.baseAliasOutput.GetAliasOutput())
 	if err != nil {
 		panic(fmt.Errorf("cannot extract L1 commitment from alias output: %w", err))
 	}
