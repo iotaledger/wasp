@@ -15,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -34,8 +33,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
-
-var latestBlock = rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)
 
 type soloChainEnv struct {
 	t          testing.TB
@@ -147,7 +144,7 @@ func (e *soloChainEnv) getBlockNumber() uint64 {
 }
 
 func (e *soloChainEnv) getCode(addr common.Address) []byte {
-	ret, err := e.evmChain.Code(addr, latestBlock)
+	ret, err := e.evmChain.Code(addr, nil)
 	require.NoError(e.t, err)
 	return ret
 }
@@ -331,7 +328,7 @@ func (e *soloChainEnv) deployContract(creator *ecdsa.PrivateKey, abiJSON string,
 		GasPrice: evm.GasPrice,
 		Value:    value,
 		Data:     data,
-	})
+	}, nil)
 	require.NoError(e.t, err)
 
 	tx, err := types.SignTx(
@@ -440,7 +437,7 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 			GasPrice: opt.gasPrice,
 			Value:    opt.value,
 			Data:     callData,
-		})
+		}, nil)
 		if err != nil {
 			return opt, fmt.Errorf("error estimating gas limit: %w", e.chain.resolveError(err))
 		}
@@ -521,7 +518,7 @@ func (e *evmContractInstance) callView(fnName string, args []interface{}, v inte
 		GasPrice: evm.GasPrice,
 		Data:     callArguments,
 	})
-	ret, err := e.chain.evmChain.CallContract(callMsg, latestBlock)
+	ret, err := e.chain.evmChain.CallContract(callMsg, nil)
 	if err != nil {
 		return err
 	}

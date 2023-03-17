@@ -44,12 +44,12 @@ import (
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 const (
@@ -220,6 +220,7 @@ func (cr *consRecover) String() string {
 // This is event received from the NodeConn as response to PublishTX
 type txPublished struct {
 	committeeAddr   iotago.Ed25519Address
+	logIndex        cmtLog.LogIndex
 	txID            iotago.TransactionID
 	nextAliasOutput *isc.AliasOutputWithID
 	confirmed       bool
@@ -548,7 +549,7 @@ func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *is
 	cni.accessLock.Lock()
 	cni.latestConfirmedState = st
 	cni.accessLock.Unlock()
-	l1Commitment, err := vmcontext.L1CommitmentFromAliasOutput(till.GetAliasOutput())
+	l1Commitment, err := transaction.L1CommitmentFromAliasOutput(till.GetAliasOutput())
 	if err != nil {
 		panic(fmt.Errorf("cannot get L1Commitment from alias output: %w", err))
 	}
@@ -577,7 +578,7 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 	}
 	delete(cni.publishingTXes, txPubResult.txID)
 	outMsgs := cni.chainMgr.Input(
-		chainMgr.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.txID, txPubResult.nextAliasOutput, txPubResult.confirmed),
+		chainMgr.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.logIndex, txPubResult.txID, txPubResult.nextAliasOutput, txPubResult.confirmed),
 	)
 	cni.sendMessages(outMsgs)
 	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
@@ -650,6 +651,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 				// TODO: why is *iotago.Transaction unused?
 				cni.recvTxPublishedPipe.In() <- &txPublished{
 					committeeAddr:   txToPost.CommitteeAddr,
+					logIndex:        txToPost.LogIndex,
 					txID:            txToPost.TxID,
 					nextAliasOutput: txToPost.NextAliasOutput,
 					confirmed:       confirmed,

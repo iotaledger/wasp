@@ -83,7 +83,7 @@ func SetupDkg(
 }
 
 func SetupDkgTrivial(
-	t *testing.T,
+	t require.TestingT,
 	n, f int,
 	peerIdentities []*cryptolib.KeyPair,
 	dkShareRegistryProviders []registry.DKShareRegistryProvider, // Will be used if not nil.

@@ -4,6 +4,7 @@
 package jsonrpc
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"sync"
@@ -72,7 +73,7 @@ func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 		return core.ErrIntrinsicGas
 	}
 
-	req, err := isc.NewEVMOffLedgerRequest(b.chain.ID(), tx)
+	req, err := isc.NewEVMOffLedgerTxRequest(b.chain.ID(), tx)
 	if err != nil {
 		return err
 	}
@@ -92,8 +93,12 @@ func (b *WaspEVMBackend) evictWhenExpired(txHash common.Hash) {
 	b.requestIDs.Delete(txHash)
 }
 
-func (b *WaspEVMBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
-	return chainutil.EstimateGas(b.chain, callMsg)
+func (b *WaspEVMBackend) EVMCall(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) ([]byte, error) {
+	return chainutil.Call(b.chain, aliasOutput, callMsg)
+}
+
+func (b *WaspEVMBackend) EVMEstimateGas(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) (uint64, error) {
+	return chainutil.EstimateGas(b.chain, aliasOutput, callMsg)
 }
 
 func (b *WaspEVMBackend) EVMGasPrice() *big.Int {
@@ -126,6 +131,14 @@ func (b *WaspEVMBackend) ISCCallView(chainState state.State, scName, funName str
 
 func (b *WaspEVMBackend) BaseToken() *parameters.BaseToken {
 	return b.baseToken
+}
+
+func (b *WaspEVMBackend) ISCLatestAliasOutput() (*isc.AliasOutputWithID, error) {
+	aliasOutput, _ := b.chain.LatestAliasOutput()
+	if aliasOutput == nil {
+		return nil, errors.New("could not get latest AliasOutput")
+	}
+	return aliasOutput, nil
 }
 
 func (b *WaspEVMBackend) ISCLatestState() state.State {

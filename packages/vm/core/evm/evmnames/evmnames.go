@@ -8,9 +8,8 @@ const (
 
 	// EVM state
 	FuncSendTransaction                     = "sendTransaction"
-	FuncEstimateGas                         = "estimateGas"
-	FuncGetBalance                          = "getBalance"
 	FuncCallContract                        = "callContract"
+	FuncGetBalance                          = "getBalance"
 	FuncGetNonce                            = "getNonce"
 	FuncGetReceipt                          = "getReceipt"
 	FuncGetCode                             = "getCode"

@@ -15,9 +15,8 @@ var Contract = coreutil.NewContract(evmnames.Contract, "EVM contract")
 var (
 	// EVM state
 	FuncSendTransaction                     = coreutil.Func(evmnames.FuncSendTransaction)
-	FuncEstimateGas                         = coreutil.Func(evmnames.FuncEstimateGas)
+	FuncCallContract                        = coreutil.Func(evmnames.FuncCallContract)
 	FuncGetBalance                          = coreutil.ViewFunc(evmnames.FuncGetBalance)
-	FuncCallContract                        = coreutil.ViewFunc(evmnames.FuncCallContract)
 	FuncGetNonce                            = coreutil.ViewFunc(evmnames.FuncGetNonce)
 	FuncGetReceipt                          = coreutil.ViewFunc(evmnames.FuncGetReceipt)
 	FuncGetCode                             = coreutil.ViewFunc(evmnames.FuncGetCode)

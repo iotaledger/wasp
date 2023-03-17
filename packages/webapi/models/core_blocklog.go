@@ -35,21 +35,25 @@ type BlockInfoResponse struct {
 
 func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
 	transactionEssenceHash := iotago.EncodeHex(info.TransactionSubEssenceHash[:])
-	commitmentHash := ""
 
-	if info.L1Commitment != nil {
-		commitmentHash = info.L1Commitment.BlockHash().String()
+	commitmentHash := ""
+	if info.L1Commitment() != nil {
+		commitmentHash = info.L1Commitment().BlockHash().String()
+	}
+	prevCommitmentHash := ""
+	if info.PreviousL1Commitment() != nil {
+		prevCommitmentHash = info.PreviousL1Commitment().BlockHash().String()
 	}
 
 	return &BlockInfoResponse{
-		AnchorTransactionID:         info.AnchorTransactionID.ToHex(),
+		AnchorTransactionID:         info.AnchorTransactionID().ToHex(),
 		BlockIndex:                  info.BlockIndex,
 		GasBurned:                   iotago.EncodeUint64(info.GasBurned),
 		GasFeeCharged:               iotago.EncodeUint64(info.GasFeeCharged),
 		L1CommitmentHash:            commitmentHash,
 		NumOffLedgerRequests:        info.NumOffLedgerRequests,
 		NumSuccessfulRequests:       info.NumSuccessfulRequests,
-		PreviousL1CommitmentHash:    info.PreviousL1Commitment.BlockHash().String(),
+		PreviousL1CommitmentHash:    prevCommitmentHash,
 		Timestamp:                   info.Timestamp,
 		TotalBaseTokensInL2Accounts: iotago.EncodeUint64(info.TotalBaseTokensInL2Accounts),
 		TotalRequests:               info.TotalRequests,
