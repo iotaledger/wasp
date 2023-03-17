@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -11,7 +10,7 @@ import (
 )
 
 type IStateManagerMetrics interface {
-	SetBlockSize(blockIndex uint32, size float64)
+	SetBlockSize(size float64)
 	SetLastSeenStateIndex(stateIndex uint32)
 }
 
@@ -23,7 +22,7 @@ type IConsensusMetrics interface {
 type IMempoolMetrics interface {
 	IncRequestsReceived(isc.Request)
 	IncRequestsProcessed()
-	SetRequestProcessingTime(isc.RequestID, time.Duration)
+	SetRequestProcessingTime(time.Duration)
 	IncBlocksPerChain()
 }
 
@@ -47,17 +46,17 @@ func NewEmptyChainMetric() IChainMetric {
 	return &emptyChainMetric{}
 }
 
-func (m *emptyChainMetric) IncRequestsReceived(_ isc.Request)                         {}
-func (m *emptyChainMetric) IncRequestsProcessed()                                     {}
-func (m *emptyChainMetric) IncRequestsAckMessages()                                   {}
-func (m *emptyChainMetric) SetRequestProcessingTime(_ isc.RequestID, _ time.Duration) {}
-func (m *emptyChainMetric) IncMessagesReceived()                                      {}
-func (m *emptyChainMetric) SetVMRunTime(_ time.Duration)                              {}
-func (m *emptyChainMetric) IncVMRunsCounter()                                         {}
-func (m *emptyChainMetric) IncBlocksPerChain()                                        {}
-func (m *emptyChainMetric) SetBlockSize(_ uint32, _ float64)                          {}
-func (m *emptyChainMetric) SetCurrentStateIndex(stateIndex uint32)                    {}
-func (m *emptyChainMetric) SetLastSeenStateIndex(stateIndex uint32)                   {}
+func (m *emptyChainMetric) IncRequestsReceived(_ isc.Request)        {}
+func (m *emptyChainMetric) IncRequestsProcessed()                    {}
+func (m *emptyChainMetric) IncRequestsAckMessages()                  {}
+func (m *emptyChainMetric) SetRequestProcessingTime(_ time.Duration) {}
+func (m *emptyChainMetric) IncMessagesReceived()                     {}
+func (m *emptyChainMetric) SetVMRunTime(_ time.Duration)             {}
+func (m *emptyChainMetric) IncVMRunsCounter()                        {}
+func (m *emptyChainMetric) IncBlocksPerChain()                       {}
+func (m *emptyChainMetric) SetBlockSize(_ float64)                   {}
+func (m *emptyChainMetric) SetCurrentStateIndex(stateIndex uint32)   {}
+func (m *emptyChainMetric) SetLastSeenStateIndex(stateIndex uint32)  {}
 
 type ChainMetric struct {
 	chainMetrics          *ChainMetrics
@@ -103,16 +102,16 @@ func (c *ChainMetric) IncRequestsAckMessages() {
 	c.chainMetrics.requestsAckMessages.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 }
 
-func (c *ChainMetric) SetRequestProcessingTime(reqID isc.RequestID, elapse time.Duration) {
-	c.chainMetrics.requestsProcessingTime.With(prometheus.Labels{"chain": c.chainID.String(), "request": reqID.String()}).Set(elapse.Seconds())
+func (c *ChainMetric) SetRequestProcessingTime(duration time.Duration) {
+	c.chainMetrics.requestsProcessingTime.With(prometheus.Labels{"chain": c.chainID.String()}).Set(duration.Seconds())
 }
 
 func (c *ChainMetric) IncMessagesReceived() {
 	c.chainMetrics.messagesReceived.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 }
 
-func (c *ChainMetric) SetVMRunTime(elapse time.Duration) {
-	c.chainMetrics.vmRunTime.With(prometheus.Labels{"chain": c.chainID.String()}).Set(elapse.Seconds())
+func (c *ChainMetric) SetVMRunTime(duration time.Duration) {
+	c.chainMetrics.vmRunTime.With(prometheus.Labels{"chain": c.chainID.String()}).Set(duration.Seconds())
 }
 
 func (c *ChainMetric) IncVMRunsCounter() {
@@ -123,8 +122,8 @@ func (c *ChainMetric) IncBlocksPerChain() {
 	c.chainMetrics.blocksTotalPerChain.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 }
 
-func (c *ChainMetric) SetBlockSize(blockIndex uint32, blockSize float64) {
-	c.chainMetrics.blockSizesPerChain.With(prometheus.Labels{"chain": c.chainID.String(), "block_index": fmt.Sprintf("%d", blockIndex)}).Set(blockSize)
+func (c *ChainMetric) SetBlockSize(blockSize float64) {
+	c.chainMetrics.blockSizesPerChain.With(prometheus.Labels{"chain": c.chainID.String()}).Set(blockSize)
 }
 
 func (c *ChainMetric) SetCurrentStateIndex(stateIndex uint32) {
@@ -198,7 +197,7 @@ func NewChainMetrics(nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
 			Subsystem: "requests",
 			Name:      "processing_time",
 			Help:      "Time to process requests per chain",
-		}, []string{"chain", "request"}),
+		}, []string{"chain"}),
 
 		//
 		// Messages
@@ -242,7 +241,7 @@ func NewChainMetrics(nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
 			Subsystem: "blocks",
 			Name:      "sizes",
 			Help:      "Block sizes per chain",
-		}, []string{"block_index", "chain"}),
+		}, []string{"chain"}),
 
 		//
 		// State
