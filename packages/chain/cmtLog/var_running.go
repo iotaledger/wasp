@@ -3,7 +3,7 @@ package cmtLog
 import (
 	"fmt"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 )
 
 // All functions returns true, if the latest LI become completed.
