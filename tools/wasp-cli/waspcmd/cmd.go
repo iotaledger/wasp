@@ -60,7 +60,7 @@ func DefaultWaspNodeFallback(node string) string {
 }
 
 func getDefaultWaspNode() string {
-	waspSettings := make(map[string]interface{})
+	waspSettings := map[string]interface{}{}
 	waspKey := viper.Sub("wasp")
 	if waspKey != nil {
 		waspSettings = waspKey.AllSettings()
