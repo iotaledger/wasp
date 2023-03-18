@@ -12,7 +12,7 @@ import (
 func initWaspNodesCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "wasp <command>",
-		Short: "Interact with a chain",
+		Short: "Configure wasp nodes",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			log.Check(cmd.Help())
@@ -60,7 +60,11 @@ func DefaultWaspNodeFallback(node string) string {
 }
 
 func getDefaultWaspNode() string {
-	waspSettings := viper.Sub("wasp").AllSettings()
+	waspSettings := make(map[string]interface{})
+	waspKey := viper.Sub("wasp")
+	if waspKey != nil {
+		waspSettings = waspKey.AllSettings()
+	}
 	switch len(waspSettings) {
 	case 0:
 		log.Fatalf("no wasp node configured, you can add a node with `wasp-cli wasp add <name> <api url>`")
