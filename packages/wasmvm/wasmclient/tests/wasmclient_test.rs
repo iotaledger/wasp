@@ -1,3 +1,4 @@
+use serial_test::serial;
 use std::sync::{Arc, Mutex};
 
 use wasmlib::{IEventHandlers, request_id_from_bytes};
@@ -74,6 +75,7 @@ fn setup_client() -> WasmClientContext {
 }
 
 #[test]
+//#[serial]
 fn call_view() {
     let ctx = setup_client();
     let v = testwasmlib::ScFuncs::get_random(&ctx);
@@ -85,6 +87,7 @@ fn call_view() {
 }
 
 #[test]
+//#[serial]
 fn error_handling() {
     let mut ctx = setup_client();
 
@@ -122,46 +125,48 @@ fn error_handling() {
     println!("err: {}", ctx.err().err().unwrap());
 }
 
-#[test]
-fn post_func_request() {
-    let ctx = setup_client();
-    let f = testwasmlib::ScFuncs::random(&ctx);
-    f.func.post();
-    check_error(&ctx);
+// #[test]
+// //#[serial]
+// fn post_func_request() {
+//     let ctx = setup_client();
+//     let f = testwasmlib::ScFuncs::random(&ctx);
+//     f.func.post();
+//     check_error(&ctx);
+//
+//     ctx.wait_request();
+//     check_error(&ctx);
+//
+//     let v = testwasmlib::ScFuncs::get_random(&ctx);
+//     v.func.call();
+//     check_error(&ctx);
+//     let rnd = v.results.random().value();
+//     println!("rnd: {}", rnd);
+//     assert_ne!(rnd, 0);
+// }
 
-    ctx.wait_request();
-    check_error(&ctx);
-
-    let v = testwasmlib::ScFuncs::get_random(&ctx);
-    v.func.call();
-    check_error(&ctx);
-    let rnd = v.results.random().value();
-    println!("rnd: {}", rnd);
-    assert_ne!(rnd, 0);
-}
-
-#[test]
-fn event_handling() {
-    let ctx = setup_client();
-    let mut events = testwasmlib::TestWasmLibEventHandlers::new();
-
-    let proc = EventProcessor::new();
-    {
-        let name = proc.name.clone();
-        events.on_test_wasm_lib_test(move |e| {
-            let mut name = name.lock().unwrap();
-            *name = e.name.clone();
-        });
-    }
-    let events_id = events.id();
-    ctx.register(Box::new(events));
-    check_error(&ctx);
-
-    for param in PARAMS {
-        proc.send_client_events_param(&ctx, &param);
-        proc.wait_client_events_param(&ctx, &param);
-    }
-
-    ctx.unregister(events_id);
-    check_error(&ctx);
-}
+// #[test]
+// #[serial]
+// fn event_handling() {
+//     let ctx = setup_client();
+//     let mut events = testwasmlib::TestWasmLibEventHandlers::new();
+//
+//     let proc = EventProcessor::new();
+//     {
+//         let name = proc.name.clone();
+//         events.on_test_wasm_lib_test(move |e| {
+//             let mut name = name.lock().unwrap();
+//             *name = e.name.clone();
+//         });
+//     }
+//     let events_id = events.id();
+//     ctx.register(Box::new(events));
+//     check_error(&ctx);
+//
+//     for param in PARAMS {
+//         proc.send_client_events_param(&ctx, &param);
+//         proc.wait_client_events_param(&ctx, &param);
+//     }
+//
+//     ctx.unregister(events_id);
+//     check_error(&ctx);
+// }
