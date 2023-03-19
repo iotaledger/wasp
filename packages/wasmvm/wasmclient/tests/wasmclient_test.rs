@@ -1,12 +1,11 @@
-use serial_test::serial;
 use std::sync::{Arc, Mutex};
 
-use wasmlib::{IEventHandlers, request_id_from_bytes};
+use wasmlib::{chain_id_from_bytes, chain_id_to_bytes, chain_id_to_string, IEventHandlers, request_id_from_bytes};
 
 use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};
 
 const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
-const NOCHAIN: &str = "atoi1pqtg32l9m53m0uv69636ch474xft5uzkn54er85hc05333hvfxfj6gm6lpx";
+const WASP_API: &str = "http://localhost:9090";
 
 const PARAMS: &[&str] = &[
     "Lala",
@@ -62,7 +61,7 @@ fn check_error(ctx: &WasmClientContext) {
 }
 
 fn setup_client() -> WasmClientContext {
-    let mut svc = WasmClientService::new("http://localhost:19090");
+    let mut svc = WasmClientService::new(WASP_API);
     assert!(svc.is_healthy());
     svc.set_default_chain_id().unwrap();
     let mut ctx = WasmClientContext::new(Arc::new(svc), "testwasmlib");
@@ -75,7 +74,6 @@ fn setup_client() -> WasmClientContext {
 }
 
 #[test]
-//#[serial]
 fn call_view() {
     let ctx = setup_client();
     let v = testwasmlib::ScFuncs::get_random(&ctx);
@@ -87,7 +85,6 @@ fn call_view() {
 }
 
 #[test]
-//#[serial]
 fn error_handling() {
     let mut ctx = setup_client();
 
@@ -112,9 +109,13 @@ fn error_handling() {
     assert!(ctx.err().is_err());
     println!("err: {}", ctx.err().err().unwrap());
 
+    let mut chain_bytes = chain_id_to_bytes(&ctx.current_chain_id());
+    chain_bytes[2] += 1;
+    let bad_chain_id = chain_id_to_string(&chain_id_from_bytes(&chain_bytes));
+
     // wait for request on wrong chain
-    let mut svc = WasmClientService::new("http://localhost:19090");
-    svc.set_current_chain_id(NOCHAIN).unwrap();
+    let mut svc = WasmClientService::new(WASP_API);
+    svc.set_current_chain_id(&bad_chain_id).unwrap();
     let mut ctx = WasmClientContext::new(Arc::new(svc), "testwasmlib");
     ctx.sign_requests(&keypair::KeyPair::from_sub_seed(
         &wasmlib::bytes_from_string(MYSEED),
@@ -125,48 +126,46 @@ fn error_handling() {
     println!("err: {}", ctx.err().err().unwrap());
 }
 
-// #[test]
-// //#[serial]
-// fn post_func_request() {
-//     let ctx = setup_client();
-//     let f = testwasmlib::ScFuncs::random(&ctx);
-//     f.func.post();
-//     check_error(&ctx);
-//
-//     ctx.wait_request();
-//     check_error(&ctx);
-//
-//     let v = testwasmlib::ScFuncs::get_random(&ctx);
-//     v.func.call();
-//     check_error(&ctx);
-//     let rnd = v.results.random().value();
-//     println!("rnd: {}", rnd);
-//     assert_ne!(rnd, 0);
-// }
+#[test]
+fn post_func_request() {
+    let ctx = setup_client();
+    let f = testwasmlib::ScFuncs::random(&ctx);
+    f.func.post();
+    check_error(&ctx);
 
-// #[test]
-// #[serial]
-// fn event_handling() {
-//     let ctx = setup_client();
-//     let mut events = testwasmlib::TestWasmLibEventHandlers::new();
-//
-//     let proc = EventProcessor::new();
-//     {
-//         let name = proc.name.clone();
-//         events.on_test_wasm_lib_test(move |e| {
-//             let mut name = name.lock().unwrap();
-//             *name = e.name.clone();
-//         });
-//     }
-//     let events_id = events.id();
-//     ctx.register(Box::new(events));
-//     check_error(&ctx);
-//
-//     for param in PARAMS {
-//         proc.send_client_events_param(&ctx, &param);
-//         proc.wait_client_events_param(&ctx, &param);
-//     }
-//
-//     ctx.unregister(events_id);
-//     check_error(&ctx);
-// }
+    ctx.wait_request();
+    check_error(&ctx);
+
+    let v = testwasmlib::ScFuncs::get_random(&ctx);
+    v.func.call();
+    check_error(&ctx);
+    let rnd = v.results.random().value();
+    println!("rnd: {}", rnd);
+    assert_ne!(rnd, 0);
+}
+
+#[test]
+fn event_handling() {
+    let ctx = setup_client();
+    let mut events = testwasmlib::TestWasmLibEventHandlers::new();
+
+    let proc = EventProcessor::new();
+    {
+        let name = proc.name.clone();
+        events.on_test_wasm_lib_test(move |e| {
+            let mut name = name.lock().unwrap();
+            *name = e.name.clone();
+        });
+    }
+    let events_id = events.id();
+    ctx.register(Box::new(events));
+    check_error(&ctx);
+
+    for param in PARAMS {
+        proc.send_client_events_param(&ctx, &param);
+        proc.wait_client_events_param(&ctx, &param);
+    }
+
+    ctx.unregister(events_id);
+    check_error(&ctx);
+}
