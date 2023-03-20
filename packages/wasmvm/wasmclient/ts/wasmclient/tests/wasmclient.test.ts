@@ -1,10 +1,17 @@
 import {WasmClientContext, WasmClientService} from '../lib';
 import * as testwasmlib from 'testwasmlib';
-import {bytesFromString, bytesToString, requestIDFromBytes} from 'wasmlib';
+import {
+    bytesFromString,
+    bytesToString,
+    chainIDFromBytes,
+    chainIDToBytes,
+    chainIDToString,
+    requestIDFromBytes
+} from 'wasmlib';
 import {KeyPair} from '../lib/isc';
 
 const MYSEED = '0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3';
-const NOCHAIN = 'atoi1pqtg32l9m53m0uv69636ch474xft5uzkn54er85hc05333hvfxfj6gm6lpx';
+const WASPAPI = 'http://localhost:9090';
 
 const params = [
     'Lala',
@@ -59,7 +66,7 @@ function checkError(ctx: WasmClientContext) {
 }
 
 function setupClient() {
-    const svc = new WasmClientService('http://localhost:19090');
+    const svc = new WasmClientService(WASPAPI);
     expect (svc.isHealthy()).toBeTruthy();
     const err = svc.setDefaultChainID();
     expect(err == null).toBeTruthy();
@@ -154,8 +161,12 @@ describe('wasmclient', function () {
             console.log('Error: ' + ctx.Err);
 
             // wait for request on wrong chain
-            const svc = new WasmClientService('http://localhost:19090');
-            ctx.Err = svc.setCurrentChainID(NOCHAIN);
+            const chain_bytes = chainIDToBytes(ctx.currentChainID());
+            chain_bytes[2]++;
+            const badChainID = chainIDToString(chainIDFromBytes(chain_bytes));
+
+            const svc = new WasmClientService(WASPAPI);
+            ctx.Err = svc.setCurrentChainID(badChainID);
             checkError(ctx);
             ctx = new WasmClientContext(svc, 'testwasmlib');
             ctx.signRequests(KeyPair.fromSubSeed(bytesFromString(MYSEED), 0n));

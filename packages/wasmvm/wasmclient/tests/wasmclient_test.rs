@@ -1,11 +1,11 @@
 use std::sync::{Arc, Mutex};
 
-use wasmlib::{IEventHandlers, request_id_from_bytes};
+use wasmlib::{chain_id_from_bytes, chain_id_to_bytes, chain_id_to_string, IEventHandlers, request_id_from_bytes};
 
 use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};
 
 const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
-const NOCHAIN: &str = "atoi1pqtg32l9m53m0uv69636ch474xft5uzkn54er85hc05333hvfxfj6gm6lpx";
+const WASP_API: &str = "http://localhost:9090";
 
 const PARAMS: &[&str] = &[
     "Lala",
@@ -61,7 +61,7 @@ fn check_error(ctx: &WasmClientContext) {
 }
 
 fn setup_client() -> WasmClientContext {
-    let mut svc = WasmClientService::new("http://localhost:19090");
+    let mut svc = WasmClientService::new(WASP_API);
     assert!(svc.is_healthy());
     svc.set_default_chain_id().unwrap();
     let mut ctx = WasmClientContext::new(Arc::new(svc), "testwasmlib");
@@ -109,9 +109,13 @@ fn error_handling() {
     assert!(ctx.err().is_err());
     println!("err: {}", ctx.err().err().unwrap());
 
+    let mut chain_bytes = chain_id_to_bytes(&ctx.current_chain_id());
+    chain_bytes[2] += 1;
+    let bad_chain_id = chain_id_to_string(&chain_id_from_bytes(&chain_bytes));
+
     // wait for request on wrong chain
-    let mut svc = WasmClientService::new("http://localhost:19090");
-    svc.set_current_chain_id(NOCHAIN).unwrap();
+    let mut svc = WasmClientService::new(WASP_API);
+    svc.set_current_chain_id(&bad_chain_id).unwrap();
     let mut ctx = WasmClientContext::new(Arc::new(svc), "testwasmlib");
     ctx.sign_requests(&keypair::KeyPair::from_sub_seed(
         &wasmlib::bytes_from_string(MYSEED),
