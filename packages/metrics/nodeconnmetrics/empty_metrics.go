@@ -16,7 +16,9 @@ func NewEmptyNodeConnectionMetrics() NodeConnectionMetrics {
 	return &emptyNodeConnectionMetrics{}
 }
 
-func (encmT *emptyNodeConnectionMetrics) Register(registry *prometheus.Registry) {}
+func (encmT *emptyNodeConnectionMetrics) PrometheusCollectors() []prometheus.Collector {
+	return []prometheus.Collector{}
+}
 
 func (encmT *emptyNodeConnectionMetrics) NewMessagesMetrics(chainID isc.ChainID) NodeConnectionMessagesMetrics {
 	encmT.emptyNodeConnectionMessagesMetrics = newEmptyNodeConnectionMessagesMetrics()

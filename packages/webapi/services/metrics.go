@@ -18,7 +18,7 @@ func NewMetricsService(chainProvider chains.Provider) interfaces.MetricsService 
 	}
 }
 
-func (c *MetricsService) GetAllChainsMetrics() *dto.ChainMetrics {
+func (c *MetricsService) GetAllChainMetrics() *dto.ChainMetrics {
 	chain := c.chainProvider()
 	if chain == nil {
 		return nil

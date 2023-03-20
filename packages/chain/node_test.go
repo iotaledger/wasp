@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -446,6 +447,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			chain.NewEmptyChainListener(),
 			[]*cryptolib.PublicKey{}, // Access nodes.
 			te.networkProviders[i],
+			metrics.NewEmptyChainMetric(),
 			shutdown.NewCoordinator("test", log),
 			log,
 		)

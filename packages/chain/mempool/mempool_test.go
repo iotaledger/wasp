@@ -508,7 +508,7 @@ func (m *MockMempoolMetrics) IncRequestsProcessed() {
 	m.processedRequestCounter++
 }
 
-func (m *MockMempoolMetrics) SetRequestProcessingTime(reqID isc.RequestID, elapse time.Duration) {}
+func (m *MockMempoolMetrics) SetRequestProcessingTime(_ time.Duration) {}
 
 func (m *MockMempoolMetrics) IncBlocksPerChain() {}
 

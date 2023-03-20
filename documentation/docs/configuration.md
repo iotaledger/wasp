@@ -349,6 +349,7 @@ Example:
 | bindAddress     | The bind address on which the Prometheus exporter listens on | string  | "0.0.0.0:2112" |
 | nodeMetrics     | Whether to include node metrics                              | boolean | true           |
 | nodeConnMetrics | Whether to include node connection metrics                   | boolean | true           |
+| chainMetrics    | Whether to include chain metrics                             | boolean | true           |
 | blockWALMetrics | Whether to include block Write-Ahead Log (WAL) metrics       | boolean | true           |
 | restAPIMetrics  | Whether to include restAPI metrics                           | boolean | true           |
 | goMetrics       | Whether to include go metrics                                | boolean | true           |
@@ -364,6 +365,7 @@ Example:
       "bindAddress": "0.0.0.0:2112",
       "nodeMetrics": true,
       "nodeConnMetrics": true,
+      "chainMetrics": true,
       "blockWALMetrics": true,
       "restAPIMetrics": true,
       "goMetrics": true,
