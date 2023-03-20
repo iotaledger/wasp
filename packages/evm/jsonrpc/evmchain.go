@@ -55,12 +55,12 @@ func NewEVMChain(backend ChainBackend, pub *publisher.Publisher, log *logger.Log
 		if !ev.ChainID.Equals(*e.backend.ISCChainID()) {
 			return
 		}
-		state, err := e.backend.ISCStateByBlockIndex(ev.Payload.BlockIndex)
+		state, err := e.backend.ISCStateByBlockIndex(ev.Payload.BlockIndex())
 		if err != nil {
 			log.Error(err)
 			return
 		}
-		blockNumber := new(big.Int).SetUint64(evmBlockNumberByISCBlockIndex(ev.Payload.BlockIndex))
+		blockNumber := new(big.Int).SetUint64(evmBlockNumberByISCBlockIndex(ev.Payload.BlockIndex()))
 		block, err := e.blockByNumber(state, blockNumber)
 		if err != nil {
 			log.Error(err)

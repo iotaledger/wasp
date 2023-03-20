@@ -356,10 +356,8 @@ func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name)
 	require.NoError(ch.Env.T, err)
 	resultDecoder := kvdecoder.New(ret, ch.Log())
-	blockIndex := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
 	blockInfoBin := resultDecoder.MustGetBytes(blocklog.ParamBlockInfo)
-
-	blockInfo, err := blocklog.BlockInfoFromBytes(blockIndex, blockInfoBin)
+	blockInfo, err := blocklog.BlockInfoFromBytes(blockInfoBin)
 	require.NoError(ch.Env.T, err)
 	return blockInfo
 }
@@ -393,9 +391,7 @@ func (ch *Chain) GetBlockInfo(blockIndex ...uint32) (*blocklog.BlockInfo, error)
 	}
 	resultDecoder := kvdecoder.New(ret, ch.Log())
 	blockInfoBin := resultDecoder.MustGetBytes(blocklog.ParamBlockInfo)
-	blockIndexRet := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
-
-	blockInfo, err := blocklog.BlockInfoFromBytes(blockIndexRet, blockInfoBin)
+	blockInfo, err := blocklog.BlockInfoFromBytes(blockInfoBin)
 	require.NoError(ch.Env.T, err)
 	return blockInfo, nil
 }
@@ -484,7 +480,7 @@ func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []isc.RequestID {
 // Upper bound is 'latest block' is set to 0
 func (ch *Chain) GetRequestReceiptsForBlockRange(fromBlockIndex, toBlockIndex uint32) []*blocklog.RequestReceipt {
 	if toBlockIndex == 0 {
-		toBlockIndex = ch.GetLatestBlockInfo().BlockIndex
+		toBlockIndex = ch.GetLatestBlockInfo().BlockIndex()
 	}
 	if fromBlockIndex > toBlockIndex {
 		return nil

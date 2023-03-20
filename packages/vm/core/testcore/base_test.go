@@ -537,7 +537,7 @@ func TestMessageSize(t *testing.T) {
 	ch.WaitUntilMempoolIsEmpty()
 
 	// request outputs are so large that they have to be processed in two separate blocks
-	require.Equal(t, initialBlockIndex+2, ch.GetLatestBlockInfo().BlockIndex)
+	require.Equal(t, initialBlockIndex()+2, ch.GetLatestBlockInfo().BlockIndex())
 
 	for _, req := range reqs {
 		receipt, err := ch.GetRequestReceipt(req.ID())

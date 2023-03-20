@@ -9,7 +9,7 @@ import (
 var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog, "Block log contract")
 
 const (
-	prefixBlockRegistry = string('a' + iota)
+	PrefixBlockRegistry = string('a' + iota)
 	prefixControlAddresses
 	prefixRequestLookupIndex
 	prefixRequestReceipts

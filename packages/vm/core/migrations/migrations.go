@@ -23,4 +23,5 @@ type Migration struct {
 var Migrations = []Migration{
 	m001GasPerTokenToRatio32,
 	m002CleanupFeePolicy,
+	m003CleanupBlockInfo,
 }

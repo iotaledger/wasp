@@ -21,14 +21,6 @@ var LimitsDefault = &Limits{
 	MaxGasExternalViewCall: 50_000_000,
 }
 
-func MustLimitsFromBytes(data []byte) *Limits {
-	ret, err := LimitsFromBytes(data)
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
 var ErrInvalidLimits = errors.New("invalid gas limits")
 
 func LimitsFromBytes(data []byte) (*Limits, error) {

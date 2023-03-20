@@ -126,7 +126,7 @@ func GetBlockInfo(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, er
 	if err != nil {
 		return nil, err
 	}
-	ret, err := BlockInfoFromBytes(blockIndex, data)
+	ret, err := BlockInfoFromBytes(data)
 	if err != nil {
 		return nil, err
 	}

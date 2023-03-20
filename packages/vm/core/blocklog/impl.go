@@ -26,7 +26,6 @@ var Processor = Contract.Processor(nil,
 func SetInitialState(s kv.KVStore) {
 	SaveNextBlockInfo(s, &BlockInfo{
 		SchemaVersion:         BlockInfoLatestSchemaVersion,
-		BlockIndex:            0,
 		Timestamp:             time.Time{},
 		TotalRequests:         1,
 		NumSuccessfulRequests: 1,

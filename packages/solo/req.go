@@ -518,7 +518,7 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie.Me
 	if err != nil {
 		return nil, nil, err
 	}
-	retBlockInfo, err := blocklog.BlockInfoFromBytes(blockIndex, biBin)
+	retBlockInfo, err := blocklog.BlockInfoFromBytes(biBin)
 	if err != nil {
 		return nil, nil, err
 	}

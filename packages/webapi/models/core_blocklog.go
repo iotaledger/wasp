@@ -42,7 +42,7 @@ func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
 
 	return &BlockInfoResponse{
 		AnchorTransactionID:      info.AnchorTransactionID().ToHex(),
-		BlockIndex:               info.BlockIndex,
+		BlockIndex:               info.BlockIndex(),
 		GasBurned:                iotago.EncodeUint64(info.GasBurned),
 		GasFeeCharged:            iotago.EncodeUint64(info.GasFeeCharged),
 		L1CommitmentHash:         commitmentHash,

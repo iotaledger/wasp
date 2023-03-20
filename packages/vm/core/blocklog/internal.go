@@ -16,27 +16,21 @@ import (
 
 // SaveNextBlockInfo appends block info and returns its index
 func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) {
-	registry := collections.NewArray32(partition, prefixBlockRegistry)
+	registry := collections.NewArray32(partition, PrefixBlockRegistry)
 	registry.MustPush(blockInfo.Bytes())
 }
 
 // UpdateLatestBlockInfo is called before producing the next block to save anchor tx id and commitment data of the previous one
 func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxID iotago.TransactionID, aliasOutput *isc.AliasOutputWithID, l1commitment *state.L1Commitment) {
-	registry := collections.NewArray32(partition, prefixBlockRegistry)
+	registry := collections.NewArray32(partition, PrefixBlockRegistry)
 	lastBlockIndex := registry.MustLen() - 1
 	blockInfoBuffer := registry.MustGetAt(lastBlockIndex)
-	blockInfo, err := BlockInfoFromBytes(lastBlockIndex, blockInfoBuffer)
+	blockInfo, err := BlockInfoFromBytes(blockInfoBuffer)
 	if err != nil {
 		panic(err)
 	}
 
-	if blockInfo.SchemaVersion < BlockInfoAliasOutputSchemaVersion {
-		blockInfo.anchorTransactionIDOld = anchorTxID
-		blockInfo.l1CommitmentOld = l1commitment
-	} else {
-		blockInfo.AliasOutput = aliasOutput
-	}
-
+	blockInfo.AliasOutput = aliasOutput
 	registry.MustSetAt(lastBlockIndex, blockInfo.Bytes())
 }
 
@@ -252,7 +246,7 @@ func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint
 }
 
 func getBlockInfoBytes(partition kv.KVStoreReader, blockIndex uint32) ([]byte, error) {
-	return collections.NewArray32ReadOnly(partition, prefixBlockRegistry).GetAt(blockIndex)
+	return collections.NewArray32ReadOnly(partition, PrefixBlockRegistry).GetAt(blockIndex)
 }
 
 func RequestReceiptKey(rkey RequestLookupKey) []byte {
@@ -283,6 +277,6 @@ func getBlockIndexParams(ctx isc.SandboxView) uint32 {
 	if ret != math.MaxUint32 {
 		return ret
 	}
-	registry := collections.NewArray32ReadOnly(ctx.StateR(), prefixBlockRegistry)
+	registry := collections.NewArray32ReadOnly(ctx.StateR(), PrefixBlockRegistry)
 	return registry.MustLen() - 1
 }
