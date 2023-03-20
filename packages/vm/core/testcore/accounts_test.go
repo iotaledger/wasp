@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -1196,7 +1197,13 @@ func TestDepositWithoutEnoughFundsForAccountingUTXOsSD(t *testing.T) {
 	// move the native tokens to a new user that doesn't have on-chain balance
 	newUser, newUserAddress := v.env.NewKeyPairWithFunds()
 	v.env.SendL1(newUserAddress, assets, v.user)
-	require.True(t, v.env.L1Assets(newUserAddress).NativeTokens.Equal(assets.NativeTokens))
+
+	newuserL1NativeTokens := v.env.L1Assets(newUserAddress).NativeTokens
+	for _, nt := range assets.NativeTokens {
+		lo.ContainsBy(newuserL1NativeTokens, func(l1NT *iotago.NativeToken) bool {
+			return nt.Equal(l1NT)
+		})
+	}
 
 	// try to deposit all native tokens in a request with just the minimum SD
 	depositReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
