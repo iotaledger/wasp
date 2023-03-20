@@ -83,6 +83,18 @@ func TestSetup(t *testing.T) {
 	require.NoError(t, ctx.Err)
 }
 
+func TestCallView(t *testing.T) {
+	ctx := setupClient(t)
+	require.NoError(t, ctx.Err)
+
+	v := testwasmlib.ScFuncs.GetRandom(ctx)
+	v.Func.Call()
+	require.NoError(t, ctx.Err)
+	rnd := v.Results.Random().Value()
+	fmt.Println("Random: ", rnd)
+	require.GreaterOrEqual(t, rnd, uint64(0))
+}
+
 func TestErrorHandling(t *testing.T) {
 	ctx := setupClient(t)
 	require.NoError(t, ctx.Err)
@@ -140,8 +152,8 @@ func TestRandom(t *testing.T) {
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
 	rnd := v.Results.Random().Value()
-	require.GreaterOrEqual(t, rnd, uint64(0))
 	fmt.Println("Random: ", rnd)
+	require.GreaterOrEqual(t, rnd, uint64(0))
 }
 
 func TestClientEvents(t *testing.T) {

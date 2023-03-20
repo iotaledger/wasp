@@ -79,7 +79,8 @@ func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
 	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "rocksdb", "mapdb")
 	env := clustertests.SetupWithChain(t)
 	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "mapdb", "rocksdb")
-	wallet := cryptolib.NewKeyPair()
+	seed := cryptolib.NewSeedFromBytes(wasmtypes.BytesFromString(mySeed))
+	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(0))
 
 	// request funds to the wallet that the wasmclient will use
 	err := env.Clu.RequestFunds(wallet.Address())
@@ -230,8 +231,8 @@ func TestClientRandom(t *testing.T) {
 		v.Func.Call()
 		require.NoError(t, ctx.Err)
 		rnd := v.Results.Random().Value()
-		require.GreaterOrEqual(t, rnd, uint64(0))
 		fmt.Println("Random: ", rnd)
+		require.GreaterOrEqual(t, rnd, uint64(0))
 	}
 	doit()
 	doit()
@@ -267,4 +268,159 @@ func TestClientEvents(t *testing.T) {
 	//for _, param := range params {
 	//	proc.waitClientEventsParam(param)
 	//}
+}
+
+const (
+	mySeed  = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3"
+	waspAPI = "http://localhost:19090"
+)
+
+func setupClientLib(t *testing.T) *wasmclient.WasmClientContext {
+	svc := wasmclient.NewWasmClientService(waspAPI)
+
+	// note that testing the WasmClient code requires a running wasp-cluster
+	// with a single preloaded chain that contains the TestWasmLib demo contract
+	// therefore we skip all WasmClient tests when in the GitHub repo
+	if !svc.IsHealthy() {
+		t.SkipNow()
+	}
+
+	err := svc.SetDefaultChainID()
+	require.NoError(t, err)
+
+	ctx := wasmclient.NewWasmClientContext(svc, testwasmlib.ScName)
+	require.NoError(t, ctx.Err)
+
+	seed := cryptolib.NewSeedFromBytes(wasmtypes.BytesFromString(mySeed))
+	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(0))
+	ctx.SignRequests(wallet)
+	require.NoError(t, ctx.Err)
+	return ctx
+}
+
+func TestAPICallView(t *testing.T) {
+	ctxCluster := setupClient(t)
+
+	ctx := setupClientLib(t)
+	require.NoError(t, ctx.Err)
+
+	rnd := testAPICallView(t, ctx)
+	require.Equal(t, rnd, uint64(0))
+
+	_ = ctxCluster
+}
+
+func TestAPIPostRequest(t *testing.T) {
+	ctxCluster := setupClient(t)
+
+	ctx := setupClientLib(t)
+
+	testAPIPostRequest(t, ctx)
+
+	rnd := testAPICallView(t, ctx)
+	require.NotEqual(t, rnd, uint64(0))
+
+	_ = ctxCluster
+}
+
+func testAPIPostRequest(t *testing.T, ctx *wasmclient.WasmClientContext) {
+	// generate new random value
+	f := testwasmlib.ScFuncs.Random(ctx)
+	f.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	ctx.WaitRequest()
+	require.NoError(t, ctx.Err)
+}
+
+func testAPICallView(t *testing.T, ctx *wasmclient.WasmClientContext) uint64 {
+	v := testwasmlib.ScFuncs.GetRandom(ctx)
+	v.Func.Call()
+	require.NoError(t, ctx.Err)
+	rnd := v.Results.Random().Value()
+	fmt.Println("Random: ", rnd)
+	return rnd
+}
+
+func TestAPIErrorHandling(t *testing.T) {
+	ctxCluster := setupClient(t)
+
+	ctx := setupClientLib(t)
+	require.NoError(t, ctx.Err)
+
+	testAPIErrorHandling(t, ctx)
+
+	_ = ctxCluster
+}
+
+func testAPIErrorHandling(t *testing.T, ctx *wasmclient.WasmClientContext) {
+	// missing mandatory string parameter
+	v := testwasmlib.ScFuncs.CheckString(ctx)
+	v.Func.Call()
+	require.Error(t, ctx.Err)
+	fmt.Println("Error: " + ctx.Err.Error())
+
+	// // wait for nonexisting request id (time out)
+	// ctx.WaitRequest(wasmtypes.RequestIDFromBytes(nil))
+	// require.Error(t, ctx.Err)
+	// fmt.Println("Error: " + ctx.Err.Error())
+
+	// sign with wrong wallet
+	seed := cryptolib.NewSeedFromBytes(wasmtypes.BytesFromString(mySeed))
+	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(1))
+	ctx.SignRequests(wallet)
+	f := testwasmlib.ScFuncs.Random(ctx)
+	f.Func.Post()
+	require.Error(t, ctx.Err)
+	fmt.Println("Error: " + ctx.Err.Error())
+
+	// wait for request on wrong chain
+	chainBytes := wasmtypes.ChainIDToBytes(ctx.CurrentChainID())
+	chainBytes[2]++
+	badChainID := wasmtypes.ChainIDToString(wasmtypes.ChainIDFromBytes(chainBytes))
+
+	svc := wasmclient.NewWasmClientService(waspAPI)
+	ctx.Err = svc.SetCurrentChainID(badChainID)
+	require.NoError(t, ctx.Err)
+	ctx = wasmclient.NewWasmClientContext(svc, testwasmlib.ScName)
+	require.NoError(t, ctx.Err)
+	ctx.SignRequests(wallet)
+	require.NoError(t, ctx.Err)
+	ctx.WaitRequest(wasmtypes.RequestIDFromBytes(nil))
+	require.Error(t, ctx.Err)
+	fmt.Println("Error: " + ctx.Err.Error())
+}
+
+func TestAPIAsyncInvoke(t *testing.T) {
+	t.SkipNow()
+	ctxCluster := setupClient(t)
+
+	ctx := setupClientLib(t)
+
+	done1 := make(chan bool)
+	go func() {
+		rnd := testAPICallView(t, ctx)
+		require.Equal(t, rnd, uint64(0))
+		done1 <- true
+	}()
+	done2 := make(chan bool)
+	go func() {
+		testAPIErrorHandling(t, ctx)
+		done2 <- true
+	}()
+	fmt.Println("APIWAIT WAIT")
+	done3 := make(chan bool)
+	go func() {
+		rnd := testAPICallView(t, ctx)
+		require.Equal(t, rnd, uint64(0))
+		done3 <- true
+	}()
+	<-done1
+	fmt.Println("APIWAIT DONE")
+	<-done2
+	fmt.Println("APIWAIT DONE")
+	<-done3
+	fmt.Println("APIWAIT DONE")
+
+	_ = ctxCluster
 }
