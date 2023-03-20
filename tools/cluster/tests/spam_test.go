@@ -175,6 +175,7 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 // executed in cluster_test.go
 func testSpamCallViewWasm(t *testing.T, env *ChainEnv) {
 	testutil.RunHeavy(t)
+	env.deployNativeIncCounterSC(0)
 
 	wallet, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)

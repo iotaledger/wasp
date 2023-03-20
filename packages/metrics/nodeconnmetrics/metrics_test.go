@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -93,7 +92,6 @@ func TestMessageMetrics(t *testing.T) {
 	ncm := New()
 	cncm1 := ncm.NewMessagesMetrics(isc.RandomChainID())
 	cncm2 := ncm.NewMessagesMetrics(isc.RandomChainID())
-	ncm.Register(prometheus.NewRegistry())
 
 	// IN State output
 	outputID1 := &InStateOutput{OutputID: iotago.OutputID{1}}

@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -66,6 +67,8 @@ type Chains struct {
 	cleanupFunc context.CancelFunc
 
 	shutdownCoordinator *shutdown.Coordinator
+	chainMetrics        *metrics.ChainMetrics
+	blockWALMetrics     *metrics.BlockWALMetrics
 }
 
 type activeChain struct {
@@ -91,6 +94,8 @@ func New(
 	consensusStateRegistry cmtLog.ConsensusStateRegistry,
 	chainListener chain.ChainListener,
 	shutdownCoordinator *shutdown.Coordinator,
+	chainMetrics *metrics.ChainMetrics,
+	blockWALMetrics *metrics.BlockWALMetrics,
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
@@ -111,6 +116,8 @@ func New(
 		chainListener:                    nil, // See bellow.
 		consensusStateRegistry:           consensusStateRegistry,
 		shutdownCoordinator:              shutdownCoordinator,
+		chainMetrics:                     chainMetrics,
+		blockWALMetrics:                  blockWALMetrics,
 	}
 	ret.chainListener = NewChainsListener(chainListener, ret.chainAccessUpdatedCB)
 	return ret
@@ -223,7 +230,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	chainLog := c.log.Named(chainID.ShortString())
 	var chainWAL smGPAUtils.BlockWAL
 	if c.walEnabled {
-		chainWAL, err = smGPAUtils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, smGPAUtils.NewBlockWALMetrics())
+		chainWAL, err = smGPAUtils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, metrics.NewBlockWALMetric(c.blockWALMetrics, chainID))
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}
@@ -245,6 +252,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.chainListener,
 		chainRecord.AccessNodes,
 		c.networkProvider,
+		metrics.NewChainMetric(c.chainMetrics, chainID),
 		c.shutdownCoordinator.Nested(fmt.Sprintf("Chain-%s", chainID.AsAddress().String())),
 		chainLog,
 	)
@@ -286,6 +294,7 @@ func (c *Chains) Deactivate(chainID isc.ChainID) error {
 	ch.cancelFunc()
 	c.accessMgr.ChainDismissed(chainID)
 	delete(c.allChains, chainID)
+
 	c.log.Debugf("chain has been deactivated: %v = %s", chainID.ShortString(), chainID.String())
 	return nil
 }

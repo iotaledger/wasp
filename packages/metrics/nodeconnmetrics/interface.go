@@ -56,6 +56,6 @@ type NodeConnectionMetrics interface {
 	SetRegistered(isc.ChainID)
 	SetUnregistered(isc.ChainID)
 	GetRegistered() []isc.ChainID
-	Register(registry *prometheus.Registry)
+	PrometheusCollectors() []prometheus.Collector
 	NewMessagesMetrics(isc.ChainID) NodeConnectionMessagesMetrics
 }
