@@ -75,7 +75,11 @@ func MustGetGasLimits(state kv.KVStoreReader) *gas.Limits {
 }
 
 func GetGasLimits(state kv.KVStoreReader) (*gas.Limits, error) {
-	return gas.LimitsFromBytes(state.MustGet(VarGasLimitsBytes))
+	data := state.MustGet(VarGasLimitsBytes)
+	if data == nil {
+		return gas.LimitsDefault, nil
+	}
+	return gas.LimitsFromBytes(data)
 }
 
 func SetCustomMetadata(state kv.KVStore, data []byte) {
