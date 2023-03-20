@@ -67,7 +67,7 @@ func MustGetGasFeePolicy(state kv.KVStoreReader) *gas.FeePolicy {
 }
 
 func MustGetGasLimits(state kv.KVStoreReader) *gas.Limits {
-	gl, err := gas.LimitsFromBytes(state.MustGet(VarGasLimitsBytes))
+	gl, err := GetGasLimits(state)
 	if err != nil {
 		panic(err)
 	}
