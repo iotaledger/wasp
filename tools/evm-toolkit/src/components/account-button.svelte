@@ -1,27 +1,28 @@
 <script lang="ts">
+  import { Dot } from '$components';
+
   export let disabled: boolean = false;
   export let onClick: () => void = () => {};
   export let title: string = '';
 </script>
 
-<button class="dot-primary" on:click={onClick} {disabled}>{title}</button>
+<button on:click={onClick} {disabled}>
+  <div><Dot /></div>
+  <span>
+    {title}
+  </span>
+</button>
 
 <style lang="scss">
   button {
     @apply rounded-md;
-    cursor: pointer;
-    width: 100%;
+    @apply cursor-pointer;
+    @apply w-full flex flex-row space-x-2 items-center justify-center;
     @apply bg-shimmer-background;
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 24px;
+    @apply text-shimmer-text-primary;
+    @apply font-semibold;
+    @apply text-center;
     @apply text-white;
-    padding: 6px 12px 6px 36px;
-    height: 48px;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    border: none;
-    position: relative;
+    @apply p-3;
   }
 </style>

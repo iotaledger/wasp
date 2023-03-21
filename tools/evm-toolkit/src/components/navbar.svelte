@@ -21,7 +21,7 @@
 <nav class="flex justify-between items center">
   <image-wrapper class="h-full flex items-center">
     <img src="/logo.svg" alt="Shimmer logo" />
-    <span class="text-24 ml-4 text-white font-semibold">shimmer</span>
+    <h1 class="text-md md:text-2xl ml-4 text-white font-semibold">shimmer</h1>
   </image-wrapper>
   <items-wrapper class="flex items-center space-x-4 mr-4">
     <img

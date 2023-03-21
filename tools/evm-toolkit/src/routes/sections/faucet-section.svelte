@@ -86,6 +86,7 @@
 
     <Button
       title="Send funds"
+      busyMessage="Sending funds..."
       disabled={!enableSendFunds}
       onClick={sendFunds}
       busy={isSendingFunds}
