@@ -62,6 +62,8 @@ services:
       - "traefik.http.middlewares.rewrite-faucet-2.stripprefixregex.regex=/[a-z0-9_]+"
     cap_drop:
       - ALL
+    volumes:
+      - hornet-nest-db:/app
 
   ########
   # WASP #
@@ -102,11 +104,19 @@ services:
     cap_drop:
       - ALL
     volumes:
-      - wasp-db:/waspdb
+      - wasp-db:/app/waspdb
     command:
       - "--webapi.auth.scheme=none"
       - "--inx.address=hornet-nest:9029"
       - "--logger.level=debug"
+      - "--db.chainState.path=/app/waspdb/chains/data"
+      - "--p2p.identity.filePath=/app/waspdb/identity/identity.key"
+      - "--p2p.db.path=/app/waspdb/p2pstore"
+      - "--registries.chains.filePath=/app/waspdb/chains/chain_registry.json"
+      - "--registries.dkShares.path=/app/waspdb/dkshares"
+      - "--registries.trustedPeers.filePath=/app/waspdb/trusted_peers.json"
+      - "--registries.consensusState.path=/app/waspdb/chains/consensus"
+      - "--wal.path=/app/waspdb/wal"
 
   ##################
   # WASP Dashboard #
@@ -136,4 +146,8 @@ services:
 
 volumes:
   wasp-db:
+    external: true
     name: wasp-db
+  hornet-nest-db:
+    external: true
+    name: hornet-nest-db
