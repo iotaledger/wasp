@@ -51,9 +51,11 @@ func NewBlockFactory(t require.TestingT) *BlockFactory {
 	originCommitment := origin.L1Commitment(nil, 0)
 	originOutput := isc.NewAliasOutputWithID(aliasOutput0, aliasOutput0ID)
 	aliasOutputs[originCommitment.BlockHash()] = originOutput
+	chainStore := state.NewStore(mapdb.NewMapDB())
+	origin.InitChain(chainStore, nil, 0)
 	return &BlockFactory{
 		t:                   t,
-		store:               origin.InitChain(state.NewStore(mapdb.NewMapDB()), nil, 0),
+		store:               chainStore,
 		chainID:             chainID,
 		lastBlockCommitment: origin.L1Commitment(nil, 0),
 		aliasOutputs:        aliasOutputs,

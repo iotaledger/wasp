@@ -163,7 +163,8 @@ func testConsBasic(t *testing.T, n, f int) {
 		nodeLog := log.Named(nid.ShortString())
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
-		chainStates[nid] = origin.InitChain(state.NewStore(mapdb.NewMapDB()),
+		chainStates[nid] = state.NewStore(mapdb.NewMapDB())
+		origin.InitChain(chainStates[nid],
 			dict.Dict{
 				origin.ParamChainOwner: isc.NewAgentID(originator.Address()).Bytes(),
 			},
@@ -364,8 +365,9 @@ func testChained(t *testing.T, n, f, b int) {
 	}
 	testNodeStates := map[gpa.NodeID]state.Store{}
 	for _, nid := range nodeIDs {
-		testNodeStates[nid] = origin.InitChain(
-			state.NewStore(mapdb.NewMapDB()),
+		testNodeStates[nid] = state.NewStore(mapdb.NewMapDB())
+		origin.InitChain(
+			testNodeStates[nid],
 			dict.Dict{
 				origin.ParamChainOwner: isc.NewAgentID(originator.Address()).Bytes(),
 			},

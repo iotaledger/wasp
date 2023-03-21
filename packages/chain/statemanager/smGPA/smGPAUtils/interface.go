@@ -16,6 +16,7 @@ type BlockWAL interface {
 	Write(state.Block) error
 	Contains(state.BlockHash) bool
 	Read(state.BlockHash) (state.Block, error)
+	ReadAllByStateIndex(cb func(stateIndex uint32, block state.Block) bool) error
 }
 
 type TimeProvider interface {

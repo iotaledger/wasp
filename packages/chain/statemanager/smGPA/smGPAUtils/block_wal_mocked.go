@@ -49,3 +49,7 @@ func (mbwT *mockedBlockWAL) Delete(blockHash state.BlockHash) bool {
 	}
 	return contains
 }
+
+func (mbwT *mockedBlockWAL) ReadAllByStateIndex(cb func(stateIndex uint32, block state.Block) bool) error {
+	return nil // Not needed in this mock.
+}

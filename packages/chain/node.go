@@ -159,6 +159,7 @@ type chainNodeImpl struct {
 	awaitReceiptCnfCh   chan *awaitReceiptReq
 	stateTrackerAct     StateTracker
 	stateTrackerCnf     StateTracker
+	blockWAL            smGPAUtils.BlockWAL
 	//
 	// Information for other components.
 	listener               ChainListener          // Object expecting event notifications.
@@ -282,6 +283,7 @@ func New(
 		awaitReceiptCnfCh:      make(chan *awaitReceiptReq, 1),
 		stateTrackerAct:        nil, // Set bellow.
 		stateTrackerCnf:        nil, // Set bellow.
+		blockWAL:               blockWAL,
 		listener:               listener,
 		accessLock:             &sync.RWMutex{},
 		activeCommitteeDKShare: nil,
@@ -301,6 +303,7 @@ func New(
 		shutdownCoordinator:    shutdownCoordinator,
 		log:                    log,
 	}
+	cni.tryRecoverStoreFromWAL(chainStore, blockWAL)
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
 	//
 	// Create sub-components.
@@ -587,7 +590,10 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
 	cni.log.Debugf("handleAliasOutput: %v", aliasOutput)
 	if aliasOutput.GetStateIndex() == 0 {
-		origin.InitChainByAliasOutput(cni.chainStore, aliasOutput)
+		initBlock := origin.InitChainByAliasOutput(cni.chainStore, aliasOutput)
+		if err := cni.blockWAL.Write(initBlock); err != nil {
+			panic(fmt.Errorf("cannot write initial block to the WAL: %w", err))
+		}
 	}
 
 	cni.stateTrackerCnf.TrackAliasOutput(aliasOutput, true)
@@ -1057,6 +1063,46 @@ func (cni *chainNodeImpl) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnect
 
 func (cni *chainNodeImpl) GetConsensusWorkflowStatus() ConsensusWorkflowStatus {
 	return &consensusWorkflowStatusImpl{}
+}
+
+func (cni *chainNodeImpl) tryRecoverStoreFromWAL(chainStore state.Store, chainWAL smGPAUtils.BlockWAL) {
+	defer func() {
+		if r := recover(); r != nil {
+			// Don't fail, if this crashes for some reason, that's an optional step.
+			cni.log.Warnf("TryRecoverStoreFromWAL: Failed to populate chain store from WAL: %v", r)
+		}
+	}()
+	//
+	// Check, if store is empty.
+	if _, err := chainStore.BlockByIndex(0); err == nil {
+		cni.log.Infof("TryRecoverStoreFromWAL: Skipping, because the state is not empty.")
+		return // Store is not empty, so we skip this.
+	}
+	cni.log.Infof("TryRecoverStoreFromWAL: Chain store is empty, will try to load blocks from the WAL.")
+	//
+	// Load all the existing blocks from the WAL.
+	blocksAdded := 0
+	err := chainWAL.ReadAllByStateIndex(func(stateIndex uint32, block state.Block) bool {
+		cni.log.Debugf("TryRecoverStoreFromWAL: Adding a block to the store, stateIndex=%v, l1Commitment=%v, previousL1Commitment=%v", block.StateIndex(), block.L1Commitment(), block.PreviousL1Commitment())
+		var stateDraft state.StateDraft
+		if block.StateIndex() == 0 {
+			stateDraft = chainStore.NewOriginStateDraft()
+		} else {
+			var stateErr error
+			stateDraft, stateErr = chainStore.NewEmptyStateDraft(block.PreviousL1Commitment())
+			if stateErr != nil {
+				panic(fmt.Errorf("cannot create new state draft for previousL1Commitment=%v: %w", block.PreviousL1Commitment(), stateErr))
+			}
+		}
+		block.Mutations().ApplyTo(stateDraft)
+		chainStore.Commit(stateDraft)
+		blocksAdded++
+		return true
+	})
+	if err != nil {
+		panic(fmt.Errorf("failed to iterate over WAL blocks: %w", err))
+	}
+	cni.log.Infof("TryRecoverStoreFromWAL: Done, added %v blocks.", blocksAdded)
 }
 
 type consensusPipeMetricsImpl struct{}                                        // TODO: Fake data, for now. Review metrics in general.

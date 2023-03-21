@@ -19,11 +19,13 @@ import (
 )
 
 func TestOrigin(t *testing.T) {
-	store := origin.InitChain(state.NewStore(mapdb.NewMapDB()), nil, 0)
 	l1commitment := origin.L1Commitment(nil, 0)
-	block, err := store.LatestBlock()
+	store := state.NewStore(mapdb.NewMapDB())
+	initBlock := origin.InitChain(store, nil, 0)
+	latestBlock, err := store.LatestBlock()
 	require.NoError(t, err)
-	require.True(t, l1commitment.Equals(block.L1Commitment()))
+	require.True(t, l1commitment.Equals(initBlock.L1Commitment()))
+	require.True(t, l1commitment.Equals(latestBlock.L1Commitment()))
 }
 
 func TestCreateOrigin(t *testing.T) {
