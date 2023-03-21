@@ -18,7 +18,8 @@ import (
 
 func TestSetThenGet(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := origin.InitChain(state.NewStore(db), nil, 0)
+	cs := state.NewStore(db)
+	origin.InitChain(cs, nil, 0)
 	latest, err := cs.LatestBlock()
 	assert.NoError(t, err)
 	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
@@ -81,7 +82,8 @@ func TestSetThenGet(t *testing.T) {
 
 func TestIterate(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := origin.InitChain(state.NewStore(db), nil, 0)
+	cs := state.NewStore(db)
+	origin.InitChain(cs, nil, 0)
 	latest, err := cs.LatestBlock()
 	assert.NoError(t, err)
 	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
@@ -113,7 +115,8 @@ func TestIterate(t *testing.T) {
 
 func TestVmctxStateDeletion(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := origin.InitChain(state.NewStore(db), nil, 0)
+	cs := state.NewStore(db)
+	origin.InitChain(cs, nil, 0)
 
 	foo := kv.Key("foo")
 	{

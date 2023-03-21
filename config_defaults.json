@@ -84,6 +84,7 @@
     "bindAddress": "0.0.0.0:2112",
     "nodeMetrics": true,
     "nodeConnMetrics": true,
+    "chainMetrics": true,
     "blockWALMetrics": true,
     "restAPIMetrics": true,
     "goMetrics": true,

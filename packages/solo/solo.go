@@ -302,7 +302,8 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 	kvStore, err := env.chainStateDatabaseManager.ChainStateKVStore(chainID)
 	require.NoError(env.T, err)
 	originAOMinSD := parameters.L1().Protocol.RentStructure.MinRent(originAO)
-	store := origin.InitChain(state.NewStore(kvStore), originParams, originAO.Amount-originAOMinSD)
+	store := state.NewStore(kvStore)
+	origin.InitChain(store, originParams, originAO.Amount-originAOMinSD)
 
 	{
 		block, err2 := store.LatestBlock()

@@ -146,7 +146,7 @@ type mempoolImpl struct {
 	netPeerPubs                    map[gpa.NodeID]*cryptolib.PublicKey
 	net                            peering.NetworkProvider
 	log                            *logger.Logger
-	metrics                        metrics.MempoolMetrics
+	metrics                        metrics.IChainMempoolMetrics
 	listener                       ChainListener
 }
 
@@ -192,7 +192,7 @@ func New(
 	nodeIdentity *cryptolib.KeyPair,
 	net peering.NetworkProvider,
 	log *logger.Logger,
-	metrics metrics.MempoolMetrics,
+	metrics metrics.IChainMempoolMetrics,
 	listener ChainListener,
 ) Mempool {
 	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("Mempool")) // ChainID × Mempool

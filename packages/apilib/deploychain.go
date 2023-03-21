@@ -95,7 +95,7 @@ func CreateChainOrigin(
 		originator,
 		stateController,
 		governanceController,
-		0,
+		10*isc.Million,
 		initParams,
 		utxoMap,
 		utxoIDsFromUtxoMap(utxoMap),

@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/shutdown"
@@ -63,9 +63,10 @@ type Chains struct {
 	allChains map[isc.ChainID]*activeChain
 	accessMgr accessMgr.AccessMgr
 
-	cleanupFunc context.CancelFunc
-
+	cleanupFunc         context.CancelFunc
 	shutdownCoordinator *shutdown.Coordinator
+
+	chainMetricsProvider *metrics.ChainMetricsProvider
 }
 
 type activeChain struct {
@@ -91,6 +92,7 @@ func New(
 	consensusStateRegistry cmtLog.ConsensusStateRegistry,
 	chainListener chain.ChainListener,
 	shutdownCoordinator *shutdown.Coordinator,
+	chainMetricsProvider *metrics.ChainMetricsProvider,
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
@@ -111,6 +113,7 @@ func New(
 		chainListener:                    nil, // See bellow.
 		consensusStateRegistry:           consensusStateRegistry,
 		shutdownCoordinator:              shutdownCoordinator,
+		chainMetricsProvider:             chainMetricsProvider,
 	}
 	ret.chainListener = NewChainsListener(chainListener, ret.chainAccessUpdatedCB)
 	return ret
@@ -219,11 +222,13 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		return fmt.Errorf("error when creating chain KV store: %w", err)
 	}
 
+	chainMetrics := c.chainMetricsProvider.NewChainMetrics(chainID)
+
 	// Initialize WAL
 	chainLog := c.log.Named(chainID.ShortString())
 	var chainWAL smGPAUtils.BlockWAL
 	if c.walEnabled {
-		chainWAL, err = smGPAUtils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, smGPAUtils.NewBlockWALMetrics())
+		chainWAL, err = smGPAUtils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, chainMetrics)
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}
@@ -234,6 +239,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
 	newChain, err := chain.New(
 		chainCtx,
+		chainLog,
 		chainID,
 		state.NewStore(chainKVStore),
 		c.nodeConnection,
@@ -245,8 +251,10 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.chainListener,
 		chainRecord.AccessNodes,
 		c.networkProvider,
+		chainMetrics,
 		c.shutdownCoordinator.Nested(fmt.Sprintf("Chain-%s", chainID.AsAddress().String())),
-		chainLog,
+		func() { c.chainMetricsProvider.RegisterChain(chainID) },
+		func() { c.chainMetricsProvider.UnregisterChain(chainID) },
 	)
 	if err != nil {
 		chainCancel()
@@ -286,6 +294,7 @@ func (c *Chains) Deactivate(chainID isc.ChainID) error {
 	ch.cancelFunc()
 	c.accessMgr.ChainDismissed(chainID)
 	delete(c.allChains, chainID)
+
 	c.log.Debugf("chain has been deactivated: %v = %s", chainID.ShortString(), chainID.String())
 	return nil
 }
@@ -301,8 +310,4 @@ func (c *Chains) Get(chainID isc.ChainID) chain.Chain {
 		return nil
 	}
 	return ret.chain
-}
-
-func (c *Chains) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
-	return c.nodeConnection.GetMetrics()
 }

@@ -24,8 +24,8 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 )
 
-func TestBasic(t *testing.T) {
-	t.Skip() // flaky
+func TestChainMgrBasic(t *testing.T) {
+	t.Skip("flaky")
 	type test struct {
 		n int
 		f int
@@ -42,12 +42,12 @@ func TestBasic(t *testing.T) {
 		tst := tests[i]
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v", tst.n, tst.f),
-			func(tt *testing.T) { testBasic(tt, tst.n, tst.f) },
+			func(tt *testing.T) { testChainMgrBasic(tt, tst.n, tst.f) },
 		)
 	}
 }
 
-func testBasic(t *testing.T, n, f int) {
+func testChainMgrBasic(t *testing.T, n, f int) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	//
@@ -104,13 +104,14 @@ func testBasic(t *testing.T, n, f int) {
 	step2AO, step2TX := tcl.FakeTX(originAO, cmtAddrA)
 	for nid := range nodes {
 		consReq := nodes[nid].Output().(*chainMgr.Output).NeedConsensus()
-		fake2ST := origin.InitChain(state.NewStore(mapdb.NewMapDB()), nil, 0).NewOriginStateDraft()
+		fake2ST := state.NewStore(mapdb.NewMapDB())
+		origin.InitChain(fake2ST, nil, 0)
 		tc.WithInput(nid, chainMgr.NewInputConsensusOutputDone( // TODO: Consider the SKIP cases as well.
 			*cmtAddrA.(*iotago.Ed25519Address),
 			consReq.LogIndex, consReq.BaseAliasOutput.OutputID(),
 			&cons.Result{
 				Transaction:     step2TX,
-				StateDraft:      fake2ST,
+				StateDraft:      fake2ST.NewOriginStateDraft(),
 				BaseAliasOutput: consReq.BaseAliasOutput.OutputID(),
 				NextAliasOutput: step2AO,
 			},

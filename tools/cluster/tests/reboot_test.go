@@ -78,7 +78,7 @@ func TestReboot(t *testing.T) {
 	// //-------
 
 	// restart the nodes
-	err = env.Clu.RestartNodes(0, 1, 2, 3)
+	err = env.Clu.RestartNodes(true, 0, 1, 2, 3)
 	require.NoError(t, err)
 
 	// after rebooting, the chain should resume processing requests without issues
@@ -156,7 +156,7 @@ func TestReboot2(t *testing.T) {
 	// //-------
 
 	// restart the nodes
-	err = env.Clu.RestartNodes(0, 1, 2, 3)
+	err = env.Clu.RestartNodes(true, 0, 1, 2, 3)
 	require.NoError(t, err)
 
 	// after rebooting, the chain should resume processing requests without issues
@@ -245,7 +245,7 @@ func TestRebootN3Single(t *testing.T) {
 
 	// Restart all nodes, one by one.
 	for _, nodeIndex := range allNodes {
-		require.NoError(t, env.Clu.RestartNodes(nodeIndex))
+		require.NoError(t, env.Clu.RestartNodes(true, nodeIndex))
 		icc.MustIncBoth(nodeIndex%2 == 1)
 		tm.Step(fmt.Sprintf("incCounter-%v", nodeIndex))
 	}
@@ -273,7 +273,7 @@ func TestRebootN3TwoNodes(t *testing.T) {
 	// Restart all nodes, one by one.
 	for _, nodeIndex := range allNodes {
 		otherTwo := lo.Filter(allNodes, func(ni int, _ int) bool { return ni != nodeIndex })
-		require.NoError(t, env.Clu.RestartNodes(otherTwo...))
+		require.NoError(t, env.Clu.RestartNodes(true, otherTwo...))
 		icc.MustIncBoth(nodeIndex%2 == 1)
 		tm.Step(fmt.Sprintf("incCounter-%v", nodeIndex))
 	}
@@ -329,7 +329,7 @@ func TestRebootDuringTasks(t *testing.T) {
 	restart := func(indexes ...int) {
 		t.Logf("restart, indexes=%v", indexes)
 		// restart the nodes
-		err := env.Clu.RestartNodes(indexes...)
+		err := env.Clu.RestartNodes(true, indexes...)
 		require.NoError(t, err)
 		time.Sleep(restartDelay)
 
@@ -370,4 +370,51 @@ func TestRebootDuringTasks(t *testing.T) {
 	for _, restartIndexes := range restartCases {
 		restart(restartIndexes...)
 	}
+}
+
+func TestRebootRecoverFromWAL(t *testing.T) {
+	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
+	client := env.createNewClient()
+
+	tx, err := client.PostRequest(inccounter.FuncIncCounter.Name)
+	require.NoError(t, err)
+
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, 10*time.Second)
+	require.NoError(t, err)
+
+	env.expectCounter(nativeIncCounterSCHname, 1)
+
+	req, err := client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
+	require.NoError(t, err)
+
+	_, _, err = env.Clu.WaspClient(0).RequestsApi.
+		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
+		TimeoutSeconds(10).
+		Execute()
+	require.NoError(t, err)
+
+	env.expectCounter(nativeIncCounterSCHname, 2)
+
+	// restart the nodes, delete the DB
+	err = env.Clu.RestartNodes(false, 0, 1, 2, 3)
+	require.NoError(t, err)
+
+	// after rebooting, the chain should resume processing requests without issues
+	tx, err = client.PostRequest(inccounter.FuncIncCounter.Name)
+	require.NoError(t, err)
+
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, 10*time.Second)
+	require.NoError(t, err)
+	env.expectCounter(nativeIncCounterSCHname, 3)
+
+	// ensure off-ledger requests are still working
+	req, err = client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
+	require.NoError(t, err)
+
+	_, _, err = env.Clu.WaspClient(0).RequestsApi.
+		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
+		TimeoutSeconds(10).
+		Execute()
+	require.NoError(t, err)
+	env.expectCounter(nativeIncCounterSCHname, 4)
 }
