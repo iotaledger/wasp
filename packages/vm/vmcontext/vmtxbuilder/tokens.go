@@ -6,9 +6,8 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
@@ -16,11 +15,10 @@ import (
 
 // nativeTokenBalance represents on-chain account of the specific native token
 type nativeTokenBalance struct {
-	nativeTokenID         iotago.NativeTokenID
-	outputID              iotago.OutputID // if in != nil, otherwise zeroOutputID
-	storageDepositCharged bool
-	in                    *iotago.BasicOutput // if nil it means output does not exist, this is new account for the token_id
-	out                   *iotago.BasicOutput // current balance of the token_id on the chain
+	nativeTokenID iotago.NativeTokenID
+	outputID      iotago.OutputID     // if in != nil, otherwise zeroOutputID
+	in            *iotago.BasicOutput // if nil it means output does not exist, this is new account for the token_id
+	out           *iotago.BasicOutput // current balance of the token_id on the chain
 }
 
 func (n *nativeTokenBalance) Clone() *nativeTokenBalance {
@@ -31,11 +29,10 @@ func (n *nativeTokenBalance) Clone() *nativeTokenBalance {
 	copy(outputID[:], n.outputID[:])
 
 	return &nativeTokenBalance{
-		nativeTokenID:         nativeTokenID,
-		outputID:              outputID,
-		storageDepositCharged: n.storageDepositCharged,
-		in:                    cloneInternalBasicOutputOrNil(n.in),
-		out:                   cloneInternalBasicOutputOrNil(n.out),
+		nativeTokenID: nativeTokenID,
+		outputID:      outputID,
+		in:            cloneInternalBasicOutputOrNil(n.in),
+		out:           cloneInternalBasicOutputOrNil(n.out),
 	}
 }
 
@@ -58,19 +55,33 @@ func (n *nativeTokenBalance) requiresInput() bool {
 		// value didn't change
 		return false
 	}
-	if n.in == nil {
-		// there's no input
-		return false
-	}
-	return true
+	return n.in != nil
 }
 
 func (n *nativeTokenBalance) getOutValue() *big.Int {
 	return n.out.NativeTokens[0].Amount
 }
 
-func (n *nativeTokenBalance) setOutValue(v *big.Int) {
-	n.out.NativeTokens[0].Amount = v
+func (n *nativeTokenBalance) add(delta *big.Int) *nativeTokenBalance {
+	amount := new(big.Int).Add(n.getOutValue(), delta)
+	if amount.Sign() < 0 {
+		panic(fmt.Errorf("(id: %s, delta: %d): %v",
+			n.nativeTokenID, delta, vm.ErrNotEnoughNativeAssetBalance))
+	}
+	if amount.Cmp(util.MaxUint256) > 0 {
+		panic(vm.ErrOverflow)
+	}
+	n.out.NativeTokens[0].Amount = amount
+	return n
+}
+
+// updateMinSD uptates the resulting output to have the minimum SD
+func (n *nativeTokenBalance) updateMinSD() {
+	minSD := parameters.L1().Protocol.RentStructure.MinRent(n.out)
+	if minSD > n.out.Amount {
+		// sd for internal output can only ever increase
+		n.out.Amount = minSD
+	}
 }
 
 func (n *nativeTokenBalance) identicalInOut() bool {
@@ -107,8 +118,8 @@ func cloneInternalBasicOutputOrNil(o *iotago.BasicOutput) *iotago.BasicOutput {
 }
 
 func (txb *AnchorTransactionBuilder) newInternalTokenOutput(aliasID iotago.AliasID, nativeTokenID iotago.NativeTokenID) *iotago.BasicOutput {
-	return &iotago.BasicOutput{
-		Amount: txb.storageDepositAssumption.NativeTokenOutput,
+	out := &iotago.BasicOutput{
+		Amount: 0,
 		NativeTokens: iotago.NativeTokens{{
 			ID:     nativeTokenID,
 			Amount: big.NewInt(0),
@@ -122,6 +133,7 @@ func (txb *AnchorTransactionBuilder) newInternalTokenOutput(aliasID iotago.Alias
 			},
 		},
 	}
+	return out
 }
 
 func (txb *AnchorTransactionBuilder) nativeTokenOutputsSorted() []*nativeTokenBalance {
@@ -167,36 +179,27 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(nativeTokenID io
 	if util.IsZeroBigInt(delta) {
 		return 0
 	}
-	nt := txb.ensureNativeTokenBalance(nativeTokenID)
-	tmp := new(big.Int).Add(nt.getOutValue(), delta)
-	if tmp.Sign() < 0 {
-		panic(fmt.Errorf("addNativeTokenBalanceDelta (id: %s, delta: %d): %v",
-			nativeTokenID, delta, vm.ErrNotEnoughNativeAssetBalance))
-	}
-	if tmp.Cmp(abi.MaxUint256) > 0 {
-		panic(fmt.Errorf("addNativeTokenBalanceDelta: %v", vm.ErrOverflow))
-	}
-	nt.setOutValue(tmp)
-	switch {
-	case nt.identicalInOut():
+	nt := txb.ensureNativeTokenBalance(nativeTokenID).add(delta)
+
+	if nt.identicalInOut() {
 		return 0
-	case nt.storageDepositCharged && !nt.producesOutput():
-		// this is an old token in the on-chain ledger. Now it disappears and storage deposit
-		// is released and delta of anchor is positive
-		nt.storageDepositCharged = false
-		txb.addDeltaBaseTokensToTotal(txb.storageDepositAssumption.NativeTokenOutput)
-		return int64(txb.storageDepositAssumption.NativeTokenOutput)
-	case !nt.storageDepositCharged && nt.producesOutput():
-		// this is a new token in the on-chain ledger
-		// There's a need for additional storage deposit on the respective UTXO, so delta for the anchor is negative
-		nt.storageDepositCharged = true
-		if txb.storageDepositAssumption.NativeTokenOutput > txb.totalBaseTokensInL2Accounts {
-			panic(vmexceptions.ErrNotEnoughFundsForInternalStorageDeposit)
-		}
-		txb.subDeltaBaseTokensFromTotal(txb.storageDepositAssumption.NativeTokenOutput)
-		return -int64(txb.storageDepositAssumption.NativeTokenOutput)
 	}
-	return 0
+
+	if util.IsZeroBigInt(nt.getOutValue()) {
+		// 0 native tokens on the output side
+		if nt.in == nil {
+			// in this case the internar accounting output that would be created is not needed anymore, reiburse the SD
+			return int64(nt.out.Amount)
+		}
+		return int64(nt.in.Amount)
+	}
+
+	// update the SD in case the storage deposit has changed from the last time this output was used
+	oldSD := nt.out.Amount
+	nt.updateMinSD()
+	updatedSD := nt.out.Amount
+
+	return int64(oldSD) - int64(updatedSD)
 }
 
 // ensureNativeTokenBalance makes sure that cached output is in the builder
@@ -207,7 +210,7 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(nativeTokenID iota
 		return nativeTokenBalance
 	}
 
-	basicOutputIn, outputID := txb.loadNativeTokenOutputFunc(nativeTokenID) // output will be nil if no such token id accounted yet
+	basicOutputIn, outputID := txb.accountsView.NativeTokenOutput(nativeTokenID) // output will be nil if no such token id accounted yet
 	if basicOutputIn != nil {
 		if txb.InputsAreFull() {
 			panic(vmexceptions.ErrInputLimitExceeded)
@@ -225,11 +228,10 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(nativeTokenID iota
 	}
 
 	nativeTokenBalance := &nativeTokenBalance{
-		nativeTokenID:         basicOutputOut.NativeTokens[0].ID,
-		outputID:              outputID,
-		in:                    basicOutputIn,
-		out:                   basicOutputOut,
-		storageDepositCharged: basicOutputIn != nil,
+		nativeTokenID: nativeTokenID,
+		outputID:      outputID,
+		in:            basicOutputIn,
+		out:           basicOutputOut,
 	}
 	txb.balanceNativeTokens[nativeTokenID] = nativeTokenBalance
 	return nativeTokenBalance

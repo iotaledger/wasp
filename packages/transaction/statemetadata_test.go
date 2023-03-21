@@ -1,4 +1,4 @@
-package vmcontext_test
+package transaction_test
 
 import (
 	"reflect"

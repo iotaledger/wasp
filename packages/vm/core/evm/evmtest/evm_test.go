@@ -406,7 +406,7 @@ func TestISCTriggerEvent(t *testing.T) {
 	res, err := iscTest.triggerEvent("Hi from EVM!")
 	require.NoError(t, err)
 	require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
-	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex)
+	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
 	require.NoError(t, err)
 	require.Len(t, ev, 1)
 	require.Contains(t, ev[0], "Hi from EVM!")
@@ -422,7 +422,7 @@ func TestISCTriggerEventThenFail(t *testing.T) {
 		gasLimit: 100_000, // skip estimate gas (which will fail)
 	})
 	require.Error(t, err)
-	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex)
+	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
 	require.NoError(t, err)
 	require.Len(t, ev, 0)
 }
@@ -905,7 +905,7 @@ func TestISCSendWithArgs(t *testing.T) {
 
 	sendBaseTokens := 700 * isc.Million
 
-	blockIndex := env.soloChain.GetLatestBlockInfo().BlockIndex
+	blockIndex := env.soloChain.GetLatestBlockInfo().BlockIndex()
 
 	ret, err := env.ISCMagicSandbox(ethKey).callFn(
 		nil,
@@ -930,7 +930,7 @@ func TestISCSendWithArgs(t *testing.T) {
 
 	// wait a bit for the request going out of EVM to be processed by ISC
 	env.soloChain.WaitUntil(func() bool {
-		return env.soloChain.GetLatestBlockInfo().BlockIndex == blockIndex+2
+		return env.soloChain.GetLatestBlockInfo().BlockIndex() == blockIndex+2
 	})
 
 	// assert inc counter was incremented
@@ -1606,7 +1606,7 @@ func TestStaticCall(t *testing.T) {
 	}}, "testStaticCall")
 	require.NoError(t, err)
 	require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
-	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex)
+	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
 	require.NoError(t, err)
 	require.Len(t, ev, 1)
 	require.Contains(t, ev[0], "non-static")

@@ -172,7 +172,7 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 			return c.handleViewCallError(err, chainID)
 		}
 
-		receipts, err = c.blocklog.GetRequestReceiptsForBlock(chainID, blockInfo.BlockIndex)
+		receipts, err = c.blocklog.GetRequestReceiptsForBlock(chainID, blockInfo.BlockIndex())
 	} else {
 		var blockIndexNum uint64
 		blockIndexNum, err = params.DecodeUInt(e, params.ParamBlockIndex)
@@ -252,7 +252,7 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 			return c.handleViewCallError(err, chainID)
 		}
 
-		events, err = c.blocklog.GetEventsForBlock(chainID, blockInfo.BlockIndex)
+		events, err = c.blocklog.GetEventsForBlock(chainID, blockInfo.BlockIndex())
 		if err != nil {
 			return c.handleViewCallError(err, chainID)
 		}

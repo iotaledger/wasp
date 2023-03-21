@@ -225,12 +225,15 @@ func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Req
 			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...", desc, i, reqNum, reqRef.ID.String())
 
 			await := func(confirmed bool) {
-				rec := <-node.AwaitRequestProcessed(ctx, reqRef.ID, confirmed)
-				if ctx.Err() != nil {
-					te.t.Fatalf("awaitRequestsProcessed (%t) failed: %s, context timeout", confirmed, desc)
-				}
-				if rec.Error != nil {
-					te.t.Fatalf("request processed with an error, %s", rec.Error.Error())
+				select {
+				case rec := <-node.AwaitRequestProcessed(ctx, reqRef.ID, confirmed):
+					if rec.Error != nil {
+						te.t.Fatalf("request processed with an error, %s", rec.Error.Error())
+					}
+				case <-ctx.Done():
+					if ctx.Err() != nil {
+						te.t.Fatalf("awaitRequestsProcessed (%t) failed: %s, context timeout", confirmed, desc)
+					}
 				}
 			}
 
