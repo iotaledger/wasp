@@ -6,6 +6,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -26,124 +27,114 @@ type TransactionTotals struct {
 	SentOutTokenBalances map[iotago.NativeTokenID]*big.Int
 }
 
-func (txb *AnchorTransactionBuilder) sumNativeTokens(totals *TransactionTotals, filter func(ntb *nativeTokenBalance) *big.Int) {
+// sumInputs sums up all assets in inputs
+func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
+	anchorInputSD := parameters.L1().Protocol.RentStructure.MinRent(txb.anchorOutput)
+	totals := &TransactionTotals{
+		NativeTokenBalances:             make(map[iotago.NativeTokenID]*big.Int),
+		TokenCirculatingSupplies:        make(map[iotago.NativeTokenID]*big.Int),
+		TotalBaseTokensInL2Accounts:     txb.anchorOutput.Deposit() - anchorInputSD,
+		TotalBaseTokensInStorageDeposit: anchorInputSD,
+	}
+	// sum over native tokens which require inputs
 	for id, ntb := range txb.balanceNativeTokens {
-		value := filter(ntb)
-		if value == nil {
+		if !ntb.requiresInput() {
 			continue
 		}
 		s, ok := totals.NativeTokenBalances[id]
 		if !ok {
 			s = new(big.Int)
 		}
-		s.Add(s, value)
+		s.Add(s, ntb.in.NativeTokens[0].Amount)
 		totals.NativeTokenBalances[id] = s
 		// sum up storage deposit in inputs of internal UTXOs
-		totals.TotalBaseTokensInStorageDeposit += txb.storageDepositAssumption.NativeTokenOutput
+		totals.TotalBaseTokensInStorageDeposit += ntb.in.Amount
 	}
-}
-
-// sumInputs sums up all assets in inputs
-func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
-	ret := &TransactionTotals{
-		NativeTokenBalances:             make(map[iotago.NativeTokenID]*big.Int),
-		TokenCirculatingSupplies:        make(map[iotago.NativeTokenID]*big.Int),
-		TotalBaseTokensInL2Accounts:     txb.anchorOutput.Deposit() - txb.storageDepositAssumption.AnchorOutput,
-		TotalBaseTokensInStorageDeposit: txb.storageDepositAssumption.AnchorOutput,
-	}
-	// sum over native tokens which require inputs
-	txb.sumNativeTokens(ret, func(ntb *nativeTokenBalance) *big.Int {
-		if ntb.requiresInput() {
-			return ntb.in.NativeTokens[0].Amount
-		}
-		return nil
-	})
 	// sum up all explicitly consumed outputs, except anchor output
 	for _, out := range txb.consumed {
 		a := out.Assets()
-		ret.TotalBaseTokensInL2Accounts += a.BaseTokens
+		totals.TotalBaseTokensInL2Accounts += a.BaseTokens
 		for _, nativeToken := range a.NativeTokens {
-			s, ok := ret.NativeTokenBalances[nativeToken.ID]
+			s, ok := totals.NativeTokenBalances[nativeToken.ID]
 			if !ok {
 				s = new(big.Int)
 			}
 			s.Add(s, nativeToken.Amount)
-			ret.NativeTokenBalances[nativeToken.ID] = s
+			totals.NativeTokenBalances[nativeToken.ID] = s
 		}
 	}
 	for _, f := range txb.invokedFoundries {
 		if f.requiresInput() {
-			ret.TotalBaseTokensInStorageDeposit += f.in.Amount
+			totals.TotalBaseTokensInStorageDeposit += f.in.Amount
 			simpleTokenScheme := util.MustTokenScheme(f.in.TokenScheme)
-			ret.TokenCirculatingSupplies[f.in.MustNativeTokenID()] = new(big.Int).
+			totals.TokenCirculatingSupplies[f.in.MustNativeTokenID()] = new(big.Int).
 				Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)
 		}
 	}
 
 	for _, nft := range txb.nftsIncluded {
 		if !isc.IsEmptyOutputID(nft.outputID) {
-			ret.TotalBaseTokensInStorageDeposit += nft.in.Amount
+			totals.TotalBaseTokensInStorageDeposit += nft.in.Amount
 		}
 	}
 
-	return ret
+	return totals
 }
 
 // sumOutputs sums all balances in outputs
 func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
-	ret := &TransactionTotals{
+	anchorOutputSD := parameters.L1().Protocol.RentStructure.MinRent(txb.resultAnchorOutput)
+
+	totals := &TransactionTotals{
 		NativeTokenBalances:             make(map[iotago.NativeTokenID]*big.Int),
 		TokenCirculatingSupplies:        make(map[iotago.NativeTokenID]*big.Int),
-		TotalBaseTokensInL2Accounts:     txb.totalBaseTokensInL2Accounts,
-		TotalBaseTokensInStorageDeposit: txb.storageDepositAssumption.AnchorOutput,
-		// TotalBaseTokensInStorageDeposit: parameters.L1().Protocol.RentStructure.MinRent(txb.anchorOutput),
-		SentOutBaseTokens:    0,
-		SentOutTokenBalances: make(map[iotago.NativeTokenID]*big.Int),
+		TotalBaseTokensInL2Accounts:     txb.resultAnchorOutput.Amount - anchorOutputSD,
+		TotalBaseTokensInStorageDeposit: anchorOutputSD,
+		SentOutBaseTokens:               0,
+		SentOutTokenBalances:            make(map[iotago.NativeTokenID]*big.Int),
 	}
 	// sum over native tokens which produce outputs
-	txb.sumNativeTokens(ret, func(ntb *nativeTokenBalance) *big.Int {
-		if ntb.producesOutput() {
-			return ntb.getOutValue()
+	for id, ntb := range txb.balanceNativeTokens {
+		if !ntb.producesOutput() {
+			continue
 		}
-		return nil
-	})
+		s, ok := totals.NativeTokenBalances[id]
+		if !ok {
+			s = new(big.Int)
+		}
+		s.Add(s, ntb.getOutValue())
+		totals.NativeTokenBalances[id] = s
+		// sum up storage deposit in inputs of internal UTXOs
+		totals.TotalBaseTokensInStorageDeposit += ntb.out.Amount
+	}
 	for _, f := range txb.invokedFoundries {
 		if !f.producesOutput() {
 			continue
 		}
-		ret.TotalBaseTokensInStorageDeposit += f.out.Amount
+		totals.TotalBaseTokensInStorageDeposit += f.out.Amount
 		id := f.out.MustNativeTokenID()
-		ret.TokenCirculatingSupplies[id] = big.NewInt(0)
+		totals.TokenCirculatingSupplies[id] = big.NewInt(0)
 		simpleTokenScheme := util.MustTokenScheme(f.out.TokenScheme)
-		ret.TokenCirculatingSupplies[id].Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)
+		totals.TokenCirculatingSupplies[id].Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)
 	}
 	for _, o := range txb.postedOutputs {
 		assets := transaction.AssetsFromOutput(o)
-		ret.SentOutBaseTokens += assets.BaseTokens
+		totals.SentOutBaseTokens += assets.BaseTokens
 		for _, nativeToken := range assets.NativeTokens {
-			s, ok := ret.SentOutTokenBalances[nativeToken.ID]
+			s, ok := totals.SentOutTokenBalances[nativeToken.ID]
 			if !ok {
 				s = new(big.Int)
 			}
 			s.Add(s, nativeToken.Amount)
-			ret.SentOutTokenBalances[nativeToken.ID] = s
+			totals.SentOutTokenBalances[nativeToken.ID] = s
 		}
 	}
 	for _, nft := range txb.nftsIncluded {
 		if !nft.sentOutside {
-			ret.TotalBaseTokensInStorageDeposit += nft.out.Amount
+			totals.TotalBaseTokensInStorageDeposit += nft.out.Amount
 		}
 	}
-	return ret
-}
-
-// Totals check consistency. If input total equals with output totals, returns (base tokens total, native token totals, true)
-// Otherwise returns (0, nil, false)
-func (txb *AnchorTransactionBuilder) Totals() (*TransactionTotals, *TransactionTotals, error) {
-	totalsIN := txb.sumInputs()
-	totalsOUT := txb.sumOutputs()
-	err := totalsIN.BalancedWith(totalsOUT)
-	return totalsIN, totalsOUT, err
+	return totals
 }
 
 // TotalBaseTokensInOutputs returns (a) total base tokens owned by SCs and (b) total base tokens locked as storage deposit
@@ -152,46 +143,26 @@ func (txb *AnchorTransactionBuilder) TotalBaseTokensInOutputs() (uint64, uint64)
 	return totals.TotalBaseTokensInL2Accounts, totals.TotalBaseTokensInStorageDeposit
 }
 
-// InternalNativeTokenBalances returns internally maintained balances of native tokens in inputs and
-func (txb *AnchorTransactionBuilder) InternalNativeTokenBalances() (map[iotago.NativeTokenID]*big.Int, map[iotago.NativeTokenID]*big.Int) {
-	before := make(map[iotago.NativeTokenID]*big.Int)
-	after := make(map[iotago.NativeTokenID]*big.Int)
+// MustBalanced asserts that the txb is balanced (intputs/outputs) and is consistent with L2
+// IMPORTANT: must be executed after `BuildTransactionEssence`, so that txb.resultAnchorOutput is calculated
+func (txb *AnchorTransactionBuilder) MustBalanced() {
+	// assert inputs/outpus are balanced
+	totalsIN := txb.sumInputs()
+	totalsOUT := txb.sumOutputs()
 
-	for id, ntb := range txb.balanceNativeTokens {
-		if ntb.requiresInput() {
-			before[id] = ntb.in.NativeTokens[0].Amount
-		}
-		if ntb.producesOutput() {
-			after[id] = ntb.getOutValue()
-		}
+	if err := totalsIN.BalancedWith(totalsOUT); err != nil {
+		fmt.Printf("================= MustBalanced: %v \ninTotals: %v\noutTotals: %v\n", err, totalsIN, totalsOUT)
+		panic(fmt.Errorf("%v: %w ", vm.ErrFatalTxBuilderNotBalanced, err))
 	}
-	return before, after
-}
 
-var DebugTxBuilder = true
-
-func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
-	if !DebugTxBuilder {
-		return
-	}
-	ins, outs, err := txb.Totals()
-	if err != nil {
-		fmt.Printf("================= MustBalanced [%s]: %v \ninTotals: %v\noutTotals: %v\n", err, checkpoint, ins, outs)
-		panic(fmt.Errorf("[%s] %v: %w ", checkpoint, vm.ErrFatalTxBuilderNotBalanced, err))
-	}
-}
-
-func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *isc.Assets, checkpoint string) {
-	_, outTotal, err := txb.Totals()
-	if err != nil {
-		panic(fmt.Errorf("%v: %w", vm.ErrFatalTxBuilderNotBalanced, err))
-	}
-	if outTotal.TotalBaseTokensInL2Accounts != l2Totals.BaseTokens {
-		panic(fmt.Errorf("'%s': base tokens L1 (%d) != base tokens L2 (%d): %v",
-			checkpoint, outTotal.TotalBaseTokensInL2Accounts, l2Totals.BaseTokens, vm.ErrInconsistentL2LedgerWithL1TxBuilder))
+	// assert the txbuilder is consistent with L2 accounting
+	l2Totals := txb.accountsView.TotalFungibleTokens()
+	if totalsOUT.TotalBaseTokensInL2Accounts != l2Totals.BaseTokens {
+		panic(fmt.Errorf("base tokens L1 (%d) != base tokens L2 (%d): %v",
+			totalsOUT.TotalBaseTokensInL2Accounts, l2Totals.BaseTokens, vm.ErrInconsistentL2LedgerWithL1TxBuilder))
 	}
 	for _, nativeToken := range l2Totals.NativeTokens {
-		b1, ok := outTotal.NativeTokenBalances[nativeToken.ID]
+		b1, ok := totalsOUT.NativeTokenBalances[nativeToken.ID]
 		if !ok {
 			// checking only those which are in the tx builder
 			continue

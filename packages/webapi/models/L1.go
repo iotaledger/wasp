@@ -6,7 +6,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/metrics"
 )
 
 type Output struct {
@@ -51,7 +51,7 @@ type InOutput struct {
 	Output   *Output `json:"output" swagger:"desc(The parsed output),required"`
 }
 
-func InOutputFromISCInOutput(output *nodeconnmetrics.InOutput) *InOutput {
+func InOutputFromISCInOutput(output *metrics.InOutput) *InOutput {
 	if output == nil {
 		return nil
 	}
@@ -67,7 +67,7 @@ type InStateOutput struct {
 	Output   *Output `json:"output" swagger:"desc(The parsed output),required"`
 }
 
-func InStateOutputFromISCInStateOutput(output *nodeconnmetrics.InStateOutput) *InStateOutput {
+func InStateOutputFromISCInStateOutput(output *metrics.InStateOutput) *InStateOutput {
 	if output == nil {
 		return nil
 	}
@@ -83,7 +83,7 @@ type StateTransaction struct {
 	TransactionID string `json:"txId" swagger:"desc(The transaction ID),required"`
 }
 
-func StateTransactionFromISCStateTransaction(transaction *nodeconnmetrics.StateTransaction) *StateTransaction {
+func StateTransactionFromISCStateTransaction(transaction *metrics.StateTransaction) *StateTransaction {
 	if transaction == nil {
 		return nil
 	}
@@ -101,7 +101,7 @@ type TxInclusionStateMsg struct {
 	State         string `json:"state" swagger:"desc(The inclusion state),required"`
 }
 
-func TxInclusionStateMsgFromISCTxInclusionStateMsg(inclusionState *nodeconnmetrics.TxInclusionStateMsg) *TxInclusionStateMsg {
+func TxInclusionStateMsgFromISCTxInclusionStateMsg(inclusionState *metrics.TxInclusionStateMsg) *TxInclusionStateMsg {
 	if inclusionState == nil {
 		return nil
 	}

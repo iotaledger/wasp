@@ -14,13 +14,12 @@ import (
 	"encoding/json"
 )
 
-// checks if the ChainMetrics type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ChainMetrics{}
+// checks if the ChainMessageMetrics type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ChainMessageMetrics{}
 
-// ChainMetrics struct for ChainMetrics
-type ChainMetrics struct {
+// ChainMessageMetrics struct for ChainMessageMetrics
+type ChainMessageMetrics struct {
 	InAliasOutput AliasOutputMetricItem `json:"inAliasOutput"`
-	InMilestone MilestoneMetricItem `json:"inMilestone"`
 	InOnLedgerRequest OnLedgerRequestMetricItem `json:"inOnLedgerRequest"`
 	InOutput InOutputMetricItem `json:"inOutput"`
 	InStateOutput InStateOutputMetricItem `json:"inStateOutput"`
@@ -30,17 +29,15 @@ type ChainMetrics struct {
 	OutPullLatestOutput InterfaceMetricItem `json:"outPullLatestOutput"`
 	OutPullOutputByID UTXOInputMetricItem `json:"outPullOutputByID"`
 	OutPullTxInclusionState TransactionIDMetricItem `json:"outPullTxInclusionState"`
-	RegisteredChainIDs []string `json:"registeredChainIDs"`
 }
 
-// NewChainMetrics instantiates a new ChainMetrics object
+// NewChainMessageMetrics instantiates a new ChainMessageMetrics object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewChainMetrics(inAliasOutput AliasOutputMetricItem, inMilestone MilestoneMetricItem, inOnLedgerRequest OnLedgerRequestMetricItem, inOutput InOutputMetricItem, inStateOutput InStateOutputMetricItem, inTxInclusionState TxInclusionStateMsgMetricItem, outPublishGovernanceTransaction TransactionMetricItem, outPublisherStateTransaction PublisherStateTransactionItem, outPullLatestOutput InterfaceMetricItem, outPullOutputByID UTXOInputMetricItem, outPullTxInclusionState TransactionIDMetricItem, registeredChainIDs []string) *ChainMetrics {
-	this := ChainMetrics{}
+func NewChainMessageMetrics(inAliasOutput AliasOutputMetricItem, inOnLedgerRequest OnLedgerRequestMetricItem, inOutput InOutputMetricItem, inStateOutput InStateOutputMetricItem, inTxInclusionState TxInclusionStateMsgMetricItem, outPublishGovernanceTransaction TransactionMetricItem, outPublisherStateTransaction PublisherStateTransactionItem, outPullLatestOutput InterfaceMetricItem, outPullOutputByID UTXOInputMetricItem, outPullTxInclusionState TransactionIDMetricItem) *ChainMessageMetrics {
+	this := ChainMessageMetrics{}
 	this.InAliasOutput = inAliasOutput
-	this.InMilestone = inMilestone
 	this.InOnLedgerRequest = inOnLedgerRequest
 	this.InOutput = inOutput
 	this.InStateOutput = inStateOutput
@@ -50,20 +47,19 @@ func NewChainMetrics(inAliasOutput AliasOutputMetricItem, inMilestone MilestoneM
 	this.OutPullLatestOutput = outPullLatestOutput
 	this.OutPullOutputByID = outPullOutputByID
 	this.OutPullTxInclusionState = outPullTxInclusionState
-	this.RegisteredChainIDs = registeredChainIDs
 	return &this
 }
 
-// NewChainMetricsWithDefaults instantiates a new ChainMetrics object
+// NewChainMessageMetricsWithDefaults instantiates a new ChainMessageMetrics object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewChainMetricsWithDefaults() *ChainMetrics {
-	this := ChainMetrics{}
+func NewChainMessageMetricsWithDefaults() *ChainMessageMetrics {
+	this := ChainMessageMetrics{}
 	return &this
 }
 
 // GetInAliasOutput returns the InAliasOutput field value
-func (o *ChainMetrics) GetInAliasOutput() AliasOutputMetricItem {
+func (o *ChainMessageMetrics) GetInAliasOutput() AliasOutputMetricItem {
 	if o == nil {
 		var ret AliasOutputMetricItem
 		return ret
@@ -74,7 +70,7 @@ func (o *ChainMetrics) GetInAliasOutput() AliasOutputMetricItem {
 
 // GetInAliasOutputOk returns a tuple with the InAliasOutput field value
 // and a boolean to check if the value has been set.
-func (o *ChainMetrics) GetInAliasOutputOk() (*AliasOutputMetricItem, bool) {
+func (o *ChainMessageMetrics) GetInAliasOutputOk() (*AliasOutputMetricItem, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -82,36 +78,12 @@ func (o *ChainMetrics) GetInAliasOutputOk() (*AliasOutputMetricItem, bool) {
 }
 
 // SetInAliasOutput sets field value
-func (o *ChainMetrics) SetInAliasOutput(v AliasOutputMetricItem) {
+func (o *ChainMessageMetrics) SetInAliasOutput(v AliasOutputMetricItem) {
 	o.InAliasOutput = v
 }
 
-// GetInMilestone returns the InMilestone field value
-func (o *ChainMetrics) GetInMilestone() MilestoneMetricItem {
-	if o == nil {
-		var ret MilestoneMetricItem
-		return ret
-	}
-
-	return o.InMilestone
-}
-
-// GetInMilestoneOk returns a tuple with the InMilestone field value
-// and a boolean to check if the value has been set.
-func (o *ChainMetrics) GetInMilestoneOk() (*MilestoneMetricItem, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.InMilestone, true
-}
-
-// SetInMilestone sets field value
-func (o *ChainMetrics) SetInMilestone(v MilestoneMetricItem) {
-	o.InMilestone = v
-}
-
 // GetInOnLedgerRequest returns the InOnLedgerRequest field value
-func (o *ChainMetrics) GetInOnLedgerRequest() OnLedgerRequestMetricItem {
+func (o *ChainMessageMetrics) GetInOnLedgerRequest() OnLedgerRequestMetricItem {
 	if o == nil {
 		var ret OnLedgerRequestMetricItem
 		return ret
@@ -122,7 +94,7 @@ func (o *ChainMetrics) GetInOnLedgerRequest() OnLedgerRequestMetricItem {
 
 // GetInOnLedgerRequestOk returns a tuple with the InOnLedgerRequest field value
 // and a boolean to check if the value has been set.
-func (o *ChainMetrics) GetInOnLedgerRequestOk() (*OnLedgerRequestMetricItem, bool) {
+func (o *ChainMessageMetrics) GetInOnLedgerRequestOk() (*OnLedgerRequestMetricItem, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -130,12 +102,12 @@ func (o *ChainMetrics) GetInOnLedgerRequestOk() (*OnLedgerRequestMetricItem, boo
 }
 
 // SetInOnLedgerRequest sets field value
-func (o *ChainMetrics) SetInOnLedgerRequest(v OnLedgerRequestMetricItem) {
+func (o *ChainMessageMetrics) SetInOnLedgerRequest(v OnLedgerRequestMetricItem) {
 	o.InOnLedgerRequest = v
 }
 
 // GetInOutput returns the InOutput field value
-func (o *ChainMetrics) GetInOutput() InOutputMetricItem {
+func (o *ChainMessageMetrics) GetInOutput() InOutputMetricItem {
 	if o == nil {
 		var ret InOutputMetricItem
 		return ret
@@ -146,7 +118,7 @@ func (o *ChainMetrics) GetInOutput() InOutputMetricItem {
 
 // GetInOutputOk returns a tuple with the InOutput field value
 // and a boolean to check if the value has been set.
-func (o *ChainMetrics) GetInOutputOk() (*InOutputMetricItem, bool) {
+func (o *ChainMessageMetrics) GetInOutputOk() (*InOutputMetricItem, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -154,12 +126,12 @@ func (o *ChainMetrics) GetInOutputOk() (*InOutputMetricItem, bool) {
 }
 
 // SetInOutput sets field value
-func (o *ChainMetrics) SetInOutput(v InOutputMetricItem) {
+func (o *ChainMessageMetrics) SetInOutput(v InOutputMetricItem) {
 	o.InOutput = v
 }
 
 // GetInStateOutput returns the InStateOutput field value
-func (o *ChainMetrics) GetInStateOutput() InStateOutputMetricItem {
+func (o *ChainMessageMetrics) GetInStateOutput() InStateOutputMetricItem {
 	if o == nil {
 		var ret InStateOutputMetricItem
 		return ret
@@ -170,7 +142,7 @@ func (o *ChainMetrics) GetInStateOutput() InStateOutputMetricItem {
 
 // GetInStateOutputOk returns a tuple with the InStateOutput field value
 // and a boolean to check if the value has been set.
-func (o *ChainMetrics) GetInStateOutputOk() (*InStateOutputMetricItem, bool) {
+func (o *ChainMessageMetrics) GetInStateOutputOk() (*InStateOutputMetricItem, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -178,12 +150,12 @@ func (o *ChainMetrics) GetInStateOutputOk() (*InStateOutputMetricItem, bool) {
 }
 
 // SetInStateOutput sets field value
-func (o *ChainMetrics) SetInStateOutput(v InStateOutputMetricItem) {
+func (o *ChainMessageMetrics) SetInStateOutput(v InStateOutputMetricItem) {
 	o.InStateOutput = v
 }
 
 // GetInTxInclusionState returns the InTxInclusionState field value
-func (o *ChainMetrics) GetInTxInclusionState() TxInclusionStateMsgMetricItem {
+func (o *ChainMessageMetrics) GetInTxInclusionState() TxInclusionStateMsgMetricItem {
 	if o == nil {
 		var ret TxInclusionStateMsgMetricItem
 		return ret
@@ -194,7 +166,7 @@ func (o *ChainMetrics) GetInTxInclusionState() TxInclusionStateMsgMetricItem {
 
 // GetInTxInclusionStateOk returns a tuple with the InTxInclusionState field value
 // and a boolean to check if the value has been set.
-func (o *ChainMetrics) GetInTxInclusionStateOk() (*TxInclusionStateMsgMetricItem, bool) {
+func (o *ChainMessageMetrics) GetInTxInclusionStateOk() (*TxInclusionStateMsgMetricItem, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -202,12 +174,12 @@ func (o *ChainMetrics) GetInTxInclusionStateOk() (*TxInclusionStateMsgMetricItem
 }
 
 // SetInTxInclusionState sets field value
-func (o *ChainMetrics) SetInTxInclusionState(v TxInclusionStateMsgMetricItem) {
+func (o *ChainMessageMetrics) SetInTxInclusionState(v TxInclusionStateMsgMetricItem) {
 	o.InTxInclusionState = v
 }
 
 // GetOutPublishGovernanceTransaction returns the OutPublishGovernanceTransaction field value
-func (o *ChainMetrics) GetOutPublishGovernanceTransaction() TransactionMetricItem {
+func (o *ChainMessageMetrics) GetOutPublishGovernanceTransaction() TransactionMetricItem {
 	if o == nil {
 		var ret TransactionMetricItem
 		return ret
@@ -218,7 +190,7 @@ func (o *ChainMetrics) GetOutPublishGovernanceTransaction() TransactionMetricIte
 
 // GetOutPublishGovernanceTransactionOk returns a tuple with the OutPublishGovernanceTransaction field value
 // and a boolean to check if the value has been set.
-func (o *ChainMetrics) GetOutPublishGovernanceTransactionOk() (*TransactionMetricItem, bool) {
+func (o *ChainMessageMetrics) GetOutPublishGovernanceTransactionOk() (*TransactionMetricItem, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -226,12 +198,12 @@ func (o *ChainMetrics) GetOutPublishGovernanceTransactionOk() (*TransactionMetri
 }
 
 // SetOutPublishGovernanceTransaction sets field value
-func (o *ChainMetrics) SetOutPublishGovernanceTransaction(v TransactionMetricItem) {
+func (o *ChainMessageMetrics) SetOutPublishGovernanceTransaction(v TransactionMetricItem) {
 	o.OutPublishGovernanceTransaction = v
 }
 
 // GetOutPublisherStateTransaction returns the OutPublisherStateTransaction field value
-func (o *ChainMetrics) GetOutPublisherStateTransaction() PublisherStateTransactionItem {
+func (o *ChainMessageMetrics) GetOutPublisherStateTransaction() PublisherStateTransactionItem {
 	if o == nil {
 		var ret PublisherStateTransactionItem
 		return ret
@@ -242,7 +214,7 @@ func (o *ChainMetrics) GetOutPublisherStateTransaction() PublisherStateTransacti
 
 // GetOutPublisherStateTransactionOk returns a tuple with the OutPublisherStateTransaction field value
 // and a boolean to check if the value has been set.
-func (o *ChainMetrics) GetOutPublisherStateTransactionOk() (*PublisherStateTransactionItem, bool) {
+func (o *ChainMessageMetrics) GetOutPublisherStateTransactionOk() (*PublisherStateTransactionItem, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -250,12 +222,12 @@ func (o *ChainMetrics) GetOutPublisherStateTransactionOk() (*PublisherStateTrans
 }
 
 // SetOutPublisherStateTransaction sets field value
-func (o *ChainMetrics) SetOutPublisherStateTransaction(v PublisherStateTransactionItem) {
+func (o *ChainMessageMetrics) SetOutPublisherStateTransaction(v PublisherStateTransactionItem) {
 	o.OutPublisherStateTransaction = v
 }
 
 // GetOutPullLatestOutput returns the OutPullLatestOutput field value
-func (o *ChainMetrics) GetOutPullLatestOutput() InterfaceMetricItem {
+func (o *ChainMessageMetrics) GetOutPullLatestOutput() InterfaceMetricItem {
 	if o == nil {
 		var ret InterfaceMetricItem
 		return ret
@@ -266,7 +238,7 @@ func (o *ChainMetrics) GetOutPullLatestOutput() InterfaceMetricItem {
 
 // GetOutPullLatestOutputOk returns a tuple with the OutPullLatestOutput field value
 // and a boolean to check if the value has been set.
-func (o *ChainMetrics) GetOutPullLatestOutputOk() (*InterfaceMetricItem, bool) {
+func (o *ChainMessageMetrics) GetOutPullLatestOutputOk() (*InterfaceMetricItem, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -274,12 +246,12 @@ func (o *ChainMetrics) GetOutPullLatestOutputOk() (*InterfaceMetricItem, bool) {
 }
 
 // SetOutPullLatestOutput sets field value
-func (o *ChainMetrics) SetOutPullLatestOutput(v InterfaceMetricItem) {
+func (o *ChainMessageMetrics) SetOutPullLatestOutput(v InterfaceMetricItem) {
 	o.OutPullLatestOutput = v
 }
 
 // GetOutPullOutputByID returns the OutPullOutputByID field value
-func (o *ChainMetrics) GetOutPullOutputByID() UTXOInputMetricItem {
+func (o *ChainMessageMetrics) GetOutPullOutputByID() UTXOInputMetricItem {
 	if o == nil {
 		var ret UTXOInputMetricItem
 		return ret
@@ -290,7 +262,7 @@ func (o *ChainMetrics) GetOutPullOutputByID() UTXOInputMetricItem {
 
 // GetOutPullOutputByIDOk returns a tuple with the OutPullOutputByID field value
 // and a boolean to check if the value has been set.
-func (o *ChainMetrics) GetOutPullOutputByIDOk() (*UTXOInputMetricItem, bool) {
+func (o *ChainMessageMetrics) GetOutPullOutputByIDOk() (*UTXOInputMetricItem, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -298,12 +270,12 @@ func (o *ChainMetrics) GetOutPullOutputByIDOk() (*UTXOInputMetricItem, bool) {
 }
 
 // SetOutPullOutputByID sets field value
-func (o *ChainMetrics) SetOutPullOutputByID(v UTXOInputMetricItem) {
+func (o *ChainMessageMetrics) SetOutPullOutputByID(v UTXOInputMetricItem) {
 	o.OutPullOutputByID = v
 }
 
 // GetOutPullTxInclusionState returns the OutPullTxInclusionState field value
-func (o *ChainMetrics) GetOutPullTxInclusionState() TransactionIDMetricItem {
+func (o *ChainMessageMetrics) GetOutPullTxInclusionState() TransactionIDMetricItem {
 	if o == nil {
 		var ret TransactionIDMetricItem
 		return ret
@@ -314,7 +286,7 @@ func (o *ChainMetrics) GetOutPullTxInclusionState() TransactionIDMetricItem {
 
 // GetOutPullTxInclusionStateOk returns a tuple with the OutPullTxInclusionState field value
 // and a boolean to check if the value has been set.
-func (o *ChainMetrics) GetOutPullTxInclusionStateOk() (*TransactionIDMetricItem, bool) {
+func (o *ChainMessageMetrics) GetOutPullTxInclusionStateOk() (*TransactionIDMetricItem, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -322,35 +294,11 @@ func (o *ChainMetrics) GetOutPullTxInclusionStateOk() (*TransactionIDMetricItem,
 }
 
 // SetOutPullTxInclusionState sets field value
-func (o *ChainMetrics) SetOutPullTxInclusionState(v TransactionIDMetricItem) {
+func (o *ChainMessageMetrics) SetOutPullTxInclusionState(v TransactionIDMetricItem) {
 	o.OutPullTxInclusionState = v
 }
 
-// GetRegisteredChainIDs returns the RegisteredChainIDs field value
-func (o *ChainMetrics) GetRegisteredChainIDs() []string {
-	if o == nil {
-		var ret []string
-		return ret
-	}
-
-	return o.RegisteredChainIDs
-}
-
-// GetRegisteredChainIDsOk returns a tuple with the RegisteredChainIDs field value
-// and a boolean to check if the value has been set.
-func (o *ChainMetrics) GetRegisteredChainIDsOk() ([]string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return o.RegisteredChainIDs, true
-}
-
-// SetRegisteredChainIDs sets field value
-func (o *ChainMetrics) SetRegisteredChainIDs(v []string) {
-	o.RegisteredChainIDs = v
-}
-
-func (o ChainMetrics) MarshalJSON() ([]byte, error) {
+func (o ChainMessageMetrics) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -358,10 +306,9 @@ func (o ChainMetrics) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o ChainMetrics) ToMap() (map[string]interface{}, error) {
+func (o ChainMessageMetrics) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["inAliasOutput"] = o.InAliasOutput
-	toSerialize["inMilestone"] = o.InMilestone
 	toSerialize["inOnLedgerRequest"] = o.InOnLedgerRequest
 	toSerialize["inOutput"] = o.InOutput
 	toSerialize["inStateOutput"] = o.InStateOutput
@@ -371,42 +318,41 @@ func (o ChainMetrics) ToMap() (map[string]interface{}, error) {
 	toSerialize["outPullLatestOutput"] = o.OutPullLatestOutput
 	toSerialize["outPullOutputByID"] = o.OutPullOutputByID
 	toSerialize["outPullTxInclusionState"] = o.OutPullTxInclusionState
-	toSerialize["registeredChainIDs"] = o.RegisteredChainIDs
 	return toSerialize, nil
 }
 
-type NullableChainMetrics struct {
-	value *ChainMetrics
+type NullableChainMessageMetrics struct {
+	value *ChainMessageMetrics
 	isSet bool
 }
 
-func (v NullableChainMetrics) Get() *ChainMetrics {
+func (v NullableChainMessageMetrics) Get() *ChainMessageMetrics {
 	return v.value
 }
 
-func (v *NullableChainMetrics) Set(val *ChainMetrics) {
+func (v *NullableChainMessageMetrics) Set(val *ChainMessageMetrics) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableChainMetrics) IsSet() bool {
+func (v NullableChainMessageMetrics) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableChainMetrics) Unset() {
+func (v *NullableChainMessageMetrics) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableChainMetrics(val *ChainMetrics) *NullableChainMetrics {
-	return &NullableChainMetrics{value: val, isSet: true}
+func NewNullableChainMessageMetrics(val *ChainMessageMetrics) *NullableChainMessageMetrics {
+	return &NullableChainMessageMetrics{value: val, isSet: true}
 }
 
-func (v NullableChainMetrics) MarshalJSON() ([]byte, error) {
+func (v NullableChainMessageMetrics) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableChainMetrics) UnmarshalJSON(src []byte) error {
+func (v *NullableChainMessageMetrics) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

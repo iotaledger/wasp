@@ -37,7 +37,6 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -78,8 +77,8 @@ type Chain interface {
 	// can query the nodes for blocks, etc. NOTE: servers = access⁻¹
 	ServersUpdated(serverNodes []*cryptolib.PublicKey)
 	// Metrics and the current descriptive state.
+	GetChainMetrics() metrics.IChainMetrics
 	GetConsensusPipeMetrics() ConsensusPipeMetrics // TODO: Review this.
-	GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics
 	GetConsensusWorkflowStatus() ConsensusWorkflowStatus
 }
 
@@ -133,6 +132,8 @@ type ChainNodeConn interface {
 		recvRequestCB RequestOutputHandler,
 		recvAliasOutput AliasOutputHandler,
 		recvMilestone MilestoneHandler,
+		onChainConnect func(),
+		onChainDisconnect func(),
 	)
 }
 
@@ -159,6 +160,7 @@ type chainNodeImpl struct {
 	awaitReceiptCnfCh   chan *awaitReceiptReq
 	stateTrackerAct     StateTracker
 	stateTrackerCnf     StateTracker
+	blockWAL            smGPAUtils.BlockWAL
 	//
 	// Information for other components.
 	listener               ChainListener          // Object expecting event notifications.
@@ -180,6 +182,7 @@ type chainNodeImpl struct {
 	netPeerPubs         map[gpa.NodeID]*cryptolib.PublicKey
 	net                 peering.NetworkProvider
 	shutdownCoordinator *shutdown.Coordinator
+	chainMetrics        metrics.IChainMetrics
 	log                 *logger.Logger
 }
 
@@ -240,6 +243,7 @@ var _ Chain = &chainNodeImpl{}
 //nolint:funlen
 func New(
 	ctx context.Context,
+	log *logger.Logger,
 	chainID isc.ChainID,
 	chainStore state.Store,
 	nodeConn NodeConnection,
@@ -251,9 +255,10 @@ func New(
 	listener ChainListener,
 	accessNodesFromNode []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
-	chainMetric metrics.IChainMetric,
+	chainMetrics metrics.IChainMetrics,
 	shutdownCoordinator *shutdown.Coordinator,
-	log *logger.Logger,
+	onChainConnect func(),
+	onChainDisconnect func(),
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
 	if listener == nil {
@@ -282,6 +287,7 @@ func New(
 		awaitReceiptCnfCh:      make(chan *awaitReceiptReq, 1),
 		stateTrackerAct:        nil, // Set bellow.
 		stateTrackerCnf:        nil, // Set bellow.
+		blockWAL:               blockWAL,
 		listener:               listener,
 		accessLock:             &sync.RWMutex{},
 		activeCommitteeDKShare: nil,
@@ -299,8 +305,10 @@ func New(
 		netPeerPubs:            map[gpa.NodeID]*cryptolib.PublicKey{},
 		net:                    net,
 		shutdownCoordinator:    shutdownCoordinator,
+		chainMetrics:           chainMetrics,
 		log:                    log,
 	}
+	cni.tryRecoverStoreFromWAL(chainStore, blockWAL)
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
 	//
 	// Create sub-components.
@@ -339,7 +347,7 @@ func New(
 		nodeIdentity,
 		net,
 		cni.log.Named("MP"),
-		chainMetric,
+		chainMetrics,
 		cni.listener,
 	)
 	cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr.AsGPA(), redeliveryPeriod)
@@ -391,7 +399,7 @@ func New(
 		log.Debugf("recvMilestoneCB[%p], %v", cni, timestamp)
 		recvMilestonePipeInCh <- timestamp
 	}
-	nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAliasOutputCB, recvMilestoneCB)
+	nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAliasOutputCB, recvMilestoneCB, onChainConnect, onChainDisconnect)
 	//
 	// Run the main thread.
 
@@ -587,7 +595,10 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
 	cni.log.Debugf("handleAliasOutput: %v", aliasOutput)
 	if aliasOutput.GetStateIndex() == 0 {
-		origin.InitChainByAliasOutput(cni.chainStore, aliasOutput)
+		initBlock := origin.InitChainByAliasOutput(cni.chainStore, aliasOutput)
+		if err := cni.blockWAL.Write(initBlock); err != nil {
+			panic(fmt.Errorf("cannot write initial block to the WAL: %w", err))
+		}
 	}
 
 	cni.stateTrackerCnf.TrackAliasOutput(aliasOutput, true)
@@ -1047,16 +1058,56 @@ func (cni *chainNodeImpl) GetCandidateNodes() []*governance.AccessNodeInfo {
 	return governance.NewStateAccess(state).GetCandidateNodes()
 }
 
+func (cni *chainNodeImpl) GetChainMetrics() metrics.IChainMetrics {
+	return cni.chainMetrics
+}
+
 func (cni *chainNodeImpl) GetConsensusPipeMetrics() ConsensusPipeMetrics {
 	return &consensusPipeMetricsImpl{}
 }
 
-func (cni *chainNodeImpl) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
-	return cni.nodeConn.GetMetrics()
-}
-
 func (cni *chainNodeImpl) GetConsensusWorkflowStatus() ConsensusWorkflowStatus {
 	return &consensusWorkflowStatusImpl{}
+}
+
+func (cni *chainNodeImpl) tryRecoverStoreFromWAL(chainStore state.Store, chainWAL smGPAUtils.BlockWAL) {
+	defer func() {
+		if r := recover(); r != nil {
+			// Don't fail, if this crashes for some reason, that's an optional step.
+			cni.log.Warnf("TryRecoverStoreFromWAL: Failed to populate chain store from WAL: %v", r)
+		}
+	}()
+	//
+	// Check, if store is empty.
+	if _, err := chainStore.BlockByIndex(0); err == nil {
+		cni.log.Infof("TryRecoverStoreFromWAL: Skipping, because the state is not empty.")
+		return // Store is not empty, so we skip this.
+	}
+	cni.log.Infof("TryRecoverStoreFromWAL: Chain store is empty, will try to load blocks from the WAL.")
+	//
+	// Load all the existing blocks from the WAL.
+	blocksAdded := 0
+	err := chainWAL.ReadAllByStateIndex(func(stateIndex uint32, block state.Block) bool {
+		cni.log.Debugf("TryRecoverStoreFromWAL: Adding a block to the store, stateIndex=%v, l1Commitment=%v, previousL1Commitment=%v", block.StateIndex(), block.L1Commitment(), block.PreviousL1Commitment())
+		var stateDraft state.StateDraft
+		if block.StateIndex() == 0 {
+			stateDraft = chainStore.NewOriginStateDraft()
+		} else {
+			var stateErr error
+			stateDraft, stateErr = chainStore.NewEmptyStateDraft(block.PreviousL1Commitment())
+			if stateErr != nil {
+				panic(fmt.Errorf("cannot create new state draft for previousL1Commitment=%v: %w", block.PreviousL1Commitment(), stateErr))
+			}
+		}
+		block.Mutations().ApplyTo(stateDraft)
+		chainStore.Commit(stateDraft)
+		blocksAdded++
+		return true
+	})
+	if err != nil {
+		panic(fmt.Errorf("failed to iterate over WAL blocks: %w", err))
+	}
+	cni.log.Infof("TryRecoverStoreFromWAL: Done, added %v blocks.", blocksAdded)
 }
 
 type consensusPipeMetricsImpl struct{}                                        // TODO: Fake data, for now. Review metrics in general.

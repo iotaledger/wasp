@@ -1443,7 +1443,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChainMetrics'
+                $ref: '#/components/schemas/ChainMessageMetrics'
           description: A list of all available metrics.
         "401":
           content:
@@ -1531,7 +1531,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChainMetrics'
+                $ref: '#/components/schemas/NodeMessageMetrics'
           description: A list of all available metrics.
         "401":
           content:
@@ -1689,7 +1689,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/PeeringNodeStatusResponse__'
+                  $ref: '#/components/schemas/PeeringNodeStatusResponse_'
                 type: array
           description: A list of all peers
         "401":
@@ -2430,25 +2430,15 @@ components:
         name: BlobValueResponse
     BlockInfoResponse:
       example:
-        anchorTransactionId: anchorTransactionId
-        gasBurned: gasBurned
-        totalRequests: 1
-        l1CommitmentHash: l1CommitmentHash
         blockIndex: 1
         numSuccessfulRequests: 1
         gasFeeCharged: gasFeeCharged
-        totalStorageDeposit: totalStorageDeposit
-        transactionSubEssenceHash: transactionSubEssenceHash
+        previousAliasOutput: previousAliasOutput
+        gasBurned: gasBurned
+        totalRequests: 1
         numOffLedgerRequests: 1
-        previousL1CommitmentHash: previousL1CommitmentHash
         timestamp: 2000-01-23T04:56:07.000+00:00
-        totalBaseTokensInL2Accounts: totalBaseTokensInL2Accounts
       properties:
-        anchorTransactionId:
-          format: string
-          type: string
-          xml:
-            name: AnchorTransactionID
         blockIndex:
           format: int32
           minimum: 1
@@ -2467,11 +2457,6 @@ components:
           type: string
           xml:
             name: GasFeeCharged
-        l1CommitmentHash:
-          format: string
-          type: string
-          xml:
-            name: L1CommitmentHash
         numOffLedgerRequests:
           format: int32
           minimum: 1
@@ -2484,53 +2469,31 @@ components:
           type: integer
           xml:
             name: NumSuccessfulRequests
-        previousL1CommitmentHash:
+        previousAliasOutput:
           format: string
           type: string
           xml:
-            name: PreviousL1CommitmentHash
+            name: PreviousAliasOutput
         timestamp:
           format: date-time
           type: string
           xml:
             name: Timestamp
-        totalBaseTokensInL2Accounts:
-          description: The total L2 base tokens (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: TotalBaseTokensInL2Accounts
         totalRequests:
           format: int32
           minimum: 1
           type: integer
           xml:
             name: TotalRequests
-        totalStorageDeposit:
-          description: The total storage deposit (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: TotalStorageDeposit
-        transactionSubEssenceHash:
-          format: string
-          type: string
-          xml:
-            name: TransactionSubEssenceHash
       required:
-      - anchorTransactionId
       - blockIndex
       - gasBurned
       - gasFeeCharged
-      - l1CommitmentHash
       - numOffLedgerRequests
       - numSuccessfulRequests
-      - previousL1CommitmentHash
+      - previousAliasOutput
       - timestamp
-      - totalBaseTokensInL2Accounts
       - totalRequests
-      - totalStorageDeposit
-      - transactionSubEssenceHash
       type: object
       xml:
         name: BlockInfoResponse
@@ -2748,6 +2711,11 @@ components:
     ChainInfoResponse:
       example:
         chainOwnerId: tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e
+        gasLimits:
+          maxGasExternalViewCall: 5
+          minGasPerRequest: 7
+          maxGasPerBlock: 5
+          maxGasPerRequest: 2
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
         customMetadata: customMetadata
@@ -2755,10 +2723,10 @@ components:
           gasPerToken:
             a: 1
             b: 100
-          validatorFeeShare: 0
+          validatorFeeShare: 1
           evmGasRatio:
-            a: 1
-            b: 1
+            a: 0
+            b: 0
         isActive: true
       properties:
         chainID:
@@ -2791,7 +2759,9 @@ components:
           xml:
             name: EVMChainID
         gasFeePolicy:
-          $ref: '#/components/schemas/GasFeePolicy'
+          $ref: '#/components/schemas/FeePolicy'
+        gasLimits:
+          $ref: '#/components/schemas/Limits'
         isActive:
           description: Whether or not the chain is active.
           format: boolean
@@ -2802,11 +2772,13 @@ components:
       - chainID
       - chainOwnerId
       - evmChainId
+      - gasFeePolicy
+      - gasLimits
       - isActive
       type: object
       xml:
         name: ChainInfoResponse
-    ChainMetrics:
+    ChainMessageMetrics:
       example:
         outPublishGovernanceTransaction:
           lastMessage:
@@ -2843,13 +2815,6 @@ components:
             outputId: outputId
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
-        inMilestone:
-          lastMessage:
-            milestoneId: milestoneId
-            index: 0
-            timestamp: 0
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
         inAliasOutput:
           lastMessage:
             outputType: 0
@@ -2869,9 +2834,6 @@ components:
             txId: txId
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
-        registeredChainIDs:
-        - registeredChainIDs
-        - registeredChainIDs
         outPullLatestOutput:
           lastMessage: lastMessage
           messages: 1
@@ -2884,8 +2846,6 @@ components:
       properties:
         inAliasOutput:
           $ref: '#/components/schemas/AliasOutputMetricItem'
-        inMilestone:
-          $ref: '#/components/schemas/MilestoneMetricItem'
         inOnLedgerRequest:
           $ref: '#/components/schemas/OnLedgerRequestMetricItem'
         inOutput:
@@ -2904,17 +2864,8 @@ components:
           $ref: '#/components/schemas/UTXOInputMetricItem'
         outPullTxInclusionState:
           $ref: '#/components/schemas/TransactionIDMetricItem'
-        registeredChainIDs:
-          items:
-            format: string
-            type: string
-          type: array
-          xml:
-            name: RegisteredChainIDs
-            wrapped: true
       required:
       - inAliasOutput
-      - inMilestone
       - inOnLedgerRequest
       - inOutput
       - inStateOutput
@@ -2924,10 +2875,9 @@ components:
       - outPullLatestOutput
       - outPullOutputByID
       - outPullTxInclusionState
-      - registeredChainIDs
       type: object
       xml:
-        name: ChainMetrics
+        name: ChainMessageMetrics
     ChainRecord:
       example:
         accessNodes:
@@ -2976,18 +2926,18 @@ components:
         committeeNodes:
         - node:
             isAlive: true
-            peeringURL: peeringURL
+            peeringURL: localhost:4000
             name: name
-            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-            numUsers: 6
+            publicKey: 0x0000
+            numUsers: 1
             isTrusted: true
           accessAPI: accessAPI
         - node:
             isAlive: true
-            peeringURL: peeringURL
+            peeringURL: localhost:4000
             name: name
-            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-            numUsers: 6
+            publicKey: 0x0000
+            numUsers: 1
             isTrusted: true
           accessAPI: accessAPI
         chainId: tst1pqm5ckama06xhkl080mmvz6l3xy8c8lulrwy7mx4ll0fc69krxfgka70j0e
@@ -3093,10 +3043,10 @@ components:
       example:
         node:
           isAlive: true
-          peeringURL: peeringURL
+          peeringURL: localhost:4000
           name: name
-          publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-          numUsers: 6
+          publicKey: 0x0000
+          numUsers: 1
           isTrusted: true
         accessAPI: accessAPI
       properties:
@@ -3608,6 +3558,60 @@ components:
       type: object
       xml:
         name: EventsResponse
+    FeePolicy:
+      example:
+        gasPerToken:
+          a: 1
+          b: 100
+        validatorFeeShare: 1
+        evmGasRatio:
+          a: 0
+          b: 0
+      properties:
+        evmGasRatio:
+          $ref: '#/components/schemas/Ratio32_'
+        gasPerToken:
+          $ref: '#/components/schemas/Ratio32'
+        validatorFeeShare:
+          description: The validator fee share.
+          format: int32
+          type: integer
+          xml:
+            name: ValidatorFeeShare
+      required:
+      - evmGasRatio
+      - gasPerToken
+      - validatorFeeShare
+      type: object
+      xml:
+        name: FeePolicy
+    FeePolicy_:
+      example:
+        gasPerToken:
+          a: 0
+          b: 0
+        validatorFeeShare: 0
+        evmGasRatio:
+          a: 0
+          b: 0
+      properties:
+        evmGasRatio:
+          $ref: '#/components/schemas/Ratio32_'
+        gasPerToken:
+          $ref: '#/components/schemas/Ratio32_'
+        validatorFeeShare:
+          description: The validator fee share.
+          format: int32
+          type: integer
+          xml:
+            name: ValidatorFeeShare
+      required:
+      - evmGasRatio
+      - gasPerToken
+      - validatorFeeShare
+      type: object
+      xml:
+        name: FeePolicy
     FoundryOutputResponse:
       example:
         assets:
@@ -3632,60 +3636,6 @@ components:
       type: object
       xml:
         name: FoundryOutputResponse
-    GasFeePolicy:
-      example:
-        gasPerToken:
-          a: 1
-          b: 100
-        validatorFeeShare: 0
-        evmGasRatio:
-          a: 1
-          b: 1
-      properties:
-        evmGasRatio:
-          $ref: '#/components/schemas/Ratio32_'
-        gasPerToken:
-          $ref: '#/components/schemas/Ratio32'
-        validatorFeeShare:
-          description: The validator fee share.
-          format: int32
-          type: integer
-          xml:
-            name: ValidatorFeeShare
-      required:
-      - evmGasRatio
-      - gasPerToken
-      - validatorFeeShare
-      type: object
-      xml:
-        name: GasFeePolicy
-    GasFeePolicy_:
-      example:
-        gasPerToken:
-          a: 0
-          b: 0
-        validatorFeeShare: 1
-        evmGasRatio:
-          a: 0
-          b: 0
-      properties:
-        evmGasRatio:
-          $ref: '#/components/schemas/Ratio32__'
-        gasPerToken:
-          $ref: '#/components/schemas/Ratio32__'
-        validatorFeeShare:
-          description: The validator fee share.
-          format: int32
-          type: integer
-          xml:
-            name: ValidatorFeeShare
-      required:
-      - evmGasRatio
-      - gasPerToken
-      - validatorFeeShare
-      type: object
-      xml:
-        name: GasFeePolicy
     GovAllowedStateControllerAddressesResponse:
       example:
         addresses:
@@ -3707,13 +3657,18 @@ components:
     GovChainInfoResponse:
       example:
         chainOwnerId: chainOwnerId
+        gasLimits:
+          maxGasExternalViewCall: 5
+          minGasPerRequest: 7
+          maxGasPerBlock: 5
+          maxGasPerRequest: 2
         chainID: chainID
         customMetadata: customMetadata
         gasFeePolicy:
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 1
+          validatorFeeShare: 0
           evmGasRatio:
             a: 0
             b: 0
@@ -3738,11 +3693,14 @@ components:
           xml:
             name: CustomMetadata
         gasFeePolicy:
-          $ref: '#/components/schemas/GasFeePolicy_'
+          $ref: '#/components/schemas/FeePolicy_'
+        gasLimits:
+          $ref: '#/components/schemas/Limits'
       required:
       - chainID
       - chainOwnerId
       - gasFeePolicy
+      - gasLimits
       type: object
       xml:
         name: GovChainInfoResponse
@@ -4071,6 +4029,45 @@ components:
       type: object
       xml:
         name: L1Params
+    Limits:
+      example:
+        maxGasExternalViewCall: 5
+        minGasPerRequest: 7
+        maxGasPerBlock: 5
+        maxGasPerRequest: 2
+      properties:
+        maxGasExternalViewCall:
+          description: The maximum gas per external view call
+          format: int64
+          type: integer
+          xml:
+            name: MaxGasExternalViewCall
+        maxGasPerBlock:
+          description: The maximum gas per block
+          format: int64
+          type: integer
+          xml:
+            name: MaxGasPerBlock
+        maxGasPerRequest:
+          description: The maximum gas per request
+          format: int64
+          type: integer
+          xml:
+            name: MaxGasPerRequest
+        minGasPerRequest:
+          description: The minimum gas per request
+          format: int64
+          type: integer
+          xml:
+            name: MinGasPerRequest
+      required:
+      - maxGasExternalViewCall
+      - maxGasPerBlock
+      - maxGasPerRequest
+      - minGasPerRequest
+      type: object
+      xml:
+        name: Limits
     LoginRequest:
       example:
         password: password
@@ -4243,6 +4240,128 @@ components:
       type: object
       xml:
         name: NativeTokenIDRegistryResponse
+    NodeMessageMetrics:
+      example:
+        outPublishGovernanceTransaction:
+          lastMessage:
+            txId: txId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        outPublisherStateTransaction:
+          lastMessage:
+            stateIndex: 1
+            txId: txId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inTxInclusionState:
+          lastMessage:
+            txId: txId
+            state: state
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inOnLedgerRequest:
+          lastMessage:
+            output:
+              outputType: 0
+              raw: raw
+            outputId: outputId
+            raw: raw
+            id: id
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inOutput:
+          lastMessage:
+            output:
+              outputType: 0
+              raw: raw
+            outputId: outputId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inMilestone:
+          lastMessage:
+            milestoneId: milestoneId
+            index: 0
+            timestamp: 0
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inAliasOutput:
+          lastMessage:
+            outputType: 0
+            raw: raw
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inStateOutput:
+          lastMessage:
+            output:
+              outputType: 0
+              raw: raw
+            outputId: outputId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        outPullTxInclusionState:
+          lastMessage:
+            txId: txId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        registeredChainIDs:
+        - registeredChainIDs
+        - registeredChainIDs
+        outPullLatestOutput:
+          lastMessage: lastMessage
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        outPullOutputByID:
+          lastMessage:
+            outputId: outputId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+      properties:
+        inAliasOutput:
+          $ref: '#/components/schemas/AliasOutputMetricItem'
+        inMilestone:
+          $ref: '#/components/schemas/MilestoneMetricItem'
+        inOnLedgerRequest:
+          $ref: '#/components/schemas/OnLedgerRequestMetricItem'
+        inOutput:
+          $ref: '#/components/schemas/InOutputMetricItem'
+        inStateOutput:
+          $ref: '#/components/schemas/InStateOutputMetricItem'
+        inTxInclusionState:
+          $ref: '#/components/schemas/TxInclusionStateMsgMetricItem'
+        outPublishGovernanceTransaction:
+          $ref: '#/components/schemas/TransactionMetricItem'
+        outPublisherStateTransaction:
+          $ref: '#/components/schemas/PublisherStateTransactionItem'
+        outPullLatestOutput:
+          $ref: '#/components/schemas/InterfaceMetricItem'
+        outPullOutputByID:
+          $ref: '#/components/schemas/UTXOInputMetricItem'
+        outPullTxInclusionState:
+          $ref: '#/components/schemas/TransactionIDMetricItem'
+        registeredChainIDs:
+          items:
+            format: string
+            type: string
+          type: array
+          xml:
+            name: RegisteredChainIDs
+            wrapped: true
+      required:
+      - inAliasOutput
+      - inMilestone
+      - inOnLedgerRequest
+      - inOutput
+      - inStateOutput
+      - inTxInclusionState
+      - outPublishGovernanceTransaction
+      - outPublisherStateTransaction
+      - outPullLatestOutput
+      - outPullOutputByID
+      - outPullTxInclusionState
+      - registeredChainIDs
+      type: object
+      xml:
+        name: NodeMessageMetrics
     NodeOwnerCertificateRequest:
       example:
         ownerAddress: ownerAddress
@@ -4508,60 +4627,6 @@ components:
     PeeringNodeStatusResponse_:
       example:
         isAlive: true
-        peeringURL: peeringURL
-        name: name
-        publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-        numUsers: 6
-        isTrusted: true
-      properties:
-        isAlive:
-          description: Whether or not the peer is activated
-          format: boolean
-          type: boolean
-          xml:
-            name: IsAlive
-        isTrusted:
-          format: boolean
-          type: boolean
-          xml:
-            name: IsTrusted
-        name:
-          format: string
-          type: string
-          xml:
-            name: Name
-        numUsers:
-          description: The amount of users attached to the peer
-          format: int32
-          type: integer
-          xml:
-            name: NumUsers
-        peeringURL:
-          description: The peering URL of the peer
-          format: string
-          type: string
-          xml:
-            name: PeeringURL
-        publicKey:
-          description: The peers public key encoded in Hex
-          example: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-          format: string
-          type: string
-          xml:
-            name: PublicKey
-      required:
-      - isAlive
-      - isTrusted
-      - name
-      - numUsers
-      - peeringURL
-      - publicKey
-      type: object
-      xml:
-        name: PeeringNodeStatusResponse
-    PeeringNodeStatusResponse__:
-      example:
-        isAlive: true
         peeringURL: localhost:4000
         name: name
         publicKey: 0x0000
@@ -4772,31 +4837,6 @@ components:
       xml:
         name: Ratio32
     Ratio32_:
-      example:
-        a: 1
-        b: 1
-      properties:
-        a:
-          example: 1
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: A
-        b:
-          example: 1
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: B
-      required:
-      - a
-      - b
-      type: object
-      xml:
-        name: Ratio32
-    Ratio32__:
       example:
         a: 0
         b: 0

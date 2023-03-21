@@ -4,25 +4,20 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**AnchorTransactionId** | **string** |  | 
 **BlockIndex** | **uint32** |  | 
 **GasBurned** | **string** | The burned gas (uint64 as string) | 
 **GasFeeCharged** | **string** | The charged gas fee (uint64 as string) | 
-**L1CommitmentHash** | **string** |  | 
 **NumOffLedgerRequests** | **uint32** |  | 
 **NumSuccessfulRequests** | **uint32** |  | 
-**PreviousL1CommitmentHash** | **string** |  | 
+**PreviousAliasOutput** | **string** |  | 
 **Timestamp** | **time.Time** |  | 
-**TotalBaseTokensInL2Accounts** | **string** | The total L2 base tokens (uint64 as string) | 
 **TotalRequests** | **uint32** |  | 
-**TotalStorageDeposit** | **string** | The total storage deposit (uint64 as string) | 
-**TransactionSubEssenceHash** | **string** |  | 
 
 ## Methods
 
 ### NewBlockInfoResponse
 
-`func NewBlockInfoResponse(anchorTransactionId string, blockIndex uint32, gasBurned string, gasFeeCharged string, l1CommitmentHash string, numOffLedgerRequests uint32, numSuccessfulRequests uint32, previousL1CommitmentHash string, timestamp time.Time, totalBaseTokensInL2Accounts string, totalRequests uint32, totalStorageDeposit string, transactionSubEssenceHash string, ) *BlockInfoResponse`
+`func NewBlockInfoResponse(blockIndex uint32, gasBurned string, gasFeeCharged string, numOffLedgerRequests uint32, numSuccessfulRequests uint32, previousAliasOutput string, timestamp time.Time, totalRequests uint32, ) *BlockInfoResponse`
 
 NewBlockInfoResponse instantiates a new BlockInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -36,26 +31,6 @@ will change when the set of required properties is changed
 NewBlockInfoResponseWithDefaults instantiates a new BlockInfoResponse object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
-
-### GetAnchorTransactionId
-
-`func (o *BlockInfoResponse) GetAnchorTransactionId() string`
-
-GetAnchorTransactionId returns the AnchorTransactionId field if non-nil, zero value otherwise.
-
-### GetAnchorTransactionIdOk
-
-`func (o *BlockInfoResponse) GetAnchorTransactionIdOk() (*string, bool)`
-
-GetAnchorTransactionIdOk returns a tuple with the AnchorTransactionId field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetAnchorTransactionId
-
-`func (o *BlockInfoResponse) SetAnchorTransactionId(v string)`
-
-SetAnchorTransactionId sets AnchorTransactionId field to given value.
-
 
 ### GetBlockIndex
 
@@ -117,26 +92,6 @@ and a boolean to check if the value has been set.
 SetGasFeeCharged sets GasFeeCharged field to given value.
 
 
-### GetL1CommitmentHash
-
-`func (o *BlockInfoResponse) GetL1CommitmentHash() string`
-
-GetL1CommitmentHash returns the L1CommitmentHash field if non-nil, zero value otherwise.
-
-### GetL1CommitmentHashOk
-
-`func (o *BlockInfoResponse) GetL1CommitmentHashOk() (*string, bool)`
-
-GetL1CommitmentHashOk returns a tuple with the L1CommitmentHash field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetL1CommitmentHash
-
-`func (o *BlockInfoResponse) SetL1CommitmentHash(v string)`
-
-SetL1CommitmentHash sets L1CommitmentHash field to given value.
-
-
 ### GetNumOffLedgerRequests
 
 `func (o *BlockInfoResponse) GetNumOffLedgerRequests() uint32`
@@ -177,24 +132,24 @@ and a boolean to check if the value has been set.
 SetNumSuccessfulRequests sets NumSuccessfulRequests field to given value.
 
 
-### GetPreviousL1CommitmentHash
+### GetPreviousAliasOutput
 
-`func (o *BlockInfoResponse) GetPreviousL1CommitmentHash() string`
+`func (o *BlockInfoResponse) GetPreviousAliasOutput() string`
 
-GetPreviousL1CommitmentHash returns the PreviousL1CommitmentHash field if non-nil, zero value otherwise.
+GetPreviousAliasOutput returns the PreviousAliasOutput field if non-nil, zero value otherwise.
 
-### GetPreviousL1CommitmentHashOk
+### GetPreviousAliasOutputOk
 
-`func (o *BlockInfoResponse) GetPreviousL1CommitmentHashOk() (*string, bool)`
+`func (o *BlockInfoResponse) GetPreviousAliasOutputOk() (*string, bool)`
 
-GetPreviousL1CommitmentHashOk returns a tuple with the PreviousL1CommitmentHash field if it's non-nil, zero value otherwise
+GetPreviousAliasOutputOk returns a tuple with the PreviousAliasOutput field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetPreviousL1CommitmentHash
+### SetPreviousAliasOutput
 
-`func (o *BlockInfoResponse) SetPreviousL1CommitmentHash(v string)`
+`func (o *BlockInfoResponse) SetPreviousAliasOutput(v string)`
 
-SetPreviousL1CommitmentHash sets PreviousL1CommitmentHash field to given value.
+SetPreviousAliasOutput sets PreviousAliasOutput field to given value.
 
 
 ### GetTimestamp
@@ -217,26 +172,6 @@ and a boolean to check if the value has been set.
 SetTimestamp sets Timestamp field to given value.
 
 
-### GetTotalBaseTokensInL2Accounts
-
-`func (o *BlockInfoResponse) GetTotalBaseTokensInL2Accounts() string`
-
-GetTotalBaseTokensInL2Accounts returns the TotalBaseTokensInL2Accounts field if non-nil, zero value otherwise.
-
-### GetTotalBaseTokensInL2AccountsOk
-
-`func (o *BlockInfoResponse) GetTotalBaseTokensInL2AccountsOk() (*string, bool)`
-
-GetTotalBaseTokensInL2AccountsOk returns a tuple with the TotalBaseTokensInL2Accounts field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetTotalBaseTokensInL2Accounts
-
-`func (o *BlockInfoResponse) SetTotalBaseTokensInL2Accounts(v string)`
-
-SetTotalBaseTokensInL2Accounts sets TotalBaseTokensInL2Accounts field to given value.
-
-
 ### GetTotalRequests
 
 `func (o *BlockInfoResponse) GetTotalRequests() uint32`
@@ -255,46 +190,6 @@ and a boolean to check if the value has been set.
 `func (o *BlockInfoResponse) SetTotalRequests(v uint32)`
 
 SetTotalRequests sets TotalRequests field to given value.
-
-
-### GetTotalStorageDeposit
-
-`func (o *BlockInfoResponse) GetTotalStorageDeposit() string`
-
-GetTotalStorageDeposit returns the TotalStorageDeposit field if non-nil, zero value otherwise.
-
-### GetTotalStorageDepositOk
-
-`func (o *BlockInfoResponse) GetTotalStorageDepositOk() (*string, bool)`
-
-GetTotalStorageDepositOk returns a tuple with the TotalStorageDeposit field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetTotalStorageDeposit
-
-`func (o *BlockInfoResponse) SetTotalStorageDeposit(v string)`
-
-SetTotalStorageDeposit sets TotalStorageDeposit field to given value.
-
-
-### GetTransactionSubEssenceHash
-
-`func (o *BlockInfoResponse) GetTransactionSubEssenceHash() string`
-
-GetTransactionSubEssenceHash returns the TransactionSubEssenceHash field if non-nil, zero value otherwise.
-
-### GetTransactionSubEssenceHashOk
-
-`func (o *BlockInfoResponse) GetTransactionSubEssenceHashOk() (*string, bool)`
-
-GetTransactionSubEssenceHashOk returns a tuple with the TransactionSubEssenceHash field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetTransactionSubEssenceHash
-
-`func (o *BlockInfoResponse) SetTransactionSubEssenceHash(v string)`
-
-SetTransactionSubEssenceHash sets TransactionSubEssenceHash field to given value.
 
 
 

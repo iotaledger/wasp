@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/l1connection"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -92,7 +91,7 @@ func TestNodeConn(t *testing.T) {
 
 	go nodeBridge.Run(ctx)
 
-	nc, err := nodeconn.New(ctxInit, log, nodeBridge, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), nil)
+	nc, err := nodeconn.New(ctxInit, log, nodeBridge, nil)
 	require.NoError(t, err)
 
 	// run the node connection
@@ -135,6 +134,8 @@ func TestNodeConn(t *testing.T) {
 			chainStateOutsICh <- outputInfo.OutputID
 		},
 		func(timestamp time.Time) {},
+		nil,
+		nil,
 	)
 
 	client := l1connection.NewClient(l1.Config, log)

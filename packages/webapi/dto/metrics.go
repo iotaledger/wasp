@@ -6,7 +6,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/metrics"
 )
 
 type MetricItem[T interface{}] struct {
@@ -15,25 +15,41 @@ type MetricItem[T interface{}] struct {
 	LastMessage T
 }
 
-type ChainMetrics struct {
-	InAliasOutput                   *MetricItem[*iotago.AliasOutput]
-	InOnLedgerRequest               *MetricItem[isc.OnLedgerRequest]
-	InOutput                        *MetricItem[*nodeconnmetrics.InOutput]
-	InStateOutput                   *MetricItem[*nodeconnmetrics.InStateOutput]
-	InTxInclusionState              *MetricItem[*nodeconnmetrics.TxInclusionStateMsg]
-	InMilestone                     *MetricItem[*nodeclient.MilestoneInfo]
+type ChainMessageMetrics struct {
+	InStateOutput      *MetricItem[*metrics.InStateOutput]
+	InAliasOutput      *MetricItem[*iotago.AliasOutput]
+	InOutput           *MetricItem[*metrics.InOutput]
+	InOnLedgerRequest  *MetricItem[isc.OnLedgerRequest]
+	InTxInclusionState *MetricItem[*metrics.TxInclusionStateMsg]
+
+	OutPublishStateTransaction      *MetricItem[*metrics.StateTransaction]
 	OutPublishGovernanceTransaction *MetricItem[*iotago.Transaction]
 	OutPullLatestOutput             *MetricItem[interface{}]
-	OutPullOutputByID               *MetricItem[iotago.OutputID]
 	OutPullTxInclusionState         *MetricItem[iotago.TransactionID]
-	OutPublisherStateTransaction    *MetricItem[*nodeconnmetrics.StateTransaction]
-	RegisteredChainIDs              []isc.ChainID
+	OutPullOutputByID               *MetricItem[iotago.OutputID]
 }
 
-func MapMetricItem[T interface{}](metrics nodeconnmetrics.NodeConnectionMessageMetrics[T]) *MetricItem[T] {
+type NodeMessageMetrics struct {
+	RegisteredChainIDs []isc.ChainID
+
+	InMilestone        *MetricItem[*nodeclient.MilestoneInfo]
+	InStateOutput      *MetricItem[*metrics.InStateOutput]
+	InAliasOutput      *MetricItem[*iotago.AliasOutput]
+	InOutput           *MetricItem[*metrics.InOutput]
+	InOnLedgerRequest  *MetricItem[isc.OnLedgerRequest]
+	InTxInclusionState *MetricItem[*metrics.TxInclusionStateMsg]
+
+	OutPublishStateTransaction      *MetricItem[*metrics.StateTransaction]
+	OutPublishGovernanceTransaction *MetricItem[*iotago.Transaction]
+	OutPullLatestOutput             *MetricItem[interface{}]
+	OutPullTxInclusionState         *MetricItem[iotago.TransactionID]
+	OutPullOutputByID               *MetricItem[iotago.OutputID]
+}
+
+func MapMetricItem[T interface{}](metrics metrics.IMessageMetric[T]) *MetricItem[T] {
 	return &MetricItem[T]{
-		Messages:    metrics.GetL1MessagesTotal(),
-		Timestamp:   metrics.GetLastL1MessageTime(),
-		LastMessage: metrics.GetLastL1Message(),
+		Messages:    metrics.MessagesTotal(),
+		Timestamp:   metrics.LastMessageTime(),
+		LastMessage: metrics.LastMessage(),
 	}
 }

@@ -247,7 +247,10 @@ func testSendNFTsBack(t *testing.T, w bool) {
 	require.True(t, ch.Env.HasL1NFT(addr, &nft.ID))
 }
 
+// TODO add a test that makes sure sending more than 4 NFTs out fails with (too many outputs produced)
+
 func TestNFTOffledgerWithdraw(t *testing.T) { run2(t, testNFTOffledgerWithdraw) }
+
 func testNFTOffledgerWithdraw(t *testing.T, w bool) {
 	// Deposit an NFT, then claim it back via offleger-request
 	_, ch := setupChain(t, nil)

@@ -30,8 +30,8 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/common"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
@@ -60,16 +60,15 @@ type LedgerUpdateHandler func(*nodebridge.LedgerUpdate)
 type nodeConnection struct {
 	*logger.WrappedLogger
 
-	ctx                   context.Context
-	syncedCtx             context.Context
-	syncedCtxCancel       context.CancelFunc
-	chainsLock            sync.RWMutex
-	chainsMap             *shrinkingmap.ShrinkingMap[isc.ChainID, *ncChain]
-	indexerClient         nodeclient.IndexerClient
-	nodeBridge            *nodebridge.NodeBridge
-	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
-	nodeClient            *nodeclient.Client
-	l1Params              *parameters.L1Params
+	ctx             context.Context
+	syncedCtx       context.Context
+	syncedCtxCancel context.CancelFunc
+	chainsLock      sync.RWMutex
+	chainsMap       *shrinkingmap.ShrinkingMap[isc.ChainID, *ncChain]
+	indexerClient   nodeclient.IndexerClient
+	nodeBridge      *nodebridge.NodeBridge
+	nodeClient      *nodeclient.Client
+	l1Params        *parameters.L1Params
 
 	// pendingTransactionsMap is a map of sent transactions that are pending.
 	pendingTransactionsMap  *shrinkingmap.ShrinkingMap[iotago.TransactionID, *pendingTransaction]
@@ -83,7 +82,6 @@ func New(
 	ctx context.Context,
 	log *logger.Logger,
 	nodeBridge *nodebridge.NodeBridge,
-	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics,
 	shutdownHandler *shutdown.ShutdownHandler,
 ) (chain.NodeConnection, error) {
 	ctxIndexer, cancelIndexer := context.WithTimeout(ctx, indexerPluginAvailableTimeout)
@@ -104,11 +102,10 @@ func New(
 			shrinkingmap.WithShrinkingThresholdRatio(chainsCleanupThresholdRatio),
 			shrinkingmap.WithShrinkingThresholdCount(chainsCleanupThresholdCount),
 		),
-		chainsLock:            sync.RWMutex{},
-		indexerClient:         indexerClient,
-		nodeBridge:            nodeBridge,
-		nodeConnectionMetrics: nodeConnectionMetrics,
-		nodeClient:            nodeBridge.INXNodeClient(),
+		chainsLock:    sync.RWMutex{},
+		indexerClient: indexerClient,
+		nodeBridge:    nodeBridge,
+		nodeClient:    nodeBridge.INXNodeClient(),
 		pendingTransactionsMap: shrinkingmap.New[iotago.TransactionID, *pendingTransaction](
 			shrinkingmap.WithShrinkingThresholdRatio(pendingTransactionsCleanupThresholdRatio),
 			shrinkingmap.WithShrinkingThresholdCount(pendingTransactionsCleanupThresholdCount),
@@ -570,10 +567,6 @@ func (nc *nodeConnection) GetChain(chainID isc.ChainID) (*ncChain, error) {
 	return ncc, nil
 }
 
-func (nc *nodeConnection) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
-	return nc.nodeConnectionMetrics
-}
-
 // doPostTx posts the transaction on layer 1 including tipselection and proof of work.
 // this function does not wait until the transaction gets confirmed on L1.
 func (nc *nodeConnection) doPostTx(ctx context.Context, tx *iotago.Transaction, tipsAdditional ...iotago.BlockID) (iotago.BlockID, error) {
@@ -786,6 +779,8 @@ func (nc *nodeConnection) AttachChain(
 	recvRequestCB chain.RequestOutputHandler,
 	recvAliasOutput chain.AliasOutputHandler,
 	recvMilestone chain.MilestoneHandler,
+	onChainConnect func(),
+	onChainDisconnect func(),
 ) {
 	chain := func() *ncChain {
 		// we need to lock until the chain init is done,
@@ -798,7 +793,7 @@ func (nc *nodeConnection) AttachChain(
 		// the chain is added to the map, even if not synchronzied yet,
 		// so we can track all pending ledger updates until the chain is synchronized.
 		nc.chainsMap.Set(chainID, chain)
-		nc.nodeConnectionMetrics.SetRegistered(chainID)
+		util.ExecuteIfNotNil(onChainConnect)
 		nc.LogDebugf("chain registered: %s = %s", chainID.ShortString(), chainID)
 
 		return chain
@@ -820,7 +815,7 @@ func (nc *nodeConnection) AttachChain(
 		defer nc.chainsLock.Unlock()
 
 		nc.chainsMap.Delete(chainID)
-		nc.nodeConnectionMetrics.SetUnregistered(chainID)
+		util.ExecuteIfNotNil(onChainDisconnect)
 		nc.LogDebugf("chain unregistered: %s = %s, |remaining|=%v", chainID.ShortString(), chainID, nc.chainsMap.Size())
 	}()
 }

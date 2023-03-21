@@ -79,9 +79,6 @@ func StateMetadataFromBytes(data []byte) (*StateMetadata, error) {
 }
 
 func L1CommitmentFromAliasOutput(ao *iotago.AliasOutput) (*state.L1Commitment, error) {
-	if len(ao.StateMetadata) == state.L1CommitmentSize {
-		return state.L1CommitmentFromBytes(ao.StateMetadata)
-	}
 	s, err := StateMetadataFromBytes(ao.StateMetadata)
 	if err != nil {
 		return nil, err
