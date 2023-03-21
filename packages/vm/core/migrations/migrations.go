@@ -20,8 +20,4 @@ type Migration struct {
 // incremented.
 // Old migrations can be pruned; for each migration pruned increment
 // BaseSchemaVersion by one.
-var Migrations = []Migration{
-	m001GasPerTokenToRatio32,
-	m002CleanupFeePolicy,
-	m003CleanupBlockInfo,
-}
+var Migrations = []Migration{}
