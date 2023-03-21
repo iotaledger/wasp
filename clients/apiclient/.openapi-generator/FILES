@@ -72,6 +72,7 @@ docs/NFTDataResponse.md
 docs/NativeToken.md
 docs/NativeTokenIDRegistryResponse.md
 docs/NodeApi.md
+docs/NodeMessageMetrics.md
 docs/NodeOwnerCertificateRequest.md
 docs/NodeOwnerCertificateResponse.md
 docs/OffLedgerRequest.md
@@ -165,6 +166,7 @@ model_login_response.go
 model_native_token.go
 model_native_token_id_registry_response.go
 model_nft_data_response.go
+model_node_message_metrics.go
 model_node_owner_certificate_request.go
 model_node_owner_certificate_response.go
 model_off_ledger_request.go

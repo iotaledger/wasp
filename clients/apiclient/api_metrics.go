@@ -406,7 +406,7 @@ type ApiGetL1MetricsRequest struct {
 	ApiService *MetricsApiService
 }
 
-func (r ApiGetL1MetricsRequest) Execute() (*ChainMessageMetrics, *http.Response, error) {
+func (r ApiGetL1MetricsRequest) Execute() (*NodeMessageMetrics, *http.Response, error) {
 	return r.ApiService.GetL1MetricsExecute(r)
 }
 
@@ -424,13 +424,13 @@ func (a *MetricsApiService) GetL1Metrics(ctx context.Context) ApiGetL1MetricsReq
 }
 
 // Execute executes the request
-//  @return ChainMessageMetrics
-func (a *MetricsApiService) GetL1MetricsExecute(r ApiGetL1MetricsRequest) (*ChainMessageMetrics, *http.Response, error) {
+//  @return NodeMessageMetrics
+func (a *MetricsApiService) GetL1MetricsExecute(r ApiGetL1MetricsRequest) (*NodeMessageMetrics, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *ChainMessageMetrics
+		localVarReturnValue  *NodeMessageMetrics
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "MetricsApiService.GetL1Metrics")

@@ -80,7 +80,6 @@ func initInfoCmd() *cobra.Command {
 				log.Printf("#Contracts: %d\n", len(contracts))
 
 				log.Printf("Owner: %s\n", chainInfo.ChainOwnerId)
-
 				log.Printf("Gas fee: gas units * (%d/%d)\n", chainInfo.GasFeePolicy.GasPerToken.A, chainInfo.GasFeePolicy.GasPerToken.B)
 				log.Printf("Validator fee share: %d%%\n", chainInfo.GasFeePolicy.ValidatorFeeShare)
 
