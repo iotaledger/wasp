@@ -1,6 +1,8 @@
 package vmcontext
 
 import (
+	"errors"
+	"fmt"
 	"math"
 	"runtime/debug"
 	"time"
@@ -28,7 +30,7 @@ import (
 )
 
 // RunTheRequest processes each isc.Request in the batch
-func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (result *vm.RequestResult, err error) {
+func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm.RequestResult, error) {
 	// prepare context for the request
 	vmctx.req = req
 	defer func() { vmctx.req = nil }() // in case `getToBeCaller()` is called afterwards
@@ -56,9 +58,8 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (res
 	// so far there were no panics except optimistic reader
 	txsnapshot := vmctx.createTxBuilderSnapshot()
 
-	// catches protocol exception error which is not the request or contract fault
-	// If it occurs, the request is just skipped
-	err = panicutil.CatchPanicReturnError(
+	var result *vm.RequestResult
+	err := vmctx.catchRequestPanic(
 		func() {
 			// transfer all attached assets to the sender's account
 			vmctx.creditAssetsToChain()
@@ -72,10 +73,10 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (res
 				Receipt: receipt,
 				Return:  callRet,
 			}
-		}, vmexceptions.AllProtocolLimits...,
+		},
 	)
 	if err != nil {
-		// transaction limits exceeded or not enough funds for internal storage deposit. Skipping the request. Rollback
+		// protocol exception triggered. Skipping the request. Rollback
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
 		return nil, err
 	}
@@ -116,6 +117,28 @@ func (vmctx *VMContext) creditAssetsToChain() {
 
 	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
 	vmctx.assertConsistentL2WithL1TxBuilder("end creditAssetsToChain")
+}
+
+func (vmctx *VMContext) catchRequestPanic(f func()) error {
+	err := panicutil.CatchPanic(f)
+	if err == nil {
+		return nil
+	}
+	// catches protocol exception error which is not the request or contract fault
+	// If it occurs, the request is just skipped
+	for _, targetError := range vmexceptions.AllProtocolLimits {
+		if errors.Is(err, targetError) {
+			return err
+		}
+	}
+	// panic again with more information about the error
+	panic(fmt.Errorf(
+		"panic when running request #%d ID:%s, requestbytes:%s err:%w",
+		vmctx.requestIndex,
+		vmctx.req.ID(),
+		iotago.EncodeHex(vmctx.req.Bytes()),
+		err,
+	))
 }
 
 // checkAllowance ensure there are enough funds to cover the specified allowance
