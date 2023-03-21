@@ -93,6 +93,9 @@ func (vmctx *VMContext) loadFoundry(serNum uint32) (*iotago.FoundryOutput, iotag
 }
 
 func (vmctx *VMContext) getOutputID(blockIndex uint32, outputIndex uint16) (iotago.OutputID, error) {
+	if blockIndex == vmctx.StateAnchor().StateIndex {
+		return iotago.OutputIDFromTransactionIDAndIndex(vmctx.StateAnchor().OutputID.TransactionID(), outputIndex), nil
+	}
 	var outputID iotago.OutputID
 	var err error
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {

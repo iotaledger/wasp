@@ -2,12 +2,12 @@
 
 All URIs are relative to *http://localhost*
 
-| Method                                                               | HTTP request                              | Description                   |
-| -------------------------------------------------------------------- | ----------------------------------------- | ----------------------------- |
-| [**GetChainMetrics**](MetricsApi.md#GetChainMetrics)                 | **Get** /metrics/chain/{chainID}          | Get chain specific metrics.   |
-| [**GetChainPipeMetrics**](MetricsApi.md#GetChainPipeMetrics)         | **Get** /metrics/chain/{chainID}/pipe     | Get chain pipe event metrics. |
-| [**GetChainWorkflowMetrics**](MetricsApi.md#GetChainWorkflowMetrics) | **Get** /metrics/chain/{chainID}/workflow | Get chain workflow metrics.   |
-| [**GetL1Metrics**](MetricsApi.md#GetL1Metrics)                       | **Get** /metrics/l1                       | Get accumulated metrics.      |
+Method | HTTP request | Description
+------------- | ------------- | -------------
+[**GetChainMetrics**](MetricsApi.md#GetChainMetrics) | **Get** /metrics/chain/{chainID} | Get chain specific metrics.
+[**GetChainPipeMetrics**](MetricsApi.md#GetChainPipeMetrics) | **Get** /metrics/chain/{chainID}/pipe | Get chain pipe event metrics.
+[**GetChainWorkflowMetrics**](MetricsApi.md#GetChainWorkflowMetrics) | **Get** /metrics/chain/{chainID}/workflow | Get chain workflow metrics.
+[**GetL1Metrics**](MetricsApi.md#GetL1Metrics) | **Get** /metrics/l1 | Get accumulated metrics.
 
 
 
@@ -47,18 +47,18 @@ func main() {
 ### Path Parameters
 
 
-| Name        | Type                | Description                                                                 | Notes |
-| ----------- | ------------------- | --------------------------------------------------------------------------- | ----- |
-| **ctx**     | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc. |
-| **chainID** | **string**          | ChainID (Bech32)                                                            |
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**chainID** | **string** | ChainID (Bech32) | 
 
 ### Other Parameters
 
 Other parameters are passed through a pointer to a apiGetChainMetricsRequest struct via the builder pattern
 
 
-| Name | Type | Description | Notes |
-| ---- | ---- | ----------- | ----- |
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
 
 
 ### Return type
@@ -115,18 +115,18 @@ func main() {
 ### Path Parameters
 
 
-| Name        | Type                | Description                                                                 | Notes |
-| ----------- | ------------------- | --------------------------------------------------------------------------- | ----- |
-| **ctx**     | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc. |
-| **chainID** | **string**          | ChainID (Bech32)                                                            |
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**chainID** | **string** | ChainID (Bech32) | 
 
 ### Other Parameters
 
 Other parameters are passed through a pointer to a apiGetChainPipeMetricsRequest struct via the builder pattern
 
 
-| Name | Type | Description | Notes |
-| ---- | ---- | ----------- | ----- |
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
 
 
 ### Return type
@@ -183,18 +183,18 @@ func main() {
 ### Path Parameters
 
 
-| Name        | Type                | Description                                                                 | Notes |
-| ----------- | ------------------- | --------------------------------------------------------------------------- | ----- |
-| **ctx**     | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc. |
-| **chainID** | **string**          | ChainID (Bech32)                                                            |
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**chainID** | **string** | ChainID (Bech32) | 
 
 ### Other Parameters
 
 Other parameters are passed through a pointer to a apiGetChainWorkflowMetricsRequest struct via the builder pattern
 
 
-| Name | Type | Description | Notes |
-| ---- | ---- | ----------- | ----- |
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
 
 
 ### Return type

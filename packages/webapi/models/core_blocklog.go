@@ -30,12 +30,14 @@ type BlockInfoResponse struct {
 
 func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
 	blockindex := uint32(0)
+	prevAOStr := ""
 	if info.PreviousAliasOutput != nil {
 		blockindex = info.PreviousAliasOutput.GetAliasOutput().StateIndex + 1
+		prevAOStr = string(info.PreviousAliasOutput.Bytes())
 	}
 	return &BlockInfoResponse{
 		BlockIndex:            blockindex,
-		PreviousAliasOutput:   string(info.PreviousAliasOutput.Bytes()),
+		PreviousAliasOutput:   prevAOStr,
 		Timestamp:             info.Timestamp,
 		TotalRequests:         info.TotalRequests,
 		NumSuccessfulRequests: info.NumSuccessfulRequests,
