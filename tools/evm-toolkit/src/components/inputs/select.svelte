@@ -1,22 +1,12 @@
 <script lang="ts">
-  import type { NetworkOption } from '$lib/network_option';
-
-  export let options: NetworkOption[] | string[] = [];
-  export let displayValue = (option: NetworkOption) => option.text;
-  export let index: number = 0;
-  export let value: NetworkOption | string;
-
-  $: value = options[index];
+  export let options: { label: string; id: number }[] = [];
+  export let value: number = 0;
 </script>
 
 <select-component>
-  <select bind:value={index}>
-    {#each options as option, i}
-      {#if typeof option === 'string'}
-        <option value={i}>{option}</option>
-      {:else}
-        <option value={i}>{displayValue(option)}</option>
-      {/if}
+  <select bind:value>
+    {#each options as { label, id }}
+      <option value={id}>{label}</option>
     {/each}
   </select>
   <select-arrow />

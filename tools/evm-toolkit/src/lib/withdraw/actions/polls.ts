@@ -1,4 +1,4 @@
-import { indexerClient, nodeClient } from '../../../store';
+import { indexerClient, nodeClient } from '$lib/evm-toolkit';
 import { selectedAccount, web3 } from 'svelte-web3';
 import { get } from 'svelte/store';
 import { updateWithdrawStateStore, withdrawStateStore } from '../stores';

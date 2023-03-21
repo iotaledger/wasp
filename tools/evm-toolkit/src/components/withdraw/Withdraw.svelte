@@ -7,7 +7,7 @@
     defaultEvmStores,
   } from 'svelte-web3';
   import { setIntervalAsync, clearIntervalAsync } from 'set-interval-async';
-  import { nodeClient, indexerClient, selectedNetwork } from '../../store';
+  import { nodeClient, indexerClient, selectedNetwork } from '$lib/evm-toolkit';
   import {
     gasFee,
     iscAbi,

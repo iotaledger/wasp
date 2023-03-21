@@ -10,7 +10,7 @@
   import { chainId, connected, selectedAccount } from 'svelte-web3';
   import { Button, Input } from '.';
   import { Bech32AddressLength } from '../lib/constants';
-  import { nodeClient } from '../store';
+  import { nodeClient } from '$lib/evm-toolkit';
   import type { WithdrawFormInput } from './withdraw/component_types';
   import { gasFee } from './withdraw/constants';
 

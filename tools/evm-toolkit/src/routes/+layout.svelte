@@ -1,17 +1,7 @@
 <script lang="ts">
-  import { Navbar, PopupManager, NotificationManager } from '$components';
+  import { Navbar, NotificationManager, PopupManager } from '$components';
+  
   import '../app.scss';
-  import { onMount } from 'svelte';
-
-  import { NETWORKS } from '$lib/networks';
-  import { networks, selectedNetwork } from '../store';
-
-  import '../app.scss';
-
-  onMount(async () => {
-    networks.set(NETWORKS);
-    selectedNetwork.set(NETWORKS[1]);
-  });
 </script>
 
 <Navbar />
