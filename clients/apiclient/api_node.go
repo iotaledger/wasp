@@ -61,7 +61,7 @@ func (a *NodeApiService) DistrustPeerExecute(r ApiDistrustPeerRequest) (*http.Re
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/node/peers/trusted/{peer}"
+	localVarPath := localBasePath + "/v1/node/peers/trusted/{peer}"
 	localVarPath = strings.Replace(localVarPath, "{"+"peer"+"}", url.PathEscape(parameterValueToString(r.peer, "peer")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -182,7 +182,7 @@ func (a *NodeApiService) GenerateDKSExecute(r ApiGenerateDKSRequest) (*DKSharesI
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/node/dks"
+	localVarPath := localBasePath + "/v1/node/dks"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -308,7 +308,7 @@ func (a *NodeApiService) GetAllPeersExecute(r ApiGetAllPeersRequest) ([]PeeringN
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/node/peers"
+	localVarPath := localBasePath + "/v1/node/peers"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -429,7 +429,7 @@ func (a *NodeApiService) GetConfigurationExecute(r ApiGetConfigurationRequest) (
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/node/config"
+	localVarPath := localBasePath + "/v1/node/config"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -553,7 +553,7 @@ func (a *NodeApiService) GetDKSInfoExecute(r ApiGetDKSInfoRequest) (*DKSharesInf
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/node/dks/{sharedAddress}"
+	localVarPath := localBasePath + "/v1/node/dks/{sharedAddress}"
 	localVarPath = strings.Replace(localVarPath, "{"+"sharedAddress"+"}", url.PathEscape(parameterValueToString(r.sharedAddress, "sharedAddress")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -674,7 +674,7 @@ func (a *NodeApiService) GetHealthExecute(r ApiGetHealthRequest) (*http.Response
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/health"
+	localVarPath := localBasePath + "/v1/health"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -762,7 +762,7 @@ func (a *NodeApiService) GetInfoExecute(r ApiGetInfoRequest) (*InfoResponse, *ht
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/node/info"
+	localVarPath := localBasePath + "/v1/node/info"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -883,7 +883,7 @@ func (a *NodeApiService) GetPeeringIdentityExecute(r ApiGetPeeringIdentityReques
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/node/peers/identity"
+	localVarPath := localBasePath + "/v1/node/peers/identity"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1004,7 +1004,7 @@ func (a *NodeApiService) GetTrustedPeersExecute(r ApiGetTrustedPeersRequest) ([]
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/node/peers/trusted"
+	localVarPath := localBasePath + "/v1/node/peers/trusted"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1125,7 +1125,7 @@ func (a *NodeApiService) GetVersionExecute(r ApiGetVersionRequest) (*VersionResp
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/node/version"
+	localVarPath := localBasePath + "/v1/node/version"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1229,7 +1229,7 @@ func (a *NodeApiService) SetNodeOwnerExecute(r ApiSetNodeOwnerRequest) (*NodeOwn
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/node/owner/certificate"
+	localVarPath := localBasePath + "/v1/node/owner/certificate"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1353,7 +1353,7 @@ func (a *NodeApiService) ShutdownNodeExecute(r ApiShutdownNodeRequest) (*http.Re
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/node/shutdown"
+	localVarPath := localBasePath + "/v1/node/shutdown"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1470,7 +1470,7 @@ func (a *NodeApiService) TrustPeerExecute(r ApiTrustPeerRequest) (*http.Response
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/node/peers/trusted"
+	localVarPath := localBasePath + "/v1/node/peers/trusted"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
