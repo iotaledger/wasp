@@ -22,7 +22,7 @@ import (
 
 const (
 	mySeed  = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3"
-	waspAPI = "http://localhost:9090"
+	waspAPI = "http://localhost:19090"
 )
 
 var params = []string{

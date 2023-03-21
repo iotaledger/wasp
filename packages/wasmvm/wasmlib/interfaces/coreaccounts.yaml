@@ -13,6 +13,7 @@ funcs:
     params:
       forceMinimumBaseTokens=f: Uint64
   foundryCreateNew:
+    access: chain # only chain owner can invoke this function
     params:
       tokenScheme=t: Bytes
     results:
@@ -25,7 +26,6 @@ funcs:
       foundrySN=s: Uint32
       supplyDeltaAbs=d: BigInt
       destroyTokens=y: Bool?
-
 views:
   balance:
     params:

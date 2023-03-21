@@ -39,6 +39,8 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (isc.VMProcessor, error)
 	// This setting will also be propagated to all the sub-processors of this processor
 	wasmVM := NewWasmTimeVM
 	if GoWasmVM != nil {
+		// note that this will never happen except with Solo tests that explicitly
+		// bypass the Wasm VM by using the WasmGoVM, which runs the Go SC code directly
 		wasmVM = GoWasmVM
 		GoWasmVM = nil
 	}

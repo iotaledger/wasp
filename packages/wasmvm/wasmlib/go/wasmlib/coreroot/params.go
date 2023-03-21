@@ -112,34 +112,6 @@ func (s MutableRevokeDeployPermissionParams) Deployer() wasmtypes.ScMutableAgent
 	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ParamDeployer))
 }
 
-type ImmutableSubscribeBlockContextParams struct {
-	Proxy wasmtypes.Proxy
-}
-
-func NewImmutableSubscribeBlockContextParams() ImmutableSubscribeBlockContextParams {
-	return ImmutableSubscribeBlockContextParams{Proxy: wasmlib.NewParamsProxy()}
-}
-
-func (s ImmutableSubscribeBlockContextParams) CloseFunc() wasmtypes.ScImmutableHname {
-	return wasmtypes.NewScImmutableHname(s.Proxy.Root(ParamCloseFunc))
-}
-
-func (s ImmutableSubscribeBlockContextParams) OpenFunc() wasmtypes.ScImmutableHname {
-	return wasmtypes.NewScImmutableHname(s.Proxy.Root(ParamOpenFunc))
-}
-
-type MutableSubscribeBlockContextParams struct {
-	Proxy wasmtypes.Proxy
-}
-
-func (s MutableSubscribeBlockContextParams) CloseFunc() wasmtypes.ScMutableHname {
-	return wasmtypes.NewScMutableHname(s.Proxy.Root(ParamCloseFunc))
-}
-
-func (s MutableSubscribeBlockContextParams) OpenFunc() wasmtypes.ScMutableHname {
-	return wasmtypes.NewScMutableHname(s.Proxy.Root(ParamOpenFunc))
-}
-
 type ImmutableFindContractParams struct {
 	Proxy wasmtypes.Proxy
 }

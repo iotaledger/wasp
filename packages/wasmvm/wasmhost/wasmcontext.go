@@ -51,12 +51,18 @@ func NewWasmContext(proc *WasmProcessor, function string) *WasmContext {
 		proc:      proc,
 		vm:        proc.vm,
 	}
-	newInstance := proc.vm.NewInstance(wc)
+	newInstance := instantiate(proc, wc)
 	if newInstance != nil {
 		wc.vm = newInstance
 	}
 	proc.RegisterContext(wc)
 	return wc
+}
+
+func instantiate(proc *WasmProcessor, wc *WasmContext) WasmVM {
+	proc.contextLock.Lock()
+	defer proc.contextLock.Unlock()
+	return proc.vm.NewInstance(wc)
 }
 
 func NewWasmContextForSoloContext(function string, sandbox ISandbox) *WasmContext {
@@ -88,7 +94,7 @@ func (wc *WasmContext) Call(ctx interface{}) dict.Dict {
 		return nil
 	}
 
-	wc.log().Debugf("Calling " + wc.funcName)
+	wc.log().Debugf("Calling %s", wc.funcName)
 	wc.results = nil
 	err := wc.callFunction()
 	if err != nil {

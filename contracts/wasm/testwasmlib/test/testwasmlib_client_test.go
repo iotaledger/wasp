@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -30,6 +31,8 @@ import (
 const (
 	useCluster    = false
 	useDisposable = false
+	mySeed        = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3"
+	waspAPI       = "http://localhost:19090"
 )
 
 var params = []string{
@@ -217,7 +220,8 @@ func TestClientArray(t *testing.T) {
 
 func TestClientRandom(t *testing.T) {
 	ctx := setupClient(t)
-	doit := func() {
+
+	for i := 0; i < 4; i++ {
 		// generate new random value
 		f := testwasmlib.ScFuncs.Random(ctx)
 		f.Func.Post()
@@ -234,10 +238,6 @@ func TestClientRandom(t *testing.T) {
 		fmt.Println("Random: ", rnd)
 		require.GreaterOrEqual(t, rnd, uint64(0))
 	}
-	doit()
-	doit()
-	doit()
-	doit()
 }
 
 func TestClientEvents(t *testing.T) {
@@ -270,12 +270,11 @@ func TestClientEvents(t *testing.T) {
 	//}
 }
 
-const (
-	mySeed  = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3"
-	waspAPI = "http://localhost:19090"
-)
-
 func setupClientLib(t *testing.T) *wasmclient.WasmClientContext {
+	if !useCluster && !useDisposable {
+		t.SkipNow()
+	}
+
 	svc := wasmclient.NewWasmClientService(waspAPI)
 
 	// note that testing the WasmClient code requires a running wasp-cluster
@@ -354,7 +353,7 @@ func TestAPIErrorHandling(t *testing.T) {
 }
 
 func testAPIErrorHandling(t *testing.T, ctx *wasmclient.WasmClientContext) {
-	// missing mandatory string parameter
+	fmt.Println("check missing mandatory string parameter")
 	v := testwasmlib.ScFuncs.CheckString(ctx)
 	v.Func.Call()
 	require.Error(t, ctx.Err)
@@ -365,7 +364,7 @@ func testAPIErrorHandling(t *testing.T, ctx *wasmclient.WasmClientContext) {
 	// require.Error(t, ctx.Err)
 	// fmt.Println("Error: " + ctx.Err.Error())
 
-	// sign with wrong wallet
+	fmt.Println("check sign with wrong wallet")
 	seed := cryptolib.NewSeedFromBytes(wasmtypes.BytesFromString(mySeed))
 	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(1))
 	ctx.SignRequests(wallet)
@@ -374,7 +373,7 @@ func testAPIErrorHandling(t *testing.T, ctx *wasmclient.WasmClientContext) {
 	require.Error(t, ctx.Err)
 	fmt.Println("Error: " + ctx.Err.Error())
 
-	// wait for request on wrong chain
+	fmt.Println("check wait for request on wrong chain")
 	chainBytes := wasmtypes.ChainIDToBytes(ctx.CurrentChainID())
 	chainBytes[2]++
 	badChainID := wasmtypes.ChainIDToString(wasmtypes.ChainIDFromBytes(chainBytes))
@@ -392,35 +391,67 @@ func testAPIErrorHandling(t *testing.T, ctx *wasmclient.WasmClientContext) {
 }
 
 func TestAPIAsyncInvoke(t *testing.T) {
-	t.SkipNow()
+	// t.SkipNow()
 	ctxCluster := setupClient(t)
+
+	done1 := make(chan bool)
+
+	// note that we'll need two contexts because one is never going to
+	// get ctx.Err set and the other will get ctx.Err set for sure
+
+	ctx := setupClientLib(t)
+	require.NoError(t, ctx.Err)
+	ctx2 := setupClientLib(t)
+	require.NoError(t, ctx2.Err)
+
+	lastRnd := testAPICallView(t, ctx)
+
+	var doneLock sync.Mutex
+	doneLock.Lock()
+	go func() {
+		for !doneLock.TryLock() {
+			fmt.Println("CALL")
+			rnd := testAPICallView(t, ctx)
+			fmt.Println("CALL DONE")
+			require.Equal(t, rnd, lastRnd)
+		}
+		done1 <- true
+	}()
+	go func() {
+		testAPIErrorHandling(t, ctx2)
+		doneLock.Unlock()
+	}()
+
+	fmt.Println("APIWAIT WAIT")
+	<-done1
+	fmt.Println("APIWAIT DONE")
+
+	_ = ctxCluster
+}
+
+func TestRunAsWaspClusterForRustTesting(t *testing.T) {
+	// only enable this test when you know why you want to enable it, because
+	// this test will run an endless loop emulating the wasp-cluster tool
+	t.SkipNow()
+	require.True(t, useCluster)
+
+	// This will start a cluster test with preloaded testwasmlib SC.
+	// Essentially this replaces starting wasp-cluster and then
+	// running deploy.sh to set up the tests for client lib testing.
+	ctxCluster := setupClient(t)
+
+	// part of setting up is a Random request and a GetRandom call
 
 	ctx := setupClientLib(t)
 
+	testAPIPostRequest(t, ctx)
+
+	rnd := testAPICallView(t, ctx)
+	require.NotEqual(t, rnd, uint64(0))
+
+	// now wait forever and allow external client lib tests to run
 	done1 := make(chan bool)
-	go func() {
-		rnd := testAPICallView(t, ctx)
-		require.Equal(t, rnd, uint64(0))
-		done1 <- true
-	}()
-	done2 := make(chan bool)
-	go func() {
-		testAPIErrorHandling(t, ctx)
-		done2 <- true
-	}()
-	fmt.Println("APIWAIT WAIT")
-	done3 := make(chan bool)
-	go func() {
-		rnd := testAPICallView(t, ctx)
-		require.Equal(t, rnd, uint64(0))
-		done3 <- true
-	}()
 	<-done1
-	fmt.Println("APIWAIT DONE")
-	<-done2
-	fmt.Println("APIWAIT DONE")
-	<-done3
-	fmt.Println("APIWAIT DONE")
 
 	_ = ctxCluster
 }

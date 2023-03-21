@@ -57,8 +57,6 @@ Moves the specified allowance from the sender's L2 account to the given L2 accou
 #### Parameters
 
 - `a` (`AgentID`): The target L2 account.
-- `c` (optional `bool` - default: `false`): If the target Agent ID doesn't have funds on the chain, `c = true` specifies
-  that the account should be created. Otherwise, the call fails.
 
 ### `harvest(f ForceMinimumBaseTokens)`
 
