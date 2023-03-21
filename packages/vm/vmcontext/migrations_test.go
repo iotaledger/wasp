@@ -50,7 +50,8 @@ func (e *migrationsTestEnv) setSchemaVersion(v uint32) {
 
 func newMigrationsTest(t *testing.T, stateIndex uint32) *migrationsTestEnv {
 	db := mapdb.NewMapDB()
-	cs := origin.InitChain(state.NewStore(db), nil, 0)
+	cs := state.NewStore(db)
+	origin.InitChain(cs, nil, 0)
 	latest, err := cs.LatestBlock()
 	assert.NoError(t, err)
 	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
