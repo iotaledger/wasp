@@ -1443,7 +1443,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChainMetrics'
+                $ref: '#/components/schemas/ChainMessageMetrics'
           description: A list of all available metrics.
         "401":
           content:
@@ -1531,7 +1531,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChainMetrics'
+                $ref: '#/components/schemas/NodeMessageMetrics'
           description: A list of all available metrics.
         "401":
           content:
@@ -1553,7 +1553,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "true"
+                  example: "30"
                   format: string
                   type: string
                 type: object
@@ -2748,6 +2748,11 @@ components:
     ChainInfoResponse:
       example:
         chainOwnerId: tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e
+        gasLimits:
+          maxGasExternalViewCall: 6
+          minGasPerRequest: 5
+          maxGasPerBlock: 1
+          maxGasPerRequest: 5
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
         customMetadata: customMetadata
@@ -2791,7 +2796,9 @@ components:
           xml:
             name: EVMChainID
         gasFeePolicy:
-          $ref: '#/components/schemas/GasFeePolicy'
+          $ref: '#/components/schemas/FeePolicy'
+        gasLimits:
+          $ref: '#/components/schemas/Limits'
         isActive:
           description: Whether or not the chain is active.
           format: boolean
@@ -2802,11 +2809,13 @@ components:
       - chainID
       - chainOwnerId
       - evmChainId
+      - gasFeePolicy
+      - gasLimits
       - isActive
       type: object
       xml:
         name: ChainInfoResponse
-    ChainMetrics:
+    ChainMessageMetrics:
       example:
         outPublishGovernanceTransaction:
           lastMessage:
@@ -2843,13 +2852,6 @@ components:
             outputId: outputId
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
-        inMilestone:
-          lastMessage:
-            milestoneId: milestoneId
-            index: 0
-            timestamp: 0
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
         inAliasOutput:
           lastMessage:
             outputType: 0
@@ -2869,9 +2871,6 @@ components:
             txId: txId
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
-        registeredChainIDs:
-        - registeredChainIDs
-        - registeredChainIDs
         outPullLatestOutput:
           lastMessage: lastMessage
           messages: 1
@@ -2884,8 +2883,6 @@ components:
       properties:
         inAliasOutput:
           $ref: '#/components/schemas/AliasOutputMetricItem'
-        inMilestone:
-          $ref: '#/components/schemas/MilestoneMetricItem'
         inOnLedgerRequest:
           $ref: '#/components/schemas/OnLedgerRequestMetricItem'
         inOutput:
@@ -2904,17 +2901,8 @@ components:
           $ref: '#/components/schemas/UTXOInputMetricItem'
         outPullTxInclusionState:
           $ref: '#/components/schemas/TransactionIDMetricItem'
-        registeredChainIDs:
-          items:
-            format: string
-            type: string
-          type: array
-          xml:
-            name: RegisteredChainIDs
-            wrapped: true
       required:
       - inAliasOutput
-      - inMilestone
       - inOnLedgerRequest
       - inOutput
       - inStateOutput
@@ -2924,10 +2912,9 @@ components:
       - outPullLatestOutput
       - outPullOutputByID
       - outPullTxInclusionState
-      - registeredChainIDs
       type: object
       xml:
-        name: ChainMetrics
+        name: ChainMessageMetrics
     ChainRecord:
       example:
         accessNodes:
@@ -3608,31 +3595,7 @@ components:
       type: object
       xml:
         name: EventsResponse
-    FoundryOutputResponse:
-      example:
-        assets:
-          baseTokens: baseTokens
-          nativeTokens:
-          - amount: amount
-            id: id
-          - amount: amount
-            id: id
-        foundryId: foundryId
-      properties:
-        assets:
-          $ref: '#/components/schemas/AssetsResponse'
-        foundryId:
-          format: string
-          type: string
-          xml:
-            name: FoundryID
-      required:
-      - assets
-      - foundryId
-      type: object
-      xml:
-        name: FoundryOutputResponse
-    GasFeePolicy:
+    FeePolicy:
       example:
         gasPerToken:
           a: 1
@@ -3658,8 +3621,8 @@ components:
       - validatorFeeShare
       type: object
       xml:
-        name: GasFeePolicy
-    GasFeePolicy_:
+        name: FeePolicy
+    FeePolicy_:
       example:
         gasPerToken:
           a: 0
@@ -3685,7 +3648,31 @@ components:
       - validatorFeeShare
       type: object
       xml:
-        name: GasFeePolicy
+        name: FeePolicy
+    FoundryOutputResponse:
+      example:
+        assets:
+          baseTokens: baseTokens
+          nativeTokens:
+          - amount: amount
+            id: id
+          - amount: amount
+            id: id
+        foundryId: foundryId
+      properties:
+        assets:
+          $ref: '#/components/schemas/AssetsResponse'
+        foundryId:
+          format: string
+          type: string
+          xml:
+            name: FoundryID
+      required:
+      - assets
+      - foundryId
+      type: object
+      xml:
+        name: FoundryOutputResponse
     GovAllowedStateControllerAddressesResponse:
       example:
         addresses:
@@ -3707,6 +3694,11 @@ components:
     GovChainInfoResponse:
       example:
         chainOwnerId: chainOwnerId
+        gasLimits:
+          maxGasExternalViewCall: 6
+          minGasPerRequest: 5
+          maxGasPerBlock: 1
+          maxGasPerRequest: 5
         chainID: chainID
         customMetadata: customMetadata
         gasFeePolicy:
@@ -3738,11 +3730,14 @@ components:
           xml:
             name: CustomMetadata
         gasFeePolicy:
-          $ref: '#/components/schemas/GasFeePolicy_'
+          $ref: '#/components/schemas/FeePolicy_'
+        gasLimits:
+          $ref: '#/components/schemas/Limits'
       required:
       - chainID
       - chainOwnerId
       - gasFeePolicy
+      - gasLimits
       type: object
       xml:
         name: GovChainInfoResponse
@@ -4071,6 +4066,45 @@ components:
       type: object
       xml:
         name: L1Params
+    Limits:
+      example:
+        maxGasExternalViewCall: 6
+        minGasPerRequest: 5
+        maxGasPerBlock: 1
+        maxGasPerRequest: 5
+      properties:
+        maxGasExternalViewCall:
+          description: The maximum gas per external view call
+          format: int64
+          type: integer
+          xml:
+            name: MaxGasExternalViewCall
+        maxGasPerBlock:
+          description: The maximum gas per block
+          format: int64
+          type: integer
+          xml:
+            name: MaxGasPerBlock
+        maxGasPerRequest:
+          description: The maximum gas per request
+          format: int64
+          type: integer
+          xml:
+            name: MaxGasPerRequest
+        minGasPerRequest:
+          description: The minimum gas per request
+          format: int64
+          type: integer
+          xml:
+            name: MinGasPerRequest
+      required:
+      - maxGasExternalViewCall
+      - maxGasPerBlock
+      - maxGasPerRequest
+      - minGasPerRequest
+      type: object
+      xml:
+        name: Limits
     LoginRequest:
       example:
         password: password
@@ -4243,6 +4277,128 @@ components:
       type: object
       xml:
         name: NativeTokenIDRegistryResponse
+    NodeMessageMetrics:
+      example:
+        outPublishGovernanceTransaction:
+          lastMessage:
+            txId: txId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        outPublisherStateTransaction:
+          lastMessage:
+            stateIndex: 1
+            txId: txId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inTxInclusionState:
+          lastMessage:
+            txId: txId
+            state: state
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inOnLedgerRequest:
+          lastMessage:
+            output:
+              outputType: 0
+              raw: raw
+            outputId: outputId
+            raw: raw
+            id: id
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inOutput:
+          lastMessage:
+            output:
+              outputType: 0
+              raw: raw
+            outputId: outputId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inMilestone:
+          lastMessage:
+            milestoneId: milestoneId
+            index: 0
+            timestamp: 0
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inAliasOutput:
+          lastMessage:
+            outputType: 0
+            raw: raw
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inStateOutput:
+          lastMessage:
+            output:
+              outputType: 0
+              raw: raw
+            outputId: outputId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        outPullTxInclusionState:
+          lastMessage:
+            txId: txId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        registeredChainIDs:
+        - registeredChainIDs
+        - registeredChainIDs
+        outPullLatestOutput:
+          lastMessage: lastMessage
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        outPullOutputByID:
+          lastMessage:
+            outputId: outputId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+      properties:
+        inAliasOutput:
+          $ref: '#/components/schemas/AliasOutputMetricItem'
+        inMilestone:
+          $ref: '#/components/schemas/MilestoneMetricItem'
+        inOnLedgerRequest:
+          $ref: '#/components/schemas/OnLedgerRequestMetricItem'
+        inOutput:
+          $ref: '#/components/schemas/InOutputMetricItem'
+        inStateOutput:
+          $ref: '#/components/schemas/InStateOutputMetricItem'
+        inTxInclusionState:
+          $ref: '#/components/schemas/TxInclusionStateMsgMetricItem'
+        outPublishGovernanceTransaction:
+          $ref: '#/components/schemas/TransactionMetricItem'
+        outPublisherStateTransaction:
+          $ref: '#/components/schemas/PublisherStateTransactionItem'
+        outPullLatestOutput:
+          $ref: '#/components/schemas/InterfaceMetricItem'
+        outPullOutputByID:
+          $ref: '#/components/schemas/UTXOInputMetricItem'
+        outPullTxInclusionState:
+          $ref: '#/components/schemas/TransactionIDMetricItem'
+        registeredChainIDs:
+          items:
+            format: string
+            type: string
+          type: array
+          xml:
+            name: RegisteredChainIDs
+            wrapped: true
+      required:
+      - inAliasOutput
+      - inMilestone
+      - inOnLedgerRequest
+      - inOutput
+      - inStateOutput
+      - inTxInclusionState
+      - outPublishGovernanceTransaction
+      - outPublisherStateTransaction
+      - outPullLatestOutput
+      - outPullOutputByID
+      - outPullTxInclusionState
+      - registeredChainIDs
+      type: object
+      xml:
+        name: NodeMessageMetrics
     NodeOwnerCertificateRequest:
       example:
         ownerAddress: ownerAddress

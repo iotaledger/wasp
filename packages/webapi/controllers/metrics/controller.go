@@ -33,7 +33,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	adminAPI.GET("metrics/l1", c.getNodeMessageMetrics, authentication.ValidatePermissions([]string{permissions.Read})).
-		AddResponse(http.StatusOK, "A list of all available metrics.", models.ChainMessageMetrics{}, nil).
+		AddResponse(http.StatusOK, "A list of all available metrics.", models.NodeMessageMetrics{}, nil).
 		SetOperationId("getL1Metrics").
 		SetSummary("Get accumulated metrics.")
 

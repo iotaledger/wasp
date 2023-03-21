@@ -14,39 +14,39 @@ import (
 	"encoding/json"
 )
 
-// checks if the GasFeePolicy type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &GasFeePolicy{}
+// checks if the FeePolicy type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &FeePolicy{}
 
-// GasFeePolicy struct for GasFeePolicy
-type GasFeePolicy struct {
+// FeePolicy struct for FeePolicy
+type FeePolicy struct {
 	EvmGasRatio Ratio32 `json:"evmGasRatio"`
 	GasPerToken Ratio32 `json:"gasPerToken"`
 	// The validator fee share.
 	ValidatorFeeShare int32 `json:"validatorFeeShare"`
 }
 
-// NewGasFeePolicy instantiates a new GasFeePolicy object
+// NewFeePolicy instantiates a new FeePolicy object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGasFeePolicy(evmGasRatio Ratio32, gasPerToken Ratio32, validatorFeeShare int32) *GasFeePolicy {
-	this := GasFeePolicy{}
+func NewFeePolicy(evmGasRatio Ratio32, gasPerToken Ratio32, validatorFeeShare int32) *FeePolicy {
+	this := FeePolicy{}
 	this.EvmGasRatio = evmGasRatio
 	this.GasPerToken = gasPerToken
 	this.ValidatorFeeShare = validatorFeeShare
 	return &this
 }
 
-// NewGasFeePolicyWithDefaults instantiates a new GasFeePolicy object
+// NewFeePolicyWithDefaults instantiates a new FeePolicy object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewGasFeePolicyWithDefaults() *GasFeePolicy {
-	this := GasFeePolicy{}
+func NewFeePolicyWithDefaults() *FeePolicy {
+	this := FeePolicy{}
 	return &this
 }
 
 // GetEvmGasRatio returns the EvmGasRatio field value
-func (o *GasFeePolicy) GetEvmGasRatio() Ratio32 {
+func (o *FeePolicy) GetEvmGasRatio() Ratio32 {
 	if o == nil {
 		var ret Ratio32
 		return ret
@@ -57,7 +57,7 @@ func (o *GasFeePolicy) GetEvmGasRatio() Ratio32 {
 
 // GetEvmGasRatioOk returns a tuple with the EvmGasRatio field value
 // and a boolean to check if the value has been set.
-func (o *GasFeePolicy) GetEvmGasRatioOk() (*Ratio32, bool) {
+func (o *FeePolicy) GetEvmGasRatioOk() (*Ratio32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -65,12 +65,12 @@ func (o *GasFeePolicy) GetEvmGasRatioOk() (*Ratio32, bool) {
 }
 
 // SetEvmGasRatio sets field value
-func (o *GasFeePolicy) SetEvmGasRatio(v Ratio32) {
+func (o *FeePolicy) SetEvmGasRatio(v Ratio32) {
 	o.EvmGasRatio = v
 }
 
 // GetGasPerToken returns the GasPerToken field value
-func (o *GasFeePolicy) GetGasPerToken() Ratio32 {
+func (o *FeePolicy) GetGasPerToken() Ratio32 {
 	if o == nil {
 		var ret Ratio32
 		return ret
@@ -81,7 +81,7 @@ func (o *GasFeePolicy) GetGasPerToken() Ratio32 {
 
 // GetGasPerTokenOk returns a tuple with the GasPerToken field value
 // and a boolean to check if the value has been set.
-func (o *GasFeePolicy) GetGasPerTokenOk() (*Ratio32, bool) {
+func (o *FeePolicy) GetGasPerTokenOk() (*Ratio32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -89,12 +89,12 @@ func (o *GasFeePolicy) GetGasPerTokenOk() (*Ratio32, bool) {
 }
 
 // SetGasPerToken sets field value
-func (o *GasFeePolicy) SetGasPerToken(v Ratio32) {
+func (o *FeePolicy) SetGasPerToken(v Ratio32) {
 	o.GasPerToken = v
 }
 
 // GetValidatorFeeShare returns the ValidatorFeeShare field value
-func (o *GasFeePolicy) GetValidatorFeeShare() int32 {
+func (o *FeePolicy) GetValidatorFeeShare() int32 {
 	if o == nil {
 		var ret int32
 		return ret
@@ -105,7 +105,7 @@ func (o *GasFeePolicy) GetValidatorFeeShare() int32 {
 
 // GetValidatorFeeShareOk returns a tuple with the ValidatorFeeShare field value
 // and a boolean to check if the value has been set.
-func (o *GasFeePolicy) GetValidatorFeeShareOk() (*int32, bool) {
+func (o *FeePolicy) GetValidatorFeeShareOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -113,11 +113,11 @@ func (o *GasFeePolicy) GetValidatorFeeShareOk() (*int32, bool) {
 }
 
 // SetValidatorFeeShare sets field value
-func (o *GasFeePolicy) SetValidatorFeeShare(v int32) {
+func (o *FeePolicy) SetValidatorFeeShare(v int32) {
 	o.ValidatorFeeShare = v
 }
 
-func (o GasFeePolicy) MarshalJSON() ([]byte, error) {
+func (o FeePolicy) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -125,7 +125,7 @@ func (o GasFeePolicy) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o GasFeePolicy) ToMap() (map[string]interface{}, error) {
+func (o FeePolicy) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["evmGasRatio"] = o.EvmGasRatio
 	toSerialize["gasPerToken"] = o.GasPerToken
@@ -133,38 +133,38 @@ func (o GasFeePolicy) ToMap() (map[string]interface{}, error) {
 	return toSerialize, nil
 }
 
-type NullableGasFeePolicy struct {
-	value *GasFeePolicy
+type NullableFeePolicy struct {
+	value *FeePolicy
 	isSet bool
 }
 
-func (v NullableGasFeePolicy) Get() *GasFeePolicy {
+func (v NullableFeePolicy) Get() *FeePolicy {
 	return v.value
 }
 
-func (v *NullableGasFeePolicy) Set(val *GasFeePolicy) {
+func (v *NullableFeePolicy) Set(val *FeePolicy) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableGasFeePolicy) IsSet() bool {
+func (v NullableFeePolicy) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableGasFeePolicy) Unset() {
+func (v *NullableFeePolicy) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableGasFeePolicy(val *GasFeePolicy) *NullableGasFeePolicy {
-	return &NullableGasFeePolicy{value: val, isSet: true}
+func NewNullableFeePolicy(val *FeePolicy) *NullableFeePolicy {
+	return &NullableFeePolicy{value: val, isSet: true}
 }
 
-func (v NullableGasFeePolicy) MarshalJSON() ([]byte, error) {
+func (v NullableFeePolicy) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableGasFeePolicy) UnmarshalJSON(src []byte) error {
+func (v *NullableFeePolicy) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
