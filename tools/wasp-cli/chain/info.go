@@ -80,11 +80,8 @@ func initInfoCmd() *cobra.Command {
 				log.Printf("#Contracts: %d\n", len(contracts))
 
 				log.Printf("Owner: %s\n", chainInfo.ChainOwnerId)
-
-				if chainInfo.GasFeePolicy != nil {
-					log.Printf("Gas fee: gas units * (%d/%d)\n", chainInfo.GasFeePolicy.GasPerToken.A, chainInfo.GasFeePolicy.GasPerToken.B)
-					log.Printf("Validator fee share: %d%%\n", chainInfo.GasFeePolicy.ValidatorFeeShare)
-				}
+				log.Printf("Gas fee: gas units * (%d/%d)\n", chainInfo.GasFeePolicy.GasPerToken.A, chainInfo.GasFeePolicy.GasPerToken.B)
+				log.Printf("Validator fee share: %d%%\n", chainInfo.GasFeePolicy.ValidatorFeeShare)
 
 				if chainInfo.CustomMetadata != nil && len(*chainInfo.CustomMetadata) > 0 {
 					customMetadata, err := base64.StdEncoding.DecodeString(*chainInfo.CustomMetadata)
