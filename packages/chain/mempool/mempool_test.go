@@ -497,6 +497,7 @@ type MockMempoolMetrics struct {
 	processedRequestCounter int
 }
 
+func (m *MockMempoolMetrics) IncBlocksPerChain() {}
 func (m *MockMempoolMetrics) IncRequestsReceived(req isc.Request) {
 	if req.IsOffLedger() {
 		m.offLedgerRequestCounter++
@@ -509,9 +510,8 @@ func (m *MockMempoolMetrics) IncRequestsProcessed() {
 	m.processedRequestCounter++
 }
 
+func (m *MockMempoolMetrics) IncRequestsAckMessages()                  {}
 func (m *MockMempoolMetrics) SetRequestProcessingTime(_ time.Duration) {}
-
-func (m *MockMempoolMetrics) IncBlocksPerChain() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 

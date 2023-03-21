@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 )
 
 // routeMetrics is the route for getting the prometheus metrics.
@@ -53,14 +52,16 @@ type dependencies struct {
 	PrometheusEcho     *echo.Echo `name:"prometheusEcho"`
 	PrometheusRegistry *prometheus.Registry
 
-	AppInfo               *app.Info
-	NodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
-	ChainMetrics          *metrics.ChainMetrics
-	BlockWALMetrics       *metrics.BlockWALMetrics
-	WebAPIEcho            *echo.Echo `name:"webapiEcho" optional:"true"`
+	AppInfo      *app.Info
+	ChainMetrics *metrics.ChainMetricsProvider
+	WebAPIEcho   *echo.Echo `name:"webapiEcho" optional:"true"`
 }
 
 func provide(c *dig.Container) error {
+	if err := c.Provide(metrics.NewChainMetricsProvider); err != nil {
+		Plugin.LogPanic(err)
+	}
+
 	type depsOut struct {
 		dig.Out
 		PrometheusEcho     *echo.Echo `name:"prometheusEcho"`
@@ -96,14 +97,20 @@ func configure() error {
 	if ParamsPrometheus.NodeMetrics {
 		register("node", newNodeCollector(deps.AppInfo))
 	}
-	if ParamsPrometheus.NodeConnMetrics {
-		register("node connection", deps.NodeConnectionMetrics.PrometheusCollectors()...)
-	}
-	if ParamsPrometheus.ChainMetrics {
-		register("chains", deps.ChainMetrics.PrometheusCollectors()...)
-	}
 	if ParamsPrometheus.BlockWALMetrics {
-		register("write ahead logging", deps.BlockWALMetrics.PrometheusCollectors()...)
+		register("write ahead logging", deps.ChainMetrics.PrometheusCollectorsBlockWAL()...)
+	}
+	if ParamsPrometheus.ConsensusMetrics {
+		register("consenus", deps.ChainMetrics.PrometheusCollectorsConsensus()...)
+	}
+	if ParamsPrometheus.MempoolMetrics {
+		register("mempool", deps.ChainMetrics.PrometheusCollectorsMempool()...)
+	}
+	if ParamsPrometheus.ChainMessagesMetrics {
+		register("chain messages", deps.ChainMetrics.PrometheusCollectorsChainMessages()...)
+	}
+	if ParamsPrometheus.ChainStateMetrics {
+		register("chain state", deps.ChainMetrics.PrometheusCollectorsChainState()...)
 	}
 	if ParamsPrometheus.RestAPIMetrics {
 		register("rest API", newRestAPICollector(deps.WebAPIEcho)...)

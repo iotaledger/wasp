@@ -24,7 +24,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -325,6 +324,8 @@ func (tnc *testNodeConn) AttachChain(
 	recvRequestCB chain.RequestOutputHandler,
 	recvAliasOutput chain.AliasOutputHandler,
 	recvMilestone chain.MilestoneHandler,
+	onChainConnect func(),
+	onChainDisconnect func(),
 ) {
 	if !tnc.chainID.Empty() {
 		tnc.t.Error("duplicate attach")
@@ -358,10 +359,6 @@ func (tnc *testNodeConn) GetL1Params() *parameters.L1Params {
 
 func (tnc *testNodeConn) GetL1ProtocolParams() *iotago.ProtocolParameters {
 	return testparameters.GetL1ProtocolParamsForTesting()
-}
-
-func (tnc *testNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
-	panic("should be unused in test")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -436,6 +433,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 		log := te.log.Named(fmt.Sprintf("N#%v", i))
 		te.nodes[i], err = chain.New(
 			te.ctx,
+			log,
 			te.chainID,
 			state.NewStore(mapdb.NewMapDB()),
 			te.nodeConns[i],
@@ -447,9 +445,10 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			chain.NewEmptyChainListener(),
 			[]*cryptolib.PublicKey{}, // Access nodes.
 			te.networkProviders[i],
-			metrics.NewEmptyChainMetric(),
+			metrics.NewEmptyChainMetrics(),
 			shutdown.NewCoordinator("test", log),
-			log,
+			nil,
+			nil,
 		)
 		require.NoError(t, err)
 		te.nodes[i].ServersUpdated(te.peerPubKeys)

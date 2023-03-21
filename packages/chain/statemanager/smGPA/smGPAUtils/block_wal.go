@@ -20,22 +20,22 @@ import (
 type blockWAL struct {
 	*logger.WrappedLogger
 
-	dir             string
-	blockWALMetrics metrics.IBlockWALMetric
+	dir     string
+	metrics metrics.IChainBlockWALMetrics
 }
 
 const constFileSuffix = ".blk"
 
-func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, blockWALMetrics metrics.IBlockWALMetric) (BlockWAL, error) {
+func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metrics metrics.IChainBlockWALMetrics) (BlockWAL, error) {
 	dir := filepath.Join(baseDir, chainID.String())
 	if err := ioutils.CreateDirectory(dir, 0o777); err != nil {
 		return nil, fmt.Errorf("BlockWAL cannot create folder %v: %w", dir, err)
 	}
 
 	result := &blockWAL{
-		WrappedLogger:   logger.NewWrappedLogger(log),
-		dir:             dir,
-		blockWALMetrics: blockWALMetrics,
+		WrappedLogger: logger.NewWrappedLogger(log),
+		dir:           dir,
+		metrics:       metrics,
 	}
 	result.LogDebugf("BlockWAL created in folder %v", dir)
 	return result, nil
@@ -49,21 +49,21 @@ func (bwT *blockWAL) Write(block state.Block) error {
 	bwT.LogDebugf("Writing block %s to wal; file name - %s", commitment, fileName)
 	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 	if err != nil {
-		bwT.blockWALMetrics.IncFailedWrites()
+		bwT.metrics.IncFailedWrites()
 		return fmt.Errorf("openning file %s for writing failed: %w", fileName, err)
 	}
 	defer f.Close()
 	blockBytes := block.Bytes()
 	n, err := f.Write(blockBytes)
 	if err != nil {
-		bwT.blockWALMetrics.IncFailedReads()
+		bwT.metrics.IncFailedReads()
 		return fmt.Errorf("writing block data to file %s failed: %w", fileName, err)
 	}
 	if len(blockBytes) != n {
-		bwT.blockWALMetrics.IncFailedReads()
+		bwT.metrics.IncFailedReads()
 		return fmt.Errorf("only %v of total %v bytes of block were written to file %s", n, len(blockBytes), fileName)
 	}
-	bwT.blockWALMetrics.IncSegments()
+	bwT.metrics.IncSegments()
 	return nil
 }
 
@@ -77,7 +77,7 @@ func (bwT *blockWAL) Read(blockHash state.BlockHash) (state.Block, error) {
 	filePath := filepath.Join(bwT.dir, fileName)
 	block, err := blockFromFilePath(filePath)
 	if err != nil {
-		bwT.blockWALMetrics.IncFailedReads()
+		bwT.metrics.IncFailedReads()
 		return nil, err
 	}
 	return block, nil
