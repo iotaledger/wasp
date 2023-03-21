@@ -116,7 +116,6 @@ services:
       - "--registries.dkShares.path=/app/waspdb/dkshares"
       - "--registries.trustedPeers.filePath=/app/waspdb/trusted_peers.json"
       - "--registries.consensusState.path=/app/waspdb/chains/consensus"
-      - "--db.debugSkipHealthCheck=true"
       - "--wal.path=/app/waspdb/wal"
 
   ##################
