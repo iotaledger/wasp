@@ -361,7 +361,3 @@ func (txb *AnchorTransactionBuilder) mustCheckTotalNativeTokensExceeded() {
 		}
 	}
 }
-
-func stringNativeTokenID(nativeTokenID iotago.NativeTokenID) string {
-	return iotago.EncodeHex(nativeTokenID[:])
-}

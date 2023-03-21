@@ -140,8 +140,7 @@ var exportMap = wasmlib.ScExportMap{
 		ViewGetRequestReceiptsForBlock,
 		ViewIsRequestProcessed,
 	},
-	Funcs: []wasmlib.ScFuncContextFunction{
-	},
+	Funcs: []wasmlib.ScFuncContextFunction{},
 	Views: []wasmlib.ScViewContextFunction{
 		wasmlib.ViewError,
 		wasmlib.ViewError,
