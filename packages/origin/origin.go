@@ -30,11 +30,7 @@ import (
 )
 
 func L1Commitment(initParams dict.Dict, originDeposit uint64) *state.L1Commitment {
-	store := InitChain(state.NewStore(mapdb.NewMapDB()), initParams, originDeposit)
-	block, err := store.LatestBlock()
-	if err != nil {
-		panic(err)
-	}
+	block := InitChain(state.NewStore(mapdb.NewMapDB()), initParams, originDeposit)
 	return block.L1Commitment()
 }
 
@@ -44,7 +40,7 @@ const (
 	ParamChainOwner   = "c"
 )
 
-func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) state.Store {
+func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) state.Block {
 	if initParams == nil {
 		initParams = dict.New()
 	}
@@ -82,10 +78,10 @@ func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) st
 	if err := store.SetLatest(block.TrieRoot()); err != nil {
 		panic(err)
 	}
-	return store
+	return block
 }
 
-func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutputWithID) {
+func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutputWithID) state.Block {
 	var initParams dict.Dict
 	if originMetadata := aliasOutput.GetAliasOutput().FeatureSet().MetadataFeature(); originMetadata != nil {
 		var err error
@@ -95,7 +91,7 @@ func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutput
 		}
 	}
 	aoSD := transaction.NewStorageDepositEstimate().AnchorOutput
-	InitChain(chainStore, initParams, aliasOutput.GetAliasOutput().Amount-aoSD)
+	return InitChain(chainStore, initParams, aliasOutput.GetAliasOutput().Amount-aoSD)
 }
 
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain

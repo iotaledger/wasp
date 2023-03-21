@@ -113,7 +113,9 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		procCache := processors.MustNew(procConfig)
 		dkShare, err := dkShareProviders[i].LoadDKShare(cmtAddress)
 		require.NoError(t, err)
-		chainStore := origin.InitChain(state.NewStore(mapdb.NewMapDB()),
+		chainStore := state.NewStore(mapdb.NewMapDB())
+		origin.InitChain(
+			chainStore,
 			dict.Dict{origin.ParamChainOwner: isc.NewAgentID(originator.Address()).Bytes()},
 			accounts.MinimumBaseTokensOnCommonAccount,
 		)

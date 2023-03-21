@@ -456,7 +456,8 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.mempools = make([]mempool.Mempool, len(te.peerIdentities))
 	te.stores = make([]state.Store, len(te.peerIdentities))
 	for i := range te.peerIdentities {
-		te.stores[i] = origin.InitChain(state.NewStore(mapdb.NewMapDB()), dict.Dict{
+		te.stores[i] = state.NewStore(mapdb.NewMapDB())
+		origin.InitChain(te.stores[i], dict.Dict{
 			origin.ParamChainOwner: isc.NewAgentID(te.governor.Address()).Bytes(),
 		}, accounts.MinimumBaseTokensOnCommonAccount)
 		te.mempools[i] = mempool.New(
