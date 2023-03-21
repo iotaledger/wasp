@@ -37,7 +37,6 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -78,8 +77,8 @@ type Chain interface {
 	// can query the nodes for blocks, etc. NOTE: servers = access⁻¹
 	ServersUpdated(serverNodes []*cryptolib.PublicKey)
 	// Metrics and the current descriptive state.
+	GetChainMetrics() metrics.IChainMetrics
 	GetConsensusPipeMetrics() ConsensusPipeMetrics // TODO: Review this.
-	GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics
 	GetConsensusWorkflowStatus() ConsensusWorkflowStatus
 }
 
@@ -133,6 +132,8 @@ type ChainNodeConn interface {
 		recvRequestCB RequestOutputHandler,
 		recvAliasOutput AliasOutputHandler,
 		recvMilestone MilestoneHandler,
+		onChainConnect func(),
+		onChainDisconnect func(),
 	)
 }
 
@@ -181,6 +182,7 @@ type chainNodeImpl struct {
 	netPeerPubs         map[gpa.NodeID]*cryptolib.PublicKey
 	net                 peering.NetworkProvider
 	shutdownCoordinator *shutdown.Coordinator
+	chainMetrics        metrics.IChainMetrics
 	log                 *logger.Logger
 }
 
@@ -241,6 +243,7 @@ var _ Chain = &chainNodeImpl{}
 //nolint:funlen
 func New(
 	ctx context.Context,
+	log *logger.Logger,
 	chainID isc.ChainID,
 	chainStore state.Store,
 	nodeConn NodeConnection,
@@ -252,9 +255,10 @@ func New(
 	listener ChainListener,
 	accessNodesFromNode []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
-	chainMetric metrics.IChainMetric,
+	chainMetrics metrics.IChainMetrics,
 	shutdownCoordinator *shutdown.Coordinator,
-	log *logger.Logger,
+	onChainConnect func(),
+	onChainDisconnect func(),
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
 	if listener == nil {
@@ -301,6 +305,7 @@ func New(
 		netPeerPubs:            map[gpa.NodeID]*cryptolib.PublicKey{},
 		net:                    net,
 		shutdownCoordinator:    shutdownCoordinator,
+		chainMetrics:           chainMetrics,
 		log:                    log,
 	}
 	cni.tryRecoverStoreFromWAL(chainStore, blockWAL)
@@ -342,7 +347,7 @@ func New(
 		nodeIdentity,
 		net,
 		cni.log.Named("MP"),
-		chainMetric,
+		chainMetrics,
 		cni.listener,
 	)
 	cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr.AsGPA(), redeliveryPeriod)
@@ -394,7 +399,7 @@ func New(
 		log.Debugf("recvMilestoneCB[%p], %v", cni, timestamp)
 		recvMilestonePipeInCh <- timestamp
 	}
-	nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAliasOutputCB, recvMilestoneCB)
+	nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAliasOutputCB, recvMilestoneCB, onChainConnect, onChainDisconnect)
 	//
 	// Run the main thread.
 
@@ -1053,12 +1058,12 @@ func (cni *chainNodeImpl) GetCandidateNodes() []*governance.AccessNodeInfo {
 	return governance.NewStateAccess(state).GetCandidateNodes()
 }
 
-func (cni *chainNodeImpl) GetConsensusPipeMetrics() ConsensusPipeMetrics {
-	return &consensusPipeMetricsImpl{}
+func (cni *chainNodeImpl) GetChainMetrics() metrics.IChainMetrics {
+	return cni.chainMetrics
 }
 
-func (cni *chainNodeImpl) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
-	return cni.nodeConn.GetMetrics()
+func (cni *chainNodeImpl) GetConsensusPipeMetrics() ConsensusPipeMetrics {
+	return &consensusPipeMetricsImpl{}
 }
 
 func (cni *chainNodeImpl) GetConsensusWorkflowStatus() ConsensusWorkflowStatus {

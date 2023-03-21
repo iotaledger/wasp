@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -26,17 +26,17 @@ type ChainService struct {
 	log                         *logger.Logger
 	governance                  *corecontracts.Governance
 	chainsProvider              chains.Provider
-	nodeConnectionMetrics       nodeconnmetrics.NodeConnectionMetrics
+	chainMetricsProvider        *metrics.ChainMetricsProvider
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	vmService                   interfaces.VMService
 }
 
-func NewChainService(logger *logger.Logger, chainsProvider chains.Provider, nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics, chainRecordRegistryProvider registry.ChainRecordRegistryProvider, vmService interfaces.VMService) interfaces.ChainService {
+func NewChainService(logger *logger.Logger, chainsProvider chains.Provider, chainMetricsProvider *metrics.ChainMetricsProvider, chainRecordRegistryProvider registry.ChainRecordRegistryProvider, vmService interfaces.VMService) interfaces.ChainService {
 	return &ChainService{
 		log:                         logger,
 		governance:                  corecontracts.NewGovernance(vmService),
 		chainsProvider:              chainsProvider,
-		nodeConnectionMetrics:       nodeConnectionMetrics,
+		chainMetricsProvider:        chainMetricsProvider,
 		chainRecordRegistryProvider: chainRecordRegistryProvider,
 		vmService:                   vmService,
 	}

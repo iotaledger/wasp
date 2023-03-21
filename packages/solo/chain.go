@@ -25,7 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -635,6 +635,11 @@ func (*Chain) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
 	panic("unimplemented")
 }
 
+// GetChainMetrics implements chain.Chain
+func (*Chain) GetChainMetrics() metrics.IChainMetrics {
+	panic("unimplemented")
+}
+
 // GetConsensusPipeMetrics implements chain.Chain
 func (*Chain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
 	panic("unimplemented")
@@ -642,11 +647,6 @@ func (*Chain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
 
 // GetConsensusWorkflowStatus implements chain.Chain
 func (*Chain) GetConsensusWorkflowStatus() chain.ConsensusWorkflowStatus {
-	panic("unimplemented")
-}
-
-// GetNodeConnectionMetrics implements chain.Chain
-func (*Chain) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
 	panic("unimplemented")
 }
 
