@@ -64,7 +64,6 @@ func TestGetBlockInfo(t *testing.T) {
 		assert.Equal(t, expectBlockInfo.NumSuccessfulRequests, blockinfo.NumSuccessfulRequests)
 		assert.Equal(t, expectBlockInfo.NumOffLedgerRequests, blockinfo.NumOffLedgerRequests)
 		assert.Equal(t, expectBlockInfo.PreviousAliasOutput, blockinfo.PreviousAliasOutput)
-		assert.Equal(t, expectBlockInfo.AliasOutput, blockinfo.AliasOutput)
 		assert.Equal(t, expectBlockInfo.GasBurned, blockinfo.GasBurned)
 		assert.Equal(t, expectBlockInfo.GasFeeCharged, blockinfo.GasFeeCharged)
 	}
@@ -91,7 +90,6 @@ func TestGetLatestBlockInfo(t *testing.T) {
 	assert.Equal(t, expectBlockInfo.NumSuccessfulRequests, blockinfo.NumSuccessfulRequests)
 	assert.Equal(t, expectBlockInfo.NumOffLedgerRequests, blockinfo.NumOffLedgerRequests)
 	assert.Equal(t, expectBlockInfo.PreviousAliasOutput, blockinfo.PreviousAliasOutput)
-	assert.Equal(t, expectBlockInfo.AliasOutput, blockinfo.AliasOutput)
 	assert.Equal(t, expectBlockInfo.GasBurned, blockinfo.GasBurned)
 	assert.Equal(t, expectBlockInfo.GasFeeCharged, blockinfo.GasFeeCharged)
 }

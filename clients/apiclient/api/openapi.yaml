@@ -1443,7 +1443,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChainMetrics'
+                $ref: '#/components/schemas/ChainMessageMetrics'
           description: A list of all available metrics.
         "401":
           content:
@@ -1531,7 +1531,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChainMetrics'
+                $ref: '#/components/schemas/ChainMessageMetrics'
           description: A list of all available metrics.
         "401":
           content:
@@ -1553,7 +1553,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: info
+                  example: "true"
                   format: string
                   type: string
                 type: object
@@ -2430,22 +2430,15 @@ components:
         name: BlobValueResponse
     BlockInfoResponse:
       example:
-        l1CommitmentHash: l1CommitmentHash
         blockIndex: 1
         numSuccessfulRequests: 1
         gasFeeCharged: gasFeeCharged
-        anchorTransactionId: anchorTransactionId
+        previousAliasOutput: previousAliasOutput
         gasBurned: gasBurned
         totalRequests: 1
         numOffLedgerRequests: 1
-        previousL1CommitmentHash: previousL1CommitmentHash
         timestamp: 2000-01-23T04:56:07.000+00:00
       properties:
-        anchorTransactionId:
-          format: string
-          type: string
-          xml:
-            name: AnchorTransactionID
         blockIndex:
           format: int32
           minimum: 1
@@ -2464,11 +2457,6 @@ components:
           type: string
           xml:
             name: GasFeeCharged
-        l1CommitmentHash:
-          format: string
-          type: string
-          xml:
-            name: L1CommitmentHash
         numOffLedgerRequests:
           format: int32
           minimum: 1
@@ -2481,11 +2469,11 @@ components:
           type: integer
           xml:
             name: NumSuccessfulRequests
-        previousL1CommitmentHash:
+        previousAliasOutput:
           format: string
           type: string
           xml:
-            name: PreviousL1CommitmentHash
+            name: PreviousAliasOutput
         timestamp:
           format: date-time
           type: string
@@ -2498,14 +2486,12 @@ components:
           xml:
             name: TotalRequests
       required:
-      - anchorTransactionId
       - blockIndex
       - gasBurned
       - gasFeeCharged
-      - l1CommitmentHash
       - numOffLedgerRequests
       - numSuccessfulRequests
-      - previousL1CommitmentHash
+      - previousAliasOutput
       - timestamp
       - totalRequests
       type: object
@@ -2792,7 +2778,7 @@ components:
       type: object
       xml:
         name: ChainInfoResponse
-    ChainMetrics:
+    ChainMessageMetrics:
       example:
         outPublishGovernanceTransaction:
           lastMessage:
@@ -2829,13 +2815,6 @@ components:
             outputId: outputId
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
-        inMilestone:
-          lastMessage:
-            milestoneId: milestoneId
-            index: 0
-            timestamp: 0
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
         inAliasOutput:
           lastMessage:
             outputType: 0
@@ -2855,9 +2834,6 @@ components:
             txId: txId
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
-        registeredChainIDs:
-        - registeredChainIDs
-        - registeredChainIDs
         outPullLatestOutput:
           lastMessage: lastMessage
           messages: 1
@@ -2870,8 +2846,6 @@ components:
       properties:
         inAliasOutput:
           $ref: '#/components/schemas/AliasOutputMetricItem'
-        inMilestone:
-          $ref: '#/components/schemas/MilestoneMetricItem'
         inOnLedgerRequest:
           $ref: '#/components/schemas/OnLedgerRequestMetricItem'
         inOutput:
@@ -2890,17 +2864,8 @@ components:
           $ref: '#/components/schemas/UTXOInputMetricItem'
         outPullTxInclusionState:
           $ref: '#/components/schemas/TransactionIDMetricItem'
-        registeredChainIDs:
-          items:
-            format: string
-            type: string
-          type: array
-          xml:
-            name: RegisteredChainIDs
-            wrapped: true
       required:
       - inAliasOutput
-      - inMilestone
       - inOnLedgerRequest
       - inOutput
       - inStateOutput
@@ -2910,10 +2875,9 @@ components:
       - outPullLatestOutput
       - outPullOutputByID
       - outPullTxInclusionState
-      - registeredChainIDs
       type: object
       xml:
-        name: ChainMetrics
+        name: ChainMessageMetrics
     ChainRecord:
       example:
         accessNodes:
@@ -4146,61 +4110,6 @@ components:
       type: object
       xml:
         name: LoginResponse
-    MilestoneInfo:
-      example:
-        milestoneId: milestoneId
-        index: 0
-        timestamp: 0
-      properties:
-        index:
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: Index
-        milestoneId:
-          format: string
-          type: string
-          xml:
-            name: MilestoneID
-        timestamp:
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: Timestamp
-      type: object
-      xml:
-        name: MilestoneInfo
-    MilestoneMetricItem:
-      example:
-        lastMessage:
-          milestoneId: milestoneId
-          index: 0
-          timestamp: 0
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        lastMessage:
-          $ref: '#/components/schemas/MilestoneInfo'
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
-          type: string
-          xml:
-            name: Timestamp
-      required:
-      - lastMessage
-      - messages
-      - timestamp
-      type: object
-      xml:
-        name: MilestoneMetricItem
     NFTDataResponse:
       example:
         owner: owner

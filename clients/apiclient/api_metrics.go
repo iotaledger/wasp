@@ -29,7 +29,7 @@ type ApiGetChainMetricsRequest struct {
 	chainID string
 }
 
-func (r ApiGetChainMetricsRequest) Execute() (*ChainMetrics, *http.Response, error) {
+func (r ApiGetChainMetricsRequest) Execute() (*ChainMessageMetrics, *http.Response, error) {
 	return r.ApiService.GetChainMetricsExecute(r)
 }
 
@@ -49,13 +49,13 @@ func (a *MetricsApiService) GetChainMetrics(ctx context.Context, chainID string)
 }
 
 // Execute executes the request
-//  @return ChainMetrics
-func (a *MetricsApiService) GetChainMetricsExecute(r ApiGetChainMetricsRequest) (*ChainMetrics, *http.Response, error) {
+//  @return ChainMessageMetrics
+func (a *MetricsApiService) GetChainMetricsExecute(r ApiGetChainMetricsRequest) (*ChainMessageMetrics, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *ChainMetrics
+		localVarReturnValue  *ChainMessageMetrics
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "MetricsApiService.GetChainMetrics")
@@ -406,7 +406,7 @@ type ApiGetL1MetricsRequest struct {
 	ApiService *MetricsApiService
 }
 
-func (r ApiGetL1MetricsRequest) Execute() (*ChainMetrics, *http.Response, error) {
+func (r ApiGetL1MetricsRequest) Execute() (*ChainMessageMetrics, *http.Response, error) {
 	return r.ApiService.GetL1MetricsExecute(r)
 }
 
@@ -424,13 +424,13 @@ func (a *MetricsApiService) GetL1Metrics(ctx context.Context) ApiGetL1MetricsReq
 }
 
 // Execute executes the request
-//  @return ChainMetrics
-func (a *MetricsApiService) GetL1MetricsExecute(r ApiGetL1MetricsRequest) (*ChainMetrics, *http.Response, error) {
+//  @return ChainMessageMetrics
+func (a *MetricsApiService) GetL1MetricsExecute(r ApiGetL1MetricsRequest) (*ChainMessageMetrics, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *ChainMetrics
+		localVarReturnValue  *ChainMessageMetrics
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "MetricsApiService.GetL1Metrics")

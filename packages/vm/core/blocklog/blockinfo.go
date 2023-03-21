@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/state"
@@ -14,9 +13,7 @@ import (
 )
 
 const (
-	BlockInfoAliasOutputSchemaVersion      = 1
-	BlockInfoDeprecateSDAssumptionsVersion = 2
-	BlockInfoLatestSchemaVersion           = BlockInfoDeprecateSDAssumptionsVersion
+	BlockInfoLatestSchemaVersion = 0
 )
 
 type BlockInfo struct {
@@ -26,7 +23,6 @@ type BlockInfo struct {
 	NumSuccessfulRequests uint16 // which didn't panic
 	NumOffLedgerRequests  uint16
 	PreviousAliasOutput   *isc.AliasOutputWithID // if new schema => always not nil
-	AliasOutput           *isc.AliasOutputWithID // if new schema => nil when not known yet for the current state
 	GasBurned             uint64
 	GasFeeCharged         uint64
 }
@@ -36,24 +32,6 @@ type BlockInfo struct {
 // is equal to the timestamp pof the block
 func (bi *BlockInfo) RequestTimestamp(requestIndex uint16) time.Time {
 	return bi.Timestamp.Add(time.Duration(-(bi.TotalRequests - requestIndex - 1)) * time.Nanosecond)
-}
-
-func (bi *BlockInfo) AnchorTransactionID() iotago.TransactionID {
-	if bi.AliasOutput == nil {
-		return iotago.TransactionID{}
-	}
-	return bi.AliasOutput.TransactionID()
-}
-
-func (bi *BlockInfo) L1Commitment() *state.L1Commitment {
-	if bi.AliasOutput == nil {
-		return nil
-	}
-	l1c, err := transaction.L1CommitmentFromAliasOutput(bi.AliasOutput.GetAliasOutput())
-	if err != nil {
-		panic(err)
-	}
-	return l1c
 }
 
 func (bi *BlockInfo) PreviousL1Commitment() *state.L1Commitment {
@@ -74,7 +52,6 @@ func (bi *BlockInfo) String() string {
 	ret += fmt.Sprintf("off-ledger requests: %d\n", bi.NumOffLedgerRequests)
 	ret += fmt.Sprintf("Succesfull requests: %d\n", bi.NumSuccessfulRequests)
 	ret += fmt.Sprintf("Prev AliasOutput: %s\n", bi.PreviousAliasOutput.String())
-	ret += fmt.Sprintf("AliasOutput: %s\n", bi.AliasOutput.String())
 	ret += fmt.Sprintf("Gas burned: %d\n", bi.GasBurned)
 	ret += fmt.Sprintf("Gas fee charged: %d\n", bi.GasFeeCharged)
 	return ret
@@ -91,25 +68,17 @@ func (bi *BlockInfo) Bytes() []byte {
 	if bi.PreviousAliasOutput != nil {
 		mu.WriteBytes(bi.PreviousAliasOutput.Bytes())
 	}
-	mu.WriteBool(bi.AliasOutput != nil)
-	if bi.AliasOutput != nil {
-		mu.WriteBytes(bi.AliasOutput.Bytes())
-	}
 	mu.WriteUint64(bi.GasBurned)
 	mu.WriteUint64(bi.GasFeeCharged)
 	return mu.Bytes()
 }
 
-//nolint:gocyclo
 func BlockInfoFromBytes(data []byte) (*BlockInfo, error) {
 	mu := marshalutil.New(data)
 	var err error
 	bi := &BlockInfo{}
 	if bi.SchemaVersion, err = mu.ReadUint8(); err != nil {
 		return nil, err
-	}
-	if bi.SchemaVersion == 0 || bi.SchemaVersion > BlockInfoLatestSchemaVersion {
-		return nil, fmt.Errorf("BlockInfoFromBytes: unexpected schema version: %d", bi.SchemaVersion)
 	}
 	if bi.Timestamp, err = mu.ReadTime(); err != nil {
 		return nil, err
@@ -127,13 +96,6 @@ func BlockInfoFromBytes(data []byte) (*BlockInfo, error) {
 		return nil, err2
 	} else if hasPreviousAliasOutput {
 		if bi.PreviousAliasOutput, err2 = isc.NewAliasOutputWithIDFromMarshalUtil(mu); err2 != nil {
-			return nil, err2
-		}
-	}
-	if hasAliasOutput, err2 := mu.ReadBool(); err2 != nil {
-		return nil, err2
-	} else if hasAliasOutput {
-		if bi.AliasOutput, err2 = isc.NewAliasOutputWithIDFromMarshalUtil(mu); err2 != nil {
 			return nil, err2
 		}
 	}

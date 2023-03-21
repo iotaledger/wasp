@@ -4,14 +4,12 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**AnchorTransactionId** | **string** |  | 
 **BlockIndex** | **uint32** |  | 
 **GasBurned** | **string** | The burned gas (uint64 as string) | 
 **GasFeeCharged** | **string** | The charged gas fee (uint64 as string) | 
-**L1CommitmentHash** | **string** |  | 
 **NumOffLedgerRequests** | **uint32** |  | 
 **NumSuccessfulRequests** | **uint32** |  | 
-**PreviousL1CommitmentHash** | **string** |  | 
+**PreviousAliasOutput** | **string** |  | 
 **Timestamp** | **time.Time** |  | 
 **TotalRequests** | **uint32** |  | 
 
@@ -19,7 +17,7 @@ Name | Type | Description | Notes
 
 ### NewBlockInfoResponse
 
-`func NewBlockInfoResponse(anchorTransactionId string, blockIndex uint32, gasBurned string, gasFeeCharged string, l1CommitmentHash string, numOffLedgerRequests uint32, numSuccessfulRequests uint32, previousL1CommitmentHash string, timestamp time.Time, totalRequests uint32, ) *BlockInfoResponse`
+`func NewBlockInfoResponse(blockIndex uint32, gasBurned string, gasFeeCharged string, numOffLedgerRequests uint32, numSuccessfulRequests uint32, previousAliasOutput string, timestamp time.Time, totalRequests uint32, ) *BlockInfoResponse`
 
 NewBlockInfoResponse instantiates a new BlockInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -33,26 +31,6 @@ will change when the set of required properties is changed
 NewBlockInfoResponseWithDefaults instantiates a new BlockInfoResponse object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
-
-### GetAnchorTransactionId
-
-`func (o *BlockInfoResponse) GetAnchorTransactionId() string`
-
-GetAnchorTransactionId returns the AnchorTransactionId field if non-nil, zero value otherwise.
-
-### GetAnchorTransactionIdOk
-
-`func (o *BlockInfoResponse) GetAnchorTransactionIdOk() (*string, bool)`
-
-GetAnchorTransactionIdOk returns a tuple with the AnchorTransactionId field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetAnchorTransactionId
-
-`func (o *BlockInfoResponse) SetAnchorTransactionId(v string)`
-
-SetAnchorTransactionId sets AnchorTransactionId field to given value.
-
 
 ### GetBlockIndex
 
@@ -114,26 +92,6 @@ and a boolean to check if the value has been set.
 SetGasFeeCharged sets GasFeeCharged field to given value.
 
 
-### GetL1CommitmentHash
-
-`func (o *BlockInfoResponse) GetL1CommitmentHash() string`
-
-GetL1CommitmentHash returns the L1CommitmentHash field if non-nil, zero value otherwise.
-
-### GetL1CommitmentHashOk
-
-`func (o *BlockInfoResponse) GetL1CommitmentHashOk() (*string, bool)`
-
-GetL1CommitmentHashOk returns a tuple with the L1CommitmentHash field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetL1CommitmentHash
-
-`func (o *BlockInfoResponse) SetL1CommitmentHash(v string)`
-
-SetL1CommitmentHash sets L1CommitmentHash field to given value.
-
-
 ### GetNumOffLedgerRequests
 
 `func (o *BlockInfoResponse) GetNumOffLedgerRequests() uint32`
@@ -174,24 +132,24 @@ and a boolean to check if the value has been set.
 SetNumSuccessfulRequests sets NumSuccessfulRequests field to given value.
 
 
-### GetPreviousL1CommitmentHash
+### GetPreviousAliasOutput
 
-`func (o *BlockInfoResponse) GetPreviousL1CommitmentHash() string`
+`func (o *BlockInfoResponse) GetPreviousAliasOutput() string`
 
-GetPreviousL1CommitmentHash returns the PreviousL1CommitmentHash field if non-nil, zero value otherwise.
+GetPreviousAliasOutput returns the PreviousAliasOutput field if non-nil, zero value otherwise.
 
-### GetPreviousL1CommitmentHashOk
+### GetPreviousAliasOutputOk
 
-`func (o *BlockInfoResponse) GetPreviousL1CommitmentHashOk() (*string, bool)`
+`func (o *BlockInfoResponse) GetPreviousAliasOutputOk() (*string, bool)`
 
-GetPreviousL1CommitmentHashOk returns a tuple with the PreviousL1CommitmentHash field if it's non-nil, zero value otherwise
+GetPreviousAliasOutputOk returns a tuple with the PreviousAliasOutput field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetPreviousL1CommitmentHash
+### SetPreviousAliasOutput
 
-`func (o *BlockInfoResponse) SetPreviousL1CommitmentHash(v string)`
+`func (o *BlockInfoResponse) SetPreviousAliasOutput(v string)`
 
-SetPreviousL1CommitmentHash sets PreviousL1CommitmentHash field to given value.
+SetPreviousAliasOutput sets PreviousAliasOutput field to given value.
 
 
 ### GetTimestamp

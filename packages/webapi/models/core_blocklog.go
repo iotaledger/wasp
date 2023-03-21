@@ -18,39 +18,30 @@ type ControlAddressesResponse struct {
 }
 
 type BlockInfoResponse struct {
-	AnchorTransactionID      string    `json:"anchorTransactionId" swagger:"required"`
-	BlockIndex               uint32    `json:"blockIndex" swagger:"required,min(1)"`
-	GasBurned                string    `json:"gasBurned" swagger:"required,desc(The burned gas (uint64 as string))"`
-	GasFeeCharged            string    `json:"gasFeeCharged" swagger:"required,desc(The charged gas fee (uint64 as string))"`
-	L1CommitmentHash         string    `json:"l1CommitmentHash" swagger:"required"`
-	NumOffLedgerRequests     uint16    `json:"numOffLedgerRequests" swagger:"required,min(1)"`
-	NumSuccessfulRequests    uint16    `json:"numSuccessfulRequests" swagger:"required,min(1)"`
-	PreviousL1CommitmentHash string    `json:"previousL1CommitmentHash" swagger:"required"`
-	Timestamp                time.Time `json:"timestamp" swagger:"required"`
-	TotalRequests            uint16    `json:"totalRequests" swagger:"required,min(1)"`
+	BlockIndex            uint32    `json:"blockIndex" swagger:"required,min(1)"`
+	Timestamp             time.Time `json:"timestamp" swagger:"required"`
+	TotalRequests         uint16    `json:"totalRequests" swagger:"required,min(1)"`
+	NumSuccessfulRequests uint16    `json:"numSuccessfulRequests" swagger:"required,min(1)"`
+	NumOffLedgerRequests  uint16    `json:"numOffLedgerRequests" swagger:"required,min(1)"`
+	PreviousAliasOutput   string    `json:"previousAliasOutput" swagger:"required,min(1)"`
+	GasBurned             string    `json:"gasBurned" swagger:"required,desc(The burned gas (uint64 as string))"`
+	GasFeeCharged         string    `json:"gasFeeCharged" swagger:"required,desc(The charged gas fee (uint64 as string))"`
 }
 
 func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
-	commitmentHash := ""
-	if info.L1Commitment() != nil {
-		commitmentHash = info.L1Commitment().BlockHash().String()
+	blockindex := uint32(0)
+	if info.PreviousAliasOutput != nil {
+		blockindex = info.PreviousAliasOutput.GetAliasOutput().StateIndex + 1
 	}
-	prevCommitmentHash := ""
-	if info.PreviousL1Commitment() != nil {
-		prevCommitmentHash = info.PreviousL1Commitment().BlockHash().String()
-	}
-
 	return &BlockInfoResponse{
-		AnchorTransactionID:      info.AnchorTransactionID().ToHex(),
-		BlockIndex:               info.BlockIndex(),
-		GasBurned:                iotago.EncodeUint64(info.GasBurned),
-		GasFeeCharged:            iotago.EncodeUint64(info.GasFeeCharged),
-		L1CommitmentHash:         commitmentHash,
-		NumOffLedgerRequests:     info.NumOffLedgerRequests,
-		NumSuccessfulRequests:    info.NumSuccessfulRequests,
-		PreviousL1CommitmentHash: prevCommitmentHash,
-		Timestamp:                info.Timestamp,
-		TotalRequests:            info.TotalRequests,
+		BlockIndex:            blockindex,
+		PreviousAliasOutput:   string(info.PreviousAliasOutput.Bytes()),
+		Timestamp:             info.Timestamp,
+		TotalRequests:         info.TotalRequests,
+		NumSuccessfulRequests: info.NumSuccessfulRequests,
+		NumOffLedgerRequests:  info.NumOffLedgerRequests,
+		GasBurned:             iotago.EncodeUint64(info.GasBurned),
+		GasFeeCharged:         iotago.EncodeUint64(info.GasFeeCharged),
 	}
 }
 

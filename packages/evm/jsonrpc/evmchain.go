@@ -238,7 +238,7 @@ func (e *EVMChain) iscStateFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Block
 }
 
 func (e *EVMChain) iscAliasOutputFromEVMBlockNumber(blockNumber *big.Int) (*isc.AliasOutputWithID, error) {
-	if blockNumber == nil {
+	if blockNumber == nil || blockNumber.Cmp(big.NewInt(int64(e.backend.ISCLatestState().BlockIndex()))) == 0 {
 		return e.backend.ISCLatestAliasOutput()
 	}
 	iscBlockIndex, err := iscBlockIndexByEVMBlockNumber(blockNumber)
@@ -252,19 +252,16 @@ func (e *EVMChain) iscAliasOutputFromEVMBlockNumber(blockNumber *big.Int) (*isc.
 	if iscBlockIndex == latestBlockIndex {
 		return e.backend.ISCLatestAliasOutput()
 	}
-	iscState, err := e.backend.ISCStateByBlockIndex(iscBlockIndex)
+	iscState, err := e.backend.ISCStateByBlockIndex(iscBlockIndex + 1)
 	if err != nil {
 		return nil, err
 	}
 	blocklogStatePartition := subrealm.NewReadOnly(iscState, kv.Key(blocklog.Contract.Hname().Bytes()))
-	bi, err := blocklog.GetBlockInfo(blocklogStatePartition, iscState.BlockIndex())
+	bi, err := blocklog.GetBlockInfo(blocklogStatePartition, iscState.BlockIndex()+1)
 	if err != nil {
 		return nil, err
 	}
-	if bi.AliasOutput == nil {
-		return nil, fmt.Errorf("unknown L1 alias output corresponding to EVM block number %s", blockNumber)
-	}
-	return bi.AliasOutput, nil
+	return bi.PreviousAliasOutput, nil
 }
 
 func (e *EVMChain) iscAliasOutputFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.BlockNumberOrHash) (*isc.AliasOutputWithID, error) {

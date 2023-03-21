@@ -13,7 +13,7 @@ Method | HTTP request | Description
 
 ## GetChainMetrics
 
-> ChainMetrics GetChainMetrics(ctx, chainID).Execute()
+> ChainMessageMetrics GetChainMetrics(ctx, chainID).Execute()
 
 Get chain specific metrics.
 
@@ -39,7 +39,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `MetricsApi.GetChainMetrics``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `GetChainMetrics`: ChainMetrics
+    // response from `GetChainMetrics`: ChainMessageMetrics
     fmt.Fprintf(os.Stdout, "Response from `MetricsApi.GetChainMetrics`: %v\n", resp)
 }
 ```
@@ -63,7 +63,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ChainMetrics**](ChainMetrics.md)
+[**ChainMessageMetrics**](ChainMessageMetrics.md)
 
 ### Authorization
 
@@ -217,7 +217,7 @@ Name | Type | Description  | Notes
 
 ## GetL1Metrics
 
-> ChainMetrics GetL1Metrics(ctx).Execute()
+> ChainMessageMetrics GetL1Metrics(ctx).Execute()
 
 Get accumulated metrics.
 
@@ -242,7 +242,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `MetricsApi.GetL1Metrics``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `GetL1Metrics`: ChainMetrics
+    // response from `GetL1Metrics`: ChainMessageMetrics
     fmt.Fprintf(os.Stdout, "Response from `MetricsApi.GetL1Metrics`: %v\n", resp)
 }
 ```
@@ -258,7 +258,7 @@ Other parameters are passed through a pointer to a apiGetL1MetricsRequest struct
 
 ### Return type
 
-[**ChainMetrics**](ChainMetrics.md)
+[**ChainMessageMetrics**](ChainMessageMetrics.md)
 
 ### Authorization
 

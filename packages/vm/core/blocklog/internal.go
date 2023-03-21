@@ -29,8 +29,6 @@ func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxID iotago.TransactionID
 	if err != nil {
 		panic(err)
 	}
-
-	blockInfo.AliasOutput = aliasOutput
 	registry.MustSetAt(lastBlockIndex, blockInfo.Bytes())
 }
 
@@ -264,11 +262,11 @@ func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, re
 }
 
 func GetOutputID(stateR kv.KVStoreReader, stateIndex uint32, outputIndex uint16) (iotago.OutputID, error) {
-	blockInfo, err := GetBlockInfo(stateR, stateIndex)
+	blockInfo, err := GetBlockInfo(stateR, stateIndex+1)
 	if err != nil {
 		return iotago.OutputID{}, err
 	}
-	return iotago.OutputIDFromTransactionIDAndIndex(blockInfo.AnchorTransactionID(), outputIndex), nil
+	return iotago.OutputIDFromTransactionIDAndIndex(blockInfo.PreviousAliasOutput.TransactionID(), outputIndex), nil
 }
 
 // tries to get block index from ParamBlockIndex, if no parameter is provided, returns the latest block index

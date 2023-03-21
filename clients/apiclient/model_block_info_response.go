@@ -20,16 +20,14 @@ var _ MappedNullable = &BlockInfoResponse{}
 
 // BlockInfoResponse struct for BlockInfoResponse
 type BlockInfoResponse struct {
-	AnchorTransactionId string `json:"anchorTransactionId"`
 	BlockIndex uint32 `json:"blockIndex"`
 	// The burned gas (uint64 as string)
 	GasBurned string `json:"gasBurned"`
 	// The charged gas fee (uint64 as string)
 	GasFeeCharged string `json:"gasFeeCharged"`
-	L1CommitmentHash string `json:"l1CommitmentHash"`
 	NumOffLedgerRequests uint32 `json:"numOffLedgerRequests"`
 	NumSuccessfulRequests uint32 `json:"numSuccessfulRequests"`
-	PreviousL1CommitmentHash string `json:"previousL1CommitmentHash"`
+	PreviousAliasOutput string `json:"previousAliasOutput"`
 	Timestamp time.Time `json:"timestamp"`
 	TotalRequests uint32 `json:"totalRequests"`
 }
@@ -38,16 +36,14 @@ type BlockInfoResponse struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBlockInfoResponse(anchorTransactionId string, blockIndex uint32, gasBurned string, gasFeeCharged string, l1CommitmentHash string, numOffLedgerRequests uint32, numSuccessfulRequests uint32, previousL1CommitmentHash string, timestamp time.Time, totalRequests uint32) *BlockInfoResponse {
+func NewBlockInfoResponse(blockIndex uint32, gasBurned string, gasFeeCharged string, numOffLedgerRequests uint32, numSuccessfulRequests uint32, previousAliasOutput string, timestamp time.Time, totalRequests uint32) *BlockInfoResponse {
 	this := BlockInfoResponse{}
-	this.AnchorTransactionId = anchorTransactionId
 	this.BlockIndex = blockIndex
 	this.GasBurned = gasBurned
 	this.GasFeeCharged = gasFeeCharged
-	this.L1CommitmentHash = l1CommitmentHash
 	this.NumOffLedgerRequests = numOffLedgerRequests
 	this.NumSuccessfulRequests = numSuccessfulRequests
-	this.PreviousL1CommitmentHash = previousL1CommitmentHash
+	this.PreviousAliasOutput = previousAliasOutput
 	this.Timestamp = timestamp
 	this.TotalRequests = totalRequests
 	return &this
@@ -59,30 +55,6 @@ func NewBlockInfoResponse(anchorTransactionId string, blockIndex uint32, gasBurn
 func NewBlockInfoResponseWithDefaults() *BlockInfoResponse {
 	this := BlockInfoResponse{}
 	return &this
-}
-
-// GetAnchorTransactionId returns the AnchorTransactionId field value
-func (o *BlockInfoResponse) GetAnchorTransactionId() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.AnchorTransactionId
-}
-
-// GetAnchorTransactionIdOk returns a tuple with the AnchorTransactionId field value
-// and a boolean to check if the value has been set.
-func (o *BlockInfoResponse) GetAnchorTransactionIdOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.AnchorTransactionId, true
-}
-
-// SetAnchorTransactionId sets field value
-func (o *BlockInfoResponse) SetAnchorTransactionId(v string) {
-	o.AnchorTransactionId = v
 }
 
 // GetBlockIndex returns the BlockIndex field value
@@ -157,30 +129,6 @@ func (o *BlockInfoResponse) SetGasFeeCharged(v string) {
 	o.GasFeeCharged = v
 }
 
-// GetL1CommitmentHash returns the L1CommitmentHash field value
-func (o *BlockInfoResponse) GetL1CommitmentHash() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.L1CommitmentHash
-}
-
-// GetL1CommitmentHashOk returns a tuple with the L1CommitmentHash field value
-// and a boolean to check if the value has been set.
-func (o *BlockInfoResponse) GetL1CommitmentHashOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.L1CommitmentHash, true
-}
-
-// SetL1CommitmentHash sets field value
-func (o *BlockInfoResponse) SetL1CommitmentHash(v string) {
-	o.L1CommitmentHash = v
-}
-
 // GetNumOffLedgerRequests returns the NumOffLedgerRequests field value
 func (o *BlockInfoResponse) GetNumOffLedgerRequests() uint32 {
 	if o == nil {
@@ -229,28 +177,28 @@ func (o *BlockInfoResponse) SetNumSuccessfulRequests(v uint32) {
 	o.NumSuccessfulRequests = v
 }
 
-// GetPreviousL1CommitmentHash returns the PreviousL1CommitmentHash field value
-func (o *BlockInfoResponse) GetPreviousL1CommitmentHash() string {
+// GetPreviousAliasOutput returns the PreviousAliasOutput field value
+func (o *BlockInfoResponse) GetPreviousAliasOutput() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.PreviousL1CommitmentHash
+	return o.PreviousAliasOutput
 }
 
-// GetPreviousL1CommitmentHashOk returns a tuple with the PreviousL1CommitmentHash field value
+// GetPreviousAliasOutputOk returns a tuple with the PreviousAliasOutput field value
 // and a boolean to check if the value has been set.
-func (o *BlockInfoResponse) GetPreviousL1CommitmentHashOk() (*string, bool) {
+func (o *BlockInfoResponse) GetPreviousAliasOutputOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.PreviousL1CommitmentHash, true
+	return &o.PreviousAliasOutput, true
 }
 
-// SetPreviousL1CommitmentHash sets field value
-func (o *BlockInfoResponse) SetPreviousL1CommitmentHash(v string) {
-	o.PreviousL1CommitmentHash = v
+// SetPreviousAliasOutput sets field value
+func (o *BlockInfoResponse) SetPreviousAliasOutput(v string) {
+	o.PreviousAliasOutput = v
 }
 
 // GetTimestamp returns the Timestamp field value
@@ -311,14 +259,12 @@ func (o BlockInfoResponse) MarshalJSON() ([]byte, error) {
 
 func (o BlockInfoResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["anchorTransactionId"] = o.AnchorTransactionId
 	toSerialize["blockIndex"] = o.BlockIndex
 	toSerialize["gasBurned"] = o.GasBurned
 	toSerialize["gasFeeCharged"] = o.GasFeeCharged
-	toSerialize["l1CommitmentHash"] = o.L1CommitmentHash
 	toSerialize["numOffLedgerRequests"] = o.NumOffLedgerRequests
 	toSerialize["numSuccessfulRequests"] = o.NumSuccessfulRequests
-	toSerialize["previousL1CommitmentHash"] = o.PreviousL1CommitmentHash
+	toSerialize["previousAliasOutput"] = o.PreviousAliasOutput
 	toSerialize["timestamp"] = o.Timestamp
 	toSerialize["totalRequests"] = o.TotalRequests
 	return toSerialize, nil
