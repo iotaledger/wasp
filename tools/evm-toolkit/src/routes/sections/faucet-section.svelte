@@ -1,10 +1,13 @@
 <script lang="ts">
+  import { connected, selectedAccount } from 'svelte-web3';
+
   import { Button, Input } from '$components';
 
-  import { indexerClient, nodeClient, selectedNetwork } from '$lib/evm-toolkit';
   import { Bech32AddressLength, EVMAddressLength } from '$lib/constants';
+  import { indexerClient, nodeClient, selectedNetwork } from '$lib/evm-toolkit';
   import { IotaWallet, SendFundsTransaction } from '$lib/faucet';
   import { NotificationType, showNotification } from '$lib/notification';
+  import { handleEnterKeyDown } from '$lib/utils';
 
   let isSendingFunds: boolean;
 
@@ -16,6 +19,8 @@
     $selectedNetwork != null &&
     $selectedNetwork.chainAddress.length == Bech32AddressLength &&
     !isSendingFunds;
+  $: allowUseSelectedAddress =
+    $connected && $selectedAccount && $selectedAccount !== evmAddress;
 
   async function sendFunds() {
     if (!enableSendFunds) {
@@ -59,7 +64,8 @@
 
       showNotification({
         type: NotificationType.Success,
-        message: 'Funds successfully sent! It may take 10-30 seconds to arrive.',
+        message:
+          'Funds successfully sent! It may take 10-30 seconds to arrive.',
         duration: 10 * 1000,
       });
     } catch (ex) {
@@ -71,18 +77,33 @@
 
     isSendingFunds = false;
   }
+
+  function onUseMyAddress() {
+    evmAddress = $selectedAccount;
+  }
 </script>
 
 <faucet-component class="flex flex-col space-y-6 mt-6">
   {#if $selectedNetwork}
-    <Input
-      id="evmAddress"
-      label="EVM Address"
-      bind:value={evmAddress}
-      placeholder="0x..."
-      stretch
-      autofocus
-    />
+    <div class="flex flex-col space-y-2">
+      <Input
+        id="evmAddress"
+        label="EVM Address"
+        bind:value={evmAddress}
+        placeholder="0x..."
+        stretch
+        autofocus
+      />
+      <div
+        on:click={onUseMyAddress}
+        on:keydown={event => handleEnterKeyDown(event, onUseMyAddress)}
+        class="cursor-pointer text-shimmer-action-primary"
+        class:opacity-50={!allowUseSelectedAddress}
+        class:pointer-events-none={!allowUseSelectedAddress}
+      >
+        Use my own address
+      </div>
+    </div>
 
     <Button
       title="Send funds"
