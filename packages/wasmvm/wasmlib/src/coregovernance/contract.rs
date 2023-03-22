@@ -49,11 +49,6 @@ pub struct RotateStateControllerCall<'a> {
     pub params: MutableRotateStateControllerParams,
 }
 
-pub struct SetChainInfoCall<'a> {
-    pub func:   ScFunc<'a>,
-    pub params: MutableSetChainInfoParams,
-}
-
 pub struct SetFeePolicyCall<'a> {
     pub func:   ScFunc<'a>,
     pub params: MutableSetFeePolicyParams,
@@ -82,11 +77,6 @@ pub struct GetChainOwnerCall<'a> {
 pub struct GetFeePolicyCall<'a> {
     pub func:    ScView<'a>,
     pub results: ImmutableGetFeePolicyResults,
-}
-
-pub struct GetMaxBlobSizeCall<'a> {
-    pub func:    ScView<'a>,
-    pub results: ImmutableGetMaxBlobSizeResults,
 }
 
 pub struct ScFuncs {
@@ -165,16 +155,6 @@ impl ScFuncs {
         f
     }
 
-    // chain info
-    pub fn set_chain_info(ctx: &impl ScFuncCallContext) -> SetChainInfoCall {
-        let mut f = SetChainInfoCall {
-            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_SET_CHAIN_INFO),
-            params:  MutableSetChainInfoParams { proxy: Proxy::nil() },
-        };
-        ScFunc::link_params(&mut f.params.proxy, &f.func);
-        f
-    }
-
     // fees
     pub fn set_fee_policy(ctx: &impl ScFuncCallContext) -> SetFeePolicyCall {
         let mut f = SetFeePolicyCall {
@@ -230,15 +210,6 @@ impl ScFuncs {
         let mut f = GetFeePolicyCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_FEE_POLICY),
             results: ImmutableGetFeePolicyResults { proxy: Proxy::nil() },
-        };
-        ScView::link_results(&mut f.results.proxy, &f.func);
-        f
-    }
-
-    pub fn get_max_blob_size(ctx: &impl ScViewCallContext) -> GetMaxBlobSizeCall {
-        let mut f = GetMaxBlobSizeCall {
-            func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_MAX_BLOB_SIZE),
-            results: ImmutableGetMaxBlobSizeResults { proxy: Proxy::nil() },
         };
         ScView::link_results(&mut f.results.proxy, &f.func);
         f

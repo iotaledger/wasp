@@ -9,5 +9,6 @@ if [ -f "$contracts_path/inccounter/rs/inccounterwasm/pkg/inccounterwasm_bg.wasm
 fi
 
 cd $root_path/documentation/tutorial-examples
-wasm-pack build rs/solotutorialwasm
+schema -go -rs
+schema -rs -build
 cp rs/solotutorialwasm/pkg/solotutorialwasm_bg.wasm test/solotutorial_bg.wasm

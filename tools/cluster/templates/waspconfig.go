@@ -8,7 +8,6 @@ type ModifyNodesConfigFn = func(nodeIndex int, configParams WaspConfigParams) Wa
 type WaspConfigParams struct {
 	APIPort                      int
 	PeeringPort                  int
-	NanomsgPort                  int
 	L1INXAddress                 string
 	ProfilingPort                int
 	MetricsPort                  int
@@ -129,9 +128,5 @@ var WaspConfig = `
         ]
       }
     }
-  },
-  "nanomsg": {
-    "enabled": true,
-    "port": {{.NanomsgPort}}
   }
 }`

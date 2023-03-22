@@ -97,7 +97,6 @@ func TestFindContract(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, root.Contract.ProgramHash, record.ProgramHash)
 	require.Equal(t, coreroot.ScName, record.Name)
-	require.Equal(t, coreroot.ScDescription, record.Description)
 }
 
 func TestGetContractRecords(t *testing.T) {
@@ -112,5 +111,4 @@ func TestGetContractRecords(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, root.Contract.ProgramHash, record.ProgramHash)
 	require.Equal(t, coreroot.ScName, record.Name)
-	require.Equal(t, coreroot.ScDescription, record.Description)
 }

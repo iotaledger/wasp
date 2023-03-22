@@ -6,6 +6,7 @@
 package jsonrpc
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -51,7 +52,7 @@ func (e *EthService) resolveError(err error) error {
 	return err
 }
 
-func (e *EthService) GetTransactionCount(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) (hexutil.Uint64, error) {
+func (e *EthService) GetTransactionCount(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Uint64, error) {
 	n, err := e.evmChain.TransactionCount(address, blockNumberOrHash)
 	if err != nil {
 		return 0, e.resolveError(err)
@@ -122,7 +123,7 @@ func (e *EthService) GetTransactionByBlockNumberAndIndex(blockNumberOrTag rpc.Bl
 	return newRPCTransaction(tx, blockHash, blockNumber, uint64(index)), err
 }
 
-func (e *EthService) GetBalance(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) (*hexutil.Big, error) {
+func (e *EthService) GetBalance(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (*hexutil.Big, error) {
 	bal, err := e.evmChain.Balance(address, blockNumberOrHash)
 	if err != nil {
 		return nil, e.resolveError(err)
@@ -130,7 +131,7 @@ func (e *EthService) GetBalance(address common.Address, blockNumberOrHash rpc.Bl
 	return (*hexutil.Big)(bal), nil
 }
 
-func (e *EthService) GetCode(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
+func (e *EthService) GetCode(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
 	code, err := e.evmChain.Code(address, blockNumberOrHash)
 	if err != nil {
 		return nil, e.resolveError(err)
@@ -164,17 +165,17 @@ func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, err
 	return tx.Hash(), nil
 }
 
-func (e *EthService) Call(args *RPCCallArgs, blockNumberOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
+func (e *EthService) Call(args *RPCCallArgs, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
 	ret, err := e.evmChain.CallContract(args.parse(), blockNumberOrHash)
 	return ret, e.resolveError(err)
 }
 
-func (e *EthService) EstimateGas(args *RPCCallArgs) (hexutil.Uint64, error) {
-	gas, err := e.evmChain.EstimateGas(args.parse())
+func (e *EthService) EstimateGas(args *RPCCallArgs, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Uint64, error) {
+	gas, err := e.evmChain.EstimateGas(args.parse(), blockNumberOrHash)
 	return hexutil.Uint64(gas), e.resolveError(err)
 }
 
-func (e *EthService) GetStorageAt(address common.Address, key common.Hash, blockNumberOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
+func (e *EthService) GetStorageAt(address common.Address, key common.Hash, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
 	ret, err := e.evmChain.StorageAt(address, key, blockNumberOrHash)
 	return ret, e.resolveError(err)
 }
@@ -286,7 +287,11 @@ func (e *EthService) parseTxArgs(args *SendTxArgs) (*types.Transaction, error) {
 	if err := args.setDefaults(e); err != nil {
 		return nil, err
 	}
-	return types.SignTx(args.toTransaction(), e.evmChain.Signer(), account)
+	signer, err := e.evmChain.Signer()
+	if err != nil {
+		return nil, err
+	}
+	return types.SignTx(args.toTransaction(), signer, account)
 }
 
 func (e *EthService) GetLogs(q *RPCFilterQuery) ([]*types.Log, error) {
@@ -298,8 +303,67 @@ func (e *EthService) GetLogs(q *RPCFilterQuery) ([]*types.Log, error) {
 }
 
 // ChainID implements the eth_chainId method according to https://eips.ethereum.org/EIPS/eip-695
-func (e *EthService) ChainId() hexutil.Uint { //nolint:revive
-	return hexutil.Uint(e.evmChain.chainID)
+func (e *EthService) ChainId() (hexutil.Uint, error) { //nolint:revive
+	chainID, err := e.evmChain.ChainID()
+	return hexutil.Uint(chainID), err
+}
+
+func (e *EthService) NewHeads(ctx context.Context) (*rpc.Subscription, error) {
+	notifier, supported := rpc.NotifierFromContext(ctx)
+	if !supported {
+		return &rpc.Subscription{}, rpc.ErrNotificationsUnsupported
+	}
+
+	rpcSub := notifier.CreateSubscription()
+
+	go func() {
+		headers := make(chan *types.Header)
+		unsubscribe := e.evmChain.SubscribeNewHeads(headers)
+		defer unsubscribe()
+
+		for {
+			select {
+			case h := <-headers:
+				_ = notifier.Notify(rpcSub.ID, h)
+			case <-rpcSub.Err():
+				return
+			case <-notifier.Closed():
+				return
+			}
+		}
+	}()
+
+	return rpcSub, nil
+}
+
+func (e *EthService) Logs(ctx context.Context, q *RPCFilterQuery) (*rpc.Subscription, error) {
+	notifier, supported := rpc.NotifierFromContext(ctx)
+	if !supported {
+		return &rpc.Subscription{}, rpc.ErrNotificationsUnsupported
+	}
+
+	rpcSub := notifier.CreateSubscription()
+
+	go func() {
+		matchedLogs := make(chan []*types.Log)
+		unsubscribe := e.evmChain.SubscribeLogs((*ethereum.FilterQuery)(q), matchedLogs)
+		defer unsubscribe()
+
+		for {
+			select {
+			case logs := <-matchedLogs:
+				for _, log := range logs {
+					_ = notifier.Notify(rpcSub.ID, log)
+				}
+			case <-rpcSub.Err():
+				return
+			case <-notifier.Closed():
+				return
+			}
+		}
+	}()
+
+	return rpcSub, nil
 }
 
 /*

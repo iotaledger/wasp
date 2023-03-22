@@ -14,7 +14,7 @@ import (
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
@@ -83,7 +83,7 @@ func SetupDkg(
 }
 
 func SetupDkgTrivial(
-	t *testing.T,
+	t require.TestingT,
 	n, f int,
 	peerIdentities []*cryptolib.KeyPair,
 	dkShareRegistryProviders []registry.DKShareRegistryProvider, // Will be used if not nil.

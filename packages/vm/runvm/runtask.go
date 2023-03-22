@@ -1,8 +1,6 @@
 package runvm
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
@@ -36,9 +34,7 @@ func runTask(task *vm.VMTask) {
 	var numOffLedger, numSuccess uint16
 	reqIndexInTheBlock := 0
 
-	if task.AnchorOutput.StateIndex > 0 {
-		vmctx.OpenBlockContexts()
-	}
+	vmctx.OpenBlockContexts()
 
 	// main loop over the batch of requests
 	for _, req := range task.Requests {
@@ -86,11 +82,7 @@ func runTask(task *vm.VMTask) {
 
 	if rotationAddr == nil {
 		// rotation does not happen
-		task.ResultTransactionEssence, task.ResultInputsCommitment = vmctx.BuildTransactionEssence(l1Commitment)
-
-		// TODO extract latest total assets
-		checkTotalAssets(task.ResultTransactionEssence, nil)
-
+		task.ResultTransactionEssence, task.ResultInputsCommitment = vmctx.BuildTransactionEssence(l1Commitment, true)
 		task.Log.Debugf("runTask OUT. block index: %d, %s", blockIndex, l1Commitment.String())
 	} else {
 		// rotation happens
@@ -98,9 +90,4 @@ func runTask(task *vm.VMTask) {
 		task.ResultTransactionEssence = nil
 		task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
-}
-
-// checkTotalAssets asserts if assets on the L1 transaction equals assets on the chain's ledger
-func checkTotalAssets(_ *iotago.TransactionEssence, _ *isc.Assets) {
-	// TODO implement
 }

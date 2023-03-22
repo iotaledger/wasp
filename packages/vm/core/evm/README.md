@@ -39,7 +39,7 @@ the Metamask connection parameters for any given ISC chain in the Dashboard.
     wasp-cli chain deposit 0xa1b2c3d4... iota:1000000
     ```
 
-5. Visit the Wasp dashboard at http://localhost:7000, go to `Chains`, then to
+5. Visit the Wasp dashboard (`<URL>/wasp/dashboard` when using `node-docker-setup`), go to `Chains`, then to
    your ISC chain, scroll down and you will find the EVM section with the
    JSON-RPC URL for Metamask or any other Ethereum tool.
 

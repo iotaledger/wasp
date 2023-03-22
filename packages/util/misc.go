@@ -10,6 +10,12 @@ var (
 	MaxUint256 = new(big.Int).Sub(new(big.Int).Lsh(Big1, 256), Big1)
 )
 
+func ExecuteIfNotNil(function func()) {
+	if function != nil {
+		function()
+	}
+}
+
 func StringInList(s string, lst []string) bool {
 	for _, l := range lst {
 		if l == s {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -38,18 +37,6 @@ func (s *state) TrieRoot() trie.Hash {
 
 func (s *state) GetMerkleProof(key []byte) *trie.MerkleProof {
 	return s.trieReader.MerkleProof(key)
-}
-
-func (s *state) ChainID() isc.ChainID {
-	return loadChainIDFromState(s)
-}
-
-func loadChainIDFromState(s kv.KVStoreReader) isc.ChainID {
-	chainID, err := isc.ChainIDFromBytes(s.MustGet(KeyChainID))
-	if err != nil {
-		panic(err)
-	}
-	return chainID
 }
 
 func (s *state) BlockIndex() uint32 {

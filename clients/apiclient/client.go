@@ -56,6 +56,8 @@ type APIClient struct {
 
 	CorecontractsApi *CorecontractsApiService
 
+	DefaultApi *DefaultApiService
+
 	MetricsApi *MetricsApiService
 
 	NodeApi *NodeApiService
@@ -84,6 +86,7 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	c.AuthApi = (*AuthApiService)(&c.common)
 	c.ChainsApi = (*ChainsApiService)(&c.common)
 	c.CorecontractsApi = (*CorecontractsApiService)(&c.common)
+	c.DefaultApi = (*DefaultApiService)(&c.common)
 	c.MetricsApi = (*MetricsApiService)(&c.common)
 	c.NodeApi = (*NodeApiService)(&c.common)
 	c.RequestsApi = (*RequestsApiService)(&c.common)

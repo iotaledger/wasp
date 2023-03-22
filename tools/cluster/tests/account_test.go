@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
@@ -32,7 +32,7 @@ func TestBasicAccountsNLow(t *testing.T) {
 		for i := range chainNodes {
 			chainNodes[i] = i
 		}
-		chain, err := e.Clu.DeployChainWithDKG(fmt.Sprintf("low_node_chain_%v_%v", n, t), chainNodes, chainNodes, uint16(t))
+		chain, err := e.Clu.DeployChainWithDKG(chainNodes, chainNodes, uint16(t))
 		require.NoError(tt, err)
 		env := newChainEnv(tt, e.Clu, chain)
 		testAccounts(env)

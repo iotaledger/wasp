@@ -31,7 +31,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/aba/mostefaoui"
 	"github.com/iotaledger/wasp/packages/gpa/rbc/bracha"

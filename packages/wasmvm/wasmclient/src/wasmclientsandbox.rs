@@ -13,7 +13,6 @@ impl ScViewCallContext for WasmClientContext {
         }
 
         let res = self.svc_client.call_view_by_hname(
-            &self.chain_id,
             &req.contract,
             &req.function,
             &req.params,
@@ -28,7 +27,7 @@ impl ScViewCallContext for WasmClientContext {
     }
 
     fn fn_chain_id(&self) -> ScChainID {
-        self.chain_id
+        self.current_chain_id()
     }
 
     fn init_view_call_context(&self, _contract_hname: ScHname) -> ScHname {
@@ -43,7 +42,7 @@ impl ScFuncCallContext for WasmClientContext {
             return Vec::new();
         }
 
-        if req.chain_id != self.chain_id {
+        if req.chain_id != self.current_chain_id() {
             self.set_err("unknown chain id: ", &req.chain_id.to_string());
             return Vec::new();
         }
@@ -54,8 +53,6 @@ impl ScFuncCallContext for WasmClientContext {
         }
 
         let sc_assets = ScAssets::new(&req.transfer);
-        let mut nonce = self.nonce.lock().unwrap();
-        *nonce += 1;
         let res = self.svc_client.post_request(
             &req.chain_id,
             &req.contract,
@@ -63,7 +60,6 @@ impl ScFuncCallContext for WasmClientContext {
             &req.params,
             &sc_assets,
             self.key_pair.as_ref().unwrap(),
-            *nonce,
         );
 
         match res {

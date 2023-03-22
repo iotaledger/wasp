@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 )
 
 // Shutdown coordinator implements a hierarchical await.

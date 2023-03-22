@@ -8,9 +8,8 @@ const (
 
 	// EVM state
 	FuncSendTransaction                     = "sendTransaction"
-	FuncEstimateGas                         = "estimateGas"
-	FuncGetBalance                          = "getBalance"
 	FuncCallContract                        = "callContract"
+	FuncGetBalance                          = "getBalance"
 	FuncGetNonce                            = "getNonce"
 	FuncGetReceipt                          = "getReceipt"
 	FuncGetCode                             = "getCode"
@@ -39,7 +38,6 @@ const (
 	FieldTransaction      = "t"
 	FieldCallMsg          = "c"
 	FieldChainID          = "chid"
-	FieldGenesisAlloc     = "g"
 	FieldAddress          = "a"
 	FieldKey              = "k"
 	FieldAgentID          = "i"

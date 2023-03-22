@@ -235,6 +235,7 @@ func (bc *BlockchainDB) deleteBlock(blockNumber uint64) {
 
 type headerGob struct {
 	Hash        common.Hash
+	GasLimit    uint64
 	GasUsed     uint64
 	Time        uint64
 	TxHash      common.Hash
@@ -245,6 +246,7 @@ type headerGob struct {
 func makeHeaderGob(header *types.Header) *headerGob {
 	return &headerGob{
 		Hash:        header.Hash(),
+		GasLimit:    header.GasLimit,
 		GasUsed:     header.GasUsed,
 		Time:        header.Time,
 		TxHash:      header.TxHash,
@@ -279,7 +281,7 @@ func (bc *BlockchainDB) headerFromGob(g *headerGob, blockNumber uint64) *types.H
 	return &types.Header{
 		Difficulty:  &big.Int{},
 		Number:      new(big.Int).SetUint64(blockNumber),
-		GasLimit:    bc.blockGasLimit,
+		GasLimit:    g.GasLimit,
 		Time:        g.Time,
 		ParentHash:  parentHash,
 		GasUsed:     g.GasUsed,

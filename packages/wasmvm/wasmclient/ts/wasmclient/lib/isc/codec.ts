@@ -3,6 +3,7 @@
 
 import {Bech32, Blake2b} from '@iota/crypto.js';
 import * as wasmlib from 'wasmlib';
+import {panic} from 'wasmlib';
 import * as isc from './';
 
 export type Error = string | null;
@@ -96,4 +97,42 @@ export class Codec {
         }
         return dict;
     }
+}
+
+let hrpForClient = '';
+
+export function clientBech32Decode(bech32: string): wasmlib.ScAddress {
+    const [hrp, addr, err] = isc.Codec.bech32Decode(bech32);
+    if (err != null) {
+        panic(err);
+    }
+    if (hrp != hrpForClient) {
+        panic('invalid protocol prefix: ' + hrp);
+    }
+    return addr;
+}
+
+export function clientBech32Encode(addr: wasmlib.ScAddress): string {
+    return isc.Codec.bech32Encode(hrpForClient, addr);
+}
+
+export function clientHashName(name: string): wasmlib.ScHname {
+    const hName = new wasmlib.ScHname(0);
+    hName.id = isc.Codec.hNameBytes(name);
+    return hName;
+}
+
+export function setSandboxWrappers(chainID: string): Error {
+    wasmlib.sandboxWrappers(clientBech32Decode, clientBech32Encode, clientHashName);
+
+    // set the network prefix for the current network
+    const [hrp, _addr, err] = isc.Codec.bech32Decode(chainID);
+    if (err != null) {
+        return err;
+    }
+    if (hrpForClient != hrp && hrpForClient != '') {
+        panic('WasmClient can only connect to one Tangle network per app');
+    }
+    hrpForClient = hrp;
+    return null;
 }

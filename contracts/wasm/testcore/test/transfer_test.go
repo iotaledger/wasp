@@ -7,7 +7,6 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/solo"
 )
 
 func TestDoNothing(t *testing.T) {
@@ -171,34 +170,4 @@ func TestDoPanicUserFee(t *testing.T) {
 	//	originatorBalanceReducedBy(ctx, w, 3)
 	//	chainAccountBalances(ctx, w, 3+10, 3+10)
 	//})
-}
-
-func TestRequestToView(t *testing.T) {
-	run2(t, func(t *testing.T, w bool) {
-		// TODO this will fail because requests are now automatically bumped to a minimum gas
-		// anyway this test was not correct, because the error that was recevied was actually "not enough gas", and not "unexpected view call", or something like that
-		t.Skip()
-		ctx := deployTestCore(t, w)
-		user := ctx.NewSoloAgent()
-		userL1 := user.Balance()
-		bal := ctx.Balances(user)
-
-		// SoloContext prevents Sign()/Post() to a view
-		// Therefore we cannot simply do the following:
-		// f := testcore.ScFuncs.JustView(ctx.Sign(user))
-		// f.Func.TransferBaseTokens(1*isc.Mi).Post()
-		// require.Error(t, ctx.Err)
-
-		// sending request to the view entry point should
-		// return an error and leave tokens in L2 minus gas fee
-		req := solo.NewCallParams(testcore.ScName, testcore.ViewJustView)
-		_, ctx.Err = ctx.Chain.PostRequestSync(req.AddBaseTokens(1*isc.Million), user.Pair)
-		require.Error(t, ctx.Err)
-		require.EqualValues(t, userL1-1*isc.Million, user.Balance())
-		ctx.UpdateGasFees()
-
-		bal.Chain += ctx.GasFee
-		bal.Add(user, 1*isc.Million-ctx.GasFee)
-		bal.VerifyBalances(t)
-	})
 }

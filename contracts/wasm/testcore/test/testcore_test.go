@@ -102,7 +102,8 @@ func TestDeployTestCoreWithCreator(t *testing.T) {
 
 // chainAccountBalances checks the balance of the chain account and the total
 // balance of all accounts, taking any extra uploadWasm() into account
-
+//
+//nolint:unused
 func chainAccountBalances(ctx *wasmsolo.SoloContext, w bool, chain, total uint64) {
 	_ = chain
 	if w {

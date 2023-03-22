@@ -83,8 +83,11 @@
     "enabled": true,
     "bindAddress": "0.0.0.0:2112",
     "nodeMetrics": true,
-    "nodeConnMetrics": true,
     "blockWALMetrics": true,
+    "consensusMetrics": true,
+    "mempoolMetrics": true,
+    "chainMessagesMetrics": true,
+    "chainStateMetrics": true,
     "restAPIMetrics": true,
     "goMetrics": true,
     "processMetrics": true,
@@ -112,12 +115,9 @@
       "timeout": "30s",
       "readTimeout": "10s",
       "writeTimeout": "10s",
-      "maxBodyLength": "2M"
+      "maxBodyLength": "2M",
+      "maxTopicSubscriptionsPerClient": 0
     },
     "debugRequestLoggerEnabled": false
-  },
-  "nanomsg": {
-    "enabled": true,
-    "port": 5550
   }
 }

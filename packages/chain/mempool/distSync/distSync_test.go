@@ -6,7 +6,6 @@ package distSync_test
 import (
 	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func TestBasic(t *testing.T) {
@@ -23,10 +23,8 @@ func TestBasic(t *testing.T) {
 
 func testBasic(t *testing.T, n, cmtN, cmtF int) {
 	require.GreaterOrEqual(t, n, cmtN)
-	rand.Seed(time.Now().UnixNano())
 	log := testlogger.NewLogger(t)
 	kp := cryptolib.NewKeyPair()
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	recv := map[gpa.NodeID]isc.Request{}
 	nodeIDs := gpa.MakeTestNodeIDs(n)
@@ -45,10 +43,17 @@ func testBasic(t *testing.T, n, cmtN, cmtF int) {
 		nodes[nid] = distSync.New(thisNodeID, requestNeededCB, requestReceivedCB, 100, log)
 	}
 
-	req := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), nil, 0).Sign(kp)
+	req := isc.NewOffLedgerRequest(
+		isc.RandomChainID(),
+		isc.Hn("foo"),
+		isc.Hn("bar"),
+		nil,
+		0,
+		gas.LimitsDefault.MaxGasPerRequest,
+	).Sign(kp)
 	reqRef := isc.RequestRefFromRequest(req)
 	cmtNodes := []gpa.NodeID{} // Random subset of all nodes.
-	for pos, idx := range rnd.Perm(cmtN) {
+	for pos, idx := range rand.Perm(cmtN) {
 		if pos >= cmtN {
 			break
 		}

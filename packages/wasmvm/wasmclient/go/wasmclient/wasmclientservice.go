@@ -3,15 +3,14 @@
 
 package wasmclient
 
-// for some reason we cannot use the import name mangos, so we rename those packages
-// for some other reason if the third mamgos import is missing things won't work
 import (
 	"context"
+	"errors"
+	"fmt"
+	"math"
 	"strings"
+	"sync"
 	"time"
-
-	"nhooyr.io/websocket"
-	"nhooyr.io/websocket/wsjson"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
@@ -19,34 +18,28 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/publisher/publisherws"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
-type ContractEvent struct {
-	ChainID    string
-	ContractID string
-	Data       string
-}
-
-type EventProcessor func(event *ContractEvent)
-
 type IClientService interface {
-	CallViewByHname(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error)
-	PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair, nonce uint64) (wasmtypes.ScRequestID, error)
-	SubscribeEvents(callback EventProcessor) error
-	UnsubscribeEvents()
-	WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error
+	CallViewByHname(hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error)
+	CurrentChainID() wasmtypes.ScChainID
+	PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (wasmtypes.ScRequestID, error)
+	SubscribeEvents(eventHandler *WasmClientEvents) error
+	UnsubscribeEvents(eventsID uint32)
+	WaitUntilRequestProcessed(reqID wasmtypes.ScRequestID, timeout time.Duration) error
 }
 
-// WasmClientService TODO should be linked to a chain and holds the nonces for signers for that chain
 type WasmClientService struct {
-	callback   EventProcessor
-	eventDone  chan bool
-	waspClient *apiclient.APIClient
-	webSocket  string
+	chainID       wasmtypes.ScChainID
+	eventDone     chan bool
+	eventHandlers []*WasmClientEvents
+	nonceLock     sync.Mutex
+	nonces        map[string]uint64
+	waspClient    *apiclient.APIClient
+	webSocket     string
 }
 
 var _ IClientService = new(WasmClientService)
@@ -54,28 +47,29 @@ var _ IClientService = new(WasmClientService)
 func NewWasmClientService(waspAPI string) *WasmClientService {
 	client, err := apiextensions.WaspAPIClientByHostName(waspAPI)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 	return &WasmClientService{
+		nonces:     make(map[string]uint64),
 		waspClient: client,
 		webSocket:  strings.Replace(waspAPI, "http:", "ws:", 1) + "/ws",
 	}
 }
 
-func (sc *WasmClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error) {
+func (svc *WasmClientService) CallViewByHname(hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error) {
 	params, err := dict.FromBytes(args)
 	if err != nil {
 		return nil, err
 	}
 
-	res, _, err := sc.waspClient.RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
-		ChainId:       cvt.IscChainID(&chainID).String(),
+	res, _, err := svc.waspClient.RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
+		ChainId:       cvt.IscChainID(&svc.chainID).String(),
 		ContractHName: cvt.IscHname(hContract).String(),
 		FunctionHName: cvt.IscHname(hFunction).String(),
 		Arguments:     apiextensions.JSONDictToAPIJSONDict(params.JSONDict()),
 	}).Execute()
 	if err != nil {
-		return nil, err
+		return nil, apiError(err)
 	}
 
 	decodedParams, err := apiextensions.APIJsonDictToDict(*res)
@@ -86,7 +80,17 @@ func (sc *WasmClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContr
 	return decodedParams.Bytes(), nil
 }
 
-func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair, nonce uint64) (reqID wasmtypes.ScRequestID, err error) {
+func (svc *WasmClientService) CurrentChainID() wasmtypes.ScChainID {
+	return svc.chainID
+}
+
+func (svc *WasmClientService) IsHealthy() bool {
+	_, err := svc.waspClient.NodeApi.
+		GetHealth(context.Background()).Execute()
+	return err == nil
+}
+
+func (svc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (reqID wasmtypes.ScRequestID, err error) {
 	iscChainID := cvt.IscChainID(&chainID)
 	iscContract := cvt.IscHname(hContract)
 	iscFunction := cvt.IscHname(hFunction)
@@ -95,93 +99,110 @@ func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract,
 		return reqID, err
 	}
 
-	req := isc.NewOffLedgerRequest(iscChainID, iscContract, iscFunction, params, nonce)
+	nonce, err := svc.cachedNonce(keyPair)
+	if err != nil {
+		return reqID, err
+	}
+
+	req := isc.NewOffLedgerRequest(iscChainID, iscContract, iscFunction, params, nonce, math.MaxUint64)
 	iscAllowance := cvt.IscAllowance(allowance)
 	req.WithAllowance(iscAllowance)
 	signed := req.Sign(keyPair)
 	reqID = cvt.ScRequestID(signed.ID())
 
-	_, err = sc.waspClient.RequestsApi.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
+	_, err = svc.waspClient.RequestsApi.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
 		ChainId: iscChainID.String(),
 		Request: iotago.EncodeHex(signed.Bytes()),
 	}).Execute()
-	return reqID, err
+	return reqID, apiError(err)
 }
 
-func (sc *WasmClientService) SubscribeEvents(callback EventProcessor) error {
-	// TODO multiple callbacks, see TS version
-	sc.callback = callback
-
-	ctx := context.Background()
-	ws, _, err := websocket.Dial(ctx, sc.webSocket, nil)
-	if err != nil {
-		return err
-	}
-	err = eventSubscribe(ctx, ws, "chains")
-	if err != nil {
-		return err
-	}
-	err = eventSubscribe(ctx, ws, publisher.ISCEventKindSmartContract)
+func (svc *WasmClientService) SetCurrentChainID(chainID string) error {
+	err := SetSandboxWrappers(chainID)
 	if err != nil {
 		return err
 	}
 
-	sc.eventDone = make(chan bool)
-	go func() {
-		<-sc.eventDone
-		_ = ws.Close(websocket.StatusNormalClosure, "intentional close")
-	}()
-
-	go sc.eventLoop(ctx, ws)
-
+	svc.chainID = wasmtypes.ChainIDFromString(chainID)
 	return nil
 }
 
-func (sc *WasmClientService) UnsubscribeEvents() {
-	sc.eventDone <- true
+func (svc *WasmClientService) SetDefaultChainID() error {
+	chains, _, err := svc.waspClient.ChainsApi.
+		GetChains(context.Background()).Execute()
+	if err != nil {
+		return apiError(err)
+	}
+	if len(chains) != 1 {
+		return errors.New("expected a single chain for default chain ID")
+	}
+	chainID := chains[0].ChainID
+	fmt.Printf("default chain ID: %s\n", chainID)
+	return svc.SetCurrentChainID(chainID)
 }
 
-func (sc *WasmClientService) WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error {
-	iscChainID := cvt.IscChainID(&chainID)
+func (svc *WasmClientService) SubscribeEvents(eventHandler *WasmClientEvents) error {
+	svc.eventHandlers = append(svc.eventHandlers, eventHandler)
+	if len(svc.eventHandlers) != 1 {
+		return nil
+	}
+
+	svc.eventDone = make(chan bool)
+	return startEventLoop(svc.webSocket, svc.eventDone, &svc.eventHandlers)
+}
+
+func (svc *WasmClientService) UnsubscribeEvents(eventsID uint32) {
+	svc.eventHandlers = RemoveHandler(svc.eventHandlers, eventsID)
+	if len(svc.eventHandlers) == 0 {
+		// stop event loop
+		svc.eventDone <- true
+		svc.eventDone = nil
+	}
+}
+
+func (svc *WasmClientService) WaitUntilRequestProcessed(reqID wasmtypes.ScRequestID, timeout time.Duration) error {
+	iscChainID := cvt.IscChainID(&svc.chainID)
 	iscReqID := cvt.IscRequestID(&reqID)
 
-	_, _, err := sc.waspClient.RequestsApi.
+	_, _, err := svc.waspClient.RequestsApi.
 		WaitForRequest(context.Background(), iscChainID.String(), iscReqID.String()).
 		TimeoutSeconds(int32(timeout.Seconds())).
 		Execute()
 
+	return apiError(err)
+}
+
+func apiError(err error) error {
+	if err != nil {
+		reqErr, ok := err.(*apiclient.GenericOpenAPIError)
+		if ok {
+			err = errors.New(reqErr.Error() + ": " + string(reqErr.Body()))
+		}
+	}
 	return err
 }
 
-func (sc *WasmClientService) eventLoop(ctx context.Context, ws *websocket.Conn) {
-	for {
-		evt := publisher.ISCEvent{}
-		err := wsjson.Read(ctx, ws, &evt)
-		if err != nil {
-			sc.callback = nil
-			return
-		}
-		items := evt.Content.([]interface{})
-		for _, item := range items {
-			parts := strings.Split(item.(string), ": ")
-			event := ContractEvent{
-				ChainID:    evt.ChainID,
-				ContractID: parts[0],
-				Data:       parts[1],
-			}
-			sc.callback(&event)
-		}
-	}
-}
+func (svc *WasmClientService) cachedNonce(keyPair *cryptolib.KeyPair) (uint64, error) {
+	svc.nonceLock.Lock()
+	defer svc.nonceLock.Unlock()
 
-func eventSubscribe(ctx context.Context, ws *websocket.Conn, topic string) error {
-	msg := publisherws.SubscriptionCommand{
-		Command: publisherws.CommandSubscribe,
-		Topic:   topic,
+	key := string(keyPair.GetPublicKey().AsBytes())
+	nonce, ok := svc.nonces[key]
+	if !ok {
+		// note that even while getting the current nonce we keep the lock active
+		// that way prevent other potential contenders to do the same in parallel
+		iscAgent := isc.NewAgentID(keyPair.Address())
+		agent := wasmtypes.AgentIDFromBytes(iscAgent.Bytes())
+		ctx := NewWasmClientContext(svc, coreaccounts.ScName)
+		n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
+		n.Params.AgentID().SetValue(agent)
+		n.Func.Call()
+		if ctx.Err != nil {
+			return 0, ctx.Err
+		}
+		nonce = n.Results.AccountNonce().Value()
 	}
-	err := wsjson.Write(ctx, ws, msg)
-	if err != nil {
-		return err
-	}
-	return wsjson.Read(ctx, ws, &msg)
+	nonce++
+	svc.nonces[key] = nonce
+	return nonce, nil
 }

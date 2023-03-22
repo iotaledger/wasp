@@ -6,7 +6,7 @@ package chain
 import (
 	"context"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smInputs"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -97,10 +97,15 @@ func (sti *stateTrackerImpl) ChainNodeAwaitStateMgrCh() <-chan *smInputs.ChainFe
 // thus no additional checks are present here.
 func (sti *stateTrackerImpl) ChainNodeStateMgrResponse(results *smInputs.ChainFetchStateDiffResults) {
 	sti.cancelQuery()
-	sti.haveLatestCB(results.GetNewState(), sti.haveAO, sti.nextAO, results.GetAdded(), results.GetRemoved())
+	newState := results.GetNewState()
+	sti.log.Debugf(
+		"Have latest state for %v, state.BlockIndex=%v, state.trieRoot=%v, previous=%v, |blocksAdded|=%v, |blockRemoved|=%v",
+		sti.nextAO, newState.BlockIndex(), newState.TrieRoot(), sti.haveAO, len(results.GetAdded()), len(results.GetRemoved()),
+	)
+	sti.haveLatestCB(newState, sti.haveAO, sti.nextAO, results.GetAdded(), results.GetRemoved())
 	sti.haveAO = sti.nextAO
-	sti.haveAOState = results.GetNewState()
-	sti.awaitReceipt.ConsiderState(results.GetNewState(), results.GetAdded())
+	sti.haveAOState = newState
+	sti.awaitReceipt.ConsiderState(newState, results.GetAdded())
 }
 
 func (sti *stateTrackerImpl) cancelQuery() {

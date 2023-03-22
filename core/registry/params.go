@@ -1,7 +1,7 @@
 package registry
 
 import (
-	"github.com/iotaledger/hive.go/core/app"
+	"github.com/iotaledger/hive.go/app"
 )
 
 type ParametersRegistries struct {

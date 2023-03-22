@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 
-	"github.com/iotaledger/hive.go/core/marshalutil"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 )
 
 // EncodeReceipt serializes the receipt in RLP format
@@ -87,4 +87,41 @@ func DecodeReceiptFull(receiptBytes []byte) (*types.Receipt, error) {
 	}
 
 	return r, nil
+}
+
+func BloomFilter(bloom types.Bloom, addresses []common.Address, topics [][]common.Hash) bool {
+	return bloomMatchesAddresses(bloom, addresses) && bloomMatchesAllEvents(bloom, topics)
+}
+
+func bloomMatchesAddresses(bloom types.Bloom, addresses []common.Address) bool {
+	if len(addresses) == 0 {
+		return true
+	}
+	for _, addr := range addresses {
+		if types.BloomLookup(bloom, addr) {
+			return true
+		}
+	}
+	return false
+}
+
+func bloomMatchesAllEvents(bloom types.Bloom, events [][]common.Hash) bool {
+	for _, topics := range events {
+		if !bloomMatchesAnyTopic(bloom, topics) {
+			return false
+		}
+	}
+	return true
+}
+
+func bloomMatchesAnyTopic(bloom types.Bloom, topics []common.Hash) bool {
+	if len(topics) == 0 {
+		return true
+	}
+	for _, topic := range topics {
+		if types.BloomLookup(bloom, topic) {
+			return true
+		}
+	}
+	return false
 }

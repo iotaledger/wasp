@@ -31,7 +31,7 @@ func startAuction(t *testing.T) (*wasmsolo.SoloContext, *wasmsolo.SoloAgent, was
 
 	ctx.WaitForPendingRequestsMark()
 
-	// start the auction
+	// start the auction, this will do a post() and a delayed post()
 	sa := fairauction.ScFuncs.StartAuction(ctx.Sign(auctioneer))
 	sa.Params.MinimumBid().SetValue(minBid)
 	sa.Params.Description().SetValue(description)
@@ -59,7 +59,7 @@ func TestStartAuction(t *testing.T) {
 
 	// remove pending finalize_auction from backlog
 	ctx.AdvanceClockBy(61 * time.Minute)
-	require.True(t, ctx.WaitForPendingRequests(1))
+	require.True(t, ctx.WaitForPendingRequests(2))
 }
 
 func TestGetAuctionInfo(t *testing.T) {
@@ -93,7 +93,7 @@ func TestGetAuctionInfo(t *testing.T) {
 
 	// remove pending finalize_auction from backlog
 	ctx.AdvanceClockBy(61 * time.Minute)
-	require.True(t, ctx.WaitForPendingRequests(1))
+	require.True(t, ctx.WaitForPendingRequests(2))
 }
 
 func TestFinalizedNoBids(t *testing.T) {
@@ -101,7 +101,7 @@ func TestFinalizedNoBids(t *testing.T) {
 
 	// wait for finalize_auction
 	ctx.AdvanceClockBy(61 * time.Minute)
-	require.True(t, ctx.WaitForPendingRequests(1))
+	require.True(t, ctx.WaitForPendingRequests(2))
 
 	info := fairauction.ScFuncs.GetAuctionInfo(ctx)
 	info.Params.Nft().SetValue(nftID)
@@ -116,8 +116,6 @@ func TestFinalizedOneBidTooLow(t *testing.T) {
 
 	bidder := ctx.NewSoloAgent()
 
-	ctx.WaitForPendingRequestsMark()
-
 	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder))
 	placeBid.Params.Nft().SetValue(nftID)
 	placeBid.Func.TransferBaseTokens(100).Post()
@@ -125,7 +123,7 @@ func TestFinalizedOneBidTooLow(t *testing.T) {
 
 	// wait for finalize_auction
 	ctx.AdvanceClockBy(61 * time.Minute)
-	require.True(t, ctx.WaitForPendingRequests(2))
+	require.True(t, ctx.WaitForPendingRequests(2+1))
 
 	info := fairauction.ScFuncs.GetAuctionInfo(ctx)
 	info.Params.Nft().SetValue(nftID)
@@ -142,8 +140,6 @@ func TestFinalizedOneBid(t *testing.T) {
 	bidder0 := ctx.NewSoloAgent()
 	bidder1 := ctx.NewSoloAgent()
 
-	ctx.WaitForPendingRequestsMark()
-
 	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder0))
 	placeBid.Params.Nft().SetValue(nftID)
 	placeBid.Func.TransferBaseTokens(5000).Post()
@@ -156,7 +152,7 @@ func TestFinalizedOneBid(t *testing.T) {
 
 	// wait for finalize_auction
 	ctx.AdvanceClockBy(61 * time.Minute)
-	require.True(t, ctx.WaitForPendingRequests(3))
+	require.True(t, ctx.WaitForPendingRequests(2+2))
 
 	info := fairauction.ScFuncs.GetAuctionInfo(ctx)
 	info.Params.Nft().SetValue(nftID)

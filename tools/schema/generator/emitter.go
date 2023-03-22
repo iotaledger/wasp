@@ -5,6 +5,7 @@ package generator
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 
@@ -382,6 +383,14 @@ func (g *GenBase) fieldIsTypeDef() bool {
 }
 
 func (g *GenBase) setCommonKeys() {
+	g.keys["env_wasmlib"] = ""
+	g.keys["env_wasmvmhost"] = ""
+	for _, env := range os.Environ() {
+		parts := strings.SplitN(env, "=", 2)
+		if len(parts) == 2 {
+			g.keys["env_"+parts[0]] = strings.ReplaceAll(parts[1], "\\n", "\n")
+		}
+	}
 	g.keys["false"] = ""
 	g.keys[KeyTrue] = KeyTrue
 	g.keys["nil"] = ""

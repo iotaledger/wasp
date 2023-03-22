@@ -24,25 +24,13 @@ import (
 
 func (e *ChainEnv) checkCoreContracts() {
 	for i := range e.Chain.AllPeers {
-		b, err := e.Chain.GetStateVariable(root.Contract.Hname(), root.StateVarStateInitialized, i)
-		require.NoError(e.t, err)
-		require.EqualValues(e.t, []byte{0xFF}, b)
-
 		cl := e.Chain.SCClient(governance.Contract.Hname(), nil, i)
 		ret, err := cl.CallView(context.Background(), governance.ViewGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
-		chainID, err := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
-		require.NoError(e.t, err)
-		require.EqualValues(e.t, e.Chain.ChainID, chainID)
-
 		aid, err := codec.DecodeAgentID(ret.MustGet(governance.VarChainOwnerID))
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, e.Chain.OriginatorID(), aid)
-
-		desc, err := codec.DecodeString(ret.MustGet(governance.VarDescription), "")
-		require.NoError(e.t, err)
-		require.EqualValues(e.t, e.Chain.Description, desc)
 
 		records, err := e.Chain.SCClient(root.Contract.Hname(), nil, i).
 			CallView(context.Background(), root.ViewGetContractRecords.Name, nil)
@@ -55,7 +43,6 @@ func (e *ChainEnv) checkCoreContracts() {
 			require.NotNil(e.t, cr, "core contract %s %+v missing", rec.Name, rec.Hname())
 
 			require.EqualValues(e.t, rec.ProgramHash, cr.ProgramHash)
-			require.EqualValues(e.t, rec.Description, cr.Description)
 			require.EqualValues(e.t, rec.Name, cr.Name)
 		}
 	}
@@ -68,7 +55,6 @@ func (e *ChainEnv) checkRootsOutside() {
 		require.NotNil(e.t, recBack)
 		require.EqualValues(e.t, rec.Name, recBack.Name)
 		require.EqualValues(e.t, rec.ProgramHash, recBack.ProgramHash)
-		require.EqualValues(e.t, rec.Description, recBack.Description)
 	}
 }
 
@@ -315,7 +301,7 @@ func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int, d
 
 	t.Logf("generated state address: %s", addr.Bech32(parameters.L1().Protocol.Bech32HRP))
 
-	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
+	chain, err := clu.DeployChain(clu.Config.AllNodes(), committee, quorum, addr)
 	require.NoError(t, err)
 	t.Logf("deployed chainID: %s", chain.ChainID)
 

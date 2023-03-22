@@ -3,7 +3,7 @@ package logger
 import (
 	"github.com/ethereum/go-ethereum/log"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 )
 
 func initGoEthLogger(waspLogger *logger.Logger) {

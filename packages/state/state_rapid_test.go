@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
-	"github.com/iotaledger/hive.go/core/kvstore"
-	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/kv"
 )
 

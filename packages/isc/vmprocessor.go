@@ -14,7 +14,6 @@ import (
 // VMProcessor is an interface to the VM processor instance.
 type VMProcessor interface {
 	GetEntryPoint(code Hname) (VMProcessorEntryPoint, bool)
-	GetDescription() string
 }
 
 // VMProcessorEntryPoint is an abstract interface by which VM is called by passing

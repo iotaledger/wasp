@@ -15,12 +15,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
-	"github.com/iotaledger/hive.go/core/generics/lo"
-	"github.com/iotaledger/hive.go/core/generics/shrinkingmap"
-	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/hive.go/core/timeutil"
-	"github.com/iotaledger/hive.go/core/workerpool"
+	"github.com/iotaledger/hive.go/app/shutdown"
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
+	"github.com/iotaledger/hive.go/lo"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/runtime/timeutil"
+	"github.com/iotaledger/hive.go/runtime/workerpool"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/inx-app/pkg/nodebridge"
 	inx "github.com/iotaledger/inx/go"
@@ -30,12 +30,13 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/common"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
 	indexerPluginAvailableTimeout = 30 * time.Second
+	l1NodeSyncWaitTimeout         = 2 * time.Minute
 	inxTimeoutInfo                = 500 * time.Millisecond
 	inxTimeoutBlockMetadata       = 500 * time.Millisecond
 	inxTimeoutSubmitBlock         = 60 * time.Second
@@ -44,7 +45,6 @@ const (
 	inxTimeoutMilestone           = 2 * time.Second
 	inxTimeoutOutput              = 2 * time.Second
 	inxTimeoutGetPeers            = 2 * time.Second
-	reattachWorkerPoolQueueSize   = 100
 
 	chainsCleanupThresholdRatio              = 50.0
 	chainsCleanupThresholdCount              = 10
@@ -60,13 +60,15 @@ type LedgerUpdateHandler func(*nodebridge.LedgerUpdate)
 type nodeConnection struct {
 	*logger.WrappedLogger
 
-	ctx                   context.Context
-	chainsLock            sync.RWMutex
-	chainsMap             *shrinkingmap.ShrinkingMap[isc.ChainID, *ncChain]
-	indexerClient         nodeclient.IndexerClient
-	nodeBridge            *nodebridge.NodeBridge
-	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
-	nodeClient            *nodeclient.Client
+	ctx             context.Context
+	syncedCtx       context.Context
+	syncedCtxCancel context.CancelFunc
+	chainsLock      sync.RWMutex
+	chainsMap       *shrinkingmap.ShrinkingMap[isc.ChainID, *ncChain]
+	indexerClient   nodeclient.IndexerClient
+	nodeBridge      *nodebridge.NodeBridge
+	nodeClient      *nodeclient.Client
+	l1Params        *parameters.L1Params
 
 	// pendingTransactionsMap is a map of sent transactions that are pending.
 	pendingTransactionsMap  *shrinkingmap.ShrinkingMap[iotago.TransactionID, *pendingTransaction]
@@ -76,14 +78,54 @@ type nodeConnection struct {
 	shutdownHandler *shutdown.ShutdownHandler
 }
 
-func setL1ProtocolParams(protocolParameters *iotago.ProtocolParameters, baseToken *nodeclient.InfoResBaseToken) {
-	parameters.InitL1(&parameters.L1Params{
-		// There are no limits on how big from a size perspective an essence can be,
-		// so it is just derived from 32KB - Block fields without payload = max size of the payload
-		MaxPayloadSize: parameters.MaxPayloadSize,
-		Protocol:       protocolParameters,
-		BaseToken:      (*parameters.BaseToken)(baseToken),
-	})
+func New(
+	ctx context.Context,
+	log *logger.Logger,
+	nodeBridge *nodebridge.NodeBridge,
+	shutdownHandler *shutdown.ShutdownHandler,
+) (chain.NodeConnection, error) {
+	ctxIndexer, cancelIndexer := context.WithTimeout(ctx, indexerPluginAvailableTimeout)
+	defer cancelIndexer()
+
+	indexerClient, err := nodeBridge.Indexer(ctxIndexer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get nodeclient indexer: %w", err)
+	}
+
+	syncedCtx, syncedCtxCancel := context.WithCancel(ctx)
+	nc := &nodeConnection{
+		WrappedLogger:   logger.NewWrappedLogger(log),
+		ctx:             nil,
+		syncedCtx:       syncedCtx,
+		syncedCtxCancel: syncedCtxCancel,
+		chainsMap: shrinkingmap.New[isc.ChainID, *ncChain](
+			shrinkingmap.WithShrinkingThresholdRatio(chainsCleanupThresholdRatio),
+			shrinkingmap.WithShrinkingThresholdCount(chainsCleanupThresholdCount),
+		),
+		chainsLock:    sync.RWMutex{},
+		indexerClient: indexerClient,
+		nodeBridge:    nodeBridge,
+		nodeClient:    nodeBridge.INXNodeClient(),
+		pendingTransactionsMap: shrinkingmap.New[iotago.TransactionID, *pendingTransaction](
+			shrinkingmap.WithShrinkingThresholdRatio(pendingTransactionsCleanupThresholdRatio),
+			shrinkingmap.WithShrinkingThresholdCount(pendingTransactionsCleanupThresholdCount),
+		),
+		pendingTransactionsLock: sync.Mutex{},
+		shutdownHandler:         shutdownHandler,
+	}
+
+	ctxInfo, cancelInfo := context.WithTimeout(ctx, inxTimeoutInfo)
+	defer cancelInfo()
+
+	nodeInfo, err := nc.nodeClient.Info(ctxInfo)
+	if err != nil {
+		return nil, fmt.Errorf("error getting node info: %w", err)
+	}
+	nc.setL1ProtocolParams(nodeBridge.ProtocolParameters(), nodeInfo.BaseToken)
+
+	nc.reattachWorkerPool = workerpool.New("L1 reattachments", 1)
+
+	return nc, nil
 }
 
 func newCtxWithTimeout(ctx context.Context, defaultTimeout time.Duration, timeout ...time.Duration) (context.Context, context.CancelFunc) {
@@ -191,73 +233,108 @@ func waitForL1ToBeSynced(ctx context.Context, log *logger.Logger, nodeBridge *no
 	}
 }
 
-func New(
-	ctx context.Context,
-	log *logger.Logger,
-	nodeBridge *nodebridge.NodeBridge,
-	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics,
-	shutdownHandler *shutdown.ShutdownHandler,
-) (chain.NodeConnection, error) {
-	// make sure the node is connected to at least one other peer
-	// otherwise the node status may not reflect the network status
-	if err := waitForL1ToBeConnected(ctx, log, nodeBridge); err != nil {
-		return nil, err
+func (nc *nodeConnection) setL1ProtocolParams(protocolParameters *iotago.ProtocolParameters, baseToken *nodeclient.InfoResBaseToken) {
+	nc.l1Params = &parameters.L1Params{
+		// There are no limits on how big from a size perspective an essence can be,
+		// so it is just derived from 32KB - Block fields without payload = max size of the payload
+		MaxPayloadSize: parameters.MaxPayloadSize,
+		Protocol:       protocolParameters,
+		BaseToken:      (*parameters.BaseToken)(baseToken),
 	}
-
-	if err := waitForL1ToBeSynced(ctx, log, nodeBridge); err != nil {
-		return nil, err
-	}
-
-	inxNodeClient := nodeBridge.INXNodeClient()
-
-	ctxInfo, cancelInfo := context.WithTimeout(ctx, inxTimeoutInfo)
-	defer cancelInfo()
-
-	nodeInfo, err := inxNodeClient.Info(ctxInfo)
-	if err != nil {
-		return nil, fmt.Errorf("error getting node info: %w", err)
-	}
-	setL1ProtocolParams(nodeBridge.ProtocolParameters(), nodeInfo.BaseToken)
-
-	ctxIndexer, cancelIndexer := context.WithTimeout(ctx, indexerPluginAvailableTimeout)
-	defer cancelIndexer()
-
-	indexerClient, err := nodeBridge.Indexer(ctxIndexer)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get nodeclient indexer: %w", err)
-	}
-
-	nc := &nodeConnection{
-		WrappedLogger: logger.NewWrappedLogger(log),
-		ctx:           nil,
-		chainsMap: shrinkingmap.New[isc.ChainID, *ncChain](
-			shrinkingmap.WithShrinkingThresholdRatio(chainsCleanupThresholdRatio),
-			shrinkingmap.WithShrinkingThresholdCount(chainsCleanupThresholdCount),
-		),
-		chainsLock:            sync.RWMutex{},
-		indexerClient:         indexerClient,
-		nodeBridge:            nodeBridge,
-		nodeConnectionMetrics: nodeConnectionMetrics,
-		nodeClient:            inxNodeClient,
-		pendingTransactionsMap: shrinkingmap.New[iotago.TransactionID, *pendingTransaction](
-			shrinkingmap.WithShrinkingThresholdRatio(pendingTransactionsCleanupThresholdRatio),
-			shrinkingmap.WithShrinkingThresholdCount(pendingTransactionsCleanupThresholdCount),
-		),
-		pendingTransactionsLock: sync.Mutex{},
-		shutdownHandler:         shutdownHandler,
-	}
-
-	nc.reattachWorkerPool = workerpool.New(nc.reattachWorkerpoolFunc, workerpool.WorkerCount(1), workerpool.QueueSize(reattachWorkerPoolQueueSize))
-
-	return nc, nil
+	parameters.InitL1(nc.l1Params)
 }
 
-func (nc *nodeConnection) Run(ctx context.Context) {
+func (nc *nodeConnection) Run(ctx context.Context) error {
 	nc.ctx = ctx
+
+	// the node bridge needs to be started before waiting for L1 to become synced,
+	// otherwise the NodeStatus would never be updated and "syncAndSetProtocolParameters" would be stuck
+	// in an inifinite loop
+	go func() {
+		nc.nodeBridge.Run(ctx)
+
+		// if the Run function returns before the context was actually canceled,
+		// it means that the connection to L1 node must have failed.
+		if !errors.Is(ctx.Err(), context.Canceled) {
+			nc.shutdownHandler.SelfShutdown("INX connection to node dropped", true)
+		}
+	}()
+
+	syncAndSetProtocolParameters := func() error {
+		ctxWaitNodeSynced, cancelWaitNodeSynced := context.WithTimeout(ctx, l1NodeSyncWaitTimeout)
+		defer cancelWaitNodeSynced()
+
+		// make sure the node is connected to at least one other peer
+		// otherwise the node status may not reflect the network status
+		if err := waitForL1ToBeConnected(ctxWaitNodeSynced, nc.WrappedLogger.Logger(), nc.nodeBridge); err != nil {
+			return err
+		}
+
+		if err := waitForL1ToBeSynced(ctxWaitNodeSynced, nc.WrappedLogger.Logger(), nc.nodeBridge); err != nil {
+			return err
+		}
+
+		ctxInfo, cancelInfo := context.WithTimeout(ctx, inxTimeoutInfo)
+		defer cancelInfo()
+
+		nodeInfo, err := nc.nodeClient.Info(ctxInfo)
+		if err != nil {
+			return fmt.Errorf("error getting node info: %w", err)
+		}
+		nc.setL1ProtocolParams(nc.nodeBridge.ProtocolParameters(), nodeInfo.BaseToken)
+
+		return nil
+	}
+
+	if err := syncAndSetProtocolParameters(); err != nil {
+		return fmt.Errorf("Getting latest L1 protocol parameters failed, error: %w", err)
+	}
+
 	nc.reattachWorkerPool.Start()
 	go nc.subscribeToLedgerUpdates()
+
+	// mark the node connection as synced
+	nc.syncedCtxCancel()
+
 	<-ctx.Done()
-	nc.reattachWorkerPool.StopAndWait()
+	nc.reattachWorkerPool.Shutdown()
+	nc.reattachWorkerPool.ShutdownComplete.Wait()
+
+	return nil
+}
+
+// WaitUntilInitiallySynced waits until the layer 1 node was initially synced.
+func (nc *nodeConnection) WaitUntilInitiallySynced(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		// the given context was canceled
+		return ctx.Err()
+
+	case <-nc.syncedCtx.Done():
+		// node was initially synced
+		return nil
+	}
+}
+
+func (nc *nodeConnection) GetBech32HRP() iotago.NetworkPrefix {
+	protoParams := nc.GetL1ProtocolParams()
+	if protoParams == nil {
+		panic("L1 protocol parameters unknown")
+	}
+
+	return protoParams.Bech32HRP
+}
+
+func (nc *nodeConnection) GetL1Params() *parameters.L1Params {
+	return nc.l1Params
+}
+
+func (nc *nodeConnection) GetL1ProtocolParams() *iotago.ProtocolParameters {
+	if nc.l1Params == nil {
+		panic("L1 parameters unknown")
+	}
+
+	return nc.l1Params.Protocol
 }
 
 func (nc *nodeConnection) subscribeToLedgerUpdates() {
@@ -334,7 +411,9 @@ func (nc *nodeConnection) checkPendingTransactions(ledgerUpdate *ledgerUpdate) {
 
 		if !inputWasConsumed {
 			// check if the transaction needs to be reattached
-			nc.reattachWorkerPool.TrySubmit(pendingTx)
+			nc.reattachWorkerPool.Submit(func() {
+				nc.reattachWorkerpoolFunc(pendingTx)
+			})
 			return true
 		}
 
@@ -488,10 +567,6 @@ func (nc *nodeConnection) GetChain(chainID isc.ChainID) (*ncChain, error) {
 	return ncc, nil
 }
 
-func (nc *nodeConnection) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
-	return nc.nodeConnectionMetrics
-}
-
 // doPostTx posts the transaction on layer 1 including tipselection and proof of work.
 // this function does not wait until the transaction gets confirmed on L1.
 func (nc *nodeConnection) doPostTx(ctx context.Context, tx *iotago.Transaction, tipsAdditional ...iotago.BlockID) (iotago.BlockID, error) {
@@ -572,10 +647,7 @@ func (nc *nodeConnection) clearPendingTransaction(transactionID iotago.Transacti
 
 // reattachWorkerpoolFunc is triggered by handleLedgerUpdate for every pending transaction,
 // if the inputs of the pending transaction were not consumed in the ledger update.
-func (nc *nodeConnection) reattachWorkerpoolFunc(task workerpool.Task) {
-	defer task.Return(nil)
-
-	pendingTx := task.Param(0).(*pendingTransaction)
+func (nc *nodeConnection) reattachWorkerpoolFunc(pendingTx *pendingTransaction) {
 	if pendingTx.Conflicting() || pendingTx.Confirmed() {
 		// no need to reattach
 		// we can remove the tracking of the pending transaction
@@ -702,11 +774,13 @@ func (nc *nodeConnection) PublishTX(
 //
 // NOTE: Any out-of-order AO will be considered as a rollback or AO by the chain impl.
 func (nc *nodeConnection) AttachChain(
-	ctx context.Context, // ctx is the context given by a backgroundworker with PriorityChains
+	ctx context.Context, // ctx is the context given by a backgroundworker with PriorityChains, it might get canceled by shutdown signal or "Chains.Deactivate"
 	chainID isc.ChainID,
 	recvRequestCB chain.RequestOutputHandler,
 	recvAliasOutput chain.AliasOutputHandler,
 	recvMilestone chain.MilestoneHandler,
+	onChainConnect func(),
+	onChainDisconnect func(),
 ) {
 	chain := func() *ncChain {
 		// we need to lock until the chain init is done,
@@ -719,7 +793,7 @@ func (nc *nodeConnection) AttachChain(
 		// the chain is added to the map, even if not synchronzied yet,
 		// so we can track all pending ledger updates until the chain is synchronized.
 		nc.chainsMap.Set(chainID, chain)
-		nc.nodeConnectionMetrics.SetRegistered(chainID)
+		util.ExecuteIfNotNil(onChainConnect)
 		nc.LogDebugf("chain registered: %s = %s", chainID.ShortString(), chainID)
 
 		return chain
@@ -741,7 +815,7 @@ func (nc *nodeConnection) AttachChain(
 		defer nc.chainsLock.Unlock()
 
 		nc.chainsMap.Delete(chainID)
-		nc.nodeConnectionMetrics.SetUnregistered(chainID)
+		util.ExecuteIfNotNil(onChainDisconnect)
 		nc.LogDebugf("chain unregistered: %s = %s, |remaining|=%v", chainID.ShortString(), chainID, nc.chainsMap.Size())
 	}()
 }

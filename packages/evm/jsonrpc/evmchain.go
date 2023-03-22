@@ -14,13 +14,20 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -28,16 +35,80 @@ import (
 )
 
 type EVMChain struct {
-	backend ChainBackend
-	chainID uint16
+	backend  ChainBackend
+	chainID  uint16 // cache
+	newBlock *event.Event1[*NewBlockEvent]
 }
 
-func NewEVMChain(backend ChainBackend, chainID uint16) *EVMChain {
-	return &EVMChain{backend, chainID}
+type NewBlockEvent struct {
+	block *types.Block
+	logs  []*types.Log
 }
 
-func (e *EVMChain) Signer() types.Signer {
-	return evmutil.Signer(big.NewInt(int64(e.chainID)))
+func NewEVMChain(backend ChainBackend, pub *publisher.Publisher, log *logger.Logger) *EVMChain {
+	e := &EVMChain{
+		backend:  backend,
+		newBlock: event.New1[*NewBlockEvent](),
+	}
+
+	pub.Events.NewBlock.Hook(func(ev *publisher.ISCEvent[*blocklog.BlockInfo]) {
+		if !ev.ChainID.Equals(*e.backend.ISCChainID()) {
+			return
+		}
+		state, err := e.backend.ISCStateByBlockIndex(ev.Payload.BlockIndex())
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		blockNumber := new(big.Int).SetUint64(evmBlockNumberByISCBlockIndex(ev.Payload.BlockIndex()))
+		block, err := e.blockByNumber(state, blockNumber)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		q := &ethereum.FilterQuery{
+			FromBlock: blockNumber,
+			ToBlock:   blockNumber,
+		}
+		ret, err := e.backend.ISCCallView(state, evm.Contract.Name, evm.FuncGetLogs.Name, dict.Dict{
+			evm.FieldFilterQuery: evmtypes.EncodeFilterQuery(q),
+		})
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		logs, err := evmtypes.DecodeLogs(ret.MustGet(evm.FieldResult))
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		e.newBlock.Trigger(&NewBlockEvent{
+			block: block,
+			logs:  logs,
+		})
+	})
+
+	return e
+}
+
+func (e *EVMChain) Signer() (types.Signer, error) {
+	chainID, err := e.ChainID()
+	if err != nil {
+		return nil, err
+	}
+	return evmutil.Signer(big.NewInt(int64(chainID))), nil
+}
+
+func (e *EVMChain) ChainID() (uint16, error) {
+	if e.chainID == 0 {
+		ret, err := e.backend.ISCCallView(e.backend.ISCLatestState(), evm.Contract.Name, evm.FuncGetChainID.Name, nil)
+		if err != nil {
+			return 0, err
+		}
+		e.chainID = codec.MustDecodeUint16(ret.MustGet(evm.FieldResult))
+	}
+	return e.chainID, nil
 }
 
 func (e *EVMChain) ViewCaller(chainState state.State) vmerrors.ViewCaller {
@@ -70,7 +141,7 @@ func (e *EVMChain) GasRatio() (util.Ratio32, error) {
 	return codec.DecodeRatio32(ret.MustGet(governance.ParamEVMGasRatio))
 }
 
-func (e *EVMChain) GasFeePolicy() (*gas.GasFeePolicy, error) {
+func (e *EVMChain) GasFeePolicy() (*gas.FeePolicy, error) {
 	res, err := e.backend.ISCCallView(e.backend.ISCLatestState(), governance.Contract.Name, governance.ViewGetFeePolicy.Name, nil)
 	if err != nil {
 		return nil, err
@@ -84,15 +155,23 @@ func (e *EVMChain) GasFeePolicy() (*gas.GasFeePolicy, error) {
 }
 
 func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
-	if tx.ChainId().Uint64() != uint64(e.chainID) {
+	chainID, err := e.ChainID()
+	if err != nil {
+		return err
+	}
+	if tx.ChainId().Uint64() != uint64(chainID) {
 		return errors.New("chain ID mismatch")
 	}
-	sender, err := types.Sender(e.Signer(), tx)
+	signer, err := e.Signer()
+	if err != nil {
+		return err
+	}
+	sender, err := types.Sender(signer, tx)
 	if err != nil {
 		return fmt.Errorf("invalid transaction: %w", err)
 	}
 
-	expectedNonce, err := e.TransactionCount(sender)
+	expectedNonce, err := e.TransactionCount(sender, nil)
 	if err != nil {
 		return fmt.Errorf("invalid transaction: %w", err)
 	}
@@ -111,7 +190,7 @@ func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, evmGas 
 	if err != nil {
 		return fmt.Errorf("could not fetch gas ratio: %w", err)
 	}
-	balance, err := e.Balance(sender, rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber))
+	balance, err := e.Balance(sender, nil)
 	if err != nil {
 		return fmt.Errorf("could not fetch sender balance: %w", err)
 	}
@@ -119,14 +198,14 @@ func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, evmGas 
 	if err != nil {
 		return fmt.Errorf("could not fetch the gas fee policy: %w", err)
 	}
-	iscGasBudgetAffordable := gasFeePolicy.AffordableGasBudgetFromAvailableTokens(balance.Uint64())
+	iscGasBudgetAffordable := gasFeePolicy.GasBudgetFromTokens(balance.Uint64())
 
 	iscGasBudgetTx := gas.EVMGasToISC(evmGas, &gasRatio)
 	if iscGasBudgetAffordable < iscGasBudgetTx {
 		return fmt.Errorf(
 			"sender doesn't have enough L2 funds to cover tx gas budget. Balance: %v, expected: %d",
 			balance.String(),
-			iscGasBudgetTx/gasFeePolicy.GasPerToken,
+			gasFeePolicy.FeeFromGas(iscGasBudgetTx),
 		)
 	}
 	return nil
@@ -136,18 +215,17 @@ func (e *EVMChain) iscStateFromEVMBlockNumber(blockNumber *big.Int) (state.State
 	if blockNumber == nil {
 		return e.backend.ISCLatestState(), nil
 	}
-	if !blockNumber.IsUint64() {
-		return nil, fmt.Errorf("block number is too large: %s", blockNumber)
+	iscBlockIndex, err := iscBlockIndexByEVMBlockNumber(blockNumber)
+	if err != nil {
+		return nil, err
 	}
-	n := blockNumber.Uint64()
-	if n > math.MaxUint32-1 {
-		return nil, fmt.Errorf("block number is too large: %s", blockNumber)
-	}
-	// the first EVM block (number 0) is "minted" at ISC block index 1 (init chain)
-	return e.backend.ISCStateByBlockIndex(uint32(n) + 1)
+	return e.backend.ISCStateByBlockIndex(iscBlockIndex)
 }
 
-func (e *EVMChain) iscStateFromEVMBlockNumberOrHash(blockNumberOrHash rpc.BlockNumberOrHash) (state.State, error) {
+func (e *EVMChain) iscStateFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.BlockNumberOrHash) (state.State, error) {
+	if blockNumberOrHash == nil {
+		return e.backend.ISCLatestState(), nil
+	}
 	if blockNumber, ok := blockNumberOrHash.Number(); ok {
 		return e.iscStateFromEVMBlockNumber(parseBlockNumber(blockNumber))
 	}
@@ -159,7 +237,49 @@ func (e *EVMChain) iscStateFromEVMBlockNumberOrHash(blockNumberOrHash rpc.BlockN
 	return e.iscStateFromEVMBlockNumber(block.Number())
 }
 
-func (e *EVMChain) Balance(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) (*big.Int, error) {
+func (e *EVMChain) iscAliasOutputFromEVMBlockNumber(blockNumber *big.Int) (*isc.AliasOutputWithID, error) {
+	if blockNumber == nil || blockNumber.Cmp(big.NewInt(int64(e.backend.ISCLatestState().BlockIndex()))) == 0 {
+		return e.backend.ISCLatestAliasOutput()
+	}
+	iscBlockIndex, err := iscBlockIndexByEVMBlockNumber(blockNumber)
+	if err != nil {
+		return nil, err
+	}
+	latestBlockIndex := e.backend.ISCLatestState().BlockIndex()
+	if iscBlockIndex > latestBlockIndex {
+		return nil, fmt.Errorf("no EVM block with number %s", blockNumber)
+	}
+	if iscBlockIndex == latestBlockIndex {
+		return e.backend.ISCLatestAliasOutput()
+	}
+	iscState, err := e.backend.ISCStateByBlockIndex(iscBlockIndex + 1)
+	if err != nil {
+		return nil, err
+	}
+	blocklogStatePartition := subrealm.NewReadOnly(iscState, kv.Key(blocklog.Contract.Hname().Bytes()))
+	bi, err := blocklog.GetBlockInfo(blocklogStatePartition, iscState.BlockIndex()+1)
+	if err != nil {
+		return nil, err
+	}
+	return bi.PreviousAliasOutput, nil
+}
+
+func (e *EVMChain) iscAliasOutputFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.BlockNumberOrHash) (*isc.AliasOutputWithID, error) {
+	if blockNumberOrHash == nil {
+		return e.backend.ISCLatestAliasOutput()
+	}
+	if blockNumber, ok := blockNumberOrHash.Number(); ok {
+		return e.iscAliasOutputFromEVMBlockNumber(parseBlockNumber(blockNumber))
+	}
+	blockHash, _ := blockNumberOrHash.Hash()
+	block, err := e.BlockByHash(blockHash)
+	if err != nil {
+		return nil, err
+	}
+	return e.iscAliasOutputFromEVMBlockNumber(block.Number())
+}
+
+func (e *EVMChain) Balance(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (*big.Int, error) {
 	chainState, err := e.iscStateFromEVMBlockNumberOrHash(blockNumberOrHash)
 	if err != nil {
 		return nil, err
@@ -176,7 +296,7 @@ func (e *EVMChain) Balance(address common.Address, blockNumberOrHash rpc.BlockNu
 	return bal, nil
 }
 
-func (e *EVMChain) Code(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) ([]byte, error) {
+func (e *EVMChain) Code(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) ([]byte, error) {
 	chainState, err := e.iscStateFromEVMBlockNumberOrHash(blockNumberOrHash)
 	if err != nil {
 		return nil, err
@@ -195,6 +315,10 @@ func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
 	if err != nil {
 		return nil, err
 	}
+	return e.blockByNumber(chainState, blockNumber)
+}
+
+func (e *EVMChain) blockByNumber(chainState state.State, blockNumber *big.Int) (*types.Block, error) {
 	params := dict.Dict{}
 	if blockNumber != nil {
 		params[evm.FieldBlockNumber] = blockNumber.Bytes()
@@ -300,16 +424,11 @@ func (e *EVMChain) TransactionReceipt(txHash common.Hash) (*types.Receipt, error
 	return receipt, nil
 }
 
-func (e *EVMChain) TransactionCount(address common.Address, blockNumberOrHash ...rpc.BlockNumberOrHash) (uint64, error) {
+func (e *EVMChain) TransactionCount(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (uint64, error) {
 	var chainState state.State
-	if len(blockNumberOrHash) > 0 {
-		var err error
-		chainState, err = e.iscStateFromEVMBlockNumberOrHash(blockNumberOrHash[0])
-		if err != nil {
-			return 0, err
-		}
-	} else {
-		chainState = e.backend.ISCLatestState()
+	chainState, err := e.iscStateFromEVMBlockNumberOrHash(blockNumberOrHash)
+	if err != nil {
+		return 0, err
 	}
 	ret, err := e.backend.ISCCallView(chainState, evm.Contract.Name, evm.FuncGetNonce.Name, dict.Dict{
 		evm.FieldAddress: address.Bytes(),
@@ -320,29 +439,27 @@ func (e *EVMChain) TransactionCount(address common.Address, blockNumberOrHash ..
 	return codec.DecodeUint64(ret.MustGet(evm.FieldResult), 0)
 }
 
-func (e *EVMChain) CallContract(args ethereum.CallMsg, blockNumberOrHash rpc.BlockNumberOrHash) ([]byte, error) {
-	chainState, err := e.iscStateFromEVMBlockNumberOrHash(blockNumberOrHash)
+func (e *EVMChain) CallContract(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.BlockNumberOrHash) ([]byte, error) {
+	aliasOutput, err := e.iscAliasOutputFromEVMBlockNumberOrHash(blockNumberOrHash)
 	if err != nil {
 		return nil, err
 	}
-	ret, err := e.backend.ISCCallView(chainState, evm.Contract.Name, evm.FuncCallContract.Name, dict.Dict{
-		evm.FieldCallMsg: evmtypes.EncodeCallMsg(args),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return ret.MustGet(evm.FieldResult), nil
+	return e.backend.EVMCall(aliasOutput, callMsg)
 }
 
-func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
-	return e.backend.EVMEstimateGas(callMsg)
+func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.BlockNumberOrHash) (uint64, error) {
+	aliasOutput, err := e.iscAliasOutputFromEVMBlockNumberOrHash(blockNumberOrHash)
+	if err != nil {
+		return 0, err
+	}
+	return e.backend.EVMEstimateGas(aliasOutput, callMsg)
 }
 
 func (e *EVMChain) GasPrice() *big.Int {
 	return e.backend.EVMGasPrice()
 }
 
-func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumberOrHash rpc.BlockNumberOrHash) ([]byte, error) {
+func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumberOrHash *rpc.BlockNumberOrHash) ([]byte, error) {
 	latestState, err := e.iscStateFromEVMBlockNumberOrHash(blockNumberOrHash)
 	if err != nil {
 		return nil, err
@@ -391,4 +508,52 @@ func (e *EVMChain) Logs(q *ethereum.FilterQuery) ([]*types.Log, error) {
 
 func (e *EVMChain) BaseToken() *parameters.BaseToken {
 	return e.backend.BaseToken()
+}
+
+func (e *EVMChain) SubscribeNewHeads(ch chan<- *types.Header) (unsubscribe func()) {
+	return e.newBlock.Hook(func(ev *NewBlockEvent) {
+		ch <- ev.block.Header()
+	}).Unhook
+}
+
+func (e *EVMChain) SubscribeLogs(q *ethereum.FilterQuery, ch chan<- []*types.Log) (unsubscribe func()) {
+	return e.newBlock.Hook(func(ev *NewBlockEvent) {
+		if q.BlockHash != nil && *q.BlockHash != ev.block.Hash() {
+			return
+		}
+		if q.FromBlock != nil && q.FromBlock.IsUint64() && q.FromBlock.Cmp(ev.block.Number()) > 0 {
+			return
+		}
+		if q.ToBlock != nil && q.ToBlock.IsUint64() && q.ToBlock.Cmp(ev.block.Number()) < 0 {
+			return
+		}
+
+		var matchedLogs []*types.Log
+		for _, log := range ev.logs {
+			if evmtypes.LogMatches(log, q.Addresses, q.Topics) {
+				matchedLogs = append(matchedLogs, log)
+			}
+		}
+		if len(matchedLogs) > 0 {
+			fmt.Printf("\n\n4\n\n")
+			ch <- matchedLogs
+		}
+	}).Unhook
+}
+
+// the first EVM block (number 0) is "minted" at ISC block index 1 (init chain)
+func iscBlockIndexByEVMBlockNumber(blockNumber *big.Int) (uint32, error) {
+	if !blockNumber.IsUint64() {
+		return 0, fmt.Errorf("block number is too large: %s", blockNumber)
+	}
+	n := blockNumber.Uint64()
+	if n > math.MaxUint32-1 {
+		return 0, fmt.Errorf("block number is too large: %s", blockNumber)
+	}
+	return uint32(n), nil
+}
+
+// the first EVM block (number 0) is "minted" at ISC block index 1 (init chain)
+func evmBlockNumberByISCBlockIndex(n uint32) uint64 {
+	return uint64(n)
 }

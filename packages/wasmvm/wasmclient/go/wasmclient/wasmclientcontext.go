@@ -4,28 +4,21 @@
 package wasmclient
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 type WasmClientContext struct {
-	chainID       wasmtypes.ScChainID
-	Err           error
-	eventHandlers []wasmlib.IEventHandlers
-	keyPair       *cryptolib.KeyPair
-	nonce         uint64
-	ReqID         wasmtypes.ScRequestID
-	scName        string
-	scHname       wasmtypes.ScHname
-	svcClient     IClientService
+	Err       error
+	keyPair   *cryptolib.KeyPair
+	ReqID     wasmtypes.ScRequestID
+	scName    string
+	scHname   wasmtypes.ScHname
+	svcClient IClientService
 }
 
 var (
@@ -33,39 +26,19 @@ var (
 	_ wasmlib.ScViewCallContext = new(WasmClientContext)
 )
 
-func NewWasmClientContext(svcClient IClientService, chain string, scName string) *WasmClientContext {
-	if HrpForClient == "" {
-		// local client implementations for some sandbox functions
-		wasmtypes.Bech32Decode = ClientBech32Decode
-		wasmtypes.Bech32Encode = ClientBech32Encode
-		wasmtypes.HashName = ClientHashName
+// NewWasmClientContext uses IClientService instead of WasmClientService
+// because this could also be a SoloClientService
+func NewWasmClientContext(svcClient IClientService, scName string) *WasmClientContext {
+	s := &WasmClientContext{
+		svcClient: svcClient,
+		scName:    scName,
 	}
-
-	s := &WasmClientContext{}
-	s.svcClient = svcClient
-	s.scName = scName
 	s.ServiceContractName(scName)
-
-	if HrpForClient == "" {
-		// set the network prefix for the current network
-		hrp, _, err := iotago.ParseBech32(chain)
-		if err != nil {
-			s.Err = err
-			return s
-		}
-		if HrpForClient != hrp && HrpForClient != "" {
-			panic("WasmClient can only connect to one Tangle network per app")
-		}
-		HrpForClient = hrp
-	}
-
-	// note that HrpForClient needs to be set
-	s.chainID = wasmtypes.ChainIDFromString(chain)
 	return s
 }
 
 func (s *WasmClientContext) CurrentChainID() wasmtypes.ScChainID {
-	return s.chainID
+	return s.svcClient.CurrentChainID()
 }
 
 func (s *WasmClientContext) CurrentKeyPair() *cryptolib.KeyPair {
@@ -84,17 +57,13 @@ func (s *WasmClientContext) InitViewCallContext(hContract wasmtypes.ScHname) was
 	return s.scHname
 }
 
-func (s *WasmClientContext) Register(handler wasmlib.IEventHandlers) error {
-	for _, h := range s.eventHandlers {
-		if h == handler {
-			return nil
-		}
-	}
-	s.eventHandlers = append(s.eventHandlers, handler)
-	if len(s.eventHandlers) > 1 {
-		return nil
-	}
-	return s.svcClient.SubscribeEvents(s.processEvent)
+// Register the event handler. So the corresponding incoming events will be handled by this event handler
+func (s *WasmClientContext) Register(handler wasmlib.IEventHandlers) {
+	s.Err = s.svcClient.SubscribeEvents(&WasmClientEvents{
+		chainID:    s.svcClient.CurrentChainID(),
+		contractID: s.scHname,
+		handler:    handler,
+	})
 }
 
 func (s *WasmClientContext) ServiceContractName(contractName string) {
@@ -103,31 +72,10 @@ func (s *WasmClientContext) ServiceContractName(contractName string) {
 
 func (s *WasmClientContext) SignRequests(keyPair *cryptolib.KeyPair) {
 	s.keyPair = keyPair
-
-	// TODO not here
-	// get last used nonce from accounts core contract
-	iscAgent := isc.NewAgentID(keyPair.Address())
-	agent := wasmtypes.AgentIDFromBytes(iscAgent.Bytes())
-	ctx := NewWasmClientContext(s.svcClient, s.chainID.String(), coreaccounts.ScName)
-	n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
-	n.Params.AgentID().SetValue(agent)
-	n.Func.Call()
-	s.Err = ctx.Err
-	if s.Err == nil {
-		s.nonce = n.Results.AccountNonce().Value()
-	}
 }
 
-func (s *WasmClientContext) Unregister(handler wasmlib.IEventHandlers) {
-	for i, h := range s.eventHandlers {
-		if h == handler {
-			s.eventHandlers = append(s.eventHandlers[:i], s.eventHandlers[i+1:]...)
-			if len(s.eventHandlers) == 0 {
-				s.svcClient.UnsubscribeEvents()
-			}
-			return
-		}
-	}
+func (s *WasmClientContext) Unregister(eventsID uint32) {
+	s.svcClient.UnsubscribeEvents(eventsID)
 }
 
 func (s *WasmClientContext) WaitRequest(reqID ...wasmtypes.ScRequestID) {
@@ -135,38 +83,5 @@ func (s *WasmClientContext) WaitRequest(reqID ...wasmtypes.ScRequestID) {
 	if len(reqID) == 1 {
 		requestID = reqID[0]
 	}
-	s.Err = s.svcClient.WaitUntilRequestProcessed(s.chainID, requestID, 60*time.Second)
-}
-
-func (s *WasmClientContext) processEvent(msg *ContractEvent) {
-	fmt.Printf("%s %s %s\n", msg.ChainID, msg.ContractID, msg.Data)
-
-	params := strings.Split(msg.Data, "|")
-	for i, param := range params {
-		params[i] = unescape(param)
-	}
-	topic := params[0]
-	params = params[1:]
-	for _, handler := range s.eventHandlers {
-		handler.CallHandler(topic, params)
-	}
-}
-
-func unescape(param string) string {
-	i := strings.IndexByte(param, '~')
-	if i < 0 {
-		// no escape detected, return original string
-		return param
-	}
-
-	switch param[i+1] {
-	case '~': // escaped escape character
-		return param[:i] + "~" + unescape(param[i+2:])
-	case '/': // escaped vertical bar
-		return param[:i] + "|" + unescape(param[i+2:])
-	case '_': // escaped space
-		return param[:i] + " " + unescape(param[i+2:])
-	default:
-		panic("invalid event encoding")
-	}
+	s.Err = s.svcClient.WaitUntilRequestProcessed(requestID, 60*time.Second)
 }

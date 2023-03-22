@@ -9,7 +9,7 @@ import (
 var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog, "Block log contract")
 
 const (
-	prefixBlockRegistry = string('a' + iota)
+	PrefixBlockRegistry = string('a' + iota)
 	prefixControlAddresses
 	prefixRequestLookupIndex
 	prefixRequestReceipts
@@ -18,6 +18,7 @@ const (
 )
 
 var (
+	// TODO feels like controlAddresses could be deprecated - controller addresses can be derived from the AO
 	ViewControlAddresses           = coreutil.ViewFunc("controlAddresses")
 	ViewGetBlockInfo               = coreutil.ViewFunc("getBlockInfo")
 	ViewGetRequestIDsForBlock      = coreutil.ViewFunc("getRequestIDsForBlock")

@@ -4,6 +4,7 @@
 package dkg
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -13,11 +14,12 @@ import (
 	"go.dedis.ch/kyber/v3/group/edwards25519"
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type NodeProvider func() *Node
@@ -36,7 +38,7 @@ type Node struct {
 	processes               map[string]*proc                 // Only for introspection.
 	procLock                *sync.RWMutex                    // To guard access to the process pool.
 	initMsgQueue            chan *initiatorInitMsgIn         // Incoming events processed async.
-	attachID                interface{}                      // Peering attach ID
+	cleanupFunc             context.CancelFunc               // Peering cleanup func
 	log                     *logger.Logger
 }
 
@@ -65,7 +67,8 @@ func NewNode(
 		initMsgQueue:            make(chan *initiatorInitMsgIn),
 		log:                     log,
 	}
-	n.attachID = netProvider.Attach(&initPeeringID, peering.PeerMessageReceiverDkgInit, n.receiveInitMessage)
+	unhook := netProvider.Attach(&initPeeringID, peering.PeerMessageReceiverDkgInit, n.receiveInitMessage)
+	n.cleanupFunc = unhook
 	go n.recvLoop()
 	return &n, nil
 }
@@ -91,7 +94,7 @@ func (n *Node) receiveInitMessage(peerMsg *peering.PeerMessageIn) {
 
 func (n *Node) Close() {
 	close(n.initMsgQueue)
-	n.netProvider.Detach(n.attachID)
+	util.ExecuteIfNotNil(n.cleanupFunc)
 }
 
 // GenerateDistributedKey takes all the required parameters from the node and initiated the DKG procedure.
@@ -127,10 +130,10 @@ func (n *Node) GenerateDistributedKey(
 	}
 	defer netGroup.Close()
 	recvCh := make(chan *peering.PeerMessageIn, peerCount*2)
-	attachID := n.netProvider.Attach(&dkgID, peering.PeerMessageReceiverDkg, func(recv *peering.PeerMessageIn) {
+	unhook := n.netProvider.Attach(&dkgID, peering.PeerMessageReceiverDkg, func(recv *peering.PeerMessageIn) {
 		recvCh <- recv
 	})
-	defer n.netProvider.Detach(attachID)
+	defer util.ExecuteIfNotNil(unhook)
 	rTimeout := stepRetry
 	gTimeout := timeout
 	if peerPubs == nil {
@@ -284,6 +287,7 @@ func (n *Node) GenerateDistributedKey(
 			}
 		}
 	}
+
 	return dkShare, nil
 }
 
@@ -311,7 +315,7 @@ func (n *Node) onInitMsg(msg *initiatorInitMsgIn) {
 	n.procLock.RUnlock()
 	go func() {
 		// This part should be executed async, because it accesses the network again, and can
-		// be locked because of the naive implementation of `events.Event`. It locks on all the callbacks.
+		// be locked because of the naive implementation of `event.Event`. It locks on all the callbacks.
 		n.procLock.Lock()
 		if p, err = onInitiatorInit(msg.peeringID, &msg.initiatorInitMsg, n); err == nil {
 			n.processes[p.dkgRef] = p

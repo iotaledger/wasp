@@ -12,23 +12,25 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 	"go.elastic.co/apm/module/apmechov4"
 	"go.uber.org/dig"
-	"go.uber.org/zap"
-	"nhooyr.io/websocket"
+	websocketserver "nhooyr.io/websocket"
 
-	"github.com/iotaledger/hive.go/core/app"
-	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
-	"github.com/iotaledger/hive.go/core/configuration"
-	"github.com/iotaledger/hive.go/core/websockethub"
+	"github.com/iotaledger/hive.go/app"
+	"github.com/iotaledger/hive.go/app/configuration"
+	"github.com/iotaledger/hive.go/app/shutdown"
+	"github.com/iotaledger/hive.go/web/websockethub"
 	"github.com/iotaledger/inx-app/pkg/httpserver"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/dkg"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi"
+	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/websocket"
 )
 
 func init() {
@@ -62,8 +64,10 @@ const (
 type dependencies struct {
 	dig.In
 
-	EchoSwagger  echoswagger.ApiRoot `name:"webapiServer"`
-	WebsocketHub *websockethub.Hub   `name:"websocketHub"`
+	EchoSwagger        echoswagger.ApiRoot `name:"webapiServer"`
+	WebsocketHub       *websockethub.Hub   `name:"websocketHub"`
+	NodeConnection     chain.NodeConnection
+	WebsocketPublisher *websocket.Service `name:"websocketService"`
 }
 
 func initConfigPars(c *dig.Container) error {
@@ -110,9 +114,8 @@ func provide(c *dig.Container) error {
 		AppConfig                   *configuration.Configuration `name:"appConfig"`
 		ShutdownHandler             *shutdown.ShutdownHandler
 		APICacheTTL                 time.Duration `name:"apiCacheTTL"`
-		PublisherPort               int           `name:"publisherPort"`
 		Chains                      *chains.Chains
-		NodeConnectionMetrics       nodeconnmetrics.NodeConnectionMetrics
+		ChainMetricsProvider        *metrics.ChainMetricsProvider
 		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
 		DKShareRegistryProvider     registry.DKShareRegistryProvider
 		NodeIdentityProvider        registry.NodeIdentityProvider
@@ -126,9 +129,10 @@ func provide(c *dig.Container) error {
 	type webapiServerResult struct {
 		dig.Out
 
-		Echo         *echo.Echo          `name:"webapiEcho"`
-		EchoSwagger  echoswagger.ApiRoot `name:"webapiServer"`
-		WebsocketHub *websockethub.Hub   `name:"websocketHub"`
+		Echo               *echo.Echo          `name:"webapiEcho"`
+		EchoSwagger        echoswagger.ApiRoot `name:"webapiServer"`
+		WebsocketHub       *websockethub.Hub   `name:"websocketHub"`
+		WebsocketPublisher *websocket.Service  `name:"websocketService"`
 	}
 
 	if err := c.Provide(func(deps webapiServerDeps) webapiServerResult {
@@ -142,7 +146,7 @@ func provide(c *dig.Container) error {
 		e.Server.WriteTimeout = ParamsWebAPI.Limits.WriteTimeout
 
 		e.HidePort = true
-		e.HTTPErrorHandler = webapi.CompatibilityHTTPErrorHandler(Plugin.Logger().WithOptions(zap.AddStacktrace(zap.ErrorLevel)))
+		e.HTTPErrorHandler = apierrors.HTTPErrorHandler()
 
 		// timeout middleware
 		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -170,19 +174,27 @@ func provide(c *dig.Container) error {
 		}))
 
 		echoSwagger := CreateEchoSwagger(e, deps.AppInfo.Version)
-		websocketOptions := websocket.AcceptOptions{
+		websocketOptions := websocketserver.AcceptOptions{
 			InsecureSkipVerify: true,
 			// Disable compression due to incompatibilities with the latest Safari browsers:
 			// https://github.com/tilt-dev/tilt/issues/4746
-			CompressionMode: websocket.CompressionDisabled,
+			CompressionMode: websocketserver.CompressionDisabled,
 		}
+
+		logger := Plugin.App().NewLogger("WebAPI/v2")
 
 		hub := websockethub.NewHub(Plugin.Logger(), &websocketOptions, broadcastQueueSize, clientSendChannelSize, maxWebsocketMessageSize)
 
+		websocketService := websocket.NewWebsocketService(logger, hub, []publisher.ISCEventType{
+			publisher.ISCEventKindNewBlock,
+			publisher.ISCEventKindReceipt,
+			publisher.ISCEventIssuerVM,
+			publisher.ISCEventKindBlockEvents,
+		}, deps.Publisher, websocket.WithMaxTopicSubscriptionsPerClient(ParamsWebAPI.Limits.MaxTopicSubscriptionsPerClient))
+
 		webapi.Init(
-			Plugin.App().NewLogger("WebAPI/v2"),
+			logger,
 			echoSwagger,
-			hub,
 			deps.AppInfo.Version,
 			deps.AppConfig,
 			deps.NetworkProvider,
@@ -198,16 +210,18 @@ func provide(c *dig.Container) error {
 				return deps.Node
 			},
 			deps.ShutdownHandler,
-			deps.NodeConnectionMetrics,
+			deps.ChainMetricsProvider,
 			ParamsWebAPI.Auth,
 			ParamsWebAPI.NodeOwnerAddresses,
 			deps.APICacheTTL,
+			websocketService,
 			deps.Publisher,
 		)
 
 		return webapiServerResult{
-			EchoSwagger:  echoSwagger,
-			WebsocketHub: hub,
+			EchoSwagger:        echoSwagger,
+			WebsocketHub:       hub,
+			WebsocketPublisher: websocketService,
 		}
 	}); err != nil {
 		Plugin.LogPanic(err)
@@ -219,6 +233,12 @@ func provide(c *dig.Container) error {
 func run() error {
 	Plugin.LogInfof("Starting %s server ...", Plugin.Name)
 	if err := Plugin.Daemon().BackgroundWorker(Plugin.Name, func(ctx context.Context) {
+		Plugin.LogInfof("Starting %s server ...", Plugin.Name)
+		if err := deps.NodeConnection.WaitUntilInitiallySynced(ctx); err != nil {
+			Plugin.LogErrorf("failed to start %s, waiting for L1 node to become sync failed, error: %s", err.Error())
+			return
+		}
+
 		Plugin.LogInfof("Starting %s server ... done", Plugin.Name)
 
 		go func() {
@@ -234,6 +254,7 @@ func run() error {
 		}()
 
 		<-ctx.Done()
+
 		Plugin.LogInfof("Stopping %s server ...", Plugin.Name)
 
 		shutdownCtx, shutdownCtxCancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -249,7 +270,10 @@ func run() error {
 		Plugin.LogPanicf("failed to start worker: %s", err)
 	}
 
-	if err := Plugin.Daemon().BackgroundWorker("WebsocketHub", func(ctx context.Context) {
+	if err := Plugin.Daemon().BackgroundWorker("WebAPI[WS]", func(ctx context.Context) {
+		unhook := deps.WebsocketPublisher.EventHandler().AttachToEvents()
+		defer unhook()
+
 		deps.WebsocketHub.Run(ctx)
 		Plugin.LogInfo("Stopping WebAPI[WS]")
 	}, daemon.PriorityWebAPI); err != nil {

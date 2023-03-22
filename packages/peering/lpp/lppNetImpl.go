@@ -36,8 +36,8 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/multiformats/go-multiaddr"
 
-	"github.com/iotaledger/hive.go/core/events"
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/domain"
@@ -61,7 +61,7 @@ type netImpl struct {
 	ctxCancel    context.CancelFunc      // A way to close the context.
 	peers        map[libp2ppeer.ID]*peer // By remotePeer.ID()
 	peersLock    *sync.RWMutex
-	recvEvents   *events.Event // Used to publish events to all attached clients.
+	recvEvents   *event.Event1[*peering.PeerMessageIn] // Used to publish events to all attached clients.
 	nodeKeyPair  *cryptolib.KeyPair
 	trusted      peering.TrustedNetworkManager
 	log          *logger.Logger
@@ -112,7 +112,7 @@ func NewNetworkProvider(
 		trusted:      trusted,
 		log:          log,
 	}
-	n.recvEvents = events.NewEvent(n.eventHandler)
+	n.recvEvents = event.New1[*peering.PeerMessageIn]()
 	//
 	// Finish initialization of the libp2p node.
 	lppHost.SetStreamHandler(lppProtocolPeering, n.lppPeeringProtocolHandler)
@@ -298,13 +298,6 @@ func (n *netImpl) delPeerWithoutLock(peer *peer) {
 	delete(n.peers, peer.remoteLppID)
 }
 
-// A handler suitable for events.NewEvent().
-func (n *netImpl) eventHandler(handler interface{}, params ...interface{}) {
-	callback := handler.(func(_ *peering.PeerMessageIn))
-	recvEvent := params[0].(*peering.PeerMessageIn)
-	callback(recvEvent)
-}
-
 // Run starts listening and communicating with the network.
 func (n *netImpl) Run(ctx context.Context) {
 	queueRecvStopCh := make(chan bool)
@@ -364,20 +357,13 @@ func (n *netImpl) SendMsgByPubKey(pubKey *cryptolib.PublicKey, msg *peering.Peer
 }
 
 // Attach implements peering.NetworkProvider.
-func (n *netImpl) Attach(peeringID *peering.PeeringID, receiver byte, callback func(recv *peering.PeerMessageIn)) interface{} {
-	closure := events.NewClosure(func(recv *peering.PeerMessageIn) {
+func (n *netImpl) Attach(peeringID *peering.PeeringID, receiver byte, callback func(recv *peering.PeerMessageIn)) context.CancelFunc {
+	unhook := n.recvEvents.Hook(func(recv *peering.PeerMessageIn) {
 		if *peeringID == recv.PeeringID && receiver == recv.MsgReceiver {
 			callback(recv)
 		}
-	})
-	n.recvEvents.Hook(closure)
-	return closure
-}
-
-// Detach implements peering.NetworkProvider.
-func (n *netImpl) Detach(attachID interface{}) {
-	closure := attachID.(*events.Closure)
-	n.recvEvents.Detach(closure)
+	}).Unhook
+	return unhook
 }
 
 // PeerByPubKey implements peering.NetworkProvider.

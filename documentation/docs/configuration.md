@@ -343,17 +343,20 @@ Example:
 
 ## <a id="prometheus"></a> 12. Prometheus
 
-| Name            | Description                                                  | Type    | Default value  |
-| --------------- | ------------------------------------------------------------ | ------- | -------------- |
-| enabled         | Whether the prometheus plugin is enabled                     | boolean | true           |
-| bindAddress     | The bind address on which the Prometheus exporter listens on | string  | "0.0.0.0:2112" |
-| nodeMetrics     | Whether to include node metrics                              | boolean | true           |
-| nodeConnMetrics | Whether to include node connection metrics                   | boolean | true           |
-| blockWALMetrics | Whether to include block Write-Ahead Log (WAL) metrics       | boolean | true           |
-| restAPIMetrics  | Whether to include restAPI metrics                           | boolean | true           |
-| goMetrics       | Whether to include go metrics                                | boolean | true           |
-| processMetrics  | Whether to include process metrics                           | boolean | true           |
-| promhttpMetrics | Whether to include promhttp metrics                          | boolean | true           |
+| Name                 | Description                                                  | Type    | Default value  |
+| -------------------- | ------------------------------------------------------------ | ------- | -------------- |
+| enabled              | Whether the prometheus plugin is enabled                     | boolean | true           |
+| bindAddress          | The bind address on which the Prometheus exporter listens on | string  | "0.0.0.0:2112" |
+| nodeMetrics          | Whether to include node metrics                              | boolean | true           |
+| blockWALMetrics      | Whether to include block Write-Ahead Log (WAL) metrics       | boolean | true           |
+| consensusMetrics     | Whether to include consensus metrics                         | boolean | true           |
+| mempoolMetrics       | Whether to include mempool metrics                           | boolean | true           |
+| chainMessagesMetrics | Whether to include chain messages metrics                    | boolean | true           |
+| chainStateMetrics    | Whether to include chain state metrics                       | boolean | true           |
+| restAPIMetrics       | Whether to include restAPI metrics                           | boolean | true           |
+| goMetrics            | Whether to include go metrics                                | boolean | true           |
+| processMetrics       | Whether to include process metrics                           | boolean | true           |
+| promhttpMetrics      | Whether to include promhttp metrics                          | boolean | true           |
 
 Example:
 
@@ -363,8 +366,11 @@ Example:
       "enabled": true,
       "bindAddress": "0.0.0.0:2112",
       "nodeMetrics": true,
-      "nodeConnMetrics": true,
       "blockWALMetrics": true,
+      "consensusMetrics": true,
+      "mempoolMetrics": true,
+      "chainMessagesMetrics": true,
+      "chainStateMetrics": true,
       "restAPIMetrics": true,
       "goMetrics": true,
       "processMetrics": true,
@@ -413,12 +419,13 @@ Example:
 
 ### <a id="webapi_limits"></a> Limits
 
-| Name          | Description                                                               | Type   | Default value |
-| ------------- | ------------------------------------------------------------------------- | ------ | ------------- |
-| timeout       | The timeout after which a long running operation will be canceled         | string | "30s"         |
-| readTimeout   | The read timeout for the HTTP request body                                | string | "10s"         |
-| writeTimeout  | The write timeout for the HTTP response body                              | string | "10s"         |
-| maxBodyLength | The maximum number of characters that the body of an API call may contain | string | "2M"          |
+| Name                           | Description                                                                   | Type   | Default value |
+| ------------------------------ | ----------------------------------------------------------------------------- | ------ | ------------- |
+| timeout                        | The timeout after which a long running operation will be canceled             | string | "30s"         |
+| readTimeout                    | The read timeout for the HTTP request body                                    | string | "10s"         |
+| writeTimeout                   | The write timeout for the HTTP response body                                  | string | "10s"         |
+| maxBodyLength                  | The maximum number of characters that the body of an API call may contain     | string | "2M"          |
+| maxTopicSubscriptionsPerClient | Defines the max amount of subscriptions per client. 0 = deactivated (default) | int    | 0             |
 
 Example:
 
@@ -446,27 +453,10 @@ Example:
         "timeout": "30s",
         "readTimeout": "10s",
         "writeTimeout": "10s",
-        "maxBodyLength": "2M"
+        "maxBodyLength": "2M",
+        "maxTopicSubscriptionsPerClient": 0
       },
       "debugRequestLoggerEnabled": false
-    }
-  }
-```
-
-## <a id="nanomsg"></a> 14. nanomsg
-
-| Name    | Description                              | Type    | Default value |
-| ------- | ---------------------------------------- | ------- | ------------- |
-| enabled | Whether the publisher plugin is enabled  | boolean | true          |
-| port    | The port for the nanomsg event publisher | int     | 5550          |
-
-Example:
-
-```json
-  {
-    "nanomsg": {
-      "enabled": true,
-      "port": 5550
     }
   }
 ```

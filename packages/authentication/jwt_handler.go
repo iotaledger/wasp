@@ -8,7 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/hive.go/core/basicauth"
+	"github.com/iotaledger/hive.go/web/basicauth"
 	"github.com/iotaledger/wasp/packages/authentication/shared"
 	"github.com/iotaledger/wasp/packages/users"
 )

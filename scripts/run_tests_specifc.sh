@@ -22,9 +22,9 @@ make install
 
 echo "Start tests... ${TESTS}"
 if [ "$OUTPUT_TO_FILE" = false ]; then
-    ${GO_EXECUTABLE} test -timeout=5m -run ${TESTS} -count 1 -failfast
+    ${GO_EXECUTABLE} test -p 1 -failfast -count=1 -timeout=5m -run ${TESTS}
 else
-    ${GO_EXECUTABLE} test -v -timeout=5m -run ${TESTS} -count 1 -failfast 2>&1 | tee tests_output.log
+    ${GO_EXECUTABLE} test -p 1 -failfast -count=1 -timeout=5m -v -run ${TESTS} 2>&1 | tee tests_output.log
 fi
 
 cd ${CURRENT_DIR}

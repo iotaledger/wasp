@@ -7,7 +7,7 @@ import (
 )
 
 func TestL1Commitment(t *testing.T) {
-	sc := RandL1Commitment()
+	sc := PseudoRandL1Commitment()
 
 	data := sc.Bytes()
 	scBack, err := L1CommitmentFromBytes(data)

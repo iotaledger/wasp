@@ -5,26 +5,24 @@ package mempool_test
 
 import (
 	"context"
-	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func TestWaitReq(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
 	kp := cryptolib.NewKeyPair()
 
 	ctxA := context.Background()
 	ctxM := context.Background()
-	req0 := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), nil, 0).Sign(kp)
-	req1 := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), nil, 1).Sign(kp)
-	req2 := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), nil, 2).Sign(kp)
+	req0 := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), nil, 0, gas.LimitsDefault.MaxGasPerRequest).Sign(kp)
+	req1 := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), nil, 1, gas.LimitsDefault.MaxGasPerRequest).Sign(kp)
+	req2 := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), nil, 2, gas.LimitsDefault.MaxGasPerRequest).Sign(kp)
 	ref0 := isc.RequestRefFromRequest(req0)
 	ref1 := isc.RequestRefFromRequest(req1)
 	ref2 := isc.RequestRefFromRequest(req2)

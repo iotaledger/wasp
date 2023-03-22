@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
-func initPermitionlessAccessNodesCmd() *cobra.Command {
+func initPermissionlessAccessNodesCmd() *cobra.Command {
 	var node string
 	var chain string
 	var peers []string

@@ -1,6 +1,7 @@
 package node
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -8,7 +9,9 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
+	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
 func (c *Controller) getRegisteredPeers(e echo.Context) error {
@@ -89,13 +92,17 @@ func (c *Controller) trustPeer(e echo.Context) error {
 }
 
 func (c *Controller) distrustPeer(e echo.Context) error {
-	var trustedPeer models.PeeringTrustRequest
+	peer := e.Param(params.ParamPeer)
 
-	if err := e.Bind(&trustedPeer); err != nil {
-		return apierrors.InvalidPropertyError("body", err)
+	if peer == "" {
+		return apierrors.InvalidPropertyError(params.ParamPeer, errors.New("invalid peer name"))
 	}
 
-	if _, err := c.peeringService.DistrustPeer(trustedPeer.Name); err != nil {
+	if _, err := c.peeringService.DistrustPeer(peer); err != nil {
+		if errors.Is(err, interfaces.ErrPeerNotFound) {
+			return apierrors.PeerNameNotFoundError(peer)
+		}
+
 		return apierrors.InternalServerError(err)
 	}
 

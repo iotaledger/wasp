@@ -11,11 +11,11 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -25,88 +25,43 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-var Processor = root.Contract.Processor(initialize,
+var Processor = root.Contract.Processor(nil,
 	root.FuncDeployContract.WithHandler(deployContract),
 	root.FuncGrantDeployPermission.WithHandler(grantDeployPermission),
 	root.FuncRequireDeployPermissions.WithHandler(requireDeployPermissions),
 	root.FuncRevokeDeployPermission.WithHandler(revokeDeployPermission),
 	root.ViewFindContract.WithHandler(findContract),
 	root.ViewGetContractRecords.WithHandler(getContractRecords),
-	root.FuncSubscribeBlockContext.WithHandler(subscribeBlockContext),
 )
 
-// initialize handles constructor, the "init" request. This is the first call to the chain
-// if it fails, chain is not initialized. Does the following:
-// - stores chain ID and chain description in the state
-// - sets state ownership to the caller
-// - creates record in the registry for the 'root' itself
-// - deploys other core contracts: 'accounts', 'blob', 'blocklog' by creating records in the registry and calling constructors
-// Input:
-// - ParamChainID isc.ChainID. ID of the chain. Cannot be changed
-// - ParamDescription string defaults to "N/A"
-// - ParamStorageDepositAssumptionsBin encoded assumptions about minimum storage deposit for internal outputs
-func initialize(ctx isc.Sandbox) dict.Dict {
-	ctx.Log().Debugf("root.initialize.begin")
-
-	state := ctx.State()
-	stateAnchor := ctx.StateAnchor()
+func SetInitialState(state kv.KVStore) {
 	contractRegistry := collections.NewMap(state, root.StateVarContractRegistry)
-	creator := stateAnchor.Sender
+	if contractRegistry.MustLen() != 0 {
+		panic("contract registry must be empty on chain start")
+	}
 
-	sender := ctx.Request().SenderAccount()
-	senderHname, _ := isc.HnameFromAgentID(sender)
-	senderAddress, _ := isc.AddressFromAgentID(sender)
-	initConditionsCorrect := stateAnchor.IsOrigin &&
-		state.MustGet(root.StateVarStateInitialized) == nil &&
-		senderHname.IsNil() &&
-		creator != nil &&
-		creator.Equal(senderAddress) &&
-		contractRegistry.MustLen() == 0
-	ctx.Requiref(initConditionsCorrect, "root.initialize.fail: %v", root.ErrChainInitConditionsFailed)
-
-	assetsOnStateAnchor := isc.NewAssets(stateAnchor.Deposit, nil)
-	ctx.Requiref(len(assetsOnStateAnchor.NativeTokens) == 0, "root.initialize.fail: native tokens in origin output are not allowed")
-
-	// store 'root' into the registry
-	storeCoreContract(ctx, root.Contract)
-
-	// store 'blob' into the registry and run init
-	storeAndInitCoreContract(ctx, blob.Contract, nil)
-
-	// store 'accounts' into the registry and run init
-	storeAndInitCoreContract(ctx, accounts.Contract, dict.Dict{
-		accounts.ParamStorageDepositAssumptionsBin: ctx.Params().MustGet(root.ParamStorageDepositAssumptionsBin),
-	})
-
-	// store 'blocklog' into the registry and run init
-	storeAndInitCoreContract(ctx, blocklog.Contract, nil)
-
-	// store 'errors' into the registry and run init
-	storeAndInitCoreContract(ctx, errors.Contract, nil)
-
-	// store 'governance' into the registry and run init
-	storeAndInitCoreContract(ctx, governance.Contract, dict.Dict{
-		governance.ParamChainID: codec.EncodeChainID(ctx.ChainID()),
-		// chain owner is whoever creates origin and sends the 'init' request
-		governance.ParamChainOwner:     sender.Bytes(),
-		governance.ParamDescription:    ctx.Params().MustGet(governance.ParamDescription),
-		governance.ParamFeePolicyBytes: ctx.Params().MustGet(governance.ParamFeePolicyBytes),
-	})
-
-	// store 'evm' into the registry and run init
-	// filter all params that have ParamEVM prefix, and remove the prefix
-	evmParams, err := dict.FromKVStore(subrealm.New(ctx.Params().Dict, root.ParamEVM("")))
-	ctx.RequireNoError(err)
-	storeAndInitCoreContract(ctx, evm.Contract, evmParams)
-
+	// forbid deployment of custom contracts by default
 	state.Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(true))
-	state.Set(root.StateVarStateInitialized, []byte{0xFF})
-	// storing hname as a terminal value of the contract's state root.
-	// This way we will be able to retrieve commitment to the contract's state
-	ctx.State().Set("", ctx.Contract().Bytes())
 
-	ctx.Log().Debugf("root.initialize.success")
-	return nil
+	{
+		// register core contracts
+		contracts := []*coreutil.ContractInfo{
+			root.Contract,
+			blob.Contract,
+			accounts.Contract,
+			blocklog.Contract,
+			errors.Contract,
+			governance.Contract,
+			evm.Contract,
+		}
+
+		for _, c := range contracts {
+			storeContractRecord(
+				state,
+				root.ContractRecordFromContractInfo(c),
+			)
+		}
+	}
 }
 
 // deployContract deploys contract and calls its 'init' constructor.
@@ -140,7 +95,7 @@ func deployContract(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err, "root.deployContract.fail 1: ")
 
 	// VM loaded successfully. Storing contract in the registry and calling constructor
-	storeContractRecord(ctx, &root.ContractRecord{
+	storeContractRecord(ctx.State(), &root.ContractRecord{
 		ProgramHash: progHash,
 		Description: description,
 		Name:        name,
@@ -213,15 +168,4 @@ func getContractRecords(ctx isc.SandboxView) dict.Dict {
 	})
 
 	return ret
-}
-
-func subscribeBlockContext(ctx isc.Sandbox) dict.Dict {
-	ctx.Requiref(ctx.StateAnchor().StateIndex == 0, "subscribeBlockContext must be called when initializing the chain")
-	root.SubscribeBlockContext(
-		ctx.State(),
-		ctx.Caller().(*isc.ContractAgentID).Hname(),
-		ctx.Params().MustGetHname(root.ParamBlockContextOpenFunc),
-		ctx.Params().MustGetHname(root.ParamBlockContextCloseFunc),
-	)
-	return nil
 }

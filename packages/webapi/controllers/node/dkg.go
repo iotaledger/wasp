@@ -9,6 +9,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/models"
+	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
 func (c *Controller) generateDKS(e echo.Context) error {
@@ -27,9 +28,9 @@ func (c *Controller) generateDKS(e echo.Context) error {
 }
 
 func (c *Controller) getDKSInfo(e echo.Context) error {
-	_, sharedAddress, err := iotago.ParseBech32(e.Param("sharedAddress"))
+	_, sharedAddress, err := iotago.ParseBech32(e.Param(params.ParamSharedAddress))
 	if err != nil {
-		return apierrors.InvalidPropertyError("sharedAddress", err)
+		return apierrors.InvalidPropertyError(params.ParamSharedAddress, err)
 	}
 
 	sharesInfo, err := c.dkgService.GetShares(sharedAddress)

@@ -24,6 +24,19 @@ func (c *Controller) handleJSONRPC(e echo.Context) error {
 	return c.evmService.HandleJSONRPC(chainID, e.Request(), e.Response())
 }
 
+func (c *Controller) handleWebsocket(e echo.Context) error {
+	chainID, err := params.DecodeChainID(e)
+	if err != nil {
+		return err
+	}
+
+	if !c.chainService.HasChain(chainID) {
+		return apierrors.ChainNotFoundError(chainID.String())
+	}
+
+	return c.evmService.HandleWebsocket(chainID, e.Request(), e.Response())
+}
+
 func (c *Controller) getRequestID(e echo.Context) error {
 	chainID, err := params.DecodeChainID(e)
 	if err != nil {
@@ -34,10 +47,10 @@ func (c *Controller) getRequestID(e echo.Context) error {
 		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
-	txHash := e.Param("txHash")
+	txHash := e.Param(params.ParamTxHash)
 	requestID, err := c.evmService.GetRequestID(chainID, txHash)
 	if err != nil {
-		return apierrors.InvalidPropertyError("txHash", err)
+		return apierrors.InvalidPropertyError(params.ParamTxHash, err)
 	}
 
 	return e.JSON(http.StatusOK, models.RequestIDResponse{

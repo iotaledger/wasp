@@ -48,11 +48,6 @@ type RotateStateControllerCall struct {
 	Params MutableRotateStateControllerParams
 }
 
-type SetChainInfoCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableSetChainInfoParams
-}
-
 type SetFeePolicyCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableSetFeePolicyParams
@@ -81,11 +76,6 @@ type GetChainOwnerCall struct {
 type GetFeePolicyCall struct {
 	Func    *wasmlib.ScView
 	Results ImmutableGetFeePolicyResults
-}
-
-type GetMaxBlobSizeCall struct {
-	Func    *wasmlib.ScView
-	Results ImmutableGetMaxBlobSizeResults
 }
 
 type Funcs struct{}
@@ -141,13 +131,6 @@ func (sc Funcs) RotateStateController(ctx wasmlib.ScFuncCallContext) *RotateStat
 	return f
 }
 
-// chain info
-func (sc Funcs) SetChainInfo(ctx wasmlib.ScFuncCallContext) *SetChainInfoCall {
-	f := &SetChainInfoCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetChainInfo)}
-	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
-	return f
-}
-
 // fees
 func (sc Funcs) SetFeePolicy(ctx wasmlib.ScFuncCallContext) *SetFeePolicyCall {
 	f := &SetFeePolicyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetFeePolicy)}
@@ -190,12 +173,6 @@ func (sc Funcs) GetFeePolicy(ctx wasmlib.ScViewCallContext) *GetFeePolicyCall {
 	return f
 }
 
-func (sc Funcs) GetMaxBlobSize(ctx wasmlib.ScViewCallContext) *GetMaxBlobSizeCall {
-	f := &GetMaxBlobSizeCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetMaxBlobSize)}
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
-	return f
-}
-
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
 		FuncAddAllowedStateControllerAddress,
@@ -206,14 +183,12 @@ var exportMap = wasmlib.ScExportMap{
 		FuncRemoveAllowedStateControllerAddress,
 		FuncRevokeAccessNode,
 		FuncRotateStateController,
-		FuncSetChainInfo,
 		FuncSetFeePolicy,
 		ViewGetAllowedStateControllerAddresses,
 		ViewGetChainInfo,
 		ViewGetChainNodes,
 		ViewGetChainOwner,
 		ViewGetFeePolicy,
-		ViewGetMaxBlobSize,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
 		wasmlib.FuncError,
@@ -225,10 +200,8 @@ var exportMap = wasmlib.ScExportMap{
 		wasmlib.FuncError,
 		wasmlib.FuncError,
 		wasmlib.FuncError,
-		wasmlib.FuncError,
 	},
 	Views: []wasmlib.ScViewContextFunction{
-		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,

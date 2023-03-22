@@ -6,7 +6,6 @@ package state
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/trie"
@@ -90,7 +89,6 @@ type Block interface {
 }
 
 type StateCommonValues interface {
-	ChainID() isc.ChainID
 	BlockIndex() uint32
 	Timestamp() time.Time
 	PreviousL1Commitment() *L1Commitment

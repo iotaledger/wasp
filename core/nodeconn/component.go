@@ -2,15 +2,15 @@ package nodeconn
 
 import (
 	"context"
+	"fmt"
 
 	"go.uber.org/dig"
 
-	"github.com/iotaledger/hive.go/core/app"
-	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
+	"github.com/iotaledger/hive.go/app"
+	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/inx-app/pkg/nodebridge"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/daemon"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 )
 
@@ -19,6 +19,7 @@ func init() {
 		Component: &app.Component{
 			Name:      "NodeConn",
 			DepsFunc:  func(cDeps dependencies) { deps = cDeps },
+			Params:    params,
 			Provide:   provide,
 			Configure: configure,
 		},
@@ -33,20 +34,26 @@ var (
 type dependencies struct {
 	dig.In
 
-	NodeConnection chain.NodeConnection
+	NodeConnection  chain.NodeConnection
+	ShutdownHandler *shutdown.ShutdownHandler
 }
 
 func provide(c *dig.Container) error {
-	type nodeConnectionMetricsResult struct {
-		dig.Out
+	if err := c.Provide(func() (*nodebridge.NodeBridge, error) {
+		nodeBridge := nodebridge.NewNodeBridge(
+			CoreComponent.Logger(),
+			nodebridge.WithTargetNetworkName(ParamsINX.TargetNetworkName),
+		)
 
-		NodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
-	}
-
-	if err := c.Provide(func() nodeConnectionMetricsResult {
-		return nodeConnectionMetricsResult{
-			NodeConnectionMetrics: nodeconnmetrics.New(),
+		if err := nodeBridge.Connect(
+			CoreComponent.Daemon().ContextStopped(),
+			ParamsINX.Address,
+			ParamsINX.MaxConnectionAttempts,
+		); err != nil {
+			return nil, err
 		}
+
+		return nodeBridge, nil
 	}); err != nil {
 		CoreComponent.LogPanic(err)
 	}
@@ -54,31 +61,21 @@ func provide(c *dig.Container) error {
 	type nodeConnectionDeps struct {
 		dig.In
 
-		NodeBridge            *nodebridge.NodeBridge
-		NodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
-		ShutdownHandler       *shutdown.ShutdownHandler
+		NodeBridge      *nodebridge.NodeBridge
+		ShutdownHandler *shutdown.ShutdownHandler
 	}
 
-	type nodeConnectionResult struct {
-		dig.Out
-
-		NodeConnection chain.NodeConnection
-	}
-
-	if err := c.Provide(func(deps nodeConnectionDeps) nodeConnectionResult {
+	if err := c.Provide(func(deps nodeConnectionDeps) chain.NodeConnection {
 		nodeConnection, err := nodeconn.New(
 			CoreComponent.Daemon().ContextStopped(),
 			CoreComponent.Logger().Named("nc"),
 			deps.NodeBridge,
-			deps.NodeConnectionMetrics,
 			deps.ShutdownHandler,
 		)
 		if err != nil {
 			CoreComponent.LogPanicf("Creating NodeConnection failed: %s", err.Error())
 		}
-		return nodeConnectionResult{
-			NodeConnection: nodeConnection,
-		}
+		return nodeConnection
 	}); err != nil {
 		CoreComponent.LogPanic(err)
 	}
@@ -89,7 +86,9 @@ func provide(c *dig.Container) error {
 func configure() error {
 	if err := CoreComponent.Daemon().BackgroundWorker(CoreComponent.Name, func(ctx context.Context) {
 		CoreComponent.LogInfof("Starting %s ... done", CoreComponent.Name)
-		deps.NodeConnection.Run(ctx)
+		if err := deps.NodeConnection.Run(ctx); err != nil {
+			deps.ShutdownHandler.SelfShutdown(fmt.Sprintf("Starting %s failed, error: %s", CoreComponent.Name, err.Error()), true)
+		}
 		CoreComponent.LogInfof("Stopping %s ... done", CoreComponent.Name)
 	}, daemon.PriorityNodeConnection); err != nil {
 		CoreComponent.LogPanicf("failed to start worker: %s", err)

@@ -1,8 +1,9 @@
 package models
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/isc"
+	"encoding/base64"
+
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/webapi/dto"
 )
 
@@ -51,22 +52,14 @@ type ContractInfoResponse struct {
 	ProgramHash string `json:"programHash" swagger:"desc(The hash of the contract. (Hex encoded)),required"`
 }
 
-type gasFeePolicy struct {
-	GasFeeTokenID     string `json:"gasFeeTokenId" swagger:"desc(The gas fee token id. Empty if base token.),required"`
-	GasPerToken       string `json:"gasPerToken" swagger:"desc(The amount of gas per token. (uint64 as string)),required"`
-	ValidatorFeeShare uint8  `json:"validatorFeeShare" swagger:"desc(The validator fee share.),required,min(1)"`
-}
-
 type ChainInfoResponse struct {
-	IsActive        bool         `json:"isActive" swagger:"desc(Whether or not the chain is active.),required"`
-	ChainID         string       `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
-	EVMChainID      uint16       `json:"evmChainId" swagger:"desc(The EVM chain ID),required,min(1)"`
-	ChainOwnerID    string       `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
-	Description     string       `json:"description" swagger:"desc(The description of the chain.),required"`
-	GasFeePolicy    gasFeePolicy `json:"gasFeePolicy"`
-	MaxBlobSize     uint32       `json:"maxBlobSize" swagger:"desc(The maximum contract blob size.),required,min(1)"`
-	MaxEventSize    uint16       `json:"maxEventSize" swagger:"desc(The maximum event size.),required,min(1)"`                      // TODO: Clarify
-	MaxEventsPerReq uint16       `json:"maxEventsPerReq" swagger:"desc(The maximum amount of events per request.),required,min(1)"` // TODO: Clarify
+	IsActive       bool           `json:"isActive" swagger:"desc(Whether or not the chain is active.),required"`
+	ChainID        string         `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
+	EVMChainID     uint16         `json:"evmChainId" swagger:"desc(The EVM chain ID),required,min(1)"`
+	ChainOwnerID   string         `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
+	GasFeePolicy   *gas.FeePolicy `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
+	GasLimits      *gas.Limits    `json:"gasLimits" swagger:"desc(The gas limits),required"`
+	CustomMetadata string         `json:"customMetadata" swagger:"desc((base64) Optional extra metadata that is appended to the L1 AliasOutput)"`
 }
 
 type StateResponse struct {
@@ -75,13 +68,10 @@ type StateResponse struct {
 
 func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfoResponse {
 	chainInfoResponse := ChainInfoResponse{
-		IsActive:        chainInfo.IsActive,
-		ChainID:         chainInfo.ChainID.String(),
-		EVMChainID:      evmChainID,
-		Description:     chainInfo.Description,
-		MaxBlobSize:     chainInfo.MaxBlobSize,
-		MaxEventSize:    chainInfo.MaxEventSize,
-		MaxEventsPerReq: chainInfo.MaxEventsPerReq,
+		IsActive:       chainInfo.IsActive,
+		ChainID:        chainInfo.ChainID.String(),
+		EVMChainID:     evmChainID,
+		CustomMetadata: base64.StdEncoding.EncodeToString(chainInfo.CustomMetadata),
 	}
 
 	if chainInfo.ChainOwnerID != nil {
@@ -89,17 +79,11 @@ func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfo
 	}
 
 	if chainInfo.GasFeePolicy != nil {
-		gasFeeTokenID := ""
+		chainInfoResponse.GasFeePolicy = chainInfo.GasFeePolicy
+	}
 
-		if !isc.IsEmptyNativeTokenID(chainInfo.GasFeePolicy.GasFeeTokenID) {
-			gasFeeTokenID = chainInfo.GasFeePolicy.GasFeeTokenID.String()
-		}
-
-		chainInfoResponse.GasFeePolicy = gasFeePolicy{
-			GasFeeTokenID:     gasFeeTokenID,
-			GasPerToken:       iotago.EncodeUint64(chainInfo.GasFeePolicy.GasPerToken),
-			ValidatorFeeShare: chainInfo.GasFeePolicy.ValidatorFeeShare,
-		}
+	if chainInfo.GasLimits != nil {
+		chainInfoResponse.GasLimits = chainInfo.GasLimits
 	}
 
 	return chainInfoResponse

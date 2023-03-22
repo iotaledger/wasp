@@ -142,40 +142,6 @@ export class MutableRotateStateControllerParams extends wasmtypes.ScProxy {
     }
 }
 
-export class ImmutableSetChainInfoParams extends wasmtypes.ScProxy {
-    // default maximum size of a blob
-    maxBlobSize(): wasmtypes.ScImmutableUint32 {
-        return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamMaxBlobSize));
-    }
-
-    // default maximum size of a single event
-    maxEventSize(): wasmtypes.ScImmutableUint16 {
-        return new wasmtypes.ScImmutableUint16(this.proxy.root(sc.ParamMaxEventSize));
-    }
-
-    // default maximum number of events per request
-    maxEventsPerReq(): wasmtypes.ScImmutableUint16 {
-        return new wasmtypes.ScImmutableUint16(this.proxy.root(sc.ParamMaxEventsPerReq));
-    }
-}
-
-export class MutableSetChainInfoParams extends wasmtypes.ScProxy {
-    // default maximum size of a blob
-    maxBlobSize(): wasmtypes.ScMutableUint32 {
-        return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamMaxBlobSize));
-    }
-
-    // default maximum size of a single event
-    maxEventSize(): wasmtypes.ScMutableUint16 {
-        return new wasmtypes.ScMutableUint16(this.proxy.root(sc.ParamMaxEventSize));
-    }
-
-    // default maximum number of events per request
-    maxEventsPerReq(): wasmtypes.ScMutableUint16 {
-        return new wasmtypes.ScMutableUint16(this.proxy.root(sc.ParamMaxEventsPerReq));
-    }
-}
-
 export class ImmutableSetFeePolicyParams extends wasmtypes.ScProxy {
     feePolicyBytes(): wasmtypes.ScImmutableBytes {
         return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamFeePolicyBytes));

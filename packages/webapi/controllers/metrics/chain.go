@@ -10,14 +10,14 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
-func (c *Controller) getL1Metrics(e echo.Context) error {
-	metricsReport := c.metricsService.GetAllChainsMetrics()
-	mappedMetrics := models.MapChainMetrics(metricsReport)
+func (c *Controller) getNodeMessageMetrics(e echo.Context) error {
+	metricsReport := c.metricsService.GetNodeMessageMetrics()
+	mappedMetrics := models.MapNodeMessageMetrics(metricsReport)
 
 	return e.JSON(http.StatusOK, mappedMetrics)
 }
 
-func (c *Controller) getChainMetrics(e echo.Context) error {
+func (c *Controller) getChainMessageMetrics(e echo.Context) error {
 	chainID, err := params.DecodeChainID(e)
 	if err != nil {
 		return err
@@ -27,8 +27,8 @@ func (c *Controller) getChainMetrics(e echo.Context) error {
 		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
-	metricsReport := c.metricsService.GetChainMetrics(chainID)
-	mappedMetrics := models.MapChainMetrics(metricsReport)
+	metricsReport := c.metricsService.GetChainMessageMetrics(chainID)
+	mappedMetrics := models.MapChainMessageMetrics(metricsReport)
 
 	return e.JSON(http.StatusOK, mappedMetrics)
 }

@@ -9,10 +9,12 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/labstack/echo/v4"
 
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 )
 
@@ -27,14 +29,23 @@ type EVMService struct {
 
 	chainService    interfaces.ChainService
 	networkProvider peering.NetworkProvider
+	publisher       *publisher.Publisher
+	log             *logger.Logger
 }
 
-func NewEVMService(chainService interfaces.ChainService, networkProvider peering.NetworkProvider) interfaces.EVMService {
+func NewEVMService(
+	chainService interfaces.ChainService,
+	networkProvider peering.NetworkProvider,
+	pub *publisher.Publisher,
+	log *logger.Logger,
+) interfaces.EVMService {
 	return &EVMService{
 		chainService:    chainService,
 		evmChainServers: map[isc.ChainID]*chainServer{},
 		evmBackendMutex: sync.Mutex{},
 		networkProvider: networkProvider,
+		publisher:       pub,
+		log:             log,
 	}
 }
 
@@ -51,20 +62,20 @@ func (e *EVMService) getEVMBackend(chainID isc.ChainID) (*chainServer, error) {
 		return nil, errors.New("chain is invalid")
 	}
 
-	evmChainID, err := e.chainService.GetEVMChainID(chainID)
+	nodePubKey := e.networkProvider.Self().PubKey()
+	backend := jsonrpc.NewWaspEVMBackend(chain, nodePubKey, parameters.L1().BaseToken)
+
+	srv, err := jsonrpc.NewServer(
+		jsonrpc.NewEVMChain(backend, e.publisher, e.log),
+		jsonrpc.NewAccountManager(nil),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	nodePubKey := e.networkProvider.Self().PubKey()
-	backend := jsonrpc.NewWaspEVMBackend(chain, nodePubKey, parameters.L1().BaseToken)
-
 	e.evmChainServers[chainID] = &chainServer{
 		backend: backend,
-		rpc: jsonrpc.NewServer(
-			jsonrpc.NewEVMChain(backend, evmChainID),
-			jsonrpc.NewAccountManager(nil),
-		),
+		rpc:     srv,
 	}
 
 	return e.evmChainServers[chainID], nil
@@ -77,6 +88,18 @@ func (e *EVMService) HandleJSONRPC(chainID isc.ChainID, request *http.Request, r
 	}
 
 	evmServer.rpc.ServeHTTP(response, request)
+
+	return nil
+}
+
+func (e *EVMService) HandleWebsocket(chainID isc.ChainID, request *http.Request, response *echo.Response) error {
+	evmServer, err := e.getEVMBackend(chainID)
+	if err != nil {
+		return err
+	}
+
+	allowedOrigins := []string{"*"}
+	evmServer.rpc.WebsocketHandler(allowedOrigins).ServeHTTP(response, request)
 
 	return nil
 }

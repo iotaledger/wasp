@@ -4,13 +4,13 @@
 package bp
 
 import (
-	"math/rand"
 	"sort"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type batchProposalSet map[gpa.NodeID]*BatchProposal
@@ -37,14 +37,22 @@ func (bps batchProposalSet) decidedBaseAliasOutput(f int) *isc.AliasOutputWithID
 	}
 
 	var found *isc.AliasOutputWithID
+	var uncertain bool
 	for h, count := range counts {
 		if count > f {
-			if found != nil {
+			if found != nil && found.GetStateIndex() == values[h].GetStateIndex() {
 				// Found more that 1 AliasOutput proposed by F+1 or more nodes.
-				return nil
+				uncertain = true
+				continue
 			}
-			found = values[h]
+			if found == nil || found.GetStateIndex() < values[h].GetStateIndex() {
+				found = values[h]
+				uncertain = false
+			}
 		}
+	}
+	if uncertain {
+		return nil
 	}
 	return found
 }
@@ -103,7 +111,7 @@ func (bps batchProposalSet) selectedProposal(aggregatedTime time.Time) gpa.NodeI
 	for nid := range bps {
 		peers = append(peers, nid)
 	}
-	rnd := rand.New(rand.NewSource(aggregatedTime.UnixNano()))
+	rnd := util.NewPseudoRand(aggregatedTime.UnixNano())
 	return peers[rnd.Intn(len(bps))]
 }
 

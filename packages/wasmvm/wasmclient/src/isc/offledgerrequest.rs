@@ -6,11 +6,6 @@ use wasmlib::*;
 
 use crate::keypair::KeyPair;
 
-pub const MAX_GAS_PER_BLOCK: u64 = 1_000_000_000;
-pub const MIN_GAS_PER_REQUEST: u64 = 10000;
-pub const MAX_GAS_PER_REQUEST: u64 = MAX_GAS_PER_BLOCK / 20;
-pub const MAX_GAS_EXTERNAL_VIEW_CALL: u64 = MIN_GAS_PER_REQUEST;
-
 #[derive(Clone)]
 pub struct OffLedgerRequest {
     chain_id: ScChainID,
@@ -52,9 +47,9 @@ impl OffLedgerRequest {
             entry_point: entry_point.clone(),
             params: params.to_vec(),
             signature_scheme: OffLedgerSignatureScheme::new(&KeyPair::new(&[])),
-            nonce: nonce,
+            nonce,
             allowance: ScAssets::new(&[]),
-            gas_budget: MAX_GAS_PER_REQUEST,
+            gas_budget: u64::MAX,
         };
     }
 

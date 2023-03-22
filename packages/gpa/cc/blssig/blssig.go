@@ -23,7 +23,7 @@ import (
 	"go.dedis.ch/kyber/v3/sign/bdn"
 	"go.dedis.ch/kyber/v3/sign/tbls"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 

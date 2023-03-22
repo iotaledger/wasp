@@ -355,5 +355,5 @@ func viewTestPanicViewEP(ctx wasmlib.ScViewContext, _ *TestPanicViewEPContext) {
 func viewTestSandboxCall(ctx wasmlib.ScViewContext, f *TestSandboxCallContext) {
 	getChainInfo := coregovernance.ScFuncs.GetChainInfo(ctx)
 	getChainInfo.Func.Call()
-	f.Results.SandboxCall().SetValue(getChainInfo.Results.Description().Value())
+	f.Results.SandboxCall().SetValue(getChainInfo.Results.ChainID().Value().String())
 }

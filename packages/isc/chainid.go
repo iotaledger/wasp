@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/hive.go/core/marshalutil"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -71,7 +71,7 @@ func RandomChainID(seed ...[]byte) ChainID {
 	if len(seed) > 0 {
 		h = hashing.HashData(seed[0])
 	} else {
-		h = hashing.RandomHash(nil)
+		h = hashing.PseudoRandomHash(nil)
 	}
 	chainID, err := ChainIDFromBytes(h[:ChainIDLength])
 	if err != nil {
@@ -116,10 +116,6 @@ func (id ChainID) AsAddress() iotago.Address {
 
 func (id ChainID) AsAliasAddress() iotago.AliasAddress {
 	return iotago.AliasAddress(id)
-}
-
-func (id ChainID) CommonAccount() AgentID {
-	return NewContractAgentID(id, 0)
 }
 
 func (id ChainID) IsSameChain(agentID AgentID) bool {

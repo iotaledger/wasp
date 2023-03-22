@@ -2,11 +2,13 @@ package chains
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.uber.org/dig"
 
-	"github.com/iotaledger/hive.go/core/app"
+	"github.com/iotaledger/hive.go/app"
+	hiveshutdown "github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/chains"
@@ -41,7 +43,8 @@ var (
 type dependencies struct {
 	dig.In
 
-	Chains *chains.Chains
+	ShutdownHandler *hiveshutdown.ShutdownHandler
+	Chains          *chains.Chains
 }
 
 func initConfigPars(c *dig.Container) error {
@@ -75,7 +78,7 @@ func provide(c *dig.Container) error {
 		NodeIdentityProvider        registry.NodeIdentityProvider
 		ConsensusStateRegistry      cmtLog.ConsensusStateRegistry
 		ChainListener               *publisher.Publisher
-		Metrics                     *metrics.Metrics `optional:"true"`
+		ChainMetricsProvider        *metrics.ChainMetricsProvider
 	}
 
 	type chainsResult struct {
@@ -104,6 +107,7 @@ func provide(c *dig.Container) error {
 				deps.ConsensusStateRegistry,
 				deps.ChainListener,
 				shutdown.NewCoordinator("chains", CoreComponent.Logger().Named("Shutdown")),
+				deps.ChainMetricsProvider,
 			),
 		}
 	}); err != nil {
@@ -116,7 +120,8 @@ func provide(c *dig.Container) error {
 func run() error {
 	err := CoreComponent.Daemon().BackgroundWorker(CoreComponent.Name, func(ctx context.Context) {
 		if err := deps.Chains.Run(ctx); err != nil {
-			CoreComponent.LogPanicf("failed to start chains: %v", err)
+			deps.ShutdownHandler.SelfShutdown(fmt.Sprintf("Starting %s failed, error: %s", CoreComponent.Name, err.Error()), true)
+			return
 		}
 
 		<-ctx.Done()

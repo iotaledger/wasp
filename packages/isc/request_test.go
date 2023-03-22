@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/marshalutil"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -18,7 +18,7 @@ func TestSerializeRequestData(t *testing.T) {
 	var req Request
 	var err error
 	t.Run("off ledger", func(t *testing.T) {
-		req = NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337).WithGasBudget(100).Sign(cryptolib.NewKeyPair())
+		req = NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337, 100).Sign(cryptolib.NewKeyPair())
 
 		serialized := req.Bytes()
 		req2, err2 := NewRequestFromMarshalUtil(marshalutil.New(serialized))
@@ -75,7 +75,7 @@ func TestSerializeRequestData(t *testing.T) {
 }
 
 func TestRequestIDToFromString(t *testing.T) {
-	req := NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337).WithGasBudget(200).Sign(cryptolib.NewKeyPair())
+	req := NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337, 200).Sign(cryptolib.NewKeyPair())
 	oritinalID := req.ID()
 	s := oritinalID.String()
 	require.NotEmpty(t, s)

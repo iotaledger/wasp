@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
+	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
 type Controller struct {
@@ -36,8 +37,9 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 	}.JSONDict()
 
 	publicAPI.GET("chains/:chainID/receipts/:requestID", c.getReceipt).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "requestID", "RequestID (Hex)").
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddParamPath("", params.ParamRequestID, params.DescriptionRequestID).
+		AddResponse(http.StatusNotFound, "Chain or request id not found", nil, nil).
 		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
 		SetSummary("Get a receipt from a request ID").
 		SetOperationId("getReceipt")
@@ -62,10 +64,10 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 	publicAPI.GET("chains/:chainID/requests/:requestID/wait", c.waitForRequestToFinish).
 		SetSummary("Wait until the given request has been processed by the node").
 		SetOperationId("waitForRequest").
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "requestID", "RequestID (Hex)").
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddParamPath("", params.ParamRequestID, params.DescriptionRequestID).
 		AddParamQuery(0, "timeoutSeconds", "The timeout in seconds", false).
-		AddResponse(http.StatusNotFound, "The chain or request id is invalid", nil, nil).
+		AddResponse(http.StatusNotFound, "The chain or request id not found", nil, nil).
 		AddResponse(http.StatusRequestTimeout, "The waiting time has reached the defined limit", nil, nil).
 		AddResponse(http.StatusOK, "The request receipt", mocker.Get(models.ReceiptResponse{}), nil)
 }

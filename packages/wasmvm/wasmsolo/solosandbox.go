@@ -107,16 +107,18 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 	if ctx.offLedger {
 		ctx.offLedger = false
 		res, ctx.Err = ctx.Chain.PostRequestOffLedger(req, ctx.keyPair)
+		ctx.UpdateGasFees()
 	} else if !ctx.isRequest {
 		ctx.Tx, res, ctx.Err = ctx.Chain.PostRequestSyncTx(req, ctx.keyPair)
+		ctx.UpdateGasFees()
 	} else {
 		ctx.isRequest = false
 		ctx.Tx, _, ctx.Err = ctx.Chain.RequestFromParamsToLedger(req, nil)
 		if ctx.Err == nil {
 			ctx.Chain.Env.EnqueueRequests(ctx.Tx)
 		}
+		// do NOT ctx.UpdateGasFees(), because this runs in parallel
 	}
-	ctx.UpdateGasFees()
 	if ctx.Err != nil {
 		return nil
 	}

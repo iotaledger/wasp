@@ -4,6 +4,8 @@
 package cmtLog
 
 import (
+	"fmt"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -29,4 +31,11 @@ func NewInputConsensusOutputDone(
 		baseAliasOutputID: baseAliasOutputID,
 		nextAliasOutput:   nextAliasOutput,
 	}
+}
+
+func (inp *inputConsensusOutputDone) String() string {
+	return fmt.Sprintf(
+		"{cmtLog.inputConsensusOutputDone, logIndex=%v, proposedBaseAO=%v, baseAliasOutputID=%v, nextAliasOutput=%v}",
+		inp.logIndex, inp.proposedBaseAO.ToHex(), inp.baseAliasOutputID.ToHex(), inp.nextAliasOutput,
+	)
 }

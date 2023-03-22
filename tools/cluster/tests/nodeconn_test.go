@@ -18,18 +18,19 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/l1connection"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 func createChain(t *testing.T) isc.ChainID {
 	originator := cryptolib.NewKeyPair()
 	layer1Client := l1connection.NewClient(l1.Config, testlogger.NewLogger(t))
-	layer1Client.RequestFunds(originator.Address())
+	err := layer1Client.RequestFunds(originator.Address())
+	require.NoError(t, err)
+
 	utxoMap, err := layer1Client.OutputMap(originator.Address())
 	require.NoError(t, err)
 
@@ -38,11 +39,12 @@ func createChain(t *testing.T) isc.ChainID {
 		utxoIDs = append(utxoIDs, id)
 	}
 
-	originTx, chainID, err := transaction.NewChainOriginTransaction(
+	originTx, _, chainID, err := origin.NewChainOriginTransaction(
 		originator,
 		originator.Address(),
 		originator.Address(),
 		0,
+		nil,
 		utxoMap,
 		utxoIDs,
 	)
@@ -89,13 +91,13 @@ func TestNodeConn(t *testing.T) {
 
 	go nodeBridge.Run(ctx)
 
-	nc, err := nodeconn.New(ctxInit, log, nodeBridge, nodeconnmetrics.NewEmptyNodeConnectionMetrics(), nil)
+	nc, err := nodeconn.New(ctxInit, log, nodeBridge, nil)
 	require.NoError(t, err)
-
-	defer cancelInit()
 
 	// run the node connection
 	go nc.Run(ctx)
+
+	nc.WaitUntilInitiallySynced(ctxInit)
 
 	//
 	// Check the chain operations.
@@ -132,6 +134,8 @@ func TestNodeConn(t *testing.T) {
 			chainStateOutsICh <- outputInfo.OutputID
 		},
 		func(timestamp time.Time) {},
+		nil,
+		nil,
 	)
 
 	client := l1connection.NewClient(l1.Config, log)

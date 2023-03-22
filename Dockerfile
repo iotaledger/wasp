@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
-ARG GOLANG_IMAGE_TAG=1.19-bullseye
+ARG GOLANG_IMAGE_TAG=1.20-bullseye
 
 # Build stage
 FROM golang:${GOLANG_IMAGE_TAG} AS build
 ARG BUILD_TAGS=rocksdb
-ARG BUILD_LD_FLAGS=""
+ARG BUILD_LD_FLAGS="--X=github.com/iotaledger/wasp/core/app.Version=v0.0.0-testing"
 
 LABEL org.label-schema.description="Wasp"
 LABEL org.label-schema.name="iotaledger/wasp"
@@ -43,9 +43,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # using distroless cc "nonroot" image, which includes everything in the base image (glibc, libssl and openssl)
 FROM gcr.io/distroless/cc-debian11:nonroot
 
-EXPOSE 7000/tcp
 EXPOSE 9090/tcp
-EXPOSE 5550/tcp
 EXPOSE 6060/tcp
 EXPOSE 4000/udp
 EXPOSE 4000/tcp

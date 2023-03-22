@@ -5,17 +5,16 @@ package chain
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/hex"
 	"strconv"
 
 	"github.com/spf13/cobra"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
@@ -67,6 +66,7 @@ func initInfoCmd() *cobra.Command {
 			}
 
 			log.Printf("Chain ID: %s\n", chainInfo.ChainID)
+			log.Printf("EVM Chain ID: %d\n", chainInfo.EvmChainId)
 			log.Printf("Active: %v\n", chainInfo.IsActive)
 
 			if chainInfo.IsActive {
@@ -75,37 +75,21 @@ func initInfoCmd() *cobra.Command {
 				printNodes("Access nodes", committeeInfo.AccessNodes, false, true)
 				printNodes("Candidate nodes", committeeInfo.CandidateNodes, false, false)
 
-				log.Printf("Description: %s\n", chainInfo.Description)
-
 				contracts, _, err := client.ChainsApi.GetContracts(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
 				log.Check(err)
 				log.Printf("#Contracts: %d\n", len(contracts))
 
 				log.Printf("Owner: %s\n", chainInfo.ChainOwnerId)
+				log.Printf("Gas fee: gas units * (%d/%d)\n", chainInfo.GasFeePolicy.GasPerToken.A, chainInfo.GasFeePolicy.GasPerToken.B)
+				log.Printf("Validator fee share: %d%%\n", chainInfo.GasFeePolicy.ValidatorFeeShare)
 
-				// TODO: Validate the gas fee token id logic
-				if chainInfo.GasFeePolicy != nil {
-					gasFeeToken := util.BaseTokenStr
-
-					if chainInfo.GasFeePolicy.GasFeeTokenId != "" {
-						decodedToken, err := iotago.DecodeHex(chainInfo.GasFeePolicy.GasFeeTokenId)
-						log.Check(err)
-
-						tokenID, err := isc.NativeTokenIDFromBytes(decodedToken)
-						log.Check(err)
-
-						if !isc.IsEmptyNativeTokenID(tokenID) {
-							gasFeeToken = tokenID.String()
-						}
-					}
-
-					log.Printf("Gas fee: 1 %s = %v gas units\n", gasFeeToken, chainInfo.GasFeePolicy.GasPerToken)
-					log.Printf("Validator fee share: %d%%\n", chainInfo.GasFeePolicy.ValidatorFeeShare)
+				if chainInfo.CustomMetadata != nil && len(*chainInfo.CustomMetadata) > 0 {
+					customMetadata, err := base64.StdEncoding.DecodeString(*chainInfo.CustomMetadata)
+					log.Check(err)
+					log.Printf("Custom metadata (hex): %s\n", hex.EncodeToString(customMetadata))
+				} else {
+					log.Printf("Custom metadata: (empty)\n")
 				}
-
-				log.Printf("Maximum blob size: %d bytes\n", chainInfo.MaxBlobSize)
-				log.Printf("Maximum event size: %d bytes\n", chainInfo.MaxEventSize)
-				log.Printf("Maximum events per request: %d\n", chainInfo.MaxEventsPerReq)
 			}
 		},
 	}

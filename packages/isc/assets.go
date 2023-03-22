@@ -6,13 +6,12 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 type Assets struct {
@@ -43,13 +42,6 @@ func NewAssets(baseTokens uint64, tokens iotago.NativeTokens, nfts ...iotago.NFT
 
 func NewAssetsBaseTokens(amount uint64) *Assets {
 	return &Assets{BaseTokens: amount}
-}
-
-func NewAssetsForGasFee(p *gas.GasFeePolicy, feeAmount uint64) *Assets {
-	if IsEmptyNativeTokenID(p.GasFeeTokenID) {
-		return NewAssetsBaseTokens(feeAmount)
-	}
-	return NewEmptyAssets().AddNativeTokens(p.GasFeeTokenID, feeAmount)
 }
 
 func AssetsFromDict(d dict.Dict) (*Assets, error) {

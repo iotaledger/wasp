@@ -29,8 +29,8 @@ import (
 )
 
 var gasLimits = GasLimits{
-	Block: gas.EVMBlockGasLimit(&util.Ratio32{A: 1, B: 1}),
-	Call:  gas.EVMCallGasLimit(&util.Ratio32{A: 1, B: 1}),
+	Block: gas.EVMBlockGasLimit(gas.LimitsDefault, &util.Ratio32{A: 1, B: 1}),
+	Call:  gas.EVMCallGasLimit(gas.LimitsDefault, &util.Ratio32{A: 1, B: 1}),
 }
 
 func estimateGas(callMsg ethereum.CallMsg, e *EVMEmulator) (uint64, error) {
@@ -130,7 +130,7 @@ func TestBlockchain(t *testing.T) {
 	}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, gasLimits, 0, genesisAlloc, l2Balance)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, gasLimits, 0, genesisAlloc)
 	emu := NewEVMEmulator(db, 1, gasLimits, nil, l2Balance)
 
 	// some assertions
@@ -201,7 +201,7 @@ func TestBlockchainPersistence(t *testing.T) {
 	l2Balance := mockL2Balance{}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, gasLimits, 0, genesisAlloc, l2Balance)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, gasLimits, 0, genesisAlloc)
 
 	// deploy a contract using one instance of EVMEmulator
 	var contractAddress common.Address
@@ -317,7 +317,7 @@ func TestStorageContract(t *testing.T) {
 	l2Balance := mockL2Balance{}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, gasLimits, 0, genesisAlloc, l2Balance)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, gasLimits, 0, genesisAlloc)
 	emu := NewEVMEmulator(db, 1, gasLimits, nil, l2Balance)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
@@ -384,7 +384,7 @@ func TestERC20Contract(t *testing.T) {
 	l2Balance := mockL2Balance{}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, gasLimits, 0, genesisAlloc, l2Balance)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, gasLimits, 0, genesisAlloc)
 	emu := NewEVMEmulator(db, 1, gasLimits, nil, l2Balance)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
@@ -472,7 +472,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 	l2Balance := mockL2Balance{}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, gasLimits, 0, genesisAlloc, l2Balance)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, gasLimits, 0, genesisAlloc)
 	emu := NewEVMEmulator(db, 1, gasLimits, nil, l2Balance)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))

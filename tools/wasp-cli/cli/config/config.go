@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/viper"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
@@ -76,12 +77,12 @@ func L1FaucetAddress() string {
 	)
 }
 
-func GetToken() string {
-	return viper.GetString("authentication.token")
+func GetToken(node string) string {
+	return viper.GetString(fmt.Sprintf("authentication.wasp.%s.token", node))
 }
 
-func SetToken(token string) {
-	Set("authentication.token", token)
+func SetToken(node, token string) {
+	Set(fmt.Sprintf("authentication.wasp.%s.token", node), token)
 }
 
 func MustWaspAPIURL(nodeName string) string {
@@ -118,7 +119,16 @@ func AddChain(name, chainID string) {
 }
 
 func GetChain(name string) isc.ChainID {
-	chainID, err := isc.ChainIDFromString(viper.GetString("chains." + name))
+	configChainID := viper.GetString("chains." + name)
+	networkPrefix, _, err := iotago.ParseBech32(configChainID)
+	log.Check(err)
+
+	if networkPrefix != parameters.L1().Protocol.Bech32HRP {
+		err = fmt.Errorf("target network of the L1 node does not match the wasp-cli config")
+	}
+	log.Check(err)
+
+	chainID, err := isc.ChainIDFromString(configChainID)
 	log.Check(err)
 	return chainID
 }

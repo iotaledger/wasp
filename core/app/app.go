@@ -3,10 +3,9 @@ package app
 import (
 	_ "net/http/pprof"
 
-	"github.com/iotaledger/hive.go/core/app"
-	"github.com/iotaledger/hive.go/core/app/core/shutdown"
-	"github.com/iotaledger/hive.go/core/app/plugins/profiling"
-	"github.com/iotaledger/inx-app/core/inx"
+	"github.com/iotaledger/hive.go/app"
+	"github.com/iotaledger/hive.go/app/components/profiling"
+	"github.com/iotaledger/hive.go/app/components/shutdown"
 	"github.com/iotaledger/wasp/core/chains"
 	"github.com/iotaledger/wasp/core/database"
 	"github.com/iotaledger/wasp/core/dkg"
@@ -20,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/core/wasmtimevm"
 	"github.com/iotaledger/wasp/plugins/profilingrecorder"
 	"github.com/iotaledger/wasp/plugins/prometheus"
-	"github.com/iotaledger/wasp/plugins/publishernano"
 	"github.com/iotaledger/wasp/plugins/webapi"
 )
 
@@ -38,7 +36,6 @@ func App() *app.App {
 		app.WithVersionCheck("iotaledger", "wasp"),
 		app.WithInitComponent(InitComponent),
 		app.WithCoreComponents([]*app.CoreComponent{
-			inx.CoreComponent,
 			shutdown.CoreComponent,
 			nodeconn.CoreComponent,
 			users.CoreComponent,
@@ -57,7 +54,6 @@ func App() *app.App {
 			profilingrecorder.Plugin,
 			prometheus.Plugin,
 			webapi.Plugin,
-			publishernano.Plugin,
 		}...),
 	)
 }

@@ -4,6 +4,7 @@
 package jsonrpc
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"sync"
@@ -72,7 +73,7 @@ func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 		return core.ErrIntrinsicGas
 	}
 
-	req, err := isc.NewEVMOffLedgerRequest(b.chain.ID(), tx)
+	req, err := isc.NewEVMOffLedgerTxRequest(b.chain.ID(), tx)
 	if err != nil {
 		return err
 	}
@@ -92,8 +93,12 @@ func (b *WaspEVMBackend) evictWhenExpired(txHash common.Hash) {
 	b.requestIDs.Delete(txHash)
 }
 
-func (b *WaspEVMBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
-	return chainutil.EstimateGas(b.chain, callMsg)
+func (b *WaspEVMBackend) EVMCall(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) ([]byte, error) {
+	return chainutil.Call(b.chain, aliasOutput, callMsg)
+}
+
+func (b *WaspEVMBackend) EVMEstimateGas(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) (uint64, error) {
+	return chainutil.EstimateGas(b.chain, aliasOutput, callMsg)
 }
 
 func (b *WaspEVMBackend) EVMGasPrice() *big.Int {
@@ -106,20 +111,16 @@ func (b *WaspEVMBackend) EVMGasPrice() *big.Int {
 	if err != nil {
 		panic(fmt.Sprintf("couldn't decode fee policy: %s ", err.Error()))
 	}
-	res, err = chainutil.CallView(latestState, b.chain, governance.Contract.Hname(), governance.ViewGetEVMGasRatio.Hname(), nil)
-	if err != nil {
-		panic(fmt.Sprintf("couldn't call getGasRatio view: %s ", err.Error()))
-	}
-	gasRatio := codec.MustDecodeRatio32(res.MustGet(governance.ParamEVMGasRatio))
 
 	// convert to wei (18 decimals)
 	decimalsDifference := 18 - parameters.L1().BaseToken.Decimals
 	price := big.NewInt(10)
 	price.Exp(price, new(big.Int).SetUint64(uint64(decimalsDifference)), nil)
 
-	price.Mul(price, new(big.Int).SetUint64(uint64(gasRatio.A)))
-	price.Div(price, new(big.Int).SetUint64(uint64(gasRatio.B)))
-	price.Div(price, new(big.Int).SetUint64(feePolicy.GasPerToken))
+	price.Mul(price, new(big.Int).SetUint64(uint64(feePolicy.EVMGasRatio.A)))
+	price.Div(price, new(big.Int).SetUint64(uint64(feePolicy.EVMGasRatio.B)))
+	price.Mul(price, new(big.Int).SetUint64(uint64(feePolicy.GasPerToken.A)))
+	price.Div(price, new(big.Int).SetUint64(uint64(feePolicy.GasPerToken.B)))
 
 	return price
 }
@@ -132,7 +133,14 @@ func (b *WaspEVMBackend) BaseToken() *parameters.BaseToken {
 	return b.baseToken
 }
 
-// ISCLatestState implements jsonrpc.ChainBackend
+func (b *WaspEVMBackend) ISCLatestAliasOutput() (*isc.AliasOutputWithID, error) {
+	aliasOutput, _ := b.chain.LatestAliasOutput()
+	if aliasOutput == nil {
+		return nil, errors.New("could not get latest AliasOutput")
+	}
+	return aliasOutput, nil
+}
+
 func (b *WaspEVMBackend) ISCLatestState() state.State {
 	latestState, err := b.chain.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
@@ -141,7 +149,6 @@ func (b *WaspEVMBackend) ISCLatestState() state.State {
 	return latestState
 }
 
-// ISCStateByBlockIndex implements jsonrpc.ChainBackend
 func (b *WaspEVMBackend) ISCStateByBlockIndex(blockIndex uint32) (state.State, error) {
 	latestState, err := b.chain.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
@@ -151,4 +158,9 @@ func (b *WaspEVMBackend) ISCStateByBlockIndex(blockIndex uint32) (state.State, e
 		return latestState, nil
 	}
 	return b.chain.Store().StateByIndex(blockIndex)
+}
+
+func (b *WaspEVMBackend) ISCChainID() *isc.ChainID {
+	chID := b.chain.ID()
+	return &chID
 }

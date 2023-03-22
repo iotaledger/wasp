@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 // ISCChainID matches the type definition in ISCTypes.sol
@@ -220,7 +219,7 @@ type IRC27NFTMetadata struct {
 	Name     string
 }
 
-func WrapIRC27NFTMetadata(m *transaction.IRC27NFTMetadata) IRC27NFTMetadata {
+func WrapIRC27NFTMetadata(m *isc.IRC27NFTMetadata) IRC27NFTMetadata {
 	return IRC27NFTMetadata{
 		Standard: m.Standard,
 		Version:  m.Version,

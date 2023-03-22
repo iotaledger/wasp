@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	hivedb "github.com/iotaledger/hive.go/core/database"
-	"github.com/iotaledger/hive.go/core/ioutils"
-	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/hive.go/kvstore"
+	hivedb "github.com/iotaledger/hive.go/kvstore/database"
+	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/packages/common"
 )
 

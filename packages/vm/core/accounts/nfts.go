@@ -129,7 +129,7 @@ func DebitNFTFromAccount(state kv.KVStore, agentID isc.AgentID, id iotago.NFTID)
 		panic(err)
 	}
 	if !debitNFTFromAccount(state, agentID, nft) {
-		panic(fmt.Errorf(" debit NFT from %s: %v\nassets: %s", agentID, ErrNotEnoughFunds, id.String()))
+		panic(fmt.Errorf("cannot debit NFT from %s: %w", agentID, ErrNotEnoughFunds))
 	}
 	deleteNFTData(state, id)
 	touchAccount(state, agentID)

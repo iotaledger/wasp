@@ -12,7 +12,7 @@ import (
 
 	"go.uber.org/atomic"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -113,7 +114,7 @@ type ConsGr struct {
 	netRecvPipe                 pipe.Pipe[*peering.PeerMessageIn]
 	netPeeringID                peering.PeeringID
 	netPeerPubs                 map[gpa.NodeID]*cryptolib.PublicKey
-	netDisconnect               func()
+	netDisconnect               context.CancelFunc
 	net                         peering.NetworkProvider
 	ctx                         context.Context
 	log                         *logger.Logger
@@ -166,16 +167,14 @@ func New(
 	cgr.consInst = gpa.NewAckHandler(me, constInstRaw, redeliveryPeriod)
 
 	netRecvPipeInCh := cgr.netRecvPipe.In()
-	attachID := net.Attach(&netPeeringID, peering.PeerMessageReceiverChainCons, func(recv *peering.PeerMessageIn) {
+	unhook := net.Attach(&netPeeringID, peering.PeerMessageReceiverChainCons, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeCons {
 			cgr.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
 		}
 		netRecvPipeInCh <- recv
 	})
-	cgr.netDisconnect = func() {
-		net.Detach(attachID)
-	}
+	cgr.netDisconnect = unhook
 
 	go cgr.run()
 	return cgr
@@ -200,7 +199,8 @@ func (cgr *ConsGr) Time(t time.Time) {
 }
 
 func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
-	defer cgr.netDisconnect()
+	defer util.ExecuteIfNotNil(cgr.netDisconnect)
+
 	ctxClose := cgr.ctx.Done()
 	netRecvPipeOutCh := cgr.netRecvPipe.Out()
 	redeliveryTickCh := time.After(cgr.redeliveryPeriod)

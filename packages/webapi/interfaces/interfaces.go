@@ -55,14 +55,15 @@ type ChainService interface {
 
 type EVMService interface {
 	HandleJSONRPC(chainID isc.ChainID, request *http.Request, response *echo.Response) error
+	HandleWebsocket(chainID isc.ChainID, request *http.Request, response *echo.Response) error
 	GetRequestID(chainID isc.ChainID, hash string) (isc.RequestID, error)
 }
 
 type MetricsService interface {
-	GetAllChainsMetrics() *dto.ChainMetrics
+	GetNodeMessageMetrics() *dto.NodeMessageMetrics
+	GetChainMessageMetrics(chainID isc.ChainID) *dto.ChainMessageMetrics
 	GetChainConsensusPipeMetrics(chainID isc.ChainID) *models.ConsensusPipeMetrics
 	GetChainConsensusWorkflowMetrics(chainID isc.ChainID) *models.ConsensusWorkflowMetrics
-	GetChainMetrics(chainID isc.ChainID) *dto.ChainMetrics
 }
 
 var ErrPeerNotFound = errors.New("couldn't find peer")

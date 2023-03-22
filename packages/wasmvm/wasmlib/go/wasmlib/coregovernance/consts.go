@@ -23,9 +23,6 @@ const (
 	ParamChainOwner                 = "o"
 	ParamChangeAccessNodesActions   = "n"
 	ParamFeePolicyBytes             = "g"
-	ParamMaxBlobSize                = "mb"
-	ParamMaxEventSize               = "ms"
-	ParamMaxEventsPerReq            = "mr"
 	ParamStateControllerAddress     = "S"
 )
 
@@ -36,12 +33,9 @@ const (
 	ResultChainID                         = "c"
 	ResultChainOwner                      = "o"
 	ResultChainOwnerID                    = "o"
-	ResultDescription                     = "d"
+	ResultCustomMetadata                  = "x"
 	ResultFeePolicyBytes                  = "g"
 	ResultGasFeePolicyBytes               = "g"
-	ResultMaxBlobSize                     = "mb"
-	ResultMaxEventSize                    = "me"
-	ResultMaxEventsPerReq                 = "mr"
 )
 
 const (
@@ -53,14 +47,12 @@ const (
 	FuncRemoveAllowedStateControllerAddress = "removeAllowedStateControllerAddress"
 	FuncRevokeAccessNode                    = "revokeAccessNode"
 	FuncRotateStateController               = "rotateStateController"
-	FuncSetChainInfo                        = "setChainInfo"
 	FuncSetFeePolicy                        = "setFeePolicy"
 	ViewGetAllowedStateControllerAddresses  = "getAllowedStateControllerAddresses"
 	ViewGetChainInfo                        = "getChainInfo"
 	ViewGetChainNodes                       = "getChainNodes"
 	ViewGetChainOwner                       = "getChainOwner"
 	ViewGetFeePolicy                        = "getFeePolicy"
-	ViewGetMaxBlobSize                      = "getMaxBlobSize"
 )
 
 const (
@@ -72,12 +64,10 @@ const (
 	HFuncRemoveAllowedStateControllerAddress = wasmtypes.ScHname(0x31f69447)
 	HFuncRevokeAccessNode                    = wasmtypes.ScHname(0x5459512d)
 	HFuncRotateStateController               = wasmtypes.ScHname(0x244d1038)
-	HFuncSetChainInfo                        = wasmtypes.ScHname(0x702f5d2b)
 	HFuncSetFeePolicy                        = wasmtypes.ScHname(0x5b791c9f)
 	HViewGetAllowedStateControllerAddresses  = wasmtypes.ScHname(0xf3505183)
 	HViewGetChainInfo                        = wasmtypes.ScHname(0x434477e2)
 	HViewGetChainNodes                       = wasmtypes.ScHname(0xe1832289)
 	HViewGetChainOwner                       = wasmtypes.ScHname(0x9b2ef0ac)
 	HViewGetFeePolicy                        = wasmtypes.ScHname(0xf8c89790)
-	HViewGetMaxBlobSize                      = wasmtypes.ScHname(0xe1db3d28)
 )

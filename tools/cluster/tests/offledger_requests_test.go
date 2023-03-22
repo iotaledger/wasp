@@ -29,7 +29,7 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 	addr, err := clu.RunDKG(cmt, 3)
 	require.NoError(t, err)
 
-	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt, 3, addr)
+	chain, err := clu.DeployChain(clu.Config.AllNodes(), cmt, 3, addr)
 	require.NoError(t, err)
 
 	e := newChainEnv(t, clu, chain)

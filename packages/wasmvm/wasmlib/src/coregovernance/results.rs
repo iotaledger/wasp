@@ -93,24 +93,12 @@ impl ImmutableGetChainInfoResults {
         ScImmutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER_ID))
     }
 
-    pub fn description(&self) -> ScImmutableString {
-        ScImmutableString::new(self.proxy.root(RESULT_DESCRIPTION))
+    pub fn custom_metadata(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(RESULT_CUSTOM_METADATA))
     }
 
     pub fn gas_fee_policy_bytes(&self) -> ScImmutableBytes {
         ScImmutableBytes::new(self.proxy.root(RESULT_GAS_FEE_POLICY_BYTES))
-    }
-
-    pub fn max_blob_size(&self) -> ScImmutableUint32 {
-        ScImmutableUint32::new(self.proxy.root(RESULT_MAX_BLOB_SIZE))
-    }
-
-    pub fn max_event_size(&self) -> ScImmutableUint16 {
-        ScImmutableUint16::new(self.proxy.root(RESULT_MAX_EVENT_SIZE))
-    }
-
-    pub fn max_events_per_req(&self) -> ScImmutableUint16 {
-        ScImmutableUint16::new(self.proxy.root(RESULT_MAX_EVENTS_PER_REQ))
     }
 }
 
@@ -134,24 +122,12 @@ impl MutableGetChainInfoResults {
         ScMutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER_ID))
     }
 
-    pub fn description(&self) -> ScMutableString {
-        ScMutableString::new(self.proxy.root(RESULT_DESCRIPTION))
+    pub fn custom_metadata(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(RESULT_CUSTOM_METADATA))
     }
 
     pub fn gas_fee_policy_bytes(&self) -> ScMutableBytes {
         ScMutableBytes::new(self.proxy.root(RESULT_GAS_FEE_POLICY_BYTES))
-    }
-
-    pub fn max_blob_size(&self) -> ScMutableUint32 {
-        ScMutableUint32::new(self.proxy.root(RESULT_MAX_BLOB_SIZE))
-    }
-
-    pub fn max_event_size(&self) -> ScMutableUint16 {
-        ScMutableUint16::new(self.proxy.root(RESULT_MAX_EVENT_SIZE))
-    }
-
-    pub fn max_events_per_req(&self) -> ScMutableUint16 {
-        ScMutableUint16::new(self.proxy.root(RESULT_MAX_EVENTS_PER_REQ))
     }
 }
 
@@ -270,33 +246,5 @@ impl MutableGetFeePolicyResults {
 
     pub fn fee_policy_bytes(&self) -> ScMutableBytes {
         ScMutableBytes::new(self.proxy.root(RESULT_FEE_POLICY_BYTES))
-    }
-}
-
-#[derive(Clone)]
-pub struct ImmutableGetMaxBlobSizeResults {
-    pub proxy: Proxy,
-}
-
-impl ImmutableGetMaxBlobSizeResults {
-    pub fn max_blob_size(&self) -> ScImmutableUint32 {
-        ScImmutableUint32::new(self.proxy.root(RESULT_MAX_BLOB_SIZE))
-    }
-}
-
-#[derive(Clone)]
-pub struct MutableGetMaxBlobSizeResults {
-    pub proxy: Proxy,
-}
-
-impl MutableGetMaxBlobSizeResults {
-    pub fn new() -> MutableGetMaxBlobSizeResults {
-        MutableGetMaxBlobSizeResults {
-            proxy: results_proxy(),
-        }
-    }
-
-    pub fn max_blob_size(&self) -> ScMutableUint32 {
-        ScMutableUint32::new(self.proxy.root(RESULT_MAX_BLOB_SIZE))
     }
 }

@@ -1,6 +1,8 @@
 package transaction
 
 import (
+	"fmt"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -32,21 +34,20 @@ func BasicOutputFromPostData(
 			GasBudget:      metadata.GasBudget,
 		},
 		par.Options,
-		!par.AdjustToMinimumStorageDeposit,
 	)
+	if par.AdjustToMinimumStorageDeposit {
+		return AdjustToMinimumStorageDeposit(ret)
+	}
 	return ret
 }
 
-// MakeBasicOutput creates new output from input parameters.
-// Auto adjusts minimal storage deposit if the notAutoAdjust flag is absent or false
-// If auto adjustment to storage deposit is disabled and not enough base tokens, returns an error
+// MakeBasicOutput creates new output from input parameters (ignoring storage deposit).
 func MakeBasicOutput(
 	targetAddress iotago.Address,
 	senderAddress iotago.Address,
 	assets *isc.Assets,
 	metadata *isc.RequestMetadata,
 	options isc.SendOptions,
-	disableAutoAdjustStorageDeposit ...bool,
 ) *iotago.BasicOutput {
 	if assets == nil {
 		assets = &isc.Assets{}
@@ -83,18 +84,6 @@ func MakeBasicOutput(
 		}
 		out.Conditions = append(out.Conditions, cond)
 	}
-
-	// Adjust to minimum storage deposit, if needed
-	if len(disableAutoAdjustStorageDeposit) > 0 && disableAutoAdjustStorageDeposit[0] {
-		return out
-	}
-
-	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(out)
-	if out.Deposit() < storageDeposit {
-		// adjust the amount to the minimum required
-		out.Amount = storageDeposit
-	}
-
 	return out
 }
 
@@ -137,4 +126,24 @@ func AssetsFromOutput(o iotago.Output) *isc.Assets {
 		BaseTokens:   o.Deposit(),
 		NativeTokens: o.NativeTokenList(),
 	}
+}
+
+func AdjustToMinimumStorageDeposit[T iotago.Output](out T) T {
+	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(out)
+	if out.Deposit() >= storageDeposit {
+		return out
+	}
+	switch out := iotago.Output(out).(type) {
+	case *iotago.AliasOutput:
+		out.Amount = storageDeposit
+	case *iotago.BasicOutput:
+		out.Amount = storageDeposit
+	case *iotago.FoundryOutput:
+		out.Amount = storageDeposit
+	case *iotago.NFTOutput:
+		out.Amount = storageDeposit
+	default:
+		panic(fmt.Sprintf("no handler for output type %T", out))
+	}
+	return out
 }

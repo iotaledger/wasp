@@ -6,10 +6,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -49,13 +46,6 @@ func (vmctx *VMContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 		panic(fmt.Errorf("internal: %w", err))
 	}
 	return vmctx.txbuilder.ModifyNativeTokenSupply(nativeTokenID, delta)
-}
-
-func (vmctx *VMContext) SubscribeBlockContext(openFunc, closeFunc isc.Hname) {
-	vmctx.Call(root.Contract.Hname(), root.FuncSubscribeBlockContext.Hname(), dict.Dict{
-		root.ParamBlockContextOpenFunc:  codec.EncodeHname(openFunc),
-		root.ParamBlockContextCloseFunc: codec.EncodeHname(closeFunc),
-	}, nil)
 }
 
 func (vmctx *VMContext) SetBlockContext(bctx interface{}) {

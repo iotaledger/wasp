@@ -49,7 +49,7 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool/distSync"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -58,6 +58,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
@@ -145,7 +146,7 @@ type mempoolImpl struct {
 	netPeerPubs                    map[gpa.NodeID]*cryptolib.PublicKey
 	net                            peering.NetworkProvider
 	log                            *logger.Logger
-	metrics                        metrics.MempoolMetrics
+	metrics                        metrics.IChainMempoolMetrics
 	listener                       ChainListener
 }
 
@@ -191,7 +192,7 @@ func New(
 	nodeIdentity *cryptolib.KeyPair,
 	net peering.NetworkProvider,
 	log *logger.Logger,
-	metrics metrics.MempoolMetrics,
+	metrics metrics.IChainMempoolMetrics,
 	listener ChainListener,
 ) Mempool {
 	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("Mempool")) // ChainID × Mempool
@@ -232,14 +233,14 @@ func New(
 		log,
 	)
 	netRecvPipeInCh := mpi.netRecvPipe.In()
-	netAttachID := net.Attach(&netPeeringID, peering.PeerMessageReceiverMempool, func(recv *peering.PeerMessageIn) {
+	unhook := net.Attach(&netPeeringID, peering.PeerMessageReceiverMempool, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeMempool {
 			mpi.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
 		}
 		netRecvPipeInCh <- recv
 	})
-	go mpi.run(ctx, netAttachID)
+	go mpi.run(ctx, unhook)
 	return mpi
 }
 
@@ -260,11 +261,17 @@ func (mpi *mempoolImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
 }
 
 func (mpi *mempoolImpl) ServerNodesUpdated(committeePubKeys, serverNodePubKeys []*cryptolib.PublicKey) {
-	mpi.serverNodesUpdatedPipe.In() <- &reqServerNodesUpdated{committeePubKeys, serverNodePubKeys}
+	mpi.serverNodesUpdatedPipe.In() <- &reqServerNodesUpdated{
+		committeePubKeys:  committeePubKeys,
+		serverNodePubKeys: serverNodePubKeys,
+	}
 }
 
 func (mpi *mempoolImpl) AccessNodesUpdated(committeePubKeys, accessNodePubKeys []*cryptolib.PublicKey) {
-	mpi.accessNodesUpdatedPipe.In() <- &reqAccessNodesUpdated{committeePubKeys, accessNodePubKeys}
+	mpi.accessNodesUpdatedPipe.In() <- &reqAccessNodesUpdated{
+		committeePubKeys:  committeePubKeys,
+		accessNodePubKeys: accessNodePubKeys,
+	}
 }
 
 func (mpi *mempoolImpl) ConsensusProposalsAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan []*isc.RequestRef {
@@ -289,7 +296,7 @@ func (mpi *mempoolImpl) ConsensusRequestsAsync(ctx context.Context, requestRefs 
 	return res
 }
 
-func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //nolint: gocyclo
+func (mpi *mempoolImpl) run(ctx context.Context, cleanupFunc context.CancelFunc) { //nolint:gocyclo
 	serverNodesUpdatedPipeOutCh := mpi.serverNodesUpdatedPipe.Out()
 	accessNodesUpdatedPipeOutCh := mpi.accessNodesUpdatedPipe.Out()
 	reqConsensusProposalsPipeOutCh := mpi.reqConsensusProposalsPipe.Out()
@@ -376,7 +383,7 @@ func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //no
 			// mpi.netRecvPipe.Close()
 			debugTicker.Stop()
 			timeTicker.Stop()
-			mpi.net.Detach(netAttachID)
+			util.ExecuteIfNotNil(cleanupFunc)
 			return
 		}
 	}
@@ -389,12 +396,14 @@ func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //no
 //     for them), then the state has to be accessed.
 func (mpi *mempoolImpl) distSyncRequestNeededCB(requestRef *isc.RequestRef) isc.Request {
 	if req := mpi.offLedgerPool.Get(requestRef); req != nil {
+		mpi.log.Debugf("responding to RequestNeeded(ref=%v), found in offLedgerPool", requestRef)
 		return req
 	}
 	if mpi.chainHeadState != nil {
 		requestID := requestRef.ID
 		receipt, err := blocklog.GetRequestReceipt(mpi.chainHeadState, requestID)
 		if err == nil && receipt != nil && receipt.Request.IsOffLedger() {
+			mpi.log.Debugf("responding to RequestNeeded(ref=%v), found in blockLog", requestRef)
 			return receipt.Request
 		}
 		return nil
@@ -509,6 +518,14 @@ func (mpi *mempoolImpl) handleConsensusRequests(recv *reqConsensusRequests) {
 		reqs[i] = mpi.onLedgerPool.Get(reqRef)
 		if reqs[i] == nil {
 			reqs[i] = mpi.offLedgerPool.Get(reqRef)
+		}
+		if reqs[i] == nil && mpi.chainHeadState != nil {
+			// Check also the processed backlog, to avoid consensus blocking while waiting for processed request.
+			// It will be rejected later (or state branch will change).
+			receipt, err := blocklog.GetRequestReceipt(mpi.chainHeadState, reqRef.ID)
+			if err == nil && receipt != nil {
+				reqs[i] = receipt.Request
+			}
 		}
 		if reqs[i] == nil {
 			missing = append(missing, reqRef)

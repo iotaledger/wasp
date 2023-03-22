@@ -51,7 +51,7 @@ func TestRandomHash(t *testing.T) {
 		seed: 1,
 	}
 	rnd := rand.New(src)
-	h := RandomHash(rnd)
+	h := PseudoRandomHash(rnd)
 	require.EqualValues(t, reflect.TypeOf(NilHash), reflect.TypeOf(h))
 }
 

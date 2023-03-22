@@ -68,15 +68,15 @@ func (g *Governance) GetChainOwner(chainID isc.ChainID) (isc.AgentID, error) {
 	return ownerID, nil
 }
 
-func (g *Governance) GetChainInfo(chainID isc.ChainID) (*governance.ChainInfo, error) {
+func (g *Governance) GetChainInfo(chainID isc.ChainID) (*isc.ChainInfo, error) {
 	ret, err := g.vmService.CallViewByChainID(chainID, governance.Contract.Hname(), governance.ViewGetChainInfo.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var chainInfo *governance.ChainInfo
+	var chainInfo *isc.ChainInfo
 
-	if chainInfo, err = governance.GetChainInfo(ret); err != nil {
+	if chainInfo, err = governance.GetChainInfo(ret, chainID); err != nil {
 		return nil, err
 	}
 

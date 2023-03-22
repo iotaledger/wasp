@@ -7,8 +7,8 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
@@ -189,4 +189,29 @@ func OutputSetToOutputIDs(outputSet iotago.OutputSet) iotago.OutputIDs {
 		i++
 	}
 	return outputIDs
+}
+
+func AliasOutputWithIDFromTx(tx *iotago.Transaction, aliasAddr iotago.Address) (*AliasOutputWithID, error) {
+	txID, err := tx.ID()
+	if err != nil {
+		return nil, err
+	}
+
+	for index, output := range tx.Essence.Outputs {
+		if aliasOutput, ok := output.(*iotago.AliasOutput); ok {
+			outputID := iotago.OutputIDFromTransactionIDAndIndex(txID, uint16(index))
+
+			aliasID := aliasOutput.AliasID
+			if aliasID.Empty() {
+				aliasID = iotago.AliasIDFromOutputID(outputID)
+			}
+
+			if aliasID.ToAddress().Equal(aliasAddr) {
+				// output found
+				return NewAliasOutputWithID(aliasOutput, outputID), nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("cannot find alias output for address %v in transaction", aliasAddr.String())
 }

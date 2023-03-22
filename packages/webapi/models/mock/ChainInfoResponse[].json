@@ -6,8 +6,9 @@
     "description": "",
     "gasFeePolicy": {
       "gasFeeTokenId": "",
-      "gasPerToken": "100",
-      "validatorFeeShare": 0
+      "gasPerToken": {"a": 1, "b": 100},
+      "validatorFeeShare": 0,
+      "evmGasRatio": {"a": 1, "b": 1}
     },
     "maxBlobSize": 2000000,
     "maxEventSize": 2000,

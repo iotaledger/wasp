@@ -18,10 +18,12 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	lru "github.com/hashicorp/golang-lru/v2"
 
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
@@ -93,7 +95,6 @@ func Init(
 	gasLimits GasLimits,
 	timestamp uint64,
 	alloc core.GenesisAlloc,
-	l2Balance L2Balance,
 ) {
 	bdb := newBlockchainDB(store, gasLimits.Block)
 	if bdb.Initialized() {
@@ -101,11 +102,11 @@ func Init(
 	}
 	bdb.Init(chainID, blockKeepAmount, timestamp)
 
-	statedb := newStateDB(store, l2Balance)
+	statedb := newStateDB(store, nil)
 	for addr, account := range alloc {
 		statedb.CreateAccount(addr)
 		if account.Balance != nil {
-			statedb.AddBalance(addr, account.Balance)
+			panic("balances must be 0 at genesis")
 		}
 		if account.Code != nil {
 			statedb.SetCode(addr, account.Code)
@@ -164,9 +165,6 @@ func (e *EVMEmulator) ChainContext() core.ChainContext {
 // CallContract executes a contract call, without committing changes to the state
 func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(bool)) (*core.ExecutionResult, error) {
 	// Ensure message is initialized properly.
-	if call.GasPrice == nil {
-		call.GasPrice = big.NewInt(0)
-	}
 	if call.Gas == 0 {
 		call.Gas = e.gasLimits.Call
 	}
@@ -174,13 +172,12 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(boo
 		call.Value = big.NewInt(0)
 	}
 
-	msg := callMsg{call}
 	pendingHeader := e.BlockchainDB().GetPendingHeader()
 
 	// run the EVM code on a buffered state (so that writes are not committed)
 	statedb := e.StateDB().Buffered().StateDB()
 
-	return e.applyMessage(msg, statedb, pendingHeader, gasBurnEnable)
+	return e.applyMessage(callMsg{call}, statedb, pendingHeader, gasBurnEnable)
 }
 
 func (e *EVMEmulator) applyMessage(msg callMsg, statedb vm.StateDB, header *types.Header, gasBurnEnable func(bool)) (res *core.ExecutionResult, err error) {
@@ -334,78 +331,17 @@ func (e *EVMEmulator) getReceiptsInFilterRange(query *ethereum.FilterQuery) []*t
 func (e *EVMEmulator) filterLogs(query *ethereum.FilterQuery, receipts []*types.Receipt) []*types.Log {
 	var logs []*types.Log
 	for _, r := range receipts {
-		if !bloomFilter(r.Bloom, query.Addresses, query.Topics) {
+		if !evmtypes.BloomFilter(r.Bloom, query.Addresses, query.Topics) {
 			continue
 		}
 		for _, log := range r.Logs {
-			if !logMatches(log, query.Addresses, query.Topics) {
+			if !evmtypes.LogMatches(log, query.Addresses, query.Topics) {
 				continue
 			}
 			logs = append(logs, log)
 		}
 	}
 	return logs
-}
-
-func bloomFilter(bloom types.Bloom, addresses []common.Address, topics [][]common.Hash) bool {
-	if len(addresses) > 0 {
-		var included bool
-		for _, addr := range addresses {
-			if types.BloomLookup(bloom, addr) {
-				included = true
-				break
-			}
-		}
-		if !included {
-			return false
-		}
-	}
-
-	for _, sub := range topics {
-		included := len(sub) == 0 // empty rule set == wildcard
-		for _, topic := range sub {
-			if types.BloomLookup(bloom, topic) {
-				included = true
-				break
-			}
-		}
-		if !included {
-			return false
-		}
-	}
-	return true
-}
-
-func logMatches(log *types.Log, addresses []common.Address, topics [][]common.Hash) bool {
-	if len(addresses) > 0 {
-		found := false
-		for _, a := range addresses {
-			if log.Address == a {
-				found = true
-			}
-		}
-		if !found {
-			return false
-		}
-	}
-	if len(topics) > 0 {
-		if len(topics) > len(log.Topics) {
-			return false
-		}
-		for i, sub := range topics {
-			match := len(sub) == 0 // empty rule set == wildcard
-			for _, topic := range sub {
-				if log.Topics[i] == topic {
-					match = true
-					break
-				}
-			}
-			if !match {
-				return false
-			}
-		}
-	}
-	return true
 }
 
 func (e *EVMEmulator) Signer() types.Signer {
@@ -421,7 +357,7 @@ func (m callMsg) From() common.Address         { return m.CallMsg.From }
 func (m callMsg) Nonce() uint64                { return 0 }
 func (m callMsg) IsFake() bool                 { return true }
 func (m callMsg) To() *common.Address          { return m.CallMsg.To }
-func (m callMsg) GasPrice() *big.Int           { return m.CallMsg.GasPrice }
+func (m callMsg) GasPrice() *big.Int           { return evm.GasPrice } // we ignore the gas price set by the sender
 func (m callMsg) GasFeeCap() *big.Int          { return m.CallMsg.GasFeeCap }
 func (m callMsg) GasTipCap() *big.Int          { return m.CallMsg.GasTipCap }
 func (m callMsg) Gas() uint64                  { return m.CallMsg.Gas }

@@ -21,8 +21,6 @@ func TestClusterSingleNode(t *testing.T) {
 
 	t.Run("SDRUC", func(t *testing.T) { run(t, testSDRUC) })
 
-	t.Run("publisher", func(t *testing.T) { run(t, testNanoPublisher) })
-
 	t.Run("spam onledger", func(t *testing.T) { run(t, testSpamOnledger) })
 	t.Run("spam offledger", func(t *testing.T) { run(t, testSpamOffLedger) })
 	t.Run("spam call wasm views", func(t *testing.T) { run(t, testSpamCallViewWasm) })
@@ -82,7 +80,7 @@ func createTestWrapper(tt *testing.T, clusterSize int, committee []int) func(t *
 	return func(t *testing.T, f func(*testing.T, *ChainEnv)) {
 		// create a fresh new chain for the test
 		allNodes := clu.Config.AllNodes()
-		chain, err := clu.DeployChain("testChain", allNodes, allNodes, dkgQuorum, dkgAddr)
+		chain, err := clu.DeployChain(allNodes, allNodes, dkgQuorum, dkgAddr)
 		require.NoError(t, err)
 		env := newChainEnv(t, clu, chain)
 

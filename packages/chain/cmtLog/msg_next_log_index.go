@@ -42,7 +42,10 @@ func (m *msgNextLogIndex) AsResent() *msgNextLogIndex {
 }
 
 func (m *msgNextLogIndex) String() string {
-	return fmt.Sprintf("{msgNextLogIndex, sender=%v, nextLogIndex=%v, nextBaseAO=%v", m.Sender().ShortString(), m.nextLogIndex, m.nextBaseAO)
+	return fmt.Sprintf(
+		"{msgNextLogIndex, sender=%v, nextLogIndex=%v, nextBaseAO=%v, pleaseRepeat=%v",
+		m.Sender().ShortString(), m.nextLogIndex, m.nextBaseAO, m.pleaseRepeat,
+	)
 }
 
 func (m *msgNextLogIndex) MarshalBinary() ([]byte, error) {

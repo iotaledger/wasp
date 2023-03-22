@@ -18,7 +18,7 @@ func decodeAccessNodeRequest(e echo.Context) (isc.ChainID, string, error) {
 		return isc.EmptyChainID(), "", err
 	}
 
-	peer := e.Param("peer")
+	peer := e.Param(params.ParamPeer)
 	if peer == "" {
 		return isc.EmptyChainID(), "", errors.New("no peer provided")
 	}

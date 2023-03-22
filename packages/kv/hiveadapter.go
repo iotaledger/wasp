@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/hive.go/kvstore"
 )
 
 // HiveKVStoreReader is an implementation of KVStoreReader with an instance of

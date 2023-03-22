@@ -7,7 +7,6 @@ import (
 	"path"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -20,8 +19,8 @@ type ConsoleReportParams struct {
 	StatsEveryKVPairs int
 }
 
-func FileName(chainID isc.ChainID, stateIndex uint32) string {
-	return fmt.Sprintf("%s.%d.snapshot", chainID, stateIndex)
+func FileName(stateIndex uint32) string {
+	return fmt.Sprintf("%d.snapshot", stateIndex)
 }
 
 // WriteKVToStream dumps k/v pairs of the state into the
@@ -66,13 +65,11 @@ func WriteSnapshot(sr state.State, dir string, p ...ConsoleReportParams) error {
 	if len(p) > 0 {
 		par = p[0]
 	}
-	chainID := sr.ChainID()
 	stateIndex := sr.BlockIndex()
 	timestamp := sr.Timestamp()
-	fmt.Fprintf(par.Console, "[WriteSnapshot] chainID:     %s\n", chainID)
 	fmt.Fprintf(par.Console, "[WriteSnapshot] state index: %d\n", stateIndex)
 	fmt.Fprintf(par.Console, "[WriteSnapshot] timestamp: %v\n", timestamp)
-	fname := path.Join(dir, FileName(chainID, stateIndex))
+	fname := path.Join(dir, FileName(stateIndex))
 	fmt.Fprintf(par.Console, "[WriteSnapshot] will be writing to file: %s\n", fname)
 
 	fstream, err := kv.CreateKVStreamFile(fname)
@@ -92,7 +89,6 @@ func WriteSnapshot(sr state.State, dir string, p ...ConsoleReportParams) error {
 
 type FileProperties struct {
 	FileName   string
-	ChainID    isc.ChainID
 	StateIndex uint32
 	TimeStamp  time.Time
 	NumRecords int
@@ -102,20 +98,10 @@ type FileProperties struct {
 
 func Scan(rdr kv.StreamIterator) (*FileProperties, error) {
 	ret := &FileProperties{}
-	var chainIDFound, stateIndexFound, timestampFound bool
+	var stateIndexFound, timestampFound bool
 	var errR error
 
 	err := rdr.Iterate(func(k, v []byte) bool {
-		if kv.Key(k) == state.KeyChainID {
-			if chainIDFound {
-				errR = errors.New("duplicate record with chainID")
-				return false
-			}
-			if ret.ChainID, errR = isc.ChainIDFromBytes(v); errR != nil {
-				return false
-			}
-			chainIDFound = true
-		}
 		if string(k) == coreutil.StatePrefixBlockIndex {
 			if stateIndexFound {
 				errR = errors.New("duplicate record with state index")

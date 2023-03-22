@@ -1,6 +1,3 @@
-if [ ! -f "wasp-cli.json" ]; then
-    wasp-cli init
-fi
 set -e
 wasp-cli request-funds
 wasp-cli chain deploy --chain=mychain

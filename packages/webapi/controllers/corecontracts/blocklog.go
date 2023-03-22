@@ -46,15 +46,15 @@ func (c *Controller) getBlockInfo(e echo.Context) error {
 	}
 
 	var blockInfo *blocklog.BlockInfo
-	blockIndex := e.Param("blockIndex")
+	blockIndex := e.Param(params.ParamBlockIndex)
 
 	if blockIndex == "" {
 		blockInfo, err = c.blocklog.GetLatestBlockInfo(chainID)
 	} else {
 		var blockIndexNum uint64
-		blockIndexNum, err = strconv.ParseUint(e.Param("blockIndex"), 10, 64)
+		blockIndexNum, err = strconv.ParseUint(e.Param(params.ParamBlockIndex), 10, 64)
 		if err != nil {
-			return apierrors.InvalidPropertyError("blockIndex", err)
+			return apierrors.InvalidPropertyError(params.ParamBlockIndex, err)
 		}
 
 		blockInfo, err = c.blocklog.GetBlockInfo(chainID, uint32(blockIndexNum))
@@ -75,13 +75,13 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 	}
 
 	var requestIDs []isc.RequestID
-	blockIndex := e.Param("blockIndex")
+	blockIndex := e.Param(params.ParamBlockIndex)
 
 	if blockIndex == "" {
 		requestIDs, err = c.blocklog.GetRequestIDsForLatestBlock(chainID)
 	} else {
 		var blockIndexNum uint64
-		blockIndexNum, err = params.DecodeUInt(e, "blockIndex")
+		blockIndexNum, err = params.DecodeUInt(e, params.ParamBlockIndex)
 		if err != nil {
 			return err
 		}
@@ -163,7 +163,7 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 	}
 
 	var receipts []*blocklog.RequestReceipt
-	blockIndex := e.Param("blockIndex")
+	blockIndex := e.Param(params.ParamBlockIndex)
 
 	if blockIndex == "" {
 		var blockInfo *blocklog.BlockInfo
@@ -172,10 +172,10 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 			return c.handleViewCallError(err, chainID)
 		}
 
-		receipts, err = c.blocklog.GetRequestReceiptsForBlock(chainID, blockInfo.BlockIndex)
+		receipts, err = c.blocklog.GetRequestReceiptsForBlock(chainID, blockInfo.BlockIndex())
 	} else {
 		var blockIndexNum uint64
-		blockIndexNum, err = params.DecodeUInt(e, "blockIndex")
+		blockIndexNum, err = params.DecodeUInt(e, params.ParamBlockIndex)
 		if err != nil {
 			return err
 		}
@@ -234,10 +234,10 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 	}
 
 	var events []string
-	blockIndex := e.Param("blockIndex")
+	blockIndex := e.Param(params.ParamBlockIndex)
 
 	if blockIndex != "" {
-		blockIndexNum, err := params.DecodeUInt(e, "blockIndex")
+		blockIndexNum, err := params.DecodeUInt(e, params.ParamBlockIndex)
 		if err != nil {
 			return err
 		}
@@ -252,7 +252,7 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 			return c.handleViewCallError(err, chainID)
 		}
 
-		events, err = c.blocklog.GetEventsForBlock(chainID, blockInfo.BlockIndex)
+		events, err = c.blocklog.GetEventsForBlock(chainID, blockInfo.BlockIndex())
 		if err != nil {
 			return c.handleViewCallError(err, chainID)
 		}

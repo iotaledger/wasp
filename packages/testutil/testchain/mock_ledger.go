@@ -4,12 +4,13 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/iotaledger/hive.go/core/events"
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/runtime/event"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/testutil"
 )
 
 type MockedLedger struct {
@@ -23,7 +24,7 @@ type MockedLedger struct {
 	pushOutputToNodesNeededFun     func(*iotago.Transaction, iotago.OutputID, iotago.Output) bool
 	stateOutputHandlerFuns         map[string]func(iotago.OutputID, iotago.Output)
 	outputHandlerFuns              map[string]func(iotago.OutputID, iotago.Output)
-	inclusionStateEvents           map[string]*events.Event
+	inclusionStateEvents           map[string]*event.Event2[iotago.TransactionID, string]
 	mutex                          sync.RWMutex
 	log                            *logger.Logger
 }
@@ -31,7 +32,7 @@ type MockedLedger struct {
 func NewMockedLedger(stateAddress iotago.Address, log *logger.Logger) (*MockedLedger, isc.ChainID) {
 	originOutput := &iotago.AliasOutput{
 		Amount:        tpkg.TestTokenSupply,
-		StateMetadata: state.OriginL1Commitment().Bytes(),
+		StateMetadata: testutil.DummyStateMetadata(origin.L1Commitment(nil, 0)).Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress},
 			&iotago.GovernorAddressUnlockCondition{Address: stateAddress},
@@ -53,7 +54,7 @@ func NewMockedLedger(stateAddress iotago.Address, log *logger.Logger) (*MockedLe
 		txIDs:                  make(map[iotago.TransactionID]bool),
 		stateOutputHandlerFuns: make(map[string]func(iotago.OutputID, iotago.Output)),
 		outputHandlerFuns:      make(map[string]func(iotago.OutputID, iotago.Output)),
-		inclusionStateEvents:   make(map[string]*events.Event),
+		inclusionStateEvents:   make(map[string]*event.Event2[iotago.TransactionID, string]),
 		log:                    log.Named("ml-" + chainID.String()[2:8]),
 	}
 	ret.SetPublishStateTransactionAllowed(true)

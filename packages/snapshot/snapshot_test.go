@@ -8,15 +8,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 func Test1(t *testing.T) {
 	db := mapdb.NewMapDB()
-	st := state.InitChainStore(db)
+	st := state.NewStore(db)
+	origin.InitChain(st, nil, 0)
 
 	tm := util.NewTimer()
 	count := 0
@@ -29,7 +31,7 @@ func Test1(t *testing.T) {
 
 	seed := time.Now().UnixNano()
 	t.Log("seed:", seed)
-	rnd := rand.New(rand.NewSource(seed))
+	rnd := util.NewPseudoRand(seed)
 	for i := 0; i < 1000; i++ {
 		k := randByteSlice(rnd, 4+1, 48) // key is hname + key
 		v := randByteSlice(rnd, 1, 128)
@@ -50,11 +52,10 @@ func Test1(t *testing.T) {
 	rdr, err := st.LatestState()
 	require.NoError(t, err)
 
-	chainID := rdr.ChainID()
 	stateidx := rdr.BlockIndex()
 	ts := rdr.Timestamp()
 
-	fname := FileName(chainID, stateidx)
+	fname := FileName(stateidx)
 	t.Logf("file: %s", fname)
 
 	tm = util.NewTimer()
@@ -68,7 +69,6 @@ func Test1(t *testing.T) {
 
 	v, err := ScanFile(fname)
 	require.NoError(t, err)
-	require.True(t, chainID.Equals(v.ChainID))
 	require.EqualValues(t, stateidx, v.StateIndex)
 	require.True(t, ts.Equal(v.TimeStamp))
 }

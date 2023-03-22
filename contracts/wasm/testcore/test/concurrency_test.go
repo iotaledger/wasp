@@ -9,7 +9,6 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 )
 
@@ -71,10 +70,6 @@ func TestSynchronous(t *testing.T) {
 
 func TestConcurrency(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		if *wasmsolo.TsWasm {
-			t.SkipNow()
-		}
-		
 		ctx := deployTestCore(t, w)
 
 		repeats := []int{300, 100, 100, 100, 200, 100, 100}
@@ -89,22 +84,15 @@ func TestConcurrency(t *testing.T) {
 			sum += n
 		}
 
-		// note that because SoloContext is not thread-safe we cannot use
-		// the following in parallel go-routines
-		// f := testcore.ScFuncs.IncCounter(ctx)
-
 		ctx.WaitForPendingRequestsMark()
 
-		req := solo.NewCallParams(testcore.ScName, testcore.FuncIncCounter).
-			AddBaseTokens(1000)
-
-		chain := ctx.Chain
+		f := testcore.ScFuncs.IncCounter(ctx)
 		for r, n := range repeats {
 			go func(_, n int) {
 				for i := 0; i < n; i++ {
-					tx, _, err := chain.RequestFromParamsToLedger(req, nil)
-					require.NoError(t, err)
-					chain.Env.EnqueueRequests(tx)
+					ctx.EnqueueRequest()
+					f.Func.Post()
+					require.NoError(t, ctx.Err)
 				}
 			}(r, n)
 		}
@@ -123,18 +111,7 @@ func TestConcurrency(t *testing.T) {
 
 func TestConcurrency2(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		if *wasmsolo.TsWasm {
-			t.SkipNow()
-		}
-
 		ctx := deployTestCore(t, w)
-
-		// note that because SoloContext is not thread-safe we cannot use
-		// the following in parallel go-routines
-		// f := testcore.ScFuncs.IncCounter(ctx)
-
-		req := solo.NewCallParams(testcore.ScName, testcore.FuncIncCounter).
-			AddBaseTokens(1000)
 
 		repeats := []int{300, 100, 100, 100, 200, 100, 100}
 		if wasmsolo.SoloDebug {
@@ -148,10 +125,11 @@ func TestConcurrency2(t *testing.T) {
 			sum += n
 		}
 
-		chain := ctx.Chain
 		users := make([]*wasmsolo.SoloAgent, len(repeats))
+		funcs := make([]*testcore.IncCounterCall, len(repeats))
 		for r := range repeats {
 			users[r] = ctx.NewSoloAgent()
+			funcs[r] = testcore.ScFuncs.IncCounter(ctx.Sign(users[r]))
 		}
 
 		ctx.WaitForPendingRequestsMark()
@@ -159,9 +137,9 @@ func TestConcurrency2(t *testing.T) {
 		for r, n := range repeats {
 			go func(r, n int) {
 				for i := 0; i < n; i++ {
-					tx, _, err := chain.RequestFromParamsToLedger(req, users[r].Pair)
-					require.NoError(t, err)
-					chain.Env.EnqueueRequests(tx)
+					ctx.EnqueueRequest()
+					funcs[r].Func.Post()
+					require.NoError(t, ctx.Err)
 				}
 			}(r, n)
 		}

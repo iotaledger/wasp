@@ -8,11 +8,12 @@ import (
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func TestSerdeRequestReceipt(t *testing.T) {
 	nonce := uint64(time.Now().UnixNano())
-	req := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("0"), isc.Hn("0"), nil, nonce)
+	req := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("0"), isc.Hn("0"), nil, nonce, gas.LimitsDefault.MaxGasPerRequest)
 	signedReq := req.Sign(cryptolib.NewKeyPair())
 	rec := &RequestReceipt{
 		Request: signedReq,

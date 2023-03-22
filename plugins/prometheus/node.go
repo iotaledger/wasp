@@ -3,12 +3,12 @@ package prometheus
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/iotaledger/hive.go/core/app"
+	"github.com/iotaledger/hive.go/app"
 )
 
 var appInfo *prometheus.GaugeVec
 
-func configureNode(registry *prometheus.Registry, info *app.Info) {
+func newNodeCollector(info *app.Info) prometheus.Collector {
 	appInfo = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: "iota_wasp",
@@ -20,5 +20,6 @@ func configureNode(registry *prometheus.Registry, info *app.Info) {
 	)
 
 	appInfo.WithLabelValues(info.Name, info.Version).Set(1)
-	registry.MustRegister(appInfo)
+
+	return appInfo
 }

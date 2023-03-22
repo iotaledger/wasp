@@ -99,31 +99,6 @@ export function funcVerifyErc721(ctx: wasmlib.ScFuncContext, f: sc.VerifyErc721C
     oo.func.call();
 }
 
-export function viewBlockRecord(ctx: wasmlib.ScViewContext, f: sc.BlockRecordContext): void {
-    let records = coreblocklog.ScFuncs.getRequestReceiptsForBlock(ctx);
-    records.params.blockIndex().setValue(f.params.blockIndex().value());
-    records.func.call();
-    let recordIndex = f.params.recordIndex().value();
-    ctx.log("index: " + recordIndex.toString());
-    recordIndex = f.params.recordIndex().value();
-    ctx.log("index: " + recordIndex.toString());
-    const requestRecord = records.results.requestRecord();
-    const length = requestRecord.length();
-    ctx.log("length: " + length.toString());
-    const length2 = requestRecord.length();
-    ctx.log("length2: " + length2.toString());
-    ctx.require(recordIndex < length, "invalid recordIndex");
-    const buf = requestRecord.getBytes(recordIndex).value();
-    f.results.record().setValue(buf);
-}
-
-export function viewBlockRecords(ctx: wasmlib.ScViewContext, f: sc.BlockRecordsContext): void {
-    let records = coreblocklog.ScFuncs.getRequestReceiptsForBlock(ctx);
-    records.params.blockIndex().setValue(f.params.blockIndex().value());
-    records.func.call();
-    f.results.count().setValue(records.results.requestRecord().length());
-}
-
 export function viewGetRandom(ctx: wasmlib.ScViewContext, f: sc.GetRandomContext): void {
     f.results.random().setValue(f.state.random().value());
 }

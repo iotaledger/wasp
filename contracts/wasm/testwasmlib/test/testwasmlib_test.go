@@ -12,12 +12,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721"
-	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721impl"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721"
+	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721impl"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -93,7 +92,6 @@ var (
 )
 
 func setupTest(t *testing.T) *wasmsolo.SoloContext {
-	wasmclient.HrpForClient = ""
 	return wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlibimpl.OnDispatch)
 }
 
@@ -247,26 +245,6 @@ func TestInvalidTypeParams(t *testing.T) {
 			})
 		}
 	}
-}
-
-func TestViewBlockRecords(t *testing.T) {
-	ctx := testValidParams(t)
-
-	recs := testwasmlib.ScFuncs.BlockRecords(ctx)
-	recs.Params.BlockIndex().SetValue(1)
-	recs.Func.Call()
-	require.NoError(t, ctx.Err)
-	count := recs.Results.Count()
-	require.True(t, count.Exists())
-	require.EqualValues(t, 1, count.Value())
-
-	rec := testwasmlib.ScFuncs.BlockRecord(ctx)
-	rec.Params.BlockIndex().SetValue(1)
-	rec.Params.RecordIndex().SetValue(0)
-	rec.Func.Call()
-	require.NoError(t, ctx.Err)
-	require.True(t, rec.Results.Record().Exists())
-	require.EqualValues(t, 230, len(rec.Results.Record().Value()))
 }
 
 func TestTakeAllowance(t *testing.T) {

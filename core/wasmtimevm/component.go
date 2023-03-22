@@ -8,7 +8,7 @@ package wasmtimevm
 import (
 	"go.uber.org/dig"
 
-	"github.com/iotaledger/hive.go/core/app"
+	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"

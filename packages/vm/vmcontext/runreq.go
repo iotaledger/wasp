@@ -1,8 +1,9 @@
 package vmcontext
 
 import (
+	"errors"
+	"fmt"
 	"math"
-	"math/big"
 	"runtime/debug"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -28,7 +30,7 @@ import (
 )
 
 // RunTheRequest processes each isc.Request in the batch
-func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (result *vm.RequestResult, err error) {
+func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm.RequestResult, error) {
 	// prepare context for the request
 	vmctx.req = req
 	defer func() { vmctx.req = nil }() // in case `getToBeCaller()` is called afterwards
@@ -45,9 +47,6 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (res
 
 	vmctx.currentStateUpdate = NewStateUpdate()
 	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.task.StateDraft.Timestamp().Add(1*time.Nanosecond)))
-	if vmctx.isInitChainRequest() {
-		vmctx.chainState().Set(state.KeyChainID, vmctx.ChainID().Bytes())
-	}
 	defer func() { vmctx.currentStateUpdate = nil }()
 
 	if err2 := vmctx.earlyCheckReasonToSkip(); err2 != nil {
@@ -59,9 +58,8 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (res
 	// so far there were no panics except optimistic reader
 	txsnapshot := vmctx.createTxBuilderSnapshot()
 
-	// catches protocol exception error which is not the request or contract fault
-	// If it occurs, the request is just skipped
-	err = panicutil.CatchPanicReturnError(
+	var result *vm.RequestResult
+	err := vmctx.catchRequestPanic(
 		func() {
 			// transfer all attached assets to the sender's account
 			vmctx.creditAssetsToChain()
@@ -75,50 +73,70 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (res
 				Receipt: receipt,
 				Return:  callRet,
 			}
-		}, vmexceptions.AllProtocolLimits...,
+		},
 	)
 	if err != nil {
-		// transaction limits exceeded or not enough funds for internal storage deposit. Skipping the request. Rollback
+		// protocol exception triggered. Skipping the request. Rollback
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
 		return nil, err
 	}
 	vmctx.chainState().Apply()
-	vmctx.assertConsistentL2WithL1TxBuilder("end RunTheRequest")
 	return result, nil
 }
 
 // creditAssetsToChain credits L1 accounts with attached assets and accrues all of them to the sender's account on-chain
 func (vmctx *VMContext) creditAssetsToChain() {
-	vmctx.assertConsistentL2WithL1TxBuilder("begin creditAssetsToChain")
-
 	if vmctx.req.IsOffLedger() {
 		// off ledger request does not bring any deposit
 		return
 	}
-	// Consume the output. Adjustment in L2 is needed because of the storage deposit in the internal UTXOs
-	storageDepositAdjustment := vmctx.txbuilder.Consume(vmctx.req.(isc.OnLedgerRequest))
-	if storageDepositAdjustment > 0 {
-		panic("`storageDepositAdjustment > 0`: assertion failed, expected always non-positive storage deposit adjustment")
+	// Consume the output. Adjustment in L2 is needed because of storage deposit in the internal UTXOs
+	storageDepositNeeded := vmctx.txbuilder.Consume(vmctx.req.(isc.OnLedgerRequest))
+
+	// if sender is specified, all assets goes to sender's sender
+	// Otherwise it all goes to the common sender and panics is logged in the SC call
+	sender := vmctx.req.SenderAccount()
+	if sender == nil {
+		// TODO this should never happen... can we just panic here?
+		// this is probably an artifact from the "originTx"
+		sender = accounts.CommonAccount()
 	}
 
-	// if sender is specified, all assets goes to sender's account
-	// Otherwise it all goes to the common account and panics is logged in the SC call
-	account := vmctx.req.SenderAccount()
-	if account == nil {
-		account = vmctx.ChainID().CommonAccount()
+	senderBaseTokens := vmctx.req.Assets().BaseTokens + vmctx.GetBaseTokensBalance(sender)
+
+	if senderBaseTokens < storageDepositNeeded {
+		panic("TODO, not enough funds to pay for the SD NEEDED, THIS REQUEST MUST BE IGNORED OR SAVED FOR LATER SOMEHOW")
+		// ...if not enough to pay for all the SD, this request needs to be flagged as "TO PROCESS LATER"... (do we consume it or not?)
 	}
-	vmctx.creditToAccount(account, vmctx.req.Assets())
-	vmctx.creditNFTToAccount(account, vmctx.req.NFT())
 
-	// adjust the sender's account with the storage deposit consumed or returned by internal UTXOs
-	// if base tokens in the sender's account is not enough for the storage deposit of newly created TNT outputs
-	// it will panic with exceptions.ErrNotEnoughFundsForInternalStorageDeposit
-	// TNT outputs will use storage deposit from the caller
-	// TODO remove attack vector when base tokens for storage deposit is not enough and the request keeps being skipped
-	vmctx.adjustL2BaseTokensIfNeeded(storageDepositAdjustment, account)
+	vmctx.creditToAccount(sender, vmctx.req.Assets())
+	vmctx.creditNFTToAccount(sender, vmctx.req.NFT())
+	if storageDepositNeeded > 0 {
+		// TODO the charged SD should be included in the receipt
+		vmctx.debitFromAccount(sender, isc.NewAssetsBaseTokens(storageDepositNeeded))
+	}
+}
 
-	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
-	vmctx.assertConsistentL2WithL1TxBuilder("end creditAssetsToChain")
+func (vmctx *VMContext) catchRequestPanic(f func()) error {
+	err := panicutil.CatchPanic(f)
+	if err == nil {
+		return nil
+	}
+	// catches protocol exception error which is not the request or contract fault
+	// If it occurs, the request is just skipped
+	for _, targetError := range vmexceptions.AllProtocolLimits {
+		if errors.Is(err, targetError) {
+			return err
+		}
+	}
+	// panic again with more information about the error
+	panic(fmt.Errorf(
+		"panic when running request #%d ID:%s, requestbytes:%s err:%w",
+		vmctx.requestIndex,
+		vmctx.req.ID(),
+		iotago.EncodeHex(vmctx.req.Bytes()),
+		err,
+	))
 }
 
 // checkAllowance ensure there are enough funds to cover the specified allowance
@@ -129,11 +147,18 @@ func (vmctx *VMContext) checkAllowance() {
 	}
 }
 
-func (vmctx *VMContext) prepareGasBudget() {
+func (vmctx *VMContext) shouldChargeGasFee() bool {
 	if vmctx.req.SenderAccount() == nil {
-		return
+		return false
 	}
-	if vmctx.isInitChainRequest() {
+	if vmctx.req.SenderAccount().Equals(vmctx.chainOwnerID) && vmctx.req.CallTarget().Contract == governance.Contract.Hname() {
+		return false
+	}
+	return true
+}
+
+func (vmctx *VMContext) prepareGasBudget() {
+	if !vmctx.shouldChargeGasFee() {
 		return
 	}
 	vmctx.gasSetBudget(vmctx.calculateAffordableGasBudget())
@@ -250,67 +275,39 @@ func (vmctx *VMContext) calculateAffordableGasBudget() uint64 {
 	gasBudget := vmctx.getGasBudget()
 
 	// make sure the gasBuget is at least >= than the allowed minimum
-	if gasBudget < gas.MinGasPerRequest {
-		gasBudget = gas.MinGasPerRequest
+	if gasBudget < vmctx.chainInfo.GasLimits.MinGasPerRequest {
+		gasBudget = vmctx.chainInfo.GasLimits.MinGasPerRequest
 	}
 
 	// when estimating gas, if a value bigger than max is provided, use the maximum gas budget possible
-	if vmctx.task.EstimateGasMode && gasBudget > gas.MaxGasPerRequest {
+	if vmctx.task.EstimateGasMode && gasBudget > vmctx.chainInfo.GasLimits.MaxGasPerRequest {
 		vmctx.gasMaxTokensToSpendForGasFee = math.MaxUint64
-		return gas.MaxGasPerRequest
+		return vmctx.chainInfo.GasLimits.MaxGasPerRequest
 	}
 
 	// calculate how many tokens for gas fee can be guaranteed after taking into account the allowance
 	guaranteedFeeTokens := vmctx.calcGuaranteedFeeTokens()
 	// calculate how many tokens maximum will be charged taking into account the budget
-	f1, f2 := vmctx.chainInfo.GasFeePolicy.FeeFromGas(gasBudget, guaranteedFeeTokens)
+	f1, f2 := vmctx.chainInfo.GasFeePolicy.FeeFromGasBurned(gasBudget, guaranteedFeeTokens)
 	vmctx.gasMaxTokensToSpendForGasFee = f1 + f2
 	// calculate affordable gas budget
-	affordable := vmctx.chainInfo.GasFeePolicy.AffordableGasBudgetFromAvailableTokens(guaranteedFeeTokens)
+	affordable := vmctx.chainInfo.GasFeePolicy.GasBudgetFromTokens(guaranteedFeeTokens)
 	// adjust gas budget to what is affordable
 	affordable = util.MinUint64(gasBudget, affordable)
 	// cap gas to the maximum allowed per tx
-	return util.MinUint64(affordable, gas.MaxGasPerRequest)
+	return util.MinUint64(affordable, vmctx.chainInfo.GasLimits.MaxGasPerRequest)
 }
 
 // calcGuaranteedFeeTokens return the maximum tokens (base tokens or native) can be guaranteed for the fee,
 // taking into account allowance (which must be 'reserved')
-// TODO this could be potentially problematic when using custom tokens that are expressed in "big.int"
 func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
-	var tokensGuaranteed uint64
-
-	if isc.IsEmptyNativeTokenID(vmctx.chainInfo.GasFeePolicy.GasFeeTokenID) {
-		// base tokens are used as gas tokens
-		tokensGuaranteed = vmctx.GetBaseTokensBalance(vmctx.req.SenderAccount())
-		// safely subtract the allowed from the sender to the target
-		if allowed := vmctx.req.Allowance(); allowed != nil {
-			if tokensGuaranteed < allowed.BaseTokens {
-				tokensGuaranteed = 0
-			} else {
-				tokensGuaranteed -= allowed.BaseTokens
-			}
-		}
-		return tokensGuaranteed
-	}
-	// native tokens are used for gas fee
-	nativeTokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
-	// to pay for gas chain is configured to use some native token, not base tokens
-	tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), nativeTokenID)
-	if tokensAvailableBig != nil {
-		// safely subtract the transfer from the sender to the target
-		if transfer := vmctx.req.Allowance(); transfer != nil {
-			if transferTokens := transfer.AmountNativeToken(nativeTokenID); !util.IsZeroBigInt(transferTokens) {
-				if tokensAvailableBig.Cmp(transferTokens) < 0 {
-					tokensAvailableBig.SetUint64(0)
-				} else {
-					tokensAvailableBig.Sub(tokensAvailableBig, transferTokens)
-				}
-			}
-		}
-		if tokensAvailableBig.IsUint64() {
-			tokensGuaranteed = tokensAvailableBig.Uint64()
+	tokensGuaranteed := vmctx.GetBaseTokensBalance(vmctx.req.SenderAccount())
+	// safely subtract the allowed from the sender to the target
+	if allowed := vmctx.req.Allowance(); allowed != nil {
+		if tokensGuaranteed < allowed.BaseTokens {
+			tokensGuaranteed = 0
 		} else {
-			tokensGuaranteed = math.MaxUint64
+			tokensGuaranteed -= allowed.BaseTokens
 		}
 	}
 	return tokensGuaranteed
@@ -327,14 +324,9 @@ func (vmctx *VMContext) chargeGasFee() {
 		vmctx.gasBurnedTotal += minGas - currentGas
 	}
 
-	// disable gas burn
 	vmctx.GasBurnEnable(false)
-	if vmctx.req.SenderAccount() == nil {
-		// no charging if sender is unknown
-		return
-	}
-	if vmctx.isInitChainRequest() {
-		// do not charge gas fees if init request
+
+	if !vmctx.shouldChargeGasFee() {
 		return
 	}
 
@@ -345,7 +337,7 @@ func (vmctx *VMContext) chargeGasFee() {
 	}
 
 	// total fees to charge
-	sendToOwner, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGas(vmctx.GasBurned(), availableToPayFee)
+	sendToOwner, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGasBurned(vmctx.GasBurned(), availableToPayFee)
 	vmctx.gasFeeCharged = sendToOwner + sendToValidator
 
 	// calc gas totals
@@ -358,21 +350,12 @@ func (vmctx *VMContext) chargeGasFee() {
 
 	transferToValidator := &isc.Assets{}
 	transferToOwner := &isc.Assets{}
-	if !isc.IsEmptyNativeTokenID(vmctx.chainInfo.GasFeePolicy.GasFeeTokenID) {
-		transferToValidator.NativeTokens = iotago.NativeTokens{
-			&iotago.NativeToken{ID: vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToValidator))},
-		}
-		transferToOwner.NativeTokens = iotago.NativeTokens{
-			&iotago.NativeToken{ID: vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToOwner))},
-		}
-	} else {
-		transferToValidator.BaseTokens = sendToValidator
-		transferToOwner.BaseTokens = sendToOwner
-	}
+	transferToValidator.BaseTokens = sendToValidator
+	transferToOwner.BaseTokens = sendToOwner
 	sender := vmctx.req.SenderAccount()
 
 	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
-	vmctx.mustMoveBetweenAccounts(sender, vmctx.ChainID().CommonAccount(), transferToOwner)
+	vmctx.mustMoveBetweenAccounts(sender, accounts.CommonAccount(), transferToOwner)
 }
 
 func (vmctx *VMContext) GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {
@@ -385,34 +368,18 @@ func (vmctx *VMContext) GetContractRecord(contractHname isc.Hname) (ret *root.Co
 }
 
 func (vmctx *VMContext) getOrCreateContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {
-	if contractHname == root.Contract.Hname() && vmctx.isInitChainRequest() {
-		return root.ContractRecordFromContractInfo(root.Contract)
-	}
 	return vmctx.GetContractRecord(contractHname)
 }
 
 // loadChainConfig only makes sense if chain is already deployed
 func (vmctx *VMContext) loadChainConfig() {
-	if vmctx.isInitChainRequest() {
-		vmctx.chainOwnerID = vmctx.req.SenderAccount()
-		vmctx.chainInfo = nil
-		return
-	}
 	vmctx.chainInfo = vmctx.getChainInfo()
 	vmctx.chainOwnerID = vmctx.chainInfo.ChainOwnerID
 }
 
-func (vmctx *VMContext) isInitChainRequest() bool {
-	if vmctx.req == nil {
-		return false
-	}
-	target := vmctx.req.CallTarget()
-	return target.Contract == root.Contract.Hname() && target.EntryPoint == isc.EntryPointInit
-}
-
 // mustCheckTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
 func (vmctx *VMContext) mustCheckTransactionSize() {
-	essence, _ := vmctx.txbuilder.BuildTransactionEssence(state.L1CommitmentNil)
+	essence, _ := vmctx.BuildTransactionEssence(state.L1CommitmentNil, false)
 	tx := transaction.MakeAnchorTransaction(essence, &iotago.Ed25519Signature{})
 	if tx.Size() > parameters.L1().MaxPayloadSize {
 		panic(vmexceptions.ErrMaxTransactionSizeExceeded)

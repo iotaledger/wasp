@@ -10,7 +10,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	iscvm "github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
@@ -76,13 +75,6 @@ func (h *magicContractHandler) Send(
 
 	h.moveAssetsToCommonAccount(req.Assets)
 
-	// assert that remaining tokens in the sender's account are enough to pay for the gas budget
-	if !h.ctx.HasInAccount(
-		h.ctx.Request().SenderAccount(),
-		h.ctx.Privileged().TotalGasTokens(),
-	) {
-		panic(iscvm.ErrNotEnoughTokensLeftForGas)
-	}
 	h.ctx.Send(req)
 }
 

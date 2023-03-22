@@ -78,24 +78,12 @@ func (s ImmutableGetChainInfoResults) ChainOwnerID() wasmtypes.ScImmutableAgentI
 	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ResultChainOwnerID))
 }
 
-func (s ImmutableGetChainInfoResults) Description() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.Proxy.Root(ResultDescription))
+func (s ImmutableGetChainInfoResults) CustomMetadata() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultCustomMetadata))
 }
 
 func (s ImmutableGetChainInfoResults) GasFeePolicyBytes() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultGasFeePolicyBytes))
-}
-
-func (s ImmutableGetChainInfoResults) MaxBlobSize() wasmtypes.ScImmutableUint32 {
-	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ResultMaxBlobSize))
-}
-
-func (s ImmutableGetChainInfoResults) MaxEventSize() wasmtypes.ScImmutableUint16 {
-	return wasmtypes.NewScImmutableUint16(s.Proxy.Root(ResultMaxEventSize))
-}
-
-func (s ImmutableGetChainInfoResults) MaxEventsPerReq() wasmtypes.ScImmutableUint16 {
-	return wasmtypes.NewScImmutableUint16(s.Proxy.Root(ResultMaxEventsPerReq))
 }
 
 type MutableGetChainInfoResults struct {
@@ -114,24 +102,12 @@ func (s MutableGetChainInfoResults) ChainOwnerID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ResultChainOwnerID))
 }
 
-func (s MutableGetChainInfoResults) Description() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.Proxy.Root(ResultDescription))
+func (s MutableGetChainInfoResults) CustomMetadata() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultCustomMetadata))
 }
 
 func (s MutableGetChainInfoResults) GasFeePolicyBytes() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultGasFeePolicyBytes))
-}
-
-func (s MutableGetChainInfoResults) MaxBlobSize() wasmtypes.ScMutableUint32 {
-	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ResultMaxBlobSize))
-}
-
-func (s MutableGetChainInfoResults) MaxEventSize() wasmtypes.ScMutableUint16 {
-	return wasmtypes.NewScMutableUint16(s.Proxy.Root(ResultMaxEventSize))
-}
-
-func (s MutableGetChainInfoResults) MaxEventsPerReq() wasmtypes.ScMutableUint16 {
-	return wasmtypes.NewScMutableUint16(s.Proxy.Root(ResultMaxEventsPerReq))
 }
 
 type MapBytesToImmutableBytes struct {
@@ -220,24 +196,4 @@ func NewMutableGetFeePolicyResults() MutableGetFeePolicyResults {
 
 func (s MutableGetFeePolicyResults) FeePolicyBytes() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultFeePolicyBytes))
-}
-
-type ImmutableGetMaxBlobSizeResults struct {
-	Proxy wasmtypes.Proxy
-}
-
-func (s ImmutableGetMaxBlobSizeResults) MaxBlobSize() wasmtypes.ScImmutableUint32 {
-	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ResultMaxBlobSize))
-}
-
-type MutableGetMaxBlobSizeResults struct {
-	Proxy wasmtypes.Proxy
-}
-
-func NewMutableGetMaxBlobSizeResults() MutableGetMaxBlobSizeResults {
-	return MutableGetMaxBlobSizeResults{Proxy: wasmlib.NewResultsProxy()}
-}
-
-func (s MutableGetMaxBlobSizeResults) MaxBlobSize() wasmtypes.ScMutableUint32 {
-	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ResultMaxBlobSize))
 }

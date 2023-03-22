@@ -3,11 +3,12 @@ package trie
 import (
 	"bytes"
 	"fmt"
-	"math/rand"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func TestBasic(t *testing.T) {
@@ -579,7 +580,8 @@ const letters = "abcdefghijklmnop"
 
 func genRnd3() []string {
 	ret := make([]string, 0, len(letters)*len(letters)*len(letters))
-	rnd := rand.New(rand.NewSource(1))
+
+	rnd := util.NewPseudoRand(1)
 	for i := range letters {
 		for j := range letters {
 			for k := range letters {

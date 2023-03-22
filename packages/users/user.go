@@ -4,8 +4,8 @@ import (
 	"encoding/hex"
 	"errors"
 
-	"github.com/iotaledger/hive.go/core/generics/lo"
-	"github.com/iotaledger/hive.go/core/generics/onchangemap"
+	"github.com/iotaledger/hive.go/lo"
+	"github.com/iotaledger/wasp/packages/onchangemap"
 	"github.com/iotaledger/wasp/packages/util"
 )
 

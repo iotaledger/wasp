@@ -6,7 +6,7 @@ package peering
 import (
 	"go.uber.org/dig"
 
-	"github.com/iotaledger/hive.go/core/app"
+	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/lpp"

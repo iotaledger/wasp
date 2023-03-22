@@ -14,8 +14,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -23,17 +23,19 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
+	testparameters "github.com/iotaledger/wasp/packages/testutil/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 )
 
@@ -41,111 +43,103 @@ type tc struct {
 	n        int
 	f        int
 	reliable bool
+	timeout  time.Duration
 }
 
-func TestBasic(t *testing.T) {
+func TestNodeBasic(t *testing.T) {
 	t.Parallel()
 	tests := []tc{
-		{n: 1, f: 0, reliable: true},  // Low N
-		{n: 2, f: 0, reliable: true},  // Low N
-		{n: 3, f: 0, reliable: true},  // Low N
-		{n: 4, f: 1, reliable: true},  // Minimal robust config.
-		{n: 10, f: 3, reliable: true}, // Typical config.
+		{n: 1, f: 0, reliable: true, timeout: 10 * time.Second},   // Low N
+		{n: 2, f: 0, reliable: true, timeout: 20 * time.Second},   // Low N
+		{n: 3, f: 0, reliable: true, timeout: 30 * time.Second},   // Low N
+		{n: 4, f: 0, reliable: true, timeout: 40 * time.Second},   // Minimal robust config.
+		{n: 4, f: 1, reliable: true, timeout: 50 * time.Second},   // Minimal robust config.
+		{n: 10, f: 3, reliable: true, timeout: 130 * time.Second}, // Typical config.
 	}
 	if !testing.Short() {
 		tests = append(tests,
-			tc{n: 4, f: 1, reliable: false},  // Minimal robust config.
-			tc{n: 10, f: 3, reliable: false}, // Typical config.
-			tc{n: 31, f: 10, reliable: true}, // Large cluster, reliable - to make test faster.
+			// TODO these "unreliable" tests are crazy, they either succeed in 10~20s or run forever...
+			tc{n: 4, f: 1, reliable: false, timeout: 5 * time.Minute},   // Minimal robust config.
+			tc{n: 10, f: 3, reliable: false, timeout: 15 * time.Minute}, // Typical config.
+			tc{n: 31, f: 10, reliable: true, timeout: 25 * time.Minute}, // Large cluster, reliable - to make test faster.
 		)
 	}
 	for _, tst := range tests {
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
-			func(tt *testing.T) { testBasic(tt, tst.n, tst.f, tst.reliable) },
+			func(tt *testing.T) { testNodeBasic(tt, tst.n, tst.f, tst.reliable, tst.timeout) },
 		)
 	}
 }
 
 //nolint:gocyclo
-func testBasic(t *testing.T, n, f int, reliable bool) {
+func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration) {
 	t.Parallel()
-	rand.Seed(time.Now().UnixNano())
 	te := newEnv(t, n, f, reliable)
 	defer te.close()
+
+	ctxTimeout, ctxTimeoutCancel := context.WithTimeout(te.ctx, timeout)
+	defer ctxTimeoutCancel()
+
 	te.log.Debugf("All started.")
 	for _, tnc := range te.nodeConns {
 		tnc.waitAttached()
 	}
 	te.log.Debugf("All attached to node conns.")
-	initTime := time.Now()
 	go func() {
-		ticker := time.NewTicker(100 * time.Millisecond) // TODO: Maybe we have to pass initial time to all sub-components...
-		closed := te.ctx.Done()
 		for {
-			select {
-			case now := <-ticker.C:
-				for _, tnc := range te.nodeConns {
-					tnc.recvMilestone(now)
-				}
-			case <-closed:
+			if te.ctx.Err() != nil {
 				return
 			}
+			for _, tnc := range te.nodeConns {
+				tnc.recvMilestone(time.Now())
+			}
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
-	//
-	// Create the chain, post Chain Init, wait for the first block.
-	initRequests := te.tcl.MakeTxChainInit()
-	for _, tnc := range te.nodeConns {
-		tnc.recvAliasOutput(
-			isc.NewOutputInfo(te.originAO.OutputID(), te.originAO.GetAliasOutput(), iotago.TransactionID{}),
-		)
-		tnc.recvMilestone(initTime)
-		for _, req := range initRequests {
-			onLedgerRequest := req.(isc.OnLedgerRequest)
-			tnc.recvRequestCB(
-				isc.NewOutputInfo(onLedgerRequest.ID().OutputID(), onLedgerRequest.Output(), iotago.TransactionID{}),
-			)
-		}
-	}
-	awaitRequestsProcessed(te, initRequests, "initRequests")
-	awaitPredicate(te, "len(published) > 0", func() bool {
-		for _, tnc := range te.nodeConns {
-			if len(tnc.published) == 0 {
-				return false
-			}
-		}
-		return true
-	})
-	//
-	// Create SC Client account with some deposit, deploy a contract, wait for a confirming TX.
-	scClient := cryptolib.NewKeyPair()
-	_, err := te.utxoDB.GetFundsFromFaucet(scClient.Address(), 150_000_000)
-	require.NoError(t, err)
-	deployReqs := append(te.tcl.MakeTxDeployIncCounterContract(), te.tcl.MakeTxAccountsDeposit(scClient)...)
-	deployBaseAnchor, deployBaseAONoID, err := transaction.GetAnchorFromTransaction(te.nodeConns[0].published[0])
+
+	deployBaseAnchor, deployBaseAONoID, err := transaction.GetAnchorFromTransaction(te.originTx)
 	require.NoError(t, err)
 	deployBaseAO := isc.NewAliasOutputWithID(deployBaseAONoID, deployBaseAnchor.OutputID)
 	for _, tnc := range te.nodeConns {
 		tnc.recvAliasOutput(
 			isc.NewOutputInfo(deployBaseAO.OutputID(), deployBaseAO.GetAliasOutput(), iotago.TransactionID{}),
 		)
-		for _, req := range deployReqs {
-			onLedgerRequest := req.(isc.OnLedgerRequest)
-			tnc.recvRequestCB(
-				isc.NewOutputInfo(onLedgerRequest.ID().OutputID(), onLedgerRequest.Output(), iotago.TransactionID{}),
-			)
-		}
 	}
-	awaitRequestsProcessed(te, deployReqs, "deployReqs")
-	awaitPredicate(te, "len(tnc.published) > 1", func() bool {
+
+	sendAndAwait := func(reqs []isc.Request, expectedBlockIndex int, desc string) {
 		for _, tnc := range te.nodeConns {
-			if len(tnc.published) <= 1 {
-				return false
+			for _, req := range reqs {
+				onLedgerRequest := req.(isc.OnLedgerRequest)
+				tnc.recvRequestCB(
+					isc.NewOutputInfo(onLedgerRequest.ID().OutputID(), onLedgerRequest.Output(), iotago.TransactionID{}),
+				)
 			}
 		}
-		return true
-	})
+		awaitRequestsProcessed(ctxTimeout, te, reqs, desc)
+		awaitPredicate(te, ctxTimeout, fmt.Sprintf("len(tnc.published) >= %d", expectedBlockIndex), func() bool {
+			for _, tnc := range te.nodeConns {
+				if len(tnc.published) < expectedBlockIndex {
+					return false
+				}
+			}
+			return true
+		})
+	}
+
+	//
+	// Create SC Client account with some deposit
+	scClient := cryptolib.NewKeyPair()
+	_, err = te.utxoDB.GetFundsFromFaucet(scClient.Address(), 150_000_000)
+	require.NoError(t, err)
+	depositReqs := te.tcl.MakeTxAccountsDeposit(scClient)
+	sendAndAwait(depositReqs, 1, "depositReqs")
+
+	//
+	// Deploy a contract, wait for a confirming TX.
+	deployReqs := te.tcl.MakeTxDeployIncCounterContract()
+	sendAndAwait(deployReqs, 2, "deployReqs")
+
 	//
 	// Invoke off-ledger requests on the contract, wait for the counter to reach the expected value.
 	// We only send the requests to the first node. Mempool has to disseminate them.
@@ -157,10 +151,16 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 			inccounter.Contract.Hname(),
 			inccounter.FuncIncCounter.Hname(),
 			dict.New(), uint64(i),
-		).WithGasBudget(20000).Sign(scClient)
+			2000000,
+		).Sign(scClient)
 		te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
 		incRequests[i] = scRequest
 	}
+
+	// Check if all requests were processed.
+	awaitRequestsProcessed(ctxTimeout, te, incRequests, "incRequests")
+
+	// assert state
 	for i, node := range te.nodes {
 		for {
 			latestState, err := node.LatestState(chain.ActiveOrCommittedState)
@@ -173,13 +173,16 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 					latestTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
 					_, latestAONoID, err := transaction.GetAnchorFromTransaction(latestTX)
 					require.NoError(t, err)
-					latestL1Commitment, err := state.L1CommitmentFromAliasOutput(latestAONoID)
+					latestL1Commitment, err := transaction.L1CommitmentFromAliasOutput(latestAONoID)
 					require.NoError(t, err)
 					st, err := node.GetStateReader().StateByTrieRoot(latestL1Commitment.GetTrieRoot())
 					require.NoError(t, err)
 					require.GreaterOrEqual(t, incCount, inccounter.NewStateAccess(st).GetCounter())
 				*/
 				break
+			}
+			if reliable {
+				continue
 			}
 			//
 			// For the unreliable-network tests we have to retry the requests.
@@ -190,16 +193,17 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 					inccounter.Contract.Hname(),
 					inccounter.FuncIncCounter.Hname(),
 					dict.New(), uint64(ii),
-				).WithGasBudget(20000).Sign(scClient)
+					20000,
+				).Sign(scClient)
 				te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
 		// Check if LastAliasOutput() works as expected.
-		awaitPredicate(te, "LatestAliasOutput", func() bool {
+		awaitPredicate(te, ctxTimeout, "LatestAliasOutput", func() bool {
 			confirmedAO, activeAO := node.LatestAliasOutput()
 			lastPublishedTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
-			lastPublishedAO, err := transaction.GetAliasOutput(lastPublishedTX, te.chainID.AsAddress())
+			lastPublishedAO, err := isc.AliasOutputWithIDFromTx(lastPublishedTX, te.chainID.AsAddress())
 			require.NoError(t, err)
 			if !lastPublishedAO.Equals(confirmedAO) { // In this test we confirm outputs immediately.
 				te.log.Debugf("lastPublishedAO(%v) != confirmedAO(%v)", lastPublishedAO, confirmedAO)
@@ -212,31 +216,48 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 			return true
 		})
 	}
-	//
-	// Check if all requests were processed.
-	awaitRequestsProcessed(te, incRequests, "incRequests")
 }
 
-func awaitRequestsProcessed(te *testEnv, requests []isc.Request, desc string) {
+func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Request, desc string) {
 	reqRefs := isc.RequestRefsFromRequests(requests)
 	for i, node := range te.nodes {
 		for reqNum, reqRef := range reqRefs {
 			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...", desc, i, reqNum, reqRef.ID.String())
-			<-node.AwaitRequestProcessed(te.ctx, reqRef.ID, false)
-			<-node.AwaitRequestProcessed(te.ctx, reqRef.ID, true)
+
+			await := func(confirmed bool) {
+				select {
+				case rec := <-node.AwaitRequestProcessed(ctx, reqRef.ID, confirmed):
+					if rec.Error != nil {
+						te.t.Fatalf("request processed with an error, %s", rec.Error.Error())
+					}
+				case <-ctx.Done():
+					if ctx.Err() != nil {
+						te.t.Fatalf("awaitRequestsProcessed (%t) failed: %s, context timeout", confirmed, desc)
+					}
+				}
+			}
+
+			await(false)
+			await(true)
 			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...Done", desc, i, reqNum, reqRef.ID.String())
 		}
 	}
 }
 
-func awaitPredicate(te *testEnv, desc string, predicate func() bool) {
+//nolint:revive
+func awaitPredicate(te *testEnv, ctx context.Context, desc string, predicate func() bool) {
 	for {
-		if predicate() {
-			te.log.Debugf("Predicate %v become true.", desc)
-			return
+		select {
+		case <-ctx.Done():
+			require.FailNowf(te.t, "awaitPredicate failed: %s", desc)
+		default:
+			if predicate() {
+				te.log.Debugf("Predicate %v become true.", desc)
+				return
+			}
+			te.log.Debugf("Predicate %v still false, will retry.", desc)
+			time.Sleep(100 * time.Millisecond)
 		}
-		te.log.Debugf("Predicate %v still false, will retry.", desc)
-		time.Sleep(100 * time.Millisecond)
 	}
 }
 
@@ -306,6 +327,8 @@ func (tnc *testNodeConn) AttachChain(
 	recvRequestCB chain.RequestOutputHandler,
 	recvAliasOutput chain.AliasOutputHandler,
 	recvMilestone chain.MilestoneHandler,
+	onChainConnect func(),
+	onChainDisconnect func(),
 ) {
 	if !tnc.chainID.Empty() {
 		tnc.t.Error("duplicate attach")
@@ -317,11 +340,7 @@ func (tnc *testNodeConn) AttachChain(
 	tnc.attachWG.Done()
 }
 
-func (tnc *testNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
-	panic("should be unused in test")
-}
-
-func (tnc *testNodeConn) Run(ctx context.Context) {
+func (tnc *testNodeConn) Run(ctx context.Context) error {
 	panic("should be unused in test")
 }
 
@@ -329,10 +348,27 @@ func (tnc *testNodeConn) waitAttached() {
 	tnc.attachWG.Wait()
 }
 
+func (tnc *testNodeConn) WaitUntilInitiallySynced(ctx context.Context) error {
+	panic("should be unused in test")
+}
+
+func (tnc *testNodeConn) GetBech32HRP() iotago.NetworkPrefix {
+	return testparameters.GetBech32HRP()
+}
+
+func (tnc *testNodeConn) GetL1Params() *parameters.L1Params {
+	return testparameters.GetL1ParamsForTesting()
+}
+
+func (tnc *testNodeConn) GetL1ProtocolParams() *iotago.ProtocolParameters {
+	return testparameters.GetL1ProtocolParamsForTesting()
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // testEnv
 
 type testEnv struct {
+	t                *testing.T
 	ctx              context.Context
 	ctxCancel        context.CancelFunc
 	log              *logger.Logger
@@ -348,12 +384,13 @@ type testEnv struct {
 	cmtAddress       iotago.Address
 	chainID          isc.ChainID
 	originAO         *isc.AliasOutputWithID
+	originTx         *iotago.Transaction
 	nodeConns        []*testNodeConn
 	nodes            []chain.Chain
 }
 
 func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
-	te := &testEnv{}
+	te := &testEnv{t: t}
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
 	te.log = testlogger.NewLogger(t).Named(fmt.Sprintf("%04d", rand.Intn(10000))) // For test instance ID.
 	//
@@ -387,19 +424,21 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
 	var dkShareProviders []registry.DKShareRegistryProvider
 	te.cmtAddress, dkShareProviders = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
-	te.tcl = testchain.NewTestChainLedger(t, te.utxoDB, te.governor, te.originator)
-	te.originAO, te.chainID = te.tcl.MakeTxChainOrigin(te.cmtAddress)
+	te.tcl = testchain.NewTestChainLedger(t, te.utxoDB, te.originator)
+	te.originTx, te.originAO, te.chainID = te.tcl.MakeTxChainOrigin(te.cmtAddress)
 	//
 	// Initialize the nodes.
 	te.nodeConns = make([]*testNodeConn, len(te.peerIdentities))
 	te.nodes = make([]chain.Chain, len(te.peerIdentities))
+	require.NoError(t, err)
 	for i := range te.peerIdentities {
 		te.nodeConns[i] = newTestNodeConn(t)
 		log := te.log.Named(fmt.Sprintf("N#%v", i))
 		te.nodes[i], err = chain.New(
 			te.ctx,
+			log,
 			te.chainID,
-			state.InitChainStore(mapdb.NewMapDB()),
+			state.NewStore(mapdb.NewMapDB()),
 			te.nodeConns[i],
 			te.peerIdentities[i],
 			coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor),
@@ -409,8 +448,10 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			chain.NewEmptyChainListener(),
 			[]*cryptolib.PublicKey{}, // Access nodes.
 			te.networkProviders[i],
+			metrics.NewEmptyChainMetrics(),
 			shutdown.NewCoordinator("test", log),
-			log,
+			nil,
+			nil,
 		)
 		require.NoError(t, err)
 		te.nodes[i].ServersUpdated(te.peerPubKeys)

@@ -21,5 +21,5 @@ func NewInputAliasOutputConfirmed(aliasOutput *isc.AliasOutputWithID) gpa.Input 
 }
 
 func (inp *inputAliasOutputConfirmed) String() string {
-	return fmt.Sprintf("{chainMgr.inputAliasOutputConfirmed, aliasOutput.ID=%v}", inp.aliasOutput.OutputID().ToHex())
+	return fmt.Sprintf("{chainMgr.inputAliasOutputConfirmed, %v}", inp.aliasOutput)
 }

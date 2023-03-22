@@ -5,13 +5,15 @@
 package group
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 const NotInGroup uint16 = 0xFFFF
@@ -23,7 +25,7 @@ type groupImpl struct {
 	other       map[uint16]peering.PeerSender
 	selfIndex   uint16
 	peeringID   peering.PeeringID
-	attachIDs   []interface{}
+	unhookFuncs []context.CancelFunc
 	log         *logger.Logger
 }
 
@@ -52,7 +54,7 @@ func NewPeeringGroupProvider(netProvider peering.NetworkProvider, peeringID peer
 		other:       other,
 		selfIndex:   selfIndex,
 		peeringID:   peeringID,
-		attachIDs:   make([]interface{}, 0),
+		unhookFuncs: make([]context.CancelFunc, 0),
 		log:         log,
 	}, nil
 }
@@ -233,8 +235,8 @@ func (g *groupImpl) OtherNodes(except ...uint16) map[uint16]peering.PeerSender {
 // Attach starts listening for messages. Messages in this case will be filtered
 // to those received from nodes in the group only. SenderIndex will be filled
 // for the messages according to the message source.
-func (g *groupImpl) Attach(receiver byte, callback func(recv *peering.PeerMessageGroupIn)) interface{} {
-	attachID := g.netProvider.Attach(&g.peeringID, receiver, func(recv *peering.PeerMessageIn) {
+func (g *groupImpl) Attach(receiver byte, callback func(recv *peering.PeerMessageGroupIn)) context.CancelFunc {
+	unhook := g.netProvider.Attach(&g.peeringID, receiver, func(recv *peering.PeerMessageIn) {
 		idx, err := g.PeerIndexByPubKey(recv.SenderPubKey)
 		if idx == NotInGroup {
 			err = errors.New("sender does not belong to the group")
@@ -250,19 +252,14 @@ func (g *groupImpl) Attach(receiver byte, callback func(recv *peering.PeerMessag
 		}
 		callback(gRecv)
 	})
-	g.attachIDs = append(g.attachIDs, attachID)
-	return attachID
-}
-
-// Detach terminates listening for messages.
-func (g *groupImpl) Detach(attachID interface{}) {
-	g.netProvider.Detach(attachID)
+	g.unhookFuncs = append(g.unhookFuncs, unhook)
+	return unhook
 }
 
 // Close implements peering.GroupProvider.
 func (g *groupImpl) Close() {
-	for _, attachID := range g.attachIDs {
-		g.Detach(attachID)
+	for _, unhook := range g.unhookFuncs {
+		util.ExecuteIfNotNil(unhook)
 	}
 	for i := range g.nodes {
 		g.nodes[i].Close()

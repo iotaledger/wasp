@@ -19,7 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -51,10 +51,11 @@ func newSoloTestEnv(t testing.TB) *soloTestEnv {
 		Log:                      log,
 	})
 	chainOwner, _ := s.NewKeyPairWithFunds()
-	chain, _, _ := s.NewChainExt(chainOwner, 0, "chain1")
+	chain, _ := s.NewChainExt(chainOwner, 0, "chain1")
 
 	accounts := jsonrpc.NewAccountManager(nil)
-	rpcsrv := jsonrpc.NewServer(chain.EVM(), accounts)
+	rpcsrv, err := jsonrpc.NewServer(chain.EVM(), accounts)
+	require.NoError(t, err)
 	t.Cleanup(rpcsrv.Stop)
 
 	rawClient := rpc.DialInProc(rpcsrv)
@@ -363,6 +364,24 @@ func TestRPCCall(t *testing.T) {
 	err = contractABI.UnpackIntoInterface(&v, "retrieve", ret)
 	require.NoError(t, err)
 	require.Equal(t, uint32(42), v)
+}
+
+func TestRPCCallNonView(t *testing.T) {
+	env := newSoloTestEnv(t)
+	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
+	require.NoError(t, err)
+	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
+
+	callArguments, err := contractABI.Pack("triggerEvent", "hello")
+	require.NoError(t, err)
+
+	_, err = env.Client.CallContract(context.Background(), ethereum.CallMsg{
+		From: creatorAddress,
+		To:   &contractAddress,
+		Data: callArguments,
+	}, nil)
+	require.NoError(t, err)
 }
 
 func TestRPCAccessHistoricalState(t *testing.T) {

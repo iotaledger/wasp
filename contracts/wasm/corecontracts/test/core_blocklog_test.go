@@ -45,28 +45,25 @@ func TestGetBlockInfo(t *testing.T) {
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
-	for i := uint32(0); i < 6; i++ {
+	for i := uint32(0); i < 5; i++ {
 		f := coreblocklog.ScFuncs.GetBlockInfo(ctx)
 		f.Params.BlockIndex().SetValue(i)
 		f.Func.Call()
 		require.NoError(t, ctx.Err)
 		b := f.Results.BlockInfo().Value()
-		blockinfo, err := blocklog.BlockInfoFromBytes(i, b)
+		blockinfo, err := blocklog.BlockInfoFromBytes(b)
 		require.NoError(t, err)
 
 		expectBlockInfo, err := ctx.Chain.GetBlockInfo(i)
 		require.NoError(t, err)
 
-		assert.Equal(t, expectBlockInfo.BlockIndex, blockinfo.BlockIndex)
+		assert.Equal(t, expectBlockInfo.SchemaVersion, blockinfo.SchemaVersion)
+		assert.Equal(t, expectBlockInfo.BlockIndex(), blockinfo.BlockIndex())
 		assert.Equal(t, expectBlockInfo.Timestamp, blockinfo.Timestamp)
 		assert.Equal(t, expectBlockInfo.TotalRequests, blockinfo.TotalRequests)
 		assert.Equal(t, expectBlockInfo.NumSuccessfulRequests, blockinfo.NumSuccessfulRequests)
 		assert.Equal(t, expectBlockInfo.NumOffLedgerRequests, blockinfo.NumOffLedgerRequests)
-		assert.Equal(t, expectBlockInfo.PreviousL1Commitment, blockinfo.PreviousL1Commitment)
-		assert.Equal(t, expectBlockInfo.L1Commitment, blockinfo.L1Commitment)
-		assert.Equal(t, expectBlockInfo.AnchorTransactionID, blockinfo.AnchorTransactionID)
-		assert.Equal(t, expectBlockInfo.TotalBaseTokensInL2Accounts, blockinfo.TotalBaseTokensInL2Accounts)
-		assert.Equal(t, expectBlockInfo.TotalStorageDeposit, blockinfo.TotalStorageDeposit)
+		assert.Equal(t, expectBlockInfo.PreviousAliasOutput, blockinfo.PreviousAliasOutput)
 		assert.Equal(t, expectBlockInfo.GasBurned, blockinfo.GasBurned)
 		assert.Equal(t, expectBlockInfo.GasFeeCharged, blockinfo.GasFeeCharged)
 	}
@@ -82,20 +79,17 @@ func TestGetLatestBlockInfo(t *testing.T) {
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	index := f.Results.BlockIndex().Value()
-	assert.Equal(t, expectBlockInfo.BlockIndex, index)
+	assert.Equal(t, expectBlockInfo.BlockIndex(), index)
 
-	blockinfo, err := blocklog.BlockInfoFromBytes(5, f.Results.BlockInfo().Value())
+	blockinfo, err := blocklog.BlockInfoFromBytes(f.Results.BlockInfo().Value())
 	require.NoError(t, err)
-	assert.Equal(t, expectBlockInfo.BlockIndex, blockinfo.BlockIndex)
+	assert.Equal(t, expectBlockInfo.SchemaVersion, blockinfo.SchemaVersion)
+	assert.Equal(t, expectBlockInfo.BlockIndex(), blockinfo.BlockIndex())
 	assert.Equal(t, expectBlockInfo.Timestamp, blockinfo.Timestamp)
 	assert.Equal(t, expectBlockInfo.TotalRequests, blockinfo.TotalRequests)
 	assert.Equal(t, expectBlockInfo.NumSuccessfulRequests, blockinfo.NumSuccessfulRequests)
 	assert.Equal(t, expectBlockInfo.NumOffLedgerRequests, blockinfo.NumOffLedgerRequests)
-	assert.Equal(t, expectBlockInfo.PreviousL1Commitment, blockinfo.PreviousL1Commitment)
-	assert.Equal(t, expectBlockInfo.L1Commitment, blockinfo.L1Commitment)
-	assert.Equal(t, expectBlockInfo.AnchorTransactionID, blockinfo.AnchorTransactionID)
-	assert.Equal(t, expectBlockInfo.TotalBaseTokensInL2Accounts, blockinfo.TotalBaseTokensInL2Accounts)
-	assert.Equal(t, expectBlockInfo.TotalStorageDeposit, blockinfo.TotalStorageDeposit)
+	assert.Equal(t, expectBlockInfo.PreviousAliasOutput, blockinfo.PreviousAliasOutput)
 	assert.Equal(t, expectBlockInfo.GasBurned, blockinfo.GasBurned)
 	assert.Equal(t, expectBlockInfo.GasFeeCharged, blockinfo.GasFeeCharged)
 }
@@ -105,7 +99,7 @@ func TestGetRequestIDsForBlock(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	f := coreblocklog.ScFuncs.GetRequestIDsForBlock(ctx)
-	for blockNum := uint32(0); blockNum < 6; blockNum++ {
+	for blockNum := uint32(0); blockNum < 5; blockNum++ {
 		f.Params.BlockIndex().SetValue(blockNum)
 		f.Func.Call()
 		require.NoError(t, ctx.Err)

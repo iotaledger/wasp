@@ -18,14 +18,12 @@ import (
 // ContractInfo holds basic information about a native smart contract
 type ContractInfo struct {
 	Name        string
-	Description string
 	ProgramHash hashing.HashValue
 }
 
 func NewContract(name, description string) *ContractInfo {
 	return &ContractInfo{
 		Name:        name,
-		Description: description,
 		ProgramHash: hashing.HashStrings(name),
 	}
 }
@@ -175,10 +173,6 @@ func (p *ContractProcessor) GetEntryPoint(code isc.Hname) (isc.VMProcessorEntryP
 		return nil, false
 	}
 	return f, true
-}
-
-func (p *ContractProcessor) GetDescription() string {
-	return p.Contract.Description
 }
 
 func (p *ContractProcessor) GetStateReadOnly(chainState kv.KVStoreReader) kv.KVStoreReader {

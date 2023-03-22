@@ -15,7 +15,7 @@ keywords:
 
 ## Monitoring
 
-You can view the chain state using the dashboard (by default on port `:7000`, or `<URL>/wasp/dashboard` when using `node-docker-setup`).
+You can view the chain state using the dashboard (`<URL>/wasp/dashboard` when using `node-docker-setup`).
 
 ## Managing Chain Configuration and Validators
 

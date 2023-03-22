@@ -79,15 +79,6 @@ export class RotateStateControllerCall {
     }
 }
 
-export class SetChainInfoCall {
-    func:   wasmlib.ScFunc;
-    params: sc.MutableSetChainInfoParams = new sc.MutableSetChainInfoParams(wasmlib.ScView.nilProxy);
-
-    public constructor(ctx: wasmlib.ScFuncCallContext) {
-        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetChainInfo);
-    }
-}
-
 export class SetFeePolicyCall {
     func:   wasmlib.ScFunc;
     params: sc.MutableSetFeePolicyParams = new sc.MutableSetFeePolicyParams(wasmlib.ScView.nilProxy);
@@ -142,15 +133,6 @@ export class GetFeePolicyCall {
     }
 }
 
-export class GetMaxBlobSizeCall {
-    func:    wasmlib.ScView;
-    results: sc.ImmutableGetMaxBlobSizeResults = new sc.ImmutableGetMaxBlobSizeResults(wasmlib.ScView.nilProxy);
-
-    public constructor(ctx: wasmlib.ScViewCallContext) {
-        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetMaxBlobSize);
-    }
-}
-
 export class ScFuncs {
     static addAllowedStateControllerAddress(ctx: wasmlib.ScFuncCallContext): AddAllowedStateControllerAddressCall {
         const f = new AddAllowedStateControllerAddressCall(ctx);
@@ -201,13 +183,6 @@ export class ScFuncs {
         return f;
     }
 
-    // chain info
-    static setChainInfo(ctx: wasmlib.ScFuncCallContext): SetChainInfoCall {
-        const f = new SetChainInfoCall(ctx);
-        f.params = new sc.MutableSetChainInfoParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
-
     // fees
     static setFeePolicy(ctx: wasmlib.ScFuncCallContext): SetFeePolicyCall {
         const f = new SetFeePolicyCall(ctx);
@@ -247,12 +222,6 @@ export class ScFuncs {
     static getFeePolicy(ctx: wasmlib.ScViewCallContext): GetFeePolicyCall {
         const f = new GetFeePolicyCall(ctx);
         f.results = new sc.ImmutableGetFeePolicyResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
-
-    static getMaxBlobSize(ctx: wasmlib.ScViewCallContext): GetMaxBlobSizeCall {
-        const f = new GetMaxBlobSizeCall(ctx);
-        f.results = new sc.ImmutableGetMaxBlobSizeResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 }

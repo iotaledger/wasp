@@ -11,8 +11,9 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/iotaledger/hive.go/core/configuration"
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/app/configuration"
+	appLogger "github.com/iotaledger/hive.go/app/logger"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/util/l1starter"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -45,7 +46,6 @@ func main() {
 	commonFlags.IntVarP(&waspConfig.NumNodes, "num-nodes", "n", waspConfig.NumNodes, "Amount of wasp nodes")
 	commonFlags.IntVarP(&waspConfig.FirstAPIPort, "first-api-port", "a", waspConfig.FirstAPIPort, "First wasp API port")
 	commonFlags.IntVarP(&waspConfig.FirstPeeringPort, "first-peering-port", "p", waspConfig.FirstPeeringPort, "First wasp Peering port")
-	commonFlags.IntVarP(&waspConfig.FirstNanomsgPort, "first-nanomsg-port", "u", waspConfig.FirstNanomsgPort, "First wasp nanomsg (publisher) port")
 
 	l1StarterFlags := flag.NewFlagSet("l1", flag.ExitOnError)
 	inxStarterFlags := flag.NewFlagSet("inx", flag.ExitOnError)
@@ -68,7 +68,7 @@ func main() {
 		panic(err)
 	}
 
-	if err := logger.InitGlobalLogger(cfg); err != nil {
+	if err := appLogger.InitGlobalLogger(cfg); err != nil {
 		panic(err)
 	}
 

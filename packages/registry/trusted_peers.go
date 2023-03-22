@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/iotaledger/hive.go/core/generics/event"
-	"github.com/iotaledger/hive.go/core/generics/lo"
-	"github.com/iotaledger/hive.go/core/generics/onchangemap"
-	"github.com/iotaledger/hive.go/core/ioutils"
-	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/hive.go/lo"
+	"github.com/iotaledger/hive.go/runtime/event"
+	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/onchangemap"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -24,7 +24,7 @@ type jsonTrustedPeers struct {
 
 type TrustedPeersRegistryImpl struct {
 	onChangeMap  *onchangemap.OnChangeMap[string, *peering.ComparablePubKey, *peering.TrustedPeer]
-	changeEvents *event.Event[[]*peering.TrustedPeer]
+	changeEvents *event.Event1[[]*peering.TrustedPeer]
 
 	filePath string
 }
@@ -40,7 +40,7 @@ func NewTrustedPeersRegistryImpl(filePath string) (*TrustedPeersRegistryImpl, er
 
 	registry := &TrustedPeersRegistryImpl{
 		filePath:     filePath,
-		changeEvents: event.New[[]*peering.TrustedPeer](),
+		changeEvents: event.New1[[]*peering.TrustedPeer](),
 	}
 
 	registry.onChangeMap = onchangemap.NewOnChangeMap(
@@ -158,7 +158,6 @@ func (p *TrustedPeersRegistryImpl) mustTrustedPeers() []*peering.TrustedPeer {
 
 func (p *TrustedPeersRegistryImpl) TrustedPeersListener(callback func([]*peering.TrustedPeer)) context.CancelFunc {
 	callback(p.mustTrustedPeers())
-	closure := event.NewClosure(callback)
-	p.changeEvents.Attach(closure)
-	return func() { p.changeEvents.Detach(closure) }
+	unhook := p.changeEvents.Hook(callback).Unhook
+	return unhook
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smInputs"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -111,7 +112,7 @@ func TestFull(t *testing.T) {
 	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedTestBlockWAL, smTimers)
 	defer env.finalize()
 
-	lastCommitment := state.OriginL1Commitment()
+	lastCommitment := origin.L1Commitment(nil, 0)
 
 	testIterationFun := func(i int, baseCommitment *state.L1Commitment, incrementFactor ...uint64) []state.Block {
 		env.t.Logf("Iteration %v: generating %v blocks and sending them to nodes", i, iterationSize)
@@ -227,7 +228,7 @@ func TestMempoolRequestFirstStep(t *testing.T) {
 	env.sendBlocksToNode(nodeID, 0*time.Second, blocks[0])
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks))
 
-	oldCommitment := state.OriginL1Commitment()
+	oldCommitment := origin.L1Commitment(nil, 0)
 	newCommitment := blocks[0].L1Commitment()
 	oldBlocks := make([]state.Block, 0)
 	require.True(env.t, env.sendAndEnsureCompletedChainFetchStateDiff(oldCommitment, newCommitment, oldBlocks, blocks, nodeID, 1, 0*time.Second))
@@ -276,7 +277,7 @@ func TestMempoolRequestBranchFromOrigin(t *testing.T) {
 	env.sendBlocksToNode(nodeID, 0*time.Second, oldBlocks...)
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, oldBlocks))
 
-	newBlocks := env.bf.GetBlocksFrom(branchSize, 1, state.OriginL1Commitment(), 2)
+	newBlocks := env.bf.GetBlocksFrom(branchSize, 1, origin.L1Commitment(nil, 0), 2)
 	env.sendBlocksToNode(nodeID, 0*time.Second, newBlocks...)
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, newBlocks))
 

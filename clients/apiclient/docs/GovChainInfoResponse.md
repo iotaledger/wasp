@@ -6,17 +6,15 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **ChainID** | **string** | ChainID (Bech32-encoded). | 
 **ChainOwnerId** | **string** | The chain owner address (Bech32-encoded). | 
-**Description** | **string** | The description of the chain. | 
-**GasFeePolicy** | [**GasFeePolicy**](GasFeePolicy.md) |  | 
-**MaxBlobSize** | **int32** | The maximum contract blob size. | 
-**MaxEventSize** | **int32** | The maximum event size. | 
-**MaxEventsPerReq** | **int32** | The maximum amount of events per request. | 
+**CustomMetadata** | Pointer to **string** | (base64) Optional extra metadata that is appended to the L1 AliasOutput | [optional] 
+**GasFeePolicy** | [**FeePolicy**](FeePolicy.md) |  | 
+**GasLimits** | [**Limits**](Limits.md) |  | 
 
 ## Methods
 
 ### NewGovChainInfoResponse
 
-`func NewGovChainInfoResponse(chainID string, chainOwnerId string, description string, gasFeePolicy GasFeePolicy, maxBlobSize int32, maxEventSize int32, maxEventsPerReq int32, ) *GovChainInfoResponse`
+`func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy FeePolicy, gasLimits Limits, ) *GovChainInfoResponse`
 
 NewGovChainInfoResponse instantiates a new GovChainInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -71,104 +69,69 @@ and a boolean to check if the value has been set.
 SetChainOwnerId sets ChainOwnerId field to given value.
 
 
-### GetDescription
+### GetCustomMetadata
 
-`func (o *GovChainInfoResponse) GetDescription() string`
+`func (o *GovChainInfoResponse) GetCustomMetadata() string`
 
-GetDescription returns the Description field if non-nil, zero value otherwise.
+GetCustomMetadata returns the CustomMetadata field if non-nil, zero value otherwise.
 
-### GetDescriptionOk
+### GetCustomMetadataOk
 
-`func (o *GovChainInfoResponse) GetDescriptionOk() (*string, bool)`
+`func (o *GovChainInfoResponse) GetCustomMetadataOk() (*string, bool)`
 
-GetDescriptionOk returns a tuple with the Description field if it's non-nil, zero value otherwise
+GetCustomMetadataOk returns a tuple with the CustomMetadata field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetDescription
+### SetCustomMetadata
 
-`func (o *GovChainInfoResponse) SetDescription(v string)`
+`func (o *GovChainInfoResponse) SetCustomMetadata(v string)`
 
-SetDescription sets Description field to given value.
+SetCustomMetadata sets CustomMetadata field to given value.
 
+### HasCustomMetadata
+
+`func (o *GovChainInfoResponse) HasCustomMetadata() bool`
+
+HasCustomMetadata returns a boolean if a field has been set.
 
 ### GetGasFeePolicy
 
-`func (o *GovChainInfoResponse) GetGasFeePolicy() GasFeePolicy`
+`func (o *GovChainInfoResponse) GetGasFeePolicy() FeePolicy`
 
 GetGasFeePolicy returns the GasFeePolicy field if non-nil, zero value otherwise.
 
 ### GetGasFeePolicyOk
 
-`func (o *GovChainInfoResponse) GetGasFeePolicyOk() (*GasFeePolicy, bool)`
+`func (o *GovChainInfoResponse) GetGasFeePolicyOk() (*FeePolicy, bool)`
 
 GetGasFeePolicyOk returns a tuple with the GasFeePolicy field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetGasFeePolicy
 
-`func (o *GovChainInfoResponse) SetGasFeePolicy(v GasFeePolicy)`
+`func (o *GovChainInfoResponse) SetGasFeePolicy(v FeePolicy)`
 
 SetGasFeePolicy sets GasFeePolicy field to given value.
 
 
-### GetMaxBlobSize
+### GetGasLimits
 
-`func (o *GovChainInfoResponse) GetMaxBlobSize() int32`
+`func (o *GovChainInfoResponse) GetGasLimits() Limits`
 
-GetMaxBlobSize returns the MaxBlobSize field if non-nil, zero value otherwise.
+GetGasLimits returns the GasLimits field if non-nil, zero value otherwise.
 
-### GetMaxBlobSizeOk
+### GetGasLimitsOk
 
-`func (o *GovChainInfoResponse) GetMaxBlobSizeOk() (*int32, bool)`
+`func (o *GovChainInfoResponse) GetGasLimitsOk() (*Limits, bool)`
 
-GetMaxBlobSizeOk returns a tuple with the MaxBlobSize field if it's non-nil, zero value otherwise
+GetGasLimitsOk returns a tuple with the GasLimits field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetMaxBlobSize
+### SetGasLimits
 
-`func (o *GovChainInfoResponse) SetMaxBlobSize(v int32)`
+`func (o *GovChainInfoResponse) SetGasLimits(v Limits)`
 
-SetMaxBlobSize sets MaxBlobSize field to given value.
-
-
-### GetMaxEventSize
-
-`func (o *GovChainInfoResponse) GetMaxEventSize() int32`
-
-GetMaxEventSize returns the MaxEventSize field if non-nil, zero value otherwise.
-
-### GetMaxEventSizeOk
-
-`func (o *GovChainInfoResponse) GetMaxEventSizeOk() (*int32, bool)`
-
-GetMaxEventSizeOk returns a tuple with the MaxEventSize field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetMaxEventSize
-
-`func (o *GovChainInfoResponse) SetMaxEventSize(v int32)`
-
-SetMaxEventSize sets MaxEventSize field to given value.
-
-
-### GetMaxEventsPerReq
-
-`func (o *GovChainInfoResponse) GetMaxEventsPerReq() int32`
-
-GetMaxEventsPerReq returns the MaxEventsPerReq field if non-nil, zero value otherwise.
-
-### GetMaxEventsPerReqOk
-
-`func (o *GovChainInfoResponse) GetMaxEventsPerReqOk() (*int32, bool)`
-
-GetMaxEventsPerReqOk returns a tuple with the MaxEventsPerReq field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetMaxEventsPerReq
-
-`func (o *GovChainInfoResponse) SetMaxEventsPerReq(v int32)`
-
-SetMaxEventsPerReq sets MaxEventsPerReq field to given value.
+SetGasLimits sets GasLimits field to given value.
 
 
 

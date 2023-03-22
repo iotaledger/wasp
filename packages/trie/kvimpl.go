@@ -8,6 +8,8 @@ import (
 	"math/rand"
 	"os"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 // ----------------------------------------------------------------------------
@@ -230,16 +232,16 @@ func (fs *BinaryStreamFileIterator) Close() error {
 
 // RandStreamIterator is a stream of random key/value pairs with the given parameters
 // Used for testing
-var _ KVStreamIterator = &RandStreamIterator{}
+var _ KVStreamIterator = &PseudoRandStreamIterator{}
 
-type RandStreamIterator struct {
+type PseudoRandStreamIterator struct {
 	rnd   *rand.Rand
-	par   RandStreamParams
+	par   PseudoRandStreamParams
 	count int
 }
 
-// RandStreamParams represents parameters of the RandStreamIterator
-type RandStreamParams struct {
+// PseudoRandStreamParams represents parameters of the RandStreamIterator
+type PseudoRandStreamParams struct {
 	// Seed for deterministic randomization
 	Seed int64
 	// NumKVPairs maximum number of key value pairs to generate. 0 means infinite
@@ -250,10 +252,10 @@ type RandStreamParams struct {
 	MaxValue int
 }
 
-func NewRandStreamIterator(p ...RandStreamParams) *RandStreamIterator {
-	ret := &RandStreamIterator{
-		par: RandStreamParams{
-			Seed:       time.Now().UnixNano(),
+func NewPseudoRandStreamIterator(p ...PseudoRandStreamParams) *PseudoRandStreamIterator {
+	ret := &PseudoRandStreamIterator{
+		par: PseudoRandStreamParams{
+			Seed:       time.Now().UnixNano() + int64(os.Getpid()),
 			NumKVPairs: 0, // infinite
 			MaxKey:     64,
 			MaxValue:   128,
@@ -262,11 +264,11 @@ func NewRandStreamIterator(p ...RandStreamParams) *RandStreamIterator {
 	if len(p) > 0 {
 		ret.par = p[0]
 	}
-	ret.rnd = rand.New(rand.NewSource(ret.par.Seed))
+	ret.rnd = util.NewPseudoRand(ret.par.Seed)
 	return ret
 }
 
-func (r *RandStreamIterator) Iterate(fun func(k []byte, v []byte) bool) error {
+func (r *PseudoRandStreamIterator) Iterate(fun func(k []byte, v []byte) bool) error {
 	max := r.par.NumKVPairs
 	if max <= 0 {
 		max = math.MaxInt

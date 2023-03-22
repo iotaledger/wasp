@@ -23,7 +23,7 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
@@ -32,7 +32,9 @@ import (
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/l1connection"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -164,7 +166,7 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	if quorum < minQuorum {
 		quorum = minQuorum
 	}
-	return clu.DeployChainWithDKG("Default chain", committee, committee, uint16(quorum))
+	return clu.DeployChainWithDKG(committee, committee, uint16(quorum))
 }
 
 func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, iotago.Address, error) {
@@ -199,21 +201,20 @@ func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...ti
 	return apilib.RunDKG(client, peerPubKeys, threshold, timeout...)
 }
 
-func (clu *Cluster) DeployChainWithDKG(description string, allPeers, committeeNodes []int, quorum uint16) (*Chain, error) {
+func (clu *Cluster) DeployChainWithDKG(allPeers, committeeNodes []int, quorum uint16) (*Chain, error) {
 	stateAddr, err := clu.RunDKG(committeeNodes, quorum)
 	if err != nil {
 		return nil, err
 	}
-	return clu.DeployChain(description, allPeers, committeeNodes, quorum, stateAddr)
+	return clu.DeployChain(allPeers, committeeNodes, quorum, stateAddr)
 }
 
-func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []int, quorum uint16, stateAddr iotago.Address) (*Chain, error) {
+func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, stateAddr iotago.Address) (*Chain, error) {
 	if len(allPeers) == 0 {
 		allPeers = clu.Config.AllNodes()
 	}
 
 	chain := &Chain{
-		Description:       description,
 		OriginatorKeyPair: clu.ValidatorKeyPair,
 		AllPeers:          allPeers,
 		CommitteeNodes:    committeeNodes,
@@ -239,16 +240,18 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 		committeePubKeys[i] = peeringNode.PublicKey
 	}
 
-	chainID, initRequestTx, err := apilib.DeployChain(
+	chainID, err := apilib.DeployChain(
 		apilib.CreateChainParams{
 			Layer1Client:      clu.L1Client(),
 			CommitteeAPIHosts: chain.CommitteeAPIHosts(),
 			N:                 uint16(len(committeeNodes)),
 			T:                 quorum,
 			OriginatorKeyPair: chain.OriginatorKeyPair,
-			Description:       description,
 			Textout:           os.Stdout,
 			Prefix:            "[cluster] ",
+			InitParams: dict.Dict{
+				origin.ParamChainOwner: isc.NewAgentID(chain.OriginatorAddress()).Bytes(),
+			},
 		},
 		stateAddr,
 		stateAddr,
@@ -265,11 +268,28 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	fmt.Printf("activating chain %s.. OK.\n", chainID.String())
 
 	// ---------- wait until the request is processed at least in all committee nodes
-	_, err = multiclient.New(clu.WaspClientFromHostName, chain.CommitteeAPIHosts()).
-		WaitUntilAllRequestsProcessedSuccessfully(chainID, initRequestTx, 30*time.Second)
+	{
+		fmt.Printf("waiting until nodes receive the origin output..\n")
 
-	if err != nil {
-		clu.t.Fatalf("waiting root init request transaction.. FAILED: %v\n", err)
+		retries := 10
+		for {
+			time.Sleep(200 * time.Millisecond)
+			err = multiclient.New(clu.WaspClientFromHostName, chain.CommitteeAPIHosts()).Do(
+				func(_ int, a *apiclient.APIClient) error {
+					_, _, err2 := a.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
+					return err2
+				})
+			if err != nil {
+				if retries > 0 {
+					retries--
+					continue
+				}
+				return nil, err
+			}
+			break
+		}
+
+		fmt.Printf("waiting until nodes receive the origin output.. DONE\n")
 	}
 
 	chain.StateAddress = stateAddr
@@ -526,10 +546,12 @@ func (clu *Cluster) Start() error {
 	start := time.Now()
 	fmt.Printf("[cluster] starting %d Wasp nodes...\n", len(clu.Config.Wasp))
 
-	initOk := make(chan bool, len(clu.Config.Wasp))
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
 
+	initOk := make(chan bool, len(clu.Config.Wasp))
 	for i := 0; i < len(clu.Config.Wasp); i++ {
-		err := clu.startWaspNode(i, initOk)
+		err := clu.startWaspNode(ctx, i, initOk)
 		if err != nil {
 			return err
 		}
@@ -538,10 +560,11 @@ func (clu *Cluster) Start() error {
 	for i := 0; i < len(clu.Config.Wasp); i++ {
 		select {
 		case <-initOk:
-		case <-time.After(10 * time.Second):
+		case <-time.After(20 * time.Second):
 			return errors.New("timeout starting wasp nodes")
 		}
 	}
+
 	fmt.Printf("[cluster] started %d Wasp nodes in %v\n", len(clu.Config.Wasp), time.Since(start))
 	return nil
 }
@@ -573,7 +596,7 @@ func (clu *Cluster) KillNodeProcess(nodeIndex int, gracefully bool) error {
 	return nil
 }
 
-func (clu *Cluster) RestartNodes(nodeIndexes ...int) error {
+func (clu *Cluster) RestartNodes(keepDB bool, nodeIndexes ...int) error {
 	for _, ni := range nodeIndexes {
 		if !lo.Contains(clu.AllNodes(), ni) {
 			panic(fmt.Errorf("unexpected node index specified for a restart: %v", ni))
@@ -583,30 +606,39 @@ func (clu *Cluster) RestartNodes(nodeIndexes ...int) error {
 	// send stop commands
 	for _, i := range nodeIndexes {
 		clu.stopNode(i)
+		if !keepDB {
+			dbPath := clu.NodeDataPath(i) + "/waspdb/chains/data/"
+			clu.log.Infof("Deleting DB from %v", dbPath)
+			if err := os.RemoveAll(dbPath); err != nil {
+				return fmt.Errorf("cannot remove the node=%v DB at %v: %w", i, dbPath, err)
+			}
+		}
 	}
 
-	// start nodes
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	// restart nodes
 	initOk := make(chan bool, len(nodeIndexes))
-	okCount := 0
 	for _, i := range nodeIndexes {
-		err := clu.startWaspNode(i, initOk)
+		err := clu.startWaspNode(ctx, i, initOk)
 		if err != nil {
 			return err
 		}
+	}
+
+	for range nodeIndexes {
 		select {
 		case <-initOk:
-			okCount++
-			if okCount == len(nodeIndexes) {
-				return nil
-			}
-		case <-time.After(5 * time.Second):
-			return errors.New("timeout starting wasp nodes")
+		case <-time.After(20 * time.Second):
+			return errors.New("timeout restarting wasp nodes")
 		}
 	}
+
 	return nil
 }
 
-func (clu *Cluster) startWaspNode(nodeIndex int, initOk chan<- bool) error {
+func (clu *Cluster) startWaspNode(ctx context.Context, nodeIndex int, initOk chan<- bool) error {
 	wcmd := &waspCmd{}
 
 	cmd := exec.Command("wasp", "-c", "config.json")
@@ -634,7 +666,7 @@ func (clu *Cluster) startWaspNode(nodeIndex int, initOk chan<- bool) error {
 	go scanLog(stdoutPipe, &wcmd.logScanner, fmt.Sprintf(" %s", name))
 
 	nodeAPIURL := fmt.Sprintf("http://localhost:%s", strconv.Itoa(clu.Config.APIPort(nodeIndex)))
-	go waitForAPIReady(initOk, nodeAPIURL)
+	go waitForAPIReady(ctx, initOk, nodeAPIURL)
 
 	wcmd.cmd = cmd
 	clu.waspCmds[nodeIndex] = wcmd
@@ -644,25 +676,29 @@ func (clu *Cluster) startWaspNode(nodeIndex int, initOk chan<- bool) error {
 const pollAPIInterval = 500 * time.Millisecond
 
 // waits until API for a given WASP node is ready
-func waitForAPIReady(initOk chan<- bool, apiURL string) {
-	infoEndpointURL := fmt.Sprintf("%s%s", apiURL, "/node/version")
+func waitForAPIReady(ctx context.Context, initOk chan<- bool, apiURL string) {
+	waspHealthEndpointURL := fmt.Sprintf("%s%s", apiURL, "/health")
 
-	ticker := time.NewTicker(pollAPIInterval)
 	go func() {
 		for {
-			<-ticker.C
+			select {
+			case <-ctx.Done():
+				return
 
-			rsp, err := http.Get(infoEndpointURL) //nolint:gosec,noctx
-			if err != nil {
-				fmt.Printf("Error Polling node API %s ready status: %v\n", apiURL, err)
-				continue
-			}
-			fmt.Printf("Polling node API %s ready status: %s %s\n", apiURL, infoEndpointURL, rsp.Status)
-			//goland:noinspection GoUnhandledErrorResult
-			rsp.Body.Close()
-			if err == nil && rsp.StatusCode != 404 {
+			default:
+				rsp, err := http.Get(waspHealthEndpointURL) //nolint:gosec,noctx
+				if err != nil {
+					time.Sleep(pollAPIInterval)
+					continue
+				}
+				_ = rsp.Body.Close()
+
+				if rsp.StatusCode != http.StatusOK {
+					time.Sleep(pollAPIInterval)
+					continue
+				}
+
 				initOk <- true
-				ticker.Stop()
 				return
 			}
 		}
