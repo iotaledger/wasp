@@ -15,6 +15,7 @@ export const ParamDeployer                 = 'dp';
 export const ParamDeployPermissionsEnabled = 'de';
 export const ParamDescription              = 'ds';
 export const ParamHname                    = 'hn';
+export const ParamInitParams               = 'this';
 export const ParamName                     = 'nm';
 export const ParamProgramHash              = 'ph';
 

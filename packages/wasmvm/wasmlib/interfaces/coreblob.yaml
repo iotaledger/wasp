@@ -24,13 +24,6 @@ funcs:
 
 views:
 
-  # Returns the size of each chunk of the blob.
-  getBlobInfo:
-    params:
-      hash: Hash # hash of the blob
-    results:
-      blobSizes=this: map[String]Int32 # sizes for each named chunk
-
   #Returns the chunk associated with the given blob field name.
   getBlobField:
     params:
@@ -38,6 +31,13 @@ views:
       hash: Hash # hash of the blob
     results:
       bytes: Bytes # data for named chunk
+
+  # Returns the size of each chunk of the blob.
+  getBlobInfo:
+    params:
+      hash: Hash # hash of the blob
+    results:
+      blobSizes=this: map[String]Int32 # sizes for each named chunk
 
   # Returns a list of all blobs hashes in the registry and their sized.
   listBlobs:

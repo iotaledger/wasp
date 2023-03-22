@@ -213,7 +213,7 @@ Returns the number of NFTs owned by the given account.
 
 #### Returns
 
-- `A` (`Uns32`) Amount of NFTs owned by the account
+- `A` (`uint32`) Amount of NFTs owned by the account
 
 ### `accountNFTsInCollection(a AgentID)`
 
@@ -241,7 +241,7 @@ Returns the number of NFTs in the given collection that are owned by the given a
 
 #### Returns
 
-- `A` (`Uns32`) Amount of NFTs in the collection owned by the account
+- `A` (`uint32`) Amount of NFTs in the collection owned by the account
 
 ### `accountFoundries(a AgentID)`
 

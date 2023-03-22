@@ -34,19 +34,24 @@ impl ImmutableStoreBlobParams {
         }
     }
 
-    // set of named blobs
+    // set of named chunks
     pub fn blobs(&self) -> MapStringToImmutableBytes {
         MapStringToImmutableBytes { proxy: self.proxy.clone() }
     }
 
-    // description of progBinary
-    pub fn description(&self) -> ScImmutableString {
-        ScImmutableString::new(self.proxy.root(PARAM_DESCRIPTION))
+    // data schema for external tools
+    pub fn data_schema(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(PARAM_DATA_SCHEMA))
     }
 
     // smart contract program binary code
     pub fn prog_binary(&self) -> ScImmutableBytes {
         ScImmutableBytes::new(self.proxy.root(PARAM_PROG_BINARY))
+    }
+
+    // smart contract program source code
+    pub fn sources(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(PARAM_SOURCES))
     }
 
     // VM type that must be used to run progBinary
@@ -76,19 +81,24 @@ pub struct MutableStoreBlobParams {
 }
 
 impl MutableStoreBlobParams {
-    // set of named blobs
+    // set of named chunks
     pub fn blobs(&self) -> MapStringToMutableBytes {
         MapStringToMutableBytes { proxy: self.proxy.clone() }
     }
 
-    // description of progBinary
-    pub fn description(&self) -> ScMutableString {
-        ScMutableString::new(self.proxy.root(PARAM_DESCRIPTION))
+    // data schema for external tools
+    pub fn data_schema(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(PARAM_DATA_SCHEMA))
     }
 
     // smart contract program binary code
     pub fn prog_binary(&self) -> ScMutableBytes {
         ScMutableBytes::new(self.proxy.root(PARAM_PROG_BINARY))
+    }
+
+    // smart contract program source code
+    pub fn sources(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(PARAM_SOURCES))
     }
 
     // VM type that must be used to run progBinary
@@ -109,12 +119,12 @@ impl ImmutableGetBlobFieldParams {
         }
     }
 
-    // blob name
+    // chunk name
     pub fn field(&self) -> ScImmutableString {
         ScImmutableString::new(self.proxy.root(PARAM_FIELD))
     }
 
-    // blob set
+    // hash of the blob
     pub fn hash(&self) -> ScImmutableHash {
         ScImmutableHash::new(self.proxy.root(PARAM_HASH))
     }
@@ -126,12 +136,12 @@ pub struct MutableGetBlobFieldParams {
 }
 
 impl MutableGetBlobFieldParams {
-    // blob name
+    // chunk name
     pub fn field(&self) -> ScMutableString {
         ScMutableString::new(self.proxy.root(PARAM_FIELD))
     }
 
-    // blob set
+    // hash of the blob
     pub fn hash(&self) -> ScMutableHash {
         ScMutableHash::new(self.proxy.root(PARAM_HASH))
     }
@@ -149,7 +159,7 @@ impl ImmutableGetBlobInfoParams {
         }
     }
 
-    // blob set
+    // hash of the blob
     pub fn hash(&self) -> ScImmutableHash {
         ScImmutableHash::new(self.proxy.root(PARAM_HASH))
     }
@@ -161,7 +171,7 @@ pub struct MutableGetBlobInfoParams {
 }
 
 impl MutableGetBlobInfoParams {
-    // blob set
+    // hash of the blob
     pub fn hash(&self) -> ScMutableHash {
         ScMutableHash::new(self.proxy.root(PARAM_HASH))
     }

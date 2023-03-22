@@ -8,14 +8,25 @@ funcs:
   # A no-op that has the side effect of crediting any transferred tokens to the sender's account.
   deposit: {}
 
-  # Moves tokens from the caller's on-chain account to the caller's L1 address.
-  # The number of tokens to be withdrawn must be specified via the allowance of the request.
-  withdraw: {}
-
-  # Moves the specified allowance from the sender's L2 account to the given L2 account on the chain.
-  transferAllowanceTo:
+  # Creates a new foundry with the specified token scheme, and assigns the foundry to the sender.
+  foundryCreateNew:
     params:
-      agentID=a: AgentID # The target L2 account
+      tokenScheme=t: Bytes # token scheme for the new foundry
+    results:
+      foundrySN=s: Uint32 # serial number of the newly created foundry
+
+  # Destroys a given foundry output on L1, reimbursing the storage deposit to the caller.
+  # The foundry must be owned by the caller.
+  foundryDestroy:
+    params:
+      foundrySN=s: Uint32 # serial number of the foundry
+
+  # Mints or destroys tokens for the given foundry, which must be owned by the caller.
+  foundryModifySupply:
+    params:
+      foundrySN=s: Uint32 # serial number of the foundry
+      supplyDeltaAbs=d: BigInt # positive nonzero amount to mint or destroy
+      destroyTokens=y: Bool? # mint (default) or destroy tokens
 
   # Moves all tokens from the chain common account to the sender's L2 account.
   # The chain owner is the only one who can call this entry point.
@@ -26,27 +37,57 @@ funcs:
       # default MinimumBaseTokensOnCommonAccount, can never be less
       forceMinimumBaseTokens=f: Uint64?
 
-  # Creates a new foundry with the specified token scheme, and assigns the foundry to the sender.
-  foundryCreateNew:
+  # Moves the specified allowance from the sender's L2 account to the given L2 account on the chain.
+  transferAllowanceTo:
     params:
-      tokenScheme=t: Bytes # token scheme for the new foundry
-    results:
-      foundrySN=s: Uint32 # serial number of the newly created foundry
+      agentID=a: AgentID # The target L2 account
 
-  # Mints or destroys tokens for the given foundry, which must be owned by the caller.
-  foundryModifySupply:
-    params:
-      foundrySN=s: Uint32 # serial number of the foundry
-      supplyDeltaAbs=d: BigInt # positive nonzero amount to mint or destroy
-      destroyTokens=y: Bool? # mint (default) or destroy tokens
-
-  # Destroys a given foundry output on L1, reimbursing the storage deposit to the caller.
-  # The foundry must be owned by the caller.
-  foundryDestroy:
-    params:
-      foundrySN=s: Uint32 # serial number of the foundry
+  # Moves tokens from the caller's on-chain account to the caller's L1 address.
+  # The number of tokens to be withdrawn must be specified via the allowance of the request.
+  withdraw: {}
 
 views:
+  # Returns a list of all agent IDs that own assets on the chain.
+  accounts:
+    results:
+      allAccounts=this: map[AgentID]Bytes # agent IDs
+
+  # Returns the NFT IDs for all NFTs owned by the given account.
+  accountFoundries:
+    params:
+      agentID=a: AgentID # account agent ID
+    results:
+      foundries=this: map[Uint32]Bytes # foundry serial numbers owned by the given account
+
+  # Returns the amount of NFTs owned by the given account.
+  accountNFTAmount:
+    params:
+      agentID=a: AgentID # account agent ID
+    results:
+      amount=A: Uint32 # amount of NFTs owned by the account
+
+  # Returns the NFT IDs for all NFTs owned by the given account.
+  accountNFTs:
+    params:
+      agentID=a: AgentID # account agent ID
+    results:
+      nftIDs=i: NftID[] # NFT IDs owned by the account
+
+  # Returns the amount of NFTs in the specified collection owned by the given account.
+  accountNFTAmountInCollection:
+    params:
+      agentID=a: AgentID # account agent ID
+      collection=C: NftID # NFT ID of collection
+    results:
+      amount=A: Uint32 # amount of NFTs in collection owned by the account
+
+  # Returns the NFT IDs for all NFTs in the specified collection owned by the given account.
+  accountNFTsInCollection:
+    params:
+      agentID=a: AgentID # account agent ID
+      collection=C: NftID # NFT ID of collection
+    results:
+      nftIDs=i: NftID[] # NFT IDs in collection owned by the account
 
   # Returns the fungible tokens owned by the given Agent ID on the chain.
   balance:
@@ -71,72 +112,12 @@ views:
     results:
       tokens=B: BigInt # amount of native tokens in the account
 
-  # Returns the balances of all fungible tokens controlled by the chain.
-  totalAssets:
-    results:
-      # balance per token ID, zero length indicates base token
-      assets=this: map[TokenID]BigInt
-
-  # Returns a list of all agent IDs that own assets on the chain.
-  accounts:
-    results:
-      allAccounts=this: map[AgentID]Bytes # agent IDs
-
-  # Returns a list of all native tokenIDs that are owned by the chain.
-  getNativeTokenIDRegistry:
-    results:
-      mapping=this: map[TokenID]Bytes # token IDs
-
   # Returns specified foundry output in serialized form.
   foundryOutput:
     params:
       foundrySN=s: Uint32 # serial number of the foundry
     results:
       foundryOutputBin=b: Bytes # serialized foundry output
-
-  # Returns the NFT IDs for all NFTs owned by the given account.
-  accountFoundries:
-    params:
-      agentID=a: AgentID # account agent ID
-    results:
-      foundries=this: map[uint32]Bytes # foundry serial numbers owned by the given account
-
-  # Returns the NFT IDs for all NFTs owned by the given account.
-  accountNFTs:
-    params:
-      agentID=a: AgentID # account agent ID
-    results:
-      nftIDs=i: NftID[] # NFT IDs owned by the account
-
-  # Returns the amount of NFTs owned by the given account.
-  accountNFTAmount:
-    params:
-      agentID=a: AgentID # account agent ID
-    results:
-      amount=A: uint32 # amount of NFTs owned by the account
-
-  # Returns the NFT IDs for all NFTs in the specified collection owned by the given account.
-  accountNFTsInCollection:
-    params:
-      agentID=a: AgentID # account agent ID
-      collection=C: NftID # NFT ID of collection
-    results:
-      nftIDs=i: NftID[] # NFT IDs in collection owned by the account
-
-  # Returns the amount of NFTs in the specified collection owned by the given account.
-  accountNFTAmountInCollection:
-    params:
-      agentID=a: AgentID # account agent ID
-      collection=C: NftID # NFT ID of collection
-    results:
-      amount=A: uint32 # amount of NFTs in collection owned by the account
-
-  # Returns the data for a given NFT that is on the chain.
-  nftData:
-    params:
-      nftID=z: NftID # NFT ID
-    results:
-      nftData=e: Bytes # serialized NFT data
 
   # Returns the current account nonce for an Agent.
   # The account nonce is used to issue unique off-ledger requests.
@@ -145,3 +126,21 @@ views:
       agentID=a: AgentID # account agent ID
     results:
       accountNonce=n: Uint64 # account nonce
+
+  # Returns a list of all native tokenIDs that are owned by the chain.
+  getNativeTokenIDRegistry:
+    results:
+      mapping=this: map[TokenID]Bytes # token IDs
+
+  # Returns the data for a given NFT that is on the chain.
+  nftData:
+    params:
+      nftID=z: NftID # NFT ID
+    results:
+      nftData=e: Bytes # serialized NFT data
+
+  # Returns the balances of all fungible tokens controlled by the chain.
+  totalAssets:
+    results:
+      # balance per token ID, zero length indicates base token
+      assets=this: map[TokenID]BigInt
