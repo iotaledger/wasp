@@ -10,18 +10,17 @@ funcs:
       description=ds: String? # default 'N/A'
       name=nm: String
   grantDeployPermission:
+    access: chain # only chain owner can invoke this function
     params:
       deployer=dp: AgentID
   revokeDeployPermission:
+    access: chain # only chain owner can invoke this function
     params:
       deployer=dp: AgentID
   requireDeployPermissions:
+    access: chain # only chain owner can invoke this function
     params:
       deployPermissionsEnabled=de: Bool
-  subscribeBlockContext:
-    params:
-      openFunc=bco: Hname
-      closeFunc=bcc: Hname
 views:
   findContract:
     params:
