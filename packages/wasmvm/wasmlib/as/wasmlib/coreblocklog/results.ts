@@ -9,50 +9,58 @@ import * as wasmtypes from '../wasmtypes';
 import * as sc from './index';
 
 export class ImmutableControlAddressesResults extends wasmtypes.ScProxy {
-    // the addresses have been set as state controller address or governing address since the following block index
+    // index of block where the addresses were set
     blockIndex(): wasmtypes.ScImmutableUint32 {
         return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultBlockIndex));
     }
 
+    // governing address
     governingAddress(): wasmtypes.ScImmutableAddress {
         return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ResultGoverningAddress));
     }
 
+    // state controller address
     stateControllerAddress(): wasmtypes.ScImmutableAddress {
         return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ResultStateControllerAddress));
     }
 }
 
 export class MutableControlAddressesResults extends wasmtypes.ScProxy {
-    // the addresses have been set as state controller address or governing address since the following block index
+    // index of block where the addresses were set
     blockIndex(): wasmtypes.ScMutableUint32 {
         return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultBlockIndex));
     }
 
+    // governing address
     governingAddress(): wasmtypes.ScMutableAddress {
         return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ResultGoverningAddress));
     }
 
+    // state controller address
     stateControllerAddress(): wasmtypes.ScMutableAddress {
         return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ResultStateControllerAddress));
     }
 }
 
 export class ImmutableGetBlockInfoResults extends wasmtypes.ScProxy {
+    // index of returned block
     blockIndex(): wasmtypes.ScImmutableUint32 {
         return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultBlockIndex));
     }
 
+    // serialized block info
     blockInfo(): wasmtypes.ScImmutableBytes {
         return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultBlockInfo));
     }
 }
 
 export class MutableGetBlockInfoResults extends wasmtypes.ScProxy {
+    // index of returned block
     blockIndex(): wasmtypes.ScMutableUint32 {
         return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultBlockIndex));
     }
 
+    // serialized block info
     blockInfo(): wasmtypes.ScMutableBytes {
         return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultBlockInfo));
     }
@@ -70,7 +78,7 @@ export class ArrayOfImmutableBytes extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetEventsForBlockResults extends wasmtypes.ScProxy {
-    // native contract, so this is an Array16
+    // Array16 of serialized events
     event(): sc.ArrayOfImmutableBytes {
         return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultEvent));
     }
@@ -96,35 +104,35 @@ export class ArrayOfMutableBytes extends wasmtypes.ScProxy {
 }
 
 export class MutableGetEventsForBlockResults extends wasmtypes.ScProxy {
-    // native contract, so this is an Array16
+    // Array16 of serialized events
     event(): sc.ArrayOfMutableBytes {
         return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultEvent));
     }
 }
 
 export class ImmutableGetEventsForContractResults extends wasmtypes.ScProxy {
-    // native contract, so this is an Array16
+    // Array16 of serialized events
     event(): sc.ArrayOfImmutableBytes {
         return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultEvent));
     }
 }
 
 export class MutableGetEventsForContractResults extends wasmtypes.ScProxy {
-    // native contract, so this is an Array16
+    // Array16 of serialized events
     event(): sc.ArrayOfMutableBytes {
         return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultEvent));
     }
 }
 
 export class ImmutableGetEventsForRequestResults extends wasmtypes.ScProxy {
-    // native contract, so this is an Array16
+    // Array16 of serialized events
     event(): sc.ArrayOfImmutableBytes {
         return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultEvent));
     }
 }
 
 export class MutableGetEventsForRequestResults extends wasmtypes.ScProxy {
-    // native contract, so this is an Array16
+    // Array16 of serialized events
     event(): sc.ArrayOfMutableBytes {
         return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultEvent));
     }
@@ -142,7 +150,12 @@ export class ArrayOfImmutableRequestID extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetRequestIDsForBlockResults extends wasmtypes.ScProxy {
-    // native contract, so this is an Array16
+    // index of block containing request
+    blockIndex(): wasmtypes.ScImmutableUint32 {
+        return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultBlockIndex));
+    }
+
+    // Array16 of request IDs
     requestID(): sc.ArrayOfImmutableRequestID {
         return new sc.ArrayOfImmutableRequestID(this.proxy.root(sc.ResultRequestID));
     }
@@ -168,61 +181,84 @@ export class ArrayOfMutableRequestID extends wasmtypes.ScProxy {
 }
 
 export class MutableGetRequestIDsForBlockResults extends wasmtypes.ScProxy {
-    // native contract, so this is an Array16
+    // index of block containing request
+    blockIndex(): wasmtypes.ScMutableUint32 {
+        return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultBlockIndex));
+    }
+
+    // Array16 of request IDs
     requestID(): sc.ArrayOfMutableRequestID {
         return new sc.ArrayOfMutableRequestID(this.proxy.root(sc.ResultRequestID));
     }
 }
 
 export class ImmutableGetRequestReceiptResults extends wasmtypes.ScProxy {
+    // index of block containing request
     blockIndex(): wasmtypes.ScImmutableUint32 {
         return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultBlockIndex));
     }
 
+    // index within block containing request
     requestIndex(): wasmtypes.ScImmutableUint16 {
         return new wasmtypes.ScImmutableUint16(this.proxy.root(sc.ResultRequestIndex));
     }
 
-    requestRecord(): wasmtypes.ScImmutableBytes {
-        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultRequestRecord));
+    // serialized request receipt
+    requestReceipt(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultRequestReceipt));
     }
 }
 
 export class MutableGetRequestReceiptResults extends wasmtypes.ScProxy {
+    // index of block containing request
     blockIndex(): wasmtypes.ScMutableUint32 {
         return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultBlockIndex));
     }
 
+    // index within block containing request
     requestIndex(): wasmtypes.ScMutableUint16 {
         return new wasmtypes.ScMutableUint16(this.proxy.root(sc.ResultRequestIndex));
     }
 
-    requestRecord(): wasmtypes.ScMutableBytes {
-        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultRequestRecord));
+    // serialized request receipt
+    requestReceipt(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultRequestReceipt));
     }
 }
 
 export class ImmutableGetRequestReceiptsForBlockResults extends wasmtypes.ScProxy {
-    // native contract, so this is an Array16
-    requestRecord(): sc.ArrayOfImmutableBytes {
-        return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultRequestRecord));
+    // index of block containing request
+    blockIndex(): wasmtypes.ScImmutableUint32 {
+        return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultBlockIndex));
+    }
+
+    // Array16 of request receipts
+    requestReceipts(): sc.ArrayOfImmutableBytes {
+        return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultRequestReceipts));
     }
 }
 
 export class MutableGetRequestReceiptsForBlockResults extends wasmtypes.ScProxy {
-    // native contract, so this is an Array16
-    requestRecord(): sc.ArrayOfMutableBytes {
-        return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultRequestRecord));
+    // index of block containing request
+    blockIndex(): wasmtypes.ScMutableUint32 {
+        return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultBlockIndex));
+    }
+
+    // Array16 of request receipts
+    requestReceipts(): sc.ArrayOfMutableBytes {
+        return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultRequestReceipts));
     }
 }
 
 export class ImmutableIsRequestProcessedResults extends wasmtypes.ScProxy {
+    // whether request has been processed
     requestProcessed(): wasmtypes.ScImmutableBool {
         return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ResultRequestProcessed));
     }
 }
 
 export class MutableIsRequestProcessedResults extends wasmtypes.ScProxy {
+    // whether request has been processed
     requestProcessed(): wasmtypes.ScMutableBool {
         return new wasmtypes.ScMutableBool(this.proxy.root(sc.ResultRequestProcessed));
     }

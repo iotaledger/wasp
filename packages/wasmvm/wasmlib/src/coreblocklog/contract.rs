@@ -67,6 +67,7 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
+    // Returns the current state controller and governing addresses and at what block index they were set.
     pub fn control_addresses(ctx: &impl ScViewCallContext) -> ControlAddressesCall {
         let mut f = ControlAddressesCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_CONTROL_ADDRESSES),
@@ -76,6 +77,7 @@ impl ScFuncs {
         f
     }
 
+    // Returns information about the given block.
     pub fn get_block_info(ctx: &impl ScViewCallContext) -> GetBlockInfoCall {
         let mut f = GetBlockInfoCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_BLOCK_INFO),
@@ -87,6 +89,7 @@ impl ScFuncs {
         f
     }
 
+    // Returns the list of events triggered during the execution of the given block.
     pub fn get_events_for_block(ctx: &impl ScViewCallContext) -> GetEventsForBlockCall {
         let mut f = GetEventsForBlockCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_EVENTS_FOR_BLOCK),
@@ -98,6 +101,8 @@ impl ScFuncs {
         f
     }
 
+    // Returns the list of events triggered by the given contract
+    // during the execution of the given block range.
     pub fn get_events_for_contract(ctx: &impl ScViewCallContext) -> GetEventsForContractCall {
         let mut f = GetEventsForContractCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_EVENTS_FOR_CONTRACT),
@@ -109,6 +114,7 @@ impl ScFuncs {
         f
     }
 
+    // Returns the list of events triggered during the execution of the given request.
     pub fn get_events_for_request(ctx: &impl ScViewCallContext) -> GetEventsForRequestCall {
         let mut f = GetEventsForRequestCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_EVENTS_FOR_REQUEST),
@@ -120,6 +126,7 @@ impl ScFuncs {
         f
     }
 
+    // Returns a list with all request IDs in the given block.
     pub fn get_request_i_ds_for_block(ctx: &impl ScViewCallContext) -> GetRequestIDsForBlockCall {
         let mut f = GetRequestIDsForBlockCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_REQUEST_I_DS_FOR_BLOCK),
@@ -131,6 +138,7 @@ impl ScFuncs {
         f
     }
 
+    // Returns the receipt for the request with the given ID.
     pub fn get_request_receipt(ctx: &impl ScViewCallContext) -> GetRequestReceiptCall {
         let mut f = GetRequestReceiptCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_REQUEST_RECEIPT),
@@ -142,6 +150,7 @@ impl ScFuncs {
         f
     }
 
+    // Returns all request receipts in the given block.
     pub fn get_request_receipts_for_block(ctx: &impl ScViewCallContext) -> GetRequestReceiptsForBlockCall {
         let mut f = GetRequestReceiptsForBlockCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_REQUEST_RECEIPTS_FOR_BLOCK),
@@ -153,6 +162,7 @@ impl ScFuncs {
         f
     }
 
+    // Returns whether the request with ID u has been processed.
     pub fn is_request_processed(ctx: &impl ScViewCallContext) -> IsRequestProcessedCall {
         let mut f = IsRequestProcessedCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_IS_REQUEST_PROCESSED),
