@@ -81,6 +81,7 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
 		ctx.RequireNoError(err)
 		arr.MustPush(rec.Request.ID().Bytes())
 	}
+	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret
 }
 
@@ -171,6 +172,7 @@ func viewGetEventsForBlock(ctx isc.SandboxView) dict.Dict {
 	for _, event := range events {
 		arr.MustPush([]byte(event))
 	}
+	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret
 }
 

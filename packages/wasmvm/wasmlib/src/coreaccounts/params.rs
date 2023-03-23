@@ -23,6 +23,7 @@ impl ImmutableFoundryCreateNewParams {
         }
     }
 
+    // token scheme for the new foundry
     pub fn token_scheme(&self) -> ScImmutableBytes {
         ScImmutableBytes::new(self.proxy.root(PARAM_TOKEN_SCHEME))
     }
@@ -34,6 +35,7 @@ pub struct MutableFoundryCreateNewParams {
 }
 
 impl MutableFoundryCreateNewParams {
+    // token scheme for the new foundry
     pub fn token_scheme(&self) -> ScMutableBytes {
         ScMutableBytes::new(self.proxy.root(PARAM_TOKEN_SCHEME))
     }
@@ -51,6 +53,7 @@ impl ImmutableFoundryDestroyParams {
         }
     }
 
+    // serial number of the foundry
     pub fn foundry_sn(&self) -> ScImmutableUint32 {
         ScImmutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
     }
@@ -62,6 +65,7 @@ pub struct MutableFoundryDestroyParams {
 }
 
 impl MutableFoundryDestroyParams {
+    // serial number of the foundry
     pub fn foundry_sn(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
     }
@@ -79,14 +83,17 @@ impl ImmutableFoundryModifySupplyParams {
         }
     }
 
+    // mint (default) or destroy tokens
     pub fn destroy_tokens(&self) -> ScImmutableBool {
         ScImmutableBool::new(self.proxy.root(PARAM_DESTROY_TOKENS))
     }
 
+    // serial number of the foundry
     pub fn foundry_sn(&self) -> ScImmutableUint32 {
         ScImmutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
     }
 
+    // positive nonzero amount to mint or destroy
     pub fn supply_delta_abs(&self) -> ScImmutableBigInt {
         ScImmutableBigInt::new(self.proxy.root(PARAM_SUPPLY_DELTA_ABS))
     }
@@ -98,14 +105,17 @@ pub struct MutableFoundryModifySupplyParams {
 }
 
 impl MutableFoundryModifySupplyParams {
+    // mint (default) or destroy tokens
     pub fn destroy_tokens(&self) -> ScMutableBool {
         ScMutableBool::new(self.proxy.root(PARAM_DESTROY_TOKENS))
     }
 
+    // serial number of the foundry
     pub fn foundry_sn(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
     }
 
+    // positive nonzero amount to mint or destroy
     pub fn supply_delta_abs(&self) -> ScMutableBigInt {
         ScMutableBigInt::new(self.proxy.root(PARAM_SUPPLY_DELTA_ABS))
     }
@@ -123,6 +133,8 @@ impl ImmutableHarvestParams {
         }
     }
 
+    // amount of base tokens to leave in the common account
+    // default MinimumBaseTokensOnCommonAccount, can never be less
     pub fn force_minimum_base_tokens(&self) -> ScImmutableUint64 {
         ScImmutableUint64::new(self.proxy.root(PARAM_FORCE_MINIMUM_BASE_TOKENS))
     }
@@ -134,6 +146,8 @@ pub struct MutableHarvestParams {
 }
 
 impl MutableHarvestParams {
+    // amount of base tokens to leave in the common account
+    // default MinimumBaseTokensOnCommonAccount, can never be less
     pub fn force_minimum_base_tokens(&self) -> ScMutableUint64 {
         ScMutableUint64::new(self.proxy.root(PARAM_FORCE_MINIMUM_BASE_TOKENS))
     }
@@ -151,6 +165,7 @@ impl ImmutableTransferAllowanceToParams {
         }
     }
 
+    // The target L2 account
     pub fn agent_id(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
     }
@@ -162,8 +177,109 @@ pub struct MutableTransferAllowanceToParams {
 }
 
 impl MutableTransferAllowanceToParams {
+    // The target L2 account
     pub fn agent_id(&self) -> ScMutableAgentID {
         ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableAccountFoundriesParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl ImmutableAccountFoundriesParams {
+    pub fn new() -> ImmutableAccountFoundriesParams {
+        ImmutableAccountFoundriesParams {
+            proxy: params_proxy(),
+        }
+    }
+
+    // account agent ID
+    pub fn agent_id(&self) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableAccountFoundriesParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl MutableAccountFoundriesParams {
+    // account agent ID
+    pub fn agent_id(&self) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableAccountNFTAmountParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl ImmutableAccountNFTAmountParams {
+    pub fn new() -> ImmutableAccountNFTAmountParams {
+        ImmutableAccountNFTAmountParams {
+            proxy: params_proxy(),
+        }
+    }
+
+    // account agent ID
+    pub fn agent_id(&self) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableAccountNFTAmountParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl MutableAccountNFTAmountParams {
+    // account agent ID
+    pub fn agent_id(&self) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableAccountNFTAmountInCollectionParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl ImmutableAccountNFTAmountInCollectionParams {
+    pub fn new() -> ImmutableAccountNFTAmountInCollectionParams {
+        ImmutableAccountNFTAmountInCollectionParams {
+            proxy: params_proxy(),
+        }
+    }
+
+    // account agent ID
+    pub fn agent_id(&self) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    }
+
+    // NFT ID of collection
+    pub fn collection(&self) -> ScImmutableNftID {
+        ScImmutableNftID::new(self.proxy.root(PARAM_COLLECTION))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableAccountNFTAmountInCollectionParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl MutableAccountNFTAmountInCollectionParams {
+    // account agent ID
+    pub fn agent_id(&self) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    }
+
+    // NFT ID of collection
+    pub fn collection(&self) -> ScMutableNftID {
+        ScMutableNftID::new(self.proxy.root(PARAM_COLLECTION))
     }
 }
 
@@ -179,6 +295,7 @@ impl ImmutableAccountNFTsParams {
         }
     }
 
+    // account agent ID
     pub fn agent_id(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
     }
@@ -190,8 +307,49 @@ pub struct MutableAccountNFTsParams {
 }
 
 impl MutableAccountNFTsParams {
+    // account agent ID
     pub fn agent_id(&self) -> ScMutableAgentID {
         ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableAccountNFTsInCollectionParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl ImmutableAccountNFTsInCollectionParams {
+    pub fn new() -> ImmutableAccountNFTsInCollectionParams {
+        ImmutableAccountNFTsInCollectionParams {
+            proxy: params_proxy(),
+        }
+    }
+
+    // account agent ID
+    pub fn agent_id(&self) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    }
+
+    // NFT ID of collection
+    pub fn collection(&self) -> ScImmutableNftID {
+        ScImmutableNftID::new(self.proxy.root(PARAM_COLLECTION))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableAccountNFTsInCollectionParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl MutableAccountNFTsInCollectionParams {
+    // account agent ID
+    pub fn agent_id(&self) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    }
+
+    // NFT ID of collection
+    pub fn collection(&self) -> ScMutableNftID {
+        ScMutableNftID::new(self.proxy.root(PARAM_COLLECTION))
     }
 }
 
@@ -207,6 +365,7 @@ impl ImmutableBalanceParams {
         }
     }
 
+    // account agent ID
     pub fn agent_id(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
     }
@@ -218,6 +377,7 @@ pub struct MutableBalanceParams {
 }
 
 impl MutableBalanceParams {
+    // account agent ID
     pub fn agent_id(&self) -> ScMutableAgentID {
         ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
     }
@@ -235,6 +395,7 @@ impl ImmutableBalanceBaseTokenParams {
         }
     }
 
+    // account agent ID
     pub fn agent_id(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
     }
@@ -246,6 +407,7 @@ pub struct MutableBalanceBaseTokenParams {
 }
 
 impl MutableBalanceBaseTokenParams {
+    // account agent ID
     pub fn agent_id(&self) -> ScMutableAgentID {
         ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
     }
@@ -263,10 +425,12 @@ impl ImmutableBalanceNativeTokenParams {
         }
     }
 
+    // account agent ID
     pub fn agent_id(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
     }
 
+    // native token ID
     pub fn token_id(&self) -> ScImmutableTokenID {
         ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN_ID))
     }
@@ -278,10 +442,12 @@ pub struct MutableBalanceNativeTokenParams {
 }
 
 impl MutableBalanceNativeTokenParams {
+    // account agent ID
     pub fn agent_id(&self) -> ScMutableAgentID {
         ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
     }
 
+    // native token ID
     pub fn token_id(&self) -> ScMutableTokenID {
         ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN_ID))
     }
@@ -299,6 +465,7 @@ impl ImmutableFoundryOutputParams {
         }
     }
 
+    // serial number of the foundry
     pub fn foundry_sn(&self) -> ScImmutableUint32 {
         ScImmutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
     }
@@ -310,6 +477,7 @@ pub struct MutableFoundryOutputParams {
 }
 
 impl MutableFoundryOutputParams {
+    // serial number of the foundry
     pub fn foundry_sn(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
     }
@@ -327,6 +495,7 @@ impl ImmutableGetAccountNonceParams {
         }
     }
 
+    // account agent ID
     pub fn agent_id(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
     }
@@ -338,6 +507,7 @@ pub struct MutableGetAccountNonceParams {
 }
 
 impl MutableGetAccountNonceParams {
+    // account agent ID
     pub fn agent_id(&self) -> ScMutableAgentID {
         ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
     }
@@ -355,6 +525,7 @@ impl ImmutableNftDataParams {
         }
     }
 
+    // NFT ID
     pub fn nft_id(&self) -> ScImmutableNftID {
         ScImmutableNftID::new(self.proxy.root(PARAM_NFT_ID))
     }
@@ -366,6 +537,7 @@ pub struct MutableNftDataParams {
 }
 
 impl MutableNftDataParams {
+    // NFT ID
     pub fn nft_id(&self) -> ScMutableNftID {
         ScMutableNftID::new(self.proxy.root(PARAM_NFT_ID))
     }

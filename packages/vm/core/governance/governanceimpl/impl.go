@@ -45,7 +45,7 @@ var Processor = governance.Contract.Processor(nil,
 	governance.FuncStopMaintenance.WithHandler(setMaintenanceOff),
 	governance.ViewGetMaintenanceStatus.WithHandler(getMaintenanceStatus),
 
-	// L1 meadata
+	// L1 metadata
 	governance.FuncSetCustomMetadata.WithHandler(setCustomMetadata),
 	governance.ViewGetCustomMetadata.WithHandler(getCustomMetadata),
 )

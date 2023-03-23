@@ -24,7 +24,7 @@ import (
 	wasp_yaml "github.com/iotaledger/wasp/tools/schema/model/yaml"
 )
 
-const version = "schema tool version 1.1.1"
+const version = "schema tool version 1.1.2"
 
 var (
 	flagBuild   = flag.Bool("build", false, "build wasm target for specified languages")

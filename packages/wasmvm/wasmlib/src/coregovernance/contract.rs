@@ -49,9 +49,32 @@ pub struct RotateStateControllerCall<'a> {
     pub params: MutableRotateStateControllerParams,
 }
 
+pub struct SetCustomMetadataCall<'a> {
+    pub func:   ScFunc<'a>,
+    pub params: MutableSetCustomMetadataParams,
+}
+
+pub struct SetEVMGasRatioCall<'a> {
+    pub func:   ScFunc<'a>,
+    pub params: MutableSetEVMGasRatioParams,
+}
+
 pub struct SetFeePolicyCall<'a> {
     pub func:   ScFunc<'a>,
     pub params: MutableSetFeePolicyParams,
+}
+
+pub struct SetGasLimitsCall<'a> {
+    pub func:   ScFunc<'a>,
+    pub params: MutableSetGasLimitsParams,
+}
+
+pub struct SetMaintenanceOffCall<'a> {
+    pub func: ScFunc<'a>,
+}
+
+pub struct SetMaintenanceOnCall<'a> {
+    pub func: ScFunc<'a>,
 }
 
 pub struct GetAllowedStateControllerAddressesCall<'a> {
@@ -74,15 +97,36 @@ pub struct GetChainOwnerCall<'a> {
     pub results: ImmutableGetChainOwnerResults,
 }
 
+pub struct GetCustomMetadataCall<'a> {
+    pub func:    ScView<'a>,
+    pub results: ImmutableGetCustomMetadataResults,
+}
+
+pub struct GetEVMGasRatioCall<'a> {
+    pub func:    ScView<'a>,
+    pub results: ImmutableGetEVMGasRatioResults,
+}
+
 pub struct GetFeePolicyCall<'a> {
     pub func:    ScView<'a>,
     pub results: ImmutableGetFeePolicyResults,
+}
+
+pub struct GetGasLimitsCall<'a> {
+    pub func:    ScView<'a>,
+    pub results: ImmutableGetGasLimitsResults,
+}
+
+pub struct GetMaintenanceStatusCall<'a> {
+    pub func:    ScView<'a>,
+    pub results: ImmutableGetMaintenanceStatusResults,
 }
 
 pub struct ScFuncs {
 }
 
 impl ScFuncs {
+    // Adds the given address to the list of identities that constitute the state controller.
     pub fn add_allowed_state_controller_address(ctx: &impl ScFuncCallContext) -> AddAllowedStateControllerAddressCall {
         let mut f = AddAllowedStateControllerAddressCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_ADD_ALLOWED_STATE_CONTROLLER_ADDRESS),
@@ -92,7 +136,7 @@ impl ScFuncs {
         f
     }
 
-    // access nodes
+    // Adds a node to the list of candidates.
     pub fn add_candidate_node(ctx: &impl ScFuncCallContext) -> AddCandidateNodeCall {
         let mut f = AddCandidateNodeCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_ADD_CANDIDATE_NODE),
@@ -102,6 +146,7 @@ impl ScFuncs {
         f
     }
 
+    // Iterates through the given map of actions and applies them.
     pub fn change_access_nodes(ctx: &impl ScFuncCallContext) -> ChangeAccessNodesCall {
         let mut f = ChangeAccessNodesCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_CHANGE_ACCESS_NODES),
@@ -111,13 +156,16 @@ impl ScFuncs {
         f
     }
 
-    // chain owner
+    // Claims the ownership of the chain if the caller matches the identity
+    // that was set in delegateChainOwnership().
     pub fn claim_chain_ownership(ctx: &impl ScFuncCallContext) -> ClaimChainOwnershipCall {
         ClaimChainOwnershipCall {
             func: ScFunc::new(ctx, HSC_NAME, HFUNC_CLAIM_CHAIN_OWNERSHIP),
         }
     }
 
+    // Sets the Agent ID o as the new owner for the chain.
+    // This change will only be effective once claimChainOwnership() is called by o.
     pub fn delegate_chain_ownership(ctx: &impl ScFuncCallContext) -> DelegateChainOwnershipCall {
         let mut f = DelegateChainOwnershipCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_DELEGATE_CHAIN_OWNERSHIP),
@@ -127,6 +175,7 @@ impl ScFuncs {
         f
     }
 
+    // Removes the given address from the list of identities that constitute the state controller.
     pub fn remove_allowed_state_controller_address(ctx: &impl ScFuncCallContext) -> RemoveAllowedStateControllerAddressCall {
         let mut f = RemoveAllowedStateControllerAddressCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_REMOVE_ALLOWED_STATE_CONTROLLER_ADDRESS),
@@ -136,6 +185,7 @@ impl ScFuncs {
         f
     }
 
+    // Removes a node from the list of candidates.
     pub fn revoke_access_node(ctx: &impl ScFuncCallContext) -> RevokeAccessNodeCall {
         let mut f = RevokeAccessNodeCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_REVOKE_ACCESS_NODE),
@@ -145,7 +195,10 @@ impl ScFuncs {
         f
     }
 
-    // state controller
+    // Called when the committee is about to be rotated to the given address.
+    // If it succeeds, the next state transition will become a governance transition,
+    // thus updating the state controller in the chain's Alias Output.
+    // If it fails, nothing happens.
     pub fn rotate_state_controller(ctx: &impl ScFuncCallContext) -> RotateStateControllerCall {
         let mut f = RotateStateControllerCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_ROTATE_STATE_CONTROLLER),
@@ -155,7 +208,27 @@ impl ScFuncs {
         f
     }
 
-    // fees
+    // Changes optional extra metadata that is appended to the L1 AliasOutput.
+    pub fn set_custom_metadata(ctx: &impl ScFuncCallContext) -> SetCustomMetadataCall {
+        let mut f = SetCustomMetadataCall {
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_SET_CUSTOM_METADATA),
+            params:  MutableSetCustomMetadataParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    // Sets the EVM gas ratio for the chain.
+    pub fn set_evm_gas_ratio(ctx: &impl ScFuncCallContext) -> SetEVMGasRatioCall {
+        let mut f = SetEVMGasRatioCall {
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_SET_EVM_GAS_RATIO),
+            params:  MutableSetEVMGasRatioParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    // Sets the fee policy for the chain.
     pub fn set_fee_policy(ctx: &impl ScFuncCallContext) -> SetFeePolicyCall {
         let mut f = SetFeePolicyCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_SET_FEE_POLICY),
@@ -165,7 +238,32 @@ impl ScFuncs {
         f
     }
 
-    // state controller
+    // Sets the gas limits for the chain.
+    pub fn set_gas_limits(ctx: &impl ScFuncCallContext) -> SetGasLimitsCall {
+        let mut f = SetGasLimitsCall {
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_SET_GAS_LIMITS),
+            params:  MutableSetGasLimitsParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    // Stops the maintenance mode.
+    pub fn set_maintenance_off(ctx: &impl ScFuncCallContext) -> SetMaintenanceOffCall {
+        SetMaintenanceOffCall {
+            func: ScFunc::new(ctx, HSC_NAME, HFUNC_SET_MAINTENANCE_OFF),
+        }
+    }
+
+    // Starts the chain maintenance mode, meaning no further requests
+    // will be processed except calls to the governance contract.
+    pub fn set_maintenance_on(ctx: &impl ScFuncCallContext) -> SetMaintenanceOnCall {
+        SetMaintenanceOnCall {
+            func: ScFunc::new(ctx, HSC_NAME, HFUNC_SET_MAINTENANCE_ON),
+        }
+    }
+
+    // Returns the list of allowed state controllers.
     pub fn get_allowed_state_controller_addresses(ctx: &impl ScViewCallContext) -> GetAllowedStateControllerAddressesCall {
         let mut f = GetAllowedStateControllerAddressesCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_ALLOWED_STATE_CONTROLLER_ADDRESSES),
@@ -175,7 +273,7 @@ impl ScFuncs {
         f
     }
 
-    // chain info
+    // Returns information about the chain.
     pub fn get_chain_info(ctx: &impl ScViewCallContext) -> GetChainInfoCall {
         let mut f = GetChainInfoCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_CHAIN_INFO),
@@ -185,7 +283,7 @@ impl ScFuncs {
         f
     }
 
-    // access nodes
+    // Returns the current access nodes and candidates.
     pub fn get_chain_nodes(ctx: &impl ScViewCallContext) -> GetChainNodesCall {
         let mut f = GetChainNodesCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_CHAIN_NODES),
@@ -195,7 +293,7 @@ impl ScFuncs {
         f
     }
 
-    // chain owner
+    // Returns the AgentID of the chain owner.
     pub fn get_chain_owner(ctx: &impl ScViewCallContext) -> GetChainOwnerCall {
         let mut f = GetChainOwnerCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_CHAIN_OWNER),
@@ -205,11 +303,51 @@ impl ScFuncs {
         f
     }
 
-    // fees
+    // Returns the extra metadata that is added to the chain AliasOutput.
+    pub fn get_custom_metadata(ctx: &impl ScViewCallContext) -> GetCustomMetadataCall {
+        let mut f = GetCustomMetadataCall {
+            func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_CUSTOM_METADATA),
+            results: ImmutableGetCustomMetadataResults { proxy: Proxy::nil() },
+        };
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    // Returns the EVM gas ratio.
+    pub fn get_evm_gas_ratio(ctx: &impl ScViewCallContext) -> GetEVMGasRatioCall {
+        let mut f = GetEVMGasRatioCall {
+            func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_EVM_GAS_RATIO),
+            results: ImmutableGetEVMGasRatioResults { proxy: Proxy::nil() },
+        };
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    // Returns the fee policy.
     pub fn get_fee_policy(ctx: &impl ScViewCallContext) -> GetFeePolicyCall {
         let mut f = GetFeePolicyCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_FEE_POLICY),
             results: ImmutableGetFeePolicyResults { proxy: Proxy::nil() },
+        };
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    // Returns the gas limits.
+    pub fn get_gas_limits(ctx: &impl ScViewCallContext) -> GetGasLimitsCall {
+        let mut f = GetGasLimitsCall {
+            func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_GAS_LIMITS),
+            results: ImmutableGetGasLimitsResults { proxy: Proxy::nil() },
+        };
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    // Returns whether the chain is undergoing maintenance.
+    pub fn get_maintenance_status(ctx: &impl ScViewCallContext) -> GetMaintenanceStatusCall {
+        let mut f = GetMaintenanceStatusCall {
+            func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_MAINTENANCE_STATUS),
+            results: ImmutableGetMaintenanceStatusResults { proxy: Proxy::nil() },
         };
         ScView::link_results(&mut f.results.proxy, &f.func);
         f

@@ -20,9 +20,9 @@ export class ArrayOfImmutableAddress extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetAllowedStateControllerAddressesResults extends wasmtypes.ScProxy {
-    // native contract, so this is an Array16
-    allowedStateControllerAddresses(): sc.ArrayOfImmutableAddress {
-        return new sc.ArrayOfImmutableAddress(this.proxy.root(sc.ResultAllowedStateControllerAddresses));
+    // Array16 of state controller addresses
+    controllers(): sc.ArrayOfImmutableAddress {
+        return new sc.ArrayOfImmutableAddress(this.proxy.root(sc.ResultControllers));
     }
 }
 
@@ -46,45 +46,63 @@ export class ArrayOfMutableAddress extends wasmtypes.ScProxy {
 }
 
 export class MutableGetAllowedStateControllerAddressesResults extends wasmtypes.ScProxy {
-    // native contract, so this is an Array16
-    allowedStateControllerAddresses(): sc.ArrayOfMutableAddress {
-        return new sc.ArrayOfMutableAddress(this.proxy.root(sc.ResultAllowedStateControllerAddresses));
+    // Array16 of state controller addresses
+    controllers(): sc.ArrayOfMutableAddress {
+        return new sc.ArrayOfMutableAddress(this.proxy.root(sc.ResultControllers));
     }
 }
 
 export class ImmutableGetChainInfoResults extends wasmtypes.ScProxy {
+    // chain ID
     chainID(): wasmtypes.ScImmutableChainID {
         return new wasmtypes.ScImmutableChainID(this.proxy.root(sc.ResultChainID));
     }
 
+    // chain owner agent ID
     chainOwnerID(): wasmtypes.ScImmutableAgentID {
         return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultChainOwnerID));
     }
 
+    // chain metadata
     customMetadata(): wasmtypes.ScImmutableBytes {
         return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultCustomMetadata));
     }
 
-    gasFeePolicyBytes(): wasmtypes.ScImmutableBytes {
-        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultGasFeePolicyBytes));
+    // serialized fee policy
+    feePolicy(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultFeePolicy));
+    }
+
+    // serialized gas limits
+    gasLimits(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultGasLimits));
     }
 }
 
 export class MutableGetChainInfoResults extends wasmtypes.ScProxy {
+    // chain ID
     chainID(): wasmtypes.ScMutableChainID {
         return new wasmtypes.ScMutableChainID(this.proxy.root(sc.ResultChainID));
     }
 
+    // chain owner agent ID
     chainOwnerID(): wasmtypes.ScMutableAgentID {
         return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultChainOwnerID));
     }
 
+    // chain metadata
     customMetadata(): wasmtypes.ScMutableBytes {
         return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultCustomMetadata));
     }
 
-    gasFeePolicyBytes(): wasmtypes.ScMutableBytes {
-        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultGasFeePolicyBytes));
+    // serialized fee policy
+    feePolicy(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultFeePolicy));
+    }
+
+    // serialized gas limits
+    gasLimits(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultGasLimits));
     }
 }
 
@@ -96,10 +114,12 @@ export class MapBytesToImmutableBytes extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetChainNodesResults extends wasmtypes.ScProxy {
+    // serialized access node info per pubKey
     accessNodeCandidates(): sc.MapBytesToImmutableBytes {
         return new sc.MapBytesToImmutableBytes(this.proxy.root(sc.ResultAccessNodeCandidates));
     }
 
+    // pubKey set
     accessNodes(): sc.MapBytesToImmutableBytes {
         return new sc.MapBytesToImmutableBytes(this.proxy.root(sc.ResultAccessNodes));
     }
@@ -117,35 +137,97 @@ export class MapBytesToMutableBytes extends wasmtypes.ScProxy {
 }
 
 export class MutableGetChainNodesResults extends wasmtypes.ScProxy {
+    // serialized access node info per pubKey
     accessNodeCandidates(): sc.MapBytesToMutableBytes {
         return new sc.MapBytesToMutableBytes(this.proxy.root(sc.ResultAccessNodeCandidates));
     }
 
+    // pubKey set
     accessNodes(): sc.MapBytesToMutableBytes {
         return new sc.MapBytesToMutableBytes(this.proxy.root(sc.ResultAccessNodes));
     }
 }
 
 export class ImmutableGetChainOwnerResults extends wasmtypes.ScProxy {
+    // chain owner
     chainOwner(): wasmtypes.ScImmutableAgentID {
         return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultChainOwner));
     }
 }
 
 export class MutableGetChainOwnerResults extends wasmtypes.ScProxy {
+    // chain owner
     chainOwner(): wasmtypes.ScMutableAgentID {
         return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultChainOwner));
     }
 }
 
+export class ImmutableGetCustomMetadataResults extends wasmtypes.ScProxy {
+    // chain metadata
+    metadata(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultMetadata));
+    }
+}
+
+export class MutableGetCustomMetadataResults extends wasmtypes.ScProxy {
+    // chain metadata
+    metadata(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultMetadata));
+    }
+}
+
+export class ImmutableGetEVMGasRatioResults extends wasmtypes.ScProxy {
+    // serialized gas ratio
+    gasRatio(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultGasRatio));
+    }
+}
+
+export class MutableGetEVMGasRatioResults extends wasmtypes.ScProxy {
+    // serialized gas ratio
+    gasRatio(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultGasRatio));
+    }
+}
+
 export class ImmutableGetFeePolicyResults extends wasmtypes.ScProxy {
-    feePolicyBytes(): wasmtypes.ScImmutableBytes {
-        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultFeePolicyBytes));
+    // serialized fee policy
+    feePolicy(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultFeePolicy));
     }
 }
 
 export class MutableGetFeePolicyResults extends wasmtypes.ScProxy {
-    feePolicyBytes(): wasmtypes.ScMutableBytes {
-        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultFeePolicyBytes));
+    // serialized fee policy
+    feePolicy(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultFeePolicy));
+    }
+}
+
+export class ImmutableGetGasLimitsResults extends wasmtypes.ScProxy {
+    // serialized gas limits
+    gasLimits(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultGasLimits));
+    }
+}
+
+export class MutableGetGasLimitsResults extends wasmtypes.ScProxy {
+    // serialized gas limits
+    gasLimits(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultGasLimits));
+    }
+}
+
+export class ImmutableGetMaintenanceStatusResults extends wasmtypes.ScProxy {
+    // whether maintenance mode is on
+    status(): wasmtypes.ScImmutableBool {
+        return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ResultStatus));
+    }
+}
+
+export class MutableGetMaintenanceStatusResults extends wasmtypes.ScProxy {
+    // whether maintenance mode is on
+    status(): wasmtypes.ScMutableBool {
+        return new wasmtypes.ScMutableBool(this.proxy.root(sc.ResultStatus));
     }
 }

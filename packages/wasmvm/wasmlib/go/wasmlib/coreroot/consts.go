@@ -20,6 +20,7 @@ const (
 	ParamDeployPermissionsEnabled = "de"
 	ParamDescription              = "ds"
 	ParamHname                    = "hn"
+	ParamInitParams               = "this"
 	ParamName                     = "nm"
 	ParamProgramHash              = "ph"
 )

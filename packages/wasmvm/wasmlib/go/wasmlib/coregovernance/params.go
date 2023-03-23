@@ -20,16 +20,18 @@ func NewImmutableAddAllowedStateControllerAddressParams() ImmutableAddAllowedSta
 	return ImmutableAddAllowedStateControllerAddressParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
-func (s ImmutableAddAllowedStateControllerAddressParams) StateControllerAddress() wasmtypes.ScImmutableAddress {
-	return wasmtypes.NewScImmutableAddress(s.Proxy.Root(ParamStateControllerAddress))
+// state controller address
+func (s ImmutableAddAllowedStateControllerAddressParams) Address() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.Proxy.Root(ParamAddress))
 }
 
 type MutableAddAllowedStateControllerAddressParams struct {
 	Proxy wasmtypes.Proxy
 }
 
-func (s MutableAddAllowedStateControllerAddressParams) StateControllerAddress() wasmtypes.ScMutableAddress {
-	return wasmtypes.NewScMutableAddress(s.Proxy.Root(ParamStateControllerAddress))
+// state controller address
+func (s MutableAddAllowedStateControllerAddressParams) Address() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.Proxy.Root(ParamAddress))
 }
 
 type ImmutableAddCandidateNodeParams struct {
@@ -40,40 +42,48 @@ func NewImmutableAddCandidateNodeParams() ImmutableAddCandidateNodeParams {
 	return ImmutableAddCandidateNodeParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
-func (s ImmutableAddCandidateNodeParams) AccessNodeInfoAccessAPI() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.Proxy.Root(ParamAccessNodeInfoAccessAPI))
+// API base URL for the node, default empty
+func (s ImmutableAddCandidateNodeParams) AccessAPI() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.Proxy.Root(ParamAccessAPI))
 }
 
-func (s ImmutableAddCandidateNodeParams) AccessNodeInfoCertificate() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamAccessNodeInfoCertificate))
+// whether node is just an access node, default false
+func (s ImmutableAddCandidateNodeParams) AccessOnly() wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(s.Proxy.Root(ParamAccessOnly))
 }
 
-func (s ImmutableAddCandidateNodeParams) AccessNodeInfoForCommittee() wasmtypes.ScImmutableBool {
-	return wasmtypes.NewScImmutableBool(s.Proxy.Root(ParamAccessNodeInfoForCommittee))
+// signed binary containing both the node public key and their L1 address
+func (s ImmutableAddCandidateNodeParams) Certificate() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamCertificate))
 }
 
-func (s ImmutableAddCandidateNodeParams) AccessNodeInfoPubKey() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamAccessNodeInfoPubKey))
+// public key of the node to be added
+func (s ImmutableAddCandidateNodeParams) PubKey() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamPubKey))
 }
 
 type MutableAddCandidateNodeParams struct {
 	Proxy wasmtypes.Proxy
 }
 
-func (s MutableAddCandidateNodeParams) AccessNodeInfoAccessAPI() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.Proxy.Root(ParamAccessNodeInfoAccessAPI))
+// API base URL for the node, default empty
+func (s MutableAddCandidateNodeParams) AccessAPI() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.Proxy.Root(ParamAccessAPI))
 }
 
-func (s MutableAddCandidateNodeParams) AccessNodeInfoCertificate() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamAccessNodeInfoCertificate))
+// whether node is just an access node, default false
+func (s MutableAddCandidateNodeParams) AccessOnly() wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(s.Proxy.Root(ParamAccessOnly))
 }
 
-func (s MutableAddCandidateNodeParams) AccessNodeInfoForCommittee() wasmtypes.ScMutableBool {
-	return wasmtypes.NewScMutableBool(s.Proxy.Root(ParamAccessNodeInfoForCommittee))
+// signed binary containing both the node public key and their L1 address
+func (s MutableAddCandidateNodeParams) Certificate() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamCertificate))
 }
 
-func (s MutableAddCandidateNodeParams) AccessNodeInfoPubKey() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamAccessNodeInfoPubKey))
+// public key of the node to be added
+func (s MutableAddCandidateNodeParams) PubKey() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamPubKey))
 }
 
 type MapBytesToImmutableUint8 struct {
@@ -92,8 +102,12 @@ func NewImmutableChangeAccessNodesParams() ImmutableChangeAccessNodesParams {
 	return ImmutableChangeAccessNodesParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
-func (s ImmutableChangeAccessNodesParams) ChangeAccessNodesActions() MapBytesToImmutableUint8 {
-	return MapBytesToImmutableUint8{Proxy: s.Proxy.Root(ParamChangeAccessNodesActions)}
+// map of actions per pubkey
+// 0: Remove the access node from the access nodes list.
+// 1: Accept a candidate node and add it to the list of access nodes.
+// 2: Drop an access node from the access node and candidate lists.
+func (s ImmutableChangeAccessNodesParams) Actions() MapBytesToImmutableUint8 {
+	return MapBytesToImmutableUint8{Proxy: s.Proxy.Root(ParamActions)}
 }
 
 type MapBytesToMutableUint8 struct {
@@ -112,8 +126,12 @@ type MutableChangeAccessNodesParams struct {
 	Proxy wasmtypes.Proxy
 }
 
-func (s MutableChangeAccessNodesParams) ChangeAccessNodesActions() MapBytesToMutableUint8 {
-	return MapBytesToMutableUint8{Proxy: s.Proxy.Root(ParamChangeAccessNodesActions)}
+// map of actions per pubkey
+// 0: Remove the access node from the access nodes list.
+// 1: Accept a candidate node and add it to the list of access nodes.
+// 2: Drop an access node from the access node and candidate lists.
+func (s MutableChangeAccessNodesParams) Actions() MapBytesToMutableUint8 {
+	return MapBytesToMutableUint8{Proxy: s.Proxy.Root(ParamActions)}
 }
 
 type ImmutableDelegateChainOwnershipParams struct {
@@ -124,6 +142,7 @@ func NewImmutableDelegateChainOwnershipParams() ImmutableDelegateChainOwnershipP
 	return ImmutableDelegateChainOwnershipParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
+// next chain owner's agent ID
 func (s ImmutableDelegateChainOwnershipParams) ChainOwner() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ParamChainOwner))
 }
@@ -132,6 +151,7 @@ type MutableDelegateChainOwnershipParams struct {
 	Proxy wasmtypes.Proxy
 }
 
+// next chain owner's agent ID
 func (s MutableDelegateChainOwnershipParams) ChainOwner() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ParamChainOwner))
 }
@@ -144,16 +164,18 @@ func NewImmutableRemoveAllowedStateControllerAddressParams() ImmutableRemoveAllo
 	return ImmutableRemoveAllowedStateControllerAddressParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
-func (s ImmutableRemoveAllowedStateControllerAddressParams) StateControllerAddress() wasmtypes.ScImmutableAddress {
-	return wasmtypes.NewScImmutableAddress(s.Proxy.Root(ParamStateControllerAddress))
+// state controller address
+func (s ImmutableRemoveAllowedStateControllerAddressParams) Address() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.Proxy.Root(ParamAddress))
 }
 
 type MutableRemoveAllowedStateControllerAddressParams struct {
 	Proxy wasmtypes.Proxy
 }
 
-func (s MutableRemoveAllowedStateControllerAddressParams) StateControllerAddress() wasmtypes.ScMutableAddress {
-	return wasmtypes.NewScMutableAddress(s.Proxy.Root(ParamStateControllerAddress))
+// state controller address
+func (s MutableRemoveAllowedStateControllerAddressParams) Address() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.Proxy.Root(ParamAddress))
 }
 
 type ImmutableRevokeAccessNodeParams struct {
@@ -164,24 +186,28 @@ func NewImmutableRevokeAccessNodeParams() ImmutableRevokeAccessNodeParams {
 	return ImmutableRevokeAccessNodeParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
-func (s ImmutableRevokeAccessNodeParams) AccessNodeInfoCertificate() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamAccessNodeInfoCertificate))
+// certificate of the node to be removed
+func (s ImmutableRevokeAccessNodeParams) Certificate() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamCertificate))
 }
 
-func (s ImmutableRevokeAccessNodeParams) AccessNodeInfoPubKey() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamAccessNodeInfoPubKey))
+// public key of the node to be removed
+func (s ImmutableRevokeAccessNodeParams) PubKey() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamPubKey))
 }
 
 type MutableRevokeAccessNodeParams struct {
 	Proxy wasmtypes.Proxy
 }
 
-func (s MutableRevokeAccessNodeParams) AccessNodeInfoCertificate() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamAccessNodeInfoCertificate))
+// certificate of the node to be removed
+func (s MutableRevokeAccessNodeParams) Certificate() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamCertificate))
 }
 
-func (s MutableRevokeAccessNodeParams) AccessNodeInfoPubKey() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamAccessNodeInfoPubKey))
+// public key of the node to be removed
+func (s MutableRevokeAccessNodeParams) PubKey() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamPubKey))
 }
 
 type ImmutableRotateStateControllerParams struct {
@@ -192,16 +218,62 @@ func NewImmutableRotateStateControllerParams() ImmutableRotateStateControllerPar
 	return ImmutableRotateStateControllerParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
-func (s ImmutableRotateStateControllerParams) StateControllerAddress() wasmtypes.ScImmutableAddress {
-	return wasmtypes.NewScImmutableAddress(s.Proxy.Root(ParamStateControllerAddress))
+// state controller address
+func (s ImmutableRotateStateControllerParams) Address() wasmtypes.ScImmutableAddress {
+	return wasmtypes.NewScImmutableAddress(s.Proxy.Root(ParamAddress))
 }
 
 type MutableRotateStateControllerParams struct {
 	Proxy wasmtypes.Proxy
 }
 
-func (s MutableRotateStateControllerParams) StateControllerAddress() wasmtypes.ScMutableAddress {
-	return wasmtypes.NewScMutableAddress(s.Proxy.Root(ParamStateControllerAddress))
+// state controller address
+func (s MutableRotateStateControllerParams) Address() wasmtypes.ScMutableAddress {
+	return wasmtypes.NewScMutableAddress(s.Proxy.Root(ParamAddress))
+}
+
+type ImmutableSetCustomMetadataParams struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewImmutableSetCustomMetadataParams() ImmutableSetCustomMetadataParams {
+	return ImmutableSetCustomMetadataParams{Proxy: wasmlib.NewParamsProxy()}
+}
+
+// serialized chain metadata
+func (s ImmutableSetCustomMetadataParams) Metadata() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamMetadata))
+}
+
+type MutableSetCustomMetadataParams struct {
+	Proxy wasmtypes.Proxy
+}
+
+// serialized chain metadata
+func (s MutableSetCustomMetadataParams) Metadata() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamMetadata))
+}
+
+type ImmutableSetEVMGasRatioParams struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewImmutableSetEVMGasRatioParams() ImmutableSetEVMGasRatioParams {
+	return ImmutableSetEVMGasRatioParams{Proxy: wasmlib.NewParamsProxy()}
+}
+
+// serialized gas ratio
+func (s ImmutableSetEVMGasRatioParams) GasRatio() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamGasRatio))
+}
+
+type MutableSetEVMGasRatioParams struct {
+	Proxy wasmtypes.Proxy
+}
+
+// serialized gas ratio
+func (s MutableSetEVMGasRatioParams) GasRatio() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamGasRatio))
 }
 
 type ImmutableSetFeePolicyParams struct {
@@ -212,14 +284,38 @@ func NewImmutableSetFeePolicyParams() ImmutableSetFeePolicyParams {
 	return ImmutableSetFeePolicyParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
-func (s ImmutableSetFeePolicyParams) FeePolicyBytes() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamFeePolicyBytes))
+// serialized fee policy
+func (s ImmutableSetFeePolicyParams) FeePolicy() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamFeePolicy))
 }
 
 type MutableSetFeePolicyParams struct {
 	Proxy wasmtypes.Proxy
 }
 
-func (s MutableSetFeePolicyParams) FeePolicyBytes() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamFeePolicyBytes))
+// serialized fee policy
+func (s MutableSetFeePolicyParams) FeePolicy() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamFeePolicy))
+}
+
+type ImmutableSetGasLimitsParams struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewImmutableSetGasLimitsParams() ImmutableSetGasLimitsParams {
+	return ImmutableSetGasLimitsParams{Proxy: wasmlib.NewParamsProxy()}
+}
+
+// serialized gas limits
+func (s ImmutableSetGasLimitsParams) GasLimits() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamGasLimits))
+}
+
+type MutableSetGasLimitsParams struct {
+	Proxy wasmtypes.Proxy
+}
+
+// serialized gas limits
+func (s MutableSetGasLimitsParams) GasLimits() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamGasLimits))
 }

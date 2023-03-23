@@ -43,10 +43,34 @@ type WithdrawCall struct {
 	Func *wasmlib.ScFunc
 }
 
+type AccountFoundriesCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableAccountFoundriesParams
+	Results ImmutableAccountFoundriesResults
+}
+
+type AccountNFTAmountCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableAccountNFTAmountParams
+	Results ImmutableAccountNFTAmountResults
+}
+
+type AccountNFTAmountInCollectionCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableAccountNFTAmountInCollectionParams
+	Results ImmutableAccountNFTAmountInCollectionResults
+}
+
 type AccountNFTsCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableAccountNFTsParams
 	Results ImmutableAccountNFTsResults
+}
+
+type AccountNFTsInCollectionCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableAccountNFTsInCollectionParams
+	Results ImmutableAccountNFTsInCollectionResults
 }
 
 type AccountsCall struct {
@@ -104,10 +128,12 @@ type Funcs struct{}
 
 var ScFuncs Funcs
 
+// A no-op that has the side effect of crediting any transferred tokens to the sender's account.
 func (sc Funcs) Deposit(ctx wasmlib.ScFuncCallContext) *DepositCall {
 	return &DepositCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncDeposit)}
 }
 
+// Creates a new foundry with the specified token scheme, and assigns the foundry to the sender.
 func (sc Funcs) FoundryCreateNew(ctx wasmlib.ScFuncCallContext) *FoundryCreateNewCall {
 	f := &FoundryCreateNewCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncFoundryCreateNew)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
@@ -115,34 +141,67 @@ func (sc Funcs) FoundryCreateNew(ctx wasmlib.ScFuncCallContext) *FoundryCreateNe
 	return f
 }
 
+// Destroys a given foundry output on L1, reimbursing the storage deposit to the caller.
+// The foundry must be owned by the caller.
 func (sc Funcs) FoundryDestroy(ctx wasmlib.ScFuncCallContext) *FoundryDestroyCall {
 	f := &FoundryDestroyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncFoundryDestroy)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
+// Mints or destroys tokens for the given foundry, which must be owned by the caller.
 func (sc Funcs) FoundryModifySupply(ctx wasmlib.ScFuncCallContext) *FoundryModifySupplyCall {
 	f := &FoundryModifySupplyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncFoundryModifySupply)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
+// Moves all tokens from the chain common account to the sender's L2 account.
+// The chain owner is the only one who can call this entry point.
 func (sc Funcs) Harvest(ctx wasmlib.ScFuncCallContext) *HarvestCall {
 	f := &HarvestCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncHarvest)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
+// Moves the specified allowance from the sender's L2 account to the given L2 account on the chain.
 func (sc Funcs) TransferAllowanceTo(ctx wasmlib.ScFuncCallContext) *TransferAllowanceToCall {
 	f := &TransferAllowanceToCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTransferAllowanceTo)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
+// Moves tokens from the caller's on-chain account to the caller's L1 address.
+// The number of tokens to be withdrawn must be specified via the allowance of the request.
 func (sc Funcs) Withdraw(ctx wasmlib.ScFuncCallContext) *WithdrawCall {
 	return &WithdrawCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncWithdraw)}
 }
 
+// Returns the NFT IDs for all NFTs owned by the given account.
+func (sc Funcs) AccountFoundries(ctx wasmlib.ScViewCallContext) *AccountFoundriesCall {
+	f := &AccountFoundriesCall{Func: wasmlib.NewScView(ctx, HScName, HViewAccountFoundries)}
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
+	return f
+}
+
+// Returns the amount of NFTs owned by the given account.
+func (sc Funcs) AccountNFTAmount(ctx wasmlib.ScViewCallContext) *AccountNFTAmountCall {
+	f := &AccountNFTAmountCall{Func: wasmlib.NewScView(ctx, HScName, HViewAccountNFTAmount)}
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
+	return f
+}
+
+// Returns the amount of NFTs in the specified collection owned by the given account.
+func (sc Funcs) AccountNFTAmountInCollection(ctx wasmlib.ScViewCallContext) *AccountNFTAmountInCollectionCall {
+	f := &AccountNFTAmountInCollectionCall{Func: wasmlib.NewScView(ctx, HScName, HViewAccountNFTAmountInCollection)}
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
+	return f
+}
+
+// Returns the NFT IDs for all NFTs owned by the given account.
 func (sc Funcs) AccountNFTs(ctx wasmlib.ScViewCallContext) *AccountNFTsCall {
 	f := &AccountNFTsCall{Func: wasmlib.NewScView(ctx, HScName, HViewAccountNFTs)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
@@ -150,12 +209,22 @@ func (sc Funcs) AccountNFTs(ctx wasmlib.ScViewCallContext) *AccountNFTsCall {
 	return f
 }
 
+// Returns the NFT IDs for all NFTs in the specified collection owned by the given account.
+func (sc Funcs) AccountNFTsInCollection(ctx wasmlib.ScViewCallContext) *AccountNFTsInCollectionCall {
+	f := &AccountNFTsInCollectionCall{Func: wasmlib.NewScView(ctx, HScName, HViewAccountNFTsInCollection)}
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
+	return f
+}
+
+// Returns a list of all agent IDs that own assets on the chain.
 func (sc Funcs) Accounts(ctx wasmlib.ScViewCallContext) *AccountsCall {
 	f := &AccountsCall{Func: wasmlib.NewScView(ctx, HScName, HViewAccounts)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
+// Returns the fungible tokens owned by the given Agent ID on the chain.
 func (sc Funcs) Balance(ctx wasmlib.ScViewCallContext) *BalanceCall {
 	f := &BalanceCall{Func: wasmlib.NewScView(ctx, HScName, HViewBalance)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
@@ -163,6 +232,7 @@ func (sc Funcs) Balance(ctx wasmlib.ScViewCallContext) *BalanceCall {
 	return f
 }
 
+// Returns the amount of base tokens owned by an agent on the chain
 func (sc Funcs) BalanceBaseToken(ctx wasmlib.ScViewCallContext) *BalanceBaseTokenCall {
 	f := &BalanceBaseTokenCall{Func: wasmlib.NewScView(ctx, HScName, HViewBalanceBaseToken)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
@@ -170,6 +240,7 @@ func (sc Funcs) BalanceBaseToken(ctx wasmlib.ScViewCallContext) *BalanceBaseToke
 	return f
 }
 
+// Returns the amount of specific native tokens owned by an agent on the chain
 func (sc Funcs) BalanceNativeToken(ctx wasmlib.ScViewCallContext) *BalanceNativeTokenCall {
 	f := &BalanceNativeTokenCall{Func: wasmlib.NewScView(ctx, HScName, HViewBalanceNativeToken)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
@@ -177,6 +248,7 @@ func (sc Funcs) BalanceNativeToken(ctx wasmlib.ScViewCallContext) *BalanceNative
 	return f
 }
 
+// Returns specified foundry output in serialized form.
 func (sc Funcs) FoundryOutput(ctx wasmlib.ScViewCallContext) *FoundryOutputCall {
 	f := &FoundryOutputCall{Func: wasmlib.NewScView(ctx, HScName, HViewFoundryOutput)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
@@ -184,6 +256,8 @@ func (sc Funcs) FoundryOutput(ctx wasmlib.ScViewCallContext) *FoundryOutputCall 
 	return f
 }
 
+// Returns the current account nonce for an Agent.
+// The account nonce is used to issue unique off-ledger requests.
 func (sc Funcs) GetAccountNonce(ctx wasmlib.ScViewCallContext) *GetAccountNonceCall {
 	f := &GetAccountNonceCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetAccountNonce)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
@@ -191,12 +265,14 @@ func (sc Funcs) GetAccountNonce(ctx wasmlib.ScViewCallContext) *GetAccountNonceC
 	return f
 }
 
+// Returns a list of all native tokenIDs that are owned by the chain.
 func (sc Funcs) GetNativeTokenIDRegistry(ctx wasmlib.ScViewCallContext) *GetNativeTokenIDRegistryCall {
 	f := &GetNativeTokenIDRegistryCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetNativeTokenIDRegistry)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
+// Returns the data for a given NFT that is on the chain.
 func (sc Funcs) NftData(ctx wasmlib.ScViewCallContext) *NftDataCall {
 	f := &NftDataCall{Func: wasmlib.NewScView(ctx, HScName, HViewNftData)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
@@ -204,6 +280,7 @@ func (sc Funcs) NftData(ctx wasmlib.ScViewCallContext) *NftDataCall {
 	return f
 }
 
+// Returns the balances of all fungible tokens controlled by the chain.
 func (sc Funcs) TotalAssets(ctx wasmlib.ScViewCallContext) *TotalAssetsCall {
 	f := &TotalAssetsCall{Func: wasmlib.NewScView(ctx, HScName, HViewTotalAssets)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
@@ -219,7 +296,11 @@ var exportMap = wasmlib.ScExportMap{
 		FuncHarvest,
 		FuncTransferAllowanceTo,
 		FuncWithdraw,
+		ViewAccountFoundries,
+		ViewAccountNFTAmount,
+		ViewAccountNFTAmountInCollection,
 		ViewAccountNFTs,
+		ViewAccountNFTsInCollection,
 		ViewAccounts,
 		ViewBalance,
 		ViewBalanceBaseToken,
@@ -240,6 +321,10 @@ var exportMap = wasmlib.ScExportMap{
 		wasmlib.FuncError,
 	},
 	Views: []wasmlib.ScViewContextFunction{
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
+		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,

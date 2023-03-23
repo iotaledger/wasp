@@ -31,7 +31,8 @@ const (
 	ResultRequestID              = "u"
 	ResultRequestIndex           = "r"
 	ResultRequestProcessed       = "p"
-	ResultRequestRecord          = "d"
+	ResultRequestReceipt         = "d"
+	ResultRequestReceipts        = "d"
 	ResultStateControllerAddress = "s"
 )
 

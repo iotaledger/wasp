@@ -11,12 +11,13 @@ export const ScName        = 'blob';
 export const ScDescription = 'Blob Contract';
 export const HScName       = new wasmtypes.ScHname(0xfd91bc63);
 
-export const ParamBlobs       = 'this';
-export const ParamDescription = 'd';
-export const ParamField       = 'field';
-export const ParamHash        = 'hash';
-export const ParamProgBinary  = 'p';
-export const ParamVMType      = 'v';
+export const ParamBlobs      = 'this';
+export const ParamDataSchema = 'd';
+export const ParamField      = 'field';
+export const ParamHash       = 'hash';
+export const ParamProgBinary = 'p';
+export const ParamSources    = 's';
+export const ParamVMType     = 'v';
 
 export const ResultBlobSizes = 'this';
 export const ResultBytes     = 'bytes';

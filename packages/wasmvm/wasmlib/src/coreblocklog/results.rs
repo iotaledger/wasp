@@ -17,15 +17,17 @@ pub struct ImmutableControlAddressesResults {
 }
 
 impl ImmutableControlAddressesResults {
-    // the addresses have been set as state controller address or governing address since the following block index
+    // index of block where the addresses were set
     pub fn block_index(&self) -> ScImmutableUint32 {
         ScImmutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
     }
 
+    // governing address
     pub fn governing_address(&self) -> ScImmutableAddress {
         ScImmutableAddress::new(self.proxy.root(RESULT_GOVERNING_ADDRESS))
     }
 
+    // state controller address
     pub fn state_controller_address(&self) -> ScImmutableAddress {
         ScImmutableAddress::new(self.proxy.root(RESULT_STATE_CONTROLLER_ADDRESS))
     }
@@ -43,15 +45,17 @@ impl MutableControlAddressesResults {
         }
     }
 
-    // the addresses have been set as state controller address or governing address since the following block index
+    // index of block where the addresses were set
     pub fn block_index(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
     }
 
+    // governing address
     pub fn governing_address(&self) -> ScMutableAddress {
         ScMutableAddress::new(self.proxy.root(RESULT_GOVERNING_ADDRESS))
     }
 
+    // state controller address
     pub fn state_controller_address(&self) -> ScMutableAddress {
         ScMutableAddress::new(self.proxy.root(RESULT_STATE_CONTROLLER_ADDRESS))
     }
@@ -63,10 +67,12 @@ pub struct ImmutableGetBlockInfoResults {
 }
 
 impl ImmutableGetBlockInfoResults {
+    // index of returned block
     pub fn block_index(&self) -> ScImmutableUint32 {
         ScImmutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
     }
 
+    // serialized block info
     pub fn block_info(&self) -> ScImmutableBytes {
         ScImmutableBytes::new(self.proxy.root(RESULT_BLOCK_INFO))
     }
@@ -84,10 +90,12 @@ impl MutableGetBlockInfoResults {
         }
     }
 
+    // index of returned block
     pub fn block_index(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
     }
 
+    // serialized block info
     pub fn block_info(&self) -> ScMutableBytes {
         ScMutableBytes::new(self.proxy.root(RESULT_BLOCK_INFO))
     }
@@ -114,7 +122,7 @@ pub struct ImmutableGetEventsForBlockResults {
 }
 
 impl ImmutableGetEventsForBlockResults {
-    // native contract, so this is an Array16
+    // Array16 of serialized events
     pub fn event(&self) -> ArrayOfImmutableBytes {
         ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
     }
@@ -155,7 +163,7 @@ impl MutableGetEventsForBlockResults {
         }
     }
 
-    // native contract, so this is an Array16
+    // Array16 of serialized events
     pub fn event(&self) -> ArrayOfMutableBytes {
         ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
     }
@@ -167,7 +175,7 @@ pub struct ImmutableGetEventsForContractResults {
 }
 
 impl ImmutableGetEventsForContractResults {
-    // native contract, so this is an Array16
+    // Array16 of serialized events
     pub fn event(&self) -> ArrayOfImmutableBytes {
         ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
     }
@@ -185,7 +193,7 @@ impl MutableGetEventsForContractResults {
         }
     }
 
-    // native contract, so this is an Array16
+    // Array16 of serialized events
     pub fn event(&self) -> ArrayOfMutableBytes {
         ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
     }
@@ -197,7 +205,7 @@ pub struct ImmutableGetEventsForRequestResults {
 }
 
 impl ImmutableGetEventsForRequestResults {
-    // native contract, so this is an Array16
+    // Array16 of serialized events
     pub fn event(&self) -> ArrayOfImmutableBytes {
         ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
     }
@@ -215,7 +223,7 @@ impl MutableGetEventsForRequestResults {
         }
     }
 
-    // native contract, so this is an Array16
+    // Array16 of serialized events
     pub fn event(&self) -> ArrayOfMutableBytes {
         ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
     }
@@ -242,7 +250,12 @@ pub struct ImmutableGetRequestIDsForBlockResults {
 }
 
 impl ImmutableGetRequestIDsForBlockResults {
-    // native contract, so this is an Array16
+    // index of block containing request
+    pub fn block_index(&self) -> ScImmutableUint32 {
+        ScImmutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
+    }
+
+    // Array16 of request IDs
     pub fn request_id(&self) -> ArrayOfImmutableRequestID {
         ArrayOfImmutableRequestID { proxy: self.proxy.root(RESULT_REQUEST_ID) }
     }
@@ -283,7 +296,12 @@ impl MutableGetRequestIDsForBlockResults {
         }
     }
 
-    // native contract, so this is an Array16
+    // index of block containing request
+    pub fn block_index(&self) -> ScMutableUint32 {
+        ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
+    }
+
+    // Array16 of request IDs
     pub fn request_id(&self) -> ArrayOfMutableRequestID {
         ArrayOfMutableRequestID { proxy: self.proxy.root(RESULT_REQUEST_ID) }
     }
@@ -295,16 +313,19 @@ pub struct ImmutableGetRequestReceiptResults {
 }
 
 impl ImmutableGetRequestReceiptResults {
+    // index of block containing request
     pub fn block_index(&self) -> ScImmutableUint32 {
         ScImmutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
     }
 
+    // index within block containing request
     pub fn request_index(&self) -> ScImmutableUint16 {
         ScImmutableUint16::new(self.proxy.root(RESULT_REQUEST_INDEX))
     }
 
-    pub fn request_record(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.proxy.root(RESULT_REQUEST_RECORD))
+    // serialized request receipt
+    pub fn request_receipt(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(RESULT_REQUEST_RECEIPT))
     }
 }
 
@@ -320,16 +341,19 @@ impl MutableGetRequestReceiptResults {
         }
     }
 
+    // index of block containing request
     pub fn block_index(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
     }
 
+    // index within block containing request
     pub fn request_index(&self) -> ScMutableUint16 {
         ScMutableUint16::new(self.proxy.root(RESULT_REQUEST_INDEX))
     }
 
-    pub fn request_record(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.proxy.root(RESULT_REQUEST_RECORD))
+    // serialized request receipt
+    pub fn request_receipt(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(RESULT_REQUEST_RECEIPT))
     }
 }
 
@@ -339,9 +363,14 @@ pub struct ImmutableGetRequestReceiptsForBlockResults {
 }
 
 impl ImmutableGetRequestReceiptsForBlockResults {
-    // native contract, so this is an Array16
-    pub fn request_record(&self) -> ArrayOfImmutableBytes {
-        ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_REQUEST_RECORD) }
+    // index of block containing request
+    pub fn block_index(&self) -> ScImmutableUint32 {
+        ScImmutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
+    }
+
+    // Array16 of request receipts
+    pub fn request_receipts(&self) -> ArrayOfImmutableBytes {
+        ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_REQUEST_RECEIPTS) }
     }
 }
 
@@ -357,9 +386,14 @@ impl MutableGetRequestReceiptsForBlockResults {
         }
     }
 
-    // native contract, so this is an Array16
-    pub fn request_record(&self) -> ArrayOfMutableBytes {
-        ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_REQUEST_RECORD) }
+    // index of block containing request
+    pub fn block_index(&self) -> ScMutableUint32 {
+        ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
+    }
+
+    // Array16 of request receipts
+    pub fn request_receipts(&self) -> ArrayOfMutableBytes {
+        ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_REQUEST_RECEIPTS) }
     }
 }
 
@@ -369,6 +403,7 @@ pub struct ImmutableIsRequestProcessedResults {
 }
 
 impl ImmutableIsRequestProcessedResults {
+    // whether request has been processed
     pub fn request_processed(&self) -> ScImmutableBool {
         ScImmutableBool::new(self.proxy.root(RESULT_REQUEST_PROCESSED))
     }
@@ -386,6 +421,7 @@ impl MutableIsRequestProcessedResults {
         }
     }
 
+    // whether request has been processed
     pub fn request_processed(&self) -> ScMutableBool {
         ScMutableBool::new(self.proxy.root(RESULT_REQUEST_PROCESSED))
     }
