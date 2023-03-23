@@ -6,4 +6,6 @@ export interface INetwork {
     chainAddress: string;
     chainID: number;
     multicallAddress: string;
+    blockExplorer?: string;
+    networkUrl?: string;
 }

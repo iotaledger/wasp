@@ -5,7 +5,7 @@ import { ISCMagic } from '$lib/iscmagic';
 import { NotificationType, showNotification } from '$lib/notification';
 import { iscAbi, iscContractAddress } from '$lib/withdraw';
 
-import { subscribeBalance } from '.';
+import { addSelectedNetworkToMetamask, subscribeBalance } from '.';
 import { updateWithdrawStateStore, withdrawStateStore } from '../stores';
 import { pollAccount } from './polls';
 
@@ -36,6 +36,8 @@ export async function connectToWallet() {
       message: `Failed to connect to wallet: ${ex.message}`,
     });
     console.error('Failed to connect to wallet: ', ex.message);
+
+    void addSelectedNetworkToMetamask()
   }
 
   updateWithdrawStateStore({ isLoading: false });

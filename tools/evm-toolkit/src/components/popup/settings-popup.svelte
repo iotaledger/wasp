@@ -43,6 +43,20 @@
         stretch
       />
       <Input
+        id="networkUrl"
+        label="Network URL"
+        bind:value={_selectedNetwork.networkUrl}
+        disabled={disableNetworkEdit}
+        stretch
+      />
+      <Input
+        id="blockExplorer"
+        label="Block Explorer"
+        bind:value={_selectedNetwork.blockExplorer}
+        disabled={disableNetworkEdit}
+        stretch
+      />
+      <Input
         id="chainAddress"
         label="Chain Address"
         bind:value={_selectedNetwork.chainAddress}
