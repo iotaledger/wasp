@@ -85,7 +85,7 @@ func (svc *WasmClientService) CurrentChainID() wasmtypes.ScChainID {
 }
 
 func (svc *WasmClientService) IsHealthy() bool {
-	_, err := svc.waspClient.NodeApi.
+	_, err := svc.waspClient.DefaultApi.
 		GetHealth(context.Background()).Execute()
 	return err == nil
 }

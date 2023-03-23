@@ -3129,7 +3129,7 @@ func (r ApiGovernanceGetChainInfoRequest) Execute() (*GovChainInfoResponse, *htt
 /*
 GovernanceGetChainInfo Get the chain info
 
-If you are using the common API functions, you most likely rather want to use '/chains/:chainID' to get information about a chain.
+If you are using the common API functions, you most likely rather want to use '/v1/chains/:chainID' to get information about a chain.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @param chainID ChainID (Bech32)
