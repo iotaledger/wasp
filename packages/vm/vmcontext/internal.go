@@ -155,7 +155,7 @@ func (vmctx *VMContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.R
 		receipt.Error = vmError.AsUnresolvedError()
 	}
 
-	vmctx.Debugf("writeReceiptToBlockLog: %s err: %v", vmctx.req.ID(), vmError)
+	vmctx.Debugf("writeReceiptToBlockLog - reqID:%s err: %v", vmctx.req.ID(), vmError)
 
 	receipt.GasBurnLog = vmctx.gasBurnLog
 
