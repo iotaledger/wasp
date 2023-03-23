@@ -54,6 +54,14 @@ paths:
       summary: Get information about the current authentication mode
       tags:
       - auth
+  /health:
+    get:
+      operationId: getHealth
+      responses:
+        "200":
+          content: {}
+          description: The node is healthy.
+      summary: Returns 200 if the node is healthy.
   /v1/chains:
     get:
       operationId: getChains
@@ -1417,16 +1425,6 @@ paths:
       summary: Fetch the raw value associated with the given key in the chain state
       tags:
       - chains
-  /v1/health:
-    get:
-      operationId: getHealth
-      responses:
-        "200":
-          content: {}
-          description: The node is healthy.
-      summary: Returns 200 if the node health is healthy.
-      tags:
-      - node
   /v1/metrics/chain/{chainID}:
     get:
       operationId: getChainMetrics

@@ -9,7 +9,6 @@ Method | HTTP request | Description
 [**GetAllPeers**](NodeApi.md#GetAllPeers) | **Get** /v1/node/peers | Get basic information about all configured peers
 [**GetConfiguration**](NodeApi.md#GetConfiguration) | **Get** /v1/node/config | Return the Wasp configuration
 [**GetDKSInfo**](NodeApi.md#GetDKSInfo) | **Get** /v1/node/dks/{sharedAddress} | Get information about the shared address DKS configuration
-[**GetHealth**](NodeApi.md#GetHealth) | **Get** /v1/health | Returns 200 if the node health is healthy.
 [**GetInfo**](NodeApi.md#GetInfo) | **Get** /v1/node/info | Returns private information about this node.
 [**GetPeeringIdentity**](NodeApi.md#GetPeeringIdentity) | **Get** /v1/node/peers/identity | Get basic peer info of the current node
 [**GetTrustedPeers**](NodeApi.md#GetTrustedPeers) | **Get** /v1/node/peers/trusted | Get trusted peers
@@ -330,63 +329,6 @@ Name | Type | Description  | Notes
 
 - **Content-Type**: Not defined
 - **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
-## GetHealth
-
-> GetHealth(ctx).Execute()
-
-Returns 200 if the node health is healthy.
-
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.NodeApi.GetHealth(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `NodeApi.GetHealth``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-}
-```
-
-### Path Parameters
-
-This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetHealthRequest struct via the builder pattern
-
-
-### Return type
-
- (empty response body)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: Not defined
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)
