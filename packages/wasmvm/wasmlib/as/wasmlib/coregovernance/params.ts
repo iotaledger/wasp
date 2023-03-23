@@ -9,12 +9,14 @@ import * as wasmtypes from '../wasmtypes';
 import * as sc from './index';
 
 export class ImmutableAddAllowedStateControllerAddressParams extends wasmtypes.ScProxy {
+    // state controller address
     address(): wasmtypes.ScImmutableAddress {
         return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamAddress));
     }
 }
 
 export class MutableAddAllowedStateControllerAddressParams extends wasmtypes.ScProxy {
+    // state controller address
     address(): wasmtypes.ScMutableAddress {
         return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamAddress));
     }
@@ -103,24 +105,28 @@ export class MutableChangeAccessNodesParams extends wasmtypes.ScProxy {
 }
 
 export class ImmutableDelegateChainOwnershipParams extends wasmtypes.ScProxy {
+    // next chain owner's agent ID
     chainOwner(): wasmtypes.ScImmutableAgentID {
         return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamChainOwner));
     }
 }
 
 export class MutableDelegateChainOwnershipParams extends wasmtypes.ScProxy {
+    // next chain owner's agent ID
     chainOwner(): wasmtypes.ScMutableAgentID {
         return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamChainOwner));
     }
 }
 
 export class ImmutableRemoveAllowedStateControllerAddressParams extends wasmtypes.ScProxy {
+    // state controller address
     address(): wasmtypes.ScImmutableAddress {
         return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamAddress));
     }
 }
 
 export class MutableRemoveAllowedStateControllerAddressParams extends wasmtypes.ScProxy {
+    // state controller address
     address(): wasmtypes.ScMutableAddress {
         return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamAddress));
     }
@@ -151,24 +157,28 @@ export class MutableRevokeAccessNodeParams extends wasmtypes.ScProxy {
 }
 
 export class ImmutableRotateStateControllerParams extends wasmtypes.ScProxy {
+    // state controller address
     address(): wasmtypes.ScImmutableAddress {
         return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamAddress));
     }
 }
 
 export class MutableRotateStateControllerParams extends wasmtypes.ScProxy {
+    // state controller address
     address(): wasmtypes.ScMutableAddress {
         return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamAddress));
     }
 }
 
 export class ImmutableSetCustomMetadataParams extends wasmtypes.ScProxy {
+    // serialized chain metadata
     metadata(): wasmtypes.ScImmutableBytes {
         return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamMetadata));
     }
 }
 
 export class MutableSetCustomMetadataParams extends wasmtypes.ScProxy {
+    // serialized chain metadata
     metadata(): wasmtypes.ScMutableBytes {
         return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamMetadata));
     }

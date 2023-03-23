@@ -7,7 +7,6 @@ funcs:
 
   # Deploys a non-EVM smart contract on the chain if the caller has deployment permission.
   deployContract:
-    # TODO variable init params for deployed contract
     params:
       initParams=this: map[String]Bytes # additional params for smart contract init function
 

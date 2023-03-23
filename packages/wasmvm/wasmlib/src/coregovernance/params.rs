@@ -23,6 +23,7 @@ impl ImmutableAddAllowedStateControllerAddressParams {
         }
     }
 
+    // state controller address
     pub fn address(&self) -> ScImmutableAddress {
         ScImmutableAddress::new(self.proxy.root(PARAM_ADDRESS))
     }
@@ -34,6 +35,7 @@ pub struct MutableAddAllowedStateControllerAddressParams {
 }
 
 impl MutableAddAllowedStateControllerAddressParams {
+    // state controller address
     pub fn address(&self) -> ScMutableAddress {
         ScMutableAddress::new(self.proxy.root(PARAM_ADDRESS))
     }
@@ -173,6 +175,7 @@ impl ImmutableDelegateChainOwnershipParams {
         }
     }
 
+    // next chain owner's agent ID
     pub fn chain_owner(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER))
     }
@@ -184,6 +187,7 @@ pub struct MutableDelegateChainOwnershipParams {
 }
 
 impl MutableDelegateChainOwnershipParams {
+    // next chain owner's agent ID
     pub fn chain_owner(&self) -> ScMutableAgentID {
         ScMutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER))
     }
@@ -201,6 +205,7 @@ impl ImmutableRemoveAllowedStateControllerAddressParams {
         }
     }
 
+    // state controller address
     pub fn address(&self) -> ScImmutableAddress {
         ScImmutableAddress::new(self.proxy.root(PARAM_ADDRESS))
     }
@@ -212,6 +217,7 @@ pub struct MutableRemoveAllowedStateControllerAddressParams {
 }
 
 impl MutableRemoveAllowedStateControllerAddressParams {
+    // state controller address
     pub fn address(&self) -> ScMutableAddress {
         ScMutableAddress::new(self.proxy.root(PARAM_ADDRESS))
     }
@@ -269,6 +275,7 @@ impl ImmutableRotateStateControllerParams {
         }
     }
 
+    // state controller address
     pub fn address(&self) -> ScImmutableAddress {
         ScImmutableAddress::new(self.proxy.root(PARAM_ADDRESS))
     }
@@ -280,6 +287,7 @@ pub struct MutableRotateStateControllerParams {
 }
 
 impl MutableRotateStateControllerParams {
+    // state controller address
     pub fn address(&self) -> ScMutableAddress {
         ScMutableAddress::new(self.proxy.root(PARAM_ADDRESS))
     }
@@ -297,6 +305,7 @@ impl ImmutableSetCustomMetadataParams {
         }
     }
 
+    // serialized chain metadata
     pub fn metadata(&self) -> ScImmutableBytes {
         ScImmutableBytes::new(self.proxy.root(PARAM_METADATA))
     }
@@ -308,6 +317,7 @@ pub struct MutableSetCustomMetadataParams {
 }
 
 impl MutableSetCustomMetadataParams {
+    // serialized chain metadata
     pub fn metadata(&self) -> ScMutableBytes {
         ScMutableBytes::new(self.proxy.root(PARAM_METADATA))
     }

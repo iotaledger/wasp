@@ -11,13 +11,13 @@ funcs:
   addAllowedStateControllerAddress:
     access: chain
     params:
-      address=S: Address
+      address=S: Address # state controller address
 
   # Removes the given address from the list of identities that constitute the state controller.
   removeAllowedStateControllerAddress:
     access: chain
     params:
-      address=S: Address
+      address=S: Address # state controller address
 
   # Called when the committee is about to be rotated to the given address.
   # If it succeeds, the next state transition will become a governance transition,
@@ -26,7 +26,7 @@ funcs:
   rotateStateController:
     access: chain
     params:
-      address=S: Address
+      address=S: Address # state controller address
 
   # chain owner
 
@@ -39,7 +39,7 @@ funcs:
   delegateChainOwnership:
     access: chain
     params:
-      chainOwner=o: AgentID
+      chainOwner=o: AgentID # next chain owner's agent ID
 
   # fees
 
@@ -102,7 +102,7 @@ funcs:
   setCustomMetadata:
     access: chain
     params:
-      metadata=x: Bytes
+      metadata=x: Bytes # serialized chain metadata
 
 views:
 

@@ -20,6 +20,7 @@ func NewImmutableAddAllowedStateControllerAddressParams() ImmutableAddAllowedSta
 	return ImmutableAddAllowedStateControllerAddressParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
+// state controller address
 func (s ImmutableAddAllowedStateControllerAddressParams) Address() wasmtypes.ScImmutableAddress {
 	return wasmtypes.NewScImmutableAddress(s.Proxy.Root(ParamAddress))
 }
@@ -28,6 +29,7 @@ type MutableAddAllowedStateControllerAddressParams struct {
 	Proxy wasmtypes.Proxy
 }
 
+// state controller address
 func (s MutableAddAllowedStateControllerAddressParams) Address() wasmtypes.ScMutableAddress {
 	return wasmtypes.NewScMutableAddress(s.Proxy.Root(ParamAddress))
 }
@@ -140,6 +142,7 @@ func NewImmutableDelegateChainOwnershipParams() ImmutableDelegateChainOwnershipP
 	return ImmutableDelegateChainOwnershipParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
+// next chain owner's agent ID
 func (s ImmutableDelegateChainOwnershipParams) ChainOwner() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ParamChainOwner))
 }
@@ -148,6 +151,7 @@ type MutableDelegateChainOwnershipParams struct {
 	Proxy wasmtypes.Proxy
 }
 
+// next chain owner's agent ID
 func (s MutableDelegateChainOwnershipParams) ChainOwner() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ParamChainOwner))
 }
@@ -160,6 +164,7 @@ func NewImmutableRemoveAllowedStateControllerAddressParams() ImmutableRemoveAllo
 	return ImmutableRemoveAllowedStateControllerAddressParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
+// state controller address
 func (s ImmutableRemoveAllowedStateControllerAddressParams) Address() wasmtypes.ScImmutableAddress {
 	return wasmtypes.NewScImmutableAddress(s.Proxy.Root(ParamAddress))
 }
@@ -168,6 +173,7 @@ type MutableRemoveAllowedStateControllerAddressParams struct {
 	Proxy wasmtypes.Proxy
 }
 
+// state controller address
 func (s MutableRemoveAllowedStateControllerAddressParams) Address() wasmtypes.ScMutableAddress {
 	return wasmtypes.NewScMutableAddress(s.Proxy.Root(ParamAddress))
 }
@@ -212,6 +218,7 @@ func NewImmutableRotateStateControllerParams() ImmutableRotateStateControllerPar
 	return ImmutableRotateStateControllerParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
+// state controller address
 func (s ImmutableRotateStateControllerParams) Address() wasmtypes.ScImmutableAddress {
 	return wasmtypes.NewScImmutableAddress(s.Proxy.Root(ParamAddress))
 }
@@ -220,6 +227,7 @@ type MutableRotateStateControllerParams struct {
 	Proxy wasmtypes.Proxy
 }
 
+// state controller address
 func (s MutableRotateStateControllerParams) Address() wasmtypes.ScMutableAddress {
 	return wasmtypes.NewScMutableAddress(s.Proxy.Root(ParamAddress))
 }
@@ -232,6 +240,7 @@ func NewImmutableSetCustomMetadataParams() ImmutableSetCustomMetadataParams {
 	return ImmutableSetCustomMetadataParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
+// serialized chain metadata
 func (s ImmutableSetCustomMetadataParams) Metadata() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamMetadata))
 }
@@ -240,6 +249,7 @@ type MutableSetCustomMetadataParams struct {
 	Proxy wasmtypes.Proxy
 }
 
+// serialized chain metadata
 func (s MutableSetCustomMetadataParams) Metadata() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamMetadata))
 }
