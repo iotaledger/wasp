@@ -32,9 +32,9 @@ pub struct ImmutableGetAllowedStateControllerAddressesResults {
 }
 
 impl ImmutableGetAllowedStateControllerAddressesResults {
-    // native contract, so this is an Array16
-    pub fn allowed_state_controller_addresses(&self) -> ArrayOfImmutableAddress {
-        ArrayOfImmutableAddress { proxy: self.proxy.root(RESULT_ALLOWED_STATE_CONTROLLER_ADDRESSES) }
+    // Array16 of state controller addresses
+    pub fn controllers(&self) -> ArrayOfImmutableAddress {
+        ArrayOfImmutableAddress { proxy: self.proxy.root(RESULT_CONTROLLERS) }
     }
 }
 
@@ -73,9 +73,9 @@ impl MutableGetAllowedStateControllerAddressesResults {
         }
     }
 
-    // native contract, so this is an Array16
-    pub fn allowed_state_controller_addresses(&self) -> ArrayOfMutableAddress {
-        ArrayOfMutableAddress { proxy: self.proxy.root(RESULT_ALLOWED_STATE_CONTROLLER_ADDRESSES) }
+    // Array16 of state controller addresses
+    pub fn controllers(&self) -> ArrayOfMutableAddress {
+        ArrayOfMutableAddress { proxy: self.proxy.root(RESULT_CONTROLLERS) }
     }
 }
 
@@ -85,20 +85,29 @@ pub struct ImmutableGetChainInfoResults {
 }
 
 impl ImmutableGetChainInfoResults {
+    // chain ID
     pub fn chain_id(&self) -> ScImmutableChainID {
         ScImmutableChainID::new(self.proxy.root(RESULT_CHAIN_ID))
     }
 
+    // chain owner agent ID
     pub fn chain_owner_id(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER_ID))
     }
 
+    // chain metadata
     pub fn custom_metadata(&self) -> ScImmutableBytes {
         ScImmutableBytes::new(self.proxy.root(RESULT_CUSTOM_METADATA))
     }
 
-    pub fn gas_fee_policy_bytes(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.proxy.root(RESULT_GAS_FEE_POLICY_BYTES))
+    // serialized fee policy
+    pub fn fee_policy(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(RESULT_FEE_POLICY))
+    }
+
+    // serialized gas limits
+    pub fn gas_limits(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(RESULT_GAS_LIMITS))
     }
 }
 
@@ -114,20 +123,29 @@ impl MutableGetChainInfoResults {
         }
     }
 
+    // chain ID
     pub fn chain_id(&self) -> ScMutableChainID {
         ScMutableChainID::new(self.proxy.root(RESULT_CHAIN_ID))
     }
 
+    // chain owner agent ID
     pub fn chain_owner_id(&self) -> ScMutableAgentID {
         ScMutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER_ID))
     }
 
+    // chain metadata
     pub fn custom_metadata(&self) -> ScMutableBytes {
         ScMutableBytes::new(self.proxy.root(RESULT_CUSTOM_METADATA))
     }
 
-    pub fn gas_fee_policy_bytes(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.proxy.root(RESULT_GAS_FEE_POLICY_BYTES))
+    // serialized fee policy
+    pub fn fee_policy(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(RESULT_FEE_POLICY))
+    }
+
+    // serialized gas limits
+    pub fn gas_limits(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(RESULT_GAS_LIMITS))
     }
 }
 
@@ -148,10 +166,12 @@ pub struct ImmutableGetChainNodesResults {
 }
 
 impl ImmutableGetChainNodesResults {
+    // serialized access node info per pubKey
     pub fn access_node_candidates(&self) -> MapBytesToImmutableBytes {
         MapBytesToImmutableBytes { proxy: self.proxy.root(RESULT_ACCESS_NODE_CANDIDATES) }
     }
 
+    // pubKey set
     pub fn access_nodes(&self) -> MapBytesToImmutableBytes {
         MapBytesToImmutableBytes { proxy: self.proxy.root(RESULT_ACCESS_NODES) }
     }
@@ -184,10 +204,12 @@ impl MutableGetChainNodesResults {
         }
     }
 
+    // serialized access node info per pubKey
     pub fn access_node_candidates(&self) -> MapBytesToMutableBytes {
         MapBytesToMutableBytes { proxy: self.proxy.root(RESULT_ACCESS_NODE_CANDIDATES) }
     }
 
+    // pubKey set
     pub fn access_nodes(&self) -> MapBytesToMutableBytes {
         MapBytesToMutableBytes { proxy: self.proxy.root(RESULT_ACCESS_NODES) }
     }
@@ -199,6 +221,7 @@ pub struct ImmutableGetChainOwnerResults {
 }
 
 impl ImmutableGetChainOwnerResults {
+    // chain owner
     pub fn chain_owner(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER))
     }
@@ -216,8 +239,69 @@ impl MutableGetChainOwnerResults {
         }
     }
 
+    // chain owner
     pub fn chain_owner(&self) -> ScMutableAgentID {
         ScMutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableGetCustomMetadataResults {
+    pub proxy: Proxy,
+}
+
+impl ImmutableGetCustomMetadataResults {
+    // chain metadata
+    pub fn metadata(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(RESULT_METADATA))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableGetCustomMetadataResults {
+    pub proxy: Proxy,
+}
+
+impl MutableGetCustomMetadataResults {
+    pub fn new() -> MutableGetCustomMetadataResults {
+        MutableGetCustomMetadataResults {
+            proxy: results_proxy(),
+        }
+    }
+
+    // chain metadata
+    pub fn metadata(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(RESULT_METADATA))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableGetEVMGasRatioResults {
+    pub proxy: Proxy,
+}
+
+impl ImmutableGetEVMGasRatioResults {
+    // serialized gas ratio
+    pub fn gas_ratio(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(RESULT_GAS_RATIO))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableGetEVMGasRatioResults {
+    pub proxy: Proxy,
+}
+
+impl MutableGetEVMGasRatioResults {
+    pub fn new() -> MutableGetEVMGasRatioResults {
+        MutableGetEVMGasRatioResults {
+            proxy: results_proxy(),
+        }
+    }
+
+    // serialized gas ratio
+    pub fn gas_ratio(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(RESULT_GAS_RATIO))
     }
 }
 
@@ -227,8 +311,9 @@ pub struct ImmutableGetFeePolicyResults {
 }
 
 impl ImmutableGetFeePolicyResults {
-    pub fn fee_policy_bytes(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.proxy.root(RESULT_FEE_POLICY_BYTES))
+    // serialized fee policy
+    pub fn fee_policy(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(RESULT_FEE_POLICY))
     }
 }
 
@@ -244,7 +329,68 @@ impl MutableGetFeePolicyResults {
         }
     }
 
-    pub fn fee_policy_bytes(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.proxy.root(RESULT_FEE_POLICY_BYTES))
+    // serialized fee policy
+    pub fn fee_policy(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(RESULT_FEE_POLICY))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableGetGasLimitsResults {
+    pub proxy: Proxy,
+}
+
+impl ImmutableGetGasLimitsResults {
+    // serialized gas limits
+    pub fn gas_limits(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(RESULT_GAS_LIMITS))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableGetGasLimitsResults {
+    pub proxy: Proxy,
+}
+
+impl MutableGetGasLimitsResults {
+    pub fn new() -> MutableGetGasLimitsResults {
+        MutableGetGasLimitsResults {
+            proxy: results_proxy(),
+        }
+    }
+
+    // serialized gas limits
+    pub fn gas_limits(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(RESULT_GAS_LIMITS))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableGetMaintenanceStatusResults {
+    pub proxy: Proxy,
+}
+
+impl ImmutableGetMaintenanceStatusResults {
+    // whether maintenance mode is on
+    pub fn status(&self) -> ScImmutableBool {
+        ScImmutableBool::new(self.proxy.root(RESULT_STATUS))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableGetMaintenanceStatusResults {
+    pub proxy: Proxy,
+}
+
+impl MutableGetMaintenanceStatusResults {
+    pub fn new() -> MutableGetMaintenanceStatusResults {
+        MutableGetMaintenanceStatusResults {
+            proxy: results_proxy(),
+        }
+    }
+
+    // whether maintenance mode is on
+    pub fn status(&self) -> ScMutableBool {
+        ScMutableBool::new(self.proxy.root(RESULT_STATUS))
     }
 }
