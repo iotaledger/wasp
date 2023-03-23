@@ -108,42 +108,42 @@ func (a *DefaultApiService) GetHealthExecute(r ApiGetHealthRequest) (*http.Respo
 	return localVarHTTPResponse, nil
 }
 
-type ApiWsGetRequest struct {
+type ApiV1WsGetRequest struct {
 	ctx context.Context
 	ApiService *DefaultApiService
 }
 
-func (r ApiWsGetRequest) Execute() (*http.Response, error) {
-	return r.ApiService.WsGetExecute(r)
+func (r ApiV1WsGetRequest) Execute() (*http.Response, error) {
+	return r.ApiService.V1WsGetExecute(r)
 }
 
 /*
-WsGet The websocket connection service
+V1WsGet The websocket connection service
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiWsGetRequest
+ @return ApiV1WsGetRequest
 */
-func (a *DefaultApiService) WsGet(ctx context.Context) ApiWsGetRequest {
-	return ApiWsGetRequest{
+func (a *DefaultApiService) V1WsGet(ctx context.Context) ApiV1WsGetRequest {
+	return ApiV1WsGetRequest{
 		ApiService: a,
 		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-func (a *DefaultApiService) WsGetExecute(r ApiWsGetRequest) (*http.Response, error) {
+func (a *DefaultApiService) V1WsGetExecute(r ApiV1WsGetRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DefaultApiService.WsGet")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DefaultApiService.V1WsGet")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/ws"
+	localVarPath := localBasePath + "/v1/ws"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}

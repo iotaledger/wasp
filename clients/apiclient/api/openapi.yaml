@@ -1425,9 +1425,9 @@ paths:
       summary: Fetch the raw value associated with the given key in the chain state
       tags:
       - chains
-  /v1/metrics/chain/{chainID}:
+  /v1/metrics/chain/{chainID}/messages:
     get:
-      operationId: getChainMetrics
+      operationId: getChainMessageMetrics
       parameters:
       - description: ChainID (Bech32)
         in: path
@@ -1454,7 +1454,7 @@ paths:
           description: Chain not found
       security:
       - Authorization: []
-      summary: Get chain specific metrics.
+      summary: Get chain specific message metrics.
       tags:
       - metrics
   /v1/metrics/chain/{chainID}/pipe:
@@ -1521,9 +1521,9 @@ paths:
       summary: Get chain workflow metrics.
       tags:
       - metrics
-  /v1/metrics/l1:
+  /v1/metrics/node/messages:
     get:
-      operationId: getL1Metrics
+      operationId: getNodeMessageMetrics
       responses:
         "200":
           content:
@@ -1539,7 +1539,7 @@ paths:
           description: "Unauthorized (Wrong permissions, missing token)"
       security:
       - Authorization: []
-      summary: Get accumulated metrics.
+      summary: Get accumulated message metrics.
       tags:
       - metrics
   /v1/node/config:
@@ -2062,7 +2062,7 @@ paths:
       tags:
       - users
       x-codegen-request-body-name: ""
-  /ws:
+  /v1/ws:
     get:
       responses:
         default:
@@ -2710,10 +2710,10 @@ components:
       example:
         chainOwnerId: tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e
         gasLimits:
-          maxGasExternalViewCall: 6
-          minGasPerRequest: 5
-          maxGasPerBlock: 1
-          maxGasPerRequest: 5
+          maxGasExternalViewCall: 5
+          minGasPerRequest: 7
+          maxGasPerBlock: 5
+          maxGasPerRequest: 2
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
         customMetadata: customMetadata
@@ -2721,10 +2721,10 @@ components:
           gasPerToken:
             a: 1
             b: 100
-          validatorFeeShare: 0
+          validatorFeeShare: 1
           evmGasRatio:
-            a: 1
-            b: 1
+            a: 0
+            b: 0
         isActive: true
       properties:
         chainID:
@@ -3561,10 +3561,10 @@ components:
         gasPerToken:
           a: 1
           b: 100
-        validatorFeeShare: 0
+        validatorFeeShare: 1
         evmGasRatio:
-          a: 1
-          b: 1
+          a: 0
+          b: 0
       properties:
         evmGasRatio:
           $ref: '#/components/schemas/Ratio32_'
@@ -3588,15 +3588,15 @@ components:
         gasPerToken:
           a: 0
           b: 0
-        validatorFeeShare: 1
+        validatorFeeShare: 0
         evmGasRatio:
           a: 0
           b: 0
       properties:
         evmGasRatio:
-          $ref: '#/components/schemas/Ratio32__'
+          $ref: '#/components/schemas/Ratio32_'
         gasPerToken:
-          $ref: '#/components/schemas/Ratio32__'
+          $ref: '#/components/schemas/Ratio32_'
         validatorFeeShare:
           description: The validator fee share.
           format: int32
@@ -3656,17 +3656,17 @@ components:
       example:
         chainOwnerId: chainOwnerId
         gasLimits:
-          maxGasExternalViewCall: 6
-          minGasPerRequest: 5
-          maxGasPerBlock: 1
-          maxGasPerRequest: 5
+          maxGasExternalViewCall: 5
+          minGasPerRequest: 7
+          maxGasPerBlock: 5
+          maxGasPerRequest: 2
         chainID: chainID
         customMetadata: customMetadata
         gasFeePolicy:
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 1
+          validatorFeeShare: 0
           evmGasRatio:
             a: 0
             b: 0
@@ -4029,10 +4029,10 @@ components:
         name: L1Params
     Limits:
       example:
-        maxGasExternalViewCall: 6
-        minGasPerRequest: 5
-        maxGasPerBlock: 1
-        maxGasPerRequest: 5
+        maxGasExternalViewCall: 5
+        minGasPerRequest: 7
+        maxGasPerBlock: 5
+        maxGasPerRequest: 2
       properties:
         maxGasExternalViewCall:
           description: The maximum gas per external view call
@@ -4889,31 +4889,6 @@ components:
       xml:
         name: Ratio32
     Ratio32_:
-      example:
-        a: 1
-        b: 1
-      properties:
-        a:
-          example: 1
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: A
-        b:
-          example: 1
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: B
-      required:
-      - a
-      - b
-      type: object
-      xml:
-        name: Ratio32
-    Ratio32__:
       example:
         a: 0
         b: 0

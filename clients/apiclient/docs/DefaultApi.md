@@ -5,7 +5,7 @@ All URIs are relative to *http://localhost*
 Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**GetHealth**](DefaultApi.md#GetHealth) | **Get** /health | Returns 200 if the node is healthy.
-[**WsGet**](DefaultApi.md#WsGet) | **Get** /ws | The websocket connection service
+[**V1WsGet**](DefaultApi.md#V1WsGet) | **Get** /v1/ws | The websocket connection service
 
 
 
@@ -66,9 +66,9 @@ No authorization required
 [[Back to README]](../README.md)
 
 
-## WsGet
+## V1WsGet
 
-> WsGet(ctx).Execute()
+> V1WsGet(ctx).Execute()
 
 The websocket connection service
 
@@ -88,9 +88,9 @@ func main() {
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.DefaultApi.WsGet(context.Background()).Execute()
+    resp, r, err := apiClient.DefaultApi.V1WsGet(context.Background()).Execute()
     if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `DefaultApi.WsGet``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Error when calling `DefaultApi.V1WsGet``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
 }
@@ -102,7 +102,7 @@ This endpoint does not need any parameter.
 
 ### Other Parameters
 
-Other parameters are passed through a pointer to a apiWsGetRequest struct via the builder pattern
+Other parameters are passed through a pointer to a apiV1WsGetRequest struct via the builder pattern
 
 
 ### Return type

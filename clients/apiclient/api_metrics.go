@@ -23,25 +23,25 @@ import (
 // MetricsApiService MetricsApi service
 type MetricsApiService service
 
-type ApiGetChainMetricsRequest struct {
+type ApiGetChainMessageMetricsRequest struct {
 	ctx context.Context
 	ApiService *MetricsApiService
 	chainID string
 }
 
-func (r ApiGetChainMetricsRequest) Execute() (*ChainMessageMetrics, *http.Response, error) {
-	return r.ApiService.GetChainMetricsExecute(r)
+func (r ApiGetChainMessageMetricsRequest) Execute() (*ChainMessageMetrics, *http.Response, error) {
+	return r.ApiService.GetChainMessageMetricsExecute(r)
 }
 
 /*
-GetChainMetrics Get chain specific metrics.
+GetChainMessageMetrics Get chain specific message metrics.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @param chainID ChainID (Bech32)
- @return ApiGetChainMetricsRequest
+ @return ApiGetChainMessageMetricsRequest
 */
-func (a *MetricsApiService) GetChainMetrics(ctx context.Context, chainID string) ApiGetChainMetricsRequest {
-	return ApiGetChainMetricsRequest{
+func (a *MetricsApiService) GetChainMessageMetrics(ctx context.Context, chainID string) ApiGetChainMessageMetricsRequest {
+	return ApiGetChainMessageMetricsRequest{
 		ApiService: a,
 		ctx: ctx,
 		chainID: chainID,
@@ -50,7 +50,7 @@ func (a *MetricsApiService) GetChainMetrics(ctx context.Context, chainID string)
 
 // Execute executes the request
 //  @return ChainMessageMetrics
-func (a *MetricsApiService) GetChainMetricsExecute(r ApiGetChainMetricsRequest) (*ChainMessageMetrics, *http.Response, error) {
+func (a *MetricsApiService) GetChainMessageMetricsExecute(r ApiGetChainMessageMetricsRequest) (*ChainMessageMetrics, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -58,12 +58,12 @@ func (a *MetricsApiService) GetChainMetricsExecute(r ApiGetChainMetricsRequest) 
 		localVarReturnValue  *ChainMessageMetrics
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "MetricsApiService.GetChainMetrics")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "MetricsApiService.GetChainMessageMetrics")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/metrics/chain/{chainID}"
+	localVarPath := localBasePath + "/v1/metrics/chain/{chainID}/messages"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -401,23 +401,23 @@ func (a *MetricsApiService) GetChainWorkflowMetricsExecute(r ApiGetChainWorkflow
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
-type ApiGetL1MetricsRequest struct {
+type ApiGetNodeMessageMetricsRequest struct {
 	ctx context.Context
 	ApiService *MetricsApiService
 }
 
-func (r ApiGetL1MetricsRequest) Execute() (*NodeMessageMetrics, *http.Response, error) {
-	return r.ApiService.GetL1MetricsExecute(r)
+func (r ApiGetNodeMessageMetricsRequest) Execute() (*NodeMessageMetrics, *http.Response, error) {
+	return r.ApiService.GetNodeMessageMetricsExecute(r)
 }
 
 /*
-GetL1Metrics Get accumulated metrics.
+GetNodeMessageMetrics Get accumulated message metrics.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiGetL1MetricsRequest
+ @return ApiGetNodeMessageMetricsRequest
 */
-func (a *MetricsApiService) GetL1Metrics(ctx context.Context) ApiGetL1MetricsRequest {
-	return ApiGetL1MetricsRequest{
+func (a *MetricsApiService) GetNodeMessageMetrics(ctx context.Context) ApiGetNodeMessageMetricsRequest {
+	return ApiGetNodeMessageMetricsRequest{
 		ApiService: a,
 		ctx: ctx,
 	}
@@ -425,7 +425,7 @@ func (a *MetricsApiService) GetL1Metrics(ctx context.Context) ApiGetL1MetricsReq
 
 // Execute executes the request
 //  @return NodeMessageMetrics
-func (a *MetricsApiService) GetL1MetricsExecute(r ApiGetL1MetricsRequest) (*NodeMessageMetrics, *http.Response, error) {
+func (a *MetricsApiService) GetNodeMessageMetricsExecute(r ApiGetNodeMessageMetricsRequest) (*NodeMessageMetrics, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -433,12 +433,12 @@ func (a *MetricsApiService) GetL1MetricsExecute(r ApiGetL1MetricsRequest) (*Node
 		localVarReturnValue  *NodeMessageMetrics
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "MetricsApiService.GetL1Metrics")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "MetricsApiService.GetNodeMessageMetrics")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/metrics/l1"
+	localVarPath := localBasePath + "/v1/metrics/node/messages"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
