@@ -127,11 +127,11 @@ Class | Method | HTTP request | Description
 *CorecontractsApi* | [**GovernanceGetChainInfo**](docs/CorecontractsApi.md#governancegetchaininfo) | **Get** /v1/chains/{chainID}/core/governance/chaininfo | Get the chain info
 *CorecontractsApi* | [**GovernanceGetChainOwner**](docs/CorecontractsApi.md#governancegetchainowner) | **Get** /v1/chains/{chainID}/core/governance/chainowner | Get the chain owner
 *DefaultApi* | [**GetHealth**](docs/DefaultApi.md#gethealth) | **Get** /health | Returns 200 if the node is healthy.
-*DefaultApi* | [**WsGet**](docs/DefaultApi.md#wsget) | **Get** /ws | The websocket connection service
-*MetricsApi* | [**GetChainMetrics**](docs/MetricsApi.md#getchainmetrics) | **Get** /v1/metrics/chain/{chainID} | Get chain specific metrics.
+*DefaultApi* | [**V1WsGet**](docs/DefaultApi.md#v1wsget) | **Get** /v1/ws | The websocket connection service
+*MetricsApi* | [**GetChainMessageMetrics**](docs/MetricsApi.md#getchainmessagemetrics) | **Get** /v1/metrics/chain/{chainID}/messages | Get chain specific message metrics.
 *MetricsApi* | [**GetChainPipeMetrics**](docs/MetricsApi.md#getchainpipemetrics) | **Get** /v1/metrics/chain/{chainID}/pipe | Get chain pipe event metrics.
 *MetricsApi* | [**GetChainWorkflowMetrics**](docs/MetricsApi.md#getchainworkflowmetrics) | **Get** /v1/metrics/chain/{chainID}/workflow | Get chain workflow metrics.
-*MetricsApi* | [**GetL1Metrics**](docs/MetricsApi.md#getl1metrics) | **Get** /v1/metrics/l1 | Get accumulated metrics.
+*MetricsApi* | [**GetNodeMessageMetrics**](docs/MetricsApi.md#getnodemessagemetrics) | **Get** /v1/metrics/node/messages | Get accumulated message metrics.
 *NodeApi* | [**DistrustPeer**](docs/NodeApi.md#distrustpeer) | **Delete** /v1/node/peers/trusted/{peer} | Distrust a peering node
 *NodeApi* | [**GenerateDKS**](docs/NodeApi.md#generatedks) | **Post** /v1/node/dks | Generate a new distributed key
 *NodeApi* | [**GetAllPeers**](docs/NodeApi.md#getallpeers) | **Get** /v1/node/peers | Get basic information about all configured peers
