@@ -87,11 +87,7 @@
     } catch (ex) {
       showNotification({
         type: NotificationType.Error,
-        message: `Failed to send withdraw request: ${JSON.stringify(
-          ex,
-          null,
-          4,
-        )}`,
+        message: `Failed to send withdraw request: ${ex.message}`,
         duration: 8000,
       });
       console.log(ex);

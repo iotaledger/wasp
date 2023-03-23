@@ -76,11 +76,10 @@
       on:click={onConnectClick}
       on:keydown={event => handleEnterKeyDown(event, onConnectClick)}
     >
-      <metamask-box class="flex items-center justify-center space-x-4">
-        <img src="/metamask-logo.png" alt="metamask icon" />
+      <div class="flex items-center justify-center space-x-4">
         <span class="text-white font-semibold">Connect your wallet</span>
-      </metamask-box>
-    </wallet-box>
+      </div></wallet-box
+    >
   {/if}
 </div>
 

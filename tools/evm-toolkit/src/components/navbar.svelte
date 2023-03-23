@@ -2,20 +2,34 @@
   import { connected, selectedAccount } from 'svelte-web3';
 
   import { AccountButton, Button } from '$components';
-  
+
   import { handleEnterKeyDown, truncateText } from '$lib/common';
+  import { NotificationType, showNotification } from '$lib/notification';
   import { PopupId } from '$lib/popup';
   import { openPopup } from '$lib/popup/actions';
+  import { connectToWallet } from '$lib/withdraw';
 
   function handleSettings() {
     openPopup(PopupId.Settings);
   }
 
-  function handleAccount() {
+  function onAccountClick() {
     openPopup(PopupId.Account, {
       account: $selectedAccount,
       actions: [],
     });
+  }
+
+  async function onConnectClick(): Promise<void> {
+    try {
+      await connectToWallet();
+    } catch (e) {
+      showNotification({
+        type: NotificationType.Error,
+        message: e,
+      });
+      console.error(e);
+    }
   }
 </script>
 
@@ -33,11 +47,11 @@
       on:keydown={event => handleEnterKeyDown(event, handleSettings)}
     />
     {#if !$connected || !$selectedAccount}
-      <Button onClick={handleAccount} title="Connect wallet" />
+      <Button onClick={onConnectClick} title="Connect wallet" />
     {:else}
       <AccountButton
         title={truncateText($selectedAccount)}
-        onClick={handleAccount}
+        onClick={onAccountClick}
       />
     {/if}
   </items-wrapper>

@@ -6,8 +6,8 @@ export const NETWORKS: INetwork[] = [
     "text": "Shimmer Beta Network",
     "apiEndpoint": "https://api.hornet.sc.testnet.shimmer.network",
     "faucetEndpoint": "https://faucet.testnet.shimmer.network",
-    "chainAddress": "rms1pp4x8a4h0vefcujxjf9tg6utuv5fp06fpszkzrjh0eqgn7vz23rm5z5lwcy",
-    "chainID": 1074,
+    "chainAddress": "rms1prwgvvw472spqusqeufvlmp8xdpyxtrnmvt26jnuk6sxdcq2hk8scku26h7",
+    "chainID": 1071,
     "multicallAddress": "0x259BeDa0D834ac60BCe35a27184F68e4A92b8382"
   },
   {
@@ -16,7 +16,7 @@ export const NETWORKS: INetwork[] = [
     "apiEndpoint": "http://localhost:14265",
     "faucetEndpoint": "http://localhost:8091",
     "chainAddress": "tst1pz0kc4urqxf4vh6c556gnr6uwmkwz5ye98vucakgafyneed4gft322s3gf0",
-    "chainID": 1074,
+    "chainID": 1071,
     "multicallAddress": "0x259BeDa0D834ac60BCe35a27184F68e4A92b8382"
   }
 ]
