@@ -252,16 +252,17 @@ func (e *EVMChain) iscAliasOutputFromEVMBlockNumber(blockNumber *big.Int) (*isc.
 	if iscBlockIndex == latestBlockIndex {
 		return e.backend.ISCLatestAliasOutput()
 	}
-	iscState, err := e.backend.ISCStateByBlockIndex(iscBlockIndex + 1)
+	nextISCBlockIndex := iscBlockIndex + 1
+	nextISCState, err := e.backend.ISCStateByBlockIndex(nextISCBlockIndex)
 	if err != nil {
 		return nil, err
 	}
-	blocklogStatePartition := subrealm.NewReadOnly(iscState, kv.Key(blocklog.Contract.Hname().Bytes()))
-	bi, err := blocklog.GetBlockInfo(blocklogStatePartition, iscState.BlockIndex()+1)
+	blocklogStatePartition := subrealm.NewReadOnly(nextISCState, kv.Key(blocklog.Contract.Hname().Bytes()))
+	nextBlock, err := blocklog.GetBlockInfo(blocklogStatePartition, nextISCBlockIndex)
 	if err != nil {
 		return nil, err
 	}
-	return bi.PreviousAliasOutput, nil
+	return nextBlock.PreviousAliasOutput, nil
 }
 
 func (e *EVMChain) iscAliasOutputFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.BlockNumberOrHash) (*isc.AliasOutputWithID, error) {
