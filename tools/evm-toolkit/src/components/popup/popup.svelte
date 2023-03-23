@@ -1,7 +1,8 @@
 <script lang="ts">
+  import { Button } from '$components';
+
+  import { handleEscapeKeyDown } from '$lib/common';
   import type { PopupAction } from '$lib/popup';
-  import { handleEscapeKeyDown } from '$lib/utils';
-  import { Button } from '..';
 
   export let onClose: () => unknown = () => {};
   export let title: string | undefined = undefined;

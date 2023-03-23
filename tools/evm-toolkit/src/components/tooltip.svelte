@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, createEventDispatcher } from 'svelte';
-  import { handleEnterKeyDown } from '$lib/utils';
+  
+  import { handleEnterKeyDown } from '$lib/common';
 
   export let message: string = null;
   export let show: boolean = false;

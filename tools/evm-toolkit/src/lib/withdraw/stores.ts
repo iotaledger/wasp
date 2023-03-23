@@ -1,5 +1,6 @@
-import type { WithdrawState } from '$components/withdraw/component_types';
 import { writable, type Writable } from 'svelte/store';
+
+import type { WithdrawState } from './interfaces';
 
 export const withdrawStateStore: Writable<WithdrawState> = writable({
   availableBaseTokens: 0,

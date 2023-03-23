@@ -1,12 +1,13 @@
 <script lang="ts">
   import { Button, Dot, Tooltip } from '$components';
-  import { NotificationType, showNotification } from '$lib/notification';
-  import { closePopup, PopupId } from '$lib/popup';
+
   import {
     copyToClipboard,
     handleEnterKeyDown,
     truncateText,
-  } from '$lib/utils';
+  } from '$lib/common';
+  import { NotificationType, showNotification } from '$lib/notification';
+  import { closePopup, PopupId } from '$lib/popup';
   import { connectToWallet, disconnectWallet } from '$lib/withdraw';
 
   export let account = undefined;
@@ -67,12 +68,7 @@
             />
           </Tooltip>
         </div>
-        <Button
-          title="Disconnect"
-          compact
-          ghost
-          onClick={onDisconnectClick}
-        />
+        <Button title="Disconnect" compact ghost onClick={onDisconnectClick} />
       </account-address>
     </account-box>
   {:else}

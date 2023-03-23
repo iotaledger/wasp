@@ -1,8 +1,10 @@
-import { iscAbi, iscContractAddress } from '$components/withdraw/constants';
-import { ISCMagic } from '$components/withdraw/iscmagic/iscmagic';
-import { NotificationType, showNotification } from '$lib/notification';
 import { defaultEvmStores, selectedAccount, web3 } from 'svelte-web3';
 import { get } from 'svelte/store';
+
+import { ISCMagic } from '$lib/iscmagic';
+import { NotificationType, showNotification } from '$lib/notification';
+import { iscAbi, iscContractAddress } from '$lib/withdraw';
+
 import { subscribeBalance } from '.';
 import { updateWithdrawStateStore, withdrawStateStore } from '../stores';
 import { pollAccount } from './polls';

@@ -1,6 +1,8 @@
-import { indexerClient, nodeClient } from '$lib/evm-toolkit';
 import { selectedAccount, web3 } from 'svelte-web3';
 import { get } from 'svelte/store';
+
+import { indexerClient, nodeClient } from '$lib/evm-toolkit';
+
 import { updateWithdrawStateStore, withdrawStateStore } from '../stores';
 
 export async function pollBalance() {

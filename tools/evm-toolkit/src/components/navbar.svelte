@@ -1,10 +1,11 @@
 <script lang="ts">
+  import { connected, selectedAccount } from 'svelte-web3';
+
+  import { AccountButton, Button } from '$components';
+  
+  import { handleEnterKeyDown, truncateText } from '$lib/common';
   import { PopupId } from '$lib/popup';
   import { openPopup } from '$lib/popup/actions';
-  import { handleEnterKeyDown } from '$lib/utils';
-  import { selectedAccount, connected } from 'svelte-web3';
-  import { Button, AccountButton } from '$components';
-  import { truncateText } from '$lib/utils';
 
   function handleSettings() {
     openPopup(PopupId.Settings);

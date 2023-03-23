@@ -7,7 +7,7 @@
   import { indexerClient, nodeClient, selectedNetwork } from '$lib/evm-toolkit';
   import { IotaWallet, SendFundsTransaction } from '$lib/faucet';
   import { NotificationType, showNotification } from '$lib/notification';
-  import { handleEnterKeyDown } from '$lib/utils';
+  import { handleEnterKeyDown } from '$lib/common';
 
   let isSendingFunds: boolean;
 

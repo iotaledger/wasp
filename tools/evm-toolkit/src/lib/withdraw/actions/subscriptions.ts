@@ -1,5 +1,6 @@
 import { clearIntervalAsync, setIntervalAsync } from 'set-interval-async';
 import { get } from 'svelte/store';
+
 import { updateWithdrawStateStore, withdrawStateStore } from '../stores';
 import { pollAccount } from './polls';
 

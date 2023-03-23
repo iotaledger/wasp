@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { ButtonHtmlType } from '$lib/enums';
-  import { handleEnterKeyDown } from '$lib/utils';
+  import { ButtonHtmlType, handleEnterKeyDown } from '$lib/common';
 
   export let compact: boolean = false;
   export let title: string = '';

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { InputType } from '../../lib/enums';
+  import { InputType } from '$lib/common';
 
   export let name: string = '';
   export let required: boolean = false;

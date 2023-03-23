@@ -1,8 +1,9 @@
 import type { SetIntervalAsyncTimer } from 'set-interval-async';
-import type { INativeToken } from '../../lib/native_token';
-import type { INFT } from '../../lib/nft';
 import type { Contract } from 'web3-eth-contract';
-import type { ISCMagic } from './iscmagic';
+
+import type { ISCMagic } from '$lib/iscmagic';
+import type { INativeToken } from '$lib/native-token';
+import type { INFT } from '$lib/nft';
 
 export interface WithdrawState {
   /**
@@ -71,4 +72,15 @@ export interface WithdrawFormInput {
    * [Form] Any NFT to send.
    */
   nftIDToSend?: string;
+}
+
+export interface INativeTokenWithdraw {
+  /**
+   * Identifier of the native token.
+   */
+  ID: string;
+  /**
+   * Amount of native tokens of the given Token ID.
+   */
+  amount: bigint;
 }

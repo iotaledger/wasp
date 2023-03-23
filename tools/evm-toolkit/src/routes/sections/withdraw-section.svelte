@@ -1,18 +1,20 @@
 <script lang="ts">
-  import { InputType } from '$lib/enums';
-  import type { INativeToken } from '$lib/native_token';
+  import { chainId, connected, selectedAccount } from 'svelte-web3';
+
+  import { Button, Input } from '$components';
+
+  import { InputType } from '$lib/common/enums';
+  import { Bech32AddressLength } from '$lib/constants';
+  import { nodeClient } from '$lib/evm-toolkit';
+  import type { INativeToken } from '$lib/native-token';
   import { NotificationType, showNotification } from '$lib/notification';
+  import type { WithdrawFormInput } from '$lib/withdraw';
   import {
     connectToWallet,
+    gasFee,
     pollBalance,
     withdrawStateStore,
   } from '$lib/withdraw';
-  import { chainId, connected, selectedAccount } from 'svelte-web3';
-  import { Button, Input } from '.';
-  import { Bech32AddressLength } from '../lib/constants';
-  import { nodeClient } from '$lib/evm-toolkit';
-  import type { WithdrawFormInput } from './withdraw/component_types';
-  import { gasFee } from './withdraw/constants';
 
   const formInput: WithdrawFormInput = {
     receiverAddress: '',

@@ -23,7 +23,7 @@ import {
 import { Converter, WriteStream } from '@iota/util.js';
 import type { IotaWallet } from './';
 // eslint-disable-next-line import/no-unresolved
-import { SimpleBufferCursor } from '$lib/simple_buffer_cursor';
+import { SimpleBufferCursor } from '$lib/simple-buffer-cursor';
 
 export class SendFundsTransaction {
   private wallet: IotaWallet;

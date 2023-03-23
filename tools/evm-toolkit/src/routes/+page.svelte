@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Box, Tabs, WithdrawNew } from '$components';
-  import { FaucetSection } from './sections';
+  import { Box, Tabs } from '$components';
+  import { FaucetSection, WithdrawSection } from './sections';
 
   const TABS = [
     {
@@ -10,8 +10,7 @@
     },
     {
       label: 'Withdraw',
-      // TODO: replace Withdraw component with WithdrawNew
-      component: WithdrawNew,
+      component: WithdrawSection,
     },
   ];
 </script>

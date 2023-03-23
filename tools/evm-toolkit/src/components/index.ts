@@ -5,8 +5,6 @@ export { default as Dot } from './dot.svelte'
 export { default as Navbar } from './navbar.svelte'
 export { default as Tabs } from './tabs.svelte'
 export { default as Tooltip } from './tooltip.svelte'
-export { default as WithdrawNew } from './withdraw.svelte'
-export { default as Withdraw } from './withdraw/Withdraw.svelte'
 
 export * from './inputs'
 export * from './notification'

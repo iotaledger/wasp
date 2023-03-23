@@ -1,25 +1,18 @@
-import type { Contract } from 'web3-eth-contract';
-import {
-  web3,
-} from 'svelte-web3';
-import type { Eth } from 'web3-eth';
-import { hNameFromString } from '../../../lib/hname';
-import { evmAddressToAgentID } from '../../../lib/evm';
-import { getBalanceParameters, withdrawParameters } from './../parameters';
-import { getNativeTokenMetaData, type INativeToken } from '../../../lib/native_token';
-import { type INFT, getNFTMetadata } from '../../../lib/nft';
-import { Converter } from '@iota/util.js';
-import { NativeTokenIDLength } from '../../../lib/constants';
 import type { IndexerPluginClient, SingleNodeClient } from '@iota/iota.js';
-import { gasFee, iscAbi, iscContractAddress } from './../constants';
-
-
+import { Converter } from '@iota/util.js';
 import {
-  Multicall,
-  type ContractCallResults,
-  type ContractCallContext,
+  Multicall, type ContractCallContext, type ContractCallResults
 } from 'ethereum-multicall';
 import type Web3 from 'web3';
+import type { Eth } from 'web3-eth';
+import type { Contract } from 'web3-eth-contract';
+
+import { NativeTokenIDLength } from '$lib/constants';
+import { getNativeTokenMetaData, type INativeToken } from '$lib/native-token';
+import { getNFTMetadata, type INFT } from '$lib/nft';
+import { gasFee, getBalanceParameters, iscAbi, iscContractAddress, withdrawParameters } from '$lib/withdraw';
+
+import { evmAddressToAgentID, hNameFromString } from './utils';
 
 export type NFTDict = [string, string][];
 
