@@ -1,6 +1,7 @@
 package webapi
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -29,6 +30,8 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/websocket"
 )
 
+const APIVersion = 1
+
 func addHealthEndpoint(server echoswagger.ApiRoot) {
 	server.GET("/health", func(c echo.Context) error { return c.NoContent(http.StatusOK) }).
 		AddResponse(http.StatusOK, "The node is healthy.", nil, nil).
@@ -38,7 +41,7 @@ func addHealthEndpoint(server echoswagger.ApiRoot) {
 
 func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLoad []interfaces.APIController, authMiddleware func() echo.MiddlewareFunc) {
 	for _, controller := range controllersToLoad {
-		group := server.Group(controller.Name(), "/v1/")
+		group := server.Group(controller.Name(), fmt.Sprintf("/v%d/", APIVersion))
 		controller.RegisterPublic(group, mocker)
 
 		adminGroup := &APIGroupModifier{
