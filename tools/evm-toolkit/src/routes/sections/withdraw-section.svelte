@@ -1,8 +1,6 @@
 <script lang="ts">
   import { chainId, connected, selectedAccount } from 'svelte-web3';
-
-  import { Button, Input } from '$components';
-
+  import { Button, Input, RangeInput } from '$components';
   import { InputType } from '$lib/common/enums';
   import { Bech32AddressLength } from '$lib/constants';
   import { nodeClient } from '$lib/evm-toolkit';
@@ -22,6 +20,8 @@
     nativeTokensToSend: {},
     nftIDToSend: undefined,
   };
+
+  let isWithdrawing: boolean = false;
 
   $: formattedBalance = ($withdrawStateStore.availableBaseTokens / 1e6).toFixed(
     2,
@@ -77,6 +77,7 @@
     let result: any;
 
     try {
+      isWithdrawing = true;
       result = await $withdrawStateStore.iscMagic.withdraw(
         $nodeClient,
         formInput.receiverAddress,
@@ -85,6 +86,7 @@
         nftID,
       );
     } catch (ex) {
+      isWithdrawing = false;
       showNotification({
         type: NotificationType.Error,
         message: `Failed to send withdraw request: ${ex.message}`,
@@ -111,6 +113,7 @@
         duration: 8000,
       });
     }
+    isWithdrawing = false;
   }
 
   async function onWithdrawClick() {
@@ -183,34 +186,23 @@
     />
     <tokens-to-send-wrapper>
       <div class="mb-2">Tokens to send</div>
-      <info-box class="flex flex-col space-y-2 max-h-96 overflow-auto">
-        <div>
-          <info-item-title>
-            SMR Token: {formattedAmountToSend}
-          </info-item-title>
-          <input
-            type="range"
-            disabled={!canSetAmountToWithdraw}
-            min="0"
-            max={$withdrawStateStore.availableBaseTokens}
-            bind:value={formInput.baseTokensToSend}
-          />
-        </div>
+      <info-box class="flex flex-col space-y-4 max-h-96 overflow-auto">
+        <RangeInput
+          label="SMR Token: {formattedAmountToSend}"
+          bind:value={formInput.baseTokensToSend}
+          disabled={!canSetAmountToWithdraw}
+          min="0"
+          max={$withdrawStateStore.availableBaseTokens}
+        />
 
         {#each $withdrawStateStore.availableNativeTokens as nativeToken}
-          <div>
-            <info-item-title>
-              {nativeToken.metadata.name} Token: {formInput.nativeTokensToSend[
-                nativeToken.id
-              ] || 0}
-            </info-item-title>
-            <input
-              type="range"
-              min="0"
-              max={Number(nativeToken.amount)}
-              bind:value={formInput.nativeTokensToSend[nativeToken.id]}
-            />
-          </div>
+          <RangeInput
+            bind:value={formInput.nativeTokensToSend[nativeToken.id]}
+            label="{nativeToken?.metadata?.name ?? ''} Token: {formInput
+              .nativeTokensToSend[nativeToken.id] || 0}"
+            min="0"
+            max={Number(nativeToken.amount)}
+          />
         {/each}
       </info-box>
     </tokens-to-send-wrapper>
@@ -232,13 +224,14 @@
       title="Withdraw"
       onClick={onWithdrawClick}
       disabled={!canWithdraw}
+      busy={isWithdrawing}
       stretch
     />
     <Button
       danger
       title="Withdraw everything at once"
       onClick={onWithdrawEverythingClick}
-      disabled={!canWithdrawEverything}
+      disabled={!canWithdrawEverything || isWithdrawing}
       stretch
     />
   {/if}
