@@ -72,7 +72,7 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 	ch.Env.AddRequestsToChainMempoolWaitUntilInbufferEmpty(ch, reqs)
 	ch.WaitUntilMempoolIsEmpty()
 
-	fullGasBlockInfo, err := ch.GetBlockInfo(initialBlockInfo.BlockIndex + 1)
+	fullGasBlockInfo, err := ch.GetBlockInfo(initialBlockInfo.BlockIndex() + 1)
 	require.NoError(t, err)
 	// the request number #{nRequests} should overflow the block and be moved to the next one
 	require.Equal(t, int(fullGasBlockInfo.TotalRequests), nRequests-1)
@@ -80,12 +80,12 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 	require.LessOrEqual(t, fullGasBlockInfo.GasBurned, limits.MaxGasPerBlock)
 
 	// 1 requests should be moved to the next block
-	followingBlockInfo, err := ch.GetBlockInfo(initialBlockInfo.BlockIndex + 2)
+	followingBlockInfo, err := ch.GetBlockInfo(initialBlockInfo.BlockIndex() + 2)
 	require.NoError(t, err)
 	require.Equal(t, followingBlockInfo.TotalRequests, uint16(1))
 
 	// no further blocks should have been produced
-	_, err = ch.GetBlockInfo(initialBlockInfo.BlockIndex + 3)
+	_, err = ch.GetBlockInfo(initialBlockInfo.BlockIndex() + 3)
 	require.Error(t, err)
 }
 

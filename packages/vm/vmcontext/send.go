@@ -9,6 +9,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
+const MaxPostedOutputsInOneRequest = 4
+
 func (vmctx *VMContext) getNFTData(nftID iotago.NFTID) *isc.NFT {
 	var nft *isc.NFT
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
@@ -52,7 +54,6 @@ func (vmctx *VMContext) sendOutput(o iotago.Output) {
 
 	assets := isc.AssetsFromOutput(o)
 
-	vmctx.assertConsistentL2WithL1TxBuilder("sandbox.Send: begin")
 	// this call cannot panic due to not enough base tokens for storage deposit because
 	// it does not change total balance of the transaction, and it does not create new internal outputs
 	// The call can destroy internal output when all native tokens of particular ID are moved outside chain
@@ -62,5 +63,4 @@ func (vmctx *VMContext) sendOutput(o iotago.Output) {
 	// debit the assets from the on-chain account
 	// It panics with accounts.ErrNotEnoughFunds if sender's account balances are exceeded
 	vmctx.debitFromAccount(vmctx.AccountID(), assets)
-	vmctx.assertConsistentL2WithL1TxBuilder("sandbox.Send: end")
 }

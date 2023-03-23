@@ -1,4 +1,4 @@
-package trie
+package trie_test
 
 import (
 	"bytes"
@@ -8,34 +8,35 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 func TestBasic(t *testing.T) {
 	store := NewInMemoryKVStore()
 
-	var root0 Hash
+	var root0 trie.Hash
 	{
-		root0 = MustInitRoot(store)
+		root0 = trie.MustInitRoot(store)
 	}
 	{
-		state, err := NewTrieReader(store, root0)
+		state, err := trie.NewTrieReader(store, root0)
 		require.NoError(t, err)
 		require.EqualValues(t, []byte(nil), state.Get([]byte("a")))
 	}
 
-	var root1 Hash
+	var root1 trie.Hash
 	{
-		tr, err := NewTrieUpdatable(store, root0)
+		tr, err := trie.NewTrieUpdatable(store, root0)
 		require.NoError(t, err)
 		tr.Update([]byte("a"), []byte("a"))
 		tr.Update([]byte("b"), []byte("b"))
 		root1 = tr.Commit(store)
 	}
 
-	var root2 Hash
+	var root2 trie.Hash
 	{
-		tr, err := NewTrieUpdatable(store, root1)
+		tr, err := trie.NewTrieUpdatable(store, root1)
 		require.NoError(t, err)
 		tr.Update([]byte("a"), nil)
 		tr.Update([]byte("b"), []byte("bb"))
@@ -47,13 +48,13 @@ func TestBasic(t *testing.T) {
 		require.Nil(t, tr.Get([]byte("a")))
 	}
 
-	state, err := NewTrieReader(store, root2)
+	state, err := trie.NewTrieReader(store, root2)
 	require.NoError(t, err)
 	require.Nil(t, state.Get([]byte("a")))
 
-	var root3 Hash
+	var root3 trie.Hash
 	{
-		tr, err := NewTrieUpdatable(store, root2)
+		tr, err := trie.NewTrieUpdatable(store, root2)
 		require.NoError(t, err)
 		tr.Update([]byte("b"), nil)
 		tr.Update([]byte("cccddd"), nil)
@@ -73,11 +74,11 @@ func TestBasic(t *testing.T) {
 func TestBasic2(t *testing.T) {
 	store := NewInMemoryKVStore()
 
-	root0 := MustInitRoot(store)
+	root0 := trie.MustInitRoot(store)
 
-	var root1 Hash
+	var root1 trie.Hash
 	{
-		tr, err := NewTrieUpdatable(store, root0)
+		tr, err := trie.NewTrieUpdatable(store, root0)
 		require.NoError(t, err)
 		tr.Update([]byte{0x00}, []byte{0})
 		tr.Update([]byte{0x01}, []byte{0})
@@ -85,7 +86,7 @@ func TestBasic2(t *testing.T) {
 		root1 = tr.Commit(store)
 	}
 
-	tr, err := NewTrieReader(store, root1)
+	tr, err := trie.NewTrieReader(store, root1)
 	require.NoError(t, err)
 	require.True(t, tr.Has([]byte{0x00}))
 	require.True(t, tr.Has([]byte{0x01}))
@@ -95,11 +96,11 @@ func TestBasic2(t *testing.T) {
 func TestBasic3(t *testing.T) {
 	store := NewInMemoryKVStore()
 
-	root0 := MustInitRoot(store)
+	root0 := trie.MustInitRoot(store)
 
-	var root1 Hash
+	var root1 trie.Hash
 	{
-		tr, err := NewTrieUpdatable(store, root0)
+		tr, err := trie.NewTrieUpdatable(store, root0)
 		require.NoError(t, err)
 		tr.Update([]byte{0x30}, []byte{1})
 		tr.Update([]byte{0x31}, []byte{1})
@@ -108,7 +109,7 @@ func TestBasic3(t *testing.T) {
 		root1 = tr.Commit(store)
 	}
 
-	tr, err := NewTrieReader(store, root1)
+	tr, err := trie.NewTrieReader(store, root1)
 	require.NoError(t, err)
 	require.Equal(t, []byte{1}, tr.Get([]byte{0x30}))
 	require.Equal(t, []byte{1}, tr.Get([]byte{0x31}))
@@ -118,10 +119,10 @@ func TestBasic3(t *testing.T) {
 
 func TestCreateTrie(t *testing.T) {
 	t.Run("ok init-"+"", func(t *testing.T) {
-		rootC1 := MustInitRoot(NewInMemoryKVStore())
+		rootC1 := trie.MustInitRoot(NewInMemoryKVStore())
 		require.NotNil(t, rootC1)
 
-		rootC2 := MustInitRoot(NewInMemoryKVStore())
+		rootC2 := trie.MustInitRoot(NewInMemoryKVStore())
 		require.NotNil(t, rootC2)
 
 		require.Equal(t, rootC1, rootC2)
@@ -133,10 +134,10 @@ func TestCreateTrie(t *testing.T) {
 			value = "value"
 		)
 
-		rootInitial := MustInitRoot(store)
+		rootInitial := trie.MustInitRoot(store)
 		require.NotNil(t, rootInitial)
 
-		tr, err := NewTrieUpdatable(store, rootInitial)
+		tr, err := trie.NewTrieUpdatable(store, rootInitial)
 		require.NoError(t, err)
 
 		require.Empty(t, tr.GetStr(""))
@@ -146,7 +147,7 @@ func TestCreateTrie(t *testing.T) {
 		t.Logf("initial root commitment: %s", rootInitial)
 		t.Logf("next root commitment: %s", rootCnext)
 
-		trInit, err := NewTrieReader(store, rootInitial)
+		trInit, err := trie.NewTrieReader(store, rootInitial)
 		require.NoError(t, err)
 		require.Empty(t, trInit.GetStr(""))
 
@@ -162,10 +163,10 @@ func TestCreateTrie(t *testing.T) {
 			value = "value"
 		)
 
-		rootInitial := MustInitRoot(store)
+		rootInitial := trie.MustInitRoot(store)
 		require.NotNil(t, rootInitial)
 
-		tr, err := NewTrieUpdatable(store, rootInitial)
+		tr, err := trie.NewTrieUpdatable(store, rootInitial)
 		require.NoError(t, err)
 
 		require.Empty(t, tr.GetStr(""))
@@ -190,10 +191,10 @@ func TestBaseUpdate(t *testing.T) {
 	runTest := func(data []string) {
 		t.Run("update many", func(t *testing.T) {
 			store := NewInMemoryKVStore()
-			rootInitial := MustInitRoot(store)
+			rootInitial := trie.MustInitRoot(store)
 			require.NotNil(t, rootInitial)
 
-			tr, err := NewTrieUpdatable(store, rootInitial)
+			tr, err := trie.NewTrieUpdatable(store, rootInitial)
 			require.NoError(t, err)
 
 			// data = data[:2]
@@ -204,7 +205,7 @@ func TestBaseUpdate(t *testing.T) {
 			rootNext := tr.Commit(store)
 			t.Logf("after commit: %s", rootNext)
 
-			err = tr.setRoot(rootNext)
+			err = tr.SetRoot(rootNext)
 			require.NoError(t, err)
 
 			for _, key := range data {
@@ -223,16 +224,16 @@ func TestBaseUpdate(t *testing.T) {
 
 var traceScenarios = false
 
-func runUpdateScenario(trie *TrieUpdatable, store KVWriter, scenario []string) (map[string]string, Hash) {
+func runUpdateScenario(trieUpdatable *trie.TrieUpdatable, store trie.KVWriter, scenario []string) (map[string]string, trie.Hash) {
 	checklist := make(map[string]string)
 	uncommitted := false
-	var ret Hash
+	var ret trie.Hash
 	for _, cmd := range scenario {
 		if cmd == "" {
 			continue
 		}
 		if cmd == "*" {
-			ret = trie.Commit(store)
+			ret = trieUpdatable.Commit(store)
 			if traceScenarios {
 				fmt.Printf("+++ commit. Root: '%s'\n", ret)
 			}
@@ -253,7 +254,7 @@ func runUpdateScenario(trie *TrieUpdatable, store KVWriter, scenario []string) (
 			key = []byte(cmd)
 			value = []byte(cmd)
 		}
-		trie.Update(key, value)
+		trieUpdatable.Update(key, value)
 		checklist[string(key)] = string(value)
 		uncommitted = true
 		if traceScenarios {
@@ -265,7 +266,7 @@ func runUpdateScenario(trie *TrieUpdatable, store KVWriter, scenario []string) (
 		}
 	}
 	if uncommitted {
-		ret = trie.Commit(store)
+		ret = trieUpdatable.Commit(store)
 		if traceScenarios {
 			fmt.Printf("+++ commit. Root: '%s'\n", ret)
 		}
@@ -273,10 +274,10 @@ func runUpdateScenario(trie *TrieUpdatable, store KVWriter, scenario []string) (
 	if traceScenarios {
 		fmt.Printf("+++ return root: '%s'\n", ret)
 	}
-	return checklist, trie.Root()
+	return checklist, trieUpdatable.Root()
 }
 
-func checkResult(t *testing.T, trie *TrieUpdatable, checklist map[string]string) {
+func checkResult(t *testing.T, trie *trie.TrieUpdatable, checklist map[string]string) {
 	for key, expectedValue := range checklist {
 		v := trie.GetStr(key)
 		if traceScenarios {
@@ -299,10 +300,10 @@ func TestBaseScenarios(t *testing.T) {
 	tf := func(data []string) func(t *testing.T) {
 		return func(t *testing.T) {
 			store := NewInMemoryKVStore()
-			rootInitial := MustInitRoot(store)
+			rootInitial := trie.MustInitRoot(store)
 			require.NotNil(t, rootInitial)
 
-			tr, err := NewTrieUpdatable(store, rootInitial)
+			tr, err := trie.NewTrieUpdatable(store, rootInitial)
 			require.NoError(t, err)
 
 			checklist, _ := runUpdateScenario(tr, store, data)
@@ -340,8 +341,8 @@ func TestBaseScenarios(t *testing.T) {
 func TestDeletionLoop(t *testing.T) {
 	runTest := func(initScenario, scenario []string) {
 		store := NewInMemoryKVStore()
-		beginRoot := MustInitRoot(store)
-		tr, err := NewTrieUpdatable(store, beginRoot)
+		beginRoot := trie.MustInitRoot(store)
+		tr, err := trie.NewTrieUpdatable(store, beginRoot)
 		require.NoError(t, err)
 		t.Logf("TestDeletionLoop: model: '%s', init='%s', scenario='%s'", "", initScenario, scenario)
 		_, beginRoot = runUpdateScenario(tr, store, initScenario)
@@ -367,18 +368,18 @@ func TestDeterminism(t *testing.T) {
 	tf := func(scenario1, scenario2 []string) func(t *testing.T) {
 		return func(t *testing.T) {
 			store1 := NewInMemoryKVStore()
-			initRoot1 := MustInitRoot(store1)
+			initRoot1 := trie.MustInitRoot(store1)
 
-			tr1, err := NewTrieUpdatable(store1, initRoot1)
+			tr1, err := trie.NewTrieUpdatable(store1, initRoot1)
 			require.NoError(t, err)
 
 			checklist1, root1 := runUpdateScenario(tr1, store1, scenario1)
 			checkResult(t, tr1, checklist1)
 
 			store2 := NewInMemoryKVStore()
-			initRoot2 := MustInitRoot(store2)
+			initRoot2 := trie.MustInitRoot(store2)
 
-			tr2, err := NewTrieUpdatable(store2, initRoot2)
+			tr2, err := trie.NewTrieUpdatable(store2, initRoot2)
 			require.NoError(t, err)
 
 			checklist2, root2 := runUpdateScenario(tr2, store2, scenario2)
@@ -411,16 +412,16 @@ func TestIterate(t *testing.T) {
 	iterTest := func(scenario []string) func(t *testing.T) {
 		return func(t *testing.T) {
 			store := NewInMemoryKVStore()
-			rootInitial := MustInitRoot(store)
+			rootInitial := trie.MustInitRoot(store)
 			require.NotNil(t, rootInitial)
 
-			tr, err := NewTrieUpdatable(store, rootInitial)
+			tr, err := trie.NewTrieUpdatable(store, rootInitial)
 			require.NoError(t, err)
 
 			checklist, root := runUpdateScenario(tr, store, scenario)
 			checkResult(t, tr, checklist)
 
-			trr, err := NewTrieReader(store, root)
+			trr, err := trie.NewTrieReader(store, root)
 			require.NoError(t, err)
 			var iteratedKeys1 [][]byte
 			trr.Iterate(func(k []byte, v []byte) bool {
@@ -465,15 +466,15 @@ func TestIteratePrefix(t *testing.T) {
 	iterTest := func(scenario []string, prefix string) func(t *testing.T) {
 		return func(t *testing.T) {
 			store := NewInMemoryKVStore()
-			rootInitial := MustInitRoot(store)
+			rootInitial := trie.MustInitRoot(store)
 			require.NotNil(t, rootInitial)
 
-			tr, err := NewTrieUpdatable(store, rootInitial)
+			tr, err := trie.NewTrieUpdatable(store, rootInitial)
 			require.NoError(t, err)
 
 			_, root := runUpdateScenario(tr, store, scenario)
 
-			trr, err := NewTrieReader(store, root)
+			trr, err := trie.NewTrieReader(store, root)
 			require.NoError(t, err)
 
 			countIter := 0
@@ -524,15 +525,15 @@ func TestDeletePrefix(t *testing.T) {
 	iterTest := func(scenario []string, prefix string) func(t *testing.T) {
 		return func(t *testing.T) {
 			store := NewInMemoryKVStore()
-			rootInitial := MustInitRoot(store)
+			rootInitial := trie.MustInitRoot(store)
 			require.NotNil(t, rootInitial)
 
-			tr, err := NewTrieUpdatable(store, rootInitial)
+			tr, err := trie.NewTrieUpdatable(store, rootInitial)
 			require.NoError(t, err)
 
 			_, root := runUpdateScenario(tr, store, scenario)
 
-			tr, err = NewTrieUpdatable(store, root)
+			tr, err = trie.NewTrieUpdatable(store, root)
 			require.NoError(t, err)
 
 			deleted := tr.DeletePrefix([]byte(prefix))
@@ -611,8 +612,8 @@ func TestSnapshot1(t *testing.T) {
 	runTest := func(name string, data []string) {
 		t.Run(name, func(t *testing.T) {
 			store1 := NewInMemoryKVStore()
-			initRoot1 := MustInitRoot(store1)
-			tr1, err := NewTrieUpdatable(store1, initRoot1)
+			initRoot1 := trie.MustInitRoot(store1)
+			tr1, err := trie.NewTrieUpdatable(store1, initRoot1)
 			require.NoError(t, err)
 
 			_, root1 := runUpdateScenario(tr1, store1, data)
@@ -620,8 +621,8 @@ func TestSnapshot1(t *testing.T) {
 			tr1.SnapshotData(storeData)
 
 			store2 := NewInMemoryKVStore()
-			initRoot2 := MustInitRoot(store2)
-			tr2, err := NewTrieUpdatable(store2, initRoot2)
+			initRoot2 := trie.MustInitRoot(store2)
+			tr2, err := trie.NewTrieUpdatable(store2, initRoot2)
 			require.NoError(t, err)
 
 			storeData.Iterate(func(k, v []byte) bool {
@@ -640,15 +641,15 @@ func TestSnapshot1(t *testing.T) {
 func TestSnapshot2(t *testing.T) {
 	runTest := func(data []string) {
 		store1 := NewInMemoryKVStore()
-		initRoot1 := MustInitRoot(store1)
-		tr1, err := NewTrieUpdatable(store1, initRoot1)
+		initRoot1 := trie.MustInitRoot(store1)
+		tr1, err := trie.NewTrieUpdatable(store1, initRoot1)
 		require.NoError(t, err)
 
 		_, root1 := runUpdateScenario(tr1, store1, data)
 		store2 := NewInMemoryKVStore()
 		tr1.Snapshot(store2)
 
-		tr2, err := NewTrieUpdatable(store2, root1)
+		tr2, err := trie.NewTrieUpdatable(store2, root1)
 		require.NoError(t, err)
 
 		sc1 := []string{"@", "#$%%^", "____++++", "~~~~~"}

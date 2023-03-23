@@ -24,7 +24,7 @@ type nodeData struct {
 	pathExtension []byte
 
 	// if terminal != nil, it contains the commitment to a value in the trie
-	terminal *tcommitment
+	terminal *Tcommitment
 
 	// children contains pointers to up to 16 other nodes, one for each
 	// possible nibble
@@ -117,7 +117,7 @@ type cflags uint16
 
 func readCflags(r io.Reader) (cflags, error) {
 	var ret uint16
-	err := readUint16(r, &ret)
+	err := ReadUint16(r, &ret)
 	if err != nil {
 		return 0, err
 	}
@@ -160,7 +160,7 @@ func (n *nodeData) Write(w io.Writer) error {
 		return err2
 	}
 	if smallFlags&isExtensionNodeFlag != 0 {
-		if err2 := writeBytes16(w, pathExtensionEncoded); err2 != nil {
+		if err2 := WriteBytes16(w, pathExtensionEncoded); err2 != nil {
 			return err2
 		}
 	}
@@ -171,7 +171,7 @@ func (n *nodeData) Write(w io.Writer) error {
 	}
 	// write child commitments if any
 	if smallFlags&hasChildrenFlag != 0 {
-		if err2 := writeUint16(w, uint16(childrenFlags)); err2 != nil {
+		if err2 := WriteUint16(w, uint16(childrenFlags)); err2 != nil {
 			return err2
 		}
 		n.iterateChildren(func(_ byte, h Hash) bool {
@@ -195,7 +195,7 @@ func (n *nodeData) Read(r io.Reader) error {
 		return err
 	}
 	if smallFlags&isExtensionNodeFlag != 0 {
-		encoded, err2 := readBytes16(r)
+		encoded, err2 := ReadBytes16(r)
 		if err2 != nil {
 			return err2
 		}
@@ -242,7 +242,7 @@ func (n *nodeData) iterateChildren(f func(byte, Hash) bool) bool {
 }
 
 // update computes update to the node data and its commitment.
-func (n *nodeData) update(childUpdates map[byte]*Hash, newTerminalUpdate *tcommitment, pathExtension []byte) {
+func (n *nodeData) update(childUpdates map[byte]*Hash, newTerminalUpdate *Tcommitment, pathExtension []byte) {
 	for i, upd := range childUpdates {
 		n.children[i] = upd
 	}

@@ -18,47 +18,32 @@ type ControlAddressesResponse struct {
 }
 
 type BlockInfoResponse struct {
-	AnchorTransactionID         string    `json:"anchorTransactionId" swagger:"required"`
-	BlockIndex                  uint32    `json:"blockIndex" swagger:"required,min(1)"`
-	GasBurned                   string    `json:"gasBurned" swagger:"required,desc(The burned gas (uint64 as string))"`
-	GasFeeCharged               string    `json:"gasFeeCharged" swagger:"required,desc(The charged gas fee (uint64 as string))"`
-	L1CommitmentHash            string    `json:"l1CommitmentHash" swagger:"required"`
-	NumOffLedgerRequests        uint16    `json:"numOffLedgerRequests" swagger:"required,min(1)"`
-	NumSuccessfulRequests       uint16    `json:"numSuccessfulRequests" swagger:"required,min(1)"`
-	PreviousL1CommitmentHash    string    `json:"previousL1CommitmentHash" swagger:"required"`
-	Timestamp                   time.Time `json:"timestamp" swagger:"required"`
-	TotalBaseTokensInL2Accounts string    `json:"totalBaseTokensInL2Accounts" swagger:"required,desc(The total L2 base tokens (uint64 as string))"`
-	TotalRequests               uint16    `json:"totalRequests" swagger:"required,min(1)"`
-	TotalStorageDeposit         string    `json:"totalStorageDeposit" swagger:"required,desc(The total storage deposit (uint64 as string))"`
-	TransactionSubEssenceHash   string    `json:"transactionSubEssenceHash" swagger:"required"`
+	BlockIndex            uint32    `json:"blockIndex" swagger:"required,min(1)"`
+	Timestamp             time.Time `json:"timestamp" swagger:"required"`
+	TotalRequests         uint16    `json:"totalRequests" swagger:"required,min(1)"`
+	NumSuccessfulRequests uint16    `json:"numSuccessfulRequests" swagger:"required,min(1)"`
+	NumOffLedgerRequests  uint16    `json:"numOffLedgerRequests" swagger:"required,min(1)"`
+	PreviousAliasOutput   string    `json:"previousAliasOutput" swagger:"required,min(1)"`
+	GasBurned             string    `json:"gasBurned" swagger:"required,desc(The burned gas (uint64 as string))"`
+	GasFeeCharged         string    `json:"gasFeeCharged" swagger:"required,desc(The charged gas fee (uint64 as string))"`
 }
 
 func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
-	transactionEssenceHash := iotago.EncodeHex(info.TransactionSubEssenceHash[:])
-
-	commitmentHash := ""
-	if info.L1Commitment() != nil {
-		commitmentHash = info.L1Commitment().BlockHash().String()
+	blockindex := uint32(0)
+	prevAOStr := ""
+	if info.PreviousAliasOutput != nil {
+		blockindex = info.PreviousAliasOutput.GetAliasOutput().StateIndex + 1
+		prevAOStr = string(info.PreviousAliasOutput.Bytes())
 	}
-	prevCommitmentHash := ""
-	if info.PreviousL1Commitment() != nil {
-		prevCommitmentHash = info.PreviousL1Commitment().BlockHash().String()
-	}
-
 	return &BlockInfoResponse{
-		AnchorTransactionID:         info.AnchorTransactionID().ToHex(),
-		BlockIndex:                  info.BlockIndex,
-		GasBurned:                   iotago.EncodeUint64(info.GasBurned),
-		GasFeeCharged:               iotago.EncodeUint64(info.GasFeeCharged),
-		L1CommitmentHash:            commitmentHash,
-		NumOffLedgerRequests:        info.NumOffLedgerRequests,
-		NumSuccessfulRequests:       info.NumSuccessfulRequests,
-		PreviousL1CommitmentHash:    prevCommitmentHash,
-		Timestamp:                   info.Timestamp,
-		TotalBaseTokensInL2Accounts: iotago.EncodeUint64(info.TotalBaseTokensInL2Accounts),
-		TotalRequests:               info.TotalRequests,
-		TotalStorageDeposit:         iotago.EncodeUint64(info.TotalStorageDeposit),
-		TransactionSubEssenceHash:   transactionEssenceHash,
+		BlockIndex:            blockindex,
+		PreviousAliasOutput:   prevAOStr,
+		Timestamp:             info.Timestamp,
+		TotalRequests:         info.TotalRequests,
+		NumSuccessfulRequests: info.NumSuccessfulRequests,
+		NumOffLedgerRequests:  info.NumOffLedgerRequests,
+		GasBurned:             iotago.EncodeUint64(info.GasBurned),
+		GasFeeCharged:         iotago.EncodeUint64(info.GasFeeCharged),
 	}
 }
 

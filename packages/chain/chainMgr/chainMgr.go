@@ -77,6 +77,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
@@ -101,10 +102,13 @@ func (o *Output) LatestActiveAliasOutput() *isc.AliasOutputWithID {
 	}
 	return o.cmi.needConsensus.BaseAliasOutput
 }
-func (o *Output) LatestConfirmedAliasOutput() *isc.AliasOutputWithID     { return o.cmi.latestConfirmedAO }
-func (o *Output) ActiveAccessNodes() []*cryptolib.PublicKey              { return o.cmi.activeAccessNodes }
-func (o *Output) NeedConsensus() *NeedConsensus                          { return o.cmi.needConsensus }
-func (o *Output) NeedPublishTX() map[iotago.TransactionID]*NeedPublishTX { return o.cmi.needPublishTX }
+func (o *Output) LatestConfirmedAliasOutput() *isc.AliasOutputWithID { return o.cmi.latestConfirmedAO }
+func (o *Output) ActiveAccessNodes() []*cryptolib.PublicKey          { return o.cmi.activeAccessNodes }
+func (o *Output) NeedConsensus() *NeedConsensus                      { return o.cmi.needConsensus }
+func (o *Output) NeedPublishTX() *shrinkingmap.ShrinkingMap[iotago.TransactionID, *NeedPublishTX] {
+	return o.cmi.needPublishTX
+}
+
 func (o *Output) String() string {
 	return fmt.Sprintf(
 		"{chainMgr.Output, LatestConfirmedAliasOutput=%v, |ActiveAccessNodes|=%v, NeedConsensus=%v, NeedPublishTX=%v}",
@@ -155,16 +159,16 @@ type cmtLogInst struct {
 }
 
 type chainMgrImpl struct {
-	chainID                 isc.ChainID                             // This instance is responsible for this chain.
-	cmtLogs                 map[iotago.Ed25519Address]*cmtLogInst   // All the committee log instances for this chain.
-	consensusStateRegistry  cmtLog.ConsensusStateRegistry           // Persistent store for log indexes.
-	latestActiveCmt         *iotago.Ed25519Address                  // The latest active committee.
-	latestConfirmedAO       *isc.AliasOutputWithID                  // The latest confirmed AO (follows Active AO).
-	activeAccessNodes       []*cryptolib.PublicKey                  // All the nodes authorized for being access nodes (for the ActiveAO).
-	activeAccessNodesCB     func([]*cryptolib.PublicKey)            // Called, when a list of access nodes has changed.
-	needConsensus           *NeedConsensus                          // Query for a consensus.
-	needPublishTX           map[iotago.TransactionID]*NeedPublishTX // Query to post TXes.
-	dkShareRegistryProvider registry.DKShareRegistryProvider        // Source for DKShares.
+	chainID                 isc.ChainID                                                      // This instance is responsible for this chain.
+	cmtLogs                 map[iotago.Ed25519Address]*cmtLogInst                            // All the committee log instances for this chain.
+	consensusStateRegistry  cmtLog.ConsensusStateRegistry                                    // Persistent store for log indexes.
+	latestActiveCmt         *iotago.Ed25519Address                                           // The latest active committee.
+	latestConfirmedAO       *isc.AliasOutputWithID                                           // The latest confirmed AO (follows Active AO).
+	activeAccessNodes       []*cryptolib.PublicKey                                           // All the nodes authorized for being access nodes (for the ActiveAO).
+	activeAccessNodesCB     func([]*cryptolib.PublicKey)                                     // Called, when a list of access nodes has changed.
+	needConsensus           *NeedConsensus                                                   // Query for a consensus.
+	needPublishTX           *shrinkingmap.ShrinkingMap[iotago.TransactionID, *NeedPublishTX] // Query to post TXes.
+	dkShareRegistryProvider registry.DKShareRegistryProvider                                 // Source for DKShares.
 	output                  *Output
 	asGPA                   gpa.GPA
 	me                      gpa.NodeID
@@ -193,7 +197,7 @@ func New(
 		activeAccessNodes:       []*cryptolib.PublicKey{},
 		activeAccessNodesCB:     activeAccessNodesCB,
 		needConsensus:           nil,
-		needPublishTX:           map[iotago.TransactionID]*NeedPublishTX{},
+		needPublishTX:           shrinkingmap.New[iotago.TransactionID, *NeedPublishTX](),
 		dkShareRegistryProvider: dkShareRegistryProvider,
 		me:                      me,
 		nodeIDFromPubKey:        nodeIDFromPubKey,
@@ -288,7 +292,7 @@ func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutput
 func (cmi *chainMgrImpl) handleInputChainTxPublishResult(input *inputChainTxPublishResult) gpa.OutMessages {
 	cmi.log.Debugf("handleInputChainTxPublishResult: %+v", input)
 	// >     Clear the TX from the NeedPublishTX variable.
-	delete(cmi.needPublishTX, input.txID)
+	cmi.needPublishTX.Delete(input.txID)
 	if input.confirmed {
 		// >     If result.confirmed = false THEN ... ELSE
 		// >         NOP // AO has to be received as Confirmed AO. // TODO: Not true, anymore.
@@ -314,14 +318,14 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 	// >         Add ConsensusOutput.TX to NeedPublishTX
 	if true { // TODO: Reconsider this condition. Several recent consensus instances should be published, if we run consensus instances in parallel.
 		txID := input.consensusResult.NextAliasOutput.TransactionID()
-		cmi.needPublishTX[txID] = &NeedPublishTX{
+		cmi.needPublishTX.Set(txID, &NeedPublishTX{
 			CommitteeAddr:     input.committeeAddr,
 			LogIndex:          input.logIndex,
 			TxID:              txID,
 			Tx:                input.consensusResult.Transaction,
 			BaseAliasOutputID: input.consensusResult.BaseAliasOutput,
 			NextAliasOutput:   input.consensusResult.NextAliasOutput,
-		}
+		})
 	}
 	//
 	// >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.

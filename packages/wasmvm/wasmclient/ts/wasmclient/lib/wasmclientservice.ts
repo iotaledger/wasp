@@ -34,7 +34,7 @@ export class WasmClientService {
             arguments: isc.Codec.jsonEncode(args),
         };
 
-        const url = this.waspAPI + '/requests/callview';
+        const url = this.waspAPI + '/v1/requests/callview';
         const client = new isc.SyncRequestClient();
         client.addHeader('Content-Type', 'application/json');
         try {
@@ -78,7 +78,7 @@ export class WasmClientService {
             request: wasmlib.hexEncode(signed.bytes()),
         };
 
-        const url = this.waspAPI + '/requests/offledger';
+        const url = this.waspAPI + '/v1/requests/offledger';
         const client = new isc.SyncRequestClient();
         client.addHeader('Content-Type', 'application/json');
         try {
@@ -102,7 +102,7 @@ export class WasmClientService {
     }
 
     public setDefaultChainID(): isc.Error {
-        const url = this.waspAPI + '/chains';
+        const url = this.waspAPI + '/v1/chains';
         const client = new isc.SyncRequestClient();
         client.addHeader('Content-Type', 'application/json');
         try {
@@ -124,7 +124,7 @@ export class WasmClientService {
         if (this.eventHandlers.length != 1) {
             return null;
         }
-        const url = this.waspAPI.replace('http:', 'ws:') + '/ws';
+        const url = this.waspAPI.replace('http:', 'ws:') + '/v1/ws';
         this.ws = new WebSocket(url, {
             perMessageDeflate: false
         });
@@ -146,7 +146,7 @@ export class WasmClientService {
 
     public waitUntilRequestProcessed(reqID: wasmlib.ScRequestID, timeout: u32): isc.Error {
         //TODO Timeout of the wait can be set with `/wait?timeoutSeconds=`. Max seconds are 60secs.
-        const url = this.waspAPI + '/chains/' + this.chainID.toString() + '/requests/' + reqID.toString() + '/wait';
+        const url = this.waspAPI + '/v1/chains/' + this.chainID.toString() + '/requests/' + reqID.toString() + '/wait';
         try {
             new isc.SyncRequestClient().get(url);
             return null;

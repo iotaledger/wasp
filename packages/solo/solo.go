@@ -278,7 +278,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 		chainOriginator,
 		stateControllerAddr,
 		stateControllerAddr,
-		initBaseTokens, // will be adjusted to min storage deposit
+		initBaseTokens, // will be adjusted to min storage deposit + MinimumBaseTokensOnCommonAccount
 		originParams,
 		outs,
 		outIDs,
@@ -301,9 +301,9 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 
 	kvStore, err := env.chainStateDatabaseManager.ChainStateKVStore(chainID)
 	require.NoError(env.T, err)
-	aoSD := transaction.NewStorageDepositEstimate().AnchorOutput
+	originAOMinSD := parameters.L1().Protocol.RentStructure.MinRent(originAO)
 	store := state.NewStore(kvStore)
-	origin.InitChain(store, originParams, originAO.Amount-aoSD)
+	origin.InitChain(store, originParams, originAO.Amount-originAOMinSD)
 
 	{
 		block, err2 := store.LatestBlock()
@@ -606,4 +606,22 @@ func (env *Solo) MintNFTsL1(issuer *cryptolib.KeyPair, target iotago.Address, co
 		}
 	}
 	return nfts, infos, nil
+}
+
+// SendL1 sends base or native tokens to another L1 address
+func (env *Solo) SendL1(targetAddress iotago.Address, assets *isc.Assets, wallet *cryptolib.KeyPair) {
+	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(wallet.Address())
+	tx, err := transaction.NewTransferTransaction(transaction.NewTransferTransactionParams{
+		DisableAutoAdjustStorageDeposit: env.disableAutoAdjustStorageDeposit,
+		FungibleTokens:                  assets,
+		SendOptions:                     isc.SendOptions{},
+		SenderAddress:                   wallet.Address(),
+		SenderKeyPair:                   wallet,
+		TargetAddress:                   targetAddress,
+		UnspentOutputs:                  allOuts,
+		UnspentOutputIDs:                allOutIDs,
+	})
+	require.NoError(env.T, err)
+	err = env.AddToLedger(tx)
+	require.NoError(env.T, err)
 }

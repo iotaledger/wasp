@@ -25,10 +25,14 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/governance/governanceimpl"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/root/rootimpl"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
+// L1Commitment calculates the L1 commitment for the origin state
+// originDeposit must exclude the minSD for the AliasOutput
 func L1Commitment(initParams dict.Dict, originDeposit uint64) *state.L1Commitment {
 	block := InitChain(state.NewStore(mapdb.NewMapDB()), initParams, originDeposit)
 	return block.L1Commitment()
@@ -90,8 +94,18 @@ func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutput
 			panic(fmt.Sprintf("invalid parameters on origin AO, %s", err.Error()))
 		}
 	}
-	aoSD := transaction.NewStorageDepositEstimate().AnchorOutput
-	return InitChain(chainStore, initParams, aliasOutput.GetAliasOutput().Amount-aoSD)
+	commonAccountAmount := aliasOutput.GetAliasOutput().Amount - parameters.L1().Protocol.RentStructure.MinRent(aliasOutput.GetAliasOutput())
+	return InitChain(chainStore, initParams, commonAccountAmount)
+}
+
+func calcStateMetadata(initParams dict.Dict, commonAccountAmount uint64) []byte {
+	s := &transaction.StateMetadata{
+		L1Commitment:   L1Commitment(initParams, commonAccountAmount),
+		GasFeePolicy:   gas.DefaultFeePolicy(),
+		SchemaVersion:  migrations.BaseSchemaVersion + uint32(len(migrations.Migrations)),
+		CustomMetadata: []byte{},
+	}
+	return s.Bytes()
 }
 
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain
@@ -119,15 +133,9 @@ func NewChainOriginTransaction(
 		initParams.Set(ParamChainOwner, isc.NewAgentID(governanceControllerAddress).Bytes())
 	}
 
-	minSD := transaction.NewStorageDepositEstimate().AnchorOutput
-	minAmount := minSD + accounts.MinimumBaseTokensOnCommonAccount
-	if deposit < minAmount {
-		deposit = minAmount
-	}
-
 	aliasOutput := &iotago.AliasOutput{
 		Amount:        deposit,
-		StateMetadata: L1Commitment(initParams, deposit-minSD).Bytes(),
+		StateMetadata: calcStateMetadata(initParams, deposit),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddress},
 			&iotago.GovernorAddressUnlockCondition{Address: governanceControllerAddress},
@@ -139,6 +147,14 @@ func NewChainOriginTransaction(
 			&iotago.MetadataFeature{Data: initParams.Bytes()},
 		},
 	}
+
+	minSD := parameters.L1().Protocol.RentStructure.MinRent(aliasOutput)
+	minAmount := minSD + accounts.MinimumBaseTokensOnCommonAccount
+	if aliasOutput.Amount < minAmount {
+		aliasOutput.Amount = minAmount
+	}
+	// update the L1 commitment to not include the minimumSD
+	aliasOutput.StateMetadata = calcStateMetadata(initParams, aliasOutput.Amount-minSD)
 
 	txInputs, remainderOutput, err := transaction.ComputeInputsAndRemainder(
 		walletAddr,

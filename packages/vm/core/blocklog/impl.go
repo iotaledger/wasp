@@ -26,7 +26,6 @@ var Processor = Contract.Processor(nil,
 func SetInitialState(s kv.KVStore) {
 	SaveNextBlockInfo(s, &BlockInfo{
 		SchemaVersion:         BlockInfoLatestSchemaVersion,
-		BlockIndex:            0,
 		Timestamp:             time.Time{},
 		TotalRequests:         1,
 		NumSuccessfulRequests: 1,
@@ -82,6 +81,7 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
 		ctx.RequireNoError(err)
 		arr.MustPush(rec.Request.ID().Bytes())
 	}
+	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret
 }
 
@@ -172,6 +172,7 @@ func viewGetEventsForBlock(ctx isc.SandboxView) dict.Dict {
 	for _, event := range events {
 		arr.MustPush([]byte(event))
 	}
+	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret
 }
 

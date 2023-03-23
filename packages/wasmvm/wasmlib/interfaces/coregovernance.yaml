@@ -4,62 +4,164 @@ structs: {}
 typedefs: {} 
 state: {}
 funcs:
+
   # state controller
-  rotateStateController:
-    params:
-      stateControllerAddress=S: Address
+
+  # Adds the given address to the list of identities that constitute the state controller.
   addAllowedStateControllerAddress:
+    access: chain
     params:
-      stateControllerAddress=S: Address
+      address=S: Address # state controller address
+
+  # Removes the given address from the list of identities that constitute the state controller.
   removeAllowedStateControllerAddress:
+    access: chain
     params:
-      stateControllerAddress=S: Address
+      address=S: Address # state controller address
+
+  # Called when the committee is about to be rotated to the given address.
+  # If it succeeds, the next state transition will become a governance transition,
+  # thus updating the state controller in the chain's Alias Output.
+  # If it fails, nothing happens.
+  rotateStateController:
+    access: chain
+    params:
+      address=S: Address # state controller address
+
   # chain owner
+
+  # Claims the ownership of the chain if the caller matches the identity
+  # that was set in delegateChainOwnership().
   claimChainOwnership: {}
+
+  # Sets the Agent ID o as the new owner for the chain.
+  # This change will only be effective once claimChainOwnership() is called by o.
   delegateChainOwnership:
+    access: chain
     params:
-      chainOwner=o: AgentID
+      chainOwner=o: AgentID # next chain owner's agent ID
+
   # fees
-  setFeePolicy:
+
+  # Sets the EVM gas ratio for the chain.
+  setEVMGasRatio:
+    access: chain
     params:
-      feePolicyBytes=g: Bytes
+      gasRatio=e: Bytes # serialized gas ratio
+
+  # Sets the fee policy for the chain.
+  setFeePolicy:
+    access: chain
+    params:
+      feePolicy=g: Bytes # serialized fee policy
+
+  # Sets the gas limits for the chain.
+  setGasLimits:
+    access: chain
+    params:
+      gasLimits=l: Bytes # serialized gas limits
+
   # access nodes
+
+  # Adds a node to the list of candidates.
   addCandidateNode:
     params:
-      accessNodeInfoForCommittee=i: Bool
-      accessNodeInfoPubKey=ip: Bytes
-      accessNodeInfoCertificate=ic: Bytes
-      accessNodeInfoAccessAPI=ia: String
+      pubKey=ip: Bytes # public key of the node to be added
+      certificate=ic: Bytes # signed binary containing both the node public key and their L1 address
+      accessAPI=ia: String? # API base URL for the node, default empty
+      accessOnly=i: Bool? # whether node is just an access node, default false
+
+  # Iterates through the given map of actions and applies them.
+  changeAccessNodes:
+    access: chain
+    params:
+      # map of actions per pubkey
+      # 0: Remove the access node from the access nodes list.
+      # 1: Accept a candidate node and add it to the list of access nodes.
+      # 2: Drop an access node from the access node and candidate lists.
+      actions=n: map[Bytes]Uint8
+
+  # Removes a node from the list of candidates.
   revokeAccessNode:
     params:
-      accessNodeInfoPubKey=ip: Bytes
-      accessNodeInfoCertificate=ic: Bytes
-  changeAccessNodes:
+      pubKey=ip: Bytes # public key of the node to be removed
+      certificate=ic: Bytes # certificate of the node to be removed
+
+  # Maintenance
+
+  # Starts the chain maintenance mode, meaning no further requests
+  # will be processed except calls to the governance contract.
+  setMaintenanceOn:
+    access: chain
+
+  # Stops the maintenance mode.
+  setMaintenanceOff:
+    access: chain
+
+  # Changes optional extra metadata that is appended to the L1 AliasOutput.
+  setCustomMetadata:
+    access: chain
     params:
-      changeAccessNodesActions=n: map[Bytes]Uint8
+      metadata=x: Bytes # serialized chain metadata
 
 views:
+
   # state controller
+
+  # Returns the list of allowed state controllers.
   getAllowedStateControllerAddresses:
     results:
-      allowedStateControllerAddresses=a: Address[] # native contract, so this is an Array16
+      controllers=a: Address[] # Array16 of state controller addresses
+
   # chain owner
+
+  # Returns the AgentID of the chain owner.
   getChainOwner:
     results:
-      chainOwner=o: AgentID
+      chainOwner=o: AgentID # chain owner
+
   # fees
+
+  # Returns the fee policy.
   getFeePolicy:
     results:
-      feePolicyBytes=g: Bytes
+      feePolicy=g: Bytes # serialized fee policy
+
+  # Returns the EVM gas ratio.
+  getEVMGasRatio:
+    results:
+      gasRatio=e: Bytes # serialized gas ratio
+
+  # Returns the gas limits.
+  getGasLimits:
+    results:
+      gasLimits=l: Bytes # serialized gas limits
+
   # chain info
+
+  # Returns information about the chain.
   getChainInfo:
     results:
-      chainID=c: ChainID
-      chainOwnerID=o: AgentID
-      gasFeePolicyBytes=g: Bytes
-      customMetadata=x: Bytes?
+      chainID=c: ChainID # chain ID
+      chainOwnerID=o: AgentID # chain owner agent ID
+      feePolicy=g: Bytes # serialized fee policy
+      gasLimits=l: Bytes # serialized gas limits
+      customMetadata=x: Bytes? # chain metadata
+
   # access nodes
+
+  # Returns the current access nodes and candidates.
   getChainNodes:
     results:
-      accessNodeCandidates=ac: map[Bytes]Bytes
-      accessNodes=an: map[Bytes]Bytes
+      accessNodes=ac: map[Bytes]Bytes # pubKey set
+      accessNodeCandidates=an: map[Bytes]Bytes # serialized access node info per pubKey
+
+  # Returns whether the chain is undergoing maintenance.
+  getMaintenanceStatus:
+    results:
+      status=m: Bool # whether maintenance mode is on
+
+  # Returns the extra metadata that is added to the chain AliasOutput.
+  getCustomMetadata:
+    results:
+      metadata=x: Bytes # chain metadata

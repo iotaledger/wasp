@@ -5,54 +5,74 @@ typedefs: {}
 state: {}
 funcs: {}
 views:
+
+  # Returns the current state controller and governing addresses and at what block index they were set.
   controlAddresses:
     results:
-      stateControllerAddress=s: Address
-      governingAddress=g: Address
-      # the addresses have been set as state controller address or governing address since the following block index
-      blockIndex=n: Uint32
+      stateControllerAddress=s: Address # state controller address
+      governingAddress=g: Address # governing address
+      blockIndex=n: Uint32 # index of block where the addresses were set
+
+  # Returns information about the given block.
   getBlockInfo:
     params:
-      blockIndex=n: Uint32 
+      blockIndex=n: Uint32? # default last block
     results:
-      blockIndex=n: Uint32
-      blockInfo=i: Bytes
-  getRequestIDsForBlock:
-    params:
-      blockIndex=n: Uint32
-    results:
-      requestID=u: RequestID[] # native contract, so this is an Array16
-  getRequestReceipt:
-    params:
-      requestID=u: RequestID
-    results:
-      requestRecord=d: Bytes
-      blockIndex=n: Uint32
-      requestIndex=r: Uint16
-  getRequestReceiptsForBlock:
-    params:
-      blockIndex=n: Uint32
-    results:
-      requestRecord=d: Bytes[] # native contract, so this is an Array16
-  isRequestProcessed:
-    params:
-      requestID=u: RequestID
-    results:
-      requestProcessed=p: Bool
-  getEventsForRequest:
-    params:
-      requestID=u: RequestID
-    results:
-      event=e: Bytes[] # native contract, so this is an Array16
+      blockIndex=n: Uint32 # index of returned block
+      blockInfo=i: Bytes # serialized block info
+
+  # Returns the list of events triggered during the execution of the given block.
   getEventsForBlock:
     params:
-      blockIndex=n: Uint32
+      blockIndex=n: Uint32? # default last block
     results:
-      event=e: Bytes[] # native contract, so this is an Array16
+      event=e: Bytes[] # Array16 of serialized events
+
+  # Returns the list of events triggered by the given contract
+  # during the execution of the given block range.
   getEventsForContract:
     params:
       contractHname=h: Hname
-      fromBlock=f: Uint32?
-      toBlock=t: Uint32?
+      fromBlock=f: Uint32? # default first block
+      toBlock=t: Uint32? # default last block
     results:
-      event=e: Bytes[] # native contract, so this is an Array16
+      event=e: Bytes[] # Array16 of serialized events
+
+  # Returns the list of events triggered during the execution of the given request.
+  getEventsForRequest:
+    params:
+      requestID=u: RequestID # target request ID
+    results:
+      event=e: Bytes[] # Array16 of serialized events
+
+  # Returns a list with all request IDs in the given block.
+  getRequestIDsForBlock:
+    params:
+      blockIndex=n: Uint32? # default last block
+    results:
+      blockIndex=n: Uint32 # index of block containing request
+      requestID=u: RequestID[] # Array16 of request IDs
+
+  # Returns the receipt for the request with the given ID.
+  getRequestReceipt:
+    params:
+      requestID=u: RequestID # target request ID
+    results:
+      blockIndex=n: Uint32 # index of block containing request
+      requestIndex=r: Uint16 # index within block containing request
+      requestReceipt=d: Bytes # serialized request receipt
+
+  # Returns all request receipts in the given block.
+  getRequestReceiptsForBlock:
+    params:
+      blockIndex=n: Uint32? # default last block
+    results:
+      blockIndex=n: Uint32 # index of block containing request
+      requestReceipts=d: Bytes[] # Array16 of request receipts
+
+  # Returns whether the request with ID u has been processed.
+  isRequestProcessed:
+    params:
+      requestID=u: RequestID # target request ID
+    results:
+      requestProcessed=p: Bool # whether request has been processed

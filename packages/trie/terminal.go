@@ -7,8 +7,8 @@ import (
 	"io"
 )
 
-// tcommitment (short for terminal commitment) commits to data of arbitrary size.
-type tcommitment struct {
+// Tcommitment (short for terminal commitment) commits to data of arbitrary size.
+type Tcommitment struct {
 	data    []byte
 	isValue bool
 }
@@ -31,7 +31,7 @@ func init() {
 	assertf(tcommitmentDataSizeMax <= tcommitmentDataSizeMask, "tcommitmentDataSizeMax <= tcommitmentDataSizeMask")
 }
 
-func commitToData(data []byte) *tcommitment {
+func CommitToData(data []byte) *Tcommitment {
 	if len(data) == 0 {
 		// empty slice -> no data (deleted)
 		return nil
@@ -51,32 +51,32 @@ func commitToData(data []byte) *tcommitment {
 	}
 	assertf(len(commitmentBytes) <= tcommitmentDataSizeMax,
 		"len(commitmentBytes) <= m.tcommitmentDataSizeMax")
-	return &tcommitment{
+	return &Tcommitment{
 		data:    commitmentBytes,
 		isValue: isValue,
 	}
 }
 
-func newTerminalCommitment() *tcommitment {
+func newTerminalCommitment() *Tcommitment {
 	// all 0 non hashed value
-	return &tcommitment{
+	return &Tcommitment{
 		data:    make([]byte, 0, HashSizeBytes),
 		isValue: false,
 	}
 }
 
-func (t *tcommitment) Equals(o *tcommitment) bool {
+func (t *Tcommitment) Equals(o *Tcommitment) bool {
 	return bytes.Equal(t.data, o.data)
 }
 
-func (t *tcommitment) Clone() *tcommitment {
-	return &tcommitment{
+func (t *Tcommitment) Clone() *Tcommitment {
+	return &Tcommitment{
 		data:    concat(t.data),
 		isValue: t.isValue,
 	}
 }
 
-func (t *tcommitment) Write(w io.Writer) error {
+func (t *Tcommitment) Write(w io.Writer) error {
 	assertf(len(t.data) <= tcommitmentDataSizeMax, "size <= tcommitmentDataSizeMax")
 	size := byte(len(t.data))
 	if t.isValue {
@@ -89,7 +89,7 @@ func (t *tcommitment) Write(w io.Writer) error {
 	return err
 }
 
-func (t *tcommitment) Read(r io.Reader) error {
+func (t *Tcommitment) Read(r io.Reader) error {
 	var err error
 	var l byte
 	if l, err = readByte(r); err != nil {
@@ -111,15 +111,15 @@ func (t *tcommitment) Read(r io.Reader) error {
 	return nil
 }
 
-func (t *tcommitment) Bytes() []byte {
+func (t *Tcommitment) Bytes() []byte {
 	return mustBytes(t)
 }
 
-func (t *tcommitment) String() string {
+func (t *Tcommitment) String() string {
 	return hex.EncodeToString(t.data)
 }
 
-func (t *tcommitment) ExtractValue() ([]byte, bool) {
+func (t *Tcommitment) ExtractValue() ([]byte, bool) {
 	if t.isValue {
 		return t.data, true
 	}

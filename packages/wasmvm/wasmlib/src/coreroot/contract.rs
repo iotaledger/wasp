@@ -30,11 +30,6 @@ pub struct RevokeDeployPermissionCall<'a> {
     pub params: MutableRevokeDeployPermissionParams,
 }
 
-pub struct SubscribeBlockContextCall<'a> {
-    pub func:   ScFunc<'a>,
-    pub params: MutableSubscribeBlockContextParams,
-}
-
 pub struct FindContractCall<'a> {
     pub func:    ScView<'a>,
     pub params:  MutableFindContractParams,
@@ -50,6 +45,7 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
+    // Deploys a non-EVM smart contract on the chain if the caller has deployment permission.
     pub fn deploy_contract(ctx: &impl ScFuncCallContext) -> DeployContractCall {
         let mut f = DeployContractCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_DEPLOY_CONTRACT),
@@ -59,6 +55,7 @@ impl ScFuncs {
         f
     }
 
+    // Grants deploy permission to an agent.
     pub fn grant_deploy_permission(ctx: &impl ScFuncCallContext) -> GrantDeployPermissionCall {
         let mut f = GrantDeployPermissionCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_GRANT_DEPLOY_PERMISSION),
@@ -68,6 +65,7 @@ impl ScFuncs {
         f
     }
 
+    // Enable or disable deploy permission check
     pub fn require_deploy_permissions(ctx: &impl ScFuncCallContext) -> RequireDeployPermissionsCall {
         let mut f = RequireDeployPermissionsCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_REQUIRE_DEPLOY_PERMISSIONS),
@@ -77,6 +75,7 @@ impl ScFuncs {
         f
     }
 
+    // Revokes deploy permission for an agent.
     pub fn revoke_deploy_permission(ctx: &impl ScFuncCallContext) -> RevokeDeployPermissionCall {
         let mut f = RevokeDeployPermissionCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_REVOKE_DEPLOY_PERMISSION),
@@ -86,15 +85,7 @@ impl ScFuncs {
         f
     }
 
-    pub fn subscribe_block_context(ctx: &impl ScFuncCallContext) -> SubscribeBlockContextCall {
-        let mut f = SubscribeBlockContextCall {
-            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_SUBSCRIBE_BLOCK_CONTEXT),
-            params:  MutableSubscribeBlockContextParams { proxy: Proxy::nil() },
-        };
-        ScFunc::link_params(&mut f.params.proxy, &f.func);
-        f
-    }
-
+    // Returns the record for a given smart contract
     pub fn find_contract(ctx: &impl ScViewCallContext) -> FindContractCall {
         let mut f = FindContractCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_FIND_CONTRACT),
@@ -106,6 +97,7 @@ impl ScFuncs {
         f
     }
 
+    // Returns the list of all smart contracts deployed on the chain and their records.
     pub fn get_contract_records(ctx: &impl ScViewCallContext) -> GetContractRecordsCall {
         let mut f = GetContractRecordsCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_CONTRACT_RECORDS),

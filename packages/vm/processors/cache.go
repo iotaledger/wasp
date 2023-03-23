@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -15,14 +16,14 @@ import (
 type Cache struct {
 	mutex      *sync.Mutex
 	Config     *Config
-	processors map[hashing.HashValue]isc.VMProcessor
+	processors *shrinkingmap.ShrinkingMap[hashing.HashValue, isc.VMProcessor]
 }
 
 func MustNew(config *Config) *Cache {
 	ret := &Cache{
 		mutex:      &sync.Mutex{},
 		Config:     config,
-		processors: make(map[hashing.HashValue]isc.VMProcessor),
+		processors: shrinkingmap.New[hashing.HashValue, isc.VMProcessor](),
 	}
 	// default builtin processor has root contract hash
 	err := ret.NewProcessor(root.Contract.ProgramHash, nil, vmtypes.Core)
@@ -65,13 +66,12 @@ func (cps *Cache) newProcessor(programHash hashing.HashValue, programCode []byte
 			return err
 		}
 	}
-	cps.processors[programHash] = proc
+	cps.processors.Set(programHash, proc)
 	return nil
 }
 
 func (cps *Cache) ExistsProcessor(h hashing.HashValue) bool {
-	_, ok := cps.processors[h]
-	return ok
+	return cps.processors.Has(h)
 }
 
 type GetBinaryFunc func(hashing.HashValue) (string, []byte, error)
@@ -84,7 +84,7 @@ func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, 
 	cps.mutex.Lock()
 	defer cps.mutex.Unlock()
 
-	if proc, ok := cps.processors[progHash]; ok {
+	if proc, exists := cps.processors.Get(progHash); exists {
 		return proc, nil
 	}
 	vmtype, binary, err := getBinary(progHash)
@@ -94,7 +94,7 @@ func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, 
 	if err := cps.newProcessor(progHash, binary, vmtype); err != nil {
 		return nil, err
 	}
-	if proc, ok := cps.processors[progHash]; ok {
+	if proc, exists := cps.processors.Get(progHash); exists {
 		return proc, nil
 	}
 	return nil, errors.New("internal error: can't get the deployed processor")
@@ -104,5 +104,5 @@ func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, 
 func (cps *Cache) RemoveProcessor(h hashing.HashValue) {
 	cps.mutex.Lock()
 	defer cps.mutex.Unlock()
-	delete(cps.processors, h)
+	cps.processors.Delete(h)
 }

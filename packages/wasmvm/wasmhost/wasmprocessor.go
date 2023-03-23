@@ -6,13 +6,14 @@ package wasmhost
 import (
 	"sync"
 
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type WasmProcessor struct {
 	contextLock      sync.Mutex
-	contexts         map[int32]*WasmContext
+	contexts         *shrinkingmap.ShrinkingMap[int32, *WasmContext]
 	currentContextID int32
 	funcTable        *WasmFuncTable
 	gasFactorX       uint64
@@ -29,7 +30,7 @@ var GoWasmVM func() WasmVM
 // GetProcessor creates a new Wasm VM processor.
 func GetProcessor(wasmBytes []byte, log *logger.Logger) (isc.VMProcessor, error) {
 	proc := &WasmProcessor{
-		contexts:   make(map[int32]*WasmContext),
+		contexts:   shrinkingmap.New[int32, *WasmContext](),
 		funcTable:  NewWasmFuncTable(),
 		gasFactorX: 1,
 		log:        log,
@@ -39,6 +40,8 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (isc.VMProcessor, error)
 	// This setting will also be propagated to all the sub-processors of this processor
 	wasmVM := NewWasmTimeVM
 	if GoWasmVM != nil {
+		// note that this will never happen except with Solo tests that explicitly
+		// bypass the Wasm VM by using the WasmGoVM, which runs the Go SC code directly
 		wasmVM = GoWasmVM
 		GoWasmVM = nil
 	}
@@ -65,7 +68,7 @@ func GetProcessor(wasmBytes []byte, log *logger.Logger) (isc.VMProcessor, error)
 	wc.GasDisable(false)
 	//burned := wc.vm.GasBurned()
 	//_ = burned
-	delete(proc.contexts, wc.id)
+	proc.contexts.Delete(wc.id)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +79,8 @@ func (proc *WasmProcessor) GetCurrentContext() *WasmContext {
 	proc.contextLock.Lock()
 	defer proc.contextLock.Unlock()
 
-	return proc.contexts[proc.currentContextID]
+	ctx, _ := proc.contexts.Get(proc.currentContextID)
+	return ctx
 }
 
 func (proc *WasmProcessor) GetDefaultEntryPoint() isc.VMProcessorEntryPoint {
@@ -105,13 +109,13 @@ func (proc *WasmProcessor) RegisterContext(wc *WasmContext) {
 
 	proc.nextContextID++
 	wc.id = proc.nextContextID
-	proc.contexts[wc.id] = wc
+	proc.contexts.Set(wc.id, wc)
 }
 
 func (proc *WasmProcessor) UnregisterContext(wc *WasmContext) {
 	proc.contextLock.Lock()
 	defer proc.contextLock.Unlock()
-	delete(proc.contexts, wc.id)
+	proc.contexts.Delete(wc.id)
 }
 
 func (proc *WasmProcessor) gasFactor() uint64 {

@@ -27,7 +27,8 @@ type ChainInfoResponse struct {
 	CustomMetadata *string `json:"customMetadata,omitempty"`
 	// The EVM chain ID
 	EvmChainId uint32 `json:"evmChainId"`
-	GasFeePolicy *GasFeePolicy `json:"gasFeePolicy,omitempty"`
+	GasFeePolicy FeePolicy `json:"gasFeePolicy"`
+	GasLimits Limits `json:"gasLimits"`
 	// Whether or not the chain is active.
 	IsActive bool `json:"isActive"`
 }
@@ -36,11 +37,13 @@ type ChainInfoResponse struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, isActive bool) *ChainInfoResponse {
+func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool) *ChainInfoResponse {
 	this := ChainInfoResponse{}
 	this.ChainID = chainID
 	this.ChainOwnerId = chainOwnerId
 	this.EvmChainId = evmChainId
+	this.GasFeePolicy = gasFeePolicy
+	this.GasLimits = gasLimits
 	this.IsActive = isActive
 	return &this
 }
@@ -157,36 +160,52 @@ func (o *ChainInfoResponse) SetEvmChainId(v uint32) {
 	o.EvmChainId = v
 }
 
-// GetGasFeePolicy returns the GasFeePolicy field value if set, zero value otherwise.
-func (o *ChainInfoResponse) GetGasFeePolicy() GasFeePolicy {
-	if o == nil || isNil(o.GasFeePolicy) {
-		var ret GasFeePolicy
+// GetGasFeePolicy returns the GasFeePolicy field value
+func (o *ChainInfoResponse) GetGasFeePolicy() FeePolicy {
+	if o == nil {
+		var ret FeePolicy
 		return ret
 	}
-	return *o.GasFeePolicy
+
+	return o.GasFeePolicy
 }
 
-// GetGasFeePolicyOk returns a tuple with the GasFeePolicy field value if set, nil otherwise
+// GetGasFeePolicyOk returns a tuple with the GasFeePolicy field value
 // and a boolean to check if the value has been set.
-func (o *ChainInfoResponse) GetGasFeePolicyOk() (*GasFeePolicy, bool) {
-	if o == nil || isNil(o.GasFeePolicy) {
+func (o *ChainInfoResponse) GetGasFeePolicyOk() (*FeePolicy, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.GasFeePolicy, true
+	return &o.GasFeePolicy, true
 }
 
-// HasGasFeePolicy returns a boolean if a field has been set.
-func (o *ChainInfoResponse) HasGasFeePolicy() bool {
-	if o != nil && !isNil(o.GasFeePolicy) {
-		return true
+// SetGasFeePolicy sets field value
+func (o *ChainInfoResponse) SetGasFeePolicy(v FeePolicy) {
+	o.GasFeePolicy = v
+}
+
+// GetGasLimits returns the GasLimits field value
+func (o *ChainInfoResponse) GetGasLimits() Limits {
+	if o == nil {
+		var ret Limits
+		return ret
 	}
 
-	return false
+	return o.GasLimits
 }
 
-// SetGasFeePolicy gets a reference to the given GasFeePolicy and assigns it to the GasFeePolicy field.
-func (o *ChainInfoResponse) SetGasFeePolicy(v GasFeePolicy) {
-	o.GasFeePolicy = &v
+// GetGasLimitsOk returns a tuple with the GasLimits field value
+// and a boolean to check if the value has been set.
+func (o *ChainInfoResponse) GetGasLimitsOk() (*Limits, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.GasLimits, true
+}
+
+// SetGasLimits sets field value
+func (o *ChainInfoResponse) SetGasLimits(v Limits) {
+	o.GasLimits = v
 }
 
 // GetIsActive returns the IsActive field value
@@ -229,9 +248,8 @@ func (o ChainInfoResponse) ToMap() (map[string]interface{}, error) {
 		toSerialize["customMetadata"] = o.CustomMetadata
 	}
 	toSerialize["evmChainId"] = o.EvmChainId
-	if !isNil(o.GasFeePolicy) {
-		toSerialize["gasFeePolicy"] = o.GasFeePolicy
-	}
+	toSerialize["gasFeePolicy"] = o.GasFeePolicy
+	toSerialize["gasLimits"] = o.GasLimits
 	toSerialize["isActive"] = o.IsActive
 	return toSerialize, nil
 }

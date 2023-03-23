@@ -1,8 +1,6 @@
 package runvm
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
@@ -32,6 +30,9 @@ func NewVMRunner() vm.VMRunner {
 // runTask runs batch of requests on VM
 func runTask(task *vm.VMTask) {
 	vmctx := vmcontext.CreateVMContext(task)
+
+	// TODO remove this log, no need to calc the state hash so many times, just for testing
+	task.Log.Debugf("runTask state after CreateVMContext: %s", task.Store.ExtractBlock(task.StateDraft).L1Commitment())
 
 	var numOffLedger, numSuccess uint16
 	reqIndexInTheBlock := 0
@@ -76,6 +77,9 @@ func runTask(task *vm.VMTask) {
 	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
 		numProcessed, numSuccess, numOffLedger)
 
+	// TODO remove this log, no need to calc the state hash so many times, just for testing
+	task.Log.Debugf("runTask state hash before CloseVMContext: %s", task.Store.ExtractBlock(task.StateDraft).L1Commitment())
+
 	blockIndex, l1Commitment, timestamp, rotationAddr := vmctx.CloseVMContext(
 		numProcessed, numSuccess, numOffLedger)
 
@@ -84,21 +88,12 @@ func runTask(task *vm.VMTask) {
 
 	if rotationAddr == nil {
 		// rotation does not happen
-		task.ResultTransactionEssence, task.ResultInputsCommitment = vmctx.BuildTransactionEssence(l1Commitment)
-
-		// TODO extract latest total assets
-		checkTotalAssets(task.ResultTransactionEssence, nil)
-
-		task.Log.Debugf("runTask OUT. block index: %d, %s", blockIndex, l1Commitment.String())
+		task.ResultTransactionEssence, task.ResultInputsCommitment = vmctx.BuildTransactionEssence(l1Commitment, true)
+		task.Log.Debugf("runTask OUT. block index: %d", blockIndex)
 	} else {
 		// rotation happens
 		task.RotationAddress = rotationAddr
 		task.ResultTransactionEssence = nil
 		task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
-}
-
-// checkTotalAssets asserts if assets on the L1 transaction equals assets on the chain's ledger
-func checkTotalAssets(_ *iotago.TransactionEssence, _ *isc.Assets) {
-	// TODO implement
 }

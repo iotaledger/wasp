@@ -12,6 +12,17 @@ use crate::*;
 use crate::coreroot::*;
 
 #[derive(Clone)]
+pub struct MapStringToImmutableBytes {
+    pub(crate) proxy: Proxy,
+}
+
+impl MapStringToImmutableBytes {
+    pub fn get_bytes(&self, key: &str) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.key(&string_to_bytes(key)))
+    }
+}
+
+#[derive(Clone)]
 pub struct ImmutableDeployContractParams {
     pub(crate) proxy: Proxy,
 }
@@ -23,18 +34,40 @@ impl ImmutableDeployContractParams {
         }
     }
 
-    // default 'N/A'
+    // Description of the contract to be deployed. Default 'N/A'
     pub fn description(&self) -> ScImmutableString {
         ScImmutableString::new(self.proxy.root(PARAM_DESCRIPTION))
     }
 
+    // additional params for smart contract init function
+    pub fn init_params(&self) -> MapStringToImmutableBytes {
+        MapStringToImmutableBytes { proxy: self.proxy.clone() }
+    }
+
+    // The name of the contract to be deployed, used to calculate the contract's hname.
+    // The hname must be unique among all contract hnames in the chain.
     pub fn name(&self) -> ScImmutableString {
         ScImmutableString::new(self.proxy.root(PARAM_NAME))
     }
 
-    // TODO variable init params for deployed contract
+    // hash of blob that has been previously stored in blob contract
     pub fn program_hash(&self) -> ScImmutableHash {
         ScImmutableHash::new(self.proxy.root(PARAM_PROGRAM_HASH))
+    }
+}
+
+#[derive(Clone)]
+pub struct MapStringToMutableBytes {
+    pub(crate) proxy: Proxy,
+}
+
+impl MapStringToMutableBytes {
+    pub fn clear(&self) {
+        self.proxy.clear_map();
+    }
+
+    pub fn get_bytes(&self, key: &str) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.key(&string_to_bytes(key)))
     }
 }
 
@@ -44,16 +77,23 @@ pub struct MutableDeployContractParams {
 }
 
 impl MutableDeployContractParams {
-    // default 'N/A'
+    // Description of the contract to be deployed. Default 'N/A'
     pub fn description(&self) -> ScMutableString {
         ScMutableString::new(self.proxy.root(PARAM_DESCRIPTION))
     }
 
+    // additional params for smart contract init function
+    pub fn init_params(&self) -> MapStringToMutableBytes {
+        MapStringToMutableBytes { proxy: self.proxy.clone() }
+    }
+
+    // The name of the contract to be deployed, used to calculate the contract's hname.
+    // The hname must be unique among all contract hnames in the chain.
     pub fn name(&self) -> ScMutableString {
         ScMutableString::new(self.proxy.root(PARAM_NAME))
     }
 
-    // TODO variable init params for deployed contract
+    // hash of blob that has been previously stored in blob contract
     pub fn program_hash(&self) -> ScMutableHash {
         ScMutableHash::new(self.proxy.root(PARAM_PROGRAM_HASH))
     }
@@ -71,6 +111,7 @@ impl ImmutableGrantDeployPermissionParams {
         }
     }
 
+    // agent to grant deploy permission to
     pub fn deployer(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_DEPLOYER))
     }
@@ -82,6 +123,7 @@ pub struct MutableGrantDeployPermissionParams {
 }
 
 impl MutableGrantDeployPermissionParams {
+    // agent to grant deploy permission to
     pub fn deployer(&self) -> ScMutableAgentID {
         ScMutableAgentID::new(self.proxy.root(PARAM_DEPLOYER))
     }
@@ -99,6 +141,7 @@ impl ImmutableRequireDeployPermissionsParams {
         }
     }
 
+    // turns permission check on or off
     pub fn deploy_permissions_enabled(&self) -> ScImmutableBool {
         ScImmutableBool::new(self.proxy.root(PARAM_DEPLOY_PERMISSIONS_ENABLED))
     }
@@ -110,6 +153,7 @@ pub struct MutableRequireDeployPermissionsParams {
 }
 
 impl MutableRequireDeployPermissionsParams {
+    // turns permission check on or off
     pub fn deploy_permissions_enabled(&self) -> ScMutableBool {
         ScMutableBool::new(self.proxy.root(PARAM_DEPLOY_PERMISSIONS_ENABLED))
     }
@@ -127,6 +171,7 @@ impl ImmutableRevokeDeployPermissionParams {
         }
     }
 
+    // agent to revoke deploy permission for
     pub fn deployer(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_DEPLOYER))
     }
@@ -138,44 +183,9 @@ pub struct MutableRevokeDeployPermissionParams {
 }
 
 impl MutableRevokeDeployPermissionParams {
+    // agent to revoke deploy permission for
     pub fn deployer(&self) -> ScMutableAgentID {
         ScMutableAgentID::new(self.proxy.root(PARAM_DEPLOYER))
-    }
-}
-
-#[derive(Clone)]
-pub struct ImmutableSubscribeBlockContextParams {
-    pub(crate) proxy: Proxy,
-}
-
-impl ImmutableSubscribeBlockContextParams {
-    pub fn new() -> ImmutableSubscribeBlockContextParams {
-        ImmutableSubscribeBlockContextParams {
-            proxy: params_proxy(),
-        }
-    }
-
-    pub fn close_func(&self) -> ScImmutableHname {
-        ScImmutableHname::new(self.proxy.root(PARAM_CLOSE_FUNC))
-    }
-
-    pub fn open_func(&self) -> ScImmutableHname {
-        ScImmutableHname::new(self.proxy.root(PARAM_OPEN_FUNC))
-    }
-}
-
-#[derive(Clone)]
-pub struct MutableSubscribeBlockContextParams {
-    pub(crate) proxy: Proxy,
-}
-
-impl MutableSubscribeBlockContextParams {
-    pub fn close_func(&self) -> ScMutableHname {
-        ScMutableHname::new(self.proxy.root(PARAM_CLOSE_FUNC))
-    }
-
-    pub fn open_func(&self) -> ScMutableHname {
-        ScMutableHname::new(self.proxy.root(PARAM_OPEN_FUNC))
     }
 }
 
@@ -191,6 +201,7 @@ impl ImmutableFindContractParams {
         }
     }
 
+    // The smart contract’s Hname
     pub fn hname(&self) -> ScImmutableHname {
         ScImmutableHname::new(self.proxy.root(PARAM_HNAME))
     }
@@ -202,6 +213,7 @@ pub struct MutableFindContractParams {
 }
 
 impl MutableFindContractParams {
+    // The smart contract’s Hname
     pub fn hname(&self) -> ScMutableHname {
         ScMutableHname::new(self.proxy.root(PARAM_HNAME))
     }

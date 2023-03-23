@@ -105,12 +105,6 @@ It can only be invoked by the chain owner.
 Claims the ownership of the chain if the caller matches the identity set
 in [`delegateChainOwnership`](#delegatechainownershipo-agentid).
 
-### `setMaxBlobSize(mb MaxBlobSize)`
-
-Sets the maximum [blob](blob.md) size.
-
-It can only be invoked by the chain owner.
-
 ### `setFeePolicy(g FeePolicy)`
 
 Sets the fee policy for the chain.
@@ -123,11 +117,21 @@ It can only be invoked by the chain owner.
 
 ### `setGasLimits(l GasLimits)`
 
-Sets the fee policy for the chain.
+Sets the gas limits for the chain.
 
 #### Parameters
 
 - `l`: ([`GasLimits`](#gaslimits)).
+
+It can only be invoked by the chain owner.
+
+### `setEVMGasRatio(e Ratio32)`
+
+Sets the EVM gas ratio for the chain.
+
+#### Parameters
+
+- `e` ([`Ratio32`](#ratio32)): The EVM gas ratio.
 
 It can only be invoked by the chain owner.
 
@@ -170,34 +174,26 @@ Iterates through the given map of actions and applies them.
 
 It can only be invoked by the chain owner.
 
-### `startMaintenance()`
+### `setMaintenanceOn()`
 
 Starts the chain maintenance mode, meaning no further requests will be processed except calls to the governance
 contract.
 
 It can only be invoked by the chain owner.
 
-### `stopMaintenance()`
+### `setMaintenanceOff()`
 
 Stops the maintenance mode.
 
 It can only be invoked by the chain owner.
 
-### `setEVMGasRatio`
+### `setCustomMetadata(x bytes)`
 
-Changes the ISC : EVM gas ratio.
-
-#### Parameters
-
-- `e` ([`Ratio32`](#ratio32)): The ISC : EVM gas ratio.
-
-### `setCustomMetadata`
-
-Changes optional extra metadata that is appended to the L1 AliasOutput
+Changes optional extra metadata that is appended to the L1 AliasOutput.
 
 #### Parameters
 
-- `e` (`bytes`): the optional metadata
+- `x` (`bytes`): the optional metadata
 
 ---
 
@@ -222,6 +218,8 @@ Returns the AgentID of the chain owner.
 - `o` (`AgentID`): The chain owner.
 
 ### `getChainInfo()`
+
+Returns information about the chain.
 
 #### Returns:
 
@@ -268,14 +266,14 @@ Returns the current access nodes and candidates.
 
 ### `getMaintenanceStatus()`
 
-Returns whether the chain is ongoing maintenance.
+Returns whether the chain is undergoing maintenance.
 
 - `m` (`bool`): `true` if the chain is in maintenance mode
 
 
 ### `getCustomMetadata()`
 
-Returns the extra metadata that is added to the chain AliasOutput
+Returns the extra metadata that is added to the chain AliasOutput.
 
 - `x` (`bytes`): the optional metadata
 

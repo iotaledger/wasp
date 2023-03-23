@@ -1,4 +1,4 @@
-package trie
+package trie_test
 
 import (
 	"bytes"
@@ -9,15 +9,16 @@ import (
 	"os"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 // ----------------------------------------------------------------------------
 // InMemoryKVStore is a KVStore implementation. Mostly used for testing
 var (
-	_ KVStore     = InMemoryKVStore{}
-	_ Traversable = InMemoryKVStore{}
-	_ KVIterator  = &simpleInMemoryIterator{}
+	_ trie.KVStore     = InMemoryKVStore{}
+	_ trie.Traversable = InMemoryKVStore{}
+	_ trie.KVIterator  = &simpleInMemoryIterator{}
 )
 
 type (
@@ -66,7 +67,7 @@ func (im InMemoryKVStore) Set(k, v []byte) {
 	}
 }
 
-func (im InMemoryKVStore) Iterator(prefix []byte) KVIterator {
+func (im InMemoryKVStore) Iterator(prefix []byte) trie.KVIterator {
 	return &simpleInMemoryIterator{
 		store:  im,
 		prefix: prefix,
@@ -136,11 +137,11 @@ func NewBinaryStreamWriter(w io.Writer) *BinaryStreamWriter {
 var _ KVStreamWriter = &BinaryStreamWriter{}
 
 func (b *BinaryStreamWriter) Write(key, value []byte) error {
-	if err := writeBytes16(b.w, key); err != nil {
+	if err := trie.WriteBytes16(b.w, key); err != nil {
 		return err
 	}
 	b.byteCount += len(key) + 2
-	if err := writeBytes32(b.w, value); err != nil {
+	if err := trie.WriteBytes32(b.w, value); err != nil {
 		return err
 	}
 	b.byteCount += len(value) + 4
@@ -165,14 +166,14 @@ func NewBinaryStreamIterator(r io.Reader) *BinaryStreamIterator {
 
 func (b BinaryStreamIterator) Iterate(fun func(k []byte, v []byte) bool) error {
 	for {
-		k, err := readBytes16(b.r)
+		k, err := trie.ReadBytes16(b.r)
 		if errors.Is(err, io.EOF) {
 			return nil
 		}
 		if err != nil {
 			return err
 		}
-		v, err := readBytes32(b.r)
+		v, err := trie.ReadBytes32(b.r)
 		if err != nil {
 			return err
 		}

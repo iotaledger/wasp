@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type typedPool[V isc.Request] struct {
 	waitReq  WaitReq
-	requests map[isc.RequestRefKey]*typedPoolEntry[V]
+	requests *shrinkingmap.ShrinkingMap[isc.RequestRefKey, *typedPoolEntry[V]]
 }
 
 type typedPoolEntry[V isc.Request] struct {
@@ -25,41 +26,43 @@ var _ RequestPool[isc.OffLedgerRequest] = &typedPool[isc.OffLedgerRequest]{}
 func NewTypedPool[V isc.Request](waitReq WaitReq) RequestPool[V] {
 	return &typedPool[V]{
 		waitReq:  waitReq,
-		requests: map[isc.RequestRefKey]*typedPoolEntry[V]{},
+		requests: shrinkingmap.New[isc.RequestRefKey, *typedPoolEntry[V]](),
 	}
 }
 
 func (olp *typedPool[V]) Has(reqRef *isc.RequestRef) bool {
-	_, have := olp.requests[reqRef.AsKey()]
-	return have
+	return olp.requests.Has(reqRef.AsKey())
 }
 
 func (olp *typedPool[V]) Get(reqRef *isc.RequestRef) V {
-	if entry, ok := olp.requests[reqRef.AsKey()]; ok {
-		return entry.req
+	entry, exists := olp.requests.Get(reqRef.AsKey())
+	if !exists {
+		return *new(V)
 	}
-	return *new(V)
+
+	return entry.req
 }
 
 func (olp *typedPool[V]) Add(request V) {
 	refKey := isc.RequestRefFromRequest(request).AsKey()
-	olp.requests[refKey] = &typedPoolEntry[V]{req: request, ts: time.Now()}
+	olp.requests.Set(refKey, &typedPoolEntry[V]{req: request, ts: time.Now()})
 	olp.waitReq.Have(request)
 }
 
 func (olp *typedPool[V]) Remove(request V) {
 	refKey := isc.RequestRefFromRequest(request).AsKey()
-	delete(olp.requests, refKey)
+	olp.requests.Delete(refKey)
 }
 
 func (olp *typedPool[V]) Filter(predicate func(request V, ts time.Time) bool) {
-	for refKey, entry := range olp.requests {
+	olp.requests.ForEach(func(refKey isc.RequestRefKey, entry *typedPoolEntry[V]) bool {
 		if !predicate(entry.req, entry.ts) {
-			delete(olp.requests, refKey)
+			olp.requests.Delete(refKey)
 		}
-	}
+		return true
+	})
 }
 
 func (olp *typedPool[V]) StatusString() string {
-	return fmt.Sprintf("{|req|=%v}", len(olp.requests))
+	return fmt.Sprintf("{|req|=%d}", olp.requests.Size())
 }

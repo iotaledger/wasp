@@ -81,42 +81,40 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm
 		return nil, err
 	}
 	vmctx.chainState().Apply()
-	vmctx.assertConsistentL2WithL1TxBuilder("end RunTheRequest")
 	return result, nil
 }
 
 // creditAssetsToChain credits L1 accounts with attached assets and accrues all of them to the sender's account on-chain
 func (vmctx *VMContext) creditAssetsToChain() {
-	vmctx.assertConsistentL2WithL1TxBuilder("begin creditAssetsToChain")
-
 	if vmctx.req.IsOffLedger() {
 		// off ledger request does not bring any deposit
 		return
 	}
-	// Consume the output. Adjustment in L2 is needed because of the storage deposit in the internal UTXOs
-	storageDepositAdjustment := vmctx.txbuilder.Consume(vmctx.req.(isc.OnLedgerRequest))
-	if storageDepositAdjustment > 0 {
-		panic("`storageDepositAdjustment > 0`: assertion failed, expected always non-positive storage deposit adjustment")
+	// Consume the output. Adjustment in L2 is needed because of storage deposit in the internal UTXOs
+	storageDepositNeeded := vmctx.txbuilder.Consume(vmctx.req.(isc.OnLedgerRequest))
+
+	// if sender is specified, all assets goes to sender's sender
+	// Otherwise it all goes to the common sender and panics is logged in the SC call
+	sender := vmctx.req.SenderAccount()
+	if sender == nil {
+		// TODO this should never happen... can we just panic here?
+		// this is probably an artifact from the "originTx"
+		sender = accounts.CommonAccount()
 	}
 
-	// if sender is specified, all assets goes to sender's account
-	// Otherwise it all goes to the common account and panics is logged in the SC call
-	account := vmctx.req.SenderAccount()
-	if account == nil {
-		account = accounts.CommonAccount()
+	senderBaseTokens := vmctx.req.Assets().BaseTokens + vmctx.GetBaseTokensBalance(sender)
+
+	if senderBaseTokens < storageDepositNeeded {
+		panic("TODO, not enough funds to pay for the SD NEEDED, THIS REQUEST MUST BE IGNORED OR SAVED FOR LATER SOMEHOW")
+		// ...if not enough to pay for all the SD, this request needs to be flagged as "TO PROCESS LATER"... (do we consume it or not?)
 	}
-	vmctx.creditToAccount(account, vmctx.req.Assets())
-	vmctx.creditNFTToAccount(account, vmctx.req.NFT())
 
-	// adjust the sender's account with the storage deposit consumed or returned by internal UTXOs
-	// if base tokens in the sender's account is not enough for the storage deposit of newly created TNT outputs
-	// it will panic with exceptions.ErrNotEnoughFundsForInternalStorageDeposit
-	// TNT outputs will use storage deposit from the caller
-	// TODO remove attack vector when base tokens for storage deposit is not enough and the request keeps being skipped
-	vmctx.adjustL2BaseTokensIfNeeded(storageDepositAdjustment, account)
-
-	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
-	vmctx.assertConsistentL2WithL1TxBuilder("end creditAssetsToChain")
+	vmctx.creditToAccount(sender, vmctx.req.Assets())
+	vmctx.creditNFTToAccount(sender, vmctx.req.NFT())
+	if storageDepositNeeded > 0 {
+		// TODO the charged SD should be included in the receipt
+		vmctx.debitFromAccount(sender, isc.NewAssetsBaseTokens(storageDepositNeeded))
+	}
 }
 
 func (vmctx *VMContext) catchRequestPanic(f func()) error {
@@ -381,8 +379,7 @@ func (vmctx *VMContext) loadChainConfig() {
 
 // mustCheckTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
 func (vmctx *VMContext) mustCheckTransactionSize() {
-	stateMetadata := vmctx.StateMetadata(state.L1CommitmentNil)
-	essence, _ := vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
+	essence, _ := vmctx.BuildTransactionEssence(state.L1CommitmentNil, false)
 	tx := transaction.MakeAnchorTransaction(essence, &iotago.Ed25519Signature{})
 	if tx.Size() > parameters.L1().MaxPayloadSize {
 		panic(vmexceptions.ErrMaxTransactionSizeExceeded)
