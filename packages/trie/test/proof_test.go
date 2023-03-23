@@ -1,22 +1,24 @@
-package trie
+package trie_test
 
 import (
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/trie"
 )
 
 func TestProofScenariosBlake2b(t *testing.T) {
 	runScenario := func(name string, scenario []string) {
 		t.Run(name, func(t *testing.T) {
 			store := NewInMemoryKVStore()
-			initRoot := MustInitRoot(store)
-			tr, err := NewTrieUpdatable(store, initRoot)
+			initRoot := trie.MustInitRoot(store)
+			tr, err := trie.NewTrieUpdatable(store, initRoot)
 			require.NoError(t, err)
 
 			checklist, root := runUpdateScenario(tr, store, scenario)
-			trr, err := NewTrieReader(store, root)
+			trr, err := trie.NewTrieReader(store, root)
 			require.NoError(t, err)
 			for k, v := range checklist {
 				vBin := trr.Get([]byte(k))
@@ -29,7 +31,7 @@ func TestProofScenariosBlake2b(t *testing.T) {
 				err = p.Validate(root.Bytes())
 				require.NoError(t, err)
 				if len(v) > 0 {
-					cID := commitToData([]byte(v))
+					cID := trie.CommitToData([]byte(v))
 					err = p.ValidateWithTerminal(root.Bytes(), cID.Bytes())
 					require.NoError(t, err)
 				} else {

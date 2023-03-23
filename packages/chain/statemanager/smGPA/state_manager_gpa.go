@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smInputs"
@@ -31,7 +32,7 @@ type stateManagerGPA struct {
 	log                     *logger.Logger
 	chainID                 isc.ChainID
 	blockCache              smGPAUtils.BlockCache
-	blockRequests           map[state.BlockHash]*blockRequestsWithCommitment
+	blockRequests           *shrinkingmap.ShrinkingMap[state.BlockHash, *blockRequestsWithCommitment]
 	nodeRandomiser          smUtils.NodeRandomiser
 	store                   state.Store
 	timers                  StateManagerTimers
@@ -66,7 +67,7 @@ func New(
 		log:                     smLog,
 		chainID:                 chainID,
 		blockCache:              blockCache,
-		blockRequests:           make(map[state.BlockHash]*blockRequestsWithCommitment),
+		blockRequests:           shrinkingmap.New[state.BlockHash, *blockRequestsWithCommitment](),
 		nodeRandomiser:          nr,
 		store:                   store,
 		timers:                  timers,
@@ -122,7 +123,7 @@ func (smT *stateManagerGPA) StatusString() string {
 			"last time blocks were requested from peer nodes: %v (every %v); "+
 			"last time outdated requests were cleared: %v (every %v); "+
 			"last time block cache was cleaned: %v (every %v).",
-		len(smT.blockRequests),
+		smT.blockRequests.Size(),
 		util.TimeOrNever(smT.lastGetBlocksTime), smT.timers.StateManagerGetBlockRetry,
 		util.TimeOrNever(smT.lastCleanRequestsTime), smT.timers.StateManagerRequestCleaningPeriod,
 		util.TimeOrNever(smT.lastCleanBlockCacheTime), smT.timers.BlockCacheBlockCleaningPeriod,
@@ -168,8 +169,8 @@ func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) 
 	blockHash := blockCommitment.BlockHash()
 	fromLog := from.ShortString()
 	smT.log.Debugf("Message Block %s received from peer %s", blockCommitment, fromLog)
-	requestsWC, ok := smT.blockRequests[blockHash]
-	if !ok {
+	requestsWC, exists := smT.blockRequests.Get(blockHash)
+	if !exists {
 		smT.log.Debugf("Message Block %s: block is not needed, ignoring it", blockCommitment)
 		return nil // No messages to send
 	}
@@ -178,7 +179,7 @@ func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) 
 	smT.blockCache.AddBlock(block)
 	request := smT.createBlockRequestLocal(blockCommitment, func(_ obtainStateFun) {})
 	requests = append(requests, request)
-	delete(smT.blockRequests, blockHash)
+	smT.blockRequests.Delete(blockHash)
 	for _, request := range requests {
 		request.blockAvailable(block)
 	}
@@ -230,12 +231,12 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.Consens
 		commitment, input.GetStateDraft().BlockIndex(), blockCommitment)
 	smT.blockCache.AddBlock(block)
 	input.Respond(nil)
-	requestsWC, ok := smT.blockRequests[blockCommitment.BlockHash()]
-	if ok {
+	requestsWC, exists := smT.blockRequests.Get(blockCommitment.BlockHash())
+	if exists {
 		requests := requestsWC.blockRequests
 		smT.log.Debugf("Input block produced on state %s: sending block %s to %v requests, waiting for it",
 			commitment, len(requestsWC.blockRequests))
-		delete(smT.blockRequests, blockCommitment.BlockHash())
+		smT.blockRequests.Delete(blockCommitment.BlockHash())
 		for _, request := range requests {
 			request.blockAvailable(block)
 		}
@@ -412,8 +413,8 @@ func (smT *stateManagerGPA) traceBlockChainByRequest(request blockRequest) (gpa.
 		smT.markRequestCompleted(request)
 		return nil, nil // No messages to send
 	}
-	requestsWC, ok := smT.blockRequests[lastCommitment.BlockHash()]
-	if ok {
+	requestsWC, exists := smT.blockRequests.Get(lastCommitment.BlockHash())
+	if exists {
 		smT.log.Debugf("Request %s id %v tracing block %s chain: %v request(s) are already waiting for the block; adding this request to the list",
 			request.getType(), request.getID(), lastCommitment, len(requestsWC.blockRequests))
 		requestsWC.blockRequests = append(requestsWC.blockRequests, request)
@@ -438,12 +439,12 @@ func (smT *stateManagerGPA) traceBlockChain(initCommitment *state.L1Commitment, 
 			smT.log.Debugf("Tracing block %s chain: block %s is missing", initCommitment, commitment)
 			// Mark that the requests are waiting for `blockHash` block
 			blockHash := commitment.BlockHash()
-			currentRequestsWC, ok := smT.blockRequests[blockHash]
-			if !ok {
-				smT.blockRequests[blockHash] = &blockRequestsWithCommitment{
+			currentRequestsWC, exists := smT.blockRequests.Get(blockHash)
+			if !exists {
+				smT.blockRequests.Set(blockHash, &blockRequestsWithCommitment{
 					l1Commitment:  commitment,
 					blockRequests: requests,
-				}
+				})
 				smT.log.Debugf("Tracing block %s chain completed: %v requests waiting for block %s, no requests was waiting before",
 					initCommitment, len(requests), commitment)
 				return smT.makeGetBlockRequestMessages(commitment), nil
@@ -540,9 +541,10 @@ func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMe
 	nextGetBlocksTime := smT.lastGetBlocksTime.Add(smT.timers.StateManagerGetBlockRetry)
 	if now.After(nextGetBlocksTime) {
 		smT.log.Debugf("Input timer tick %v: resending get block messages...", now)
-		for _, blockRequestsWC := range smT.blockRequests {
+		smT.blockRequests.ForEach(func(bh state.BlockHash, blockRequestsWC *blockRequestsWithCommitment) bool {
 			result.AddAll(smT.makeGetBlockRequestMessages(blockRequestsWC.l1Commitment))
-		}
+			return true
+		})
 		smT.lastGetBlocksTime = now
 	} else {
 		smT.log.Debugf("Input timer tick %v: no need to resend get block messages; next resend at %v",
@@ -559,8 +561,7 @@ func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMe
 	nextCleanRequestsTime := smT.lastCleanRequestsTime.Add(smT.timers.StateManagerRequestCleaningPeriod)
 	if now.After(nextCleanRequestsTime) {
 		smT.log.Debugf("Input timer tick %v: cleaning requests...", now)
-		newBlockRequestsMap := make(map[state.BlockHash]*blockRequestsWithCommitment)
-		for blockHash, blockRequestsWC := range smT.blockRequests {
+		smT.blockRequests.ForEach(func(blockHash state.BlockHash, blockRequestsWC *blockRequestsWithCommitment) bool {
 			commitment := blockRequestsWC.l1Commitment
 			blockRequests := blockRequestsWC.blockRequests
 			smT.log.Debugf("Input timer tick %v: checking %v requests waiting for block %v",
@@ -581,15 +582,17 @@ func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMe
 			blockRequests = blockRequests[:outI]
 			if len(blockRequests) > 0 {
 				smT.log.Debugf("Input timer tick %v: %v requests remaining waiting for block %v", now, len(blockRequests), commitment)
-				newBlockRequestsMap[blockHash] = &blockRequestsWithCommitment{
+				smT.blockRequests.Set(blockHash, &blockRequestsWithCommitment{
 					l1Commitment:  commitment,
 					blockRequests: blockRequests,
-				}
+				})
 			} else {
 				smT.log.Debugf("Input timer tick %v: no more requests waiting for block %v", now, commitment)
+				smT.blockRequests.Delete(blockHash)
 			}
-		}
-		smT.blockRequests = newBlockRequestsMap
+
+			return true
+		})
 		smT.lastCleanRequestsTime = now
 	} else {
 		smT.log.Debugf("Input timer tick %v: no need to clean requests; next clean at %v", now, nextCleanRequestsTime)

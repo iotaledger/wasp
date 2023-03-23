@@ -167,6 +167,6 @@ func (e *MerkleProofElement) hash(missingCommitment []byte) (Hash, error) {
 }
 
 func (p *MerkleProof) ValidateValue(trieRoot Hash, value []byte) error {
-	tc := commitToData(value)
+	tc := CommitToData(value)
 	return p.ValidateWithTerminal(trieRoot.Bytes(), tc.Bytes())
 }
