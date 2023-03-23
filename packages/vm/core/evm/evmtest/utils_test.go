@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -507,7 +508,7 @@ func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName
 	return res
 }
 
-func (e *evmContractInstance) callView(fnName string, args []interface{}, v interface{}) error {
+func (e *evmContractInstance) callView(fnName string, args []interface{}, v interface{}, blockNumberOrHash ...rpc.BlockNumberOrHash) error {
 	e.chain.t.Logf("callView: %s %+v", fnName, args)
 	callArguments, err := e.abi.Pack(fnName, args...)
 	require.NoError(e.chain.t, err)
@@ -518,7 +519,11 @@ func (e *evmContractInstance) callView(fnName string, args []interface{}, v inte
 		GasPrice: evm.GasPrice,
 		Data:     callArguments,
 	})
-	ret, err := e.chain.evmChain.CallContract(callMsg, nil)
+	var bn *rpc.BlockNumberOrHash
+	if len(blockNumberOrHash) > 0 {
+		bn = &blockNumberOrHash[0]
+	}
+	ret, err := e.chain.evmChain.CallContract(callMsg, bn)
 	if err != nil {
 		return err
 	}
