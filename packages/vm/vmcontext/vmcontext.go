@@ -267,6 +267,7 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 	changeInSD := int64(oldMinSD) - int64(newMinSD)
 
 	if changeInSD != 0 {
+		vmctx.task.Log.Debugf("adjusting commonAccount because AO SD cost changed, old:%d new:%d", oldMinSD, newMinSD)
 		// update the commonAccount with the change in SD cost
 		vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 			accounts.AdjustAccountBaseTokens(s, accounts.CommonAccount(), changeInSD)
@@ -287,28 +288,34 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		// update native token outputs
 		for _, out := range nativeTokensOutputsToBeUpdated {
+			vmctx.task.Log.Debugf("saving NT %s, outputIndex: %d", out.NativeTokens[0].ID, outputIndex)
 			accounts.SaveNativeTokenOutput(s, out, blockIndex, outputIndex)
 			outputIndex++
 		}
 		for _, id := range nativeTokensToBeRemoved {
+			vmctx.task.Log.Debugf("deleting NT %s", id)
 			accounts.DeleteNativeTokenOutput(s, id)
 		}
 
 		// update foundry UTXOs
 		for _, out := range foundrySNToBeUpdated {
+			vmctx.task.Log.Debugf("saving foundry %d, outputIndex: %d", out.SerialNumber, outputIndex)
 			accounts.SaveFoundryOutput(s, out, blockIndex, outputIndex)
 			outputIndex++
 		}
 		for _, sn := range foundriesToBeRemoved {
+			vmctx.task.Log.Debugf("deleting foundry %s", sn)
 			accounts.DeleteFoundryOutput(s, sn)
 		}
 
 		// update NFT Outputs
 		for _, out := range NFTOutputsToBeAdded {
+			vmctx.task.Log.Debugf("saving NFT %s, outputIndex: %d", out.NFTID, outputIndex)
 			accounts.SaveNFTOutput(s, out, blockIndex, outputIndex)
 			outputIndex++
 		}
 		for _, out := range NFTOutputsToBeRemoved {
+			vmctx.task.Log.Debugf("deleting NFT %s", out.NFTID)
 			accounts.DeleteNFTOutput(s, out.NFTID)
 		}
 	})
