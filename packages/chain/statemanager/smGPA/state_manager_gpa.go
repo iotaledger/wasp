@@ -402,7 +402,7 @@ func (smT *stateManagerGPA) traceBlockChainWithCallback(lastCommitment *state.L1
 func (smT *stateManagerGPA) traceBlockChain(fetcher blockFetcher) (gpa.OutMessages, error) {
 	commitment := fetcher.getCommitment()
 	smT.log.Debugf("Tracing block %s chain...", commitment)
-	if commitment != nil && !smT.store.HasTrieRoot(commitment.TrieRoot()) {
+	if !smT.store.HasTrieRoot(commitment.TrieRoot()) {
 		smT.log.Debugf("Tracing block %s chain: block is not in store", commitment)
 		block := smT.blockCache.GetBlock(commitment)
 		if block == nil {
@@ -410,8 +410,13 @@ func (smT *stateManagerGPA) traceBlockChain(fetcher blockFetcher) (gpa.OutMessag
 			smT.blocksToFetch.addFetcher(fetcher)
 			return smT.makeGetBlockRequestMessages(commitment), nil
 		}
-		smT.blocksFetched.addFetcher(fetcher)
 		previousCommitment := block.PreviousL1Commitment()
+		if previousCommitment == nil {
+			result, err := smT.markFetched(fetcher)
+			smT.log.Debugf("Tracing block %s chain done, err=%v", commitment, err)
+			return result, err
+		}
+		smT.blocksFetched.addFetcher(fetcher)
 		if smT.blocksToFetch.addRelatedFetcher(previousCommitment, fetcher) {
 			smT.log.Debugf("Tracing block %s chain: previous block %s is already being fetched", previousCommitment)
 			return nil, nil
