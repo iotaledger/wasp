@@ -1760,3 +1760,17 @@ func TestGasPriceIgnored(t *testing.T) {
 	require.Len(t, lo.Uniq(gasLimit), 1)
 	require.Len(t, lo.Uniq(gasUsed), 1)
 }
+
+// calling views via eth_call must not cost gas (still has a maximum budget, but simple view calls should pass)
+func TestEVMCallViewGas(t *testing.T) {
+	env := initEVM(t)
+
+	// issue a view call from an account with no funds
+	ethKey, _ := solo.NewEthereumAccount()
+
+	var ret struct {
+		iscmagic.ISCAgentID
+	}
+	err := env.ISCMagicSandbox(ethKey).callView("getChainOwnerID", nil, &ret)
+	require.NoError(t, err)
+}

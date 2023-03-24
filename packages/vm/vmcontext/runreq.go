@@ -256,7 +256,7 @@ func (vmctx *VMContext) callFromRequest() dict.Dict {
 
 func (vmctx *VMContext) getGasBudget() uint64 {
 	gasBudget, isEVM := vmctx.req.GasBudget()
-	if !isEVM {
+	if !isEVM || gasBudget == 0 {
 		return gasBudget
 	}
 
@@ -274,15 +274,15 @@ func (vmctx *VMContext) getGasBudget() uint64 {
 func (vmctx *VMContext) calculateAffordableGasBudget() uint64 {
 	gasBudget := vmctx.getGasBudget()
 
+	if vmctx.task.EstimateGasMode && gasBudget == 0 {
+		// gas budget 0 means its a view call, so we give it max gas and tokens
+		vmctx.gasMaxTokensToSpendForGasFee = math.MaxUint64
+		return vmctx.chainInfo.GasLimits.MaxGasExternalViewCall
+	}
+
 	// make sure the gasBuget is at least >= than the allowed minimum
 	if gasBudget < vmctx.chainInfo.GasLimits.MinGasPerRequest {
 		gasBudget = vmctx.chainInfo.GasLimits.MinGasPerRequest
-	}
-
-	// when estimating gas, if a value bigger than max is provided, use the maximum gas budget possible
-	if vmctx.task.EstimateGasMode && gasBudget > vmctx.chainInfo.GasLimits.MaxGasPerRequest {
-		vmctx.gasMaxTokensToSpendForGasFee = math.MaxUint64
-		return vmctx.chainInfo.GasLimits.MaxGasPerRequest
 	}
 
 	// calculate how many tokens for gas fee can be guaranteed after taking into account the allowance

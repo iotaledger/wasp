@@ -16,7 +16,9 @@ func Call(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, call ethereum.
 	if err != nil {
 		return nil, err
 	}
-	if call.Gas == 0 || call.Gas > gasLimit {
+
+	// 0 means view call
+	if call.Gas != 0 && call.Gas > gasLimit {
 		call.Gas = gasLimit
 	}
 

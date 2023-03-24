@@ -3,7 +3,6 @@ package isc
 import (
 	"errors"
 	"fmt"
-	"math"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -211,11 +210,7 @@ func (r *evmOffLedgerCallRequest) Assets() *Assets {
 }
 
 func (r *evmOffLedgerCallRequest) GasBudget() (gas uint64, isEVM bool) {
-	if r.callMsg.Gas > 0 {
-		return r.callMsg.Gas, true
-	}
-	// see VMContext::calculateAffordableGasBudget() when EstimateGasMode == true
-	return math.MaxUint64, false
+	return r.callMsg.Gas, true
 }
 
 func (r *evmOffLedgerCallRequest) ID() RequestID {
