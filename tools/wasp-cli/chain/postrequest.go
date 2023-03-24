@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
@@ -41,7 +42,7 @@ func postRequest(nodeName, chain, hname, fname string, params chainclient.PostRe
 				EntryPoint:     isc.Hn(fname),
 				Params:         params.Args,
 				Allowance:      params.Allowance,
-				GasBudget:      params.GasBudget(),
+				GasBudget:      gas.MaxGasPerRequest,
 			},
 			isc.SendOptions{},
 		)
