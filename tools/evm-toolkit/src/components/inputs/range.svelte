@@ -8,26 +8,31 @@
   function handleChange(event) {
     value = event.target.value;
   }
+
+  $:formattedAmountToSend = (value / 1e6).toFixed(2);
 </script>
 
 <div class="flex flex-col space-y-4">
   {#if label}
-    <label for="range">{label}</label>
+  <div class="flex space-x-2">
+    <label for="formatted" class="flex flex-shrink-0">{label}</label>
+    <input type="text" id="formatted"  bind:value={formattedAmountToSend} />
+  </div>
   {/if}
+  <input
+  type="range"
+  bind:value
+  on:change={handleChange}
+  {min}
+  {max}
+  {disabled}
+  />
   {#if min || max}
     <div class="w-full flex justify-between">
       <small>{min}</small>
       <small>Max: {(max / 1e6).toFixed(2)}</small>
     </div>
   {/if}
-  <input
-    type="range"
-    bind:value
-    on:change={handleChange}
-    {min}
-    {max}
-    {disabled}
-  />
 </div>
 
 <style lang="scss">
