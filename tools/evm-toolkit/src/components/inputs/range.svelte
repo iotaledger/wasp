@@ -5,12 +5,18 @@
   export let disabled: boolean = false;
   export let label: string = '';
   export let showValueOnLabel: boolean = false;
+  export let needsFormatting: boolean = false;
 
-  let formattedValue;
+  let formattedValue: string = '';
 
   function handleChange(event) {
     value = event.target.value;
-    formattedValue = (value / 1e6).toFixed(2);
+
+    if (needsFormatting) {
+      formattedValue = (value / 1e6).toFixed(2);
+    } else {
+      formattedValue = value.toFixed(0);
+    }
   }
 
   function formatValue(event) {
@@ -26,7 +32,9 @@
         <input
           type="text"
           id="formatted"
-          placeholder="Your amount here: 0.00"
+          placeholder={needsFormatting
+            ? 'Your amount here: 0.00'
+            : 'Your amount here: 0'}
           bind:value={formattedValue}
           on:input={formatValue}
         />
@@ -108,8 +116,7 @@
       outline-offset: 0.125rem;
     }
   }
-  input[type='text']{
-
+  input[type='text'] {
     &::placeholder {
       @apply text-xs;
       @apply text-shimmer-text-secondary;

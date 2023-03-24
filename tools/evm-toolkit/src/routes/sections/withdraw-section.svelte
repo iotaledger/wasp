@@ -193,15 +193,16 @@
           min="0"
           max={$withdrawStateStore.availableBaseTokens}
           showValueOnLabel
+          needsFormatting
         />
 
         {#each $withdrawStateStore.availableNativeTokens as nativeToken}
           <RangeInput
             bind:value={formInput.nativeTokensToSend[nativeToken.id]}
-            label="{nativeToken?.metadata?.name ?? ''} Token: {formInput
-              .nativeTokensToSend[nativeToken.id] || 0}"
+            label="{nativeToken?.metadata?.name ?? ''} Token:"
             min="0"
             max={Number(nativeToken.amount)}
+            showValueOnLabel
           />
         {/each}
       </info-box>
