@@ -31,9 +31,6 @@ func NewVMRunner() vm.VMRunner {
 func runTask(task *vm.VMTask) {
 	vmctx := vmcontext.CreateVMContext(task)
 
-	// TODO remove this log, no need to calc the state hash so many times, just for testing
-	task.Log.Debugf("runTask state after CreateVMContext: %s", task.Store.ExtractBlock(task.StateDraft).L1Commitment())
-
 	var numOffLedger, numSuccess uint16
 	reqIndexInTheBlock := 0
 
@@ -76,9 +73,6 @@ func runTask(task *vm.VMTask) {
 
 	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
 		numProcessed, numSuccess, numOffLedger)
-
-	// TODO remove this log, no need to calc the state hash so many times, just for testing
-	task.Log.Debugf("runTask state hash before CloseVMContext: %s", task.Store.ExtractBlock(task.StateDraft).L1Commitment())
 
 	blockIndex, l1Commitment, timestamp, rotationAddr := vmctx.CloseVMContext(
 		numProcessed, numSuccess, numOffLedger)
