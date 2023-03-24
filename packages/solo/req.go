@@ -389,7 +389,7 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
 func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair, useFakeBudget ...bool) (gas, gasFee uint64, err error) {
 	if len(useFakeBudget) > 0 && useFakeBudget[0] {
-		req.WithGasBudget(math.MaxUint64)
+		req.WithGasBudget(0)
 	}
 	r, err := ch.requestFromParams(req, keyPair)
 	if err != nil {
