@@ -11,7 +11,7 @@ import (
 type blockRequestImpl struct {
 	lastL1Commitment *state.L1Commitment
 	done             bool
-	blocks           []state.Block
+	commitments      []*state.L1Commitment
 	isValidFun       isValidFun
 	respondFun       respondFun
 	log              *logger.Logger
@@ -27,11 +27,11 @@ var _ blockRequest = &blockRequestImpl{}
 
 func newBlockRequestTemplate(rType string, log *logger.Logger, id blockRequestID) *blockRequestImpl {
 	return &blockRequestImpl{
-		done:   false,
-		blocks: make([]state.Block, 0),
-		log:    log.Named(fmt.Sprintf("r%s-%v", rType, id)),
-		rType:  rType,
-		id:     id,
+		done:        false,
+		commitments: make([]*state.L1Commitment, 0),
+		log:         log.Named(fmt.Sprintf("r%s-%v", rType, id)),
+		rType:       rType,
+		id:          id,
 	}
 }
 
@@ -98,17 +98,18 @@ func (sbrT *blockRequestImpl) isValid() bool {
 	return sbrT.isValidFun()
 }
 
-func (sbrT *blockRequestImpl) blockAvailable(block state.Block) {
-	sbrT.log.Debugf("State block request received block %s, appending it to chain", block.L1Commitment())
-	sbrT.blocks = append(sbrT.blocks, block)
+func (sbrT *blockRequestImpl) commitmentAvailable(commitment *state.L1Commitment) {
+	sbrT.log.Debugf("State block request received commitment %s, appending it to chain", commitment)
+	sbrT.commitments = append(sbrT.commitments, commitment)
 }
 
-func (sbrT *blockRequestImpl) getBlockChain() []state.Block {
-	return sbrT.blocks
+func (sbrT *blockRequestImpl) getCommitmentChain() []*state.L1Commitment {
+	return sbrT.commitments
 }
 
 func (sbrT *blockRequestImpl) getChainOfBlocks(baseIndex uint32, obtainBlockFun obtainBlockFun) chainOfBlocks {
-	return newChainOfBlocks(sbrT.getBlockChain(), sbrT.getLastL1Commitment(), baseIndex, obtainBlockFun, sbrT.log)
+	return nil
+	//return newChainOfBlocks(sbrT.getBlockChain(), sbrT.getLastL1Commitment(), baseIndex, obtainBlockFun, sbrT.log)
 }
 
 func (sbrT *blockRequestImpl) markCompleted(obtainStateFun obtainStateFun) {
