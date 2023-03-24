@@ -26,7 +26,6 @@
   $: formattedBalance = ($withdrawStateStore.availableBaseTokens / 1e6).toFixed(
     2,
   );
-  $: formattedAmountToSend = (formInput.baseTokensToSend / 1e6).toFixed(2);
   $: isValidAddress = formInput.receiverAddress.length == Bech32AddressLength;
   $: canWithdraw =
     $withdrawStateStore.availableBaseTokens > 0 &&
@@ -193,6 +192,7 @@
           disabled={!canSetAmountToWithdraw}
           min="0"
           max={$withdrawStateStore.availableBaseTokens}
+          showValueOnLabel
         />
 
         {#each $withdrawStateStore.availableNativeTokens as nativeToken}

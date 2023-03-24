@@ -4,28 +4,42 @@
   export let value: number;
   export let disabled: boolean = false;
   export let label: string = '';
+  export let showValueOnLabel: boolean = false;
+
+  let formattedValue;
 
   function handleChange(event) {
     value = event.target.value;
+    formattedValue = (value / 1e6).toFixed(2);
   }
 
-  $:formattedAmountToSend = (value / 1e6).toFixed(2);
+  function formatValue(event) {
+    value = event.target.value * 1e6;
+  }
 </script>
 
 <div class="flex flex-col space-y-4">
   {#if label}
-  <div class="flex space-x-2">
-    <label for="formatted" class="flex flex-shrink-0">{label}</label>
-    <input type="text" id="formatted"  bind:value={formattedAmountToSend} />
-  </div>
+    <div class="flex space-x-2">
+      <label for="formatted" class="flex flex-shrink-0">{label}</label>
+      {#if showValueOnLabel}
+        <input
+          type="text"
+          id="formatted"
+          placeholder="Your amount here: 0.00"
+          bind:value={formattedValue}
+          on:input={formatValue}
+        />
+      {/if}
+    </div>
   {/if}
   <input
-  type="range"
-  bind:value
-  on:change={handleChange}
-  {min}
-  {max}
-  {disabled}
+    type="range"
+    bind:value
+    on:input={handleChange}
+    {min}
+    {max}
+    {disabled}
   />
   {#if min || max}
     <div class="w-full flex justify-between">
@@ -92,6 +106,13 @@
     &:focus::-moz-range-thumb {
       outline: 3px solid #00f5dd;
       outline-offset: 0.125rem;
+    }
+  }
+  input[type='text']{
+
+    &::placeholder {
+      @apply text-xs;
+      @apply text-shimmer-text-secondary;
     }
   }
 </style>
