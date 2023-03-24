@@ -141,7 +141,7 @@ services:
       - "traefik.http.routers.wasp-dashboard.middlewares=rewrite-wasp-dashboard"
       - "traefik.http.middlewares.rewrite-wasp-dashboard.stripprefix.prefixes=/wasp/dashboard"
     environment:
-      - WASP_API_URL=http://localhost/wasp/api/v1
+      - WASP_API_URL=http://localhost/wasp/api
       - L1_API_URL=http://localhost
 
 volumes:
