@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -79,10 +80,16 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		consensusStateRegistry := testutil.NewConsensusStateRegistry()
 		stores[nid] = state.NewStore(mapdb.NewMapDB())
 		origin.InitChainByAliasOutput(stores[nid], originAO)
-		activeAccessNodesFunc := func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
+		activeAccessNodesCB := func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
 			return []*cryptolib.PublicKey{}, []*cryptolib.PublicKey{}
 		}
-		cm, err := chainMgr.New(nid, chainID, stores[nid], consensusStateRegistry, dkRegs[i], gpa.NodeIDFromPublicKey, activeAccessNodesFunc, log.Named(nid.ShortString()))
+		tractStateActCB := func(ao *isc.AliasOutputWithID) {
+			// Nothing
+		}
+		cm, err := chainMgr.New(
+			nid, chainID, stores[nid], consensusStateRegistry, dkRegs[i], gpa.NodeIDFromPublicKey,
+			activeAccessNodesCB, tractStateActCB, log.Named(nid.ShortString()),
+		)
 		require.NoError(t, err)
 		nodes[nid] = cm.AsGPA()
 	}

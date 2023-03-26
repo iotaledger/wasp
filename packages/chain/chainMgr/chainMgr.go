@@ -164,10 +164,12 @@ type chainMgrImpl struct {
 	consensusStateRegistry  cmtLog.ConsensusStateRegistry                                    // Persistent store for log indexes.
 	latestActiveCmt         *iotago.Ed25519Address                                           // The latest active committee.
 	latestConfirmedAO       *isc.AliasOutputWithID                                           // The latest confirmed AO (follows Active AO).
-	activeNodes             func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey)          // All the nodes authorized for being access nodes (for the ActiveAO).
+	activeNodesCB           func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey)          // All the nodes authorized for being access nodes (for the ActiveAO).
+	tractStateActCB         func(ao *isc.AliasOutputWithID)                                  // We will call this to set new AO for the active state.
 	needConsensus           *NeedConsensus                                                   // Query for a consensus.
 	needPublishTX           *shrinkingmap.ShrinkingMap[iotago.TransactionID, *NeedPublishTX] // Query to post TXes.
 	dkShareRegistryProvider registry.DKShareRegistryProvider                                 // Source for DKShares.
+	varAccessState          VarAccessState
 	output                  *Output
 	asGPA                   gpa.GPA
 	me                      gpa.NodeID
@@ -187,7 +189,8 @@ func New(
 	consensusStateRegistry cmtLog.ConsensusStateRegistry,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
-	activeNodes func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey),
+	activeNodesCB func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey),
+	tractStateActCB func(ao *isc.AliasOutputWithID),
 	log *logger.Logger,
 ) (ChainMgr, error) {
 	cmi := &chainMgrImpl{
@@ -195,10 +198,12 @@ func New(
 		chainStore:              chainStore,
 		cmtLogs:                 map[iotago.Ed25519Address]*cmtLogInst{},
 		consensusStateRegistry:  consensusStateRegistry,
-		activeNodes:             activeNodes,
+		activeNodesCB:           activeNodesCB,
+		tractStateActCB:         tractStateActCB,
 		needConsensus:           nil,
 		needPublishTX:           shrinkingmap.New[iotago.TransactionID, *NeedPublishTX](),
 		dkShareRegistryProvider: dkShareRegistryProvider,
+		varAccessState:          NewVarAccessState(chainID, log.Named("VAS")),
 		me:                      me,
 		nodeIDFromPubKey:        nodeIDFromPubKey,
 		log:                     log,
@@ -254,6 +259,7 @@ func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutput
 	cmi.log.Debugf("handleInputAliasOutputConfirmed: %+v", input)
 	//
 	// >     Set LatestConfirmedAO <- ConfirmedAO
+	vsaTip, vsaUpdated := cmi.varAccessState.BlockConfirmed(input.aliasOutput)
 	cmi.latestConfirmedAO = input.aliasOutput
 	msgs := gpa.NoMessages()
 	committeeAddr := input.aliasOutput.GetAliasOutput().StateController().(*iotago.Ed25519Address)
@@ -269,6 +275,10 @@ func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutput
 		}
 		cmi.latestActiveCmt = nil
 		cmi.needConsensus = nil
+		if vsaUpdated && vsaTip != nil {
+			cmi.log.Debugf("⊢ going to track %v as an access node on confirmed block.", vsaTip)
+			cmi.tractStateActCB(vsaTip)
+		}
 		cmi.log.Debugf("This node is not in the committee for aliasOutput: %v", input.aliasOutput)
 		return msgs
 	}
@@ -324,7 +334,7 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 		if !cmi.needPublishTX.Has(txID) && input.consensusResult.Block != nil {
 			// Inform the access nodes on new block produced.
 			block := input.consensusResult.Block
-			activeAccessNodes, activeCommitteeNodes := cmi.activeNodes()
+			activeAccessNodes, activeCommitteeNodes := cmi.activeNodesCB()
 			cmi.log.Debugf(
 				"Sending MsgBlockProduced (stateIndex=%v, l1Commitment=%v, txID=%v) to access nodes: %v except committeeNodes %v",
 				block.StateIndex(), block.L1Commitment(), txID.ToHex(), activeAccessNodes, activeCommitteeNodes,
@@ -380,7 +390,11 @@ func (cmi *chainMgrImpl) handleMsgCmtLog(msg *msgCmtLog) gpa.OutMessages {
 }
 
 func (cmi *chainMgrImpl) handleMsgBlockProduced(msg *msgBlockProduced) gpa.OutMessages {
-	cmi.log.Debugf("handleMsgBlockProduced: %+v", msg) // TODO: Handle it.
+	cmi.log.Debugf("handleMsgBlockProduced: %+v", msg) // TODO: Save the block.
+	if vsaTip, vsaUpdated := cmi.varAccessState.BlockProduced(msg.tx); vsaUpdated && vsaTip != nil && cmi.latestActiveCmt == nil {
+		cmi.log.Debugf("⊢ going to track %v as an access node on unconfirmed block.", vsaTip)
+		cmi.tractStateActCB(vsaTip)
+	}
 	return nil
 }
 

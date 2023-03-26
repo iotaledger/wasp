@@ -327,6 +327,9 @@ func New(
 			defer cni.accessLock.RUnlock()
 			return cni.activeAccessNodes, cni.activeCommitteeNodes
 		},
+		func(ao *isc.AliasOutputWithID) {
+			cni.stateTrackerAct.TrackAliasOutput(ao, true)
+		},
 		cni.log.Named("CM"),
 	)
 	if err != nil {
