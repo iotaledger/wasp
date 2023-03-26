@@ -168,9 +168,10 @@ type chainNodeImpl struct {
 	accessLock             *sync.RWMutex          // Mutex for accessing informative fields from other threads.
 	activeCommitteeDKShare tcrypto.DKShare        // DKShare of the current active committee.
 	activeCommitteeNodes   []*cryptolib.PublicKey // The nodes acting as a committee for the latest consensus.
-	activeAccessNodes      []*cryptolib.PublicKey // All the nodes authorized for being access nodes (∪{{Self}, accessNodesFromNode, accessNodesFromChain, activeCommitteeNodes}).
+	activeAccessNodes      []*cryptolib.PublicKey // All the nodes authorized for being access nodes (∪{{Self}, accessNodesFromNode, accessNodesFrom{ACT, CNF}}, activeCommitteeNodes}).
 	accessNodesFromNode    []*cryptolib.PublicKey // Access nodes, as configured locally by a user in this node.
-	accessNodesFromChain   []*cryptolib.PublicKey // Access nodes, as configured in the governance contract (for the ActiveAO).
+	accessNodesFromCNF     []*cryptolib.PublicKey // Access nodes, as configured in the governance contract (for the active state).
+	accessNodesFromACT     []*cryptolib.PublicKey // Access nodes, as configured in the governance contract (for the confirmed state).
 	serverNodes            []*cryptolib.PublicKey // The nodes we can query (because they consider us an access node).
 	latestConfirmedAO      *isc.AliasOutputWithID // Confirmed by L1, can be lagging from latestActiveAO.
 	latestConfirmedState   state.State            // State corresponding to latestConfirmedAO, for performance reasons.
@@ -295,7 +296,8 @@ func New(
 		activeCommitteeNodes:   []*cryptolib.PublicKey{},
 		activeAccessNodes:      nil, // Set bellow.
 		accessNodesFromNode:    nil, // Set bellow.
-		accessNodesFromChain:   nil, // Set bellow.
+		accessNodesFromACT:     nil, // Set bellow.
+		accessNodesFromCNF:     nil, // Set bellow.
 		serverNodes:            nil, // Set bellow.
 		latestConfirmedAO:      nil,
 		latestConfirmedState:   nil,
@@ -316,10 +318,15 @@ func New(
 	chainMgr, err := chainMgr.New(
 		cni.me,
 		cni.chainID,
+		cni.chainStore,
 		consensusStateRegistry,
 		dkShareRegistryProvider,
 		cni.pubKeyAsNodeID,
-		cni.handleAccessNodesOnChainUpdatedCB, // Access nodes updated on the governance contract.
+		func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
+			cni.accessLock.RLock()
+			defer cni.accessLock.RUnlock()
+			return cni.activeAccessNodes, cni.activeCommitteeNodes
+		},
 		cni.log.Named("CM"),
 	)
 	if err != nil {
@@ -358,7 +365,8 @@ func New(
 	cni.stateTrackerCnf = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerCnfCB, cni.log.Named("ST.CNF"))
 	cni.updateAccessNodes(func() {
 		cni.accessNodesFromNode = accessNodesFromNode
-		cni.accessNodesFromChain = []*cryptolib.PublicKey{}
+		cni.accessNodesFromACT = []*cryptolib.PublicKey{}
+		cni.accessNodesFromCNF = []*cryptolib.PublicKey{}
 	})
 	cni.updateServerNodes([]*cryptolib.PublicKey{})
 	//
@@ -530,14 +538,6 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 	}
 }
 
-// This will always run in the main thread, because that's a callback for the chainMgr.
-func (cni *chainNodeImpl) handleAccessNodesOnChainUpdatedCB(accessNodesFromChain []*cryptolib.PublicKey) {
-	cni.log.Debugf("handleAccessNodesOnChainUpdatedCB")
-	cni.updateAccessNodes(func() {
-		cni.accessNodesFromChain = accessNodesFromChain
-	})
-}
-
 // The active state is needed by the mempool to cleanup the processed requests, etc.
 // The request/receipt awaits are already handled in the StateTracker.
 func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
@@ -545,6 +545,14 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 	cni.accessLock.Lock()
 	cni.latestActiveState = st
 	cni.accessLock.Unlock()
+
+	newAccessNodes := governance.NewStateAccess(st).GetAccessNodes()
+	if !util.Same(newAccessNodes, cni.accessNodesFromACT) {
+		cni.updateAccessNodes(func() {
+			cni.accessNodesFromACT = newAccessNodes
+		})
+	}
+
 	cni.mempool.TrackNewChainHead(st, from, till, added, removed)
 }
 
@@ -558,6 +566,14 @@ func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *is
 	cni.accessLock.Lock()
 	cni.latestConfirmedState = st
 	cni.accessLock.Unlock()
+
+	newAccessNodes := governance.NewStateAccess(st).GetAccessNodes()
+	if !util.Same(newAccessNodes, cni.accessNodesFromCNF) {
+		cni.updateAccessNodes(func() {
+			cni.accessNodesFromCNF = newAccessNodes
+		})
+	}
+
 	l1Commitment, err := transaction.L1CommitmentFromAliasOutput(till.GetAliasOutput())
 	if err != nil {
 		panic(fmt.Errorf("cannot get L1Commitment from alias output: %w", err))
@@ -839,6 +855,11 @@ func (cni *chainNodeImpl) sendMessages(outMsgs gpa.OutMessages) {
 		return
 	}
 	outMsgs.MustIterate(func(m gpa.Message) {
+		recipientPubKey, ok := cni.netPeerPubs[m.Recipient()]
+		if !ok {
+			cni.log.Warnf("Pub key for the recipient not found: %v", m.Recipient())
+			return
+		}
 		msgData, err := m.MarshalBinary()
 		if err != nil {
 			cni.log.Warnf("Failed to send a message: %v", err)
@@ -850,11 +871,11 @@ func (cni *chainNodeImpl) sendMessages(outMsgs gpa.OutMessages) {
 			MsgType:     msgTypeChainMgr,
 			MsgData:     msgData,
 		}
-		cni.net.SendMsgByPubKey(cni.netPeerPubs[m.Recipient()], pm)
+		cni.net.SendMsgByPubKey(recipientPubKey, pm)
 	})
 }
 
-// activeAccessNodes = ∪{{Self}, accessNodesFromNode, accessNodesFromChain, activeCommitteeNodes}
+// activeAccessNodes = ∪{{Self}, accessNodesFromNode, accessNodesFromACT, accessNodesFromCNF, activeCommitteeNodes}
 func (cni *chainNodeImpl) deriveActiveAccessNodes() {
 	nodes := []*cryptolib.PublicKey{cni.nodeIdentity.GetPublicKey()}
 	index := map[cryptolib.PublicKeyKey]bool{nodes[0].AsKey(): true}
@@ -864,7 +885,13 @@ func (cni *chainNodeImpl) deriveActiveAccessNodes() {
 			nodes = append(nodes, k)
 		}
 	}
-	for _, k := range cni.accessNodesFromChain {
+	for _, k := range cni.accessNodesFromACT {
+		if _, ok := index[k.AsKey()]; !ok {
+			index[k.AsKey()] = true
+			nodes = append(nodes, k)
+		}
+	}
+	for _, k := range cni.accessNodesFromCNF {
 		if _, ok := index[k.AsKey()]; !ok {
 			index[k.AsKey()] = true
 			nodes = append(nodes, k)

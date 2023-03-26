@@ -230,7 +230,7 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.Consens
 	smT.log.Debugf("Input block produced on state %s: state draft index %v has been committed to the store, resulting block %s",
 		commitment, input.GetStateDraft().BlockIndex(), blockCommitment)
 	smT.blockCache.AddBlock(block)
-	input.Respond(nil)
+	input.Respond(block)
 	requestsWC, exists := smT.blockRequests.Get(blockCommitment.BlockHash())
 	if exists {
 		requests := requestsWC.blockRequests

@@ -8,13 +8,14 @@ import (
 	"strings"
 
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
 type SyncTX interface {
 	VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages
 	SignatureReceived(signature []byte) gpa.OutMessages
-	BlockSaved() gpa.OutMessages
+	BlockSaved(block state.Block) gpa.OutMessages
 	String() string
 }
 
@@ -22,12 +23,13 @@ type syncTXImpl struct {
 	vmResult   *vm.VMTask
 	signature  []byte
 	blockSaved bool
+	block      state.Block
 
 	inputsReady   bool
-	inputsReadyCB func(vmResult *vm.VMTask, signature []byte) gpa.OutMessages
+	inputsReadyCB func(vmResult *vm.VMTask, block state.Block, signature []byte) gpa.OutMessages
 }
 
-func NewSyncTX(inputsReadyCB func(vmResult *vm.VMTask, signature []byte) gpa.OutMessages) SyncTX {
+func NewSyncTX(inputsReadyCB func(vmResult *vm.VMTask, block state.Block, signature []byte) gpa.OutMessages) SyncTX {
 	return &syncTXImpl{inputsReadyCB: inputsReadyCB}
 }
 
@@ -47,11 +49,12 @@ func (sub *syncTXImpl) SignatureReceived(signature []byte) gpa.OutMessages {
 	return sub.tryCompleteInputs()
 }
 
-func (sub *syncTXImpl) BlockSaved() gpa.OutMessages {
+func (sub *syncTXImpl) BlockSaved(block state.Block) gpa.OutMessages {
 	if sub.blockSaved {
 		return nil
 	}
 	sub.blockSaved = true
+	sub.block = block
 	return sub.tryCompleteInputs()
 }
 
@@ -60,7 +63,7 @@ func (sub *syncTXImpl) tryCompleteInputs() gpa.OutMessages {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.inputsReadyCB(sub.vmResult, sub.signature)
+	return sub.inputsReadyCB(sub.vmResult, sub.block, sub.signature)
 }
 
 // Try to provide useful human-readable compact status.

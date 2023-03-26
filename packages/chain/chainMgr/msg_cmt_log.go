@@ -41,6 +41,9 @@ func (msg *msgCmtLog) SetSender(sender gpa.NodeID) {
 
 func (msg *msgCmtLog) MarshalBinary() ([]byte, error) {
 	w := bytes.NewBuffer([]byte{})
+	if err := util.WriteByte(w, msgTypeCmtLog); err != nil {
+		return nil, fmt.Errorf("cannot serialize msgType: %w", err)
+	}
 	committeeAddrBytes, err := msg.committeeAddr.Serialize(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
 		return nil, err
@@ -61,6 +64,16 @@ func (msg *msgCmtLog) MarshalBinary() ([]byte, error) {
 func (msg *msgCmtLog) UnmarshalBinary(data []byte) error {
 	var err error
 	r := bytes.NewReader(data)
+	//
+	// MsgType
+	msgType, err := util.ReadByte(r)
+	if err != nil {
+		return fmt.Errorf("cannot read msgType byte: %w", err)
+	}
+	if msgType != msgTypeCmtLog {
+		return fmt.Errorf("unexpected msgType: %v", msgType)
+	}
+	//
 	committeeAddrBytes, err := util.ReadBytes16(r)
 	if err != nil {
 		return err
