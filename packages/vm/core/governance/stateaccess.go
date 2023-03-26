@@ -6,7 +6,6 @@ package governance
 import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
@@ -53,20 +52,4 @@ func (sa *StateAccess) GetCandidateNodes() []*AccessNodeInfo {
 		return true
 	})
 	return candidateNodes
-}
-
-// This can be called on mutations to check, if block has any changes to the access nodes.
-func HaveAccessNodeChanges(mut *buffered.Mutations) bool {
-	varPrefix := kv.Key(append(Contract.Hname().Bytes(), []byte(VarAccessNodes)...))
-	for k := range mut.Sets {
-		if k.HasPrefix(varPrefix) {
-			return true
-		}
-	}
-	for k := range mut.Dels {
-		if k.HasPrefix(varPrefix) {
-			return true
-		}
-	}
-	return false
 }
