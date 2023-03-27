@@ -390,7 +390,8 @@ func (cmi *chainMgrImpl) handleMsgCmtLog(msg *msgCmtLog) gpa.OutMessages {
 }
 
 func (cmi *chainMgrImpl) handleMsgBlockProduced(msg *msgBlockProduced) gpa.OutMessages {
-	cmi.log.Debugf("handleMsgBlockProduced: %+v", msg) // TODO: Save the block.
+	cmi.log.Debugf("handleMsgBlockProduced: %+v", msg)
+	// TODO: Save the block <------ this...
 	if vsaTip, vsaUpdated := cmi.varAccessState.BlockProduced(msg.tx); vsaUpdated && vsaTip != nil && cmi.latestActiveCmt == nil {
 		cmi.log.Debugf("⊢ going to track %v as an access node on unconfirmed block.", vsaTip)
 		cmi.tractStateActCB(vsaTip)

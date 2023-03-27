@@ -420,6 +420,7 @@ func New(
 }
 
 func (cni *chainNodeImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) {
+	cni.log.Debugf("ReceiveOffLedgerRequest: %v from outside.", request.ID())
 	// TODO: What to do with the sender's pub key?
 	cni.mempool.ReceiveOffLedgerRequest(request)
 }
