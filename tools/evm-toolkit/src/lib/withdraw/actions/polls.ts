@@ -17,16 +17,19 @@ export async function pollBalance() {
 export async function pollNativeTokens() {
   const $withdrawStateStore = get(withdrawStateStore);
   const $selectedAccount = get(selectedAccount);
+
   if (!$selectedAccount) {
     return;
   }
 
-  $withdrawStateStore.availableNativeTokens =
+  const availableNativeTokens =
     await $withdrawStateStore.iscMagic.getNativeTokens(
       get(nodeClient),
       get(indexerClient),
       $selectedAccount,
     );
+
+  updateWithdrawStateStore({ availableNativeTokens });
 }
 
 export async function pollNFTs() {
