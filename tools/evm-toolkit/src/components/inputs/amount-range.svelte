@@ -1,42 +1,53 @@
 <script lang="ts">
+  export let min: number = 0;
   export let decimals: number = 0;
-  export let min: string = '';
   export let max: number = 100;
-  export let value: number;
+  export let value: number = 0;
   export let disabled: boolean = false;
   export let label: string = '';
 
   let maxValueFormatted = 0;
   let valueFormatted = 0;
 
-  $: {
-    maxValueFormatted = max / 10 ** decimals;
+  $: maxValueFormatted = max / 10 ** decimals;
+
+  function handleRangeChange(event): void {
+    value = event.target.value;
     valueFormatted = value / 10 ** decimals;
   }
-
-  function handleChange(event) {
-    value = event.target.value;
+  function handleInputChange(event): void {
+    valueFormatted = event.target.value;
+    value = value * 10 ** decimals;
   }
 </script>
 
 <div class="flex flex-col space-y-4">
   {#if label}
-    <label for="range">{label} {valueFormatted}</label>
-  {/if}
-  {#if min || max}
-    <div class="w-full flex justify-between">
-      <small>{min}</small>
-      <small>Max: {maxValueFormatted}</small>
+    <div class="flex space-x-2">
+      <label for="formatted" class="flex flex-shrink-0">{label}</label>
+      <input
+        type="text"
+        id="formatted"
+        bind:value={valueFormatted}
+        on:input={handleInputChange}
+        {disabled}
+      />
     </div>
   {/if}
   <input
     type="range"
     bind:value
-    on:change={handleChange}
+    on:input={handleRangeChange}
     {min}
     {max}
     {disabled}
   />
+  {#if min || max}
+    <div class="w-full flex justify-between">
+      <small>Min: {min}</small>
+      <small>Max: {maxValueFormatted}</small>
+    </div>
+  {/if}
 </div>
 
 <style lang="scss">
@@ -96,6 +107,12 @@
     &:focus::-moz-range-thumb {
       outline: 3px solid #00f5dd;
       outline-offset: 0.125rem;
+    }
+  }
+  input[type='text'] {
+    &::placeholder {
+      @apply text-xs;
+      @apply text-shimmer-text-secondary;
     }
   }
 </style>
