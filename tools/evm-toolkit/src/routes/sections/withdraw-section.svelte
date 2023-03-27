@@ -201,7 +201,7 @@
             bind:value={formInput.nativeTokensToSend[nativeToken.id]}
             label="{nativeToken?.metadata?.name ?? ''} Token:"
             min="0"
-            decimals={nativeToken.metadata.decimals}
+            decimals={nativeToken?.metadata?.decimals || 0}
             max={Number(nativeToken.amount)}
           />
         {/each}
