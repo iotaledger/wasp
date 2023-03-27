@@ -1,8 +1,5 @@
 import type { IndexerPluginClient, SingleNodeClient } from '@iota/iota.js';
 import { Converter } from '@iota/util.js';
-import {
-  Multicall, type ContractCallContext, type ContractCallResults
-} from 'ethereum-multicall';
 import type Web3 from 'web3';
 import type { Eth } from 'web3-eth';
 import type { Contract } from 'web3-eth-contract';
@@ -33,11 +30,9 @@ export interface IWithdrawResponse {
 
 export class ISCMagic {
   private readonly contract: Contract;
-  private readonly multicall: Contract;
 
-  constructor(contract: Contract, multicall: Contract) {
+  constructor(contract: Contract) {
     this.contract = contract;
-    this.multicall = multicall;
   }
 
   public async getBaseTokens(eth: Eth, account: string): Promise<number> {
@@ -99,65 +94,11 @@ export class ISCMagic {
     const nftIds = nfts.filter(x => Converter.hexToUtf8(x[0]) != 'i');
     const availableNFTs = nftIds.map(x => <INFT>{ id: x[1] });
 
-    console.log(nftIds)
-
     for (let nft of availableNFTs) {
       nft.metadata = await getNFTMetadata(nodeClient, indexerClient, nft.id);
     }
 
     return availableNFTs;
-  }
-
-  public async withdrawMulticall(web3Instance: Web3, multicallAddress: string, nodeClient: SingleNodeClient, receiverAddress: string, baseTokens: number, nativeTokens: INativeToken[], nftIDs: string[]) {
-    const sendABI = iscAbi.find(x => x.name == 'send');
-    const contractCallContext: ContractCallContext =
-    {
-      reference: 'send',
-      contractAddress: iscContractAddress,
-
-      abi: iscAbi,
-      calls: []
-    };
-
-    let baseTokensSent = 0;
-
-    for (let nft of nftIDs) {
-      const parameters = await withdrawParameters(
-        nodeClient,
-        receiverAddress,
-        gasFee,
-        gasFee * 2,
-        [],
-        nft,
-      );
-
-      baseTokensSent += gasFee * 2;
-
-      contractCallContext.calls.push({
-        reference: 'send', methodName: 'send', methodParameters: parameters,
-      })
-    }
-
-    const lastParameters = await withdrawParameters(
-      nodeClient,
-      receiverAddress,
-      gasFee,
-      baseTokens - baseTokensSent,
-      nativeTokens,
-      null,
-    );
-
-    console.log(contractCallContext)
-
-    /*contractCallContext.calls.push({
-      reference: 'send', methodName: 'send', methodParameters: lastParameters,
-    });*/
-
-    const multicall = new Multicall({ web3Instance: web3Instance, tryAggregate: false, multicallCustomContractAddress: multicallAddress });
-    const results: ContractCallResults = await multicall.call(contractCallContext);
-
-    console.log(results);
-
   }
 
   public async withdraw(nodeClient: SingleNodeClient, receiverAddress: string, baseTokens: number, nativeTokens: INativeToken[], nftID?: string) {
