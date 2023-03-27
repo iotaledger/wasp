@@ -264,10 +264,4 @@
   info-item-value {
     @apply text-2xl;
   }
-  select {
-    @apply w-full;
-    @apply bg-shimmer-background-tertiary;
-    @apply rounded-xl;
-    @apply p-4;
-  }
 </style>
