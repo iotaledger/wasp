@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { connected, selectedAccount } from 'svelte-web3';
+
   import { Input, Select } from '$components';
 
   import {
@@ -8,7 +11,9 @@
     updateNetwork,
     type INetwork,
   } from '$lib/evm-toolkit';
+  import { addSelectedNetworkToMetamask } from '$lib/withdraw';
 
+  let previousSelectedNetworkId: number = $selectedNetworkId;
   let _selectedNetwork: INetwork;
   // local copy to manage updates afterwards
   $: $selectedNetworkId, (_selectedNetwork = $selectedNetwork);
@@ -18,6 +23,18 @@
     id,
   }));
   $: disableNetworkEdit = $selectedNetwork?.id !== 1;
+
+  onMount(() => {
+    const unsubscribe = selectedNetworkId.subscribe(id => {
+      if (id !== previousSelectedNetworkId) {
+        previousSelectedNetworkId = id;
+        if ($connected && $selectedAccount) {
+          void addSelectedNetworkToMetamask();
+        }
+      }
+    });
+    return () => unsubscribe();
+  });
 
   function handleNetworkChange() {
     updateNetwork(_selectedNetwork);
