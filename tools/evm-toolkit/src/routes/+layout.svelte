@@ -17,7 +17,7 @@
         if (network?.id === 0) {
           return matchedDefaultNetwork;
         } else {
-          return { ...network, chainID: matchedDefaultNetwork?.chainID };
+          return network;
         }
       });
       return updatedNetworks;
