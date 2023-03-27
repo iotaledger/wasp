@@ -83,7 +83,7 @@ export async function withdrawParameters(
       },
     },
   ];
-  console.log(parameters)
+
   return parameters;
 }
 
