@@ -13,7 +13,6 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smInputs"
