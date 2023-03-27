@@ -1,20 +1,23 @@
 <script lang="ts">
   export let min: number = 0;
+  export let decimals: number = 0;
   export let max: number = 100;
   export let value: number = 0;
   export let disabled: boolean = false;
   export let label: string = '';
-  export let formatOperand: number = 1;
 
-  let inputValue: string = '0';
+  let maxValueFormatted = 0;
+  let valueFormatted = 0;
 
-  function handleRangeChange(event) {
+  $: maxValueFormatted = max / 10 ** decimals;
+
+  function handleRangeChange(event): void {
     value = event.target.value;
-    inputValue = (value / formatOperand)?.toFixed(2);
+    valueFormatted = value / 10 ** decimals;
   }
-  function handleInputChange(event) {
-    inputValue = event.target.value;
-    value = Number(inputValue) * formatOperand;
+  function handleInputChange(event): void {
+    valueFormatted = event.target.value;
+    value = value * 10 ** decimals;
   }
 </script>
 
@@ -25,7 +28,7 @@
       <input
         type="text"
         id="formatted"
-        bind:value={inputValue}
+        bind:value={valueFormatted}
         on:input={handleInputChange}
         {disabled}
       />
@@ -41,8 +44,8 @@
   />
   {#if min || max}
     <div class="w-full flex justify-between">
-      <small>{min}</small>
-      <small>Max: {(max / formatOperand).toFixed(2)}</small>
+      <small>Min: {min}</small>
+      <small>Max: {maxValueFormatted}</small>
     </div>
   {/if}
 </div>

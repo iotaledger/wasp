@@ -9,6 +9,8 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
@@ -544,4 +546,18 @@ func TestMessageSize(t *testing.T) {
 		require.Nil(t, err)
 		require.Nil(t, receipt.Error)
 	}
+}
+
+func TestOriginInitParameters(t *testing.T) {
+	env := solo.New(t)
+	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
+	env.AssertL1BaseTokens(userAddr, utxodb.FundsFromFaucetAmount)
+	originAmount := 10 * isc.Million
+	ch, _ := env.NewChainExt(user, originAmount, "chain1", solo.InitChainOptions{
+		OriginParameters: dict.Dict{
+			origin.ParamEVMChainID:   codec.EncodeUint16(12345),
+			origin.ParamEVMBlockKeep: codec.EncodeInt32(6789),
+		},
+	})
+	ch.DepositBaseTokensToL2(1*isc.Million, user)
 }

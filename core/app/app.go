@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/core/registry"
 	"github.com/iotaledger/wasp/core/users"
 	"github.com/iotaledger/wasp/core/wasmtimevm"
+	"github.com/iotaledger/wasp/packages/toolset"
 	"github.com/iotaledger/wasp/plugins/profilingrecorder"
 	"github.com/iotaledger/wasp/plugins/prometheus"
 	"github.com/iotaledger/wasp/plugins/webapi"
@@ -76,5 +77,15 @@ func init() {
 		AdditionalConfigs: []*app.ConfigurationSet{
 			app.NewConfigurationSet("users", "users", "usersConfigFilePath", "usersConfig", false, true, false, "users.json", "u"),
 		},
+		Init: initialize,
 	}
+}
+
+func initialize(_ *app.App) error {
+	if toolset.ShouldHandleTools() {
+		toolset.HandleTools()
+		// HandleTools will call os.Exit
+	}
+
+	return nil
 }

@@ -60,7 +60,7 @@ export class SendFundsTransaction {
     metadata.writeInt8('a'.charCodeAt(0)); // Write key (a == 'agentID')
     metadata.writeUInt32LE(evmAddressBuffer.buffer.length); // Length of value (len(agentID) == 21 for evm address)
     metadata.writeBytes(evmAddressBuffer.buffer); //  Write value (bytes(agentID))
-    console.log(evmAddressBuffer.buffer.length)
+
     /* Write allowance */
     metadata.writeUInt8(0); // Has allowance (255 if no allowance is set)
     metadata.writeUInt64LE(amount - gas); // IOTA amount to send

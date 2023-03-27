@@ -1,10 +1,14 @@
 <script lang="ts">
   import { chainId, connected, selectedAccount } from 'svelte-web3';
-  import { Button, Input, AmountRangeInput } from '$components';
+
+  import { AmountRangeInput, Button, Input, Select } from '$components';
+
+  import { truncateText } from '$lib/common';
   import { InputType } from '$lib/common/enums';
   import { Bech32AddressLength } from '$lib/constants';
   import { nodeClient } from '$lib/evm-toolkit';
   import type { INativeToken } from '$lib/native-token';
+  import type { INFT } from '$lib/nft';
   import { NotificationType, showNotification } from '$lib/notification';
   import type { WithdrawFormInput } from '$lib/withdraw';
   import {
@@ -21,12 +25,13 @@
     nftIDToSend: undefined,
   };
 
-  const BASE_TOKEN_FORMATTING_OPERAND = 1e6;
+  const BASE_TOKEN_DECIMALS = 6;
 
   let isWithdrawing: boolean = false;
 
   $: formattedBalance = (
-    $withdrawStateStore.availableBaseTokens / BASE_TOKEN_FORMATTING_OPERAND
+    $withdrawStateStore.availableBaseTokens /
+    10 ** BASE_TOKEN_DECIMALS
   ).toFixed(2);
   $: isValidAddress = formInput.receiverAddress.length == Bech32AddressLength;
   $: canWithdraw =
@@ -160,6 +165,17 @@
       );
     } catch {}
   }
+
+  const formatAvailableNFTsForSelectTag = (nfts: INFT[]) => {
+    return nfts.map(nft => {
+      return {
+        id: Number(nft.id),
+        label: nft?.metadata?.name
+          ? truncateText(nft?.metadata?.name, 4, 4) + '  ' + nft?.id
+          : nft?.id,
+      };
+    });
+  };
 </script>
 
 <withdraw-component class="flex flex-col space-y-6 mt-6">
@@ -193,12 +209,13 @@
           bind:value={formInput.baseTokensToSend}
           disabled={!canSetAmountToWithdraw}
           max={$withdrawStateStore.availableBaseTokens}
-          formatOperand={BASE_TOKEN_FORMATTING_OPERAND}
+          decimals={6}
         />
         {#each $withdrawStateStore.availableNativeTokens as nativeToken}
           <AmountRangeInput
             bind:value={formInput.nativeTokensToSend[nativeToken.id]}
             label="{nativeToken?.metadata?.name ?? ''} Token:"
+            decimals={nativeToken?.metadata?.decimals || 0}
             max={Number(nativeToken.amount)}
           />
         {/each}
@@ -207,15 +224,12 @@
     {#if $withdrawStateStore.availableNFTs.length > 0}
       <nfts-wrapper>
         <div class="mb-2">NFTs</div>
-        <info-box>
-          <div class="flex flex-col space-y-2">
-            {#each $withdrawStateStore.availableNFTs as nft}
-              <info-item-title>
-                {nft.id}
-              </info-item-title>
-            {/each}
-          </div>
-        </info-box>
+        <Select
+          bind:value={formInput.nftIDToSend}
+          options={formatAvailableNFTsForSelectTag(
+            $withdrawStateStore.availableNFTs,
+          )}
+        />
       </nfts-wrapper>
     {/if}
     <Button

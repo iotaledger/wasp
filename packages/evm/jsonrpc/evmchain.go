@@ -154,6 +154,19 @@ func (e *EVMChain) GasFeePolicy() (*gas.FeePolicy, error) {
 	return feePolicy, nil
 }
 
+func (e *EVMChain) gasLimits() (*gas.Limits, error) {
+	res, err := e.backend.ISCCallView(e.backend.ISCLatestState(), governance.Contract.Name, governance.ViewGetGasLimits.Name, nil)
+	if err != nil {
+		return nil, err
+	}
+	glBin := res.MustGet(governance.ParamGasLimitsBytes)
+	gasLimits, err := gas.LimitsFromBytes(glBin)
+	if err != nil {
+		return nil, err
+	}
+	return gasLimits, nil
+}
+
 func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 	chainID, err := e.ChainID()
 	if err != nil {
@@ -201,6 +214,16 @@ func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, evmGas 
 	iscGasBudgetAffordable := gasFeePolicy.GasBudgetFromTokens(balance.Uint64())
 
 	iscGasBudgetTx := gas.EVMGasToISC(evmGas, &gasRatio)
+
+	gasLimits, err := e.gasLimits()
+	if err != nil {
+		return fmt.Errorf("could not fetch the gas limits: %w", err)
+	}
+
+	if iscGasBudgetTx > gasLimits.MaxGasPerRequest {
+		iscGasBudgetTx = gasLimits.MaxGasPerRequest
+	}
+
 	if iscGasBudgetAffordable < iscGasBudgetTx {
 		return fmt.Errorf(
 			"sender doesn't have enough L2 funds to cover tx gas budget. Balance: %v, expected: %d",

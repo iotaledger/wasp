@@ -12,6 +12,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/origin"
@@ -83,6 +84,7 @@ func initDeployCmd() *cobra.Command {
 				Textout:              os.Stdout,
 				GovernanceController: govController,
 				InitParams: dict.Dict{
+					origin.ParamChainOwner:   isc.NewAgentID(govController).Bytes(),
 					origin.ParamEVMChainID:   codec.EncodeUint16(evmParams.ChainID),
 					origin.ParamEVMBlockKeep: codec.EncodeInt32(evmParams.BlockKeepAmount),
 				},
