@@ -25,7 +25,7 @@ export async function connectToWallet() {
 
     updateWithdrawStateStore({ contract });
 
-    const iscMagic = new ISCMagic(get(withdrawStateStore).contract, null);
+    const iscMagic = new ISCMagic(get(withdrawStateStore).contract);
     updateWithdrawStateStore({ iscMagic });
 
     await pollAccount();
