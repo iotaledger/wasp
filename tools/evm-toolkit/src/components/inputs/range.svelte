@@ -1,9 +1,18 @@
 <script lang="ts">
+  export let decimals: number = 0;
   export let min: string = '';
   export let max: number = 100;
   export let value: number;
   export let disabled: boolean = false;
   export let label: string = '';
+
+  let maxValueFormatted = 0;
+  let valueFormatted = 0;
+
+  $: {
+    maxValueFormatted = max / 10 ** decimals;
+    valueFormatted = value / 10 ** decimals;
+  }
 
   function handleChange(event) {
     value = event.target.value;
@@ -12,12 +21,12 @@
 
 <div class="flex flex-col space-y-4">
   {#if label}
-    <label for="range">{label}</label>
+    <label for="range">{label} {valueFormatted}</label>
   {/if}
   {#if min || max}
     <div class="w-full flex justify-between">
       <small>{min}</small>
-      <small>Max: {(max / 1e6).toFixed(2)}</small>
+      <small>Max: {maxValueFormatted}</small>
     </div>
   {/if}
   <input

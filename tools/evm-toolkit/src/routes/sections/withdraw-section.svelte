@@ -188,19 +188,20 @@
       <div class="mb-2">Tokens to send</div>
       <info-box class="flex flex-col space-y-4 max-h-96 overflow-auto">
         <RangeInput
-          label="SMR Token: {formattedAmountToSend}"
+          label="SMR Token:"
           bind:value={formInput.baseTokensToSend}
           disabled={!canSetAmountToWithdraw}
           min="0"
+          decimals={6}
           max={$withdrawStateStore.availableBaseTokens}
         />
 
         {#each $withdrawStateStore.availableNativeTokens as nativeToken}
           <RangeInput
             bind:value={formInput.nativeTokensToSend[nativeToken.id]}
-            label="{nativeToken?.metadata?.name ?? ''} Token: {formInput
-              .nativeTokensToSend[nativeToken.id] || 0}"
+            label="{nativeToken?.metadata?.name ?? ''} Token:"
             min="0"
+            decimals={nativeToken.metadata.decimals}
             max={Number(nativeToken.amount)}
           />
         {/each}
