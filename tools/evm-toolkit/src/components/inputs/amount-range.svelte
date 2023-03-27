@@ -1,26 +1,20 @@
 <script lang="ts">
-  export let min: string = '';
+  export let min: number = 0;
   export let max: number = 100;
-  export let value: number;
+  export let value: number = 0;
   export let disabled: boolean = false;
   export let label: string = '';
-  export let showValueOnLabel: boolean = false;
-  export let needsFormatting: boolean = false;
+  export let formatOperand: number = 1;
 
-  let formattedValue: string = '';
+  let inputValue: string = '0';
 
-  function handleChange(event) {
+  function handleRangeChange(event) {
     value = event.target.value;
-
-    if (needsFormatting) {
-      formattedValue = (value / 1e6).toFixed(2);
-    } else {
-      formattedValue = value.toFixed(0);
-    }
+    inputValue = (value / formatOperand)?.toFixed(2);
   }
-
-  function formatValue(event) {
-    value = event.target.value * 1e6;
+  function handleInputChange(event) {
+    inputValue = event.target.value;
+    value = Number(inputValue) * formatOperand;
   }
 </script>
 
@@ -28,23 +22,19 @@
   {#if label}
     <div class="flex space-x-2">
       <label for="formatted" class="flex flex-shrink-0">{label}</label>
-      {#if showValueOnLabel}
-        <input
-          type="text"
-          id="formatted"
-          placeholder={needsFormatting
-            ? 'Your amount here: 0.00'
-            : 'Your amount here: 0'}
-          bind:value={formattedValue}
-          on:input={formatValue}
-        />
-      {/if}
+      <input
+        type="text"
+        id="formatted"
+        bind:value={inputValue}
+        on:input={handleInputChange}
+        {disabled}
+      />
     </div>
   {/if}
   <input
     type="range"
     bind:value
-    on:input={handleChange}
+    on:input={handleRangeChange}
     {min}
     {max}
     {disabled}
@@ -52,7 +42,7 @@
   {#if min || max}
     <div class="w-full flex justify-between">
       <small>{min}</small>
-      <small>Max: {(max / 1e6).toFixed(2)}</small>
+      <small>Max: {(max / formatOperand).toFixed(2)}</small>
     </div>
   {/if}
 </div>

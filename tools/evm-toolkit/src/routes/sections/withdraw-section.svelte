@@ -1,6 +1,6 @@
 <script lang="ts">
   import { chainId, connected, selectedAccount } from 'svelte-web3';
-  import { Button, Input, RangeInput } from '$components';
+  import { Button, Input, AmountRangeInput } from '$components';
   import { InputType } from '$lib/common/enums';
   import { Bech32AddressLength } from '$lib/constants';
   import { nodeClient } from '$lib/evm-toolkit';
@@ -21,11 +21,13 @@
     nftIDToSend: undefined,
   };
 
+  const BASE_TOKEN_FORMATTING_OPERAND = 1e6;
+
   let isWithdrawing: boolean = false;
 
-  $: formattedBalance = ($withdrawStateStore.availableBaseTokens / 1e6).toFixed(
-    2,
-  );
+  $: formattedBalance = (
+    $withdrawStateStore.availableBaseTokens / BASE_TOKEN_FORMATTING_OPERAND
+  ).toFixed(2);
   $: isValidAddress = formInput.receiverAddress.length == Bech32AddressLength;
   $: canWithdraw =
     $withdrawStateStore.availableBaseTokens > 0 &&
@@ -186,23 +188,18 @@
     <tokens-to-send-wrapper>
       <div class="mb-2">Tokens to send</div>
       <info-box class="flex flex-col space-y-4 max-h-96 overflow-auto">
-        <RangeInput
+        <AmountRangeInput
           label="SMR Token:"
           bind:value={formInput.baseTokensToSend}
           disabled={!canSetAmountToWithdraw}
-          min="0"
           max={$withdrawStateStore.availableBaseTokens}
-          showValueOnLabel
-          needsFormatting
+          formatOperand={BASE_TOKEN_FORMATTING_OPERAND}
         />
-
         {#each $withdrawStateStore.availableNativeTokens as nativeToken}
-          <RangeInput
+          <AmountRangeInput
             bind:value={formInput.nativeTokensToSend[nativeToken.id]}
             label="{nativeToken?.metadata?.name ?? ''} Token:"
-            min="0"
             max={Number(nativeToken.amount)}
-            showValueOnLabel
           />
         {/each}
       </info-box>
