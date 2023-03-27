@@ -1,0 +1,2 @@
+export const NOTIFICATION_TIMEOUT_DEFAULT: number = 5000
+export const NOTIFICATION_TIMEOUT_NEVER: number = 0

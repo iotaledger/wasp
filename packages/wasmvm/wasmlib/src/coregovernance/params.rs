@@ -23,8 +23,9 @@ impl ImmutableAddAllowedStateControllerAddressParams {
         }
     }
 
-    pub fn state_controller_address(&self) -> ScImmutableAddress {
-        ScImmutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
+    // state controller address
+    pub fn address(&self) -> ScImmutableAddress {
+        ScImmutableAddress::new(self.proxy.root(PARAM_ADDRESS))
     }
 }
 
@@ -34,8 +35,9 @@ pub struct MutableAddAllowedStateControllerAddressParams {
 }
 
 impl MutableAddAllowedStateControllerAddressParams {
-    pub fn state_controller_address(&self) -> ScMutableAddress {
-        ScMutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
+    // state controller address
+    pub fn address(&self) -> ScMutableAddress {
+        ScMutableAddress::new(self.proxy.root(PARAM_ADDRESS))
     }
 }
 
@@ -51,20 +53,24 @@ impl ImmutableAddCandidateNodeParams {
         }
     }
 
-    pub fn access_node_info_access_api(&self) -> ScImmutableString {
-        ScImmutableString::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_ACCESS_API))
+    // API base URL for the node, default empty
+    pub fn access_api(&self) -> ScImmutableString {
+        ScImmutableString::new(self.proxy.root(PARAM_ACCESS_API))
     }
 
-    pub fn access_node_info_certificate(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_CERTIFICATE))
+    // whether node is just an access node, default false
+    pub fn access_only(&self) -> ScImmutableBool {
+        ScImmutableBool::new(self.proxy.root(PARAM_ACCESS_ONLY))
     }
 
-    pub fn access_node_info_for_committee(&self) -> ScImmutableBool {
-        ScImmutableBool::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_FOR_COMMITTEE))
+    // signed binary containing both the node public key and their L1 address
+    pub fn certificate(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(PARAM_CERTIFICATE))
     }
 
-    pub fn access_node_info_pub_key(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_PUB_KEY))
+    // public key of the node to be added
+    pub fn pub_key(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(PARAM_PUB_KEY))
     }
 }
 
@@ -74,20 +80,24 @@ pub struct MutableAddCandidateNodeParams {
 }
 
 impl MutableAddCandidateNodeParams {
-    pub fn access_node_info_access_api(&self) -> ScMutableString {
-        ScMutableString::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_ACCESS_API))
+    // API base URL for the node, default empty
+    pub fn access_api(&self) -> ScMutableString {
+        ScMutableString::new(self.proxy.root(PARAM_ACCESS_API))
     }
 
-    pub fn access_node_info_certificate(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_CERTIFICATE))
+    // whether node is just an access node, default false
+    pub fn access_only(&self) -> ScMutableBool {
+        ScMutableBool::new(self.proxy.root(PARAM_ACCESS_ONLY))
     }
 
-    pub fn access_node_info_for_committee(&self) -> ScMutableBool {
-        ScMutableBool::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_FOR_COMMITTEE))
+    // signed binary containing both the node public key and their L1 address
+    pub fn certificate(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(PARAM_CERTIFICATE))
     }
 
-    pub fn access_node_info_pub_key(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_PUB_KEY))
+    // public key of the node to be added
+    pub fn pub_key(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(PARAM_PUB_KEY))
     }
 }
 
@@ -114,8 +124,12 @@ impl ImmutableChangeAccessNodesParams {
         }
     }
 
-    pub fn change_access_nodes_actions(&self) -> MapBytesToImmutableUint8 {
-        MapBytesToImmutableUint8 { proxy: self.proxy.root(PARAM_CHANGE_ACCESS_NODES_ACTIONS) }
+    // map of actions per pubkey
+    // 0: Remove the access node from the access nodes list.
+    // 1: Accept a candidate node and add it to the list of access nodes.
+    // 2: Drop an access node from the access node and candidate lists.
+    pub fn actions(&self) -> MapBytesToImmutableUint8 {
+        MapBytesToImmutableUint8 { proxy: self.proxy.root(PARAM_ACTIONS) }
     }
 }
 
@@ -140,8 +154,12 @@ pub struct MutableChangeAccessNodesParams {
 }
 
 impl MutableChangeAccessNodesParams {
-    pub fn change_access_nodes_actions(&self) -> MapBytesToMutableUint8 {
-        MapBytesToMutableUint8 { proxy: self.proxy.root(PARAM_CHANGE_ACCESS_NODES_ACTIONS) }
+    // map of actions per pubkey
+    // 0: Remove the access node from the access nodes list.
+    // 1: Accept a candidate node and add it to the list of access nodes.
+    // 2: Drop an access node from the access node and candidate lists.
+    pub fn actions(&self) -> MapBytesToMutableUint8 {
+        MapBytesToMutableUint8 { proxy: self.proxy.root(PARAM_ACTIONS) }
     }
 }
 
@@ -157,6 +175,7 @@ impl ImmutableDelegateChainOwnershipParams {
         }
     }
 
+    // next chain owner's agent ID
     pub fn chain_owner(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER))
     }
@@ -168,6 +187,7 @@ pub struct MutableDelegateChainOwnershipParams {
 }
 
 impl MutableDelegateChainOwnershipParams {
+    // next chain owner's agent ID
     pub fn chain_owner(&self) -> ScMutableAgentID {
         ScMutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER))
     }
@@ -185,8 +205,9 @@ impl ImmutableRemoveAllowedStateControllerAddressParams {
         }
     }
 
-    pub fn state_controller_address(&self) -> ScImmutableAddress {
-        ScImmutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
+    // state controller address
+    pub fn address(&self) -> ScImmutableAddress {
+        ScImmutableAddress::new(self.proxy.root(PARAM_ADDRESS))
     }
 }
 
@@ -196,8 +217,9 @@ pub struct MutableRemoveAllowedStateControllerAddressParams {
 }
 
 impl MutableRemoveAllowedStateControllerAddressParams {
-    pub fn state_controller_address(&self) -> ScMutableAddress {
-        ScMutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
+    // state controller address
+    pub fn address(&self) -> ScMutableAddress {
+        ScMutableAddress::new(self.proxy.root(PARAM_ADDRESS))
     }
 }
 
@@ -213,12 +235,14 @@ impl ImmutableRevokeAccessNodeParams {
         }
     }
 
-    pub fn access_node_info_certificate(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_CERTIFICATE))
+    // certificate of the node to be removed
+    pub fn certificate(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(PARAM_CERTIFICATE))
     }
 
-    pub fn access_node_info_pub_key(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_PUB_KEY))
+    // public key of the node to be removed
+    pub fn pub_key(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(PARAM_PUB_KEY))
     }
 }
 
@@ -228,12 +252,14 @@ pub struct MutableRevokeAccessNodeParams {
 }
 
 impl MutableRevokeAccessNodeParams {
-    pub fn access_node_info_certificate(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_CERTIFICATE))
+    // certificate of the node to be removed
+    pub fn certificate(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(PARAM_CERTIFICATE))
     }
 
-    pub fn access_node_info_pub_key(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_PUB_KEY))
+    // public key of the node to be removed
+    pub fn pub_key(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(PARAM_PUB_KEY))
     }
 }
 
@@ -249,8 +275,9 @@ impl ImmutableRotateStateControllerParams {
         }
     }
 
-    pub fn state_controller_address(&self) -> ScImmutableAddress {
-        ScImmutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
+    // state controller address
+    pub fn address(&self) -> ScImmutableAddress {
+        ScImmutableAddress::new(self.proxy.root(PARAM_ADDRESS))
     }
 }
 
@@ -260,8 +287,69 @@ pub struct MutableRotateStateControllerParams {
 }
 
 impl MutableRotateStateControllerParams {
-    pub fn state_controller_address(&self) -> ScMutableAddress {
-        ScMutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
+    // state controller address
+    pub fn address(&self) -> ScMutableAddress {
+        ScMutableAddress::new(self.proxy.root(PARAM_ADDRESS))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableSetCustomMetadataParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl ImmutableSetCustomMetadataParams {
+    pub fn new() -> ImmutableSetCustomMetadataParams {
+        ImmutableSetCustomMetadataParams {
+            proxy: params_proxy(),
+        }
+    }
+
+    // serialized chain metadata
+    pub fn metadata(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(PARAM_METADATA))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableSetCustomMetadataParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl MutableSetCustomMetadataParams {
+    // serialized chain metadata
+    pub fn metadata(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(PARAM_METADATA))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableSetEVMGasRatioParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl ImmutableSetEVMGasRatioParams {
+    pub fn new() -> ImmutableSetEVMGasRatioParams {
+        ImmutableSetEVMGasRatioParams {
+            proxy: params_proxy(),
+        }
+    }
+
+    // serialized gas ratio
+    pub fn gas_ratio(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(PARAM_GAS_RATIO))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableSetEVMGasRatioParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl MutableSetEVMGasRatioParams {
+    // serialized gas ratio
+    pub fn gas_ratio(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(PARAM_GAS_RATIO))
     }
 }
 
@@ -277,8 +365,9 @@ impl ImmutableSetFeePolicyParams {
         }
     }
 
-    pub fn fee_policy_bytes(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.proxy.root(PARAM_FEE_POLICY_BYTES))
+    // serialized fee policy
+    pub fn fee_policy(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(PARAM_FEE_POLICY))
     }
 }
 
@@ -288,7 +377,38 @@ pub struct MutableSetFeePolicyParams {
 }
 
 impl MutableSetFeePolicyParams {
-    pub fn fee_policy_bytes(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.proxy.root(PARAM_FEE_POLICY_BYTES))
+    // serialized fee policy
+    pub fn fee_policy(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(PARAM_FEE_POLICY))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableSetGasLimitsParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl ImmutableSetGasLimitsParams {
+    pub fn new() -> ImmutableSetGasLimitsParams {
+        ImmutableSetGasLimitsParams {
+            proxy: params_proxy(),
+        }
+    }
+
+    // serialized gas limits
+    pub fn gas_limits(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(PARAM_GAS_LIMITS))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableSetGasLimitsParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl MutableSetGasLimitsParams {
+    // serialized gas limits
+    pub fn gas_limits(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(PARAM_GAS_LIMITS))
     }
 }

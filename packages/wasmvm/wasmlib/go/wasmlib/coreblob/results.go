@@ -16,7 +16,7 @@ type ImmutableStoreBlobResults struct {
 	Proxy wasmtypes.Proxy
 }
 
-// calculated hash of blob set
+// calculated hash of blob chunks
 func (s ImmutableStoreBlobResults) Hash() wasmtypes.ScImmutableHash {
 	return wasmtypes.NewScImmutableHash(s.Proxy.Root(ResultHash))
 }
@@ -29,7 +29,7 @@ func NewMutableStoreBlobResults() MutableStoreBlobResults {
 	return MutableStoreBlobResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
-// calculated hash of blob set
+// calculated hash of blob chunks
 func (s MutableStoreBlobResults) Hash() wasmtypes.ScMutableHash {
 	return wasmtypes.NewScMutableHash(s.Proxy.Root(ResultHash))
 }
@@ -38,7 +38,7 @@ type ImmutableGetBlobFieldResults struct {
 	Proxy wasmtypes.Proxy
 }
 
-// blob data
+// data for named chunk
 func (s ImmutableGetBlobFieldResults) Bytes() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultBytes))
 }
@@ -51,7 +51,7 @@ func NewMutableGetBlobFieldResults() MutableGetBlobFieldResults {
 	return MutableGetBlobFieldResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
-// blob data
+// data for named chunk
 func (s MutableGetBlobFieldResults) Bytes() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultBytes))
 }
@@ -68,7 +68,7 @@ type ImmutableGetBlobInfoResults struct {
 	Proxy wasmtypes.Proxy
 }
 
-// size for each named blob
+// sizes for each named chunk
 func (s ImmutableGetBlobInfoResults) BlobSizes() MapStringToImmutableInt32 {
 	return MapStringToImmutableInt32(s)
 }
@@ -93,7 +93,7 @@ func NewMutableGetBlobInfoResults() MutableGetBlobInfoResults {
 	return MutableGetBlobInfoResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
-// size for each named blob
+// sizes for each named chunk
 func (s MutableGetBlobInfoResults) BlobSizes() MapStringToMutableInt32 {
 	return MapStringToMutableInt32(s)
 }
@@ -110,7 +110,7 @@ type ImmutableListBlobsResults struct {
 	Proxy wasmtypes.Proxy
 }
 
-// total size for each blob set
+// sizes for each blob hash
 func (s ImmutableListBlobsResults) BlobSizes() MapHashToImmutableInt32 {
 	return MapHashToImmutableInt32(s)
 }
@@ -135,7 +135,7 @@ func NewMutableListBlobsResults() MutableListBlobsResults {
 	return MutableListBlobsResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
-// total size for each blob set
+// sizes for each blob hash
 func (s MutableListBlobsResults) BlobSizes() MapHashToMutableInt32 {
 	return MapHashToMutableInt32(s)
 }

@@ -83,7 +83,7 @@ func runTask(task *vm.VMTask) {
 	if rotationAddr == nil {
 		// rotation does not happen
 		task.ResultTransactionEssence, task.ResultInputsCommitment = vmctx.BuildTransactionEssence(l1Commitment, true)
-		task.Log.Debugf("runTask OUT. block index: %d, %s", blockIndex, l1Commitment.String())
+		task.Log.Debugf("runTask OUT. block index: %d", blockIndex)
 	} else {
 		// rotation happens
 		task.RotationAddress = rotationAddr

@@ -31,6 +31,15 @@ jobs:
           path: temp.tar
           retention-days: 1
 
+      - name: Set up Node
+        uses: actions/setup-node@v2.4.0
+        with:
+           node-version: '14'
+
+      - name: Install dependencies
+        run: npm install @slack/webhook
+
+
   binaries:
     needs: setup
     name: Release wasp-cli Binaries
@@ -112,3 +121,14 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/core/app.Version=${{ steps.tagger.outputs.tag }}
+
+  notify-slack:
+    needs: [release-docker]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack Notification
+        uses: [at-actions/slack-action@v3]
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          text: '@here New Release build complete!'
+

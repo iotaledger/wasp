@@ -263,29 +263,29 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 
 		messagesL1: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "iota_wasp",
-			Subsystem: "l1",
+			Subsystem: "messages",
 			Name:      "messages_total",
 			Help:      "Number of messages sent/received by L1 connection",
 		}, []string{labelNameMessageType}),
 
 		lastL1MessageTime: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "iota_wasp",
-			Subsystem: "l1",
+			Subsystem: "messages",
 			Name:      "last_message_time",
 			Help:      "Last time when a message was sent/received by L1 connection",
 		}, []string{labelNameMessageType}),
 
 		messagesL1Chain: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "iota_wasp",
-			Subsystem: "l1",
-			Name:      "messages_total",
+			Subsystem: "messages",
+			Name:      "chain_messages_total",
 			Help:      "Number of messages sent/received by L1 connection of the chain",
 		}, []string{labelNameChain, labelNameMessageType}),
 
 		lastL1MessageTimeChain: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "iota_wasp",
-			Subsystem: "l1",
-			Name:      "last_message_time",
+			Subsystem: "messages",
+			Name:      "chain_last_message_time",
 			Help:      "Last time when a message was sent/received by L1 connection of the chain",
 		}, []string{labelNameChain, labelNameMessageType}),
 

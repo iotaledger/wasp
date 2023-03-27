@@ -125,7 +125,7 @@ func TestGetRequestReceipt(t *testing.T) {
 	assert.Equal(t, blockIndex, f.Results.BlockIndex().Value())
 	assert.Equal(t, reqIndex, f.Results.RequestIndex().Value())
 
-	receipt, err := blocklog.RequestReceiptFromBytes(f.Results.RequestRecord().Value())
+	receipt, err := blocklog.RequestReceiptFromBytes(f.Results.RequestReceipt().Value())
 	require.NoError(t, err)
 	soloreceipt, err := ctx.Chain.GetRequestReceipt(reqs[0])
 	assert.Nil(t, err)
@@ -148,9 +148,10 @@ func TestGetRequestReceiptsForBlock(t *testing.T) {
 		require.NoError(t, ctx.Err)
 
 		soloreceipts := ctx.Chain.GetRequestReceiptsForBlock(i)
-		recNum := f.Results.RequestRecord().Length()
+		receipts := f.Results.RequestReceipts()
+		recNum := receipts.Length()
 		for j := uint32(0); j < recNum; j++ {
-			receipt, err := blocklog.RequestReceiptFromBytes(f.Results.RequestRecord().GetBytes(j).Value())
+			receipt, err := blocklog.RequestReceiptFromBytes(receipts.GetBytes(j).Value())
 			require.NoError(t, err)
 			receipt.BlockIndex = soloreceipts[j].BlockIndex
 			assert.Equal(t, soloreceipts[j], receipt)

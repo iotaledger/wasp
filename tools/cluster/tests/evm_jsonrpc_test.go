@@ -35,7 +35,7 @@ type clusterTestEnv struct {
 func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestEnv {
 	evmtest.InitGoEthLogger(t)
 
-	evmJSONRPCPath := fmt.Sprintf("/chains/%v/evm", env.Chain.ChainID.String())
+	evmJSONRPCPath := fmt.Sprintf("/v1/chains/%v/evm", env.Chain.ChainID.String())
 	jsonRPCEndpoint := env.Clu.Config.APIHost(nodeIndex) + evmJSONRPCPath
 	rawClient, err := rpc.DialHTTP(jsonRPCEndpoint)
 	require.NoError(t, err)

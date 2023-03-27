@@ -52,7 +52,7 @@ func NewWasmClientService(waspAPI string) *WasmClientService {
 	return &WasmClientService{
 		nonces:     make(map[string]uint64),
 		waspClient: client,
-		webSocket:  strings.Replace(waspAPI, "http:", "ws:", 1) + "/ws",
+		webSocket:  strings.Replace(waspAPI, "http:", "ws:", 1) + "/v1/ws",
 	}
 }
 
@@ -85,7 +85,7 @@ func (svc *WasmClientService) CurrentChainID() wasmtypes.ScChainID {
 }
 
 func (svc *WasmClientService) IsHealthy() bool {
-	_, err := svc.waspClient.NodeApi.
+	_, err := svc.waspClient.DefaultApi.
 		GetHealth(context.Background()).Execute()
 	return err == nil
 }

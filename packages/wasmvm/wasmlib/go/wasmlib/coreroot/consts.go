@@ -16,13 +16,12 @@ const (
 )
 
 const (
-	ParamCloseFunc                = "bcc"
 	ParamDeployer                 = "dp"
 	ParamDeployPermissionsEnabled = "de"
 	ParamDescription              = "ds"
 	ParamHname                    = "hn"
+	ParamInitParams               = "this"
 	ParamName                     = "nm"
-	ParamOpenFunc                 = "bco"
 	ParamProgramHash              = "ph"
 )
 
@@ -37,7 +36,6 @@ const (
 	FuncGrantDeployPermission    = "grantDeployPermission"
 	FuncRequireDeployPermissions = "requireDeployPermissions"
 	FuncRevokeDeployPermission   = "revokeDeployPermission"
-	FuncSubscribeBlockContext    = "subscribeBlockContext"
 	ViewFindContract             = "findContract"
 	ViewGetContractRecords       = "getContractRecords"
 )
@@ -47,7 +45,6 @@ const (
 	HFuncGrantDeployPermission    = wasmtypes.ScHname(0xf440263a)
 	HFuncRequireDeployPermissions = wasmtypes.ScHname(0xefff8d83)
 	HFuncRevokeDeployPermission   = wasmtypes.ScHname(0x850744f1)
-	HFuncSubscribeBlockContext    = wasmtypes.ScHname(0xf2f8a06d)
 	HViewFindContract             = wasmtypes.ScHname(0xc145ca00)
 	HViewGetContractRecords       = wasmtypes.ScHname(0x078b3ef3)
 )

@@ -16,6 +16,7 @@ type ImmutableFoundryCreateNewResults struct {
 	Proxy wasmtypes.Proxy
 }
 
+// serial number of the newly created foundry
 func (s ImmutableFoundryCreateNewResults) FoundrySN() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ResultFoundrySN))
 }
@@ -28,8 +29,95 @@ func NewMutableFoundryCreateNewResults() MutableFoundryCreateNewResults {
 	return MutableFoundryCreateNewResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
+// serial number of the newly created foundry
 func (s MutableFoundryCreateNewResults) FoundrySN() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ResultFoundrySN))
+}
+
+type MapUint32ToImmutableBytes struct {
+	Proxy wasmtypes.Proxy
+}
+
+func (m MapUint32ToImmutableBytes) GetBytes(key uint32) wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(m.Proxy.Key(wasmtypes.Uint32ToBytes(key)))
+}
+
+type ImmutableAccountFoundriesResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+// foundry serial numbers owned by the given account
+func (s ImmutableAccountFoundriesResults) Foundries() MapUint32ToImmutableBytes {
+	return MapUint32ToImmutableBytes(s)
+}
+
+type MapUint32ToMutableBytes struct {
+	Proxy wasmtypes.Proxy
+}
+
+func (m MapUint32ToMutableBytes) Clear() {
+	m.Proxy.ClearMap()
+}
+
+func (m MapUint32ToMutableBytes) GetBytes(key uint32) wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(m.Proxy.Key(wasmtypes.Uint32ToBytes(key)))
+}
+
+type MutableAccountFoundriesResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewMutableAccountFoundriesResults() MutableAccountFoundriesResults {
+	return MutableAccountFoundriesResults{Proxy: wasmlib.NewResultsProxy()}
+}
+
+// foundry serial numbers owned by the given account
+func (s MutableAccountFoundriesResults) Foundries() MapUint32ToMutableBytes {
+	return MapUint32ToMutableBytes(s)
+}
+
+type ImmutableAccountNFTAmountResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+// amount of NFTs owned by the account
+func (s ImmutableAccountNFTAmountResults) Amount() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ResultAmount))
+}
+
+type MutableAccountNFTAmountResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewMutableAccountNFTAmountResults() MutableAccountNFTAmountResults {
+	return MutableAccountNFTAmountResults{Proxy: wasmlib.NewResultsProxy()}
+}
+
+// amount of NFTs owned by the account
+func (s MutableAccountNFTAmountResults) Amount() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ResultAmount))
+}
+
+type ImmutableAccountNFTAmountInCollectionResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+// amount of NFTs in collection owned by the account
+func (s ImmutableAccountNFTAmountInCollectionResults) Amount() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ResultAmount))
+}
+
+type MutableAccountNFTAmountInCollectionResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewMutableAccountNFTAmountInCollectionResults() MutableAccountNFTAmountInCollectionResults {
+	return MutableAccountNFTAmountInCollectionResults{Proxy: wasmlib.NewResultsProxy()}
+}
+
+// amount of NFTs in collection owned by the account
+func (s MutableAccountNFTAmountInCollectionResults) Amount() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ResultAmount))
 }
 
 type ArrayOfImmutableNftID struct {
@@ -48,6 +136,7 @@ type ImmutableAccountNFTsResults struct {
 	Proxy wasmtypes.Proxy
 }
 
+// NFT IDs owned by the account
 func (s ImmutableAccountNFTsResults) NftIDs() ArrayOfImmutableNftID {
 	return ArrayOfImmutableNftID{Proxy: s.Proxy.Root(ResultNftIDs)}
 }
@@ -80,7 +169,30 @@ func NewMutableAccountNFTsResults() MutableAccountNFTsResults {
 	return MutableAccountNFTsResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
+// NFT IDs owned by the account
 func (s MutableAccountNFTsResults) NftIDs() ArrayOfMutableNftID {
+	return ArrayOfMutableNftID{Proxy: s.Proxy.Root(ResultNftIDs)}
+}
+
+type ImmutableAccountNFTsInCollectionResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+// NFT IDs in collection owned by the account
+func (s ImmutableAccountNFTsInCollectionResults) NftIDs() ArrayOfImmutableNftID {
+	return ArrayOfImmutableNftID{Proxy: s.Proxy.Root(ResultNftIDs)}
+}
+
+type MutableAccountNFTsInCollectionResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewMutableAccountNFTsInCollectionResults() MutableAccountNFTsInCollectionResults {
+	return MutableAccountNFTsInCollectionResults{Proxy: wasmlib.NewResultsProxy()}
+}
+
+// NFT IDs in collection owned by the account
+func (s MutableAccountNFTsInCollectionResults) NftIDs() ArrayOfMutableNftID {
 	return ArrayOfMutableNftID{Proxy: s.Proxy.Root(ResultNftIDs)}
 }
 
@@ -96,6 +208,7 @@ type ImmutableAccountsResults struct {
 	Proxy wasmtypes.Proxy
 }
 
+// agent IDs
 func (s ImmutableAccountsResults) AllAccounts() MapAgentIDToImmutableBytes {
 	return MapAgentIDToImmutableBytes(s)
 }
@@ -120,6 +233,7 @@ func NewMutableAccountsResults() MutableAccountsResults {
 	return MutableAccountsResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
+// agent IDs
 func (s MutableAccountsResults) AllAccounts() MapAgentIDToMutableBytes {
 	return MapAgentIDToMutableBytes(s)
 }
@@ -136,6 +250,7 @@ type ImmutableBalanceResults struct {
 	Proxy wasmtypes.Proxy
 }
 
+// balance per token ID, zero length indicates base token
 func (s ImmutableBalanceResults) Balances() MapTokenIDToImmutableBigInt {
 	return MapTokenIDToImmutableBigInt(s)
 }
@@ -160,6 +275,7 @@ func NewMutableBalanceResults() MutableBalanceResults {
 	return MutableBalanceResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
+// balance per token ID, zero length indicates base token
 func (s MutableBalanceResults) Balances() MapTokenIDToMutableBigInt {
 	return MapTokenIDToMutableBigInt(s)
 }
@@ -168,6 +284,7 @@ type ImmutableBalanceBaseTokenResults struct {
 	Proxy wasmtypes.Proxy
 }
 
+// amount of base tokens in the account
 func (s ImmutableBalanceBaseTokenResults) Balance() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.Proxy.Root(ResultBalance))
 }
@@ -180,6 +297,7 @@ func NewMutableBalanceBaseTokenResults() MutableBalanceBaseTokenResults {
 	return MutableBalanceBaseTokenResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
+// amount of base tokens in the account
 func (s MutableBalanceBaseTokenResults) Balance() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.Proxy.Root(ResultBalance))
 }
@@ -188,6 +306,7 @@ type ImmutableBalanceNativeTokenResults struct {
 	Proxy wasmtypes.Proxy
 }
 
+// amount of native tokens in the account
 func (s ImmutableBalanceNativeTokenResults) Tokens() wasmtypes.ScImmutableBigInt {
 	return wasmtypes.NewScImmutableBigInt(s.Proxy.Root(ResultTokens))
 }
@@ -200,6 +319,7 @@ func NewMutableBalanceNativeTokenResults() MutableBalanceNativeTokenResults {
 	return MutableBalanceNativeTokenResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
+// amount of native tokens in the account
 func (s MutableBalanceNativeTokenResults) Tokens() wasmtypes.ScMutableBigInt {
 	return wasmtypes.NewScMutableBigInt(s.Proxy.Root(ResultTokens))
 }
@@ -208,6 +328,7 @@ type ImmutableFoundryOutputResults struct {
 	Proxy wasmtypes.Proxy
 }
 
+// serialized foundry output
 func (s ImmutableFoundryOutputResults) FoundryOutputBin() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultFoundryOutputBin))
 }
@@ -220,6 +341,7 @@ func NewMutableFoundryOutputResults() MutableFoundryOutputResults {
 	return MutableFoundryOutputResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
+// serialized foundry output
 func (s MutableFoundryOutputResults) FoundryOutputBin() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultFoundryOutputBin))
 }
@@ -228,6 +350,7 @@ type ImmutableGetAccountNonceResults struct {
 	Proxy wasmtypes.Proxy
 }
 
+// account nonce
 func (s ImmutableGetAccountNonceResults) AccountNonce() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.Proxy.Root(ResultAccountNonce))
 }
@@ -240,6 +363,7 @@ func NewMutableGetAccountNonceResults() MutableGetAccountNonceResults {
 	return MutableGetAccountNonceResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
+// account nonce
 func (s MutableGetAccountNonceResults) AccountNonce() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.Proxy.Root(ResultAccountNonce))
 }
@@ -256,6 +380,7 @@ type ImmutableGetNativeTokenIDRegistryResults struct {
 	Proxy wasmtypes.Proxy
 }
 
+// token IDs
 func (s ImmutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToImmutableBytes {
 	return MapTokenIDToImmutableBytes(s)
 }
@@ -280,6 +405,7 @@ func NewMutableGetNativeTokenIDRegistryResults() MutableGetNativeTokenIDRegistry
 	return MutableGetNativeTokenIDRegistryResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
+// token IDs
 func (s MutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToMutableBytes {
 	return MapTokenIDToMutableBytes(s)
 }
@@ -288,6 +414,7 @@ type ImmutableNftDataResults struct {
 	Proxy wasmtypes.Proxy
 }
 
+// serialized NFT data
 func (s ImmutableNftDataResults) NftData() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultNftData))
 }
@@ -300,6 +427,7 @@ func NewMutableNftDataResults() MutableNftDataResults {
 	return MutableNftDataResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
+// serialized NFT data
 func (s MutableNftDataResults) NftData() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultNftData))
 }
@@ -308,6 +436,7 @@ type ImmutableTotalAssetsResults struct {
 	Proxy wasmtypes.Proxy
 }
 
+// balance per token ID, zero length indicates base token
 func (s ImmutableTotalAssetsResults) Assets() MapTokenIDToImmutableBigInt {
 	return MapTokenIDToImmutableBigInt(s)
 }
@@ -320,6 +449,7 @@ func NewMutableTotalAssetsResults() MutableTotalAssetsResults {
 	return MutableTotalAssetsResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
+// balance per token ID, zero length indicates base token
 func (s MutableTotalAssetsResults) Assets() MapTokenIDToMutableBigInt {
 	return MapTokenIDToMutableBigInt(s)
 }

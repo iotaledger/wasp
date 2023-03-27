@@ -47,6 +47,7 @@ func (bi *BlockInfo) PreviousL1Commitment() *state.L1Commitment {
 
 func (bi *BlockInfo) String() string {
 	ret := fmt.Sprintf("Block index: %d\n", bi.BlockIndex())
+	ret += fmt.Sprintf("SchemaVersion: %d\n", bi.SchemaVersion)
 	ret += fmt.Sprintf("Timestamp: %d\n", bi.Timestamp.Unix())
 	ret += fmt.Sprintf("Total requests: %d\n", bi.TotalRequests)
 	ret += fmt.Sprintf("off-ledger requests: %d\n", bi.NumOffLedgerRequests)

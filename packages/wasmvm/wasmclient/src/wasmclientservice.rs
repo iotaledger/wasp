@@ -55,7 +55,7 @@ impl WasmClientService {
         function_hname: &ScHname,
         args: &[u8],
     ) -> Result<Vec<u8>> {
-        let url = self.wasp_api.clone() + "/requests/callview";
+        let url = self.wasp_api.clone() + "/v1/requests/callview";
         let client = blocking::Client::builder()
             .timeout(READ_TIMEOUT)
             .build()
@@ -121,7 +121,7 @@ impl WasmClientService {
         req.with_allowance(&allowance);
         let signed = req.sign(key_pair);
 
-        let url = self.wasp_api.clone() + "/requests/offledger";
+        let url = self.wasp_api.clone() + "/v1/requests/offledger";
         let client = blocking::Client::new();
         let body = APIOffLedgerRequest {
             chain_id: chain_id.to_string(),
@@ -149,7 +149,7 @@ impl WasmClientService {
     }
 
     pub fn set_default_chain_id(&mut self) -> Result<()> {
-        let url = format!("{}/chains", self.wasp_api);
+        let url = format!("{}/v1/chains", self.wasp_api);
         let client = blocking::Client::builder()
             .build()
             .unwrap();
@@ -188,7 +188,7 @@ impl WasmClientService {
             }
         }
 
-        let socket_url = self.wasp_api.replace("http:", "ws:") + "/ws";
+        let socket_url = self.wasp_api.replace("http:", "ws:") + "/v1/ws";
         let close_rx = self.close_rx.clone();
         let event_handlers = self.event_handlers.clone();
         let handle = WasmClientEvents::start_event_loop(socket_url, close_rx, event_handlers);
@@ -216,7 +216,7 @@ impl WasmClientService {
         timeout: Duration,
     ) -> Result<()> {
         let url = format!(
-            "{}/chains/{}/requests/{}/wait",
+            "{}/v1/chains/{}/requests/{}/wait",
             self.wasp_api,
             self.chain_id.to_string(),
             req_id.to_string()

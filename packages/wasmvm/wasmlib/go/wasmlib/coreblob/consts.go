@@ -16,12 +16,13 @@ const (
 )
 
 const (
-	ParamBlobs       = "this"
-	ParamDescription = "d"
-	ParamField       = "field"
-	ParamHash        = "hash"
-	ParamProgBinary  = "p"
-	ParamVMType      = "v"
+	ParamBlobs      = "this"
+	ParamDataSchema = "d"
+	ParamField      = "field"
+	ParamHash       = "hash"
+	ParamProgBinary = "p"
+	ParamSources    = "s"
+	ParamVMType     = "v"
 )
 
 const (

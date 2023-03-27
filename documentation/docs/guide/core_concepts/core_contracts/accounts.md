@@ -57,8 +57,6 @@ Moves the specified allowance from the sender's L2 account to the given L2 accou
 #### Parameters
 
 - `a` (`AgentID`): The target L2 account.
-- `c` (optional `bool` - default: `false`): If the target Agent ID doesn't have funds on the chain, `c = true` specifies
-  that the account should be created. Otherwise, the call fails.
 
 ### `harvest(f ForceMinimumBaseTokens)`
 
@@ -202,8 +200,48 @@ Returns the NFT IDs for all NFTs owned by the given account.
 #### Returns
 
 - `i` ([`Array16`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/array16.go)
-  of [`iotago::NFTID`](https://github.com/iotaledger/iota.go/blob/develop/output_nft.go)): The NFT IDs owned by the
-  account
+  of [`iotago::NFTID`](https://github.com/iotaledger/iota.go/blob/develop/output_nft.go)):
+  The NFT IDs owned by the account
+
+### `accountNFTAmount(a AgentID)`
+
+Returns the number of NFTs owned by the given account.
+
+#### Parameters
+
+- `a` (`AgentID`): The account Agent ID
+
+#### Returns
+
+- `A` (`uint32`) Amount of NFTs owned by the account
+
+### `accountNFTsInCollection(a AgentID)`
+
+Returns the NFT IDs for all NFTs in the given collection that are owned by the given account.
+
+#### Parameters
+
+- `a` (`AgentID`): The account Agent ID
+- `C` (`NFTID`): The NFT ID of the collection
+
+#### Returns
+
+- `i` ([`Array16`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/array16.go)
+  of [`iotago::NFTID`](https://github.com/iotaledger/iota.go/blob/develop/output_nft.go)):
+  The NFT IDs in the collection owned by the account
+
+### `accountNFTAmountInCollection(a AgentID)`
+
+Returns the number of NFTs in the given collection that are owned by the given account.
+
+#### Parameters
+
+- `a` (`AgentID`): The account Agent ID
+- `C` (`NFTID`): The NFT ID of the collection
+
+#### Returns
+
+- `A` (`uint32`) Amount of NFTs in the collection owned by the account
 
 ### `accountFoundries(a AgentID)`
 

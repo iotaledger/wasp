@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
@@ -60,6 +61,28 @@ func TestStorageContract(t *testing.T) {
 
 	// call `retrieve` view, get 43
 	require.EqualValues(t, 43, storage.retrieve())
+
+	blockNumber := rpc.BlockNumber(env.getBlockNumber())
+
+	// try the view call explicitly passing the EVM block
+	{
+		for _, v := range []uint32{44, 45, 46} {
+			_, err = storage.store(v)
+			require.NoError(t, err)
+		}
+		for _, i := range []uint32{0, 1, 2, 3} {
+			var v uint32
+			bn := blockNumber + rpc.BlockNumber(i)
+			require.NoError(t, storage.callView("retrieve", nil, &v, rpc.BlockNumberOrHashWithNumber(bn)))
+			require.EqualValuesf(t, 43+i, v, "blockNumber %d should have counter=%d, got=%d", bn, 43+i, v)
+		}
+	}
+	// same but with blockNumber = -1 (latest block)
+	{
+		var v uint32
+		require.NoError(t, storage.callView("retrieve", nil, &v, rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)))
+		require.EqualValues(t, 46, v)
+	}
 }
 
 func TestERC20Contract(t *testing.T) {
@@ -1736,4 +1759,18 @@ func TestGasPriceIgnored(t *testing.T) {
 	t.Log("gas used", gasUsed)
 	require.Len(t, lo.Uniq(gasLimit), 1)
 	require.Len(t, lo.Uniq(gasUsed), 1)
+}
+
+// calling views via eth_call must not cost gas (still has a maximum budget, but simple view calls should pass)
+func TestEVMCallViewGas(t *testing.T) {
+	env := initEVM(t)
+
+	// issue a view call from an account with no funds
+	ethKey, _ := solo.NewEthereumAccount()
+
+	var ret struct {
+		iscmagic.ISCAgentID
+	}
+	err := env.ISCMagicSandbox(ethKey).callView("getChainOwnerID", nil, &ret)
+	require.NoError(t, err)
 }

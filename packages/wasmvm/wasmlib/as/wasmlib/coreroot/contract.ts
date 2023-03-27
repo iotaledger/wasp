@@ -44,15 +44,6 @@ export class RevokeDeployPermissionCall {
     }
 }
 
-export class SubscribeBlockContextCall {
-    func:   wasmlib.ScFunc;
-    params: sc.MutableSubscribeBlockContextParams = new sc.MutableSubscribeBlockContextParams(wasmlib.ScView.nilProxy);
-
-    public constructor(ctx: wasmlib.ScFuncCallContext) {
-        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSubscribeBlockContext);
-    }
-}
-
 export class FindContractCall {
     func:    wasmlib.ScView;
     params:  sc.MutableFindContractParams = new sc.MutableFindContractParams(wasmlib.ScView.nilProxy);
@@ -73,36 +64,35 @@ export class GetContractRecordsCall {
 }
 
 export class ScFuncs {
+    // Deploys a non-EVM smart contract on the chain if the caller has deployment permission.
     static deployContract(ctx: wasmlib.ScFuncCallContext): DeployContractCall {
         const f = new DeployContractCall(ctx);
         f.params = new sc.MutableDeployContractParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
+    // Grants deploy permission to an agent.
     static grantDeployPermission(ctx: wasmlib.ScFuncCallContext): GrantDeployPermissionCall {
         const f = new GrantDeployPermissionCall(ctx);
         f.params = new sc.MutableGrantDeployPermissionParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
+    // Enable or disable deploy permission check
     static requireDeployPermissions(ctx: wasmlib.ScFuncCallContext): RequireDeployPermissionsCall {
         const f = new RequireDeployPermissionsCall(ctx);
         f.params = new sc.MutableRequireDeployPermissionsParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
+    // Revokes deploy permission for an agent.
     static revokeDeployPermission(ctx: wasmlib.ScFuncCallContext): RevokeDeployPermissionCall {
         const f = new RevokeDeployPermissionCall(ctx);
         f.params = new sc.MutableRevokeDeployPermissionParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    static subscribeBlockContext(ctx: wasmlib.ScFuncCallContext): SubscribeBlockContextCall {
-        const f = new SubscribeBlockContextCall(ctx);
-        f.params = new sc.MutableSubscribeBlockContextParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
-
+    // Returns the record for a given smart contract
     static findContract(ctx: wasmlib.ScViewCallContext): FindContractCall {
         const f = new FindContractCall(ctx);
         f.params = new sc.MutableFindContractParams(wasmlib.newCallParamsProxy(f.func));
@@ -110,6 +100,7 @@ export class ScFuncs {
         return f;
     }
 
+    // Returns the list of all smart contracts deployed on the chain and their records.
     static getContractRecords(ctx: wasmlib.ScViewCallContext): GetContractRecordsCall {
         const f = new GetContractRecordsCall(ctx);
         f.results = new sc.ImmutableGetContractRecordsResults(wasmlib.newCallResultsProxy(f.func));

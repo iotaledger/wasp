@@ -17,6 +17,7 @@ pub struct ImmutableFoundryCreateNewResults {
 }
 
 impl ImmutableFoundryCreateNewResults {
+    // serial number of the newly created foundry
     pub fn foundry_sn(&self) -> ScImmutableUint32 {
         ScImmutableUint32::new(self.proxy.root(RESULT_FOUNDRY_SN))
     }
@@ -34,8 +35,125 @@ impl MutableFoundryCreateNewResults {
         }
     }
 
+    // serial number of the newly created foundry
     pub fn foundry_sn(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(RESULT_FOUNDRY_SN))
+    }
+}
+
+#[derive(Clone)]
+pub struct MapUint32ToImmutableBytes {
+    pub(crate) proxy: Proxy,
+}
+
+impl MapUint32ToImmutableBytes {
+    pub fn get_bytes(&self, key: u32) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.key(&uint32_to_bytes(key)))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableAccountFoundriesResults {
+    pub proxy: Proxy,
+}
+
+impl ImmutableAccountFoundriesResults {
+    // foundry serial numbers owned by the given account
+    pub fn foundries(&self) -> MapUint32ToImmutableBytes {
+        MapUint32ToImmutableBytes { proxy: self.proxy.clone() }
+    }
+}
+
+#[derive(Clone)]
+pub struct MapUint32ToMutableBytes {
+    pub(crate) proxy: Proxy,
+}
+
+impl MapUint32ToMutableBytes {
+    pub fn clear(&self) {
+        self.proxy.clear_map();
+    }
+
+    pub fn get_bytes(&self, key: u32) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.key(&uint32_to_bytes(key)))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableAccountFoundriesResults {
+    pub proxy: Proxy,
+}
+
+impl MutableAccountFoundriesResults {
+    pub fn new() -> MutableAccountFoundriesResults {
+        MutableAccountFoundriesResults {
+            proxy: results_proxy(),
+        }
+    }
+
+    // foundry serial numbers owned by the given account
+    pub fn foundries(&self) -> MapUint32ToMutableBytes {
+        MapUint32ToMutableBytes { proxy: self.proxy.clone() }
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableAccountNFTAmountResults {
+    pub proxy: Proxy,
+}
+
+impl ImmutableAccountNFTAmountResults {
+    // amount of NFTs owned by the account
+    pub fn amount(&self) -> ScImmutableUint32 {
+        ScImmutableUint32::new(self.proxy.root(RESULT_AMOUNT))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableAccountNFTAmountResults {
+    pub proxy: Proxy,
+}
+
+impl MutableAccountNFTAmountResults {
+    pub fn new() -> MutableAccountNFTAmountResults {
+        MutableAccountNFTAmountResults {
+            proxy: results_proxy(),
+        }
+    }
+
+    // amount of NFTs owned by the account
+    pub fn amount(&self) -> ScMutableUint32 {
+        ScMutableUint32::new(self.proxy.root(RESULT_AMOUNT))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableAccountNFTAmountInCollectionResults {
+    pub proxy: Proxy,
+}
+
+impl ImmutableAccountNFTAmountInCollectionResults {
+    // amount of NFTs in collection owned by the account
+    pub fn amount(&self) -> ScImmutableUint32 {
+        ScImmutableUint32::new(self.proxy.root(RESULT_AMOUNT))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableAccountNFTAmountInCollectionResults {
+    pub proxy: Proxy,
+}
+
+impl MutableAccountNFTAmountInCollectionResults {
+    pub fn new() -> MutableAccountNFTAmountInCollectionResults {
+        MutableAccountNFTAmountInCollectionResults {
+            proxy: results_proxy(),
+        }
+    }
+
+    // amount of NFTs in collection owned by the account
+    pub fn amount(&self) -> ScMutableUint32 {
+        ScMutableUint32::new(self.proxy.root(RESULT_AMOUNT))
     }
 }
 
@@ -60,6 +178,7 @@ pub struct ImmutableAccountNFTsResults {
 }
 
 impl ImmutableAccountNFTsResults {
+    // NFT IDs owned by the account
     pub fn nft_i_ds(&self) -> ArrayOfImmutableNftID {
         ArrayOfImmutableNftID { proxy: self.proxy.root(RESULT_NFT_I_DS) }
     }
@@ -100,6 +219,37 @@ impl MutableAccountNFTsResults {
         }
     }
 
+    // NFT IDs owned by the account
+    pub fn nft_i_ds(&self) -> ArrayOfMutableNftID {
+        ArrayOfMutableNftID { proxy: self.proxy.root(RESULT_NFT_I_DS) }
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableAccountNFTsInCollectionResults {
+    pub proxy: Proxy,
+}
+
+impl ImmutableAccountNFTsInCollectionResults {
+    // NFT IDs in collection owned by the account
+    pub fn nft_i_ds(&self) -> ArrayOfImmutableNftID {
+        ArrayOfImmutableNftID { proxy: self.proxy.root(RESULT_NFT_I_DS) }
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableAccountNFTsInCollectionResults {
+    pub proxy: Proxy,
+}
+
+impl MutableAccountNFTsInCollectionResults {
+    pub fn new() -> MutableAccountNFTsInCollectionResults {
+        MutableAccountNFTsInCollectionResults {
+            proxy: results_proxy(),
+        }
+    }
+
+    // NFT IDs in collection owned by the account
     pub fn nft_i_ds(&self) -> ArrayOfMutableNftID {
         ArrayOfMutableNftID { proxy: self.proxy.root(RESULT_NFT_I_DS) }
     }
@@ -122,6 +272,7 @@ pub struct ImmutableAccountsResults {
 }
 
 impl ImmutableAccountsResults {
+    // agent IDs
     pub fn all_accounts(&self) -> MapAgentIDToImmutableBytes {
         MapAgentIDToImmutableBytes { proxy: self.proxy.clone() }
     }
@@ -154,6 +305,7 @@ impl MutableAccountsResults {
         }
     }
 
+    // agent IDs
     pub fn all_accounts(&self) -> MapAgentIDToMutableBytes {
         MapAgentIDToMutableBytes { proxy: self.proxy.clone() }
     }
@@ -176,6 +328,7 @@ pub struct ImmutableBalanceResults {
 }
 
 impl ImmutableBalanceResults {
+    // balance per token ID, zero length indicates base token
     pub fn balances(&self) -> MapTokenIDToImmutableBigInt {
         MapTokenIDToImmutableBigInt { proxy: self.proxy.clone() }
     }
@@ -208,6 +361,7 @@ impl MutableBalanceResults {
         }
     }
 
+    // balance per token ID, zero length indicates base token
     pub fn balances(&self) -> MapTokenIDToMutableBigInt {
         MapTokenIDToMutableBigInt { proxy: self.proxy.clone() }
     }
@@ -219,6 +373,7 @@ pub struct ImmutableBalanceBaseTokenResults {
 }
 
 impl ImmutableBalanceBaseTokenResults {
+    // amount of base tokens in the account
     pub fn balance(&self) -> ScImmutableUint64 {
         ScImmutableUint64::new(self.proxy.root(RESULT_BALANCE))
     }
@@ -236,6 +391,7 @@ impl MutableBalanceBaseTokenResults {
         }
     }
 
+    // amount of base tokens in the account
     pub fn balance(&self) -> ScMutableUint64 {
         ScMutableUint64::new(self.proxy.root(RESULT_BALANCE))
     }
@@ -247,6 +403,7 @@ pub struct ImmutableBalanceNativeTokenResults {
 }
 
 impl ImmutableBalanceNativeTokenResults {
+    // amount of native tokens in the account
     pub fn tokens(&self) -> ScImmutableBigInt {
         ScImmutableBigInt::new(self.proxy.root(RESULT_TOKENS))
     }
@@ -264,6 +421,7 @@ impl MutableBalanceNativeTokenResults {
         }
     }
 
+    // amount of native tokens in the account
     pub fn tokens(&self) -> ScMutableBigInt {
         ScMutableBigInt::new(self.proxy.root(RESULT_TOKENS))
     }
@@ -275,6 +433,7 @@ pub struct ImmutableFoundryOutputResults {
 }
 
 impl ImmutableFoundryOutputResults {
+    // serialized foundry output
     pub fn foundry_output_bin(&self) -> ScImmutableBytes {
         ScImmutableBytes::new(self.proxy.root(RESULT_FOUNDRY_OUTPUT_BIN))
     }
@@ -292,6 +451,7 @@ impl MutableFoundryOutputResults {
         }
     }
 
+    // serialized foundry output
     pub fn foundry_output_bin(&self) -> ScMutableBytes {
         ScMutableBytes::new(self.proxy.root(RESULT_FOUNDRY_OUTPUT_BIN))
     }
@@ -303,6 +463,7 @@ pub struct ImmutableGetAccountNonceResults {
 }
 
 impl ImmutableGetAccountNonceResults {
+    // account nonce
     pub fn account_nonce(&self) -> ScImmutableUint64 {
         ScImmutableUint64::new(self.proxy.root(RESULT_ACCOUNT_NONCE))
     }
@@ -320,6 +481,7 @@ impl MutableGetAccountNonceResults {
         }
     }
 
+    // account nonce
     pub fn account_nonce(&self) -> ScMutableUint64 {
         ScMutableUint64::new(self.proxy.root(RESULT_ACCOUNT_NONCE))
     }
@@ -342,6 +504,7 @@ pub struct ImmutableGetNativeTokenIDRegistryResults {
 }
 
 impl ImmutableGetNativeTokenIDRegistryResults {
+    // token IDs
     pub fn mapping(&self) -> MapTokenIDToImmutableBytes {
         MapTokenIDToImmutableBytes { proxy: self.proxy.clone() }
     }
@@ -374,6 +537,7 @@ impl MutableGetNativeTokenIDRegistryResults {
         }
     }
 
+    // token IDs
     pub fn mapping(&self) -> MapTokenIDToMutableBytes {
         MapTokenIDToMutableBytes { proxy: self.proxy.clone() }
     }
@@ -385,6 +549,7 @@ pub struct ImmutableNftDataResults {
 }
 
 impl ImmutableNftDataResults {
+    // serialized NFT data
     pub fn nft_data(&self) -> ScImmutableBytes {
         ScImmutableBytes::new(self.proxy.root(RESULT_NFT_DATA))
     }
@@ -402,6 +567,7 @@ impl MutableNftDataResults {
         }
     }
 
+    // serialized NFT data
     pub fn nft_data(&self) -> ScMutableBytes {
         ScMutableBytes::new(self.proxy.root(RESULT_NFT_DATA))
     }
@@ -413,6 +579,7 @@ pub struct ImmutableTotalAssetsResults {
 }
 
 impl ImmutableTotalAssetsResults {
+    // balance per token ID, zero length indicates base token
     pub fn assets(&self) -> MapTokenIDToImmutableBigInt {
         MapTokenIDToImmutableBigInt { proxy: self.proxy.clone() }
     }
@@ -430,6 +597,7 @@ impl MutableTotalAssetsResults {
         }
     }
 
+    // balance per token ID, zero length indicates base token
     pub fn assets(&self) -> MapTokenIDToMutableBigInt {
         MapTokenIDToMutableBigInt { proxy: self.proxy.clone() }
     }
