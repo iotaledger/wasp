@@ -54,11 +54,11 @@ func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, scName, funName
 }
 
 func (b *jsonRPCSoloBackend) ISCLatestAliasOutput() (*isc.AliasOutputWithID, error) {
-	aliasOutput, _ := b.Chain.LatestAliasOutput()
-	if aliasOutput == nil {
+	_, activeAliasOutput := b.Chain.LatestAliasOutput()
+	if activeAliasOutput == nil {
 		return nil, errors.New("could not get latest AliasOutput")
 	}
-	return aliasOutput, nil
+	return activeAliasOutput, nil
 }
 
 func (b *jsonRPCSoloBackend) ISCLatestState() state.State {

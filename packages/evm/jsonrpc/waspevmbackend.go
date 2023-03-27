@@ -134,11 +134,11 @@ func (b *WaspEVMBackend) BaseToken() *parameters.BaseToken {
 }
 
 func (b *WaspEVMBackend) ISCLatestAliasOutput() (*isc.AliasOutputWithID, error) {
-	aliasOutput, _ := b.chain.LatestAliasOutput()
-	if aliasOutput == nil {
+	_, activeAliasOutput := b.chain.LatestAliasOutput()
+	if activeAliasOutput == nil {
 		return nil, errors.New("could not get latest AliasOutput")
 	}
-	return aliasOutput, nil
+	return activeAliasOutput, nil
 }
 
 func (b *WaspEVMBackend) ISCLatestState() state.State {
