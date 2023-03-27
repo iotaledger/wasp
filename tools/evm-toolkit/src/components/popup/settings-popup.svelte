@@ -4,6 +4,7 @@
 
   import { Input, Select } from '$components';
 
+  import { InputType } from '$lib/common';
   import {
     networks,
     selectedNetwork,
@@ -15,7 +16,9 @@
 
   let previousSelectedNetworkId: number = $selectedNetworkId;
   let _selectedNetwork: INetwork;
-  // local copy to manage updates afterwards
+  // local copies to manage updates afterwards
+  let chainIdString: string = $selectedNetwork?.chainID.toString();
+
   $: $selectedNetworkId, (_selectedNetwork = $selectedNetwork);
   $: _selectedNetwork, handleNetworkChange();
   $: networkSelectorOptions = $networks?.map(({ text, id }) => ({
@@ -23,6 +26,9 @@
     id,
   }));
   $: disableNetworkEdit = $selectedNetwork?.id !== 1;
+  $: if (chainIdString && $selectedNetwork.chainID) {
+    _selectedNetwork.chainID = parseInt(chainIdString);
+  }
 
   onMount(() => {
     const unsubscribe = selectedNetworkId.subscribe(id => {
@@ -56,6 +62,14 @@
         id="faucetEndpoint"
         label="Faucet API endpoint"
         bind:value={_selectedNetwork.faucetEndpoint}
+        disabled={disableNetworkEdit}
+        stretch
+      />
+      <Input
+        id="chainId"
+        label="Chain ID"
+        type={InputType.Number}
+        bind:value={chainIdString}
         disabled={disableNetworkEdit}
         stretch
       />
