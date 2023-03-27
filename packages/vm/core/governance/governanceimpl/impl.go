@@ -28,6 +28,8 @@ var Processor = governance.Contract.Processor(nil,
 	governance.ViewGetFeePolicy.WithHandler(getFeePolicy),
 	governance.FuncSetEVMGasRatio.WithHandler(setEVMGasRatio),
 	governance.ViewGetEVMGasRatio.WithHandler(getEVMGasRatio),
+	governance.FuncSetGasLimits.WithHandler(setGasLimits),
+	governance.ViewGetGasLimits.WithHandler(getGasLimits),
 
 	// chain info
 	governance.ViewGetChainInfo.WithHandler(getChainInfo),
@@ -43,7 +45,7 @@ var Processor = governance.Contract.Processor(nil,
 	governance.FuncStopMaintenance.WithHandler(setMaintenanceOff),
 	governance.ViewGetMaintenanceStatus.WithHandler(getMaintenanceStatus),
 
-	// L1 meadata
+	// L1 metadata
 	governance.FuncSetCustomMetadata.WithHandler(setCustomMetadata),
 	governance.ViewGetCustomMetadata.WithHandler(getCustomMetadata),
 )
@@ -51,5 +53,6 @@ var Processor = governance.Contract.Processor(nil,
 func SetInitialState(state kv.KVStore, chainOwner isc.AgentID) {
 	state.Set(governance.VarChainOwnerID, chainOwner.Bytes())
 	state.Set(governance.VarGasFeePolicyBytes, gas.DefaultFeePolicy().Bytes())
+	state.Set(governance.VarGasLimitsBytes, gas.LimitsDefault.Bytes())
 	state.Set(governance.VarMaintenanceStatus, codec.Encode(false))
 }

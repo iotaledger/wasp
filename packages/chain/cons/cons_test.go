@@ -29,13 +29,12 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 // Here we run a single consensus instance, step by step with
@@ -164,7 +163,8 @@ func testConsBasic(t *testing.T, n, f int) {
 		nodeLog := log.Named(nid.ShortString())
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
-		chainStates[nid] = origin.InitChain(state.NewStore(mapdb.NewMapDB()),
+		chainStates[nid] = state.NewStore(mapdb.NewMapDB())
+		origin.InitChain(chainStates[nid],
 			dict.Dict{
 				origin.ParamChainOwner: isc.NewAgentID(originator.Address()).Bytes(),
 			},
@@ -208,7 +208,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedStateMgrStateProposal)
 		require.NotNil(t, out.NeedMempoolRequests)
 		require.NotNil(t, out.NeedStateMgrDecidedState)
-		l1Commitment, err := vmcontext.L1CommitmentFromAliasOutput(out.NeedStateMgrDecidedState.GetAliasOutput())
+		l1Commitment, err := transaction.L1CommitmentFromAliasOutput(out.NeedStateMgrDecidedState.GetAliasOutput())
 		require.NoError(t, err)
 		chainState, err := chainStates[nid].StateByTrieRoot(l1Commitment.TrieRoot())
 		require.NoError(t, err)
@@ -346,8 +346,10 @@ func testChained(t *testing.T, n, f, b int) {
 				chainID,
 				inccounter.Contract.Hname(),
 				inccounter.FuncIncCounter.Hname(),
-				dict.New(), uint64(i*reqPerBlock+ii),
-			).WithGasBudget(20000).Sign(scClient)
+				dict.New(),
+				uint64(i*reqPerBlock+ii),
+				20000,
+			).Sign(scClient)
 			reqs = append(reqs, scRequest)
 			incTotal++
 		}
@@ -363,8 +365,9 @@ func testChained(t *testing.T, n, f, b int) {
 	}
 	testNodeStates := map[gpa.NodeID]state.Store{}
 	for _, nid := range nodeIDs {
-		testNodeStates[nid] = origin.InitChain(
-			state.NewStore(mapdb.NewMapDB()),
+		testNodeStates[nid] = state.NewStore(mapdb.NewMapDB())
+		origin.InitChain(
+			testNodeStates[nid],
 			dict.Dict{
 				origin.ParamChainOwner: isc.NewAgentID(originator.Address()).Bytes(),
 			},
@@ -394,7 +397,7 @@ func testChained(t *testing.T, n, f, b int) {
 	// Start the process by providing input to the first instance.
 	for _, nid := range nodeIDs {
 		t.Log("Going to provide inputs.")
-		originL1Commitment, err := vmcontext.L1CommitmentFromAliasOutput(originAO.GetAliasOutput())
+		originL1Commitment, err := transaction.L1CommitmentFromAliasOutput(originAO.GetAliasOutput())
 		require.NoError(t, err)
 		originState, err := testNodeStates[nid].StateByTrieRoot(originL1Commitment.TrieRoot())
 		require.NoError(t, err)

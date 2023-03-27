@@ -20,6 +20,7 @@ func NewImmutableGetBlockInfoParams() ImmutableGetBlockInfoParams {
 	return ImmutableGetBlockInfoParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
+// default last block
 func (s ImmutableGetBlockInfoParams) BlockIndex() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ParamBlockIndex))
 }
@@ -28,6 +29,7 @@ type MutableGetBlockInfoParams struct {
 	Proxy wasmtypes.Proxy
 }
 
+// default last block
 func (s MutableGetBlockInfoParams) BlockIndex() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamBlockIndex))
 }
@@ -40,6 +42,7 @@ func NewImmutableGetEventsForBlockParams() ImmutableGetEventsForBlockParams {
 	return ImmutableGetEventsForBlockParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
+// default last block
 func (s ImmutableGetEventsForBlockParams) BlockIndex() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ParamBlockIndex))
 }
@@ -48,6 +51,7 @@ type MutableGetEventsForBlockParams struct {
 	Proxy wasmtypes.Proxy
 }
 
+// default last block
 func (s MutableGetEventsForBlockParams) BlockIndex() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamBlockIndex))
 }
@@ -64,10 +68,12 @@ func (s ImmutableGetEventsForContractParams) ContractHname() wasmtypes.ScImmutab
 	return wasmtypes.NewScImmutableHname(s.Proxy.Root(ParamContractHname))
 }
 
+// default first block
 func (s ImmutableGetEventsForContractParams) FromBlock() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ParamFromBlock))
 }
 
+// default last block
 func (s ImmutableGetEventsForContractParams) ToBlock() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ParamToBlock))
 }
@@ -80,10 +86,12 @@ func (s MutableGetEventsForContractParams) ContractHname() wasmtypes.ScMutableHn
 	return wasmtypes.NewScMutableHname(s.Proxy.Root(ParamContractHname))
 }
 
+// default first block
 func (s MutableGetEventsForContractParams) FromBlock() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamFromBlock))
 }
 
+// default last block
 func (s MutableGetEventsForContractParams) ToBlock() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamToBlock))
 }
@@ -96,6 +104,7 @@ func NewImmutableGetEventsForRequestParams() ImmutableGetEventsForRequestParams 
 	return ImmutableGetEventsForRequestParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
+// target request ID
 func (s ImmutableGetEventsForRequestParams) RequestID() wasmtypes.ScImmutableRequestID {
 	return wasmtypes.NewScImmutableRequestID(s.Proxy.Root(ParamRequestID))
 }
@@ -104,6 +113,7 @@ type MutableGetEventsForRequestParams struct {
 	Proxy wasmtypes.Proxy
 }
 
+// target request ID
 func (s MutableGetEventsForRequestParams) RequestID() wasmtypes.ScMutableRequestID {
 	return wasmtypes.NewScMutableRequestID(s.Proxy.Root(ParamRequestID))
 }
@@ -116,6 +126,7 @@ func NewImmutableGetRequestIDsForBlockParams() ImmutableGetRequestIDsForBlockPar
 	return ImmutableGetRequestIDsForBlockParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
+// default last block
 func (s ImmutableGetRequestIDsForBlockParams) BlockIndex() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ParamBlockIndex))
 }
@@ -124,6 +135,7 @@ type MutableGetRequestIDsForBlockParams struct {
 	Proxy wasmtypes.Proxy
 }
 
+// default last block
 func (s MutableGetRequestIDsForBlockParams) BlockIndex() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamBlockIndex))
 }
@@ -136,6 +148,7 @@ func NewImmutableGetRequestReceiptParams() ImmutableGetRequestReceiptParams {
 	return ImmutableGetRequestReceiptParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
+// target request ID
 func (s ImmutableGetRequestReceiptParams) RequestID() wasmtypes.ScImmutableRequestID {
 	return wasmtypes.NewScImmutableRequestID(s.Proxy.Root(ParamRequestID))
 }
@@ -144,6 +157,7 @@ type MutableGetRequestReceiptParams struct {
 	Proxy wasmtypes.Proxy
 }
 
+// target request ID
 func (s MutableGetRequestReceiptParams) RequestID() wasmtypes.ScMutableRequestID {
 	return wasmtypes.NewScMutableRequestID(s.Proxy.Root(ParamRequestID))
 }
@@ -156,6 +170,7 @@ func NewImmutableGetRequestReceiptsForBlockParams() ImmutableGetRequestReceiptsF
 	return ImmutableGetRequestReceiptsForBlockParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
+// default last block
 func (s ImmutableGetRequestReceiptsForBlockParams) BlockIndex() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ParamBlockIndex))
 }
@@ -164,6 +179,7 @@ type MutableGetRequestReceiptsForBlockParams struct {
 	Proxy wasmtypes.Proxy
 }
 
+// default last block
 func (s MutableGetRequestReceiptsForBlockParams) BlockIndex() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamBlockIndex))
 }
@@ -176,6 +192,7 @@ func NewImmutableIsRequestProcessedParams() ImmutableIsRequestProcessedParams {
 	return ImmutableIsRequestProcessedParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
+// target request ID
 func (s ImmutableIsRequestProcessedParams) RequestID() wasmtypes.ScImmutableRequestID {
 	return wasmtypes.NewScImmutableRequestID(s.Proxy.Root(ParamRequestID))
 }
@@ -184,6 +201,7 @@ type MutableIsRequestProcessedParams struct {
 	Proxy wasmtypes.Proxy
 }
 
+// target request ID
 func (s MutableIsRequestProcessedParams) RequestID() wasmtypes.ScMutableRequestID {
 	return wasmtypes.NewScMutableRequestID(s.Proxy.Root(ParamRequestID))
 }

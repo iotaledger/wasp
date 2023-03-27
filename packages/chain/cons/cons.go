@@ -359,7 +359,8 @@ func (c *consImpl) Output() gpa.Output {
 
 func (c *consImpl) StatusString() string {
 	// We con't include RND here, maybe that's less important, and visible from the VM status.
-	return fmt.Sprintf("{consImpl,%v,%v,%v,%v,%v,%v}",
+	return fmt.Sprintf("{consImpl⟨%v⟩,%v,%v,%v,%v,%v,%v}",
+		c.output.Status,
 		c.subSM.String(),
 		c.subMP.String(),
 		c.subDSS.String(),
@@ -499,8 +500,10 @@ func (c *consImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte) gpa
 	}
 	bao := aggr.DecidedBaseAliasOutput()
 	baoID := bao.OutputID()
+	reqs := aggr.DecidedRequestRefs()
+	c.log.Debugf("ACS decision: baseAO=%v, requests=%v", bao, reqs)
 	return gpa.NoMessages().
-		AddAll(c.subMP.RequestsNeeded(aggr.DecidedRequestRefs())).
+		AddAll(c.subMP.RequestsNeeded(reqs)).
 		AddAll(c.subSM.DecidedVirtualStateNeeded(bao)).
 		AddAll(c.subVM.DecidedBatchProposalsReceived(aggr)).
 		AddAll(c.subRND.CanProceed(baoID[:])).

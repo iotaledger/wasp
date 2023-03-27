@@ -54,7 +54,15 @@ paths:
       summary: Get information about the current authentication mode
       tags:
       - auth
-  /chains:
+  /health:
+    get:
+      operationId: getHealth
+      responses:
+        "200":
+          content: {}
+          description: The node is healthy.
+      summary: Returns 200 if the node is healthy.
+  /v1/chains:
     get:
       operationId: getChains
       responses:
@@ -77,7 +85,7 @@ paths:
       summary: Get a list of all chains
       tags:
       - chains
-  /chains/{chainID}:
+  /v1/chains/{chainID}:
     get:
       operationId: getChainInfo
       parameters:
@@ -106,7 +114,7 @@ paths:
       summary: Get information about a specific chain
       tags:
       - chains
-  /chains/{chainID}/access-node/{peer}:
+  /v1/chains/{chainID}/access-node/{peer}:
     delete:
       operationId: removeAccessNode
       parameters:
@@ -171,7 +179,7 @@ paths:
       summary: Configure a trusted node to be an access node.
       tags:
       - chains
-  /chains/{chainID}/activate:
+  /v1/chains/{chainID}/activate:
     post:
       operationId: activateChain
       parameters:
@@ -200,7 +208,7 @@ paths:
       summary: Activate a chain
       tags:
       - chains
-  /chains/{chainID}/chainrecord:
+  /v1/chains/{chainID}/chainrecord:
     post:
       operationId: setChainRecord
       parameters:
@@ -234,7 +242,7 @@ paths:
       tags:
       - chains
       x-codegen-request-body-name: ChainRecord
-  /chains/{chainID}/committee:
+  /v1/chains/{chainID}/committee:
     get:
       operationId: getCommitteeInfo
       parameters:
@@ -263,7 +271,7 @@ paths:
       summary: Get information about the deployed committee
       tags:
       - chains
-  /chains/{chainID}/contracts:
+  /v1/chains/{chainID}/contracts:
     get:
       operationId: getContracts
       parameters:
@@ -294,7 +302,7 @@ paths:
       summary: Get all available chain contracts
       tags:
       - chains
-  /chains/{chainID}/core/accounts:
+  /v1/chains/{chainID}/core/accounts:
     get:
       operationId: accountsGetAccounts
       parameters:
@@ -321,7 +329,7 @@ paths:
       summary: Get a list of all accounts
       tags:
       - corecontracts
-  /chains/{chainID}/core/accounts/account/{agentID}/balance:
+  /v1/chains/{chainID}/core/accounts/account/{agentID}/balance:
     get:
       operationId: accountsGetAccountBalance
       parameters:
@@ -355,7 +363,7 @@ paths:
       summary: Get all assets belonging to an account
       tags:
       - corecontracts
-  /chains/{chainID}/core/accounts/account/{agentID}/foundries:
+  /v1/chains/{chainID}/core/accounts/account/{agentID}/foundries:
     get:
       operationId: accountsGetAccountFoundries
       parameters:
@@ -389,7 +397,7 @@ paths:
       summary: Get all foundries owned by an account
       tags:
       - corecontracts
-  /chains/{chainID}/core/accounts/account/{agentID}/nfts:
+  /v1/chains/{chainID}/core/accounts/account/{agentID}/nfts:
     get:
       operationId: accountsGetAccountNFTIDs
       parameters:
@@ -423,7 +431,7 @@ paths:
       summary: Get all NFT ids belonging to an account
       tags:
       - corecontracts
-  /chains/{chainID}/core/accounts/account/{agentID}/nonce:
+  /v1/chains/{chainID}/core/accounts/account/{agentID}/nonce:
     get:
       operationId: accountsGetAccountNonce
       parameters:
@@ -457,7 +465,7 @@ paths:
       summary: Get the current nonce of an account
       tags:
       - corecontracts
-  /chains/{chainID}/core/accounts/foundry_output/{serialNumber}:
+  /v1/chains/{chainID}/core/accounts/foundry_output/{serialNumber}:
     get:
       operationId: accountsGetFoundryOutput
       parameters:
@@ -492,7 +500,7 @@ paths:
       summary: Get the foundry output
       tags:
       - corecontracts
-  /chains/{chainID}/core/accounts/nftdata/{nftID}:
+  /v1/chains/{chainID}/core/accounts/nftdata/{nftID}:
     get:
       operationId: accountsGetNFTData
       parameters:
@@ -526,7 +534,7 @@ paths:
       summary: Get the NFT data by an ID
       tags:
       - corecontracts
-  /chains/{chainID}/core/accounts/token_registry:
+  /v1/chains/{chainID}/core/accounts/token_registry:
     get:
       operationId: accountsGetNativeTokenIDRegistry
       parameters:
@@ -553,7 +561,7 @@ paths:
       summary: Get a list of all registries
       tags:
       - corecontracts
-  /chains/{chainID}/core/accounts/total_assets:
+  /v1/chains/{chainID}/core/accounts/total_assets:
     get:
       operationId: accountsGetTotalAssets
       parameters:
@@ -580,7 +588,7 @@ paths:
       summary: Get all stored assets
       tags:
       - corecontracts
-  /chains/{chainID}/core/blobs:
+  /v1/chains/{chainID}/core/blobs:
     get:
       operationId: blobsGetAllBlobs
       parameters:
@@ -607,7 +615,7 @@ paths:
       summary: Get all stored blobs
       tags:
       - corecontracts
-  /chains/{chainID}/core/blobs/{blobHash}:
+  /v1/chains/{chainID}/core/blobs/{blobHash}:
     get:
       operationId: blobsGetBlobInfo
       parameters:
@@ -641,7 +649,7 @@ paths:
       summary: Get all fields of a blob
       tags:
       - corecontracts
-  /chains/{chainID}/core/blobs/{blobHash}/data/{fieldKey}:
+  /v1/chains/{chainID}/core/blobs/{blobHash}/data/{fieldKey}:
     get:
       operationId: blobsGetBlobValue
       parameters:
@@ -682,7 +690,7 @@ paths:
       summary: Get the value of the supplied field (key)
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/blocks/latest:
+  /v1/chains/{chainID}/core/blocklog/blocks/latest:
     get:
       operationId: blocklogGetLatestBlockInfo
       parameters:
@@ -709,7 +717,7 @@ paths:
       summary: Get the block info of the latest block
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/blocks/latest/receipts:
+  /v1/chains/{chainID}/core/blocklog/blocks/latest/receipts:
     get:
       operationId: blocklogGetRequestReceiptsOfLatestBlock
       parameters:
@@ -736,7 +744,7 @@ paths:
       summary: Get all receipts of the latest block
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/blocks/latest/requestids:
+  /v1/chains/{chainID}/core/blocklog/blocks/latest/requestids:
     get:
       operationId: blocklogGetRequestIDsForLatestBlock
       parameters:
@@ -763,7 +771,7 @@ paths:
       summary: Get the request ids for the latest block
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/blocks/{blockIndex}:
+  /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}:
     get:
       operationId: blocklogGetBlockInfo
       parameters:
@@ -798,7 +806,7 @@ paths:
       summary: Get the block info of a certain block index
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts:
+  /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts:
     get:
       operationId: blocklogGetRequestReceiptsOfBlock
       parameters:
@@ -833,7 +841,7 @@ paths:
       summary: Get all receipts of a certain block
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids:
+  /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids:
     get:
       operationId: blocklogGetRequestIDsForBlock
       parameters:
@@ -868,7 +876,7 @@ paths:
       summary: Get the request ids for a certain block index
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/controladdresses:
+  /v1/chains/{chainID}/core/blocklog/controladdresses:
     get:
       operationId: blocklogGetControlAddresses
       parameters:
@@ -895,7 +903,7 @@ paths:
       summary: Get the control addresses
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/events/block/latest:
+  /v1/chains/{chainID}/core/blocklog/events/block/latest:
     get:
       operationId: blocklogGetEventsOfLatestBlock
       parameters:
@@ -922,7 +930,7 @@ paths:
       summary: Get events of the latest block
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/events/block/{blockIndex}:
+  /v1/chains/{chainID}/core/blocklog/events/block/{blockIndex}:
     get:
       operationId: blocklogGetEventsOfBlock
       parameters:
@@ -957,7 +965,7 @@ paths:
       summary: Get events of a block
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/events/contract/{contractHname}:
+  /v1/chains/{chainID}/core/blocklog/events/contract/{contractHname}:
     get:
       operationId: blocklogGetEventsOfContract
       parameters:
@@ -991,7 +999,7 @@ paths:
       summary: Get events of a contract
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/events/request/{requestID}:
+  /v1/chains/{chainID}/core/blocklog/events/request/{requestID}:
     get:
       operationId: blocklogGetEventsOfRequest
       parameters:
@@ -1025,7 +1033,7 @@ paths:
       summary: Get events of a request
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/requests/{requestID}:
+  /v1/chains/{chainID}/core/blocklog/requests/{requestID}:
     get:
       operationId: blocklogGetRequestReceipt
       parameters:
@@ -1059,7 +1067,7 @@ paths:
       summary: Get the receipt of a certain request id
       tags:
       - corecontracts
-  /chains/{chainID}/core/blocklog/requests/{requestID}/is_processed:
+  /v1/chains/{chainID}/core/blocklog/requests/{requestID}/is_processed:
     get:
       operationId: blocklogGetRequestIsProcessed
       parameters:
@@ -1093,7 +1101,7 @@ paths:
       summary: Get the request processing status
       tags:
       - corecontracts
-  /chains/{chainID}/core/errors/{contractHname}/message/{errorID}:
+  /v1/chains/{chainID}/core/errors/{contractHname}/message/{errorID}:
     get:
       operationId: errorsGetErrorMessageFormat
       parameters:
@@ -1135,7 +1143,7 @@ paths:
       summary: Get the error message format of a specific error id
       tags:
       - corecontracts
-  /chains/{chainID}/core/governance/allowedstatecontrollers:
+  /v1/chains/{chainID}/core/governance/allowedstatecontrollers:
     get:
       description: Returns the allowed state controller addresses
       operationId: governanceGetAllowedStateControllerAddresses
@@ -1163,10 +1171,10 @@ paths:
       summary: Get the allowed state controller addresses
       tags:
       - corecontracts
-  /chains/{chainID}/core/governance/chaininfo:
+  /v1/chains/{chainID}/core/governance/chaininfo:
     get:
       description: "If you are using the common API functions, you most likely rather\
-        \ want to use '/chains/:chainID' to get information about a chain."
+        \ want to use '/v1/chains/:chainID' to get information about a chain."
       operationId: governanceGetChainInfo
       parameters:
       - description: ChainID (Bech32)
@@ -1192,7 +1200,7 @@ paths:
       summary: Get the chain info
       tags:
       - corecontracts
-  /chains/{chainID}/core/governance/chainowner:
+  /v1/chains/{chainID}/core/governance/chainowner:
     get:
       description: Returns the chain owner
       operationId: governanceGetChainOwner
@@ -1220,7 +1228,7 @@ paths:
       summary: Get the chain owner
       tags:
       - corecontracts
-  /chains/{chainID}/deactivate:
+  /v1/chains/{chainID}/deactivate:
     post:
       operationId: deactivateChain
       parameters:
@@ -1249,7 +1257,7 @@ paths:
       summary: Deactivate a chain
       tags:
       - chains
-  /chains/{chainID}/evm:
+  /v1/chains/{chainID}/evm:
     get:
       parameters:
       - description: ChainID (Bech32)
@@ -1266,7 +1274,7 @@ paths:
       summary: Ethereum JSON-RPC
       tags:
       - chains
-  /chains/{chainID}/evm/tx/{txHash}:
+  /v1/chains/{chainID}/evm/tx/{txHash}:
     get:
       operationId: getRequestIDFromEVMTransactionID
       parameters:
@@ -1301,7 +1309,7 @@ paths:
       summary: Get the ISC request ID for the given Ethereum transaction hash
       tags:
       - chains
-  /chains/{chainID}/evm/ws:
+  /v1/chains/{chainID}/evm/ws:
     get:
       parameters:
       - description: ChainID (Bech32)
@@ -1318,7 +1326,7 @@ paths:
       summary: Ethereum JSON-RPC (Websocket transport)
       tags:
       - chains
-  /chains/{chainID}/receipts/{requestID}:
+  /v1/chains/{chainID}/receipts/{requestID}:
     get:
       operationId: getReceipt
       parameters:
@@ -1349,7 +1357,7 @@ paths:
       summary: Get a receipt from a request ID
       tags:
       - requests
-  /chains/{chainID}/requests/{requestID}/wait:
+  /v1/chains/{chainID}/requests/{requestID}/wait:
     get:
       operationId: waitForRequest
       parameters:
@@ -1389,7 +1397,7 @@ paths:
       summary: Wait until the given request has been processed by the node
       tags:
       - requests
-  /chains/{chainID}/state/{stateKey}:
+  /v1/chains/{chainID}/state/{stateKey}:
     get:
       operationId: getStateValue
       parameters:
@@ -1417,19 +1425,9 @@ paths:
       summary: Fetch the raw value associated with the given key in the chain state
       tags:
       - chains
-  /health:
+  /v1/metrics/chain/{chainID}/messages:
     get:
-      operationId: getHealth
-      responses:
-        "200":
-          content: {}
-          description: The node is healthy.
-      summary: Returns 200 if the node health is healthy.
-      tags:
-      - node
-  /metrics/chain/{chainID}:
-    get:
-      operationId: getChainMetrics
+      operationId: getChainMessageMetrics
       parameters:
       - description: ChainID (Bech32)
         in: path
@@ -1443,7 +1441,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChainMetrics'
+                $ref: '#/components/schemas/ChainMessageMetrics'
           description: A list of all available metrics.
         "401":
           content:
@@ -1456,10 +1454,10 @@ paths:
           description: Chain not found
       security:
       - Authorization: []
-      summary: Get chain specific metrics.
+      summary: Get chain specific message metrics.
       tags:
       - metrics
-  /metrics/chain/{chainID}/pipe:
+  /v1/metrics/chain/{chainID}/pipe:
     get:
       operationId: getChainPipeMetrics
       parameters:
@@ -1491,7 +1489,7 @@ paths:
       summary: Get chain pipe event metrics.
       tags:
       - metrics
-  /metrics/chain/{chainID}/workflow:
+  /v1/metrics/chain/{chainID}/workflow:
     get:
       operationId: getChainWorkflowMetrics
       parameters:
@@ -1523,15 +1521,15 @@ paths:
       summary: Get chain workflow metrics.
       tags:
       - metrics
-  /metrics/l1:
+  /v1/metrics/node/messages:
     get:
-      operationId: getL1Metrics
+      operationId: getNodeMessageMetrics
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChainMetrics'
+                $ref: '#/components/schemas/NodeMessageMetrics'
           description: A list of all available metrics.
         "401":
           content:
@@ -1541,10 +1539,10 @@ paths:
           description: "Unauthorized (Wrong permissions, missing token)"
       security:
       - Authorization: []
-      summary: Get accumulated metrics.
+      summary: Get accumulated message metrics.
       tags:
       - metrics
-  /node/config:
+  /v1/node/config:
     get:
       operationId: getConfiguration
       responses:
@@ -1569,7 +1567,7 @@ paths:
       summary: Return the Wasp configuration
       tags:
       - node
-  /node/dks:
+  /v1/node/dks:
     post:
       operationId: generateDKS
       requestBody:
@@ -1598,7 +1596,7 @@ paths:
       tags:
       - node
       x-codegen-request-body-name: DKSharesPostRequest
-  /node/dks/{sharedAddress}:
+  /v1/node/dks/{sharedAddress}:
     get:
       operationId: getDKSInfo
       parameters:
@@ -1630,7 +1628,7 @@ paths:
       summary: Get information about the shared address DKS configuration
       tags:
       - node
-  /node/info:
+  /v1/node/info:
     get:
       operationId: getInfo
       responses:
@@ -1651,7 +1649,7 @@ paths:
       summary: Returns private information about this node.
       tags:
       - node
-  /node/owner/certificate:
+  /v1/node/owner/certificate:
     post:
       operationId: setNodeOwner
       requestBody:
@@ -1680,7 +1678,7 @@ paths:
       tags:
       - node
       x-codegen-request-body-name: ""
-  /node/peers:
+  /v1/node/peers:
     get:
       operationId: getAllPeers
       responses:
@@ -1703,7 +1701,7 @@ paths:
       summary: Get basic information about all configured peers
       tags:
       - node
-  /node/peers/identity:
+  /v1/node/peers/identity:
     get:
       operationId: getPeeringIdentity
       responses:
@@ -1724,7 +1722,7 @@ paths:
       summary: Get basic peer info of the current node
       tags:
       - node
-  /node/peers/trusted:
+  /v1/node/peers/trusted:
     get:
       operationId: getTrustedPeers
       responses:
@@ -1772,7 +1770,7 @@ paths:
       tags:
       - node
       x-codegen-request-body-name: ""
-  /node/peers/trusted/{peer}:
+  /v1/node/peers/trusted/{peer}:
     delete:
       operationId: distrustPeer
       parameters:
@@ -1801,7 +1799,7 @@ paths:
       summary: Distrust a peering node
       tags:
       - node
-  /node/shutdown:
+  /v1/node/shutdown:
     post:
       operationId: shutdownNode
       responses:
@@ -1819,7 +1817,7 @@ paths:
       summary: Shut down the node
       tags:
       - node
-  /node/version:
+  /v1/node/version:
     get:
       operationId: getVersion
       responses:
@@ -1832,7 +1830,7 @@ paths:
       summary: Returns the node version.
       tags:
       - node
-  /requests/callview:
+  /v1/requests/callview:
     post:
       description: "Execute a view call. Either use HName or Name properties. If both\
         \ are supplied, HName are used."
@@ -1855,7 +1853,7 @@ paths:
       tags:
       - requests
       x-codegen-request-body-name: ""
-  /requests/offledger:
+  /v1/requests/offledger:
     post:
       operationId: offLedger
       requestBody:
@@ -1873,7 +1871,7 @@ paths:
       tags:
       - requests
       x-codegen-request-body-name: ""
-  /users:
+  /v1/users:
     get:
       operationId: getUsers
       responses:
@@ -1924,7 +1922,7 @@ paths:
       tags:
       - users
       x-codegen-request-body-name: ""
-  /users/{username}:
+  /v1/users/{username}:
     delete:
       operationId: deleteUser
       parameters:
@@ -1984,7 +1982,7 @@ paths:
       summary: Get a user
       tags:
       - users
-  /users/{username}/password:
+  /v1/users/{username}/password:
     put:
       operationId: changeUserPassword
       parameters:
@@ -2024,7 +2022,7 @@ paths:
       tags:
       - users
       x-codegen-request-body-name: ""
-  /users/{username}/permissions:
+  /v1/users/{username}/permissions:
     put:
       operationId: changeUserPermissions
       parameters:
@@ -2064,7 +2062,7 @@ paths:
       tags:
       - users
       x-codegen-request-body-name: ""
-  /ws:
+  /v1/ws:
     get:
       responses:
         default:
@@ -2430,25 +2428,15 @@ components:
         name: BlobValueResponse
     BlockInfoResponse:
       example:
-        anchorTransactionId: anchorTransactionId
-        gasBurned: gasBurned
-        totalRequests: 1
-        l1CommitmentHash: l1CommitmentHash
         blockIndex: 1
         numSuccessfulRequests: 1
         gasFeeCharged: gasFeeCharged
-        totalStorageDeposit: totalStorageDeposit
-        transactionSubEssenceHash: transactionSubEssenceHash
+        previousAliasOutput: previousAliasOutput
+        gasBurned: gasBurned
+        totalRequests: 1
         numOffLedgerRequests: 1
-        previousL1CommitmentHash: previousL1CommitmentHash
         timestamp: 2000-01-23T04:56:07.000+00:00
-        totalBaseTokensInL2Accounts: totalBaseTokensInL2Accounts
       properties:
-        anchorTransactionId:
-          format: string
-          type: string
-          xml:
-            name: AnchorTransactionID
         blockIndex:
           format: int32
           minimum: 1
@@ -2467,11 +2455,6 @@ components:
           type: string
           xml:
             name: GasFeeCharged
-        l1CommitmentHash:
-          format: string
-          type: string
-          xml:
-            name: L1CommitmentHash
         numOffLedgerRequests:
           format: int32
           minimum: 1
@@ -2484,53 +2467,31 @@ components:
           type: integer
           xml:
             name: NumSuccessfulRequests
-        previousL1CommitmentHash:
+        previousAliasOutput:
           format: string
           type: string
           xml:
-            name: PreviousL1CommitmentHash
+            name: PreviousAliasOutput
         timestamp:
           format: date-time
           type: string
           xml:
             name: Timestamp
-        totalBaseTokensInL2Accounts:
-          description: The total L2 base tokens (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: TotalBaseTokensInL2Accounts
         totalRequests:
           format: int32
           minimum: 1
           type: integer
           xml:
             name: TotalRequests
-        totalStorageDeposit:
-          description: The total storage deposit (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: TotalStorageDeposit
-        transactionSubEssenceHash:
-          format: string
-          type: string
-          xml:
-            name: TransactionSubEssenceHash
       required:
-      - anchorTransactionId
       - blockIndex
       - gasBurned
       - gasFeeCharged
-      - l1CommitmentHash
       - numOffLedgerRequests
       - numSuccessfulRequests
-      - previousL1CommitmentHash
+      - previousAliasOutput
       - timestamp
-      - totalBaseTokensInL2Accounts
       - totalRequests
-      - totalStorageDeposit
-      - transactionSubEssenceHash
       type: object
       xml:
         name: BlockInfoResponse
@@ -2748,6 +2709,11 @@ components:
     ChainInfoResponse:
       example:
         chainOwnerId: tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e
+        gasLimits:
+          maxGasExternalViewCall: 5
+          minGasPerRequest: 7
+          maxGasPerBlock: 5
+          maxGasPerRequest: 2
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
         customMetadata: customMetadata
@@ -2755,10 +2721,10 @@ components:
           gasPerToken:
             a: 1
             b: 100
-          validatorFeeShare: 0
+          validatorFeeShare: 1
           evmGasRatio:
-            a: 1
-            b: 1
+            a: 0
+            b: 0
         isActive: true
       properties:
         chainID:
@@ -2791,7 +2757,9 @@ components:
           xml:
             name: EVMChainID
         gasFeePolicy:
-          $ref: '#/components/schemas/GasFeePolicy'
+          $ref: '#/components/schemas/FeePolicy'
+        gasLimits:
+          $ref: '#/components/schemas/Limits'
         isActive:
           description: Whether or not the chain is active.
           format: boolean
@@ -2802,11 +2770,13 @@ components:
       - chainID
       - chainOwnerId
       - evmChainId
+      - gasFeePolicy
+      - gasLimits
       - isActive
       type: object
       xml:
         name: ChainInfoResponse
-    ChainMetrics:
+    ChainMessageMetrics:
       example:
         outPublishGovernanceTransaction:
           lastMessage:
@@ -2843,13 +2813,6 @@ components:
             outputId: outputId
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
-        inMilestone:
-          lastMessage:
-            milestoneId: milestoneId
-            index: 0
-            timestamp: 0
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
         inAliasOutput:
           lastMessage:
             outputType: 0
@@ -2869,9 +2832,6 @@ components:
             txId: txId
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
-        registeredChainIDs:
-        - registeredChainIDs
-        - registeredChainIDs
         outPullLatestOutput:
           lastMessage: lastMessage
           messages: 1
@@ -2884,8 +2844,6 @@ components:
       properties:
         inAliasOutput:
           $ref: '#/components/schemas/AliasOutputMetricItem'
-        inMilestone:
-          $ref: '#/components/schemas/MilestoneMetricItem'
         inOnLedgerRequest:
           $ref: '#/components/schemas/OnLedgerRequestMetricItem'
         inOutput:
@@ -2904,17 +2862,8 @@ components:
           $ref: '#/components/schemas/UTXOInputMetricItem'
         outPullTxInclusionState:
           $ref: '#/components/schemas/TransactionIDMetricItem'
-        registeredChainIDs:
-          items:
-            format: string
-            type: string
-          type: array
-          xml:
-            name: RegisteredChainIDs
-            wrapped: true
       required:
       - inAliasOutput
-      - inMilestone
       - inOnLedgerRequest
       - inOutput
       - inStateOutput
@@ -2924,10 +2873,9 @@ components:
       - outPullLatestOutput
       - outPullOutputByID
       - outPullTxInclusionState
-      - registeredChainIDs
       type: object
       xml:
-        name: ChainMetrics
+        name: ChainMessageMetrics
     ChainRecord:
       example:
         accessNodes:
@@ -3608,6 +3556,60 @@ components:
       type: object
       xml:
         name: EventsResponse
+    FeePolicy:
+      example:
+        gasPerToken:
+          a: 1
+          b: 100
+        validatorFeeShare: 1
+        evmGasRatio:
+          a: 0
+          b: 0
+      properties:
+        evmGasRatio:
+          $ref: '#/components/schemas/Ratio32_'
+        gasPerToken:
+          $ref: '#/components/schemas/Ratio32'
+        validatorFeeShare:
+          description: The validator fee share.
+          format: int32
+          type: integer
+          xml:
+            name: ValidatorFeeShare
+      required:
+      - evmGasRatio
+      - gasPerToken
+      - validatorFeeShare
+      type: object
+      xml:
+        name: FeePolicy
+    FeePolicy_:
+      example:
+        gasPerToken:
+          a: 0
+          b: 0
+        validatorFeeShare: 0
+        evmGasRatio:
+          a: 0
+          b: 0
+      properties:
+        evmGasRatio:
+          $ref: '#/components/schemas/Ratio32_'
+        gasPerToken:
+          $ref: '#/components/schemas/Ratio32_'
+        validatorFeeShare:
+          description: The validator fee share.
+          format: int32
+          type: integer
+          xml:
+            name: ValidatorFeeShare
+      required:
+      - evmGasRatio
+      - gasPerToken
+      - validatorFeeShare
+      type: object
+      xml:
+        name: FeePolicy
     FoundryOutputResponse:
       example:
         assets:
@@ -3632,60 +3634,6 @@ components:
       type: object
       xml:
         name: FoundryOutputResponse
-    GasFeePolicy:
-      example:
-        gasPerToken:
-          a: 1
-          b: 100
-        validatorFeeShare: 0
-        evmGasRatio:
-          a: 1
-          b: 1
-      properties:
-        evmGasRatio:
-          $ref: '#/components/schemas/Ratio32_'
-        gasPerToken:
-          $ref: '#/components/schemas/Ratio32'
-        validatorFeeShare:
-          description: The validator fee share.
-          format: int32
-          type: integer
-          xml:
-            name: ValidatorFeeShare
-      required:
-      - evmGasRatio
-      - gasPerToken
-      - validatorFeeShare
-      type: object
-      xml:
-        name: GasFeePolicy
-    GasFeePolicy_:
-      example:
-        gasPerToken:
-          a: 0
-          b: 0
-        validatorFeeShare: 1
-        evmGasRatio:
-          a: 0
-          b: 0
-      properties:
-        evmGasRatio:
-          $ref: '#/components/schemas/Ratio32__'
-        gasPerToken:
-          $ref: '#/components/schemas/Ratio32__'
-        validatorFeeShare:
-          description: The validator fee share.
-          format: int32
-          type: integer
-          xml:
-            name: ValidatorFeeShare
-      required:
-      - evmGasRatio
-      - gasPerToken
-      - validatorFeeShare
-      type: object
-      xml:
-        name: GasFeePolicy
     GovAllowedStateControllerAddressesResponse:
       example:
         addresses:
@@ -3707,13 +3655,18 @@ components:
     GovChainInfoResponse:
       example:
         chainOwnerId: chainOwnerId
+        gasLimits:
+          maxGasExternalViewCall: 5
+          minGasPerRequest: 7
+          maxGasPerBlock: 5
+          maxGasPerRequest: 2
         chainID: chainID
         customMetadata: customMetadata
         gasFeePolicy:
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 1
+          validatorFeeShare: 0
           evmGasRatio:
             a: 0
             b: 0
@@ -3738,11 +3691,14 @@ components:
           xml:
             name: CustomMetadata
         gasFeePolicy:
-          $ref: '#/components/schemas/GasFeePolicy_'
+          $ref: '#/components/schemas/FeePolicy_'
+        gasLimits:
+          $ref: '#/components/schemas/Limits'
       required:
       - chainID
       - chainOwnerId
       - gasFeePolicy
+      - gasLimits
       type: object
       xml:
         name: GovChainInfoResponse
@@ -4071,6 +4027,45 @@ components:
       type: object
       xml:
         name: L1Params
+    Limits:
+      example:
+        maxGasExternalViewCall: 5
+        minGasPerRequest: 7
+        maxGasPerBlock: 5
+        maxGasPerRequest: 2
+      properties:
+        maxGasExternalViewCall:
+          description: The maximum gas per external view call
+          format: int64
+          type: integer
+          xml:
+            name: MaxGasExternalViewCall
+        maxGasPerBlock:
+          description: The maximum gas per block
+          format: int64
+          type: integer
+          xml:
+            name: MaxGasPerBlock
+        maxGasPerRequest:
+          description: The maximum gas per request
+          format: int64
+          type: integer
+          xml:
+            name: MaxGasPerRequest
+        minGasPerRequest:
+          description: The minimum gas per request
+          format: int64
+          type: integer
+          xml:
+            name: MinGasPerRequest
+      required:
+      - maxGasExternalViewCall
+      - maxGasPerBlock
+      - maxGasPerRequest
+      - minGasPerRequest
+      type: object
+      xml:
+        name: Limits
     LoginRequest:
       example:
         password: password
@@ -4243,6 +4238,128 @@ components:
       type: object
       xml:
         name: NativeTokenIDRegistryResponse
+    NodeMessageMetrics:
+      example:
+        outPublishGovernanceTransaction:
+          lastMessage:
+            txId: txId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        outPublisherStateTransaction:
+          lastMessage:
+            stateIndex: 1
+            txId: txId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inTxInclusionState:
+          lastMessage:
+            txId: txId
+            state: state
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inOnLedgerRequest:
+          lastMessage:
+            output:
+              outputType: 0
+              raw: raw
+            outputId: outputId
+            raw: raw
+            id: id
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inOutput:
+          lastMessage:
+            output:
+              outputType: 0
+              raw: raw
+            outputId: outputId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inMilestone:
+          lastMessage:
+            milestoneId: milestoneId
+            index: 0
+            timestamp: 0
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inAliasOutput:
+          lastMessage:
+            outputType: 0
+            raw: raw
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        inStateOutput:
+          lastMessage:
+            output:
+              outputType: 0
+              raw: raw
+            outputId: outputId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        outPullTxInclusionState:
+          lastMessage:
+            txId: txId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        registeredChainIDs:
+        - registeredChainIDs
+        - registeredChainIDs
+        outPullLatestOutput:
+          lastMessage: lastMessage
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        outPullOutputByID:
+          lastMessage:
+            outputId: outputId
+          messages: 1
+          timestamp: 2000-01-23T04:56:07.000+00:00
+      properties:
+        inAliasOutput:
+          $ref: '#/components/schemas/AliasOutputMetricItem'
+        inMilestone:
+          $ref: '#/components/schemas/MilestoneMetricItem'
+        inOnLedgerRequest:
+          $ref: '#/components/schemas/OnLedgerRequestMetricItem'
+        inOutput:
+          $ref: '#/components/schemas/InOutputMetricItem'
+        inStateOutput:
+          $ref: '#/components/schemas/InStateOutputMetricItem'
+        inTxInclusionState:
+          $ref: '#/components/schemas/TxInclusionStateMsgMetricItem'
+        outPublishGovernanceTransaction:
+          $ref: '#/components/schemas/TransactionMetricItem'
+        outPublisherStateTransaction:
+          $ref: '#/components/schemas/PublisherStateTransactionItem'
+        outPullLatestOutput:
+          $ref: '#/components/schemas/InterfaceMetricItem'
+        outPullOutputByID:
+          $ref: '#/components/schemas/UTXOInputMetricItem'
+        outPullTxInclusionState:
+          $ref: '#/components/schemas/TransactionIDMetricItem'
+        registeredChainIDs:
+          items:
+            format: string
+            type: string
+          type: array
+          xml:
+            name: RegisteredChainIDs
+            wrapped: true
+      required:
+      - inAliasOutput
+      - inMilestone
+      - inOnLedgerRequest
+      - inOutput
+      - inStateOutput
+      - inTxInclusionState
+      - outPublishGovernanceTransaction
+      - outPublisherStateTransaction
+      - outPullLatestOutput
+      - outPullOutputByID
+      - outPullTxInclusionState
+      - registeredChainIDs
+      type: object
+      xml:
+        name: NodeMessageMetrics
     NodeOwnerCertificateRequest:
       example:
         ownerAddress: ownerAddress
@@ -4772,31 +4889,6 @@ components:
       xml:
         name: Ratio32
     Ratio32_:
-      example:
-        a: 1
-        b: 1
-      properties:
-        a:
-          example: 1
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: A
-        b:
-          example: 1
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: B
-      required:
-      - a
-      - b
-      type: object
-      xml:
-        name: Ratio32
-    Ratio32__:
       example:
         a: 0
         b: 0

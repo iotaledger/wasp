@@ -29,12 +29,12 @@ func TestRotateStateController(t *testing.T) {
 
 	user := ctx.NewSoloAgent()
 	fadd := coregovernance.ScFuncs.AddAllowedStateControllerAddress(ctx)
-	fadd.Params.StateControllerAddress().SetValue(user.ScAgentID().Address())
+	fadd.Params.Address().SetValue(user.ScAgentID().Address())
 	fadd.Func.Post()
 	require.NoError(t, ctx.Err)
 
 	frot := coregovernance.ScFuncs.RotateStateController(ctx)
-	frot.Params.StateControllerAddress().SetValue(user.ScAgentID().Address())
+	frot.Params.Address().SetValue(user.ScAgentID().Address())
 	frot.Func.Post()
 	require.NoError(t, ctx.Err)
 }
@@ -45,7 +45,7 @@ func TestAddAllowedStateControllerAddress(t *testing.T) {
 
 	user := ctx.NewSoloAgent()
 	f := coregovernance.ScFuncs.AddAllowedStateControllerAddress(ctx)
-	f.Params.StateControllerAddress().SetValue(user.ScAgentID().Address())
+	f.Params.Address().SetValue(user.ScAgentID().Address())
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
 }
@@ -56,7 +56,7 @@ func TestRemoveAllowedStateControllerAddress(t *testing.T) {
 
 	user := ctx.NewSoloAgent()
 	f := coregovernance.ScFuncs.RemoveAllowedStateControllerAddress(ctx)
-	f.Params.StateControllerAddress().SetValue(user.ScAgentID().Address())
+	f.Params.Address().SetValue(user.ScAgentID().Address())
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
 }
@@ -95,7 +95,7 @@ func TestSetFeePolicy(t *testing.T) {
 	gfp0 := gas.DefaultFeePolicy()
 	gfp0.GasPerToken = util.Ratio32{A: 1, B: 10}
 	f := coregovernance.ScFuncs.SetFeePolicy(ctx)
-	f.Params.FeePolicyBytes().SetValue(gfp0.Bytes())
+	f.Params.FeePolicy().SetValue(gfp0.Bytes())
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
 }
@@ -106,10 +106,10 @@ func TestAddCandidateNode(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	f := coregovernance.ScFuncs.AddCandidateNode(ctx)
-	f.Params.AccessNodeInfoPubKey().SetValue(nil)
-	f.Params.AccessNodeInfoCertificate().SetValue(nil)
-	f.Params.AccessNodeInfoForCommittee().SetValue(false)
-	f.Params.AccessNodeInfoAccessAPI().SetValue("")
+	f.Params.PubKey().SetValue(nil)
+	f.Params.Certificate().SetValue(nil)
+	f.Params.AccessAPI().SetValue("")
+	f.Params.AccessOnly().SetValue(false)
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
 }
@@ -120,8 +120,8 @@ func TestRevokeAccessNode(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	f := coregovernance.ScFuncs.RevokeAccessNode(ctx)
-	f.Params.AccessNodeInfoPubKey().SetValue(nil)
-	f.Params.AccessNodeInfoCertificate().SetValue(nil)
+	f.Params.PubKey().SetValue(nil)
+	f.Params.Certificate().SetValue(nil)
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
 }
@@ -131,7 +131,7 @@ func TestChangeAccessNodes(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	f := coregovernance.ScFuncs.ChangeAccessNodes(ctx)
-	f.Params.ChangeAccessNodesActions()
+	f.Params.Actions()
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
 }
@@ -153,7 +153,7 @@ func TestGetFeePolicy(t *testing.T) {
 	f := coregovernance.ScFuncs.GetFeePolicy(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	fpBin := f.Results.FeePolicyBytes().Value()
+	fpBin := f.Results.FeePolicy().Value()
 	gfp, err := gas.FeePolicyFromBytes(fpBin)
 	require.NoError(t, err)
 	require.Equal(t, gas.DefaultGasPerToken, gfp.GasPerToken)
@@ -168,7 +168,7 @@ func TestGetChainInfo(t *testing.T) {
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	assert.Equal(t, ctx.ChainOwnerID().String(), f.Results.ChainOwnerID().Value().String())
-	gfp, err := gas.FeePolicyFromBytes(f.Results.GasFeePolicyBytes().Value())
+	gfp, err := gas.FeePolicyFromBytes(f.Results.FeePolicy().Value())
 	require.NoError(t, err)
 	assert.Equal(t, ctx.Chain.GetGasFeePolicy(), gfp)
 }

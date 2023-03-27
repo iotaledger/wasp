@@ -10,8 +10,6 @@ import "@iscmagic/ISCPrivileged.sol";
 
 // The ERC20 contract for ISC L2 native tokens (on-chain foundry).
 contract ERC20NativeTokens {
-    uint256 constant MAX_UINT64 = 1 << (64 - 1);
-
     string _name;
     string _tickerSymbol;
     uint8 _decimals;
@@ -65,7 +63,6 @@ contract ERC20NativeTokens {
         public
         returns (bool)
     {
-        require(numTokens <= MAX_UINT64, "amount is too large");
         ISCAssets memory assets;
         assets.nativeTokens = new NativeToken[](1);
         assets.nativeTokens[0].ID = nativeTokenID();
@@ -79,7 +76,6 @@ contract ERC20NativeTokens {
         public
         returns (bool)
     {
-        require(numTokens <= MAX_UINT64, "amount is too large");
         ISCAssets memory assets;
         assets.nativeTokens = new NativeToken[](1);
         assets.nativeTokens[0].ID = nativeTokenID();
@@ -120,7 +116,6 @@ contract ERC20NativeTokens {
         address buyer,
         uint256 numTokens
     ) public returns (bool) {
-        require(numTokens <= MAX_UINT64, "amount is too large");
         ISCAssets memory assets;
         assets.nativeTokens = new NativeToken[](1);
         assets.nativeTokens[0].ID = nativeTokenID();

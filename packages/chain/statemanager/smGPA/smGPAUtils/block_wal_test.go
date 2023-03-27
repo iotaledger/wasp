@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
@@ -22,9 +23,9 @@ func TestBlockWALBasic(t *testing.T) {
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(5, 1)
 	blocksInWAL := blocks[:4]
-	walGood, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), NewBlockWALMetrics())
+	walGood, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), metrics.NewEmptyChainBlockWALMetrics())
 	require.NoError(t, err)
-	walBad, err := NewBlockWAL(log, constTestFolder, isc.RandomChainID(), NewBlockWALMetrics())
+	walBad, err := NewBlockWAL(log, constTestFolder, isc.RandomChainID(), metrics.NewEmptyChainBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocksInWAL {
 		err = walGood.Write(blocks[i])
@@ -57,7 +58,7 @@ func TestBlockWALOverwrite(t *testing.T) {
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(4, 1)
-	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), NewBlockWALMetrics())
+	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), metrics.NewEmptyChainBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
 		err = wal.Write(blocks[i])
@@ -99,7 +100,7 @@ func TestBlockWALRestart(t *testing.T) {
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(4, 1)
-	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), NewBlockWALMetrics())
+	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), metrics.NewEmptyChainBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
 		err = wal.Write(blocks[i])
@@ -107,7 +108,7 @@ func TestBlockWALRestart(t *testing.T) {
 	}
 
 	// Restart: WAL object is recreated
-	wal, err = NewBlockWAL(log, constTestFolder, factory.GetChainID(), NewBlockWALMetrics())
+	wal, err = NewBlockWAL(log, constTestFolder, factory.GetChainID(), metrics.NewEmptyChainBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
 		require.True(t, wal.Contains(blocks[i].Hash()))

@@ -36,6 +36,7 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/multiformats/go-multiaddr"
 
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -54,12 +55,12 @@ const (
 
 // netImpl implements a peering.NetworkProvider interface.
 type netImpl struct {
-	myPeeringURL string                  // peeringURL of this node.
-	lppHost      host.Host               // The instance of the libp2p to use.
-	port         int                     // Port to use for peering.
-	ctx          context.Context         // Context for the libp2p
-	ctxCancel    context.CancelFunc      // A way to close the context.
-	peers        map[libp2ppeer.ID]*peer // By remotePeer.ID()
+	myPeeringURL string                                           // peeringURL of this node.
+	lppHost      host.Host                                        // The instance of the libp2p to use.
+	port         int                                              // Port to use for peering.
+	ctx          context.Context                                  // Context for the libp2p
+	ctxCancel    context.CancelFunc                               // A way to close the context.
+	peers        *shrinkingmap.ShrinkingMap[libp2ppeer.ID, *peer] // By remotePeer.ID()
 	peersLock    *sync.RWMutex
 	recvEvents   *event.Event1[*peering.PeerMessageIn] // Used to publish events to all attached clients.
 	nodeKeyPair  *cryptolib.KeyPair
@@ -105,7 +106,7 @@ func NewNetworkProvider(
 		ctx:          ctx,
 		ctxCancel:    ctxCancel,
 		port:         port,
-		peers:        make(map[libp2ppeer.ID]*peer),
+		peers:        shrinkingmap.New[libp2ppeer.ID, *peer](),
 		peersLock:    &sync.RWMutex{},
 		recvEvents:   nil, // Initialized bellow.
 		nodeKeyPair:  nodeKeyPair,
@@ -204,9 +205,9 @@ func (n *netImpl) lppTrustedPeerID(trustedPeer *peering.TrustedPeer) (libp2ppeer
 func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 	defer stream.Close()
 	n.peersLock.RLock()
-	remotePeer, ok := n.peers[stream.Conn().RemotePeer()]
+	remotePeer, exists := n.peers.Get(stream.Conn().RemotePeer())
 	n.peersLock.RUnlock()
-	if !ok {
+	if !exists {
 		n.log.Warnf("Dropping incoming message from unknown peer: %v", stream.Conn().RemotePeer())
 		return
 	}
@@ -230,9 +231,9 @@ func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 func (n *netImpl) lppHeartbeatProtocolHandler(stream network.Stream) {
 	defer stream.Close()
 	n.peersLock.RLock()
-	remotePeer, ok := n.peers[stream.Conn().RemotePeer()]
+	remotePeer, exists := n.peers.Get(stream.Conn().RemotePeer())
 	n.peersLock.RUnlock()
-	if !ok {
+	if !exists {
 		n.log.Warnf("Dropping incoming heartbeat from unknown peer: %v", stream.Conn().RemotePeer())
 		return
 	}
@@ -280,13 +281,13 @@ func (n *netImpl) addPeer(trustedPeer *peering.TrustedPeer) error {
 	n.peersLock.Lock()
 	defer n.peersLock.Unlock()
 	var p *peer
-	var ok bool
-	if p, ok = n.peers[lppPeerID]; ok {
+	var exists bool
+	if p, exists = n.peers.Get(lppPeerID); exists {
 		p.trust(true)                           // It might be distrusted previously.
 		p.setPeeringURL(trustedPeer.PeeringURL) // It might be changed.
 	} else {
 		p = newPeer(trustedPeer.Name, trustedPeer.PeeringURL, trustedPeer.PubKey(), lppPeerID, n)
-		n.peers[lppPeerID] = p
+		n.peers.Set(lppPeerID, p)
 	}
 	return nil
 }
@@ -295,7 +296,7 @@ func (n *netImpl) addPeer(trustedPeer *peering.TrustedPeer) error {
 // Should be called when the peer is not used anymore by any users.
 func (n *netImpl) delPeerWithoutLock(peer *peer) {
 	n.lppHost.Peerstore().ClearAddrs(peer.remoteLppID)
-	delete(n.peers, peer.remoteLppID)
+	n.peers.Delete(peer.remoteLppID)
 }
 
 // Run starts listening and communicating with the network.
@@ -376,10 +377,13 @@ func (n *netImpl) PeerByPubKey(peerPubKey *cryptolib.PublicKey) (peering.PeerSen
 func (n *netImpl) PeerStatus() []peering.PeerStatusProvider {
 	n.peersLock.RLock()
 	defer n.peersLock.RUnlock()
-	peerStatus := make([]peering.PeerStatusProvider, 0)
-	for i := range n.peers {
-		peerStatus = append(peerStatus, n.peers[i])
-	}
+
+	peerStatus := make([]peering.PeerStatusProvider, 0, n.peers.Size())
+	n.peers.ForEach(func(_ libp2ppeer.ID, p *peer) bool {
+		peerStatus = append(peerStatus, p)
+		return true
+	})
+
 	return peerStatus
 }
 
@@ -460,12 +464,13 @@ func (n *netImpl) DistrustPeer(pubKey *cryptolib.PublicKey) (*peering.TrustedPee
 	n.peersLock.Lock()
 	defer n.peersLock.Unlock()
 
-	for _, peer := range n.peers {
-		peerPubKey := peer.remotePubKey
+	n.peers.ForEach(func(_ libp2ppeer.ID, p *peer) bool {
+		peerPubKey := p.remotePubKey
 		if peerPubKey != nil && pubKey.Equals(peerPubKey) {
-			peer.trust(false)
+			p.trust(false)
 		}
-	}
+		return true
+	})
 
 	return n.trusted.DistrustPeer(pubKey)
 }
@@ -492,11 +497,18 @@ func (n *netImpl) usePeer(remotePubKey *cryptolib.PublicKey) (peering.PeerSender
 	n.peersLock.Lock()
 	defer n.peersLock.Unlock()
 
-	for _, p := range n.peers {
+	var foundPeer *peer
+	n.peers.ForEach(func(_ libp2ppeer.ID, p *peer) bool {
 		if p.remotePubKey.Equals(remotePubKey) {
 			p.usePeer()
-			return p, nil
+			foundPeer = p
+			return false
 		}
+		return true
+	})
+
+	if foundPeer != nil {
+		return foundPeer, nil
 	}
 
 	return nil, fmt.Errorf("peer %v is not trusted", remotePubKey)
@@ -507,9 +519,10 @@ func (n *netImpl) maintenanceLoop(stopCh chan bool) {
 		select {
 		case <-time.After(maintenancePeriod):
 			n.peersLock.Lock()
-			for _, p := range n.peers {
+			n.peers.ForEach(func(_ libp2ppeer.ID, p *peer) bool {
 				p.maintenanceCheck()
-			}
+				return true
+			})
 			n.peersLock.Unlock()
 		case <-stopCh:
 			return

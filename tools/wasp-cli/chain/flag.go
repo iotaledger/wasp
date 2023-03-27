@@ -19,7 +19,11 @@ func defaultChainFallback(chainName string) string {
 }
 
 func getDefaultChain() string {
-	chainSettings := viper.Sub("chains").AllSettings()
+	chainSettings := map[string]interface{}{}
+	chainsKey := viper.Sub("chains")
+	if chainsKey != nil {
+		chainSettings = chainsKey.AllSettings()
+	}
 	switch len(chainSettings) {
 	case 0:
 		log.Fatalf("no chains configured, you can add a new chain with `wasp-cli add <name> <chain id>`")

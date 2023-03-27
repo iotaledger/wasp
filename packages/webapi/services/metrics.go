@@ -3,72 +3,63 @@ package services
 import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/webapi/dto"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 )
 
 type MetricsService struct {
-	chainProvider chains.Provider
+	chainProvider        chains.Provider
+	chainMetricsProvider *metrics.ChainMetricsProvider
 }
 
-func NewMetricsService(chainProvider chains.Provider) interfaces.MetricsService {
+func NewMetricsService(chainProvider chains.Provider, chainMetricsProvider *metrics.ChainMetricsProvider) interfaces.MetricsService {
 	return &MetricsService{
-		chainProvider: chainProvider,
+		chainProvider:        chainProvider,
+		chainMetricsProvider: chainMetricsProvider,
 	}
 }
 
-func (c *MetricsService) GetAllChainsMetrics() *dto.ChainMetrics {
-	chain := c.chainProvider()
-	if chain == nil {
-		return nil
-	}
+func (c *MetricsService) GetNodeMessageMetrics() *dto.NodeMessageMetrics {
+	return &dto.NodeMessageMetrics{
+		RegisteredChainIDs: c.chainMetricsProvider.RegisteredChains(),
 
-	nodeConnMetrics := chain.GetNodeConnectionMetrics()
-	registered := nodeConnMetrics.GetRegistered()
+		InMilestone:        dto.MapMetricItem(c.chainMetricsProvider.InMilestone()),
+		InStateOutput:      dto.MapMetricItem(c.chainMetricsProvider.InStateOutput()),
+		InAliasOutput:      dto.MapMetricItem(c.chainMetricsProvider.InAliasOutput()),
+		InOutput:           dto.MapMetricItem(c.chainMetricsProvider.InOutput()),
+		InOnLedgerRequest:  dto.MapMetricItem(c.chainMetricsProvider.InOnLedgerRequest()),
+		InTxInclusionState: dto.MapMetricItem(c.chainMetricsProvider.InTxInclusionState()),
 
-	return &dto.ChainMetrics{
-		InAliasOutput:      dto.MapMetricItem(nodeConnMetrics.GetInAliasOutput()),
-		InOnLedgerRequest:  dto.MapMetricItem(nodeConnMetrics.GetInOnLedgerRequest()),
-		InOutput:           dto.MapMetricItem(nodeConnMetrics.GetInOutput()),
-		InStateOutput:      dto.MapMetricItem(nodeConnMetrics.GetInStateOutput()),
-		InTxInclusionState: dto.MapMetricItem(nodeConnMetrics.GetInTxInclusionState()),
-		InMilestone:        dto.MapMetricItem(nodeConnMetrics.GetInMilestone()),
-
-		OutPublishGovernanceTransaction: dto.MapMetricItem(nodeConnMetrics.GetOutPublishGovernanceTransaction()),
-		OutPullLatestOutput:             dto.MapMetricItem(nodeConnMetrics.GetOutPullLatestOutput()),
-		OutPullOutputByID:               dto.MapMetricItem(nodeConnMetrics.GetOutPullOutputByID()),
-		OutPullTxInclusionState:         dto.MapMetricItem(nodeConnMetrics.GetOutPullTxInclusionState()),
-		OutPublisherStateTransaction:    dto.MapMetricItem(nodeConnMetrics.GetOutPublishStateTransaction()),
-
-		RegisteredChainIDs: registered,
+		OutPublishStateTransaction:      dto.MapMetricItem(c.chainMetricsProvider.OutPublishStateTransaction()),
+		OutPublishGovernanceTransaction: dto.MapMetricItem(c.chainMetricsProvider.OutPublishGovernanceTransaction()),
+		OutPullLatestOutput:             dto.MapMetricItem(c.chainMetricsProvider.OutPullLatestOutput()),
+		OutPullTxInclusionState:         dto.MapMetricItem(c.chainMetricsProvider.OutPullTxInclusionState()),
+		OutPullOutputByID:               dto.MapMetricItem(c.chainMetricsProvider.OutPullOutputByID()),
 	}
 }
 
-func (c *MetricsService) GetChainMetrics(chainID isc.ChainID) *dto.ChainMetrics {
+func (c *MetricsService) GetChainMessageMetrics(chainID isc.ChainID) *dto.ChainMessageMetrics {
 	chain := c.chainProvider().Get(chainID)
 	if chain == nil {
 		return nil
 	}
 
-	nodeConnMetrics := chain.GetNodeConnectionMetrics()
-	registered := nodeConnMetrics.GetRegistered()
+	chainMetrics := chain.GetChainMetrics()
 
-	return &dto.ChainMetrics{
-		InAliasOutput:                   dto.MapMetricItem(nodeConnMetrics.GetInAliasOutput()),
-		InOnLedgerRequest:               dto.MapMetricItem(nodeConnMetrics.GetInOnLedgerRequest()),
-		InOutput:                        dto.MapMetricItem(nodeConnMetrics.GetInOutput()),
-		InStateOutput:                   dto.MapMetricItem(nodeConnMetrics.GetInStateOutput()),
-		InTxInclusionState:              dto.MapMetricItem(nodeConnMetrics.GetInTxInclusionState()),
-		InMilestone:                     dto.MapMetricItem(nodeConnMetrics.GetInMilestone()),
-		OutPublishGovernanceTransaction: dto.MapMetricItem(nodeConnMetrics.GetOutPublishGovernanceTransaction()),
+	return &dto.ChainMessageMetrics{
+		InStateOutput:      dto.MapMetricItem(chainMetrics.InStateOutput()),
+		InAliasOutput:      dto.MapMetricItem(chainMetrics.InAliasOutput()),
+		InOutput:           dto.MapMetricItem(chainMetrics.InOutput()),
+		InOnLedgerRequest:  dto.MapMetricItem(chainMetrics.InOnLedgerRequest()),
+		InTxInclusionState: dto.MapMetricItem(chainMetrics.InTxInclusionState()),
 
-		OutPullLatestOutput:          dto.MapMetricItem(nodeConnMetrics.GetOutPullLatestOutput()),
-		OutPullOutputByID:            dto.MapMetricItem(nodeConnMetrics.GetOutPullOutputByID()),
-		OutPullTxInclusionState:      dto.MapMetricItem(nodeConnMetrics.GetOutPullTxInclusionState()),
-		OutPublisherStateTransaction: dto.MapMetricItem(nodeConnMetrics.GetOutPublishStateTransaction()),
-
-		RegisteredChainIDs: registered,
+		OutPublishStateTransaction:      dto.MapMetricItem(chainMetrics.OutPublishStateTransaction()),
+		OutPublishGovernanceTransaction: dto.MapMetricItem(chainMetrics.OutPublishGovernanceTransaction()),
+		OutPullLatestOutput:             dto.MapMetricItem(chainMetrics.OutPullLatestOutput()),
+		OutPullTxInclusionState:         dto.MapMetricItem(chainMetrics.OutPullTxInclusionState()),
+		OutPullOutputByID:               dto.MapMetricItem(chainMetrics.OutPullOutputByID()),
 	}
 }
 

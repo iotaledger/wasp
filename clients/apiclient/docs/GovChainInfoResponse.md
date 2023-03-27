@@ -7,13 +7,14 @@ Name | Type | Description | Notes
 **ChainID** | **string** | ChainID (Bech32-encoded). | 
 **ChainOwnerId** | **string** | The chain owner address (Bech32-encoded). | 
 **CustomMetadata** | Pointer to **string** | (base64) Optional extra metadata that is appended to the L1 AliasOutput | [optional] 
-**GasFeePolicy** | [**GasFeePolicy**](GasFeePolicy.md) |  | 
+**GasFeePolicy** | [**FeePolicy**](FeePolicy.md) |  | 
+**GasLimits** | [**Limits**](Limits.md) |  | 
 
 ## Methods
 
 ### NewGovChainInfoResponse
 
-`func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy GasFeePolicy, ) *GovChainInfoResponse`
+`func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy FeePolicy, gasLimits Limits, ) *GovChainInfoResponse`
 
 NewGovChainInfoResponse instantiates a new GovChainInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -95,22 +96,42 @@ HasCustomMetadata returns a boolean if a field has been set.
 
 ### GetGasFeePolicy
 
-`func (o *GovChainInfoResponse) GetGasFeePolicy() GasFeePolicy`
+`func (o *GovChainInfoResponse) GetGasFeePolicy() FeePolicy`
 
 GetGasFeePolicy returns the GasFeePolicy field if non-nil, zero value otherwise.
 
 ### GetGasFeePolicyOk
 
-`func (o *GovChainInfoResponse) GetGasFeePolicyOk() (*GasFeePolicy, bool)`
+`func (o *GovChainInfoResponse) GetGasFeePolicyOk() (*FeePolicy, bool)`
 
 GetGasFeePolicyOk returns a tuple with the GasFeePolicy field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetGasFeePolicy
 
-`func (o *GovChainInfoResponse) SetGasFeePolicy(v GasFeePolicy)`
+`func (o *GovChainInfoResponse) SetGasFeePolicy(v FeePolicy)`
 
 SetGasFeePolicy sets GasFeePolicy field to given value.
+
+
+### GetGasLimits
+
+`func (o *GovChainInfoResponse) GetGasLimits() Limits`
+
+GetGasLimits returns the GasLimits field if non-nil, zero value otherwise.
+
+### GetGasLimitsOk
+
+`func (o *GovChainInfoResponse) GetGasLimitsOk() (*Limits, bool)`
+
+GetGasLimitsOk returns a tuple with the GasLimits field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetGasLimits
+
+`func (o *GovChainInfoResponse) SetGasLimits(v Limits)`
+
+SetGasLimits sets GasLimits field to given value.
 
 
 

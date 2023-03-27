@@ -16,19 +16,24 @@ export class MapStringToImmutableBytes extends wasmtypes.ScProxy {
 }
 
 export class ImmutableStoreBlobParams extends wasmtypes.ScProxy {
-    // set of named blobs
+    // set of named chunks
     blobs(): sc.MapStringToImmutableBytes {
         return new sc.MapStringToImmutableBytes(this.proxy);
     }
 
-    // description of progBinary
-    description(): wasmtypes.ScImmutableString {
-        return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamDescription));
+    // data schema for external tools
+    dataSchema(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamDataSchema));
     }
 
     // smart contract program binary code
     progBinary(): wasmtypes.ScImmutableBytes {
         return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamProgBinary));
+    }
+
+    // smart contract program source code
+    sources(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamSources));
     }
 
     // VM type that must be used to run progBinary
@@ -49,19 +54,24 @@ export class MapStringToMutableBytes extends wasmtypes.ScProxy {
 }
 
 export class MutableStoreBlobParams extends wasmtypes.ScProxy {
-    // set of named blobs
+    // set of named chunks
     blobs(): sc.MapStringToMutableBytes {
         return new sc.MapStringToMutableBytes(this.proxy);
     }
 
-    // description of progBinary
-    description(): wasmtypes.ScMutableString {
-        return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamDescription));
+    // data schema for external tools
+    dataSchema(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamDataSchema));
     }
 
     // smart contract program binary code
     progBinary(): wasmtypes.ScMutableBytes {
         return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamProgBinary));
+    }
+
+    // smart contract program source code
+    sources(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamSources));
     }
 
     // VM type that must be used to run progBinary
@@ -71,38 +81,38 @@ export class MutableStoreBlobParams extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetBlobFieldParams extends wasmtypes.ScProxy {
-    // blob name
+    // chunk name
     field(): wasmtypes.ScImmutableString {
         return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamField));
     }
 
-    // blob set
+    // hash of the blob
     hash(): wasmtypes.ScImmutableHash {
         return new wasmtypes.ScImmutableHash(this.proxy.root(sc.ParamHash));
     }
 }
 
 export class MutableGetBlobFieldParams extends wasmtypes.ScProxy {
-    // blob name
+    // chunk name
     field(): wasmtypes.ScMutableString {
         return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamField));
     }
 
-    // blob set
+    // hash of the blob
     hash(): wasmtypes.ScMutableHash {
         return new wasmtypes.ScMutableHash(this.proxy.root(sc.ParamHash));
     }
 }
 
 export class ImmutableGetBlobInfoParams extends wasmtypes.ScProxy {
-    // blob set
+    // hash of the blob
     hash(): wasmtypes.ScImmutableHash {
         return new wasmtypes.ScImmutableHash(this.proxy.root(sc.ParamHash));
     }
 }
 
 export class MutableGetBlobInfoParams extends wasmtypes.ScProxy {
-    // blob set
+    // hash of the blob
     hash(): wasmtypes.ScMutableHash {
         return new wasmtypes.ScMutableHash(this.proxy.root(sc.ParamHash));
     }

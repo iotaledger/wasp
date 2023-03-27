@@ -9,50 +9,60 @@ import * as wasmtypes from '../wasmtypes';
 import * as sc from './index';
 
 export class ImmutableAddAllowedStateControllerAddressParams extends wasmtypes.ScProxy {
-    stateControllerAddress(): wasmtypes.ScImmutableAddress {
-        return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamStateControllerAddress));
+    // state controller address
+    address(): wasmtypes.ScImmutableAddress {
+        return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamAddress));
     }
 }
 
 export class MutableAddAllowedStateControllerAddressParams extends wasmtypes.ScProxy {
-    stateControllerAddress(): wasmtypes.ScMutableAddress {
-        return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamStateControllerAddress));
+    // state controller address
+    address(): wasmtypes.ScMutableAddress {
+        return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamAddress));
     }
 }
 
 export class ImmutableAddCandidateNodeParams extends wasmtypes.ScProxy {
-    accessNodeInfoAccessAPI(): wasmtypes.ScImmutableString {
-        return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamAccessNodeInfoAccessAPI));
+    // API base URL for the node, default empty
+    accessAPI(): wasmtypes.ScImmutableString {
+        return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamAccessAPI));
     }
 
-    accessNodeInfoCertificate(): wasmtypes.ScImmutableBytes {
-        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamAccessNodeInfoCertificate));
+    // whether node is just an access node, default false
+    accessOnly(): wasmtypes.ScImmutableBool {
+        return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ParamAccessOnly));
     }
 
-    accessNodeInfoForCommittee(): wasmtypes.ScImmutableBool {
-        return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ParamAccessNodeInfoForCommittee));
+    // signed binary containing both the node public key and their L1 address
+    certificate(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamCertificate));
     }
 
-    accessNodeInfoPubKey(): wasmtypes.ScImmutableBytes {
-        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamAccessNodeInfoPubKey));
+    // public key of the node to be added
+    pubKey(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamPubKey));
     }
 }
 
 export class MutableAddCandidateNodeParams extends wasmtypes.ScProxy {
-    accessNodeInfoAccessAPI(): wasmtypes.ScMutableString {
-        return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamAccessNodeInfoAccessAPI));
+    // API base URL for the node, default empty
+    accessAPI(): wasmtypes.ScMutableString {
+        return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamAccessAPI));
     }
 
-    accessNodeInfoCertificate(): wasmtypes.ScMutableBytes {
-        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamAccessNodeInfoCertificate));
+    // whether node is just an access node, default false
+    accessOnly(): wasmtypes.ScMutableBool {
+        return new wasmtypes.ScMutableBool(this.proxy.root(sc.ParamAccessOnly));
     }
 
-    accessNodeInfoForCommittee(): wasmtypes.ScMutableBool {
-        return new wasmtypes.ScMutableBool(this.proxy.root(sc.ParamAccessNodeInfoForCommittee));
+    // signed binary containing both the node public key and their L1 address
+    certificate(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamCertificate));
     }
 
-    accessNodeInfoPubKey(): wasmtypes.ScMutableBytes {
-        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamAccessNodeInfoPubKey));
+    // public key of the node to be added
+    pubKey(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamPubKey));
     }
 }
 
@@ -64,8 +74,12 @@ export class MapBytesToImmutableUint8 extends wasmtypes.ScProxy {
 }
 
 export class ImmutableChangeAccessNodesParams extends wasmtypes.ScProxy {
-    changeAccessNodesActions(): sc.MapBytesToImmutableUint8 {
-        return new sc.MapBytesToImmutableUint8(this.proxy.root(sc.ParamChangeAccessNodesActions));
+    // map of actions per pubkey
+    // 0: Remove the access node from the access nodes list.
+    // 1: Accept a candidate node and add it to the list of access nodes.
+    // 2: Drop an access node from the access node and candidate lists.
+    actions(): sc.MapBytesToImmutableUint8 {
+        return new sc.MapBytesToImmutableUint8(this.proxy.root(sc.ParamActions));
     }
 }
 
@@ -81,75 +95,133 @@ export class MapBytesToMutableUint8 extends wasmtypes.ScProxy {
 }
 
 export class MutableChangeAccessNodesParams extends wasmtypes.ScProxy {
-    changeAccessNodesActions(): sc.MapBytesToMutableUint8 {
-        return new sc.MapBytesToMutableUint8(this.proxy.root(sc.ParamChangeAccessNodesActions));
+    // map of actions per pubkey
+    // 0: Remove the access node from the access nodes list.
+    // 1: Accept a candidate node and add it to the list of access nodes.
+    // 2: Drop an access node from the access node and candidate lists.
+    actions(): sc.MapBytesToMutableUint8 {
+        return new sc.MapBytesToMutableUint8(this.proxy.root(sc.ParamActions));
     }
 }
 
 export class ImmutableDelegateChainOwnershipParams extends wasmtypes.ScProxy {
+    // next chain owner's agent ID
     chainOwner(): wasmtypes.ScImmutableAgentID {
         return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamChainOwner));
     }
 }
 
 export class MutableDelegateChainOwnershipParams extends wasmtypes.ScProxy {
+    // next chain owner's agent ID
     chainOwner(): wasmtypes.ScMutableAgentID {
         return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamChainOwner));
     }
 }
 
 export class ImmutableRemoveAllowedStateControllerAddressParams extends wasmtypes.ScProxy {
-    stateControllerAddress(): wasmtypes.ScImmutableAddress {
-        return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamStateControllerAddress));
+    // state controller address
+    address(): wasmtypes.ScImmutableAddress {
+        return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamAddress));
     }
 }
 
 export class MutableRemoveAllowedStateControllerAddressParams extends wasmtypes.ScProxy {
-    stateControllerAddress(): wasmtypes.ScMutableAddress {
-        return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamStateControllerAddress));
+    // state controller address
+    address(): wasmtypes.ScMutableAddress {
+        return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamAddress));
     }
 }
 
 export class ImmutableRevokeAccessNodeParams extends wasmtypes.ScProxy {
-    accessNodeInfoCertificate(): wasmtypes.ScImmutableBytes {
-        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamAccessNodeInfoCertificate));
+    // certificate of the node to be removed
+    certificate(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamCertificate));
     }
 
-    accessNodeInfoPubKey(): wasmtypes.ScImmutableBytes {
-        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamAccessNodeInfoPubKey));
+    // public key of the node to be removed
+    pubKey(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamPubKey));
     }
 }
 
 export class MutableRevokeAccessNodeParams extends wasmtypes.ScProxy {
-    accessNodeInfoCertificate(): wasmtypes.ScMutableBytes {
-        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamAccessNodeInfoCertificate));
+    // certificate of the node to be removed
+    certificate(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamCertificate));
     }
 
-    accessNodeInfoPubKey(): wasmtypes.ScMutableBytes {
-        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamAccessNodeInfoPubKey));
+    // public key of the node to be removed
+    pubKey(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamPubKey));
     }
 }
 
 export class ImmutableRotateStateControllerParams extends wasmtypes.ScProxy {
-    stateControllerAddress(): wasmtypes.ScImmutableAddress {
-        return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamStateControllerAddress));
+    // state controller address
+    address(): wasmtypes.ScImmutableAddress {
+        return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ParamAddress));
     }
 }
 
 export class MutableRotateStateControllerParams extends wasmtypes.ScProxy {
-    stateControllerAddress(): wasmtypes.ScMutableAddress {
-        return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamStateControllerAddress));
+    // state controller address
+    address(): wasmtypes.ScMutableAddress {
+        return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ParamAddress));
+    }
+}
+
+export class ImmutableSetCustomMetadataParams extends wasmtypes.ScProxy {
+    // serialized chain metadata
+    metadata(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamMetadata));
+    }
+}
+
+export class MutableSetCustomMetadataParams extends wasmtypes.ScProxy {
+    // serialized chain metadata
+    metadata(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamMetadata));
+    }
+}
+
+export class ImmutableSetEVMGasRatioParams extends wasmtypes.ScProxy {
+    // serialized gas ratio
+    gasRatio(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamGasRatio));
+    }
+}
+
+export class MutableSetEVMGasRatioParams extends wasmtypes.ScProxy {
+    // serialized gas ratio
+    gasRatio(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamGasRatio));
     }
 }
 
 export class ImmutableSetFeePolicyParams extends wasmtypes.ScProxy {
-    feePolicyBytes(): wasmtypes.ScImmutableBytes {
-        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamFeePolicyBytes));
+    // serialized fee policy
+    feePolicy(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamFeePolicy));
     }
 }
 
 export class MutableSetFeePolicyParams extends wasmtypes.ScProxy {
-    feePolicyBytes(): wasmtypes.ScMutableBytes {
-        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamFeePolicyBytes));
+    // serialized fee policy
+    feePolicy(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamFeePolicy));
+    }
+}
+
+export class ImmutableSetGasLimitsParams extends wasmtypes.ScProxy {
+    // serialized gas limits
+    gasLimits(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamGasLimits));
+    }
+}
+
+export class MutableSetGasLimitsParams extends wasmtypes.ScProxy {
+    // serialized gas limits
+    gasLimits(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamGasLimits));
     }
 }

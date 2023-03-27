@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
@@ -247,7 +247,10 @@ func testSendNFTsBack(t *testing.T, w bool) {
 	require.True(t, ch.Env.HasL1NFT(addr, &nft.ID))
 }
 
+// TODO add a test that makes sure sending more than 4 NFTs out fails with (too many outputs produced)
+
 func TestNFTOffledgerWithdraw(t *testing.T) { run2(t, testNFTOffledgerWithdraw) }
+
 func testNFTOffledgerWithdraw(t *testing.T, w bool) {
 	// Deposit an NFT, then claim it back via offleger-request
 	_, ch := setupChain(t, nil)

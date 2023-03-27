@@ -25,8 +25,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -35,7 +36,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -43,8 +43,6 @@ import (
 var _ chain.Chain = &Chain{}
 
 // String is string representation for main parameters of the chain
-//
-//goland:noinspection ALL
 func (ch *Chain) String() string {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
@@ -127,6 +125,26 @@ func (ch *Chain) SetGasFeePolicy(user *cryptolib.KeyPair, fp *gas.FeePolicy) {
 		governance.FuncSetFeePolicy.Name,
 		dict.Dict{
 			governance.ParamFeePolicyBytes: fp.Bytes(),
+		},
+	), user)
+	require.NoError(ch.Env.T, err)
+}
+
+func (ch *Chain) GetGasLimits() *gas.Limits {
+	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetGasLimits.Name)
+	require.NoError(ch.Env.T, err)
+	glBin := res.MustGet(governance.ParamGasLimitsBytes)
+	gasLimits, err := gas.LimitsFromBytes(glBin)
+	require.NoError(ch.Env.T, err)
+	return gasLimits
+}
+
+func (ch *Chain) SetGasLimits(user *cryptolib.KeyPair, gl *gas.Limits) {
+	_, err := ch.PostRequestOffLedger(NewCallParams(
+		governance.Contract.Name,
+		governance.FuncSetGasLimits.Name,
+		dict.Dict{
+			governance.ParamGasLimitsBytes: gl.Bytes(),
 		},
 	), user)
 	require.NoError(ch.Env.T, err)
@@ -338,10 +356,8 @@ func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name)
 	require.NoError(ch.Env.T, err)
 	resultDecoder := kvdecoder.New(ret, ch.Log())
-	blockIndex := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
 	blockInfoBin := resultDecoder.MustGetBytes(blocklog.ParamBlockInfo)
-
-	blockInfo, err := blocklog.BlockInfoFromBytes(blockIndex, blockInfoBin)
+	blockInfo, err := blocklog.BlockInfoFromBytes(blockInfoBin)
 	require.NoError(ch.Env.T, err)
 	return blockInfo
 }
@@ -375,9 +391,7 @@ func (ch *Chain) GetBlockInfo(blockIndex ...uint32) (*blocklog.BlockInfo, error)
 	}
 	resultDecoder := kvdecoder.New(ret, ch.Log())
 	blockInfoBin := resultDecoder.MustGetBytes(blocklog.ParamBlockInfo)
-	blockIndexRet := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
-
-	blockInfo, err := blocklog.BlockInfoFromBytes(blockIndexRet, blockInfoBin)
+	blockInfo, err := blocklog.BlockInfoFromBytes(blockInfoBin)
 	require.NoError(ch.Env.T, err)
 	return blockInfo, nil
 }
@@ -466,7 +480,7 @@ func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []isc.RequestID {
 // Upper bound is 'latest block' is set to 0
 func (ch *Chain) GetRequestReceiptsForBlockRange(fromBlockIndex, toBlockIndex uint32) []*blocklog.RequestReceipt {
 	if toBlockIndex == 0 {
-		toBlockIndex = ch.GetLatestBlockInfo().BlockIndex
+		toBlockIndex = ch.GetLatestBlockInfo().BlockIndex()
 	}
 	if fromBlockIndex > toBlockIndex {
 		return nil
@@ -615,6 +629,11 @@ func (*Chain) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
 	panic("unimplemented")
 }
 
+// GetChainMetrics implements chain.Chain
+func (*Chain) GetChainMetrics() metrics.IChainMetrics {
+	panic("unimplemented")
+}
+
 // GetConsensusPipeMetrics implements chain.Chain
 func (*Chain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
 	panic("unimplemented")
@@ -622,11 +641,6 @@ func (*Chain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
 
 // GetConsensusWorkflowStatus implements chain.Chain
 func (*Chain) GetConsensusWorkflowStatus() chain.ConsensusWorkflowStatus {
-	panic("unimplemented")
-}
-
-// GetNodeConnectionMetrics implements chain.Chain
-func (*Chain) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
 	panic("unimplemented")
 }
 
@@ -652,7 +666,7 @@ func (ch *Chain) LatestState(freshness chain.StateFreshness) (state.State, error
 	if ao == nil {
 		return ch.store.LatestState()
 	}
-	l1c, err := vmcontext.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
+	l1c, err := transaction.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
 	if err != nil {
 		panic(err)
 	}

@@ -1,6 +1,8 @@
 package vmcontext
 
 import (
+	"errors"
+	"fmt"
 	"math"
 	"runtime/debug"
 	"time"
@@ -28,7 +30,7 @@ import (
 )
 
 // RunTheRequest processes each isc.Request in the batch
-func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (result *vm.RequestResult, err error) {
+func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm.RequestResult, error) {
 	// prepare context for the request
 	vmctx.req = req
 	defer func() { vmctx.req = nil }() // in case `getToBeCaller()` is called afterwards
@@ -56,9 +58,8 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (res
 	// so far there were no panics except optimistic reader
 	txsnapshot := vmctx.createTxBuilderSnapshot()
 
-	// catches protocol exception error which is not the request or contract fault
-	// If it occurs, the request is just skipped
-	err = panicutil.CatchPanicReturnError(
+	var result *vm.RequestResult
+	err := vmctx.catchRequestPanic(
 		func() {
 			// transfer all attached assets to the sender's account
 			vmctx.creditAssetsToChain()
@@ -72,50 +73,70 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (res
 				Receipt: receipt,
 				Return:  callRet,
 			}
-		}, vmexceptions.AllProtocolLimits...,
+		},
 	)
 	if err != nil {
-		// transaction limits exceeded or not enough funds for internal storage deposit. Skipping the request. Rollback
+		// protocol exception triggered. Skipping the request. Rollback
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
 		return nil, err
 	}
 	vmctx.chainState().Apply()
-	vmctx.assertConsistentL2WithL1TxBuilder("end RunTheRequest")
 	return result, nil
 }
 
 // creditAssetsToChain credits L1 accounts with attached assets and accrues all of them to the sender's account on-chain
 func (vmctx *VMContext) creditAssetsToChain() {
-	vmctx.assertConsistentL2WithL1TxBuilder("begin creditAssetsToChain")
-
 	if vmctx.req.IsOffLedger() {
 		// off ledger request does not bring any deposit
 		return
 	}
-	// Consume the output. Adjustment in L2 is needed because of the storage deposit in the internal UTXOs
-	storageDepositAdjustment := vmctx.txbuilder.Consume(vmctx.req.(isc.OnLedgerRequest))
-	if storageDepositAdjustment > 0 {
-		panic("`storageDepositAdjustment > 0`: assertion failed, expected always non-positive storage deposit adjustment")
+	// Consume the output. Adjustment in L2 is needed because of storage deposit in the internal UTXOs
+	storageDepositNeeded := vmctx.txbuilder.Consume(vmctx.req.(isc.OnLedgerRequest))
+
+	// if sender is specified, all assets goes to sender's sender
+	// Otherwise it all goes to the common sender and panics is logged in the SC call
+	sender := vmctx.req.SenderAccount()
+	if sender == nil {
+		// TODO this should never happen... can we just panic here?
+		// this is probably an artifact from the "originTx"
+		sender = accounts.CommonAccount()
 	}
 
-	// if sender is specified, all assets goes to sender's account
-	// Otherwise it all goes to the common account and panics is logged in the SC call
-	account := vmctx.req.SenderAccount()
-	if account == nil {
-		account = accounts.CommonAccount()
+	senderBaseTokens := vmctx.req.Assets().BaseTokens + vmctx.GetBaseTokensBalance(sender)
+
+	if senderBaseTokens < storageDepositNeeded {
+		panic("TODO, not enough funds to pay for the SD NEEDED, THIS REQUEST MUST BE IGNORED OR SAVED FOR LATER SOMEHOW")
+		// ...if not enough to pay for all the SD, this request needs to be flagged as "TO PROCESS LATER"... (do we consume it or not?)
 	}
-	vmctx.creditToAccount(account, vmctx.req.Assets())
-	vmctx.creditNFTToAccount(account, vmctx.req.NFT())
 
-	// adjust the sender's account with the storage deposit consumed or returned by internal UTXOs
-	// if base tokens in the sender's account is not enough for the storage deposit of newly created TNT outputs
-	// it will panic with exceptions.ErrNotEnoughFundsForInternalStorageDeposit
-	// TNT outputs will use storage deposit from the caller
-	// TODO remove attack vector when base tokens for storage deposit is not enough and the request keeps being skipped
-	vmctx.adjustL2BaseTokensIfNeeded(storageDepositAdjustment, account)
+	vmctx.creditToAccount(sender, vmctx.req.Assets())
+	vmctx.creditNFTToAccount(sender, vmctx.req.NFT())
+	if storageDepositNeeded > 0 {
+		// TODO the charged SD should be included in the receipt
+		vmctx.debitFromAccount(sender, isc.NewAssetsBaseTokens(storageDepositNeeded))
+	}
+}
 
-	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
-	vmctx.assertConsistentL2WithL1TxBuilder("end creditAssetsToChain")
+func (vmctx *VMContext) catchRequestPanic(f func()) error {
+	err := panicutil.CatchPanic(f)
+	if err == nil {
+		return nil
+	}
+	// catches protocol exception error which is not the request or contract fault
+	// If it occurs, the request is just skipped
+	for _, targetError := range vmexceptions.AllProtocolLimits {
+		if errors.Is(err, targetError) {
+			return err
+		}
+	}
+	// panic again with more information about the error
+	panic(fmt.Errorf(
+		"panic when running request #%d ID:%s, requestbytes:%s err:%w",
+		vmctx.requestIndex,
+		vmctx.req.ID(),
+		iotago.EncodeHex(vmctx.req.Bytes()),
+		err,
+	))
 }
 
 // checkAllowance ensure there are enough funds to cover the specified allowance
@@ -235,7 +256,7 @@ func (vmctx *VMContext) callFromRequest() dict.Dict {
 
 func (vmctx *VMContext) getGasBudget() uint64 {
 	gasBudget, isEVM := vmctx.req.GasBudget()
-	if !isEVM {
+	if !isEVM || gasBudget == 0 {
 		return gasBudget
 	}
 
@@ -253,15 +274,15 @@ func (vmctx *VMContext) getGasBudget() uint64 {
 func (vmctx *VMContext) calculateAffordableGasBudget() uint64 {
 	gasBudget := vmctx.getGasBudget()
 
-	// make sure the gasBuget is at least >= than the allowed minimum
-	if gasBudget < gas.MinGasPerRequest {
-		gasBudget = gas.MinGasPerRequest
+	if vmctx.task.EstimateGasMode && gasBudget == 0 {
+		// gas budget 0 means its a view call, so we give it max gas and tokens
+		vmctx.gasMaxTokensToSpendForGasFee = math.MaxUint64
+		return vmctx.chainInfo.GasLimits.MaxGasExternalViewCall
 	}
 
-	// when estimating gas, if a value bigger than max is provided, use the maximum gas budget possible
-	if vmctx.task.EstimateGasMode && gasBudget > gas.MaxGasPerRequest {
-		vmctx.gasMaxTokensToSpendForGasFee = math.MaxUint64
-		return gas.MaxGasPerRequest
+	// make sure the gasBuget is at least >= than the allowed minimum
+	if gasBudget < vmctx.chainInfo.GasLimits.MinGasPerRequest {
+		gasBudget = vmctx.chainInfo.GasLimits.MinGasPerRequest
 	}
 
 	// calculate how many tokens for gas fee can be guaranteed after taking into account the allowance
@@ -274,7 +295,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() uint64 {
 	// adjust gas budget to what is affordable
 	affordable = util.MinUint64(gasBudget, affordable)
 	// cap gas to the maximum allowed per tx
-	return util.MinUint64(affordable, gas.MaxGasPerRequest)
+	return util.MinUint64(affordable, vmctx.chainInfo.GasLimits.MaxGasPerRequest)
 }
 
 // calcGuaranteedFeeTokens return the maximum tokens (base tokens or native) can be guaranteed for the fee,
@@ -358,8 +379,7 @@ func (vmctx *VMContext) loadChainConfig() {
 
 // mustCheckTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
 func (vmctx *VMContext) mustCheckTransactionSize() {
-	stateMetadata := vmctx.StateMetadata(state.L1CommitmentNil)
-	essence, _ := vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
+	essence, _ := vmctx.BuildTransactionEssence(state.L1CommitmentNil, false)
 	tx := transaction.MakeAnchorTransaction(essence, &iotago.Ed25519Signature{})
 	if tx.Size() > parameters.L1().MaxPayloadSize {
 		panic(vmexceptions.ErrMaxTransactionSizeExceeded)

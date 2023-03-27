@@ -4,6 +4,8 @@
 package cmtLog
 
 import (
+	"fmt"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
@@ -22,4 +24,11 @@ func NewInputConsensusOutputSkip(
 		logIndex:       logIndex,
 		proposedBaseAO: proposedBaseAO,
 	}
+}
+
+func (inp *inputConsensusOutputSkip) String() string {
+	return fmt.Sprintf(
+		"{cmtLog.inputConsensusOutputSkip, logIndex=%v, proposedBaseAO=%v}",
+		inp.logIndex, inp.proposedBaseAO.ToHex(),
+	)
 }

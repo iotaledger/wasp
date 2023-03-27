@@ -61,8 +61,8 @@ func (vmctx *VMContext) findContractByHname(contractHname isc.Hname) (ret *root.
 	return ret
 }
 
-func (vmctx *VMContext) getChainInfo() *governance.ChainInfo {
-	var ret *governance.ChainInfo
+func (vmctx *VMContext) getChainInfo() *isc.ChainInfo {
+	var ret *isc.ChainInfo
 	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
 		ret = governance.MustGetChainInfo(s, vmctx.ChainID())
 	})
@@ -155,7 +155,7 @@ func (vmctx *VMContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.R
 		receipt.Error = vmError.AsUnresolvedError()
 	}
 
-	vmctx.Debugf("writeReceiptToBlockLog: %s err: %v", vmctx.req.ID(), vmError)
+	vmctx.Debugf("writeReceiptToBlockLog - reqID:%s err: %v", vmctx.req.ID(), vmError)
 
 	receipt.GasBurnLog = vmctx.gasBurnLog
 

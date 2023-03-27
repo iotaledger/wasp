@@ -23,7 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/dkg"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -115,7 +115,7 @@ func provide(c *dig.Container) error {
 		ShutdownHandler             *shutdown.ShutdownHandler
 		APICacheTTL                 time.Duration `name:"apiCacheTTL"`
 		Chains                      *chains.Chains
-		NodeConnectionMetrics       nodeconnmetrics.NodeConnectionMetrics
+		ChainMetricsProvider        *metrics.ChainMetricsProvider
 		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
 		DKShareRegistryProvider     registry.DKShareRegistryProvider
 		NodeIdentityProvider        registry.NodeIdentityProvider
@@ -210,7 +210,7 @@ func provide(c *dig.Container) error {
 				return deps.Node
 			},
 			deps.ShutdownHandler,
-			deps.NodeConnectionMetrics,
+			deps.ChainMetricsProvider,
 			ParamsWebAPI.Auth,
 			ParamsWebAPI.NodeOwnerAddresses,
 			deps.APICacheTTL,

@@ -1,6 +1,9 @@
 package pipe
 
-import "github.com/iotaledger/wasp/packages/hashing"
+import (
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
+	"github.com/iotaledger/wasp/packages/hashing"
+)
 
 // LimitedPriorityHashQueue is a queue, which can prioritize elements,
 // limit its growth and reject already included elements.
@@ -12,7 +15,7 @@ type LimitedPriorityHashQueue[E any] struct {
 	count       int
 	priorityFun func(E) bool
 	limit       int
-	hashMap     *map[hashing.HashValue]bool
+	hashMap     *shrinkingmap.ShrinkingMap[hashing.HashValue, struct{}]
 }
 
 var _ Queue[Hashable] = &LimitedPriorityHashQueue[Hashable]{}
@@ -28,7 +31,7 @@ func NewPriorityLimitedPriorityHashQueue[E any](priorityFun func(E) bool) Queue[
 }
 
 func NewLimitLimitedPriorityHashQueue[E any](limit int) Queue[E] {
-	return NewLimitPriorityLimitedPriorityHashQueue[E](NoPriority[E], limit)
+	return NewLimitPriorityLimitedPriorityHashQueue(NoPriority[E], limit)
 }
 
 func NewLimitPriorityLimitedPriorityHashQueue[E any](priorityFun func(E) bool, limit int) Queue[E] {
@@ -58,12 +61,9 @@ func newLimitedPriorityHashQueue[E any](priorityFun func(E) bool, limit int, has
 	} else {
 		initBufSize = minQueueLen
 	}
-	var hashMap *map[hashing.HashValue]bool
+	var hashMap *shrinkingmap.ShrinkingMap[hashing.HashValue, struct{}]
 	if hashNeeded {
-		hMap := make(map[hashing.HashValue]bool)
-		hashMap = &hMap
-	} else {
-		hashMap = nil
+		hashMap = shrinkingmap.New[hashing.HashValue, struct{}]()
 	}
 	return &LimitedPriorityHashQueue[E]{
 		head:        0,
@@ -142,8 +142,7 @@ func (q *LimitedPriorityHashQueue[E]) Add(elem E) bool {
 			panic("Adding not hashable element")
 		}
 		elemHash = elemHashable.GetHash()
-		contains, ok := (*q.hashMap)[elemHash]
-		if ok && contains {
+		if q.hashMap.Has(elemHash) {
 			// duplicate element; ignoring
 			return false
 		}
@@ -197,7 +196,7 @@ func (q *LimitedPriorityHashQueue[E]) Add(elem E) bool {
 			if !ok {
 				panic("Deleting not hashable element")
 			}
-			delete(*q.hashMap, deleteElemHashable.GetHash())
+			q.hashMap.Delete(deleteElemHashable.GetHash())
 		}
 	}
 	if priority {
@@ -215,7 +214,7 @@ func (q *LimitedPriorityHashQueue[E]) Add(elem E) bool {
 		q.count++
 	}
 	if q.hashMap != nil {
-		(*q.hashMap)[elemHash] = true
+		q.hashMap.Set(elemHash, struct{}{})
 	}
 	return true
 }
@@ -268,7 +267,7 @@ func (q *LimitedPriorityHashQueue[E]) Remove() E {
 		if !ok {
 			panic("Removing not hashable element")
 		}
-		delete(*q.hashMap, retHashable.GetHash())
+		q.hashMap.Delete(retHashable.GetHash())
 	}
 	return ret
 }

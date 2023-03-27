@@ -596,7 +596,7 @@ func (clu *Cluster) KillNodeProcess(nodeIndex int, gracefully bool) error {
 	return nil
 }
 
-func (clu *Cluster) RestartNodes(nodeIndexes ...int) error {
+func (clu *Cluster) RestartNodes(keepDB bool, nodeIndexes ...int) error {
 	for _, ni := range nodeIndexes {
 		if !lo.Contains(clu.AllNodes(), ni) {
 			panic(fmt.Errorf("unexpected node index specified for a restart: %v", ni))
@@ -606,6 +606,13 @@ func (clu *Cluster) RestartNodes(nodeIndexes ...int) error {
 	// send stop commands
 	for _, i := range nodeIndexes {
 		clu.stopNode(i)
+		if !keepDB {
+			dbPath := clu.NodeDataPath(i) + "/waspdb/chains/data/"
+			clu.log.Infof("Deleting DB from %v", dbPath)
+			if err := os.RemoveAll(dbPath); err != nil {
+				return fmt.Errorf("cannot remove the node=%v DB at %v: %w", i, dbPath, err)
+			}
+		}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)

@@ -8,6 +8,7 @@ import (
 
 	"golang.org/x/crypto/blake2b"
 
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
@@ -59,6 +60,15 @@ func (bh BlockHash) String() string {
 
 func (bh BlockHash) Equals(other BlockHash) bool {
 	return bh == other
+}
+
+//nolint:revive
+func L1CommitmentFromMarshalUtil(mu *marshalutil.MarshalUtil) (*L1Commitment, error) {
+	if buf, err := mu.ReadBytes(L1CommitmentSize); err != nil {
+		return nil, err
+	} else {
+		return L1CommitmentFromBytes(buf)
+	}
 }
 
 func L1CommitmentFromBytes(data []byte) (*L1Commitment, error) {

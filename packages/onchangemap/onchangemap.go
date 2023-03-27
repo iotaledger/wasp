@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/iotaledger/hive.go/constraints"
-	"github.com/iotaledger/hive.go/lo"
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/runtime/options"
 )
 
@@ -20,7 +20,7 @@ type Item[K comparable, C constraints.ComparableStringer[K]] interface {
 type OnChangeMap[K comparable, C constraints.ComparableStringer[K], I Item[K, C]] struct {
 	mutex sync.RWMutex
 
-	m                map[K]I
+	m                *shrinkingmap.ShrinkingMap[K, I]
 	callbacksEnabled bool
 
 	changedCallback      func([]I) error
@@ -60,7 +60,7 @@ func WithItemDeletedCallback[K comparable, C constraints.ComparableStringer[K], 
 // NewOnChangeMap creates a new OnChangeMap.
 func NewOnChangeMap[K comparable, C constraints.ComparableStringer[K], I Item[K, C]](opts ...options.Option[OnChangeMap[K, C, I]]) *OnChangeMap[K, C, I] {
 	return options.Apply(&OnChangeMap[K, C, I]{
-		m:                    make(map[K]I),
+		m:                    shrinkingmap.New[K, I](),
 		callbacksEnabled:     false,
 		changedCallback:      nil,
 		itemAddedCallback:    nil,
@@ -81,7 +81,7 @@ func (r *OnChangeMap[K, C, I]) executeChangedCallback() error {
 	}
 
 	if r.changedCallback != nil {
-		if err := r.changedCallback(lo.Values(r.m)); err != nil {
+		if err := r.changedCallback(r.m.Values()); err != nil {
 			return fmt.Errorf("failed to execute callback in OnChangeMap: %w", err)
 		}
 	}
@@ -121,10 +121,11 @@ func (r *OnChangeMap[K, C, I]) All() map[K]I {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
-	itemsCopy := make(map[K]I, len(r.m))
-	for k := range r.m {
-		itemsCopy[k] = r.m[k].Clone().(I)
-	}
+	itemsCopy := make(map[K]I, r.m.Size())
+	r.m.ForEach(func(key K, item I) bool {
+		itemsCopy[key] = item.Clone().(I)
+		return true
+	})
 
 	return itemsCopy
 }
@@ -134,11 +135,12 @@ func (r *OnChangeMap[K, C, I]) Get(id C) (I, error) {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
-	if _, exists := r.m[id.Key()]; !exists {
+	item, exists := r.m.Get(id.Key())
+	if !exists {
 		return *new(I), fmt.Errorf("unable to get item: \"%s\" does not exist in map", id)
 	}
 
-	return r.m[id.Key()].Clone().(I), nil
+	return item.Clone().(I), nil
 }
 
 // Add adds an item to the map.
@@ -146,11 +148,11 @@ func (r *OnChangeMap[K, C, I]) Add(item I) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	if _, exists := r.m[item.ID().Key()]; exists {
+	if r.m.Has(item.ID().Key()) {
 		return fmt.Errorf("unable to add item: \"%s\" already exists in map", item.ID())
 	}
 
-	r.m[item.ID().Key()] = item
+	r.m.Set(item.ID().Key(), item)
 
 	return r.executeItemCallback(r.itemAddedCallback, item)
 }
@@ -160,7 +162,7 @@ func (r *OnChangeMap[K, C, I]) Modify(id C, callback func(item I) bool) (I, erro
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	item, exists := r.m[id.Key()]
+	item, exists := r.m.Get(id.Key())
 	if !exists {
 		return *new(I), fmt.Errorf("unable to modify item: \"%s\" does not exist in map", id)
 	}
@@ -177,12 +179,12 @@ func (r *OnChangeMap[K, C, I]) Delete(id C) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	item, exists := r.m[id.Key()]
+	item, exists := r.m.Get(id.Key())
 	if !exists {
 		return fmt.Errorf("unable to remove item: \"%s\" does not exist in map", id)
 	}
 
-	delete(r.m, id.Key())
+	r.m.Delete(id.Key())
 
 	return r.executeItemCallback(r.itemDeletedCallback, item)
 }

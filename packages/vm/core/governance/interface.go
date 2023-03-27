@@ -23,9 +23,12 @@ var (
 	FuncDelegateChainOwnership = coreutil.Func("delegateChainOwnership")
 	ViewGetChainOwner          = coreutil.ViewFunc("getChainOwner")
 
-	// fees
+	// gas
 	FuncSetFeePolicy = coreutil.Func("setFeePolicy")
 	ViewGetFeePolicy = coreutil.ViewFunc("getFeePolicy")
+	FuncSetGasLimits = coreutil.Func("setGasLimits")
+	ViewGetGasLimits = coreutil.ViewFunc("getGasLimits")
+
 	// evm fees
 	FuncSetEVMGasRatio = coreutil.Func("setGasRatio")
 	ViewGetEVMGasRatio = coreutil.ViewFunc("getGasRatio")
@@ -59,8 +62,9 @@ const (
 	VarChainOwnerID          = "o"
 	VarChainOwnerIDDelegated = "n"
 
-	// fees
+	// gas
 	VarGasFeePolicyBytes = "g"
+	VarGasLimitsBytes    = "l"
 
 	// access nodes
 	VarAccessNodes          = "an"
@@ -82,9 +86,10 @@ const (
 	// chain owner
 	ParamChainOwner = "o"
 
-	// fees
+	// gas
 	ParamFeePolicyBytes = "g"
 	ParamEVMGasRatio    = "e"
+	ParamGasLimitsBytes = "l"
 
 	// chain info
 	ParamChainID = "c"

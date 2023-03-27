@@ -31,15 +31,15 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 type tc struct {
@@ -86,7 +86,14 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	te := newEnv(t, n, f, reliable)
 	defer te.close()
 	//
-	offLedgerReq := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), dict.New(), 0).Sign(te.governor)
+	offLedgerReq := isc.NewOffLedgerRequest(
+		isc.RandomChainID(),
+		isc.Hn("foo"),
+		isc.Hn("bar"),
+		dict.New(),
+		0,
+		gas.LimitsDefault.MaxGasPerRequest,
+	).Sign(te.governor)
 	t.Log("Sending off-ledger request")
 	chosenMempool := rand.Intn(len(te.mempools))
 	te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq)
@@ -170,7 +177,14 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	}
 	//
 	// Add a message, we should get it now.
-	offLedgerReq2 := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), dict.New(), 1).Sign(te.governor)
+	offLedgerReq2 := isc.NewOffLedgerRequest(
+		isc.RandomChainID(),
+		isc.Hn("foo"),
+		isc.Hn("bar"),
+		dict.New(),
+		1,
+		gas.LimitsDefault.MaxGasPerRequest,
+	).Sign(te.governor)
 	offLedgerRef2 := isc.RequestRefFromRequest(offLedgerReq2)
 	for i := range te.mempools {
 		te.mempools[i].ReceiveOffLedgerRequest(offLedgerReq2)
@@ -442,7 +456,8 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.mempools = make([]mempool.Mempool, len(te.peerIdentities))
 	te.stores = make([]state.Store, len(te.peerIdentities))
 	for i := range te.peerIdentities {
-		te.stores[i] = origin.InitChain(state.NewStore(mapdb.NewMapDB()), dict.Dict{
+		te.stores[i] = state.NewStore(mapdb.NewMapDB())
+		origin.InitChain(te.stores[i], dict.Dict{
 			origin.ParamChainOwner: isc.NewAgentID(te.governor.Address()).Bytes(),
 		}, accounts.MinimumBaseTokensOnCommonAccount)
 		te.mempools[i] = mempool.New(
@@ -459,7 +474,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 }
 
 func (te *testEnv) stateForAO(i int, ao *isc.AliasOutputWithID) state.State {
-	l1Commitment, err := vmcontext.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
+	l1Commitment, err := transaction.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
 	require.NoError(te.t, err)
 	st, err := te.stores[i].StateByTrieRoot(l1Commitment.TrieRoot())
 	require.NoError(te.t, err)
@@ -482,6 +497,7 @@ type MockMempoolMetrics struct {
 	processedRequestCounter int
 }
 
+func (m *MockMempoolMetrics) IncBlocksPerChain() {}
 func (m *MockMempoolMetrics) IncRequestsReceived(req isc.Request) {
 	if req.IsOffLedger() {
 		m.offLedgerRequestCounter++
@@ -494,9 +510,8 @@ func (m *MockMempoolMetrics) IncRequestsProcessed() {
 	m.processedRequestCounter++
 }
 
-func (m *MockMempoolMetrics) SetRequestProcessingTime(reqID isc.RequestID, elapse time.Duration) {}
-
-func (m *MockMempoolMetrics) IncBlocksPerChain() {}
+func (m *MockMempoolMetrics) IncRequestsAckMessages()                  {}
+func (m *MockMempoolMetrics) SetRequestProcessingTime(_ time.Duration) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 

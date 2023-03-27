@@ -3,32 +3,53 @@ description: Root Contract
 structs: {}
 typedefs: {}
 state: {}
-funcs: 
+funcs:
+
+  # Deploys a non-EVM smart contract on the chain if the caller has deployment permission.
   deployContract:
     params:
-      programHash=ph: Hash # TODO variable init params for deployed contract
-      description=ds: String? # default 'N/A'
+      initParams=this: map[String]Bytes # additional params for smart contract init function
+
+      # The following are predefined parameter names that are necessary
+      # to be able to deploy the specific smart contract.
+      # They directly map to entries in the initParams map.
+      # This means init params cannot use these names as they get filtered out.
+
+      programHash=ph: Hash # hash of blob that has been previously stored in blob contract
+      # The name of the contract to be deployed, used to calculate the contract's hname.
+      # The hname must be unique among all contract hnames in the chain.
       name=nm: String
+      description=ds: String? # Description of the contract to be deployed. Default 'N/A'
+
+  # Grants deploy permission to an agent.
   grantDeployPermission:
+    access: chain # only chain owner can invoke this function
     params:
-      deployer=dp: AgentID
+      deployer=dp: AgentID # agent to grant deploy permission to
+
+  # Revokes deploy permission for an agent.
   revokeDeployPermission:
+    access: chain # only chain owner can invoke this function
     params:
-      deployer=dp: AgentID
+      deployer=dp: AgentID # agent to revoke deploy permission for
+
+  # Enable or disable deploy permission check
   requireDeployPermissions:
+    access: chain # only chain owner can invoke this function
     params:
-      deployPermissionsEnabled=de: Bool
-  subscribeBlockContext:
-    params:
-      openFunc=bco: Hname
-      closeFunc=bcc: Hname
+      deployPermissionsEnabled=de: Bool # turns permission check on or off
+
 views:
+
+  # Returns the record for a given smart contract
   findContract:
     params:
-      hname=hn: Hname
+      hname=hn: Hname # The smart contract’s Hname
     results:
-      contractFound=cf: Bool
-      contractRecData=dt: Bytes # encoded contract record
+      contractFound=cf: Bool # whether or not the contract exists.
+      contractRecData=dt: Bytes? # encoded contract record (if exists)
+
+  # Returns the list of all smart contracts deployed on the chain and their records.
   getContractRecords:
     results:
-      contractRegistry=r: map[Hname]Bytes # contract records
+      contractRegistry=r: map[Hname]Bytes # contract records by Hname

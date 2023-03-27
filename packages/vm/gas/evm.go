@@ -21,11 +21,11 @@ func EVMGasToISC(evmGas uint64, gasRatio *util.Ratio32) uint64 {
 }
 
 // EVMBlockGasLimit returns the ISC block gas limit converted to EVM gas units
-func EVMBlockGasLimit(gasRatio *util.Ratio32) uint64 {
-	return ISCGasBudgetToEVM(MaxGasPerBlock, gasRatio)
+func EVMBlockGasLimit(gasLimits *Limits, gasRatio *util.Ratio32) uint64 {
+	return ISCGasBudgetToEVM(gasLimits.MaxGasPerBlock, gasRatio)
 }
 
 // EVMCallGasLimit returns the maximum gas limit accepted for an EVM tx
-func EVMCallGasLimit(gasRatio *util.Ratio32) uint64 {
-	return ISCGasBudgetToEVM(MaxGasPerRequest, gasRatio)
+func EVMCallGasLimit(gasLimits *Limits, gasRatio *util.Ratio32) uint64 {
+	return ISCGasBudgetToEVM(gasLimits.MaxGasPerRequest, gasRatio)
 }

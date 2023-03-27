@@ -25,7 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 type CallParams struct {
@@ -184,8 +183,7 @@ func (r *CallParams) WithSender(sender iotago.Address) *CallParams {
 
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(chainID isc.ChainID, keyPair *cryptolib.KeyPair) isc.OffLedgerRequest {
-	ret := isc.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce).
-		WithGasBudget(r.gasBudget).
+	ret := isc.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce, r.gasBudget).
 		WithAllowance(r.allowance)
 	return ret.Sign(keyPair)
 }
@@ -391,7 +389,7 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
 func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair, useFakeBudget ...bool) (gas, gasFee uint64, err error) {
 	if len(useFakeBudget) > 0 && useFakeBudget[0] {
-		req.WithGasBudget(math.MaxUint64)
+		req.WithGasBudget(0)
 	}
 	r, err := ch.requestFromParams(req, keyPair)
 	if err != nil {
@@ -409,7 +407,7 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
 func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair, useMaxBalance ...bool) (gas, gasFee uint64, err error) {
 	if len(useMaxBalance) > 0 && useMaxBalance[0] {
-		req.WithGasBudget(math.MaxUint64)
+		req.WithGasBudget(0)
 	}
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
@@ -520,7 +518,7 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie.Me
 	if err != nil {
 		return nil, nil, err
 	}
-	retBlockInfo, err := blocklog.BlockInfoFromBytes(blockIndex, biBin)
+	retBlockInfo, err := blocklog.BlockInfoFromBytes(biBin)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -536,7 +534,7 @@ func (ch *Chain) GetMerkleProof(scHname isc.Hname, key []byte) *trie.MerkleProof
 // GetL1Commitment returns state commitment taken from the anchor output
 func (ch *Chain) GetL1Commitment() *state.L1Commitment {
 	anchorOutput := ch.GetAnchorOutput()
-	ret, err := vmcontext.L1CommitmentFromAliasOutput(anchorOutput.GetAliasOutput())
+	ret, err := transaction.L1CommitmentFromAliasOutput(anchorOutput.GetAliasOutput())
 	require.NoError(ch.Env.T, err)
 	return ret
 }

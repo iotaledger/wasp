@@ -33,6 +33,7 @@ type WaspContext interface {
 	Call(contractHname, entryPoint isc.Hname, params dict.Dict, allowance *isc.Assets) dict.Dict
 	ChainID() isc.ChainID
 	ChainOwnerID() isc.AgentID
+	ChainInfo() *isc.ChainInfo
 	CurrentContractHname() isc.Hname
 	Params() *isc.Params
 	StateReader() kv.KVStoreReader

@@ -4,6 +4,8 @@
 package cmtLog
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
@@ -16,4 +18,11 @@ func NewInputConsensusTimeout(logIndex LogIndex) gpa.Input {
 	return &inputConsensusTimeout{
 		logIndex: logIndex,
 	}
+}
+
+func (inp *inputConsensusTimeout) String() string {
+	return fmt.Sprintf(
+		"{cmtLog.inputConsensusTimeout, logIndex=%v}",
+		inp.logIndex,
+	)
 }

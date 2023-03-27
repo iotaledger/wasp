@@ -25,18 +25,20 @@ type GovChainInfoResponse struct {
 	ChainOwnerId string `json:"chainOwnerId"`
 	// (base64) Optional extra metadata that is appended to the L1 AliasOutput
 	CustomMetadata *string `json:"customMetadata,omitempty"`
-	GasFeePolicy GasFeePolicy `json:"gasFeePolicy"`
+	GasFeePolicy FeePolicy `json:"gasFeePolicy"`
+	GasLimits Limits `json:"gasLimits"`
 }
 
 // NewGovChainInfoResponse instantiates a new GovChainInfoResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy GasFeePolicy) *GovChainInfoResponse {
+func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy FeePolicy, gasLimits Limits) *GovChainInfoResponse {
 	this := GovChainInfoResponse{}
 	this.ChainID = chainID
 	this.ChainOwnerId = chainOwnerId
 	this.GasFeePolicy = gasFeePolicy
+	this.GasLimits = gasLimits
 	return &this
 }
 
@@ -129,9 +131,9 @@ func (o *GovChainInfoResponse) SetCustomMetadata(v string) {
 }
 
 // GetGasFeePolicy returns the GasFeePolicy field value
-func (o *GovChainInfoResponse) GetGasFeePolicy() GasFeePolicy {
+func (o *GovChainInfoResponse) GetGasFeePolicy() FeePolicy {
 	if o == nil {
-		var ret GasFeePolicy
+		var ret FeePolicy
 		return ret
 	}
 
@@ -140,7 +142,7 @@ func (o *GovChainInfoResponse) GetGasFeePolicy() GasFeePolicy {
 
 // GetGasFeePolicyOk returns a tuple with the GasFeePolicy field value
 // and a boolean to check if the value has been set.
-func (o *GovChainInfoResponse) GetGasFeePolicyOk() (*GasFeePolicy, bool) {
+func (o *GovChainInfoResponse) GetGasFeePolicyOk() (*FeePolicy, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -148,8 +150,32 @@ func (o *GovChainInfoResponse) GetGasFeePolicyOk() (*GasFeePolicy, bool) {
 }
 
 // SetGasFeePolicy sets field value
-func (o *GovChainInfoResponse) SetGasFeePolicy(v GasFeePolicy) {
+func (o *GovChainInfoResponse) SetGasFeePolicy(v FeePolicy) {
 	o.GasFeePolicy = v
+}
+
+// GetGasLimits returns the GasLimits field value
+func (o *GovChainInfoResponse) GetGasLimits() Limits {
+	if o == nil {
+		var ret Limits
+		return ret
+	}
+
+	return o.GasLimits
+}
+
+// GetGasLimitsOk returns a tuple with the GasLimits field value
+// and a boolean to check if the value has been set.
+func (o *GovChainInfoResponse) GetGasLimitsOk() (*Limits, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.GasLimits, true
+}
+
+// SetGasLimits sets field value
+func (o *GovChainInfoResponse) SetGasLimits(v Limits) {
+	o.GasLimits = v
 }
 
 func (o GovChainInfoResponse) MarshalJSON() ([]byte, error) {
@@ -168,6 +194,7 @@ func (o GovChainInfoResponse) ToMap() (map[string]interface{}, error) {
 		toSerialize["customMetadata"] = o.CustomMetadata
 	}
 	toSerialize["gasFeePolicy"] = o.GasFeePolicy
+	toSerialize["gasLimits"] = o.GasLimits
 	return toSerialize, nil
 }
 

@@ -79,12 +79,55 @@ export class RotateStateControllerCall {
     }
 }
 
+export class SetCustomMetadataCall {
+    func:   wasmlib.ScFunc;
+    params: sc.MutableSetCustomMetadataParams = new sc.MutableSetCustomMetadataParams(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScFuncCallContext) {
+        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetCustomMetadata);
+    }
+}
+
+export class SetEVMGasRatioCall {
+    func:   wasmlib.ScFunc;
+    params: sc.MutableSetEVMGasRatioParams = new sc.MutableSetEVMGasRatioParams(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScFuncCallContext) {
+        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetEVMGasRatio);
+    }
+}
+
 export class SetFeePolicyCall {
     func:   wasmlib.ScFunc;
     params: sc.MutableSetFeePolicyParams = new sc.MutableSetFeePolicyParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
         this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetFeePolicy);
+    }
+}
+
+export class SetGasLimitsCall {
+    func:   wasmlib.ScFunc;
+    params: sc.MutableSetGasLimitsParams = new sc.MutableSetGasLimitsParams(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScFuncCallContext) {
+        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetGasLimits);
+    }
+}
+
+export class SetMaintenanceOffCall {
+    func: wasmlib.ScFunc;
+
+    public constructor(ctx: wasmlib.ScFuncCallContext) {
+        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetMaintenanceOff);
+    }
+}
+
+export class SetMaintenanceOnCall {
+    func: wasmlib.ScFunc;
+
+    public constructor(ctx: wasmlib.ScFuncCallContext) {
+        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetMaintenanceOn);
     }
 }
 
@@ -124,6 +167,24 @@ export class GetChainOwnerCall {
     }
 }
 
+export class GetCustomMetadataCall {
+    func:    wasmlib.ScView;
+    results: sc.ImmutableGetCustomMetadataResults = new sc.ImmutableGetCustomMetadataResults(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScViewCallContext) {
+        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetCustomMetadata);
+    }
+}
+
+export class GetEVMGasRatioCall {
+    func:    wasmlib.ScView;
+    results: sc.ImmutableGetEVMGasRatioResults = new sc.ImmutableGetEVMGasRatioResults(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScViewCallContext) {
+        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetEVMGasRatio);
+    }
+}
+
 export class GetFeePolicyCall {
     func:    wasmlib.ScView;
     results: sc.ImmutableGetFeePolicyResults = new sc.ImmutableGetFeePolicyResults(wasmlib.ScView.nilProxy);
@@ -133,95 +194,183 @@ export class GetFeePolicyCall {
     }
 }
 
+export class GetGasLimitsCall {
+    func:    wasmlib.ScView;
+    results: sc.ImmutableGetGasLimitsResults = new sc.ImmutableGetGasLimitsResults(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScViewCallContext) {
+        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetGasLimits);
+    }
+}
+
+export class GetMaintenanceStatusCall {
+    func:    wasmlib.ScView;
+    results: sc.ImmutableGetMaintenanceStatusResults = new sc.ImmutableGetMaintenanceStatusResults(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScViewCallContext) {
+        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetMaintenanceStatus);
+    }
+}
+
 export class ScFuncs {
+    // Adds the given address to the list of identities that constitute the state controller.
     static addAllowedStateControllerAddress(ctx: wasmlib.ScFuncCallContext): AddAllowedStateControllerAddressCall {
         const f = new AddAllowedStateControllerAddressCall(ctx);
         f.params = new sc.MutableAddAllowedStateControllerAddressParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    // access nodes
+    // Adds a node to the list of candidates.
     static addCandidateNode(ctx: wasmlib.ScFuncCallContext): AddCandidateNodeCall {
         const f = new AddCandidateNodeCall(ctx);
         f.params = new sc.MutableAddCandidateNodeParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
+    // Iterates through the given map of actions and applies them.
     static changeAccessNodes(ctx: wasmlib.ScFuncCallContext): ChangeAccessNodesCall {
         const f = new ChangeAccessNodesCall(ctx);
         f.params = new sc.MutableChangeAccessNodesParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    // chain owner
+    // Claims the ownership of the chain if the caller matches the identity
+    // that was set in delegateChainOwnership().
     static claimChainOwnership(ctx: wasmlib.ScFuncCallContext): ClaimChainOwnershipCall {
         return new ClaimChainOwnershipCall(ctx);
     }
 
+    // Sets the Agent ID o as the new owner for the chain.
+    // This change will only be effective once claimChainOwnership() is called by o.
     static delegateChainOwnership(ctx: wasmlib.ScFuncCallContext): DelegateChainOwnershipCall {
         const f = new DelegateChainOwnershipCall(ctx);
         f.params = new sc.MutableDelegateChainOwnershipParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
+    // Removes the given address from the list of identities that constitute the state controller.
     static removeAllowedStateControllerAddress(ctx: wasmlib.ScFuncCallContext): RemoveAllowedStateControllerAddressCall {
         const f = new RemoveAllowedStateControllerAddressCall(ctx);
         f.params = new sc.MutableRemoveAllowedStateControllerAddressParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
+    // Removes a node from the list of candidates.
     static revokeAccessNode(ctx: wasmlib.ScFuncCallContext): RevokeAccessNodeCall {
         const f = new RevokeAccessNodeCall(ctx);
         f.params = new sc.MutableRevokeAccessNodeParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    // state controller
+    // Called when the committee is about to be rotated to the given address.
+    // If it succeeds, the next state transition will become a governance transition,
+    // thus updating the state controller in the chain's Alias Output.
+    // If it fails, nothing happens.
     static rotateStateController(ctx: wasmlib.ScFuncCallContext): RotateStateControllerCall {
         const f = new RotateStateControllerCall(ctx);
         f.params = new sc.MutableRotateStateControllerParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    // fees
+    // Changes optional extra metadata that is appended to the L1 AliasOutput.
+    static setCustomMetadata(ctx: wasmlib.ScFuncCallContext): SetCustomMetadataCall {
+        const f = new SetCustomMetadataCall(ctx);
+        f.params = new sc.MutableSetCustomMetadataParams(wasmlib.newCallParamsProxy(f.func));
+        return f;
+    }
+
+    // Sets the EVM gas ratio for the chain.
+    static setEVMGasRatio(ctx: wasmlib.ScFuncCallContext): SetEVMGasRatioCall {
+        const f = new SetEVMGasRatioCall(ctx);
+        f.params = new sc.MutableSetEVMGasRatioParams(wasmlib.newCallParamsProxy(f.func));
+        return f;
+    }
+
+    // Sets the fee policy for the chain.
     static setFeePolicy(ctx: wasmlib.ScFuncCallContext): SetFeePolicyCall {
         const f = new SetFeePolicyCall(ctx);
         f.params = new sc.MutableSetFeePolicyParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
-    // state controller
+    // Sets the gas limits for the chain.
+    static setGasLimits(ctx: wasmlib.ScFuncCallContext): SetGasLimitsCall {
+        const f = new SetGasLimitsCall(ctx);
+        f.params = new sc.MutableSetGasLimitsParams(wasmlib.newCallParamsProxy(f.func));
+        return f;
+    }
+
+    // Stops the maintenance mode.
+    static setMaintenanceOff(ctx: wasmlib.ScFuncCallContext): SetMaintenanceOffCall {
+        return new SetMaintenanceOffCall(ctx);
+    }
+
+    // Starts the chain maintenance mode, meaning no further requests
+    // will be processed except calls to the governance contract.
+    static setMaintenanceOn(ctx: wasmlib.ScFuncCallContext): SetMaintenanceOnCall {
+        return new SetMaintenanceOnCall(ctx);
+    }
+
+    // Returns the list of allowed state controllers.
     static getAllowedStateControllerAddresses(ctx: wasmlib.ScViewCallContext): GetAllowedStateControllerAddressesCall {
         const f = new GetAllowedStateControllerAddressesCall(ctx);
         f.results = new sc.ImmutableGetAllowedStateControllerAddressesResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    // chain info
+    // Returns information about the chain.
     static getChainInfo(ctx: wasmlib.ScViewCallContext): GetChainInfoCall {
         const f = new GetChainInfoCall(ctx);
         f.results = new sc.ImmutableGetChainInfoResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    // access nodes
+    // Returns the current access nodes and candidates.
     static getChainNodes(ctx: wasmlib.ScViewCallContext): GetChainNodesCall {
         const f = new GetChainNodesCall(ctx);
         f.results = new sc.ImmutableGetChainNodesResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    // chain owner
+    // Returns the AgentID of the chain owner.
     static getChainOwner(ctx: wasmlib.ScViewCallContext): GetChainOwnerCall {
         const f = new GetChainOwnerCall(ctx);
         f.results = new sc.ImmutableGetChainOwnerResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
-    // fees
+    // Returns the extra metadata that is added to the chain AliasOutput.
+    static getCustomMetadata(ctx: wasmlib.ScViewCallContext): GetCustomMetadataCall {
+        const f = new GetCustomMetadataCall(ctx);
+        f.results = new sc.ImmutableGetCustomMetadataResults(wasmlib.newCallResultsProxy(f.func));
+        return f;
+    }
+
+    // Returns the EVM gas ratio.
+    static getEVMGasRatio(ctx: wasmlib.ScViewCallContext): GetEVMGasRatioCall {
+        const f = new GetEVMGasRatioCall(ctx);
+        f.results = new sc.ImmutableGetEVMGasRatioResults(wasmlib.newCallResultsProxy(f.func));
+        return f;
+    }
+
+    // Returns the fee policy.
     static getFeePolicy(ctx: wasmlib.ScViewCallContext): GetFeePolicyCall {
         const f = new GetFeePolicyCall(ctx);
         f.results = new sc.ImmutableGetFeePolicyResults(wasmlib.newCallResultsProxy(f.func));
+        return f;
+    }
+
+    // Returns the gas limits.
+    static getGasLimits(ctx: wasmlib.ScViewCallContext): GetGasLimitsCall {
+        const f = new GetGasLimitsCall(ctx);
+        f.results = new sc.ImmutableGetGasLimitsResults(wasmlib.newCallResultsProxy(f.func));
+        return f;
+    }
+
+    // Returns whether the chain is undergoing maintenance.
+    static getMaintenanceStatus(ctx: wasmlib.ScViewCallContext): GetMaintenanceStatusCall {
+        const f = new GetMaintenanceStatusCall(ctx);
+        f.results = new sc.ImmutableGetMaintenanceStatusResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 }

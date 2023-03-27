@@ -8,16 +8,14 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
 func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	scheme iotago.TokenScheme,
 	metadata []byte,
 ) (uint32, uint64) {
-	// TODO does it make sense to keep these max supply checks?
+	// must check for valid token scheme to not create invalid transactions
 	simpleTokenScheme := util.MustTokenScheme(scheme)
 	maxSupply := simpleTokenScheme.MaximumSupply
 	if maxSupply.Cmp(util.Big0) <= 0 {
@@ -45,12 +43,6 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		}}
 	}
 	f.Amount = parameters.L1().Protocol.RentStructure.MinRent(f)
-	err := panicutil.CatchPanicReturnError(func() {
-		txb.subDeltaBaseTokensFromTotal(f.Amount)
-	}, vm.ErrNotEnoughBaseTokensBalance)
-	if err != nil {
-		panic(vmexceptions.ErrNotEnoughFundsForInternalStorageDeposit)
-	}
 	txb.invokedFoundries[f.SerialNumber] = &foundryInvoked{
 		serialNumber: f.SerialNumber,
 		in:           nil,
@@ -62,7 +54,6 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 // ModifyNativeTokenSupply inflates the supply is delta > 0, shrinks if delta < 0
 // returns adjustment of the storage deposit.
 func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(nativeTokenID iotago.NativeTokenID, delta *big.Int) int64 {
-	txb.MustBalanced("ModifyNativeTokenSupply: IN")
 	sn := nativeTokenID.FoundrySerialNumber()
 	f := txb.ensureFoundry(sn)
 	if f == nil {
@@ -98,7 +89,6 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(nativeTokenID iotag
 	txb.invokedFoundries[sn] = f
 
 	adjustment += int64(f.in.Amount) - int64(f.out.Amount)
-	txb.MustBalanced("ModifyNativeTokenSupply: OUT")
 	return adjustment
 }
 
@@ -108,7 +98,7 @@ func (txb *AnchorTransactionBuilder) ensureFoundry(sn uint32) *foundryInvoked {
 	}
 
 	// load foundry output from the state
-	foundryOutput, outputID := txb.loadFoundryFunc(sn)
+	foundryOutput, outputID := txb.accountsView.FoundryOutput(sn)
 	if foundryOutput == nil {
 		return nil
 	}
@@ -124,7 +114,6 @@ func (txb *AnchorTransactionBuilder) ensureFoundry(sn uint32) *foundryInvoked {
 
 // DestroyFoundry destroys existing foundry. Return storage deposit
 func (txb *AnchorTransactionBuilder) DestroyFoundry(sn uint32) uint64 {
-	txb.MustBalanced("ModifyNativeTokenSupply: IN")
 	f := txb.ensureFoundry(sn)
 	if f == nil {
 		panic(vm.ErrFoundryDoesNotExist)
@@ -136,8 +125,6 @@ func (txb *AnchorTransactionBuilder) DestroyFoundry(sn uint32) uint64 {
 	defer txb.mustCheckTotalNativeTokensExceeded()
 
 	f.out = nil
-	// return storage deposit to accounts
-	txb.addDeltaBaseTokensToTotal(f.in.Amount)
 	return f.in.Amount
 }
 

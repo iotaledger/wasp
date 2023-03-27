@@ -3,13 +3,6 @@ package gas
 import "fmt"
 
 const (
-	MaxGasPerBlock         = uint64(1_000_000_000)
-	MinGasPerRequest       = uint64(10000)
-	MaxGasPerRequest       = MaxGasPerBlock / 20 // one request cannot use more than 5% of maximum block gas
-	MaxGasExternalViewCall = MaxGasPerRequest
-)
-
-const (
 	BurnCodeStorage1P = BurnCode(iota)
 	BurnCodeReadFromState1P
 	BurnCodeCallTargetNotFound

@@ -29,8 +29,8 @@ import (
 )
 
 var gasLimits = GasLimits{
-	Block: gas.EVMBlockGasLimit(&util.Ratio32{A: 1, B: 1}),
-	Call:  gas.EVMCallGasLimit(&util.Ratio32{A: 1, B: 1}),
+	Block: gas.EVMBlockGasLimit(gas.LimitsDefault, &util.Ratio32{A: 1, B: 1}),
+	Call:  gas.EVMCallGasLimit(gas.LimitsDefault, &util.Ratio32{A: 1, B: 1}),
 }
 
 func estimateGas(callMsg ethereum.CallMsg, e *EVMEmulator) (uint64, error) {

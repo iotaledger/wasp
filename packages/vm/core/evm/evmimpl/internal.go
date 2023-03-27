@@ -22,15 +22,13 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 type blockContext struct {
-	emu       *emulator.EVMEmulator
-	feePolicy *gas.FeePolicy
-	txs       []*types.Transaction
-	receipts  []*types.Receipt
+	emu      *emulator.EVMEmulator
+	txs      []*types.Transaction
+	receipts []*types.Receipt
 }
 
 // openBlockContext creates a new emulator instance before processing any
@@ -38,13 +36,9 @@ type blockContext struct {
 // for each ISC block.
 func openBlockContext(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCaller(&isc.NilAgentID{}) // called from ISC VM
-	feePolicy := getFeePolicy(ctx)
-	bctx := &blockContext{feePolicy: feePolicy}
-	bctx.emu = createEmulator(
-		ctx,
-		feePolicy,
-		newL2Balance(ctx, func() *gas.FeePolicy { return bctx.feePolicy }),
-	)
+	bctx := &blockContext{
+		emu: createEmulator(ctx, newL2Balance(ctx)),
+	}
 	ctx.Privileged().SetBlockContext(bctx)
 	return nil
 }
@@ -58,9 +52,7 @@ func closeBlockContext(ctx isc.Sandbox) dict.Dict {
 }
 
 func getBlockContext(ctx isc.Sandbox) *blockContext {
-	bctx := ctx.Privileged().BlockContext().(*blockContext)
-	bctx.feePolicy = getFeePolicy(ctx) // refresh in case it changed since the last tx
-	return bctx
+	return ctx.Privileged().BlockContext().(*blockContext)
 }
 
 func (bctx *blockContext) mintBlock() {
@@ -91,30 +83,31 @@ func (bctx *blockContext) mintBlock() {
 	bctx.emu.MintBlock()
 }
 
-func createEmulator(ctx isc.Sandbox, feePolicy *gas.FeePolicy, l2Balance *l2Balance) *emulator.EVMEmulator {
+func gasLimits(ctx isc.SandboxBase) emulator.GasLimits {
+	chainInfo := ctx.ChainInfo()
+	return emulator.GasLimits{
+		Block: gas.EVMBlockGasLimit(chainInfo.GasLimits, &chainInfo.GasFeePolicy.EVMGasRatio),
+		Call:  gas.EVMCallGasLimit(chainInfo.GasLimits, &chainInfo.GasFeePolicy.EVMGasRatio),
+	}
+}
+
+func createEmulator(ctx isc.Sandbox, l2Balance *l2Balance) *emulator.EVMEmulator {
 	return emulator.NewEVMEmulator(
 		evmStateSubrealm(ctx.State()),
 		timestamp(ctx.Timestamp()),
-		emulator.GasLimits{
-			Block: gas.EVMBlockGasLimit(&feePolicy.EVMGasRatio),
-			Call:  gas.EVMCallGasLimit(&feePolicy.EVMGasRatio),
-		},
+		gasLimits(ctx),
 		newMagicContract(ctx),
 		l2Balance,
 	)
 }
 
 func createEmulatorR(ctx isc.SandboxView) *emulator.EVMEmulator {
-	feePolicy := getFeePolicy(ctx)
 	return emulator.NewEVMEmulator(
 		evmStateSubrealm(buffered.NewBufferedKVStore(ctx.StateR())),
 		timestamp(ctx.Timestamp()),
-		emulator.GasLimits{
-			Block: gas.EVMBlockGasLimit(&feePolicy.EVMGasRatio),
-			Call:  gas.EVMCallGasLimit(&feePolicy.EVMGasRatio),
-		},
+		gasLimits(ctx),
 		newMagicContractView(ctx),
-		newL2BalanceR(ctx, func() *gas.FeePolicy { return feePolicy }),
+		newL2BalanceR(ctx),
 	)
 }
 
@@ -226,28 +219,13 @@ func paramBlockNumber(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevi
 	return current
 }
 
-// TODO dropping "customtokens gas fee" might be the way to go
-func getFeePolicy(ctx isc.SandboxBase) *gas.FeePolicy {
-	res := ctx.CallView(
-		governance.Contract.Hname(),
-		governance.ViewGetFeePolicy.Hname(),
-		nil,
-	)
-	var err error
-	feePolicy, err := gas.FeePolicyFromBytes(res.MustGet(governance.ParamFeePolicyBytes))
-	ctx.RequireNoError(err)
-	return feePolicy
-}
-
 type l2BalanceR struct {
-	ctx          isc.SandboxBase
-	getFeePolicy func() *gas.FeePolicy
+	ctx isc.SandboxBase
 }
 
-func newL2BalanceR(ctx isc.SandboxBase, getFeePolicy func() *gas.FeePolicy) *l2BalanceR {
+func newL2BalanceR(ctx isc.SandboxBase) *l2BalanceR {
 	return &l2BalanceR{
-		ctx:          ctx,
-		getFeePolicy: getFeePolicy,
+		ctx: ctx,
 	}
 }
 
@@ -256,9 +234,9 @@ type l2Balance struct {
 	ctx isc.Sandbox
 }
 
-func newL2Balance(ctx isc.Sandbox, getFeePolicy func() *gas.FeePolicy) *l2Balance {
+func newL2Balance(ctx isc.Sandbox) *l2Balance {
 	return &l2Balance{
-		l2BalanceR: newL2BalanceR(ctx, getFeePolicy),
+		l2BalanceR: newL2BalanceR(ctx),
 		ctx:        ctx,
 	}
 }

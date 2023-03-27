@@ -3,6 +3,7 @@ package smGPAUtils
 import (
 	"time"
 
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/state"
 )
@@ -14,7 +15,7 @@ type blockTime struct {
 
 type blockCache struct {
 	log          *logger.Logger
-	blocks       map[BlockKey]state.Block
+	blocks       *shrinkingmap.ShrinkingMap[BlockKey, state.Block]
 	wal          BlockWAL
 	times        []*blockTime
 	timeProvider TimeProvider
@@ -25,7 +26,7 @@ var _ BlockCache = &blockCache{}
 func NewBlockCache(tp TimeProvider, wal BlockWAL, log *logger.Logger) (BlockCache, error) {
 	return &blockCache{
 		log:          log.Named("bc"),
-		blocks:       make(map[BlockKey]state.Block),
+		blocks:       shrinkingmap.New[BlockKey, state.Block](),
 		wal:          wal,
 		times:        make([]*blockTime, 0),
 		timeProvider: tp,
@@ -43,7 +44,7 @@ func (bcT *blockCache) AddBlock(block state.Block) {
 		bcT.log.Debugf("Block %s written to WAL", commitment)
 	}
 
-	bcT.blocks[blockKey] = block
+	bcT.blocks.Set(blockKey, block)
 	bcT.times = append(bcT.times, &blockTime{
 		time:     bcT.timeProvider.GetNow(),
 		blockKey: blockKey,
@@ -54,8 +55,8 @@ func (bcT *blockCache) AddBlock(block state.Block) {
 func (bcT *blockCache) GetBlock(commitment *state.L1Commitment) state.Block {
 	blockKey := NewBlockKey(commitment)
 	// Check in cache
-	block, ok := bcT.blocks[blockKey]
-	if ok {
+	block, exists := bcT.blocks.Get(blockKey)
+	if exists {
 		bcT.log.Debugf("Block %s retrieved from cache", commitment)
 		return block
 	}
@@ -84,7 +85,7 @@ func (bcT *blockCache) CleanOlderThan(limit time.Time) {
 			bcT.times = bcT.times[i:]
 			return
 		}
-		delete(bcT.blocks, bt.blockKey)
+		bcT.blocks.Delete(bt.blockKey)
 		bcT.log.Debugf("Block %s deleted from cache", bt.blockKey)
 	}
 	bcT.times = make([]*blockTime, 0) // All the blocks were deleted

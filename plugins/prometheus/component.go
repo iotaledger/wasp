@@ -14,9 +14,8 @@ import (
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/app"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/daemon"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/metrics"
 )
 
 // routeMetrics is the route for getting the prometheus metrics.
@@ -53,13 +52,16 @@ type dependencies struct {
 	PrometheusEcho     *echo.Echo `name:"prometheusEcho"`
 	PrometheusRegistry *prometheus.Registry
 
-	AppInfo               *app.Info
-	NodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
-	WebAPIEcho            *echo.Echo                  `name:"webapiEcho" optional:"true"`
-	BlockWALMetrics       *smGPAUtils.BlockWALMetrics `optional:"true"`
+	AppInfo      *app.Info
+	ChainMetrics *metrics.ChainMetricsProvider
+	WebAPIEcho   *echo.Echo `name:"webapiEcho" optional:"true"`
 }
 
 func provide(c *dig.Container) error {
+	if err := c.Provide(metrics.NewChainMetricsProvider); err != nil {
+		Plugin.LogPanic(err)
+	}
+
 	type depsOut struct {
 		dig.Out
 		PrometheusEcho     *echo.Echo `name:"prometheusEcho"`
@@ -83,24 +85,41 @@ func provide(c *dig.Container) error {
 	return nil
 }
 
+func register(name string, cs ...prometheus.Collector) {
+	for _, c := range cs {
+		if err := deps.PrometheusRegistry.Register(c); err != nil {
+			Plugin.LogWarnf("failed to register %s metrics", name)
+		}
+	}
+}
+
 func configure() error {
 	if ParamsPrometheus.NodeMetrics {
-		configureNode(deps.PrometheusRegistry, deps.AppInfo)
+		register("node", newNodeCollector(deps.AppInfo))
 	}
-	if ParamsPrometheus.NodeConnMetrics {
-		deps.NodeConnectionMetrics.Register(deps.PrometheusRegistry)
+	if ParamsPrometheus.BlockWALMetrics {
+		register("write ahead logging", deps.ChainMetrics.PrometheusCollectorsBlockWAL()...)
 	}
-	if ParamsPrometheus.BlockWALMetrics && deps.BlockWALMetrics != nil {
-		deps.BlockWALMetrics.Register(deps.PrometheusRegistry)
+	if ParamsPrometheus.ConsensusMetrics {
+		register("consenus", deps.ChainMetrics.PrometheusCollectorsConsensus()...)
+	}
+	if ParamsPrometheus.MempoolMetrics {
+		register("mempool", deps.ChainMetrics.PrometheusCollectorsMempool()...)
+	}
+	if ParamsPrometheus.ChainMessagesMetrics {
+		register("chain messages", deps.ChainMetrics.PrometheusCollectorsChainMessages()...)
+	}
+	if ParamsPrometheus.ChainStateMetrics {
+		register("chain state", deps.ChainMetrics.PrometheusCollectorsChainState()...)
 	}
 	if ParamsPrometheus.RestAPIMetrics {
-		configureRestAPI(deps.PrometheusRegistry, deps.WebAPIEcho)
+		register("rest API", newRestAPICollector(deps.WebAPIEcho)...)
 	}
 	if ParamsPrometheus.GoMetrics {
-		deps.PrometheusRegistry.MustRegister(collectors.NewGoCollector())
+		register("go", collectors.NewGoCollector())
 	}
 	if ParamsPrometheus.ProcessMetrics {
-		deps.PrometheusRegistry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
+		register("process", collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 	}
 
 	return nil

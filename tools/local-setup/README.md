@@ -9,26 +9,29 @@ setup.
 
 Run `docker-compose pull` to fetch the dependencies.
 
-Run `docker-compose up` to start the setup.
+Create dedicated volumes:
+```
+docker volume create --name hornet-nest-db
+docker volume create --name wasp-db
+```
+
+Run `docker-compose up -d` to start the setup.
 
 After startup, you should be able to see the wasp dashboard on:
 http://localhost/wasp/dashboard/
 
-### Stopping
+### Stopping/Resuming
 
-Press `Ctrl-C` to shut down the setup, but don't press it twice to force it.
-Otherwise, you can corrupt the Hornet database.
+You can stop execution with `docker-compose down`.
 
-You can also shut down the setup with `docker-compose down` in a new terminal.
+### Removing data
 
-### Reset
+After `docker compose down`:
+```
+ docker volume rm wasp-db hornet-nest-db
+```
 
-Run `docker-compose down --volumes` to shut down the nodes and to remove all
-databases.
-
-### Re-build
-
-If you made changes to the Wasp code and want to use it inside the setup, you can re-build the Wasp image using `build_container.sh` or `build_container.cmd`.
+You'll need to re-create the volumes to spin the setup up again.
 
 ## Ports
 
@@ -36,6 +39,7 @@ The nodes will then be reachable under these ports:
 
 - Wasp:
   - API: <http://localhost:9090>
+  - DASHBOARD: <http://localhost/wasp/dashboard>
 
 - Hornet:
   - API: <http://localhost:14265>
@@ -68,3 +72,8 @@ After a chain has been created, the EVM JSON-RPC can be accessed via:
 http://localhost:9090/chain/<CHAIN ID (tst1...)>/evm/jsonrpc
 ChainID: 1074
 ```
+
+### Re-build (wasp-devs only)
+
+If you made changes to the Wasp code and want to use it inside the setup, you can re-build the Wasp image using `build_container.sh` or `build_container.cmd`.
+

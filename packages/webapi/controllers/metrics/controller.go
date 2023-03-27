@@ -32,17 +32,17 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
-	adminAPI.GET("metrics/l1", c.getL1Metrics, authentication.ValidatePermissions([]string{permissions.Read})).
-		AddResponse(http.StatusOK, "A list of all available metrics.", models.ChainMetrics{}, nil).
-		SetOperationId("getL1Metrics").
-		SetSummary("Get accumulated metrics.")
+	adminAPI.GET("metrics/node/messages", c.getNodeMessageMetrics, authentication.ValidatePermissions([]string{permissions.Read})).
+		AddResponse(http.StatusOK, "A list of all available metrics.", models.NodeMessageMetrics{}, nil).
+		SetOperationId("getNodeMessageMetrics").
+		SetSummary("Get accumulated message metrics.")
 
-	adminAPI.GET("metrics/chain/:chainID", c.getChainMetrics, authentication.ValidatePermissions([]string{permissions.Read})).
+	adminAPI.GET("metrics/chain/:chainID/messages", c.getChainMessageMetrics, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddResponse(http.StatusNotFound, "Chain not found", nil, nil).
-		AddResponse(http.StatusOK, "A list of all available metrics.", models.ChainMetrics{}, nil).
-		SetOperationId("getChainMetrics").
-		SetSummary("Get chain specific metrics.")
+		AddResponse(http.StatusOK, "A list of all available metrics.", models.ChainMessageMetrics{}, nil).
+		SetOperationId("getChainMessageMetrics").
+		SetSummary("Get chain specific message metrics.")
 
 	adminAPI.GET("metrics/chain/:chainID/workflow", c.getChainWorkflowMetrics, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).

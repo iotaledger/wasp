@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -86,10 +87,16 @@ func (m mustChainStore) NewStateDraft(timestamp time.Time, prevL1Commitment *sta
 	return r
 }
 
+func initializedStore(db kvstore.KVStore) state.Store {
+	st := state.NewStore(db)
+	origin.InitChain(st, nil, 0)
+	return st
+}
+
 func TestOriginBlock(t *testing.T) {
 	db := mapdb.NewMapDB()
 
-	cs := mustChainStore{origin.InitChain(state.NewStore(db), nil, 0)}
+	cs := mustChainStore{initializedStore(db)}
 
 	validateBlock0 := func(block0 state.Block, err error) {
 		require.NoError(t, err)
@@ -111,7 +118,7 @@ func TestOriginBlock(t *testing.T) {
 
 func Test1Block(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := mustChainStore{origin.InitChain(state.NewStore(db), nil, 0)}
+	cs := mustChainStore{initializedStore(db)}
 
 	block1 := func() state.Block {
 		d := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
@@ -134,7 +141,7 @@ func Test1Block(t *testing.T) {
 
 func TestReorg(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := mustChainStore{origin.InitChain(state.NewStore(db), nil, 0)}
+	cs := mustChainStore{initializedStore(db)}
 
 	// main branch
 	for i := 1; i < 10; i++ {
@@ -177,7 +184,7 @@ func TestReorg(t *testing.T) {
 
 func TestReplay(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := mustChainStore{origin.InitChain(state.NewStore(db), nil, 0)}
+	cs := mustChainStore{initializedStore(db)}
 	for i := 1; i < 10; i++ {
 		d := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
 		d.Set("k", []byte(fmt.Sprintf("a%d", i)))
@@ -188,7 +195,7 @@ func TestReplay(t *testing.T) {
 
 	// create a clone of the store by replaying all the blocks
 	db2 := mapdb.NewMapDB()
-	cs2 := mustChainStore{origin.InitChain(state.NewStore(db2), nil, 0)}
+	cs2 := mustChainStore{initializedStore(db2)}
 	for i := 1; i < 10; i++ {
 		block := cs.BlockByIndex(uint32(i))
 
@@ -203,7 +210,7 @@ func TestReplay(t *testing.T) {
 
 func TestProof(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := mustChainStore{origin.InitChain(state.NewStore(db), nil, 0)}
+	cs := mustChainStore{initializedStore(db)}
 
 	for _, k := range [][]byte{
 		[]byte(coreutil.StatePrefixTimestamp),
@@ -223,7 +230,7 @@ func TestProof(t *testing.T) {
 
 func TestDoubleCommit(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := mustChainStore{origin.InitChain(state.NewStore(db), nil, 0)}
+	cs := mustChainStore{initializedStore(db)}
 	keyChanged := kv.Key("k")
 	for i := 1; i < 10; i++ {
 		now := time.Now()

@@ -8,7 +8,7 @@ npm install
 go install $root_path/tools/schema
 
 cd $root_path/packages/wasmvm/wasmlib
-schema -go -rs -ts -force -core
+schema -go -rs -ts -force
 
 cd $contracts_path
 rm -rf ./node_modules/wasmlib/
