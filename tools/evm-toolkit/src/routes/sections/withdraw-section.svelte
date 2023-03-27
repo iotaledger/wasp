@@ -1,6 +1,6 @@
 <script lang="ts">
   import { chainId, connected, selectedAccount } from 'svelte-web3';
-  import { Button, Input, RangeInput } from '$components';
+  import { Button, Input, RangeInput, Select } from '$components';
   import { InputType } from '$lib/common/enums';
   import { Bech32AddressLength } from '$lib/constants';
   import { nodeClient } from '$lib/evm-toolkit';
@@ -13,6 +13,8 @@
     pollBalance,
     withdrawStateStore,
   } from '$lib/withdraw';
+  import type { INFT } from '$lib/nft';
+  import { truncateText } from '$lib/common';
 
   const formInput: WithdrawFormInput = {
     receiverAddress: '',
@@ -159,6 +161,17 @@
       );
     } catch {}
   }
+
+  const formatAvailableNFTsForSelectTag = (nfts: INFT[]) => {
+    return nfts.map(nft => {
+      return {
+        id: Number(nft.id),
+        label: nft?.metadata?.name
+          ? truncateText(nft?.metadata?.name, 4, 4) + '  ' + nft?.id
+          : nft?.id,
+      };
+    });
+  };
 </script>
 
 <withdraw-component class="flex flex-col space-y-6 mt-6">
@@ -210,15 +223,12 @@
     {#if $withdrawStateStore.availableNFTs.length > 0}
       <nfts-wrapper>
         <div class="mb-2">NFTs</div>
-        <info-box>
-          <div class="flex flex-col space-y-2">
-            {#each $withdrawStateStore.availableNFTs as nft}
-              <info-item-title>
-                {nft.id}
-              </info-item-title>
-            {/each}
-          </div>
-        </info-box>
+        <Select
+          bind:value={formInput.nftIDToSend}
+          options={formatAvailableNFTsForSelectTag(
+            $withdrawStateStore.availableNFTs,
+          )}
+        />
       </nfts-wrapper>
     {/if}
     <Button
