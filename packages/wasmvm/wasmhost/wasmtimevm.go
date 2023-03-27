@@ -6,7 +6,7 @@ package wasmhost
 import (
 	"errors"
 
-	"github.com/bytecodealliance/wasmtime-go/v6"
+	"github.com/bytecodealliance/wasmtime-go/v7"
 )
 
 type WasmTimeVM struct {
@@ -23,9 +23,12 @@ type WasmTimeVM struct {
 
 func NewWasmTimeVM() WasmVM {
 	config := wasmtime.NewConfig()
+	// no need to be interruptable by WasmVMBase
 	// config.SetInterruptable(true)
 	config.SetConsumeFuel(true)
 	vm := &WasmTimeVM{engine: wasmtime.NewEngineWithConfig(config)}
+	// prevent WasmVMBase from starting timeout interrupting,
+	// instead we simply let WasmTime run out of fuel
 	vm.timeoutStarted = true // DisableWasmTimeout
 	return vm
 }
@@ -127,7 +130,7 @@ func (vm *WasmTimeVM) NewInstance(wc *WasmContext) WasmVM {
 	// That means that store will stay alive as long as there still are instances
 	// using it (usually because of nested calls). Once all WasmContexts that
 	// reference the old store have been released, there is nothing referencing
-	// the old store any more, and it will be cleaned up by WasmTime-Go.
+	// the old store anymore, and it will be cleaned up by WasmTime-Go.
 	vm.instances++
 	if (vm.instances & 0xff) == 0 {
 		err := vm.LinkHost()

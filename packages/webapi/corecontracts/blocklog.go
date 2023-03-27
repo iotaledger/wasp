@@ -62,12 +62,7 @@ func handleBlockInfo(info dict.Dict) (*blocklog.BlockInfo, error) {
 		return nil, err
 	}
 
-	blockIndexRet, err := resultDecoder.GetUint32(blocklog.ParamBlockIndex)
-	if err != nil {
-		return nil, err
-	}
-
-	blockInfo, err := blocklog.BlockInfoFromBytes(blockIndexRet, blockInfoBin)
+	blockInfo, err := blocklog.BlockInfoFromBytes(blockInfoBin)
 	if err != nil {
 		return nil, err
 	}

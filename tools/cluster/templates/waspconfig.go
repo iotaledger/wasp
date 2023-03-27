@@ -92,7 +92,7 @@ var WaspConfig = `
     "directory": "blocks"
   },
   "profiling": {
-    "enabled": true,
+    "enabled": false,
     "bindAddress": "0.0.0.0:{{.ProfilingPort}}"
   },
   "profilingRecorder": {

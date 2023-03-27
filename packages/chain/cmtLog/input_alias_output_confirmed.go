@@ -4,6 +4,8 @@
 package cmtLog
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 )
@@ -16,4 +18,8 @@ func NewInputAliasOutputConfirmed(aliasOutput *isc.AliasOutputWithID) gpa.Input 
 	return &inputAliasOutputConfirmed{
 		aliasOutput: aliasOutput,
 	}
+}
+
+func (inp *inputAliasOutputConfirmed) String() string {
+	return fmt.Sprintf("{cmtLog.inputAliasOutputConfirmed, %v}", inp.aliasOutput)
 }

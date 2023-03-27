@@ -57,7 +57,6 @@ func TestProofs(t *testing.T) {
 		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
 
-		pastL1Commitment := ch.GetL1Commitment()
 		pastBlockIndex, err := ch.Store().LatestBlockIndex()
 		require.NoError(t, err)
 
@@ -74,8 +73,6 @@ func TestProofs(t *testing.T) {
 		err = proof.ValidateValue(ch.GetL1Commitment().TrieRoot(), bi.Bytes())
 
 		require.NoError(t, err)
-
-		require.Equal(t, pastL1Commitment.TrieRoot(), bi.L1Commitment.TrieRoot())
 	})
 	t.Run("proof past block", func(t *testing.T) {
 		env := solo.New(t)
@@ -86,7 +83,6 @@ func TestProofs(t *testing.T) {
 
 		pastBlockIndex, err := ch.Store().LatestBlockIndex()
 		require.NoError(t, err)
-		pastL1Commitment := ch.GetL1Commitment()
 
 		_, err = ch.UploadBlobFromFile(nil, randomFile, "file")
 		require.NoError(t, err)
@@ -97,7 +93,6 @@ func TestProofs(t *testing.T) {
 		pastBlockInfo, poi, err := ch.GetBlockProof(pastBlockIndex)
 		require.NoError(t, err)
 
-		require.Equal(t, pastL1Commitment.TrieRoot(), pastBlockInfo.L1Commitment.TrieRoot())
 		err = poi.ValidateValue(ch.GetL1Commitment().TrieRoot(), pastBlockInfo.Bytes())
 
 		require.NoError(t, err)

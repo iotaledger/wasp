@@ -35,8 +35,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-var latestBlock = rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)
-
 type soloChainEnv struct {
 	t          testing.TB
 	solo       *solo.Solo
@@ -147,7 +145,7 @@ func (e *soloChainEnv) getBlockNumber() uint64 {
 }
 
 func (e *soloChainEnv) getCode(addr common.Address) []byte {
-	ret, err := e.evmChain.Code(addr, latestBlock)
+	ret, err := e.evmChain.Code(addr, nil)
 	require.NoError(e.t, err)
 	return ret
 }
@@ -304,6 +302,12 @@ func (e *soloChainEnv) signer() types.Signer {
 	return evmutil.Signer(big.NewInt(int64(e.evmChainID)))
 }
 
+func (e *soloChainEnv) maxGasLimit() uint64 {
+	fp := e.soloChain.GetGasFeePolicy()
+	gl := e.soloChain.GetGasLimits()
+	return gas.EVMCallGasLimit(gl, &fp.EVMGasRatio)
+}
+
 func (e *soloChainEnv) deployContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, args ...interface{}) *evmContractInstance {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
@@ -325,7 +329,7 @@ func (e *soloChainEnv) deployContract(creator *ecdsa.PrivateKey, abiJSON string,
 		GasPrice: evm.GasPrice,
 		Value:    value,
 		Data:     data,
-	})
+	}, nil)
 	require.NoError(e.t, err)
 
 	tx, err := types.SignTx(
@@ -434,7 +438,7 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 			GasPrice: opt.gasPrice,
 			Value:    opt.value,
 			Data:     callData,
-		})
+		}, nil)
 		if err != nil {
 			return opt, fmt.Errorf("error estimating gas limit: %w", e.chain.resolveError(err))
 		}
@@ -504,7 +508,7 @@ func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName
 	return res
 }
 
-func (e *evmContractInstance) callView(fnName string, args []interface{}, v interface{}) error {
+func (e *evmContractInstance) callView(fnName string, args []interface{}, v interface{}, blockNumberOrHash ...rpc.BlockNumberOrHash) error {
 	e.chain.t.Logf("callView: %s %+v", fnName, args)
 	callArguments, err := e.abi.Pack(fnName, args...)
 	require.NoError(e.chain.t, err)
@@ -515,7 +519,11 @@ func (e *evmContractInstance) callView(fnName string, args []interface{}, v inte
 		GasPrice: evm.GasPrice,
 		Data:     callArguments,
 	})
-	ret, err := e.chain.evmChain.CallContract(callMsg, latestBlock)
+	var bn *rpc.BlockNumberOrHash
+	if len(blockNumberOrHash) > 0 {
+		bn = &blockNumberOrHash[0]
+	}
+	ret, err := e.chain.evmChain.CallContract(callMsg, bn)
 	if err != nil {
 		return err
 	}

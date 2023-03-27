@@ -16,32 +16,20 @@ import (
 
 // SaveNextBlockInfo appends block info and returns its index
 func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) {
-	registry := collections.NewArray32(partition, prefixBlockRegistry)
+	registry := collections.NewArray32(partition, PrefixBlockRegistry)
 	registry.MustPush(blockInfo.Bytes())
 }
 
 // UpdateLatestBlockInfo is called before producing the next block to save anchor tx id and commitment data of the previous one
-func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxID iotago.TransactionID, l1Commitment *state.L1Commitment) {
-	registry := collections.NewArray32(partition, prefixBlockRegistry)
+func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxID iotago.TransactionID, aliasOutput *isc.AliasOutputWithID, l1commitment *state.L1Commitment) {
+	registry := collections.NewArray32(partition, PrefixBlockRegistry)
 	lastBlockIndex := registry.MustLen() - 1
 	blockInfoBuffer := registry.MustGetAt(lastBlockIndex)
-	blockInfo, _ := BlockInfoFromBytes(lastBlockIndex, blockInfoBuffer)
-
-	blockInfo.AnchorTransactionID = anchorTxID
-	blockInfo.L1Commitment = l1Commitment
-
-	registry.MustSetAt(lastBlockIndex, blockInfo.Bytes())
-}
-
-func GetAnchorTransactionIDByBlockIndex(partition kv.KVStore, blockIndex uint32) iotago.TransactionID {
-	registry := collections.NewArray32(partition, prefixBlockRegistry)
-	blockInfoBuffer := registry.MustGetAt(blockIndex)
-	blockInfo, err := BlockInfoFromBytes(blockIndex, blockInfoBuffer)
+	blockInfo, err := BlockInfoFromBytes(blockInfoBuffer)
 	if err != nil {
-		panic("Failed to parse blockinfo")
+		panic(err)
 	}
-
-	return blockInfo.AnchorTransactionID
+	registry.MustSetAt(lastBlockIndex, blockInfo.Bytes())
 }
 
 // SaveControlAddressesIfNecessary saves new information about state address in the blocklog partition
@@ -256,7 +244,7 @@ func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint
 }
 
 func getBlockInfoBytes(partition kv.KVStoreReader, blockIndex uint32) ([]byte, error) {
-	return collections.NewArray32ReadOnly(partition, prefixBlockRegistry).GetAt(blockIndex)
+	return collections.NewArray32ReadOnly(partition, PrefixBlockRegistry).GetAt(blockIndex)
 }
 
 func RequestReceiptKey(rkey RequestLookupKey) []byte {
@@ -274,12 +262,11 @@ func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, re
 }
 
 func GetOutputID(stateR kv.KVStoreReader, stateIndex uint32, outputIndex uint16) (iotago.OutputID, error) {
-	blockInfo, err := GetBlockInfo(stateR, stateIndex)
+	blockInfo, err := GetBlockInfo(stateR, stateIndex+1)
 	if err != nil {
 		return iotago.OutputID{}, err
 	}
-
-	return iotago.OutputIDFromTransactionIDAndIndex(blockInfo.AnchorTransactionID, outputIndex), nil
+	return iotago.OutputIDFromTransactionIDAndIndex(blockInfo.PreviousAliasOutput.TransactionID(), outputIndex), nil
 }
 
 // tries to get block index from ParamBlockIndex, if no parameter is provided, returns the latest block index
@@ -288,6 +275,6 @@ func getBlockIndexParams(ctx isc.SandboxView) uint32 {
 	if ret != math.MaxUint32 {
 		return ret
 	}
-	registry := collections.NewArray32ReadOnly(ctx.StateR(), prefixBlockRegistry)
+	registry := collections.NewArray32ReadOnly(ctx.StateR(), PrefixBlockRegistry)
 	return registry.MustLen() - 1
 }

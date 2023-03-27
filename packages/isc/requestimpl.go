@@ -13,14 +13,13 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 const (
 	requestKindTagOnLedger byte = iota
 	requestKindTagOffLedgerISC
-	requestKindTagOffLedgerEVM
-	requestKindTagOffLedgerEVMEstimateGas
+	requestKindTagOffLedgerEVMTx
+	requestKindTagOffLedgerEVMCall
 )
 
 func NewRequestFromBytes(data []byte) (Request, error) {
@@ -38,10 +37,10 @@ func NewRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (Request, error) {
 		r = &onLedgerRequestData{}
 	case requestKindTagOffLedgerISC:
 		r = &offLedgerRequestData{}
-	case requestKindTagOffLedgerEVM:
-		r = &evmOffLedgerRequest{}
-	case requestKindTagOffLedgerEVMEstimateGas:
-		r = &evmOffLedgerEstimateGasRequest{}
+	case requestKindTagOffLedgerEVMTx:
+		r = &evmOffLedgerTxRequest{}
+	case requestKindTagOffLedgerEVMCall:
+		r = &evmOffLedgerCallRequest{}
 	default:
 		panic(fmt.Sprintf("no handler for request kind %d", kind))
 	}
@@ -102,7 +101,13 @@ func (s *offLedgerSignatureScheme) readSignature(mu *marshalutil.MarshalUtil) er
 	return err
 }
 
-func NewOffLedgerRequest(chainID ChainID, contract, entryPoint Hname, params dict.Dict, nonce uint64) UnsignedOffLedgerRequest {
+func NewOffLedgerRequest(
+	chainID ChainID,
+	contract, entryPoint Hname,
+	params dict.Dict,
+	nonce uint64,
+	gasBudget uint64,
+) UnsignedOffLedgerRequest {
 	return &offLedgerRequestData{
 		chainID:    chainID,
 		contract:   contract,
@@ -110,7 +115,7 @@ func NewOffLedgerRequest(chainID ChainID, contract, entryPoint Hname, params dic
 		params:     params,
 		nonce:      nonce,
 		allowance:  NewEmptyAssets(),
-		gasBudget:  gas.MaxGasPerRequest,
+		gasBudget:  gasBudget,
 	}
 }
 

@@ -60,10 +60,10 @@ type EVMService interface {
 }
 
 type MetricsService interface {
-	GetAllChainsMetrics() *dto.ChainMetrics
+	GetNodeMessageMetrics() *dto.NodeMessageMetrics
+	GetChainMessageMetrics(chainID isc.ChainID) *dto.ChainMessageMetrics
 	GetChainConsensusPipeMetrics(chainID isc.ChainID) *models.ConsensusPipeMetrics
 	GetChainConsensusWorkflowMetrics(chainID isc.ChainID) *models.ConsensusWorkflowMetrics
-	GetChainMetrics(chainID isc.ChainID) *dto.ChainMetrics
 }
 
 var ErrPeerNotFound = errors.New("couldn't find peer")

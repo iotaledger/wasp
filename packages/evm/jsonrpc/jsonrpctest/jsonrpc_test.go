@@ -366,6 +366,24 @@ func TestRPCCall(t *testing.T) {
 	require.Equal(t, uint32(42), v)
 }
 
+func TestRPCCallNonView(t *testing.T) {
+	env := newSoloTestEnv(t)
+	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
+	require.NoError(t, err)
+	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
+
+	callArguments, err := contractABI.Pack("triggerEvent", "hello")
+	require.NoError(t, err)
+
+	_, err = env.Client.CallContract(context.Background(), ethereum.CallMsg{
+		From: creatorAddress,
+		To:   &contractAddress,
+		Data: callArguments,
+	}, nil)
+	require.NoError(t, err)
+}
+
 func TestRPCAccessHistoricalState(t *testing.T) {
 	env := newSoloTestEnv(t)
 	env.TestRPCAccessHistoricalState()

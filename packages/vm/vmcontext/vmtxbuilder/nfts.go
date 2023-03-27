@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
@@ -86,15 +87,9 @@ func (txb *AnchorTransactionBuilder) NFTOutputsToBeUpdated() (toBeAdded, toBeRem
 	return toBeAdded, toBeRemoved
 }
 
-func (txb *AnchorTransactionBuilder) consumeNFT(nftOutput *iotago.NFTOutput, outputID iotago.OutputID) int64 {
-	storageDeposit := int64(txb.storageDepositAssumption.NFTOutput)
-
-	// keep the number of base tokens in the output == required storage deposit
-	// take all native tokens out of the NFT output
-	txb.subDeltaBaseTokensFromTotal(txb.storageDepositAssumption.NFTOutput)
-
+func (txb *AnchorTransactionBuilder) internalNFTOutputFromRequest(nftOutput *iotago.NFTOutput, outputID iotago.OutputID) *nftIncluded {
 	out := nftOutput.Clone().(*iotago.NFTOutput)
-	out.Amount = uint64(storageDeposit)
+	out.Amount = 0
 	chainAddr := txb.anchorOutput.AliasID.ToAddress()
 	out.NativeTokens = nil
 	out.Conditions = iotago.UnlockConditions{
@@ -113,15 +108,18 @@ func (txb *AnchorTransactionBuilder) consumeNFT(nftOutput *iotago.NFTOutput, out
 		out.NFTID = iotago.NFTIDFromOutputID(outputID)
 	}
 
-	toInclude := &nftIncluded{
+	// set amount to the min SD
+	out.Amount = parameters.L1().Protocol.RentStructure.MinRent(out)
+
+	ret := &nftIncluded{
 		ID:          out.NFTID,
 		in:          nil,
 		out:         out,
 		sentOutside: false,
 	}
 
-	txb.nftsIncluded[nftOutput.NFTID] = toInclude
-	return -storageDeposit
+	txb.nftsIncluded[out.NFTID] = ret
+	return ret
 }
 
 func (txb *AnchorTransactionBuilder) sendNFT(o *iotago.NFTOutput) int64 {
@@ -132,24 +130,25 @@ func (txb *AnchorTransactionBuilder) sendNFT(o *iotago.NFTOutput) int64 {
 	if txb.nftsIncluded[o.NFTID] != nil {
 		// NFT comes in and out in the same block
 		txb.nftsIncluded[o.NFTID].sentOutside = true
+		sd := txb.nftsIncluded[o.NFTID].out.Amount // reimburse the SD cost
 		txb.nftsIncluded[o.NFTID].out = o
-	} else {
-		if txb.InputsAreFull() {
-			panic(vmexceptions.ErrInputLimitExceeded)
-		}
-
-		// using NFT already owned by the chain
-		in, outputID := txb.loadNFTOutput(o.NFTID)
-		toInclude := &nftIncluded{
-			ID:          o.NFTID,
-			in:          in,
-			outputID:    outputID,
-			out:         o,
-			sentOutside: true,
-		}
-
-		txb.nftsIncluded[o.NFTID] = toInclude
+		return int64(sd)
 	}
-	txb.addDeltaBaseTokensToTotal(txb.storageDepositAssumption.NFTOutput)
-	return int64(txb.storageDepositAssumption.NFTOutput)
+	if txb.InputsAreFull() {
+		panic(vmexceptions.ErrInputLimitExceeded)
+	}
+
+	// using NFT already owned by the chain
+	in, outputID := txb.accountsView.NFTOutput(o.NFTID)
+	toInclude := &nftIncluded{
+		ID:          o.NFTID,
+		in:          in,
+		outputID:    outputID,
+		out:         o,
+		sentOutside: true,
+	}
+
+	txb.nftsIncluded[o.NFTID] = toInclude
+
+	return int64(in.Deposit())
 }

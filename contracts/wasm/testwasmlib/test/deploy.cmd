@@ -1,4 +1,3 @@
-if not exist wasp-cli.json wasp-cli init
 wasp-cli request-funds
 wasp-cli chain deploy --chain=mychain
 wasp-cli chain activate

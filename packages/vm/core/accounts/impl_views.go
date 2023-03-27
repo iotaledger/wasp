@@ -138,6 +138,7 @@ func viewAccountNFTsInCollection(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamNFTIDs)
 	for _, nftID := range nftIDs {
+		nftID := nftID
 		arr.MustPush(nftID[:])
 	}
 	return ret

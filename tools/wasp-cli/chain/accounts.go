@@ -96,25 +96,13 @@ func initBalanceCmd() *cobra.Command {
 	return cmd
 }
 
-func NFTFromNFTOutput(nftOutput *iotago.NFTOutput) *isc.NFT {
-	if nftOutput == nil {
-		return nil
-	}
-
-	return &isc.NFT{
-		ID:       nftOutput.NFTID,
-		Metadata: nftOutput.ImmutableFeatureSet().MetadataFeature().Data,
-		Issuer:   nftOutput.ImmutableFeatureSet().IssuerFeature().Address,
-	}
-}
-
 func initDepositCmd() *cobra.Command {
 	var adjustStorageDeposit bool
 	var node string
 	var chain string
 
 	cmd := &cobra.Command{
-		Use:   "deposit [<agentid>] <token-id>:<amount>, [<token-id>:amount ...], <nft>:nftID, [<nft>:nftID ...]",
+		Use:   "deposit [<agentid>] <token-id>:<amount>, [<token-id>:amount ...]",
 		Short: "Deposit L1 funds into the given (default: your) L2 account",
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -124,7 +112,7 @@ func initDepositCmd() *cobra.Command {
 			chainID := config.GetChain(chain)
 			if strings.Contains(args[0], ":") {
 				// deposit to own agentID
-				tokens := util.ParseAssetArgs(args)
+				tokens := util.ParseFungibleTokens(args)
 				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotago.Transaction, error) {
 					client := cliclients.WaspClient(node)
 
@@ -141,22 +129,8 @@ func initDepositCmd() *cobra.Command {
 				agentID, err := isc.NewAgentIDFromString(args[0])
 				log.Check(err)
 				tokensStr := strings.Split(strings.Join(args[1:], ""), ",")
-				tokens := util.ParseAssetArgs(tokensStr)
+				tokens := util.ParseFungibleTokens(tokensStr)
 				allowance := tokens.Clone()
-
-				w := wallet.Load()
-				outputsSet, err := cliclients.L1Client().OutputMap(w.KeyPair.Address())
-				log.Check(err)
-
-				var nftOutput *iotago.NFTOutput
-
-				for _, k := range outputsSet {
-					output, ok := k.(*iotago.NFTOutput)
-
-					if ok {
-						nftOutput = output
-					}
-				}
 
 				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotago.Transaction, error) {
 					client := cliclients.WaspClient(node)
@@ -170,7 +144,6 @@ func initDepositCmd() *cobra.Command {
 							Transfer:                 tokens,
 							Allowance:                allowance,
 							AutoAdjustStorageDeposit: adjustStorageDeposit,
-							NFT:                      NFTFromNFTOutput(nftOutput),
 						},
 					)
 				})

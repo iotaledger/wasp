@@ -5,10 +5,12 @@
 
 pub use isc::*;
 pub use wasmclientcontext::*;
+pub use wasmclientevents::*;
 pub use wasmclientservice::*;
 
 pub mod isc;
 pub mod wasmclientcontext;
+pub mod wasmclientevents;
 pub mod wasmclientsandbox;
 pub mod wasmclientservice;
 

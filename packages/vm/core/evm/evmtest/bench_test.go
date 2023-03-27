@@ -34,7 +34,7 @@ func initBenchmark(b *testing.B) (*solo.Chain, []isc.Request) {
 			gasLimit: gasLimit,
 		}}, "store", uint32(i))
 		require.NoError(b, err)
-		reqs[i], err = isc.NewEVMOffLedgerRequest(env.soloChain.ChainID, tx)
+		reqs[i], err = isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx)
 		require.NoError(b, err)
 	}
 

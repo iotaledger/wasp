@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func TestBasic(t *testing.T) {
@@ -42,7 +43,14 @@ func testBasic(t *testing.T, n, cmtN, cmtF int) {
 		nodes[nid] = distSync.New(thisNodeID, requestNeededCB, requestReceivedCB, 100, log)
 	}
 
-	req := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), nil, 0).Sign(kp)
+	req := isc.NewOffLedgerRequest(
+		isc.RandomChainID(),
+		isc.Hn("foo"),
+		isc.Hn("bar"),
+		nil,
+		0,
+		gas.LimitsDefault.MaxGasPerRequest,
+	).Sign(kp)
 	reqRef := isc.RequestRefFromRequest(req)
 	cmtNodes := []gpa.NodeID{} // Random subset of all nodes.
 	for pos, idx := range rand.Perm(cmtN) {

@@ -19,11 +19,11 @@ func IsRotateStateControllerRequest(req isc.Calldata) bool {
 	return target.Contract == coreutil.CoreContractGovernanceHname && target.EntryPoint == coreutil.CoreEPRotateStateControllerHname
 }
 
-func NewRotateRequestOffLedger(chainID isc.ChainID, newStateAddress iotago.Address, keyPair *cryptolib.KeyPair) isc.Request {
+func NewRotateRequestOffLedger(chainID isc.ChainID, newStateAddress iotago.Address, keyPair *cryptolib.KeyPair, gasBudget uint64) isc.Request {
 	args := dict.New()
 	args.Set(coreutil.ParamStateControllerAddress, codec.EncodeAddress(newStateAddress))
 	nonce := uint64(time.Now().UnixNano())
-	ret := isc.NewOffLedgerRequest(chainID, coreutil.CoreContractGovernanceHname, coreutil.CoreEPRotateStateControllerHname, args, nonce)
+	ret := isc.NewOffLedgerRequest(chainID, coreutil.CoreContractGovernanceHname, coreutil.CoreEPRotateStateControllerHname, args, nonce, gasBudget)
 	return ret.Sign(keyPair)
 }
 

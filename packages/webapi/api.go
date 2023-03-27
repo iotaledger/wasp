@@ -1,6 +1,7 @@
 package webapi
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -13,14 +14,14 @@ import (
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	userspkg "github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/chain"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/corecontracts"
-	"github.com/iotaledger/wasp/packages/webapi/controllers/metrics"
+	apimetrics "github.com/iotaledger/wasp/packages/webapi/controllers/metrics"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/node"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/requests"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/users"
@@ -29,9 +30,18 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/websocket"
 )
 
+const APIVersion = 1
+
+func addHealthEndpoint(server echoswagger.ApiRoot) {
+	server.GET("/health", func(c echo.Context) error { return c.NoContent(http.StatusOK) }).
+		AddResponse(http.StatusOK, "The node is healthy.", nil, nil).
+		SetOperationId("getHealth").
+		SetSummary("Returns 200 if the node is healthy.")
+}
+
 func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLoad []interfaces.APIController, authMiddleware func() echo.MiddlewareFunc) {
 	for _, controller := range controllersToLoad {
-		group := server.Group(controller.Name(), "/")
+		group := server.Group(controller.Name(), fmt.Sprintf("/v%d/", APIVersion))
 		controller.RegisterPublic(group, mocker)
 
 		adminGroup := &APIGroupModifier{
@@ -68,7 +78,7 @@ func Init(
 	chainsProvider chains.Provider,
 	dkgNodeProvider dkg.NodeProvider,
 	shutdownHandler *shutdown.ShutdownHandler,
-	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics,
+	chainMetricsProvider *metrics.ChainMetricsProvider,
 	authConfig authentication.AuthConfiguration,
 	nodeOwnerAddresses []string,
 	requestCacheTTL time.Duration,
@@ -80,11 +90,11 @@ func Init(
 	mocker.LoadMockFiles()
 
 	vmService := services.NewVMService(chainsProvider, chainRecordRegistryProvider)
-	chainService := services.NewChainService(logger, chainsProvider, nodeConnectionMetrics, chainRecordRegistryProvider, vmService)
+	chainService := services.NewChainService(logger, chainsProvider, chainMetricsProvider, chainRecordRegistryProvider, vmService)
 	committeeService := services.NewCommitteeService(chainsProvider, networkProvider, dkShareRegistryProvider)
 	registryService := services.NewRegistryService(chainsProvider, chainRecordRegistryProvider)
 	offLedgerService := services.NewOffLedgerService(chainService, networkProvider, requestCacheTTL)
-	metricsService := services.NewMetricsService(chainsProvider)
+	metricsService := services.NewMetricsService(chainsProvider, chainMetricsProvider)
 	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
 	evmService := services.NewEVMService(chainService, networkProvider, pub, logger)
 	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeOwnerAddresses, nodeIdentityProvider, shutdownHandler, trustedNetworkManager)
@@ -102,13 +112,14 @@ func Init(
 
 	controllersToLoad := []interfaces.APIController{
 		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, vmService),
-		metrics.NewMetricsController(chainService, metricsService),
+		apimetrics.NewMetricsController(chainService, metricsService),
 		node.NewNodeController(waspVersion, config, dkgService, nodeService, peeringService),
 		requests.NewRequestsController(chainService, offLedgerService, peeringService, vmService),
 		users.NewUsersController(userService),
 		corecontracts.NewCoreContractsController(vmService),
 	}
 
+	addHealthEndpoint(server)
 	addWebSocketEndpoint(server, websocketService)
 	loadControllers(server, mocker, controllersToLoad, authMiddleware)
 }

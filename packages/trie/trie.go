@@ -26,7 +26,7 @@ func NewTrieUpdatable(store KVReader, root Hash, cacheSize ...int) (*TrieUpdatab
 	ret := &TrieUpdatable{
 		TrieReader: trieReader,
 	}
-	if err := ret.setRoot(root); err != nil {
+	if err := ret.SetRoot(root); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -56,8 +56,8 @@ func (tr *TrieReader) setRoot(h Hash) (*nodeData, error) {
 	return rootNodeData, nil
 }
 
-// setRoot overloaded for updatable trie
-func (tr *TrieUpdatable) setRoot(h Hash) error {
+// SetRoot overloaded for updatable trie
+func (tr *TrieUpdatable) SetRoot(h Hash) error {
 	rootNodeData, err := tr.TrieReader.setRoot(h)
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func (tr *TrieUpdatable) Commit(store KVWriter) Hash {
 	tr.mutatedRoot.uncommittedChildren = make(map[byte]*bufferedNode)
 
 	ret := tr.mutatedRoot.nodeData.commitment
-	err := tr.setRoot(ret) // always clear cache because NodeData-s are mutated and not valid anymore
+	err := tr.SetRoot(ret) // always clear cache because NodeData-s are mutated and not valid anymore
 	assertNoError(err)
 	return ret
 }

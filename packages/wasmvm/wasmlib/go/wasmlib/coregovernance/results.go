@@ -28,9 +28,9 @@ type ImmutableGetAllowedStateControllerAddressesResults struct {
 	Proxy wasmtypes.Proxy
 }
 
-// native contract, so this is an Array16
-func (s ImmutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfImmutableAddress {
-	return ArrayOfImmutableAddress{Proxy: s.Proxy.Root(ResultAllowedStateControllerAddresses)}
+// Array16 of state controller addresses
+func (s ImmutableGetAllowedStateControllerAddressesResults) Controllers() ArrayOfImmutableAddress {
+	return ArrayOfImmutableAddress{Proxy: s.Proxy.Root(ResultControllers)}
 }
 
 type ArrayOfMutableAddress struct {
@@ -61,29 +61,38 @@ func NewMutableGetAllowedStateControllerAddressesResults() MutableGetAllowedStat
 	return MutableGetAllowedStateControllerAddressesResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
-// native contract, so this is an Array16
-func (s MutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfMutableAddress {
-	return ArrayOfMutableAddress{Proxy: s.Proxy.Root(ResultAllowedStateControllerAddresses)}
+// Array16 of state controller addresses
+func (s MutableGetAllowedStateControllerAddressesResults) Controllers() ArrayOfMutableAddress {
+	return ArrayOfMutableAddress{Proxy: s.Proxy.Root(ResultControllers)}
 }
 
 type ImmutableGetChainInfoResults struct {
 	Proxy wasmtypes.Proxy
 }
 
+// chain ID
 func (s ImmutableGetChainInfoResults) ChainID() wasmtypes.ScImmutableChainID {
 	return wasmtypes.NewScImmutableChainID(s.Proxy.Root(ResultChainID))
 }
 
+// chain owner agent ID
 func (s ImmutableGetChainInfoResults) ChainOwnerID() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ResultChainOwnerID))
 }
 
+// chain metadata
 func (s ImmutableGetChainInfoResults) CustomMetadata() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultCustomMetadata))
 }
 
-func (s ImmutableGetChainInfoResults) GasFeePolicyBytes() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultGasFeePolicyBytes))
+// serialized fee policy
+func (s ImmutableGetChainInfoResults) FeePolicy() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultFeePolicy))
+}
+
+// serialized gas limits
+func (s ImmutableGetChainInfoResults) GasLimits() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultGasLimits))
 }
 
 type MutableGetChainInfoResults struct {
@@ -94,20 +103,29 @@ func NewMutableGetChainInfoResults() MutableGetChainInfoResults {
 	return MutableGetChainInfoResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
+// chain ID
 func (s MutableGetChainInfoResults) ChainID() wasmtypes.ScMutableChainID {
 	return wasmtypes.NewScMutableChainID(s.Proxy.Root(ResultChainID))
 }
 
+// chain owner agent ID
 func (s MutableGetChainInfoResults) ChainOwnerID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ResultChainOwnerID))
 }
 
+// chain metadata
 func (s MutableGetChainInfoResults) CustomMetadata() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultCustomMetadata))
 }
 
-func (s MutableGetChainInfoResults) GasFeePolicyBytes() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultGasFeePolicyBytes))
+// serialized fee policy
+func (s MutableGetChainInfoResults) FeePolicy() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultFeePolicy))
+}
+
+// serialized gas limits
+func (s MutableGetChainInfoResults) GasLimits() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultGasLimits))
 }
 
 type MapBytesToImmutableBytes struct {
@@ -122,10 +140,12 @@ type ImmutableGetChainNodesResults struct {
 	Proxy wasmtypes.Proxy
 }
 
+// serialized access node info per pubKey
 func (s ImmutableGetChainNodesResults) AccessNodeCandidates() MapBytesToImmutableBytes {
 	return MapBytesToImmutableBytes{Proxy: s.Proxy.Root(ResultAccessNodeCandidates)}
 }
 
+// pubKey set
 func (s ImmutableGetChainNodesResults) AccessNodes() MapBytesToImmutableBytes {
 	return MapBytesToImmutableBytes{Proxy: s.Proxy.Root(ResultAccessNodes)}
 }
@@ -150,10 +170,12 @@ func NewMutableGetChainNodesResults() MutableGetChainNodesResults {
 	return MutableGetChainNodesResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
+// serialized access node info per pubKey
 func (s MutableGetChainNodesResults) AccessNodeCandidates() MapBytesToMutableBytes {
 	return MapBytesToMutableBytes{Proxy: s.Proxy.Root(ResultAccessNodeCandidates)}
 }
 
+// pubKey set
 func (s MutableGetChainNodesResults) AccessNodes() MapBytesToMutableBytes {
 	return MapBytesToMutableBytes{Proxy: s.Proxy.Root(ResultAccessNodes)}
 }
@@ -162,6 +184,7 @@ type ImmutableGetChainOwnerResults struct {
 	Proxy wasmtypes.Proxy
 }
 
+// chain owner
 func (s ImmutableGetChainOwnerResults) ChainOwner() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ResultChainOwner))
 }
@@ -174,16 +197,62 @@ func NewMutableGetChainOwnerResults() MutableGetChainOwnerResults {
 	return MutableGetChainOwnerResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
+// chain owner
 func (s MutableGetChainOwnerResults) ChainOwner() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ResultChainOwner))
+}
+
+type ImmutableGetCustomMetadataResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+// chain metadata
+func (s ImmutableGetCustomMetadataResults) Metadata() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultMetadata))
+}
+
+type MutableGetCustomMetadataResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewMutableGetCustomMetadataResults() MutableGetCustomMetadataResults {
+	return MutableGetCustomMetadataResults{Proxy: wasmlib.NewResultsProxy()}
+}
+
+// chain metadata
+func (s MutableGetCustomMetadataResults) Metadata() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultMetadata))
+}
+
+type ImmutableGetEVMGasRatioResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+// serialized gas ratio
+func (s ImmutableGetEVMGasRatioResults) GasRatio() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultGasRatio))
+}
+
+type MutableGetEVMGasRatioResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewMutableGetEVMGasRatioResults() MutableGetEVMGasRatioResults {
+	return MutableGetEVMGasRatioResults{Proxy: wasmlib.NewResultsProxy()}
+}
+
+// serialized gas ratio
+func (s MutableGetEVMGasRatioResults) GasRatio() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultGasRatio))
 }
 
 type ImmutableGetFeePolicyResults struct {
 	Proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetFeePolicyResults) FeePolicyBytes() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultFeePolicyBytes))
+// serialized fee policy
+func (s ImmutableGetFeePolicyResults) FeePolicy() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultFeePolicy))
 }
 
 type MutableGetFeePolicyResults struct {
@@ -194,6 +263,51 @@ func NewMutableGetFeePolicyResults() MutableGetFeePolicyResults {
 	return MutableGetFeePolicyResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
-func (s MutableGetFeePolicyResults) FeePolicyBytes() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultFeePolicyBytes))
+// serialized fee policy
+func (s MutableGetFeePolicyResults) FeePolicy() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultFeePolicy))
+}
+
+type ImmutableGetGasLimitsResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+// serialized gas limits
+func (s ImmutableGetGasLimitsResults) GasLimits() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultGasLimits))
+}
+
+type MutableGetGasLimitsResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewMutableGetGasLimitsResults() MutableGetGasLimitsResults {
+	return MutableGetGasLimitsResults{Proxy: wasmlib.NewResultsProxy()}
+}
+
+// serialized gas limits
+func (s MutableGetGasLimitsResults) GasLimits() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultGasLimits))
+}
+
+type ImmutableGetMaintenanceStatusResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+// whether maintenance mode is on
+func (s ImmutableGetMaintenanceStatusResults) Status() wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(s.Proxy.Root(ResultStatus))
+}
+
+type MutableGetMaintenanceStatusResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewMutableGetMaintenanceStatusResults() MutableGetMaintenanceStatusResults {
+	return MutableGetMaintenanceStatusResults{Proxy: wasmlib.NewResultsProxy()}
+}
+
+// whether maintenance mode is on
+func (s MutableGetMaintenanceStatusResults) Status() wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(s.Proxy.Root(ResultStatus))
 }

@@ -17,11 +17,12 @@ pub struct ImmutableFindContractResults {
 }
 
 impl ImmutableFindContractResults {
+    // whether or not the contract exists.
     pub fn contract_found(&self) -> ScImmutableBool {
         ScImmutableBool::new(self.proxy.root(RESULT_CONTRACT_FOUND))
     }
 
-    // encoded contract record
+    // encoded contract record (if exists)
     pub fn contract_rec_data(&self) -> ScImmutableBytes {
         ScImmutableBytes::new(self.proxy.root(RESULT_CONTRACT_REC_DATA))
     }
@@ -39,11 +40,12 @@ impl MutableFindContractResults {
         }
     }
 
+    // whether or not the contract exists.
     pub fn contract_found(&self) -> ScMutableBool {
         ScMutableBool::new(self.proxy.root(RESULT_CONTRACT_FOUND))
     }
 
-    // encoded contract record
+    // encoded contract record (if exists)
     pub fn contract_rec_data(&self) -> ScMutableBytes {
         ScMutableBytes::new(self.proxy.root(RESULT_CONTRACT_REC_DATA))
     }
@@ -66,7 +68,7 @@ pub struct ImmutableGetContractRecordsResults {
 }
 
 impl ImmutableGetContractRecordsResults {
-    // contract records
+    // contract records by Hname
     pub fn contract_registry(&self) -> MapHnameToImmutableBytes {
         MapHnameToImmutableBytes { proxy: self.proxy.root(RESULT_CONTRACT_REGISTRY) }
     }
@@ -99,7 +101,7 @@ impl MutableGetContractRecordsResults {
         }
     }
 
-    // contract records
+    // contract records by Hname
     pub fn contract_registry(&self) -> MapHnameToMutableBytes {
         MapHnameToMutableBytes { proxy: self.proxy.root(RESULT_CONTRACT_REGISTRY) }
     }

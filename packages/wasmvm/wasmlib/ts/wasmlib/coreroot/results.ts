@@ -9,22 +9,24 @@ import * as wasmtypes from '../wasmtypes';
 import * as sc from './index';
 
 export class ImmutableFindContractResults extends wasmtypes.ScProxy {
+    // whether or not the contract exists.
     contractFound(): wasmtypes.ScImmutableBool {
         return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ResultContractFound));
     }
 
-    // encoded contract record
+    // encoded contract record (if exists)
     contractRecData(): wasmtypes.ScImmutableBytes {
         return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultContractRecData));
     }
 }
 
 export class MutableFindContractResults extends wasmtypes.ScProxy {
+    // whether or not the contract exists.
     contractFound(): wasmtypes.ScMutableBool {
         return new wasmtypes.ScMutableBool(this.proxy.root(sc.ResultContractFound));
     }
 
-    // encoded contract record
+    // encoded contract record (if exists)
     contractRecData(): wasmtypes.ScMutableBytes {
         return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultContractRecData));
     }
@@ -38,7 +40,7 @@ export class MapHnameToImmutableBytes extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetContractRecordsResults extends wasmtypes.ScProxy {
-    // contract records
+    // contract records by Hname
     contractRegistry(): sc.MapHnameToImmutableBytes {
         return new sc.MapHnameToImmutableBytes(this.proxy.root(sc.ResultContractRegistry));
     }
@@ -56,7 +58,7 @@ export class MapHnameToMutableBytes extends wasmtypes.ScProxy {
 }
 
 export class MutableGetContractRecordsResults extends wasmtypes.ScProxy {
-    // contract records
+    // contract records by Hname
     contractRegistry(): sc.MapHnameToMutableBytes {
         return new sc.MapHnameToMutableBytes(this.proxy.root(sc.ResultContractRegistry));
     }

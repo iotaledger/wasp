@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -31,17 +32,16 @@ import (
 type VMContext struct {
 	task *vm.VMTask
 	// same for the block
-	chainOwnerID              isc.AgentID
-	finalStateTimestamp       time.Time
-	blockContext              map[isc.Hname]interface{}
-	storageDepositAssumptions *transaction.StorageDepositAssumption
-	txbuilder                 *vmtxbuilder.AnchorTransactionBuilder
-	txsnapshot                *vmtxbuilder.AnchorTransactionBuilder
-	gasBurnedTotal            uint64
-	gasFeeChargedTotal        uint64
+	chainOwnerID        isc.AgentID
+	finalStateTimestamp time.Time
+	blockContext        map[isc.Hname]interface{}
+	txbuilder           *vmtxbuilder.AnchorTransactionBuilder
+	txsnapshot          *vmtxbuilder.AnchorTransactionBuilder
+	gasBurnedTotal      uint64
+	gasFeeChargedTotal  uint64
 
 	// ---- request context
-	chainInfo          *governance.ChainInfo
+	chainInfo          *isc.ChainInfo
 	req                isc.Request
 	NumPostedOutputs   int // how many outputs has been posted in the request
 	requestIndex       uint16
@@ -83,7 +83,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		// should never happen
 		panic(errors.New("CreateVMContext.invalid params: must be at least 1 request"))
 	}
-	prevL1Commitment, err := L1CommitmentFromAliasOutput(task.AnchorOutput)
+	prevL1Commitment, err := transaction.L1CommitmentFromAliasOutput(task.AnchorOutput)
 	if err != nil {
 		// should never happen
 		panic(fmt.Errorf("CreateVMContext: can't parse state data as L1Commitment from chain input %w", err))
@@ -106,39 +106,41 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.gasBurnLog = gas.NewGasBurnLog()
 	}
 	// at the beginning of each block
-	l1Commitment, err := L1CommitmentFromAliasOutput(task.AnchorOutput)
+	l1Commitment, err := transaction.L1CommitmentFromAliasOutput(task.AnchorOutput)
 	if err != nil {
 		// should never happen
 		panic(err)
 	}
 
+	var totalL2Funds *isc.Assets
 	ret.withStateUpdate(func() {
 		ret.runMigrations(migrations.BaseSchemaVersion, migrations.Migrations)
 
 		// save the anchor tx ID of the current state
 		ret.callCore(blocklog.Contract, func(s kv.KVStore) {
-			blocklog.UpdateLatestBlockInfo(s, ret.task.AnchorOutputID.TransactionID(), l1Commitment)
+			blocklog.UpdateLatestBlockInfo(
+				s,
+				ret.task.AnchorOutputID.TransactionID(),
+				isc.NewAliasOutputWithID(ret.task.AnchorOutput, ret.task.AnchorOutputID),
+				l1Commitment,
+			)
 		})
+		// get the total L2 funds in accounting
+		totalL2Funds = ret.loadTotalFungibleTokens()
 	})
 
-	ret.storageDepositAssumptions = transaction.NewStorageDepositEstimate()
+	task.AnchorOutputStorageDeposit = task.AnchorOutput.Amount - totalL2Funds.BaseTokens
 
-	nativeTokenBalanceLoader := func(nativeTokenID iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID) {
-		return ret.loadNativeTokenOutput(nativeTokenID)
-	}
-	foundryLoader := func(serNum uint32) (*iotago.FoundryOutput, iotago.OutputID) {
-		return ret.loadFoundry(serNum)
-	}
-	nftLoader := func(id iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID) {
-		return ret.loadNFT(id)
-	}
 	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
 		task.AnchorOutput,
 		task.AnchorOutputID,
-		nativeTokenBalanceLoader,
-		foundryLoader,
-		nftLoader,
-		ret.storageDepositAssumptions,
+		task.AnchorOutputStorageDeposit,
+		vmtxbuilder.AccountsContractRead{
+			NativeTokenOutput:   ret.loadNativeTokenOutput,
+			FoundryOutput:       ret.loadFoundry,
+			NFTOutput:           ret.loadNFT,
+			TotalFungibleTokens: ret.loadTotalFungibleTokens,
+		},
 	)
 
 	return ret
@@ -187,30 +189,20 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		// We skip saving block information in order to avoid inconsistencies
 		return rotationAddress
 	}
-	// block info will be stored into the separate state update
-	prevL1Commitment, err := L1CommitmentFromAliasOutput(vmctx.task.AnchorOutput)
-	if err != nil {
-		panic(err)
-	}
-	// sub essence hash is known without L1 commitment. It is needed for fraud proofs
-	subEssenceHash := vmctx.CalcTransactionSubEssenceHash()
-	totalBaseTokensInContracts, totalStorageDepositOnChain := vmctx.txbuilder.TotalBaseTokensInOutputs()
+
 	blockInfo := &blocklog.BlockInfo{
-		BlockIndex:                  vmctx.task.StateDraft.BlockIndex(),
-		Timestamp:                   vmctx.task.StateDraft.Timestamp(),
-		TotalRequests:               numRequests,
-		NumSuccessfulRequests:       numSuccess,
-		NumOffLedgerRequests:        numOffLedger,
-		PreviousL1Commitment:        *prevL1Commitment,
-		L1Commitment:                nil,                    // current L1Commitment not known at this point
-		AnchorTransactionID:         iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
-		TransactionSubEssenceHash:   subEssenceHash,
-		TotalBaseTokensInL2Accounts: totalBaseTokensInContracts,
-		TotalStorageDeposit:         totalStorageDepositOnChain,
-		GasBurned:                   vmctx.gasBurnedTotal,
-		GasFeeCharged:               vmctx.gasFeeChargedTotal,
+		SchemaVersion:         blocklog.BlockInfoLatestSchemaVersion,
+		Timestamp:             vmctx.task.StateDraft.Timestamp(),
+		TotalRequests:         numRequests,
+		NumSuccessfulRequests: numSuccess,
+		NumOffLedgerRequests:  numOffLedger,
+		PreviousAliasOutput:   isc.NewAliasOutputWithID(vmctx.task.AnchorOutput, vmctx.task.AnchorOutputID),
+		GasBurned:             vmctx.gasBurnedTotal,
+		GasFeeCharged:         vmctx.gasFeeChargedTotal,
 	}
 
+	// TODO this "SaveControlAddressesIfNecessary" call is saving potentially outdated info.
+	// Regardless the "control addresses in the state" can be completely removed, these are useless as the info can be derived from the AO
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
 		blocklog.SaveNextBlockInfo(s, blockInfo)
 		blocklog.SaveControlAddressesIfNecessary(
@@ -220,6 +212,7 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 			vmctx.task.AnchorOutput.StateIndex,
 		)
 	})
+	vmctx.task.Log.Debugf("saved blockinfo: %s", blockInfo)
 	return nil
 }
 
@@ -262,10 +255,25 @@ func (vmctx *VMContext) closeBlockContexts() {
 
 // saveInternalUTXOs relies on the order of the outputs in the anchor tx. If that order changes, this will be broken.
 // Anchor Transaction outputs order must be:
+// 0. Anchor Output
 // 1. NativeTokens
 // 2. Foundries
 // 3. NFTs
 func (vmctx *VMContext) saveInternalUTXOs() {
+	// create a mock AO, with a nil statecommitment, just to calculate changes in the minimum SD
+	mockAO := vmctx.txbuilder.CreateAnchorOutput(vmctx.StateMetadata(state.L1CommitmentNil))
+	newMinSD := parameters.L1().Protocol.RentStructure.MinRent(mockAO)
+	oldMinSD := vmctx.task.AnchorOutputStorageDeposit
+	changeInSD := int64(oldMinSD) - int64(newMinSD)
+
+	if changeInSD != 0 {
+		vmctx.task.Log.Debugf("adjusting commonAccount because AO SD cost changed, old:%d new:%d", oldMinSD, newMinSD)
+		// update the commonAccount with the change in SD cost
+		vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+			accounts.AdjustAccountBaseTokens(s, accounts.CommonAccount(), changeInSD)
+		})
+	}
+
 	nativeTokenIDs, nativeTokensToBeRemoved := vmctx.txbuilder.NativeTokenRecordsToBeUpdated()
 	nativeTokensOutputsToBeUpdated := vmctx.txbuilder.NativeTokenOutputsByTokenIDs(nativeTokenIDs)
 
@@ -280,39 +288,37 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		// update native token outputs
 		for _, out := range nativeTokensOutputsToBeUpdated {
+			vmctx.task.Log.Debugf("saving NT %s, outputIndex: %d", out.NativeTokens[0].ID, outputIndex)
 			accounts.SaveNativeTokenOutput(s, out, blockIndex, outputIndex)
 			outputIndex++
 		}
 		for _, id := range nativeTokensToBeRemoved {
+			vmctx.task.Log.Debugf("deleting NT %s", id)
 			accounts.DeleteNativeTokenOutput(s, id)
 		}
 
 		// update foundry UTXOs
 		for _, out := range foundrySNToBeUpdated {
+			vmctx.task.Log.Debugf("saving foundry %d, outputIndex: %d", out.SerialNumber, outputIndex)
 			accounts.SaveFoundryOutput(s, out, blockIndex, outputIndex)
 			outputIndex++
 		}
 		for _, sn := range foundriesToBeRemoved {
+			vmctx.task.Log.Debugf("deleting foundry %s", sn)
 			accounts.DeleteFoundryOutput(s, sn)
 		}
 
 		// update NFT Outputs
 		for _, out := range NFTOutputsToBeAdded {
+			vmctx.task.Log.Debugf("saving NFT %s, outputIndex: %d", out.NFTID, outputIndex)
 			accounts.SaveNFTOutput(s, out, blockIndex, outputIndex)
 			outputIndex++
 		}
 		for _, out := range NFTOutputsToBeRemoved {
+			vmctx.task.Log.Debugf("deleting NFT %s", out.NFTID)
 			accounts.DeleteNFTOutput(s, out.NFTID)
 		}
 	})
-}
-
-func (vmctx *VMContext) assertConsistentL2WithL1TxBuilder(checkpoint string) {
-	var totalL2Assets *isc.Assets
-	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		totalL2Assets = accounts.GetTotalL2FungibleTokens(s)
-	})
-	vmctx.txbuilder.AssertConsistentWithL2Totals(totalL2Assets, checkpoint)
 }
 
 func (vmctx *VMContext) AssertConsistentGasTotals() {

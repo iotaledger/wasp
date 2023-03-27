@@ -105,12 +105,6 @@ It can only be invoked by the chain owner.
 Claims the ownership of the chain if the caller matches the identity set
 in [`delegateChainOwnership`](#delegatechainownershipo-agentid).
 
-### `setMaxBlobSize(mb MaxBlobSize)`
-
-Sets the maximum [blob](blob.md) size.
-
-It can only be invoked by the chain owner.
-
 ### `setFeePolicy(g FeePolicy)`
 
 Sets the fee policy for the chain.
@@ -118,6 +112,26 @@ Sets the fee policy for the chain.
 #### Parameters
 
 - `g`: ([`FeePolicy`](#feepolicy)).
+
+It can only be invoked by the chain owner.
+
+### `setGasLimits(l GasLimits)`
+
+Sets the gas limits for the chain.
+
+#### Parameters
+
+- `l`: ([`GasLimits`](#gaslimits)).
+
+It can only be invoked by the chain owner.
+
+### `setEVMGasRatio(e Ratio32)`
+
+Sets the EVM gas ratio for the chain.
+
+#### Parameters
+
+- `e` ([`Ratio32`](#ratio32)): The EVM gas ratio.
 
 It can only be invoked by the chain owner.
 
@@ -160,34 +174,26 @@ Iterates through the given map of actions and applies them.
 
 It can only be invoked by the chain owner.
 
-### `startMaintenance()`
+### `setMaintenanceOn()`
 
 Starts the chain maintenance mode, meaning no further requests will be processed except calls to the governance
 contract.
 
 It can only be invoked by the chain owner.
 
-### `stopMaintenance()`
+### `setMaintenanceOff()`
 
 Stops the maintenance mode.
 
 It can only be invoked by the chain owner.
 
-### `setEVMGasRatio`
+### `setCustomMetadata(x bytes)`
 
-Changes the ISC : EVM gas ratio.
-
-#### Parameters
-
-- `e` ([`Ratio32`](#ratio32)): The ISC : EVM gas ratio.
-
-### `setCustomMetadata`
-
-Changes optional extra metadata that is appended to the L1 AliasOutput
+Changes optional extra metadata that is appended to the L1 AliasOutput.
 
 #### Parameters
 
-- `e` (`bytes`): the optional metadata
+- `x` (`bytes`): the optional metadata
 
 ---
 
@@ -213,11 +219,14 @@ Returns the AgentID of the chain owner.
 
 ### `getChainInfo()`
 
+Returns information about the chain.
+
 #### Returns:
 
 - `c` (`ChainID`): The chain ID
 - `o` (`AgentID`): The chain owner
 - `g` ([`FeePolicy`](#feepolicy)): The gas fee policy
+- `l` ([`GasLimits`](#gaslimits)): The gas limits
 - `x` (`bytes`): The custom metadata
 
 ### `getFeePolicy()`
@@ -236,6 +245,14 @@ Returns the ISC : EVM gas ratio.
 
 - `e` ([`Ratio32`](#ratio32)): The ISC : EVM gas ratio.
 
+### `getGasLimits()`
+
+Returns the gas limits.
+
+#### Returns
+
+- `l` ([`GasLimits`](#gaslimits)): The gas limits.
+
 ### `getChainNodes()`
 
 Returns the current access nodes and candidates.
@@ -249,14 +266,14 @@ Returns the current access nodes and candidates.
 
 ### `getMaintenanceStatus()`
 
-Returns whether the chain is ongoing maintenance.
+Returns whether the chain is undergoing maintenance.
 
 - `m` (`bool`): `true` if the chain is in maintenance mode
 
 
 ### `getCustomMetadata()`
 
-Returns the extra metadata that is added to the chain AliasOutput
+Returns the extra metadata that is added to the chain AliasOutput.
 
 - `x` (`bytes`): the optional metadata
 
@@ -281,6 +298,19 @@ A ratio between two values `x` and `y`, expressed as two `int32` numbers `a:b`, 
 - Validator fee share. Must be between 0 and 100, meaning the percentage of the gas fees distributed to the
   validators. (`uint8`)
 - The ISC:EVM gas ratio ([`Ratio32`](#ratio32)): such that `ISC gas = EVM gas * a/b`.
+
+### `GasLimits`
+
+`GasLimits` is encoded as the concatenation of:
+
+- The maximum gas per block (`uint64`). A request that exceeds this limit is
+  skipped and processed in the next block.
+- The minimum gas per request (`uint64`). If a request consumes less than this
+  value, it is charged for this instead.
+- The maximum gas per request (`uint64`). If a request exceeds this limit, it
+  is rejected as failed.
+- The maximum gas per external view call (`uint64). This is the gas budget
+  assigned to external view calls.
 
 ### `AccessNodeInfo`
 

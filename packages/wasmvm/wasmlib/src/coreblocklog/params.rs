@@ -23,6 +23,7 @@ impl ImmutableGetBlockInfoParams {
         }
     }
 
+    // default last block
     pub fn block_index(&self) -> ScImmutableUint32 {
         ScImmutableUint32::new(self.proxy.root(PARAM_BLOCK_INDEX))
     }
@@ -34,6 +35,7 @@ pub struct MutableGetBlockInfoParams {
 }
 
 impl MutableGetBlockInfoParams {
+    // default last block
     pub fn block_index(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(PARAM_BLOCK_INDEX))
     }
@@ -51,6 +53,7 @@ impl ImmutableGetEventsForBlockParams {
         }
     }
 
+    // default last block
     pub fn block_index(&self) -> ScImmutableUint32 {
         ScImmutableUint32::new(self.proxy.root(PARAM_BLOCK_INDEX))
     }
@@ -62,6 +65,7 @@ pub struct MutableGetEventsForBlockParams {
 }
 
 impl MutableGetEventsForBlockParams {
+    // default last block
     pub fn block_index(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(PARAM_BLOCK_INDEX))
     }
@@ -83,10 +87,12 @@ impl ImmutableGetEventsForContractParams {
         ScImmutableHname::new(self.proxy.root(PARAM_CONTRACT_HNAME))
     }
 
+    // default first block
     pub fn from_block(&self) -> ScImmutableUint32 {
         ScImmutableUint32::new(self.proxy.root(PARAM_FROM_BLOCK))
     }
 
+    // default last block
     pub fn to_block(&self) -> ScImmutableUint32 {
         ScImmutableUint32::new(self.proxy.root(PARAM_TO_BLOCK))
     }
@@ -102,10 +108,12 @@ impl MutableGetEventsForContractParams {
         ScMutableHname::new(self.proxy.root(PARAM_CONTRACT_HNAME))
     }
 
+    // default first block
     pub fn from_block(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(PARAM_FROM_BLOCK))
     }
 
+    // default last block
     pub fn to_block(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(PARAM_TO_BLOCK))
     }
@@ -123,6 +131,7 @@ impl ImmutableGetEventsForRequestParams {
         }
     }
 
+    // target request ID
     pub fn request_id(&self) -> ScImmutableRequestID {
         ScImmutableRequestID::new(self.proxy.root(PARAM_REQUEST_ID))
     }
@@ -134,6 +143,7 @@ pub struct MutableGetEventsForRequestParams {
 }
 
 impl MutableGetEventsForRequestParams {
+    // target request ID
     pub fn request_id(&self) -> ScMutableRequestID {
         ScMutableRequestID::new(self.proxy.root(PARAM_REQUEST_ID))
     }
@@ -151,6 +161,7 @@ impl ImmutableGetRequestIDsForBlockParams {
         }
     }
 
+    // default last block
     pub fn block_index(&self) -> ScImmutableUint32 {
         ScImmutableUint32::new(self.proxy.root(PARAM_BLOCK_INDEX))
     }
@@ -162,6 +173,7 @@ pub struct MutableGetRequestIDsForBlockParams {
 }
 
 impl MutableGetRequestIDsForBlockParams {
+    // default last block
     pub fn block_index(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(PARAM_BLOCK_INDEX))
     }
@@ -179,6 +191,7 @@ impl ImmutableGetRequestReceiptParams {
         }
     }
 
+    // target request ID
     pub fn request_id(&self) -> ScImmutableRequestID {
         ScImmutableRequestID::new(self.proxy.root(PARAM_REQUEST_ID))
     }
@@ -190,6 +203,7 @@ pub struct MutableGetRequestReceiptParams {
 }
 
 impl MutableGetRequestReceiptParams {
+    // target request ID
     pub fn request_id(&self) -> ScMutableRequestID {
         ScMutableRequestID::new(self.proxy.root(PARAM_REQUEST_ID))
     }
@@ -207,6 +221,7 @@ impl ImmutableGetRequestReceiptsForBlockParams {
         }
     }
 
+    // default last block
     pub fn block_index(&self) -> ScImmutableUint32 {
         ScImmutableUint32::new(self.proxy.root(PARAM_BLOCK_INDEX))
     }
@@ -218,6 +233,7 @@ pub struct MutableGetRequestReceiptsForBlockParams {
 }
 
 impl MutableGetRequestReceiptsForBlockParams {
+    // default last block
     pub fn block_index(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(PARAM_BLOCK_INDEX))
     }
@@ -235,6 +251,7 @@ impl ImmutableIsRequestProcessedParams {
         }
     }
 
+    // target request ID
     pub fn request_id(&self) -> ScImmutableRequestID {
         ScImmutableRequestID::new(self.proxy.root(PARAM_REQUEST_ID))
     }
@@ -246,6 +263,7 @@ pub struct MutableIsRequestProcessedParams {
 }
 
 impl MutableIsRequestProcessedParams {
+    // target request ID
     pub fn request_id(&self) -> ScMutableRequestID {
         ScMutableRequestID::new(self.proxy.root(PARAM_REQUEST_ID))
     }

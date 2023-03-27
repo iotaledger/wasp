@@ -71,7 +71,6 @@ func initBalanceCmd() *cobra.Command {
 				AddressIndex: wallet.AddressIndex,
 				NativeTokens: balance.NativeTokens,
 				BaseTokens:   balance.BaseTokens,
-				NFTIDs:       balance.NFTs,
 				OutputMap:    outs,
 			}
 			if log.VerboseFlag {
@@ -95,7 +94,6 @@ type BalanceModel struct {
 	Address      string              `json:"Address"`
 	BaseTokens   uint64              `json:"BaseTokens"`
 	NativeTokens iotago.NativeTokens `json:"NativeTokens"`
-	NFTIDs       iotago.NFTIDs       `json:"NFTIDs"`
 
 	OutputMap      iotago.OutputSet `json:"-"`
 	VerboseOutputs map[uint16]string
@@ -106,15 +104,10 @@ func (b *BalanceModel) AsText() (string, error) {
 Address: {{.Address}}
 
 Native Assets:
- - base: {{.BaseTokens}}
-{{- range $i, $out := .NativeTokens}}
- - {{$out.ID}}: {{$out.Amount}}
-{{- end}}
 
-NFTs:
-{{- range $i, $out := .NFTIDs}} 
- - {{$out}}
-{{- end -}}`
+ - base: {{.BaseTokens}}{{range $i, $out := .NativeTokens}}
+ - {{$out.ID}}: {{$out.Amount}}
+{{end}}`
 
 	return log.ParseCLIOutputTemplate(b, balanceTemplate)
 }

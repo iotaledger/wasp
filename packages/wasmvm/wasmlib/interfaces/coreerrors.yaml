@@ -1,0 +1,23 @@
+name: CoreErrors
+description: Errors Contract
+structs: {}
+typedefs: {}
+state: {}
+funcs:
+
+  # Registers an error message template.
+  # note that this function must be call()ed
+  registerError:
+    params:
+      template=m: String # error message template string
+    results:
+      errorCode=c: Bytes # serialized error code
+
+views:
+
+  # Returns the message template stored for a given error code.
+  getErrorMessageFormat:
+    params:
+      errorCode=c: Bytes # serialized error code
+    results:
+      template=m: String # error message template string

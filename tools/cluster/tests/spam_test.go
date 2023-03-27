@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 )
 
 // executed in cluster_test.go
@@ -175,6 +175,7 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 // executed in cluster_test.go
 func testSpamCallViewWasm(t *testing.T, env *ChainEnv) {
 	testutil.RunHeavy(t)
+	env.deployNativeIncCounterSC(0)
 
 	wallet, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)

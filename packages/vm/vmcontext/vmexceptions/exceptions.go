@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 type skipRequestException struct {
@@ -17,7 +16,7 @@ var (
 	ErrOutputLimitExceeded                     = &skipRequestException{fmt.Sprintf("exceeded maximum number of outputs in transaction. iotago.MaxOutputsCount = %d", iotago.MaxOutputsCount)}
 	ErrTotalNativeTokensLimitExceeded          = &skipRequestException{fmt.Sprintf("exceeded maximum number of different native tokens in transaction. iotago.MaxNativeTokensCount = %d", iotago.MaxNativeTokensCount)}
 	ErrNotEnoughFundsForInternalStorageDeposit = &skipRequestException{"not enough funds for internal storage deposit: common account must be topped up"}
-	ErrBlockGasLimitExceeded                   = &skipRequestException{fmt.Sprintf("exceeded maximum gas allowed in a block. MaxGasPerBlock = %d", gas.MaxGasPerBlock)}
+	ErrBlockGasLimitExceeded                   = &skipRequestException{"exceeded maximum gas allowed in a block"}
 	ErrMaxTransactionSizeExceeded              = &skipRequestException{"exceeded maximum size of the transaction"}
 )
 
