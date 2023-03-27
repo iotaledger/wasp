@@ -26,7 +26,8 @@ pub(crate) const RESULT_GOVERNING_ADDRESS        : &str = "g";
 pub(crate) const RESULT_REQUEST_ID               : &str = "u";
 pub(crate) const RESULT_REQUEST_INDEX            : &str = "r";
 pub(crate) const RESULT_REQUEST_PROCESSED        : &str = "p";
-pub(crate) const RESULT_REQUEST_RECORD           : &str = "d";
+pub(crate) const RESULT_REQUEST_RECEIPT          : &str = "d";
+pub(crate) const RESULT_REQUEST_RECEIPTS         : &str = "d";
 pub(crate) const RESULT_STATE_CONTROLLER_ADDRESS : &str = "s";
 
 pub(crate) const VIEW_CONTROL_ADDRESSES              : &str = "controlAddresses";

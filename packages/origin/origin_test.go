@@ -13,17 +13,21 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func TestOrigin(t *testing.T) {
-	store := origin.InitChain(state.NewStore(mapdb.NewMapDB()), nil, 0)
 	l1commitment := origin.L1Commitment(nil, 0)
-	block, err := store.LatestBlock()
+	store := state.NewStore(mapdb.NewMapDB())
+	initBlock := origin.InitChain(store, nil, 0)
+	latestBlock, err := store.LatestBlock()
 	require.NoError(t, err)
-	require.True(t, l1commitment.Equals(block.L1Commitment()))
+	require.True(t, l1commitment.Equals(initBlock.L1Commitment()))
+	require.True(t, l1commitment.Equals(latestBlock.L1Commitment()))
 }
 
 func TestCreateOrigin(t *testing.T) {
@@ -88,12 +92,20 @@ func TestCreateOrigin(t *testing.T) {
 		require.EqualValues(t, 0, anchor.StateIndex)
 		require.True(t, stateAddr.Equal(anchor.StateController))
 		require.True(t, stateAddr.Equal(anchor.GovernanceController))
+
+		originStateMetadata := &transaction.StateMetadata{
+			L1Commitment: origin.L1Commitment(
+				dict.Dict{origin.ParamChainOwner: isc.NewAgentID(anchor.GovernanceController).Bytes()},
+				accounts.MinimumBaseTokensOnCommonAccount,
+			),
+			GasFeePolicy:   gas.DefaultFeePolicy(),
+			SchemaVersion:  migrations.BaseSchemaVersion + uint32(len(migrations.Migrations)),
+			CustomMetadata: []byte{},
+		}
+
 		require.True(t,
 			bytes.Equal(
-				origin.L1Commitment(
-					dict.Dict{origin.ParamChainOwner: isc.NewAgentID(anchor.GovernanceController).Bytes()},
-					accounts.MinimumBaseTokensOnCommonAccount,
-				).Bytes(),
+				originStateMetadata.Bytes(),
 				anchor.StateData),
 		)
 

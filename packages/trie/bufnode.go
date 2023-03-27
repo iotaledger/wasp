@@ -10,7 +10,7 @@ type bufferedNode struct {
 	// persistent
 	nodeData            *nodeData
 	value               []byte // will be persisted in value store if not nil
-	terminal            *tcommitment
+	terminal            *Tcommitment
 	pathExtension       []byte
 	uncommittedChildren map[byte]*bufferedNode // children which has been modified
 	triePath            []byte
@@ -101,7 +101,7 @@ func (n *bufferedNode) setValue(value []byte) {
 		n.value = nil
 		return
 	}
-	n.terminal = commitToData(value)
+	n.terminal = CommitToData(value)
 	_, valueIsInCommitment := n.terminal.ExtractValue()
 	if valueIsInCommitment {
 		n.value = nil

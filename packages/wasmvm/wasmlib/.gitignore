@@ -1,1 +1,3 @@
 **/target
+*.js
+!jest.config.js

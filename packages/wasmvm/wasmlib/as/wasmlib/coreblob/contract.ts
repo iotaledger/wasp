@@ -48,6 +48,7 @@ export class ListBlobsCall {
 }
 
 export class ScFuncs {
+    // Stores a new blob in the registry.
     static storeBlob(ctx: wasmlib.ScFuncCallContext): StoreBlobCall {
         const f = new StoreBlobCall(ctx);
         f.params = new sc.MutableStoreBlobParams(wasmlib.newCallParamsProxy(f.func));
@@ -55,6 +56,7 @@ export class ScFuncs {
         return f;
     }
 
+    //Returns the chunk associated with the given blob field name.
     static getBlobField(ctx: wasmlib.ScViewCallContext): GetBlobFieldCall {
         const f = new GetBlobFieldCall(ctx);
         f.params = new sc.MutableGetBlobFieldParams(wasmlib.newCallParamsProxy(f.func));
@@ -62,6 +64,7 @@ export class ScFuncs {
         return f;
     }
 
+    // Returns the size of each chunk of the blob.
     static getBlobInfo(ctx: wasmlib.ScViewCallContext): GetBlobInfoCall {
         const f = new GetBlobInfoCall(ctx);
         f.params = new sc.MutableGetBlobInfoParams(wasmlib.newCallParamsProxy(f.func));
@@ -69,6 +72,7 @@ export class ScFuncs {
         return f;
     }
 
+    // Returns a list of all blobs hashes in the registry and their sized.
     static listBlobs(ctx: wasmlib.ScViewCallContext): ListBlobsCall {
         const f = new ListBlobsCall(ctx);
         f.results = new sc.ImmutableListBlobsResults(wasmlib.newCallResultsProxy(f.func));

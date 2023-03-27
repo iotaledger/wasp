@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -179,7 +178,7 @@ func (s *WasmContextSandbox) makeRequest(args []byte) isc.RequestParameters {
 			EntryPoint:     function,
 			Params:         params,
 			Allowance:      allowance,
-			GasBudget:      gas.MaxGasPerRequest,
+			GasBudget:      s.ctx.ChainInfo().GasLimits.MaxGasPerRequest,
 		},
 	}
 	if req.Delay != 0 {

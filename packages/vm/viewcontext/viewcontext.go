@@ -37,7 +37,7 @@ type ViewContext struct {
 	stateReader    state.State
 	chainID        isc.ChainID
 	log            *logger.Logger
-	chainInfo      *governance.ChainInfo
+	chainInfo      *isc.ChainInfo
 	gasBurnLog     *gas.BurnLog
 	gasBudget      uint64
 	gasBurnEnabled bool
@@ -138,6 +138,10 @@ func (ctx *ViewContext) Call(targetContract, epCode isc.Hname, params dict.Dict,
 	return ctx.callView(targetContract, epCode, params)
 }
 
+func (ctx *ViewContext) ChainInfo() *isc.ChainInfo {
+	return ctx.chainInfo
+}
+
 func (ctx *ViewContext) ChainID() isc.ChainID {
 	return ctx.chainInfo.ChainID
 }
@@ -164,7 +168,7 @@ func (ctx *ViewContext) GasBudgetLeft() uint64 {
 
 func (ctx *ViewContext) GasBurned() uint64 {
 	// view calls start with max gas
-	return gas.MaxGasExternalViewCall - ctx.gasBudget
+	return ctx.chainInfo.GasLimits.MaxGasExternalViewCall - ctx.gasBudget
 }
 
 func (ctx *ViewContext) Infof(format string, params ...interface{}) {
@@ -202,14 +206,13 @@ func (ctx *ViewContext) callView(targetContract, entryPoint isc.Hname, params di
 }
 
 func (ctx *ViewContext) initAndCallView(targetContract, entryPoint isc.Hname, params dict.Dict) (ret dict.Dict) {
-	ctx.gasBurnLog = gas.NewGasBurnLog()
-	ctx.gasBudget = gas.MaxGasExternalViewCall
-
 	ctx.chainInfo = governance.MustGetChainInfo(
 		ctx.contractStateReader(governance.Contract.Hname()),
 		ctx.chainID,
 	)
 
+	ctx.gasBudget = ctx.chainInfo.GasLimits.MaxGasExternalViewCall
+	ctx.gasBurnLog = gas.NewGasBurnLog()
 	return ctx.callView(targetContract, entryPoint, params)
 }
 

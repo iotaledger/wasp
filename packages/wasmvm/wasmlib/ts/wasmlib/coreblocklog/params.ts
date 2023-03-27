@@ -9,24 +9,28 @@ import * as wasmtypes from '../wasmtypes';
 import * as sc from './index';
 
 export class ImmutableGetBlockInfoParams extends wasmtypes.ScProxy {
+    // default last block
     blockIndex(): wasmtypes.ScImmutableUint32 {
         return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamBlockIndex));
     }
 }
 
 export class MutableGetBlockInfoParams extends wasmtypes.ScProxy {
+    // default last block
     blockIndex(): wasmtypes.ScMutableUint32 {
         return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamBlockIndex));
     }
 }
 
 export class ImmutableGetEventsForBlockParams extends wasmtypes.ScProxy {
+    // default last block
     blockIndex(): wasmtypes.ScImmutableUint32 {
         return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamBlockIndex));
     }
 }
 
 export class MutableGetEventsForBlockParams extends wasmtypes.ScProxy {
+    // default last block
     blockIndex(): wasmtypes.ScMutableUint32 {
         return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamBlockIndex));
     }
@@ -37,10 +41,12 @@ export class ImmutableGetEventsForContractParams extends wasmtypes.ScProxy {
         return new wasmtypes.ScImmutableHname(this.proxy.root(sc.ParamContractHname));
     }
 
+    // default first block
     fromBlock(): wasmtypes.ScImmutableUint32 {
         return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamFromBlock));
     }
 
+    // default last block
     toBlock(): wasmtypes.ScImmutableUint32 {
         return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamToBlock));
     }
@@ -51,70 +57,82 @@ export class MutableGetEventsForContractParams extends wasmtypes.ScProxy {
         return new wasmtypes.ScMutableHname(this.proxy.root(sc.ParamContractHname));
     }
 
+    // default first block
     fromBlock(): wasmtypes.ScMutableUint32 {
         return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamFromBlock));
     }
 
+    // default last block
     toBlock(): wasmtypes.ScMutableUint32 {
         return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamToBlock));
     }
 }
 
 export class ImmutableGetEventsForRequestParams extends wasmtypes.ScProxy {
+    // target request ID
     requestID(): wasmtypes.ScImmutableRequestID {
         return new wasmtypes.ScImmutableRequestID(this.proxy.root(sc.ParamRequestID));
     }
 }
 
 export class MutableGetEventsForRequestParams extends wasmtypes.ScProxy {
+    // target request ID
     requestID(): wasmtypes.ScMutableRequestID {
         return new wasmtypes.ScMutableRequestID(this.proxy.root(sc.ParamRequestID));
     }
 }
 
 export class ImmutableGetRequestIDsForBlockParams extends wasmtypes.ScProxy {
+    // default last block
     blockIndex(): wasmtypes.ScImmutableUint32 {
         return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamBlockIndex));
     }
 }
 
 export class MutableGetRequestIDsForBlockParams extends wasmtypes.ScProxy {
+    // default last block
     blockIndex(): wasmtypes.ScMutableUint32 {
         return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamBlockIndex));
     }
 }
 
 export class ImmutableGetRequestReceiptParams extends wasmtypes.ScProxy {
+    // target request ID
     requestID(): wasmtypes.ScImmutableRequestID {
         return new wasmtypes.ScImmutableRequestID(this.proxy.root(sc.ParamRequestID));
     }
 }
 
 export class MutableGetRequestReceiptParams extends wasmtypes.ScProxy {
+    // target request ID
     requestID(): wasmtypes.ScMutableRequestID {
         return new wasmtypes.ScMutableRequestID(this.proxy.root(sc.ParamRequestID));
     }
 }
 
 export class ImmutableGetRequestReceiptsForBlockParams extends wasmtypes.ScProxy {
+    // default last block
     blockIndex(): wasmtypes.ScImmutableUint32 {
         return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamBlockIndex));
     }
 }
 
 export class MutableGetRequestReceiptsForBlockParams extends wasmtypes.ScProxy {
+    // default last block
     blockIndex(): wasmtypes.ScMutableUint32 {
         return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamBlockIndex));
     }
 }
 
 export class ImmutableIsRequestProcessedParams extends wasmtypes.ScProxy {
+    // target request ID
     requestID(): wasmtypes.ScImmutableRequestID {
         return new wasmtypes.ScImmutableRequestID(this.proxy.root(sc.ParamRequestID));
     }
 }
 
 export class MutableIsRequestProcessedParams extends wasmtypes.ScProxy {
+    // target request ID
     requestID(): wasmtypes.ScMutableRequestID {
         return new wasmtypes.ScMutableRequestID(this.proxy.root(sc.ParamRequestID));
     }

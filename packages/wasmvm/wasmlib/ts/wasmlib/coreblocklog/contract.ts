@@ -98,12 +98,14 @@ export class IsRequestProcessedCall {
 }
 
 export class ScFuncs {
+    // Returns the current state controller and governing addresses and at what block index they were set.
     static controlAddresses(ctx: wasmlib.ScViewCallContext): ControlAddressesCall {
         const f = new ControlAddressesCall(ctx);
         f.results = new sc.ImmutableControlAddressesResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
+    // Returns information about the given block.
     static getBlockInfo(ctx: wasmlib.ScViewCallContext): GetBlockInfoCall {
         const f = new GetBlockInfoCall(ctx);
         f.params = new sc.MutableGetBlockInfoParams(wasmlib.newCallParamsProxy(f.func));
@@ -111,6 +113,7 @@ export class ScFuncs {
         return f;
     }
 
+    // Returns the list of events triggered during the execution of the given block.
     static getEventsForBlock(ctx: wasmlib.ScViewCallContext): GetEventsForBlockCall {
         const f = new GetEventsForBlockCall(ctx);
         f.params = new sc.MutableGetEventsForBlockParams(wasmlib.newCallParamsProxy(f.func));
@@ -118,6 +121,8 @@ export class ScFuncs {
         return f;
     }
 
+    // Returns the list of events triggered by the given contract
+    // during the execution of the given block range.
     static getEventsForContract(ctx: wasmlib.ScViewCallContext): GetEventsForContractCall {
         const f = new GetEventsForContractCall(ctx);
         f.params = new sc.MutableGetEventsForContractParams(wasmlib.newCallParamsProxy(f.func));
@@ -125,6 +130,7 @@ export class ScFuncs {
         return f;
     }
 
+    // Returns the list of events triggered during the execution of the given request.
     static getEventsForRequest(ctx: wasmlib.ScViewCallContext): GetEventsForRequestCall {
         const f = new GetEventsForRequestCall(ctx);
         f.params = new sc.MutableGetEventsForRequestParams(wasmlib.newCallParamsProxy(f.func));
@@ -132,6 +138,7 @@ export class ScFuncs {
         return f;
     }
 
+    // Returns a list with all request IDs in the given block.
     static getRequestIDsForBlock(ctx: wasmlib.ScViewCallContext): GetRequestIDsForBlockCall {
         const f = new GetRequestIDsForBlockCall(ctx);
         f.params = new sc.MutableGetRequestIDsForBlockParams(wasmlib.newCallParamsProxy(f.func));
@@ -139,6 +146,7 @@ export class ScFuncs {
         return f;
     }
 
+    // Returns the receipt for the request with the given ID.
     static getRequestReceipt(ctx: wasmlib.ScViewCallContext): GetRequestReceiptCall {
         const f = new GetRequestReceiptCall(ctx);
         f.params = new sc.MutableGetRequestReceiptParams(wasmlib.newCallParamsProxy(f.func));
@@ -146,6 +154,7 @@ export class ScFuncs {
         return f;
     }
 
+    // Returns all request receipts in the given block.
     static getRequestReceiptsForBlock(ctx: wasmlib.ScViewCallContext): GetRequestReceiptsForBlockCall {
         const f = new GetRequestReceiptsForBlockCall(ctx);
         f.params = new sc.MutableGetRequestReceiptsForBlockParams(wasmlib.newCallParamsProxy(f.func));
@@ -153,6 +162,7 @@ export class ScFuncs {
         return f;
     }
 
+    // Returns whether the request with ID u has been processed.
     static isRequestProcessed(ctx: wasmlib.ScViewCallContext): IsRequestProcessedCall {
         const f = new IsRequestProcessedCall(ctx);
         f.params = new sc.MutableIsRequestProcessedParams(wasmlib.newCallParamsProxy(f.func));

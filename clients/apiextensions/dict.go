@@ -2,6 +2,7 @@ package apiextensions
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -61,7 +62,7 @@ func APIWaitUntilAllRequestsProcessed(client *apiclient.APIClient, chainID isc.C
 			TimeoutSeconds(int32(timeout.Seconds())).
 			Execute()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Error in WaitForRequest, reqID=%v: %w", req.ID(), err)
 		}
 
 		ret[i] = receipt

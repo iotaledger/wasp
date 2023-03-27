@@ -12,8 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -39,9 +38,10 @@ func TestInitLoad(t *testing.T) {
 	ch, _ := env.NewChainExt(user, originAmount, "chain1")
 	_ = ch.Log().Sync()
 
-	storageDepositCosts := transaction.NewStorageDepositEstimate()
 	cassets := ch.L2CommonAccountAssets()
-	require.EqualValues(t, originAmount-storageDepositCosts.AnchorOutput, cassets.BaseTokens)
+	require.EqualValues(t,
+		originAmount-parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput()),
+		cassets.BaseTokens)
 	require.EqualValues(t, 0, len(cassets.NativeTokens))
 
 	t.Logf("common base tokens: %d", ch.L2CommonAccountBaseTokens())
@@ -60,8 +60,6 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	defer func() {
 		_ = ch.Log().Sync()
 	}()
-	t.Logf("originator address base tokens: %d (spent %d)",
-		env.L1BaseTokens(ch.OriginatorAddress), utxodb.FundsFromFaucetAmount-env.L1BaseTokens(ch.OriginatorAddress))
 
 	// get all native tokens. Must be empty
 	nativeTokenIDs := ch.GetOnChainTokenIDs()
@@ -86,15 +84,16 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	// what spent all goes to the alias output
 	// require.EqualValues(t, int(totalSpent), int(aliasOut.Amount))
 	// total base tokens on L2 must be equal to alias output base tokens - storage deposit
-	storageDepositCosts := transaction.NewStorageDepositEstimate()
-	totalAccountedL2Tokens := aliasOut.Amount - storageDepositCosts.AnchorOutput
+	originAOSD := parameters.L1().Protocol.RentStructure.MinRent(aliasOut)
+	totalAccountedL2Tokens := aliasOut.Amount - originAOSD
 	ch.AssertL2TotalBaseTokens(totalAccountedL2Tokens)
 
 	// common account is empty
-	require.EqualValues(t, 10*isc.Million-transaction.NewStorageDepositEstimate().AnchorOutput, ch.L2CommonAccountBaseTokens())
 
 	someUserWallet, _ := env.NewKeyPairWithFunds()
 	ch.DepositBaseTokensToL2(1*isc.Million, someUserWallet)
+	// AliasOutput minSD changes from block #0 to block #1 because the "state metadata" part gets bigger
+	totalAccountedL2Tokens += originAOSD - parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
 	ch.AssertL2TotalBaseTokens(totalAccountedL2Tokens + 1*isc.Million)
 	ch.AssertControlAddresses()
 }
@@ -104,9 +103,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no contract,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		ch, _ := env.NewChainExt(nil, 0, "chain")
-		defer func() {
-			_ = ch.Log().Sync()
-		}()
+		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
 
 		totalBaseTokensBefore := ch.L2TotalBaseTokens()
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
@@ -122,24 +119,26 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalBaseTokensAfter := ch.L2TotalBaseTokens()
 		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
 
+		// AO minSD changes from block 0 to block 1 because the statemedata grows
+		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
+		changeInAOminSD := newAOSD - oldAOSD
+
 		reqStorageDeposit := GetStorageDeposit(reqTx)[0]
 		rec := ch.LastReceipt()
 
 		// total base tokens on chain increase by the storage deposit from the request tx
-		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit), int(totalBaseTokensAfter))
+		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit-changeInAOminSD), int(totalBaseTokensAfter))
 		// user on L1 is charged with storage deposit
 		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore-reqStorageDeposit)
 		// originator (user) is charged with gas fee on L2
 		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+reqStorageDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged, commonAccountBaseTokensAfter)
+		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged-changeInAOminSD, commonAccountBaseTokensAfter)
 	})
 	t.Run("no contract,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		ch, _ := env.NewChainExt(nil, 0, "chain")
-		defer func() {
-			_ = ch.Log().Sync()
-		}()
+		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID := isc.NewAgentID(senderAddr)
@@ -159,11 +158,15 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalBaseTokensAfter := ch.L2TotalBaseTokens()
 		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
 
+		// AO minSD changes from block 0 to block 1 because the statemedata grows
+		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
+		changeInAOminSD := newAOSD - oldAOSD
+
 		reqStorageDeposit := GetStorageDeposit(reqTx)[0]
 		rec := ch.LastReceipt()
 
 		// total base tokens on chain increase by the storage deposit from the request tx
-		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit), int(totalBaseTokensAfter))
+		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit-changeInAOminSD), int(totalBaseTokensAfter))
 		// originator on L1 does not change
 		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore)
 		// user on L1 is charged with storage deposit
@@ -173,14 +176,12 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// user is charged with gas fee on L2
 		ch.AssertL2BaseTokens(senderAgentID, reqStorageDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged, commonAccountBaseTokensAfter)
+		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged-changeInAOminSD, commonAccountBaseTokensAfter)
 	})
 	t.Run("no EP,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		ch, _ := env.NewChainExt(nil, 0, "chain")
-		defer func() {
-			_ = ch.Log().Sync()
-		}()
+		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
 
 		totalBaseTokensBefore := ch.L2TotalBaseTokens()
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
@@ -199,21 +200,23 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		reqStorageDeposit := GetStorageDeposit(reqTx)[0]
 		rec := ch.LastReceipt()
 
+		// AO minSD changes from block 0 to block 1 because the statemedata grows
+		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
+		changeInAOminSD := newAOSD - oldAOSD
+
 		// total base tokens on chain increase by the storage deposit from the request tx
-		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit), int(totalBaseTokensAfter))
+		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit-changeInAOminSD), int(totalBaseTokensAfter))
 		// user on L1 is charged with storage deposit
 		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore-reqStorageDeposit)
 		// originator (user) is charged with gas fee on L2
 		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+reqStorageDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged, commonAccountBaseTokensAfter)
+		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged-changeInAOminSD, commonAccountBaseTokensAfter)
 	})
 	t.Run("no EP,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		ch, _ := env.NewChainExt(nil, 0, "chain")
-		defer func() {
-			_ = ch.Log().Sync()
-		}()
+		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID := isc.NewAgentID(senderAddr)
@@ -233,10 +236,14 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalBaseTokensAfter := ch.L2TotalBaseTokens()
 		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
 
+		// AO minSD changes from block 0 to block 1 because the statemedata grows
+		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
+		changeInAOminSD := newAOSD - oldAOSD
+
 		reqStorageDeposit := GetStorageDeposit(reqTx)[0]
 		rec := ch.LastReceipt()
 		// total base tokens on chain increase by the storage deposit from the request tx
-		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit), int(totalBaseTokensAfter))
+		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit-changeInAOminSD), int(totalBaseTokensAfter))
 		// originator on L1 does not change
 		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore)
 		// user on L1 is charged with storage deposit
@@ -246,7 +253,10 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// user is charged with gas fee on L2
 		ch.AssertL2BaseTokens(senderAgentID, reqStorageDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged, commonAccountBaseTokensAfter)
+		require.EqualValues(t,
+			accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged-changeInAOminSD,
+			commonAccountBaseTokensAfter,
+		)
 	})
 }
 
@@ -527,7 +537,7 @@ func TestMessageSize(t *testing.T) {
 	ch.WaitUntilMempoolIsEmpty()
 
 	// request outputs are so large that they have to be processed in two separate blocks
-	require.Equal(t, initialBlockIndex+2, ch.GetLatestBlockInfo().BlockIndex)
+	require.Equal(t, initialBlockIndex()+2, ch.GetLatestBlockInfo().BlockIndex())
 
 	for _, req := range reqs {
 		receipt, err := ch.GetRequestReceipt(req.ID())

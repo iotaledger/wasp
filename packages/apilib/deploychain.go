@@ -33,8 +33,6 @@ type CreateChainParams struct {
 }
 
 // DeployChain creates a new chain on specified committee address
-// noinspection ALL
-
 func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr iotago.Address) (isc.ChainID, error) {
 	var err error
 	textout := io.Discard
@@ -97,7 +95,7 @@ func CreateChainOrigin(
 		originator,
 		stateController,
 		governanceController,
-		0,
+		10*isc.Million,
 		initParams,
 		utxoMap,
 		utxoIDsFromUtxoMap(utxoMap),

@@ -60,7 +60,7 @@ func initLoginCmd() *cobra.Command {
 
 			log.Check(err)
 
-			config.SetToken(token.Jwt)
+			config.SetToken(node, token.Jwt)
 
 			log.Printf("\nSuccessfully authenticated\n")
 		},

@@ -18,7 +18,15 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
+type tHelper interface {
+	Helper()
+}
+
 func (ch *Chain) AssertL2NativeTokens(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID, bal interface{}) {
+	if h, ok := ch.Env.T.(tHelper); ok {
+		h.Helper()
+	}
+
 	bals := ch.L2Assets(agentID)
 	actualTokenBalance := bals.AmountNativeToken(nativeTokenID)
 	expected := util.ToBigInt(bal)
@@ -29,6 +37,9 @@ func (ch *Chain) AssertL2NativeTokens(agentID isc.AgentID, nativeTokenID iotago.
 }
 
 func (ch *Chain) AssertL2BaseTokens(agentID isc.AgentID, bal uint64) {
+	if h, ok := ch.Env.T.(tHelper); ok {
+		h.Helper()
+	}
 	require.EqualValues(ch.Env.T, int(bal), int(ch.L2Assets(agentID).BaseTokens))
 }
 
@@ -67,16 +78,25 @@ func (ch *Chain) CheckAccountLedger() {
 }
 
 func (ch *Chain) AssertL2TotalNativeTokens(nativeTokenID iotago.NativeTokenID, bal interface{}) {
+	if h, ok := ch.Env.T.(tHelper); ok {
+		h.Helper()
+	}
 	bals := ch.L2TotalAssets()
 	require.True(ch.Env.T, util.ToBigInt(bal).Cmp(bals.AmountNativeToken(nativeTokenID)) == 0)
 }
 
 func (ch *Chain) AssertL2TotalBaseTokens(bal uint64) {
+	if h, ok := ch.Env.T.(tHelper); ok {
+		h.Helper()
+	}
 	baseTokens := ch.L2TotalBaseTokens()
 	require.EqualValues(ch.Env.T, int(bal), int(baseTokens))
 }
 
 func (ch *Chain) AssertControlAddresses() {
+	if h, ok := ch.Env.T.(tHelper); ok {
+		h.Helper()
+	}
 	rec := ch.GetControlAddresses()
 	require.True(ch.Env.T, rec.StateAddress.Equal(ch.StateControllerAddress))
 	require.True(ch.Env.T, rec.GoverningAddress.Equal(ch.StateControllerAddress))
@@ -94,10 +114,16 @@ func (ch *Chain) HasL2NFT(agentID isc.AgentID, nftID *iotago.NFTID) bool {
 }
 
 func (env *Solo) AssertL1BaseTokens(addr iotago.Address, expected uint64) {
+	if h, ok := env.T.(tHelper); ok {
+		h.Helper()
+	}
 	require.EqualValues(env.T, int(expected), int(env.L1BaseTokens(addr)))
 }
 
 func (env *Solo) AssertL1NativeTokens(addr iotago.Address, nativeTokenID iotago.NativeTokenID, expected interface{}) {
+	if h, ok := env.T.(tHelper); ok {
+		h.Helper()
+	}
 	require.True(env.T, env.L1NativeTokens(addr, nativeTokenID).Cmp(util.ToBigInt(expected)) == 0)
 }
 

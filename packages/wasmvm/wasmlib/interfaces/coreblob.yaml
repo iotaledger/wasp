@@ -4,33 +4,43 @@ structs: {}
 typedefs: {}
 state: {}
 funcs:
+
+  # Stores a new blob in the registry.
   storeBlob:
     params:
-      blobs=this: map[String]Bytes # set of named blobs
+      blobs=this: map[String]Bytes # set of named chunks
 
-      # The following are predefined blob names that are necessary
+      # The following are predefined chunk names that are necessary
       # to be able to load and deploy specific VM binary code.
       # They directly map to entries in the blobs map.
       # In fact, we will probably never use the blobs map directly.
 
-      progBinary=p: Bytes? # smart contract program binary code
-      description=d: String? # description of progBinary
       vmType=v: String? # VM type that must be used to run progBinary
+      progBinary=p: Bytes? # smart contract program binary code
+      dataSchema=d: Bytes? # data schema for external tools
+      sources=s: Bytes? # smart contract program source code
     results:
-      hash: Hash # calculated hash of blob set
+      hash: Hash # calculated hash of blob chunks
+
 views:
-  getBlobInfo:
-    params:
-      hash: Hash # blob set
-    results:
-      blobSizes=this: map[String]Int32 # size for each named blob
+
+  #Returns the chunk associated with the given blob field name.
   getBlobField:
     params:
-      field: String # blob name
-      hash: Hash # blob set
+      field: String # chunk name
+      hash: Hash # hash of the blob
     results:
-      bytes: Bytes # blob data
+      bytes: Bytes # data for named chunk
+
+  # Returns the size of each chunk of the blob.
+  getBlobInfo:
+    params:
+      hash: Hash # hash of the blob
+    results:
+      blobSizes=this: map[String]Int32 # sizes for each named chunk
+
+  # Returns a list of all blobs hashes in the registry and their sized.
   listBlobs:
     results:
-      blobSizes=this: map[Hash]Int32 # total size for each blob set
+      blobSizes=this: map[Hash]Int32 # sizes for each blob hash
  

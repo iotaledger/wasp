@@ -39,7 +39,7 @@ func (tr *TrieUpdatable) DeletePrefix(pathPrefix []byte) bool {
 // Get reads the trie with the key
 func (tr *TrieReader) Get(key []byte) []byte {
 	unpackedTriePath := unpackBytes(key)
-	var terminal *tcommitment
+	var terminal *Tcommitment
 	tr.traversePath(unpackedTriePath, func(n *nodeData, _ []byte, ending pathEndingCode) {
 		if ending == endingTerminal && n.terminal != nil {
 			terminal = n.terminal

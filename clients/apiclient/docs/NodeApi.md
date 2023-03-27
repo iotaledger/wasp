@@ -4,19 +4,18 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**DistrustPeer**](NodeApi.md#DistrustPeer) | **Delete** /node/peers/trusted/{peer} | Distrust a peering node
-[**GenerateDKS**](NodeApi.md#GenerateDKS) | **Post** /node/dks | Generate a new distributed key
-[**GetAllPeers**](NodeApi.md#GetAllPeers) | **Get** /node/peers | Get basic information about all configured peers
-[**GetConfiguration**](NodeApi.md#GetConfiguration) | **Get** /node/config | Return the Wasp configuration
-[**GetDKSInfo**](NodeApi.md#GetDKSInfo) | **Get** /node/dks/{sharedAddress} | Get information about the shared address DKS configuration
-[**GetHealth**](NodeApi.md#GetHealth) | **Get** /health | Returns 200 if the node health is healthy.
-[**GetInfo**](NodeApi.md#GetInfo) | **Get** /node/info | Returns private information about this node.
-[**GetPeeringIdentity**](NodeApi.md#GetPeeringIdentity) | **Get** /node/peers/identity | Get basic peer info of the current node
-[**GetTrustedPeers**](NodeApi.md#GetTrustedPeers) | **Get** /node/peers/trusted | Get trusted peers
-[**GetVersion**](NodeApi.md#GetVersion) | **Get** /node/version | Returns the node version.
-[**SetNodeOwner**](NodeApi.md#SetNodeOwner) | **Post** /node/owner/certificate | Sets the node owner
-[**ShutdownNode**](NodeApi.md#ShutdownNode) | **Post** /node/shutdown | Shut down the node
-[**TrustPeer**](NodeApi.md#TrustPeer) | **Post** /node/peers/trusted | Trust a peering node
+[**DistrustPeer**](NodeApi.md#DistrustPeer) | **Delete** /v1/node/peers/trusted/{peer} | Distrust a peering node
+[**GenerateDKS**](NodeApi.md#GenerateDKS) | **Post** /v1/node/dks | Generate a new distributed key
+[**GetAllPeers**](NodeApi.md#GetAllPeers) | **Get** /v1/node/peers | Get basic information about all configured peers
+[**GetConfiguration**](NodeApi.md#GetConfiguration) | **Get** /v1/node/config | Return the Wasp configuration
+[**GetDKSInfo**](NodeApi.md#GetDKSInfo) | **Get** /v1/node/dks/{sharedAddress} | Get information about the shared address DKS configuration
+[**GetInfo**](NodeApi.md#GetInfo) | **Get** /v1/node/info | Returns private information about this node.
+[**GetPeeringIdentity**](NodeApi.md#GetPeeringIdentity) | **Get** /v1/node/peers/identity | Get basic peer info of the current node
+[**GetTrustedPeers**](NodeApi.md#GetTrustedPeers) | **Get** /v1/node/peers/trusted | Get trusted peers
+[**GetVersion**](NodeApi.md#GetVersion) | **Get** /v1/node/version | Returns the node version.
+[**SetNodeOwner**](NodeApi.md#SetNodeOwner) | **Post** /v1/node/owner/certificate | Sets the node owner
+[**ShutdownNode**](NodeApi.md#ShutdownNode) | **Post** /v1/node/shutdown | Shut down the node
+[**TrustPeer**](NodeApi.md#TrustPeer) | **Post** /v1/node/peers/trusted | Trust a peering node
 
 
 
@@ -330,63 +329,6 @@ Name | Type | Description  | Notes
 
 - **Content-Type**: Not defined
 - **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
-## GetHealth
-
-> GetHealth(ctx).Execute()
-
-Returns 200 if the node health is healthy.
-
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.NodeApi.GetHealth(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `NodeApi.GetHealth``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-}
-```
-
-### Path Parameters
-
-This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetHealthRequest struct via the builder pattern
-
-
-### Return type
-
- (empty response body)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: Not defined
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)

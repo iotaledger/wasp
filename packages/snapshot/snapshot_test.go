@@ -17,7 +17,8 @@ import (
 
 func Test1(t *testing.T) {
 	db := mapdb.NewMapDB()
-	st := origin.InitChain(state.NewStore(db), nil, 0)
+	st := state.NewStore(db)
+	origin.InitChain(st, nil, 0)
 
 	tm := util.NewTimer()
 	count := 0

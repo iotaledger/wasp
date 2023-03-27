@@ -14,6 +14,7 @@ import (
 	"go.dedis.ch/kyber/v3/group/edwards25519"
 	"go.dedis.ch/kyber/v3/suites"
 
+	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -28,17 +29,17 @@ type NodeProvider func() *Node
 // It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.
 type Node struct {
-	identity                *cryptolib.KeyPair               // Keys of the current node.
-	secKey                  kyber.Scalar                     // Derived from the identity.
-	pubKey                  kyber.Point                      // Derived from the identity.
-	blsSuite                Suite                            // Cryptography to use for the Pairing based operations.
-	edSuite                 suites.Suite                     // Cryptography to use for the Ed25519 based operations.
-	netProvider             peering.NetworkProvider          // Network to communicate through.
-	dkShareRegistryProvider registry.DKShareRegistryProvider // Where to store the generated keys.
-	processes               map[string]*proc                 // Only for introspection.
-	procLock                *sync.RWMutex                    // To guard access to the process pool.
-	initMsgQueue            chan *initiatorInitMsgIn         // Incoming events processed async.
-	cleanupFunc             context.CancelFunc               // Peering cleanup func
+	identity                *cryptolib.KeyPair                        // Keys of the current node.
+	secKey                  kyber.Scalar                              // Derived from the identity.
+	pubKey                  kyber.Point                               // Derived from the identity.
+	blsSuite                Suite                                     // Cryptography to use for the Pairing based operations.
+	edSuite                 suites.Suite                              // Cryptography to use for the Ed25519 based operations.
+	netProvider             peering.NetworkProvider                   // Network to communicate through.
+	dkShareRegistryProvider registry.DKShareRegistryProvider          // Where to store the generated keys.
+	processes               *shrinkingmap.ShrinkingMap[string, *proc] // Only for introspection.
+	procLock                *sync.RWMutex                             // To guard access to the process pool.
+	initMsgQueue            chan *initiatorInitMsgIn                  // Incoming events processed async.
+	cleanupFunc             context.CancelFunc                        // Peering cleanup func
 	log                     *logger.Logger
 }
 
@@ -62,7 +63,7 @@ func NewNode(
 		edSuite:                 edwards25519.NewBlakeSHA256Ed25519(),
 		netProvider:             netProvider,
 		dkShareRegistryProvider: dkShareRegistryProvider,
-		processes:               make(map[string]*proc),
+		processes:               shrinkingmap.New[string, *proc](),
 		procLock:                &sync.RWMutex{},
 		initMsgQueue:            make(chan *initiatorInitMsgIn),
 		log:                     log,
@@ -303,7 +304,7 @@ func (n *Node) onInitMsg(msg *initiatorInitMsgIn) {
 	var err error
 	var p *proc
 	n.procLock.RLock()
-	if _, ok := n.processes[msg.dkgRef]; ok {
+	if n.processes.Has(msg.dkgRef) {
 		// To have idempotence for retries, we need to consider duplicate
 		// messages as success, if process is already created.
 		n.procLock.RUnlock()
@@ -318,7 +319,7 @@ func (n *Node) onInitMsg(msg *initiatorInitMsgIn) {
 		// be locked because of the naive implementation of `event.Event`. It locks on all the callbacks.
 		n.procLock.Lock()
 		if p, err = onInitiatorInit(msg.peeringID, &msg.initiatorInitMsg, n); err == nil {
-			n.processes[p.dkgRef] = p
+			n.processes.Set(p.dkgRef, p)
 		}
 		n.procLock.Unlock()
 		n.netProvider.SendMsgByPubKey(msg.SenderPubKey, makePeerMessage(msg.peeringID, peering.PeerMessageReceiverDkg, msg.step, &initiatorStatusMsg{
@@ -331,11 +332,8 @@ func (n *Node) onInitMsg(msg *initiatorInitMsgIn) {
 func (n *Node) dropProcess(p *proc) bool {
 	n.procLock.Lock()
 	defer n.procLock.Unlock()
-	if found := n.processes[p.dkgRef]; found != nil {
-		delete(n.processes, p.dkgRef)
-		return true
-	}
-	return false
+
+	return n.processes.Delete(p.dkgRef)
 }
 
 func (n *Node) exchangeInitiatorStep(

@@ -4,18 +4,18 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**GetChainMetrics**](MetricsApi.md#GetChainMetrics) | **Get** /metrics/chain/{chainID} | Get chain specific metrics.
-[**GetChainPipeMetrics**](MetricsApi.md#GetChainPipeMetrics) | **Get** /metrics/chain/{chainID}/pipe | Get chain pipe event metrics.
-[**GetChainWorkflowMetrics**](MetricsApi.md#GetChainWorkflowMetrics) | **Get** /metrics/chain/{chainID}/workflow | Get chain workflow metrics.
-[**GetL1Metrics**](MetricsApi.md#GetL1Metrics) | **Get** /metrics/l1 | Get accumulated metrics.
+[**GetChainMessageMetrics**](MetricsApi.md#GetChainMessageMetrics) | **Get** /v1/metrics/chain/{chainID}/messages | Get chain specific message metrics.
+[**GetChainPipeMetrics**](MetricsApi.md#GetChainPipeMetrics) | **Get** /v1/metrics/chain/{chainID}/pipe | Get chain pipe event metrics.
+[**GetChainWorkflowMetrics**](MetricsApi.md#GetChainWorkflowMetrics) | **Get** /v1/metrics/chain/{chainID}/workflow | Get chain workflow metrics.
+[**GetNodeMessageMetrics**](MetricsApi.md#GetNodeMessageMetrics) | **Get** /v1/metrics/node/messages | Get accumulated message metrics.
 
 
 
-## GetChainMetrics
+## GetChainMessageMetrics
 
-> ChainMetrics GetChainMetrics(ctx, chainID).Execute()
+> ChainMessageMetrics GetChainMessageMetrics(ctx, chainID).Execute()
 
-Get chain specific metrics.
+Get chain specific message metrics.
 
 ### Example
 
@@ -34,13 +34,13 @@ func main() {
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.MetricsApi.GetChainMetrics(context.Background(), chainID).Execute()
+    resp, r, err := apiClient.MetricsApi.GetChainMessageMetrics(context.Background(), chainID).Execute()
     if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `MetricsApi.GetChainMetrics``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Error when calling `MetricsApi.GetChainMessageMetrics``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `GetChainMetrics`: ChainMetrics
-    fmt.Fprintf(os.Stdout, "Response from `MetricsApi.GetChainMetrics`: %v\n", resp)
+    // response from `GetChainMessageMetrics`: ChainMessageMetrics
+    fmt.Fprintf(os.Stdout, "Response from `MetricsApi.GetChainMessageMetrics`: %v\n", resp)
 }
 ```
 
@@ -54,7 +54,7 @@ Name | Type | Description  | Notes
 
 ### Other Parameters
 
-Other parameters are passed through a pointer to a apiGetChainMetricsRequest struct via the builder pattern
+Other parameters are passed through a pointer to a apiGetChainMessageMetricsRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
@@ -63,7 +63,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ChainMetrics**](ChainMetrics.md)
+[**ChainMessageMetrics**](ChainMessageMetrics.md)
 
 ### Authorization
 
@@ -215,11 +215,11 @@ Name | Type | Description  | Notes
 [[Back to README]](../README.md)
 
 
-## GetL1Metrics
+## GetNodeMessageMetrics
 
-> ChainMetrics GetL1Metrics(ctx).Execute()
+> NodeMessageMetrics GetNodeMessageMetrics(ctx).Execute()
 
-Get accumulated metrics.
+Get accumulated message metrics.
 
 ### Example
 
@@ -237,13 +237,13 @@ func main() {
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.MetricsApi.GetL1Metrics(context.Background()).Execute()
+    resp, r, err := apiClient.MetricsApi.GetNodeMessageMetrics(context.Background()).Execute()
     if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `MetricsApi.GetL1Metrics``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Error when calling `MetricsApi.GetNodeMessageMetrics``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `GetL1Metrics`: ChainMetrics
-    fmt.Fprintf(os.Stdout, "Response from `MetricsApi.GetL1Metrics`: %v\n", resp)
+    // response from `GetNodeMessageMetrics`: NodeMessageMetrics
+    fmt.Fprintf(os.Stdout, "Response from `MetricsApi.GetNodeMessageMetrics`: %v\n", resp)
 }
 ```
 
@@ -253,12 +253,12 @@ This endpoint does not need any parameter.
 
 ### Other Parameters
 
-Other parameters are passed through a pointer to a apiGetL1MetricsRequest struct via the builder pattern
+Other parameters are passed through a pointer to a apiGetNodeMessageMetricsRequest struct via the builder pattern
 
 
 ### Return type
 
-[**ChainMetrics**](ChainMetrics.md)
+[**NodeMessageMetrics**](NodeMessageMetrics.md)
 
 ### Authorization
 

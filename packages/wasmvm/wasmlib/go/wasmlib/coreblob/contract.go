@@ -36,6 +36,7 @@ type Funcs struct{}
 
 var ScFuncs Funcs
 
+// Stores a new blob in the registry.
 func (sc Funcs) StoreBlob(ctx wasmlib.ScFuncCallContext) *StoreBlobCall {
 	f := &StoreBlobCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncStoreBlob)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
@@ -43,6 +44,7 @@ func (sc Funcs) StoreBlob(ctx wasmlib.ScFuncCallContext) *StoreBlobCall {
 	return f
 }
 
+// Returns the chunk associated with the given blob field name.
 func (sc Funcs) GetBlobField(ctx wasmlib.ScViewCallContext) *GetBlobFieldCall {
 	f := &GetBlobFieldCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetBlobField)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
@@ -50,6 +52,7 @@ func (sc Funcs) GetBlobField(ctx wasmlib.ScViewCallContext) *GetBlobFieldCall {
 	return f
 }
 
+// Returns the size of each chunk of the blob.
 func (sc Funcs) GetBlobInfo(ctx wasmlib.ScViewCallContext) *GetBlobInfoCall {
 	f := &GetBlobInfoCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetBlobInfo)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
@@ -57,6 +60,7 @@ func (sc Funcs) GetBlobInfo(ctx wasmlib.ScViewCallContext) *GetBlobInfoCall {
 	return f
 }
 
+// Returns a list of all blobs hashes in the registry and their sized.
 func (sc Funcs) ListBlobs(ctx wasmlib.ScViewCallContext) *ListBlobsCall {
 	f := &ListBlobsCall{Func: wasmlib.NewScView(ctx, HScName, HViewListBlobs)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)

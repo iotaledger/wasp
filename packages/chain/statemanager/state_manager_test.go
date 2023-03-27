@@ -59,7 +59,8 @@ func TestCruelWorld(t *testing.T) {
 	for i := range sms {
 		t.Logf("Creating %v-th state manager for node %s", i, peeringURLs[i])
 		var err error
-		stores[i] = origin.InitChain(state.NewStore(mapdb.NewMapDB()), nil, 0)
+		stores[i] = state.NewStore(mapdb.NewMapDB())
+		origin.InitChain(stores[i], nil, 0)
 		sms[i], err = New(
 			context.Background(),
 			bf.GetChainID(),

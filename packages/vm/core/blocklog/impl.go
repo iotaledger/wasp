@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/state"
 )
 
 var Processor = Contract.Processor(nil,
@@ -26,13 +25,11 @@ var Processor = Contract.Processor(nil,
 
 func SetInitialState(s kv.KVStore) {
 	SaveNextBlockInfo(s, &BlockInfo{
-		BlockIndex:            0,
+		SchemaVersion:         BlockInfoLatestSchemaVersion,
 		Timestamp:             time.Time{},
 		TotalRequests:         1,
 		NumSuccessfulRequests: 1,
 		NumOffLedgerRequests:  0,
-		PreviousL1Commitment:  state.L1Commitment{}, // doesn't exist
-		L1Commitment:          nil,                  // not known yet
 	})
 }
 
@@ -84,6 +81,7 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
 		ctx.RequireNoError(err)
 		arr.MustPush(rec.Request.ID().Bytes())
 	}
+	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret
 }
 
@@ -174,6 +172,7 @@ func viewGetEventsForBlock(ctx isc.SandboxView) dict.Dict {
 	for _, event := range events {
 		arr.MustPush([]byte(event))
 	}
+	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret
 }
 

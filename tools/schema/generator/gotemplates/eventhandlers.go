@@ -15,16 +15,25 @@ $#each events eventHandler
 }
 
 type $PkgName$+EventHandlers struct {
+	myID uint32
 $#each events eventHandlerMember
 }
 
 var _ wasmlib.IEventHandlers = new($PkgName$+EventHandlers)
+
+func New$PkgName$+EventHandlers() *$PkgName$+EventHandlers {
+	return &$PkgName$+EventHandlers{ myID: wasmlib.EventHandlersGenerateID() }
+}
 
 func (h *$PkgName$+EventHandlers) CallHandler(topic string, params []string) {
 	handler := $pkgName$+Handlers[topic]
 	if handler != nil {
 		handler(h, params)
 	}
+}
+
+func (h *$PkgName$+EventHandlers) ID() uint32 {
+	return h.myID
 }
 $#each events eventFuncSignature
 $#each events eventClass

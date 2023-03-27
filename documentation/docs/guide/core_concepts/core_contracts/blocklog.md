@@ -46,7 +46,7 @@ Returns information about the block with index `n`.
 
 ### `getRequestIDsForBlock(n uint32)`
 
-Returns a list with the IDs of all requests in the block with block index `n`.
+Returns a list with all request IDs in the block with block index `n`.
 
 #### Parameters
 
@@ -54,6 +54,7 @@ Returns a list with the IDs of all requests in the block with block index `n`.
 
 #### Returns
 
+- `n` (`uint32`):The block index.
 - `u`: ([`Array16`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/array16.go)
   of [`RequestID`](#requestid))
 
@@ -67,9 +68,9 @@ Returns the receipt for the request with the given ID.
 
 #### Returns
 
-- `d` ([`RequestReceipt`](#requestreceipt)):The request receipt.
 - `n` (`uint32`):The block index.
-- `r` (`uint16`):The request index.
+- `r` (`uint16`):The request index within the block.
+- `d` ([`RequestReceipt`](#requestreceipt)):The request receipt.
 
 ### `getRequestReceiptsForBlock(n uint32)`
 
@@ -81,6 +82,7 @@ Returns all the receipts in the block with index `n`.
 
 #### Returns
 
+- `n` (`uint32`):The block index.
 - `d`:  ([`Array16`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/array16.go)
   of [`RequestReceipt`](#requestreceipt))
 

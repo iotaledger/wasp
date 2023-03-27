@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/inx-app/pkg/nodebridge"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/daemon"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 )
 
@@ -59,16 +58,11 @@ func provide(c *dig.Container) error {
 		CoreComponent.LogPanic(err)
 	}
 
-	if err := c.Provide(nodeconnmetrics.New); err != nil {
-		CoreComponent.LogPanic(err)
-	}
-
 	type nodeConnectionDeps struct {
 		dig.In
 
-		NodeBridge            *nodebridge.NodeBridge
-		NodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
-		ShutdownHandler       *shutdown.ShutdownHandler
+		NodeBridge      *nodebridge.NodeBridge
+		ShutdownHandler *shutdown.ShutdownHandler
 	}
 
 	if err := c.Provide(func(deps nodeConnectionDeps) chain.NodeConnection {
@@ -76,7 +70,6 @@ func provide(c *dig.Container) error {
 			CoreComponent.Daemon().ContextStopped(),
 			CoreComponent.Logger().Named("nc"),
 			deps.NodeBridge,
-			deps.NodeConnectionMetrics,
 			deps.ShutdownHandler,
 		)
 		if err != nil {

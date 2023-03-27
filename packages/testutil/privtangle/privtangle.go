@@ -102,6 +102,7 @@ func (pt *PrivTangle) StartServers(deleteExisting bool) {
 	pt.waitInxPluginsIndexer(20 * time.Second)
 	pt.startFaucet(0) // faucet needs to be started after the indexer, otherwise it will take 1 milestone for the faucet get the correct balance
 	pt.waitInxPluginsFaucet(20 * time.Second)
+	pt.logf("Privtangle started successfully")
 }
 
 func (pt *PrivTangle) generateSnapshot() {

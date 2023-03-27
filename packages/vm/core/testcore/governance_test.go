@@ -13,13 +13,14 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/governance/governanceimpl"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 func TestGovernance1(t *testing.T) {
@@ -279,6 +280,9 @@ func TestCustomL1Metadata(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	ch := env.NewChain()
 
+	// deposit some extra tokens to the common account to accommodate for the SD change
+	ch.SendFromL1ToL2AccountBaseTokens(10*isc.Million, 9*isc.Million, accounts.CommonAccount(), nil)
+
 	// set max valid size custom metadata
 	_, err := ch.PostRequestSync(
 		solo.NewCallParams(
@@ -327,7 +331,7 @@ func TestCustomL1Metadata(t *testing.T) {
 
 	// assert metadata is correct on L1 alias output
 	ao, _ := ch.LatestAliasOutput()
-	sm, err := vmcontext.StateMetadataFromBytes(ao.GetStateMetadata())
+	sm, err := transaction.StateMetadataFromBytes(ao.GetStateMetadata())
 	require.NoError(t, err)
 	require.Equal(t, customMetadata, sm.CustomMetadata)
 	require.True(t, reflect.DeepEqual(sm.GasFeePolicy, gas.DefaultFeePolicy()))
@@ -357,7 +361,7 @@ func TestCustomL1Metadata(t *testing.T) {
 
 	// assert gas policy changed on L1 metadata
 	ao, _ = ch.LatestAliasOutput()
-	sm, err = vmcontext.StateMetadataFromBytes(ao.GetStateMetadata())
+	sm, err = transaction.StateMetadataFromBytes(ao.GetStateMetadata())
 	require.NoError(t, err)
 	require.Equal(t, customMetadata, sm.CustomMetadata)
 	require.True(t, reflect.DeepEqual(sm.GasFeePolicy, newFeePolicy))

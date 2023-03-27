@@ -24,7 +24,8 @@ export const ResultGoverningAddress       = 'g';
 export const ResultRequestID              = 'u';
 export const ResultRequestIndex           = 'r';
 export const ResultRequestProcessed       = 'p';
-export const ResultRequestRecord          = 'd';
+export const ResultRequestReceipt         = 'd';
+export const ResultRequestReceipts        = 'd';
 export const ResultStateControllerAddress = 's';
 
 export const ViewControlAddresses           = 'controlAddresses';

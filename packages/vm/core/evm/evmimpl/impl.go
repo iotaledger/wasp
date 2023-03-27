@@ -34,7 +34,7 @@ var Processor = evm.Contract.Processor(nil,
 	evm.FuncOpenBlockContext.WithHandler(restricted(openBlockContext)),
 	evm.FuncCloseBlockContext.WithHandler(restricted(closeBlockContext)),
 	evm.FuncSendTransaction.WithHandler(restricted(applyTransaction)),
-	evm.FuncEstimateGas.WithHandler(restricted(estimateGas)),
+	evm.FuncCallContract.WithHandler(restricted(callContract)),
 	evm.FuncRegisterERC20NativeToken.WithHandler(restricted(registerERC20NativeToken)),
 	evm.FuncRegisterERC20NativeTokenOnRemoteChain.WithHandler(restricted(registerERC20NativeTokenOnRemoteChain)),
 	evm.FuncRegisterERC20ExternalNativeToken.WithHandler(registerERC20ExternalNativeToken),
@@ -42,7 +42,6 @@ var Processor = evm.Contract.Processor(nil,
 
 	// views
 	evm.FuncGetBalance.WithHandler(restrictedView(getBalance)),
-	evm.FuncCallContract.WithHandler(restrictedView(callContract)),
 	evm.FuncGetNonce.WithHandler(restrictedView(getNonce)),
 	evm.FuncGetReceipt.WithHandler(restrictedView(getReceipt)),
 	evm.FuncGetCode.WithHandler(restrictedView(getCode)),
@@ -81,15 +80,16 @@ func SetInitialState(state kv.KVStore, evmChainID uint16, blockKeepAmount int32)
 	}
 	addToPrivileged(state, iscmagic.ERC721NFTsAddress)
 
-	// chain always starts with default gas policy
+	// chain always starts with default gas fee & limits configuration
+	gasLimits := gas.LimitsDefault
 	gasRatio := gas.DefaultFeePolicy().EVMGasRatio
 	emulator.Init(
 		evmStateSubrealm(state),
 		evmChainID,
 		blockKeepAmount,
 		emulator.GasLimits{
-			Block: gas.EVMBlockGasLimit(&gasRatio),
-			Call:  gas.EVMCallGasLimit(&gasRatio),
+			Block: gas.EVMBlockGasLimit(gasLimits, &gasRatio),
+			Call:  gas.EVMCallGasLimit(gasLimits, &gasRatio),
 		},
 		0,
 		genesisAlloc,
@@ -122,10 +122,14 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	var gasErr error
 	if result != nil {
 		// convert burnt EVM gas to ISC gas
+		chainInfo := ctx.ChainInfo()
 		ctx.Privileged().GasBurnEnable(true)
 		gasErr = panicutil.CatchPanic(
 			func() {
-				ctx.Gas().Burn(gas.BurnCodeEVM1P, gas.EVMGasToISC(result.UsedGas, &bctx.feePolicy.EVMGasRatio))
+				ctx.Gas().Burn(
+					gas.BurnCodeEVM1P,
+					gas.EVMGasToISC(result.UsedGas, &chainInfo.GasFeePolicy.EVMGasRatio),
+				)
 			},
 		)
 		ctx.Privileged().GasBurnEnable(false)
@@ -407,16 +411,6 @@ func getChainID(ctx isc.SandboxView) dict.Dict {
 	return result(evmtypes.EncodeChainID(emu.BlockchainDB().GetChainID()))
 }
 
-func callContract(ctx isc.SandboxView) dict.Dict {
-	callMsg, err := evmtypes.DecodeCallMsg(ctx.Params().MustGet(evm.FieldCallMsg))
-	ctx.RequireNoError(err)
-	emu := createEmulatorR(ctx)
-	res, err := emu.CallContract(callMsg, nil)
-	ctx.RequireNoError(err)
-	ctx.RequireNoError(tryGetRevertError(res))
-	return result(res.Return())
-}
-
 func tryGetRevertError(res *core.ExecutionResult) error {
 	// try to include the revert reason in the error
 	if res.Err == nil {
@@ -431,9 +425,9 @@ func tryGetRevertError(res *core.ExecutionResult) error {
 	return res.Err
 }
 
-// estimateGas is called from the jsonrpc eth_estimateGas endpoint.
+// callContract is called from the jsonrpc eth_estimateGas and eth_call endpoints.
 // The VM is in estimate gas mode, and any state mutations are discarded.
-func estimateGas(ctx isc.Sandbox) dict.Dict {
+func callContract(ctx isc.Sandbox) dict.Dict {
 	// we only want to charge gas for the actual execution of the ethereum tx
 	ctx.Privileged().GasBurnEnable(false)
 	defer ctx.Privileged().GasBurnEnable(true)
@@ -461,9 +455,7 @@ func estimateGas(ctx isc.Sandbox) dict.Dict {
 		ctx.RequireNoError(gasErr)
 	}
 
-	finalEvmGasUsed := gas.ISCGasBurnedToEVM(ctx.Gas().Burned(), &gasRatio)
-
-	return result(codec.EncodeUint64(finalEvmGasUsed))
+	return result(res.ReturnData)
 }
 
 func getGasRatio(ctx isc.SandboxBase) util.Ratio32 {

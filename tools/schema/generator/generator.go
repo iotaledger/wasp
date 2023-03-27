@@ -188,7 +188,7 @@ func (g *GenBase) IsLatest() bool {
 
 	info, err := os.Stat(g.folder + "consts" + g.extension)
 	if err == nil && info.ModTime().After(g.s.SchemaTime) {
-		fmt.Printf("skipping %s code generation\n", g.language)
+		// fmt.Printf("skipping %s code generation\n", g.language)
 		return true
 	}
 
