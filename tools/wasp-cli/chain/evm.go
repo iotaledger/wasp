@@ -6,22 +6,15 @@ package chain
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
 
 type evmDeployParams struct {
 	ChainID         uint16
-	allocBase64     string
-	GasRatio        util.Ratio32
-	BlockGasLimit   uint64
 	BlockKeepAmount int32
 }
 
 func (d *evmDeployParams) initFlags(cmd *cobra.Command) {
 	cmd.Flags().Uint16VarP(&d.ChainID, "evm-chainid", "", evm.DefaultChainID, "ChainID")
-	cmd.Flags().StringVarP(&d.allocBase64, "evm-alloc", "", "", "Genesis allocation (base64-encoded)")
-	d.GasRatio = util.Ratio32{A: 1, B: 1}
-	cmd.Flags().VarP(&d.GasRatio, "evm-gas-ratio", "", "ISC Gas : EVM gas ratio")
 	cmd.Flags().Int32VarP(&d.BlockKeepAmount, "evm-block-keep-amount", "", evm.BlockKeepAmountDefault, "Amount of blocks to keep in DB (-1: keep all blocks)")
 }
