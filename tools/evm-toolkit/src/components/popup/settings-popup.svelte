@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { connected, selectedAccount } from 'svelte-web3';
+  import { get } from 'svelte/store';
 
-  import { Input, Select } from '$components';
+  import { Button, Input, Select } from '$components';
 
   import { InputType } from '$lib/common';
   import {
@@ -12,44 +12,57 @@
     updateNetwork,
     type INetwork,
   } from '$lib/evm-toolkit';
+  import { NotificationType, showNotification } from '$lib/notification';
+  import { closePopup, PopupId } from '$lib/popup';
   import { connectToWallet } from '$lib/withdraw';
 
-  let previousSelectedNetworkId: number = $selectedNetworkId;
-  let _selectedNetwork: INetwork;
-  // local copies to manage updates afterwards
-  $: $selectedNetworkId, (_selectedNetwork = $selectedNetwork);
-  $: _selectedNetwork, handleNetworkChange();
+  let busy: boolean = false;
+
+  let _selectedNetwork: INetwork = get(selectedNetwork);
+  let _selectedNetworkId: number = get(selectedNetworkId);
+
+  $: disableNetworkEdit = _selectedNetwork?.id !== 1;
+
   $: networkSelectorOptions = $networks?.map(({ text, id }) => ({
     label: text,
     id,
   }));
-  $: disableNetworkEdit = $selectedNetwork?.id !== 1;
 
-  onMount(() => {
-    const unsubscribe = selectedNetworkId.subscribe(async id => {
-      if (id !== previousSelectedNetworkId) {
-        previousSelectedNetworkId = id;
-        if ($connected && $selectedAccount) {
-          try {
-            await connectToWallet();
-          } catch (e) {
-            console.error(e);
-          }
-        }
-      }
-    });
-    return () => unsubscribe();
-  });
+  $: _selectedNetworkId,
+    (_selectedNetwork = $networks.find(
+      network => network.id === _selectedNetworkId,
+    ));
 
-  function handleNetworkChange() {
+  async function handleSave(): Promise<void> {
+    const _closePopup = () => {
+      closePopup(PopupId.Settings);
+    };
+    selectedNetworkId.set(_selectedNetworkId);
     updateNetwork(_selectedNetwork);
+    if ($connected && $selectedAccount) {
+      try {
+        busy = true;
+        await connectToWallet();
+        _closePopup();
+      } catch (e) {
+        showNotification({
+          type: NotificationType.Error,
+          message: e,
+        });
+        console.error(e);
+      } finally {
+        busy = false;
+      }
+    } else {
+      _closePopup();
+    }
   }
 </script>
 
 <network-settings-component class="flex flex-col space-y-4">
   {#if _selectedNetwork}
-    <Select options={networkSelectorOptions} bind:value={$selectedNetworkId} />
-    <div class="flex flex-col space-y-2">
+    <Select options={networkSelectorOptions} bind:value={_selectedNetworkId} />
+    <form class="flex flex-col space-y-2">
       <Input
         id="hornetEndpoint"
         label="Hornet API endpoint"
@@ -93,7 +106,8 @@
         disabled={disableNetworkEdit}
         stretch
       />
-    </div>
+    </form>
+    <Button title="Save" busyMessage="Saving..." onClick={handleSave} {busy} />
   {:else}
     <span>Loading Network Configuration...</span>
   {/if}
