@@ -10,6 +10,7 @@ type BlockCache interface {
 	AddBlock(state.Block)
 	GetBlock(*state.L1Commitment) state.Block
 	CleanOlderThan(time.Time)
+	Size() int
 }
 
 type BlockWAL interface {

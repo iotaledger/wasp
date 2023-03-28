@@ -17,11 +17,13 @@ type blockCacheTestSM struct { // State machine for block cache property based R
 	wal            TestBlockWAL
 }
 
+var _ rapid.StateMachine = &blockCacheTestSM{}
+
 func (bctsmT *blockCacheTestSM) Init(t *rapid.T) {
 	bctsmT.blockCacheNoWALTestSM = &blockCacheNoWALTestSM{}
 	bctsmT.blocksNotInWAL = []BlockKey{}
 	bctsmT.wal = NewMockedTestBlockWAL()
-	bctsmT.blockCacheNoWALTestSM.initStateMachine(t, bctsmT.wal, func(block state.Block) {
+	bctsmT.blockCacheNoWALTestSM.initStateMachine(t, 10, bctsmT.wal, func(block state.Block) {
 		bctsmT.blocksNotInWAL = lo.Without(bctsmT.blocksNotInWAL, NewBlockKey(block.L1Commitment()))
 	})
 }
