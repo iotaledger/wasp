@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
+// TODO this should reuse the code from webapi/controllers/corecontracts/blocklog getRequestReceipt
 func (c *Controller) getReceipt(e echo.Context) error {
 	chainID, err := params.DecodeChainID(e)
 	if err != nil {

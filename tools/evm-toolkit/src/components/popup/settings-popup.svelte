@@ -1,6 +1,10 @@
 <script lang="ts">
-  import { Input, Select } from '$components';
+  import { connected, selectedAccount } from 'svelte-web3';
+  import { get } from 'svelte/store';
 
+  import { Button, Input, Select } from '$components';
+
+  import { InputType } from '$lib/common';
   import {
     networks,
     selectedNetwork,
@@ -8,26 +12,57 @@
     updateNetwork,
     type INetwork,
   } from '$lib/evm-toolkit';
+  import { NotificationType, showNotification } from '$lib/notification';
+  import { closePopup, PopupId } from '$lib/popup';
+  import { connectToWallet } from '$lib/withdraw';
 
-  let _selectedNetwork: INetwork;
-  // local copy to manage updates afterwards
-  $: $selectedNetworkId, (_selectedNetwork = $selectedNetwork);
-  $: _selectedNetwork, handleNetworkChange();
+  let busy: boolean = false;
+
+  let _selectedNetwork: INetwork = get(selectedNetwork);
+  let _selectedNetworkId: number = get(selectedNetworkId);
+
+  $: disableNetworkEdit = _selectedNetwork?.id !== 1;
+
   $: networkSelectorOptions = $networks?.map(({ text, id }) => ({
     label: text,
     id,
   }));
-  $: disableNetworkEdit = $selectedNetwork?.id !== 1;
 
-  function handleNetworkChange() {
+  $: _selectedNetworkId,
+    (_selectedNetwork = $networks.find(
+      network => network.id === _selectedNetworkId,
+    ));
+
+  async function handleSave(): Promise<void> {
+    const _closePopup = () => {
+      closePopup(PopupId.Settings);
+    };
+    selectedNetworkId.set(_selectedNetworkId);
     updateNetwork(_selectedNetwork);
+    if ($connected && $selectedAccount) {
+      try {
+        busy = true;
+        await connectToWallet();
+        _closePopup();
+      } catch (e) {
+        showNotification({
+          type: NotificationType.Error,
+          message: e,
+        });
+        console.error(e);
+      } finally {
+        busy = false;
+      }
+    } else {
+      _closePopup();
+    }
   }
 </script>
 
 <network-settings-component class="flex flex-col space-y-4">
   {#if _selectedNetwork}
-    <Select options={networkSelectorOptions} bind:value={$selectedNetworkId} />
-    <div class="flex flex-col space-y-2">
+    <Select options={networkSelectorOptions} bind:value={_selectedNetworkId} />
+    <form class="flex flex-col space-y-2">
       <Input
         id="hornetEndpoint"
         label="Hornet API endpoint"
@@ -43,13 +78,36 @@
         stretch
       />
       <Input
+        id="chainId"
+        label="Chain ID"
+        type={InputType.Number}
+        bind:value={_selectedNetwork.chainID}
+        disabled={disableNetworkEdit}
+        stretch
+      />
+      <Input
+        id="networkUrl"
+        label="Network URL"
+        bind:value={_selectedNetwork.networkUrl}
+        disabled={disableNetworkEdit}
+        stretch
+      />
+      <Input
+        id="blockExplorer"
+        label="Block Explorer"
+        bind:value={_selectedNetwork.blockExplorer}
+        disabled={disableNetworkEdit}
+        stretch
+      />
+      <Input
         id="chainAddress"
         label="Chain Address"
         bind:value={_selectedNetwork.chainAddress}
         disabled={disableNetworkEdit}
         stretch
       />
-    </div>
+    </form>
+    <Button title="Save" busyMessage="Saving..." onClick={handleSave} {busy} />
   {:else}
     <span>Loading Network Configuration...</span>
   {/if}

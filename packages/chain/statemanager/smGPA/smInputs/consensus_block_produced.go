@@ -10,13 +10,13 @@ import (
 type ConsensusBlockProduced struct {
 	context    context.Context
 	stateDraft state.StateDraft
-	resultCh   chan<- error
+	resultCh   chan<- state.Block
 }
 
 var _ gpa.Input = &ConsensusBlockProduced{}
 
-func NewConsensusBlockProduced(ctx context.Context, stateDraft state.StateDraft) (*ConsensusBlockProduced, <-chan error) {
-	resultChannel := make(chan error, 1)
+func NewConsensusBlockProduced(ctx context.Context, stateDraft state.StateDraft) (*ConsensusBlockProduced, <-chan state.Block) {
+	resultChannel := make(chan state.Block, 1)
 	return &ConsensusBlockProduced{
 		context:    ctx,
 		stateDraft: stateDraft,
@@ -32,9 +32,9 @@ func (cbpT *ConsensusBlockProduced) IsValid() bool {
 	return cbpT.context.Err() == nil
 }
 
-func (cbpT *ConsensusBlockProduced) Respond(err error) {
+func (cbpT *ConsensusBlockProduced) Respond(block state.Block) {
 	if cbpT.IsValid() && !cbpT.isResultChClosed() {
-		cbpT.resultCh <- err
+		cbpT.resultCh <- block
 		cbpT.closeResultCh()
 	}
 }

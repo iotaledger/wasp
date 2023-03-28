@@ -204,7 +204,7 @@ func New(
 	n := len(nodeIDs)
 	f := dkShare.DSS().MaxFaulty()
 	if f > (n-1)/3 {
-		log.Panicf("invalid f=%v for n=%v", n, f)
+		log.Panicf("invalid f=%v for n=%v", f, n)
 	}
 	//
 	// Log important info.

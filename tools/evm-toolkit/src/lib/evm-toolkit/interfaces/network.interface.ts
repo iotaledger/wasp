@@ -5,5 +5,6 @@ export interface INetwork {
     faucetEndpoint: string;
     chainAddress: string;
     chainID: number;
-    multicallAddress: string;
+    blockExplorer?: string;
+    networkUrl?: string;
 }

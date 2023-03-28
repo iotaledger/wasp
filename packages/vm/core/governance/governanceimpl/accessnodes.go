@@ -38,7 +38,7 @@ func addCandidateNode(ctx isc.Sandbox) dict.Dict {
 
 	if ctx.ChainOwnerID().Equals(ctx.Request().SenderAccount()) {
 		accessNodes := collections.NewMap(ctx.State(), governance.VarAccessNodes)
-		accessNodes.MustSetAt(ani.NodePubKey, make([]byte, 0))
+		accessNodes.MustSetAt(ani.NodePubKey, codec.EncodeBool(true))
 		ctx.Log().Infof("Governance::AddCandidateNode: accessNode added, pubKey=%s", pubKeyStr)
 	}
 

@@ -10,7 +10,10 @@ export function evmAddressToAgentID(evmStoreAccount: string): Uint8Array {
   // In the case of EVM addresses it's ID 3.
   const agentIDKindEthereumAddress = 3;
 
-  const receiverAddrBinary = Converter.hexToBytes(evmStoreAccount);
+  // Note: we need the evmStoreAccount to be in lower case, 
+  // otherwise fetching balances using the iscmagic contract will fail,
+  // because evm addresses are case-insensitive but hexToBytes is not.
+  const receiverAddrBinary = Converter.hexToBytes(evmStoreAccount?.toLowerCase());
   const addressBytes = new Uint8Array([
     agentIDKindEthereumAddress,
     ...receiverAddrBinary,

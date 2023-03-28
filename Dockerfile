@@ -48,6 +48,8 @@ EXPOSE 6060/tcp
 EXPOSE 4000/udp
 EXPOSE 4000/tcp
 
+HEALTHCHECK --interval=10s --timeout=5s --retries=30 CMD ["/app/wasp", "tools", "node-health"]
+
 # Copy the app dir into distroless image
 COPY --chown=nonroot:nonroot --from=build /app /app
 COPY --chown=nonroot:nonroot --from=build /app/waspdb /app/waspdb
