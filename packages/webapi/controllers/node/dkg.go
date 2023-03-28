@@ -21,7 +21,7 @@ func (c *Controller) generateDKS(e echo.Context) error {
 
 	sharesInfo, err := c.dkgService.GenerateDistributedKey(generateDKSRequest.PeerPubKeysOrNames, generateDKSRequest.Threshold, time.Duration(generateDKSRequest.TimeoutMS)*time.Millisecond)
 	if err != nil {
-		return apierrors.InternalServerError(err)
+		panic(err)
 	}
 
 	return e.JSON(http.StatusOK, sharesInfo)
@@ -35,7 +35,7 @@ func (c *Controller) getDKSInfo(e echo.Context) error {
 
 	sharesInfo, err := c.dkgService.GetShares(sharedAddress)
 	if err != nil {
-		return apierrors.InternalServerError(err)
+		panic(err)
 	}
 
 	return e.JSON(http.StatusOK, sharesInfo)

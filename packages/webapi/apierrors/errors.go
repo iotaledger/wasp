@@ -59,7 +59,3 @@ func NoRecordFoundErrror(err error) *HTTPError {
 func ReceiptError(err error) *HTTPError {
 	return NewHTTPError(http.StatusBadRequest, "Failed to get receipt", err)
 }
-
-func InternalServerError(err error) *HTTPError {
-	return NewHTTPError(http.StatusInternalServerError, "Unknown error has occoured", err)
-}
