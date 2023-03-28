@@ -93,6 +93,10 @@ func (s *contractSandbox) RegisterError(messageFormat string) *isc.VMErrorTempla
 	return s.Ctx.(*VMContext).RegisterError(messageFormat)
 }
 
+func (s *contractSandbox) EVMTracer() *isc.EVMTracer {
+	return s.Ctx.(*VMContext).task.EVMTracer
+}
+
 // helper methods
 
 func (s *contractSandbox) RequireCallerAnyOf(agentIDs []isc.AgentID) {

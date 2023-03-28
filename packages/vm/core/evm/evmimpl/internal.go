@@ -9,6 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -81,6 +82,18 @@ func (bctx *blockContext) mintBlock() {
 	}
 
 	bctx.emu.MintBlock()
+}
+
+func getTracer(ctx isc.Sandbox, bctx *blockContext) tracers.Tracer {
+	tracer := ctx.EVMTracer()
+	if tracer == nil {
+		return nil
+	}
+	if int(tracer.TxIndex) != len(bctx.txs) {
+		// some tx in this block is being traced but not the current one
+		return nil
+	}
+	return tracer.Tracer
 }
 
 func gasLimits(ctx isc.SandboxBase) emulator.GasLimits {

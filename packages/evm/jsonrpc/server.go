@@ -20,6 +20,7 @@ func NewServer(evmChain *EVMChain, accountManager *AccountManager) (*rpc.Server,
 		{"web3", NewWeb3Service()},
 		{"net", NewNetService(int(chainID))},
 		{"eth", NewEthService(evmChain, accountManager)},
+		{"debug", NewDebugService(evmChain)},
 		{"txpool", NewTxPoolService()},
 	} {
 		err := rpcsrv.RegisterName(srv.namespace, srv.service)
