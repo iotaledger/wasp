@@ -1,6 +1,6 @@
 <script lang="ts">
   export let options: { label: string; id: number }[] = [];
-  export let value: number = 0;
+  export let value: number | string = 0;
 </script>
 
 <select-component>

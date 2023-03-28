@@ -1,6 +1,10 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { connected, selectedAccount } from 'svelte-web3';
+
   import { Input, Select } from '$components';
 
+  import { InputType } from '$lib/common';
   import {
     networks,
     selectedNetwork,
@@ -8,9 +12,11 @@
     updateNetwork,
     type INetwork,
   } from '$lib/evm-toolkit';
+  import { addSelectedNetworkToMetamask } from '$lib/withdraw';
 
+  let previousSelectedNetworkId: number = $selectedNetworkId;
   let _selectedNetwork: INetwork;
-  // local copy to manage updates afterwards
+  // local copies to manage updates afterwards
   $: $selectedNetworkId, (_selectedNetwork = $selectedNetwork);
   $: _selectedNetwork, handleNetworkChange();
   $: networkSelectorOptions = $networks?.map(({ text, id }) => ({
@@ -18,6 +24,17 @@
     id,
   }));
   $: disableNetworkEdit = $selectedNetwork?.id !== 1;
+  onMount(() => {
+    const unsubscribe = selectedNetworkId.subscribe(id => {
+      if (id !== previousSelectedNetworkId) {
+        previousSelectedNetworkId = id;
+        if ($connected && $selectedAccount) {
+          void addSelectedNetworkToMetamask();
+        }
+      }
+    });
+    return () => unsubscribe();
+  });
 
   function handleNetworkChange() {
     updateNetwork(_selectedNetwork);
@@ -39,6 +56,28 @@
         id="faucetEndpoint"
         label="Faucet API endpoint"
         bind:value={_selectedNetwork.faucetEndpoint}
+        disabled={disableNetworkEdit}
+        stretch
+      />
+      <Input
+        id="chainId"
+        label="Chain ID"
+        type={InputType.Number}
+        bind:value={_selectedNetwork.chainID}
+        disabled={disableNetworkEdit}
+        stretch
+      />
+      <Input
+        id="networkUrl"
+        label="Network URL"
+        bind:value={_selectedNetwork.networkUrl}
+        disabled={disableNetworkEdit}
+        stretch
+      />
+      <Input
+        id="blockExplorer"
+        label="Block Explorer"
+        bind:value={_selectedNetwork.blockExplorer}
         disabled={disableNetworkEdit}
         stretch
       />

@@ -9,7 +9,7 @@ replace (
 
 require (
 	github.com/bygui86/multi-profile/v2 v2.1.0
-	github.com/bytecodealliance/wasmtime-go/v6 v6.0.0
+	github.com/bytecodealliance/wasmtime-go/v7 v7.0.0
 	github.com/ethereum/go-ethereum v1.11.4
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/hashicorp/golang-lru/v2 v2.0.2
