@@ -5,11 +5,12 @@ import { updateWithdrawStateStore, withdrawStateStore } from '../stores';
 import { pollAccount } from './polls';
 
 export async function subscribeBalance() {
+  await unsubscribeBalance();
   const $withdrawStateStore = get(withdrawStateStore);
   if ($withdrawStateStore.balancePollingHandle) {
     return;
   }
-
+  await pollAccount();
   updateWithdrawStateStore({
     balancePollingHandle: setIntervalAsync(pollAccount, 2500),
   });
