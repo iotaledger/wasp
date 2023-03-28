@@ -4,20 +4,15 @@
 package cons
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/state"
 )
 
-type inputStateMgrBlockSaved struct {
-	block state.Block
-}
+type inputStateMgrBlockSaved struct{}
 
-func NewInputStateMgrBlockSaved(block state.Block) gpa.Input {
-	return &inputStateMgrBlockSaved{block: block}
+func NewInputStateMgrBlockSaved() gpa.Input {
+	return &inputStateMgrBlockSaved{}
 }
 
 func (inp *inputStateMgrBlockSaved) String() string {
-	return fmt.Sprintf("{cons.inputStateMgrBlockSaved, stateIndex=%v, l1Commitment=%v}", inp.block.StateIndex(), inp.block.L1Commitment())
+	return "{cons.inputStateMgrBlockSaved}"
 }

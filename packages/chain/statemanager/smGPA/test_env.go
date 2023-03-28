@@ -94,17 +94,17 @@ func (teT *testEnv) sendAndEnsureCompletedConsensusBlockProduced(block state.Blo
 	return teT.ensureCompletedConsensusBlockProduced(responseCh, maxTimeIterations, timeStep)
 }
 
-func (teT *testEnv) sendConsensusBlockProduced(block state.Block, nodeID gpa.NodeID) <-chan state.Block {
+func (teT *testEnv) sendConsensusBlockProduced(block state.Block, nodeID gpa.NodeID) <-chan error {
 	input, responseCh := smInputs.NewConsensusBlockProduced(context.Background(), teT.bf.GetStateDraft(block))
 	teT.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: input}).RunAll()
 	return responseCh
 }
 
-func (teT *testEnv) ensureCompletedConsensusBlockProduced(respChan <-chan state.Block, maxTimeIterations int, timeStep time.Duration) bool {
+func (teT *testEnv) ensureCompletedConsensusBlockProduced(respChan <-chan error, maxTimeIterations int, timeStep time.Duration) bool {
 	return teT.ensureTrue("response from ConsensusBlockProduced", func() bool {
 		select {
-		case block := <-respChan:
-			require.NotNil(teT.t, block)
+		case err := <-respChan:
+			require.NoError(teT.t, err)
 			return true
 		default:
 			return false

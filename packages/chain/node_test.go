@@ -201,10 +201,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 		}
 		// Check if LastAliasOutput() works as expected.
 		awaitPredicate(te, ctxTimeout, "LatestAliasOutput", func() bool {
-			confirmedAO, err := node.LatestAliasOutput(chain.ConfirmedState)
-			require.NoError(t, err)
-			activeAO, err := node.LatestAliasOutput(chain.ActiveState)
-			require.NoError(t, err)
+			confirmedAO, activeAO := node.LatestAliasOutput()
 			lastPublishedTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
 			lastPublishedAO, err := isc.AliasOutputWithIDFromTx(lastPublishedTX, te.chainID.AsAddress())
 			require.NoError(t, err)

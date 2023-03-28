@@ -600,7 +600,6 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 }
 
 func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
-	mpi.log.Debugf("Received request %v from outside.", request.ID())
 	if mpi.addOffLedgerRequestIfUnseen(request) {
 		mpi.sendMessages(mpi.distSync.Input(distSync.NewInputPublishRequest(request)))
 	}

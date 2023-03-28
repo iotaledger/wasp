@@ -317,12 +317,11 @@ func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutput 
 	return resp
 }
 
-func (tsm *testStateMgr) ConsensusProducedBlock(ctx context.Context, stateDraft state.StateDraft) <-chan state.Block {
+func (tsm *testStateMgr) ConsensusProducedBlock(ctx context.Context, block state.StateDraft) <-chan error {
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
-	resp := make(chan state.Block, 1)
-	block := tsm.chainStore.Commit(stateDraft)
-	resp <- block
+	resp := make(chan error, 1)
+	resp <- nil // We don't save it in the test for now, just respond it is already saved.
 	close(resp)
 	return resp
 }

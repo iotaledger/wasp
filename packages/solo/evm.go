@@ -2,7 +2,7 @@ package solo
 
 import (
 	"crypto/ecdsa"
-	"fmt"
+	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -54,11 +54,11 @@ func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, scName, funName
 }
 
 func (b *jsonRPCSoloBackend) ISCLatestAliasOutput() (*isc.AliasOutputWithID, error) {
-	latestAliasOutput, err := b.Chain.LatestAliasOutput(chain.ActiveOrCommittedState)
-	if err != nil {
-		return nil, fmt.Errorf("could not get latest AliasOutput: %w", err)
+	_, activeAliasOutput := b.Chain.LatestAliasOutput()
+	if activeAliasOutput == nil {
+		return nil, errors.New("could not get latest AliasOutput")
 	}
-	return latestAliasOutput, nil
+	return activeAliasOutput, nil
 }
 
 func (b *jsonRPCSoloBackend) ISCLatestState() state.State {
