@@ -145,6 +145,7 @@ type chainNodeImpl struct {
 	chainMgr            gpa.AckHandler
 	chainStore          state.Store
 	nodeConn            NodeConnection
+	tangleTime          time.Time
 	mempool             mempool.Mempool
 	stateMgr            statemanager.StateMgr
 	recvAliasOutputPipe pipe.Pipe[*isc.AliasOutputWithID]
@@ -275,6 +276,7 @@ func New(
 		chainID:                chainID,
 		chainStore:             chainStore,
 		nodeConn:               nodeConn,
+		tangleTime:             time.Time{}, // Zero time, while we haven't received it from the L1.
 		recvAliasOutputPipe:    pipe.NewInfinitePipe[*isc.AliasOutputWithID](),
 		recvTxPublishedPipe:    pipe.NewInfinitePipe[*txPublished](),
 		recvMilestonePipe:      pipe.NewInfinitePipe[time.Time](),
@@ -634,6 +636,7 @@ func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *is
 
 func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
 	cni.log.Debugf("handleMilestoneTimestamp: %v", timestamp)
+	cni.tangleTime = timestamp
 	cni.mempool.TangleTimeUpdated(timestamp)
 	cni.consensusInsts.ForEach(func(address iotago.Ed25519Address, consensusInstances *shrinkingmap.ShrinkingMap[cmtLog.LogIndex, *consensusInst]) bool {
 		consensusInstances.ForEach(func(li cmtLog.LogIndex, consensusInstance *consensusInst) bool {
@@ -793,12 +796,14 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 				recoveryTimeout, redeliveryPeriod, printStatusPeriod,
 				cni.log.Named(fmt.Sprintf("C-%v.LI-%v", committeeAddr.String()[:10], logIndexCopy)),
 			)
-
 			consensusInstances.Set(addLogIndex, &consensusInst{
 				cancelFunc: consGrCancel,
 				consensus:  cgr,
 				committee:  dkShare.GetNodePubKeys(),
 			})
+			if !cni.tangleTime.IsZero() {
+				cgr.Time(cni.tangleTime)
+			}
 		}
 		addLogIndex = addLogIndex.Next()
 	}
