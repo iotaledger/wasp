@@ -147,11 +147,13 @@ func (dsi *distSyncImpl) handleInputPublishRequest(input *inputPublishRequest) g
 	var publishToNodes []gpa.NodeID
 	if len(dsi.committeeNodes) > 0 {
 		publishToNodes = dsi.committeeNodes
+		dsi.log.Debugf("Forwarding request %v to committee nodes: %v", input.request.ID(), dsi.committeeNodes)
 	} else {
+		dsi.log.Debugf("Forwarding request %v to server nodes: %v", input.request.ID(), dsi.serverNodes)
 		publishToNodes = dsi.serverNodes
 	}
-	for _, node := range publishToNodes {
-		msgs.Add(newMsgShareRequest(input.request, 0, node))
+	for i := range publishToNodes {
+		msgs.Add(newMsgShareRequest(input.request, 0, publishToNodes[i]))
 	}
 	//
 	// Delete the it from the "needed" list, if any.

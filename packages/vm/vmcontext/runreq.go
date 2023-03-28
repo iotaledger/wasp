@@ -290,12 +290,12 @@ func (vmctx *VMContext) calculateAffordableGasBudget() uint64 {
 	// calculate how many tokens maximum will be charged taking into account the budget
 	f1, f2 := vmctx.chainInfo.GasFeePolicy.FeeFromGasBurned(gasBudget, guaranteedFeeTokens)
 	vmctx.gasMaxTokensToSpendForGasFee = f1 + f2
-	// calculate affordable gas budget
-	affordable := vmctx.chainInfo.GasFeePolicy.GasBudgetFromTokens(guaranteedFeeTokens)
+	// calculate affordableGas gas budget
+	affordableGas := vmctx.chainInfo.GasFeePolicy.GasBudgetFromTokens(guaranteedFeeTokens)
 	// adjust gas budget to what is affordable
-	affordable = util.MinUint64(gasBudget, affordable)
+	affordableGas = util.MinUint64(gasBudget, affordableGas)
 	// cap gas to the maximum allowed per tx
-	return util.MinUint64(affordable, vmctx.chainInfo.GasLimits.MaxGasPerRequest)
+	return util.MinUint64(affordableGas, vmctx.chainInfo.GasLimits.MaxGasPerRequest)
 }
 
 // calcGuaranteedFeeTokens return the maximum tokens (base tokens or native) can be guaranteed for the fee,
