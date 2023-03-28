@@ -428,7 +428,7 @@ func (cni *chainNodeImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, 
 }
 
 func (cni *chainNodeImpl) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID, confirmed bool) <-chan *blocklog.RequestReceipt {
-	query, responseCh := newAwaitReceiptReq(ctx, requestID)
+	query, responseCh := newAwaitReceiptReq(ctx, requestID, cni.log)
 	if confirmed {
 		cni.awaitReceiptCnfCh <- query
 	} else {
