@@ -10,13 +10,13 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pangpanglabs/echoswagger/v2"
-	"go.elastic.co/apm/module/apmechov4"
 	"go.uber.org/dig"
 	websocketserver "nhooyr.io/websocket"
 
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/app/configuration"
 	"github.com/iotaledger/hive.go/app/shutdown"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/web/websockethub"
 	"github.com/iotaledger/inx-app/pkg/httpserver"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -87,6 +87,45 @@ func initConfigPars(c *dig.Container) error {
 	return nil
 }
 
+func NewEcho(params *ParametersWebAPI, log *logger.Logger) *echo.Echo {
+	e := httpserver.NewEcho(
+		log,
+		nil,
+		ParamsWebAPI.DebugRequestLoggerEnabled,
+	)
+
+	e.Server.ReadTimeout = params.Limits.ReadTimeout
+	e.Server.WriteTimeout = params.Limits.WriteTimeout
+
+	e.HidePort = true
+	e.HTTPErrorHandler = apierrors.HTTPErrorHandler()
+
+	// timeout middleware
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			timeoutCtx, cancel := context.WithTimeout(c.Request().Context(), params.Limits.Timeout)
+			defer cancel()
+
+			c.SetRequest(c.Request().WithContext(timeoutCtx))
+
+			return next(c)
+		}
+	})
+	e.Use(middleware.BodyLimit(params.Limits.MaxBodyLength))
+
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
+	}))
+
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins:     []string{"*"},
+		AllowHeaders:     []string{"*"},
+		AllowMethods:     []string{"*"},
+		AllowCredentials: true,
+	}))
+	return e
+}
+
 func CreateEchoSwagger(e *echo.Echo, version string) echoswagger.ApiRoot {
 	echoSwagger := echoswagger.New(e, "/doc", &echoswagger.Info{
 		Title:       "Wasp API",
@@ -105,7 +144,6 @@ func CreateEchoSwagger(e *echo.Echo, version string) echoswagger.ApiRoot {
 	return echoSwagger
 }
 
-//nolint:funlen
 func provide(c *dig.Container) error {
 	type webapiServerDeps struct {
 		dig.In
@@ -136,42 +174,7 @@ func provide(c *dig.Container) error {
 	}
 
 	if err := c.Provide(func(deps webapiServerDeps) webapiServerResult {
-		e := httpserver.NewEcho(
-			Plugin.Logger(),
-			nil,
-			ParamsWebAPI.DebugRequestLoggerEnabled,
-		)
-
-		e.Server.ReadTimeout = ParamsWebAPI.Limits.ReadTimeout
-		e.Server.WriteTimeout = ParamsWebAPI.Limits.WriteTimeout
-
-		e.HidePort = true
-		e.HTTPErrorHandler = apierrors.HTTPErrorHandler()
-
-		// timeout middleware
-		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-			return func(c echo.Context) error {
-				timeoutCtx, cancel := context.WithTimeout(c.Request().Context(), ParamsWebAPI.Limits.Timeout)
-				defer cancel()
-
-				c.SetRequest(c.Request().WithContext(timeoutCtx))
-
-				return next(c)
-			}
-		})
-		e.Use(middleware.BodyLimit(ParamsWebAPI.Limits.MaxBodyLength))
-		e.Use(apmechov4.Middleware())
-
-		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-			Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
-		}))
-
-		e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-			AllowOrigins:     []string{"*"},
-			AllowHeaders:     []string{"*"},
-			AllowMethods:     []string{"*"},
-			AllowCredentials: true,
-		}))
+		e := NewEcho(ParamsWebAPI, Plugin.Logger())
 
 		echoSwagger := CreateEchoSwagger(e, deps.AppInfo.Version)
 		websocketOptions := websocketserver.AcceptOptions{
