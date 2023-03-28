@@ -237,7 +237,7 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.Consens
 	smT.log.Debugf("Input block produced on state %s: state draft index %v has been committed to the store, resulting block %s",
 		commitment, input.GetStateDraft().BlockIndex(), blockCommitment)
 	smT.blockCache.AddBlock(block)
-	input.Respond(nil)
+	input.Respond(block)
 	fetcher := smT.blocksToFetch.takeFetcher(blockCommitment)
 	if fetcher != nil {
 		result, err := smT.markFetched(fetcher)

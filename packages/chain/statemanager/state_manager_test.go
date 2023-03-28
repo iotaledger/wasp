@@ -91,9 +91,9 @@ func TestCruelWorld(t *testing.T) {
 			return time.Duration(rand.Intn(maxMinWaitsToProduceBlock)+1) * minWaitToProduceBlock
 		}, func(bi int) bool {
 			t.Logf("Sending block %v to node %s", bi+1, peeringURLs[ii])
-			err := <-sms[ii].ConsensusProducedBlock(context.Background(), stateDrafts[bi])
-			if err != nil {
-				t.Logf("Sending block %v to node %s FAILED: %v", bi+1, peeringURLs[ii], err)
+			block := <-sms[ii].ConsensusProducedBlock(context.Background(), stateDrafts[bi])
+			if block == nil {
+				t.Logf("Sending block %v to node %s FAILED", bi+1, peeringURLs[ii])
 				return false
 			}
 			blockProduced[bi].Store(true)

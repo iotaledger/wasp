@@ -655,9 +655,12 @@ func (*Chain) GetTimeData() time.Time {
 }
 
 // LatestAliasOutput implements chain.Chain
-func (ch *Chain) LatestAliasOutput() (confirmed *isc.AliasOutputWithID, active *isc.AliasOutputWithID) {
+func (ch *Chain) LatestAliasOutput(freshness chain.StateFreshness) (*isc.AliasOutputWithID, error) {
 	ao := ch.GetAnchorOutput()
-	return ao, ao
+	if ao == nil {
+		return nil, fmt.Errorf("have no latest alias output")
+	}
+	return ao, nil
 }
 
 // LatestState implements chain.Chain

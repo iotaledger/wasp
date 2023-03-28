@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"runtime/debug"
 	"time"
 
 	"github.com/samber/lo"
@@ -44,8 +45,9 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) {
 		peerIdx := e.Chain.AllPeers[i]
 		b, err2 := e.Chain.BlockIndex(peerIdx)
 		if err2 != nil || b < blockIndex {
+			e.t.Logf("deployNativeIncCounterSC: waiting for block=%v on all nodes, nodeIndex=%v, blockIndex=%v, err2=%v", blockIndex, peerIdx, b, err2)
 			if retries >= 10 {
-				e.t.Fatalf("error on deployIncCounterSC, failed to wait for all peers to be on the same block index after 10 retries. Peer index: %d", peerIdx)
+				e.t.Fatalf("error on deployIncCounterSC, failed to wait for all peers to be on the same block index after 10 retries. Peer index: %d, stack=%v", peerIdx, string(debug.Stack()))
 			}
 			// retry (access nodes might take slightly more time to sync)
 			retries++
