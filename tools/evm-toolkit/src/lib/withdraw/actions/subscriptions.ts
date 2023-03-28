@@ -9,7 +9,7 @@ export async function subscribeBalance() {
   if ($withdrawStateStore.balancePollingHandle) {
     return;
   }
-
+  void pollAccount();
   updateWithdrawStateStore({
     balancePollingHandle: setIntervalAsync(pollAccount, 2500),
   });
