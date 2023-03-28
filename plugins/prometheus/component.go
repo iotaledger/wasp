@@ -88,7 +88,7 @@ func provide(c *dig.Container) error {
 func register(name string, cs ...prometheus.Collector) {
 	for _, c := range cs {
 		if err := deps.PrometheusRegistry.Register(c); err != nil {
-			Plugin.LogWarnf("failed to register %s metrics", name)
+			Plugin.LogWarnf("failed to register %s metrics: %v", name, err)
 		}
 	}
 }
