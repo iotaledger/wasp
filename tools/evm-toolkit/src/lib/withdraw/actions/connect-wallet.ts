@@ -7,13 +7,15 @@ import { iscAbi, iscContractAddress } from '$lib/withdraw';
 
 import { addSelectedNetworkToMetamask, subscribeBalance } from '.';
 import { updateWithdrawStateStore, withdrawStateStore } from '../stores';
-import { pollAccount } from './polls';
 
 export async function connectToWallet() {
   updateWithdrawStateStore({ isLoading: true });
 
   try {
+
     await defaultEvmStores.setProvider();
+
+    await addSelectedNetworkToMetamask();
 
     const evmChainID = await get(web3).eth.getChainId();
     updateWithdrawStateStore({ evmChainID });
@@ -25,19 +27,16 @@ export async function connectToWallet() {
 
     updateWithdrawStateStore({ contract });
 
-    const iscMagic = new ISCMagic(get(withdrawStateStore).contract);
+    const iscMagic = new ISCMagic(get(withdrawStateStore)?.contract);
     updateWithdrawStateStore({ iscMagic });
-    
-    await addSelectedNetworkToMetamask();
-    
-    await pollAccount();
+
     await subscribeBalance();
   } catch (ex) {
+    console.error('Failed to connect to wallet: ', ex.message);
     showNotification({
       type: NotificationType.Error,
       message: `Failed to connect to wallet: ${ex.message}`,
     });
-    console.error('Failed to connect to wallet: ', ex.message);
   }
 
   updateWithdrawStateStore({ isLoading: false });

@@ -12,11 +12,7 @@
     updateNetwork,
     type INetwork,
   } from '$lib/evm-toolkit';
-  import {
-    addSelectedNetworkToMetamask,
-    subscribeBalance,
-    unsubscribeBalance,
-  } from '$lib/withdraw';
+  import { connectToWallet } from '$lib/withdraw';
 
   let previousSelectedNetworkId: number = $selectedNetworkId;
   let _selectedNetwork: INetwork;
@@ -28,15 +24,14 @@
     id,
   }));
   $: disableNetworkEdit = $selectedNetwork?.id !== 1;
+
   onMount(() => {
     const unsubscribe = selectedNetworkId.subscribe(async id => {
       if (id !== previousSelectedNetworkId) {
         previousSelectedNetworkId = id;
         if ($connected && $selectedAccount) {
           try {
-            await addSelectedNetworkToMetamask();
-            await unsubscribeBalance();
-            await subscribeBalance();
+            await connectToWallet();
           } catch (e) {
             console.error(e);
           }
