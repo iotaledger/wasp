@@ -982,10 +982,33 @@ func (cni *chainNodeImpl) Log() *logger.Logger {
 	return cni.log
 }
 
-func (cni *chainNodeImpl) LatestAliasOutput() (confirmed, active *isc.AliasOutputWithID) {
+func (cni *chainNodeImpl) LatestAliasOutput(freshness StateFreshness) (*isc.AliasOutputWithID, error) {
 	cni.accessLock.RLock()
-	defer cni.accessLock.RUnlock()
-	return cni.latestConfirmedAO, cni.latestActiveAO
+	latestConfirmedAO := cni.latestConfirmedAO
+	latestActiveAO := cni.latestActiveAO
+	cni.accessLock.RUnlock()
+	switch freshness {
+	case ActiveOrCommittedState:
+		if latestActiveAO != nil {
+			return latestActiveAO, nil
+		}
+		if latestConfirmedAO != nil {
+			return latestConfirmedAO, nil
+		}
+		return nil, fmt.Errorf("have no active nor confirmed state")
+	case ConfirmedState:
+		if latestConfirmedAO != nil {
+			return latestConfirmedAO, nil
+		}
+		return nil, fmt.Errorf("have no confirmed state")
+	case ActiveState:
+		if latestActiveAO != nil {
+			return latestActiveAO, nil
+		}
+		return nil, fmt.Errorf("have no active state")
+	default:
+		panic(fmt.Errorf("Unexpected StateFreshness: %v", freshness))
+	}
 }
 
 func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, error) {
