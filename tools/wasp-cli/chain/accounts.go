@@ -110,7 +110,6 @@ func baseTokensForDepositFee(client *apiclient.APIClient, chain string) uint64 {
 			FunctionName: viewName,
 		}).Execute() //nolint:bodyclose // false positive
 		log.Check(err)
-		result.ToMap()
 
 		resultDict, err := apiextensions.APIJsonDictToDict(*result)
 		log.Check(err)
