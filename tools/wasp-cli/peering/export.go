@@ -95,11 +95,20 @@ func initImportTrustedJSONCmd() *cobra.Command {
 			bytes := util.ReadFile(args[0])
 			var trustedList []apiclient.PeeringNodeIdentityResponse
 			log.Check(json.Unmarshal(bytes, &trustedList))
+
+			client := cliclients.WaspClient(node)
+			identity, _, err := client.NodeApi.GetPeeringIdentity(context.Background()).Execute()
+			log.Check(err)
+
 			for _, t := range trustedList {
-				client := cliclients.WaspClient(node)
 				if !t.IsTrusted {
 					continue // avoid importing untrusted peers by mistake
 				}
+
+				if t.PublicKey == identity.PublicKey {
+					continue
+				}
+
 				_, err := client.NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
 					Name:       t.Name,
 					PeeringURL: t.PeeringURL,
