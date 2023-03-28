@@ -46,7 +46,7 @@
     : false;
 
   $: $withdrawStateStore, updateFormInput();
-
+  
   function updateFormInput() {
     if (formInput.baseTokensToSend > $withdrawStateStore.availableBaseTokens) {
       formInput.baseTokensToSend = 0;

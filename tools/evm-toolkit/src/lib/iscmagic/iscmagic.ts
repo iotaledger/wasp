@@ -52,6 +52,7 @@ export class ISCMagic {
     const nativeTokenResult = await this.contract.methods
       .callView(accountsCoreContract, getBalanceFunc, parameters)
       .call();
+      
 
     const nativeTokens: INativeToken[] = [];
 
