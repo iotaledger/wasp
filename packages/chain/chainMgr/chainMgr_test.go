@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -75,21 +74,9 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	//
 	// Construct the nodes.
 	nodes := map[gpa.NodeID]gpa.GPA{}
-	stores := map[gpa.NodeID]state.Store{}
 	for i, nid := range nodeIDs {
 		consensusStateRegistry := testutil.NewConsensusStateRegistry()
-		stores[nid] = state.NewStore(mapdb.NewMapDB())
-		origin.InitChainByAliasOutput(stores[nid], originAO)
-		activeAccessNodesCB := func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
-			return []*cryptolib.PublicKey{}, []*cryptolib.PublicKey{}
-		}
-		tractStateActCB := func(ao *isc.AliasOutputWithID) {
-			// Nothing
-		}
-		cm, err := chainMgr.New(
-			nid, chainID, stores[nid], consensusStateRegistry, dkRegs[i], gpa.NodeIDFromPublicKey,
-			activeAccessNodesCB, tractStateActCB, log.Named(nid.ShortString()),
-		)
+		cm, err := chainMgr.New(nid, chainID, consensusStateRegistry, dkRegs[i], gpa.NodeIDFromPublicKey, func(pk []*cryptolib.PublicKey) {}, log.Named(nid.ShortString()))
 		require.NoError(t, err)
 		nodes[nid] = cm.AsGPA()
 	}
@@ -119,15 +106,12 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		consReq := nodes[nid].Output().(*chainMgr.Output).NeedConsensus()
 		fake2ST := state.NewStore(mapdb.NewMapDB())
 		origin.InitChain(fake2ST, nil, 0)
-		block0, err := fake2ST.BlockByIndex(0)
-		require.NoError(t, err)
-		// TODO: Commit a block to the store, if needed.
 		tc.WithInput(nid, chainMgr.NewInputConsensusOutputDone( // TODO: Consider the SKIP cases as well.
 			*cmtAddrA.(*iotago.Ed25519Address),
 			consReq.LogIndex, consReq.BaseAliasOutput.OutputID(),
 			&cons.Result{
 				Transaction:     step2TX,
-				Block:           block0,
+				StateDraft:      fake2ST.NewOriginStateDraft(),
 				BaseAliasOutput: consReq.BaseAliasOutput.OutputID(),
 				NextAliasOutput: step2AO,
 			},

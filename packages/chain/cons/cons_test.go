@@ -246,9 +246,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedStateMgrDecidedState)
 		require.Nil(t, out.NeedVMResult)
 		require.NotNil(t, out.NeedStateMgrSaveBlock)
-		block := chainStates[nid].Commit(out.NeedStateMgrSaveBlock)
-		require.NotNil(t, block)
-		tc.WithInput(nid, cons.NewInputStateMgrBlockSaved(block))
+		tc.WithInput(nid, cons.NewInputStateMgrBlockSaved())
 	}
 	tc.RunAll()
 	t.Log("############ All should be done now.")
@@ -264,7 +262,9 @@ func testConsBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedVMResult)
 		require.NotNil(t, out.Result.Transaction)
 		require.NotNil(t, out.Result.NextAliasOutput)
-		require.NotNil(t, out.Result.Block)
+		require.NotNil(t, out.Result.StateDraft)
+		block := chainStates[nid].Commit(out.Result.StateDraft)
+		require.NotNil(t, block)
 		if nid == nodeIDs[0] { // Just do this once.
 			require.NoError(t, utxoDB.AddToLedger(out.Result.Transaction))
 		}
@@ -602,7 +602,8 @@ func (tci *testConsInst) tryHandleOutput(nodeID gpa.NodeID) { //nolint:gocyclo
 		if tci.done[nodeID] {
 			return
 		}
-		resultState, err := tci.nodeStates[nodeID].StateByTrieRoot(out.Result.Block.TrieRoot())
+		resultBlock := tci.nodeStates[nodeID].Commit(out.Result.StateDraft)
+		resultState, err := tci.nodeStates[nodeID].StateByTrieRoot(resultBlock.TrieRoot())
 		require.NoError(tci.t, err)
 		tci.doneCB(&testInstInput{
 			nodeID:          nodeID,
@@ -707,8 +708,7 @@ func (tci *testConsInst) tryHandledNeedVMResult(nodeID gpa.NodeID, out *cons.Out
 
 func (tci *testConsInst) tryHandledNeedStateMgrSaveBlock(nodeID gpa.NodeID, out *cons.Output) {
 	if out.NeedStateMgrSaveBlock != nil && !tci.handledNeedStateMgrSaveBlock[nodeID] {
-		block := tci.nodeStates[nodeID].Commit(out.NeedStateMgrSaveBlock)
-		tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputStateMgrBlockSaved(block)}
+		tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputStateMgrBlockSaved()}
 		tci.handledNeedStateMgrSaveBlock[nodeID] = true
 	}
 }

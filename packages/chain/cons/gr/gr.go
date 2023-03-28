@@ -59,7 +59,7 @@ type StateMgr interface {
 	ConsensusProducedBlock(
 		ctx context.Context,
 		block state.StateDraft,
-	) <-chan state.Block
+	) <-chan error
 }
 
 type VM interface {
@@ -106,7 +106,7 @@ type ConsGr struct {
 	stateMgrStateProposalAsked  bool
 	stateMgrDecidedStateRespCh  <-chan state.State
 	stateMgrDecidedStateAsked   bool
-	stateMgrSaveBlockRespCh     <-chan state.Block
+	stateMgrSaveBlockRespCh     <-chan error
 	stateMgrSaveBlockAsked      bool
 	vm                          VM
 	vmRespCh                    <-chan *vm.VMTask
@@ -260,15 +260,15 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 				continue
 			}
 			cgr.handleConsInput(cons.NewInputStateMgrDecidedVirtualState(resp))
-		case resp, ok := <-cgr.stateMgrSaveBlockRespCh:
+		case err, ok := <-cgr.stateMgrSaveBlockRespCh:
 			if !ok {
 				cgr.stateMgrSaveBlockRespCh = nil
 				continue
 			}
-			if resp == nil {
-				panic(fmt.Errorf("cannot save produced block"))
+			if err != nil {
+				panic(fmt.Errorf("cannot save produced block: %w", err))
 			}
-			cgr.handleConsInput(cons.NewInputStateMgrBlockSaved(resp))
+			cgr.handleConsInput(cons.NewInputStateMgrBlockSaved())
 		case resp, ok := <-cgr.vmRespCh:
 			if !ok {
 				cgr.vmRespCh = nil

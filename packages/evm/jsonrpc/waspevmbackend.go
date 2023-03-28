@@ -4,6 +4,7 @@
 package jsonrpc
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"sync"
@@ -133,11 +134,11 @@ func (b *WaspEVMBackend) BaseToken() *parameters.BaseToken {
 }
 
 func (b *WaspEVMBackend) ISCLatestAliasOutput() (*isc.AliasOutputWithID, error) {
-	latestAliasOutput, err := b.chain.LatestAliasOutput(chain.ActiveOrCommittedState)
-	if err != nil {
-		return nil, fmt.Errorf("could not get latest AliasOutput: %w", err)
+	_, activeAliasOutput := b.chain.LatestAliasOutput()
+	if activeAliasOutput == nil {
+		return nil, errors.New("could not get latest AliasOutput")
 	}
-	return latestAliasOutput, nil
+	return activeAliasOutput, nil
 }
 
 func (b *WaspEVMBackend) ISCLatestState() state.State {

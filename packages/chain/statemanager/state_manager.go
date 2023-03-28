@@ -184,7 +184,7 @@ func (smT *stateManager) ConsensusDecidedState(ctx context.Context, aliasOutput 
 	return resultCh
 }
 
-func (smT *stateManager) ConsensusProducedBlock(ctx context.Context, stateDraft state.StateDraft) <-chan state.Block {
+func (smT *stateManager) ConsensusProducedBlock(ctx context.Context, stateDraft state.StateDraft) <-chan error {
 	input, resultCh := smInputs.NewConsensusBlockProduced(ctx, stateDraft)
 	smT.addInput(input)
 	return resultCh
