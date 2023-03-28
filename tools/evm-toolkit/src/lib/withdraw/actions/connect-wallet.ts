@@ -27,7 +27,9 @@ export async function connectToWallet() {
 
     const iscMagic = new ISCMagic(get(withdrawStateStore).contract);
     updateWithdrawStateStore({ iscMagic });
-
+    
+    await addSelectedNetworkToMetamask();
+    
     await pollAccount();
     await subscribeBalance();
   } catch (ex) {
@@ -36,8 +38,6 @@ export async function connectToWallet() {
       message: `Failed to connect to wallet: ${ex.message}`,
     });
     console.error('Failed to connect to wallet: ', ex.message);
-
-    void addSelectedNetworkToMetamask()
   }
 
   updateWithdrawStateStore({ isLoading: false });
