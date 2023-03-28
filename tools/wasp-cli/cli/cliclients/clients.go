@@ -19,6 +19,9 @@ func WaspClientForHostName(name string) *apiclient.APIClient {
 
 	client, err := apiextensions.WaspAPIClientByHostName(apiAddress)
 	log.Check(err)
+	if log.DebugFlag {
+		client.GetConfig().Debug = log.DebugFlag
+	}
 
 	client.GetConfig().AddDefaultHeader("Authorization", "Bearer "+config.GetToken(name))
 
