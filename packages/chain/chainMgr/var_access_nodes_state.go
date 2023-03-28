@@ -15,66 +15,69 @@ import (
 // then the tip tracked by this node should be ignored and the state tracked by the
 // committee should be used. The algorithm itself is similar to the `varLocalView`
 // in the `cmtLog`.
-type VarAccessState interface {
-	Value() *isc.AliasOutputWithID
+type VarAccessNodeState interface {
+	Tip() *isc.AliasOutputWithID
+	// Considers the produced (not yet confirmed) block / TX and returns new tip AO.
+	// The returned bool indicates if the tip has changed because of this call.
 	BlockProduced(tx *iotago.Transaction) (*isc.AliasOutputWithID, bool)
+	// Considers a confirmed AO and returns new tip AO.
+	// The returned bool indicates if the tip has changed because of this call.
 	BlockConfirmed(ao *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool)
 }
 
-type varAccessStateImpl struct {
+type varAccessNodeStateImpl struct {
 	chainID   isc.ChainID
-	value     *isc.AliasOutputWithID                                     // Will point to the latest known good state while the chain don't have the current good state.
-	confirmed *isc.AliasOutputWithID                                     // Latest known confirmed AO.
-	pending   *shrinkingmap.ShrinkingMap[uint32, []*varAccessStateEntry] // A set of unconfirmed outputs (StateIndex => TX).
-	log       *logger.Logger                                             // Will write this just for the alignment.
+	tipAO     *isc.AliasOutputWithID                                         // Will point to the latest known good state while the chain don't have the current good state.
+	confirmed *isc.AliasOutputWithID                                         // Latest known confirmed AO.
+	pending   *shrinkingmap.ShrinkingMap[uint32, []*varAccessNodeStateEntry] // A set of unconfirmed outputs (StateIndex => TX).
+	log       *logger.Logger                                                 // Will write this just for the alignment.
 }
 
-type varAccessStateEntry struct {
+type varAccessNodeStateEntry struct {
 	output   *isc.AliasOutputWithID // The published AO.
 	consumed iotago.OutputID        // The AO used as an input for the TX.
 }
 
-func NewVarAccessState(chainID isc.ChainID, log *logger.Logger) VarAccessState {
-	return &varAccessStateImpl{
+func NewVarAccessNodeState(chainID isc.ChainID, log *logger.Logger) VarAccessNodeState {
+	return &varAccessNodeStateImpl{
 		chainID:   chainID,
-		value:     nil,
+		tipAO:     nil,
 		confirmed: nil,
-		pending:   shrinkingmap.New[uint32, []*varAccessStateEntry](),
+		pending:   shrinkingmap.New[uint32, []*varAccessNodeStateEntry](),
 		log:       log,
 	}
 }
 
-func (vas *varAccessStateImpl) Value() *isc.AliasOutputWithID {
-	return vas.value
+func (vas *varAccessNodeStateImpl) Tip() *isc.AliasOutputWithID {
+	return vas.tipAO
 }
 
-func (vas *varAccessStateImpl) BlockProduced(tx *iotago.Transaction) (*isc.AliasOutputWithID, bool) {
+func (vas *varAccessNodeStateImpl) BlockProduced(tx *iotago.Transaction) (*isc.AliasOutputWithID, bool) {
 	txID, err := tx.ID()
 	if err != nil {
 		vas.log.Debugf("BlockProduced: Ignoring, cannot extract txID: %v", err)
-		return vas.value, false
+		return vas.tipAO, false
 	}
 	consumed, published, err := vas.extractConsumedPublished(tx)
 	if err != nil {
 		vas.log.Debugf("BlockProduced(tx.ID=%v): Ignoring because of %v", txID, err)
-		return vas.value, false
+		return vas.tipAO, false
 	}
 	//
 	vas.log.Debugf("BlockProduced: consumed.ID=%v, published=%v", consumed.ToHex(), published)
 	stateIndex := published.GetStateIndex()
-	// prevLatest := vas.findLatestPending()
 	//
 	// Add it to the pending list.
-	var entries []*varAccessStateEntry
+	var entries []*varAccessNodeStateEntry
 	entries, ok := vas.pending.Get(stateIndex)
 	if !ok {
-		entries = []*varAccessStateEntry{}
+		entries = []*varAccessNodeStateEntry{}
 	}
-	if lo.ContainsBy(entries, func(e *varAccessStateEntry) bool { return e.output.Equals(published) }) {
+	if lo.ContainsBy(entries, func(e *varAccessNodeStateEntry) bool { return e.output.Equals(published) }) {
 		vas.log.Debugf("⊳ Ignoring it, duplicate.")
-		return vas.value, false
+		return vas.tipAO, false
 	}
-	entries = append(entries, &varAccessStateEntry{
+	entries = append(entries, &varAccessNodeStateEntry{
 		output:   published,
 		consumed: consumed,
 	})
@@ -86,15 +89,15 @@ func (vas *varAccessStateImpl) BlockProduced(tx *iotago.Transaction) (*isc.Alias
 		return vas.outputIfChanged(published)
 	}
 	vas.log.Debugf("⊳ That's not a tip.")
-	return vas.value, false
+	return vas.tipAO, false
 }
 
-func (vas *varAccessStateImpl) BlockConfirmed(confirmed *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool) {
+func (vas *varAccessNodeStateImpl) BlockConfirmed(confirmed *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool) {
 	vas.log.Debugf("BlockConfirmed: confirmed=%v", confirmed)
 	stateIndex := confirmed.GetStateIndex()
 	vas.confirmed = confirmed
 	if vas.isAliasOutputPending(confirmed) {
-		vas.pending.ForEach(func(si uint32, es []*varAccessStateEntry) bool {
+		vas.pending.ForEach(func(si uint32, es []*varAccessNodeStateEntry) bool {
 			if si <= stateIndex {
 				for _, e := range es {
 					vas.log.Debugf("⊳ Removing[%v≤%v] %v", si, stateIndex, e.output)
@@ -104,7 +107,7 @@ func (vas *varAccessStateImpl) BlockConfirmed(confirmed *isc.AliasOutputWithID) 
 			return true
 		})
 	} else {
-		vas.pending.ForEach(func(si uint32, es []*varAccessStateEntry) bool {
+		vas.pending.ForEach(func(si uint32, es []*varAccessNodeStateEntry) bool {
 			for _, e := range es {
 				vas.log.Debugf("⊳ Removing[all] %v", si, stateIndex, e.output)
 			}
@@ -115,33 +118,33 @@ func (vas *varAccessStateImpl) BlockConfirmed(confirmed *isc.AliasOutputWithID) 
 	return vas.outputIfChanged(vas.findLatestPending())
 }
 
-func (vas *varAccessStateImpl) outputIfChanged(newTip *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool) {
-	if vas.value == nil && newTip == nil {
+func (vas *varAccessNodeStateImpl) outputIfChanged(newTip *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool) {
+	if vas.tipAO == nil && newTip == nil {
 		vas.log.Debugf("⊳ Tip remains nil.")
-		return vas.value, false
+		return vas.tipAO, false
 	}
 	if newTip == nil {
-		vas.log.Debugf("⊳ Tip remains %v, new candidate was nil.", vas.value)
-		return vas.value, false
+		vas.log.Debugf("⊳ Tip remains %v, new candidate was nil.", vas.tipAO)
+		return vas.tipAO, false
 	}
-	if vas.value == nil {
-		vas.log.Debugf("⊳ New tip=%v, was %v", newTip, vas.value)
-		vas.value = newTip
-		return vas.value, true
+	if vas.tipAO == nil {
+		vas.log.Debugf("⊳ New tip=%v, was %v", newTip, vas.tipAO)
+		vas.tipAO = newTip
+		return vas.tipAO, true
 	}
-	if vas.value.Equals(newTip) {
-		vas.log.Debugf("⊳ Tip remains %v.", vas.value)
-		return vas.value, false
+	if vas.tipAO.Equals(newTip) {
+		vas.log.Debugf("⊳ Tip remains %v.", vas.tipAO)
+		return vas.tipAO, false
 	}
-	vas.log.Debugf("⊳ New tip=%v, was %v", newTip, vas.value)
-	vas.value = newTip
-	return vas.value, true
+	vas.log.Debugf("⊳ New tip=%v, was %v", newTip, vas.tipAO)
+	vas.tipAO = newTip
+	return vas.tipAO, true
 }
 
-func (vas *varAccessStateImpl) isAliasOutputPending(ao *isc.AliasOutputWithID) bool {
+func (vas *varAccessNodeStateImpl) isAliasOutputPending(ao *isc.AliasOutputWithID) bool {
 	found := false
-	vas.pending.ForEach(func(si uint32, es []*varAccessStateEntry) bool {
-		found = lo.ContainsBy(es, func(e *varAccessStateEntry) bool {
+	vas.pending.ForEach(func(si uint32, es []*varAccessNodeStateEntry) bool {
+		found = lo.ContainsBy(es, func(e *varAccessNodeStateEntry) bool {
 			return e.output.Equals(ao)
 		})
 		return !found
@@ -149,7 +152,7 @@ func (vas *varAccessStateImpl) isAliasOutputPending(ao *isc.AliasOutputWithID) b
 	return found
 }
 
-func (vas *varAccessStateImpl) findLatestPending() *isc.AliasOutputWithID {
+func (vas *varAccessNodeStateImpl) findLatestPending() *isc.AliasOutputWithID {
 	if vas.confirmed == nil {
 		return nil
 	}
@@ -172,7 +175,7 @@ func (vas *varAccessStateImpl) findLatestPending() *isc.AliasOutputWithID {
 	return latest
 }
 
-func (vas *varAccessStateImpl) extractConsumedPublished(tx *iotago.Transaction) (iotago.OutputID, *isc.AliasOutputWithID, error) {
+func (vas *varAccessNodeStateImpl) extractConsumedPublished(tx *iotago.Transaction) (iotago.OutputID, *isc.AliasOutputWithID, error) {
 	var consumed iotago.OutputID
 	var published *isc.AliasOutputWithID
 	var err error
@@ -238,7 +241,7 @@ func (vas *varAccessStateImpl) extractConsumedPublished(tx *iotago.Transaction) 
 	return consumed, published, nil
 }
 
-func (vas *varAccessStateImpl) verifyTxSignature(tx *iotago.Transaction, stateController iotago.Address) error {
+func (vas *varAccessNodeStateImpl) verifyTxSignature(tx *iotago.Transaction, stateController iotago.Address) error {
 	signingMessage, err := tx.Essence.SigningMessage()
 	if err != nil {
 		return fmt.Errorf("cannot extract signing message: %w", err)
