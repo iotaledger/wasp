@@ -5,11 +5,13 @@
   export let value: number = 0;
   export let disabled: boolean = false;
   export let label: string = '';
+  export let valid: boolean = true;
 
   let maxValueFormatted = 0;
   let valueFormatted = 0;
 
   $: maxValueFormatted = max / 10 ** decimals;
+  $: valid = value >= min && value <= max;
 
   function handleRangeChange(event): void {
     value = event.target.value;
@@ -17,7 +19,7 @@
   }
   function handleInputChange(event): void {
     valueFormatted = event.target.value;
-    value = value * 10 ** decimals;
+    value = valueFormatted * 10 ** decimals;
   }
 </script>
 
@@ -30,6 +32,7 @@
         id="formatted"
         bind:value={valueFormatted}
         on:input={handleInputChange}
+        class:error={!valid}
         {disabled}
       />
     </div>
@@ -57,6 +60,10 @@
     background: transparent;
     cursor: pointer;
     width: 100%;
+
+    &.error {
+      @apply text-red-500;
+    }
 
     /* Removes default focus */
     &:focus {
