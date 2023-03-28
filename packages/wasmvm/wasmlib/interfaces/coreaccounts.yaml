@@ -52,7 +52,7 @@ views:
     results:
       allAccounts=this: map[AgentID]Bytes # agent IDs
 
-  # Returns the NFT IDs for all NFTs owned by the given account.
+  # Returns all foundries owned by the given account.
   accountFoundries:
     params:
       agentID=a: AgentID # account agent ID
