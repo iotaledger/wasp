@@ -2,7 +2,6 @@ import { defaultEvmStores, selectedAccount, web3 } from 'svelte-web3';
 import { get } from 'svelte/store';
 
 import { ISCMagic } from '$lib/iscmagic';
-import { NotificationType, showNotification } from '$lib/notification';
 import { iscAbi, iscContractAddress } from '$lib/withdraw';
 
 import { addSelectedNetworkToMetamask, subscribeBalance } from '.';
@@ -33,10 +32,7 @@ export async function connectToWallet() {
     await subscribeBalance();
   } catch (ex) {
     console.error('Failed to connect to wallet: ', ex.message);
-    showNotification({
-      type: NotificationType.Error,
-      message: `Failed to connect to wallet: ${ex.message}`,
-    });
+    throw ex;
   }
 
   updateWithdrawStateStore({ isLoading: false });
