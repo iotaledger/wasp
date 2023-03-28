@@ -16,6 +16,7 @@ type blockTime struct {
 type blockCache struct {
 	log          *logger.Logger
 	blocks       *shrinkingmap.ShrinkingMap[BlockKey, state.Block]
+	maxCacheSize int
 	wal          BlockWAL
 	times        []*blockTime
 	timeProvider TimeProvider
@@ -23,10 +24,11 @@ type blockCache struct {
 
 var _ BlockCache = &blockCache{}
 
-func NewBlockCache(tp TimeProvider, wal BlockWAL, log *logger.Logger) (BlockCache, error) {
+func NewBlockCache(tp TimeProvider, maxCacheSize int, wal BlockWAL, log *logger.Logger) (BlockCache, error) {
 	return &blockCache{
 		log:          log.Named("bc"),
 		blocks:       shrinkingmap.New[BlockKey, state.Block](),
+		maxCacheSize: maxCacheSize,
 		wal:          wal,
 		times:        make([]*blockTime, 0),
 		timeProvider: tp,
@@ -50,6 +52,13 @@ func (bcT *blockCache) AddBlock(block state.Block) {
 		blockKey: blockKey,
 	})
 	bcT.log.Debugf("Block %s added to cache", commitment)
+
+	if bcT.Size() > bcT.maxCacheSize {
+		bt := bcT.times[0]
+		bcT.times = bcT.times[1:]
+		bcT.blocks.Delete(bt.blockKey)
+		bcT.log.Debugf("Block %s deleted from cache, because cache is too large", bt.blockKey)
+	}
 }
 
 func (bcT *blockCache) GetBlock(commitment *state.L1Commitment) state.Block {
@@ -63,8 +72,6 @@ func (bcT *blockCache) GetBlock(commitment *state.L1Commitment) state.Block {
 	bcT.log.Debugf("Block %s is not in cache", commitment)
 
 	// Check in WAL
-	// NOTE: this is not needed by state manager algorithm as all the blocks are
-	// stored in the DB. This is left for recovery in case of DB failure.
 	if bcT.wal.Contains(commitment.BlockHash()) {
 		block, err := bcT.wal.Read(commitment.BlockHash())
 		if err != nil {
@@ -86,7 +93,11 @@ func (bcT *blockCache) CleanOlderThan(limit time.Time) {
 			return
 		}
 		bcT.blocks.Delete(bt.blockKey)
-		bcT.log.Debugf("Block %s deleted from cache", bt.blockKey)
+		bcT.log.Debugf("Block %s deleted from cache, because it is too old", bt.blockKey)
 	}
 	bcT.times = make([]*blockTime, 0) // All the blocks were deleted
+}
+
+func (bcT *blockCache) Size() int {
+	return bcT.blocks.Size()
 }

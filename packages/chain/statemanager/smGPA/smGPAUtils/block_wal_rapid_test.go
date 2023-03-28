@@ -27,6 +27,8 @@ type blockWALTestSM struct { // State machine for block WAL property based Rapid
 	log                 *logger.Logger
 }
 
+var _ rapid.StateMachine = &blockWALTestSM{}
+
 func (bwtsmT *blockWALTestSM) Init(t *rapid.T) {
 	var err error
 	bwtsmT.factory = NewBlockFactory(t)
