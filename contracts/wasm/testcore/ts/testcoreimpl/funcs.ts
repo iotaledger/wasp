@@ -3,6 +3,7 @@
 
 import * as wasmlib from "wasmlib"
 import * as wasmtypes from "wasmlib/wasmtypes";
+import * as coreaccounts from "wasmlib/coreaccounts"
 import * as coregovernance from "wasmlib/coregovernance"
 import * as sc from "../testcore/index";
 
@@ -219,6 +220,19 @@ export function funcTestPanicFullEP(ctx: wasmlib.ScFuncContext, f: sc.TestPanicF
 }
 
 export function funcWithdrawFromChain(ctx: wasmlib.ScFuncContext, f: sc.WithdrawFromChainContext): void {
+    const targetChain = f.params.chainID().value()
+    const withdrawal = f.params.baseTokensWithdrawal().value()
+    const availableTokens = ctx.allowance().baseTokens()
+
+    // requiredStorageDepositDeposit := ctx.EstimateRequiredStorageDepositDeposit(request)
+    if (availableTokens < 1000) {
+        ctx.panic("not enough base tokens sent to cover storage deposit")
+    }
+    const transfer = wasmlib.ScTransfer.fromBalances(ctx.allowance())
+    ctx.transferAllowed(ctx.accountID(), transfer)
+
+    const withdraw = coreaccounts.ScFuncs.withdraw(ctx)
+    withdraw.func.transfer(transfer).allowanceBaseTokens(withdrawal).postToChain(targetChain)
 }
 
 export function viewCheckContextFromViewEP(ctx: wasmlib.ScViewContext, f: sc.CheckContextFromViewEPContext): void {

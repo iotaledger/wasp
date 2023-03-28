@@ -217,7 +217,20 @@ pub fn func_test_panic_full_ep(ctx: &ScFuncContext, _f: &TestPanicFullEPContext)
     ctx.panic(MSG_FULL_PANIC);
 }
 
-pub fn func_withdraw_from_chain(_ctx: &ScFuncContext, _f: &WithdrawFromChainContext) {
+pub fn func_withdraw_from_chain(ctx: &ScFuncContext, f: &WithdrawFromChainContext) {
+    let target_chain = f.params.chain_id().value();
+    let withdrawal = f.params.base_tokens_withdrawal().value();
+    let available_tokens = ctx.allowance().base_tokens();
+
+    // requiredStorageDepositDeposit := ctx.EstimateRequiredStorageDepositDeposit(request)
+    if available_tokens < 1000 {
+        ctx.panic("not enough base tokens sent to cover storage deposit");
+    }
+    let transfer = ScTransfer::from_balances(&ctx.allowance());
+    ctx.transfer_allowed(&ctx.account_id(), &transfer);
+
+    let withdraw = coreaccounts::ScFuncs::withdraw(ctx);
+    withdraw.func.transfer(transfer).allowance_base_tokens(withdrawal).post_to_chain(target_chain);
 }
 
 pub fn view_check_context_from_view_ep(ctx: &ScViewContext, f: &CheckContextFromViewEPContext) {

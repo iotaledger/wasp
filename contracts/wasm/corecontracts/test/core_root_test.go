@@ -34,7 +34,7 @@ func TestDeployContract(t *testing.T) {
 	// now deploy
 	ctxb := ctxr.SoloContextForCore(t, coreblob.ScName, coreblob.OnDispatch)
 	require.NoError(t, ctxb.Err)
-	fblob := coreblob.ScFuncs.StoreBlob(ctxb.OffLedger(ctxb.NewSoloAgent()))
+	fblob := coreblob.ScFuncs.StoreBlob(ctxb.OffLedger(ctxb.Originator()))
 	wasm, err := os.ReadFile("./testdata/testdata.wasm")
 	require.NoError(t, err)
 	fblob.Params.ProgBinary().SetValue(wasm)
@@ -54,7 +54,7 @@ func TestGrantDeployPermission(t *testing.T) {
 	ctx := setupRoot(t)
 	require.NoError(t, ctx.Err)
 
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 	f := coreroot.ScFuncs.GrantDeployPermission(ctx)
 	f.Params.Deployer().SetValue(user.ScAgentID())
 	f.Func.Post()
@@ -65,7 +65,7 @@ func TestRevokeDeployPermission(t *testing.T) {
 	ctx := setupRoot(t)
 	require.NoError(t, ctx.Err)
 
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 	f := coreroot.ScFuncs.RevokeDeployPermission(ctx)
 	f.Params.Deployer().SetValue(user.ScAgentID())
 	f.Func.Post()
