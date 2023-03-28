@@ -2,15 +2,20 @@ package chain
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
@@ -96,6 +101,33 @@ func initBalanceCmd() *cobra.Command {
 	return cmd
 }
 
+// baseTokensForDepositFee calculates the amount of tokens needed to pay for a deposit
+func baseTokensForDepositFee(client *apiclient.APIClient, chain string) uint64 {
+	callGovView := func(viewName string) dict.Dict {
+		result, _, err := client.RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
+			ChainId:      config.GetChain(chain).String(),
+			ContractName: governance.Contract.Name,
+			FunctionName: viewName,
+		}).Execute() //nolint:bodyclose // false positive
+		log.Check(err)
+		result.ToMap()
+
+		resultDict, err := apiextensions.APIJsonDictToDict(*result)
+		log.Check(err)
+		return resultDict
+	}
+
+	feePolicyBytes := callGovView(governance.ViewGetFeePolicy.Name).MustGet(governance.ParamFeePolicyBytes)
+	feePolicy := gas.MustFeePolicyFromBytes(feePolicyBytes)
+
+	gasLimitsBytes := callGovView(governance.ViewGetGasLimits.Name).MustGet(governance.ParamGasLimitsBytes)
+	gasLimits, err := gas.LimitsFromBytes(gasLimitsBytes)
+	log.Check(err)
+
+	// assumes deposit fee == minGasPerRequest fee
+	return feePolicy.FeeFromGas(gasLimits.MinGasPerRequest)
+}
+
 func initDepositCmd() *cobra.Command {
 	var adjustStorageDeposit bool
 	var node string
@@ -130,7 +162,23 @@ func initDepositCmd() *cobra.Command {
 				log.Check(err)
 				tokensStr := strings.Split(strings.Join(args[1:], ""), ",")
 				tokens := util.ParseFungibleTokens(tokensStr)
+
 				allowance := tokens.Clone()
+
+				{
+					// adjust allowance to leave enough for fee if needed
+					client := cliclients.WaspClient(node)
+					feeNeeded := baseTokensForDepositFee(client, chain)
+					senderAgentID := isc.NewAgentID(wallet.Load().Address())
+					senderOnChainBalance, _, err := client.CorecontractsApi.AccountsGetAccountBalance(context.Background(), chainID.String(), senderAgentID.String()).Execute() //nolint:bodyclose // false positive
+					log.Check(err)
+					senderOnChainBaseTokens, err := strconv.ParseUint(senderOnChainBalance.BaseTokens, 10, 64)
+					log.Check(err)
+
+					if senderOnChainBaseTokens < feeNeeded {
+						allowance.Spend(isc.NewAssetsBaseTokens(feeNeeded - senderOnChainBaseTokens))
+					}
+				}
 
 				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotago.Transaction, error) {
 					client := cliclients.WaspClient(node)
