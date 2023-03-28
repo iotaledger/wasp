@@ -71,12 +71,12 @@ func Test2Chains(t *testing.T) {
 
 		bal1.Add(testcore2, allowanceForWithdraw-ctx1.GasFee-baseTokens)
 		bal1.Chain += ctx1.GasFee
-		bal1.DumpBalances()
+		bal1.VerifyBalances(t)
 
 		bal2.Add(accounts1, accounts.ConstDepositFeeTmp-ctx2.GasFee)
 		bal2.Account += baseTokens - accounts.ConstDepositFeeTmp
 		bal2.Originator += wasmhost.WasmStorageDeposit - ctx2.GasFee - allowanceForWithdraw
 		bal2.Chain += 2 * ctx2.GasFee
-		bal2.DumpBalances()
+		bal2.VerifyBalances(t)
 	})
 }
