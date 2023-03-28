@@ -20,8 +20,8 @@ type SyncSM interface {
 	DecidedVirtualStateReceived(chainState state.State) gpa.OutMessages
 	//
 	// Save the block.
-	BlockProduced(block state.StateDraft) gpa.OutMessages
-	BlockSaved() gpa.OutMessages
+	BlockProduced(producedBlock state.StateDraft) gpa.OutMessages
+	BlockSaved(savedBlock state.Block) gpa.OutMessages
 	//
 	// Supporting stuff.
 	String() string
@@ -46,7 +46,7 @@ type syncSMImpl struct {
 	producedBlockReceived          bool
 	saveProducedBlockInputsReadyCB func(producedBlock state.StateDraft) gpa.OutMessages
 	saveProducedBlockDone          bool
-	saveProducedBlockDoneCB        func() gpa.OutMessages
+	saveProducedBlockDoneCB        func(savedBlock state.Block) gpa.OutMessages
 }
 
 func NewSyncSM(
@@ -55,7 +55,7 @@ func NewSyncSM(
 	decidedStateQueryInputsReadyCB func(decidedBaseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages,
 	decidedStateReceivedCB func(chainState state.State) gpa.OutMessages,
 	saveProducedBlockInputsReadyCB func(producedBlock state.StateDraft) gpa.OutMessages,
-	saveProducedBlockDoneCB func() gpa.OutMessages,
+	saveProducedBlockDoneCB func(savedBlock state.Block) gpa.OutMessages,
 ) SyncSM {
 	return &syncSMImpl{
 		stateProposalQueryInputsReadyCB: stateProposalQueryInputsReadyCB,
@@ -110,12 +110,12 @@ func (sub *syncSMImpl) BlockProduced(block state.StateDraft) gpa.OutMessages {
 	return sub.saveProducedBlockInputsReadyCB(sub.producedBlock)
 }
 
-func (sub *syncSMImpl) BlockSaved() gpa.OutMessages {
+func (sub *syncSMImpl) BlockSaved(block state.Block) gpa.OutMessages {
 	if sub.saveProducedBlockDone {
 		return nil
 	}
 	sub.saveProducedBlockDone = true
-	return sub.saveProducedBlockDoneCB()
+	return sub.saveProducedBlockDoneCB(block)
 }
 
 // Try to provide useful human-readable compact status.
