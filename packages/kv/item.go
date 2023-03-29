@@ -2,6 +2,8 @@ package kv
 
 import (
 	"fmt"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 type Item struct {
@@ -24,5 +26,5 @@ func (items Items) Swap(i, j int) {
 }
 
 func (it *Item) Format(format string) string {
-	return fmt.Sprintf(format, it.Key, it.Value)
+	return fmt.Sprintf(format, iotago.EncodeHex([]byte(it.Key)), iotago.EncodeHex(it.Value))
 }
