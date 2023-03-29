@@ -317,7 +317,9 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 		return !checkTransactionIncludedAndSetConfirmed(pendingTx)
 	}
 
-	postTransaction := func(pendingTx *pendingTransaction) error {
+	postTransaction := func(pendingTx *pendingTransaction, isReattachment bool) error {
+		debugInfoChaining := ""
+
 		// check if the the transaction should be chained with another pending transaction
 		chainedTxBlockIDs := iotago.BlockIDs{}
 		if pendingTx.lastPendingTx != nil {
@@ -326,11 +328,14 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			// if not, it must have been confirmed already or if it was canceled instead, also all chained tx would have been canceled already
 			if checkIsPending(pendingTx.lastPendingTx) {
 				chainedTxBlockIDs = append(chainedTxBlockIDs, pendingTx.lastPendingTx.BlockID())
+				debugInfoChaining = fmt.Sprintf(", chainedTxID: %s, chainedBlockID: %s", pendingTx.lastPendingTx.transactionID.ToHex(), pendingTx.lastPendingTx.BlockID().ToHex())
 			} else {
 				// the chained pending transaction is not tracked anymore.
 				pendingTx.lastPendingTx = nil
 			}
 		}
+
+		ncc.LogDebugf("posting transaction %s (chainID: %s, isReattachment: %t%s)...", pendingTx.ID().ToHex(), ncc.chainID, isReattachment, debugInfoChaining)
 
 		// we link the ctxAttach to ctxConfirmed and ncChain.ctx.
 		// this way the proof of work will be canceled if the transaction already got confirmed on L1.
@@ -376,7 +381,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 		if checkIsPending(pendingTx) {
 			// transaction is still pending
 			for {
-				txErr = postTransaction(pendingTx)
+				txErr = postTransaction(pendingTx, isReattachment)
 				if txErr != nil {
 					action := "publishing"
 					if isReattachment {
