@@ -4,6 +4,7 @@
 package emulator
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -290,20 +291,28 @@ func (e *EVMEmulator) MintBlock() {
 
 // FilterLogs executes a log filter operation, blocking during execution and
 // returning all the results in one batch.
-func (e *EVMEmulator) FilterLogs(query *ethereum.FilterQuery) []*types.Log {
-	receipts := e.getReceiptsInFilterRange(query)
+func (e *EVMEmulator) FilterLogs(query *ethereum.FilterQuery) ([]*types.Log, error) {
+	receipts, err := e.getReceiptsInFilterRange(query)
+	if err != nil {
+		return nil, err
+	}
 	return e.filterLogs(query, receipts)
 }
 
-func (e *EVMEmulator) getReceiptsInFilterRange(query *ethereum.FilterQuery) []*types.Receipt {
+const (
+	maxBlocksInFilterRange = 1_000
+	maxLogsInResult        = 10_000
+)
+
+func (e *EVMEmulator) getReceiptsInFilterRange(query *ethereum.FilterQuery) ([]*types.Receipt, error) {
 	bc := e.BlockchainDB()
 
 	if query.BlockHash != nil {
 		blockNumber, ok := bc.GetBlockNumberByBlockHash(*query.BlockHash)
 		if !ok {
-			return nil
+			return nil, nil
 		}
-		return bc.GetReceiptsByBlockNumber(blockNumber)
+		return bc.GetReceiptsByBlockNumber(blockNumber), nil
 	}
 
 	// Initialize unset filter boundaries to run from genesis to chain head
@@ -318,17 +327,24 @@ func (e *EVMEmulator) getReceiptsInFilterRange(query *ethereum.FilterQuery) []*t
 		to = query.ToBlock
 	}
 
+	if !from.IsUint64() || !to.IsUint64() {
+		return nil, errors.New("block number is too large")
+	}
 	var receipts []*types.Receipt
 	{
+		from := from.Uint64()
 		to := to.Uint64()
-		for i := from.Uint64(); i <= to; i++ {
+		if to > from && to-from > maxBlocksInFilterRange {
+			return nil, errors.New("too many blocks in filter range")
+		}
+		for i := from; i <= to; i++ {
 			receipts = append(receipts, bc.GetReceiptsByBlockNumber(i)...)
 		}
 	}
-	return receipts
+	return receipts, nil
 }
 
-func (e *EVMEmulator) filterLogs(query *ethereum.FilterQuery, receipts []*types.Receipt) []*types.Log {
+func (e *EVMEmulator) filterLogs(query *ethereum.FilterQuery, receipts []*types.Receipt) ([]*types.Log, error) {
 	var logs []*types.Log
 	for _, r := range receipts {
 		if !evmtypes.BloomFilter(r.Bloom, query.Addresses, query.Topics) {
@@ -338,10 +354,13 @@ func (e *EVMEmulator) filterLogs(query *ethereum.FilterQuery, receipts []*types.
 			if !evmtypes.LogMatches(log, query.Addresses, query.Topics) {
 				continue
 			}
+			if len(logs) >= maxLogsInResult {
+				return nil, errors.New("too many logs in result")
+			}
 			logs = append(logs, log)
 		}
 	}
-	return logs
+	return logs, nil
 }
 
 func (e *EVMEmulator) Signer() types.Signer {
