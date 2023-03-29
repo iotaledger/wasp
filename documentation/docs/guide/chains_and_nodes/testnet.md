@@ -77,7 +77,7 @@ We have deployed an experimental EVM chain that you can interact with. To begin,
 the following configuration:
 
 | Key      | Value                                        |
-| -------- |----------------------------------------------|
+|----------|----------------------------------------------|
 | RPC URL  | https://json-rpc.evm.testnet.shimmer.network |
 | Chain ID | 1071                                         |
 
