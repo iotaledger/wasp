@@ -83,12 +83,12 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		activeAccessNodesCB := func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
 			return []*cryptolib.PublicKey{}, []*cryptolib.PublicKey{}
 		}
-		tractStateActCB := func(ao *isc.AliasOutputWithID) {
+		trackActiveStateCB := func(ao *isc.AliasOutputWithID) {
 			// Nothing
 		}
 		cm, err := chainMgr.New(
 			nid, chainID, stores[nid], consensusStateRegistry, dkRegs[i], gpa.NodeIDFromPublicKey,
-			activeAccessNodesCB, tractStateActCB, log.Named(nid.ShortString()),
+			activeAccessNodesCB, trackActiveStateCB, log.Named(nid.ShortString()),
 		)
 		require.NoError(t, err)
 		nodes[nid] = cm.AsGPA()
