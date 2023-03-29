@@ -257,6 +257,58 @@ func TestFoundryModifySupply(t *testing.T) {
 	require.NoError(t, ctx.Err)
 }
 
+func TestAccountFoundries(t *testing.T) {
+	ctx := setupAccounts(t)
+	user0 := ctx.NewSoloAgent()
+	user1 := ctx.NewSoloAgent()
+
+	mintAmount := wasmtypes.NewScBigInt(1000)
+	var foundries0 []*wasmsolo.SoloFoundry
+	for i := 0; i < 10; i++ {
+		foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
+		require.NoError(t, err)
+		foundries0 = append(foundries0, foundry)
+		err = foundry.Mint(mintAmount)
+		require.NoError(t, err)
+	}
+
+	var foundries1 []*wasmsolo.SoloFoundry
+	for i := 0; i < 3; i++ {
+		foundry, err := ctx.NewSoloFoundry(mintAmount, user1)
+		require.NoError(t, err)
+		foundries1 = append(foundries1, foundry)
+		err = foundry.Mint(mintAmount)
+		require.NoError(t, err)
+	}
+
+	f := coreaccounts.ScFuncs.AccountFoundries(ctx)
+	f.Params.AgentID().SetValue(user0.ScAgentID())
+	f.Func.Call()
+	require.NoError(t, ctx.Err)
+	for _, foundry := range foundries0 {
+		require.Equal(t, []byte{0xff}, f.Results.Foundries().GetBytes(foundry.SN()).Value())
+	}
+
+	f.Params.AgentID().SetValue(user1.ScAgentID())
+	f.Func.Call()
+	require.NoError(t, ctx.Err)
+	for _, foundry := range foundries1 {
+		require.Equal(t, []byte{0xff}, f.Results.Foundries().GetBytes(foundry.SN()).Value())
+	}
+}
+
+func TestAccountNFTAmount(t *testing.T) {
+	// TODO add test later
+}
+
+func TestAccountNFTAmountInCollection(t *testing.T) {
+	// TODO add test later
+}
+
+func TestAccountNFTsInCollection(t *testing.T) {
+	// TODO add test later
+}
+
 func TestBalance(t *testing.T) {
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent("user0")
