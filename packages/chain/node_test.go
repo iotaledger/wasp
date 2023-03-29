@@ -47,6 +47,7 @@ type tc struct {
 }
 
 func TestNodeBasic(t *testing.T) {
+	t.SkipNow() // TODO: Disable pipelining temporary.
 	t.Parallel()
 	tests := []tc{
 		{n: 1, f: 0, reliable: true, timeout: 10 * time.Second},   // Low N

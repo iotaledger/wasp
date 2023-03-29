@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -215,7 +216,7 @@ func (bc *BlockchainDB) prune(currentNumber uint64) {
 }
 
 func (bc *BlockchainDB) deleteBlock(blockNumber uint64) {
-	header := bc.getHeaderGobByBlockNumber(blockNumber)
+	header := bc.getHeaderByBlockNumber(blockNumber)
 	if header == nil {
 		// already deleted?
 		return
@@ -233,7 +234,7 @@ func (bc *BlockchainDB) deleteBlock(blockNumber uint64) {
 	bc.kv.Del(makeBlockNumberByBlockHashKey(header.Hash))
 }
 
-type headerGob struct {
+type header struct {
 	Hash        common.Hash
 	GasLimit    uint64
 	GasUsed     uint64
@@ -243,29 +244,76 @@ type headerGob struct {
 	Bloom       types.Bloom
 }
 
-func makeHeaderGob(header *types.Header) *headerGob {
-	return &headerGob{
-		Hash:        header.Hash(),
-		GasLimit:    header.GasLimit,
-		GasUsed:     header.GasUsed,
-		Time:        header.Time,
-		TxHash:      header.TxHash,
-		ReceiptHash: header.ReceiptHash,
-		Bloom:       header.Bloom,
+var headerSize = common.HashLength*3 + marshalutil.Uint64Size*3 + types.BloomByteLength
+
+func makeHeader(h *types.Header) *header {
+	return &header{
+		Hash:        h.Hash(),
+		GasLimit:    h.GasLimit,
+		GasUsed:     h.GasUsed,
+		Time:        h.Time,
+		TxHash:      h.TxHash,
+		ReceiptHash: h.ReceiptHash,
+		Bloom:       h.Bloom,
 	}
 }
 
-func encodeHeaderGob(g *headerGob) []byte {
-	buf := new(bytes.Buffer)
-	err := gob.NewEncoder(buf).Encode(g)
-	if err != nil {
+func encodeHeader(g *header) []byte {
+	m := marshalutil.New()
+	m.WriteBytes(g.Hash[:])
+	m.WriteUint64(g.GasLimit)
+	m.WriteUint64(g.GasUsed)
+	m.WriteUint64(g.Time)
+	m.WriteBytes(g.TxHash[:])
+	m.WriteBytes(g.ReceiptHash[:])
+	m.WriteBytes(g.Bloom[:])
+	return m.Bytes()
+}
+
+func decodeHeader(b []byte) *header {
+	if len(b) != headerSize {
+		// old format
+		return decodeHeaderGobOld(b)
+	}
+	m := marshalutil.New(b)
+	h := &header{}
+	var err error
+	if err = readBytes(m, common.HashLength, h.Hash[:]); err != nil {
 		panic(err)
 	}
-	return buf.Bytes()
+	if h.GasLimit, err = m.ReadUint64(); err != nil {
+		panic(err)
+	}
+	if h.GasUsed, err = m.ReadUint64(); err != nil {
+		panic(err)
+	}
+	if h.Time, err = m.ReadUint64(); err != nil {
+		panic(err)
+	}
+	if err = readBytes(m, common.HashLength, h.TxHash[:]); err != nil {
+		panic(err)
+	}
+	if err = readBytes(m, common.HashLength, h.ReceiptHash[:]); err != nil {
+		panic(err)
+	}
+	if err = readBytes(m, types.BloomByteLength, h.Bloom[:]); err != nil {
+		panic(err)
+	}
+	return h
 }
 
-func (bc *BlockchainDB) decodeHeaderGob(b []byte) *headerGob {
-	var g headerGob
+func readBytes(m *marshalutil.MarshalUtil, size int, dst []byte) (err error) {
+	var buf []byte
+	buf, err = m.ReadBytes(size)
+	if err == nil {
+		copy(dst, buf)
+	}
+	return err
+}
+
+// deprecated
+func decodeHeaderGobOld(b []byte) *header {
+	var g header
 	err := gob.NewDecoder(bytes.NewReader(b)).Decode(&g)
 	if err != nil {
 		panic(err)
@@ -273,7 +321,7 @@ func (bc *BlockchainDB) decodeHeaderGob(b []byte) *headerGob {
 	return &g
 }
 
-func (bc *BlockchainDB) headerFromGob(g *headerGob, blockNumber uint64) *types.Header {
+func (bc *BlockchainDB) makeEthereumHeader(g *header, blockNumber uint64) *types.Header {
 	var parentHash common.Hash
 	if blockNumber > 0 {
 		parentHash = bc.GetBlockHashByBlockNumber(blockNumber - 1)
@@ -296,7 +344,7 @@ func (bc *BlockchainDB) addBlock(header *types.Header, pendingTimestamp uint64) 
 	blockNumber := header.Number.Uint64()
 	bc.kv.Set(
 		makeBlockHeaderByBlockNumberKey(blockNumber),
-		encodeHeaderGob(makeHeaderGob(header)),
+		encodeHeader(makeHeader(header)),
 	)
 	bc.kv.Set(
 		makeBlockNumberByBlockHashKey(header.Hash()),
@@ -395,7 +443,7 @@ func (bc *BlockchainDB) GetTransactionByHash(txHash common.Hash) *types.Transact
 }
 
 func (bc *BlockchainDB) GetBlockHashByBlockNumber(blockNumber uint64) common.Hash {
-	g := bc.getHeaderGobByBlockNumber(blockNumber)
+	g := bc.getHeaderByBlockNumber(blockNumber)
 	if g == nil {
 		return common.Hash{}
 	}
@@ -407,7 +455,7 @@ func (bc *BlockchainDB) GetBlockNumberByBlockHash(hash common.Hash) (uint64, boo
 }
 
 func (bc *BlockchainDB) GetTimestampByBlockNumber(blockNumber uint64) uint64 {
-	g := bc.getHeaderGobByBlockNumber(blockNumber)
+	g := bc.getHeaderByBlockNumber(blockNumber)
 	if g == nil {
 		return 0
 	}
@@ -447,15 +495,15 @@ func (bc *BlockchainDB) GetHeaderByBlockNumber(blockNumber uint64) *types.Header
 	if blockNumber > bc.GetNumber() {
 		return nil
 	}
-	return bc.headerFromGob(bc.getHeaderGobByBlockNumber(blockNumber), blockNumber)
+	return bc.makeEthereumHeader(bc.getHeaderByBlockNumber(blockNumber), blockNumber)
 }
 
-func (bc *BlockchainDB) getHeaderGobByBlockNumber(blockNumber uint64) *headerGob {
+func (bc *BlockchainDB) getHeaderByBlockNumber(blockNumber uint64) *header {
 	b := bc.kv.MustGet(makeBlockHeaderByBlockNumberKey(blockNumber))
 	if b == nil {
 		return nil
 	}
-	return bc.decodeHeaderGob(b)
+	return decodeHeader(b)
 }
 
 func (bc *BlockchainDB) GetHeaderByHash(hash common.Hash) *types.Header {

@@ -282,29 +282,30 @@ func (lvi *varLocalViewImpl) StatusString() string {
 // set of AOs is a chain, with no gaps, or alternatives, and all the AOs
 // are not rejected.
 func (lvi *varLocalViewImpl) findLatestPending() *isc.AliasOutputWithID {
-	if lvi.confirmed == nil {
-		return nil
-	}
-	latest := lvi.confirmed
-	confirmedSI := lvi.confirmed.GetStateIndex()
-	pendingSICount := uint32(lvi.pending.Size())
-	for i := uint32(0); i < pendingSICount; i++ {
-		entries, ok := lvi.pending.Get(confirmedSI + i + 1)
-		if !ok {
-			return nil // That's a gap.
-		}
-		if len(entries) != 1 {
-			return nil // Alternatives exist.
-		}
-		if entries[0].rejected {
-			return nil // Some are rejected.
-		}
-		if latest.OutputID() != entries[0].consumed {
-			return nil // Don't form a chain.
-		}
-		latest = entries[0].output
-	}
-	return latest
+	return lvi.confirmed // TODO: Enable pipelining later.
+	// if lvi.confirmed == nil {
+	// 	return nil
+	// }
+	// latest := lvi.confirmed
+	// confirmedSI := lvi.confirmed.GetStateIndex()
+	// pendingSICount := uint32(lvi.pending.Size())
+	// for i := uint32(0); i < pendingSICount; i++ {
+	// 	entries, ok := lvi.pending.Get(confirmedSI + i + 1)
+	// 	if !ok {
+	// 		return nil // That's a gap.
+	// 	}
+	// 	if len(entries) != 1 {
+	// 		return nil // Alternatives exist.
+	// 	}
+	// 	if entries[0].rejected {
+	// 		return nil // Some are rejected.
+	// 	}
+	// 	if latest.OutputID() != entries[0].consumed {
+	// 		return nil // Don't form a chain.
+	// 	}
+	// 	latest = entries[0].output
+	// }
+	// return latest
 }
 
 func (lvi *varLocalViewImpl) isAliasOutputPending(ao *isc.AliasOutputWithID) bool {
