@@ -176,8 +176,10 @@ type chainNodeImpl struct {
 	serverNodes            []*cryptolib.PublicKey // The nodes we can query (because they consider us an access node).
 	latestConfirmedAO      *isc.AliasOutputWithID // Confirmed by L1, can be lagging from latestActiveAO.
 	latestConfirmedState   state.State            // State corresponding to latestConfirmedAO, for performance reasons.
+	latestConfirmedStateAO *isc.AliasOutputWithID // Set only when the corresponding state is retrieved.
 	latestActiveAO         *isc.AliasOutputWithID // This is the AO the chain is build on.
 	latestActiveState      state.State            // State corresponding to latestActiveAO, for performance reasons.
+	latestActiveStateAO    *isc.AliasOutputWithID // Set only when the corresponding state is retrieved.
 	//
 	// Infrastructure.
 	netRecvPipe         pipe.Pipe[*peering.PeerMessageIn]
@@ -303,8 +305,10 @@ func New(
 		serverNodes:            nil, // Set bellow.
 		latestConfirmedAO:      nil,
 		latestConfirmedState:   nil,
+		latestConfirmedStateAO: nil,
 		latestActiveAO:         nil,
 		latestActiveState:      nil,
+		latestActiveStateAO:    nil,
 		netRecvPipe:            pipe.NewInfinitePipe[*peering.PeerMessageIn](),
 		netPeeringID:           netPeeringID,
 		netPeerPubs:            map[gpa.NodeID]*cryptolib.PublicKey{},
@@ -550,6 +554,7 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 	cni.log.Debugf("handleStateTrackerActCB")
 	cni.accessLock.Lock()
 	cni.latestActiveState = st
+	cni.latestActiveStateAO = till
 	cni.accessLock.Unlock()
 
 	newAccessNodes := governance.NewStateAccess(st).GetAccessNodes()
@@ -571,6 +576,7 @@ func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *is
 	cni.log.Debugf("handleStateTrackerCnfCB")
 	cni.accessLock.Lock()
 	cni.latestConfirmedState = st
+	cni.latestConfirmedStateAO = till
 	cni.accessLock.Unlock()
 
 	newAccessNodes := governance.NewStateAccess(st).GetAccessNodes()
@@ -709,6 +715,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 	cni.latestActiveAO = output.LatestActiveAliasOutput()
 	if cni.latestActiveAO == nil {
 		cni.latestActiveState = nil
+		cni.latestActiveStateAO = nil
 	}
 	cni.accessLock.Unlock()
 }
@@ -984,8 +991,8 @@ func (cni *chainNodeImpl) Log() *logger.Logger {
 
 func (cni *chainNodeImpl) LatestAliasOutput(freshness StateFreshness) (*isc.AliasOutputWithID, error) {
 	cni.accessLock.RLock()
-	latestConfirmedAO := cni.latestConfirmedAO
-	latestActiveAO := cni.latestActiveAO
+	latestConfirmedAO := cni.latestConfirmedStateAO
+	latestActiveAO := cni.latestActiveStateAO
 	cni.accessLock.RUnlock()
 	switch freshness {
 	case ActiveOrCommittedState:
