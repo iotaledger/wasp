@@ -21,7 +21,7 @@ func deployTestCore(t *testing.T, runWasm bool, addCreator ...bool) *wasmsolo.So
 
 	var creator *wasmsolo.SoloAgent
 	if len(addCreator) != 0 && addCreator[0] {
-		creator = wasmsolo.NewSoloAgent(chain.Env)
+		creator = wasmsolo.NewSoloAgent(chain.Env, "creator")
 		setDeployer(t, &wasmsolo.SoloContext{Chain: chain}, creator)
 	}
 

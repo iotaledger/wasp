@@ -98,14 +98,17 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 			panic(ErrTooManyNFTsInAllowance)
 		}
 	}
+
+	// warning: this will transfer the allowance into the accounts core contract
+	// make sure everything transfers out again, or the tokens will be stuck there forever
 	remains := ctx.TransferAllowedFunds(ctx.AccountID())
 
-	// por las dudas
+	// paranoia check
 	ctx.Requiref(remains.IsEmpty(), "internal: allowance left after must be empty")
 
 	if callerContract != nil && !callerContract.Hname().IsNil() {
 		// deduct the deposit fee from the allowance, so that there are enough tokens to pay for the deposit on the target chain
-		allowance := isc.NewAssetsBaseTokens(fundsToWithdraw.BaseTokens - ConstDepositFeeTmp)
+		allowance = isc.NewAssetsBaseTokens(fundsToWithdraw.BaseTokens - ConstDepositFeeTmp)
 		// send funds to a contract on another chain
 		ctx.Send(isc.RequestParameters{
 			TargetAddress: callerAddress,
@@ -115,7 +118,7 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 				EntryPoint:     FuncTransferAllowanceTo.Hname(),
 				Allowance:      allowance,
 				Params:         dict.Dict{ParamAgentID: codec.EncodeAgentID(callerContract)},
-				GasBudget:      math.MaxUint64, // TODO This call will fail if not enough gas, and the funds will be lost (credited to this accounts on the target chain)
+				GasBudget:      math.MaxUint64, // TODO This call will fail if not enough gas, and the funds will be lost (credited to this account on the target chain)
 			},
 		})
 	} else {

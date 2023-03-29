@@ -21,7 +21,7 @@ func TestDeploy(t *testing.T) {
 
 func TestMint(t *testing.T) {
 	ctx := setup(t)
-	owner := ctx.NewSoloAgent()
+	owner := ctx.NewSoloAgent("owner")
 	tokenID := wasmtypes.HashFromBytes(owner.ScAgentID().Bytes()[:32])
 	mint(ctx, owner, tokenID)
 	require.NoError(t, ctx.Err)
@@ -29,7 +29,7 @@ func TestMint(t *testing.T) {
 
 func TestApprove(t *testing.T) {
 	ctx := setup(t)
-	owner := ctx.NewSoloAgent()
+	owner := ctx.NewSoloAgent("owner")
 	tokenID := wasmtypes.HashFromBytes(owner.ScAgentID().Bytes()[:32])
 	mint(ctx, owner, tokenID)
 	require.NoError(t, ctx.Err)
@@ -42,7 +42,7 @@ func TestApprove(t *testing.T) {
 	approved := getApproved(t, ctx, tokenID)
 	require.Nil(t, approved)
 
-	friend1 := ctx.NewSoloAgent()
+	friend1 := ctx.NewSoloAgent("friend1")
 	approve(ctx, owner, friend1, tokenID)
 	require.NoError(t, ctx.Err)
 
@@ -59,15 +59,15 @@ func TestApprove(t *testing.T) {
 
 func TestApproveAll(t *testing.T) {
 	ctx := setup(t)
-	owner := ctx.NewSoloAgent()
+	owner := ctx.NewSoloAgent("owner")
 	tokenID := wasmtypes.HashFromBytes(owner.ScAgentID().Bytes()[:32])
 	mint(ctx, owner, tokenID)
 	require.NoError(t, ctx.Err)
 
-	friend1 := ctx.NewSoloAgent()
+	friend1 := ctx.NewSoloAgent("friend1")
 	require.False(t, isApprovedForAll(t, ctx, owner, friend1))
 
-	friend2 := ctx.NewSoloAgent()
+	friend2 := ctx.NewSoloAgent("friend2")
 	require.False(t, isApprovedForAll(t, ctx, owner, friend2))
 
 	// approve friend1
@@ -101,7 +101,7 @@ func TestApproveAll(t *testing.T) {
 
 func TestTransferFrom(t *testing.T) {
 	ctx := setup(t)
-	owner := ctx.NewSoloAgent()
+	owner := ctx.NewSoloAgent("owner")
 	tokenID := wasmtypes.HashFromBytes(owner.ScAgentID().Bytes()[:32])
 	mint(ctx, owner, tokenID)
 	require.NoError(t, ctx.Err)
@@ -113,7 +113,7 @@ func TestTransferFrom(t *testing.T) {
 	// no one approved for token
 	require.Nil(t, getApproved(t, ctx, tokenID))
 
-	friend1 := ctx.NewSoloAgent()
+	friend1 := ctx.NewSoloAgent("friend1")
 
 	// try to transfer without approval, should fail
 	transferFrom(ctx, friend1, owner, friend1, tokenID)

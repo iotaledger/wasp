@@ -25,7 +25,7 @@ const (
 
 func startAuction(t *testing.T) (*wasmsolo.SoloContext, *wasmsolo.SoloAgent, wasmtypes.ScNftID) {
 	ctx := wasmsolo.NewSoloContext(t, fairauction.ScName, fairauctionimpl.OnDispatch)
-	auctioneer := ctx.NewSoloAgent()
+	auctioneer := ctx.NewSoloAgent("auctioneer")
 	nftID := ctx.MintNFT(auctioneer, []byte("NFT metadata"))
 	require.NoError(t, ctx.Err)
 
@@ -114,7 +114,7 @@ func TestFinalizedNoBids(t *testing.T) {
 func TestFinalizedOneBidTooLow(t *testing.T) {
 	ctx, _, nftID := startAuction(t)
 
-	bidder := ctx.NewSoloAgent()
+	bidder := ctx.NewSoloAgent("bidder")
 
 	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder))
 	placeBid.Params.Nft().SetValue(nftID)
@@ -137,8 +137,8 @@ func TestFinalizedOneBidTooLow(t *testing.T) {
 func TestFinalizedOneBid(t *testing.T) {
 	ctx, _, nftID := startAuction(t)
 
-	bidder0 := ctx.NewSoloAgent()
-	bidder1 := ctx.NewSoloAgent()
+	bidder0 := ctx.NewSoloAgent("bidder0")
+	bidder1 := ctx.NewSoloAgent("bidder1")
 
 	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder0))
 	placeBid.Params.Nft().SetValue(nftID)

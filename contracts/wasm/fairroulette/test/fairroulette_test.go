@@ -4,6 +4,7 @@
 package test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -28,7 +29,7 @@ func TestBets(t *testing.T) {
 
 	var better [10]*wasmsolo.SoloAgent
 	for i := 0; i < len(better); i++ {
-		better[i] = ctx.NewSoloAgent()
+		better[i] = ctx.NewSoloAgent(fmt.Sprintf("better%d", i))
 	}
 
 	ctx.WaitForPendingRequestsMark()

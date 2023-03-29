@@ -37,7 +37,7 @@ func TestStateAfterDeploy(t *testing.T) {
 func TestDonateOnce(t *testing.T) {
 	ctx := setupTest(t)
 
-	donator1 := ctx.NewSoloAgent()
+	donator1 := ctx.NewSoloAgent("donator1")
 	donator1L1 := donator1.Balance()
 	bal := ctx.Balances(donator1)
 
@@ -64,8 +64,8 @@ func TestDonateOnce(t *testing.T) {
 func TestDonateTwice(t *testing.T) {
 	ctx := setupTest(t)
 
-	donator1 := ctx.NewSoloAgent()
-	donator2 := ctx.NewSoloAgent()
+	donator1 := ctx.NewSoloAgent("donator1")
+	donator2 := ctx.NewSoloAgent("donator2")
 	donator1L1 := donator1.Balance()
 	donator2L1 := donator2.Balance()
 	bal := ctx.Balances(donator1, donator2)

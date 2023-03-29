@@ -13,17 +13,22 @@ import (
 )
 
 type SoloAgent struct {
-	Env     *solo.Solo
-	Pair    *cryptolib.KeyPair
 	agentID isc.AgentID
+	Env     *solo.Solo
+	ID      string
+	Name    string
+	Pair    *cryptolib.KeyPair
 }
 
-func NewSoloAgent(env *solo.Solo) *SoloAgent {
+func NewSoloAgent(env *solo.Solo, name string) *SoloAgent {
 	pair, address := env.NewKeyPairWithFunds()
+	agentID := isc.NewAgentID(address)
 	return &SoloAgent{
+		agentID: agentID,
 		Env:     env,
+		ID:      agentID.String(),
+		Name:    name,
 		Pair:    pair,
-		agentID: isc.NewAgentID(address),
 	}
 }
 
