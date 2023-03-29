@@ -101,6 +101,46 @@ func initBalanceCmd() *cobra.Command {
 	return cmd
 }
 
+func initAccountNFTsCmd() *cobra.Command {
+	var node string
+	var chain string
+	cmd := &cobra.Command{
+		Use:   "nfts [<agentid>]",
+		Short: "Show NFTs owned by a given account",
+		Args:  cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			node = waspcmd.DefaultWaspNodeFallback(node)
+			chain = defaultChainFallback(chain)
+
+			var agentID isc.AgentID
+			if len(args) == 0 {
+				agentID = isc.NewAgentID(wallet.Load().Address())
+			} else {
+				var err error
+				agentID, err = isc.NewAgentIDFromString(args[0])
+				log.Check(err)
+			}
+
+			// ViewAccountNFTs
+
+			client := cliclients.WaspClient(node)
+			chainID := config.GetChain(chain)
+			nfts, _, err := client.CorecontractsApi.
+				AccountsGetAccountNFTIDs(context.Background(), chainID.String(), agentID.String()).
+				Execute() //nolint:bodyclose // false positive
+			log.Check(err)
+
+			for _, nftID := range nfts.NftIds {
+				log.Printf("%s\n", nftID)
+			}
+		},
+	}
+
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	withChainFlag(cmd, &chain)
+	return cmd
+}
+
 // baseTokensForDepositFee calculates the amount of tokens needed to pay for a deposit
 func baseTokensForDepositFee(client *apiclient.APIClient, chain string) uint64 {
 	callGovView := func(viewName string) dict.Dict {
