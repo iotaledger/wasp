@@ -354,21 +354,21 @@ func (bc *BlockchainDB) addBlock(header *types.Header, pendingTimestamp uint64) 
 	bc.setPendingTimestamp(pendingTimestamp)
 }
 
-func (bc *BlockchainDB) GetReceiptByBlockNumberAndIndex(blockNumber uint64, i uint32) *types.Receipt {
+func (bc *BlockchainDB) GetReceiptByBlockNumberAndIndex(blockNumber uint64, txIndex uint32) *types.Receipt {
 	receipts := bc.getReceiptArray(blockNumber)
-	if i >= receipts.MustLen() {
+	if txIndex >= receipts.MustLen() {
 		return nil
 	}
-	r, err := evmtypes.DecodeReceipt(receipts.MustGetAt(i))
+	r, err := evmtypes.DecodeReceipt(receipts.MustGetAt(txIndex))
 	if err != nil {
 		panic(err)
 	}
-	tx := bc.GetTransactionByBlockNumberAndIndex(blockNumber, i)
+	tx := bc.GetTransactionByBlockNumberAndIndex(blockNumber, txIndex)
 	r.TxHash = tx.Hash()
 	r.BlockHash = bc.GetBlockHashByBlockNumber(blockNumber)
 	for _, log := range r.Logs {
 		log.TxHash = r.TxHash
-		log.TxIndex = uint(i)
+		log.TxIndex = uint(txIndex)
 		log.BlockHash = r.BlockHash
 		log.BlockNumber = blockNumber
 	}
@@ -377,8 +377,8 @@ func (bc *BlockchainDB) GetReceiptByBlockNumberAndIndex(blockNumber uint64, i ui
 		r.ContractAddress = crypto.CreateAddress(from, tx.Nonce())
 	}
 	r.GasUsed = r.CumulativeGasUsed
-	if i > 0 {
-		prev, err := evmtypes.DecodeReceipt(receipts.MustGetAt(i - 1))
+	if txIndex > 0 {
+		prev, err := evmtypes.DecodeReceipt(receipts.MustGetAt(txIndex - 1))
 		if err != nil {
 			panic(err)
 		}
@@ -540,8 +540,8 @@ func (bc *BlockchainDB) GetReceiptsByBlockNumber(blockNumber uint64) []*types.Re
 	txArray := bc.getTxArray(blockNumber)
 	n := txArray.MustLen()
 	receipts := make([]*types.Receipt, n)
-	for i := uint32(0); i < n; i++ {
-		receipts[i] = bc.GetReceiptByBlockNumberAndIndex(blockNumber, i)
+	for txIndex := uint32(0); txIndex < n; txIndex++ {
+		receipts[txIndex] = bc.GetReceiptByBlockNumberAndIndex(blockNumber, txIndex)
 	}
 	return receipts
 }

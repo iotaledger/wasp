@@ -402,7 +402,8 @@ func getLogs(ctx isc.SandboxView) dict.Dict {
 	q, err := evmtypes.DecodeFilterQuery(ctx.Params().MustGet(evm.FieldFilterQuery))
 	ctx.RequireNoError(err)
 	emu := createEmulatorR(ctx)
-	logs := emu.FilterLogs(q)
+	logs, err := emu.FilterLogs(q)
+	ctx.RequireNoError(err)
 	return result(evmtypes.EncodeLogs(logs))
 }
 
