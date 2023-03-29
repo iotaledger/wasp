@@ -68,16 +68,20 @@ func Test2Chains(t *testing.T) {
 
 		require.True(t, ctx1.WaitForPendingRequests(2))
 		require.True(t, ctx2.WaitForPendingRequests(2))
-		ctx1.UpdateGasFees()
 
-		bal1.Add(testcore2, allowanceForWithdraw-ctx1.GasFee-baseTokens)
-		bal1.Chain += ctx1.GasFee
+		receipt := ctx1.Chain.LastReceipt()
+		bal1.Chain += receipt.GasFeeCharged
+		bal1.Add(testcore2, allowanceForWithdraw-receipt.GasFeeCharged-baseTokens)
 		bal1.VerifyBalances(t)
 
-		bal2.Add(accounts1, accounts.ConstDepositFeeTmp-ctx2.GasFee)
+		receipts := ctx2.Chain.GetRequestReceiptsForBlockRange(0, 0)
+		prevReceipt := receipts[len(receipts)-2]
+		lastReceipt := receipts[len(receipts)-1]
+
+		bal2.Chain += prevReceipt.GasFeeCharged + lastReceipt.GasFeeCharged
+		bal2.Originator += wasmhost.WasmStorageDeposit - prevReceipt.GasFeeCharged - allowanceForWithdraw
+		bal2.Add(accounts1, accounts.ConstDepositFeeTmp-lastReceipt.GasFeeCharged)
 		bal2.Account += baseTokens - accounts.ConstDepositFeeTmp
-		bal2.Originator += wasmhost.WasmStorageDeposit - ctx2.GasFee - allowanceForWithdraw
-		bal2.Chain += 2 * ctx2.GasFee
 		bal2.VerifyBalances(t)
 	})
 }
