@@ -153,36 +153,16 @@ func (vmctx *VMContext) withStateUpdate(f func()) {
 	vmctx.currentStateUpdate = nil
 }
 
-// TODO revert this commit
-func (vmctx *VMContext) withStateUpdateAndLog(f func()) {
-	vmctx.currentStateUpdate = NewStateUpdate()
-	f()
-	vmctx.task.Log.Debugf(vmctx.currentStateUpdate.Mutations.Dump())
-	vmctx.currentStateUpdate.Mutations.ApplyTo(vmctx.task.StateDraft)
-	vmctx.currentStateUpdate = nil
-}
-
 // CloseVMContext does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
 func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, *state.L1Commitment, time.Time, iotago.Address) {
 	vmctx.GasBurnEnable(false)
 	var rotationAddr iotago.Address
-
-	// TODO revert this commit
 	vmctx.withStateUpdate(func() {
 		rotationAddr = vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
-	})
-	vmctx.task.Log.Debugf("closeVMContext1: %s", vmctx.task.Store.ExtractBlock(vmctx.task.StateDraft).L1Commitment())
-
-	vmctx.withStateUpdateAndLog(func() {
 		vmctx.closeBlockContexts()
-	})
-	vmctx.task.Log.Debugf("closeVMContext2: %s", vmctx.task.Store.ExtractBlock(vmctx.task.StateDraft).L1Commitment())
-
-	vmctx.withStateUpdate(func() {
 		vmctx.saveInternalUTXOs()
 	})
-	vmctx.task.Log.Debugf("closeVMContext3: %s", vmctx.task.Store.ExtractBlock(vmctx.task.StateDraft).L1Commitment())
 
 	block := vmctx.task.Store.ExtractBlock(vmctx.task.StateDraft)
 
