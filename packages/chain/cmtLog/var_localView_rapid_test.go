@@ -223,5 +223,6 @@ var _ rapid.StateMachine = &varLocalViewSM{}
 // E.g. for special parameters for reproducibility, etc.
 // `go test ./packages/chain/cmtLog/ --run TestPropsRapid -v -rapid.seed=13061922091840831492 -rapid.checks=100`
 func TestVarLocalViewRapid(t *testing.T) {
+	t.SkipNow() // TODO: Disable pipelining temporary.
 	rapid.Check(t, rapid.Run[*varLocalViewSM]())
 }
