@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -145,16 +146,15 @@ func initRequestCmd() *cobra.Command {
 			reqID, err := isc.RequestIDFromString(args[0])
 			log.Check(err)
 
-			// TODO change to use the other endpoint instead
 			client := cliclients.WaspClient(node)
-			receipt, _, err := client.CorecontractsApi.
-				BlocklogGetRequestReceipt(context.Background(), config.GetChain(chain).String(), reqID.String()).
+			receipt, _, err := client.RequestsApi.
+				GetReceipt(context.Background(), config.GetChain(chain).String(), reqID.String()).
 				Execute() //nolint:bodyclose // false positive
 
 			log.Check(err)
 
 			log.Printf("Request found in block %d\n\n", receipt.BlockIndex)
-			logReceipt(receipt)
+			logResolvedReceipt(receipt)
 
 			log.Printf("\n")
 			logEventsInRequest(reqID, node, chain)
@@ -164,6 +164,43 @@ func initRequestCmd() *cobra.Command {
 	waspcmd.WithWaspNodeFlag(cmd, &node)
 	withChainFlag(cmd, &chain)
 	return cmd
+}
+
+func logResolvedReceipt(receipt *apiclient.ReceiptResponse, index ...int) {
+	reqBytes, err := iotago.DecodeHex(receipt.Request)
+	log.Check(err)
+	req, err := isc.NewRequestFromBytes(reqBytes)
+	log.Check(err)
+
+	kind := "on-ledger"
+	if req.IsOffLedger() {
+		kind = "off-ledger"
+	}
+
+	var argsTree interface{} = "(empty)"
+	if len(req.Params()) > 0 {
+		argsTree = req.Params()
+	}
+
+	errMsg := "(empty)"
+	if receipt.Error != nil {
+		errMsg = receipt.Error.Message
+	}
+
+	tree := []log.TreeItem{
+		{K: "Kind", V: kind},
+		{K: "Sender", V: req.SenderAccount().String()},
+		{K: "Contract Hname", V: req.CallTarget().Contract.String()},
+		{K: "Function Hname", V: req.CallTarget().EntryPoint.String()},
+		{K: "Arguments", V: argsTree},
+		{K: "Error", V: errMsg},
+	}
+	if len(index) > 0 {
+		log.Printf("Request #%d (%s):\n", index[0], req.ID())
+	} else {
+		log.Printf("Request %s:\n", req.ID())
+	}
+	log.PrintTree(tree, 2, 2)
 }
 
 func logEventsInRequest(reqID isc.RequestID, node, chain string) {
