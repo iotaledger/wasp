@@ -198,7 +198,7 @@ impl ScFuncs {
         }
     }
 
-    // Returns the NFT IDs for all NFTs owned by the given account.
+    // Returns all foundries owned by the given account.
     pub fn account_foundries(ctx: &impl ScViewCallContext) -> AccountFoundriesCall {
         let mut f = AccountFoundriesCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_ACCOUNT_FOUNDRIES),

@@ -177,7 +177,7 @@ func (sc Funcs) Withdraw(ctx wasmlib.ScFuncCallContext) *WithdrawCall {
 	return &WithdrawCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncWithdraw)}
 }
 
-// Returns the NFT IDs for all NFTs owned by the given account.
+// Returns all foundries owned by the given account.
 func (sc Funcs) AccountFoundries(ctx wasmlib.ScViewCallContext) *AccountFoundriesCall {
 	f := &AccountFoundriesCall{Func: wasmlib.NewScView(ctx, HScName, HViewAccountFoundries)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)

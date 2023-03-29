@@ -257,7 +257,7 @@ export class ScFuncs {
         return new WithdrawCall(ctx);
     }
 
-    // Returns the NFT IDs for all NFTs owned by the given account.
+    // Returns all foundries owned by the given account.
     static accountFoundries(ctx: wasmlib.ScViewCallContext): AccountFoundriesCall {
         const f = new AccountFoundriesCall(ctx);
         f.params = new sc.MutableAccountFoundriesParams(wasmlib.newCallParamsProxy(f.func));
