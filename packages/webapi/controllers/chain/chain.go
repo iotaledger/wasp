@@ -135,7 +135,7 @@ func (c *Controller) getState(e echo.Context) error {
 
 	state, err := c.chainService.GetState(chainID, stateKey)
 	if err != nil {
-		return apierrors.InternalServerError(err)
+		panic(err)
 	}
 
 	response := models.StateResponse{

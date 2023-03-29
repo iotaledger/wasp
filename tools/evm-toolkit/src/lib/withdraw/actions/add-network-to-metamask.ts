@@ -20,18 +20,15 @@ export async function addSelectedNetworkToMetamask(): Promise<void> {
                                 symbol: 'SMR',
                                 decimals: 18,
                             },
-                            ...($selectedNetwork.networkUrl && {rpcUrls: [$selectedNetwork.networkUrl]}),
-                            ...($selectedNetwork.blockExplorer && {blockExplorerUrls: [$selectedNetwork.blockExplorer]}),
+                            ...($selectedNetwork.networkUrl && { rpcUrls: [$selectedNetwork.networkUrl] }),
+                            ...($selectedNetwork.blockExplorer && { blockExplorerUrls: [$selectedNetwork.blockExplorer] }),
                         },
                     ],
                 });
             }
             catch (ex) {
-                showNotification({
-                    type: NotificationType.Error,
-                    message: `Failed to add selected network to wallet: ${ex.message}`,
-                });
-                console.error('Failed to add selected network to wallet: ', ex.message);
+                console.error(ex?.message);
+                throw new Error(ex?.message);
             }
         } else {
             showNotification({

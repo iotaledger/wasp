@@ -28,7 +28,6 @@ export async function pollNativeTokens() {
       get(indexerClient),
       $selectedAccount,
     );
-
   updateWithdrawStateStore({ availableNativeTokens });
 }
 

@@ -35,7 +35,7 @@ func (c *Controller) getRegisteredPeers(e echo.Context) error {
 func (c *Controller) getTrustedPeers(e echo.Context) error {
 	peers, err := c.peeringService.GetTrustedPeers()
 	if err != nil {
-		return apierrors.InternalServerError(err)
+		panic(err)
 	}
 
 	peerModels := make([]models.PeeringNodeIdentityResponse, len(peers))
@@ -85,7 +85,7 @@ func (c *Controller) trustPeer(e echo.Context) error {
 	}
 	_, err = c.peeringService.TrustPeer(trustedPeer.Name, publicKey, trustedPeer.PeeringURL)
 	if err != nil {
-		return apierrors.InternalServerError(err)
+		panic(err)
 	}
 
 	return e.NoContent(http.StatusOK)
@@ -103,7 +103,7 @@ func (c *Controller) distrustPeer(e echo.Context) error {
 			return apierrors.PeerNameNotFoundError(peer)
 		}
 
-		return apierrors.InternalServerError(err)
+		panic(err)
 	}
 
 	return e.NoContent(http.StatusOK)

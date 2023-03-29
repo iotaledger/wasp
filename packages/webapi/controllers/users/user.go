@@ -21,7 +21,7 @@ func (c *Controller) addUser(e echo.Context) error {
 	}
 
 	if err := c.userService.AddUser(addUserModel.Username, addUserModel.Password, addUserModel.Permissions); err != nil {
-		return apierrors.InternalServerError(err)
+		panic(err)
 	}
 
 	return e.NoContent(http.StatusCreated)

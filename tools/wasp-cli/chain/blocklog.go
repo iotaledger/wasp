@@ -145,6 +145,7 @@ func initRequestCmd() *cobra.Command {
 			reqID, err := isc.RequestIDFromString(args[0])
 			log.Check(err)
 
+			// TODO change to use the other endpoint instead
 			client := cliclients.WaspClient(node)
 			receipt, _, err := client.CorecontractsApi.
 				BlocklogGetRequestReceipt(context.Background(), config.GetChain(chain).String(), reqID.String()).
