@@ -158,22 +158,11 @@ func (vmctx *VMContext) withStateUpdate(f func()) {
 func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, *state.L1Commitment, time.Time, iotago.Address) {
 	vmctx.GasBurnEnable(false)
 	var rotationAddr iotago.Address
-
-	// TODO revert this commit
 	vmctx.withStateUpdate(func() {
 		rotationAddr = vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
-	})
-	vmctx.task.Log.Debugf("closeVMContext1: %s", vmctx.task.Store.ExtractBlock(vmctx.task.StateDraft).L1Commitment())
-
-	vmctx.withStateUpdate(func() {
 		vmctx.closeBlockContexts()
-	})
-	vmctx.task.Log.Debugf("closeVMContext2: %s", vmctx.task.Store.ExtractBlock(vmctx.task.StateDraft).L1Commitment())
-
-	vmctx.withStateUpdate(func() {
 		vmctx.saveInternalUTXOs()
 	})
-	vmctx.task.Log.Debugf("closeVMContext3: %s", vmctx.task.Store.ExtractBlock(vmctx.task.StateDraft).L1Commitment())
 
 	block := vmctx.task.Store.ExtractBlock(vmctx.task.StateDraft)
 
