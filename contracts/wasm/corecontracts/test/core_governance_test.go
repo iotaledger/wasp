@@ -146,6 +146,16 @@ func TestGetChainOwner(t *testing.T) {
 	assert.Equal(t, ctx.ChainOwnerID(), f.Results.ChainOwner().Value())
 }
 
+func TestGetChainNodes(t *testing.T) {
+	ctx := setupGovernance(t)
+	require.NoError(t, ctx.Err)
+
+	// TODO first set up nodes / candidates so we have something to test f.Results for
+	f := coregovernance.ScFuncs.GetChainNodes(ctx)
+	f.Func.Call()
+	require.NoError(t, ctx.Err)
+}
+
 func TestGetFeePolicy(t *testing.T) {
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)

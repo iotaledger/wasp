@@ -34,12 +34,12 @@ func (s MutableFoundryCreateNewResults) FoundrySN() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ResultFoundrySN))
 }
 
-type MapUint32ToImmutableBytes struct {
+type MapUint32ToImmutableBool struct {
 	Proxy wasmtypes.Proxy
 }
 
-func (m MapUint32ToImmutableBytes) GetBytes(key uint32) wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(m.Proxy.Key(wasmtypes.Uint32ToBytes(key)))
+func (m MapUint32ToImmutableBool) GetBool(key uint32) wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(m.Proxy.Key(wasmtypes.Uint32ToBytes(key)))
 }
 
 type ImmutableAccountFoundriesResults struct {
@@ -47,20 +47,20 @@ type ImmutableAccountFoundriesResults struct {
 }
 
 // foundry serial numbers owned by the given account
-func (s ImmutableAccountFoundriesResults) Foundries() MapUint32ToImmutableBytes {
-	return MapUint32ToImmutableBytes(s)
+func (s ImmutableAccountFoundriesResults) Foundries() MapUint32ToImmutableBool {
+	return MapUint32ToImmutableBool(s)
 }
 
-type MapUint32ToMutableBytes struct {
+type MapUint32ToMutableBool struct {
 	Proxy wasmtypes.Proxy
 }
 
-func (m MapUint32ToMutableBytes) Clear() {
+func (m MapUint32ToMutableBool) Clear() {
 	m.Proxy.ClearMap()
 }
 
-func (m MapUint32ToMutableBytes) GetBytes(key uint32) wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(m.Proxy.Key(wasmtypes.Uint32ToBytes(key)))
+func (m MapUint32ToMutableBool) GetBool(key uint32) wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(m.Proxy.Key(wasmtypes.Uint32ToBytes(key)))
 }
 
 type MutableAccountFoundriesResults struct {
@@ -72,8 +72,8 @@ func NewMutableAccountFoundriesResults() MutableAccountFoundriesResults {
 }
 
 // foundry serial numbers owned by the given account
-func (s MutableAccountFoundriesResults) Foundries() MapUint32ToMutableBytes {
-	return MapUint32ToMutableBytes(s)
+func (s MutableAccountFoundriesResults) Foundries() MapUint32ToMutableBool {
+	return MapUint32ToMutableBool(s)
 }
 
 type ImmutableAccountNFTAmountResults struct {
@@ -196,12 +196,12 @@ func (s MutableAccountNFTsInCollectionResults) NftIDs() ArrayOfMutableNftID {
 	return ArrayOfMutableNftID{Proxy: s.Proxy.Root(ResultNftIDs)}
 }
 
-type MapAgentIDToImmutableBytes struct {
+type MapAgentIDToImmutableBool struct {
 	Proxy wasmtypes.Proxy
 }
 
-func (m MapAgentIDToImmutableBytes) GetBytes(key wasmtypes.ScAgentID) wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(m.Proxy.Key(wasmtypes.AgentIDToBytes(key)))
+func (m MapAgentIDToImmutableBool) GetBool(key wasmtypes.ScAgentID) wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(m.Proxy.Key(wasmtypes.AgentIDToBytes(key)))
 }
 
 type ImmutableAccountsResults struct {
@@ -209,20 +209,20 @@ type ImmutableAccountsResults struct {
 }
 
 // agent IDs
-func (s ImmutableAccountsResults) AllAccounts() MapAgentIDToImmutableBytes {
-	return MapAgentIDToImmutableBytes(s)
+func (s ImmutableAccountsResults) AllAccounts() MapAgentIDToImmutableBool {
+	return MapAgentIDToImmutableBool(s)
 }
 
-type MapAgentIDToMutableBytes struct {
+type MapAgentIDToMutableBool struct {
 	Proxy wasmtypes.Proxy
 }
 
-func (m MapAgentIDToMutableBytes) Clear() {
+func (m MapAgentIDToMutableBool) Clear() {
 	m.Proxy.ClearMap()
 }
 
-func (m MapAgentIDToMutableBytes) GetBytes(key wasmtypes.ScAgentID) wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(m.Proxy.Key(wasmtypes.AgentIDToBytes(key)))
+func (m MapAgentIDToMutableBool) GetBool(key wasmtypes.ScAgentID) wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(m.Proxy.Key(wasmtypes.AgentIDToBytes(key)))
 }
 
 type MutableAccountsResults struct {
@@ -234,8 +234,8 @@ func NewMutableAccountsResults() MutableAccountsResults {
 }
 
 // agent IDs
-func (s MutableAccountsResults) AllAccounts() MapAgentIDToMutableBytes {
-	return MapAgentIDToMutableBytes(s)
+func (s MutableAccountsResults) AllAccounts() MapAgentIDToMutableBool {
+	return MapAgentIDToMutableBool(s)
 }
 
 type MapTokenIDToImmutableBigInt struct {
@@ -368,12 +368,12 @@ func (s MutableGetAccountNonceResults) AccountNonce() wasmtypes.ScMutableUint64 
 	return wasmtypes.NewScMutableUint64(s.Proxy.Root(ResultAccountNonce))
 }
 
-type MapTokenIDToImmutableBytes struct {
+type MapTokenIDToImmutableBool struct {
 	Proxy wasmtypes.Proxy
 }
 
-func (m MapTokenIDToImmutableBytes) GetBytes(key wasmtypes.ScTokenID) wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(m.Proxy.Key(wasmtypes.TokenIDToBytes(key)))
+func (m MapTokenIDToImmutableBool) GetBool(key wasmtypes.ScTokenID) wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(m.Proxy.Key(wasmtypes.TokenIDToBytes(key)))
 }
 
 type ImmutableGetNativeTokenIDRegistryResults struct {
@@ -381,20 +381,20 @@ type ImmutableGetNativeTokenIDRegistryResults struct {
 }
 
 // token IDs
-func (s ImmutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToImmutableBytes {
-	return MapTokenIDToImmutableBytes(s)
+func (s ImmutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToImmutableBool {
+	return MapTokenIDToImmutableBool(s)
 }
 
-type MapTokenIDToMutableBytes struct {
+type MapTokenIDToMutableBool struct {
 	Proxy wasmtypes.Proxy
 }
 
-func (m MapTokenIDToMutableBytes) Clear() {
+func (m MapTokenIDToMutableBool) Clear() {
 	m.Proxy.ClearMap()
 }
 
-func (m MapTokenIDToMutableBytes) GetBytes(key wasmtypes.ScTokenID) wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(m.Proxy.Key(wasmtypes.TokenIDToBytes(key)))
+func (m MapTokenIDToMutableBool) GetBool(key wasmtypes.ScTokenID) wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(m.Proxy.Key(wasmtypes.TokenIDToBytes(key)))
 }
 
 type MutableGetNativeTokenIDRegistryResults struct {
@@ -406,8 +406,8 @@ func NewMutableGetNativeTokenIDRegistryResults() MutableGetNativeTokenIDRegistry
 }
 
 // token IDs
-func (s MutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToMutableBytes {
-	return MapTokenIDToMutableBytes(s)
+func (s MutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToMutableBool {
+	return MapTokenIDToMutableBool(s)
 }
 
 type ImmutableNftDataResults struct {

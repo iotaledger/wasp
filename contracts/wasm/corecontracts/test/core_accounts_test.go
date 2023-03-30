@@ -257,6 +257,58 @@ func TestFoundryModifySupply(t *testing.T) {
 	require.NoError(t, ctx.Err)
 }
 
+func TestAccountFoundries(t *testing.T) {
+	ctx := setupAccounts(t)
+	user0 := ctx.NewSoloAgent("user0")
+	user1 := ctx.NewSoloAgent("user1")
+
+	mintAmount := wasmtypes.NewScBigInt(1000)
+	var foundries0 []*wasmsolo.SoloFoundry
+	for i := 0; i < 10; i++ {
+		foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
+		require.NoError(t, err)
+		foundries0 = append(foundries0, foundry)
+		err = foundry.Mint(mintAmount)
+		require.NoError(t, err)
+	}
+
+	var foundries1 []*wasmsolo.SoloFoundry
+	for i := 0; i < 3; i++ {
+		foundry, err := ctx.NewSoloFoundry(mintAmount, user1)
+		require.NoError(t, err)
+		foundries1 = append(foundries1, foundry)
+		err = foundry.Mint(mintAmount)
+		require.NoError(t, err)
+	}
+
+	f := coreaccounts.ScFuncs.AccountFoundries(ctx)
+	f.Params.AgentID().SetValue(user0.ScAgentID())
+	f.Func.Call()
+	require.NoError(t, ctx.Err)
+	for _, foundry := range foundries0 {
+		require.True(t, f.Results.Foundries().GetBool(foundry.SN()).Value())
+	}
+
+	f.Params.AgentID().SetValue(user1.ScAgentID())
+	f.Func.Call()
+	require.NoError(t, ctx.Err)
+	for _, foundry := range foundries1 {
+		require.True(t, f.Results.Foundries().GetBool(foundry.SN()).Value())
+	}
+}
+
+func TestAccountNFTAmount(t *testing.T) {
+	// TODO add test later
+}
+
+func TestAccountNFTAmountInCollection(t *testing.T) {
+	// TODO add test later
+}
+
+func TestAccountNFTsInCollection(t *testing.T) {
+	// TODO add test later
+}
+
 func TestBalance(t *testing.T) {
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent("user0")
@@ -419,9 +471,9 @@ func TestAccounts(t *testing.T) {
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	allAccounts := f.Results.AllAccounts()
-	assert.True(t, allAccounts.GetBytes(user0.ScAgentID()).Exists())
-	assert.True(t, allAccounts.GetBytes(user1.ScAgentID()).Exists())
-	assert.False(t, allAccounts.GetBytes(ctx.NewSoloAgent("dummy").ScAgentID()).Exists())
+	assert.True(t, allAccounts.GetBool(user0.ScAgentID()).Value())
+	assert.True(t, allAccounts.GetBool(user1.ScAgentID()).Value())
+	assert.False(t, allAccounts.GetBool(ctx.NewSoloAgent("dummy").ScAgentID()).Value())
 }
 
 func TestGetAccountNonce(t *testing.T) {
@@ -464,10 +516,10 @@ func TestGetNativeTokenIDRegistry(t *testing.T) {
 	f := coreaccounts.ScFuncs.GetNativeTokenIDRegistry(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	assert.True(t, f.Results.Mapping().GetBytes(tokenID0).Exists())
-	assert.True(t, f.Results.Mapping().GetBytes(tokenID1).Exists())
+	assert.True(t, f.Results.Mapping().GetBool(tokenID0).Value())
+	assert.True(t, f.Results.Mapping().GetBool(tokenID1).Value())
 	notExistTokenID := wasmtypes.TokenIDFromString("0x08f824508968d585ede1d154d34ba0d966ee03c928670fb85bd72e2924f67137890100000000")
-	assert.False(t, f.Results.Mapping().GetBytes(notExistTokenID).Exists())
+	assert.False(t, f.Results.Mapping().GetBool(notExistTokenID).Value())
 }
 
 func TestFoundryOutput(t *testing.T) {

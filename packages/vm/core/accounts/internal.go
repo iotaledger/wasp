@@ -82,8 +82,8 @@ func AccountExists(state kv.KVStoreReader, agentID isc.AgentID) bool {
 
 func allAccountsAsDict(state kv.KVStoreReader) dict.Dict {
 	ret := dict.New()
-	allAccountsMapR(state).MustIterate(func(agentID []byte, val []byte) bool {
-		ret.Set(kv.Key(agentID), []byte{0xff})
+	allAccountsMapR(state).MustIterateKeys(func(agentID []byte) bool {
+		ret.Set(kv.Key(agentID), []byte{0x01})
 		return true
 	})
 	return ret
