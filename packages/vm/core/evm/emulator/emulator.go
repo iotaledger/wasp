@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/params"
 	lru "github.com/hashicorp/golang-lru/v2"
 
@@ -178,13 +179,24 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(boo
 	// run the EVM code on a buffered state (so that writes are not committed)
 	statedb := e.StateDB().Buffered().StateDB()
 
-	return e.applyMessage(callMsg{call}, statedb, pendingHeader, gasBurnEnable)
+	return e.applyMessage(callMsg{call}, statedb, pendingHeader, gasBurnEnable, nil)
 }
 
-func (e *EVMEmulator) applyMessage(msg callMsg, statedb vm.StateDB, header *types.Header, gasBurnEnable func(bool)) (res *core.ExecutionResult, err error) {
+func (e *EVMEmulator) applyMessage(
+	msg callMsg,
+	statedb vm.StateDB,
+	header *types.Header,
+	gasBurnEnable func(bool),
+	tracer tracers.Tracer,
+) (res *core.ExecutionResult, err error) {
 	blockContext := core.NewEVMBlockContext(header, e.ChainContext(), nil)
 	txContext := core.NewEVMTxContext(msg)
-	vmEnv := vm.NewEVM(blockContext, txContext, statedb, e.chainConfig, e.vmConfig)
+
+	vmConfig := e.vmConfig
+	vmConfig.Tracer = tracer
+	vmConfig.Debug = vmConfig.Tracer != nil
+
+	vmEnv := vm.NewEVM(blockContext, txContext, statedb, e.chainConfig, vmConfig)
 
 	if msg.CallMsg.Gas > e.gasLimits.Call {
 		msg.CallMsg.Gas = e.gasLimits.Call
@@ -210,7 +222,11 @@ func (e *EVMEmulator) applyMessage(msg callMsg, statedb vm.StateDB, header *type
 	return res, err
 }
 
-func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasBurnEnable func(bool)) (*types.Receipt, *core.ExecutionResult, error) {
+func (e *EVMEmulator) SendTransaction(
+	tx *types.Transaction,
+	gasBurnEnable func(bool),
+	tracer tracers.Tracer,
+) (*types.Receipt, *core.ExecutionResult, error) {
 	buf := e.StateDB().Buffered()
 	statedb := buf.StateDB()
 	pendingHeader := e.BlockchainDB().GetPendingHeader()
@@ -243,7 +259,13 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasBurnEnable func(
 		},
 	}
 
-	result, err := e.applyMessage(msgWithZeroGasPrice, statedb, pendingHeader, gasBurnEnable)
+	result, err := e.applyMessage(
+		msgWithZeroGasPrice,
+		statedb,
+		pendingHeader,
+		gasBurnEnable,
+		tracer,
+	)
 
 	gasUsed := uint64(0)
 	if result != nil {

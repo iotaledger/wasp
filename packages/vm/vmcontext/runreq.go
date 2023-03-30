@@ -182,7 +182,7 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 			}
 			callErr = panicErr
 			vmctx.Debugf("recovered panic from contract call: %v", panicErr)
-			if !vmctx.task.EstimateGasMode {
+			if vmctx.task.WillProduceBlock() {
 				vmctx.Debugf(string(debug.Stack()))
 			}
 		}()

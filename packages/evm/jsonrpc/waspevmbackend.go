@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
@@ -93,11 +94,28 @@ func (b *WaspEVMBackend) evictWhenExpired(txHash common.Hash) {
 }
 
 func (b *WaspEVMBackend) EVMCall(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) ([]byte, error) {
-	return chainutil.Call(b.chain, aliasOutput, callMsg)
+	return chainutil.EVMCall(b.chain, aliasOutput, callMsg)
 }
 
 func (b *WaspEVMBackend) EVMEstimateGas(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) (uint64, error) {
-	return chainutil.EstimateGas(b.chain, aliasOutput, callMsg)
+	return chainutil.EVMEstimateGas(b.chain, aliasOutput, callMsg)
+}
+
+func (b *WaspEVMBackend) EVMTraceTransaction(
+	aliasOutput *isc.AliasOutputWithID,
+	blockTime time.Time,
+	iscRequestsInBlock []isc.Request,
+	txIndex uint64,
+	tracer tracers.Tracer,
+) error {
+	return chainutil.EVMTraceTransaction(
+		b.chain,
+		aliasOutput,
+		blockTime,
+		iscRequestsInBlock,
+		txIndex,
+		tracer,
+	)
 }
 
 func (b *WaspEVMBackend) EVMGasPrice() *big.Int {

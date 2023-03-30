@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
-// GetRequestIDsForLastBlock reads blocklog from chain state and returns request IDs settled in specific block
+// GetRequestIDsForBlock reads blocklog from chain state and returns request IDs settled in specific block
 // Can only panic on DB error of internal error
 func GetRequestIDsForBlock(stateReader kv.KVStoreReader, blockIndex uint32) ([]isc.RequestID, error) {
 	if blockIndex == 0 {

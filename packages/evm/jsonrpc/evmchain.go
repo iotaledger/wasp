@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -565,16 +566,81 @@ func (e *EVMChain) SubscribeLogs(q *ethereum.FilterQuery, ch chan<- []*types.Log
 	}).Unhook
 }
 
+func (e *EVMChain) iscRequestsInBlock(blockIndex uint32) (*blocklog.BlockInfo, []isc.Request, error) {
+	iscState, err := e.backend.ISCStateByBlockIndex(blockIndex)
+	if err != nil {
+		return nil, nil, err
+	}
+	reqIDs, err := blocklog.GetRequestIDsForBlock(iscState, blockIndex)
+	if err != nil {
+		return nil, nil, err
+	}
+	reqs := make([]isc.Request, len(reqIDs))
+	for i, reqID := range reqIDs {
+		var receipt *blocklog.RequestReceipt
+		receipt, err = blocklog.GetRequestReceipt(iscState, reqID)
+		if err != nil {
+			return nil, nil, err
+		}
+		reqs[i] = receipt.Request
+	}
+	blocklogStatePartition := subrealm.NewReadOnly(iscState, kv.Key(blocklog.Contract.Hname().Bytes()))
+	block, err := blocklog.GetBlockInfo(blocklogStatePartition, blockIndex)
+	if err != nil {
+		return nil, nil, err
+	}
+	return block, reqs, nil
+}
+
+func (e *EVMChain) TraceTransaction(txHash common.Hash, config *tracers.TraceConfig) (any, error) {
+	tracerType := "callTracer"
+	if config.Tracer != nil {
+		tracerType = *config.Tracer
+	}
+	tracer, err := newTracer(tracerType, config.TracerConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	_, _, blockNumber, txIndex, err := e.TransactionByHash(txHash)
+	if err != nil {
+		return nil, err
+	}
+	if blockNumber == 0 {
+		return nil, errors.New("tx not found")
+	}
+
+	blockIndex, err := iscBlockIndexByEVMBlockNumber(big.NewInt(0).SetUint64(blockNumber))
+	if err != nil {
+		return nil, err
+	}
+	iscBlock, iscRequestsInBlock, err := e.iscRequestsInBlock(blockIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	err = e.backend.EVMTraceTransaction(
+		iscBlock.PreviousAliasOutput,
+		iscBlock.Timestamp,
+		iscRequestsInBlock,
+		txIndex,
+		tracer,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return tracer.GetResult()
+}
+
+var maxUint32 = big.NewInt(math.MaxUint32)
+
 // the first EVM block (number 0) is "minted" at ISC block index 1 (init chain)
 func iscBlockIndexByEVMBlockNumber(blockNumber *big.Int) (uint32, error) {
-	if !blockNumber.IsUint64() {
+	if blockNumber.Cmp(maxUint32) > 0 {
 		return 0, fmt.Errorf("block number is too large: %s", blockNumber)
 	}
-	n := blockNumber.Uint64()
-	if n > math.MaxUint32-1 {
-		return 0, fmt.Errorf("block number is too large: %s", blockNumber)
-	}
-	return uint32(n), nil
+	return uint32(blockNumber.Uint64()), nil
 }
 
 // the first EVM block (number 0) is "minted" at ISC block index 1 (init chain)

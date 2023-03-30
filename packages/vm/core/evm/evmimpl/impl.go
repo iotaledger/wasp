@@ -113,10 +113,16 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 
 	ctx.Requiref(tx.ChainId().Uint64() == uint64(bctx.emu.BlockchainDB().GetChainID()), "chainId mismatch")
 
+	tracer := getTracer(ctx, bctx)
+
 	// Send the tx to the emulator.
 	// ISC gas burn will be enabled right before executing the tx, and disabled right after,
 	// so that ISC magic calls are charged gas.
-	receipt, result, err := bctx.emu.SendTransaction(tx, ctx.Privileged().GasBurnEnable)
+	receipt, result, err := bctx.emu.SendTransaction(
+		tx,
+		ctx.Privileged().GasBurnEnable,
+		tracer,
+	)
 
 	// burn EVM gas as ISC gas
 	var gasErr error
