@@ -238,7 +238,7 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 	availableTokens := ctx.Allowance().BaseTokens()
 
 	// requiredStorageDepositDeposit := ctx.EstimateRequiredStorageDepositDeposit(request)
-	if availableTokens < 1000 {
+	if availableTokens < 2000 {
 		ctx.Panic("not enough base tokens sent to cover storage deposit")
 	}
 	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
