@@ -109,137 +109,60 @@ func (a *Array16) setSize(n uint16) {
 	}
 }
 
-func (a *Array16) addToSize(amount int) (uint16, error) {
-	prevSize, err := a.Len()
-	if err != nil {
-		return 0, err
-	}
+func (a *Array16) addToSize(amount int) uint16 {
+	prevSize := a.Len()
 	newSize := int(prevSize) + amount
 	if newSize > math.MaxUint16 {
-		return 0, ErrArray16Overflow
+		panic(ErrArray16Overflow)
 	}
 	a.setSize(uint16(newSize))
-	return prevSize, nil
+	return prevSize
 }
 
 // Len == 0/empty/non-existent are equivalent
-func (a *ImmutableArray16) Len() (uint16, error) {
-	v, err := a.kvr.Get(a.getSizeKey())
-	if err != nil {
-		return 0, err
-	}
+func (a *ImmutableArray16) Len() uint16 {
+	v := a.kvr.Get(a.getSizeKey())
 	if v == nil {
-		return 0, nil
+		return 0
 	}
-	return bytesToUint16(v), nil
-}
-
-func (a *ImmutableArray16) MustLen() uint16 {
-	n, err := a.Len()
-	if err != nil {
-		panic(err)
-	}
-	return n
+	return bytesToUint16(v)
 }
 
 // adds to the end of the list
-func (a *Array16) Push(value []byte) error {
-	prevSize, err := a.addToSize(1)
-	if err != nil {
-		return err
-	}
+func (a *Array16) Push(value []byte) {
+	prevSize := a.addToSize(1)
 	k := a.getArray16ElemKey(prevSize)
 	a.kvw.Set(k, value)
-	return nil
 }
 
-func (a *Array16) MustPush(value []byte) {
-	err := a.Push(value)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (a *Array16) Extend(other *ImmutableArray16) error {
-	otherLen, err := other.Len()
-	if err != nil {
-		return err
-	}
+func (a *Array16) Extend(other *ImmutableArray16) {
+	otherLen := other.Len()
 	for i := uint16(0); i < otherLen; i++ {
-		v, _ := other.GetAt(i)
-		err = a.Push(v)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (a *Array16) MustExtend(other *ImmutableArray16) {
-	err := a.Extend(other)
-	if err != nil {
-		panic(err)
+		a.Push(other.GetAt(i))
 	}
 }
 
 // TODO implement with DelPrefix
-func (a *Array16) Erase() error {
-	n, err := a.Len()
-	if err != nil {
-		return err
-	}
+func (a *Array16) Erase() {
+	n := a.Len()
 	for i := uint16(0); i < n; i++ {
 		a.kvw.Del(a.getArray16ElemKey(i))
 	}
 	a.setSize(0)
-	return nil
 }
 
-func (a *Array16) MustErase() {
-	err := a.Erase()
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (a *ImmutableArray16) GetAt(idx uint16) ([]byte, error) {
-	n, err := a.Len()
-	if err != nil {
-		return nil, err
-	}
+func (a *ImmutableArray16) GetAt(idx uint16) []byte {
+	n := a.Len()
 	if idx >= n {
-		return nil, fmt.Errorf("index %d out of range for array of len %d", idx, n)
+		panic(fmt.Errorf("index %d out of range for array of len %d", idx, n))
 	}
-	ret, err := a.kvr.Get(a.getArray16ElemKey(idx))
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
+	return a.kvr.Get(a.getArray16ElemKey(idx))
 }
 
-func (a *ImmutableArray16) MustGetAt(idx uint16) []byte {
-	ret, err := a.GetAt(idx)
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-func (a *Array16) SetAt(idx uint16, value []byte) error {
-	n, err := a.Len()
-	if err != nil {
-		return err
-	}
+func (a *Array16) SetAt(idx uint16, value []byte) {
+	n := a.Len()
 	if idx >= n {
-		return fmt.Errorf("index %d out of range for array of len %d", idx, n)
+		panic(fmt.Errorf("index %d out of range for array of len %d", idx, n))
 	}
 	a.kvw.Set(a.getArray16ElemKey(idx), value)
-	return nil
-}
-
-func (a *Array16) MustSetAt(idx uint16, value []byte) {
-	err := a.SetAt(idx, value)
-	if err != nil {
-		panic(err)
-	}
 }

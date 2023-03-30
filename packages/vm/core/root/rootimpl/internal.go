@@ -12,7 +12,7 @@ import (
 
 // isAuthorizedToDeploy checks if caller is authorized to deploy smart contract
 func isAuthorizedToDeploy(ctx isc.Sandbox) bool {
-	permissionsEnabled, err := codec.DecodeBool(ctx.State().MustGet(root.StateVarDeployPermissionsEnabled))
+	permissionsEnabled, err := codec.DecodeBool(ctx.State().Get(root.StateVarDeployPermissionsEnabled))
 	if err != nil {
 		return false
 	}
@@ -30,15 +30,15 @@ func isAuthorizedToDeploy(ctx isc.Sandbox) bool {
 		return true
 	}
 
-	return collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustHasAt(caller.Bytes())
+	return collections.NewMap(ctx.State(), root.StateVarDeployPermissions).HasAt(caller.Bytes())
 }
 
 func storeContractRecord(state kv.KVStore, rec *root.ContractRecord) {
 	hname := isc.Hn(rec.Name)
 	// storing contract record in the registry
 	contractRegistry := root.GetContractRegistry(state)
-	if contractRegistry.MustHasAt(hname.Bytes()) {
+	if contractRegistry.HasAt(hname.Bytes()) {
 		panic(fmt.Sprintf("contract '%s'/%s already exists", rec.Name, hname.String()))
 	}
-	contractRegistry.MustSetAt(hname.Bytes(), rec.Bytes())
+	contractRegistry.SetAt(hname.Bytes(), rec.Bytes())
 }

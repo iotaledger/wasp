@@ -97,7 +97,7 @@ func (s *StateDB) GetBalance(addr common.Address) *big.Int {
 }
 
 func (s *StateDB) GetNonce(addr common.Address) uint64 {
-	n, err := codec.DecodeUint64(s.kv.MustGet(accountNonceKey(addr)), 0)
+	n, err := codec.DecodeUint64(s.kv.Get(accountNonceKey(addr)), 0)
 	if err != nil {
 		panic(err)
 	}
@@ -114,7 +114,7 @@ func (s *StateDB) GetCodeHash(addr common.Address) common.Hash {
 }
 
 func (s *StateDB) GetCode(addr common.Address) []byte {
-	return s.kv.MustGet(accountCodeKey(addr))
+	return s.kv.Get(accountCodeKey(addr))
 }
 
 func (s *StateDB) SetCode(addr common.Address, code []byte) {
@@ -150,7 +150,7 @@ func (s *StateDB) GetCommittedState(addr common.Address, key common.Hash) common
 }
 
 func (s *StateDB) GetState(addr common.Address, key common.Hash) common.Hash {
-	return common.BytesToHash(s.kv.MustGet(accountStateKey(addr, key)))
+	return common.BytesToHash(s.kv.Get(accountStateKey(addr, key)))
 }
 
 func (s *StateDB) SetState(addr common.Address, key, value common.Hash) {
@@ -166,7 +166,7 @@ func (s *StateDB) Suicide(addr common.Address) bool {
 	s.kv.Del(accountCodeKey(addr))
 
 	keys := make([]kv.Key, 0)
-	s.kv.MustIterateKeys(accountKey(keyAccountState, addr), func(key kv.Key) bool {
+	s.kv.IterateKeys(accountKey(keyAccountState, addr), func(key kv.Key) bool {
 		keys = append(keys, key)
 		return true
 	})
@@ -184,13 +184,13 @@ func (s *StateDB) Suicide(addr common.Address) bool {
 }
 
 func (s *StateDB) HasSuicided(addr common.Address) bool {
-	return s.kv.MustHas(accountSuicidedKey(addr))
+	return s.kv.Has(accountSuicidedKey(addr))
 }
 
 // Exist reports whether the given account exists in state.
 // Notably this should also return true for suicided accounts.
 func (s *StateDB) Exist(addr common.Address) bool {
-	return s.kv.MustHas(accountNonceKey(addr))
+	return s.kv.Has(accountNonceKey(addr))
 }
 
 // Empty returns whether the given account is empty. Empty

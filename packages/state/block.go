@@ -80,7 +80,7 @@ func (b *block) PreviousL1Commitment() *L1Commitment {
 }
 
 func (b *block) StateIndex() uint32 {
-	return codec.MustDecodeUint32(b.MutationsReader().MustGet(kv.Key(coreutil.StatePrefixBlockIndex)))
+	return codec.MustDecodeUint32(b.MutationsReader().Get(kv.Key(coreutil.StatePrefixBlockIndex)))
 }
 
 func (b *block) essenceBytes() []byte {

@@ -24,7 +24,7 @@ func nativeTokensMap(state kv.KVStore, accountKey kv.Key) *collections.Map {
 
 func getNativeTokenAmount(state kv.KVStoreReader, accountKey kv.Key, tokenID iotago.NativeTokenID) *big.Int {
 	r := new(big.Int)
-	b := nativeTokensMapR(state, accountKey).MustGetAt(tokenID[:])
+	b := nativeTokensMapR(state, accountKey).GetAt(tokenID[:])
 	if len(b) > 0 {
 		r.SetBytes(b)
 	}
@@ -33,9 +33,9 @@ func getNativeTokenAmount(state kv.KVStoreReader, accountKey kv.Key, tokenID iot
 
 func setNativeTokenAmount(state kv.KVStore, accountKey kv.Key, tokenID iotago.NativeTokenID, n *big.Int) {
 	if n.Sign() == 0 {
-		nativeTokensMap(state, accountKey).MustDelAt(tokenID[:])
+		nativeTokensMap(state, accountKey).DelAt(tokenID[:])
 	} else {
-		nativeTokensMap(state, accountKey).MustSetAt(tokenID[:], codec.EncodeBigIntAbs(n))
+		nativeTokensMap(state, accountKey).SetAt(tokenID[:], codec.EncodeBigIntAbs(n))
 	}
 }
 
@@ -49,7 +49,7 @@ func GetNativeTokenBalanceTotal(state kv.KVStoreReader, nativeTokenID iotago.Nat
 
 func GetNativeTokens(state kv.KVStoreReader, agentID isc.AgentID) iotago.NativeTokens {
 	ret := iotago.NativeTokens{}
-	nativeTokensMapR(state, accountKey(agentID)).MustIterate(func(idBytes []byte, val []byte) bool {
+	nativeTokensMapR(state, accountKey(agentID)).Iterate(func(idBytes []byte, val []byte) bool {
 		ret = append(ret, &iotago.NativeToken{
 			ID:     isc.MustNativeTokenIDFromBytes(idBytes),
 			Amount: new(big.Int).SetBytes(val),

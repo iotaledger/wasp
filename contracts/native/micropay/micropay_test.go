@@ -115,13 +115,13 @@ package micropay
 // 		ParamServiceAddress, providerAddr,
 // 	)
 // 	require.NoError(t, err)
-// 	warrant, err := codec.DecodeUint64(ret.MustGet(ParamWarrant))
+// 	warrant, err := codec.DecodeUint64(ret.Get(ParamWarrant))
 // 	require.NoError(t, err)
 // 	require.EqualValues(t, 600+600, int(warrant))
 
-// 	require.False(t, ret.MustHas(ParamRevoked))
+// 	require.False(t, ret.Has(ParamRevoked))
 
-// 	require.False(t, ret.MustHas(ParamLastOrd))
+// 	require.False(t, ret.Has(ParamLastOrd))
 // }
 
 // func TestRevokeWarrant(t *testing.T) {
@@ -159,11 +159,11 @@ package micropay
 // 		ParamServiceAddress, providerAddr,
 // 	)
 // 	require.NoError(t, err)
-// 	warrant, err := codec.DecodeUint64(ret.MustGet(ParamWarrant))
+// 	warrant, err := codec.DecodeUint64(ret.Get(ParamWarrant))
 // 	require.NoError(t, err)
 // 	require.EqualValues(t, 600, warrant)
 
-// 	require.False(t, ret.MustHas(ParamRevoked))
+// 	require.False(t, ret.Has(ParamRevoked))
 
 // 	req = solo.NewCallParams("micropay", FuncRevokeWarrant.Name,
 // 		ParamServiceAddress, providerAddr,
@@ -178,11 +178,11 @@ package micropay
 // 		ParamServiceAddress, providerAddr,
 // 	)
 // 	require.NoError(t, err)
-// 	warrant, err = codec.DecodeUint64(ret.MustGet(ParamWarrant))
+// 	warrant, err = codec.DecodeUint64(ret.Get(ParamWarrant))
 // 	require.NoError(t, err)
 // 	require.EqualValues(t, 600, warrant)
 
-// 	_, err = codec.DecodeInt64(ret.MustGet(ParamRevoked))
+// 	_, err = codec.DecodeInt64(ret.Get(ParamRevoked))
 // 	require.NoError(t, err)
 
 // 	env.AdvanceClockBy(31 * time.Minute)
@@ -193,11 +193,11 @@ package micropay
 // 		ParamServiceAddress, providerAddr,
 // 	)
 // 	require.NoError(t, err)
-// 	require.False(t, ret.MustHas(ParamWarrant))
+// 	require.False(t, ret.Has(ParamWarrant))
 
-// 	require.False(t, ret.MustHas(ParamRevoked))
+// 	require.False(t, ret.Has(ParamRevoked))
 
-// 	require.False(t, ret.MustHas(ParamLastOrd))
+// 	require.False(t, ret.Has(ParamLastOrd))
 // }
 
 // func TestPayment(t *testing.T) {
@@ -235,11 +235,11 @@ package micropay
 // 		ParamServiceAddress, providerAddr,
 // 	)
 // 	require.NoError(t, err)
-// 	w, err := codec.DecodeUint64(res.MustGet(ParamWarrant))
+// 	w, err := codec.DecodeUint64(res.Get(ParamWarrant))
 // 	require.NoError(t, err)
 // 	require.EqualValues(t, 600, w)
 
-// 	require.False(t, res.MustHas(ParamRevoked))
+// 	require.False(t, res.Has(ParamRevoked))
 
 // 	pay1 := NewPayment(uint32(time.Now().Unix()), 42, providerAddr, payer).Bytes()
 // 	time.Sleep(1 * time.Second)
@@ -261,13 +261,13 @@ package micropay
 // 		ParamServiceAddress, providerAddr,
 // 	)
 // 	require.NoError(t, err)
-// 	warrant, err := codec.DecodeInt64(res.MustGet(ParamWarrant))
+// 	warrant, err := codec.DecodeInt64(res.Get(ParamWarrant))
 // 	require.NoError(t, err)
 // 	require.EqualValues(t, 600-42-41, warrant)
 
-// 	require.False(t, res.MustHas(ParamRevoked))
+// 	require.False(t, res.Has(ParamRevoked))
 
-// 	lastOrd, err := codec.DecodeInt64(res.MustGet(ParamLastOrd))
+// 	lastOrd, err := codec.DecodeInt64(res.Get(ParamLastOrd))
 // 	require.NoError(t, err)
 // 	require.EqualValues(t, last, lastOrd)
 // }

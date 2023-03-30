@@ -199,7 +199,7 @@ func testSpamCallViewWasm(t *testing.T, env *ChainEnv) {
 				return
 			}
 
-			v, err := codec.DecodeInt64(r.MustGet(inccounter.VarCounter))
+			v, err := codec.DecodeInt64(r.Get(inccounter.VarCounter))
 			if err == nil && v != 1 {
 				err = errors.New("v != 1")
 			}

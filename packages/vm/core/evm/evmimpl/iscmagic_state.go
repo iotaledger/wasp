@@ -24,7 +24,7 @@ func keyPrivileged(addr common.Address) kv.Key {
 
 func isCallerPrivileged(ctx isc.SandboxBase, addr common.Address) bool {
 	state := iscMagicSubrealmR(ctx.StateR())
-	return state.MustHas(keyPrivileged(addr))
+	return state.Has(keyPrivileged(addr))
 }
 
 func addToPrivileged(s kv.KVStore, addr common.Address) {
@@ -40,13 +40,13 @@ func keyAllowance(from, to common.Address) kv.Key {
 func getAllowance(ctx isc.SandboxBase, from, to common.Address) *isc.Assets {
 	state := iscMagicSubrealmR(ctx.StateR())
 	key := keyAllowance(from, to)
-	return isc.MustAssetsFromBytes(state.MustGet(key))
+	return isc.MustAssetsFromBytes(state.Get(key))
 }
 
 func addToAllowance(ctx isc.Sandbox, from, to common.Address, add *isc.Assets) {
 	state := iscMagicSubrealm(ctx.State())
 	key := keyAllowance(from, to)
-	allowance := isc.MustAssetsFromBytes(state.MustGet(key))
+	allowance := isc.MustAssetsFromBytes(state.Get(key))
 	allowance.Add(add)
 	state.Set(key, allowance.Bytes())
 }
@@ -55,7 +55,7 @@ func subtractFromAllowance(ctx isc.Sandbox, from, to common.Address, taken *isc.
 	state := iscMagicSubrealm(ctx.State())
 	key := keyAllowance(from, to)
 
-	remaining := isc.MustAssetsFromBytes(state.MustGet(key))
+	remaining := isc.MustAssetsFromBytes(state.Get(key))
 	if taken.IsEmpty() {
 		taken = remaining.Clone()
 	}
@@ -83,7 +83,7 @@ func addERC20ExternalNativeTokensAddress(ctx isc.Sandbox, nativeTokenID iotago.N
 
 func getERC20ExternalNativeTokensAddress(ctx isc.SandboxBase, nativeTokenID iotago.NativeTokenID) (ret common.Address, ok bool) {
 	state := iscMagicSubrealmR(ctx.StateR())
-	b := state.MustGet(keyERC20ExternalNativeTokensAddress(nativeTokenID))
+	b := state.Get(keyERC20ExternalNativeTokensAddress(nativeTokenID))
 	if b == nil {
 		return ret, false
 	}

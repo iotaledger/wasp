@@ -82,7 +82,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 		info, err := cl.CallView(context.Background(), governance.ViewGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
-		aid, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerID))
+		aid, err := codec.DecodeAgentID(info.Get(governance.VarChainOwnerID))
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, e.Chain.OriginatorID(), aid)
 
@@ -250,7 +250,7 @@ func testIncViewCounter(t *testing.T, env *ChainEnv) {
 	})
 	require.NoError(t, err)
 
-	counter, err := codec.DecodeInt64(ret.MustGet(varCounter), 0)
+	counter, err := codec.DecodeInt64(ret.Get(varCounter), 0)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, counter)
 }

@@ -204,35 +204,35 @@ package micropay
 
 // func getWarrantInfoIntern(state kv.KVStoreReader, payer, service iotago.Address, a assert.Assert) (uint64, uint64, uint64) {
 // 	payerInfo := collections.NewMapReadOnly(state, string(isc.BytesFromAddress(payer)))
-// 	warrantBin := payerInfo.MustGetAt(isc.BytesFromAddress(service))
+// 	warrantBin := payerInfo.GetAt(isc.BytesFromAddress(service))
 // 	warrant, err := codec.DecodeUint64(warrantBin, 0)
 // 	a.RequireNoError(err)
-// 	revokeBin := payerInfo.MustGetAt(getRevokeKey(service))
+// 	revokeBin := payerInfo.GetAt(getRevokeKey(service))
 // 	revoke, err := codec.DecodeUint64(revokeBin, 0)
 // 	a.RequireNoError(err)
-// 	lastOrdBin := payerInfo.MustGetAt(getLastOrdKey(service))
+// 	lastOrdBin := payerInfo.GetAt(getLastOrdKey(service))
 // 	lastOrd, err := codec.DecodeUint64(lastOrdBin, 0)
 // 	a.RequireNoError(err)
 // 	return warrant, revoke, lastOrd
 // }
 
 // func setWarrant(payerAccount *collections.Map, service iotago.Address, value uint64) {
-// 	payerAccount.MustSetAt(isc.BytesFromAddress(service), codec.EncodeUint64(value))
+// 	payerAccount.SetAt(isc.BytesFromAddress(service), codec.EncodeUint64(value))
 // }
 
 // func setWarrantRevoke(payerAccount *collections.Map, service iotago.Address, deadline int64) {
-// 	payerAccount.MustSetAt(getRevokeKey(service), codec.EncodeInt64(deadline))
+// 	payerAccount.SetAt(getRevokeKey(service), codec.EncodeInt64(deadline))
 // }
 
 // func setLastOrd(payerAccount *collections.Map, service iotago.Address, lastOrd uint64) {
-// 	payerAccount.MustSetAt(getLastOrdKey(service), codec.EncodeUint64(lastOrd))
+// 	payerAccount.SetAt(getLastOrdKey(service), codec.EncodeUint64(lastOrd))
 // }
 
 // func deleteWarrant(state kv.KVStore, payer, service iotago.Address) {
 // 	payerInfo := collections.NewMap(state, string(isc.BytesFromAddress(payer)))
-// 	payerInfo.MustDelAt(isc.BytesFromAddress(service))
-// 	payerInfo.MustDelAt(getRevokeKey(service))
-// 	payerInfo.MustDelAt(getLastOrdKey(service))
+// 	payerInfo.DelAt(isc.BytesFromAddress(service))
+// 	payerInfo.DelAt(getRevokeKey(service))
+// 	payerInfo.DelAt(getLastOrdKey(service))
 // }
 
 // func getPublicKey(state kv.KVStoreReader, addr iotago.Address, a assert.Assert) []byte {
@@ -256,7 +256,7 @@ package micropay
 
 // func decodePayments(state kv.KVStoreReader, a assert.Assert) []*Payment {
 // 	payments := collections.NewArray16ReadOnly(state, ParamPayments)
-// 	n := payments.MustLen()
+// 	n := payments.Len()
 // 	a.Requiref(n > 0, "no payments found")
 
 // 	ret := make([]*Payment, n)

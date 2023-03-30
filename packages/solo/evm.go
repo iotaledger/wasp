@@ -112,7 +112,7 @@ func (ch *Chain) EVMGasRatio() util.Ratio32 {
 	// TODO: Cache the gas ratio?
 	ret, err := ch.CallView(governance.Contract.Name, governance.ViewGetEVMGasRatio.Name)
 	require.NoError(ch.Env.T, err)
-	return codec.MustDecodeRatio32(ret.MustGet(governance.ParamEVMGasRatio))
+	return codec.MustDecodeRatio32(ret.Get(governance.ParamEVMGasRatio))
 }
 
 func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (dict.Dict, error) {

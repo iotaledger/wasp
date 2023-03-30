@@ -11,7 +11,7 @@ func baseTokensKey(accountKey kv.Key) kv.Key {
 }
 
 func getBaseTokens(state kv.KVStoreReader, accountKey kv.Key) uint64 {
-	return codec.MustDecodeUint64(state.MustGet(baseTokensKey(accountKey)), 0)
+	return codec.MustDecodeUint64(state.Get(baseTokensKey(accountKey)), 0)
 }
 
 func setBaseTokens(state kv.KVStore, accountKey kv.Key, n uint64) {

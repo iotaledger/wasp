@@ -16,5 +16,5 @@ func NewStateAccess(store kv.KVStoreReader) *StateAccess {
 }
 
 func (sa *StateAccess) GetCounter() int64 {
-	return codec.MustDecodeInt64(sa.state.MustGet(VarCounter), 0)
+	return codec.MustDecodeInt64(sa.state.Get(VarCounter), 0)
 }

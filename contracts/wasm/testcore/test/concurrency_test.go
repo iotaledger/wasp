@@ -184,7 +184,7 @@ func TestViewConcurrency(t *testing.T) {
 					channels <- err
 					return
 				}
-				v, err := codec.DecodeInt64(res.MustGet("counter"))
+				v, err := codec.DecodeInt64(res.Get("counter"))
 				if err == nil && v != 1 {
 					err = errors.New("v != 1")
 				}

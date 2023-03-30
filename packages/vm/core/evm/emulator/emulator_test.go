@@ -569,7 +569,7 @@ func BenchmarkEVMEmulator100(b *testing.B) { benchmarkEVMEmulator(b, 100) }
 
 func dbSize(db kv.KVStore) float64 {
 	r := float64(0)
-	db.MustIterate("", func(key kv.Key, value []byte) bool {
+	db.Iterate("", func(key kv.Key, value []byte) bool {
 		r += float64(len(key) + len(value))
 		return true
 	})

@@ -92,19 +92,14 @@ func (b *BlockLog) GetBlockInfo(chainID isc.ChainID, blockIndex uint32) (*blockl
 
 func handleRequestIDs(requestIDsDict dict.Dict) ([]isc.RequestID, error) {
 	requestIDCollection := collections.NewArray16ReadOnly(requestIDsDict, blocklog.ParamRequestID)
-	requestIDsCount, err := requestIDCollection.Len()
-	if err != nil {
-		return nil, err
-	}
+	requestIDsCount := requestIDCollection.Len()
 
 	requestIDs := make([]isc.RequestID, requestIDsCount)
 
 	for i := range requestIDs {
-		reqIDBin, err := requestIDCollection.GetAt(uint16(i))
-		if err != nil {
-			return nil, err
-		}
+		reqIDBin := requestIDCollection.GetAt(uint16(i))
 
+		var err error
 		requestIDs[i], err = isc.RequestIDFromBytes(reqIDBin)
 		if err != nil {
 			return nil, err
@@ -176,24 +171,18 @@ func (b *BlockLog) GetRequestReceiptsForBlock(chainID isc.ChainID, blockIndex ui
 		return nil, err
 	}
 
-	returnedBlockIndex, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
+	returnedBlockIndex, err := codec.DecodeUint32(ret.Get(blocklog.ParamBlockIndex))
 	if err != nil {
 		return nil, err
 	}
 
 	requestRecordCollection := collections.NewArray16ReadOnly(ret, blocklog.ParamRequestRecord)
-	requestRecordCount, err := requestRecordCollection.Len()
-	if err != nil {
-		return nil, err
-	}
+	requestRecordCount := requestRecordCollection.Len()
 
 	requestReceipts := make([]*blocklog.RequestReceipt, requestRecordCount)
 
 	for i := range requestReceipts {
-		data, err := requestRecordCollection.GetAt(uint16(i))
-		if err != nil {
-			return nil, err
-		}
+		data := requestRecordCollection.GetAt(uint16(i))
 		requestReceipts[i], err = blocklog.RequestReceiptFromBytes(data)
 		if err != nil {
 			return nil, err
@@ -223,18 +212,11 @@ func (b *BlockLog) IsRequestProcessed(chainID isc.ChainID, requestID isc.Request
 
 func eventsFromViewResult(viewResult dict.Dict) ([]string, error) {
 	eventCollection := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
-	eventCount, err := eventCollection.Len()
-	if err != nil {
-		return nil, err
-	}
+	eventCount := eventCollection.Len()
 
 	events := make([]string, eventCount)
 	for i := range events {
-		data, err := eventCollection.GetAt(uint16(i))
-		if err != nil {
-			return nil, err
-		}
-
+		data := eventCollection.GetAt(uint16(i))
 		events[i] = string(data)
 	}
 

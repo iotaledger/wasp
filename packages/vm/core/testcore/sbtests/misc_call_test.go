@@ -17,7 +17,7 @@ func testChainOwnerIDView(t *testing.T, w bool) {
 	ret, err := chain.CallView(ScName, sbtestsc.FuncChainOwnerIDView.Name)
 	require.NoError(t, err)
 
-	c := ret.MustGet(sbtestsc.ParamChainOwnerID)
+	c := ret.Get(sbtestsc.ParamChainOwnerID)
 
 	require.EqualValues(t, chain.OriginatorAgentID.Bytes(), c)
 }
@@ -32,7 +32,7 @@ func testChainOwnerIDFull(t *testing.T, w bool) {
 	ret, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	c := ret.MustGet(sbtestsc.ParamChainOwnerID)
+	c := ret.Get(sbtestsc.ParamChainOwnerID)
 	require.EqualValues(t, chain.OriginatorAgentID.Bytes(), c)
 }
 

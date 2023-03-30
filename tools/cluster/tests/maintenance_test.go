@@ -56,7 +56,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 		// TODO: Add maintenance status to wrapped core contracts
 		ret, err2 := ownerSCClient.CallView(context.Background(), governance.ViewGetMaintenanceStatus.Name, nil)
 		require.NoError(t, err2)
-		maintenanceStatus := codec.MustDecodeBool(ret.MustGet(governance.VarMaintenanceStatus))
+		maintenanceStatus := codec.MustDecodeBool(ret.Get(governance.VarMaintenanceStatus))
 		require.False(t, maintenanceStatus)
 	}
 
@@ -81,7 +81,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 	{
 		ret, err2 := ownerSCClient.CallView(context.Background(), governance.ViewGetMaintenanceStatus.Name, nil)
 		require.NoError(t, err2)
-		maintenanceStatus := codec.MustDecodeBool(ret.MustGet(governance.VarMaintenanceStatus))
+		maintenanceStatus := codec.MustDecodeBool(ret.Get(governance.VarMaintenanceStatus))
 		require.True(t, maintenanceStatus)
 	}
 

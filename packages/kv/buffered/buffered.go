@@ -45,13 +45,10 @@ func (b *BufferedKVStore) Mutations() *Mutations {
 // backing store + applied mutations.
 func (b *BufferedKVStore) DangerouslyDumpToDict() dict.Dict {
 	ret := dict.New()
-	err := b.Iterate("", func(key kv.Key, value []byte) bool {
+	b.Iterate("", func(key kv.Key, value []byte) bool {
 		ret.Set(key, value)
 		return true
 	})
-	if err != nil {
-		panic(err)
-	}
 	return ret
 }
 
@@ -91,60 +88,38 @@ func (b *BufferedKVStore) Del(key kv.Key) {
 	b.muts.Del(key)
 }
 
-func (b *BufferedKVStore) Get(key kv.Key) ([]byte, error) {
+func (b *BufferedKVStore) Get(key kv.Key) []byte {
 	v, ok := b.muts.Get(key)
 	if ok {
-		return v, nil
+		return v
 	}
 	return b.r.Get(key)
 }
 
-func (b *BufferedKVStore) MustGet(key kv.Key) []byte {
-	return kv.MustGet(b, key)
-}
-
-func (b *BufferedKVStore) Has(key kv.Key) (bool, error) {
+func (b *BufferedKVStore) Has(key kv.Key) bool {
 	v, ok := b.muts.Get(key)
 	if ok {
-		return v != nil, nil
+		return v != nil
 	}
 	return b.r.Has(key)
 }
 
-func (b *BufferedKVStore) MustHas(key kv.Key) bool {
-	return kv.MustHas(b, key)
-}
-
-func (b *BufferedKVStore) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
-	var err error
-	err2 := b.IterateKeys(prefix, func(k kv.Key) bool {
-		var v []byte
-		v, err = b.Get(k)
-		if err != nil {
-			return false
-		}
-		return f(k, v)
+func (b *BufferedKVStore) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+	b.IterateKeys(prefix, func(k kv.Key) bool {
+		return f(k, b.Get(k))
 	})
-	if err2 != nil {
-		return err2
-	}
-	return err
 }
 
-func (b *BufferedKVStore) MustIterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
-	kv.MustIterate(b, prefix, f)
-}
-
-func (b *BufferedKVStore) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
+func (b *BufferedKVStore) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
 	for k := range b.muts.Sets {
 		if !k.HasPrefix(prefix) {
 			continue
 		}
 		if !f(k) {
-			return nil
+			return
 		}
 	}
-	return b.r.IterateKeys(prefix, func(k kv.Key) bool {
+	b.r.IterateKeys(prefix, func(k kv.Key) bool {
 		if !b.muts.Contains(k) {
 			return f(k)
 		}
@@ -152,27 +127,13 @@ func (b *BufferedKVStore) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) er
 	})
 }
 
-func (b *BufferedKVStore) IterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
-	var err error
-	err2 := b.IterateKeysSorted(prefix, func(k kv.Key) bool {
-		var v []byte
-		v, err = b.Get(k)
-		if err != nil {
-			return false
-		}
-		return f(k, v)
+func (b *BufferedKVStore) IterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+	b.IterateKeysSorted(prefix, func(k kv.Key) bool {
+		return f(k, b.Get(k))
 	})
-	if err2 != nil {
-		return err2
-	}
-	return err
 }
 
-func (b *BufferedKVStore) MustIterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
-	kv.MustIterateSorted(b, prefix, f)
-}
-
-func (b *BufferedKVStore) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
+func (b *BufferedKVStore) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
 	var keys []kv.Key
 
 	for k := range b.muts.Sets {
@@ -182,15 +143,12 @@ func (b *BufferedKVStore) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bo
 		keys = append(keys, k)
 	}
 
-	err := b.r.IterateKeysSorted(prefix, func(k kv.Key) bool {
+	b.r.IterateKeysSorted(prefix, func(k kv.Key) bool {
 		if !b.muts.Contains(k) {
 			keys = append(keys, k)
 		}
 		return true
 	})
-	if err != nil {
-		return err
-	}
 
 	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
 
@@ -199,13 +157,4 @@ func (b *BufferedKVStore) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bo
 			break
 		}
 	}
-	return nil
-}
-
-func (b *BufferedKVStore) MustIterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
-	kv.MustIterateKeys(b, prefix, f)
-}
-
-func (b *BufferedKVStore) MustIterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
-	kv.MustIterateKeysSorted(b, prefix, f)
 }

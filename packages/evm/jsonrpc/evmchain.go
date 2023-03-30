@@ -79,7 +79,7 @@ func NewEVMChain(backend ChainBackend, pub *publisher.Publisher, log *logger.Log
 			log.Error(err)
 			return
 		}
-		logs, err := evmtypes.DecodeLogs(ret.MustGet(evm.FieldResult))
+		logs, err := evmtypes.DecodeLogs(ret.Get(evm.FieldResult))
 		if err != nil {
 			log.Error(err)
 			return
@@ -107,7 +107,7 @@ func (e *EVMChain) ChainID() (uint16, error) {
 		if err != nil {
 			return 0, err
 		}
-		e.chainID = codec.MustDecodeUint16(ret.MustGet(evm.FieldResult))
+		e.chainID = codec.MustDecodeUint16(ret.Get(evm.FieldResult))
 	}
 	return e.chainID, nil
 }
@@ -125,7 +125,7 @@ func (e *EVMChain) BlockNumber() (*big.Int, error) {
 	}
 
 	bal := big.NewInt(0)
-	bal.SetBytes(ret.MustGet(evm.FieldResult))
+	bal.SetBytes(ret.Get(evm.FieldResult))
 	return bal, nil
 }
 
@@ -139,7 +139,7 @@ func (e *EVMChain) GasRatio() (util.Ratio32, error) {
 	if err != nil {
 		return util.Ratio32{}, err
 	}
-	return codec.DecodeRatio32(ret.MustGet(governance.ParamEVMGasRatio))
+	return codec.DecodeRatio32(ret.Get(governance.ParamEVMGasRatio))
 }
 
 func (e *EVMChain) GasFeePolicy() (*gas.FeePolicy, error) {
@@ -147,7 +147,7 @@ func (e *EVMChain) GasFeePolicy() (*gas.FeePolicy, error) {
 	if err != nil {
 		return nil, err
 	}
-	fpBin := res.MustGet(governance.ParamFeePolicyBytes)
+	fpBin := res.Get(governance.ParamFeePolicyBytes)
 	feePolicy, err := gas.FeePolicyFromBytes(fpBin)
 	if err != nil {
 		return nil, err
@@ -160,7 +160,7 @@ func (e *EVMChain) gasLimits() (*gas.Limits, error) {
 	if err != nil {
 		return nil, err
 	}
-	glBin := res.MustGet(governance.ParamGasLimitsBytes)
+	glBin := res.Get(governance.ParamGasLimitsBytes)
 	gasLimits, err := gas.LimitsFromBytes(glBin)
 	if err != nil {
 		return nil, err
@@ -317,7 +317,7 @@ func (e *EVMChain) Balance(address common.Address, blockNumberOrHash *rpc.BlockN
 	}
 
 	bal := big.NewInt(0)
-	bal.SetBytes(ret.MustGet(evm.FieldResult))
+	bal.SetBytes(ret.Get(evm.FieldResult))
 	return bal, nil
 }
 
@@ -332,7 +332,7 @@ func (e *EVMChain) Code(address common.Address, blockNumberOrHash *rpc.BlockNumb
 	if err != nil {
 		return nil, err
 	}
-	return ret.MustGet(evm.FieldResult), nil
+	return ret.Get(evm.FieldResult), nil
 }
 
 func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
@@ -353,11 +353,11 @@ func (e *EVMChain) blockByNumber(chainState state.State, blockNumber *big.Int) (
 		return nil, err
 	}
 
-	if !ret.MustHas(evm.FieldResult) {
+	if !ret.Has(evm.FieldResult) {
 		return nil, nil
 	}
 
-	block, err := evmtypes.DecodeBlock(ret.MustGet(evm.FieldResult))
+	block, err := evmtypes.DecodeBlock(ret.Get(evm.FieldResult))
 	if err != nil {
 		return nil, err
 	}
@@ -371,20 +371,20 @@ func (e *EVMChain) getTransactionBy(chainState state.State, funcName string, arg
 		return
 	}
 
-	if !ret.MustHas(evm.FieldTransaction) {
+	if !ret.Has(evm.FieldTransaction) {
 		return
 	}
 
-	tx, err = evmtypes.DecodeTransaction(ret.MustGet(evm.FieldTransaction))
+	tx, err = evmtypes.DecodeTransaction(ret.Get(evm.FieldTransaction))
 	if err != nil {
 		return
 	}
-	blockHash = common.BytesToHash(ret.MustGet(evm.FieldBlockHash))
-	blockNumber, err = codec.DecodeUint64(ret.MustGet(evm.FieldBlockNumber), 0)
+	blockHash = common.BytesToHash(ret.Get(evm.FieldBlockHash))
+	blockNumber, err = codec.DecodeUint64(ret.Get(evm.FieldBlockNumber), 0)
 	if err != nil {
 		return
 	}
-	index, err = codec.DecodeUint64(ret.MustGet(evm.FieldTransactionIndex), 0)
+	index, err = codec.DecodeUint64(ret.Get(evm.FieldTransactionIndex), 0)
 	return
 }
 
@@ -419,11 +419,11 @@ func (e *EVMChain) BlockByHash(hash common.Hash) (*types.Block, error) {
 		return nil, err
 	}
 
-	if !ret.MustHas(evm.FieldResult) {
+	if !ret.Has(evm.FieldResult) {
 		return nil, nil
 	}
 
-	block, err := evmtypes.DecodeBlock(ret.MustGet(evm.FieldResult))
+	block, err := evmtypes.DecodeBlock(ret.Get(evm.FieldResult))
 	if err != nil {
 		return nil, err
 	}
@@ -438,11 +438,11 @@ func (e *EVMChain) TransactionReceipt(txHash common.Hash) (*types.Receipt, error
 		return nil, err
 	}
 
-	if !ret.MustHas(evm.FieldResult) {
+	if !ret.Has(evm.FieldResult) {
 		return nil, nil
 	}
 
-	receipt, err := evmtypes.DecodeReceiptFull(ret.MustGet(evm.FieldResult))
+	receipt, err := evmtypes.DecodeReceiptFull(ret.Get(evm.FieldResult))
 	if err != nil {
 		return nil, err
 	}
@@ -461,7 +461,7 @@ func (e *EVMChain) TransactionCount(address common.Address, blockNumberOrHash *r
 	if err != nil {
 		return 0, err
 	}
-	return codec.DecodeUint64(ret.MustGet(evm.FieldResult), 0)
+	return codec.DecodeUint64(ret.Get(evm.FieldResult), 0)
 }
 
 func (e *EVMChain) CallContract(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.BlockNumberOrHash) ([]byte, error) {
@@ -496,7 +496,7 @@ func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumbe
 	if err != nil {
 		return nil, err
 	}
-	return ret.MustGet(evm.FieldResult), nil
+	return ret.Get(evm.FieldResult), nil
 }
 
 func (e *EVMChain) BlockTransactionCountByHash(blockHash common.Hash) (uint64, error) {
@@ -506,7 +506,7 @@ func (e *EVMChain) BlockTransactionCountByHash(blockHash common.Hash) (uint64, e
 	if err != nil {
 		return 0, err
 	}
-	return codec.DecodeUint64(ret.MustGet(evm.FieldResult), 0)
+	return codec.DecodeUint64(ret.Get(evm.FieldResult), 0)
 }
 
 func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, error) {
@@ -518,7 +518,7 @@ func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, 
 	if err != nil {
 		return 0, err
 	}
-	return codec.DecodeUint64(ret.MustGet(evm.FieldResult), 0)
+	return codec.DecodeUint64(ret.Get(evm.FieldResult), 0)
 }
 
 func (e *EVMChain) Logs(q *ethereum.FilterQuery) ([]*types.Log, error) {
@@ -528,7 +528,7 @@ func (e *EVMChain) Logs(q *ethereum.FilterQuery) ([]*types.Log, error) {
 	if err != nil {
 		return nil, err
 	}
-	return evmtypes.DecodeLogs(ret.MustGet(evm.FieldResult))
+	return evmtypes.DecodeLogs(ret.Get(evm.FieldResult))
 }
 
 func (e *EVMChain) BaseToken() *parameters.BaseToken {

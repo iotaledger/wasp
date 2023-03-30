@@ -60,7 +60,7 @@ func (b *WaspEVMBackend) EVMGasRatio() (util.Ratio32, error) {
 	if err != nil {
 		return util.Ratio32{}, err
 	}
-	return codec.DecodeRatio32(ret.MustGet(governance.ParamEVMGasRatio))
+	return codec.DecodeRatio32(ret.Get(governance.ParamEVMGasRatio))
 }
 
 func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
@@ -124,7 +124,7 @@ func (b *WaspEVMBackend) EVMGasPrice() *big.Int {
 	if err != nil {
 		panic(fmt.Sprintf("couldn't call gasFeePolicy view: %s ", err.Error()))
 	}
-	feePolicy, err := gas.FeePolicyFromBytes(res.MustGet(governance.ParamFeePolicyBytes))
+	feePolicy, err := gas.FeePolicyFromBytes(res.Get(governance.ParamFeePolicyBytes))
 	if err != nil {
 		panic(fmt.Sprintf("couldn't decode fee policy: %s ", err.Error()))
 	}

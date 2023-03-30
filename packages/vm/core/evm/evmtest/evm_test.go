@@ -854,7 +854,7 @@ func TestISCCall(t *testing.T) {
 		inccounter.ViewGetCounter.Name,
 	)
 	require.NoError(env.solo.T, err)
-	require.EqualValues(t, 42, codec.MustDecodeInt64(r.MustGet(inccounter.VarCounter)))
+	require.EqualValues(t, 42, codec.MustDecodeInt64(r.Get(inccounter.VarCounter)))
 }
 
 func TestFibonacciContract(t *testing.T) {
@@ -921,7 +921,7 @@ func TestISCSendWithArgs(t *testing.T) {
 	checkCounter := func(c int) {
 		ret, err2 := env.soloChain.CallView(inccounter.Contract.Name, inccounter.ViewGetCounter.Name)
 		require.NoError(t, err2)
-		counter := codec.MustDecodeUint64(ret.MustGet(inccounter.VarCounter))
+		counter := codec.MustDecodeUint64(ret.Get(inccounter.VarCounter))
 		require.EqualValues(t, c, counter)
 	}
 	checkCounter(0)

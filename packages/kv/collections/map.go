@@ -1,7 +1,7 @@
 package collections
 
 import (
-	"errors"
+	"math"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
@@ -63,153 +63,72 @@ func (m *ImmutableMap) Name() string {
 	return m.name
 }
 
-func (m *Map) addToSize(amount int) error {
-	n, err := m.Len()
-	if err != nil {
-		return err
+func (m *Map) addToSize(amount int) {
+	n := int64(m.Len()) + int64(amount)
+	if n < 0 {
+		panic("negative size in Map")
 	}
-	n = uint32(int(n) + amount)
+	if n > math.MaxUint32 {
+		panic("Map is full")
+	}
 	if n == 0 {
 		m.kvw.Del(kv.Key(MapSizeKey(m.name)))
 	} else {
-		m.kvw.Set(kv.Key(MapSizeKey(m.name)), util.Uint32To4Bytes(n))
+		m.kvw.Set(kv.Key(MapSizeKey(m.name)), util.Uint32To4Bytes(uint32(n)))
 	}
-	return nil
 }
 
-func (m *ImmutableMap) GetAt(key []byte) ([]byte, error) {
-	ret, err := m.kvr.Get(kv.Key(MapElemKey(m.name, key)))
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
+func (m *ImmutableMap) GetAt(key []byte) []byte {
+	return m.kvr.Get(kv.Key(MapElemKey(m.name, key)))
 }
 
-func (m *ImmutableMap) MustGetAt(key []byte) []byte {
-	ret, err := m.GetAt(key)
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-func (m *Map) SetAt(key, value []byte) error {
-	keyExists, err := m.HasAt(key)
-	if err != nil {
-		return err
-	}
-	if !keyExists {
-		err = m.addToSize(1)
-		if err != nil {
-			return err
-		}
+func (m *Map) SetAt(key, value []byte) {
+	if !m.HasAt(key) {
+		m.addToSize(1)
 	}
 	m.kvw.Set(kv.Key(MapElemKey(m.name, key)), value)
-	return nil
 }
 
-func (m *Map) MustSetAt(key, value []byte) {
-	err := m.SetAt(key, value)
-	if err != nil {
-		panic(err)
+func (m *Map) DelAt(key []byte) {
+	if !m.HasAt(key) {
+		return
 	}
-}
-
-func (m *Map) DelAt(key []byte) error {
-	keyExist, err := m.HasAt(key)
-	if !keyExist {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	if keyExist {
-		err = m.addToSize(-1)
-		if err != nil {
-			return err
-		}
-	}
+	m.addToSize(-1)
 	m.kvw.Del(kv.Key(MapElemKey(m.name, key)))
-	return nil
 }
 
-func (m *Map) MustDelAt(key []byte) {
-	err := m.DelAt(key)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (m *ImmutableMap) HasAt(key []byte) (bool, error) {
+func (m *ImmutableMap) HasAt(key []byte) bool {
 	return m.kvr.Has(kv.Key(MapElemKey(m.name, key)))
 }
 
-func (m *ImmutableMap) MustHasAt(key []byte) bool {
-	ret, err := m.HasAt(key)
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-func (m *ImmutableMap) MustLen() uint32 {
-	n, err := m.Len()
-	if err != nil {
-		panic(err)
-	}
-	return n
-}
-
-func (m *ImmutableMap) Len() (uint32, error) {
-	v, err := m.kvr.Get(kv.Key(MapSizeKey(m.name)))
-	if err != nil {
-		return 0, err
-	}
+func (m *ImmutableMap) Len() uint32 {
+	v := m.kvr.Get(kv.Key(MapSizeKey(m.name)))
 	if v == nil {
-		return 0, nil
+		return 0
 	}
-	if len(v) != 4 {
-		return 0, errors.New("corrupted data")
-	}
-	return util.MustUint32From4Bytes(v), nil
+	return util.MustUint32From4Bytes(v)
 }
 
 // Erase the map.
 func (m *Map) Erase() {
-	m.MustIterateKeys(func(elemKey []byte) bool {
-		m.MustDelAt(elemKey)
+	m.IterateKeys(func(elemKey []byte) bool {
+		m.DelAt(elemKey)
 		return true
 	})
 }
 
 // Iterate non-deterministic
-func (m *ImmutableMap) Iterate(f func(elemKey []byte, value []byte) bool) error {
+func (m *ImmutableMap) Iterate(f func(elemKey []byte, value []byte) bool) {
 	prefix := kv.Key(MapElemKey(m.name, nil))
-	return m.kvr.Iterate(prefix, func(key kv.Key, value []byte) bool {
+	m.kvr.Iterate(prefix, func(key kv.Key, value []byte) bool {
 		return f([]byte(key)[len(prefix):], value)
 	})
 }
 
 // IterateKeys non-deterministic
-func (m *ImmutableMap) IterateKeys(f func(elemKey []byte) bool) error {
+func (m *ImmutableMap) IterateKeys(f func(elemKey []byte) bool) {
 	prefix := kv.Key(MapElemKey(m.name, nil))
-	return m.kvr.IterateKeys(prefix, func(key kv.Key) bool {
+	m.kvr.IterateKeys(prefix, func(key kv.Key) bool {
 		return f([]byte(key)[len(prefix):])
 	})
-}
-
-// MustIterate non-deterministic
-func (m *ImmutableMap) MustIterate(f func(elemKey []byte, value []byte) bool) {
-	err := m.Iterate(f)
-	if err != nil {
-		panic(err)
-	}
-}
-
-// MustIterateKeys non-deterministic
-func (m *ImmutableMap) MustIterateKeys(f func(elemKey []byte) bool) {
-	err := m.IterateKeys(f)
-	if err != nil {
-		panic(err)
-	}
 }

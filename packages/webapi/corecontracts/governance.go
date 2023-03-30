@@ -26,18 +26,11 @@ func (g *Governance) GetAllowedStateControllerAddresses(chainID isc.ChainID) ([]
 	}
 
 	stateControllerAddressesCollection := collections.NewArray16ReadOnly(ret, governance.ParamAllowedStateControllerAddresses)
-	stateControllerAddressesCount, err := stateControllerAddressesCollection.Len()
-	if err != nil {
-		return nil, err
-	}
+	stateControllerAddressesCount := stateControllerAddressesCollection.Len()
 
 	stateControllerAddresses := make([]iotago.Address, 0)
 	for i := uint16(0); i < stateControllerAddressesCount; i++ {
-		addressBytes, err := stateControllerAddressesCollection.GetAt(i)
-		if err != nil {
-			return nil, err
-		}
-
+		addressBytes := stateControllerAddressesCollection.GetAt(i)
 		address, err := codec.DecodeAddress(addressBytes)
 		if err != nil {
 			return nil, err
@@ -55,11 +48,7 @@ func (g *Governance) GetChainOwner(chainID isc.ChainID) (isc.AgentID, error) {
 		return nil, err
 	}
 
-	ownerBytes, err := ret.Get(governance.ParamChainOwner)
-	if err != nil {
-		return nil, err
-	}
-
+	ownerBytes := ret.Get(governance.ParamChainOwner)
 	ownerID, err := isc.AgentIDFromBytes(ownerBytes)
 	if err != nil {
 		return nil, err

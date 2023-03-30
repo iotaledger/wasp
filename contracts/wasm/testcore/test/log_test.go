@@ -38,7 +38,7 @@ package test
 // 	require.NoError(t, err)
 
 // 	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
-// 	require.EqualValues(t, 3, array.MustLen())
+// 	require.EqualValues(t, 3, array.Len())
 // }
 
 // func TestEventlogGetBetweenTs(t *testing.T) { run2(t, testEventlogGetBetweenTs) }
@@ -66,7 +66,7 @@ package test
 // 	require.NoError(t, err)
 
 // 	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
-// 	require.EqualValues(t, 2, array.MustLen())
+// 	require.EqualValues(t, 2, array.Len())
 // }
 
 // func TestEventLogEventData(t *testing.T) { run2(t, testEventLogEventData) }
@@ -88,7 +88,7 @@ package test
 // 	require.NoError(t, err)
 // 	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
 
-// 	require.EqualValues(t, 1, array.MustLen())
+// 	require.EqualValues(t, 1, array.Len())
 
 // 	str, err := chain.GetEventsForContractString(ScName)
 // 	require.NoError(t, err)
@@ -129,7 +129,7 @@ package test
 // 	)
 // 	require.NoError(t, err)
 // 	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
-// 	require.EqualValues(t, 5, array.MustLen())
+// 	require.EqualValues(t, 5, array.Len())
 
 // 	str, err := chain.GetEventsForContractString(ScName)
 // 	require.NoError(t, err)
@@ -166,7 +166,7 @@ package test
 // 	)
 // 	require.NoError(t, err)
 
-// 	v, ok, err := codec.DecodeInt64(res.MustGet(eventlog.ParamNumRecords))
+// 	v, ok, err := codec.DecodeInt64(res.Get(eventlog.ParamNumRecords))
 
 // 	require.NoError(t, err)
 // 	require.True(t, ok)
@@ -209,7 +209,7 @@ package test
 // 	require.NoError(t, err)
 // 	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
 
-// 	require.EqualValues(t, 2, array.MustLen())
+// 	require.EqualValues(t, 2, array.Len())
 
 // 	str, err := chain.GetEventsForContractString(root.Contract.Name)
 // 	require.NoError(t, err)
@@ -252,7 +252,7 @@ package test
 // 	)
 // 	require.NoError(t, err)
 // 	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
-// 	require.EqualValues(t, 2, array.MustLen())
+// 	require.EqualValues(t, 2, array.Len())
 // 	//////////////////////////////////////
 
 // 	strRoot, err := chain.GetEventsForContractString(root.Contract.Name)

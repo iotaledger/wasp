@@ -80,10 +80,7 @@ func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 	if err != nil {
 		return nil, err
 	}
-	retBin, err := retDict.Get(root.ParamContractRecData)
-	if err != nil {
-		return nil, err
-	}
+	retBin := retDict.Get(root.ParamContractRecData)
 	if retBin == nil {
 		return nil, fmt.Errorf("smart contract '%s' not found", scName)
 	}
@@ -113,7 +110,7 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 func (ch *Chain) GetGasFeePolicy() *gas.FeePolicy {
 	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetFeePolicy.Name)
 	require.NoError(ch.Env.T, err)
-	fpBin := res.MustGet(governance.ParamFeePolicyBytes)
+	fpBin := res.Get(governance.ParamFeePolicyBytes)
 	feePolicy, err := gas.FeePolicyFromBytes(fpBin)
 	require.NoError(ch.Env.T, err)
 	return feePolicy
@@ -133,7 +130,7 @@ func (ch *Chain) SetGasFeePolicy(user *cryptolib.KeyPair, fp *gas.FeePolicy) {
 func (ch *Chain) GetGasLimits() *gas.Limits {
 	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetGasLimits.Name)
 	require.NoError(ch.Env.T, err)
-	glBin := res.MustGet(governance.ParamGasLimitsBytes)
+	glBin := res.Get(governance.ParamGasLimitsBytes)
 	gasLimits, err := gas.LimitsFromBytes(glBin)
 	require.NoError(ch.Env.T, err)
 	return gasLimits
@@ -175,7 +172,7 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 	if err != nil {
 		return
 	}
-	resBin := res.MustGet(blob.ParamHash)
+	resBin := res.Get(blob.ParamHash)
 	if resBin == nil {
 		err = errors.New("internal error: no hash returned")
 		return
@@ -231,7 +228,7 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	require.EqualValues(ch.Env.T, vmtypes.WasmTime, string(res.MustGet(blob.ParamBytes)))
+	require.EqualValues(ch.Env.T, vmtypes.WasmTime, string(res.Get(blob.ParamBytes)))
 
 	res, err = ch.CallView(blob.Contract.Name, blob.ViewGetBlobField.Name,
 		blob.ParamHash, progHash,
@@ -240,7 +237,7 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	binary := res.MustGet(blob.ParamBytes)
+	binary := res.Get(blob.ParamBytes)
 	return binary, nil
 }
 
@@ -285,7 +282,7 @@ func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.Contra
 	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
-	chainOwnerID, err := codec.DecodeAgentID(res.MustGet(governance.VarChainOwnerID))
+	chainOwnerID, err := codec.DecodeAgentID(res.Get(governance.VarChainOwnerID))
 	require.NoError(ch.Env.T, err)
 
 	res, err = ch.CallView(root.Contract.Name, root.ViewGetContractRecords.Name)
@@ -298,10 +295,9 @@ func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.Contra
 
 func eventsFromViewResult(t TestContext, viewResult dict.Dict) []string {
 	recs := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
-	ret := make([]string, recs.MustLen())
+	ret := make([]string, recs.Len())
 	for i := range ret {
-		data, err := recs.GetAt(uint16(i))
-		require.NoError(t, err)
+		data := recs.GetAt(uint16(i))
 		ret[i] = string(data)
 	}
 	return ret
@@ -446,10 +442,9 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.Re
 		return nil
 	}
 	recs := collections.NewArray16ReadOnly(res, blocklog.ParamRequestRecord)
-	ret := make([]*blocklog.RequestReceipt, recs.MustLen())
+	ret := make([]*blocklog.RequestReceipt, recs.Len())
 	for i := range ret {
-		data, err := recs.GetAt(uint16(i))
-		require.NoError(ch.Env.T, err)
+		data := recs.GetAt(uint16(i))
 		ret[i], err = blocklog.RequestReceiptFromBytes(data)
 		require.NoError(ch.Env.T, err)
 		ret[i].WithBlockData(blockIdx, uint16(i))
@@ -466,10 +461,9 @@ func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []isc.RequestID {
 		return nil
 	}
 	recs := collections.NewArray16ReadOnly(res, blocklog.ParamRequestID)
-	ret := make([]isc.RequestID, recs.MustLen())
+	ret := make([]isc.RequestID, recs.Len())
 	for i := range ret {
-		reqIDBin, err := recs.GetAt(uint16(i))
-		require.NoError(ch.Env.T, err)
+		reqIDBin := recs.GetAt(uint16(i))
 		ret[i], err = isc.RequestIDFromBytes(reqIDBin)
 		require.NoError(ch.Env.T, err)
 	}
@@ -542,8 +536,8 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 	}
 	ret := make([]iotago.Address, 0)
 	arr := collections.NewArray16ReadOnly(res, governance.ParamAllowedStateControllerAddresses)
-	for i := uint16(0); i < arr.MustLen(); i++ {
-		a, err := codec.DecodeAddress(arr.MustGetAt(i))
+	for i := uint16(0); i < arr.Len(); i++ {
+		a, err := codec.DecodeAddress(arr.GetAt(i))
 		require.NoError(ch.Env.T, err)
 		ret = append(ret, a)
 	}

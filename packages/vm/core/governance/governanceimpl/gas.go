@@ -36,7 +36,7 @@ func getFeePolicy(ctx isc.SandboxView) dict.Dict {
 
 func setEVMGasRatio(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	ratio := codec.MustDecodeRatio32(ctx.Params().MustGet(governance.ParamEVMGasRatio))
+	ratio := codec.MustDecodeRatio32(ctx.Params().Get(governance.ParamEVMGasRatio))
 	ctx.Requiref(!ratio.HasZeroComponent(), "invalid ratio")
 	policy := governance.MustGetGasFeePolicy(ctx.StateR())
 	policy.EVMGasRatio = ratio

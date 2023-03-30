@@ -126,7 +126,7 @@ func TestRetrievalOfErrorMessage(t *testing.T) {
 	_, d, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
-	errorCode := codec.MustDecodeVMErrorCode(d.MustGet(errors.ParamErrorCode))
+	errorCode := codec.MustDecodeVMErrorCode(d.Get(errors.ParamErrorCode))
 
 	req = solo.NewCallParams(errors.Contract.Name, errors.ViewGetErrorMessageFormat.Name,
 		errors.ParamErrorCode, errorCode,
@@ -136,7 +136,7 @@ func TestRetrievalOfErrorMessage(t *testing.T) {
 	_, d, err = chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
-	message := d.MustGet(errors.ParamErrorMessageFormat)
+	message := d.Get(errors.ParamErrorMessageFormat)
 
 	require.Equal(t, string(message), errorMessageToTest)
 }
