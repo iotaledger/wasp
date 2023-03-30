@@ -628,6 +628,10 @@ const RequestRefKeyLen = iotago.OutputIDLength + 32
 
 type RequestRefKey [RequestRefKeyLen]byte
 
+func (rrk RequestRefKey) String() string {
+	return iotago.EncodeHex(rrk[:])
+}
+
 func RequestRefFromRequest(req Request) *RequestRef {
 	return &RequestRef{ID: req.ID(), Hash: RequestHash(req)}
 }

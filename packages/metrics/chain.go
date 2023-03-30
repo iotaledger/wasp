@@ -137,12 +137,17 @@ type ChainMetricsProvider struct {
 	vmRunsTotal *prometheus.CounterVec
 
 	// mempool
-	blocksTotalPerChain       *prometheus.CounterVec
-	requestsReceivedOffLedger *prometheus.CounterVec
-	requestsReceivedOnLedger  *prometheus.CounterVec
-	requestsProcessed         *prometheus.CounterVec
-	requestsAckMessages       *prometheus.CounterVec
-	requestsProcessingTime    *prometheus.GaugeVec
+	blocksTotalPerChain       *prometheus.CounterVec // TODO: Outdated and should be removed?
+	requestsReceivedOffLedger *prometheus.CounterVec // TODO: Outdated and should be removed?
+	requestsReceivedOnLedger  *prometheus.CounterVec // TODO: Outdated and should be removed?
+	requestsProcessed         *prometheus.CounterVec // TODO: Outdated and should be removed?
+	requestsAckMessages       *prometheus.CounterVec // TODO: Outdated and should be removed?
+	requestsProcessingTime    *prometheus.GaugeVec   // TODO: Outdated and should be removed?
+
+	mempoolTimePoolSize      *prometheus.GaugeVec
+	mempoolOnLedgerPoolSize  *prometheus.GaugeVec
+	mempoolOffLedgerPoolSize *prometheus.GaugeVec
+	mempoolTotalSize         *prometheus.GaugeVec
 
 	// messages
 	chainsRegistered       []isc.ChainID
@@ -256,6 +261,31 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 			Help:      "Time to process requests per chain",
 		}, []string{labelNameChain}),
 
+		mempoolTimePoolSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "mempool",
+			Name:      "time_pool_size",
+			Help:      "Number of postponed requests in mempool.",
+		}, []string{labelNameChain}),
+		mempoolOnLedgerPoolSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "mempool",
+			Name:      "on_ledger_pool_size",
+			Help:      "Number of On Ledger requests in mempool.",
+		}, []string{labelNameChain}),
+		mempoolOffLedgerPoolSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "mempool",
+			Name:      "off_ledger_pool_size",
+			Help:      "Number of Off Ledger requests in mempool.",
+		}, []string{labelNameChain}),
+		mempoolTotalSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "mempool",
+			Name:      "total_pool_size",
+			Help:      "Total requests in mempool.",
+		}, []string{labelNameChain}),
+
 		//
 		// messages
 		//
@@ -356,6 +386,10 @@ func (m *ChainMetricsProvider) PrometheusCollectorsMempool() []prometheus.Collec
 		m.requestsProcessed,
 		m.requestsAckMessages,
 		m.requestsProcessingTime,
+		m.mempoolTimePoolSize,
+		m.mempoolOnLedgerPoolSize,
+		m.mempoolOffLedgerPoolSize,
+		m.mempoolTotalSize,
 	}
 }
 
