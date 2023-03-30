@@ -136,6 +136,14 @@ func (m MapBytesToImmutableBytes) GetBytes(key []byte) wasmtypes.ScImmutableByte
 	return wasmtypes.NewScImmutableBytes(m.Proxy.Key(wasmtypes.BytesToBytes(key)))
 }
 
+type MapBytesToImmutableBool struct {
+	Proxy wasmtypes.Proxy
+}
+
+func (m MapBytesToImmutableBool) GetBool(key []byte) wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(m.Proxy.Key(wasmtypes.BytesToBytes(key)))
+}
+
 type ImmutableGetChainNodesResults struct {
 	Proxy wasmtypes.Proxy
 }
@@ -146,8 +154,8 @@ func (s ImmutableGetChainNodesResults) AccessNodeCandidates() MapBytesToImmutabl
 }
 
 // pubKey set
-func (s ImmutableGetChainNodesResults) AccessNodes() MapBytesToImmutableBytes {
-	return MapBytesToImmutableBytes{Proxy: s.Proxy.Root(ResultAccessNodes)}
+func (s ImmutableGetChainNodesResults) AccessNodes() MapBytesToImmutableBool {
+	return MapBytesToImmutableBool{Proxy: s.Proxy.Root(ResultAccessNodes)}
 }
 
 type MapBytesToMutableBytes struct {
@@ -160,6 +168,18 @@ func (m MapBytesToMutableBytes) Clear() {
 
 func (m MapBytesToMutableBytes) GetBytes(key []byte) wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(m.Proxy.Key(wasmtypes.BytesToBytes(key)))
+}
+
+type MapBytesToMutableBool struct {
+	Proxy wasmtypes.Proxy
+}
+
+func (m MapBytesToMutableBool) Clear() {
+	m.Proxy.ClearMap()
+}
+
+func (m MapBytesToMutableBool) GetBool(key []byte) wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(m.Proxy.Key(wasmtypes.BytesToBytes(key)))
 }
 
 type MutableGetChainNodesResults struct {
@@ -176,8 +196,8 @@ func (s MutableGetChainNodesResults) AccessNodeCandidates() MapBytesToMutableByt
 }
 
 // pubKey set
-func (s MutableGetChainNodesResults) AccessNodes() MapBytesToMutableBytes {
-	return MapBytesToMutableBytes{Proxy: s.Proxy.Root(ResultAccessNodes)}
+func (s MutableGetChainNodesResults) AccessNodes() MapBytesToMutableBool {
+	return MapBytesToMutableBool{Proxy: s.Proxy.Root(ResultAccessNodes)}
 }
 
 type ImmutableGetChainOwnerResults struct {

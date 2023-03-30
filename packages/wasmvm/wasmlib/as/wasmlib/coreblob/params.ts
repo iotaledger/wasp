@@ -16,7 +16,7 @@ export class MapStringToImmutableBytes extends wasmtypes.ScProxy {
 }
 
 export class ImmutableStoreBlobParams extends wasmtypes.ScProxy {
-    // set of named chunks
+    // named chunks
     blobs(): sc.MapStringToImmutableBytes {
         return new sc.MapStringToImmutableBytes(this.proxy);
     }
@@ -54,7 +54,7 @@ export class MapStringToMutableBytes extends wasmtypes.ScProxy {
 }
 
 export class MutableStoreBlobParams extends wasmtypes.ScProxy {
-    // set of named chunks
+    // named chunks
     blobs(): sc.MapStringToMutableBytes {
         return new sc.MapStringToMutableBytes(this.proxy);
     }

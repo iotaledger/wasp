@@ -8,7 +8,7 @@ funcs:
   # Stores a new blob in the registry.
   storeBlob:
     params:
-      blobs=this: map[String]Bytes # set of named chunks
+      blobs=this: map[String]Bytes # named chunks
 
       # The following are predefined chunk names that are necessary
       # to be able to load and deploy specific VM binary code.

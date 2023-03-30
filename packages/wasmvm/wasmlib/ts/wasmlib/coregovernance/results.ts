@@ -113,6 +113,13 @@ export class MapBytesToImmutableBytes extends wasmtypes.ScProxy {
     }
 }
 
+export class MapBytesToImmutableBool extends wasmtypes.ScProxy {
+
+    getBool(key: Uint8Array): wasmtypes.ScImmutableBool {
+        return new wasmtypes.ScImmutableBool(this.proxy.key(wasmtypes.bytesToBytes(key)));
+    }
+}
+
 export class ImmutableGetChainNodesResults extends wasmtypes.ScProxy {
     // serialized access node info per pubKey
     accessNodeCandidates(): sc.MapBytesToImmutableBytes {
@@ -120,8 +127,8 @@ export class ImmutableGetChainNodesResults extends wasmtypes.ScProxy {
     }
 
     // pubKey set
-    accessNodes(): sc.MapBytesToImmutableBytes {
-        return new sc.MapBytesToImmutableBytes(this.proxy.root(sc.ResultAccessNodes));
+    accessNodes(): sc.MapBytesToImmutableBool {
+        return new sc.MapBytesToImmutableBool(this.proxy.root(sc.ResultAccessNodes));
     }
 }
 
@@ -136,6 +143,17 @@ export class MapBytesToMutableBytes extends wasmtypes.ScProxy {
     }
 }
 
+export class MapBytesToMutableBool extends wasmtypes.ScProxy {
+
+    clear(): void {
+        this.proxy.clearMap();
+    }
+
+    getBool(key: Uint8Array): wasmtypes.ScMutableBool {
+        return new wasmtypes.ScMutableBool(this.proxy.key(wasmtypes.bytesToBytes(key)));
+    }
+}
+
 export class MutableGetChainNodesResults extends wasmtypes.ScProxy {
     // serialized access node info per pubKey
     accessNodeCandidates(): sc.MapBytesToMutableBytes {
@@ -143,8 +161,8 @@ export class MutableGetChainNodesResults extends wasmtypes.ScProxy {
     }
 
     // pubKey set
-    accessNodes(): sc.MapBytesToMutableBytes {
-        return new sc.MapBytesToMutableBytes(this.proxy.root(sc.ResultAccessNodes));
+    accessNodes(): sc.MapBytesToMutableBool {
+        return new sc.MapBytesToMutableBool(this.proxy.root(sc.ResultAccessNodes));
     }
 }
 

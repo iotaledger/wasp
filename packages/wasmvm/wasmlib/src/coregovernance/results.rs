@@ -161,6 +161,17 @@ impl MapBytesToImmutableBytes {
 }
 
 #[derive(Clone)]
+pub struct MapBytesToImmutableBool {
+    pub(crate) proxy: Proxy,
+}
+
+impl MapBytesToImmutableBool {
+    pub fn get_bool(&self, key: &[u8]) -> ScImmutableBool {
+        ScImmutableBool::new(self.proxy.key(&bytes_to_bytes(key)))
+    }
+}
+
+#[derive(Clone)]
 pub struct ImmutableGetChainNodesResults {
     pub proxy: Proxy,
 }
@@ -172,8 +183,8 @@ impl ImmutableGetChainNodesResults {
     }
 
     // pubKey set
-    pub fn access_nodes(&self) -> MapBytesToImmutableBytes {
-        MapBytesToImmutableBytes { proxy: self.proxy.root(RESULT_ACCESS_NODES) }
+    pub fn access_nodes(&self) -> MapBytesToImmutableBool {
+        MapBytesToImmutableBool { proxy: self.proxy.root(RESULT_ACCESS_NODES) }
     }
 }
 
@@ -189,6 +200,21 @@ impl MapBytesToMutableBytes {
 
     pub fn get_bytes(&self, key: &[u8]) -> ScMutableBytes {
         ScMutableBytes::new(self.proxy.key(&bytes_to_bytes(key)))
+    }
+}
+
+#[derive(Clone)]
+pub struct MapBytesToMutableBool {
+    pub(crate) proxy: Proxy,
+}
+
+impl MapBytesToMutableBool {
+    pub fn clear(&self) {
+        self.proxy.clear_map();
+    }
+
+    pub fn get_bool(&self, key: &[u8]) -> ScMutableBool {
+        ScMutableBool::new(self.proxy.key(&bytes_to_bytes(key)))
     }
 }
 
@@ -210,8 +236,8 @@ impl MutableGetChainNodesResults {
     }
 
     // pubKey set
-    pub fn access_nodes(&self) -> MapBytesToMutableBytes {
-        MapBytesToMutableBytes { proxy: self.proxy.root(RESULT_ACCESS_NODES) }
+    pub fn access_nodes(&self) -> MapBytesToMutableBool {
+        MapBytesToMutableBool { proxy: self.proxy.root(RESULT_ACCESS_NODES) }
     }
 }
 

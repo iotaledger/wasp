@@ -259,8 +259,8 @@ func TestFoundryModifySupply(t *testing.T) {
 
 func TestAccountFoundries(t *testing.T) {
 	ctx := setupAccounts(t)
-	user0 := ctx.NewSoloAgent()
-	user1 := ctx.NewSoloAgent()
+	user0 := ctx.NewSoloAgent("user0")
+	user1 := ctx.NewSoloAgent("user1")
 
 	mintAmount := wasmtypes.NewScBigInt(1000)
 	var foundries0 []*wasmsolo.SoloFoundry
@@ -286,14 +286,14 @@ func TestAccountFoundries(t *testing.T) {
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	for _, foundry := range foundries0 {
-		require.Equal(t, []byte{0xff}, f.Results.Foundries().GetBytes(foundry.SN()).Value())
+		require.True(t, f.Results.Foundries().GetBool(foundry.SN()).Value())
 	}
 
 	f.Params.AgentID().SetValue(user1.ScAgentID())
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	for _, foundry := range foundries1 {
-		require.Equal(t, []byte{0xff}, f.Results.Foundries().GetBytes(foundry.SN()).Value())
+		require.True(t, f.Results.Foundries().GetBool(foundry.SN()).Value())
 	}
 }
 
@@ -471,9 +471,9 @@ func TestAccounts(t *testing.T) {
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	allAccounts := f.Results.AllAccounts()
-	assert.True(t, allAccounts.GetBytes(user0.ScAgentID()).Exists())
-	assert.True(t, allAccounts.GetBytes(user1.ScAgentID()).Exists())
-	assert.False(t, allAccounts.GetBytes(ctx.NewSoloAgent("dummy").ScAgentID()).Exists())
+	assert.True(t, allAccounts.GetBool(user0.ScAgentID()).Value())
+	assert.True(t, allAccounts.GetBool(user1.ScAgentID()).Value())
+	assert.False(t, allAccounts.GetBool(ctx.NewSoloAgent("dummy").ScAgentID()).Value())
 }
 
 func TestGetAccountNonce(t *testing.T) {
@@ -516,10 +516,10 @@ func TestGetNativeTokenIDRegistry(t *testing.T) {
 	f := coreaccounts.ScFuncs.GetNativeTokenIDRegistry(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	assert.True(t, f.Results.Mapping().GetBytes(tokenID0).Exists())
-	assert.True(t, f.Results.Mapping().GetBytes(tokenID1).Exists())
+	assert.True(t, f.Results.Mapping().GetBool(tokenID0).Value())
+	assert.True(t, f.Results.Mapping().GetBool(tokenID1).Value())
 	notExistTokenID := wasmtypes.TokenIDFromString("0x08f824508968d585ede1d154d34ba0d966ee03c928670fb85bd72e2924f67137890100000000")
-	assert.False(t, f.Results.Mapping().GetBytes(notExistTokenID).Exists())
+	assert.False(t, f.Results.Mapping().GetBool(notExistTokenID).Value())
 }
 
 func TestFoundryOutput(t *testing.T) {
