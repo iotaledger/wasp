@@ -13,13 +13,15 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func TestTimePoolBasic(t *testing.T) {
+	log := testlogger.NewLogger(t)
 	kp := cryptolib.NewKeyPair()
-	tp := mempool.NewTimePool()
+	tp := mempool.NewTimePool(func(i int) {}, log)
 	t0 := time.Now()
 	t1 := t0.Add(17 * time.Nanosecond)
 	t2 := t0.Add(17 * time.Minute)
@@ -84,7 +86,8 @@ type timePoolSM struct {
 }
 
 func (sm *timePoolSM) Init(t *rapid.T) {
-	sm.tp = mempool.NewTimePool()
+	log := testlogger.NewLogger(t)
+	sm.tp = mempool.NewTimePool(func(i int) {}, log)
 	sm.kp = cryptolib.NewKeyPair()
 	sm.added = 0
 	sm.taken = 0

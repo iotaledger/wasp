@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -24,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -466,7 +466,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			te.peerIdentities[i],
 			te.networkProviders[i],
 			te.log.Named(fmt.Sprintf("N#%v", i)),
-			&MockMempoolMetrics{},
+			metrics.NewEmptyChainMempoolMetric(),
 			chain.NewEmptyChainListener(),
 		)
 	}
@@ -486,32 +486,6 @@ func (te *testEnv) close() {
 	te.peeringNetwork.Close()
 	te.log.Sync()
 }
-
-////////////////////////////////////////////////////////////////////////////////
-// MockMempoolMetrics
-
-type MockMempoolMetrics struct {
-	mock.Mock
-	offLedgerRequestCounter int
-	onLedgerRequestCounter  int
-	processedRequestCounter int
-}
-
-func (m *MockMempoolMetrics) IncBlocksPerChain() {}
-func (m *MockMempoolMetrics) IncRequestsReceived(req isc.Request) {
-	if req.IsOffLedger() {
-		m.offLedgerRequestCounter++
-	} else {
-		m.onLedgerRequestCounter++
-	}
-}
-
-func (m *MockMempoolMetrics) IncRequestsProcessed() {
-	m.processedRequestCounter++
-}
-
-func (m *MockMempoolMetrics) IncRequestsAckMessages()                  {}
-func (m *MockMempoolMetrics) SetRequestProcessingTime(_ time.Duration) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 
