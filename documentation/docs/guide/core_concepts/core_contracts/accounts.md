@@ -169,7 +169,7 @@ Returns a list of all agent IDs that own assets on the chain.
 
 #### Returns
 
-A map of `AgentiD` => `0xff`.
+A map of `AgentiD` => `0x01`.
 
 ### `getNativeTokenIDRegistry()`
 
@@ -177,7 +177,7 @@ Returns a list of all native tokenIDs that are owned by the chain.
 
 #### Returns
 
-A map of [`TokenID`](#tokenid) => `0xff`
+A map of [`TokenID`](#tokenid) => `0x01`
 
 ### `foundryOutput(s FoundrySerialNumber)`
 
@@ -253,7 +253,7 @@ Returns all foundries owned by the given account.
 
 #### Returns
 
-A map of [`FoundrySerialNumber`](#foundryserialnumber) => `0xff`
+A map of [`FoundrySerialNumber`](#foundryserialnumber) => `0x01`
 
 ### `nftData(z NFTID)`
 

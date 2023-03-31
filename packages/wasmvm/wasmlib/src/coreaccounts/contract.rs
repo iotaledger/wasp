@@ -198,7 +198,7 @@ impl ScFuncs {
         }
     }
 
-    // Returns the NFT IDs for all NFTs owned by the given account.
+    // Returns a set of all foundries owned by the given account.
     pub fn account_foundries(ctx: &impl ScViewCallContext) -> AccountFoundriesCall {
         let mut f = AccountFoundriesCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_ACCOUNT_FOUNDRIES),
@@ -258,7 +258,7 @@ impl ScFuncs {
         f
     }
 
-    // Returns a list of all agent IDs that own assets on the chain.
+    // Returns a set of all agent IDs that own assets on the chain.
     pub fn accounts(ctx: &impl ScViewCallContext) -> AccountsCall {
         let mut f = AccountsCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_ACCOUNTS),
@@ -329,7 +329,7 @@ impl ScFuncs {
         f
     }
 
-    // Returns a list of all native tokenIDs that are owned by the chain.
+    // Returns a set of all native tokenIDs that are owned by the chain.
     pub fn get_native_token_id_registry(ctx: &impl ScViewCallContext) -> GetNativeTokenIDRegistryCall {
         let mut f = GetNativeTokenIDRegistryCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_NATIVE_TOKEN_ID_REGISTRY),

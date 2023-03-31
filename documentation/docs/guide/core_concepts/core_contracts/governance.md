@@ -259,10 +259,10 @@ Returns the current access nodes and candidates.
 
 #### Returns
 
-- `ac` ([`Map`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/map.go) of public key => empty
-  value): The access nodes.
-- `an` ([`Map`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/map.go) of public key
-  => [`AccessNodeInfo`](#accessnodeinfo)): The candidate nodes.
+- `ac` ([`Map`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/map.go)
+  of public key => `0x01`): The access nodes.
+- `an` ([`Map`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/map.go)
+  of public key => [`AccessNodeInfo`](#accessnodeinfo)): The candidate nodes.
 
 ### `getMaintenanceStatus()`
 

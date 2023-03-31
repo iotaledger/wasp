@@ -67,10 +67,9 @@ func viewGetAccountNonce(ctx isc.SandboxView) dict.Dict {
 
 // viewGetNativeTokenIDRegistry returns all native token ID accounted in the chain
 func viewGetNativeTokenIDRegistry(ctx isc.SandboxView) dict.Dict {
-	mapping := nativeTokenOutputMapR(ctx.StateR())
 	ret := dict.New()
-	mapping.Iterate(func(elemKey []byte, value []byte) bool {
-		ret.Set(kv.Key(elemKey), []byte{0xff})
+	nativeTokenOutputMapR(ctx.StateR()).IterateKeys(func(tokenID []byte) bool {
+		ret.Set(kv.Key(tokenID), []byte{0x01})
 		return true
 	})
 	return ret
@@ -78,11 +77,10 @@ func viewGetNativeTokenIDRegistry(ctx isc.SandboxView) dict.Dict {
 
 // viewAccountFoundries returns the foundries owned by the given agentID
 func viewAccountFoundries(ctx isc.SandboxView) dict.Dict {
-	account := ctx.Params().MustGetAgentID(ParamAgentID)
-	foundries := accountFoundriesMapR(ctx.StateR(), account)
 	ret := dict.New()
-	foundries.Iterate(func(k []byte, v []byte) bool {
-		ret.Set(kv.Key(k), v)
+	account := ctx.Params().MustGetAgentID(ParamAgentID)
+	accountFoundriesMapR(ctx.StateR(), account).IterateKeys(func(foundry []byte) bool {
+		ret.Set(kv.Key(foundry), []byte{0x01})
 		return true
 	})
 	return ret

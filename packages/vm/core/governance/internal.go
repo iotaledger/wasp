@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -88,4 +89,20 @@ func SetCustomMetadata(state kv.KVStore, data []byte) {
 
 func GetCustomMetadata(state kv.KVStoreReader) []byte {
 	return state.Get(VarCustomMetadata)
+}
+
+func AccessNodesMap(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, VarAccessNodes)
+}
+
+func AccessNodesMapR(state kv.KVStoreReader) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, VarAccessNodes)
+}
+
+func AccessNodeCandidatesMap(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, VarAccessNodeCandidates)
+}
+
+func AccessNodeCandidatesMapR(state kv.KVStoreReader) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, VarAccessNodeCandidates)
 }

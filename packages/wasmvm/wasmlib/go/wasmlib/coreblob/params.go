@@ -28,7 +28,7 @@ func NewImmutableStoreBlobParams() ImmutableStoreBlobParams {
 	return ImmutableStoreBlobParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
-// set of named chunks
+// named chunks
 func (s ImmutableStoreBlobParams) Blobs() MapStringToImmutableBytes {
 	return MapStringToImmutableBytes(s)
 }
@@ -69,7 +69,7 @@ type MutableStoreBlobParams struct {
 	Proxy wasmtypes.Proxy
 }
 
-// set of named chunks
+// named chunks
 func (s MutableStoreBlobParams) Blobs() MapStringToMutableBytes {
 	return MapStringToMutableBytes(s)
 }

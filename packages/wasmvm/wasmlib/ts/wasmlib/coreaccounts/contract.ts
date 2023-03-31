@@ -257,7 +257,7 @@ export class ScFuncs {
         return new WithdrawCall(ctx);
     }
 
-    // Returns the NFT IDs for all NFTs owned by the given account.
+    // Returns a set of all foundries owned by the given account.
     static accountFoundries(ctx: wasmlib.ScViewCallContext): AccountFoundriesCall {
         const f = new AccountFoundriesCall(ctx);
         f.params = new sc.MutableAccountFoundriesParams(wasmlib.newCallParamsProxy(f.func));
@@ -297,7 +297,7 @@ export class ScFuncs {
         return f;
     }
 
-    // Returns a list of all agent IDs that own assets on the chain.
+    // Returns a set of all agent IDs that own assets on the chain.
     static accounts(ctx: wasmlib.ScViewCallContext): AccountsCall {
         const f = new AccountsCall(ctx);
         f.results = new sc.ImmutableAccountsResults(wasmlib.newCallResultsProxy(f.func));
@@ -345,7 +345,7 @@ export class ScFuncs {
         return f;
     }
 
-    // Returns a list of all native tokenIDs that are owned by the chain.
+    // Returns a set of all native tokenIDs that are owned by the chain.
     static getNativeTokenIDRegistry(ctx: wasmlib.ScViewCallContext): GetNativeTokenIDRegistryCall {
         const f = new GetNativeTokenIDRegistryCall(ctx);
         f.results = new sc.ImmutableGetNativeTokenIDRegistryResults(wasmlib.newCallResultsProxy(f.func));
