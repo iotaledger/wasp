@@ -31,8 +31,8 @@ type KVStore interface {
 
 type KVReader interface {
 	// Get returns the value, or nil if not found
-	Get(key Key) ([]byte, error)
-	Has(key Key) (bool, error)
+	Get(key Key) []byte
+	Has(key Key) bool
 }
 
 type KVWriter interface {
@@ -43,72 +43,13 @@ type KVWriter interface {
 }
 
 type KVIterator interface {
-	Iterate(prefix Key, f func(key Key, value []byte) bool) error
-	IterateKeys(prefix Key, f func(key Key) bool) error
-	IterateSorted(prefix Key, f func(key Key, value []byte) bool) error
-	IterateKeysSorted(prefix Key, f func(key Key) bool) error
-}
-
-type KVMustReader interface {
-	// MustGet returns the value, or nil if not found
-	MustGet(key Key) []byte
-	MustHas(key Key) bool
-}
-
-type KVMustIterator interface {
-	MustIterate(prefix Key, f func(key Key, value []byte) bool)
-	MustIterateKeys(prefix Key, f func(key Key) bool)
-	MustIterateSorted(prefix Key, f func(key Key, value []byte) bool)
-	MustIterateKeysSorted(prefix Key, f func(key Key) bool)
+	Iterate(prefix Key, f func(key Key, value []byte) bool)
+	IterateKeys(prefix Key, f func(key Key) bool)
+	IterateSorted(prefix Key, f func(key Key, value []byte) bool)
+	IterateKeysSorted(prefix Key, f func(key Key) bool)
 }
 
 type KVStoreReader interface {
 	KVReader
 	KVIterator
-	KVMustReader
-	KVMustIterator
-}
-
-func MustGet(kvs KVStoreReader, key Key) []byte {
-	v, err := kvs.Get(key)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-func MustHas(kvs KVStoreReader, key Key) bool {
-	v, err := kvs.Has(key)
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-func MustIterate(kvs KVStoreReader, prefix Key, f func(key Key, value []byte) bool) {
-	err := kvs.Iterate(prefix, f)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func MustIterateKeys(kvs KVStoreReader, prefix Key, f func(key Key) bool) {
-	err := kvs.IterateKeys(prefix, f)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func MustIterateSorted(kvs KVStoreReader, prefix Key, f func(key Key, value []byte) bool) {
-	err := kvs.IterateSorted(prefix, f)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func MustIterateKeysSorted(kvs KVStoreReader, prefix Key, f func(key Key) bool) {
-	err := kvs.IterateKeysSorted(prefix, f)
-	if err != nil {
-		panic(err)
-	}
 }

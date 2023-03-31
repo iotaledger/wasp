@@ -112,137 +112,60 @@ func (a *Array32) setSize(n uint32) {
 	}
 }
 
-func (a *Array32) addToSize(amount int) (uint32, error) {
-	prevSize, err := a.Len()
-	if err != nil {
-		return 0, err
-	}
+func (a *Array32) addToSize(amount int) uint32 {
+	prevSize := a.Len()
 	newSize := uint64(prevSize) + uint64(amount)
 	if newSize > math.MaxUint32 {
-		return 0, ErrArray32Overflow
+		panic(ErrArray32Overflow)
 	}
 	a.setSize(uint32(newSize))
-	return prevSize, nil
+	return prevSize
 }
 
 // Len == 0/empty/non-existent are equivalent
-func (a *ImmutableArray32) Len() (uint32, error) {
-	v, err := a.kvr.Get(a.getSizeKey())
-	if err != nil {
-		return 0, err
-	}
+func (a *ImmutableArray32) Len() uint32 {
+	v := a.kvr.Get(a.getSizeKey())
 	if v == nil {
-		return 0, nil
+		return 0
 	}
-	return bytesToUint32(v), nil
-}
-
-func (a *ImmutableArray32) MustLen() uint32 {
-	n, err := a.Len()
-	if err != nil {
-		panic(err)
-	}
-	return n
+	return bytesToUint32(v)
 }
 
 // adds to the end of the list
-func (a *Array32) Push(value []byte) error {
-	prevSize, err := a.addToSize(1)
-	if err != nil {
-		return err
-	}
+func (a *Array32) Push(value []byte) {
+	prevSize := a.addToSize(1)
 	k := a.getArray32ElemKey(prevSize)
 	a.kvw.Set(k, value)
-	return nil
 }
 
-func (a *Array32) MustPush(value []byte) {
-	err := a.Push(value)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (a *Array32) Extend(other *ImmutableArray32) error {
-	otherLen, err := other.Len()
-	if err != nil {
-		return err
-	}
+func (a *Array32) Extend(other *ImmutableArray32) {
+	otherLen := other.Len()
 	for i := uint32(0); i < otherLen; i++ {
-		v, _ := other.GetAt(i)
-		err = a.Push(v)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (a *Array32) MustExtend(other *ImmutableArray32) {
-	err := a.Extend(other)
-	if err != nil {
-		panic(err)
+		a.Push(other.GetAt(i))
 	}
 }
 
 // TODO implement with DelPrefix
-func (a *Array32) Erase() error {
-	n, err := a.Len()
-	if err != nil {
-		return err
-	}
+func (a *Array32) Erase() {
+	n := a.Len()
 	for i := uint32(0); i < n; i++ {
 		a.kvw.Del(a.getArray32ElemKey(i))
 	}
 	a.setSize(0)
-	return nil
 }
 
-func (a *Array32) MustErase() {
-	err := a.Erase()
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (a *ImmutableArray32) GetAt(idx uint32) ([]byte, error) {
-	n, err := a.Len()
-	if err != nil {
-		return nil, err
-	}
+func (a *ImmutableArray32) GetAt(idx uint32) []byte {
+	n := a.Len()
 	if idx >= n {
-		return nil, fmt.Errorf("index %d out of range for array of len %d", idx, n)
+		panic(fmt.Errorf("index %d out of range for array of len %d", idx, n))
 	}
-	ret, err := a.kvr.Get(a.getArray32ElemKey(idx))
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
+	return a.kvr.Get(a.getArray32ElemKey(idx))
 }
 
-func (a *ImmutableArray32) MustGetAt(idx uint32) []byte {
-	ret, err := a.GetAt(idx)
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-func (a *Array32) SetAt(idx uint32, value []byte) error {
-	n, err := a.Len()
-	if err != nil {
-		return err
-	}
+func (a *Array32) SetAt(idx uint32, value []byte) {
+	n := a.Len()
 	if idx >= n {
-		return fmt.Errorf("index %d out of range for array of len %d", idx, n)
+		panic(fmt.Errorf("index %d out of range for array of len %d", idx, n))
 	}
 	a.kvw.Set(a.getArray32ElemKey(idx), value)
-	return nil
-}
-
-func (a *Array32) MustSetAt(idx uint32, value []byte) {
-	err := a.SetAt(idx, value)
-	if err != nil {
-		panic(err)
-	}
 }

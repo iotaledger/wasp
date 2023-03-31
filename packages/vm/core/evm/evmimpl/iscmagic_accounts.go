@@ -18,7 +18,7 @@ func (h *magicContractViewHandler) GetL2BalanceBaseTokens(agentID iscmagic.ISCAg
 	r := h.ctx.CallView(accounts.Contract.Hname(), accounts.ViewBalanceBaseToken.Hname(), dict.Dict{
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID.MustUnwrap()),
 	})
-	return codec.MustDecodeUint64(r.MustGet(accounts.ParamBalance))
+	return codec.MustDecodeUint64(r.Get(accounts.ParamBalance))
 }
 
 // handler for ISCAccounts::getL2BalanceNativeTokens
@@ -27,7 +27,7 @@ func (h *magicContractViewHandler) GetL2BalanceNativeTokens(nativeTokenID iscmag
 		accounts.ParamNativeTokenID: codec.EncodeNativeTokenID(nativeTokenID.Unwrap()),
 		accounts.ParamAgentID:       codec.EncodeAgentID(agentID.MustUnwrap()),
 	})
-	return codec.MustDecodeBigIntAbs(r.MustGet(accounts.ParamBalance))
+	return codec.MustDecodeBigIntAbs(r.Get(accounts.ParamBalance))
 }
 
 // handler for ISCAccounts::getL2NFTs
@@ -36,9 +36,9 @@ func (h *magicContractViewHandler) GetL2NFTs(agentID iscmagic.ISCAgentID) []iscm
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID.MustUnwrap()),
 	})
 	arr := collections.NewArray16(r, accounts.ParamNFTIDs)
-	ret := make([]iscmagic.NFTID, arr.MustLen())
-	for i := uint16(0); i < arr.MustLen(); i++ {
-		copy(ret[i][:], arr.MustGetAt(i))
+	ret := make([]iscmagic.NFTID, arr.Len())
+	for i := uint16(0); i < arr.Len(); i++ {
+		copy(ret[i][:], arr.GetAt(i))
 	}
 	return ret
 }
@@ -59,9 +59,9 @@ func (h *magicContractViewHandler) GetL2NFTsInCollection(agentID iscmagic.ISCAge
 		accounts.ParamCollectionID: codec.EncodeNFTID(collectionID.Unwrap()),
 	})
 	arr := collections.NewArray16(r, accounts.ParamNFTIDs)
-	ret := make([]iscmagic.NFTID, arr.MustLen())
-	for i := uint16(0); i < arr.MustLen(); i++ {
-		copy(ret[i][:], arr.MustGetAt(i))
+	ret := make([]iscmagic.NFTID, arr.Len())
+	for i := uint16(0); i < arr.Len(); i++ {
+		copy(ret[i][:], arr.GetAt(i))
 	}
 	return ret
 }

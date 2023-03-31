@@ -132,11 +132,11 @@ func getMaxCallGasLimit(ch chain.ChainCore) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	fp, err := gas.FeePolicyFromBytes(ret.MustGet(governance.VarGasFeePolicyBytes))
+	fp, err := gas.FeePolicyFromBytes(ret.Get(governance.VarGasFeePolicyBytes))
 	if err != nil {
 		return 0, err
 	}
-	gl, err := gas.LimitsFromBytes(ret.MustGet(governance.VarGasLimitsBytes))
+	gl, err := gas.LimitsFromBytes(ret.Get(governance.VarGasLimitsBytes))
 	if err != nil {
 		return 0, err
 	}

@@ -258,14 +258,14 @@ func TestMoveAll(t *testing.T) {
 
 	transfer := isc.NewAssetsBaseTokens(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	CreditToAccount(state, agentID1, transfer)
-	require.EqualValues(t, 1, allAccountsMapR(state).MustLen())
+	require.EqualValues(t, 1, allAccountsMapR(state).Len())
 	accs := allAccountsAsDict(state)
 	require.EqualValues(t, 1, len(accs))
 	_, ok := accs[kv.Key(agentID1.Bytes())]
 	require.True(t, ok)
 
 	MustMoveBetweenAccounts(state, agentID1, agentID2, transfer)
-	require.EqualValues(t, 2, allAccountsMapR(state).MustLen())
+	require.EqualValues(t, 2, allAccountsMapR(state).Len())
 	accs = allAccountsAsDict(state)
 	require.EqualValues(t, 2, len(accs))
 	_, ok = accs[kv.Key(agentID2.Bytes())]
@@ -278,14 +278,14 @@ func TestDebitAll(t *testing.T) {
 
 	transfer := isc.NewAssets(42, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	CreditToAccount(state, agentID1, transfer)
-	require.EqualValues(t, 1, allAccountsMapR(state).MustLen())
+	require.EqualValues(t, 1, allAccountsMapR(state).Len())
 	accs := allAccountsAsDict(state)
 	require.EqualValues(t, 1, len(accs))
 	_, ok := accs[kv.Key(agentID1.Bytes())]
 	require.True(t, ok)
 
 	DebitFromAccount(state, agentID1, transfer)
-	require.EqualValues(t, 1, allAccountsMapR(state).MustLen())
+	require.EqualValues(t, 1, allAccountsMapR(state).Len())
 	accs = allAccountsAsDict(state)
 	require.EqualValues(t, 1, len(accs))
 	require.True(t, ok)

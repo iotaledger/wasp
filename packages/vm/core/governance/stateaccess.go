@@ -20,7 +20,7 @@ func NewStateAccess(store kv.KVStoreReader) *StateAccess {
 }
 
 func (sa *StateAccess) GetMaintenanceStatus() bool {
-	r := sa.state.MustGet(VarMaintenanceStatus)
+	r := sa.state.Get(VarMaintenanceStatus)
 	if r == nil {
 		return false // chain is being initialized, governance has not been initialized yet
 	}
@@ -29,7 +29,7 @@ func (sa *StateAccess) GetMaintenanceStatus() bool {
 
 func (sa *StateAccess) GetAccessNodes() []*cryptolib.PublicKey {
 	accessNodes := []*cryptolib.PublicKey{}
-	AccessNodesMapR(sa.state).MustIterateKeys(func(pubKeyBytes []byte) bool {
+	AccessNodesMapR(sa.state).IterateKeys(func(pubKeyBytes []byte) bool {
 		pubKey, err := cryptolib.NewPublicKeyFromBytes(pubKeyBytes)
 		if err != nil {
 			panic(err)
@@ -42,7 +42,7 @@ func (sa *StateAccess) GetAccessNodes() []*cryptolib.PublicKey {
 
 func (sa *StateAccess) GetCandidateNodes() []*AccessNodeInfo {
 	candidateNodes := []*AccessNodeInfo{}
-	AccessNodeCandidatesMapR(sa.state).MustIterate(func(pubKeyBytes, accessNodeInfoBytes []byte) bool {
+	AccessNodeCandidatesMapR(sa.state).Iterate(func(pubKeyBytes, accessNodeInfoBytes []byte) bool {
 		ani, err := NewAccessNodeInfoFromBytes(pubKeyBytes, accessNodeInfoBytes)
 		if err != nil {
 			panic(err)

@@ -48,7 +48,7 @@ func AssetsFromDict(d dict.Dict) (*Assets, error) {
 	ret := NewEmptyAssets()
 	for key, val := range d {
 		if IsBaseToken([]byte(key)) {
-			ret.BaseTokens = new(big.Int).SetBytes(d.MustGet(kv.Key(BaseTokenID))).Uint64()
+			ret.BaseTokens = new(big.Int).SetBytes(d.Get(kv.Key(BaseTokenID))).Uint64()
 			continue
 		}
 		id, err := NativeTokenIDFromBytes([]byte(key))

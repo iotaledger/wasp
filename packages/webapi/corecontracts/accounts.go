@@ -72,18 +72,12 @@ func (a *Accounts) GetAccountNFTs(chainID isc.ChainID, agentID isc.AgentID) ([]i
 	}
 
 	nftIDsCollection := collections.NewArray16ReadOnly(ret, accounts.ParamNFTIDs)
-	nftLen, err := nftIDsCollection.Len()
+	nftLen := nftIDsCollection.Len()
 	nftIDs := make([]iotago.NFTID, 0)
-	if err != nil {
-		return nil, err
-	}
 
 	for i := uint16(0); i < nftLen; i++ {
 		nftID := iotago.NFTID{}
-		nftIDBytes, err := nftIDsCollection.GetAt(i)
-		if err != nil {
-			return nil, err
-		}
+		nftIDBytes := nftIDsCollection.GetAt(i)
 
 		copy(nftID[:], nftIDBytes)
 		nftIDs = append(nftIDs, nftID)
@@ -118,10 +112,7 @@ func (a *Accounts) GetAccountNonce(chainID isc.ChainID, agentID isc.AgentID) (ui
 		return 0, err
 	}
 
-	nonce, err := ret.Get(accounts.ParamAccountNonce)
-	if err != nil {
-		return 0, err
-	}
+	nonce := ret.Get(accounts.ParamAccountNonce)
 
 	return codec.DecodeUint64(nonce)
 }
@@ -134,7 +125,7 @@ func (a *Accounts) GetNFTData(chainID isc.ChainID, nftID iotago.NFTID) (*isc.NFT
 		return nil, err
 	}
 
-	nftData, err := isc.NFTFromBytes(ret.MustGet(accounts.ParamNFTData))
+	nftData, err := isc.NFTFromBytes(ret.Get(accounts.ParamNFTData))
 	if err != nil {
 		return nil, err
 	}
@@ -180,11 +171,7 @@ func (a *Accounts) GetFoundryOutput(chainID isc.ChainID, serialNumber uint32) (*
 		return nil, err
 	}
 
-	outBin, err := res.Get(accounts.ParamFoundryOutputBin)
-	if err != nil {
-		return nil, err
-	}
-
+	outBin := res.Get(accounts.ParamFoundryOutputBin)
 	out := &iotago.FoundryOutput{}
 	_, err = out.Deserialize(outBin, serializer.DeSeriModeNoValidation, nil)
 	if err != nil {

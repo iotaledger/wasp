@@ -178,13 +178,9 @@ func (vmctx *VMContext) MustSaveEvent(contract isc.Hname, msg string) {
 	}
 	vmctx.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
 
-	var err error
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		err = blocklog.SaveEvent(vmctx.State(), msg, vmctx.eventLookupKey(), contract)
+		blocklog.SaveEvent(vmctx.State(), msg, vmctx.eventLookupKey(), contract)
 	})
-	if err != nil {
-		panic(err)
-	}
 	vmctx.requestEventIndex++
 }
 

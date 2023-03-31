@@ -18,34 +18,6 @@ import (
 // where both keys and values are arbitrary byte slices.
 type Dict map[kv.Key][]byte
 
-// MustGet retrieves value by key
-func (d Dict) MustGet(key kv.Key) []byte {
-	return kv.MustGet(d, key)
-}
-
-// MustHas checks if the value exists
-func (d Dict) MustHas(key kv.Key) bool {
-	return kv.MustHas(d, key)
-}
-
-// MustIterate iterated of key/value pairs. In general, non-deterministic
-func (d Dict) MustIterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
-	kv.MustIterate(d, prefix, f)
-}
-
-// MustIterateKeys iterated of keys of the dictionary. In general, non-deterministic
-func (d Dict) MustIterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
-	kv.MustIterateKeys(d, prefix, f)
-}
-
-func (d Dict) MustIterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
-	kv.MustIterateSorted(d, prefix, f)
-}
-
-func (d Dict) MustIterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
-	kv.MustIterateKeysSorted(d, prefix, f)
-}
-
 // New creates new
 func New() Dict {
 	return make(Dict)
@@ -62,13 +34,13 @@ func (d Dict) Clone() Dict {
 }
 
 // FromKVStore convert (copy) any KVStore to dict
-func FromKVStore(s kv.KVStoreReader) (Dict, error) {
+func FromKVStore(s kv.KVStoreReader) Dict {
 	d := make(Dict)
-	err := s.Iterate(kv.EmptyPrefix, func(k kv.Key, v []byte) bool {
+	s.Iterate(kv.EmptyPrefix, func(k kv.Key, v []byte) bool {
 		d[k] = v
 		return true
 	})
-	return d, err
+	return d
 }
 
 func (d Dict) String() string {
@@ -78,31 +50,9 @@ func (d Dict) String() string {
 		if len(val) > 80 {
 			val = val[:80]
 		}
-		ret += fmt.Sprintf(
-			"           %s: %s ('%s': '%s')\n",
-			slice(iotago.EncodeHex([]byte(key))),
-			slice(iotago.EncodeHex(val)),
-			printable([]byte(key)),
-			printable(val),
-		)
+		ret += fmt.Sprintf("           %q: %q\n", key, val)
 	}
 	return ret
-}
-
-func slice(s string) string {
-	if len(s) > 44 {
-		return s[:10] + "[...]" + s[len(s)-10:]
-	}
-	return s
-}
-
-func printable(s []byte) string {
-	for _, c := range s {
-		if c < 0x20 || c > 0x7e {
-			return "??? binary data ???"
-		}
-	}
-	return string(s)
 }
 
 // ForEach iterates non-deterministic!
@@ -133,20 +83,20 @@ func (d Dict) Del(key kv.Key) {
 }
 
 // Has checks if key exist
-func (d Dict) Has(key kv.Key) (bool, error) {
+func (d Dict) Has(key kv.Key) bool {
 	_, ok := d[key]
-	return ok, nil
+	return ok
 }
 
 // Iterate over keys with prefix
-func (d Dict) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
-	return d.IterateKeys(prefix, func(key kv.Key) bool {
+func (d Dict) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+	d.IterateKeys(prefix, func(key kv.Key) bool {
 		return f(key, d[key])
 	})
 }
 
 // IterateKeys over keys with prefix
-func (d Dict) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
+func (d Dict) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
 	for k := range d {
 		if !k.HasPrefix(prefix) {
 			continue
@@ -155,16 +105,15 @@ func (d Dict) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 			break
 		}
 	}
-	return nil
 }
 
-func (d Dict) IterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
-	return d.IterateKeysSorted(prefix, func(key kv.Key) bool {
+func (d Dict) IterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+	d.IterateKeysSorted(prefix, func(key kv.Key) bool {
 		return f(key, d[key])
 	})
 }
 
-func (d Dict) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
+func (d Dict) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
 	for _, k := range d.KeysSorted() {
 		if !k.HasPrefix(prefix) {
 			continue
@@ -173,12 +122,11 @@ func (d Dict) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
 			break
 		}
 	}
-	return nil
 }
 
 // Get takes a value. Returns nil if key does not exist
-func (d Dict) Get(key kv.Key) ([]byte, error) {
-	return d[key], nil
+func (d Dict) Get(key kv.Key) []byte {
+	return d[key]
 }
 
 func (d Dict) Bytes() []byte {
@@ -268,8 +216,7 @@ func (d Dict) Hash() hashing.HashValue {
 	data := make([][]byte, 0, 2*len(d))
 	for _, k := range keys {
 		data = append(data, []byte(k))
-		v, _ := d.Get(k)
-		data = append(data, v)
+		data = append(data, d.Get(k))
 	}
 	return hashing.HashData(data...)
 }

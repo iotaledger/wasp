@@ -36,7 +36,7 @@ var Processor = root.Contract.Processor(nil,
 
 func SetInitialState(state kv.KVStore) {
 	contractRegistry := collections.NewMap(state, root.StateVarContractRegistry)
-	if contractRegistry.MustLen() != 0 {
+	if contractRegistry.Len() != 0 {
 		panic("contract registry must be empty on chain start")
 	}
 
@@ -83,15 +83,14 @@ func deployContract(ctx isc.Sandbox) dict.Dict {
 
 	// pass to init function all params not consumed so far
 	initParams := dict.New()
-	err := ctx.Params().Dict.Iterate("", func(key kv.Key, value []byte) bool {
+	ctx.Params().Dict.Iterate("", func(key kv.Key, value []byte) bool {
 		if key != root.ParamProgramHash && key != root.ParamName && key != root.ParamDescription {
 			initParams.Set(key, value)
 		}
 		return true
 	})
-	ctx.RequireNoError(err)
 	// call to load VM from binary to check if it loads successfully
-	err = ctx.Privileged().TryLoadContract(progHash)
+	err := ctx.Privileged().TryLoadContract(progHash)
 	ctx.RequireNoError(err, "root.deployContract.fail 1: ")
 
 	// VM loaded successfully. Storing contract in the registry and calling constructor
@@ -115,7 +114,7 @@ func grantDeployPermission(ctx isc.Sandbox) dict.Dict {
 	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
 	ctx.Requiref(deployer.Kind() != isc.AgentIDKindNil, "cannot grant deploy permission to NilAgentID")
 
-	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustSetAt(deployer.Bytes(), []byte{0xFF})
+	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).SetAt(deployer.Bytes(), []byte{0xFF})
 	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer.String()))
 	return nil
 }
@@ -128,7 +127,7 @@ func revokeDeployPermission(ctx isc.Sandbox) dict.Dict {
 
 	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
 
-	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustDelAt(deployer.Bytes())
+	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).DelAt(deployer.Bytes())
 	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %v", deployer))
 	return nil
 }
@@ -162,8 +161,8 @@ func getContractRecords(ctx isc.SandboxView) dict.Dict {
 
 	ret := dict.New()
 	dst := collections.NewMap(ret, root.StateVarContractRegistry)
-	src.MustIterate(func(elemKey []byte, value []byte) bool {
-		dst.MustSetAt(elemKey, value)
+	src.Iterate(func(elemKey []byte, value []byte) bool {
+		dst.SetAt(elemKey, value)
 		return true
 	})
 

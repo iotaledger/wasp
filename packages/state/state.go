@@ -44,7 +44,7 @@ func (s *state) BlockIndex() uint32 {
 }
 
 func loadBlockIndexFromState(s kv.KVStoreReader) uint32 {
-	return codec.MustDecodeUint32(s.MustGet(kv.Key(coreutil.StatePrefixBlockIndex)))
+	return codec.MustDecodeUint32(s.Get(kv.Key(coreutil.StatePrefixBlockIndex)))
 }
 
 func (s *state) Timestamp() time.Time {
@@ -54,10 +54,7 @@ func (s *state) Timestamp() time.Time {
 }
 
 func loadTimestampFromState(chainState kv.KVStoreReader) (time.Time, error) {
-	tsBin, err := chainState.Get(kv.Key(coreutil.StatePrefixTimestamp))
-	if err != nil {
-		return time.Time{}, err
-	}
+	tsBin := chainState.Get(kv.Key(coreutil.StatePrefixTimestamp))
 	ts, err := codec.DecodeTime(tsBin)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("loadTimestampFromState: %w", err)
@@ -70,8 +67,7 @@ func (s *state) PreviousL1Commitment() *L1Commitment {
 }
 
 func loadPrevL1CommitmentFromState(chainState kv.KVStoreReader) *L1Commitment {
-	data, err := chainState.Get(kv.Key(coreutil.StatePrefixPrevL1Commitment))
-	mustNoErr(err)
+	data := chainState.Get(kv.Key(coreutil.StatePrefixPrevL1Commitment))
 	l1c, err := L1CommitmentFromBytes(data)
 	mustNoErr(err)
 	return l1c

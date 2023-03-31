@@ -16,41 +16,31 @@ func (vmctx *VMContext) chainState() chainStateWrapper {
 	return chainStateWrapper{vmctx}
 }
 
-func (s chainStateWrapper) Has(name kv.Key) (bool, error) {
+func (s chainStateWrapper) Has(name kv.Key) bool {
 	if _, ok := s.vmctx.currentStateUpdate.Mutations.Sets[name]; ok {
-		return true, nil
+		return true
 	}
 	if _, wasDeleted := s.vmctx.currentStateUpdate.Mutations.Dels[name]; wasDeleted {
-		return false, nil
+		return false
 	}
 	return s.vmctx.task.StateDraft.Has(name)
 }
 
-func (s chainStateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) error {
-	var err error
-	err2 := s.IterateKeys(prefix, func(k kv.Key) bool {
-		var v []byte
-		v, err = s.Get(k)
-		if err != nil {
-			return false
-		}
-		return f(k, v)
+func (s chainStateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) {
+	s.IterateKeys(prefix, func(k kv.Key) bool {
+		return f(k, s.Get(k))
 	})
-	if err2 != nil {
-		return err2
-	}
-	return err
 }
 
-func (s chainStateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
+func (s chainStateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
 	for k := range s.vmctx.currentStateUpdate.Mutations.Sets {
 		if k.HasPrefix(prefix) {
 			if !f(k) {
-				return nil
+				return
 			}
 		}
 	}
-	return s.vmctx.task.StateDraft.IterateKeys(prefix, func(k kv.Key) bool {
+	s.vmctx.task.StateDraft.IterateKeys(prefix, func(k kv.Key) bool {
 		if !s.vmctx.currentStateUpdate.Mutations.Contains(k) {
 			return f(k)
 		}
@@ -58,58 +48,44 @@ func (s chainStateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) e
 	})
 }
 
-func (s chainStateWrapper) IterateSorted(prefix kv.Key, f func(kv.Key, []byte) bool) error {
-	var err error
-	err2 := s.IterateKeysSorted(prefix, func(k kv.Key) bool {
-		var v []byte
-		v, err = s.Get(k)
-		if err != nil {
-			return false
-		}
-		return f(k, v)
+func (s chainStateWrapper) IterateSorted(prefix kv.Key, f func(kv.Key, []byte) bool) {
+	s.IterateKeysSorted(prefix, func(k kv.Key) bool {
+		return f(k, s.Get(k))
 	})
-	if err2 != nil {
-		return err2
-	}
-	return err
 }
 
-func (s chainStateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
+func (s chainStateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
 	var keys []kv.Key
 	for k := range s.vmctx.currentStateUpdate.Mutations.Sets {
 		if k.HasPrefix(prefix) {
 			keys = append(keys, k)
 		}
 	}
-	err := s.vmctx.task.StateDraft.IterateKeysSorted(prefix, func(k kv.Key) bool {
+	s.vmctx.task.StateDraft.IterateKeysSorted(prefix, func(k kv.Key) bool {
 		if !s.vmctx.currentStateUpdate.Mutations.Contains(k) {
 			keys = append(keys, k)
 		}
 		return true
 	})
-	if err != nil {
-		return err
-	}
 	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
 	for _, k := range keys {
 		if !f(k) {
 			break
 		}
 	}
-	return nil
 }
 
-func (s chainStateWrapper) Get(name kv.Key) ([]byte, error) {
+func (s chainStateWrapper) Get(name kv.Key) []byte {
 	v, ok := s.vmctx.currentStateUpdate.Mutations.Sets[name]
 	if ok {
-		return v, nil
+		return v
 	}
 	if _, wasDeleted := s.vmctx.currentStateUpdate.Mutations.Dels[name]; wasDeleted {
-		return nil, nil
+		return nil
 	}
-	ret, err := s.vmctx.task.StateDraft.Get(name)
+	ret := s.vmctx.task.StateDraft.Get(name)
 	s.vmctx.GasBurn(gas.BurnCodeReadFromState1P, uint64(len(ret)/100)+1) // minimum 1
-	return ret, err
+	return ret
 }
 
 func (s chainStateWrapper) Del(name kv.Key) {
@@ -128,30 +104,6 @@ func (vmctx *VMContext) State() kv.KVStore {
 
 func (vmctx *VMContext) StateReader() kv.KVStoreReader {
 	return subrealm.NewReadOnly(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
-}
-
-func (s chainStateWrapper) MustGet(key kv.Key) []byte {
-	return kv.MustGet(s, key)
-}
-
-func (s chainStateWrapper) MustHas(key kv.Key) bool {
-	return kv.MustHas(s, key)
-}
-
-func (s chainStateWrapper) MustIterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
-	kv.MustIterate(s, prefix, f)
-}
-
-func (s chainStateWrapper) MustIterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
-	kv.MustIterateKeys(s, prefix, f)
-}
-
-func (s chainStateWrapper) MustIterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
-	kv.MustIterateSorted(s, prefix, f)
-}
-
-func (s chainStateWrapper) MustIterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
-	kv.MustIterateKeysSorted(s, prefix, f)
 }
 
 func (s chainStateWrapper) Apply() {

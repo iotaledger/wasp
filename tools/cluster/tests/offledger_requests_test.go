@@ -57,7 +57,7 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	resultint64, _ := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
+	resultint64, _ := codec.DecodeInt64(ret.Get(inccounter.VarCounter))
 	require.EqualValues(t, 43, resultint64)
 }
 
@@ -83,7 +83,7 @@ func testOffledgerRequest(t *testing.T, e *ChainEnv) {
 	})
 
 	require.NoError(t, err)
-	resultint64, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
+	resultint64, err := codec.DecodeInt64(ret.Get(inccounter.VarCounter))
 	require.NoError(t, err)
 	require.EqualValues(t, 43, resultint64)
 }

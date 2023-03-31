@@ -17,7 +17,7 @@ func GetMessageFormat(code isc.VMErrorCode, callView ViewCaller) (string, error)
 	if err != nil {
 		return "", err
 	}
-	return codec.DecodeString(ret.MustGet(ParamErrorMessageFormat))
+	return codec.DecodeString(ret.Get(ParamErrorMessageFormat))
 }
 
 func Resolve(e *isc.UnresolvedVMError, callView ViewCaller) (*isc.VMError, error) {

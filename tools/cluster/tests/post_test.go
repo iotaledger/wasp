@@ -67,8 +67,7 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 	})
 	require.NoError(e.t, err)
 
-	recb, err := result.Get(root.ParamContractRecData)
-	require.NoError(e.t, err)
+	recb := result.Get(root.ParamContractRecData)
 
 	rec, err := root.ContractRecordFromBytes(recb)
 	require.NoError(e.t, err)
@@ -99,7 +98,7 @@ func (e *ChainEnv) getCounterForNode(hname isc.Hname, nodeIndex int) int64 {
 	decodedDict, err := apiextensions.APIJsonDictToDict(*result)
 	require.NoError(e.t, err)
 
-	counter, err := codec.DecodeInt64(decodedDict.MustGet(inccounter.VarCounter), 0)
+	counter, err := codec.DecodeInt64(decodedDict.Get(inccounter.VarCounter), 0)
 	require.NoError(e.t, err)
 
 	return counter

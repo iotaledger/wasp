@@ -84,10 +84,10 @@ func (ch *Chain) L2NFTs(agentID isc.AgentID) []iotago.NFTID {
 	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewAccountNFTs.Name, accounts.ParamAgentID, agentID)
 	require.NoError(ch.Env.T, err)
 	nftIDs := collections.NewArray16ReadOnly(res, accounts.ParamNFTIDs)
-	nftLen := nftIDs.MustLen()
+	nftLen := nftIDs.Len()
 	for i := uint16(0); i < nftLen; i++ {
 		nftID := iotago.NFTID{}
-		copy(nftID[:], nftIDs.MustGetAt(i))
+		copy(nftID[:], nftIDs.GetAt(i))
 		ret = append(ret, nftID)
 	}
 	return ret
@@ -147,7 +147,7 @@ func (ch *Chain) GetFoundryOutput(sn uint32) (*iotago.FoundryOutput, error) {
 	if err != nil {
 		return nil, err
 	}
-	outBin := res.MustGet(accounts.ParamFoundryOutputBin)
+	outBin := res.Get(accounts.ParamFoundryOutputBin)
 	out := &iotago.FoundryOutput{}
 	_, err = out.Deserialize(outBin, serializer.DeSeriModeNoValidation, nil)
 	require.NoError(ch.Env.T, err)

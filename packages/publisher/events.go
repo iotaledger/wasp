@@ -112,19 +112,15 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 
 	//
 	// Publish contract-issued events.
-	blockEvents, err := blocklog.GetEventsByBlockIndex(blocklogStatePartition, blockIndex, blockInfo.TotalRequests)
-	if err != nil {
-		log.Errorf("unable to get events from a block: %v", err)
-	} else {
-		triggerEvent(events, events.BlockEvents, &ISCEvent[[]string]{
-			Kind: ISCEventKindBlockEvents,
-			// TODO should be the contract Hname, but right now events are just stored as strings.
-			// must be refactored so its possible to filter by "events from a contract"
-			Issuer: &isc.NilAgentID{},
-			// TODO should be possible to filter by request ID (not possible with current events impl)
-			// RequestID: event.RequestID,
-			Payload: blockEvents,
-			ChainID: chainID,
-		})
-	}
+	blockEvents := blocklog.GetEventsByBlockIndex(blocklogStatePartition, blockIndex, blockInfo.TotalRequests)
+	triggerEvent(events, events.BlockEvents, &ISCEvent[[]string]{
+		Kind: ISCEventKindBlockEvents,
+		// TODO should be the contract Hname, but right now events are just stored as strings.
+		// must be refactored so its possible to filter by "events from a contract"
+		Issuer: &isc.NilAgentID{},
+		// TODO should be possible to filter by request ID (not possible with current events impl)
+		// RequestID: event.RequestID,
+		Payload: blockEvents,
+		ChainID: chainID,
+	})
 }

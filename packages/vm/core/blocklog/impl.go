@@ -35,9 +35,9 @@ func SetInitialState(s kv.KVStore) {
 
 func viewControlAddresses(ctx isc.SandboxView) dict.Dict {
 	registry := collections.NewArray32ReadOnly(ctx.StateR(), prefixControlAddresses)
-	l := registry.MustLen()
+	l := registry.Len()
 	ctx.Requiref(l > 0, "inconsistency: unknown control addresses")
-	rec, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
+	rec, err := ControlAddressesFromBytes(registry.GetAt(l - 1))
 	ctx.RequireNoError(err)
 	return dict.Dict{
 		ParamStateControllerAddress: isc.BytesFromAddress(rec.StateAddress),
@@ -51,11 +51,9 @@ func viewControlAddresses(ctx isc.SandboxView) dict.Dict {
 // ParamBlockIndex - index of the block (defaults to the latest block)
 func viewGetBlockInfo(ctx isc.SandboxView) dict.Dict {
 	blockIndex := getBlockIndexParams(ctx)
-	data, err := getBlockInfoBytes(ctx.StateR(), blockIndex)
-	ctx.RequireNoError(err)
 	return dict.Dict{
 		ParamBlockIndex: codec.EncodeUint32(blockIndex),
-		ParamBlockInfo:  data,
+		ParamBlockInfo:  getBlockInfoBytes(ctx.StateR(), blockIndex),
 	}
 }
 
@@ -79,7 +77,7 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
 	for _, d := range dataArr {
 		rec, err := RequestReceiptFromBytes(d)
 		ctx.RequireNoError(err)
-		arr.MustPush(rec.Request.ID().Bytes())
+		arr.Push(rec.Request.ID().Bytes())
 	}
 	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret
@@ -117,7 +115,7 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamRequestRecord)
 	for _, d := range dataArr {
-		arr.MustPush(d)
+		arr.Push(d)
 	}
 	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret
@@ -146,7 +144,7 @@ func viewGetEventsForRequest(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamEvent)
 	for _, event := range events {
-		arr.MustPush([]byte(event))
+		arr.Push([]byte(event))
 	}
 	return ret
 }
@@ -164,13 +162,12 @@ func viewGetEventsForBlock(ctx isc.SandboxView) dict.Dict {
 
 	blockInfo, err := GetBlockInfo(ctx.StateR(), blockIndex)
 	ctx.RequireNoError(err)
-	events, err := GetEventsByBlockIndex(ctx.StateR(), blockIndex, blockInfo.TotalRequests)
-	ctx.RequireNoError(err)
+	events := GetEventsByBlockIndex(ctx.StateR(), blockIndex, blockInfo.TotalRequests)
 
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamEvent)
 	for _, event := range events {
-		arr.MustPush([]byte(event))
+		arr.Push([]byte(event))
 	}
 	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret
@@ -191,7 +188,7 @@ func viewGetEventsForContract(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamEvent)
 	for _, event := range events {
-		arr.MustPush([]byte(event))
+		arr.Push([]byte(event))
 	}
 	return ret
 }

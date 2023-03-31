@@ -24,15 +24,15 @@ func SaveNativeTokenOutput(state kv.KVStore, out *iotago.BasicOutput, blockIndex
 		BlockIndex:        blockIndex,
 		OutputIndex:       outputIndex,
 	}
-	nativeTokenOutputMap(state).MustSetAt(out.NativeTokens[0].ID[:], tokenRec.Bytes())
+	nativeTokenOutputMap(state).SetAt(out.NativeTokens[0].ID[:], tokenRec.Bytes())
 }
 
 func DeleteNativeTokenOutput(state kv.KVStore, nativeTokenID iotago.NativeTokenID) {
-	nativeTokenOutputMap(state).MustDelAt(nativeTokenID[:])
+	nativeTokenOutputMap(state).DelAt(nativeTokenID[:])
 }
 
 func GetNativeTokenOutput(state kv.KVStoreReader, nativeTokenID iotago.NativeTokenID, chainID isc.ChainID) (*iotago.BasicOutput, uint32, uint16) {
-	data := nativeTokenOutputMapR(state).MustGetAt(nativeTokenID[:])
+	data := nativeTokenOutputMapR(state).GetAt(nativeTokenID[:])
 	if data == nil {
 		return nil, 0, 0
 	}

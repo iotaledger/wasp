@@ -26,14 +26,14 @@ var (
 
 	manyEventsContractProcessor = manyEventsContract.Processor(nil,
 		funcManyEvents.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-			n := int(codec.MustDecodeUint32(ctx.Params().MustGet("n")))
+			n := int(codec.MustDecodeUint32(ctx.Params().Get("n")))
 			for i := 0; i < n; i++ {
 				ctx.Event(fmt.Sprintf("testing many events %d", i))
 			}
 			return nil
 		}),
 		funcBigEvent.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-			n := int(codec.MustDecodeUint32(ctx.Params().MustGet("n")))
+			n := int(codec.MustDecodeUint32(ctx.Params().Get("n")))
 			buf := make([]byte, n)
 			ctx.Event(string(buf))
 			return nil
@@ -156,9 +156,7 @@ func getEventsForRequest(t *testing.T, chain *solo.Chain, reqID isc.RequestID) [
 		blocklog.ParamRequestID, reqID,
 	)
 	require.NoError(t, err)
-	events, err := EventsViewResultToStringArray(res)
-	require.NoError(t, err)
-	return events
+	return EventsViewResultToStringArray(res)
 }
 
 func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...int32) []string {
@@ -172,9 +170,7 @@ func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...int32) []
 		res, err = chain.CallView(blocklog.Contract.Name, blocklog.ViewGetEventsForBlock.Name)
 	}
 	require.NoError(t, err)
-	events, err := EventsViewResultToStringArray(res)
-	require.NoError(t, err)
-	return events
+	return EventsViewResultToStringArray(res)
 }
 
 func getEventsForSC(t *testing.T, chain *solo.Chain, fromBlock, toBlock int32) []string {
@@ -184,9 +180,7 @@ func getEventsForSC(t *testing.T, chain *solo.Chain, fromBlock, toBlock int32) [
 		blocklog.ParamToBlock, toBlock,
 	)
 	require.NoError(t, err)
-	events, err := EventsViewResultToStringArray(res)
-	require.NoError(t, err)
-	return events
+	return EventsViewResultToStringArray(res)
 }
 
 func TestGetEvents(t *testing.T) {

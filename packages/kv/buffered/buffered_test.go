@@ -23,8 +23,7 @@ func TestBufferedKVStore(t *testing.T) {
 
 	b := NewBufferedKVStore(kv.NewHiveKVStoreReader(realm))
 
-	v, err = b.Get("cd")
-	assert.NoError(t, err)
+	v = b.Get("cd")
 	assert.Equal(t, []byte("v1"), v)
 
 	assert.EqualValues(
@@ -36,7 +35,7 @@ func TestBufferedKVStore(t *testing.T) {
 	)
 
 	n := 0
-	b.MustIterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
+	b.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
 		assert.Equal(t, kv.Key("cd"), key)
 		assert.Equal(t, []byte("v1"), value)
 		n++
@@ -45,7 +44,7 @@ func TestBufferedKVStore(t *testing.T) {
 	assert.Equal(t, 1, n)
 
 	n = 0
-	b.MustIterate("c", func(key kv.Key, value []byte) bool {
+	b.Iterate("c", func(key kv.Key, value []byte) bool {
 		assert.Equal(t, kv.Key("cd"), key)
 		assert.Equal(t, []byte("v1"), value)
 		n++
@@ -54,7 +53,7 @@ func TestBufferedKVStore(t *testing.T) {
 	assert.Equal(t, 1, n)
 
 	n = 0
-	b.MustIterateKeys(kv.EmptyPrefix, func(key kv.Key) bool {
+	b.IterateKeys(kv.EmptyPrefix, func(key kv.Key) bool {
 		assert.Equal(t, kv.Key("cd"), key)
 		n++
 		return true
@@ -68,8 +67,7 @@ func TestBufferedKVStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v1"), v)
 
-	v, err = b.Get("cd")
-	assert.NoError(t, err)
+	v = b.Get("cd")
 	assert.Equal(t, []byte("v2"), v)
 
 	assert.EqualValues(
@@ -102,7 +100,7 @@ func TestIterateSorted(t *testing.T) {
 	b.Set("250", []byte("v1250"))
 
 	var seen []kv.Key
-	b.MustIterateKeysSorted("2", func(k kv.Key) bool {
+	b.IterateKeysSorted("2", func(k kv.Key) bool {
 		seen = append(seen, k)
 		return true
 	})

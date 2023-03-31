@@ -341,7 +341,7 @@ func TestRebootDuringTasks(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		counter, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
+		counter, err := codec.DecodeInt64(ret.Get(inccounter.VarCounter), 0)
 		require.NoError(t, err)
 		require.Greater(t, counter, lastCounter)
 		lastCounter = counter

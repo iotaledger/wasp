@@ -72,15 +72,13 @@ func (sm *stateSM) Check(t *rapid.T) {
 // Property: the state and the model DB have to have the same keys/values.
 func (sm *stateSM) checkStateReaderMatchesModel(t *rapid.T, reader kv.KVStoreReader) {
 	require.NoError(t, sm.model.Iterate(kvstore.EmptyPrefix, func(key, value kvstore.Value) bool {
-		draftHasVal, err := reader.Has(kv.Key(key))
-		require.NoError(t, err)
+		draftHasVal := reader.Has(kv.Key(key))
 		require.True(t, draftHasVal, "Should have key %v", key)
-		draftValue, err := reader.Get(kv.Key(key))
-		require.NoError(t, err)
+		draftValue := reader.Get(kv.Key(key))
 		require.Equal(t, value, draftValue, "Values for key %v should be equal", key)
 		return true
 	}))
-	require.NoError(t, reader.Iterate(kv.EmptyPrefix, func(key kv.Key, value kvstore.Value) bool {
+	reader.Iterate(kv.EmptyPrefix, func(key kv.Key, value kvstore.Value) bool {
 		modelHasVal, err := sm.model.Has([]byte(key))
 		require.NoError(t, err)
 		require.True(t, modelHasVal, "Should have key %v", key)
@@ -88,7 +86,7 @@ func (sm *stateSM) checkStateReaderMatchesModel(t *rapid.T, reader kv.KVStoreRea
 		require.NoError(t, err)
 		require.Equal(t, value, modelValue, "Values for key %v should be equal", key)
 		return true
-	}))
+	})
 }
 
 func TestRapid(t *testing.T) {
@@ -110,11 +108,9 @@ func TestRapidReproduced(t *testing.T) {
 	check := func(b byte) {
 		keyBin := []byte{b}
 		key := kv.Key(keyBin)
-		has, err := blockState.Has(key)
-		require.NoError(t, err)
+		has := blockState.Has(key)
 		require.True(t, has)
-		val, err := blockState.Get(key)
-		require.NoError(t, err)
+		val := blockState.Get(key)
 		require.Equal(t, []byte{0}, val, "values equal for key %v", keyBin)
 	}
 	check(0)
@@ -134,8 +130,8 @@ func TestRapidReproduced2(t *testing.T) {
 	t.Log(block.TrieRoot())
 	require.NoError(t, err)
 
-	require.Equal(t, blockState.MustGet(kv.Key([]byte{0x2})), []byte{0x1})
-	require.Equal(t, blockState.MustGet(kv.Key([]byte{0x7})), []byte{0x1})
+	require.Equal(t, blockState.Get(kv.Key([]byte{0x2})), []byte{0x1})
+	require.Equal(t, blockState.Get(kv.Key([]byte{0x7})), []byte{0x1})
 
 	//
 	// Proceed to the next transition.
