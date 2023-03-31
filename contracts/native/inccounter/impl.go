@@ -48,8 +48,8 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 
 func incCounter(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("inccounter.incCounter in %s", ctx.Contract().String())
-	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	inc := par.MustGetInt64(VarCounter, 1)
+	params := ctx.Params()
+	inc := params.MustGetInt64(VarCounter, 1)
 
 	state := kvdecoder.New(ctx.State(), ctx.Log())
 	val := state.MustGetInt64(VarCounter, 0)
@@ -143,9 +143,9 @@ func spawn(ctx isc.Sandbox) dict.Dict {
 
 	state := kvdecoder.New(ctx.State(), ctx.Log())
 	val := state.MustGetInt64(VarCounter)
-	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	name := par.MustGetString(VarName)
-	dscr := par.MustGetString(VarDescription, "N/A")
+	params := ctx.Params()
+	name := params.MustGetString(VarName)
+	dscr := params.MustGetString(VarDescription, "N/A")
 
 	callPar := dict.New()
 	callPar.Set(VarCounter, codec.EncodeInt64(val+1))

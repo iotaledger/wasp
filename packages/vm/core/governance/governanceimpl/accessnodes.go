@@ -32,11 +32,12 @@ func addCandidateNode(ctx isc.Sandbox) dict.Dict {
 	ctx.Requiref(ani.ValidateCertificate(ctx), "certificate invalid")
 	pubKeyStr := base64.StdEncoding.EncodeToString(ani.NodePubKey)
 
-	governance.AccessNodeCandidatesMap(ctx.State()).SetAt(ani.NodePubKey, ani.Bytes())
+	state := ctx.State()
+	governance.AccessNodeCandidatesMap(state).SetAt(ani.NodePubKey, ani.Bytes())
 	ctx.Log().Infof("Governance::AddCandidateNode: accessNodeCandidate added, pubKey=%s", pubKeyStr)
 
 	if ctx.ChainOwnerID().Equals(ctx.Request().SenderAccount()) {
-		governance.AccessNodesMap(ctx.State()).SetAt(ani.NodePubKey, codec.EncodeBool(true))
+		governance.AccessNodesMap(state).SetAt(ani.NodePubKey, codec.EncodeBool(true))
 		ctx.Log().Infof("Governance::AddCandidateNode: accessNode added, pubKey=%s", pubKeyStr)
 	}
 
@@ -58,8 +59,9 @@ func revokeAccessNode(ctx isc.Sandbox) dict.Dict {
 	ani := governance.NewAccessNodeInfoFromRevokeAccessNodeParams(ctx)
 	ctx.Requiref(ani.ValidateCertificate(ctx), "certificate invalid")
 
-	governance.AccessNodeCandidatesMap(ctx.State()).DelAt(ani.NodePubKey)
-	governance.AccessNodesMap(ctx.State()).DelAt(ani.NodePubKey)
+	state := ctx.State()
+	governance.AccessNodeCandidatesMap(state).DelAt(ani.NodePubKey)
+	governance.AccessNodesMap(state).DelAt(ani.NodePubKey)
 
 	return nil
 }
@@ -73,8 +75,9 @@ func revokeAccessNode(ctx isc.Sandbox) dict.Dict {
 func changeAccessNodes(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
-	accessNodeCandidates := governance.AccessNodeCandidatesMap(ctx.State())
-	accessNodes := governance.AccessNodesMap(ctx.State())
+	state := ctx.State()
+	accessNodeCandidates := governance.AccessNodeCandidatesMap(state)
+	accessNodes := governance.AccessNodesMap(state)
 	paramNodeActions := collections.NewMapReadOnly(ctx.Params(), governance.ParamChangeAccessNodesActions)
 	ctx.Log().Debugf("changeAccessNodes: actions len: %d", paramNodeActions.Len())
 
@@ -108,11 +111,12 @@ func getChainNodes(ctx isc.SandboxView) dict.Dict {
 	res := dict.New()
 	candidates := collections.NewMap(res, governance.ParamGetChainNodesAccessNodeCandidates)
 	nodes := collections.NewMap(res, governance.ParamGetChainNodesAccessNodes)
-	governance.AccessNodeCandidatesMapR(ctx.StateR()).Iterate(func(key, value []byte) bool {
+	stateR := ctx.StateR()
+	governance.AccessNodeCandidatesMapR(stateR).Iterate(func(key, value []byte) bool {
 		candidates.SetAt(key, value)
 		return true
 	})
-	governance.AccessNodesMapR(ctx.StateR()).IterateKeys(func(key []byte) bool {
+	governance.AccessNodesMapR(stateR).IterateKeys(func(key []byte) bool {
 		nodes.SetAt(key, []byte{0x01})
 		return true
 	})

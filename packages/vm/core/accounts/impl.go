@@ -74,8 +74,8 @@ func transferAllowanceTo(ctx isc.Sandbox) dict.Dict {
 // TODO this is just a temporary value, we need to make deposits fee constant across chains.
 const ConstDepositFeeTmp = 1 * isc.Million
 
-// withdraw sends the allowed funds to the caller's L1 address, or if the caller is a
-// cross-chain contract, to its account.
+// withdraw sends the allowed funds to the caller's L1 address,
+// or if the caller is a cross-chain contract, to its account.
 func withdraw(ctx isc.Sandbox) dict.Dict {
 	allowance := ctx.AllowanceAvailable()
 	ctx.Requiref(!allowance.IsEmpty(), "Allowance can't be empty in 'accounts.withdraw'")
@@ -185,20 +185,21 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 func harvest(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
-	state := ctx.State()
-
 	bottomBaseTokens := ctx.Params().MustGetUint64(ParamForceMinimumBaseTokens, MinimumBaseTokensOnCommonAccount)
 	if bottomBaseTokens > MinimumBaseTokensOnCommonAccount {
 		bottomBaseTokens = MinimumBaseTokensOnCommonAccount
 	}
-	toWithdraw := GetAccountFungibleTokens(state, CommonAccount())
+
+	state := ctx.State()
+	commonAccount := CommonAccount()
+	toWithdraw := GetAccountFungibleTokens(state, commonAccount)
 	if toWithdraw.BaseTokens <= bottomBaseTokens {
 		// below minimum, nothing to withdraw
 		return nil
 	}
 	ctx.Requiref(toWithdraw.BaseTokens > bottomBaseTokens, "assertion failed: toWithdraw.BaseTokens > availableBaseTokens")
 	toWithdraw.BaseTokens -= bottomBaseTokens
-	MustMoveBetweenAccounts(state, CommonAccount(), ctx.Caller(), toWithdraw)
+	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw)
 	return nil
 }
 
@@ -233,18 +234,20 @@ func foundryDestroy(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryDestroy")
 	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
 	// check if foundry is controlled by the caller
-	ctx.Requiref(hasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
+	state := ctx.State()
+	caller := ctx.Caller()
+	ctx.Requiref(hasFoundry(state, caller, sn), "foundry #%d is not controlled by the caller", sn)
 
-	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
+	out, _, _ := GetFoundryOutput(state, sn, ctx.ChainID())
 	simpleTokenScheme := util.MustTokenScheme(out.TokenScheme)
 	ctx.Requiref(util.IsZeroBigInt(big.NewInt(0).Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)), "can't destroy foundry with positive circulating supply")
 
 	storageDepositReleased := ctx.Privileged().DestroyFoundry(sn)
 
-	deleteFoundryFromAccount(ctx.State(), ctx.Caller(), sn)
-	DeleteFoundryOutput(ctx.State(), sn)
+	deleteFoundryFromAccount(state, caller, sn)
+	DeleteFoundryOutput(state, sn)
 	// the storage deposit goes to the caller's account
-	CreditToAccount(ctx.State(), ctx.Caller(), &isc.Assets{
+	CreditToAccount(state, caller, &isc.Assets{
 		BaseTokens: storageDepositReleased,
 	})
 	return nil
@@ -257,16 +260,19 @@ func foundryDestroy(ctx isc.Sandbox) dict.Dict {
 // - ParamDestroyTokens true if destroy supply, false (default) if mint new supply
 // NOTE: ParamDestroyTokens is needed since `big.Int` `Bytes()` function does not serialize the sign, only the absolute value
 func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
-	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
-	delta := new(big.Int).Abs(ctx.Params().MustGetBigInt(ParamSupplyDeltaAbs))
+	params := ctx.Params()
+	sn := params.MustGetUint32(ParamFoundrySN)
+	delta := new(big.Int).Abs(params.MustGetBigInt(ParamSupplyDeltaAbs))
 	if util.IsZeroBigInt(delta) {
 		return nil
 	}
-	destroy := ctx.Params().MustGetBool(ParamDestroyTokens, false)
+	destroy := params.MustGetBool(ParamDestroyTokens, false)
+	state := ctx.State()
+	caller := ctx.Caller()
 	// check if foundry is controlled by the caller
-	ctx.Requiref(hasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
+	ctx.Requiref(hasFoundry(state, caller, sn), "foundry #%d is not controlled by the caller", sn)
 
-	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
+	out, _, _ := GetFoundryOutput(state, sn, ctx.ChainID())
 	nativeTokenID, err := out.NativeTokenID()
 	ctx.RequireNoError(err, "internal")
 
@@ -275,7 +281,8 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 	var storageDepositAdjustment int64
 	if deltaAssets := isc.NewEmptyAssets().AddNativeTokens(nativeTokenID, delta); destroy {
 		// take tokens to destroy from allowance
-		ctx.TransferAllowedFunds(ctx.AccountID(),
+		accountID := ctx.AccountID()
+		ctx.TransferAllowedFunds(accountID,
 			isc.NewAssets(0, iotago.NativeTokens{
 				&iotago.NativeToken{
 					ID:     nativeTokenID,
@@ -283,10 +290,10 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 				},
 			}),
 		)
-		DebitFromAccount(ctx.State(), ctx.AccountID(), deltaAssets)
+		DebitFromAccount(state, accountID, deltaAssets)
 		storageDepositAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta.Neg(delta))
 	} else {
-		CreditToAccount(ctx.State(), ctx.Caller(), deltaAssets)
+		CreditToAccount(state, caller, deltaAssets)
 		storageDepositAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta)
 	}
 
@@ -297,7 +304,7 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 		debitBaseTokensFromAllowance(ctx, uint64(-storageDepositAdjustment))
 	case storageDepositAdjustment > 0:
 		// storage deposit is returned to the caller account
-		CreditToAccount(ctx.State(), ctx.Caller(), isc.NewAssetsBaseTokens(uint64(storageDepositAdjustment)))
+		CreditToAccount(state, caller, isc.NewAssetsBaseTokens(uint64(storageDepositAdjustment)))
 	}
 	return nil
 }

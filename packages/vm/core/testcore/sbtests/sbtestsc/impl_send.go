@@ -34,14 +34,15 @@ func testSplitFundsNativeTokens(ctx isc.Sandbox) dict.Dict {
 	addr, ok := isc.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
 	// claims all base tokens from allowance
-	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssets(ctx.AllowanceAvailable().BaseTokens, nil))
+	accountID := ctx.AccountID()
+	ctx.TransferAllowedFunds(accountID, isc.NewAssets(ctx.AllowanceAvailable().BaseTokens, nil))
 	for _, nativeToken := range ctx.AllowanceAvailable().NativeTokens {
 		for ctx.AllowanceAvailable().AmountNativeToken(nativeToken.ID).Cmp(util.Big0) > 0 {
 			// claim 1 token from allowance at a time
 			// send back to caller's address
 			// depending on the amount of tokens, it will exceed number of outputs or not
 			assets := isc.NewEmptyAssets().AddNativeTokens(nativeToken.ID, 1)
-			rem := ctx.TransferAllowedFunds(ctx.AccountID(), assets)
+			rem := ctx.TransferAllowedFunds(accountID, assets)
 			fmt.Printf("%s\n", rem)
 			ctx.Send(
 				isc.RequestParameters{
@@ -56,9 +57,10 @@ func testSplitFundsNativeTokens(ctx isc.Sandbox) dict.Dict {
 }
 
 func pingAllowanceBack(ctx isc.Sandbox) dict.Dict {
-	addr, ok := isc.AddressFromAgentID(ctx.Caller())
+	caller := ctx.Caller()
+	addr, ok := isc.AddressFromAgentID(caller)
 	// assert caller is L1 address, not a SC
-	ctx.Requiref(ok && !ctx.ChainID().IsSameChain(ctx.Caller()),
+	ctx.Requiref(ok && !ctx.ChainID().IsSameChain(caller),
 		"pingAllowanceBack: caller expected to be a L1 address")
 	// save allowance budget because after transfer it will be modified
 	toSend := ctx.AllowanceAvailable()
