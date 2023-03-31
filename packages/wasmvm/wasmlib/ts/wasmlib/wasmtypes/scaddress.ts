@@ -17,9 +17,9 @@ export const ScAddressEth: u8 = 32;
 export const ScLengthAlias = 33;
 export const ScLengthEd25519 = 33;
 export const ScLengthNFT = 33;
+export const ScLengthEth = 20;
 
 export const ScAddressLength = ScLengthEd25519;
-export const ScAddressEthLength = 21;
 
 export class ScAddress {
     id: Uint8Array = zeroes(ScAddressLength);
@@ -62,6 +62,14 @@ export function addressFromBytes(buf: Uint8Array | null): ScAddress {
     if (buf === null || buf.length == 0) {
         return addr;
     }
+
+    // special case, ETH address has no type byte but different length
+    if (buf.length == ScLengthEth) {
+        addr.id[0] = ScAddressEth;
+        addr.id.set(buf, 1);
+        return addr;
+    }
+
     switch (buf[0]) {
         case ScAddressAlias:
             if (buf.length != ScLengthAlias) {
@@ -76,11 +84,6 @@ export function addressFromBytes(buf: Uint8Array | null): ScAddress {
         case ScAddressNFT:
             if (buf.length != ScLengthNFT) {
                 panic('invalid Address length: NFT');
-            }
-            break;
-        case ScAddressEth:
-            if (buf.length != ScAddressEthLength) {
-                panic('invalid Address length: Eth');
             }
             break;
         default:
@@ -101,7 +104,7 @@ export function addressToBytes(value: ScAddress): Uint8Array {
         case ScAddressNFT:
             return value.id.slice(0, ScLengthNFT);
         case ScAddressEth:
-            return value.id.slice(0, ScAddressEthLength);
+            return value.id.slice(0, ScLengthEth+1);
         default:
             panic('unexpected Address type');
     }
@@ -110,18 +113,14 @@ export function addressToBytes(value: ScAddress): Uint8Array {
 
 export function addressFromString(value: string): ScAddress {
     if (value.indexOf('0x') == 0) {
-        const hexBytes = hexDecode(value);
-        const b = new Uint8Array(hexBytes.length + 1);
-        b[0] = ScAddressEth;
-        b.set(hexBytes, 1);
-        return addressFromBytes(b);
+        return addressFromBytes(hexDecode(value));
     }
     return bech32Decode(value);
 }
 
 export function addressToString(value: ScAddress): string {
     if (value.id[0] == ScAddressEth) {
-        return hexEncode(value.id.slice(1, ScAddressEthLength));
+        return hexEncode(addressToBytes(value));
     }
     return bech32Encode(value);
 }

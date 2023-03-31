@@ -92,7 +92,7 @@ func AgentIDFromBytes(buf []byte) (a ScAgentID) {
 		a.address = ChainIDFromBytes(buf[:ScChainIDLength]).Address()
 		a.hname = HnameFromBytes(buf[ScChainIDLength:])
 	case ScAgentIDEthereum:
-		if len(buf) != ScAddressEthLength {
+		if len(buf) != ScLengthEth {
 			panic("invalid AgentID length: eth agentID")
 		}
 		a.address = AddressFromBytes(buf)

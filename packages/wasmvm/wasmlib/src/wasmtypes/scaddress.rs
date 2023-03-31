@@ -15,9 +15,9 @@ pub const SC_ADDRESS_ETH: u8 = 32;
 pub const SC_LENGTH_ALIAS: usize = 33;
 pub const SC_LENGTH_ED25519: usize = 33;
 pub const SC_LENGTH_NFT: usize = 33;
+pub const SC_LENGTH_ETH: usize = 20;
 
 pub const SC_ADDRESS_LENGTH: usize = SC_LENGTH_ED25519;
-pub const SC_ADDRESS_ETH_LENGTH: usize = 21;
 
 #[derive(PartialEq, Clone)]
 pub struct ScAddress {
@@ -59,6 +59,14 @@ pub fn address_from_bytes(buf: &[u8]) -> ScAddress {
     if buf.len() == 0 {
         return addr;
     }
+
+    // special case, ETH address has no type byte but different length
+    if buf.len() == SC_LENGTH_ETH {
+        addr.id[0] = SC_ADDRESS_ETH;
+        addr.id[1..SC_LENGTH_ETH+1].copy_from_slice(&buf[..SC_LENGTH_ETH]);
+        return addr;
+    }
+
     match buf[0] {
         SC_ADDRESS_ALIAS => {
             if buf.len() != SC_LENGTH_ALIAS {
@@ -78,12 +86,6 @@ pub fn address_from_bytes(buf: &[u8]) -> ScAddress {
             }
             addr.id[..SC_LENGTH_NFT].copy_from_slice(&buf[..SC_LENGTH_NFT]);
         }
-        SC_ADDRESS_ETH => {
-            if buf.len() != SC_ADDRESS_ETH_LENGTH {
-                panic("invalid Address length: Eth");
-            }
-            addr.id[..SC_ADDRESS_ETH_LENGTH].copy_from_slice(&buf[..SC_ADDRESS_ETH_LENGTH]);
-        }
         _ => panic("invalid Address type"),
     }
     addr
@@ -101,7 +103,7 @@ pub fn address_to_bytes(value: &ScAddress) -> Vec<u8> {
             return value.id[..SC_LENGTH_NFT].to_vec();
         }
         SC_ADDRESS_ETH => {
-            return value.id[..SC_ADDRESS_ETH_LENGTH].to_vec();
+            return value.id[1..SC_LENGTH_ETH+1].to_vec();
         }
         _ => panic("unexpected Address type"),
     }
@@ -110,16 +112,14 @@ pub fn address_to_bytes(value: &ScAddress) -> Vec<u8> {
 
 pub fn address_from_string(value: &str) -> ScAddress {
     if value.find("0x") == Some(0) {
-        let mut b = vec![SC_ADDRESS_ETH];
-        b.append(&mut hex_decode(&value));
-        return address_from_bytes(&b);
+        return address_from_bytes(&hex_decode(value));
     }
     bech32_decode(value)
 }
 
 pub fn address_to_string(value: &ScAddress) -> String {
     if value.id[0] == SC_ADDRESS_ETH {
-        return hex_encode(&value.id[1..SC_ADDRESS_ETH_LENGTH]);
+        return hex_encode(&address_to_bytes(value));
     }
     bech32_encode(value)
 }

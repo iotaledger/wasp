@@ -14,9 +14,9 @@ const (
 	ScLengthAlias   = 33
 	ScLengthEd25519 = 33
 	ScLengthNFT     = 33
+	ScLengthEth     = 20
 
-	ScAddressLength    = ScLengthEd25519
-	ScAddressEthLength = 21
+	ScAddressLength = ScLengthEd25519
 )
 
 type ScAddress struct {
@@ -53,6 +53,14 @@ func AddressFromBytes(buf []byte) ScAddress {
 	if len(buf) == 0 {
 		return addr
 	}
+
+	// special case, ETH address has no type byte but different length
+	if len(buf) == ScLengthEth {
+		addr.id[0] = ScAddressEth
+		copy(addr.id[1:], buf)
+		return addr
+	}
+
 	switch buf[0] {
 	case ScAddressAlias:
 		if len(buf) != ScLengthAlias {
@@ -65,10 +73,6 @@ func AddressFromBytes(buf []byte) ScAddress {
 	case ScAddressNFT:
 		if len(buf) != ScLengthNFT {
 			panic("invalid Address length: NFT")
-		}
-	case ScAddressEth:
-		if len(buf) != ScAddressEthLength {
-			panic("invalid Address length: Eth")
 		}
 	default:
 		panic("invalid Address type")
@@ -86,7 +90,7 @@ func AddressToBytes(value ScAddress) []byte {
 	case ScAddressNFT:
 		return value.id[:ScLengthNFT]
 	case ScAddressEth:
-		return value.id[:ScAddressEthLength]
+		return value.id[1 : ScLengthEth+1]
 	default:
 		panic("unexpected Address type")
 	}
@@ -94,16 +98,14 @@ func AddressToBytes(value ScAddress) []byte {
 
 func AddressFromString(value string) ScAddress {
 	if value[:2] == "0x" {
-		b := []byte{ScAddressEth}
-		b = append(b, HexDecode(value)...)
-		return AddressFromBytes(b)
+		return AddressFromBytes(HexDecode(value))
 	}
 	return Bech32Decode(value)
 }
 
 func AddressToString(value ScAddress) string {
 	if value.id[0] == ScAddressEth {
-		return HexEncode(value.id[1:ScAddressEthLength])
+		return HexEncode(AddressToBytes(value))
 	}
 	return Bech32Encode(value)
 }
