@@ -26,7 +26,7 @@ func testGetSet(t *testing.T, w bool) {
 		sbtestsc.ParamIntParamName, "ppp")
 	require.NoError(t, err)
 
-	retInt, err := codec.DecodeInt64(ret.MustGet("ppp"))
+	retInt, err := codec.DecodeInt64(ret.Get("ppp"))
 	require.NoError(t, err)
 	require.EqualValues(t, 314, retInt)
 }
@@ -50,7 +50,7 @@ func testCallRecursive(t *testing.T, w bool) {
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
-	r, err := codec.DecodeInt64(ret.MustGet(sbtestsc.VarCounter))
+	r, err := codec.DecodeInt64(ret.Get(sbtestsc.VarCounter))
 	require.NoError(t, err)
 	require.EqualValues(t, depth+1, r)
 }
@@ -73,7 +73,7 @@ func testCallFibonacci(t *testing.T, w bool) {
 		sbtestsc.ParamN, fiboN,
 	)
 	require.NoError(t, err)
-	val, err := codec.DecodeUint64(ret.MustGet(sbtestsc.ParamN))
+	val, err := codec.DecodeUint64(ret.Get(sbtestsc.ParamN))
 	require.NoError(t, err)
 	require.EqualValues(t, fibonacci(fiboN), val)
 }
@@ -87,7 +87,7 @@ func testCallFibonacciIndirect(t *testing.T, w bool) {
 		sbtestsc.ParamN, fiboN,
 	)
 	require.NoError(t, err)
-	val, err := codec.DecodeUint64(ret.MustGet(sbtestsc.ParamN))
+	val, err := codec.DecodeUint64(ret.Get(sbtestsc.ParamN))
 	require.NoError(t, err)
 	require.EqualValues(t, fibonacci(fiboN), val)
 }
@@ -104,14 +104,14 @@ func testIndirectCallFibonacci(t *testing.T, w bool) { //nolint:dupl
 		WithGasBudget(5_000_000)
 	ret, err := chain.PostRequestSync(req.AddBaseTokens(1), nil)
 	require.NoError(t, err)
-	r, err := codec.DecodeUint64(ret.MustGet(sbtestsc.ParamN))
+	r, err := codec.DecodeUint64(ret.Get(sbtestsc.ParamN))
 	require.NoError(t, err)
 	require.EqualValues(t, fibonacci(fiboN), r)
 
 	ret, err = chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
-	r, err = codec.DecodeUint64(ret.MustGet(sbtestsc.VarCounter))
+	r, err = codec.DecodeUint64(ret.Get(sbtestsc.VarCounter))
 	require.NoError(t, err)
 	require.EqualValues(t, 1, r)
 }
@@ -128,14 +128,14 @@ func testIndirectCallFibonacciIndirect(t *testing.T, w bool) { //nolint:dupl
 		WithGasBudget(5_000_000)
 	ret, err := chain.PostRequestSync(req.AddBaseTokens(1), nil)
 	require.NoError(t, err)
-	r, err := codec.DecodeUint64(ret.MustGet(sbtestsc.ParamN))
+	r, err := codec.DecodeUint64(ret.Get(sbtestsc.ParamN))
 	require.NoError(t, err)
 	require.EqualValues(t, fibonacci(fiboN), r)
 
 	ret, err = chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
-	r, err = codec.DecodeUint64(ret.MustGet(sbtestsc.VarCounter))
+	r, err = codec.DecodeUint64(ret.Get(sbtestsc.VarCounter))
 	require.NoError(t, err)
 	require.EqualValues(t, 1, r)
 }

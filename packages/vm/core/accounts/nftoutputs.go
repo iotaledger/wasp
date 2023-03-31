@@ -22,15 +22,15 @@ func SaveNFTOutput(state kv.KVStore, out *iotago.NFTOutput, blockIndex uint32, o
 		BlockIndex:  blockIndex,
 		OutputIndex: outputIndex,
 	}
-	nftOutputMap(state).MustSetAt(out.NFTID[:], tokenRec.Bytes())
+	nftOutputMap(state).SetAt(out.NFTID[:], tokenRec.Bytes())
 }
 
 func DeleteNFTOutput(state kv.KVStore, id iotago.NFTID) {
-	nftOutputMap(state).MustDelAt(id[:])
+	nftOutputMap(state).DelAt(id[:])
 }
 
 func GetNFTOutput(state kv.KVStoreReader, id iotago.NFTID, chainID isc.ChainID) (*iotago.NFTOutput, uint32, uint16) {
-	data := nftOutputMapR(state).MustGetAt(id[:])
+	data := nftOutputMapR(state).GetAt(id[:])
 	if data == nil {
 		return nil, 0, 0
 	}

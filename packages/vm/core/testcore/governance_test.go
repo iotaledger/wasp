@@ -327,7 +327,7 @@ func TestCustomL1Metadata(t *testing.T) {
 		governance.ViewGetCustomMetadata.Name,
 	)
 	require.NoError(t, err)
-	resMetadata := res.MustGet(governance.ParamCustomMetadata)
+	resMetadata := res.Get(governance.ParamCustomMetadata)
 	require.Equal(t, customMetadata, resMetadata)
 
 	// assert metadata is correct on L1 alias output

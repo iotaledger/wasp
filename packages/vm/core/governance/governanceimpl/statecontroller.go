@@ -24,7 +24,7 @@ func rotateStateController(ctx isc.Sandbox) dict.Dict {
 	newStateControllerAddr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	// check is address is allowed
 	amap := collections.NewMapReadOnly(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
-	ctx.Requiref(amap.MustHasAt(isc.BytesFromAddress(newStateControllerAddr)), "rotateStateController: address is not allowed as next state address: %s", newStateControllerAddr)
+	ctx.Requiref(amap.HasAt(isc.BytesFromAddress(newStateControllerAddr)), "rotateStateController: address is not allowed as next state address: %s", newStateControllerAddr)
 
 	if !newStateControllerAddr.Equal(ctx.StateAnchor().StateController) {
 		// rotate request to another address has been issued. State update will be taken over by VM and will have no effect
@@ -55,7 +55,7 @@ func addAllowedStateControllerAddress(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	addr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
-	amap.MustSetAt(isc.BytesFromAddress(addr), []byte{0xFF})
+	amap.SetAt(isc.BytesFromAddress(addr), []byte{0xFF})
 	return nil
 }
 
@@ -63,19 +63,19 @@ func removeAllowedStateControllerAddress(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	addr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
-	amap.MustDelAt(isc.BytesFromAddress(addr))
+	amap.DelAt(isc.BytesFromAddress(addr))
 	return nil
 }
 
 func getAllowedStateControllerAddresses(ctx isc.SandboxView) dict.Dict {
 	amap := collections.NewMapReadOnly(ctx.StateR(), governance.StateVarAllowedStateControllerAddresses)
-	if amap.MustLen() == 0 {
+	if amap.Len() == 0 {
 		return nil
 	}
 	ret := dict.New()
 	retArr := collections.NewArray16(ret, governance.ParamAllowedStateControllerAddresses)
-	amap.MustIterateKeys(func(elemKey []byte) bool {
-		retArr.MustPush(elemKey)
+	amap.IterateKeys(func(elemKey []byte) bool {
+		retArr.Push(elemKey)
 		return true
 	})
 	return ret

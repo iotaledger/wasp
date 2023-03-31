@@ -68,7 +68,7 @@ func viewGetAccountNonce(ctx isc.SandboxView) dict.Dict {
 // viewGetNativeTokenIDRegistry returns all native token ID accounted in the chain
 func viewGetNativeTokenIDRegistry(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
-	nativeTokenOutputMapR(ctx.StateR()).MustIterateKeys(func(tokenID []byte) bool {
+	nativeTokenOutputMapR(ctx.StateR()).IterateKeys(func(tokenID []byte) bool {
 		ret.Set(kv.Key(tokenID), []byte{0x01})
 		return true
 	})
@@ -79,7 +79,7 @@ func viewGetNativeTokenIDRegistry(ctx isc.SandboxView) dict.Dict {
 func viewAccountFoundries(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
 	account := ctx.Params().MustGetAgentID(ParamAgentID)
-	accountFoundriesMapR(ctx.StateR(), account).MustIterateKeys(func(foundry []byte) bool {
+	accountFoundriesMapR(ctx.StateR(), account).IterateKeys(func(foundry []byte) bool {
 		ret.Set(kv.Key(foundry), []byte{0x01})
 		return true
 	})
@@ -113,7 +113,7 @@ func viewAccountNFTs(ctx isc.SandboxView) dict.Dict {
 	arr := collections.NewArray16(ret, ParamNFTIDs)
 	for _, nftID := range nftIDs {
 		nftID := nftID
-		arr.MustPush(nftID[:])
+		arr.Push(nftID[:])
 	}
 	return ret
 }
@@ -121,13 +121,13 @@ func viewAccountNFTs(ctx isc.SandboxView) dict.Dict {
 func viewAccountNFTAmount(ctx isc.SandboxView) dict.Dict {
 	aid := ctx.Params().MustGetAgentID(ParamAgentID)
 	return dict.Dict{
-		ParamNFTAmount: codec.EncodeUint32(nftsMapR(ctx.StateR(), aid).MustLen()),
+		ParamNFTAmount: codec.EncodeUint32(nftsMapR(ctx.StateR(), aid).Len()),
 	}
 }
 
 func viewAccountNFTsInCollection(ctx isc.SandboxView) dict.Dict {
 	aid := ctx.Params().MustGetAgentID(ParamAgentID)
-	collectionID := codec.MustDecodeNFTID(ctx.Params().MustGet(ParamCollectionID))
+	collectionID := codec.MustDecodeNFTID(ctx.Params().Get(ParamCollectionID))
 	nftIDs := getAccountNFTsInCollection(ctx.StateR(), aid, collectionID)
 
 	if len(nftIDs) > math.MaxUint16 {
@@ -137,16 +137,16 @@ func viewAccountNFTsInCollection(ctx isc.SandboxView) dict.Dict {
 	arr := collections.NewArray16(ret, ParamNFTIDs)
 	for _, nftID := range nftIDs {
 		nftID := nftID
-		arr.MustPush(nftID[:])
+		arr.Push(nftID[:])
 	}
 	return ret
 }
 
 func viewAccountNFTAmountInCollection(ctx isc.SandboxView) dict.Dict {
 	aid := ctx.Params().MustGetAgentID(ParamAgentID)
-	collectionID := codec.MustDecodeNFTID(ctx.Params().MustGet(ParamCollectionID))
+	collectionID := codec.MustDecodeNFTID(ctx.Params().Get(ParamCollectionID))
 	return dict.Dict{
-		ParamNFTAmount: codec.EncodeUint32(nftsByCollectionMapR(ctx.StateR(), aid, kv.Key(collectionID[:])).MustLen()),
+		ParamNFTAmount: codec.EncodeUint32(nftsByCollectionMapR(ctx.StateR(), aid, kv.Key(collectionID[:])).Len()),
 	}
 }
 

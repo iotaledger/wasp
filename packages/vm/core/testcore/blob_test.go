@@ -67,7 +67,7 @@ func TestUploadBlob(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, howMany, len(ret))
 		for _, h := range hashes {
-			sizeBin := ret.MustGet(kv.Key(h[:]))
+			sizeBin := ret.Get(kv.Key(h[:]))
 			size, err := codec.DecodeUint32(sizeBin)
 			require.NoError(t, err)
 			require.EqualValues(t, len("dummy data #1"), int(size))
@@ -78,7 +78,7 @@ func TestUploadBlob(t *testing.T) {
 			)
 			require.NoError(t, err)
 			require.EqualValues(t, 1, len(ret))
-			data := ret.MustGet(blob.ParamBytes)
+			data := ret.Get(blob.ParamBytes)
 			require.EqualValues(t, size, len(data))
 		}
 	})

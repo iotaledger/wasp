@@ -15,7 +15,7 @@ const MaxCustomMetadataLength = iotago.MaxMetadataLength - serializer.OneByte - 
 
 func setCustomMetadata(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	customMetadata := ctx.Params().MustGet(governance.ParamCustomMetadata)
+	customMetadata := ctx.Params().Get(governance.ParamCustomMetadata)
 	ctx.Requiref(len(customMetadata) <= MaxCustomMetadataLength, "custom metadata size too big (%d>%d)", len(customMetadata), MaxCustomMetadataLength)
 	governance.SetCustomMetadata(ctx.State(), customMetadata)
 	return nil

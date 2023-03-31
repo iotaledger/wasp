@@ -59,24 +59,24 @@ func nftsByCollectionMap(state kv.KVStore, agentID isc.AgentID, collectionKey kv
 }
 
 func hasNFT(state kv.KVStoreReader, agentID isc.AgentID, nftID iotago.NFTID) bool {
-	return nftsMapR(state, agentID).MustHasAt(nftID[:])
+	return nftsMapR(state, agentID).HasAt(nftID[:])
 }
 
 func saveNFTData(state kv.KVStore, nft *isc.NFT) {
-	nftDataMap(state).MustSetAt(nft.ID[:], nft.Bytes(false))
+	nftDataMap(state).SetAt(nft.ID[:], nft.Bytes(false))
 }
 
 func deleteNFTData(state kv.KVStore, id iotago.NFTID) {
 	allNFTs := nftDataMap(state)
-	if !allNFTs.MustHasAt(id[:]) {
+	if !allNFTs.HasAt(id[:]) {
 		panic("deleteNFTData: inconsistency - NFT data doesn't exists")
 	}
-	allNFTs.MustDelAt(id[:])
+	allNFTs.DelAt(id[:])
 }
 
 func GetNFTData(state kv.KVStoreReader, id iotago.NFTID) (*isc.NFT, error) {
 	allNFTs := nftDataMapR(state)
-	b := allNFTs.MustGetAt(id[:])
+	b := allNFTs.GetAt(id[:])
 	if len(b) == 0 {
 		return nil, ErrNFTIDNotFound.Create(id)
 	}
@@ -114,11 +114,11 @@ func creditNFTToAccount(state kv.KVStore, agentID isc.AgentID, nft *isc.NFT) {
 	saveNFTData(state, nft)
 
 	nfts := nftsMap(state, agentID)
-	nfts.MustSetAt(nft.ID[:], codec.EncodeBool(true))
+	nfts.SetAt(nft.ID[:], codec.EncodeBool(true))
 
 	collectionKey := nftCollectionKey(nft.Issuer)
 	nftsByCollection := nftsByCollectionMap(state, agentID, collectionKey)
-	nftsByCollection.MustSetAt(nft.ID[:], codec.EncodeBool(true))
+	nftsByCollection.SetAt(nft.ID[:], codec.EncodeBool(true))
 }
 
 // DebitNFTFromAccount removes an NFT from an account.
@@ -138,24 +138,24 @@ func DebitNFTFromAccount(state kv.KVStore, agentID isc.AgentID, id iotago.NFTID)
 // DebitNFTFromAccount removes an NFT from the internal map of an account
 func debitNFTFromAccount(state kv.KVStore, agentID isc.AgentID, nft *isc.NFT) bool {
 	nfts := nftsMap(state, agentID)
-	if !nfts.MustHasAt(nft.ID[:]) {
+	if !nfts.HasAt(nft.ID[:]) {
 		return false
 	}
-	nfts.MustDelAt(nft.ID[:])
+	nfts.DelAt(nft.ID[:])
 
 	collectionKey := nftCollectionKey(nft.Issuer)
 	nftsByCollection := nftsByCollectionMap(state, agentID, collectionKey)
-	if !nftsByCollection.MustHasAt(nft.ID[:]) {
+	if !nftsByCollection.HasAt(nft.ID[:]) {
 		panic("inconsistency: NFT not found in collection")
 	}
-	nftsByCollection.MustDelAt(nft.ID[:])
+	nftsByCollection.DelAt(nft.ID[:])
 
 	return true
 }
 
 func collectNFTIDs(m *collections.ImmutableMap) []iotago.NFTID {
 	var ret []iotago.NFTID
-	m.MustIterate(func(idBytes []byte, val []byte) bool {
+	m.Iterate(func(idBytes []byte, val []byte) bool {
 		id := iotago.NFTID{}
 		copy(id[:], idBytes)
 		ret = append(ret, id)
@@ -187,7 +187,7 @@ func GetTotalL2NFTs(state kv.KVStoreReader) []iotago.NFTID {
 
 func calcL2TotalNFTs(state kv.KVStoreReader) []iotago.NFTID {
 	var ret []iotago.NFTID
-	allAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
+	allAccountsMapR(state).IterateKeys(func(key []byte) bool {
 		agentID, err := isc.AgentIDFromBytes(key)
 		if err != nil {
 			panic(fmt.Errorf("calcL2TotalNFTs: %w", err))

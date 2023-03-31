@@ -14,18 +14,15 @@ import (
 func TestBasicKVMap(t *testing.T) {
 	vars := New()
 
-	v, err := vars.Get("k1")
-	assert.NoError(t, err)
+	v := vars.Get("k1")
 	assert.Nil(t, v)
 
 	vars.Set("k1", []byte("v1"))
-	v, err = vars.Get("k1")
-	assert.NoError(t, err)
+	v = vars.Get("k1")
 	assert.Equal(t, []byte("v1"), v)
 
 	vars.Del("k1")
-	v, err = vars.Get("v1")
-	assert.NoError(t, err)
+	v = vars.Get("v1")
 	assert.Nil(t, v)
 }
 
@@ -106,19 +103,17 @@ func TestIterateSorted(t *testing.T) {
 	d.Set("k4", []byte("v4"))
 
 	var seen []kv.Key
-	err := d.IterateSorted("", func(k kv.Key, v []byte) bool {
+	d.IterateSorted("", func(k kv.Key, v []byte) bool {
 		seen = append(seen, k)
 		return true
 	})
-	require.NoError(t, err)
 	require.Equal(t, []kv.Key{"k1", "k2", "k3", "k4", "k5", "x"}, seen)
 
 	seen = nil
-	err = d.IterateSorted("k", func(k kv.Key, v []byte) bool {
+	d.IterateSorted("k", func(k kv.Key, v []byte) bool {
 		seen = append(seen, k)
 		return true
 	})
-	require.NoError(t, err)
 	require.Equal(t, []kv.Key{"k1", "k2", "k3", "k4", "k5"}, seen)
 }
 

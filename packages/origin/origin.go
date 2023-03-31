@@ -56,10 +56,10 @@ func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) st
 		return subrealm.New(d, kv.Key(contract.Hname().Bytes()))
 	}
 
-	evmChainID := evmtypes.MustDecodeChainID(initParams.MustGet(ParamEVMChainID), evm.DefaultChainID)
-	blockKeepAmount := codec.MustDecodeInt32(initParams.MustGet(ParamEVMBlockKeep), evm.BlockKeepAmountDefault)
+	evmChainID := evmtypes.MustDecodeChainID(initParams.Get(ParamEVMChainID), evm.DefaultChainID)
+	blockKeepAmount := codec.MustDecodeInt32(initParams.Get(ParamEVMBlockKeep), evm.BlockKeepAmountDefault)
 
-	chainOwner := codec.MustDecodeAgentID(initParams.MustGet(ParamChainOwner), &isc.NilAgentID{})
+	chainOwner := codec.MustDecodeAgentID(initParams.Get(ParamChainOwner), &isc.NilAgentID{})
 
 	// init the state of each core contract
 	rootimpl.SetInitialState(contractState(root.Contract))
@@ -128,7 +128,7 @@ func NewChainOriginTransaction(
 	if initParams == nil {
 		initParams = dict.New()
 	}
-	if initParams.MustGet(ParamChainOwner) == nil {
+	if initParams.Get(ParamChainOwner) == nil {
 		// default chain owner to the gov address
 		initParams.Set(ParamChainOwner, isc.NewAgentID(governanceControllerAddress).Bytes())
 	}

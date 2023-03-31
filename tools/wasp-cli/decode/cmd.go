@@ -53,7 +53,7 @@ func initDecodeCmd() *cobra.Command {
 				vtype := args[i*2+2]
 
 				key := kv.Key(util.ValueFromString(ktype, skey))
-				val := d.MustGet(key)
+				val := d.Get(key)
 				if val == nil {
 					log.Printf("%s: <nil>\n", skey)
 				} else {

@@ -18,31 +18,31 @@ func TestBasicArray16(t *testing.T) {
 	d3 := []byte("datum3")
 	d4 := []byte("datum4")
 
-	arr.MustPush(d1)
-	assert.EqualValues(t, 1, arr.MustLen())
-	v := arr.MustGetAt(0)
+	arr.Push(d1)
+	assert.EqualValues(t, 1, arr.Len())
+	v := arr.GetAt(0)
 	assert.EqualValues(t, d1, v)
 	assert.Panics(t, func() {
-		arr.MustGetAt(1)
+		arr.GetAt(1)
 	})
 
-	arr.MustPush(d2)
-	assert.EqualValues(t, 2, arr.MustLen())
+	arr.Push(d2)
+	assert.EqualValues(t, 2, arr.Len())
 
-	arr.MustPush(d3)
-	assert.EqualValues(t, 3, arr.MustLen())
+	arr.Push(d3)
+	assert.EqualValues(t, 3, arr.Len())
 
-	arr.MustPush(d4)
-	assert.EqualValues(t, 4, arr.MustLen())
+	arr.Push(d4)
+	assert.EqualValues(t, 4, arr.Len())
 
 	arr2 := NewArray16(vars, "testArray2")
-	assert.EqualValues(t, 0, arr2.MustLen())
+	assert.EqualValues(t, 0, arr2.Len())
 
-	arr2.MustExtend(arr.Immutable())
-	assert.EqualValues(t, arr.MustLen(), arr2.MustLen())
+	arr2.Extend(arr.Immutable())
+	assert.EqualValues(t, arr.Len(), arr2.Len())
 
-	arr2.MustPush(d4)
-	assert.EqualValues(t, arr.MustLen()+1, arr2.MustLen())
+	arr2.Push(d4)
+	assert.EqualValues(t, arr.Len()+1, arr2.Len())
 }
 
 func TestConcurrentAccessArray16(t *testing.T) {
@@ -50,9 +50,9 @@ func TestConcurrentAccessArray16(t *testing.T) {
 	a1 := NewArray16(vars, "test")
 	a2 := NewArray16(vars, "test")
 
-	a1.MustPush([]byte{1})
-	assert.EqualValues(t, a1.MustLen(), 1)
-	assert.EqualValues(t, a2.MustLen(), 1)
+	a1.Push([]byte{1})
+	assert.EqualValues(t, a1.Len(), 1)
+	assert.EqualValues(t, a2.Len(), 1)
 }
 
 //nolint:dupl // TODO duplicated code, could be refactored
@@ -65,31 +65,31 @@ func TestBasicArray32(t *testing.T) {
 	d3 := []byte("datum3")
 	d4 := []byte("datum4")
 
-	arr.MustPush(d1)
-	assert.EqualValues(t, 1, arr.MustLen())
-	v := arr.MustGetAt(0)
+	arr.Push(d1)
+	assert.EqualValues(t, 1, arr.Len())
+	v := arr.GetAt(0)
 	assert.EqualValues(t, d1, v)
 	assert.Panics(t, func() {
-		arr.MustGetAt(1)
+		arr.GetAt(1)
 	})
 
-	arr.MustPush(d2)
-	assert.EqualValues(t, 2, arr.MustLen())
+	arr.Push(d2)
+	assert.EqualValues(t, 2, arr.Len())
 
-	arr.MustPush(d3)
-	assert.EqualValues(t, 3, arr.MustLen())
+	arr.Push(d3)
+	assert.EqualValues(t, 3, arr.Len())
 
-	arr.MustPush(d4)
-	assert.EqualValues(t, 4, arr.MustLen())
+	arr.Push(d4)
+	assert.EqualValues(t, 4, arr.Len())
 
 	arr2 := NewArray32(vars, "testArray2")
-	assert.EqualValues(t, 0, arr2.MustLen())
+	assert.EqualValues(t, 0, arr2.Len())
 
-	arr2.MustExtend(arr.Immutable())
-	assert.EqualValues(t, arr.MustLen(), arr2.MustLen())
+	arr2.Extend(arr.Immutable())
+	assert.EqualValues(t, arr.Len(), arr2.Len())
 
-	arr2.MustPush(d4)
-	assert.EqualValues(t, arr.MustLen()+1, arr2.MustLen())
+	arr2.Push(d4)
+	assert.EqualValues(t, arr.Len()+1, arr2.Len())
 }
 
 func TestConcurrentAccessArray32(t *testing.T) {
@@ -97,7 +97,7 @@ func TestConcurrentAccessArray32(t *testing.T) {
 	a1 := NewArray32(vars, "test")
 	a2 := NewArray32(vars, "test")
 
-	a1.MustPush([]byte{1})
-	assert.EqualValues(t, a1.MustLen(), 1)
-	assert.EqualValues(t, a2.MustLen(), 1)
+	a1.Push([]byte{1})
+	assert.EqualValues(t, a1.Len(), 1)
+	assert.EqualValues(t, a2.Len(), 1)
 }

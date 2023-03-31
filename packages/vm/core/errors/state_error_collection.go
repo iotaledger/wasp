@@ -39,10 +39,7 @@ func (e *StateErrorCollectionWriter) Get(errorID uint16) (*isc.VMErrorTemplate, 
 	errorMap := e.getErrorTemplateMap()
 	errorIDKey := codec.EncodeUint16(errorID)
 
-	errorBytes, err := errorMap.GetAt(errorIDKey)
-	if err != nil {
-		return nil, err
-	}
+	errorBytes := errorMap.GetAt(errorIDKey)
 
 	template, err := isc.VMErrorTemplateFromMarshalUtil(marshalutil.New(errorBytes))
 	if err != nil {
@@ -62,17 +59,14 @@ func (e *StateErrorCollectionWriter) Register(messageFormat string) (*isc.VMErro
 
 	mapKey := codec.EncodeUint16(errorID)
 
-	if errorBytes, err := errorMap.GetAt(mapKey); err != nil {
-		return nil, err
-	} else if len(errorBytes) > 0 {
+	errorBytes := errorMap.GetAt(mapKey)
+	if len(errorBytes) > 0 {
 		return nil, coreerrors.ErrErrorAlreadyRegistered.Create(errorID)
 	}
 
 	newError := isc.NewVMErrorTemplate(isc.NewVMErrorCode(e.hname, errorID), messageFormat)
 
-	if err := errorMap.SetAt(mapKey, newError.Bytes()); err != nil {
-		return nil, err
-	}
+	errorMap.SetAt(mapKey, newError.Bytes())
 
 	return newError, nil
 }
@@ -101,10 +95,7 @@ func (e *StateErrorCollectionReader) Get(errorID uint16) (*isc.VMErrorTemplate, 
 	errorMap := e.getErrorTemplateMap()
 	errorIDKey := codec.EncodeUint16(errorID)
 
-	errorBytes, err := errorMap.GetAt(errorIDKey)
-	if err != nil {
-		return nil, err
-	}
+	errorBytes := errorMap.GetAt(errorIDKey)
 
 	template, err := isc.VMErrorTemplateFromMarshalUtil(marshalutil.New(errorBytes))
 	if err != nil {

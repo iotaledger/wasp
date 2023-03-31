@@ -106,15 +106,15 @@ func getFibonacciIndirect(ctx isc.SandboxView) dict.Dict {
 // calls the "fib indirect" view and stores the result in the state
 func calcFibonacciIndirectStoreValue(ctx isc.Sandbox) dict.Dict {
 	ret := ctx.CallView(ctx.Contract(), FuncGetFibonacciIndirect.Hname(), dict.Dict{
-		ParamN: ctx.Params().MustGet(ParamN),
+		ParamN: ctx.Params().Get(ParamN),
 	})
-	ctx.State().Set(ParamN, ret.MustGet(ParamN))
+	ctx.State().Set(ParamN, ret.Get(ParamN))
 	return nil
 }
 
 func viewFibResult(ctx isc.SandboxView) dict.Dict {
 	return dict.Dict{
-		ParamN: ctx.StateR().MustGet(ParamN),
+		ParamN: ctx.StateR().Get(ParamN),
 	}
 }
 

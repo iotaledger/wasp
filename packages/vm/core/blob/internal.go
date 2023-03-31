@@ -27,7 +27,7 @@ func mustGetBlobHash(fields dict.Dict) (hashing.HashValue, []kv.Key, [][]byte) {
 	values := make([][]byte, 0, len(sorted))
 	all := make([][]byte, 0, 2*len(sorted))
 	for _, k := range sorted {
-		v := fields.MustGet(k)
+		v := fields.Get(k)
 		values = append(values, v)
 		all = append(all, v)
 		all = append(all, []byte(k))
@@ -73,11 +73,11 @@ func GetBlobSizesR(state kv.KVStoreReader, blobHash hashing.HashValue) *collecti
 
 func LocateProgram(state kv.KVStoreReader, programHash hashing.HashValue) (string, []byte, error) {
 	blbValues := GetBlobValuesR(state, programHash)
-	programBinary := blbValues.MustGetAt([]byte(VarFieldProgramBinary))
+	programBinary := blbValues.GetAt([]byte(VarFieldProgramBinary))
 	if programBinary == nil {
 		return "", nil, fmt.Errorf("can't find program binary for hash %s", programHash.String())
 	}
-	v := blbValues.MustGetAt([]byte(VarFieldVMType))
+	v := blbValues.GetAt([]byte(VarFieldVMType))
 	vmType := vmtypes.WasmTime
 	if v != nil {
 		vmType = string(v)

@@ -256,7 +256,7 @@ func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *trie.MerklePr
 			codec.MakeDict(map[string]interface{}{
 				blocklog.ParamBlockIndex: blockIndex,
 			}),
-		).MustGet(blocklog.ParamBlockInfo)
+		).Get(blocklog.ParamBlockInfo)
 
 		// retrieve proof to serialized block
 		key := blocklog.Contract.FullKey(blocklog.BlockInfoKey(blockIndex))

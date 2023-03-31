@@ -108,7 +108,7 @@ func debitFromAccount(state kv.KVStore, accountKey kv.Key, assets *isc.Assets) b
 func getFungibleTokens(state kv.KVStoreReader, accountKey kv.Key) *isc.Assets {
 	ret := isc.NewEmptyAssets()
 	ret.AddBaseTokens(getBaseTokens(state, accountKey))
-	nativeTokensMapR(state, accountKey).MustIterate(func(idBytes []byte, val []byte) bool {
+	nativeTokensMapR(state, accountKey).Iterate(func(idBytes []byte, val []byte) bool {
 		ret.AddNativeTokens(
 			isc.MustNativeTokenIDFromBytes(idBytes),
 			new(big.Int).SetBytes(val),
@@ -120,7 +120,7 @@ func getFungibleTokens(state kv.KVStoreReader, accountKey kv.Key) *isc.Assets {
 
 func calcL2TotalFungibleTokens(state kv.KVStoreReader) *isc.Assets {
 	ret := isc.NewEmptyAssets()
-	allAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
+	allAccountsMapR(state).IterateKeys(func(key []byte) bool {
 		ret.Add(getFungibleTokens(state, kv.Key(key)))
 		return true
 	})

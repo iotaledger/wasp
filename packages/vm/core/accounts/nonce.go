@@ -14,7 +14,7 @@ func nonceKey(callerAgentID isc.AgentID) kv.Key {
 
 // GetMaxAssumedNonce is maintained for each caller with the purpose of replay protection of off-ledger requests
 func GetMaxAssumedNonce(state kv.KVStoreReader, callerAgentID isc.AgentID) uint64 {
-	nonce, err := codec.DecodeUint64(state.MustGet(nonceKey(callerAgentID)), 0)
+	nonce, err := codec.DecodeUint64(state.Get(nonceKey(callerAgentID)), 0)
 	if err != nil {
 		panic(fmt.Errorf("GetMaxAssumedNonce: %w", err))
 	}

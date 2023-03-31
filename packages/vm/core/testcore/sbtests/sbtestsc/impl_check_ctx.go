@@ -33,97 +33,97 @@ func testCheckContextFromViewEP(ctx isc.SandboxView) dict.Dict {
 
 func passTypesFull(ctx isc.Sandbox) dict.Dict {
 	ret := dict.New()
-	s, err := codec.DecodeString(ctx.Params().MustGet("string"))
+	s, err := codec.DecodeString(ctx.Params().Get("string"))
 	checkFull(ctx, err)
 	if s != "string" {
 		ctx.Log().Panicf("wrong string")
 	}
 	ret.Set("string", codec.EncodeString(s))
 
-	i64, err := codec.DecodeInt64(ctx.Params().MustGet("int64"))
+	i64, err := codec.DecodeInt64(ctx.Params().Get("int64"))
 	checkFull(ctx, err)
 	if i64 != 42 {
 		ctx.Log().Panicf("wrong int64")
 	}
 	ret.Set("string", codec.EncodeInt64(42))
 
-	i64_0, err := codec.DecodeInt64(ctx.Params().MustGet("int64-0"))
+	i64_0, err := codec.DecodeInt64(ctx.Params().Get("int64-0"))
 	checkFull(ctx, err)
 	if i64_0 != 0 {
 		ctx.Log().Panicf("wrong int64_0")
 	}
 	ret.Set("string", codec.EncodeInt64(0))
 
-	hash, err := codec.DecodeHashValue(ctx.Params().MustGet("Hash"))
+	hash, err := codec.DecodeHashValue(ctx.Params().Get("Hash"))
 	checkFull(ctx, err)
 	if hash != hashing.HashStrings("Hash") {
 		ctx.Log().Panicf("wrong hash")
 	}
-	hname, err := codec.DecodeHname(ctx.Params().MustGet("Hname"))
+	hname, err := codec.DecodeHname(ctx.Params().Get("Hname"))
 	checkFull(ctx, err)
 	if hname != isc.Hn("Hname") {
 		ctx.Log().Panicf("wrong hname")
 	}
-	hname0, err := codec.DecodeHname(ctx.Params().MustGet("Hname-0"))
+	hname0, err := codec.DecodeHname(ctx.Params().Get("Hname-0"))
 	checkFull(ctx, err)
 	if hname0 != 0 {
 		ctx.Log().Panicf("wrong Hname-0")
 	}
-	_, err = codec.DecodeHname(ctx.Params().MustGet(ParamContractID))
+	_, err = codec.DecodeHname(ctx.Params().Get(ParamContractID))
 	checkFull(ctx, err)
 
-	_, err = codec.DecodeHname(ctx.Params().MustGet(ParamChainID))
+	_, err = codec.DecodeHname(ctx.Params().Get(ParamChainID))
 	checkFull(ctx, err)
 
-	_, err = codec.DecodeHname(ctx.Params().MustGet(ParamAddress))
+	_, err = codec.DecodeHname(ctx.Params().Get(ParamAddress))
 	checkFull(ctx, err)
 
-	_, err = codec.DecodeHname(ctx.Params().MustGet(ParamAgentID))
+	_, err = codec.DecodeHname(ctx.Params().Get(ParamAgentID))
 	checkFull(ctx, err)
 	return nil
 }
 
 func passTypesView(ctx isc.SandboxView) dict.Dict {
-	s, err := codec.DecodeString(ctx.Params().MustGet("string"))
+	s, err := codec.DecodeString(ctx.Params().Get("string"))
 	checkView(ctx, err)
 	if s != "string" {
 		ctx.Log().Panicf("wrong string")
 	}
-	i64, err := codec.DecodeInt64(ctx.Params().MustGet("int64"))
+	i64, err := codec.DecodeInt64(ctx.Params().Get("int64"))
 	checkView(ctx, err)
 	if i64 != 42 {
 		ctx.Log().Panicf("wrong int64")
 	}
-	i64_0, err := codec.DecodeInt64(ctx.Params().MustGet("int64-0"))
+	i64_0, err := codec.DecodeInt64(ctx.Params().Get("int64-0"))
 	checkView(ctx, err)
 	if i64_0 != 0 {
 		ctx.Log().Panicf("wrong int64_0")
 	}
-	hash, err := codec.DecodeHashValue(ctx.Params().MustGet("Hash"))
+	hash, err := codec.DecodeHashValue(ctx.Params().Get("Hash"))
 	checkView(ctx, err)
 	if hash != hashing.HashStrings("Hash") {
 		ctx.Log().Panicf("wrong hash")
 	}
-	hname, err := codec.DecodeHname(ctx.Params().MustGet("Hname"))
+	hname, err := codec.DecodeHname(ctx.Params().Get("Hname"))
 	checkView(ctx, err)
 	if hname != isc.Hn("Hname") {
 		ctx.Log().Panicf("wrong hname")
 	}
-	hname0, err := codec.DecodeHname(ctx.Params().MustGet("Hname-0"))
+	hname0, err := codec.DecodeHname(ctx.Params().Get("Hname-0"))
 	checkView(ctx, err)
 	if hname0 != 0 {
 		ctx.Log().Panicf("wrong hname-0")
 	}
-	_, err = codec.DecodeHname(ctx.Params().MustGet(ParamContractID))
+	_, err = codec.DecodeHname(ctx.Params().Get(ParamContractID))
 	checkView(ctx, err)
 
-	_, err = codec.DecodeHname(ctx.Params().MustGet(ParamChainID))
+	_, err = codec.DecodeHname(ctx.Params().Get(ParamChainID))
 	checkView(ctx, err)
 
-	_, err = codec.DecodeHname(ctx.Params().MustGet(ParamAddress))
+	_, err = codec.DecodeHname(ctx.Params().Get(ParamAddress))
 	checkView(ctx, err)
 
-	_, err = codec.DecodeHname(ctx.Params().MustGet(ParamAgentID))
+	_, err = codec.DecodeHname(ctx.Params().Get(ParamAgentID))
 	checkView(ctx, err)
 	return nil
 }

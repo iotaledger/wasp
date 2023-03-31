@@ -23,7 +23,7 @@ func GetContractRegistryR(state kv.KVStoreReader) *collections.ImmutableMap {
 // If contract is not found by the given hname, nil is returned
 func FindContract(state kv.KVStoreReader, hname isc.Hname) *ContractRecord {
 	contractRegistry := GetContractRegistryR(state)
-	retBin := contractRegistry.MustGetAt(hname.Bytes())
+	retBin := contractRegistry.GetAt(hname.Bytes())
 	if retBin != nil {
 		ret, err := ContractRecordFromBytes(retBin)
 		if err != nil {
@@ -39,14 +39,14 @@ func FindContract(state kv.KVStoreReader, hname isc.Hname) *ContractRecord {
 }
 
 func ContractExists(state kv.KVStoreReader, hname isc.Hname) bool {
-	return GetContractRegistryR(state).MustHasAt(hname.Bytes())
+	return GetContractRegistryR(state).HasAt(hname.Bytes())
 }
 
 // DecodeContractRegistry encodes the whole contract registry from the map into a Go map.
 func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[isc.Hname]*ContractRecord, error) {
 	ret := make(map[isc.Hname]*ContractRecord)
 	var err error
-	contractRegistry.MustIterate(func(k []byte, v []byte) bool {
+	contractRegistry.Iterate(func(k []byte, v []byte) bool {
 		var deploymentHash isc.Hname
 		deploymentHash, err = isc.HnameFromBytes(k)
 		if err != nil {
@@ -102,17 +102,17 @@ func SubscribeBlockContext(state kv.KVStore, contract, openFunc, closeFunc isc.H
 		OpenFunc:  openFunc,
 		CloseFunc: closeFunc,
 	}
-	getBlockContextSubscriptions(state).MustPush(s.Encode())
+	getBlockContextSubscriptions(state).Push(s.Encode())
 }
 
 // GetBlockContextSubscriptions returns all contracts that are subscribed to block context,
 // in deterministic order
 func GetBlockContextSubscriptions(state kv.KVStoreReader) []BlockContextSubscription {
 	subs := getBlockContextSubscriptionsR(state)
-	n := subs.MustLen()
+	n := subs.Len()
 	r := make([]BlockContextSubscription, 0, n)
 	for i := uint16(0); i < n; i++ {
-		r = append(r, mustDecodeBlockContextSubscription(subs.MustGetAt(i)))
+		r = append(r, mustDecodeBlockContextSubscription(subs.GetAt(i)))
 	}
 	return r
 }

@@ -153,7 +153,7 @@ func (e *soloChainEnv) getCode(addr common.Address) []byte {
 func (e *soloChainEnv) getGasRatio() util.Ratio32 {
 	ret, err := e.soloChain.CallView(governance.Contract.Name, governance.ViewGetEVMGasRatio.Name)
 	require.NoError(e.t, err)
-	ratio, err := codec.DecodeRatio32(ret.MustGet(governance.ParamEVMGasRatio))
+	ratio, err := codec.DecodeRatio32(ret.Get(governance.ParamEVMGasRatio))
 	require.NoError(e.t, err)
 	return ratio
 }
@@ -179,7 +179,7 @@ func (e *soloChainEnv) setFeePolicy(p gas.FeePolicy, opts ...iscCallOptions) err
 func (e *soloChainEnv) getNonce(addr common.Address) uint64 {
 	ret, err := e.callView(evm.FuncGetNonce.Name, evm.FieldAddress, addr.Bytes())
 	require.NoError(e.t, err)
-	nonce, err := codec.DecodeUint64(ret.MustGet(evm.FieldResult))
+	nonce, err := codec.DecodeUint64(ret.Get(evm.FieldResult))
 	require.NoError(e.t, err)
 	return nonce
 }
