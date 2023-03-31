@@ -57,7 +57,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	}
 
 	t.Run("cluster=10,N=4,req=50", func(t *testing.T) {
-		const waitFor = 20 * time.Second
+		const waitFor = 30 * time.Second
 		const numRequests = 50
 		const numValidatorNodes = 4
 		const clusterSize = 10

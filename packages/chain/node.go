@@ -336,6 +336,24 @@ func New(
 		func(ao *isc.AliasOutputWithID) {
 			cni.stateTrackerAct.TrackAliasOutput(ao, true)
 		},
+		func(dkShare tcrypto.DKShare) {
+			cni.accessLock.Lock()
+			cni.activeCommitteeDKShare = dkShare
+			activeCommitteeNodes := cni.activeCommitteeNodes
+			cni.accessLock.Unlock()
+			var newCommitteeNodes []*cryptolib.PublicKey
+			if dkShare == nil {
+				newCommitteeNodes = []*cryptolib.PublicKey{}
+			} else {
+				newCommitteeNodes = dkShare.GetNodePubKeys()
+			}
+			if !util.Same(newCommitteeNodes, activeCommitteeNodes) {
+				cni.log.Infof("Committee nodes updated to %v, was %v", newCommitteeNodes, activeCommitteeNodes)
+				cni.updateAccessNodes(func() {
+					cni.activeCommitteeNodes = newCommitteeNodes
+				})
+			}
+		},
 		cni.log.Named("CM"),
 	)
 	if err != nil {
@@ -668,7 +686,7 @@ func (cni *chainNodeImpl) handleNetMessage(ctx context.Context, recv *peering.Pe
 
 func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntyped gpa.Output) {
 	cni.log.Debugf("handleChainMgrOutput: %v", outputUntyped)
-	if outputUntyped == nil {
+	if outputUntyped == nil { // TODO: Will never be nil, fix it.
 		// TODO: Cleanup consensus instances for all the committees after some time.
 		// Not sure, if it is OK to terminate them immediately at this point.
 		// This is for the case, if the current node is not in a committee of a chain anymore.
@@ -770,16 +788,6 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 		ci.request = needConsensus
 		cni.stateTrackerAct.TrackAliasOutput(needConsensus.BaseAliasOutput, true)
 		ci.consensus.Input(needConsensus.BaseAliasOutput, outputCB, recoverCB)
-		//
-		// Update committee nodes, if changed.
-		cni.accessLock.Lock()
-		cni.activeCommitteeDKShare = needConsensus.DKShare
-		cni.accessLock.Unlock()
-		if !util.Same(ci.committee, cni.activeCommitteeNodes) {
-			cni.updateAccessNodes(func() {
-				cni.activeCommitteeNodes = ci.committee
-			})
-		}
 	}
 }
 
