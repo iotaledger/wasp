@@ -5,14 +5,13 @@ import (
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
 // withdrawFromChain withdraws all the available balance existing on the target chain
 func withdrawFromChain(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Infof(FuncWithdrawFromChain.Name)
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	params := ctx.Params()
 	targetChain := params.MustGetChainID(ParamChainID)
 	baseTokensToWithdrawal := params.MustGetUint64(ParamBaseTokensToWithdrawal)
 	availableBaseTokens := ctx.AllowanceAvailable().BaseTokens

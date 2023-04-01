@@ -36,10 +36,11 @@ func viewBalanceBaseToken(ctx isc.SandboxView) dict.Dict {
 // - ParamNativeTokenID
 // Returns: {ParamBalance: big.Int}
 func viewBalanceNativeToken(ctx isc.SandboxView) dict.Dict {
-	nativeTokenID := ctx.Params().MustGetNativeTokenID(ParamNativeTokenID)
+	params := ctx.Params()
+	nativeTokenID := params.MustGetNativeTokenID(ParamNativeTokenID)
 	bal := getNativeTokenAmount(
 		ctx.StateR(),
-		accountKey(ctx.Params().MustGetAgentID(ParamAgentID)),
+		accountKey(params.MustGetAgentID(ParamAgentID)),
 		nativeTokenID,
 	)
 	return dict.Dict{ParamBalance: bal.Bytes()}
@@ -126,8 +127,9 @@ func viewAccountNFTAmount(ctx isc.SandboxView) dict.Dict {
 }
 
 func viewAccountNFTsInCollection(ctx isc.SandboxView) dict.Dict {
-	aid := ctx.Params().MustGetAgentID(ParamAgentID)
-	collectionID := codec.MustDecodeNFTID(ctx.Params().Get(ParamCollectionID))
+	params := ctx.Params()
+	aid := params.MustGetAgentID(ParamAgentID)
+	collectionID := codec.MustDecodeNFTID(params.Get(ParamCollectionID))
 	nftIDs := getAccountNFTsInCollection(ctx.StateR(), aid, collectionID)
 
 	if len(nftIDs) > math.MaxUint16 {
@@ -143,8 +145,9 @@ func viewAccountNFTsInCollection(ctx isc.SandboxView) dict.Dict {
 }
 
 func viewAccountNFTAmountInCollection(ctx isc.SandboxView) dict.Dict {
-	aid := ctx.Params().MustGetAgentID(ParamAgentID)
-	collectionID := codec.MustDecodeNFTID(ctx.Params().Get(ParamCollectionID))
+	params := ctx.Params()
+	aid := params.MustGetAgentID(ParamAgentID)
+	collectionID := codec.MustDecodeNFTID(params.Get(ParamCollectionID))
 	return dict.Dict{
 		ParamNFTAmount: codec.EncodeUint32(nftsByCollectionMapR(ctx.StateR(), aid, kv.Key(collectionID[:])).Len()),
 	}

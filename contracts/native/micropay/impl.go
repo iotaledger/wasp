@@ -31,9 +31,9 @@ package micropay
 // 	// a := assert.NewAssert(ctx.Log())
 // 	// a.Requiref(ctx.Caller().Address().Type() != ledgerstate.AliasAddressType, "micropay.publicKey: caller must be an address")
 
-// 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
+// 	// params := ctx.Params()
 
-// 	// pubKeyBin := par.MustGetBytes(ParamPublicKey)
+// 	// pubKeyBin := params.MustGetBytes(ParamPublicKey)
 // 	// addr, err := ctx.Utils().ED25519().AddressFromPublicKey(pubKeyBin)
 // 	// a.RequireNoError(err)
 // 	// a.Requiref(addr.Equals(ctx.Caller().Address()), "public key does not correspond to the caller's address")
@@ -49,7 +49,7 @@ package micropay
 // func addWarrant(ctx isc.Sandbox) (dict.Dict, error) {
 // 	panic("TODO implement")
 
-// 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
+// 	// params := ctx.Params()
 // 	// a := assert.NewAssert(ctx.Log())
 
 // 	// a.Requiref(ctx.Caller().Address().Type() != ledgerstate.AliasAddressType, "micropay.addWarrant: caller must be an address")
@@ -58,7 +58,7 @@ package micropay
 // 	// a.Requiref(getPublicKey(ctx.State(), payerAddr, a) != nil,
 // 	// 	fmt.Sprintf("unknown public key for address %s", payerAddr))
 
-// 	// serviceAddr := par.MustGetAddress(ParamServiceAddress)
+// 	// serviceAddr := params.MustGetAddress(ParamServiceAddress)
 // 	// addWarrant := ctx.Allowance().BaseTokens
 // 	// a.Requiref(addWarrant >= MinimumWarrantBaseTokens, fmt.Sprintf("warrant must be larger than %d base tokens", MinimumWarrantBaseTokens))
 
@@ -98,12 +98,12 @@ package micropay
 // func revokeWarrant(ctx isc.Sandbox) (dict.Dict, error) {
 // 	panic("TODO implement")
 
-// 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
+// 	// params := ctx.Params()
 // 	// a := assert.NewAssert(ctx.Log())
 
 // 	// a.Requiref(ctx.Caller().Address().Type() != ledgerstate.AliasAddressType, "micropay.addWarrant: caller must be an address")
 // 	// payerAddr := ctx.Caller().Address()
-// 	// serviceAddr := par.MustGetAddress(ParamServiceAddress)
+// 	// serviceAddr := params.MustGetAddress(ParamServiceAddress)
 
 // 	// w, r, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, a)
 // 	// a.Requiref(w > 0, fmt.Sprintf("warrant of %s to %s does not exist", payerAddr, serviceAddr))
@@ -139,9 +139,9 @@ package micropay
 // 	// myAgentID := isc.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
 // 	// a.Requiref(ctx.Caller().Equals(myAgentID), "caller must be self")
 
-// 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
-// 	// payerAddr := par.MustGetAddress(ParamPayerAddress)
-// 	// serviceAddr := par.MustGetAddress(ParamServiceAddress)
+// 	// params := ctx.Params()
+// 	// payerAddr := params.MustGetAddress(ParamPayerAddress)
+// 	// serviceAddr := params.MustGetAddress(ParamServiceAddress)
 // 	// warrant, _, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, assert.NewAssert(ctx.Log()))
 // 	// if warrant > 0 {
 // 	// 	tokens := isc.NewFungibleBaseTokens(warrant)
@@ -162,8 +162,8 @@ package micropay
 // 	// targetAddr := ctx.Caller().Address()
 // 	// a.Requiref(targetAddr.Type() != ledgerstate.AliasAddressType, "micropay.addWarrant: caller must be an address")
 
-// 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
-// 	// payerAddr := par.MustGetAddress(ParamPayerAddress)
+// 	// params := ctx.Params()
+// 	// payerAddr := params.MustGetAddress(ParamPayerAddress)
 // 	// payerPubKeyBin := getPublicKey(ctx.State(), payerAddr, a)
 // 	// a.Requiref(payerPubKeyBin != nil, "public key unknown for %s", payerAddr)
 
@@ -185,9 +185,9 @@ package micropay
 // // - ParamWarrant int64 if == 0 no warrant
 // // - ParamRevoked int64 is exists, timestamp in Unix nanosec when warrant will be revoked
 // func getWarrantInfo(ctx isc.SandboxView) (dict.Dict, error) {
-// 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
-// 	// payerAddr := par.MustGetAddress(ParamPayerAddress)
-// 	// serviceAddr := par.MustGetAddress(ParamServiceAddress)
+// 	// params := ctx.Params()
+// 	// payerAddr := params.MustGetAddress(ParamPayerAddress)
+// 	// serviceAddr := params.MustGetAddress(ParamServiceAddress)
 // 	// warrant, revoke, lastOrd := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, assert.NewAssert(ctx.Log()))
 // 	// ret := dict.New()
 // 	// if warrant > 0 {

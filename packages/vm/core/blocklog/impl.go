@@ -160,9 +160,10 @@ func viewGetEventsForBlock(ctx isc.SandboxView) dict.Dict {
 		return nil
 	}
 
-	blockInfo, err := GetBlockInfo(ctx.StateR(), blockIndex)
+	stateR := ctx.StateR()
+	blockInfo, err := GetBlockInfo(stateR, blockIndex)
 	ctx.RequireNoError(err)
-	events := GetEventsByBlockIndex(ctx.StateR(), blockIndex, blockInfo.TotalRequests)
+	events := GetEventsByBlockIndex(stateR, blockIndex, blockInfo.TotalRequests)
 
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamEvent)
@@ -179,9 +180,10 @@ func viewGetEventsForBlock(ctx isc.SandboxView) dict.Dict {
 // ParamFromBlock - defaults to 0
 // ParamToBlock - defaults to latest block
 func viewGetEventsForContract(ctx isc.SandboxView) dict.Dict {
-	contract := ctx.Params().MustGetHname(ParamContractHname)
-	fromBlock := ctx.Params().MustGetUint32(ParamFromBlock, 0)
-	toBlock := ctx.Params().MustGetUint32(ParamToBlock, math.MaxUint32)
+	params := ctx.Params()
+	contract := params.MustGetHname(ParamContractHname)
+	fromBlock := params.MustGetUint32(ParamFromBlock, 0)
+	toBlock := params.MustGetUint32(ParamToBlock, math.MaxUint32)
 	events, err := getSmartContractEventsInternal(ctx.StateR(), contract, fromBlock, toBlock)
 	ctx.RequireNoError(err)
 

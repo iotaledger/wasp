@@ -80,8 +80,9 @@ func getBlobField(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("blob.getBlobField.begin")
 	state := ctx.StateR()
 
-	blobHash := ctx.Params().MustGetHashValue(ParamHash)
-	field := ctx.Params().MustGetBytes(ParamField)
+	params := ctx.Params()
+	blobHash := params.MustGetHashValue(ParamHash)
+	field := params.MustGetBytes(ParamField)
 
 	blobValues := GetBlobValuesR(state, blobHash)
 	ctx.Requiref(blobValues.Len() != 0, "blob with hash %s has not been found", blobHash.String())

@@ -112,8 +112,8 @@ pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
         }
         SC_AGENT_ID_ETHEREUM => {
             let buf: &[u8] = &buf[1..];
-            if buf.len() != SC_ADDRESS_ETH_LENGTH {
-                panic("invalid AgentID length: address agentID");
+            if buf.len() != SC_LENGTH_ETH {
+                panic("invalid AgentID length: eth agentID");
             }
             return ScAgentID::from_address(&address_from_bytes(&buf));
         }

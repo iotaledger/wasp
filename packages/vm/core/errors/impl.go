@@ -5,7 +5,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
@@ -22,7 +21,7 @@ func funcRegisterError(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("Registering error")
 	e := NewStateErrorCollectionWriter(ctx.State(), ctx.Contract())
 
-	params := kvdecoder.New(ctx.Params())
+	params := ctx.Params()
 	errorMessageFormat := params.MustGetString(ParamErrorMessageFormat)
 
 	if errorMessageFormat == "" {

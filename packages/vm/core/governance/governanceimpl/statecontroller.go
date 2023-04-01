@@ -23,7 +23,8 @@ func rotateStateController(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	newStateControllerAddr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	// check is address is allowed
-	amap := collections.NewMapReadOnly(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
+	state := ctx.State()
+	amap := collections.NewMapReadOnly(state, governance.StateVarAllowedStateControllerAddresses)
 	ctx.Requiref(amap.HasAt(isc.BytesFromAddress(newStateControllerAddr)), "rotateStateController: address is not allowed as next state address: %s", newStateControllerAddr)
 
 	if !newStateControllerAddr.Equal(ctx.StateAnchor().StateController) {
@@ -31,7 +32,7 @@ func rotateStateController(ctx isc.Sandbox) dict.Dict {
 		// By setting StateVarRotateToAddress we signal the VM this special situation
 		// StateVarRotateToAddress value should never persist in the state
 		ctx.Log().Infof("Governance::RotateStateController: newStateControllerAddress=%s", newStateControllerAddr.String())
-		ctx.State().Set(governance.StateVarRotateToAddress, isc.BytesFromAddress(newStateControllerAddr))
+		state.Set(governance.StateVarRotateToAddress, isc.BytesFromAddress(newStateControllerAddr))
 		return nil
 	}
 	// here the new state controller address from the request equals to the state controller address in the anchor output

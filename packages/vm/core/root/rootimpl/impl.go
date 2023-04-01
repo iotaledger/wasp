@@ -76,14 +76,15 @@ func deployContract(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("root.deployContract.begin")
 	ctx.Requiref(isAuthorizedToDeploy(ctx), "root.deployContract: deploy not permitted for: %s", ctx.Caller().String())
 
-	progHash := ctx.Params().MustGetHashValue(root.ParamProgramHash)
-	description := ctx.Params().MustGetString(root.ParamDescription, "N/A")
-	name := ctx.Params().MustGetString(root.ParamName)
+	params := ctx.Params()
+	progHash := params.MustGetHashValue(root.ParamProgramHash)
+	description := params.MustGetString(root.ParamDescription, "N/A")
+	name := params.MustGetString(root.ParamName)
 	ctx.Requiref(name != "", "wrong name")
 
 	// pass to init function all params not consumed so far
 	initParams := dict.New()
-	ctx.Params().Dict.Iterate("", func(key kv.Key, value []byte) bool {
+	params.Dict.Iterate("", func(key kv.Key, value []byte) bool {
 		if key != root.ParamProgramHash && key != root.ParamName && key != root.ParamDescription {
 			initParams.Set(key, value)
 		}
@@ -157,11 +158,9 @@ func findContract(ctx isc.SandboxView) dict.Dict {
 }
 
 func getContractRecords(ctx isc.SandboxView) dict.Dict {
-	src := root.GetContractRegistryR(ctx.StateR())
-
 	ret := dict.New()
 	dst := collections.NewMap(ret, root.StateVarContractRegistry)
-	src.Iterate(func(elemKey []byte, value []byte) bool {
+	root.GetContractRegistryR(ctx.StateR()).Iterate(func(elemKey []byte, value []byte) bool {
 		dst.SetAt(elemKey, value)
 		return true
 	})
