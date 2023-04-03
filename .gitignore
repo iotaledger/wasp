@@ -45,3 +45,4 @@ packages/vm/core/evm/**/*.bin-runtime
 *.blk
 go.work
 go.work.sum
+TMP*
