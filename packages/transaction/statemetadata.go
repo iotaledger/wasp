@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	StateMetadataSupportedVersion = 0
+	StateMetadataSupportedVersion = 1
 )
 
 type StateMetadata struct {
@@ -40,7 +40,7 @@ func StateMetadataFromBytes(data []byte) (*StateMetadata, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse state metadata version, error: %w", err)
 	}
-	if version != StateMetadataSupportedVersion {
+	if version > StateMetadataSupportedVersion {
 		return nil, fmt.Errorf("unsupported state metadata version: %d", version)
 	}
 
