@@ -1,6 +1,7 @@
 package origin
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -94,8 +95,31 @@ func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutput
 			panic(fmt.Sprintf("invalid parameters on origin AO, %s", err.Error()))
 		}
 	}
-	commonAccountAmount := aliasOutput.GetAliasOutput().Amount - parameters.L1().Protocol.RentStructure.MinRent(aliasOutput.GetAliasOutput())
-	return InitChain(chainStore, initParams, commonAccountAmount)
+	l1params := parameters.L1()
+	aoMinSD := l1params.Protocol.RentStructure.MinRent(aliasOutput.GetAliasOutput())
+	commonAccountAmount := aliasOutput.GetAliasOutput().Amount - aoMinSD
+	originBlock := InitChain(chainStore, initParams, commonAccountAmount)
+
+	originAOStateMetadata, err := transaction.StateMetadataFromBytes(aliasOutput.GetStateMetadata())
+	if err != nil {
+		panic(fmt.Sprintf("invalid state metadata on origin AO: %s", err.Error()))
+	}
+	if !originBlock.L1Commitment().Equals(originAOStateMetadata.L1Commitment) {
+		l1paramsJSON, err := json.Marshal(l1params)
+		if err != nil {
+			l1paramsJSON = []byte(fmt.Sprintf("unable to marshaljson l1params: %s", err.Error()))
+		}
+		x := (fmt.Sprintf(
+			"L1Commitment mismatch between originAO / originBlock: %s / %s, AOminSD: %d, L1params: %s",
+			originAOStateMetadata.L1Commitment,
+			originBlock.L1Commitment(),
+			aoMinSD,
+			string(l1paramsJSON),
+		))
+		println(x)
+		panic(x)
+	}
+	return originBlock
 }
 
 func calcStateMetadata(initParams dict.Dict, commonAccountAmount uint64) []byte {

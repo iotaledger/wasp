@@ -58,7 +58,8 @@ func (bps batchProposalSet) decidedBaseAliasOutput(f int) *isc.AliasOutputWithID
 }
 
 // Take requests proposed by at least F+1 nodes. Then the request is proposed at least by 1 fair node.
-func (bps batchProposalSet) decidedRequestRefs(f int) []*isc.RequestRef {
+// We should only consider the proposals from the nodes that proposed the decided AO, otherwise we can select already processed requests.
+func (bps batchProposalSet) decidedRequestRefs(f int, ao *isc.AliasOutputWithID) []*isc.RequestRef {
 	minNumberMentioned := f + 1
 	requestsByKey := map[isc.RequestRefKey]*isc.RequestRef{}
 	numMentioned := map[isc.RequestRefKey]int{}
@@ -66,6 +67,9 @@ func (bps batchProposalSet) decidedRequestRefs(f int) []*isc.RequestRef {
 	// Count number of nodes proposing a request.
 	maxLen := 0
 	for _, bp := range bps {
+		if !bp.baseAliasOutput.Equals(ao) {
+			continue
+		}
 		for _, reqRef := range bp.requestRefs {
 			reqRefFey := reqRef.AsKey()
 			numMentioned[reqRefFey]++

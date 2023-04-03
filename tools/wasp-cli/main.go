@@ -58,7 +58,7 @@ func init() {
 	rootCmd = initRootCmd(waspVersion)
 	log.Init(rootCmd)
 	rootCmd.AddCommand(completion.InitCompletionCommand(rootCmd.Root().Name()))
-	cliinit.Init(rootCmd, waspVersion)
+	cliinit.Init(rootCmd)
 	authentication.Init(rootCmd)
 	waspcmd.Init(rootCmd)
 	wallet.Init(rootCmd)

@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -83,12 +84,11 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		activeAccessNodesCB := func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
 			return []*cryptolib.PublicKey{}, []*cryptolib.PublicKey{}
 		}
-		trackActiveStateCB := func(ao *isc.AliasOutputWithID) {
-			// Nothing
-		}
+		trackActiveStateCB := func(ao *isc.AliasOutputWithID) {}
+		updateCommitteeNodesCB := func(tcrypto.DKShare) {}
 		cm, err := chainMgr.New(
 			nid, chainID, stores[nid], consensusStateRegistry, dkRegs[i], gpa.NodeIDFromPublicKey,
-			activeAccessNodesCB, trackActiveStateCB, log.Named(nid.ShortString()),
+			activeAccessNodesCB, trackActiveStateCB, updateCommitteeNodesCB, log.Named(nid.ShortString()),
 		)
 		require.NoError(t, err)
 		nodes[nid] = cm.AsGPA()

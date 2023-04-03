@@ -43,6 +43,7 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 	//
 	// Store the aggregated values.
 	if len(bps) == 0 {
+		log.Debugf("Cant' aggregate batch proposal: have 0 batch proposals.")
 		return &AggregatedBatchProposals{shouldBeSkipped: true}
 	}
 	aggregatedTime := bps.aggregatedTime(f)
@@ -50,11 +51,15 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 	abp := &AggregatedBatchProposals{
 		decidedIndexProposals:  bps.decidedDSSIndexProposals(),
 		decidedBaseAliasOutput: decidedBaseAliasOutput,
-		decidedRequestRefs:     bps.decidedRequestRefs(f),
+		decidedRequestRefs:     bps.decidedRequestRefs(f, decidedBaseAliasOutput),
 		aggregatedTime:         aggregatedTime,
 		validatorFeeTarget:     bps.selectedFeeDestination(aggregatedTime),
 	}
 	if abp.decidedBaseAliasOutput == nil || len(abp.decidedRequestRefs) == 0 || abp.aggregatedTime.IsZero() {
+		log.Debugf(
+			"Cant' aggregate batch proposal: decidedBaseAliasOutput=%v, |decidedRequestRefs|=%v, aggregatedTime=%v",
+			abp.decidedBaseAliasOutput, len(abp.decidedRequestRefs), abp.aggregatedTime,
+		)
 		abp.shouldBeSkipped = true
 	}
 	return abp
