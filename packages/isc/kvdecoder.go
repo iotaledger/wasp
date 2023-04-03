@@ -50,4 +50,6 @@ type KVDecoder interface {
 	MustGetBigInt(key kv.Key, def ...*big.Int) *big.Int
 	GetNativeTokenID(key kv.Key, def ...iotago.NativeTokenID) (iotago.NativeTokenID, error)
 	MustGetNativeTokenID(key kv.Key, def ...iotago.NativeTokenID) iotago.NativeTokenID
+	GetNFTID(key kv.Key, def ...iotago.NFTID) (iotago.NFTID, error)
+	MustGetNFTID(key kv.Key, def ...iotago.NFTID) iotago.NFTID
 }
