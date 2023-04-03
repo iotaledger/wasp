@@ -286,3 +286,20 @@ func (p *kvdecoder) MustGetNativeTokenID(key kv.Key, def ...iotago.NativeTokenID
 	p.check(err)
 	return ret
 }
+
+func (p *kvdecoder) GetNFTID(key kv.Key, def ...iotago.NFTID) (iotago.NFTID, error) {
+	v := p.Get(key)
+	if v == nil {
+		if len(def) != 0 {
+			return def[0], nil
+		}
+		return iotago.NFTID{}, fmt.Errorf("GetNFTID: mandatory parameter %q does not exist", key)
+	}
+	return codec.DecodeNFTID(v)
+}
+
+func (p *kvdecoder) MustGetNFTID(key kv.Key, def ...iotago.NFTID) iotago.NFTID {
+	ret, err := p.GetNFTID(key, def...)
+	p.check(err)
+	return ret
+}
