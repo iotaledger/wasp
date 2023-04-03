@@ -51,7 +51,7 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 	abp := &AggregatedBatchProposals{
 		decidedIndexProposals:  bps.decidedDSSIndexProposals(),
 		decidedBaseAliasOutput: decidedBaseAliasOutput,
-		decidedRequestRefs:     bps.decidedRequestRefs(f),
+		decidedRequestRefs:     bps.decidedRequestRefs(f, decidedBaseAliasOutput),
 		aggregatedTime:         aggregatedTime,
 		validatorFeeTarget:     bps.selectedFeeDestination(aggregatedTime),
 	}
