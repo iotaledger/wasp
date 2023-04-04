@@ -41,6 +41,7 @@ type distSyncImpl struct {
 	nodeCountToShare  int // Number of nodes to share a request per iteration.
 	maxMsgsPerTick    int
 	needed            *shrinkingmap.ShrinkingMap[isc.RequestRefKey, *isc.RequestRef]
+	missingReqsMetric func(count int)
 	rnd               *rand.Rand
 	log               *logger.Logger
 }
@@ -52,6 +53,7 @@ func New(
 	requestNeededCB func(*isc.RequestRef) isc.Request,
 	requestReceivedCB func(isc.Request),
 	maxMsgsPerTick int,
+	missingReqsMetric func(count int),
 	log *logger.Logger,
 ) gpa.GPA {
 	return &distSyncImpl{
@@ -64,6 +66,7 @@ func New(
 		nodeCountToShare:  0,
 		maxMsgsPerTick:    maxMsgsPerTick,
 		needed:            shrinkingmap.New[isc.RequestRefKey, *isc.RequestRef](),
+		missingReqsMetric: missingReqsMetric,
 		rnd:               util.NewPseudoRand(),
 		log:               log,
 	}
@@ -159,7 +162,9 @@ func (dsi *distSyncImpl) handleInputPublishRequest(input *inputPublishRequest) g
 	// Delete the it from the "needed" list, if any.
 	// This node has the request, if it tries to publish it.
 	reqRef := isc.RequestRefFromRequest(input.request)
-	dsi.needed.Delete(reqRef.AsKey())
+	if dsi.needed.Delete(reqRef.AsKey()) {
+		dsi.missingReqsMetric(dsi.needed.Size())
+	}
 	return msgs
 }
 
@@ -169,10 +174,14 @@ func (dsi *distSyncImpl) handleInputPublishRequest(input *inputPublishRequest) g
 func (dsi *distSyncImpl) handleInputRequestNeeded(input *inputRequestNeeded) gpa.OutMessages {
 	reqRefKey := input.requestRef.AsKey()
 	if !input.needed {
-		dsi.needed.Delete(reqRefKey)
+		if dsi.needed.Delete(reqRefKey) {
+			dsi.missingReqsMetric(dsi.needed.Size())
+		}
 		return nil
 	}
-	dsi.needed.Set(reqRefKey, input.requestRef)
+	if dsi.needed.Set(reqRefKey, input.requestRef) {
+		dsi.missingReqsMetric(dsi.needed.Size())
+	}
 	msgs := gpa.NoMessages()
 	for _, nid := range dsi.committeeNodes {
 		msgs.Add(newMsgMissingRequest(input.requestRef, nid))
@@ -195,7 +204,9 @@ func (dsi *distSyncImpl) handleInputTimeTick() gpa.OutMessages {
 	nodePerm := dsi.rnd.Perm(nodeCount)
 	counter := 0
 	dsi.needed.ForEach(func(_ isc.RequestRefKey, reqRef *isc.RequestRef) bool { // Access is randomized.
-		msgs.Add(newMsgMissingRequest(reqRef, dsi.serverNodes[nodePerm[counter%nodeCount]]))
+		recipient := dsi.serverNodes[nodePerm[counter%nodeCount]]
+		dsi.log.Debugf("Sending MsgMissingRequest for %v to %v", reqRef, recipient)
+		msgs.Add(newMsgMissingRequest(reqRef, recipient))
 		counter++
 		return counter <= dsi.maxMsgsPerTick
 	})
@@ -215,7 +226,9 @@ func (dsi *distSyncImpl) handleMsgMissingRequest(msg *msgMissingRequest) gpa.Out
 func (dsi *distSyncImpl) handleMsgShareRequest(msg *msgShareRequest) gpa.OutMessages {
 	reqRefKey := isc.RequestRefFromRequest(msg.request).AsKey()
 	dsi.requestReceivedCB(msg.request)
-	dsi.needed.Delete(reqRefKey)
+	if dsi.needed.Delete(reqRefKey) {
+		dsi.missingReqsMetric(dsi.needed.Size())
+	}
 	if msg.ttl > 0 {
 		ttl := msg.ttl
 		if ttl > maxTTL {
