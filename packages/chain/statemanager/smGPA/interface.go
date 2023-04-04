@@ -11,7 +11,7 @@ type blockRequestCallback interface {
 
 type blockFetcher interface {
 	getCommitment() *state.L1Commitment
-	notifyFetched(func(blockFetcher) (bool, error)) error // calls fun for this fetcher and each related recursively; fun for parent block is always called before fun for related block
+	notifyFetched(func(blockFetcher) bool) // calls fun for this fetcher and each related recursively; fun for parent block is always called before fun for related block
 	addCallback(blockRequestCallback)
 	addRelatedFetcher(blockFetcher)
 	cleanCallbacks()
