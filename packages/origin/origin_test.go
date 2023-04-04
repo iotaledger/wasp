@@ -93,15 +93,15 @@ func TestCreateOrigin(t *testing.T) {
 		require.True(t, stateAddr.Equal(anchor.StateController))
 		require.True(t, stateAddr.Equal(anchor.GovernanceController))
 
-		originStateMetadata := &transaction.StateMetadata{
-			L1Commitment: origin.L1Commitment(
+		originStateMetadata := transaction.NewStateMetadata(
+			origin.L1Commitment(
 				dict.Dict{origin.ParamChainOwner: isc.NewAgentID(anchor.GovernanceController).Bytes()},
 				accounts.MinimumBaseTokensOnCommonAccount,
 			),
-			GasFeePolicy:   gas.DefaultFeePolicy(),
-			SchemaVersion:  migrations.BaseSchemaVersion + uint32(len(migrations.Migrations)),
-			CustomMetadata: []byte{},
-		}
+			gas.DefaultFeePolicy(),
+			migrations.BaseSchemaVersion+uint32(len(migrations.Migrations)),
+			[]byte{},
+		)
 
 		require.True(t,
 			bytes.Equal(
@@ -172,7 +172,7 @@ func TestMismatchOriginCommitment(t *testing.T) {
 		},
 		oid,
 	)
-	require.Panics(t, func() {
-		origin.InitChainByAliasOutput(store, ao)
-	})
+
+	_, err = origin.InitChainByAliasOutput(store, ao)
+	require.Error(t, err)
 }

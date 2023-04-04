@@ -17,6 +17,7 @@ import (
 
 func (vmctx *VMContext) StateMetadata(stateCommitment *state.L1Commitment) []byte {
 	stateMetadata := transaction.StateMetadata{
+		Version:      transaction.StateMetadataSupportedVersion,
 		L1Commitment: stateCommitment,
 	}
 

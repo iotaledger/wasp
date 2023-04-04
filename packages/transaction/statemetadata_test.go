@@ -13,9 +13,9 @@ import (
 )
 
 func TestStateMetadataSerialization(t *testing.T) {
-	s := &transaction.StateMetadata{
-		L1Commitment: state.PseudoRandL1Commitment(),
-		GasFeePolicy: &gas.FeePolicy{
+	s := transaction.NewStateMetadata(
+		state.PseudoRandL1Commitment(),
+		&gas.FeePolicy{
 			GasPerToken: util.Ratio32{
 				A: 1,
 				B: 2,
@@ -26,9 +26,9 @@ func TestStateMetadataSerialization(t *testing.T) {
 			},
 			ValidatorFeeShare: 5,
 		},
-		SchemaVersion:  6,
-		CustomMetadata: []byte("foo"),
-	}
+		6,
+		[]byte("foo"),
+	)
 	data := s.Bytes()
 	s2, err := transaction.StateMetadataFromBytes(data)
 	require.NoError(t, err)

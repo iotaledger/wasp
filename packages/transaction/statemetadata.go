@@ -10,19 +10,39 @@ import (
 )
 
 const (
-	StateMetadataSupportedVersion = 1
+	// L1Commitment calculation has changed from version 0 to version 1.
+	// The structure is actually the same, but the L1 commitment in V0
+	// refers to an empty state, and in V1 refers to the first initialized
+	// state.
+	StateMetadataSupportedVersion byte = 1
 )
 
 type StateMetadata struct {
+	Version        byte
 	L1Commitment   *state.L1Commitment
 	GasFeePolicy   *gas.FeePolicy
 	SchemaVersion  uint32
 	CustomMetadata []byte
 }
 
+func NewStateMetadata(
+	l1Commitment *state.L1Commitment,
+	gasFeePolicy *gas.FeePolicy,
+	schemaVersion uint32,
+	customMetadata []byte,
+) *StateMetadata {
+	return &StateMetadata{
+		Version:        StateMetadataSupportedVersion,
+		L1Commitment:   l1Commitment,
+		GasFeePolicy:   gasFeePolicy,
+		SchemaVersion:  schemaVersion,
+		CustomMetadata: customMetadata,
+	}
+}
+
 func (s *StateMetadata) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.WriteByte(StateMetadataSupportedVersion)
+	mu.WriteByte(StateMetadataSupportedVersion) // Always write the new version.
 	mu.WriteUint32(s.SchemaVersion)
 	mu.WriteBytes(s.L1Commitment.Bytes())
 	mu.WriteBytes(s.GasFeePolicy.Bytes())
@@ -36,12 +56,12 @@ func StateMetadataFromBytes(data []byte) (*StateMetadata, error) {
 	mu := marshalutil.New(data)
 	var err error
 
-	version, err := mu.ReadByte()
+	ret.Version, err = mu.ReadByte()
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse state metadata version, error: %w", err)
 	}
-	if version > StateMetadataSupportedVersion {
-		return nil, fmt.Errorf("unsupported state metadata version: %d", version)
+	if ret.Version > StateMetadataSupportedVersion {
+		return nil, fmt.Errorf("unsupported state metadata version: %d", ret.Version)
 	}
 
 	ret.SchemaVersion, err = mu.ReadUint32()
