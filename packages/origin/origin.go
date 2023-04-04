@@ -166,9 +166,6 @@ func NewChainOriginTransaction(
 			&iotago.GovernorAddressUnlockCondition{Address: governanceControllerAddress},
 		},
 		Features: iotago.Features{
-			&iotago.SenderFeature{
-				Address: walletAddr,
-			},
 			&iotago.MetadataFeature{Data: initParams.Bytes()},
 		},
 	}

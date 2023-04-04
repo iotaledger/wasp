@@ -167,6 +167,7 @@ type chainMgrImpl struct {
 	latestConfirmedAO       *isc.AliasOutputWithID                                           // The latest confirmed AO (follows Active AO).
 	activeNodesCB           func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey)          // All the nodes authorized for being access nodes (for the ActiveAO).
 	trackActiveStateCB      func(ao *isc.AliasOutputWithID)                                  // We will call this to set new AO for the active state.
+	savePreliminaryBlockCB  func(block state.Block)                                          // We will call this, when a preliminary block matching the tx signatures is received.
 	committeeUpdatedCB      func(dkShare tcrypto.DKShare)                                    // Will be called, when a committee changes.
 	needConsensus           *NeedConsensus                                                   // Query for a consensus.
 	needPublishTX           *shrinkingmap.ShrinkingMap[iotago.TransactionID, *NeedPublishTX] // Query to post TXes.
@@ -193,6 +194,7 @@ func New(
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	activeNodesCB func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey),
 	trackActiveStateCB func(ao *isc.AliasOutputWithID),
+	savePreliminaryBlockCB func(block state.Block),
 	committeeUpdatedCB func(dkShare tcrypto.DKShare),
 	log *logger.Logger,
 ) (ChainMgr, error) {
@@ -203,6 +205,7 @@ func New(
 		consensusStateRegistry:  consensusStateRegistry,
 		activeNodesCB:           activeNodesCB,
 		trackActiveStateCB:      trackActiveStateCB,
+		savePreliminaryBlockCB:  savePreliminaryBlockCB,
 		committeeUpdatedCB:      committeeUpdatedCB,
 		needConsensus:           nil,
 		needPublishTX:           shrinkingmap.New[iotago.TransactionID, *NeedPublishTX](),
@@ -396,8 +399,20 @@ func (cmi *chainMgrImpl) handleMsgCmtLog(msg *msgCmtLog) gpa.OutMessages {
 
 func (cmi *chainMgrImpl) handleMsgBlockProduced(msg *msgBlockProduced) gpa.OutMessages {
 	cmi.log.Debugf("handleMsgBlockProduced: %+v", msg)
-	// TODO: Save the block <------ this...
-	if vsaTip, vsaUpdated := cmi.varAccessNodeState.BlockProduced(msg.tx); vsaUpdated && vsaTip != nil && cmi.latestActiveCmt == nil {
+	vsaTip, vsaUpdated, l1Commitment := cmi.varAccessNodeState.BlockProduced(msg.tx)
+	//
+	// Save the block, if it matches all the signatures by the current committee.
+	// This will save us a round-trip to query the block from the sender.
+	if l1Commitment != nil {
+		if msg.block.L1Commitment().Equals(l1Commitment) {
+			cmi.savePreliminaryBlockCB(msg.block)
+		} else {
+			cmi.log.Warnf("Received msgBlockProduced, but publishedAO.l1Commitment != block.l1Commitment.")
+		}
+	}
+	//
+	// Update the active state, if needed.
+	if vsaUpdated && vsaTip != nil && cmi.latestActiveCmt == nil {
 		cmi.log.Debugf("⊢ going to track %v as an access node on unconfirmed block.", vsaTip)
 		cmi.trackActiveStateCB(vsaTip)
 	}

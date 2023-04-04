@@ -85,10 +85,25 @@ func rotateTo(chain string, newStateControllerAddr iotago.Address) {
 		wallet.KeyPair,
 	)
 	log.Check(err)
-	log.Verbosef("issuing rotation tx, signed for address: %s", wallet.KeyPair.Address().Bech32(parameters.L1().Protocol.Bech32HRP))
-	json, err := tx.MarshalJSON()
-	log.Check(err)
-	log.Verbosef("rotation tx: %s", string(json))
+
+	// debug logging
+	if log.DebugFlag {
+		s, err2 := chainOutput.MarshalJSON()
+		log.Check(err2)
+		minSD := parameters.L1().Protocol.RentStructure.MinRent(chainOutput)
+		log.Printf("original chain output: %s, minSD: %d\n", s, minSD)
+
+		rotOut := tx.Essence.Outputs[0]
+		s, err2 = rotOut.MarshalJSON()
+		log.Check(err2)
+		minSD = parameters.L1().Protocol.RentStructure.MinRent(rotOut)
+		log.Printf("new chain output: %s, minSD: %d\n", s, minSD)
+
+		json, err2 := tx.MarshalJSON()
+		log.Check(err2)
+		log.Printf("issuing rotation tx, signed for address: %s", wallet.KeyPair.Address().Bech32(parameters.L1().Protocol.Bech32HRP))
+		log.Printf("rotation tx: %s", string(json))
+	}
 
 	_, err = l1Client.PostTxAndWaitUntilConfirmation(tx)
 	if err != nil {
