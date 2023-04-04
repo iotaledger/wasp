@@ -129,7 +129,7 @@ func viewAccountNFTAmount(ctx isc.SandboxView) dict.Dict {
 func viewAccountNFTsInCollection(ctx isc.SandboxView) dict.Dict {
 	params := ctx.Params()
 	aid := params.MustGetAgentID(ParamAgentID)
-	collectionID := codec.MustDecodeNFTID(params.Get(ParamCollectionID))
+	collectionID := params.MustGetNFTID(ParamCollectionID)
 	nftIDs := getAccountNFTsInCollection(ctx.StateR(), aid, collectionID)
 
 	if len(nftIDs) > math.MaxUint16 {
@@ -147,7 +147,7 @@ func viewAccountNFTsInCollection(ctx isc.SandboxView) dict.Dict {
 func viewAccountNFTAmountInCollection(ctx isc.SandboxView) dict.Dict {
 	params := ctx.Params()
 	aid := params.MustGetAgentID(ParamAgentID)
-	collectionID := codec.MustDecodeNFTID(params.Get(ParamCollectionID))
+	collectionID := params.MustGetNFTID(ParamCollectionID)
 	return dict.Dict{
 		ParamNFTAmount: codec.EncodeUint32(nftsByCollectionMapR(ctx.StateR(), aid, kv.Key(collectionID[:])).Len()),
 	}
@@ -156,7 +156,7 @@ func viewAccountNFTAmountInCollection(ctx isc.SandboxView) dict.Dict {
 // viewNFTData returns the NFT data for a given NFTID
 func viewNFTData(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewNFTData")
-	nftID := codec.MustDecodeNFTID(ctx.Params().MustGetBytes(ParamNFTID))
+	nftID := ctx.Params().MustGetNFTID(ParamNFTID)
 	data := MustGetNFTData(ctx.StateR(), nftID)
 	return dict.Dict{
 		ParamNFTData: data.Bytes(),
