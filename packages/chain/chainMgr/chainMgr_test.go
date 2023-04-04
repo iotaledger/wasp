@@ -86,9 +86,12 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		trackActiveStateCB := func(ao *isc.AliasOutputWithID) {
 			// Nothing
 		}
+		savePreliminaryBlockCB := func(state.Block) {
+			// Nothing
+		}
 		cm, err := chainMgr.New(
 			nid, chainID, stores[nid], consensusStateRegistry, dkRegs[i], gpa.NodeIDFromPublicKey,
-			activeAccessNodesCB, trackActiveStateCB, log.Named(nid.ShortString()),
+			activeAccessNodesCB, trackActiveStateCB, savePreliminaryBlockCB, log.Named(nid.ShortString()),
 		)
 		require.NoError(t, err)
 		nodes[nid] = cm.AsGPA()

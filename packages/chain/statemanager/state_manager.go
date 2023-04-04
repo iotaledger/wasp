@@ -36,6 +36,10 @@ type StateMgr interface {
 	// Invoked by the chain when a set of server (access⁻¹) nodes has changed.
 	// These nodes should be used to perform block replication.
 	ChainNodesUpdated(serverNodes, accessNodes, committeeNodes []*cryptolib.PublicKey)
+	// This is called to save a prelim block, received from other nodes.
+	// That should happen on the access nodes to receive the active state faster.
+	// This function should save the block (in the WAL) synchronously.
+	PreliminaryBlock(block state.Block) error
 }
 
 type reqChainNodesUpdated struct {
@@ -57,21 +61,36 @@ func (r *reqChainNodesUpdated) String() string {
 	)
 }
 
+type reqPreliminaryBlock struct {
+	block state.Block
+	reply chan error
+}
+
+func (r *reqPreliminaryBlock) String() string {
+	return fmt.Sprintf("{reqPreliminaryBlock, block.L1Commitment=%v", r.block.L1Commitment())
+}
+
+func (r *reqPreliminaryBlock) Respond(err error) {
+	r.reply <- err
+}
+
 type stateManager struct {
-	log                 *logger.Logger
-	chainID             isc.ChainID
-	stateManagerGPA     gpa.GPA
-	nodeRandomiser      smUtils.NodeRandomiser
-	nodeIDToPubKey      map[gpa.NodeID]*cryptolib.PublicKey
-	inputPipe           pipe.Pipe[gpa.Input]
-	messagePipe         pipe.Pipe[*peering.PeerMessageIn]
-	nodePubKeysPipe     pipe.Pipe[*reqChainNodesUpdated]
-	net                 peering.NetworkProvider
-	netPeeringID        peering.PeeringID
-	timers              smGPA.StateManagerTimers
-	ctx                 context.Context
-	cleanupFun          func()
-	shutdownCoordinator *shutdown.Coordinator
+	log                  *logger.Logger
+	chainID              isc.ChainID
+	stateManagerGPA      gpa.GPA
+	nodeRandomiser       smUtils.NodeRandomiser
+	nodeIDToPubKey       map[gpa.NodeID]*cryptolib.PublicKey
+	inputPipe            pipe.Pipe[gpa.Input]
+	messagePipe          pipe.Pipe[*peering.PeerMessageIn]
+	nodePubKeysPipe      pipe.Pipe[*reqChainNodesUpdated]
+	preliminaryBlockPipe pipe.Pipe[*reqPreliminaryBlock]
+	wal                  smGPAUtils.BlockWAL
+	net                  peering.NetworkProvider
+	netPeeringID         peering.PeeringID
+	timers               smGPA.StateManagerTimers
+	ctx                  context.Context
+	cleanupFun           func()
+	shutdownCoordinator  *shutdown.Coordinator
 }
 
 var (
@@ -110,18 +129,20 @@ func New(
 		return nil, err
 	}
 	result := &stateManager{
-		log:                 log,
-		chainID:             chainID,
-		stateManagerGPA:     stateManagerGPA,
-		nodeRandomiser:      nr,
-		inputPipe:           pipe.NewInfinitePipe[gpa.Input](),
-		messagePipe:         pipe.NewInfinitePipe[*peering.PeerMessageIn](),
-		nodePubKeysPipe:     pipe.NewInfinitePipe[*reqChainNodesUpdated](),
-		net:                 net,
-		netPeeringID:        peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("StateManager")), // ChainID × StateManager
-		timers:              timers,
-		ctx:                 ctx,
-		shutdownCoordinator: shutdownCoordinator,
+		log:                  log,
+		chainID:              chainID,
+		stateManagerGPA:      stateManagerGPA,
+		nodeRandomiser:       nr,
+		inputPipe:            pipe.NewInfinitePipe[gpa.Input](),
+		messagePipe:          pipe.NewInfinitePipe[*peering.PeerMessageIn](),
+		nodePubKeysPipe:      pipe.NewInfinitePipe[*reqChainNodesUpdated](),
+		preliminaryBlockPipe: pipe.NewInfinitePipe[*reqPreliminaryBlock](),
+		wal:                  wal,
+		net:                  net,
+		netPeeringID:         peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("StateManager")), // ChainID × StateManager
+		timers:               timers,
+		ctx:                  ctx,
+		shutdownCoordinator:  shutdownCoordinator,
 	}
 	result.handleNodePublicKeys(&reqChainNodesUpdated{
 		serverNodes:    peerPubKeys,
@@ -165,6 +186,15 @@ func (smT *stateManager) ChainNodesUpdated(serverNodes, accessNodes, committeeNo
 	}
 }
 
+func (smT *stateManager) PreliminaryBlock(block state.Block) error {
+	reply := make(chan error, 1)
+	smT.preliminaryBlockPipe.In() <- &reqPreliminaryBlock{
+		block: block,
+		reply: reply,
+	}
+	return <-reply
+}
+
 // -------------------------------------
 // Implementations of consGR.StateMgr
 // -------------------------------------
@@ -198,11 +228,12 @@ func (smT *stateManager) addInput(input gpa.Input) {
 	smT.inputPipe.In() <- input
 }
 
-func (smT *stateManager) run() {
+func (smT *stateManager) run() { //nolint:gocyclo
 	defer smT.cleanupFun()
 	inputPipeCh := smT.inputPipe.Out()
 	messagePipeCh := smT.messagePipe.Out()
 	nodePubKeysPipeCh := smT.nodePubKeysPipe.Out()
+	preliminaryBlockPipeCh := smT.preliminaryBlockPipe.Out()
 	timerTickCh := smT.timers.TimeProvider.After(smT.timers.StateManagerTimerTickPeriod)
 	for {
 		smT.log.Debugf("State manager loop iteration; there are %v inputs, %v messages, %v public key changes waiting to be handled",
@@ -236,6 +267,12 @@ func (smT *stateManager) run() {
 				smT.handleNodePublicKeys(msg)
 			} else {
 				nodePubKeysPipeCh = nil
+			}
+		case msg, ok := <-preliminaryBlockPipeCh:
+			if ok {
+				smT.handlePreliminaryBlock(msg)
+			} else {
+				preliminaryBlockPipeCh = nil
 			}
 		case now, ok := <-timerTickCh:
 			if ok {
@@ -298,6 +335,21 @@ func (smT *stateManager) handleNodePublicKeys(req *reqChainNodesUpdated) {
 		}, ""),
 	)
 	smT.nodeRandomiser.UpdateNodeIDs(peerNodeIDs)
+}
+
+func (smT *stateManager) handlePreliminaryBlock(msg *reqPreliminaryBlock) {
+	if !smT.wal.Contains(msg.block.Hash()) {
+		if err := smT.wal.Write(msg.block); err != nil {
+			smT.log.Warnf("Preliminary block %v cannot be saved to the WAL: %v", msg.block.L1Commitment(), err)
+			msg.Respond(err)
+			return
+		}
+		smT.log.Warnf("Preliminary block %v saved to the WAL.", msg.block.L1Commitment())
+		msg.Respond(nil)
+		return
+	}
+	smT.log.Warnf("Preliminary block %v already exist in the WAL.", msg.block.L1Commitment())
+	msg.Respond(nil)
 }
 
 func (smT *stateManager) handleTimerTick(now time.Time) {

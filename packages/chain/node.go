@@ -332,6 +332,11 @@ func New(
 		func(ao *isc.AliasOutputWithID) {
 			cni.stateTrackerAct.TrackAliasOutput(ao, true)
 		},
+		func(block state.Block) {
+			if err := cni.stateMgr.PreliminaryBlock(block); err != nil {
+				cni.log.Warnf("Failed to save a preliminary block %v: %v", block.L1Commitment(), err)
+			}
+		},
 		cni.log.Named("CM"),
 	)
 	if err != nil {
