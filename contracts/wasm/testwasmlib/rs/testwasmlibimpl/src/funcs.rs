@@ -602,25 +602,29 @@ pub fn view_check_eth_address_and_agent_id(
     ctx: &ScViewContext,
     f: &CheckEthAddressAndAgentIDContext,
 ) {
-    let eth_address = f.params.eth_address().value();
-    let sc_address_eth = address_from_string(&eth_address);
-    ctx.require(
-        sc_address_eth == address_from_bytes(&address_to_bytes(&sc_address_eth)),
-        "eth address bytes conversion failed",
-    );
-    ctx.require(
-        sc_address_eth == address_from_string(&address_to_string(&sc_address_eth)),
-        "eth address string conversion failed",
-    );
-    let sc_agent_id_eth = ScAgentID::from_address(&sc_address_eth);
-    ctx.require(
-        sc_agent_id_eth == agent_id_from_bytes(&agent_id_to_bytes(&sc_agent_id_eth)),
-        "eth agent_id bytes conversion failed",
-    );
-    ctx.require(
-        sc_agent_id_eth == agent_id_from_string(&agent_id_to_string(&sc_agent_id_eth)),
-        "eth agent_id string conversion failed",
-    );
+    let address = f.params.eth_address().value();
+    let address_string = f.params.eth_address_string().value();
+    ctx.require(address.to_string() == address_string, "eth address string encoding failed");
+    ctx.require(address_from_string(&address_string) == address, "eth address string decoding failed");
+    ctx.require(address == address_from_bytes(&address_to_bytes(&address)), "eth address bytes conversion failed");
+    ctx.require(address == address_from_string(&address_to_string(&address)), "eth address to/from string conversion failed");
+    ctx.require(address_string == address_to_string(&address_from_string(&address_string)), "eth address from/to string conversion failed");
+
+    let agent_id = f.params.eth_agent_id().value();
+    let agent_id_string = f.params.eth_agent_id_string().value();
+    ctx.require(agent_id.to_string() == agent_id_string, "eth agentID string encoding failed");
+    ctx.require(agent_id_from_string(&agent_id_string) == agent_id, "eth agentID string decoding failed");
+    ctx.require(agent_id == agent_id_from_bytes(&agent_id_to_bytes(&agent_id)), "eth agentID bytes conversion failed");
+    ctx.require(agent_id == agent_id_from_string(&agent_id_to_string(&agent_id)), "eth agentID to/from string conversion failed");
+    ctx.require(agent_id_string == agent_id_to_string(&agent_id_from_string(&agent_id_string)), "eth agentID from/to string conversion failed");
+
+    let agent_id_from_address = ScAgentID::from_address(&address);
+    ctx.require(agent_id_from_address == agent_id_from_bytes(&agent_id_to_bytes(&agent_id_from_address)), "eth agentID bytes conversion failed");
+    ctx.require(agent_id_from_address == agent_id_from_string(&agent_id_to_string(&agent_id_from_address)), "eth agentID string conversion failed");
+
+    let address_from_agent_id = agent_id.address();
+    ctx.require(address_from_agent_id == address_from_bytes(&address_to_bytes(&address_from_agent_id)), "eth raw agent_id bytes conversion failed");
+    ctx.require(address_from_agent_id == address_from_string(&address_to_string(&address_from_agent_id)), "eth raw agent_id string conversion failed");
 }
 
 pub fn view_check_hash(ctx: &ScViewContext, f: &CheckHashContext) {

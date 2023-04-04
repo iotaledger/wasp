@@ -58,6 +58,7 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnUtilsHashBlake2b,
 	(*WasmContextSandbox).fnUtilsHashName,
 	(*WasmContextSandbox).fnUtilsHashSha3,
+	(*WasmContextSandbox).fnUtilsHashKeccak,
 }
 
 // '$' prefix indicates a string param
@@ -102,6 +103,7 @@ var sandboxFuncNames = []string{
 	"#FnUtilsEd25519Address",
 	"#FnUtilsEd25519Valid",
 	"#FnUtilsHashBlake2b",
+	"#FnUtilsHashKeccak",
 	"$FnUtilsHashName",
 	"#FnUtilsHashSha3",
 }
@@ -463,6 +465,10 @@ func (s WasmContextSandbox) fnUtilsEd25519Valid(args []byte) []byte {
 
 func (s WasmContextSandbox) fnUtilsHashBlake2b(args []byte) []byte {
 	return cvt.ScHash(s.common.Utils().Hashing().Blake2b(args)).Bytes()
+}
+
+func (s WasmContextSandbox) fnUtilsHashKeccak(args []byte) []byte {
+	return cvt.ScHash(s.common.Utils().Hashing().Keccak(args)).Bytes()
 }
 
 func (s WasmContextSandbox) fnUtilsHashName(args []byte) []byte {

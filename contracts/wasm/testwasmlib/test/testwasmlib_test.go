@@ -408,9 +408,14 @@ func TestWasmTypes(t *testing.T) {
 	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// eth
-	addressEth := "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+	// addressEth := "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+	_, ethAddress := ctx.Chain.NewEthereumAccountWithL2Funds()
+	ethAgentID := isc.NewEthereumAddressAgentID(ethAddress)
 	checkerEth := testwasmlib.ScFuncs.CheckEthAddressAndAgentID(ctx)
-	checkerEth.Params.EthAddress().SetValue(addressEth)
+	checkerEth.Params.EthAddress().SetValue(wasmtypes.AddressFromBytes(ethAddress.Bytes()))
+	checkerEth.Params.EthAddressString().SetValue(ethAddress.String())
+	checkerEth.Params.EthAgentID().SetValue(wasmtypes.AgentIDFromBytes(ethAgentID.Bytes()))
+	checkerEth.Params.EthAgentIDString().SetValue(ethAgentID.String())
 	checkerEth.Func.Call()
 	require.NoError(t, ctx.Err)
 

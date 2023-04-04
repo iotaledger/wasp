@@ -11,6 +11,7 @@ import {
     FnUtilsEd25519Address,
     FnUtilsEd25519Valid,
     FnUtilsHashBlake2b,
+    FnUtilsHashKeccak,
     FnUtilsHashName,
     FnUtilsHashSha3
 } from './sandbox';
@@ -66,17 +67,22 @@ export class ScSandboxUtils {
         return boolFromBytes(sandbox(FnUtilsEd25519Valid, enc.buf()));
     }
 
-    // hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
+    // hashes the specified value bytes using Blake2b hashing and returns the resulting 32-byte hash
     public hashBlake2b(value: Uint8Array): ScHash {
         return hashFromBytes(sandbox(FnUtilsHashBlake2b, value));
     }
 
-    // hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
+    // hashes the specified value bytes using Keccak hashing and returns the resulting 32-byte hash
+    public hashKeccak(value: Uint8Array): ScHash {
+        return hashFromBytes(sandbox(FnUtilsHashKeccak, value));
+    }
+
+    // hashes the specified value bytes using Blake2b hashing and returns the resulting 32-byte hash
     public hashName(value: string): ScHname {
         return hnameFromBytes(sandbox(FnUtilsHashName, stringToBytes(value)));
     }
 
-    // hashes the specified value bytes using sha3 hashing and returns the resulting 32-byte hash
+    // hashes the specified value bytes using SHA3 hashing and returns the resulting 32-byte hash
     public hashSha3(value: Uint8Array): ScHash {
         return hashFromBytes(sandbox(FnUtilsHashSha3, value));
     }

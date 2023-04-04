@@ -61,9 +61,14 @@ func (u utilImpl) Blake2b(data []byte) hashing.HashValue {
 	return hashing.HashDataBlake2b(data)
 }
 
-func (u utilImpl) Sha3(data []byte) hashing.HashValue {
+func (u utilImpl) Keccak(data []byte) hashing.HashValue {
 	u.gas.Burn(gas.BurnCodeUtilsHashingSha3)
 	return hashing.HashSha3(data)
+}
+
+func (u utilImpl) Sha3(data []byte) hashing.HashValue {
+	u.gas.Burn(gas.BurnCodeUtilsHashingSha3)
+	return hashing.HashKeccak(data)
 }
 
 func (u utilImpl) Hname(name string) isc.Hname {

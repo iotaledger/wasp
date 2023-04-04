@@ -369,7 +369,10 @@ views:
 
   checkEthAddressAndAgentID:
     params:
-      ethAddress: String
+      ethAddress: Address
+      ethAddressString: String
+      ethAgentID: AgentID
+      ethAgentIDString: String
 
   checkHash:
     params:

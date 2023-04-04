@@ -207,6 +207,7 @@ type Utils interface {
 
 type Hashing interface {
 	Blake2b(data []byte) hashing.HashValue
+	Keccak(data []byte) hashing.HashValue
 	Sha3(data []byte) hashing.HashValue
 	Hname(name string) Hname
 }
