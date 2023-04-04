@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -95,6 +96,48 @@ func main() {
 	}
 }
 
+func addSubProjectToParentToml() error {
+	tomlPath := "./Cargo.toml"
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	projectName := path.Base(cwd)
+	_, err = os.Stat(cwd + "/../" + tomlPath)
+	if err != nil {
+		return nil
+	}
+	b, err := os.ReadFile(cwd + "/../" + tomlPath)
+	if err != nil {
+		return err
+	}
+	tomlContent := string(b)
+
+	projectFormat := []string{
+		"\"%s/rs/%s\"",
+		"\"%s/rs/%simpl\"",
+		"\"%s/rs/%swasm\"",
+	}
+	start := strings.Index(tomlContent, "members")
+	memberContent := strings.Split(tomlContent[start:], "]")[0]
+	end := start + len(memberContent)
+	insertContent := ""
+
+	for _, format := range projectFormat {
+		name := fmt.Sprintf(format, projectName, projectName)
+		if !strings.Contains(memberContent, name) {
+			insertContent += ("\t" + name + ",\n")
+		}
+	}
+	finalContent := tomlContent[:start] + memberContent + insertContent + tomlContent[end:]
+	err = os.WriteFile(cwd+"/../"+tomlPath, []byte(finalContent), 0o600)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func determineSchemaRegenerationTime(file *os.File, s *model.Schema) error {
 	s.SchemaTime = time.Now()
 	if !*flagForce {
@@ -169,6 +212,11 @@ func generateSchema(file *os.File, core ...bool) error {
 		err = g.Generate(g, *flagBuild, *flagClean)
 		if err != nil {
 			return err
+		}
+		// Add current contract to the workspace in the parent folder
+		err = addSubProjectToParentToml()
+		if err != nil {
+			log.Panic(err)
 		}
 	}
 
