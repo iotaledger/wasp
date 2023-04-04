@@ -72,3 +72,7 @@ func loadPrevL1CommitmentFromState(chainState kv.KVStoreReader) *L1Commitment {
 	mustNoErr(err)
 	return l1c
 }
+
+func (s *state) String() string {
+	return fmt.Sprintf("State[si#%v]%v", s.BlockIndex(), s.TrieRoot())
+}

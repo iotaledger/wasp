@@ -1018,8 +1018,10 @@ func (cni *chainNodeImpl) LatestAliasOutput(freshness StateFreshness) (*isc.Alia
 	switch freshness {
 	case ActiveOrCommittedState:
 		if latestActiveAO != nil {
-			cni.log.Debugf("LatestAliasOutput(%v) => active = %v", freshness, latestActiveAO)
-			return latestActiveAO, nil
+			if latestConfirmedAO == nil || latestActiveAO.GetStateIndex() > latestConfirmedAO.GetStateIndex() {
+				cni.log.Debugf("LatestAliasOutput(%v) => active = %v", freshness, latestActiveAO)
+				return latestActiveAO, nil
+			}
 		}
 		if latestConfirmedAO != nil {
 			cni.log.Debugf("LatestAliasOutput(%v) => confirmed = %v", freshness, latestConfirmedAO)
@@ -1051,8 +1053,10 @@ func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, er
 	switch freshness {
 	case ActiveOrCommittedState:
 		if latestActiveState != nil {
-			cni.log.Debugf("LatestState(%v) => active = %v", freshness, latestActiveState)
-			return latestActiveState, nil
+			if latestConfirmedState == nil || latestActiveState.BlockIndex() > latestConfirmedState.BlockIndex() {
+				cni.log.Debugf("LatestState(%v) => active = %v", freshness, latestActiveState)
+				return latestActiveState, nil
+			}
 		}
 		if latestConfirmedState != nil {
 			cni.log.Debugf("LatestState(%v) => confirmed = %v", freshness, latestConfirmedState)
