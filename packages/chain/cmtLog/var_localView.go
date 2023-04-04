@@ -112,15 +112,20 @@ type varLocalViewImpl struct {
 	// Recovery/Timeout notices. Then the next consensus is started o build a TX.
 	// Both of them can still produce a TX, but only one of them will be confirmed.
 	pending *shrinkingmap.ShrinkingMap[uint32, []*varLocalViewEntry]
+	// Limit pipelining (a number of unconfirmed TXes to this number.)
+	// -1 -- infinite, 0 -- disabled, x -- up to x TXes ahead.
+	pipeliningLimit int
 	// Just a logger.
 	log *logger.Logger
 }
 
-func NewVarLocalView(log *logger.Logger) VarLocalView {
+func NewVarLocalView(pipeliningLimit int, log *logger.Logger) VarLocalView {
+	log.Debugf("NewVarLocalView, pipeliningLimit=%v", pipeliningLimit)
 	return &varLocalViewImpl{
-		confirmed: nil,
-		pending:   shrinkingmap.New[uint32, []*varLocalViewEntry](),
-		log:       log,
+		confirmed:       nil,
+		pending:         shrinkingmap.New[uint32, []*varLocalViewEntry](),
+		pipeliningLimit: pipeliningLimit,
+		log:             log,
 	}
 }
 
@@ -282,30 +287,35 @@ func (lvi *varLocalViewImpl) StatusString() string {
 // set of AOs is a chain, with no gaps, or alternatives, and all the AOs
 // are not rejected.
 func (lvi *varLocalViewImpl) findLatestPending() *isc.AliasOutputWithID {
-	return lvi.confirmed // TODO: Enable pipelining later.
-	// if lvi.confirmed == nil {
-	// 	return nil
-	// }
-	// latest := lvi.confirmed
-	// confirmedSI := lvi.confirmed.GetStateIndex()
-	// pendingSICount := uint32(lvi.pending.Size())
-	// for i := uint32(0); i < pendingSICount; i++ {
-	// 	entries, ok := lvi.pending.Get(confirmedSI + i + 1)
-	// 	if !ok {
-	// 		return nil // That's a gap.
-	// 	}
-	// 	if len(entries) != 1 {
-	// 		return nil // Alternatives exist.
-	// 	}
-	// 	if entries[0].rejected {
-	// 		return nil // Some are rejected.
-	// 	}
-	// 	if latest.OutputID() != entries[0].consumed {
-	// 		return nil // Don't form a chain.
-	// 	}
-	// 	latest = entries[0].output
-	// }
-	// return latest
+	if lvi.confirmed == nil {
+		return nil
+	}
+	latest := lvi.confirmed
+	confirmedSI := lvi.confirmed.GetStateIndex()
+	pendingSICount := uint32(lvi.pending.Size())
+	if lvi.pipeliningLimit >= 0 && pendingSICount > uint32(lvi.pipeliningLimit) {
+		// pipeliningLimit < 0 ==> no limit on the pipelining.
+		// pipeliningLimit = 0 ==> there is no pipelining, we wait each TX to be confirmed first.
+		// pipeliningLimit > 0 ==> up to pipeliningLimit TXes can be build unconfirmed.
+		return nil
+	}
+	for i := uint32(0); i < pendingSICount; i++ {
+		entries, ok := lvi.pending.Get(confirmedSI + i + 1)
+		if !ok {
+			return nil // That's a gap.
+		}
+		if len(entries) != 1 {
+			return nil // Alternatives exist.
+		}
+		if entries[0].rejected {
+			return nil // Some are rejected.
+		}
+		if latest.OutputID() != entries[0].consumed {
+			return nil // Don't form a chain.
+		}
+		latest = entries[0].output
+	}
+	return latest
 }
 
 func (lvi *varLocalViewImpl) isAliasOutputPending(ao *isc.AliasOutputWithID) bool {

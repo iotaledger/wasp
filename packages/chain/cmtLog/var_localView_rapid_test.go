@@ -35,7 +35,7 @@ type varLocalViewSM struct {
 }
 
 func (sm *varLocalViewSM) Init(t *rapid.T) {
-	sm.lv = cmtLog.NewVarLocalView(testlogger.NewLogger(t))
+	sm.lv = cmtLog.NewVarLocalView(-1, testlogger.NewLogger(t))
 	sm.confirmed = []*isc.AliasOutputWithID{}
 	sm.pending = []*isc.AliasOutputWithID{}
 	sm.rejected = []*isc.AliasOutputWithID{}
@@ -223,6 +223,5 @@ var _ rapid.StateMachine = &varLocalViewSM{}
 // E.g. for special parameters for reproducibility, etc.
 // `go test ./packages/chain/cmtLog/ --run TestPropsRapid -v -rapid.seed=13061922091840831492 -rapid.checks=100`
 func TestVarLocalViewRapid(t *testing.T) {
-	t.SkipNow() // TODO: Disable pipelining temporary.
 	rapid.Check(t, rapid.Run[*varLocalViewSM]())
 }

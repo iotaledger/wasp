@@ -264,6 +264,8 @@ func New(
 	shutdownCoordinator *shutdown.Coordinator,
 	onChainConnect func(),
 	onChainDisconnect func(),
+	deriveAliasOutputByQuorum bool,
+	pipeliningLimit int,
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
 	if listener == nil {
@@ -359,6 +361,8 @@ func New(
 				})
 			}
 		},
+		deriveAliasOutputByQuorum,
+		pipeliningLimit,
 		cni.log.Named("CM"),
 	)
 	if err != nil {
@@ -1009,13 +1013,13 @@ func (cni *chainNodeImpl) Log() *logger.Logger {
 func (cni *chainNodeImpl) LatestAliasOutput(freshness StateFreshness) (*isc.AliasOutputWithID, error) {
 	cni.accessLock.RLock()
 	latestConfirmedAO := cni.latestConfirmedStateAO
-	// latestActiveAO := cni.latestActiveStateAO
+	latestActiveAO := cni.latestActiveStateAO
 	cni.accessLock.RUnlock()
 	switch freshness {
 	case ActiveOrCommittedState:
-		// if latestActiveAO != nil { // TODO: Temporary.
-		// 	return latestActiveAO, nil
-		// }
+		if latestActiveAO != nil {
+			return latestActiveAO, nil
+		}
 		if latestConfirmedAO != nil {
 			return latestConfirmedAO, nil
 		}
@@ -1026,12 +1030,9 @@ func (cni *chainNodeImpl) LatestAliasOutput(freshness StateFreshness) (*isc.Alia
 		}
 		return nil, fmt.Errorf("have no confirmed state")
 	case ActiveState:
-		if latestConfirmedAO != nil { // TODO: Temporary.
-			return latestConfirmedAO, nil
+		if latestActiveAO != nil {
+			return latestActiveAO, nil
 		}
-		// if latestActiveAO != nil { // TODO: Temporary.
-		// 	return latestActiveAO, nil
-		// }
 		return nil, fmt.Errorf("have no active state")
 	default:
 		panic(fmt.Errorf("Unexpected StateFreshness: %v", freshness))
@@ -1040,14 +1041,14 @@ func (cni *chainNodeImpl) LatestAliasOutput(freshness StateFreshness) (*isc.Alia
 
 func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, error) {
 	cni.accessLock.RLock()
-	// latestActiveState := cni.latestActiveState
+	latestActiveState := cni.latestActiveState
 	latestConfirmedState := cni.latestConfirmedState
 	cni.accessLock.RUnlock()
 	switch freshness {
 	case ActiveOrCommittedState:
-		// if latestActiveState != nil {  // TODO: Temporary.
-		// 	return latestActiveState, nil
-		// }
+		if latestActiveState != nil {
+			return latestActiveState, nil
+		}
 		if latestConfirmedState != nil {
 			return latestConfirmedState, nil
 		}
@@ -1060,12 +1061,9 @@ func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, er
 		cni.log.Warn("Have no state, but someone asks for it, will query the state.")
 		return cni.chainStore.LatestState()
 	case ActiveState:
-		if latestConfirmedState != nil { // TODO: Temporary.
-			return latestConfirmedState, nil
+		if latestActiveState != nil {
+			return latestActiveState, nil
 		}
-		// if latestActiveState != nil { // TODO: Temporary.
-		// 	return latestActiveState, nil
-		// }
 		return nil, fmt.Errorf("chain %v has no active state", cni.chainID)
 	default:
 		panic(fmt.Errorf("Unexpected StateFreshness: %v", freshness))
