@@ -1,6 +1,7 @@
 package origin
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -56,10 +57,10 @@ func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) st
 		return subrealm.New(d, kv.Key(contract.Hname().Bytes()))
 	}
 
-	evmChainID := evmtypes.MustDecodeChainID(initParams.MustGet(ParamEVMChainID), evm.DefaultChainID)
-	blockKeepAmount := codec.MustDecodeInt32(initParams.MustGet(ParamEVMBlockKeep), evm.BlockKeepAmountDefault)
+	evmChainID := evmtypes.MustDecodeChainID(initParams.Get(ParamEVMChainID), evm.DefaultChainID)
+	blockKeepAmount := codec.MustDecodeInt32(initParams.Get(ParamEVMBlockKeep), evm.BlockKeepAmountDefault)
 
-	chainOwner := codec.MustDecodeAgentID(initParams.MustGet(ParamChainOwner), &isc.NilAgentID{})
+	chainOwner := codec.MustDecodeAgentID(initParams.Get(ParamChainOwner), &isc.NilAgentID{})
 
 	// init the state of each core contract
 	rootimpl.SetInitialState(contractState(root.Contract))
@@ -85,26 +86,50 @@ func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) st
 	return block
 }
 
-func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutputWithID) state.Block {
+func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutputWithID) (state.Block, error) {
 	var initParams dict.Dict
 	if originMetadata := aliasOutput.GetAliasOutput().FeatureSet().MetadataFeature(); originMetadata != nil {
 		var err error
 		initParams, err = dict.FromBytes(originMetadata.Data)
 		if err != nil {
-			panic(fmt.Sprintf("invalid parameters on origin AO, %s", err.Error()))
+			return nil, fmt.Errorf("invalid parameters on origin AO, %w", err)
 		}
 	}
-	commonAccountAmount := aliasOutput.GetAliasOutput().Amount - parameters.L1().Protocol.RentStructure.MinRent(aliasOutput.GetAliasOutput())
-	return InitChain(chainStore, initParams, commonAccountAmount)
+	l1params := parameters.L1()
+	aoMinSD := l1params.Protocol.RentStructure.MinRent(aliasOutput.GetAliasOutput())
+	commonAccountAmount := aliasOutput.GetAliasOutput().Amount - aoMinSD
+	originBlock := InitChain(chainStore, initParams, commonAccountAmount)
+
+	originAOStateMetadata, err := transaction.StateMetadataFromBytes(aliasOutput.GetStateMetadata())
+	if err != nil {
+		return nil, fmt.Errorf("invalid state metadata on origin AO: %w", err)
+	}
+	if originAOStateMetadata.Version != transaction.StateMetadataSupportedVersion {
+		return nil, fmt.Errorf("unsupported StateMetadata Version: %v, expect %v", originAOStateMetadata.Version, transaction.StateMetadataSupportedVersion)
+	}
+	if !originBlock.L1Commitment().Equals(originAOStateMetadata.L1Commitment) {
+		l1paramsJSON, err := json.Marshal(l1params)
+		if err != nil {
+			l1paramsJSON = []byte(fmt.Sprintf("unable to marshalJson l1params: %s", err.Error()))
+		}
+		return nil, fmt.Errorf(
+			"l1Commitment mismatch between originAO / originBlock: %s / %s, AOminSD: %d, L1params: %s",
+			originAOStateMetadata.L1Commitment,
+			originBlock.L1Commitment(),
+			aoMinSD,
+			string(l1paramsJSON),
+		)
+	}
+	return originBlock, nil
 }
 
 func calcStateMetadata(initParams dict.Dict, commonAccountAmount uint64) []byte {
-	s := &transaction.StateMetadata{
-		L1Commitment:   L1Commitment(initParams, commonAccountAmount),
-		GasFeePolicy:   gas.DefaultFeePolicy(),
-		SchemaVersion:  migrations.BaseSchemaVersion + uint32(len(migrations.Migrations)),
-		CustomMetadata: []byte{},
-	}
+	s := transaction.NewStateMetadata(
+		L1Commitment(initParams, commonAccountAmount),
+		gas.DefaultFeePolicy(),
+		migrations.BaseSchemaVersion+uint32(len(migrations.Migrations)),
+		[]byte{},
+	)
 	return s.Bytes()
 }
 
@@ -128,7 +153,7 @@ func NewChainOriginTransaction(
 	if initParams == nil {
 		initParams = dict.New()
 	}
-	if initParams.MustGet(ParamChainOwner) == nil {
+	if initParams.Get(ParamChainOwner) == nil {
 		// default chain owner to the gov address
 		initParams.Set(ParamChainOwner, isc.NewAgentID(governanceControllerAddress).Bytes())
 	}

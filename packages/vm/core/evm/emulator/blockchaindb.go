@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -54,7 +55,7 @@ func NewBlockchainDB(store kv.KVStore, blockGasLimit uint64) *BlockchainDB {
 }
 
 func (bc *BlockchainDB) Initialized() bool {
-	return bc.kv.MustGet(keyChainID) != nil
+	return bc.kv.Get(keyChainID) != nil
 }
 
 func (bc *BlockchainDB) Init(chainID uint16, keepAmount int32, timestamp uint64) {
@@ -68,7 +69,7 @@ func (bc *BlockchainDB) SetChainID(chainID uint16) {
 }
 
 func (bc *BlockchainDB) GetChainID() uint16 {
-	chainID, err := codec.DecodeUint16(bc.kv.MustGet(keyChainID))
+	chainID, err := codec.DecodeUint16(bc.kv.Get(keyChainID))
 	if err != nil {
 		panic(err)
 	}
@@ -80,7 +81,7 @@ func (bc *BlockchainDB) SetKeepAmount(keepAmount int32) {
 }
 
 func (bc *BlockchainDB) keepAmount() int32 {
-	gas, err := codec.DecodeInt32(bc.kv.MustGet(keyKeepAmount), -1)
+	gas, err := codec.DecodeInt32(bc.kv.Get(keyKeepAmount), -1)
 	if err != nil {
 		panic(err)
 	}
@@ -92,7 +93,7 @@ func (bc *BlockchainDB) setPendingTimestamp(timestamp uint64) {
 }
 
 func (bc *BlockchainDB) getPendingTimestamp() uint64 {
-	timestamp, err := codec.DecodeUint64(bc.kv.MustGet(keyPendingTimestamp))
+	timestamp, err := codec.DecodeUint64(bc.kv.Get(keyPendingTimestamp))
 	if err != nil {
 		panic(err)
 	}
@@ -104,7 +105,7 @@ func (bc *BlockchainDB) setNumber(n uint64) {
 }
 
 func (bc *BlockchainDB) GetNumber() uint64 {
-	n, err := codec.DecodeUint64(bc.kv.MustGet(keyNumber))
+	n, err := codec.DecodeUint64(bc.kv.Get(keyNumber))
 	if err != nil {
 		panic(err)
 	}
@@ -159,10 +160,7 @@ func (bc *BlockchainDB) GetPendingHeader() *types.Header {
 func (bc *BlockchainDB) GetLatestPendingReceipt() *types.Receipt {
 	blockNumber := bc.GetPendingBlockNumber()
 	receiptArray := bc.getReceiptArray(blockNumber)
-	n, err := receiptArray.Len()
-	if err != nil {
-		panic(err)
-	}
+	n := receiptArray.Len()
 	if n == 0 {
 		return nil
 	}
@@ -173,18 +171,18 @@ func (bc *BlockchainDB) AddTransaction(tx *types.Transaction, receipt *types.Rec
 	blockNumber := bc.GetPendingBlockNumber()
 
 	txArray := bc.getTxArray(blockNumber)
-	txArray.MustPush(evmtypes.EncodeTransaction(tx))
+	txArray.Push(evmtypes.EncodeTransaction(tx))
 	bc.kv.Set(
 		makeBlockNumberByTxHashKey(tx.Hash()),
 		codec.EncodeUint64(blockNumber),
 	)
 	bc.kv.Set(
 		makeBlockIndexByTxHashKey(tx.Hash()),
-		codec.EncodeUint32(txArray.MustLen()-1),
+		codec.EncodeUint32(txArray.Len()-1),
 	)
 
 	receiptArray := bc.getReceiptArray(blockNumber)
-	receiptArray.MustPush(evmtypes.EncodeReceipt(receipt))
+	receiptArray.Push(evmtypes.EncodeReceipt(receipt))
 }
 
 func (bc *BlockchainDB) MintBlock(timestamp uint64) {
@@ -215,25 +213,25 @@ func (bc *BlockchainDB) prune(currentNumber uint64) {
 }
 
 func (bc *BlockchainDB) deleteBlock(blockNumber uint64) {
-	header := bc.getHeaderGobByBlockNumber(blockNumber)
+	header := bc.getHeaderByBlockNumber(blockNumber)
 	if header == nil {
 		// already deleted?
 		return
 	}
 	txs := bc.getTxArray(blockNumber)
-	n := txs.MustLen()
+	n := txs.Len()
 	for i := uint32(0); i < n; i++ {
 		txHash := bc.GetTransactionByBlockNumberAndIndex(blockNumber, i).Hash()
 		bc.kv.Del(makeBlockNumberByTxHashKey(txHash))
 		bc.kv.Del(makeBlockIndexByTxHashKey(txHash))
 	}
-	txs.MustErase()
-	bc.getReceiptArray(blockNumber).MustErase()
+	txs.Erase()
+	bc.getReceiptArray(blockNumber).Erase()
 	bc.kv.Del(makeBlockHeaderByBlockNumberKey(blockNumber))
 	bc.kv.Del(makeBlockNumberByBlockHashKey(header.Hash))
 }
 
-type headerGob struct {
+type header struct {
 	Hash        common.Hash
 	GasLimit    uint64
 	GasUsed     uint64
@@ -243,29 +241,76 @@ type headerGob struct {
 	Bloom       types.Bloom
 }
 
-func makeHeaderGob(header *types.Header) *headerGob {
-	return &headerGob{
-		Hash:        header.Hash(),
-		GasLimit:    header.GasLimit,
-		GasUsed:     header.GasUsed,
-		Time:        header.Time,
-		TxHash:      header.TxHash,
-		ReceiptHash: header.ReceiptHash,
-		Bloom:       header.Bloom,
+var headerSize = common.HashLength*3 + marshalutil.Uint64Size*3 + types.BloomByteLength
+
+func makeHeader(h *types.Header) *header {
+	return &header{
+		Hash:        h.Hash(),
+		GasLimit:    h.GasLimit,
+		GasUsed:     h.GasUsed,
+		Time:        h.Time,
+		TxHash:      h.TxHash,
+		ReceiptHash: h.ReceiptHash,
+		Bloom:       h.Bloom,
 	}
 }
 
-func encodeHeaderGob(g *headerGob) []byte {
-	buf := new(bytes.Buffer)
-	err := gob.NewEncoder(buf).Encode(g)
-	if err != nil {
+func encodeHeader(g *header) []byte {
+	m := marshalutil.New()
+	m.WriteBytes(g.Hash[:])
+	m.WriteUint64(g.GasLimit)
+	m.WriteUint64(g.GasUsed)
+	m.WriteUint64(g.Time)
+	m.WriteBytes(g.TxHash[:])
+	m.WriteBytes(g.ReceiptHash[:])
+	m.WriteBytes(g.Bloom[:])
+	return m.Bytes()
+}
+
+func decodeHeader(b []byte) *header {
+	if len(b) != headerSize {
+		// old format
+		return decodeHeaderGobOld(b)
+	}
+	m := marshalutil.New(b)
+	h := &header{}
+	var err error
+	if err = readBytes(m, common.HashLength, h.Hash[:]); err != nil {
 		panic(err)
 	}
-	return buf.Bytes()
+	if h.GasLimit, err = m.ReadUint64(); err != nil {
+		panic(err)
+	}
+	if h.GasUsed, err = m.ReadUint64(); err != nil {
+		panic(err)
+	}
+	if h.Time, err = m.ReadUint64(); err != nil {
+		panic(err)
+	}
+	if err = readBytes(m, common.HashLength, h.TxHash[:]); err != nil {
+		panic(err)
+	}
+	if err = readBytes(m, common.HashLength, h.ReceiptHash[:]); err != nil {
+		panic(err)
+	}
+	if err = readBytes(m, types.BloomByteLength, h.Bloom[:]); err != nil {
+		panic(err)
+	}
+	return h
 }
 
-func (bc *BlockchainDB) decodeHeaderGob(b []byte) *headerGob {
-	var g headerGob
+func readBytes(m *marshalutil.MarshalUtil, size int, dst []byte) (err error) {
+	var buf []byte
+	buf, err = m.ReadBytes(size)
+	if err == nil {
+		copy(dst, buf)
+	}
+	return err
+}
+
+// deprecated
+func decodeHeaderGobOld(b []byte) *header {
+	var g header
 	err := gob.NewDecoder(bytes.NewReader(b)).Decode(&g)
 	if err != nil {
 		panic(err)
@@ -273,7 +318,7 @@ func (bc *BlockchainDB) decodeHeaderGob(b []byte) *headerGob {
 	return &g
 }
 
-func (bc *BlockchainDB) headerFromGob(g *headerGob, blockNumber uint64) *types.Header {
+func (bc *BlockchainDB) makeEthereumHeader(g *header, blockNumber uint64) *types.Header {
 	var parentHash common.Hash
 	if blockNumber > 0 {
 		parentHash = bc.GetBlockHashByBlockNumber(blockNumber - 1)
@@ -296,7 +341,7 @@ func (bc *BlockchainDB) addBlock(header *types.Header, pendingTimestamp uint64) 
 	blockNumber := header.Number.Uint64()
 	bc.kv.Set(
 		makeBlockHeaderByBlockNumberKey(blockNumber),
-		encodeHeaderGob(makeHeaderGob(header)),
+		encodeHeader(makeHeader(header)),
 	)
 	bc.kv.Set(
 		makeBlockNumberByBlockHashKey(header.Hash()),
@@ -306,21 +351,21 @@ func (bc *BlockchainDB) addBlock(header *types.Header, pendingTimestamp uint64) 
 	bc.setPendingTimestamp(pendingTimestamp)
 }
 
-func (bc *BlockchainDB) GetReceiptByBlockNumberAndIndex(blockNumber uint64, i uint32) *types.Receipt {
+func (bc *BlockchainDB) GetReceiptByBlockNumberAndIndex(blockNumber uint64, txIndex uint32) *types.Receipt {
 	receipts := bc.getReceiptArray(blockNumber)
-	if i >= receipts.MustLen() {
+	if txIndex >= receipts.Len() {
 		return nil
 	}
-	r, err := evmtypes.DecodeReceipt(receipts.MustGetAt(i))
+	r, err := evmtypes.DecodeReceipt(receipts.GetAt(txIndex))
 	if err != nil {
 		panic(err)
 	}
-	tx := bc.GetTransactionByBlockNumberAndIndex(blockNumber, i)
+	tx := bc.GetTransactionByBlockNumberAndIndex(blockNumber, txIndex)
 	r.TxHash = tx.Hash()
 	r.BlockHash = bc.GetBlockHashByBlockNumber(blockNumber)
 	for _, log := range r.Logs {
 		log.TxHash = r.TxHash
-		log.TxIndex = uint(i)
+		log.TxIndex = uint(txIndex)
 		log.BlockHash = r.BlockHash
 		log.BlockNumber = blockNumber
 	}
@@ -329,8 +374,8 @@ func (bc *BlockchainDB) GetReceiptByBlockNumberAndIndex(blockNumber uint64, i ui
 		r.ContractAddress = crypto.CreateAddress(from, tx.Nonce())
 	}
 	r.GasUsed = r.CumulativeGasUsed
-	if i > 0 {
-		prev, err := evmtypes.DecodeReceipt(receipts.MustGetAt(i - 1))
+	if txIndex > 0 {
+		prev, err := evmtypes.DecodeReceipt(receipts.GetAt(txIndex - 1))
 		if err != nil {
 			panic(err)
 		}
@@ -341,7 +386,7 @@ func (bc *BlockchainDB) GetReceiptByBlockNumberAndIndex(blockNumber uint64, i ui
 }
 
 func (bc *BlockchainDB) getBlockNumberBy(key kv.Key) (uint64, bool) {
-	b := bc.kv.MustGet(key)
+	b := bc.kv.Get(key)
 	if b == nil {
 		return 0, false
 	}
@@ -357,7 +402,7 @@ func (bc *BlockchainDB) GetBlockNumberByTxHash(txHash common.Hash) (uint64, bool
 }
 
 func (bc *BlockchainDB) GetBlockIndexByTxHash(txHash common.Hash) uint32 {
-	n, err := codec.DecodeUint32(bc.kv.MustGet(makeBlockIndexByTxHashKey(txHash)), 0)
+	n, err := codec.DecodeUint32(bc.kv.Get(makeBlockIndexByTxHashKey(txHash)), 0)
 	if err != nil {
 		panic(err)
 	}
@@ -375,10 +420,10 @@ func (bc *BlockchainDB) GetReceiptByTxHash(txHash common.Hash) *types.Receipt {
 
 func (bc *BlockchainDB) GetTransactionByBlockNumberAndIndex(blockNumber uint64, i uint32) *types.Transaction {
 	txs := bc.getTxArray(blockNumber)
-	if i >= txs.MustLen() {
+	if i >= txs.Len() {
 		return nil
 	}
-	tx, err := evmtypes.DecodeTransaction(txs.MustGetAt(i))
+	tx, err := evmtypes.DecodeTransaction(txs.GetAt(i))
 	if err != nil {
 		panic(err)
 	}
@@ -395,7 +440,7 @@ func (bc *BlockchainDB) GetTransactionByHash(txHash common.Hash) *types.Transact
 }
 
 func (bc *BlockchainDB) GetBlockHashByBlockNumber(blockNumber uint64) common.Hash {
-	g := bc.getHeaderGobByBlockNumber(blockNumber)
+	g := bc.getHeaderByBlockNumber(blockNumber)
 	if g == nil {
 		return common.Hash{}
 	}
@@ -407,7 +452,7 @@ func (bc *BlockchainDB) GetBlockNumberByBlockHash(hash common.Hash) (uint64, boo
 }
 
 func (bc *BlockchainDB) GetTimestampByBlockNumber(blockNumber uint64) uint64 {
-	g := bc.getHeaderGobByBlockNumber(blockNumber)
+	g := bc.getHeaderByBlockNumber(blockNumber)
 	if g == nil {
 		return 0
 	}
@@ -447,15 +492,15 @@ func (bc *BlockchainDB) GetHeaderByBlockNumber(blockNumber uint64) *types.Header
 	if blockNumber > bc.GetNumber() {
 		return nil
 	}
-	return bc.headerFromGob(bc.getHeaderGobByBlockNumber(blockNumber), blockNumber)
+	return bc.makeEthereumHeader(bc.getHeaderByBlockNumber(blockNumber), blockNumber)
 }
 
-func (bc *BlockchainDB) getHeaderGobByBlockNumber(blockNumber uint64) *headerGob {
-	b := bc.kv.MustGet(makeBlockHeaderByBlockNumberKey(blockNumber))
+func (bc *BlockchainDB) getHeaderByBlockNumber(blockNumber uint64) *header {
+	b := bc.kv.Get(makeBlockHeaderByBlockNumberKey(blockNumber))
 	if b == nil {
 		return nil
 	}
-	return bc.decodeHeaderGob(b)
+	return decodeHeader(b)
 }
 
 func (bc *BlockchainDB) GetHeaderByHash(hash common.Hash) *types.Header {
@@ -480,7 +525,7 @@ func (bc *BlockchainDB) GetCurrentBlock() *types.Block {
 
 func (bc *BlockchainDB) GetTransactionsByBlockNumber(blockNumber uint64) []*types.Transaction {
 	txArray := bc.getTxArray(blockNumber)
-	n := txArray.MustLen()
+	n := txArray.Len()
 	txs := make([]*types.Transaction, n)
 	for i := uint32(0); i < n; i++ {
 		txs[i] = bc.GetTransactionByBlockNumberAndIndex(blockNumber, i)
@@ -490,10 +535,10 @@ func (bc *BlockchainDB) GetTransactionsByBlockNumber(blockNumber uint64) []*type
 
 func (bc *BlockchainDB) GetReceiptsByBlockNumber(blockNumber uint64) []*types.Receipt {
 	txArray := bc.getTxArray(blockNumber)
-	n := txArray.MustLen()
+	n := txArray.Len()
 	receipts := make([]*types.Receipt, n)
-	for i := uint32(0); i < n; i++ {
-		receipts[i] = bc.GetReceiptByBlockNumberAndIndex(blockNumber, i)
+	for txIndex := uint32(0); txIndex < n; txIndex++ {
+		receipts[txIndex] = bc.GetReceiptByBlockNumberAndIndex(blockNumber, txIndex)
 	}
 	return receipts
 }

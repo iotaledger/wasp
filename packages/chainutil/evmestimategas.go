@@ -1,55 +1,25 @@
 package chainutil
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/params"
-	"go.uber.org/zap"
 
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/runvm"
 )
-
-func executeISCVM(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, req isc.Request) (*vm.RequestResult, error) {
-	vmRunner := runvm.NewVMRunner()
-
-	task := &vm.VMTask{
-		Processors:           ch.Processors(),
-		AnchorOutput:         aliasOutput.GetAliasOutput(),
-		AnchorOutputID:       aliasOutput.OutputID(),
-		Store:                ch.Store(),
-		Requests:             []isc.Request{req},
-		TimeAssumption:       time.Now(),
-		Entropy:              hashing.PseudoRandomHash(nil),
-		ValidatorFeeTarget:   isc.NewContractAgentID(ch.ID(), 0),
-		EnableGasBurnLogging: false,
-		EstimateGasMode:      true,
-		Log:                  ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
-	}
-	err := vmRunner.Run(task)
-	if err != nil {
-		return nil, err
-	}
-	if len(task.Results) == 0 {
-		return nil, errors.New("request was skipped")
-	}
-	return task.Results[0], nil
-}
 
 var evmErrorsRegex = regexp.MustCompile("out of gas|intrinsic gas too low|(execution reverted$)")
 
-// EstimateGas executes the given request and discards the resulting chain state. It is useful
+// EVMEstimateGas executes the given request and discards the resulting chain state. It is useful
 // for estimating gas.
-func EstimateGas(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, call ethereum.CallMsg) (uint64, error) { //nolint:gocyclo
+func EVMEstimateGas(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, call ethereum.CallMsg) (uint64, error) { //nolint:gocyclo
 	// Determine the lowest and highest possible gas limits to binary search in between
 	var (
 		lo     uint64 = params.TxGas - 1
@@ -71,10 +41,11 @@ func EstimateGas(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, call et
 	gasCap = hi
 
 	// Create a helper to check if a gas allowance results in an executable transaction
+	blockTime := time.Now()
 	executable := func(gas uint64) (failed bool, used uint64, err error) {
 		call.Gas = gas
 		iscReq := isc.NewEVMOffLedgerCallRequest(ch.ID(), call)
-		res, err := executeISCVM(ch, aliasOutput, iscReq)
+		res, err := runISCRequest(ch, aliasOutput, blockTime, iscReq)
 		if err != nil {
 			return true, 0, err
 		}
@@ -161,11 +132,11 @@ func getMaxCallGasLimit(ch chain.ChainCore) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	fp, err := gas.FeePolicyFromBytes(ret.MustGet(governance.VarGasFeePolicyBytes))
+	fp, err := gas.FeePolicyFromBytes(ret.Get(governance.VarGasFeePolicyBytes))
 	if err != nil {
 		return 0, err
 	}
-	gl, err := gas.LimitsFromBytes(ret.MustGet(governance.VarGasLimitsBytes))
+	gl, err := gas.LimitsFromBytes(ret.Get(governance.VarGasLimitsBytes))
 	if err != nil {
 		return 0, err
 	}

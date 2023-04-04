@@ -27,7 +27,7 @@ func TestRotateStateController(t *testing.T) {
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
 
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 	fadd := coregovernance.ScFuncs.AddAllowedStateControllerAddress(ctx)
 	fadd.Params.Address().SetValue(user.ScAgentID().Address())
 	fadd.Func.Post()
@@ -43,7 +43,7 @@ func TestAddAllowedStateControllerAddress(t *testing.T) {
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
 
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 	f := coregovernance.ScFuncs.AddAllowedStateControllerAddress(ctx)
 	f.Params.Address().SetValue(user.ScAgentID().Address())
 	f.Func.Post()
@@ -54,7 +54,7 @@ func TestRemoveAllowedStateControllerAddress(t *testing.T) {
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
 
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 	f := coregovernance.ScFuncs.RemoveAllowedStateControllerAddress(ctx)
 	f.Params.Address().SetValue(user.ScAgentID().Address())
 	f.Func.Post()
@@ -66,7 +66,7 @@ func TestClaimChainOwnership(t *testing.T) {
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
 
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 	fdele := coregovernance.ScFuncs.DelegateChainOwnership(ctx)
 	fdele.Params.ChainOwner().SetValue(user.ScAgentID())
 	fdele.Func.Post()
@@ -81,7 +81,7 @@ func TestDelegateChainOwnership(t *testing.T) {
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
 
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 	f := coregovernance.ScFuncs.DelegateChainOwnership(ctx)
 	f.Params.ChainOwner().SetValue(user.ScAgentID())
 	f.Func.Post()
@@ -144,6 +144,16 @@ func TestGetChainOwner(t *testing.T) {
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	assert.Equal(t, ctx.ChainOwnerID(), f.Results.ChainOwner().Value())
+}
+
+func TestGetChainNodes(t *testing.T) {
+	ctx := setupGovernance(t)
+	require.NoError(t, ctx.Err)
+
+	// TODO first set up nodes / candidates so we have something to test f.Results for
+	f := coregovernance.ScFuncs.GetChainNodes(ctx)
+	f.Func.Call()
+	require.NoError(t, ctx.Err)
 }
 
 func TestGetFeePolicy(t *testing.T) {

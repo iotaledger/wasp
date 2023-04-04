@@ -20,7 +20,7 @@ var (
 
 func setupTest(t *testing.T) {
 	chain = wasmsolo.StartChain(t, "chain1")
-	creator = wasmsolo.NewSoloAgent(chain.Env)
+	creator = wasmsolo.NewSoloAgent(chain.Env, "creator")
 }
 
 func setupErc20(t *testing.T) *wasmsolo.SoloContext {
@@ -98,7 +98,7 @@ func TestInitial(t *testing.T) {
 
 func TestTransferOk1(t *testing.T) {
 	ctx := setupErc20(t)
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 
 	require.NoError(t, transfer(ctx, creator, user, 42))
 	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount-42)
@@ -107,7 +107,7 @@ func TestTransferOk1(t *testing.T) {
 
 func TestTransferOk2(t *testing.T) {
 	ctx := setupErc20(t)
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 
 	require.NoError(t, transfer(ctx, creator, user, 42))
 	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount-42)
@@ -120,7 +120,7 @@ func TestTransferOk2(t *testing.T) {
 
 func TestTransferNotEnoughFunds1(t *testing.T) {
 	ctx := setupErc20(t)
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 
 	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount)
 	checkErc20Balance(ctx, user, 0)
@@ -133,7 +133,7 @@ func TestTransferNotEnoughFunds1(t *testing.T) {
 
 func TestTransferNotEnoughFunds2(t *testing.T) {
 	ctx := setupErc20(t)
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 
 	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount)
 	checkErc20Balance(ctx, user, 0)
@@ -146,13 +146,13 @@ func TestTransferNotEnoughFunds2(t *testing.T) {
 
 func TestNoAllowance(t *testing.T) {
 	ctx := setupErc20(t)
-	delegate := ctx.NewSoloAgent()
+	delegate := ctx.NewSoloAgent("delegate")
 	checkErc20Allowance(ctx, creator, delegate, 0)
 }
 
 func TestApprove(t *testing.T) {
 	ctx := setupErc20(t)
-	delegate := ctx.NewSoloAgent()
+	delegate := ctx.NewSoloAgent("delegate")
 
 	require.NoError(t, approve(ctx, creator, delegate, 100))
 
@@ -163,7 +163,7 @@ func TestApprove(t *testing.T) {
 
 func TestTransferFromOk1(t *testing.T) {
 	ctx := setupErc20(t)
-	delegate := ctx.NewSoloAgent()
+	delegate := ctx.NewSoloAgent("delegate")
 
 	require.NoError(t, approve(ctx, creator, delegate, 100))
 
@@ -180,7 +180,7 @@ func TestTransferFromOk1(t *testing.T) {
 
 func TestTransferFromOk2(t *testing.T) {
 	ctx := setupErc20(t)
-	delegate := ctx.NewSoloAgent()
+	delegate := ctx.NewSoloAgent("delegate")
 
 	require.NoError(t, approve(ctx, creator, delegate, 100))
 
@@ -197,7 +197,7 @@ func TestTransferFromOk2(t *testing.T) {
 
 func TestTransferFromFailNoDelegate(t *testing.T) {
 	ctx := setupErc20(t)
-	delegate := ctx.NewSoloAgent()
+	delegate := ctx.NewSoloAgent("delegate")
 
 	require.NoError(t, approve(ctx, creator, delegate, 100))
 
@@ -205,7 +205,7 @@ func TestTransferFromFailNoDelegate(t *testing.T) {
 	checkErc20Balance(ctx, creator, utxodb.FundsFromFaucetAmount)
 	checkErc20Balance(ctx, delegate, 0)
 
-	noDelegate := ctx.NewSoloAgent()
+	noDelegate := ctx.NewSoloAgent("noDelegate")
 	require.Error(t, transferFrom(ctx, noDelegate, creator, delegate, 100))
 
 	checkErc20Allowance(ctx, creator, delegate, 100)
@@ -216,7 +216,7 @@ func TestTransferFromFailNoDelegate(t *testing.T) {
 
 func TestTransferFromFailTooMuch(t *testing.T) {
 	ctx := setupErc20(t)
-	delegate := ctx.NewSoloAgent()
+	delegate := ctx.NewSoloAgent("delegate")
 
 	require.NoError(t, approve(ctx, creator, delegate, 100))
 

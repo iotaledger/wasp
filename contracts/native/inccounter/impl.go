@@ -40,7 +40,7 @@ const (
 func initialize(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("inccounter.init in %s", ctx.Contract().String())
 	params := ctx.Params()
-	val := codec.MustDecodeInt64(params.MustGet(VarCounter), 0)
+	val := codec.MustDecodeInt64(params.Get(VarCounter), 0)
 	ctx.State().Set(VarCounter, codec.EncodeInt64(val))
 	ctx.Event(fmt.Sprintf("inccounter.init.success. counter = %d", val))
 	return nil
@@ -48,8 +48,8 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 
 func incCounter(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("inccounter.incCounter in %s", ctx.Contract().String())
-	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	inc := par.MustGetInt64(VarCounter, 1)
+	params := ctx.Params()
+	inc := params.MustGetInt64(VarCounter, 1)
 
 	state := kvdecoder.New(ctx.State(), ctx.Log())
 	val := state.MustGetInt64(VarCounter, 0)
@@ -68,7 +68,7 @@ func incCounter(ctx isc.Sandbox) dict.Dict {
 func incCounterAndRepeatOnce(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatOnce")
 	state := ctx.State()
-	val := codec.MustDecodeInt64(state.MustGet(VarCounter), 0)
+	val := codec.MustDecodeInt64(state.Get(VarCounter), 0)
 
 	ctx.Log().Debugf(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
@@ -98,16 +98,16 @@ func incCounterAndRepeatMany(ctx isc.Sandbox) dict.Dict {
 	state := ctx.State()
 	params := ctx.Params()
 
-	val := codec.MustDecodeInt64(state.MustGet(VarCounter), 0)
+	val := codec.MustDecodeInt64(state.Get(VarCounter), 0)
 
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatMany: increasing counter value: %d", val)
 
 	var numRepeats int64
-	if params.MustHas(VarNumRepeats) {
-		numRepeats = codec.MustDecodeInt64(params.MustGet(VarNumRepeats), 0)
+	if params.Has(VarNumRepeats) {
+		numRepeats = codec.MustDecodeInt64(params.Get(VarNumRepeats), 0)
 	} else {
-		numRepeats = codec.MustDecodeInt64(state.MustGet(VarNumRepeats), 0)
+		numRepeats = codec.MustDecodeInt64(state.Get(VarNumRepeats), 0)
 	}
 	if numRepeats == 0 {
 		ctx.Log().Debugf("inccounter.incCounterAndRepeatMany: finished chain of requests. counter value: %d", val)
@@ -143,9 +143,9 @@ func spawn(ctx isc.Sandbox) dict.Dict {
 
 	state := kvdecoder.New(ctx.State(), ctx.Log())
 	val := state.MustGetInt64(VarCounter)
-	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	name := par.MustGetString(VarName)
-	dscr := par.MustGetString(VarDescription, "N/A")
+	params := ctx.Params()
+	name := params.MustGetString(VarName)
+	dscr := params.MustGetString(VarDescription, "N/A")
 
 	callPar := dict.New()
 	callPar.Set(VarCounter, codec.EncodeInt64(val+1))
@@ -160,6 +160,6 @@ func spawn(ctx isc.Sandbox) dict.Dict {
 
 func getCounter(ctx isc.SandboxView) dict.Dict {
 	state := ctx.StateR()
-	val := codec.MustDecodeInt64(state.MustGet(VarCounter), 0)
+	val := codec.MustDecodeInt64(state.Get(VarCounter), 0)
 	return dict.Dict{VarCounter: codec.EncodeInt64(val)}
 }

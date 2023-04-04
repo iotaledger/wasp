@@ -14,6 +14,10 @@ BUILD_PKGS=./ ./tools/cluster/wasp-cluster/
 BUILD_CMD=go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 
+# Docker image name and tag
+DOCKER_IMAGE_NAME=wasp
+DOCKER_IMAGE_TAG=develop
+
 all: build-lint
 
 wasm:
@@ -77,7 +81,23 @@ docker-build: compile-solidity
 	DOCKER_BUILDKIT=1 docker build ${DOCKER_BUILD_ARGS} \
 		--build-arg BUILD_TAGS=${BUILD_TAGS} \
 		--build-arg BUILD_LD_FLAGS=${BUILD_LD_FLAGS} \
+		--tag iotaledger/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) \
 		.
+
+docker-check-push-deps:
+    ifndef DOCKER_USERNAME
+	    $(error DOCKER_USERNAME is undefined)
+    endif
+    ifndef DOCKER_ACCESS_TOKEN
+	    $(error DOCKER_ACCESS_TOKEN is undefined)
+    endif
+
+docker-push:
+	echo "$(DOCKER_ACCESS_TOKEN)" | docker login --username $(DOCKER_USERNAME) --password-stdin
+	docker tag iotaledger/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) $(DOCKER_USERNAME)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
+	docker push $(DOCKER_USERNAME)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
+
+docker-build-push: docker-check-push-deps docker-build docker-push
 
 deps-versions:
 	@grep -n "====" packages/testutil/privtangle/privtangle.go | \

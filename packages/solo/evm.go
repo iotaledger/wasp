@@ -4,11 +4,13 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -38,11 +40,28 @@ func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
 }
 
 func (b *jsonRPCSoloBackend) EVMCall(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) ([]byte, error) {
-	return chainutil.Call(b.Chain, aliasOutput, callMsg)
+	return chainutil.EVMCall(b.Chain, aliasOutput, callMsg)
 }
 
 func (b *jsonRPCSoloBackend) EVMEstimateGas(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) (uint64, error) {
-	return chainutil.EstimateGas(b.Chain, aliasOutput, callMsg)
+	return chainutil.EVMEstimateGas(b.Chain, aliasOutput, callMsg)
+}
+
+func (b *jsonRPCSoloBackend) EVMTraceTransaction(
+	aliasOutput *isc.AliasOutputWithID,
+	blockTime time.Time,
+	iscRequestsInBlock []isc.Request,
+	txIndex uint64,
+	tracer tracers.Tracer,
+) error {
+	return chainutil.EVMTraceTransaction(
+		b.Chain,
+		aliasOutput,
+		blockTime,
+		iscRequestsInBlock,
+		txIndex,
+		tracer,
+	)
 }
 
 func (b *jsonRPCSoloBackend) EVMGasPrice() *big.Int {
@@ -93,7 +112,7 @@ func (ch *Chain) EVMGasRatio() util.Ratio32 {
 	// TODO: Cache the gas ratio?
 	ret, err := ch.CallView(governance.Contract.Name, governance.ViewGetEVMGasRatio.Name)
 	require.NoError(ch.Env.T, err)
-	return codec.MustDecodeRatio32(ret.MustGet(governance.ParamEVMGasRatio))
+	return codec.MustDecodeRatio32(ret.Get(governance.ParamEVMGasRatio))
 }
 
 func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (dict.Dict, error) {

@@ -5,6 +5,7 @@ package evmtest
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/big"
@@ -16,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
@@ -25,6 +27,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
+	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -851,7 +854,7 @@ func TestISCCall(t *testing.T) {
 		inccounter.ViewGetCounter.Name,
 	)
 	require.NoError(env.solo.T, err)
-	require.EqualValues(t, 42, codec.MustDecodeInt64(r.MustGet(inccounter.VarCounter)))
+	require.EqualValues(t, 42, codec.MustDecodeInt64(r.Get(inccounter.VarCounter)))
 }
 
 func TestFibonacciContract(t *testing.T) {
@@ -918,7 +921,7 @@ func TestISCSendWithArgs(t *testing.T) {
 	checkCounter := func(c int) {
 		ret, err2 := env.soloChain.CallView(inccounter.Contract.Name, inccounter.ViewGetCounter.Name)
 		require.NoError(t, err2)
-		counter := codec.MustDecodeUint64(ret.MustGet(inccounter.VarCounter))
+		counter := codec.MustDecodeUint64(ret.Get(inccounter.VarCounter))
 		require.EqualValues(t, c, counter)
 	}
 	checkCounter(0)
@@ -1773,4 +1776,39 @@ func TestEVMCallViewGas(t *testing.T) {
 	}
 	err := env.ISCMagicSandbox(ethKey).callView("getChainOwnerID", nil, &ret)
 	require.NoError(t, err)
+}
+
+func TestTraceTransaction(t *testing.T) {
+	env := initEVM(t)
+	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	traceLatestTx := func() *jsonrpc.CallFrame {
+		latestBlock, err := env.evmChain.BlockByNumber(nil)
+		require.NoError(t, err)
+		trace, err := env.evmChain.TraceTransaction(latestBlock.Transactions()[0].Hash(), &tracers.TraceConfig{})
+		require.NoError(t, err)
+		var ret jsonrpc.CallFrame
+		err = json.Unmarshal(trace.(json.RawMessage), &ret)
+		require.NoError(t, err)
+		t.Log(ret)
+		return &ret
+	}
+	{
+		storage := env.deployStorageContract(ethKey)
+		_, err := storage.store(43)
+		require.NoError(t, err)
+		trace := traceLatestTx()
+		require.EqualValues(t, ethAddr, common.HexToAddress(trace.From))
+		require.EqualValues(t, storage.address, common.HexToAddress(trace.To))
+		require.Empty(t, trace.Calls)
+	}
+	{
+		iscTest := env.deployISCTestContract(ethKey)
+		_, err := iscTest.triggerEvent("Hi from EVM!")
+		require.NoError(t, err)
+		trace := traceLatestTx()
+		require.EqualValues(t, ethAddr, common.HexToAddress(trace.From))
+		require.EqualValues(t, iscTest.address, common.HexToAddress(trace.To))
+		require.NotEmpty(t, trace.Calls)
+	}
 }

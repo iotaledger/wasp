@@ -28,7 +28,7 @@ func TestDoNothingUser(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
-		user := ctx.NewSoloAgent()
+		user := ctx.NewSoloAgent("user")
 		bal := ctx.Balances(user)
 
 		nop := testcore.ScFuncs.DoNothing(ctx.Sign(user))
@@ -47,7 +47,7 @@ func TestWithdrawToAddress(t *testing.T) {
 	//	run2(t, func(t *testing.T, w bool) {
 	//		ctx := deployTestCore(t, w)
 	//
-	//		user := ctx.NewSoloAgent()
+	//		user := ctx.NewSoloAgent("user")
 	//		bal := ctx.Balances(user)
 	//
 	//		nop := testcore.ScFuncs.DoNothing(ctx.Sign(user))
@@ -79,7 +79,7 @@ func TestDoPanicUser(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
-		user := ctx.NewSoloAgent()
+		user := ctx.NewSoloAgent("user")
 		bal := ctx.Balances(user)
 		userL1 := user.Balance()
 
@@ -99,7 +99,7 @@ func TestDoPanicUserFeeless(t *testing.T) {
 	t.SkipNow()
 	//run2(t, func(t *testing.T, w bool) {
 	//	ctx := deployTestCore(t, w)
-	//	user := ctx.NewSoloAgent()
+	//	user := ctx.NewSoloAgent("user")
 	//
 	//	t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
 	//	require.EqualValues(t, utxodb.FundsFromFaucetAmount, user.Balance())
@@ -138,7 +138,7 @@ func TestDoPanicUserFee(t *testing.T) {
 	t.SkipNow()
 	//run2(t, func(t *testing.T, w bool) {
 	//	ctx := deployTestCore(t, w)
-	//	user := ctx.NewSoloAgent()
+	//	user := ctx.NewSoloAgent("user")
 	//
 	//	t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
 	//	require.EqualValues(t, utxodb.FundsFromFaucetAmount, user.Balance())

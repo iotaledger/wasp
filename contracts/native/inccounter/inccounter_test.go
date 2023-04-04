@@ -21,7 +21,7 @@ const incName = "incTest"
 func checkCounter(e *solo.Chain, expected int64) {
 	ret, err := e.CallView(incName, ViewGetCounter.Name)
 	require.NoError(e.Env.T, err)
-	c, err := codec.DecodeInt64(ret.MustGet(VarCounter))
+	c, err := codec.DecodeInt64(ret.Get(VarCounter))
 	require.NoError(e.Env.T, err)
 	require.EqualValues(e.Env.T, expected, c)
 }
@@ -137,7 +137,7 @@ func TestSpawn(t *testing.T) {
 	res, err := chain.CallView(root.Contract.Name, root.ViewGetContractRecords.Name)
 	require.NoError(t, err)
 	creg := collections.NewMapReadOnly(res, root.StateVarContractRegistry)
-	require.True(t, int(creg.MustLen()) == len(corecontracts.All)+2)
+	require.True(t, int(creg.Len()) == len(corecontracts.All)+2)
 }
 
 func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {

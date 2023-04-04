@@ -112,8 +112,7 @@ func (bfT *BlockFactory) GetNextBlock(
 	stateDraft, err := bfT.store.NewStateDraft(time.Now(), commitment)
 	require.NoError(bfT.t, err)
 	counterKey := kv.Key(coreutil.StateVarBlockIndex + "counter")
-	counterBin, err := stateDraft.Get(counterKey)
-	require.NoError(bfT.t, err)
+	counterBin := stateDraft.Get(counterKey)
 	counter, err := codec.DecodeUint64(counterBin, 0)
 	require.NoError(bfT.t, err)
 	var increment uint64

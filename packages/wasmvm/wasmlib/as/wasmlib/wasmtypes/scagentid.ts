@@ -10,9 +10,9 @@ import {
     ScAddress,
     ScAddressAlias,
     ScAddressEth,
-    ScAddressEthLength,
     ScLengthAlias,
-    ScLengthEd25519
+    ScLengthEd25519,
+    ScLengthEth,
 } from './scaddress';
 import {chainIDFromBytes, ScChainIDLength} from './scchainid';
 import {hnameFromBytes, hnameFromString, hnameToBytes, hnameToString, ScHname, ScHnameLength} from './schname';
@@ -123,8 +123,8 @@ export function agentIDFromBytes(buf: Uint8Array | null): ScAgentID {
         }
         case ScAgentIDEthereum:
             buf = buf.subarray(1);
-            if (buf.length != ScAddressEthLength) {
-                panic('invalid AgentID length: Eth agentID');
+            if (buf.length != ScLengthEth) {
+                panic('invalid AgentID length: eth agentID');
             }
             return ScAgentID.fromAddress(addressFromBytes(buf));
         case ScAgentIDNil:

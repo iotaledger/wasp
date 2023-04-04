@@ -113,7 +113,7 @@ func (h *magicContractViewHandler) GetNativeTokenID(foundrySN uint32) iscmagic.N
 		accounts.ParamFoundrySN: codec.EncodeUint32(foundrySN),
 	})
 	out := &iotago.FoundryOutput{}
-	_, err := out.Deserialize(r.MustGet(accounts.ParamFoundryOutputBin), serializer.DeSeriModeNoValidation, nil)
+	_, err := out.Deserialize(r.Get(accounts.ParamFoundryOutputBin), serializer.DeSeriModeNoValidation, nil)
 	h.ctx.RequireNoError(err)
 	nativeTokenID := out.MustNativeTokenID()
 	return iscmagic.WrapNativeTokenID(nativeTokenID)
@@ -125,7 +125,7 @@ func (h *magicContractViewHandler) GetNativeTokenScheme(foundrySN uint32) iotago
 		accounts.ParamFoundrySN: codec.EncodeUint32(foundrySN),
 	})
 	out := &iotago.FoundryOutput{}
-	_, err := out.Deserialize(r.MustGet(accounts.ParamFoundryOutputBin), serializer.DeSeriModeNoValidation, nil)
+	_, err := out.Deserialize(r.Get(accounts.ParamFoundryOutputBin), serializer.DeSeriModeNoValidation, nil)
 	h.ctx.RequireNoError(err)
 	s, ok := out.TokenScheme.(*iotago.SimpleTokenScheme)
 	if !ok {

@@ -33,7 +33,10 @@ type VMTask struct {
 	Entropy                    hashing.HashValue
 	ValidatorFeeTarget         isc.AgentID
 	// If EstimateGasMode is enabled, gas fee will be calculated but not charged
-	EstimateGasMode      bool
+	EstimateGasMode bool
+	// If EVMtrace is set, all requests will be executed normally up until the EVM
+	// tx with the given index, which will then be executed with the given tracer.
+	EVMTracer            *isc.EVMTracer
 	EnableGasBurnLogging bool // for testing and Solo only
 
 	// INPUTS_OUTPUTS:
@@ -72,4 +75,8 @@ func (task *VMTask) GetProcessedRequestIDs() []isc.RequestID {
 		ret[i] = res.Request.ID()
 	}
 	return ret
+}
+
+func (task *VMTask) WillProduceBlock() bool {
+	return !task.EstimateGasMode && task.EVMTracer == nil
 }

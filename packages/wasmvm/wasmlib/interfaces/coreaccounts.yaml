@@ -47,17 +47,17 @@ funcs:
   withdraw: {}
 
 views:
-  # Returns a list of all agent IDs that own assets on the chain.
+  # Returns a set of all agent IDs that own assets on the chain.
   accounts:
     results:
-      allAccounts=this: map[AgentID]Bytes # agent IDs
+      allAccounts=this: map[AgentID]Bool # agent IDs
 
-  # Returns the NFT IDs for all NFTs owned by the given account.
+  # Returns a set of all foundries owned by the given account.
   accountFoundries:
     params:
       agentID=a: AgentID # account agent ID
     results:
-      foundries=this: map[Uint32]Bytes # foundry serial numbers owned by the given account
+      foundries=this: map[Uint32]Bool # foundry serial numbers owned by the given account
 
   # Returns the amount of NFTs owned by the given account.
   accountNFTAmount:
@@ -127,10 +127,10 @@ views:
     results:
       accountNonce=n: Uint64 # account nonce
 
-  # Returns a list of all native tokenIDs that are owned by the chain.
+  # Returns a set of all native tokenIDs that are owned by the chain.
   getNativeTokenIDRegistry:
     results:
-      mapping=this: map[TokenID]Bytes # token IDs
+      mapping=this: map[TokenID]Bool # token IDs
 
   # Returns the data for a given NFT that is on the chain.
   nftData:

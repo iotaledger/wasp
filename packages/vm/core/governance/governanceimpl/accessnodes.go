@@ -32,13 +32,12 @@ func addCandidateNode(ctx isc.Sandbox) dict.Dict {
 	ctx.Requiref(ani.ValidateCertificate(ctx), "certificate invalid")
 	pubKeyStr := base64.StdEncoding.EncodeToString(ani.NodePubKey)
 
-	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
-	accessNodeCandidates.MustSetAt(ani.NodePubKey, ani.Bytes())
+	state := ctx.State()
+	governance.AccessNodeCandidatesMap(state).SetAt(ani.NodePubKey, ani.Bytes())
 	ctx.Log().Infof("Governance::AddCandidateNode: accessNodeCandidate added, pubKey=%s", pubKeyStr)
 
 	if ctx.ChainOwnerID().Equals(ctx.Request().SenderAccount()) {
-		accessNodes := collections.NewMap(ctx.State(), governance.VarAccessNodes)
-		accessNodes.MustSetAt(ani.NodePubKey, codec.EncodeBool(true))
+		governance.AccessNodesMap(state).SetAt(ani.NodePubKey, codec.EncodeBool(true))
 		ctx.Log().Infof("Governance::AddCandidateNode: accessNode added, pubKey=%s", pubKeyStr)
 	}
 
@@ -60,10 +59,9 @@ func revokeAccessNode(ctx isc.Sandbox) dict.Dict {
 	ani := governance.NewAccessNodeInfoFromRevokeAccessNodeParams(ctx)
 	ctx.Requiref(ani.ValidateCertificate(ctx), "certificate invalid")
 
-	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
-	accessNodeCandidates.MustDelAt(ani.NodePubKey)
-	accessNodes := collections.NewMap(ctx.State(), governance.VarAccessNodes)
-	accessNodes.MustDelAt(ani.NodePubKey)
+	state := ctx.State()
+	governance.AccessNodeCandidatesMap(state).DelAt(ani.NodePubKey)
+	governance.AccessNodesMap(state).DelAt(ani.NodePubKey)
 
 	return nil
 }
@@ -77,23 +75,24 @@ func revokeAccessNode(ctx isc.Sandbox) dict.Dict {
 func changeAccessNodes(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
-	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
-	accessNodes := collections.NewMap(ctx.State(), governance.VarAccessNodes)
+	state := ctx.State()
+	accessNodeCandidates := governance.AccessNodeCandidatesMap(state)
+	accessNodes := governance.AccessNodesMap(state)
 	paramNodeActions := collections.NewMapReadOnly(ctx.Params(), governance.ParamChangeAccessNodesActions)
-	ctx.Log().Debugf("changeAccessNodes: actions len: %d", paramNodeActions.MustLen())
+	ctx.Log().Debugf("changeAccessNodes: actions len: %d", paramNodeActions.Len())
 
-	paramNodeActions.MustIterate(func(pubKey, actionBin []byte) bool {
+	paramNodeActions.Iterate(func(pubKey, actionBin []byte) bool {
 		ctx.Requiref(len(actionBin) == 1, "action should be a single byte")
 		switch governance.ChangeAccessNodeAction(actionBin[0]) {
 		case governance.ChangeAccessNodeActionRemove:
-			accessNodes.MustDelAt(pubKey)
+			accessNodes.DelAt(pubKey)
 		case governance.ChangeAccessNodeActionAccept:
 			// TODO should the list of candidates be checked? we are just adding any pubkey
-			accessNodes.MustSetAt(pubKey, codec.EncodeBool(true))
-			// TODO should the node be removed from the list of candidates? // accessNodeCandidates.MustDelAt(pubKey)
+			accessNodes.SetAt(pubKey, codec.EncodeBool(true))
+			// TODO should the node be removed from the list of candidates? // accessNodeCandidates.DelAt(pubKey)
 		case governance.ChangeAccessNodeActionDrop:
-			accessNodes.MustDelAt(pubKey)
-			accessNodeCandidates.MustDelAt(pubKey)
+			accessNodes.DelAt(pubKey)
+			accessNodeCandidates.DelAt(pubKey)
 		default:
 			ctx.Requiref(false, "unexpected action")
 		}
@@ -112,12 +111,13 @@ func getChainNodes(ctx isc.SandboxView) dict.Dict {
 	res := dict.New()
 	candidates := collections.NewMap(res, governance.ParamGetChainNodesAccessNodeCandidates)
 	nodes := collections.NewMap(res, governance.ParamGetChainNodesAccessNodes)
-	collections.NewMapReadOnly(ctx.StateR(), governance.VarAccessNodeCandidates).MustIterate(func(key, value []byte) bool {
-		candidates.MustSetAt(key, value)
+	stateR := ctx.StateR()
+	governance.AccessNodeCandidatesMapR(stateR).Iterate(func(key, value []byte) bool {
+		candidates.SetAt(key, value)
 		return true
 	})
-	collections.NewMapReadOnly(ctx.StateR(), governance.VarAccessNodes).MustIterate(func(key, value []byte) bool {
-		nodes.MustSetAt(key, value)
+	governance.AccessNodesMapR(stateR).IterateKeys(func(key []byte) bool {
+		nodes.SetAt(key, []byte{0x01})
 		return true
 	})
 	return res

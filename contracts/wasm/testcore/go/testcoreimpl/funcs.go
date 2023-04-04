@@ -235,30 +235,17 @@ func funcTestPanicFullEP(ctx wasmlib.ScFuncContext, _ *TestPanicFullEPContext) {
 func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContext) {
 	targetChain := f.Params.ChainID().Value()
 	withdrawal := f.Params.BaseTokensWithdrawal().Value()
-	// gasBudget := f.Params.GasBudget().Value()
-
-	// TODO more
 	availableTokens := ctx.Allowance().BaseTokens()
+
 	// requiredStorageDepositDeposit := ctx.EstimateRequiredStorageDepositDeposit(request)
-	if availableTokens < 1000 {
-		ctx.Panic("not enough base tokens sent to cover StorageDeposit deposit")
+	if availableTokens < 2000 {
+		ctx.Panic("not enough base tokens sent to cover storage deposit")
 	}
 	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
 	ctx.TransferAllowed(ctx.AccountID(), transfer)
 
-	//request := isc.RequestParameters{
-	//	TargetAddress:  targetChain.AsAddress(),
-	//	FungibleTokens: isc.NewFungibleBaseTokens(availableTokens),
-	//	Metadata: &isc.SendMetadata{
-	//		TargetContract: accounts.Contract.Hname(),
-	//		EntryPoint:     accounts.FuncWithdraw.Hname(),
-	//		GasBudget:      math.MaxUint64,
-	//		Allowance:      isc.NewAssetsBaseTokens(withdrawal),
-	//	},
-	//}
-
 	withdraw := coreaccounts.ScFuncs.Withdraw(ctx)
-	withdraw.Func.TransferBaseTokens(withdrawal).PostToChain(targetChain)
+	withdraw.Func.Transfer(transfer).AllowanceBaseTokens(withdrawal).PostToChain(targetChain)
 }
 
 func viewCheckContextFromViewEP(ctx wasmlib.ScViewContext, f *CheckContextFromViewEPContext) {

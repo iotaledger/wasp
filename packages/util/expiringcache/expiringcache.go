@@ -67,6 +67,7 @@ func New[K comparable, V any](ttl time.Duration, cleanupInterval ...time.Duratio
 
 	c := &cache[K, V]{
 		items: shrinkingmap.New[K, cacheItem[V]](),
+		ttl:   ttl,
 	}
 
 	ret := &ExpiringCache[K, V]{c} // prevent the cleanup loop from blocking garbage collection on `c`

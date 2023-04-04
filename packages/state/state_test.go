@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"pgregory.net/rapid"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -116,6 +117,21 @@ func TestOriginBlock(t *testing.T) {
 	require.EqualValues(t, 0, cs.LatestBlockIndex())
 }
 
+func TestOriginBlockDeterminism(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		deposit := rapid.Uint64().Draw(t, "deposit")
+		db := mapdb.NewMapDB()
+		st := state.NewStore(db)
+		blockA := origin.InitChain(st, nil, deposit)
+		blockB := origin.InitChain(st, nil, deposit)
+		require.Equal(t, blockA.L1Commitment(), blockB.L1Commitment())
+		db2 := mapdb.NewMapDB()
+		st2 := state.NewStore(db2)
+		blockC := origin.InitChain(st2, nil, deposit)
+		require.Equal(t, blockA.L1Commitment(), blockC.L1Commitment())
+	})
+}
+
 func Test1Block(t *testing.T) {
 	db := mapdb.NewMapDB()
 	cs := mustChainStore{initializedStore(db)}
@@ -124,7 +140,7 @@ func Test1Block(t *testing.T) {
 		d := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
 		d.Set("a", []byte{1})
 
-		require.EqualValues(t, []byte{1}, d.MustGet("a"))
+		require.EqualValues(t, []byte{1}, d.Get("a"))
 
 		return cs.Commit(d)
 	}()
@@ -136,7 +152,7 @@ func Test1Block(t *testing.T) {
 	require.EqualValues(t, 1, cs.StateByIndex(1).BlockIndex())
 	require.EqualValues(t, []byte{1}, cs.BlockByIndex(1).Mutations().Sets["a"])
 
-	require.EqualValues(t, []byte{1}, cs.StateByIndex(1).MustGet("a"))
+	require.EqualValues(t, []byte{1}, cs.StateByIndex(1).Get("a"))
 }
 
 func TestReorg(t *testing.T) {
@@ -164,7 +180,7 @@ func TestReorg(t *testing.T) {
 	require.EqualValues(t, 9, cs.LatestBlockIndex())
 	for i := uint32(1); i <= cs.LatestBlockIndex(); i++ {
 		require.EqualValues(t, i, cs.StateByIndex(i).BlockIndex())
-		require.EqualValues(t, []byte("a"), cs.StateByIndex(i).MustGet("k"))
+		require.EqualValues(t, []byte("a"), cs.StateByIndex(i).Get("k"))
 	}
 
 	// reorg
@@ -175,9 +191,9 @@ func TestReorg(t *testing.T) {
 		t.Log(i)
 		require.EqualValues(t, i, cs.StateByIndex(i).BlockIndex())
 		if i <= 5 {
-			require.EqualValues(t, []byte("a"), cs.StateByIndex(i).MustGet("k"))
+			require.EqualValues(t, []byte("a"), cs.StateByIndex(i).Get("k"))
 		} else {
-			require.EqualValues(t, []byte("b"), cs.StateByIndex(i).MustGet("k"))
+			require.EqualValues(t, []byte("b"), cs.StateByIndex(i).Get("k"))
 		}
 	}
 }
@@ -217,7 +233,7 @@ func TestProof(t *testing.T) {
 		[]byte(coreutil.StatePrefixBlockIndex),
 	} {
 		t.Run(fmt.Sprintf("%x", k), func(t *testing.T) {
-			v := cs.LatestState().MustGet(kv.Key(k))
+			v := cs.LatestState().Get(kv.Key(k))
 			require.NotEmpty(t, v)
 
 			proof := cs.LatestState().GetMerkleProof(k)

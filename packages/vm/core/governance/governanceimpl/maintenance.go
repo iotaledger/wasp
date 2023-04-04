@@ -14,8 +14,9 @@ import (
 func setMaintenanceOn(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	// check if caller is a contract from this chain, panic if so.
-	if ctx.Caller().Kind() == isc.AgentIDKindContract &&
-		ctx.Caller().(*isc.ContractAgentID).ChainID().Equals(ctx.ChainID()) {
+	caller := ctx.Caller()
+	if caller.Kind() == isc.AgentIDKindContract &&
+		caller.(*isc.ContractAgentID).ChainID().Equals(ctx.ChainID()) {
 		panic(vm.ErrUnauthorized)
 	}
 	ctx.State().Set(governance.VarMaintenanceStatus, codec.Encode(true))
@@ -30,6 +31,6 @@ func setMaintenanceOff(ctx isc.Sandbox) dict.Dict {
 
 func getMaintenanceStatus(ctx isc.SandboxView) dict.Dict {
 	return dict.Dict{
-		governance.VarMaintenanceStatus: ctx.StateR().MustGet(governance.VarMaintenanceStatus),
+		governance.VarMaintenanceStatus: ctx.StateR().Get(governance.VarMaintenanceStatus),
 	}
 }

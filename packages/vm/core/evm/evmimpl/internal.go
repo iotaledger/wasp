@@ -9,6 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -81,6 +82,18 @@ func (bctx *blockContext) mintBlock() {
 	}
 
 	bctx.emu.MintBlock()
+}
+
+func getTracer(ctx isc.Sandbox, bctx *blockContext) tracers.Tracer {
+	tracer := ctx.EVMTracer()
+	if tracer == nil {
+		return nil
+	}
+	if int(tracer.TxIndex) != len(bctx.txs) {
+		// some tx in this block is being traced but not the current one
+		return nil
+	}
+	return tracer.Tracer
 }
 
 func gasLimits(ctx isc.SandboxBase) emulator.GasLimits {
@@ -165,22 +178,22 @@ func blockByNumber(ctx isc.SandboxView) (*emulator.EVMEmulator, *types.Block) {
 
 func blockByHash(ctx isc.SandboxView) (*emulator.EVMEmulator, *types.Block) {
 	emu := createEmulatorR(ctx)
-	hash := common.BytesToHash(ctx.Params().MustGet(evm.FieldBlockHash))
+	hash := common.BytesToHash(ctx.Params().Get(evm.FieldBlockHash))
 	return emu, emu.BlockchainDB().GetBlockByHash(hash)
 }
 
 func transactionByHash(ctx isc.SandboxView) (*emulator.EVMEmulator, *types.Transaction) {
 	emu := createEmulatorR(ctx)
-	txHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldTransactionHash))
+	txHash := common.BytesToHash(ctx.Params().Get(evm.FieldTransactionHash))
 	return emu, emu.BlockchainDB().GetTransactionByHash(txHash)
 }
 
 func transactionByBlockHashAndIndex(ctx isc.SandboxView) (*emulator.EVMEmulator, *types.Transaction) {
 	emu := createEmulatorR(ctx)
-	blockHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldBlockHash))
+	blockHash := common.BytesToHash(ctx.Params().Get(evm.FieldBlockHash))
 
 	a := assert.NewAssert(ctx.Log())
-	index, err := codec.DecodeUint64(ctx.Params().MustGet(evm.FieldTransactionIndex), 0)
+	index, err := codec.DecodeUint64(ctx.Params().Get(evm.FieldTransactionIndex), 0)
 	a.RequireNoError(err)
 
 	bc := emu.BlockchainDB()
@@ -196,7 +209,7 @@ func transactionByBlockNumberAndIndex(ctx isc.SandboxView) (*emulator.EVMEmulato
 	blockNumber := paramBlockNumber(ctx, emu, true)
 
 	a := assert.NewAssert(ctx.Log())
-	index, err := codec.DecodeUint64(ctx.Params().MustGet(evm.FieldTransactionIndex), 0)
+	index, err := codec.DecodeUint64(ctx.Params().Get(evm.FieldTransactionIndex), 0)
 	a.RequireNoError(err)
 
 	return emu, emu.BlockchainDB().GetTransactionByBlockNumberAndIndex(blockNumber, uint32(index))
@@ -212,8 +225,8 @@ func requireLatestBlock(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPre
 
 func paramBlockNumber(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool) uint64 {
 	current := emu.BlockchainDB().GetNumber()
-	if ctx.Params().MustHas(evm.FieldBlockNumber) {
-		blockNumber := new(big.Int).SetBytes(ctx.Params().MustGet(evm.FieldBlockNumber))
+	if ctx.Params().Has(evm.FieldBlockNumber) {
+		blockNumber := new(big.Int).SetBytes(ctx.Params().Get(evm.FieldBlockNumber))
 		return requireLatestBlock(ctx, emu, allowPrevious, blockNumber.Uint64())
 	}
 	return current
@@ -248,7 +261,7 @@ func (b *l2BalanceR) Get(addr common.Address) *big.Int {
 		dict.Dict{accounts.ParamAgentID: isc.NewEthereumAddressAgentID(addr).Bytes()},
 	)
 	decimals := parameters.L1().BaseToken.Decimals
-	ret := new(big.Int).SetUint64(codec.MustDecodeUint64(res.MustGet(accounts.ParamBalance), 0))
+	ret := new(big.Int).SetUint64(codec.MustDecodeUint64(res.Get(accounts.ParamBalance), 0))
 	return util.CustomTokensDecimalsToEthereumDecimals(ret, decimals)
 }
 

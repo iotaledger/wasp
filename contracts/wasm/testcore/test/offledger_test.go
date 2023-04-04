@@ -15,7 +15,7 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		// note: create agent without depositing into L2
-		user := wasmsolo.NewSoloAgent(ctx.Chain.Env)
+		user := wasmsolo.NewSoloAgent(ctx.Chain.Env, "user")
 		require.EqualValues(t, utxodb.FundsFromFaucetAmount, user.Balance())
 		require.EqualValues(t, 0, ctx.Balance(user))
 		bal := ctx.Balances(user)
@@ -36,7 +36,7 @@ func TestOffLedgerNoTransfer(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
-		user := ctx.NewSoloAgent()
+		user := ctx.NewSoloAgent("user")
 		bal := ctx.Balances(user)
 		userL1 := user.Balance()
 
@@ -65,7 +65,7 @@ func TestOffLedgerTransferWhenEnoughBudget(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
-		user := ctx.NewSoloAgent()
+		user := ctx.NewSoloAgent("user")
 		bal := ctx.Balances(user)
 		userL1 := user.Balance()
 
@@ -96,7 +96,7 @@ func TestOffLedgerTransferWhenNotEnoughBudget(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w)
 
-		user := ctx.NewSoloAgent()
+		user := ctx.NewSoloAgent("user")
 		bal := ctx.Balances(user)
 
 		// Try to transfer everything from L2, which does preclude paying for gas

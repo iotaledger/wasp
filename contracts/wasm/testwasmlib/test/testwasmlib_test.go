@@ -489,7 +489,7 @@ func getTokenID(ctx *wasmsolo.SoloContext) (nativeTokenID iotago.NativeTokenID, 
 }
 
 func getNftID(ctx *wasmsolo.SoloContext) (iotago.NFTID, error) {
-	agent := ctx.NewSoloAgent()
+	agent := ctx.NewSoloAgent("NFTOwner")
 	addr, ok := isc.AddressFromAgentID(agent.AgentID())
 	if !ok {
 		return iotago.NFTID{}, errors.New("can't get address from AgentID")

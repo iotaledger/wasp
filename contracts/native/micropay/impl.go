@@ -31,9 +31,9 @@ package micropay
 // 	// a := assert.NewAssert(ctx.Log())
 // 	// a.Requiref(ctx.Caller().Address().Type() != ledgerstate.AliasAddressType, "micropay.publicKey: caller must be an address")
 
-// 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
+// 	// params := ctx.Params()
 
-// 	// pubKeyBin := par.MustGetBytes(ParamPublicKey)
+// 	// pubKeyBin := params.MustGetBytes(ParamPublicKey)
 // 	// addr, err := ctx.Utils().ED25519().AddressFromPublicKey(pubKeyBin)
 // 	// a.RequireNoError(err)
 // 	// a.Requiref(addr.Equals(ctx.Caller().Address()), "public key does not correspond to the caller's address")
@@ -49,7 +49,7 @@ package micropay
 // func addWarrant(ctx isc.Sandbox) (dict.Dict, error) {
 // 	panic("TODO implement")
 
-// 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
+// 	// params := ctx.Params()
 // 	// a := assert.NewAssert(ctx.Log())
 
 // 	// a.Requiref(ctx.Caller().Address().Type() != ledgerstate.AliasAddressType, "micropay.addWarrant: caller must be an address")
@@ -58,7 +58,7 @@ package micropay
 // 	// a.Requiref(getPublicKey(ctx.State(), payerAddr, a) != nil,
 // 	// 	fmt.Sprintf("unknown public key for address %s", payerAddr))
 
-// 	// serviceAddr := par.MustGetAddress(ParamServiceAddress)
+// 	// serviceAddr := params.MustGetAddress(ParamServiceAddress)
 // 	// addWarrant := ctx.Allowance().BaseTokens
 // 	// a.Requiref(addWarrant >= MinimumWarrantBaseTokens, fmt.Sprintf("warrant must be larger than %d base tokens", MinimumWarrantBaseTokens))
 
@@ -98,12 +98,12 @@ package micropay
 // func revokeWarrant(ctx isc.Sandbox) (dict.Dict, error) {
 // 	panic("TODO implement")
 
-// 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
+// 	// params := ctx.Params()
 // 	// a := assert.NewAssert(ctx.Log())
 
 // 	// a.Requiref(ctx.Caller().Address().Type() != ledgerstate.AliasAddressType, "micropay.addWarrant: caller must be an address")
 // 	// payerAddr := ctx.Caller().Address()
-// 	// serviceAddr := par.MustGetAddress(ParamServiceAddress)
+// 	// serviceAddr := params.MustGetAddress(ParamServiceAddress)
 
 // 	// w, r, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, a)
 // 	// a.Requiref(w > 0, fmt.Sprintf("warrant of %s to %s does not exist", payerAddr, serviceAddr))
@@ -139,9 +139,9 @@ package micropay
 // 	// myAgentID := isc.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
 // 	// a.Requiref(ctx.Caller().Equals(myAgentID), "caller must be self")
 
-// 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
-// 	// payerAddr := par.MustGetAddress(ParamPayerAddress)
-// 	// serviceAddr := par.MustGetAddress(ParamServiceAddress)
+// 	// params := ctx.Params()
+// 	// payerAddr := params.MustGetAddress(ParamPayerAddress)
+// 	// serviceAddr := params.MustGetAddress(ParamServiceAddress)
 // 	// warrant, _, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, assert.NewAssert(ctx.Log()))
 // 	// if warrant > 0 {
 // 	// 	tokens := isc.NewFungibleBaseTokens(warrant)
@@ -162,8 +162,8 @@ package micropay
 // 	// targetAddr := ctx.Caller().Address()
 // 	// a.Requiref(targetAddr.Type() != ledgerstate.AliasAddressType, "micropay.addWarrant: caller must be an address")
 
-// 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
-// 	// payerAddr := par.MustGetAddress(ParamPayerAddress)
+// 	// params := ctx.Params()
+// 	// payerAddr := params.MustGetAddress(ParamPayerAddress)
 // 	// payerPubKeyBin := getPublicKey(ctx.State(), payerAddr, a)
 // 	// a.Requiref(payerPubKeyBin != nil, "public key unknown for %s", payerAddr)
 
@@ -185,9 +185,9 @@ package micropay
 // // - ParamWarrant int64 if == 0 no warrant
 // // - ParamRevoked int64 is exists, timestamp in Unix nanosec when warrant will be revoked
 // func getWarrantInfo(ctx isc.SandboxView) (dict.Dict, error) {
-// 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
-// 	// payerAddr := par.MustGetAddress(ParamPayerAddress)
-// 	// serviceAddr := par.MustGetAddress(ParamServiceAddress)
+// 	// params := ctx.Params()
+// 	// payerAddr := params.MustGetAddress(ParamPayerAddress)
+// 	// serviceAddr := params.MustGetAddress(ParamServiceAddress)
 // 	// warrant, revoke, lastOrd := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, assert.NewAssert(ctx.Log()))
 // 	// ret := dict.New()
 // 	// if warrant > 0 {
@@ -204,35 +204,35 @@ package micropay
 
 // func getWarrantInfoIntern(state kv.KVStoreReader, payer, service iotago.Address, a assert.Assert) (uint64, uint64, uint64) {
 // 	payerInfo := collections.NewMapReadOnly(state, string(isc.BytesFromAddress(payer)))
-// 	warrantBin := payerInfo.MustGetAt(isc.BytesFromAddress(service))
+// 	warrantBin := payerInfo.GetAt(isc.BytesFromAddress(service))
 // 	warrant, err := codec.DecodeUint64(warrantBin, 0)
 // 	a.RequireNoError(err)
-// 	revokeBin := payerInfo.MustGetAt(getRevokeKey(service))
+// 	revokeBin := payerInfo.GetAt(getRevokeKey(service))
 // 	revoke, err := codec.DecodeUint64(revokeBin, 0)
 // 	a.RequireNoError(err)
-// 	lastOrdBin := payerInfo.MustGetAt(getLastOrdKey(service))
+// 	lastOrdBin := payerInfo.GetAt(getLastOrdKey(service))
 // 	lastOrd, err := codec.DecodeUint64(lastOrdBin, 0)
 // 	a.RequireNoError(err)
 // 	return warrant, revoke, lastOrd
 // }
 
 // func setWarrant(payerAccount *collections.Map, service iotago.Address, value uint64) {
-// 	payerAccount.MustSetAt(isc.BytesFromAddress(service), codec.EncodeUint64(value))
+// 	payerAccount.SetAt(isc.BytesFromAddress(service), codec.EncodeUint64(value))
 // }
 
 // func setWarrantRevoke(payerAccount *collections.Map, service iotago.Address, deadline int64) {
-// 	payerAccount.MustSetAt(getRevokeKey(service), codec.EncodeInt64(deadline))
+// 	payerAccount.SetAt(getRevokeKey(service), codec.EncodeInt64(deadline))
 // }
 
 // func setLastOrd(payerAccount *collections.Map, service iotago.Address, lastOrd uint64) {
-// 	payerAccount.MustSetAt(getLastOrdKey(service), codec.EncodeUint64(lastOrd))
+// 	payerAccount.SetAt(getLastOrdKey(service), codec.EncodeUint64(lastOrd))
 // }
 
 // func deleteWarrant(state kv.KVStore, payer, service iotago.Address) {
 // 	payerInfo := collections.NewMap(state, string(isc.BytesFromAddress(payer)))
-// 	payerInfo.MustDelAt(isc.BytesFromAddress(service))
-// 	payerInfo.MustDelAt(getRevokeKey(service))
-// 	payerInfo.MustDelAt(getLastOrdKey(service))
+// 	payerInfo.DelAt(isc.BytesFromAddress(service))
+// 	payerInfo.DelAt(getRevokeKey(service))
+// 	payerInfo.DelAt(getLastOrdKey(service))
 // }
 
 // func getPublicKey(state kv.KVStoreReader, addr iotago.Address, a assert.Assert) []byte {
@@ -256,7 +256,7 @@ package micropay
 
 // func decodePayments(state kv.KVStoreReader, a assert.Assert) []*Payment {
 // 	payments := collections.NewArray16ReadOnly(state, ParamPayments)
-// 	n := payments.MustLen()
+// 	n := payments.Len()
 // 	a.Requiref(n > 0, "no payments found")
 
 // 	ret := make([]*Payment, n)

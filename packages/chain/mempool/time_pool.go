@@ -9,6 +9,7 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
@@ -24,8 +25,10 @@ type TimePool interface {
 // The list is organized in slots. Each slot contains a list of requests that fit to the
 // slot boundaries.
 type timePoolImpl struct {
-	requests *shrinkingmap.ShrinkingMap[isc.RequestRefKey, isc.Request] // All the requests in this pool.
-	slots    *timeSlot                                                  // Structure to fetch them fast by their time.
+	requests   *shrinkingmap.ShrinkingMap[isc.RequestRefKey, isc.Request] // All the requests in this pool.
+	slots      *timeSlot                                                  // Structure to fetch them fast by their time.
+	sizeMetric func(int)
+	log        *logger.Logger
 }
 
 type timeSlot struct {
@@ -39,10 +42,12 @@ const slotPrecision = time.Minute
 
 var _ TimePool = &timePoolImpl{}
 
-func NewTimePool() TimePool {
+func NewTimePool(sizeMetric func(int), log *logger.Logger) TimePool {
 	return &timePoolImpl{
-		requests: shrinkingmap.New[isc.RequestRefKey, isc.Request](),
-		slots:    nil,
+		requests:   shrinkingmap.New[isc.RequestRefKey, isc.Request](),
+		slots:      nil,
+		sizeMetric: sizeMetric,
+		log:        log,
 	}
 }
 
@@ -53,7 +58,11 @@ func (tpi *timePoolImpl) AddRequest(timestamp time.Time, request isc.Request) {
 		return
 	}
 
-	tpi.requests.Set(reqRefKey, request)
+	if tpi.requests.Set(reqRefKey, request) {
+		tpi.log.Debugf("ADD %v as key=%v", request.ID(), reqRefKey)
+	}
+	tpi.sizeMetric(tpi.requests.Size())
+
 	reqFrom, reqTill := tpi.timestampSlotBounds(timestamp)
 	prevNext := &tpi.slots
 	for slot := tpi.slots; ; {
@@ -91,8 +100,11 @@ func (tpi *timePoolImpl) TakeTill(timestamp time.Time) []isc.Request {
 				resp = append(resp, tsReqs...)
 				for _, req := range tsReqs {
 					reqRefKey := isc.RequestRefFromRequest(req).AsKey()
-					tpi.requests.Delete(reqRefKey)
+					if tpi.requests.Delete(reqRefKey) {
+						tpi.log.Debugf("DEL %v as key=%v", req.ID(), reqRefKey)
+					}
 				}
+				tpi.sizeMetric(tpi.requests.Size())
 				slot.reqs.Delete(ts)
 			}
 			return true
@@ -118,6 +130,10 @@ func (tpi *timePoolImpl) Filter(predicate func(request isc.Request, ts time.Time
 			for i, req := range requests {
 				if !predicate(req, ts) {
 					requests = slices.Delete(requests, i, i+1)
+					reqRefKey := isc.RequestRefFromRequest(req).AsKey()
+					if tpi.requests.Delete(reqRefKey) {
+						tpi.log.Debugf("DEL %v as key=%v", req.ID(), reqRefKey)
+					}
 				}
 			}
 
@@ -137,6 +153,7 @@ func (tpi *timePoolImpl) Filter(predicate func(request isc.Request, ts time.Time
 			prevNext = &slot.next
 		}
 	}
+	tpi.sizeMetric(tpi.requests.Size())
 }
 
 func (tpi *timePoolImpl) timestampSlotBounds(timestamp time.Time) (time.Time, time.Time) {

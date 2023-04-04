@@ -4,6 +4,7 @@
 package emulator
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/params"
 	lru "github.com/hashicorp/golang-lru/v2"
 
@@ -177,13 +179,24 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(boo
 	// run the EVM code on a buffered state (so that writes are not committed)
 	statedb := e.StateDB().Buffered().StateDB()
 
-	return e.applyMessage(callMsg{call}, statedb, pendingHeader, gasBurnEnable)
+	return e.applyMessage(callMsg{call}, statedb, pendingHeader, gasBurnEnable, nil)
 }
 
-func (e *EVMEmulator) applyMessage(msg callMsg, statedb vm.StateDB, header *types.Header, gasBurnEnable func(bool)) (res *core.ExecutionResult, err error) {
+func (e *EVMEmulator) applyMessage(
+	msg callMsg,
+	statedb vm.StateDB,
+	header *types.Header,
+	gasBurnEnable func(bool),
+	tracer tracers.Tracer,
+) (res *core.ExecutionResult, err error) {
 	blockContext := core.NewEVMBlockContext(header, e.ChainContext(), nil)
 	txContext := core.NewEVMTxContext(msg)
-	vmEnv := vm.NewEVM(blockContext, txContext, statedb, e.chainConfig, e.vmConfig)
+
+	vmConfig := e.vmConfig
+	vmConfig.Tracer = tracer
+	vmConfig.Debug = vmConfig.Tracer != nil
+
+	vmEnv := vm.NewEVM(blockContext, txContext, statedb, e.chainConfig, vmConfig)
 
 	if msg.CallMsg.Gas > e.gasLimits.Call {
 		msg.CallMsg.Gas = e.gasLimits.Call
@@ -209,7 +222,11 @@ func (e *EVMEmulator) applyMessage(msg callMsg, statedb vm.StateDB, header *type
 	return res, err
 }
 
-func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasBurnEnable func(bool)) (*types.Receipt, *core.ExecutionResult, error) {
+func (e *EVMEmulator) SendTransaction(
+	tx *types.Transaction,
+	gasBurnEnable func(bool),
+	tracer tracers.Tracer,
+) (*types.Receipt, *core.ExecutionResult, error) {
 	buf := e.StateDB().Buffered()
 	statedb := buf.StateDB()
 	pendingHeader := e.BlockchainDB().GetPendingHeader()
@@ -242,7 +259,13 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasBurnEnable func(
 		},
 	}
 
-	result, err := e.applyMessage(msgWithZeroGasPrice, statedb, pendingHeader, gasBurnEnable)
+	result, err := e.applyMessage(
+		msgWithZeroGasPrice,
+		statedb,
+		pendingHeader,
+		gasBurnEnable,
+		tracer,
+	)
 
 	gasUsed := uint64(0)
 	if result != nil {
@@ -290,20 +313,28 @@ func (e *EVMEmulator) MintBlock() {
 
 // FilterLogs executes a log filter operation, blocking during execution and
 // returning all the results in one batch.
-func (e *EVMEmulator) FilterLogs(query *ethereum.FilterQuery) []*types.Log {
-	receipts := e.getReceiptsInFilterRange(query)
+func (e *EVMEmulator) FilterLogs(query *ethereum.FilterQuery) ([]*types.Log, error) {
+	receipts, err := e.getReceiptsInFilterRange(query)
+	if err != nil {
+		return nil, err
+	}
 	return e.filterLogs(query, receipts)
 }
 
-func (e *EVMEmulator) getReceiptsInFilterRange(query *ethereum.FilterQuery) []*types.Receipt {
+const (
+	maxBlocksInFilterRange = 1_000
+	maxLogsInResult        = 10_000
+)
+
+func (e *EVMEmulator) getReceiptsInFilterRange(query *ethereum.FilterQuery) ([]*types.Receipt, error) {
 	bc := e.BlockchainDB()
 
 	if query.BlockHash != nil {
 		blockNumber, ok := bc.GetBlockNumberByBlockHash(*query.BlockHash)
 		if !ok {
-			return nil
+			return nil, nil
 		}
-		return bc.GetReceiptsByBlockNumber(blockNumber)
+		return bc.GetReceiptsByBlockNumber(blockNumber), nil
 	}
 
 	// Initialize unset filter boundaries to run from genesis to chain head
@@ -318,17 +349,24 @@ func (e *EVMEmulator) getReceiptsInFilterRange(query *ethereum.FilterQuery) []*t
 		to = query.ToBlock
 	}
 
+	if !from.IsUint64() || !to.IsUint64() {
+		return nil, errors.New("block number is too large")
+	}
 	var receipts []*types.Receipt
 	{
+		from := from.Uint64()
 		to := to.Uint64()
-		for i := from.Uint64(); i <= to; i++ {
+		if to > from && to-from > maxBlocksInFilterRange {
+			return nil, errors.New("too many blocks in filter range")
+		}
+		for i := from; i <= to; i++ {
 			receipts = append(receipts, bc.GetReceiptsByBlockNumber(i)...)
 		}
 	}
-	return receipts
+	return receipts, nil
 }
 
-func (e *EVMEmulator) filterLogs(query *ethereum.FilterQuery, receipts []*types.Receipt) []*types.Log {
+func (e *EVMEmulator) filterLogs(query *ethereum.FilterQuery, receipts []*types.Receipt) ([]*types.Log, error) {
 	var logs []*types.Log
 	for _, r := range receipts {
 		if !evmtypes.BloomFilter(r.Bloom, query.Addresses, query.Topics) {
@@ -338,10 +376,13 @@ func (e *EVMEmulator) filterLogs(query *ethereum.FilterQuery, receipts []*types.
 			if !evmtypes.LogMatches(log, query.Addresses, query.Topics) {
 				continue
 			}
+			if len(logs) >= maxLogsInResult {
+				return nil, errors.New("too many logs in result")
+			}
 			logs = append(logs, log)
 		}
 	}
-	return logs
+	return logs, nil
 }
 
 func (e *EVMEmulator) Signer() types.Signer {

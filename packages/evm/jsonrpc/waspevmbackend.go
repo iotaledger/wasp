@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
@@ -59,7 +60,7 @@ func (b *WaspEVMBackend) EVMGasRatio() (util.Ratio32, error) {
 	if err != nil {
 		return util.Ratio32{}, err
 	}
-	return codec.DecodeRatio32(ret.MustGet(governance.ParamEVMGasRatio))
+	return codec.DecodeRatio32(ret.Get(governance.ParamEVMGasRatio))
 }
 
 func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
@@ -76,10 +77,11 @@ func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 	if err != nil {
 		return err
 	}
+	b.chain.Log().Debugf("EVMSendTransaction, evm.tx.nonce=%v, evm.tx.hash=%v => isc.req.id=%v", tx.Nonce(), tx.Hash().Hex(), req.ID())
 	b.chain.ReceiveOffLedgerRequest(req, b.nodePubKey)
 
 	// store the request ID so that the user can query it later (if the
-	// Etheeum tx fails, the Ethereum receipt is never generated).
+	// Ethereum tx fails, the Ethereum receipt is never generated).
 	txHash := tx.Hash()
 	b.requestIDs.Store(txHash, req.ID())
 	go b.evictWhenExpired(txHash)
@@ -93,11 +95,28 @@ func (b *WaspEVMBackend) evictWhenExpired(txHash common.Hash) {
 }
 
 func (b *WaspEVMBackend) EVMCall(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) ([]byte, error) {
-	return chainutil.Call(b.chain, aliasOutput, callMsg)
+	return chainutil.EVMCall(b.chain, aliasOutput, callMsg)
 }
 
 func (b *WaspEVMBackend) EVMEstimateGas(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) (uint64, error) {
-	return chainutil.EstimateGas(b.chain, aliasOutput, callMsg)
+	return chainutil.EVMEstimateGas(b.chain, aliasOutput, callMsg)
+}
+
+func (b *WaspEVMBackend) EVMTraceTransaction(
+	aliasOutput *isc.AliasOutputWithID,
+	blockTime time.Time,
+	iscRequestsInBlock []isc.Request,
+	txIndex uint64,
+	tracer tracers.Tracer,
+) error {
+	return chainutil.EVMTraceTransaction(
+		b.chain,
+		aliasOutput,
+		blockTime,
+		iscRequestsInBlock,
+		txIndex,
+		tracer,
+	)
 }
 
 func (b *WaspEVMBackend) EVMGasPrice() *big.Int {
@@ -106,7 +125,7 @@ func (b *WaspEVMBackend) EVMGasPrice() *big.Int {
 	if err != nil {
 		panic(fmt.Sprintf("couldn't call gasFeePolicy view: %s ", err.Error()))
 	}
-	feePolicy, err := gas.FeePolicyFromBytes(res.MustGet(governance.ParamFeePolicyBytes))
+	feePolicy, err := gas.FeePolicyFromBytes(res.Get(governance.ParamFeePolicyBytes))
 	if err != nil {
 		panic(fmt.Sprintf("couldn't decode fee policy: %s ", err.Error()))
 	}

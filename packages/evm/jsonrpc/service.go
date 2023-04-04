@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/eth/protocols/eth"
+	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"golang.org/x/crypto/sha3"
@@ -436,4 +437,16 @@ func (s *TxPoolService) Status() map[string]hexutil.Uint {
 		"pending": hexutil.Uint(0),
 		"queued":  hexutil.Uint(0),
 	}
+}
+
+type DebugService struct {
+	evmChain *EVMChain
+}
+
+func NewDebugService(evmChain *EVMChain) *DebugService {
+	return &DebugService{evmChain}
+}
+
+func (d *DebugService) TraceTransaction(txHash common.Hash, config *tracers.TraceConfig) (interface{}, error) {
+	return d.evmChain.TraceTransaction(txHash, config)
 }

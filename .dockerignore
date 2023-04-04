@@ -12,6 +12,8 @@
 *.toml
 *.tpl
 *.hcl
+go.work
+go.work.sum
 contracts/wasm
 Dockerfile
 docOps/

@@ -246,10 +246,13 @@ func StartChain(t solo.TestContext, chainName string, env ...*solo.Solo) *solo.C
 
 // Account returns a SoloAgent for the smart contract associated with ctx
 func (ctx *SoloContext) Account() *SoloAgent {
+	agentID := isc.NewContractAgentID(ctx.Chain.ChainID, isc.Hn(ctx.scName))
 	return &SoloAgent{
+		agentID: agentID,
 		Env:     ctx.Chain.Env,
+		ID:      agentID.String(),
+		Name:    ctx.Chain.Name + "." + ctx.scName,
 		Pair:    nil,
-		agentID: isc.NewContractAgentID(ctx.Chain.ChainID, isc.Hn(ctx.scName)),
 	}
 }
 
@@ -290,10 +293,13 @@ func (ctx *SoloContext) Balances(agents ...*SoloAgent) *SoloBalances {
 
 // ChainAccount returns a SoloAgent for the chain associated with ctx
 func (ctx *SoloContext) ChainAccount() *SoloAgent {
+	agentID := accounts.CommonAccount()
 	return &SoloAgent{
+		agentID: agentID,
 		Env:     ctx.Chain.Env,
+		ID:      agentID.String(),
+		Name:    ctx.Chain.Name + ".Common",
 		Pair:    nil,
-		agentID: accounts.CommonAccount(),
 	}
 }
 
@@ -403,8 +409,8 @@ func (ctx *SoloContext) MintNFT(agent *SoloAgent, metadata []byte) wasmtypes.ScN
 
 // NewSoloAgent creates a new SoloAgent with utxodb.FundsFromFaucetAmount (1 Gi)
 // tokens in its address and pre-deposits 10Mi into the corresponding chain account
-func (ctx *SoloContext) NewSoloAgent() *SoloAgent {
-	agent := NewSoloAgent(ctx.Chain.Env)
+func (ctx *SoloContext) NewSoloAgent(name string) *SoloAgent {
+	agent := NewSoloAgent(ctx.Chain.Env, name)
 	ctx.Chain.MustDepositBaseTokensToL2(L2FundsAgent+MinGasFee, agent.Pair)
 	return agent
 }
@@ -436,10 +442,13 @@ func (ctx *SoloContext) OffLedger(agent *SoloAgent) wasmlib.ScFuncCallContext {
 
 // Originator returns a SoloAgent representing the chain originator
 func (ctx *SoloContext) Originator() *SoloAgent {
+	agentID := ctx.Chain.OriginatorAgentID
 	return &SoloAgent{
+		agentID: agentID,
 		Env:     ctx.Chain.Env,
+		ID:      agentID.String(),
+		Name:    ctx.Chain.Name + ".Originator",
 		Pair:    ctx.Chain.OriginatorPrivateKey,
-		agentID: ctx.Chain.OriginatorAgentID,
 	}
 }
 

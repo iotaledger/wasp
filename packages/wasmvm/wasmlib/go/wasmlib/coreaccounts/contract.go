@@ -177,7 +177,7 @@ func (sc Funcs) Withdraw(ctx wasmlib.ScFuncCallContext) *WithdrawCall {
 	return &WithdrawCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncWithdraw)}
 }
 
-// Returns the NFT IDs for all NFTs owned by the given account.
+// Returns a set of all foundries owned by the given account.
 func (sc Funcs) AccountFoundries(ctx wasmlib.ScViewCallContext) *AccountFoundriesCall {
 	f := &AccountFoundriesCall{Func: wasmlib.NewScView(ctx, HScName, HViewAccountFoundries)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
@@ -217,7 +217,7 @@ func (sc Funcs) AccountNFTsInCollection(ctx wasmlib.ScViewCallContext) *AccountN
 	return f
 }
 
-// Returns a list of all agent IDs that own assets on the chain.
+// Returns a set of all agent IDs that own assets on the chain.
 func (sc Funcs) Accounts(ctx wasmlib.ScViewCallContext) *AccountsCall {
 	f := &AccountsCall{Func: wasmlib.NewScView(ctx, HScName, HViewAccounts)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
@@ -265,7 +265,7 @@ func (sc Funcs) GetAccountNonce(ctx wasmlib.ScViewCallContext) *GetAccountNonceC
 	return f
 }
 
-// Returns a list of all native tokenIDs that are owned by the chain.
+// Returns a set of all native tokenIDs that are owned by the chain.
 func (sc Funcs) GetNativeTokenIDRegistry(ctx wasmlib.ScViewCallContext) *GetNativeTokenIDRegistryCall {
 	f := &GetNativeTokenIDRegistryCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetNativeTokenIDRegistry)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)

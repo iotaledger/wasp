@@ -76,10 +76,10 @@ wasp-cli request-funds
 We have deployed an experimental EVM chain that you can interact with. To begin, add a custom network to Metamask with
 the following configuration:
 
-| Key      | Value                                              |
-| -------- | -------------------------------------------------- |
-| RPC URL  | https://api.sc.testnet.shimmer.network/evm/jsonrpc |
-| Chain ID | 1076                                               |
+| Key      | Value                                        |
+|----------|----------------------------------------------|
+| RPC URL  | https://json-rpc.evm.testnet.shimmer.network |
+| Chain ID | 1071                                         |
 
 
 :::note

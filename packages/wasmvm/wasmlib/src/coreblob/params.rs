@@ -34,7 +34,7 @@ impl ImmutableStoreBlobParams {
         }
     }
 
-    // set of named chunks
+    // named chunks
     pub fn blobs(&self) -> MapStringToImmutableBytes {
         MapStringToImmutableBytes { proxy: self.proxy.clone() }
     }
@@ -81,7 +81,7 @@ pub struct MutableStoreBlobParams {
 }
 
 impl MutableStoreBlobParams {
-    // set of named chunks
+    // named chunks
     pub fn blobs(&self) -> MapStringToMutableBytes {
         MapStringToMutableBytes { proxy: self.proxy.clone() }
     }

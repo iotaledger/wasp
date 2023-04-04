@@ -153,6 +153,7 @@ type ChainMgr interface {
 
 type cmtLogInst struct {
 	committeeAddr iotago.Ed25519Address
+	dkShare       tcrypto.DKShare
 	gpaInstance   gpa.GPA
 	pendingMsgs   []gpa.Message
 }
@@ -167,6 +168,7 @@ type chainMgrImpl struct {
 	activeNodesCB           func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey)          // All the nodes authorized for being access nodes (for the ActiveAO).
 	trackActiveStateCB      func(ao *isc.AliasOutputWithID)                                  // We will call this to set new AO for the active state.
 	savePreliminaryBlockCB  func(block state.Block)                                          // We will call this, when a preliminary block matching the tx signatures is received.
+	committeeUpdatedCB      func(dkShare tcrypto.DKShare)                                    // Will be called, when a committee changes.
 	needConsensus           *NeedConsensus                                                   // Query for a consensus.
 	needPublishTX           *shrinkingmap.ShrinkingMap[iotago.TransactionID, *NeedPublishTX] // Query to post TXes.
 	dkShareRegistryProvider registry.DKShareRegistryProvider                                 // Source for DKShares.
@@ -193,6 +195,7 @@ func New(
 	activeNodesCB func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey),
 	trackActiveStateCB func(ao *isc.AliasOutputWithID),
 	savePreliminaryBlockCB func(block state.Block),
+	committeeUpdatedCB func(dkShare tcrypto.DKShare),
 	log *logger.Logger,
 ) (ChainMgr, error) {
 	cmi := &chainMgrImpl{
@@ -203,6 +206,7 @@ func New(
 		activeNodesCB:           activeNodesCB,
 		trackActiveStateCB:      trackActiveStateCB,
 		savePreliminaryBlockCB:  savePreliminaryBlockCB,
+		committeeUpdatedCB:      committeeUpdatedCB,
 		needConsensus:           nil,
 		needPublishTX:           shrinkingmap.New[iotago.TransactionID, *NeedPublishTX](),
 		dkShareRegistryProvider: dkShareRegistryProvider,
@@ -275,8 +279,9 @@ func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutput
 		// >         Set NeedConsensus <- NIL
 		if cmi.latestActiveCmt != nil {
 			msgs.AddAll(cmi.suspendCommittee(cmi.latestActiveCmt))
+			cmi.committeeUpdatedCB(nil)
+			cmi.latestActiveCmt = nil
 		}
-		cmi.latestActiveCmt = nil
 		cmi.needConsensus = nil
 		if vsaUpdated && vsaTip != nil {
 			cmi.log.Debugf("⊢ going to track %v as an access node on confirmed block.", vsaTip)
@@ -436,8 +441,9 @@ func (cmi *chainMgrImpl) handleCmtLogOutput(cli *cmtLogInst, cliMsgs gpa.OutMess
 	// >         Set LatestActiveCmt <- cmt
 	// >         Set NeedConsensus <- output.NeedConsensus // Can be nil
 	if cmi.latestActiveCmt == nil || cli.committeeAddr.Equal(cmi.latestActiveCmt) {
-		cmi.latestActiveCmt = &cli.committeeAddr
+		cmi.committeeUpdatedCB(cli.dkShare)
 		cmi.ensureNeedConsensus(cli, outputUntyped)
+		cmi.latestActiveCmt = &cli.committeeAddr
 		return msgs
 	}
 	// >     ELSE
@@ -452,8 +458,9 @@ func (cmi *chainMgrImpl) handleCmtLogOutput(cli *cmtLogInst, cliMsgs gpa.OutMess
 	}
 	if !cmi.latestActiveCmt.Equal(&cli.committeeAddr) {
 		msgs.AddAll(cmi.suspendCommittee(cmi.latestActiveCmt))
+		cmi.committeeUpdatedCB(cli.dkShare)
+		cmi.latestActiveCmt = &cli.committeeAddr
 	}
-	cmi.latestActiveCmt = &cli.committeeAddr
 	cmi.ensureNeedConsensus(cli, outputUntyped)
 	return msgs
 }
@@ -554,6 +561,7 @@ func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr iotago.Ed25519Address) (*cmt
 	clGPA := clInst.AsGPA()
 	cli := &cmtLogInst{
 		committeeAddr: committeeAddr,
+		dkShare:       dkShare,
 		gpaInstance:   clGPA,
 		pendingMsgs:   []gpa.Message{},
 	}

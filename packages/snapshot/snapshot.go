@@ -33,9 +33,9 @@ func WriteKVToStream(store kv.KVIterator, stream kv.StreamWriter, p ...ConsoleRe
 	if len(p) > 0 {
 		par = p[0]
 	}
-	var err, errW error
-	err = store.Iterate("", func(k kv.Key, v []byte) bool {
-		if errW = stream.Write([]byte(k), v); errW != nil {
+	var err error
+	store.Iterate("", func(k kv.Key, v []byte) bool {
+		if err = stream.Write([]byte(k), v); err != nil {
 			return false
 		}
 		if par.StatsEveryKVPairs > 0 {
@@ -44,15 +44,11 @@ func WriteKVToStream(store kv.KVIterator, stream kv.StreamWriter, p ...ConsoleRe
 				fmt.Fprintf(par.Console, "[WriteKVToStream] k/v pairs: %d, bytes: %d\n", kvCount, bCount)
 			}
 		}
-		return errW == nil
+		return true
 	})
 	if err != nil {
-		fmt.Fprintf(par.Console, "[WriteKVToStream] error while reading: %v\n", err)
-		return err
-	}
-	if errW != nil {
 		fmt.Fprintf(par.Console, "[WriteKVToStream] error while writing: %v\n", err)
-		return errW
+		return err
 	}
 	return nil
 }

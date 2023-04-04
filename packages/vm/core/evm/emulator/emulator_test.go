@@ -5,6 +5,7 @@ package emulator
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
@@ -27,6 +28,18 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
+
+func TestDecodeHeader(t *testing.T) {
+	// old format, gob encoded
+	b, err := hex.DecodeString("6bff8103010109686561646572476f6201ff8200010701044861736801ff840001084761734c696d6974010600010747617355736564010600010454696d65010600010654784861736801ff8400010b526563656970744861736801ff84000105426c6f6f6d01ff8600000014ff83010101044861736801ff840001060140000017ff8501010105426c6f6f6d01ff8600010601fe02000000fe018bff8201204dffddff8bff8f51ffbbffa218427effd2110a64ffb9ff96ffd1171bffe37f5923ffe53d26ffd216ffbd5a26ff8d01fc3b9aca0001fea56401fc64243bc8012000000000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000000001fe01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
+	require.NoError(t, err)
+	h := decodeHeader(b)
+	b2 := encodeHeader(h) // new format
+	require.NotEqualValues(t, len(b2), len(b))
+	require.NotEqualValues(t, b2, b)
+	h2 := decodeHeader(b2)
+	require.EqualValues(t, h, h2)
+}
 
 var gasLimits = GasLimits{
 	Block: gas.EVMBlockGasLimit(gas.LimitsDefault, &util.Ratio32{A: 1, B: 1}),
@@ -83,7 +96,7 @@ func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, r
 	)
 	require.NoError(t, err)
 
-	receipt, res, err := emu.SendTransaction(tx, nil)
+	receipt, res, err := emu.SendTransaction(tx, nil, nil)
 	require.NoError(t, err)
 	if res != nil && res.Err != nil {
 		t.Logf("Execution failed: %v", res.Err)
@@ -262,7 +275,7 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	)
 	require.NoError(t, err)
 
-	receipt, res, err := emu.SendTransaction(tx, nil)
+	receipt, res, err := emu.SendTransaction(tx, nil, nil)
 	require.NoError(t, err)
 	require.NoError(t, res.Err)
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
@@ -538,7 +551,7 @@ func benchmarkEVMEmulator(b *testing.B, k int) {
 	b.ResetTimer()
 	for _, chunk := range chunks {
 		for _, tx := range chunk {
-			receipt, res, err := emu.SendTransaction(tx, nil)
+			receipt, res, err := emu.SendTransaction(tx, nil, nil)
 			require.NoError(b, err)
 			require.NoError(b, res.Err)
 			require.Equal(b, types.ReceiptStatusSuccessful, receipt.Status)
@@ -556,7 +569,7 @@ func BenchmarkEVMEmulator100(b *testing.B) { benchmarkEVMEmulator(b, 100) }
 
 func dbSize(db kv.KVStore) float64 {
 	r := float64(0)
-	db.MustIterate("", func(key kv.Key, value []byte) bool {
+	db.Iterate("", func(key kv.Key, value []byte) bool {
 		r += float64(len(key) + len(value))
 		return true
 	})

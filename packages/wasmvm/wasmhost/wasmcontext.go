@@ -235,10 +235,7 @@ func (wc *WasmContext) StateDelete(key []byte) {
 }
 
 func (wc *WasmContext) StateExists(key []byte) bool {
-	exists, err := wc.state().Has(kv.Key(key))
-	if err != nil {
-		panic("StateExists: " + err.Error())
-	}
+	exists := wc.state().Has(kv.Key(key))
 	if HostTracing {
 		wc.tracef("StateExists(%s) = %v", traceHex(key), exists)
 	}
@@ -246,10 +243,7 @@ func (wc *WasmContext) StateExists(key []byte) bool {
 }
 
 func (wc *WasmContext) StateGet(key []byte) []byte {
-	res, err := wc.state().Get(kv.Key(key))
-	if err != nil {
-		panic("StateGet: " + err.Error())
-	}
+	res := wc.state().Get(kv.Key(key))
 	if HostTracing {
 		wc.tracef("StateGet(%s)", traceHex(key))
 		wc.tracef("  => %s", hex(res))

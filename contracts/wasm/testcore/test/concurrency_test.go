@@ -2,6 +2,7 @@ package test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -128,7 +129,7 @@ func TestConcurrency2(t *testing.T) {
 		users := make([]*wasmsolo.SoloAgent, len(repeats))
 		funcs := make([]*testcore.IncCounterCall, len(repeats))
 		for r := range repeats {
-			users[r] = ctx.NewSoloAgent()
+			users[r] = ctx.NewSoloAgent(fmt.Sprintf("user%d", r))
 			funcs[r] = testcore.ScFuncs.IncCounter(ctx.Sign(users[r]))
 		}
 
@@ -183,7 +184,7 @@ func TestViewConcurrency(t *testing.T) {
 					channels <- err
 					return
 				}
-				v, err := codec.DecodeInt64(res.MustGet("counter"))
+				v, err := codec.DecodeInt64(res.Get("counter"))
 				if err == nil && v != 1 {
 					err = errors.New("v != 1")
 				}

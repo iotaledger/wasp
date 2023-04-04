@@ -43,16 +43,14 @@ func TestSetThenGet(t *testing.T) {
 	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations.Dels)
 
 	// contract gets variable x
-	v, err := s.Get("x")
-	assert.NoError(t, err)
+	v := s.Get("x")
 	assert.Equal(t, []byte{42}, v)
 
 	// mutation is in currentStateUpdate, prefixed by the contract id
 	assert.Equal(t, []byte{42}, stateUpdate.Mutations.Sets[subpartitionedKey])
 
 	// mutation is in the not committed to the virtual state yet
-	v, err = stateDraft.Get(subpartitionedKey)
-	assert.NoError(t, err)
+	v = stateDraft.Get(subpartitionedKey)
 	assert.Nil(t, v)
 
 	// contract deletes variable x
@@ -61,8 +59,7 @@ func TestSetThenGet(t *testing.T) {
 	assert.Equal(t, map[kv.Key]struct{}{subpartitionedKey: {}}, stateUpdate.Mutations.Dels)
 
 	// contract sees variable x does not exist
-	v, err = s.Get("x")
-	assert.NoError(t, err)
+	v = s.Get("x")
 	assert.Nil(t, v)
 
 	// contract makes several writes to same variable, gets the latest value
@@ -74,9 +71,7 @@ func TestSetThenGet(t *testing.T) {
 	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: {3 * 42}}, stateUpdate.Mutations.Sets)
 	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations.Dels)
 
-	v, err = s.Get("x")
-
-	assert.NoError(t, err)
+	v = s.Get("x")
 	assert.Equal(t, []byte{3 * 42}, v)
 }
 
@@ -102,7 +97,7 @@ func TestIterate(t *testing.T) {
 	s.Set("xy2", []byte{42 * 2})
 
 	arr := make([][]byte, 0)
-	err = s.IterateSorted("xy", func(k kv.Key, v []byte) bool {
+	s.IterateSorted("xy", func(k kv.Key, v []byte) bool {
 		assert.True(t, strings.HasPrefix(string(k), "xy"))
 		arr = append(arr, v)
 		return true
@@ -110,7 +105,6 @@ func TestIterate(t *testing.T) {
 	require.EqualValues(t, 2, len(arr))
 	require.Equal(t, []byte{42}, arr[0])
 	require.Equal(t, []byte{42 * 2}, arr[1])
-	assert.NoError(t, err)
 }
 
 func TestVmctxStateDeletion(t *testing.T) {
@@ -140,9 +134,9 @@ func TestVmctxStateDeletion(t *testing.T) {
 		currentStateUpdate: stateUpdate,
 	}
 	vmctxStore := vmctx.chainState()
-	require.EqualValues(t, "bar", vmctxStore.MustGet(foo))
+	require.EqualValues(t, "bar", vmctxStore.Get(foo))
 	vmctxStore.Del(foo)
-	require.False(t, vmctxStore.MustHas(foo))
-	val := vmctxStore.MustGet(foo)
+	require.False(t, vmctxStore.Has(foo))
+	val := vmctxStore.Get(foo)
 	require.Nil(t, val)
 }

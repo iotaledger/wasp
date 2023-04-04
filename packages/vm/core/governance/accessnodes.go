@@ -75,7 +75,7 @@ func NewAccessNodeInfoFromBytes(pubKey, value []byte) (*AccessNodeInfo, error) {
 func NewAccessNodeInfoListFromMap(infoMap *collections.ImmutableMap) ([]*AccessNodeInfo, error) {
 	res := make([]*AccessNodeInfo, 0)
 	var accErr error
-	err := infoMap.Iterate(func(elemKey, value []byte) bool {
+	infoMap.Iterate(func(elemKey, value []byte) bool {
 		var a *AccessNodeInfo
 		if a, accErr = NewAccessNodeInfoFromBytes(elemKey, value); accErr != nil {
 			return false
@@ -85,9 +85,6 @@ func NewAccessNodeInfoListFromMap(infoMap *collections.ImmutableMap) ([]*AccessN
 	})
 	if accErr != nil {
 		return nil, fmt.Errorf("failed to iterate over AccessNodeInfo list: %w", accErr)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to iterate over AccessNodeInfo list: %w", err)
 	}
 	return res, nil
 }
@@ -113,12 +110,13 @@ func (a *AccessNodeInfo) Bytes() []byte {
 func NewAccessNodeInfoFromAddCandidateNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
 	validatorAddr, _ := isc.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
 	ctx.Requiref(validatorAddr != nil, "sender must have L1 address")
+	params := ctx.Params()
 	ani := AccessNodeInfo{
-		NodePubKey:    ctx.Params().MustGetBytes(ParamAccessNodeInfoPubKey),
+		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),
 		ValidatorAddr: isc.BytesFromAddress(validatorAddr),
-		Certificate:   ctx.Params().MustGetBytes(ParamAccessNodeInfoCertificate),
-		ForCommittee:  ctx.Params().MustGetBool(ParamAccessNodeInfoForCommittee, false),
-		AccessAPI:     ctx.Params().MustGetString(ParamAccessNodeInfoAccessAPI, ""),
+		Certificate:   params.MustGetBytes(ParamAccessNodeInfoCertificate),
+		ForCommittee:  params.MustGetBool(ParamAccessNodeInfoForCommittee, false),
+		AccessAPI:     params.MustGetString(ParamAccessNodeInfoAccessAPI, ""),
 	}
 	return &ani
 }
@@ -135,10 +133,11 @@ func (a *AccessNodeInfo) ToAddCandidateNodeParams() dict.Dict {
 func NewAccessNodeInfoFromRevokeAccessNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
 	validatorAddr, _ := isc.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
 	ctx.Requiref(validatorAddr != nil, "sender must have L1 address")
+	params := ctx.Params()
 	ani := AccessNodeInfo{
-		NodePubKey:    ctx.Params().MustGetBytes(ParamAccessNodeInfoPubKey),
+		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),
 		ValidatorAddr: isc.BytesFromAddress(validatorAddr), // Not from params, to have it validated.
-		Certificate:   ctx.Params().MustGetBytes(ParamAccessNodeInfoCertificate),
+		Certificate:   params.MustGetBytes(ParamAccessNodeInfoCertificate),
 	}
 	return &ani
 }
@@ -188,7 +187,7 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 	}
 
 	ac := collections.NewMapReadOnly(d, ParamGetChainNodesAccessNodeCandidates)
-	ac.MustIterate(func(pubKey, value []byte) bool {
+	ac.Iterate(func(pubKey, value []byte) bool {
 		ani, err := NewAccessNodeInfoFromBytes(pubKey, value)
 		if err != nil {
 			panic(fmt.Errorf("unable to decode access node info: %w", err))
@@ -198,7 +197,7 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 	})
 
 	an := collections.NewMapReadOnly(d, ParamGetChainNodesAccessNodes)
-	an.MustIterate(func(pubKeyBin, value []byte) bool {
+	an.Iterate(func(pubKeyBin, value []byte) bool {
 		publicKey, err := cryptolib.NewPublicKeyFromBytes(pubKeyBin)
 		if err != nil {
 			panic(fmt.Errorf("unable to decode public key: %w", err))
@@ -250,7 +249,7 @@ func (req *ChangeAccessNodesRequest) AsDict() dict.Dict {
 	d := dict.New()
 	actionsMap := collections.NewMap(d, ParamChangeAccessNodesActions)
 	for pubKey, action := range req.actions {
-		actionsMap.MustSetAt(pubKey[:], []byte{byte(action)})
+		actionsMap.SetAt(pubKey[:], []byte{byte(action)})
 	}
 	return d
 }

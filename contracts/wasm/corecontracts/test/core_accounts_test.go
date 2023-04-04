@@ -37,7 +37,7 @@ func TestDeposit(t *testing.T) {
 	ctx := setupAccounts(t)
 
 	const depositAmount = 1 * isc.Million
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 	balanceOld := user.Balance()
 
 	bal := ctx.Balances(user)
@@ -59,8 +59,8 @@ func TestTransferAllowanceTo(t *testing.T) {
 	ctx := setupAccounts(t)
 
 	var transferAmountBaseTokens uint64 = 10_000
-	user0 := ctx.NewSoloAgent()
-	user1 := ctx.NewSoloAgent()
+	user0 := ctx.NewSoloAgent("user0")
+	user1 := ctx.NewSoloAgent("user1")
 	balanceOldUser0 := user0.Balance()
 	balanceOldUser1 := user1.Balance()
 
@@ -117,7 +117,7 @@ func TestWithdraw(t *testing.T) {
 	ctx := setupAccounts(t)
 	var withdrawAmount uint64 = 10_000
 
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 	balanceOldUser := user.Balance()
 
 	f := coreaccounts.ScFuncs.Withdraw(ctx.OffLedger(user))
@@ -132,7 +132,7 @@ func TestHarvest(t *testing.T) {
 	var transferAmount, mintAmount uint64 = 10_000, 20_000
 	var minimumBaseTokensOnCommonAccount uint64 = 3000
 
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 	creatorAgentID := ctx.Creator().AgentID()
 	commonAccount := ctx.Chain.CommonAccount()
 	commonAccountBal0 := ctx.Chain.L2Assets(commonAccount)
@@ -168,7 +168,7 @@ func TestHarvest(t *testing.T) {
 
 func TestFoundryCreateNew(t *testing.T) {
 	ctx := setupAccounts(t)
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 
 	f := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
 	f.Params.TokenScheme().SetValue(codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
@@ -195,7 +195,7 @@ func TestFoundryCreateNew(t *testing.T) {
 
 func TestFoundryDestroy(t *testing.T) {
 	ctx := setupAccounts(t)
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 
 	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
 	fnew.Params.TokenScheme().SetValue(codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
@@ -217,7 +217,7 @@ func TestFoundryDestroy(t *testing.T) {
 
 func TestFoundryNew(t *testing.T) {
 	ctx := setupAccounts(t)
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 
 	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
 	fnew.Params.TokenScheme().SetValue(codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
@@ -234,7 +234,7 @@ func TestFoundryNew(t *testing.T) {
 
 func TestFoundryModifySupply(t *testing.T) {
 	ctx := setupAccounts(t)
-	user0 := ctx.NewSoloAgent()
+	user0 := ctx.NewSoloAgent("user0")
 
 	mintAmount := wasmtypes.NewScBigInt(1000)
 	foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
@@ -257,10 +257,62 @@ func TestFoundryModifySupply(t *testing.T) {
 	require.NoError(t, ctx.Err)
 }
 
+func TestAccountFoundries(t *testing.T) {
+	ctx := setupAccounts(t)
+	user0 := ctx.NewSoloAgent("user0")
+	user1 := ctx.NewSoloAgent("user1")
+
+	mintAmount := wasmtypes.NewScBigInt(1000)
+	var foundries0 []*wasmsolo.SoloFoundry
+	for i := 0; i < 10; i++ {
+		foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
+		require.NoError(t, err)
+		foundries0 = append(foundries0, foundry)
+		err = foundry.Mint(mintAmount)
+		require.NoError(t, err)
+	}
+
+	var foundries1 []*wasmsolo.SoloFoundry
+	for i := 0; i < 3; i++ {
+		foundry, err := ctx.NewSoloFoundry(mintAmount, user1)
+		require.NoError(t, err)
+		foundries1 = append(foundries1, foundry)
+		err = foundry.Mint(mintAmount)
+		require.NoError(t, err)
+	}
+
+	f := coreaccounts.ScFuncs.AccountFoundries(ctx)
+	f.Params.AgentID().SetValue(user0.ScAgentID())
+	f.Func.Call()
+	require.NoError(t, ctx.Err)
+	for _, foundry := range foundries0 {
+		require.True(t, f.Results.Foundries().GetBool(foundry.SN()).Value())
+	}
+
+	f.Params.AgentID().SetValue(user1.ScAgentID())
+	f.Func.Call()
+	require.NoError(t, ctx.Err)
+	for _, foundry := range foundries1 {
+		require.True(t, f.Results.Foundries().GetBool(foundry.SN()).Value())
+	}
+}
+
+func TestAccountNFTAmount(t *testing.T) {
+	// TODO add test later
+}
+
+func TestAccountNFTAmountInCollection(t *testing.T) {
+	// TODO add test later
+}
+
+func TestAccountNFTsInCollection(t *testing.T) {
+	// TODO add test later
+}
+
 func TestBalance(t *testing.T) {
 	ctx := setupAccounts(t)
-	user0 := ctx.NewSoloAgent()
-	user1 := ctx.NewSoloAgent()
+	user0 := ctx.NewSoloAgent("user0")
+	user1 := ctx.NewSoloAgent("user1")
 
 	mintAmount := wasmtypes.NewScBigInt(1000)
 	foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
@@ -293,8 +345,8 @@ func TestBalance(t *testing.T) {
 
 func TestBalanceBaseToken(t *testing.T) {
 	ctx := setupAccounts(t)
-	user0 := ctx.NewSoloAgent()
-	user1 := ctx.NewSoloAgent()
+	user0 := ctx.NewSoloAgent("user0")
+	user1 := ctx.NewSoloAgent("user1")
 
 	fbal := coreaccounts.ScFuncs.BalanceBaseToken(ctx)
 	fbal.Params.AgentID().SetValue(user0.ScAgentID())
@@ -329,8 +381,8 @@ func TestBalanceBaseToken(t *testing.T) {
 
 func TestBalanceNativeToken(t *testing.T) {
 	ctx := setupAccounts(t)
-	user0 := ctx.NewSoloAgent()
-	user1 := ctx.NewSoloAgent()
+	user0 := ctx.NewSoloAgent("user0")
+	user1 := ctx.NewSoloAgent("user1")
 
 	mintAmount := wasmtypes.NewScBigInt(1000)
 	foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
@@ -376,8 +428,8 @@ func TestBalanceNativeToken(t *testing.T) {
 
 func TestTotalAssets(t *testing.T) {
 	ctx := setupAccounts(t)
-	user0 := ctx.NewSoloAgent()
-	user1 := ctx.NewSoloAgent()
+	user0 := ctx.NewSoloAgent("user0")
+	user1 := ctx.NewSoloAgent("user1")
 
 	mintAmount0, mintAmount1 := wasmtypes.NewScBigInt(101), wasmtypes.NewScBigInt(202)
 	foundry0, err := ctx.NewSoloFoundry(mintAmount0, user0)
@@ -402,8 +454,8 @@ func TestTotalAssets(t *testing.T) {
 
 func TestAccounts(t *testing.T) {
 	ctx := setupAccounts(t)
-	user0 := ctx.NewSoloAgent()
-	user1 := ctx.NewSoloAgent()
+	user0 := ctx.NewSoloAgent("user0")
+	user1 := ctx.NewSoloAgent("user1")
 
 	var mintAmount0, mintAmount1 uint64 = 101, 202
 	foundry0, err := ctx.NewSoloFoundry(mintAmount0, user0)
@@ -419,14 +471,14 @@ func TestAccounts(t *testing.T) {
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	allAccounts := f.Results.AllAccounts()
-	assert.True(t, allAccounts.GetBytes(user0.ScAgentID()).Exists())
-	assert.True(t, allAccounts.GetBytes(user1.ScAgentID()).Exists())
-	assert.False(t, allAccounts.GetBytes(ctx.NewSoloAgent().ScAgentID()).Exists())
+	assert.True(t, allAccounts.GetBool(user0.ScAgentID()).Value())
+	assert.True(t, allAccounts.GetBool(user1.ScAgentID()).Value())
+	assert.False(t, allAccounts.GetBool(ctx.NewSoloAgent("dummy").ScAgentID()).Value())
 }
 
 func TestGetAccountNonce(t *testing.T) {
 	ctx := setupAccounts(t)
-	user0 := ctx.NewSoloAgent()
+	user0 := ctx.NewSoloAgent("user0")
 
 	fnon := coreaccounts.ScFuncs.GetAccountNonce(ctx)
 	fnon.Params.AgentID().SetValue(user0.ScAgentID())
@@ -446,8 +498,8 @@ func TestGetAccountNonce(t *testing.T) {
 
 func TestGetNativeTokenIDRegistry(t *testing.T) {
 	ctx := setupAccounts(t)
-	user0 := ctx.NewSoloAgent()
-	user1 := ctx.NewSoloAgent()
+	user0 := ctx.NewSoloAgent("user0")
+	user1 := ctx.NewSoloAgent("user1")
 
 	var mintAmount0, mintAmount1 uint64 = 101, 202
 	foundry0, err := ctx.NewSoloFoundry(mintAmount0, user0)
@@ -464,15 +516,15 @@ func TestGetNativeTokenIDRegistry(t *testing.T) {
 	f := coreaccounts.ScFuncs.GetNativeTokenIDRegistry(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	assert.True(t, f.Results.Mapping().GetBytes(tokenID0).Exists())
-	assert.True(t, f.Results.Mapping().GetBytes(tokenID1).Exists())
+	assert.True(t, f.Results.Mapping().GetBool(tokenID0).Value())
+	assert.True(t, f.Results.Mapping().GetBool(tokenID1).Value())
 	notExistTokenID := wasmtypes.TokenIDFromString("0x08f824508968d585ede1d154d34ba0d966ee03c928670fb85bd72e2924f67137890100000000")
-	assert.False(t, f.Results.Mapping().GetBytes(notExistTokenID).Exists())
+	assert.False(t, f.Results.Mapping().GetBool(notExistTokenID).Value())
 }
 
 func TestFoundryOutput(t *testing.T) {
 	ctx := setupAccounts(t)
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 
 	fnew := coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
 	fnew.Params.TokenScheme().SetValue(codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
@@ -502,7 +554,7 @@ func TestFoundryOutput(t *testing.T) {
 
 func TestAccountNFTs(t *testing.T) {
 	ctx := setupAccounts(t)
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 	nftID := ctx.MintNFT(user, []byte(nftMetadata))
 	require.NoError(t, ctx.Err)
 	userAddr, _ := isc.AddressFromAgentID(user.AgentID())
@@ -526,7 +578,7 @@ func TestAccountNFTs(t *testing.T) {
 
 func TestNFTData(t *testing.T) {
 	ctx := setupAccounts(t)
-	user := ctx.NewSoloAgent()
+	user := ctx.NewSoloAgent("user")
 	nftID := ctx.MintNFT(user, []byte(nftMetadata))
 	require.NoError(t, ctx.Err)
 	userAddr, _ := isc.AddressFromAgentID(user.AgentID())

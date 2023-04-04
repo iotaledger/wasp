@@ -33,17 +33,17 @@ func SaveFoundryOutput(state kv.KVStore, f *iotago.FoundryOutput, blockIndex uin
 		BlockIndex:  blockIndex,
 		OutputIndex: outputIndex,
 	}
-	allFoundriesMap(state).MustSetAt(codec.EncodeUint32(f.SerialNumber), foundryRec.Bytes())
+	allFoundriesMap(state).SetAt(codec.EncodeUint32(f.SerialNumber), foundryRec.Bytes())
 }
 
 // DeleteFoundryOutput deletes foundry output from the map of all foundries
 func DeleteFoundryOutput(state kv.KVStore, sn uint32) {
-	allFoundriesMap(state).MustDelAt(codec.EncodeUint32(sn))
+	allFoundriesMap(state).DelAt(codec.EncodeUint32(sn))
 }
 
 // GetFoundryOutput returns foundry output, its block number and output index
 func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID isc.ChainID) (*iotago.FoundryOutput, uint32, uint16) {
-	data := allFoundriesMapR(state).MustGetAt(codec.EncodeUint32(sn))
+	data := allFoundriesMapR(state).GetAt(codec.EncodeUint32(sn))
 	if data == nil {
 		return nil, 0, 0
 	}
@@ -64,26 +64,26 @@ func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID isc.ChainID) (*
 
 // hasFoundry checks if specific account owns the foundry
 func hasFoundry(state kv.KVStoreReader, agentID isc.AgentID, sn uint32) bool {
-	return accountFoundriesMapR(state, agentID).MustHasAt(codec.EncodeUint32(sn))
+	return accountFoundriesMapR(state, agentID).HasAt(codec.EncodeUint32(sn))
 }
 
 // addFoundryToAccount ads new foundry to the foundries controlled by the account
 func addFoundryToAccount(state kv.KVStore, agentID isc.AgentID, sn uint32) {
 	key := codec.EncodeUint32(sn)
 	foundries := accountFoundriesMap(state, agentID)
-	if foundries.MustHasAt(key) {
+	if foundries.HasAt(key) {
 		panic(ErrRepeatingFoundrySerialNumber)
 	}
-	foundries.MustSetAt(key, codec.EncodeBool(true))
+	foundries.SetAt(key, codec.EncodeBool(true))
 }
 
 func deleteFoundryFromAccount(state kv.KVStore, agentID isc.AgentID, sn uint32) {
 	key := codec.EncodeUint32(sn)
 	foundries := accountFoundriesMap(state, agentID)
-	if !foundries.MustHasAt(key) {
+	if !foundries.HasAt(key) {
 		panic(ErrFoundryNotFound)
 	}
-	foundries.MustDelAt(key)
+	foundries.DelAt(key)
 }
 
 // MoveFoundryBetweenAccounts changes ownership of the foundry

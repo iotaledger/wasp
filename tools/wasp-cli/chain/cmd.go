@@ -3,6 +3,7 @@ package chain
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -21,6 +22,8 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd := initChainCmd()
 	rootCmd.AddCommand(chainCmd)
 
+	chainCmd.PersistentFlags().BoolVar(&cliclients.SkipCheckVersions, "skip-version-check", false, "skip-version-check")
+
 	initUploadFlags(chainCmd)
 
 	chainCmd.AddCommand(initListCmd())
@@ -30,6 +33,7 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(initDeployContractCmd())
 	chainCmd.AddCommand(initListAccountsCmd())
 	chainCmd.AddCommand(initBalanceCmd())
+	chainCmd.AddCommand(initAccountNFTsCmd())
 	chainCmd.AddCommand(initDepositCmd())
 	chainCmd.AddCommand(initListBlobsCmd())
 	chainCmd.AddCommand(initStoreBlobCmd())

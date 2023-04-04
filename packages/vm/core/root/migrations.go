@@ -10,5 +10,5 @@ func SetSchemaVersion(state kv.KVStore, v uint32) {
 }
 
 func GetSchemaVersion(state kv.KVStoreReader) uint32 {
-	return codec.MustDecodeUint32(state.MustGet(StateVarSchemaVersion), 0)
+	return codec.MustDecodeUint32(state.Get(StateVarSchemaVersion), 0)
 }

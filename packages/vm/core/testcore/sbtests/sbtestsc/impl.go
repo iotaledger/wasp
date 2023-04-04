@@ -10,7 +10,7 @@ import (
 )
 
 func initialize(ctx isc.Sandbox) dict.Dict {
-	p := ctx.Params().MustGet(ParamFail)
+	p := ctx.Params().Get(ParamFail)
 	ctx.Requiref(p == nil, "failing on purpose")
 	return nil
 }
@@ -18,7 +18,7 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 // testEventLogGenericData is called several times in log_test.go
 func testEventLogGenericData(ctx isc.Sandbox) dict.Dict {
 	params := ctx.Params()
-	inc := codec.MustDecodeUint64(params.MustGet(VarCounter), 1)
+	inc := codec.MustDecodeUint64(params.Get(VarCounter), 1)
 	ctx.Event(fmt.Sprintf("[GenericData] Counter Number: %d", inc))
 	return nil
 }

@@ -49,6 +49,6 @@ func delegateChainOwnership(ctx isc.Sandbox) dict.Dict {
 
 func getChainOwner(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
-	ret.Set(governance.ParamChainOwner, ctx.StateR().MustGet(governance.VarChainOwnerID))
+	ret.Set(governance.ParamChainOwner, ctx.StateR().Get(governance.VarChainOwnerID))
 	return ret
 }

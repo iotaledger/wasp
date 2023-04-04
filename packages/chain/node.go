@@ -176,8 +176,10 @@ type chainNodeImpl struct {
 	serverNodes            []*cryptolib.PublicKey // The nodes we can query (because they consider us an access node).
 	latestConfirmedAO      *isc.AliasOutputWithID // Confirmed by L1, can be lagging from latestActiveAO.
 	latestConfirmedState   state.State            // State corresponding to latestConfirmedAO, for performance reasons.
+	latestConfirmedStateAO *isc.AliasOutputWithID // Set only when the corresponding state is retrieved.
 	latestActiveAO         *isc.AliasOutputWithID // This is the AO the chain is build on.
 	latestActiveState      state.State            // State corresponding to latestActiveAO, for performance reasons.
+	latestActiveStateAO    *isc.AliasOutputWithID // Set only when the corresponding state is retrieved.
 	//
 	// Infrastructure.
 	netRecvPipe         pipe.Pipe[*peering.PeerMessageIn]
@@ -303,8 +305,10 @@ func New(
 		serverNodes:            nil, // Set bellow.
 		latestConfirmedAO:      nil,
 		latestConfirmedState:   nil,
+		latestConfirmedStateAO: nil,
 		latestActiveAO:         nil,
 		latestActiveState:      nil,
+		latestActiveStateAO:    nil,
 		netRecvPipe:            pipe.NewInfinitePipe[*peering.PeerMessageIn](),
 		netPeeringID:           netPeeringID,
 		netPeerPubs:            map[gpa.NodeID]*cryptolib.PublicKey{},
@@ -335,6 +339,24 @@ func New(
 		func(block state.Block) {
 			if err := cni.stateMgr.PreliminaryBlock(block); err != nil {
 				cni.log.Warnf("Failed to save a preliminary block %v: %v", block.L1Commitment(), err)
+			}
+		},
+		func(dkShare tcrypto.DKShare) {
+			cni.accessLock.Lock()
+			cni.activeCommitteeDKShare = dkShare
+			activeCommitteeNodes := cni.activeCommitteeNodes
+			cni.accessLock.Unlock()
+			var newCommitteeNodes []*cryptolib.PublicKey
+			if dkShare == nil {
+				newCommitteeNodes = []*cryptolib.PublicKey{}
+			} else {
+				newCommitteeNodes = dkShare.GetNodePubKeys()
+			}
+			if !util.Same(newCommitteeNodes, activeCommitteeNodes) {
+				cni.log.Infof("Committee nodes updated to %v, was %v", newCommitteeNodes, activeCommitteeNodes)
+				cni.updateAccessNodes(func() {
+					cni.activeCommitteeNodes = newCommitteeNodes
+				})
 			}
 		},
 		cni.log.Named("CM"),
@@ -555,6 +577,7 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 	cni.log.Debugf("handleStateTrackerActCB")
 	cni.accessLock.Lock()
 	cni.latestActiveState = st
+	cni.latestActiveStateAO = till
 	cni.accessLock.Unlock()
 
 	newAccessNodes := governance.NewStateAccess(st).GetAccessNodes()
@@ -576,6 +599,7 @@ func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *is
 	cni.log.Debugf("handleStateTrackerCnfCB")
 	cni.accessLock.Lock()
 	cni.latestConfirmedState = st
+	cni.latestConfirmedStateAO = till
 	cni.accessLock.Unlock()
 
 	newAccessNodes := governance.NewStateAccess(st).GetAccessNodes()
@@ -624,7 +648,11 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
 	cni.log.Debugf("handleAliasOutput: %v", aliasOutput)
 	if aliasOutput.GetStateIndex() == 0 {
-		initBlock := origin.InitChainByAliasOutput(cni.chainStore, aliasOutput)
+		initBlock, err := origin.InitChainByAliasOutput(cni.chainStore, aliasOutput)
+		if err != nil {
+			cni.log.Errorf("Ignoring InitialAO for the chain: %v", err)
+			return
+		}
 		if err := cni.blockWAL.Write(initBlock); err != nil {
 			panic(fmt.Errorf("cannot write initial block to the WAL: %w", err))
 		}
@@ -667,7 +695,7 @@ func (cni *chainNodeImpl) handleNetMessage(ctx context.Context, recv *peering.Pe
 
 func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntyped gpa.Output) {
 	cni.log.Debugf("handleChainMgrOutput: %v", outputUntyped)
-	if outputUntyped == nil {
+	if outputUntyped == nil { // TODO: Will never be nil, fix it.
 		// TODO: Cleanup consensus instances for all the committees after some time.
 		// Not sure, if it is OK to terminate them immediately at this point.
 		// This is for the case, if the current node is not in a committee of a chain anymore.
@@ -714,6 +742,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 	cni.latestActiveAO = output.LatestActiveAliasOutput()
 	if cni.latestActiveAO == nil {
 		cni.latestActiveState = nil
+		cni.latestActiveStateAO = nil
 	}
 	cni.accessLock.Unlock()
 }
@@ -768,16 +797,6 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 		ci.request = needConsensus
 		cni.stateTrackerAct.TrackAliasOutput(needConsensus.BaseAliasOutput, true)
 		ci.consensus.Input(needConsensus.BaseAliasOutput, outputCB, recoverCB)
-		//
-		// Update committee nodes, if changed.
-		cni.accessLock.Lock()
-		cni.activeCommitteeDKShare = needConsensus.DKShare
-		cni.accessLock.Unlock()
-		if !util.Same(ci.committee, cni.activeCommitteeNodes) {
-			cni.updateAccessNodes(func() {
-				cni.activeCommitteeNodes = ci.committee
-			})
-		}
 	}
 }
 
@@ -989,14 +1008,14 @@ func (cni *chainNodeImpl) Log() *logger.Logger {
 
 func (cni *chainNodeImpl) LatestAliasOutput(freshness StateFreshness) (*isc.AliasOutputWithID, error) {
 	cni.accessLock.RLock()
-	latestConfirmedAO := cni.latestConfirmedAO
-	latestActiveAO := cni.latestActiveAO
+	latestConfirmedAO := cni.latestConfirmedStateAO
+	// latestActiveAO := cni.latestActiveStateAO
 	cni.accessLock.RUnlock()
 	switch freshness {
 	case ActiveOrCommittedState:
-		if latestActiveAO != nil {
-			return latestActiveAO, nil
-		}
+		// if latestActiveAO != nil { // TODO: Temporary.
+		// 	return latestActiveAO, nil
+		// }
 		if latestConfirmedAO != nil {
 			return latestConfirmedAO, nil
 		}
@@ -1007,9 +1026,12 @@ func (cni *chainNodeImpl) LatestAliasOutput(freshness StateFreshness) (*isc.Alia
 		}
 		return nil, fmt.Errorf("have no confirmed state")
 	case ActiveState:
-		if latestActiveAO != nil {
-			return latestActiveAO, nil
+		if latestConfirmedAO != nil { // TODO: Temporary.
+			return latestConfirmedAO, nil
 		}
+		// if latestActiveAO != nil { // TODO: Temporary.
+		// 	return latestActiveAO, nil
+		// }
 		return nil, fmt.Errorf("have no active state")
 	default:
 		panic(fmt.Errorf("Unexpected StateFreshness: %v", freshness))
@@ -1018,14 +1040,14 @@ func (cni *chainNodeImpl) LatestAliasOutput(freshness StateFreshness) (*isc.Alia
 
 func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, error) {
 	cni.accessLock.RLock()
-	latestActiveState := cni.latestActiveState
+	// latestActiveState := cni.latestActiveState
 	latestConfirmedState := cni.latestConfirmedState
 	cni.accessLock.RUnlock()
 	switch freshness {
 	case ActiveOrCommittedState:
-		if latestActiveState != nil {
-			return latestActiveState, nil
-		}
+		// if latestActiveState != nil {  // TODO: Temporary.
+		// 	return latestActiveState, nil
+		// }
 		if latestConfirmedState != nil {
 			return latestConfirmedState, nil
 		}
@@ -1038,9 +1060,12 @@ func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, er
 		cni.log.Warn("Have no state, but someone asks for it, will query the state.")
 		return cni.chainStore.LatestState()
 	case ActiveState:
-		if latestActiveState != nil {
-			return latestActiveState, nil
+		if latestConfirmedState != nil { // TODO: Temporary.
+			return latestConfirmedState, nil
 		}
+		// if latestActiveState != nil { // TODO: Temporary.
+		// 	return latestActiveState, nil
+		// }
 		return nil, fmt.Errorf("chain %v has no active state", cni.chainID)
 	default:
 		panic(fmt.Errorf("Unexpected StateFreshness: %v", freshness))

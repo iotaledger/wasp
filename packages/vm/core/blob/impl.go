@@ -31,7 +31,7 @@ func storeBlob(ctx isc.Sandbox) dict.Dict {
 	blobHash, kSorted, values := mustGetBlobHash(params.Dict)
 
 	directory := GetDirectory(state)
-	ctx.Requiref(!directory.MustHasAt(blobHash[:]),
+	ctx.Requiref(!directory.HasAt(blobHash[:]),
 		"blob.storeBlob.fail: blob with hash %s already exists", blobHash.String())
 
 	// get a record by blob hash
@@ -45,8 +45,8 @@ func storeBlob(ctx isc.Sandbox) dict.Dict {
 	sizes := make([]uint32, len(kSorted))
 	for i, k := range kSorted {
 		size := uint32(len(values[i]))
-		blbValues.MustSetAt([]byte(k), values[i])
-		blbSizes.MustSetAt([]byte(k), EncodeSize(size))
+		blbValues.SetAt([]byte(k), values[i])
+		blbSizes.SetAt([]byte(k), EncodeSize(size))
 		sizes[i] = size
 		totalSize += size
 		totalSizeWithKeys += size + uint32(len(k))
@@ -55,7 +55,7 @@ func storeBlob(ctx isc.Sandbox) dict.Dict {
 	ret := dict.New()
 	ret.Set(ParamHash, codec.EncodeHashValue(blobHash))
 
-	directory.MustSetAt(blobHash[:], EncodeSize(totalSize))
+	directory.SetAt(blobHash[:], EncodeSize(totalSize))
 
 	ctx.Event(fmt.Sprintf("[blob] hash: %s, field sizes: %+v", blobHash.String(), sizes))
 	return ret
@@ -69,7 +69,7 @@ func getBlobInfo(ctx isc.SandboxView) dict.Dict {
 
 	blbSizes := GetBlobSizesR(ctx.StateR(), blobHash)
 	ret := dict.New()
-	blbSizes.MustIterate(func(field []byte, value []byte) bool {
+	blbSizes.Iterate(func(field []byte, value []byte) bool {
 		ret.Set(kv.Key(field), value)
 		return true
 	})
@@ -80,12 +80,13 @@ func getBlobField(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("blob.getBlobField.begin")
 	state := ctx.StateR()
 
-	blobHash := ctx.Params().MustGetHashValue(ParamHash)
-	field := ctx.Params().MustGetBytes(ParamField)
+	params := ctx.Params()
+	blobHash := params.MustGetHashValue(ParamHash)
+	field := params.MustGetBytes(ParamField)
 
 	blobValues := GetBlobValuesR(state, blobHash)
-	ctx.Requiref(blobValues.MustLen() != 0, "blob with hash %s has not been found", blobHash.String())
-	value := blobValues.MustGetAt(field)
+	ctx.Requiref(blobValues.Len() != 0, "blob with hash %s has not been found", blobHash.String())
+	value := blobValues.GetAt(field)
 	ctx.Requiref(value != nil, "'blob field %s value not found", string(field))
 	ret := dict.New()
 	ret.Set(ParamBytes, value)
@@ -95,7 +96,7 @@ func getBlobField(ctx isc.SandboxView) dict.Dict {
 func listBlobs(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("blob.listBlobs.begin")
 	ret := dict.New()
-	GetDirectoryR(ctx.StateR()).MustIterate(func(hash []byte, totalSize []byte) bool {
+	GetDirectoryR(ctx.StateR()).Iterate(func(hash []byte, totalSize []byte) bool {
 		ret.Set(kv.Key(hash), totalSize)
 		return true
 	})

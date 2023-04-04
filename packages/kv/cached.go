@@ -21,30 +21,15 @@ func NewCachedKVStoreReader(r KVStoreReader, cacheSize int) KVStoreReader {
 	}
 }
 
-func (c *cachedKVStoreReader) Get(key Key) ([]byte, error) {
+func (c *cachedKVStoreReader) Get(key Key) []byte {
 	if v, ok := c.cache.Get(key); ok {
-		return v, nil
+		return v
 	}
-	v, err := c.KVStoreReader.Get(key)
-	if err != nil {
-		return nil, err
-	}
+	v := c.KVStoreReader.Get(key)
 	c.cache.Add(key, v)
-	return v, nil
+	return v
 }
 
-func (c *cachedKVStoreReader) Has(key Key) (bool, error) {
-	v, err := c.Get(key)
-	if err != nil {
-		return false, err
-	}
-	return v != nil, nil
-}
-
-func (c *cachedKVStoreReader) MustGet(key Key) []byte {
-	return MustGet(c, key)
-}
-
-func (c *cachedKVStoreReader) MustHas(key Key) bool {
-	return MustHas(c, key)
+func (c *cachedKVStoreReader) Has(key Key) bool {
+	return c.Get(key) != nil
 }

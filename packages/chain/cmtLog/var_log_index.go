@@ -9,7 +9,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -289,31 +288,32 @@ func (v *varLogIndexImpl) tryPropose(li LogIndex) gpa.OutMessages {
 // >            THEN ao       // Can't be ⊥.
 // >            ELSE latestAO // Can be ⊥, thus no derived AO
 func (v *varLogIndexImpl) deriveAO(li LogIndex) *isc.AliasOutputWithID {
-	countsAOMap := map[iotago.OutputID]*isc.AliasOutputWithID{}
-	countsAO := map[iotago.OutputID]int{}
-	for _, msg := range v.maxPeerLIs {
-		if msg.nextLogIndex < li {
-			continue
-		}
-		countsAOMap[msg.nextBaseAO.OutputID()] = msg.nextBaseAO
-		countsAO[msg.nextBaseAO.OutputID()]++
-	}
+	v.log.Debugf("Pipelining disabled, deriving %v for LI=%v", v.latestAO, li)
+	// countsAOMap := map[iotago.OutputID]*isc.AliasOutputWithID{} // TODO: Re-enable pipelining.
+	// countsAO := map[iotago.OutputID]int{}
+	// for _, msg := range v.maxPeerLIs {
+	// 	if msg.nextLogIndex < li {
+	// 		continue
+	// 	}
+	// 	countsAOMap[msg.nextBaseAO.OutputID()] = msg.nextBaseAO
+	// 	countsAO[msg.nextBaseAO.OutputID()]++
+	// }
 
-	var q1fAO *isc.AliasOutputWithID
-	var found bool
-	for aoID, c := range countsAO {
-		if c >= v.f+1 {
-			if found {
-				// Non unique, return our value.
-				return v.latestAO
-			}
-			q1fAO = countsAOMap[aoID]
-			found = true
-		}
-	}
-	if found {
-		return q1fAO
-	}
+	// var q1fAO *isc.AliasOutputWithID
+	// var found bool
+	// for aoID, c := range countsAO {
+	// 	if c >= v.f+1 {
+	// 		if found {
+	// 			// Non unique, return our value.
+	// 			return v.latestAO
+	// 		}
+	// 		q1fAO = countsAOMap[aoID]
+	// 		found = true
+	// 	}
+	// }
+	// if found {
+	// 	return q1fAO
+	// }
 	return v.latestAO
 }
 

@@ -1086,7 +1086,7 @@ func checkChainNFTData(t *testing.T, ch *solo.Chain, nft *isc.NFT, owner isc.Age
 		accounts.ParamNFTID: nft.ID[:],
 	})
 	require.NoError(t, err)
-	nftBack, err := isc.NFTFromBytes(ret.MustGet(accounts.ParamNFTData))
+	nftBack, err := isc.NFTFromBytes(ret.Get(accounts.ParamNFTData))
 	require.NoError(t, err)
 	require.Equal(t, nftBack.ID, nft.ID)
 	require.Equal(t, nftBack.Issuer, nft.Issuer)

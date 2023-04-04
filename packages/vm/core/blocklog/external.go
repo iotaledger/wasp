@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
-// GetRequestIDsForLastBlock reads blocklog from chain state and returns request IDs settled in specific block
+// GetRequestIDsForBlock reads blocklog from chain state and returns request IDs settled in specific block
 // Can only panic on DB error of internal error
 func GetRequestIDsForBlock(stateReader kv.KVStoreReader, blockIndex uint32) ([]isc.RequestID, error) {
 	if blockIndex == 0 {
@@ -69,7 +69,7 @@ type GetRequestReceiptResult struct {
 func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID isc.RequestID) (*GetRequestReceiptResult, error) {
 	lookupDigest := reqID.LookupDigest()
 	lookupTable := collections.NewMapReadOnly(stateReader, prefixRequestLookupIndex)
-	lookupKeyListBin := lookupTable.MustGetAt(lookupDigest[:])
+	lookupKeyListBin := lookupTable.GetAt(lookupDigest[:])
 	if lookupKeyListBin == nil {
 		return nil, nil
 	}
@@ -97,17 +97,14 @@ func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID isc.Req
 	return nil, nil
 }
 
-func GetEventsByBlockIndex(partition kv.KVStoreReader, blockIndex uint32, totalRequests uint16) ([]string, error) {
+func GetEventsByBlockIndex(partition kv.KVStoreReader, blockIndex uint32, totalRequests uint16) []string {
 	ret := make([]string, 0)
 	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
 	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
 		eventIndex := uint16(0)
 		for {
 			key := NewEventLookupKey(blockIndex, reqIdx, eventIndex)
-			msg, err := events.GetAt(key.Bytes())
-			if err != nil {
-				return nil, err
-			}
+			msg := events.GetAt(key.Bytes())
 			if msg == nil {
 				break
 			}
@@ -115,18 +112,14 @@ func GetEventsByBlockIndex(partition kv.KVStoreReader, blockIndex uint32, totalR
 			eventIndex++
 		}
 	}
-	return ret, nil
+	return ret
 }
 
 func GetBlockInfo(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, error) {
 	if blockIndex == 0 {
 		return nil, nil
 	}
-	data, err := getBlockInfoBytes(partition, blockIndex)
-	if err != nil {
-		return nil, err
-	}
-	ret, err := BlockInfoFromBytes(data)
+	ret, err := BlockInfoFromBytes(getBlockInfoBytes(partition, blockIndex))
 	if err != nil {
 		return nil, err
 	}

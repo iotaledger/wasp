@@ -2,14 +2,17 @@ package origin_test
 
 import (
 	"bytes"
+	"encoding/hex"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"pgregory.net/rapid"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
@@ -93,15 +96,15 @@ func TestCreateOrigin(t *testing.T) {
 		require.True(t, stateAddr.Equal(anchor.StateController))
 		require.True(t, stateAddr.Equal(anchor.GovernanceController))
 
-		originStateMetadata := &transaction.StateMetadata{
-			L1Commitment: origin.L1Commitment(
+		originStateMetadata := transaction.NewStateMetadata(
+			origin.L1Commitment(
 				dict.Dict{origin.ParamChainOwner: isc.NewAgentID(anchor.GovernanceController).Bytes()},
 				accounts.MinimumBaseTokensOnCommonAccount,
 			),
-			GasFeePolicy:   gas.DefaultFeePolicy(),
-			SchemaVersion:  migrations.BaseSchemaVersion + uint32(len(migrations.Migrations)),
-			CustomMetadata: []byte{},
-		}
+			gas.DefaultFeePolicy(),
+			migrations.BaseSchemaVersion+uint32(len(migrations.Migrations)),
+			[]byte{},
+		)
 
 		require.True(t,
 			bytes.Equal(
@@ -131,4 +134,93 @@ func TestCreateOrigin(t *testing.T) {
 		require.EqualValues(t, 1, len(allOutputs))
 		require.EqualValues(t, 1, len(ids))
 	})
+}
+
+// Was used to find proper deposit values for a specific metadata according to the existing hashes.
+func TestMetadataBad(t *testing.T) {
+	t.SkipNow()
+	metadataHex := "0300000001006102000000e60701006204000000ffffffff01006322000000010024ed2ed9d3682c9c4b801dd15103f73d1fe877224cb51c8b3def6f91b67f5067"
+	metadataBin, err := hex.DecodeString(metadataHex)
+	require.NoError(t, err)
+	var initParams dict.Dict
+	initParams, err = dict.FromBytes(metadataBin)
+	require.NoError(t, err)
+	require.NotNil(t, initParams)
+	t.Logf("Dict=%v", initParams)
+	initParams.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
+		t.Logf("Dict, %v ===> %v", key, value)
+		return true
+	})
+
+	for deposit := uint64(0); deposit <= 10*isc.Million; deposit++ {
+		db := mapdb.NewMapDB()
+		st := state.NewStore(db)
+		block1A := origin.InitChain(st, initParams, deposit)
+		block1B := origin.InitChain(st, initParams, 10*isc.Million-deposit)
+		block1C := origin.InitChain(st, initParams, 10*isc.Million+deposit)
+		block2A := origin.InitChain(st, nil, deposit)
+		block2B := origin.InitChain(st, nil, 10*isc.Million-deposit)
+		block2C := origin.InitChain(st, nil, 10*isc.Million+deposit)
+		t.Logf("Block0, deposit=%v => %v %v %v / %v %v %v", deposit,
+			block1A.L1Commitment(), block1B.L1Commitment(), block1C.L1Commitment(),
+			block2A.L1Commitment(), block2B.L1Commitment(), block2C.L1Commitment(),
+		)
+	}
+}
+
+func TestDictBytes(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		key := rapid.SliceOfBytesMatching(".*").Draw(t, "key")
+		val := rapid.SliceOfBytesMatching(".+").Draw(t, "val")
+		d := dict.New()
+		d.Set(kv.Key(key), val)
+		b := d.Bytes()
+		d2, err := dict.FromBytes(b)
+		require.NoError(t, err)
+		require.Equal(t, d, d2)
+	})
+}
+
+// example values taken from a test on the testnet
+func TestMismatchOriginCommitment(t *testing.T) {
+	store := state.NewStore(mapdb.NewMapDB())
+	oid, err := iotago.OutputIDFromHex("0xcf72dd6a8c8cd76eab93c80ae192677a17c554b91334a41bed5079eff37effc40000")
+	require.NoError(t, err)
+	originMetadata, err := iotago.DecodeHex("0x0300000001006102000000e60701006204000000ffffffff01006322000000010024ed2ed9d3682c9c4b801dd15103f73d1fe877224cb51c8b3def6f91b67f5067")
+	require.NoError(t, err)
+	aoStateMetadata, err := iotago.DecodeHex("0x00000000006e55672af085d73ea0ed646f280a26e0eba053df10f439378fe4e99e0fb8774600761da7c0402da864000000010000000001000000010000000000")
+	require.NoError(t, err)
+	_, sender, err := iotago.ParseBech32("rms1qqjw6tke6d5ze8ztsqwaz5gr7u73l6rhyfxt28yt8hhklydk0agxwgerk65")
+	require.NoError(t, err)
+	_, stateController, err := iotago.ParseBech32("rms1qrkrlggl2plwfvxyuuyj55gw48ws0xwtteydez8y8e03elm3xf38gf7eq5r")
+	require.NoError(t, err)
+	_, govController, err := iotago.ParseBech32("rms1qqjw6tke6d5ze8ztsqwaz5gr7u73l6rhyfxt28yt8hhklydk0agxwgerk65")
+	require.NoError(t, err)
+	_, chainAliasAddress, err := iotago.ParseBech32("rms1pr27d4mr9wgesv8je5j6zkequhw0ysx55ftxt04z55dm9hc9yxkauqtukfl")
+	require.NoError(t, err)
+
+	ao := isc.NewAliasOutputWithID(
+		&iotago.AliasOutput{
+			Amount:         10000000,
+			NativeTokens:   []*iotago.NativeToken{},
+			AliasID:        chainAliasAddress.(*iotago.AliasAddress).AliasID(),
+			StateIndex:     0,
+			StateMetadata:  aoStateMetadata,
+			FoundryCounter: 0,
+			Conditions: []iotago.UnlockCondition{
+				&iotago.StateControllerAddressUnlockCondition{Address: stateController},
+				&iotago.GovernorAddressUnlockCondition{Address: govController},
+			},
+			Features: []iotago.Feature{
+				&iotago.SenderFeature{
+					Address: sender,
+				},
+				&iotago.MetadataFeature{Data: originMetadata},
+			},
+		},
+		oid,
+	)
+
+	_, err = origin.InitChainByAliasOutput(store, ao)
+	require.Error(t, err)
 }
