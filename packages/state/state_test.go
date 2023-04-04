@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"pgregory.net/rapid"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -114,6 +115,21 @@ func TestOriginBlock(t *testing.T) {
 	validateBlock0(state.NewStore(db).BlockByIndex(0))
 
 	require.EqualValues(t, 0, cs.LatestBlockIndex())
+}
+
+func TestOriginBlockDeterminism(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		deposit := rapid.Uint64().Draw(t, "deposit")
+		db := mapdb.NewMapDB()
+		st := state.NewStore(db)
+		blockA := origin.InitChain(st, nil, deposit)
+		blockB := origin.InitChain(st, nil, deposit)
+		require.Equal(t, blockA.L1Commitment(), blockB.L1Commitment())
+		db2 := mapdb.NewMapDB()
+		st2 := state.NewStore(db2)
+		blockC := origin.InitChain(st2, nil, deposit)
+		require.Equal(t, blockA.L1Commitment(), blockC.L1Commitment())
+	})
 }
 
 func Test1Block(t *testing.T) {
