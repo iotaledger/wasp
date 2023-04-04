@@ -194,3 +194,15 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 	w2.MustRun("chain", "post-request", "-s", inccounterSCName, "increment", "--node=0")
 	checkCounter(w2, 43)
 }
+
+func TestRotateOnOrigin(t *testing.T) {
+	w := newWaspCLITest(t, waspClusterOpts{
+		nNodes: 4,
+	})
+	// start a chain on node 0
+	w.MustRun("chain", "deploy", "--chain=chain1", "--node=0")
+	w.ActivateChainOnAllNodes("chain1", 0)
+	// immediately rotate to a committee with nodes 1,2,3 (no need to add as access nodes first, because there is no state to sync)
+	w.MustRun("chain", "rotate-with-dkg", "--node=1", "--peers=2,3")
+	w.MustRun("chain", "deposit", "base:10000000", "--node=1") // deposit works
+}
