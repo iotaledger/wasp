@@ -96,6 +96,8 @@ func provide(c *dig.Container) error {
 				ParamsChains.BroadcastUpToNPeers,
 				ParamsChains.BroadcastInterval,
 				ParamsChains.PullMissingRequestsFromCommittee,
+				ParamsChains.DeriveAliasOutputByQuorum,
+				ParamsChains.PipeliningLimit,
 				deps.NetworkProvider,
 				deps.TrustedNetworkManager,
 				deps.ChainStateDatabaseManager.ChainStateKVStore,

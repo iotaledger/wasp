@@ -264,6 +264,8 @@ func New(
 	shutdownCoordinator *shutdown.Coordinator,
 	onChainConnect func(),
 	onChainDisconnect func(),
+	deriveAliasOutputByQuorum bool,
+	pipeliningLimit int,
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
 	if listener == nil {
@@ -359,6 +361,8 @@ func New(
 				})
 			}
 		},
+		deriveAliasOutputByQuorum,
+		pipeliningLimit,
 		cni.log.Named("CM"),
 	)
 	if err != nil {

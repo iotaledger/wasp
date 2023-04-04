@@ -177,6 +177,8 @@ type chainMgrImpl struct {
 	asGPA                   gpa.GPA
 	me                      gpa.NodeID
 	nodeIDFromPubKey        func(pubKey *cryptolib.PublicKey) gpa.NodeID
+	deriveAOByQuorum        bool // Config parameter.
+	pipeliningLimit         int  // Config parameter.
 	log                     *logger.Logger
 }
 
@@ -196,6 +198,8 @@ func New(
 	trackActiveStateCB func(ao *isc.AliasOutputWithID),
 	savePreliminaryBlockCB func(block state.Block),
 	committeeUpdatedCB func(dkShare tcrypto.DKShare),
+	deriveAOByQuorum bool,
+	pipeliningLimit int,
 	log *logger.Logger,
 ) (ChainMgr, error) {
 	cmi := &chainMgrImpl{
@@ -213,6 +217,8 @@ func New(
 		varAccessNodeState:      NewVarAccessNodeState(chainID, log.Named("VAS")),
 		me:                      me,
 		nodeIDFromPubKey:        nodeIDFromPubKey,
+		deriveAOByQuorum:        deriveAOByQuorum,
+		pipeliningLimit:         pipeliningLimit,
 		log:                     log,
 	}
 	cmi.output = &Output{cmi: cmi}
@@ -552,7 +558,7 @@ func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr iotago.Ed25519Address) (*cmt
 	}
 
 	clInst, err := cmtLog.New(
-		cmi.me, cmi.chainID, dkShare, cmi.consensusStateRegistry, cmi.nodeIDFromPubKey,
+		cmi.me, cmi.chainID, dkShare, cmi.consensusStateRegistry, cmi.nodeIDFromPubKey, cmi.deriveAOByQuorum, cmi.pipeliningLimit,
 		cmi.log.Named(fmt.Sprintf("CL-%v", dkShare.GetSharedPublic().AsEd25519Address().String()[:10])),
 	)
 	if err != nil {

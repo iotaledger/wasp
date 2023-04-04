@@ -177,6 +177,8 @@ func New(
 	dkShare tcrypto.DKShare,
 	consensusStateRegistry ConsensusStateRegistry,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
+	deriveAOByQuorum bool,
+	pipeliningLimit int,
 	log *logger.Logger,
 ) (CmtLog, error) {
 	cmtAddr := dkShare.GetSharedPublic().AsEd25519Address()
@@ -223,7 +225,7 @@ func New(
 		suspended:              false,
 		minLI:                  minLogIndex,
 		consensusLI:            NilLogIndex(),
-		varLogIndex:            NewVarLogIndex(nodeIDs, n, f, prevLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, log.Named("VLI")),
+		varLogIndex:            NewVarLogIndex(nodeIDs, n, f, prevLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, deriveAOByQuorum, pipeliningLimit, log.Named("VLI")),
 		varLocalView:           NewVarLocalView(log.Named("VLV")),
 		varRunning:             NewVarRunning(log.Named("VR")),
 		log:                    log,

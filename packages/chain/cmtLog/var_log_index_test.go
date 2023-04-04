@@ -25,7 +25,7 @@ func TestVarLogIndex(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(4)
 	initLI := NilLogIndex().Next()
 	//
-	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, log)
+	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, true, -1, log)
 	//
 	nextLI := initLI.Next()
 	vliLI, _ := vli.Value()
@@ -49,7 +49,7 @@ func TestVarLogIndexV2(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(4)
 	initLI := NilLogIndex().Next()
 	//
-	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, log)
+	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, true, -1, log)
 	vliValueLI := func() LogIndex {
 		li, _ := vli.Value()
 		return li
