@@ -278,7 +278,7 @@ export class ScSandboxFunc extends ScSandbox {
 
     // generates a random value from 0 to max (exclusive: max) using a deterministic RNG
     public random(max: u64): u64 {
-        if (max == 0) {
+        if (max <= 0) {
             this.panic('random: max parameter should be > 0');
         }
 

@@ -2,10 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from '../sandbox';
-import {bech32Decode, bech32Encode, hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from './codec';
+import {bech32Decode, bech32Encode, hashKeccak, hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from './codec';
 import {Proxy} from './proxy';
-import {bytesCompare} from './scbytes';
+import {bytesCompare, bytesFromString} from './scbytes';
 import {ScAgentID} from './scagentid';
+import {stringFromBytes} from "./scstring";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -121,10 +122,23 @@ export function addressFromString(value: string): ScAddress {
 }
 
 export function addressToString(value: ScAddress): string {
-    if (value.id[0] == ScAddressEth) {
-        return hexEncode(addressToBytes(value));
+    if (value.id[0] != ScAddressEth) {
+        return bech32Encode(value);
     }
-    return bech32Encode(value);
+    const hex = bytesFromString(hexEncode(addressToBytes(value)));
+    const hash = hashKeccak(hex.slice(2)).toBytes();
+    for (let i = 2; i < hex.length; i++) {
+        let hashByte = hash[(i-2)/2] as u8;
+        if (i%2 == 0) {
+            hashByte >>= 4;
+        } else {
+            hashByte &= 0xf;
+        }
+        if (hex[i] > 0x39 && hashByte > 7) {
+            hex[i] -= 32;
+        }
+    }
+    return stringFromBytes(hex);
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

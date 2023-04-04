@@ -310,7 +310,7 @@ func TestAccountNFTAmount(t *testing.T) {
 		randNftMetadata := make([]byte, 4)
 		rand.Read(randNftMetadata)
 		nftMetadataSlice[i] = randNftMetadata
-		nftIDs[i] = ctx.MintNFT(user, []byte(randNftMetadata))
+		nftIDs[i] = ctx.MintNFT(user, randNftMetadata)
 		require.NoError(t, ctx.Err)
 		require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, ctx.Cvt.IscNFTID(&nftIDs[i])))
 	}
