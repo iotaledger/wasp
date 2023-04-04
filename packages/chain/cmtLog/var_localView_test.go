@@ -17,7 +17,7 @@ import (
 func TestVarLocalView(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
-	j := cmtLog.NewVarLocalView(log)
+	j := cmtLog.NewVarLocalView(-1, log)
 	require.Nil(t, j.Value())
 	tipAO, ok := j.AliasOutputConfirmed(isc.NewAliasOutputWithID(&iotago.AliasOutput{}, iotago.OutputID{}))
 	require.True(t, ok)

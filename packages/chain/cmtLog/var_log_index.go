@@ -141,7 +141,6 @@ func NewVarLogIndex(
 	persistedLI LogIndex,
 	outputCB func(li LogIndex, ao *isc.AliasOutputWithID),
 	deriveAOByQuorum bool,
-	pipeliningLimit int, // TODO: Use it.
 	log *logger.Logger,
 ) VarLogIndex {
 	log.Debugf("NewVarLogIndex, n=%v, f=%v, persistedLI=%v, deriveAOByQuorum=%v", n, f, persistedLI, deriveAOByQuorum)

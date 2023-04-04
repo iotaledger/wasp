@@ -35,7 +35,7 @@ type varLocalViewSM struct {
 }
 
 func (sm *varLocalViewSM) Init(t *rapid.T) {
-	sm.lv = cmtLog.NewVarLocalView(testlogger.NewLogger(t))
+	sm.lv = cmtLog.NewVarLocalView(-1, testlogger.NewLogger(t))
 	sm.confirmed = []*isc.AliasOutputWithID{}
 	sm.pending = []*isc.AliasOutputWithID{}
 	sm.rejected = []*isc.AliasOutputWithID{}

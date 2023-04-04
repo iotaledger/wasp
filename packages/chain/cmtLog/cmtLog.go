@@ -225,8 +225,8 @@ func New(
 		suspended:              false,
 		minLI:                  minLogIndex,
 		consensusLI:            NilLogIndex(),
-		varLogIndex:            NewVarLogIndex(nodeIDs, n, f, prevLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, deriveAOByQuorum, pipeliningLimit, log.Named("VLI")),
-		varLocalView:           NewVarLocalView(log.Named("VLV")),
+		varLogIndex:            NewVarLogIndex(nodeIDs, n, f, prevLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, deriveAOByQuorum, log.Named("VLI")),
+		varLocalView:           NewVarLocalView(pipeliningLimit, log.Named("VLV")),
 		varRunning:             NewVarRunning(log.Named("VR")),
 		log:                    log,
 	}
