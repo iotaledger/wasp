@@ -643,7 +643,11 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
 	cni.log.Debugf("handleAliasOutput: %v", aliasOutput)
 	if aliasOutput.GetStateIndex() == 0 {
-		initBlock := origin.InitChainByAliasOutput(cni.chainStore, aliasOutput)
+		initBlock, err := origin.InitChainByAliasOutput(cni.chainStore, aliasOutput)
+		if err != nil {
+			cni.log.Errorf("Ignoring InitialAO for the chain: %v", err)
+			return
+		}
 		if err := cni.blockWAL.Write(initBlock); err != nil {
 			panic(fmt.Errorf("cannot write initial block to the WAL: %w", err))
 		}
