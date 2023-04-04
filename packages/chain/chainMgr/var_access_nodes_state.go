@@ -9,6 +9,8 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 // Tracks the active state at the access nodes. If this node is part of the committee,
@@ -19,7 +21,8 @@ type VarAccessNodeState interface {
 	Tip() *isc.AliasOutputWithID
 	// Considers the produced (not yet confirmed) block / TX and returns new tip AO.
 	// The returned bool indicates if the tip has changed because of this call.
-	BlockProduced(tx *iotago.Transaction) (*isc.AliasOutputWithID, bool)
+	// This function should return L1 commitment, if the corresponding block should be added to the store.
+	BlockProduced(tx *iotago.Transaction) (*isc.AliasOutputWithID, bool, *state.L1Commitment)
 	// Considers a confirmed AO and returns new tip AO.
 	// The returned bool indicates if the tip has changed because of this call.
 	BlockConfirmed(ao *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool)
@@ -52,16 +55,16 @@ func (vas *varAccessNodeStateImpl) Tip() *isc.AliasOutputWithID {
 	return vas.tipAO
 }
 
-func (vas *varAccessNodeStateImpl) BlockProduced(tx *iotago.Transaction) (*isc.AliasOutputWithID, bool) {
+func (vas *varAccessNodeStateImpl) BlockProduced(tx *iotago.Transaction) (*isc.AliasOutputWithID, bool, *state.L1Commitment) {
 	txID, err := tx.ID()
 	if err != nil {
 		vas.log.Debugf("BlockProduced: Ignoring, cannot extract txID: %v", err)
-		return vas.tipAO, false
+		return vas.tipAO, false, nil
 	}
 	consumed, published, err := vas.extractConsumedPublished(tx)
 	if err != nil {
 		vas.log.Debugf("BlockProduced(tx.ID=%v): Ignoring because of %v", txID, err)
-		return vas.tipAO, false
+		return vas.tipAO, false, nil
 	}
 	//
 	vas.log.Debugf("BlockProduced: consumed.ID=%v, published=%v", consumed.ToHex(), published)
@@ -73,9 +76,14 @@ func (vas *varAccessNodeStateImpl) BlockProduced(tx *iotago.Transaction) (*isc.A
 	if !ok {
 		entries = []*varAccessNodeStateEntry{}
 	}
+	publishedL1Commitment, err := transaction.L1CommitmentFromAliasOutput(published.GetAliasOutput())
+	if err != nil {
+		vas.log.Warnf("Cannot extract L1Commitment from the published AO: %v", err)
+		publishedL1Commitment = nil // Will ignore it.
+	}
 	if lo.ContainsBy(entries, func(e *varAccessNodeStateEntry) bool { return e.output.Equals(published) }) {
 		vas.log.Debugf("⊳ Ignoring it, duplicate.")
-		return vas.tipAO, false
+		return vas.tipAO, false, nil
 	}
 	entries = append(entries, &varAccessNodeStateEntry{
 		output:   published,
@@ -86,10 +94,11 @@ func (vas *varAccessNodeStateImpl) BlockProduced(tx *iotago.Transaction) (*isc.A
 	// Check, if the added AO is a new tip for the chain.
 	if published.Equals(vas.findLatestPending()) {
 		vas.log.Debugf("⊳ Will consider consensusOutput=%v as a tip, the current confirmed=%v.", published, vas.confirmed)
-		return vas.outputIfChanged(published)
+		changedAO, changed := vas.outputIfChanged(published)
+		return changedAO, changed, publishedL1Commitment
 	}
 	vas.log.Debugf("⊳ That's not a tip.")
-	return vas.tipAO, false
+	return vas.tipAO, false, publishedL1Commitment
 }
 
 func (vas *varAccessNodeStateImpl) BlockConfirmed(confirmed *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool) {
