@@ -600,7 +600,7 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 //
 // The request/receipt awaits are already handled in the StateTracker.
 func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
-	cni.log.Debugf("handleStateTrackerCnfCB")
+	cni.log.Debugf("handleStateTrackerCnfCB: till %v from %v", till, from)
 	cni.accessLock.Lock()
 	cni.latestConfirmedState = st
 	cni.latestConfirmedStateAO = till
@@ -744,10 +744,10 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 	cni.accessLock.Lock()
 	cni.latestConfirmedAO = output.LatestConfirmedAliasOutput()
 	cni.latestActiveAO = output.LatestActiveAliasOutput()
-	if cni.latestActiveAO == nil {
-		cni.latestActiveState = nil
-		cni.latestActiveStateAO = nil
-	}
+	// if cni.latestActiveAO == nil {	// TODO: Check, how is this handled in the case of rejections.
+	// 	cni.latestActiveState = nil
+	// 	cni.latestActiveStateAO = nil
+	// }
 	cni.accessLock.Unlock()
 }
 
