@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -407,9 +408,9 @@ func TestWasmTypes(t *testing.T) {
 	agentID = &isc.NilAgentID{}
 	checkAgentID(t, ctx, scAgentID, agentID)
 
-	// eth
-	// addressEth := "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
-	_, ethAddress := ctx.Chain.NewEthereumAccountWithL2Funds()
+	// eth address and agentID
+	ethString := "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+	ethAddress := common.BytesToAddress(wasmtypes.HexDecode(ethString))
 	ethAgentID := isc.NewEthereumAddressAgentID(ethAddress)
 	checkerEth := testwasmlib.ScFuncs.CheckEthAddressAndAgentID(ctx)
 	checkerEth.Params.EthAddress().SetValue(wasmtypes.AddressFromBytes(ethAddress.Bytes()))

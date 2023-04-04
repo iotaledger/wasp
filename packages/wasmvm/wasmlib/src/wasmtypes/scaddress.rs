@@ -121,6 +121,7 @@ pub fn address_to_string(value: &ScAddress) -> String {
     if value.id[0] != SC_ADDRESS_ETH {
         return bech32_encode(value);
     }
+
     let mut hex = string_to_bytes(&hex_encode(&address_to_bytes(value)));
     let hash = hash_keccak(&hex[2..]).to_bytes();
     for i in 2..hex.len() {
@@ -134,7 +135,7 @@ pub fn address_to_string(value: &ScAddress) -> String {
             hex[i] -= 32;
         }
     }
-    bytes_to_string(&hex)
+    string_from_bytes(&hex)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

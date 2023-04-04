@@ -1,12 +1,12 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from '../sandbox';
+import {log, panic} from '../sandbox';
 import {bech32Decode, bech32Encode, hashKeccak, hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from './codec';
 import {Proxy} from './proxy';
-import {bytesCompare, bytesFromString} from './scbytes';
+import {bytesCompare, bytesFromString, bytesToString} from './scbytes';
 import {ScAgentID} from './scagentid';
-import {stringFromBytes} from "./scstring";
+import {stringFromBytes, stringToBytes} from "./scstring";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -125,7 +125,8 @@ export function addressToString(value: ScAddress): string {
     if (value.id[0] != ScAddressEth) {
         return bech32Encode(value);
     }
-    const hex = bytesFromString(hexEncode(addressToBytes(value)));
+
+    const hex = stringToBytes(hexEncode(addressToBytes(value)));
     const hash = hashKeccak(hex.slice(2)).toBytes();
     for (let i = 2; i < hex.length; i++) {
         let hashByte = hash[(i-2)/2] as u8;

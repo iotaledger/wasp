@@ -116,7 +116,7 @@ func AddressToString(value ScAddress) string {
 		} else {
 			hashByte &= 0xf
 		}
-		if hex[i] > '9' && hashByte > 7 {
+		if hex[i] > 0x39 && hashByte > 7 {
 			hex[i] -= 32
 		}
 	}
