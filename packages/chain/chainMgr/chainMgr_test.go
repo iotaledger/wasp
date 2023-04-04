@@ -80,7 +80,8 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for i, nid := range nodeIDs {
 		consensusStateRegistry := testutil.NewConsensusStateRegistry()
 		stores[nid] = state.NewStore(mapdb.NewMapDB())
-		origin.InitChainByAliasOutput(stores[nid], originAO)
+		_, err := origin.InitChainByAliasOutput(stores[nid], originAO)
+		require.NoError(t, err)
 		activeAccessNodesCB := func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
 			return []*cryptolib.PublicKey{}, []*cryptolib.PublicKey{}
 		}
