@@ -40,7 +40,7 @@ func testBasic(t *testing.T, n, cmtN, cmtF int) {
 		requestReceivedCB := func(req isc.Request) {
 			recv[thisNodeID] = req
 		}
-		nodes[nid] = distSync.New(thisNodeID, requestNeededCB, requestReceivedCB, 100, log)
+		nodes[nid] = distSync.New(thisNodeID, requestNeededCB, requestReceivedCB, 100, func(count int) {}, log)
 	}
 
 	req := isc.NewOffLedgerRequest(

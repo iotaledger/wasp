@@ -5,6 +5,7 @@ package chain
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -33,6 +34,19 @@ const (
 	ActiveState                                  // The state the chain build next TX on, can be ahead of ConfirmedState.
 	ConfirmedState                               // The state confirmed on L1.
 )
+
+func (sf StateFreshness) String() string {
+	switch sf {
+	case ActiveOrCommittedState:
+		return "ActiveOrCommittedState"
+	case ActiveState:
+		return "ActiveState"
+	case ConfirmedState:
+		return "ConfirmedState"
+	default:
+		return fmt.Sprintf("StateFreshness=%v", int(sf))
+	}
+}
 
 type ChainCore interface {
 	ID() isc.ChainID
