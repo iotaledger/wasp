@@ -148,6 +148,7 @@ type ChainMetricsProvider struct {
 	mempoolOnLedgerPoolSize  *prometheus.GaugeVec
 	mempoolOffLedgerPoolSize *prometheus.GaugeVec
 	mempoolTotalSize         *prometheus.GaugeVec
+	mempoolMissingReqs       *prometheus.GaugeVec
 
 	// messages
 	chainsRegistered       []isc.ChainID
@@ -285,6 +286,12 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 			Name:      "total_pool_size",
 			Help:      "Total requests in mempool.",
 		}, []string{labelNameChain}),
+		mempoolMissingReqs: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "mempool",
+			Name:      "missing_reqs",
+			Help:      "Number of requests missing at this node (asking others to send them).",
+		}, []string{labelNameChain}),
 
 		//
 		// messages
@@ -390,6 +397,7 @@ func (m *ChainMetricsProvider) PrometheusCollectorsMempool() []prometheus.Collec
 		m.mempoolOnLedgerPoolSize,
 		m.mempoolOffLedgerPoolSize,
 		m.mempoolTotalSize,
+		m.mempoolMissingReqs,
 	}
 }
 

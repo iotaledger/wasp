@@ -230,6 +230,7 @@ func New(
 		mpi.distSyncRequestNeededCB,
 		mpi.distSyncRequestReceivedCB,
 		distShareMaxMsgsPerTick,
+		mpi.metrics.SetMissingReqs,
 		log,
 	)
 	netRecvPipeInCh := mpi.netRecvPipe.In()
