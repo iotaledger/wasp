@@ -1,11 +1,8 @@
 package runvm
 
 import (
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
@@ -61,11 +58,6 @@ func runTask(task *vm.VMTask) {
 
 	if !task.WillProduceBlock() {
 		return
-	}
-
-	{
-		accountsState := subrealm.NewReadOnly(task.StateDraft, kv.Key(accounts.Contract.Hname().Bytes()))
-		accounts.CheckLedger(accountsState, "runTask")
 	}
 
 	numProcessed := uint16(len(task.Results))
