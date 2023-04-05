@@ -4,6 +4,7 @@
 package test
 
 import (
+	"bytes"
 	"crypto/rand"
 	"fmt"
 	"math/big"
@@ -402,7 +403,96 @@ func TestAccountNFTAmountInCollection(t *testing.T) {
 }
 
 func TestAccountNFTsInCollection(t *testing.T) {
-	// TODO add test later
+	ctx := setupAccounts(t)
+	user := ctx.NewSoloAgent("user")
+	collectionOwnerAddr, _ := isc.AddressFromAgentID(user.AgentID())
+	collectionOwner := user.Pair
+	err := ctx.Chain.DepositBaseTokensToL2(ctx.Chain.Env.L1BaseTokens(collectionOwnerAddr)/2, collectionOwner)
+	require.NoError(t, err)
+
+	_, ethAddr := ctx.Chain.NewEthereumAccountWithL2Funds()
+	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
+
+	collectionMetadata := isc.NewIRC27NFTMetadata(
+		"text/html",
+		"https://my-awesome-nft-project.com",
+		"a string that is longer than 32 bytes",
+	)
+
+	collection, collectionInfo, err := ctx.Chain.Env.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.MustBytes())
+	require.NoError(t, err)
+
+	nftMetadatas := []*isc.IRC27NFTMetadata{
+		isc.NewIRC27NFTMetadata(
+			"application/json",
+			"https://my-awesome-nft-project.com/1.json",
+			"nft1",
+		),
+		isc.NewIRC27NFTMetadata(
+			"application/json",
+			"https://my-awesome-nft-project.com/2.json",
+			"nft2",
+		),
+	}
+	nftNum := len(nftMetadatas)
+	allNFTs, _, err := ctx.Chain.Env.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID,
+		lo.Map(nftMetadatas, func(item *isc.IRC27NFTMetadata, index int) []byte {
+			return item.MustBytes()
+		}),
+	)
+	require.NoError(t, err)
+
+	require.Len(t, allNFTs, nftNum+1)
+	for _, nft := range allNFTs {
+		require.True(t, ctx.Chain.Env.HasL1NFT(collectionOwnerAddr, &nft.ID))
+	}
+
+	// deposit all nfts on L2
+	nfts := func() []*isc.NFT {
+		var nfts []*isc.NFT
+		for _, nft := range allNFTs {
+			if nft.ID == collection.ID {
+				// the collection NFT in the owner's account
+				ctx.Chain.MustDepositNFT(nft, isc.NewAgentID(collectionOwnerAddr), collectionOwner)
+			} else {
+				// others in ethAgentID's account
+				ctx.Chain.MustDepositNFT(nft, ethAgentID, collectionOwner)
+				nfts = append(nfts, nft)
+			}
+		}
+		return nfts
+	}()
+	require.Len(t, nfts, nftNum)
+
+	f := coreaccounts.ScFuncs.AccountNFTsInCollection(ctx)
+	f.Params.AgentID().SetValue(ctx.Cvt.ScAgentID(ethAgentID))
+	f.Params.Collection().SetValue(ctx.Cvt.ScNftID(&collection.ID))
+	f.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.Equal(t, uint32(nftNum), f.Results.NftIDs().Length())
+	for i := 0; i < nftNum; i++ {
+		nftID := f.Results.NftIDs().GetNftID(uint32(i)).Value()
+		require.True(t, ifContainNFTID(nfts, nftID))
+	}
+}
+
+func ifContainNFTID(nfts []*isc.NFT, nftID wasmtypes.ScNftID) bool {
+	ret := false
+	stringRet := false
+	byteRet := false
+	for _, nft := range nfts {
+		if nft.ID.String() == nftID.String() {
+			stringRet = true
+		}
+		if bytes.Equal([]byte(nft.ID[:]), nftID.Bytes()) {
+			byteRet = true
+		}
+		ret = stringRet && byteRet
+	}
+	if !ret {
+		fmt.Println("not exist nftID: ", nftID)
+	}
+	return ret
 }
 
 func TestBalance(t *testing.T) {
