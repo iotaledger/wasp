@@ -56,17 +56,22 @@ impl ScSandboxUtils {
         bool_from_bytes(&sandbox(FN_UTILS_ED25519_VALID, &enc.buf()))
     }
 
-    // hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
+    // hashes the specified value bytes using Blake2b hashing and returns the resulting 32-byte hash
     pub fn hash_blake2b(&self, value: &[u8]) -> ScHash {
         hash_from_bytes(&sandbox(FN_UTILS_HASH_BLAKE2B, value))
     }
 
-    // hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
+    // hashes the specified value bytes using Keccak hashing and returns the resulting 32-byte hash
+    pub fn hash_keccak(&self, value: &[u8]) -> ScHash {
+        hash_from_bytes(&sandbox(FN_UTILS_HASH_KECCAK, value))
+    }
+
+    // hashes the specified value bytes using Blake2b hashing and returns the resulting 32-byte hash
     pub fn hash_name(&self, name: &str) -> ScHname {
         hname_from_bytes(&sandbox(FN_UTILS_HASH_NAME, &string_to_bytes(name)))
     }
 
-    // hashes the specified value bytes using sha3 hashing and returns the resulting 32-byte hash
+    // hashes the specified value bytes using SHA3 hashing and returns the resulting 32-byte hash
     pub fn hash_sha3(&self, value: &[u8]) -> ScHash {
         hash_from_bytes(&sandbox(FN_UTILS_HASH_SHA3, value))
     }

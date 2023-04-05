@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
@@ -75,6 +76,10 @@ func clientBech32Encode(scAddress wasmtypes.ScAddress) string {
 	return addr.Bech32(HrpForClient)
 }
 
+func clientHashKeccak(buf []byte) wasmtypes.ScHash {
+	return wasmtypes.HashFromBytes(hashing.HashKeccak(buf).Bytes())
+}
+
 func clientHashName(name string) wasmtypes.ScHname {
 	hName := isc.Hn(name)
 	return cvt.ScHname(hName)
@@ -88,6 +93,7 @@ func SetSandboxWrappers(chainID string) error {
 	// local client implementations for some sandbox functions
 	wasmtypes.Bech32Decode = clientBech32Decode
 	wasmtypes.Bech32Encode = clientBech32Encode
+	wasmtypes.HashKeccak = clientHashKeccak
 	wasmtypes.HashName = clientHashName
 
 	// set the network prefix for the current network

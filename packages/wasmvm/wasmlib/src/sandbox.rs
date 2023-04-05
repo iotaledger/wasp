@@ -46,6 +46,7 @@ pub const FN_UTILS_ED25519_VALID      : i32 = -35;
 pub const FN_UTILS_HASH_BLAKE2B       : i32 = -36;
 pub const FN_UTILS_HASH_NAME          : i32 = -37;
 pub const FN_UTILS_HASH_SHA3          : i32 = -38;
+pub const FN_UTILS_HASH_KECCAK        : i32 = -39;
 // @formatter:on
 
 // Direct logging of informational text to host log

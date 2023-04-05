@@ -52,17 +52,22 @@ func (u ScSandboxUtils) Ed25519ValidSignature(data, pubKey, signature []byte) bo
 	return wasmtypes.BoolFromBytes(Sandbox(FnUtilsEd25519Valid, enc.Buf()))
 }
 
-// hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
+// hashes the specified value bytes using Blake2b hashing and returns the resulting 32-byte hash
 func (u ScSandboxUtils) HashBlake2b(value []byte) wasmtypes.ScHash {
 	return wasmtypes.HashFromBytes(Sandbox(FnUtilsHashBlake2b, value))
 }
 
-// hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
+// hashes the specified value bytes using Keccak hashing and returns the resulting 32-byte hash
+func (u ScSandboxUtils) HashKeccak(value []byte) wasmtypes.ScHash {
+	return wasmtypes.HashFromBytes(Sandbox(FnUtilsHashKeccak, value))
+}
+
+// hashes the specified value bytes using Blake2b hashing and returns the resulting 32-byte hash
 func (u ScSandboxUtils) HashName(value string) wasmtypes.ScHname {
 	return wasmtypes.HnameFromBytes(Sandbox(FnUtilsHashName, []byte(value)))
 }
 
-// hashes the specified value bytes using sha3 hashing and returns the resulting 32-byte hash
+// hashes the specified value bytes using SHA3 hashing and returns the resulting 32-byte hash
 func (u ScSandboxUtils) HashSha3(value []byte) wasmtypes.ScHash {
 	return wasmtypes.HashFromBytes(Sandbox(FnUtilsHashSha3, value))
 }

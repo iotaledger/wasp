@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use wasmlib::{chain_id_from_bytes, chain_id_to_bytes, chain_id_to_string, IEventHandlers, request_id_from_bytes};
+use wasmlib::{address_from_bytes, chain_id_from_bytes, chain_id_to_bytes, chain_id_to_string, hex_decode, IEventHandlers, request_id_from_bytes};
 
 use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};
 
@@ -71,6 +71,16 @@ fn setup_client() -> WasmClientContext {
     ));
     check_error(&ctx);
     return ctx;
+}
+
+#[test]
+fn eth_address() {
+    let mut svc = WasmClientService::new(WASP_API);
+    svc.set_current_chain_id("tgl1pqufy0lzy5fhgfymwzaz8trvkkula4kfjlgytfr6a2e5q5g53jtly4hmzaf").unwrap();
+    let str_address = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c";
+    let address = address_from_bytes(&hex_decode(str_address));
+    let eth_address = address.to_string();
+    assert_eq!(str_address, eth_address);
 }
 
 #[test]

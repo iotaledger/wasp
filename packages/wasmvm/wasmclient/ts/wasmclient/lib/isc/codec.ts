@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {Bech32, Blake2b} from '@iota/crypto.js';
+import create from 'keccak';
 import * as wasmlib from 'wasmlib';
 import {panic} from 'wasmlib';
 import * as isc from './';
@@ -49,7 +50,15 @@ export class Codec {
         return Bech32.encode(hrp, wasmlib.addressToBytes(addr));
     }
 
-    public static hNameBytes(name: string): Uint8Array {
+    public static hashKeccak(buf: Uint8Array): Uint8Array {
+        const buffer = Buffer.alloc(buf.length);
+        for (let i = 0; i < buf.length; ++i) {
+            buffer[i] = buf[i];
+        }
+        return new Uint8Array(create('keccak256').update(buffer).digest());
+    }
+
+    public static hashName(name: string): Uint8Array {
         const data = wasmlib.stringToBytes(name);
         const hash = Blake2b.sum256(data);
         for (let i = 0; i < hash.length; i += wasmlib.ScHnameLength) {
@@ -116,14 +125,18 @@ export function clientBech32Encode(addr: wasmlib.ScAddress): string {
     return isc.Codec.bech32Encode(hrpForClient, addr);
 }
 
+export function clientHashKeccak(buf: Uint8Array): wasmlib.ScHash {
+    return wasmlib.hashFromBytes(isc.Codec.hashKeccak(buf));
+}
+
 export function clientHashName(name: string): wasmlib.ScHname {
     const hName = new wasmlib.ScHname(0);
-    hName.id = isc.Codec.hNameBytes(name);
+    hName.id = isc.Codec.hashName(name);
     return hName;
 }
 
 export function setSandboxWrappers(chainID: string): Error {
-    wasmlib.sandboxWrappers(clientBech32Decode, clientBech32Encode, clientHashName);
+    wasmlib.sandboxWrappers(clientBech32Decode, clientBech32Encode, clientHashKeccak, clientHashName);
 
     // set the network prefix for the current network
     const [hrp, _addr, err] = isc.Codec.bech32Decode(chainID);

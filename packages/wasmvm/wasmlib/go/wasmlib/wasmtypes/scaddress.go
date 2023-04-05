@@ -104,10 +104,23 @@ func AddressFromString(value string) ScAddress {
 }
 
 func AddressToString(value ScAddress) string {
-	if value.id[0] == ScAddressEth {
-		return HexEncode(AddressToBytes(value))
+	if value.id[0] != ScAddressEth {
+		return Bech32Encode(value)
 	}
-	return Bech32Encode(value)
+	hex := []byte(HexEncode(AddressToBytes(value)))
+	hash := HashKeccak(hex[2:]).Bytes()
+	for i := 2; i < len(hex); i++ {
+		hashByte := hash[(i-2)>>1]
+		if (i & 0x01) == 0 {
+			hashByte >>= 4
+		} else {
+			hashByte &= 0x0f
+		}
+		if hex[i] > 0x39 && hashByte > 7 {
+			hex[i] -= 32
+		}
+	}
+	return string(hex)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

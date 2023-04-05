@@ -17,7 +17,7 @@ export class WasmClientSandbox {
     public constructor(svcClient: WasmClientService, scName: string) {
         this.svcClient = svcClient;
         this.scName = scName;
-        this.scHname = wasmlib.hnameFromBytes(isc.Codec.hNameBytes(scName));
+        this.scHname = wasmlib.hashName(scName);
     }
 
     public currentChainID(): wasmlib.ScChainID {

@@ -118,10 +118,24 @@ pub fn address_from_string(value: &str) -> ScAddress {
 }
 
 pub fn address_to_string(value: &ScAddress) -> String {
-    if value.id[0] == SC_ADDRESS_ETH {
-        return hex_encode(&address_to_bytes(value));
+    if value.id[0] != SC_ADDRESS_ETH {
+        return bech32_encode(value);
     }
-    bech32_encode(value)
+
+    let mut hex = string_to_bytes(&hex_encode(&address_to_bytes(value)));
+    let hash = hash_keccak(&hex[2..]).to_bytes();
+    for i in 2..hex.len() {
+        let mut hash_byte = hash[(i-2) >> 1];
+        if (i & 0x01) == 0 {
+            hash_byte >>= 4;
+        } else {
+            hash_byte &= 0x0f;
+        }
+        if hex[i] > 0x39 && hash_byte > 7 {
+            hex[i] -= 32;
+        }
+    }
+    string_from_bytes(&hex)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

@@ -47,6 +47,7 @@ const (
 	FnUtilsHashBlake2b       = int32(-36)
 	FnUtilsHashName          = int32(-37)
 	FnUtilsHashSha3          = int32(-38)
+	FnUtilsHashKeccak        = int32(-39)
 )
 
 type ScSandbox struct{}
