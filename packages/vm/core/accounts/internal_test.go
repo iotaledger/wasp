@@ -1,9 +1,11 @@
 package accounts
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
@@ -31,9 +33,31 @@ func TestBasic(t *testing.T) {
 
 var dummyAssetID = [iotago.NativeTokenIDLength]byte{1, 2, 3}
 
+func checkLedger(state kv.KVStoreReader, checkpoint string) {
+	t := GetTotalL2FungibleTokens(state)
+	c := calcL2TotalFungibleTokens(state)
+	if !t.Equals(c) {
+		panic(fmt.Sprintf("inconsistent on-chain account ledger @ checkpoint '%s'\n total assets: %s\ncalc total: %s\n",
+			checkpoint, t, c))
+	}
+
+	totalAccNFTs := GetTotalL2NFTs(state)
+	if len(lo.FindDuplicates(totalAccNFTs)) != 0 {
+		panic(fmt.Sprintf("inconsistent on-chain account ledger @ checkpoint '%s'\n duplicate NFTs\n", checkpoint))
+	}
+	calculatedNFTs := calcL2TotalNFTs(state)
+	if len(lo.FindDuplicates(calculatedNFTs)) != 0 {
+		panic(fmt.Sprintf("inconsistent on-chain account ledger @ checkpoint '%s'\n duplicate NFTs\n", checkpoint))
+	}
+	left, right := lo.Difference(calculatedNFTs, totalAccNFTs)
+	if len(left)+len(right) != 0 {
+		panic(fmt.Sprintf("inconsistent on-chain account ledger @ checkpoint '%s'\n NFTs don't match\n", checkpoint))
+	}
+}
+
 func checkLedgerT(t *testing.T, state dict.Dict, cp string) *isc.Assets {
 	require.NotPanics(t, func() {
-		CheckLedger(state, cp)
+		checkLedger(state, cp)
 	})
 	return GetTotalL2FungibleTokens(state)
 }
