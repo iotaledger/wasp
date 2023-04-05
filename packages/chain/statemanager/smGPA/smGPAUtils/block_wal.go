@@ -46,7 +46,6 @@ func (bwT *blockWAL) Write(block state.Block) error {
 	commitment := block.L1Commitment()
 	fileName := fileName(commitment.BlockHash())
 	filePath := filepath.Join(bwT.dir, fileName)
-	bwT.LogDebugf("Writing block %s to wal; file name - %s", commitment, fileName)
 	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 	if err != nil {
 		bwT.metrics.IncFailedWrites()
@@ -64,6 +63,7 @@ func (bwT *blockWAL) Write(block state.Block) error {
 		return fmt.Errorf("only %v of total %v bytes of block were written to file %s", n, len(blockBytes), fileName)
 	}
 	bwT.metrics.IncSegments()
+	bwT.LogDebugf("Block %s written to wal; file name - %s", commitment, fileName)
 	return nil
 }
 

@@ -42,8 +42,6 @@ func (bcT *blockCache) AddBlock(block state.Block) {
 	err := bcT.wal.Write(block)
 	if err != nil {
 		bcT.log.Errorf("Failed writing block %s to WAL: %v", commitment, err)
-	} else {
-		bcT.log.Debugf("Block %s written to WAL", commitment)
 	}
 
 	bcT.blocks.Set(blockKey, block)
@@ -69,19 +67,17 @@ func (bcT *blockCache) GetBlock(commitment *state.L1Commitment) state.Block {
 		bcT.log.Debugf("Block %s retrieved from cache", commitment)
 		return block
 	}
-	bcT.log.Debugf("Block %s is not in cache", commitment)
 
 	// Check in WAL
 	if bcT.wal.Contains(commitment.BlockHash()) {
 		block, err := bcT.wal.Read(commitment.BlockHash())
 		if err != nil {
-			bcT.log.Debugf("Error reading block %s from WAL: %w", commitment, err)
+			bcT.log.Errorf("Error reading block %s from WAL: %w", commitment, err)
 			return nil
 		}
 		bcT.log.Debugf("Block %s retrieved from WAL", commitment)
 		return block
 	}
-	bcT.log.Debugf("Block %s is not in WAL", commitment)
 
 	return nil
 }
