@@ -125,11 +125,11 @@ pub fn address_to_string(value: &ScAddress) -> String {
     let mut hex = string_to_bytes(&hex_encode(&address_to_bytes(value)));
     let hash = hash_keccak(&hex[2..]).to_bytes();
     for i in 2..hex.len() {
-        let mut hash_byte = hash[(i-2)/2];
-        if i%2 == 0 {
+        let mut hash_byte = hash[(i-2) >> 1];
+        if (i & 0x01) == 0 {
             hash_byte >>= 4;
         } else {
-            hash_byte &= 0xf;
+            hash_byte &= 0x0f;
         }
         if hex[i] > 0x39 && hash_byte > 7 {
             hex[i] -= 32;

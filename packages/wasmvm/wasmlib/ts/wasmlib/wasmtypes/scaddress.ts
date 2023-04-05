@@ -127,11 +127,11 @@ export function addressToString(value: ScAddress): string {
     const hex = stringToBytes(hexEncode(addressToBytes(value)));
     const hash = hashKeccak(hex.slice(2)).toBytes();
     for (let i = 2; i < hex.length; i++) {
-        let hashByte = hash[(i-2)/2] as u8;
-        if (i%2 == 0) {
+        let hashByte = hash[(i-2) >> 1] as u8;
+        if ((i & 0x01) == 0) {
             hashByte >>= 4;
         } else {
-            hashByte &= 0xf;
+            hashByte &= 0x0f;
         }
         if (hex[i] > 0x39 && hashByte > 7) {
             hex[i] -= 32;

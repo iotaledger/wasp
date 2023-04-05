@@ -56,7 +56,7 @@ export class Codec {
             buffer[i] = buf[i];
         }
         return new Uint8Array(create('keccak256').update(buffer).digest());
-     }
+    }
 
     public static hashName(name: string): Uint8Array {
         const data = wasmlib.stringToBytes(name);

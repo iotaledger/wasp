@@ -110,11 +110,11 @@ func AddressToString(value ScAddress) string {
 	hex := []byte(HexEncode(AddressToBytes(value)))
 	hash := HashKeccak(hex[2:]).Bytes()
 	for i := 2; i < len(hex); i++ {
-		hashByte := hash[(i-2)/2]
-		if i%2 == 0 {
+		hashByte := hash[(i-2)>>1]
+		if (i & 0x01) == 0 {
 			hashByte >>= 4
 		} else {
-			hashByte &= 0xf
+			hashByte &= 0x0f
 		}
 		if hex[i] > 0x39 && hashByte > 7 {
 			hex[i] -= 32

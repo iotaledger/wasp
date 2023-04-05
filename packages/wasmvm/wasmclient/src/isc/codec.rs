@@ -52,8 +52,7 @@ pub struct JsonError {
     pub(crate) message: String,
 }
 
-pub(crate) struct Codec {
-}
+pub(crate) struct Codec {}
 
 impl Codec {
     fn bech32_decode(input: &str) -> Result<(String, ScAddress)> {

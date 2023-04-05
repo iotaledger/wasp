@@ -1,10 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+import {Blake2b} from '@iota/crypto.js';
 import * as wasmlib from 'wasmlib';
 import {concat} from 'wasmlib';
 import {KeyPair} from './keypair';
-import {Blake2b} from '@iota/crypto.js';
 
 export class OffLedgerSignatureScheme {
     keyPair: KeyPair;
