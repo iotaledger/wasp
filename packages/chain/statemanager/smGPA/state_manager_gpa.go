@@ -36,12 +36,14 @@ type stateManagerGPA struct {
 	lastGetBlocksTime       time.Time
 	lastCleanBlockCacheTime time.Time
 	lastCleanRequestsTime   time.Time
+	lastStatusLogTime       time.Time
 }
 
 var _ gpa.GPA = &stateManagerGPA{}
 
 const (
 	numberOfNodesToRequestBlockFromConst = 5
+	statusLogPeriodConst                 = 10 * time.Second
 )
 
 func New(
@@ -69,6 +71,7 @@ func New(
 		timers:                  timers,
 		lastGetBlocksTime:       time.Time{},
 		lastCleanBlockCacheTime: time.Time{},
+		lastStatusLogTime:       time.Time{},
 	}
 
 	return result, nil
@@ -450,7 +453,11 @@ func (smT *stateManagerGPA) makeGetBlockRequestMessages(commitment *state.L1Comm
 
 func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMessages {
 	result := gpa.NoMessages()
-	smT.log.Debugf("State manager gpa status: %s", smT.StatusString())
+	nextStatusLogTime := smT.lastStatusLogTime.Add(statusLogPeriodConst)
+	if now.After(nextStatusLogTime) {
+		smT.log.Debugf("State manager gpa status: %s", smT.StatusString())
+		smT.lastStatusLogTime = now
+	}
 	nextGetBlocksTime := smT.lastGetBlocksTime.Add(smT.timers.StateManagerGetBlockRetry)
 	if now.After(nextGetBlocksTime) {
 		commitments := smT.blocksToFetch.getCommitments()

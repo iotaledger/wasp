@@ -82,6 +82,7 @@ var (
 const (
 	constMsgTypeStm           byte = iota
 	constDefaultTimerTickTime      = 1 * time.Second
+	constStatusTimerTime           = 10 * time.Second
 )
 
 func New(
@@ -204,9 +205,8 @@ func (smT *stateManager) run() {
 	messagePipeCh := smT.messagePipe.Out()
 	nodePubKeysPipeCh := smT.nodePubKeysPipe.Out()
 	timerTickCh := smT.timers.TimeProvider.After(smT.timers.StateManagerTimerTickPeriod)
+	statusTimerCh := smT.timers.TimeProvider.After(constStatusTimerTime)
 	for {
-		smT.log.Debugf("State manager loop iteration; there are %v inputs, %v messages, %v public key changes waiting to be handled",
-			smT.inputPipe.Len(), smT.messagePipe.Len(), smT.nodePubKeysPipe.Len())
 		if smT.ctx.Err() != nil {
 			if smT.shutdownCoordinator == nil {
 				return
@@ -244,6 +244,10 @@ func (smT *stateManager) run() {
 			} else {
 				timerTickCh = nil
 			}
+		case <-statusTimerCh:
+			statusTimerCh = smT.timers.TimeProvider.After(constStatusTimerTime)
+			smT.log.Debugf("State manager loop iteration; there are %v inputs, %v messages, %v public key changes waiting to be handled",
+				smT.inputPipe.Len(), smT.messagePipe.Len(), smT.nodePubKeysPipe.Len())
 		case <-smT.ctx.Done():
 			continue
 		}
