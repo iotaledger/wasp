@@ -86,13 +86,13 @@ func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) st
 	return block
 }
 
-func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutputWithID) state.Block {
+func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutputWithID) (state.Block, error) {
 	var initParams dict.Dict
 	if originMetadata := aliasOutput.GetAliasOutput().FeatureSet().MetadataFeature(); originMetadata != nil {
 		var err error
 		initParams, err = dict.FromBytes(originMetadata.Data)
 		if err != nil {
-			panic(fmt.Sprintf("invalid parameters on origin AO, %s", err.Error()))
+			return nil, fmt.Errorf("invalid parameters on origin AO, %w", err)
 		}
 	}
 	l1params := parameters.L1()
@@ -102,33 +102,34 @@ func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutput
 
 	originAOStateMetadata, err := transaction.StateMetadataFromBytes(aliasOutput.GetStateMetadata())
 	if err != nil {
-		panic(fmt.Sprintf("invalid state metadata on origin AO: %s", err.Error()))
+		return nil, fmt.Errorf("invalid state metadata on origin AO: %w", err)
+	}
+	if originAOStateMetadata.Version != transaction.StateMetadataSupportedVersion {
+		return nil, fmt.Errorf("unsupported StateMetadata Version: %v, expect %v", originAOStateMetadata.Version, transaction.StateMetadataSupportedVersion)
 	}
 	if !originBlock.L1Commitment().Equals(originAOStateMetadata.L1Commitment) {
 		l1paramsJSON, err := json.Marshal(l1params)
 		if err != nil {
-			l1paramsJSON = []byte(fmt.Sprintf("unable to marshaljson l1params: %s", err.Error()))
+			l1paramsJSON = []byte(fmt.Sprintf("unable to marshalJson l1params: %s", err.Error()))
 		}
-		x := (fmt.Sprintf(
-			"L1Commitment mismatch between originAO / originBlock: %s / %s, AOminSD: %d, L1params: %s",
+		return nil, fmt.Errorf(
+			"l1Commitment mismatch between originAO / originBlock: %s / %s, AOminSD: %d, L1params: %s",
 			originAOStateMetadata.L1Commitment,
 			originBlock.L1Commitment(),
 			aoMinSD,
 			string(l1paramsJSON),
-		))
-		println(x)
-		panic(x)
+		)
 	}
-	return originBlock
+	return originBlock, nil
 }
 
 func calcStateMetadata(initParams dict.Dict, commonAccountAmount uint64) []byte {
-	s := &transaction.StateMetadata{
-		L1Commitment:   L1Commitment(initParams, commonAccountAmount),
-		GasFeePolicy:   gas.DefaultFeePolicy(),
-		SchemaVersion:  migrations.BaseSchemaVersion + uint32(len(migrations.Migrations)),
-		CustomMetadata: []byte{},
-	}
+	s := transaction.NewStateMetadata(
+		L1Commitment(initParams, commonAccountAmount),
+		gas.DefaultFeePolicy(),
+		migrations.BaseSchemaVersion+uint32(len(migrations.Migrations)),
+		[]byte{},
+	)
 	return s.Bytes()
 }
 
@@ -165,9 +166,6 @@ func NewChainOriginTransaction(
 			&iotago.GovernorAddressUnlockCondition{Address: governanceControllerAddress},
 		},
 		Features: iotago.Features{
-			&iotago.SenderFeature{
-				Address: walletAddr,
-			},
 			&iotago.MetadataFeature{Data: initParams.Bytes()},
 		},
 	}

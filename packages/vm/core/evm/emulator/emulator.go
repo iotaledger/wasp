@@ -311,22 +311,17 @@ func (e *EVMEmulator) MintBlock() {
 	e.BlockchainDB().MintBlock(e.timestamp)
 }
 
-// FilterLogs executes a log filter operation, blocking during execution and
-// returning all the results in one batch.
-func (e *EVMEmulator) FilterLogs(query *ethereum.FilterQuery) ([]*types.Log, error) {
-	receipts, err := e.getReceiptsInFilterRange(query)
-	if err != nil {
-		return nil, err
-	}
-	return e.filterLogs(query, receipts)
-}
-
 const (
 	maxBlocksInFilterRange = 1_000
 	maxLogsInResult        = 10_000
 )
 
-func (e *EVMEmulator) getReceiptsInFilterRange(query *ethereum.FilterQuery) ([]*types.Receipt, error) {
+// FilterLogs executes a log filter operation, blocking during execution and
+// returning all the results in one batch.
+//
+//nolint:gocyclo
+func (e *EVMEmulator) FilterLogs(query *ethereum.FilterQuery) ([]*types.Log, error) {
+	logs := make([]*types.Log, 0)
 	bc := e.BlockchainDB()
 
 	if query.BlockHash != nil {
@@ -334,7 +329,12 @@ func (e *EVMEmulator) getReceiptsInFilterRange(query *ethereum.FilterQuery) ([]*
 		if !ok {
 			return nil, nil
 		}
-		return bc.GetReceiptsByBlockNumber(blockNumber), nil
+		receipts := bc.GetReceiptsByBlockNumber(blockNumber)
+		err := filterAndAppendToLogs(query, receipts, &logs)
+		if err != nil {
+			return nil, err
+		}
+		return logs, nil
 	}
 
 	// Initialize unset filter boundaries to run from genesis to chain head
@@ -352,7 +352,6 @@ func (e *EVMEmulator) getReceiptsInFilterRange(query *ethereum.FilterQuery) ([]*
 	if !from.IsUint64() || !to.IsUint64() {
 		return nil, errors.New("block number is too large")
 	}
-	var receipts []*types.Receipt
 	{
 		from := from.Uint64()
 		to := to.Uint64()
@@ -360,14 +359,20 @@ func (e *EVMEmulator) getReceiptsInFilterRange(query *ethereum.FilterQuery) ([]*
 			return nil, errors.New("too many blocks in filter range")
 		}
 		for i := from; i <= to; i++ {
-			receipts = append(receipts, bc.GetReceiptsByBlockNumber(i)...)
+			err := filterAndAppendToLogs(
+				query,
+				bc.GetReceiptsByBlockNumber(i),
+				&logs,
+			)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
-	return receipts, nil
+	return logs, nil
 }
 
-func (e *EVMEmulator) filterLogs(query *ethereum.FilterQuery, receipts []*types.Receipt) ([]*types.Log, error) {
-	var logs []*types.Log
+func filterAndAppendToLogs(query *ethereum.FilterQuery, receipts []*types.Receipt, logs *[]*types.Log) error {
 	for _, r := range receipts {
 		if !evmtypes.BloomFilter(r.Bloom, query.Addresses, query.Topics) {
 			continue
@@ -376,13 +381,13 @@ func (e *EVMEmulator) filterLogs(query *ethereum.FilterQuery, receipts []*types.
 			if !evmtypes.LogMatches(log, query.Addresses, query.Topics) {
 				continue
 			}
-			if len(logs) >= maxLogsInResult {
-				return nil, errors.New("too many logs in result")
+			if len(*logs) >= maxLogsInResult {
+				return errors.New("too many logs in result")
 			}
-			logs = append(logs, log)
+			*logs = append(*logs, log)
 		}
 	}
-	return logs, nil
+	return nil
 }
 
 func (e *EVMEmulator) Signer() types.Signer {

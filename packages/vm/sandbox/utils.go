@@ -61,14 +61,20 @@ func (u utilImpl) Blake2b(data []byte) hashing.HashValue {
 	return hashing.HashDataBlake2b(data)
 }
 
-func (u utilImpl) Sha3(data []byte) hashing.HashValue {
-	u.gas.Burn(gas.BurnCodeUtilsHashingSha3)
-	return hashing.HashSha3(data)
-}
-
 func (u utilImpl) Hname(name string) isc.Hname {
 	u.gas.Burn(gas.BurnCodeUtilsHashingHname)
 	return isc.Hn(name)
+}
+
+func (u utilImpl) Keccak(data []byte) hashing.HashValue {
+	// no need for a new burn code, since Keccak == SHA3 with different padding
+	u.gas.Burn(gas.BurnCodeUtilsHashingSha3)
+	return hashing.HashKeccak(data)
+}
+
+func (u utilImpl) Sha3(data []byte) hashing.HashValue {
+	u.gas.Burn(gas.BurnCodeUtilsHashingSha3)
+	return hashing.HashSha3(data)
 }
 
 // --- isc.ED25519 interface

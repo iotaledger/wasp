@@ -16,7 +16,6 @@ import (
 )
 
 func TestVarLogIndex(t *testing.T) {
-	t.SkipNow() // TODO: Disable pipelining temporary.
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	n := 4
@@ -26,7 +25,7 @@ func TestVarLogIndex(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(4)
 	initLI := NilLogIndex().Next()
 	//
-	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, log)
+	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, true, log)
 	//
 	nextLI := initLI.Next()
 	vliLI, _ := vli.Value()
@@ -41,7 +40,6 @@ func TestVarLogIndex(t *testing.T) {
 }
 
 func TestVarLogIndexV2(t *testing.T) {
-	t.SkipNow() // TODO: Disable pipelining temporary.
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	n := 4
@@ -51,7 +49,7 @@ func TestVarLogIndexV2(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(4)
 	initLI := NilLogIndex().Next()
 	//
-	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, log)
+	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, true, log)
 	vliValueLI := func() LogIndex {
 		li, _ := vli.Value()
 		return li

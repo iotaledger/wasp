@@ -47,7 +47,6 @@ type tc struct {
 }
 
 func TestNodeBasic(t *testing.T) {
-	t.SkipNow() // TODO: Disable pipelining temporary.
 	t.Parallel()
 	tests := []tc{
 		{n: 1, f: 0, reliable: true, timeout: 10 * time.Second},   // Low N
@@ -456,6 +455,8 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			shutdown.NewCoordinator("test", log),
 			nil,
 			nil,
+			true,
+			-1,
 		)
 		require.NoError(t, err)
 		te.nodes[i].ServersUpdated(te.peerPubKeys)

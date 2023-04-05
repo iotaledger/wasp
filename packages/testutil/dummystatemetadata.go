@@ -8,10 +8,10 @@ import (
 )
 
 func DummyStateMetadata(commitment *state.L1Commitment) *transaction.StateMetadata {
-	return &transaction.StateMetadata{
-		L1Commitment:   commitment,
-		GasFeePolicy:   gas.DefaultFeePolicy(),
-		SchemaVersion:  migrations.BaseSchemaVersion + uint32(len(migrations.Migrations)),
-		CustomMetadata: []byte{},
-	}
+	return transaction.NewStateMetadata(
+		commitment,
+		gas.DefaultFeePolicy(),
+		migrations.BaseSchemaVersion+uint32(len(migrations.Migrations)),
+		[]byte{},
+	)
 }

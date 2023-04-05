@@ -1,11 +1,12 @@
 import {WasmClientContext, WasmClientService} from '../lib';
 import * as testwasmlib from 'testwasmlib';
 import {
+    addressFromBytes,
     bytesFromString,
     bytesToString,
     chainIDFromBytes,
     chainIDToBytes,
-    chainIDToString,
+    chainIDToString, hexDecode,
     requestIDFromBytes
 } from 'wasmlib';
 import {KeyPair} from '../lib/isc';
@@ -125,6 +126,17 @@ describe('keypair tests', function () {
 });
 
 describe('wasmclient', function () {
+    describe('ETH address strings', function () {
+        it('should be proper ETH address string', () => {
+            const svc = new WasmClientService(WASPAPI);
+            svc.setCurrentChainID('tgl1pqufy0lzy5fhgfymwzaz8trvkkula4kfjlgytfr6a2e5q5g53jtly4hmzaf');
+            const strAddress = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
+            const address = addressFromBytes(hexDecode(strAddress));
+            const ethAddress = address.toString();
+            expect(strAddress == ethAddress).toBeTruthy();
+        });
+    });
+
     describe('call() view', function () {
         it('should call through web API', () => {
             const ctx = setupClient();

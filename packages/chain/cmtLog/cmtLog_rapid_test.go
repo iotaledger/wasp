@@ -56,7 +56,7 @@ func (sm *cmtLogTestRapidSM) Init(t *rapid.T) {
 		dkShare, err := committeeKeyShares[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
 		consensusStateRegistry := testutil.NewConsensusStateRegistry() // Empty store in this case.
-		cmtLogInst, err := cmtLog.New(gpaNodeIDs[i], sm.chainID, dkShare, consensusStateRegistry, gpa.NodeIDFromPublicKey, log.Named(fmt.Sprintf("N%v", i)))
+		cmtLogInst, err := cmtLog.New(gpaNodeIDs[i], sm.chainID, dkShare, consensusStateRegistry, gpa.NodeIDFromPublicKey, true, -1, log.Named(fmt.Sprintf("N%v", i)))
 		require.NoError(t, err)
 		gpaNodes[gpaNodeIDs[i]] = cmtLogInst.AsGPA()
 	}

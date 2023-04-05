@@ -213,6 +213,7 @@ static UTILS: ScSandboxUtils = ScSandboxUtils {};
 
 pub static mut BECH32_DECODE: fn(bech32: &str) -> ScAddress = |bech32| UTILS.bech32_decode(bech32);
 pub static mut BECH32_ENCODE: fn(addr: &ScAddress) -> String = |addr| UTILS.bech32_encode(addr);
+pub static mut HASH_KECCAK: fn(buf: &[u8]) -> ScHash = |buf| UTILS.hash_keccak(buf);
 pub static mut HASH_NAME: fn(name: &str) -> ScHname = |name| UTILS.hash_name(name);
 
 pub fn bech32_decode(bech32: &str) -> ScAddress {
@@ -224,6 +225,12 @@ pub fn bech32_decode(bech32: &str) -> ScAddress {
 pub fn bech32_encode(addr: &ScAddress) -> String {
     unsafe {
         BECH32_ENCODE(addr)
+    }
+}
+
+pub fn hash_keccak(buf: &[u8]) -> ScHash {
+    unsafe {
+        HASH_KECCAK(buf)
     }
 }
 

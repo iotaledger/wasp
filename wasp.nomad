@@ -215,7 +215,9 @@ EOH
     "broadcastUpToNPeers": 2,
     "broadcastInterval": "5s",
     "apiCacheTTL": "5m",
-    "pullMissingRequestsFromCommittee": true
+    "pullMissingRequestsFromCommittee": true,
+    "deriveAliasOutputByQuorum": true,
+    "pipeliningLimit": -1
   },
   "rawBlocks": {
     "enabled": false,

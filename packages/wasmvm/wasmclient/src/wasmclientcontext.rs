@@ -25,7 +25,7 @@ impl WasmClientContext {
             key_pair: None,
             req_id: Arc::new(Mutex::new(request_id_from_bytes(&[]))),
             sc_name: String::from(sc_name),
-            sc_hname: hname_from_bytes(&hname_bytes(&sc_name)),
+            sc_hname: hash_name(&sc_name),
             svc_client,
         }
     }

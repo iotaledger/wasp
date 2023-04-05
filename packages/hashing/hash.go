@@ -95,6 +95,26 @@ func hashBlake2b() hash.Hash {
 	return h
 }
 
+func HashKeccak(data ...[]byte) (ret HashValue) {
+	h := hashKeccak()
+	for _, d := range data {
+		_, err := h.Write(d)
+		if err != nil {
+			panic(err)
+		}
+	}
+	copy(ret[:], h.Sum(nil))
+	return
+}
+
+func hashKeccak() hash.Hash {
+	h := sha3.NewLegacyKeccak256()
+	if h.Size() != HashSize {
+		panic("keccak: hash size != 32")
+	}
+	return h
+}
+
 func HashSha3(data ...[]byte) (ret HashValue) {
 	h := hashSha3()
 	for _, d := range data {

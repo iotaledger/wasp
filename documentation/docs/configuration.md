@@ -269,12 +269,14 @@ Example:
 
 ## <a id="chains"></a> 8. Chains
 
-| Name                             | Description                                                          | Type    | Default value |
-| -------------------------------- | -------------------------------------------------------------------- | ------- | ------------- |
-| broadcastUpToNPeers              | Number of peers an offledger request is broadcasted to               | int     | 2             |
-| broadcastInterval                | Time between re-broadcast of offledger requests                      | string  | "5s"          |
-| apiCacheTTL                      | Time to keep processed offledger requests in api cache               | string  | "5m"          |
-| pullMissingRequestsFromCommittee | Whether or not to pull missing requests from other committee members | boolean | true          |
+| Name                             | Description                                                                                             | Type    | Default value |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------- | ------- | ------------- |
+| broadcastUpToNPeers              | Number of peers an offledger request is broadcasted to                                                  | int     | 2             |
+| broadcastInterval                | Time between re-broadcast of offledger requests                                                         | string  | "5s"          |
+| apiCacheTTL                      | Time to keep processed offledger requests in api cache                                                  | string  | "5m"          |
+| pullMissingRequestsFromCommittee | Whether or not to pull missing requests from other committee members                                    | boolean | true          |
+| deriveAliasOutputByQuorum        | False means we propose own AliasOutput, true - by majority vote.                                        | boolean | true          |
+| pipeliningLimit                  | -1 -- infinite, 0 -- disabled, X -- build the chain if there is up to X transactions unconfirmed by L1. | int     | -1            |
 
 Example:
 
@@ -284,7 +286,9 @@ Example:
       "broadcastUpToNPeers": 2,
       "broadcastInterval": "5s",
       "apiCacheTTL": "5m",
-      "pullMissingRequestsFromCommittee": true
+      "pullMissingRequestsFromCommittee": true,
+      "deriveAliasOutputByQuorum": true,
+      "pipeliningLimit": -1
     }
   }
 ```

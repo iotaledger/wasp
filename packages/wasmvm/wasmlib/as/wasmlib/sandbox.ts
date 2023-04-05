@@ -40,6 +40,7 @@ export const FnUtilsEd25519Valid      : i32 = -35;
 export const FnUtilsHashBlake2b       : i32 = -36;
 export const FnUtilsHashName          : i32 = -37;
 export const FnUtilsHashSha3          : i32 = -38;
+export const FnUtilsHashKeccak        : i32 = -39;
 // @formatter:on
 
 import {ScAssets, ScBalances, ScTransfer} from './assets';
@@ -277,7 +278,7 @@ export class ScSandboxFunc extends ScSandbox {
 
     // generates a random value from 0 to max (exclusive: max) using a deterministic RNG
     public random(max: u64): u64 {
-        if (max == 0) {
+        if (max <= 0) {
             this.panic('random: max parameter should be > 0');
         }
 

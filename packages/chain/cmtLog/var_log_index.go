@@ -9,6 +9,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -113,18 +114,19 @@ type VarLogIndex interface {
 // In that case (the latestAO=⊥) the node should not propose to increase the LI, but should support proposals by others.
 // As a consequence, it might happen that this variable will provide output even without getting an input from this node.
 type varLogIndexImpl struct {
-	nodeIDs    []gpa.NodeID                    // All the peers in this committee.
-	n          int                             // Total number of nodes.
-	f          int                             // Maximal number of faulty nodes to tolerate.
-	latestAO   *isc.AliasOutputWithID          // Latest known AO, as reported by the varLocalView, can be nil (means we suspend proposing LIs).
-	proposedLI LogIndex                        // Highest LI send by this node with a ⟨NextLI, li⟩ message.
-	agreedLI   LogIndex                        // LI for which we have N-F proposals (when reached, consensus starts, the LI is persisted).
-	agreedAO   *isc.AliasOutputWithID          // AO agreed for agreedLI.
-	minLI      LogIndex                        // Minimal LI at which this node can participate (set on boot).
-	maxPeerLIs map[gpa.NodeID]*msgNextLogIndex // Latest peer indexes received from peers.
-	outputCB   func(li LogIndex, ao *isc.AliasOutputWithID)
-	lastMsgs   map[gpa.NodeID]*msgNextLogIndex
-	log        *logger.Logger
+	nodeIDs          []gpa.NodeID                    // All the peers in this committee.
+	n                int                             // Total number of nodes.
+	f                int                             // Maximal number of faulty nodes to tolerate.
+	latestAO         *isc.AliasOutputWithID          // Latest known AO, as reported by the varLocalView, can be nil (means we suspend proposing LIs).
+	proposedLI       LogIndex                        // Highest LI send by this node with a ⟨NextLI, li⟩ message.
+	agreedLI         LogIndex                        // LI for which we have N-F proposals (when reached, consensus starts, the LI is persisted).
+	agreedAO         *isc.AliasOutputWithID          // AO agreed for agreedLI.
+	minLI            LogIndex                        // Minimal LI at which this node can participate (set on boot).
+	maxPeerLIs       map[gpa.NodeID]*msgNextLogIndex // Latest peer indexes received from peers.
+	outputCB         func(li LogIndex, ao *isc.AliasOutputWithID)
+	lastMsgs         map[gpa.NodeID]*msgNextLogIndex // Messages with highest LIs received from the peers.
+	deriveAOByQuorum bool                            // True, if the AO should be derived from a quorum, instead of own value.
+	log              *logger.Logger
 }
 
 // > ON Init(persistedLI):
@@ -138,22 +140,24 @@ func NewVarLogIndex(
 	f int,
 	persistedLI LogIndex,
 	outputCB func(li LogIndex, ao *isc.AliasOutputWithID),
+	deriveAOByQuorum bool,
 	log *logger.Logger,
 ) VarLogIndex {
-	log.Debugf("NewVarLogIndex, n=%v, f=%v, persistedLI=%v", n, f, persistedLI)
+	log.Debugf("NewVarLogIndex, n=%v, f=%v, persistedLI=%v, deriveAOByQuorum=%v", n, f, persistedLI, deriveAOByQuorum)
 	return &varLogIndexImpl{
-		nodeIDs:    nodeIDs,
-		n:          n,
-		f:          f,
-		latestAO:   nil,
-		proposedLI: NilLogIndex(),
-		agreedLI:   NilLogIndex(),
-		agreedAO:   nil,
-		minLI:      persistedLI.Next(),
-		maxPeerLIs: map[gpa.NodeID]*msgNextLogIndex{},
-		outputCB:   outputCB,
-		lastMsgs:   map[gpa.NodeID]*msgNextLogIndex{},
-		log:        log,
+		nodeIDs:          nodeIDs,
+		n:                n,
+		f:                f,
+		latestAO:         nil,
+		proposedLI:       NilLogIndex(),
+		agreedLI:         NilLogIndex(),
+		agreedAO:         nil,
+		minLI:            persistedLI.Next(),
+		maxPeerLIs:       map[gpa.NodeID]*msgNextLogIndex{},
+		outputCB:         outputCB,
+		lastMsgs:         map[gpa.NodeID]*msgNextLogIndex{},
+		deriveAOByQuorum: deriveAOByQuorum,
+		log:              log,
 	}
 }
 
@@ -288,32 +292,34 @@ func (v *varLogIndexImpl) tryPropose(li LogIndex) gpa.OutMessages {
 // >            THEN ao       // Can't be ⊥.
 // >            ELSE latestAO // Can be ⊥, thus no derived AO
 func (v *varLogIndexImpl) deriveAO(li LogIndex) *isc.AliasOutputWithID {
-	v.log.Debugf("Pipelining disabled, deriving %v for LI=%v", v.latestAO, li)
-	// countsAOMap := map[iotago.OutputID]*isc.AliasOutputWithID{} // TODO: Re-enable pipelining.
-	// countsAO := map[iotago.OutputID]int{}
-	// for _, msg := range v.maxPeerLIs {
-	// 	if msg.nextLogIndex < li {
-	// 		continue
-	// 	}
-	// 	countsAOMap[msg.nextBaseAO.OutputID()] = msg.nextBaseAO
-	// 	countsAO[msg.nextBaseAO.OutputID()]++
-	// }
+	if !v.deriveAOByQuorum { // Configurable switch, to disable the AO derived from a quorum.
+		return v.latestAO
+	}
+	countsAOMap := map[iotago.OutputID]*isc.AliasOutputWithID{}
+	countsAO := map[iotago.OutputID]int{}
+	for _, msg := range v.maxPeerLIs {
+		if msg.nextLogIndex < li {
+			continue
+		}
+		countsAOMap[msg.nextBaseAO.OutputID()] = msg.nextBaseAO
+		countsAO[msg.nextBaseAO.OutputID()]++
+	}
 
-	// var q1fAO *isc.AliasOutputWithID
-	// var found bool
-	// for aoID, c := range countsAO {
-	// 	if c >= v.f+1 {
-	// 		if found {
-	// 			// Non unique, return our value.
-	// 			return v.latestAO
-	// 		}
-	// 		q1fAO = countsAOMap[aoID]
-	// 		found = true
-	// 	}
-	// }
-	// if found {
-	// 	return q1fAO
-	// }
+	var q1fAO *isc.AliasOutputWithID
+	var found bool
+	for aoID, c := range countsAO {
+		if c >= v.f+1 {
+			if found {
+				// Non unique, return our value.
+				return v.latestAO
+			}
+			q1fAO = countsAOMap[aoID]
+			found = true
+		}
+	}
+	if found {
+		return q1fAO
+	}
 	return v.latestAO
 }
 

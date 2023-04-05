@@ -80,15 +80,24 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for i, nid := range nodeIDs {
 		consensusStateRegistry := testutil.NewConsensusStateRegistry()
 		stores[nid] = state.NewStore(mapdb.NewMapDB())
-		origin.InitChainByAliasOutput(stores[nid], originAO)
+		_, err := origin.InitChainByAliasOutput(stores[nid], originAO)
+		require.NoError(t, err)
 		activeAccessNodesCB := func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
 			return []*cryptolib.PublicKey{}, []*cryptolib.PublicKey{}
 		}
-		trackActiveStateCB := func(ao *isc.AliasOutputWithID) {}
-		updateCommitteeNodesCB := func(tcrypto.DKShare) {}
+		trackActiveStateCB := func(ao *isc.AliasOutputWithID) {
+			// Nothing
+		}
+		savePreliminaryBlockCB := func(state.Block) {
+			// Nothing
+		}
+		updateCommitteeNodesCB := func(tcrypto.DKShare) {
+			// Nothing
+		}
 		cm, err := chainMgr.New(
 			nid, chainID, stores[nid], consensusStateRegistry, dkRegs[i], gpa.NodeIDFromPublicKey,
-			activeAccessNodesCB, trackActiveStateCB, updateCommitteeNodesCB, log.Named(nid.ShortString()),
+			activeAccessNodesCB, trackActiveStateCB, savePreliminaryBlockCB, updateCommitteeNodesCB, true, -1,
+			log.Named(nid.ShortString()),
 		)
 		require.NoError(t, err)
 		nodes[nid] = cm.AsGPA()

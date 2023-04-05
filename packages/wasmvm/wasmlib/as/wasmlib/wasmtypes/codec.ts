@@ -6,6 +6,7 @@ import {stringFromBytes} from './scstring';
 import {ScAddress} from './scaddress';
 import {ScHname} from './schname';
 import {ScSandboxUtils} from '../sandboxutils';
+import {ScHash} from "./schash";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -13,6 +14,7 @@ import {ScSandboxUtils} from '../sandboxutils';
 
 type FuncBech32Decode = (bech32: string) => ScAddress;
 type FuncBech32Encode = (addr: ScAddress) => string;
+type FuncHashKeccak = (buf: Uint8Array) => ScHash;
 type FuncHashName = (name: string) => ScHname;
 
 export let bech32Decode: FuncBech32Decode = function (bech32: string): ScAddress {
@@ -23,14 +25,19 @@ export let bech32Encode: FuncBech32Encode = function (addr: ScAddress): string {
     const utils = new ScSandboxUtils();
     return utils.bech32Encode(addr);
 };
+export let hashKeccak: FuncHashKeccak = function (buf: Uint8Array): ScHash {
+    const utils = new ScSandboxUtils();
+    return utils.hashKeccak(buf);
+};
 export let hashName: FuncHashName = function (name: string): ScHname {
     const utils = new ScSandboxUtils();
     return utils.hashName(name);
 };
 
-export function sandboxWrappers(wrapBech32Decode: FuncBech32Decode, wrapBech32Encode: FuncBech32Encode, wrapHashName: FuncHashName): void {
+export function sandboxWrappers(wrapBech32Decode: FuncBech32Decode, wrapBech32Encode: FuncBech32Encode, wrapHashKeccak: FuncHashKeccak, wrapHashName: FuncHashName): void {
     bech32Decode = wrapBech32Decode;
     bech32Encode = wrapBech32Encode;
+    hashKeccak = wrapHashKeccak;
     hashName = wrapHashName;
 }
 

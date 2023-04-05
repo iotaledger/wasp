@@ -61,7 +61,7 @@ impl WasmClientService {
             .build()
             .unwrap();
         let body = APICallViewRequest {
-            arguments: json_encode(args),
+            arguments: Codec::json_encode(args),
             chain_id: self.chain_id.to_string(),
             contract_hname: contract_hname.to_string(),
             function_hname: function_hname.to_string(),
@@ -70,7 +70,7 @@ impl WasmClientService {
             Ok(v) => match v.status() {
                 StatusCode::OK => {
                     match v.json::<JsonResponse>() {
-                        Ok(json_obj) => Ok(json_decode(json_obj)),
+                        Ok(json_obj) => Ok(Codec::json_decode(json_obj)),
                         Err(e) => Err(format!("call() response failed: {}", e.to_string())),
                     }
                 }
