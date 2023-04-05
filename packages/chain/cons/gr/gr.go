@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -134,6 +135,7 @@ func New(
 	recoveryTimeout time.Duration,
 	redeliveryPeriod time.Duration,
 	printStatusPeriod time.Duration,
+	chainMetrics metrics.IChainConsensusMetrics,
 	log *logger.Logger,
 ) *ConsGr {
 	cmtPubKey := dkShare.GetSharedPublic()
@@ -154,7 +156,7 @@ func New(
 		printStatusPeriod: printStatusPeriod,
 		mempool:           mempool,
 		stateMgr:          stateMgr,
-		vm:                NewVMAsync(),
+		vm:                NewVMAsync(chainMetrics, log),
 		netRecvPipe:       pipe.NewInfinitePipe[*peering.PeerMessageIn](),
 		netPeeringID:      netPeeringID,
 		netPeerPubs:       netPeerPubs,
