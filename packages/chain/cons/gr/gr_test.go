@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -128,6 +129,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 			1*time.Minute, // RecoverTimeout
 			1*time.Second, // RedeliveryPeriod
 			5*time.Second, // PrintStatusPeriod
+			metrics.NewEmptyChainConsensusMetric(),
 			log.Named(fmt.Sprintf("N#%v", i)),
 		)
 	}

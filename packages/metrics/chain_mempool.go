@@ -17,7 +17,9 @@ type IChainMempoolMetrics interface {
 
 	SetTimePoolSize(count int)
 	SetOnLedgerPoolSize(count int)
+	SetOnLedgerReqTime(d time.Duration)
 	SetOffLedgerPoolSize(count int)
+	SetOffLedgerReqTime(d time.Duration)
 	SetMissingReqs(count int)
 }
 
@@ -36,7 +38,9 @@ func (m *emptyChainMempoolMetric) IncRequestsAckMessages()                {}
 func (m *emptyChainMempoolMetric) SetRequestProcessingTime(time.Duration) {}
 func (m *emptyChainMempoolMetric) SetTimePoolSize(count int)              {}
 func (m *emptyChainMempoolMetric) SetOnLedgerPoolSize(count int)          {}
+func (m *emptyChainMempoolMetric) SetOnLedgerReqTime(d time.Duration)     {}
 func (m *emptyChainMempoolMetric) SetOffLedgerPoolSize(count int)         {}
+func (m *emptyChainMempoolMetric) SetOffLedgerReqTime(d time.Duration)    {}
 func (m *emptyChainMempoolMetric) SetMissingReqs(count int)               {}
 
 type chainMempoolMetric struct {
@@ -61,7 +65,9 @@ func newChainMempoolMetric(provider *ChainMetricsProvider, chainID isc.ChainID) 
 
 	provider.mempoolTimePoolSize.With(metricsLabels)
 	provider.mempoolOnLedgerPoolSize.With(metricsLabels)
+	provider.mempoolOnLedgerReqTime.With(metricsLabels)
 	provider.mempoolOffLedgerPoolSize.With(metricsLabels)
+	provider.mempoolOffLedgerReqTime.With(metricsLabels)
 	provider.mempoolTotalSize.With(metricsLabels)
 	provider.mempoolMissingReqs.With(metricsLabels)
 
@@ -119,4 +125,12 @@ func (m *chainMempoolMetric) deriveTotalPoolSize() {
 
 func (m *chainMempoolMetric) SetMissingReqs(count int) {
 	m.provider.mempoolMissingReqs.With(m.metricsLabels).Set(float64(count))
+}
+
+func (m *chainMempoolMetric) SetOnLedgerReqTime(d time.Duration) {
+	m.provider.mempoolOnLedgerReqTime.With(m.metricsLabels).Observe(float64(d.Milliseconds()))
+}
+
+func (m *chainMempoolMetric) SetOffLedgerReqTime(d time.Duration) {
+	m.provider.mempoolOffLedgerReqTime.With(m.metricsLabels).Observe(float64(d.Milliseconds()))
 }

@@ -9,8 +9,7 @@ import (
 )
 
 type IChainConsensusMetrics interface {
-	SetVMRunTime(time.Duration)
-	IncVMRunsCounter()
+	VMRun(duration time.Duration, reqCount int)
 }
 
 var (
@@ -20,9 +19,8 @@ var (
 
 type emptyChainConsensusMetric struct{}
 
-func NewEmptyChainConsensusMetric() IChainConsensusMetrics               { return &emptyChainConsensusMetric{} }
-func (m *emptyChainConsensusMetric) SetVMRunTime(duration time.Duration) {}
-func (m *emptyChainConsensusMetric) IncVMRunsCounter()                   {}
+func NewEmptyChainConsensusMetric() IChainConsensusMetrics                      { return &emptyChainConsensusMetric{} }
+func (m *emptyChainConsensusMetric) VMRun(duration time.Duration, reqCount int) {}
 
 type chainConsensusMetric struct {
 	provider      *ChainMetricsProvider
@@ -33,8 +31,9 @@ func newChainConsensusMetric(provider *ChainMetricsProvider, chainID isc.ChainID
 	metricsLabels := getChainLabels(chainID)
 
 	// init values so they appear in prometheus
-	provider.vmRunTime.With(metricsLabels)
-	provider.vmRunsTotal.With(metricsLabels)
+	provider.consensusVMRunTime.With(metricsLabels)
+	provider.consensusVMRunTimePerReq.With(metricsLabels)
+	provider.consensusVMRunReqCount.With(metricsLabels)
 
 	return &chainConsensusMetric{
 		provider:      provider,
@@ -42,10 +41,10 @@ func newChainConsensusMetric(provider *ChainMetricsProvider, chainID isc.ChainID
 	}
 }
 
-func (m *chainConsensusMetric) SetVMRunTime(duration time.Duration) {
-	m.provider.vmRunTime.With(m.metricsLabels).Set(duration.Seconds())
-}
-
-func (m *chainConsensusMetric) IncVMRunsCounter() {
-	m.provider.vmRunsTotal.With(m.metricsLabels).Inc()
+func (m *chainConsensusMetric) VMRun(duration time.Duration, reqCount int) {
+	d := float64(duration.Milliseconds())
+	r := float64(reqCount)
+	m.provider.consensusVMRunTime.With(m.metricsLabels).Observe(d)
+	m.provider.consensusVMRunTimePerReq.With(m.metricsLabels).Observe(d / r)
+	m.provider.consensusVMRunReqCount.With(m.metricsLabels).Observe(r)
 }

@@ -133,8 +133,9 @@ type ChainMetricsProvider struct {
 	blockWALSegments     *prometheus.CounterVec
 
 	// consensus
-	vmRunTime   *prometheus.GaugeVec
-	vmRunsTotal *prometheus.CounterVec
+	consensusVMRunTime       *prometheus.HistogramVec
+	consensusVMRunTimePerReq *prometheus.HistogramVec
+	consensusVMRunReqCount   *prometheus.HistogramVec
 
 	// mempool
 	blocksTotalPerChain       *prometheus.CounterVec // TODO: Outdated and should be removed?
@@ -146,7 +147,9 @@ type ChainMetricsProvider struct {
 
 	mempoolTimePoolSize      *prometheus.GaugeVec
 	mempoolOnLedgerPoolSize  *prometheus.GaugeVec
+	mempoolOnLedgerReqTime   *prometheus.HistogramVec
 	mempoolOffLedgerPoolSize *prometheus.GaugeVec
+	mempoolOffLedgerReqTime  *prometheus.HistogramVec
 	mempoolTotalSize         *prometheus.GaugeVec
 	mempoolMissingReqs       *prometheus.GaugeVec
 
@@ -177,6 +180,9 @@ type ChainMetricsProvider struct {
 
 //nolint:funlen
 func NewChainMetricsProvider() *ChainMetricsProvider {
+	execTimeBuckets := prometheus.ExponentialBucketsRange(10, 100_000, 16)
+	recCountBuckets := prometheus.ExponentialBucketsRange(1, 1000, 16)
+
 	m := &ChainMetricsProvider{
 		//
 		// blockWAL
@@ -203,18 +209,26 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 		//
 		// consensus
 		//
-		vmRunTime: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		consensusVMRunTime: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",
-			Subsystem: "vm",
-			Name:      "run_time",
-			Help:      "Time it takes to run the vm per chain",
+			Subsystem: "consensus",
+			Name:      "vm_run_time",
+			Help:      "Time (ms) it takes to run the VM per chain block.",
+			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain}),
-
-		vmRunsTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+		consensusVMRunTimePerReq: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",
-			Subsystem: "vm",
-			Name:      "runs_total",
-			Help:      "Number of vm runs per chain",
+			Subsystem: "consensus",
+			Name:      "vm_run_time_per_req",
+			Help:      "Time (ms) it takes to run the VM per request.",
+			Buckets:   execTimeBuckets,
+		}, []string{labelNameChain}),
+		consensusVMRunReqCount: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "consensus",
+			Name:      "vm_run_req_count",
+			Help:      "Number of requests processed per VM run.",
+			Buckets:   recCountBuckets,
 		}, []string{labelNameChain}),
 
 		//
@@ -274,11 +288,25 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 			Name:      "on_ledger_pool_size",
 			Help:      "Number of On Ledger requests in mempool.",
 		}, []string{labelNameChain}),
+		mempoolOnLedgerReqTime: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "mempool",
+			Name:      "on_ledger_req_time",
+			Help:      "Time (ms) an on-ledger request stayed in the mempool before removing it.",
+			Buckets:   execTimeBuckets,
+		}, []string{labelNameChain}),
 		mempoolOffLedgerPoolSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "mempool",
 			Name:      "off_ledger_pool_size",
 			Help:      "Number of Off Ledger requests in mempool.",
+		}, []string{labelNameChain}),
+		mempoolOffLedgerReqTime: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "mempool",
+			Name:      "off_ledger_req_time",
+			Help:      "Time (ms) an off-ledger request stayed in the mempool before removing it.",
+			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain}),
 		mempoolTotalSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "iota_wasp",
@@ -380,8 +408,9 @@ func (m *ChainMetricsProvider) PrometheusCollectorsBlockWAL() []prometheus.Colle
 
 func (m *ChainMetricsProvider) PrometheusCollectorsConsensus() []prometheus.Collector {
 	return []prometheus.Collector{
-		m.vmRunTime,
-		m.vmRunsTotal,
+		m.consensusVMRunTime,
+		m.consensusVMRunTimePerReq,
+		m.consensusVMRunReqCount,
 	}
 }
 
@@ -395,7 +424,9 @@ func (m *ChainMetricsProvider) PrometheusCollectorsMempool() []prometheus.Collec
 		m.requestsProcessingTime,
 		m.mempoolTimePoolSize,
 		m.mempoolOnLedgerPoolSize,
+		m.mempoolOnLedgerReqTime,
 		m.mempoolOffLedgerPoolSize,
+		m.mempoolOffLedgerReqTime,
 		m.mempoolTotalSize,
 		m.mempoolMissingReqs,
 	}
