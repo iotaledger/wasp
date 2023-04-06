@@ -10,6 +10,7 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -35,7 +36,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) initStateMachine(t *rapid.T, bcms int, wa
 	bcnwtsmT.lastBlockCommitment = origin.L1Commitment(nil, 0)
 	bcnwtsmT.log = testlogger.NewLogger(t)
 	bcnwtsmT.blockCacheMaxSize = bcms
-	bcnwtsmT.bc, err = NewBlockCache(NewDefaultTimeProvider(), bcnwtsmT.blockCacheMaxSize, wal, bcnwtsmT.log)
+	bcnwtsmT.bc, err = NewBlockCache(NewDefaultTimeProvider(), bcnwtsmT.blockCacheMaxSize, wal, metrics.NewEmptyChainStateManagerMetric(), bcnwtsmT.log)
 	require.NoError(t, err)
 	bcnwtsmT.blockTimes = make([]*blockTime, 0)
 	bcnwtsmT.blocks = make(map[BlockKey]state.Block)
@@ -106,7 +107,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) tstGetBlockFromCache(t *rapid.T, blockKey
 
 func (bcnwtsmT *blockCacheNoWALTestSM) Restart(t *rapid.T) {
 	var err error
-	bcnwtsmT.bc, err = NewBlockCache(NewDefaultTimeProvider(), bcnwtsmT.blockCacheMaxSize, bcnwtsmT.bc.(*blockCache).wal, bcnwtsmT.log)
+	bcnwtsmT.bc, err = NewBlockCache(NewDefaultTimeProvider(), bcnwtsmT.blockCacheMaxSize, bcnwtsmT.bc.(*blockCache).wal, metrics.NewEmptyChainStateManagerMetric(), bcnwtsmT.log)
 	require.NoError(t, err)
 	bcnwtsmT.blocksInCache = make([]BlockKey, 0)
 	bcnwtsmT.blockTimes = make([]*blockTime, 0)

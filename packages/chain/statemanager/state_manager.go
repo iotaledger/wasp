@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
@@ -113,6 +114,7 @@ func New(
 	wal smGPAUtils.BlockWAL,
 	store state.Store,
 	shutdownCoordinator *shutdown.Coordinator,
+	metrics metrics.IChainStateManagerMetrics,
 	log *logger.Logger,
 	timersOpt ...smGPA.StateManagerTimers,
 ) (StateMgr, error) {
@@ -124,7 +126,7 @@ func New(
 		timers = smGPA.NewStateManagerTimers()
 	}
 
-	stateManagerGPA, err := smGPA.New(chainID, nr, wal, store, log, timers)
+	stateManagerGPA, err := smGPA.New(chainID, nr, wal, store, metrics, log, timers)
 	if err != nil {
 		log.Errorf("failed to create state manager GPA: %w", err)
 		return nil, err

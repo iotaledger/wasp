@@ -112,6 +112,9 @@ func configure() error {
 	if ParamsPrometheus.ChainStateMetrics {
 		register("chain state", deps.ChainMetrics.PrometheusCollectorsChainState()...)
 	}
+	if ParamsPrometheus.ChainStateManagerMetrics {
+		register("chain state manager", deps.ChainMetrics.PrometheusCollectorsChainStateManager()...)
+	}
 	if ParamsPrometheus.RestAPIMetrics {
 		register("rest API", newRestAPICollector(deps.WebAPIEcho)...)
 	}

@@ -1,19 +1,30 @@
 package smGPA
 
 import (
+	"time"
+
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
+type blockFetcherWithTime struct {
+	fetcher    blockFetcher
+	createTime time.Time
+}
+
 type blockFetchersImpl struct {
-	fetchers *shrinkingmap.ShrinkingMap[smGPAUtils.BlockKey, blockFetcher]
+	fetchers *shrinkingmap.ShrinkingMap[smGPAUtils.BlockKey, *blockFetcherWithTime]
+	metrics  blockFetchersMetrics
 }
 
 var _ blockFetchers = &blockFetchersImpl{}
 
-func newBlockFetchers() blockFetchers {
-	return &blockFetchersImpl{fetchers: shrinkingmap.New[smGPAUtils.BlockKey, blockFetcher]()}
+func newBlockFetchers(metrics blockFetchersMetrics) blockFetchers {
+	return &blockFetchersImpl{
+		fetchers: shrinkingmap.New[smGPAUtils.BlockKey, *blockFetcherWithTime](),
+		metrics:  metrics,
+	}
 }
 
 func (bfiT *blockFetchersImpl) getSize() int {
@@ -21,42 +32,52 @@ func (bfiT *blockFetchersImpl) getSize() int {
 }
 
 func (bfiT *blockFetchersImpl) addFetcher(fetcher blockFetcher) {
-	bfiT.fetchers.Set(smGPAUtils.NewBlockKey(fetcher.getCommitment()), fetcher)
+	key := smGPAUtils.NewBlockKey(fetcher.getCommitment())
+	_, exists := bfiT.fetchers.Get(key)
+	if !exists {
+		bfiT.metrics.inc()
+	}
+	bfiT.fetchers.Set(key, &blockFetcherWithTime{
+		fetcher:    fetcher,
+		createTime: time.Now(),
+	})
 }
 
 func (bfiT *blockFetchersImpl) takeFetcher(commitment *state.L1Commitment) blockFetcher {
 	blockKey := smGPAUtils.NewBlockKey(commitment)
-	fetcher, exists := bfiT.fetchers.Get(blockKey)
+	fetcherWithTime, exists := bfiT.fetchers.Get(blockKey)
 	if !exists {
 		return nil
 	}
 	bfiT.fetchers.Delete(blockKey)
-	return fetcher
+	bfiT.metrics.dec()
+	bfiT.metrics.duration(time.Since(fetcherWithTime.createTime))
+	return fetcherWithTime.fetcher
 }
 
 func (bfiT *blockFetchersImpl) addCallback(commitment *state.L1Commitment, callback blockRequestCallback) bool {
-	fetcher, exists := bfiT.fetchers.Get(smGPAUtils.NewBlockKey(commitment))
+	fetcherWithTime, exists := bfiT.fetchers.Get(smGPAUtils.NewBlockKey(commitment))
 	if !exists {
 		return false
 	}
-	fetcher.addCallback(callback)
+	fetcherWithTime.fetcher.addCallback(callback)
 	return true
 }
 
 func (bfiT *blockFetchersImpl) addRelatedFetcher(commitment *state.L1Commitment, relatedFetcher blockFetcher) bool {
-	fetcher, exists := bfiT.fetchers.Get(smGPAUtils.NewBlockKey(commitment))
+	fetcherWithTime, exists := bfiT.fetchers.Get(smGPAUtils.NewBlockKey(commitment))
 	if !exists {
 		return false
 	}
-	fetcher.addRelatedFetcher(relatedFetcher)
+	fetcherWithTime.fetcher.addRelatedFetcher(relatedFetcher)
 	return true
 }
 
 func (bfiT *blockFetchersImpl) getCommitments() []*state.L1Commitment {
 	result := make([]*state.L1Commitment, bfiT.getSize())
 	i := 0
-	bfiT.fetchers.ForEach(func(_ smGPAUtils.BlockKey, fetcher blockFetcher) bool {
-		result[i] = fetcher.getCommitment()
+	bfiT.fetchers.ForEach(func(_ smGPAUtils.BlockKey, fetcherWithTime *blockFetcherWithTime) bool {
+		result[i] = fetcherWithTime.fetcher.getCommitment()
 		i++
 		return true
 	})
@@ -64,8 +85,8 @@ func (bfiT *blockFetchersImpl) getCommitments() []*state.L1Commitment {
 }
 
 func (bfiT *blockFetchersImpl) cleanCallbacks() {
-	bfiT.fetchers.ForEach(func(_ smGPAUtils.BlockKey, fetcher blockFetcher) bool {
-		fetcher.cleanCallbacks()
+	bfiT.fetchers.ForEach(func(_ smGPAUtils.BlockKey, fetcherWithTime *blockFetcherWithTime) bool {
+		fetcherWithTime.fetcher.cleanCallbacks()
 		return true
 	})
 }
