@@ -200,6 +200,7 @@ type ChainMetricsProvider struct {
 //nolint:funlen
 func NewChainMetricsProvider() *ChainMetricsProvider {
 	execTimeBuckets := prometheus.ExponentialBucketsRange(10, 100_000, 16)
+	reqTimeBuckets := prometheus.ExponentialBucketsRange(10, 1_000_000, 16)
 	recCountBuckets := prometheus.ExponentialBucketsRange(1, 1000, 16)
 
 	m := &ChainMetricsProvider{
@@ -441,36 +442,42 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 			Subsystem: "state_manager",
 			Name:      "consensus_state_proposal_duration",
 			Help:      "The duration from starting handling ConsensusStateProposal request till responding to the consensus",
+			Buckets:   reqTimeBuckets,
 		}, []string{labelNameChain}),
 		smCDSHandlingDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "state_manager",
 			Name:      "consensus_decided_state_duration",
 			Help:      "The duration from starting handling ConsensusDecidedState request till responding to the consensus",
+			Buckets:   reqTimeBuckets,
 		}, []string{labelNameChain}),
 		smCBPHandlingDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "state_manager",
 			Name:      "consensus_block_produced_duration",
 			Help:      "The duration from starting till finishing handling ConsensusBlockProduced, which includes responding to the consensus",
+			Buckets:   reqTimeBuckets,
 		}, []string{labelNameChain}),
 		smFSDHandlingDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "state_manager",
 			Name:      "chain_fetch_state_diff_duration",
 			Help:      "The duration from starting handling ChainFetchStateDiff request till responding to the chain",
+			Buckets:   reqTimeBuckets,
 		}, []string{labelNameChain}),
 		smTTHandlingDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "state_manager",
 			Name:      "timer_tick_duration",
 			Help:      "The duration from starting till finishing handling StateManagerTimerTick request",
+			Buckets:   reqTimeBuckets,
 		}, []string{labelNameChain}),
 		smBlockFetchDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "state_manager",
 			Name:      "block_fetch_duration",
 			Help:      "The duration from starting fetching block from other till it is received in this node",
+			Buckets:   reqTimeBuckets,
 		}, []string{labelNameChain}),
 	}
 
