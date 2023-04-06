@@ -37,7 +37,16 @@ funcs:
       # default MinimumBaseTokensOnCommonAccount, can never be less
       forceMinimumBaseTokens=f: Uint64?
 
-  # Moves the specified allowance from the sender's L2 account to the given L2 account on the chain.
+  # Transfers the specified allowance from the sender SC's L2 account on
+  # the target chain to the sender SC's L2 account on the origin chain.
+  transferAccountToChain:
+    params:
+      # Optional gas amount to reserve in the allowance for the internal
+      # call to transferAllowanceTo(). Default 100 (MinGasFee).
+      gasReserve=g: Uint64?
+
+  # Transfers the specified allowance from the sender's L2 account
+  # to the given L2 account on the chain.
   transferAllowanceTo:
     params:
       agentID=a: AgentID # The target L2 account

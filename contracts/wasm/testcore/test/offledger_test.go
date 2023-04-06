@@ -47,7 +47,7 @@ func TestOffLedgerNoTransfer(t *testing.T) {
 		f.Func.Post()
 		require.NoError(t, ctx.Err)
 
-		bal.Chain += ctx.GasFee
+		bal.Common += ctx.GasFee
 		bal.Add(user, -ctx.GasFee)
 		bal.VerifyBalances(t)
 		require.EqualValues(t, userL1, user.Balance())
@@ -78,7 +78,7 @@ func TestOffLedgerTransferWhenEnoughBudget(t *testing.T) {
 		require.NoError(t, ctx.Err)
 		ctx.Balances(user)
 
-		bal.Chain += ctx.GasFee
+		bal.Common += ctx.GasFee
 		bal.Add(user, -ctx.GasFee)
 		bal.VerifyBalances(t)
 		require.EqualValues(t, userL1, user.Balance())
@@ -108,7 +108,7 @@ func TestOffLedgerTransferWhenNotEnoughBudget(t *testing.T) {
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), "gas budget exceeded")
 
-		bal.Chain += ctx.GasFee
+		bal.Common += ctx.GasFee
 		bal.Add(user, -ctx.GasFee)
 		bal.VerifyBalances(t)
 

@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 )
 
 // TODO deposit fee needs to be constant, this test is using a placeholder value that will need to be changed
@@ -25,10 +26,6 @@ import (
 func Test2Chains(t *testing.T) { run2(t, test2Chains) }
 
 func test2Chains(t *testing.T, w bool) {
-	if w {
-		// TODO wasm version is being skipped
-		t.SkipNow()
-	}
 	corecontracts.PrintWellKnownHnames()
 
 	env := solo.New(t, &solo.InitOptions{
@@ -39,6 +36,8 @@ func test2Chains(t *testing.T, w bool) {
 		WithNativeContract(sbtestsc.Processor)
 	chain1 := env.NewChain()
 	chain2, _ := env.NewChainExt(nil, 0, "chain2")
+	err := chain2.DepositAssetsToL2(isc.NewAssetsBaseTokens(5*isc.Million), nil)
+	require.NoError(t, err)
 	chain1.CheckAccountLedger()
 	chain2.CheckAccountLedger()
 
@@ -75,16 +74,17 @@ func test2Chains(t *testing.T, w bool) {
 		AddAllowanceBaseTokens(baseTokensCreditedToScOnChain1).
 		WithGasBudget(math.MaxUint64)
 
-	_, err := chain1.PostRequestSync(req, userWallet)
+	_, err = chain1.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
-	receipt1 := chain1.LastReceipt()
+	chain1TransferAllowanceReceipt := chain1.LastReceipt()
+	chain1TransferAllowanceGas := chain1TransferAllowanceReceipt.GasFeeCharged
 
 	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-baseTokensToSend)
-	chain1.AssertL2BaseTokens(userAgentID, baseTokensToSend-baseTokensCreditedToScOnChain1-receipt1.GasFeeCharged)
+	chain1.AssertL2BaseTokens(userAgentID, baseTokensToSend-baseTokensCreditedToScOnChain1-chain1TransferAllowanceGas)
 	chain1.AssertL2BaseTokens(contractAgentID, baseTokensCreditedToScOnChain1)
-	chain1.AssertL2BaseTokens(chain1.CommonAccount(), chain1CommonAccountBaseTokens+receipt1.GasFeeCharged)
-	chain1CommonAccountBaseTokens += receipt1.GasFeeCharged
+	chain1.AssertL2BaseTokens(chain1.CommonAccount(), chain1CommonAccountBaseTokens+chain1TransferAllowanceGas)
+	chain1CommonAccountBaseTokens += chain1TransferAllowanceGas
 	chain1.AssertL2TotalBaseTokens(chain1TotalBaseTokens + baseTokensToSend)
 	chain1TotalBaseTokens += baseTokensToSend
 
@@ -100,51 +100,68 @@ func test2Chains(t *testing.T, w bool) {
 	println("----------------------------------------------")
 
 	// make chain2 send a call to chain1 to withdraw base tokens
-	baseTokensToWithdrawalFromChain1 := baseTokensCreditedToScOnChain1 // try to withdraw all base tokens deposited to chain1 on behalf of chain2's contract
-	// reqAllowance is the allowance provided to the "withdraw from chain" contract (chain2) that needs to be enough to
-	// pay the gas fees of withdraw func on chain1
-	reqAllowance := accounts.ConstDepositFeeTmp + 1*isc.Million
-	// allowance + x, where x will be used for the gas costs of `FuncWithdrawFromChain` on chain2
-	baseTokensToSend2 := reqAllowance + 1*isc.Million
+	baseTokensToWithdrawFromChain1 := baseTokensCreditedToScOnChain1
+
+	// actual gas fee is less, but always rounded up to this minimum amount
+	const gasFee = wasmlib.MinGasFee
+	const storageDeposit = wasmlib.StorageDeposit
+
+	// NOTE: make sure you READ THE DOCS for accounts.transferAccountToChain()
+	// to understand fully how to call it and why.
+
+	// reqAllowance is the allowance provided to chain2.testcore.withdrawFromChain(),
+	// which needs to be enough to cover any storage deposit along the way and to pay
+	// the gas fees for the chain2.accounts.transferAccountToChain() request and the
+	// chain1.accounts.transferAllowanceTo() request.
+	// note that the storage deposit will be returned in the end
+	reqAllowance := storageDeposit + gasFee + gasFee
+
+	// also cover gas fee for `FuncWithdrawFromChain` on chain2
+	assetsBaseTokens := reqAllowance + isc.Million
 
 	req = solo.NewCallParams(ScName, sbtestsc.FuncWithdrawFromChain.Name,
 		sbtestsc.ParamChainID, chain1.ChainID,
-		sbtestsc.ParamBaseTokensToWithdrawal, baseTokensToWithdrawalFromChain1).
-		AddBaseTokens(baseTokensToSend2).
+		sbtestsc.ParamBaseTokens, baseTokensToWithdrawFromChain1).
+		AddBaseTokens(assetsBaseTokens).
 		WithAllowance(isc.NewAssetsBaseTokens(reqAllowance)).
-		WithGasBudget(math.MaxUint64)
-
+		WithGasBudget(isc.Million)
 	_, err = chain2.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
-	chain2SendWithdrawalReceipt := chain2.LastReceipt()
+	chain2WithdrawFromChainReceipt := chain2.LastReceipt()
+	chain2WithdrawFromChainGas := chain2WithdrawFromChainReceipt.GasFeeCharged
 
 	require.True(t, chain1.WaitForRequestsThrough(2, 10*time.Second))
 	require.True(t, chain2.WaitForRequestsThrough(2, 10*time.Second))
 
-	println("----chain1------------------------------------------")
+	chain2TransferAllowanceReceipt := chain2.LastReceipt()
+	chain2TransferAllowanceGas := chain2TransferAllowanceReceipt.GasFeeCharged
+	chain2TransferAllowanceTarget := chain2TransferAllowanceReceipt.DeserializedRequest().CallTarget()
+	require.Equal(t, chain2TransferAllowanceTarget.Contract, accounts.Contract.Hname())
+	require.Equal(t, chain2TransferAllowanceTarget.EntryPoint, accounts.FuncTransferAllowanceTo.Hname())
+	require.Nil(t, chain2TransferAllowanceReceipt.Error)
+
+	chain1TransferAccountToChainReceipt := chain1.LastReceipt()
+	chain1TransferAccountToChainGas := chain1TransferAccountToChainReceipt.GasFeeCharged
+	chain1TransferAccountToChainTarget := chain1TransferAccountToChainReceipt.DeserializedRequest().CallTarget()
+	require.Equal(t, chain1TransferAccountToChainTarget.Contract, accounts.Contract.Hname())
+	require.Equal(t, chain1TransferAccountToChainTarget.EntryPoint, accounts.FuncTransferAccountToChain.Hname())
+	require.Nil(t, chain1TransferAccountToChainReceipt.Error)
+
+	println("-----chain1-----------------------------------------")
 	println(chain1.DumpAccounts())
 	println("-----chain2-----------------------------------------")
 	println(chain2.DumpAccounts())
-	println("----------------------------------------------")
+	println("----------------------------------------------------")
 
-	chain2DepositReceipt := chain2.LastReceipt()
+	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-baseTokensToSend-assetsBaseTokens)
 
-	chain1WithdrawalReceipt := chain1.LastReceipt()
+	chain1.AssertL2BaseTokens(userAgentID, baseTokensToSend-baseTokensCreditedToScOnChain1-chain1TransferAllowanceGas)
+	chain1.AssertL2BaseTokens(contractAgentID, 0) // emptied the account
+	chain1.AssertL2BaseTokens(chain1.CommonAccount(), chain1CommonAccountBaseTokens+chain1TransferAccountToChainGas)
+	chain1.AssertL2TotalBaseTokens(chain1TotalBaseTokens + chain1TransferAllowanceGas + chain1TransferAccountToChainGas - chain2TransferAllowanceGas - baseTokensToWithdrawFromChain1)
 
-	require.Equal(t, chain1WithdrawalReceipt.DeserializedRequest().CallTarget().Contract, accounts.Contract.Hname())
-	require.Equal(t, chain1WithdrawalReceipt.DeserializedRequest().CallTarget().EntryPoint, accounts.FuncWithdraw.Hname())
-	require.Nil(t, chain1WithdrawalReceipt.Error)
-
-	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-baseTokensToSend-baseTokensToSend2)
-
-	chain1.AssertL2BaseTokens(userAgentID, baseTokensToSend-baseTokensCreditedToScOnChain1-receipt1.GasFeeCharged)
-	chain1.AssertL2BaseTokens(contractAgentID, reqAllowance-chain1WithdrawalReceipt.GasFeeCharged) // amount of base tokens sent from chain2 to chain1 in order to call the "withdrawal" request
-	chain1.AssertL2BaseTokens(chain1.CommonAccount(), chain1CommonAccountBaseTokens+chain1WithdrawalReceipt.GasFeeCharged)
-	chain1.AssertL2TotalBaseTokens(chain1TotalBaseTokens + reqAllowance - baseTokensToWithdrawalFromChain1)
-
-	chain2.AssertL2BaseTokens(userAgentID, baseTokensToSend2-reqAllowance-chain2SendWithdrawalReceipt.GasFeeCharged)
-	chain2.AssertL2BaseTokens(contractAgentID, baseTokensToWithdrawalFromChain1-accounts.ConstDepositFeeTmp)
-	chain2.AssertL2BaseTokens(chain2.CommonAccount(), chain2CommonAccountBaseTokens+chain2SendWithdrawalReceipt.GasFeeCharged+chain2DepositReceipt.GasFeeCharged)
-	println(chain2.DumpAccounts())
-	chain2.AssertL2TotalBaseTokens(chain2TotalBaseTokens + baseTokensToSend2 - reqAllowance + baseTokensCreditedToScOnChain1)
+	chain2.AssertL2BaseTokens(userAgentID, assetsBaseTokens-reqAllowance-chain2WithdrawFromChainGas)
+	chain2.AssertL2BaseTokens(contractAgentID, baseTokensToWithdrawFromChain1+storageDeposit)
+	chain2.AssertL2BaseTokens(chain2.CommonAccount(), chain2CommonAccountBaseTokens+chain2WithdrawFromChainGas+chain2TransferAllowanceGas)
+	chain2.AssertL2TotalBaseTokens(chain2TotalBaseTokens + assetsBaseTokens + baseTokensCreditedToScOnChain1 + chain2TransferAllowanceGas - chain1TransferAllowanceGas - chain1TransferAccountToChainGas)
 }

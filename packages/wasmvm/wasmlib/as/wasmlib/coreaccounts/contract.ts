@@ -53,6 +53,15 @@ export class HarvestCall {
     }
 }
 
+export class TransferAccountToChainCall {
+    func:   wasmlib.ScFunc;
+    params: sc.MutableTransferAccountToChainParams = new sc.MutableTransferAccountToChainParams(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScFuncCallContext) {
+        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncTransferAccountToChain);
+    }
+}
+
 export class TransferAllowanceToCall {
     func:   wasmlib.ScFunc;
     params: sc.MutableTransferAllowanceToParams = new sc.MutableTransferAllowanceToParams(wasmlib.ScView.nilProxy);
@@ -244,7 +253,16 @@ export class ScFuncs {
         return f;
     }
 
-    // Moves the specified allowance from the sender's L2 account to the given L2 account on the chain.
+    // Transfers the specified allowance from the sender SC's L2 account on
+    // the target chain to the sender SC's L2 account on the origin chain.
+    static transferAccountToChain(ctx: wasmlib.ScFuncCallContext): TransferAccountToChainCall {
+        const f = new TransferAccountToChainCall(ctx);
+        f.params = new sc.MutableTransferAccountToChainParams(wasmlib.newCallParamsProxy(f.func));
+        return f;
+    }
+
+    // Transfers the specified allowance from the sender's L2 account
+    // to the given L2 account on the chain.
     static transferAllowanceTo(ctx: wasmlib.ScFuncCallContext): TransferAllowanceToCall {
         const f = new TransferAllowanceToCall(ctx);
         f.params = new sc.MutableTransferAllowanceToParams(wasmlib.newCallParamsProxy(f.func));

@@ -1,8 +1,9 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use wasmlib::*;
 use testcore::*;
+use wasmlib::*;
+
 use crate::*;
 
 const CONTRACT_NAME_DEPLOYED: &str = "exampleDeployTR";
@@ -114,8 +115,7 @@ pub fn func_run_recursion(ctx: &ScFuncContext, f: &RunRecursionContext) {
     f.results.n().set_value(ret_val);
 }
 
-pub fn func_send_large_request(_ctx: &ScFuncContext, _f: &SendLargeRequestContext) {
-}
+pub fn func_send_large_request(_ctx: &ScFuncContext, _f: &SendLargeRequestContext) {}
 
 pub fn func_send_nf_ts_back(ctx: &ScFuncContext, _f: &SendNFTsBackContext) {
     let address = ctx.caller().address();
@@ -219,18 +219,34 @@ pub fn func_test_panic_full_ep(ctx: &ScFuncContext, _f: &TestPanicFullEPContext)
 
 pub fn func_withdraw_from_chain(ctx: &ScFuncContext, f: &WithdrawFromChainContext) {
     let target_chain = f.params.chain_id().value();
-    let withdrawal = f.params.base_tokens_withdrawal().value();
-    let available_tokens = ctx.allowance().base_tokens();
+    let withdrawal = f.params.base_tokens().value();
 
-    // requiredStorageDepositDeposit := ctx.EstimateRequiredStorageDepositDeposit(request)
-    if available_tokens < 1000 {
-        ctx.panic("not enough base tokens sent to cover storage deposit");
-    }
+    // if it is not already present in the SC's account the caller should have
+    // provided enough base tokens to cover the gas fees for the current call,
+    // and for the storage deposit plus gas fees for the outgoing request to
+    // accounts.transferAllowanceTo()
     let transfer = ScTransfer::from_balances(&ctx.allowance());
     ctx.transfer_allowed(&ctx.account_id(), &transfer);
 
-    let withdraw = coreaccounts::ScFuncs::withdraw(ctx);
-    withdraw.func.transfer(transfer).allowance_base_tokens(withdrawal).post_to_chain(target_chain);
+    // This is just a test contract, but normally these numbers should
+    // be parameters because there is no way for the contract to figure
+    // out the gas fees on the other chain, and it's also silly to run
+    // the costly calculation to determine storage deposit every time
+    // unless absolutely necessary. Better to just make sure that the
+    // storage deposit is large enough, since it will be returned anyway.
+    let gas_fee: u64 = MIN_GAS_FEE;
+    let gas_reserve: u64 = MIN_GAS_FEE;
+    let storage_deposit: u64 = STORAGE_DEPOSIT;
+
+    // note: gasReserve is the gas necessary to run accounts.transferAllowanceTo
+    // on the other chain by the accounts.transferAccountToChain request
+
+    // NOTE: make sure you READ THE DOCS before calling this function
+    let xfer = coreaccounts::ScFuncs::transfer_account_to_chain(ctx);
+    xfer.params.gas_reserve().set_value(gas_reserve);
+    xfer.func.transfer_base_tokens(storage_deposit + gas_fee + gas_reserve).
+        allowance_base_tokens(withdrawal + storage_deposit + gas_reserve).
+        post_to_chain(target_chain);
 }
 
 pub fn view_check_context_from_view_ep(ctx: &ScViewContext, f: &CheckContextFromViewEPContext) {

@@ -154,6 +154,38 @@ impl MutableHarvestParams {
 }
 
 #[derive(Clone)]
+pub struct ImmutableTransferAccountToChainParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl ImmutableTransferAccountToChainParams {
+    pub fn new() -> ImmutableTransferAccountToChainParams {
+        ImmutableTransferAccountToChainParams {
+            proxy: params_proxy(),
+        }
+    }
+
+    // Optional gas amount to reserve in the allowance for the internal
+    // call to transferAllowanceTo(). Default 100 (MinGasFee).
+    pub fn gas_reserve(&self) -> ScImmutableUint64 {
+        ScImmutableUint64::new(self.proxy.root(PARAM_GAS_RESERVE))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableTransferAccountToChainParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl MutableTransferAccountToChainParams {
+    // Optional gas amount to reserve in the allowance for the internal
+    // call to transferAllowanceTo(). Default 100 (MinGasFee).
+    pub fn gas_reserve(&self) -> ScMutableUint64 {
+        ScMutableUint64::new(self.proxy.root(PARAM_GAS_RESERVE))
+    }
+}
+
+#[derive(Clone)]
 pub struct ImmutableTransferAllowanceToParams {
     pub(crate) proxy: Proxy,
 }

@@ -21,6 +21,7 @@ const (
 	ParamDestroyTokens          = "y"
 	ParamForceMinimumBaseTokens = "f"
 	ParamFoundrySN              = "s"
+	ParamGasReserve             = "g"
 	ParamNftID                  = "z"
 	ParamSupplyDeltaAbs         = "d"
 	ParamTokenID                = "N"
@@ -49,6 +50,7 @@ const (
 	FuncFoundryDestroy               = "foundryDestroy"
 	FuncFoundryModifySupply          = "foundryModifySupply"
 	FuncHarvest                      = "harvest"
+	FuncTransferAccountToChain       = "transferAccountToChain"
 	FuncTransferAllowanceTo          = "transferAllowanceTo"
 	FuncWithdraw                     = "withdraw"
 	ViewAccountFoundries             = "accountFoundries"
@@ -73,6 +75,7 @@ const (
 	HFuncFoundryDestroy               = wasmtypes.ScHname(0x85e4c893)
 	HFuncFoundryModifySupply          = wasmtypes.ScHname(0x76a5868b)
 	HFuncHarvest                      = wasmtypes.ScHname(0x7b40efbd)
+	HFuncTransferAccountToChain       = wasmtypes.ScHname(0x07005c45)
 	HFuncTransferAllowanceTo          = wasmtypes.ScHname(0x23f4e3a1)
 	HFuncWithdraw                     = wasmtypes.ScHname(0x9dcc0f41)
 	HViewAccountFoundries             = wasmtypes.ScHname(0xdc3a0c38)
