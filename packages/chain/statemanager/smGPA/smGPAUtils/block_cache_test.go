@@ -65,6 +65,30 @@ func TestBlockCacheCleaning(t *testing.T) {
 	require.NotNil(t, blockCache.GetBlock(blocks[5].L1Commitment()))
 }
 
+func TestBlockCacheSameBlockCleaning(t *testing.T) {
+	log := testlogger.NewLogger(t)
+	defer log.Sync()
+
+	factory := NewBlockFactory(t)
+	blocks := factory.GetBlocks(3, 2)
+	blockCache, err := NewBlockCache(NewDefaultTimeProvider(), 100, NewEmptyTestBlockWAL(), log)
+	require.NoError(t, err)
+	blockCache.AddBlock(blocks[0])
+	blockCache.AddBlock(blocks[1])
+	inTheMiddleTime := time.Now()
+	blockCache.AddBlock(blocks[0])
+	blockCache.AddBlock(blocks[2])
+	require.Equal(t, 3, blockCache.Size())
+	require.NotNil(t, blockCache.GetBlock(blocks[0].L1Commitment()))
+	require.NotNil(t, blockCache.GetBlock(blocks[1].L1Commitment()))
+	require.NotNil(t, blockCache.GetBlock(blocks[2].L1Commitment()))
+	blockCache.CleanOlderThan(inTheMiddleTime)
+	require.Equal(t, 2, blockCache.Size())
+	require.NotNil(t, blockCache.GetBlock(blocks[0].L1Commitment())) // Block should remain in cache as it was also added after inTheMiddleTime
+	require.Nil(t, blockCache.GetBlock(blocks[1].L1Commitment()))
+	require.NotNil(t, blockCache.GetBlock(blocks[2].L1Commitment()))
+}
+
 // Test if blocks are put/taken from WAL, if they are not available in cache
 func TestBlockCacheWAL(t *testing.T) {
 	log := testlogger.NewLogger(t)

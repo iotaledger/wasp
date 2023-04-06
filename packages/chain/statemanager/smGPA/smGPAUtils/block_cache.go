@@ -3,6 +3,8 @@ package smGPAUtils
 import (
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/state"
@@ -44,6 +46,12 @@ func (bcT *blockCache) AddBlock(block state.Block) {
 		bcT.log.Errorf("Failed writing block %s to WAL: %v", commitment, err)
 	}
 
+	_, exists := bcT.blocks.Get(blockKey)
+	if exists {
+		bcT.times = lo.Filter(bcT.times, func(bt *blockTime, _ int) bool {
+			return !bt.blockKey.Equals(blockKey)
+		})
+	}
 	bcT.blocks.Set(blockKey, block)
 	bcT.times = append(bcT.times, &blockTime{
 		time:     bcT.timeProvider.GetNow(),
