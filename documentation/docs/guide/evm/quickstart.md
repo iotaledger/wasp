@@ -15,6 +15,8 @@ keywords:
 
 ---
 
+import AddToMetaMaskButton from '@site/src/common/components/AddToMetaMaskButton';
+
 # ShimmerEVM Testnet Quickstart Guide
 
 This guide will help you quickly get started with the ShimmerEVM Testnet, where you can deploy and interact with EVM-compatible smart contracts on the Shimmer Testnet.
@@ -25,6 +27,12 @@ Prerequisites
 
 Setup MetaMask
 --------------
+
+Click this button:
+
+<AddToMetaMaskButton />
+
+or follow these steps:
 
 1.  Open MetaMask and click on the network dropdown at the top.
 2.  Select "Custom RPC" to add the ShimmerEVM Testnet.
