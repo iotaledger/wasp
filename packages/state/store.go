@@ -5,6 +5,7 @@ package state
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -216,6 +217,12 @@ func (s *store) findTrieRootByIndex(index uint32) (trie.Hash, error) {
 		return trie.Hash{}, err
 	}
 	latestBlockIndex := state.BlockIndex()
+	if index > latestBlockIndex {
+		return trie.Hash{}, fmt.Errorf(
+			"block %d not found (latest index is %d)",
+			index, latestBlockIndex,
+		)
+	}
 	s.trieRootByIndex[latestBlockIndex] = latestTrieRoot
 
 	for i := latestBlockIndex; i > 0 && i > index; i-- {
