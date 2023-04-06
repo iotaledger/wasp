@@ -26,10 +26,6 @@ import (
 func Test2Chains(t *testing.T) { run2(t, test2Chains) }
 
 func test2Chains(t *testing.T, w bool) {
-	//if w {
-	//	// TODO wasm version is being skipped
-	//	t.SkipNow()
-	//}
 	corecontracts.PrintWellKnownHnames()
 
 	env := solo.New(t, &solo.InitOptions{
@@ -110,10 +106,13 @@ func test2Chains(t *testing.T, w bool) {
 	const gasFee = wasmlib.MinGasFee
 	const storageDeposit = wasmlib.StorageDeposit
 
-	// reqAllowance is the allowance provided to chain2.testcore.withdrawFromChain()),
+	// NOTE: make sure you READ THE DOCS for accounts.transferAccountToChain()
+	// to understand fully how to call it and why.
+
+	// reqAllowance is the allowance provided to chain2.testcore.withdrawFromChain(),
 	// which needs to be enough to cover any storage deposit along the way and to pay
 	// the gas fees for the chain2.accounts.transferAccountToChain() request and the
-	// chain1.C request.
+	// chain1.accounts.transferAllowanceTo() request.
 	// note that the storage deposit will be returned in the end
 	reqAllowance := storageDeposit + gasFee + gasFee
 

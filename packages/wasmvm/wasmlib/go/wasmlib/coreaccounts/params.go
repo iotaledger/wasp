@@ -130,8 +130,8 @@ func NewImmutableTransferAccountToChainParams() ImmutableTransferAccountToChainP
 	return ImmutableTransferAccountToChainParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
-// Gas reserve in allowance for internal call to transferAllowanceTo
-// Default 100 (for now)
+// Optional gas amount to reserve in the allowance for the internal
+// call to transferAllowanceTo(). Default 100 (MinGasFee).
 func (s ImmutableTransferAccountToChainParams) GasReserve() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.Proxy.Root(ParamGasReserve))
 }
@@ -140,8 +140,8 @@ type MutableTransferAccountToChainParams struct {
 	Proxy wasmtypes.Proxy
 }
 
-// Gas reserve in allowance for internal call to transferAllowanceTo
-// Default 100 (for now)
+// Optional gas amount to reserve in the allowance for the internal
+// call to transferAllowanceTo(). Default 100 (MinGasFee).
 func (s MutableTransferAccountToChainParams) GasReserve() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.Proxy.Root(ParamGasReserve))
 }

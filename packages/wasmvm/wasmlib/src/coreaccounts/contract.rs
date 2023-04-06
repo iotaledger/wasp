@@ -185,8 +185,8 @@ impl ScFuncs {
         f
     }
 
-    // Moves the specified allowance from the sender SC's L2 account on the target chain
-    // to sender SC's L2 account on the origin chain.
+    // Transfers the specified allowance from the sender SC's L2 account on
+    // the target chain to the sender SC's L2 account on the origin chain.
     pub fn transfer_account_to_chain(ctx: &impl ScFuncCallContext) -> TransferAccountToChainCall {
         let mut f = TransferAccountToChainCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_TRANSFER_ACCOUNT_TO_CHAIN),
@@ -196,7 +196,8 @@ impl ScFuncs {
         f
     }
 
-    // Moves the specified allowance from the sender's L2 account to the given L2 account on the chain.
+    // Transfers the specified allowance from the sender's L2 account
+    // to the given L2 account on the chain.
     pub fn transfer_allowance_to(ctx: &impl ScFuncCallContext) -> TransferAllowanceToCall {
         let mut f = TransferAllowanceToCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_TRANSFER_ALLOWANCE_TO),

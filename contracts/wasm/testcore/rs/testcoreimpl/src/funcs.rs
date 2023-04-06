@@ -234,12 +234,18 @@ pub fn func_withdraw_from_chain(ctx: &ScFuncContext, f: &WithdrawFromChainContex
     // the costly calculation to determine storage deposit every time
     // unless absolutely necessary. Better to just make sure that the
     // storage deposit is large enough, since it will be returned anyway.
-    let gasFee: u64 = MIN_GAS_FEE;
-    let storageDeposit: u64 = STORAGE_DEPOSIT;
+    let gas_fee: u64 = MIN_GAS_FEE;
+    let gas_reserve: u64 = MIN_GAS_FEE;
+    let storage_deposit: u64 = STORAGE_DEPOSIT;
 
+    // note: gasReserve is the gas necessary to run accounts.transferAllowanceTo
+    // on the other chain by the accounts.transferAccountToChain request
+
+    // NOTE: make sure you READ THE DOCS before calling this function
     let xfer = coreaccounts::ScFuncs::transfer_account_to_chain(ctx);
-    xfer.func.transfer_base_tokens(storageDeposit + gasFee + gasFee).
-        allowance_base_tokens(withdrawal + storageDeposit + gasFee).
+    xfer.params.gas_reserve().set_value(gas_reserve);
+    xfer.func.transfer_base_tokens(storage_deposit + gas_fee + gas_reserve).
+        allowance_base_tokens(withdrawal + storage_deposit + gas_reserve).
         post_to_chain(target_chain);
 }
 

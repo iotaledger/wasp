@@ -220,15 +220,15 @@ export function funcTestPanicFullEP(ctx: wasmlib.ScFuncContext, f: sc.TestPanicF
 }
 
 export function funcWithdrawFromChain(ctx: wasmlib.ScFuncContext, f: sc.WithdrawFromChainContext): void {
-    const targetChain = f.params.chainID().value()
-    const withdrawal = f.params.baseTokens().value()
+    const targetChain = f.params.chainID().value();
+    const withdrawal = f.params.baseTokens().value();
 
     // if it is not already present in the SC's account the caller should have
     // provided enough base tokens to cover the gas fees for the current call,
     // and for the storage deposit plus gas fees for the outgoing request to
     // accounts.transferAllowanceTo()
-    const transfer = wasmlib.ScTransfer.fromBalances(ctx.allowance())
-    ctx.transferAllowed(ctx.accountID(), transfer)
+    const transfer = wasmlib.ScTransfer.fromBalances(ctx.allowance());
+    ctx.transferAllowed(ctx.accountID(), transfer);
 
     // This is just a test contract, but normally these numbers should
     // be parameters because there is no way for the contract to figure
@@ -237,12 +237,18 @@ export function funcWithdrawFromChain(ctx: wasmlib.ScFuncContext, f: sc.Withdraw
     // unless absolutely necessary. Better to just make sure that the
     // storage deposit is large enough, since it will be returned anyway.
     const gasFee: u64 = wasmlib.MinGasFee;
+    const gasReserve: u64 = wasmlib.MinGasFee;
     const storageDeposit: u64 = wasmlib.StorageDeposit;
 
-    const xfer = coreaccounts.ScFuncs.transferAccountToChain(ctx)
-    xfer.func.transferBaseTokens(storageDeposit + gasFee + gasFee)
-        .allowanceBaseTokens(withdrawal + storageDeposit + gasFee)
-        .postToChain(targetChain)
+    // note: gasReserve is the gas necessary to run accounts.transferAllowanceTo
+    // on the other chain by the accounts.transferAccountToChain request
+
+    // NOTE: make sure you READ THE DOCS before calling this function
+    const xfer = coreaccounts.ScFuncs.transferAccountToChain(ctx);
+    xfer.params.gasReserve().setValue(gasReserve);
+    xfer.func.transferBaseTokens(storageDeposit + gasFee + gasReserve)
+        .allowanceBaseTokens(withdrawal + storageDeposit + gasReserve)
+        .postToChain(targetChain);
 }
 
 export function viewCheckContextFromViewEP(ctx: wasmlib.ScViewContext, f: sc.CheckContextFromViewEPContext): void {

@@ -87,16 +87,16 @@ export class MutableHarvestParams extends wasmtypes.ScProxy {
 }
 
 export class ImmutableTransferAccountToChainParams extends wasmtypes.ScProxy {
-    // Gas reserve in allowance for internal call to transferAllowanceTo
-    // Default 100 (for now)
+    // Optional gas amount to reserve in the allowance for the internal
+    // call to transferAllowanceTo(). Default 100 (MinGasFee).
     gasReserve(): wasmtypes.ScImmutableUint64 {
         return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamGasReserve));
     }
 }
 
 export class MutableTransferAccountToChainParams extends wasmtypes.ScProxy {
-    // Gas reserve in allowance for internal call to transferAllowanceTo
-    // Default 100 (for now)
+    // Optional gas amount to reserve in the allowance for the internal
+    // call to transferAllowanceTo(). Default 100 (MinGasFee).
     gasReserve(): wasmtypes.ScMutableUint64 {
         return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamGasReserve));
     }

@@ -250,11 +250,17 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 	// unless absolutely necessary. Better to just make sure that the
 	// storage deposit is large enough, since it will be returned anyway.
 	const gasFee = wasmlib.MinGasFee
+	const gasReserve = wasmlib.MinGasFee
 	const storageDeposit = wasmlib.StorageDeposit
 
+	// note: gasReserve is the gas necessary to run accounts.transferAllowanceTo
+	// on the other chain by the accounts.transferAccountToChain request
+
+	// NOTE: make sure you READ THE DOCS before calling this function
 	xfer := coreaccounts.ScFuncs.TransferAccountToChain(ctx)
-	xfer.Func.TransferBaseTokens(storageDeposit + gasFee + gasFee).
-		AllowanceBaseTokens(withdrawal + storageDeposit + gasFee).
+	xfer.Params.GasReserve().SetValue(gasReserve)
+	xfer.Func.TransferBaseTokens(storageDeposit + gasFee + gasReserve).
+		AllowanceBaseTokens(withdrawal + storageDeposit + gasReserve).
 		PostToChain(targetChain)
 }
 
