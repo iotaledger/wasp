@@ -105,3 +105,11 @@ func L1CommitmentFromAliasOutput(ao *iotago.AliasOutput) (*state.L1Commitment, e
 	}
 	return s.L1Commitment, nil
 }
+
+func MustL1CommitmentFromAliasOutput(ao *iotago.AliasOutput) *state.L1Commitment {
+	l1c, err := L1CommitmentFromAliasOutput(ao)
+	if err != nil {
+		panic(err)
+	}
+	return l1c
+}
