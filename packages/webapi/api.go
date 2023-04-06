@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/hive.go/app/configuration"
@@ -84,6 +85,7 @@ func Init(
 	requestCacheTTL time.Duration,
 	websocketService *websocket.Service,
 	pub *publisher.Publisher,
+	debugRequestLoggerEnabled bool,
 ) {
 	// load mock files to generate correct echo swagger documentation
 	mocker := NewMocker()
@@ -96,7 +98,7 @@ func Init(
 	offLedgerService := services.NewOffLedgerService(chainService, networkProvider, requestCacheTTL)
 	metricsService := services.NewMetricsService(chainsProvider, chainMetricsProvider)
 	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
-	evmService := services.NewEVMService(chainService, networkProvider, pub, logger)
+	evmService := services.NewEVMService(chainService, networkProvider, pub, logger.Named("EVMService"))
 	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeOwnerAddresses, nodeIdentityProvider, shutdownHandler, trustedNetworkManager)
 	dkgService := services.NewDKGService(dkShareRegistryProvider, dkgNodeProvider, trustedNetworkManager)
 	userService := services.NewUserService(userManager)
@@ -117,6 +119,12 @@ func Init(
 		requests.NewRequestsController(chainService, offLedgerService, peeringService, vmService),
 		users.NewUsersController(userService),
 		corecontracts.NewCoreContractsController(vmService),
+	}
+
+	if debugRequestLoggerEnabled {
+		server.Echo().Use(middleware.BodyDump(func(c echo.Context, reqBody, resBody []byte) {
+			logger.Debugf("API Dump: Request=%q, Response=%q", reqBody, resBody)
+		}))
 	}
 
 	addHealthEndpoint(server)

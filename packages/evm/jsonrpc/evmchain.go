@@ -60,13 +60,13 @@ func NewEVMChain(backend ChainBackend, pub *publisher.Publisher, log *logger.Log
 		}
 		state, err := e.backend.ISCStateByBlockIndex(ev.Payload.BlockIndex())
 		if err != nil {
-			log.Error(err)
+			log.Errorf("NewEVMChain.Hook.ISCStateByBlockIndex(blockIndex=%v) returned error: %v", ev.Payload.BlockIndex(), err)
 			return
 		}
 		blockNumber := new(big.Int).SetUint64(evmBlockNumberByISCBlockIndex(ev.Payload.BlockIndex()))
 		block, err := e.blockByNumber(state, blockNumber)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("NewEVMChain.Hook.blockByNumber(state=%v, blockNumber=%v) returned error: %v", state, blockNumber, err)
 			return
 		}
 
@@ -78,12 +78,12 @@ func NewEVMChain(backend ChainBackend, pub *publisher.Publisher, log *logger.Log
 			evm.FieldFilterQuery: evmtypes.EncodeFilterQuery(q),
 		})
 		if err != nil {
-			log.Error(err)
+			log.Errorf("NewEVMChain.Hook.ISCCallView(state=%v, FuncGetLogs, ...) returned error: %v", state, err)
 			return
 		}
 		logs, err := evmtypes.DecodeLogs(ret.Get(evm.FieldResult))
 		if err != nil {
-			log.Error(err)
+			log.Errorf("NewEVMChain.Hook.DecodeLogs(...) returned error: %v", err)
 			return
 		}
 		e.newBlock.Trigger(&NewBlockEvent{
@@ -115,12 +115,14 @@ func (e *EVMChain) ChainID() (uint16, error) {
 }
 
 func (e *EVMChain) ViewCaller(chainState state.State) vmerrors.ViewCaller {
+	e.log.Debugf("ViewCaller(chainState=%v)", chainState)
 	return func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
 		return e.backend.ISCCallView(chainState, contractName, funcName, params)
 	}
 }
 
 func (e *EVMChain) BlockNumber() (*big.Int, error) {
+	e.log.Debugf("BlockNumber()")
 	ret, err := e.backend.ISCCallView(e.backend.ISCLatestState(), evm.Contract.Name, evm.FuncGetBlockNumber.Name, nil)
 	if err != nil {
 		return nil, err
@@ -132,6 +134,7 @@ func (e *EVMChain) BlockNumber() (*big.Int, error) {
 }
 
 func (e *EVMChain) GasRatio() (util.Ratio32, error) {
+	e.log.Debugf("GasRatio()")
 	ret, err := e.backend.ISCCallView(
 		e.backend.ISCLatestState(),
 		governance.Contract.Name,
@@ -145,6 +148,7 @@ func (e *EVMChain) GasRatio() (util.Ratio32, error) {
 }
 
 func (e *EVMChain) GasFeePolicy() (*gas.FeePolicy, error) {
+	e.log.Debugf("GasFeePolicy()")
 	res, err := e.backend.ISCCallView(e.backend.ISCLatestState(), governance.Contract.Name, governance.ViewGetFeePolicy.Name, nil)
 	if err != nil {
 		return nil, err
@@ -171,6 +175,7 @@ func (e *EVMChain) gasLimits() (*gas.Limits, error) {
 }
 
 func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
+	e.log.Debugf("SendTransaction(tx=%v)", tx)
 	chainID, err := e.ChainID()
 	if err != nil {
 		return err
@@ -307,6 +312,7 @@ func (e *EVMChain) iscAliasOutputFromEVMBlockNumberOrHash(blockNumberOrHash *rpc
 }
 
 func (e *EVMChain) Balance(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (*big.Int, error) {
+	e.log.Debugf("Balance(address=%v, blockNumberOrHash=%v)", address, blockNumberOrHash)
 	chainState, err := e.iscStateFromEVMBlockNumberOrHash(blockNumberOrHash)
 	if err != nil {
 		return nil, err
@@ -324,6 +330,7 @@ func (e *EVMChain) Balance(address common.Address, blockNumberOrHash *rpc.BlockN
 }
 
 func (e *EVMChain) Code(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) ([]byte, error) {
+	e.log.Debugf("Code(address=%v, blockNumberOrHash=%v)", address, blockNumberOrHash)
 	chainState, err := e.iscStateFromEVMBlockNumberOrHash(blockNumberOrHash)
 	if err != nil {
 		return nil, err
@@ -338,6 +345,7 @@ func (e *EVMChain) Code(address common.Address, blockNumberOrHash *rpc.BlockNumb
 }
 
 func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
+	e.log.Debugf("BlockByNumber(blockNumber=%v)", blockNumber)
 	chainState, err := e.iscStateFromEVMBlockNumber(blockNumber)
 	if err != nil {
 		return nil, err
@@ -391,14 +399,14 @@ func (e *EVMChain) getTransactionBy(chainState state.State, funcName string, arg
 }
 
 func (e *EVMChain) TransactionByHash(hash common.Hash) (tx *types.Transaction, blockHash common.Hash, blockNumber, index uint64, err error) {
-	e.log.Debugf("TransactionByHash, hash=%v", hash)
+	e.log.Debugf("TransactionByHash(hash=%v)", hash)
 	return e.getTransactionBy(e.backend.ISCLatestState(), evm.FuncGetTransactionByHash.Name, dict.Dict{
 		evm.FieldTransactionHash: hash.Bytes(),
 	})
 }
 
 func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumber, indexRet uint64, err error) {
-	e.log.Debugf("TransactionByBlockHashAndIndex, hash=%v, index=%v", hash, index)
+	e.log.Debugf("TransactionByBlockHashAndIndex(hash=%v, index=%v)", hash, index)
 	return e.getTransactionBy(e.backend.ISCLatestState(), evm.FuncGetTransactionByBlockHashAndIndex.Name, dict.Dict{
 		evm.FieldBlockHash:        hash.Bytes(),
 		evm.FieldTransactionIndex: codec.EncodeUint64(index),
@@ -406,7 +414,7 @@ func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64
 }
 
 func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumberRet, indexRet uint64, err error) {
-	e.log.Debugf("TransactionByBlockNumberAndIndex, blockNumber=%v, index=%v", blockNumber, index)
+	e.log.Debugf("TransactionByBlockNumberAndIndex(blockNumber=%v, index=%v)", blockNumber, index)
 	blockIndex, err := e.iscStateFromEVMBlockNumber(blockNumber)
 	if err != nil {
 		return nil, common.Hash{}, 0, 0, err
@@ -417,7 +425,7 @@ func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index 
 }
 
 func (e *EVMChain) BlockByHash(hash common.Hash) (*types.Block, error) {
-	e.log.Debugf("BlockByHash, hash=%v", hash)
+	e.log.Debugf("BlockByHash(hash=%v)", hash)
 	ret, err := e.backend.ISCCallView(e.backend.ISCLatestState(), evm.Contract.Name, evm.FuncGetBlockByHash.Name, dict.Dict{
 		evm.FieldBlockHash: hash.Bytes(),
 	})
@@ -437,7 +445,7 @@ func (e *EVMChain) BlockByHash(hash common.Hash) (*types.Block, error) {
 }
 
 func (e *EVMChain) TransactionReceipt(txHash common.Hash) (*types.Receipt, error) {
-	e.log.Debugf("TransactionReceipt, txHash=%v", txHash)
+	e.log.Debugf("TransactionReceipt(txHash=%v)", txHash)
 	ret, err := e.backend.ISCCallView(e.backend.ISCLatestState(), evm.Contract.Name, evm.FuncGetReceipt.Name, dict.Dict{
 		evm.FieldTransactionHash: txHash.Bytes(),
 	})
@@ -457,7 +465,7 @@ func (e *EVMChain) TransactionReceipt(txHash common.Hash) (*types.Receipt, error
 }
 
 func (e *EVMChain) TransactionCount(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (uint64, error) {
-	e.log.Debugf("TransactionCount, address=%v, blockNumberOrHash=%v", address, blockNumberOrHash)
+	e.log.Debugf("TransactionCount(address=%v, blockNumberOrHash=%v)", address, blockNumberOrHash)
 	var chainState state.State
 	chainState, err := e.iscStateFromEVMBlockNumberOrHash(blockNumberOrHash)
 	if err != nil {
@@ -473,6 +481,7 @@ func (e *EVMChain) TransactionCount(address common.Address, blockNumberOrHash *r
 }
 
 func (e *EVMChain) CallContract(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.BlockNumberOrHash) ([]byte, error) {
+	e.log.Debugf("CallContract(callMsg=..., blockNumberOrHash=%v)", blockNumberOrHash)
 	aliasOutput, err := e.iscAliasOutputFromEVMBlockNumberOrHash(blockNumberOrHash)
 	if err != nil {
 		return nil, err
@@ -481,6 +490,7 @@ func (e *EVMChain) CallContract(callMsg ethereum.CallMsg, blockNumberOrHash *rpc
 }
 
 func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.BlockNumberOrHash) (uint64, error) {
+	e.log.Debugf("EstimateGas(callMsg=..., blockNumberOrHash=%v)", blockNumberOrHash)
 	aliasOutput, err := e.iscAliasOutputFromEVMBlockNumberOrHash(blockNumberOrHash)
 	if err != nil {
 		return 0, err
@@ -489,10 +499,12 @@ func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.
 }
 
 func (e *EVMChain) GasPrice() *big.Int {
+	e.log.Debugf("GasPrice()")
 	return e.backend.EVMGasPrice()
 }
 
 func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumberOrHash *rpc.BlockNumberOrHash) ([]byte, error) {
+	e.log.Debugf("StorageAt(address=%v, key=%v, blockNumberOrHash=%v)", address, key, blockNumberOrHash)
 	latestState, err := e.iscStateFromEVMBlockNumberOrHash(blockNumberOrHash)
 	if err != nil {
 		return nil, err
@@ -508,6 +520,7 @@ func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumbe
 }
 
 func (e *EVMChain) BlockTransactionCountByHash(blockHash common.Hash) (uint64, error) {
+	e.log.Debugf("BlockTransactionCountByHash(blockHash=%v)", blockHash)
 	ret, err := e.backend.ISCCallView(e.backend.ISCLatestState(), evm.Contract.Name, evm.FuncGetTransactionCountByBlockHash.Name, dict.Dict{
 		evm.FieldBlockHash: blockHash.Bytes(),
 	})
@@ -518,6 +531,7 @@ func (e *EVMChain) BlockTransactionCountByHash(blockHash common.Hash) (uint64, e
 }
 
 func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, error) {
+	e.log.Debugf("BlockTransactionCountByNumber(blockNumber=%v)", blockNumber)
 	chainState, err := e.iscStateFromEVMBlockNumber(blockNumber)
 	if err != nil {
 		return 0, err
@@ -530,6 +544,7 @@ func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, 
 }
 
 func (e *EVMChain) Logs(q *ethereum.FilterQuery) ([]*types.Log, error) {
+	e.log.Debugf("Logs(q=%v)", q)
 	ret, err := e.backend.ISCCallView(e.backend.ISCLatestState(), evm.Contract.Name, evm.FuncGetLogs.Name, dict.Dict{
 		evm.FieldFilterQuery: evmtypes.EncodeFilterQuery(q),
 	})
@@ -540,16 +555,19 @@ func (e *EVMChain) Logs(q *ethereum.FilterQuery) ([]*types.Log, error) {
 }
 
 func (e *EVMChain) BaseToken() *parameters.BaseToken {
+	e.log.Debugf("BaseToken()")
 	return e.backend.BaseToken()
 }
 
 func (e *EVMChain) SubscribeNewHeads(ch chan<- *types.Header) (unsubscribe func()) {
+	e.log.Debugf("SubscribeNewHeads(ch=?)")
 	return e.newBlock.Hook(func(ev *NewBlockEvent) {
 		ch <- ev.block.Header()
 	}).Unhook
 }
 
 func (e *EVMChain) SubscribeLogs(q *ethereum.FilterQuery, ch chan<- []*types.Log) (unsubscribe func()) {
+	e.log.Debugf("SubscribeLogs(q=%v, ch=?)", q)
 	return e.newBlock.Hook(func(ev *NewBlockEvent) {
 		if q.BlockHash != nil && *q.BlockHash != ev.block.Hash() {
 			return
@@ -601,6 +619,7 @@ func (e *EVMChain) iscRequestsInBlock(blockIndex uint32) (*blocklog.BlockInfo, [
 }
 
 func (e *EVMChain) TraceTransaction(txHash common.Hash, config *tracers.TraceConfig) (any, error) {
+	e.log.Debugf("TraceTransaction(txHash=%v, config=?)", txHash)
 	tracerType := "callTracer"
 	if config.Tracer != nil {
 		tracerType = *config.Tracer

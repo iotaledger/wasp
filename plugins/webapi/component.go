@@ -219,6 +219,7 @@ func provide(c *dig.Container) error {
 			deps.APICacheTTL,
 			websocketService,
 			deps.Publisher,
+			ParamsWebAPI.DebugRequestLoggerEnabled,
 		)
 
 		return webapiServerResult{
