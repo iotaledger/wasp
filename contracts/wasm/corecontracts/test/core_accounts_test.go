@@ -52,7 +52,7 @@ func TestDeposit(t *testing.T) {
 	assert.Equal(t, balanceOld-depositAmount, balanceNew)
 
 	// expected changes to L2, note that caller pays the gas fee
-	bal.Chain += ctx.GasFee
+	bal.Common += ctx.GasFee
 	bal.Add(user, depositAmount-ctx.GasFee)
 	bal.VerifyBalances(t)
 }
@@ -80,7 +80,7 @@ func TestTransferAllowanceTo(t *testing.T) {
 	assert.Equal(t, balanceOldUser1, balanceNewUser1)
 
 	// expected changes to L2, note that caller pays the gas fee
-	bal.Chain += ctx.GasFee
+	bal.Common += ctx.GasFee
 	bal.Add(user0, -transferAmountBaseTokens-ctx.GasFee)
 	bal.Add(user1, transferAmountBaseTokens)
 	bal.VerifyBalances(t)

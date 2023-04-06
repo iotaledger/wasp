@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	SoloDebug        = false
+	SoloDebug        = true
 	SoloHostTracing  = false
 	SoloStackTracing = false
 )
@@ -216,7 +216,7 @@ func soloContext(t solo.TestContext, chain *solo.Chain, scName string, creator *
 		scName:         scName,
 		Chain:          chain,
 		creator:        creator,
-		StorageDeposit: wasmhost.WasmStorageDeposit,
+		StorageDeposit: wasmlib.StorageDeposit,
 	}
 }
 
@@ -291,8 +291,8 @@ func (ctx *SoloContext) Balances(agents ...*SoloAgent) *SoloBalances {
 	return NewSoloBalances(ctx, agents...)
 }
 
-// ChainAccount returns a SoloAgent for the chain associated with ctx
-func (ctx *SoloContext) ChainAccount() *SoloAgent {
+// CommonAccount returns a SoloAgent for the chain associated with ctx
+func (ctx *SoloContext) CommonAccount() *SoloAgent {
 	agentID := accounts.CommonAccount()
 	return &SoloAgent{
 		agentID: agentID,

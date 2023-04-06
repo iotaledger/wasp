@@ -122,6 +122,30 @@ func (s MutableHarvestParams) ForceMinimumBaseTokens() wasmtypes.ScMutableUint64
 	return wasmtypes.NewScMutableUint64(s.Proxy.Root(ParamForceMinimumBaseTokens))
 }
 
+type ImmutableTransferAccountToChainParams struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewImmutableTransferAccountToChainParams() ImmutableTransferAccountToChainParams {
+	return ImmutableTransferAccountToChainParams{Proxy: wasmlib.NewParamsProxy()}
+}
+
+// Gas reserve in allowance for internal call to transferAllowanceTo
+// Default 100 (for now)
+func (s ImmutableTransferAccountToChainParams) GasReserve() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.Proxy.Root(ParamGasReserve))
+}
+
+type MutableTransferAccountToChainParams struct {
+	Proxy wasmtypes.Proxy
+}
+
+// Gas reserve in allowance for internal call to transferAllowanceTo
+// Default 100 (for now)
+func (s MutableTransferAccountToChainParams) GasReserve() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.Proxy.Root(ParamGasReserve))
+}
+
 type ImmutableTransferAllowanceToParams struct {
 	Proxy wasmtypes.Proxy
 }

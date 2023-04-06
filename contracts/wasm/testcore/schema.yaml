@@ -76,7 +76,7 @@ funcs:
   withdrawFromChain:
     params:
       chainID: ChainID
-      baseTokensWithdrawal: Uint64
+      baseTokens: Uint64
 views:
   checkContextFromViewEP:
     params:

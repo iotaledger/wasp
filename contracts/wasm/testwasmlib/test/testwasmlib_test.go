@@ -258,7 +258,7 @@ func TestTakeAllowance(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	bal.Account += tokensToSend
-	bal.Chain += ctx.GasFee
+	bal.Common += ctx.GasFee
 	bal.Originator -= ctx.GasFee
 	bal.VerifyBalances(t)
 
@@ -267,7 +267,7 @@ func TestTakeAllowance(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	require.EqualValues(t, bal.Account, g.Results.Tokens().Value())
 
-	bal.Chain += ctx.GasFee
+	bal.Common += ctx.GasFee
 	bal.Originator += ctx.StorageDeposit - ctx.GasFee
 	bal.VerifyBalances(t)
 
@@ -293,7 +293,7 @@ func TestTakeNoAllowance(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	ctx.Balances()
 
-	bal.Chain += ctx.GasFee
+	bal.Common += ctx.GasFee
 	bal.Originator += tokensToSend - ctx.GasFee
 	bal.VerifyBalances(t)
 
@@ -302,7 +302,7 @@ func TestTakeNoAllowance(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	require.EqualValues(t, bal.Account, g.Results.Tokens().Value())
 
-	bal.Chain += ctx.GasFee
+	bal.Common += ctx.GasFee
 	bal.Originator += ctx.StorageDeposit - ctx.GasFee
 	bal.VerifyBalances(t)
 

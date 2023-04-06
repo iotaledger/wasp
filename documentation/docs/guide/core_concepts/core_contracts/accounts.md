@@ -40,13 +40,18 @@ As with every call, the gas fee is debited from the L2 account right after execu
 
 ### `withdraw()`
 
-Moves tokens from the caller's on-chain account to the caller's L1 address. The number of tokens to be withdrawn must be
-specified via the allowance of the request.
+Moves tokens from the caller's on-chain account to the caller's L1 address. The number of 
+tokens to be withdrawn must be specified via the allowance of the request.
+
+:::note Contract Account
+
+Because contracts does not have a corresponding L1 address it does not make sense to 
+have them call this function. It will fail with an error.
 
 :::note Storage Deposit
 
-A call to withdraw means that a L1 output will be created. Because of this, the withdrawn amount must be able to cover
-the L1 storage deposit. Otherwise, it will fail.
+A call to withdraw means that a L1 output will be created. Because of this, the withdrawn
+amount must be able to cover the L1 storage deposit. Otherwise, it will fail.
 
 :::
 

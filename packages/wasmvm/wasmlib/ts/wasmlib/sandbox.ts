@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // @formatter:off
+export const MinGasFee      : u64 = 100n;
+export const StorageDeposit : u64 = 20_000n;
+
 export const FnAccountID              : i32 = -1;
 export const FnAllowance              : i32 = -2;
 export const FnBalance                : i32 = -3;

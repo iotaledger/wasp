@@ -35,6 +35,11 @@ pub struct HarvestCall<'a> {
     pub params: MutableHarvestParams,
 }
 
+pub struct TransferAccountToChainCall<'a> {
+    pub func:   ScFunc<'a>,
+    pub params: MutableTransferAccountToChainParams,
+}
+
 pub struct TransferAllowanceToCall<'a> {
     pub func:   ScFunc<'a>,
     pub params: MutableTransferAllowanceToParams,
@@ -175,6 +180,17 @@ impl ScFuncs {
         let mut f = HarvestCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_HARVEST),
             params:  MutableHarvestParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    // Moves the specified allowance from the sender SC's L2 account on the target chain
+    // to sender SC's L2 account on the origin chain.
+    pub fn transfer_account_to_chain(ctx: &impl ScFuncCallContext) -> TransferAccountToChainCall {
+        let mut f = TransferAccountToChainCall {
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_TRANSFER_ACCOUNT_TO_CHAIN),
+            params:  MutableTransferAccountToChainParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f

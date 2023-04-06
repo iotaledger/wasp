@@ -17,13 +17,13 @@ type SoloBalances struct {
 	Account    uint64
 	accounts   map[string]uint64
 	agents     []*SoloAgent
-	Chain      uint64
+	Common     uint64
 	ctx        *SoloContext
 	Originator uint64
 }
 
 // NewSoloBalances takes a snapshot of all balances necessary to track token
-// movements easily. It will track L2 Originator, Chain, snd SC Account balances
+// movements easily. It will track L2 Originator, Common, snd SC Account balances
 // Additional agents can be specified as extra accounts
 // This is typically called from SoloContext.Balances() before a call to the SC.
 // After the call, update the balances with the expected token movements and then
@@ -32,7 +32,7 @@ func NewSoloBalances(ctx *SoloContext, agents ...*SoloAgent) *SoloBalances {
 	bal := &SoloBalances{
 		ctx:        ctx,
 		Account:    ctx.Balance(ctx.Account()),
-		Chain:      ctx.Balance(ctx.ChainAccount()),
+		Common:     ctx.Balance(ctx.CommonAccount()),
 		Originator: ctx.Balance(ctx.Originator()),
 		agents:     agents,
 		accounts:   make(map[string]uint64),
@@ -110,7 +110,7 @@ func (bal *SoloBalances) findName(id string) string {
 	if agent.ID == id {
 		return agent.Name
 	}
-	agent = bal.ctx.ChainAccount()
+	agent = bal.ctx.CommonAccount()
 	if agent.ID == id {
 		return agent.Name
 	}
@@ -131,8 +131,8 @@ func (bal *SoloBalances) VerifyBalances(t solo.TestContext) {
 	ctx := bal.ctx
 	actual := ctx.Balance(ctx.Account())
 	require.EqualValues(t, bal.Account, actual)
-	actual = ctx.Balance(ctx.ChainAccount())
-	require.EqualValues(t, bal.Chain, actual)
+	actual = ctx.Balance(ctx.CommonAccount())
+	require.EqualValues(t, bal.Common, actual)
 	actual = ctx.Balance(ctx.Originator())
 	require.EqualValues(t, bal.Originator, actual)
 	for _, agent := range bal.agents {

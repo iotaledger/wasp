@@ -221,18 +221,28 @@ export function funcTestPanicFullEP(ctx: wasmlib.ScFuncContext, f: sc.TestPanicF
 
 export function funcWithdrawFromChain(ctx: wasmlib.ScFuncContext, f: sc.WithdrawFromChainContext): void {
     const targetChain = f.params.chainID().value()
-    const withdrawal = f.params.baseTokensWithdrawal().value()
-    const availableTokens = ctx.allowance().baseTokens()
+    const withdrawal = f.params.baseTokens().value()
 
-    // requiredStorageDepositDeposit := ctx.EstimateRequiredStorageDepositDeposit(request)
-    if (availableTokens < 1000) {
-        ctx.panic("not enough base tokens sent to cover storage deposit")
-    }
+    // if it is not already present in the SC's account the caller should have
+    // provided enough base tokens to cover the gas fees for the current call,
+    // and for the storage deposit plus gas fees for the outgoing request to
+    // accounts.transferAllowanceTo()
     const transfer = wasmlib.ScTransfer.fromBalances(ctx.allowance())
     ctx.transferAllowed(ctx.accountID(), transfer)
 
-    const withdraw = coreaccounts.ScFuncs.withdraw(ctx)
-    withdraw.func.transfer(transfer).allowanceBaseTokens(withdrawal).postToChain(targetChain)
+    // This is just a test contract, but normally these numbers should
+    // be parameters because there is no way for the contract to figure
+    // out the gas fees on the other chain, and it's also silly to run
+    // the costly calculation to determine storage deposit every time
+    // unless absolutely necessary. Better to just make sure that the
+    // storage deposit is large enough, since it will be returned anyway.
+    const gasFee: u64 = wasmlib.MinGasFee;
+    const storageDeposit: u64 = wasmlib.StorageDeposit;
+
+    const xfer = coreaccounts.ScFuncs.transferAccountToChain(ctx)
+    xfer.func.transferBaseTokens(storageDeposit + gasFee + gasFee)
+        .allowanceBaseTokens(withdrawal + storageDeposit + gasFee)
+        .postToChain(targetChain)
 }
 
 export function viewCheckContextFromViewEP(ctx: wasmlib.ScViewContext, f: sc.CheckContextFromViewEPContext): void {

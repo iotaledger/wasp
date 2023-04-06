@@ -85,11 +85,11 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 	// excess can always be reclaimed from the chain account by the user
 	// This also removes the silly requirement to transfer 1 base token
 	if transfer.IsEmpty() && !ctx.offLedger {
-		transfer = isc.NewAssetsBaseTokens(wasmhost.WasmStorageDeposit)
+		transfer = isc.NewAssetsBaseTokens(wasmlib.StorageDeposit)
 	}
-	if !transfer.IsEmpty() && transfer.BaseTokens < wasmhost.WasmStorageDeposit {
+	if !transfer.IsEmpty() && transfer.BaseTokens < wasmlib.StorageDeposit {
 		transfer = transfer.Clone()
-		transfer.BaseTokens = wasmhost.WasmStorageDeposit
+		transfer.BaseTokens = wasmlib.StorageDeposit
 	}
 	req.AddFungibleTokens(transfer)
 	if len(transfer.NFTs) != 0 {

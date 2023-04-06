@@ -7,7 +7,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -25,6 +24,7 @@ var Processor = Contract.Processor(nil,
 	FuncFoundryDestroy.WithHandler(foundryDestroy),
 	FuncFoundryModifySupply.WithHandler(foundryModifySupply),
 	FuncHarvest.WithHandler(harvest),
+	FuncTransferAccountToChain.WithHandler(transferAccountToChain),
 	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
 	FuncWithdraw.WithHandler(withdraw),
 
@@ -71,43 +71,55 @@ func transferAllowanceTo(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
-// TODO this is just a temporary value, we need to make deposits fee constant across chains.
-const ConstDepositFeeTmp = 1 * isc.Million
-
 // withdraw sends the allowed funds to the caller's L1 address,
-// or if the caller is a cross-chain contract, to its account.
 func withdraw(ctx isc.Sandbox) dict.Dict {
 	allowance := ctx.AllowanceAvailable()
-	ctx.Requiref(!allowance.IsEmpty(), "Allowance can't be empty in 'accounts.withdraw'")
+	ctx.Log().Debugf("accounts.withdraw.begin -- %s", allowance)
+	ctx.Requiref(!allowance.IsEmpty(), "allowance can't be empty")
+	if len(allowance.NFTs) > 1 {
+		panic(ErrTooManyNFTsInAllowance)
+	}
+
+	caller := ctx.Caller()
+	_, ok := caller.(*isc.ContractAgentID)
+	ctx.Requiref(!ok, "cannot withdraw from contract account")
+
+	// simple case, caller is not a contract, this is a straightforward withdrawal to L1
+	callerAddress, ok := isc.AddressFromAgentID(caller)
+	ctx.Requiref(ok, "caller must have L1 address")
+	remains := ctx.TransferAllowedFunds(ctx.AccountID())
+	ctx.Requiref(remains.IsEmpty(), "internal: allowance remains must be empty")
+	ctx.Send(isc.RequestParameters{
+		TargetAddress: callerAddress,
+		Assets:        allowance,
+	})
+	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s: %s",
+		callerAddress.String(),
+		allowance.String(),
+	)
+	return nil
+}
+
+// transferAccountToChain sends the allowed funds from the calling SC's account
+// on this chain to its account on the origin chain.
+func transferAccountToChain(ctx isc.Sandbox) dict.Dict {
+	allowance := ctx.AllowanceAvailable()
+	ctx.Log().Debugf("accounts.transferAccountToChain.begin -- %s", allowance)
+	ctx.Requiref(!allowance.IsEmpty(), "allowance can't be empty")
 	if len(allowance.NFTs) > 1 {
 		panic(ErrTooManyNFTsInAllowance)
 	}
 
 	caller := ctx.Caller()
 	callerContract, ok := caller.(*isc.ContractAgentID)
-	if !ok || callerContract.Hname().IsNil() {
-		// simple case, caller is not a contract, this is a straightforward withdrawal to L1
-		callerAddress, ok := isc.AddressFromAgentID(caller)
-		ctx.Requiref(ok, "caller must have L1 address")
-		remains := ctx.TransferAllowedFunds(ctx.AccountID())
-		ctx.Requiref(remains.IsEmpty(), "internal: allowance remains must be empty")
-		ctx.Send(isc.RequestParameters{
-			TargetAddress: callerAddress,
-			Assets:        allowance,
-		})
-		ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s: %s",
-			callerAddress.String(),
-			allowance.String(),
-		)
-		return nil
-	}
+	ctx.Requiref(ok && !callerContract.Hname().IsNil(), "caller must be contract")
 
-	// Caller is a contract, and therefore does not have a L1 address to withdraw to.
-	// Instead, we will withdraw from its L2 account on the target chain to its L2
-	// account on the caller's chain. This requires a second request to be made by
-	// the accounts contract on the target chain, that transfers the assets via L1
-	// to the caller's chain and requests accounts.TransferAllowanceTo to transfer
-	// the assets into the caller's L2 account on the caller's chain.
+	// Caller is a contract, and we will withdraw from its L2 account on the target
+	// chain to its L2 account on the origin chain. This requires a second request
+	// to be made by the accounts contract on the target chain, that transfers the
+	// assets via L1 to the caller's chain and requests accounts.TransferAllowanceTo
+	// on the origin chain to transfer the assets into the caller's L2 account on
+	// the caller's chain.
 
 	// SPECIAL CONSIDERATIONS:
 	// 1. The caller contract needs to have enough extra tokens in its account, to send
@@ -131,8 +143,6 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 	// GAS1, otherwise the request could cannibalize GAS2 or even SD2 and again cause
 	// the assets to be locked up in the L2 account of the core accounts contract.
 
-	// TODO how to know GAS2 within withdrawal request so we can modify
-	// the allowance for the transfer request accordingly?
 	// TODO tokens could also be locked up in L2 account of core accounts
 	// if gas runs out before they are transferred to caller's L2 account
 	// So how do we make sure the GAS2 budget is enough
@@ -143,14 +153,13 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 		return nil
 	}
 
-	// TODO Silly ConstDepositFeeTmp (1M tokens) needs to be replaced with actual GAS2
-	gas2 := ConstDepositFeeTmp
+	gasReserved := ctx.Params().MustGetUint64(ParamGasReserve, 100)
 
 	// save the assets to send to the transfer request
 	assets := allowance.Clone()
 	// deduct the gas budget GAS2 from the allowance, if possible
-	ctx.Requiref(allowance.BaseTokens >= gas2, "insufficient base tokens for GAS2")
-	allowance.BaseTokens -= gas2
+	ctx.Requiref(allowance.BaseTokens >= gasReserved, "insufficient base tokens for gas reserve")
+	allowance.BaseTokens -= gasReserved
 
 	// warning: this will transfer the assets into the accounts core contract
 	// make sure everything transfers out again, or assets will be stuck forever
@@ -158,6 +167,12 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 	ctx.Requiref(remains.IsEmpty(), "internal: allowance remains must be empty")
 
 	// send the assets to the caller contract's L2 account on the caller's chain
+	// note that the assets initially end up in the L2 account of this core accounts
+	// contract on the chain we send them to, from which they become the allowance
+	// to accounts.FuncTransferAllowanceTo on that chain
+	// This convoluted way is a direct result of the design using an allowance system
+	// Note that in most cases it actually makes things easier and really safe.
+	// It's only in this case that it becomes a royal PITA.
 	ctx.Send(isc.RequestParameters{
 		TargetAddress: callerContract.Address(),
 		Assets:        assets,
@@ -165,11 +180,11 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 			TargetContract: Contract.Hname(), // core accounts
 			EntryPoint:     FuncTransferAllowanceTo.Hname(),
 			Allowance:      allowance,
-			Params:         dict.Dict{ParamAgentID: codec.EncodeAgentID(callerContract)},
-			GasBudget:      gas2,
+			Params:         dict.Dict{ParamAgentID: callerContract.Bytes()},
+			GasBudget:      gasReserved,
 		},
 	})
-	ctx.Log().Debugf("accounts.withdraw.success. Sent to contract %s: %s",
+	ctx.Log().Debugf("accounts.transferAccountToChain.success. Sent to contract %s: %s",
 		callerContract.String(),
 		allowance.String(),
 	)

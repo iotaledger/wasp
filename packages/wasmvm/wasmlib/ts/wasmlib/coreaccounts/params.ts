@@ -86,6 +86,22 @@ export class MutableHarvestParams extends wasmtypes.ScProxy {
     }
 }
 
+export class ImmutableTransferAccountToChainParams extends wasmtypes.ScProxy {
+    // Gas reserve in allowance for internal call to transferAllowanceTo
+    // Default 100 (for now)
+    gasReserve(): wasmtypes.ScImmutableUint64 {
+        return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamGasReserve));
+    }
+}
+
+export class MutableTransferAccountToChainParams extends wasmtypes.ScProxy {
+    // Gas reserve in allowance for internal call to transferAllowanceTo
+    // Default 100 (for now)
+    gasReserve(): wasmtypes.ScMutableUint64 {
+        return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamGasReserve));
+    }
+}
+
 export class ImmutableTransferAllowanceToParams extends wasmtypes.ScProxy {
     // The target L2 account
     agentID(): wasmtypes.ScImmutableAgentID {

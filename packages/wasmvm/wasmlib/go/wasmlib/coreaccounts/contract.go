@@ -34,6 +34,11 @@ type HarvestCall struct {
 	Params MutableHarvestParams
 }
 
+type TransferAccountToChainCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableTransferAccountToChainParams
+}
+
 type TransferAllowanceToCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableTransferAllowanceToParams
@@ -160,6 +165,14 @@ func (sc Funcs) FoundryModifySupply(ctx wasmlib.ScFuncCallContext) *FoundryModif
 // The chain owner is the only one who can call this entry point.
 func (sc Funcs) Harvest(ctx wasmlib.ScFuncCallContext) *HarvestCall {
 	f := &HarvestCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncHarvest)}
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+// Moves the specified allowance from the sender SC's L2 account on the target chain
+// to sender SC's L2 account on the origin chain.
+func (sc Funcs) TransferAccountToChain(ctx wasmlib.ScFuncCallContext) *TransferAccountToChainCall {
+	f := &TransferAccountToChainCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTransferAccountToChain)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
@@ -294,6 +307,7 @@ var exportMap = wasmlib.ScExportMap{
 		FuncFoundryDestroy,
 		FuncFoundryModifySupply,
 		FuncHarvest,
+		FuncTransferAccountToChain,
 		FuncTransferAllowanceTo,
 		FuncWithdraw,
 		ViewAccountFoundries,
@@ -312,6 +326,7 @@ var exportMap = wasmlib.ScExportMap{
 		ViewTotalAssets,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
+		wasmlib.FuncError,
 		wasmlib.FuncError,
 		wasmlib.FuncError,
 		wasmlib.FuncError,

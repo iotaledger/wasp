@@ -234,18 +234,28 @@ func funcTestPanicFullEP(ctx wasmlib.ScFuncContext, _ *TestPanicFullEPContext) {
 
 func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContext) {
 	targetChain := f.Params.ChainID().Value()
-	withdrawal := f.Params.BaseTokensWithdrawal().Value()
-	availableTokens := ctx.Allowance().BaseTokens()
+	withdrawal := f.Params.BaseTokens().Value()
 
-	// requiredStorageDepositDeposit := ctx.EstimateRequiredStorageDepositDeposit(request)
-	if availableTokens < 2000 {
-		ctx.Panic("not enough base tokens sent to cover storage deposit")
-	}
+	// if it is not already present in the SC's account the caller should have
+	// provided enough base tokens to cover the gas fees for the current call,
+	// and for the storage deposit plus gas fees for the outgoing request to
+	// accounts.transferAllowanceTo()
 	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
 	ctx.TransferAllowed(ctx.AccountID(), transfer)
 
-	withdraw := coreaccounts.ScFuncs.Withdraw(ctx)
-	withdraw.Func.Transfer(transfer).AllowanceBaseTokens(withdrawal).PostToChain(targetChain)
+	// This is just a test contract, but normally these numbers should
+	// be parameters because there is no way for the contract to figure
+	// out the gas fees on the other chain, and it's also silly to run
+	// the costly calculation to determine storage deposit every time
+	// unless absolutely necessary. Better to just make sure that the
+	// storage deposit is large enough, since it will be returned anyway.
+	const gasFee = wasmlib.MinGasFee
+	const storageDeposit = wasmlib.StorageDeposit
+
+	xfer := coreaccounts.ScFuncs.TransferAccountToChain(ctx)
+	xfer.Func.TransferBaseTokens(storageDeposit + gasFee + gasFee).
+		AllowanceBaseTokens(withdrawal + storageDeposit + gasFee).
+		PostToChain(targetChain)
 }
 
 func viewCheckContextFromViewEP(ctx wasmlib.ScViewContext, f *CheckContextFromViewEPContext) {

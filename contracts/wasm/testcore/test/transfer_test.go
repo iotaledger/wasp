@@ -18,7 +18,7 @@ func TestDoNothing(t *testing.T) {
 		nop.Func.TransferBaseTokens(1 * isc.Million).Post()
 		require.NoError(t, ctx.Err)
 
-		bal.Chain += ctx.GasFee
+		bal.Common += ctx.GasFee
 		bal.Originator += 1*isc.Million - ctx.GasFee
 		bal.VerifyBalances(t)
 	})
@@ -35,7 +35,7 @@ func TestDoNothingUser(t *testing.T) {
 		nop.Func.TransferBaseTokens(1 * isc.Million).Post()
 		require.NoError(t, ctx.Err)
 
-		bal.Chain += ctx.GasFee
+		bal.Common += ctx.GasFee
 		bal.Add(user, 1*isc.Million-ctx.GasFee)
 		bal.VerifyBalances(t)
 	})
@@ -88,7 +88,7 @@ func TestDoPanicUser(t *testing.T) {
 		require.Error(t, ctx.Err)
 		require.EqualValues(t, userL1-1*isc.Million, user.Balance())
 
-		bal.Chain += ctx.GasFee
+		bal.Common += ctx.GasFee
 		bal.Add(user, 1*isc.Million-ctx.GasFee)
 		bal.VerifyBalances(t)
 	})

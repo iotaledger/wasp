@@ -165,9 +165,9 @@ func (s *WasmContextSandbox) makeRequest(args []byte) isc.RequestParameters {
 
 	// Force a minimum transfer of WasmStorageDeposit base tokens for storage deposit
 	// excess can always be reclaimed from the chain account by the user
-	if !transfer.IsEmpty() && transfer.BaseTokens < WasmStorageDeposit {
+	if !transfer.IsEmpty() && transfer.BaseTokens < wasmlib.StorageDeposit {
 		transfer = transfer.Clone()
-		transfer.BaseTokens = WasmStorageDeposit
+		transfer.BaseTokens = wasmlib.StorageDeposit
 	}
 
 	s.Tracef("POST %s.%s, chain %s", contract.String(), function.String(), chainID.String())
