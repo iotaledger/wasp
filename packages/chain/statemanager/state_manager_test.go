@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -70,6 +71,7 @@ func TestCruelWorld(t *testing.T) {
 			smGPAUtils.NewMockedTestBlockWAL(),
 			stores[i],
 			nil,
+			metrics.NewEmptyChainStateManagerMetric(),
 			log.Named(peeringURLs[i]),
 			timers,
 		)

@@ -9,7 +9,7 @@ import (
 type IChainBlockWALMetrics interface {
 	IncFailedWrites()
 	IncFailedReads()
-	IncSegments()
+	BlockWritten(uint32)
 }
 
 var (
@@ -22,11 +22,13 @@ type emptyChainBlockWALMetrics struct{}
 func NewEmptyChainBlockWALMetrics() IChainBlockWALMetrics { return &emptyChainBlockWALMetrics{} }
 func (m *emptyChainBlockWALMetrics) IncFailedWrites()     {}
 func (m *emptyChainBlockWALMetrics) IncFailedReads()      {}
-func (m *emptyChainBlockWALMetrics) IncSegments()         {}
+func (m *emptyChainBlockWALMetrics) BlockWritten(uint32)  {}
 
 type chainBlockWALMetrics struct {
 	provider      *ChainMetricsProvider
 	metricsLabels prometheus.Labels
+
+	maxBlockIndex int64
 }
 
 func newChainBlockWALMetrics(provider *ChainMetricsProvider, chainID isc.ChainID) *chainBlockWALMetrics {
@@ -35,11 +37,13 @@ func newChainBlockWALMetrics(provider *ChainMetricsProvider, chainID isc.ChainID
 	// init values so they appear in prometheus
 	provider.blockWALFailedWrites.With(metricsLabels)
 	provider.blockWALFailedReads.With(metricsLabels)
-	provider.blockWALSegments.With(metricsLabels)
+	provider.blockWALBlocksAdded.With(metricsLabels)
+	provider.blockWALMaxBlockIndex.With(metricsLabels)
 
 	return &chainBlockWALMetrics{
 		provider:      provider,
 		metricsLabels: metricsLabels,
+		maxBlockIndex: -1,
 	}
 }
 
@@ -51,6 +55,17 @@ func (m *chainBlockWALMetrics) IncFailedReads() {
 	m.provider.blockWALFailedReads.With(m.metricsLabels).Inc()
 }
 
-func (m *chainBlockWALMetrics) IncSegments() {
-	m.provider.blockWALSegments.With(m.metricsLabels).Inc()
+func (m *chainBlockWALMetrics) BlockWritten(blockIndex uint32) {
+	m.provider.blockWALBlocksAdded.With(m.metricsLabels).Inc()
+	blockIndexInt64 := int64(blockIndex)
+	if m.maxBlockIndex < 0 {
+		m.provider.blockWALMaxBlockIndex.With(m.metricsLabels).Add(float64(blockIndexInt64))
+		m.maxBlockIndex = blockIndexInt64
+	} else {
+		diff := blockIndexInt64 - m.maxBlockIndex
+		if diff > 0 {
+			m.provider.blockWALMaxBlockIndex.With(m.metricsLabels).Add(float64(diff))
+			m.maxBlockIndex = blockIndexInt64
+		}
+	}
 }

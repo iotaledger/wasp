@@ -380,6 +380,7 @@ func New(
 		blockWAL,
 		chainStore,
 		shutdownCoordinator.Nested("StateMgr"),
+		chainMetrics,
 		cni.log.Named("SM"),
 	)
 	if err != nil {
