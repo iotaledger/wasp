@@ -1,6 +1,8 @@
 package smGPA
 
 import (
+	"time"
+
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -25,4 +27,10 @@ type blockFetchers interface {
 	addRelatedFetcher(*state.L1Commitment, blockFetcher) bool
 	getCommitments() []*state.L1Commitment
 	cleanCallbacks()
+}
+
+type blockFetchersMetrics interface {
+	inc()
+	dec()
+	duration(time.Duration)
 }

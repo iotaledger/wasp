@@ -55,14 +55,14 @@ func (bwT *blockWAL) Write(block state.Block) error {
 	blockBytes := block.Bytes()
 	n, err := f.Write(blockBytes)
 	if err != nil {
-		bwT.metrics.IncFailedReads()
+		bwT.metrics.IncFailedWrites()
 		return fmt.Errorf("writing block data to file %s failed: %w", fileName, err)
 	}
 	if len(blockBytes) != n {
-		bwT.metrics.IncFailedReads()
+		bwT.metrics.IncFailedWrites()
 		return fmt.Errorf("only %v of total %v bytes of block were written to file %s", n, len(blockBytes), fileName)
 	}
-	bwT.metrics.IncSegments()
+	bwT.metrics.BlockWritten(block.StateIndex())
 	bwT.LogDebugf("Block %s written to wal; file name - %s", commitment, fileName)
 	return nil
 }
@@ -102,6 +102,7 @@ func (bwT *blockWAL) ReadAllByStateIndex(cb func(stateIndex uint32, block state.
 		filePath := filepath.Join(bwT.dir, dirEntry.Name())
 		fileBlock, fileErr := blockFromFilePath(filePath)
 		if fileErr != nil {
+			bwT.metrics.IncFailedReads()
 			bwT.LogWarn("Unable to read %v: %v", filePath, err)
 			continue
 		}
@@ -121,6 +122,7 @@ func (bwT *blockWAL) ReadAllByStateIndex(cb func(stateIndex uint32, block state.
 		for _, stateIndexPath := range stateIndexPaths {
 			fileBlock, fileErr := blockFromFilePath(stateIndexPath)
 			if fileErr != nil {
+				bwT.metrics.IncFailedReads()
 				bwT.LogWarn("Unable to read %v: %v", stateIndexPath, err)
 				continue
 			}

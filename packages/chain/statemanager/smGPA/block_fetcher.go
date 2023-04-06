@@ -1,10 +1,13 @@
 package smGPA
 
 import (
+	"time"
+
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 type blockFetcherImpl struct {
+	start      time.Time
 	commitment *state.L1Commitment
 	callbacks  []blockRequestCallback
 	related    []blockFetcher
@@ -14,6 +17,7 @@ var _ blockFetcher = &blockFetcherImpl{}
 
 func newBlockFetcher(commitment *state.L1Commitment) blockFetcher {
 	return &blockFetcherImpl{
+		start:      time.Now(),
 		commitment: commitment,
 		callbacks:  make([]blockRequestCallback, 0),
 		related:    make([]blockFetcher, 0),

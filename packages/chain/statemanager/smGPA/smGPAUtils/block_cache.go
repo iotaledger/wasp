@@ -3,8 +3,11 @@ package smGPAUtils
 import (
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -20,11 +23,12 @@ type blockCache struct {
 	wal          BlockWAL
 	times        []*blockTime
 	timeProvider TimeProvider
+	metrics      metrics.IChainStateManagerMetrics
 }
 
 var _ BlockCache = &blockCache{}
 
-func NewBlockCache(tp TimeProvider, maxCacheSize int, wal BlockWAL, log *logger.Logger) (BlockCache, error) {
+func NewBlockCache(tp TimeProvider, maxCacheSize int, wal BlockWAL, metrics metrics.IChainStateManagerMetrics, log *logger.Logger) (BlockCache, error) {
 	return &blockCache{
 		log:          log.Named("bc"),
 		blocks:       shrinkingmap.New[BlockKey, state.Block](),
@@ -32,6 +36,7 @@ func NewBlockCache(tp TimeProvider, maxCacheSize int, wal BlockWAL, log *logger.
 		wal:          wal,
 		times:        make([]*blockTime, 0),
 		timeProvider: tp,
+		metrics:      metrics,
 	}, nil
 }
 
@@ -44,6 +49,12 @@ func (bcT *blockCache) AddBlock(block state.Block) {
 		bcT.log.Errorf("Failed writing block %s to WAL: %v", commitment, err)
 	}
 
+	_, exists := bcT.blocks.Get(blockKey)
+	if exists {
+		bcT.times = lo.Filter(bcT.times, func(bt *blockTime, _ int) bool {
+			return !bt.blockKey.Equals(blockKey)
+		})
+	}
 	bcT.blocks.Set(blockKey, block)
 	bcT.times = append(bcT.times, &blockTime{
 		time:     bcT.timeProvider.GetNow(),
@@ -57,6 +68,7 @@ func (bcT *blockCache) AddBlock(block state.Block) {
 		bcT.blocks.Delete(bt.blockKey)
 		bcT.log.Debugf("Block %s deleted from cache, because cache is too large", bt.blockKey)
 	}
+	bcT.metrics.SetCacheSize(bcT.Size())
 }
 
 func (bcT *blockCache) GetBlock(commitment *state.L1Commitment) state.Block {
@@ -83,6 +95,7 @@ func (bcT *blockCache) GetBlock(commitment *state.L1Commitment) state.Block {
 }
 
 func (bcT *blockCache) CleanOlderThan(limit time.Time) {
+	defer bcT.metrics.SetCacheSize(bcT.Size())
 	for i, bt := range bcT.times {
 		if bt.time.After(limit) {
 			bcT.times = bcT.times[i:]
