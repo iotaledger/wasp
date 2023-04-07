@@ -15,7 +15,7 @@ func Connect(h wasmlib.ScHost) wasmlib.ScHost {
 	return wasmlib.ConnectHost(h)
 }
 
-type ScOnloadFunc func(index int32)
+type ScOnloadFunc func(index int32) *wasmlib.ScExportMap
 
 type WasmGoVM struct {
 	WasmVMBase

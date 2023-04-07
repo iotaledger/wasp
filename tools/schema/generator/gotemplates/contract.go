@@ -77,10 +77,9 @@ $#each func coreExportView
 	},
 }
 
-func OnDispatch(index int32) {
-	if index == -1 {
-		exportMap.Export()
-		return
+func OnDispatch(index int32) *wasmlib.ScExportMap {
+	if index < 0 {
+		return exportMap.Dispatch(index)
 	}
 
 	panic("Calling core contract?")

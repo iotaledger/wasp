@@ -25,8 +25,8 @@ var exportMap = wasmlib.ScExportMap{
 	},
 }
 
-func OnDispatch(index int32) {
-	exportMap.Dispatch(index)
+func OnDispatch(index int32) *wasmlib.ScExportMap {
+	return exportMap.Dispatch(index)
 }
 
 type StoreStringContext struct {

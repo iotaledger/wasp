@@ -371,8 +371,7 @@ func (ctx *SoloContext) Host() wasmlib.ScHost {
 // init further initializes the SoloContext.
 func (ctx *SoloContext) init(onLoad wasmhost.ScOnloadFunc) *SoloContext {
 	ctx.wc = wasmhost.NewWasmContextForSoloContext("-solo-", NewSoloSandbox(ctx))
-	wasmhost.Connect(ctx.wc)
-	onLoad(-1)
+	onLoad(-2).Export(ctx.wc.ExportName)
 	return ctx
 }
 
