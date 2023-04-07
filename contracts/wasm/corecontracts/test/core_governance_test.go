@@ -88,6 +88,10 @@ func TestDelegateChainOwnership(t *testing.T) {
 	require.NoError(t, ctx.Err)
 }
 
+func TestSetEVMGasRatio(t *testing.T) {
+	// TODO
+}
+
 func TestSetFeePolicy(t *testing.T) {
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
@@ -98,6 +102,10 @@ func TestSetFeePolicy(t *testing.T) {
 	f.Params.FeePolicy().SetValue(gfp0.Bytes())
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
+}
+
+func TestSetGasLimits(t *testing.T) {
+	// TODO
 }
 
 func TestAddCandidateNode(t *testing.T) {
@@ -124,6 +132,22 @@ func TestRevokeAccessNode(t *testing.T) {
 	f.Params.Certificate().SetValue(nil)
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
+}
+
+func TestSetMaintenanceOn(t *testing.T) {
+	// TODO
+}
+
+func TestSetMaintenanceOff(t *testing.T) {
+	// TODO
+}
+
+func TestSetCustomMetadata(t *testing.T) {
+	// TODO
+}
+
+func TestGetAllowedStateControllerAddresses(t *testing.T) {
+	// TODO
 }
 
 func TestChangeAccessNodes(t *testing.T) {
@@ -156,6 +180,14 @@ func TestGetChainNodes(t *testing.T) {
 	require.NoError(t, ctx.Err)
 }
 
+func TestGetMaintenanceStatus(t *testing.T) {
+	// TODO
+}
+
+func TestGetCustomMetadata(t *testing.T) {
+	// TODO
+}
+
 func TestGetFeePolicy(t *testing.T) {
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
@@ -168,6 +200,14 @@ func TestGetFeePolicy(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, gas.DefaultGasPerToken, gfp.GasPerToken)
 	require.Equal(t, uint8(0), gfp.ValidatorFeeShare) // default fee share is 0
+}
+
+func TestGetEVMGasRatio(t *testing.T) {
+	// TODO
+}
+
+func TestGetGasLimits(t *testing.T) {
+	// TODO
 }
 
 func TestGetChainInfo(t *testing.T) {
