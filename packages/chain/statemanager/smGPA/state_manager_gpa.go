@@ -366,14 +366,17 @@ func (smT *stateManagerGPA) traceBlockChainWithCallback(lastCommitment *state.L1
 		return nil // No messages to send
 	}
 	if smT.blocksToFetch.addCallback(lastCommitment, callback) {
+		smT.metrics.IncRequestsWaiting()
 		smT.log.Debugf("Tracing block %s chain: the block is already being fetched", lastCommitment)
 		return nil
 	}
 	if smT.blocksFetched.addCallback(lastCommitment, callback) {
+		smT.metrics.IncRequestsWaiting()
 		smT.log.Debugf("Tracing block %s chain: the block is already fetched, but cannot yet be committed", lastCommitment)
 		return nil
 	}
 	fetcher := newBlockFetcherWithCallback(lastCommitment, callback)
+	smT.metrics.IncRequestsWaiting()
 	return smT.traceBlockChain(fetcher)
 }
 
@@ -450,6 +453,7 @@ func (smT *stateManagerGPA) markFetched(fetcher blockFetcher) gpa.OutMessages {
 		smT.log.Debugf("Block index %v %s has been committed to the store on state %s",
 			block.StateIndex(), commitment, previousCommitment)
 		_ = smT.blocksFetched.takeFetcher(commitment)
+		smT.metrics.SubRequestsWaiting(bf.getCallbacksCount())
 		return true
 	})
 	return result
@@ -495,6 +499,7 @@ func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMe
 		smT.blocksToFetch.cleanCallbacks()
 		smT.blocksFetched.cleanCallbacks()
 		smT.lastCleanRequestsTime = now
+		smT.metrics.SetRequestsWaiting(smT.blocksToFetch.getCallbacksCount() + smT.blocksFetched.getCallbacksCount())
 		smT.log.Debugf("Callbacks of block fetchers cleaned, next cleaning not earlier than %v",
 			smT.lastCleanRequestsTime.Add(smT.timers.StateManagerRequestCleaningPeriod))
 	}

@@ -40,6 +40,10 @@ func (bfiT *blockFetcherImpl) getCommitment() *state.L1Commitment {
 	return bfiT.commitment
 }
 
+func (bfiT *blockFetcherImpl) getCallbacksCount() int {
+	return len(bfiT.callbacks)
+}
+
 func (bfiT *blockFetcherImpl) addCallback(callback blockRequestCallback) {
 	bfiT.callbacks = append(bfiT.callbacks, callback)
 }

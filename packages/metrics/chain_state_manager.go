@@ -15,7 +15,9 @@ type IChainStateManagerMetrics interface {
 	IncBlocksPending()
 	DecBlocksPending()
 	IncBlocksCommitted()
-	SetRequestsWaiting(int) // TODO: use this method
+	IncRequestsWaiting()
+	SubRequestsWaiting(int)
+	SetRequestsWaiting(int)
 	ConsensusStateProposalHandled(time.Duration)
 	ConsensusDecidedStateHandled(time.Duration)
 	ConsensusBlockProducedHandled(time.Duration)
@@ -40,6 +42,8 @@ func (m *emptyChainStateManagerMetric) DecBlocksFetching()                      
 func (m *emptyChainStateManagerMetric) IncBlocksPending()                           {}
 func (m *emptyChainStateManagerMetric) DecBlocksPending()                           {}
 func (m *emptyChainStateManagerMetric) IncBlocksCommitted()                         {}
+func (m *emptyChainStateManagerMetric) IncRequestsWaiting()                         {}
+func (m *emptyChainStateManagerMetric) SubRequestsWaiting(int)                      {}
 func (m *emptyChainStateManagerMetric) SetRequestsWaiting(int)                      {}
 func (m *emptyChainStateManagerMetric) ConsensusStateProposalHandled(time.Duration) {}
 func (m *emptyChainStateManagerMetric) ConsensusDecidedStateHandled(time.Duration)  {}
@@ -87,6 +91,14 @@ func (m *chainStateManagerMetric) DecBlocksPending() {
 
 func (m *chainStateManagerMetric) IncBlocksCommitted() {
 	m.provider.smBlocksCommitted.With(m.metricsLabels).Inc()
+}
+
+func (m *chainStateManagerMetric) IncRequestsWaiting() {
+	m.provider.smRequestsWaiting.With(m.metricsLabels).Inc()
+}
+
+func (m *chainStateManagerMetric) SubRequestsWaiting(count int) {
+	m.provider.smRequestsWaiting.With(m.metricsLabels).Sub(float64(count))
 }
 
 func (m *chainStateManagerMetric) SetRequestsWaiting(count int) {
