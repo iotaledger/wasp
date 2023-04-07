@@ -95,7 +95,7 @@ type RequestDetail struct {
 	Allowance     *Assets          `json:"allowance" swagger:"required"`
 	CallTarget    CallTarget       `json:"callTarget" swagger:"required"`
 	Assets        *Assets          `json:"fungibleTokens" swagger:"required"`
-	GasGudget     string           `json:"gasGudget,string" swagger:"required,desc(The gas budget (uint64 as string))"`
+	GasBudget     string           `json:"gasBudget,string" swagger:"required,desc(The gas budget (uint64 as string))"`
 	IsEVM         bool             `json:"isEVM" swagger:"required"`
 	IsOffLedger   bool             `json:"isOffLedger" swagger:"required"`
 	NFT           *NFTDataResponse `json:"nft" swagger:"required"`
@@ -112,7 +112,7 @@ func MapRequestDetail(request isc.Request) *RequestDetail {
 		Allowance:     mapAssets(request.Allowance()),
 		CallTarget:    MapCallTarget(request.CallTarget()),
 		Assets:        mapAssets(request.Assets()),
-		GasGudget:     iotago.EncodeUint64(gasBudget),
+		GasBudget:     iotago.EncodeUint64(gasBudget),
 		IsEVM:         isEVM,
 		IsOffLedger:   request.IsOffLedger(),
 		NFT:           MapNFTDataResponse(request.NFT()),

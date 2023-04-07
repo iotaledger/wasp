@@ -2538,7 +2538,7 @@ components:
                 id: id
             senderAccount: senderAccount
             isOffLedger: true
-            gasGudget: gasGudget
+            gasBudget: gasBudget
             requestId: requestId
             callTarget:
               contractHName: contractHName
@@ -2593,7 +2593,7 @@ components:
                 id: id
             senderAccount: senderAccount
             isOffLedger: true
-            gasGudget: gasGudget
+            gasBudget: gasBudget
             requestId: requestId
             callTarget:
               contractHName: contractHName
@@ -5096,7 +5096,7 @@ components:
             id: id
         senderAccount: senderAccount
         isOffLedger: true
-        gasGudget: gasGudget
+        gasBudget: gasBudget
         requestId: requestId
         callTarget:
           contractHName: contractHName
@@ -5131,12 +5131,12 @@ components:
           $ref: '#/components/schemas/CallTarget'
         fungibleTokens:
           $ref: '#/components/schemas/Assets'
-        gasGudget:
+        gasBudget:
           description: The gas budget (uint64 as string)
           format: string
           type: string
           xml:
-            name: GasGudget
+            name: GasBudget
         isEVM:
           format: boolean
           type: boolean
@@ -5170,7 +5170,7 @@ components:
       - allowance
       - callTarget
       - fungibleTokens
-      - gasGudget
+      - gasBudget
       - isEVM
       - isOffLedger
       - nft
@@ -5264,7 +5264,7 @@ components:
               id: id
           senderAccount: senderAccount
           isOffLedger: true
-          gasGudget: gasGudget
+          gasBudget: gasBudget
           requestId: requestId
           callTarget:
             contractHName: contractHName

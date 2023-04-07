@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 **Allowance** | [**Assets**](Assets.md) |  | 
 **CallTarget** | [**CallTarget**](CallTarget.md) |  | 
 **FungibleTokens** | [**Assets**](Assets.md) |  | 
-**GasGudget** | **string** | The gas budget (uint64 as string) | 
+**GasBudget** | **string** | The gas budget (uint64 as string) | 
 **IsEVM** | **bool** |  | 
 **IsOffLedger** | **bool** |  | 
 **Nft** | [**NFTDataResponse**](NFTDataResponse.md) |  | 
@@ -20,7 +20,7 @@ Name | Type | Description | Notes
 
 ### NewRequestDetail
 
-`func NewRequestDetail(allowance Assets, callTarget CallTarget, fungibleTokens Assets, gasGudget string, isEVM bool, isOffLedger bool, nft NFTDataResponse, params JSONDict, requestId string, senderAccount string, targetAddress string, ) *RequestDetail`
+`func NewRequestDetail(allowance Assets, callTarget CallTarget, fungibleTokens Assets, gasBudget string, isEVM bool, isOffLedger bool, nft NFTDataResponse, params JSONDict, requestId string, senderAccount string, targetAddress string, ) *RequestDetail`
 
 NewRequestDetail instantiates a new RequestDetail object
 This constructor will assign default values to properties that have it defined,
@@ -95,24 +95,24 @@ and a boolean to check if the value has been set.
 SetFungibleTokens sets FungibleTokens field to given value.
 
 
-### GetGasGudget
+### GetGasBudget
 
-`func (o *RequestDetail) GetGasGudget() string`
+`func (o *RequestDetail) GetGasBudget() string`
 
-GetGasGudget returns the GasGudget field if non-nil, zero value otherwise.
+GetGasBudget returns the GasBudget field if non-nil, zero value otherwise.
 
-### GetGasGudgetOk
+### GetGasBudgetOk
 
-`func (o *RequestDetail) GetGasGudgetOk() (*string, bool)`
+`func (o *RequestDetail) GetGasBudgetOk() (*string, bool)`
 
-GetGasGudgetOk returns a tuple with the GasGudget field if it's non-nil, zero value otherwise
+GetGasBudgetOk returns a tuple with the GasBudget field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetGasGudget
+### SetGasBudget
 
-`func (o *RequestDetail) SetGasGudget(v string)`
+`func (o *RequestDetail) SetGasBudget(v string)`
 
-SetGasGudget sets GasGudget field to given value.
+SetGasBudget sets GasBudget field to given value.
 
 
 ### GetIsEVM
