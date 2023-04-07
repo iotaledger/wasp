@@ -178,8 +178,6 @@ func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) 
 		return nil // No messages to send
 	}
 	smT.blockCache.AddBlock(block)
-	callback := newBlockRequestCallback(brcAlwaysValidFun, brcIgnoreRequestCompletedFun)
-	fetcher.addCallback(callback) // TODO: maybe it is not needed?
 	messages := smT.traceBlockChain(fetcher)
 	smT.log.Debugf("Message Block %s from peer %s handled", blockCommitment, fromLog)
 	return messages
