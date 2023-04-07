@@ -43,14 +43,14 @@ description = "Wasm VM host stub for: $scDesc"
 	// *******************************
 	"dependenciesLib": `
 [dependencies]
-$env_wasmlib$+wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "wasmclient" }
+$env_wasmlib$+wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "develop" }
 `,
 	// *******************************
 	"dependenciesImpl": `
 [dependencies]
 $package = { path = "../$package" }
 $#if packagetestwasmlib dependencyErc721
-$env_wasmlib$+wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "wasmclient" }
+$env_wasmlib$+wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "develop" }
 `,
 	// *******************************
 	"dependencyErc721": `
@@ -63,7 +63,7 @@ default = ["console_error_panic_hook"]
 
 [dependencies]
 $package$+impl = { path = "../$package$+impl" }
-$env_wasmvmhost$+wasmvmhost = { git = "https://github.com/iotaledger/wasp", branch = "wasmclient" }
+$env_wasmvmhost$+wasmvmhost = { git = "https://github.com/iotaledger/wasp", branch = "develop" }
 console_error_panic_hook = { version = "0.1.7", optional = true }
 wee_alloc = { version = "0.4.5", optional = true }
 `,
