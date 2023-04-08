@@ -202,7 +202,30 @@ func TestSetCustomMetadata(t *testing.T) {
 }
 
 func TestGetAllowedStateControllerAddresses(t *testing.T) {
-	// TODO
+	ctx := setupGovernance(t)
+	require.NoError(t, ctx.Err)
+
+	user0 := ctx.NewSoloAgent("user0")
+	user1 := ctx.NewSoloAgent("user1")
+	users := []*wasmsolo.SoloAgent{user0, user1}
+	fAdd := coregovernance.ScFuncs.AddAllowedStateControllerAddress(ctx)
+	fAdd.Params.Address().SetValue(user0.ScAgentID().Address())
+	fAdd.Func.Post()
+	fAdd.Params.Address().SetValue(user1.ScAgentID().Address())
+	fAdd.Func.Post()
+
+	f := coregovernance.ScFuncs.GetAllowedStateControllerAddresses(ctx)
+	f.Func.Call()
+	require.NoError(t, ctx.Err)
+
+	require.Equal(t, uint32(len(users)), f.Results.Controllers().Length())
+	for i, user := range users {
+		retScAddress := f.Results.Controllers().GetAddress(uint32(i)).Value()
+		// FIXME why isn't it the same as ctx.Chain.StateControllerAddress
+		// if 'AddAllowedStateControllerAddress' is not called, then the return of GetAllowedStateControllerAddresses is zero
+		// require.Equal(t, ctx.Chain.StateControllerAddress, retScAddress)
+		require.Equal(t, user.ScAgentID().Address(), retScAddress)
+	}
 }
 
 func TestChangeAccessNodes(t *testing.T) {
