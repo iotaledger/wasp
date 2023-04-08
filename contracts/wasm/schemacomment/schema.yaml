@@ -88,7 +88,7 @@ state:
 funcs: # comment for funcs
 
   # comment for TestFunc1 1
-  TestFunc1: # comment for TestFunc1 2
+  testFunc1: # comment for TestFunc1 2
   
     # comment for params
     params: 
@@ -109,7 +109,7 @@ funcs: # comment for funcs
 views: # comment for views
 
   # comment for TestView1
-  TestView1: 
+  testView1:
     # comment for params
     params: 
       # comment for name
