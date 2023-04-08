@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coregovernance"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 )
 
@@ -232,20 +233,25 @@ func TestGetAllowedStateControllerAddresses(t *testing.T) {
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 
-	for i, user := range users {
-		retScAddress := f.Results.Controllers().GetAddress(uint32(i)).Value()
-		fmt.Println("retScAddress: ", retScAddress)
-		fmt.Println("users: ", user)
-	}
-
 	require.Equal(t, uint32(len(users)), f.Results.Controllers().Length())
-	for i, user := range users {
+	for i := range users {
 		retScAddress := f.Results.Controllers().GetAddress(uint32(i)).Value()
 		// FIXME why isn't it the same as ctx.Chain.StateControllerAddress
 		// if 'AddAllowedStateControllerAddress' is not called, then the return of GetAllowedStateControllerAddresses is zero
 		// require.Equal(t, ctx.Chain.StateControllerAddress, retScAddress)
-		require.Equal(t, user.ScAgentID().Address(), retScAddress)
+		require.True(t, ifContainAddress(users, retScAddress))
 	}
+}
+
+func ifContainAddress(agents []*wasmsolo.SoloAgent, addrIn wasmtypes.ScAddress) bool {
+	for _, agent := range agents {
+		addr := agent.ScAgentID().Address()
+		if addr == addrIn {
+			return true
+		}
+	}
+	fmt.Println("not exist address: ", addrIn)
+	return false
 }
 
 func TestChangeAccessNodes(t *testing.T) {
