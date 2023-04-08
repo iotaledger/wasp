@@ -21,6 +21,8 @@ func setupErrors(t *testing.T) *wasmsolo.SoloContext {
 
 func TestRegisterErrorAndGetErrorMessageFormat(t *testing.T) {
 	ctx := setupErrors(t)
+	require.NoError(t, ctx.Err)
+
 	errorFmt := "this \"%v\" is error format"
 	fRegister := coreerrors.ScFuncs.RegisterError(ctx)
 	fRegister.Params.Template().SetValue(errorFmt)
@@ -34,5 +36,4 @@ func TestRegisterErrorAndGetErrorMessageFormat(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	resErrorFmt := fGet.Results.Template().String()
 	require.Equal(t, errorFmt, resErrorFmt)
-
 }

@@ -88,8 +88,24 @@ func TestDelegateChainOwnership(t *testing.T) {
 	require.NoError(t, ctx.Err)
 }
 
-func TestSetEVMGasRatio(t *testing.T) {
-	// TODO
+func TestSetEVMGasRatioAndGetEVMGasRatio(t *testing.T) {
+	t.Skip()
+
+	ctx := setupGovernance(t)
+	require.NoError(t, ctx.Err)
+
+	gasRatio := "1:2"
+	fSet := coregovernance.ScFuncs.SetEVMGasRatio(ctx)
+	r, err := util.Ratio32FromString(gasRatio)
+	require.NoError(t, err)
+	fSet.Params.GasRatio().SetValue(r.Bytes())
+	fSet.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	fGet := coregovernance.ScFuncs.GetEVMGasRatio(ctx)
+	fGet.Func.Call()
+	require.NoError(t, ctx.Err)
+	require.Equal(t, gasRatio, fGet.Results.GasRatio().String())
 }
 
 func TestSetFeePolicy(t *testing.T) {
@@ -104,8 +120,29 @@ func TestSetFeePolicy(t *testing.T) {
 	require.NoError(t, ctx.Err)
 }
 
-func TestSetGasLimits(t *testing.T) {
-	// TODO
+func TestSetGasLimitsAndGetGasLimits(t *testing.T) {
+	ctx := setupGovernance(t)
+	require.NoError(t, ctx.Err)
+
+	gasLimit := &gas.Limits{
+		MaxGasPerBlock:         9_000_000_000,
+		MinGasPerRequest:       1_000,
+		MaxGasPerRequest:       5_000_000,
+		MaxGasExternalViewCall: 5_000_000,
+	}
+
+	fSet := coregovernance.ScFuncs.SetGasLimits(ctx)
+	fSet.Params.GasLimits().SetValue(gasLimit.Bytes())
+	fSet.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	fGet := coregovernance.ScFuncs.GetGasLimits(ctx)
+	fGet.Func.Call()
+	require.NoError(t, ctx.Err)
+	retGasLimitBytes := fGet.Results.GasLimits().Value()
+	retGasLimit, err := gas.LimitsFromBytes(retGasLimitBytes)
+	require.NoError(t, err)
+	require.Equal(t, gasLimit, retGasLimit)
 }
 
 func TestAddCandidateNode(t *testing.T) {
@@ -200,14 +237,6 @@ func TestGetFeePolicy(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, gas.DefaultGasPerToken, gfp.GasPerToken)
 	require.Equal(t, uint8(0), gfp.ValidatorFeeShare) // default fee share is 0
-}
-
-func TestGetEVMGasRatio(t *testing.T) {
-	// TODO
-}
-
-func TestGetGasLimits(t *testing.T) {
-	// TODO
 }
 
 func TestGetChainInfo(t *testing.T) {
