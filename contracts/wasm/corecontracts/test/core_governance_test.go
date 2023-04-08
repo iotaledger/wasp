@@ -171,12 +171,30 @@ func TestRevokeAccessNode(t *testing.T) {
 	require.NoError(t, ctx.Err)
 }
 
-func TestSetMaintenanceOn(t *testing.T) {
-	// TODO
-}
+func TestSetMaintenanceStatusAndSetOnAndOff(t *testing.T) {
+	t.Skip()
 
-func TestSetMaintenanceOff(t *testing.T) {
-	// TODO
+	ctx := setupGovernance(t)
+	require.NoError(t, ctx.Err)
+
+	fOn := coregovernance.ScFuncs.SetMaintenanceOn(ctx)
+	fOn.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	fStatus := coregovernance.ScFuncs.GetMaintenanceStatus(ctx)
+	fStatus.Func.Call()
+	require.NoError(t, ctx.Err)
+	status := fStatus.Results.Status().Value()
+	require.True(t, status)
+
+	fOff := coregovernance.ScFuncs.SetMaintenanceOff(ctx)
+	fOff.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	fStatus.Func.Call()
+	require.NoError(t, ctx.Err)
+	status = fStatus.Results.Status().Value()
+	require.False(t, status)
 }
 
 func TestSetCustomMetadata(t *testing.T) {
@@ -215,10 +233,6 @@ func TestGetChainNodes(t *testing.T) {
 	f := coregovernance.ScFuncs.GetChainNodes(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-}
-
-func TestGetMaintenanceStatus(t *testing.T) {
-	// TODO
 }
 
 func TestGetCustomMetadata(t *testing.T) {
