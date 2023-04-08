@@ -4,6 +4,7 @@
 package test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -197,8 +198,21 @@ func TestSetMaintenanceStatusAndSetOnAndOff(t *testing.T) {
 	require.False(t, status)
 }
 
-func TestSetCustomMetadata(t *testing.T) {
-	// TODO
+func TestSetCustomMetadataAndGetCustomMetadata(t *testing.T) {
+	ctx := setupGovernance(t)
+	require.NoError(t, ctx.Err)
+
+	customMetadata := "some rand metadata"
+	fSet := coregovernance.ScFuncs.SetCustomMetadata(ctx)
+	fSet.Params.Metadata().SetValue([]byte(customMetadata))
+	fSet.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	fGet := coregovernance.ScFuncs.GetCustomMetadata(ctx)
+	fGet.Func.Call()
+	require.NoError(t, ctx.Err)
+	retCustomMetadata := fGet.Results.Metadata().Value()
+	require.Equal(t, customMetadata, string(retCustomMetadata))
 }
 
 func TestGetAllowedStateControllerAddresses(t *testing.T) {
@@ -217,6 +231,12 @@ func TestGetAllowedStateControllerAddresses(t *testing.T) {
 	f := coregovernance.ScFuncs.GetAllowedStateControllerAddresses(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
+
+	for i, user := range users {
+		retScAddress := f.Results.Controllers().GetAddress(uint32(i)).Value()
+		fmt.Println("retScAddress: ", retScAddress)
+		fmt.Println("users: ", user)
+	}
 
 	require.Equal(t, uint32(len(users)), f.Results.Controllers().Length())
 	for i, user := range users {
@@ -256,10 +276,6 @@ func TestGetChainNodes(t *testing.T) {
 	f := coregovernance.ScFuncs.GetChainNodes(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-}
-
-func TestGetCustomMetadata(t *testing.T) {
-	// TODO
 }
 
 func TestGetFeePolicy(t *testing.T) {
