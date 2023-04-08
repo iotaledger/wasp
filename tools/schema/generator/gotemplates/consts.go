@@ -61,7 +61,7 @@ $#each func constHFunc
 `,
 	// *******************************
 	"constFunc": `
-	$Kind$FuncName$funcPad = "$funcName"
+	$Kind$FuncName$funcPad = "$funcAlias"
 `,
 	// *******************************
 	"constHFunc": `

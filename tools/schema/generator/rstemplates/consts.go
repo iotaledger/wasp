@@ -48,7 +48,7 @@ pub$crate const $constPrefix$FLD_NAME$fld_pad : &str = "$fldAlias";
 `,
 	// *******************************
 	"constFunc": `
-pub$crate const $KIND$+_$FUNC_NAME$func_pad : &str = "$funcName";
+pub$crate const $KIND$+_$FUNC_NAME$func_pad : &str = "$funcAlias";
 `,
 	// *******************************
 	"constHFunc": `
