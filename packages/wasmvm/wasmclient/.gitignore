@@ -1,2 +1,5 @@
 **/pkg/
-**/target/
+**/target
+*.js
+package-lock.json
+!jest.config.js
