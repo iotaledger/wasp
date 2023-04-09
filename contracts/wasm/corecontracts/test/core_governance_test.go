@@ -91,8 +91,6 @@ func TestDelegateChainOwnership(t *testing.T) {
 }
 
 func TestSetEVMGasRatioAndGetEVMGasRatio(t *testing.T) {
-	t.Skip()
-
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
 
@@ -107,7 +105,9 @@ func TestSetEVMGasRatioAndGetEVMGasRatio(t *testing.T) {
 	fGet := coregovernance.ScFuncs.GetEVMGasRatio(ctx)
 	fGet.Func.Call()
 	require.NoError(t, ctx.Err)
-	require.Equal(t, gasRatio, fGet.Results.GasRatio().String())
+	resGasRatio, err := util.Ratio32FromBytes(fGet.Results.GasRatio().Value())
+	require.NoError(t, err)
+	require.Equal(t, r, resGasRatio)
 }
 
 func TestSetFeePolicy(t *testing.T) {
@@ -174,8 +174,6 @@ func TestRevokeAccessNode(t *testing.T) {
 }
 
 func TestSetMaintenanceStatusAndSetOnAndOff(t *testing.T) {
-	t.Skip()
-
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
 
