@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
@@ -33,10 +32,11 @@ const (
 )
 
 var (
-	// GoWasm / RsWasm / TsWasm are used to specify the Wasm language mode,
-	// By default, SoloContext will try to run the Go SC code directly (no Wasm)
-	// The 3 flags can be used to cause Wasm code to be loaded and run instead.
+	// NoWasm / GoWasm / RsWasm / TsWasm are used to specify the Wasm language mode,
+	// By default, SoloContext will try to run the Go SC code directly (NoWasm)
+	// The 3 other flags can be used to cause Wasm code to be loaded and run instead.
 	// They are checked in sequence and the first one set determines the Wasm language used.
+	NoWasm = flag.Bool("nowasm", false, "use Go Wasm smart contract code without Wasm")
 	GoWasm = flag.Bool("gowasm", false, "use Go Wasm smart contract code")
 	RsWasm = flag.Bool("rswasm", false, "use Rust Wasm smart contract code")
 	TsWasm = flag.Bool("tswasm", false, "use TypeScript Wasm smart contract code")
@@ -51,7 +51,6 @@ var (
 
 const (
 	MinGasFee         = 100
-	L1FundsAgent      = utxodb.FundsFromFaucetAmount - 10*isc.Million - MinGasFee
 	L2FundsAgent      = 10 * isc.Million
 	L2FundsContract   = 10 * isc.Million
 	L2FundsCreator    = 20 * isc.Million
@@ -471,8 +470,11 @@ func (ctx *SoloContext) UpdateGasFees() {
 }
 
 func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {
-	wasmFile := ""
-	if *GoWasm {
+	// default to use WasmGoVM to run Go SC code directly without Wasm VM
+	wasmFile := "go"
+	if *NoWasm {
+		// explicit default
+	} else if *GoWasm {
 		// find Go Wasm file
 		wasmFile = ctx.existFile("go")
 	} else if *RsWasm {
@@ -481,14 +483,16 @@ func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {
 	} else if *TsWasm {
 		// find TypeScript Wasm file
 		wasmFile = ctx.existFile("ts")
-	} else {
-		// none of the Wasm modes selected, use WasmGoVM to run Go SC code directly
-		ctx.Hprog, ctx.Err = ctx.Chain.UploadWasm(keyPair, []byte("go:"+ctx.scName))
-		return
 	}
 
 	if wasmFile == "" {
 		panic("cannot find Wasm file for: " + ctx.scName)
+	}
+
+	if wasmFile == "go" {
+		// none of the Wasm modes selected, use WasmGoVM to run Go SC code directly
+		ctx.Hprog, ctx.Err = ctx.Chain.UploadWasm(keyPair, []byte("go:"+ctx.scName))
+		return
 	}
 
 	// upload the Wasm code into the core blob contract
