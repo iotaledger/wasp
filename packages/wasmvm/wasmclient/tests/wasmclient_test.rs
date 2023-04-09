@@ -76,7 +76,7 @@ fn setup_client() -> WasmClientContext {
 #[test]
 fn eth_address() {
     let mut svc = WasmClientService::new(WASP_API);
-    svc.set_current_chain_id("tgl1pqufy0lzy5fhgfymwzaz8trvkkula4kfjlgytfr6a2e5q5g53jtly4hmzaf").unwrap();
+    svc.set_current_chain_id("atoi1ppp52dzsr6m2tle27v87e409n36xfcva3uld6lm093f0jgz2xng82pmf3yl").unwrap();
     let str_address = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c";
     let address = address_from_bytes(&hex_decode(str_address));
     let eth_address = address.to_string();
