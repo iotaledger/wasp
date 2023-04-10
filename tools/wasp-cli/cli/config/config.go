@@ -120,6 +120,9 @@ func AddChain(name, chainID string) {
 
 func GetChain(name string) isc.ChainID {
 	configChainID := viper.GetString("chains." + name)
+	if configChainID == "" {
+		log.Fatal(fmt.Sprintf("chain '%s' doesn't exist in config file", name))
+	}
 	networkPrefix, _, err := iotago.ParseBech32(configChainID)
 	log.Check(err)
 
