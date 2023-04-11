@@ -31,7 +31,7 @@ The following examples will make use of the
 .
 
 In order to test the smart contract using Solo, first you need to deploy it. You can use the following code to
-deploy `slotutorial_bg.wasm`:
+deploy `solotutorial_bg.wasm`:
 
 ```go
 func TestTutorialDeploySC(t *testing.T) {

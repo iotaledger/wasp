@@ -50,8 +50,8 @@ require.NoError(t, err)
 <TabItem value="soloctx">
 
 ```go
-w := coreaccounts.ScFuncs.Harvest(ctx.Sign(wallet))
-w.Func.TransferBaseTokens(1).PostToChain(chainID)
+h := coreaccounts.ScFuncs.Harvest(ctx.Sign(wallet))
+h.Func.Post()
 require.NoError(t, ctx.Err)
 ```
 
@@ -60,15 +60,15 @@ require.NoError(t, ctx.Err)
 
 ```rust
 let h = coreaccounts::ScFuncs::harvest(ctx);
-h.func.transfer_base_tokens(1).post_to_chain(chainID);
+h.func.post();
 ```
 
 </TabItem>
 <TabItem value="go">
 
 ```go
-w := coreaccounts.ScFuncs.Harvest(ctx)
-w.Func.TransferBaseTokens(1).PostToChain(chainID)
+h := coreaccounts.ScFuncs.Harvest(ctx)
+h.Func.Post(chainID)
 ```
 
 </TabItem>
