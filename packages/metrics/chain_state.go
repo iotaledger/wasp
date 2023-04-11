@@ -7,9 +7,10 @@ import (
 )
 
 type IChainStateMetrics interface {
-	SetBlockSize(size float64)
-	SetCurrentStateIndex(stateIndex uint32)
-	SetLastSeenStateIndex(stateIndex uint32)
+	SetChainActiveStateWant(stateIndex uint32)
+	SetChainActiveStateHave(stateIndex uint32)
+	SetChainConfirmedStateWant(stateIndex uint32)
+	SetChainConfirmedStateHave(stateIndex uint32)
 }
 
 var (
@@ -22,9 +23,11 @@ type emptyChainStateMetric struct{}
 func NewEmptyChainStateMetric() IChainStateMetrics {
 	return &emptyChainStateMetric{}
 }
-func (m *emptyChainStateMetric) SetBlockSize(size float64)               {}
-func (m *emptyChainStateMetric) SetCurrentStateIndex(stateIndex uint32)  {}
-func (m *emptyChainStateMetric) SetLastSeenStateIndex(stateIndex uint32) {}
+
+func (m *emptyChainStateMetric) SetChainActiveStateWant(stateIndex uint32)    {}
+func (m *emptyChainStateMetric) SetChainActiveStateHave(stateIndex uint32)    {}
+func (m *emptyChainStateMetric) SetChainConfirmedStateWant(stateIndex uint32) {}
+func (m *emptyChainStateMetric) SetChainConfirmedStateHave(stateIndex uint32) {}
 
 type chainStateMetric struct {
 	provider              *ChainMetricsProvider
@@ -36,9 +39,10 @@ func newChainStateMetric(provider *ChainMetricsProvider, chainID isc.ChainID) *c
 	metricsLabels := getChainLabels(chainID)
 
 	// init values so they appear in prometheus
-	provider.blockSizesPerChain.With(metricsLabels)
-	provider.stateIndexCurrent.With(metricsLabels)
-	provider.stateIndexLatestSeen.With(metricsLabels)
+	provider.chainActiveStateWant.With(metricsLabels)
+	provider.chainActiveStateHave.With(metricsLabels)
+	provider.chainConfirmedStateWant.With(metricsLabels)
+	provider.chainConfirmedStateHave.With(metricsLabels)
 
 	return &chainStateMetric{
 		provider:              provider,
@@ -47,18 +51,18 @@ func newChainStateMetric(provider *ChainMetricsProvider, chainID isc.ChainID) *c
 	}
 }
 
-func (m *chainStateMetric) SetBlockSize(blockSize float64) {
-	m.provider.blockSizesPerChain.With(m.metricsLabels).Set(blockSize)
+func (m *chainStateMetric) SetChainActiveStateWant(stateIndex uint32) {
+	m.provider.chainActiveStateWant.With(m.metricsLabels).Set(float64(stateIndex))
 }
 
-func (m *chainStateMetric) SetCurrentStateIndex(stateIndex uint32) {
-	m.provider.stateIndexCurrent.With(m.metricsLabels).Set(float64(stateIndex))
+func (m *chainStateMetric) SetChainActiveStateHave(stateIndex uint32) {
+	m.provider.chainActiveStateHave.With(m.metricsLabels).Set(float64(stateIndex))
 }
 
-func (m *chainStateMetric) SetLastSeenStateIndex(stateIndex uint32) {
-	if m.lastSeenStateIndexVal >= stateIndex {
-		return
-	}
-	m.lastSeenStateIndexVal = stateIndex
-	m.provider.stateIndexLatestSeen.With(m.metricsLabels).Set(float64(stateIndex))
+func (m *chainStateMetric) SetChainConfirmedStateWant(stateIndex uint32) {
+	m.provider.chainConfirmedStateWant.With(m.metricsLabels).Set(float64(stateIndex))
+}
+
+func (m *chainStateMetric) SetChainConfirmedStateHave(stateIndex uint32) {
+	m.provider.chainConfirmedStateHave.With(m.metricsLabels).Set(float64(stateIndex))
 }
