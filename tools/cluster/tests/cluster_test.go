@@ -23,6 +23,7 @@ func TestClusterSingleNode(t *testing.T) {
 
 	t.Run("spam onledger", func(t *testing.T) { run(t, testSpamOnledger) })
 	t.Run("spam offledger", func(t *testing.T) { run(t, testSpamOffLedger) })
+	t.Run("spam EVM", func(t *testing.T) { run(t, testSpamEVM) })
 	t.Run("spam call wasm views", func(t *testing.T) { run(t, testSpamCallViewWasm) })
 }
 
