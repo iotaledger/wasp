@@ -204,7 +204,7 @@ func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.
 	defer ctxCancel()
 
 	select {
-	case receiptResponse := <-chain.AwaitRequestProcessed(ctxTimeout, requestID, true):
+	case receiptResponse := <-chain.AwaitRequestProcessed(ctxTimeout, requestID, false):
 		return c.vmService.ParseReceipt(chain, receiptResponse)
 	case <-ctxTimeout.Done():
 		return nil, nil, errors.New("timeout while waiting for request to be processed")
