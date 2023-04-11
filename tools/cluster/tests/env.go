@@ -1,18 +1,35 @@
 package tests
 
 import (
+	"context"
+	"crypto/ecdsa"
+	"fmt"
+	"math/big"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/scclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
@@ -104,4 +121,87 @@ func (e *ChainEnv) DepositFunds(amount uint64, keyPair *cryptolib.KeyPair) {
 	require.NoError(e.t, err)
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 	require.NoError(e.t, err, "Error while WaitUntilAllRequestsProcessedSuccessfully for tx.ID=%v", txID.ToHex())
+}
+
+func (e *ChainEnv) TransferFundsTo(assets *isc.Assets, nft *isc.NFT, keyPair *cryptolib.KeyPair, targetAccount isc.AgentID) {
+	accountsClient := e.Chain.SCClient(accounts.Contract.Hname(), keyPair)
+	transferAssets := assets.Clone()
+	transferAssets.AddBaseTokens(1 * isc.Million) // to pay for the fees
+	tx, err := accountsClient.PostRequest(accounts.FuncTransferAllowanceTo.Name, chainclient.PostRequestParams{
+		Transfer:                 transferAssets,
+		Args:                     map[kv.Key][]byte{accounts.ParamAgentID: codec.EncodeAgentID(targetAccount)},
+		NFT:                      nft,
+		Allowance:                assets,
+		AutoAdjustStorageDeposit: false,
+	})
+	require.NoError(e.t, err)
+	txID, err := tx.ID()
+	require.NoError(e.t, err)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	require.NoError(e.t, err, "Error while WaitUntilAllRequestsProcessedSuccessfully for tx.ID=%v", txID.ToHex())
+}
+
+// DeploySolidityContract deploys a given solidity contract with a given private key, returns the create contract address
+// it will send the EVM request to node #0, using the default EVM chainID, that can be changed if needed
+func (e *ChainEnv) DeploySolidityContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, args ...interface{}) (common.Address, abi.ABI) {
+	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
+
+	nonce := e.GetNonceEVM(creatorAddress)
+
+	contractABI, err := abi.JSON(strings.NewReader(abiJSON))
+	require.NoError(e.t, err)
+	constructorArguments, err := contractABI.Pack("", args...)
+	require.NoError(e.t, err)
+
+	data := []byte{}
+	data = append(data, bytecode...)
+	data = append(data, constructorArguments...)
+
+	value := big.NewInt(0)
+
+	jsonRPCClient := e.EVMJSONRPClient(0) // send request to node #0
+	gasLimit, err := jsonRPCClient.EstimateGas(context.Background(),
+		ethereum.CallMsg{
+			From:     creatorAddress,
+			GasPrice: evm.GasPrice,
+			Value:    value,
+			Data:     data,
+		})
+	require.NoError(e.t, err)
+
+	tx, err := types.SignTx(
+		types.NewContractCreation(nonce, value, gasLimit, evm.GasPrice, data),
+		e.EVMSigner(),
+		creator,
+	)
+	require.NoError(e.t, err)
+
+	err = jsonRPCClient.SendTransaction(context.Background(), tx)
+	require.NoError(e.t, err)
+
+	return crypto.CreateAddress(creatorAddress, nonce), contractABI
+}
+
+func (e *ChainEnv) GetNonceEVM(addr common.Address) uint64 {
+	ret, err := e.NewChainClient().CallView(context.Background(), evm.Contract.Hname(), evm.FuncGetNonce.Name, dict.Dict{
+		evm.FieldAddress: addr.Bytes(),
+	})
+	require.NoError(e.t, err)
+	nonce, err := codec.DecodeUint64(ret.Get(evm.FieldResult))
+	require.NoError(e.t, err)
+	return nonce
+}
+
+func (e *ChainEnv) EVMJSONRPClient(nodeIndex int) *ethclient.Client {
+	evmJSONRPCPath := fmt.Sprintf("/v1/chains/%v/evm", e.Chain.ChainID.String())
+	jsonRPCEndpoint := e.Clu.Config.APIHost(0) + evmJSONRPCPath
+	rawClient, err := rpc.DialHTTP(jsonRPCEndpoint)
+	require.NoError(e.t, err)
+	jsonRPCClient := ethclient.NewClient(rawClient)
+	e.t.Cleanup(jsonRPCClient.Close)
+	return jsonRPCClient
+}
+
+func (e *ChainEnv) EVMSigner() types.Signer {
+	return evmutil.Signer(big.NewInt(int64(evm.DefaultChainID))) // use default evm chainID
 }
