@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 )
@@ -37,6 +38,11 @@ func (e *ISCEvent[T]) String() string {
 	}
 
 	return fmt.Sprintf("%s | %s (%s)", e.ChainID, issuerStr, e.Kind)
+}
+
+type BlockWithTrieRoot struct {
+	BlockInfo *blocklog.BlockInfo
+	TrieRoot  trie.Hash
 }
 
 type ReceiptWithError struct {
@@ -73,11 +79,14 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 		log.Errorf("unable to get blockInfo for blockIndex %d: %v", blockIndex, err)
 	}
 
-	triggerEvent(events, events.NewBlock, &ISCEvent[*blocklog.BlockInfo]{
+	triggerEvent(events, events.NewBlock, &ISCEvent[*BlockWithTrieRoot]{
 		Kind:   ISCEventKindNewBlock,
 		Issuer: &isc.NilAgentID{},
 		// TODO the L1 commitment will be nil (on the blocklog), but at this point the L1 commitment has already been calculated, so we could potentially add it to blockInfo
-		Payload: blockInfo,
+		Payload: &BlockWithTrieRoot{
+			BlockInfo: blockInfo,
+			TrieRoot:  block.TrieRoot(),
+		},
 		ChainID: chainID,
 	})
 

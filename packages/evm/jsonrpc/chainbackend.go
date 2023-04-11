@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/trie"
 )
 
 type ChainBackend interface {
@@ -27,6 +28,7 @@ type ChainBackend interface {
 	ISCLatestAliasOutput() (*isc.AliasOutputWithID, error)
 	ISCLatestState() state.State
 	ISCStateByBlockIndex(blockIndex uint32) (state.State, error)
+	ISCStateByTrieRoot(trieRoot trie.Hash) (state.State, error)
 	EVMGasPrice() *big.Int
 	BaseToken() *parameters.BaseToken
 }

@@ -28,6 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -56,28 +57,27 @@ func NewEVMChain(backend ChainBackend, pub *publisher.Publisher, log *logger.Log
 		log:      log,
 	}
 
-	blocksFromPublisher := pipe.NewInfinitePipe[uint32]()
+	blocksFromPublisher := pipe.NewInfinitePipe[*publisher.BlockWithTrieRoot]()
 
-	pub.Events.NewBlock.Hook(func(ev *publisher.ISCEvent[*blocklog.BlockInfo]) {
-		blockIndex := ev.Payload.BlockIndex()
+	pub.Events.NewBlock.Hook(func(ev *publisher.ISCEvent[*publisher.BlockWithTrieRoot]) {
 		if !ev.ChainID.Equals(*e.backend.ISCChainID()) {
 			return
 		}
-		blocksFromPublisher.In() <- blockIndex
+		blocksFromPublisher.In() <- ev.Payload
 	})
 
 	// publish blocks on a separate goroutine so that we don't block the publisher
 	go func() {
-		for blockIndex := range blocksFromPublisher.Out() {
-			e.publishNewBlock(blockIndex)
+		for ev := range blocksFromPublisher.Out() {
+			e.publishNewBlock(ev.BlockInfo.BlockIndex(), ev.TrieRoot)
 		}
 	}()
 
 	return e
 }
 
-func (e *EVMChain) publishNewBlock(blockIndex uint32) {
-	state, err := e.backend.ISCStateByBlockIndex(blockIndex)
+func (e *EVMChain) publishNewBlock(blockIndex uint32, trieRoot trie.Hash) {
+	state, err := e.backend.ISCStateByTrieRoot(trieRoot)
 	if err != nil {
 		log.Errorf("NewEVMChain.Hook.ISCStateByBlockIndex(blockIndex=%v) returned error: %v", blockIndex, err)
 		return

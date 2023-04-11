@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/web/websockethub"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/publisher"
+	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
@@ -57,11 +58,14 @@ func TestSuccessfulEventHandling(t *testing.T) {
 		cancel()
 	})
 
-	pub.Events.NewBlock.Trigger(&publisher.ISCEvent[*blocklog.BlockInfo]{
+	pub.Events.NewBlock.Trigger(&publisher.ISCEvent[*publisher.BlockWithTrieRoot]{
 		Kind:    publisher.ISCEventKindNewBlock,
 		ChainID: chainID,
 		Issuer:  isc.NewRandomAgentID(),
-		Payload: &blocklog.BlockInfo{},
+		Payload: &publisher.BlockWithTrieRoot{
+			BlockInfo: &blocklog.BlockInfo{},
+			TrieRoot:  trie.Hash{},
+		},
 	})
 
 	<-ctx.Done()

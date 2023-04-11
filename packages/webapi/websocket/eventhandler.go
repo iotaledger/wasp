@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 )
 
@@ -52,12 +51,12 @@ func NewEventHandler(pub *publisher.Publisher, publishEvent *event.Event1[*ISCEv
 func (p *EventHandler) AttachToEvents() context.CancelFunc {
 	return lo.Batch(
 
-		p.publisher.Events.NewBlock.Hook(func(block *publisher.ISCEvent[*blocklog.BlockInfo]) {
+		p.publisher.Events.NewBlock.Hook(func(block *publisher.ISCEvent[*publisher.BlockWithTrieRoot]) {
 			if !p.subscriptionValidator.shouldProcessEvent(block.ChainID.String(), block.Kind) {
 				return
 			}
 
-			blockInfo := models.MapBlockInfoResponse(block.Payload)
+			blockInfo := models.MapBlockInfoResponse(block.Payload.BlockInfo)
 			iscEvent := MapISCEvent(block, blockInfo)
 			p.publishEvent.Trigger(iscEvent)
 		}).Unhook,
