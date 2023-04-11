@@ -178,10 +178,11 @@ type ChainMetricsProvider struct {
 	outPullTxInclusionStateMetrics         *messageMetric[iotago.TransactionID]
 	outPullOutputByIDMetrics               *messageMetric[iotago.OutputID]
 
-	// state
-	blockSizesPerChain   *prometheus.GaugeVec
-	stateIndexCurrent    *prometheus.GaugeVec
-	stateIndexLatestSeen *prometheus.GaugeVec
+	// chain state / tips
+	chainActiveStateWant    *prometheus.GaugeVec
+	chainActiveStateHave    *prometheus.GaugeVec
+	chainConfirmedStateWant *prometheus.GaugeVec
+	chainConfirmedStateHave *prometheus.GaugeVec
 
 	// state manager
 	smCacheSize           *prometheus.GaugeVec
@@ -381,27 +382,31 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 		}, []string{labelNameChain, labelNameMessageType}),
 
 		//
-		// state
+		// chain state / tips.
 		//
-		blockSizesPerChain: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		chainActiveStateWant: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "iota_wasp",
-			Subsystem: "blocks",
-			Name:      "sizes",
-			Help:      "Block sizes per chain",
+			Subsystem: "chain",
+			Name:      "active_state_want",
+			Help:      "We try to get blocks till this StateIndex for the active state.",
 		}, []string{labelNameChain}),
-
-		stateIndexCurrent: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		chainActiveStateHave: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "iota_wasp",
-			Subsystem: "state",
-			Name:      "index_current",
-			Help:      "The current state index per chain",
+			Subsystem: "chain",
+			Name:      "active_state_have",
+			Help:      "We received blocks till this StateIndex for the active state.",
 		}, []string{labelNameChain}),
-
-		stateIndexLatestSeen: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		chainConfirmedStateWant: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "iota_wasp",
-			Subsystem: "state",
-			Name:      "index_latest_seen",
-			Help:      "Latest seen state index per chain",
+			Subsystem: "chain",
+			Name:      "confirmed_state_want",
+			Help:      "We try to get blocks till this StateIndex for the confirmed state.",
+		}, []string{labelNameChain}),
+		chainConfirmedStateHave: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "chain",
+			Name:      "confirmed_state_have",
+			Help:      "We received blocks till this StateIndex for the confirmed state.",
 		}, []string{labelNameChain}),
 
 		//
@@ -546,9 +551,10 @@ func (m *ChainMetricsProvider) PrometheusCollectorsChainMessages() []prometheus.
 
 func (m *ChainMetricsProvider) PrometheusCollectorsChainState() []prometheus.Collector {
 	return []prometheus.Collector{
-		m.blockSizesPerChain,
-		m.stateIndexCurrent,
-		m.stateIndexLatestSeen,
+		m.chainActiveStateWant,
+		m.chainActiveStateHave,
+		m.chainConfirmedStateWant,
+		m.chainConfirmedStateHave,
 	}
 }
 

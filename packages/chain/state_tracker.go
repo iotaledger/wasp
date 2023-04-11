@@ -30,16 +30,18 @@ type StateTracker interface {
 type StateTrackerStepCB = func(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block)
 
 type stateTrackerImpl struct {
-	ctx          context.Context
-	stateMgr     statemanager.StateMgr
-	haveLatestCB StateTrackerStepCB
-	haveAOState  state.State
-	haveAO       *isc.AliasOutputWithID // We have a state ready for this AO.
-	nextAO       *isc.AliasOutputWithID // For this state a query was made, but the response not received yet.
-	nextAOCancel context.CancelFunc     // Cancel for a context used to query for the nextAO state.
-	nextAOWaitCh <-chan *smInputs.ChainFetchStateDiffResults
-	awaitReceipt AwaitReceipt
-	log          *logger.Logger
+	ctx                    context.Context
+	stateMgr               statemanager.StateMgr
+	haveLatestCB           StateTrackerStepCB
+	haveAOState            state.State
+	haveAO                 *isc.AliasOutputWithID // We have a state ready for this AO.
+	nextAO                 *isc.AliasOutputWithID // For this state a query was made, but the response not received yet.
+	nextAOCancel           context.CancelFunc     // Cancel for a context used to query for the nextAO state.
+	nextAOWaitCh           <-chan *smInputs.ChainFetchStateDiffResults
+	awaitReceipt           AwaitReceipt
+	metricWantStateIndexCB func(uint32)
+	metricHaveStateIndexCB func(uint32)
+	log                    *logger.Logger
 }
 
 var _ StateTracker = &stateTrackerImpl{}
@@ -48,19 +50,23 @@ func NewStateTracker(
 	ctx context.Context,
 	stateMgr statemanager.StateMgr,
 	haveLatestCB StateTrackerStepCB,
+	metricWantStateIndexCB func(uint32),
+	metricHaveStateIndexCB func(uint32),
 	log *logger.Logger,
 ) StateTracker {
 	return &stateTrackerImpl{
-		ctx:          ctx,
-		stateMgr:     stateMgr,
-		haveLatestCB: haveLatestCB,
-		haveAOState:  nil,
-		haveAO:       nil,
-		nextAO:       nil,
-		nextAOCancel: nil,
-		nextAOWaitCh: nil,
-		awaitReceipt: NewAwaitReceipt(awaitReceiptCleanupEvery, log),
-		log:          log,
+		ctx:                    ctx,
+		stateMgr:               stateMgr,
+		haveLatestCB:           haveLatestCB,
+		haveAOState:            nil,
+		haveAO:                 nil,
+		nextAO:                 nil,
+		nextAOCancel:           nil,
+		nextAOWaitCh:           nil,
+		awaitReceipt:           NewAwaitReceipt(awaitReceiptCleanupEvery, log),
+		metricWantStateIndexCB: metricWantStateIndexCB,
+		metricHaveStateIndexCB: metricHaveStateIndexCB,
+		log:                    log,
 	}
 }
 
@@ -72,6 +78,7 @@ func (sti *stateTrackerImpl) TrackAliasOutput(ao *isc.AliasOutputWithID, strict 
 	if ao.Equals(sti.nextAO) {
 		return
 	}
+	sti.metricWantStateIndexCB(ao.GetStateIndex())
 	if ao.Equals(sti.haveAO) {
 		sti.nextAO = sti.haveAO // All done, state is already received.
 		sti.cancelQuery()       // Cancel the request, if pending.
@@ -105,6 +112,7 @@ func (sti *stateTrackerImpl) ChainNodeStateMgrResponse(results *smInputs.ChainFe
 	sti.haveLatestCB(newState, sti.haveAO, sti.nextAO, results.GetAdded(), results.GetRemoved())
 	sti.haveAO = sti.nextAO
 	sti.haveAOState = newState
+	sti.metricHaveStateIndexCB(newState.BlockIndex())
 	sti.awaitReceipt.ConsiderState(newState, results.GetAdded())
 }
 
