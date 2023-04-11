@@ -6,24 +6,17 @@ package evmimpl
 import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
-)
-
-const (
-	// keyEVMState is the subrealm prefix for the EVM state, used by the emulator
-	keyEVMState = "s"
-
-	// keyISCMagic is the subrealm prefix for the ISC magic contract
-	keyISCMagic = "m"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
 
 func evmStateSubrealm(state kv.KVStore) kv.KVStore {
-	return subrealm.New(state, keyEVMState)
+	return subrealm.New(state, evm.KeyEVMState)
 }
 
 func iscMagicSubrealm(state kv.KVStore) kv.KVStore {
-	return subrealm.New(state, keyISCMagic)
+	return subrealm.New(state, evm.KeyISCMagic)
 }
 
 func iscMagicSubrealmR(state kv.KVStoreReader) kv.KVStoreReader {
-	return subrealm.NewReadOnly(state, keyISCMagic)
+	return subrealm.NewReadOnly(state, evm.KeyISCMagic)
 }

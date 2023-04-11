@@ -8,10 +8,7 @@ import (
 )
 
 func NewServer(evmChain *EVMChain, accountManager *AccountManager) (*rpc.Server, error) {
-	chainID, err := evmChain.ChainID()
-	if err != nil {
-		return nil, err
-	}
+	chainID := evmChain.ChainID()
 	rpcsrv := rpc.NewServer()
 	for _, srv := range []struct {
 		namespace string

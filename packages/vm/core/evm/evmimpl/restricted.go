@@ -21,10 +21,3 @@ func restricted(handler coreutil.Handler) coreutil.Handler {
 		return handler(ctx)
 	}
 }
-
-func restrictedView(handler coreutil.ViewHandler) coreutil.ViewHandler {
-	return func(ctx isc.SandboxView) dict.Dict {
-		cannotBeCalledFromContracts(ctx)
-		return handler(ctx)
-	}
-}

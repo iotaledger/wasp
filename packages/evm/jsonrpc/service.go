@@ -61,12 +61,9 @@ func (e *EthService) GetTransactionCount(address common.Address, blockNumberOrHa
 	return hexutil.Uint64(n), nil
 }
 
-func (e *EthService) BlockNumber() (*hexutil.Big, error) {
-	n, err := e.evmChain.BlockNumber()
-	if err != nil {
-		return nil, e.resolveError(err)
-	}
-	return (*hexutil.Big)(n), nil
+func (e *EthService) BlockNumber() *hexutil.Big {
+	n := e.evmChain.BlockNumber()
+	return (*hexutil.Big)(n)
 }
 
 func (e *EthService) GetBlockByNumber(blockNumber rpc.BlockNumber, full bool) (map[string]interface{}, error) {
@@ -81,10 +78,7 @@ func (e *EthService) GetBlockByNumber(blockNumber rpc.BlockNumber, full bool) (m
 }
 
 func (e *EthService) GetBlockByHash(hash common.Hash, full bool) (map[string]interface{}, error) {
-	block, err := e.evmChain.BlockByHash(hash)
-	if err != nil {
-		return nil, e.resolveError(err)
-	}
+	block := e.evmChain.BlockByHash(hash)
 	if block == nil {
 		return nil, nil
 	}
@@ -141,10 +135,7 @@ func (e *EthService) GetCode(address common.Address, blockNumberOrHash *rpc.Bloc
 }
 
 func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]interface{}, error) {
-	r, err := e.evmChain.TransactionReceipt(txHash)
-	if err != nil {
-		return nil, e.resolveError(err)
-	}
+	r := e.evmChain.TransactionReceipt(txHash)
 	if r == nil {
 		return nil, nil
 	}
@@ -178,12 +169,12 @@ func (e *EthService) EstimateGas(args *RPCCallArgs, blockNumberOrHash *rpc.Block
 
 func (e *EthService) GetStorageAt(address common.Address, key common.Hash, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
 	ret, err := e.evmChain.StorageAt(address, key, blockNumberOrHash)
-	return ret, e.resolveError(err)
+	return ret[:], e.resolveError(err)
 }
 
-func (e *EthService) GetBlockTransactionCountByHash(blockHash common.Hash) (hexutil.Uint, error) {
-	ret, err := e.evmChain.BlockTransactionCountByHash(blockHash)
-	return hexutil.Uint(ret), e.resolveError(err)
+func (e *EthService) GetBlockTransactionCountByHash(blockHash common.Hash) hexutil.Uint {
+	ret := e.evmChain.BlockTransactionCountByHash(blockHash)
+	return hexutil.Uint(ret)
 }
 
 func (e *EthService) GetBlockTransactionCountByNumber(blockNumber rpc.BlockNumber) (hexutil.Uint, error) {
@@ -304,9 +295,9 @@ func (e *EthService) GetLogs(q *RPCFilterQuery) ([]*types.Log, error) {
 }
 
 // ChainID implements the eth_chainId method according to https://eips.ethereum.org/EIPS/eip-695
-func (e *EthService) ChainId() (hexutil.Uint, error) { //nolint:revive
-	chainID, err := e.evmChain.ChainID()
-	return hexutil.Uint(chainID), err
+func (e *EthService) ChainId() hexutil.Uint { //nolint:revive
+	chainID := e.evmChain.ChainID()
+	return hexutil.Uint(chainID)
 }
 
 func (e *EthService) NewHeads(ctx context.Context) (*rpc.Subscription, error) {

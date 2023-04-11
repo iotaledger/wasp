@@ -130,17 +130,8 @@ func (e *soloChainEnv) resolveError(err error) error {
 	return err
 }
 
-func (e *soloChainEnv) callView(funName string, params ...interface{}) (dict.Dict, error) {
-	ret, err := e.soloChain.CallView(evm.Contract.Name, funName, params...)
-	if err != nil {
-		return nil, fmt.Errorf("CallView failed: %w", e.resolveError(err))
-	}
-	return ret, nil
-}
-
 func (e *soloChainEnv) getBlockNumber() uint64 {
-	n, err := e.evmChain.BlockNumber()
-	require.NoError(e.t, err)
+	n := e.evmChain.BlockNumber()
 	return n.Uint64()
 }
 
@@ -177,9 +168,7 @@ func (e *soloChainEnv) setFeePolicy(p gas.FeePolicy, opts ...iscCallOptions) err
 }
 
 func (e *soloChainEnv) getNonce(addr common.Address) uint64 {
-	ret, err := e.callView(evm.FuncGetNonce.Name, evm.FieldAddress, addr.Bytes())
-	require.NoError(e.t, err)
-	nonce, err := codec.DecodeUint64(ret.Get(evm.FieldResult))
+	nonce, err := e.evmChain.TransactionCount(addr, nil)
 	require.NoError(e.t, err)
 	return nonce
 }
@@ -487,12 +476,8 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 	res := callFnResult{tx: tx}
 
 	sendTxErr := e.chain.evmChain.SendTransaction(res.tx)
-
 	res.iscReceipt = e.chain.soloChain.LastReceipt()
-
-	res.evmReceipt, err = e.chain.evmChain.TransactionReceipt(res.tx.Hash())
-	require.NoError(e.chain.t, err)
-
+	res.evmReceipt = e.chain.evmChain.TransactionReceipt(res.tx.Hash())
 	return res, sendTxErr
 }
 

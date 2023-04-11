@@ -11,10 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/assert"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -134,102 +132,6 @@ func result(value []byte) dict.Dict {
 		return nil
 	}
 	return dict.Dict{evm.FieldResult: value}
-}
-
-func blockResult(emu *emulator.EVMEmulator, block *types.Block) dict.Dict {
-	if block == nil {
-		return nil
-	}
-	return result(evmtypes.EncodeBlock(block))
-}
-
-func txResult(emu *emulator.EVMEmulator, tx *types.Transaction) dict.Dict {
-	if tx == nil {
-		return nil
-	}
-	bc := emu.BlockchainDB()
-	blockNumber, ok := bc.GetBlockNumberByTxHash(tx.Hash())
-	if !ok {
-		panic("cannot find block number of tx")
-	}
-	return dict.Dict{
-		evm.FieldTransaction: evmtypes.EncodeTransaction(tx),
-		evm.FieldBlockHash:   bc.GetBlockHashByBlockNumber(blockNumber).Bytes(),
-		evm.FieldBlockNumber: codec.EncodeUint64(blockNumber),
-	}
-}
-
-func txCountResult(emu *emulator.EVMEmulator, block *types.Block) dict.Dict {
-	if block == nil {
-		return nil
-	}
-	n := uint64(0)
-	if block.NumberU64() != 0 {
-		n = 1
-	}
-	return result(codec.EncodeUint64(n))
-}
-
-func blockByNumber(ctx isc.SandboxView) (*emulator.EVMEmulator, *types.Block) {
-	emu := createEmulatorR(ctx)
-	blockNumber := paramBlockNumber(ctx, emu, true)
-	return emu, emu.BlockchainDB().GetBlockByNumber(blockNumber)
-}
-
-func blockByHash(ctx isc.SandboxView) (*emulator.EVMEmulator, *types.Block) {
-	emu := createEmulatorR(ctx)
-	hash := common.BytesToHash(ctx.Params().Get(evm.FieldBlockHash))
-	return emu, emu.BlockchainDB().GetBlockByHash(hash)
-}
-
-func transactionByHash(ctx isc.SandboxView) (*emulator.EVMEmulator, *types.Transaction) {
-	emu := createEmulatorR(ctx)
-	txHash := common.BytesToHash(ctx.Params().Get(evm.FieldTransactionHash))
-	return emu, emu.BlockchainDB().GetTransactionByHash(txHash)
-}
-
-func transactionByBlockHashAndIndex(ctx isc.SandboxView) (*emulator.EVMEmulator, *types.Transaction) {
-	emu := createEmulatorR(ctx)
-	blockHash := common.BytesToHash(ctx.Params().Get(evm.FieldBlockHash))
-
-	a := assert.NewAssert(ctx.Log())
-	index, err := codec.DecodeUint64(ctx.Params().Get(evm.FieldTransactionIndex), 0)
-	a.RequireNoError(err)
-
-	bc := emu.BlockchainDB()
-	blockNumber, ok := bc.GetBlockNumberByBlockHash(blockHash)
-	if !ok {
-		return emu, nil
-	}
-	return emu, bc.GetTransactionByBlockNumberAndIndex(blockNumber, uint32(index))
-}
-
-func transactionByBlockNumberAndIndex(ctx isc.SandboxView) (*emulator.EVMEmulator, *types.Transaction) {
-	emu := createEmulatorR(ctx)
-	blockNumber := paramBlockNumber(ctx, emu, true)
-
-	a := assert.NewAssert(ctx.Log())
-	index, err := codec.DecodeUint64(ctx.Params().Get(evm.FieldTransactionIndex), 0)
-	a.RequireNoError(err)
-
-	return emu, emu.BlockchainDB().GetTransactionByBlockNumberAndIndex(blockNumber, uint32(index))
-}
-
-func requireLatestBlock(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool, blockNumber uint64) uint64 {
-	current := emu.BlockchainDB().GetNumber()
-	if blockNumber != current {
-		assert.NewAssert(ctx.Log()).Requiref(allowPrevious, "unsupported operation, cannot query previous blocks")
-	}
-	return blockNumber
-}
-
-func paramBlockNumber(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool) uint64 {
-	current := emu.BlockchainDB().GetNumber()
-	if ctx.Params().Has(evm.FieldBlockNumber) {
-		blockNumber := new(big.Int).SetBytes(ctx.Params().Get(evm.FieldBlockNumber))
-		return requireLatestBlock(ctx, emu, allowPrevious, blockNumber.Uint64())
-	}
-	return current
 }
 
 type l2BalanceR struct {
