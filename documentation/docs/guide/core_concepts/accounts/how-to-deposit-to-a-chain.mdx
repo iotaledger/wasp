@@ -49,6 +49,7 @@ values={[
 <TabItem value="solo">
 
 ```go
+// deposits N base tokens from wallet into chain
 err := chain.DepositBaseTokensToL2(N, wallet)
 require.NoError(t, err)
 ```
@@ -57,9 +58,9 @@ require.NoError(t, err)
 <TabItem value="soloctx">
 
 ```go
-// deposits N base tokens from wallet into chain *chainID*
+// deposits N base tokens from wallet into chain
 d := coreaccounts.ScFuncs.Deposit(ctx.Sign(wallet))
-d.Func.TransferBaseTokes(N).PostToChain(chainID)
+d.Func.TransferBaseTokes(N).Post()
 require.NoError(t, ctx.Err)
 ```
 
@@ -67,18 +68,18 @@ require.NoError(t, ctx.Err)
 <TabItem value="rust">
 
 ```rust
-// deposits N iotas from current SC into chain *chainID*
-let d = coreaccounts::ScFuncs::deposit(ctx);
-d.func.transfer_base_tokens(N).post_to_chain(chainID);
+// deposits N iotas from wallet into chain
+let d = coreaccounts::ScFuncs::deposit(ctx.sign(wallet));
+d.func.transfer_base_tokens(N).post();
 ```
 
 </TabItem>
 <TabItem value="go">
 
 ```go
-// deposits N iotas from current SC into chain *chainID*
-d := coreaccounts.ScFuncs.Deposit(ctx)
-d.Func.TransferBaseTokens(N).PostToChain(chainID)
+// deposits N iotas from wallet into chain
+d := coreaccounts.ScFuncs.Deposit(ctx.Sign(wallet))
+d.Func.TransferBaseTokens(N).Post()
 ```
 
 </TabItem>
