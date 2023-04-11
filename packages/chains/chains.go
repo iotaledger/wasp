@@ -25,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -250,7 +251,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		chainCtx,
 		chainLog,
 		chainID,
-		state.NewStore(chainKVStore),
+		indexedstore.New(state.NewStore(chainKVStore)),
 		c.nodeConnection,
 		c.nodeIdentityProvider.NodeIdentity(),
 		c.processorConfig,

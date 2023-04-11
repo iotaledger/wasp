@@ -29,6 +29,7 @@ require (
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.2
 	github.com/labstack/echo-contrib v0.14.1
 	github.com/labstack/echo/v4 v4.10.2
+	github.com/labstack/gommon v0.4.0
 	github.com/libp2p/go-libp2p v0.26.2
 	github.com/multiformats/go-multiaddr v0.8.0
 	github.com/pangpanglabs/echoswagger/v2 v2.4.1
@@ -113,7 +114,6 @@ require (
 	github.com/koron/go-ssdp v0.0.4 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
 	github.com/libp2p/go-cidranger v1.1.0 // indirect
 	github.com/libp2p/go-flow-metrics v0.1.0 // indirect

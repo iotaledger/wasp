@@ -29,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil"
 	testparameters "github.com/iotaledger/wasp/packages/testutil/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
@@ -441,7 +442,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			te.ctx,
 			log,
 			te.chainID,
-			state.NewStore(mapdb.NewMapDB()),
+			indexedstore.NewFake(state.NewStore(mapdb.NewMapDB())),
 			te.nodeConns[i],
 			te.peerIdentities[i],
 			coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor),
