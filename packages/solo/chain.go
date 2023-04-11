@@ -27,6 +27,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -639,7 +640,7 @@ func (*Chain) GetConsensusWorkflowStatus() chain.ConsensusWorkflowStatus {
 }
 
 // Store implements chain.Chain
-func (ch *Chain) Store() state.Store {
+func (ch *Chain) Store() indexedstore.IndexedStore {
 	return ch.store
 }
 

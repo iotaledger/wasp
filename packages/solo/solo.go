@@ -29,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -92,7 +93,7 @@ type Chain struct {
 	ValidatorFeeTarget isc.AgentID
 
 	// Store is where the chain data (blocks, state) is stored
-	store state.Store
+	store indexedstore.IndexedStore
 	// Log is the named logger of the chain
 	log *logger.Logger
 	// instance of VM
@@ -302,7 +303,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 	kvStore, err := env.chainStateDatabaseManager.ChainStateKVStore(chainID)
 	require.NoError(env.T, err)
 	originAOMinSD := parameters.L1().Protocol.RentStructure.MinRent(originAO)
-	store := state.NewStore(kvStore)
+	store := indexedstore.New(state.NewStore(kvStore))
 	origin.InitChain(store, originParams, originAO.Amount-originAOMinSD)
 
 	{

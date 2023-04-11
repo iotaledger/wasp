@@ -34,18 +34,15 @@ type Store interface {
 	StateByTrieRoot(trie.Hash) (State, error)
 
 	// SetLatest sets the given trie root to be considered the latest one in the chain.
-	// This affects all `*ByIndex` and `Latest*` functions.
 	SetLatest(trieRoot trie.Hash) error
-	// BlockByIndex returns the block that corresponds to the given state index (see SetLatest).
-	BlockByIndex(uint32) (Block, error)
-	// StateByIndex returns the chain state corresponding to the given state index (see SetLatest).
-	StateByIndex(uint32) (State, error)
 	// LatestBlockIndex returns the index of the latest block, if set (see SetLatest)
 	LatestBlockIndex() (uint32, error)
 	// LatestBlock returns the latest block of the chain, if set (see SetLatest)
 	LatestBlock() (Block, error)
 	// LatestState returns the latest chain state, if set (see SetLatest)
 	LatestState() (State, error)
+	// LatestTrieRoot returns the latest trie root the chain, if set (see SetLatest)
+	LatestTrieRoot() (trie.Hash, error)
 
 	// NewOriginStateDraft starts a new StateDraft for the origin block
 	NewOriginStateDraft() StateDraft

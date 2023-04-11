@@ -116,9 +116,6 @@ func GetEventsByBlockIndex(partition kv.KVStoreReader, blockIndex uint32, totalR
 }
 
 func GetBlockInfo(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, error) {
-	if blockIndex == 0 {
-		return nil, nil
-	}
 	ret, err := BlockInfoFromBytes(getBlockInfoBytes(partition, blockIndex))
 	if err != nil {
 		return nil, err
