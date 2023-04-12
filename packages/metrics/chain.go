@@ -440,7 +440,7 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 			Namespace: "iota_wasp",
 			Subsystem: "state_manager",
 			Name:      "requests_waiting",
-			Help:      "Number of requests from other components of the node waiting for response from the state manager",
+			Help:      "Number of requests from other components of the node waiting for response from the state manager. Note that StateDiff request is counted as two requests as it has to obtain two possibly different blocks.",
 		}, []string{labelNameChain}),
 		smCSPHandlingDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",

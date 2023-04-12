@@ -10,16 +10,7 @@ type blockRequestCallbackImpl struct {
 	requestCompletedFun brcRequestCompletedFun
 }
 
-var (
-	brcAlwaysValidFun            = func() bool { return true }
-	brcIgnoreRequestCompletedFun = func() {}
-)
-
-var (
-	_ blockRequestCallback   = &blockRequestCallbackImpl{}
-	_ brcIsValidFun          = brcAlwaysValidFun
-	_ brcRequestCompletedFun = brcIgnoreRequestCompletedFun
-)
+var _ blockRequestCallback = &blockRequestCallbackImpl{}
 
 func newBlockRequestCallback(ivf brcIsValidFun, rcf brcRequestCompletedFun) blockRequestCallback {
 	return &blockRequestCallbackImpl{

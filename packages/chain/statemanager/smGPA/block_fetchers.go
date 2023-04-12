@@ -31,6 +31,15 @@ func (bfiT *blockFetchersImpl) getSize() int {
 	return bfiT.fetchers.Size()
 }
 
+func (bfiT *blockFetchersImpl) getCallbacksCount() int {
+	result := 0
+	bfiT.fetchers.ForEach(func(_ smGPAUtils.BlockKey, fetcherWithTime *blockFetcherWithTime) bool {
+		result += fetcherWithTime.fetcher.getCallbacksCount()
+		return true
+	})
+	return result
+}
+
 func (bfiT *blockFetchersImpl) addFetcher(fetcher blockFetcher) {
 	key := smGPAUtils.NewBlockKey(fetcher.getCommitment())
 	_, exists := bfiT.fetchers.Get(key)

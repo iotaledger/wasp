@@ -90,6 +90,7 @@
     "mempoolMetrics": true,
     "chainMessagesMetrics": true,
     "chainStateMetrics": true,
+    "chainStateManagerMetrics": true,
     "restAPIMetrics": true,
     "goMetrics": true,
     "processMetrics": true,

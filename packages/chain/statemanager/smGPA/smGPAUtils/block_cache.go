@@ -63,10 +63,11 @@ func (bcT *blockCache) AddBlock(block state.Block) {
 	bcT.log.Debugf("Block %s added to cache", commitment)
 
 	if bcT.Size() > bcT.maxCacheSize {
-		bt := bcT.times[0]
+		blockKey := bcT.times[0].blockKey
+		bcT.times[0] = nil // Freeing up memory
 		bcT.times = bcT.times[1:]
-		bcT.blocks.Delete(bt.blockKey)
-		bcT.log.Debugf("Block %s deleted from cache, because cache is too large", bt.blockKey)
+		bcT.blocks.Delete(blockKey)
+		bcT.log.Debugf("Block %s deleted from cache, because cache is too large", blockKey)
 	}
 	bcT.metrics.SetCacheSize(bcT.Size())
 }
@@ -102,6 +103,7 @@ func (bcT *blockCache) CleanOlderThan(limit time.Time) {
 			return
 		}
 		bcT.blocks.Delete(bt.blockKey)
+		bcT.times[i] = nil // Freeing up memory
 		bcT.log.Debugf("Block %s deleted from cache, because it is too old", bt.blockKey)
 	}
 	bcT.times = make([]*blockTime, 0) // All the blocks were deleted
