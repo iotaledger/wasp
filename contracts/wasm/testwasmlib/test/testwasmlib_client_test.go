@@ -93,7 +93,7 @@ func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
 	chClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), env.Chain.ChainID, wallet)
 	reqTx, err := chClient.DepositFunds(10_000_000)
 	require.NoError(t, err)
-	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, reqTx, 30*time.Second)
+	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, reqTx, false, 30*time.Second)
 	require.NoError(t, err)
 
 	// deploy the contract

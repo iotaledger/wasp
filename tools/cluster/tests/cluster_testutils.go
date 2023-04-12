@@ -32,7 +32,7 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) {
 	})
 	require.NoError(e.t, err)
 
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.Chain.ChainID, tx, 10*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.Chain.ChainID, tx, false, 10*time.Second)
 	require.NoError(e.t, err)
 
 	blockIndex, err := e.Chain.BlockIndex()
@@ -77,6 +77,6 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) {
 		require.NoError(e.t, err2)
 		require.EqualValues(e.t, counterStartValue, counterValue)
 	}
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 10*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 10*time.Second)
 	require.NoError(e.t, err)
 }

@@ -40,7 +40,7 @@ func TestInxShutdownTest(t *testing.T) {
 	tx, err := client.PostRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(t, err)
 
 	env.expectCounter(nativeIncCounterSCHname, 1)

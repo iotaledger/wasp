@@ -67,6 +67,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamPath("", params.ParamRequestID, params.DescriptionRequestID).
 		AddParamQuery(0, "timeoutSeconds", "The timeout in seconds", false).
+		AddParamQuery(false, "waitForL1Confirmation", "Wait for the block to be confirmed on L1", false).
 		AddResponse(http.StatusNotFound, "The chain or request id not found", nil, nil).
 		AddResponse(http.StatusRequestTimeout, "The waiting time has reached the defined limit", nil, nil).
 		AddResponse(http.StatusOK, "The request receipt", mocker.Get(models.ReceiptResponse{}), nil)

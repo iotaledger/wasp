@@ -188,7 +188,7 @@ func (c *ChainService) GetState(chainID isc.ChainID, stateKey []byte) (state []b
 	return latestState.Get(kv.Key(stateKey)), nil
 }
 
-func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.ChainID, requestID isc.RequestID, timeout time.Duration) (*isc.Receipt, *isc.VMError, error) {
+func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.ChainID, requestID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*isc.Receipt, *isc.VMError, error) {
 	chain := c.chainsProvider().Get(chainID)
 
 	if chain == nil {
@@ -204,7 +204,7 @@ func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.
 	defer ctxCancel()
 
 	select {
-	case receiptResponse := <-chain.AwaitRequestProcessed(ctxTimeout, requestID, false):
+	case receiptResponse := <-chain.AwaitRequestProcessed(ctxTimeout, requestID, waitForL1Confirmation):
 		return c.vmService.ParseReceipt(chain, receiptResponse)
 	case <-ctxTimeout.Done():
 		return nil, nil, errors.New("timeout while waiting for request to be processed")

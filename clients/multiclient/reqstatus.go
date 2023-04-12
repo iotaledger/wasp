@@ -12,7 +12,7 @@ import (
 )
 
 // WaitUntilRequestProcessed blocks until the request has been processed by all nodes
-func (m *MultiClient) WaitUntilRequestProcessed(chainID isc.ChainID, reqID isc.RequestID, timeout time.Duration) (*apiclient.ReceiptResponse, error) {
+func (m *MultiClient) WaitUntilRequestProcessed(chainID isc.ChainID, reqID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*apiclient.ReceiptResponse, error) {
 	oldTimeout := m.Timeout
 	defer func() { m.Timeout = oldTimeout }()
 
@@ -21,7 +21,9 @@ func (m *MultiClient) WaitUntilRequestProcessed(chainID isc.ChainID, reqID isc.R
 	var receipt *apiclient.ReceiptResponse
 	var err error
 	err = m.Do(func(i int, w *apiclient.APIClient) error {
-		receipt, _, err = w.RequestsApi.WaitForRequest(context.Background(), chainID.String(), reqID.String()).Execute()
+		receipt, _, err = w.RequestsApi.WaitForRequest(context.Background(), chainID.String(), reqID.String()).
+			WaitForL1Confirmation(waitForL1Confirmation).
+			Execute()
 		return err
 	})
 	return receipt, err
@@ -29,8 +31,8 @@ func (m *MultiClient) WaitUntilRequestProcessed(chainID isc.ChainID, reqID isc.R
 
 // WaitUntilRequestProcessedSuccessfully is similar to WaitUntilRequestProcessed,
 // but also checks the receipt and return an error if the request was processed with an error
-func (m *MultiClient) WaitUntilRequestProcessedSuccessfully(chainID isc.ChainID, reqID isc.RequestID, timeout time.Duration) (*apiclient.ReceiptResponse, error) {
-	receipt, err := m.WaitUntilRequestProcessed(chainID, reqID, timeout)
+func (m *MultiClient) WaitUntilRequestProcessedSuccessfully(chainID isc.ChainID, reqID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*apiclient.ReceiptResponse, error) {
+	receipt, err := m.WaitUntilRequestProcessed(chainID, reqID, waitForL1Confirmation, timeout)
 	if err != nil {
 		return receipt, err
 	}
@@ -42,7 +44,7 @@ func (m *MultiClient) WaitUntilRequestProcessedSuccessfully(chainID isc.ChainID,
 
 // WaitUntilAllRequestsProcessed blocks until all requests in the given transaction have been processed
 // by all nodes
-func (m *MultiClient) WaitUntilAllRequestsProcessed(chainID isc.ChainID, tx *iotago.Transaction, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
+func (m *MultiClient) WaitUntilAllRequestsProcessed(chainID isc.ChainID, tx *iotago.Transaction, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
 	oldTimeout := m.Timeout
 	defer func() { m.Timeout = oldTimeout }()
 
@@ -51,7 +53,7 @@ func (m *MultiClient) WaitUntilAllRequestsProcessed(chainID isc.ChainID, tx *iot
 	var receipts []*apiclient.ReceiptResponse
 	var err error
 	err = m.Do(func(i int, w *apiclient.APIClient) error {
-		receipts, err = apiextensions.APIWaitUntilAllRequestsProcessed(w, chainID, tx, timeout)
+		receipts, err = apiextensions.APIWaitUntilAllRequestsProcessed(w, chainID, tx, waitForL1Confirmation, timeout)
 		return err
 	})
 
@@ -60,8 +62,8 @@ func (m *MultiClient) WaitUntilAllRequestsProcessed(chainID isc.ChainID, tx *iot
 
 // WaitUntilAllRequestsProcessedSuccessfully is similar to WaitUntilAllRequestsProcessed
 // but also checks the receipts and return an error if any of the requests was processed with an error
-func (m *MultiClient) WaitUntilAllRequestsProcessedSuccessfully(chainID isc.ChainID, tx *iotago.Transaction, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
-	receipts, err := m.WaitUntilAllRequestsProcessed(chainID, tx, timeout)
+func (m *MultiClient) WaitUntilAllRequestsProcessedSuccessfully(chainID isc.ChainID, tx *iotago.Transaction, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
+	receipts, err := m.WaitUntilAllRequestsProcessed(chainID, tx, waitForL1Confirmation, timeout)
 	if err != nil {
 		return receipts, err
 	}

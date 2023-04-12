@@ -343,11 +343,18 @@ type ApiWaitForRequestRequest struct {
 	chainID string
 	requestID string
 	timeoutSeconds *int32
+	waitForL1Confirmation *bool
 }
 
 // The timeout in seconds
 func (r ApiWaitForRequestRequest) TimeoutSeconds(timeoutSeconds int32) ApiWaitForRequestRequest {
 	r.timeoutSeconds = &timeoutSeconds
+	return r
+}
+
+// Wait for the block to be confirmed on L1
+func (r ApiWaitForRequestRequest) WaitForL1Confirmation(waitForL1Confirmation bool) ApiWaitForRequestRequest {
+	r.waitForL1Confirmation = &waitForL1Confirmation
 	return r
 }
 
@@ -397,6 +404,9 @@ func (a *RequestsApiService) WaitForRequestExecute(r ApiWaitForRequestRequest) (
 
 	if r.timeoutSeconds != nil {
 		parameterAddToQuery(localVarQueryParams, "timeoutSeconds", r.timeoutSeconds, "")
+	}
+	if r.waitForL1Confirmation != nil {
+		parameterAddToQuery(localVarQueryParams, "waitForL1Confirmation", r.waitForL1Confirmation, "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}

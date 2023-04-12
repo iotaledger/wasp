@@ -149,7 +149,7 @@ func testPost1Request(t *testing.T, e *ChainEnv) {
 	tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
 
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(t, err)
 
 	e.expectCounter(contractID.Hname(), 43)
@@ -174,7 +174,7 @@ func testPost3Recursive(t *testing.T, e *ChainEnv) {
 	})
 	require.NoError(t, err)
 
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(t, err)
 
 	e.waitUntilCounterEquals(contractID.Hname(), 43+3, 10*time.Second)
@@ -199,7 +199,7 @@ func testPost5Requests(t *testing.T, e *ChainEnv) {
 		})
 		require.NoError(t, err)
 
-		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
 		require.NoError(t, err)
 
 		gasFeeCharged, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
@@ -236,7 +236,7 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 	}
 
 	for i := 0; i < 5; i++ {
-		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx[i], 30*time.Second)
+		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx[i], false, 30*time.Second)
 		require.NoError(t, err)
 
 		gasFeeCharged, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
