@@ -14,23 +14,9 @@ var Contract = coreutil.NewContract(evmnames.Contract, "EVM contract")
 
 var (
 	// EVM state
-	FuncSendTransaction                     = coreutil.Func(evmnames.FuncSendTransaction)
-	FuncCallContract                        = coreutil.Func(evmnames.FuncCallContract)
-	FuncGetBalance                          = coreutil.ViewFunc(evmnames.FuncGetBalance)
-	FuncGetNonce                            = coreutil.ViewFunc(evmnames.FuncGetNonce)
-	FuncGetReceipt                          = coreutil.ViewFunc(evmnames.FuncGetReceipt)
-	FuncGetCode                             = coreutil.ViewFunc(evmnames.FuncGetCode)
-	FuncGetBlockNumber                      = coreutil.ViewFunc(evmnames.FuncGetBlockNumber)
-	FuncGetBlockByNumber                    = coreutil.ViewFunc(evmnames.FuncGetBlockByNumber)
-	FuncGetBlockByHash                      = coreutil.ViewFunc(evmnames.FuncGetBlockByHash)
-	FuncGetTransactionByHash                = coreutil.ViewFunc(evmnames.FuncGetTransactionByHash)
-	FuncGetTransactionByBlockHashAndIndex   = coreutil.ViewFunc(evmnames.FuncGetTransactionByBlockHashAndIndex)
-	FuncGetTransactionByBlockNumberAndIndex = coreutil.ViewFunc(evmnames.FuncGetTransactionByBlockNumberAndIndex)
-	FuncGetTransactionCountByBlockHash      = coreutil.ViewFunc(evmnames.FuncGetTransactionCountByBlockHash)
-	FuncGetTransactionCountByBlockNumber    = coreutil.ViewFunc(evmnames.FuncGetTransactionCountByBlockNumber)
-	FuncGetStorage                          = coreutil.ViewFunc(evmnames.FuncGetStorage)
-	FuncGetLogs                             = coreutil.ViewFunc(evmnames.FuncGetLogs)
-	FuncGetChainID                          = coreutil.ViewFunc(evmnames.FuncGetChainID)
+	FuncSendTransaction = coreutil.Func(evmnames.FuncSendTransaction)
+	FuncCallContract    = coreutil.Func(evmnames.FuncCallContract)
+	FuncGetChainID      = coreutil.ViewFunc(evmnames.FuncGetChainID)
 
 	FuncRegisterERC20NativeToken              = coreutil.Func(evmnames.FuncRegisterERC20NativeToken)
 	FuncRegisterERC20NativeTokenOnRemoteChain = coreutil.Func(evmnames.FuncRegisterERC20NativeTokenOnRemoteChain)
@@ -78,3 +64,11 @@ const (
 
 // Gas is charged in isc VM (L1 currencies), not ETH
 var GasPrice = big.NewInt(0)
+
+const (
+	// KeyEVMState is the subrealm prefix for the EVM state, used by the emulator
+	KeyEVMState = "s"
+
+	// KeyISCMagic is the subrealm prefix for the ISC magic contract
+	KeyISCMagic = "m"
+)

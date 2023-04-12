@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
@@ -90,6 +91,10 @@ func (b *jsonRPCSoloBackend) ISCLatestState() state.State {
 
 func (b *jsonRPCSoloBackend) ISCStateByBlockIndex(blockIndex uint32) (state.State, error) {
 	return b.Chain.store.StateByIndex(blockIndex)
+}
+
+func (b *jsonRPCSoloBackend) ISCStateByTrieRoot(trieRoot trie.Hash) (state.State, error) {
+	return b.Chain.store.StateByTrieRoot(trieRoot)
 }
 
 func (b *jsonRPCSoloBackend) BaseToken() *parameters.BaseToken {

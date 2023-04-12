@@ -27,7 +27,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -183,11 +182,7 @@ func (e *ChainEnv) DeploySolidityContract(creator *ecdsa.PrivateKey, abiJSON str
 }
 
 func (e *ChainEnv) GetNonceEVM(addr common.Address) uint64 {
-	ret, err := e.NewChainClient().CallView(context.Background(), evm.Contract.Hname(), evm.FuncGetNonce.Name, dict.Dict{
-		evm.FieldAddress: addr.Bytes(),
-	})
-	require.NoError(e.t, err)
-	nonce, err := codec.DecodeUint64(ret.Get(evm.FieldResult))
+	nonce, err := e.EVMJSONRPClient(0).NonceAt(context.Background(), addr, nil)
 	require.NoError(e.t, err)
 	return nonce
 }

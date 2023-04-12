@@ -5,7 +5,6 @@ package evmimpl
 
 import (
 	"fmt"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -33,30 +32,18 @@ import (
 var Processor = evm.Contract.Processor(nil,
 	evm.FuncOpenBlockContext.WithHandler(restricted(openBlockContext)),
 	evm.FuncCloseBlockContext.WithHandler(restricted(closeBlockContext)),
+
 	evm.FuncSendTransaction.WithHandler(restricted(applyTransaction)),
 	evm.FuncCallContract.WithHandler(restricted(callContract)),
+
 	evm.FuncRegisterERC20NativeToken.WithHandler(restricted(registerERC20NativeToken)),
 	evm.FuncRegisterERC20NativeTokenOnRemoteChain.WithHandler(restricted(registerERC20NativeTokenOnRemoteChain)),
 	evm.FuncRegisterERC20ExternalNativeToken.WithHandler(registerERC20ExternalNativeToken),
 	evm.FuncRegisterERC721NFTCollection.WithHandler(restricted(registerERC721NFTCollection)),
 
 	// views
-	evm.FuncGetBalance.WithHandler(restrictedView(getBalance)),
-	evm.FuncGetNonce.WithHandler(restrictedView(getNonce)),
-	evm.FuncGetReceipt.WithHandler(restrictedView(getReceipt)),
-	evm.FuncGetCode.WithHandler(restrictedView(getCode)),
-	evm.FuncGetBlockNumber.WithHandler(restrictedView(getBlockNumber)),
-	evm.FuncGetBlockByNumber.WithHandler(restrictedView(getBlockByNumber)),
-	evm.FuncGetBlockByHash.WithHandler(restrictedView(getBlockByHash)),
-	evm.FuncGetTransactionByHash.WithHandler(restrictedView(getTransactionByHash)),
-	evm.FuncGetTransactionByBlockHashAndIndex.WithHandler(restrictedView(getTransactionByBlockHashAndIndex)),
-	evm.FuncGetTransactionByBlockNumberAndIndex.WithHandler(restrictedView(getTransactionByBlockNumberAndIndex)),
-	evm.FuncGetTransactionCountByBlockHash.WithHandler(restrictedView(getTransactionCountByBlockHash)),
-	evm.FuncGetTransactionCountByBlockNumber.WithHandler(restrictedView(getTransactionCountByBlockNumber)),
-	evm.FuncGetStorage.WithHandler(restrictedView(getStorage)),
-	evm.FuncGetLogs.WithHandler(restrictedView(getLogs)),
-	evm.FuncGetChainID.WithHandler(restrictedView(getChainID)),
-	evm.FuncGetERC20ExternalNativeTokenAddress.WithHandler(restrictedView(viewERC20ExternalNativeTokenAddress)),
+	evm.FuncGetERC20ExternalNativeTokenAddress.WithHandler(viewERC20ExternalNativeTokenAddress),
+	evm.FuncGetChainID.WithHandler(getChainID),
 )
 
 func SetInitialState(state kv.KVStore, evmChainID uint16, blockKeepAmount int32) {
@@ -333,84 +320,6 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 	addToPrivileged(ctx.State(), addr)
 
 	return nil
-}
-
-func getBalance(ctx isc.SandboxView) dict.Dict {
-	addr := common.BytesToAddress(ctx.Params().Get(evm.FieldAddress))
-	emu := createEmulatorR(ctx)
-	return result(emu.StateDB().GetBalance(addr).Bytes())
-}
-
-func getBlockNumber(ctx isc.SandboxView) dict.Dict {
-	emu := createEmulatorR(ctx)
-	return result(new(big.Int).SetUint64(emu.BlockchainDB().GetNumber()).Bytes())
-}
-
-func getBlockByNumber(ctx isc.SandboxView) dict.Dict {
-	return blockResult(blockByNumber(ctx))
-}
-
-func getBlockByHash(ctx isc.SandboxView) dict.Dict {
-	return blockResult(blockByHash(ctx))
-}
-
-func getTransactionByHash(ctx isc.SandboxView) dict.Dict {
-	return txResult(transactionByHash(ctx))
-}
-
-func getTransactionByBlockHashAndIndex(ctx isc.SandboxView) dict.Dict {
-	return txResult(transactionByBlockHashAndIndex(ctx))
-}
-
-func getTransactionByBlockNumberAndIndex(ctx isc.SandboxView) dict.Dict {
-	return txResult(transactionByBlockNumberAndIndex(ctx))
-}
-
-func getTransactionCountByBlockHash(ctx isc.SandboxView) dict.Dict {
-	return txCountResult(blockByHash(ctx))
-}
-
-func getTransactionCountByBlockNumber(ctx isc.SandboxView) dict.Dict {
-	return txCountResult(blockByNumber(ctx))
-}
-
-func getReceipt(ctx isc.SandboxView) dict.Dict {
-	txHash := common.BytesToHash(ctx.Params().Get(evm.FieldTransactionHash))
-	emu := createEmulatorR(ctx)
-	r := emu.BlockchainDB().GetReceiptByTxHash(txHash)
-	if r == nil {
-		return nil
-	}
-	return result(evmtypes.EncodeReceiptFull(r))
-}
-
-func getNonce(ctx isc.SandboxView) dict.Dict {
-	emu := createEmulatorR(ctx)
-	addr := common.BytesToAddress(ctx.Params().Get(evm.FieldAddress))
-	return result(codec.EncodeUint64(emu.StateDB().GetNonce(addr)))
-}
-
-func getCode(ctx isc.SandboxView) dict.Dict {
-	emu := createEmulatorR(ctx)
-	addr := common.BytesToAddress(ctx.Params().Get(evm.FieldAddress))
-	return result(emu.StateDB().GetCode(addr))
-}
-
-func getStorage(ctx isc.SandboxView) dict.Dict {
-	emu := createEmulatorR(ctx)
-	addr := common.BytesToAddress(ctx.Params().Get(evm.FieldAddress))
-	key := common.BytesToHash(ctx.Params().Get(evm.FieldKey))
-	data := emu.StateDB().GetState(addr, key)
-	return result(data[:])
-}
-
-func getLogs(ctx isc.SandboxView) dict.Dict {
-	q, err := evmtypes.DecodeFilterQuery(ctx.Params().Get(evm.FieldFilterQuery))
-	ctx.RequireNoError(err)
-	emu := createEmulatorR(ctx)
-	logs, err := emu.FilterLogs(q)
-	ctx.RequireNoError(err)
-	return result(evmtypes.EncodeLogs(logs))
 }
 
 func getChainID(ctx isc.SandboxView) dict.Dict {

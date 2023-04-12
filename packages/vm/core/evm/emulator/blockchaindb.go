@@ -6,8 +6,10 @@ package emulator
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -555,6 +557,84 @@ func (bc *BlockchainDB) makeBlock(header *types.Header) *types.Block {
 		bc.GetReceiptsByBlockNumber(blockNumber),
 		&fakeHasher{},
 	)
+}
+
+const (
+	maxBlocksInFilterRange = 1_000
+	maxLogsInResult        = 10_000
+)
+
+// FilterLogs executes a log filter operation, blocking during execution and
+// returning all the results in one batch.
+//
+//nolint:gocyclo
+func (bc *BlockchainDB) FilterLogs(query *ethereum.FilterQuery) ([]*types.Log, error) {
+	logs := make([]*types.Log, 0)
+
+	if query.BlockHash != nil {
+		blockNumber, ok := bc.GetBlockNumberByBlockHash(*query.BlockHash)
+		if !ok {
+			return nil, nil
+		}
+		receipts := bc.GetReceiptsByBlockNumber(blockNumber)
+		err := filterAndAppendToLogs(query, receipts, &logs)
+		if err != nil {
+			return nil, err
+		}
+		return logs, nil
+	}
+
+	// Initialize unset filter boundaries to run from genesis to chain head
+	first := big.NewInt(1) // skip genesis since it has no logs
+	last := new(big.Int).SetUint64(bc.GetNumber())
+	from := first
+	if query.FromBlock != nil && query.FromBlock.Cmp(first) >= 0 && query.FromBlock.Cmp(last) <= 0 {
+		from = query.FromBlock
+	}
+	to := last
+	if query.ToBlock != nil && query.ToBlock.Cmp(first) >= 0 && query.ToBlock.Cmp(last) <= 0 {
+		to = query.ToBlock
+	}
+
+	if !from.IsUint64() || !to.IsUint64() {
+		return nil, errors.New("block number is too large")
+	}
+	{
+		from := from.Uint64()
+		to := to.Uint64()
+		if to > from && to-from > maxBlocksInFilterRange {
+			return nil, errors.New("too many blocks in filter range")
+		}
+		for i := from; i <= to; i++ {
+			err := filterAndAppendToLogs(
+				query,
+				bc.GetReceiptsByBlockNumber(i),
+				&logs,
+			)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return logs, nil
+}
+
+func filterAndAppendToLogs(query *ethereum.FilterQuery, receipts []*types.Receipt, logs *[]*types.Log) error {
+	for _, r := range receipts {
+		if !evmtypes.BloomFilter(r.Bloom, query.Addresses, query.Topics) {
+			continue
+		}
+		for _, log := range r.Logs {
+			if !evmtypes.LogMatches(log, query.Addresses, query.Topics) {
+				continue
+			}
+			if len(*logs) >= maxLogsInResult {
+				return errors.New("too many logs in result")
+			}
+			*logs = append(*logs, log)
+		}
+	}
+	return nil
 }
 
 type fakeHasher struct{}

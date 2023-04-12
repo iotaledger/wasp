@@ -11,12 +11,11 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/pipe"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
 type Events struct {
 	BlockEvents    *event.Event1[*ISCEvent[[]string]]
-	NewBlock       *event.Event1[*ISCEvent[*blocklog.BlockInfo]]
+	NewBlock       *event.Event1[*ISCEvent[*BlockWithTrieRoot]]
 	RequestReceipt *event.Event1[*ISCEvent[*ReceiptWithError]]
 
 	Published *event.Event1[*ISCEvent[any]]
@@ -45,7 +44,7 @@ func New(log *logger.Logger) *Publisher {
 		mutex:            &sync.RWMutex{},
 		log:              log,
 		Events: &Events{
-			NewBlock:       event.New1[*ISCEvent[*blocklog.BlockInfo]](),
+			NewBlock:       event.New1[*ISCEvent[*BlockWithTrieRoot]](),
 			RequestReceipt: event.New1[*ISCEvent[*ReceiptWithError]](),
 			BlockEvents:    event.New1[*ISCEvent[[]string]](),
 			Published:      event.New1[*ISCEvent[any]](),

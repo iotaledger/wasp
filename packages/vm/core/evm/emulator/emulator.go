@@ -4,7 +4,6 @@
 package emulator
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -20,7 +19,6 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	lru "github.com/hashicorp/golang-lru/v2"
 
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
@@ -77,16 +75,16 @@ func getConfig(chainID int) *params.ChainConfig {
 }
 
 const (
-	keyStateDB      = "s"
-	keyBlockchainDB = "b"
+	KeyStateDB      = "s"
+	KeyBlockchainDB = "b"
 )
 
 func newStateDB(store kv.KVStore, l2Balance L2Balance) *StateDB {
-	return NewStateDB(subrealm.New(store, keyStateDB), l2Balance)
+	return NewStateDB(subrealm.New(store, KeyStateDB), l2Balance)
 }
 
 func newBlockchainDB(store kv.KVStore, blockGasLimit uint64) *BlockchainDB {
-	return NewBlockchainDB(subrealm.New(store, keyBlockchainDB), blockGasLimit)
+	return NewBlockchainDB(subrealm.New(store, KeyBlockchainDB), blockGasLimit)
 }
 
 // Init initializes the EVM state with the provided genesis allocation parameters
@@ -309,85 +307,6 @@ func (e *EVMEmulator) SendTransaction(
 
 func (e *EVMEmulator) MintBlock() {
 	e.BlockchainDB().MintBlock(e.timestamp)
-}
-
-const (
-	maxBlocksInFilterRange = 1_000
-	maxLogsInResult        = 10_000
-)
-
-// FilterLogs executes a log filter operation, blocking during execution and
-// returning all the results in one batch.
-//
-//nolint:gocyclo
-func (e *EVMEmulator) FilterLogs(query *ethereum.FilterQuery) ([]*types.Log, error) {
-	logs := make([]*types.Log, 0)
-	bc := e.BlockchainDB()
-
-	if query.BlockHash != nil {
-		blockNumber, ok := bc.GetBlockNumberByBlockHash(*query.BlockHash)
-		if !ok {
-			return nil, nil
-		}
-		receipts := bc.GetReceiptsByBlockNumber(blockNumber)
-		err := filterAndAppendToLogs(query, receipts, &logs)
-		if err != nil {
-			return nil, err
-		}
-		return logs, nil
-	}
-
-	// Initialize unset filter boundaries to run from genesis to chain head
-	first := big.NewInt(1) // skip genesis since it has no logs
-	last := new(big.Int).SetUint64(bc.GetNumber())
-	from := first
-	if query.FromBlock != nil && query.FromBlock.Cmp(first) >= 0 && query.FromBlock.Cmp(last) <= 0 {
-		from = query.FromBlock
-	}
-	to := last
-	if query.ToBlock != nil && query.ToBlock.Cmp(first) >= 0 && query.ToBlock.Cmp(last) <= 0 {
-		to = query.ToBlock
-	}
-
-	if !from.IsUint64() || !to.IsUint64() {
-		return nil, errors.New("block number is too large")
-	}
-	{
-		from := from.Uint64()
-		to := to.Uint64()
-		if to > from && to-from > maxBlocksInFilterRange {
-			return nil, errors.New("too many blocks in filter range")
-		}
-		for i := from; i <= to; i++ {
-			err := filterAndAppendToLogs(
-				query,
-				bc.GetReceiptsByBlockNumber(i),
-				&logs,
-			)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	return logs, nil
-}
-
-func filterAndAppendToLogs(query *ethereum.FilterQuery, receipts []*types.Receipt, logs *[]*types.Log) error {
-	for _, r := range receipts {
-		if !evmtypes.BloomFilter(r.Bloom, query.Addresses, query.Topics) {
-			continue
-		}
-		for _, log := range r.Logs {
-			if !evmtypes.LogMatches(log, query.Addresses, query.Topics) {
-				continue
-			}
-			if len(*logs) >= maxLogsInResult {
-				return errors.New("too many logs in result")
-			}
-			*logs = append(*logs, log)
-		}
-	}
-	return nil
 }
 
 func (e *EVMEmulator) Signer() types.Signer {

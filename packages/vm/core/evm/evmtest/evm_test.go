@@ -1536,8 +1536,7 @@ func TestSendEntireBalance(t *testing.T) {
 	err = env.evmChain.SendTransaction(tx)
 	// this will produce an error because there won't be tokens left in the account to pay for gas
 	require.Error(t, err)
-	evmReceipt, err := env.evmChain.TransactionReceipt(tx.Hash())
-	require.NoError(t, err)
+	evmReceipt := env.evmChain.TransactionReceipt(tx.Hash())
 	require.Equal(t, evmReceipt.Status, types.ReceiptStatusFailed)
 	rec := env.soloChain.LastReceipt()
 	require.EqualValues(t, rec.ResolvedError, vm.ErrNotEnoughTokensLeftForGas.Error())
@@ -1686,8 +1685,7 @@ func TestChangeGasLimit(t *testing.T) {
 	}
 
 	for _, h := range blockHashes {
-		b, err := env.evmChain.BlockByHash(h)
-		require.NoError(t, err)
+		b := env.evmChain.BlockByHash(h)
 		require.Equal(t, b.Hash(), h)
 	}
 }
