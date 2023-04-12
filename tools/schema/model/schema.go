@@ -15,6 +15,7 @@ import (
 
 type Func struct {
 	Name    string
+	Alias   string
 	Access  DefElt
 	Kind    string
 	Hname   isc.Hname
@@ -131,9 +132,16 @@ func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, v
 		}
 
 		f := &Func{}
-		f.Name = funcName.Val
+		fName := strings.TrimSpace(funcName.Val)
+		f.Name = fName
+		f.Alias = fName
+		index := strings.Index(fName, "=")
+		if index >= 0 {
+			f.Name = strings.TrimSpace(fName[:index])
+			f.Alias = strings.TrimSpace(fName[index+1:])
+		}
 		f.Kind = funcKind
-		f.Hname = isc.Hn(funcName.Val)
+		f.Hname = isc.Hn(f.Alias)
 		f.Line = funcName.Line
 		f.Comment = funcName.Comment
 

@@ -4,6 +4,7 @@
 package test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coregovernance"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 )
 
@@ -88,6 +90,26 @@ func TestDelegateChainOwnership(t *testing.T) {
 	require.NoError(t, ctx.Err)
 }
 
+func TestSetEVMGasRatioAndGetEVMGasRatio(t *testing.T) {
+	ctx := setupGovernance(t)
+	require.NoError(t, ctx.Err)
+
+	gasRatio := "1:2"
+	fSet := coregovernance.ScFuncs.SetEVMGasRatio(ctx)
+	r, err := util.Ratio32FromString(gasRatio)
+	require.NoError(t, err)
+	fSet.Params.GasRatio().SetValue(r.Bytes())
+	fSet.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	fGet := coregovernance.ScFuncs.GetEVMGasRatio(ctx)
+	fGet.Func.Call()
+	require.NoError(t, ctx.Err)
+	resGasRatio, err := util.Ratio32FromBytes(fGet.Results.GasRatio().Value())
+	require.NoError(t, err)
+	require.Equal(t, r, resGasRatio)
+}
+
 func TestSetFeePolicy(t *testing.T) {
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
@@ -98,6 +120,31 @@ func TestSetFeePolicy(t *testing.T) {
 	f.Params.FeePolicy().SetValue(gfp0.Bytes())
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
+}
+
+func TestSetGasLimitsAndGetGasLimits(t *testing.T) {
+	ctx := setupGovernance(t)
+	require.NoError(t, ctx.Err)
+
+	gasLimit := &gas.Limits{
+		MaxGasPerBlock:         9_000_000_000,
+		MinGasPerRequest:       1_000,
+		MaxGasPerRequest:       5_000_000,
+		MaxGasExternalViewCall: 5_000_000,
+	}
+
+	fSet := coregovernance.ScFuncs.SetGasLimits(ctx)
+	fSet.Params.GasLimits().SetValue(gasLimit.Bytes())
+	fSet.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	fGet := coregovernance.ScFuncs.GetGasLimits(ctx)
+	fGet.Func.Call()
+	require.NoError(t, ctx.Err)
+	retGasLimitBytes := fGet.Results.GasLimits().Value()
+	retGasLimit, err := gas.LimitsFromBytes(retGasLimitBytes)
+	require.NoError(t, err)
+	require.Equal(t, gasLimit, retGasLimit)
 }
 
 func TestAddCandidateNode(t *testing.T) {
@@ -124,6 +171,85 @@ func TestRevokeAccessNode(t *testing.T) {
 	f.Params.Certificate().SetValue(nil)
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
+}
+
+func TestSetMaintenanceStatusAndSetOnAndOff(t *testing.T) {
+	ctx := setupGovernance(t)
+	require.NoError(t, ctx.Err)
+
+	fOn := coregovernance.ScFuncs.SetMaintenanceOn(ctx)
+	fOn.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	fStatus := coregovernance.ScFuncs.GetMaintenanceStatus(ctx)
+	fStatus.Func.Call()
+	require.NoError(t, ctx.Err)
+	status := fStatus.Results.Status().Value()
+	require.True(t, status)
+
+	fOff := coregovernance.ScFuncs.SetMaintenanceOff(ctx)
+	fOff.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	fStatus.Func.Call()
+	require.NoError(t, ctx.Err)
+	status = fStatus.Results.Status().Value()
+	require.False(t, status)
+}
+
+func TestSetCustomMetadataAndGetCustomMetadata(t *testing.T) {
+	ctx := setupGovernance(t)
+	require.NoError(t, ctx.Err)
+
+	customMetadata := "some rand metadata"
+	fSet := coregovernance.ScFuncs.SetCustomMetadata(ctx)
+	fSet.Params.Metadata().SetValue([]byte(customMetadata))
+	fSet.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	fGet := coregovernance.ScFuncs.GetCustomMetadata(ctx)
+	fGet.Func.Call()
+	require.NoError(t, ctx.Err)
+	retCustomMetadata := fGet.Results.Metadata().Value()
+	require.Equal(t, customMetadata, string(retCustomMetadata))
+}
+
+func TestGetAllowedStateControllerAddresses(t *testing.T) {
+	ctx := setupGovernance(t)
+	require.NoError(t, ctx.Err)
+
+	user0 := ctx.NewSoloAgent("user0")
+	user1 := ctx.NewSoloAgent("user1")
+	users := []*wasmsolo.SoloAgent{user0, user1}
+	fAdd := coregovernance.ScFuncs.AddAllowedStateControllerAddress(ctx)
+	fAdd.Params.Address().SetValue(user0.ScAgentID().Address())
+	fAdd.Func.Post()
+	fAdd.Params.Address().SetValue(user1.ScAgentID().Address())
+	fAdd.Func.Post()
+
+	f := coregovernance.ScFuncs.GetAllowedStateControllerAddresses(ctx)
+	f.Func.Call()
+	require.NoError(t, ctx.Err)
+
+	require.Equal(t, uint32(len(users)), f.Results.Controllers().Length())
+	for i := range users {
+		retScAddress := f.Results.Controllers().GetAddress(uint32(i)).Value()
+		// FIXME why isn't it the same as ctx.Chain.StateControllerAddress
+		// if 'AddAllowedStateControllerAddress' is not called, then the return of GetAllowedStateControllerAddresses is zero
+		// require.Equal(t, ctx.Chain.StateControllerAddress, retScAddress)
+		require.True(t, ifContainAddress(users, retScAddress))
+	}
+}
+
+func ifContainAddress(agents []*wasmsolo.SoloAgent, addrIn wasmtypes.ScAddress) bool {
+	for _, agent := range agents {
+		addr := agent.ScAgentID().Address()
+		if addr == addrIn {
+			return true
+		}
+	}
+	fmt.Println("not exist address: ", addrIn)
+	return false
 }
 
 func TestChangeAccessNodes(t *testing.T) {

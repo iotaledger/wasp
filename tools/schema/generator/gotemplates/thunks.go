@@ -26,8 +26,8 @@ $#each func libExportView
 	},
 }
 
-func OnDispatch(index int32) {
-	exportMap.Dispatch(index)
+func OnDispatch(index int32) *wasmlib.ScExportMap {
+	return exportMap.Dispatch(index)
 }
 $#each func libThunk
 `,

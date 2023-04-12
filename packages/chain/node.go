@@ -43,6 +43,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -143,7 +144,7 @@ type chainNodeImpl struct {
 	nodeIdentity        *cryptolib.KeyPair
 	chainID             isc.ChainID
 	chainMgr            gpa.AckHandler
-	chainStore          state.Store
+	chainStore          indexedstore.IndexedStore
 	nodeConn            NodeConnection
 	tangleTime          time.Time
 	mempool             mempool.Mempool
@@ -250,7 +251,7 @@ func New(
 	ctx context.Context,
 	log *logger.Logger,
 	chainID isc.ChainID,
-	chainStore state.Store,
+	chainStore indexedstore.IndexedStore,
 	nodeConn NodeConnection,
 	nodeIdentity *cryptolib.KeyPair,
 	processorConfig *processors.Config,
@@ -398,8 +399,8 @@ func New(
 	cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr.AsGPA(), redeliveryPeriod)
 	cni.stateMgr = stateMgr
 	cni.mempool = mempool
-	cni.stateTrackerAct = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerActCB, cni.log.Named("ST.ACT"))
-	cni.stateTrackerCnf = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerCnfCB, cni.log.Named("ST.CNF"))
+	cni.stateTrackerAct = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerActCB, chainMetrics.SetChainActiveStateWant, chainMetrics.SetChainActiveStateHave, cni.log.Named("ST.ACT"))
+	cni.stateTrackerCnf = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerCnfCB, chainMetrics.SetChainConfirmedStateWant, chainMetrics.SetChainConfirmedStateHave, cni.log.Named("ST.CNF"))
 	cni.updateAccessNodes(func() {
 		cni.accessNodesFromNode = accessNodesFromNode
 		cni.accessNodesFromACT = []*cryptolib.PublicKey{}
@@ -1011,7 +1012,7 @@ func (cni *chainNodeImpl) ID() isc.ChainID {
 	return cni.chainID
 }
 
-func (cni *chainNodeImpl) Store() state.Store {
+func (cni *chainNodeImpl) Store() indexedstore.IndexedStore {
 	return cni.chainStore
 }
 
@@ -1205,7 +1206,7 @@ func (cni *chainNodeImpl) GetConsensusWorkflowStatus() ConsensusWorkflowStatus {
 	return &consensusWorkflowStatusImpl{}
 }
 
-func (cni *chainNodeImpl) tryRecoverStoreFromWAL(chainStore state.Store, chainWAL smGPAUtils.BlockWAL) {
+func (cni *chainNodeImpl) tryRecoverStoreFromWAL(chainStore indexedstore.IndexedStore, chainWAL smGPAUtils.BlockWAL) {
 	defer func() {
 		if r := recover(); r != nil {
 			// Don't fail, if this crashes for some reason, that's an optional step.

@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
 func (ch *Chain) RunOffLedgerRequest(r isc.Request) (dict.Dict, error) {
@@ -80,6 +81,7 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTask 
 
 	err := ch.vmRunner.Run(task)
 	require.NoError(ch.Env.T, err)
+	accounts.CheckLedger(task.StateDraft, "solo")
 	return task
 }
 

@@ -25,7 +25,7 @@ import (
 	wasp_yaml "github.com/iotaledger/wasp/tools/schema/model/yaml"
 )
 
-const version = "schema tool version 1.1.3"
+const version = "schema tool version 1.1.6"
 
 var (
 	flagBuild   = flag.Bool("build", false, "build wasm target for specified languages")
@@ -97,45 +97,48 @@ func main() {
 }
 
 func addSubProjectToParentToml() error {
-	tomlPath := "./Cargo.toml"
+	const cargoTomlPath = "../Cargo.toml"
+	_, err := os.Stat(cargoTomlPath)
+	if err != nil {
+		return nil
+	}
+	b, err := os.ReadFile(cargoTomlPath)
+	if err != nil {
+		return err
+	}
+	content := string(b)
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
+	// in case of Windows replace path separators
+	cwd = strings.ReplaceAll(cwd, "\\", "/")
 	projectName := path.Base(cwd)
-	_, err = os.Stat(cwd + "/../" + tomlPath)
-	if err != nil {
-		return nil
-	}
-	b, err := os.ReadFile(cwd + "/../" + tomlPath)
-	if err != nil {
-		return err
-	}
-	tomlContent := string(b)
 
 	projectFormat := []string{
 		"\"%s/rs/%s\"",
 		"\"%s/rs/%simpl\"",
 		"\"%s/rs/%swasm\"",
 	}
-	start := strings.Index(tomlContent, "members")
-	memberContent := strings.Split(tomlContent[start:], "]")[0]
+	start := strings.Index(content, "members")
+	memberContent := strings.Split(content[start:], "]")[0]
 	end := start + len(memberContent)
 	insertContent := ""
 
+	changes := false
 	for _, format := range projectFormat {
-		name := fmt.Sprintf(format, projectName, projectName)
-		if !strings.Contains(memberContent, name) {
-			insertContent += ("\t" + name + ",\n")
+		path := fmt.Sprintf(format, projectName, projectName)
+		if !strings.Contains(memberContent, path) {
+			insertContent += "\t" + path + ",\n"
+			changes = true
 		}
 	}
-	finalContent := tomlContent[:start] + memberContent + insertContent + tomlContent[end:]
-	err = os.WriteFile(cwd+"/../"+tomlPath, []byte(finalContent), 0o600)
-	if err != nil {
-		return err
+	if !changes {
+		return nil
 	}
-
-	return nil
+	finalContent := content[:start] + memberContent + insertContent + content[end:]
+	return os.WriteFile(cargoTomlPath, []byte(finalContent), 0o600)
 }
 
 func determineSchemaRegenerationTime(file *os.File, s *model.Schema) error {
@@ -216,7 +219,7 @@ func generateSchema(file *os.File, core ...bool) error {
 		// Add current contract to the workspace in the parent folder
 		err = addSubProjectToParentToml()
 		if err != nil {
-			log.Panic(err)
+			return err
 		}
 	}
 

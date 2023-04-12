@@ -23,7 +23,7 @@ type RequestDetail struct {
 	CallTarget CallTarget `json:"callTarget"`
 	FungibleTokens Assets `json:"fungibleTokens"`
 	// The gas budget (uint64 as string)
-	GasGudget string `json:"gasGudget"`
+	GasBudget string `json:"gasBudget"`
 	IsEVM bool `json:"isEVM"`
 	IsOffLedger bool `json:"isOffLedger"`
 	Nft NFTDataResponse `json:"nft"`
@@ -37,12 +37,12 @@ type RequestDetail struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewRequestDetail(allowance Assets, callTarget CallTarget, fungibleTokens Assets, gasGudget string, isEVM bool, isOffLedger bool, nft NFTDataResponse, params JSONDict, requestId string, senderAccount string, targetAddress string) *RequestDetail {
+func NewRequestDetail(allowance Assets, callTarget CallTarget, fungibleTokens Assets, gasBudget string, isEVM bool, isOffLedger bool, nft NFTDataResponse, params JSONDict, requestId string, senderAccount string, targetAddress string) *RequestDetail {
 	this := RequestDetail{}
 	this.Allowance = allowance
 	this.CallTarget = callTarget
 	this.FungibleTokens = fungibleTokens
-	this.GasGudget = gasGudget
+	this.GasBudget = gasBudget
 	this.IsEVM = isEVM
 	this.IsOffLedger = isOffLedger
 	this.Nft = nft
@@ -133,28 +133,28 @@ func (o *RequestDetail) SetFungibleTokens(v Assets) {
 	o.FungibleTokens = v
 }
 
-// GetGasGudget returns the GasGudget field value
-func (o *RequestDetail) GetGasGudget() string {
+// GetGasBudget returns the GasBudget field value
+func (o *RequestDetail) GetGasBudget() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.GasGudget
+	return o.GasBudget
 }
 
-// GetGasGudgetOk returns a tuple with the GasGudget field value
+// GetGasBudgetOk returns a tuple with the GasBudget field value
 // and a boolean to check if the value has been set.
-func (o *RequestDetail) GetGasGudgetOk() (*string, bool) {
+func (o *RequestDetail) GetGasBudgetOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.GasGudget, true
+	return &o.GasBudget, true
 }
 
-// SetGasGudget sets field value
-func (o *RequestDetail) SetGasGudget(v string) {
-	o.GasGudget = v
+// SetGasBudget sets field value
+func (o *RequestDetail) SetGasBudget(v string) {
+	o.GasBudget = v
 }
 
 // GetIsEVM returns the IsEVM field value
@@ -338,7 +338,7 @@ func (o RequestDetail) ToMap() (map[string]interface{}, error) {
 	toSerialize["allowance"] = o.Allowance
 	toSerialize["callTarget"] = o.CallTarget
 	toSerialize["fungibleTokens"] = o.FungibleTokens
-	toSerialize["gasGudget"] = o.GasGudget
+	toSerialize["gasBudget"] = o.GasBudget
 	toSerialize["isEVM"] = o.IsEVM
 	toSerialize["isOffLedger"] = o.IsOffLedger
 	toSerialize["nft"] = o.Nft

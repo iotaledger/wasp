@@ -44,20 +44,20 @@ function then transfers it into the caller's L2 account on that chain.
 
 1. The caller contract needs to provide sufficient base tokens in its
 allowance, to cover the gas fee GAS1 for this request.
-Note that this amount depend on the fee structure of the target chain,
+Note that this amount depends on the fee structure of the target chain,
 which can be different from the fee structure of the caller's own chain.
 
 2. The caller contract also needs to provide sufficient base tokens in
 its allowance, to cover the gas fee GAS2 for the resulting request to
 accounts.TransferAllowanceTo() on the origin chain. The caller needs to
-specify this GAS2 amount through the GasReserve parameter.
+also specify this GAS2 amount through the GasReserve parameter.
 
 3. The caller contract also needs to provide a storage deposit SD with
 this request, holding enough base tokens *independent* of the GAS1 and
 GAS2 amounts.
 Since this storage deposit is dictated by L1 we can use this amount as
 storage deposit for the resulting accounts.TransferAllowanceTo() request,
-where it will be then returned to the caller as part of the transfer.
+where it will then be returned to the caller as part of the transfer.
 
 4. This means that the caller contract needs to provide at least
 GAS1 + GAS2 + SD base tokens as assets to this request, and provide an

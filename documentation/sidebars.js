@@ -362,6 +362,11 @@ module.exports = {
                 },
                 {
                     type: 'doc',
+                    label: 'Quickstart',
+                    id: 'guide/evm/quickstart',
+                },
+                {
+                    type: 'doc',
                     label: 'Compatibility',
                     id: 'guide/evm/compatibility',
                 },

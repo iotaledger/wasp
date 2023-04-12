@@ -62,6 +62,16 @@ func newChainStateManagerMetric(provider *ChainMetricsProvider, chainID isc.Chai
 
 	// init values so they appear in prometheus
 	provider.smCacheSize.With(metricsLabels)
+	provider.smBlocksFetching.With(metricsLabels)
+	provider.smBlocksPending.With(metricsLabels)
+	provider.smBlocksCommitted.With(metricsLabels)
+	provider.smRequestsWaiting.With(metricsLabels)
+	provider.smCSPHandlingDuration.With(metricsLabels)
+	provider.smCDSHandlingDuration.With(metricsLabels)
+	provider.smCBPHandlingDuration.With(metricsLabels)
+	provider.smFSDHandlingDuration.With(metricsLabels)
+	provider.smTTHandlingDuration.With(metricsLabels)
+	provider.smBlockFetchDuration.With(metricsLabels)
 
 	return &chainStateManagerMetric{
 		provider:      provider,

@@ -109,13 +109,13 @@ jobs:
           make compile-solidity
           cd contracts/wasm
           if [ $TEST_LANG == "go" ]; then
-            go test ./... -p 1
+            go test ./...
           elif [ $TEST_LANG == "gowasm" ]; then
-            go test ./... -gowasm  -p 1
+            go test ./... -gowasm
           elif [ $TEST_LANG == "tswasm" ]; then
-            go test ./... -tswasm  -p 1
+            go test ./... -tswasm
           elif [ $TEST_LANG == "rswasm" ]; then
-            go test ./... -rswasm  -p 1
+            go test ./... -rswasm
           fi
 
   golangci:

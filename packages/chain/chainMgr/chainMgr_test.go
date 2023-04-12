@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
@@ -126,7 +127,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	step2AO, step2TX := tcl.FakeTX(originAO, cmtAddrA)
 	for nid := range nodes {
 		consReq := nodes[nid].Output().(*chainMgr.Output).NeedConsensus()
-		fake2ST := state.NewStore(mapdb.NewMapDB())
+		fake2ST := indexedstore.NewFake(state.NewStore(mapdb.NewMapDB()))
 		origin.InitChain(fake2ST, nil, 0)
 		block0, err := fake2ST.BlockByIndex(0)
 		require.NoError(t, err)

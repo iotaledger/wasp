@@ -5,6 +5,7 @@ package state
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -90,7 +91,7 @@ func (db *storeDB) saveBlock(block Block) {
 func (db *storeDB) readBlock(root trie.Hash) (*block, error) {
 	key := keyBlockByTrieRoot(root)
 	if !db.mustHas(key) {
-		return nil, ErrTrieRootNotFound
+		return nil, fmt.Errorf("%w %s", ErrTrieRootNotFound, root)
 	}
 	return BlockFromBytes(db.mustGet(key))
 }

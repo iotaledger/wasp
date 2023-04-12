@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/labstack/gommon/log"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/runtime/event"
@@ -28,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -54,45 +56,59 @@ func NewEVMChain(backend ChainBackend, pub *publisher.Publisher, log *logger.Log
 		log:      log,
 	}
 
+	blocksFromPublisher := pipe.NewInfinitePipe[uint32]()
+
 	pub.Events.NewBlock.Hook(func(ev *publisher.ISCEvent[*blocklog.BlockInfo]) {
+		blockIndex := ev.Payload.BlockIndex()
 		if !ev.ChainID.Equals(*e.backend.ISCChainID()) {
 			return
 		}
-		state, err := e.backend.ISCStateByBlockIndex(ev.Payload.BlockIndex())
-		if err != nil {
-			log.Errorf("NewEVMChain.Hook.ISCStateByBlockIndex(blockIndex=%v) returned error: %v", ev.Payload.BlockIndex(), err)
-			return
-		}
-		blockNumber := new(big.Int).SetUint64(evmBlockNumberByISCBlockIndex(ev.Payload.BlockIndex()))
-		block, err := e.blockByNumber(state, blockNumber)
-		if err != nil {
-			log.Errorf("NewEVMChain.Hook.blockByNumber(state=%v, blockNumber=%v) returned error: %v", state, blockNumber, err)
-			return
-		}
-
-		q := &ethereum.FilterQuery{
-			FromBlock: blockNumber,
-			ToBlock:   blockNumber,
-		}
-		ret, err := e.backend.ISCCallView(state, evm.Contract.Name, evm.FuncGetLogs.Name, dict.Dict{
-			evm.FieldFilterQuery: evmtypes.EncodeFilterQuery(q),
-		})
-		if err != nil {
-			log.Errorf("NewEVMChain.Hook.ISCCallView(state=%v, FuncGetLogs, ...) returned error: %v", state, err)
-			return
-		}
-		logs, err := evmtypes.DecodeLogs(ret.Get(evm.FieldResult))
-		if err != nil {
-			log.Errorf("NewEVMChain.Hook.DecodeLogs(...) returned error: %v", err)
-			return
-		}
-		e.newBlock.Trigger(&NewBlockEvent{
-			block: block,
-			logs:  logs,
-		})
+		blocksFromPublisher.In() <- blockIndex
 	})
 
+	// publish blocks on a separate goroutine so that we don't block the publisher
+	go func() {
+		for blockIndex := range blocksFromPublisher.Out() {
+			e.publishNewBlock(blockIndex)
+		}
+	}()
+
 	return e
+}
+
+func (e *EVMChain) publishNewBlock(blockIndex uint32) {
+	state, err := e.backend.ISCStateByBlockIndex(blockIndex)
+	if err != nil {
+		log.Errorf("NewEVMChain.Hook.ISCStateByBlockIndex(blockIndex=%v) returned error: %v", blockIndex, err)
+		return
+	}
+	blockNumber := new(big.Int).SetUint64(evmBlockNumberByISCBlockIndex(blockIndex))
+	block, err := e.blockByNumber(state, blockNumber)
+	if err != nil {
+		log.Errorf("NewEVMChain.Hook.blockByNumber(state=%v, blockNumber=%v) returned error: %v", state, blockNumber, err)
+		return
+	}
+
+	q := &ethereum.FilterQuery{
+		FromBlock: blockNumber,
+		ToBlock:   blockNumber,
+	}
+	ret, err := e.backend.ISCCallView(state, evm.Contract.Name, evm.FuncGetLogs.Name, dict.Dict{
+		evm.FieldFilterQuery: evmtypes.EncodeFilterQuery(q),
+	})
+	if err != nil {
+		log.Errorf("NewEVMChain.Hook.ISCCallView(state=%v, FuncGetLogs, ...) returned error: %v", state, err)
+		return
+	}
+	logs, err := evmtypes.DecodeLogs(ret.Get(evm.FieldResult))
+	if err != nil {
+		log.Errorf("NewEVMChain.Hook.DecodeLogs(...) returned error: %v", err)
+		return
+	}
+	e.newBlock.Trigger(&NewBlockEvent{
+		block: block,
+		logs:  logs,
+	})
 }
 
 func (e *EVMChain) Signer() (types.Signer, error) {

@@ -17,7 +17,6 @@ type Wallet struct {
 
 func Load() *Wallet {
 	seedHex := viper.GetString("wallet.seed")
-
 	if seedHex == "" {
 		log.Fatal("call `init` first")
 	}

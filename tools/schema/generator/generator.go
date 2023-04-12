@@ -160,8 +160,8 @@ func (g *GenBase) createSourceFile(name string, mustExist bool, macro ...string)
 		name = macro[0]
 	}
 	return g.createFile(path, true, func() {
-		g.emit("copyright")
 		g.emit("warning")
+		g.emit("copyright")
 		g.emit(name + g.extension)
 	})
 }

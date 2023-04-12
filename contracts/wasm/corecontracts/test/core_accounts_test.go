@@ -484,7 +484,7 @@ func ifContainNFTID(nfts []*isc.NFT, nftID wasmtypes.ScNftID) bool {
 		if nft.ID.String() == nftID.String() {
 			stringRet = true
 		}
-		if bytes.Equal([]byte(nft.ID[:]), nftID.Bytes()) {
+		if bytes.Equal(nft.ID[:], nftID.Bytes()) {
 			byteRet = true
 		}
 		ret = stringRet && byteRet

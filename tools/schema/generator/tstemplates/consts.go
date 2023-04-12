@@ -47,7 +47,7 @@ export const $constPrefix$FldName$fldPad = '$fldAlias';
 `,
 	// *******************************
 	"constFunc": `
-export const $Kind$FuncName$funcPad = '$funcName';
+export const $Kind$FuncName$funcPad = '$funcAlias';
 `,
 	// *******************************
 	"constHFunc": `

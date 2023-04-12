@@ -5,8 +5,6 @@ package state
 
 import (
 	"errors"
-	"fmt"
-	"sync"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -21,14 +19,6 @@ type store struct {
 	// db is the backing key-value store
 	db *storeDB
 
-	// mu protects all accesses by block index, since it is mutable information
-	mu sync.RWMutex
-
-	// trieRootByIndex is a cache of index -> trieRoot, since the only one
-	// stored in the db is the latestTrieRoot and all others have to be discovered by
-	// traversing the block chain backwards
-	trieRootByIndex map[uint32]trie.Hash
-
 	// stateCache is a cache of immutable state readers by trie root. Reusing the
 	// State instances allows to better take advantage of its internal caches.
 	stateCache *lru.Cache[trie.Hash, *state]
@@ -40,9 +30,8 @@ func NewStore(db kvstore.KVStore) Store {
 		panic(err)
 	}
 	return &store{
-		db:              &storeDB{db},
-		trieRootByIndex: make(map[uint32]trie.Hash),
-		stateCache:      stateCache,
+		db:         &storeDB{db},
+		stateCache: stateCache,
 	}
 }
 
@@ -151,100 +140,24 @@ func (s *store) Commit(d StateDraft) Block {
 }
 
 func (s *store) SetLatest(trieRoot trie.Hash) error {
-	block, err := s.BlockByTrieRoot(trieRoot)
+	_, err := s.BlockByTrieRoot(trieRoot)
 	if err != nil {
 		return err
 	}
-	state, err := s.StateByTrieRoot(trieRoot)
-	if err != nil {
-		return err
-	}
-	blockIndex := state.BlockIndex()
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.trieRootByIndex[blockIndex] == block.TrieRoot() {
-		// nothing to do
-		return nil
-	}
-
-	isNextInSameBranch := func() bool {
-		if blockIndex == 0 {
-			return false
-		}
-		if _, ok := s.trieRootByIndex[blockIndex]; ok {
-			return false
-		}
-		return s.trieRootByIndex[blockIndex-1] == block.PreviousL1Commitment().TrieRoot()
-	}()
-	if !isNextInSameBranch {
-		// reorg
-		s.trieRootByIndex = map[uint32]trie.Hash{}
-	}
-	s.trieRootByIndex[blockIndex] = block.TrieRoot()
 	s.db.setLatestTrieRoot(trieRoot)
 	return nil
 }
 
-func (s *store) BlockByIndex(index uint32) (Block, error) {
-	root, err := s.findTrieRootByIndex(index)
+func (s *store) LatestBlock() (Block, error) {
+	root, err := s.db.latestTrieRoot()
 	if err != nil {
 		return nil, err
 	}
 	return s.BlockByTrieRoot(root)
 }
 
-func (s *store) findTrieRootByIndex(index uint32) (trie.Hash, error) {
-	if cached, ok := func() (ret trie.Hash, ok bool) {
-		s.mu.RLock()
-		defer s.mu.RUnlock()
-		ret, ok = s.trieRootByIndex[index]
-		return
-	}(); ok {
-		return cached, nil
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	latestTrieRoot, err := s.db.latestTrieRoot()
-	if err != nil {
-		return trie.Hash{}, err
-	}
-	state, err := s.StateByTrieRoot(latestTrieRoot)
-	if err != nil {
-		return trie.Hash{}, err
-	}
-	latestBlockIndex := state.BlockIndex()
-	if index > latestBlockIndex {
-		return trie.Hash{}, fmt.Errorf(
-			"block %d not found (latest index is %d)",
-			index, latestBlockIndex,
-		)
-	}
-	s.trieRootByIndex[latestBlockIndex] = latestTrieRoot
-
-	for i := latestBlockIndex; i > 0 && i > index; i-- {
-		block, err := s.BlockByTrieRoot(s.trieRootByIndex[i])
-		if err != nil {
-			return trie.Hash{}, err
-		}
-		s.trieRootByIndex[i-1] = block.PreviousL1Commitment().TrieRoot()
-	}
-	return s.trieRootByIndex[index], nil
-}
-
-func (s *store) LatestBlock() (Block, error) {
-	index, err := s.LatestBlockIndex()
-	if err != nil {
-		return nil, err
-	}
-	return s.BlockByIndex(index)
-}
-
 func (s *store) LatestBlockIndex() (uint32, error) {
-	latestTrieRoot, err := s.db.latestTrieRoot()
+	latestTrieRoot, err := s.LatestTrieRoot()
 	if err != nil {
 		return 0, err
 	}
@@ -256,17 +169,13 @@ func (s *store) LatestBlockIndex() (uint32, error) {
 }
 
 func (s *store) LatestState() (State, error) {
-	index, err := s.LatestBlockIndex()
+	root, err := s.db.latestTrieRoot()
 	if err != nil {
 		return nil, err
 	}
-	return s.StateByIndex(index)
+	return s.StateByTrieRoot(root)
 }
 
-func (s *store) StateByIndex(index uint32) (State, error) {
-	block, err := s.BlockByIndex(index)
-	if err != nil {
-		return nil, err
-	}
-	return s.StateByTrieRoot(block.TrieRoot())
+func (s *store) LatestTrieRoot() (trie.Hash, error) {
+	return s.db.latestTrieRoot()
 }

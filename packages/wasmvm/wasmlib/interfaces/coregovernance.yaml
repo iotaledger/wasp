@@ -44,7 +44,7 @@ funcs:
   # fees
 
   # Sets the EVM gas ratio for the chain.
-  setEVMGasRatio:
+  setEVMGasRatio=setGasRatio:
     access: chain
     params:
       gasRatio=e: Bytes # serialized gas ratio
@@ -91,11 +91,11 @@ funcs:
 
   # Starts the chain maintenance mode, meaning no further requests
   # will be processed except calls to the governance contract.
-  setMaintenanceOn:
+  setMaintenanceOn=startMaintenance:
     access: chain
 
   # Stops the maintenance mode.
-  setMaintenanceOff:
+  setMaintenanceOff=stopMaintenance:
     access: chain
 
   # Changes optional extra metadata that is appended to the L1 AliasOutput.
@@ -128,7 +128,7 @@ views:
       feePolicy=g: Bytes # serialized fee policy
 
   # Returns the EVM gas ratio.
-  getEVMGasRatio:
+  getEVMGasRatio=getGasRatio:
     results:
       gasRatio=e: Bytes # serialized gas ratio
 
