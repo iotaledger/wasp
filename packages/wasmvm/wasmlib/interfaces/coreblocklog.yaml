@@ -1,5 +1,7 @@
 name: CoreBlockLog
+version: 1.0.10
 description: Block log contract
+author: Eric Hop <eric@iota.org>
 structs: {}
 typedefs: {}
 state: {}

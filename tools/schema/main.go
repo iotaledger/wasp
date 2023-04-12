@@ -263,8 +263,9 @@ func generateSchemaNew() error {
 
 	schemaDef := &model.SchemaDef{}
 	schemaDef.Name = model.DefElt{Val: name}
+	schemaDef.Author = model.DefElt{Val: model.DefaultAuthor}
 	schemaDef.Description = model.DefElt{Val: name + " description"}
-	schemaDef.Author = model.DefElt{Val: "Eric Hop <eric@iota.org>"}
+	schemaDef.Version = model.DefElt{Val: model.DefaultVersion}
 	schemaDef.Structs = make(model.DefMapMap)
 	schemaDef.Events = make(model.DefMapMap)
 	schemaDef.Typedefs = make(model.DefMap)

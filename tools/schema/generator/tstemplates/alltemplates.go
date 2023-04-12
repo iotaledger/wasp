@@ -114,7 +114,7 @@ import * as sc from './index';
 	"package.json": `
 {
   "name": "$package",
-  "version": "1.0.0",
+  "version": "$version",
   "description": "Interface library for: $scDesc",
   "main": "index.ts",
   "author": "$author",

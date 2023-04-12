@@ -1,5 +1,7 @@
 name: WasmRequests
+version: 1.0.10
 description: WasmLib request structures
+author: Eric Hop <eric@iota.org>
 events: {}
 structs:
   CallRequest:

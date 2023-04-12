@@ -13,6 +13,11 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
+const (
+	DefaultAuthor  = "Eric Hop <eric@iota.org>"
+	DefaultVersion = "0.0.1"
+)
+
 type Func struct {
 	Name    string
 	Alias   string
@@ -34,8 +39,9 @@ type Schema struct {
 	Author        string
 	ContractName  string
 	Copyright     string
-	PackageName   string
 	Description   string
+	PackageName   string
+	Version       string
 	CoreContracts bool
 	SchemaTime    time.Time
 	Events        []*Struct
@@ -61,7 +67,11 @@ func (s *Schema) Compile(schemaDef *SchemaDef) error {
 	s.Description = strings.TrimSpace(schemaDef.Description.Val)
 	s.Author = strings.TrimSpace(schemaDef.Author.Val)
 	if s.Author == "" {
-		s.Author = "Eric Hop <eric@iota.org>"
+		s.Author = DefaultAuthor
+	}
+	s.Version = strings.TrimSpace(schemaDef.Version.Val)
+	if s.Version == "" {
+		s.Version = DefaultVersion
 	}
 
 	err := s.compileEvents(schemaDef)

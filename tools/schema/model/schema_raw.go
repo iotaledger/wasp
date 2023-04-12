@@ -12,8 +12,9 @@ type RawFuncDefMap map[string]*RawFuncDef
 
 type RawSchemaDef struct {
 	Name        string        `yaml:"name"`
-	Description string        `yaml:"description"`
 	Author      string        `yaml:"author"`
+	Description string        `yaml:"description"`
+	Version     string        `yaml:"version"`
 	Events      StringMapMap  `yaml:"events"`
 	Structs     StringMapMap  `yaml:"structs"`
 	Typedefs    StringMap     `yaml:"typedefs"`
@@ -27,8 +28,9 @@ type JSONSchemaDef RawSchemaDef
 func (s *RawSchemaDef) ToSchemaDef() *SchemaDef {
 	def := NewSchemaDef()
 	def.Name = DefElt{Val: s.Name}
-	def.Description = DefElt{Val: s.Description}
 	def.Author = DefElt{Val: s.Author}
+	def.Description = DefElt{Val: s.Description}
+	def.Version = DefElt{Val: s.Version}
 	def.Events = s.Events.ToDefMapMap()
 	def.Structs = s.Structs.ToDefMapMap()
 	def.State = s.State.ToDefMap()
@@ -98,8 +100,9 @@ func (m FuncDefMap) ToRawFuncDefMap() RawFuncDefMap {
 func (s *SchemaDef) ToRawSchemaDef() *RawSchemaDef {
 	def := &RawSchemaDef{}
 	def.Name = s.Name.Val
-	def.Description = s.Description.Val
 	def.Author = s.Author.Val
+	def.Description = s.Description.Val
+	def.Version = s.Version.Val
 	def.Structs = s.Structs.ToStringMapMap()
 	def.Events = s.Events.ToStringMapMap()
 	def.Typedefs = s.Typedefs.ToStringMap()
