@@ -744,7 +744,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 					confirmed:       confirmed,
 				}
 			}); err != nil {
-				panic(err)
+				cni.log.Error(err.Error())
 			}
 		}
 

@@ -484,6 +484,9 @@ func (ncc *ncChain) publishTX(pendingTx *pendingTransaction) error {
 	defer ncc.shutdownWaitGroup.Done() // -1 for pendingTxTaskPipe (we wait for the task to return with "<-back")
 
 	back := make(chan *pendingTxResult)
+	if ncc.ctx.Err() != nil {
+		return errors.New("context closed")
+	}
 	ncc.pendingTxTaskPipe.In() <- &transactionTask{
 		pendingTx: pendingTx,
 		back:      back,
