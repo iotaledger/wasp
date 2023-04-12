@@ -98,7 +98,7 @@ func testSDRUC(t *testing.T, env *ChainEnv) {
 	_, err = env.Clu.L1Client().PostTxAndWaitUntilConfirmation(txNormal)
 	require.NoError(t, err)
 
-	_, err = env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, txNormal, 1*time.Minute)
+	_, err = env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, txNormal, false, 1*time.Minute)
 	require.NoError(t, err)
 
 	require.EqualValues(t, 1, env.getNativeContractCounter(nativeIncCounterSCHname))

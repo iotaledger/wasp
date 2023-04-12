@@ -69,7 +69,7 @@ func (e *ChainEnv) deployWasmContract(wasmName, scDescription string, initParams
 
 	reqTx, err := chClient.DepositFunds(1_000_000)
 	require.NoError(e.t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 30*time.Second)
 	require.NoError(e.t, err)
 
 	ph, err := e.Chain.DeployWasmContract(wasmName, scDescription, wasm, initParams)
@@ -119,7 +119,7 @@ func (e *ChainEnv) DepositFunds(amount uint64, keyPair *cryptolib.KeyPair) {
 	require.NoError(e.t, err)
 	txID, err := tx.ID()
 	require.NoError(e.t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(e.t, err, "Error while WaitUntilAllRequestsProcessedSuccessfully for tx.ID=%v", txID.ToHex())
 }
 
@@ -137,7 +137,7 @@ func (e *ChainEnv) TransferFundsTo(assets *isc.Assets, nft *isc.NFT, keyPair *cr
 	require.NoError(e.t, err)
 	txID, err := tx.ID()
 	require.NoError(e.t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(e.t, err, "Error while WaitUntilAllRequestsProcessedSuccessfully for tx.ID=%v", txID.ToHex())
 }
 

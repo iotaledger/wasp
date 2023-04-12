@@ -45,7 +45,7 @@ func TestDepositWithdraw(t *testing.T) {
 	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), *par)
 	require.NoError(t, err)
 
-	receipts, err := chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, reqTx, 30*time.Second)
+	receipts, err := chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, reqTx, true, 30*time.Second)
 	require.NoError(t, err)
 	chEnv.checkLedger()
 
@@ -68,7 +68,7 @@ func TestDepositWithdraw(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	receipt, err := chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req.ID(), 30*time.Second)
+	receipt, err := chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req.ID(), true, 30*time.Second)
 	require.NoError(t, err)
 
 	chEnv.checkLedger()

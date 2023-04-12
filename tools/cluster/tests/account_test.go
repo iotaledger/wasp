@@ -54,7 +54,7 @@ func testAccounts(e *ChainEnv) {
 	})
 	require.NoError(e.t, err)
 
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(e.t, err)
 
 	e.t.Logf("   %s: %s", root.Contract.Name, root.Contract.Hname().String())
@@ -94,7 +94,7 @@ func testAccounts(e *ChainEnv) {
 	reqTx, err := chClient.Post1Request(hname, inccounter.FuncIncCounter.Hname(), *par)
 	require.NoError(e.t, err)
 
-	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 10*time.Second)
+	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 10*time.Second)
 	require.NoError(e.t, err)
 
 	fees, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
@@ -129,7 +129,7 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	})
 	require.NoError(t, err)
 
-	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, 30*time.Second)
+	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(env.t, err)
 
 	env.checkCoreContracts()
@@ -173,7 +173,7 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	reqTx, err := myWalletClient.Post1Request(hname, inccounter.FuncIncCounter.Hname(), *par)
 	require.NoError(t, err)
 
-	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, reqTx, 30*time.Second)
+	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, reqTx, false, 30*time.Second)
 	require.NoError(t, err)
 	env.checkLedger()
 
@@ -200,7 +200,7 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	)
 	require.NoError(t, err)
 
-	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req2.ID(), 30*time.Second)
+	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req2.ID(), true, 30*time.Second)
 	require.NoError(t, err)
 
 	env.checkLedger()

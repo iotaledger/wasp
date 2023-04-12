@@ -42,12 +42,12 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 			},
 		})
 		require.NoError(t, err2)
-		_, err2 = env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 10*time.Second)
+		_, err2 = env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 10*time.Second)
 		require.NoError(t, err2)
 
 		req, err2 := ownerSCClient.PostOffLedgerRequest(governance.FuncClaimChainOwnership.Name)
 		require.NoError(t, err2)
-		_, err2 = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 10*time.Second)
+		_, err2 = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), false, 10*time.Second)
 		require.NoError(t, err2)
 	}
 
@@ -64,7 +64,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 	{
 		req, err2 := userSCClient.PostOffLedgerRequest(governance.FuncStartMaintenance.Name)
 		require.NoError(t, err2)
-		rec, err2 := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
+		rec, err2 := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), false, 10*time.Second)
 		require.NoError(t, err2)
 		require.NotNil(t, rec.Error)
 	}
@@ -73,7 +73,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 	{
 		req, err2 := ownerSCClient.PostOffLedgerRequest(governance.FuncStartMaintenance.Name)
 		require.NoError(t, err2)
-		_, err2 = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 10*time.Second)
+		_, err2 = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), false, 10*time.Second)
 		require.NoError(t, err2)
 	}
 
@@ -124,7 +124,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 			},
 		})
 		require.NoError(t, err2)
-		_, err2 = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 10*time.Second)
+		_, err2 = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), false, 10*time.Second)
 		require.NoError(t, err2)
 	}
 
@@ -136,7 +136,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 			},
 		})
 		require.NoError(t, err2)
-		receipt, err2 := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
+		receipt, err2 := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), false, 10*time.Second)
 		require.NoError(t, err2)
 		require.NotNil(t, receipt.Error)
 	}
@@ -145,7 +145,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 	{
 		req, err2 := userSCClient.PostOffLedgerRequest(governance.FuncStopMaintenance.Name)
 		require.NoError(t, err2)
-		rec, err2 := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
+		rec, err2 := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), false, 10*time.Second)
 		require.NoError(t, err2)
 		require.NotNil(t, rec.Error)
 	}
@@ -154,15 +154,15 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 	{
 		req, err2 := ownerSCClient.PostOffLedgerRequest(governance.FuncStopMaintenance.Name)
 		require.NoError(t, err2)
-		_, err2 = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 10*time.Second)
+		_, err2 = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), false, 10*time.Second)
 		require.NoError(t, err2)
 	}
 
 	// normal requests are now processed successfully (pending requests issued during maintenance should be processed now)
 	{
-		_, err = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, notProccessedReq1.ID(), 10*time.Second)
+		_, err = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, notProccessedReq1.ID(), false, 10*time.Second)
 		require.NoError(t, err)
-		_, err = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, notProccessedReq2.ID(), 10*time.Second)
+		_, err = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, notProccessedReq2.ID(), false, 10*time.Second)
 		require.NoError(t, err)
 		require.EqualValues(t, 2, env.getNativeContractCounter(nativeIncCounterSCHname))
 	}

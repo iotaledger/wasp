@@ -317,7 +317,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	for _, tx := range addAccessNodesRequests {
 		// ---------- wait until the requests are processed in all committee nodes
 
-		if _, err := peers.WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, 30*time.Second); err != nil {
+		if _, err := peers.WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, true, 30*time.Second); err != nil {
 			return fmt.Errorf("WaitAddAccessNode: %w", err)
 		}
 	}
@@ -347,7 +347,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	if err != nil {
 		return err
 	}
-	_, err = peers.WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, 30*time.Second)
+	_, err = peers.WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, true, 30*time.Second)
 	if err != nil {
 		return err
 	}

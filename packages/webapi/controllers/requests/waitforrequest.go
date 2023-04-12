@@ -46,8 +46,10 @@ func (c *Controller) waitForRequestToFinish(e echo.Context) error {
 			timeout = time.Duration(parsedTimeout) * time.Second
 		}
 	}
+	var waitForL1Confirmation bool
+	echo.QueryParamsBinder(e).Bool("waitForL1Confirmation", &waitForL1Confirmation)
 
-	receipt, vmError, err := c.chainService.WaitForRequestProcessed(e.Request().Context(), chainID, requestID, timeout)
+	receipt, vmError, err := c.chainService.WaitForRequestProcessed(e.Request().Context(), chainID, requestID, waitForL1Confirmation, timeout)
 	if err != nil {
 		return err
 	}

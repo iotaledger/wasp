@@ -45,7 +45,7 @@ func TestMissingRequests(t *testing.T) {
 	chClient := chainclient.New(clu.L1Client(), clu.WaspClient(0), chainID, userWallet)
 	reqTx, err := chClient.DepositFunds(100)
 	require.NoError(t, err)
-	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chainID, reqTx, 30*time.Second)
+	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chainID, reqTx, false, 30*time.Second)
 	require.NoError(t, err)
 
 	// TODO: Validate offleder logic
