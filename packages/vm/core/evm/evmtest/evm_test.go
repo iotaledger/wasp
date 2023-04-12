@@ -150,23 +150,23 @@ func TestGasRatio(t *testing.T) {
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
 
-	require.Equal(t, gas.DefaultEVMGasRatio, env.getGasRatio())
+	require.Equal(t, gas.DefaultEVMGasRatio, env.getEVMGasRatio())
 
 	res, err := storage.store(43)
 	require.NoError(t, err)
 	initialGasFee := res.iscReceipt.GasFeeCharged
 
-	// only the owner can call the setGasRatio endpoint
+	// only the owner can call the setEVMGasRatio endpoint
 	newGasRatio := util.Ratio32{A: gas.DefaultEVMGasRatio.A * 10, B: gas.DefaultEVMGasRatio.B}
 	newUserWallet, _ := env.solo.NewKeyPairWithFunds()
-	err = env.setGasRatio(newGasRatio, iscCallOptions{wallet: newUserWallet})
+	err = env.setEVMGasRatio(newGasRatio, iscCallOptions{wallet: newUserWallet})
 	require.True(t, isc.VMErrorIs(err, vm.ErrUnauthorized))
-	require.Equal(t, gas.DefaultEVMGasRatio, env.getGasRatio())
+	require.Equal(t, gas.DefaultEVMGasRatio, env.getEVMGasRatio())
 
 	// current owner is able to set a new gasRatio
-	err = env.setGasRatio(newGasRatio, iscCallOptions{wallet: env.soloChain.OriginatorPrivateKey})
+	err = env.setEVMGasRatio(newGasRatio, iscCallOptions{wallet: env.soloChain.OriginatorPrivateKey})
 	require.NoError(t, err)
-	require.Equal(t, newGasRatio, env.getGasRatio())
+	require.Equal(t, newGasRatio, env.getEVMGasRatio())
 
 	// run an equivalent request and compare the gas fees
 	res, err = storage.store(44)
@@ -181,7 +181,7 @@ func TestGasLimit(t *testing.T) {
 	storage := env.deployStorageContract(ethKey)
 
 	// set a gas ratio such that evm gas cost in base tokens is larger than storage deposit cost
-	err := env.setGasRatio(util.Ratio32{A: 10, B: 1}, iscCallOptions{wallet: env.soloChain.OriginatorPrivateKey})
+	err := env.setEVMGasRatio(util.Ratio32{A: 10, B: 1}, iscCallOptions{wallet: env.soloChain.OriginatorPrivateKey})
 	require.NoError(t, err)
 
 	// estimate gas by sending a valid tx
@@ -207,12 +207,12 @@ func TestNotEnoughISCGas(t *testing.T) {
 	_, err := storage.store(43)
 	require.NoError(t, err)
 
-	// only the owner can call the setGasRatio endpoint
+	// only the owner can call the setEVMGasRatio endpoint
 	// set the ISC gas ratio VERY HIGH
 	newGasRatio := util.Ratio32{A: gas.DefaultEVMGasRatio.A * 500, B: gas.DefaultEVMGasRatio.B}
-	err = env.setGasRatio(newGasRatio, iscCallOptions{wallet: env.soloChain.OriginatorPrivateKey})
+	err = env.setEVMGasRatio(newGasRatio, iscCallOptions{wallet: env.soloChain.OriginatorPrivateKey})
 	require.NoError(t, err)
-	require.Equal(t, newGasRatio, env.getGasRatio())
+	require.Equal(t, newGasRatio, env.getEVMGasRatio())
 
 	senderAddress := crypto.PubkeyToAddress(storage.defaultSender.PublicKey)
 	nonce := env.getNonce(senderAddress)
@@ -241,7 +241,7 @@ func TestLoop(t *testing.T) {
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	loop := env.deployLoopContract(ethKey)
 
-	gasRatio := env.getGasRatio()
+	gasRatio := env.getEVMGasRatio()
 
 	for _, gasLimit := range []uint64{200000, 400000} {
 		baseTokensSent := gas.EVMGasToISC(gasLimit, &gasRatio)
@@ -267,7 +267,7 @@ func TestLoopWithGasLeft(t *testing.T) {
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
-	gasRatio := env.getGasRatio()
+	gasRatio := env.getEVMGasRatio()
 	var usedGas []uint64
 	for _, gasLimit := range []uint64{50000, 200000} {
 		baseTokensSent := gas.EVMGasToISC(gasLimit, &gasRatio)
@@ -299,7 +299,7 @@ func TestLoopWithGasLeftEstimateGas(t *testing.T) {
 	require.NotZero(t, estimatedGas)
 	t.Log(estimatedGas)
 
-	gasRatio := env.getGasRatio()
+	gasRatio := env.getEVMGasRatio()
 	baseTokensSent := gas.EVMGasToISC(estimatedGas, &gasRatio)
 	ethKey2, _ := env.soloChain.NewEthereumAccountWithL2Funds(baseTokensSent)
 	res, err := iscTest.callFn([]ethCallOptions{{

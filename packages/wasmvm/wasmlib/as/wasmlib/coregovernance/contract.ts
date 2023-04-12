@@ -113,19 +113,19 @@ export class SetGasLimitsCall {
     }
 }
 
-export class SetMaintenanceOffCall {
+export class StartMaintenanceCall {
     func: wasmlib.ScFunc;
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
-        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetMaintenanceOff);
+        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncStartMaintenance);
     }
 }
 
-export class SetMaintenanceOnCall {
+export class StopMaintenanceCall {
     func: wasmlib.ScFunc;
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
-        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetMaintenanceOn);
+        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncStopMaintenance);
     }
 }
 
@@ -298,15 +298,15 @@ export class ScFuncs {
         return f;
     }
 
-    // Stops the maintenance mode.
-    static setMaintenanceOff(ctx: wasmlib.ScFuncCallContext): SetMaintenanceOffCall {
-        return new SetMaintenanceOffCall(ctx);
-    }
-
     // Starts the chain maintenance mode, meaning no further requests
     // will be processed except calls to the governance contract.
-    static setMaintenanceOn(ctx: wasmlib.ScFuncCallContext): SetMaintenanceOnCall {
-        return new SetMaintenanceOnCall(ctx);
+    static startMaintenance(ctx: wasmlib.ScFuncCallContext): StartMaintenanceCall {
+        return new StartMaintenanceCall(ctx);
+    }
+
+    // Stops the maintenance mode.
+    static stopMaintenance(ctx: wasmlib.ScFuncCallContext): StopMaintenanceCall {
+        return new StopMaintenanceCall(ctx);
     }
 
     // Returns the list of allowed state controllers.

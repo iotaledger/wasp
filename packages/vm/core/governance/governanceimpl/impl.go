@@ -41,8 +41,8 @@ var Processor = governance.Contract.Processor(nil,
 	governance.ViewGetChainNodes.WithHandler(getChainNodes),
 
 	// maintenance
-	governance.FuncStartMaintenance.WithHandler(setMaintenanceOn),
-	governance.FuncStopMaintenance.WithHandler(setMaintenanceOff),
+	governance.FuncStartMaintenance.WithHandler(startMaintenance),
+	governance.FuncStopMaintenance.WithHandler(stopMaintenance),
 	governance.ViewGetMaintenanceStatus.WithHandler(getMaintenanceStatus),
 
 	// L1 metadata

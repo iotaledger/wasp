@@ -177,7 +177,7 @@ func TestSetMaintenanceStatusAndSetOnAndOff(t *testing.T) {
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
 
-	fOn := coregovernance.ScFuncs.SetMaintenanceOn(ctx)
+	fOn := coregovernance.ScFuncs.StartMaintenance(ctx)
 	fOn.Func.Post()
 	require.NoError(t, ctx.Err)
 
@@ -187,7 +187,7 @@ func TestSetMaintenanceStatusAndSetOnAndOff(t *testing.T) {
 	status := fStatus.Results.Status().Value()
 	require.True(t, status)
 
-	fOff := coregovernance.ScFuncs.SetMaintenanceOff(ctx)
+	fOff := coregovernance.ScFuncs.StopMaintenance(ctx)
 	fOff.Func.Post()
 	require.NoError(t, ctx.Err)
 
