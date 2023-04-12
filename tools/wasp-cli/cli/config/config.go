@@ -78,11 +78,7 @@ func L1FaucetAddress() string {
 }
 
 func GetToken(node string) string {
-	token := viper.GetString(fmt.Sprintf("authentication.wasp.%s.token", node))
-	if token == "" {
-		log.Fatalf("token for wasp node '%s' not defined in config", node)
-	}
-	return token
+	return viper.GetString(fmt.Sprintf("authentication.wasp.%s.token", node))
 }
 
 func SetToken(node, token string) {
