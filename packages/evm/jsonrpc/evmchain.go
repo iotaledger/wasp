@@ -262,6 +262,9 @@ func (e *EVMChain) iscAliasOutputFromEVMBlockNumberOrHash(blockNumberOrHash *rpc
 	}
 	blockHash, _ := blockNumberOrHash.Hash()
 	block := e.BlockByHash(blockHash)
+	if block == nil {
+		return nil, fmt.Errorf("block with hash %s not found", blockHash)
+	}
 	return e.iscAliasOutputFromEVMBlockNumber(block.Number())
 }
 
