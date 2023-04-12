@@ -1,5 +1,7 @@
 name: CoreErrors
+version: 1.0.10
 description: Errors Contract
+author: Eric Hop <eric@iota.org>
 structs: {}
 typedefs: {}
 state: {}

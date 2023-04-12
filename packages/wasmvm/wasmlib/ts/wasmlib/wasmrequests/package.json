@@ -1,6 +1,6 @@
 {
   "name": "wasmrequests",
-  "version": "1.0.0",
+  "version": "1.0.10",
   "description": "Interface library for: WasmLib request structures",
   "main": "index.ts",
   "author": "Eric Hop <eric@iota.org>",

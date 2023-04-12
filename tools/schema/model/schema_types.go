@@ -41,6 +41,7 @@ type SchemaDef struct {
 	Typedefs    DefMap
 	State       DefMap
 	Funcs       FuncDefMap
+	Version     DefElt
 	Views       FuncDefMap
 }
 

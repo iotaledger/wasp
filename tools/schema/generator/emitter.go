@@ -410,6 +410,7 @@ func (g *GenBase) setCommonKeys() {
 	g.keys["scDesc"] = g.s.Description
 	g.keys["author"] = g.s.Author
 	g.keys["copyrightMessage"] = g.s.Copyright
+	g.keys["version"] = g.s.Version
 }
 
 func (g *GenBase) setFieldKeys(pad bool, maxCamelLength, maxSnakeLength int) {

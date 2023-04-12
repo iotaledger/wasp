@@ -66,11 +66,11 @@ type SetGasLimitsCall struct {
 	Params MutableSetGasLimitsParams
 }
 
-type SetMaintenanceOffCall struct {
+type StartMaintenanceCall struct {
 	Func *wasmlib.ScFunc
 }
 
-type SetMaintenanceOnCall struct {
+type StopMaintenanceCall struct {
 	Func *wasmlib.ScFunc
 }
 
@@ -210,15 +210,15 @@ func (sc Funcs) SetGasLimits(ctx wasmlib.ScFuncCallContext) *SetGasLimitsCall {
 	return f
 }
 
-// Stops the maintenance mode.
-func (sc Funcs) SetMaintenanceOff(ctx wasmlib.ScFuncCallContext) *SetMaintenanceOffCall {
-	return &SetMaintenanceOffCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetMaintenanceOff)}
-}
-
 // Starts the chain maintenance mode, meaning no further requests
 // will be processed except calls to the governance contract.
-func (sc Funcs) SetMaintenanceOn(ctx wasmlib.ScFuncCallContext) *SetMaintenanceOnCall {
-	return &SetMaintenanceOnCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetMaintenanceOn)}
+func (sc Funcs) StartMaintenance(ctx wasmlib.ScFuncCallContext) *StartMaintenanceCall {
+	return &StartMaintenanceCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncStartMaintenance)}
+}
+
+// Stops the maintenance mode.
+func (sc Funcs) StopMaintenance(ctx wasmlib.ScFuncCallContext) *StopMaintenanceCall {
+	return &StopMaintenanceCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncStopMaintenance)}
 }
 
 // Returns the list of allowed state controllers.
@@ -298,8 +298,8 @@ var exportMap = wasmlib.ScExportMap{
 		FuncSetEVMGasRatio,
 		FuncSetFeePolicy,
 		FuncSetGasLimits,
-		FuncSetMaintenanceOff,
-		FuncSetMaintenanceOn,
+		FuncStartMaintenance,
+		FuncStopMaintenance,
 		ViewGetAllowedStateControllerAddresses,
 		ViewGetChainInfo,
 		ViewGetChainNodes,

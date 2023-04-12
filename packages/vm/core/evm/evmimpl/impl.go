@@ -358,7 +358,7 @@ func callContract(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err)
 	ctx.RequireNoError(tryGetRevertError(res))
 
-	gasRatio := getGasRatio(ctx)
+	gasRatio := getEVMGasRatio(ctx)
 	{
 		// burn the used EVM gas as it would be done for a normal request call
 		ctx.Privileged().GasBurnEnable(true)
@@ -374,7 +374,7 @@ func callContract(ctx isc.Sandbox) dict.Dict {
 	return result(res.ReturnData)
 }
 
-func getGasRatio(ctx isc.SandboxBase) util.Ratio32 {
+func getEVMGasRatio(ctx isc.SandboxBase) util.Ratio32 {
 	gasRatioViewRes := ctx.CallView(governance.Contract.Hname(), governance.ViewGetEVMGasRatio.Hname(), nil)
 	return codec.MustDecodeRatio32(gasRatioViewRes.Get(governance.ParamEVMGasRatio), gas.DefaultEVMGasRatio)
 }

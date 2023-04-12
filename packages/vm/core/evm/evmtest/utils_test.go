@@ -141,7 +141,7 @@ func (e *soloChainEnv) getCode(addr common.Address) []byte {
 	return ret
 }
 
-func (e *soloChainEnv) getGasRatio() util.Ratio32 {
+func (e *soloChainEnv) getEVMGasRatio() util.Ratio32 {
 	ret, err := e.soloChain.CallView(governance.Contract.Name, governance.ViewGetEVMGasRatio.Name)
 	require.NoError(e.t, err)
 	ratio, err := codec.DecodeRatio32(ret.Get(governance.ParamEVMGasRatio))
@@ -149,7 +149,7 @@ func (e *soloChainEnv) getGasRatio() util.Ratio32 {
 	return ratio
 }
 
-func (e *soloChainEnv) setGasRatio(newGasRatio util.Ratio32, opts ...iscCallOptions) error {
+func (e *soloChainEnv) setEVMGasRatio(newGasRatio util.Ratio32, opts ...iscCallOptions) error {
 	opt := e.parseISCCallOptions(opts)
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetEVMGasRatio.Name, governance.ParamEVMGasRatio, newGasRatio.Bytes())
 	_, err := e.soloChain.PostRequestSync(req, opt.wallet)

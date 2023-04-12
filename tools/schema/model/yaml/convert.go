@@ -20,6 +20,7 @@ const (
 	KeyTypedefs    string = "typedefs"
 	KeyState       string = "state"
 	KeyFuncs       string = "funcs"
+	KeyVersion     string = "version"
 	KeyViews       string = "views"
 	KeyAccess      string = "access"
 	KeyParams      string = "params"
@@ -27,7 +28,7 @@ const (
 )
 
 func Convert(root *Node, def *model.SchemaDef) error {
-	var name, description, author model.DefElt
+	var name, description, author, version model.DefElt
 	var events, structs model.DefMapMap
 	var typedefs, state model.DefMap
 	var funcs, views model.FuncDefMap
@@ -54,6 +55,9 @@ func Convert(root *Node, def *model.SchemaDef) error {
 			state = key.ToDefMap()
 		case KeyFuncs:
 			funcs = key.ToFuncDefMap()
+		case KeyVersion:
+			version.Val = key.Contents[0].Val
+			version.Line = key.Line
 		case KeyViews:
 			views = key.ToFuncDefMap()
 		default:
@@ -61,12 +65,13 @@ func Convert(root *Node, def *model.SchemaDef) error {
 		}
 	}
 	def.Name = name
-	def.Description = description
 	def.Author = author
+	def.Description = description
+	def.Version = version
 	def.Events = events
+	def.State = state
 	def.Structs = structs
 	def.Typedefs = typedefs
-	def.State = state
 	def.Funcs = funcs
 	def.Views = views
 	return nil

@@ -30,8 +30,8 @@ var (
 	ViewGetGasLimits = coreutil.ViewFunc("getGasLimits")
 
 	// evm fees
-	FuncSetEVMGasRatio = coreutil.Func("setGasRatio")
-	ViewGetEVMGasRatio = coreutil.ViewFunc("getGasRatio")
+	FuncSetEVMGasRatio = coreutil.Func("setEVMGasRatio")
+	ViewGetEVMGasRatio = coreutil.ViewFunc("getEVMGasRatio")
 
 	// chain info
 	ViewGetChainInfo = coreutil.ViewFunc("getChainInfo")

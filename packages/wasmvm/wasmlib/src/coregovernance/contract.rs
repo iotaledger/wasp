@@ -67,11 +67,11 @@ pub struct SetGasLimitsCall<'a> {
     pub params: MutableSetGasLimitsParams,
 }
 
-pub struct SetMaintenanceOffCall<'a> {
+pub struct StartMaintenanceCall<'a> {
     pub func: ScFunc<'a>,
 }
 
-pub struct SetMaintenanceOnCall<'a> {
+pub struct StopMaintenanceCall<'a> {
     pub func: ScFunc<'a>,
 }
 
@@ -246,18 +246,18 @@ impl ScFuncs {
         f
     }
 
-    // Stops the maintenance mode.
-    pub fn set_maintenance_off(ctx: &impl ScFuncCallContext) -> SetMaintenanceOffCall {
-        SetMaintenanceOffCall {
-            func: ScFunc::new(ctx, HSC_NAME, HFUNC_SET_MAINTENANCE_OFF),
+    // Starts the chain maintenance mode, meaning no further requests
+    // will be processed except calls to the governance contract.
+    pub fn start_maintenance(ctx: &impl ScFuncCallContext) -> StartMaintenanceCall {
+        StartMaintenanceCall {
+            func: ScFunc::new(ctx, HSC_NAME, HFUNC_START_MAINTENANCE),
         }
     }
 
-    // Starts the chain maintenance mode, meaning no further requests
-    // will be processed except calls to the governance contract.
-    pub fn set_maintenance_on(ctx: &impl ScFuncCallContext) -> SetMaintenanceOnCall {
-        SetMaintenanceOnCall {
-            func: ScFunc::new(ctx, HSC_NAME, HFUNC_SET_MAINTENANCE_ON),
+    // Stops the maintenance mode.
+    pub fn stop_maintenance(ctx: &impl ScFuncCallContext) -> StopMaintenanceCall {
+        StopMaintenanceCall {
+            func: ScFunc::new(ctx, HSC_NAME, HFUNC_STOP_MAINTENANCE),
         }
     }
 

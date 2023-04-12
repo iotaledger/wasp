@@ -174,14 +174,14 @@ Iterates through the given map of actions and applies them.
 
 It can only be invoked by the chain owner.
 
-### `setMaintenanceOn()`
+### `startMaintenance()`
 
-Starts the chain maintenance mode, meaning no further requests will be processed except calls to the governance
-contract.
+Starts the chain maintenance mode, meaning no further requests will be processed except 
+calls to the governance contract.
 
 It can only be invoked by the chain owner.
 
-### `setMaintenanceOff()`
+### `stopMaintenance()`
 
 Stops the maintenance mode.
 
