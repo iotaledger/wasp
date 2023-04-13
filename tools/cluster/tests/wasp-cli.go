@@ -239,3 +239,8 @@ func (w *WaspCLITest) CreateL2Foundry(tokenScheme iotago.TokenScheme) {
 	)
 	require.Regexp(w.T, `.*Error: \(empty\).*`, strings.Join(out, "\n"))
 }
+
+func (w *WaspCLITest) ChainID(idx int) string {
+	out := w.MustRun("chain", "info", fmt.Sprintf("--node=%d", idx))
+	return regexp.MustCompile(`(?m)Chain ID:\s+([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]
+}
