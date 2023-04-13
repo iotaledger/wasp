@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -132,6 +133,34 @@ func logEventsInBlock(index uint32, node, chain string) {
 	logEvents(events)
 }
 
+func hexLenFromByteLen(length int) int {
+	return (length * 2) + 2
+}
+
+func reqIDFromString(s string, client *apiclient.APIClient, chainID isc.ChainID) isc.RequestID {
+	switch len(s) {
+	case hexLenFromByteLen(iotago.OutputIDLength):
+		// isc ReqID
+		reqID, err := isc.RequestIDFromString(s)
+		log.Check(err)
+		return reqID
+	case hexLenFromByteLen(common.HashLength):
+		// EVM ReqID
+		rsp, _, err := client.ChainsApi.GetRequestIDFromEVMTransactionID(
+			context.Background(),
+			chainID.String(),
+			s,
+		).Execute() //nolint:bodyclose // false positive
+		log.Check(err)
+		reqID, err := isc.RequestIDFromString(rsp.RequestId)
+		log.Check(err)
+		return reqID
+	default:
+		log.Fatalf("invalid requestID length: %d", len(s))
+	}
+	panic("unreachable")
+}
+
 func initRequestCmd() *cobra.Command {
 	var node string
 	var chain string
@@ -142,13 +171,13 @@ func initRequestCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
-
-			reqID, err := isc.RequestIDFromString(args[0])
-			log.Check(err)
+			chainID := config.GetChain(chain)
 
 			client := cliclients.WaspClient(node)
+			reqID := reqIDFromString(args[0], client, chainID)
+
 			receipt, _, err := client.RequestsApi.
-				GetReceipt(context.Background(), config.GetChain(chain).String(), reqID.String()).
+				GetReceipt(context.Background(), chainID.String(), reqID.String()).
 				Execute() //nolint:bodyclose // false positive
 
 			log.Check(err)

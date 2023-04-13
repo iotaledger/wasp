@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
@@ -19,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
@@ -52,13 +55,13 @@ func TestWaspCLI1Chain(t *testing.T) {
 	w.ActivateChainOnAllNodes(chainName, 0)
 
 	// test chain info command
-	out := w.MustRun("chain", "info", "--node=0")
-	chainID := regexp.MustCompile(`(?m)Chain ID:\s+([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]
+	chainID := w.ChainID(0)
+
 	require.NotEmpty(t, chainID)
 	t.Logf("Chain ID: %s", chainID)
 
 	// test chain list command
-	out = w.MustRun("chain", "list", "--node=0")
+	out := w.MustRun("chain", "list", "--node=0")
 	require.Contains(t, out[0], "Total 1 chain(s)")
 	require.Contains(t, out[4], chainID)
 
@@ -416,8 +419,7 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 	var chainID string
 	for _, idx := range w.Cluster.AllNodes() {
 		// test chain info command
-		out := w.MustRun("chain", "info", fmt.Sprintf("--node=%d", idx))
-		chainID = regexp.MustCompile(`(?m)Chain ID:\s+([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]
+		chainID = w.ChainID(idx)
 		require.NotEmpty(t, chainID)
 		t.Logf("Chain ID: %s", chainID)
 	}
@@ -677,4 +679,26 @@ func TestWaspCLIRegisterERC20NativeTokenOnRemoteChain(t *testing.T) {
 
 	out = w.MustRun("chain", "request", reqID, "--node=0", "--chain=chain1")
 	require.Contains(t, strings.Join(out, "\n"), "Error: (empty)")
+}
+
+func TestEVMISCReceipt(t *testing.T) {
+	w := newWaspCLITest(t)
+	committee, quorum := w.ArgCommitteeConfig(0)
+	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain1", 0)
+	ethPvtKey, ethAddr := newEthereumAccount()
+	w.MustRun("chain", "deposit", ethAddr.String(), "base:100000000", "--node=0")
+
+	// send some arbitrary EVM tx
+	jsonRPCClient := NewEVMJSONRPClient(t, w.ChainID(0), w.Cluster, 0)
+	tx, err := types.SignTx(
+		types.NewTransaction(0, ethAddr, big.NewInt(123), 100000, evm.GasPrice, []byte{}),
+		EVMSigner(),
+		ethPvtKey,
+	)
+	require.NoError(t, err)
+	err = jsonRPCClient.SendTransaction(context.Background(), tx)
+	require.NoError(t, err)
+	out := w.MustRun("chain", "request", tx.Hash().Hex(), "--node=0")
+	require.Contains(t, out[0], "Request found in block")
 }

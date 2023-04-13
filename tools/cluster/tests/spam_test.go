@@ -233,12 +233,12 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	chainClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), env.Chain.ChainID, keyPair)
-	evmKeyPair, evmAddr := solo.NewEthereumAccount()
+	evmPvtKey, evmAddr := solo.NewEthereumAccount()
 	evmAgentID := isc.NewEthereumAddressAgentID(evmAddr)
 	env.TransferFundsTo(isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
 
 	// deploy solidity inccounter
-	storageContractAddr, storageContractABI := env.DeploySolidityContract(evmKeyPair, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(42))
+	storageContractAddr, storageContractABI := env.DeploySolidityContract(evmPvtKey, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(42))
 
 	initialBlockIndex, err := env.Chain.BlockIndex()
 	require.NoError(t, err)
@@ -251,8 +251,8 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 		require.NoError(t, err2)
 		tx, err2 := types.SignTx(
 			types.NewTransaction(nonce+i, storageContractAddr, big.NewInt(0), 100000, evm.GasPrice, callArguments),
-			env.EVMSigner(),
-			evmKeyPair,
+			EVMSigner(),
+			evmPvtKey,
 		)
 		require.NoError(t, err2)
 		err2 = jsonRPCClient.SendTransaction(context.Background(), tx)

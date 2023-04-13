@@ -170,7 +170,7 @@ func (e *ChainEnv) DeploySolidityContract(creator *ecdsa.PrivateKey, abiJSON str
 
 	tx, err := types.SignTx(
 		types.NewContractCreation(nonce, value, gasLimit, evm.GasPrice, data),
-		e.EVMSigner(),
+		EVMSigner(),
 		creator,
 	)
 	require.NoError(e.t, err)
@@ -188,15 +188,19 @@ func (e *ChainEnv) GetNonceEVM(addr common.Address) uint64 {
 }
 
 func (e *ChainEnv) EVMJSONRPClient(nodeIndex int) *ethclient.Client {
-	evmJSONRPCPath := fmt.Sprintf("/v1/chains/%v/evm", e.Chain.ChainID.String())
-	jsonRPCEndpoint := e.Clu.Config.APIHost(0) + evmJSONRPCPath
+	return NewEVMJSONRPClient(e.t, e.Chain.ChainID.String(), e.Clu, nodeIndex)
+}
+
+func NewEVMJSONRPClient(t *testing.T, chainID string, clu *cluster.Cluster, nodeIndex int) *ethclient.Client {
+	evmJSONRPCPath := fmt.Sprintf("/v1/chains/%v/evm", chainID)
+	jsonRPCEndpoint := clu.Config.APIHost(nodeIndex) + evmJSONRPCPath
 	rawClient, err := rpc.DialHTTP(jsonRPCEndpoint)
-	require.NoError(e.t, err)
+	require.NoError(t, err)
 	jsonRPCClient := ethclient.NewClient(rawClient)
-	e.t.Cleanup(jsonRPCClient.Close)
+	t.Cleanup(jsonRPCClient.Close)
 	return jsonRPCClient
 }
 
-func (e *ChainEnv) EVMSigner() types.Signer {
+func EVMSigner() types.Signer {
 	return evmutil.Signer(big.NewInt(int64(evm.DefaultChainID))) // use default evm chainID
 }
