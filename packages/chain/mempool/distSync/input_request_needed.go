@@ -4,6 +4,7 @@
 package distSync
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -11,14 +12,14 @@ import (
 )
 
 type inputRequestNeeded struct {
+	ctx        context.Context
 	requestRef *isc.RequestRef
-	needed     bool // false to cancel.
 }
 
-func NewInputRequestNeeded(requestRef *isc.RequestRef, needed bool) gpa.Input {
-	return &inputRequestNeeded{requestRef: requestRef, needed: needed}
+func NewInputRequestNeeded(ctx context.Context, requestRef *isc.RequestRef) gpa.Input {
+	return &inputRequestNeeded{ctx: ctx, requestRef: requestRef}
 }
 
 func (inp *inputRequestNeeded) String() string {
-	return fmt.Sprintf("{mp.ds.inputRequestNeeded, requestRef=%v, needed=%v}", inp.requestRef, inp.needed)
+	return fmt.Sprintf("{mp.ds.inputRequestNeeded, requestRef=%v}", inp.requestRef)
 }
