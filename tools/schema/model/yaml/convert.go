@@ -35,7 +35,16 @@ func Convert(root *Node, def *model.SchemaDef) error {
 	for _, key := range root.Contents {
 		switch key.Val {
 		case KeyCopyright:
-			def.Copyright = key.HeadComment
+			if key.Contents[0].Val != "" {
+				lines := strings.Split(key.Contents[0].Val, "\n")
+				copyright := ""
+				for _, line := range lines {
+					copyright += ("// " + line)
+				}
+				def.Copyright = copyright
+			} else {
+				def.Copyright = key.HeadComment
+			}
 		case KeyName:
 			name.Val = key.Contents[0].Val
 			name.Line = key.Line
