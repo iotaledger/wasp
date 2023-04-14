@@ -42,7 +42,7 @@ func newChainConsensusMetric(provider *ChainMetricsProvider, chainID isc.ChainID
 }
 
 func (m *chainConsensusMetric) VMRun(duration time.Duration, reqCount int) {
-	d := float64(duration.Milliseconds())
+	d := duration.Seconds()
 	r := float64(reqCount)
 	m.provider.consensusVMRunTime.With(m.metricsLabels).Observe(d)
 	m.provider.consensusVMRunTimePerReq.With(m.metricsLabels).Observe(d / r)

@@ -200,8 +200,7 @@ type ChainMetricsProvider struct {
 
 //nolint:funlen
 func NewChainMetricsProvider() *ChainMetricsProvider {
-	execTimeBuckets := prometheus.ExponentialBucketsRange(10, 100_000, 16)
-	reqTimeBuckets := prometheus.ExponentialBucketsRange(10, 1_000_000, 16)
+	execTimeBuckets := prometheus.ExponentialBucketsRange(0.01, 100, 17)
 	recCountBuckets := prometheus.ExponentialBucketsRange(1, 1000, 16)
 
 	m := &ChainMetricsProvider{
@@ -240,14 +239,14 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 			Namespace: "iota_wasp",
 			Subsystem: "consensus",
 			Name:      "vm_run_time",
-			Help:      "Time (ms) it takes to run the VM per chain block.",
+			Help:      "Time (s) it takes to run the VM per chain block.",
 			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain}),
 		consensusVMRunTimePerReq: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "consensus",
 			Name:      "vm_run_time_per_req",
-			Help:      "Time (ms) it takes to run the VM per request.",
+			Help:      "Time (s) it takes to run the VM per request.",
 			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain}),
 		consensusVMRunReqCount: prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -319,7 +318,7 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 			Namespace: "iota_wasp",
 			Subsystem: "mempool",
 			Name:      "on_ledger_req_time",
-			Help:      "Time (ms) an on-ledger request stayed in the mempool before removing it.",
+			Help:      "Time (s) an on-ledger request stayed in the mempool before removing it.",
 			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain}),
 		mempoolOffLedgerPoolSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -332,7 +331,7 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 			Namespace: "iota_wasp",
 			Subsystem: "mempool",
 			Name:      "off_ledger_req_time",
-			Help:      "Time (ms) an off-ledger request stayed in the mempool before removing it.",
+			Help:      "Time (s) an off-ledger request stayed in the mempool before removing it.",
 			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain}),
 		mempoolTotalSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -446,43 +445,43 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 			Namespace: "iota_wasp",
 			Subsystem: "state_manager",
 			Name:      "consensus_state_proposal_duration",
-			Help:      "The duration from starting handling ConsensusStateProposal request till responding to the consensus",
-			Buckets:   reqTimeBuckets,
+			Help:      "The duration (s) from starting handling ConsensusStateProposal request till responding to the consensus",
+			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain}),
 		smCDSHandlingDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "state_manager",
 			Name:      "consensus_decided_state_duration",
-			Help:      "The duration from starting handling ConsensusDecidedState request till responding to the consensus",
-			Buckets:   reqTimeBuckets,
+			Help:      "The duration (s) from starting handling ConsensusDecidedState request till responding to the consensus",
+			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain}),
 		smCBPHandlingDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "state_manager",
 			Name:      "consensus_block_produced_duration",
-			Help:      "The duration from starting till finishing handling ConsensusBlockProduced, which includes responding to the consensus",
-			Buckets:   reqTimeBuckets,
+			Help:      "The duration (s) from starting till finishing handling ConsensusBlockProduced, which includes responding to the consensus",
+			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain}),
 		smFSDHandlingDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "state_manager",
 			Name:      "chain_fetch_state_diff_duration",
-			Help:      "The duration from starting handling ChainFetchStateDiff request till responding to the chain",
-			Buckets:   reqTimeBuckets,
+			Help:      "The duration (s) from starting handling ChainFetchStateDiff request till responding to the chain",
+			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain}),
 		smTTHandlingDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "state_manager",
 			Name:      "timer_tick_duration",
-			Help:      "The duration from starting till finishing handling StateManagerTimerTick request",
-			Buckets:   reqTimeBuckets,
+			Help:      "The duration (s) from starting till finishing handling StateManagerTimerTick request",
+			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain}),
 		smBlockFetchDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "state_manager",
 			Name:      "block_fetch_duration",
-			Help:      "The duration from starting fetching block from other till it is received in this node",
-			Buckets:   reqTimeBuckets,
+			Help:      "The duration (s) from starting fetching block from other till it is received in this node",
+			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain}),
 	}
 
