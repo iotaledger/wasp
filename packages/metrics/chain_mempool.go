@@ -128,9 +128,9 @@ func (m *chainMempoolMetric) SetMissingReqs(count int) {
 }
 
 func (m *chainMempoolMetric) SetOnLedgerReqTime(d time.Duration) {
-	m.provider.mempoolOnLedgerReqTime.With(m.metricsLabels).Observe(float64(d.Milliseconds()))
+	m.provider.mempoolOnLedgerReqTime.With(m.metricsLabels).Observe(d.Seconds())
 }
 
 func (m *chainMempoolMetric) SetOffLedgerReqTime(d time.Duration) {
-	m.provider.mempoolOffLedgerReqTime.With(m.metricsLabels).Observe(float64(d.Milliseconds()))
+	m.provider.mempoolOffLedgerReqTime.With(m.metricsLabels).Observe(d.Seconds())
 }
