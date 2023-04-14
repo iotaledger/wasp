@@ -33,7 +33,7 @@ func (i *inputChainTxPublishResult) String() string {
 		i.committeeAddr.String(),
 		i.logIndex,
 		i.txID.ToHex(),
-		i.aliasOutput.OutputID().ToHex(),
+		i.aliasOutput,
 		i.confirmed,
 	)
 }

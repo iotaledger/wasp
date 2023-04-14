@@ -91,6 +91,7 @@
     "chainMessagesMetrics": true,
     "chainStateMetrics": true,
     "chainStateManagerMetrics": true,
+    "chainNodeConnMetrics": true,
     "restAPIMetrics": true,
     "goMetrics": true,
     "processMetrics": true,

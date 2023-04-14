@@ -347,20 +347,22 @@ Example:
 
 ## <a id="prometheus"></a> 12. Prometheus
 
-| Name                 | Description                                                  | Type    | Default value  |
-| -------------------- | ------------------------------------------------------------ | ------- | -------------- |
-| enabled              | Whether the prometheus plugin is enabled                     | boolean | true           |
-| bindAddress          | The bind address on which the Prometheus exporter listens on | string  | "0.0.0.0:2112" |
-| nodeMetrics          | Whether to include node metrics                              | boolean | true           |
-| blockWALMetrics      | Whether to include block Write-Ahead Log (WAL) metrics       | boolean | true           |
-| consensusMetrics     | Whether to include consensus metrics                         | boolean | true           |
-| mempoolMetrics       | Whether to include mempool metrics                           | boolean | true           |
-| chainMessagesMetrics | Whether to include chain messages metrics                    | boolean | true           |
-| chainStateMetrics    | Whether to include chain state metrics                       | boolean | true           |
-| restAPIMetrics       | Whether to include restAPI metrics                           | boolean | true           |
-| goMetrics            | Whether to include go metrics                                | boolean | true           |
-| processMetrics       | Whether to include process metrics                           | boolean | true           |
-| promhttpMetrics      | Whether to include promhttp metrics                          | boolean | true           |
+| Name                     | Description                                                  | Type    | Default value  |
+| ------------------------ | ------------------------------------------------------------ | ------- | -------------- |
+| enabled                  | Whether the prometheus plugin is enabled                     | boolean | true           |
+| bindAddress              | The bind address on which the Prometheus exporter listens on | string  | "0.0.0.0:2112" |
+| nodeMetrics              | Whether to include node metrics                              | boolean | true           |
+| blockWALMetrics          | Whether to include block Write-Ahead Log (WAL) metrics       | boolean | true           |
+| consensusMetrics         | Whether to include consensus metrics                         | boolean | true           |
+| mempoolMetrics           | Whether to include mempool metrics                           | boolean | true           |
+| chainMessagesMetrics     | Whether to include chain messages metrics                    | boolean | true           |
+| chainStateMetrics        | Whether to include chain state metrics                       | boolean | true           |
+| chainStateManagerMetrics | Whether to include chain state manager metrics               | boolean | true           |
+| chainNodeConnMetrics     | Whether to include chain node conn metrics                   | boolean | true           |
+| restAPIMetrics           | Whether to include restAPI metrics                           | boolean | true           |
+| goMetrics                | Whether to include go metrics                                | boolean | true           |
+| processMetrics           | Whether to include process metrics                           | boolean | true           |
+| promhttpMetrics          | Whether to include promhttp metrics                          | boolean | true           |
 
 Example:
 
@@ -375,6 +377,8 @@ Example:
       "mempoolMetrics": true,
       "chainMessagesMetrics": true,
       "chainStateMetrics": true,
+      "chainStateManagerMetrics": true,
+      "chainNodeConnMetrics": true,
       "restAPIMetrics": true,
       "goMetrics": true,
       "processMetrics": true,
