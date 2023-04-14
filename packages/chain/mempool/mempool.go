@@ -541,7 +541,7 @@ func (mpi *mempoolImpl) handleConsensusRequests(recv *reqConsensusRequests) {
 	//
 	// Wait for missing requests.
 	for i := range missing {
-		mpi.sendMessages(mpi.distSync.Input(distSync.NewInputRequestNeeded(missing[i], true)))
+		mpi.sendMessages(mpi.distSync.Input(distSync.NewInputRequestNeeded(recv.ctx, missing[i])))
 	}
 	mpi.waitReq.WaitMany(recv.ctx, missing, func(req isc.Request) {
 		reqRefKey := isc.RequestRefFromRequest(req).AsKey()
