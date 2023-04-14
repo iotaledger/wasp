@@ -116,25 +116,25 @@ func (m *chainStateManagerMetric) SetRequestsWaiting(count int) {
 }
 
 func (m *chainStateManagerMetric) ConsensusStateProposalHandled(duration time.Duration) {
-	m.provider.smCSPHandlingDuration.With(m.metricsLabels).Observe(duration.Seconds())
+	m.provider.smCSPHandlingDuration.With(m.metricsLabels).Observe(float64(duration.Milliseconds()))
 }
 
 func (m *chainStateManagerMetric) ConsensusDecidedStateHandled(duration time.Duration) {
-	m.provider.smCDSHandlingDuration.With(m.metricsLabels).Observe(duration.Seconds())
+	m.provider.smCDSHandlingDuration.With(m.metricsLabels).Observe(float64(duration.Milliseconds()))
 }
 
 func (m *chainStateManagerMetric) ConsensusBlockProducedHandled(duration time.Duration) {
-	m.provider.smCBPHandlingDuration.With(m.metricsLabels).Observe(duration.Seconds())
+	m.provider.smCBPHandlingDuration.With(m.metricsLabels).Observe(float64(duration.Milliseconds()))
 }
 
 func (m *chainStateManagerMetric) ChainFetchStateDiffHandled(duration time.Duration) {
-	m.provider.smFSDHandlingDuration.With(m.metricsLabels).Observe(duration.Seconds())
+	m.provider.smFSDHandlingDuration.With(m.metricsLabels).Observe(float64(duration.Milliseconds()))
 }
 
 func (m *chainStateManagerMetric) StateManagerTimerTickHandled(duration time.Duration) {
-	m.provider.smTTHandlingDuration.With(m.metricsLabels).Observe(duration.Seconds())
+	m.provider.smTTHandlingDuration.With(m.metricsLabels).Observe(float64(duration.Milliseconds()))
 }
 
 func (m *chainStateManagerMetric) StateManagerBlockFetched(duration time.Duration) {
-	m.provider.smBlockFetchDuration.With(m.metricsLabels).Observe(duration.Seconds())
+	m.provider.smBlockFetchDuration.With(m.metricsLabels).Observe(float64(duration.Milliseconds()))
 }
