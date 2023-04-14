@@ -60,7 +60,9 @@ interface ISCSandbox {
     ) external;
 
     // Call the entry point of an ISC contract on the same chain.
-    // The specified funds in the allowance are taken from the caller's L2 account.
+    // The specified assets in `allowance` are transferred from the caller's L2
+    // account to the `evm` core contract's account.
+    // The called entry point will have the `evm` core contract as caller.
     function call(
         ISCHname contractHname,
         ISCHname entryPoint,
@@ -69,6 +71,7 @@ interface ISCSandbox {
     ) external returns (ISCDict memory);
 
     // Call a view entry point of an ISC contract on the same chain.
+    // The called entry point will have the `evm` core contract as caller.
     function callView(
         ISCHname contractHname,
         ISCHname entryPoint,
