@@ -15,6 +15,7 @@ type ParametersPrometheus struct {
 	ChainMessagesMetrics     bool   `default:"true" usage:"whether to include chain messages metrics"`
 	ChainStateMetrics        bool   `default:"true" usage:"whether to include chain state metrics"`
 	ChainStateManagerMetrics bool   `default:"true" usage:"whether to include chain state manager metrics"`
+	ChainNodeConnMetrics     bool   `default:"true" usage:"whether to include chain node conn metrics"`
 	RestAPIMetrics           bool   `default:"true" usage:"whether to include restAPI metrics"`
 	GoMetrics                bool   `default:"true" usage:"whether to include go metrics"`
 	ProcessMetrics           bool   `default:"true" usage:"whether to include process metrics"`
