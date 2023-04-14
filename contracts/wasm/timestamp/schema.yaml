@@ -1,3 +1,6 @@
+# Copyright 2020 IOTA Stiftung
+# SPDX-License-Identifier: Apache-2.0
+copyright: ""
 name: timestamp
 description: Extremely simple timestamp server
 structs: {}

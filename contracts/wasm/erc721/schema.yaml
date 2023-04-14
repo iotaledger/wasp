@@ -1,3 +1,6 @@
+# Copyright 2020 IOTA Stiftung
+# SPDX-License-Identifier: Apache-2.0
+copyright: ""
 name: Erc721
 description: ERC-721 NFT PoC for IOTA Smart Contracts
 events:
