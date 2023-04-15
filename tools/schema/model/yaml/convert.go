@@ -12,6 +12,8 @@ import (
 
 const (
 	KeyCopyright   string = "copyright"
+	KeyLicense     string = "license"
+	KeyRepository  string = "repository"
 	KeyName        string = "name"
 	KeyDescription string = "description"
 	KeyAuthor      string = "author"
@@ -27,24 +29,26 @@ const (
 	KeyResults     string = "results"
 )
 
+//nolint:funlen,gocyclo
 func Convert(root *Node, def *model.SchemaDef) error {
-	var name, description, author, version model.DefElt
+	var name, description, author, version, license, repository model.DefElt
 	var events, structs model.DefMapMap
 	var typedefs, state model.DefMap
 	var funcs, views model.FuncDefMap
 	for _, key := range root.Contents {
 		switch key.Val {
 		case KeyCopyright:
-			if key.Contents[0].Val != "" {
-				lines := strings.Split(key.Contents[0].Val, "\n")
-				copyright := ""
-				for _, line := range lines {
-					copyright += ("// " + line)
-				}
-				def.Copyright = copyright
+			if len(key.Contents) > 0 && key.Contents[0].Val != "" {
+				def.Copyright = ("// " + strings.TrimSuffix(key.Val, "\n"))
 			} else {
 				def.Copyright = key.HeadComment
 			}
+		case KeyLicense:
+			license.Val = key.Contents[0].Val
+			license.Line = key.Line
+		case KeyRepository:
+			repository.Val = key.Contents[0].Val
+			repository.Line = key.Line
 		case KeyName:
 			name.Val = key.Contents[0].Val
 			name.Line = key.Line
@@ -75,6 +79,8 @@ func Convert(root *Node, def *model.SchemaDef) error {
 	}
 	def.Name = name
 	def.Author = author
+	def.License = license
+	def.Repository = repository
 	def.Description = description
 	def.Version = version
 	def.Events = events

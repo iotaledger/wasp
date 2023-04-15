@@ -6,6 +6,7 @@ package generator
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/iotaledger/wasp/tools/schema/generator/rstemplates"
 	"github.com/iotaledger/wasp/tools/schema/model"
@@ -120,6 +121,8 @@ func (g *RustGenerator) generateCargoFiles(cargoMain string) error {
 func (g *RustGenerator) generateCargoToml() error {
 	const cargoToml = "../Cargo.toml"
 	return g.createFile(g.folder+cargoToml, false, func() {
+		save := g.keys["copyrightMessage"]
+		g.keys["copyrightMessage"] = strings.ReplaceAll(save, "//", "#")
 		g.emit(cargoToml)
 	})
 }

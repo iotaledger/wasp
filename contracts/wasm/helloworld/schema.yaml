@@ -1,6 +1,8 @@
 # Copyright 2020 IOTA Stiftung
 # SPDX-License-Identifier: Apache-2.0
 copyright: ""
+license: Apache-2.0
+repository: https://github.com/iotaledger/wasp/contracts/wasm/helloworld
 name: HelloWorld
 description: The ubiquitous hello world demo
 structs: {}

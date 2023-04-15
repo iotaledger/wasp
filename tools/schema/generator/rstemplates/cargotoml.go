@@ -6,16 +6,13 @@ package rstemplates
 var cargoToml = map[string]string{
 	// *******************************
 	"../Cargo.toml": `
-# Copyright 2020 IOTA Stiftung
-# SPDX-License-Identifier: Apache-2.0
-
 [package]
 $#emit package$cargoMain
-license = "Apache-2.0"
+license = $license
 version = "$version"
 authors = ["$author"]
 edition = "2021"
-repository = "https://github.com/iotaledger/wasp"
+$#if repository userRepository
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -24,6 +21,10 @@ $#emit dependencies$cargoMain
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"
+`,
+	// *******************************
+	"userRepository": `
+repository = $repository
 `,
 	// *******************************
 	"packageLib": `
