@@ -4,6 +4,8 @@ copyright: ""
 name: CoreGovernance
 version: 1.0.10
 description: Governance contract
+license: Apache-2.0
+repository: https://github.com/iotaledger/wasp/packages/wasmvm/wasmlib/interfaces/coreaccounts/coregovernance
 author: Eric Hop <eric@iota.org>
 structs: {}
 typedefs: {} 

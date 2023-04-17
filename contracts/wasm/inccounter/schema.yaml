@@ -3,6 +3,8 @@
 copyright: ""
 name: IncCounter
 description: ""
+license: Apache-2.0
+repository: https://github.com/iotaledger/wasp/contracts/wasm/inccounter
 structs: {}
 typedefs: {}
 state:

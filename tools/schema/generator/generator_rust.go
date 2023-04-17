@@ -124,6 +124,7 @@ func (g *RustGenerator) generateCargoToml() error {
 		save := g.keys["copyrightMessage"]
 		g.keys["copyrightMessage"] = strings.ReplaceAll(save, "//", "#")
 		g.emit(cargoToml)
+		g.keys["copyrightMessage"] = strings.ReplaceAll(save, "#", "//")
 	})
 }
 

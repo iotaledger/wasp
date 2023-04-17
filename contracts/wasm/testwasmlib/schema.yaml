@@ -4,6 +4,8 @@ copyright: ""
 
 name: TestWasmLib
 description: Exercise several aspects of WasmLib
+license: Apache-2.0
+repository: https://github.com/iotaledger/wasp/contracts/wasm/testwasmlib
 
 # ##################################
 

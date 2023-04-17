@@ -3,6 +3,8 @@
 copyright: ""
 name: memory
 description: memory description
+license: Apache-2.0
+repository: https://github.com/iotaledger/wasp/contracts/wasm/memory
 events: {}
 structs: {}
 typedefs: {}

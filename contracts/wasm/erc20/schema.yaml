@@ -3,6 +3,8 @@
 copyright: ""
 name: Erc20
 description: ERC-20 PoC for IOTA Smart Contracts
+license: Apache-2.0
+repository: https://github.com/iotaledger/wasp/contracts/wasm/erc20
 events:
   approval:
     amount: Uint64

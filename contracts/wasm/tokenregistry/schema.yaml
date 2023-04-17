@@ -3,6 +3,8 @@
 copyright: ""
 name: TokenRegistry
 description: ""
+license: Apache-2.0
+repository: https://github.com/iotaledger/wasp/contracts/wasm/tokenregistry
 structs:
   Token:
     created: Uint64 # creation timestamp

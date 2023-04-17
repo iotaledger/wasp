@@ -3,6 +3,8 @@
 copyright: ""
 name: timestamp
 description: Extremely simple timestamp server
+license: Apache-2.0
+repository: https://github.com/iotaledger/wasp/contracts/wasm/timestamp
 structs: {}
 typedefs: {}
 state:

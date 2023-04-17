@@ -3,6 +3,8 @@
 copyright: ""
 name: CoreContracts
 description: Tests core contract interfaces
+license: Apache-2.0
+repository: https://github.com/iotaledger/wasp/contracts/wasm/corecontracts
 events: {}
 structs: {}
 typedefs: {}

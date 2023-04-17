@@ -3,6 +3,8 @@
 copyright: ""
 name: FairAuction
 description: Decentralized auction to securely sell NFTs to the highest bidder
+license: Apache-2.0
+repository: https://github.com/iotaledger/wasp/contracts/wasm/fairauction
 structs:
   Auction:
     nft: NftID # NFT of NFTs for sale

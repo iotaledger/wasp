@@ -4,6 +4,8 @@ copyright: ""
 name: CoreBlockLog
 version: 1.0.10
 description: Block log contract
+license: Apache-2.0
+repository: https://github.com/iotaledger/wasp/packages/wasmvm/wasmlib/interfaces/coreaccounts/coreblocklog
 author: Eric Hop <eric@iota.org>
 structs: {}
 typedefs: {}

@@ -3,6 +3,8 @@
 copyright: ""
 name: storage
 description: storage description
+license: Apache-2.0
+repository: https://github.com/iotaledger/wasp/contracts/wasm/storage
 events: {}
 structs: {}
 typedefs: {}

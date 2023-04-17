@@ -55,6 +55,10 @@ func Parse(in []byte) *Node {
 			} else {
 				// yaml tag with value
 				elts := strings.SplitN(val, ":", 2)
+				if len(elts) != 2 {
+					fmt.Printf("nested key/value in the same line")
+					return nil
+				}
 				cur.Val = strings.TrimSpace(elts[0])
 				value := strings.TrimSpace(elts[1])
 				// TODO  what about special characters in value string?

@@ -3,6 +3,8 @@
 copyright: ""
 name: FairRoulette
 description: ""
+license: Apache-2.0
+repository: https://github.com/iotaledger/wasp/contracts/wasm/fairroulette
 events:
   bet:
     address: Address # address of better
