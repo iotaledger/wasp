@@ -14,13 +14,13 @@ var commonTemplates = model.StringMap{
 
 `,
 	// *******************************
-	"copyright": `
+	"copyrightMessage": `
 $#emit initGlobals
-$#if copyrightMessage userCopyrightMessage defaultCopyrightMessage
+$#if copyright userCopyrightMessage defaultCopyrightMessage
 `,
 	// *******************************
 	"userCopyrightMessage": `
-$copyrightMessage
+$copyright
 `,
 	// *******************************
 	"defaultCopyrightMessage": `

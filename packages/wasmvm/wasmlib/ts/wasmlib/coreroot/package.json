@@ -1,6 +1,6 @@
 {
   "name": "coreroot",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Interface library for: Root Contract",
   "main": "index.ts",
   "author": "Eric Hop <eric@iota.org>",

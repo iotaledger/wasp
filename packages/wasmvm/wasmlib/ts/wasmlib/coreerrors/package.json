@@ -1,6 +1,6 @@
 {
   "name": "coreerrors",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Interface library for: Errors Contract",
   "main": "index.ts",
   "author": "Eric Hop <eric@iota.org>",

@@ -1,10 +1,15 @@
 # Copyright 2020 IOTA Stiftung
 # SPDX-License-Identifier: Apache-2.0
 copyright: ""
+
 name: FairAuction
+version: 0.1.1
 description: Decentralized auction to securely sell NFTs to the highest bidder
+
+author: Eric Hop <eric@iota.org>
 license: Apache-2.0
-repository: https://github.com/iotaledger/wasp/contracts/wasm/fairauction
+repository: https://github.com/iotaledger/wasp
+
 structs:
   Auction:
     nft: NftID # NFT of NFTs for sale

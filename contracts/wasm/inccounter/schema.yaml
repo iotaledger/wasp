@@ -1,10 +1,15 @@
 # Copyright 2020 IOTA Stiftung
 # SPDX-License-Identifier: Apache-2.0
 copyright: ""
+
 name: IncCounter
-description: ""
+version: 0.1.1
+description: Increment counter tests
+
+author: Eric Hop <eric@iota.org>
 license: Apache-2.0
-repository: https://github.com/iotaledger/wasp/contracts/wasm/inccounter
+repository: https://github.com/iotaledger/wasp
+
 structs: {}
 typedefs: {}
 state:

@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/tools/schema/generator/rstemplates"
 	"github.com/iotaledger/wasp/tools/schema/model"
+	"github.com/iotaledger/wasp/tools/schema/model/yaml"
 )
 
 type RustGenerator struct {
@@ -121,10 +122,11 @@ func (g *RustGenerator) generateCargoFiles(cargoMain string) error {
 func (g *RustGenerator) generateCargoToml() error {
 	const cargoToml = "../Cargo.toml"
 	return g.createFile(g.folder+cargoToml, false, func() {
-		save := g.keys["copyrightMessage"]
-		g.keys["copyrightMessage"] = strings.ReplaceAll(save, "//", "#")
+		save := g.keys[yaml.KeyCopyright]
+		g.keys[yaml.KeyCopyright] = strings.ReplaceAll(save, "//", "#")
+		g.emit("copyrightMessage")
 		g.emit(cargoToml)
-		g.keys["copyrightMessage"] = strings.ReplaceAll(save, "#", "//")
+		g.keys[yaml.KeyCopyright] = save
 	})
 }
 

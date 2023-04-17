@@ -1,10 +1,15 @@
 # Copyright 2020 IOTA Stiftung
 # SPDX-License-Identifier: Apache-2.0
 copyright: ""
+
 name: executiontime
-description: executiontime description
+version: 0.1.1
+description: Gas calibration execution time
+
+author: Larry Ivange <larry.ivange@iota.org>
 license: Apache-2.0
-repository: https://github.com/iotaledger/wasp/contracts/wasm/executiontime
+repository: https://github.com/iotaledger/wasp
+
 events: {}
 structs: {}
 typedefs: {}

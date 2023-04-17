@@ -1,10 +1,15 @@
 # Copyright 2020 IOTA Stiftung
 # SPDX-License-Identifier: Apache-2.0
 copyright: ""
+
 name: FairRoulette
-description: ""
+version: 0.1.1
+description: Demo gambling contract
+
+author: Eric Hop <eric@iota.org>
 license: Apache-2.0
-repository: https://github.com/iotaledger/wasp/contracts/wasm/fairroulette
+repository: https://github.com/iotaledger/wasp
+
 events:
   bet:
     address: Address # address of better

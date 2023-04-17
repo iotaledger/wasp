@@ -1,10 +1,15 @@
 # Copyright 2020 IOTA Stiftung
 # SPDX-License-Identifier: Apache-2.0
 copyright: ""
+
 name: Dividend
+version: 0.1.1
 description: Simple dividend smart contract
+
+author: Eric Hop <eric@iota.org>
 license: Apache-2.0
-repository: https://github.com/iotaledger/wasp/contracts/wasm/dividend
+repository: https://github.com/iotaledger/wasp
+
 structs: {}
 typedefs: {}
 state:

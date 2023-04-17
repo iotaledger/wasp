@@ -3,9 +3,12 @@
 copyright: ""
 
 name: TestWasmLib
+version: 0.1.1
 description: Exercise several aspects of WasmLib
+
+author: Eric Hop <eric@iota.org>
 license: Apache-2.0
-repository: https://github.com/iotaledger/wasp/contracts/wasm/testwasmlib
+repository: https://github.com/iotaledger/wasp
 
 # ##################################
 
