@@ -39,6 +39,8 @@ type Schema struct {
 	Author        string
 	ContractName  string
 	Copyright     string
+	License       string
+	Repository    string
 	Description   string
 	PackageName   string
 	Version       string
@@ -63,6 +65,8 @@ func (s *Schema) Compile(schemaDef *SchemaDef) error {
 		return errors.New("missing contract name")
 	}
 	s.Copyright = schemaDef.Copyright
+	s.License = schemaDef.License.Val
+	s.Repository = schemaDef.Repository.Val
 	s.PackageName = strings.ToLower(s.ContractName)
 	s.Description = strings.TrimSpace(schemaDef.Description.Val)
 	s.Author = strings.TrimSpace(schemaDef.Author.Val)

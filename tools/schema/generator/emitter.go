@@ -409,6 +409,21 @@ func (g *GenBase) setCommonKeys() {
 	g.keys["hscName"] = isc.Hn(scName).String()
 	g.keys["scDesc"] = g.s.Description
 	g.keys["author"] = g.s.Author
+	if g.s.License != "" {
+		if g.s.License[0] != '"' {
+			g.keys["license"] = "\"" + g.s.License + "\""
+		} else {
+			g.keys["license"] = g.s.License
+		}
+	} else {
+		g.keys["license"] = "\"Apache-2.0\""
+	}
+	if g.s.Repository != "" && g.s.Repository[0] != '"' {
+		g.keys["repository"] = "\"" + g.s.Repository + "\""
+	} else {
+		// if 'repository' is empty then it will be ignore in template
+		g.keys["repository"] = g.s.Repository
+	}
 	g.keys["copyrightMessage"] = g.s.Copyright
 	g.keys["version"] = g.s.Version
 }

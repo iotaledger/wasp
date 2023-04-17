@@ -1,6 +1,11 @@
+# Copyright 2020 IOTA Stiftung
+# SPDX-License-Identifier: Apache-2.0
+copyright: ""
 name: CoreBlob
 version: 1.0.10
 description: Blob Contract
+license: Apache-2.0
+repository: https://github.com/iotaledger/wasp/packages/wasmvm/wasmlib/interfaces/coreaccounts/coreblob
 author: Eric Hop <eric@iota.org>
 structs: {}
 typedefs: {}

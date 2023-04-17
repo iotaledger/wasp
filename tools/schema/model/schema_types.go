@@ -33,6 +33,8 @@ type DefElt struct {
 
 type SchemaDef struct {
 	Copyright   string
+	License     DefElt
+	Repository  DefElt
 	Name        DefElt
 	Description DefElt
 	Author      DefElt
