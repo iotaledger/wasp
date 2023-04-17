@@ -42,7 +42,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 	originatorAddr := par.OriginatorKeyPair.GetPublicKey().AsEd25519Address()
 
 	fmt.Fprint(textout, par.Prefix)
-	fmt.Fprintf(textout, "creating new chain. Owner address: %s. State controller: %s, N = %d, T = %d\n",
+	fmt.Fprintf(textout, "Creating new chain\n* Owner address:    %s\n* State controller: %s, N = %d, T = %d\n",
 		originatorAddr, stateControllerAddr, par.N, par.T)
 	fmt.Fprint(textout, par.Prefix)
 
@@ -55,14 +55,14 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 	)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
-		fmt.Fprintf(textout, "creating chain origin and init transaction.. FAILED: %v\n", err)
+		fmt.Fprintf(textout, "Creating chain origin and init transaction.. FAILED: %v\n", err)
 		return isc.ChainID{}, fmt.Errorf("DeployChain: %w", err)
 	}
 	fmt.Fprint(textout, par.Prefix)
-	fmt.Fprintf(textout, "chain has been created successfully on the Tangle. ChainID: %s, State address: %s, N = %d, T = %d\n",
+	fmt.Fprintf(textout, "Chain has been created successfully on the Tangle.\n* ChainID: %s\n* State address: %s, N = %d, T = %d\n",
 		chainID.String(), stateControllerAddr.Bech32(parameters.L1().Protocol.Bech32HRP), par.N, par.T)
 
-	fmt.Fprintf(textout, "make sure to activate the chain on all committee nodes\n")
+	fmt.Fprintf(textout, "Make sure to activate the chain on all committee nodes\n")
 
 	return chainID, err
 }

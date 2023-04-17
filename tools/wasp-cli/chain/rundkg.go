@@ -102,11 +102,11 @@ func doDKG(node string, peers []string, quorum int) iotago.Address {
 
 	committeeMembersStr := ""
 	for _, fp := range filteredPeers {
-		committeeMembersStr += fmt.Sprintf("\t%v (%v)\n", fp.PublicKey, fp.Name)
+		committeeMembersStr += fmt.Sprintf("%v (%v)\n", fp.PublicKey, fp.Name)
 	}
 
 	fmt.Fprintf(os.Stdout,
-		"DKG successful\nAddress: %s\nCommittee size=%v, quorum=%v, members:\n%s",
+		"DKG successful\nAddress: %s\nCommittee:\n* size=%v\n* quorum=%v\n* members: %s\n",
 		stateControllerAddr.Bech32(parameters.L1().Protocol.Bech32HRP),
 		len(filteredPeers),
 		quorum,
