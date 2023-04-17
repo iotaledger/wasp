@@ -6,6 +6,7 @@ package generator
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -52,6 +53,8 @@ type GenBase struct {
 
 const spaces = "                                             "
 
+var ErrNoError = errors.New("abort without error")
+
 func (g *GenBase) init(s *model.Schema, typeDependent model.StringMapMap, templates []map[string]string) {
 	g.s = s
 	g.typeDependent = typeDependent
@@ -91,6 +94,7 @@ func (g *GenBase) build(exe string, args string) error {
 	err := cmd.Run()
 	if err != nil {
 		fmt.Println(stdout.String())
+		return ErrNoError
 	}
 	return err
 }

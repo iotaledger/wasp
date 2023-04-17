@@ -61,10 +61,10 @@ impl WasmClientService {
             .build()
             .unwrap();
         let body = APICallViewRequest {
-            arguments: Codec::json_encode(args),
             chain_id: self.chain_id.to_string(),
             contract_hname: contract_hname.to_string(),
             function_hname: function_hname.to_string(),
+            arguments: Codec::json_encode(args),
         };
         match client.post(url).json(&body).send() {
             Ok(v) => match v.status() {

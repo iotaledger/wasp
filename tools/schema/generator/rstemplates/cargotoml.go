@@ -8,7 +8,7 @@ var cargoToml = map[string]string{
 	"../Cargo.toml": `
 [package]
 $#emit package$cargoMain
-license = $license
+license = "$license"
 version = "$version"
 authors = ["$author"]
 edition = "2021"
@@ -24,7 +24,7 @@ wasm-bindgen-test = "0.3.34"
 `,
 	// *******************************
 	"userRepository": `
-repository = $repository
+repository = "$repository"
 `,
 	// *******************************
 	"packageLib": `

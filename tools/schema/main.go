@@ -25,7 +25,7 @@ import (
 	wasp_yaml "github.com/iotaledger/wasp/tools/schema/model/yaml"
 )
 
-const version = "schema tool version 1.1.6"
+const version = "schema tool version 1.1.7"
 
 var (
 	flagBuild   = flag.Bool("build", false, "build wasm target for specified languages")
@@ -71,7 +71,7 @@ func main() {
 			log.Panic("schema definition file already exists")
 		}
 		err = generateSchema(file)
-		if err != nil {
+		if err != nil && !errors.Is(err, generator.ErrNoError) {
 			log.Panic(err)
 		}
 		return
@@ -79,7 +79,7 @@ func main() {
 
 	if *flagInit != "" {
 		err = generateSchemaNew()
-		if err != nil {
+		if err != nil && !errors.Is(err, generator.ErrNoError) {
 			if _, err2 := os.Stat(*flagInit); err2 == nil {
 				log.Println("schema already exists")
 				return
@@ -263,7 +263,6 @@ func generateSchemaNew() error {
 
 	schemaDef := &model.SchemaDef{}
 	schemaDef.Name = model.DefElt{Val: name}
-	schemaDef.Author = model.DefElt{Val: model.DefaultAuthor}
 	schemaDef.Description = model.DefElt{Val: name + " description"}
 	schemaDef.Version = model.DefElt{Val: model.DefaultVersion}
 	schemaDef.Structs = make(model.DefMapMap)
@@ -349,7 +348,7 @@ func walkSubFolders() bool {
 		}
 		return generateSchema(file)
 	})
-	if err != nil {
+	if err != nil && !errors.Is(err, generator.ErrNoError) {
 		log.Panic(err)
 	}
 	return generated

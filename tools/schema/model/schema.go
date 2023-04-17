@@ -14,7 +14,6 @@ import (
 )
 
 const (
-	DefaultAuthor  = "Eric Hop <eric@iota.org>"
 	DefaultVersion = "0.0.1"
 )
 
@@ -36,13 +35,13 @@ type Struct struct {
 }
 
 type Schema struct {
-	Author        string
 	ContractName  string
+	PackageName   string
+	Author        string
 	Copyright     string
+	Description   string
 	License       string
 	Repository    string
-	Description   string
-	PackageName   string
 	Version       string
 	CoreContracts bool
 	SchemaTime    time.Time
@@ -60,20 +59,17 @@ func NewSchema() *Schema {
 }
 
 func (s *Schema) Compile(schemaDef *SchemaDef) error {
-	s.ContractName = strings.TrimSpace(schemaDef.Name.Val)
+	s.ContractName = schemaDef.Name.Val
 	if s.ContractName == "" {
 		return errors.New("missing contract name")
 	}
+	s.PackageName = strings.ToLower(s.ContractName)
+	s.Author = schemaDef.Author.Val
 	s.Copyright = schemaDef.Copyright
+	s.Description = schemaDef.Description.Val
 	s.License = schemaDef.License.Val
 	s.Repository = schemaDef.Repository.Val
-	s.PackageName = strings.ToLower(s.ContractName)
-	s.Description = strings.TrimSpace(schemaDef.Description.Val)
-	s.Author = strings.TrimSpace(schemaDef.Author.Val)
-	if s.Author == "" {
-		s.Author = DefaultAuthor
-	}
-	s.Version = strings.TrimSpace(schemaDef.Version.Val)
+	s.Version = schemaDef.Version.Val
 	if s.Version == "" {
 		s.Version = DefaultVersion
 	}
