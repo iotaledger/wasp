@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-//nolint:gocyclo
+//nolint:gocyclo,funlen
 func Parse(in []byte) *Node {
 	var root Node
 	path := []*Node{&root} // Nodes in each hierarchy
@@ -45,15 +45,20 @@ func Parse(in []byte) *Node {
 		}
 
 		cur.Line = lineNum
-		curIndent = len(val) - len(strings.TrimLeft(val, " "))
+		valTrimLeft := strings.TrimLeft(val, " ")
+		curIndent = len(val) - len(valTrimLeft)
 		val = strings.TrimSpace(val)
-		if strings.Contains(val, ":") {
+		if strings.Contains(val, ":") && (strings.Index(val, ":") != strings.Index(val, "://")) {
 			if val[len(val)-1] == ':' {
 				// yaml tag only
 				cur.Val = val[:len(val)-1]
 			} else {
 				// yaml tag with value
-				elts := strings.Split(val, ":")
+				elts := strings.SplitN(val, ":", 2)
+				if len(elts) != 2 {
+					fmt.Printf("nested key/value in the same line")
+					return nil
+				}
 				cur.Val = strings.TrimSpace(elts[0])
 				value := strings.TrimSpace(elts[1])
 				// TODO  what about special characters in value string?
