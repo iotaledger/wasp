@@ -26,24 +26,20 @@ const (
 )
 
 func init() {
-	Plugin = &app.Plugin{
-		Component: &app.Component{
-			Name:      "Prometheus",
-			DepsFunc:  func(cDeps dependencies) { deps = cDeps },
-			Params:    params,
-			Provide:   provide,
-			Configure: configure,
-			Run:       run,
-		},
-		IsEnabled: func() bool {
-			return ParamsPrometheus.Enabled
-		},
+	Component = &app.Component{
+		Name:      "Prometheus",
+		DepsFunc:  func(cDeps dependencies) { deps = cDeps },
+		Params:    params,
+		IsEnabled: func(_ *dig.Container) bool { return ParamsPrometheus.Enabled },
+		Provide:   provide,
+		Configure: configure,
+		Run:       run,
 	}
 }
 
 var (
-	Plugin *app.Plugin
-	deps   dependencies
+	Component *app.Component
+	deps      dependencies
 )
 
 type dependencies struct {
@@ -59,7 +55,7 @@ type dependencies struct {
 
 func provide(c *dig.Container) error {
 	if err := c.Provide(metrics.NewChainMetricsProvider); err != nil {
-		Plugin.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	type depsOut struct {
@@ -79,7 +75,7 @@ func provide(c *dig.Container) error {
 			PrometheusRegistry: prometheus.NewRegistry(),
 		}
 	}); err != nil {
-		Plugin.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	return nil
@@ -88,7 +84,7 @@ func provide(c *dig.Container) error {
 func register(name string, cs ...prometheus.Collector) {
 	for _, c := range cs {
 		if err := deps.PrometheusRegistry.Register(c); err != nil {
-			Plugin.LogWarnf("failed to register %s metrics: %v", name, err)
+			Component.LogWarnf("failed to register %s metrics: %v", name, err)
 		}
 	}
 }
@@ -132,10 +128,10 @@ func configure() error {
 }
 
 func run() error {
-	Plugin.LogInfo("Starting Prometheus exporter ...")
+	Component.LogInfo("Starting Prometheus exporter ...")
 
-	if err := Plugin.Daemon().BackgroundWorker("Prometheus exporter", func(ctx context.Context) {
-		Plugin.LogInfo("Starting Prometheus exporter ... done")
+	if err := Component.Daemon().BackgroundWorker("Prometheus exporter", func(ctx context.Context) {
+		Component.LogInfo("Starting Prometheus exporter ... done")
 
 		deps.PrometheusEcho.GET(routeMetrics, func(c echo.Context) error {
 			handler := promhttp.HandlerFor(
@@ -157,14 +153,14 @@ func run() error {
 		bindAddr := ParamsPrometheus.BindAddress
 
 		go func() {
-			Plugin.LogInfof("You can now access the Prometheus exporter using: http://%s/metrics", bindAddr)
+			Component.LogInfof("You can now access the Prometheus exporter using: http://%s/metrics", bindAddr)
 			if err := deps.PrometheusEcho.Start(bindAddr); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				Plugin.LogWarnf("Stopped Prometheus exporter due to an error (%s)", err)
+				Component.LogWarnf("Stopped Prometheus exporter due to an error (%s)", err)
 			}
 		}()
 
 		<-ctx.Done()
-		Plugin.LogInfo("Stopping Prometheus exporter ...")
+		Component.LogInfo("Stopping Prometheus exporter ...")
 
 		shutdownCtx, shutdownCtxCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer shutdownCtxCancel()
@@ -172,12 +168,12 @@ func run() error {
 		//nolint:contextcheck // false positive
 		err := deps.PrometheusEcho.Shutdown(shutdownCtx)
 		if err != nil {
-			Plugin.LogWarn(err)
+			Component.LogWarn(err)
 		}
 
-		Plugin.LogInfo("Stopping Prometheus exporter ... done")
+		Component.LogInfo("Stopping Prometheus exporter ... done")
 	}, daemon.PriorityPrometheus); err != nil {
-		Plugin.LogPanicf("failed to start worker: %s", err)
+		Component.LogPanicf("failed to start worker: %s", err)
 	}
 
 	return nil

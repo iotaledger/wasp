@@ -11,16 +11,14 @@ import (
 )
 
 func init() {
-	CoreComponent = &app.CoreComponent{
-		Component: &app.Component{
-			Name:    "Users",
-			Params:  params,
-			Provide: provide,
-		},
+	Component = &app.Component{
+		Name:    "Users",
+		Params:  params,
+		Provide: provide,
 	}
 }
 
-var CoreComponent *app.CoreComponent
+var Component *app.Component
 
 func provide(c *dig.Container) error {
 	type userManagerDeps struct {
@@ -60,11 +58,11 @@ func provide(c *dig.Container) error {
 		for name, u := range ParamsUsers.Users {
 			user, err := users.NewUser(name, u.PasswordHash, u.PasswordSalt, u.PermissionsMap())
 			if err != nil {
-				CoreComponent.LogPanicf("unable to add user to user manager %s: %s", name, err)
+				Component.LogPanicf("unable to add user to user manager %s: %s", name, err)
 			}
 
 			if err := userManager.AddUser(user); err != nil {
-				CoreComponent.LogPanicf("unable to add user to user manager %s: %s", name, err)
+				Component.LogPanicf("unable to add user to user manager %s: %s", name, err)
 			}
 		}
 
@@ -74,7 +72,7 @@ func provide(c *dig.Container) error {
 			UserManager: userManager,
 		}
 	}); err != nil {
-		CoreComponent.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	return nil

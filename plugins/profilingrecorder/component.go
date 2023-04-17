@@ -5,25 +5,22 @@ import (
 	"runtime"
 
 	profile "github.com/bygui86/multi-profile/v2"
+	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/wasp/packages/daemon"
 )
 
 func init() {
-	Plugin = &app.Plugin{
-		Component: &app.Component{
-			Name:   "profilingRecorder",
-			Params: params,
-			Run:    run,
-		},
-		IsEnabled: func() bool {
-			return ParamsProfilingRecorder.Enabled
-		},
+	Component = &app.Component{
+		Name:      "profilingRecorder",
+		Params:    params,
+		IsEnabled: func(_ *dig.Container) bool { return ParamsProfilingRecorder.Enabled },
+		Run:       run,
 	}
 }
 
-var Plugin *app.Plugin
+var Component *app.Component
 
 func run() error {
 	runtime.SetMutexProfileFraction(5)
@@ -44,7 +41,7 @@ func run() error {
 	profs[5] = profile.TraceProfile(profConfig).Start()
 	profs[6] = profile.ThreadCreationProfile(profConfig).Start()
 
-	err := Plugin.Daemon().BackgroundWorker(Plugin.Name, func(ctx context.Context) {
+	err := Component.Daemon().BackgroundWorker(Component.Name, func(ctx context.Context) {
 		<-ctx.Done()
 		for _, p := range profs {
 			p.Stop()

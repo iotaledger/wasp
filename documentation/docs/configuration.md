@@ -311,83 +311,7 @@ Example:
   }
 ```
 
-## <a id="profiling"></a> 10. Profiling
-
-| Name        | Description                                       | Type    | Default value    |
-| ----------- | ------------------------------------------------- | ------- | ---------------- |
-| enabled     | Whether the profiling plugin is enabled           | boolean | false            |
-| bindAddress | The bind address on which the profiler listens on | string  | "localhost:6060" |
-
-Example:
-
-```json
-  {
-    "profiling": {
-      "enabled": false,
-      "bindAddress": "localhost:6060"
-    }
-  }
-```
-
-## <a id="profilingrecorder"></a> 11. ProfilingRecorder
-
-| Name    | Description                                     | Type    | Default value |
-| ------- | ----------------------------------------------- | ------- | ------------- |
-| enabled | Whether the ProfilingRecorder plugin is enabled | boolean | false         |
-
-Example:
-
-```json
-  {
-    "profilingRecorder": {
-      "enabled": false
-    }
-  }
-```
-
-## <a id="prometheus"></a> 12. Prometheus
-
-| Name                     | Description                                                  | Type    | Default value  |
-| ------------------------ | ------------------------------------------------------------ | ------- | -------------- |
-| enabled                  | Whether the prometheus plugin is enabled                     | boolean | true           |
-| bindAddress              | The bind address on which the Prometheus exporter listens on | string  | "0.0.0.0:2112" |
-| nodeMetrics              | Whether to include node metrics                              | boolean | true           |
-| blockWALMetrics          | Whether to include block Write-Ahead Log (WAL) metrics       | boolean | true           |
-| consensusMetrics         | Whether to include consensus metrics                         | boolean | true           |
-| mempoolMetrics           | Whether to include mempool metrics                           | boolean | true           |
-| chainMessagesMetrics     | Whether to include chain messages metrics                    | boolean | true           |
-| chainStateMetrics        | Whether to include chain state metrics                       | boolean | true           |
-| chainStateManagerMetrics | Whether to include chain state manager metrics               | boolean | true           |
-| chainNodeConnMetrics     | Whether to include chain node conn metrics                   | boolean | true           |
-| restAPIMetrics           | Whether to include restAPI metrics                           | boolean | true           |
-| goMetrics                | Whether to include go metrics                                | boolean | true           |
-| processMetrics           | Whether to include process metrics                           | boolean | true           |
-| promhttpMetrics          | Whether to include promhttp metrics                          | boolean | true           |
-
-Example:
-
-```json
-  {
-    "prometheus": {
-      "enabled": true,
-      "bindAddress": "0.0.0.0:2112",
-      "nodeMetrics": true,
-      "blockWALMetrics": true,
-      "consensusMetrics": true,
-      "mempoolMetrics": true,
-      "chainMessagesMetrics": true,
-      "chainStateMetrics": true,
-      "chainStateManagerMetrics": true,
-      "chainNodeConnMetrics": true,
-      "restAPIMetrics": true,
-      "goMetrics": true,
-      "processMetrics": true,
-      "promhttpMetrics": true
-    }
-  }
-```
-
-## <a id="webapi"></a> 13. Web API
+## <a id="webapi"></a> 10. Web API
 
 | Name                      | Description                                              | Type    | Default value  |
 | ------------------------- | -------------------------------------------------------- | ------- | -------------- |
@@ -465,6 +389,82 @@ Example:
         "maxTopicSubscriptionsPerClient": 0
       },
       "debugRequestLoggerEnabled": false
+    }
+  }
+```
+
+## <a id="profiling"></a> 11. Profiling
+
+| Name        | Description                                       | Type    | Default value    |
+| ----------- | ------------------------------------------------- | ------- | ---------------- |
+| enabled     | Whether the profiling component is enabled        | boolean | false            |
+| bindAddress | The bind address on which the profiler listens on | string  | "localhost:6060" |
+
+Example:
+
+```json
+  {
+    "profiling": {
+      "enabled": false,
+      "bindAddress": "localhost:6060"
+    }
+  }
+```
+
+## <a id="profilingrecorder"></a> 12. ProfilingRecorder
+
+| Name    | Description                                     | Type    | Default value |
+| ------- | ----------------------------------------------- | ------- | ------------- |
+| enabled | Whether the ProfilingRecorder plugin is enabled | boolean | false         |
+
+Example:
+
+```json
+  {
+    "profilingRecorder": {
+      "enabled": false
+    }
+  }
+```
+
+## <a id="prometheus"></a> 13. Prometheus
+
+| Name                     | Description                                                  | Type    | Default value  |
+| ------------------------ | ------------------------------------------------------------ | ------- | -------------- |
+| enabled                  | Whether the prometheus plugin is enabled                     | boolean | true           |
+| bindAddress              | The bind address on which the Prometheus exporter listens on | string  | "0.0.0.0:2112" |
+| nodeMetrics              | Whether to include node metrics                              | boolean | true           |
+| blockWALMetrics          | Whether to include block Write-Ahead Log (WAL) metrics       | boolean | true           |
+| consensusMetrics         | Whether to include consensus metrics                         | boolean | true           |
+| mempoolMetrics           | Whether to include mempool metrics                           | boolean | true           |
+| chainMessagesMetrics     | Whether to include chain messages metrics                    | boolean | true           |
+| chainStateMetrics        | Whether to include chain state metrics                       | boolean | true           |
+| chainStateManagerMetrics | Whether to include chain state manager metrics               | boolean | true           |
+| chainNodeConnMetrics     | Whether to include chain node conn metrics                   | boolean | true           |
+| restAPIMetrics           | Whether to include restAPI metrics                           | boolean | true           |
+| goMetrics                | Whether to include go metrics                                | boolean | true           |
+| processMetrics           | Whether to include process metrics                           | boolean | true           |
+| promhttpMetrics          | Whether to include promhttp metrics                          | boolean | true           |
+
+Example:
+
+```json
+  {
+    "prometheus": {
+      "enabled": true,
+      "bindAddress": "0.0.0.0:2112",
+      "nodeMetrics": true,
+      "blockWALMetrics": true,
+      "consensusMetrics": true,
+      "mempoolMetrics": true,
+      "chainMessagesMetrics": true,
+      "chainStateMetrics": true,
+      "chainStateManagerMetrics": true,
+      "chainNodeConnMetrics": true,
+      "restAPIMetrics": true,
+      "goMetrics": true,
+      "processMetrics": true,
+      "promhttpMetrics": true
     }
   }
 ```

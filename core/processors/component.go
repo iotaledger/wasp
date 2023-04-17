@@ -11,15 +11,13 @@ import (
 )
 
 func init() {
-	CoreComponent = &app.CoreComponent{
-		Component: &app.Component{
-			Name:    "Processors",
-			Provide: provide,
-		},
+	Component = &app.Component{
+		Name:    "Processors",
+		Provide: provide,
 	}
 }
 
-var CoreComponent *app.CoreComponent
+var Component *app.Component
 
 func provide(c *dig.Container) error {
 	type processorsConfigResult struct {
@@ -29,14 +27,14 @@ func provide(c *dig.Container) error {
 	}
 
 	if err := c.Provide(func() processorsConfigResult {
-		CoreComponent.LogInfo("Registering native contracts...")
+		Component.LogInfo("Registering native contracts...")
 
 		nativeContracts := []*coreutil.ContractProcessor{
 			inccounter.Processor,
 		}
 
 		for _, c := range nativeContracts {
-			CoreComponent.LogDebugf(
+			Component.LogDebugf(
 				"Registering native contract: name: '%s', program hash: %s\n",
 				c.Contract.Name, c.Contract.ProgramHash.String(),
 			)
@@ -46,7 +44,7 @@ func provide(c *dig.Container) error {
 			ProcessorsConfig: coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(nativeContracts...),
 		}
 	}); err != nil {
-		CoreComponent.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	return nil

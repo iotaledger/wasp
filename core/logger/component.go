@@ -5,18 +5,16 @@ import (
 )
 
 func init() {
-	CoreComponent = &app.CoreComponent{
-		Component: &app.Component{
-			Name:      "Logger",
-			Configure: configure,
-		},
+	Component = &app.Component{
+		Name:      "Logger",
+		Configure: configure,
 	}
 }
 
-var CoreComponent *app.CoreComponent
+var Component *app.Component
 
 func configure() error {
-	initGoEthLogger(CoreComponent.App().NewLogger("go-ethereum"))
+	initGoEthLogger(Component.App().NewLogger("go-ethereum"))
 
 	return nil
 }

@@ -9,19 +9,17 @@ import (
 )
 
 func init() {
-	CoreComponent = &app.CoreComponent{
-		Component: &app.Component{
-			Name:     "Publisher",
-			DepsFunc: func(cDeps dependencies) { deps = cDeps },
-			Provide:  provide,
-			Run:      run,
-		},
+	Component = &app.Component{
+		Name:     "Publisher",
+		DepsFunc: func(cDeps dependencies) { deps = cDeps },
+		Provide:  provide,
+		Run:      run,
 	}
 }
 
 var (
-	CoreComponent *app.CoreComponent
-	deps          dependencies
+	Component *app.Component
+	deps      dependencies
 )
 
 type dependencies struct {
@@ -39,18 +37,18 @@ func provide(c *dig.Container) error {
 	if err := c.Provide(func() publisherResult {
 		return publisherResult{
 			Publisher: publisher.New(
-				CoreComponent.Logger(),
+				Component.Logger(),
 			),
 		}
 	}); err != nil {
-		CoreComponent.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	return nil
 }
 
 func run() error {
-	err := CoreComponent.Daemon().BackgroundWorker(
+	err := Component.Daemon().BackgroundWorker(
 		"Publisher",
 		deps.Publisher.Run,
 		daemon.PriorityPublisher,

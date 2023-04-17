@@ -14,21 +14,19 @@ import (
 )
 
 func init() {
-	CoreComponent = &app.CoreComponent{
-		Component: &app.Component{
-			Name:           "Database",
-			DepsFunc:       func(cDeps dependencies) { deps = cDeps },
-			Params:         params,
-			InitConfigPars: initConfigPars,
-			Provide:        provide,
-			Configure:      configure,
-		},
+	Component = &app.Component{
+		Name:             "Database",
+		DepsFunc:         func(cDeps dependencies) { deps = cDeps },
+		Params:           params,
+		InitConfigParams: initConfigParams,
+		Provide:          provide,
+		Configure:        configure,
 	}
 }
 
 var (
-	CoreComponent *app.CoreComponent
-	deps          dependencies
+	Component *app.Component
+	deps      dependencies
 )
 
 type dependencies struct {
@@ -37,7 +35,7 @@ type dependencies struct {
 	ChainStateDatabaseManager *database.ChainStateDatabaseManager
 }
 
-func initConfigPars(c *dig.Container) error {
+func initConfigParams(c *dig.Container) error {
 	type cfgResult struct {
 		dig.Out
 		DatabaseEngine hivedb.Engine `name:"databaseEngine"`
@@ -46,14 +44,14 @@ func initConfigPars(c *dig.Container) error {
 	if err := c.Provide(func() cfgResult {
 		dbEngine, err := hivedb.EngineFromStringAllowed(ParamsDatabase.Engine, database.AllowedEnginesDefault)
 		if err != nil {
-			CoreComponent.LogPanic(err)
+			Component.LogPanic(err)
 		}
 
 		return cfgResult{
 			DatabaseEngine: dbEngine,
 		}
 	}); err != nil {
-		CoreComponent.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	return nil
@@ -85,14 +83,14 @@ func provide(c *dig.Container) error {
 			database.WithPath(ParamsDatabase.ChainState.Path),
 		)
 		if err != nil {
-			CoreComponent.LogPanic(err)
+			Component.LogPanic(err)
 		}
 
 		return chainStateDatabaseManagerResult{
 			ChainStateDatabaseManager: manager,
 		}
 	}); err != nil {
-		CoreComponent.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	return nil
@@ -103,21 +101,21 @@ func configure() error {
 	// This has to be done in a background worker, because the Daemon could receive
 	// a shutdown signal during startup. If that is the case, the BackgroundWorker will never be started
 	// and the database will never be marked as corrupted.
-	if err := CoreComponent.Daemon().BackgroundWorker("Database Health", func(_ context.Context) {
+	if err := Component.Daemon().BackgroundWorker("Database Health", func(_ context.Context) {
 		if err := deps.ChainStateDatabaseManager.MarkStoresCorrupted(); err != nil {
-			CoreComponent.LogPanic(err)
+			Component.LogPanic(err)
 		}
 	}, daemon.PriorityDatabaseHealth); err != nil {
-		CoreComponent.LogPanicf("failed to start worker: %s", err)
+		Component.LogPanicf("failed to start worker: %s", err)
 	}
 
 	storesCorrupted, err := deps.ChainStateDatabaseManager.AreStoresCorrupted()
 	if err != nil {
-		CoreComponent.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	if storesCorrupted && !ParamsDatabase.DebugSkipHealthCheck {
-		CoreComponent.LogPanic(`
+		Component.LogPanic(`
 WASP was not shut down properly, the database may be corrupted.
 You need to resolve this situation manually.
 `)
@@ -125,34 +123,34 @@ You need to resolve this situation manually.
 
 	correctStoresVersion, err := deps.ChainStateDatabaseManager.CheckCorrectStoresVersion()
 	if err != nil {
-		CoreComponent.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	if !correctStoresVersion {
 		storesVersionUpdated, err2 := deps.ChainStateDatabaseManager.UpdateStoresVersion()
 		if err2 != nil {
-			CoreComponent.LogPanic(err2)
+			Component.LogPanic(err2)
 		}
 
 		if !storesVersionUpdated {
-			CoreComponent.LogPanic("WASP database version mismatch. The database scheme was updated.")
+			Component.LogPanic("WASP database version mismatch. The database scheme was updated.")
 		}
 	}
 
-	if err = CoreComponent.Daemon().BackgroundWorker("Close database", func(ctx context.Context) {
+	if err = Component.Daemon().BackgroundWorker("Close database", func(ctx context.Context) {
 		<-ctx.Done()
 
 		if err = deps.ChainStateDatabaseManager.MarkStoresHealthy(); err != nil {
-			CoreComponent.LogPanic(err)
+			Component.LogPanic(err)
 		}
 
-		CoreComponent.LogInfo("Syncing databases to disk ...")
+		Component.LogInfo("Syncing databases to disk ...")
 		if err = deps.ChainStateDatabaseManager.FlushAndCloseStores(); err != nil {
-			CoreComponent.LogPanicf("Syncing databases to disk ... failed: %s", err)
+			Component.LogPanicf("Syncing databases to disk ... failed: %s", err)
 		}
-		CoreComponent.LogInfo("Syncing databases to disk ... done")
+		Component.LogInfo("Syncing databases to disk ... done")
 	}, daemon.PriorityCloseDatabase); err != nil {
-		CoreComponent.LogPanicf("failed to start worker: %s", err)
+		Component.LogPanicf("failed to start worker: %s", err)
 	}
 
 	return nil

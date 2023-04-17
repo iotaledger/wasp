@@ -14,20 +14,18 @@ import (
 )
 
 func init() {
-	CoreComponent = &app.CoreComponent{
-		Component: &app.Component{
-			Name:     "Peering",
-			DepsFunc: func(cDeps dependencies) { deps = cDeps },
-			Params:   params,
-			Provide:  provide,
-			Run:      run,
-		},
+	Component = &app.Component{
+		Name:     "Peering",
+		DepsFunc: func(cDeps dependencies) { deps = cDeps },
+		Params:   params,
+		Provide:  provide,
+		Run:      run,
 	}
 }
 
 var (
-	CoreComponent *app.CoreComponent
-	deps          dependencies
+	Component *app.Component
+	deps      dependencies
 )
 
 type dependencies struct {
@@ -58,26 +56,26 @@ func provide(c *dig.Container) error {
 			ParamsPeering.Port,
 			nodeIdentity,
 			deps.TrustedPeersRegistryProvider,
-			CoreComponent.Logger(),
+			Component.Logger(),
 		)
 		if err != nil {
-			CoreComponent.LogPanicf("Init.peering: %v", err)
+			Component.LogPanicf("Init.peering: %v", err)
 		}
-		CoreComponent.LogInfof("------------- PeeringURL = %s, PubKey = %s ------------------", ParamsPeering.PeeringURL, nodeIdentity.GetPublicKey().String())
+		Component.LogInfof("------------- PeeringURL = %s, PubKey = %s ------------------", ParamsPeering.PeeringURL, nodeIdentity.GetPublicKey().String())
 
 		return networkResult{
 			NetworkProvider:       netImpl,
 			TrustedNetworkManager: tnmImpl,
 		}
 	}); err != nil {
-		CoreComponent.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	return nil
 }
 
 func run() error {
-	err := CoreComponent.Daemon().BackgroundWorker(
+	err := Component.Daemon().BackgroundWorker(
 		"WaspPeering",
 		deps.NetworkProvider.Run,
 		daemon.PriorityPeering,

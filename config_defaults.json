@@ -74,29 +74,6 @@
     "enabled": true,
     "path": "waspdb/wal"
   },
-  "profiling": {
-    "enabled": false,
-    "bindAddress": "localhost:6060"
-  },
-  "profilingRecorder": {
-    "enabled": false
-  },
-  "prometheus": {
-    "enabled": true,
-    "bindAddress": "0.0.0.0:2112",
-    "nodeMetrics": true,
-    "blockWALMetrics": true,
-    "consensusMetrics": true,
-    "mempoolMetrics": true,
-    "chainMessagesMetrics": true,
-    "chainStateMetrics": true,
-    "chainStateManagerMetrics": true,
-    "chainNodeConnMetrics": true,
-    "restAPIMetrics": true,
-    "goMetrics": true,
-    "processMetrics": true,
-    "promhttpMetrics": true
-  },
   "webapi": {
     "enabled": true,
     "bindAddress": "0.0.0.0:9090",
@@ -123,5 +100,28 @@
       "maxTopicSubscriptionsPerClient": 0
     },
     "debugRequestLoggerEnabled": false
+  },
+  "profiling": {
+    "enabled": false,
+    "bindAddress": "localhost:6060"
+  },
+  "profilingRecorder": {
+    "enabled": false
+  },
+  "prometheus": {
+    "enabled": true,
+    "bindAddress": "0.0.0.0:2112",
+    "nodeMetrics": true,
+    "blockWALMetrics": true,
+    "consensusMetrics": true,
+    "mempoolMetrics": true,
+    "chainMessagesMetrics": true,
+    "chainStateMetrics": true,
+    "chainStateManagerMetrics": true,
+    "chainNodeConnMetrics": true,
+    "restAPIMetrics": true,
+    "goMetrics": true,
+    "processMetrics": true,
+    "promhttpMetrics": true
   }
 }

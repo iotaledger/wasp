@@ -34,24 +34,20 @@ import (
 )
 
 func init() {
-	Plugin = &app.Plugin{
-		Component: &app.Component{
-			Name:           "WebAPI",
-			DepsFunc:       func(cDeps dependencies) { deps = cDeps },
-			Params:         params,
-			InitConfigPars: initConfigPars,
-			Provide:        provide,
-			Run:            run,
-		},
-		IsEnabled: func() bool {
-			return ParamsWebAPI.Enabled
-		},
+	Component = &app.Component{
+		Name:             "WebAPI",
+		DepsFunc:         func(cDeps dependencies) { deps = cDeps },
+		Params:           params,
+		InitConfigParams: initConfigParams,
+		IsEnabled:        func(_ *dig.Container) bool { return ParamsWebAPI.Enabled },
+		Provide:          provide,
+		Run:              run,
 	}
 }
 
 var (
-	Plugin *app.Plugin
-	deps   dependencies
+	Component *app.Component
+	deps      dependencies
 )
 
 const (
@@ -70,7 +66,7 @@ type dependencies struct {
 	WebsocketPublisher *websocket.Service `name:"websocketService"`
 }
 
-func initConfigPars(c *dig.Container) error {
+func initConfigParams(c *dig.Container) error {
 	type cfgResult struct {
 		dig.Out
 		WebAPIBindAddress string `name:"webAPIBindAddress"`
@@ -81,7 +77,7 @@ func initConfigPars(c *dig.Container) error {
 			WebAPIBindAddress: ParamsWebAPI.BindAddress,
 		}
 	}); err != nil {
-		Plugin.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	return nil
@@ -174,7 +170,7 @@ func provide(c *dig.Container) error {
 	}
 
 	if err := c.Provide(func(deps webapiServerDeps) webapiServerResult {
-		e := NewEcho(ParamsWebAPI, Plugin.Logger())
+		e := NewEcho(ParamsWebAPI, Component.Logger())
 
 		echoSwagger := CreateEchoSwagger(e, deps.AppInfo.Version)
 		websocketOptions := websocketserver.AcceptOptions{
@@ -184,9 +180,9 @@ func provide(c *dig.Container) error {
 			CompressionMode: websocketserver.CompressionDisabled,
 		}
 
-		logger := Plugin.App().NewLogger("WebAPI/v2")
+		logger := Component.App().NewLogger("WebAPI/v2")
 
-		hub := websockethub.NewHub(Plugin.Logger(), &websocketOptions, broadcastQueueSize, clientSendChannelSize, maxWebsocketMessageSize)
+		hub := websockethub.NewHub(Component.Logger(), &websocketOptions, broadcastQueueSize, clientSendChannelSize, maxWebsocketMessageSize)
 
 		websocketService := websocket.NewWebsocketService(logger, hub, []publisher.ISCEventType{
 			publisher.ISCEventKindNewBlock,
@@ -228,22 +224,22 @@ func provide(c *dig.Container) error {
 			WebsocketPublisher: websocketService,
 		}
 	}); err != nil {
-		Plugin.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	return nil
 }
 
 func run() error {
-	Plugin.LogInfof("Starting %s server ...", Plugin.Name)
-	if err := Plugin.Daemon().BackgroundWorker(Plugin.Name, func(ctx context.Context) {
-		Plugin.LogInfof("Starting %s server ...", Plugin.Name)
+	Component.LogInfof("Starting %s server ...", Component.Name)
+	if err := Component.Daemon().BackgroundWorker(Component.Name, func(ctx context.Context) {
+		Component.LogInfof("Starting %s server ...", Component.Name)
 		if err := deps.NodeConnection.WaitUntilInitiallySynced(ctx); err != nil {
-			Plugin.LogErrorf("failed to start %s, waiting for L1 node to become sync failed, error: %s", err.Error())
+			Component.LogErrorf("failed to start %s, waiting for L1 node to become sync failed, error: %s", err.Error())
 			return
 		}
 
-		Plugin.LogInfof("Starting %s server ... done", Plugin.Name)
+		Component.LogInfof("Starting %s server ... done", Component.Name)
 
 		go func() {
 			deps.EchoSwagger.Echo().Server.BaseContext = func(_ net.Listener) context.Context {
@@ -251,37 +247,37 @@ func run() error {
 				return ctx
 			}
 
-			Plugin.LogInfof("You can now access the WebAPI using: http://%s", ParamsWebAPI.BindAddress)
+			Component.LogInfof("You can now access the WebAPI using: http://%s", ParamsWebAPI.BindAddress)
 			if err := deps.EchoSwagger.Echo().Start(ParamsWebAPI.BindAddress); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				Plugin.LogWarnf("Stopped %s server due to an error (%s)", Plugin.Name, err)
+				Component.LogWarnf("Stopped %s server due to an error (%s)", Component.Name, err)
 			}
 		}()
 
 		<-ctx.Done()
 
-		Plugin.LogInfof("Stopping %s server ...", Plugin.Name)
+		Component.LogInfof("Stopping %s server ...", Component.Name)
 
 		shutdownCtx, shutdownCtxCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer shutdownCtxCancel()
 
 		//nolint:contextcheck // false positive
 		if err := deps.EchoSwagger.Echo().Shutdown(shutdownCtx); err != nil {
-			Plugin.LogWarn(err)
+			Component.LogWarn(err)
 		}
 
-		Plugin.LogInfof("Stopping %s server ... done", Plugin.Name)
+		Component.LogInfof("Stopping %s server ... done", Component.Name)
 	}, daemon.PriorityWebAPI); err != nil {
-		Plugin.LogPanicf("failed to start worker: %s", err)
+		Component.LogPanicf("failed to start worker: %s", err)
 	}
 
-	if err := Plugin.Daemon().BackgroundWorker("WebAPI[WS]", func(ctx context.Context) {
+	if err := Component.Daemon().BackgroundWorker("WebAPI[WS]", func(ctx context.Context) {
 		unhook := deps.WebsocketPublisher.EventHandler().AttachToEvents()
 		defer unhook()
 
 		deps.WebsocketHub.Run(ctx)
-		Plugin.LogInfo("Stopping WebAPI[WS]")
+		Component.LogInfo("Stopping WebAPI[WS]")
 	}, daemon.PriorityWebAPI); err != nil {
-		Plugin.LogPanicf("failed to start worker: %s", err)
+		Component.LogPanicf("failed to start worker: %s", err)
 	}
 
 	return nil

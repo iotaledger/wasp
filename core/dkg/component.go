@@ -15,15 +15,13 @@ import (
 )
 
 func init() {
-	CoreComponent = &app.CoreComponent{
-		Component: &app.Component{
-			Name:    "DKG",
-			Provide: provide,
-		},
+	Component = &app.Component{
+		Name:    "DKG",
+		Provide: provide,
 	}
 }
 
-var CoreComponent *app.CoreComponent
+var Component *app.Component
 
 func provide(c *dig.Container) error {
 	type nodeDeps struct {
@@ -45,17 +43,17 @@ func provide(c *dig.Container) error {
 			deps.NodeIdentityProvider.NodeIdentity(),
 			deps.NetworkProvider,
 			deps.DKShareRegistryProvider,
-			CoreComponent.Logger(),
+			Component.Logger(),
 		)
 		if err != nil {
-			CoreComponent.LogPanic(fmt.Errorf("failed to initialize the DKG node: %w", err))
+			Component.LogPanic(fmt.Errorf("failed to initialize the DKG node: %w", err))
 		}
 
 		return nodeResult{
 			Node: node,
 		}
 	}); err != nil {
-		CoreComponent.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	return nil

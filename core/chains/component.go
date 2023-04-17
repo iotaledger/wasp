@@ -23,21 +23,19 @@ import (
 )
 
 func init() {
-	CoreComponent = &app.CoreComponent{
-		Component: &app.Component{
-			Name:           "Chains",
-			DepsFunc:       func(cDeps dependencies) { deps = cDeps },
-			Params:         params,
-			InitConfigPars: initConfigPars,
-			Provide:        provide,
-			Run:            run,
-		},
+	Component = &app.Component{
+		Name:             "Chains",
+		DepsFunc:         func(cDeps dependencies) { deps = cDeps },
+		Params:           params,
+		InitConfigParams: initConfigParams,
+		Provide:          provide,
+		Run:              run,
 	}
 }
 
 var (
-	CoreComponent *app.CoreComponent
-	deps          dependencies
+	Component *app.Component
+	deps      dependencies
 )
 
 type dependencies struct {
@@ -47,7 +45,7 @@ type dependencies struct {
 	Chains          *chains.Chains
 }
 
-func initConfigPars(c *dig.Container) error {
+func initConfigParams(c *dig.Container) error {
 	type cfgResult struct {
 		dig.Out
 		APICacheTTL time.Duration `name:"apiCacheTTL"`
@@ -58,7 +56,7 @@ func initConfigPars(c *dig.Container) error {
 			APICacheTTL: ParamsChains.APICacheTTL,
 		}
 	}); err != nil {
-		CoreComponent.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	return nil
@@ -90,7 +88,7 @@ func provide(c *dig.Container) error {
 	if err := c.Provide(func(deps chainsDeps) chainsResult {
 		return chainsResult{
 			Chains: chains.New(
-				CoreComponent.Logger(),
+				Component.Logger(),
 				deps.NodeConnection,
 				deps.ProcessorsConfig,
 				ParamsChains.BroadcastUpToNPeers,
@@ -108,21 +106,21 @@ func provide(c *dig.Container) error {
 				deps.NodeIdentityProvider,
 				deps.ConsensusStateRegistry,
 				deps.ChainListener,
-				shutdown.NewCoordinator("chains", CoreComponent.Logger().Named("Shutdown")),
+				shutdown.NewCoordinator("chains", Component.Logger().Named("Shutdown")),
 				deps.ChainMetricsProvider,
 			),
 		}
 	}); err != nil {
-		CoreComponent.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	return nil
 }
 
 func run() error {
-	err := CoreComponent.Daemon().BackgroundWorker(CoreComponent.Name, func(ctx context.Context) {
+	err := Component.Daemon().BackgroundWorker(Component.Name, func(ctx context.Context) {
 		if err := deps.Chains.Run(ctx); err != nil {
-			deps.ShutdownHandler.SelfShutdown(fmt.Sprintf("Starting %s failed, error: %s", CoreComponent.Name, err.Error()), true)
+			deps.ShutdownHandler.SelfShutdown(fmt.Sprintf("Starting %s failed, error: %s", Component.Name, err.Error()), true)
 			return
 		}
 
@@ -130,7 +128,7 @@ func run() error {
 		deps.Chains.Close()
 	}, daemon.PriorityChains)
 	if err != nil {
-		CoreComponent.LogError(err)
+		Component.LogError(err)
 		return err
 	}
 

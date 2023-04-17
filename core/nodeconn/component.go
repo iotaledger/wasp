@@ -15,20 +15,18 @@ import (
 )
 
 func init() {
-	CoreComponent = &app.CoreComponent{
-		Component: &app.Component{
-			Name:      "NodeConn",
-			DepsFunc:  func(cDeps dependencies) { deps = cDeps },
-			Params:    params,
-			Provide:   provide,
-			Configure: configure,
-		},
+	Component = &app.Component{
+		Name:      "NodeConn",
+		DepsFunc:  func(cDeps dependencies) { deps = cDeps },
+		Params:    params,
+		Provide:   provide,
+		Configure: configure,
 	}
 }
 
 var (
-	CoreComponent *app.CoreComponent
-	deps          dependencies
+	Component *app.Component
+	deps      dependencies
 )
 
 type dependencies struct {
@@ -41,12 +39,12 @@ type dependencies struct {
 func provide(c *dig.Container) error {
 	if err := c.Provide(func() (*nodebridge.NodeBridge, error) {
 		nodeBridge := nodebridge.NewNodeBridge(
-			CoreComponent.Logger(),
+			Component.Logger(),
 			nodebridge.WithTargetNetworkName(ParamsINX.TargetNetworkName),
 		)
 
 		if err := nodeBridge.Connect(
-			CoreComponent.Daemon().ContextStopped(),
+			Component.Daemon().ContextStopped(),
 			ParamsINX.Address,
 			ParamsINX.MaxConnectionAttempts,
 		); err != nil {
@@ -55,7 +53,7 @@ func provide(c *dig.Container) error {
 
 		return nodeBridge, nil
 	}); err != nil {
-		CoreComponent.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	type nodeConnectionDeps struct {
@@ -67,31 +65,31 @@ func provide(c *dig.Container) error {
 
 	if err := c.Provide(func(deps nodeConnectionDeps) chain.NodeConnection {
 		nodeConnection, err := nodeconn.New(
-			CoreComponent.Daemon().ContextStopped(),
-			CoreComponent.Logger().Named("nc"),
+			Component.Daemon().ContextStopped(),
+			Component.Logger().Named("nc"),
 			deps.NodeBridge,
 			deps.ShutdownHandler,
 		)
 		if err != nil {
-			CoreComponent.LogPanicf("Creating NodeConnection failed: %s", err.Error())
+			Component.LogPanicf("Creating NodeConnection failed: %s", err.Error())
 		}
 		return nodeConnection
 	}); err != nil {
-		CoreComponent.LogPanic(err)
+		Component.LogPanic(err)
 	}
 
 	return nil
 }
 
 func configure() error {
-	if err := CoreComponent.Daemon().BackgroundWorker(CoreComponent.Name, func(ctx context.Context) {
-		CoreComponent.LogInfof("Starting %s ... done", CoreComponent.Name)
+	if err := Component.Daemon().BackgroundWorker(Component.Name, func(ctx context.Context) {
+		Component.LogInfof("Starting %s ... done", Component.Name)
 		if err := deps.NodeConnection.Run(ctx); err != nil {
-			deps.ShutdownHandler.SelfShutdown(fmt.Sprintf("Starting %s failed, error: %s", CoreComponent.Name, err.Error()), true)
+			deps.ShutdownHandler.SelfShutdown(fmt.Sprintf("Starting %s failed, error: %s", Component.Name, err.Error()), true)
 		}
-		CoreComponent.LogInfof("Stopping %s ... done", CoreComponent.Name)
+		Component.LogInfof("Stopping %s ... done", Component.Name)
 	}, daemon.PriorityNodeConnection); err != nil {
-		CoreComponent.LogPanicf("failed to start worker: %s", err)
+		Component.LogPanicf("failed to start worker: %s", err)
 	}
 
 	return nil
