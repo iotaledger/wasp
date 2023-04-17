@@ -1,10 +1,15 @@
 # Copyright 2020 IOTA Stiftung
 # SPDX-License-Identifier: Apache-2.0
 copyright: ""
+
 name: TestCore
+version: 0.1.1
 description: Wasm equivalent of built-in TestCore contract
+
+author: Eric Hop <eric@iota.org>
 license: Apache-2.0
-repository: https://github.com/iotaledger/wasp/contracts/wasm/testcore
+repository: https://github.com/iotaledger/wasp
+
 structs: {}
 typedefs: {}
 state:

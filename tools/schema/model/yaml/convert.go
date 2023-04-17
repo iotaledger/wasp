@@ -11,22 +11,22 @@ import (
 )
 
 const (
-	KeyCopyright   string = "copyright"
-	KeyLicense     string = "license"
-	KeyRepository  string = "repository"
-	KeyName        string = "name"
-	KeyDescription string = "description"
+	KeyAccess      string = "access"
 	KeyAuthor      string = "author"
+	KeyCopyright   string = "copyright"
+	KeyDescription string = "description"
 	KeyEvents      string = "events"
+	KeyFuncs       string = "funcs"
+	KeyLicense     string = "license"
+	KeyName        string = "name"
+	KeyParams      string = "params"
+	KeyRepository  string = "repository"
+	KeyResults     string = "results"
+	KeyState       string = "state"
 	KeyStructs     string = "structs"
 	KeyTypedefs    string = "typedefs"
-	KeyState       string = "state"
-	KeyFuncs       string = "funcs"
 	KeyVersion     string = "version"
 	KeyViews       string = "views"
-	KeyAccess      string = "access"
-	KeyParams      string = "params"
-	KeyResults     string = "results"
 )
 
 //nolint:funlen,gocyclo

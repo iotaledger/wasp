@@ -1,10 +1,14 @@
 # COPYRIGHT OF A TEST SCHEMA DEFINITION 1
 # COPYRIGHT OF A TEST SCHEMA DEFINITION 2
 copyright:
+
 name: SchemaComment
-description: demonstration of dumping comments in yaml file to schema definition
+version: 0.1.1
+description: Demonstration of copying comments in yaml file to schema code
+
+author: Eric Hop <eric@iota.org>
 license: Apache-2.0
-repository: https://github.com/iotaledger/wasp/contracts/wasm/schemacomment
+repository: https://github.com/iotaledger/wasp
 
 # ##################################
 

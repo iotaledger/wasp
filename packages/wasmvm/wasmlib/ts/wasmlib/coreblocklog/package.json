@@ -1,6 +1,6 @@
 {
   "name": "coreblocklog",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Interface library for: Block log contract",
   "main": "index.ts",
   "author": "Eric Hop <eric@iota.org>",

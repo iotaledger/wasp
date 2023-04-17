@@ -1,6 +1,6 @@
 {
   "name": "coreaccounts",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Interface library for: Chain account ledger contract",
   "main": "index.ts",
   "author": "Eric Hop <eric@iota.org>",

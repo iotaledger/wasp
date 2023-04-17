@@ -1,10 +1,15 @@
 # Copyright 2020 IOTA Stiftung
 # SPDX-License-Identifier: Apache-2.0
 copyright: ""
+
 name: memory
-description: memory description
+version: 0.1.1
+description: Gas calibration memory
+
+author: Larry Ivange <larry.ivange@iota.org>
 license: Apache-2.0
-repository: https://github.com/iotaledger/wasp/contracts/wasm/memory
+repository: https://github.com/iotaledger/wasp
+
 events: {}
 structs: {}
 typedefs: {}
