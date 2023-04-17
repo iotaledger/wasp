@@ -65,7 +65,7 @@ To use your EVM chain with MetaMask, simply open up MetaMask and click on the ne
 the bottom of this list, you will see the option `Custom RPC`. Click on this. For a local setup, use the values as shown
 in the image below:
 
-[![MetaMask Network](/img/metamask_beta.png)](/img/metamask_beta.png)
+[![MetaMask Network](/img/metamask_beta.png)](https://wiki.iota.org/shimmer/assets/images/metamask-shimmerevm-ff076ce000f4c9708f75fd1e0fb53f07.png)
 
 Ensure that your `RPC Url` and `Chain ID` are set correctly and match the dashboard values. The `Network Name` can be
 whatever you see fit.
@@ -91,7 +91,7 @@ the `Custom (1074) network`.
 
 ## Video Tutorial
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/yOyl30LQfac" title="Deploy Solidity Contract via Remix + Metamask" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/0_rmmprEKrM" title="ShimmerEVM Tutorial: Connect to ShimmerEVM Testnet & Deploy a Solidity Smart Contract" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ## Hardhat
 
@@ -101,18 +101,11 @@ make sure you add the correct network parameters to your `hardhat.config.js`, fo
 
 ```javascript
 networks: {
-    local: {
-        url: 'http://localhost:9090/chain/rms1.../evm/jsonrpc',
-            chainId
-    :
-        1074,
-            accounts
-    :
-        [privkey],
-            timeout
-    :
-        60000
-    }
+    'shimmerevm-testnet': {
+      url: 'https://json-rpc.evm.testnet.shimmer.network',
+      chainId: 1071,
+      accounts: [priv_key],
+    },
 }
 ```
 
@@ -125,7 +118,7 @@ often offered through block explorer APIs.
 
 ## Video Tutorial
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/zfc4ENTQkDE" title="Deploy Solidity Contracts with Hardhat" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/rRscvKirroo" title="ShimmerEVM Tutorial: Deploying a Smart Contract with Hardhat" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ## Ethers.js/Web3.js
 
