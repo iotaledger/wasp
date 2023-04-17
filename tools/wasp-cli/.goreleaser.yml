@@ -9,7 +9,7 @@ builds:
   - id: wasp-cli-linux-amd64
     binary: wasp-cli
     ldflags:
-      - -s -w -X=github.com/iotaledger/wasp/core/app.Version={{ .Summary }}
+      - -s -w -X=github.com/iotaledger/wasp/components/app.Version={{ .Summary }}
     main: main.go
     dir: ./tools/wasp-cli
     goos:
@@ -25,7 +25,7 @@ builds:
       - CC=aarch64-linux-gnu-gcc
       - CXX=aarch64-linux-gnu-g++
     ldflags:
-      - -s -w -X=github.com/iotaledger/wasp/core/app.Version={{ .Summary }}
+      - -s -w -X=github.com/iotaledger/wasp/components/app.Version={{ .Summary }}
     main: main.go
     dir: ./tools/wasp-cli
     goos:
@@ -41,7 +41,7 @@ builds:
       - CC=/usr/bin/x86_64-w64-mingw32-gcc-posix
       - CXX=/usr/bin/x86_64-w64-mingw32-g++-posix
     ldflags:
-      - -s -w -X=github.com/iotaledger/wasp/core/app.Version={{ .Summary }}
+      - -s -w -X=github.com/iotaledger/wasp/components/app.Version={{ .Summary }}
     main: main.go
     dir: ./tools/wasp-cli
     goos:

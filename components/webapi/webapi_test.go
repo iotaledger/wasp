@@ -14,8 +14,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/components/webapi"
 	"github.com/iotaledger/wasp/packages/authentication"
-	"github.com/iotaledger/wasp/plugins/webapi"
 )
 
 func TestInternalServerErrors(t *testing.T) {
