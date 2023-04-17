@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/iotaledger/wasp/core/app"
+	"github.com/iotaledger/wasp/components/app"
 )
 
 func main() {

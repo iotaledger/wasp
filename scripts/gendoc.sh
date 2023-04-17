@@ -9,7 +9,7 @@ cd tools/gendoc
 GIT_REF_TAG="$(git describe --tags)"
 
 BUILD_TAGS=rocksdb
-BUILD_LD_FLAGS="-X=github.com/iotaledger/wasp/core/app.Version=${GIT_REF_TAG}"
+BUILD_LD_FLAGS="-X=github.com/iotaledger/wasp/components/app.Version=${GIT_REF_TAG}"
 
 go run -tags ${BUILD_TAGS} -ldflags ${BUILD_LD_FLAGS} main.go
 

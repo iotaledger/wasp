@@ -9,11 +9,11 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/core/app"
+	"github.com/iotaledger/wasp/components/app"
+	"github.com/iotaledger/wasp/components/webapi"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	v2 "github.com/iotaledger/wasp/packages/webapi"
-	"github.com/iotaledger/wasp/plugins/webapi"
 )
 
 type NodeIdentityProviderMock struct{}

@@ -120,4 +120,4 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }},iotaledger/wasp:latest
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/core/app.Version=${{ steps.tagger.outputs.tag }}
+            BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}

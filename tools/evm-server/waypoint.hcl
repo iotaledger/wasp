@@ -37,8 +37,8 @@ app "wasp-evm-server" {
             dockerfile = "../../Dockerfile"
             context    = "../.."
             build_args = {
-                GOLANG_IMAGE_TAG = "1.19-bullseye"
-                BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/core/app.Version=${gitreftag()}"
+                GOLANG_IMAGE_TAG = "1.20-bullseye"
+                BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/components/app.Version=${gitreftag()}"
                 BUILD_TARGET = "./tools/wasp-cli"
                 FINAL_BINARY = "wasp-cli"
             }
