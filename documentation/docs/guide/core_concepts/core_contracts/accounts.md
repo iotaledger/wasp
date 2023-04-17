@@ -19,7 +19,7 @@ The `accounts` contract is one of the [core contracts](overview.md) on each IOTA
 chain.
 
 This contract keeps a consistent ledger of on-chain accounts in its state,
-i.e. [the L2 ledger](../accounts/how-accounts-work).
+i.e. [the L2 ledger](../accounts/how-accounts-work.md).
 
 ---
 
@@ -84,7 +84,7 @@ the target chain to the sender SC's L2 account on the origin chain.
 
 ### `harvest(f ForceMinimumBaseTokens)`
 
-Moves all tokens from the chain [common account](../accounts/the-common-account) to the sender's L2 account. The chain
+Moves all tokens from the chain [common account](../accounts/the-common-account.mdx) to the sender's L2 account. The chain
 owner is the only one who can call this entry point.
 
 #### Parameters
