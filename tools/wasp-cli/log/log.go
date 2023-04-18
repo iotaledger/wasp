@@ -207,7 +207,7 @@ func PrintTree(node interface{}, tab, tabwidth int) {
 		for k, v := range node {
 			tree = append(tree, TreeItem{
 				K: fmt.Sprintf("%q", string(k)),
-				V: fmt.Sprintf("%s", iotago.EncodeHex(v)),
+				V: iotago.EncodeHex(v),
 			})
 		}
 		PrintTree(tree, tab, tabwidth)

@@ -217,9 +217,8 @@ func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string, skipOnNodes ...i
 
 	chainIsUpAndRunning := func(t *testing.T, nodeIndex int) bool {
 		_, _, err := w.Cluster.WaspClient(nodeIndex).RequestsApi.
-			CallView(context.Background()).
+			CallView(context.Background(), chainIDStr).
 			ContractCallViewRequest(apiclient.ContractCallViewRequest{
-				ChainId:       chainIDStr,
 				ContractHName: governance.Contract.Hname().String(),
 				FunctionHName: governance.ViewGetChainInfo.Hname().String(),
 			}).

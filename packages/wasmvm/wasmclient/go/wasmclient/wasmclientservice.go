@@ -62,12 +62,12 @@ func (svc *WasmClientService) CallViewByHname(hContract, hFunction wasmtypes.ScH
 		return nil, err
 	}
 
-	res, _, err := svc.waspClient.RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
-		ChainId:       cvt.IscChainID(&svc.chainID).String(),
-		ContractHName: cvt.IscHname(hContract).String(),
-		FunctionHName: cvt.IscHname(hFunction).String(),
-		Arguments:     apiextensions.JSONDictToAPIJSONDict(params.JSONDict()),
-	}).Execute()
+	res, _, err := svc.waspClient.RequestsApi.CallView(context.Background(), cvt.IscChainID(&svc.chainID).String()).
+		ContractCallViewRequest(apiclient.ContractCallViewRequest{
+			ContractHName: cvt.IscHname(hContract).String(),
+			FunctionHName: cvt.IscHname(hFunction).String(),
+			Arguments:     apiextensions.JSONDictToAPIJSONDict(params.JSONDict()),
+		}).Execute()
 	if err != nil {
 		return nil, apiError(err)
 	}

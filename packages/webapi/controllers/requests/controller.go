@@ -45,6 +45,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		SetOperationId("getReceipt")
 
 	publicAPI.POST("chains/:chainID/callview", c.executeCallView).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamBody(mocker.Get(models.ContractCallViewRequest{}), "", "Parameters", true).
 		AddResponse(http.StatusOK, "Result", dictExample, nil).
 		SetSummary("Call a view function on a contract by Hname").

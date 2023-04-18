@@ -243,11 +243,14 @@ func testIncViewCounter(t *testing.T, env *ChainEnv) {
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkWasmContractCounter(1)
 
-	ret, err := apiextensions.CallView(context.Background(), e.Chain.Cluster.WaspClient(0), apiclient.ContractCallViewRequest{
-		ChainId:       e.Chain.ChainID.String(),
-		ContractHName: incHname.String(),
-		FunctionName:  "getCounter",
-	})
+	ret, err := apiextensions.CallView(
+		context.Background(),
+		e.Chain.Cluster.WaspClient(0),
+		e.Chain.ChainID.String(),
+		apiclient.ContractCallViewRequest{
+			ContractHName: incHname.String(),
+			FunctionName:  "getCounter",
+		})
 	require.NoError(t, err)
 
 	counter, err := codec.DecodeInt64(ret.Get(varCounter), 0)

@@ -335,11 +335,14 @@ func TestRebootDuringTasks(t *testing.T) {
 		time.Sleep(restartDelay)
 
 		// after rebooting, the chain should resume processing requests/views without issues
-		ret, err := apiextensions.CallView(context.Background(), env.Clu.WaspClient(0), apiclient.ContractCallViewRequest{
-			ChainId:       env.Chain.ChainID.String(),
-			ContractHName: nativeIncCounterSCHname.String(),
-			FunctionHName: inccounter.ViewGetCounter.Hname().String(),
-		})
+		ret, err := apiextensions.CallView(
+			context.Background(),
+			env.Clu.WaspClient(0),
+			env.Chain.ChainID.String(),
+			apiclient.ContractCallViewRequest{
+				ContractHName: nativeIncCounterSCHname.String(),
+				FunctionHName: inccounter.ViewGetCounter.Hname().String(),
+			})
 		require.NoError(t, err)
 
 		counter, err := codec.DecodeInt64(ret.Get(inccounter.VarCounter), 0)

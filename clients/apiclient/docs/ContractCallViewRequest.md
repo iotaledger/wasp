@@ -5,7 +5,6 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Arguments** | [**JSONDict**](JSONDict.md) |  | 
-**ChainId** | **string** | The chain id | 
 **ContractHName** | **string** | The contract name as HName (Hex) | 
 **ContractName** | **string** | The contract name | 
 **FunctionHName** | **string** | The function name as HName (Hex) | 
@@ -15,7 +14,7 @@ Name | Type | Description | Notes
 
 ### NewContractCallViewRequest
 
-`func NewContractCallViewRequest(arguments JSONDict, chainId string, contractHName string, contractName string, functionHName string, functionName string, ) *ContractCallViewRequest`
+`func NewContractCallViewRequest(arguments JSONDict, contractHName string, contractName string, functionHName string, functionName string, ) *ContractCallViewRequest`
 
 NewContractCallViewRequest instantiates a new ContractCallViewRequest object
 This constructor will assign default values to properties that have it defined,
@@ -48,26 +47,6 @@ and a boolean to check if the value has been set.
 `func (o *ContractCallViewRequest) SetArguments(v JSONDict)`
 
 SetArguments sets Arguments field to given value.
-
-
-### GetChainId
-
-`func (o *ContractCallViewRequest) GetChainId() string`
-
-GetChainId returns the ChainId field if non-nil, zero value otherwise.
-
-### GetChainIdOk
-
-`func (o *ContractCallViewRequest) GetChainIdOk() (*string, bool)`
-
-GetChainIdOk returns a tuple with the ChainId field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetChainId
-
-`func (o *ContractCallViewRequest) SetChainId(v string)`
-
-SetChainId sets ChainId field to given value.
 
 
 ### GetContractHName

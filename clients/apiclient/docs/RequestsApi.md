@@ -4,7 +4,7 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**CallView**](RequestsApi.md#CallView) | **Post** /v1/requests/callview | Call a view function on a contract by Hname
+[**CallView**](RequestsApi.md#CallView) | **Post** /v1/chains/{chainID}/callview | Call a view function on a contract by Hname
 [**GetReceipt**](RequestsApi.md#GetReceipt) | **Get** /v1/chains/{chainID}/receipts/{requestID} | Get a receipt from a request ID
 [**OffLedger**](RequestsApi.md#OffLedger) | **Post** /v1/requests/offledger | Post an off-ledger request
 [**WaitForRequest**](RequestsApi.md#WaitForRequest) | **Get** /v1/chains/{chainID}/requests/{requestID}/wait | Wait until the given request has been processed by the node
@@ -13,7 +13,7 @@ Method | HTTP request | Description
 
 ## CallView
 
-> JSONDict CallView(ctx).ContractCallViewRequest(contractCallViewRequest).Execute()
+> JSONDict CallView(ctx, chainID).ContractCallViewRequest(contractCallViewRequest).Execute()
 
 Call a view function on a contract by Hname
 
@@ -32,11 +32,12 @@ import (
 )
 
 func main() {
-    contractCallViewRequest := *openapiclient.NewContractCallViewRequest(*openapiclient.NewJSONDict(), "ChainId_example", "ContractHName_example", "ContractName_example", "FunctionHName_example", "FunctionName_example") // ContractCallViewRequest | Parameters
+    chainID := "chainID_example" // string | ChainID (Bech32)
+    contractCallViewRequest := *openapiclient.NewContractCallViewRequest(*openapiclient.NewJSONDict(), "ContractHName_example", "ContractName_example", "FunctionHName_example", "FunctionName_example") // ContractCallViewRequest | Parameters
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.RequestsApi.CallView(context.Background()).ContractCallViewRequest(contractCallViewRequest).Execute()
+    resp, r, err := apiClient.RequestsApi.CallView(context.Background(), chainID).ContractCallViewRequest(contractCallViewRequest).Execute()
     if err != nil {
         fmt.Fprintf(os.Stderr, "Error when calling `RequestsApi.CallView``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -49,6 +50,10 @@ func main() {
 ### Path Parameters
 
 
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**chainID** | **string** | ChainID (Bech32) | 
 
 ### Other Parameters
 
@@ -57,6 +62,7 @@ Other parameters are passed through a pointer to a apiCallViewRequest struct via
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
+
  **contractCallViewRequest** | [**ContractCallViewRequest**](ContractCallViewRequest.md) | Parameters | 
 
 ### Return type
