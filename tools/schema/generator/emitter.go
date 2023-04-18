@@ -412,21 +412,8 @@ func (g *GenBase) setCommonKeys() {
 	g.keys[yaml.KeyAuthor] = g.s.Author
 	g.keys[yaml.KeyCopyright] = g.s.Copyright
 	g.keys[yaml.KeyVersion] = g.s.Version
-	if g.s.License != "" {
-		if g.s.License[0] != '"' {
-			g.keys[yaml.KeyLicense] = "\"" + g.s.License + "\""
-		} else {
-			g.keys[yaml.KeyLicense] = g.s.License
-		}
-	} else {
-		g.keys[yaml.KeyLicense] = "\"Apache-2.0\""
-	}
-	if g.s.Repository != "" && g.s.Repository[0] != '"' {
-		g.keys[yaml.KeyRepository] = "\"" + g.s.Repository + "\""
-	} else {
-		// if 'repository' is empty then it will be ignored in template
-		g.keys[yaml.KeyRepository] = g.s.Repository
-	}
+	g.keys[yaml.KeyLicense] = g.s.License
+	g.keys[yaml.KeyRepository] = g.s.Repository
 }
 
 func (g *GenBase) setFieldKeys(pad bool, maxCamelLength, maxSnakeLength int) {

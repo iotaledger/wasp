@@ -28,9 +28,9 @@ export class WasmClientService {
 
     public callViewByHname(hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): [Uint8Array, isc.Error] {
         const callViewRequest: isc.APICallViewRequest = {
+            chainId: this.chainID.toString(),
             contractHName: hContract.toString(),
             functionHName: hFunction.toString(),
-            chainId: this.chainID.toString(),
             arguments: isc.Codec.jsonEncode(args),
         };
 

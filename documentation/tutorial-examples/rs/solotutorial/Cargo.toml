@@ -5,8 +5,8 @@
 name = "solotutorial"
 description = "Interface library for: Example ISC smart contract for the Solo tutorial"
 license = "Apache-2.0"
-version = "0.1.0"
-authors = ["Eric Hop <eric@iota.org>"]
+version = "0.1.1"
+authors = ["Diego Essaya <diego.essaya@iota.org>"]
 edition = "2021"
 repository = "https://github.com/iotaledger/wasp"
 

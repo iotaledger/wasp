@@ -5,6 +5,7 @@ package yaml
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/iotaledger/wasp/tools/schema/model"
@@ -29,77 +30,65 @@ const (
 	KeyViews       string = "views"
 )
 
-//nolint:funlen,gocyclo
+//nolint:gocyclo
 func Convert(root *Node, def *model.SchemaDef) error {
-	var name, description, author, version, license, repository model.DefElt
-	var events, structs model.DefMapMap
-	var typedefs, state model.DefMap
-	var funcs, views model.FuncDefMap
 	for _, key := range root.Contents {
 		switch key.Val {
 		case KeyCopyright:
-			if len(key.Contents) > 0 && key.Contents[0].Val != "" {
-				def.Copyright = ("// " + strings.TrimSuffix(key.Val, "\n"))
+			copyright := key.toStringElt()
+			if copyright.Val != "" {
+				def.Copyright = "// " + copyright.Val + "\n"
 			} else {
 				def.Copyright = key.HeadComment
 			}
-		case KeyLicense:
-			license.Val = key.Contents[0].Val
-			license.Line = key.Line
-		case KeyRepository:
-			repository.Val = key.Contents[0].Val
-			repository.Line = key.Line
 		case KeyName:
-			name.Val = key.Contents[0].Val
-			name.Line = key.Line
+			def.Name = key.toStringElt()
 		case KeyDescription:
-			description.Val = key.Contents[0].Val
-			description.Line = key.Line
+			def.Description = key.toStringElt()
 		case KeyAuthor:
-			author.Val = key.Contents[0].Val
-			author.Line = key.Line
-		case KeyEvents:
-			events = key.ToDefMapMap()
-		case KeyStructs:
-			structs = key.ToDefMapMap()
-		case KeyTypedefs:
-			typedefs = key.ToDefMap()
-		case KeyState:
-			state = key.ToDefMap()
-		case KeyFuncs:
-			funcs = key.ToFuncDefMap()
+			def.Author = key.toStringElt()
+		case KeyLicense:
+			def.License = key.toStringElt()
+		case KeyRepository:
+			def.Repository = key.toStringElt()
 		case KeyVersion:
-			version.Val = key.Contents[0].Val
-			version.Line = key.Line
+			def.Version = key.toStringElt()
+		case KeyEvents:
+			def.Events = key.toDefMapMap()
+		case KeyStructs:
+			def.Structs = key.toDefMapMap()
+		case KeyTypedefs:
+			def.Typedefs = key.toDefMap()
+		case KeyState:
+			def.State = key.toDefMap()
+		case KeyFuncs:
+			def.Funcs = key.toFuncDefMap()
 		case KeyViews:
-			views = key.ToFuncDefMap()
+			def.Views = key.toFuncDefMap()
 		default:
 			return errors.New("unsupported key")
 		}
 	}
-	def.Name = name
-	def.Author = author
-	def.License = license
-	def.Repository = repository
-	def.Description = description
-	def.Version = version
-	def.Events = events
-	def.State = state
-	def.Structs = structs
-	def.Typedefs = typedefs
-	def.Funcs = funcs
-	def.Views = views
 	return nil
 }
 
-func (n *Node) ToDefElt() *model.DefElt {
+func (n *Node) toStringElt() model.DefElt {
+	var result model.DefElt
+	if len(n.Contents) != 0 {
+		result.Val = strings.TrimSpace(n.Contents[0].Val)
+	}
+	result.Line = n.Line
+	return result
+}
+
+func (n *Node) toDefElt() *model.DefElt {
 	comment := ""
 	if len(n.HeadComment) > 0 {
-		// remove trailing '\n'
-		comment = n.HeadComment[:len(n.HeadComment)-1]
+		// remove trailing '\n' and space
+		comment = strings.TrimSpace(n.HeadComment)
 	} else if len(n.LineComment) > 0 {
-		// remove trailing '\n'
-		comment = n.LineComment[:len(n.LineComment)-1]
+		// remove trailing '\n' and space
+		comment = strings.TrimSpace(n.LineComment)
 	}
 	return &model.DefElt{
 		Val:     n.Val,
@@ -108,15 +97,15 @@ func (n *Node) ToDefElt() *model.DefElt {
 	}
 }
 
-func (n *Node) ToDefMap() model.DefMap {
+func (n *Node) toDefMap() model.DefMap {
 	defs := make(model.DefMap)
 	for _, yamlKey := range n.Contents {
 		if strings.ReplaceAll(yamlKey.Val, " ", "") == "{}" {
 			// treat "{}" as empty
 			continue
 		}
-		key := *yamlKey.ToDefElt()
-		val := yamlKey.Contents[0].ToDefElt()
+		key := *yamlKey.toDefElt()
+		val := yamlKey.Contents[0].toDefElt()
 		if val.Comment != "" && key.Comment == "" {
 			key.Comment = val.Comment
 		}
@@ -126,7 +115,7 @@ func (n *Node) ToDefMap() model.DefMap {
 	return defs
 }
 
-func (n *Node) ToDefMapMap() model.DefMapMap {
+func (n *Node) toDefMapMap() model.DefMapMap {
 	defs := make(model.DefMapMap)
 	for _, yamlKey := range n.Contents {
 		// TODO better parsing
@@ -136,9 +125,9 @@ func (n *Node) ToDefMapMap() model.DefMapMap {
 		}
 		comment := ""
 		if len(yamlKey.HeadComment) > 0 {
-			comment = yamlKey.HeadComment[:len(yamlKey.HeadComment)-1] // remove trailing '\n'
+			comment = strings.TrimSpace(yamlKey.HeadComment) // remove trailing '\n'
 		} else if len(yamlKey.LineComment) > 0 {
-			comment = yamlKey.LineComment[:len(yamlKey.LineComment)-1] // remove trailing '\n'
+			comment = strings.TrimSpace(yamlKey.LineComment) // remove trailing '\n'
 		}
 
 		key := model.DefElt{
@@ -146,19 +135,19 @@ func (n *Node) ToDefMapMap() model.DefMapMap {
 			Comment: comment,
 			Line:    yamlKey.Line,
 		}
-		val := yamlKey.ToDefMap()
+		val := yamlKey.toDefMap()
 		defs[key] = &val
 	}
 	return defs
 }
 
-func (n *Node) ToFuncDef() model.FuncDef {
+func (n *Node) toFuncDef() model.FuncDef {
 	def := model.FuncDef{}
 	def.Line = n.Line
 	if len(n.HeadComment) > 0 {
-		def.Comment = n.HeadComment[:len(n.HeadComment)-1] // remove trailing '\n'
+		def.Comment = strings.TrimSpace(n.HeadComment) // remove trailing '\n'
 	} else if len(n.LineComment) > 0 {
-		def.Comment = n.LineComment[:len(n.LineComment)-1] // remove trailing '\n'
+		def.Comment = strings.TrimSpace(n.LineComment) // remove trailing '\n'
 	}
 
 	for _, yamlKey := range n.Contents {
@@ -168,16 +157,20 @@ func (n *Node) ToFuncDef() model.FuncDef {
 		}
 		switch yamlKey.Val {
 		case KeyAccess:
-			def.Access = *yamlKey.Contents[0].ToDefElt()
+			if len(yamlKey.Contents) == 0 {
+				fmt.Println("empty funcs access hasn't been given")
+				return model.FuncDef{}
+			}
+			def.Access = *yamlKey.Contents[0].toDefElt()
 			if len(yamlKey.HeadComment) > 0 {
-				def.Access.Comment = yamlKey.HeadComment[:len(yamlKey.HeadComment)-1] // remove trailing '\n'
+				def.Access.Comment = strings.TrimSpace(yamlKey.HeadComment) // remove trailing '\n'
 			} else if len(yamlKey.LineComment) > 0 {
-				def.Access.Comment = yamlKey.LineComment[:len(yamlKey.LineComment)-1] // remove trailing '\n'
+				def.Access.Comment = strings.TrimSpace(yamlKey.LineComment) // remove trailing '\n'
 			}
 		case KeyParams:
-			def.Params = yamlKey.ToDefMap()
+			def.Params = yamlKey.toDefMap()
 		case KeyResults:
-			def.Results = yamlKey.ToDefMap()
+			def.Results = yamlKey.toDefMap()
 		default:
 			return model.FuncDef{}
 		}
@@ -185,7 +178,7 @@ func (n *Node) ToFuncDef() model.FuncDef {
 	return def
 }
 
-func (n *Node) ToFuncDefMap() model.FuncDefMap {
+func (n *Node) toFuncDefMap() model.FuncDefMap {
 	defs := make(model.FuncDefMap)
 	for _, yamlKey := range n.Contents {
 		if strings.ReplaceAll(yamlKey.Val, " ", "") == "{}" {
@@ -194,16 +187,16 @@ func (n *Node) ToFuncDefMap() model.FuncDefMap {
 		}
 		comment := ""
 		if len(yamlKey.HeadComment) > 0 {
-			comment = yamlKey.HeadComment[:len(yamlKey.HeadComment)-1] // remove trailing '\n'
+			comment = strings.TrimSpace(yamlKey.HeadComment) // remove trailing '\n'
 		} else if len(yamlKey.LineComment) > 0 {
-			comment = yamlKey.LineComment[:len(yamlKey.LineComment)-1] // remove trailing '\n'
+			comment = strings.TrimSpace(yamlKey.LineComment) // remove trailing '\n'
 		}
 		key := model.DefElt{
 			Val:     yamlKey.Val,
 			Comment: comment,
 			Line:    yamlKey.Line,
 		}
-		val := yamlKey.ToFuncDef()
+		val := yamlKey.toFuncDef()
 		defs[key] = &val
 	}
 	return defs
