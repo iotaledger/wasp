@@ -42,13 +42,17 @@ func NewBlockCache(tp TimeProvider, maxCacheSize int, wal BlockWAL, metrics metr
 
 // Adds block to cache and WAL
 func (bcT *blockCache) AddBlock(block state.Block) {
-	commitment := block.L1Commitment()
-	blockKey := NewBlockKey(commitment)
 	err := bcT.wal.Write(block)
 	if err != nil {
-		bcT.log.Errorf("Failed writing block %s to WAL: %v", commitment, err)
+		bcT.log.Errorf("Failed writing block index %v %s to WAL: %v", block.StateIndex(), block.L1Commitment(), err)
 	}
+	bcT.addBlockToCache(block)
+}
 
+// Adds block to cache only
+func (bcT *blockCache) addBlockToCache(block state.Block) {
+	commitment := block.L1Commitment()
+	blockKey := NewBlockKey(commitment)
 	_, exists := bcT.blocks.Get(blockKey)
 	if exists {
 		bcT.times = lo.Filter(bcT.times, func(bt *blockTime, _ int) bool {
@@ -60,7 +64,7 @@ func (bcT *blockCache) AddBlock(block state.Block) {
 		time:     bcT.timeProvider.GetNow(),
 		blockKey: blockKey,
 	})
-	bcT.log.Debugf("Block %s added to cache", commitment)
+	bcT.log.Debugf("Block index %v %s added to cache", block.StateIndex(), commitment)
 
 	if bcT.Size() > bcT.maxCacheSize {
 		blockKey := bcT.times[0].blockKey
@@ -77,7 +81,7 @@ func (bcT *blockCache) GetBlock(commitment *state.L1Commitment) state.Block {
 	// Check in cache
 	block, exists := bcT.blocks.Get(blockKey)
 	if exists {
-		bcT.log.Debugf("Block %s retrieved from cache", commitment)
+		bcT.log.Debugf("Block index %v %s retrieved from cache", block.StateIndex(), commitment)
 		return block
 	}
 
@@ -88,7 +92,8 @@ func (bcT *blockCache) GetBlock(commitment *state.L1Commitment) state.Block {
 			bcT.log.Errorf("Error reading block %s from WAL: %w", commitment, err)
 			return nil
 		}
-		bcT.log.Debugf("Block %s retrieved from WAL", commitment)
+		bcT.addBlockToCache(block)
+		bcT.log.Debugf("Block index %v %s retrieved from WAL", block.StateIndex(), commitment)
 		return block
 	}
 

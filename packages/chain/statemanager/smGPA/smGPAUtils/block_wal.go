@@ -43,27 +43,28 @@ func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metric
 
 // Overwrites, if block is already in WAL
 func (bwT *blockWAL) Write(block state.Block) error {
+	blockIndex := block.StateIndex()
 	commitment := block.L1Commitment()
 	fileName := fileName(commitment.BlockHash())
 	filePath := filepath.Join(bwT.dir, fileName)
 	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 	if err != nil {
 		bwT.metrics.IncFailedWrites()
-		return fmt.Errorf("openning file %s for writing failed: %w", fileName, err)
+		return fmt.Errorf("openning file %s for writing block index %v failed: %w", fileName, blockIndex, err)
 	}
 	defer f.Close()
 	blockBytes := block.Bytes()
 	n, err := f.Write(blockBytes)
 	if err != nil {
 		bwT.metrics.IncFailedWrites()
-		return fmt.Errorf("writing block data to file %s failed: %w", fileName, err)
+		return fmt.Errorf("writing block index %v data to file %s failed: %w", blockIndex, fileName, err)
 	}
 	if len(blockBytes) != n {
 		bwT.metrics.IncFailedWrites()
-		return fmt.Errorf("only %v of total %v bytes of block were written to file %s", n, len(blockBytes), fileName)
+		return fmt.Errorf("only %v of total %v bytes of block index %v were written to file %s", n, len(blockBytes), blockIndex, fileName)
 	}
 	bwT.metrics.BlockWritten(block.StateIndex())
-	bwT.LogDebugf("Block %s written to wal; file name - %s", commitment, fileName)
+	bwT.LogDebugf("Block index %v %s written to wal; file name - %s", blockIndex, commitment, fileName)
 	return nil
 }
 

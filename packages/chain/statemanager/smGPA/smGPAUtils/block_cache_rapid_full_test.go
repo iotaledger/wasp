@@ -69,6 +69,7 @@ func (bctsmT *blockCacheTestSM) GetBlockFromWAL(t *rapid.T) {
 	}
 	blockKey := rapid.SampledFrom(blocksToChoose).Example()
 	bctsmT.getAndCheckBlock(t, blockKey)
+	bctsmT.addBlockToCache(t, blockKey)
 	t.Logf("Block %s is retrieved from WAL", blockKey)
 }
 
@@ -79,6 +80,7 @@ func (bctsmT *blockCacheTestSM) GetBlockFromCacheOrWAL(t *rapid.T) {
 	}
 	blockKey := rapid.SampledFrom(blocksToChoose).Example()
 	bctsmT.getAndCheckBlock(t, blockKey)
+	bctsmT.addBlockToCache(t, blockKey)
 	t.Logf("Block %s is retrieved from cache or wal", blockKey)
 }
 
