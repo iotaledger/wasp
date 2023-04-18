@@ -139,18 +139,24 @@ func (bcnwtsmT *blockCacheNoWALTestSM) addBlock(t *rapid.T, block state.Block) {
 	bcnwtsmT.blocks[blockKey] = block
 	bcnwtsmT.bc.AddBlock(block)
 	require.False(t, lo.Contains(bcnwtsmT.blocksInCache, blockKey))
-	bcnwtsmT.blocksInCache = append(bcnwtsmT.blocksInCache, blockKey)
-	bcnwtsmT.blockTimes = append(bcnwtsmT.blockTimes, &blockTime{
-		time:     time.Now(),
-		blockKey: blockKey,
-	})
-	if len(bcnwtsmT.blocksInCache) > bcnwtsmT.blockCacheMaxSize {
-		blockKey := bcnwtsmT.blockTimes[0].blockKey
-		bcnwtsmT.blocksInCache = lo.Without(bcnwtsmT.blocksInCache, blockKey)
-		bcnwtsmT.blockTimes = bcnwtsmT.blockTimes[1:]
-		t.Logf("Block %s deleted from cache", blockKey)
-	}
+	bcnwtsmT.addBlockToCache(t, blockKey)
 	bcnwtsmT.addBlockCallback(block)
+}
+
+func (bcnwtsmT *blockCacheNoWALTestSM) addBlockToCache(t *rapid.T, blockKey BlockKey) {
+	if !lo.Contains(bcnwtsmT.blocksInCache, blockKey) {
+		bcnwtsmT.blocksInCache = append(bcnwtsmT.blocksInCache, blockKey)
+		bcnwtsmT.blockTimes = append(bcnwtsmT.blockTimes, &blockTime{
+			time:     time.Now(),
+			blockKey: blockKey,
+		})
+		if len(bcnwtsmT.blocksInCache) > bcnwtsmT.blockCacheMaxSize {
+			blockKey := bcnwtsmT.blockTimes[0].blockKey
+			bcnwtsmT.blocksInCache = lo.Without(bcnwtsmT.blocksInCache, blockKey)
+			bcnwtsmT.blockTimes = bcnwtsmT.blockTimes[1:]
+			t.Logf("Block %s deleted from cache", blockKey)
+		}
+	}
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) blocksNotInCache(t *rapid.T) []BlockKey {
