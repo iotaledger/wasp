@@ -67,7 +67,8 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		fmt.Sprintf("--gov-controller=%s", w.WaspCliAddress.Bech32(parameters.L1().Protocol.Bech32HRP)),
 		"--node=0",
 	)
-	chainID := regexp.MustCompile(`(.*)ChainID:\s*([a-zA-Z0-9_]*),`).FindStringSubmatch(strings.Join(out, ""))[2]
+	matches := regexp.MustCompile(`.*ChainID:\s*([a-zA-Z0-9_]*)\s+.*`).FindStringSubmatch(strings.Join(out, " "))
+	chainID := matches[1]
 	w.ActivateChainOnAllNodes("chain1", 0)
 
 	// start a new wasp cluster
