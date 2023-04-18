@@ -55,17 +55,16 @@ impl WasmClientService {
         function_hname: &ScHname,
         args: &[u8],
     ) -> Result<Vec<u8>> {
-        let url = self.wasp_api.clone() + "/v1/requests/callview";
-        let client = blocking::Client::builder()
-            .timeout(READ_TIMEOUT)
-            .build()
-            .unwrap();
+        let url = self.wasp_api.clone() + "/v1/chains/" + &self.chain_id.to_string() + "/callview";
         let body = APICallViewRequest {
-            chain_id: self.chain_id.to_string(),
             contract_hname: contract_hname.to_string(),
             function_hname: function_hname.to_string(),
             arguments: Codec::json_encode(args),
         };
+        let client = blocking::Client::builder()
+            .timeout(READ_TIMEOUT)
+            .build()
+            .unwrap();
         match client.post(url).json(&body).send() {
             Ok(v) => match v.status() {
                 StatusCode::OK => {
@@ -122,11 +121,11 @@ impl WasmClientService {
         let signed = req.sign(key_pair);
 
         let url = self.wasp_api.clone() + "/v1/requests/offledger";
-        let client = blocking::Client::new();
         let body = APIOffLedgerRequest {
             chain_id: chain_id.to_string(),
             request: hex_encode(&signed.to_bytes()),
         };
+        let client = blocking::Client::new();
         match client.post(url).json(&body).send() {
             Ok(v) => match v.status() {
                 StatusCode::OK => Ok(signed.id()),

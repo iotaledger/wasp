@@ -23,8 +23,6 @@ pub struct JsonDict {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct APICallViewRequest {
     pub(crate) arguments: JsonDict,
-    #[serde(rename = "chainId")]
-    pub(crate) chain_id: String,
     #[serde(rename = "contractHName")]
     pub(crate) contract_hname: String,
     #[serde(rename = "functionHName")]

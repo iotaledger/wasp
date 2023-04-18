@@ -50,7 +50,7 @@ func uploadBlob(client *apiclient.APIClient, chainID isc.ChainID, fieldValues di
 
 	hash, _, _, err := chainClient.UploadBlob(context.Background(), fieldValues)
 	log.Check(err)
-	log.Printf("uploaded blob to chain -- hash: %s", hash)
+	log.Printf("uploaded blob to chain -- hash: %s\n", hash)
 	// TODO print receipt?
 	return hash
 }
