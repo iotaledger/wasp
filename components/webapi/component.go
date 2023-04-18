@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -23,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/dkg"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -30,6 +32,7 @@ import (
 	"github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/websocket"
 )
 
@@ -83,7 +86,7 @@ func initConfigParams(c *dig.Container) error {
 	return nil
 }
 
-func NewEcho(params *ParametersWebAPI, log *logger.Logger) *echo.Echo {
+func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, log *logger.Logger) *echo.Echo {
 	e := httpserver.NewEcho(
 		log,
 		nil,
@@ -95,6 +98,42 @@ func NewEcho(params *ParametersWebAPI, log *logger.Logger) *echo.Echo {
 
 	e.HidePort = true
 	e.HTTPErrorHandler = apierrors.HTTPErrorHandler()
+
+	// publish metrics to prometheus component (that exposes a separate http server on another port)
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if strings.HasPrefix(c.Path(), "/chains/") {
+				// ignore metrics for all requests not related to "chains/<chainID>""
+				return next(c)
+			}
+			start := time.Now()
+			err := next(c)
+
+			status := c.Response().Status
+			if err != nil {
+				var httpError *echo.HTTPError
+				if errors.As(err, &httpError) {
+					status = httpError.Code
+				}
+				if status == 0 || status == http.StatusOK {
+					status = http.StatusInternalServerError
+				}
+			}
+
+			chainID, ok := c.Get(controllerutils.EchoContextKeyChainID).(isc.ChainID)
+			if !ok {
+				return err
+			}
+
+			operation, ok := c.Get(controllerutils.EchoContextKeyOperation).(string)
+			if !ok {
+				return err
+			}
+			metrics.NewChainMetrics(chainID).WebAPIRequest(operation, status, time.Since(start))
+
+			return err
+		}
+	})
 
 	// timeout middleware
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -119,6 +158,7 @@ func NewEcho(params *ParametersWebAPI, log *logger.Logger) *echo.Echo {
 		AllowMethods:     []string{"*"},
 		AllowCredentials: true,
 	}))
+
 	return e
 }
 
@@ -170,7 +210,7 @@ func provide(c *dig.Container) error {
 	}
 
 	if err := c.Provide(func(deps webapiServerDeps) webapiServerResult {
-		e := NewEcho(ParamsWebAPI, Component.Logger())
+		e := NewEcho(ParamsWebAPI, deps.ChainMetricsProvider, Component.Logger())
 
 		echoSwagger := CreateEchoSwagger(e, deps.AppInfo.Version)
 		websocketOptions := websocketserver.AcceptOptions{

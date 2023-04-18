@@ -57,14 +57,17 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 		require.EqualValues(e.t, 42, counterValue)
 	}
 
-	result, err := apiextensions.CallView(context.Background(), e.Chain.Cluster.WaspClient(), apiclient.ContractCallViewRequest{
-		ChainId:       e.Chain.ChainID.String(),
-		ContractHName: root.Contract.Hname().String(),
-		FunctionHName: root.ViewFindContract.Hname().String(),
-		Arguments: apiextensions.DictToAPIJsonDict(dict.Dict{
-			root.ParamHname: hname.Bytes(),
-		}),
-	})
+	result, err := apiextensions.CallView(
+		context.Background(),
+		e.Chain.Cluster.WaspClient(),
+		e.Chain.ChainID.String(),
+		apiclient.ContractCallViewRequest{
+			ContractHName: root.Contract.Hname().String(),
+			FunctionHName: root.ViewFindContract.Hname().String(),
+			Arguments: apiextensions.DictToAPIJsonDict(dict.Dict{
+				root.ParamHname: hname.Bytes(),
+			}),
+		})
 	require.NoError(e.t, err)
 
 	recb := result.Get(root.ParamContractRecData)
@@ -88,11 +91,11 @@ func (e *ChainEnv) getNativeContractCounter(hname isc.Hname) int64 {
 
 func (e *ChainEnv) getCounterForNode(hname isc.Hname, nodeIndex int) int64 {
 	result, _, err := e.Chain.Cluster.WaspClient(nodeIndex).RequestsApi.
-		CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
-		ChainId:       e.Chain.ChainID.String(),
-		ContractHName: hname.String(),
-		FunctionName:  "getCounter",
-	}).Execute()
+		CallView(context.Background(), e.Chain.ChainID.String()).
+		ContractCallViewRequest(apiclient.ContractCallViewRequest{
+			ContractHName: hname.String(),
+			FunctionName:  "getCounter",
+		}).Execute()
 	require.NoError(e.t, err)
 
 	decodedDict, err := apiextensions.APIJsonDictToDict(*result)

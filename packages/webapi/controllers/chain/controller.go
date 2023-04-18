@@ -54,7 +54,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 	// Echoswagger does not support ANY, so create a fake route, and overwrite it with Echo ANY afterwords.
 	evmURL := "chains/:chainID/evm"
 	publicAPI.
-		GET(evmURL, c.handleJSONRPC).
+		GET(evmURL, c.handleJSONRPC). // TODO shoulnd't this be POST instead of GET?
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		SetSummary("Ethereum JSON-RPC")
 

@@ -192,12 +192,15 @@ func (e *ChainEnv) findContract(name string, nodeIndex ...int) (*root.ContractRe
 	}
 
 	// TODO: Validate with develop
-	ret, err := apiextensions.CallView(context.Background(), e.Chain.Cluster.WaspClient(i), apiclient.ContractCallViewRequest{
-		ChainId:       e.Chain.ChainID.String(),
-		ContractHName: root.Contract.Hname().String(),
-		FunctionHName: root.ViewFindContract.Hname().String(),
-		Arguments:     apiextensions.JSONDictToAPIJSONDict(args.JSONDict()),
-	})
+	ret, err := apiextensions.CallView(
+		context.Background(),
+		e.Chain.Cluster.WaspClient(i),
+		e.Chain.ChainID.String(),
+		apiclient.ContractCallViewRequest{
+			ContractHName: root.Contract.Hname().String(),
+			FunctionHName: root.ViewFindContract.Hname().String(),
+			Arguments:     apiextensions.JSONDictToAPIJSONDict(args.JSONDict()),
+		})
 
 	require.NoError(e.t, err)
 
@@ -225,11 +228,14 @@ func waitTrue(timeout time.Duration, fun func() bool) bool {
 
 func (e *ChainEnv) counterEquals(expected int64) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
-		ret, err := apiextensions.CallView(context.Background(), e.Chain.Cluster.WaspClient(nodeIndex), apiclient.ContractCallViewRequest{
-			ChainId:       e.Chain.ChainID.String(),
-			ContractHName: nativeIncCounterSCHname.String(),
-			FunctionHName: inccounter.ViewGetCounter.Hname().String(),
-		})
+		ret, err := apiextensions.CallView(
+			context.Background(),
+			e.Chain.Cluster.WaspClient(nodeIndex),
+			e.Chain.ChainID.String(),
+			apiclient.ContractCallViewRequest{
+				ContractHName: nativeIncCounterSCHname.String(),
+				FunctionHName: inccounter.ViewGetCounter.Hname().String(),
+			})
 		if err != nil {
 			e.t.Logf("chainEnv::counterEquals: failed to call GetCounter: %v", err)
 			return false

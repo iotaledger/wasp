@@ -50,11 +50,14 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 	waitUntil(t, e.counterEquals(43), clu.Config.AllNodes(), 30*time.Second)
 
 	// check off-ledger request was successfully processed (check by asking another access node)
-	ret, err := apiextensions.CallView(context.Background(), clu.WaspClient(6), apiclient.ContractCallViewRequest{
-		ChainId:       e.Chain.ChainID.String(),
-		ContractHName: nativeIncCounterSCHname.String(),
-		FunctionHName: inccounter.ViewGetCounter.Hname().String(),
-	})
+	ret, err := apiextensions.CallView(
+		context.Background(),
+		clu.WaspClient(6),
+		e.Chain.ChainID.String(),
+		apiclient.ContractCallViewRequest{
+			ContractHName: nativeIncCounterSCHname.String(),
+			FunctionHName: inccounter.ViewGetCounter.Hname().String(),
+		})
 
 	require.NoError(t, err)
 	resultint64, _ := codec.DecodeInt64(ret.Get(inccounter.VarCounter))
@@ -76,11 +79,14 @@ func testOffledgerRequest(t *testing.T, e *ChainEnv) {
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(e.Chain.ChainID, offledgerReq.ID(), false, 30*time.Second)
 	require.NoError(t, err)
 
-	ret, err := apiextensions.CallView(context.Background(), e.Chain.Cluster.WaspClient(0), apiclient.ContractCallViewRequest{
-		ChainId:       e.Chain.ChainID.String(),
-		ContractHName: nativeIncCounterSCHname.String(),
-		FunctionHName: inccounter.ViewGetCounter.Hname().String(),
-	})
+	ret, err := apiextensions.CallView(
+		context.Background(),
+		e.Chain.Cluster.WaspClient(0),
+		e.Chain.ChainID.String(),
+		apiclient.ContractCallViewRequest{
+			ContractHName: nativeIncCounterSCHname.String(),
+			FunctionHName: inccounter.ViewGetCounter.Hname().String(),
+		})
 
 	require.NoError(t, err)
 	resultint64, err := codec.DecodeInt64(ret.Get(inccounter.VarCounter))

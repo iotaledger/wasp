@@ -42,7 +42,10 @@ func TestInternalServerErrors(t *testing.T) {
 			MaxTopicSubscriptionsPerClient: 0,
 		},
 		DebugRequestLoggerEnabled: true,
-	}, log.Sugar())
+	},
+		nil,
+		log.Sugar(),
+	)
 
 	// Add an endpoint that just panics with "foobar" and start the server
 	exceptionText := "foobar"

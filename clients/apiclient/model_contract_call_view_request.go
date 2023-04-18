@@ -20,8 +20,6 @@ var _ MappedNullable = &ContractCallViewRequest{}
 // ContractCallViewRequest struct for ContractCallViewRequest
 type ContractCallViewRequest struct {
 	Arguments JSONDict `json:"arguments"`
-	// The chain id
-	ChainId string `json:"chainId"`
 	// The contract name as HName (Hex)
 	ContractHName string `json:"contractHName"`
 	// The contract name
@@ -36,10 +34,9 @@ type ContractCallViewRequest struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewContractCallViewRequest(arguments JSONDict, chainId string, contractHName string, contractName string, functionHName string, functionName string) *ContractCallViewRequest {
+func NewContractCallViewRequest(arguments JSONDict, contractHName string, contractName string, functionHName string, functionName string) *ContractCallViewRequest {
 	this := ContractCallViewRequest{}
 	this.Arguments = arguments
-	this.ChainId = chainId
 	this.ContractHName = contractHName
 	this.ContractName = contractName
 	this.FunctionHName = functionHName
@@ -77,30 +74,6 @@ func (o *ContractCallViewRequest) GetArgumentsOk() (*JSONDict, bool) {
 // SetArguments sets field value
 func (o *ContractCallViewRequest) SetArguments(v JSONDict) {
 	o.Arguments = v
-}
-
-// GetChainId returns the ChainId field value
-func (o *ContractCallViewRequest) GetChainId() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.ChainId
-}
-
-// GetChainIdOk returns a tuple with the ChainId field value
-// and a boolean to check if the value has been set.
-func (o *ContractCallViewRequest) GetChainIdOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.ChainId, true
-}
-
-// SetChainId sets field value
-func (o *ContractCallViewRequest) SetChainId(v string) {
-	o.ChainId = v
 }
 
 // GetContractHName returns the ContractHName field value
@@ -210,7 +183,6 @@ func (o ContractCallViewRequest) MarshalJSON() ([]byte, error) {
 func (o ContractCallViewRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["arguments"] = o.Arguments
-	toSerialize["chainId"] = o.ChainId
 	toSerialize["contractHName"] = o.ContractHName
 	toSerialize["contractName"] = o.ContractName
 	toSerialize["functionHName"] = o.FunctionHName

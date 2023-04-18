@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 
 	"github.com/labstack/echo/v4"
@@ -13,15 +14,15 @@ import (
 )
 
 func (c *Controller) executeCallView(e echo.Context) error {
-	var callViewRequest models.ContractCallViewRequest
-
-	if err := e.Bind(&callViewRequest); err != nil {
-		return apierrors.InvalidPropertyError("body", err)
+	controllerutils.SetOperation(e, "call_view")
+	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
+	if err != nil {
+		return err
 	}
 
-	chainID, err := isc.ChainIDFromString(callViewRequest.ChainID)
-	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+	var callViewRequest models.ContractCallViewRequest
+	if err = e.Bind(&callViewRequest); err != nil {
+		return apierrors.InvalidPropertyError("body", err)
 	}
 
 	if !c.chainService.HasChain(chainID) {

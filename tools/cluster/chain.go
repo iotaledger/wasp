@@ -240,11 +240,11 @@ func (ch *Chain) ContractRegistry(nodeIndex ...int) ([]apiclient.ContractInfoRes
 
 func (ch *Chain) GetCounterValue(inccounterSCHname isc.Hname, nodeIndex ...int) (int64, error) {
 	result, _, err := ch.Cluster.
-		WaspClient(nodeIndex...).RequestsApi.CallView(context.Background()).ContractCallViewRequest(apiclient.ContractCallViewRequest{
-		ChainId:       ch.ChainID.String(),
-		ContractHName: inccounterSCHname.String(),
-		FunctionHName: inccounter.ViewGetCounter.Hname().String(),
-	}).Execute() //nolint:bodyclose // false positive
+		WaspClient(nodeIndex...).RequestsApi.CallView(context.Background(), ch.ChainID.String()).
+		ContractCallViewRequest(apiclient.ContractCallViewRequest{
+			ContractHName: inccounterSCHname.String(),
+			FunctionHName: inccounter.ViewGetCounter.Hname().String(),
+		}).Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		return 0, err
 	}

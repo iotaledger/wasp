@@ -26,6 +26,9 @@ const (
 	labelNameOutPullTxInclusionStateMetrics         = "out_pull_tx_inclusion_state"
 	labelNameOutPullOutputByIDMetrics               = "out_pull_output_by_id"
 	labelTxPublishResult                            = "result"
+	labelNameWebapiRequestOperation                 = "api_req_type"
+	labelNameWebapiRequestStatusCode                = "api_req_status_code"
+	labelNameWebapiEvmRPCSuccess                    = "success"
 )
 
 type IChainMetrics interface {
@@ -36,6 +39,7 @@ type IChainMetrics interface {
 	IChainStateMetrics
 	IChainStateManagerMetrics
 	IChainNodeConnMetrics
+	IWebAPIMetrics
 }
 
 var (
@@ -100,6 +104,7 @@ type emptyChainMetrics struct {
 	IChainStateMetrics
 	IChainStateManagerMetrics
 	IChainNodeConnMetrics
+	IWebAPIMetrics
 }
 
 func NewEmptyChainMetrics() IChainMetrics {
@@ -111,6 +116,7 @@ func NewEmptyChainMetrics() IChainMetrics {
 		IChainStateMetrics:        NewEmptyChainStateMetric(),
 		IChainStateManagerMetrics: NewEmptyChainStateManagerMetric(),
 		IChainNodeConnMetrics:     NewEmptyChainNodeConnMetric(),
+		IWebAPIMetrics:            NewEmptyWebAPIMetrics(),
 	}
 }
 
@@ -122,6 +128,7 @@ type chainMetrics struct {
 	*chainStateMetric
 	*chainStateManagerMetric
 	*chainNodeConnMetric
+	*webAPIChainMetrics
 }
 
 func newChainMetrics(provider *ChainMetricsProvider, chainID isc.ChainID) *chainMetrics {
@@ -133,6 +140,7 @@ func newChainMetrics(provider *ChainMetricsProvider, chainID isc.ChainID) *chain
 		chainStateMetric:        newChainStateMetric(provider, chainID),
 		chainStateManagerMetric: newChainStateManagerMetric(provider, chainID),
 		chainNodeConnMetric:     newChainNodeConnMetric(provider, chainID),
+		webAPIChainMetrics:      newWebAPIChainMetrics(provider, chainID),
 	}
 }
 
@@ -208,6 +216,10 @@ type ChainMetricsProvider struct {
 	ncL1AliasOutputReceived *prometheus.CounterVec
 	ncTXPublishStarted      *prometheus.CounterVec
 	ncTXPublishResult       *prometheus.HistogramVec
+
+	// webapi
+	webAPIRequests    *prometheus.HistogramVec
+	webAPIEvmRPCCalls *prometheus.HistogramVec
 }
 
 //nolint:funlen
@@ -516,6 +528,22 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 			Help:      "The duration (s) to publish a transaction.",
 			Buckets:   postTimeBuckets,
 		}, []string{labelNameChain, labelTxPublishResult}),
+
+		//
+		// webapi
+		//
+		webAPIRequests: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "webapi",
+			Name:      "webapi_requests",
+			Help:      "Time elapsed processing requests",
+		}, []string{labelNameChain, labelNameWebapiRequestOperation, labelNameWebapiRequestStatusCode}),
+		webAPIEvmRPCCalls: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "webapi",
+			Name:      "webapi_evm_rpc_calls",
+			Help:      "Time elapsed processing evm rpc requests",
+		}, []string{labelNameChain, labelNameWebapiRequestOperation, labelNameWebapiEvmRPCSuccess}),
 	}
 
 	m.inMilestoneMetrics = newMessageMetric[*nodeclient.MilestoneInfo](m, labelNameInMilestone)
@@ -612,6 +640,13 @@ func (m *ChainMetricsProvider) PrometheusCollectorsChainNodeConn() []prometheus.
 		m.ncL1AliasOutputReceived,
 		m.ncTXPublishStarted,
 		m.ncTXPublishResult,
+	}
+}
+
+func (m *ChainMetricsProvider) PrometheusCollectorsWebAPI() []prometheus.Collector {
+	return []prometheus.Collector{
+		m.webAPIRequests,
+		m.webAPIEvmRPCCalls,
 	}
 }
 

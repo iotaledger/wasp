@@ -8,19 +8,17 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
 func (c *Controller) getCommitteeInfo(e echo.Context) error {
-	chainID, err := params.DecodeChainID(e)
+	controllerutils.SetOperation(e, "get_committee_info")
+	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
 	if err != nil {
 		return err
-	}
-
-	if !c.chainService.HasChain(chainID) {
-		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
 	chain, err := c.chainService.GetChainInfoByChainID(chainID)
@@ -46,13 +44,10 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 }
 
 func (c *Controller) getChainInfo(e echo.Context) error {
-	chainID, err := params.DecodeChainID(e)
+	controllerutils.SetOperation(e, "get_chain_info")
+	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
 	if err != nil {
 		return err
-	}
-
-	if !c.chainService.HasChain(chainID) {
-		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
 	chainInfo, err := c.chainService.GetChainInfoByChainID(chainID)
@@ -119,13 +114,10 @@ func (c *Controller) getChainList(e echo.Context) error {
 }
 
 func (c *Controller) getState(e echo.Context) error {
-	chainID, err := params.DecodeChainID(e)
+	controllerutils.SetOperation(e, "get_state")
+	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
 	if err != nil {
 		return err
-	}
-
-	if !c.chainService.HasChain(chainID) {
-		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
 	stateKey, err := iotago.DecodeHex(e.Param(params.ParamStateKey))
