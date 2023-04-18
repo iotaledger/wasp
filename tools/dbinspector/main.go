@@ -4,98 +4,104 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"io/fs"
+	"log"
 	"os"
+	"os/signal"
 
-	"github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
-	"github.com/iotaledger/wasp/packages/common"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 )
 
-var dbKeysNames = map[byte]string{
-	common.ObjectTypeDBSchemaVersion:    "Schema Version",
-	common.ObjectTypeChainRecord:        "Chain Record",
-	common.ObjectTypeCommitteeRecord:    "Committee Record",
-	common.ObjectTypeDistributedKeyData: "Distributed Key Data",
-	common.ObjectTypeTrie:               "State Hash",
-	common.ObjectTypeBlock:              "Block",
-	common.ObjectTypeState:              "State Variable",
-	common.ObjectTypeNodeIdentity:       "Node Identity",
-	common.ObjectTypeBlobCache:          "BlobCache",
-	common.ObjectTypeBlobCacheTTL:       "BlobCacheTTL",
-	common.ObjectTypeTrustedPeer:        "TrustedPeer",
+func main() {
+	if len(os.Args) != 2 {
+		log.Fatalf("usage: %s <chain-db-dir>", os.Args[0])
+	}
+	process(os.Args[1])
 }
 
-const defaultDbpath = "/tmp/wasp-cluster/wasp0/waspdb"
-
-func printDbEntries(dbDir fs.DirEntry, dbpath string) {
-	if !dbDir.IsDir() {
-		fmt.Printf("Not a directory, skipping %s\n", dbDir.Name())
-		return
-	}
-
-	db, err := database.DatabaseWithDefaultSettings(fmt.Sprintf("%s/%s", dbpath, dbDir.Name()), false, hivedb.EngineAuto, false)
+func process(dbDir string) {
+	db, err := database.DatabaseWithDefaultSettings(dbDir, false, hivedb.EngineAuto, false)
 	if err != nil {
 		panic(err)
 	}
 
-	store := db.KVStore()
+	kvs := db.KVStore()
 
-	fmt.Printf("\n\n------------------ %s ------------------\n", dbDir.Name())
-	accLen := 0
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{}, 1)
 
+	go func() {
+		defer close(done)
+
+		store := indexedstore.New(state.NewStore(kvs))
+		state, err := store.LatestState()
+		if err != nil {
+			panic(err)
+		}
+		dumpStateStats(ctx, state)
+	}()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	select {
+	case <-c:
+		cancel()
+		<-done
+	case <-done:
+		cancel()
+	}
+}
+
+func dumpStateStats(ctx context.Context, state state.State) {
+	totalSize := 0
+
+	var seenHnames []isc.Hname
 	hnameUsedSpace := make(map[isc.Hname]int)
 	hnameCount := make(map[isc.Hname]int)
 
-	dbKeysUsedSpace := make(map[byte]int)
-
-	err = store.Iterate(kvstore.EmptyPrefix, func(k kvstore.Key, v []byte) bool {
-		usedSpace := len(k) + len(v)
-		accLen += usedSpace
-		dbKeysUsedSpace[k[0]] += usedSpace
-		if len(k) >= 5 {
-			hn, err2 := isc.HnameFromBytes(k[1:5])
-			if err2 == nil {
-				fmt.Printf("HName: %s, key len: %d \t", hn, len(k))
-				hnameUsedSpace[hn] += usedSpace
-				hnameCount[hn]++
+	show := func() {
+		fmt.Printf("\n\n Total DB size: %d\n\n", totalSize)
+		for _, hn := range seenHnames {
+			hns := hn.String()
+			if corecontracts.All[hn] != nil {
+				hns = corecontracts.All[hn].Name
 			}
+			fmt.Printf("%s: %d key-value pairs -- size: %d bytes\n", hns, hnameCount[hn], hnameUsedSpace[hn])
 		}
-		fmt.Printf("Key: %s - Value len: %d\n", k, len(v))
+	}
+
+	n := 0
+	state.IterateSorted("", func(k kv.Key, v []byte) bool {
+		if ctx.Err() != nil {
+			fmt.Println(ctx.Err())
+			return false
+		}
+		if len(k) < 4 {
+			fmt.Printf("len(k) < 4: %x\n", k)
+			return true
+		}
+		usedSpace := len(k) + len(v)
+		totalSize += usedSpace
+		hn, err := isc.HnameFromBytes([]byte(k[:4]))
+		if err == nil {
+			if hnameCount[hn] == 0 {
+				seenHnames = append(seenHnames, hn)
+			}
+			hnameUsedSpace[hn] += usedSpace
+			hnameCount[hn]++
+		}
+		n++
+		if n%10000 == 0 {
+			show()
+		}
 		return true
 	})
-
-	fmt.Printf("\n\n Total DB size: %d\n\n", accLen)
-
-	for hn, space := range hnameUsedSpace {
-		fmt.Printf("Hname: %s, %d entries, size: %d\n", hn, hnameCount[hn], space)
-	}
-
-	fmt.Printf("\n\n DB Usage per dbKeys: \n\n")
-	for dbkey, space := range dbKeysUsedSpace {
-		fmt.Printf("KEY: %s, space: %d\n", dbKeysNames[dbkey], space)
-	}
-
-	if err != nil {
-		panic(err)
-	}
-}
-
-func main() {
-	var dbpath string
-	if len(os.Args) > 1 {
-		dbpath = os.Args[1]
-	} else {
-		dbpath = defaultDbpath
-	}
-	subDirectories, err := os.ReadDir(dbpath)
-	if err != nil {
-		panic(err)
-	}
-	for _, dir := range subDirectories {
-		printDbEntries(dir, dbpath)
-	}
+	show()
 }
