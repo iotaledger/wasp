@@ -8,14 +8,9 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/wasp/packages/chaindb"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/trie"
-)
-
-const (
-	prefixBlockByTrieRoot = iota
-	prefixTrie
-	prefixLatestTrieRoot
 )
 
 var (
@@ -24,11 +19,11 @@ var (
 )
 
 func keyBlockByTrieRoot(root trie.Hash) []byte {
-	return append([]byte{prefixBlockByTrieRoot}, root.Bytes()...)
+	return append([]byte{chaindb.PrefixBlockByTrieRoot}, root.Bytes()...)
 }
 
 func keyLatestTrieRoot() []byte {
-	return []byte{prefixLatestTrieRoot}
+	return []byte{chaindb.PrefixLatestTrieRoot}
 }
 
 func mustNoErr(err error) {
@@ -65,7 +60,7 @@ func (db *storeDB) setLatestTrieRoot(root trie.Hash) {
 }
 
 func (db *storeDB) trieStore() trie.KVStore {
-	return trie.NewHiveKVStoreAdapter(db, []byte{prefixTrie})
+	return trie.NewHiveKVStoreAdapter(db, []byte{chaindb.PrefixTrie})
 }
 
 func (db *storeDB) trieUpdatable(root trie.Hash) (*trie.TrieUpdatable, error) {

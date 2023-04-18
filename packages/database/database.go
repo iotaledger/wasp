@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
-	"github.com/iotaledger/wasp/packages/common"
+	"github.com/iotaledger/wasp/packages/chaindb"
 )
 
 var (
@@ -145,7 +145,7 @@ func newDatabaseWithHealthTracker(path string, dbEngine hivedb.Engine, autoFlush
 		}
 	}
 
-	healthTracker, err := kvstore.NewStoreHealthTracker(db.KVStore(), []byte{common.StorePrefixHealth}, storeVersion, hiveStoreVersionUpdateFunc)
+	healthTracker, err := kvstore.NewStoreHealthTracker(db.KVStore(), []byte{chaindb.PrefixHealthTracker}, storeVersion, hiveStoreVersionUpdateFunc)
 	if err != nil {
 		return nil, err
 	}

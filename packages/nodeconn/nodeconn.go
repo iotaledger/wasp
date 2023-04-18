@@ -28,7 +28,6 @@ import (
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/common"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
@@ -51,6 +50,8 @@ const (
 	pendingTransactionsCleanupThresholdRatio = 50.0
 	pendingTransactionsCleanupThresholdCount = 1000
 )
+
+var ErrOperationAborted = errors.New("operation was aborted")
 
 type LedgerUpdateHandler func(*nodebridge.LedgerUpdate)
 
@@ -179,7 +180,7 @@ func waitForL1ToBeConnected(ctx context.Context, log *logger.Logger, nodeBridge 
 
 		case <-ctx.Done():
 			// context was canceled
-			return common.ErrOperationAborted
+			return ErrOperationAborted
 		}
 	}
 }
@@ -228,7 +229,7 @@ func waitForL1ToBeSynced(ctx context.Context, log *logger.Logger, nodeBridge *no
 			}
 		case <-ctx.Done():
 			// context was canceled
-			return common.ErrOperationAborted
+			return ErrOperationAborted
 		}
 	}
 }
