@@ -1,5 +1,15 @@
+# Copyright 2020 IOTA Stiftung
+# SPDX-License-Identifier: Apache-2.0
+copyright:
+
 name: SoloTutorial
+version: 0.1.1
 description: Example ISC smart contract for the Solo tutorial
+
+author: Diego Essaya <diego.essaya@iota.org>
+license: Apache-2.0
+repository: https://github.com/iotaledger/wasp
+
 structs: {}
 typedefs: {}
 state:
