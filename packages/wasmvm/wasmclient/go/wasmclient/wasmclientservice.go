@@ -62,10 +62,10 @@ func (svc *WasmClientService) CallViewByHname(hContract, hFunction wasmtypes.ScH
 		return nil, err
 	}
 
-	res, _, err := svc.waspClient.RequestsApi.CallView(context.Background(), cvt.IscChainID(&svc.chainID).String()).
+	res, _, err := svc.waspClient.RequestsApi.CallView(context.Background(), svc.chainID.String()).
 		ContractCallViewRequest(apiclient.ContractCallViewRequest{
-			ContractHName: cvt.IscHname(hContract).String(),
-			FunctionHName: cvt.IscHname(hFunction).String(),
+			ContractHName: hContract.String(),
+			FunctionHName: hFunction.String(),
 			Arguments:     apiextensions.JSONDictToAPIJSONDict(params.JSONDict()),
 		}).Execute()
 	if err != nil {
@@ -161,11 +161,8 @@ func (svc *WasmClientService) UnsubscribeEvents(eventsID uint32) {
 }
 
 func (svc *WasmClientService) WaitUntilRequestProcessed(reqID wasmtypes.ScRequestID, timeout time.Duration) error {
-	iscChainID := cvt.IscChainID(&svc.chainID)
-	iscReqID := cvt.IscRequestID(&reqID)
-
 	_, _, err := svc.waspClient.RequestsApi.
-		WaitForRequest(context.Background(), iscChainID.String(), iscReqID.String()).
+		WaitForRequest(context.Background(), svc.chainID.String(), reqID.String()).
 		TimeoutSeconds(int32(timeout.Seconds())).
 		Execute()
 

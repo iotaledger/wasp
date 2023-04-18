@@ -27,17 +27,15 @@ export class WasmClientService {
     }
 
     public callViewByHname(hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): [Uint8Array, isc.Error] {
+        const url = this.waspAPI + '/v1/chains/' + this.chainID.toString() + '/callview';
         const callViewRequest: isc.APICallViewRequest = {
-            chainId: this.chainID.toString(),
             contractHName: hContract.toString(),
             functionHName: hFunction.toString(),
             arguments: isc.Codec.jsonEncode(args),
         };
-
-        const url = this.waspAPI + '/v1/requests/callview';
-        const client = new isc.SyncRequestClient();
-        client.addHeader('Content-Type', 'application/json');
         try {
+            const client = new isc.SyncRequestClient();
+            client.addHeader('Content-Type', 'application/json');
             const resp = client.post<isc.APICallViewRequest, isc.JsonResp>(url, callViewRequest);
             const result = isc.Codec.jsonDecode(resp);
             return [result, null];
@@ -73,15 +71,14 @@ export class WasmClientService {
         const signed = req.sign(keyPair);
         const reqID = signed.ID();
 
+        const url = this.waspAPI + '/v1/requests/offledger';
         const offLedgerRequest: isc.APIOffLedgerRequest = {
             chainId: chainID.toString(),
             request: wasmlib.hexEncode(signed.bytes()),
         };
-
-        const url = this.waspAPI + '/v1/requests/offledger';
-        const client = new isc.SyncRequestClient();
-        client.addHeader('Content-Type', 'application/json');
         try {
+            const client = new isc.SyncRequestClient();
+            client.addHeader('Content-Type', 'application/json');
             client.post(url, offLedgerRequest);
             return [reqID, null];
         } catch (error) {
@@ -103,9 +100,9 @@ export class WasmClientService {
 
     public setDefaultChainID(): isc.Error {
         const url = this.waspAPI + '/v1/chains';
-        const client = new isc.SyncRequestClient();
-        client.addHeader('Content-Type', 'application/json');
         try {
+            const client = new isc.SyncRequestClient();
+            client.addHeader('Content-Type', 'application/json');
             const chains = client.get<ChainInfoResponse[]>(url);
             if (chains.length != 1) {
                 return 'expected a single chain for default chain ID';
@@ -148,7 +145,8 @@ export class WasmClientService {
         //TODO Timeout of the wait can be set with `/wait?timeoutSeconds=`. Max seconds are 60secs.
         const url = this.waspAPI + '/v1/chains/' + this.chainID.toString() + '/requests/' + reqID.toString() + '/wait';
         try {
-            new isc.SyncRequestClient().get(url);
+            const client = new isc.SyncRequestClient();
+            client.get(url);
             return null;
         } catch (error) {
             let message;

@@ -21,7 +21,6 @@ export class JsonReq {
 export interface APICallViewRequest {
     contractHName: string;
     functionHName: string;
-    chainId: string;
     arguments: JsonReq;
 }
 

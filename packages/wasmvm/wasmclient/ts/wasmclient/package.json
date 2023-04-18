@@ -1,7 +1,7 @@
 {
   "name": "wasmclient",
   "description": "Smart Contract interface library for Wasm clients",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "main": "index.ts",
   "scripts": {
     "build:node": "tsc --declaration",
