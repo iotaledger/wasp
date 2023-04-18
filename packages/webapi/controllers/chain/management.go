@@ -8,18 +8,16 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
 func (c *Controller) activateChain(e echo.Context) error {
-	chainID, err := params.DecodeChainID(e)
+	controllerutils.SetOperation(e, "activate_chain")
+	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
 	if err != nil {
 		return err
-	}
-
-	if !c.chainService.HasChain(chainID) {
-		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
 	if err := c.chainService.ActivateChain(chainID); err != nil {
@@ -30,13 +28,10 @@ func (c *Controller) activateChain(e echo.Context) error {
 }
 
 func (c *Controller) deactivateChain(e echo.Context) error {
-	chainID, err := params.DecodeChainID(e)
+	controllerutils.SetOperation(e, "deactivate_chain")
+	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
 	if err != nil {
 		return err
-	}
-
-	if !c.chainService.HasChain(chainID) {
-		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
 	if err := c.chainService.DeactivateChain(chainID); err != nil {
@@ -47,6 +42,7 @@ func (c *Controller) deactivateChain(e echo.Context) error {
 }
 
 func (c *Controller) setChainRecord(e echo.Context) error {
+	controllerutils.SetOperation(e, "set_chain_record")
 	chainID, err := params.DecodeChainID(e)
 	if err != nil {
 		return err

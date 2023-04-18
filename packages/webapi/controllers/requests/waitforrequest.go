@@ -1,30 +1,25 @@
 package requests
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/webapi/apierrors"
-	"github.com/iotaledger/wasp/packages/webapi/interfaces"
+	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
 func (c *Controller) waitForRequestToFinish(e echo.Context) error {
+	controllerutils.SetOperation(e, "wait_request")
 	const maximumTimeoutSeconds = 60
 	const defaultTimeoutSeconds = 30
 
-	chainID, err := params.DecodeChainID(e)
+	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
 	if err != nil {
 		return err
-	}
-
-	if errors.Is(err, interfaces.ErrChainNotFound) {
-		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
 	requestID, err := params.DecodeRequestID(e)

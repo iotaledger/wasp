@@ -10,7 +10,6 @@ type OffLedgerRequest struct {
 }
 
 type ContractCallViewRequest struct {
-	ChainID       string        `json:"chainId" swagger:"desc(The chain id),required"`
 	ContractName  string        `json:"contractName" swagger:"desc(The contract name),required"`
 	ContractHName string        `json:"contractHName" swagger:"desc(The contract name as HName (Hex)),required"`
 	FunctionName  string        `json:"functionName" swagger:"desc(The function name),required"`

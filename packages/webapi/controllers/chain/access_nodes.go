@@ -6,34 +6,22 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
-func decodeAccessNodeRequest(e echo.Context) (isc.ChainID, string, error) {
-	chainID, err := params.DecodeChainID(e)
-	if err != nil {
-		return isc.EmptyChainID(), "", err
-	}
-
-	peer := e.Param(params.ParamPeer)
-	if peer == "" {
-		return isc.EmptyChainID(), "", errors.New("no peer provided")
-	}
-
-	return chainID, peer, nil
-}
-
 func (c *Controller) addAccessNode(e echo.Context) error {
-	chainID, peer, err := decodeAccessNodeRequest(e)
+	controllerutils.SetOperation(e, "add_access_node")
+	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
 	if err != nil {
 		return err
 	}
 
-	if !c.chainService.HasChain(chainID) {
-		return apierrors.ChainNotFoundError(chainID.String())
+	peer := e.Param(params.ParamPeer)
+	if peer == "" {
+		return errors.New("no peer provided")
 	}
 
 	if err := c.nodeService.AddAccessNode(chainID, peer); err != nil {
@@ -48,13 +36,15 @@ func (c *Controller) addAccessNode(e echo.Context) error {
 }
 
 func (c *Controller) removeAccessNode(e echo.Context) error {
-	chainID, peer, err := decodeAccessNodeRequest(e)
+	controllerutils.SetOperation(e, "remove_access_node")
+	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
 	if err != nil {
 		return err
 	}
 
-	if !c.chainService.HasChain(chainID) {
-		return apierrors.ChainNotFoundError(chainID.String())
+	peer := e.Param(params.ParamPeer)
+	if peer == "" {
+		return errors.New("no peer provided")
 	}
 
 	if err := c.nodeService.DeleteAccessNode(chainID, peer); err != nil {

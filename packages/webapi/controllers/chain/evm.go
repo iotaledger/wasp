@@ -7,44 +7,36 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
 func (c *Controller) handleJSONRPC(e echo.Context) error {
-	chainID, err := params.DecodeChainID(e)
+	controllerutils.SetOperation(e, "evm_json_rpc")
+	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
 	if err != nil {
 		return err
-	}
-
-	if !c.chainService.HasChain(chainID) {
-		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
 	return c.evmService.HandleJSONRPC(chainID, e.Request(), e.Response())
 }
 
 func (c *Controller) handleWebsocket(e echo.Context) error {
-	chainID, err := params.DecodeChainID(e)
+	controllerutils.SetOperation(e, "evm_websocket")
+	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
 	if err != nil {
 		return err
-	}
-
-	if !c.chainService.HasChain(chainID) {
-		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
 	return c.evmService.HandleWebsocket(chainID, e.Request(), e.Response())
 }
 
 func (c *Controller) getRequestID(e echo.Context) error {
-	chainID, err := params.DecodeChainID(e)
+	controllerutils.SetOperation(e, "evm_get_request_id")
+	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
 	if err != nil {
 		return err
-	}
-
-	if !c.chainService.HasChain(chainID) {
-		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
 	txHash := e.Param(params.ParamTxHash)

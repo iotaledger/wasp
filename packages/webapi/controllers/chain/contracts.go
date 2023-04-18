@@ -5,19 +5,15 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/models"
-	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
 func (c *Controller) getContracts(e echo.Context) error {
-	chainID, err := params.DecodeChainID(e)
+	controllerutils.SetOperation(e, "get_contracts")
+	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
 	if err != nil {
 		return err
-	}
-
-	if !c.chainService.HasChain(chainID) {
-		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
 	contracts, err := c.chainService.GetContracts(chainID)

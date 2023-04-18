@@ -123,7 +123,9 @@ func configure() error {
 	if ParamsPrometheus.ProcessMetrics {
 		register("process", collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 	}
-
+	if ParamsPrometheus.WebAPIMetrics {
+		register("webapi", deps.ChainMetrics.PrometheusCollectorsWebAPI()...)
+	}
 	return nil
 }
 
@@ -146,7 +148,6 @@ func run() error {
 			}
 
 			handler.ServeHTTP(c.Response().Writer, c.Request())
-
 			return nil
 		})
 

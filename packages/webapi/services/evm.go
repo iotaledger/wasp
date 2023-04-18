@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -30,6 +31,7 @@ type EVMService struct {
 	chainService    interfaces.ChainService
 	networkProvider peering.NetworkProvider
 	publisher       *publisher.Publisher
+	metrics         *metrics.ChainMetricsProvider
 	log             *logger.Logger
 }
 
@@ -37,6 +39,7 @@ func NewEVMService(
 	chainService interfaces.ChainService,
 	networkProvider peering.NetworkProvider,
 	pub *publisher.Publisher,
+	metrics *metrics.ChainMetricsProvider,
 	log *logger.Logger,
 ) interfaces.EVMService {
 	return &EVMService{
@@ -45,6 +48,7 @@ func NewEVMService(
 		evmBackendMutex: sync.Mutex{},
 		networkProvider: networkProvider,
 		publisher:       pub,
+		metrics:         metrics,
 		log:             log,
 	}
 }
@@ -68,6 +72,7 @@ func (e *EVMService) getEVMBackend(chainID isc.ChainID) (*chainServer, error) {
 	srv, err := jsonrpc.NewServer(
 		jsonrpc.NewEVMChain(backend, e.publisher, e.log.Named("EVMChain")),
 		jsonrpc.NewAccountManager(nil),
+		e.metrics.NewChainMetrics(chainID),
 	)
 	if err != nil {
 		return nil, err

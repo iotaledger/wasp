@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
@@ -15,7 +16,8 @@ import (
 
 // TODO this should reuse the code from webapi/controllers/corecontracts/blocklog getRequestReceipt
 func (c *Controller) getReceipt(e echo.Context) error {
-	chainID, err := params.DecodeChainID(e)
+	controllerutils.SetOperation(e, "get_receipt")
+	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
 	if err != nil {
 		return err
 	}
