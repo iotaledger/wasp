@@ -5,6 +5,7 @@ package yaml
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/iotaledger/wasp/tools/schema/model"
@@ -83,11 +84,11 @@ func (n *Node) toStringElt() model.DefElt {
 func (n *Node) toDefElt() *model.DefElt {
 	comment := ""
 	if len(n.HeadComment) > 0 {
-		// remove trailing '\n'
-		comment = n.HeadComment[:len(n.HeadComment)-1]
+		// remove trailing '\n' and space
+		comment = strings.TrimSpace(n.HeadComment)
 	} else if len(n.LineComment) > 0 {
-		// remove trailing '\n'
-		comment = n.LineComment[:len(n.LineComment)-1]
+		// remove trailing '\n' and space
+		comment = strings.TrimSpace(n.LineComment)
 	}
 	return &model.DefElt{
 		Val:     n.Val,
@@ -124,9 +125,9 @@ func (n *Node) toDefMapMap() model.DefMapMap {
 		}
 		comment := ""
 		if len(yamlKey.HeadComment) > 0 {
-			comment = yamlKey.HeadComment[:len(yamlKey.HeadComment)-1] // remove trailing '\n'
+			comment = strings.TrimSpace(yamlKey.HeadComment) // remove trailing '\n'
 		} else if len(yamlKey.LineComment) > 0 {
-			comment = yamlKey.LineComment[:len(yamlKey.LineComment)-1] // remove trailing '\n'
+			comment = strings.TrimSpace(yamlKey.LineComment) // remove trailing '\n'
 		}
 
 		key := model.DefElt{
@@ -144,9 +145,9 @@ func (n *Node) toFuncDef() model.FuncDef {
 	def := model.FuncDef{}
 	def.Line = n.Line
 	if len(n.HeadComment) > 0 {
-		def.Comment = n.HeadComment[:len(n.HeadComment)-1] // remove trailing '\n'
+		def.Comment = strings.TrimSpace(n.HeadComment) // remove trailing '\n'
 	} else if len(n.LineComment) > 0 {
-		def.Comment = n.LineComment[:len(n.LineComment)-1] // remove trailing '\n'
+		def.Comment = strings.TrimSpace(n.LineComment) // remove trailing '\n'
 	}
 
 	for _, yamlKey := range n.Contents {
@@ -156,11 +157,15 @@ func (n *Node) toFuncDef() model.FuncDef {
 		}
 		switch yamlKey.Val {
 		case KeyAccess:
+			if len(yamlKey.Contents) == 0 {
+				fmt.Println("empty funcs access hasn't been given")
+				return model.FuncDef{}
+			}
 			def.Access = *yamlKey.Contents[0].toDefElt()
 			if len(yamlKey.HeadComment) > 0 {
-				def.Access.Comment = yamlKey.HeadComment[:len(yamlKey.HeadComment)-1] // remove trailing '\n'
+				def.Access.Comment = strings.TrimSpace(yamlKey.HeadComment) // remove trailing '\n'
 			} else if len(yamlKey.LineComment) > 0 {
-				def.Access.Comment = yamlKey.LineComment[:len(yamlKey.LineComment)-1] // remove trailing '\n'
+				def.Access.Comment = strings.TrimSpace(yamlKey.LineComment) // remove trailing '\n'
 			}
 		case KeyParams:
 			def.Params = yamlKey.toDefMap()
@@ -182,9 +187,9 @@ func (n *Node) toFuncDefMap() model.FuncDefMap {
 		}
 		comment := ""
 		if len(yamlKey.HeadComment) > 0 {
-			comment = yamlKey.HeadComment[:len(yamlKey.HeadComment)-1] // remove trailing '\n'
+			comment = strings.TrimSpace(yamlKey.HeadComment) // remove trailing '\n'
 		} else if len(yamlKey.LineComment) > 0 {
-			comment = yamlKey.LineComment[:len(yamlKey.LineComment)-1] // remove trailing '\n'
+			comment = strings.TrimSpace(yamlKey.LineComment) // remove trailing '\n'
 		}
 		key := model.DefElt{
 			Val:     yamlKey.Val,
