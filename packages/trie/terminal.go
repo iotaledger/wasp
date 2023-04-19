@@ -9,8 +9,8 @@ import (
 
 // Tcommitment (short for terminal commitment) commits to data of arbitrary size.
 type Tcommitment struct {
-	data    []byte
-	isValue bool
+	Data    []byte
+	IsValue bool
 }
 
 // tcommitment is encoded as [header | data]
@@ -52,40 +52,40 @@ func CommitToData(data []byte) *Tcommitment {
 	assertf(len(commitmentBytes) <= tcommitmentDataSizeMax,
 		"len(commitmentBytes) <= m.tcommitmentDataSizeMax")
 	return &Tcommitment{
-		data:    commitmentBytes,
-		isValue: isValue,
+		Data:    commitmentBytes,
+		IsValue: isValue,
 	}
 }
 
 func newTerminalCommitment() *Tcommitment {
 	// all 0 non hashed value
 	return &Tcommitment{
-		data:    make([]byte, 0, HashSizeBytes),
-		isValue: false,
+		Data:    make([]byte, 0, HashSizeBytes),
+		IsValue: false,
 	}
 }
 
 func (t *Tcommitment) Equals(o *Tcommitment) bool {
-	return bytes.Equal(t.data, o.data)
+	return bytes.Equal(t.Data, o.Data)
 }
 
 func (t *Tcommitment) Clone() *Tcommitment {
 	return &Tcommitment{
-		data:    concat(t.data),
-		isValue: t.isValue,
+		Data:    concat(t.Data),
+		IsValue: t.IsValue,
 	}
 }
 
 func (t *Tcommitment) Write(w io.Writer) error {
-	assertf(len(t.data) <= tcommitmentDataSizeMax, "size <= tcommitmentDataSizeMax")
-	size := byte(len(t.data))
-	if t.isValue {
+	assertf(len(t.Data) <= tcommitmentDataSizeMax, "size <= tcommitmentDataSizeMax")
+	size := byte(len(t.Data))
+	if t.IsValue {
 		size |= tcommitmentIsValueMask
 	}
 	if err := writeByte(w, size); err != nil {
 		return err
 	}
-	_, err := w.Write(t.data)
+	_, err := w.Write(t.Data)
 	return err
 }
 
@@ -95,12 +95,12 @@ func (t *Tcommitment) Read(r io.Reader) error {
 	if l, err = readByte(r); err != nil {
 		return err
 	}
-	t.isValue = (l & tcommitmentIsValueMask) != 0
+	t.IsValue = (l & tcommitmentIsValueMask) != 0
 	l &= tcommitmentDataSizeMask
 	if l > 0 {
-		t.data = make([]byte, l)
+		t.Data = make([]byte, l)
 
-		n, err := r.Read(t.data)
+		n, err := r.Read(t.Data)
 		if err != nil {
 			return err
 		}
@@ -116,12 +116,12 @@ func (t *Tcommitment) Bytes() []byte {
 }
 
 func (t *Tcommitment) String() string {
-	return hex.EncodeToString(t.data)
+	return hex.EncodeToString(t.Data)
 }
 
 func (t *Tcommitment) ExtractValue() ([]byte, bool) {
-	if t.isValue {
-		return t.data, true
+	if t.IsValue {
+		return t.Data, true
 	}
 	return nil, false
 }

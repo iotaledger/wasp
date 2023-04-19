@@ -40,9 +40,9 @@ func (tr *TrieUpdatable) DeletePrefix(pathPrefix []byte) bool {
 func (tr *TrieReader) Get(key []byte) []byte {
 	unpackedTriePath := unpackBytes(key)
 	var terminal *Tcommitment
-	tr.traversePath(unpackedTriePath, func(n *nodeData, _ []byte, ending pathEndingCode) {
-		if ending == endingTerminal && n.terminal != nil {
-			terminal = n.terminal
+	tr.traversePath(unpackedTriePath, func(n *NodeData, _ []byte, ending pathEndingCode) {
+		if ending == endingTerminal && n.Terminal != nil {
+			terminal = n.Terminal
 		}
 	})
 	if terminal == nil {
@@ -64,8 +64,8 @@ func (tr *TrieReader) Get(key []byte) []byte {
 func (tr *TrieReader) Has(key []byte) bool {
 	unpackedTriePath := unpackBytes(key)
 	found := false
-	tr.traversePath(unpackedTriePath, func(n *nodeData, p []byte, ending pathEndingCode) {
-		if ending == endingTerminal && n.terminal != nil {
+	tr.traversePath(unpackedTriePath, func(n *NodeData, p []byte, ending pathEndingCode) {
+		if ending == endingTerminal && n.Terminal != nil {
 			found = true
 		}
 	})
@@ -117,21 +117,21 @@ func (tr *TrieReader) Snapshot(destStore KVWriter) {
 	triePartition := makeWriterPartition(destStore, partitionTrieNodes)
 	valuePartition := makeWriterPartition(destStore, partitionValues)
 
-	tr.iterateNodes(tr.root, nil, func(nodeKey []byte, n *nodeData) bool {
+	tr.iterateNodes(0, tr.root, nil, func(nodeKey []byte, n *NodeData, depth int) bool {
 		// write trie node
 		var buf bytes.Buffer
 		err := n.Write(&buf)
 		assertNoError(err)
-		triePartition.Set(n.commitment.Bytes(), buf.Bytes())
+		triePartition.Set(n.Commitment.Bytes(), buf.Bytes())
 
-		if n.terminal == nil {
+		if n.Terminal == nil {
 			return true
 		}
 		// write value if needed
-		if _, valueInCommitment := n.terminal.ExtractValue(); valueInCommitment {
+		if _, valueInCommitment := n.Terminal.ExtractValue(); valueInCommitment {
 			return true
 		}
-		valueKey := n.terminal.Bytes()
+		valueKey := n.Terminal.Bytes()
 		value := tr.nodeStore.valueStore.Get(valueKey)
 		assertf(len(value) > 0, "can't find value for nodeKey '%s'", hex.EncodeToString(valueKey))
 		valuePartition.Set(valueKey, value)
@@ -259,9 +259,9 @@ func (tr *TrieReader) iteratePrefix(f func(k []byte, v []byte) bool, prefix []by
 	var root *Hash
 	var triePath []byte
 	unpackedPrefix := unpackBytes(prefix)
-	tr.traversePath(unpackedPrefix, func(n *nodeData, trieKey []byte, ending pathEndingCode) {
-		if bytes.HasPrefix(concat(trieKey, n.pathExtension), unpackedPrefix) {
-			root = &n.commitment
+	tr.traversePath(unpackedPrefix, func(n *NodeData, trieKey []byte, ending pathEndingCode) {
+		if bytes.HasPrefix(concat(trieKey, n.PathExtension), unpackedPrefix) {
+			root = &n.Commitment
 			triePath = trieKey
 		}
 	})
@@ -271,17 +271,17 @@ func (tr *TrieReader) iteratePrefix(f func(k []byte, v []byte) bool, prefix []by
 }
 
 func (tr *TrieReader) iterate(root Hash, triePath []byte, fun func(k []byte, v []byte) bool, extractValue bool) bool {
-	return tr.iterateNodes(root, triePath, func(nodeKey []byte, n *nodeData) bool {
-		if n.terminal != nil {
-			key, err := packUnpackedBytes(concat(nodeKey, n.pathExtension))
+	return tr.iterateNodes(0, root, triePath, func(nodeKey []byte, n *NodeData, depth int) bool {
+		if n.Terminal != nil {
+			key, err := packUnpackedBytes(concat(nodeKey, n.PathExtension))
 			assertNoError(err)
 			var value []byte
 			if extractValue {
 				var inTheCommitment bool
-				value, inTheCommitment = n.terminal.ExtractValue()
+				value, inTheCommitment = n.Terminal.ExtractValue()
 				if !inTheCommitment {
-					value = tr.nodeStore.valueStore.Get(n.terminal.Bytes())
-					assertf(len(value) > 0, "can't fetch value. triePath: '%s', data commitment: %s", hex.EncodeToString(key), n.terminal)
+					value = tr.nodeStore.valueStore.Get(n.Terminal.Bytes())
+					assertf(len(value) > 0, "can't fetch value. triePath: '%s', data commitment: %s", hex.EncodeToString(key), n.Terminal)
 				}
 			}
 			if !fun(key, value) {
@@ -292,16 +292,20 @@ func (tr *TrieReader) iterate(root Hash, triePath []byte, fun func(k []byte, v [
 	})
 }
 
-// iterateNodes iterates nodes of the trie in the lexicographical order of trie keys in "depth first" order
-func (tr *TrieReader) iterateNodes(root Hash, rootKey []byte, fun func(nodeKey []byte, n *nodeData) bool) bool {
-	n, found := tr.nodeStore.FetchNodeData(root)
-	assertf(found, "can't fetch node. triePath: '%s', node commitment: %s", hex.EncodeToString(rootKey), root)
+// IterateNodes iterates nodes of the trie in the lexicographical order of trie keys in "depth first" order
+func (tr *TrieReader) IterateNodes(fun func(nodeKey []byte, n *NodeData, depth int) bool) {
+	tr.iterateNodes(0, tr.root, nil, fun)
+}
 
-	if !fun(rootKey, n) {
+func (tr *TrieReader) iterateNodes(depth int, commitment Hash, path []byte, fun func(nodeKey []byte, n *NodeData, depth int) bool) bool {
+	n, found := tr.nodeStore.FetchNodeData(commitment)
+	assertf(found, "can't fetch node. triePath: '%s', node commitment: %s", hex.EncodeToString(path), commitment)
+
+	if !fun(path, n, depth) {
 		return false
 	}
 	return n.iterateChildren(func(childIndex byte, childCommitment Hash) bool {
-		return tr.iterateNodes(childCommitment, concat(rootKey, n.pathExtension, []byte{childIndex}), fun)
+		return tr.iterateNodes(depth+1, childCommitment, concat(path, n.PathExtension, []byte{childIndex}), fun)
 	})
 }
 
@@ -314,7 +318,7 @@ func (tr *TrieUpdatable) deletePrefix(pathPrefix []byte) bool {
 	prefixExists := false
 	tr.traverseMutatedPath(pathPrefix, func(n *bufferedNode, ending pathEndingCode) {
 		nodes = append(nodes, n)
-		if bytes.HasPrefix(concat(n.triePath, n.nodeData.pathExtension), pathPrefix) {
+		if bytes.HasPrefix(concat(n.triePath, n.nodeData.PathExtension), pathPrefix) {
 			prefixExists = true
 		}
 	})
@@ -332,7 +336,7 @@ func (tr *TrieUpdatable) deletePrefix(pathPrefix []byte) bool {
 			lastNode.uncommittedChildren[byte(i)] = nil
 			continue
 		}
-		if c := lastNode.nodeData.children[i]; c != nil {
+		if c := lastNode.nodeData.Children[i]; c != nil {
 			lastNode.uncommittedChildren[byte(i)] = nil
 		}
 	}

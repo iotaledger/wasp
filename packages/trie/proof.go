@@ -22,15 +22,15 @@ func (tr *TrieReader) MerkleProof(key []byte) *MerkleProof {
 	}
 	for i, e := range nodePath {
 		elem := &MerkleProofElement{
-			PathExtension: e.NodeData.pathExtension,
+			PathExtension: e.NodeData.PathExtension,
 			Terminal:      nil,
 			ChildIndex:    int(e.ChildIndex),
 		}
-		if e.NodeData.terminal != nil {
-			elem.Terminal = compressToHashSize(e.NodeData.terminal.Bytes())
+		if e.NodeData.Terminal != nil {
+			elem.Terminal = compressToHashSize(e.NodeData.Terminal.Bytes())
 		}
 		isLast := i == len(nodePath)-1
-		for childIndex, childCommitment := range e.NodeData.children {
+		for childIndex, childCommitment := range e.NodeData.Children {
 			if childCommitment == nil {
 				continue
 			}

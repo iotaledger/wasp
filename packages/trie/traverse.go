@@ -33,7 +33,7 @@ func (e pathEndingCode) String() string {
 // the next child in the path (except the last one in the proof path)
 // Sequence of pathElement is used to generate proof
 type pathElement struct {
-	NodeData   *nodeData
+	NodeData   *NodeData
 	ChildIndex byte
 }
 
@@ -43,11 +43,11 @@ type pathElement struct {
 func (tr *TrieReader) nodePath(triePath []byte) ([]*pathElement, pathEndingCode) {
 	ret := make([]*pathElement, 0)
 	var endingCode pathEndingCode
-	tr.traversePath(triePath, func(n *nodeData, trieKey []byte, ending pathEndingCode) {
+	tr.traversePath(triePath, func(n *NodeData, trieKey []byte, ending pathEndingCode) {
 		elem := &pathElement{
 			NodeData: n,
 		}
-		nextChildIdx := len(trieKey) + len(n.pathExtension)
+		nextChildIdx := len(trieKey) + len(n.PathExtension)
 		if nextChildIdx < len(triePath) {
 			elem.ChildIndex = triePath[nextChildIdx]
 		}
@@ -59,14 +59,14 @@ func (tr *TrieReader) nodePath(triePath []byte) ([]*pathElement, pathEndingCode)
 	return ret, endingCode
 }
 
-func (tr *TrieReader) traversePath(target []byte, fun func(*nodeData, []byte, pathEndingCode)) {
+func (tr *TrieReader) traversePath(target []byte, fun func(*NodeData, []byte, pathEndingCode)) {
 	n, found := tr.nodeStore.FetchNodeData(tr.root)
 	if !found {
 		return
 	}
 	var path []byte
 	for {
-		pathPlusExtension := concat(path, n.pathExtension)
+		pathPlusExtension := concat(path, n.PathExtension)
 		switch {
 		case len(pathPlusExtension) > len(target):
 			fun(n, path, endingSplit)

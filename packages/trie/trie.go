@@ -47,7 +47,7 @@ func (tr *TrieReader) Root() Hash {
 }
 
 // SetRoot fetches and sets new root. It clears cache before fetching the new root
-func (tr *TrieReader) setRoot(h Hash) (*nodeData, error) {
+func (tr *TrieReader) setRoot(h Hash) (*NodeData, error) {
 	rootNodeData, ok := tr.nodeStore.FetchNodeData(h)
 	if !ok {
 		return nil, fmt.Errorf("root commitment '%s' does not exist", &h)
@@ -79,7 +79,7 @@ func (tr *TrieUpdatable) Commit(store KVWriter) Hash {
 	// set uncommitted children in the root to empty -> the GC will collect the whole tree of buffered nodes
 	tr.mutatedRoot.uncommittedChildren = make(map[byte]*bufferedNode)
 
-	ret := tr.mutatedRoot.nodeData.commitment
+	ret := tr.mutatedRoot.nodeData.Commitment
 	err := tr.SetRoot(ret) // always clear cache because NodeData-s are mutated and not valid anymore
 	assertNoError(err)
 	return ret
@@ -92,11 +92,9 @@ func (tr *TrieUpdatable) newTerminalNode(triePath, pathExtension, value []byte) 
 	return ret
 }
 
-// dump prints the structure of the tree to stdout, for debugging purposes.
-//
-//nolint:unused //used for debugging
-func (tr *TrieReader) dump() {
-	tr.iterateNodes(tr.root, nil, func(nodeKey []byte, n *nodeData) bool {
+// DebugDump prints the structure of the tree to stdout, for debugging purposes.
+func (tr *TrieReader) DebugDump() {
+	tr.IterateNodes(func(nodeKey []byte, n *NodeData, depth int) bool {
 		fmt.Printf("%s %v %s\n", strings.Repeat(" ", len(nodeKey)), nodeKey, n)
 		return true
 	})

@@ -8,7 +8,7 @@ import (
 // bufferedNode is a modified node
 type bufferedNode struct {
 	// persistent
-	nodeData            *nodeData
+	nodeData            *NodeData
 	value               []byte // will be persisted in value store if not nil
 	terminal            *Tcommitment
 	pathExtension       []byte
@@ -16,14 +16,14 @@ type bufferedNode struct {
 	triePath            []byte
 }
 
-func newBufferedNode(n *nodeData, triePath []byte) *bufferedNode {
+func newBufferedNode(n *NodeData, triePath []byte) *bufferedNode {
 	if n == nil {
 		n = newNodeData()
 	}
 	ret := &bufferedNode{
 		nodeData:            n,
-		terminal:            n.terminal,
-		pathExtension:       n.pathExtension,
+		terminal:            n.Terminal,
+		pathExtension:       n.PathExtension,
 		uncommittedChildren: make(map[byte]*bufferedNode),
 		triePath:            triePath,
 	}
@@ -38,7 +38,7 @@ func (n *bufferedNode) commitNode(triePartition, valuePartition KVWriter) {
 			childUpdates[idx] = nil
 		} else {
 			child.commitNode(triePartition, valuePartition)
-			childUpdates[idx] = &child.nodeData.commitment
+			childUpdates[idx] = &child.nodeData.Commitment
 		}
 	}
 	n.nodeData.update(childUpdates, n.terminal, n.pathExtension)
@@ -50,7 +50,7 @@ func (n *bufferedNode) commitNode(triePartition, valuePartition KVWriter) {
 }
 
 func (n *bufferedNode) mustPersist(w KVWriter) {
-	dbKey := n.nodeData.commitment.Bytes()
+	dbKey := n.nodeData.Commitment.Bytes()
 	var buf bytes.Buffer
 	err := n.nodeData.Write(&buf)
 	assertNoError(err)
@@ -118,7 +118,7 @@ func (n *bufferedNode) getChild(childIndex byte, db *nodeStore) *bufferedNode {
 	if ret, already := n.uncommittedChildren[childIndex]; already {
 		return ret
 	}
-	childCommitment := n.nodeData.children[childIndex]
+	childCommitment := n.nodeData.Children[childIndex]
 	if childCommitment == nil {
 		return nil
 	}
