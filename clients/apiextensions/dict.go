@@ -57,7 +57,7 @@ func APIWaitUntilAllRequestsProcessed(client *apiclient.APIClient, chainID isc.C
 	}
 	ret := make([]*apiclient.ReceiptResponse, len(reqs))
 	for i, req := range reqs[chainID] {
-		receipt, _, err := client.RequestsApi.
+		receipt, _, err := client.ChainsApi.
 			WaitForRequest(context.Background(), chainID.String(), req.ID().String()).
 			TimeoutSeconds(int32(timeout.Seconds())).
 			WaitForL1Confirmation(waitForL1Confirmation).

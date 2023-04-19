@@ -21,7 +21,7 @@ func (m *MultiClient) WaitUntilRequestProcessed(chainID isc.ChainID, reqID isc.R
 	var receipt *apiclient.ReceiptResponse
 	var err error
 	err = m.Do(func(i int, w *apiclient.APIClient) error {
-		receipt, _, err = w.RequestsApi.WaitForRequest(context.Background(), chainID.String(), reqID.String()).
+		receipt, _, err = w.ChainsApi.WaitForRequest(context.Background(), chainID.String(), reqID.String()).
 			WaitForL1Confirmation(waitForL1Confirmation).
 			Execute()
 		return err

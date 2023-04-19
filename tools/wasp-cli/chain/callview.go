@@ -33,7 +33,7 @@ func initCallViewCmd() *cobra.Command {
 			funcName := args[1]
 			params := util.EncodeParams(args[2:])
 
-			result, _, err := client.RequestsApi.CallView(context.Background(), config.GetChain(chain).String()).
+			result, _, err := client.ChainsApi.CallView(context.Background(), config.GetChain(chain).String()).
 				ContractCallViewRequest(apiclient.ContractCallViewRequest{
 					ContractName: contractName,
 					FunctionName: funcName,

@@ -6,17 +6,20 @@ Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**ActivateChain**](ChainsApi.md#ActivateChain) | **Post** /v1/chains/{chainID}/activate | Activate a chain
 [**AddAccessNode**](ChainsApi.md#AddAccessNode) | **Put** /v1/chains/{chainID}/access-node/{peer} | Configure a trusted node to be an access node.
+[**CallView**](ChainsApi.md#CallView) | **Post** /v1/chains/{chainID}/callview | Call a view function on a contract by Hname
 [**DeactivateChain**](ChainsApi.md#DeactivateChain) | **Post** /v1/chains/{chainID}/deactivate | Deactivate a chain
 [**GetChainInfo**](ChainsApi.md#GetChainInfo) | **Get** /v1/chains/{chainID} | Get information about a specific chain
 [**GetChains**](ChainsApi.md#GetChains) | **Get** /v1/chains | Get a list of all chains
 [**GetCommitteeInfo**](ChainsApi.md#GetCommitteeInfo) | **Get** /v1/chains/{chainID}/committee | Get information about the deployed committee
 [**GetContracts**](ChainsApi.md#GetContracts) | **Get** /v1/chains/{chainID}/contracts | Get all available chain contracts
+[**GetReceipt**](ChainsApi.md#GetReceipt) | **Get** /v1/chains/{chainID}/receipts/{requestID} | Get a receipt from a request ID
 [**GetRequestIDFromEVMTransactionID**](ChainsApi.md#GetRequestIDFromEVMTransactionID) | **Get** /v1/chains/{chainID}/evm/tx/{txHash} | Get the ISC request ID for the given Ethereum transaction hash
 [**GetStateValue**](ChainsApi.md#GetStateValue) | **Get** /v1/chains/{chainID}/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
 [**RemoveAccessNode**](ChainsApi.md#RemoveAccessNode) | **Delete** /v1/chains/{chainID}/access-node/{peer} | Remove an access node.
 [**SetChainRecord**](ChainsApi.md#SetChainRecord) | **Post** /v1/chains/{chainID}/chainrecord | Sets the chain record.
 [**V1ChainsChainIDEvmGet**](ChainsApi.md#V1ChainsChainIDEvmGet) | **Get** /v1/chains/{chainID}/evm | Ethereum JSON-RPC
 [**V1ChainsChainIDEvmWsGet**](ChainsApi.md#V1ChainsChainIDEvmWsGet) | **Get** /v1/chains/{chainID}/evm/ws | Ethereum JSON-RPC (Websocket transport)
+[**WaitForRequest**](ChainsApi.md#WaitForRequest) | **Get** /v1/chains/{chainID}/requests/{requestID}/wait | Wait until the given request has been processed by the node
 
 
 
@@ -148,6 +151,78 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
 - **Content-Type**: Not defined
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
+## CallView
+
+> JSONDict CallView(ctx, chainID).ContractCallViewRequest(contractCallViewRequest).Execute()
+
+Call a view function on a contract by Hname
+
+
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    chainID := "chainID_example" // string | ChainID (Bech32)
+    contractCallViewRequest := *openapiclient.NewContractCallViewRequest(*openapiclient.NewJSONDict(), "ContractHName_example", "ContractName_example", "FunctionHName_example", "FunctionName_example") // ContractCallViewRequest | Parameters
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.ChainsApi.CallView(context.Background(), chainID).ContractCallViewRequest(contractCallViewRequest).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.CallView``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `CallView`: JSONDict
+    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.CallView`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**chainID** | **string** | ChainID (Bech32) | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiCallViewRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+ **contractCallViewRequest** | [**ContractCallViewRequest**](ContractCallViewRequest.md) | Parameters | 
+
+### Return type
+
+[**JSONDict**](JSONDict.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: application/json
 - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
@@ -473,6 +548,77 @@ Name | Type | Description  | Notes
 ### Authorization
 
 [Authorization](../README.md#Authorization)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
+## GetReceipt
+
+> ReceiptResponse GetReceipt(ctx, chainID, requestID).Execute()
+
+Get a receipt from a request ID
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    chainID := "chainID_example" // string | ChainID (Bech32)
+    requestID := "requestID_example" // string | RequestID (Hex)
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.ChainsApi.GetReceipt(context.Background(), chainID, requestID).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetReceipt``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetReceipt`: ReceiptResponse
+    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.GetReceipt`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**chainID** | **string** | ChainID (Bech32) | 
+**requestID** | **string** | RequestID (Hex) | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetReceiptRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+
+
+### Return type
+
+[**ReceiptResponse**](ReceiptResponse.md)
+
+### Authorization
+
+No authorization required
 
 ### HTTP request headers
 
@@ -889,6 +1035,81 @@ No authorization required
 
 - **Content-Type**: Not defined
 - **Accept**: Not defined
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
+## WaitForRequest
+
+> ReceiptResponse WaitForRequest(ctx, chainID, requestID).TimeoutSeconds(timeoutSeconds).WaitForL1Confirmation(waitForL1Confirmation).Execute()
+
+Wait until the given request has been processed by the node
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    chainID := "chainID_example" // string | ChainID (Bech32)
+    requestID := "requestID_example" // string | RequestID (Hex)
+    timeoutSeconds := int32(56) // int32 | The timeout in seconds (optional)
+    waitForL1Confirmation := true // bool | Wait for the block to be confirmed on L1 (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.ChainsApi.WaitForRequest(context.Background(), chainID, requestID).TimeoutSeconds(timeoutSeconds).WaitForL1Confirmation(waitForL1Confirmation).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.WaitForRequest``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `WaitForRequest`: ReceiptResponse
+    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.WaitForRequest`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**chainID** | **string** | ChainID (Bech32) | 
+**requestID** | **string** | RequestID (Hex) | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiWaitForRequestRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+
+ **timeoutSeconds** | **int32** | The timeout in seconds | 
+ **waitForL1Confirmation** | **bool** | Wait for the block to be confirmed on L1 | 
+
+### Return type
+
+[**ReceiptResponse**](ReceiptResponse.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)

@@ -90,7 +90,7 @@ func (e *ChainEnv) getNativeContractCounter(hname isc.Hname) int64 {
 }
 
 func (e *ChainEnv) getCounterForNode(hname isc.Hname, nodeIndex int) int64 {
-	result, _, err := e.Chain.Cluster.WaspClient(nodeIndex).RequestsApi.
+	result, _, err := e.Chain.Cluster.WaspClient(nodeIndex).ChainsApi.
 		CallView(context.Background(), e.Chain.ChainID.String()).
 		ContractCallViewRequest(apiclient.ContractCallViewRequest{
 			ContractHName: hname.String(),

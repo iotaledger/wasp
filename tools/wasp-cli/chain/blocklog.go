@@ -176,7 +176,7 @@ func initRequestCmd() *cobra.Command {
 			client := cliclients.WaspClient(node)
 			reqID := reqIDFromString(args[0], client, chainID)
 
-			receipt, _, err := client.RequestsApi.
+			receipt, _, err := client.ChainsApi.
 				GetReceipt(context.Background(), chainID.String(), reqID.String()).
 				Execute() //nolint:bodyclose // false positive
 

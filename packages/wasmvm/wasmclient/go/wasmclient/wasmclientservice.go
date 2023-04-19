@@ -62,7 +62,7 @@ func (svc *WasmClientService) CallViewByHname(hContract, hFunction wasmtypes.ScH
 		return nil, err
 	}
 
-	res, _, err := svc.waspClient.RequestsApi.CallView(context.Background(), svc.chainID.String()).
+	res, _, err := svc.waspClient.ChainsApi.CallView(context.Background(), svc.chainID.String()).
 		ContractCallViewRequest(apiclient.ContractCallViewRequest{
 			ContractHName: hContract.String(),
 			FunctionHName: hFunction.String(),
@@ -161,7 +161,7 @@ func (svc *WasmClientService) UnsubscribeEvents(eventsID uint32) {
 }
 
 func (svc *WasmClientService) WaitUntilRequestProcessed(reqID wasmtypes.ScRequestID, timeout time.Duration) error {
-	_, _, err := svc.waspClient.RequestsApi.
+	_, _, err := svc.waspClient.ChainsApi.
 		WaitForRequest(context.Background(), svc.chainID.String(), reqID.String()).
 		TimeoutSeconds(int32(timeout.Seconds())).
 		Execute()

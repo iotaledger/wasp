@@ -51,7 +51,7 @@ func TestReboot(t *testing.T) {
 	req, err := client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).RequestsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsApi.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
@@ -93,7 +93,7 @@ func TestReboot(t *testing.T) {
 	req, err = client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).RequestsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsApi.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
@@ -116,7 +116,7 @@ func TestReboot2(t *testing.T) {
 	req, err := client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).RequestsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsApi.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		WaitForL1Confirmation(true).
 		TimeoutSeconds(10).
@@ -172,7 +172,7 @@ func TestReboot2(t *testing.T) {
 	req, err = client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).RequestsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsApi.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
@@ -207,7 +207,7 @@ func (icc *incCounterClient) MustIncOffLedger() {
 	req, err := icc.client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(icc.t, err)
 
-	_, _, err = icc.env.Clu.WaspClient(0).RequestsApi.
+	_, _, err = icc.env.Clu.WaspClient(0).ChainsApi.
 		WaitForRequest(context.Background(), icc.env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
@@ -391,7 +391,7 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 	req, err := client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).RequestsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsApi.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
@@ -415,7 +415,7 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 	req, err = client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).RequestsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsApi.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()

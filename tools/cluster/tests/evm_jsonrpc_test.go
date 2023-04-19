@@ -48,7 +48,7 @@ func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestE
 		if err != nil {
 			return err
 		}
-		receipt, _, err := c.WaspClient.RequestsApi.
+		receipt, _, err := c.WaspClient.ChainsApi.
 			WaitForRequest(context.Background(), env.Chain.ChainID.String(), reqID.String()).
 			TimeoutSeconds(60).
 			Execute()
