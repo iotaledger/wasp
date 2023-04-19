@@ -11,7 +11,7 @@ import (
 )
 
 func stateStatsPerHname(ctx context.Context, kvs kvstore.KVStore) {
-	state := getState(kvs)
+	state := getState(kvs, blockIndex)
 
 	totalSize := 0
 

@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -21,10 +22,14 @@ import (
 
 type processFunc func(context.Context, kvstore.KVStore)
 
-var blockIndex int64
+var (
+	blockIndex  int64
+	blockIndex2 int64
+)
 
 func main() {
 	flag.Int64Var(&blockIndex, "b", -1, "Block index")
+	flag.Int64Var(&blockIndex2, "B", -1, "Block index 2")
 	flag.Parse()
 
 	if flag.NArg() != 2 {
@@ -37,6 +42,8 @@ func main() {
 		f = stateStatsPerHname
 	case "trie-stats":
 		f = trieStats
+	case "trie-diff":
+		f = trieDiff
 	default:
 		log.Fatalf("unknown command: %s", args[0])
 	}
@@ -44,14 +51,14 @@ func main() {
 	process(args[1], f)
 }
 
-func getState(kvs kvstore.KVStore) state.State {
+func getState(kvs kvstore.KVStore, index int64) state.State {
 	store := indexedstore.New(state.NewStore(kvs))
-	if blockIndex < 0 {
+	if index < 0 {
 		state, err := store.LatestState()
 		mustNoError(err)
 		return state
 	}
-	state, err := store.StateByIndex(uint32(blockIndex))
+	state, err := store.StateByIndex(uint32(index))
 	mustNoError(err)
 	return state
 }
@@ -94,6 +101,18 @@ func process(dbDir string, f processFunc) {
 	case <-done:
 		cancel()
 	}
+}
+
+func percent(a, n int) int {
+	return int(percentf(a, n))
+}
+
+func percentf(a, n int) float64 {
+	return (100.0 * float64(a)) / float64(n)
+}
+
+func clearScreen() {
+	fmt.Print("\033[H\033[2J")
 }
 
 func mustNoError(err error) {

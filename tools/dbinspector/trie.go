@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"math"
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore"
@@ -12,49 +11,27 @@ import (
 	"github.com/iotaledger/wasp/packages/trie"
 )
 
+type trieStatsData struct {
+	n               int
+	size            int
+	childCount      [trie.NumChildren + 1]int
+	terminal        int
+	notTerminal     int
+	terminalIsValue int
+	depthSum        int
+
+	start     time.Time
+	lastShown time.Time
+}
+
 func trieStats(ctx context.Context, kvs kvstore.KVStore) {
-	state := getState(kvs)
+	state := getState(kvs, blockIndex)
 	tr, err := trie.NewTrieReader(trie.NewHiveKVStoreAdapter(kvs, []byte{chaindb.PrefixTrie}), state.TrieRoot())
 	mustNoError(err)
 
-	n := 0
-	size := 0
-	var childCount [trie.NumChildren + 1]int
-	terminal := 0
-	notTerminal := 0
-	terminalIsValue := 0
-	depthSum := 0
-
-	start := time.Now()
-
-	percent := func(a, n int) int {
-		return int(math.Round((100.0 * float64(a)) / float64(n)))
-	}
-
-	show := func() {
-		fmt.Print("\033[H\033[2J") // clear screen
-		fmt.Println()
-		fmt.Printf("Block index: %d\n", state.BlockIndex())
-		fmt.Println()
-		fmt.Printf("Total trie nodes: %d\n", n)
-		fmt.Println()
-		fmt.Printf("non-terminal: %9d (%2d%%)\n", notTerminal, percent(notTerminal, n))
-		fmt.Printf("    terminal: %9d (%2d%%)\n", terminal, percent(terminal, n))
-		fmt.Println()
-		fmt.Printf("     value stored in node: %9d (%2d%% of terminal nodes)\n", terminalIsValue, percent(terminalIsValue, terminal))
-		fmt.Printf("value stored outside node: %9d (%2d%% of terminal nodes)\n", terminal-terminalIsValue, percent(terminal-terminalIsValue, terminal))
-		fmt.Println()
-		for i := 0; i <= trie.NumChildren; i++ {
-			fmt.Printf("with %2d children: %9d (%2d%%)\n", i, childCount[i], percent(childCount[i], n))
-		}
-		fmt.Println()
-		fmt.Printf("Total trie size: %d bytes\n", size)
-		fmt.Printf("Avg node size: %d bytes\n", size/n)
-		fmt.Printf("Avg node depth: %.2f\n", float32(depthSum)/float32(n))
-		fmt.Println()
-		elapsed := time.Since(start)
-		fmt.Printf("Elapsed: %s\n", elapsed)
-		fmt.Printf("Speed: %d nodes/s\n", int(float64(n)/(elapsed.Seconds())))
+	data := trieStatsData{
+		start:     time.Now(),
+		lastShown: time.Now(),
 	}
 
 	type nodeData struct {
@@ -77,28 +54,54 @@ func trieStats(ctx context.Context, kvs kvstore.KVStore) {
 
 	last := time.Now()
 	for node := range nodesCh {
-		n++
+		data.n++
 
 		var buf bytes.Buffer
 		err := node.Write(&buf)
 		mustNoError(err)
-		size += len(buf.Bytes()) + trie.HashSizeBytes
-		childCount[node.ChildrenCount()]++
+		data.size += len(buf.Bytes()) + trie.HashSizeBytes
+		data.childCount[node.ChildrenCount()]++
 		if node.Terminal == nil {
-			notTerminal++
+			data.notTerminal++
 		} else {
-			terminal++
+			data.terminal++
 			if node.Terminal.IsValue {
-				terminalIsValue++
+				data.terminalIsValue++
 			}
 		}
-		depthSum += node.depth
+		data.depthSum += node.depth
 
 		now := time.Now()
 		if now.Sub(last) > 1*time.Second {
-			show()
+			clearScreen()
+			showTrieStats(&data)
 			last = now
 		}
 	}
-	show()
+	showTrieStats(&data)
+}
+
+func showTrieStats(data *trieStatsData) {
+	fmt.Println()
+	fmt.Printf("Block index: %d\n", blockIndex)
+	fmt.Println()
+	fmt.Printf("Total trie nodes: %d\n", data.n)
+	fmt.Println()
+	fmt.Printf("non-terminal: %9d (%2d%%)\n", data.notTerminal, percent(data.notTerminal, data.n))
+	fmt.Printf("    terminal: %9d (%2d%%)\n", data.terminal, percent(data.terminal, data.n))
+	fmt.Println()
+	fmt.Printf("     value stored in node: %9d (%2d%% of terminal nodes)\n", data.terminalIsValue, percent(data.terminalIsValue, data.terminal))
+	fmt.Printf("value stored outside node: %9d (%2d%% of terminal nodes)\n", data.terminal-data.terminalIsValue, percent(data.terminal-data.terminalIsValue, data.terminal))
+	fmt.Println()
+	for i := 0; i <= trie.NumChildren; i++ {
+		fmt.Printf("with %2d children: %9d (%2d%%)\n", i, data.childCount[i], percent(data.childCount[i], data.n))
+	}
+	fmt.Println()
+	fmt.Printf("Total trie size: %d bytes\n", data.size)
+	fmt.Printf("Avg node size: %d bytes\n", data.size/data.n)
+	fmt.Printf("Avg node depth: %.2f\n", float32(data.depthSum)/float32(data.n))
+	fmt.Println()
+	elapsed := time.Since(data.start)
+	fmt.Printf("Elapsed: %s\n", elapsed)
+	fmt.Printf("Speed: %d nodes/s\n", int(float64(data.n)/(elapsed.Seconds())))
 }
