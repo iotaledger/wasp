@@ -395,6 +395,35 @@ func TestRPCGetLogs(t *testing.T) {
 	env.TestRPCGetLogs()
 }
 
+func TestRPCLogIndex(t *testing.T) {
+	env := newSoloTestEnv(t)
+	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
+	require.NoError(t, err)
+	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
+
+	callArguments, err := contractABI.Pack("loopWithGasLeft")
+	require.NoError(t, err)
+
+	value := big.NewInt(0)
+	gas := uint64(100_000)
+	tx, err := types.SignTx(
+		types.NewTransaction(env.NonceAt(creatorAddress), contractAddress, value, gas, evm.GasPrice, callArguments),
+		env.Signer(),
+		creator,
+	)
+	require.NoError(t, err)
+	receipt := env.mustSendTransactionAndWait(tx)
+
+	logs, err := env.Client.FilterLogs(context.Background(), ethereum.FilterQuery{
+		FromBlock: receipt.BlockNumber,
+		ToBlock:   receipt.BlockNumber,
+	})
+	require.NoError(t, err)
+	require.Greater(t, len(logs), 2)
+	require.EqualValues(t, 1, logs[1].Index)
+}
+
 func TestRPCEthChainID(t *testing.T) {
 	env := newSoloTestEnv(t)
 	var chainID hexutil.Uint

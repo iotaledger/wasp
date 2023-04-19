@@ -365,11 +365,12 @@ func (bc *BlockchainDB) GetReceiptByBlockNumberAndIndex(blockNumber uint64, txIn
 	tx := bc.GetTransactionByBlockNumberAndIndex(blockNumber, txIndex)
 	r.TxHash = tx.Hash()
 	r.BlockHash = bc.GetBlockHashByBlockNumber(blockNumber)
-	for _, log := range r.Logs {
+	for i, log := range r.Logs {
 		log.TxHash = r.TxHash
 		log.TxIndex = uint(txIndex)
 		log.BlockHash = r.BlockHash
 		log.BlockNumber = blockNumber
+		log.Index = uint(i)
 	}
 	if tx.To() == nil {
 		from, _ := types.Sender(evmutil.Signer(big.NewInt(int64(bc.GetChainID()))), tx)
