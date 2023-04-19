@@ -18,7 +18,7 @@ func WithOffLedgerRequest(chainID isc.ChainID, nodeName string, f func() (isc.Of
 	log.Check(err)
 	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().String())
 	if config.WaitForCompletion {
-		_, _, err = cliclients.WaspClient(nodeName).RequestsApi.
+		_, _, err = cliclients.WaspClient(nodeName).ChainsApi.
 			WaitForRequest(context.Background(), chainID.String(), req.ID().String()).
 			WaitForL1Confirmation(true).
 			TimeoutSeconds(60).

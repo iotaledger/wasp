@@ -237,7 +237,7 @@ paths:
           description: Result
       summary: Call a view function on a contract by Hname
       tags:
-      - requests
+      - chains
       x-codegen-request-body-name: ""
   /v1/chains/{chainID}/chainrecord:
     post:
@@ -1387,7 +1387,7 @@ paths:
           description: Chain or request id not found
       summary: Get a receipt from a request ID
       tags:
-      - requests
+      - chains
   /v1/chains/{chainID}/requests/{requestID}/wait:
     get:
       operationId: waitForRequest
@@ -1433,7 +1433,7 @@ paths:
           description: The waiting time has reached the defined limit
       summary: Wait until the given request has been processed by the node
       tags:
-      - requests
+      - chains
   /v1/chains/{chainID}/state/{stateKey}:
     get:
       operationId: getStateValue
@@ -1724,7 +1724,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/PeeringNodeStatusResponse__'
+                  $ref: '#/components/schemas/PeeringNodeStatusResponse_'
                 type: array
           description: A list of all peers
         "401":
@@ -2724,10 +2724,10 @@ components:
       example:
         chainOwnerId: tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e
         gasLimits:
-          maxGasExternalViewCall: 5
-          minGasPerRequest: 7
-          maxGasPerBlock: 5
-          maxGasPerRequest: 2
+          maxGasExternalViewCall: 6
+          minGasPerRequest: 5
+          maxGasPerBlock: 1
+          maxGasPerRequest: 5
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
         customMetadata: customMetadata
@@ -2735,10 +2735,10 @@ components:
           gasPerToken:
             a: 1
             b: 100
-          validatorFeeShare: 1
+          validatorFeeShare: 0
           evmGasRatio:
-            a: 0
-            b: 0
+            a: 1
+            b: 1
         isActive: true
       properties:
         chainID:
@@ -2938,18 +2938,18 @@ components:
         committeeNodes:
         - node:
             isAlive: true
-            peeringURL: peeringURL
+            peeringURL: localhost:4000
             name: name
-            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-            numUsers: 6
+            publicKey: 0x0000
+            numUsers: 1
             isTrusted: true
           accessAPI: accessAPI
         - node:
             isAlive: true
-            peeringURL: peeringURL
+            peeringURL: localhost:4000
             name: name
-            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-            numUsers: 6
+            publicKey: 0x0000
+            numUsers: 1
             isTrusted: true
           accessAPI: accessAPI
         chainId: tst1pqm5ckama06xhkl080mmvz6l3xy8c8lulrwy7mx4ll0fc69krxfgka70j0e
@@ -3055,10 +3055,10 @@ components:
       example:
         node:
           isAlive: true
-          peeringURL: peeringURL
+          peeringURL: localhost:4000
           name: name
-          publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-          numUsers: 6
+          publicKey: 0x0000
+          numUsers: 1
           isTrusted: true
         accessAPI: accessAPI
       properties:
@@ -3567,10 +3567,10 @@ components:
         gasPerToken:
           a: 1
           b: 100
-        validatorFeeShare: 1
+        validatorFeeShare: 0
         evmGasRatio:
-          a: 0
-          b: 0
+          a: 1
+          b: 1
       properties:
         evmGasRatio:
           $ref: '#/components/schemas/Ratio32_'
@@ -3594,15 +3594,15 @@ components:
         gasPerToken:
           a: 0
           b: 0
-        validatorFeeShare: 0
+        validatorFeeShare: 1
         evmGasRatio:
           a: 0
           b: 0
       properties:
         evmGasRatio:
-          $ref: '#/components/schemas/Ratio32_'
+          $ref: '#/components/schemas/Ratio32__'
         gasPerToken:
-          $ref: '#/components/schemas/Ratio32_'
+          $ref: '#/components/schemas/Ratio32__'
         validatorFeeShare:
           description: The validator fee share.
           format: int32
@@ -3662,17 +3662,17 @@ components:
       example:
         chainOwnerId: chainOwnerId
         gasLimits:
-          maxGasExternalViewCall: 5
-          minGasPerRequest: 7
-          maxGasPerBlock: 5
-          maxGasPerRequest: 2
+          maxGasExternalViewCall: 6
+          minGasPerRequest: 5
+          maxGasPerBlock: 1
+          maxGasPerRequest: 5
         chainID: chainID
         customMetadata: customMetadata
         gasFeePolicy:
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 0
+          validatorFeeShare: 1
           evmGasRatio:
             a: 0
             b: 0
@@ -4035,10 +4035,10 @@ components:
         name: L1Params
     Limits:
       example:
-        maxGasExternalViewCall: 5
-        minGasPerRequest: 7
-        maxGasPerBlock: 5
-        maxGasPerRequest: 2
+        maxGasExternalViewCall: 6
+        minGasPerRequest: 5
+        maxGasPerBlock: 1
+        maxGasPerRequest: 5
       properties:
         maxGasExternalViewCall:
           description: The maximum gas per external view call
@@ -4631,60 +4631,6 @@ components:
     PeeringNodeStatusResponse_:
       example:
         isAlive: true
-        peeringURL: peeringURL
-        name: name
-        publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-        numUsers: 6
-        isTrusted: true
-      properties:
-        isAlive:
-          description: Whether or not the peer is activated
-          format: boolean
-          type: boolean
-          xml:
-            name: IsAlive
-        isTrusted:
-          format: boolean
-          type: boolean
-          xml:
-            name: IsTrusted
-        name:
-          format: string
-          type: string
-          xml:
-            name: Name
-        numUsers:
-          description: The amount of users attached to the peer
-          format: int32
-          type: integer
-          xml:
-            name: NumUsers
-        peeringURL:
-          description: The peering URL of the peer
-          format: string
-          type: string
-          xml:
-            name: PeeringURL
-        publicKey:
-          description: The peers public key encoded in Hex
-          example: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-          format: string
-          type: string
-          xml:
-            name: PublicKey
-      required:
-      - isAlive
-      - isTrusted
-      - name
-      - numUsers
-      - peeringURL
-      - publicKey
-      type: object
-      xml:
-        name: PeeringNodeStatusResponse
-    PeeringNodeStatusResponse__:
-      example:
-        isAlive: true
         peeringURL: localhost:4000
         name: name
         publicKey: 0x0000
@@ -4895,6 +4841,31 @@ components:
       xml:
         name: Ratio32
     Ratio32_:
+      example:
+        a: 1
+        b: 1
+      properties:
+        a:
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: A
+        b:
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: B
+      required:
+      - a
+      - b
+      type: object
+      xml:
+        name: Ratio32
+    Ratio32__:
       example:
         a: 0
         b: 0

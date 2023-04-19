@@ -114,7 +114,7 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 
 	// request is not processed after a while
 	time.Sleep(2 * time.Second)
-	receipt, _, err := nodeClient.RequestsApi.GetReceipt(context.Background(), env.Chain.ChainID.String(), req.ID().String()).Execute()
+	receipt, _, err := nodeClient.ChainsApi.GetReceipt(context.Background(), env.Chain.ChainID.String(), req.ID().String()).Execute()
 
 	require.Error(t, err)
 	require.Regexp(t, `404`, err.Error())

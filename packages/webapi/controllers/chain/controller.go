@@ -8,6 +8,7 @@ import (
 	loggerpkg "github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
@@ -80,6 +81,37 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		AddResponse(http.StatusOK, "Result", mocker.Get(models.StateResponse{}), nil).
 		SetSummary("Fetch the raw value associated with the given key in the chain state").
 		SetOperationId("getStateValue")
+
+	publicAPI.GET("chains/:chainID/receipts/:requestID", c.getReceipt).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddParamPath("", params.ParamRequestID, params.DescriptionRequestID).
+		AddResponse(http.StatusNotFound, "Chain or request id not found", nil, nil).
+		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
+		SetSummary("Get a receipt from a request ID").
+		SetOperationId("getReceipt")
+
+	dictExample := dict.Dict{
+		"key1": []byte("value1"),
+	}.JSONDict()
+
+	publicAPI.POST("chains/:chainID/callview", c.executeCallView).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddParamBody(mocker.Get(models.ContractCallViewRequest{}), "", "Parameters", true).
+		AddResponse(http.StatusOK, "Result", dictExample, nil).
+		SetSummary("Call a view function on a contract by Hname").
+		SetDescription("Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.").
+		SetOperationId("callView")
+
+	publicAPI.GET("chains/:chainID/requests/:requestID/wait", c.waitForRequestToFinish).
+		SetSummary("Wait until the given request has been processed by the node").
+		SetOperationId("waitForRequest").
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddParamPath("", params.ParamRequestID, params.DescriptionRequestID).
+		AddParamQuery(0, "timeoutSeconds", "The timeout in seconds", false).
+		AddParamQuery(false, "waitForL1Confirmation", "Wait for the block to be confirmed on L1", false).
+		AddResponse(http.StatusNotFound, "The chain or request id not found", nil, nil).
+		AddResponse(http.StatusRequestTimeout, "The waiting time has reached the defined limit", nil, nil).
+		AddResponse(http.StatusOK, "The request receipt", mocker.Get(models.ReceiptResponse{}), nil)
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {

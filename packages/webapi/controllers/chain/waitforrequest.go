@@ -1,4 +1,4 @@
-package requests
+package chain
 
 import (
 	"net/http"

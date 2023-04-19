@@ -240,7 +240,7 @@ func (ch *Chain) ContractRegistry(nodeIndex ...int) ([]apiclient.ContractInfoRes
 
 func (ch *Chain) GetCounterValue(inccounterSCHname isc.Hname, nodeIndex ...int) (int64, error) {
 	result, _, err := ch.Cluster.
-		WaspClient(nodeIndex...).RequestsApi.CallView(context.Background(), ch.ChainID.String()).
+		WaspClient(nodeIndex...).ChainsApi.CallView(context.Background(), ch.ChainID.String()).
 		ContractCallViewRequest(apiclient.ContractCallViewRequest{
 			ContractHName: inccounterSCHname.String(),
 			FunctionHName: inccounter.ViewGetCounter.Hname().String(),
@@ -264,7 +264,7 @@ func (ch *Chain) GetStateVariable(contractHname isc.Hname, key string, nodeIndex
 }
 
 func (ch *Chain) GetRequestReceipt(reqID isc.RequestID, nodeIndex ...int) (*apiclient.ReceiptResponse, error) {
-	receipt, _, err := ch.Cluster.WaspClient(nodeIndex...).RequestsApi.GetReceipt(context.Background(), ch.ChainID.String(), reqID.String()).
+	receipt, _, err := ch.Cluster.WaspClient(nodeIndex...).ChainsApi.GetReceipt(context.Background(), ch.ChainID.String(), reqID.String()).
 		Execute() //nolint:bodyclose // false positive
 
 	return receipt, err

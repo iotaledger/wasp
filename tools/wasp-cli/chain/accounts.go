@@ -144,7 +144,7 @@ func initAccountNFTsCmd() *cobra.Command {
 // baseTokensForDepositFee calculates the amount of tokens needed to pay for a deposit
 func baseTokensForDepositFee(client *apiclient.APIClient, chain string) uint64 {
 	callGovView := func(viewName string) dict.Dict {
-		result, _, err := client.RequestsApi.CallView(context.Background(), config.GetChain(chain).String()).
+		result, _, err := client.ChainsApi.CallView(context.Background(), config.GetChain(chain).String()).
 			ContractCallViewRequest(apiclient.ContractCallViewRequest{
 				ContractName: governance.Contract.Name,
 				FunctionName: viewName,
