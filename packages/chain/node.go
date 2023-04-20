@@ -884,14 +884,14 @@ func (cni *chainNodeImpl) cleanupConsensusInsts(committeeAddr iotago.Ed25519Addr
 
 // Cleanup TX'es that are not needed to be posted anymore.
 func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes *shrinkingmap.ShrinkingMap[iotago.TransactionID, *chainMgr.NeedPublishTX]) {
-	if neededPostTXes == nil {
+	if neededPostTXes == nil || neededPostTXes.Size() == 0 {
 		// just create a new map
 		cni.publishingTXes = shrinkingmap.New[iotago.TransactionID, context.CancelFunc]()
 		return
 	}
 
 	cni.publishingTXes.ForEach(func(txID iotago.TransactionID, cancelFunc context.CancelFunc) bool {
-		if _, ok := neededPostTXes.Get(txID); !ok { // remove anything that doesn't need a tx to be posted
+		if !neededPostTXes.Has(txID) { // remove anything that doesn't need a tx to be posted
 			cancelFunc()
 			cni.publishingTXes.Delete(txID)
 		}
