@@ -10,7 +10,7 @@ DOCKER_BUILD_ARGS = # E.g. make docker-build "DOCKER_BUILD_ARGS=--tag wasp:devel
 TEST_PKG=./...
 TEST_ARG=
 
-BUILD_PKGS=./ ./tools/cluster/wasp-cluster/
+BUILD_PKGS ?= ./ ./tools/cluster/wasp-cluster/
 BUILD_CMD=go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 
@@ -59,7 +59,9 @@ install-cli:
 install-full: compile-solidity install-cli
 	$(INSTALL_CMD) ./...
 
-install: compile-solidity install-cli
+install: compile-solidity install-cli install-pkgs
+
+install-pkgs:
 	$(INSTALL_CMD) $(BUILD_PKGS)
 
 lint: lint-wasp-cli
