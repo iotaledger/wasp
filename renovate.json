@@ -14,6 +14,8 @@
   ],
   "goGetDirs": [
     ".",
-    "./tools/wasp-cli"
+    "./tools/wasp-cli",
+    "./tools/gendoc",
+    "./tools/gascalibration"
   ]
 }
