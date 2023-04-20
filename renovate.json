@@ -13,9 +13,6 @@
     "github.com/iotaledger/wasp/tools/wasp-cli"
   ],
   "goGetDirs": [
-    ".",
-    "./tools/wasp-cli",
-    "./tools/gendoc",
-    "./tools/gascalibration"
+    "."
   ]
 }
