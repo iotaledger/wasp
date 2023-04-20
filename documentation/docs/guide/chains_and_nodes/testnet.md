@@ -25,16 +25,8 @@ overloading the testnet because we are looking for functionality testing more th
 
 You can access the testnet via the following endpoints:
 
-- https://sc.testnet.shimmer.network **Username**: wasp **Password**: wasp
-    - The Wasp dashboard to explore the node configuration and view peering/chain configurations
-    - https://api.evm.testnet.shimmer.network/
-        - The Wasp api to deploy and interact with smart contracts
-        - https://api.evm.testnet.shimmer.network/info
-            - Information about the Wasp access node
-        - https://api.evm.testnet.shimmer.network/doc
-            - API reference for the Wasp API
-    - https://json-rpc.evm.testnet.shimmer.network/
-        - The URL to interact with the Ethereum Virtual Machine on our testnet
+- https://json-rpc.evm.testnet.shimmer.network/
+    - The URL to interact with the Ethereum Virtual Machine on our testnet
 - https://evm-faucet.testnet.shimmer.network/
     - The faucet for the Shimmer Beta network
 - https://explorer.evm.testnet.shimmer.network/
