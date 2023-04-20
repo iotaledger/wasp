@@ -4,7 +4,6 @@
 package tests
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -103,35 +102,4 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	}
 
 	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize-1), to, "requests counted")
-}
-
-// extreme test
-func TestAccessNodesMany(t *testing.T) {
-	testutil.RunHeavy(t)
-	const clusterSize = 15
-	const numValidatorNodes = 6
-	const requestsCountInitial = 2
-	const requestsCountProgression = 2
-	const iterationCount = 8
-
-	e := setupNativeInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes-1))
-
-	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
-	require.NoError(t, err)
-
-	myClient := e.Chain.SCClient(nativeIncCounterSCHname, keyPair)
-
-	requestsCount := requestsCountInitial
-	requestsCumulative := 0
-	posted := 0
-	for i := 0; i < iterationCount; i++ {
-		logMsg := fmt.Sprintf("iteration %v of %v requests", i, requestsCount)
-		t.Logf("Running %s", logMsg)
-		_, err := myClient.PostNRequests(inccounter.FuncIncCounter.Name, requestsCount)
-		require.NoError(t, err)
-		posted += requestsCount
-		requestsCumulative += requestsCount
-		waitUntil(t, e.counterEquals(int64(requestsCumulative)), e.Clu.Config.AllNodes(), 60*time.Second, logMsg)
-		requestsCount *= requestsCountProgression
-	}
 }

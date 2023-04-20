@@ -89,7 +89,7 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 5*time.Minute)
+	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 30*time.Second)
 
 	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsApi.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, err)
