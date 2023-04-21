@@ -10,7 +10,7 @@ replace (
 require (
 	github.com/bygui86/multi-profile/v2 v2.1.0
 	github.com/bytecodealliance/wasmtime-go/v7 v7.0.0
-	github.com/ethereum/go-ethereum v1.11.5
+	github.com/ethereum/go-ethereum v1.11.6
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/hashicorp/golang-lru/v2 v2.0.2
 	github.com/iotaledger/hive.go/app v0.0.0-20230420105138-0b7cba751091
