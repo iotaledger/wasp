@@ -95,7 +95,7 @@ type peeringNode struct {
 
 type peeringMsg struct {
 	from      *cryptolib.PublicKey
-	msg       peering.PeerMessageData
+	msg       *peering.PeerMessageData
 	timestamp int64
 }
 
@@ -141,7 +141,7 @@ func (n *peeringNode) recvLoop() {
 func (n *peeringNode) sendMsg(from *cryptolib.PublicKey, msg *peering.PeerMessageData) {
 	n.sendCh <- &peeringMsg{
 		from: from,
-		msg:  *msg,
+		msg:  msg,
 	}
 }
 

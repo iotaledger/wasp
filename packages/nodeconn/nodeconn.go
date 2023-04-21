@@ -339,8 +339,7 @@ func (nc *nodeConnection) GetL1ProtocolParams() *iotago.ProtocolParameters {
 }
 
 func (nc *nodeConnection) subscribeToLedgerUpdates() {
-	err := nc.nodeBridge.ListenToLedgerUpdates(nc.ctx, 0, 0, nc.handleLedgerUpdate)
-	if err != nil && !errors.Is(err, io.EOF) {
+	if err := nc.nodeBridge.ListenToLedgerUpdates(nc.ctx, 0, 0, nc.handleLedgerUpdate); err != nil && !errors.Is(err, io.EOF) {
 		nc.LogError(err)
 		nc.shutdownHandler.SelfShutdown(
 			fmt.Sprintf("INX connection unexpected error: %s", err.Error()),

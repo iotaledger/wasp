@@ -13,7 +13,7 @@ func TestPeerMessageCodec(t *testing.T) {
 	var err error
 	var src, dst *peering.PeerMessageNet
 	src = &peering.PeerMessageNet{
-		PeerMessageData: peering.PeerMessageData{
+		PeerMessageData: &peering.PeerMessageData{
 			PeeringID:   peering.RandomPeeringID(),
 			MsgReceiver: byte(10),
 			MsgType:     peering.FirstUserMsgCode + 17,

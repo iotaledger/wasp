@@ -128,7 +128,7 @@ func (p *peer) PubKey() *cryptolib.PublicKey {
 func (p *peer) SendMsg(msg *peering.PeerMessageData) {
 	//
 	p.accessLock.RLock()
-	msgNet := &peering.PeerMessageNet{PeerMessageData: *msg}
+	msgNet := &peering.PeerMessageNet{PeerMessageData: msg}
 	if !p.trusted {
 		p.log.Infof("Dropping outgoing message, because it was meant to send to a distrusted peer.")
 		p.accessLock.RUnlock()
@@ -201,6 +201,8 @@ func (p *peer) IsAlive() bool {
 }
 
 // Await implements peering.PeerSender interface for the remote peers.
+//
+//nolint:revive
 func (p *peer) Await(timeout time.Duration) error {
 	p.accessLock.RLock()
 	defer p.accessLock.RUnlock()

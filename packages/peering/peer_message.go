@@ -28,17 +28,17 @@ type PeerMessageData struct {
 }
 
 type PeerMessageNet struct {
-	PeerMessageData
+	*PeerMessageData
 	serialized *[]byte
 }
 
 type PeerMessageIn struct {
-	PeerMessageData
+	*PeerMessageData
 	SenderPubKey *cryptolib.PublicKey
 }
 
 type PeerMessageGroupIn struct {
-	PeerMessageIn
+	*PeerMessageIn
 	SenderIndex uint16
 }
 
@@ -70,7 +70,7 @@ func NewPeerMessageNetFromBytes(buf []byte) (*PeerMessageNet, error) {
 		return nil, err
 	}
 	return &PeerMessageNet{
-		PeerMessageData: *data,
+		PeerMessageData: data,
 		serialized:      &buf,
 	}, nil
 }
