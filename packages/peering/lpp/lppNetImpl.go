@@ -426,8 +426,6 @@ func (n *netImpl) NumUsers() int {
 }
 
 // Await implements peering.PeerSender for the Self() node.
-//
-//nolint:revive
 func (n *netImpl) Await(timeout time.Duration) error {
 	return nil // This node is alive immediately.
 }

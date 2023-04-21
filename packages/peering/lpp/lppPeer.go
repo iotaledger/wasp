@@ -201,8 +201,6 @@ func (p *peer) IsAlive() bool {
 }
 
 // Await implements peering.PeerSender interface for the remote peers.
-//
-//nolint:revive
 func (p *peer) Await(timeout time.Duration) error {
 	p.accessLock.RLock()
 	defer p.accessLock.RUnlock()
