@@ -472,19 +472,19 @@ func (ctx *SoloContext) UpdateGasFees() {
 func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {
 	// default to use WasmGoVM to run Go SC code directly without Wasm VM
 	wasmFile := "go"
-	if *NoWasm {
+	switch {
+	case *NoWasm:
 		// explicit default
-	} else if *GoWasm {
+	case *GoWasm:
 		// find Go Wasm file
 		wasmFile = ctx.existFile("go")
-	} else if *RsWasm {
+	case *RsWasm:
 		// find Rust Wasm file
 		wasmFile = ctx.existFile("bg")
-	} else if *TsWasm {
+	case *TsWasm:
 		// find TypeScript Wasm file
 		wasmFile = ctx.existFile("ts")
 	}
-
 	if wasmFile == "" {
 		panic("cannot find Wasm file for: " + ctx.scName)
 	}

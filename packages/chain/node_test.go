@@ -19,7 +19,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -448,7 +448,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor),
 			dkShareProviders[i],
 			testutil.NewConsensusStateRegistry(),
-			smGPAUtils.NewMockedTestBlockWAL(),
+			sm_gpa_utils.NewMockedTestBlockWAL(),
 			chain.NewEmptyChainListener(),
 			[]*cryptolib.PublicKey{}, // Access nodes.
 			te.networkProviders[i],

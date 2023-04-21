@@ -144,7 +144,7 @@ func HashStrings(str ...string) HashValue {
 }
 
 func PseudoRandomHash(rnd *rand.Rand) HashValue {
-	s := ""
+	var s string
 	if rnd == nil {
 		s = fmt.Sprintf("%d", rand.Int())
 	} else {

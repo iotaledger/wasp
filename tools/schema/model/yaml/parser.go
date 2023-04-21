@@ -15,7 +15,9 @@ func Parse(in []byte) *Node {
 	indentList := []int{0} // the list of indent space numbers in the current code block
 	lines := strings.Split(strings.ReplaceAll(string(in), "\r\n", "\n"), "\n")
 
-	prevIndent, curIndent := -1, 0
+	prevIndent := -1
+	var curIndent int
+
 	var comment string
 	for i, line := range lines {
 		if strings.TrimSpace(line) == "" {
