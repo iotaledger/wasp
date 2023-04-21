@@ -382,7 +382,7 @@ func (n *Node) exchangeInitiatorMsgs(
 		var err error
 		var initMsg initiatorMsg
 		var isInitMsg bool
-		isInitMsg, initMsg, err = readInitiatorMsg(&recv.PeerMessageData, n.edSuite, n.blsSuite)
+		isInitMsg, initMsg, err = readInitiatorMsg(recv.PeerMessageData, n.edSuite, n.blsSuite)
 		if !isInitMsg {
 			return false, nil
 		}

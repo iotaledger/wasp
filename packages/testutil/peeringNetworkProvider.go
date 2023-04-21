@@ -95,8 +95,15 @@ type peeringNode struct {
 
 type peeringMsg struct {
 	from      *cryptolib.PublicKey
-	msg       peering.PeerMessageData
+	msg       *peering.PeerMessageData
 	timestamp int64
+}
+
+func (m *peeringMsg) PeerMessageData() *peering.PeerMessageData {
+	if m.msg == nil {
+		return &peering.PeerMessageData{}
+	}
+	return m.msg
 }
 
 type peeringCb struct {
@@ -126,6 +133,10 @@ func newPeeringNode(peeringURL string, identity *cryptolib.KeyPair, network *Pee
 
 func (n *peeringNode) recvLoop() {
 	for pm := range n.recvCh {
+		if pm.msg == nil {
+			continue
+		}
+
 		msgPeeringID := pm.msg.PeeringID.String()
 		for _, cb := range n.recvCbs {
 			if cb.peeringID.String() == msgPeeringID && cb.receiver == pm.msg.MsgReceiver {
@@ -141,7 +152,7 @@ func (n *peeringNode) recvLoop() {
 func (n *peeringNode) sendMsg(from *cryptolib.PublicKey, msg *peering.PeerMessageData) {
 	n.sendCh <- &peeringMsg{
 		from: from,
-		msg:  *msg,
+		msg:  msg,
 	}
 }
 

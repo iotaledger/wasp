@@ -148,7 +148,7 @@ func (g *groupImpl) ExchangeRound(
 				continue
 			}
 			recvMsg := peering.PeerMessageGroupIn{
-				PeerMessageIn: *recvMsgNoIndex,
+				PeerMessageIn: recvMsgNoIndex,
 				SenderIndex:   senderIndex,
 			}
 			if acks[recvMsg.SenderIndex] { // Only consider first successful message.
@@ -247,7 +247,7 @@ func (g *groupImpl) Attach(receiver byte, callback func(recv *peering.PeerMessag
 			return
 		}
 		gRecv := &peering.PeerMessageGroupIn{
-			PeerMessageIn: *recv,
+			PeerMessageIn: recv,
 			SenderIndex:   idx,
 		}
 		callback(gRecv)

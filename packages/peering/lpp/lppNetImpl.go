@@ -405,7 +405,7 @@ func (n *netImpl) PubKey() *cryptolib.PublicKey {
 // SendMsg implements peering.PeerSender for the Self() node.
 func (n *netImpl) SendMsg(msg *peering.PeerMessageData) {
 	// Don't go via the network, if sending a message to self.
-	n.triggerRecvEvents(n.Self().PubKey(), &peering.PeerMessageNet{PeerMessageData: *msg})
+	n.triggerRecvEvents(n.Self().PubKey(), &peering.PeerMessageNet{PeerMessageData: msg})
 }
 
 func (n *netImpl) triggerRecvEvents(from *cryptolib.PublicKey, msg *peering.PeerMessageNet) {
