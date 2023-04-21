@@ -98,8 +98,8 @@ github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 h1:q0rUy8C/TYNBQS1+CGKw68tLOF
 github.com/buger/jsonparser v0.0.0-20181115193947-bf1c66bbce23/go.mod h1:bbYlZJ7hK1yFx9hf58LP0zeX7UjIGs20ufpu3evjr+s=
 github.com/bygui86/multi-profile/v2 v2.1.0 h1:x/jPqeL/6hJqLXoDI/H5zLPsSFbDR6IEbrBbFpkWQdw=
 github.com/bygui86/multi-profile/v2 v2.1.0/go.mod h1:f4qCZiQo1nnJdwbPoADUtdDXg3hhnpfgZ9iq3/kW4BA=
-github.com/bytecodealliance/wasmtime-go/v7 v7.0.0 h1:/rBNjgFju2HCZnkPb1eL+W4GBwP8DMbaQu7i+GR9DH4=
-github.com/bytecodealliance/wasmtime-go/v7 v7.0.0/go.mod h1:bu6fic7trDt20w+LMooX7j3fsOwv4/ln6j8gAdP6vmA=
+github.com/bytecodealliance/wasmtime-go/v8 v8.0.0 h1:jP4sqm2PHgm3+eQ50zCoCdIyQFkIL/Rtkw6TT8OYPFI=
+github.com/bytecodealliance/wasmtime-go/v8 v8.0.0/go.mod h1:tgazNLU7xSC2gfRAM8L4WyE+dgs5yp9FF5/tGebEQyM=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/cp v0.1.0 h1:SE+dxFebS7Iik5LK0tsi1k9ZCxEaFX4AjQmoyA+1dJk=
 github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghfAqPWnc=
@@ -996,8 +996,6 @@ golang.org/x/exp v0.0.0-20191227195350-da58074b4299/go.mod h1:2RIsYlXP63K8oxa1u0
 golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a/go.mod h1:2RIsYlXP63K8oxa1u096TMicItID8zy7Y6sNkU49FU4=
 golang.org/x/exp v0.0.0-20200207192155-f17229e696bd/go.mod h1:J/WKrq2StrnmMY6+EHIKF9dgMWnmCNThgcyBT1FY9mM=
 golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6/go.mod h1:3jZMyOhIsHpP37uCMkUooju7aAi5cS1Q23tOzKc+0MU=
-golang.org/x/exp v0.0.0-20230419192730-864b3d6c5c2c h1:HDdYQYKOkvJT/Plb5HwJJywTVyUnIctjQm6XSnZ/0CY=
-golang.org/x/exp v0.0.0-20230419192730-864b3d6c5c2c/go.mod h1:CxIveKay+FTh1D0yPZemJVgC/95VzuuOLq5Qi4xnoYc=
 golang.org/x/exp v0.0.0-20230420155640-133eef4313cb h1:rhjz/8Mbfa8xROFiH+MQphmAmgqRM0bOMnytznhWEXk=
 golang.org/x/exp v0.0.0-20230420155640-133eef4313cb/go.mod h1:V1LtkGg67GoY2N1AnLN78QLrzxkLyJw7RJb1gzOOz9w=
 golang.org/x/image v0.0.0-20190227222117-0694c2d4d067/go.mod h1:kZ7UVZpmo3dzQBMxlp+ypCbDeSB+sBbTgSJuh5dn5js=
