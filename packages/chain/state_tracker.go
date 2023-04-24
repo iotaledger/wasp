@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smInputs"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 )
@@ -23,8 +23,8 @@ type StateTracker interface {
 	AwaitRequestReceipt(query *awaitReceiptReq)
 	//
 	// The following 2 functions are only to move the channel receive loop to the main ChainNode thread.
-	ChainNodeAwaitStateMgrCh() <-chan *smInputs.ChainFetchStateDiffResults
-	ChainNodeStateMgrResponse(*smInputs.ChainFetchStateDiffResults)
+	ChainNodeAwaitStateMgrCh() <-chan *sm_inputs.ChainFetchStateDiffResults
+	ChainNodeStateMgrResponse(*sm_inputs.ChainFetchStateDiffResults)
 }
 
 type StateTrackerStepCB = func(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block)
@@ -37,7 +37,7 @@ type stateTrackerImpl struct {
 	haveAO                 *isc.AliasOutputWithID // We have a state ready for this AO.
 	nextAO                 *isc.AliasOutputWithID // For this state a query was made, but the response not received yet.
 	nextAOCancel           context.CancelFunc     // Cancel for a context used to query for the nextAO state.
-	nextAOWaitCh           <-chan *smInputs.ChainFetchStateDiffResults
+	nextAOWaitCh           <-chan *sm_inputs.ChainFetchStateDiffResults
 	awaitReceipt           AwaitReceipt
 	metricWantStateIndexCB func(uint32)
 	metricHaveStateIndexCB func(uint32)
@@ -96,13 +96,13 @@ func (sti *stateTrackerImpl) AwaitRequestReceipt(query *awaitReceiptReq) {
 }
 
 // To be used in the select loop at the chain node.
-func (sti *stateTrackerImpl) ChainNodeAwaitStateMgrCh() <-chan *smInputs.ChainFetchStateDiffResults {
+func (sti *stateTrackerImpl) ChainNodeAwaitStateMgrCh() <-chan *sm_inputs.ChainFetchStateDiffResults {
 	return sti.nextAOWaitCh
 }
 
 // This is assumed to be called right after the `ChainNodeAwaitStateMgrCh()`,
 // thus no additional checks are present here.
-func (sti *stateTrackerImpl) ChainNodeStateMgrResponse(results *smInputs.ChainFetchStateDiffResults) {
+func (sti *stateTrackerImpl) ChainNodeStateMgrResponse(results *sm_inputs.ChainFetchStateDiffResults) {
 	sti.cancelQuery()
 	newState := results.GetNewState()
 	sti.log.Debugf(

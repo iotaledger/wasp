@@ -491,7 +491,7 @@ func testQueueAddRemove[E IntConvertable](factory Factory[E], q Queue[E], elemen
 
 //--
 
-func TesLimitedPriorityHashQueueLength(t *testing.T) {
+func TestLimitedPriorityHashQueueLength(t *testing.T) {
 	testDefaultQueueLength(NewSimpleNothashableFactory(), NewLimitedPriorityHashQueue[SimpleNothashable](), t)
 }
 
@@ -515,7 +515,7 @@ func TestLimitPriorityLimitedPriorityHashQueueLength(t *testing.T) {
 	testLimitedPriorityQueueLength(NewSimpleNothashableFactory(), NewLimitPriorityLimitedPriorityHashQueue[SimpleNothashable], t)
 }
 
-func TesHashLimitedPriorityHashQueueLength(t *testing.T) {
+func TestHashLimitedPriorityHashQueueLength(t *testing.T) {
 	testDefaultQueueLength(NewSimpleHashableFactory(), NewHashLimitedPriorityHashQueue[SimpleHashable](), t)
 }
 

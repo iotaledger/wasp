@@ -101,7 +101,6 @@ func TestWaspCLI1Chain(t *testing.T) {
 
 func checkBalance(t *testing.T, out []string, expected int) {
 	t.Helper()
-	amount := 0
 	// regex example: base tokens 1000000
 	//				  -----  ------token  amount-----  ------base   1364700
 	r := regexp.MustCompile(`.*(?i:base)\s*(?i:tokens)?:*\s*(\d+).*`).FindStringSubmatch(strings.Join(out, ""))

@@ -50,8 +50,8 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
-	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
-	"github.com/iotaledger/wasp/packages/chain/mempool/distSync"
+	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	"github.com/iotaledger/wasp/packages/chain/mempool/distsync"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -225,7 +225,7 @@ func New(
 		metrics:                        metrics,
 		listener:                       listener,
 	}
-	mpi.distSync = distSync.New(
+	mpi.distSync = distsync.New(
 		mpi.pubKeyAsNodeID(nodeIdentity.GetPublicKey()),
 		mpi.distSyncRequestNeededCB,
 		mpi.distSyncRequestReceivedCB,
@@ -451,7 +451,7 @@ func (mpi *mempoolImpl) addOffLedgerRequestIfUnseen(request isc.OffLedgerRequest
 func (mpi *mempoolImpl) handleServerNodesUpdated(recv *reqServerNodesUpdated) {
 	mpi.serverNodes = recv.serverNodePubKeys
 	mpi.committeeNodes = recv.committeePubKeys
-	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputServerNodes(
+	mpi.sendMessages(mpi.distSync.Input(distsync.NewInputServerNodes(
 		lo.Map(mpi.serverNodes, mpi.pubKeyAsNodeIDMap),
 		lo.Map(mpi.committeeNodes, mpi.pubKeyAsNodeIDMap),
 	)))
@@ -460,7 +460,7 @@ func (mpi *mempoolImpl) handleServerNodesUpdated(recv *reqServerNodesUpdated) {
 func (mpi *mempoolImpl) handleAccessNodesUpdated(recv *reqAccessNodesUpdated) {
 	mpi.accessNodes = recv.accessNodePubKeys
 	mpi.committeeNodes = recv.committeePubKeys
-	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputAccessNodes(
+	mpi.sendMessages(mpi.distSync.Input(distsync.NewInputAccessNodes(
 		lo.Map(mpi.accessNodes, mpi.pubKeyAsNodeIDMap),
 		lo.Map(mpi.committeeNodes, mpi.pubKeyAsNodeIDMap),
 	)))
@@ -541,7 +541,7 @@ func (mpi *mempoolImpl) handleConsensusRequests(recv *reqConsensusRequests) {
 	//
 	// Wait for missing requests.
 	for i := range missing {
-		mpi.sendMessages(mpi.distSync.Input(distSync.NewInputRequestNeeded(recv.ctx, missing[i])))
+		mpi.sendMessages(mpi.distSync.Input(distsync.NewInputRequestNeeded(recv.ctx, missing[i])))
 	}
 	mpi.waitReq.WaitMany(recv.ctx, missing, func(req isc.Request) {
 		reqRefKey := isc.RequestRefFromRequest(req).AsKey()
@@ -603,7 +603,7 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
 	mpi.log.Debugf("Received request %v from outside.", request.ID())
 	if mpi.addOffLedgerRequestIfUnseen(request) {
-		mpi.sendMessages(mpi.distSync.Input(distSync.NewInputPublishRequest(request)))
+		mpi.sendMessages(mpi.distSync.Input(distsync.NewInputPublishRequest(request)))
 	}
 }
 
@@ -718,7 +718,7 @@ func (mpi *mempoolImpl) handleDistSyncDebugTick() {
 }
 
 func (mpi *mempoolImpl) handleDistSyncTimeTick() {
-	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputTimeTick()))
+	mpi.sendMessages(mpi.distSync.Input(distsync.NewInputTimeTick()))
 }
 
 // Re-send off-ledger messages that are hanging here for a long time.
@@ -727,7 +727,7 @@ func (mpi *mempoolImpl) handleRePublishTimeTick() {
 	retryOlder := time.Now().Add(-distShareRePublishTick)
 	mpi.offLedgerPool.Filter(func(request isc.OffLedgerRequest, ts time.Time) bool {
 		if ts.Before(retryOlder) {
-			mpi.sendMessages(mpi.distSync.Input(distSync.NewInputPublishRequest(request)))
+			mpi.sendMessages(mpi.distSync.Input(distsync.NewInputPublishRequest(request)))
 		}
 		return true
 	})

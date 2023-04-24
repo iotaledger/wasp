@@ -17,6 +17,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -39,17 +40,24 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 	errCh := make(chan error, numRequests)
 	txCh := make(chan iotago.Transaction, numRequests)
 	for i := 0; i < numAccounts; i++ {
-		keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 		createWalletRetries := 0
-		if err != nil {
-			if createWalletRetries >= 5 {
-				t.Fatal("failed to create wallet, got an error 5 times, %w", err)
+
+		var keyPair *cryptolib.KeyPair
+		for {
+			var err error
+			keyPair, _, err = env.Clu.NewKeyPairWithFunds()
+			if err != nil {
+				if createWalletRetries >= 5 {
+					t.Fatal("failed to create wallet, got an error 5 times, %w", err)
+				}
+				// wait and re-try
+				createWalletRetries++
+				i--
+				time.Sleep(1 * time.Second)
+				continue
 			}
-			// wait and re-try
-			createWalletRetries++
-			i--
-			time.Sleep(1 * time.Second)
-			continue
+
+			break
 		}
 		go func() {
 			chainClient := env.Chain.SCClient(isc.Hn(nativeIncCounterSCName), keyPair)

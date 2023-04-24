@@ -490,16 +490,17 @@ func (e *EthService) GetLogs(q *RPCFilterQuery) ([]*types.Log, error) {
 }
 
 // ChainID implements the eth_chainId method according to https://eips.ethereum.org/EIPS/eip-695
-func (e *EthService) chainId() hexutil.Uint { //nolint:revive
+func (e *EthService) chainID() hexutil.Uint {
 	chainID := e.evmChain.ChainID()
 	return hexutil.Uint(chainID)
 }
 
-func (e *EthService) ChainId() (hexutil.Uint, error) { //nolint:revive
+//nolint:revive // needs to be ChainId to match the interface
+func (e *EthService) ChainId() (hexutil.Uint, error) {
 	return withMetrics(
 		e.metrics, "eth_chainId",
 		func() (hexutil.Uint, error) {
-			return e.chainId(), nil
+			return e.chainID(), nil
 		},
 	)
 }

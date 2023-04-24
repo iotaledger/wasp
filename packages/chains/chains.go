@@ -14,9 +14,9 @@ import (
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/cmtLog"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
-	"github.com/iotaledger/wasp/packages/chains/accessMgr"
+	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chains/access_mgr"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -61,12 +61,12 @@ type Chains struct {
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
 	nodeIdentityProvider        registry.NodeIdentityProvider
-	consensusStateRegistry      cmtLog.ConsensusStateRegistry
+	consensusStateRegistry      cmt_log.ConsensusStateRegistry
 	chainListener               chain.ChainListener
 
 	mutex     sync.RWMutex
 	allChains *shrinkingmap.ShrinkingMap[isc.ChainID, *activeChain]
-	accessMgr accessMgr.AccessMgr
+	accessMgr access_mgr.AccessMgr
 
 	cleanupFunc         context.CancelFunc
 	shutdownCoordinator *shutdown.Coordinator
@@ -96,7 +96,7 @@ func New(
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
-	consensusStateRegistry cmtLog.ConsensusStateRegistry,
+	consensusStateRegistry cmt_log.ConsensusStateRegistry,
 	chainListener chain.ChainListener,
 	shutdownCoordinator *shutdown.Coordinator,
 	chainMetricsProvider *metrics.ChainMetricsProvider,
@@ -141,7 +141,7 @@ func (c *Chains) Run(ctx context.Context) error {
 	}
 	c.ctx = ctx
 
-	c.accessMgr = accessMgr.New(ctx, c.chainServersUpdatedCB, c.nodeIdentityProvider.NodeIdentity(), c.networkProvider, c.log.Named("AM"))
+	c.accessMgr = access_mgr.New(ctx, c.chainServersUpdatedCB, c.nodeIdentityProvider.NodeIdentity(), c.networkProvider, c.log.Named("AM"))
 	c.trustedNetworkListenerCancel = c.trustedNetworkManager.TrustedPeersListener(c.trustedPeersUpdatedCB)
 
 	unhook := c.chainRecordRegistryProvider.Events().ChainRecordModified.Hook(func(event *registry.ChainRecordModifiedEvent) {
@@ -236,14 +236,14 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 
 	// Initialize WAL
 	chainLog := c.log.Named(chainID.ShortString())
-	var chainWAL smGPAUtils.BlockWAL
+	var chainWAL sm_gpa_utils.BlockWAL
 	if c.walEnabled {
-		chainWAL, err = smGPAUtils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, chainMetrics)
+		chainWAL, err = sm_gpa_utils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, chainMetrics)
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}
 	} else {
-		chainWAL = smGPAUtils.NewEmptyBlockWAL()
+		chainWAL = sm_gpa_utils.NewEmptyBlockWAL()
 	}
 
 	chainCtx, chainCancel := context.WithCancel(c.ctx)

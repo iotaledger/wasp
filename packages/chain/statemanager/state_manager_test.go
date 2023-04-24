@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
@@ -51,10 +51,10 @@ func TestCruelWorld(t *testing.T) {
 		log.Named("net"),
 	)
 	netProviders := network.NetworkProviders()
-	bf := smGPAUtils.NewBlockFactory(t)
+	bf := sm_gpa_utils.NewBlockFactory(t)
 	sms := make([]StateMgr, nodeCount)
 	stores := make([]state.Store, nodeCount)
-	timers := smGPA.NewStateManagerTimers()
+	timers := sm_gpa.NewStateManagerTimers()
 	timers.StateManagerTimerTickPeriod = timerTickPeriod
 	timers.StateManagerGetBlockRetry = getBlockPeriod
 	for i := range sms {
@@ -68,7 +68,7 @@ func TestCruelWorld(t *testing.T) {
 			peerPubKeys[i],
 			peerPubKeys,
 			netProviders[i],
-			smGPAUtils.NewMockedTestBlockWAL(),
+			sm_gpa_utils.NewMockedTestBlockWAL(),
 			stores[i],
 			nil,
 			metrics.NewEmptyChainStateManagerMetric(),
@@ -131,8 +131,9 @@ func TestCruelWorld(t *testing.T) {
 	// Send MempoolStateRequest requests
 	mempoolStateRequestResult := makeNRequests(mempoolStateRequestCount, mempoolStateRequestDelay, func(_ int) bool {
 		nodeIndex := rand.Intn(nodeCount)
-		newBlockIndex := getRandomProducedBlockAIndex(blockProduced)
-		for ; newBlockIndex == 0; newBlockIndex = getRandomProducedBlockAIndex(blockProduced) {
+		var newBlockIndex int
+		for newBlockIndex == 0 {
+			newBlockIndex = getRandomProducedBlockAIndex(blockProduced)
 		}
 		oldBlockIndex := rand.Intn(newBlockIndex)
 		t.Logf("Mempool state request for new block %v and old block %v is sent to node %v", newBlockIndex+1, oldBlockIndex+1, peeringURLs[nodeIndex])
@@ -176,10 +177,12 @@ func TestCruelWorld(t *testing.T) {
 }
 
 func getRandomProducedBlockAIndex(blockProduced []*atomic.Bool) int {
+	//nolint:revive // we ingore the empty-block here because we wait for blockProduced 0 to become true
 	for !blockProduced[0].Load() {
 	}
 	var maxIndex int
-	for maxIndex = 0; maxIndex < len(blockProduced) && blockProduced[maxIndex].Load(); maxIndex++ {
+	for maxIndex < len(blockProduced) && blockProduced[maxIndex].Load() {
+		maxIndex++
 	}
 	return rand.Intn(maxIndex)
 }
