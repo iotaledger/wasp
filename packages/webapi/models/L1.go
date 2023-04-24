@@ -165,3 +165,10 @@ func OutputIDFromIotaGoOutputID(outputID iotago.OutputID) *OutputID {
 		OutputID: outputID.ToHex(),
 	}
 }
+
+func ConfirmStateFromISCConfirmState(state *metrics.ChainConfirmedState) *ChainConfirmedState {
+	return &ChainConfirmedState{
+		ConfirmedStateWant: state.ConfirmedStateWant,
+		ConfirmedStateHave: state.ConfirmedStateHave,
+	}
+}

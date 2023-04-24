@@ -44,6 +44,8 @@ type NodeMessageMetrics struct {
 	OutPullLatestOutput             *MetricItem[interface{}]
 	OutPullTxInclusionState         *MetricItem[iotago.TransactionID]
 	OutPullOutputByID               *MetricItem[iotago.OutputID]
+
+	ChainConfirmedState *MetricItem[*metrics.ChainConfirmedState]
 }
 
 func MapMetricItem[T interface{}](metrics metrics.IMessageMetric[T]) *MetricItem[T] {

@@ -58,6 +58,11 @@ type TxInclusionStateMsg struct {
 	State string
 }
 
+type ChainConfirmedState struct {
+	ConfirmedStateWant uint32
+	ConfirmedStateHave uint32
+}
+
 type emptyChainMessageMetric[T any] struct{}
 
 func (m emptyChainMessageMetric[T]) IncMessages(msg T, ts ...time.Time) {}

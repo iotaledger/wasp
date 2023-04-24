@@ -677,7 +677,7 @@ const pollAPIInterval = 500 * time.Millisecond
 
 // waits until API for a given WASP node is ready
 func waitForAPIReady(ctx context.Context, initOk chan<- bool, apiURL string) {
-	waspHealthEndpointURL := fmt.Sprintf("%s%s", apiURL, "/health")
+	waspHealthEndpointURL := fmt.Sprintf("%s%s", apiURL, "/metrics/node/health")
 
 	go func() {
 		for {

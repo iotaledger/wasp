@@ -206,6 +206,8 @@ type ChainMetricsProvider struct {
 	outPullTxInclusionStateMetrics         *messageMetric[iotago.TransactionID]
 	outPullOutputByIDMetrics               *messageMetric[iotago.OutputID]
 
+	chainConfirmedState *messageMetric[*ChainConfirmedState]
+
 	// chain state / tips
 	chainActiveStateWant    *prometheus.GaugeVec
 	chainActiveStateHave    *prometheus.GaugeVec
@@ -723,6 +725,10 @@ func (m *ChainMetricsProvider) InOnLedgerRequest() IMessageMetric[isc.OnLedgerRe
 
 func (m *ChainMetricsProvider) InTxInclusionState() IMessageMetric[*TxInclusionStateMsg] {
 	return m.inTxInclusionStateMetrics
+}
+
+func (m *ChainMetricsProvider) ChainConfirmedState() IMessageMetric[*ChainConfirmedState] {
+	return m.chainConfirmedState
 }
 
 func (m *ChainMetricsProvider) OutPublishStateTransaction() IMessageMetric[*StateTransaction] {
