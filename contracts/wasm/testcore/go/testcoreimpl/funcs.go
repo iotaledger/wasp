@@ -83,6 +83,7 @@ func funcIncCounter(_ wasmlib.ScFuncContext, f *IncCounterContext) {
 	counter.SetValue(counter.Value() + 1)
 }
 
+//nolint:revive
 func funcInfiniteLoop(_ wasmlib.ScFuncContext, _ *InfiniteLoopContext) {
 	for {
 		// do nothing, just waste gas
@@ -320,6 +321,7 @@ func viewGetStringValue(ctx wasmlib.ScViewContext, _ *GetStringValueContext) {
 	// f.Results.Vars().GetString(varName).SetValue(value)
 }
 
+//nolint:revive
 func viewInfiniteLoopView(_ wasmlib.ScViewContext, _ *InfiniteLoopViewContext) {
 	for {
 		// do nothing, just waste gas

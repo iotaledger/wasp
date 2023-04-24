@@ -16,8 +16,6 @@ func Parse(in []byte) *Node {
 	lines := strings.Split(strings.ReplaceAll(string(in), "\r\n", "\n"), "\n")
 
 	prevIndent := -1
-	var curIndent int
-
 	var comment string
 	for i, line := range lines {
 		if strings.TrimSpace(line) == "" {
@@ -48,7 +46,7 @@ func Parse(in []byte) *Node {
 
 		cur.Line = lineNum
 		valTrimLeft := strings.TrimLeft(val, " ")
-		curIndent = len(val) - len(valTrimLeft)
+		curIndent := len(val) - len(valTrimLeft)
 		val = strings.TrimSpace(val)
 		if strings.Contains(val, ":") && (strings.Index(val, ":") != strings.Index(val, "://")) {
 			if val[len(val)-1] == ':' {

@@ -273,7 +273,6 @@ func (g *GenBase) emitFunc(line string) {
 // It processes the optional elseTemplate when the named condition is false
 // Produces an error if named condition is unknown
 
-//nolint:funlen,gocyclo
 func (g *GenBase) emitIf(line string) {
 	g.log(line)
 	g.indent()
@@ -285,60 +284,7 @@ func (g *GenBase) emitIf(line string) {
 		return
 	}
 
-	var condition bool
-	switch parts[1] {
-	case KeyArray:
-		condition = g.currentField.Array
-	case KeyBaseType:
-		condition = g.currentField.BaseType
-	case KeyCore:
-		condition = g.s.CoreContracts
-	case KeyEvent:
-		condition = len(g.currentEvent.Fields) != 0
-	case KeyEvents:
-		condition = len(g.s.Events) != 0
-	case KeyExist:
-		condition = g.newTypes[g.keys[KeyProxy]]
-	case KeyFunc:
-		condition = g.keys["kind"] == KeyFunc
-	case KeyFuncs:
-		condition = len(g.s.Funcs) != 0
-	case KeyInit:
-		condition = g.currentFunc.Name == KeyInit
-	case KeyMandatory:
-		condition = !g.currentField.Optional
-	case KeyMap:
-		condition = g.currentField.MapKey != ""
-	case KeyMut:
-		condition = g.keys[KeyMut] == "Mutable"
-	case KeyParam:
-		condition = len(g.currentFunc.Params) != 0
-	case KeyParams:
-		condition = len(g.s.Params) != 0
-	case KeyPtrs:
-		condition = len(g.currentFunc.Params) != 0 || len(g.currentFunc.Results) != 0
-	case KeyResult:
-		condition = len(g.currentFunc.Results) != 0
-	case KeyResults:
-		condition = len(g.s.Results) != 0
-	case KeyState:
-		condition = len(g.s.StateVars) != 0
-	case KeyStructs:
-		condition = len(g.s.Structs) != 0
-	case KeyThis:
-		condition = g.currentField.Alias == KeyThis
-	case KeyTypeDef:
-		condition = g.fieldIsTypeDef()
-	case KeyTypeDefs:
-		condition = len(g.s.Typedefs) != 0
-	case KeyView:
-		condition = g.keys["kind"] == KeyView
-	default:
-		key := g.keys[parts[1]]
-		condition = key != ""
-	}
-
-	if condition {
+	if g.emitIfCondition(parts[1]) {
 		g.emit(parts[2])
 		return
 	}
@@ -346,6 +292,60 @@ func (g *GenBase) emitIf(line string) {
 	// else branch?
 	if len(parts) == 4 {
 		g.emit(parts[3])
+	}
+}
+
+//nolint:gocyclo
+func (g *GenBase) emitIfCondition(key string) bool {
+	switch key {
+	case KeyArray:
+		return g.currentField.Array
+	case KeyBaseType:
+		return g.currentField.BaseType
+	case KeyCore:
+		return g.s.CoreContracts
+	case KeyEvent:
+		return len(g.currentEvent.Fields) != 0
+	case KeyEvents:
+		return len(g.s.Events) != 0
+	case KeyExist:
+		return g.newTypes[g.keys[KeyProxy]]
+	case KeyFunc:
+		return g.keys["kind"] == KeyFunc
+	case KeyFuncs:
+		return len(g.s.Funcs) != 0
+	case KeyInit:
+		return g.currentFunc.Name == KeyInit
+	case KeyMandatory:
+		return !g.currentField.Optional
+	case KeyMap:
+		return g.currentField.MapKey != ""
+	case KeyMut:
+		return g.keys[KeyMut] == "Mutable"
+	case KeyParam:
+		return len(g.currentFunc.Params) != 0
+	case KeyParams:
+		return len(g.s.Params) != 0
+	case KeyPtrs:
+		return len(g.currentFunc.Params) != 0 || len(g.currentFunc.Results) != 0
+	case KeyResult:
+		return len(g.currentFunc.Results) != 0
+	case KeyResults:
+		return len(g.s.Results) != 0
+	case KeyState:
+		return len(g.s.StateVars) != 0
+	case KeyStructs:
+		return len(g.s.Structs) != 0
+	case KeyThis:
+		return g.currentField.Alias == KeyThis
+	case KeyTypeDef:
+		return g.fieldIsTypeDef()
+	case KeyTypeDefs:
+		return len(g.s.Typedefs) != 0
+	case KeyView:
+		return g.keys["kind"] == KeyView
+	default:
+		return g.keys[key] != ""
 	}
 }
 
