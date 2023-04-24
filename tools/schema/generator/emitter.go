@@ -119,8 +119,6 @@ func (g *GenBase) emit(template string) {
 // emitEach processes "$#each array template"
 // It processes the template for each item in the array
 // Produces an error if the array key is unknown
-
-//nolint:gocyclo
 func (g *GenBase) emitEach(line string) {
 	g.log(line)
 	g.indent()
@@ -159,19 +157,7 @@ func (g *GenBase) emitEach(line string) {
 	case KeyTypeDef:
 		g.emitEachField(g.s.Typedefs, template)
 	default:
-		// emit multi-line text
-		text, ok := g.keys[parts[1]]
-		if !ok {
-			g.error(line)
-			return
-		}
-		if text != "" {
-			lines := strings.Split(text, "\n")
-			for _, nextLine := range lines {
-				g.keys["nextLine"] = nextLine
-				g.emit(template)
-			}
-		}
+		g.emitEachLine(line, parts[1], template)
 	}
 }
 
@@ -223,6 +209,22 @@ func (g *GenBase) emitEachFunc(funcs []*model.Func, template string) {
 		g.log("currentFunc: " + g.currentFunc.Name)
 		g.setFuncKeys(true, maxCamelLength, maxSnakeLength)
 		g.emit(template)
+	}
+}
+
+// emitEachLine emits multi-line text, like multi-line comments
+func (g *GenBase) emitEachLine(line string, key string, template string) {
+	text, ok := g.keys[key]
+	if !ok {
+		g.error(line)
+		return
+	}
+	if text != "" {
+		lines := strings.Split(text, "\n")
+		for _, nextLine := range lines {
+			g.keys["nextLine"] = nextLine
+			g.emit(template)
+		}
 	}
 }
 

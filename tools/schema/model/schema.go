@@ -181,9 +181,10 @@ func (s *Schema) compileFuncFields(fieldMap DefMap, allFieldMap *FieldMap, what 
 	fields := make([]*Field, 0, len(fieldMap))
 	fieldNames := make(DefNameMap)
 	fieldAliases := make(DefNameMap)
-	for _, fldName := range sortedKeys(fieldMap) {
+	for _, fldKey := range sortedKeys(fieldMap) {
+		fldName := fldKey
 		fldType := fieldMap[fldName]
-		field, err := s.compileField(&fldName, fldType) //nolint:gosec
+		field, err := s.compileField(&fldName, fldType)
 		if err != nil {
 			return nil, err
 		}
@@ -224,9 +225,10 @@ func (s *Schema) compileFuncFields(fieldMap DefMap, allFieldMap *FieldMap, what 
 func (s *Schema) compileStateVars(schemaDef *SchemaDef) error {
 	varNames := make(DefNameMap)
 	varAliases := make(DefNameMap)
-	for _, varName := range sortedKeys(schemaDef.State) {
+	for _, varKey := range sortedKeys(schemaDef.State) {
+		varName := varKey
 		varType := schemaDef.State[varName]
-		varDef, err := s.compileField(&varName, varType) //nolint:gosec
+		varDef, err := s.compileField(&varName, varType)
 		if err != nil {
 			return err
 		}
@@ -268,9 +270,10 @@ func (s *Schema) compileStruct(kind string, structName DefElt, structFields DefM
 	structDef := &Struct{Name: structName}
 	fieldNames := make(DefNameMap)
 	fieldAliases := make(DefNameMap)
-	for _, fldName := range sortedKeys(structFields) {
+	for _, fldKey := range sortedKeys(structFields) {
+		fldName := fldKey
 		fldType := structFields[fldName]
-		field, err := s.compileField(&fldName, fldType) //nolint:gosec
+		field, err := s.compileField(&fldName, fldType)
 		if err != nil {
 			return nil, err
 		}
@@ -307,9 +310,10 @@ func (s *Schema) compileStruct(kind string, structName DefElt, structFields DefM
 func (s *Schema) compileTypeDefs(schemaDef *SchemaDef) error {
 	varNames := make(DefNameMap)
 	varAliases := make(DefNameMap)
-	for _, varName := range sortedKeys(schemaDef.Typedefs) {
+	for _, varKey := range sortedKeys(schemaDef.Typedefs) {
+		varName := varKey
 		varType := schemaDef.Typedefs[varName]
-		varDef, err := s.compileField(&varName, varType) //nolint:gosec
+		varDef, err := s.compileField(&varName, varType)
 		if err != nil {
 			return err
 		}
