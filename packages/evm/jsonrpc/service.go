@@ -495,7 +495,8 @@ func (e *EthService) chainID() hexutil.Uint {
 	return hexutil.Uint(chainID)
 }
 
-func (e *EthService) ChainID() (hexutil.Uint, error) {
+//nolint:revive // needs to be ChainId to match the interface
+func (e *EthService) ChainId() (hexutil.Uint, error) {
 	return withMetrics(
 		e.metrics, "eth_chainId",
 		func() (hexutil.Uint, error) {
