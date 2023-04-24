@@ -497,7 +497,7 @@ func (e *EthService) chainID() hexutil.Uint {
 
 func (e *EthService) ChainID() (hexutil.Uint, error) {
 	return withMetrics(
-		e.metrics, "eth_chainID",
+		e.metrics, "eth_chainId",
 		func() (hexutil.Uint, error) {
 			return e.chainID(), nil
 		},
