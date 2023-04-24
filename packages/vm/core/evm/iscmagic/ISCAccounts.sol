@@ -24,6 +24,12 @@ interface ISCAccounts {
 
     // Get the amount of L2 NFTs of a given collection owned by an account
     function getL2NFTAmountInCollection(ISCAgentID memory agentID, NFTID collectionId) external view returns (uint256);
+
+    // Create a new foundry. The evm core contract will be the owner of the foundry. You need to call MoveFoundryOwnership to transfer the ownership to your contract.
+    function foundryCreateNew(NativeTokenScheme memory tokenScheme, ISCAssets memory allowance) external returns(uint32);
+
+    // Mint new tokens. Only the owner of the foundry can call this function.
+    function mintNativeTokens(uint32 foundrySN, uint256 amount, ISCAssets memory allowance) external;
 }
 
 ISCAccounts constant __iscAccounts = ISCAccounts(ISC_MAGIC_ADDRESS);

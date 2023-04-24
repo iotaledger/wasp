@@ -1837,3 +1837,30 @@ func TestTraceTransaction(t *testing.T) {
 		require.NotEmpty(t, trace.Calls)
 	}
 }
+
+func TestMagicContractExamples(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	contract := env.deployERC20ExampleContract(ethKey)
+
+	contractAgentID := isc.NewEthereumAddressAgentID(contract.address)
+	env.soloChain.GetL2FundsFromFaucet(contractAgentID)
+
+	_, err := contract.callFn(nil, "createFoundry", big.NewInt(1000000), uint64(10_000))
+	require.NoError(t, err)
+
+	_, err = contract.callFn(nil, "registerToken", "TESTCOIN", "TEST", uint8(18), uint64(10_000))
+	require.NoError(t, err)
+
+	_, err = contract.callFn(nil, "mint", big.NewInt(1000), uint64(10_000))
+	require.NoError(t, err)
+
+	isTestContract := env.deployISCTestContract(ethKey)
+	contractAgentID = isc.NewEthereumAddressAgentID(isTestContract.address)
+	env.soloChain.GetL2FundsFromFaucet(contractAgentID)
+
+	_, err = isTestContract.callFn(nil, "mint", uint32(1), big.NewInt(1000), uint64(10_000))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "supply of the token is not controlled by the chain")
+}

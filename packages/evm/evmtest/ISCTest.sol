@@ -169,4 +169,11 @@ contract ISCTest {
             emit LoopEvent();
         }
     }
+
+    // This function is used to test foundry access. Should fail if foundry is not owned by the sender.
+    function mint(uint32 foundrySN,uint256 amount, uint64 storageDeposit) public {
+      ISCAssets memory allowance;
+      allowance.baseTokens = storageDeposit;
+      ISC.accounts.mintNativeTokens(foundrySN, amount, allowance);
+    }
 }

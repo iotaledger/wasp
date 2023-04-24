@@ -36,7 +36,7 @@ var Processor = evm.Contract.Processor(nil,
 	evm.FuncSendTransaction.WithHandler(restricted(applyTransaction)),
 	evm.FuncCallContract.WithHandler(restricted(callContract)),
 
-	evm.FuncRegisterERC20NativeToken.WithHandler(restricted(registerERC20NativeToken)),
+	evm.FuncRegisterERC20NativeToken.WithHandler(registerERC20NativeToken),
 	evm.FuncRegisterERC20NativeTokenOnRemoteChain.WithHandler(restricted(registerERC20NativeTokenOnRemoteChain)),
 	evm.FuncRegisterERC20ExternalNativeToken.WithHandler(registerERC20ExternalNativeToken),
 	evm.FuncRegisterERC721NFTCollection.WithHandler(restricted(registerERC721NFTCollection)),
