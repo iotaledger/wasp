@@ -1776,6 +1776,33 @@ func TestEVMCallViewGas(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestGasPrice(t *testing.T) {
+	env := initEVM(t)
+
+	price1 := env.evmChain.GasPrice().Uint64()
+	require.NotZero(t, price1)
+
+	{
+		feePolicy := env.soloChain.GetGasFeePolicy()
+		feePolicy.GasPerToken.B *= 2 // 1 gas is paid with 2 tokens
+		err := env.setFeePolicy(*feePolicy)
+		require.NoError(t, err)
+	}
+
+	price2 := env.evmChain.GasPrice().Uint64()
+	require.EqualValues(t, price1*2, price2)
+
+	{
+		feePolicy := env.soloChain.GetGasFeePolicy()
+		feePolicy.EVMGasRatio.A *= 2 // 1 EVM gas unit consumes 2 ISC gas units
+		err := env.setFeePolicy(*feePolicy)
+		require.NoError(t, err)
+	}
+
+	price3 := env.evmChain.GasPrice().Uint64()
+	require.EqualValues(t, price2*2, price3)
+}
+
 func TestTraceTransaction(t *testing.T) {
 	env := initEVM(t)
 	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()

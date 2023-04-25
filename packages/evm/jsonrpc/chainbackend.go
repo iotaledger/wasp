@@ -4,7 +4,6 @@
 package jsonrpc
 
 import (
-	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
@@ -29,6 +28,5 @@ type ChainBackend interface {
 	ISCLatestState() state.State
 	ISCStateByBlockIndex(blockIndex uint32) (state.State, error)
 	ISCStateByTrieRoot(trieRoot trie.Hash) (state.State, error)
-	EVMGasPrice() *big.Int
 	BaseToken() *parameters.BaseToken
 }

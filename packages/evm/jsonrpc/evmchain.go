@@ -404,7 +404,22 @@ func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.
 
 func (e *EVMChain) GasPrice() *big.Int {
 	e.log.Debugf("GasPrice()")
-	return e.backend.EVMGasPrice()
+
+	iscState := e.backend.ISCLatestState()
+	governancePartition := subrealm.NewReadOnly(iscState, kv.Key(governance.Contract.Hname().Bytes()))
+	feePolicy := governance.MustGetGasFeePolicy(governancePartition)
+
+	// convert to wei (18 decimals)
+	decimalsDifference := 18 - parameters.L1().BaseToken.Decimals
+	price := big.NewInt(10)
+	price.Exp(price, new(big.Int).SetUint64(uint64(decimalsDifference)), nil)
+
+	price.Mul(price, new(big.Int).SetUint64(uint64(feePolicy.GasPerToken.B)))
+	price.Div(price, new(big.Int).SetUint64(uint64(feePolicy.GasPerToken.A)))
+	price.Mul(price, new(big.Int).SetUint64(uint64(feePolicy.EVMGasRatio.A)))
+	price.Div(price, new(big.Int).SetUint64(uint64(feePolicy.EVMGasRatio.B)))
+
+	return price
 }
 
 func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumberOrHash *rpc.BlockNumberOrHash) (common.Hash, error) {
