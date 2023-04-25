@@ -111,7 +111,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	t.Log("Ask for proposals")
 	proposals := make([]<-chan []*isc.RequestRef, len(te.mempools))
 	for i, node := range te.mempools {
-		proposals[i] = node.ConsensusProposalsAsync(te.ctx, te.originAO)
+		proposals[i] = node.ConsensusProposalAsync(te.ctx, te.originAO)
 	}
 	t.Log("Wait for proposals and ask for decided requests")
 	decided := make([]<-chan []isc.Request, len(te.mempools))
@@ -161,7 +161,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	// Ask proposals for the next
 	proposals = make([]<-chan []*isc.RequestRef, len(te.mempools))
 	for i := range te.mempools {
-		proposals[i] = te.mempools[i].ConsensusProposalsAsync(te.ctx, nextAO) // Intentionally invalid order (vs TrackNewChainHead).
+		proposals[i] = te.mempools[i].ConsensusProposalAsync(te.ctx, nextAO) // Intentionally invalid order (vs TrackNewChainHead).
 		te.mempools[i].TrackNewChainHead(chainState, te.originAO, nextAO, []state.Block{block}, []state.Block{})
 	}
 	//
@@ -261,7 +261,7 @@ func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint:gocyclo
 	// Check, if requests are proposed.
 	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
 	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalsAsync(te.ctx, te.originAO)
+		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO)
 		require.Len(t, reqs, 3)
 		require.Contains(t, reqs, reqRefs[0])
 		require.Contains(t, reqs, reqRefs[1])
@@ -276,7 +276,7 @@ func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint:gocyclo
 	}
 	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
 	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalsAsync(te.ctx, te.originAO)
+		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO)
 		require.Len(t, reqs, 3)
 		require.Contains(t, reqs, reqRefs[0])
 		require.Contains(t, reqs, reqRefs[1])
@@ -289,7 +289,7 @@ func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint:gocyclo
 	}
 	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
 	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalsAsync(te.ctx, te.originAO)
+		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO)
 		require.Len(t, reqs, 4)
 		require.Contains(t, reqs, reqRefs[0])
 		require.Contains(t, reqs, reqRefs[1])
@@ -303,7 +303,7 @@ func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint:gocyclo
 	}
 	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
 	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalsAsync(te.ctx, te.originAO)
+		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO)
 		require.Len(t, reqs, 5)
 		require.Contains(t, reqs, reqRefs[0])
 		require.Contains(t, reqs, reqRefs[1])
@@ -376,7 +376,7 @@ func testExpiration(t *testing.T, n, f int, reliable bool) {
 	// Check, if requests are proposed.
 	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
 	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalsAsync(te.ctx, te.originAO)
+		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO)
 		require.Len(t, reqs, 2)
 		require.Contains(t, reqs, reqRefs[0])
 		require.Contains(t, reqs, reqRefs[3])
@@ -388,7 +388,7 @@ func testExpiration(t *testing.T, n, f int, reliable bool) {
 	}
 	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
 	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalsAsync(te.ctx, te.originAO)
+		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO)
 		require.Len(t, reqs, 1)
 		require.Contains(t, reqs, reqRefs[0])
 	}
