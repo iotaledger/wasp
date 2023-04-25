@@ -156,7 +156,7 @@ func (e *soloChainEnv) setEVMGasRatio(newGasRatio util.Ratio32, opts ...iscCallO
 	return err
 }
 
-func (e *soloChainEnv) setFeePolicy(p gas.FeePolicy, opts ...iscCallOptions) error {
+func (e *soloChainEnv) setFeePolicy(p gas.FeePolicy, opts ...iscCallOptions) error { //nolint:unparam
 	opt := e.parseISCCallOptions(opts)
 	req := solo.NewCallParams(
 		governance.Contract.Name, governance.FuncSetFeePolicy.Name,
