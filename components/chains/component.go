@@ -96,6 +96,7 @@ func provide(c *dig.Container) error {
 				ParamsChains.PullMissingRequestsFromCommittee,
 				ParamsChains.DeriveAliasOutputByQuorum,
 				ParamsChains.PipeliningLimit,
+				ParamsChains.ConsensusDelay,
 				deps.NetworkProvider,
 				deps.TrustedNetworkManager,
 				deps.ChainStateDatabaseManager.ChainStateKVStore,

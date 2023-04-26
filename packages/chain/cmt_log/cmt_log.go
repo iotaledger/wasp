@@ -158,7 +158,9 @@ type cmtLogImpl struct {
 	varLogIndex            VarLogIndex            // Calculates the current log index.
 	varLocalView           VarLocalView           // Tracks the pending alias outputs.
 	varRunning             VarRunning             // Tracks the latest LI.
-	output                 *Output                // The current request for a consensus.
+	outputCandidate        *Output                // We are about to propose this consensus, but we have to wait for time notification.
+	outputCanPropose       bool                   // True, if the next proposal can be made without waiting more time notifications.
+	outputProposed         *Output                // The current request for a consensus.
 	asGPA                  gpa.GPA                // This object, just with all the needed wrappers.
 	log                    *logger.Logger
 }
@@ -228,6 +230,9 @@ func New(
 		varLogIndex:            NewVarLogIndex(nodeIDs, n, f, prevLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, deriveAOByQuorum, log.Named("VLI")),
 		varLocalView:           NewVarLocalView(pipeliningLimit, log.Named("VLV")),
 		varRunning:             NewVarRunning(log.Named("VR")),
+		outputCandidate:        nil,
+		outputCanPropose:       true,
+		outputProposed:         nil,
 		log:                    log,
 	}
 	cl.asGPA = gpa.NewOwnHandler(me, cl)
@@ -255,6 +260,8 @@ func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
 		return cl.handleInputConsensusOutputRejected(input)
 	case *inputConsensusTimeout:
 		return cl.handleInputConsensusTimeout(input)
+	case *inputCanPropose:
+		return cl.handleInputCanPropose()
 	case *inputSuspend:
 		return cl.handleInputSuspend()
 	}
@@ -331,12 +338,25 @@ func (cl *cmtLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) 
 	return nil
 }
 
+func (cl *cmtLogImpl) handleInputCanPropose() gpa.OutMessages {
+	if cl.outputProposed == nil && cl.outputCandidate != nil {
+		// Proposal is already pending, so we output it.
+		// Then we already used this allowance, thus keep the can_propose false.
+		cl.outputProposed = cl.outputCandidate
+		cl.outputCanPropose = false
+		return nil
+	}
+	cl.outputCanPropose = true
+	return nil
+}
+
 // > ON Suspend:
 // >   ...
 func (cl *cmtLogImpl) handleInputSuspend() gpa.OutMessages {
 	cl.log.Infof("Committee suspended.")
 	cl.suspended = true
-	cl.output = nil
+	cl.outputCandidate = nil
+	cl.outputProposed = nil
 	return cl.tryProposeConsensus(nil)
 }
 
@@ -349,16 +369,16 @@ func (cl *cmtLogImpl) handleMsgNextLogIndex(msg *msgNextLogIndex) gpa.OutMessage
 
 // Implements the gpa.GPA interface.
 func (cl *cmtLogImpl) Output() gpa.Output {
-	if cl.output == nil {
+	if cl.outputProposed == nil {
 		return nil // Untyped nil!
 	}
-	return cl.output
+	return cl.outputProposed
 }
 
 // Implements the gpa.GPA interface.
 func (cl *cmtLogImpl) StatusString() string {
 	vliLI, _ := cl.varLogIndex.Value()
-	return fmt.Sprintf("{cmtLogImpl, LogIndex=%v, output=%+v, %v, %v}", vliLI, cl.output, cl.varLocalView.StatusString(), cl.varLogIndex.StatusString())
+	return fmt.Sprintf("{cmtLogImpl, LogIndex=%v, output=%+v, %v, %v}", vliLI, cl.outputProposed, cl.varLocalView.StatusString(), cl.varLogIndex.StatusString())
 }
 
 // > PROCEDURE TryProposeConsensus:
@@ -380,7 +400,7 @@ func (cl *cmtLogImpl) tryProposeConsensus(msgs gpa.OutMessages) gpa.OutMessages 
 	}
 	//
 	// Check, maybe it is already started.
-	if cl.output != nil && cl.output.logIndex == logIndex {
+	if cl.outputCandidate != nil && cl.outputCandidate.logIndex == logIndex {
 		// Already started, keep it as is.
 		return msgs
 	}
@@ -405,12 +425,19 @@ func (cl *cmtLogImpl) tryProposeConsensus(msgs gpa.OutMessages) gpa.OutMessages 
 		//
 		// Start the consensus (ask the upper layer to start it).
 		cl.consensusLI = logIndex
-		cl.output = makeOutput(cl.consensusLI, baseAO)
+		cl.outputCandidate = makeOutput(cl.consensusLI, baseAO)
+		if cl.outputCanPropose {
+			cl.outputProposed = cl.outputCandidate
+			cl.outputCanPropose = false
+		} else {
+			cl.outputProposed = nil
+		}
 		cl.varRunning.ConsensusProposed(logIndex)
 	} else {
 		// >     ELSE
 		// >         Don't propose any consensus.
-		cl.output = nil // Outdated, clear it away.
+		cl.outputCandidate = nil // Outdated, clear it away.
+		cl.outputProposed = nil
 	}
 	return msgs
 }

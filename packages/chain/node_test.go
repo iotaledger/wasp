@@ -458,6 +458,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			nil,
 			true,
 			-1,
+			10*time.Millisecond,
 		)
 		require.NoError(t, err)
 		te.nodes[i].ServersUpdated(te.peerPubKeys)
