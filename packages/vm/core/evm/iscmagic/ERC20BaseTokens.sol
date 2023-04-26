@@ -54,14 +54,17 @@ contract ERC20BaseTokens {
         return true;
     }
 
+    // Sets `numTokens` as the allowance of `delegate` over the caller’s tokens.
+    //
+    // NOTE: Base tokens are represented internally as an uint64.
+    //       If numTokens > MAX_UINT64, this call will fail.
+    //       Exception: as a special case, numTokens == MAX_UINT256 can be
+    //       specified as an "infinite" approval.
     function approve(address delegate, uint256 numTokens)
         public
         returns (bool)
     {
-        require(numTokens <= MAX_UINT64, "amount is too large");
-        ISCAssets memory assets;
-        assets.baseTokens = uint64(numTokens);
-        __iscPrivileged.addToAllowance(msg.sender, delegate, assets);
+        __iscPrivileged.setAllowanceBaseTokens(msg.sender, delegate, numTokens);
         emit Approval(msg.sender, delegate, numTokens);
         return true;
     }

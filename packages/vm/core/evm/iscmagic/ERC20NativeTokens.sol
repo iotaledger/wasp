@@ -76,11 +76,7 @@ contract ERC20NativeTokens {
         public
         returns (bool)
     {
-        ISCAssets memory assets;
-        assets.nativeTokens = new NativeToken[](1);
-        assets.nativeTokens[0].ID = nativeTokenID();
-        assets.nativeTokens[0].amount = numTokens;
-        __iscPrivileged.addToAllowance(msg.sender, delegate, assets);
+        __iscPrivileged.setAllowanceNativeTokens(msg.sender, delegate, nativeTokenID(), numTokens);
         emit Approval(msg.sender, delegate, numTokens);
         return true;
     }
