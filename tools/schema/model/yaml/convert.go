@@ -30,17 +30,11 @@ const (
 	KeyViews       string = "views"
 )
 
-//nolint:gocyclo
 func Convert(root *Node, def *model.SchemaDef) error {
 	for _, key := range root.Contents {
 		switch key.Val {
 		case KeyCopyright:
-			copyright := key.toStringElt()
-			if copyright.Val != "" {
-				def.Copyright = "// " + copyright.Val + "\n"
-			} else {
-				def.Copyright = key.HeadComment
-			}
+			def.Copyright = convertCopyright(key)
 		case KeyName:
 			def.Name = key.toStringElt()
 		case KeyDescription:
@@ -70,6 +64,14 @@ func Convert(root *Node, def *model.SchemaDef) error {
 		}
 	}
 	return nil
+}
+
+func convertCopyright(key *Node) string {
+	copyright := key.toStringElt()
+	if copyright.Val == "" {
+		return key.HeadComment
+	}
+	return "// " + copyright.Val + "\n"
 }
 
 func (n *Node) toStringElt() model.DefElt {

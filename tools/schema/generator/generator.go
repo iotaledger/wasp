@@ -85,9 +85,9 @@ func (g *GenBase) addTemplates(t model.StringMap) {
 	}
 }
 
-func (g *GenBase) build(exe string, args string) error {
-	//nolint:gosec
-	cmd := exec.Command(exe, strings.Split(args, " ")...)
+func (g *GenBase) build(compiler string, args string) error {
+	command := compiler
+	cmd := exec.Command(command, strings.Split(args, " ")...)
 	var stdout strings.Builder
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stdout

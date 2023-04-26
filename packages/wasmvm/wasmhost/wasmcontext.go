@@ -270,13 +270,12 @@ func (wc *WasmContext) tracef(format string, args ...interface{}) {
 }
 
 func traceHex(key []byte) string {
-	var name string
 	for i, b := range key {
 		if b == '.' {
 			return string(key[:i+1]) + hex(key[i+1:])
 		}
 		if b == '#' {
-			name = string(key[:i+1])
+			name := string(key[:i+1])
 			j := i + 1
 			for (key[j] & 0x80) != 0 {
 				j++
