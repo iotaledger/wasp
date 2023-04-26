@@ -177,7 +177,7 @@ func TestCruelWorld(t *testing.T) {
 }
 
 func getRandomProducedBlockAIndex(blockProduced []*atomic.Bool) int {
-	//nolint:revive // we ingore the empty-block here because we wait for blockProduced 0 to become true
+	//nolint:revive // we ignore the empty-block here because we wait for blockProduced 0 to become true
 	for !blockProduced[0].Load() {
 	}
 	var maxIndex int

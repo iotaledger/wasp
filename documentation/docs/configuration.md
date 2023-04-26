@@ -277,6 +277,7 @@ Example:
 | pullMissingRequestsFromCommittee | Whether or not to pull missing requests from other committee members                                    | boolean | true          |
 | deriveAliasOutputByQuorum        | False means we propose own AliasOutput, true - by majority vote.                                        | boolean | true          |
 | pipeliningLimit                  | -1 -- infinite, 0 -- disabled, X -- build the chain if there is up to X transactions unconfirmed by L1. | int     | -1            |
+| consensusDelay                   | Minimal delay between consensus runs.                                                                   | string  | "500ms"       |
 
 Example:
 
@@ -288,7 +289,8 @@ Example:
       "apiCacheTTL": "5m",
       "pullMissingRequestsFromCommittee": true,
       "deriveAliasOutputByQuorum": true,
-      "pipeliningLimit": -1
+      "pipeliningLimit": -1,
+      "consensusDelay": "500ms"
     }
   }
 ```
@@ -445,6 +447,7 @@ Example:
 | goMetrics                | Whether to include go metrics                                | boolean | true           |
 | processMetrics           | Whether to include process metrics                           | boolean | true           |
 | promhttpMetrics          | Whether to include promhttp metrics                          | boolean | true           |
+| webAPIMetrics            | Whether to include webapi metrics                            | boolean | true           |
 
 Example:
 
@@ -464,7 +467,8 @@ Example:
       "restAPIMetrics": true,
       "goMetrics": true,
       "processMetrics": true,
-      "promhttpMetrics": true
+      "promhttpMetrics": true,
+      "webAPIMetrics": true
     }
   }
 ```

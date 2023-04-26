@@ -36,7 +36,7 @@ const (
 // Interfaces required from other components (MP, SM)
 
 type Mempool interface {
-	ConsensusProposalsAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan []*isc.RequestRef
+	ConsensusProposalAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan []*isc.RequestRef
 	ConsensusRequestsAsync(ctx context.Context, requestRefs []*isc.RequestRef) <-chan []isc.Request
 }
 
@@ -337,7 +337,7 @@ func (cgr *ConsGr) tryHandleOutput() { //nolint:gocyclo
 	}
 	output := outputUntyped.(*cons.Output)
 	if output.NeedMempoolProposal != nil && !cgr.mempoolProposalsAsked {
-		cgr.mempoolProposalsRespCh = cgr.mempool.ConsensusProposalsAsync(cgr.ctx, output.NeedMempoolProposal)
+		cgr.mempoolProposalsRespCh = cgr.mempool.ConsensusProposalAsync(cgr.ctx, output.NeedMempoolProposal)
 		cgr.mempoolProposalsAsked = true
 	}
 	if output.NeedMempoolRequests != nil && !cgr.mempoolRequestsAsked {

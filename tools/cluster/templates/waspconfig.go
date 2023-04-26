@@ -87,7 +87,8 @@ var WaspConfig = `
     "apiCacheTTL": "5m",
     "pullMissingRequestsFromCommittee": true,
     "deriveAliasOutputByQuorum": true,
-    "pipeliningLimit": -1
+    "pipeliningLimit": -1,
+    "consensusDelay": "50ms"
   },
   "rawBlocks": {
     "enabled": false,
@@ -99,7 +100,7 @@ var WaspConfig = `
   },
   "profilingRecorder": {
     "enabled": false
-  }, 
+  },
   "prometheus": {
     "enabled": true,
     "bindAddress": "0.0.0.0:{{.MetricsPort}}",

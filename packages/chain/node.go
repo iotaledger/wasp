@@ -165,6 +165,9 @@ type chainNodeImpl struct {
 	stateTrackerCnf     StateTracker
 	blockWAL            sm_gpa_utils.BlockWAL
 	//
+	// Configuration values.
+	consensusDelay time.Duration
+	//
 	// Information for other components.
 	listener               ChainListener          // Object expecting event notifications.
 	accessLock             *sync.RWMutex          // Mutex for accessing informative fields from other threads.
@@ -267,6 +270,7 @@ func New(
 	onChainDisconnect func(),
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
+	consensusDelay time.Duration,
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
 	if listener == nil {
@@ -297,6 +301,7 @@ func New(
 		stateTrackerAct:        nil, // Set bellow.
 		stateTrackerCnf:        nil, // Set bellow.
 		blockWAL:               blockWAL,
+		consensusDelay:         consensusDelay,
 		listener:               listener,
 		accessLock:             &sync.RWMutex{},
 		activeCommitteeDKShare: nil,
@@ -492,6 +497,7 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 	consRecoverPipeOutCh := cni.consRecoverPipe.Out()
 	serversUpdatedPipeOutCh := cni.serversUpdatedPipe.Out()
 	redeliveryPeriodTicker := time.NewTicker(redeliveryPeriod)
+	consensusDelayTicker := time.NewTicker(cni.consensusDelay)
 	for {
 		if ctx.Err() != nil {
 			if cni.shutdownCoordinator == nil {
@@ -571,8 +577,12 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 			if ok {
 				cni.stateTrackerCnf.ChainNodeStateMgrResponse(resp)
 			}
+		case <-consensusDelayTicker.C:
+			cni.sendMessages(cni.chainMgr.Input(chainmanager.NewInputCanPropose()))
+			cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 		case t := <-redeliveryPeriodTicker.C:
 			cni.sendMessages(cni.chainMgr.Input(cni.chainMgr.MakeTickInput(t)))
+			cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 		case <-ctx.Done():
 			continue
 		}

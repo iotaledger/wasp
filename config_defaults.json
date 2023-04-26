@@ -68,7 +68,8 @@
     "apiCacheTTL": "5m",
     "pullMissingRequestsFromCommittee": true,
     "deriveAliasOutputByQuorum": true,
-    "pipeliningLimit": -1
+    "pipeliningLimit": -1,
+    "consensusDelay": "500ms"
   },
   "wal": {
     "enabled": true,
@@ -122,6 +123,7 @@
     "restAPIMetrics": true,
     "goMetrics": true,
     "processMetrics": true,
-    "promhttpMetrics": true
+    "promhttpMetrics": true,
+    "webAPIMetrics": true
   }
 }

@@ -50,6 +50,7 @@ type Chains struct {
 	pullMissingRequestsFromCommittee bool
 	deriveAliasOutputByQuorum        bool
 	pipeliningLimit                  int
+	consensusDelay                   time.Duration
 
 	networkProvider              peering.NetworkProvider
 	trustedNetworkManager        peering.TrustedNetworkManager
@@ -88,6 +89,7 @@ func New(
 	pullMissingRequestsFromCommittee bool, // TODO: Unused for now.
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
+	consensusDelay time.Duration,
 	networkProvider peering.NetworkProvider,
 	trustedNetworkManager peering.TrustedNetworkManager,
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
@@ -111,6 +113,7 @@ func New(
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		deriveAliasOutputByQuorum:        deriveAliasOutputByQuorum,
 		pipeliningLimit:                  pipeliningLimit,
+		consensusDelay:                   consensusDelay,
 		networkProvider:                  networkProvider,
 		trustedNetworkManager:            trustedNetworkManager,
 		chainStateStoreProvider:          chainStateStoreProvider,
@@ -267,6 +270,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		func() { c.chainMetricsProvider.UnregisterChain(chainID) },
 		c.deriveAliasOutputByQuorum,
 		c.pipeliningLimit,
+		c.consensusDelay,
 	)
 	if err != nil {
 		chainCancel()

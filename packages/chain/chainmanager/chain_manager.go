@@ -244,6 +244,8 @@ func (cmi *chainMgrImpl) Input(input gpa.Input) gpa.OutMessages {
 		return cmi.handleInputConsensusOutputSkip(input)
 	case *inputConsensusTimeout:
 		return cmi.handleInputConsensusTimeout(input)
+	case *inputCanPropose:
+		return cmi.handleInputCanPropose()
 	}
 	panic(fmt.Errorf("unexpected input %T: %+v", input, input))
 }
@@ -394,6 +396,13 @@ func (cmi *chainMgrImpl) handleInputConsensusTimeout(input *inputConsensusTimeou
 	})
 }
 
+func (cmi *chainMgrImpl) handleInputCanPropose() gpa.OutMessages {
+	cmi.log.Debugf("handleInputCanPropose")
+	return cmi.withAllCmtLogs(func(cl gpa.GPA) gpa.OutMessages {
+		return cl.Input(cmt_log.NewInputCanPropose())
+	})
+}
+
 // > UPON Reception of CmtLog.NextLI message:
 // >     Forward it to the corresponding CmtLog; HandleCmtLogOutput.
 func (cmi *chainMgrImpl) handleMsgCmtLog(msg *msgCmtLog) gpa.OutMessages {
@@ -540,6 +549,14 @@ func (cmi *chainMgrImpl) withCmtLog(committeeAddr iotago.Ed25519Address, handler
 		return nil
 	}
 	return gpa.NoMessages().AddAll(cmi.handleCmtLogOutput(cli, handler(cli.gpaInstance)))
+}
+
+func (cmi *chainMgrImpl) withAllCmtLogs(handler func(cl gpa.GPA) gpa.OutMessages) gpa.OutMessages {
+	msgs := gpa.NoMessages()
+	for _, cli := range cmi.cmtLogs {
+		msgs.AddAll(cmi.handleCmtLogOutput(cli, handler(cli.gpaInstance)))
+	}
+	return msgs
 }
 
 // NOTE: ErrNotInCommittee
