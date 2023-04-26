@@ -69,6 +69,7 @@ func TestCruelWorld(t *testing.T) {
 			peerPubKeys,
 			netProviders[i],
 			smGPAUtils.NewMockedTestBlockWAL(),
+			smGPAUtils.NewEmptySnapshotter(),
 			stores[i],
 			nil,
 			metrics.NewEmptyChainStateManagerMetric(),

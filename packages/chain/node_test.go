@@ -449,6 +449,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			dkShareProviders[i],
 			testutil.NewConsensusStateRegistry(),
 			smGPAUtils.NewMockedTestBlockWAL(),
+			smGPAUtils.NewEmptySnapshotter(),
 			chain.NewEmptyChainListener(),
 			[]*cryptolib.PublicKey{}, // Access nodes.
 			te.networkProviders[i],

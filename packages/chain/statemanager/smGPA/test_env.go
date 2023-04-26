@@ -50,11 +50,12 @@ func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() smGPAUti
 		smLog := log.Named(nodeID.ShortString())
 		nr := smUtils.NewNodeRandomiser(nodeID, nodeIDs, smLog)
 		wal := createWALFun()
+		snapshotter := smGPAUtils.NewEmptySnapshotter()
 		store := state.NewStore(mapdb.NewMapDB())
 		origin.InitChain(store, nil, 0)
 		stores[nodeID] = store
 		metrics := metrics.NewEmptyChainStateManagerMetric()
-		sms[nodeID], err = New(chainID, nr, wal, store, metrics, smLog, timers)
+		sms[nodeID], err = New(chainID, nr, wal, snapshotter, store, metrics, smLog, timers)
 		require.NoError(t, err)
 	}
 	return &testEnv{

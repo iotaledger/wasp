@@ -32,6 +32,7 @@ type stateManagerGPA struct {
 	blocksToFetch           blockFetchers
 	blocksFetched           blockFetchers
 	nodeRandomiser          smUtils.NodeRandomiser
+	snapshotter             smGPAUtils.Snapshotter
 	store                   state.Store
 	timers                  StateManagerTimers
 	lastGetBlocksTime       time.Time
@@ -52,6 +53,7 @@ func New(
 	chainID isc.ChainID,
 	nr smUtils.NodeRandomiser,
 	wal smGPAUtils.BlockWAL,
+	snapshotter smGPAUtils.Snapshotter,
 	store state.Store,
 	metrics metrics.IChainStateManagerMetrics,
 	log *logger.Logger,
@@ -70,6 +72,7 @@ func New(
 		blocksToFetch:           newBlockFetchers(newBlockFetchersMetrics(metrics.IncBlocksFetching, metrics.DecBlocksFetching, metrics.StateManagerBlockFetched)),
 		blocksFetched:           newBlockFetchers(newBlockFetchersMetrics(metrics.IncBlocksPending, metrics.DecBlocksPending, bfmNopDurationFun)),
 		nodeRandomiser:          nr,
+		snapshotter:             snapshotter,
 		store:                   store,
 		timers:                  timers,
 		lastGetBlocksTime:       time.Time{},
@@ -236,8 +239,7 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.Consens
 		smT.log.Panicf("Input block produced on state index %v %s: state, on which this block is produced, is not yet in the store", stateIndex, commitment)
 	}
 	// NOTE: committing already committed block is allowed (see `TestDoubleCommit` test in `packages/state/state_test.go`)
-	block := smT.store.Commit(input.GetStateDraft())
-	smT.metrics.IncBlocksCommitted()
+	block := smT.commitStateDraft(input.GetStateDraft())
 	blockCommitment := block.L1Commitment()
 	smT.blockCache.AddBlock(block)
 	input.Respond(block)
@@ -448,8 +450,7 @@ func (smT *stateManagerGPA) markFetched(fetcher blockFetcher) gpa.OutMessages {
 			}
 		}
 		block.Mutations().ApplyTo(stateDraft)
-		committedBlock := smT.store.Commit(stateDraft)
-		smT.metrics.IncBlocksCommitted()
+		committedBlock := smT.commitStateDraft(stateDraft)
 		committedCommitment := committedBlock.L1Commitment()
 		if !committedCommitment.Equals(commitment) {
 			smT.log.Panicf("Block index %v, received after committing (%s), differs from the block, which was committed (%s)",
@@ -515,4 +516,11 @@ func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMe
 
 func (smT *stateManagerGPA) getWaitingCallbacksCount() int {
 	return smT.blocksToFetch.getCallbacksCount() + smT.blocksFetched.getCallbacksCount()
+}
+
+func (smT *stateManagerGPA) commitStateDraft(stateDraft state.StateDraft) state.Block {
+	block := smT.store.Commit(stateDraft)
+	smT.metrics.IncBlocksCommitted()
+	smT.snapshotter.BlockCommitted(block)
+	return block
 }

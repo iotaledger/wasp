@@ -101,6 +101,8 @@ func provide(c *dig.Container) error {
 				deps.ChainStateDatabaseManager.ChainStateKVStore,
 				ParamsWAL.Enabled,
 				ParamsWAL.Path,
+				ParamsSnapshotter.Period,
+				ParamsSnapshotter.Path,
 				deps.ChainRecordRegistryProvider,
 				deps.DKShareRegistryProvider,
 				deps.NodeIdentityProvider,

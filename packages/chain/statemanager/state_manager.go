@@ -112,6 +112,7 @@ func New(
 	peerPubKeys []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
 	wal smGPAUtils.BlockWAL,
+	snapshotter smGPAUtils.Snapshotter,
 	store state.Store,
 	shutdownCoordinator *shutdown.Coordinator,
 	metrics metrics.IChainStateManagerMetrics,
@@ -126,7 +127,7 @@ func New(
 		timers = smGPA.NewStateManagerTimers()
 	}
 
-	stateManagerGPA, err := smGPA.New(chainID, nr, wal, store, metrics, log, timers)
+	stateManagerGPA, err := smGPA.New(chainID, nr, wal, snapshotter, store, metrics, log, timers)
 	if err != nil {
 		log.Errorf("failed to create state manager GPA: %w", err)
 		return nil, err

@@ -20,15 +20,22 @@ type ParametersWAL struct {
 	Path    string `default:"waspdb/wal" usage:"the path to the \"write-ahead logging\" folder"`
 }
 
+type ParametersSnapshotter struct {
+	Period uint32 `default:"0" usage:"how often state snapshots should be made: 1000 meaning \"every 1000th state\", 0 meaning \"making snapshots is disabled\""`
+	Path   string `default:"waspdb/snap" usage:"the path to the snapshots folder"`
+}
+
 var (
-	ParamsChains = &ParametersChains{}
-	ParamsWAL    = &ParametersWAL{}
+	ParamsChains      = &ParametersChains{}
+	ParamsWAL         = &ParametersWAL{}
+	ParamsSnapshotter = &ParametersSnapshotter{}
 )
 
 var params = &app.ComponentParams{
 	Params: map[string]any{
-		"chains": ParamsChains,
-		"wal":    ParamsWAL,
+		"chains":    ParamsChains,
+		"wal":       ParamsWAL,
+		"snapshots": ParamsSnapshotter,
 	},
 	Masked: nil,
 }

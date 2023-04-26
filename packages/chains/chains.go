@@ -57,6 +57,8 @@ type Chains struct {
 	chainStateStoreProvider      database.ChainStateKVStoreProvider
 	walEnabled                   bool
 	walFolderPath                string
+	snapshotterPeriod            uint32
+	snapshotterFolderPath        string
 
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
@@ -93,6 +95,8 @@ func New(
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
 	walEnabled bool,
 	walFolderPath string,
+	snapshotterPeriod uint32,
+	snapshotterFolderPath string,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
@@ -116,6 +120,8 @@ func New(
 		chainStateStoreProvider:          chainStateStoreProvider,
 		walEnabled:                       walEnabled,
 		walFolderPath:                    walFolderPath,
+		snapshotterPeriod:                snapshotterPeriod,
+		snapshotterFolderPath:            snapshotterFolderPath,
 		chainRecordRegistryProvider:      chainRecordRegistryProvider,
 		dkShareRegistryProvider:          dkShareRegistryProvider,
 		nodeIdentityProvider:             nodeIdentityProvider,
@@ -246,18 +252,31 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		chainWAL = smGPAUtils.NewEmptyBlockWAL()
 	}
 
+	// Initialize Snapshotter
+	chainStore := indexedstore.New(state.NewStore(chainKVStore))
+	var chainSnapshotter smGPAUtils.Snapshotter
+	if c.snapshotterPeriod > 0 {
+		chainSnapshotter, err = smGPAUtils.NewSnapshotter(chainLog.Named("Snap"), c.snapshotterFolderPath, chainID, c.snapshotterPeriod, chainStore)
+		if err != nil {
+			panic(fmt.Errorf("cannot create Snapshotter: %w", err))
+		}
+	} else {
+		chainSnapshotter = smGPAUtils.NewEmptySnapshotter()
+	}
+
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
 	newChain, err := chain.New(
 		chainCtx,
 		chainLog,
 		chainID,
-		indexedstore.New(state.NewStore(chainKVStore)),
+		chainStore,
 		c.nodeConnection,
 		c.nodeIdentityProvider.NodeIdentity(),
 		c.processorConfig,
 		c.dkShareRegistryProvider,
 		c.consensusStateRegistry,
 		chainWAL,
+		chainSnapshotter,
 		c.chainListener,
 		chainRecord.AccessNodes,
 		c.networkProvider,
