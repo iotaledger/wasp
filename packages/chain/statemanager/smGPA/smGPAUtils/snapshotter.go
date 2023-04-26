@@ -77,6 +77,11 @@ func (sn *snapshotterImpl) BlockCommitted(block state.Block) {
 			sn.log.Debugf("Skipped making state snapshot on index %v commitment %s as it is already being produced", index, commitment)
 			return
 		}
+		f, err := os.OpenFile(tmpFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
+		if err != nil {
+			sn.log.Errorf("Failed to create temporary snapshot file %s: %w", tmpFilePath, err)
+			return
+		}
 		sn.log.Debugf("Starting making state snapshot on index %v commitment %s", index, commitment)
 		state, err := sn.store.StateByTrieRoot(commitment.TrieRoot())
 		if err != nil {
@@ -85,7 +90,7 @@ func (sn *snapshotterImpl) BlockCommitted(block state.Block) {
 		}
 		go func() {
 			sn.log.Debugf("State index %v commitment %s obtained, iterating it and writing to file", index, commitment)
-			err := writeStateToFile(state, tmpFilePath)
+			err := writeStateToFile(state, tmpFilePath, f)
 			if err != nil {
 				sn.log.Errorf("Failed to write state index %v commitment %s to temporary snapshot file: %w", index, commitment, err)
 				return
@@ -130,13 +135,10 @@ func (sn *snapshotterImpl) cleanTempFiles() {
 	sn.log.Debugf("Removed %v out of %v temporary snapshot files", removed, len(tempFiles))
 }
 
-func writeStateToFile(state state.State, filePath string) error {
-	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
-	if err != nil {
-		return fmt.Errorf("failed to create file %s: %w", filePath, err)
-	}
+func writeStateToFile(state state.State, filePath string, f *os.File) error {
 	defer f.Close()
 
+	var err error
 	err = nil
 	state.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
 		keyBytes := []byte(key)
