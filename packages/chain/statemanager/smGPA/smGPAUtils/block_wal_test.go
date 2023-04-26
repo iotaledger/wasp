@@ -65,7 +65,7 @@ func TestBlockWALOverwrite(t *testing.T) {
 		require.NoError(t, err)
 	}
 	pathFromHashFun := func(blockHash state.BlockHash) string {
-		return filepath.Join(constTestFolder, factory.GetChainID().String(), fileName(blockHash))
+		return filepath.Join(constTestFolder, factory.GetChainID().String(), blockWALFileName(blockHash))
 	}
 	file0Path := pathFromHashFun(blocks[0].Hash())
 	file1Path := pathFromHashFun(blocks[1].Hash())
