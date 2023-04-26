@@ -53,10 +53,19 @@ func NewSnapshotter(log *logger.Logger, baseDir string, chainID isc.ChainID, per
 		store:          store,
 		log:            log,
 	}
+	result.cleanTempFiles() // To be able to make snapshots, which were not finished. See comment in `BlockCommitted` function
 	log.Debugf("Snapshotter created folder %v for snapshots", dir)
 	return result, nil
 }
 
+// Snapshotter makes snapshot of every `period`th state only, if this state hasn't
+// been snapshotted before. The snapshot file name includes state index and state hash.
+// Snapshotter first writes the state to temporary file and only then moves it to
+// permanent location. Writing is done in separate thread to not interfere with
+// normal State manager routine, as it may be lengthy. If snapshotter detects that
+// the temporary file, needed to create a snapshot, already exists, it assumes
+// that another go routine is already making a snapshot and returns. For this reason
+// it is important to delete all temporary files on snapshotter start.
 func (sn *snapshotterImpl) BlockCommitted(block state.Block) {
 	index := block.StateIndex()
 	if (index > sn.lastIndex) && (index%sn.period == 0) { // TODO: what if snapshotted state has been reverted?
@@ -98,6 +107,27 @@ func (sn *snapshotterImpl) BlockCommitted(block state.Block) {
 			sn.log.Infof("Snapshot on state index %v commitment %s was created in %s", index, commitment, finalFilePath)
 		}()
 	}
+}
+
+func (sn *snapshotterImpl) cleanTempFiles() {
+	tempFileRegExp := tempSnapshotFileNameString("*", "*")
+	tempFileRegExpWithPath := filepath.Join(sn.dir, tempFileRegExp)
+	tempFiles, err := filepath.Glob(tempFileRegExpWithPath)
+	if err != nil {
+		sn.log.Errorf("Failed to obtain temporary snapshot file list: %v", err)
+		return
+	}
+
+	removed := 0
+	for _, tempFile := range tempFiles {
+		err = os.Remove(tempFile)
+		if err != nil {
+			sn.log.Warnf("Failed to remove temporary snapshot file %s: %v", tempFile, err)
+		} else {
+			removed++
+		}
+	}
+	sn.log.Debugf("Removed %v out of %v temporary snapshot files", removed, len(tempFiles))
 }
 
 func writeStateToFile(state state.State, filePath string) error {
@@ -157,11 +187,19 @@ func writeStateToFile(state state.State, filePath string) error {
 }
 
 func tempSnapshotFileName(index uint32, blockHash state.BlockHash) string {
-	return snapshotFileName(index, blockHash) + constSnapshotTmpFileSuffix
+	return tempSnapshotFileNameString(fmt.Sprint(index), blockHash.String())
+}
+
+func tempSnapshotFileNameString(index string, blockHash string) string {
+	return snapshotFileNameString(index, blockHash) + constSnapshotTmpFileSuffix
 }
 
 func snapshotFileName(index uint32, blockHash state.BlockHash) string {
-	return fmt.Sprint(index) + constSnapshotIndexHashFileNameSepparator + blockHash.String() + constSnapshotFileSuffix
+	return snapshotFileNameString(fmt.Sprint(index), blockHash.String())
+}
+
+func snapshotFileNameString(index string, blockHash string) string {
+	return index + constSnapshotIndexHashFileNameSepparator + blockHash + constSnapshotFileSuffix
 }
 
 func lengthAsArray(array []byte) []byte {
