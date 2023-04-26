@@ -10,7 +10,8 @@
   ],
   "ignoreDeps": [
     "github.com/iotaledger/wasp",
-    "github.com/iotaledger/wasp/tools/wasp-cli"
+    "github.com/iotaledger/wasp/tools/wasp-cli",
+    "github.com/iotaledger/hive.go"
   ],
   "goGetDirs": [
     "."
