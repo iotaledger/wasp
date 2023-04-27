@@ -29,6 +29,7 @@ type VMTask struct {
 	AnchorOutputStorageDeposit uint64 // will be filled by vmcontext
 	Store                      state.Store
 	Requests                   []isc.Request
+	UnprocessableToRetry       []isc.Request
 	TimeAssumption             time.Time
 	Entropy                    hashing.HashValue
 	ValidatorFeeTarget         isc.AgentID

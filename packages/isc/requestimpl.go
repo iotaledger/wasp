@@ -331,6 +331,10 @@ type onLedgerRequestData struct {
 	outputID iotago.OutputID
 	output   iotago.Output
 
+	// set when retrying an "unprocessable request" that was consumed by the chain previously.
+	// we keep the old outputID so that the requestID doesn't change
+	retryOutputID iotago.OutputID
+
 	// the following originate from UTXOMetaData and output, and are created in `NewExtendedOutputData`
 
 	featureBlocks    iotago.FeatureSet
@@ -557,7 +561,14 @@ func (r *onLedgerRequestData) String() string {
 var _ OnLedgerRequest = &onLedgerRequestData{}
 
 func (r *onLedgerRequestData) OutputID() iotago.OutputID {
+	if !IsEmptyOutputID(r.retryOutputID) {
+		return r.retryOutputID
+	}
 	return r.outputID
+}
+
+func (r *onLedgerRequestData) SetRetryOutputID(oid iotago.OutputID) {
+	r.retryOutputID = oid
 }
 
 func (r *onLedgerRequestData) Output() iotago.Output {

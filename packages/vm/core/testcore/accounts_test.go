@@ -1171,7 +1171,6 @@ func TestDepositNFTWithMinStorageDeposit(t *testing.T) {
 }
 
 func TestDepositWithoutEnoughFundsForAccountingUTXOsSD(t *testing.T) {
-	t.Skip() // TODO this will be interesting to implement
 	v := initDepositTest(t)
 	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 	// create many foundries and mint 1 token on each

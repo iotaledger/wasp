@@ -6,6 +6,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -54,4 +55,11 @@ func (vmctx *VMContext) SetBlockContext(bctx interface{}) {
 
 func (vmctx *VMContext) BlockContext() interface{} {
 	return vmctx.blockContext[vmctx.CurrentContractHname()]
+}
+
+func (vmctx *VMContext) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
+	// set the "rety output ID" so that the correct output is used by the txbuilder
+	oid := vmctx.getOutputID(blockIndex, outputIndex)
+	req.(isc.OnLedgerRequest).SetRetryOutputID(oid)
+	vmctx.task.UnprocessableToRetry = append(vmctx.task.UnprocessableToRetry, req)
 }

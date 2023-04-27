@@ -138,6 +138,56 @@ func (txb *AnchorTransactionBuilder) Consume(req isc.OnLedgerRequest) uint64 {
 	return requiredSD
 }
 
+// ConsumeUnprocessable adds an unprocessable request to the txbuilder,
+// consumes the original request and cretes a new output keeping assets intact
+// return the position of the resulting output in `txb.postedOutputs`
+func (txb *AnchorTransactionBuilder) ConsumeUnprocessable(req isc.OnLedgerRequest) int {
+	if txb.InputsAreFull() {
+		panic(vmexceptions.ErrInputLimitExceeded)
+	}
+
+	if txb.outputsAreFull() {
+		panic(vmexceptions.ErrOutputLimitExceeded)
+	}
+
+	defer txb.mustCheckTotalNativeTokensExceeded()
+
+	txb.consumed = append(txb.consumed, req)
+
+	out := req.Output().Clone()
+
+	metadata := out.FeatureSet().MetadataFeature()
+	if metadata == nil {
+		metadata = &iotago.MetadataFeature{}
+	}
+	features := iotago.Features{metadata}
+
+	unlock := iotago.UnlockConditions{
+		&iotago.AddressUnlockCondition{
+			Address: txb.anchorOutput.AliasID.ToAddress(),
+		},
+	}
+
+	// cleanup features and unlock conditions except metadata
+	switch o := out.(type) {
+	case *iotago.BasicOutput:
+		o.Features = features
+		o.Conditions = unlock
+	case *iotago.NFTOutput:
+		o.Features = features
+		o.Conditions = unlock
+	case *iotago.AliasOutput:
+		o.Features = features
+		o.Conditions = unlock
+	default:
+		panic("unexpected output type")
+	}
+
+	txb.postedOutputs = append(txb.postedOutputs, out)
+
+	return len(txb.postedOutputs) - 1
+}
+
 // AddOutput adds an information about posted request. It will produce output
 // Return adjustment needed for the L2 ledger (adjustment on base tokens related to storage deposit)
 func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
@@ -201,7 +251,7 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 
 	// consumed on-ledger requests
 	for i := range txb.consumed {
-		outputID := txb.consumed[i].ID().OutputID()
+		outputID := txb.consumed[i].OutputID()
 		outputIDs = append(outputIDs, outputID)
 		inputs[outputID] = txb.consumed[i].Output()
 	}

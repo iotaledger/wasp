@@ -39,6 +39,7 @@ type VMContext struct {
 	txsnapshot          *vmtxbuilder.AnchorTransactionBuilder
 	gasBurnedTotal      uint64
 	gasFeeChargedTotal  uint64
+	unprocessable       []isc.OnLedgerRequest
 
 	// ---- request context
 	chainInfo          *isc.ChainInfo
@@ -101,6 +102,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		blockContext:        make(map[isc.Hname]interface{}),
 		entropy:             task.Entropy,
 		callStack:           make([]*callContext, 0),
+		unprocessable:       make([]isc.OnLedgerRequest, 0),
 	}
 	if task.EnableGasBurnLogging {
 		ret.gasBurnLog = gas.NewGasBurnLog()
@@ -259,6 +261,8 @@ func (vmctx *VMContext) closeBlockContexts() {
 // 1. NativeTokens
 // 2. Foundries
 // 3. NFTs
+// 4. produced outputs
+// 5. unprocessable requests
 func (vmctx *VMContext) saveInternalUTXOs() {
 	// create a mock AO, with a nil statecommitment, just to calculate changes in the minimum SD
 	mockAO := vmctx.txbuilder.CreateAnchorOutput(vmctx.StateMetadata(state.L1CommitmentNil))
@@ -319,6 +323,9 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 			accounts.DeleteNFTOutput(s, out.NFTID)
 		}
 	})
+
+	// add unprocessable requests
+	vmctx.storeUnprocessable(outputIndex)
 }
 
 func (vmctx *VMContext) AssertConsistentGasTotals() {

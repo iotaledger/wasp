@@ -69,6 +69,7 @@ type OnLedgerRequest interface {
 	IsInternalUTXO(ChainID) bool
 	OutputID() iotago.OutputID
 	Features() Features
+	SetRetryOutputID(iotago.OutputID) // TODO rename?
 }
 
 type ReturnAmountOptions interface {
