@@ -33,7 +33,7 @@ import (
 
 const APIVersion = 1
 
-func addHealthEndpoint(server echoswagger.ApiRoot) {
+func AddHealthEndpoint(server echoswagger.ApiRoot) {
 	server.GET("/health", func(c echo.Context) error { return c.NoContent(http.StatusOK) }).
 		AddResponse(http.StatusOK, "The node is healthy.", nil, nil).
 		SetOperationId("getHealth").
@@ -126,7 +126,7 @@ func Init(
 		}))
 	}
 
-	addHealthEndpoint(server)
+	AddHealthEndpoint(server)
 	addWebSocketEndpoint(server, websocketService)
 	loadControllers(server, mocker, controllersToLoad, authMiddleware)
 }
