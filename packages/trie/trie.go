@@ -99,3 +99,18 @@ func (tr *TrieReader) DebugDump() {
 		return true
 	})
 }
+
+func (tr *TrieReader) CopyToStore(snapshot KVStore) {
+	triePartition := makeWriterPartition(snapshot, partitionTrieNodes)
+	valuePartition := makeWriterPartition(snapshot, partitionValues)
+	tr.IterateNodes(func(_ []byte, n *NodeData, depth int) bool {
+		nodeKey := n.Commitment.Bytes()
+		triePartition.Set(nodeKey, tr.nodeStore.trieStore.Get(nodeKey))
+		if n.Terminal != nil && !n.Terminal.IsValue {
+			n.Terminal.ExtractValue()
+			valueKey := n.Terminal.Bytes()
+			valuePartition.Set(valueKey, tr.nodeStore.valueStore.Get(valueKey))
+		}
+		return true
+	})
+}

@@ -115,7 +115,7 @@ func (s *store) extractBlock(d StateDraft) (Block, *buffered.Mutations) {
 		for k := range d.Mutations().Dels {
 			trie.Delete([]byte(k))
 		}
-		trieRoot := trie.Commit(bufDB.trieStore())
+		trieRoot := trie.Commit(trieStore(bufDB))
 		block := &block{
 			trieRoot:             trieRoot,
 			mutations:            d.Mutations(),
@@ -178,4 +178,12 @@ func (s *store) LatestState() (State, error) {
 
 func (s *store) LatestTrieRoot() (trie.Hash, error) {
 	return s.db.latestTrieRoot()
+}
+
+func (s *store) TakeSnapshot(root trie.Hash, snapshot kvstore.KVStore) error {
+	return s.db.takeSnapshot(root, snapshot)
+}
+
+func (s *store) RestoreSnapshot(root trie.Hash, snapshot kvstore.KVStore) error {
+	return s.db.restoreSnapshot(root, snapshot)
 }
