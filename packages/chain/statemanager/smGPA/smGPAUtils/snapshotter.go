@@ -10,6 +10,7 @@ package smGPAUtils
 import (
 	"encoding/binary"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -18,6 +19,7 @@ import (
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -142,7 +144,7 @@ func writeStateToFile(state state.State, filePath string, f *os.File) error {
 	err = nil
 	state.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
 		keyBytes := []byte(key)
-		n, e := f.Write(lengthAsArray(keyBytes))
+		n, e := f.Write(arrayLengthToArray(keyBytes))
 		if n != constLengthArrayLength {
 			err = fmt.Errorf("only %v of total %v bytes of key %s length were written to file %s", n, constLengthArrayLength, key, filePath)
 			return false
@@ -153,7 +155,7 @@ func writeStateToFile(state state.State, filePath string, f *os.File) error {
 		}
 
 		n, e = f.Write(keyBytes)
-		if n != constLengthArrayLength {
+		if n != len(keyBytes) {
 			err = fmt.Errorf("only %v of total %v bytes of key %s were written to file %s", n, len(keyBytes), key, filePath)
 			return false
 		}
@@ -162,7 +164,7 @@ func writeStateToFile(state state.State, filePath string, f *os.File) error {
 			return false
 		}
 
-		n, e = f.Write(lengthAsArray(value))
+		n, e = f.Write(arrayLengthToArray(value))
 		if n != constLengthArrayLength {
 			err = fmt.Errorf("only %v of total %v bytes of value of key %s length were written to file %s", n, constLengthArrayLength, key, filePath)
 			return false
@@ -173,7 +175,7 @@ func writeStateToFile(state state.State, filePath string, f *os.File) error {
 		}
 
 		n, e = f.Write(value)
-		if n != constLengthArrayLength {
+		if n != len(value) {
 			err = fmt.Errorf("only %v of total %v bytes of value of key %s were written to file %s", n, len(value), key, filePath)
 			return false
 		}
@@ -186,6 +188,60 @@ func writeStateToFile(state state.State, filePath string, f *os.File) error {
 	})
 
 	return err
+}
+
+func readStateFromFile(filePath string) (*buffered.Mutations, error) {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to open snapshot file %s: %w", filePath, err)
+	}
+	defer f.Close()
+
+	mutations := buffered.NewMutations()
+	lenArray := make([]byte, constLengthArrayLength)
+	for read, err := f.Read(lenArray); err != io.EOF; read, err = f.Read(lenArray) {
+		if err != nil {
+			return nil, fmt.Errorf("failed to read key length: %w", err)
+		}
+		if read < constLengthArrayLength {
+			return nil, fmt.Errorf("read only %v bytes out of %v of key length", read, constLengthArrayLength)
+		}
+
+		keyArray, err := arrayToArrayOfLength(lenArray)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse key length: %w", err)
+		}
+		read, err = f.Read(keyArray)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read key: %w", err)
+		}
+		if read < len(keyArray) {
+			return nil, fmt.Errorf("read only %v bytes out of %v of key", read, len(keyArray))
+		}
+		key := kv.Key(keyArray)
+
+		read, err := f.Read(lenArray)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read value length of key %s: %w", key, err)
+		}
+		if read < constLengthArrayLength {
+			return nil, fmt.Errorf("read only %v bytes out of %v of value length of key %s", read, constLengthArrayLength, key)
+		}
+
+		value, err := arrayToArrayOfLength(lenArray)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse value length of key %s: %w", key, err)
+		}
+		read, err = f.Read(value)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read value of key %s: %w", key, err)
+		}
+		if read < len(value) {
+			return nil, fmt.Errorf("read only %v bytes out of %v of value of key %s", read, len(value), key)
+		}
+		mutations.Set(key, value)
+	}
+	return mutations, nil
 }
 
 func tempSnapshotFileName(index uint32, blockHash state.BlockHash) string {
@@ -204,11 +260,17 @@ func snapshotFileNameString(index string, blockHash string) string {
 	return index + constSnapshotIndexHashFileNameSepparator + blockHash + constSnapshotFileSuffix
 }
 
-func lengthAsArray(array []byte) []byte {
+func arrayLengthToArray(array []byte) []byte {
 	length := uint32(len(array))
 	res := make([]byte, constLengthArrayLength)
 	binary.LittleEndian.PutUint32(res, length)
 	return res
 }
 
-// TODO: clean temporary files on start
+func arrayToArrayOfLength(lengthArray []byte) ([]byte, error) {
+	if len(lengthArray) != constLengthArrayLength {
+		return nil, fmt.Errorf("array length array contains %v bytes instead of %v", len(lengthArray), constLengthArrayLength)
+	}
+	length := binary.LittleEndian.Uint32(lengthArray)
+	return make([]byte, length), nil
+}
