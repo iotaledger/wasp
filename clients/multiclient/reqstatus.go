@@ -53,6 +53,9 @@ func (m *MultiClient) WaitUntilEVMRequestProcessedSuccessfully(chainID isc.Chain
 		return nil, err
 	}
 	requestID, err := isc.RequestIDFromString(requestIDStr.RequestId)
+	if err != nil {
+		return nil, err
+	}
 	receipt, err := m.WaitUntilRequestProcessed(chainID, requestID, waitForL1Confirmation, timeout)
 	if err != nil {
 		return receipt, err
