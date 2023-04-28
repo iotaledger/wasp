@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
@@ -33,6 +35,28 @@ func (m *MultiClient) WaitUntilRequestProcessed(chainID isc.ChainID, reqID isc.R
 // but also checks the receipt and return an error if the request was processed with an error
 func (m *MultiClient) WaitUntilRequestProcessedSuccessfully(chainID isc.ChainID, reqID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*apiclient.ReceiptResponse, error) {
 	receipt, err := m.WaitUntilRequestProcessed(chainID, reqID, waitForL1Confirmation, timeout)
+	if err != nil {
+		return receipt, err
+	}
+	if receipt.Error != nil {
+		return receipt, fmt.Errorf("request processed with an error: %s", receipt.Error.Message)
+	}
+	return receipt, nil
+}
+
+// WaitUntilRequestProcessedSuccessfully is similar to WaitUntilRequestProcessed,
+// but also checks the receipt and return an error if the request was processed with an error
+func (m *MultiClient) WaitUntilEVMRequestProcessedSuccessfully(chainID isc.ChainID, txHash common.Hash, waitForL1Confirmation bool, timeout time.Duration) (*apiclient.ReceiptResponse, error) {
+	requestIDStr, _, err := m.nodes[0].ChainsApi.GetRequestIDFromEVMTransactionID(context.Background(), chainID.String(), txHash.Hex()).
+		Execute()
+	if err != nil {
+		return nil, err
+	}
+	requestID, err := isc.RequestIDFromString(requestIDStr.RequestId)
+	if err != nil {
+		return nil, err
+	}
+	receipt, err := m.WaitUntilRequestProcessed(chainID, requestID, waitForL1Confirmation, timeout)
 	if err != nil {
 		return receipt, err
 	}
