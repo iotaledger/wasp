@@ -240,7 +240,6 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 	// deposit funds for EVM
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	chainClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), env.Chain.ChainID, keyPair)
 	evmPvtKey, evmAddr := solo.NewEthereumAccount()
 	evmAgentID := isc.NewEthereumAddressAgentID(evmAddr)
 	env.TransferFundsTo(isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
@@ -266,9 +265,7 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 		err2 = jsonRPCClient.SendTransaction(context.Background(), tx)
 		require.NoError(t, err2)
 		// await tx confirmed
-		reqID, err2 := chainClient.RequestIDByEVMTransactionHash(context.Background(), tx.Hash())
-		require.NoError(t, err2)
-		_, err2 = env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, reqID, false, 5*time.Second)
+		_, err2 = env.Clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(env.Chain.ChainID, tx.Hash(), false, 5*time.Second)
 		require.NoError(t, err2)
 	}
 
