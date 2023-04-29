@@ -1856,11 +1856,12 @@ func TestMagicContractExamples(t *testing.T) {
 	_, err = contract.callFn(nil, "mint", big.NewInt(1000), uint64(10_000))
 	require.NoError(t, err)
 
-	isTestContract := env.deployISCTestContract(ethKey)
-	contractAgentID = isc.NewEthereumAddressAgentID(isTestContract.address)
-	env.soloChain.GetL2FundsFromFaucet(contractAgentID)
+	ethKey2, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	isTestContract := env.deployISCTestContract(ethKey2)
+	iscTestAgentID := isc.NewEthereumAddressAgentID(isTestContract.address)
+	env.soloChain.GetL2FundsFromFaucet(iscTestAgentID)
 
 	_, err = isTestContract.callFn(nil, "mint", uint32(1), big.NewInt(1000), uint64(10_000))
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "supply of the token is not controlled by the chain")
+	require.Contains(t, err.Error(), "not controlled by the caller")
 }

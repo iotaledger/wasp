@@ -174,6 +174,6 @@ contract ISCTest {
     function mint(uint32 foundrySN,uint256 amount, uint64 storageDeposit) public {
       ISCAssets memory allowance;
       allowance.baseTokens = storageDeposit;
-      ISC.accounts.mintNativeTokens(foundrySN, amount, allowance);
+      ISC.accounts.mintNativeTokens(msg.sender, foundrySN, amount, allowance);
     }
 }

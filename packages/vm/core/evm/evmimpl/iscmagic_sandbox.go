@@ -124,10 +124,11 @@ func (h *magicContractHandler) moveAssetsToCommonAccount(assets *isc.Assets) {
 }
 
 // handler for ISCSandbox::registerERC20NativeToken
-func (h *magicContractHandler) RegisterERC20NativeToken(foundrySN uint32, name, symbol string, decimals uint8, allowance iscmagic.ISCAssets) {
+func (h *magicContractHandler) RegisterERC20NativeToken(caller common.Address, foundrySN uint32, name, symbol string, decimals uint8, allowance iscmagic.ISCAssets) {
 	a := allowance.Unwrap()
 	h.moveAssetsToCommonAccount(a)
-	h.ctx.Call(
+	h.ctx.Privileged().CallOnBehalfOf(
+		isc.NewEthereumAddressAgentID(caller),
 		evm.Contract.Hname(),
 		evm.FuncRegisterERC20NativeToken.Hname(),
 		dict.Dict{

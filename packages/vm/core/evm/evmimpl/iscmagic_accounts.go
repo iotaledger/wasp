@@ -6,7 +6,9 @@ package evmimpl
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -78,10 +80,11 @@ func (h *magicContractViewHandler) GetL2NFTAmountInCollection(agentID iscmagic.I
 }
 
 // handler for ISCAccounts::foundryCreateNew
-func (h *magicContractHandler) FoundryCreateNew(tokenScheme iotago.SimpleTokenScheme, allowance iscmagic.ISCAssets) uint32 {
+func (h *magicContractHandler) FoundryCreateNew(caller common.Address, tokenScheme iotago.SimpleTokenScheme, allowance iscmagic.ISCAssets) uint32 {
 	a := allowance.Unwrap()
 	h.moveAssetsToCommonAccount(a)
-	ret := h.ctx.Call(
+	ret := h.ctx.Privileged().CallOnBehalfOf(
+		isc.NewEthereumAddressAgentID(caller),
 		accounts.Contract.Hname(),
 		accounts.FuncFoundryCreateNew.Hname(),
 		dict.Dict{
@@ -93,10 +96,11 @@ func (h *magicContractHandler) FoundryCreateNew(tokenScheme iotago.SimpleTokenSc
 }
 
 // handler for ISCAccounts::mintBaseTokens
-func (h *magicContractHandler) MintNativeTokens(foundrySN uint32, amount *big.Int, allowance iscmagic.ISCAssets) {
+func (h *magicContractHandler) MintNativeTokens(caller common.Address, foundrySN uint32, amount *big.Int, allowance iscmagic.ISCAssets) {
 	a := allowance.Unwrap()
 	h.moveAssetsToCommonAccount(a)
-	h.ctx.Call(
+	h.ctx.Privileged().CallOnBehalfOf(
+		isc.NewEthereumAddressAgentID(caller),
 		accounts.Contract.Hname(),
 		accounts.FuncFoundryModifySupply.Hname(),
 		dict.Dict{
