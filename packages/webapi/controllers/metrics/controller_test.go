@@ -6,16 +6,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi"
 	apimetrics "github.com/iotaledger/wasp/packages/webapi/controllers/metrics"
 	"github.com/iotaledger/wasp/packages/webapi/services"
-	"github.com/labstack/echo/v4"
-	"github.com/pangpanglabs/echoswagger/v2"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func TestMetricsNodeHealth(t *testing.T) {

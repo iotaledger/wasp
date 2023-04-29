@@ -5,10 +5,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/webapi"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/webapi"
 )
 
 func TestHealth(t *testing.T) {
