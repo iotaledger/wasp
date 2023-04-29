@@ -29,7 +29,7 @@ func (c *Controller) Name() string {
 }
 
 func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
-	publicAPI.GET("metrics/node/health", c.getHealth, nil).
+	publicAPI.GET("metrics/node/health", c.getHealth).
 		AddResponse(http.StatusOK, "The node is healthy.", nil, nil).
 		SetOperationId("getHealth").
 		SetSummary("Returns 200 if the node is healthy.")

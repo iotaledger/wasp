@@ -175,6 +175,7 @@ type chainMessageMetrics struct {
 	outPullLatestOutputMetrics             IMessageMetric[interface{}]
 	outPullTxInclusionStateMetrics         IMessageMetric[iotago.TransactionID]
 	outPullOutputByIDMetrics               IMessageMetric[iotago.OutputID]
+	chainConfirmedState                    IMessageMetric[*ChainConfirmedState]
 }
 
 func newChainMessageMetrics(provider *ChainMetricsProvider, chainID isc.ChainID) *chainMessageMetrics {
@@ -189,6 +190,7 @@ func newChainMessageMetrics(provider *ChainMetricsProvider, chainID isc.ChainID)
 		outPullLatestOutputMetrics:             createChainMessageMetric(provider, chainID, labelNameOutPullLatestOutputMetrics, provider.outPullLatestOutputMetrics),
 		outPullTxInclusionStateMetrics:         createChainMessageMetric(provider, chainID, labelNameOutPullTxInclusionStateMetrics, provider.outPullTxInclusionStateMetrics),
 		outPullOutputByIDMetrics:               createChainMessageMetric(provider, chainID, labelNameOutPullOutputByIDMetrics, provider.outPullOutputByIDMetrics),
+		chainConfirmedState:                    createChainMessageMetric(provider, chainID, labelChainConfirmedState, provider.chainConfirmedState),
 	}
 }
 
@@ -230,4 +232,8 @@ func (m *chainMessageMetrics) OutPullTxInclusionState() IMessageMetric[iotago.Tr
 
 func (m *chainMessageMetrics) OutPullOutputByID() IMessageMetric[iotago.OutputID] {
 	return m.outPullOutputByIDMetrics
+}
+
+func (m *chainMessageMetrics) ChainConfirmedState() IMessageMetric[*ChainConfirmedState] {
+	return m.chainConfirmedState
 }
