@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -146,6 +147,30 @@ func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, lo
 			return next(c)
 		}
 	})
+
+	// Middleware to unescape any supplied path (/path/foo%40bar/) parameter
+	// Query parameters (?name=foo%40bar) get unescaped by default.
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			escapedPathParams := c.ParamValues()
+			unescapedPathParams := make([]string, len(escapedPathParams))
+
+			for i, param := range escapedPathParams {
+				unescapedParam, err := url.PathUnescape(param)
+
+				if err != nil {
+					unescapedPathParams[i] = param
+				} else {
+					unescapedPathParams[i] = unescapedParam
+				}
+			}
+
+			c.SetParamValues(unescapedPathParams...)
+
+			return next(c)
+		}
+	})
+
 	e.Use(middleware.BodyLimit(params.Limits.MaxBodyLength))
 
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
