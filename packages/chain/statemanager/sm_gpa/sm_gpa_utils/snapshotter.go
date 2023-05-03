@@ -143,7 +143,7 @@ func writeSnapshotToFile(snapshot kvstore.KVStore, filePath string, f *os.File) 
 
 	var err error
 	err = nil
-	snapshot.Iterate(kvstore.EmptyPrefix, func(key kvstore.Key, value kvstore.Value) bool {
+	iterErr := snapshot.Iterate(kvstore.EmptyPrefix, func(key kvstore.Key, value kvstore.Value) bool {
 		n, e := f.Write(arrayLengthToArray(key))
 		if n != constLengthArrayLength {
 			err = fmt.Errorf("only %v of total %v bytes of key %v length were written to file %s", n, constLengthArrayLength, key, filePath)
@@ -186,6 +186,10 @@ func writeSnapshotToFile(snapshot kvstore.KVStore, filePath string, f *os.File) 
 
 		return true
 	})
+
+	if iterErr != nil {
+		return iterErr
+	}
 
 	return err
 }
@@ -238,7 +242,11 @@ func readSnapshotFromFile(filePath string) (kvstore.KVStore, error) {
 		if read < len(value) {
 			return nil, fmt.Errorf("read only %v bytes out of %v of value of key %v", read, len(value), key)
 		}
-		snapshot.Set(key, value)
+
+		err = snapshot.Set(key, value)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting key %v value %v: %w", key, value, err)
+		}
 	}
 	return snapshot, nil
 }
