@@ -39,7 +39,7 @@ type VMContext struct {
 	txsnapshot          *vmtxbuilder.AnchorTransactionBuilder
 	gasBurnedTotal      uint64
 	gasFeeChargedTotal  uint64
-	unprocessable       []isc.OnLedgerRequest
+	unprocessable       []isc.OnLedgerRequest // list of request that were found to be unprocessable during this VM execution
 
 	// ---- request context
 	chainInfo          *isc.ChainInfo
@@ -326,6 +326,16 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 
 	// add unprocessable requests
 	vmctx.storeUnprocessable(outputIndex)
+}
+
+func (vmctx *VMContext) RemoveUnprocessable(results []*vm.RequestResult) {
+	vmctx.withStateUpdate(func() {
+		vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
+			for _, r := range results {
+				blocklog.RemoveUnprocessable(s, r.Request.ID())
+			}
+		})
+	})
 }
 
 func (vmctx *VMContext) AssertConsistentGasTotals() {

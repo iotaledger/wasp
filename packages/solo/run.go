@@ -89,10 +89,12 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 	ch.Log().Debugf("runRequestsNolock ('%s')", trace)
 
 	task := ch.runTaskNoLock(reqs, false)
-	if len(task.Results) == 0 {
-		// don't produce empty blocks
-		return task.Results
-	}
+
+	// TODO issue empty blocks for unprocessable requests, but this has te be removed from the mempool
+	// if len(task.Results) == 0 {
+	// 	// don't produce empty blocks
+	// 	return task.Results
+	// }
 
 	var essence *iotago.TransactionEssence
 	if task.RotationAddress == nil {

@@ -79,7 +79,7 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm
 		// protocol exception triggered. Skipping the request. Rollback
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
 
-		if errors.Is(errNotEnoughFundsForSD, err) {
+		if errors.Is(vmexceptions.ErrNotEnoughFundsForSD, err) {
 			vmctx.unprocessable = append(vmctx.unprocessable, vmctx.req.(isc.OnLedgerRequest))
 		}
 
@@ -89,8 +89,6 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm
 	vmctx.chainState().Apply()
 	return result, nil
 }
-
-var errNotEnoughFundsForSD = errors.New("user doesn't have enough on-chain funds to cover the SD cost of processing this request")
 
 // creditAssetsToChain credits L1 accounts with attached assets and accrues all of them to the sender's account on-chain
 func (vmctx *VMContext) creditAssetsToChain() {
@@ -112,7 +110,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 
 	if senderBaseTokens < storageDepositNeeded {
 		// user doesn't have enough funds to pay for the SD needs of this request
-		panic(errNotEnoughFundsForSD)
+		panic(vmexceptions.ErrNotEnoughFundsForSD)
 	}
 
 	vmctx.creditToAccount(sender, vmctx.req.Assets())

@@ -176,28 +176,32 @@ func (vmctx *VMContext) storeUnprocessable(lastInternalAssetUTXOIndex uint16) {
 	if len(vmctx.unprocessable) == 0 {
 		return
 	}
-	positionInTxOutputs := make([]int, len(vmctx.unprocessable))
-	for i, r := range vmctx.unprocessable {
-		positionInTxOutputs[i] = -1
-		txsnapshot := vmctx.createTxBuilderSnapshot()
-		err := panicutil.CatchPanic(func() {
-			x := vmctx.txbuilder.ConsumeUnprocessable(r)
-			positionInTxOutputs[i] = x + int(lastInternalAssetUTXOIndex)
-		})
-		if err != nil {
-			// protocol exception triggered. Rollback
-			vmctx.restoreTxBuilderSnapshot(txsnapshot)
-		}
-	}
-	// save the unprocessable requests and respective output indices onto the state so they can be retried later
 	blockIndex := vmctx.task.AnchorOutput.StateIndex + 1
-	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		for i, outputIndex := range positionInTxOutputs {
-			if outputIndex < 0 {
-				continue
+
+	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
+		for _, r := range vmctx.unprocessable {
+			txsnapshot := vmctx.createTxBuilderSnapshot()
+			err := panicutil.CatchPanic(func() {
+				position := vmctx.txbuilder.ConsumeUnprocessable(r)
+				outputIndex := position + int(lastInternalAssetUTXOIndex)
+				if blocklog.HasUnprocessable(s, r.ID()) {
+					panic("already in unprocessable list")
+				}
+				// save the unprocessable requests and respective output indices onto the state so they can be retried later
+				blocklog.SaveUnprocessable(s, r, blockIndex, uint16(outputIndex))
+
+				// TODO the following works in solo but its not good enough for the real node, remove
+				// // add the unprocessable request to the task results, so it can be removed from the mempool
+				// vmctx.task.Results = append(vmctx.task.Results, &vm.RequestResult{
+				// 	Request: r,
+				// 	Return:  nil,
+				// 	Receipt: nil,
+				// })
+			})
+			if err != nil {
+				// protocol exception triggered. Rollback
+				vmctx.restoreTxBuilderSnapshot(txsnapshot)
 			}
-			// TODO might have to change this logic and check if `SaveUnprocessable` has some error
-			blocklog.SaveUnprocessable(s, vmctx.unprocessable[i], blockIndex, uint16(outputIndex))
 		}
 	})
 }

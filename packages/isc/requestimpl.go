@@ -331,7 +331,7 @@ type onLedgerRequestData struct {
 	outputID iotago.OutputID
 	output   iotago.Output
 
-	// set when retrying an "unprocessable request" that was consumed by the chain previously.
+	// non-persistent, set when retrying an "unprocessable request" that was consumed by the chain previously.
 	// we keep the old outputID so that the requestID doesn't change
 	retryOutputID iotago.OutputID
 
@@ -561,14 +561,51 @@ func (r *onLedgerRequestData) String() string {
 var _ OnLedgerRequest = &onLedgerRequestData{}
 
 func (r *onLedgerRequestData) OutputID() iotago.OutputID {
-	if !IsEmptyOutputID(r.retryOutputID) {
-		return r.retryOutputID
-	}
 	return r.outputID
 }
 
 func (r *onLedgerRequestData) SetRetryOutputID(oid iotago.OutputID) {
 	r.retryOutputID = oid
+}
+
+func (r *onLedgerRequestData) IsRetry() bool {
+	return !IsEmptyOutputID(r.retryOutputID)
+}
+
+func (r *onLedgerRequestData) RetryOutputID() iotago.OutputID {
+	return r.retryOutputID
+}
+
+func (r *onLedgerRequestData) RetryOutput(chainAliasID iotago.AliasID) iotago.Output {
+	out := r.Output().Clone()
+
+	metadata := out.FeatureSet().MetadataFeature()
+	if metadata == nil {
+		metadata = &iotago.MetadataFeature{}
+	}
+	features := iotago.Features{metadata}
+
+	unlock := iotago.UnlockConditions{
+		&iotago.AddressUnlockCondition{
+			Address: chainAliasID.ToAddress(),
+		},
+	}
+
+	// cleanup features and unlock conditions except metadata
+	switch o := out.(type) {
+	case *iotago.BasicOutput:
+		o.Features = features
+		o.Conditions = unlock
+	case *iotago.NFTOutput:
+		o.Features = features
+		o.Conditions = unlock
+	case *iotago.AliasOutput:
+		o.Features = features
+		o.Conditions = unlock
+	default:
+		panic("unexpected output type")
+	}
+	return out
 }
 
 func (r *onLedgerRequestData) Output() iotago.Output {

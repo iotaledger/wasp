@@ -154,36 +154,7 @@ func (txb *AnchorTransactionBuilder) ConsumeUnprocessable(req isc.OnLedgerReques
 
 	txb.consumed = append(txb.consumed, req)
 
-	out := req.Output().Clone()
-
-	metadata := out.FeatureSet().MetadataFeature()
-	if metadata == nil {
-		metadata = &iotago.MetadataFeature{}
-	}
-	features := iotago.Features{metadata}
-
-	unlock := iotago.UnlockConditions{
-		&iotago.AddressUnlockCondition{
-			Address: txb.anchorOutput.AliasID.ToAddress(),
-		},
-	}
-
-	// cleanup features and unlock conditions except metadata
-	switch o := out.(type) {
-	case *iotago.BasicOutput:
-		o.Features = features
-		o.Conditions = unlock
-	case *iotago.NFTOutput:
-		o.Features = features
-		o.Conditions = unlock
-	case *iotago.AliasOutput:
-		o.Features = features
-		o.Conditions = unlock
-	default:
-		panic("unexpected output type")
-	}
-
-	txb.postedOutputs = append(txb.postedOutputs, out)
+	txb.postedOutputs = append(txb.postedOutputs, req.RetryOutput(txb.anchorOutput.AliasID))
 
 	return len(txb.postedOutputs) - 1
 }
@@ -251,9 +222,15 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 
 	// consumed on-ledger requests
 	for i := range txb.consumed {
-		outputID := txb.consumed[i].OutputID()
+		req := txb.consumed[i]
+		outputID := req.OutputID()
+		output := req.Output()
+		if req.IsRetry() {
+			outputID = req.RetryOutputID()
+			output = req.RetryOutput(txb.anchorOutput.AliasID)
+		}
 		outputIDs = append(outputIDs, outputID)
-		inputs[outputID] = txb.consumed[i].Output()
+		inputs[outputID] = output
 	}
 
 	// internal native token outputs

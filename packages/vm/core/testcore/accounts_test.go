@@ -24,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -1170,7 +1171,7 @@ func TestDepositNFTWithMinStorageDeposit(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestDepositWithoutEnoughFundsForAccountingUTXOsSD(t *testing.T) {
+func TestUnprocessable(t *testing.T) {
 	v := initDepositTest(t)
 	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 	// create many foundries and mint 1 token on each
@@ -1195,6 +1196,7 @@ func TestDepositWithoutEnoughFundsForAccountingUTXOsSD(t *testing.T) {
 
 	// move the native tokens to a new user that doesn't have on-chain balance
 	newUser, newUserAddress := v.env.NewKeyPairWithFunds()
+	newUserAgentID := isc.NewAgentID(newUserAddress)
 	v.env.SendL1(newUserAddress, assets, v.user)
 
 	newuserL1NativeTokens := v.env.L1Assets(newUserAddress).NativeTokens
@@ -1204,13 +1206,90 @@ func TestDepositWithoutEnoughFundsForAccountingUTXOsSD(t *testing.T) {
 		})
 	}
 
+	// TODO add an NFT?
 	// try to deposit all native tokens in a request with just the minimum SD
-	depositReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+	unprocessableReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
 		WithFungibleTokens(isc.NewAssets(0, assets.NativeTokens)).
 		WithMaxAffordableGasBudget()
 
-	_, err = v.ch.PostRequestSync(depositReq, newUser)
+	tx, receipt, _, err := v.ch.PostRequestSyncExt(unprocessableReq, newUser)
 	require.NoError(t, err)
+	require.Nil(t, receipt) // nil receipt means the request was not processed
+
+	txReqs, err := v.ch.Env.RequestsForChain(tx, v.ch.ChainID)
+	require.NoError(t, err)
+	unprocessableReqID := txReqs[0].ID()
+
+	isInUnprocessableList := func() bool {
+		res, err2 := v.ch.CallView(
+			blocklog.Contract.Name, blocklog.ViewHasUnprocessable.Name,
+			blocklog.ParamRequestID, unprocessableReqID,
+		)
+		require.NoError(t, err2)
+		return codec.MustDecodeBool(res.Get(blocklog.ParamUnprocessableRequestExists))
+	}
+
+	require.True(t, isInUnprocessableList())
+
+	// assert trying to "retry" the request won't work (still not enough funds)
+	retryReq := solo.NewCallParams(
+		blocklog.Contract.Name, blocklog.FuncRetryUnprocessable.Name,
+		blocklog.ParamRequestID, unprocessableReqID,
+	)
+	_, rec, _, err := v.ch.PostRequestSyncExt(retryReq, newUser)
+	require.NoError(t, err)
+	require.Nil(t, rec.Error)
+	// the "retry request" is successful, but "there request to be retried" did not produce a receipt, meaning it was skipped again
+	// check that the "request to be retried" did not succeed (no receipt, still in the unprocessed list)
+	receipt, err = v.ch.GetRequestReceipt(unprocessableReqID)
+	require.NoError(t, err)
+	require.Nil(t, receipt)
+	require.True(t, isInUnprocessableList())
+
+	// --
+	// deposit funds and retry that request
+	err = v.ch.DepositBaseTokensToL2(10*isc.Million, newUser)
+	require.NoError(t, err)
+	_, rec, _, err = v.ch.PostRequestSyncExt(retryReq, newUser)
+	require.NoError(t, err)
+	require.Nil(t, rec.Error) // assert the receipt for the "retry req" exists and its successful
+
+	receipt, err = v.ch.GetRequestReceipt(unprocessableReqID)
+	require.NoError(t, err)
+	require.NotNil(t, receipt)
+	require.Nil(t, receipt.Error)             // assert the receit for the initially unprocessable request exists and is successful
+	require.False(t, isInUnprocessableList()) // assert the request was removed from the unprocessable list
+
+	// assert the user was credited the tokens from the "initially unprocessable request"
+	userAssets := v.ch.L2Assets(newUserAgentID)
+	require.Len(t, userAssets.NativeTokens, 4)
+	assetsContain := func(nativeTokenID iotago.NativeTokenID) bool {
+		return lo.ContainsBy(userAssets.NativeTokens, func(nt *iotago.NativeToken) bool {
+			return nt.ID == nativeTokenID
+		})
+	}
+	require.True(t, assetsContain(nativeTokenID1))
+	require.True(t, assetsContain(nativeTokenID2))
+	require.True(t, assetsContain(nativeTokenID3))
+	require.True(t, assetsContain(nativeTokenID4))
+
+	// try the "retry request" again, assert it fails
+	_, rec, _, err = v.ch.PostRequestSyncExt(retryReq, newUser)
+	require.NoError(t, err)
+	require.Error(t, rec.Error)
+	// --
+	// try to withdrawal the native tokens
+	err = v.ch.Withdraw(isc.NewAssets(1*isc.Million, userAssets.NativeTokens), newUser)
+	require.NoError(t, err)
+
+	userAssets = v.ch.L2Assets(newUserAgentID)
+	require.Len(t, userAssets.NativeTokens, 0)
+	v.env.AssertL1NativeTokens(newUserAddress, nativeTokenID1, 1)
+	v.env.AssertL1NativeTokens(newUserAddress, nativeTokenID2, 1)
+	v.env.AssertL1NativeTokens(newUserAddress, nativeTokenID3, 1)
+	v.env.AssertL1NativeTokens(newUserAddress, nativeTokenID4, 1)
+
+	// TODO !!!!!!! make sure the mempool is cleared when the request is consumed initially
 }
 
 func TestDepositRandomContractMinFee(t *testing.T) {

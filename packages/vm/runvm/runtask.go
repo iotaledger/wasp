@@ -62,14 +62,17 @@ func runTask(task *vm.VMTask) {
 
 	// run the batch of requests
 	results, numSuccess, numOffLedger := runRequests(vmctx, task.Requests, 0, task.Log)
-	// run any scheduled retry of "unprocessable" requests
-	results2, numSuccess2, numOffLedger2 := runRequests(vmctx, task.UnprocessableToRetry, uint16(len(results)), task.Log)
-	if numOffLedger2 != 0 {
-		panic("offledger request executed as 'unprocessable retry', this cannot happen")
+	{
+		// run any scheduled retry of "unprocessable" requests
+		results2, numSuccess2, numOffLedger2 := runRequests(vmctx, task.UnprocessableToRetry, uint16(len(results)), task.Log)
+		vmctx.RemoveUnprocessable(results2)
+		if numOffLedger2 != 0 {
+			panic("offledger request executed as 'unprocessable retry', this cannot happen")
+		}
+		task.Results = results
+		task.Results = append(task.Results, results2...)
+		numSuccess += numSuccess2
 	}
-	task.Results = results
-	task.Results = append(task.Results, results2...)
-	numSuccess += numSuccess2
 
 	vmctx.AssertConsistentGasTotals()
 

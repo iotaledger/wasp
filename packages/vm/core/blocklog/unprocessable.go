@@ -54,8 +54,6 @@ func unprocessableMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 
 // save request reference / address of the sender
 func SaveUnprocessable(state kv.KVStore, req isc.OnLedgerRequest, blockIndex uint32, outputIndex uint16) {
-	// TODO check if REQID already exists, return an error if it does?
-	// save in a map of reqID => {isc.Request, blockIndex, outputIndex}
 	rec := unprocessableRequestRecord{
 		blockIndex:  blockIndex,
 		outputIndex: outputIndex,
