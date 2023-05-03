@@ -172,7 +172,7 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(boo
 		call.Value = big.NewInt(0)
 	}
 
-	pendingHeader := e.BlockchainDB().GetPendingHeader()
+	pendingHeader := e.BlockchainDB().GetPendingHeader(e.timestamp)
 
 	// run the EVM code on a buffered state (so that writes are not committed)
 	statedb := e.StateDB().Buffered().StateDB()
@@ -227,7 +227,7 @@ func (e *EVMEmulator) SendTransaction(
 ) (*types.Receipt, *core.ExecutionResult, error) {
 	buf := e.StateDB().Buffered()
 	statedb := buf.StateDB()
-	pendingHeader := e.BlockchainDB().GetPendingHeader()
+	pendingHeader := e.BlockchainDB().GetPendingHeader(e.timestamp)
 
 	sender, err := types.Sender(e.Signer(), tx)
 	if err != nil {
