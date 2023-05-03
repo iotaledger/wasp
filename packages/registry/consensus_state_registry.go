@@ -14,7 +14,7 @@ import (
 
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/chain/cmtLog"
+	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/onchangemap"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -56,7 +56,7 @@ func (c *comparableConsensusID) String() string {
 type consensusState struct {
 	identifier *comparableConsensusID
 
-	LogIndex cmtLog.LogIndex
+	LogIndex cmt_log.LogIndex
 }
 
 func (c *consensusState) ID() *comparableConsensusID {
@@ -117,7 +117,7 @@ func (c *consensusState) UnmarshalJSON(bytes []byte) error {
 
 	*c = consensusState{
 		identifier: newComparableConsensusID(chainID, committeeAddress),
-		LogIndex:   cmtLog.LogIndex(j.LogIndex),
+		LogIndex:   cmt_log.LogIndex(j.LogIndex),
 	}
 
 	return nil
@@ -130,7 +130,7 @@ type ConsensusStateRegistry struct {
 	networkPrefix iotago.NetworkPrefix
 }
 
-var _ cmtLog.ConsensusStateRegistry = &ConsensusStateRegistry{}
+var _ cmt_log.ConsensusStateRegistry = &ConsensusStateRegistry{}
 
 // NewConsensusStateRegistry creates new instance of the consensus state registry implementation.
 func NewConsensusStateRegistry(folderPath string, networkPrefix iotago.NetworkPrefix) (*ConsensusStateRegistry, error) {
@@ -321,13 +321,13 @@ func (p *ConsensusStateRegistry) deleteConsensusStateJSON(state *consensusState)
 }
 
 // Can return cmtLog.ErrCmtLogStateNotFound.
-func (p *ConsensusStateRegistry) Get(chainID isc.ChainID, committeeAddress iotago.Address) (*cmtLog.State, error) {
+func (p *ConsensusStateRegistry) Get(chainID isc.ChainID, committeeAddress iotago.Address) (*cmt_log.State, error) {
 	state, err := p.onChangeMap.Get(newComparableConsensusID(chainID, committeeAddress))
 	if err != nil {
-		return nil, cmtLog.ErrCmtLogStateNotFound
+		return nil, cmt_log.ErrCmtLogStateNotFound
 	}
 
-	return &cmtLog.State{
+	return &cmt_log.State{
 		LogIndex: state.LogIndex,
 	}, nil
 }
@@ -350,7 +350,7 @@ func (p *ConsensusStateRegistry) add(state *consensusState) error {
 	return nil
 }
 
-func (p *ConsensusStateRegistry) Set(chainID isc.ChainID, committeeAddress iotago.Address, state *cmtLog.State) error {
+func (p *ConsensusStateRegistry) Set(chainID isc.ChainID, committeeAddress iotago.Address, state *cmt_log.State) error {
 	return p.add(&consensusState{
 		identifier: newComparableConsensusID(chainID, committeeAddress),
 		LogIndex:   state.LogIndex,

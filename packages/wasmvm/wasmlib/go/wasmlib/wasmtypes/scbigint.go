@@ -21,7 +21,8 @@ func NewScBigInt(value ...uint64) ScBigInt {
 
 func normalize(buf []byte) ScBigInt {
 	bufLen := len(buf)
-	for ; bufLen > 0 && buf[bufLen-1] == 0; bufLen-- {
+	for bufLen > 0 && buf[bufLen-1] == 0 {
+		bufLen--
 	}
 	return ScBigInt{bytes: buf[:bufLen]}
 }

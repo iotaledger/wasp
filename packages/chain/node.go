@@ -27,13 +27,13 @@ import (
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/chain/chainMgr"
-	"github.com/iotaledger/wasp/packages/chain/cmtLog"
+	"github.com/iotaledger/wasp/packages/chain/chainmanager"
+	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
-	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
+	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -152,7 +152,7 @@ type chainNodeImpl struct {
 	recvAliasOutputPipe pipe.Pipe[*isc.AliasOutputWithID]
 	recvTxPublishedPipe pipe.Pipe[*txPublished]
 	recvMilestonePipe   pipe.Pipe[time.Time]
-	consensusInsts      *shrinkingmap.ShrinkingMap[iotago.Ed25519Address, *shrinkingmap.ShrinkingMap[cmtLog.LogIndex, *consensusInst]] // Running consensus instances.
+	consensusInsts      *shrinkingmap.ShrinkingMap[iotago.Ed25519Address, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]] // Running consensus instances.
 	consOutputPipe      pipe.Pipe[*consOutput]
 	consRecoverPipe     pipe.Pipe[*consRecover]
 	publishingTXes      *shrinkingmap.ShrinkingMap[iotago.TransactionID, context.CancelFunc] // TX'es now being published.
@@ -163,7 +163,10 @@ type chainNodeImpl struct {
 	awaitReceiptCnfCh   chan *awaitReceiptReq
 	stateTrackerAct     StateTracker
 	stateTrackerCnf     StateTracker
-	blockWAL            smGPAUtils.BlockWAL
+	blockWAL            sm_gpa_utils.BlockWAL
+	//
+	// Configuration values.
+	consensusDelay time.Duration
 	//
 	// Information for other components.
 	listener               ChainListener          // Object expecting event notifications.
@@ -193,7 +196,7 @@ type chainNodeImpl struct {
 }
 
 type consensusInst struct {
-	request    *chainMgr.NeedConsensus
+	request    *chainmanager.NeedConsensus
 	cancelFunc context.CancelFunc
 	consensus  *consGR.ConsGr
 	committee  []*cryptolib.PublicKey
@@ -209,7 +212,7 @@ func (ci *consensusInst) Cancel() {
 
 // Used to correlate consensus request with its output.
 type consOutput struct {
-	request *chainMgr.NeedConsensus
+	request *chainmanager.NeedConsensus
 	output  *consGR.Output
 }
 
@@ -219,7 +222,7 @@ func (co *consOutput) String() string {
 
 // Used to correlate consensus request with its output.
 type consRecover struct {
-	request *chainMgr.NeedConsensus
+	request *chainmanager.NeedConsensus
 }
 
 func (cr *consRecover) String() string {
@@ -229,7 +232,7 @@ func (cr *consRecover) String() string {
 // This is event received from the NodeConn as response to PublishTX
 type txPublished struct {
 	committeeAddr   iotago.Ed25519Address
-	logIndex        cmtLog.LogIndex
+	logIndex        cmt_log.LogIndex
 	txID            iotago.TransactionID
 	nextAliasOutput *isc.AliasOutputWithID
 	confirmed       bool
@@ -256,9 +259,9 @@ func New(
 	nodeIdentity *cryptolib.KeyPair,
 	processorConfig *processors.Config,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
-	consensusStateRegistry cmtLog.ConsensusStateRegistry,
-	blockWAL smGPAUtils.BlockWAL,
-	snapshotter smGPAUtils.Snapshotter,
+	consensusStateRegistry cmt_log.ConsensusStateRegistry,
+	blockWAL sm_gpa_utils.BlockWAL,
+	snapshotter sm_gpa_utils.Snapshotter,
 	listener ChainListener,
 	accessNodesFromNode []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
@@ -268,6 +271,7 @@ func New(
 	onChainDisconnect func(),
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
+	consensusDelay time.Duration,
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
 	if listener == nil {
@@ -286,7 +290,7 @@ func New(
 		recvAliasOutputPipe:    pipe.NewInfinitePipe[*isc.AliasOutputWithID](),
 		recvTxPublishedPipe:    pipe.NewInfinitePipe[*txPublished](),
 		recvMilestonePipe:      pipe.NewInfinitePipe[time.Time](),
-		consensusInsts:         shrinkingmap.New[iotago.Ed25519Address, *shrinkingmap.ShrinkingMap[cmtLog.LogIndex, *consensusInst]](),
+		consensusInsts:         shrinkingmap.New[iotago.Ed25519Address, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]](),
 		consOutputPipe:         pipe.NewInfinitePipe[*consOutput](),
 		consRecoverPipe:        pipe.NewInfinitePipe[*consRecover](),
 		publishingTXes:         shrinkingmap.New[iotago.TransactionID, context.CancelFunc](),
@@ -298,6 +302,7 @@ func New(
 		stateTrackerAct:        nil, // Set bellow.
 		stateTrackerCnf:        nil, // Set bellow.
 		blockWAL:               blockWAL,
+		consensusDelay:         consensusDelay,
 		listener:               listener,
 		accessLock:             &sync.RWMutex{},
 		activeCommitteeDKShare: nil,
@@ -325,7 +330,7 @@ func New(
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
 	//
 	// Create sub-components.
-	chainMgr, err := chainMgr.New(
+	chainMgr, err := chainmanager.New(
 		cni.me,
 		cni.chainID,
 		cni.chainStore,
@@ -494,6 +499,7 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 	consRecoverPipeOutCh := cni.consRecoverPipe.Out()
 	serversUpdatedPipeOutCh := cni.serversUpdatedPipe.Out()
 	redeliveryPeriodTicker := time.NewTicker(redeliveryPeriod)
+	consensusDelayTicker := time.NewTicker(cni.consensusDelay)
 	for {
 		if ctx.Err() != nil {
 			if cni.shutdownCoordinator == nil {
@@ -573,8 +579,12 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 			if ok {
 				cni.stateTrackerCnf.ChainNodeStateMgrResponse(resp)
 			}
+		case <-consensusDelayTicker.C:
+			cni.sendMessages(cni.chainMgr.Input(chainmanager.NewInputCanPropose()))
+			cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 		case t := <-redeliveryPeriodTicker.C:
 			cni.sendMessages(cni.chainMgr.Input(cni.chainMgr.MakeTickInput(t)))
+			cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 		case <-ctx.Done():
 			continue
 		}
@@ -660,7 +670,7 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 	cni.publishingTXes.Delete(txPubResult.txID)
 
 	outMsgs := cni.chainMgr.Input(
-		chainMgr.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.logIndex, txPubResult.txID, txPubResult.nextAliasOutput, txPubResult.confirmed),
+		chainmanager.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.logIndex, txPubResult.txID, txPubResult.nextAliasOutput, txPubResult.confirmed),
 	)
 	cni.sendMessages(outMsgs)
 	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
@@ -682,7 +692,7 @@ func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *is
 	cni.stateTrackerCnf.TrackAliasOutput(aliasOutput, true)
 	cni.stateTrackerAct.TrackAliasOutput(aliasOutput, false) // ACT state will be equal to CNF or ahead of it.
 	outMsgs := cni.chainMgr.Input(
-		chainMgr.NewInputAliasOutputConfirmed(aliasOutput),
+		chainmanager.NewInputAliasOutputConfirmed(aliasOutput),
 	)
 	cni.sendMessages(outMsgs)
 	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
@@ -692,8 +702,8 @@ func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
 	cni.log.Debugf("handleMilestoneTimestamp: %v", timestamp)
 	cni.tangleTime = timestamp
 	cni.mempool.TangleTimeUpdated(timestamp)
-	cni.consensusInsts.ForEach(func(address iotago.Ed25519Address, consensusInstances *shrinkingmap.ShrinkingMap[cmtLog.LogIndex, *consensusInst]) bool {
-		consensusInstances.ForEach(func(li cmtLog.LogIndex, consensusInstance *consensusInst) bool {
+	cni.consensusInsts.ForEach(func(address iotago.Ed25519Address, consensusInstances *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
+		consensusInstances.ForEach(func(li cmt_log.LogIndex, consensusInstance *consensusInst) bool {
 			if consensusInstance.cancelFunc != nil {
 				consensusInstance.consensus.Time(timestamp)
 			}
@@ -723,7 +733,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 		cni.cleanupPublishingTXes(nil)
 		return
 	}
-	output := outputUntyped.(*chainMgr.Output)
+	output := outputUntyped.(*chainmanager.Output)
 	//
 	// Start new consensus instances, if needed.
 	outputNeedConsensus := output.NeedConsensus()
@@ -733,7 +743,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 	//
 	// Start publishing TX'es, if there not being posted already.
 	outputNeedPostTXes := output.NeedPublishTX()
-	outputNeedPostTXes.ForEach(func(ti iotago.TransactionID, needPublishTx *chainMgr.NeedPublishTX) bool {
+	outputNeedPostTXes.ForEach(func(ti iotago.TransactionID, needPublishTx *chainmanager.NeedPublishTX) bool {
 		txToPost := needPublishTx // Have to take a copy to be used in callback.
 		if !cni.publishingTXes.Has(txToPost.TxID) {
 			subCtx, subCancel := context.WithCancel(ctx)
@@ -775,14 +785,14 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 	var chainMgrInput gpa.Input
 	switch out.output.Status {
 	case cons.Completed:
-		chainMgrInput = chainMgr.NewInputConsensusOutputDone(
+		chainMgrInput = chainmanager.NewInputConsensusOutputDone(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
 			out.request.BaseAliasOutput.OutputID(),
 			out.output.Result,
 		)
 	case cons.Skipped:
-		chainMgrInput = chainMgr.NewInputConsensusOutputSkip(
+		chainMgrInput = chainmanager.NewInputConsensusOutputSkip(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
 			out.request.BaseAliasOutput.OutputID(),
@@ -800,7 +810,7 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 
 func (cni *chainNodeImpl) handleConsensusRecover(ctx context.Context, out *consRecover) {
 	cni.log.Debugf("handleConsensusRecover: %v", out)
-	chainMgrInput := chainMgr.NewInputConsensusTimeout(
+	chainMgrInput := chainmanager.NewInputConsensusTimeout(
 		out.request.CommitteeAddr,
 		out.request.LogIndex,
 	)
@@ -808,7 +818,7 @@ func (cni *chainNodeImpl) handleConsensusRecover(ctx context.Context, out *consR
 	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
-func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensus *chainMgr.NeedConsensus) {
+func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensus *chainmanager.NeedConsensus) {
 	ci := cni.ensureConsensusInst(ctx, needConsensus)
 	if ci.request == nil {
 		outputCB := func(o *consGR.Output) {
@@ -823,13 +833,13 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 	}
 }
 
-func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus *chainMgr.NeedConsensus) *consensusInst {
+func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus *chainmanager.NeedConsensus) *consensusInst {
 	committeeAddr := needConsensus.CommitteeAddr
 	logIndex := needConsensus.LogIndex
 	dkShare := needConsensus.DKShare
 
-	consensusInstances, _ := cni.consensusInsts.GetOrCreate(committeeAddr, func() *shrinkingmap.ShrinkingMap[cmtLog.LogIndex, *consensusInst] {
-		return shrinkingmap.New[cmtLog.LogIndex, *consensusInst]()
+	consensusInstances, _ := cni.consensusInsts.GetOrCreate(committeeAddr, func() *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst] {
+		return shrinkingmap.New[cmt_log.LogIndex, *consensusInst]()
 	})
 
 	addLogIndex := logIndex
@@ -862,13 +872,13 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 
 // Cleanup consensus instances, except the instances with LogIndexes above the specified for a particular committee.
 // If nils are provided for the keep* variables, all the instances are cleaned up.
-func (cni *chainNodeImpl) cleanupConsensusInsts(committeeAddr iotago.Ed25519Address, keepLogIndex cmtLog.LogIndex) {
+func (cni *chainNodeImpl) cleanupConsensusInsts(committeeAddr iotago.Ed25519Address, keepLogIndex cmt_log.LogIndex) {
 	consensusInstances, exists := cni.consensusInsts.Get(committeeAddr)
 	if !exists {
 		return
 	}
 
-	consensusInstances.ForEach(func(li cmtLog.LogIndex, consensusInstance *consensusInst) bool {
+	consensusInstances.ForEach(func(li cmt_log.LogIndex, consensusInstance *consensusInst) bool {
 		if li >= keepLogIndex {
 			return true
 		}
@@ -885,7 +895,7 @@ func (cni *chainNodeImpl) cleanupConsensusInsts(committeeAddr iotago.Ed25519Addr
 }
 
 // Cleanup TX'es that are not needed to be posted anymore.
-func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes *shrinkingmap.ShrinkingMap[iotago.TransactionID, *chainMgr.NeedPublishTX]) {
+func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes *shrinkingmap.ShrinkingMap[iotago.TransactionID, *chainmanager.NeedPublishTX]) {
 	if neededPostTXes == nil || neededPostTXes.Size() == 0 {
 		// just create a new map
 		cni.publishingTXes = shrinkingmap.New[iotago.TransactionID, context.CancelFunc]()
@@ -1206,7 +1216,7 @@ func (cni *chainNodeImpl) GetConsensusWorkflowStatus() ConsensusWorkflowStatus {
 	return &consensusWorkflowStatusImpl{}
 }
 
-func (cni *chainNodeImpl) tryRecoverStoreFromWAL(chainStore indexedstore.IndexedStore, chainWAL smGPAUtils.BlockWAL) {
+func (cni *chainNodeImpl) tryRecoverStoreFromWAL(chainStore indexedstore.IndexedStore, chainWAL sm_gpa_utils.BlockWAL) {
 	defer func() {
 		if r := recover(); r != nil {
 			// Don't fail, if this crashes for some reason, that's an optional step.

@@ -194,7 +194,7 @@ func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint
 		return nil, false, err
 	}
 	ret := make([][]byte, blockInfo.TotalRequests)
-	found := false
+	var found bool
 	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
 		ret[reqIdx], found = getRequestRecordDataByRef(partition, blockIndex, reqIdx)
 		if !found {

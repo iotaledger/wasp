@@ -17,6 +17,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -34,43 +35,50 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 	const numRequests = 10_000
 
 	// send requests from many different wallets to speed things up
-	numAccounts := 1000
+	numAccounts := numRequests / 10
 	numRequestsPerAccount := numRequests / numAccounts
 	errCh := make(chan error, numRequests)
 	txCh := make(chan iotago.Transaction, numRequests)
 	for i := 0; i < numAccounts; i++ {
-		keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 		createWalletRetries := 0
-		if err != nil {
-			if createWalletRetries >= 5 {
-				t.Fatal("failed to create wallet, got an error 5 times, %w", err)
+
+		var keyPair *cryptolib.KeyPair
+		for {
+			var err error
+			keyPair, _, err = env.Clu.NewKeyPairWithFunds()
+			if err != nil {
+				if createWalletRetries >= 5 {
+					t.Fatal("failed to create wallet, got an error 5 times, %w", err)
+				}
+				// wait and re-try
+				createWalletRetries++
+				time.Sleep(200 * time.Millisecond)
+				continue
 			}
-			// wait and re-try
-			createWalletRetries++
-			i--
-			time.Sleep(1 * time.Second)
-			continue
+
+			break
 		}
 		go func() {
 			chainClient := env.Chain.SCClient(isc.Hn(nativeIncCounterSCName), keyPair)
-			retries := 0
 			for i := 0; i < numRequestsPerAccount; i++ {
-				tx, err := chainClient.PostRequest(inccounter.FuncIncCounter.Name)
-				if err != nil {
-					if retries >= 5 {
-						errCh <- fmt.Errorf("failed to issue tx, an error 5 times, %w", err)
-						break
+				retries := 0
+				for {
+					tx, err := chainClient.PostRequest(inccounter.FuncIncCounter.Name)
+					if err != nil {
+						if retries >= 5 {
+							errCh <- fmt.Errorf("failed to issue tx, an error 5 times, %w", err)
+							break
+						}
+						// wait and retry the tx
+						retries++
+						time.Sleep(200 * time.Millisecond)
+						continue
 					}
-					// wait and re-try the tx
-					retries++
-					i--
-					time.Sleep(1 * time.Second)
-					continue
+					errCh <- err
+					txCh <- *tx
+					break
 				}
-				retries = 0
-				errCh <- err
-				txCh <- *tx
-				time.Sleep(1 * time.Second) // give time for the indexer to get the new UTXOs (so we don't issue conflicting txs)
+				time.Sleep(200 * time.Millisecond) // give time for the indexer to get the new UTXOs (so we don't issue conflicting txs)
 			}
 		}()
 	}
@@ -94,7 +102,7 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsApi.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, err)
 
-	println(res.Events)
+	require.Contains(t, res.Events[len(res.Events)-1], fmt.Sprintf("counter = %d", numRequests))
 }
 
 // executed in cluster_test.go
@@ -232,7 +240,6 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 	// deposit funds for EVM
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	chainClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), env.Chain.ChainID, keyPair)
 	evmPvtKey, evmAddr := solo.NewEthereumAccount()
 	evmAgentID := isc.NewEthereumAddressAgentID(evmAddr)
 	env.TransferFundsTo(isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
@@ -258,9 +265,7 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 		err2 = jsonRPCClient.SendTransaction(context.Background(), tx)
 		require.NoError(t, err2)
 		// await tx confirmed
-		reqID, err2 := chainClient.RequestIDByEVMTransactionHash(context.Background(), tx.Hash())
-		require.NoError(t, err2)
-		_, err2 = env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, reqID, false, 5*time.Second)
+		_, err2 = env.Clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(env.Chain.ChainID, tx.Hash(), false, 5*time.Second)
 		require.NoError(t, err2)
 	}
 

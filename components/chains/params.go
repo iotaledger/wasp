@@ -13,6 +13,7 @@ type ParametersChains struct {
 	PullMissingRequestsFromCommittee bool          `default:"true" usage:"whether or not to pull missing requests from other committee members"`
 	DeriveAliasOutputByQuorum        bool          `default:"true" usage:"false means we propose own AliasOutput, true - by majority vote."`
 	PipeliningLimit                  int           `default:"-1" usage:"-1 -- infinite, 0 -- disabled, X -- build the chain if there is up to X transactions unconfirmed by L1."`
+	ConsensusDelay                   time.Duration `default:"500ms" usage:"Minimal delay between consensus runs."`
 }
 
 type ParametersWAL struct {

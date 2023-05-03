@@ -31,7 +31,10 @@ issues:
         - "exported: comment on exported" # revive
         - "package-comments" # revive
         - "blank-imports" # revive
-        - "var-naming: don't use leading k in Go names;" #revive
+        - "var-naming: don't use leading k in Go names;" # revive
+        - "var-naming: don't use an underscore in package name" # revive
+        - "if-return: redundant if ...; err != nil check, just return error instead." # revive
+        - "unused-parameter: parameter" # revive (maybe we should add this again later?)
 
     exclude-rules:
         - path: (_test\.go|example_test\.go|example_[0-9A-Za-z_-]+_test\.go)

@@ -267,11 +267,11 @@ func testIncCounterTimelock(t *testing.T, env *ChainEnv) {
 	e.checkWasmContractCounter(1)
 
 	e.postRequest(incHname, isc.Hn("incrementWithDelay"), 0, map[string]interface{}{
-		varDelay: int32(5), // 5s delay()
+		varDelay: int32(50), // 50s delay()
 	})
 
-	time.Sleep(300 * time.Millisecond) // equivalent of 3s
+	time.Sleep(3000 * time.Millisecond) // equivalent of 30s
 	e.checkWasmContractCounter(1)
-	time.Sleep(300 * time.Millisecond) // equivalent of 3s
+	time.Sleep(3000 * time.Millisecond) // equivalent of 30s
 	e.checkWasmContractCounter(2)
 }

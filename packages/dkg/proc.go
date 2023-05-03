@@ -7,6 +7,7 @@ package dkg
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
@@ -873,10 +874,11 @@ func (s *procStep) run() {
 					// Parse and store it and wait until we have messages from all the peers.
 					multiKSTMsg := &multiKeySetMsg{}
 					if err := multiKSTMsg.fromBytes(recv.PeerMessageData.MsgData, recv.PeerMessageData.PeeringID, recv.PeerMessageData.MsgReceiver, recv.PeerMessageData.MsgType); err != nil {
-						// TODO: handle the error.
-					} else {
-						s.recvMsgs[recv.SenderIndex] = multiKSTMsg
+						s.log.Debugf("failed to parse peer message, peeringID: %s, msgType: %d, msgData: %s, error: %w", recv.PeerMessageData.PeeringID, recv.PeerMessageData.MsgType, hex.EncodeToString(recv.PeerMessageData.MsgData), err)
+						continue
 					}
+
+					s.recvMsgs[recv.SenderIndex] = multiKSTMsg
 				} else if s.sentMsgs != nil && isRabinMsg && !isEcho {
 					// If that's a repeated message from the peer, maybe our message has been
 					// lost, so we repeat it as an echo, to avoid resend loops.

@@ -44,6 +44,9 @@ build: compile-solidity build-cli
 
 build-lint: build lint
 
+gendoc:
+	./scripts/gendoc.sh
+
 test-full: install
 	go test -tags $(BUILD_TAGS),runheavy ./... --timeout 60m --count 1 -failfast
 

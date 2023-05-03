@@ -3,7 +3,6 @@ package solo
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
@@ -63,10 +62,6 @@ func (b *jsonRPCSoloBackend) EVMTraceTransaction(
 		txIndex,
 		tracer,
 	)
-}
-
-func (b *jsonRPCSoloBackend) EVMGasPrice() *big.Int {
-	return big.NewInt(0)
 }
 
 func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, scName, funName string, args dict.Dict) (dict.Dict, error) {

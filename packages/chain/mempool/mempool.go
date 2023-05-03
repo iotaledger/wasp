@@ -12,7 +12,7 @@
 // the latest state for which it has provided the proposal. Let's say the mempool
 // has provided proposals for PrevAO (AO≡AliasOutput).
 //
-// Upon reception of the proposal query (ConsensusProposalsAsync) for NextAO
+// Upon reception of the proposal query (ConsensusProposalAsync) for NextAO
 // from the consensus, it asks the StateMgr for the virtual state VS(NextAO)
 // corresponding to the NextAO and a list of blocks that has to be reverted.
 // The state manager collects this information by finding a common ancestor of
@@ -50,8 +50,8 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
-	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
-	"github.com/iotaledger/wasp/packages/chain/mempool/distSync"
+	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	"github.com/iotaledger/wasp/packages/chain/mempool/distsync"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -134,8 +134,8 @@ type mempoolImpl struct {
 	accessNodes                    []*cryptolib.PublicKey
 	committeeNodes                 []*cryptolib.PublicKey
 	waitReq                        WaitReq
-	waitChainHead                  []*reqConsensusProposals
-	reqConsensusProposalsPipe      pipe.Pipe[*reqConsensusProposals]
+	waitChainHead                  []*reqConsensusProposal
+	reqConsensusProposalPipe       pipe.Pipe[*reqConsensusProposal]
 	reqConsensusRequestsPipe       pipe.Pipe[*reqConsensusRequests]
 	reqReceiveOnLedgerRequestPipe  pipe.Pipe[isc.OnLedgerRequest]
 	reqReceiveOffLedgerRequestPipe pipe.Pipe[isc.OffLedgerRequest]
@@ -166,10 +166,15 @@ type reqAccessNodesUpdated struct {
 	accessNodePubKeys []*cryptolib.PublicKey
 }
 
-type reqConsensusProposals struct {
+type reqConsensusProposal struct {
 	ctx         context.Context
 	aliasOutput *isc.AliasOutputWithID
 	responseCh  chan<- []*isc.RequestRef
+}
+
+func (r *reqConsensusProposal) Respond(reqRefs []*isc.RequestRef) {
+	r.responseCh <- reqRefs
+	close(r.responseCh)
 }
 
 type reqConsensusRequests struct {
@@ -210,8 +215,8 @@ func New(
 		accessNodes:                    []*cryptolib.PublicKey{},
 		committeeNodes:                 []*cryptolib.PublicKey{},
 		waitReq:                        waitReq,
-		waitChainHead:                  []*reqConsensusProposals{},
-		reqConsensusProposalsPipe:      pipe.NewInfinitePipe[*reqConsensusProposals](),
+		waitChainHead:                  []*reqConsensusProposal{},
+		reqConsensusProposalPipe:       pipe.NewInfinitePipe[*reqConsensusProposal](),
 		reqConsensusRequestsPipe:       pipe.NewInfinitePipe[*reqConsensusRequests](),
 		reqReceiveOnLedgerRequestPipe:  pipe.NewInfinitePipe[isc.OnLedgerRequest](),
 		reqReceiveOffLedgerRequestPipe: pipe.NewInfinitePipe[isc.OffLedgerRequest](),
@@ -225,7 +230,7 @@ func New(
 		metrics:                        metrics,
 		listener:                       listener,
 	}
-	mpi.distSync = distSync.New(
+	mpi.distSync = distsync.New(
 		mpi.pubKeyAsNodeID(nodeIdentity.GetPublicKey()),
 		mpi.distSyncRequestNeededCB,
 		mpi.distSyncRequestReceivedCB,
@@ -275,14 +280,14 @@ func (mpi *mempoolImpl) AccessNodesUpdated(committeePubKeys, accessNodePubKeys [
 	}
 }
 
-func (mpi *mempoolImpl) ConsensusProposalsAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan []*isc.RequestRef {
+func (mpi *mempoolImpl) ConsensusProposalAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan []*isc.RequestRef {
 	res := make(chan []*isc.RequestRef, 1)
-	req := &reqConsensusProposals{
+	req := &reqConsensusProposal{
 		ctx:         ctx,
 		aliasOutput: aliasOutput,
 		responseCh:  res,
 	}
-	mpi.reqConsensusProposalsPipe.In() <- req
+	mpi.reqConsensusProposalPipe.In() <- req
 	return res
 }
 
@@ -300,7 +305,7 @@ func (mpi *mempoolImpl) ConsensusRequestsAsync(ctx context.Context, requestRefs 
 func (mpi *mempoolImpl) run(ctx context.Context, cleanupFunc context.CancelFunc) { //nolint:gocyclo
 	serverNodesUpdatedPipeOutCh := mpi.serverNodesUpdatedPipe.Out()
 	accessNodesUpdatedPipeOutCh := mpi.accessNodesUpdatedPipe.Out()
-	reqConsensusProposalsPipeOutCh := mpi.reqConsensusProposalsPipe.Out()
+	reqConsensusProposalPipeOutCh := mpi.reqConsensusProposalPipe.Out()
 	reqConsensusRequestsPipeOutCh := mpi.reqConsensusRequestsPipe.Out()
 	reqReceiveOnLedgerRequestPipeOutCh := mpi.reqReceiveOnLedgerRequestPipe.Out()
 	reqReceiveOffLedgerRequestPipeOutCh := mpi.reqReceiveOffLedgerRequestPipe.Out()
@@ -324,12 +329,12 @@ func (mpi *mempoolImpl) run(ctx context.Context, cleanupFunc context.CancelFunc)
 				break
 			}
 			mpi.handleAccessNodesUpdated(recv)
-		case recv, ok := <-reqConsensusProposalsPipeOutCh:
+		case recv, ok := <-reqConsensusProposalPipeOutCh:
 			if !ok {
-				reqConsensusProposalsPipeOutCh = nil
+				reqConsensusProposalPipeOutCh = nil
 				break
 			}
-			mpi.handleConsensusProposals(recv)
+			mpi.handleConsensusProposal(recv)
 		case recv, ok := <-reqConsensusRequestsPipeOutCh:
 			if !ok {
 				reqConsensusRequestsPipeOutCh = nil
@@ -375,7 +380,7 @@ func (mpi *mempoolImpl) run(ctx context.Context, cleanupFunc context.CancelFunc)
 		case <-ctx.Done():
 			// mpi.serverNodesUpdatedPipe.Close() // TODO: Causes panic: send on closed channel
 			// mpi.accessNodesUpdatedPipe.Close()
-			// mpi.reqConsensusProposalsPipe.Close()
+			// mpi.reqConsensusProposalPipe.Close()
 			// mpi.reqConsensusRequestsPipe.Close()
 			// mpi.reqReceiveOnLedgerRequestPipe.Close()
 			// mpi.reqReceiveOffLedgerRequestPipe.Close()
@@ -451,7 +456,7 @@ func (mpi *mempoolImpl) addOffLedgerRequestIfUnseen(request isc.OffLedgerRequest
 func (mpi *mempoolImpl) handleServerNodesUpdated(recv *reqServerNodesUpdated) {
 	mpi.serverNodes = recv.serverNodePubKeys
 	mpi.committeeNodes = recv.committeePubKeys
-	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputServerNodes(
+	mpi.sendMessages(mpi.distSync.Input(distsync.NewInputServerNodes(
 		lo.Map(mpi.serverNodes, mpi.pubKeyAsNodeIDMap),
 		lo.Map(mpi.committeeNodes, mpi.pubKeyAsNodeIDMap),
 	)))
@@ -460,7 +465,7 @@ func (mpi *mempoolImpl) handleServerNodesUpdated(recv *reqServerNodesUpdated) {
 func (mpi *mempoolImpl) handleAccessNodesUpdated(recv *reqAccessNodesUpdated) {
 	mpi.accessNodes = recv.accessNodePubKeys
 	mpi.committeeNodes = recv.committeePubKeys
-	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputAccessNodes(
+	mpi.sendMessages(mpi.distSync.Input(distsync.NewInputAccessNodes(
 		lo.Map(mpi.accessNodes, mpi.pubKeyAsNodeIDMap),
 		lo.Map(mpi.committeeNodes, mpi.pubKeyAsNodeIDMap),
 	)))
@@ -468,17 +473,17 @@ func (mpi *mempoolImpl) handleAccessNodesUpdated(recv *reqAccessNodesUpdated) {
 
 // This implementation only tracks a single branch. So, we will only respond
 // to the request matching the TrackNewChainHead call.
-func (mpi *mempoolImpl) handleConsensusProposals(recv *reqConsensusProposals) {
+func (mpi *mempoolImpl) handleConsensusProposal(recv *reqConsensusProposal) {
 	if mpi.chainHeadAO == nil || !recv.aliasOutput.Equals(mpi.chainHeadAO) {
-		mpi.log.Debugf("handleConsensusProposals, have to wait for chain head to become %v", recv.aliasOutput)
+		mpi.log.Debugf("handleConsensusProposal, have to wait for chain head to become %v", recv.aliasOutput)
 		mpi.waitChainHead = append(mpi.waitChainHead, recv)
 		return
 	}
-	mpi.log.Debugf("handleConsensusProposals, already have the chain head %v", recv.aliasOutput)
-	mpi.handleConsensusProposalsForChainHead(recv)
+	mpi.log.Debugf("handleConsensusProposal, already have the chain head %v", recv.aliasOutput)
+	mpi.handleConsensusProposalForChainHead(recv)
 }
 
-func (mpi *mempoolImpl) handleConsensusProposalsForChainHead(recv *reqConsensusProposals) {
+func (mpi *mempoolImpl) handleConsensusProposalForChainHead(recv *reqConsensusProposal) {
 	//
 	// The case for matching ChainHeadAO and request BaseAO
 	reqRefs := []*isc.RequestRef{}
@@ -498,15 +503,13 @@ func (mpi *mempoolImpl) handleConsensusProposalsForChainHead(recv *reqConsensusP
 		return true // Keep them for now
 	})
 	if len(reqRefs) > 0 {
-		recv.responseCh <- reqRefs
-		close(recv.responseCh)
+		recv.Respond(reqRefs)
 		return
 	}
 	//
 	// Wait for any request.
 	mpi.waitReq.WaitAny(recv.ctx, func(req isc.Request) {
-		recv.responseCh <- []*isc.RequestRef{isc.RequestRefFromRequest(req)}
-		close(recv.responseCh)
+		recv.Respond([]*isc.RequestRef{isc.RequestRefFromRequest(req)})
 	})
 }
 
@@ -541,7 +544,7 @@ func (mpi *mempoolImpl) handleConsensusRequests(recv *reqConsensusRequests) {
 	//
 	// Wait for missing requests.
 	for i := range missing {
-		mpi.sendMessages(mpi.distSync.Input(distSync.NewInputRequestNeeded(recv.ctx, missing[i])))
+		mpi.sendMessages(mpi.distSync.Input(distsync.NewInputRequestNeeded(recv.ctx, missing[i])))
 	}
 	mpi.waitReq.WaitMany(recv.ctx, missing, func(req isc.Request) {
 		reqRefKey := isc.RequestRefFromRequest(req).AsKey()
@@ -603,7 +606,7 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
 	mpi.log.Debugf("Received request %v from outside.", request.ID())
 	if mpi.addOffLedgerRequestIfUnseen(request) {
-		mpi.sendMessages(mpi.distSync.Input(distSync.NewInputPublishRequest(request)))
+		mpi.sendMessages(mpi.distSync.Input(distsync.NewInputPublishRequest(request)))
 	}
 }
 
@@ -682,13 +685,13 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 	//
 	// Process the pending consensus proposal requests if any.
 	if len(mpi.waitChainHead) != 0 {
-		newWaitChainHead := []*reqConsensusProposals{}
+		newWaitChainHead := []*reqConsensusProposal{}
 		for i, waiting := range mpi.waitChainHead {
 			if waiting.ctx.Err() != nil {
 				continue // Drop it.
 			}
 			if waiting.aliasOutput.Equals(mpi.chainHeadAO) {
-				mpi.handleConsensusProposalsForChainHead(waiting)
+				mpi.handleConsensusProposalForChainHead(waiting)
 				continue // Drop it from wait queue.
 			}
 			newWaitChainHead = append(newWaitChainHead, mpi.waitChainHead[i])
@@ -718,7 +721,7 @@ func (mpi *mempoolImpl) handleDistSyncDebugTick() {
 }
 
 func (mpi *mempoolImpl) handleDistSyncTimeTick() {
-	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputTimeTick()))
+	mpi.sendMessages(mpi.distSync.Input(distsync.NewInputTimeTick()))
 }
 
 // Re-send off-ledger messages that are hanging here for a long time.
@@ -727,7 +730,7 @@ func (mpi *mempoolImpl) handleRePublishTimeTick() {
 	retryOlder := time.Now().Add(-distShareRePublishTick)
 	mpi.offLedgerPool.Filter(func(request isc.OffLedgerRequest, ts time.Time) bool {
 		if ts.Before(retryOlder) {
-			mpi.sendMessages(mpi.distSync.Input(distSync.NewInputPublishRequest(request)))
+			mpi.sendMessages(mpi.distSync.Input(distsync.NewInputPublishRequest(request)))
 		}
 		return true
 	})

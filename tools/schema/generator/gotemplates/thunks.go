@@ -6,7 +6,6 @@ package gotemplates
 var thunksGo = map[string]string{
 	// *******************************
 	"thunks.go": `
-//nolint:dupl
 package $package$+impl
 
 import (

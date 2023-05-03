@@ -217,7 +217,8 @@ EOH
     "apiCacheTTL": "5m",
     "pullMissingRequestsFromCommittee": true,
     "deriveAliasOutputByQuorum": true,
-    "pipeliningLimit": -1
+    "pipeliningLimit": -1,
+    "consensusDelay": "500ms"
   },
   "rawBlocks": {
     "enabled": false,

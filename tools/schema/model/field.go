@@ -51,7 +51,6 @@ type Field struct {
 	Line       int // the line number originally in yaml file
 }
 
-//nolint:gocyclo
 func (f *Field) Compile(s *Schema, fldNameDef, fldTypeDef *DefElt) error {
 	fldName := strings.TrimSpace(fldNameDef.Val)
 	f.Name = fldName
@@ -70,55 +69,54 @@ func (f *Field) Compile(s *Schema, fldNameDef, fldTypeDef *DefElt) error {
 		return fmt.Errorf("invalid field alias: %s at %d", f.Alias, fldNameDef.Line)
 	}
 
-	fldType := strings.TrimSpace(fldTypeDef.Val)
-
-	// remove // comment
-	index = strings.Index(fldType, "//")
-	if index >= 0 {
-		f.FldComment = " " + fldType[index:]
-		fldType = strings.TrimSpace(fldType[:index])
-	}
-
-	// remove optional indicator
-	n := len(fldType)
-	if n > 1 && fldType[n-1:] == "?" {
-		f.Optional = true
-		fldType = strings.TrimSpace(fldType[:n-1])
-	}
-
-	n = len(fldType)
-	if n > 2 && fldType[n-2:] == "[]" {
-		// must be array
-		f.Array = true
-		fldType = strings.TrimSpace(fldType[:n-2])
-	} else if n > 4 && fldType[:4] == "map[" {
-		// must be map
-		index = strings.Index(fldType, "]")
-		if index > 5 {
-			f.MapKey = strings.TrimSpace(fldType[4:index])
-			if !fldTypeRegexp.MatchString(f.MapKey) || f.MapKey == "Bool" {
-				return fmt.Errorf("invalid key field type: %s at %d", f.MapKey, fldTypeDef.Line)
-			}
-			fldType = strings.TrimSpace(fldType[index+1:])
-		}
+	fldType, err := f.compileFieldType(fldTypeDef)
+	if err != nil {
+		return err
 	}
 	f.Type = fldType
-	if !fldTypeRegexp.MatchString(f.Type) {
-		return fmt.Errorf("invalid field type: %s at %d", f.Type, fldTypeDef.Line)
-	}
-	f.BaseType = FieldTypes[f.Type]
+	f.BaseType = FieldTypes[fldType]
 	if f.BaseType {
 		return nil
 	}
 	for _, typeDef := range s.Structs {
-		if f.Type == typeDef.Name.Val {
+		if fldType == typeDef.Name.Val {
 			return nil
 		}
 	}
 	for _, subtype := range s.Typedefs {
-		if f.Type == subtype.Name {
+		if fldType == subtype.Name {
 			return nil
 		}
 	}
-	return fmt.Errorf("invalid field type: %s at %d", f.Type, fldTypeDef.Line)
+	return fmt.Errorf("invalid field type: %s at %d", fldType, fldTypeDef.Line)
+}
+
+func (f *Field) compileFieldType(fldTypeDef *DefElt) (string, error) {
+	fldType := strings.TrimSpace(fldTypeDef.Val)
+
+	// strip 'optional' indicator
+	if strings.HasSuffix(fldType, "?") {
+		f.Optional = true
+		fldType = strings.TrimSpace(fldType[:len(fldType)-1])
+	}
+
+	switch {
+	case strings.HasSuffix(fldType, "[]"): // is it an array?
+		f.Array = true
+		fldType = strings.TrimSpace(fldType[:len(fldType)-2])
+	case strings.HasPrefix(fldType, "map["): // is it a map?
+		parts := strings.Split(fldType[4:], "]")
+		if len(parts) != 2 {
+			return "", fmt.Errorf("expected map field type: %s at %d", fldType, fldTypeDef.Line)
+		}
+		f.MapKey = strings.TrimSpace(parts[0])
+		if !fldTypeRegexp.MatchString(f.MapKey) || f.MapKey == "Bool" {
+			return "", fmt.Errorf("invalid map key field type: %s at %d", f.MapKey, fldTypeDef.Line)
+		}
+		fldType = strings.TrimSpace(parts[1])
+	}
+	if !fldTypeRegexp.MatchString(fldType) {
+		return "", fmt.Errorf("invalid field type: %s at %d", fldType, fldTypeDef.Line)
+	}
+	return fldType, nil
 }

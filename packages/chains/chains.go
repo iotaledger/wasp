@@ -14,9 +14,9 @@ import (
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/cmtLog"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
-	"github.com/iotaledger/wasp/packages/chains/accessMgr"
+	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chains/access_mgr"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -50,6 +50,7 @@ type Chains struct {
 	pullMissingRequestsFromCommittee bool
 	deriveAliasOutputByQuorum        bool
 	pipeliningLimit                  int
+	consensusDelay                   time.Duration
 
 	networkProvider              peering.NetworkProvider
 	trustedNetworkManager        peering.TrustedNetworkManager
@@ -63,12 +64,12 @@ type Chains struct {
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
 	nodeIdentityProvider        registry.NodeIdentityProvider
-	consensusStateRegistry      cmtLog.ConsensusStateRegistry
+	consensusStateRegistry      cmt_log.ConsensusStateRegistry
 	chainListener               chain.ChainListener
 
 	mutex     sync.RWMutex
 	allChains *shrinkingmap.ShrinkingMap[isc.ChainID, *activeChain]
-	accessMgr accessMgr.AccessMgr
+	accessMgr access_mgr.AccessMgr
 
 	cleanupFunc         context.CancelFunc
 	shutdownCoordinator *shutdown.Coordinator
@@ -90,6 +91,7 @@ func New(
 	pullMissingRequestsFromCommittee bool, // TODO: Unused for now.
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
+	consensusDelay time.Duration,
 	networkProvider peering.NetworkProvider,
 	trustedNetworkManager peering.TrustedNetworkManager,
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
@@ -100,7 +102,7 @@ func New(
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
-	consensusStateRegistry cmtLog.ConsensusStateRegistry,
+	consensusStateRegistry cmt_log.ConsensusStateRegistry,
 	chainListener chain.ChainListener,
 	shutdownCoordinator *shutdown.Coordinator,
 	chainMetricsProvider *metrics.ChainMetricsProvider,
@@ -115,6 +117,7 @@ func New(
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		deriveAliasOutputByQuorum:        deriveAliasOutputByQuorum,
 		pipeliningLimit:                  pipeliningLimit,
+		consensusDelay:                   consensusDelay,
 		networkProvider:                  networkProvider,
 		trustedNetworkManager:            trustedNetworkManager,
 		chainStateStoreProvider:          chainStateStoreProvider,
@@ -147,7 +150,7 @@ func (c *Chains) Run(ctx context.Context) error {
 	}
 	c.ctx = ctx
 
-	c.accessMgr = accessMgr.New(ctx, c.chainServersUpdatedCB, c.nodeIdentityProvider.NodeIdentity(), c.networkProvider, c.log.Named("AM"))
+	c.accessMgr = access_mgr.New(ctx, c.chainServersUpdatedCB, c.nodeIdentityProvider.NodeIdentity(), c.networkProvider, c.log.Named("AM"))
 	c.trustedNetworkListenerCancel = c.trustedNetworkManager.TrustedPeersListener(c.trustedPeersUpdatedCB)
 
 	unhook := c.chainRecordRegistryProvider.Events().ChainRecordModified.Hook(func(event *registry.ChainRecordModifiedEvent) {
@@ -242,26 +245,26 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 
 	// Initialize WAL
 	chainLog := c.log.Named(chainID.ShortString())
-	var chainWAL smGPAUtils.BlockWAL
+	var chainWAL sm_gpa_utils.BlockWAL
 	if c.walEnabled {
-		chainWAL, err = smGPAUtils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, chainMetrics)
+		chainWAL, err = sm_gpa_utils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, chainMetrics)
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}
 	} else {
-		chainWAL = smGPAUtils.NewEmptyBlockWAL()
+		chainWAL = sm_gpa_utils.NewEmptyBlockWAL()
 	}
 
 	// Initialize Snapshotter
 	chainStore := indexedstore.New(state.NewStore(chainKVStore))
-	var chainSnapshotter smGPAUtils.Snapshotter
+	var chainSnapshotter sm_gpa_utils.Snapshotter
 	if c.snapshotterPeriod > 0 {
-		chainSnapshotter, err = smGPAUtils.NewSnapshotter(chainLog.Named("Snap"), c.snapshotterFolderPath, chainID, c.snapshotterPeriod, chainStore)
+		chainSnapshotter, err = sm_gpa_utils.NewSnapshotter(chainLog.Named("Snap"), c.snapshotterFolderPath, chainID, c.snapshotterPeriod, chainStore)
 		if err != nil {
 			panic(fmt.Errorf("cannot create Snapshotter: %w", err))
 		}
 	} else {
-		chainSnapshotter = smGPAUtils.NewEmptySnapshotter()
+		chainSnapshotter = sm_gpa_utils.NewEmptySnapshotter()
 	}
 
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
@@ -286,6 +289,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		func() { c.chainMetricsProvider.UnregisterChain(chainID) },
 		c.deriveAliasOutputByQuorum,
 		c.pipeliningLimit,
+		c.consensusDelay,
 	)
 	if err != nil {
 		chainCancel()

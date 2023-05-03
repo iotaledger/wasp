@@ -5,7 +5,6 @@ package jsonrpc
 
 import (
 	"fmt"
-	"math/big"
 	"sync"
 	"time"
 
@@ -26,7 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 type WaspEVMBackend struct {
@@ -118,30 +116,6 @@ func (b *WaspEVMBackend) EVMTraceTransaction(
 		txIndex,
 		tracer,
 	)
-}
-
-func (b *WaspEVMBackend) EVMGasPrice() *big.Int {
-	latestState := b.ISCLatestState()
-	res, err := chainutil.CallView(latestState, b.chain, governance.Contract.Hname(), governance.ViewGetFeePolicy.Hname(), nil)
-	if err != nil {
-		panic(fmt.Sprintf("couldn't call gasFeePolicy view: %s ", err.Error()))
-	}
-	feePolicy, err := gas.FeePolicyFromBytes(res.Get(governance.ParamFeePolicyBytes))
-	if err != nil {
-		panic(fmt.Sprintf("couldn't decode fee policy: %s ", err.Error()))
-	}
-
-	// convert to wei (18 decimals)
-	decimalsDifference := 18 - parameters.L1().BaseToken.Decimals
-	price := big.NewInt(10)
-	price.Exp(price, new(big.Int).SetUint64(uint64(decimalsDifference)), nil)
-
-	price.Mul(price, new(big.Int).SetUint64(uint64(feePolicy.EVMGasRatio.A)))
-	price.Div(price, new(big.Int).SetUint64(uint64(feePolicy.EVMGasRatio.B)))
-	price.Mul(price, new(big.Int).SetUint64(uint64(feePolicy.GasPerToken.A)))
-	price.Div(price, new(big.Int).SetUint64(uint64(feePolicy.GasPerToken.B)))
-
-	return price
 }
 
 func (b *WaspEVMBackend) ISCCallView(chainState state.State, scName, funName string, args dict.Dict) (dict.Dict, error) {

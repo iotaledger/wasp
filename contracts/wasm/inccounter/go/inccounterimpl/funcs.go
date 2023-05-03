@@ -41,6 +41,7 @@ func funcCallIncrementRecurse5x(ctx wasmlib.ScFuncContext, f *CallIncrementRecur
 	}
 }
 
+//nolint:revive
 func funcEndlessLoop(_ wasmlib.ScFuncContext, _ *EndlessLoopContext) {
 	for {
 		// intentional endless loop to see if Wasm VM can be interrupted
