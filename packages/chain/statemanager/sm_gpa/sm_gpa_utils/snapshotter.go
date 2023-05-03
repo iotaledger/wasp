@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/trie"
 )
 
 type snapshotterImpl struct {
@@ -93,7 +94,7 @@ func (sn *snapshotterImpl) BlockCommitted(block state.Block) {
 		}
 		go func() {
 			sn.log.Debugf("State index %v commitment %s obtained, iterating it and writing to file", index, commitment)
-			err := writeSnapshotToFile(snapshot, tmpFilePath, f)
+			err := writeSnapshotToFile(commitment.TrieRoot(), snapshot, tmpFilePath, f)
 			if err != nil {
 				sn.log.Errorf("Failed to write state index %v commitment %s to temporary snapshot file: %w", index, commitment, err)
 				return
@@ -138,11 +139,26 @@ func (sn *snapshotterImpl) cleanTempFiles() {
 	sn.log.Debugf("Removed %v out of %v temporary snapshot files", removed, len(tempFiles))
 }
 
-func writeSnapshotToFile(snapshot kvstore.KVStore, filePath string, f *os.File) error {
+func writeSnapshotToFile(trieRoot trie.Hash, snapshot kvstore.KVStore, filePath string, f *os.File) error {
 	defer f.Close()
 
-	var err error
-	err = nil
+	trieRootBytes := trieRoot.Bytes()
+	n, err := f.Write(arrayLengthToArray(trieRootBytes))
+	if n != constLengthArrayLength {
+		return fmt.Errorf("only %v of total %v bytes of trie root %s length were written to file %s", n, constLengthArrayLength, trieRoot, filePath)
+	}
+	if err != nil {
+		return fmt.Errorf("failed writing trie root %s length to file %s: %w", trieRoot, filePath, err)
+	}
+
+	n, err = f.Write(trieRootBytes)
+	if n != len(trieRootBytes) {
+		return fmt.Errorf("only %v of total %v bytes of trie root %s were written to file %s", n, len(trieRootBytes), trieRoot, filePath)
+	}
+	if err != nil {
+		return fmt.Errorf("failed writing trie root %s to file %s: %w", trieRoot, filePath, err)
+	}
+
 	iterErr := snapshot.Iterate(kvstore.EmptyPrefix, func(key kvstore.Key, value kvstore.Value) bool {
 		n, e := f.Write(arrayLengthToArray(key))
 		if n != constLengthArrayLength {
@@ -194,61 +210,86 @@ func writeSnapshotToFile(snapshot kvstore.KVStore, filePath string, f *os.File) 
 	return err
 }
 
-func readSnapshotFromFile(filePath string) (kvstore.KVStore, error) {
+func readSnapshotFromFile(filePath string) (trie.Hash, kvstore.KVStore, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to open snapshot file %s: %w", filePath, err)
+		return trie.Hash{}, nil, fmt.Errorf("Failed to open snapshot file %s: %w", filePath, err)
 	}
 	defer f.Close()
 
 	snapshot := mapdb.NewMapDB()
 	lenArray := make([]byte, constLengthArrayLength)
-	for read, err := f.Read(lenArray); err != io.EOF; read, err = f.Read(lenArray) {
+	read, err := f.Read(lenArray)
+	if err != nil {
+		return trie.Hash{}, nil, fmt.Errorf("failed to read trie root length: %w", err)
+	}
+	if read < constLengthArrayLength {
+		return trie.Hash{}, nil, fmt.Errorf("read only %v bytes out of %v of trie root length", read, constLengthArrayLength)
+	}
+
+	trieRootArray, err := arrayToArrayOfLength(lenArray)
+	if err != nil {
+		return trie.Hash{}, nil, fmt.Errorf("failed to parse trie root length: %w", err)
+	}
+	read, err = f.Read(trieRootArray)
+	if err != nil {
+		return trie.Hash{}, nil, fmt.Errorf("failed to read trie root: %w", err)
+	}
+	if read < len(trieRootArray) {
+		return trie.Hash{}, nil, fmt.Errorf("read only %v bytes out of %v of trie root", read, len(trieRootArray))
+	}
+
+	trieRoot, err := trie.HashFromBytes(trieRootArray)
+	if err != nil {
+		return trie.Hash{}, nil, fmt.Errorf("failed to read parse trie root: %w", err)
+	}
+
+	for read, err = f.Read(lenArray); err != io.EOF; read, err = f.Read(lenArray) {
 		if err != nil {
-			return nil, fmt.Errorf("failed to read key length: %w", err)
+			return trie.Hash{}, nil, fmt.Errorf("failed to read key length: %w", err)
 		}
 		if read < constLengthArrayLength {
-			return nil, fmt.Errorf("read only %v bytes out of %v of key length", read, constLengthArrayLength)
+			return trie.Hash{}, nil, fmt.Errorf("read only %v bytes out of %v of key length", read, constLengthArrayLength)
 		}
 
 		key, err := arrayToArrayOfLength(lenArray)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse key length: %w", err)
+			return trie.Hash{}, nil, fmt.Errorf("failed to parse key length: %w", err)
 		}
 		read, err = f.Read(key)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read key: %w", err)
+			return trie.Hash{}, nil, fmt.Errorf("failed to read key: %w", err)
 		}
 		if read < len(key) {
-			return nil, fmt.Errorf("read only %v bytes out of %v of key", read, len(key))
+			return trie.Hash{}, nil, fmt.Errorf("read only %v bytes out of %v of key", read, len(key))
 		}
 
 		read, err := f.Read(lenArray)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read value length of key %v: %w", key, err)
+			return trie.Hash{}, nil, fmt.Errorf("failed to read value length of key %v: %w", key, err)
 		}
 		if read < constLengthArrayLength {
-			return nil, fmt.Errorf("read only %v bytes out of %v of value length of key %v", read, constLengthArrayLength, key)
+			return trie.Hash{}, nil, fmt.Errorf("read only %v bytes out of %v of value length of key %v", read, constLengthArrayLength, key)
 		}
 
 		value, err := arrayToArrayOfLength(lenArray)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse value length of key %v: %w", key, err)
+			return trie.Hash{}, nil, fmt.Errorf("failed to parse value length of key %v: %w", key, err)
 		}
 		read, err = f.Read(value)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read value of key %v: %w", key, err)
+			return trie.Hash{}, nil, fmt.Errorf("failed to read value of key %v: %w", key, err)
 		}
 		if read < len(value) {
-			return nil, fmt.Errorf("read only %v bytes out of %v of value of key %v", read, len(value), key)
+			return trie.Hash{}, nil, fmt.Errorf("read only %v bytes out of %v of value of key %v", read, len(value), key)
 		}
 
 		err = snapshot.Set(key, value)
 		if err != nil {
-			return nil, fmt.Errorf("failed setting key %v value %v: %w", key, value, err)
+			return trie.Hash{}, nil, fmt.Errorf("failed setting key %v value %v: %w", key, value, err)
 		}
 	}
-	return snapshot, nil
+	return trieRoot, snapshot, nil
 }
 
 func tempSnapshotFileName(index uint32, blockHash state.BlockHash) string {
