@@ -64,7 +64,7 @@ func (s *istore) findTrieRootByIndex(index uint32) (trie.Hash, error) {
 		)
 	}
 	if index == latestIndex {
-		return s.LatestTrieRoot()
+		return latestState.TrieRoot(), nil
 	}
 	blocklogStatePartition := subrealm.NewReadOnly(latestState, kv.Key(blocklog.Contract.Hname().Bytes()))
 	nextBlockInfo, err := blocklog.GetBlockInfo(blocklogStatePartition, index+1)
