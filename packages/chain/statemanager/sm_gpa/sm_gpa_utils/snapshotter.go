@@ -15,11 +15,11 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -85,14 +85,15 @@ func (sn *snapshotterImpl) BlockCommitted(block state.Block) {
 			return
 		}
 		sn.log.Debugf("Starting making state snapshot on index %v commitment %s", index, commitment)
-		state, err := sn.store.StateByTrieRoot(commitment.TrieRoot())
+		snapshot := mapdb.NewMapDB()
+		err = sn.store.TakeSnapshot(commitment.TrieRoot(), snapshot)
 		if err != nil {
-			sn.log.Errorf("Failed to obtain state %s: %v", commitment, err)
+			sn.log.Errorf("Failed to obtain snapshot %s: %v", commitment, err)
 			return
 		}
 		go func() {
 			sn.log.Debugf("State index %v commitment %s obtained, iterating it and writing to file", index, commitment)
-			err := writeStateToFile(state, tmpFilePath, f)
+			err := writeSnapshotToFile(snapshot, tmpFilePath, f)
 			if err != nil {
 				sn.log.Errorf("Failed to write state index %v commitment %s to temporary snapshot file: %w", index, commitment, err)
 				return
@@ -137,50 +138,49 @@ func (sn *snapshotterImpl) cleanTempFiles() {
 	sn.log.Debugf("Removed %v out of %v temporary snapshot files", removed, len(tempFiles))
 }
 
-func writeStateToFile(state state.State, filePath string, f *os.File) error {
+func writeSnapshotToFile(snapshot kvstore.KVStore, filePath string, f *os.File) error {
 	defer f.Close()
 
 	var err error
 	err = nil
-	state.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
-		keyBytes := []byte(key)
-		n, e := f.Write(arrayLengthToArray(keyBytes))
+	snapshot.Iterate(kvstore.EmptyPrefix, func(key kvstore.Key, value kvstore.Value) bool {
+		n, e := f.Write(arrayLengthToArray(key))
 		if n != constLengthArrayLength {
-			err = fmt.Errorf("only %v of total %v bytes of key %s length were written to file %s", n, constLengthArrayLength, key, filePath)
+			err = fmt.Errorf("only %v of total %v bytes of key %v length were written to file %s", n, constLengthArrayLength, key, filePath)
 			return false
 		}
 		if e != nil {
-			err = fmt.Errorf("failed writing key %s length to file %s: %w", key, filePath, e)
+			err = fmt.Errorf("failed writing key %v length to file %s: %w", key, filePath, e)
 			return false
 		}
 
-		n, e = f.Write(keyBytes)
-		if n != len(keyBytes) {
-			err = fmt.Errorf("only %v of total %v bytes of key %s were written to file %s", n, len(keyBytes), key, filePath)
+		n, e = f.Write(key)
+		if n != len(key) {
+			err = fmt.Errorf("only %v of total %v bytes of key %v were written to file %s", n, len(key), key, filePath)
 			return false
 		}
 		if e != nil {
-			err = fmt.Errorf("failed writing key %s to file %s: %w", key, filePath, e)
+			err = fmt.Errorf("failed writing key %v to file %s: %w", key, filePath, e)
 			return false
 		}
 
 		n, e = f.Write(arrayLengthToArray(value))
 		if n != constLengthArrayLength {
-			err = fmt.Errorf("only %v of total %v bytes of value of key %s length were written to file %s", n, constLengthArrayLength, key, filePath)
+			err = fmt.Errorf("only %v of total %v bytes of value of key %v length were written to file %s", n, constLengthArrayLength, key, filePath)
 			return false
 		}
 		if e != nil {
-			err = fmt.Errorf("failed writing value of key %s length to file %s: %w", key, filePath, e)
+			err = fmt.Errorf("failed writing value of key %v length to file %s: %w", key, filePath, e)
 			return false
 		}
 
 		n, e = f.Write(value)
 		if n != len(value) {
-			err = fmt.Errorf("only %v of total %v bytes of value of key %s were written to file %s", n, len(value), key, filePath)
+			err = fmt.Errorf("only %v of total %v bytes of value of key %v were written to file %s", n, len(value), key, filePath)
 			return false
 		}
 		if e != nil {
-			err = fmt.Errorf("failed writing value of key %s to file %s: %w", key, filePath, e)
+			err = fmt.Errorf("failed writing value of key %v to file %s: %w", key, filePath, e)
 			return false
 		}
 
@@ -190,14 +190,14 @@ func writeStateToFile(state state.State, filePath string, f *os.File) error {
 	return err
 }
 
-func readStateFromFile(filePath string) (*buffered.Mutations, error) {
+func readSnapshotFromFile(filePath string) (kvstore.KVStore, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to open snapshot file %s: %w", filePath, err)
 	}
 	defer f.Close()
 
-	mutations := buffered.NewMutations()
+	snapshot := mapdb.NewMapDB()
 	lenArray := make([]byte, constLengthArrayLength)
 	for read, err := f.Read(lenArray); err != io.EOF; read, err = f.Read(lenArray) {
 		if err != nil {
@@ -207,41 +207,40 @@ func readStateFromFile(filePath string) (*buffered.Mutations, error) {
 			return nil, fmt.Errorf("read only %v bytes out of %v of key length", read, constLengthArrayLength)
 		}
 
-		keyArray, err := arrayToArrayOfLength(lenArray)
+		key, err := arrayToArrayOfLength(lenArray)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse key length: %w", err)
 		}
-		read, err = f.Read(keyArray)
+		read, err = f.Read(key)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read key: %w", err)
 		}
-		if read < len(keyArray) {
-			return nil, fmt.Errorf("read only %v bytes out of %v of key", read, len(keyArray))
+		if read < len(key) {
+			return nil, fmt.Errorf("read only %v bytes out of %v of key", read, len(key))
 		}
-		key := kv.Key(keyArray)
 
 		read, err := f.Read(lenArray)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read value length of key %s: %w", key, err)
+			return nil, fmt.Errorf("failed to read value length of key %v: %w", key, err)
 		}
 		if read < constLengthArrayLength {
-			return nil, fmt.Errorf("read only %v bytes out of %v of value length of key %s", read, constLengthArrayLength, key)
+			return nil, fmt.Errorf("read only %v bytes out of %v of value length of key %v", read, constLengthArrayLength, key)
 		}
 
 		value, err := arrayToArrayOfLength(lenArray)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse value length of key %s: %w", key, err)
+			return nil, fmt.Errorf("failed to parse value length of key %v: %w", key, err)
 		}
 		read, err = f.Read(value)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read value of key %s: %w", key, err)
+			return nil, fmt.Errorf("failed to read value of key %v: %w", key, err)
 		}
 		if read < len(value) {
-			return nil, fmt.Errorf("read only %v bytes out of %v of value of key %s", read, len(value), key)
+			return nil, fmt.Errorf("read only %v bytes out of %v of value of key %v", read, len(value), key)
 		}
-		mutations.Set(key, value)
+		snapshot.Set(key, value)
 	}
-	return mutations, nil
+	return snapshot, nil
 }
 
 func tempSnapshotFileName(index uint32, blockHash state.BlockHash) string {

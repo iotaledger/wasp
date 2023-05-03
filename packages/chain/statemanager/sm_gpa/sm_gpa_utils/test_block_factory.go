@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
@@ -155,6 +156,13 @@ func (bfT *BlockFactory) GetStateDraft(block state.Block) state.StateDraft {
 
 func (bfT *BlockFactory) GetState(commitment *state.L1Commitment) state.State {
 	result, err := bfT.store.StateByTrieRoot(commitment.TrieRoot())
+	require.NoError(bfT.t, err)
+	return result
+}
+
+func (bfT *BlockFactory) GetSnapshot(commitment *state.L1Commitment) kvstore.KVStore {
+	result := mapdb.NewMapDB()
+	err := bfT.store.TakeSnapshot(commitment.TrieRoot(), result)
 	require.NoError(bfT.t, err)
 	return result
 }
