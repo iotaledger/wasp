@@ -6,6 +6,7 @@ package state
 import (
 	"time"
 
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/trie"
@@ -67,6 +68,13 @@ type Store interface {
 	// ExtractBlock performs a dry-run of Commit, discarding all changes that would be
 	// made to the DB.
 	ExtractBlock(StateDraft) Block
+
+	// TakeSnapshot takes a snapshot of the block and trie at the given trie root.
+	TakeSnapshot(trie.Hash, kvstore.KVStore) error
+
+	// RestoreSnapshot restores the block and trie from the given snapshot.
+	// It is not required for the previous trie root to be present in the DB.
+	RestoreSnapshot(trie.Hash, kvstore.KVStore) error
 }
 
 // A Block contains the mutations between the previous and current states,

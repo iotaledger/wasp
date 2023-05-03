@@ -1,7 +1,6 @@
 package trie
 
 import (
-	"bytes"
 	"encoding/hex"
 )
 
@@ -50,11 +49,7 @@ func (n *bufferedNode) commitNode(triePartition, valuePartition KVWriter) {
 }
 
 func (n *bufferedNode) mustPersist(w KVWriter) {
-	dbKey := n.nodeData.Commitment.Bytes()
-	var buf bytes.Buffer
-	err := n.nodeData.Write(&buf)
-	assertNoError(err)
-	w.Set(dbKey, buf.Bytes())
+	n.nodeData.mustPersist(w)
 }
 
 func (n *bufferedNode) isRoot() bool {

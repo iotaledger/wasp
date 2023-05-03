@@ -59,20 +59,24 @@ func (db *storeDB) setLatestTrieRoot(root trie.Hash) {
 	db.mustSet(keyLatestTrieRoot(), root.Bytes())
 }
 
-func (db *storeDB) trieStore() trie.KVStore {
+func trieStore(db kvstore.KVStore) trie.KVStore {
 	return trie.NewHiveKVStoreAdapter(db, []byte{chaindb.PrefixTrie})
 }
 
 func (db *storeDB) trieUpdatable(root trie.Hash) (*trie.TrieUpdatable, error) {
-	return trie.NewTrieUpdatable(db.trieStore(), root)
+	return trie.NewTrieUpdatable(trieStore(db), root)
 }
 
 func (db *storeDB) initTrie() trie.Hash {
-	return trie.MustInitRoot(db.trieStore())
+	return trie.MustInitRoot(trieStore(db))
 }
 
 func (db *storeDB) trieReader(root trie.Hash) (*trie.TrieReader, error) {
-	return trie.NewTrieReader(db.trieStore(), root)
+	return trieReader(trieStore(db), root)
+}
+
+func trieReader(trieStore trie.KVStore, root trie.Hash) (*trie.TrieReader, error) {
+	return trie.NewTrieReader(trieStore, root)
 }
 
 func (db *storeDB) hasBlock(root trie.Hash) bool {
@@ -126,4 +130,40 @@ func (db *storeDB) mustGet(key []byte) []byte {
 func (db *storeDB) buffered() (*bufferedKVStore, *storeDB) {
 	buf := newBufferedKVStore(db)
 	return buf, &storeDB{buf}
+}
+
+func (db *storeDB) takeSnapshot(root trie.Hash, snapshot kvstore.KVStore) error {
+	if !db.hasBlock(root) {
+		return fmt.Errorf("cannot take snapshot: trie root not found: %s", root)
+	}
+	blockKey := keyBlockByTrieRoot(root)
+	err := snapshot.Set(blockKey, db.mustGet(blockKey))
+	if err != nil {
+		return err
+	}
+
+	trie, err := db.trieReader(root)
+	if err != nil {
+		return err
+	}
+	trie.CopyToStore(trieStore(snapshot))
+	return nil
+}
+
+func (db *storeDB) restoreSnapshot(root trie.Hash, snapshot kvstore.KVStore) error {
+	blockKey := keyBlockByTrieRoot(root)
+	blockBytes, err := snapshot.Get(blockKey)
+	if err != nil {
+		return err
+	}
+	db.mustSet(blockKey, blockBytes)
+
+	trieSnapshot, err := trieReader(trieStore(snapshot), root)
+	if err != nil {
+		return err
+	}
+	trieSnapshot.CopyToStore(trieStore(db))
+
+	db.setLatestTrieRoot(root)
+	return nil
 }

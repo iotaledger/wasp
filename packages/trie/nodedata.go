@@ -93,6 +93,14 @@ func (n *NodeData) String() string {
 		n.Commitment, n.PathExtension, childIdx, t)
 }
 
+func (n *NodeData) mustPersist(w KVWriter) {
+	dbKey := n.Commitment.Bytes()
+	var buf bytes.Buffer
+	err := n.Write(&buf)
+	assertNoError(err)
+	w.Set(dbKey, buf.Bytes())
+}
+
 // Read/Write implements optimized serialization of the trie node
 // The serialization of the node takes advantage of the fact that most of the
 // nodes has just few children.
