@@ -1,6 +1,7 @@
 package trie
 
 import (
+	"fmt"
 	"bytes"
 	"encoding/hex"
 	"io"
@@ -56,8 +57,14 @@ func (h Hash) Bytes() []byte {
 }
 
 func (h *Hash) Read(r io.Reader) error {
-	_, err := r.Read(h[:])
-	return err
+	n, err := r.Read(h[:])
+	if err != nil {
+		return err
+	}
+	if n < HashSizeBytes {
+		return fmt.Errorf("only %v bytes of %v read", n, HashSizeBytes)
+	}
+	return nil
 }
 
 func (h Hash) Write(w io.Writer) error {
