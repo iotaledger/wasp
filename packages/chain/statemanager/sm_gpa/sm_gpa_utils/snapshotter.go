@@ -9,6 +9,7 @@ package sm_gpa_utils
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -94,9 +95,9 @@ func (sn *snapshotterImpl) BlockCommitted(block state.Block) {
 		}
 		go func() {
 			sn.log.Debugf("State index %v commitment %s obtained, iterating it and writing to file", index, commitment)
-			err := writeSnapshotToFile(commitment.TrieRoot(), snapshot, tmpFilePath, f)
+			err := writeSnapshotToFile(commitment.TrieRoot(), snapshot, f)
 			if err != nil {
-				sn.log.Errorf("Failed to write state index %v commitment %s to temporary snapshot file: %w", index, commitment, err)
+				sn.log.Errorf("Failed to write state index %v commitment %s to temporary snapshot file %s: %w", index, commitment, tmpFilePath, err)
 				return
 			}
 
@@ -139,64 +140,25 @@ func (sn *snapshotterImpl) cleanTempFiles() {
 	sn.log.Debugf("Removed %v out of %v temporary snapshot files", removed, len(tempFiles))
 }
 
-func writeSnapshotToFile(trieRoot trie.Hash, snapshot kvstore.KVStore, filePath string, f *os.File) error {
+func writeSnapshotToFile(trieRoot trie.Hash, snapshot kvstore.KVStore, f *os.File) error {
 	defer f.Close()
 
 	trieRootBytes := trieRoot.Bytes()
-	n, err := f.Write(arrayLengthToArray(trieRootBytes))
-	if n != constLengthArrayLength {
-		return fmt.Errorf("only %v of total %v bytes of trie root %s length were written to file %s", n, constLengthArrayLength, trieRoot, filePath)
-	}
+	err := writeBytes(trieRootBytes, f)
 	if err != nil {
-		return fmt.Errorf("failed writing trie root %s length to file %s: %w", trieRoot, filePath, err)
-	}
-
-	n, err = f.Write(trieRootBytes)
-	if n != len(trieRootBytes) {
-		return fmt.Errorf("only %v of total %v bytes of trie root %s were written to file %s", n, len(trieRootBytes), trieRoot, filePath)
-	}
-	if err != nil {
-		return fmt.Errorf("failed writing trie root %s to file %s: %w", trieRoot, filePath, err)
+		return fmt.Errorf("failed writing trie root %s: %w", trieRoot, err)
 	}
 
 	iterErr := snapshot.Iterate(kvstore.EmptyPrefix, func(key kvstore.Key, value kvstore.Value) bool {
-		n, e := f.Write(arrayLengthToArray(key))
-		if n != constLengthArrayLength {
-			err = fmt.Errorf("only %v of total %v bytes of key %v length were written to file %s", n, constLengthArrayLength, key, filePath)
-			return false
-		}
+		e := writeBytes(key, f)
 		if e != nil {
-			err = fmt.Errorf("failed writing key %v length to file %s: %w", key, filePath, e)
+			err = fmt.Errorf("failed writing key %v: %w", key, e)
 			return false
 		}
 
-		n, e = f.Write(key)
-		if n != len(key) {
-			err = fmt.Errorf("only %v of total %v bytes of key %v were written to file %s", n, len(key), key, filePath)
-			return false
-		}
+		e = writeBytes(value, f)
 		if e != nil {
-			err = fmt.Errorf("failed writing key %v to file %s: %w", key, filePath, e)
-			return false
-		}
-
-		n, e = f.Write(arrayLengthToArray(value))
-		if n != constLengthArrayLength {
-			err = fmt.Errorf("only %v of total %v bytes of value of key %v length were written to file %s", n, constLengthArrayLength, key, filePath)
-			return false
-		}
-		if e != nil {
-			err = fmt.Errorf("failed writing value of key %v length to file %s: %w", key, filePath, e)
-			return false
-		}
-
-		n, e = f.Write(value)
-		if n != len(value) {
-			err = fmt.Errorf("only %v of total %v bytes of value of key %v were written to file %s", n, len(value), key, filePath)
-			return false
-		}
-		if e != nil {
-			err = fmt.Errorf("failed writing value of key %v to file %s: %w", key, filePath, e)
+			err = fmt.Errorf("failed writing key's %v value %v: %w", key, value, e)
 			return false
 		}
 
@@ -217,76 +179,29 @@ func readSnapshotFromFile(filePath string) (trie.Hash, kvstore.KVStore, error) {
 	}
 	defer f.Close()
 
-	snapshot := mapdb.NewMapDB()
-	lenArray := make([]byte, constLengthArrayLength)
-	read, err := f.Read(lenArray)
-	if err != nil {
-		return trie.Hash{}, nil, fmt.Errorf("failed to read trie root length: %w", err)
-	}
-	if read < constLengthArrayLength {
-		return trie.Hash{}, nil, fmt.Errorf("read only %v bytes out of %v of trie root length", read, constLengthArrayLength)
-	}
-
-	trieRootArray, err := arrayToArrayOfLength(lenArray)
-	if err != nil {
-		return trie.Hash{}, nil, fmt.Errorf("failed to parse trie root length: %w", err)
-	}
-	read, err = f.Read(trieRootArray)
+	trieRootArray, err := readBytes(f)
 	if err != nil {
 		return trie.Hash{}, nil, fmt.Errorf("failed to read trie root: %w", err)
 	}
-	if read < len(trieRootArray) {
-		return trie.Hash{}, nil, fmt.Errorf("read only %v bytes out of %v of trie root", read, len(trieRootArray))
-	}
-
 	trieRoot, err := trie.HashFromBytes(trieRootArray)
 	if err != nil {
 		return trie.Hash{}, nil, fmt.Errorf("failed to read parse trie root: %w", err)
 	}
 
-	for read, err = f.Read(lenArray); err != io.EOF; read, err = f.Read(lenArray) {
-		if err != nil {
-			return trie.Hash{}, nil, fmt.Errorf("failed to read key length: %w", err)
-		}
-		if read < constLengthArrayLength {
-			return trie.Hash{}, nil, fmt.Errorf("read only %v bytes out of %v of key length", read, constLengthArrayLength)
-		}
-
-		key, err := arrayToArrayOfLength(lenArray)
-		if err != nil {
-			return trie.Hash{}, nil, fmt.Errorf("failed to parse key length: %w", err)
-		}
-		read, err = f.Read(key)
+	snapshot := mapdb.NewMapDB()
+	for key, err := readBytes(f); !errors.Is(err, io.EOF); key, err = readBytes(f) {
 		if err != nil {
 			return trie.Hash{}, nil, fmt.Errorf("failed to read key: %w", err)
 		}
-		if read < len(key) {
-			return trie.Hash{}, nil, fmt.Errorf("read only %v bytes out of %v of key", read, len(key))
-		}
 
-		read, err := f.Read(lenArray)
-		if err != nil {
-			return trie.Hash{}, nil, fmt.Errorf("failed to read value length of key %v: %w", key, err)
-		}
-		if read < constLengthArrayLength {
-			return trie.Hash{}, nil, fmt.Errorf("read only %v bytes out of %v of value length of key %v", read, constLengthArrayLength, key)
-		}
-
-		value, err := arrayToArrayOfLength(lenArray)
-		if err != nil {
-			return trie.Hash{}, nil, fmt.Errorf("failed to parse value length of key %v: %w", key, err)
-		}
-		read, err = f.Read(value)
+		value, err := readBytes(f)
 		if err != nil {
 			return trie.Hash{}, nil, fmt.Errorf("failed to read value of key %v: %w", key, err)
-		}
-		if read < len(value) {
-			return trie.Hash{}, nil, fmt.Errorf("read only %v bytes out of %v of value of key %v", read, len(value), key)
 		}
 
 		err = snapshot.Set(key, value)
 		if err != nil {
-			return trie.Hash{}, nil, fmt.Errorf("failed setting key %v value %v: %w", key, value, err)
+			return trie.Hash{}, nil, fmt.Errorf("failed to set key's %v value %v to snapshot: %w", key, value, err)
 		}
 	}
 	return trieRoot, snapshot, nil
@@ -306,6 +221,51 @@ func snapshotFileName(index uint32, blockHash state.BlockHash) string {
 
 func snapshotFileNameString(index string, blockHash string) string {
 	return index + constSnapshotIndexHashFileNameSepparator + blockHash + constSnapshotFileSuffix
+}
+
+func writeBytes(bytes []byte, f *os.File) error {
+	n, err := f.Write(arrayLengthToArray(bytes))
+	if n != constLengthArrayLength {
+		return fmt.Errorf("only %v of total %v bytes of length written", n, constLengthArrayLength)
+	}
+	if err != nil {
+		return fmt.Errorf("failed writing length: %w", err)
+	}
+
+	n, err = f.Write(bytes)
+	if n != len(bytes) {
+		return fmt.Errorf("only %v of total %v bytes of array written", n, len(bytes))
+	}
+	if err != nil {
+		return fmt.Errorf("failed writing array: %w", err)
+	}
+
+	return nil
+}
+
+func readBytes(f *os.File) ([]byte, error) {
+	lenArray := make([]byte, constLengthArrayLength)
+	read, err := f.Read(lenArray)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read length: %w", err)
+	}
+	if read < constLengthArrayLength {
+		return nil, fmt.Errorf("read only %v bytes out of %v of length", read, constLengthArrayLength)
+	}
+
+	array, err := arrayToArrayOfLength(lenArray)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse length: %w", err)
+	}
+	read, err = f.Read(array)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read array: %w", err)
+	}
+	if read < len(array) {
+		return nil, fmt.Errorf("only %v of %v bytes of array read", read, len(array))
+	}
+
+	return array, nil
 }
 
 func arrayLengthToArray(array []byte) []byte {

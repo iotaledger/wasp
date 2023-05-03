@@ -26,7 +26,7 @@ func TestWriteReadDifferentStores(t *testing.T) {
 	fileName := "TestWriteReadDifferentStores.snap"
 	f, err := os.OpenFile(fileName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 	require.NoError(t, err)
-	err = writeSnapshotToFile(lastCommitment.TrieRoot(), origSnapshot, fileName, f)
+	err = writeSnapshotToFile(lastCommitment.TrieRoot(), origSnapshot, f)
 	require.NoError(t, err)
 	newTrieRoot, newSnapshot, err := readSnapshotFromFile(fileName)
 	require.NoError(t, err)
