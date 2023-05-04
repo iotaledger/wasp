@@ -290,12 +290,12 @@ func (e *EthService) EstimateGas(args *RPCCallArgs, blockNumberOrHash *rpc.Block
 	)
 }
 
-func (e *EthService) getStorageAt(address common.Address, key common.Hash, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
-	ret, err := e.evmChain.StorageAt(address, key, blockNumberOrHash)
+func (e *EthService) getStorageAt(address common.Address, key string, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
+	ret, err := e.evmChain.StorageAt(address, common.HexToHash(key), blockNumberOrHash)
 	return ret[:], e.resolveError(err)
 }
 
-func (e *EthService) GetStorageAt(address common.Address, key common.Hash, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
+func (e *EthService) GetStorageAt(address common.Address, key string, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
 	return withMetrics(
 		e.metrics, "eth_getStorageAt",
 		func() (hexutil.Bytes, error) {
