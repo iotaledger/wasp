@@ -47,7 +47,6 @@ export class ScAddress {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// TODO address type-dependent encoding/decoding?
 export function addressDecode(dec: WasmDecoder): ScAddress {
     const addr = new ScAddress();
     addr.id = dec.fixedBytes(ScAddressLength);

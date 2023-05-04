@@ -37,7 +37,6 @@ func (o ScAddress) String() string {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// TODO address type-dependent encoding/decoding?
 func AddressDecode(dec *WasmDecoder) ScAddress {
 	addr := ScAddress{}
 	copy(addr.id[:], dec.FixedBytes(ScAddressLength))
