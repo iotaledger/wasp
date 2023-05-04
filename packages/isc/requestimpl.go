@@ -583,7 +583,12 @@ func (r *onLedgerRequestData) RetryOutput(chainAliasID iotago.AliasID) iotago.Ou
 	if metadata == nil {
 		metadata = &iotago.MetadataFeature{}
 	}
-	features := iotago.Features{metadata}
+	features := iotago.Features{
+		&iotago.SenderFeature{
+			Address: chainAliasID.ToAddress(), // must have the chain as the sender, so its recognized as an internalUTXO
+		},
+		metadata,
+	}
 
 	unlock := iotago.UnlockConditions{
 		&iotago.AddressUnlockCondition{
@@ -621,9 +626,6 @@ func (r *onLedgerRequestData) IsInternalUTXO(chainID ChainID) bool {
 		return false
 	}
 	if !r.SenderAddress().Equal(chainID.AsAddress()) {
-		return false
-	}
-	if r.requestMetadata != nil {
 		return false
 	}
 	return true

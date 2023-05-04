@@ -640,6 +640,8 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 
 // - Re-add all the request from the reverted blocks.
 // - Cleanup requests from the blocks that were added.
+//
+//nolint:gocyclo
 func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 	mpi.log.Debugf("handleTrackNewChainHead, %v from %v, current=%v", req.till, req.from, mpi.chainHeadAO)
 	if len(req.removed) != 0 {
@@ -654,6 +656,9 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 			panic(fmt.Errorf("cannot extract receipts from block: %w", err))
 		}
 		for _, receipt := range blockReceipts {
+			if blocklog.HasUnprocessableRequestBeenRemovedInBlock(block, receipt.Request.ID()) {
+				continue // do not add unprocessable requests that were successfully retried back into the mempool in case of a reorg
+			}
 			mpi.tryReAddRequest(receipt.Request)
 		}
 	}
@@ -669,6 +674,14 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 		for _, receipt := range blockReceipts {
 			mpi.metrics.IncRequestsProcessed()
 			mpi.tryRemoveRequest(receipt.Request)
+		}
+		unprocessableRequests, err := blocklog.UnprocessableRequestsAddedInBlock(block)
+		if err != nil {
+			panic(fmt.Errorf("cannot extract unprocessable requests from block: %w", err))
+		}
+		for _, req := range unprocessableRequests {
+			mpi.metrics.IncRequestsProcessed()
+			mpi.tryRemoveRequest(req)
 		}
 	}
 	//

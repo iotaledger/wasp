@@ -9,6 +9,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/packages/state"
 )
 
 type unprocessableRequestRecord struct {
@@ -106,4 +108,27 @@ func retryUnprocessable(ctx isc.Sandbox) dict.Dict {
 	}
 	ctx.Privileged().RetryUnprocessable(rec, blockIndex, outputIndex)
 	return nil
+}
+
+func UnprocessableRequestsAddedInBlock(block state.Block) ([]isc.Request, error) {
+	var respErr error
+	requests := []isc.Request{}
+	kvStore := subrealm.NewReadOnly(block.MutationsReader(), kv.Key(Contract.Hname().Bytes()))
+	unprocessableMapR(kvStore).Iterate(func(_, recData []byte) bool {
+		rec, err := unprocessableRequestRecordFromBytes(recData)
+		if err != nil {
+			respErr = err
+			return false
+		}
+		requests = append(requests, rec.req)
+		return true
+	})
+	return requests, respErr
+}
+
+func HasUnprocessableRequestBeenRemovedInBlock(block state.Block, requestID isc.RequestID) bool {
+	keyBytes := Contract.Hname().Bytes()
+	keyBytes = append(keyBytes, collections.MapElemKey(prefixUnprocessableRequests, requestID.Bytes())...)
+	_, wasRemoved := block.Mutations().Dels[kv.Key(keyBytes)]
+	return wasRemoved
 }

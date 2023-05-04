@@ -70,14 +70,6 @@ type RequestResult struct {
 	Receipt *blocklog.RequestReceipt
 }
 
-func (task *VMTask) GetProcessedRequestIDs() []isc.RequestID {
-	ret := make([]isc.RequestID, len(task.Results))
-	for i, res := range task.Results {
-		ret[i] = res.Request.ID()
-	}
-	return ret
-}
-
 func (task *VMTask) WillProduceBlock() bool {
 	return !task.EstimateGasMode && task.EVMTracer == nil
 }

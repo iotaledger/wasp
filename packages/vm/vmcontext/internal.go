@@ -189,14 +189,6 @@ func (vmctx *VMContext) storeUnprocessable(lastInternalAssetUTXOIndex uint16) {
 				}
 				// save the unprocessable requests and respective output indices onto the state so they can be retried later
 				blocklog.SaveUnprocessable(s, r, blockIndex, uint16(outputIndex))
-
-				// TODO the following works in solo but its not good enough for the real node, remove
-				// // add the unprocessable request to the task results, so it can be removed from the mempool
-				// vmctx.task.Results = append(vmctx.task.Results, &vm.RequestResult{
-				// 	Request: r,
-				// 	Return:  nil,
-				// 	Receipt: nil,
-				// })
 			})
 			if err != nil {
 				// protocol exception triggered. Rollback

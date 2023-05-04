@@ -103,7 +103,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	// Otherwise it all goes to the common sender and panics is logged in the SC call
 	sender := vmctx.req.SenderAccount()
 	if sender == nil {
-		panic("nil sender, should never happen")
+		panic("nil sender should never happen")
 	}
 
 	senderBaseTokens := vmctx.req.Assets().BaseTokens + vmctx.GetBaseTokensBalance(sender)
