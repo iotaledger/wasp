@@ -11,13 +11,13 @@ type RawFuncDef struct {
 type RawFuncDefMap map[string]*RawFuncDef
 
 type RawSchemaDef struct {
-	Name        string        `yaml:"name"`
-	Author      string        `yaml:"author"`
 	Copyright   string        `yaml:"copyright"`
+	Name        string        `yaml:"name"`
+	Version     string        `yaml:"version"`
 	Description string        `yaml:"description"`
+	Author      string        `yaml:"author"`
 	License     string        `yaml:"license"`
 	Repository  string        `yaml:"repository"`
-	Version     string        `yaml:"version"`
 	Events      StringMapMap  `yaml:"events"`
 	Structs     StringMapMap  `yaml:"structs"`
 	Typedefs    StringMap     `yaml:"typedefs"`
