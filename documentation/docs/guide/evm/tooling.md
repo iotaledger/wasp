@@ -62,10 +62,9 @@ Metamask.
 let your wallet interact with web applications utilizing an EVM chain (dApps).
 
 To use your EVM chain with MetaMask, simply open up MetaMask and click on the network drop-down list at the very top. At
-the bottom of this list, you will see the option `Custom RPC`. Click on this. For a local setup, use the values as shown
-in the image below:
+the bottom of this list, you will see the option `Custom RPC`. For example this would be the config to add the ShimmerEVM testnet:
 
-[![MetaMask Network](/img/metamask_beta.png)](https://wiki.iota.org/shimmer/assets/images/metamask-shimmerevm-ff076ce000f4c9708f75fd1e0fb53f07.png)
+![ShimmerEVM testnet config](/img/metamask_beta.png "How to configure ShimmerEVM testnet in metamask")
 
 Ensure that your `RPC Url` and `Chain ID` are set correctly and match the dashboard values. The `Network Name` can be
 whatever you see fit.
