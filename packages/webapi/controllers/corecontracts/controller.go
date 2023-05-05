@@ -44,7 +44,7 @@ func (c *Controller) handleViewCallError(err error, chainID isc.ChainID) error {
 		return apierrors.ChainNotFoundError(chainID.String())
 	}
 	if errors.Is(err, corecontracts.ErrNoRecord) {
-		return apierrors.NoRecordFoundErrror(err)
+		return apierrors.NoRecordFoundError(err)
 	}
 
 	return apierrors.ContractExecutionError(err)

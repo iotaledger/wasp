@@ -30,7 +30,7 @@ func (c *Controller) getReceipt(e echo.Context) error {
 	receipt, vmError, err := c.vmService.GetReceipt(chainID, requestID)
 	if err != nil {
 		if errors.Is(err, corecontracts.ErrNoRecord) {
-			return apierrors.NoRecordFoundErrror(err)
+			return apierrors.NoRecordFoundError(err)
 		}
 		if errors.Is(err, interfaces.ErrChainNotFound) {
 			return apierrors.ChainNotFoundError(chainID.String())
