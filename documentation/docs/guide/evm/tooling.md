@@ -65,7 +65,7 @@ To use your EVM chain with MetaMask, simply open up MetaMask and click on the ne
 the bottom of this list, you will see the option `Custom RPC`. Click on this. For a local setup, use the values as shown
 in the image below:
 
-[![MetaMask Network](/img/metamask_beta.png)](https://wiki.iota.org/shimmer/assets/images/metamask-shimmerevm-ff076ce000f4c9708f75fd1e0fb53f07.png)
+[![MetaMask Network](https://wiki.iota.org/shimmer/assets/images/metamask-shimmerevm-ff076ce000f4c9708f75fd1e0fb53f07.png)](https://wiki.iota.org/shimmer/assets/images/metamask-shimmerevm-ff076ce000f4c9708f75fd1e0fb53f07.png)
 
 Ensure that your `RPC Url` and `Chain ID` are set correctly and match the dashboard values. The `Network Name` can be
 whatever you see fit.
