@@ -38,7 +38,7 @@ func (c *MetricsService) GetNodeMessageMetrics() *dto.NodeMessageMetrics {
 		OutPullTxInclusionState:         dto.MapMetricItem(c.chainMetricsProvider.OutPullTxInclusionState()),
 		OutPullOutputByID:               dto.MapMetricItem(c.chainMetricsProvider.OutPullOutputByID()),
 
-		ChainConfirmedState: dto.MapMetricItem(c.chainMetricsProvider.ChainConfirmedState()),
+		// TODO: ChainConfirmedState: dto.MapMetricItem(c.chainMetricsProvider.MaxChainConfirmedStateLag()),
 	}
 }
 

@@ -237,20 +237,6 @@ func TestMessageMetrics(t *testing.T) {
 	ncm.InMilestone().IncMessages(milestoneInfo2)
 
 	checkMetricsValues(t, 2, milestoneInfo2, ncm.InMilestone())
-
-	// ChainConfirmedState
-	chainConfirmedState1 := ChainConfirmedState{
-		ConfirmedStateWant: 4,
-		ConfirmedStateHave: 3,
-	}
-	chainConfirmedState2 := ChainConfirmedState{
-		ConfirmedStateWant: 6,
-		ConfirmedStateHave: 4,
-	}
-	ncm.ChainConfirmedState().IncMessages(&chainConfirmedState1)
-	ncm.ChainConfirmedState().IncMessages(&chainConfirmedState2)
-
-	checkMetricsValues(t, 2, &chainConfirmedState2, ncm.ChainConfirmedState())
 }
 
 func checkMetricsValues[T any, V any](t *testing.T, expectedTotal uint32, expectedLastMessage V, metrics IMessageMetric[T]) {

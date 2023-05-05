@@ -190,7 +190,6 @@ func newChainMessageMetrics(provider *ChainMetricsProvider, chainID isc.ChainID)
 		outPullLatestOutputMetrics:             createChainMessageMetric(provider, chainID, labelNameOutPullLatestOutputMetrics, provider.outPullLatestOutputMetrics),
 		outPullTxInclusionStateMetrics:         createChainMessageMetric(provider, chainID, labelNameOutPullTxInclusionStateMetrics, provider.outPullTxInclusionStateMetrics),
 		outPullOutputByIDMetrics:               createChainMessageMetric(provider, chainID, labelNameOutPullOutputByIDMetrics, provider.outPullOutputByIDMetrics),
-		chainConfirmedState:                    createChainMessageMetric(provider, chainID, labelChainConfirmedState, provider.chainConfirmedState),
 	}
 }
 

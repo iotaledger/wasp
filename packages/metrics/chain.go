@@ -28,7 +28,6 @@ const (
 	labelNameOutPullLatestOutputMetrics             = "out_pull_latest_output"
 	labelNameOutPullTxInclusionStateMetrics         = "out_pull_tx_inclusion_state"
 	labelNameOutPullOutputByIDMetrics               = "out_pull_output_by_id"
-	labelChainConfirmedState                        = "chain_confirmed_state"
 	labelTxPublishResult                            = "result"
 	labelNameWebapiRequestOperation                 = "api_req_type"
 	labelNameWebapiRequestStatusCode                = "api_req_status_code"
@@ -206,13 +205,13 @@ type ChainMetricsProvider struct {
 	outPullLatestOutputMetrics             *messageMetric[interface{}]
 	outPullTxInclusionStateMetrics         *messageMetric[iotago.TransactionID]
 	outPullOutputByIDMetrics               *messageMetric[iotago.OutputID]
-	chainConfirmedState                    *messageMetric[*ChainConfirmedState]
 
 	// chain state / tips
 	chainActiveStateWant    *prometheus.GaugeVec
 	chainActiveStateHave    *prometheus.GaugeVec
 	chainConfirmedStateWant *prometheus.GaugeVec
 	chainConfirmedStateHave *prometheus.GaugeVec
+	chainConfirmedStateLag  ChainStateLag
 
 	// state manager
 	smCacheSize           *prometheus.GaugeVec
@@ -577,7 +576,6 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 	m.outPullLatestOutputMetrics = newMessageMetric[interface{}](m, labelNameOutPullLatestOutputMetrics)
 	m.outPullTxInclusionStateMetrics = newMessageMetric[iotago.TransactionID](m, labelNameOutPullTxInclusionStateMetrics)
 	m.outPullOutputByIDMetrics = newMessageMetric[iotago.OutputID](m, labelNameOutPullOutputByIDMetrics)
-	m.chainConfirmedState = newMessageMetric[*ChainConfirmedState](m, labelChainConfirmedState)
 
 	return m
 }
@@ -728,10 +726,6 @@ func (m *ChainMetricsProvider) InTxInclusionState() IMessageMetric[*TxInclusionS
 	return m.inTxInclusionStateMetrics
 }
 
-func (m *ChainMetricsProvider) ChainConfirmedState() IMessageMetric[*ChainConfirmedState] {
-	return m.chainConfirmedState
-}
-
 func (m *ChainMetricsProvider) OutPublishStateTransaction() IMessageMetric[*StateTransaction] {
 	return m.outPublishStateTransactionMetrics
 }
@@ -750,4 +744,8 @@ func (m *ChainMetricsProvider) OutPullTxInclusionState() IMessageMetric[iotago.T
 
 func (m *ChainMetricsProvider) OutPullOutputByID() IMessageMetric[iotago.OutputID] {
 	return m.outPullOutputByIDMetrics
+}
+
+func (m *ChainMetricsProvider) MaxChainConfirmedStateLag() uint32 { // TODO: Call it from the health endpoint.
+	return m.chainConfirmedStateLag.MaxLag()
 }
