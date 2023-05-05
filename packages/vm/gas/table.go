@@ -101,6 +101,10 @@ func linear(a uint64) BurnFunction {
 
 func minBurn(minGasBurn uint64) BurnFunction {
 	return func(currentBurnedGas uint64) uint64 {
-		return minGasBurn - currentBurnedGas
+		ret := minGasBurn - currentBurnedGas
+		if ret > minGasBurn {
+			return 0 // prevent overflow
+		}
+		return ret
 	}
 }
