@@ -1,19 +1,23 @@
 package metrics
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-
-	"github.com/iotaledger/wasp/packages/webapi/models"
 )
 
 func (c *Controller) getHealth(e echo.Context) error {
-	metricsReport := c.metricsService.GetNodeMessageMetrics()
-	mappedMetrics := models.MapNodeMessageMetrics(metricsReport).ChainConfirmedState
-
-	if mappedMetrics.LastMessage.ConfirmedStateWant-mappedMetrics.LastMessage.ConfirmedStateHave < 2 {
-		return e.JSON(http.StatusOK, mappedMetrics)
+	chainIDs, err := c.chainService.GetAllChainIDs()
+	if err != nil {
+		return e.String(http.StatusInternalServerError, fmt.Sprintf("failed to get all chain IDs: %s", err))
 	}
-	return e.JSON(http.StatusInternalServerError, mappedMetrics)
+
+	for _, chainID := range chainIDs {
+		lag := c.metricsService.GetMaxChainConfirmedStateLag(chainID)
+		if lag > 2 {
+			return e.String(http.StatusInternalServerError, fmt.Sprintf("chain %v not sync with %d diff", chainID.String(), lag))
+		}
+	}
+	return e.String(http.StatusOK, "all chain synchronized")
 }

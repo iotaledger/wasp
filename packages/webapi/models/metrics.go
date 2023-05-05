@@ -34,7 +34,6 @@ type (
 	PublisherStateTransactionItem MetricItem[*StateTransaction]
 	RegisteredChainIDItems        []string
 	MilestoneMetricItem           MetricItem[*MilestoneInfo]
-	ChainConfirmedStateItem       MetricItem[*ChainConfirmedState]
 )
 
 type ChainMessageMetrics struct {
@@ -66,8 +65,6 @@ type NodeMessageMetrics struct {
 	OutPullLatestOutput             InterfaceMetricItem           `json:"outPullLatestOutput" swagger:"required"`
 	OutPullTxInclusionState         TransactionIDMetricItem       `json:"outPullTxInclusionState" swagger:"required"`
 	OutPullOutputByID               UTXOInputMetricItem           `json:"outPullOutputByID" swagger:"required"`
-
-	ChainConfirmedState ChainConfirmedStateItem `json:"chainConfirmedState" swagger:"required"`
 }
 
 func MapMetricItem[T any, G any](metrics *dto.MetricItem[G], value T) MetricItem[T] {
@@ -120,8 +117,6 @@ func MapNodeMessageMetrics(metrics *dto.NodeMessageMetrics) *NodeMessageMetrics 
 		OutPullLatestOutput:             InterfaceMetricItem(MapMetricItem(metrics.OutPullLatestOutput, metrics.OutPullLatestOutput.LastMessage)),
 		OutPullTxInclusionState:         TransactionIDMetricItem(MapMetricItem(metrics.OutPullTxInclusionState, TransactionFromIotaGoTransactionID(&metrics.OutPullTxInclusionState.LastMessage))),
 		OutPullOutputByID:               UTXOInputMetricItem(MapMetricItem(metrics.OutPullOutputByID, OutputIDFromIotaGoOutputID(metrics.OutPullOutputByID.LastMessage))),
-
-		ChainConfirmedState: ChainConfirmedStateItem(MapMetricItem(metrics.ChainConfirmedState, ConfirmStateFromISCConfirmState(metrics.ChainConfirmedState.LastMessage))),
 	}
 }
 

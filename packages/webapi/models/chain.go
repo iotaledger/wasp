@@ -140,8 +140,3 @@ type ChainRecord struct {
 	IsActive    bool     `json:"isActive" swagger:"required"`
 	AccessNodes []string `json:"accessNodes" swagger:"required"`
 }
-
-type ChainConfirmedState struct {
-	ConfirmedStateWant uint32 `json:"confirmedStateWant" swagger:"required"`
-	ConfirmedStateHave uint32 `json:"confirmedStateHave" swagger:"required"`
-}

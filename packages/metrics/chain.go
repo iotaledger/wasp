@@ -577,6 +577,8 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 	m.outPullTxInclusionStateMetrics = newMessageMetric[iotago.TransactionID](m, labelNameOutPullTxInclusionStateMetrics)
 	m.outPullOutputByIDMetrics = newMessageMetric[iotago.OutputID](m, labelNameOutPullOutputByIDMetrics)
 
+	m.chainConfirmedStateLag = make(ChainStateLag)
+
 	return m
 }
 

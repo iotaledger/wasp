@@ -58,11 +58,6 @@ type TxInclusionStateMsg struct {
 	State string
 }
 
-type ChainConfirmedState struct {
-	ConfirmedStateWant uint32
-	ConfirmedStateHave uint32
-}
-
 type emptyChainMessageMetric[T any] struct{}
 
 func (m emptyChainMessageMetric[T]) IncMessages(msg T, ts ...time.Time) {}
@@ -175,7 +170,6 @@ type chainMessageMetrics struct {
 	outPullLatestOutputMetrics             IMessageMetric[interface{}]
 	outPullTxInclusionStateMetrics         IMessageMetric[iotago.TransactionID]
 	outPullOutputByIDMetrics               IMessageMetric[iotago.OutputID]
-	chainConfirmedState                    IMessageMetric[*ChainConfirmedState]
 }
 
 func newChainMessageMetrics(provider *ChainMetricsProvider, chainID isc.ChainID) *chainMessageMetrics {
@@ -231,8 +225,4 @@ func (m *chainMessageMetrics) OutPullTxInclusionState() IMessageMetric[iotago.Tr
 
 func (m *chainMessageMetrics) OutPullOutputByID() IMessageMetric[iotago.OutputID] {
 	return m.outPullOutputByIDMetrics
-}
-
-func (m *chainMessageMetrics) ChainConfirmedState() IMessageMetric[*ChainConfirmedState] {
-	return m.chainConfirmedState
 }

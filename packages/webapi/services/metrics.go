@@ -37,8 +37,6 @@ func (c *MetricsService) GetNodeMessageMetrics() *dto.NodeMessageMetrics {
 		OutPullLatestOutput:             dto.MapMetricItem(c.chainMetricsProvider.OutPullLatestOutput()),
 		OutPullTxInclusionState:         dto.MapMetricItem(c.chainMetricsProvider.OutPullTxInclusionState()),
 		OutPullOutputByID:               dto.MapMetricItem(c.chainMetricsProvider.OutPullOutputByID()),
-
-		// TODO: ChainConfirmedState: dto.MapMetricItem(c.chainMetricsProvider.MaxChainConfirmedStateLag()),
 	}
 }
 
@@ -91,4 +89,8 @@ func (c *MetricsService) GetChainConsensusPipeMetrics(chainID isc.ChainID) *mode
 	}
 
 	return models.MapConsensusPipeMetrics(metrics)
+}
+
+func (c *MetricsService) GetMaxChainConfirmedStateLag(chainID isc.ChainID) uint32 {
+	return c.chainMetricsProvider.MaxChainConfirmedStateLag()
 }
