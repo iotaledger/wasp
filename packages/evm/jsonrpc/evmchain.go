@@ -323,16 +323,9 @@ func (e *EVMChain) TransactionByHash(hash common.Hash) (tx *types.Transaction, b
 	if !ok {
 		return nil, common.Hash{}, 0, 0, err
 	}
-	tx = db.GetTransactionByHash(hash)
+	tx, txIndex := db.GetTransactionByHash(hash)
 	block := db.GetBlockByNumber(blockNumber)
-	txIndex := uint64(0)
-	for i, t := range block.Transactions() {
-		if t.Hash() == tx.Hash() {
-			txIndex = uint64(i)
-			break
-		}
-	}
-	return tx, block.Hash(), blockNumber, txIndex, nil
+	return tx, block.Hash(), blockNumber, uint64(txIndex), nil
 }
 
 func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumber, indexRet uint64, err error) {

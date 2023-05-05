@@ -121,7 +121,7 @@ func makeBlockNumberByTxHashKey(hash common.Hash) kv.Key {
 	return keyBlockNumberByTxHash + kv.Key(hash.Bytes())
 }
 
-func makeBlockIndexByTxHashKey(hash common.Hash) kv.Key {
+func makeTxIndexInBlockByTxHashKey(hash common.Hash) kv.Key {
 	return keyBlockIndexByTxHash + kv.Key(hash.Bytes())
 }
 
@@ -166,7 +166,7 @@ func (bc *BlockchainDB) AddTransaction(tx *types.Transaction, receipt *types.Rec
 		codec.EncodeUint64(blockNumber),
 	)
 	bc.kv.Set(
-		makeBlockIndexByTxHashKey(tx.Hash()),
+		makeTxIndexInBlockByTxHashKey(tx.Hash()),
 		codec.EncodeUint32(txArray.Len()-1),
 	)
 
@@ -212,7 +212,7 @@ func (bc *BlockchainDB) deleteBlock(blockNumber uint64) {
 	for i := uint32(0); i < n; i++ {
 		txHash := bc.GetTransactionByBlockNumberAndIndex(blockNumber, i).Hash()
 		bc.kv.Del(makeBlockNumberByTxHashKey(txHash))
-		bc.kv.Del(makeBlockIndexByTxHashKey(txHash))
+		bc.kv.Del(makeTxIndexInBlockByTxHashKey(txHash))
 	}
 	txs.Erase()
 	bc.getReceiptArray(blockNumber).Erase()
@@ -390,8 +390,8 @@ func (bc *BlockchainDB) GetBlockNumberByTxHash(txHash common.Hash) (uint64, bool
 	return bc.getBlockNumberBy(makeBlockNumberByTxHashKey(txHash))
 }
 
-func (bc *BlockchainDB) GetBlockIndexByTxHash(txHash common.Hash) uint32 {
-	n, err := codec.DecodeUint32(bc.kv.Get(makeBlockIndexByTxHashKey(txHash)), 0)
+func (bc *BlockchainDB) GetTxIndexInBlockByTxHash(txHash common.Hash) uint32 {
+	n, err := codec.DecodeUint32(bc.kv.Get(makeTxIndexInBlockByTxHashKey(txHash)), 0)
 	if err != nil {
 		panic(err)
 	}
@@ -403,7 +403,7 @@ func (bc *BlockchainDB) GetReceiptByTxHash(txHash common.Hash) *types.Receipt {
 	if !ok {
 		return nil
 	}
-	i := bc.GetBlockIndexByTxHash(txHash)
+	i := bc.GetTxIndexInBlockByTxHash(txHash)
 	return bc.GetReceiptByBlockNumberAndIndex(blockNumber, i)
 }
 
@@ -419,13 +419,13 @@ func (bc *BlockchainDB) GetTransactionByBlockNumberAndIndex(blockNumber uint64, 
 	return tx
 }
 
-func (bc *BlockchainDB) GetTransactionByHash(txHash common.Hash) *types.Transaction {
+func (bc *BlockchainDB) GetTransactionByHash(txHash common.Hash) (*types.Transaction, uint32) {
 	blockNumber, ok := bc.GetBlockNumberByTxHash(txHash)
 	if !ok {
-		return nil
+		return nil, 0
 	}
-	i := bc.GetBlockIndexByTxHash(txHash)
-	return bc.GetTransactionByBlockNumberAndIndex(blockNumber, i)
+	i := bc.GetTxIndexInBlockByTxHash(txHash)
+	return bc.GetTransactionByBlockNumberAndIndex(blockNumber, i), i
 }
 
 func (bc *BlockchainDB) GetBlockHashByBlockNumber(blockNumber uint64) common.Hash {
