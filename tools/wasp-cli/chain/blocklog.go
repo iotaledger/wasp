@@ -223,6 +223,9 @@ func logResolvedReceipt(receipt *apiclient.ReceiptResponse, index ...int) {
 		{K: "Function Hname", V: req.CallTarget().EntryPoint.String()},
 		{K: "Arguments", V: argsTree},
 		{K: "Error", V: errMsg},
+		{K: "Gas budget", V: receipt.GasBudget},
+		{K: "Gas burned", V: receipt.GasBurned},
+		{K: "Gas fee charged", V: receipt.GasFeeCharged},
 	}
 	if len(index) > 0 {
 		log.Printf("Request #%d (%s):\n", index[0], req.ID())

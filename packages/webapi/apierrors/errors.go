@@ -52,7 +52,7 @@ func InvalidOffLedgerRequestError(err error) *HTTPError {
 	return NewHTTPError(http.StatusBadRequest, "Supplied offledger request is invalid", err)
 }
 
-func NoRecordFoundErrror(err error) *HTTPError {
+func NoRecordFoundError(err error) *HTTPError {
 	return NewHTTPError(http.StatusNotFound, "Record not found", err)
 }
 
