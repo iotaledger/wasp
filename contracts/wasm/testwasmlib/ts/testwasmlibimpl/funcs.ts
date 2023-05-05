@@ -450,20 +450,20 @@ export function viewCheckAgentID(ctx: wasmlib.ScViewContext, f: sc.CheckAgentIDC
     const scAgentID = f.params.scAgentID().value();
     const agentBytes = f.params.agentBytes().value();
     const agentString = f.params.agentString().value();
-    ctx.require(scAgentID.equals(wasmtypes.agentIDFromBytes(wasmtypes.agentIDToBytes(scAgentID))), 'bytes conversion failed');
-    ctx.require(scAgentID.equals(wasmtypes.agentIDFromString(wasmtypes.agentIDToString(scAgentID))), 'string conversion failed');
-    ctx.require(wasmtypes.bytesCompare(scAgentID.toBytes(), agentBytes) == 0, 'bytes mismatch');
-    ctx.require(scAgentID.toString() == agentString, 'string mismatch');
+    ctx.require(scAgentID.equals(wasmtypes.agentIDFromBytes(wasmtypes.agentIDToBytes(scAgentID))), 'agentID bytes conversion failed');
+    ctx.require(scAgentID.equals(wasmtypes.agentIDFromString(wasmtypes.agentIDToString(scAgentID))), 'agentID string conversion failed');
+    ctx.require(wasmtypes.bytesCompare(scAgentID.toBytes(), agentBytes) == 0, 'agentID bytes mismatch');
+    ctx.require(scAgentID.toString() == agentString, 'agentID string mismatch');
 }
 
 export function viewCheckAddress(ctx: wasmlib.ScViewContext, f: sc.CheckAddressContext): void {
     const address = f.params.scAddress().value();
     const addressBytes = f.params.addressBytes().value();
     const addressString = f.params.addressString().value();
-    ctx.require(address.equals(wasmtypes.addressFromBytes(wasmtypes.addressToBytes(address))), 'bytes conversion failed');
-    ctx.require(address.equals(wasmtypes.addressFromString(wasmtypes.addressToString(address))), 'string conversion failed');
-    ctx.require(wasmtypes.bytesCompare(address.toBytes(), addressBytes) == 0, 'bytes mismatch');
-    ctx.require(address.toString() == addressString, 'string mismatch');
+    ctx.require(address.equals(wasmtypes.addressFromBytes(wasmtypes.addressToBytes(address))), 'address bytes conversion failed');
+    ctx.require(address.equals(wasmtypes.addressFromString(wasmtypes.addressToString(address))), 'address string conversion failed');
+    ctx.require(wasmtypes.bytesCompare(address.toBytes(), addressBytes) == 0, 'address bytes mismatch');
+    ctx.require(address.toString() == addressString, 'address string mismatch');
 }
 
 export function viewCheckEthAddressAndAgentID(ctx: wasmlib.ScViewContext, f: sc.CheckEthAddressAndAgentIDContext): void {

@@ -115,7 +115,12 @@ export function addressToBytes(value: ScAddress): Uint8Array {
 
 export function addressFromString(value: string): ScAddress {
     if (value.indexOf('0x') == 0) {
-        return addressFromBytes(hexDecode(value));
+        for (let i = 2; i < value.length; i++) {
+			if (value[i] != '0') {
+				return addressFromBytes(hexDecode(value));
+			}
+		}
+        return addressFromBytes(new Uint8Array(ScLengthEth));
     }
     return bech32Decode(value);
 }

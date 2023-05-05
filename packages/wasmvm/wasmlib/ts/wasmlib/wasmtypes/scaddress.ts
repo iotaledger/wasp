@@ -1,12 +1,12 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {log, panic} from '../sandbox';
-import {bech32Decode, bech32Encode, hashKeccak, hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from './codec';
-import {Proxy} from './proxy';
-import {bytesCompare, bytesFromString, bytesToString} from './scbytes';
-import {ScAgentID} from './scagentid';
-import {stringFromBytes, stringToBytes} from "./scstring";
+import { log, panic } from '../sandbox';
+import { bech32Decode, bech32Encode, hashKeccak, hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes } from './codec';
+import { Proxy } from './proxy';
+import { bytesCompare, bytesFromString, bytesToString } from './scbytes';
+import { ScAgentID } from './scagentid';
+import { stringFromBytes, stringToBytes } from "./scstring";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -104,7 +104,7 @@ export function addressToBytes(value: ScAddress): Uint8Array {
         case ScAddressNFT:
             return value.id.slice(0, ScLengthNFT);
         case ScAddressEth:
-            return value.id.slice(1, ScLengthEth+1);
+            return value.id.slice(1, ScLengthEth + 1);
         default:
             panic('unexpected Address type');
     }
@@ -113,7 +113,12 @@ export function addressToBytes(value: ScAddress): Uint8Array {
 
 export function addressFromString(value: string): ScAddress {
     if (value.indexOf('0x') == 0) {
-        return addressFromBytes(hexDecode(value));
+        for (let i = 2; i < value.length; i++) {
+			if (value[i] != '0') {
+				return addressFromBytes(hexDecode(value));
+			}
+		}
+        return addressFromBytes(new Uint8Array(ScLengthEth));
     }
     return bech32Decode(value);
 }
@@ -126,7 +131,7 @@ export function addressToString(value: ScAddress): string {
     const hex = stringToBytes(hexEncode(addressToBytes(value)));
     const hash = hashKeccak(hex.slice(2)).toBytes();
     for (let i = 2; i < hex.length; i++) {
-        let hashByte = hash[(i-2) >> 1] as u8;
+        let hashByte = hash[(i - 2) >> 1] as u8;
         if ((i & 0x01) == 0) {
             hashByte >>= 4;
         } else {
