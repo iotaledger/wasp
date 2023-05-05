@@ -536,14 +536,14 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 			Namespace: "iota_wasp",
 			Subsystem: "webapi",
 			Name:      "webapi_requests",
-			Help:      "Time elapsed processing requests",
+			Help:      "Time elapsed (s) processing requests",
 			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain, labelNameWebapiRequestOperation, labelNameWebapiRequestStatusCode}),
 		webAPIEvmRPCCalls: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "webapi",
 			Name:      "webapi_evm_rpc_calls",
-			Help:      "Time elapsed processing evm rpc requests",
+			Help:      "Time elapsed (s) processing evm rpc requests",
 			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain, labelNameWebapiRequestOperation, labelNameWebapiEvmRPCSuccess}),
 	}
