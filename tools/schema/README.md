@@ -38,10 +38,10 @@ Usage of schema:
 ### Setting up an initial smart contract folder
 
 You can use the Schema tool to generate an initial folder with a default schema 
-definition file by using `schema -init MyContractName` where `MyContractName` is a 
+definition file by using `schema -init MySmartContract` where `MySmartContract` is a 
 user-defined camel-case name for the smart contract.
 
-The Schema tool will create a sub-folder `mycontractname` (all lower case) for the smart 
+The Schema tool will create a sub-folder `mysmartcontract` (all lower case) for the smart 
 contract, with a default `schema.yaml` in it that describes a minimal contract with the 
 provided name, and can be used to generate a complete working contract later on.
 
@@ -58,26 +58,30 @@ sections, or check the (somewhat outdated, coming soon) documentation on the
 The initial `schema.yaml` looks like this:
 
 ```yaml
-name: MyContractName
-description: MyContractName description
-author: Eric Hop <eric@iota.org>
+name: MySmartContract
+author: ""
+copyright: ""
+description: MySmartContract description
+license: ""
+repository: ""
+version: 0.0.1
 events: {}
 structs: {}
 typedefs: {}
 state:
-    owner: AgentID # current owner of this smart contract
+  owner: AgentID # current owner of this smart contract
 funcs:
-    init:
-        params:
-            owner: AgentID? # optional owner of this smart contract
-    setOwner:
-        access: owner # current owner of this smart contract
-        params:
-            owner: AgentID # new owner of this smart contract
+  init:
+    params:
+      owner: AgentID? # optional owner of this smart contract
+  setOwner:
+    access: owner # current owner of this smart contract
+    params:
+      owner: AgentID # new owner of this smart contract
 views:
-    getOwner:
-        results:
-            owner: AgentID # current owner of this smart contract
+  getOwner:
+    results:
+      owner: AgentID # current owner of this smart contract
 ```
 
 ### Generating the smart contract interface
@@ -98,36 +102,47 @@ Normally the Schema tool will only generate new code when the schema definition 
 or the Schema tool itself is newer than the last generated code. If for some reason you 
 need to override this behavior you can use the `-force` flag to force code generation.
 
-The Schema tool will generate a sub-folder for each separate language. These sub-folders 
-will each have a several sub-folders:
+The Schema Tool will generate a sub-folder for each separate language. These sub-folders 
+will in turn each have several specific sub-folders:
 
-- `mycontractname` This library/crate sub-folder contains the interface code that can be 
-  used to invoke the smart contract functions from within a smart contract, from within a 
-  test environment, or from within a client application. This code is completely under 
-  control of the Schema tool and should never be modified by the user.
-- `mycontractnameimpl` This library/crate sub-folder contains the implementation code for 
-  the smart contract functions. The generated code is specific to the functioning of the 
-  smart contract. The only file in this sub-folder that you should modify is `funcs.xx`, 
-  which contains the user-defined function implementations for the smart contract.
-- `mycontractnamewasm` This crate sub-folder will only be generated for Rust code. The 
-  crate contains the Wasm stub that combines the interface code and implementation code 
-  when building the Wasm binary file. The other languages achieve the same thing by using 
-  a single stub source file called `main.xx`, which does not need its own sub-folder.
+- `mysmartcontract` This library/crate sub-folder contains the interface code that can be
+  used to invoke the smart contract functions from within a smart contract, from within a
+  test environment, or from within a client application. This interface code should never
+  be modified by the user.
+- `mysmartcontractimpl` This library/crate sub-folder contains the implementation code for
+  the smart contract functions. The generated code is specific to the functioning of the
+  smart contract. The user should modify `funcs.xx`, which contains the user-defined
+  function implementations for the smart contract, with the required smart contract logic.
+  The file `thunks.xx` contains some glue code to properly set up function invocation
+  from the Wasm VM. This glue code should never be modified by the user.
+- `mysmartcontractwasm` This crate sub-folder will only be generated for Rust code. The
+  crate contains the Wasm stub that is necessary to combine the interface code and
+  implementation code when building the Wasm binary file. The other languages achieve the
+  same thing by using a single stub source file called `main.xx`, which does not need its
+  own sub-folder. This stub code should never be modified by the user.
+
+Note that the Schema Tool will make it very clear which files should not
+be touched by the user by inserting a comment at the first line of the generated files
+which clearly specifies:
+
+```go
+// Code generated by schema tool; DO NOT EDIT.
+```
 
 ### Building the smart contract
 
 The Schema tool will also build the smart contract for you. To be able to do that it 
-requires that the proper compilers have already been installed and can be reached through 
-your execution PATH. These are the required compilers for each language:
+requires that the proper compilers have already been installed and can be reached 
+through your execution PATH. These are the required compilers for each language:
 
 - [Go](https://go.dev/) version 1.20 or higher with [tinygo](https://tinygo.org/) version
   0.27 or higher.
-- [Rust](https://www.rust-lang.org/) version 1.67 or higher with
-  [wasm-pack](https://github.com/rustwasm/wasm-pack) version 0.10.3 or higher.
-- [Typescript](https://www.npmjs.com/package/typescript) version 4.9.5 or higher with 
-  [Assemblyscript](https://www.assemblyscript.org/) version 0.27.1 or higher.
+- [Rust](https://www.rust-lang.org/) version 1.69 or higher with
+  [wasm-pack](https://github.com/rustwasm/wasm-pack) version 0.11 or higher.
+- [Typescript](https://www.npmjs.com/package/typescript) version 5.0 or higher with 
+  [Assemblyscript](https://www.assemblyscript.org/) version 0.27 or higher.
 
-The Schema tool will standardize the naming and location of the generated Wasm code so 
+The Schema tool will standardize the naming and location of the compiled Wasm code so 
 that the `Solo` stand-alone test environment will automatically be able to find the Wasm 
 code and deploy it for you in your tests.
 
@@ -140,7 +155,7 @@ supported languages.
 The Schema tool will normally generate quite a lot of code. Sometimes you will want to 
 be able to clean up all generated artifacts. To that end the Schema tool provides the 
 `-clean` flag. Add this flag to the desired language flags to clean up the artifacts 
-for the specified languages. 
+for the specified languages. Note that this will leave files modified by the user alone. 
 
 You may want to make sure that the artifact files do not end up in your repository, 
 since they can be re-generated at any time. There is a `.gitignore` file in the 
