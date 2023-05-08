@@ -1,8 +1,6 @@
 package blocklog
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -11,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 type unprocessableRequestRecord struct {
@@ -92,19 +91,24 @@ func viewHasUnprocessable(ctx isc.SandboxView) dict.Dict {
 	}
 }
 
+var (
+	ErrUnprocessableAlreadyExist = coreerrors.Register("request does not exist on the unprocessable list").Create()
+	ErrUnprocessableUnexpected   = coreerrors.Register("unexpected error getting unprocessable request from the state").Create()
+	ErrUnprocessableWrongSender  = coreerrors.Register("unprocessable request sender does not match the retry sender").Create()
+)
+
 func retryUnprocessable(ctx isc.Sandbox) dict.Dict {
 	reqID := ctx.Params().MustGetRequestID(ParamRequestID)
 	exists := HasUnprocessable(ctx.StateR(), reqID)
-	// TODO add VMERRORS for these errors?
 	if !exists {
-		panic("request does not exist on the unprocessable list")
+		panic(ErrUnprocessableAlreadyExist)
 	}
 	rec, blockIndex, outputIndex, err := GetUnprocessable(ctx.StateR(), reqID)
 	if err != nil {
-		panic(fmt.Errorf("error getting unprocessable request: %s", err.Error()))
+		panic(ErrUnprocessableUnexpected)
 	}
 	if !rec.SenderAccount().Equals(ctx.Request().SenderAccount()) {
-		panic("unprocessable request sender does not match the retry sender")
+		panic(ErrUnprocessableWrongSender)
 	}
 	ctx.Privileged().RetryUnprocessable(rec, blockIndex, outputIndex)
 	return nil
