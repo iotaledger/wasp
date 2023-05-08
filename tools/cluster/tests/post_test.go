@@ -80,59 +80,6 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 	return isc.NewContractAgentID(e.Chain.ChainID, hname)
 }
 
-func (e *ChainEnv) expectCounter(hname isc.Hname, counter int64) {
-	c := e.getNativeContractCounter(hname)
-	require.EqualValues(e.t, counter, c)
-}
-
-func (e *ChainEnv) getNativeContractCounter(hname isc.Hname) int64 {
-	return e.getCounterForNode(hname, 0)
-}
-
-func (e *ChainEnv) getCounterForNode(hname isc.Hname, nodeIndex int) int64 {
-	result, _, err := e.Chain.Cluster.WaspClient(nodeIndex).ChainsApi.
-		CallView(context.Background(), e.Chain.ChainID.String()).
-		ContractCallViewRequest(apiclient.ContractCallViewRequest{
-			ContractHName: hname.String(),
-			FunctionName:  "getCounter",
-		}).Execute()
-	require.NoError(e.t, err)
-
-	decodedDict, err := apiextensions.APIJsonDictToDict(*result)
-	require.NoError(e.t, err)
-
-	counter, err := codec.DecodeInt64(decodedDict.Get(inccounter.VarCounter), 0)
-	require.NoError(e.t, err)
-
-	return counter
-}
-
-func (e *ChainEnv) waitUntilCounterEquals(hname isc.Hname, expected int64, duration time.Duration) {
-	timeout := time.After(duration)
-	var c int64
-	allNodesEqualFun := func() bool {
-		for _, node := range e.Chain.AllPeers {
-			c = e.getCounterForNode(hname, node)
-			if c != expected {
-				return false
-			}
-		}
-		return true
-	}
-	for {
-		select {
-		case <-timeout:
-			e.t.Errorf("timeout waiting for inccounter, current: %d, expected: %d", c, expected)
-			e.t.Fatal()
-		default:
-			if allNodesEqualFun() {
-				return // success
-			}
-		}
-		time.Sleep(1 * time.Second)
-	}
-}
-
 // executed in cluster_test.go
 func testPostDeployInccounter(t *testing.T, e *ChainEnv) {
 	contractID := deployInccounter42(e)
