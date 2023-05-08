@@ -1186,6 +1186,7 @@ func TestUnprocessable(t *testing.T) {
 		{ID: nativeTokenID3, Amount: big.NewInt(1)},
 		{ID: nativeTokenID4, Amount: big.NewInt(1)},
 	})
+
 	withdrawReq := solo.NewCallParams("accounts", "withdraw").
 		WithAllowance(assets).
 		WithMaxAffordableGasBudget()
@@ -1198,19 +1199,25 @@ func TestUnprocessable(t *testing.T) {
 	newUser, newUserAddress := v.env.NewKeyPairWithFunds()
 	newUserAgentID := isc.NewAgentID(newUserAddress)
 	v.env.SendL1(newUserAddress, assets, v.user)
+	// also create an NFT
+	iscNFT, _, err := v.ch.Env.MintNFTL1(v.user, newUserAddress, []byte("foobar"))
+	require.NoError(t, err)
 
 	newuserL1NativeTokens := v.env.L1Assets(newUserAddress).NativeTokens
-	for _, nt := range assets.NativeTokens {
-		lo.ContainsBy(newuserL1NativeTokens, func(l1NT *iotago.NativeToken) bool {
-			return nt.Equal(l1NT)
+	assetsContain := func(tokens iotago.NativeTokens, nativeTokenID iotago.NativeTokenID) bool {
+		return lo.ContainsBy(tokens, func(nt *iotago.NativeToken) bool {
+			return nt.ID == nativeTokenID
 		})
 	}
+	require.True(t, assetsContain(newuserL1NativeTokens, nativeTokenID1))
+	require.True(t, assetsContain(newuserL1NativeTokens, nativeTokenID2))
+	require.True(t, assetsContain(newuserL1NativeTokens, nativeTokenID3))
+	require.True(t, assetsContain(newuserL1NativeTokens, nativeTokenID4))
 
-	// TODO add an NFT?
 	// try to deposit all native tokens in a request with just the minimum SD
 	unprocessableReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
 		WithFungibleTokens(isc.NewAssets(0, assets.NativeTokens)).
-		WithMaxAffordableGasBudget()
+		WithNFT(iscNFT)
 
 	tx, receipt, _, err := v.ch.PostRequestSyncExt(unprocessableReq, newUser)
 	require.Error(t, err)
@@ -1266,15 +1273,12 @@ func TestUnprocessable(t *testing.T) {
 	// assert the user was credited the tokens from the "initially unprocessable request"
 	userAssets := v.ch.L2Assets(newUserAgentID)
 	require.Len(t, userAssets.NativeTokens, 4)
-	assetsContain := func(nativeTokenID iotago.NativeTokenID) bool {
-		return lo.ContainsBy(userAssets.NativeTokens, func(nt *iotago.NativeToken) bool {
-			return nt.ID == nativeTokenID
-		})
-	}
-	require.True(t, assetsContain(nativeTokenID1))
-	require.True(t, assetsContain(nativeTokenID2))
-	require.True(t, assetsContain(nativeTokenID3))
-	require.True(t, assetsContain(nativeTokenID4))
+	require.True(t, assetsContain(userAssets.NativeTokens, nativeTokenID1))
+	require.True(t, assetsContain(userAssets.NativeTokens, nativeTokenID2))
+	require.True(t, assetsContain(userAssets.NativeTokens, nativeTokenID3))
+	require.True(t, assetsContain(userAssets.NativeTokens, nativeTokenID4))
+	require.Len(t, userAssets.NFTs, 1)
+	require.EqualValues(t, userAssets.NFTs[0], iscNFT.ID)
 
 	// try the "retry request" again, assert it fails
 	_, rec, _, err = v.ch.PostRequestSyncExt(retryReq, newUser)
@@ -1284,14 +1288,16 @@ func TestUnprocessable(t *testing.T) {
 
 	// --
 	// try to withdrawal the native tokens
-	err = v.ch.Withdraw(isc.NewAssets(1*isc.Million, userAssets.NativeTokens), newUser)
+	err = v.ch.Withdraw(isc.NewAssets(1*isc.Million, userAssets.NativeTokens, iscNFT.ID), newUser)
 	require.NoError(t, err)
 
 	require.Len(t, v.ch.L2Assets(newUserAgentID).NativeTokens, 0)
+	require.Len(t, v.ch.L2Assets(newUserAgentID).NFTs, 0)
 	v.env.AssertL1NativeTokens(newUserAddress, nativeTokenID1, 1)
 	v.env.AssertL1NativeTokens(newUserAddress, nativeTokenID2, 1)
 	v.env.AssertL1NativeTokens(newUserAddress, nativeTokenID3, 1)
 	v.env.AssertL1NativeTokens(newUserAddress, nativeTokenID4, 1)
+	require.Len(t, v.env.L1NFTs(newUserAddress), 1)
 }
 
 func TestDepositRandomContractMinFee(t *testing.T) {
