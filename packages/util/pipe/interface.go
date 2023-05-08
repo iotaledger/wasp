@@ -22,4 +22,6 @@ type Pipe[E any] interface {
 	Out() <-chan E
 	Len() int
 	Close()
+	Discard()
+	TryAdd(e E) bool
 }

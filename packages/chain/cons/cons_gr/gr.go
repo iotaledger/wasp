@@ -168,13 +168,12 @@ func New(
 	constInstRaw := cons.New(chainID, chainStore, me, myNodeIdentity.GetPrivateKey(), dkShare, procCache, netPeeringID[:], gpa.NodeIDFromPublicKey, log).AsGPA()
 	cgr.consInst = gpa.NewAckHandler(me, constInstRaw, redeliveryPeriod)
 
-	netRecvPipeInCh := cgr.netRecvPipe.In()
 	unhook := net.Attach(&netPeeringID, peering.PeerMessageReceiverChainCons, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeCons {
 			cgr.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
 		}
-		netRecvPipeInCh <- recv
+		cgr.netRecvPipe.TryAdd(recv)
 	})
 	cgr.netDisconnect = unhook
 
@@ -202,6 +201,9 @@ func (cgr *ConsGr) Time(t time.Time) {
 
 func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 	defer util.ExecuteIfNotNil(cgr.netDisconnect)
+	defer func() {
+		cgr.netRecvPipe.Discard()
+	}()
 
 	ctxClose := cgr.ctx.Done()
 	netRecvPipeOutCh := cgr.netRecvPipe.Out()
