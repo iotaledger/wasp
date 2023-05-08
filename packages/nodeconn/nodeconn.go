@@ -526,8 +526,6 @@ func (nc *nodeConnection) checkReceivedTxPendingAndCancelPoW(block *iotago.Block
 
 	// asynchronously check the quality of the received block and cancel the PoW if possible
 	go func() {
-		cancelTxAttachment := false
-
 		ctxWithTimeout, ctxCancel := context.WithTimeout(nc.ctx, blockMetadataCheckTimeout)
 		defer ctxCancel()
 
@@ -557,7 +555,7 @@ func (nc *nodeConnection) checkReceivedTxPendingAndCancelPoW(block *iotago.Block
 			// check if the block was already referenced
 			if metadata.ReferencedByMilestoneIndex != 0 {
 				// block with the tracked tx already got referenced, we can abort attachment of the tx
-				cancelTxAttachment = true
+				pendingTx.SetPublished()
 				break
 			}
 
@@ -569,13 +567,9 @@ func (nc *nodeConnection) checkReceivedTxPendingAndCancelPoW(block *iotago.Block
 			}
 
 			// block is solid and the quality of the tips seem fine
-			// => abort out own attachment
-			cancelTxAttachment = true
-			break
-		}
-
-		if cancelTxAttachment {
+			// => abort our own attachment
 			pendingTx.SetPublished()
+			break
 		}
 	}()
 }
