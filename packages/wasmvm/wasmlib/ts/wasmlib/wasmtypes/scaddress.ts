@@ -113,12 +113,14 @@ export function addressToBytes(value: ScAddress): Uint8Array {
 
 export function addressFromString(value: string): ScAddress {
     if (value.indexOf('0x') == 0) {
-        for (let i = 2; i < value.length; i++) {
-			if (value[i] != '0') {
-				return addressFromBytes(hexDecode(value));
-			}
-		}
-        return addressFromBytes(new Uint8Array(ScLengthEth));
+        if (value == '0x0') {
+            return addressFromBytes(new Uint8Array(ScLengthEth));
+        }
+        let b = hexDecode(value);
+        if (b.length != ScLengthEth) {
+            panic("invalid ETH address");
+        }
+        return addressFromBytes(b);
     }
     return bech32Decode(value);
 }

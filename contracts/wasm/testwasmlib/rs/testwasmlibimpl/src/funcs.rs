@@ -1095,3 +1095,70 @@ pub fn view_check_string(ctx: &ScViewContext, f: &CheckStringContext) {
         "string conversion failed",
     );
 }
+
+pub fn view_check_eth_empty_address_and_agent_id(
+    ctx: &ScViewContext,
+    f: &CheckEthEmptyAddressAndAgentIDContext,
+) {
+    let address = f.params.eth_address().value();
+    let address_string = "0x0";
+    let address_string_long = "0x0000000000000000000000000000000000000000";
+    ctx.require(
+        address == address_from_bytes(&address_to_bytes(&address)),
+        "eth address bytes conversion failed",
+    );
+    ctx.require(
+        address == address_from_string(address_string),
+        "eth address to/from string conversion failed",
+    );
+    ctx.require(
+        address == address_from_string(address_string_long),
+        "eth address to/from string conversion failed",
+    );
+    ctx.require(
+        address_string_long == address_to_string(&address),
+        "eth address to/from string conversion failed",
+    );
+
+    let agent_id = f.params.eth_agent_id().value();
+    let agent_id_string = f.params.eth_agent_id_string().value();
+    ctx.require(
+        agent_id.to_string() == agent_id_string,
+        "eth agentID string encoding failed",
+    );
+    ctx.require(
+        agent_id == agent_id_from_bytes(&agent_id_to_bytes(&agent_id)),
+        "eth agentID bytes conversion failed",
+    );
+    ctx.require(
+        agent_id_string == agent_id_to_string(&agent_id),
+        "eth agentID from/to string conversion failed",
+    );
+
+    let agent_id_from_address = ScAgentID::from_address(&address);
+    ctx.require(
+        agent_id_from_address == agent_id_from_bytes(&agent_id_to_bytes(&agent_id_from_address)),
+        "eth agentID bytes conversion failed",
+    );
+    ctx.require(
+        agent_id_string == agent_id_to_string(&agent_id_from_address),
+        "eth agentID string conversion failed",
+    );
+
+    let address_from_agent_id = agent_id.address();
+    ctx.require(
+        address_from_agent_id == address_from_bytes(&address_to_bytes(&address_from_agent_id)),
+        "eth raw agentID bytes conversion failed",
+    );
+    ctx.require(
+        address_string_long == address_to_string(&address_from_agent_id),
+        "eth raw agentID string conversion failed",
+    );
+}
+
+pub fn view_check_eth_invalid_empty_address_from_string(
+    ctx: &ScViewContext,
+    f: &CheckEthInvalidEmptyAddressFromStringContext,
+) {
+    address_from_string("0x00");
+}

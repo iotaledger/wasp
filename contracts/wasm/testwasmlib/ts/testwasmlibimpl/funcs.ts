@@ -664,3 +664,31 @@ export function viewCheckString(ctx: wasmlib.ScViewContext, f: sc.CheckStringCon
     ctx.require(stringData == wasmtypes.stringFromBytes(wasmtypes.stringToBytes(stringData)), 'bytes conversion failed');
     ctx.require(stringData == wasmtypes.stringToString(wasmtypes.stringFromString(stringData)), 'string conversion failed');
 }
+
+export function viewCheckEthEmptyAddressAndAgentID(ctx: wasmlib.ScViewContext, f: sc.CheckEthEmptyAddressAndAgentIDContext): void {
+	let address = f.params.ethAddress().value();
+	let addressString = "0x0";
+	let addressStringLong = "0x0000000000000000000000000000000000000000";
+	ctx.require(address.equals(wasmtypes.addressFromBytes(wasmtypes.addressToBytes(address))) , "eth address bytes conversion failed");
+    ctx.require(address.equals(wasmtypes.addressFromString(addressString)), "eth address to/from string conversion failed");
+    ctx.require(address.equals(wasmtypes.addressFromString(addressStringLong)), "eth address to/from string conversion failed");
+    ctx.require(addressStringLong == wasmtypes.addressToString(address), "eth address to/from string conversion failed");
+
+	let agentID = f.params.ethAgentID().value();
+	let agentIDString = f.params.ethAgentIDString().value();
+	ctx.require(agentID.toString() == agentIDString, "eth agentID string encoding failed");
+	ctx.require(agentID.equals(wasmtypes.agentIDFromBytes(wasmtypes.agentIDToBytes(agentID))), "eth agentID bytes conversion failed");
+	ctx.require(agentIDString == wasmtypes.agentIDToString(agentID), "eth agentID from/to string conversion failed");
+
+	let agentIDFromAddress = wasmtypes.ScAgentID.fromAddress(address);
+	ctx.require(agentIDFromAddress.equals(wasmtypes.agentIDFromBytes(wasmtypes.agentIDToBytes(agentIDFromAddress))), "eth agentID bytes conversion failed");
+	ctx.require(agentIDString == wasmtypes.agentIDToString(agentIDFromAddress), "eth agentID string conversion failed");
+
+	let addressFromAgentID = agentID.address();
+	ctx.require(addressFromAgentID.equals(wasmtypes.addressFromBytes(wasmtypes.addressToBytes(addressFromAgentID))), "eth raw agentID bytes conversion failed");
+	ctx.require(addressStringLong == wasmtypes.addressToString(addressFromAgentID), "eth raw agentID string conversion failed");
+}
+
+export function viewCheckEthInvalidEmptyAddressFromString(ctx: wasmlib.ScViewContext, f: sc.CheckEthInvalidEmptyAddressFromStringContext): void {
+    wasmtypes.addressFromString("0x00");
+}
