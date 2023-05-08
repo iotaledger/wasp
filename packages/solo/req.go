@@ -571,6 +571,7 @@ func (ch *Chain) WaitUntil(p func() bool, maxWait ...time.Duration) bool {
 		}
 		if time.Now().After(deadline) {
 			ch.Log().Errorf("WaitUntil failed waiting max %v", maxw)
+			ch.Env.T.FailNow()
 			return false
 		}
 		time.Sleep(10 * time.Millisecond)

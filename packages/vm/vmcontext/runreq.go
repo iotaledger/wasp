@@ -44,6 +44,8 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm
 	vmctx.gasBurned = 0
 	vmctx.gasFeeCharged = 0
 	vmctx.GasBurnEnable(false)
+	initialGasBurnedTotal := vmctx.gasBurnedTotal
+	initialGasFeeChargedTotal := vmctx.gasFeeChargedTotal
 
 	vmctx.currentStateUpdate = NewStateUpdate()
 	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.task.StateDraft.Timestamp().Add(1*time.Nanosecond)))
@@ -78,6 +80,8 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm
 	if err != nil {
 		// protocol exception triggered. Skipping the request. Rollback
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
+		vmctx.gasBurnedTotal = initialGasBurnedTotal
+		vmctx.gasFeeChargedTotal = initialGasFeeChargedTotal
 
 		if errors.Is(vmexceptions.ErrNotEnoughFundsForSD, err) {
 			vmctx.unprocessable = append(vmctx.unprocessable, vmctx.req.(isc.OnLedgerRequest))

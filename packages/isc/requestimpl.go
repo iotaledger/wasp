@@ -579,15 +579,10 @@ func (r *onLedgerRequestData) RetryOutputID() iotago.OutputID {
 func (r *onLedgerRequestData) RetryOutput(chainAliasID iotago.AliasID) iotago.Output {
 	out := r.Output().Clone()
 
-	metadata := out.FeatureSet().MetadataFeature()
-	if metadata == nil {
-		metadata = &iotago.MetadataFeature{}
-	}
 	features := iotago.Features{
 		&iotago.SenderFeature{
 			Address: chainAliasID.ToAddress(), // must have the chain as the sender, so its recognized as an internalUTXO
 		},
-		metadata,
 	}
 
 	unlock := iotago.UnlockConditions{
@@ -626,6 +621,9 @@ func (r *onLedgerRequestData) IsInternalUTXO(chainID ChainID) bool {
 		return false
 	}
 	if !r.SenderAddress().Equal(chainID.AsAddress()) {
+		return false
+	}
+	if r.requestMetadata != nil {
 		return false
 	}
 	return true
