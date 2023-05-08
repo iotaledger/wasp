@@ -145,7 +145,7 @@ func (txb *AnchorTransactionBuilder) nextFoundryCounter() uint32 {
 func (txb *AnchorTransactionBuilder) foundriesSorted() []*foundryInvoked {
 	ret := make([]*foundryInvoked, 0, len(txb.invokedFoundries))
 	for _, f := range txb.invokedFoundries {
-		if !f.requiresInput() && !f.producesOutput() {
+		if !f.requiresExistingAccountingUTXOAsInput() && !f.producesAccountingOutput() {
 			continue
 		}
 		ret = append(ret, f)
@@ -160,9 +160,9 @@ func (txb *AnchorTransactionBuilder) FoundriesToBeUpdated() ([]uint32, []uint32)
 	toBeUpdated := make([]uint32, 0, len(txb.invokedFoundries))
 	toBeRemoved := make([]uint32, 0, len(txb.invokedFoundries))
 	for _, f := range txb.foundriesSorted() {
-		if f.producesOutput() {
+		if f.producesAccountingOutput() {
 			toBeUpdated = append(toBeUpdated, f.serialNumber)
-		} else if f.requiresInput() {
+		} else if f.requiresExistingAccountingUTXOAsInput() {
 			toBeRemoved = append(toBeRemoved, f.serialNumber)
 		}
 	}
@@ -197,10 +197,10 @@ func (f *foundryInvoked) Clone() *foundryInvoked {
 }
 
 func (f *foundryInvoked) isNewCreated() bool {
-	return !f.requiresInput() && f.producesOutput()
+	return !f.requiresExistingAccountingUTXOAsInput() && f.producesAccountingOutput()
 }
 
-func (f *foundryInvoked) requiresInput() bool {
+func (f *foundryInvoked) requiresExistingAccountingUTXOAsInput() bool {
 	if f.in == nil {
 		return false
 	}
@@ -210,7 +210,7 @@ func (f *foundryInvoked) requiresInput() bool {
 	return true
 }
 
-func (f *foundryInvoked) producesOutput() bool {
+func (f *foundryInvoked) producesAccountingOutput() bool {
 	if f.out == nil {
 		return false
 	}

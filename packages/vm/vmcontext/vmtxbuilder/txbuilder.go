@@ -235,7 +235,7 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 
 	// internal native token outputs
 	for _, nativeTokenBalance := range txb.nativeTokenOutputsSorted() {
-		if nativeTokenBalance.requiresInput() {
+		if nativeTokenBalance.requiresExistingAccountingUTXOAsInput() {
 			outputID := nativeTokenBalance.outputID
 			outputIDs = append(outputIDs, outputID)
 			inputs[outputID] = nativeTokenBalance.in
@@ -244,7 +244,7 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 
 	// foundries
 	for _, foundry := range txb.foundriesSorted() {
-		if foundry.requiresInput() {
+		if foundry.requiresExistingAccountingUTXOAsInput() {
 			outputID := foundry.outputID
 			outputIDs = append(outputIDs, outputID)
 			inputs[outputID] = foundry.in
@@ -338,12 +338,12 @@ func (txb *AnchorTransactionBuilder) outputs(stateMetadata []byte) iotago.Output
 func (txb *AnchorTransactionBuilder) numInputs() int {
 	ret := len(txb.consumed) + 1 // + 1 for anchor UTXO
 	for _, v := range txb.balanceNativeTokens {
-		if v.requiresInput() {
+		if v.requiresExistingAccountingUTXOAsInput() {
 			ret++
 		}
 	}
 	for _, f := range txb.invokedFoundries {
-		if f.requiresInput() {
+		if f.requiresExistingAccountingUTXOAsInput() {
 			ret++
 		}
 	}
@@ -359,13 +359,13 @@ func (txb *AnchorTransactionBuilder) numInputs() int {
 func (txb *AnchorTransactionBuilder) numOutputs() int {
 	ret := 1 // for chain output
 	for _, v := range txb.balanceNativeTokens {
-		if v.producesOutput() {
+		if v.producesAccountingOutput() {
 			ret++
 		}
 	}
 	ret += len(txb.postedOutputs)
 	for _, f := range txb.invokedFoundries {
-		if f.producesOutput() {
+		if f.producesAccountingOutput() {
 			ret++
 		}
 	}
@@ -380,7 +380,7 @@ func (txb *AnchorTransactionBuilder) outputsAreFull() bool {
 func (txb *AnchorTransactionBuilder) mustCheckTotalNativeTokensExceeded() {
 	num := 0
 	for _, nt := range txb.balanceNativeTokens {
-		if nt.requiresInput() || nt.producesOutput() {
+		if nt.requiresExistingAccountingUTXOAsInput() || nt.producesAccountingOutput() {
 			num++
 		}
 		if num > iotago.MaxNativeTokensCount {

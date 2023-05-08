@@ -1172,7 +1172,6 @@ func TestDepositNFTWithMinStorageDeposit(t *testing.T) {
 }
 
 func TestUnprocessable(t *testing.T) {
-	t.Skip()
 	v := initDepositTest(t)
 	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 	// create many foundries and mint 1 token on each
@@ -1288,13 +1287,11 @@ func TestUnprocessable(t *testing.T) {
 	err = v.ch.Withdraw(isc.NewAssets(1*isc.Million, userAssets.NativeTokens), newUser)
 	require.NoError(t, err)
 
-	userAssets = v.ch.L2Assets(newUserAgentID)
-	require.Len(t, userAssets.NativeTokens, 0)
+	require.Len(t, v.ch.L2Assets(newUserAgentID).NativeTokens, 0)
 	v.env.AssertL1NativeTokens(newUserAddress, nativeTokenID1, 1)
 	v.env.AssertL1NativeTokens(newUserAddress, nativeTokenID2, 1)
 	v.env.AssertL1NativeTokens(newUserAddress, nativeTokenID3, 1)
 	v.env.AssertL1NativeTokens(newUserAddress, nativeTokenID4, 1)
-	// TODO this test is flaky!!! some times fails	with "invalid inputs commitment", need to figure out why
 }
 
 func TestDepositRandomContractMinFee(t *testing.T) {

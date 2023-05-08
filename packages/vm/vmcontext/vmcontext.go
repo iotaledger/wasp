@@ -278,11 +278,13 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 		})
 	}
 
-	nativeTokenIDs, nativeTokensToBeRemoved := vmctx.txbuilder.NativeTokenRecordsToBeUpdated()
-	nativeTokensOutputsToBeUpdated := vmctx.txbuilder.NativeTokenOutputsByTokenIDs(nativeTokenIDs)
+	nativeTokenIDsToBeUpdated, nativeTokensToBeRemoved := vmctx.txbuilder.NativeTokenRecordsToBeUpdated()
+	// IMPORTANT: do not iterate by this map, order of the slice above must be respected
+	nativeTokensMap := vmctx.txbuilder.NativeTokenOutputsByTokenIDs(nativeTokenIDsToBeUpdated)
 
-	foundryIDs, foundriesToBeRemoved := vmctx.txbuilder.FoundriesToBeUpdated()
-	foundrySNToBeUpdated := vmctx.txbuilder.FoundryOutputsBySN(foundryIDs)
+	foundryIDsToBeUpdated, foundriesToBeRemoved := vmctx.txbuilder.FoundriesToBeUpdated()
+	// IMPORTANT: do not iterate by this map, order of the slice above must be respected
+	foundryOutputsMap := vmctx.txbuilder.FoundryOutputsBySN(foundryIDsToBeUpdated)
 
 	NFTOutputsToBeAdded, NFTOutputsToBeRemoved := vmctx.txbuilder.NFTOutputsToBeUpdated()
 
@@ -291,9 +293,9 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		// update native token outputs
-		for _, out := range nativeTokensOutputsToBeUpdated {
-			vmctx.task.Log.Debugf("saving NT %s, outputIndex: %d", out.NativeTokens[0].ID, outputIndex)
-			accounts.SaveNativeTokenOutput(s, out, blockIndex, outputIndex)
+		for _, ntID := range nativeTokenIDsToBeUpdated {
+			vmctx.task.Log.Debugf("saving NT %s, outputIndex: %d", ntID, outputIndex)
+			accounts.SaveNativeTokenOutput(s, nativeTokensMap[ntID], blockIndex, outputIndex)
 			outputIndex++
 		}
 		for _, id := range nativeTokensToBeRemoved {
@@ -302,9 +304,9 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 		}
 
 		// update foundry UTXOs
-		for _, out := range foundrySNToBeUpdated {
-			vmctx.task.Log.Debugf("saving foundry %d, outputIndex: %d", out.SerialNumber, outputIndex)
-			accounts.SaveFoundryOutput(s, out, blockIndex, outputIndex)
+		for _, foundryID := range foundryIDsToBeUpdated {
+			vmctx.task.Log.Debugf("saving foundry %d, outputIndex: %d", foundryID, outputIndex)
+			accounts.SaveFoundryOutput(s, foundryOutputsMap[foundryID], blockIndex, outputIndex)
 			outputIndex++
 		}
 		for _, sn := range foundriesToBeRemoved {

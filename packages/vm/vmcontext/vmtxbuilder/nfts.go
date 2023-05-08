@@ -70,7 +70,6 @@ func (txb *AnchorTransactionBuilder) NFTOutputs() []*iotago.NFTOutput {
 func (txb *AnchorTransactionBuilder) NFTOutputsToBeUpdated() (toBeAdded, toBeRemoved []*iotago.NFTOutput) {
 	toBeAdded = make([]*iotago.NFTOutput, 0, len(txb.nftsIncluded))
 	toBeRemoved = make([]*iotago.NFTOutput, 0, len(txb.nftsIncluded))
-	// txb.inputs() // TODO I think this can be removed
 	for _, nft := range txb.nftsSorted() {
 		if nft.in != nil {
 			// to remove if input is not nil (nft exists in accounting), and its sent to outside the chain
