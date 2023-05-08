@@ -37,10 +37,9 @@ type snapshotterImpl struct {
 var _ Snapshotter = &snapshotterImpl{}
 
 const (
-	constSnapshotIndexHashFileNameSepparator = "-"
-	constSnapshotFileSuffix                  = ".snap"
-	constSnapshotTmpFileSuffix               = ".tmp"
-	constLengthArrayLength                   = 4 // bytes
+	constSnapshotFileSuffix    = ".snap"
+	constSnapshotTmpFileSuffix = ".tmp"
+	constLengthArrayLength     = 4 // bytes
 )
 
 func NewSnapshotter(log *logger.Logger, baseDir string, chainID isc.ChainID, period uint32, store state.Store) (Snapshotter, error) {
@@ -74,7 +73,7 @@ func (sn *snapshotterImpl) BlockCommitted(block state.Block) {
 	index := block.StateIndex()
 	if (index > sn.lastIndex) && (index%sn.period == 0) { // TODO: what if snapshotted state has been reverted?
 		commitment := block.L1Commitment()
-		tmpFileName := tempSnapshotFileName(index, commitment.BlockHash())
+		tmpFileName := tempSnapshotFileName(commitment.BlockHash())
 		tmpFilePath := filepath.Join(sn.dir, tmpFileName)
 		exists, _, _ := ioutils.PathExists(tmpFilePath)
 		if exists {
@@ -95,13 +94,13 @@ func (sn *snapshotterImpl) BlockCommitted(block state.Block) {
 		}
 		go func() {
 			sn.log.Debugf("State index %v commitment %s obtained, iterating it and writing to file", index, commitment)
-			err := writeSnapshotToFile(commitment.TrieRoot(), snapshot, f)
+			err := writeSnapshotToFile(index, commitment.TrieRoot(), snapshot, f)
 			if err != nil {
 				sn.log.Errorf("Failed to write state index %v commitment %s to temporary snapshot file %s: %w", index, commitment, tmpFilePath, err)
 				return
 			}
 
-			finalFileName := snapshotFileName(index, commitment.BlockHash())
+			finalFileName := snapshotFileName(commitment.BlockHash())
 			finalFilePath := filepath.Join(sn.dir, finalFileName)
 			err = os.Rename(tmpFilePath, finalFilePath)
 			if err != nil {
@@ -120,7 +119,7 @@ func (sn *snapshotterImpl) BlockCommitted(block state.Block) {
 }
 
 func (sn *snapshotterImpl) cleanTempFiles() {
-	tempFileRegExp := tempSnapshotFileNameString("*", "*")
+	tempFileRegExp := tempSnapshotFileNameString("*")
 	tempFileRegExpWithPath := filepath.Join(sn.dir, tempFileRegExp)
 	tempFiles, err := filepath.Glob(tempFileRegExpWithPath)
 	if err != nil {
@@ -140,11 +139,18 @@ func (sn *snapshotterImpl) cleanTempFiles() {
 	sn.log.Debugf("Removed %v out of %v temporary snapshot files", removed, len(tempFiles))
 }
 
-func writeSnapshotToFile(trieRoot trie.Hash, snapshot kvstore.KVStore, f *os.File) error {
+func writeSnapshotToFile(index uint32, trieRoot trie.Hash, snapshot kvstore.KVStore, f *os.File) error {
 	defer f.Close()
 
+	indexArray := make([]byte, 4) // Size of block index, which is of type uint32: 4 bytes
+	binary.LittleEndian.PutUint32(indexArray, index)
+	err := writeBytes(indexArray, f)
+	if err != nil {
+		return fmt.Errorf("failed writing block index %v: %w", index, err)
+	}
+
 	trieRootBytes := trieRoot.Bytes()
-	err := writeBytes(trieRootBytes, f)
+	err = writeBytes(trieRootBytes, f)
 	if err != nil {
 		return fmt.Errorf("failed writing trie root %s: %w", trieRoot, err)
 	}
@@ -172,55 +178,61 @@ func writeSnapshotToFile(trieRoot trie.Hash, snapshot kvstore.KVStore, f *os.Fil
 	return err
 }
 
-func readSnapshotFromFile(filePath string) (trie.Hash, kvstore.KVStore, error) {
+func readSnapshotFromFile(filePath string) (uint32, trie.Hash, kvstore.KVStore, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
-		return trie.Hash{}, nil, fmt.Errorf("Failed to open snapshot file %s: %w", filePath, err)
+		return 0, trie.Hash{}, nil, fmt.Errorf("failed to open snapshot file %s: %w", filePath, err)
 	}
 	defer f.Close()
 
+	indexArray, err := readBytes(f)
+	if len(indexArray) != 4 { // Size of block index, which is of type uint32: 4 bytes
+		return 0, trie.Hash{}, nil, fmt.Errorf("block index is %v instead of 4 bytes", len(indexArray))
+	}
+	index := binary.LittleEndian.Uint32(indexArray)
+
 	trieRootArray, err := readBytes(f)
 	if err != nil {
-		return trie.Hash{}, nil, fmt.Errorf("failed to read trie root: %w", err)
+		return 0, trie.Hash{}, nil, fmt.Errorf("failed to read trie root: %w", err)
 	}
 	trieRoot, err := trie.HashFromBytes(trieRootArray)
 	if err != nil {
-		return trie.Hash{}, nil, fmt.Errorf("failed to read parse trie root: %w", err)
+		return 0, trie.Hash{}, nil, fmt.Errorf("failed to read parse trie root: %w", err)
 	}
 
 	snapshot := mapdb.NewMapDB()
 	for key, err := readBytes(f); !errors.Is(err, io.EOF); key, err = readBytes(f) {
 		if err != nil {
-			return trie.Hash{}, nil, fmt.Errorf("failed to read key: %w", err)
+			return 0, trie.Hash{}, nil, fmt.Errorf("failed to read key: %w", err)
 		}
 
 		value, err := readBytes(f)
 		if err != nil {
-			return trie.Hash{}, nil, fmt.Errorf("failed to read value of key %v: %w", key, err)
+			return 0, trie.Hash{}, nil, fmt.Errorf("failed to read value of key %v: %w", key, err)
 		}
 
 		err = snapshot.Set(key, value)
 		if err != nil {
-			return trie.Hash{}, nil, fmt.Errorf("failed to set key's %v value %v to snapshot: %w", key, value, err)
+			return 0, trie.Hash{}, nil, fmt.Errorf("failed to set key's %v value %v to snapshot: %w", key, value, err)
 		}
 	}
-	return trieRoot, snapshot, nil
+	return index, trieRoot, snapshot, nil
 }
 
-func tempSnapshotFileName(index uint32, blockHash state.BlockHash) string {
-	return tempSnapshotFileNameString(fmt.Sprint(index), blockHash.String())
+func tempSnapshotFileName(blockHash state.BlockHash) string {
+	return tempSnapshotFileNameString(blockHash.String())
 }
 
-func tempSnapshotFileNameString(index string, blockHash string) string {
-	return snapshotFileNameString(index, blockHash) + constSnapshotTmpFileSuffix
+func tempSnapshotFileNameString(blockHash string) string {
+	return snapshotFileNameString(blockHash) + constSnapshotTmpFileSuffix
 }
 
-func snapshotFileName(index uint32, blockHash state.BlockHash) string {
-	return snapshotFileNameString(fmt.Sprint(index), blockHash.String())
+func snapshotFileName(blockHash state.BlockHash) string {
+	return snapshotFileNameString(blockHash.String())
 }
 
-func snapshotFileNameString(index string, blockHash string) string {
-	return index + constSnapshotIndexHashFileNameSepparator + blockHash + constSnapshotFileSuffix
+func snapshotFileNameString(blockHash string) string {
+	return blockHash + constSnapshotFileSuffix
 }
 
 func writeBytes(bytes []byte, f *os.File) error {
