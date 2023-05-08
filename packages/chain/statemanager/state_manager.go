@@ -245,11 +245,10 @@ func (smT *stateManager) run() { //nolint:gocyclo
 				return
 			}
 			// TODO what should the statemgr wait for?
-			if smT.shutdownCoordinator.CheckNestedDone() {
-				smT.log.Debugf("Stopping state manager, because context was closed")
-				smT.shutdownCoordinator.Done()
-				return
-			}
+			smT.shutdownCoordinator.WaitNestedWithLogging(1 * time.Second)
+			smT.log.Debugf("Stopping state manager, because context was closed")
+			smT.shutdownCoordinator.Done()
+			return
 		}
 		select {
 		case input, ok := <-inputPipeCh:

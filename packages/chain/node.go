@@ -504,10 +504,9 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 				return
 			}
 			// needs to wait for state mgr and consensusInst
-			if cni.shutdownCoordinator.CheckNestedDone() {
-				cni.shutdownCoordinator.Done()
-				return
-			}
+			cni.shutdownCoordinator.WaitNestedWithLogging(1 * time.Second)
+			cni.shutdownCoordinator.Done()
+			return
 		}
 		select {
 		case txPublishResult, ok := <-recvTxPublishedPipeOutCh:

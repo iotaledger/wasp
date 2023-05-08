@@ -353,6 +353,29 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 		ctxAttachWithTimeout, cancelCtxAttachWithTimeout := context.WithTimeout(ctxAttach, inxTimeoutPublishTransaction)
 		defer cancelCtxAttachWithTimeout()
 
+		// check if the context is already canceled before posting the transaction
+		if ctxAttachWithTimeout.Err() != nil {
+			// check if the transaction was already included (race condition with other validators)
+			checkTransactionIncludedAndSetConfirmed(pendingTx)
+
+			ncc.LogDebugf("posting transaction %s (chainID: %s, isReattachment: %t%s) failed. Context is already canceled. (ncc.ctx: %t, ctxConfirmed: %t, ctxPublished: %t, ctxAttach: %t, ctxAttachWithTimeout: %t, ",
+				pendingTx.ID().ToHex(),
+				ncc.chainID,
+				isReattachment,
+				debugInfoChaining,
+				ncc.ctx.Err() != nil,
+				pendingTx.ctxConfirmed.Err() != nil,
+				pendingTx.ctxPublished.Err() != nil,
+				ctxAttach.Err() != nil,
+				ctxAttachWithTimeout.Err() != nil,
+			)
+
+			// we always return nil here, even if the context was canceled by L1 confirmation,
+			// chain consensus, shutdown signal or chain deactivation.
+			// the actual reason is checked on caller site.
+			return nil
+		}
+
 		// post the transaction
 		blockID, err := nodeConn.doPostTx(ctxAttachWithTimeout, pendingTx.transaction, chainedTxBlockIDs...)
 		if err != nil && !errors.Is(err, context.Canceled) {
