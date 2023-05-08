@@ -235,8 +235,8 @@ func (ncc *ncChain) getLastPendingTx() *pendingTransaction {
 	defer ncc.lastPendingTxLock.Unlock()
 
 	if ncc.lastPendingTx != nil {
-		ncc.nodeConn.pendingTransactionsLock.Lock()
-		defer ncc.nodeConn.pendingTransactionsLock.Unlock()
+		ncc.nodeConn.pendingTransactionsLock.RLock()
+		defer ncc.nodeConn.pendingTransactionsLock.RUnlock()
 
 		// check if the transaction is still pending, otherwise reset it
 		if ncc.nodeConn.pendingTransactionsMap.Has(ncc.lastPendingTx.transactionID) {
@@ -337,12 +337,17 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 
 		ncc.LogDebugf("posting transaction %s (chainID: %s, isReattachment: %t%s)...", pendingTx.ID().ToHex(), ncc.chainID, isReattachment, debugInfoChaining)
 
-		// we link the ctxAttach to ctxConfirmed and ncChain.ctx.
-		// this way the proof of work will be canceled if the transaction already got confirmed on L1.
-		// (e.g. another validator finished PoW and tx was confirmed)
+		if isReattachment {
+			// in case it is a reattachment, we have to renew the ctxPublished beforehand, because it may have already been
+			// canceled by a previous block on L1, which was orphaned.
+			pendingTx.ctxPublished, pendingTx.cancelCtxPublished = context.WithCancel(pendingTx.ctxConfirmed)
+		}
+
+		// we link the ctxAttach to ctxPublished and ncChain.ctx.
+		// this way the proof of work will be canceled if the transaction already got confirmed on L1 or was published by another validator.
 		// the given context will be canceled by the pending transaction checks.
 		// the context will also be canceled if the ncChain.ctx gets canceled by shutdown signal or "Chains.Deactivate".
-		ctxAttach, cancelCtxAttach := contextutils.MergeContexts(pendingTx.ctxConfirmed, ncc.ctx)
+		ctxAttach, cancelCtxAttach := contextutils.MergeContexts(pendingTx.ctxPublished, ncc.ctx)
 		defer cancelCtxAttach()
 
 		ctxAttachWithTimeout, cancelCtxAttachWithTimeout := context.WithTimeout(ctxAttach, inxTimeoutPublishTransaction)

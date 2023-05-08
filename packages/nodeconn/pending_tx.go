@@ -20,6 +20,12 @@ type pendingTransaction struct {
 	// if this context gets canceled, the tx should not be tracked by the node connection anymore.
 	ctxChainConsensus context.Context
 
+	// this context is used to signal that the transaction was published to the network (maybe by other validators).
+	// the metadata of the containing block was fine (solid, no-reattach flag set).
+	// this context can be used to abort the ongoing PoW in case another validator was faster with publishing the tx.
+	ctxPublished       context.Context
+	cancelCtxPublished context.CancelFunc
+
 	// this context is used to signal that the transaction got referenced by a milestone.
 	// it might be confirmed or conflicting, or the parent ctxChainConsensus got canceled.
 	ctxConfirmed       context.Context
@@ -60,8 +66,13 @@ func newPendingTransaction(ctxChainConsensus context.Context, ncChain *ncChain, 
 
 	ctxConfirmed, cancelCtxConfirmed := context.WithCancel(ctxChainConsensus)
 
+	// if it was confirmed, it was also already published
+	ctxPublished, cancelCtxPublished := context.WithCancel(ctxConfirmed)
+
 	pendingTx := &pendingTransaction{
 		ctxChainConsensus:    ctxChainConsensus,
+		ctxPublished:         ctxPublished,
+		cancelCtxPublished:   cancelCtxPublished,
 		ctxConfirmed:         ctxConfirmed,
 		cancelCtxConfirmed:   cancelCtxConfirmed,
 		ncChain:              ncChain,
@@ -133,6 +144,10 @@ func (tx *pendingTransaction) propagateReattach() {
 	if tx.chainedPendingTx != nil {
 		tx.chainedPendingTx.Reattach()
 	}
+}
+
+func (tx *pendingTransaction) SetPublished() {
+	tx.cancelCtxPublished()
 }
 
 func (tx *pendingTransaction) Confirmed() bool {
