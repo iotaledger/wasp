@@ -65,7 +65,7 @@ type Chains struct {
 	consensusStateRegistry      cmt_log.ConsensusStateRegistry
 	chainListener               chain.ChainListener
 
-	mutex     sync.RWMutex
+	mutex     *sync.RWMutex
 	allChains *shrinkingmap.ShrinkingMap[isc.ChainID, *activeChain]
 	accessMgr access_mgr.AccessMgr
 
@@ -105,6 +105,7 @@ func New(
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
+		mutex:                            &sync.RWMutex{},
 		allChains:                        shrinkingmap.New[isc.ChainID, *activeChain](),
 		nodeConnection:                   nodeConnection,
 		processorConfig:                  processorConfig,
@@ -161,6 +162,8 @@ func (c *Chains) Run(ctx context.Context) error {
 
 func (c *Chains) Close() {
 	util.ExecuteIfNotNil(c.cleanupFunc)
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
 	c.allChains.ForEach(func(_ isc.ChainID, ac *activeChain) bool {
 		ac.cancelFunc()
 		return true
@@ -212,6 +215,10 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	if c.ctx == nil {
 		return errors.New("run chains first")
 	}
+	if c.ctx.Err() != nil {
+		return errors.New("node is shutting down")
+	}
+
 	//
 	// Check, maybe it is already running.
 	if c.allChains.Has(chainID) {

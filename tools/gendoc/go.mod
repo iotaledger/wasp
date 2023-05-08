@@ -70,17 +70,17 @@ require (
 	github.com/huin/goupnp v1.1.0 // indirect
 	github.com/iancoleman/orderedmap v0.2.0 // indirect
 	github.com/iotaledger/grocksdb v1.7.5-0.20230220105546-5162e18885c7 // indirect
-	github.com/iotaledger/hive.go/constraints v0.0.0-20230420105138-0b7cba751091 // indirect
-	github.com/iotaledger/hive.go/crypto v0.0.0-20230420105138-0b7cba751091 // indirect
-	github.com/iotaledger/hive.go/ds v0.0.0-20230420105138-0b7cba751091 // indirect
-	github.com/iotaledger/hive.go/kvstore v0.0.0-20230420105138-0b7cba751091 // indirect
-	github.com/iotaledger/hive.go/lo v0.0.0-20230420105138-0b7cba751091 // indirect
-	github.com/iotaledger/hive.go/logger v0.0.0-20230420105138-0b7cba751091 // indirect
-	github.com/iotaledger/hive.go/objectstorage v0.0.0-20230420105138-0b7cba751091 // indirect
-	github.com/iotaledger/hive.go/runtime v0.0.0-20230420105138-0b7cba751091 // indirect
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20230420105138-0b7cba751091 // indirect
-	github.com/iotaledger/hive.go/stringify v0.0.0-20230420105138-0b7cba751091 // indirect
-	github.com/iotaledger/hive.go/web v0.0.0-20230420105138-0b7cba751091 // indirect
+	github.com/iotaledger/hive.go/constraints v0.0.0-20230425142119-6abddaf15db9 // indirect
+	github.com/iotaledger/hive.go/crypto v0.0.0-20230425142119-6abddaf15db9 // indirect
+	github.com/iotaledger/hive.go/ds v0.0.0-20230425142119-6abddaf15db9 // indirect
+	github.com/iotaledger/hive.go/kvstore v0.0.0-20230425142119-6abddaf15db9 // indirect
+	github.com/iotaledger/hive.go/lo v0.0.0-20230425142119-6abddaf15db9 // indirect
+	github.com/iotaledger/hive.go/logger v0.0.0-20230425142119-6abddaf15db9 // indirect
+	github.com/iotaledger/hive.go/objectstorage v0.0.0-20230425142119-6abddaf15db9 // indirect
+	github.com/iotaledger/hive.go/runtime v0.0.0-20230425142119-6abddaf15db9 // indirect
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20230425142119-6abddaf15db9 // indirect
+	github.com/iotaledger/hive.go/stringify v0.0.0-20230425142119-6abddaf15db9 // indirect
+	github.com/iotaledger/hive.go/web v0.0.0-20230425142119-6abddaf15db9 // indirect
 	github.com/iotaledger/inx-app v1.0.0-rc.3.0.20230417131029-0bfe891d7c4a // indirect
 	github.com/iotaledger/inx/go v1.0.0-rc.2 // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
@@ -101,7 +101,7 @@ require (
 	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
 	github.com/libp2p/go-cidranger v1.1.0 // indirect
 	github.com/libp2p/go-flow-metrics v0.1.0 // indirect
-	github.com/libp2p/go-libp2p v0.27.1 // indirect
+	github.com/libp2p/go-libp2p v0.27.2 // indirect
 	github.com/libp2p/go-libp2p-asn-util v0.3.0 // indirect
 	github.com/libp2p/go-msgio v0.3.0 // indirect
 	github.com/libp2p/go-nat v0.1.0 // indirect
@@ -142,7 +142,7 @@ require (
 	github.com/petermattis/goid v0.0.0-20230317030725-371a4b8eda08 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_golang v1.15.0 // indirect
+	github.com/prometheus/client_golang v1.15.1 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
@@ -158,7 +158,7 @@ require (
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/samber/lo v1.38.1 // indirect
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect
-	github.com/second-state/WasmEdge-go v0.11.2 // indirect
+	github.com/second-state/WasmEdge-go v0.12.0 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
@@ -177,13 +177,13 @@ require (
 	go.dedis.ch/fixbuf v1.0.3 // indirect
 	go.dedis.ch/kyber/v3 v3.1.0 // indirect
 	go.dedis.ch/protobuf v1.0.11 // indirect
-	go.uber.org/atomic v1.10.0 // indirect
-	go.uber.org/dig v1.16.1 // indirect
+	go.uber.org/atomic v1.11.0 // indirect
+	go.uber.org/dig v1.17.0 // indirect
 	go.uber.org/fx v1.19.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/crypto v0.8.0 // indirect
-	golang.org/x/exp v0.0.0-20230420155640-133eef4313cb // indirect
+	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53 // indirect
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/net v0.9.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
