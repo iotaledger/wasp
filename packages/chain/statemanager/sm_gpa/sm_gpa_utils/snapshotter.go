@@ -224,7 +224,9 @@ func snapshotFileNameString(index string, blockHash string) string {
 }
 
 func writeBytes(bytes []byte, f *os.File) error {
-	n, err := f.Write(arrayLengthToArray(bytes))
+	lengthArray := make([]byte, constLengthArrayLength)
+	binary.LittleEndian.PutUint32(lengthArray, uint32(len(bytes)))
+	n, err := f.Write(lengthArray)
 	if n != constLengthArrayLength {
 		return fmt.Errorf("only %v of total %v bytes of length written", n, constLengthArrayLength)
 	}
@@ -244,8 +246,8 @@ func writeBytes(bytes []byte, f *os.File) error {
 }
 
 func readBytes(f *os.File) ([]byte, error) {
-	lenArray := make([]byte, constLengthArrayLength)
-	read, err := f.Read(lenArray)
+	lengthArray := make([]byte, constLengthArrayLength)
+	read, err := f.Read(lengthArray)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read length: %w", err)
 	}
@@ -253,7 +255,8 @@ func readBytes(f *os.File) ([]byte, error) {
 		return nil, fmt.Errorf("read only %v bytes out of %v of length", read, constLengthArrayLength)
 	}
 
-	array, err := arrayToArrayOfLength(lenArray)
+	length := binary.LittleEndian.Uint32(lengthArray)
+	array := make([]byte, length)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse length: %w", err)
 	}
@@ -266,19 +269,4 @@ func readBytes(f *os.File) ([]byte, error) {
 	}
 
 	return array, nil
-}
-
-func arrayLengthToArray(array []byte) []byte {
-	length := uint32(len(array))
-	res := make([]byte, constLengthArrayLength)
-	binary.LittleEndian.PutUint32(res, length)
-	return res
-}
-
-func arrayToArrayOfLength(lengthArray []byte) ([]byte, error) {
-	if len(lengthArray) != constLengthArrayLength {
-		return nil, fmt.Errorf("array length array contains %v bytes instead of %v", len(lengthArray), constLengthArrayLength)
-	}
-	length := binary.LittleEndian.Uint32(lengthArray)
-	return make([]byte, length), nil
 }
