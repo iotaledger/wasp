@@ -56,7 +56,7 @@ func (h *magicContractViewHandler) CallView(
 	entryPoint uint32,
 	params iscmagic.ISCDict,
 ) iscmagic.ISCDict {
-	callRet := h.ctx.CallView(
+	callRet := h.callView(
 		isc.Hname(contractHname),
 		isc.Hname(entryPoint),
 		params.Unwrap(),
@@ -109,7 +109,7 @@ func (h *magicContractViewHandler) Erc20NativeTokensFoundrySerialNumber(addr com
 
 // handler for ISCSandbox::getNativeTokenID
 func (h *magicContractViewHandler) GetNativeTokenID(foundrySN uint32) iscmagic.NativeTokenID {
-	r := h.ctx.CallView(accounts.Contract.Hname(), accounts.ViewFoundryOutput.Hname(), dict.Dict{
+	r := h.callView(accounts.Contract.Hname(), accounts.ViewFoundryOutput.Hname(), dict.Dict{
 		accounts.ParamFoundrySN: codec.EncodeUint32(foundrySN),
 	})
 	out := &iotago.FoundryOutput{}
@@ -121,7 +121,7 @@ func (h *magicContractViewHandler) GetNativeTokenID(foundrySN uint32) iscmagic.N
 
 // handler for ISCSandbox::getNativeTokenScheme
 func (h *magicContractViewHandler) GetNativeTokenScheme(foundrySN uint32) iotago.SimpleTokenScheme {
-	r := h.ctx.CallView(accounts.Contract.Hname(), accounts.ViewFoundryOutput.Hname(), dict.Dict{
+	r := h.callView(accounts.Contract.Hname(), accounts.ViewFoundryOutput.Hname(), dict.Dict{
 		accounts.ParamFoundrySN: codec.EncodeUint32(foundrySN),
 	})
 	out := &iotago.FoundryOutput{}

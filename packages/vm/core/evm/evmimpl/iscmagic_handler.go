@@ -13,6 +13,7 @@ import (
 
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 type magicContractHandler struct {
@@ -84,4 +85,16 @@ func reflectCall(handler any, method *abi.Method, args []any) []byte {
 		panic(err)
 	}
 	return ret
+}
+
+func (h *magicContractHandler) call(target, ep isc.Hname, params dict.Dict, allowance *isc.Assets) dict.Dict {
+	return h.ctx.Privileged().CallOnBehalfOf(
+		isc.NewEthereumAddressAgentID(h.caller.Address()),
+		target, ep, params, allowance,
+	)
+}
+
+func (h *magicContractViewHandler) callView(target, ep isc.Hname, params dict.Dict) dict.Dict {
+	// TODO: currently there is no way to change the caller of a view in the VM
+	return h.ctx.CallView(target, ep, params)
 }
