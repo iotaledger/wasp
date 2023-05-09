@@ -30,7 +30,7 @@ require (
 	github.com/labstack/echo-contrib v0.14.1
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/labstack/gommon v0.4.0
-	github.com/libp2p/go-libp2p v0.27.2
+	github.com/libp2p/go-libp2p v0.27.3
 	github.com/multiformats/go-multiaddr v0.9.0
 	github.com/pangpanglabs/echoswagger/v2 v2.4.1
 	github.com/pkg/errors v0.9.1
