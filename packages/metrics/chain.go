@@ -748,6 +748,6 @@ func (m *ChainMetricsProvider) OutPullOutputByID() IMessageMetric[iotago.OutputI
 	return m.outPullOutputByIDMetrics
 }
 
-func (m *ChainMetricsProvider) MaxChainConfirmedStateLag() uint32 { // TODO: Call it from the health endpoint.
+func (m *ChainMetricsProvider) MaxChainConfirmedStateLag() uint32 {
 	return m.chainConfirmedStateLag.MaxLag()
 }

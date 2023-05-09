@@ -91,6 +91,6 @@ func (c *MetricsService) GetChainConsensusPipeMetrics(chainID isc.ChainID) *mode
 	return models.MapConsensusPipeMetrics(metrics)
 }
 
-func (c *MetricsService) GetMaxChainConfirmedStateLag(chainID isc.ChainID) uint32 {
+func (c *MetricsService) GetMaxChainConfirmedStateLag() uint32 {
 	return c.chainMetricsProvider.MaxChainConfirmedStateLag()
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/hive.go/app/configuration"
 	"github.com/iotaledger/hive.go/app/shutdown"
 	loggerpkg "github.com/iotaledger/hive.go/logger"
+	components "github.com/iotaledger/wasp/components/webapi"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
@@ -33,8 +34,15 @@ import (
 
 const APIVersion = 1
 
-func AddHealthEndpoint(server echoswagger.ApiRoot) {
-	server.GET("/health", func(c echo.Context) error { return c.NoContent(http.StatusOK) }).
+func AddHealthEndpoint(server echoswagger.ApiRoot, chainService interfaces.ChainService, metricsService interfaces.MetricsService) {
+	server.GET("/health", func(e echo.Context) error {
+		lag := metricsService.GetMaxChainConfirmedStateLag()
+		if lag > components.ParamsWebAPI.Limits.ConfirmedStateLagThreshold {
+			return e.String(http.StatusInternalServerError, fmt.Sprintf("chain unsync with %d diff", lag))
+		}
+
+		return e.String(http.StatusOK, "all chain synchronized")
+	}).
 		AddResponse(http.StatusOK, "The node is healthy.", nil, nil).
 		SetOperationId("getHealth").
 		SetSummary("Returns 200 if the node is healthy.")
@@ -126,7 +134,7 @@ func Init(
 		}))
 	}
 
-	AddHealthEndpoint(server)
+	AddHealthEndpoint(server, chainService, metricsService)
 	addWebSocketEndpoint(server, websocketService)
 	loadControllers(server, mocker, controllersToLoad, authMiddleware)
 }
