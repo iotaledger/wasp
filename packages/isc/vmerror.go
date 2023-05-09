@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"hash/crc32"
 	"math"
+	"reflect"
 
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -190,6 +191,26 @@ func (e *UnresolvedVMError) AsGoError() error {
 		return nil
 	}
 	return e
+}
+
+// produce the params as humanly readably json
+func (e *UnresolvedVMError) MarshalJSON() ([]byte, error) {
+	type Alias UnresolvedVMError // needed to avoid the struct below to inherit `MarshalJSON` and go into an infinite loop
+	return json.Marshal(&struct {
+		Params []string `json:"params"`
+		*Alias
+	}{
+		Params: humanlyReadableParams(e.Params),
+		Alias:  (*Alias)(e),
+	})
+}
+
+func humanlyReadableParams(params []interface{}) []string {
+	res := make([]string, len(params))
+	for i, param := range params {
+		res[i] = fmt.Sprintf("%v:%s", param, reflect.TypeOf(param).String())
+	}
+	return res
 }
 
 type VMError struct {

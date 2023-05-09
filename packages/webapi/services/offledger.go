@@ -64,9 +64,9 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 	}
 
 	// check chain exists
-	chain := c.chainService.GetChainByID(chainID)
-	if chain == nil {
-		return fmt.Errorf("unknown chain: %s", chainID.String())
+	chain, err := c.chainService.GetChainByID(chainID)
+	if err != nil {
+		return err
 	}
 
 	if !chain.ReceiveOffLedgerRequest(request, c.networkProvider.Self().PubKey()) {

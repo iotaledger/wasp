@@ -18,7 +18,7 @@ var (
 	ErrInconsistentL2LedgerWithL1TxBuilder  = coreerrors.Register("fatal: L2 ledger is not consistent with the L1 tx builder").Create()
 	ErrCantDestroyFoundryBeingCreated       = coreerrors.Register("can't destroy foundry which is being created").Create()
 
-	ErrContractNotFound          = coreerrors.Register("contract not found id:%d")
+	ErrContractNotFound          = coreerrors.Register("contract not found, hname:%d")
 	ErrTargetEntryPointNotFound  = coreerrors.Register("entry point not found").Create()
 	ErrEntryPointCantBeAView     = coreerrors.Register("'init' entry point can't be a view").Create()
 	ErrRepeatingInitCall         = coreerrors.Register("repeating init call").Create()

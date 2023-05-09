@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/webapi/dto"
 	"github.com/iotaledger/wasp/packages/webapi/models"
@@ -42,7 +41,7 @@ type ChainService interface {
 	DeactivateChain(chainID isc.ChainID) error
 	GetAllChainIDs() ([]isc.ChainID, error)
 	HasChain(chainID isc.ChainID) bool
-	GetChainByID(chainID isc.ChainID) chain.Chain
+	GetChainByID(chainID isc.ChainID) (chain.Chain, error)
 	GetChainInfoByChainID(chainID isc.ChainID) (*dto.ChainInfo, error)
 	GetContracts(chainID isc.ChainID) (dto.ContractsMap, error)
 	GetEVMChainID(chainID isc.ChainID) (uint16, error)
@@ -105,10 +104,11 @@ type UserService interface {
 }
 
 type VMService interface {
-	CallView(chainState state.State, chain chain.Chain, contractName isc.Hname, functionName isc.Hname, params dict.Dict) (dict.Dict, error)
 	CallViewByChainID(chainID isc.ChainID, contractName isc.Hname, functionName isc.Hname, params dict.Dict) (dict.Dict, error)
 	ParseReceipt(chain chain.Chain, receipt *blocklog.RequestReceipt) (*isc.Receipt, *isc.VMError, error)
+	// TODO vmError return value can probably be removed
 	GetReceipt(chainID isc.ChainID, requestID isc.RequestID) (ret *isc.Receipt, vmError *isc.VMError, err error)
+	EstimateGas(chainID isc.ChainID, req isc.Request) (*isc.Receipt, error)
 }
 
 type Mocker interface {

@@ -115,7 +115,7 @@ func (c *ChainService) HasChain(chainID isc.ChainID) bool {
 	return storedChainRec != nil
 }
 
-func (c *ChainService) GetChainByID(chainID isc.ChainID) chainpkg.Chain {
+func (c *ChainService) GetChainByID(chainID isc.ChainID) (chainpkg.Chain, error) {
 	return c.chainsProvider().Get(chainID)
 }
 
@@ -178,7 +178,10 @@ func (c *ChainService) GetContracts(chainID isc.ChainID) (dto.ContractsMap, erro
 }
 
 func (c *ChainService) GetState(chainID isc.ChainID, stateKey []byte) (state []byte, err error) {
-	ch := c.chainsProvider().Get(chainID)
+	ch, err := c.GetChainByID(chainID)
+	if err != nil {
+		return nil, err
+	}
 
 	latestState, err := ch.LatestState(chainpkg.ActiveOrCommittedState)
 	if err != nil {
@@ -189,10 +192,9 @@ func (c *ChainService) GetState(chainID isc.ChainID, stateKey []byte) (state []b
 }
 
 func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.ChainID, requestID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*isc.Receipt, *isc.VMError, error) {
-	chain := c.chainsProvider().Get(chainID)
-
-	if chain == nil {
-		return nil, nil, errors.New("chain does not exist")
+	ch, err := c.GetChainByID(chainID)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	receipt, vmError, _ := c.vmService.GetReceipt(chainID, requestID)
@@ -204,11 +206,11 @@ func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.
 	defer ctxCancel()
 
 	select {
-	case receiptResponse := <-chain.AwaitRequestProcessed(ctxTimeout, requestID, waitForL1Confirmation):
+	case receiptResponse := <-ch.AwaitRequestProcessed(ctxTimeout, requestID, waitForL1Confirmation):
 		if receiptResponse == nil {
 			return nil, nil, nil
 		}
-		return c.vmService.ParseReceipt(chain, receiptResponse)
+		return c.vmService.ParseReceipt(ch, receiptResponse)
 	case <-ctxTimeout.Done():
 		return nil, nil, errors.New("timeout while waiting for request to be processed")
 	}
