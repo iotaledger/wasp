@@ -47,7 +47,6 @@ export class ScAddress {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// TODO address type-dependent encoding/decoding?
 export function addressDecode(dec: WasmDecoder): ScAddress {
     const addr = new ScAddress();
     addr.id = dec.fixedBytes(ScAddressLength);
@@ -116,7 +115,14 @@ export function addressToBytes(value: ScAddress): Uint8Array {
 
 export function addressFromString(value: string): ScAddress {
     if (value.indexOf('0x') == 0) {
-        return addressFromBytes(hexDecode(value));
+        if (value == '0x0') {
+            return addressFromBytes(new Uint8Array(ScLengthEth));
+        }
+        let b = hexDecode(value);
+        if (b.length != ScLengthEth) {
+            panic("invalid ETH address");
+        }
+        return addressFromBytes(b);
     }
     return bech32Decode(value);
 }
