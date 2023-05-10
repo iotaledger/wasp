@@ -10,6 +10,7 @@ author: Eric Hop <eric@iota.org>
 license: Apache-2.0
 repository: https://github.com/iotaledger/wasp
 
+events: {}
 structs:
   Token:
     created: Uint64 # creation timestamp
@@ -20,10 +21,12 @@ structs:
     updated: Uint64 # last update timestamp
     userDefined: String # any user defined text
 typedefs: {}
+
 state:
   owner: AgentID
   tokenList: TokenID[]
   registry: map[TokenID]Token
+
 funcs:
   init:
     params:
@@ -40,6 +43,7 @@ funcs:
     access: owner # the one who can change the token info
     params:
       token: TokenID # token of token to update metadata for
+
 views:
   getInfo:
     params:

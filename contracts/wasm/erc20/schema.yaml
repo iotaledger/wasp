@@ -22,10 +22,12 @@ events:
 structs: {}
 typedefs:
   AllowancesForAgent: map[AgentID]Uint64
+
 state:
   allAllowances=a: map[AgentID]AllowancesForAgent
   balances=b: map[AgentID]Uint64 # balances per account
   supply=s: Uint64 # total supply of the token
+
 funcs:
   approve:
     params:
@@ -44,6 +46,7 @@ funcs:
       account=ac: AgentID # sender account
       amount=am: Uint64 # amount of tokens to transfer
       recipient=r: AgentID # recipient account
+
 views:
   allowance:
     params:

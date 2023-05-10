@@ -10,8 +10,10 @@ author: Eric Hop <eric@iota.org>
 license: Apache-2.0
 repository: https://github.com/iotaledger/wasp
 
+events: {}
 structs: {}
 typedefs: {}
+
 state:
   counter: Uint64
   ints: map[String]Int64
@@ -31,11 +33,11 @@ funcs:
       caller: AgentID
       chainID: ChainID
       chainOwnerID: AgentID
-  claimAllowance:
-  doNothing:
-  estimateMinStorageDeposit:
-  incCounter:
-  infiniteLoop:
+  claimAllowance: {}
+  doNothing: {}
+  estimateMinStorageDeposit: {}
+  incCounter: {}
+  infiniteLoop: {}
   init:
     params:
       fail=initFailParam: Int64?
@@ -52,15 +54,15 @@ funcs:
       int64Zero=int64-0: Int64
       string: String
       stringZero=string-0: String
-  pingAllowanceBack:
+  pingAllowanceBack: {}
   runRecursion:
     params:
       n: Uint64
     results:
       n: Uint64
-  sendLargeRequest:
-  sendNFTsBack:
-  sendToAddress:
+  sendLargeRequest: {}
+  sendNFTsBack: {}
+  sendToAddress: {}
   setInt:
     params:
       intValue=intParamValue: Int64
@@ -68,25 +70,26 @@ funcs:
   spawn:
     params:
       progHash: Hash
-  splitFunds:
-  splitFundsNativeTokens:
-  testBlockContext1:
-  testBlockContext2:
-  testCallPanicFullEP:
-  testCallPanicViewEPFromFull:
+  splitFunds: {}
+  splitFundsNativeTokens: {}
+  testBlockContext1: {}
+  testBlockContext2: {}
+  testCallPanicFullEP: {}
+  testCallPanicViewEPFromFull: {}
   testChainOwnerIDFull:
     results:
       chainOwnerID: AgentID
-  testEventLogDeploy:
-  testEventLogEventData:
+  testEventLogDeploy: {}
+  testEventLogEventData: {}
   testEventLogGenericData:
     params:
       counter: Uint64
-  testPanicFullEP:
+  testPanicFullEP: {}
   withdrawFromChain:
     params:
       chainID: ChainID
       baseTokens: Uint64
+
 views:
   checkContextFromViewEP:
     params:
@@ -116,8 +119,8 @@ views:
       varName: String
     results:
       vars=this: map[String]String
-  infiniteLoopView:
-  justView:
+  infiniteLoopView: {}
+  justView: {}
   passTypesView:
     params:
       address: Address
@@ -131,11 +134,11 @@ views:
       int64Zero=int64-0: Int64
       string: String
       stringZero=string-0: String
-  testCallPanicViewEPFromView:
+  testCallPanicViewEPFromView: {}
   testChainOwnerIDView:
     results:
       chainOwnerID: AgentID
-  testPanicViewEP:
+  testPanicViewEP: {}
   testSandboxCall:
     results:
       sandboxCall: String
