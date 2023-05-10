@@ -1,12 +1,12 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import { log, panic } from '../sandbox';
-import { bech32Decode, bech32Encode, hashKeccak, hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes } from './codec';
-import { Proxy } from './proxy';
-import { bytesCompare, bytesFromString, bytesToString } from './scbytes';
-import { ScAgentID } from './scagentid';
-import { stringFromBytes, stringToBytes } from "./scstring";
+import {panic} from '../sandbox';
+import {bech32Decode, bech32Encode, hashKeccak, hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from './codec';
+import {Proxy} from './proxy';
+import {bytesCompare} from './scbytes';
+import {ScAgentID} from './scagentid';
+import {stringFromBytes, stringToBytes} from "./scstring";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -112,17 +112,20 @@ export function addressToBytes(value: ScAddress): Uint8Array {
 }
 
 export function addressFromString(value: string): ScAddress {
-    if (value.indexOf('0x') == 0) {
-        if (value == '0x0') {
-            return addressFromBytes(new Uint8Array(ScLengthEth));
-        }
-        let b = hexDecode(value);
-        if (b.length != ScLengthEth) {
-            panic("invalid ETH address");
-        }
-        return addressFromBytes(b);
+    if (!value.startsWith('0x')) {
+        return bech32Decode(value);
     }
-    return bech32Decode(value);
+
+    // ETH address, allow the common "0x0"
+    if (value == '0x0') {
+        return addressFromBytes(new Uint8Array(ScLengthEth));
+    }
+
+    let bytes = hexDecode(value);
+    if (bytes.length != ScLengthEth) {
+        panic("invalid ETH address");
+    }
+    return addressFromBytes(bytes);
 }
 
 export function addressToString(value: ScAddress): string {

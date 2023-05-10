@@ -377,12 +377,15 @@ views:
       ethAddressString: String
       ethAgentID: AgentID
       ethAgentIDString: String
+
   checkEthEmptyAddressAndAgentID:
     params:
       ethAddress: Address
       ethAgentID: AgentID
       ethAgentIDString: String
-  checkEthInvalidEmptyAddressFromString:
+
+  checkEthInvalidEmptyAddressFromString: {}
+
   checkHash:
     params:
       scHash: Hash

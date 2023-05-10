@@ -38,6 +38,22 @@ function vala(val: Uint8Array): string {
 export class ScDict implements IKvStore {
     dict: Map<string, Uint8Array> = new Map();
 
+    public constructor(buf: Uint8Array | null) {
+        if (buf !== null && buf.length != 0) {
+            const dec = new WasmDecoder(buf);
+            const size = uint32FromBytes(dec.fixedBytes(ScUint32Length));
+            for (let i: u32 = 0; i < size; i++) {
+                const keyBuf = dec.fixedBytes(ScUint16Length);
+                const keyLen = uint16FromBytes(keyBuf);
+                const key = dec.fixedBytes(keyLen as u32);
+                const valBuf = dec.fixedBytes(ScUint32Length);
+                const valLen = uint32FromBytes(valBuf);
+                const val = dec.fixedBytes(valLen);
+                this.set(key, val);
+            }
+        }
+    }
+
     static toKey(buf: Uint8Array): string {
         let key = '';
         for (let i = 0; i < buf.length; i++) {
@@ -56,22 +72,6 @@ export class ScDict implements IKvStore {
         return buf;
     }
 
-    public constructor(buf: Uint8Array | null) {
-        if (buf !== null && buf.length != 0) {
-            const dec = new WasmDecoder(buf);
-            const size = uint32FromBytes(dec.fixedBytes(ScUint32Length));
-            for (let i: u32 = 0; i < size; i++) {
-                const keyBuf = dec.fixedBytes(ScUint16Length);
-                const keyLen = uint16FromBytes(keyBuf);
-                const key = dec.fixedBytes(keyLen as u32);
-                const valBuf = dec.fixedBytes(ScUint32Length);
-                const valLen = uint32FromBytes(valBuf);
-                const val = dec.fixedBytes(valLen);
-                this.set(key, val);
-            }
-        }
-    }
-
     public asProxy(): Proxy {
         return new Proxy(this);
     }
@@ -81,13 +81,6 @@ export class ScDict implements IKvStore {
         // log('dict.delete(' + keya(key) + ')');
         this.dict.delete(ScDict.toKey(key));
         // this.dump('Delete')
-    }
-
-    protected dump(which: string): void {
-        const keys = this.dict.keys();
-        for (let i = 0; i < keys.length; i++) {
-            log('dict.' + which + '.' + i.toString() + '.' + keya(ScDict.fromKey(keys[i])) + ' = ' + vala(this.dict.get(keys[i])));
-        }
     }
 
     exists(key: Uint8Array): bool {
@@ -138,6 +131,13 @@ export class ScDict implements IKvStore {
             enc.fixedBytes(val, val.length as u32);
         }
         return enc.buf();
+    }
+
+    protected dump(which: string): void {
+        const keys = this.dict.keys();
+        for (let i = 0; i < keys.length; i++) {
+            log('dict.' + which + '.' + i.toString() + '.' + keya(ScDict.fromKey(keys[i])) + ' = ' + vala(this.dict.get(keys[i])));
+        }
     }
 }
 
