@@ -331,10 +331,6 @@ type onLedgerRequestData struct {
 	outputID iotago.OutputID
 	output   iotago.Output
 
-	// non-persistent, set when retrying an "unprocessable request" that was consumed by the chain previously.
-	// we keep the old outputID so that the requestID doesn't change
-	retryOutputID iotago.OutputID
-
 	// the following originate from UTXOMetaData and output, and are created in `NewExtendedOutputData`
 
 	featureBlocks    iotago.FeatureSet
@@ -564,50 +560,6 @@ func (r *onLedgerRequestData) OutputID() iotago.OutputID {
 	return r.outputID
 }
 
-func (r *onLedgerRequestData) SetRetryOutputID(oid iotago.OutputID) {
-	r.retryOutputID = oid
-}
-
-func (r *onLedgerRequestData) IsRetry() bool {
-	return !IsEmptyOutputID(r.retryOutputID)
-}
-
-func (r *onLedgerRequestData) RetryOutputID() iotago.OutputID {
-	return r.retryOutputID
-}
-
-func (r *onLedgerRequestData) RetryOutput(chainAliasID iotago.AliasID) iotago.Output {
-	out := r.Output().Clone()
-
-	features := iotago.Features{
-		&iotago.SenderFeature{
-			Address: chainAliasID.ToAddress(), // must have the chain as the sender, so its recognized as an internalUTXO
-		},
-	}
-
-	unlock := iotago.UnlockConditions{
-		&iotago.AddressUnlockCondition{
-			Address: chainAliasID.ToAddress(),
-		},
-	}
-
-	// cleanup features and unlock conditions except metadata
-	switch o := out.(type) {
-	case *iotago.BasicOutput:
-		o.Features = features
-		o.Conditions = unlock
-	case *iotago.NFTOutput:
-		o.Features = features
-		o.Conditions = unlock
-	case *iotago.AliasOutput:
-		o.Features = features
-		o.Conditions = unlock
-	default:
-		panic("unexpected output type")
-	}
-	return out
-}
-
 func (r *onLedgerRequestData) Output() iotago.Output {
 	return r.output
 }
@@ -655,6 +607,30 @@ func (r *onLedgerRequestData) ReturnAmount() (uint64, bool) {
 		return 0, false
 	}
 	return storageDepositReturn.Amount, true
+}
+
+// endregion
+
+// region RetryOnLedgerRequest //////////////////////////////////////////////////////////////////
+
+type RetryOnLedgerRequest struct {
+	OnLedgerRequest
+	retryOutputID iotago.OutputID
+}
+
+func NewRetryOnLedgerRequest(req OnLedgerRequest, retryOutput iotago.OutputID) *RetryOnLedgerRequest {
+	return &RetryOnLedgerRequest{
+		OnLedgerRequest: req,
+		retryOutputID:   retryOutput,
+	}
+}
+
+func (r *RetryOnLedgerRequest) SetRetryOutputID(oid iotago.OutputID) {
+	r.retryOutputID = oid
+}
+
+func (r *RetryOnLedgerRequest) RetryOutputID() iotago.OutputID {
+	return r.retryOutputID
 }
 
 // endregion

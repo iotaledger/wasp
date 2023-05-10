@@ -60,6 +60,6 @@ func (vmctx *VMContext) BlockContext() interface{} {
 func (vmctx *VMContext) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
 	// set the "rety output ID" so that the correct output is used by the txbuilder
 	oid := vmctx.getOutputID(blockIndex, outputIndex)
-	req.(isc.OnLedgerRequest).SetRetryOutputID(oid)
-	vmctx.task.UnprocessableToRetry = append(vmctx.task.UnprocessableToRetry, req)
+	retryReq := isc.NewRetryOnLedgerRequest(req.(isc.OnLedgerRequest), oid)
+	vmctx.task.UnprocessableToRetry = append(vmctx.task.UnprocessableToRetry, retryReq)
 }

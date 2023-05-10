@@ -154,7 +154,7 @@ func (txb *AnchorTransactionBuilder) ConsumeUnprocessable(req isc.OnLedgerReques
 
 	txb.consumed = append(txb.consumed, req)
 
-	txb.postedOutputs = append(txb.postedOutputs, req.RetryOutput(txb.anchorOutput.AliasID))
+	txb.postedOutputs = append(txb.postedOutputs, retryOutputFromOnLedgerRequest(req, txb.anchorOutput.AliasID))
 
 	return len(txb.postedOutputs) - 1
 }
@@ -225,9 +225,9 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 		req := txb.consumed[i]
 		outputID := req.OutputID()
 		output := req.Output()
-		if req.IsRetry() {
-			outputID = req.RetryOutputID()
-			output = req.RetryOutput(txb.anchorOutput.AliasID)
+		if retrReq, ok := req.(*isc.RetryOnLedgerRequest); ok {
+			outputID = retrReq.RetryOutputID()
+			output = retryOutputFromOnLedgerRequest(req, txb.anchorOutput.AliasID)
 		}
 		outputIDs = append(outputIDs, outputID)
 		inputs[outputID] = output
@@ -387,4 +387,36 @@ func (txb *AnchorTransactionBuilder) mustCheckTotalNativeTokensExceeded() {
 			panic(vmexceptions.ErrTotalNativeTokensLimitExceeded)
 		}
 	}
+}
+
+func retryOutputFromOnLedgerRequest(req isc.OnLedgerRequest, chainAliasID iotago.AliasID) iotago.Output {
+	out := req.Output().Clone()
+
+	features := iotago.Features{
+		&iotago.SenderFeature{
+			Address: chainAliasID.ToAddress(), // must have the chain as the sender, so its recognized as an internalUTXO
+		},
+	}
+
+	unlock := iotago.UnlockConditions{
+		&iotago.AddressUnlockCondition{
+			Address: chainAliasID.ToAddress(),
+		},
+	}
+
+	// cleanup features and unlock conditions except metadata
+	switch o := out.(type) {
+	case *iotago.BasicOutput:
+		o.Features = features
+		o.Conditions = unlock
+	case *iotago.NFTOutput:
+		o.Features = features
+		o.Conditions = unlock
+	case *iotago.AliasOutput:
+		o.Features = features
+		o.Conditions = unlock
+	default:
+		panic("unexpected output type")
+	}
+	return out
 }
