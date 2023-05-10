@@ -1,7 +1,5 @@
 package pipe
 
-import "sync"
-
 // InfinitePipe provides deserialised sender and receiver: it queues messages
 // sent by the sender and returns them to the receiver whenever it is ready,
 // without blocking the sender process. Depending on the backing queue, the pipe
@@ -12,8 +10,6 @@ type InfinitePipe[E any] struct {
 	length    chan int
 	buffer    Queue[E]
 	discardCh chan struct{}
-	closeLock *sync.RWMutex
-	closed    bool
 }
 
 var _ Pipe[Hashable] = &InfinitePipe[Hashable]{}
@@ -57,8 +53,6 @@ func newInfinitePipe[E any](queue Queue[E]) *InfinitePipe[E] {
 		length:    make(chan int),
 		buffer:    queue,
 		discardCh: make(chan struct{}),
-		closeLock: &sync.RWMutex{},
-		closed:    false,
 	}
 	go ch.infiniteBuffer()
 	return ch
@@ -77,10 +71,7 @@ func (ch *InfinitePipe[E]) Len() int {
 }
 
 func (ch *InfinitePipe[E]) Close() {
-	ch.closeLock.Lock()
-	defer ch.closeLock.Unlock()
 	close(ch.input)
-	ch.closed = true
 }
 
 func (ch *InfinitePipe[E]) Discard() {
@@ -88,14 +79,14 @@ func (ch *InfinitePipe[E]) Discard() {
 	close(ch.discardCh)
 }
 
-func (ch *InfinitePipe[E]) TryAdd(e E) bool {
-	ch.closeLock.RLock()
-	defer ch.closeLock.RUnlock()
-	if ch.closed {
-		return false
-	}
+func (ch *InfinitePipe[E]) TryAdd(e E, log func(msg string, args ...interface{})) {
+	defer func() {
+		if err := recover(); err != nil {
+			log("Attempt to write to a closed channel: %v", e)
+			return
+		}
+	}()
 	ch.In() <- e
-	return true
 }
 
 func (ch *InfinitePipe[E]) infiniteBuffer() {
@@ -117,6 +108,10 @@ func (ch *InfinitePipe[E]) infiniteBuffer() {
 		case ch.length <- ch.buffer.Length():
 		case <-ch.discardCh:
 			// Close the pipe without waiting for the values to be consumed.
+			for range ch.input { //nolint:revive
+				// Just clear the channel, to avoid blocking the senders.
+				// The channel itself should be closed already.
+			}
 			close(ch.output)
 			close(ch.length)
 			return

@@ -23,5 +23,5 @@ type Pipe[E any] interface {
 	Len() int
 	Close()
 	Discard()
-	TryAdd(e E) bool
+	TryAdd(e E, log func(msg string, args ...interface{}))
 }
