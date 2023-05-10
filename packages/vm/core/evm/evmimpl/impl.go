@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/solidity"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
@@ -323,8 +324,11 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 }
 
 func getChainID(ctx isc.SandboxView) dict.Dict {
-	emu := createEmulatorR(ctx)
-	return result(evmtypes.EncodeChainID(emu.BlockchainDB().GetChainID()))
+	bdb := emulator.NewBlockchainDB(
+		evmStateSubrealm(buffered.NewBufferedKVStore(ctx.StateR())),
+		0, // block gas limit should not be needed for GetChainID()
+	)
+	return result(evmtypes.EncodeChainID(bdb.GetChainID()))
 }
 
 func tryGetRevertError(res *core.ExecutionResult) error {

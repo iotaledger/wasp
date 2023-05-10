@@ -28,18 +28,6 @@ func callHandler(ctx isc.Sandbox, caller vm.ContractRef, method *abi.Method, arg
 	}, method, args)
 }
 
-type magicContractViewHandler struct {
-	ctx    isc.SandboxBase
-	caller vm.ContractRef
-}
-
-func callViewHandler(ctx isc.SandboxBase, caller vm.ContractRef, method *abi.Method, args []any) []byte {
-	return reflectCall(&magicContractViewHandler{
-		ctx:    ctx,
-		caller: caller,
-	}, method, args)
-}
-
 func titleCase(s string) string {
 	return strings.ToUpper(s[:1]) + s[1:]
 }
@@ -94,7 +82,9 @@ func (h *magicContractHandler) call(target, ep isc.Hname, params dict.Dict, allo
 	)
 }
 
-func (h *magicContractViewHandler) callView(target, ep isc.Hname, params dict.Dict) dict.Dict {
-	// TODO: currently there is no way to change the caller of a view in the VM
-	return h.ctx.CallView(target, ep, params)
+func (h *magicContractHandler) callView(target, ep isc.Hname, params dict.Dict) dict.Dict {
+	return h.ctx.Privileged().CallOnBehalfOf(
+		isc.NewEthereumAddressAgentID(h.caller.Address()),
+		target, ep, params, nil,
+	)
 }

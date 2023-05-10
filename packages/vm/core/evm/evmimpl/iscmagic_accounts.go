@@ -15,7 +15,7 @@ import (
 )
 
 // handler for ISCAccounts::getL2BalanceBaseTokens
-func (h *magicContractViewHandler) GetL2BalanceBaseTokens(agentID iscmagic.ISCAgentID) uint64 {
+func (h *magicContractHandler) GetL2BalanceBaseTokens(agentID iscmagic.ISCAgentID) uint64 {
 	r := h.callView(accounts.Contract.Hname(), accounts.ViewBalanceBaseToken.Hname(), dict.Dict{
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID.MustUnwrap()),
 	})
@@ -23,7 +23,7 @@ func (h *magicContractViewHandler) GetL2BalanceBaseTokens(agentID iscmagic.ISCAg
 }
 
 // handler for ISCAccounts::getL2BalanceNativeTokens
-func (h *magicContractViewHandler) GetL2BalanceNativeTokens(nativeTokenID iscmagic.NativeTokenID, agentID iscmagic.ISCAgentID) *big.Int {
+func (h *magicContractHandler) GetL2BalanceNativeTokens(nativeTokenID iscmagic.NativeTokenID, agentID iscmagic.ISCAgentID) *big.Int {
 	r := h.callView(accounts.Contract.Hname(), accounts.ViewBalanceNativeToken.Hname(), dict.Dict{
 		accounts.ParamNativeTokenID: codec.EncodeNativeTokenID(nativeTokenID.Unwrap()),
 		accounts.ParamAgentID:       codec.EncodeAgentID(agentID.MustUnwrap()),
@@ -32,7 +32,7 @@ func (h *magicContractViewHandler) GetL2BalanceNativeTokens(nativeTokenID iscmag
 }
 
 // handler for ISCAccounts::getL2NFTs
-func (h *magicContractViewHandler) GetL2NFTs(agentID iscmagic.ISCAgentID) []iscmagic.NFTID {
+func (h *magicContractHandler) GetL2NFTs(agentID iscmagic.ISCAgentID) []iscmagic.NFTID {
 	r := h.callView(
 		accounts.Contract.Hname(),
 		accounts.ViewAccountNFTs.Hname(),
@@ -47,7 +47,7 @@ func (h *magicContractViewHandler) GetL2NFTs(agentID iscmagic.ISCAgentID) []iscm
 }
 
 // handler for ISCAccounts::getL2NFTAmount
-func (h *magicContractViewHandler) GetL2NFTAmount(agentID iscmagic.ISCAgentID) *big.Int {
+func (h *magicContractHandler) GetL2NFTAmount(agentID iscmagic.ISCAgentID) *big.Int {
 	r := h.callView(
 		accounts.Contract.Hname(),
 		accounts.ViewAccountNFTAmount.Hname(),
@@ -58,7 +58,7 @@ func (h *magicContractViewHandler) GetL2NFTAmount(agentID iscmagic.ISCAgentID) *
 }
 
 // handler for ISCAccounts::getL2NFTsInCollection
-func (h *magicContractViewHandler) GetL2NFTsInCollection(agentID iscmagic.ISCAgentID, collectionID iscmagic.NFTID) []iscmagic.NFTID {
+func (h *magicContractHandler) GetL2NFTsInCollection(agentID iscmagic.ISCAgentID, collectionID iscmagic.NFTID) []iscmagic.NFTID {
 	r := h.callView(
 		accounts.Contract.Hname(),
 		accounts.ViewAccountNFTsInCollection.Hname(),
@@ -76,7 +76,7 @@ func (h *magicContractViewHandler) GetL2NFTsInCollection(agentID iscmagic.ISCAge
 }
 
 // handler for ISCAccounts::getL2NFTAmountInCollection
-func (h *magicContractViewHandler) GetL2NFTAmountInCollection(agentID iscmagic.ISCAgentID, collectionID iscmagic.NFTID) *big.Int {
+func (h *magicContractHandler) GetL2NFTAmountInCollection(agentID iscmagic.ISCAgentID, collectionID iscmagic.NFTID) *big.Int {
 	r := h.callView(
 		accounts.Contract.Hname(),
 		accounts.ViewAccountNFTAmountInCollection.Hname(),
