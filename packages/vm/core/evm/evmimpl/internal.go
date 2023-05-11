@@ -13,7 +13,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -109,16 +108,6 @@ func createEmulator(ctx isc.Sandbox, l2Balance *l2Balance) *emulator.EVMEmulator
 		gasLimits(ctx),
 		newMagicContract(ctx),
 		l2Balance,
-	)
-}
-
-func createEmulatorR(ctx isc.SandboxView) *emulator.EVMEmulator {
-	return emulator.NewEVMEmulator(
-		evmStateSubrealm(buffered.NewBufferedKVStore(ctx.StateR())),
-		timestamp(ctx.Timestamp()),
-		gasLimits(ctx),
-		newMagicContractView(ctx),
-		newL2BalanceR(ctx),
 	)
 }
 

@@ -10,6 +10,9 @@ import (
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
@@ -85,13 +88,11 @@ func (h *magicContractHandler) Call(
 	params iscmagic.ISCDict,
 	allowance iscmagic.ISCAssets,
 ) iscmagic.ISCDict {
-	a := allowance.Unwrap()
-	h.moveAssetsToCommonAccount(a)
-	callRet := h.ctx.Call(
+	callRet := h.call(
 		isc.Hname(contractHname),
 		isc.Hname(entryPoint),
 		params.Unwrap(),
-		a,
+		allowance.Unwrap(),
 	)
 	return iscmagic.WrapISCDict(callRet)
 }
@@ -117,5 +118,21 @@ func (h *magicContractHandler) moveAssetsToCommonAccount(assets *isc.Assets) {
 		isc.NewEthereumAddressAgentID(h.caller.Address()),
 		h.ctx.AccountID(),
 		assets,
+	)
+}
+
+// handler for ISCSandbox::registerERC20NativeToken
+func (h *magicContractHandler) RegisterERC20NativeToken(foundrySN uint32, name, symbol string, decimals uint8, allowance iscmagic.ISCAssets) {
+	h.ctx.Privileged().CallOnBehalfOf(
+		isc.NewEthereumAddressAgentID(h.caller.Address()),
+		evm.Contract.Hname(),
+		evm.FuncRegisterERC20NativeToken.Hname(),
+		dict.Dict{
+			evm.FieldFoundrySN:         codec.EncodeUint32(foundrySN),
+			evm.FieldTokenName:         codec.EncodeString(name),
+			evm.FieldTokenTickerSymbol: codec.EncodeString(symbol),
+			evm.FieldTokenDecimals:     codec.EncodeUint8(decimals),
+		},
+		allowance.Unwrap(),
 	)
 }

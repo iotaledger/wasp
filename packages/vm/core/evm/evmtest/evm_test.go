@@ -35,7 +35,6 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	testparameters "github.com/iotaledger/wasp/packages/testutil/parameters"
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -1601,7 +1600,7 @@ func TestSolidityRevertMessage(t *testing.T) {
 	require.EqualValues(t, "execution reverted: foobar", res.iscReceipt.ResolvedError)
 }
 
-func TestSandboxStackOverflow(t *testing.T) {
+func TestCallContractCannotCauseStackOverlow(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 
@@ -1612,13 +1611,13 @@ func TestSandboxStackOverflow(t *testing.T) {
 		gasLimit: 100_000, // skip estimate gas (which will fail)
 	}}, "testStackOverflow")
 
-	testmisc.RequireErrorToBe(t, err, vm.ErrIllegalCall)
+	require.ErrorContains(t, err, "unauthorized access")
 	require.NotNil(t, ret.evmReceipt) // evm receipt is produced
 
 	// view call
 	err = iscTest.callView("testStackOverflow", nil, nil)
 	require.Error(t, err)
-	testmisc.RequireErrorToBe(t, err, vm.ErrIllegalCall)
+	require.ErrorContains(t, err, "unauthorized access")
 }
 
 func TestStaticCall(t *testing.T) {
@@ -1836,4 +1835,51 @@ func TestTraceTransaction(t *testing.T) {
 		require.EqualValues(t, iscTest.address, common.HexToAddress(trace.To))
 		require.NotEmpty(t, trace.Calls)
 	}
+}
+
+func TestMagicContractExamples(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	contract := env.deployERC20ExampleContract(ethKey)
+
+	contractAgentID := isc.NewEthereumAddressAgentID(contract.address)
+	env.soloChain.GetL2FundsFromFaucet(contractAgentID)
+
+	_, err := contract.callFn(nil, "createFoundry", big.NewInt(1000000), uint64(10_000))
+	require.NoError(t, err)
+
+	_, err = contract.callFn(nil, "registerToken", "TESTCOIN", "TEST", uint8(18), uint64(10_000))
+	require.NoError(t, err)
+
+	_, err = contract.callFn(nil, "mint", big.NewInt(1000), uint64(10_000))
+	require.NoError(t, err)
+
+	ethKey2, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	isTestContract := env.deployISCTestContract(ethKey2)
+	iscTestAgentID := isc.NewEthereumAddressAgentID(isTestContract.address)
+	env.soloChain.GetL2FundsFromFaucet(iscTestAgentID)
+
+	_, err = isTestContract.callFn(nil, "mint", uint32(1), big.NewInt(1000), uint64(10_000))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "not controlled by the caller")
+}
+
+func TestCaller(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+	err := env.soloChain.TransferAllowanceTo(
+		isc.NewAssetsBaseTokens(42),
+		isc.NewEthereumAddressAgentID(iscTest.address),
+		env.soloChain.OriginatorPrivateKey,
+	)
+	require.NoError(t, err)
+
+	_, err = iscTest.callFn(nil, "testCallViewCaller")
+	require.NoError(t, err)
+	var r []byte
+	err = iscTest.callView("testCallViewCaller", nil, &r)
+	require.NoError(t, err)
+	require.EqualValues(t, 42, big.NewInt(0).SetBytes(r).Uint64())
 }
