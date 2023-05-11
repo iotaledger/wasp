@@ -626,10 +626,13 @@ func filterAndAppendToLogs(query *ethereum.FilterQuery, receipts []*types.Receip
 
 type fakeHasher struct{}
 
+var _ types.TrieHasher = &fakeHasher{}
+
 func (d *fakeHasher) Reset() {
 }
 
-func (d *fakeHasher) Update(i1, i2 []byte) {
+func (d *fakeHasher) Update(i1, i2 []byte) error {
+	return nil
 }
 
 func (d *fakeHasher) Hash() common.Hash {
