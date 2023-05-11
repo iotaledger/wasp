@@ -25,14 +25,14 @@ func (vmctx *VMContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	g := burnCode.Cost(par...)
 	vmctx.gasBurnLog.Record(burnCode, g)
 	vmctx.gasBurned += g
-	vmctx.gasBurnedTotal += g
-
-	if vmctx.gasBurnedTotal+g > vmctx.chainInfo.GasLimits.MaxGasPerBlock {
-		panic(vmexceptions.ErrBlockGasLimitExceeded)
-	}
 
 	if vmctx.gasBurned > vmctx.gasBudgetAdjusted {
+		vmctx.gasBurned = vmctx.gasBudgetAdjusted // do not charge more than the limit set by the request
 		panic(vm.ErrGasBudgetExceeded)
+	}
+
+	if vmctx.gasBurnedTotal+vmctx.gasBurned > vmctx.chainInfo.GasLimits.MaxGasPerBlock {
+		panic(vmexceptions.ErrBlockGasLimitExceeded) // panic if the current request gas overshoots the block limit
 	}
 }
 

@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/require"
@@ -75,14 +74,6 @@ func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestE
 	}
 	e.Env.NewAccountWithL2Funds = e.newEthereumAccountWithL2Funds
 	return e
-}
-
-func newEthereumAccount() (*ecdsa.PrivateKey, common.Address) {
-	key, err := crypto.GenerateKey()
-	if err != nil {
-		panic(err)
-	}
-	return key, crypto.PubkeyToAddress(key.PublicKey)
 }
 
 const transferAllowanceToGasBudgetBaseTokens = 1 * isc.Million

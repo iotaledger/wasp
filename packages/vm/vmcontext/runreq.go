@@ -200,7 +200,6 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 		callRet = vmctx.callFromRequest()
 		// ensure at least the minimum amount of gas is charged
 		if vmctx.GasBurned() < gas.BurnCodeMinimumGasPerRequest1P.Cost() {
-			vmctx.gasBurnedTotal -= vmctx.gasBurned
 			vmctx.gasBurned = 0
 			vmctx.GasBurn(gas.BurnCodeMinimumGasPerRequest1P, vmctx.GasBurned())
 		}
@@ -212,6 +211,7 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	}
 	// charge gas fee no matter what
 	vmctx.chargeGasFee()
+
 	// write receipt no matter what
 	receipt = vmctx.writeReceiptToBlockLog(callErr)
 	return receipt, callRet
@@ -324,12 +324,13 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 // chargeGasFee takes burned tokens from the sender's account
 // It should always be enough because gas budget is set affordable
 func (vmctx *VMContext) chargeGasFee() {
+	defer func() {
+		vmctx.gasBurnedTotal += vmctx.gasBurned // add current request gas burn to the total of the block
+	}()
 	// ensure at least the minimum amount of gas is charged
 	minGas := gas.BurnCodeMinimumGasPerRequest1P.Cost()
-	if vmctx.GasBurned() < minGas {
-		currentGas := vmctx.gasBurned
+	if vmctx.gasBurned < minGas {
 		vmctx.gasBurned = minGas
-		vmctx.gasBurnedTotal += minGas - currentGas
 	}
 
 	vmctx.GasBurnEnable(false)

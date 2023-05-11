@@ -10,10 +10,9 @@ import {uint16FromBytes} from './scuint16';
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScBigInt {
-    bytes: Uint8Array = new Uint8Array(0);
-
     private static zero: ScBigInt = new ScBigInt();
     private static one: ScBigInt = ScBigInt.fromUint64(1n);
+    bytes: Uint8Array = new Uint8Array(0);
 
     constructor() {
     }
@@ -210,21 +209,6 @@ export class ScBigInt {
         return [quoRem[0], quoRem[1].shr(shift)];
     }
 
-    private divModSingleByte(value: u8): ScBigInt[] {
-        const lhsLen = this.bytes.length;
-        const buf = new Uint8Array(lhsLen);
-        let remain: u16 = 0;
-        const rhs = value as u16;
-        for (let i = lhsLen - 1; i >= 0; i--) {
-            remain = (remain << 8) + (this.bytes[i] as u16);
-            buf[i] = (remain / rhs) as u8;
-            remain %= rhs;
-        }
-        const rem = new Uint8Array(1);
-        rem[0] = remain as u8;
-        return [ScBigInt.normalize(buf), ScBigInt.normalize(rem)];
-    }
-
     public equals(rhs: ScBigInt): bool {
         return this.cmp(rhs) == 0;
     }
@@ -364,6 +348,21 @@ export class ScBigInt {
         const buf = new Uint8Array(ScUint64Length);
         buf.set(this.bytes);
         return uint64FromBytes(buf);
+    }
+
+    private divModSingleByte(value: u8): ScBigInt[] {
+        const lhsLen = this.bytes.length;
+        const buf = new Uint8Array(lhsLen);
+        let remain: u16 = 0;
+        const rhs = value as u16;
+        for (let i = lhsLen - 1; i >= 0; i--) {
+            remain = (remain << 8) + (this.bytes[i] as u16);
+            buf[i] = (remain / rhs) as u8;
+            remain %= rhs;
+        }
+        const rem = new Uint8Array(1);
+        rem[0] = remain as u8;
+        return [ScBigInt.normalize(buf), ScBigInt.normalize(rem)];
     }
 }
 

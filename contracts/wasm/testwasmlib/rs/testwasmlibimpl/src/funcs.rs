@@ -1,10 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use wasmlib::*;
+use crate::*;
 use erc721::*;
 use testwasmlib::*;
-use crate::*;
+use wasmlib::*;
 
 pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
     if f.params.address().exists() {
@@ -108,7 +108,10 @@ pub fn func_random(ctx: &ScFuncContext, f: &RandomContext) {
 }
 
 pub fn func_take_allowance(ctx: &ScFuncContext, _f: &TakeAllowanceContext) {
-    ctx.transfer_allowed(&ctx.account_id(),&ScTransfer::from_balances(&ctx.allowance()));
+    ctx.transfer_allowed(
+        &ctx.account_id(),
+        &ScTransfer::from_balances(&ctx.allowance()),
+    );
 }
 
 pub fn func_take_balance(ctx: &ScFuncContext, f: &TakeBalanceContext) {
@@ -572,14 +575,20 @@ pub fn view_check_agent_id(ctx: &ScViewContext, f: &CheckAgentIDContext) {
     let agent_string = f.params.agent_string().value();
     ctx.require(
         sc_agent_id == agent_id_from_bytes(&agent_id_to_bytes(&sc_agent_id)),
-        "bytes conversion failed",
+        "agentID bytes conversion failed",
     );
     ctx.require(
         sc_agent_id == agent_id_from_string(&agent_id_to_string(&sc_agent_id)),
-        "string conversion failed",
+        "agentID string conversion failed",
     );
-    ctx.require(sc_agent_id.to_bytes() == agent_bytes, "bytes mismatch");
-    ctx.require(sc_agent_id.to_string() == agent_string, "string mismatch");
+    ctx.require(
+        sc_agent_id.to_bytes() == agent_bytes,
+        "agentID bytes mismatch",
+    );
+    ctx.require(
+        sc_agent_id.to_string() == agent_string,
+        "agentID string mismatch",
+    );
 }
 
 pub fn view_check_address(ctx: &ScViewContext, f: &CheckAddressContext) {
@@ -588,14 +597,20 @@ pub fn view_check_address(ctx: &ScViewContext, f: &CheckAddressContext) {
     let address_string = f.params.address_string().value();
     ctx.require(
         sc_address == address_from_bytes(&address_to_bytes(&sc_address)),
-        "bytes conversion failed",
+        "address bytes conversion failed",
     );
     ctx.require(
         sc_address == address_from_string(&address_to_string(&sc_address)),
-        "string conversion failed",
+        "address string conversion failed",
     );
-    ctx.require(sc_address.to_bytes() == address_bytes, "bytes mismatch");
-    ctx.require(sc_address.to_string() == address_string, "string mismatch");
+    ctx.require(
+        sc_address.to_bytes() == address_bytes,
+        "address bytes mismatch",
+    );
+    ctx.require(
+        sc_address.to_string() == address_string,
+        "address string mismatch",
+    );
 }
 
 pub fn view_check_eth_address_and_agent_id(
@@ -604,27 +619,69 @@ pub fn view_check_eth_address_and_agent_id(
 ) {
     let address = f.params.eth_address().value();
     let address_string = f.params.eth_address_string().value();
-    ctx.require(address.to_string() == address_string, "eth address string encoding failed");
-    ctx.require(address_from_string(&address_string) == address, "eth address string decoding failed");
-    ctx.require(address == address_from_bytes(&address_to_bytes(&address)), "eth address bytes conversion failed");
-    ctx.require(address == address_from_string(&address_to_string(&address)), "eth address to/from string conversion failed");
-    ctx.require(address_string == address_to_string(&address_from_string(&address_string)), "eth address from/to string conversion failed");
+    ctx.require(
+        address.to_string() == address_string,
+        "eth address string encoding failed",
+    );
+    ctx.require(
+        address_from_string(&address_string) == address,
+        "eth address string decoding failed",
+    );
+    ctx.require(
+        address == address_from_bytes(&address_to_bytes(&address)),
+        "eth address bytes conversion failed",
+    );
+    ctx.require(
+        address == address_from_string(&address_to_string(&address)),
+        "eth address to/from string conversion failed",
+    );
+    ctx.require(
+        address_string == address_to_string(&address_from_string(&address_string)),
+        "eth address from/to string conversion failed",
+    );
 
     let agent_id = f.params.eth_agent_id().value();
     let agent_id_string = f.params.eth_agent_id_string().value();
-    ctx.require(agent_id.to_string() == agent_id_string, "eth agentID string encoding failed");
-    ctx.require(agent_id_from_string(&agent_id_string) == agent_id, "eth agentID string decoding failed");
-    ctx.require(agent_id == agent_id_from_bytes(&agent_id_to_bytes(&agent_id)), "eth agentID bytes conversion failed");
-    ctx.require(agent_id == agent_id_from_string(&agent_id_to_string(&agent_id)), "eth agentID to/from string conversion failed");
-    ctx.require(agent_id_string == agent_id_to_string(&agent_id_from_string(&agent_id_string)), "eth agentID from/to string conversion failed");
+    ctx.require(
+        agent_id.to_string() == agent_id_string,
+        "eth agentID string encoding failed",
+    );
+    ctx.require(
+        agent_id_from_string(&agent_id_string) == agent_id,
+        "eth agentID string decoding failed",
+    );
+    ctx.require(
+        agent_id == agent_id_from_bytes(&agent_id_to_bytes(&agent_id)),
+        "eth agentID bytes conversion failed",
+    );
+    ctx.require(
+        agent_id == agent_id_from_string(&agent_id_to_string(&agent_id)),
+        "eth agentID to/from string conversion failed",
+    );
+    ctx.require(
+        agent_id_string == agent_id_to_string(&agent_id_from_string(&agent_id_string)),
+        "eth agentID from/to string conversion failed",
+    );
 
     let agent_id_from_address = ScAgentID::from_address(&address);
-    ctx.require(agent_id_from_address == agent_id_from_bytes(&agent_id_to_bytes(&agent_id_from_address)), "eth agentID bytes conversion failed");
-    ctx.require(agent_id_from_address == agent_id_from_string(&agent_id_to_string(&agent_id_from_address)), "eth agentID string conversion failed");
+    ctx.require(
+        agent_id_from_address == agent_id_from_bytes(&agent_id_to_bytes(&agent_id_from_address)),
+        "eth agentID bytes conversion failed",
+    );
+    ctx.require(
+        agent_id_from_address == agent_id_from_string(&agent_id_to_string(&agent_id_from_address)),
+        "eth agentID string conversion failed",
+    );
 
     let address_from_agent_id = agent_id.address();
-    ctx.require(address_from_agent_id == address_from_bytes(&address_to_bytes(&address_from_agent_id)), "eth raw agent_id bytes conversion failed");
-    ctx.require(address_from_agent_id == address_from_string(&address_to_string(&address_from_agent_id)), "eth raw agent_id string conversion failed");
+    ctx.require(
+        address_from_agent_id == address_from_bytes(&address_to_bytes(&address_from_agent_id)),
+        "eth raw agent_id bytes conversion failed",
+    );
+    ctx.require(
+        address_from_agent_id == address_from_string(&address_to_string(&address_from_agent_id)),
+        "eth raw agent_id string conversion failed",
+    );
 }
 
 pub fn view_check_hash(ctx: &ScViewContext, f: &CheckHashContext) {
@@ -1037,4 +1094,71 @@ pub fn view_check_string(ctx: &ScViewContext, f: &CheckStringContext) {
         string_data == string_to_string(&string_from_string(&string_data)),
         "string conversion failed",
     );
+}
+
+pub fn view_check_eth_empty_address_and_agent_id(
+    ctx: &ScViewContext,
+    f: &CheckEthEmptyAddressAndAgentIDContext,
+) {
+    let address = f.params.eth_address().value();
+    let address_string = "0x0";
+    let address_string_long = "0x0000000000000000000000000000000000000000";
+    ctx.require(
+        address == address_from_bytes(&address_to_bytes(&address)),
+        "eth address bytes conversion failed",
+    );
+    ctx.require(
+        address == address_from_string(address_string),
+        "eth address to/from string conversion failed",
+    );
+    ctx.require(
+        address == address_from_string(address_string_long),
+        "eth address to/from string conversion failed",
+    );
+    ctx.require(
+        address_string_long == address_to_string(&address),
+        "eth address to/from string conversion failed",
+    );
+
+    let agent_id = f.params.eth_agent_id().value();
+    let agent_id_string = f.params.eth_agent_id_string().value();
+    ctx.require(
+        agent_id.to_string() == agent_id_string,
+        "eth agentID string encoding failed",
+    );
+    ctx.require(
+        agent_id == agent_id_from_bytes(&agent_id_to_bytes(&agent_id)),
+        "eth agentID bytes conversion failed",
+    );
+    ctx.require(
+        agent_id_string == agent_id_to_string(&agent_id),
+        "eth agentID from/to string conversion failed",
+    );
+
+    let agent_id_from_address = ScAgentID::from_address(&address);
+    ctx.require(
+        agent_id_from_address == agent_id_from_bytes(&agent_id_to_bytes(&agent_id_from_address)),
+        "eth agentID bytes conversion failed",
+    );
+    ctx.require(
+        agent_id_string == agent_id_to_string(&agent_id_from_address),
+        "eth agentID string conversion failed",
+    );
+
+    let address_from_agent_id = agent_id.address();
+    ctx.require(
+        address_from_agent_id == address_from_bytes(&address_to_bytes(&address_from_agent_id)),
+        "eth raw agentID bytes conversion failed",
+    );
+    ctx.require(
+        address_string_long == address_to_string(&address_from_agent_id),
+        "eth raw agentID string conversion failed",
+    );
+}
+
+pub fn view_check_eth_invalid_empty_address_from_string(
+    ctx: &ScViewContext,
+    f: &CheckEthInvalidEmptyAddressFromStringContext,
+) {
+    address_from_string("0x00");
 }

@@ -34,16 +34,18 @@ import (
 )
 
 const (
-	indexerPluginAvailableTimeout = 30 * time.Second
-	l1NodeSyncWaitTimeout         = 2 * time.Minute
-	inxTimeoutInfo                = 500 * time.Millisecond
-	inxTimeoutBlockMetadata       = 500 * time.Millisecond
-	inxTimeoutSubmitBlock         = 60 * time.Second
-	inxTimeoutPublishTransaction  = 120 * time.Second
-	inxTimeoutIndexerQuery        = 2 * time.Second
-	inxTimeoutMilestone           = 2 * time.Second
-	inxTimeoutOutput              = 2 * time.Second
-	inxTimeoutGetPeers            = 2 * time.Second
+	indexerPluginAvailableTimeout  = 30 * time.Second
+	l1NodeSyncWaitTimeout          = 2 * time.Minute
+	blockMetadataCheckTimeout      = 3 * time.Second
+	blockMetadataCheckCooldownTime = 100 * time.Millisecond
+	inxTimeoutInfo                 = 500 * time.Millisecond
+	inxTimeoutBlockMetadata        = 500 * time.Millisecond
+	inxTimeoutSubmitBlock          = 60 * time.Second
+	inxTimeoutPublishTransaction   = 120 * time.Second
+	inxTimeoutIndexerQuery         = 2 * time.Second
+	inxTimeoutMilestone            = 2 * time.Second
+	inxTimeoutOutput               = 2 * time.Second
+	inxTimeoutGetPeers             = 2 * time.Second
 
 	chainsCleanupThresholdRatio              = 50.0
 	chainsCleanupThresholdCount              = 10
@@ -73,7 +75,7 @@ type nodeConnection struct {
 
 	// pendingTransactionsMap is a map of sent transactions that are pending.
 	pendingTransactionsMap  *shrinkingmap.ShrinkingMap[iotago.TransactionID, *pendingTransaction]
-	pendingTransactionsLock sync.Mutex
+	pendingTransactionsLock sync.RWMutex
 	reattachWorkerPool      *workerpool.WorkerPool
 
 	shutdownHandler *shutdown.ShutdownHandler
@@ -111,7 +113,7 @@ func New(
 			shrinkingmap.WithShrinkingThresholdRatio(pendingTransactionsCleanupThresholdRatio),
 			shrinkingmap.WithShrinkingThresholdCount(pendingTransactionsCleanupThresholdCount),
 		),
-		pendingTransactionsLock: sync.Mutex{},
+		pendingTransactionsLock: sync.RWMutex{},
 		shutdownHandler:         shutdownHandler,
 	}
 
@@ -293,6 +295,7 @@ func (nc *nodeConnection) Run(ctx context.Context) error {
 
 	nc.reattachWorkerPool.Start()
 	go nc.subscribeToLedgerUpdates()
+	go nc.subscribeToBlocks()
 
 	// mark the node connection as synced
 	nc.syncedCtxCancel()
@@ -340,6 +343,20 @@ func (nc *nodeConnection) GetL1ProtocolParams() *iotago.ProtocolParameters {
 
 func (nc *nodeConnection) subscribeToLedgerUpdates() {
 	if err := nc.nodeBridge.ListenToLedgerUpdates(nc.ctx, 0, 0, nc.handleLedgerUpdate); err != nil && !errors.Is(err, io.EOF) {
+		nc.LogError(err)
+		nc.shutdownHandler.SelfShutdown(
+			fmt.Sprintf("INX connection unexpected error: %s", err.Error()),
+			true)
+		return
+	}
+	if nc.ctx.Err() == nil {
+		// shutdown in case there isn't a shutdown already in progress
+		nc.shutdownHandler.SelfShutdown("INX connection closed", true)
+	}
+}
+
+func (nc *nodeConnection) subscribeToBlocks() {
+	if err := nc.nodeBridge.ListenToBlocks(nc.ctx, func() {}, nc.handleBlock); err != nil && !errors.Is(err, io.EOF) {
 		nc.LogError(err)
 		nc.shutdownHandler.SelfShutdown(
 			fmt.Sprintf("INX connection unexpected error: %s", err.Error()),
@@ -486,6 +503,77 @@ func (nc *nodeConnection) triggerChainCallbacks(ledgerUpdate *ledgerUpdate) erro
 	return nil
 }
 
+func (nc *nodeConnection) checkReceivedTxPendingAndCancelPoW(block *iotago.Block, txPayload *iotago.Transaction) {
+	txID, err := txPayload.ID()
+	if err != nil {
+		return
+	}
+
+	nc.pendingTransactionsLock.RLock()
+	pendingTx, has := nc.pendingTransactionsMap.Get(txID)
+	if !has {
+		nc.pendingTransactionsLock.RUnlock()
+		return
+	}
+	nc.pendingTransactionsLock.RUnlock()
+
+	// some chain is waiting for the received tx payload
+	// => check the quality of the block and cancel ongoing PoW tasks
+	blockID, err := block.ID()
+	if err != nil {
+		return
+	}
+
+	// asynchronously check the quality of the received block and cancel the PoW if possible
+	go func() {
+		ctxWithTimeout, ctxCancel := context.WithTimeout(nc.ctx, blockMetadataCheckTimeout)
+		defer ctxCancel()
+
+		for ctxWithTimeout.Err() == nil {
+			ctxMetaWithTimeout, ctxMetaCancel := context.WithTimeout(nc.ctx, inxTimeoutBlockMetadata)
+
+			metadata, err := nc.nodeBridge.BlockMetadata(ctxMetaWithTimeout, blockID)
+			if err != nil {
+				// block not found yet => try again
+				ctxMetaCancel()
+
+				// block not found yet
+				// => try again after some timeout
+				time.Sleep(blockMetadataCheckCooldownTime)
+				continue
+			}
+			ctxMetaCancel()
+
+			// => check if the block is solid
+			if !metadata.Solid {
+				// block not solid yet
+				// => try again after some timeout
+				time.Sleep(blockMetadataCheckCooldownTime)
+				continue
+			}
+
+			// check if the block was already referenced
+			if metadata.ReferencedByMilestoneIndex != 0 {
+				// block with the tracked tx already got referenced, we can abort attachment of the tx
+				pendingTx.SetPublished()
+				break
+			}
+
+			// block not referenced yet
+			// => check if the quality of the tips is good or if the block can never be referenced
+			if metadata.ShouldReattach {
+				// we can abort the block metadata check, but we should not abort our own attachment of the tx
+				break
+			}
+
+			// block is solid and the quality of the tips seem fine
+			// => abort our own attachment
+			pendingTx.SetPublished()
+			break
+		}
+	}()
+}
+
 type ledgerUpdate struct {
 	milestoneIndex     iotago.MilestoneIndex
 	milestoneTimestamp time.Time
@@ -552,6 +640,23 @@ func (nc *nodeConnection) handleLedgerUpdate(update *nodebridge.LedgerUpdate) er
 	nc.checkPendingTransactions(ledgerUpdate)
 
 	return nil
+}
+
+func (nc *nodeConnection) handleBlock(block *iotago.Block) {
+	if block == nil || block.Payload == nil {
+		return
+	}
+
+	// check if the block contains a transaction payload
+	txPayload, ok := block.Payload.(*iotago.Transaction)
+	if !ok {
+		// not a transaction payload
+		return
+	}
+
+	// check if the same tx is being tracked in any of the chains,
+	// and cancel the ongoing PoW if the received tx is attached correctly.
+	nc.checkReceivedTxPendingAndCancelPoW(block, txPayload)
 }
 
 // GetChain returns the chain if it was registered, otherwise it returns an error.
@@ -625,8 +730,8 @@ func (nc *nodeConnection) addPendingTransaction(pending *pendingTransaction) {
 
 // hasPendingTransaction returns true if a pending transaction exists.
 func (nc *nodeConnection) hasPendingTransaction(txID iotago.TransactionID) bool {
-	nc.pendingTransactionsLock.Lock()
-	defer nc.pendingTransactionsLock.Unlock()
+	nc.pendingTransactionsLock.RLock()
+	defer nc.pendingTransactionsLock.RUnlock()
 
 	return nc.pendingTransactionsMap.Has(txID)
 }

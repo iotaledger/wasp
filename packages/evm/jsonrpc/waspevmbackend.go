@@ -64,7 +64,7 @@ func (b *WaspEVMBackend) EVMGasRatio() (util.Ratio32, error) {
 
 func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 	// Ensure the transaction has more gas than the basic Ethereum tx fee.
-	intrinsicGas, err := core.IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, true, true)
+	intrinsicGas, err := core.IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, true, true, true)
 	if err != nil {
 		return err
 	}

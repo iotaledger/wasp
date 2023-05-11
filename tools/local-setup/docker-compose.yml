@@ -94,6 +94,7 @@ services:
       - "2112:2112/tcp" # Prometheus
       - "4000:4000/tcp" # Peering
       - "9090:9090/tcp" # WebAPI
+      - "6060:6060/tcp" # Profiling
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.wasp-api.service=wasp-api"
@@ -102,6 +103,12 @@ services:
       - "traefik.http.services.wasp-api.loadbalancer.server.port=9090"
       - "traefik.http.routers.wasp-api.middlewares=rewrite-wasp-api"
       - "traefik.http.middlewares.rewrite-wasp-api.stripprefix.prefixes=/wasp/api"
+      - "traefik.http.routers.wasp-pprof.service=wasp-pprof"
+      - "traefik.http.routers.wasp-pprof.rule=Host(`localhost`) && (Path(`/wasp/debug/pprof`) || PathPrefix(`/wasp/debug/pprof/`))"
+      - "traefik.http.routers.wasp-pprof.entrypoints=web"
+      - "traefik.http.services.wasp-pprof.loadbalancer.server.port=6060"
+      - "traefik.http.routers.wasp-pprof.middlewares=rewrite-wasp-pprof"
+      - "traefik.http.middlewares.rewrite-wasp-pprof.stripprefix.prefixes=/wasp"
     cap_drop:
       - ALL
     volumes:
@@ -118,6 +125,8 @@ services:
       - "--registries.trustedPeers.filePath=/app/waspdb/trusted_peers.json"
       - "--registries.consensusState.path=/app/waspdb/chains/consensus"
       - "--wal.path=/app/waspdb/wal"
+      - "--profiling.enabled=false"
+      - "--profiling.bindAddress=0.0.0.0:6060"
 
   ##################
   # WASP Dashboard #

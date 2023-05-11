@@ -81,10 +81,9 @@ jobs:
 
       - name: install schema
         run: |
-          cd contracts/wasm/scripts
-          bash schema_all.sh
-          cd ..
-          npm install
+          root_path=$(git rev-parse --show-toplevel)
+          go install $root_path/tools/schema
+          schema -go
 
       - name: run builds
         env:
@@ -92,14 +91,12 @@ jobs:
         run: |
           cd contracts/wasm/scripts
           bash core_build.sh
-          if [ $TEST_LANG == "go" ]; then
-            bash schema_all.sh
-          elif [ $TEST_LANG == "gowasm" ]; then
+          if [ $TEST_LANG == "gowasm" ]; then
             bash go_all.sh
           elif [ $TEST_LANG == "tswasm" ]; then
             bash ts_all.sh
           elif [ $TEST_LANG == "rswasm" ]; then
-            bash rust_all.sh
+            bash rust_all.sh ci
           fi
 
       - name: run tests

@@ -56,11 +56,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"$module/go/$package"
+	"$module/go/$package$+impl"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 )
 
 func TestDeploy(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, $package.ScName, $package.OnDispatch)
+	ctx := wasmsolo.NewSoloContext(t, $package.ScName, $package$+impl.OnDispatch)
 	require.NoError(t, ctx.ContractExists($package.ScName))
 }
 `,

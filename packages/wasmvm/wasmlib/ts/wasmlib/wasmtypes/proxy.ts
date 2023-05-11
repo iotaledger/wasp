@@ -33,13 +33,6 @@ export class Proxy {
         this._key = new Uint8Array(0);
     }
 
-    // alternative constructor
-    protected proxy(kvStore: IKvStore, key: Uint8Array): Proxy {
-        const res = new Proxy(kvStore);
-        res._key = key;
-        return res;
-    }
-
     // Append returns a Proxy for a newly appended null element
     // Note that this will essentially return the element at Length()
     public append(): Proxy {
@@ -73,24 +66,9 @@ export class Proxy {
         this.kvStore.delete(this._key);
     }
 
-    protected element(index: u32): Proxy {
-        const enc = new WasmEncoder();
-        uint32Encode(enc, index);
-        // 0x23 is '#'
-        return this.sub(0x23, enc.buf());
-    }
-
     exists(): bool {
         //log(this.id.toString() + '.exists(' + keya(this._key) + ')');
         return this.kvStore.exists(this._key);
-    }
-
-    //TODO have a Grow function that grows an array?
-    protected expand(length: u32): void {
-        // update the length counter
-        const enc = new WasmEncoder();
-        uint32Encode(enc, length);
-        this.set(enc.buf());
     }
 
     get(): Uint8Array {
@@ -138,6 +116,28 @@ export class Proxy {
     set(value: Uint8Array): void {
         //log(this.id.toString() + '.set(' + keya(this._key) + ') = ' + vala(value));
         this.kvStore.set(this._key, value);
+    }
+
+    // alternative constructor
+    protected proxy(kvStore: IKvStore, key: Uint8Array): Proxy {
+        const res = new Proxy(kvStore);
+        res._key = key;
+        return res;
+    }
+
+    protected element(index: u32): Proxy {
+        const enc = new WasmEncoder();
+        uint32Encode(enc, index);
+        // 0x23 is '#'
+        return this.sub(0x23, enc.buf());
+    }
+
+    //TODO have a Grow function that grows an array?
+    protected expand(length: u32): void {
+        // update the length counter
+        const enc = new WasmEncoder();
+        uint32Encode(enc, length);
+        this.set(enc.buf());
     }
 
     // sub returns a proxy for an element of a container.

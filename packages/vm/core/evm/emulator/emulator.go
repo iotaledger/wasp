@@ -23,7 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
@@ -59,7 +58,6 @@ func getConfig(chainID int) *params.ChainConfig {
 		ChainID:             big.NewInt(int64(chainID)),
 		HomesteadBlock:      big.NewInt(0),
 		EIP150Block:         big.NewInt(0),
-		EIP150Hash:          common.Hash{},
 		EIP155Block:         big.NewInt(0),
 		EIP158Block:         big.NewInt(0),
 		ByzantiumBlock:      big.NewInt(0),
@@ -69,6 +67,7 @@ func getConfig(chainID int) *params.ChainConfig {
 		MuirGlacierBlock:    big.NewInt(0),
 		BerlinBlock:         big.NewInt(0),
 		Ethash:              &params.EthashConfig{},
+		ShanghaiTime:        new(uint64),
 	}
 	configCache.Add(chainID, c)
 	return c
@@ -162,6 +161,22 @@ func (e *EVMEmulator) ChainContext() core.ChainContext {
 	}
 }
 
+func coreMsgFromCallMsg(call ethereum.CallMsg, statedb *StateDB) *core.Message {
+	return &core.Message{
+		To:                call.To,
+		From:              call.From,
+		Nonce:             statedb.GetNonce(call.From),
+		Value:             call.Value,
+		GasLimit:          call.Gas,
+		GasPrice:          call.GasPrice,
+		GasFeeCap:         call.GasFeeCap,
+		GasTipCap:         call.GasTipCap,
+		Data:              call.Data,
+		AccessList:        call.AccessList,
+		SkipAccountChecks: false,
+	}
+}
+
 // CallContract executes a contract call, without committing changes to the state
 func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(bool)) (*core.ExecutionResult, error) {
 	// Ensure message is initialized properly.
@@ -177,30 +192,34 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(boo
 	// run the EVM code on a buffered state (so that writes are not committed)
 	statedb := e.StateDB().Buffered().StateDB()
 
-	return e.applyMessage(callMsg{call}, statedb, pendingHeader, gasBurnEnable, nil)
+	return e.applyMessage(coreMsgFromCallMsg(call, statedb), statedb, pendingHeader, gasBurnEnable, nil)
 }
 
 func (e *EVMEmulator) applyMessage(
-	msg callMsg,
+	msg *core.Message,
 	statedb vm.StateDB,
 	header *types.Header,
 	gasBurnEnable func(bool),
 	tracer tracers.Tracer,
 ) (res *core.ExecutionResult, err error) {
+	// Set msg gas price to 0
+	msg.GasPrice = big.NewInt(0)
+	msg.GasFeeCap = big.NewInt(0)
+	msg.GasTipCap = big.NewInt(0)
+
 	blockContext := core.NewEVMBlockContext(header, e.ChainContext(), nil)
 	txContext := core.NewEVMTxContext(msg)
 
 	vmConfig := e.vmConfig
 	vmConfig.Tracer = tracer
-	vmConfig.Debug = vmConfig.Tracer != nil
 
 	vmEnv := vm.NewEVM(blockContext, txContext, statedb, e.chainConfig, vmConfig)
 
-	if msg.CallMsg.Gas > e.gasLimits.Call {
-		msg.CallMsg.Gas = e.gasLimits.Call
+	if msg.GasLimit > e.gasLimits.Call {
+		msg.GasLimit = e.gasLimits.Call
 	}
 
-	gasPool := core.GasPool(msg.Gas())
+	gasPool := core.GasPool(msg.GasLimit)
 	vmEnv.Reset(txContext, statedb)
 	if gasBurnEnable != nil {
 		gasBurnEnable(true)
@@ -238,27 +257,13 @@ func (e *EVMEmulator) SendTransaction(
 		return nil, nil, fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
 	}
 
-	msg, err := tx.AsMessage(types.MakeSigner(e.chainConfig, pendingHeader.Number), pendingHeader.BaseFee)
+	msg, err := core.TransactionToMessage(tx, types.MakeSigner(e.chainConfig, pendingHeader.Number), pendingHeader.BaseFee)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	msgWithZeroGasPrice := callMsg{
-		CallMsg: ethereum.CallMsg{
-			From:       msg.From(),
-			To:         msg.To(),
-			Gas:        msg.Gas(),
-			GasPrice:   big.NewInt(0),
-			GasFeeCap:  big.NewInt(0),
-			GasTipCap:  big.NewInt(0),
-			Value:      msg.Value(),
-			Data:       msg.Data(),
-			AccessList: msg.AccessList(),
-		},
-	}
-
 	result, err := e.applyMessage(
-		msgWithZeroGasPrice,
+		msg,
 		statedb,
 		pendingHeader,
 		gasBurnEnable,
@@ -295,8 +300,8 @@ func (e *EVMEmulator) SendTransaction(
 		receipt.Status = types.ReceiptStatusSuccessful
 	}
 
-	if msg.To() == nil {
-		receipt.ContractAddress = crypto.CreateAddress(msg.From(), tx.Nonce())
+	if msg.To == nil {
+		receipt.ContractAddress = crypto.CreateAddress(msg.From, tx.Nonce())
 	}
 
 	buf.Commit()
@@ -312,23 +317,6 @@ func (e *EVMEmulator) MintBlock() {
 func (e *EVMEmulator) Signer() types.Signer {
 	return evmutil.Signer(e.chainConfig.ChainID)
 }
-
-// callMsg implements core.Message to allow passing it as a transaction simulator.
-type callMsg struct {
-	ethereum.CallMsg
-}
-
-func (m callMsg) From() common.Address         { return m.CallMsg.From }
-func (m callMsg) Nonce() uint64                { return 0 }
-func (m callMsg) IsFake() bool                 { return true }
-func (m callMsg) To() *common.Address          { return m.CallMsg.To }
-func (m callMsg) GasPrice() *big.Int           { return evm.GasPrice } // we ignore the gas price set by the sender
-func (m callMsg) GasFeeCap() *big.Int          { return m.CallMsg.GasFeeCap }
-func (m callMsg) GasTipCap() *big.Int          { return m.CallMsg.GasTipCap }
-func (m callMsg) Gas() uint64                  { return m.CallMsg.Gas }
-func (m callMsg) Value() *big.Int              { return m.CallMsg.Value }
-func (m callMsg) Data() []byte                 { return m.CallMsg.Data }
-func (m callMsg) AccessList() types.AccessList { return m.CallMsg.AccessList }
 
 type chainContext struct {
 	engine consensus.Engine

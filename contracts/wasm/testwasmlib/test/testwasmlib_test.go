@@ -420,6 +420,21 @@ func TestWasmTypes(t *testing.T) {
 	checkerEth.Func.Call()
 	require.NoError(t, ctx.Err)
 
+	// check eth zero address
+	ethAddress = common.BytesToAddress([]byte{})
+	ethAddressBytes := make([]byte, wasmtypes.ScLengthEth)
+	ethAgentID = isc.NewEthereumAddressAgentID(ethAddress)
+	checkerEthEmpty := testwasmlib.ScFuncs.CheckEthEmptyAddressAndAgentID(ctx)
+	checkerEthEmpty.Params.EthAddress().SetValue(wasmtypes.AddressFromBytes(ethAddressBytes))
+	checkerEthEmpty.Params.EthAgentID().SetValue(wasmtypes.AgentIDFromBytes(ethAgentID.Bytes()))
+	checkerEthEmpty.Params.EthAgentIDString().SetValue(ethAgentID.String())
+	checkerEthEmpty.Func.Call()
+	require.NoError(t, ctx.Err)
+
+	checkerEthInvalidEmpty := testwasmlib.ScFuncs.CheckEthInvalidEmptyAddressFromString(ctx)
+	checkerEthInvalidEmpty.Func.Call()
+	require.Error(t, ctx.Err)
+
 	// check int types and uint types
 	checkerIntAndUint := testwasmlib.ScFuncs.CheckIntAndUint(ctx)
 	checkerIntAndUint.Func.Call()

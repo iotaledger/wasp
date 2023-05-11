@@ -30,6 +30,7 @@ structs:
     better: AgentID
     number: Uint16
 typedefs: {}
+
 state:
   bets: Bet[]
   lastWinningNumber: Uint16
@@ -38,6 +39,7 @@ state:
   roundNumber: Uint32
   roundStartedAt: Uint32
   roundStatus: Uint16
+
 funcs:
   init:
     params:
@@ -55,6 +57,7 @@ funcs:
     access: owner # only SC owner can update the play period
     params:
       playPeriod: Uint32 # number of minutes in one playing round
+
 views:
   lastWinningNumber:
     results:

@@ -60,6 +60,11 @@ export class ScView {
         this.callWithAllowance(null);
     }
 
+    ofContract(hContract: ScHname): ScView {
+        this.hContract = hContract;
+        return this;
+    }
+
     protected callWithAllowance(allowance: ScTransfer | null): void {
         const req = new CallRequest();
         req.contract = this.hContract;
@@ -74,11 +79,6 @@ export class ScView {
         if (proxy != null) {
             proxy.kvStore = new ScDict(res);
         }
-    }
-
-    ofContract(hContract: ScHname): ScView {
-        this.hContract = hContract;
-        return this;
     }
 }
 
