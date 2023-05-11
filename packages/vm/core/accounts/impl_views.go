@@ -13,24 +13,26 @@ import (
 
 // viewBalance returns the balances of the account belonging to the AgentID
 // Params:
-// - ParamAgentID (optional -- default: caller)
+// - ParamAgentID
 func viewBalance(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewBalance")
-	aid := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
+	aid, err := ctx.Params().GetAgentID(ParamAgentID)
+	ctx.RequireNoError(err)
 	return getAccountBalanceDict(ctx.StateR(), accountKey(aid))
 }
 
 // viewBalanceBaseToken returns the base tokens balance of the account belonging to the AgentID
 // Params:
-// - ParamAgentID (optional -- default: caller)
+// - ParamAgentID
+// Returns: {ParamBalance: uint64}
 func viewBalanceBaseToken(ctx isc.SandboxView) dict.Dict {
-	nTokens := getBaseTokens(ctx.StateR(), accountKey(ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())))
+	nTokens := getBaseTokens(ctx.StateR(), accountKey(ctx.Params().MustGetAgentID(ParamAgentID)))
 	return dict.Dict{ParamBalance: codec.EncodeUint64(nTokens)}
 }
 
 // viewBalanceNativeToken returns the native token balance of the account belonging to the AgentID
 // Params:
-// - ParamAgentID (optional -- default: caller)
+// - ParamAgentID
 // - ParamNativeTokenID
 // Returns: {ParamBalance: big.Int}
 func viewBalanceNativeToken(ctx isc.SandboxView) dict.Dict {
@@ -38,7 +40,7 @@ func viewBalanceNativeToken(ctx isc.SandboxView) dict.Dict {
 	nativeTokenID := params.MustGetNativeTokenID(ParamNativeTokenID)
 	bal := getNativeTokenAmount(
 		ctx.StateR(),
-		accountKey(params.MustGetAgentID(ParamAgentID, ctx.Caller())),
+		accountKey(params.MustGetAgentID(ParamAgentID)),
 		nativeTokenID,
 	)
 	return dict.Dict{ParamBalance: bal.Bytes()}
@@ -57,7 +59,7 @@ func viewAccounts(ctx isc.SandboxView) dict.Dict {
 
 // nonces are only sent with off-ledger requests
 func viewGetAccountNonce(ctx isc.SandboxView) dict.Dict {
-	account := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
+	account := ctx.Params().MustGetAgentID(ParamAgentID)
 	nonce := GetMaxAssumedNonce(ctx.StateR(), account)
 	ret := dict.New()
 	ret.Set(ParamAccountNonce, codec.EncodeUint64(nonce))
@@ -77,7 +79,7 @@ func viewGetNativeTokenIDRegistry(ctx isc.SandboxView) dict.Dict {
 // viewAccountFoundries returns the foundries owned by the given agentID
 func viewAccountFoundries(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
-	account := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
+	account := ctx.Params().MustGetAgentID(ParamAgentID)
 	accountFoundriesMapR(ctx.StateR(), account).IterateKeys(func(foundry []byte) bool {
 		ret.Set(kv.Key(foundry), []byte{0x01})
 		return true
@@ -102,7 +104,7 @@ func viewFoundryOutput(ctx isc.SandboxView) dict.Dict {
 // viewAccountNFTs returns the NFTIDs of NFTs owned by an account
 func viewAccountNFTs(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewAccountNFTs")
-	aid := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
+	aid := ctx.Params().MustGetAgentID(ParamAgentID)
 	nftIDs := getAccountNFTs(ctx.StateR(), aid)
 
 	if len(nftIDs) > math.MaxUint16 {
@@ -118,7 +120,7 @@ func viewAccountNFTs(ctx isc.SandboxView) dict.Dict {
 }
 
 func viewAccountNFTAmount(ctx isc.SandboxView) dict.Dict {
-	aid := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
+	aid := ctx.Params().MustGetAgentID(ParamAgentID)
 	return dict.Dict{
 		ParamNFTAmount: codec.EncodeUint32(nftsMapR(ctx.StateR(), aid).Len()),
 	}
@@ -126,7 +128,7 @@ func viewAccountNFTAmount(ctx isc.SandboxView) dict.Dict {
 
 func viewAccountNFTsInCollection(ctx isc.SandboxView) dict.Dict {
 	params := ctx.Params()
-	aid := params.MustGetAgentID(ParamAgentID, ctx.Caller())
+	aid := params.MustGetAgentID(ParamAgentID)
 	collectionID := params.MustGetNFTID(ParamCollectionID)
 	nftIDs := getAccountNFTsInCollection(ctx.StateR(), aid, collectionID)
 
@@ -144,7 +146,7 @@ func viewAccountNFTsInCollection(ctx isc.SandboxView) dict.Dict {
 
 func viewAccountNFTAmountInCollection(ctx isc.SandboxView) dict.Dict {
 	params := ctx.Params()
-	aid := params.MustGetAgentID(ParamAgentID, ctx.Caller())
+	aid := params.MustGetAgentID(ParamAgentID)
 	collectionID := params.MustGetNFTID(ParamCollectionID)
 	return dict.Dict{
 		ParamNFTAmount: codec.EncodeUint32(nftsByCollectionMapR(ctx.StateR(), aid, kv.Key(collectionID[:])).Len()),

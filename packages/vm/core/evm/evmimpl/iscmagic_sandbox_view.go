@@ -19,23 +19,23 @@ import (
 )
 
 // handler for ISCSandbox::getChainID
-func (h *magicContractHandler) GetChainID() iscmagic.ISCChainID {
+func (h *magicContractViewHandler) GetChainID() iscmagic.ISCChainID {
 	return iscmagic.WrapISCChainID(h.ctx.ChainID())
 }
 
 // handler for ISCSandbox::getChainOwnerID
-func (h *magicContractHandler) GetChainOwnerID() iscmagic.ISCAgentID {
+func (h *magicContractViewHandler) GetChainOwnerID() iscmagic.ISCAgentID {
 	return iscmagic.WrapISCAgentID(h.ctx.ChainOwnerID())
 }
 
 // handler for ISCSandbox::getNFTData
-func (h *magicContractHandler) GetNFTData(nftID iscmagic.NFTID) iscmagic.ISCNFT {
+func (h *magicContractViewHandler) GetNFTData(nftID iscmagic.NFTID) iscmagic.ISCNFT {
 	nft := h.ctx.GetNFTData(nftID.Unwrap())
 	return iscmagic.WrapISCNFT(nft)
 }
 
 // handler for ISCSandbox::getIRC27NFTData
-func (h *magicContractHandler) GetIRC27NFTData(nftID iscmagic.NFTID) iscmagic.IRC27NFT {
+func (h *magicContractViewHandler) GetIRC27NFTData(nftID iscmagic.NFTID) iscmagic.IRC27NFT {
 	nft := h.ctx.GetNFTData(nftID.Unwrap())
 	metadata, err := isc.IRC27NFTMetadataFromBytes(nft.Metadata)
 	h.ctx.RequireNoError(err)
@@ -46,17 +46,17 @@ func (h *magicContractHandler) GetIRC27NFTData(nftID iscmagic.NFTID) iscmagic.IR
 }
 
 // handler for ISCSandbox::getTimestampUnixSeconds
-func (h *magicContractHandler) GetTimestampUnixSeconds() int64 {
+func (h *magicContractViewHandler) GetTimestampUnixSeconds() int64 {
 	return h.ctx.Timestamp().Unix()
 }
 
 // handler for ISCSandbox::callView
-func (h *magicContractHandler) CallView(
+func (h *magicContractViewHandler) CallView(
 	contractHname uint32,
 	entryPoint uint32,
 	params iscmagic.ISCDict,
 ) iscmagic.ISCDict {
-	callRet := h.callView(
+	callRet := h.ctx.CallView(
 		isc.Hname(contractHname),
 		isc.Hname(entryPoint),
 		params.Unwrap(),
@@ -65,22 +65,22 @@ func (h *magicContractHandler) CallView(
 }
 
 // handler for ISCSandbox::getAllowanceFrom
-func (h *magicContractHandler) GetAllowanceFrom(addr common.Address) iscmagic.ISCAssets {
+func (h *magicContractViewHandler) GetAllowanceFrom(addr common.Address) iscmagic.ISCAssets {
 	return iscmagic.WrapISCAssets(getAllowance(h.ctx, addr, h.caller.Address()))
 }
 
 // handler for ISCSandbox::getAllowanceTo
-func (h *magicContractHandler) GetAllowanceTo(target common.Address) iscmagic.ISCAssets {
+func (h *magicContractViewHandler) GetAllowanceTo(target common.Address) iscmagic.ISCAssets {
 	return iscmagic.WrapISCAssets(getAllowance(h.ctx, h.caller.Address(), target))
 }
 
 // handler for ISCSandbox::getAllowance
-func (h *magicContractHandler) GetAllowance(from, to common.Address) iscmagic.ISCAssets {
+func (h *magicContractViewHandler) GetAllowance(from, to common.Address) iscmagic.ISCAssets {
 	return iscmagic.WrapISCAssets(getAllowance(h.ctx, from, to))
 }
 
 // handler for ISCSandbox::getBaseTokenProperties
-func (h *magicContractHandler) GetBaseTokenProperties() iscmagic.ISCTokenProperties {
+func (h *magicContractViewHandler) GetBaseTokenProperties() iscmagic.ISCTokenProperties {
 	l1 := parameters.L1()
 	return iscmagic.ISCTokenProperties{
 		Name:         l1.BaseToken.Name,
@@ -91,25 +91,25 @@ func (h *magicContractHandler) GetBaseTokenProperties() iscmagic.ISCTokenPropert
 }
 
 // handler for ISCSandbox::erc20NativeTokensAddress
-func (h *magicContractHandler) Erc20NativeTokensAddress(foundrySN uint32) common.Address {
+func (h *magicContractViewHandler) Erc20NativeTokensAddress(foundrySN uint32) common.Address {
 	return iscmagic.ERC20NativeTokensAddress(foundrySN)
 }
 
 // handler for ISCSandbox::erc721NFTCollectionAddress
-func (h *magicContractHandler) Erc721NFTCollectionAddress(collectionID iscmagic.NFTID) common.Address {
+func (h *magicContractViewHandler) Erc721NFTCollectionAddress(collectionID iscmagic.NFTID) common.Address {
 	return iscmagic.ERC721NFTCollectionAddress(collectionID.Unwrap())
 }
 
 // handler for ISCSandbox::erc20NativeTokensFoundrySerialNumber
-func (h *magicContractHandler) Erc20NativeTokensFoundrySerialNumber(addr common.Address) uint32 {
+func (h *magicContractViewHandler) Erc20NativeTokensFoundrySerialNumber(addr common.Address) uint32 {
 	sn, err := iscmagic.ERC20NativeTokensFoundrySN(addr)
 	h.ctx.RequireNoError(err)
 	return sn
 }
 
 // handler for ISCSandbox::getNativeTokenID
-func (h *magicContractHandler) GetNativeTokenID(foundrySN uint32) iscmagic.NativeTokenID {
-	r := h.callView(accounts.Contract.Hname(), accounts.ViewFoundryOutput.Hname(), dict.Dict{
+func (h *magicContractViewHandler) GetNativeTokenID(foundrySN uint32) iscmagic.NativeTokenID {
+	r := h.ctx.CallView(accounts.Contract.Hname(), accounts.ViewFoundryOutput.Hname(), dict.Dict{
 		accounts.ParamFoundrySN: codec.EncodeUint32(foundrySN),
 	})
 	out := &iotago.FoundryOutput{}
@@ -120,8 +120,8 @@ func (h *magicContractHandler) GetNativeTokenID(foundrySN uint32) iscmagic.Nativ
 }
 
 // handler for ISCSandbox::getNativeTokenScheme
-func (h *magicContractHandler) GetNativeTokenScheme(foundrySN uint32) iotago.SimpleTokenScheme {
-	r := h.callView(accounts.Contract.Hname(), accounts.ViewFoundryOutput.Hname(), dict.Dict{
+func (h *magicContractViewHandler) GetNativeTokenScheme(foundrySN uint32) iotago.SimpleTokenScheme {
+	r := h.ctx.CallView(accounts.Contract.Hname(), accounts.ViewFoundryOutput.Hname(), dict.Dict{
 		accounts.ParamFoundrySN: codec.EncodeUint32(foundrySN),
 	})
 	out := &iotago.FoundryOutput{}

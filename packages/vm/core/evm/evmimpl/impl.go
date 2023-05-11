@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/solidity"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
@@ -37,7 +36,7 @@ var Processor = evm.Contract.Processor(nil,
 	evm.FuncSendTransaction.WithHandler(restricted(applyTransaction)),
 	evm.FuncCallContract.WithHandler(restricted(callContract)),
 
-	evm.FuncRegisterERC20NativeToken.WithHandler(registerERC20NativeToken),
+	evm.FuncRegisterERC20NativeToken.WithHandler(restricted(registerERC20NativeToken)),
 	evm.FuncRegisterERC20NativeTokenOnRemoteChain.WithHandler(restricted(registerERC20NativeTokenOnRemoteChain)),
 	evm.FuncRegisterERC20ExternalNativeToken.WithHandler(registerERC20ExternalNativeToken),
 	evm.FuncRegisterERC721NFTCollection.WithHandler(restricted(registerERC721NFTCollection)),
@@ -324,11 +323,8 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 }
 
 func getChainID(ctx isc.SandboxView) dict.Dict {
-	bdb := emulator.NewBlockchainDB(
-		evmStateSubrealm(buffered.NewBufferedKVStore(ctx.StateR())),
-		0, // block gas limit should not be needed for GetChainID()
-	)
-	return result(evmtypes.EncodeChainID(bdb.GetChainID()))
+	emu := createEmulatorR(ctx)
+	return result(evmtypes.EncodeChainID(emu.BlockchainDB().GetChainID()))
 }
 
 func tryGetRevertError(res *core.ExecutionResult) error {
