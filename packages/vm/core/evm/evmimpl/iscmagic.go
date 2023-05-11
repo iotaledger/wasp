@@ -119,33 +119,10 @@ func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, ga
 func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) []byte {
 	privileged := isCallerPrivileged(c.ctx, caller.Address())
 	method, args := parseCall(input, privileged)
-	if method.IsConstant() {
-		return callViewHandler(c.ctx, caller, method, args)
-	}
-	if readOnly {
+	if readOnly && !method.IsConstant() {
 		panic("attempt to call non-view method in read-only context")
 	}
 	return callHandler(c.ctx, caller, method, args)
-}
-
-type magicContractView struct {
-	ctx isc.SandboxBase
-}
-
-func newMagicContractView(ctx isc.SandboxBase) map[common.Address]vm.ISCMagicContract {
-	return map[common.Address]vm.ISCMagicContract{
-		iscmagic.Address: &magicContractView{ctx},
-	}
-}
-
-func (c *magicContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
-	return catchISCPanics(c.doRun, evm, caller, input, gas, readOnly, c.ctx.Log())
-}
-
-func (c *magicContractView) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) []byte {
-	privileged := isCallerPrivileged(c.ctx, caller.Address())
-	method, args := parseCall(input, privileged)
-	return callViewHandler(c.ctx, caller, method, args)
 }
 
 // deployMagicContractOnGenesis sets up the initial state of the ISC EVM contract

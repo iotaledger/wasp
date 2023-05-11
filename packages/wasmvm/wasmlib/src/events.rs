@@ -13,8 +13,7 @@ pub trait IEventHandlers: Any + Sync + Send {
 
 static mut NEXT_ID: u32 = 0;
 
-pub struct EventHandlers {
-}
+pub struct EventHandlers {}
 
 impl EventHandlers {
     pub fn generate_id() -> u32 {
@@ -24,6 +23,7 @@ impl EventHandlers {
         }
     }
 }
+
 pub struct EventEncoder {
     event: String,
 }

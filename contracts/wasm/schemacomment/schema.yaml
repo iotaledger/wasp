@@ -95,21 +95,20 @@ funcs: # comment for funcs
 
   # comment for TestFunc1 1
   testFunc1: # comment for TestFunc1 2
-  
+
     # comment for params
-    params: 
+    params:
       # comment for name
-      name: String 
+      name: String
       # comment for value
-      value: String 
+      value: String
       # comment for arr
       arr: Int64[]
     # comment for results  
-    results: 
+    results:
       # comment for length
-      length: Uint32 
-        
-    
+      length: Uint32
+
 # ##################################
 
 views: # comment for views
@@ -117,15 +116,12 @@ views: # comment for views
   # comment for TestView1
   testView1:
     # comment for params
-    params: 
+    params:
       # comment for name
-      name: String 
+      name: String
       # comment for arr
       arr: Int64[]
     # comment for results  
-    results: 
+    results:
       # comment for length
       length: Uint32 
-
-
-

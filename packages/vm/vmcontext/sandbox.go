@@ -186,3 +186,9 @@ func (s *contractSandbox) totalGasTokens() *isc.Assets {
 	amount := s.Ctx.(*VMContext).gasMaxTokensToSpendForGasFee
 	return isc.NewAssetsBaseTokens(amount)
 }
+
+// Call calls an entry point of contract, passes parameters and funds
+func (s *contractSandbox) CallOnBehalfOf(caller isc.AgentID, target, entryPoint isc.Hname, params dict.Dict, transfer *isc.Assets) dict.Dict {
+	s.Ctx.GasBurn(gas.BurnCodeCallContract)
+	return s.Ctx.(*VMContext).CallOnBehalfOf(caller, target, entryPoint, params, transfer)
+}

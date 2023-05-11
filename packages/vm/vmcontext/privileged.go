@@ -6,7 +6,9 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -54,4 +56,9 @@ func (vmctx *VMContext) SetBlockContext(bctx interface{}) {
 
 func (vmctx *VMContext) BlockContext() interface{} {
 	return vmctx.blockContext[vmctx.CurrentContractHname()]
+}
+
+func (vmctx *VMContext) CallOnBehalfOf(caller isc.AgentID, target, entryPoint isc.Hname, params dict.Dict, allowance *isc.Assets) dict.Dict {
+	vmctx.Debugf("CallOnBehalfOf: caller = %s, target = %s, entryPoint = %s, params = %s", caller.String(), target.String(), entryPoint.String(), params.String())
+	return vmctx.callProgram(target, entryPoint, params, allowance, caller)
 }

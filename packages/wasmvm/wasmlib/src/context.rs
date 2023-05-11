@@ -17,8 +17,7 @@ impl ScSandbox for ScFuncContext {}
 impl ScSandboxFunc for ScFuncContext {}
 
 impl ScFuncCallContext for ScFuncContext {
-    fn init_func_call_context(&self) {
-    }
+    fn init_func_call_context(&self) {}
 }
 
 impl ScViewCallContext for ScFuncContext {

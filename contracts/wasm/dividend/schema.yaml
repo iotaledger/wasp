@@ -3,44 +3,54 @@
 copyright:
 
 name: Dividend
-version: 0.1.1
+version: 0.1.2
 description: Simple dividend smart contract
 
 author: Eric Hop <eric@iota.org>
 license: Apache-2.0
 repository: https://github.com/iotaledger/wasp
 
+events: {}
 structs: {}
 typedefs: {}
+
 state:
-  memberList: Address[] # array with all the recipients of this dividend
-
-  # factors per member
-
+  memberList: Address[] # array with all the recipient members of this dividend
   members: map[Address]Uint64 # map with all the recipient factors of this dividend
-  owner: AgentID # owner of contract, the only one who can call 'member' func
+  owner: AgentID # owner of contract, the only one who can call the 'member' func
   totalFactor: Uint64 # sum of all recipient factors
+
 funcs:
-  # divide tokens over members
-  divide: {}
+  # initialize the dividend smart contract
   init:
     params:
       owner: AgentID? # optional owner of contract, defaults to contract creator
+
+  # divide tokens over recipient members
+  divide: {}
+
+  # set a recipient member and their division factor
   member:
-    access: owner # only defined owner of contract can add members
+    access: owner # only current owner of contract can add members
     params:
-      address: Address # address of dividend recipient
+      address: Address # address of dividend recipient member
       factor: Uint64 # relative division factor
+
+  # set the current owner of the dividend smart contract
   setOwner:
-    access: owner # only defined owner of contract can change owner
+    access: owner # only current owner of contract can change owner
     params:
       owner: AgentID # new owner of smart contract
+
 views:
+  # retrieve the current dividend factor for a member
   getFactor:
     params:
       address: Address # address of dividend recipient
     results:
       factor: Uint64 # relative division factor
+
+  # retrieve the current owner of the dividend smart contract
   getOwner:
     results:
       owner: AgentID # current owner of this smart contract

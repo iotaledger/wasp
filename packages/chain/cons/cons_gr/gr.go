@@ -173,7 +173,7 @@ func New(
 			cgr.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
 		}
-		cgr.netRecvPipe.TryAdd(recv)
+		cgr.netRecvPipe.TryAdd(recv, cgr.log.Debugf)
 	})
 	cgr.netDisconnect = unhook
 
