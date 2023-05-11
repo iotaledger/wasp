@@ -20,11 +20,11 @@ func (vmctx *VMContext) Call(targetContract, epCode isc.Hname, params dict.Dict,
 	return vmctx.callProgram(targetContract, epCode, params, allowance)
 }
 
-func (vmctx *VMContext) callProgram(targetContract, epCode isc.Hname, params dict.Dict, allowance *isc.Assets, caller ...isc.AgentID) dict.Dict {
+func (vmctx *VMContext) callProgram(targetContract, epCode isc.Hname, params dict.Dict, allowance *isc.Assets) dict.Dict {
 	contractRecord := vmctx.getOrCreateContractRecord(targetContract)
 	ep := execution.GetEntryPointByProgHash(vmctx, targetContract, epCode, contractRecord.ProgramHash)
 
-	vmctx.pushCallContext(targetContract, params, allowance, caller...)
+	vmctx.pushCallContext(targetContract, params, allowance)
 	defer vmctx.popCallContext()
 
 	// distinguishing between two types of entry points. Passing different types of sandboxes
@@ -54,13 +54,9 @@ func (vmctx *VMContext) callerIsRoot() bool {
 
 const traceStack = false
 
-func (vmctx *VMContext) pushCallContext(contract isc.Hname, params dict.Dict, allowance *isc.Assets, caller ...isc.AgentID) {
-	toBeCaller := vmctx.getToBeCaller()
-	if len(caller) != 0 {
-		toBeCaller = caller[0]
-	}
+func (vmctx *VMContext) pushCallContext(contract isc.Hname, params dict.Dict, allowance *isc.Assets) {
 	ctx := &callContext{
-		caller:   toBeCaller,
+		caller:   vmctx.getToBeCaller(),
 		contract: contract,
 		params: isc.Params{
 			Dict:      params,
