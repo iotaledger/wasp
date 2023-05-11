@@ -140,6 +140,8 @@ type Privileged interface {
 
 	SetBlockContext(bctx interface{})
 	BlockContext() interface{}
+
+	CallOnBehalfOf(caller AgentID, target, entryPoint Hname, params dict.Dict, allowance *Assets) dict.Dict
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters

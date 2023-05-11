@@ -287,6 +287,10 @@ func (e *soloChainEnv) deployFibonacciContract(creator *ecdsa.PrivateKey) *fibon
 	return &fibonacciContractInstance{e.deployContract(creator, evmtest.FibonacciContractABI, evmtest.FibonacciContractByteCode)}
 }
 
+func (e *soloChainEnv) deployERC20ExampleContract(creator *ecdsa.PrivateKey) *erc20ContractInstance {
+	return &erc20ContractInstance{e.deployContract(creator, evmtest.ERC20ExampleContractABI, evmtest.ERC20ExampleContractBytecode)}
+}
+
 func (e *soloChainEnv) signer() types.Signer {
 	return evmutil.Signer(big.NewInt(int64(e.evmChainID)))
 }
