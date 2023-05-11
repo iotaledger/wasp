@@ -10,8 +10,10 @@ import (
 	"github.com/spf13/cobra"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	cliwallet "github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
@@ -55,6 +57,9 @@ func initRotateWithDKGCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			chain = defaultChainFallback(chain)
 			node = waspcmd.DefaultWaspNodeFallback(node)
+
+			setMaintenanceStatus(chain, node, true)
+			defer setMaintenanceStatus(chain, node, false)
 
 			controllerAddr := doDKG(node, peers, quorum)
 			rotateTo(chain, controllerAddr)
@@ -114,4 +119,23 @@ func rotateTo(chain string, newStateControllerAddr iotago.Address) {
 	txID, err := tx.ID()
 	log.Check(err)
 	fmt.Fprintf(os.Stdout, "Chain rotation transaction issued successfully.\nTXID: %s\n", txID.ToHex())
+}
+
+func setMaintenanceStatus(chain, node string, start bool) {
+	status := ""
+	if start {
+		status = governance.FuncStartMaintenance.Name
+	} else {
+		status = governance.FuncStopMaintenance.Name
+	}
+	params := chainclient.PostRequestParams{}
+	postRequest(
+		node,
+		chain,
+		governance.Contract.Name,
+		status,
+		params,
+		true,
+		true,
+	)
 }
