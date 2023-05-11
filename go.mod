@@ -45,7 +45,7 @@ require (
 	go.uber.org/dig v1.17.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.9.0
-	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
+	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea
 	golang.org/x/net v0.10.0
 	gopkg.in/yaml.v3 v3.0.1
 	nhooyr.io/websocket v1.8.7
