@@ -3,6 +3,8 @@
 
 package wasmtypes
 
+import "strings"
+
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 const (
@@ -96,17 +98,20 @@ func AddressToBytes(value ScAddress) []byte {
 }
 
 func AddressFromString(value string) ScAddress {
-	if value[:2] == "0x" {
-		if value == "0x0" {
-			return AddressFromBytes(make([]byte, ScLengthEth))
-		}
-		b := HexDecode(value)
-		if len(b) != ScLengthEth {
-			panic("invalid ETH address")
-		}
-		return AddressFromBytes(b)
+	if !strings.HasPrefix(value, "0x") {
+		return Bech32Decode(value)
 	}
-	return Bech32Decode(value)
+
+	// ETH address, allow the common "0x0"
+	if value == "0x0" {
+		return AddressFromBytes(make([]byte, ScLengthEth))
+	}
+
+	bytes := HexDecode(value)
+	if len(bytes) != ScLengthEth {
+		panic("invalid ETH address")
+	}
+	return AddressFromBytes(bytes)
 }
 
 func AddressToString(value ScAddress) string {

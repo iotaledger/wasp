@@ -4,8 +4,8 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 
-use crate::host::*;
 use crate::*;
+use crate::host::*;
 
 pub struct ScImmutableDict {
     dict: ScDict,

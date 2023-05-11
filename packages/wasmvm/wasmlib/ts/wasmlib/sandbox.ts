@@ -102,23 +102,6 @@ export class ScSandbox {
         return new ScAssets(sandbox(FnBalances, null)).balances();
     }
 
-    // calls a smart contract function
-    protected callWithAllowance(hContract: ScHname, hFunction: ScHname, params: ScDict | null, allowance: ScTransfer | null): ScImmutableDict {
-        const req = new CallRequest();
-        req.contract = hContract;
-        req.function = hFunction;
-        if (params === null) {
-            params = new ScDict(null);
-        }
-        req.params = params.toBytes();
-        if (allowance === null) {
-            allowance = new ScTransfer();
-        }
-        req.allowance = allowance.toBytes();
-        const res = this.fnCall(req);
-        return new ScDict(res).immutable();
-    }
-
     fnCall(req: CallRequest): Uint8Array {
         return sandbox(FnCall, req.bytes());
     }
@@ -181,6 +164,23 @@ export class ScSandbox {
     // access diverse utility functions
     public utility(): ScSandboxUtils {
         return new ScSandboxUtils();
+    }
+
+    // calls a smart contract function
+    protected callWithAllowance(hContract: ScHname, hFunction: ScHname, params: ScDict | null, allowance: ScTransfer | null): ScImmutableDict {
+        const req = new CallRequest();
+        req.contract = hContract;
+        req.function = hFunction;
+        if (params === null) {
+            params = new ScDict(null);
+        }
+        req.params = params.toBytes();
+        if (allowance === null) {
+            allowance = new ScTransfer();
+        }
+        req.allowance = allowance.toBytes();
+        const res = this.fnCall(req);
+        return new ScDict(res).immutable();
     }
 }
 

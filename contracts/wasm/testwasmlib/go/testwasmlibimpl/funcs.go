@@ -698,6 +698,6 @@ func viewCheckEthEmptyAddressAndAgentID(ctx wasmlib.ScViewContext, f *CheckEthEm
 	ctx.Require(addressStringLong == wasmtypes.AddressToString(addressFromAgentID), "eth raw agentID string conversion failed")
 }
 
-func viewCheckEthInvalidEmptyAddressFromString(ctx wasmlib.ScViewContext, f *CheckEthInvalidEmptyAddressFromStringContext) {
+func viewCheckEthInvalidEmptyAddressFromString(_ wasmlib.ScViewContext, _ *CheckEthInvalidEmptyAddressFromStringContext) {
 	_ = wasmtypes.AddressFromString("0x00")
 }

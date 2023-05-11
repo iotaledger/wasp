@@ -110,17 +110,20 @@ pub fn address_to_bytes(value: &ScAddress) -> Vec<u8> {
 }
 
 pub fn address_from_string(value: &str) -> ScAddress {
-    if value.find("0x") == Some(0) {
-        if value == "0x0" {
-            return address_from_bytes(&vec![0; SC_LENGTH_ETH]);
-        }
-        let b = hex_decode(value);
-        if b.len() != SC_LENGTH_ETH {
-            panic("invalid ETH address");
-        }
-        return address_from_bytes(&b);
+    if !value.starts_with("0x") {
+        return bech32_decode(value);
     }
-    bech32_decode(value)
+
+    // ETH address, allow the common "0x0"
+    if value == "0x0" {
+        return address_from_bytes(&vec![0; SC_LENGTH_ETH]);
+    }
+
+    let bytes = hex_decode(value);
+    if bytes.len() != SC_LENGTH_ETH {
+        panic("invalid ETH address");
+    }
+    address_from_bytes(&bytes)
 }
 
 pub fn address_to_string(value: &ScAddress) -> String {
