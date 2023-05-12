@@ -146,7 +146,11 @@ func (tx *pendingTransaction) propagateReattach() {
 	}
 }
 
-func (tx *pendingTransaction) SetPublished() {
+func (tx *pendingTransaction) SetPublished(blockID iotago.BlockID) {
+	// we can set the blockID of the pendingTransaction here, so the chaining will use the block that was published on L1.
+	// we can even overwrite this blockID several times if there are multiple blocks published with the same pendingTransaction on L1,
+	// since it doesn't matter where we attach our next Tx, as long as the chain structure is valid.
+	tx.SetBlockID(blockID)
 	tx.cancelCtxPublished()
 }
 
