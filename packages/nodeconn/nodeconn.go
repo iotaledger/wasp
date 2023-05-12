@@ -555,7 +555,7 @@ func (nc *nodeConnection) checkReceivedTxPendingAndCancelPoW(block *iotago.Block
 			// check if the block was already referenced
 			if metadata.ReferencedByMilestoneIndex != 0 {
 				// block with the tracked tx already got referenced, we can abort attachment of the tx
-				pendingTx.SetPublished()
+				pendingTx.SetPublished(blockID)
 				break
 			}
 
@@ -568,7 +568,7 @@ func (nc *nodeConnection) checkReceivedTxPendingAndCancelPoW(block *iotago.Block
 
 			// block is solid and the quality of the tips seem fine
 			// => abort our own attachment
-			pendingTx.SetPublished()
+			pendingTx.SetPublished(blockID)
 			break
 		}
 	}()
