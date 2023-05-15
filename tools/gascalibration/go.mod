@@ -12,12 +12,12 @@ replace (
 require (
 	github.com/iotaledger/wasp/tools/wasp-cli v1.0.0-00010101000000-000000000000
 	github.com/spf13/cobra v1.7.0
-	gonum.org/v1/plot v0.12.0
+	gonum.org/v1/plot v0.13.0
 )
 
 require (
 	filippo.io/edwards25519 v1.0.0 // indirect
-	git.sr.ht/~sbinet/gg v0.3.1 // indirect
+	git.sr.ht/~sbinet/gg v0.4.1 // indirect
 	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.1 // indirect
 	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b // indirect
@@ -36,10 +36,10 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gballet/go-libpcsclite v0.0.0-20191108122812-4678299bea08 // indirect
 	github.com/getsentry/sentry-go v0.20.0 // indirect
-	github.com/go-fonts/liberation v0.3.0 // indirect
+	github.com/go-fonts/liberation v0.3.1 // indirect
 	github.com/go-latex/latex v0.0.0-20230307184459-12ec69307ad9 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
-	github.com/go-pdf/fpdf v0.7.0 // indirect
+	github.com/go-pdf/fpdf v0.8.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -103,7 +103,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/crypto v0.9.0 // indirect
-	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53 // indirect
+	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea // indirect
 	golang.org/x/image v0.7.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
