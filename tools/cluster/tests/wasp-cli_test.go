@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/samber/lo"
@@ -21,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -155,21 +157,20 @@ func TestWaspCLIDeposit(t *testing.T) {
 		_, eth := newEthereumAccount()
 		// create foundry
 		tokenScheme := codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
-			MintedTokens:  big.NewInt(10), // TODO this is not 0, where do these tokens go to? they don't show up in the wasp-cli balances...
+			MintedTokens:  big.NewInt(0),
 			MeltedTokens:  big.NewInt(0),
 			MaximumSupply: big.NewInt(1000),
 		})
 		out := w.PostRequestGetReceipt(
 			"accounts", accounts.FuncFoundryCreateNew.Name,
-			"string", accounts.ParamTokenScheme, "bytes", iotago.EncodeHex(tokenScheme), "-l", "base:1000000",
+			"string", accounts.ParamTokenScheme, "bytes", iotago.EncodeHex(tokenScheme),
+			"-l", "base:1000000",
 			"-t", "base:100000000",
 			"--node=0",
 		)
 		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
 		// mint 2 native tokens
-		// TODO we know its the first foundry to be created by the chain, so SN must be 1,
-		// but there is NO WAY to obtain the SN, this is a design flaw that must be fixed.
 		foundrySN := "1"
 		out = w.PostRequestGetReceipt(
 			"accounts", accounts.FuncFoundryModifySupply.Name,
@@ -182,7 +183,6 @@ func TestWaspCLIDeposit(t *testing.T) {
 		)
 		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
-		// withdraw this token to the wasp-cli L1 address
 		out = w.MustRun("chain", "balance", "--node=0")
 		tokenID := ""
 		for _, line := range out {
@@ -191,6 +191,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 			}
 		}
 
+		// withdraw this token to the wasp-cli L1 address
 		out = w.PostRequestGetReceipt(
 			"accounts", accounts.FuncWithdraw.Name,
 			"-l", fmt.Sprintf("base:1000000, %s:2", tokenID),
@@ -222,6 +223,122 @@ func TestWaspCLIDeposit(t *testing.T) {
 		out = w.MustRun("balance")
 		require.NotContains(t, strings.Join(out, ""), tokenID)
 	})
+}
+
+func TestWaspCLIUnprocessableRequest(t *testing.T) {
+	w := newWaspCLITest(t)
+
+	committee, quorum := w.ArgCommitteeConfig(0)
+	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain1", 0)
+	regex4NTsBalance := regexp.MustCompile(`.*(0x.{76}).*(0x.{76}).*(0x.{76}).*(0x.{76}).*`)
+
+	createFoundries := func(nFoundries int) []string {
+		// create N foundries and mints 1 tokens from each foundry
+		tokenScheme := codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
+			MintedTokens:  big.NewInt(0),
+			MeltedTokens:  big.NewInt(0),
+			MaximumSupply: big.NewInt(1),
+		})
+		for i := 1; i <= nFoundries; i++ {
+			// create foundry
+			out := w.PostRequestGetReceipt(
+				"accounts", accounts.FuncFoundryCreateNew.Name,
+				"string", accounts.ParamTokenScheme, "bytes", iotago.EncodeHex(tokenScheme),
+				"-l", "base:1000000",
+				"-t", "base:100000000",
+				"--node=0",
+			)
+			require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
+
+			// mint 1 native token
+			out = w.PostRequestGetReceipt(
+				"accounts", accounts.FuncFoundryModifySupply.Name,
+				"string", accounts.ParamFoundrySN, "uint32", fmt.Sprintf("%d", i),
+				"string", accounts.ParamSupplyDeltaAbs, "bigint", "1",
+				"string", accounts.ParamDestroyTokens, "bool", "false",
+				"-l", "base:1000000",
+				"--off-ledger",
+				"--node=0",
+			)
+			require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
+		}
+
+		out := w.MustRun("chain", "balance", "--node=0")
+		ntIDs := regex4NTsBalance.FindStringSubmatch(strings.Join(out, ""))
+		ntIDs = ntIDs[1:]
+
+		// withdraw all tokens to the target L1 address
+		out = w.PostRequestGetReceipt(
+			"accounts", accounts.FuncWithdraw.Name,
+			"-l", fmt.Sprintf("base:1000000, %s:1, %s:1, %s:1, %s:1", ntIDs[0], ntIDs[1], ntIDs[2], ntIDs[3]),
+			"--off-ledger",
+			"--node=0",
+		)
+		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
+
+		return ntIDs
+	}
+
+	// create 4 foundries, mint 1 token of each
+	ntIDs := createFoundries(4)
+
+	// send those tokens to another address (that doesn't have on-chain balance)
+	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
+	w.MustRun("send-funds", "-s", alternativeAddress, fmt.Sprintf("base:10000000, %s:1, %s:1, %s:1, %s:1", ntIDs[0], ntIDs[1], ntIDs[2], ntIDs[3]))
+	out := w.MustRun("balance", "--address-index=1")
+	require.True(t, regex4NTsBalance.Match([]byte(strings.Join(out, ""))))
+
+	go func() {
+		// wait some time and post another request so that a block is produced (a block won't be produced with only unprocessable requests)
+		time.Sleep(1 * time.Second)
+		w.MustRun("chain", "deposit", "base:1000000", "--node=0")
+	}()
+	// try to deposit them without enough funds (only send minSD) // THIS IS THIS UNPROCESSABLE REQUEST
+	out = w.MustRun(
+		"chain", "deposit",
+		fmt.Sprintf("%s:1, %s:1, %s:1, %s:1", ntIDs[0], ntIDs[1], ntIDs[2], ntIDs[3]),
+		"--adjust-storage-deposit",
+		"--node=0",
+		"--address-index=1",
+	)
+	reqID := findRequestIDInOutput(out)
+	require.NotEmpty(t, reqID)
+
+	// native tokens don't appear on-chain, nor on L1
+	out = w.MustRun("balance", "--address-index=1")
+	require.False(t, regex4NTsBalance.Match([]byte(strings.Join(out, ""))))
+
+	out = w.MustRun("chain", "balance", "--node=0", "--address-index=1")
+	require.False(t, regex4NTsBalance.Match([]byte(strings.Join(out, ""))))
+
+	// check "request to retry" exists
+	out = w.MustRun("chain", "call-view",
+		blocklog.Contract.Name, blocklog.ViewHasUnprocessable.Name,
+		"string", blocklog.ParamRequestID, "bytes", reqID,
+		"--node=0")
+	require.Regexp(t, `"value":"0x01"`, strings.Join(out, ""))
+
+	// send a "retry" request that deposits enough funds to process the initial NTs deposit
+	out = w.PostRequestGetReceipt(
+		blocklog.Contract.Name, blocklog.FuncRetryUnprocessable.Name,
+		"string", blocklog.ParamRequestID, "bytes", reqID,
+		"-t", "base:1000000",
+		"--node=0",
+		"--address-index=1",
+	)
+	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
+
+	// check "request to retry" has left the "unprocessable list"
+	out = w.MustRun("chain", "call-view",
+		blocklog.Contract.Name, blocklog.ViewHasUnprocessable.Name,
+		"string", blocklog.ParamRequestID, "bytes", reqID,
+		"--node=0")
+	require.Regexp(t, `"value":"0x00"`, strings.Join(out, ""))
+
+	// native tokens now appear on-chain, nor on L1
+	out = w.MustRun("chain", "balance", "--node=0", "--address-index=1")
+	require.Len(t, regex4NTsBalance.FindStringSubmatch(strings.Join(out, "")), 5)
 }
 
 func TestWaspCLIContract(t *testing.T) {
