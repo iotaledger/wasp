@@ -119,6 +119,9 @@ func configure() error {
 	if ParamsPrometheus.ChainNodeConnMetrics {
 		register("chain node conn", deps.ChainMetrics.PrometheusCollectorsChainNodeConn()...)
 	}
+	if ParamsPrometheus.ChainPipeMetrics {
+		deps.ChainMetrics.PrometheusRegisterChainPipeMetrics(deps.PrometheusRegistry)
+	}
 	if ParamsPrometheus.PeeringMetrics {
 		register("peering", deps.PeeringMetrics.Collectors()...)
 	}
