@@ -38,7 +38,7 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	}
 	// sum over native tokens which require inputs
 	for id, ntb := range txb.balanceNativeTokens {
-		if !ntb.requiresInput() {
+		if !ntb.requiresExistingAccountingUTXOAsInput() {
 			continue
 		}
 		s, ok := totals.NativeTokenBalances[id]
@@ -64,7 +64,7 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 		}
 	}
 	for _, f := range txb.invokedFoundries {
-		if f.requiresInput() {
+		if f.requiresExistingAccountingUTXOAsInput() {
 			totals.TotalBaseTokensInStorageDeposit += f.in.Amount
 			simpleTokenScheme := util.MustTokenScheme(f.in.TokenScheme)
 			totals.TokenCirculatingSupplies[f.in.MustNativeTokenID()] = new(big.Int).
@@ -95,7 +95,7 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 	}
 	// sum over native tokens which produce outputs
 	for id, ntb := range txb.balanceNativeTokens {
-		if !ntb.producesOutput() {
+		if !ntb.producesAccountingOutput() {
 			continue
 		}
 		s, ok := totals.NativeTokenBalances[id]
@@ -108,7 +108,7 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 		totals.TotalBaseTokensInStorageDeposit += ntb.out.Amount
 	}
 	for _, f := range txb.invokedFoundries {
-		if !f.producesOutput() {
+		if !f.producesAccountingOutput() {
 			continue
 		}
 		totals.TotalBaseTokensInStorageDeposit += f.out.Amount

@@ -675,6 +675,12 @@ func (ch *Chain) LatestState(freshness chain.StateFreshness) (state.State, error
 	return st, nil
 }
 
+func (ch *Chain) LatestBlock() state.Block {
+	b, err := ch.store.LatestBlock()
+	require.NoError(ch.Env.T, err)
+	return b
+}
+
 // ReceiveOffLedgerRequest implements chain.Chain
 func (*Chain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) {
 	panic("unimplemented")
@@ -686,8 +692,5 @@ func (*Chain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID
 }
 
 func (ch *Chain) LatestBlockIndex() uint32 {
-	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name)
-	require.NoError(ch.Env.T, err)
-	resultDecoder := kvdecoder.New(ret, ch.Log())
-	return resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
+	return ch.GetLatestBlockInfo().BlockIndex()
 }

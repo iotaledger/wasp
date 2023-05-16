@@ -89,14 +89,24 @@ func (ari *awaitReceiptImpl) respondByBlock(block state.Block) {
 	if err != nil {
 		panic(fmt.Errorf("cannot extract receipts from block: %w", err))
 	}
-	for _, receipt := range blockReceipts {
-		requestID := receipt.Request.ID()
-		if reqAwaits, exists := ari.queries.Get(requestID); exists {
+	handleReq := func(reqID isc.RequestID, receipt *blocklog.RequestReceipt) {
+		if reqAwaits, exists := ari.queries.Get(reqID); exists {
 			for _, reqAwait := range reqAwaits {
 				reqAwait.Respond(receipt)
 			}
-			ari.queries.Delete(requestID)
+			ari.queries.Delete(reqID)
 		}
+	}
+
+	for _, receipt := range blockReceipts {
+		handleReq(receipt.Request.ID(), receipt)
+	}
+	unprocessableRequests, err := blocklog.UnprocessableRequestsAddedInBlock(block)
+	if err != nil {
+		panic(fmt.Errorf("cannot extract new unprocessable requests from block: %w", err))
+	}
+	for _, r := range unprocessableRequests {
+		handleReq(r.ID(), nil)
 	}
 }
 

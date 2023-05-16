@@ -44,6 +44,8 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm
 	vmctx.gasBurned = 0
 	vmctx.gasFeeCharged = 0
 	vmctx.GasBurnEnable(false)
+	initialGasBurnedTotal := vmctx.gasBurnedTotal
+	initialGasFeeChargedTotal := vmctx.gasFeeChargedTotal
 
 	vmctx.currentStateUpdate = NewStateUpdate()
 	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.task.StateDraft.Timestamp().Add(1*time.Nanosecond)))
@@ -78,8 +80,16 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm
 	if err != nil {
 		// protocol exception triggered. Skipping the request. Rollback
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
+		vmctx.gasBurnedTotal = initialGasBurnedTotal
+		vmctx.gasFeeChargedTotal = initialGasFeeChargedTotal
+
+		if errors.Is(vmexceptions.ErrNotEnoughFundsForSD, err) {
+			vmctx.unprocessable = append(vmctx.unprocessable, vmctx.req.(isc.OnLedgerRequest))
+		}
+
 		return nil, err
 	}
+
 	vmctx.chainState().Apply()
 	return result, nil
 }
@@ -97,22 +107,20 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	// Otherwise it all goes to the common sender and panics is logged in the SC call
 	sender := vmctx.req.SenderAccount()
 	if sender == nil {
-		// TODO this should never happen... can we just panic here?
-		// this is probably an artifact from the "originTx"
-		sender = accounts.CommonAccount()
+		panic("nil sender should never happen")
 	}
 
 	senderBaseTokens := vmctx.req.Assets().BaseTokens + vmctx.GetBaseTokensBalance(sender)
 
 	if senderBaseTokens < storageDepositNeeded {
-		panic("TODO, not enough funds to pay for the SD NEEDED, THIS REQUEST MUST BE IGNORED OR SAVED FOR LATER SOMEHOW")
-		// ...if not enough to pay for all the SD, this request needs to be flagged as "TO PROCESS LATER"... (do we consume it or not?)
+		// user doesn't have enough funds to pay for the SD needs of this request
+		panic(vmexceptions.ErrNotEnoughFundsForSD)
 	}
 
 	vmctx.creditToAccount(sender, vmctx.req.Assets())
 	vmctx.creditNFTToAccount(sender, vmctx.req.NFT())
 	if storageDepositNeeded > 0 {
-		// TODO the charged SD should be included in the receipt
+		// TODO the charged SD should be included in the receipt (?)
 		vmctx.debitFromAccount(sender, isc.NewAssetsBaseTokens(storageDepositNeeded))
 	}
 }

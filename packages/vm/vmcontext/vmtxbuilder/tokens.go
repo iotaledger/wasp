@@ -36,8 +36,8 @@ func (n *nativeTokenBalance) Clone() *nativeTokenBalance {
 	}
 }
 
-// producesOutput if value update produces UTXO of the corresponding total native token balance
-func (n *nativeTokenBalance) producesOutput() bool {
+// producesAccountingOutput if value update produces UTXO of the corresponding total native token balance
+func (n *nativeTokenBalance) producesAccountingOutput() bool {
 	if n.identicalInOut() {
 		// value didn't change
 		return false
@@ -49,8 +49,8 @@ func (n *nativeTokenBalance) producesOutput() bool {
 	return true
 }
 
-// requiresInput returns if value change requires input in the transaction
-func (n *nativeTokenBalance) requiresInput() bool {
+// requiresExistingAccountingUTXOAsInput returns if value change requires input in the transaction
+func (n *nativeTokenBalance) requiresExistingAccountingUTXOAsInput() bool {
 	if n.identicalInOut() {
 		// value didn't change
 		return false
@@ -139,7 +139,7 @@ func (txb *AnchorTransactionBuilder) newInternalTokenOutput(aliasID iotago.Alias
 func (txb *AnchorTransactionBuilder) nativeTokenOutputsSorted() []*nativeTokenBalance {
 	ret := make([]*nativeTokenBalance, 0, len(txb.balanceNativeTokens))
 	for _, f := range txb.balanceNativeTokens {
-		if !f.requiresInput() && !f.producesOutput() {
+		if !f.requiresExistingAccountingUTXOAsInput() && !f.producesAccountingOutput() {
 			continue
 		}
 		ret = append(ret, f)
@@ -154,9 +154,9 @@ func (txb *AnchorTransactionBuilder) NativeTokenRecordsToBeUpdated() ([]iotago.N
 	toBeUpdated := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))
 	toBeRemoved := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))
 	for _, nt := range txb.nativeTokenOutputsSorted() {
-		if nt.producesOutput() {
+		if nt.producesAccountingOutput() {
 			toBeUpdated = append(toBeUpdated, nt.nativeTokenID)
-		} else if nt.requiresInput() {
+		} else if nt.requiresExistingAccountingUTXOAsInput() {
 			toBeRemoved = append(toBeRemoved, nt.nativeTokenID)
 		}
 	}

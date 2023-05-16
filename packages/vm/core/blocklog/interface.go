@@ -15,10 +15,12 @@ const (
 	prefixRequestReceipts
 	prefixRequestEvents
 	prefixSmartContractEventsLookup
+	prefixUnprocessableRequests
 )
 
 var (
 	// TODO feels like controlAddresses could be deprecated - controller addresses can be derived from the AO
+	// views
 	ViewControlAddresses           = coreutil.ViewFunc("controlAddresses")
 	ViewGetBlockInfo               = coreutil.ViewFunc("getBlockInfo")
 	ViewGetRequestIDsForBlock      = coreutil.ViewFunc("getRequestIDsForBlock")
@@ -28,20 +30,25 @@ var (
 	ViewGetEventsForRequest        = coreutil.ViewFunc("getEventsForRequest")
 	ViewGetEventsForBlock          = coreutil.ViewFunc("getEventsForBlock")
 	ViewGetEventsForContract       = coreutil.ViewFunc("getEventsForContract")
+	ViewHasUnprocessable           = coreutil.ViewFunc("hasUnprocessable")
+
+	// entrypoints
+	FuncRetryUnprocessable = coreutil.Func("retryUnprocessable")
 )
 
 const (
 	// parameters
-	ParamBlockIndex             = "n"
-	ParamBlockInfo              = "i"
-	ParamGoverningAddress       = "g"
-	ParamContractHname          = "h"
-	ParamFromBlock              = "f"
-	ParamToBlock                = "t"
-	ParamRequestID              = "u"
-	ParamRequestIndex           = "r"
-	ParamRequestProcessed       = "p"
-	ParamRequestRecord          = "d"
-	ParamEvent                  = "e"
-	ParamStateControllerAddress = "s"
+	ParamBlockIndex                 = "n"
+	ParamBlockInfo                  = "i"
+	ParamGoverningAddress           = "g"
+	ParamContractHname              = "h"
+	ParamFromBlock                  = "f"
+	ParamToBlock                    = "t"
+	ParamRequestID                  = "u"
+	ParamRequestIndex               = "r"
+	ParamRequestProcessed           = "p"
+	ParamRequestRecord              = "d"
+	ParamEvent                      = "e"
+	ParamStateControllerAddress     = "s"
+	ParamUnprocessableRequestExists = "x"
 )

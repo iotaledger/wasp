@@ -931,7 +931,7 @@ func TestISCSendWithArgs(t *testing.T) {
 
 	sendBaseTokens := 700 * isc.Million
 
-	blockIndex := env.soloChain.GetLatestBlockInfo().BlockIndex()
+	blockIndex := env.soloChain.LatestBlockIndex()
 
 	ret, err := env.ISCMagicSandbox(ethKey).callFn(
 		nil,
@@ -956,7 +956,7 @@ func TestISCSendWithArgs(t *testing.T) {
 
 	// wait a bit for the request going out of EVM to be processed by ISC
 	env.soloChain.WaitUntil(func() bool {
-		return env.soloChain.GetLatestBlockInfo().BlockIndex() == blockIndex+2
+		return env.soloChain.LatestBlockIndex() == blockIndex+2
 	})
 
 	// assert inc counter was incremented

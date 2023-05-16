@@ -611,6 +611,30 @@ func (r *onLedgerRequestData) ReturnAmount() (uint64, bool) {
 
 // endregion
 
+// region RetryOnLedgerRequest //////////////////////////////////////////////////////////////////
+
+type RetryOnLedgerRequest struct {
+	OnLedgerRequest
+	retryOutputID iotago.OutputID
+}
+
+func NewRetryOnLedgerRequest(req OnLedgerRequest, retryOutput iotago.OutputID) *RetryOnLedgerRequest {
+	return &RetryOnLedgerRequest{
+		OnLedgerRequest: req,
+		retryOutputID:   retryOutput,
+	}
+}
+
+func (r *RetryOnLedgerRequest) SetRetryOutputID(oid iotago.OutputID) {
+	r.retryOutputID = oid
+}
+
+func (r *RetryOnLedgerRequest) RetryOutputID() iotago.OutputID {
+	return r.retryOutputID
+}
+
+// endregion
+
 // region RequestID //////////////////////////////////////////////////////////////////
 
 type RequestID iotago.OutputID
