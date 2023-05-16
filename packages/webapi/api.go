@@ -130,4 +130,5 @@ func Init(
 	addHealthEndpoint(server)
 	addWebSocketEndpoint(server, websocketService)
 	loadControllers(server, mocker, controllersToLoad, authMiddleware)
+
 }

@@ -12,6 +12,6 @@ func DummyStateMetadata(commitment *state.L1Commitment) *transaction.StateMetada
 		commitment,
 		gas.DefaultFeePolicy(),
 		migrations.BaseSchemaVersion+uint32(len(migrations.Migrations)),
-		[]byte{},
+		"",
 	)
 }

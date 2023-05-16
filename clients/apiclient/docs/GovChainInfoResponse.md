@@ -6,15 +6,17 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **ChainID** | **string** | ChainID (Bech32-encoded). | 
 **ChainOwnerId** | **string** | The chain owner address (Bech32-encoded). | 
-**CustomMetadata** | Pointer to **string** | (base64) Optional extra metadata that is appended to the L1 AliasOutput | [optional] 
 **GasFeePolicy** | [**FeePolicy**](FeePolicy.md) |  | 
 **GasLimits** | [**Limits**](Limits.md) |  | 
+**MetadataEvmJsonRpcUrl** | **string** | The EVM json rpc url | 
+**MetadataEvmWebSocketUrl** | **string** | The EVM websocket url | 
+**PublicUrl** | **string** | The fully qualified public url leading to the chains metadata | 
 
 ## Methods
 
 ### NewGovChainInfoResponse
 
-`func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy FeePolicy, gasLimits Limits, ) *GovChainInfoResponse`
+`func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy FeePolicy, gasLimits Limits, metadataEvmJsonRpcUrl string, metadataEvmWebSocketUrl string, publicUrl string, ) *GovChainInfoResponse`
 
 NewGovChainInfoResponse instantiates a new GovChainInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -69,31 +71,6 @@ and a boolean to check if the value has been set.
 SetChainOwnerId sets ChainOwnerId field to given value.
 
 
-### GetCustomMetadata
-
-`func (o *GovChainInfoResponse) GetCustomMetadata() string`
-
-GetCustomMetadata returns the CustomMetadata field if non-nil, zero value otherwise.
-
-### GetCustomMetadataOk
-
-`func (o *GovChainInfoResponse) GetCustomMetadataOk() (*string, bool)`
-
-GetCustomMetadataOk returns a tuple with the CustomMetadata field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetCustomMetadata
-
-`func (o *GovChainInfoResponse) SetCustomMetadata(v string)`
-
-SetCustomMetadata sets CustomMetadata field to given value.
-
-### HasCustomMetadata
-
-`func (o *GovChainInfoResponse) HasCustomMetadata() bool`
-
-HasCustomMetadata returns a boolean if a field has been set.
-
 ### GetGasFeePolicy
 
 `func (o *GovChainInfoResponse) GetGasFeePolicy() FeePolicy`
@@ -132,6 +109,66 @@ and a boolean to check if the value has been set.
 `func (o *GovChainInfoResponse) SetGasLimits(v Limits)`
 
 SetGasLimits sets GasLimits field to given value.
+
+
+### GetMetadataEvmJsonRpcUrl
+
+`func (o *GovChainInfoResponse) GetMetadataEvmJsonRpcUrl() string`
+
+GetMetadataEvmJsonRpcUrl returns the MetadataEvmJsonRpcUrl field if non-nil, zero value otherwise.
+
+### GetMetadataEvmJsonRpcUrlOk
+
+`func (o *GovChainInfoResponse) GetMetadataEvmJsonRpcUrlOk() (*string, bool)`
+
+GetMetadataEvmJsonRpcUrlOk returns a tuple with the MetadataEvmJsonRpcUrl field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetMetadataEvmJsonRpcUrl
+
+`func (o *GovChainInfoResponse) SetMetadataEvmJsonRpcUrl(v string)`
+
+SetMetadataEvmJsonRpcUrl sets MetadataEvmJsonRpcUrl field to given value.
+
+
+### GetMetadataEvmWebSocketUrl
+
+`func (o *GovChainInfoResponse) GetMetadataEvmWebSocketUrl() string`
+
+GetMetadataEvmWebSocketUrl returns the MetadataEvmWebSocketUrl field if non-nil, zero value otherwise.
+
+### GetMetadataEvmWebSocketUrlOk
+
+`func (o *GovChainInfoResponse) GetMetadataEvmWebSocketUrlOk() (*string, bool)`
+
+GetMetadataEvmWebSocketUrlOk returns a tuple with the MetadataEvmWebSocketUrl field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetMetadataEvmWebSocketUrl
+
+`func (o *GovChainInfoResponse) SetMetadataEvmWebSocketUrl(v string)`
+
+SetMetadataEvmWebSocketUrl sets MetadataEvmWebSocketUrl field to given value.
+
+
+### GetPublicUrl
+
+`func (o *GovChainInfoResponse) GetPublicUrl() string`
+
+GetPublicUrl returns the PublicUrl field if non-nil, zero value otherwise.
+
+### GetPublicUrlOk
+
+`func (o *GovChainInfoResponse) GetPublicUrlOk() (*string, bool)`
+
+GetPublicUrlOk returns a tuple with the PublicUrl field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetPublicUrl
+
+`func (o *GovChainInfoResponse) SetPublicUrl(v string)`
+
+SetPublicUrl sets PublicUrl field to given value.
 
 
 

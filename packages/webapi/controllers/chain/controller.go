@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
 type Controller struct {
@@ -53,17 +54,17 @@ func (c *Controller) Name() string {
 
 func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	// Echoswagger does not support ANY, so create a fake route, and overwrite it with Echo ANY afterwords.
-	evmURL := "chains/:chainID/evm"
+
 	publicAPI.
-		GET(evmURL, c.handleJSONRPC). // TODO shoulnd't this be POST instead of GET?
+		GET(routes.EVMJsonRPCRoute, c.handleJSONRPC). // TODO shoulnd't this be POST instead of GET?
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		SetSummary("Ethereum JSON-RPC")
 
 	publicAPI.
-		EchoGroup().Any(evmURL, c.handleJSONRPC)
+		EchoGroup().Any(routes.EVMJsonRPCRoute, c.handleJSONRPC)
 
 	publicAPI.
-		GET("chains/:chainID/evm/ws", c.handleWebsocket).
+		GET(routes.EVMJsonWebSocketRoute, c.handleWebsocket).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		SetSummary("Ethereum JSON-RPC (Websocket transport)")
 

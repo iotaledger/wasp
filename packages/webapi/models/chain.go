@@ -1,10 +1,11 @@
 package models
 
 import (
-	"encoding/base64"
+	"net/url"
 
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/webapi/dto"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
 type CommitteeNode struct {
@@ -53,25 +54,41 @@ type ContractInfoResponse struct {
 }
 
 type ChainInfoResponse struct {
-	IsActive       bool           `json:"isActive" swagger:"desc(Whether or not the chain is active.),required"`
-	ChainID        string         `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
-	EVMChainID     uint16         `json:"evmChainId" swagger:"desc(The EVM chain ID),required,min(1)"`
-	ChainOwnerID   string         `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
-	GasFeePolicy   *gas.FeePolicy `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
-	GasLimits      *gas.Limits    `json:"gasLimits" swagger:"desc(The gas limits),required"`
-	CustomMetadata string         `json:"customMetadata" swagger:"desc((base64) Optional extra metadata that is appended to the L1 AliasOutput)"`
+	IsActive                bool           `json:"isActive" swagger:"desc(Whether or not the chain is active.),required"`
+	ChainID                 string         `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
+	EVMChainID              uint16         `json:"evmChainId" swagger:"desc(The EVM chain ID),required,min(1)"`
+	ChainOwnerID            string         `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
+	GasFeePolicy            *gas.FeePolicy `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
+	GasLimits               *gas.Limits    `json:"gasLimits" swagger:"desc(The gas limits),required"`
+	PublicURL               string         `json:"publicUrl" swagger:"desc(The fully qualified public url leading to the chains metadata),required"`
+	MetadataEVMJsonRPCURL   string         `json:"metadataEvmJsonRpcUrl" swagger:"desc(The EVM json rpc url),required"`
+	MetadataEVMWebSocketURL string         `json:"metadataEvmWebSocketUrl" swagger:"desc(The EVM websocket url),required"`
 }
 
 type StateResponse struct {
 	State string `json:"state" swagger:"desc(The state of the requested key (Hex-encoded)),required"`
 }
 
+func mapMetadataUrls(response *ChainInfoResponse) {
+	if response.MetadataEVMJsonRPCURL == "" {
+		response.MetadataEVMJsonRPCURL, _ = url.JoinPath(response.PublicURL, routes.EVMJsonRPCPathSuffix)
+	}
+
+	if response.MetadataEVMWebSocketURL == "" {
+		publicURL, _ := url.Parse(response.PublicURL)
+		publicURL.Scheme = "ws"
+		response.MetadataEVMWebSocketURL, _ = url.JoinPath(publicURL.String(), routes.EVMJsonWebSocketPathSuffix)
+	}
+}
+
 func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfoResponse {
 	chainInfoResponse := ChainInfoResponse{
-		IsActive:       chainInfo.IsActive,
-		ChainID:        chainInfo.ChainID.String(),
-		EVMChainID:     evmChainID,
-		CustomMetadata: base64.StdEncoding.EncodeToString(chainInfo.CustomMetadata),
+		IsActive:                chainInfo.IsActive,
+		ChainID:                 chainInfo.ChainID.String(),
+		EVMChainID:              evmChainID,
+		PublicURL:               chainInfo.PublicURL,
+		MetadataEVMWebSocketURL: chainInfo.MetadataEVMWebSocketURL,
+		MetadataEVMJsonRPCURL:   chainInfo.MetadataEVMJsonRPCURL,
 	}
 
 	if chainInfo.ChainOwnerID != nil {
@@ -85,6 +102,8 @@ func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfo
 	if chainInfo.GasLimits != nil {
 		chainInfoResponse.GasLimits = chainInfo.GasLimits
 	}
+
+	mapMetadataUrls(&chainInfoResponse)
 
 	return chainInfoResponse
 }

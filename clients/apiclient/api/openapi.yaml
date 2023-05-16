@@ -1588,7 +1588,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "true"
+                  example: "30"
                   format: string
                   type: string
                 type: object
@@ -2728,9 +2728,10 @@ components:
           minGasPerRequest: 5
           maxGasPerBlock: 1
           maxGasPerRequest: 5
+        metadataEvmJsonRpcUrl: metadataEvmJsonRpcUrl
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
-        customMetadata: customMetadata
+        publicUrl: publicUrl
         gasFeePolicy:
           gasPerToken:
             a: 1
@@ -2740,6 +2741,7 @@ components:
             a: 1
             b: 1
         isActive: true
+        metadataEvmWebSocketUrl: metadataEvmWebSocketUrl
       properties:
         chainID:
           description: ChainID (Bech32-encoded).
@@ -2755,13 +2757,6 @@ components:
           type: string
           xml:
             name: ChainOwnerID
-        customMetadata:
-          description: (base64) Optional extra metadata that is appended to the L1
-            AliasOutput
-          format: string
-          type: string
-          xml:
-            name: CustomMetadata
         evmChainId:
           description: The EVM chain ID
           example: 1074
@@ -2780,6 +2775,24 @@ components:
           type: boolean
           xml:
             name: IsActive
+        metadataEvmJsonRpcUrl:
+          description: The EVM json rpc url
+          format: string
+          type: string
+          xml:
+            name: MetadataEVMJsonRPCURL
+        metadataEvmWebSocketUrl:
+          description: The EVM websocket url
+          format: string
+          type: string
+          xml:
+            name: MetadataEVMWebSocketURL
+        publicUrl:
+          description: The fully qualified public url leading to the chains metadata
+          format: string
+          type: string
+          xml:
+            name: PublicURL
       required:
       - chainID
       - chainOwnerId
@@ -2787,6 +2800,9 @@ components:
       - gasFeePolicy
       - gasLimits
       - isActive
+      - metadataEvmJsonRpcUrl
+      - metadataEvmWebSocketUrl
+      - publicUrl
       type: object
       xml:
         name: ChainInfoResponse
@@ -3666,8 +3682,9 @@ components:
           minGasPerRequest: 5
           maxGasPerBlock: 1
           maxGasPerRequest: 5
+        metadataEvmJsonRpcUrl: metadataEvmJsonRpcUrl
         chainID: chainID
-        customMetadata: customMetadata
+        publicUrl: publicUrl
         gasFeePolicy:
           gasPerToken:
             a: 0
@@ -3676,6 +3693,7 @@ components:
           evmGasRatio:
             a: 0
             b: 0
+        metadataEvmWebSocketUrl: metadataEvmWebSocketUrl
       properties:
         chainID:
           description: ChainID (Bech32-encoded).
@@ -3689,22 +3707,36 @@ components:
           type: string
           xml:
             name: ChainOwnerID
-        customMetadata:
-          description: (base64) Optional extra metadata that is appended to the L1
-            AliasOutput
-          format: string
-          type: string
-          xml:
-            name: CustomMetadata
         gasFeePolicy:
           $ref: '#/components/schemas/FeePolicy_'
         gasLimits:
           $ref: '#/components/schemas/Limits'
+        metadataEvmJsonRpcUrl:
+          description: The EVM json rpc url
+          format: string
+          type: string
+          xml:
+            name: MetadataEVMJsonRPCURL
+        metadataEvmWebSocketUrl:
+          description: The EVM websocket url
+          format: string
+          type: string
+          xml:
+            name: MetadataEVMWebSocketURL
+        publicUrl:
+          description: The fully qualified public url leading to the chains metadata
+          format: string
+          type: string
+          xml:
+            name: PublicURL
       required:
       - chainID
       - chainOwnerId
       - gasFeePolicy
       - gasLimits
+      - metadataEvmJsonRpcUrl
+      - metadataEvmWebSocketUrl
+      - publicUrl
       type: object
       xml:
         name: GovChainInfoResponse
