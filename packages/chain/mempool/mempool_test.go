@@ -467,6 +467,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			te.networkProviders[i],
 			te.log.Named(fmt.Sprintf("N#%v", i)),
 			metrics.NewEmptyChainMempoolMetric(),
+			metrics.NewEmptyChainPipeMetrics(),
 			chain.NewEmptyChainListener(),
 		)
 	}

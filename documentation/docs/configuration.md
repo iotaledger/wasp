@@ -443,6 +443,8 @@ Example:
 | chainStateMetrics        | Whether to include chain state metrics                       | boolean | true           |
 | chainStateManagerMetrics | Whether to include chain state manager metrics               | boolean | true           |
 | chainNodeConnMetrics     | Whether to include chain node conn metrics                   | boolean | true           |
+| chainPipeMetrics         | Whether to include chain pipe metrics                        | boolean | true           |
+| peeringMetrics           | Whether to include peering metrics                           | boolean | true           |
 | restAPIMetrics           | Whether to include restAPI metrics                           | boolean | true           |
 | goMetrics                | Whether to include go metrics                                | boolean | true           |
 | processMetrics           | Whether to include process metrics                           | boolean | true           |
@@ -464,6 +466,8 @@ Example:
       "chainStateMetrics": true,
       "chainStateManagerMetrics": true,
       "chainNodeConnMetrics": true,
+      "chainPipeMetrics": true,
+      "peeringMetrics": true,
       "restAPIMetrics": true,
       "goMetrics": true,
       "processMetrics": true,

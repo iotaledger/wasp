@@ -198,6 +198,7 @@ func New(
 	net peering.NetworkProvider,
 	log *logger.Logger,
 	metrics metrics.IChainMempoolMetrics,
+	pipeMetrics metrics.IChainPipeMetrics,
 	listener ChainListener,
 ) Mempool {
 	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("Mempool")) // ChainID × Mempool
@@ -230,6 +231,17 @@ func New(
 		metrics:                        metrics,
 		listener:                       listener,
 	}
+
+	pipeMetrics.TrackPipeLen("mp-serverNodesUpdatedPipe", mpi.serverNodesUpdatedPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-accessNodesUpdatedPipe", mpi.accessNodesUpdatedPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-reqConsensusProposalPipe", mpi.reqConsensusProposalPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-reqConsensusRequestsPipe", mpi.reqConsensusRequestsPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-reqReceiveOnLedgerRequestPipe", mpi.reqReceiveOnLedgerRequestPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-reqReceiveOffLedgerRequestPipe", mpi.reqReceiveOffLedgerRequestPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-reqTangleTimeUpdatedPipe", mpi.reqTangleTimeUpdatedPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-reqTrackNewChainHeadPipe", mpi.reqTrackNewChainHeadPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-netRecvPipe", mpi.netRecvPipe.Len)
+
 	mpi.distSync = distsync.New(
 		mpi.pubKeyAsNodeID(nodeIdentity.GetPublicKey()),
 		mpi.distSyncRequestNeededCB,

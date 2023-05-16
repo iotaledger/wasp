@@ -120,6 +120,8 @@
     "chainStateMetrics": true,
     "chainStateManagerMetrics": true,
     "chainNodeConnMetrics": true,
+    "chainPipeMetrics": true,
+    "peeringMetrics": true,
     "restAPIMetrics": true,
     "goMetrics": true,
     "processMetrics": true,

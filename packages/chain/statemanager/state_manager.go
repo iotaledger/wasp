@@ -115,6 +115,7 @@ func New(
 	store state.Store,
 	shutdownCoordinator *shutdown.Coordinator,
 	metrics metrics.IChainStateManagerMetrics,
+	pipeMetrics metrics.IChainPipeMetrics,
 	log *logger.Logger,
 	timersOpt ...sm_gpa.StateManagerTimers,
 ) (StateMgr, error) {
@@ -147,6 +148,12 @@ func New(
 		ctx:                  ctx,
 		shutdownCoordinator:  shutdownCoordinator,
 	}
+
+	pipeMetrics.TrackPipeLen("sm-inputPipe", result.inputPipe.Len)
+	pipeMetrics.TrackPipeLen("sm-messagePipe", result.messagePipe.Len)
+	pipeMetrics.TrackPipeLen("sm-nodePubKeysPipe", result.nodePubKeysPipe.Len)
+	pipeMetrics.TrackPipeLen("sm-preliminaryBlockPipe", result.preliminaryBlockPipe.Len)
+
 	result.handleNodePublicKeys(&reqChainNodesUpdated{
 		serverNodes:    peerPubKeys,
 		accessNodes:    []*cryptolib.PublicKey{},
