@@ -65,6 +65,7 @@ type netImpl struct {
 	recvEvents   *event.Event1[*peering.PeerMessageIn] // Used to publish events to all attached clients.
 	nodeKeyPair  *cryptolib.KeyPair
 	trusted      peering.TrustedNetworkManager
+	metrics      peering.Metrics
 	log          *logger.Logger
 }
 
@@ -80,6 +81,7 @@ func NewNetworkProvider(
 	port int,
 	nodeKeyPair *cryptolib.KeyPair,
 	trusted peering.TrustedNetworkManager,
+	metrics peering.Metrics,
 	log *logger.Logger,
 ) (peering.NetworkProvider, peering.TrustedNetworkManager, error) {
 	privKey, err := crypto.UnmarshalEd25519PrivateKey(nodeKeyPair.GetPrivateKey().AsBytes())
@@ -111,6 +113,7 @@ func NewNetworkProvider(
 		recvEvents:   nil, // Initialized bellow.
 		nodeKeyPair:  nodeKeyPair,
 		trusted:      trusted,
+		metrics:      metrics,
 		log:          log,
 	}
 	n.recvEvents = event.New1[*peering.PeerMessageIn]()
@@ -288,6 +291,7 @@ func (n *netImpl) addPeer(trustedPeer *peering.TrustedPeer) error {
 	} else {
 		p = newPeer(trustedPeer.Name, trustedPeer.PeeringURL, trustedPeer.PubKey(), lppPeerID, n)
 		n.peers.Set(lppPeerID, p)
+		n.metrics.PeerCount(n.peers.Size())
 	}
 	return nil
 }
@@ -297,6 +301,7 @@ func (n *netImpl) addPeer(trustedPeer *peering.TrustedPeer) error {
 func (n *netImpl) delPeerWithoutLock(peer *peer) {
 	n.lppHost.Peerstore().ClearAddrs(peer.remoteLppID)
 	n.peers.Delete(peer.remoteLppID)
+	n.metrics.PeerCount(n.peers.Size())
 }
 
 // Run starts listening and communicating with the network.
