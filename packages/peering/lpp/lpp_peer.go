@@ -136,6 +136,7 @@ func (p *peer) SendMsg(msg *peering.PeerMessageData) {
 	}
 	p.accessLock.RUnlock()
 	p.sendPipe.In() <- msgNet
+	p.net.metrics.SendEnqueued(len(msg.MsgData), p.sendPipe.Len())
 }
 
 func (p *peer) RecvMsg(msg *peering.PeerMessageNet) {
@@ -145,16 +146,19 @@ func (p *peer) RecvMsg(msg *peering.PeerMessageNet) {
 	}
 	p.noteReceived()
 	p.recvPipe.In() <- msg
+	p.net.metrics.RecvEnqueued(len(msg.MsgData), p.recvPipe.Len())
 }
 
 func (p *peer) sendLoop() {
 	for msg := range p.sendPipe.Out() {
+		p.net.metrics.SendDequeued(len(msg.MsgData), p.sendPipe.Len())
 		p.sendMsgDirect(msg)
 	}
 }
 
 func (p *peer) recvLoop() {
 	for msg := range p.recvPipe.Out() {
+		p.net.metrics.RecvDequeued(len(msg.MsgData), p.recvPipe.Len())
 		p.net.triggerRecvEvents(p.PubKey(), msg)
 	}
 }
