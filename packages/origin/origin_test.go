@@ -104,7 +104,7 @@ func TestCreateOrigin(t *testing.T) {
 			),
 			gas.DefaultFeePolicy(),
 			migrations.BaseSchemaVersion+uint32(len(migrations.Migrations)),
-			[]byte{},
+			"",
 		)
 
 		require.True(t,

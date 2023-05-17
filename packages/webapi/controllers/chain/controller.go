@@ -53,18 +53,23 @@ func (c *Controller) Name() string {
 }
 
 func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
-	// Echoswagger does not support ANY, so create a fake route, and overwrite it with Echo ANY afterwords.
+	publicAPI.GET("chains/:chainID", c.getChainInfo).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddResponse(http.StatusOK, "Information about a specific chain", mocker.Get(models.ChainInfoResponse{}), nil).
+		SetOperationId("getChainInfo").
+		SetSummary("Get information about a specific chain")
 
+	// Echoswagger does not support ANY, so create a fake route, and overwrite it with Echo ANY afterwords.
 	publicAPI.
-		GET(routes.EVMJsonRPCRoute, c.handleJSONRPC). // TODO shoulnd't this be POST instead of GET?
+		POST("chains/:chainID/"+routes.EVMJsonRPCPathSuffix, c.handleJSONRPC).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		SetSummary("Ethereum JSON-RPC")
 
 	publicAPI.
-		EchoGroup().Any(routes.EVMJsonRPCRoute, c.handleJSONRPC)
+		EchoGroup().Any("chains/:chainID/"+routes.EVMJsonRPCPathSuffix, c.handleJSONRPC)
 
 	publicAPI.
-		GET(routes.EVMJsonWebSocketRoute, c.handleWebsocket).
+		GET("chains/:chainID/"+routes.EVMJsonWebSocketPathSuffix, c.handleWebsocket).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		SetSummary("Ethereum JSON-RPC (Websocket transport)")
 
@@ -134,12 +139,6 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		AddResponse(http.StatusOK, "Chain was successfully deactivated", nil, nil).
 		SetOperationId("deactivateChain").
 		SetSummary("Deactivate a chain")
-
-	adminAPI.GET("chains/:chainID", c.getChainInfo, authentication.ValidatePermissions([]string{permissions.Read})).
-		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
-		AddResponse(http.StatusOK, "Information about a specific chain", mocker.Get(models.ChainInfoResponse{}), nil).
-		SetOperationId("getChainInfo").
-		SetSummary("Get information about a specific chain")
 
 	adminAPI.GET("chains/:chainID/committee", c.getCommitteeInfo, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).

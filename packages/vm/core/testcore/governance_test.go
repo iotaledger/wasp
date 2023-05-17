@@ -290,7 +290,7 @@ func TestCustomL1Metadata(t *testing.T) {
 			governance.Contract.Name,
 			governance.FuncSetMetadata.Name,
 			governance.ParamPublicURL,
-			[]byte(strings.Repeat("9", governanceimpl.MaxCustomMetadataLength)),
+			[]byte(strings.Repeat("9", governanceimpl.MaxMetadataLength)),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
@@ -315,7 +315,7 @@ func TestCustomL1Metadata(t *testing.T) {
 			governance.Contract.Name,
 			governance.FuncSetMetadata.Name,
 			governance.ParamPublicURL,
-			[]byte(strings.Repeat("9", governanceimpl.MaxCustomMetadataLength+1)),
+			[]byte(strings.Repeat("9", governanceimpl.MaxMetadataLength+1)),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)

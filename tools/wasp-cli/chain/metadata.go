@@ -2,7 +2,6 @@ package chain
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
 	"github.com/spf13/cobra"
@@ -69,10 +68,12 @@ func initMetadataCmd() *cobra.Command {
 	var (
 		node          string
 		chainName     string
+		withOffLedger bool
+
+		useCliUrl     bool
 		publicUrl     nilableString
 		evmJsonRPCUrl nilableString
 		evmWSUrl      nilableString
-		withOffLedger bool
 	)
 
 	cmd := &cobra.Command{
@@ -84,7 +85,7 @@ func initMetadataCmd() *cobra.Command {
 			chainName = defaultChainFallback(chainName)
 			chainID := config.GetChain(chainName)
 
-			updateMetadata(node, chainName, chainID, withOffLedger, publicUrl, evmJsonRPCUrl, evmWSUrl)
+			updateMetadata(node, chainName, chainID, withOffLedger, useCliUrl, publicUrl, evmJsonRPCUrl, evmWSUrl)
 		},
 	}
 
@@ -95,6 +96,7 @@ func initMetadataCmd() *cobra.Command {
 		"post an off-ledger request",
 	)
 
+	cmd.Flags().BoolVarP(&useCliUrl, "use-cli-url", "u", false, "use the configured cli wasp api url as public url (overrides --public-url)")
 	cmd.Flags().Var(&publicUrl, "public-url", "the chains public url")
 	cmd.Flags().Var(&evmJsonRPCUrl, "evm-rpc-url", "the public facing evm json rpc url")
 	cmd.Flags().Var(&evmWSUrl, "evm-ws-url", "the public facing evm websocket url")
@@ -125,20 +127,26 @@ func validateAndPushUrl(dict dict.Dict, key kv.Key, metadataUrl nilableString) e
 	return nil
 }
 
-func updateMetadata(node string, chainName string, chainID isc.ChainID, withOffLedger bool, metadataUrl nilableString, evmJsonUrl nilableString, evmWsUrl nilableString) {
+func updateMetadata(node string, chainName string, chainID isc.ChainID, withOffLedger bool, useCliUrl bool, metadataUrl nilableString, evmJsonUrl nilableString, evmWsUrl nilableString) {
 	client := cliclients.WaspClient(node)
 
-	chainInfo, _, err := client.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
-
-	fmt.Println(chainInfo)
+	_, _, err := client.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		log.Fatal("Chain not found")
 	}
 
 	args := dict.Dict{}
 
-	if err := validateAndPushUrl(args, governance.ParamPublicURL, metadataUrl); err != nil {
-		log.Fatal(err)
+	if useCliUrl {
+		apiUrl := config.WaspAPIURL(node)
+		chainPath, err := url.JoinPath(apiUrl, "/v1/chains/", chainID.String())
+		log.Check(err)
+
+		args.Set(governance.ParamPublicURL, []byte(chainPath))
+	} else {
+		if err := validateAndPushUrl(args, governance.ParamPublicURL, metadataUrl); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	if err := validateAndPushUrl(args, governance.ParamMetadataEVMJsonRPCURL, evmJsonUrl); err != nil {

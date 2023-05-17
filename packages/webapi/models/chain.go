@@ -53,16 +53,19 @@ type ContractInfoResponse struct {
 	ProgramHash string `json:"programHash" swagger:"desc(The hash of the contract. (Hex encoded)),required"`
 }
 
+// ChainInfoResponse includes the metadata standard
 type ChainInfoResponse struct {
-	IsActive                bool           `json:"isActive" swagger:"desc(Whether or not the chain is active.),required"`
-	ChainID                 string         `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
-	EVMChainID              uint16         `json:"evmChainId" swagger:"desc(The EVM chain ID),required,min(1)"`
-	ChainOwnerID            string         `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
-	GasFeePolicy            *gas.FeePolicy `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
-	GasLimits               *gas.Limits    `json:"gasLimits" swagger:"desc(The gas limits),required"`
-	PublicURL               string         `json:"publicUrl" swagger:"desc(The fully qualified public url leading to the chains metadata),required"`
-	MetadataEVMJsonRPCURL   string         `json:"metadataEvmJsonRpcUrl" swagger:"desc(The EVM json rpc url),required"`
-	MetadataEVMWebSocketURL string         `json:"metadataEvmWebSocketUrl" swagger:"desc(The EVM websocket url),required"`
+	Standard string `json:"standard" swagger:"desc(The chain info standard),required"`
+
+	IsActive        bool           `json:"isActive" swagger:"desc(Whether or not the chain is active.),required"`
+	ChainID         string         `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
+	EVMChainID      uint16         `json:"evmChainId" swagger:"desc(The EVM chain ID),required,min(1)"`
+	ChainOwnerID    string         `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
+	GasFeePolicy    *gas.FeePolicy `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
+	GasLimits       *gas.Limits    `json:"gasLimits" swagger:"desc(The gas limits),required"`
+	PublicURL       string         `json:"publicUrl" swagger:"desc(The fully qualified public url leading to the chains metadata),required"`
+	EVMJsonRPCURL   string         `json:"evmJsonRpcUrl" swagger:"desc(The EVM json rpc url),required"`
+	EVMWebSocketURL string         `json:"evmWebSocketUrl" swagger:"desc(The EVM websocket url),required"`
 }
 
 type StateResponse struct {
@@ -70,25 +73,37 @@ type StateResponse struct {
 }
 
 func mapMetadataUrls(response *ChainInfoResponse) {
-	if response.MetadataEVMJsonRPCURL == "" {
-		response.MetadataEVMJsonRPCURL, _ = url.JoinPath(response.PublicURL, routes.EVMJsonRPCPathSuffix)
+	if response.PublicURL == "" {
+		return
 	}
 
-	if response.MetadataEVMWebSocketURL == "" {
+	if response.EVMJsonRPCURL == "" {
+		response.EVMJsonRPCURL, _ = url.JoinPath(response.PublicURL, routes.EVMJsonRPCPathSuffix)
+	}
+
+	if response.EVMWebSocketURL == "" {
 		publicURL, _ := url.Parse(response.PublicURL)
-		publicURL.Scheme = "ws"
-		response.MetadataEVMWebSocketURL, _ = url.JoinPath(publicURL.String(), routes.EVMJsonWebSocketPathSuffix)
+
+		if publicURL.Scheme == "http" {
+			publicURL.Scheme = "ws"
+		} else {
+			publicURL.Scheme = "wss"
+		}
+
+		response.EVMWebSocketURL, _ = url.JoinPath(publicURL.String(), routes.EVMJsonWebSocketPathSuffix)
 	}
 }
 
 func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfoResponse {
 	chainInfoResponse := ChainInfoResponse{
-		IsActive:                chainInfo.IsActive,
-		ChainID:                 chainInfo.ChainID.String(),
-		EVMChainID:              evmChainID,
-		PublicURL:               chainInfo.PublicURL,
-		MetadataEVMWebSocketURL: chainInfo.MetadataEVMWebSocketURL,
-		MetadataEVMJsonRPCURL:   chainInfo.MetadataEVMJsonRPCURL,
+		Standard: "IRCxx",
+
+		IsActive:        chainInfo.IsActive,
+		ChainID:         chainInfo.ChainID.String(),
+		EVMChainID:      evmChainID,
+		PublicURL:       chainInfo.PublicURL,
+		EVMWebSocketURL: chainInfo.EVMWebSocketURL,
+		EVMJsonRPCURL:   chainInfo.EVMJsonRPCURL,
 	}
 
 	if chainInfo.ChainOwnerID != nil {

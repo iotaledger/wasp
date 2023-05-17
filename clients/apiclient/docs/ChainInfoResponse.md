@@ -7,18 +7,19 @@ Name | Type | Description | Notes
 **ChainID** | **string** | ChainID (Bech32-encoded). | 
 **ChainOwnerId** | **string** | The chain owner address (Bech32-encoded). | 
 **EvmChainId** | **uint32** | The EVM chain ID | 
+**EvmJsonRpcUrl** | **string** | The EVM json rpc url | 
+**EvmWebSocketUrl** | **string** | The EVM websocket url | 
 **GasFeePolicy** | [**FeePolicy**](FeePolicy.md) |  | 
 **GasLimits** | [**Limits**](Limits.md) |  | 
 **IsActive** | **bool** | Whether or not the chain is active. | 
-**MetadataEvmJsonRpcUrl** | **string** | The EVM json rpc url | 
-**MetadataEvmWebSocketUrl** | **string** | The EVM websocket url | 
 **PublicUrl** | **string** | The fully qualified public url leading to the chains metadata | 
+**Standard** | **string** | The chain info standard | 
 
 ## Methods
 
 ### NewChainInfoResponse
 
-`func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadataEvmJsonRpcUrl string, metadataEvmWebSocketUrl string, publicUrl string, ) *ChainInfoResponse`
+`func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, evmJsonRpcUrl string, evmWebSocketUrl string, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, publicUrl string, standard string, ) *ChainInfoResponse`
 
 NewChainInfoResponse instantiates a new ChainInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -93,6 +94,46 @@ and a boolean to check if the value has been set.
 SetEvmChainId sets EvmChainId field to given value.
 
 
+### GetEvmJsonRpcUrl
+
+`func (o *ChainInfoResponse) GetEvmJsonRpcUrl() string`
+
+GetEvmJsonRpcUrl returns the EvmJsonRpcUrl field if non-nil, zero value otherwise.
+
+### GetEvmJsonRpcUrlOk
+
+`func (o *ChainInfoResponse) GetEvmJsonRpcUrlOk() (*string, bool)`
+
+GetEvmJsonRpcUrlOk returns a tuple with the EvmJsonRpcUrl field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetEvmJsonRpcUrl
+
+`func (o *ChainInfoResponse) SetEvmJsonRpcUrl(v string)`
+
+SetEvmJsonRpcUrl sets EvmJsonRpcUrl field to given value.
+
+
+### GetEvmWebSocketUrl
+
+`func (o *ChainInfoResponse) GetEvmWebSocketUrl() string`
+
+GetEvmWebSocketUrl returns the EvmWebSocketUrl field if non-nil, zero value otherwise.
+
+### GetEvmWebSocketUrlOk
+
+`func (o *ChainInfoResponse) GetEvmWebSocketUrlOk() (*string, bool)`
+
+GetEvmWebSocketUrlOk returns a tuple with the EvmWebSocketUrl field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetEvmWebSocketUrl
+
+`func (o *ChainInfoResponse) SetEvmWebSocketUrl(v string)`
+
+SetEvmWebSocketUrl sets EvmWebSocketUrl field to given value.
+
+
 ### GetGasFeePolicy
 
 `func (o *ChainInfoResponse) GetGasFeePolicy() FeePolicy`
@@ -153,46 +194,6 @@ and a boolean to check if the value has been set.
 SetIsActive sets IsActive field to given value.
 
 
-### GetMetadataEvmJsonRpcUrl
-
-`func (o *ChainInfoResponse) GetMetadataEvmJsonRpcUrl() string`
-
-GetMetadataEvmJsonRpcUrl returns the MetadataEvmJsonRpcUrl field if non-nil, zero value otherwise.
-
-### GetMetadataEvmJsonRpcUrlOk
-
-`func (o *ChainInfoResponse) GetMetadataEvmJsonRpcUrlOk() (*string, bool)`
-
-GetMetadataEvmJsonRpcUrlOk returns a tuple with the MetadataEvmJsonRpcUrl field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetMetadataEvmJsonRpcUrl
-
-`func (o *ChainInfoResponse) SetMetadataEvmJsonRpcUrl(v string)`
-
-SetMetadataEvmJsonRpcUrl sets MetadataEvmJsonRpcUrl field to given value.
-
-
-### GetMetadataEvmWebSocketUrl
-
-`func (o *ChainInfoResponse) GetMetadataEvmWebSocketUrl() string`
-
-GetMetadataEvmWebSocketUrl returns the MetadataEvmWebSocketUrl field if non-nil, zero value otherwise.
-
-### GetMetadataEvmWebSocketUrlOk
-
-`func (o *ChainInfoResponse) GetMetadataEvmWebSocketUrlOk() (*string, bool)`
-
-GetMetadataEvmWebSocketUrlOk returns a tuple with the MetadataEvmWebSocketUrl field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetMetadataEvmWebSocketUrl
-
-`func (o *ChainInfoResponse) SetMetadataEvmWebSocketUrl(v string)`
-
-SetMetadataEvmWebSocketUrl sets MetadataEvmWebSocketUrl field to given value.
-
-
 ### GetPublicUrl
 
 `func (o *ChainInfoResponse) GetPublicUrl() string`
@@ -211,6 +212,26 @@ and a boolean to check if the value has been set.
 `func (o *ChainInfoResponse) SetPublicUrl(v string)`
 
 SetPublicUrl sets PublicUrl field to given value.
+
+
+### GetStandard
+
+`func (o *ChainInfoResponse) GetStandard() string`
+
+GetStandard returns the Standard field if non-nil, zero value otherwise.
+
+### GetStandardOk
+
+`func (o *ChainInfoResponse) GetStandardOk() (*string, bool)`
+
+GetStandardOk returns a tuple with the Standard field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetStandard
+
+`func (o *ChainInfoResponse) SetStandard(v string)`
+
+SetStandard sets Standard field to given value.
 
 
 

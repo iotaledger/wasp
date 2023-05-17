@@ -13,13 +13,13 @@ import (
 
 func MapGovChainInfoResponse(chainInfo *isc.ChainInfo) models.GovChainInfoResponse {
 	return models.GovChainInfoResponse{
-		ChainID:                 chainInfo.ChainID.String(),
-		ChainOwnerID:            chainInfo.ChainOwnerID.String(),
-		GasFeePolicy:            chainInfo.GasFeePolicy,
-		GasLimits:               chainInfo.GasLimits,
-		PublicURL:               chainInfo.PublicURL,
-		MetadataEVMJsonRPCURL:   chainInfo.MetadataEVMJsonRPCURL,
-		MetadataEVMWebSocketURL: chainInfo.MetadataEVMWebSocketURL,
+		ChainID:         chainInfo.ChainID.String(),
+		ChainOwnerID:    chainInfo.ChainOwnerID.String(),
+		GasFeePolicy:    chainInfo.GasFeePolicy,
+		GasLimits:       chainInfo.GasLimits,
+		PublicURL:       chainInfo.PublicURL,
+		EVMJsonRPCURL:   chainInfo.MetadataEVMJsonRPCURL,
+		EVMWebSocketURL: chainInfo.MetadataEVMWebSocketURL,
 	}
 }
 

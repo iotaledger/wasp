@@ -113,7 +113,7 @@ const (
 	// L2 metadata (provided by the webapi, located by the public url)
 	ParamMetadataEVMJsonRPCURL   = "e"
 	ParamMetadataEVMWebSocketURL = "w"
-	
+
 	// L1 metadata (stored and provided in the tangle)
 	ParamPublicURL = "x"
 )
