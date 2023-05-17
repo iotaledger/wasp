@@ -133,22 +133,6 @@ func readSnapshot(r io.Reader) (SnapshotInfo, kvstore.KVStore, error) {
 	return NewSnapshotInfo(index, commitment), snapshot, nil
 }
 
-func tempSnapshotFileName(blockHash state.BlockHash) string {
-	return tempSnapshotFileNameString(blockHash.String())
-}
-
-func tempSnapshotFileNameString(blockHash string) string {
-	return snapshotFileNameString(blockHash) + constSnapshotTmpFileSuffix
-}
-
-func snapshotFileName(blockHash state.BlockHash) string {
-	return snapshotFileNameString(blockHash.String())
-}
-
-func snapshotFileNameString(blockHash string) string {
-	return blockHash + constSnapshotFileSuffix
-}
-
 func writeBytes(bytes []byte, w io.Writer) error {
 	lengthArray := make([]byte, constLengthArrayLength)
 	binary.LittleEndian.PutUint32(lengthArray, uint32(len(bytes)))
