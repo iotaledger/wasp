@@ -169,4 +169,27 @@ contract ISCTest {
             emit LoopEvent();
         }
     }
+
+    // This function is used to test foundry access. Should fail if foundry is not owned by the sender.
+    function mint(uint32 foundrySN,uint256 amount, uint64 storageDeposit) public {
+      ISCAssets memory allowance;
+      allowance.baseTokens = storageDeposit;
+      ISC.accounts.mintNativeTokens(foundrySN, amount, allowance);
+    }
+
+    function testCallViewCaller() public view returns (bytes memory) {
+        // test that the caller is set to this contract's address
+        ISCDict memory params = ISCDict(new ISCDictItem[](0));
+        ISCDict memory r = ISC.sandbox.callView(
+            ISC.util.hn("accounts"),
+            ISC.util.hn("balance"),
+            params
+        );
+        for (uint256 i = 0; i < r.items.length; i++) {
+            if (r.items[i].key.length == 0) {
+                return r.items[i].value;
+            }
+        }
+        revert();
+    }
 }

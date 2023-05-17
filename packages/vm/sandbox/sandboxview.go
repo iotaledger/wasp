@@ -17,11 +17,3 @@ func NewSandboxView(ctx execution.WaspContext) isc.SandboxView {
 	ret.Ctx = ctx
 	return ret
 }
-
-func (s *sandboxView) Privileged() isc.PrivilegedView {
-	return s
-}
-
-func (s *sandboxView) GasBurnEnable(enable bool) {
-	s.Ctx.GasBurnEnable(enable)
-}

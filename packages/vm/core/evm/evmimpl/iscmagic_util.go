@@ -8,11 +8,11 @@ import (
 )
 
 // handler for ISCUtil::hn
-func (h *magicContractViewHandler) Hn(s string) isc.Hname {
+func (h *magicContractHandler) Hn(s string) isc.Hname {
 	return isc.Hn(s)
 }
 
 // handler for ISCUtil::print
-func (h *magicContractViewHandler) Print(s string) {
+func (h *magicContractHandler) Print(s string) {
 	h.ctx.Log().Debugf("ISCUtil::print -> %q", s)
 }
