@@ -22,8 +22,8 @@ type SnapshotInfo interface {
 }
 
 type snapshotter interface {
-	createSnapshotAsync(stateIndex uint32, commitment *state.L1Commitment, doneCallback func())
-	loadSnapshot(io.Reader) error
+	storeSnapshot(SnapshotInfo, io.Writer) error
+	loadSnapshot(SnapshotInfo, io.Reader) error
 }
 
 type snapshotList interface {

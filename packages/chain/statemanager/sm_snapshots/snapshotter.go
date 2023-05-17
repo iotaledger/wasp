@@ -13,105 +13,48 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/hive.go/runtime/ioutils"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
 )
 
 type snapshotterImpl struct {
-	dir   string
 	store state.Store
-	log   *logger.Logger
 }
 
 var _ snapshotter = &snapshotterImpl{}
 
-const (
-	constSnapshotFileSuffix    = ".snap"
-	constSnapshotTmpFileSuffix = ".tmp"
-	constLengthArrayLength     = 4 // bytes
-)
+const constLengthArrayLength = 4 // bytes
 
-func newSnapshotter(log *logger.Logger, baseDir string, chainID isc.ChainID, store state.Store) (snapshotter, error) {
-	dir := filepath.Join(baseDir, chainID.String())
-	if err := ioutils.CreateDirectory(dir, 0o777); err != nil {
-		return nil, fmt.Errorf("Snapshotter cannot create folder %v: %w", dir, err)
-	}
-
-	result := &snapshotterImpl{
-		dir:   dir,
-		store: store,
-		log:   log,
-	}
-	result.cleanTempFiles() // To be able to make snapshots, which were not finished. See comment in `BlockCommitted` function
-	log.Debugf("Snapshotter created folder %v for snapshots", dir)
-	return result, nil
+func newSnapshotter(store state.Store) snapshotter {
+	return &snapshotterImpl{store: store}
 }
 
-// Snapshotter makes snapshot of every `period`th state only, if this state hasn't
-// been snapshotted before. The snapshot file name includes state index and state hash.
-// Snapshotter first writes the state to temporary file and only then moves it to
-// permanent location. Writing is done in separate thread to not interfere with
-// normal State manager routine, as it may be lengthy. If snapshotter detects that
-// the temporary file, needed to create a snapshot, already exists, it assumes
-// that another go routine is already making a snapshot and returns. For this reason
-// it is important to delete all temporary files on snapshotter start.
-func (sn *snapshotterImpl) createSnapshotAsync(stateIndex uint32, commitment *state.L1Commitment, doneCallback func()) {
-	sn.log.Debugf("Creating snapshot %v %s...", stateIndex, commitment)
-	tmpFileName := tempSnapshotFileName(commitment.BlockHash())
-	tmpFilePath := filepath.Join(sn.dir, tmpFileName)
-	exists, _, _ := ioutils.PathExists(tmpFilePath)
-	if exists {
-		sn.log.Debugf("Creating snapshot %v %s: skipped making snapshot as it is already being produced", stateIndex, commitment)
-		return
-	}
-	f, err := os.OpenFile(tmpFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
-	if err != nil {
-		sn.log.Errorf("Creating snapshot %v %s: failed to create temporary snapshot file %s: %w", stateIndex, commitment, tmpFilePath, err)
-		f.Close()
-		return
-	}
-	sn.log.Debugf("Creating snapshot %v %s: reading store...", stateIndex, commitment)
+func (sn *snapshotterImpl) storeSnapshot(snapshotInfo SnapshotInfo, w io.Writer) error {
 	snapshot := mapdb.NewMapDB()
-	err = sn.store.TakeSnapshot(commitment.TrieRoot(), snapshot)
+	err := sn.store.TakeSnapshot(snapshotInfo.GetTrieRoot(), snapshot)
 	if err != nil {
-		sn.log.Errorf("Creating snapshot %v %s: failed to read store: %w", stateIndex, commitment, err)
-		f.Close()
-		return
+		return fmt.Errorf("failed to read store: %w", err)
 	}
-	go func() {
-		sn.log.Debugf("Creating snapshot %v %s: store read, iterating snapshot and writing it to file", stateIndex, commitment)
-		err := writeSnapshot(stateIndex, commitment.TrieRoot(), snapshot, f)
-		f.Close()
-		if err != nil {
-			sn.log.Errorf("Creating snapshot %v %s: filed to write snaphost to temporary file %s: %w", stateIndex, commitment, tmpFilePath, err)
-			return
-		}
-
-		finalFileName := snapshotFileName(commitment.BlockHash())
-		finalFilePath := filepath.Join(sn.dir, finalFileName)
-		err = os.Rename(tmpFilePath, finalFilePath)
-		if err != nil {
-			sn.log.Errorf("Creating snapshot %v %s: failed to move temporary snapshot file %s to permanent location %s: %w",
-				stateIndex, commitment, tmpFilePath, finalFilePath, err)
-			return
-		}
-
-		doneCallback()
-		sn.log.Infof("Creating snapshot %v %s: snapshot created in %s", stateIndex, commitment, finalFilePath)
-	}()
+	err = writeSnapshot(snapshotInfo, snapshot, w)
+	if err != nil {
+		return fmt.Errorf("failed writing snapshot: %w", err)
+	}
+	return nil
 }
 
-func (sn *snapshotterImpl) loadSnapshot(r io.Reader) error {
-	_, trieRoot, snapshot, err := readSnapshot(r)
+func (sn *snapshotterImpl) loadSnapshot(snapshotInfo SnapshotInfo, r io.Reader) error {
+	stateIndex, trieRoot, snapshot, err := readSnapshot(r)
 	if err != nil {
 		return fmt.Errorf("failed reading snapshot: %w", err)
+	}
+	if stateIndex != snapshotInfo.GetStateIndex() {
+		return fmt.Errorf("state index read %v is different than expected %v", stateIndex, snapshotInfo.GetStateIndex())
+	}
+	if !trieRoot.Equals(snapshotInfo.GetTrieRoot()) {
+		return fmt.Errorf("trie root read %s is different than expected %s", trieRoot, snapshotInfo.GetTrieRoot())
 	}
 	err = sn.store.RestoreSnapshot(trieRoot, snapshot)
 	if err != nil {
@@ -120,39 +63,18 @@ func (sn *snapshotterImpl) loadSnapshot(r io.Reader) error {
 	return nil
 }
 
-func (sn *snapshotterImpl) cleanTempFiles() {
-	tempFileRegExp := tempSnapshotFileNameString("*")
-	tempFileRegExpWithPath := filepath.Join(sn.dir, tempFileRegExp)
-	tempFiles, err := filepath.Glob(tempFileRegExpWithPath)
-	if err != nil {
-		sn.log.Errorf("Failed to obtain temporary snapshot file list: %v", err)
-		return
-	}
-
-	removed := 0
-	for _, tempFile := range tempFiles {
-		err = os.Remove(tempFile)
-		if err != nil {
-			sn.log.Warnf("Failed to remove temporary snapshot file %s: %v", tempFile, err)
-		} else {
-			removed++
-		}
-	}
-	sn.log.Debugf("Removed %v out of %v temporary snapshot files", removed, len(tempFiles))
-}
-
-func writeSnapshot(index uint32, trieRoot trie.Hash, snapshot kvstore.KVStore, w io.Writer) error {
+func writeSnapshot(snapshotInfo SnapshotInfo, snapshot kvstore.KVStore, w io.Writer) error {
 	indexArray := make([]byte, 4) // Size of block index, which is of type uint32: 4 bytes
-	binary.LittleEndian.PutUint32(indexArray, index)
+	binary.LittleEndian.PutUint32(indexArray, snapshotInfo.GetStateIndex())
 	err := writeBytes(indexArray, w)
 	if err != nil {
-		return fmt.Errorf("failed writing block index %v: %w", index, err)
+		return fmt.Errorf("failed writing block index %v: %w", snapshotInfo.GetStateIndex(), err)
 	}
 
-	trieRootBytes := trieRoot.Bytes()
+	trieRootBytes := snapshotInfo.GetTrieRoot().Bytes()
 	err = writeBytes(trieRootBytes, w)
 	if err != nil {
-		return fmt.Errorf("failed writing trie root %s: %w", trieRoot, err)
+		return fmt.Errorf("failed writing trie root %s: %w", snapshotInfo.GetTrieRoot(), err)
 	}
 
 	iterErr := snapshot.Iterate(kvstore.EmptyPrefix, func(key kvstore.Key, value kvstore.Value) bool {
