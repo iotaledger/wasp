@@ -5,7 +5,11 @@ use wasmlib::*;
 
 use crate::*;
 
-impl ScViewCallContext for WasmClientContext {
+impl ScViewClientContext for WasmClientContext {
+    fn client_contract(&self, _contract_hname: ScHname) -> ScHname {
+        self.sc_hname
+    }
+
     fn fn_call(&self, req: &wasmrequests::CallRequest) -> Vec<u8> {
         if req.contract != self.sc_hname {
             self.set_err("unknown contract: ", &req.contract.to_string());
@@ -29,13 +33,9 @@ impl ScViewCallContext for WasmClientContext {
     fn fn_chain_id(&self) -> ScChainID {
         self.current_chain_id()
     }
-
-    fn init_view_call_context(&self, _contract_hname: ScHname) -> ScHname {
-        self.sc_hname
-    }
 }
 
-impl ScFuncCallContext for WasmClientContext {
+impl ScFuncClientContext for WasmClientContext {
     fn fn_post(&self, req: &wasmrequests::PostRequest) -> Vec<u8> {
         if self.key_pair.is_none() {
             self.set_err("fn_post: ", "missing key pair");
@@ -71,6 +71,4 @@ impl ScFuncCallContext for WasmClientContext {
         }
         Vec::new()
     }
-
-    fn init_func_call_context(&self) {}
 }

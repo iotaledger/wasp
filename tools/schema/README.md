@@ -13,6 +13,17 @@ the smart contract without distractions. Any time changes are made to the smart 
 interface by the programmer in the schema definition file, the Schema tool will 
 automatically re-generate any affected code to reflect these changes.
 
+## Installation
+
+Clone the [Wasp repository](https://github.com/iotaledger/wasp) and run 
+```shell
+go install ./tools/schema
+```
+If you want to use the demo smart contracts, immediately after cloning the repository run
+```shell
+make wasm
+```
+
 ## Usage
 
 ```text

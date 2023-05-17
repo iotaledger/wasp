@@ -23,7 +23,7 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn store_string(ctx: &impl ScFuncCallContext) -> StoreStringCall {
+    pub fn store_string(ctx: &impl ScFuncClientContext) -> StoreStringCall {
         let mut f = StoreStringCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_STORE_STRING),
             params:  MutableStoreStringParams { proxy: Proxy::nil() },
@@ -32,7 +32,7 @@ impl ScFuncs {
         f
     }
 
-    pub fn get_string(ctx: &impl ScViewCallContext) -> GetStringCall {
+    pub fn get_string(ctx: &impl ScViewClientContext) -> GetStringCall {
         let mut f = GetStringCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_STRING),
             results: ImmutableGetStringResults { proxy: Proxy::nil() },

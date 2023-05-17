@@ -77,8 +77,8 @@ type SoloContext struct {
 }
 
 var (
-	_ wasmlib.ScFuncCallContext = &SoloContext{}
-	_ wasmlib.ScViewCallContext = &SoloContext{}
+	_ wasmlib.ScFuncClientContext = &SoloContext{}
+	_ wasmlib.ScViewClientContext = &SoloContext{}
 )
 
 func contains(s []isc.AgentID, e isc.AgentID) bool {
@@ -306,6 +306,12 @@ func (ctx *SoloContext) ChainOwnerID() wasmtypes.ScAgentID {
 	return cvt.ScAgentID(ctx.Chain.OriginatorAgentID)
 }
 
+// ClientContract is a function that is required to use SoloContext as an ScViewClientContext
+func (ctx *SoloContext) ClientContract(hContract wasmtypes.ScHname) wasmtypes.ScHname {
+	_ = hContract
+	return cvt.ScHname(isc.Hn(ctx.scName))
+}
+
 // ContractExists checks to see if the contract named scName exists in the chain associated with ctx.
 func (ctx *SoloContext) ContractExists(scName string) error {
 	_, err := ctx.Chain.FindContract(scName)
@@ -374,16 +380,6 @@ func (ctx *SoloContext) init(onLoad wasmhost.ScOnloadFunc) *SoloContext {
 	return ctx
 }
 
-// InitFuncCallContext is a function that is required to use SoloContext as an ScFuncCallContext
-func (ctx *SoloContext) InitFuncCallContext() {
-}
-
-// InitViewCallContext is a function that is required to use SoloContext as an ScViewCallContext
-func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
-	_ = hContract
-	return cvt.ScHname(isc.Hn(ctx.scName))
-}
-
 // MintNFT tells SoloContext to mint a new NFT issued/owned by the specified agent
 // note that SoloContext will cache the NFT data to be able to use it
 // in Post()s that go through the *SAME* SoloContext
@@ -432,7 +428,7 @@ func (ctx *SoloContext) NFTs(agent *SoloAgent) []wasmtypes.ScNftID {
 }
 
 // OffLedger tells SoloContext to Post() the next request off-ledger
-func (ctx *SoloContext) OffLedger(agent *SoloAgent) wasmlib.ScFuncCallContext {
+func (ctx *SoloContext) OffLedger(agent *SoloAgent) wasmlib.ScFuncClientContext {
 	ctx.offLedger = true
 	ctx.keyPair = agent.Pair
 	return ctx
@@ -451,7 +447,7 @@ func (ctx *SoloContext) Originator() *SoloAgent {
 }
 
 // Sign is used to force a different agent for signing a Post() request
-func (ctx *SoloContext) Sign(agent *SoloAgent) wasmlib.ScFuncCallContext {
+func (ctx *SoloContext) Sign(agent *SoloAgent) wasmlib.ScFuncClientContext {
 	ctx.keyPair = agent.Pair
 	return ctx
 }

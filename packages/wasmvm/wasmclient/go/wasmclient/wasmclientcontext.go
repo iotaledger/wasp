@@ -22,8 +22,8 @@ type WasmClientContext struct {
 }
 
 var (
-	_ wasmlib.ScFuncCallContext = new(WasmClientContext)
-	_ wasmlib.ScViewCallContext = new(WasmClientContext)
+	_ wasmlib.ScFuncClientContext = new(WasmClientContext)
+	_ wasmlib.ScViewClientContext = new(WasmClientContext)
 )
 
 // NewWasmClientContext uses IClientService instead of WasmClientService
@@ -37,6 +37,11 @@ func NewWasmClientContext(svcClient IClientService, scName string) *WasmClientCo
 	return s
 }
 
+func (s *WasmClientContext) ClientContract(hContract wasmtypes.ScHname) wasmtypes.ScHname {
+	_ = hContract
+	return s.scHname
+}
+
 func (s *WasmClientContext) CurrentChainID() wasmtypes.ScChainID {
 	return s.svcClient.CurrentChainID()
 }
@@ -47,14 +52,6 @@ func (s *WasmClientContext) CurrentKeyPair() *cryptolib.KeyPair {
 
 func (s *WasmClientContext) CurrentSvcClient() IClientService {
 	return s.svcClient
-}
-
-func (s *WasmClientContext) InitFuncCallContext() {
-}
-
-func (s *WasmClientContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
-	_ = hContract
-	return s.scHname
 }
 
 // Register the event handler. So the corresponding incoming events will be handled by this event handler

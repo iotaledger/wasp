@@ -45,7 +45,7 @@ $#if result ImmutableFuncNameResults
 $#emit setupInitFunc
 
 $#each funcComment _funcComment
-func (sc Funcs) $FuncName(ctx wasmlib.Sc$Kind$+CallContext) *$FuncName$+Call {
+func (sc Funcs) $FuncName(ctx wasmlib.Sc$Kind$+ClientContext) *$FuncName$+Call {
 $#set thisView f.Func
 $#if func setThisView
 $#set complex $false

@@ -25,7 +25,7 @@ var ScFuncs Funcs
 
 // Registers an error message template.
 // note that this function must be call()ed
-func (sc Funcs) RegisterError(ctx wasmlib.ScFuncCallContext) *RegisterErrorCall {
+func (sc Funcs) RegisterError(ctx wasmlib.ScFuncClientContext) *RegisterErrorCall {
 	f := &RegisterErrorCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRegisterError)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	wasmlib.NewCallResultsProxy(&f.Func.ScView, &f.Results.Proxy)
@@ -33,7 +33,7 @@ func (sc Funcs) RegisterError(ctx wasmlib.ScFuncCallContext) *RegisterErrorCall 
 }
 
 // Returns the message template stored for a given error code.
-func (sc Funcs) GetErrorMessageFormat(ctx wasmlib.ScViewCallContext) *GetErrorMessageFormatCall {
+func (sc Funcs) GetErrorMessageFormat(ctx wasmlib.ScViewClientContext) *GetErrorMessageFormatCall {
 	f := &GetErrorMessageFormatCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetErrorMessageFormat)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)

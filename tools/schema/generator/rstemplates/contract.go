@@ -45,7 +45,7 @@ $#emit setupInitFunc
 $#if separator newline
 $#set separator $true
 $#each funcComment _funcComment
-    pub fn $func_name(ctx: &impl Sc$Kind$+CallContext) -> $FuncName$+Call {
+    pub fn $func_name(ctx: &impl Sc$Kind$+ClientContext) -> $FuncName$+Call {
 $#if ptrs setPtrs noPtrs
     }
 `,
