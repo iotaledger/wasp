@@ -5,6 +5,7 @@ package state_test
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/origin"
@@ -97,6 +99,13 @@ func (m mustChainStore) NewStateDraft(timestamp time.Time, prevL1Commitment *sta
 		panic(err)
 	}
 	return r
+}
+
+// check that the trie can access all its nodes
+func (m mustChainStore) checkTrie(trieRoot trie.Hash) {
+	m.StateByTrieRoot(trieRoot).Iterate("", func(k kv.Key, v []byte) bool {
+		return true
+	})
 }
 
 func initializedStore(db kvstore.KVStore) state.Store {
@@ -272,5 +281,146 @@ func TestDoubleCommit(t *testing.T) {
 		require.Equal(t, block1.L1Commitment(), block2.L1Commitment())
 		err := cs.SetLatest(block1.TrieRoot())
 		require.NoError(t, err)
+	}
+}
+
+type randomState struct {
+	t   *testing.T
+	rnd *rand.Rand
+	db  kvstore.KVStore
+	cs  mustChainStore
+}
+
+func newRandomState(t *testing.T) *randomState {
+	db := mapdb.NewMapDB()
+	return &randomState{
+		t:   t,
+		rnd: rand.New(rand.NewSource(0)),
+		db:  db,
+		cs:  mustChainStore{initializedStore(db)},
+	}
+}
+
+const rsKeyAlphabet = "ab"
+
+// to avoid collisions with core contracts
+var rsKeyPrefix = kv.Key(isc.Hn("randomState").Bytes())
+
+func (r *randomState) randomKey() kv.Key {
+	n := r.rnd.Intn(10) + 1
+	b := make([]byte, n)
+	for i := 0; i < n; i++ {
+		b[i] = rsKeyAlphabet[r.rnd.Intn(len(rsKeyAlphabet))]
+	}
+	return rsKeyPrefix + kv.Key(b)
+}
+
+func (r *randomState) randomValue() []byte {
+	// half of the values will be stored in the trie nodes,
+	// and the other half in the value store
+	n := r.rnd.Intn(128) + 1
+	b := make([]byte, n)
+	_, err := r.rnd.Read(b)
+	require.NoError(r.t, err)
+	return b
+}
+
+func (r *randomState) commitNewBlock(latestBlock state.Block, timestamp time.Time) state.Block {
+	d := r.cs.NewStateDraft(timestamp, latestBlock.L1Commitment())
+	for j := 0; j < 50; j++ {
+		d.Set(r.randomKey(), r.randomValue())
+	}
+	for j := 0; j < 10; j++ {
+		d.Del(r.randomKey())
+	}
+	block := r.cs.Commit(d)
+	err := r.cs.SetLatest(block.TrieRoot())
+	require.NoError(r.t, err)
+	return block
+}
+
+func dbSize(db kvstore.KVStore) int {
+	size := 0
+	err := db.Iterate(kvstore.EmptyPrefix, func(k []byte, v []byte) bool {
+		size += len(k) + len(v)
+		return true
+	})
+	if err != nil {
+		panic(err)
+	}
+	return size
+}
+
+func TestPruning(t *testing.T) {
+	run := func(keepLatest int) int {
+		var sizes []int
+
+		r := newRandomState(t)
+
+		for i := 1; i <= 20; i++ {
+			block := r.commitNewBlock(r.cs.LatestBlock(), time.Unix(int64(i), 0))
+
+			index := block.StateIndex()
+			t.Logf("committed block %d", index)
+
+			if keepLatest > 0 && index >= uint32(keepLatest) {
+				p := index - uint32(keepLatest)
+				stats, err := r.cs.Prune(r.cs.BlockByIndex(p).TrieRoot())
+				require.NoError(t, err)
+				t.Logf("pruned block %d: %+v", p, stats)
+			}
+
+			sizes = append(sizes, dbSize(r.db))
+
+			r.cs.checkTrie(r.cs.LatestBlock().TrieRoot())
+		}
+
+		t.Log(sizes)
+		return sizes[len(sizes)-1]
+	}
+
+	dbSizeWithoutPruning := run(0)
+	dbSizeWithPruning := run(10)
+
+	require.Less(t, dbSizeWithPruning, dbSizeWithoutPruning)
+}
+
+func TestPruning2(t *testing.T) {
+	r := newRandomState(t)
+
+	trieRoots := []trie.Hash{r.cs.LatestBlock().TrieRoot()}
+
+	var n int64 = 1
+
+	for i := 1; i <= 20; i++ {
+		block := r.commitNewBlock(r.cs.LatestBlock(), time.Unix(n, 0))
+		n++
+		trieRoots = append(trieRoots, block.TrieRoot())
+	}
+
+	r.rnd.Shuffle(len(trieRoots), func(i, j int) {
+		trieRoots[i], trieRoots[j] = trieRoots[j], trieRoots[i]
+	})
+
+	for len(trieRoots) > 3 {
+		// prune 2 random trie roots
+		for i := 0; i < 2; i++ {
+			trieRoot := trieRoots[0]
+			stats, err := r.cs.Prune(trieRoot)
+			require.NoError(t, err)
+			t.Logf("pruned trie root %x: %+v", trieRoot, stats)
+			trieRoots = trieRoots[1:]
+
+			for _, trieRoot := range trieRoots {
+				r.cs.checkTrie(trieRoot)
+			}
+		}
+
+		// commit a new block based off a random trie root
+		trieRoot := trieRoots[0]
+		block := r.commitNewBlock(r.cs.BlockByTrieRoot(trieRoot), time.Unix(n, 0))
+		n++
+		trieRoots = append(trieRoots, block.TrieRoot())
+		t.Logf("committed block: %d", len(trieRoots))
 	}
 }

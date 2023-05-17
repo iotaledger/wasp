@@ -224,7 +224,7 @@ func TestBaseUpdate(t *testing.T) {
 
 var traceScenarios = false
 
-func runUpdateScenario(trieUpdatable *trie.TrieUpdatable, store trie.KVWriter, scenario []string) (map[string]string, trie.Hash) {
+func runUpdateScenario(trieUpdatable *trie.TrieUpdatable, store trie.KVStore, scenario []string) (map[string]string, trie.Hash) {
 	checklist := make(map[string]string)
 	uncommitted := false
 	var ret trie.Hash
@@ -606,64 +606,4 @@ func reverse(orig []string) []string {
 		ret = append(ret, orig[i])
 	}
 	return ret
-}
-
-func TestSnapshot1(t *testing.T) {
-	runTest := func(name string, data []string) {
-		t.Run(name, func(t *testing.T) {
-			store1 := NewInMemoryKVStore()
-			initRoot1 := trie.MustInitRoot(store1)
-			tr1, err := trie.NewTrieUpdatable(store1, initRoot1)
-			require.NoError(t, err)
-
-			_, root1 := runUpdateScenario(tr1, store1, data)
-			storeData := NewInMemoryKVStore()
-			tr1.SnapshotData(storeData)
-
-			store2 := NewInMemoryKVStore()
-			initRoot2 := trie.MustInitRoot(store2)
-			tr2, err := trie.NewTrieUpdatable(store2, initRoot2)
-			require.NoError(t, err)
-
-			storeData.Iterate(func(k, v []byte) bool {
-				tr2.Update(k, v)
-				return true
-			})
-			root2 := tr2.Commit(store2)
-
-			require.Equal(t, root1, root2)
-		})
-	}
-	runTest("1", []string{"a", "ab", "abc", "1", "2", "3", "11"})
-	runTest("rnd", genRnd3())
-}
-
-func TestSnapshot2(t *testing.T) {
-	runTest := func(data []string) {
-		store1 := NewInMemoryKVStore()
-		initRoot1 := trie.MustInitRoot(store1)
-		tr1, err := trie.NewTrieUpdatable(store1, initRoot1)
-		require.NoError(t, err)
-
-		_, root1 := runUpdateScenario(tr1, store1, data)
-		store2 := NewInMemoryKVStore()
-		tr1.Snapshot(store2)
-
-		tr2, err := trie.NewTrieUpdatable(store2, root1)
-		require.NoError(t, err)
-
-		sc1 := []string{"@", "#$%%^", "____++++", "~~~~~"}
-		sc2 := []string{"@", "#$%%^", "*", "____++++", "~~~~~"}
-		_, r1 := runUpdateScenario(tr1, store1, sc1)
-		_, r2 := runUpdateScenario(tr2, store2, sc2)
-		require.Equal(t, r1, r2)
-	}
-	{
-		data := []string{"a", "ab", "abc", "1", "2", "3", "11"}
-		runTest(data)
-	}
-	{
-		data := genRnd3()
-		runTest(data)
-	}
 }

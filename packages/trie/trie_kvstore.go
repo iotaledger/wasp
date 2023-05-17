@@ -104,41 +104,6 @@ func (tr *TrieReader) Iterator(prefix []byte) KVIterator {
 	}
 }
 
-// SnapshotData writes all key/value pairs, committed in the specific root, to a store
-func (tr *TrieReader) SnapshotData(dest KVWriter) {
-	tr.Iterate(func(k []byte, v []byte) bool {
-		dest.Set(k, v)
-		return true
-	})
-}
-
-// Snapshot writes the whole trie (including values) from specific root to another store
-func (tr *TrieReader) Snapshot(destStore KVWriter) {
-	triePartition := makeWriterPartition(destStore, partitionTrieNodes)
-	valuePartition := makeWriterPartition(destStore, partitionValues)
-
-	tr.iterateNodes(0, tr.root, nil, func(nodeKey []byte, n *NodeData, depth int) bool {
-		// write trie node
-		var buf bytes.Buffer
-		err := n.Write(&buf)
-		assertNoError(err)
-		triePartition.Set(n.Commitment.Bytes(), buf.Bytes())
-
-		if n.Terminal == nil {
-			return true
-		}
-		// write value if needed
-		if _, valueInCommitment := n.Terminal.ExtractValue(); valueInCommitment {
-			return true
-		}
-		valueKey := n.Terminal.Bytes()
-		value := tr.nodeStore.valueStore.Get(valueKey)
-		assertf(len(value) > 0, "can't find value for nodeKey '%s'", hex.EncodeToString(valueKey))
-		valuePartition.Set(valueKey, value)
-		return true
-	})
-}
-
 func (tr *TrieUpdatable) update(triePath []byte, value []byte) {
 	assertf(len(value) > 0, "len(value)>0")
 
@@ -270,8 +235,8 @@ func (tr *TrieReader) iteratePrefix(f func(k []byte, v []byte) bool, prefix []by
 	}
 }
 
-func (tr *TrieReader) iterate(root Hash, triePath []byte, fun func(k []byte, v []byte) bool, extractValue bool) bool {
-	return tr.iterateNodes(0, root, triePath, func(nodeKey []byte, n *NodeData, depth int) bool {
+func (tr *TrieReader) iterate(root Hash, triePath []byte, fun func(k []byte, v []byte) bool, extractValue bool) {
+	tr.iterateNodes(0, root, triePath, func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction {
 		if n.Terminal != nil {
 			key, err := packUnpackedBytes(concat(nodeKey, n.PathExtension))
 			assertNoError(err)
@@ -285,28 +250,37 @@ func (tr *TrieReader) iterate(root Hash, triePath []byte, fun func(k []byte, v [
 				}
 			}
 			if !fun(key, value) {
-				return false
+				return IterateStop
 			}
 		}
-		return true
+		return IterateContinue
 	})
 }
 
+type IterateNodesAction byte
+
+const (
+	IterateStop IterateNodesAction = iota
+	IterateContinue
+	IterateSkipSubtree
+)
+
 // IterateNodes iterates nodes of the trie in the lexicographical order of trie keys in "depth first" order
-func (tr *TrieReader) IterateNodes(fun func(nodeKey []byte, n *NodeData, depth int) bool) {
+func (tr *TrieReader) IterateNodes(fun func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction) {
 	tr.iterateNodes(0, tr.root, nil, fun)
 }
 
-func (tr *TrieReader) iterateNodes(depth int, commitment Hash, path []byte, fun func(nodeKey []byte, n *NodeData, depth int) bool) bool {
+func (tr *TrieReader) iterateNodes(depth int, commitment Hash, path []byte, fun func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction) bool {
 	n, found := tr.nodeStore.FetchNodeData(commitment)
 	assertf(found, "can't fetch node. triePath: '%s', node commitment: %s", hex.EncodeToString(path), commitment)
 
-	if !fun(path, n, depth) {
-		return false
+	action := fun(path, n, depth)
+	if action == IterateContinue {
+		n.iterateChildren(func(childIndex byte, childCommitment Hash) bool {
+			return tr.iterateNodes(depth+1, childCommitment, concat(path, n.PathExtension, []byte{childIndex}), fun)
+		})
 	}
-	return n.iterateChildren(func(childIndex byte, childCommitment Hash) bool {
-		return tr.iterateNodes(depth+1, childCommitment, concat(path, n.PathExtension, []byte{childIndex}), fun)
-	})
+	return action != IterateStop
 }
 
 // deletePrefix deletes all k/v pairs from the trie with the specified prefix
