@@ -1,10 +1,12 @@
 package metrics
 
 import (
+	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/samber/lo"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
@@ -152,6 +154,9 @@ func newChainMetrics(provider *ChainMetricsProvider, chainID isc.ChainID) *chain
 
 // ChainMetricsProvider holds all metrics for all chains per chain
 type ChainMetricsProvider struct {
+	chainsLock       *sync.RWMutex
+	chainsRegistered map[isc.ChainID]*chainMetrics
+
 	// We use Func variant of a metric here, thus we register them
 	// explicitly when they are created. Therefore we need a registry here.
 	pipeLenRegistry *prometheus.Registry
@@ -184,7 +189,6 @@ type ChainMetricsProvider struct {
 	mempoolMissingReqs       *prometheus.GaugeVec
 
 	// messages
-	chainsRegistered       []isc.ChainID
 	messagesL1             *prometheus.CounterVec
 	lastL1MessageTime      *prometheus.GaugeVec
 	messagesL1Chain        *prometheus.CounterVec
@@ -239,6 +243,9 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 	recCountBuckets := prometheus.ExponentialBucketsRange(1, 1000, 16)
 
 	m := &ChainMetricsProvider{
+		chainsLock:       &sync.RWMutex{},
+		chainsRegistered: map[isc.ChainID]*chainMetrics{},
+
 		//
 		// blockWAL
 		//
@@ -379,7 +386,6 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 		//
 		// messages // TODO: Review, if they are used/needed.
 		//
-		chainsRegistered: make([]isc.ChainID, 0),
 
 		messagesL1: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "iota_wasp",
@@ -573,8 +579,16 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 	return m
 }
 
-func (m *ChainMetricsProvider) NewChainMetrics(chainID isc.ChainID) IChainMetrics {
-	return newChainMetrics(m, chainID)
+func (m *ChainMetricsProvider) GetChainMetrics(chainID isc.ChainID) IChainMetrics {
+	m.chainsLock.Lock()
+	defer m.chainsLock.Unlock()
+
+	if cm, ok := m.chainsRegistered[chainID]; ok {
+		return cm
+	}
+	cm := newChainMetrics(m, chainID)
+	m.chainsRegistered[chainID] = cm
+	return cm
 }
 
 func (m *ChainMetricsProvider) PrometheusCollectorsBlockWAL() []prometheus.Collector {
@@ -667,21 +681,24 @@ func (m *ChainMetricsProvider) PrometheusCollectorsWebAPI() []prometheus.Collect
 }
 
 func (m *ChainMetricsProvider) RegisterChain(chainID isc.ChainID) {
-	m.chainsRegistered = append(m.chainsRegistered, chainID)
+	m.GetChainMetrics(chainID)
 }
 
 func (m *ChainMetricsProvider) UnregisterChain(chainID isc.ChainID) {
-	for i := 0; i < len(m.chainsRegistered); i++ {
-		if m.chainsRegistered[i] == chainID {
-			// remove the found chain from the slice and return
-			m.chainsRegistered = append(m.chainsRegistered[:i], m.chainsRegistered[i+1:]...)
-			return
-		}
+	m.chainsLock.Lock()
+	defer m.chainsLock.Unlock()
+
+	if cm, ok := m.chainsRegistered[chainID]; ok {
+		cm.cleanup()
+		delete(m.chainsRegistered, chainID)
 	}
 }
 
 func (m *ChainMetricsProvider) RegisteredChains() []isc.ChainID {
-	return m.chainsRegistered
+	m.chainsLock.RLock()
+	defer m.chainsLock.RUnlock()
+
+	return lo.Keys(m.chainsRegistered)
 }
 
 func (m *ChainMetricsProvider) InMilestone() IMessageMetric[*nodeclient.MilestoneInfo] {

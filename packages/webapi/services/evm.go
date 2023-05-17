@@ -72,7 +72,7 @@ func (e *EVMService) getEVMBackend(chainID isc.ChainID) (*chainServer, error) {
 	srv, err := jsonrpc.NewServer(
 		jsonrpc.NewEVMChain(backend, e.publisher, e.log.Named("EVMChain")),
 		jsonrpc.NewAccountManager(nil),
-		e.metrics.NewChainMetrics(chainID),
+		e.metrics.GetChainMetrics(chainID),
 	)
 	if err != nil {
 		return nil, err

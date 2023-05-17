@@ -242,7 +242,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		return fmt.Errorf("error when creating chain KV store: %w", err)
 	}
 
-	chainMetrics := c.chainMetricsProvider.NewChainMetrics(chainID)
+	chainMetrics := c.chainMetricsProvider.GetChainMetrics(chainID)
 
 	// Initialize WAL
 	chainLog := c.log.Named(chainID.ShortString())
