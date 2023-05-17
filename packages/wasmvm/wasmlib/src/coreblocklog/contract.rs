@@ -66,7 +66,7 @@ pub struct ScFuncs {
 
 impl ScFuncs {
     // Returns the current state controller and governing addresses and at what block index they were set.
-    pub fn control_addresses(ctx: &impl ScViewCallContext) -> ControlAddressesCall {
+    pub fn control_addresses(ctx: &impl ScViewClientContext) -> ControlAddressesCall {
         let mut f = ControlAddressesCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_CONTROL_ADDRESSES),
             results: ImmutableControlAddressesResults { proxy: Proxy::nil() },
@@ -76,7 +76,7 @@ impl ScFuncs {
     }
 
     // Returns information about the given block.
-    pub fn get_block_info(ctx: &impl ScViewCallContext) -> GetBlockInfoCall {
+    pub fn get_block_info(ctx: &impl ScViewClientContext) -> GetBlockInfoCall {
         let mut f = GetBlockInfoCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_BLOCK_INFO),
             params:  MutableGetBlockInfoParams { proxy: Proxy::nil() },
@@ -88,7 +88,7 @@ impl ScFuncs {
     }
 
     // Returns the list of events triggered during the execution of the given block.
-    pub fn get_events_for_block(ctx: &impl ScViewCallContext) -> GetEventsForBlockCall {
+    pub fn get_events_for_block(ctx: &impl ScViewClientContext) -> GetEventsForBlockCall {
         let mut f = GetEventsForBlockCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_EVENTS_FOR_BLOCK),
             params:  MutableGetEventsForBlockParams { proxy: Proxy::nil() },
@@ -101,7 +101,7 @@ impl ScFuncs {
 
     // Returns the list of events triggered by the given contract
     // during the execution of the given block range.
-    pub fn get_events_for_contract(ctx: &impl ScViewCallContext) -> GetEventsForContractCall {
+    pub fn get_events_for_contract(ctx: &impl ScViewClientContext) -> GetEventsForContractCall {
         let mut f = GetEventsForContractCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_EVENTS_FOR_CONTRACT),
             params:  MutableGetEventsForContractParams { proxy: Proxy::nil() },
@@ -113,7 +113,7 @@ impl ScFuncs {
     }
 
     // Returns the list of events triggered during the execution of the given request.
-    pub fn get_events_for_request(ctx: &impl ScViewCallContext) -> GetEventsForRequestCall {
+    pub fn get_events_for_request(ctx: &impl ScViewClientContext) -> GetEventsForRequestCall {
         let mut f = GetEventsForRequestCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_EVENTS_FOR_REQUEST),
             params:  MutableGetEventsForRequestParams { proxy: Proxy::nil() },
@@ -125,7 +125,7 @@ impl ScFuncs {
     }
 
     // Returns a list with all request IDs in the given block.
-    pub fn get_request_i_ds_for_block(ctx: &impl ScViewCallContext) -> GetRequestIDsForBlockCall {
+    pub fn get_request_i_ds_for_block(ctx: &impl ScViewClientContext) -> GetRequestIDsForBlockCall {
         let mut f = GetRequestIDsForBlockCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_REQUEST_I_DS_FOR_BLOCK),
             params:  MutableGetRequestIDsForBlockParams { proxy: Proxy::nil() },
@@ -137,7 +137,7 @@ impl ScFuncs {
     }
 
     // Returns the receipt for the request with the given ID.
-    pub fn get_request_receipt(ctx: &impl ScViewCallContext) -> GetRequestReceiptCall {
+    pub fn get_request_receipt(ctx: &impl ScViewClientContext) -> GetRequestReceiptCall {
         let mut f = GetRequestReceiptCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_REQUEST_RECEIPT),
             params:  MutableGetRequestReceiptParams { proxy: Proxy::nil() },
@@ -149,7 +149,7 @@ impl ScFuncs {
     }
 
     // Returns all request receipts in the given block.
-    pub fn get_request_receipts_for_block(ctx: &impl ScViewCallContext) -> GetRequestReceiptsForBlockCall {
+    pub fn get_request_receipts_for_block(ctx: &impl ScViewClientContext) -> GetRequestReceiptsForBlockCall {
         let mut f = GetRequestReceiptsForBlockCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_REQUEST_RECEIPTS_FOR_BLOCK),
             params:  MutableGetRequestReceiptsForBlockParams { proxy: Proxy::nil() },
@@ -161,7 +161,7 @@ impl ScFuncs {
     }
 
     // Returns whether the request with ID u has been processed.
-    pub fn is_request_processed(ctx: &impl ScViewCallContext) -> IsRequestProcessedCall {
+    pub fn is_request_processed(ctx: &impl ScViewClientContext) -> IsRequestProcessedCall {
         let mut f = IsRequestProcessedCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_IS_REQUEST_PROCESSED),
             params:  MutableIsRequestProcessedParams { proxy: Proxy::nil() },

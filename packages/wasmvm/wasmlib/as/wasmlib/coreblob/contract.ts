@@ -11,7 +11,7 @@ export class StoreBlobCall {
     params:  sc.MutableStoreBlobParams = new sc.MutableStoreBlobParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableStoreBlobResults = new sc.ImmutableStoreBlobResults(wasmlib.ScView.nilProxy);
 
-    public constructor(ctx: wasmlib.ScFuncCallContext) {
+    public constructor(ctx: wasmlib.ScFuncClientContext) {
         this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncStoreBlob);
     }
 }
@@ -21,7 +21,7 @@ export class GetBlobFieldCall {
     params:  sc.MutableGetBlobFieldParams = new sc.MutableGetBlobFieldParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetBlobFieldResults = new sc.ImmutableGetBlobFieldResults(wasmlib.ScView.nilProxy);
 
-    public constructor(ctx: wasmlib.ScViewCallContext) {
+    public constructor(ctx: wasmlib.ScViewClientContext) {
         this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetBlobField);
     }
 }
@@ -31,7 +31,7 @@ export class GetBlobInfoCall {
     params:  sc.MutableGetBlobInfoParams = new sc.MutableGetBlobInfoParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetBlobInfoResults = new sc.ImmutableGetBlobInfoResults(wasmlib.ScView.nilProxy);
 
-    public constructor(ctx: wasmlib.ScViewCallContext) {
+    public constructor(ctx: wasmlib.ScViewClientContext) {
         this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetBlobInfo);
     }
 }
@@ -40,14 +40,14 @@ export class ListBlobsCall {
     func:    wasmlib.ScView;
     results: sc.ImmutableListBlobsResults = new sc.ImmutableListBlobsResults(wasmlib.ScView.nilProxy);
 
-    public constructor(ctx: wasmlib.ScViewCallContext) {
+    public constructor(ctx: wasmlib.ScViewClientContext) {
         this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewListBlobs);
     }
 }
 
 export class ScFuncs {
     // Stores a new blob in the registry.
-    static storeBlob(ctx: wasmlib.ScFuncCallContext): StoreBlobCall {
+    static storeBlob(ctx: wasmlib.ScFuncClientContext): StoreBlobCall {
         const f = new StoreBlobCall(ctx);
         f.params = new sc.MutableStoreBlobParams(wasmlib.newCallParamsProxy(f.func));
         f.results = new sc.ImmutableStoreBlobResults(wasmlib.newCallResultsProxy(f.func));
@@ -55,7 +55,7 @@ export class ScFuncs {
     }
 
     //Returns the chunk associated with the given blob field name.
-    static getBlobField(ctx: wasmlib.ScViewCallContext): GetBlobFieldCall {
+    static getBlobField(ctx: wasmlib.ScViewClientContext): GetBlobFieldCall {
         const f = new GetBlobFieldCall(ctx);
         f.params = new sc.MutableGetBlobFieldParams(wasmlib.newCallParamsProxy(f.func));
         f.results = new sc.ImmutableGetBlobFieldResults(wasmlib.newCallResultsProxy(f.func));
@@ -63,7 +63,7 @@ export class ScFuncs {
     }
 
     // Returns the size of each chunk of the blob.
-    static getBlobInfo(ctx: wasmlib.ScViewCallContext): GetBlobInfoCall {
+    static getBlobInfo(ctx: wasmlib.ScViewClientContext): GetBlobInfoCall {
         const f = new GetBlobInfoCall(ctx);
         f.params = new sc.MutableGetBlobInfoParams(wasmlib.newCallParamsProxy(f.func));
         f.results = new sc.ImmutableGetBlobInfoResults(wasmlib.newCallResultsProxy(f.func));
@@ -71,7 +71,7 @@ export class ScFuncs {
     }
 
     // Returns a list of all blobs hashes in the registry and their sized.
-    static listBlobs(ctx: wasmlib.ScViewCallContext): ListBlobsCall {
+    static listBlobs(ctx: wasmlib.ScViewClientContext): ListBlobsCall {
         const f = new ListBlobsCall(ctx);
         f.results = new sc.ImmutableListBlobsResults(wasmlib.newCallResultsProxy(f.func));
         return f;

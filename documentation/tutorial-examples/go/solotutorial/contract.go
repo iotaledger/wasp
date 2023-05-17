@@ -21,13 +21,13 @@ type Funcs struct{}
 
 var ScFuncs Funcs
 
-func (sc Funcs) StoreString(ctx wasmlib.ScFuncCallContext) *StoreStringCall {
+func (sc Funcs) StoreString(ctx wasmlib.ScFuncClientContext) *StoreStringCall {
 	f := &StoreStringCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncStoreString)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
-func (sc Funcs) GetString(ctx wasmlib.ScViewCallContext) *GetStringCall {
+func (sc Funcs) GetString(ctx wasmlib.ScViewClientContext) *GetStringCall {
 	f := &GetStringCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetString)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f

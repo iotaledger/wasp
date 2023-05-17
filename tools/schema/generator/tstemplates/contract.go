@@ -25,7 +25,7 @@ export class $FuncName$+Call {
 $#if param MutableFuncNameParams
 $#if result ImmutableFuncNameResults
 
-    public constructor(ctx: wasmlib.Sc$Kind$+CallContext) {
+    public constructor(ctx: wasmlib.Sc$Kind$+ClientContext) {
         this.func = new wasmlib.Sc$initFunc$Kind(ctx, sc.HScName, sc.H$Kind$FuncName);
     }
 }
@@ -84,7 +84,7 @@ $#emit setupInitFunc
 $#if separator newline
 $#set separator $true
 $#each funcComment _funcComment
-    static $funcName(ctx: wasmlib.Sc$Kind$+CallContext): $FuncName$+Call {
+    static $funcName(ctx: wasmlib.Sc$Kind$+ClientContext): $FuncName$+Call {
 $#if ptrs setPtrs noPtrs
     }
 `,

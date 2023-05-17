@@ -9,7 +9,9 @@ use crate::*;
 use crate::host::*;
 use crate::wasmrequests::*;
 
-pub trait ScViewCallContext {
+pub trait ScViewClientContext {
+    fn client_contract(&self, h_contract: ScHname) -> ScHname;
+
     fn fn_call(&self, req: &CallRequest) -> Vec<u8> {
         sandbox(FN_CALL, &req.to_bytes())
     }
@@ -17,23 +19,19 @@ pub trait ScViewCallContext {
     fn fn_chain_id(&self) -> ScChainID {
         chain_id_from_bytes(&sandbox(FN_CHAIN_ID, &[]))
     }
-
-    fn init_view_call_context(&self, h_contract: ScHname) -> ScHname;
 }
 
-pub trait ScFuncCallContext: ScViewCallContext {
+pub trait ScFuncClientContext: ScViewClientContext {
     fn fn_post(&self, req: &PostRequest) -> Vec<u8> {
         sandbox(FN_POST, &req.to_bytes())
     }
-
-    fn init_func_call_context(&self);
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 #[derive(Clone)]
 pub struct ScView<'a> {
-    ctx: &'a dyn ScViewCallContext,
+    ctx: &'a dyn ScViewClientContext,
     h_contract: ScHname,
     h_function: ScHname,
     params: Rc<ScDict>,
@@ -41,11 +39,11 @@ pub struct ScView<'a> {
 }
 
 impl<'a> ScView<'_> {
-    pub fn new(ctx: &'a impl ScViewCallContext, h_contract: ScHname, h_function: ScHname) -> ScView {
+    pub fn new(ctx: &'a impl ScViewClientContext, h_contract: ScHname, h_function: ScHname) -> ScView {
         ScView {
             // allow context to override default hContract
             ctx: ctx,
-            h_contract: ctx.init_view_call_context(h_contract),
+            h_contract: ctx.client_contract(h_contract),
             h_function: h_function,
             params: Rc::new(ScDict::new(&[])),
             results: Rc::new(ScDict::new(&[])),
@@ -93,7 +91,7 @@ pub struct ScInitFunc<'a> {
 }
 
 impl<'a> ScInitFunc<'_> {
-    pub fn new(ctx: &'a impl ScFuncCallContext, h_contract: ScHname, h_function: ScHname) -> ScInitFunc {
+    pub fn new(ctx: &'a impl ScFuncClientContext, h_contract: ScHname, h_function: ScHname) -> ScInitFunc {
         ScInitFunc {
             view: ScView::new(ctx, h_contract, h_function),
         }
@@ -125,12 +123,12 @@ pub struct ScFunc<'a> {
     pub view: ScView<'a>,
     allowance: ScTransfer,
     delay: u32,
-    fctx: &'a dyn ScFuncCallContext,
+    fctx: &'a dyn ScFuncClientContext,
     transfer: ScTransfer,
 }
 
 impl<'a> ScFunc<'_> {
-    pub fn new(ctx: &'a impl ScFuncCallContext, h_contract: ScHname, h_function: ScHname) -> ScFunc {
+    pub fn new(ctx: &'a impl ScFuncClientContext, h_contract: ScHname, h_function: ScHname) -> ScFunc {
         ScFunc {
             view: ScView::new(ctx, h_contract, h_function),
             allowance: ScTransfer::new(),

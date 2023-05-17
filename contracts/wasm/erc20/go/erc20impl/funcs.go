@@ -18,10 +18,11 @@ func funcApprove(ctx wasmlib.ScFuncContext, f *ApproveContext) {
 	delegation := f.Params.Delegation().Value()
 	amount := f.Params.Amount().Value()
 
-	// all allowances are in the map under the name of he owner
-	allowances := f.State.AllAllowances().GetAllowancesForAgent(ctx.Caller())
+	// all allowances for the caller are stored in a sub-map
+	caller := ctx.Caller()
+	allowances := f.State.AllAllowances().GetAllowancesForAgent(caller)
 	allowances.GetUint64(delegation).SetValue(amount)
-	f.Events.Approval(amount, ctx.Caller(), delegation)
+	f.Events.Approval(amount, caller, delegation)
 }
 
 // on_init is a constructor entry point. It initializes the smart contract with the

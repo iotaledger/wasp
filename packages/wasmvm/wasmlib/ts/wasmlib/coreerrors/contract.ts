@@ -11,7 +11,7 @@ export class RegisterErrorCall {
     params:  sc.MutableRegisterErrorParams = new sc.MutableRegisterErrorParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableRegisterErrorResults = new sc.ImmutableRegisterErrorResults(wasmlib.ScView.nilProxy);
 
-    public constructor(ctx: wasmlib.ScFuncCallContext) {
+    public constructor(ctx: wasmlib.ScFuncClientContext) {
         this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncRegisterError);
     }
 }
@@ -21,7 +21,7 @@ export class GetErrorMessageFormatCall {
     params:  sc.MutableGetErrorMessageFormatParams = new sc.MutableGetErrorMessageFormatParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetErrorMessageFormatResults = new sc.ImmutableGetErrorMessageFormatResults(wasmlib.ScView.nilProxy);
 
-    public constructor(ctx: wasmlib.ScViewCallContext) {
+    public constructor(ctx: wasmlib.ScViewClientContext) {
         this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetErrorMessageFormat);
     }
 }
@@ -29,7 +29,7 @@ export class GetErrorMessageFormatCall {
 export class ScFuncs {
     // Registers an error message template.
     // note that this function must be call()ed
-    static registerError(ctx: wasmlib.ScFuncCallContext): RegisterErrorCall {
+    static registerError(ctx: wasmlib.ScFuncClientContext): RegisterErrorCall {
         const f = new RegisterErrorCall(ctx);
         f.params = new sc.MutableRegisterErrorParams(wasmlib.newCallParamsProxy(f.func));
         f.results = new sc.ImmutableRegisterErrorResults(wasmlib.newCallResultsProxy(f.func));
@@ -37,7 +37,7 @@ export class ScFuncs {
     }
 
     // Returns the message template stored for a given error code.
-    static getErrorMessageFormat(ctx: wasmlib.ScViewCallContext): GetErrorMessageFormatCall {
+    static getErrorMessageFormat(ctx: wasmlib.ScViewClientContext): GetErrorMessageFormatCall {
         const f = new GetErrorMessageFormatCall(ctx);
         f.params = new sc.MutableGetErrorMessageFormatParams(wasmlib.newCallParamsProxy(f.func));
         f.results = new sc.ImmutableGetErrorMessageFormatResults(wasmlib.newCallResultsProxy(f.func));
