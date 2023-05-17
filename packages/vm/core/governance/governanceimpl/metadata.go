@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
-// MaxMetadataLength - Version - SchemaVersion - L1Commitment - GasFeePolicy - CustomMetadataLength
 const MaxURLLength = 255
 
 func setMetadata(ctx isc.Sandbox) dict.Dict {

@@ -277,7 +277,7 @@ func TestDisallowMaintenanceDeadlock(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestCustomL1Metadata(t *testing.T) {
+func TestPublicURLL1Metadata(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	ch := env.NewChain()
 
@@ -285,25 +285,26 @@ func TestCustomL1Metadata(t *testing.T) {
 	ch.SendFromL1ToL2AccountBaseTokens(10*isc.Million, 9*isc.Million, accounts.CommonAccount(), nil)
 
 	// set max valid size custom metadata
+	publicURLMetadata := "https://iota.org"
+
 	_, err := ch.PostRequestSync(
 		solo.NewCallParams(
 			governance.Contract.Name,
 			governance.FuncSetMetadata.Name,
 			governance.ParamPublicURL,
-			[]byte(strings.Repeat("9", governanceimpl.MaxMetadataLength)),
+			publicURLMetadata,
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
 	require.NoError(t, err)
 
 	// set custom metadata
-	customMetadata := []byte("http://foobar.com")
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
 			governance.Contract.Name,
 			governance.FuncSetMetadata.Name,
 			governance.ParamPublicURL,
-			customMetadata,
+			publicURLMetadata,
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
@@ -315,7 +316,7 @@ func TestCustomL1Metadata(t *testing.T) {
 			governance.Contract.Name,
 			governance.FuncSetMetadata.Name,
 			governance.ParamPublicURL,
-			[]byte(strings.Repeat("9", governanceimpl.MaxMetadataLength+1)),
+			string(make([]byte, governanceimpl.MaxURLLength*2)),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
@@ -328,14 +329,14 @@ func TestCustomL1Metadata(t *testing.T) {
 	)
 	require.NoError(t, err)
 	resMetadata := res.Get(governance.ParamPublicURL)
-	require.Equal(t, customMetadata, resMetadata)
+	require.Equal(t, publicURLMetadata, string(resMetadata))
 
 	// assert metadata is correct on L1 alias output
 	ao, err := ch.LatestAliasOutput(chain.ActiveOrCommittedState)
 	require.NoError(t, err)
 	sm, err := transaction.StateMetadataFromBytes(ao.GetStateMetadata())
 	require.NoError(t, err)
-	require.Equal(t, customMetadata, sm.PublicURL)
+	require.Equal(t, publicURLMetadata, sm.PublicURL)
 	require.True(t, reflect.DeepEqual(sm.GasFeePolicy, gas.DefaultFeePolicy()))
 
 	// try changing the gas policy
@@ -366,7 +367,7 @@ func TestCustomL1Metadata(t *testing.T) {
 	require.NoError(t, err)
 	sm, err = transaction.StateMetadataFromBytes(ao.GetStateMetadata())
 	require.NoError(t, err)
-	require.Equal(t, customMetadata, sm.PublicURL)
+	require.Equal(t, publicURLMetadata, sm.PublicURL)
 	require.True(t, reflect.DeepEqual(sm.GasFeePolicy, newFeePolicy))
 }
 
