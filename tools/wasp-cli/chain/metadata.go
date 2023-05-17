@@ -149,11 +149,6 @@ func updateMetadata(node string, chainName string, chainID isc.ChainID, withOffL
 		log.Fatal(err)
 	}
 
-	args.Iterate("", func(key kv.Key, value []byte) bool {
-		log.Printf("Got Key: %v", key)
-		return true
-	})
-
 	params := chainclient.PostRequestParams{
 		Args: args,
 	}
