@@ -164,23 +164,20 @@ func TestTxBuilderConsistency(t *testing.T) {
 	}
 	anchorID := tpkg.RandOutputID(0)
 
-	var nativeTokenIDs []iotago.NativeTokenID
-	var txb *AnchorTransactionBuilder
-
-	initTest := func(numTokenIDs int) *mockAccountContractRead {
+	initTest := func(numTokenIDs int) (*AnchorTransactionBuilder, *mockAccountContractRead, []iotago.NativeTokenID) {
 		mockedAccounts := newMockAccountsContractRead(anchor)
-		txb = NewAnchorTransactionBuilder(
+		txb := NewAnchorTransactionBuilder(
 			anchor,
 			anchorID,
 			parameters.L1().Protocol.RentStructure.MinRent(anchor),
 			mockedAccounts.Read(),
 		)
 
-		nativeTokenIDs = make([]iotago.NativeTokenID, 0)
+		nativeTokenIDs := make([]iotago.NativeTokenID, 0)
 		for i := 0; i < numTokenIDs; i++ {
 			nativeTokenIDs = append(nativeTokenIDs, testiotago.RandNativeTokenID())
 		}
-		return mockedAccounts
+		return txb, mockedAccounts, nativeTokenIDs
 	}
 
 	// return deposit in BaseToken
@@ -241,13 +238,10 @@ func TestTxBuilderConsistency(t *testing.T) {
 		const testAmount = 10
 		const numTokenIDs = 4
 
-		mockedAccounts := initTest(numTokenIDs)
+		txb, mockedAccounts, nativeTokenIDs := initTest(numTokenIDs)
 		for i := 0; i < runTimes; i++ {
 			idx := rand.Intn(numTokenIDs)
 			consumeUTXO(t, txb, nativeTokenIDs[idx], testAmount, mockedAccounts)
-
-			txb.BuildTransactionEssence(dummyStateMetadata)
-			txb.MustBalanced()
 		}
 
 		essence, _ := txb.BuildTransactionEssence(dummyStateMetadata)
@@ -258,9 +252,9 @@ func TestTxBuilderConsistency(t *testing.T) {
 		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
 
-	runConsume := func(numTokenIDs, numRun int, amountNative uint64, mockedAccounts *mockAccountContractRead) {
+	runConsume := func(txb *AnchorTransactionBuilder, nativeTokenIDs []iotago.NativeTokenID, numRun int, amountNative uint64, mockedAccounts *mockAccountContractRead) {
 		for i := 0; i < numRun; i++ {
-			idx := i % numTokenIDs
+			idx := i % len(nativeTokenIDs)
 			consumeUTXO(t, txb, nativeTokenIDs[idx], amountNative, mockedAccounts)
 			txb.BuildTransactionEssence(dummyStateMetadata)
 			txb.MustBalanced()
@@ -272,9 +266,9 @@ func TestTxBuilderConsistency(t *testing.T) {
 		const testAmount = 10
 		const numTokenIDs = 4
 
-		mockedAccounts := initTest(numTokenIDs)
+		txb, mockedAccounts, nativeTokenIDs := initTest(numTokenIDs)
 		err := panicutil.CatchPanicReturnError(func() {
-			runConsume(numTokenIDs, runTimes, testAmount, mockedAccounts)
+			runConsume(txb, nativeTokenIDs, runTimes, testAmount, mockedAccounts)
 		}, vmexceptions.ErrInputLimitExceeded)
 		require.Error(t, err, vmexceptions.ErrInputLimitExceeded)
 
@@ -290,8 +284,8 @@ func TestTxBuilderConsistency(t *testing.T) {
 		const runTimesOutputs = 130
 		const numTokenIDs = 5
 
-		mockedAccounts := initTest(5)
-		runConsume(numTokenIDs, runTimesInputs, 10, mockedAccounts)
+		txb, mockedAccounts, nativeTokenIDs := initTest(numTokenIDs)
+		runConsume(txb, nativeTokenIDs, runTimesInputs, 10, mockedAccounts)
 		txb.BuildTransactionEssence(dummyStateMetadata)
 		txb.MustBalanced()
 
@@ -315,7 +309,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		const runTimes = 30
 		const numTokenIDs = 5
 
-		mockedAccounts := initTest(numTokenIDs)
+		txb, mockedAccounts, nativeTokenIDs := initTest(numTokenIDs)
 		for _, id := range nativeTokenIDs {
 			consumeUTXO(t, txb, id, 10, mockedAccounts)
 		}
@@ -324,7 +318,9 @@ func TestTxBuilderConsistency(t *testing.T) {
 			idx1 := rand.Intn(numTokenIDs)
 			consumeUTXO(t, txb, nativeTokenIDs[idx1], 1, mockedAccounts)
 			idx2 := rand.Intn(numTokenIDs)
-			addOutput(txb, 1, nativeTokenIDs[idx2], mockedAccounts)
+			if mockedAccounts.assets.AmountNativeToken(nativeTokenIDs[idx2]).Uint64() > 0 {
+				addOutput(txb, 1, nativeTokenIDs[idx2], mockedAccounts)
+			}
 		}
 		essence, _ := txb.BuildTransactionEssence(dummyStateMetadata)
 		txb.MustBalanced()
@@ -337,7 +333,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		const runTimes = 7
 		const numTokenIDs = 5
 
-		mockedAccounts := initTest(numTokenIDs)
+		txb, mockedAccounts, nativeTokenIDs := initTest(numTokenIDs)
 		for _, id := range nativeTokenIDs {
 			consumeUTXO(t, txb, id, 100, mockedAccounts)
 		}
@@ -357,7 +353,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		txbClone.BuildTransactionEssence(dummyStateMetadata)
 	})
 	t.Run("send some of the tokens in balance", func(t *testing.T) {
-		mockedAccounts := initTest(5)
+		txb, mockedAccounts, nativeTokenIDs := initTest(5)
 		setNativeTokenAccountsBalance := func(id iotago.NativeTokenID, amount int64) {
 			mockedAccounts.assets.AddNativeTokens(id, amount)
 			// create internal accounting outputs with 0 base tokens (they must be updated in the output side)
@@ -376,6 +372,21 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		require.EqualValues(t, 6, len(essence.Inputs))
 		require.EqualValues(t, 11, len(essence.Outputs)) // 6 + 5 internal outputs with the 10 remaining tokens
+
+		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
+		require.NoError(t, err)
+		t.Logf("essence bytes len = %d", len(essenceBytes))
+	})
+
+	t.Run("test consistency - consume send out, consume again", func(t *testing.T) {
+		txb, mockedAccounts, nativeTokenIDs := initTest(1)
+		tokenID := nativeTokenIDs[0]
+		consumeUTXO(t, txb, tokenID, 1, mockedAccounts)
+		addOutput(txb, 1, tokenID, mockedAccounts)
+		consumeUTXO(t, txb, tokenID, 1, mockedAccounts)
+
+		essence, _ := txb.BuildTransactionEssence(dummyStateMetadata)
+		txb.MustBalanced()
 
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
