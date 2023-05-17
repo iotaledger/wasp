@@ -108,8 +108,15 @@ func (sn *snapshotterImpl) createSnapshotAsync(stateIndex uint32, commitment *st
 	}()
 }
 
-// func (sn *snapshotterImpl) loadSnapshot(r io.Reader) error {
-func (sn *snapshotterImpl) loadSnapshot(s string) error {
+func (sn *snapshotterImpl) loadSnapshot(r io.Reader) error {
+	_, trieRoot, snapshot, err := readSnapshot(r)
+	if err != nil {
+		return fmt.Errorf("failed reading snapshot: %w", err)
+	}
+	err = sn.store.RestoreSnapshot(trieRoot, snapshot)
+	if err != nil {
+		return fmt.Errorf("failed restoring snapshot: %w", err)
+	}
 	return nil
 }
 

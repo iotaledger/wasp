@@ -1,6 +1,8 @@
 package sm_snapshots
 
 import (
+	"io"
+
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
 )
@@ -21,7 +23,7 @@ type SnapshotInfo interface {
 
 type snapshotter interface {
 	createSnapshotAsync(stateIndex uint32, commitment *state.L1Commitment, doneCallback func())
-	loadSnapshot(filePath string) error
+	loadSnapshot(io.Reader) error
 }
 
 type snapshotList interface {

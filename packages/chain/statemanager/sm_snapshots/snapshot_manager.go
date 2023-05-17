@@ -3,9 +3,10 @@ package sm_snapshots
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"sync"
-	//	"time"
+	"time"
 
 	"github.com/samber/lo"
 
@@ -51,6 +52,8 @@ type snapshotManagerImpl struct {
 }
 
 var _ SnapshotManager = &snapshotManagerImpl{}
+
+const downloadTimeout = 10 * time.Minute
 
 func NewSnapshotManager(
 	ctx context.Context,
@@ -184,17 +187,34 @@ func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfoCallback *snapsh
 	callback := snapshotInfoCallback.callback
 	defer close(callback)
 
+	downloadCtx, downloadCtxCancel := context.WithTimeout(smiT.ctx, downloadTimeout)
+	defer downloadCtxCancel()
+
 	url := "TODO"
-	resp, err := http.DefaultClient.Get(url)
+	request, err := http.NewRequestWithContext(downloadCtx, http.MethodGet, url, http.NoBody)
 	if err != nil {
-		callback <- err
-		return
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		callback <- fmt.Errorf("http request to %s got status code %v", url, resp.StatusCode)
+		callback <- fmt.Errorf("failed creating request with url %s: %w", url, err)
 		return
 	}
 
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		callback <- fmt.Errorf("http request to url %s failed: %w", url, err)
+		return
+	}
+	defer func() { _ = response.Body.Close() }()
+
+	if response.StatusCode != http.StatusOK {
+		callback <- fmt.Errorf("http request to %s got status code %v", url, response.StatusCode)
+		return
+	}
+
+	progressReporter := NewProgressReporter(smiT.log, fmt.Sprintf("downloading snapshot from %s", url), uint64(response.ContentLength))
+	reader := io.TeeReader(response.Body, progressReporter)
+	err = smiT.snapshotter.loadSnapshot(reader)
+	if err != nil {
+		callback <- fmt.Errorf("downoloading snapshot from %s failed: %w", url, err)
+		return
+	}
+	callback <- nil
 }
