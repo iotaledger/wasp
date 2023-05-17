@@ -25,7 +25,3 @@ type TimeProvider interface {
 	GetNow() time.Time
 	After(time.Duration) <-chan time.Time
 }
-
-type Snapshotter interface {
-	BlockCommitted(state.Block)
-}

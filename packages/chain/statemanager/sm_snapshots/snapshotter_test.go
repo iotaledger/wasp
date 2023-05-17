@@ -1,4 +1,4 @@
-package sm_gpa_utils
+package sm_snapshots
 
 import (
 	"os"
@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -18,7 +19,7 @@ func TestWriteReadDifferentStores(t *testing.T) {
 
 	var err error
 	numberOfBlocks := 10
-	factory := NewBlockFactory(t)
+	factory := sm_gpa_utils.NewBlockFactory(t)
 	blocks := factory.GetBlocks(numberOfBlocks, 1)
 	lastIndex := blocks[numberOfBlocks-1].StateIndex()
 	lastCommitment := blocks[numberOfBlocks-1].L1Commitment()
@@ -27,7 +28,7 @@ func TestWriteReadDifferentStores(t *testing.T) {
 	fileName := "TestWriteReadDifferentStores.snap"
 	f, err := os.OpenFile(fileName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 	require.NoError(t, err)
-	err = writeSnapshotToFile(lastIndex, lastCommitment.TrieRoot(), origSnapshot, f)
+	err = writeSnapshot(lastIndex, lastCommitment.TrieRoot(), origSnapshot, f)
 	require.NoError(t, err)
 	newIndex, newTrieRoot, newSnapshot, err := readSnapshotFromFile(fileName)
 	require.NoError(t, err)

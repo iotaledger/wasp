@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
@@ -69,7 +70,7 @@ func TestCruelWorld(t *testing.T) {
 			peerPubKeys,
 			netProviders[i],
 			sm_gpa_utils.NewMockedTestBlockWAL(),
-			sm_gpa_utils.NewEmptySnapshotter(),
+			sm_snapshots.NewEmptySnapshotManager(),
 			stores[i],
 			nil,
 			metrics.NewEmptyChainStateManagerMetric(),
