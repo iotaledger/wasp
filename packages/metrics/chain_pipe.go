@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -26,6 +27,7 @@ type chainPipeMetrics struct {
 	provider   *ChainMetricsProvider
 	lenMetrics map[string]prometheus.Collector
 	maxMetrics map[string]*chainPipeMaxCollector
+	regLock    *sync.RWMutex
 }
 
 type chainPipeMaxCollector struct {
@@ -39,7 +41,28 @@ func newChainPipeMetric(provider *ChainMetricsProvider, chainID isc.ChainID) *ch
 		provider:   provider,
 		lenMetrics: map[string]prometheus.Collector{},
 		maxMetrics: map[string]*chainPipeMaxCollector{},
+		regLock:    &sync.RWMutex{},
 	}
+}
+
+func (m *chainPipeMetrics) cleanup() {
+	m.regLock.Lock()
+	defer m.regLock.Unlock()
+
+	reg := m.provider.pipeLenRegistry
+	if reg == nil {
+		return
+	}
+
+	for _, collector := range m.lenMetrics {
+		reg.Unregister(collector)
+	}
+	m.lenMetrics = map[string]prometheus.Collector{}
+
+	for _, maxCollector := range m.maxMetrics {
+		reg.Unregister(maxCollector.collector)
+	}
+	m.maxMetrics = map[string]*chainPipeMaxCollector{}
 }
 
 func (m *chainPipeMetrics) makeLabels(pipeName string) prometheus.Labels {
@@ -50,6 +73,9 @@ func (m *chainPipeMetrics) makeLabels(pipeName string) prometheus.Labels {
 }
 
 func (m *chainPipeMetrics) TrackPipeLen(name string, lenFunc func() int) {
+	m.regLock.Lock()
+	defer m.regLock.Unlock()
+
 	reg := m.provider.pipeLenRegistry
 	if reg == nil {
 		return
@@ -65,13 +91,17 @@ func (m *chainPipeMetrics) TrackPipeLen(name string, lenFunc func() int) {
 		Help:        "Length of a pipe",
 		ConstLabels: m.makeLabels(name),
 	}, func() float64 { return float64(lenFunc()) })
+	m.lenMetrics[name] = collector
 
 	if err := reg.Register(collector); err != nil {
-		panic(fmt.Errorf("failed to register pipe len metric: %w", err))
+		panic(fmt.Errorf("failed to register pipe %v len metric for chain %v: %w", name, m.chainID, err))
 	}
 }
 
 func (m *chainPipeMetrics) TrackPipeLenMax(name string, key string, lenFunc func() int) {
+	m.regLock.Lock()
+	defer m.regLock.Unlock()
+
 	reg := m.provider.pipeLenRegistry
 	if reg == nil {
 		return
@@ -96,6 +126,9 @@ func (m *chainPipeMetrics) TrackPipeLenMax(name string, key string, lenFunc func
 			}
 			return float64(max)
 		})
+		if err := reg.Register(collector); err != nil {
+			panic(fmt.Errorf("failed to register pipe %v max len metric for chain %v: %w", name, m.chainID, err))
+		}
 		maxCollector = &chainPipeMaxCollector{
 			collector:  collector,
 			valueFuncs: valueFuncs,
@@ -106,6 +139,9 @@ func (m *chainPipeMetrics) TrackPipeLenMax(name string, key string, lenFunc func
 }
 
 func (m *chainPipeMetrics) ForgetPipeLenMax(name string, key string) {
+	m.regLock.Lock()
+	defer m.regLock.Unlock()
+
 	reg := m.provider.pipeLenRegistry
 	if reg == nil {
 		return

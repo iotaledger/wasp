@@ -130,7 +130,7 @@ func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, lo
 			if !ok {
 				return err
 			}
-			metrics.NewChainMetrics(chainID).WebAPIRequest(operation, status, time.Since(start))
+			metrics.GetChainMetrics(chainID).WebAPIRequest(operation, status, time.Since(start))
 
 			return err
 		}

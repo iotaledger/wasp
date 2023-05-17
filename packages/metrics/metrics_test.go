@@ -90,8 +90,8 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 
 func TestMessageMetrics(t *testing.T) {
 	ncm := NewChainMetricsProvider()
-	cncm1 := ncm.NewChainMetrics(isc.RandomChainID())
-	cncm2 := ncm.NewChainMetrics(isc.RandomChainID())
+	cncm1 := ncm.GetChainMetrics(isc.RandomChainID())
+	cncm2 := ncm.GetChainMetrics(isc.RandomChainID())
 
 	// IN State output
 	outputID1 := &InStateOutput{OutputID: iotago.OutputID{1}}
