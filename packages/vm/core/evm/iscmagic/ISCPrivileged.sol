@@ -14,10 +14,17 @@ interface ISCPrivileged {
         ISCAssets memory allowance
     ) external;
 
-    function addToAllowance(
+    function setAllowanceBaseTokens(
         address from,
         address to,
-        ISCAssets memory allowance
+        uint256 numTokens
+    ) external;
+
+    function setAllowanceNativeTokens(
+        address from,
+        address to,
+        NativeTokenID memory nativeTokenID,
+        uint256 numTokens
     ) external;
 
     function moveAllowedFunds(

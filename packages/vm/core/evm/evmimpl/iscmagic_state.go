@@ -4,11 +4,17 @@
 package evmimpl
 
 import (
+	"math"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
+	gethmath "github.com/ethereum/go-ethereum/common/math"
+	"github.com/samber/lo"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
 const (
@@ -43,11 +49,42 @@ func getAllowance(ctx isc.SandboxBase, from, to common.Address) *isc.Assets {
 	return isc.MustAssetsFromBytes(state.Get(key))
 }
 
+func setAllowanceBaseTokens(ctx isc.Sandbox, from, to common.Address, numTokens *big.Int) {
+	withAllowance(ctx, from, to, func(allowance *isc.Assets) {
+		if !numTokens.IsUint64() {
+			// Calling `approve(MAX_UINT256)` is semantically equivalent to an "infinite" allowance
+			if numTokens.Cmp(gethmath.MaxBig256) == 0 {
+				numTokens = big.NewInt(0).SetUint64(math.MaxUint64)
+			} else {
+				panic("base tokens amount must be an uint64")
+			}
+		}
+		allowance.BaseTokens = numTokens.Uint64()
+	})
+}
+
+func setAllowanceNativeTokens(ctx isc.Sandbox, from, to common.Address, nativeTokenID iscmagic.NativeTokenID, numTokens *big.Int) {
+	withAllowance(ctx, from, to, func(allowance *isc.Assets) {
+		ntSet := allowance.NativeTokens.MustSet()
+		ntSet[nativeTokenID.MustUnwrap()] = &iotago.NativeToken{
+			ID:     nativeTokenID.MustUnwrap(),
+			Amount: numTokens,
+		}
+		allowance.NativeTokens = lo.Values(ntSet)
+	})
+}
+
 func addToAllowance(ctx isc.Sandbox, from, to common.Address, add *isc.Assets) {
+	withAllowance(ctx, from, to, func(allowance *isc.Assets) {
+		allowance.Add(add)
+	})
+}
+
+func withAllowance(ctx isc.Sandbox, from, to common.Address, f func(*isc.Assets)) {
 	state := iscMagicSubrealm(ctx.State())
 	key := keyAllowance(from, to)
 	allowance := isc.MustAssetsFromBytes(state.Get(key))
-	allowance.Add(add)
+	f(allowance)
 	state.Set(key, allowance.Bytes())
 }
 
