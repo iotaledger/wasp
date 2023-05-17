@@ -12,12 +12,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/trie"
 )
 
 type snapshotterImpl struct {
@@ -46,17 +44,14 @@ func (sn *snapshotterImpl) storeSnapshot(snapshotInfo SnapshotInfo, w io.Writer)
 }
 
 func (sn *snapshotterImpl) loadSnapshot(snapshotInfo SnapshotInfo, r io.Reader) error {
-	stateIndex, trieRoot, snapshot, err := readSnapshot(r)
+	readSnapshotInfo, snapshot, err := readSnapshot(r)
 	if err != nil {
 		return fmt.Errorf("failed reading snapshot: %w", err)
 	}
-	if stateIndex != snapshotInfo.GetStateIndex() {
-		return fmt.Errorf("state index read %v is different than expected %v", stateIndex, snapshotInfo.GetStateIndex())
+	if !readSnapshotInfo.Equals(snapshotInfo) {
+		return fmt.Errorf("snapshot read %s is different than expected %v", readSnapshotInfo, snapshotInfo)
 	}
-	if !trieRoot.Equals(snapshotInfo.GetTrieRoot()) {
-		return fmt.Errorf("trie root read %s is different than expected %s", trieRoot, snapshotInfo.GetTrieRoot())
-	}
-	err = sn.store.RestoreSnapshot(trieRoot, snapshot)
+	err = sn.store.RestoreSnapshot(readSnapshotInfo.GetTrieRoot(), snapshot)
 	if err != nil {
 		return fmt.Errorf("failed restoring snapshot: %w", err)
 	}
@@ -71,10 +66,10 @@ func writeSnapshot(snapshotInfo SnapshotInfo, snapshot kvstore.KVStore, w io.Wri
 		return fmt.Errorf("failed writing block index %v: %w", snapshotInfo.GetStateIndex(), err)
 	}
 
-	trieRootBytes := snapshotInfo.GetTrieRoot().Bytes()
+	trieRootBytes := snapshotInfo.GetCommitment().Bytes()
 	err = writeBytes(trieRootBytes, w)
 	if err != nil {
-		return fmt.Errorf("failed writing trie root %s: %w", snapshotInfo.GetTrieRoot(), err)
+		return fmt.Errorf("failed writing L1 commitment %s: %w", snapshotInfo.GetCommitment(), err)
 	}
 
 	iterErr := snapshot.Iterate(kvstore.EmptyPrefix, func(key kvstore.Key, value kvstore.Value) bool {
@@ -100,52 +95,42 @@ func writeSnapshot(snapshotInfo SnapshotInfo, snapshot kvstore.KVStore, w io.Wri
 	return err
 }
 
-func readSnapshotFromFile(filePath string) (uint32, trie.Hash, kvstore.KVStore, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return 0, trie.Hash{}, nil, fmt.Errorf("failed to open snapshot file %s: %w", filePath, err)
-	}
-	defer f.Close()
-
-	return readSnapshot(f)
-}
-
-func readSnapshot(r io.Reader) (uint32, trie.Hash, kvstore.KVStore, error) {
+func readSnapshot(r io.Reader) (SnapshotInfo, kvstore.KVStore, error) {
 	indexArray, err := readBytes(r)
 	if err != nil {
-		return 0, trie.Hash{}, nil, fmt.Errorf("failed to read block index: %w", err)
+		return nil, nil, fmt.Errorf("failed to read block index: %w", err)
 	}
 	if len(indexArray) != 4 { // Size of block index, which is of type uint32: 4 bytes
-		return 0, trie.Hash{}, nil, fmt.Errorf("block index is %v instead of 4 bytes", len(indexArray))
+		return nil, nil, fmt.Errorf("block index is %v instead of 4 bytes", len(indexArray))
 	}
 	index := binary.LittleEndian.Uint32(indexArray)
 
 	trieRootArray, err := readBytes(r)
 	if err != nil {
-		return 0, trie.Hash{}, nil, fmt.Errorf("failed to read trie root: %w", err)
+		return nil, nil, fmt.Errorf("failed to read trie root: %w", err)
 	}
-	trieRoot, err := trie.HashFromBytes(trieRootArray)
+	commitment, err := state.L1CommitmentFromBytes(trieRootArray)
 	if err != nil {
-		return 0, trie.Hash{}, nil, fmt.Errorf("failed to read parse trie root: %w", err)
+		return nil, nil, fmt.Errorf("failed to parse L1 commitment: %w", err)
 	}
 
 	snapshot := mapdb.NewMapDB()
 	for key, err := readBytes(r); !errors.Is(err, io.EOF); key, err = readBytes(r) {
 		if err != nil {
-			return 0, trie.Hash{}, nil, fmt.Errorf("failed to read key: %w", err)
+			return nil, nil, fmt.Errorf("failed to read key: %w", err)
 		}
 
 		value, err := readBytes(r)
 		if err != nil {
-			return 0, trie.Hash{}, nil, fmt.Errorf("failed to read value of key %v: %w", key, err)
+			return nil, nil, fmt.Errorf("failed to read value of key %v: %w", key, err)
 		}
 
 		err = snapshot.Set(key, value)
 		if err != nil {
-			return 0, trie.Hash{}, nil, fmt.Errorf("failed to set key's %v value %v to snapshot: %w", key, value, err)
+			return nil, nil, fmt.Errorf("failed to set key's %v value %v to snapshot: %w", key, value, err)
 		}
 	}
-	return index, trieRoot, snapshot, nil
+	return NewSnapshotInfo(index, commitment), snapshot, nil
 }
 
 func tempSnapshotFileName(blockHash state.BlockHash) string {

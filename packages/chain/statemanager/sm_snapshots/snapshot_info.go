@@ -1,6 +1,8 @@
 package sm_snapshots
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
 )
@@ -33,4 +35,18 @@ func (si *snapshotInfoImpl) GetTrieRoot() trie.Hash {
 
 func (si *snapshotInfoImpl) GetBlockHash() state.BlockHash {
 	return si.GetCommitment().BlockHash()
+}
+
+func (si *snapshotInfoImpl) String() string {
+	return fmt.Sprintf("%v:%s", si.GetStateIndex(), si.GetCommitment())
+}
+
+func (si *snapshotInfoImpl) Equals(other SnapshotInfo) bool {
+	if si == nil {
+		return other == nil
+	}
+	if si.GetStateIndex() != other.GetStateIndex() {
+		return false
+	}
+	return si.GetCommitment().Equals(other.GetCommitment())
 }

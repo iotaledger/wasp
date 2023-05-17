@@ -19,6 +19,8 @@ type SnapshotInfo interface {
 	GetCommitment() *state.L1Commitment
 	GetTrieRoot() trie.Hash
 	GetBlockHash() state.BlockHash
+	String() string
+	Equals(SnapshotInfo) bool
 }
 
 type snapshotter interface {
