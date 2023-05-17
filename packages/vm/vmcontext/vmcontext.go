@@ -39,6 +39,7 @@ type VMContext struct {
 	txsnapshot          *vmtxbuilder.AnchorTransactionBuilder
 	gasBurnedTotal      uint64
 	gasFeeChargedTotal  uint64
+	unprocessable       []isc.OnLedgerRequest // list of request that were found to be unprocessable during this VM execution
 
 	// ---- request context
 	chainInfo          *isc.ChainInfo
@@ -101,6 +102,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		blockContext:        make(map[isc.Hname]interface{}),
 		entropy:             task.Entropy,
 		callStack:           make([]*callContext, 0),
+		unprocessable:       make([]isc.OnLedgerRequest, 0),
 	}
 	if task.EnableGasBurnLogging {
 		ret.gasBurnLog = gas.NewGasBurnLog()
@@ -259,6 +261,8 @@ func (vmctx *VMContext) closeBlockContexts() {
 // 1. NativeTokens
 // 2. Foundries
 // 3. NFTs
+// 4. produced outputs
+// 5. unprocessable requests
 func (vmctx *VMContext) saveInternalUTXOs() {
 	// create a mock AO, with a nil statecommitment, just to calculate changes in the minimum SD
 	mockAO := vmctx.txbuilder.CreateAnchorOutput(vmctx.StateMetadata(state.L1CommitmentNil))
@@ -274,11 +278,13 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 		})
 	}
 
-	nativeTokenIDs, nativeTokensToBeRemoved := vmctx.txbuilder.NativeTokenRecordsToBeUpdated()
-	nativeTokensOutputsToBeUpdated := vmctx.txbuilder.NativeTokenOutputsByTokenIDs(nativeTokenIDs)
+	nativeTokenIDsToBeUpdated, nativeTokensToBeRemoved := vmctx.txbuilder.NativeTokenRecordsToBeUpdated()
+	// IMPORTANT: do not iterate by this map, order of the slice above must be respected
+	nativeTokensMap := vmctx.txbuilder.NativeTokenOutputsByTokenIDs(nativeTokenIDsToBeUpdated)
 
-	foundryIDs, foundriesToBeRemoved := vmctx.txbuilder.FoundriesToBeUpdated()
-	foundrySNToBeUpdated := vmctx.txbuilder.FoundryOutputsBySN(foundryIDs)
+	foundryIDsToBeUpdated, foundriesToBeRemoved := vmctx.txbuilder.FoundriesToBeUpdated()
+	// IMPORTANT: do not iterate by this map, order of the slice above must be respected
+	foundryOutputsMap := vmctx.txbuilder.FoundryOutputsBySN(foundryIDsToBeUpdated)
 
 	NFTOutputsToBeAdded, NFTOutputsToBeRemoved := vmctx.txbuilder.NFTOutputsToBeUpdated()
 
@@ -287,9 +293,9 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		// update native token outputs
-		for _, out := range nativeTokensOutputsToBeUpdated {
-			vmctx.task.Log.Debugf("saving NT %s, outputIndex: %d", out.NativeTokens[0].ID, outputIndex)
-			accounts.SaveNativeTokenOutput(s, out, blockIndex, outputIndex)
+		for _, ntID := range nativeTokenIDsToBeUpdated {
+			vmctx.task.Log.Debugf("saving NT %s, outputIndex: %d", ntID, outputIndex)
+			accounts.SaveNativeTokenOutput(s, nativeTokensMap[ntID], blockIndex, outputIndex)
 			outputIndex++
 		}
 		for _, id := range nativeTokensToBeRemoved {
@@ -298,9 +304,9 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 		}
 
 		// update foundry UTXOs
-		for _, out := range foundrySNToBeUpdated {
-			vmctx.task.Log.Debugf("saving foundry %d, outputIndex: %d", out.SerialNumber, outputIndex)
-			accounts.SaveFoundryOutput(s, out, blockIndex, outputIndex)
+		for _, foundryID := range foundryIDsToBeUpdated {
+			vmctx.task.Log.Debugf("saving foundry %d, outputIndex: %d", foundryID, outputIndex)
+			accounts.SaveFoundryOutput(s, foundryOutputsMap[foundryID], blockIndex, outputIndex)
 			outputIndex++
 		}
 		for _, sn := range foundriesToBeRemoved {
@@ -318,6 +324,19 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 			vmctx.task.Log.Debugf("deleting NFT %s", out.NFTID)
 			accounts.DeleteNFTOutput(s, out.NFTID)
 		}
+	})
+
+	// add unprocessable requests
+	vmctx.storeUnprocessable(outputIndex)
+}
+
+func (vmctx *VMContext) RemoveUnprocessable(results []*vm.RequestResult) {
+	vmctx.withStateUpdate(func() {
+		vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
+			for _, r := range results {
+				blocklog.RemoveUnprocessable(s, r.Request.ID())
+			}
+		})
 	})
 }
 

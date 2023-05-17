@@ -118,6 +118,7 @@ type ConsGr struct {
 	netDisconnect               context.CancelFunc
 	net                         peering.NetworkProvider
 	ctx                         context.Context
+	pipeMetrics                 metrics.IChainPipeMetrics
 	log                         *logger.Logger
 }
 
@@ -136,6 +137,7 @@ func New(
 	redeliveryPeriod time.Duration,
 	printStatusPeriod time.Duration,
 	chainMetrics metrics.IChainConsensusMetrics,
+	pipeMetrics metrics.IChainPipeMetrics,
 	log *logger.Logger,
 ) *ConsGr {
 	cmtPubKey := dkShare.GetSharedPublic()
@@ -163,8 +165,12 @@ func New(
 		netDisconnect:     nil, // Set bellow.
 		net:               net,
 		ctx:               ctx,
+		pipeMetrics:       pipeMetrics,
 		log:               log,
 	}
+
+	pipeMetrics.TrackPipeLenMax("cons-gr-netRecvPipe", netPeeringID.String(), cgr.netRecvPipe.Len)
+
 	constInstRaw := cons.New(chainID, chainStore, me, myNodeIdentity.GetPrivateKey(), dkShare, procCache, netPeeringID[:], gpa.NodeIDFromPublicKey, log).AsGPA()
 	cgr.consInst = gpa.NewAckHandler(me, constInstRaw, redeliveryPeriod)
 
@@ -202,6 +208,7 @@ func (cgr *ConsGr) Time(t time.Time) {
 func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 	defer util.ExecuteIfNotNil(cgr.netDisconnect)
 	defer func() {
+		cgr.pipeMetrics.ForgetPipeLenMax("cons-gr-netRecvPipe", cgr.netPeeringID.String())
 		cgr.netRecvPipe.Discard()
 	}()
 

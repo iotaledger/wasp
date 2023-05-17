@@ -186,3 +186,7 @@ func (s *contractSandbox) totalGasTokens() *isc.Assets {
 	amount := s.Ctx.(*VMContext).gasMaxTokensToSpendForGasFee
 	return isc.NewAssetsBaseTokens(amount)
 }
+
+func (s *contractSandbox) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
+	s.Ctx.(*VMContext).RetryUnprocessable(req, blockIndex, outputIndex)
+}

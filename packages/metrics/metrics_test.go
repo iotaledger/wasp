@@ -248,3 +248,17 @@ func checkMetricsValues[T any, V any](t *testing.T, expectedTotal uint32, expect
 		require.Equal(t, expectedLastMessage, metrics.LastMessage())
 	}
 }
+
+func TestPeeringMetrics(t *testing.T) {
+	pmp := NewPeeringMetricsProvider()
+
+	pmp.RecvEnqueued(100, 1)
+	pmp.RecvEnqueued(1009, 2)
+	pmp.RecvDequeued(1009, 1)
+	pmp.RecvEnqueued(100, 0)
+
+	pmp.SendEnqueued(100, 1)
+	pmp.SendEnqueued(1009, 2)
+	pmp.SendDequeued(1009, 1)
+	pmp.SendEnqueued(100, 0)
+}

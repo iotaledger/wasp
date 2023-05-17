@@ -19,6 +19,10 @@ func TokenIDFromString(s string) []byte {
 	return ret
 }
 
+func ArgsToFungibleTokensStr(args []string) []string {
+	return strings.Split(strings.Join(args, ""), ",")
+}
+
 func ParseFungibleTokens(args []string) *isc.Assets {
 	tokens := isc.NewEmptyAssets()
 	for _, tr := range args {

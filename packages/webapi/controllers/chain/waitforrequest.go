@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
@@ -47,6 +48,20 @@ func (c *Controller) waitForRequestToFinish(e echo.Context) error {
 	receipt, vmError, err := c.chainService.WaitForRequestProcessed(e.Request().Context(), chainID, requestID, waitForL1Confirmation, timeout)
 	if err != nil {
 		return err
+	}
+
+	if receipt == nil {
+		// unprocessable request just return empty receipt (TODO maybe we need a better way to communicate this, but its good enough for now)
+		return e.JSON(http.StatusOK, models.ReceiptResponse{
+			Request:       "",
+			Error:         &models.ReceiptError{},
+			GasBudget:     "",
+			GasBurned:     "",
+			GasFeeCharged: "",
+			BlockIndex:    0,
+			RequestIndex:  0,
+			GasBurnLog:    []gas.BurnRecord{},
+		})
 	}
 
 	mappedReceipt := models.MapReceiptResponse(receipt, vmError)

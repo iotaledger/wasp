@@ -21,11 +21,22 @@ The `blocklog` contract is one of the [core contracts](overview.md) on each IOTA
 The `blocklog` contract keeps track of the blocks of requests processed by the chain, providing views to get request
 status, receipts, block, and event details.
 
+---
+
 ## Entry Points
 
-The `blocklog` core contract does not contain any entry points which modify its state.
+### `retryUnprocessable(u requestID)`
 
-The only way to modify the `blocklog` state is by submitting requests for processing to the chain.
+Tries to retry a given request that was marked as "unprocessable".
+
+:::note
+"Unprocessable" requests are on-ledger requests that do not include enough base tokens to cover the deposit fees (example if an user tries to deposit many native tokens in a single output but only includes the minimum possible amount of base tokens). Such requests will be collected into an "unprocessable list" and users are able to deposit more funds onto their on-chain account and retry them afterwards.
+:::
+
+#### Parameters
+
+- `u` ([`isc::RequestID`](https://github.com/iotaledger/wasp/blob/develop/packages/isc/request.go)): The requestID to be retried. (sender of the retry request must match the sender of the "unprocessable" request)
+
 
 ---
 
@@ -146,6 +157,20 @@ Returns the current state controller and governing addresses and at what block i
   address.
 - `g`: ([`iotago::Address`](https://github.com/iotaledger/iota.go/blob/develop/address.go)) The governing address.
 - `n` (`uint32`):The block index where the specified addresses were set.
+
+
+### `hasUnprocessable(u requestID)`
+
+Asserts whether or not a given requestID (`u`) is present in the "unprocessable list"
+
+#### Parameters
+
+- `u` ([`isc::RequestID`](https://github.com/iotaledger/wasp/blob/develop/packages/isc/request.go)): The requestID to be checked
+
+#### Returns
+
+- `x` ([`bool`]) Whether or not the request exists in the "unprocessable list"
+
 
 ---
 

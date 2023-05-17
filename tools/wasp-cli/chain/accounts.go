@@ -183,7 +183,8 @@ func initDepositCmd() *cobra.Command {
 			chainID := config.GetChain(chain)
 			if strings.Contains(args[0], ":") {
 				// deposit to own agentID
-				tokens := util.ParseFungibleTokens(args)
+				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args))
+
 				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotago.Transaction, error) {
 					client := cliclients.WaspClient(node)
 
@@ -199,8 +200,7 @@ func initDepositCmd() *cobra.Command {
 				// deposit to some other agentID
 				agentID, err := isc.NewAgentIDFromString(args[0])
 				log.Check(err)
-				tokensStr := strings.Split(strings.Join(args[1:], ""), ",")
-				tokens := util.ParseFungibleTokens(tokensStr)
+				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))
 
 				allowance := tokens.Clone()
 

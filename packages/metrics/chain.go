@@ -13,6 +13,7 @@ import (
 
 const (
 	labelNameChain                                  = "chain"
+	labelNamePipeName                               = "pipe_name"
 	labelNameMessageType                            = "message_type"
 	labelNameInMilestone                            = "in_milestone"
 	labelNameInStateOutputMetrics                   = "in_state_output"
@@ -32,6 +33,7 @@ const (
 )
 
 type IChainMetrics interface {
+	IChainPipeMetrics
 	IChainBlockWALMetrics
 	IChainConsensusMetrics
 	IChainMempoolMetrics
@@ -97,6 +99,7 @@ func (m *messageMetric[T]) LastMessage() T {
 }
 
 type emptyChainMetrics struct {
+	IChainPipeMetrics
 	IChainBlockWALMetrics
 	IChainConsensusMetrics
 	IChainMempoolMetrics
@@ -109,6 +112,7 @@ type emptyChainMetrics struct {
 
 func NewEmptyChainMetrics() IChainMetrics {
 	return &emptyChainMetrics{
+		IChainPipeMetrics:         NewEmptyChainPipeMetrics(),
 		IChainBlockWALMetrics:     NewEmptyChainBlockWALMetrics(),
 		IChainConsensusMetrics:    NewEmptyChainConsensusMetric(),
 		IChainMempoolMetrics:      NewEmptyChainMempoolMetric(),
@@ -121,6 +125,7 @@ func NewEmptyChainMetrics() IChainMetrics {
 }
 
 type chainMetrics struct {
+	*chainPipeMetrics
 	*chainBlockWALMetrics
 	*chainConsensusMetric
 	*chainMempoolMetric
@@ -133,6 +138,7 @@ type chainMetrics struct {
 
 func newChainMetrics(provider *ChainMetricsProvider, chainID isc.ChainID) *chainMetrics {
 	return &chainMetrics{
+		chainPipeMetrics:        newChainPipeMetric(provider, chainID),
 		chainBlockWALMetrics:    newChainBlockWALMetrics(provider, chainID),
 		chainConsensusMetric:    newChainConsensusMetric(provider, chainID),
 		chainMempoolMetric:      newChainMempoolMetric(provider, chainID),
@@ -146,6 +152,10 @@ func newChainMetrics(provider *ChainMetricsProvider, chainID isc.ChainID) *chain
 
 // ChainMetricsProvider holds all metrics for all chains per chain
 type ChainMetricsProvider struct {
+	// We use Func variant of a metric here, thus we register them
+	// explicitly when they are created. Therefore we need a registry here.
+	pipeLenRegistry *prometheus.Registry
+
 	// blockWAL
 	blockWALFailedWrites  *prometheus.CounterVec
 	blockWALFailedReads   *prometheus.CounterVec
@@ -643,6 +653,10 @@ func (m *ChainMetricsProvider) PrometheusCollectorsChainNodeConn() []prometheus.
 		m.ncTXPublishStarted,
 		m.ncTXPublishResult,
 	}
+}
+
+func (m *ChainMetricsProvider) PrometheusRegisterChainPipeMetrics(reg *prometheus.Registry) {
+	m.pipeLenRegistry = reg
 }
 
 func (m *ChainMetricsProvider) PrometheusCollectorsWebAPI() []prometheus.Collector {
