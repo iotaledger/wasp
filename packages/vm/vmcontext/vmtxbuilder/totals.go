@@ -105,7 +105,7 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 		s.Add(s, ntb.getOutValue())
 		totals.NativeTokenBalances[id] = s
 		// sum up storage deposit in inputs of internal UTXOs
-		totals.TotalBaseTokensInStorageDeposit += ntb.out.Amount
+		totals.TotalBaseTokensInStorageDeposit += ntb.accountingOutput.Amount
 	}
 	for _, f := range txb.invokedFoundries {
 		if !f.producesAccountingOutput() {

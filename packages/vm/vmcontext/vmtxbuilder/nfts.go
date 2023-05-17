@@ -13,7 +13,7 @@ type nftIncluded struct {
 	ID          iotago.NFTID
 	outputID    iotago.OutputID // only available when the input is already accounted for (NFT was deposited in a previous block)
 	in          *iotago.NFTOutput
-	out         *iotago.NFTOutput
+	out         *iotago.NFTOutput // this is not the same as in the `nativeTokenBalance` struct, this can be the accounting output, or the output leaving the chain. // TODO should refactor to follow the same logic so its easier to grok
 	sentOutside bool
 }
 

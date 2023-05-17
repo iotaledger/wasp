@@ -103,10 +103,13 @@ func (txb *AnchorTransactionBuilder) SplitAssetsIntoInternalOutputs(req isc.OnLe
 	for _, nativeToken := range req.Assets().NativeTokens {
 		// ensure this NT is in the txbuilder, update it
 		nt := txb.ensureNativeTokenBalance(nativeToken.ID)
-		sdBefore := nt.out.Amount
+		sdBefore := nt.accountingOutput.Amount
+		if util.IsZeroBigInt(nt.getOutValue()) {
+			sdBefore = 0 // accounting output was zero'ed this block, meaning the existing SD was released
+		}
 		nt.add(nativeToken.Amount)
 		nt.updateMinSD()
-		sdAfter := nt.out.Amount
+		sdAfter := nt.accountingOutput.Amount
 		// user pays for the difference (in case SD has increased, will be the full SD cost if the output is new)
 		requiredSD += sdAfter - sdBefore
 	}
@@ -236,7 +239,7 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 	// internal native token outputs
 	for _, nativeTokenBalance := range txb.nativeTokenOutputsSorted() {
 		if nativeTokenBalance.requiresExistingAccountingUTXOAsInput() {
-			outputID := nativeTokenBalance.outputID
+			outputID := nativeTokenBalance.accountingoutputID
 			outputIDs = append(outputIDs, outputID)
 			inputs[outputID] = nativeTokenBalance.in
 		}
@@ -317,7 +320,7 @@ func (txb *AnchorTransactionBuilder) outputs(stateMetadata []byte) iotago.Output
 	nativeTokensToBeUpdated, _ := txb.NativeTokenRecordsToBeUpdated()
 	for _, id := range nativeTokensToBeUpdated {
 		// create one output for each token ID of internal account
-		ret = append(ret, txb.balanceNativeTokens[id].out)
+		ret = append(ret, txb.balanceNativeTokens[id].accountingOutput)
 	}
 	// creating outputs for updated foundries
 	foundriesToBeUpdated, _ := txb.FoundriesToBeUpdated()
