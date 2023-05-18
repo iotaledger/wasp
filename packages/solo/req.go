@@ -188,12 +188,6 @@ func (r *CallParams) NewRequestOffLedger(chainID isc.ChainID, keyPair *cryptolib
 	return ret.Sign(keyPair)
 }
 
-func (ch *Chain) mustStardustVM() {
-	if ch.bypassStardustVM {
-		panic("Solo: StardustVM context expected")
-	}
-}
-
 func parseParams(params []interface{}) dict.Dict {
 	if len(params) == 1 {
 		return params[0].(dict.Dict)
@@ -358,8 +352,6 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 
 // LastReceipt returns the receipt for the latest request processed by the chain, will return nil if the last block is empty
 func (ch *Chain) LastReceipt() *isc.Receipt {
-	ch.mustStardustVM()
-
 	lastBlockReceipts := ch.GetRequestReceiptsForBlock()
 	if len(lastBlockReceipts) == 0 {
 		return nil
@@ -533,7 +525,7 @@ func (ch *Chain) GetMerkleProof(scHname isc.Hname, key []byte) *trie.MerkleProof
 
 // GetL1Commitment returns state commitment taken from the anchor output
 func (ch *Chain) GetL1Commitment() *state.L1Commitment {
-	anchorOutput := ch.GetAnchorOutput()
+	anchorOutput := ch.GetAnchorOutputFromL1()
 	ret, err := transaction.L1CommitmentFromAliasOutput(anchorOutput.GetAliasOutput())
 	require.NoError(ch.Env.T, err)
 	return ret

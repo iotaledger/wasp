@@ -372,9 +372,8 @@ func (env *Solo) requestsByChain(tx *iotago.Transaction) map[isc.ChainID][]isc.R
 	return ret
 }
 
-// AddRequestsToChainMempoolWaitUntilInbufferEmpty adds all the requests to the chain mempool,
-// then waits for the in-buffer to be empty, before resuming VM execution
-func (env *Solo) AddRequestsToChainMempoolWaitUntilInbufferEmpty(ch *Chain, reqs []isc.Request, timeout ...time.Duration) {
+// AddRequestsToMempool adds all the requests to the chain mempool,
+func (env *Solo) AddRequestsToMempool(ch *Chain, reqs []isc.Request, timeout ...time.Duration) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 	ch.runVMMutex.Lock()
@@ -404,7 +403,7 @@ func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
 	}
 }
 
-func (ch *Chain) GetAnchorOutput() *isc.AliasOutputWithID {
+func (ch *Chain) GetAnchorOutputFromL1() *isc.AliasOutputWithID {
 	outputs := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
 	require.EqualValues(ch.Env.T, 1, len(outputs))
 	for outputID, aliasOutput := range outputs {

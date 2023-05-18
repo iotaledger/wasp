@@ -519,7 +519,7 @@ func TestAccountBalances(t *testing.T) {
 			l1BaseTokens(chainOwnerAddr)+l1BaseTokens(senderAddr)+l1BaseTokens(ch.ChainID.AsAddress()),
 		)
 
-		anchor := ch.GetAnchorOutput().GetAliasOutput()
+		anchor := ch.GetAnchorOutputFromL1().GetAliasOutput()
 		require.EqualValues(t, l1BaseTokens(ch.ChainID.AsAddress()), anchor.Deposit())
 
 		require.LessOrEqual(t, len(ch.L2Accounts()), 3)

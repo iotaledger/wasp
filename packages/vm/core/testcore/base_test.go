@@ -42,7 +42,7 @@ func TestInitLoad(t *testing.T) {
 
 	cassets := ch.L2CommonAccountAssets()
 	require.EqualValues(t,
-		originAmount-parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput()),
+		originAmount-parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput()),
 		cassets.BaseTokens)
 	require.EqualValues(t, 0, len(cassets.NativeTokens))
 
@@ -95,7 +95,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	someUserWallet, _ := env.NewKeyPairWithFunds()
 	ch.DepositBaseTokensToL2(1*isc.Million, someUserWallet)
 	// AliasOutput minSD changes from block #0 to block #1 because the "state metadata" part gets bigger
-	totalAccountedL2Tokens += originAOSD - parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
+	totalAccountedL2Tokens += originAOSD - parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 	ch.AssertL2TotalBaseTokens(totalAccountedL2Tokens + 1*isc.Million)
 	ch.AssertControlAddresses()
 }
@@ -105,7 +105,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no contract,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		ch, _ := env.NewChainExt(nil, 0, "chain")
-		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
+		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 
 		totalBaseTokensBefore := ch.L2TotalBaseTokens()
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
@@ -122,7 +122,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
 
 		// AO minSD changes from block 0 to block 1 because the statemedata grows
-		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
+		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 		changeInAOminSD := newAOSD - oldAOSD
 
 		reqStorageDeposit := GetStorageDeposit(reqTx)[0]
@@ -140,7 +140,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no contract,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		ch, _ := env.NewChainExt(nil, 0, "chain")
-		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
+		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID := isc.NewAgentID(senderAddr)
@@ -161,7 +161,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
 
 		// AO minSD changes from block 0 to block 1 because the statemedata grows
-		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
+		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 		changeInAOminSD := newAOSD - oldAOSD
 
 		reqStorageDeposit := GetStorageDeposit(reqTx)[0]
@@ -183,7 +183,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no EP,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		ch, _ := env.NewChainExt(nil, 0, "chain")
-		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
+		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 
 		totalBaseTokensBefore := ch.L2TotalBaseTokens()
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
@@ -203,7 +203,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		rec := ch.LastReceipt()
 
 		// AO minSD changes from block 0 to block 1 because the statemedata grows
-		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
+		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 		changeInAOminSD := newAOSD - oldAOSD
 
 		// total base tokens on chain increase by the storage deposit from the request tx
@@ -218,7 +218,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no EP,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		ch, _ := env.NewChainExt(nil, 0, "chain")
-		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
+		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID := isc.NewAgentID(senderAddr)
@@ -239,7 +239,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
 
 		// AO minSD changes from block 0 to block 1 because the statemedata grows
-		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutput().GetAliasOutput())
+		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 		changeInAOminSD := newAOSD - oldAOSD
 
 		reqStorageDeposit := GetStorageDeposit(reqTx)[0]
@@ -512,7 +512,7 @@ func TestMessageSize(t *testing.T) {
 	err := ch.DeployContract(nil, sbtestsc.Contract.Name, sbtestsc.Contract.ProgramHash)
 	require.NoError(t, err)
 
-	initialBlockIndex := ch.GetLatestBlockInfo().BlockIndex
+	initialBlockIndex := ch.GetLatestBlockInfo().BlockIndex()
 
 	reqSize := 5_000 // bytes
 	storageDeposit := 1 * isc.Million
@@ -535,11 +535,11 @@ func TestMessageSize(t *testing.T) {
 		reqs[i] = req
 	}
 
-	env.AddRequestsToChainMempoolWaitUntilInbufferEmpty(ch, reqs)
+	env.AddRequestsToMempool(ch, reqs)
 	ch.WaitUntilMempoolIsEmpty()
 
 	// request outputs are so large that they have to be processed in two separate blocks
-	require.Equal(t, initialBlockIndex()+2, ch.GetLatestBlockInfo().BlockIndex())
+	require.Equal(t, initialBlockIndex+2, ch.GetLatestBlockInfo().BlockIndex())
 
 	for _, req := range reqs {
 		receipt, err := ch.GetRequestReceipt(req.ID())
