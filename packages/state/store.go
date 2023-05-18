@@ -139,6 +139,16 @@ func (s *store) Commit(d StateDraft) Block {
 	return block
 }
 
+func (s *store) Prune(trieRoot trie.Hash) (trie.PruneStats, error) {
+	buf, bufDB := s.db.buffered()
+	stats, err := trie.Prune(bufDB.trieStore(), trieRoot)
+	if err != nil {
+		return trie.PruneStats{}, err
+	}
+	s.db.commitToDB(buf.muts)
+	return stats, nil
+}
+
 func (s *store) SetLatest(trieRoot trie.Hash) error {
 	_, err := s.BlockByTrieRoot(trieRoot)
 	if err != nil {

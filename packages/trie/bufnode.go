@@ -31,13 +31,13 @@ func newBufferedNode(n *NodeData, triePath []byte) *bufferedNode {
 }
 
 // commitNode re-calculates node commitment and, recursively, its children commitments
-func (n *bufferedNode) commitNode(triePartition, valuePartition KVWriter) {
+func (n *bufferedNode) commitNode(triePartition, valuePartition KVWriter, refcounts *Refcounts) {
 	childUpdates := make(map[byte]*Hash)
 	for idx, child := range n.uncommittedChildren {
 		if child == nil {
 			childUpdates[idx] = nil
 		} else {
-			child.commitNode(triePartition, valuePartition)
+			child.commitNode(triePartition, valuePartition, refcounts)
 			childUpdates[idx] = &child.nodeData.Commitment
 		}
 	}
@@ -47,6 +47,8 @@ func (n *bufferedNode) commitNode(triePartition, valuePartition KVWriter) {
 	if len(n.value) > 0 {
 		valuePartition.Set(n.terminal.Bytes(), n.value)
 	}
+
+	refcounts.Inc(n)
 }
 
 func (n *bufferedNode) mustPersist(w KVWriter) {

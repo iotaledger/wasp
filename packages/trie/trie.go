@@ -71,18 +71,20 @@ func (tr *TrieUpdatable) SetRoot(h Hash) error {
 // The nodes and values are written into separate partitions
 // The buffered nodes are garbage collected, except the mutated ones
 // By default, it sets new root in the end and clears the trie reader cache. To override, use notSetNewRoot = true
-func (tr *TrieUpdatable) Commit(store KVWriter) Hash {
+func (tr *TrieUpdatable) Commit(store KVStore) Hash {
 	triePartition := makeWriterPartition(store, partitionTrieNodes)
 	valuePartition := makeWriterPartition(store, partitionValues)
+	refcounts := newRefcounts(store)
 
-	tr.mutatedRoot.commitNode(triePartition, valuePartition)
+	tr.mutatedRoot.commitNode(triePartition, valuePartition, refcounts)
 	// set uncommitted children in the root to empty -> the GC will collect the whole tree of buffered nodes
 	tr.mutatedRoot.uncommittedChildren = make(map[byte]*bufferedNode)
 
-	ret := tr.mutatedRoot.nodeData.Commitment
-	err := tr.SetRoot(ret) // always clear cache because NodeData-s are mutated and not valid anymore
+	newTrieRoot := tr.mutatedRoot.nodeData.Commitment
+	err := tr.SetRoot(newTrieRoot) // always clear cache because NodeData-s are mutated and not valid anymore
 	assertNoError(err)
-	return ret
+
+	return newTrieRoot
 }
 
 func (tr *TrieUpdatable) newTerminalNode(triePath, pathExtension, value []byte) *bufferedNode {
@@ -94,8 +96,8 @@ func (tr *TrieUpdatable) newTerminalNode(triePath, pathExtension, value []byte) 
 
 // DebugDump prints the structure of the tree to stdout, for debugging purposes.
 func (tr *TrieReader) DebugDump() {
-	tr.IterateNodes(func(nodeKey []byte, n *NodeData, depth int) bool {
+	tr.IterateNodes(func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction {
 		fmt.Printf("%s %v %s\n", strings.Repeat(" ", len(nodeKey)), nodeKey, n)
-		return true
+		return IterateContinue
 	})
 }

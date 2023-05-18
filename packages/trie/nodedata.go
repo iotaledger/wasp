@@ -230,15 +230,14 @@ func (n *NodeData) Read(r io.Reader) error {
 	return nil
 }
 
-func (n *NodeData) iterateChildren(f func(byte, Hash) bool) bool {
+func (n *NodeData) iterateChildren(f func(byte, Hash) bool) {
 	for i, v := range n.Children {
 		if v != nil {
 			if !f(byte(i), *v) {
-				return false
+				return
 			}
 		}
 	}
-	return true
 }
 
 // update computes update to the node data and its commitment.

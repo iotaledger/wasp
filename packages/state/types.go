@@ -67,6 +67,9 @@ type Store interface {
 	// ExtractBlock performs a dry-run of Commit, discarding all changes that would be
 	// made to the DB.
 	ExtractBlock(StateDraft) Block
+
+	// Prune deletes the trie with the given root from the DB
+	Prune(trie.Hash) (trie.PruneStats, error)
 }
 
 // A Block contains the mutations between the previous and current states,

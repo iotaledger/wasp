@@ -67,6 +67,10 @@ func (im InMemoryKVStore) Set(k, v []byte) {
 	}
 }
 
+func (im InMemoryKVStore) Del(k []byte) {
+	delete(im, string(k))
+}
+
 func (im InMemoryKVStore) Iterator(prefix []byte) trie.KVIterator {
 	return &simpleInMemoryIterator{
 		store:  im,
