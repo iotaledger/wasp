@@ -348,8 +348,6 @@ func (ch *Chain) CommonAccount() isc.AgentID {
 
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain
 func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
-	ch.mustStardustVM()
-
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name)
 	require.NoError(ch.Env.T, err)
 	resultDecoder := kvdecoder.New(ret, ch.Log())
@@ -428,8 +426,6 @@ func (ch *Chain) GetRequestReceipt(reqID isc.RequestID) (*blocklog.RequestReceip
 
 // GetRequestReceiptsForBlock returns all request log records for a particular block
 func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.RequestReceipt {
-	ch.mustStardustVM()
-
 	var blockIdx uint32
 	if len(blockIndex) == 0 {
 		blockIdx = ch.LatestBlockIndex()
@@ -651,7 +647,7 @@ func (*Chain) GetTimeData() time.Time {
 
 // LatestAliasOutput implements chain.Chain
 func (ch *Chain) LatestAliasOutput(freshness chain.StateFreshness) (*isc.AliasOutputWithID, error) {
-	ao := ch.GetAnchorOutput()
+	ao := ch.GetAnchorOutputFromL1()
 	if ao == nil {
 		return nil, fmt.Errorf("have no latest alias output")
 	}
@@ -660,9 +656,12 @@ func (ch *Chain) LatestAliasOutput(freshness chain.StateFreshness) (*isc.AliasOu
 
 // LatestState implements chain.Chain
 func (ch *Chain) LatestState(freshness chain.StateFreshness) (state.State, error) {
-	ao := ch.GetAnchorOutput()
-	if ao == nil {
+	if freshness == chain.ActiveOrCommittedState || freshness == chain.ActiveState {
 		return ch.store.LatestState()
+	}
+	ao := ch.GetAnchorOutputFromL1()
+	if ao == nil {
+		return nil, errors.New("no AO for this chain in L1")
 	}
 	l1c, err := transaction.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
 	if err != nil {

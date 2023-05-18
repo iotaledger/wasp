@@ -69,7 +69,7 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 		reqs[i] = iscReq
 	}
 
-	ch.Env.AddRequestsToChainMempoolWaitUntilInbufferEmpty(ch, reqs)
+	ch.Env.AddRequestsToMempool(ch, reqs)
 	ch.WaitUntilMempoolIsEmpty()
 
 	fullGasBlockInfo, err := ch.GetBlockInfo(initialBlockInfo.BlockIndex() + 1)
