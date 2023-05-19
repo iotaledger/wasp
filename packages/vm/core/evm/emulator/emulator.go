@@ -82,8 +82,12 @@ func newStateDB(store kv.KVStore, l2Balance L2Balance) *StateDB {
 	return NewStateDB(subrealm.New(store, KeyStateDB), l2Balance)
 }
 
-func newBlockchainDB(store kv.KVStore, blockGasLimit uint64) *BlockchainDB {
-	return NewBlockchainDB(subrealm.New(store, KeyBlockchainDB), blockGasLimit)
+func NewBlockchainDBSubrealm(store kv.KVStore) kv.KVStore {
+	return subrealm.New(store, KeyBlockchainDB)
+}
+
+func newBlockchainDBWithSubrealm(store kv.KVStore, blockGasLimit uint64) *BlockchainDB {
+	return NewBlockchainDB(NewBlockchainDBSubrealm(store), blockGasLimit)
 }
 
 // Init initializes the EVM state with the provided genesis allocation parameters
@@ -95,7 +99,7 @@ func Init(
 	timestamp uint64,
 	alloc core.GenesisAlloc,
 ) {
-	bdb := newBlockchainDB(store, gasLimits.Block)
+	bdb := newBlockchainDBWithSubrealm(store, gasLimits.Block)
 	if bdb.Initialized() {
 		panic("evm state already initialized in kvstore")
 	}
@@ -124,7 +128,7 @@ func NewEVMEmulator(
 	magicContracts map[common.Address]vm.ISCMagicContract,
 	l2Balance L2Balance,
 ) *EVMEmulator {
-	bdb := newBlockchainDB(store, gasLimits.Block)
+	bdb := newBlockchainDBWithSubrealm(store, gasLimits.Block)
 	if !bdb.Initialized() {
 		panic("must initialize genesis block first")
 	}
@@ -144,7 +148,7 @@ func (e *EVMEmulator) StateDB() *StateDB {
 }
 
 func (e *EVMEmulator) BlockchainDB() *BlockchainDB {
-	return newBlockchainDB(e.kv, e.gasLimits.Block)
+	return newBlockchainDBWithSubrealm(e.kv, e.gasLimits.Block)
 }
 
 func (e *EVMEmulator) BlockGasLimit() uint64 {

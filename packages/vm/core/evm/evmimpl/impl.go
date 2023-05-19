@@ -325,7 +325,9 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 
 func getChainID(ctx isc.SandboxView) dict.Dict {
 	bdb := emulator.NewBlockchainDB(
-		evmStateSubrealm(buffered.NewBufferedKVStore(ctx.StateR())),
+		emulator.NewBlockchainDBSubrealm(
+			evmStateSubrealm(buffered.NewBufferedKVStore(ctx.StateR())),
+		),
 		0, // block gas limit should not be needed for GetChainID()
 	)
 	return result(evmtypes.EncodeChainID(bdb.GetChainID()))
