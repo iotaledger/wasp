@@ -30,12 +30,7 @@ func (ch *Chain) RunOffLedgerRequest(r isc.Request) (dict.Dict, error) {
 		return nil, errors.New("request was skipped")
 	}
 	res := results[0]
-	var err *isc.UnresolvedVMError
-	if !ch.bypassStardustVM {
-		// bypass if VM does not implement receipts
-		err = res.Receipt.Error
-	}
-	return res.Return, ch.ResolveVMError(err).AsGoError()
+	return res.Return, ch.ResolveVMError(res.Receipt.Error).AsGoError()
 }
 
 func (ch *Chain) RunOffLedgerRequests(reqs []isc.Request) []*vm.RequestResult {
@@ -163,9 +158,6 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, stateDraft s
 }
 
 func (ch *Chain) logRequestLastBlock() {
-	if ch.bypassStardustVM {
-		return
-	}
 	recs := ch.GetRequestReceiptsForBlock(ch.GetLatestBlockInfo().BlockIndex())
 	for _, rec := range recs {
 		ch.Log().Infof("REQ: '%s'", rec.Short())

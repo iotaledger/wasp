@@ -107,9 +107,6 @@ type Chain struct {
 
 	RequestsBlock     uint32
 	RequestsRemaining int
-
-	// used for non-standard VMs
-	bypassStardustVM bool
 }
 
 var _ chain.ChainCore = &Chain{}
@@ -120,16 +117,6 @@ type InitOptions struct {
 	PrintStackTrace          bool
 	Seed                     cryptolib.Seed
 	Log                      *logger.Logger
-}
-
-type InitChainOptions struct {
-	// optional parameters for the chain origin
-	OriginParameters dict.Dict
-	// optional VMRunner. Default is StardustVM
-	VMRunner vm.VMRunner
-	// flag forces bypassing any StardustVM ledger-dependent calls, such as init or blocklog
-	// To be used with provided non-standard VMRunner
-	BypassStardustVM bool
 }
 
 func DefaultInitOptions() *InitOptions {
@@ -236,13 +223,8 @@ func (env *Solo) NewChain() *Chain {
 //   - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
 //
 // Upon return, the chain is fully functional to process requests
-//
-
-//nolint:funlen
-func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens uint64, name string, initOptions ...InitChainOptions) (*Chain, *iotago.Transaction) {
+func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens uint64, name string) (*Chain, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
-
-	vmRunner := runvm.NewVMRunner()
 
 	if chainOriginator == nil {
 		chainOriginator = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
@@ -253,17 +235,6 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 
 	originParams := dict.Dict{
 		origin.ParamChainOwner: isc.NewAgentID(chainOriginator.Address()).Bytes(),
-	}
-	bypassStardustVM := false
-
-	if len(initOptions) > 0 {
-		if initOptions[0].VMRunner != nil {
-			vmRunner = initOptions[0].VMRunner
-		}
-		if initOptions[0].OriginParameters != nil {
-			originParams = initOptions[0].OriginParameters
-		}
-		bypassStardustVM = initOptions[0].BypassStardustVM
 	}
 
 	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indices to user
@@ -323,8 +294,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 		OriginatorAgentID:      originatorAgentID,
 		ValidatorFeeTarget:     originatorAgentID,
 		store:                  store,
-		bypassStardustVM:       bypassStardustVM,
-		vmRunner:               vmRunner,
+		vmRunner:               runvm.NewVMRunner(),
 		proc:                   processors.MustNew(env.processorConfig),
 		log:                    chainlog,
 	}
@@ -336,11 +306,6 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 	env.glbMutex.Unlock()
 
 	go ret.batchLoop()
-
-	if bypassStardustVM {
-		// force skipping the init request. It is needed for non-Stardust VMs
-		return ret, originTx
-	}
 
 	ret.log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID.String())
 	return ret, originTx
