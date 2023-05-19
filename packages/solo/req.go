@@ -460,9 +460,6 @@ func (ch *Chain) CallViewByHname(hContract, hFunction isc.Hname, params ...inter
 }
 
 func (ch *Chain) CallViewByHnameAtState(chainState state.State, hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
-	if ch.bypassStardustVM {
-		return nil, errors.New("Solo: StardustVM context expected")
-	}
 	ch.Log().Debugf("callView: %s::%s", hContract.String(), hFunction.String())
 
 	p := parseParams(params)
