@@ -95,25 +95,33 @@ func writeSnapshot(snapshotInfo SnapshotInfo, snapshot kvstore.KVStore, w io.Wri
 	return err
 }
 
-func readSnapshot(r io.Reader) (SnapshotInfo, kvstore.KVStore, error) {
+func readSnapshotInfo(r io.Reader) (SnapshotInfo, error) {
 	indexArray, err := readBytes(r)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read block index: %w", err)
+		return nil, fmt.Errorf("failed to read block index: %w", err)
 	}
 	if len(indexArray) != 4 { // Size of block index, which is of type uint32: 4 bytes
-		return nil, nil, fmt.Errorf("block index is %v instead of 4 bytes", len(indexArray))
+		return nil, fmt.Errorf("block index is %v instead of 4 bytes", len(indexArray))
 	}
 	index := binary.LittleEndian.Uint32(indexArray)
 
 	trieRootArray, err := readBytes(r)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read trie root: %w", err)
+		return nil, fmt.Errorf("failed to read trie root: %w", err)
 	}
 	commitment, err := state.L1CommitmentFromBytes(trieRootArray)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse L1 commitment: %w", err)
+		return nil, fmt.Errorf("failed to parse L1 commitment: %w", err)
 	}
 
+	return NewSnapshotInfo(index, commitment), nil
+}
+
+func readSnapshot(r io.Reader) (SnapshotInfo, kvstore.KVStore, error) {
+	snapshotInfo, err := readSnapshotInfo(r)
+	if err != nil {
+		return nil, nil, err
+	}
 	snapshot := mapdb.NewMapDB()
 	for key, err := readBytes(r); !errors.Is(err, io.EOF); key, err = readBytes(r) {
 		if err != nil {
@@ -130,7 +138,7 @@ func readSnapshot(r io.Reader) (SnapshotInfo, kvstore.KVStore, error) {
 			return nil, nil, fmt.Errorf("failed to set key's %v value %v to snapshot: %w", key, value, err)
 		}
 	}
-	return NewSnapshotInfo(index, commitment), snapshot, nil
+	return snapshotInfo, snapshot, nil
 }
 
 func writeBytes(bytes []byte, w io.Writer) error {

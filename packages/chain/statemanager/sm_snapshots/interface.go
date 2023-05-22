@@ -33,3 +33,13 @@ type snapshotList interface {
 	GetL1Commitments() []*state.L1Commitment
 	Join()
 }
+
+type SliceStruct[E any] interface {
+	Add(E)
+	Get(int) E
+	Set(int, E)
+	Length() int
+	ForEach(func(int, E) bool) bool
+	ContainsBy(func(E) bool) bool
+	Find(func(E) bool) (E, bool)
+}

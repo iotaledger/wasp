@@ -347,6 +347,7 @@ func (smT *stateManagerGPA) handleSnapshotManagerSnapshotDone(input *sm_inputs.S
 		return nil // No messages to send
 	}
 	if input.GetResult() != nil {
+		// TODO: maybe downloading snapshot should be retried?
 		smT.log.Errorf("Input snapshot manager snapshot %v %s done: retrieving snapshot failed %v", stateIndex, commitment, input.GetResult())
 		smT.blocksToFetch.addFetcher(fetcher)
 		return smT.makeGetBlockRequestMessages(commitment)

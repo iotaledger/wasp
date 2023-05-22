@@ -1,16 +1,18 @@
 package sm_snapshots
 
 import (
+	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
-
-	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
@@ -26,6 +28,11 @@ type snapshotInfoCallback struct {
 	callback chan<- error
 }
 
+type commitmentSources struct {
+	commitment *state.L1Commitment
+	sources    []string
+}
+
 type snapshotManagerImpl struct {
 	log                 *logger.Logger
 	ctx                 context.Context
@@ -37,10 +44,11 @@ type snapshotManagerImpl struct {
 	createPeriod              uint32
 	snapshotter               snapshotter
 
-	availableSnapshots      *shrinkingmap.ShrinkingMap[uint32, []*state.L1Commitment]
+	availableSnapshots      *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]]
 	availableSnapshotsMutex sync.RWMutex
 
-	localPath string
+	localPath        string
+	networkAddresses []string
 
 	updatePipe         pipe.Pipe[bool]
 	blockCommittedPipe pipe.Pipe[SnapshotInfo]
@@ -53,18 +61,21 @@ const (
 	constDownloadTimeout       = 10 * time.Minute
 	constSnapshotFileSuffix    = ".snap"
 	constSnapshotTmpFileSuffix = ".tmp"
+	constIndexFileName         = "INDEX" // Index file contains a new-line separated list of snapshot files
+	constLocalAddress          = "local://"
 )
 
 func NewSnapshotManager(
 	ctx context.Context,
 	shutdownCoordinator *shutdown.Coordinator,
 	chainID isc.ChainID,
-	baseDir string,
+	basePath string,
+	networkAddresses []string,
 	createPeriod uint32,
 	store state.Store,
 	log *logger.Logger,
 ) (SnapshotManager, error) {
-	localPath := filepath.Join(baseDir, chainID.String())
+	localPath := filepath.Join(basePath, chainID.String())
 	if err := ioutils.CreateDirectory(localPath, 0o777); err != nil {
 		return nil, fmt.Errorf("cannot create folder %s: %w", localPath, err)
 	}
@@ -77,9 +88,10 @@ func NewSnapshotManager(
 		lastIndexSnapshottedMutex: sync.Mutex{},
 		createPeriod:              createPeriod,
 		snapshotter:               newSnapshotter(store),
-		availableSnapshots:        shrinkingmap.New[uint32, []*state.L1Commitment](),
+		availableSnapshots:        shrinkingmap.New[uint32, SliceStruct[*commitmentSources]](),
 		availableSnapshotsMutex:   sync.RWMutex{},
 		localPath:                 localPath,
+		networkAddresses:          networkAddresses,
 		updatePipe:                pipe.NewInfinitePipe[bool](),
 		blockCommittedPipe:        pipe.NewInfinitePipe[SnapshotInfo](),
 		loadSnapshotPipe:          pipe.NewInfinitePipe[*snapshotInfoCallback](),
@@ -110,7 +122,7 @@ func (smiT *snapshotManagerImpl) SnapshotExists(stateIndex uint32, commitment *s
 	if !exists {
 		return false
 	}
-	return lo.ContainsBy(commitments, func(elem *state.L1Commitment) bool { return elem.Equals(commitment) })
+	return commitments.ContainsBy(func(elem *commitmentSources) bool { return elem.commitment.Equals(commitment) && len(elem.sources) > 0 })
 }
 
 func (smiT *snapshotManagerImpl) LoadSnapshotAsync(snapshotInfo SnapshotInfo) <-chan error {
@@ -147,7 +159,7 @@ func (smiT *snapshotManagerImpl) cleanTempFiles() {
 	smiT.log.Debugf("Removed %v out of %v temporary snapshot files", removed, len(tempFiles))
 }
 
-func (smiT *snapshotManagerImpl) run() { //nolint:gocyclo
+func (smiT *snapshotManagerImpl) run() {
 	updatePipeCh := smiT.updatePipe.Out()
 	blockCommittedPipeCh := smiT.blockCommittedPipe.Out()
 	loadSnapshotPipeCh := smiT.loadSnapshotPipe.Out()
@@ -188,7 +200,69 @@ func (smiT *snapshotManagerImpl) run() { //nolint:gocyclo
 	}
 }
 
-func (smiT *snapshotManagerImpl) handleUpdate() {}
+func (smiT *snapshotManagerImpl) handleUpdate() {
+	result := shrinkingmap.New[uint32, SliceStruct[*commitmentSources]]()
+	addFun := func(si SnapshotInfo, path string) {
+		makeNewComSourcesFun := func() *commitmentSources {
+			return &commitmentSources{
+				commitment: si.GetCommitment(),
+				sources:    []string{path},
+			}
+		}
+		comSourcesArray, exists := result.Get(si.GetStateIndex())
+		if exists {
+			comSources, ok := comSourcesArray.Find(func(elem *commitmentSources) bool { return elem.commitment.Equals(si.GetCommitment()) })
+			if ok {
+				comSources.sources = append(comSources.sources, path)
+			} else {
+				comSourcesArray.Add(makeNewComSourcesFun())
+			}
+		} else {
+			comSourcesArray = NewSliceStruct[*commitmentSources](makeNewComSourcesFun())
+			result.Set(si.GetStateIndex(), comSourcesArray)
+		}
+	}
+	// update local
+	// update network
+	for _, networkAddress := range smiT.networkAddresses {
+		func() { // Function to make the defers sooner
+			indexFilePath, err := url.JoinPath(networkAddress, constIndexFileName)
+			if err != nil {
+				smiT.log.Errorf("Unable to join paths %s and %s: %w", networkAddress, constIndexFileName, err)
+				return
+			}
+			cancelFun, reader, err := downloadFile(smiT.ctx, smiT.log, indexFilePath, constDownloadTimeout)
+			defer cancelFun()
+			if err != nil {
+				smiT.log.Errorf("Failed to download index file: %w", err)
+				return
+			}
+			scanner := bufio.NewScanner(reader) // Defaults to splitting input by newline character
+			for scanner.Scan() {
+				func() {
+					snapshotFileName := scanner.Text()
+					snapshotFilePath, err := url.JoinPath(networkAddress, snapshotFileName)
+					if err != nil {
+						smiT.log.Errorf("Unable to join paths %s and %s: %w", networkAddress, snapshotFileName, err)
+						return
+					}
+					sCancelFun, sReader, err := downloadFile(smiT.ctx, smiT.log, snapshotFilePath, constDownloadTimeout)
+					defer sCancelFun()
+					if err != nil {
+						smiT.log.Errorf("Failed to download snapshot file: %w", err)
+						return
+					}
+					snapshotInfo, err := readSnapshotInfo(sReader)
+					if err != nil {
+						smiT.log.Errorf("Failed to download read snapshot info from %s: %w", snapshotFilePath, err)
+						return
+					}
+					addFun(snapshotInfo, snapshotFilePath)
+				}()
+			}
+		}()
+	}
+}
 
 // Snapshot manager makes snapshot of every `period`th state only, if this state hasn't
 // been snapshotted before. The snapshot file name includes state index and state hash.
@@ -253,36 +327,76 @@ func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfoCallback *snapsh
 	callback := snapshotInfoCallback.callback
 	defer close(callback)
 
-	downloadCtx, downloadCtxCancel := context.WithTimeout(smiT.ctx, constDownloadTimeout)
-	defer downloadCtxCancel()
-
-	url := "TODO"
-	request, err := http.NewRequestWithContext(downloadCtx, http.MethodGet, url, http.NoBody)
-	if err != nil {
-		callback <- fmt.Errorf("failed creating request with url %s: %w", url, err)
+	// smiT.availableSnapshotsMutex.RLock() // Probably locking is not needed as it happens on the same thread as editing available snapshots
+	commitments, exists := smiT.availableSnapshots.Get(snapshotInfoCallback.SnapshotInfo.GetStateIndex())
+	// smiT.availableSnapshotsMutex.RUnlock()
+	if !exists {
+		callback <- fmt.Errorf("failed to obtain snapshot commitments of index %v", snapshotInfoCallback.SnapshotInfo.GetStateIndex())
+		return
+	}
+	cs, exists := commitments.Find(func(c *commitmentSources) bool {
+		return c.commitment.Equals(snapshotInfoCallback.SnapshotInfo.GetCommitment())
+	})
+	if !exists {
+		callback <- fmt.Errorf("failed to obtain sources of snapshot %v", snapshotInfoCallback.SnapshotInfo)
 		return
 	}
 
-	response, err := http.DefaultClient.Do(request)
-	if err != nil {
-		callback <- fmt.Errorf("http request to url %s failed: %w", url, err)
-		return
+	loadSnapshotFun := func(r io.Reader) error {
+		err := smiT.snapshotter.loadSnapshot(snapshotInfoCallback.SnapshotInfo, r)
+		if err != nil {
+			return fmt.Errorf("loading snapshot failed: %w", err)
+		}
+		return nil
 	}
-	defer func() { _ = response.Body.Close() }()
+	loadLocalFun := func(path string) error {
+		f, err := os.Open(path)
+		if err != nil {
+			return fmt.Errorf("failed to open snapshot file %s", path)
+		}
+		defer f.Close()
+		return loadSnapshotFun(f)
+	}
+	loadNetworkFun := func(ctx context.Context, url string) error {
+		downloadCtx, downloadCtxCancel := context.WithTimeout(ctx, constDownloadTimeout)
+		defer downloadCtxCancel()
 
-	if response.StatusCode != http.StatusOK {
-		callback <- fmt.Errorf("http request to %s got status code %v", url, response.StatusCode)
-		return
+		request, err := http.NewRequestWithContext(downloadCtx, http.MethodGet, url, http.NoBody)
+		if err != nil {
+			return fmt.Errorf("failed creating request with url %s: %w", url, err)
+		}
+
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			return fmt.Errorf("http request to url %s failed: %w", url, err)
+		}
+		defer response.Body.Close()
+
+		if response.StatusCode != http.StatusOK {
+			return fmt.Errorf("http request to %s got status code %v", url, response.StatusCode)
+		}
+
+		progressReporter := NewProgressReporter(smiT.log, fmt.Sprintf("downloading snapshot from %s", url), uint64(response.ContentLength))
+		reader := io.TeeReader(response.Body, progressReporter)
+		return loadSnapshotFun(reader)
+	}
+	loadFun := func(source string) error {
+		if strings.HasPrefix(source, constLocalAddress) {
+			return loadLocalFun(strings.TrimPrefix(source, constLocalAddress))
+		}
+		return loadNetworkFun(smiT.ctx, source)
 	}
 
-	progressReporter := NewProgressReporter(smiT.log, fmt.Sprintf("downloading snapshot from %s", url), uint64(response.ContentLength))
-	reader := io.TeeReader(response.Body, progressReporter)
-	err = smiT.snapshotter.loadSnapshot(snapshotInfoCallback.SnapshotInfo, reader)
-	if err != nil {
-		callback <- fmt.Errorf("downoloading snapshot from %s failed: %w", url, err)
-		return
+	var err error
+	for _, source := range cs.sources {
+		e := loadFun(source)
+		if e == nil {
+			callback <- nil
+			return
+		}
+		err = errors.Join(err, e)
 	}
-	callback <- nil
+	callback <- err
 }
 
 func tempSnapshotFileName(blockHash state.BlockHash) string {
@@ -299,4 +413,30 @@ func snapshotFileName(blockHash state.BlockHash) string {
 
 func snapshotFileNameString(blockHash string) string {
 	return blockHash + constSnapshotFileSuffix
+}
+
+func downloadFile(ctx context.Context, log *logger.Logger, url string, timeout time.Duration) (context.CancelFunc, io.Reader, error) {
+	downloadCtx, downloadCtxCancel := context.WithTimeout(ctx, timeout)
+
+	request, err := http.NewRequestWithContext(downloadCtx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return downloadCtxCancel, nil, fmt.Errorf("failed creating request with url %s: %w", url, err)
+	}
+
+	response, err := http.DefaultClient.Do(request) //nolint:bodyclose// it will be closed, when the caller calls `cancelFun`
+	if err != nil {
+		return downloadCtxCancel, nil, fmt.Errorf("http request to file url %s failed: %w", url, err)
+	}
+	cancelFun := func() {
+		response.Body.Close()
+		downloadCtxCancel()
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return cancelFun, nil, fmt.Errorf("http request to %s got status code %v", url, response.StatusCode)
+	}
+
+	progressReporter := NewProgressReporter(log, fmt.Sprintf("downloading file %s", url), uint64(response.ContentLength))
+	reader := io.TeeReader(response.Body, progressReporter)
+	return cancelFun, reader, nil
 }
