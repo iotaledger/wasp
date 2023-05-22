@@ -28,6 +28,8 @@ type snapshotter interface {
 	loadSnapshot(SnapshotInfo, io.Reader) error
 }
 
+// Putting slice into a map is not acceptable as if you want to append to slice,
+// you'll have to re-include the appended slice into the map.
 type SliceStruct[E any] interface {
 	Add(E)
 	Get(int) E
