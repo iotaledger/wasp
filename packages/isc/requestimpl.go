@@ -806,14 +806,8 @@ type RequestMetadata struct {
 func requestMetadataFromFeatureSet(set iotago.FeatureSet) (*RequestMetadata, error) {
 	metadataFeatBlock := set.MetadataFeature()
 	if metadataFeatBlock == nil {
-<<<<<<< HEAD
 		// IMPORTANT: this cannot return an empty `&RequestMetadata{}` object because that could cause `isInternalUTXO` check to fail
 		return nil, nil
-||||||| parent of 7c2ea0c20 (feat: simulate request endpoint)
-		return nil, nil
-=======
-		return &RequestMetadata{}, nil
->>>>>>> 7c2ea0c20 (feat: simulate request endpoint)
 	}
 	return RequestMetadataFromBytes(metadataFeatBlock.Data)
 }

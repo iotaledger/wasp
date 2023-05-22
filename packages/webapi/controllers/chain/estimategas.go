@@ -1,11 +1,11 @@
 package chain
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
@@ -26,8 +26,11 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	mu := marshalutil.New(estimateGasRequest.Output)
-	output, err := util.OutputFromMarshalUtil(mu)
+	requestBytes, err := iotago.DecodeHex(estimateGasRequest.Output)
+	if err != nil {
+		return apierrors.InvalidPropertyError("Request", err)
+	}
+	output, err := util.OutputFromBytes(requestBytes)
 	if err != nil {
 		return apierrors.InvalidPropertyError("Output", err)
 	}
@@ -38,6 +41,9 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	)
 	if err != nil {
 		return apierrors.InvalidPropertyError("Output", err)
+	}
+	if !req.TargetAddress().Equal(chainID.AsAddress()) {
+		return apierrors.InvalidPropertyError("Request", errors.New("wrong chainID"))
 	}
 
 	rec, err := c.vmService.EstimateGas(chainID, req)
@@ -67,6 +73,9 @@ func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 	req, err := c.offLedgerService.ParseRequest(requestBytes)
 	if err != nil {
 		return apierrors.InvalidPropertyError("Request", err)
+	}
+	if !req.TargetAddress().Equal(chainID.AsAddress()) {
+		return apierrors.InvalidPropertyError("Request", errors.New("wrong chainID"))
 	}
 
 	rec, err := c.vmService.EstimateGas(chainID, req)

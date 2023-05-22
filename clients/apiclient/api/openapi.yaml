@@ -2775,10 +2775,10 @@ components:
         standard: standard
         chainOwnerId: tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e
         gasLimits:
-          maxGasExternalViewCall: 5
-          minGasPerRequest: 7
-          maxGasPerBlock: 5
-          maxGasPerRequest: 2
+          maxGasExternalViewCall: 6
+          minGasPerRequest: 5
+          maxGasPerBlock: 1
+          maxGasPerRequest: 5
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
         evmWebSocketUrl: evmWebSocketUrl
@@ -2787,11 +2787,10 @@ components:
           gasPerToken:
             a: 1
             b: 100
-          validatorFeeShare: 1
+          validatorFeeShare: 0
           evmGasRatio:
-            a: 0
-            b: 0
-        evmJsonRpcUrl: evmJsonRpcUrl
+            a: 1
+            b: 1
         isActive: true
       properties:
         chainID:
@@ -3650,10 +3649,10 @@ components:
         gasPerToken:
           a: 1
           b: 100
-        validatorFeeShare: 1
+        validatorFeeShare: 0
         evmGasRatio:
-          a: 0
-          b: 0
+          a: 1
+          b: 1
       properties:
         evmGasRatio:
           $ref: '#/components/schemas/Ratio32_'
@@ -3677,15 +3676,15 @@ components:
         gasPerToken:
           a: 0
           b: 0
-        validatorFeeShare: 0
+        validatorFeeShare: 1
         evmGasRatio:
           a: 0
           b: 0
       properties:
         evmGasRatio:
-          $ref: '#/components/schemas/Ratio32_'
+          $ref: '#/components/schemas/Ratio32__'
         gasPerToken:
-          $ref: '#/components/schemas/Ratio32_'
+          $ref: '#/components/schemas/Ratio32__'
         validatorFeeShare:
           description: The validator fee share.
           format: int32
@@ -3745,10 +3744,10 @@ components:
       example:
         chainOwnerId: chainOwnerId
         gasLimits:
-          maxGasExternalViewCall: 5
-          minGasPerRequest: 7
-          maxGasPerBlock: 5
-          maxGasPerRequest: 2
+          maxGasExternalViewCall: 6
+          minGasPerRequest: 5
+          maxGasPerBlock: 1
+          maxGasPerRequest: 5
         chainID: chainID
         evmWebSocketUrl: evmWebSocketUrl
         publicUrl: publicUrl
@@ -3756,7 +3755,7 @@ components:
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 0
+          validatorFeeShare: 1
           evmGasRatio:
             a: 0
             b: 0
@@ -4134,10 +4133,10 @@ components:
         name: L1Params
     Limits:
       example:
-        maxGasExternalViewCall: 5
-        minGasPerRequest: 7
-        maxGasPerBlock: 5
-        maxGasPerRequest: 2
+        maxGasExternalViewCall: 6
+        minGasPerRequest: 5
+        maxGasPerBlock: 1
+        maxGasPerRequest: 5
       properties:
         maxGasExternalViewCall:
           description: The maximum gas per external view call
@@ -4994,6 +4993,31 @@ components:
       xml:
         name: Ratio32
     Ratio32_:
+      example:
+        a: 1
+        b: 1
+      properties:
+        a:
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: A
+        b:
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: B
+      required:
+      - a
+      - b
+      type: object
+      xml:
+        name: Ratio32
+    Ratio32__:
       example:
         a: 0
         b: 0
