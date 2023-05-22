@@ -352,7 +352,7 @@ func (r *onLedgerRequestData) readFromUTXO(output iotago.Output, outputID iotago
 
 	fbSet := output.FeatureSet()
 
-	reqMetadata, err = RequestMetadataFromFeatureSet(fbSet)
+	reqMetadata, err = requestMetadataFromFeatureSet(fbSet)
 	if err != nil {
 		return err
 	}
@@ -800,10 +800,11 @@ type RequestMetadata struct {
 	GasBudget uint64 `json:"gasBudget"`
 }
 
-func RequestMetadataFromFeatureSet(set iotago.FeatureSet) (*RequestMetadata, error) {
+func requestMetadataFromFeatureSet(set iotago.FeatureSet) (*RequestMetadata, error) {
 	metadataFeatBlock := set.MetadataFeature()
 	if metadataFeatBlock == nil {
-		return &RequestMetadata{}, nil
+		// IMPORTANT: this cannot return an empty `&RequestMetadata{}` object because that could cause `isInternalUTXO` check to fail
+		return nil, nil
 	}
 	return RequestMetadataFromBytes(metadataFeatBlock.Data)
 }
