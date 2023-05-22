@@ -55,8 +55,6 @@ type ContractInfoResponse struct {
 
 // ChainInfoResponse includes the metadata standard
 type ChainInfoResponse struct {
-	Standard string `json:"standard" swagger:"desc(The chain info standard),required"`
-
 	IsActive        bool           `json:"isActive" swagger:"desc(Whether or not the chain is active.),required"`
 	ChainID         string         `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).),required"`
 	EVMChainID      uint16         `json:"evmChainId" swagger:"desc(The EVM chain ID),required,min(1)"`
@@ -96,8 +94,6 @@ func mapMetadataUrls(response *ChainInfoResponse) {
 
 func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfoResponse {
 	chainInfoResponse := ChainInfoResponse{
-		Standard: "IRCxx",
-
 		IsActive:        chainInfo.IsActive,
 		ChainID:         chainInfo.ChainID.String(),
 		EVMChainID:      evmChainID,

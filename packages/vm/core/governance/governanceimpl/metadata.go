@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
-const MaxURLLength = 255
+const MaxURLLength = 1000
 
 func setMetadata(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()

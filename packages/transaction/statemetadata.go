@@ -95,7 +95,8 @@ func StateMetadataFromBytes(data []byte) (*StateMetadata, error) {
 		return nil, fmt.Errorf("unable to parse the public url, error: %w", err)
 	}
 
-	ret.PublicURL = codec.MustDecodeString(publicURLBytes)
+	// On error, publicUrl is len(0)
+	ret.PublicURL, _ = codec.DecodeString(publicURLBytes)
 
 	return ret, nil
 }
