@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/chains/access_mgr"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
@@ -257,17 +258,22 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 
 	// Initialize Snapshotter
 	chainStore := indexedstore.New(state.NewStore(chainKVStore))
-	var chainSnapshotter sm_gpa_utils.Snapshotter
-	if c.snapshotterPeriod > 0 {
-		chainSnapshotter, err = sm_gpa_utils.NewSnapshotter(chainLog.Named("Snap"), c.snapshotterFolderPath, chainID, c.snapshotterPeriod, chainStore)
-		if err != nil {
-			panic(fmt.Errorf("cannot create Snapshotter: %w", err))
-		}
-	} else {
-		chainSnapshotter = sm_gpa_utils.NewEmptySnapshotter()
+	chainCtx, chainCancel := context.WithCancel(c.ctx)
+	chainShutdownCoordinator := c.shutdownCoordinator.Nested(fmt.Sprintf("Chain-%s", chainID.AsAddress().String()))
+	chainSnapshotManager, err := sm_snapshots.NewSnapshotManager(
+		chainCtx,
+		chainShutdownCoordinator.Nested("SnapMgr"),
+		chainID,
+		c.snapshotterFolderPath,
+		[]string{}, // TODO
+		c.snapshotterPeriod,
+		chainStore,
+		chainLog.Named("Snap"),
+	)
+	if err != nil {
+		panic(fmt.Errorf("cannot create Snapshotter: %w", err))
 	}
 
-	chainCtx, chainCancel := context.WithCancel(c.ctx)
 	newChain, err := chain.New(
 		chainCtx,
 		chainLog,
@@ -279,12 +285,12 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.dkShareRegistryProvider,
 		c.consensusStateRegistry,
 		chainWAL,
-		chainSnapshotter,
+		chainSnapshotManager,
 		c.chainListener,
 		chainRecord.AccessNodes,
 		c.networkProvider,
 		chainMetrics,
-		c.shutdownCoordinator.Nested(fmt.Sprintf("Chain-%s", chainID.AsAddress().String())),
+		chainShutdownCoordinator,
 		func() { c.chainMetricsProvider.RegisterChain(chainID) },
 		func() { c.chainMetricsProvider.UnregisterChain(chainID) },
 		c.deriveAliasOutputByQuorum,

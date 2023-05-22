@@ -76,9 +76,6 @@ func NewSnapshotManager(
 	log *logger.Logger,
 ) (SnapshotManager, error) {
 	localPath := filepath.Join(basePath, chainID.String())
-	if err := ioutils.CreateDirectory(localPath, 0o777); err != nil {
-		return nil, fmt.Errorf("cannot create folder %s: %w", localPath, err)
-	}
 	result := &snapshotManagerImpl{
 		log:                       log,
 		ctx:                       ctx,
@@ -96,9 +93,16 @@ func NewSnapshotManager(
 		blockCommittedPipe:        pipe.NewInfinitePipe[SnapshotInfo](),
 		loadSnapshotPipe:          pipe.NewInfinitePipe[*snapshotInfoCallback](),
 	}
-	result.cleanTempFiles() // To be able to make snapshots, which were not finished. See comment in `handleBlockCommitted` function
+	if result.createSnapshotsNeeded() {
+		if err := ioutils.CreateDirectory(localPath, 0o777); err != nil {
+			return nil, fmt.Errorf("cannot create folder %s: %w", localPath, err)
+		}
+		result.cleanTempFiles() // To be able to make snapshots, which were not finished. See comment in `handleBlockCommitted` function
+		log.Debugf("Snapshot manager created; folder %v is used for snapshots", localPath)
+	} else {
+		log.Debugf("Snapshot manager created; no snapshots will be produced")
+	}
 	go result.run()
-	log.Debugf("Snapshotter created; folder %v is used for snapshots", localPath)
 	return result, nil
 }
 
@@ -111,7 +115,9 @@ func (smiT *snapshotManagerImpl) UpdateAsync() {
 }
 
 func (smiT *snapshotManagerImpl) BlockCommittedAsync(snapshotInfo SnapshotInfo) {
-	smiT.blockCommittedPipe.In() <- snapshotInfo
+	if smiT.createSnapshotsNeeded() {
+		smiT.blockCommittedPipe.In() <- snapshotInfo
+	}
 }
 
 func (smiT *snapshotManagerImpl) SnapshotExists(stateIndex uint32, commitment *state.L1Commitment) bool {
@@ -215,13 +221,19 @@ func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.Shrinkin
 	fileRegExpWithPath := filepath.Join(smiT.localPath, fileRegExp)
 	files, err := filepath.Glob(fileRegExpWithPath)
 	if err != nil {
-		smiT.log.Errorf("Failed to obtain snapshot file list: %v", err)
+		if smiT.createSnapshotsNeeded() {
+			smiT.log.Errorf("Failed to obtain snapshot file list: %w", err)
+		} else {
+			// If snapshots are not created, snapshot dir is not supposed to exists; unless, it was created by other runs of Wasp or manually
+			smiT.log.Warnf("Cannot obtain local snapshot file list (possibly, it does not exist): %w", err)
+		}
+		return
 	}
 	for _, file := range files {
 		func() { // Function to make the defers sooner
 			f, err := os.Open(file)
 			if err != nil {
-				smiT.log.Errorf("Failed to open snapshot file %s", file)
+				smiT.log.Errorf("Failed to open snapshot file %s: %w", file, err)
 			}
 			defer f.Close()
 			snapshotInfo, err := readSnapshotInfo(f)
@@ -397,6 +409,10 @@ func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfoCallback *snapsh
 		err = errors.Join(err, e)
 	}
 	callback <- err
+}
+
+func (smiT *snapshotManagerImpl) createSnapshotsNeeded() bool {
+	return smiT.createPeriod > 0
 }
 
 func tempSnapshotFileName(blockHash state.BlockHash) string {

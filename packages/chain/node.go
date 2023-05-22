@@ -34,6 +34,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -261,7 +262,7 @@ func New(
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	consensusStateRegistry cmt_log.ConsensusStateRegistry,
 	blockWAL sm_gpa_utils.BlockWAL,
-	snapshotter sm_gpa_utils.Snapshotter,
+	snapshotManager sm_snapshots.SnapshotManager,
 	listener ChainListener,
 	accessNodesFromNode []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
@@ -385,7 +386,7 @@ func New(
 		peerPubKeys,
 		net,
 		blockWAL,
-		snapshotter,
+		snapshotManager,
 		chainStore,
 		shutdownCoordinator.Nested("StateMgr"),
 		chainMetrics,
