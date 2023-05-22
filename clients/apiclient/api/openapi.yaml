@@ -1280,6 +1280,64 @@ paths:
       summary: Deactivate a chain
       tags:
       - chains
+  /v1/chains/{chainID}/estimategas-offledger:
+    post:
+      operationId: estimateGasOffledger
+      parameters:
+      - description: ChainID (Bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstimateGasRequestOffledger'
+        description: Request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptResponse'
+          description: ReceiptResponse
+      summary: Estimates gas for a given off-ledger ISC request
+      tags:
+      - chains
+      x-codegen-request-body-name: Request
+  /v1/chains/{chainID}/estimategas-onledger:
+    post:
+      operationId: estimateGasOnledger
+      parameters:
+      - description: ChainID (Bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstimateGasRequestOnledger'
+        description: Request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptResponse'
+          description: ReceiptResponse
+      summary: Estimates gas for a given on-ledger ISC request
+      tags:
+      - chains
+      x-codegen-request-body-name: Request
   /v1/chains/{chainID}/evm:
     post:
       parameters:
@@ -3538,27 +3596,36 @@ components:
       type: object
       xml:
         name: ErrorMessageFormatResponse
-    ErrorParameter:
+    EstimateGasRequestOffledger:
       example:
-        type: type
-        value: value
+        requestBytes: requestBytes
       properties:
-        type:
+        requestBytes:
+          description: Offledger Request (Hex)
           format: string
           type: string
           xml:
-            name: Type
-        value:
-          format: string
-          type: string
-          xml:
-            name: Value
+            name: Request
       required:
-      - type
-      - value
+      - requestBytes
       type: object
       xml:
-        name: ErrorParameter
+        name: EstimateGasRequestOffledger
+    EstimateGasRequestOnledger:
+      example:
+        outputBytes: outputBytes
+      properties:
+        outputBytes:
+          description: Serialized Output (Hex)
+          format: string
+          type: string
+          xml:
+            name: Output
+      required:
+      - outputBytes
+      type: object
+      xml:
+        name: EstimateGasRequestOnledger
     EventsResponse:
       example:
         events:
@@ -4949,62 +5016,6 @@ components:
       type: object
       xml:
         name: Ratio32
-    ReceiptError:
-      example:
-        contractHName: contractHName
-        messageFormat: messageFormat
-        errorCode: errorCode
-        errorId: 1
-        message: message
-        parameters:
-        - type: type
-          value: value
-        - type: type
-          value: value
-      properties:
-        contractHName:
-          description: The contract hname (Hex)
-          format: string
-          type: string
-          xml:
-            name: ContractHName
-        errorCode:
-          format: string
-          type: string
-          xml:
-            name: ErrorCode
-        errorId:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: ErrorID
-        message:
-          format: string
-          type: string
-          xml:
-            name: Message
-        messageFormat:
-          format: string
-          type: string
-          xml:
-            name: MessageFormat
-        parameters:
-          items:
-            $ref: '#/components/schemas/ErrorParameter'
-          type: array
-          xml:
-            name: Parameters
-            wrapped: true
-      required:
-      - contractHName
-      - errorCode
-      - errorId
-      - message
-      - messageFormat
-      type: object
-      xml:
-        name: ReceiptError
     ReceiptResponse:
       example:
         gasBurnLog:
@@ -5014,21 +5025,19 @@ components:
           gasBurned: 1
         request: request
         blockIndex: 1
+        rawError:
+          code:
+            ContractID: 6
+            ID: 1
+          params:
+          - params
+          - params
+          hash: 5
         requestIndex: 1
         gasFeeCharged: gasFeeCharged
+        errorMessage: errorMessage
         gasBudget: gasBudget
         gasBurned: gasBurned
-        error:
-          contractHName: contractHName
-          messageFormat: messageFormat
-          errorCode: errorCode
-          errorId: 1
-          message: message
-          parameters:
-          - type: type
-            value: value
-          - type: type
-            value: value
       properties:
         blockIndex:
           format: int32
@@ -5036,8 +5045,11 @@ components:
           type: integer
           xml:
             name: BlockIndex
-        error:
-          $ref: '#/components/schemas/ReceiptError'
+        errorMessage:
+          format: string
+          type: string
+          xml:
+            name: ErrorMessage
         gasBudget:
           description: The gas budget (uint64 as string)
           format: string
@@ -5063,6 +5075,8 @@ components:
           type: string
           xml:
             name: GasFeeCharged
+        rawError:
+          $ref: '#/components/schemas/UnresolvedVMError'
         request:
           format: string
           type: string
@@ -5572,6 +5586,34 @@ components:
       type: object
       xml:
         name: UTXOInputMetricItem
+    UnresolvedVMError:
+      example:
+        code:
+          ContractID: 6
+          ID: 1
+        params:
+        - params
+        - params
+        hash: 5
+      properties:
+        code:
+          $ref: '#/components/schemas/VMErrorCode'
+        hash:
+          format: int32
+          type: integer
+          xml:
+            name: Hash
+        params:
+          items:
+            format: string
+            type: string
+          type: array
+          xml:
+            name: Params
+            wrapped: true
+      type: object
+      xml:
+        name: UnresolvedVMError
     UpdateUserPasswordRequest:
       example:
         password: password
@@ -5631,6 +5673,24 @@ components:
       type: object
       xml:
         name: User
+    VMErrorCode:
+      example:
+        ContractID: 6
+        ID: 1
+      properties:
+        ContractID:
+          format: int32
+          type: integer
+          xml:
+            name: ContractID
+        ID:
+          format: int32
+          type: integer
+          xml:
+            name: ID
+      type: object
+      xml:
+        name: VMErrorCode
     ValidationError:
       properties:
         error:

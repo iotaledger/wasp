@@ -5,11 +5,12 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **BlockIndex** | **uint32** |  | 
-**Error** | Pointer to [**ReceiptError**](ReceiptError.md) |  | [optional] 
+**ErrorMessage** | Pointer to **string** |  | [optional] 
 **GasBudget** | **string** | The gas budget (uint64 as string) | 
 **GasBurnLog** | [**[]BurnRecord**](BurnRecord.md) |  | 
 **GasBurned** | **string** | The burned gas (uint64 as string) | 
 **GasFeeCharged** | **string** | The charged gas fee (uint64 as string) | 
+**RawError** | Pointer to [**UnresolvedVMError**](UnresolvedVMError.md) |  | [optional] 
 **Request** | **string** |  | 
 **RequestIndex** | **uint32** |  | 
 
@@ -52,30 +53,30 @@ and a boolean to check if the value has been set.
 SetBlockIndex sets BlockIndex field to given value.
 
 
-### GetError
+### GetErrorMessage
 
-`func (o *ReceiptResponse) GetError() ReceiptError`
+`func (o *ReceiptResponse) GetErrorMessage() string`
 
-GetError returns the Error field if non-nil, zero value otherwise.
+GetErrorMessage returns the ErrorMessage field if non-nil, zero value otherwise.
 
-### GetErrorOk
+### GetErrorMessageOk
 
-`func (o *ReceiptResponse) GetErrorOk() (*ReceiptError, bool)`
+`func (o *ReceiptResponse) GetErrorMessageOk() (*string, bool)`
 
-GetErrorOk returns a tuple with the Error field if it's non-nil, zero value otherwise
+GetErrorMessageOk returns a tuple with the ErrorMessage field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetError
+### SetErrorMessage
 
-`func (o *ReceiptResponse) SetError(v ReceiptError)`
+`func (o *ReceiptResponse) SetErrorMessage(v string)`
 
-SetError sets Error field to given value.
+SetErrorMessage sets ErrorMessage field to given value.
 
-### HasError
+### HasErrorMessage
 
-`func (o *ReceiptResponse) HasError() bool`
+`func (o *ReceiptResponse) HasErrorMessage() bool`
 
-HasError returns a boolean if a field has been set.
+HasErrorMessage returns a boolean if a field has been set.
 
 ### GetGasBudget
 
@@ -156,6 +157,31 @@ and a boolean to check if the value has been set.
 
 SetGasFeeCharged sets GasFeeCharged field to given value.
 
+
+### GetRawError
+
+`func (o *ReceiptResponse) GetRawError() UnresolvedVMError`
+
+GetRawError returns the RawError field if non-nil, zero value otherwise.
+
+### GetRawErrorOk
+
+`func (o *ReceiptResponse) GetRawErrorOk() (*UnresolvedVMError, bool)`
+
+GetRawErrorOk returns a tuple with the RawError field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetRawError
+
+`func (o *ReceiptResponse) SetRawError(v UnresolvedVMError)`
+
+SetRawError sets RawError field to given value.
+
+### HasRawError
+
+`func (o *ReceiptResponse) HasRawError() bool`
+
+HasRawError returns a boolean if a field has been set.
 
 ### GetRequest
 
