@@ -358,26 +358,11 @@ func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfoCallback *snapsh
 		return loadSnapshotFun(f)
 	}
 	loadNetworkFun := func(ctx context.Context, url string) error {
-		downloadCtx, downloadCtxCancel := context.WithTimeout(ctx, constDownloadTimeout)
-		defer downloadCtxCancel()
-
-		request, err := http.NewRequestWithContext(downloadCtx, http.MethodGet, url, http.NoBody)
+		closeFun, reader, err := downloadFile(ctx, smiT.log, url, constDownloadTimeout)
+		defer closeFun()
 		if err != nil {
-			return fmt.Errorf("failed creating request with url %s: %w", url, err)
+			return err
 		}
-
-		response, err := http.DefaultClient.Do(request)
-		if err != nil {
-			return fmt.Errorf("http request to url %s failed: %w", url, err)
-		}
-		defer response.Body.Close()
-
-		if response.StatusCode != http.StatusOK {
-			return fmt.Errorf("http request to %s got status code %v", url, response.StatusCode)
-		}
-
-		progressReporter := NewProgressReporter(smiT.log, fmt.Sprintf("downloading snapshot from %s", url), uint64(response.ContentLength))
-		reader := io.TeeReader(response.Body, progressReporter)
 		return loadSnapshotFun(reader)
 	}
 	loadFun := func(source string) error {
