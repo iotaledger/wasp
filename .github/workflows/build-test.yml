@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        TEST_LANG: [go, gowasm, tswasm, rswasm]
+        TEST_LANG: [go, rswasm]
     steps:
       - name: checkout to the directory
         uses: actions/checkout@v3
@@ -58,13 +58,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install solc
 
-      - name: install tinygo
-        # only work on x86_64
-        run: |
-          wget https://github.com/tinygo-org/tinygo/releases/download/v0.27.0/tinygo_0.27.0_amd64.deb
-          sudo dpkg -i tinygo_0.27.0_amd64.deb
-          export PATH=$PATH:/usr/local/bin
-
       - name: install rust-toolchain
         uses: actions-rs/toolchain@v1.0.7
         with:
@@ -73,11 +66,6 @@ jobs:
       - name: install wasm-pack
         run: |
           curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
-      - name: install Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
 
       - name: install schema
         run: |
@@ -91,11 +79,7 @@ jobs:
         run: |
           cd contracts/wasm/scripts
           bash core_build.sh
-          if [ $TEST_LANG == "gowasm" ]; then
-            bash go_all.sh
-          elif [ $TEST_LANG == "tswasm" ]; then
-            bash ts_all.sh
-          elif [ $TEST_LANG == "rswasm" ]; then
+          if [ $TEST_LANG == "rswasm" ]; then
             bash rust_all.sh ci
           fi
 
@@ -107,10 +91,6 @@ jobs:
           cd contracts/wasm
           if [ $TEST_LANG == "go" ]; then
             go test ./...
-          elif [ $TEST_LANG == "gowasm" ]; then
-            go test ./... -gowasm
-          elif [ $TEST_LANG == "tswasm" ]; then
-            go test ./... -tswasm
           elif [ $TEST_LANG == "rswasm" ]; then
             go test ./... -rswasm
           fi
