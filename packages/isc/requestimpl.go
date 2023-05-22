@@ -150,7 +150,7 @@ func (r *offLedgerRequestData) ReturnAmount() (uint64, bool) {
 	return 0, false
 }
 
-// implements isc.Calldata interface
+// implements Calldata interface
 var _ Calldata = &offLedgerRequestData{}
 
 func (r *offLedgerRequestData) Bytes() []byte {
@@ -374,6 +374,7 @@ func (r *onLedgerRequestData) readFromMarshalUtil(mu *marshalutil.MarshalUtil) e
 	if err != nil {
 		return err
 	}
+
 	outputBytesLength, err := mu.ReadUint16()
 	if err != nil {
 		return err
@@ -382,15 +383,7 @@ func (r *onLedgerRequestData) readFromMarshalUtil(mu *marshalutil.MarshalUtil) e
 	if err != nil {
 		return err
 	}
-	outputType, err := mu.ReadByte()
-	if err != nil {
-		return err
-	}
-	output, err := iotago.OutputSelector(uint32(outputType))
-	if err != nil {
-		return err
-	}
-	_, err = output.Deserialize(outputBytes, serializer.DeSeriModeNoValidation, nil)
+	output, err := util.OutputFromBytes(outputBytes)
 	if err != nil {
 		return err
 	}
@@ -425,7 +418,6 @@ func (r *onLedgerRequestData) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu = OutputIDToMarshalUtil(r.outputID, mu)
 	mu.WriteUint16(uint16(len(outputBytes)))
 	mu.WriteBytes(outputBytes)
-	mu.WriteByte(byte(r.output.Type()))
 }
 
 // implements Calldata interface
@@ -440,11 +432,11 @@ func (r *onLedgerRequestData) Params() dict.Dict {
 }
 
 func (r *onLedgerRequestData) SenderAccount() AgentID {
-	sender := r.SenderAddress()
-	if sender == nil || r.requestMetadata == nil {
+	sender := r.senderAddress()
+	if sender == nil {
 		return nil
 	}
-	if r.requestMetadata.SenderContract != 0 {
+	if r.requestMetadata != nil && r.requestMetadata.SenderContract != 0 {
 		if sender.Type() != iotago.AddressAlias {
 			panic("inconsistency: non-alias address cannot have hname != 0")
 		}
@@ -454,7 +446,7 @@ func (r *onLedgerRequestData) SenderAccount() AgentID {
 	return NewAgentID(sender)
 }
 
-func (r *onLedgerRequestData) SenderAddress() iotago.Address {
+func (r *onLedgerRequestData) senderAddress() iotago.Address {
 	senderBlock := r.featureBlocks.SenderFeature()
 	if senderBlock == nil {
 		return nil
@@ -569,10 +561,10 @@ func (r *onLedgerRequestData) IsInternalUTXO(chainID ChainID) bool {
 	if r.output.Type() == iotago.OutputFoundry {
 		return true
 	}
-	if r.SenderAddress() == nil {
+	if r.senderAddress() == nil {
 		return false
 	}
-	if !r.SenderAddress().Equal(chainID.AsAddress()) {
+	if !r.senderAddress().Equal(chainID.AsAddress()) {
 		return false
 	}
 	if r.requestMetadata != nil {
@@ -811,7 +803,7 @@ type RequestMetadata struct {
 func RequestMetadataFromFeatureSet(set iotago.FeatureSet) (*RequestMetadata, error) {
 	metadataFeatBlock := set.MetadataFeature()
 	if metadataFeatBlock == nil {
-		return nil, nil
+		return &RequestMetadata{}, nil
 	}
 	return RequestMetadataFromBytes(metadataFeatBlock.Data)
 }
@@ -875,5 +867,3 @@ func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error
 	}
 	return nil
 }
-
-// endregion ///////////////////////////////////////////////////////////////
