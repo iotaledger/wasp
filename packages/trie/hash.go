@@ -1,9 +1,9 @@
 package trie
 
 import (
-	"fmt"
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"io"
 )
 

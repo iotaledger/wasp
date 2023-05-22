@@ -28,12 +28,6 @@ type snapshotter interface {
 	loadSnapshot(SnapshotInfo, io.Reader) error
 }
 
-type snapshotList interface {
-	GetStateIndex() uint32
-	GetL1Commitments() []*state.L1Commitment
-	Join()
-}
-
 type SliceStruct[E any] interface {
 	Add(E)
 	Get(int) E
