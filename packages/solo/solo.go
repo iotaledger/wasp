@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"math/rand"
 	"sync"
+	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -52,7 +53,7 @@ const (
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
-	T                               TestContext
+	T                               testing.TB
 	logger                          *logger.Logger
 	chainStateDatabaseManager       *database.ChainStateDatabaseManager
 	utxoDB                          *utxodb.UtxoDB
@@ -63,6 +64,7 @@ type Solo struct {
 	disableAutoAdjustStorageDeposit bool
 	seed                            cryptolib.Seed
 	publisher                       *publisher.Publisher
+	ctx                             context.Context
 }
 
 // Chain represents state of individual chain.
@@ -131,10 +133,7 @@ func DefaultInitOptions() *InitOptions {
 // New creates an instance of the Solo environment
 // If solo is used for unit testing, 't' should be the *testing.T instance;
 // otherwise it can be either nil or an instance created with NewTestContext.
-func New(t TestContext, initOptions ...*InitOptions) *Solo {
-	if t == nil {
-		t = NewTestContext("solo")
-	}
+func New(t testing.TB, initOptions ...*InitOptions) *Solo {
 	opt := DefaultInitOptions()
 	if len(initOptions) > 0 {
 		opt = initOptions[0]
@@ -155,6 +154,8 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	}
 
 	utxoDBinitParams := utxodb.DefaultInitParams()
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	t.Cleanup(cancelCtx)
 	ret := &Solo{
 		T:                               t,
 		logger:                          opt.Log,
@@ -165,6 +166,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		disableAutoAdjustStorageDeposit: !opt.AutoAdjustStorageDeposit,
 		seed:                            opt.Seed,
 		publisher:                       publisher.New(opt.Log.Named("publisher")),
+		ctx:                             ctx,
 	}
 	globalTime := ret.utxoDB.GlobalTime()
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v",
@@ -178,9 +180,9 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	_ = ret.publisher.Events.Published.Hook(func(ev *publisher.ISCEvent[any]) {
 		ret.logger.Infof("solo publisher: %s %s %v", ev.Kind, ev.ChainID, ev.String())
 	})
+
 	go func() {
-		// TODO: cancel the context when the test finishes
-		ret.publisher.Run(context.Background())
+		ret.publisher.Run(ctx)
 	}()
 
 	return ret
@@ -396,23 +398,17 @@ func (ch *Chain) collateBatch() []isc.Request {
 // batchLoop mimics behavior Wasp consensus
 func (ch *Chain) batchLoop() {
 	for {
-		ch.Sync()
+		ch.collateAndRunBatch()
 		time.Sleep(50 * time.Millisecond)
 	}
 }
 
-// Sync runs all ready requests
-func (ch *Chain) Sync() {
-	for {
-		if !ch.collateAndRunBatch() {
-			return
-		}
-	}
-}
-
-func (ch *Chain) collateAndRunBatch() bool {
+func (ch *Chain) collateAndRunBatch() {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
+	if ch.Env.ctx.Err() != nil {
+		return
+	}
 	batch := ch.collateBatch()
 	if len(batch) > 0 {
 		results := ch.runRequestsNolock(batch, "batchLoop")
@@ -421,9 +417,7 @@ func (ch *Chain) collateAndRunBatch() bool {
 				ch.log.Errorf("runRequestsSync: %v", res.Receipt.Error)
 			}
 		}
-		return true
 	}
-	return false
 }
 
 func (ch *Chain) GetCandidateNodes() []*governance.AccessNodeInfo {
