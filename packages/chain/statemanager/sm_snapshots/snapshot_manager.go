@@ -202,28 +202,39 @@ func (smiT *snapshotManagerImpl) run() {
 
 func (smiT *snapshotManagerImpl) handleUpdate() {
 	result := shrinkingmap.New[uint32, SliceStruct[*commitmentSources]]()
-	addFun := func(si SnapshotInfo, path string) {
-		makeNewComSourcesFun := func() *commitmentSources {
-			return &commitmentSources{
-				commitment: si.GetCommitment(),
-				sources:    []string{path},
-			}
-		}
-		comSourcesArray, exists := result.Get(si.GetStateIndex())
-		if exists {
-			comSources, ok := comSourcesArray.Find(func(elem *commitmentSources) bool { return elem.commitment.Equals(si.GetCommitment()) })
-			if ok {
-				comSources.sources = append(comSources.sources, path)
-			} else {
-				comSourcesArray.Add(makeNewComSourcesFun())
-			}
-		} else {
-			comSourcesArray = NewSliceStruct[*commitmentSources](makeNewComSourcesFun())
-			result.Set(si.GetStateIndex(), comSourcesArray)
-		}
+	smiT.handleUpdateLocal(result)
+	smiT.handleUpdateNetwork(result)
+
+	smiT.availableSnapshotsMutex.Lock()
+	smiT.availableSnapshots = result
+	smiT.availableSnapshotsMutex.Unlock()
+}
+
+func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]]) {
+	fileRegExp := snapshotFileNameString("*")
+	fileRegExpWithPath := filepath.Join(smiT.localPath, fileRegExp)
+	files, err := filepath.Glob(fileRegExpWithPath)
+	if err != nil {
+		smiT.log.Errorf("Failed to obtain snapshot file list: %v", err)
 	}
-	// update local
-	// update network
+	for _, file := range files {
+		func() { // Function to make the defers sooner
+			f, err := os.Open(file)
+			if err != nil {
+				smiT.log.Errorf("Failed to open snapshot file %s", file)
+			}
+			defer f.Close()
+			snapshotInfo, err := readSnapshotInfo(f)
+			if err != nil {
+				smiT.log.Errorf("Failed to read snapshot info from file %s: %w", file, err)
+				return
+			}
+			addSource(result, snapshotInfo, constLocalAddress+file)
+		}()
+	}
+}
+
+func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]]) {
 	for _, networkAddress := range smiT.networkAddresses {
 		func() { // Function to make the defers sooner
 			indexFilePath, err := url.JoinPath(networkAddress, constIndexFileName)
@@ -241,24 +252,28 @@ func (smiT *snapshotManagerImpl) handleUpdate() {
 			for scanner.Scan() {
 				func() {
 					snapshotFileName := scanner.Text()
-					snapshotFilePath, err := url.JoinPath(networkAddress, snapshotFileName)
-					if err != nil {
-						smiT.log.Errorf("Unable to join paths %s and %s: %w", networkAddress, snapshotFileName, err)
+					snapshotFilePath, er := url.JoinPath(networkAddress, snapshotFileName)
+					if er != nil {
+						smiT.log.Errorf("Unable to join paths %s and %s: %w", networkAddress, snapshotFileName, er)
 						return
 					}
-					sCancelFun, sReader, err := downloadFile(smiT.ctx, smiT.log, snapshotFilePath, constDownloadTimeout)
+					sCancelFun, sReader, er := downloadFile(smiT.ctx, smiT.log, snapshotFilePath, constDownloadTimeout)
 					defer sCancelFun()
-					if err != nil {
-						smiT.log.Errorf("Failed to download snapshot file: %w", err)
+					if er != nil {
+						smiT.log.Errorf("Failed to download snapshot file: %w", er)
 						return
 					}
-					snapshotInfo, err := readSnapshotInfo(sReader)
-					if err != nil {
-						smiT.log.Errorf("Failed to download read snapshot info from %s: %w", snapshotFilePath, err)
+					snapshotInfo, er := readSnapshotInfo(sReader)
+					if er != nil {
+						smiT.log.Errorf("Failed to download read snapshot info from %s: %w", snapshotFilePath, er)
 						return
 					}
-					addFun(snapshotInfo, snapshotFilePath)
+					addSource(result, snapshotInfo, snapshotFilePath)
 				}()
+			}
+			err = scanner.Err()
+			if err != nil {
+				smiT.log.Errorf("Failed reading index file %s: %w", indexFilePath, err)
 			}
 		}()
 	}
@@ -424,4 +439,25 @@ func downloadFile(ctx context.Context, log *logger.Logger, url string, timeout t
 	progressReporter := NewProgressReporter(log, fmt.Sprintf("downloading file %s", url), uint64(response.ContentLength))
 	reader := io.TeeReader(response.Body, progressReporter)
 	return cancelFun, reader, nil
+}
+
+func addSource(result *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]], si SnapshotInfo, path string) {
+	makeNewComSourcesFun := func() *commitmentSources {
+		return &commitmentSources{
+			commitment: si.GetCommitment(),
+			sources:    []string{path},
+		}
+	}
+	comSourcesArray, exists := result.Get(si.GetStateIndex())
+	if exists {
+		comSources, ok := comSourcesArray.Find(func(elem *commitmentSources) bool { return elem.commitment.Equals(si.GetCommitment()) })
+		if ok {
+			comSources.sources = append(comSources.sources, path)
+		} else {
+			comSourcesArray.Add(makeNewComSourcesFun())
+		}
+	} else {
+		comSourcesArray = NewSliceStruct[*commitmentSources](makeNewComSourcesFun())
+		result.Set(si.GetStateIndex(), comSourcesArray)
+	}
 }
