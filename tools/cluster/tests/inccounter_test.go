@@ -120,7 +120,7 @@ func testInvalidEntrypoint(t *testing.T, env *ChainEnv) {
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.Chain.ChainID, tx, false, 30*time.Second)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(receipts))
-		require.Contains(t, receipts[0].Error.MessageFormat, vm.ErrTargetEntryPointNotFound.MessageFormat())
+		require.Contains(t, *receipts[0].ErrorMessage, vm.ErrTargetEntryPointNotFound.MessageFormat())
 	}
 
 	e.checkSC(numRequests)

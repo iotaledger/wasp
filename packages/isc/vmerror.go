@@ -193,16 +193,26 @@ func (e *UnresolvedVMError) AsGoError() error {
 	return e
 }
 
-// produce the params as humanly readably json
-func (e *UnresolvedVMError) MarshalJSON() ([]byte, error) {
-	type Alias UnresolvedVMError // needed to avoid the struct below to inherit `MarshalJSON` and go into an infinite loop
-	return json.Marshal(&struct {
-		Params []string `json:"params"`
-		*Alias
-	}{
-		Params: humanlyReadableParams(e.Params),
-		Alias:  (*Alias)(e),
-	})
+type UnresolvedVMErrorJSON struct {
+	Params    []string `json:"params"`
+	ErrorCode string   `json:"code"`
+	Hash      string   `json:"hash"`
+}
+
+// produce the params as humanly readably json, and the uints as strings
+func (e *UnresolvedVMError) ToJSONStruct() *UnresolvedVMErrorJSON {
+	if e == nil {
+		return &UnresolvedVMErrorJSON{
+			Params:    []string{},
+			ErrorCode: "",
+			Hash:      "",
+		}
+	}
+	return &UnresolvedVMErrorJSON{
+		Params:    humanlyReadableParams(e.Params),
+		ErrorCode: e.ErrorCode.String(),
+		Hash:      fmt.Sprintf("%04x", e.Hash),
+	}
 }
 
 func humanlyReadableParams(params []interface{}) []string {

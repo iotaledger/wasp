@@ -10,7 +10,7 @@ Name | Type | Description | Notes
 **GasBurnLog** | [**[]BurnRecord**](BurnRecord.md) |  | 
 **GasBurned** | **string** | The burned gas (uint64 as string) | 
 **GasFeeCharged** | **string** | The charged gas fee (uint64 as string) | 
-**RawError** | Pointer to [**UnresolvedVMError**](UnresolvedVMError.md) |  | [optional] 
+**RawError** | Pointer to [**UnresolvedVMErrorJSON**](UnresolvedVMErrorJSON.md) |  | [optional] 
 **Request** | **string** |  | 
 **RequestIndex** | **uint32** |  | 
 
@@ -160,20 +160,20 @@ SetGasFeeCharged sets GasFeeCharged field to given value.
 
 ### GetRawError
 
-`func (o *ReceiptResponse) GetRawError() UnresolvedVMError`
+`func (o *ReceiptResponse) GetRawError() UnresolvedVMErrorJSON`
 
 GetRawError returns the RawError field if non-nil, zero value otherwise.
 
 ### GetRawErrorOk
 
-`func (o *ReceiptResponse) GetRawErrorOk() (*UnresolvedVMError, bool)`
+`func (o *ReceiptResponse) GetRawErrorOk() (*UnresolvedVMErrorJSON, bool)`
 
 GetRawErrorOk returns a tuple with the RawError field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetRawError
 
-`func (o *ReceiptResponse) SetRawError(v UnresolvedVMError)`
+`func (o *ReceiptResponse) SetRawError(v UnresolvedVMErrorJSON)`
 
 SetRawError sets RawError field to given value.
 

@@ -7,15 +7,15 @@ import (
 )
 
 type ReceiptResponse struct {
-	Request       string                 `json:"request" swagger:"required"`
-	RawError      *isc.UnresolvedVMError `json:"rawError"`
-	ErrorMessage  string                 `json:"errorMessage"`
-	GasBudget     string                 `json:"gasBudget" swagger:"required,desc(The gas budget (uint64 as string))"`
-	GasBurned     string                 `json:"gasBurned" swagger:"required,desc(The burned gas (uint64 as string))"`
-	GasFeeCharged string                 `json:"gasFeeCharged" swagger:"required,desc(The charged gas fee (uint64 as string))"`
-	BlockIndex    uint32                 `json:"blockIndex" swagger:"required,min(1)"`
-	RequestIndex  uint16                 `json:"requestIndex" swagger:"required,min(1)"`
-	GasBurnLog    []gas.BurnRecord       `json:"gasBurnLog" swagger:"required"`
+	Request       string                     `json:"request" swagger:"required"`
+	RawError      *isc.UnresolvedVMErrorJSON `json:"rawError,omitempty"`
+	ErrorMessage  string                     `json:"errorMessage,omitempty"`
+	GasBudget     string                     `json:"gasBudget" swagger:"required,desc(The gas budget (uint64 as string))"`
+	GasBurned     string                     `json:"gasBurned" swagger:"required,desc(The burned gas (uint64 as string))"`
+	GasFeeCharged string                     `json:"gasFeeCharged" swagger:"required,desc(The charged gas fee (uint64 as string))"`
+	BlockIndex    uint32                     `json:"blockIndex" swagger:"required,min(1)"`
+	RequestIndex  uint16                     `json:"requestIndex" swagger:"required,min(1)"`
+	GasBurnLog    []gas.BurnRecord           `json:"gasBurnLog" swagger:"required"`
 }
 
 func MapReceiptResponse(receipt *isc.Receipt) *ReceiptResponse {
@@ -27,7 +27,7 @@ func MapReceiptResponse(receipt *isc.Receipt) *ReceiptResponse {
 
 	return &ReceiptResponse{
 		Request:       iotago.EncodeHex(receipt.Request),
-		RawError:      receipt.Error,
+		RawError:      receipt.Error.ToJSONStruct(),
 		ErrorMessage:  receipt.ResolvedError,
 		BlockIndex:    receipt.BlockIndex,
 		RequestIndex:  receipt.RequestIndex,

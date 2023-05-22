@@ -5026,13 +5026,11 @@ components:
         request: request
         blockIndex: 1
         rawError:
-          code:
-            ContractID: 6
-            ID: 1
+          code: code
           params:
           - params
           - params
-          hash: 5
+          hash: hash
         requestIndex: 1
         gasFeeCharged: gasFeeCharged
         errorMessage: errorMessage
@@ -5076,7 +5074,7 @@ components:
           xml:
             name: GasFeeCharged
         rawError:
-          $ref: '#/components/schemas/UnresolvedVMError'
+          $ref: '#/components/schemas/UnresolvedVMErrorJSON'
         request:
           format: string
           type: string
@@ -5586,21 +5584,22 @@ components:
       type: object
       xml:
         name: UTXOInputMetricItem
-    UnresolvedVMError:
+    UnresolvedVMErrorJSON:
       example:
-        code:
-          ContractID: 6
-          ID: 1
+        code: code
         params:
         - params
         - params
-        hash: 5
+        hash: hash
       properties:
         code:
-          $ref: '#/components/schemas/VMErrorCode'
+          format: string
+          type: string
+          xml:
+            name: ErrorCode
         hash:
-          format: int32
-          type: integer
+          format: string
+          type: string
           xml:
             name: Hash
         params:
@@ -5613,7 +5612,7 @@ components:
             wrapped: true
       type: object
       xml:
-        name: UnresolvedVMError
+        name: UnresolvedVMErrorJSON
     UpdateUserPasswordRequest:
       example:
         password: password
@@ -5673,24 +5672,6 @@ components:
       type: object
       xml:
         name: User
-    VMErrorCode:
-      example:
-        ContractID: 6
-        ID: 1
-      properties:
-        ContractID:
-          format: int32
-          type: integer
-          xml:
-            name: ContractID
-        ID:
-          format: int32
-          type: integer
-          xml:
-            name: ID
-      type: object
-      xml:
-        name: VMErrorCode
     ValidationError:
       properties:
         error:

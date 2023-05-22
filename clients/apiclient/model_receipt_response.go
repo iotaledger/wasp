@@ -28,7 +28,7 @@ type ReceiptResponse struct {
 	GasBurned string `json:"gasBurned"`
 	// The charged gas fee (uint64 as string)
 	GasFeeCharged string `json:"gasFeeCharged"`
-	RawError *UnresolvedVMError `json:"rawError,omitempty"`
+	RawError *UnresolvedVMErrorJSON `json:"rawError,omitempty"`
 	Request string `json:"request"`
 	RequestIndex uint32 `json:"requestIndex"`
 }
@@ -210,9 +210,9 @@ func (o *ReceiptResponse) SetGasFeeCharged(v string) {
 }
 
 // GetRawError returns the RawError field value if set, zero value otherwise.
-func (o *ReceiptResponse) GetRawError() UnresolvedVMError {
+func (o *ReceiptResponse) GetRawError() UnresolvedVMErrorJSON {
 	if o == nil || isNil(o.RawError) {
-		var ret UnresolvedVMError
+		var ret UnresolvedVMErrorJSON
 		return ret
 	}
 	return *o.RawError
@@ -220,7 +220,7 @@ func (o *ReceiptResponse) GetRawError() UnresolvedVMError {
 
 // GetRawErrorOk returns a tuple with the RawError field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *ReceiptResponse) GetRawErrorOk() (*UnresolvedVMError, bool) {
+func (o *ReceiptResponse) GetRawErrorOk() (*UnresolvedVMErrorJSON, bool) {
 	if o == nil || isNil(o.RawError) {
 		return nil, false
 	}
@@ -236,8 +236,8 @@ func (o *ReceiptResponse) HasRawError() bool {
 	return false
 }
 
-// SetRawError gets a reference to the given UnresolvedVMError and assigns it to the RawError field.
-func (o *ReceiptResponse) SetRawError(v UnresolvedVMError) {
+// SetRawError gets a reference to the given UnresolvedVMErrorJSON and assigns it to the RawError field.
+func (o *ReceiptResponse) SetRawError(v UnresolvedVMErrorJSON) {
 	o.RawError = &v
 }
 

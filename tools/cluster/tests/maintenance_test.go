@@ -66,7 +66,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 		require.NoError(t, err2)
 		rec, err2 := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), false, 10*time.Second)
 		require.NoError(t, err2)
-		require.NotNil(t, rec.Error)
+		require.NotNil(t, rec.ErrorMessage)
 	}
 
 	// owner can start maintenance mode
@@ -138,7 +138,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 		require.NoError(t, err2)
 		receipt, err2 := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), false, 10*time.Second)
 		require.NoError(t, err2)
-		require.NotNil(t, receipt.Error)
+		require.NotNil(t, receipt.ErrorMessage)
 	}
 
 	// test non-chain owner cannot call stop maintenance
@@ -147,7 +147,7 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 		require.NoError(t, err2)
 		rec, err2 := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), false, 10*time.Second)
 		require.NoError(t, err2)
-		require.NotNil(t, rec.Error)
+		require.NotNil(t, rec.ErrorMessage)
 	}
 
 	// owner can stop maintenance mode
