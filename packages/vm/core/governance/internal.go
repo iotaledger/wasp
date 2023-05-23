@@ -28,30 +28,63 @@ func GetRotationAddress(state kv.KVStoreReader) iotago.Address {
 func GetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) (*isc.ChainInfo, error) {
 	d := kvdecoder.New(state)
 	ret := &isc.ChainInfo{
-		ChainID: chainID,
+		ChainID:  chainID,
+		Metadata: isc.ChainMetadata{},
 	}
 	var err error
 	if ret.ChainOwnerID, err = d.GetAgentID(VarChainOwnerID); err != nil {
 		return nil, err
 	}
+
 	if ret.GasFeePolicy, err = GetGasFeePolicy(state); err != nil {
 		return nil, err
 	}
+
 	if ret.GasLimits, err = GetGasLimits(state); err != nil {
 		return nil, err
 	}
+
 	ret.BlockKeepAmount = GetBlockKeepAmount(state)
 	if ret.PublicURL, err = GetPublicURL(state); err != nil {
 		return nil, err
 	}
-	if ret.MetadataEVMJsonRPCURL, err = GetEVMJsonRPCURL(state); err != nil {
-		return nil, err
-	}
-	if ret.MetadataEVMWebSocketURL, err = GetEVMWebSocketURL(state); err != nil {
+
+	if ret.Metadata, err = GetMetadata(state); err != nil {
 		return nil, err
 	}
 
 	return ret, nil
+}
+
+func GetMetadata(state kv.KVStoreReader) (isc.ChainMetadata, error) {
+	var err error
+	metadata := isc.ChainMetadata{}
+
+	if metadata.EVMJsonRPCURL, err = GetEVMJsonRPCURL(state); err != nil {
+		return isc.ChainMetadata{}, err
+	}
+
+	if metadata.EVMWebSocketURL, err = GetEVMWebSocketURL(state); err != nil {
+		return isc.ChainMetadata{}, err
+	}
+
+	if metadata.ChainName, err = GetChainName(state); err != nil {
+		return isc.ChainMetadata{}, err
+	}
+
+	if metadata.ChainDescription, err = GetChainDescription(state); err != nil {
+		return isc.ChainMetadata{}, err
+	}
+
+	if metadata.ChainOwnerEmail, err = GetChainOwnerEmail(state); err != nil {
+		return isc.ChainMetadata{}, err
+	}
+
+	if metadata.ChainWebsite, err = GetChainWebsite(state); err != nil {
+		return isc.ChainMetadata{}, err
+	}
+
+	return metadata, nil
 }
 
 // MustGetChainInfo return global variables of the chain
@@ -119,6 +152,38 @@ func SetEVMWebSocketURL(state kv.KVStore, url string) {
 
 func GetEVMWebSocketURL(state kv.KVStoreReader) (string, error) {
 	return codec.DecodeString(state.Get(VarMetadataEVMWebSocketURL), "")
+}
+
+func SetChainName(state kv.KVStore, name string) {
+	state.Set(VarMetadataChainName, codec.EncodeString(name))
+}
+
+func GetChainName(state kv.KVStoreReader) (string, error) {
+	return codec.DecodeString(state.Get(VarMetadataChainName), "")
+}
+
+func SetChainDescription(state kv.KVStore, name string) {
+	state.Set(VarMetadataChainDescription, codec.EncodeString(name))
+}
+
+func GetChainDescription(state kv.KVStoreReader) (string, error) {
+	return codec.DecodeString(state.Get(VarMetadataChainDescription), "")
+}
+
+func SetChainOwnerEmail(state kv.KVStore, name string) {
+	state.Set(VarMetadataChainOwnerEmail, codec.EncodeString(name))
+}
+
+func GetChainOwnerEmail(state kv.KVStoreReader) (string, error) {
+	return codec.DecodeString(state.Get(VarMetadataChainOwnerEmail), "")
+}
+
+func SetChainWebsite(state kv.KVStore, name string) {
+	state.Set(VarMetadataChainWebsite, codec.EncodeString(name))
+}
+
+func GetChainWebsite(state kv.KVStoreReader) (string, error) {
+	return codec.DecodeString(state.Get(VarMetadataChainWebsite), "")
 }
 
 func AccessNodesMap(state kv.KVStore) *collections.Map {

@@ -7,17 +7,16 @@ Name | Type | Description | Notes
 **BlockKeepAmount** | Pointer to **int32** | Amount of blocks to keep in the state | [optional] 
 **ChainID** | **string** | ChainID (Bech32-encoded). | 
 **ChainOwnerId** | **string** | The chain owner address (Bech32-encoded). | 
-**EvmJsonRpcUrl** | **string** | The EVM json rpc url | 
-**EvmWebSocketUrl** | **string** | The EVM websocket url | 
 **GasFeePolicy** | [**FeePolicy**](FeePolicy.md) |  | 
 **GasLimits** | [**Limits**](Limits.md) |  | 
+**Metadata** | [**GovChainMetadata**](GovChainMetadata.md) |  | 
 **PublicUrl** | **string** | The fully qualified public url leading to the chains metadata | 
 
 ## Methods
 
 ### NewGovChainInfoResponse
 
-`func NewGovChainInfoResponse(chainID string, chainOwnerId string, evmJsonRpcUrl string, evmWebSocketUrl string, gasFeePolicy FeePolicy, gasLimits Limits, publicUrl string, ) *GovChainInfoResponse`
+`func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy FeePolicy, gasLimits Limits, metadata GovChainMetadata, publicUrl string, ) *GovChainInfoResponse`
 
 NewGovChainInfoResponse instantiates a new GovChainInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -97,46 +96,6 @@ and a boolean to check if the value has been set.
 SetChainOwnerId sets ChainOwnerId field to given value.
 
 
-### GetEvmJsonRpcUrl
-
-`func (o *GovChainInfoResponse) GetEvmJsonRpcUrl() string`
-
-GetEvmJsonRpcUrl returns the EvmJsonRpcUrl field if non-nil, zero value otherwise.
-
-### GetEvmJsonRpcUrlOk
-
-`func (o *GovChainInfoResponse) GetEvmJsonRpcUrlOk() (*string, bool)`
-
-GetEvmJsonRpcUrlOk returns a tuple with the EvmJsonRpcUrl field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetEvmJsonRpcUrl
-
-`func (o *GovChainInfoResponse) SetEvmJsonRpcUrl(v string)`
-
-SetEvmJsonRpcUrl sets EvmJsonRpcUrl field to given value.
-
-
-### GetEvmWebSocketUrl
-
-`func (o *GovChainInfoResponse) GetEvmWebSocketUrl() string`
-
-GetEvmWebSocketUrl returns the EvmWebSocketUrl field if non-nil, zero value otherwise.
-
-### GetEvmWebSocketUrlOk
-
-`func (o *GovChainInfoResponse) GetEvmWebSocketUrlOk() (*string, bool)`
-
-GetEvmWebSocketUrlOk returns a tuple with the EvmWebSocketUrl field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetEvmWebSocketUrl
-
-`func (o *GovChainInfoResponse) SetEvmWebSocketUrl(v string)`
-
-SetEvmWebSocketUrl sets EvmWebSocketUrl field to given value.
-
-
 ### GetGasFeePolicy
 
 `func (o *GovChainInfoResponse) GetGasFeePolicy() FeePolicy`
@@ -175,6 +134,26 @@ and a boolean to check if the value has been set.
 `func (o *GovChainInfoResponse) SetGasLimits(v Limits)`
 
 SetGasLimits sets GasLimits field to given value.
+
+
+### GetMetadata
+
+`func (o *GovChainInfoResponse) GetMetadata() GovChainMetadata`
+
+GetMetadata returns the Metadata field if non-nil, zero value otherwise.
+
+### GetMetadataOk
+
+`func (o *GovChainInfoResponse) GetMetadataOk() (*GovChainMetadata, bool)`
+
+GetMetadataOk returns a tuple with the Metadata field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetMetadata
+
+`func (o *GovChainInfoResponse) SetMetadata(v GovChainMetadata)`
+
+SetMetadata sets Metadata field to given value.
 
 
 ### GetPublicUrl

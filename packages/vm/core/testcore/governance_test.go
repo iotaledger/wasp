@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -277,7 +278,116 @@ func TestDisallowMaintenanceDeadlock(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestPublicURLL1Metadata(t *testing.T) {
+func testMetadataBehaviorSetIgnoreUnset(t *testing.T, ch *solo.Chain, metadataParameter kv.Key) {
+	/*
+		Values with the length == 0 will reset the state value
+		Values with the length > 0 will set the state value
+		Nil values will be ignored and not change the state value
+	*/
+
+	testValue := "TESTYTEST"
+
+	// Set proper metadata value
+	_, err := ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetMetadata.Name,
+			metadataParameter,
+			testValue,
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	res, err := ch.CallView(
+		governance.Contract.Name,
+		governance.ViewGetMetadata.Name,
+	)
+	require.NoError(t, err)
+	resMetadata := res.Get(metadataParameter)
+
+	// Chain name should be equal to the configured one.
+	require.Equal(t, testValue, string(resMetadata))
+
+	// Call SetMetadata without args. The metadata should be the same as it was previously configured and not be emptied.
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetMetadata.Name,
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	res, err = ch.CallView(
+		governance.Contract.Name,
+		governance.ViewGetMetadata.Name,
+	)
+	require.NoError(t, err)
+	resMetadata = res.Get(metadataParameter)
+
+	// Chain name should be equal to the configured one.
+	require.Equal(t, testValue, string(resMetadata))
+
+	// Call SetMetadata with an empty arg. The metadata should be cleared.
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetMetadata.Name,
+			metadataParameter,
+			[]byte{},
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	res, err = ch.CallView(
+		governance.Contract.Name,
+		governance.ViewGetMetadata.Name,
+	)
+	require.NoError(t, err)
+	resMetadata = res.Get(metadataParameter)
+
+	// Chain name should be empty now
+	require.Equal(t, []byte{}, resMetadata)
+
+	// Test invalid custom metadata
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetMetadata.Name,
+			metadataParameter,
+			string(make([]byte, governanceimpl.MaxCustomMetadataLength+1)),
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.Error(t, err)
+}
+
+func TestMetadata(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	ch := env.NewChain()
+
+	// deposit some extra tokens to the common account to accommodate for the SD change
+	ch.SendFromL1ToL2AccountBaseTokens(10*isc.Million, 9*isc.Million, accounts.CommonAccount(), nil)
+
+	keys := map[string]kv.Key{
+		"chainName":        governance.ParamMetadataChainName,
+		"chainDescription": governance.ParamMetadataChainDescription,
+		"chainOwnerEmail":  governance.ParamMetadataChainOwnerEmail,
+		"chainWebsite":     governance.ParamMetadataChainWebsite,
+		"evmJsonRpcUrl":    governance.ParamMetadataEVMJsonRPCURL,
+		"evmWebsocketUrl":  governance.ParamMetadataEVMWebSocketURL,
+	}
+
+	for k, v := range keys {
+		t.Run(k, func(t *testing.T) {
+			testMetadataBehaviorSetIgnoreUnset(t, ch, v)
+		})
+	}
+}
+
+func TestL1Metadata(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	ch := env.NewChain()
 
