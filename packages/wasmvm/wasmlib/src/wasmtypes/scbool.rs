@@ -5,8 +5,6 @@ use std::convert::TryInto;
 
 use crate::*;
 
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 pub const SC_BOOL_LENGTH: usize = 1;
 pub const SC_BOOL_FALSE: u8 = 0x00;
 pub const SC_BOOL_TRUE: u8 = 0x01;
@@ -26,10 +24,11 @@ pub fn bool_encode(enc: &mut WasmEncoder, value: bool) {
 }
 
 pub fn bool_from_bytes(buf: &[u8]) -> bool {
-    if buf.len() == 0 {
+    let len = buf.len();
+    if len == 0 {
         return false;
     }
-    if buf.len() != SC_BOOL_LENGTH {
+    if len != SC_BOOL_LENGTH {
         panic("invalid Bool length");
     }
     if buf[0] == SC_BOOL_FALSE {

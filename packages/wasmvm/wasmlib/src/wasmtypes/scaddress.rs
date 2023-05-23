@@ -55,12 +55,13 @@ pub fn address_from_bytes(buf: &[u8]) -> ScAddress {
     let mut addr = ScAddress {
         id: [0; SC_ADDRESS_LENGTH],
     };
-    if buf.len() == 0 {
+    let len = buf.len();
+    if len == 0 {
         return addr;
     }
 
     // special case, ETH address has no type byte but different length
-    if buf.len() == SC_LENGTH_ETH {
+    if len == SC_LENGTH_ETH {
         addr.id[0] = SC_ADDRESS_ETH;
         addr.id[1..SC_LENGTH_ETH + 1].copy_from_slice(&buf[..SC_LENGTH_ETH]);
         return addr;
@@ -68,19 +69,19 @@ pub fn address_from_bytes(buf: &[u8]) -> ScAddress {
 
     match buf[0] {
         SC_ADDRESS_ALIAS => {
-            if buf.len() != SC_LENGTH_ALIAS {
+            if len != SC_LENGTH_ALIAS {
                 panic("invalid Address length: Alias");
             }
             addr.id[..SC_LENGTH_ALIAS].copy_from_slice(&buf[..SC_LENGTH_ALIAS]);
         }
         SC_ADDRESS_ED25519 => {
-            if buf.len() != SC_LENGTH_ED25519 {
+            if len != SC_LENGTH_ED25519 {
                 panic("invalid Address length: Ed25519");
             }
             addr.id[..SC_LENGTH_ED25519].copy_from_slice(&buf[..SC_LENGTH_ED25519]);
         }
         SC_ADDRESS_NFT => {
-            if buf.len() != SC_LENGTH_NFT {
+            if len != SC_LENGTH_NFT {
                 panic("invalid Address length: NFT");
             }
             addr.id[..SC_LENGTH_NFT].copy_from_slice(&buf[..SC_LENGTH_NFT]);
@@ -120,7 +121,7 @@ pub fn address_from_string(value: &str) -> ScAddress {
     }
 
     let bytes = hex_decode(value);
-    if bytes.len() != SC_LENGTH_ETH {
+    if bytes.len()!= SC_LENGTH_ETH {
         panic("invalid ETH address");
     }
     address_from_bytes(&bytes)

@@ -38,12 +38,13 @@ pub fn token_id_encode(enc: &mut WasmEncoder, value: &ScTokenID) {
 }
 
 pub fn token_id_from_bytes(buf: &[u8]) -> ScTokenID {
-    if buf.len() == 0 {
+    let len = buf.len();
+    if len == 0 {
         return ScTokenID {
             id: [0; SC_TOKEN_ID_LENGTH],
         };
     }
-    if buf.len() != SC_TOKEN_ID_LENGTH {
+    if len != SC_TOKEN_ID_LENGTH {
         panic("invalid TokenID length");
     }
     ScTokenID {

@@ -80,7 +80,7 @@ impl ScAssets {
 
         uint16_encode(&mut enc, self.native_tokens.len() as u16);
         for (token_id, amount) in self.native_tokens.iter() {
-            enc.fixed_bytes(token_id, SC_TOKEN_ID_LENGTH);
+            token_id_encode(&mut enc, &token_id_from_bytes(token_id));
             big_int_encode(&mut enc, amount);
         }
 

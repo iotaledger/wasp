@@ -195,10 +195,9 @@ export function viewGetCounter(ctx: wasmlib.ScViewContext, f: sc.GetCounterConte
 export function viewGetVli(ctx: wasmlib.ScViewContext, f: sc.GetVliContext): void {
     let enc = new wasmtypes.WasmEncoder();
     let n = f.params.ni64().value();
-    wasmtypes.int64Encode(enc, n);
-    let buf = enc.buf();
+    let buf = enc.vliEncode(n).buf();
     let dec = new wasmtypes.WasmDecoder(buf);
-    let x = wasmtypes.int64Decode(dec);
+    let x = dec.vliDecode(64);
 
     let str = n.toString() + " -";
     for (let j = 0; j < buf.length; j++) {
@@ -216,10 +215,9 @@ export function viewGetVli(ctx: wasmlib.ScViewContext, f: sc.GetVliContext): voi
 export function viewGetVlu(ctx: wasmlib.ScViewContext, f: sc.GetVluContext): void {
     let enc = new wasmtypes.WasmEncoder();
     let n = f.params.nu64().value();
-    wasmtypes.uint64Encode(enc, n);
-    let buf = enc.buf();
+    let buf = enc.vluEncode(n).buf();
     let dec = new wasmtypes.WasmDecoder(buf);
-    let x = wasmtypes.uint64Decode(dec);
+    let x = dec.vluDecode(64);
 
     let str = n.toString() + " -";
     for (let j = 0; j < buf.length; j++) {

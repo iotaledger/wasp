@@ -13,11 +13,11 @@ const ScInt32Length = 4
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 func Int32Decode(dec *WasmDecoder) int32 {
-	return int32(dec.VliDecode(32))
+	return Int32FromBytes(dec.FixedBytes(ScInt32Length))
 }
 
 func Int32Encode(enc *WasmEncoder, value int32) {
-	enc.VliEncode(int64(value))
+	enc.FixedBytes(Int32ToBytes(value), ScInt32Length)
 }
 
 func Int32FromBytes(buf []byte) int32 {

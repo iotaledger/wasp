@@ -13,11 +13,11 @@ const ScInt64Length = 8
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 func Int64Decode(dec *WasmDecoder) int64 {
-	return dec.VliDecode(64)
+	return Int64FromBytes(dec.FixedBytes(ScInt64Length))
 }
 
 func Int64Encode(enc *WasmEncoder, value int64) {
-	enc.VliEncode(value)
+	enc.FixedBytes(Int64ToBytes(value), ScInt64Length)
 }
 
 func Int64FromBytes(buf []byte) int64 {

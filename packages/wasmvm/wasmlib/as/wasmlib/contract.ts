@@ -68,10 +68,7 @@ export class ScView {
         req.contract = this.hContract;
         req.function = this.hFunction;
         req.params = this.params.toBytes();
-        if (allowance === null) {
-            allowance = new ScTransfer();
-        }
-        req.allowance = allowance.toBytes();
+        req.allowance = (allowance === null) ? new Uint8Array(0): allowance.toBytes();
         const res = this.ctx.fnCall(req);
         const proxy = this.resultsProxy;
         if (proxy != null) {

@@ -171,10 +171,7 @@ export class ScSandbox {
             params = new ScDict(null);
         }
         req.params = params.toBytes();
-        if (allowance === null) {
-            allowance = new ScTransfer();
-        }
-        req.allowance = allowance.toBytes();
+        req.allowance = (allowance === null) ? new Uint8Array(0) : allowance.toBytes();
         const res = this.fnCall(req);
         return new ScDict(res).immutable();
     }
@@ -239,15 +236,9 @@ export class ScSandboxFunc extends ScSandbox {
         req.function = fn.hFunction;
         req.params = fn.params.toBytes();
         let allowance = fn.allowanceAssets;
-        if (allowance === null) {
-            allowance = new ScTransfer();
-        }
-        req.allowance = allowance.toBytes();
+        req.allowance = (allowance === null) ? new Uint8Array(0) : allowance.toBytes();
         let transfer = fn.transferAssets;
-        if (transfer === null) {
-            transfer = new ScTransfer();
-        }
-        req.transfer = transfer.toBytes();
+        req.transfer = (transfer === null) ? new Uint8Array(0) : transfer.toBytes();
         req.delay = fn.delaySeconds;
         return uint64FromBytes(sandbox(FnEstimateStorageDeposit, req.bytes()));
     }

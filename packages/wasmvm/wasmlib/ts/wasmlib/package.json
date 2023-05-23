@@ -1,7 +1,7 @@
 {
   "name": "wasmlib",
   "description": "WasmLib, interface library for ISC Wasm VM",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "author": "Eric Hop",
   "main": "index.ts",
   "scripts": {

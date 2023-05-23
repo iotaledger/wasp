@@ -1,14 +1,14 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+export const ScNftIDLength = 32;
+
 import {panic} from '../sandbox';
 import {hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from './codec';
 import {Proxy} from './proxy';
 import {bytesCompare} from './scbytes';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-export const ScNftIDLength = 32;
 
 export class ScNftID {
     id: Uint8Array = zeroes(ScNftIDLength);

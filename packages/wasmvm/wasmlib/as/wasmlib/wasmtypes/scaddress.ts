@@ -1,15 +1,6 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from '../sandbox';
-import {bech32Decode, bech32Encode, hashKeccak, hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from './codec';
-import {Proxy} from './proxy';
-import {bytesCompare} from './scbytes';
-import {ScAgentID} from './scagentid';
-import {stringFromBytes, stringToBytes} from "./scstring";
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 export const ScAddressAlias: u8 = 8;
 export const ScAddressEd25519: u8 = 0;
 export const ScAddressNFT: u8 = 16;
@@ -21,6 +12,15 @@ export const ScLengthNFT = 33;
 export const ScLengthEth = 20;
 
 export const ScAddressLength = ScLengthEd25519;
+
+import {panic} from '../sandbox';
+import {bech32Decode, bech32Encode, hashKeccak, hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from './codec';
+import {Proxy} from './proxy';
+import {bytesCompare} from './scbytes';
+import {ScAgentID} from './scagentid';
+import {stringFromBytes, stringToBytes} from "./scstring";
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScAddress {
     id: Uint8Array = zeroes(ScAddressLength);

@@ -37,10 +37,11 @@ pub fn hname_encode(enc: &mut WasmEncoder, value: ScHname) {
 }
 
 pub fn hname_from_bytes(buf: &[u8]) -> ScHname {
-    if buf.len() == 0 {
+    let len = buf.len();
+    if len == 0 {
         return ScHname(0);
     }
-    if buf.len() != SC_HNAME_LENGTH {
+    if len != SC_HNAME_LENGTH {
         panic("invalid Hname length");
     }
     ScHname(u32::from_le_bytes(buf.try_into().expect("WTF?")))
