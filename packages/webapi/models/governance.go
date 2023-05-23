@@ -7,6 +7,7 @@ type GovChainInfoResponse struct {
 	ChainOwnerID    string         `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).),required"`
 	GasFeePolicy    *gas.FeePolicy `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
 	GasLimits       *gas.Limits    `json:"gasLimits" swagger:"desc(The gas limits),required"`
+	BlockKeepAmount int32          `json:"blockKeepAmount" swagger:"desc(Amount of blocks to keep in the state)"`
 	PublicURL       string         `json:"publicUrl" swagger:"desc(The fully qualified public url leading to the chains metadata),required"`
 	EVMJsonRPCURL   string         `json:"evmJsonRpcUrl" swagger:"desc(The EVM json rpc url),required"`
 	EVMWebSocketURL string         `json:"evmWebSocketUrl" swagger:"desc(The EVM websocket url),required"`

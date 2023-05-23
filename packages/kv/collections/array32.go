@@ -169,3 +169,13 @@ func (a *Array32) SetAt(idx uint32, value []byte) {
 	}
 	a.kvw.Set(a.getArray32ElemKey(idx), value)
 }
+
+// PruneAt deletes the value at the given index, without shifting the rest
+// of the values.
+func (a *Array32) PruneAt(idx uint32) {
+	n := a.Len()
+	if idx >= n {
+		panic(fmt.Errorf("index %d out of range for array of len %d", idx, n))
+	}
+	a.kvw.Del(a.getArray32ElemKey(idx))
+}

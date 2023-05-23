@@ -74,9 +74,9 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 	// Publish notifications about the state change (new block).
 	blockIndex := block.StateIndex()
 	blocklogStatePartition := subrealm.NewReadOnly(block.MutationsReader(), kv.Key(blocklog.Contract.Hname().Bytes()))
-	blockInfo, err := blocklog.GetBlockInfo(blocklogStatePartition, blockIndex)
-	if err != nil {
-		log.Errorf("unable to get blockInfo for blockIndex %d: %v", blockIndex, err)
+	blockInfo, ok := blocklog.GetBlockInfo(blocklogStatePartition, blockIndex)
+	if !ok {
+		log.Errorf("unable to get blockInfo for blockIndex %d", blockIndex)
 	}
 
 	triggerEvent(events, events.NewBlock, &ISCEvent[*BlockWithTrieRoot]{

@@ -16,6 +16,7 @@ type ChainInfo struct {
 	ChainOwnerID    isc.AgentID
 	GasFeePolicy    *gas.FeePolicy
 	GasLimits       *gas.Limits
+	BlockKeepAmount int32
 	PublicURL       string
 	EVMJsonRPCURL   string
 	EVMWebSocketURL string
@@ -28,6 +29,7 @@ func MapChainInfo(info *isc.ChainInfo, isActive bool) *ChainInfo {
 		ChainOwnerID:    info.ChainOwnerID,
 		GasFeePolicy:    info.GasFeePolicy,
 		GasLimits:       info.GasLimits,
+		BlockKeepAmount: info.BlockKeepAmount,
 		PublicURL:       info.PublicURL,
 		EVMJsonRPCURL:   info.MetadataEVMJsonRPCURL,
 		EVMWebSocketURL: info.MetadataEVMWebSocketURL,

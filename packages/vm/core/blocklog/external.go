@@ -18,10 +18,7 @@ func GetRequestIDsForBlock(stateReader kv.KVStoreReader, blockIndex uint32) ([]i
 	}
 	partition := subrealm.NewReadOnly(stateReader, kv.Key(Contract.Hname().Bytes()))
 
-	recsBin, exist, err := getRequestLogRecordsForBlockBin(partition, blockIndex)
-	if err != nil {
-		return nil, err
-	}
+	recsBin, exist := getRequestLogRecordsForBlockBin(partition, blockIndex)
 	if !exist {
 		return []isc.RequestID{}, fmt.Errorf("block index %v does not exist", blockIndex)
 	}
@@ -115,10 +112,28 @@ func GetEventsByBlockIndex(partition kv.KVStoreReader, blockIndex uint32, totalR
 	return ret
 }
 
-func GetBlockInfo(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, error) {
-	ret, err := BlockInfoFromBytes(getBlockInfoBytes(partition, blockIndex))
-	if err != nil {
-		return nil, err
+func GetBlockInfo(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, bool) {
+	data := getBlockInfoBytes(partition, blockIndex)
+	if data == nil {
+		return nil, false
 	}
-	return ret, nil
+	ret, err := BlockInfoFromBytes(data)
+	if err != nil {
+		panic(err)
+	}
+	return ret, true
+}
+
+func Prune(partition kv.KVStore, latestBlockIndex uint32, blockKeepAmount int32) {
+	if blockKeepAmount <= 0 {
+		// keep all blocks
+		return
+	}
+	if latestBlockIndex < uint32(blockKeepAmount) {
+		return
+	}
+	toDelete := latestBlockIndex - uint32(blockKeepAmount)
+	// assume that all blocks prior to `toDelete` have been already deleted, so
+	// we only need to delete this one.
+	pruneBlock(partition, toDelete)
 }

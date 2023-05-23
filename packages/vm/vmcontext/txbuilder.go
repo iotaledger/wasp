@@ -93,12 +93,12 @@ func (vmctx *VMContext) getOutputID(blockIndex uint32, outputIndex uint16) iotag
 		return iotago.OutputIDFromTransactionIDAndIndex(vmctx.StateAnchor().OutputID.TransactionID(), outputIndex)
 	}
 	var outputID iotago.OutputID
-	var err error
+	var ok bool
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		outputID, err = blocklog.GetOutputID(s, blockIndex, outputIndex)
+		outputID, ok = blocklog.GetOutputID(s, blockIndex, outputIndex)
 	})
-	if err != nil {
-		panic(fmt.Errorf("internal: can't find UTXO input for block index %d, output index %d, error: %w", blockIndex, outputIndex, err))
+	if !ok {
+		panic(fmt.Errorf("internal: can't find UTXO input for block index %d, output index %d", blockIndex, outputIndex))
 	}
 	return outputID
 }

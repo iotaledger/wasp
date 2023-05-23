@@ -25,8 +25,6 @@ const (
 
 	// EVM chain ID
 	keyChainID = "c"
-	// Amount of blocks to keep in DB. Older blocks will be pruned every time a transaction is added
-	keyKeepAmount = "k"
 
 	// blocks:
 
@@ -40,26 +38,32 @@ const (
 	keyBlockNumberByBlockHash = "bh:n"
 	keyBlockNumberByTxHash    = "th:n"
 	keyBlockIndexByTxHash     = "th:i"
+
+	BlockKeepAll = -1
 )
 
 // BlockchainDB contains logic for storing a fake blockchain (more like a list of blocks),
 // intended for satisfying EVM tools that depend on the concept of a block.
 type BlockchainDB struct {
-	kv            kv.KVStore
-	blockGasLimit uint64
+	kv              kv.KVStore
+	blockGasLimit   uint64
+	blockKeepAmount int32
 }
 
-func NewBlockchainDB(store kv.KVStore, blockGasLimit uint64) *BlockchainDB {
-	return &BlockchainDB{kv: store, blockGasLimit: blockGasLimit}
+func NewBlockchainDB(store kv.KVStore, blockGasLimit uint64, blockKeepAmount int32) *BlockchainDB {
+	return &BlockchainDB{
+		kv:              store,
+		blockGasLimit:   blockGasLimit,
+		blockKeepAmount: blockKeepAmount,
+	}
 }
 
 func (bc *BlockchainDB) Initialized() bool {
 	return bc.kv.Get(keyChainID) != nil
 }
 
-func (bc *BlockchainDB) Init(chainID uint16, keepAmount int32, timestamp uint64) {
+func (bc *BlockchainDB) Init(chainID uint16, timestamp uint64) {
 	bc.SetChainID(chainID)
-	bc.SetKeepAmount(keepAmount)
 	bc.addBlock(bc.makeHeader(nil, nil, 0, timestamp))
 }
 
@@ -67,16 +71,12 @@ func (bc *BlockchainDB) SetChainID(chainID uint16) {
 	bc.kv.Set(keyChainID, codec.EncodeUint16(chainID))
 }
 
+func GetChainIDFromBlockChainDBState(kv kv.KVStore) uint16 {
+	return codec.MustDecodeUint16(kv.Get(keyChainID))
+}
+
 func (bc *BlockchainDB) GetChainID() uint16 {
-	return codec.MustDecodeUint16(bc.kv.Get(keyChainID))
-}
-
-func (bc *BlockchainDB) SetKeepAmount(keepAmount int32) {
-	bc.kv.Set(keyKeepAmount, codec.EncodeInt32(keepAmount))
-}
-
-func (bc *BlockchainDB) keepAmount() int32 {
-	return codec.MustDecodeInt32(bc.kv.Get(keyKeepAmount), -1)
+	return GetChainIDFromBlockChainDBState(bc.kv)
 }
 
 func (bc *BlockchainDB) setNumber(n uint64) {
@@ -173,15 +173,14 @@ func (bc *BlockchainDB) MintBlock(timestamp uint64) {
 }
 
 func (bc *BlockchainDB) prune(currentNumber uint64) {
-	keepAmount := bc.keepAmount()
-	if keepAmount < 0 {
+	if bc.blockKeepAmount <= 0 {
 		// keep all blocks
 		return
 	}
-	if currentNumber <= uint64(keepAmount) {
+	if currentNumber < uint64(bc.blockKeepAmount) {
 		return
 	}
-	toDelete := currentNumber - uint64(keepAmount)
+	toDelete := currentNumber - uint64(bc.blockKeepAmount)
 	// assume that all blocks prior to `toDelete` have been already deleted, so
 	// we only need to delete this one.
 	bc.deleteBlock(toDelete)

@@ -227,7 +227,12 @@ func (env *Solo) NewChain(depositFundsForOriginator ...bool) *Chain {
 //   - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
 //
 // Upon return, the chain is fully functional to process requests
-func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens uint64, name string) (*Chain, *iotago.Transaction) {
+func (env *Solo) NewChainExt(
+	chainOriginator *cryptolib.KeyPair,
+	initBaseTokens uint64,
+	name string,
+	originParams ...dict.Dict,
+) (*Chain, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
 	if chainOriginator == nil {
@@ -237,8 +242,13 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 		require.NoError(env.T, err)
 	}
 
-	originParams := dict.Dict{
+	initParams := dict.Dict{
 		origin.ParamChainOwner: isc.NewAgentID(chainOriginator.Address()).Bytes(),
+	}
+	if len(originParams) > 0 {
+		for k, v := range originParams[0] {
+			initParams[k] = v
+		}
 	}
 
 	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indices to user
@@ -255,7 +265,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 		stateControllerAddr,
 		stateControllerAddr,
 		initBaseTokens, // will be adjusted to min storage deposit + MinimumBaseTokensOnCommonAccount
-		originParams,
+		initParams,
 		outs,
 		outIDs,
 	)
@@ -279,7 +289,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 	require.NoError(env.T, err)
 	originAOMinSD := parameters.L1().Protocol.RentStructure.MinRent(originAO)
 	store := indexedstore.New(state.NewStore(kvStore))
-	origin.InitChain(store, originParams, originAO.Amount-originAOMinSD)
+	origin.InitChain(store, initParams, originAO.Amount-originAOMinSD)
 
 	{
 		block, err2 := store.LatestBlock()

@@ -4,6 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**BlockKeepAmount** | Pointer to **int32** | Amount of blocks to keep in the state | [optional] 
 **ChainID** | **string** | ChainID (Bech32-encoded). | 
 **ChainOwnerId** | **string** | The chain owner address (Bech32-encoded). | 
 **EvmJsonRpcUrl** | **string** | The EVM json rpc url | 
@@ -30,6 +31,31 @@ will change when the set of required properties is changed
 NewGovChainInfoResponseWithDefaults instantiates a new GovChainInfoResponse object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
+
+### GetBlockKeepAmount
+
+`func (o *GovChainInfoResponse) GetBlockKeepAmount() int32`
+
+GetBlockKeepAmount returns the BlockKeepAmount field if non-nil, zero value otherwise.
+
+### GetBlockKeepAmountOk
+
+`func (o *GovChainInfoResponse) GetBlockKeepAmountOk() (*int32, bool)`
+
+GetBlockKeepAmountOk returns a tuple with the BlockKeepAmount field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetBlockKeepAmount
+
+`func (o *GovChainInfoResponse) SetBlockKeepAmount(v int32)`
+
+SetBlockKeepAmount sets BlockKeepAmount field to given value.
+
+### HasBlockKeepAmount
+
+`func (o *GovChainInfoResponse) HasBlockKeepAmount() bool`
+
+HasBlockKeepAmount returns a boolean if a field has been set.
 
 ### GetChainID
 
