@@ -316,7 +316,7 @@ func TestPublicURLL1Metadata(t *testing.T) {
 			governance.Contract.Name,
 			governance.FuncSetMetadata.Name,
 			governance.ParamPublicURL,
-			string(make([]byte, governanceimpl.MaxURLLength*2)),
+			string(make([]byte, governanceimpl.MaxCustomMetadataLength+1)),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
