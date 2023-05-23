@@ -78,8 +78,8 @@ type SoloContext struct {
 }
 
 var (
-	_ wasmlib.ScFuncClientContext = &SoloContext{}
-	_ wasmlib.ScViewClientContext = &SoloContext{}
+	_ wasmlib.ScFuncClientContext = new(SoloContext)
+	_ wasmlib.ScViewClientContext = new(SoloContext)
 )
 
 func contains(s []isc.AgentID, e isc.AgentID) bool {

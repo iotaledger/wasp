@@ -16,7 +16,7 @@ type ScFuncContext struct {
 	ScSandboxFunc
 }
 
-var _ ScFuncClientContext = &ScFuncContext{}
+var _ ScFuncClientContext = new(ScFuncContext)
 
 func (ctx ScFuncContext) ClientContract(hContract wasmtypes.ScHname) wasmtypes.ScHname {
 	return hContract
@@ -34,8 +34,8 @@ type ScViewContext struct {
 }
 
 var (
-	_ ScViewClientContext = &ScFuncContext{}
-	_ ScViewClientContext = &ScViewContext{}
+	_ ScViewClientContext = new(ScFuncContext)
+	_ ScViewClientContext = new(ScViewContext)
 )
 
 func (ctx ScViewContext) ClientContract(hContract wasmtypes.ScHname) wasmtypes.ScHname {
