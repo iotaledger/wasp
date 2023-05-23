@@ -220,28 +220,6 @@ func (s MutableGetChainOwnerResults) ChainOwner() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ResultChainOwner))
 }
 
-type ImmutableGetCustomMetadataResults struct {
-	Proxy wasmtypes.Proxy
-}
-
-// chain metadata
-func (s ImmutableGetCustomMetadataResults) Metadata() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultMetadata))
-}
-
-type MutableGetCustomMetadataResults struct {
-	Proxy wasmtypes.Proxy
-}
-
-func NewMutableGetCustomMetadataResults() MutableGetCustomMetadataResults {
-	return MutableGetCustomMetadataResults{Proxy: wasmlib.NewResultsProxy()}
-}
-
-// chain metadata
-func (s MutableGetCustomMetadataResults) Metadata() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultMetadata))
-}
-
 type ImmutableGetEVMGasRatioResults struct {
 	Proxy wasmtypes.Proxy
 }
@@ -328,4 +306,46 @@ func NewMutableGetMaintenanceStatusResults() MutableGetMaintenanceStatusResults 
 // whether maintenance mode is on
 func (s MutableGetMaintenanceStatusResults) Status() wasmtypes.ScMutableBool {
 	return wasmtypes.NewScMutableBool(s.Proxy.Root(ResultStatus))
+}
+
+type ImmutableGetMetadataResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+// the public evm json rpc url
+func (s ImmutableGetMetadataResults) EvmJsonRPCURL() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.Proxy.Root(ResultEvmJsonRPCURL))
+}
+
+// the public evm websocket url
+func (s ImmutableGetMetadataResults) EvmWebSocketUrl() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.Proxy.Root(ResultEvmWebSocketUrl))
+}
+
+// the public url leading to the chain info, stored on the tangle
+func (s ImmutableGetMetadataResults) PublicURL() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.Proxy.Root(ResultPublicURL))
+}
+
+type MutableGetMetadataResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewMutableGetMetadataResults() MutableGetMetadataResults {
+	return MutableGetMetadataResults{Proxy: wasmlib.NewResultsProxy()}
+}
+
+// the public evm json rpc url
+func (s MutableGetMetadataResults) EvmJsonRPCURL() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.Proxy.Root(ResultEvmJsonRPCURL))
+}
+
+// the public evm websocket url
+func (s MutableGetMetadataResults) EvmWebSocketUrl() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.Proxy.Root(ResultEvmWebSocketUrl))
+}
+
+// the public url leading to the chain info, stored on the tangle
+func (s MutableGetMetadataResults) PublicURL() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.Proxy.Root(ResultPublicURL))
 }
