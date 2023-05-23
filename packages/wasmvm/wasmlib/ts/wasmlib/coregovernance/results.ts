@@ -178,20 +178,6 @@ export class MutableGetChainOwnerResults extends wasmtypes.ScProxy {
     }
 }
 
-export class ImmutableGetCustomMetadataResults extends wasmtypes.ScProxy {
-    // chain metadata
-    metadata(): wasmtypes.ScImmutableBytes {
-        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultMetadata));
-    }
-}
-
-export class MutableGetCustomMetadataResults extends wasmtypes.ScProxy {
-    // chain metadata
-    metadata(): wasmtypes.ScMutableBytes {
-        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultMetadata));
-    }
-}
-
 export class ImmutableGetEVMGasRatioResults extends wasmtypes.ScProxy {
     // serialized gas ratio
     gasRatio(): wasmtypes.ScImmutableBytes {
@@ -245,5 +231,39 @@ export class MutableGetMaintenanceStatusResults extends wasmtypes.ScProxy {
     // whether maintenance mode is on
     status(): wasmtypes.ScMutableBool {
         return new wasmtypes.ScMutableBool(this.proxy.root(sc.ResultStatus));
+    }
+}
+
+export class ImmutableGetMetadataResults extends wasmtypes.ScProxy {
+    // the public evm json rpc url
+    evmJsonRPCURL(): wasmtypes.ScImmutableString {
+        return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultEvmJsonRPCURL));
+    }
+
+    // the public evm websocket url
+    evmWebSocketUrl(): wasmtypes.ScImmutableString {
+        return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultEvmWebSocketUrl));
+    }
+
+    // the public url leading to the chain info, stored on the tangle
+    publicURL(): wasmtypes.ScImmutableString {
+        return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultPublicURL));
+    }
+}
+
+export class MutableGetMetadataResults extends wasmtypes.ScProxy {
+    // the public evm json rpc url
+    evmJsonRPCURL(): wasmtypes.ScMutableString {
+        return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultEvmJsonRPCURL));
+    }
+
+    // the public evm websocket url
+    evmWebSocketUrl(): wasmtypes.ScMutableString {
+        return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultEvmWebSocketUrl));
+    }
+
+    // the public url leading to the chain info, stored on the tangle
+    publicURL(): wasmtypes.ScMutableString {
+        return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultPublicURL));
     }
 }

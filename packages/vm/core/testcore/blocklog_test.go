@@ -107,8 +107,8 @@ func TestRequestIsProcessed(t *testing.T) {
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetCustomMetadata.Name,
-		governance.ParamCustomMetadata, []byte("foo"),
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetMetadata.Name,
+		governance.ParamPublicURL, []byte("foo"),
 	).
 		WithGasBudget(100_000)
 	tx, _, err := ch.PostRequestSyncTx(req, nil)
@@ -130,8 +130,8 @@ func TestRequestReceipt(t *testing.T) {
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetCustomMetadata.Name,
-		governance.ParamCustomMetadata, []byte("foo"),
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetMetadata.Name,
+		governance.ParamPublicURL, []byte("foo"),
 	).
 		WithGasBudget(100_000)
 	tx, _, err := ch.PostRequestSyncTx(req, nil)
@@ -159,8 +159,8 @@ func TestRequestReceiptsForBlocks(t *testing.T) {
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetCustomMetadata.Name,
-		governance.ParamCustomMetadata, []byte("foo"),
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetMetadata.Name,
+		governance.ParamPublicURL, []byte("foo"),
 	).
 		WithGasBudget(100_000)
 	tx, _, err := ch.PostRequestSyncTx(req, nil)
@@ -184,8 +184,8 @@ func TestRequestIDsForBlocks(t *testing.T) {
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetCustomMetadata.Name,
-		governance.ParamCustomMetadata, []byte("foo"),
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetMetadata.Name,
+		governance.ParamPublicURL, []byte("foo"),
 	).
 		WithGasBudget(100_000)
 	tx, _, err := ch.PostRequestSyncTx(req, nil)

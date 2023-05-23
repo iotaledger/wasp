@@ -197,21 +197,21 @@ func TestSetMaintenanceStatusAndSetOnAndOff(t *testing.T) {
 	require.False(t, status)
 }
 
-func TestSetCustomMetadataAndGetCustomMetadata(t *testing.T) {
+func TestSetPublicUrlAndGetPublicUrl(t *testing.T) {
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
 
 	customMetadata := "some rand metadata"
-	fSet := coregovernance.ScFuncs.SetCustomMetadata(ctx)
-	fSet.Params.Metadata().SetValue([]byte(customMetadata))
+	fSet := coregovernance.ScFuncs.SetMetadata(ctx)
+	fSet.Params.PublicURL().SetValue(customMetadata)
 	fSet.Func.Post()
 	require.NoError(t, ctx.Err)
 
-	fGet := coregovernance.ScFuncs.GetCustomMetadata(ctx)
+	fGet := coregovernance.ScFuncs.GetMetadata(ctx)
 	fGet.Func.Call()
 	require.NoError(t, ctx.Err)
-	retCustomMetadata := fGet.Results.Metadata().Value()
-	require.Equal(t, customMetadata, string(retCustomMetadata))
+	retCustomMetadata := fGet.Results.PublicURL().Value()
+	require.Equal(t, customMetadata, retCustomMetadata)
 }
 
 func TestGetAllowedStateControllerAddresses(t *testing.T) {

@@ -26,7 +26,8 @@ func (vmctx *VMContext) StateMetadata(stateCommitment *state.L1Commitment) []byt
 	})
 
 	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
-		stateMetadata.CustomMetadata = governance.GetCustomMetadata(s)
+		// On error, the publicURL is len(0)
+		stateMetadata.PublicURL, _ = governance.GetPublicURL(s)
 		stateMetadata.GasFeePolicy = governance.MustGetGasFeePolicy(s)
 	})
 

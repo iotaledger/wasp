@@ -27,7 +27,7 @@ func TestStateMetadataSerialization(t *testing.T) {
 			ValidatorFeeShare: 5,
 		},
 		6,
-		[]byte("foo"),
+		"https://iota.org",
 	)
 	data := s.Bytes()
 	s2, err := transaction.StateMetadataFromBytes(data)

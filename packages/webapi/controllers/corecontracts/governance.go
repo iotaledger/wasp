@@ -1,7 +1,6 @@
 package corecontracts
 
 import (
-	"encoding/base64"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -14,11 +13,13 @@ import (
 
 func MapGovChainInfoResponse(chainInfo *isc.ChainInfo) models.GovChainInfoResponse {
 	return models.GovChainInfoResponse{
-		ChainID:        chainInfo.ChainID.String(),
-		ChainOwnerID:   chainInfo.ChainOwnerID.String(),
-		GasFeePolicy:   chainInfo.GasFeePolicy,
-		GasLimits:      chainInfo.GasLimits,
-		CustomMetadata: base64.StdEncoding.EncodeToString(chainInfo.CustomMetadata),
+		ChainID:         chainInfo.ChainID.String(),
+		ChainOwnerID:    chainInfo.ChainOwnerID.String(),
+		GasFeePolicy:    chainInfo.GasFeePolicy,
+		GasLimits:       chainInfo.GasLimits,
+		PublicURL:       chainInfo.PublicURL,
+		EVMJsonRPCURL:   chainInfo.MetadataEVMJsonRPCURL,
+		EVMWebSocketURL: chainInfo.MetadataEVMWebSocketURL,
 	}
 }
 

@@ -27,7 +27,7 @@ require (
 	github.com/iotaledger/inx-app v1.0.0-rc.3.0.20230417131029-0bfe891d7c4a
 	github.com/iotaledger/inx/go v1.0.0-rc.2
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.2
-	github.com/labstack/echo-contrib v0.14.1
+	github.com/labstack/echo-contrib v0.15.0
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/labstack/gommon v0.4.0
 	github.com/libp2p/go-libp2p v0.27.3
@@ -45,7 +45,7 @@ require (
 	go.uber.org/dig v1.17.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.9.0
-	golang.org/x/exp v0.0.0-20230519143937-03e91628a987
+	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 	golang.org/x/net v0.10.0
 	gopkg.in/yaml.v3 v3.0.1
 	nhooyr.io/websocket v1.8.7

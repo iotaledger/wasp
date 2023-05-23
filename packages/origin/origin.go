@@ -128,7 +128,7 @@ func calcStateMetadata(initParams dict.Dict, commonAccountAmount uint64) []byte 
 		L1Commitment(initParams, commonAccountAmount),
 		gas.DefaultFeePolicy(),
 		migrations.BaseSchemaVersion+uint32(len(migrations.Migrations)),
-		[]byte{},
+		"",
 	)
 	return s.Bytes()
 }
