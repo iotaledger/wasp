@@ -2,7 +2,9 @@ package trie_test
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
+	"math/rand"
 	"strings"
 	"testing"
 
@@ -67,7 +69,7 @@ func TestBasic(t *testing.T) {
 		require.Nil(t, tr.Get([]byte("cccddd")))
 		require.Nil(t, tr.Get([]byte("ccceee")))
 	}
-	// trie is now empty, so hash3 should be equl to hash0
+	// trie is now empty, so hash3 should be equal to hash0
 	require.Equal(t, root0, root3)
 }
 
@@ -606,4 +608,59 @@ func reverse(orig []string) []string {
 		ret = append(ret, orig[i])
 	}
 	return ret
+}
+
+// Benchmark trie cache speed
+func BenchmarkTrieCacheMiss(b *testing.B) {
+	store := NewInMemoryKVStore()
+
+	var root0 trie.Hash
+	{
+		root0 = trie.MustInitRoot(store)
+	}
+	{
+		state, err := trie.NewTrieReader(store, root0)
+		require.NoError(b, err)
+		require.EqualValues(b, []byte(nil), state.Get([]byte("a")))
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		key := fmt.Sprintf("key_%d", i)
+		val := fmt.Sprintf("value_%d", i)
+		store.Set([]byte(key), []byte(val))
+	}
+}
+
+func BenchmarkTrieCache(b *testing.B) {
+	const (
+		numEntries = 2e7
+	)
+	var state *trie.TrieUpdatable
+	{
+		var err error
+		store := NewInMemoryKVStore()
+		root0 := trie.MustInitRoot(store)
+		state, err = trie.NewTrieUpdatable(store, root0)
+		require.NoError(b, err)
+		require.EqualValues(b, []byte(nil), state.Get([]byte("a")))
+	}
+
+	for i := 0; i < numEntries; i++ {
+		key := fmt.Sprintf("key_%d", i)
+		v := []byte{}
+		state.Update([]byte(key), binary.BigEndian.AppendUint64(v, uint64(i)))
+	}
+
+	value := []byte{}
+	b.ResetTimer()
+	t := util.NewTimer()
+	for i := 0; i < b.N; i++ {
+		r := rand.Int63n(numEntries)
+		value = state.Get([]byte(fmt.Sprintf("key_%d", r)))
+		t.Step(fmt.Sprintf("key_%d", r))
+	}
+	t.Done("benchmark")
+	b.Log(t.String())
+	b.Logf("found value %x", value)
 }
