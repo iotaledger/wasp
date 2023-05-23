@@ -11,21 +11,27 @@ type (
 )
 
 type ChainInfo struct {
-	IsActive       bool
-	ChainID        isc.ChainID
-	ChainOwnerID   isc.AgentID
-	GasFeePolicy   *gas.FeePolicy
-	GasLimits      *gas.Limits
-	CustomMetadata []byte
+	IsActive        bool
+	ChainID         isc.ChainID
+	ChainOwnerID    isc.AgentID
+	GasFeePolicy    *gas.FeePolicy
+	GasLimits       *gas.Limits
+	PublicURL       string
+	EVMJsonRPCURL   string
+	EVMWebSocketURL string
 }
 
 func MapChainInfo(info *isc.ChainInfo, isActive bool) *ChainInfo {
-	return &ChainInfo{
-		IsActive:       isActive,
-		ChainID:        info.ChainID,
-		ChainOwnerID:   info.ChainOwnerID,
-		GasFeePolicy:   info.GasFeePolicy,
-		GasLimits:      info.GasLimits,
-		CustomMetadata: info.CustomMetadata,
+	chainInfo := &ChainInfo{
+		IsActive:        isActive,
+		ChainID:         info.ChainID,
+		ChainOwnerID:    info.ChainOwnerID,
+		GasFeePolicy:    info.GasFeePolicy,
+		GasLimits:       info.GasLimits,
+		PublicURL:       info.PublicURL,
+		EVMJsonRPCURL:   info.MetadataEVMJsonRPCURL,
+		EVMWebSocketURL: info.MetadataEVMWebSocketURL,
 	}
+
+	return chainInfo
 }

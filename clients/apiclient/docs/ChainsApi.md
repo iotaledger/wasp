@@ -17,7 +17,7 @@ Method | HTTP request | Description
 [**GetStateValue**](ChainsApi.md#GetStateValue) | **Get** /v1/chains/{chainID}/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
 [**RemoveAccessNode**](ChainsApi.md#RemoveAccessNode) | **Delete** /v1/chains/{chainID}/access-node/{peer} | Remove an access node.
 [**SetChainRecord**](ChainsApi.md#SetChainRecord) | **Post** /v1/chains/{chainID}/chainrecord | Sets the chain record.
-[**V1ChainsChainIDEvmGet**](ChainsApi.md#V1ChainsChainIDEvmGet) | **Get** /v1/chains/{chainID}/evm | Ethereum JSON-RPC
+[**V1ChainsChainIDEvmPost**](ChainsApi.md#V1ChainsChainIDEvmPost) | **Post** /v1/chains/{chainID}/evm | Ethereum JSON-RPC
 [**V1ChainsChainIDEvmWsGet**](ChainsApi.md#V1ChainsChainIDEvmWsGet) | **Get** /v1/chains/{chainID}/evm/ws | Ethereum JSON-RPC (Websocket transport)
 [**WaitForRequest**](ChainsApi.md#WaitForRequest) | **Get** /v1/chains/{chainID}/requests/{requestID}/wait | Wait until the given request has been processed by the node
 
@@ -352,7 +352,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -909,9 +909,9 @@ Name | Type | Description  | Notes
 [[Back to README]](../README.md)
 
 
-## V1ChainsChainIDEvmGet
+## V1ChainsChainIDEvmPost
 
-> V1ChainsChainIDEvmGet(ctx, chainID).Execute()
+> V1ChainsChainIDEvmPost(ctx, chainID).Execute()
 
 Ethereum JSON-RPC
 
@@ -932,9 +932,9 @@ func main() {
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.V1ChainsChainIDEvmGet(context.Background(), chainID).Execute()
+    resp, r, err := apiClient.ChainsApi.V1ChainsChainIDEvmPost(context.Background(), chainID).Execute()
     if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.V1ChainsChainIDEvmGet``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.V1ChainsChainIDEvmPost``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
 }
@@ -950,7 +950,7 @@ Name | Type | Description  | Notes
 
 ### Other Parameters
 
-Other parameters are passed through a pointer to a apiV1ChainsChainIDEvmGetRequest struct via the builder pattern
+Other parameters are passed through a pointer to a apiV1ChainsChainIDEvmPostRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes

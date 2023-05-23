@@ -548,20 +548,6 @@ func (a *ChainsApiService) GetChainInfoExecute(r ApiGetChainInfoRequest) (*Chain
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if r.ctx != nil {
-		// API Key Authentication
-		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
-			if apiKey, ok := auth["Authorization"]; ok {
-				var key string
-				if apiKey.Prefix != "" {
-					key = apiKey.Prefix + " " + apiKey.Key
-				} else {
-					key = apiKey.Key
-				}
-				localVarHeaderParams["Authorization"] = key
-			}
-		}
-	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
 		return localVarReturnValue, nil, err
@@ -583,16 +569,6 @@ func (a *ChainsApiService) GetChainInfoExecute(r ApiGetChainInfoRequest) (*Chain
 		newErr := &GenericOpenAPIError{
 			body:  localVarBody,
 			error: localVarHTTPResponse.Status,
-		}
-		if localVarHTTPResponse.StatusCode == 401 {
-			var v ValidationError
-			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHTTPResponse, newErr
-			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -1549,25 +1525,25 @@ func (a *ChainsApiService) SetChainRecordExecute(r ApiSetChainRecordRequest) (*h
 	return localVarHTTPResponse, nil
 }
 
-type ApiV1ChainsChainIDEvmGetRequest struct {
+type ApiV1ChainsChainIDEvmPostRequest struct {
 	ctx context.Context
 	ApiService *ChainsApiService
 	chainID string
 }
 
-func (r ApiV1ChainsChainIDEvmGetRequest) Execute() (*http.Response, error) {
-	return r.ApiService.V1ChainsChainIDEvmGetExecute(r)
+func (r ApiV1ChainsChainIDEvmPostRequest) Execute() (*http.Response, error) {
+	return r.ApiService.V1ChainsChainIDEvmPostExecute(r)
 }
 
 /*
-V1ChainsChainIDEvmGet Ethereum JSON-RPC
+V1ChainsChainIDEvmPost Ethereum JSON-RPC
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @param chainID ChainID (Bech32)
- @return ApiV1ChainsChainIDEvmGetRequest
+ @return ApiV1ChainsChainIDEvmPostRequest
 */
-func (a *ChainsApiService) V1ChainsChainIDEvmGet(ctx context.Context, chainID string) ApiV1ChainsChainIDEvmGetRequest {
-	return ApiV1ChainsChainIDEvmGetRequest{
+func (a *ChainsApiService) V1ChainsChainIDEvmPost(ctx context.Context, chainID string) ApiV1ChainsChainIDEvmPostRequest {
+	return ApiV1ChainsChainIDEvmPostRequest{
 		ApiService: a,
 		ctx: ctx,
 		chainID: chainID,
@@ -1575,14 +1551,14 @@ func (a *ChainsApiService) V1ChainsChainIDEvmGet(ctx context.Context, chainID st
 }
 
 // Execute executes the request
-func (a *ChainsApiService) V1ChainsChainIDEvmGetExecute(r ApiV1ChainsChainIDEvmGetRequest) (*http.Response, error) {
+func (a *ChainsApiService) V1ChainsChainIDEvmPostExecute(r ApiV1ChainsChainIDEvmPostRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodGet
+		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.V1ChainsChainIDEvmGet")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.V1ChainsChainIDEvmPost")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}

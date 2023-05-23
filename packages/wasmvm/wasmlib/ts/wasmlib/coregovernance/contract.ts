@@ -77,15 +77,6 @@ export class RotateStateControllerCall {
     }
 }
 
-export class SetCustomMetadataCall {
-    func:   wasmlib.ScFunc;
-    params: sc.MutableSetCustomMetadataParams = new sc.MutableSetCustomMetadataParams(wasmlib.ScView.nilProxy);
-
-    public constructor(ctx: wasmlib.ScFuncClientContext) {
-        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetCustomMetadata);
-    }
-}
-
 export class SetEVMGasRatioCall {
     func:   wasmlib.ScFunc;
     params: sc.MutableSetEVMGasRatioParams = new sc.MutableSetEVMGasRatioParams(wasmlib.ScView.nilProxy);
@@ -110,6 +101,15 @@ export class SetGasLimitsCall {
 
     public constructor(ctx: wasmlib.ScFuncClientContext) {
         this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetGasLimits);
+    }
+}
+
+export class SetMetadataCall {
+    func:   wasmlib.ScFunc;
+    params: sc.MutableSetMetadataParams = new sc.MutableSetMetadataParams(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScFuncClientContext) {
+        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetMetadata);
     }
 }
 
@@ -165,15 +165,6 @@ export class GetChainOwnerCall {
     }
 }
 
-export class GetCustomMetadataCall {
-    func:    wasmlib.ScView;
-    results: sc.ImmutableGetCustomMetadataResults = new sc.ImmutableGetCustomMetadataResults(wasmlib.ScView.nilProxy);
-
-    public constructor(ctx: wasmlib.ScViewClientContext) {
-        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetCustomMetadata);
-    }
-}
-
 export class GetEVMGasRatioCall {
     func:    wasmlib.ScView;
     results: sc.ImmutableGetEVMGasRatioResults = new sc.ImmutableGetEVMGasRatioResults(wasmlib.ScView.nilProxy);
@@ -207,6 +198,15 @@ export class GetMaintenanceStatusCall {
 
     public constructor(ctx: wasmlib.ScViewClientContext) {
         this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetMaintenanceStatus);
+    }
+}
+
+export class GetMetadataCall {
+    func:    wasmlib.ScView;
+    results: sc.ImmutableGetMetadataResults = new sc.ImmutableGetMetadataResults(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScViewClientContext) {
+        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetMetadata);
     }
 }
 
@@ -270,13 +270,6 @@ export class ScFuncs {
         return f;
     }
 
-    // Changes optional extra metadata that is appended to the L1 AliasOutput.
-    static setCustomMetadata(ctx: wasmlib.ScFuncClientContext): SetCustomMetadataCall {
-        const f = new SetCustomMetadataCall(ctx);
-        f.params = new sc.MutableSetCustomMetadataParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
-
     // Sets the EVM gas ratio for the chain.
     static setEVMGasRatio(ctx: wasmlib.ScFuncClientContext): SetEVMGasRatioCall {
         const f = new SetEVMGasRatioCall(ctx);
@@ -295,6 +288,13 @@ export class ScFuncs {
     static setGasLimits(ctx: wasmlib.ScFuncClientContext): SetGasLimitsCall {
         const f = new SetGasLimitsCall(ctx);
         f.params = new sc.MutableSetGasLimitsParams(wasmlib.newCallParamsProxy(f.func));
+        return f;
+    }
+
+    // Changes optional extra metadata that is appended to the L1 AliasOutput.
+    static setMetadata(ctx: wasmlib.ScFuncClientContext): SetMetadataCall {
+        const f = new SetMetadataCall(ctx);
+        f.params = new sc.MutableSetMetadataParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
@@ -337,13 +337,6 @@ export class ScFuncs {
         return f;
     }
 
-    // Returns the extra metadata that is added to the chain AliasOutput.
-    static getCustomMetadata(ctx: wasmlib.ScViewClientContext): GetCustomMetadataCall {
-        const f = new GetCustomMetadataCall(ctx);
-        f.results = new sc.ImmutableGetCustomMetadataResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
-
     // Returns the EVM gas ratio.
     static getEVMGasRatio(ctx: wasmlib.ScViewClientContext): GetEVMGasRatioCall {
         const f = new GetEVMGasRatioCall(ctx);
@@ -369,6 +362,13 @@ export class ScFuncs {
     static getMaintenanceStatus(ctx: wasmlib.ScViewClientContext): GetMaintenanceStatusCall {
         const f = new GetMaintenanceStatusCall(ctx);
         f.results = new sc.ImmutableGetMaintenanceStatusResults(wasmlib.newCallResultsProxy(f.func));
+        return f;
+    }
+
+    // Returns the extra metadata that is added to the chain AliasOutput.
+    static getMetadata(ctx: wasmlib.ScViewClientContext): GetMetadataCall {
+        const f = new GetMetadataCall(ctx);
+        f.results = new sc.ImmutableGetMetadataResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 }

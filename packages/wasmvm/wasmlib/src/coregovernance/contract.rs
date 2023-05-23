@@ -47,11 +47,6 @@ pub struct RotateStateControllerCall<'a> {
     pub params: MutableRotateStateControllerParams,
 }
 
-pub struct SetCustomMetadataCall<'a> {
-    pub func:   ScFunc<'a>,
-    pub params: MutableSetCustomMetadataParams,
-}
-
 pub struct SetEVMGasRatioCall<'a> {
     pub func:   ScFunc<'a>,
     pub params: MutableSetEVMGasRatioParams,
@@ -65,6 +60,11 @@ pub struct SetFeePolicyCall<'a> {
 pub struct SetGasLimitsCall<'a> {
     pub func:   ScFunc<'a>,
     pub params: MutableSetGasLimitsParams,
+}
+
+pub struct SetMetadataCall<'a> {
+    pub func:   ScFunc<'a>,
+    pub params: MutableSetMetadataParams,
 }
 
 pub struct StartMaintenanceCall<'a> {
@@ -95,11 +95,6 @@ pub struct GetChainOwnerCall<'a> {
     pub results: ImmutableGetChainOwnerResults,
 }
 
-pub struct GetCustomMetadataCall<'a> {
-    pub func:    ScView<'a>,
-    pub results: ImmutableGetCustomMetadataResults,
-}
-
 pub struct GetEVMGasRatioCall<'a> {
     pub func:    ScView<'a>,
     pub results: ImmutableGetEVMGasRatioResults,
@@ -118,6 +113,11 @@ pub struct GetGasLimitsCall<'a> {
 pub struct GetMaintenanceStatusCall<'a> {
     pub func:    ScView<'a>,
     pub results: ImmutableGetMaintenanceStatusResults,
+}
+
+pub struct GetMetadataCall<'a> {
+    pub func:    ScView<'a>,
+    pub results: ImmutableGetMetadataResults,
 }
 
 pub struct ScFuncs {
@@ -206,16 +206,6 @@ impl ScFuncs {
         f
     }
 
-    // Changes optional extra metadata that is appended to the L1 AliasOutput.
-    pub fn set_custom_metadata(ctx: &impl ScFuncClientContext) -> SetCustomMetadataCall {
-        let mut f = SetCustomMetadataCall {
-            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_SET_CUSTOM_METADATA),
-            params:  MutableSetCustomMetadataParams { proxy: Proxy::nil() },
-        };
-        ScFunc::link_params(&mut f.params.proxy, &f.func);
-        f
-    }
-
     // Sets the EVM gas ratio for the chain.
     pub fn set_evm_gas_ratio(ctx: &impl ScFuncClientContext) -> SetEVMGasRatioCall {
         let mut f = SetEVMGasRatioCall {
@@ -241,6 +231,16 @@ impl ScFuncs {
         let mut f = SetGasLimitsCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_SET_GAS_LIMITS),
             params:  MutableSetGasLimitsParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    // Changes optional extra metadata that is appended to the L1 AliasOutput.
+    pub fn set_metadata(ctx: &impl ScFuncClientContext) -> SetMetadataCall {
+        let mut f = SetMetadataCall {
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_SET_METADATA),
+            params:  MutableSetMetadataParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
@@ -301,16 +301,6 @@ impl ScFuncs {
         f
     }
 
-    // Returns the extra metadata that is added to the chain AliasOutput.
-    pub fn get_custom_metadata(ctx: &impl ScViewClientContext) -> GetCustomMetadataCall {
-        let mut f = GetCustomMetadataCall {
-            func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_CUSTOM_METADATA),
-            results: ImmutableGetCustomMetadataResults { proxy: Proxy::nil() },
-        };
-        ScView::link_results(&mut f.results.proxy, &f.func);
-        f
-    }
-
     // Returns the EVM gas ratio.
     pub fn get_evm_gas_ratio(ctx: &impl ScViewClientContext) -> GetEVMGasRatioCall {
         let mut f = GetEVMGasRatioCall {
@@ -346,6 +336,16 @@ impl ScFuncs {
         let mut f = GetMaintenanceStatusCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_MAINTENANCE_STATUS),
             results: ImmutableGetMaintenanceStatusResults { proxy: Proxy::nil() },
+        };
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    // Returns the extra metadata that is added to the chain AliasOutput.
+    pub fn get_metadata(ctx: &impl ScViewClientContext) -> GetMetadataCall {
+        let mut f = GetMetadataCall {
+            func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_METADATA),
+            results: ImmutableGetMetadataResults { proxy: Proxy::nil() },
         };
         ScView::link_results(&mut f.results.proxy, &f.func);
         f

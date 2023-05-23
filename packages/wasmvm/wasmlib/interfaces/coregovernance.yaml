@@ -109,10 +109,12 @@ funcs:
     access: chain
 
   # Changes optional extra metadata that is appended to the L1 AliasOutput.
-  setCustomMetadata:
+  setMetadata:
     access: chain
     params:
-      metadata=x: Bytes # serialized chain metadata
+      publicURL=x: String # the public url leading to the chain info, stored on the tangle
+      evmJsonRPCURL=e: String? # the public evm json rpc url
+      evmWebSocketUrl=w: String? # the public evm websocket url
 
 views:
 
@@ -172,6 +174,8 @@ views:
       status=m: Bool # whether maintenance mode is on
 
   # Returns the extra metadata that is added to the chain AliasOutput.
-  getCustomMetadata:
+  getMetadata:
     results:
-      metadata=x: Bytes # chain metadata
+      publicURL=x: String # the public url leading to the chain info, stored on the tangle
+      evmJsonRPCURL=e: String? # the public evm json rpc url
+      evmWebSocketUrl=w: String? # the public evm websocket url

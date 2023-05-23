@@ -103,14 +103,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ChainInfoResponse'
           description: Information about a specific chain
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get information about a specific chain
       tags:
       - chains
@@ -1289,7 +1281,7 @@ paths:
       tags:
       - chains
   /v1/chains/{chainID}/evm:
-    get:
+    post:
       parameters:
       - description: ChainID (Bech32)
         in: path
@@ -1724,7 +1716,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/PeeringNodeStatusResponse_'
+                  $ref: '#/components/schemas/PeeringNodeStatusResponse__'
                 type: array
           description: A list of all peers
         "401":
@@ -2722,23 +2714,26 @@ components:
         name: CallTarget
     ChainInfoResponse:
       example:
+        standard: standard
         chainOwnerId: tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e
         gasLimits:
-          maxGasExternalViewCall: 6
-          minGasPerRequest: 5
-          maxGasPerBlock: 1
-          maxGasPerRequest: 5
+          maxGasExternalViewCall: 5
+          minGasPerRequest: 7
+          maxGasPerBlock: 5
+          maxGasPerRequest: 2
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
-        customMetadata: customMetadata
+        evmWebSocketUrl: evmWebSocketUrl
+        publicUrl: publicUrl
         gasFeePolicy:
           gasPerToken:
             a: 1
             b: 100
-          validatorFeeShare: 0
+          validatorFeeShare: 1
           evmGasRatio:
-            a: 1
-            b: 1
+            a: 0
+            b: 0
+        evmJsonRpcUrl: evmJsonRpcUrl
         isActive: true
       properties:
         chainID:
@@ -2755,13 +2750,6 @@ components:
           type: string
           xml:
             name: ChainOwnerID
-        customMetadata:
-          description: (base64) Optional extra metadata that is appended to the L1
-            AliasOutput
-          format: string
-          type: string
-          xml:
-            name: CustomMetadata
         evmChainId:
           description: The EVM chain ID
           example: 1074
@@ -2770,6 +2758,18 @@ components:
           type: integer
           xml:
             name: EVMChainID
+        evmJsonRpcUrl:
+          description: The EVM json rpc url
+          format: string
+          type: string
+          xml:
+            name: EVMJsonRPCURL
+        evmWebSocketUrl:
+          description: The EVM websocket url
+          format: string
+          type: string
+          xml:
+            name: EVMWebSocketURL
         gasFeePolicy:
           $ref: '#/components/schemas/FeePolicy'
         gasLimits:
@@ -2780,13 +2780,29 @@ components:
           type: boolean
           xml:
             name: IsActive
+        publicUrl:
+          description: The fully qualified public url leading to the chains metadata
+          format: string
+          type: string
+          xml:
+            name: PublicURL
+        standard:
+          description: The chain info standard
+          format: string
+          type: string
+          xml:
+            name: Standard
       required:
       - chainID
       - chainOwnerId
       - evmChainId
+      - evmJsonRpcUrl
+      - evmWebSocketUrl
       - gasFeePolicy
       - gasLimits
       - isActive
+      - publicUrl
+      - standard
       type: object
       xml:
         name: ChainInfoResponse
@@ -2938,18 +2954,18 @@ components:
         committeeNodes:
         - node:
             isAlive: true
-            peeringURL: localhost:4000
+            peeringURL: peeringURL
             name: name
-            publicKey: 0x0000
-            numUsers: 1
+            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+            numUsers: 6
             isTrusted: true
           accessAPI: accessAPI
         - node:
             isAlive: true
-            peeringURL: localhost:4000
+            peeringURL: peeringURL
             name: name
-            publicKey: 0x0000
-            numUsers: 1
+            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+            numUsers: 6
             isTrusted: true
           accessAPI: accessAPI
         chainId: tst1pqm5ckama06xhkl080mmvz6l3xy8c8lulrwy7mx4ll0fc69krxfgka70j0e
@@ -3055,10 +3071,10 @@ components:
       example:
         node:
           isAlive: true
-          peeringURL: localhost:4000
+          peeringURL: peeringURL
           name: name
-          publicKey: 0x0000
-          numUsers: 1
+          publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+          numUsers: 6
           isTrusted: true
         accessAPI: accessAPI
       properties:
@@ -3567,10 +3583,10 @@ components:
         gasPerToken:
           a: 1
           b: 100
-        validatorFeeShare: 0
+        validatorFeeShare: 1
         evmGasRatio:
-          a: 1
-          b: 1
+          a: 0
+          b: 0
       properties:
         evmGasRatio:
           $ref: '#/components/schemas/Ratio32_'
@@ -3594,15 +3610,15 @@ components:
         gasPerToken:
           a: 0
           b: 0
-        validatorFeeShare: 1
+        validatorFeeShare: 0
         evmGasRatio:
           a: 0
           b: 0
       properties:
         evmGasRatio:
-          $ref: '#/components/schemas/Ratio32__'
+          $ref: '#/components/schemas/Ratio32_'
         gasPerToken:
-          $ref: '#/components/schemas/Ratio32__'
+          $ref: '#/components/schemas/Ratio32_'
         validatorFeeShare:
           description: The validator fee share.
           format: int32
@@ -3662,20 +3678,22 @@ components:
       example:
         chainOwnerId: chainOwnerId
         gasLimits:
-          maxGasExternalViewCall: 6
-          minGasPerRequest: 5
-          maxGasPerBlock: 1
-          maxGasPerRequest: 5
+          maxGasExternalViewCall: 5
+          minGasPerRequest: 7
+          maxGasPerBlock: 5
+          maxGasPerRequest: 2
         chainID: chainID
-        customMetadata: customMetadata
+        evmWebSocketUrl: evmWebSocketUrl
+        publicUrl: publicUrl
         gasFeePolicy:
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 1
+          validatorFeeShare: 0
           evmGasRatio:
             a: 0
             b: 0
+        evmJsonRpcUrl: evmJsonRpcUrl
       properties:
         chainID:
           description: ChainID (Bech32-encoded).
@@ -3689,22 +3707,36 @@ components:
           type: string
           xml:
             name: ChainOwnerID
-        customMetadata:
-          description: (base64) Optional extra metadata that is appended to the L1
-            AliasOutput
+        evmJsonRpcUrl:
+          description: The EVM json rpc url
           format: string
           type: string
           xml:
-            name: CustomMetadata
+            name: EVMJsonRPCURL
+        evmWebSocketUrl:
+          description: The EVM websocket url
+          format: string
+          type: string
+          xml:
+            name: EVMWebSocketURL
         gasFeePolicy:
           $ref: '#/components/schemas/FeePolicy_'
         gasLimits:
           $ref: '#/components/schemas/Limits'
+        publicUrl:
+          description: The fully qualified public url leading to the chains metadata
+          format: string
+          type: string
+          xml:
+            name: PublicURL
       required:
       - chainID
       - chainOwnerId
+      - evmJsonRpcUrl
+      - evmWebSocketUrl
       - gasFeePolicy
       - gasLimits
+      - publicUrl
       type: object
       xml:
         name: GovChainInfoResponse
@@ -4035,10 +4067,10 @@ components:
         name: L1Params
     Limits:
       example:
-        maxGasExternalViewCall: 6
-        minGasPerRequest: 5
-        maxGasPerBlock: 1
-        maxGasPerRequest: 5
+        maxGasExternalViewCall: 5
+        minGasPerRequest: 7
+        maxGasPerBlock: 5
+        maxGasPerRequest: 2
       properties:
         maxGasExternalViewCall:
           description: The maximum gas per external view call
@@ -4631,6 +4663,60 @@ components:
     PeeringNodeStatusResponse_:
       example:
         isAlive: true
+        peeringURL: peeringURL
+        name: name
+        publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+        numUsers: 6
+        isTrusted: true
+      properties:
+        isAlive:
+          description: Whether or not the peer is activated
+          format: boolean
+          type: boolean
+          xml:
+            name: IsAlive
+        isTrusted:
+          format: boolean
+          type: boolean
+          xml:
+            name: IsTrusted
+        name:
+          format: string
+          type: string
+          xml:
+            name: Name
+        numUsers:
+          description: The amount of users attached to the peer
+          format: int32
+          type: integer
+          xml:
+            name: NumUsers
+        peeringURL:
+          description: The peering URL of the peer
+          format: string
+          type: string
+          xml:
+            name: PeeringURL
+        publicKey:
+          description: The peers public key encoded in Hex
+          example: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+          format: string
+          type: string
+          xml:
+            name: PublicKey
+      required:
+      - isAlive
+      - isTrusted
+      - name
+      - numUsers
+      - peeringURL
+      - publicKey
+      type: object
+      xml:
+        name: PeeringNodeStatusResponse
+    PeeringNodeStatusResponse__:
+      example:
+        isAlive: true
         peeringURL: localhost:4000
         name: name
         publicKey: 0x0000
@@ -4841,31 +4927,6 @@ components:
       xml:
         name: Ratio32
     Ratio32_:
-      example:
-        a: 1
-        b: 1
-      properties:
-        a:
-          example: 1
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: A
-        b:
-          example: 1
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: B
-      required:
-      - a
-      - b
-      type: object
-      xml:
-        name: Ratio32
-    Ratio32__:
       example:
         a: 0
         b: 0

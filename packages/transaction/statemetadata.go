@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -18,25 +19,25 @@ const (
 )
 
 type StateMetadata struct {
-	Version        byte
-	L1Commitment   *state.L1Commitment
-	GasFeePolicy   *gas.FeePolicy
-	SchemaVersion  uint32
-	CustomMetadata []byte
+	Version       byte
+	L1Commitment  *state.L1Commitment
+	GasFeePolicy  *gas.FeePolicy
+	SchemaVersion uint32
+	PublicURL     string
 }
 
 func NewStateMetadata(
 	l1Commitment *state.L1Commitment,
 	gasFeePolicy *gas.FeePolicy,
 	schemaVersion uint32,
-	customMetadata []byte,
+	publicURL string,
 ) *StateMetadata {
 	return &StateMetadata{
-		Version:        StateMetadataSupportedVersion,
-		L1Commitment:   l1Commitment,
-		GasFeePolicy:   gasFeePolicy,
-		SchemaVersion:  schemaVersion,
-		CustomMetadata: customMetadata,
+		Version:       StateMetadataSupportedVersion,
+		L1Commitment:  l1Commitment,
+		GasFeePolicy:  gasFeePolicy,
+		SchemaVersion: schemaVersion,
+		PublicURL:     publicURL,
 	}
 }
 
@@ -46,8 +47,8 @@ func (s *StateMetadata) Bytes() []byte {
 	mu.WriteUint32(s.SchemaVersion)
 	mu.WriteBytes(s.L1Commitment.Bytes())
 	mu.WriteBytes(s.GasFeePolicy.Bytes())
-	mu.WriteUint16(uint16(len(s.CustomMetadata)))
-	mu.WriteBytes(s.CustomMetadata)
+	mu.WriteUint16(uint16(len(s.PublicURL)))
+	mu.WriteBytes([]byte(s.PublicURL))
 	return mu.Bytes()
 }
 
@@ -84,16 +85,18 @@ func StateMetadataFromBytes(data []byte) (*StateMetadata, error) {
 		return nil, fmt.Errorf("unable to parse gas fee policy, error: %w", err)
 	}
 
-	customMetadataLength, err := mu.ReadUint16()
+	publicURLBytesLength, err := mu.ReadUint16()
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse custom metadata length, error: %w", err)
 	}
 
-	customMetadataBytes, err := mu.ReadBytes(int(customMetadataLength))
+	publicURLBytes, err := mu.ReadBytes(int(publicURLBytesLength))
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse custom metadata, error: %w", err)
+		return nil, fmt.Errorf("unable to parse the public url, error: %w", err)
 	}
-	ret.CustomMetadata = customMetadataBytes
+
+	// On error, publicUrl is len(0)
+	ret.PublicURL, _ = codec.DecodeString(publicURLBytes)
 
 	return ret, nil
 }

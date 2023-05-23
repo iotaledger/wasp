@@ -46,11 +46,6 @@ type RotateStateControllerCall struct {
 	Params MutableRotateStateControllerParams
 }
 
-type SetCustomMetadataCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableSetCustomMetadataParams
-}
-
 type SetEVMGasRatioCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableSetEVMGasRatioParams
@@ -64,6 +59,11 @@ type SetFeePolicyCall struct {
 type SetGasLimitsCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableSetGasLimitsParams
+}
+
+type SetMetadataCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableSetMetadataParams
 }
 
 type StartMaintenanceCall struct {
@@ -94,11 +94,6 @@ type GetChainOwnerCall struct {
 	Results ImmutableGetChainOwnerResults
 }
 
-type GetCustomMetadataCall struct {
-	Func    *wasmlib.ScView
-	Results ImmutableGetCustomMetadataResults
-}
-
 type GetEVMGasRatioCall struct {
 	Func    *wasmlib.ScView
 	Results ImmutableGetEVMGasRatioResults
@@ -117,6 +112,11 @@ type GetGasLimitsCall struct {
 type GetMaintenanceStatusCall struct {
 	Func    *wasmlib.ScView
 	Results ImmutableGetMaintenanceStatusResults
+}
+
+type GetMetadataCall struct {
+	Func    *wasmlib.ScView
+	Results ImmutableGetMetadataResults
 }
 
 type Funcs struct{}
@@ -182,13 +182,6 @@ func (sc Funcs) RotateStateController(ctx wasmlib.ScFuncClientContext) *RotateSt
 	return f
 }
 
-// Changes optional extra metadata that is appended to the L1 AliasOutput.
-func (sc Funcs) SetCustomMetadata(ctx wasmlib.ScFuncClientContext) *SetCustomMetadataCall {
-	f := &SetCustomMetadataCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetCustomMetadata)}
-	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
-	return f
-}
-
 // Sets the EVM gas ratio for the chain.
 func (sc Funcs) SetEVMGasRatio(ctx wasmlib.ScFuncClientContext) *SetEVMGasRatioCall {
 	f := &SetEVMGasRatioCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetEVMGasRatio)}
@@ -206,6 +199,13 @@ func (sc Funcs) SetFeePolicy(ctx wasmlib.ScFuncClientContext) *SetFeePolicyCall 
 // Sets the gas limits for the chain.
 func (sc Funcs) SetGasLimits(ctx wasmlib.ScFuncClientContext) *SetGasLimitsCall {
 	f := &SetGasLimitsCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetGasLimits)}
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+// Changes optional extra metadata that is appended to the L1 AliasOutput.
+func (sc Funcs) SetMetadata(ctx wasmlib.ScFuncClientContext) *SetMetadataCall {
+	f := &SetMetadataCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetMetadata)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
@@ -249,13 +249,6 @@ func (sc Funcs) GetChainOwner(ctx wasmlib.ScViewClientContext) *GetChainOwnerCal
 	return f
 }
 
-// Returns the extra metadata that is added to the chain AliasOutput.
-func (sc Funcs) GetCustomMetadata(ctx wasmlib.ScViewClientContext) *GetCustomMetadataCall {
-	f := &GetCustomMetadataCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetCustomMetadata)}
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
-	return f
-}
-
 // Returns the EVM gas ratio.
 func (sc Funcs) GetEVMGasRatio(ctx wasmlib.ScViewClientContext) *GetEVMGasRatioCall {
 	f := &GetEVMGasRatioCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetEVMGasRatio)}
@@ -284,6 +277,13 @@ func (sc Funcs) GetMaintenanceStatus(ctx wasmlib.ScViewClientContext) *GetMainte
 	return f
 }
 
+// Returns the extra metadata that is added to the chain AliasOutput.
+func (sc Funcs) GetMetadata(ctx wasmlib.ScViewClientContext) *GetMetadataCall {
+	f := &GetMetadataCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetMetadata)}
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
+	return f
+}
+
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
 		FuncAddAllowedStateControllerAddress,
@@ -294,21 +294,21 @@ var exportMap = wasmlib.ScExportMap{
 		FuncRemoveAllowedStateControllerAddress,
 		FuncRevokeAccessNode,
 		FuncRotateStateController,
-		FuncSetCustomMetadata,
 		FuncSetEVMGasRatio,
 		FuncSetFeePolicy,
 		FuncSetGasLimits,
+		FuncSetMetadata,
 		FuncStartMaintenance,
 		FuncStopMaintenance,
 		ViewGetAllowedStateControllerAddresses,
 		ViewGetChainInfo,
 		ViewGetChainNodes,
 		ViewGetChainOwner,
-		ViewGetCustomMetadata,
 		ViewGetEVMGasRatio,
 		ViewGetFeePolicy,
 		ViewGetGasLimits,
 		ViewGetMaintenanceStatus,
+		ViewGetMetadata,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
 		wasmlib.FuncError,

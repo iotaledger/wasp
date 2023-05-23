@@ -5,8 +5,6 @@ package chain
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/hex"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -83,13 +81,7 @@ func initInfoCmd() *cobra.Command {
 				log.Printf("Gas fee: gas units * (%d/%d)\n", chainInfo.GasFeePolicy.GasPerToken.A, chainInfo.GasFeePolicy.GasPerToken.B)
 				log.Printf("Validator fee share: %d%%\n", chainInfo.GasFeePolicy.ValidatorFeeShare)
 
-				if chainInfo.CustomMetadata != nil && len(*chainInfo.CustomMetadata) > 0 {
-					customMetadata, err := base64.StdEncoding.DecodeString(*chainInfo.CustomMetadata)
-					log.Check(err)
-					log.Printf("Custom metadata (hex): %s\n", hex.EncodeToString(customMetadata))
-				} else {
-					log.Printf("Custom metadata: (empty)\n")
-				}
+				log.Printf("Public API: %s", chainInfo.PublicUrl)
 			}
 		},
 	}
