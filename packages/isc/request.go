@@ -50,9 +50,11 @@ type OffLedgerRequestData interface {
 }
 
 type UnsignedOffLedgerRequest interface {
+	Bytes() []byte
 	WithNonce(nonce uint64) UnsignedOffLedgerRequest
 	WithGasBudget(gasBudget uint64) UnsignedOffLedgerRequest
 	WithAllowance(allowance *Assets) UnsignedOffLedgerRequest
+	WithSender(sender *cryptolib.PublicKey) UnsignedOffLedgerRequest
 	Sign(key *cryptolib.KeyPair) OffLedgerRequest
 }
 
