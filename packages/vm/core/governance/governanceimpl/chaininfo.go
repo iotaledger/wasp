@@ -22,7 +22,7 @@ func getChainInfo(ctx isc.SandboxView) dict.Dict {
 	if len(info.PublicURL) > 0 {
 		ret.Set(governance.VarPublicURL, codec.EncodeString(info.PublicURL))
 	}
-	
+
 	if len(info.Metadata.EVMJsonRPCURL) > 0 {
 		ret.Set(governance.VarMetadataEVMJsonRPCURL, codec.EncodeString(info.Metadata.EVMJsonRPCURL))
 	}

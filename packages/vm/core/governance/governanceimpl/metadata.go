@@ -28,7 +28,6 @@ func setMetadata(ctx isc.Sandbox) dict.Dict {
 		ctx.RequireNoError(err)
 		ctx.Requiref(len(publicURL) <= MaxCustomMetadataLength, "public url size too big (%d>%d)", len(publicURL), MaxCustomMetadataLength)
 		governance.SetPublicURL(ctx.State(), publicURL)
-
 	}
 
 	evmJSONRPCUrlBytes := ctx.Params().Get(governance.ParamMetadataEVMJsonRPCURL)
