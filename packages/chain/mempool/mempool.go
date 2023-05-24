@@ -94,7 +94,7 @@ type Mempool interface {
 	// It can mean simple advance of the chain, or a rollback or a reorg.
 	// This function is guaranteed to be called in the order, which is
 	// considered the chain block order by the ChainMgr.
-	TrackNewChainHead(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block)
+	TrackNewChainHead(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) <-chan bool
 	// Invoked by the chain when a new off-ledger request is received from a node user.
 	// Inter-node off-ledger dissemination is NOT performed via this function.
 	ReceiveOnLedgerRequest(request isc.OnLedgerRequest)
@@ -189,11 +189,12 @@ type reqConsensusRequests struct {
 }
 
 type reqTrackNewChainHead struct {
-	st      state.State
-	from    *isc.AliasOutputWithID
-	till    *isc.AliasOutputWithID
-	added   []state.Block
-	removed []state.Block
+	st         state.State
+	from       *isc.AliasOutputWithID
+	till       *isc.AliasOutputWithID
+	added      []state.Block
+	removed    []state.Block
+	responseCh chan<- bool // only for tests, shouldn't be used in the chain package
 }
 
 func New(
@@ -271,8 +272,10 @@ func (mpi *mempoolImpl) TangleTimeUpdated(tangleTime time.Time) {
 	mpi.reqTangleTimeUpdatedPipe.In() <- tangleTime
 }
 
-func (mpi *mempoolImpl) TrackNewChainHead(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
-	mpi.reqTrackNewChainHeadPipe.In() <- &reqTrackNewChainHead{st, from, till, added, removed}
+func (mpi *mempoolImpl) TrackNewChainHead(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) <-chan bool {
+	responseCh := make(chan bool)
+	mpi.reqTrackNewChainHeadPipe.In() <- &reqTrackNewChainHead{st, from, till, added, removed, responseCh}
+	return responseCh
 }
 
 func (mpi *mempoolImpl) ReceiveOnLedgerRequest(request isc.OnLedgerRequest) {
@@ -683,6 +686,7 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 //
 //nolint:gocyclo
 func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
+	defer close(req.responseCh)
 	mpi.log.Debugf("handleTrackNewChainHead, %v from %v, current=%v", req.till, req.from, mpi.chainHeadAO)
 	if len(req.removed) != 0 {
 		mpi.log.Infof("Reorg detected, removing %v blocks, adding %v blocks", len(req.removed), len(req.added))
