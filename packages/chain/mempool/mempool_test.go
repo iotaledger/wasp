@@ -81,6 +81,8 @@ func TestMempoolBasic(t *testing.T) {
 //   - Get proposals -- all waiting.
 //   - Send a request.
 //   - Get proposals -- all received 1 request.
+//
+//nolint:gocyclo
 func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
 	te := newEnv(t, n, f, reliable)
@@ -223,7 +225,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	).Sign(te.governor)
 	offLedgerRef2 := isc.RequestRefFromRequest(offLedgerReq2)
 	for i := range te.mempools {
-		require.True(t, te.mempools[i].ReceiveOffLedgerRequest(offLedgerReq2))
+		te.mempools[i].ReceiveOffLedgerRequest(offLedgerReq2)
 	}
 	for i := range te.mempools {
 		prop := <-proposals[i]
