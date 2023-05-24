@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 // ViewCaller is a generic interface for any function that can call views
@@ -37,9 +38,9 @@ func ResolveFromState(state kv.KVStoreReader, e *isc.UnresolvedVMError) (*isc.VM
 	if e == nil {
 		return nil, nil
 	}
-	template, err := getErrorMessageFormat(state, e.Code())
-	if err != nil {
-		return nil, err
+	template, ok := getErrorMessageFormat(state, e.Code())
+	if !ok {
+		return nil, coreerrors.ErrErrorNotFound
 	}
 	return isc.NewVMErrorTemplate(e.Code(), template.MessageFormat()).Create(e.Params...), nil
 }

@@ -4,11 +4,13 @@ import (
 	"math"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 // viewBalance returns the balances of the account belonging to the AgentID
@@ -85,13 +87,17 @@ func viewAccountFoundries(ctx isc.SandboxView) dict.Dict {
 	return ret
 }
 
+var errFoundryNotFound = coreerrors.Register("foundry not found").Create()
+
 // viewFoundryOutput takes serial number and returns corresponding foundry output in serialized form
 func viewFoundryOutput(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewFoundryOutput")
 
 	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
 	out, _, _ := GetFoundryOutput(ctx.StateR(), sn, ctx.ChainID())
-	ctx.Requiref(out != nil, "foundry #%d does not exist", sn)
+	if out == nil {
+		panic(errFoundryNotFound)
+	}
 	outBin, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
 	ctx.RequireNoError(err, "internal: error while serializing foundry output")
 	ret := dict.New()
@@ -104,17 +110,7 @@ func viewAccountNFTs(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewAccountNFTs")
 	aid := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
 	nftIDs := getAccountNFTs(ctx.StateR(), aid)
-
-	if len(nftIDs) > math.MaxUint16 {
-		panic("too many NFTs")
-	}
-	ret := dict.New()
-	arr := collections.NewArray16(ret, ParamNFTIDs)
-	for _, nftID := range nftIDs {
-		nftID := nftID
-		arr.Push(nftID[:])
-	}
-	return ret
+	return listNFTIDs(nftIDs)
 }
 
 func viewAccountNFTAmount(ctx isc.SandboxView) dict.Dict {
@@ -129,7 +125,11 @@ func viewAccountNFTsInCollection(ctx isc.SandboxView) dict.Dict {
 	aid := params.MustGetAgentID(ParamAgentID, ctx.Caller())
 	collectionID := params.MustGetNFTID(ParamCollectionID)
 	nftIDs := getAccountNFTsInCollection(ctx.StateR(), aid, collectionID)
+	return listNFTIDs(nftIDs)
+}
 
+func listNFTIDs(nftIDs []iotago.NFTID) dict.Dict {
+	// TODO: add pagination?
 	if len(nftIDs) > math.MaxUint16 {
 		panic("too many NFTs")
 	}

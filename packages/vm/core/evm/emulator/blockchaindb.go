@@ -4,8 +4,6 @@
 package emulator
 
 import (
-	"bytes"
-	"encoding/gob"
 	"errors"
 	"math/big"
 
@@ -70,11 +68,7 @@ func (bc *BlockchainDB) SetChainID(chainID uint16) {
 }
 
 func (bc *BlockchainDB) GetChainID() uint16 {
-	chainID, err := codec.DecodeUint16(bc.kv.Get(keyChainID))
-	if err != nil {
-		panic(err)
-	}
-	return chainID
+	return codec.MustDecodeUint16(bc.kv.Get(keyChainID))
 }
 
 func (bc *BlockchainDB) SetKeepAmount(keepAmount int32) {
@@ -82,11 +76,7 @@ func (bc *BlockchainDB) SetKeepAmount(keepAmount int32) {
 }
 
 func (bc *BlockchainDB) keepAmount() int32 {
-	gas, err := codec.DecodeInt32(bc.kv.Get(keyKeepAmount), -1)
-	if err != nil {
-		panic(err)
-	}
-	return gas
+	return codec.MustDecodeInt32(bc.kv.Get(keyKeepAmount), -1)
 }
 
 func (bc *BlockchainDB) setNumber(n uint64) {
@@ -94,11 +84,7 @@ func (bc *BlockchainDB) setNumber(n uint64) {
 }
 
 func (bc *BlockchainDB) GetNumber() uint64 {
-	n, err := codec.DecodeUint64(bc.kv.Get(keyNumber))
-	if err != nil {
-		panic(err)
-	}
-	return n
+	return codec.MustDecodeUint64(bc.kv.Get(keyNumber))
 }
 
 func makeTransactionsByBlockNumberKey(blockNumber uint64) kv.Key {
@@ -230,8 +216,6 @@ type header struct {
 	Bloom       types.Bloom
 }
 
-var headerSize = common.HashLength*3 + marshalutil.Uint64Size*3 + types.BloomByteLength
-
 func makeHeader(h *types.Header) *header {
 	return &header{
 		Hash:        h.Hash(),
@@ -257,10 +241,6 @@ func encodeHeader(g *header) []byte {
 }
 
 func decodeHeader(b []byte) *header {
-	if len(b) != headerSize {
-		// old format
-		return decodeHeaderGobOld(b)
-	}
 	m := marshalutil.New(b)
 	h := &header{}
 	var err error
@@ -295,16 +275,6 @@ func readBytes(m *marshalutil.MarshalUtil, size int, dst []byte) (err error) {
 		copy(dst, buf)
 	}
 	return err
-}
-
-// deprecated
-func decodeHeaderGobOld(b []byte) *header {
-	var g header
-	err := gob.NewDecoder(bytes.NewReader(b)).Decode(&g)
-	if err != nil {
-		panic(err)
-	}
-	return &g
 }
 
 func (bc *BlockchainDB) makeEthereumHeader(g *header, blockNumber uint64) *types.Header {
@@ -379,11 +349,7 @@ func (bc *BlockchainDB) getBlockNumberBy(key kv.Key) (uint64, bool) {
 	if b == nil {
 		return 0, false
 	}
-	n, err := codec.DecodeUint64(b)
-	if err != nil {
-		panic(err)
-	}
-	return n, true
+	return codec.MustDecodeUint64(b), true
 }
 
 func (bc *BlockchainDB) GetBlockNumberByTxHash(txHash common.Hash) (uint64, bool) {
@@ -391,11 +357,7 @@ func (bc *BlockchainDB) GetBlockNumberByTxHash(txHash common.Hash) (uint64, bool
 }
 
 func (bc *BlockchainDB) GetTxIndexInBlockByTxHash(txHash common.Hash) uint32 {
-	n, err := codec.DecodeUint32(bc.kv.Get(makeTxIndexInBlockByTxHashKey(txHash)), 0)
-	if err != nil {
-		panic(err)
-	}
-	return n
+	return codec.MustDecodeUint32(bc.kv.Get(makeTxIndexInBlockByTxHashKey(txHash)), 0)
 }
 
 func (bc *BlockchainDB) GetReceiptByTxHash(txHash common.Hash) *types.Receipt {

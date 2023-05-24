@@ -5,6 +5,6 @@ import (
 )
 
 type ErrorCollection interface {
-	Get(errorID uint16) (*isc.VMErrorTemplate, error)
+	Get(errorID uint16) (*isc.VMErrorTemplate, bool)
 	Register(messageFormat string) (*isc.VMErrorTemplate, error)
 }
