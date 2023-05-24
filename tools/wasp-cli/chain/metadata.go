@@ -70,9 +70,9 @@ func initMetadataCmd() *cobra.Command {
 		chainName     string
 		withOffLedger bool
 
-		useCliUrl     bool
-		publicUrl     nilableString
-		evmJsonRPCUrl nilableString
+		useCliURL     bool
+		publicURL     nilableString
+		evmJSONRpcURL nilableString
 		evmWSUrl      nilableString
 	)
 
@@ -85,7 +85,7 @@ func initMetadataCmd() *cobra.Command {
 			chainName = defaultChainFallback(chainName)
 			chainID := config.GetChain(chainName)
 
-			updateMetadata(node, chainName, chainID, withOffLedger, useCliUrl, publicUrl, evmJsonRPCUrl, evmWSUrl)
+			updateMetadata(node, chainName, chainID, withOffLedger, useCliURL, publicURL, evmJSONRpcURL, evmWSUrl)
 		},
 	}
 
@@ -96,38 +96,38 @@ func initMetadataCmd() *cobra.Command {
 		"post an off-ledger request",
 	)
 
-	cmd.Flags().BoolVarP(&useCliUrl, "use-cli-url", "u", false, "use the configured cli wasp api url as public url (overrides --public-url)")
-	cmd.Flags().Var(&publicUrl, "public-url", "the chains public url")
-	cmd.Flags().Var(&evmJsonRPCUrl, "evm-rpc-url", "the public facing evm json rpc url")
+	cmd.Flags().BoolVarP(&useCliURL, "use-cli-url", "u", false, "use the configured cli wasp api url as public url (overrides --public-url)")
+	cmd.Flags().Var(&publicURL, "public-url", "the chains public url")
+	cmd.Flags().Var(&evmJSONRpcURL, "evm-rpc-url", "the public facing evm json rpc url")
 	cmd.Flags().Var(&evmWSUrl, "evm-ws-url", "the public facing evm websocket url")
 
 	return cmd
 }
 
-func validateAndPushUrl(dict dict.Dict, key kv.Key, metadataUrl nilableString) error {
+func validateAndPushURL(dict dict.Dict, key kv.Key, metadataURL nilableString) error {
 	// If the url was not explicitly set, add nothing to the dictionary.
-	if !metadataUrl.IsSet() {
+	if !metadataURL.IsSet() {
 		return nil
 	}
 
 	// If the url is empty, force the default value
-	if len(metadataUrl.String()) == 0 {
+	if metadataURL.String() == "" {
 		dict.Set(key, []byte{})
 		return nil
 	}
 
 	// If the url is longer than 0, treat it as an absolute url which gets validated before adding
-	_, err := url.ParseRequestURI(metadataUrl.String())
+	_, err := url.ParseRequestURI(metadataURL.String())
 	if err != nil {
 		return err
 	}
 
-	dict.Set(key, []byte(metadataUrl.String()))
+	dict.Set(key, []byte(metadataURL.String()))
 
 	return nil
 }
 
-func updateMetadata(node string, chainName string, chainID isc.ChainID, withOffLedger bool, useCliUrl bool, metadataUrl nilableString, evmJsonUrl nilableString, evmWsUrl nilableString) {
+func updateMetadata(node string, chainName string, chainID isc.ChainID, withOffLedger bool, useCliURL bool, metadataURL nilableString, evmJSONRpcURL nilableString, evmWsURL nilableString) {
 	client := cliclients.WaspClient(node)
 
 	_, _, err := client.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
@@ -137,23 +137,23 @@ func updateMetadata(node string, chainName string, chainID isc.ChainID, withOffL
 
 	args := dict.Dict{}
 
-	if useCliUrl {
-		apiUrl := config.WaspAPIURL(node)
-		chainPath, err := url.JoinPath(apiUrl, "/v1/chains/", chainID.String())
+	if useCliURL {
+		apiURL := config.WaspAPIURL(node)
+		chainPath, err := url.JoinPath(apiURL, "/v1/chains/", chainID.String())
 		log.Check(err)
 
 		args.Set(governance.ParamPublicURL, []byte(chainPath))
 	} else {
-		if err := validateAndPushUrl(args, governance.ParamPublicURL, metadataUrl); err != nil {
+		if err := validateAndPushURL(args, governance.ParamPublicURL, metadataURL); err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	if err := validateAndPushUrl(args, governance.ParamMetadataEVMJsonRPCURL, evmJsonUrl); err != nil {
+	if err := validateAndPushURL(args, governance.ParamMetadataEVMJsonRPCURL, evmJSONRpcURL); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := validateAndPushUrl(args, governance.ParamMetadataEVMWebSocketURL, evmWsUrl); err != nil {
+	if err := validateAndPushURL(args, governance.ParamMetadataEVMWebSocketURL, evmWsURL); err != nil {
 		log.Fatal(err)
 	}
 
