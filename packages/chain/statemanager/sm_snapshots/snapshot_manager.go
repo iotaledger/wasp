@@ -47,8 +47,8 @@ type snapshotManagerImpl struct {
 	availableSnapshots      *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]]
 	availableSnapshotsMutex sync.RWMutex
 
-	localPath        string
-	networkAddresses []string
+	localPath    string
+	networkPaths []string
 
 	updatePipe         pipe.Pipe[bool]
 	blockCommittedPipe pipe.Pipe[SnapshotInfo]
@@ -69,9 +69,9 @@ func NewSnapshotManager(
 	ctx context.Context,
 	shutdownCoordinator *shutdown.Coordinator,
 	chainID isc.ChainID,
-	basePath string,
-	networkAddresses []string,
 	createPeriod uint32,
+	basePath string,
+	networkPaths []string,
 	store state.Store,
 	log *logger.Logger,
 ) (SnapshotManager, error) {
@@ -88,7 +88,7 @@ func NewSnapshotManager(
 		availableSnapshots:        shrinkingmap.New[uint32, SliceStruct[*commitmentSources]](),
 		availableSnapshotsMutex:   sync.RWMutex{},
 		localPath:                 localPath,
-		networkAddresses:          networkAddresses,
+		networkPaths:              networkPaths,
 		updatePipe:                pipe.NewInfinitePipe[bool](),
 		blockCommittedPipe:        pipe.NewInfinitePipe[SnapshotInfo](),
 		loadSnapshotPipe:          pipe.NewInfinitePipe[*snapshotInfoCallback](),
@@ -247,11 +247,11 @@ func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.Shrinkin
 }
 
 func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]]) {
-	for _, networkAddress := range smiT.networkAddresses {
+	for _, networkPath := range smiT.networkPaths {
 		func() { // Function to make the defers sooner
-			indexFilePath, err := url.JoinPath(networkAddress, constIndexFileName)
+			indexFilePath, err := url.JoinPath(networkPath, constIndexFileName)
 			if err != nil {
-				smiT.log.Errorf("Unable to join paths %s and %s: %w", networkAddress, constIndexFileName, err)
+				smiT.log.Errorf("Unable to join paths %s and %s: %w", networkPath, constIndexFileName, err)
 				return
 			}
 			cancelFun, reader, err := downloadFile(smiT.ctx, smiT.log, indexFilePath, constDownloadTimeout)
@@ -264,9 +264,9 @@ func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.Shrink
 			for scanner.Scan() {
 				func() {
 					snapshotFileName := scanner.Text()
-					snapshotFilePath, er := url.JoinPath(networkAddress, snapshotFileName)
+					snapshotFilePath, er := url.JoinPath(networkPath, snapshotFileName)
 					if er != nil {
-						smiT.log.Errorf("Unable to join paths %s and %s: %w", networkAddress, snapshotFileName, er)
+						smiT.log.Errorf("Unable to join paths %s and %s: %w", networkPath, snapshotFileName, er)
 						return
 					}
 					sCancelFun, sReader, er := downloadFile(smiT.ctx, smiT.log, snapshotFilePath, constDownloadTimeout)

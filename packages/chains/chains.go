@@ -59,8 +59,9 @@ type Chains struct {
 	chainStateStoreProvider      database.ChainStateKVStoreProvider
 	walEnabled                   bool
 	walFolderPath                string
-	snapshotterPeriod            uint32
-	snapshotterFolderPath        string
+	snapshotPeriod               uint32
+	snapshotFolderPath           string
+	snapshotNetworkPaths         []string
 
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
@@ -98,8 +99,9 @@ func New(
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
 	walEnabled bool,
 	walFolderPath string,
-	snapshotterPeriod uint32,
-	snapshotterFolderPath string,
+	snapshotPeriod uint32,
+	snapshotFolderPath string,
+	snapshotNetworkPaths []string,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
@@ -124,8 +126,9 @@ func New(
 		chainStateStoreProvider:          chainStateStoreProvider,
 		walEnabled:                       walEnabled,
 		walFolderPath:                    walFolderPath,
-		snapshotterPeriod:                snapshotterPeriod,
-		snapshotterFolderPath:            snapshotterFolderPath,
+		snapshotPeriod:                   snapshotPeriod,
+		snapshotFolderPath:               snapshotFolderPath,
+		snapshotNetworkPaths:             snapshotNetworkPaths,
 		chainRecordRegistryProvider:      chainRecordRegistryProvider,
 		dkShareRegistryProvider:          dkShareRegistryProvider,
 		nodeIdentityProvider:             nodeIdentityProvider,
@@ -264,9 +267,9 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		chainCtx,
 		chainShutdownCoordinator.Nested("SnapMgr"),
 		chainID,
-		c.snapshotterFolderPath,
-		[]string{}, // TODO
-		c.snapshotterPeriod,
+		c.snapshotPeriod,
+		c.snapshotFolderPath,
+		c.snapshotNetworkPath,
 		chainStore,
 		chainLog.Named("Snap"),
 	)
