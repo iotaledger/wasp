@@ -173,6 +173,10 @@ func (bfT *BlockFactory) GetAliasOutput(commitment *state.L1Commitment) *isc.Ali
 	return result
 }
 
+func (bfT *BlockFactory) GetStore() state.Store {
+	return NewReadOnlyStore(bfT.store)
+}
+
 func getRandomTxID(t require.TestingT) iotago.TransactionID {
 	var result iotago.TransactionID
 	_, err := rand.Read(result[:])
