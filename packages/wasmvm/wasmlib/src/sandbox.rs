@@ -101,7 +101,7 @@ pub trait ScSandbox {
             contract: h_contract,
             function: h_function,
             params: vec![0; SC_UINT32_LENGTH],
-            allowance: vec![0; SC_UINT32_LENGTH],
+            allowance: vec![0; 0],
         };
         if let Some(params) = params {
             req.params = params.to_bytes();

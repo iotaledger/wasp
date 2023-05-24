@@ -13,11 +13,11 @@ const ScInt16Length = 2
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 func Int16Decode(dec *WasmDecoder) int16 {
-	return int16(dec.VliDecode(16))
+	return Int16FromBytes(dec.FixedBytes(ScInt16Length))
 }
 
 func Int16Encode(enc *WasmEncoder, value int16) {
-	enc.VliEncode(int64(value))
+	enc.FixedBytes(Int16ToBytes(value), ScInt16Length)
 }
 
 func Int16FromBytes(buf []byte) int16 {

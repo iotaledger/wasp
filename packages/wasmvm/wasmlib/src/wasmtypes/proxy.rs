@@ -55,7 +55,7 @@ impl Proxy {
 
     fn element(&self, index: u32) -> Proxy {
         let mut enc = WasmEncoder::new();
-        uint32_encode(&mut enc, index);
+        enc.vlu_encode(index as u64);
         // 0x23 is '#'
         self.sub(0x23, &enc.buf())
     }
@@ -67,7 +67,7 @@ impl Proxy {
     pub fn expand(&self, length: u32) {
         // update the length counter
         let mut enc = WasmEncoder::new();
-        uint32_encode(&mut enc, length);
+        enc.vlu_encode(length as u64);
         self.set(&enc.buf());
     }
 
@@ -97,7 +97,7 @@ impl Proxy {
             return 0;
         }
         let mut dec = WasmDecoder::new(&buf);
-        uint32_decode(&mut dec)
+        dec.vli_decode(32) as u32
     }
 
     pub fn root(&self, key: &str) -> Proxy {

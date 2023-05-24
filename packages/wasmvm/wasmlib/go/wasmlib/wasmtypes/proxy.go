@@ -60,7 +60,7 @@ func (p Proxy) Delete() {
 
 func (p Proxy) element(index uint32) Proxy {
 	enc := NewWasmEncoder()
-	Uint32Encode(enc, index)
+	enc.VluEncode(uint64(index))
 	return p.sub('#', enc.Buf())
 }
 
@@ -72,7 +72,7 @@ func (p Proxy) Exists() bool {
 func (p Proxy) expand(length uint32) {
 	// update the length counter
 	enc := NewWasmEncoder()
-	Uint32Encode(enc, length)
+	enc.VluEncode(uint64(length))
 	p.Set(enc.Buf())
 }
 
@@ -106,7 +106,7 @@ func (p Proxy) Length() uint32 {
 		return 0
 	}
 	dec := NewWasmDecoder(buf)
-	return Uint32Decode(dec)
+	return uint32(dec.VluDecode(32))
 }
 
 // Root returns a Proxy for an element of a root container (Params/Results/State).

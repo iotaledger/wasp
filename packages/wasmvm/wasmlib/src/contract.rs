@@ -67,7 +67,7 @@ impl<'a> ScView<'_> {
             contract: self.h_contract,
             function: self.h_function,
             params: self.params.to_bytes(),
-            allowance: vec![0; SC_UINT32_LENGTH],
+            allowance: vec![0; 0],
         };
         if let Some(allowance) = allowance {
             req.allowance = allowance.to_bytes();

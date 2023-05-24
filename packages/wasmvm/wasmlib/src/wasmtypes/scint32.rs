@@ -5,25 +5,24 @@ use std::convert::TryInto;
 
 use crate::*;
 
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 pub const SC_INT32_LENGTH: usize = 4;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub fn int32_decode(dec: &mut WasmDecoder) -> i32 {
-    dec.vli_decode(32) as i32
+    int32_from_bytes(&dec.fixed_bytes(SC_INT32_LENGTH))
 }
 
 pub fn int32_encode(enc: &mut WasmEncoder, value: i32) {
-    enc.vli_encode(value as i64);
+    enc.fixed_bytes(&int32_to_bytes(value), SC_INT32_LENGTH);
 }
 
 pub fn int32_from_bytes(buf: &[u8]) -> i32 {
-    if buf.len() == 0 {
+    let len = buf.len();
+    if len == 0 {
         return 0;
     }
-    if buf.len() != SC_INT32_LENGTH {
+    if len != SC_INT32_LENGTH {
         panic("invalid Int32 length");
     }
     i32::from_le_bytes(buf.try_into().expect("WTF?"))

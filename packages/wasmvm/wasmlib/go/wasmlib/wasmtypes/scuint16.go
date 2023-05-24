@@ -13,11 +13,11 @@ const ScUint16Length = 2
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 func Uint16Decode(dec *WasmDecoder) uint16 {
-	return uint16(dec.VluDecode(16))
+	return Uint16FromBytes(dec.FixedBytes(ScUint16Length))
 }
 
 func Uint16Encode(enc *WasmEncoder, value uint16) {
-	enc.VluEncode(uint64(value))
+	enc.FixedBytes(Uint16ToBytes(value), ScUint16Length)
 }
 
 func Uint16FromBytes(buf []byte) uint16 {

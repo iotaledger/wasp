@@ -104,7 +104,7 @@ export class Proxy {
             return 0;
         }
         const dec = new WasmDecoder(buf);
-        return uint32Decode(dec);
+        return dec.vluDecode(32) as u32;
     }
 
     // Root returns a Proxy for an element of a root container (Params/Results/State).
@@ -127,7 +127,7 @@ export class Proxy {
 
     protected element(index: u32): Proxy {
         const enc = new WasmEncoder();
-        uint32Encode(enc, index);
+        enc.vluEncode(index as u64);
         // 0x23 is '#'
         return this.sub(0x23, enc.buf());
     }
@@ -136,7 +136,7 @@ export class Proxy {
     protected expand(length: u32): void {
         // update the length counter
         const enc = new WasmEncoder();
-        uint32Encode(enc, length);
+        enc.vluEncode(length as u64);
         this.set(enc.buf());
     }
 

@@ -93,11 +93,11 @@ impl ScDict {
             let size = uint32_from_bytes(&dec.fixed_bytes(SC_UINT32_LENGTH));
             for _i in 0..size {
                 let key_buf = dec.fixed_bytes(SC_UINT16_LENGTH);
-                let key_len = uint16_from_bytes(&key_buf);
-                let key = dec.fixed_bytes(key_len as usize);
+                let key_len = uint16_from_bytes(&key_buf) as usize;
+                let key = dec.fixed_bytes(key_len);
                 let val_buf = dec.fixed_bytes(SC_UINT32_LENGTH);
-                let val_len = uint32_from_bytes(&val_buf);
-                let val = dec.fixed_bytes(val_len as usize);
+                let val_len = uint32_from_bytes(&val_buf) as usize;
+                let val = dec.fixed_bytes(val_len);
                 self.set(&key, &val);
             }
         }
@@ -110,11 +110,11 @@ impl ScDict {
             let size = uint32_from_bytes(&dec.fixed_bytes(SC_UINT32_LENGTH));
             for _ in 0..size {
                 let key_buf = dec.fixed_bytes(SC_UINT16_LENGTH);
-                let key_len = uint16_from_bytes(&key_buf);
-                let key = dec.fixed_bytes(key_len as usize);
+                let key_len = uint16_from_bytes(&key_buf) as usize;
+                let key = dec.fixed_bytes(key_len);
                 let val_buf = dec.fixed_bytes(SC_UINT32_LENGTH);
-                let val_len = uint32_from_bytes(&val_buf);
-                let val = dec.fixed_bytes(val_len as usize);
+                let val_len = uint32_from_bytes(&val_buf) as usize;
+                let val = dec.fixed_bytes(val_len);
                 dict.set(&key, &val);
             }
         }
@@ -130,10 +130,12 @@ impl ScDict {
         let mut enc = WasmEncoder::new();
         enc.fixed_bytes(&uint32_to_bytes(dict.len() as u32), SC_UINT32_LENGTH);
         for (key, val) in dict.iter() {
-            enc.fixed_bytes(&uint16_to_bytes(key.len() as u16), SC_UINT16_LENGTH);
-            enc.fixed_bytes(key, key.len());
-            enc.fixed_bytes(&uint32_to_bytes(val.len() as u32), SC_UINT32_LENGTH);
-            enc.fixed_bytes(val, val.len());
+            let key_len = key.len();
+            enc.fixed_bytes(&uint16_to_bytes(key_len as u16), SC_UINT16_LENGTH);
+            enc.fixed_bytes(key, key_len);
+            let val_len = val.len();
+            enc.fixed_bytes(&uint32_to_bytes(val_len as u32), SC_UINT32_LENGTH);
+            enc.fixed_bytes(val, val_len);
         }
         return enc.buf();
     }
