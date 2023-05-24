@@ -81,10 +81,86 @@ func TestMempoolBasic(t *testing.T) {
 //   - Get proposals -- all waiting.
 //   - Send a request.
 //   - Get proposals -- all received 1 request.
+//
+//nolint:gocyclo
 func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
 	te := newEnv(t, n, f, reliable)
 	defer te.close()
+
+	t.Log("ServerNodesUpdated")
+	tangleTime := time.Now()
+	for _, node := range te.mempools {
+		node.ServerNodesUpdated(te.peerPubKeys, te.peerPubKeys)
+		node.TangleTimeUpdated(tangleTime)
+	}
+	awaitTrackHeadChanels := make([]<-chan bool, len(te.mempools))
+	// deposit some funds so off-ledger requests can go through
+	t.Log("TrackNewChainHead")
+	for i, node := range te.mempools {
+		awaitTrackHeadChanels[i] = node.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
+	}
+	for i := range te.mempools {
+		<-awaitTrackHeadChanels[i]
+	}
+
+	blockFn := func(req isc.Request, ao *isc.AliasOutputWithID) *isc.AliasOutputWithID {
+		store := te.stores[0]
+		vmTask := &vm.VMTask{
+			Processors:             processors.MustNew(coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)),
+			AnchorOutput:           ao.GetAliasOutput(),
+			AnchorOutputID:         ao.OutputID(),
+			Store:                  store,
+			Requests:               []isc.Request{req},
+			TimeAssumption:         tangleTime,
+			Entropy:                hashing.HashDataBlake2b([]byte{2, 1, 7}),
+			ValidatorFeeTarget:     accounts.CommonAccount(),
+			EstimateGasMode:        false,
+			EnableGasBurnLogging:   false,
+			MaintenanceModeEnabled: false,
+			Log:                    te.log.Named("VM"),
+		}
+		require.NoError(t, runvm.NewVMRunner().Run(vmTask))
+		block := store.Commit(vmTask.StateDraft)
+		chainState, err := store.StateByTrieRoot(block.TrieRoot())
+		require.NoError(t, err)
+		//
+		// Check if block has both requests as consumed.
+		receipts, err := blocklog.RequestReceiptsFromBlock(block)
+		require.NoError(t, err)
+		require.Len(t, receipts, 1)
+		blockReqs := []isc.Request{}
+		for i := range receipts {
+			blockReqs = append(blockReqs, receipts[i].Request)
+		}
+		require.Contains(t, blockReqs, req)
+		nextAO, _ := te.tcl.FakeTX(ao, te.cmtAddress)
+
+		// sync mempools with new state
+		for i := range te.mempools {
+			awaitTrackHeadChanels[i] = te.mempools[i].TrackNewChainHead(chainState, ao, nextAO, []state.Block{block}, []state.Block{})
+		}
+		for i := range te.mempools {
+			<-awaitTrackHeadChanels[i]
+		}
+		return nextAO
+	}
+
+	output := transaction.BasicOutputFromPostData(
+		te.governor.Address(),
+		isc.HnameNil,
+		isc.RequestParameters{
+			TargetAddress: te.chainID.AsAddress(),
+			Assets:        isc.NewAssetsBaseTokens(10 * isc.Million),
+		},
+	)
+	onLedgerReq, err := isc.OnLedgerFromUTXO(output, tpkg.RandOutputID(uint16(0)))
+	require.NoError(t, err)
+	for _, node := range te.mempools {
+		node.ReceiveOnLedgerRequest(onLedgerReq)
+	}
+	currentAO := blockFn(onLedgerReq, te.originAO)
+
 	//
 	offLedgerReq := isc.NewOffLedgerRequest(
 		isc.RandomChainID(),
@@ -96,22 +172,13 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	).Sign(te.governor)
 	t.Log("Sending off-ledger request")
 	chosenMempool := rand.Intn(len(te.mempools))
-	te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq)
+	require.True(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq))
 	te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq) // Check for duplicate receives.
-	t.Log("ServerNodesUpdated")
-	tangleTime := time.Now()
-	for _, node := range te.mempools {
-		node.ServerNodesUpdated(te.peerPubKeys, te.peerPubKeys)
-		node.TangleTimeUpdated(tangleTime)
-	}
-	t.Log("TrackNewChainHead")
-	for i, node := range te.mempools {
-		node.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
-	}
+
 	t.Log("Ask for proposals")
 	proposals := make([]<-chan []*isc.RequestRef, len(te.mempools))
 	for i, node := range te.mempools {
-		proposals[i] = node.ConsensusProposalAsync(te.ctx, te.originAO)
+		proposals[i] = node.ConsensusProposalAsync(te.ctx, currentAO)
 	}
 	t.Log("Wait for proposals and ask for decided requests")
 	decided := make([]<-chan []isc.Request, len(te.mempools))
@@ -127,42 +194,13 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	}
 	//
 	// Make a block consuming those 2 requests.
-	store := te.stores[0]
-	vmTask := &vm.VMTask{
-		Processors:             processors.MustNew(coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)),
-		AnchorOutput:           te.originAO.GetAliasOutput(),
-		AnchorOutputID:         te.originAO.OutputID(),
-		Store:                  store,
-		Requests:               []isc.Request{offLedgerReq},
-		TimeAssumption:         tangleTime,
-		Entropy:                hashing.HashDataBlake2b([]byte{2, 1, 7}),
-		ValidatorFeeTarget:     accounts.CommonAccount(),
-		EstimateGasMode:        false,
-		EnableGasBurnLogging:   false,
-		MaintenanceModeEnabled: false,
-		Log:                    te.log.Named("VM"),
-	}
-	require.NoError(t, runvm.NewVMRunner().Run(vmTask))
-	block := store.Commit(vmTask.StateDraft)
-	chainState, err := store.StateByTrieRoot(block.TrieRoot())
-	require.NoError(t, err)
-	//
-	// Check if block has both requests as consumed.
-	receipts, err := blocklog.RequestReceiptsFromBlock(block)
-	require.NoError(t, err)
-	require.Len(t, receipts, 1)
-	blockReqs := []isc.Request{}
-	for i := range receipts {
-		blockReqs = append(blockReqs, receipts[i].Request)
-	}
-	require.Contains(t, blockReqs, offLedgerReq)
-	nextAO, _ := te.tcl.FakeTX(te.originAO, te.cmtAddress)
+	currentAO = blockFn(offLedgerReq, currentAO)
+
 	//
 	// Ask proposals for the next
 	proposals = make([]<-chan []*isc.RequestRef, len(te.mempools))
 	for i := range te.mempools {
-		proposals[i] = te.mempools[i].ConsensusProposalAsync(te.ctx, nextAO) // Intentionally invalid order (vs TrackNewChainHead).
-		te.mempools[i].TrackNewChainHead(chainState, te.originAO, nextAO, []state.Block{block}, []state.Block{})
+		proposals[i] = te.mempools[i].ConsensusProposalAsync(te.ctx, currentAO) // Intentionally invalid order (vs TrackNewChainHead).
 	}
 	//
 	// We should not get any requests, because old requests are consumed

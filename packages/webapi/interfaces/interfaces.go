@@ -24,11 +24,8 @@ import (
 )
 
 var (
+	ErrNotAddedToMempool      = errors.New("not added to the mempool")
 	ErrUnableToGetLatestState = errors.New("unable to get latest state")
-	ErrUnableToGetReceipt     = errors.New("unable to get request receipt from block state")
-	ErrAlreadyProcessed       = errors.New("request already processed")
-	ErrNoBalanceOnAccount     = errors.New("no balance on account")
-	ErrInvalidNonce           = errors.New("invalid nonce")
 	ErrChainNotFound          = errors.New("chain not found")
 	ErrCantDeleteLastUser     = errors.New("you can't delete the last user")
 )
