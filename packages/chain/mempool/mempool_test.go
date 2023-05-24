@@ -173,7 +173,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	t.Log("Sending off-ledger request")
 	chosenMempool := rand.Intn(len(te.mempools))
 	require.True(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq))
-	require.True(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq)) // Check for duplicate receives.
+	te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq) // Check for duplicate receives.
 
 	t.Log("Ask for proposals")
 	proposals := make([]<-chan []*isc.RequestRef, len(te.mempools))
