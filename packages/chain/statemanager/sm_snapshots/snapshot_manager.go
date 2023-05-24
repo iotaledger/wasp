@@ -58,11 +58,12 @@ type snapshotManagerImpl struct {
 var _ SnapshotManager = &snapshotManagerImpl{}
 
 const (
-	constDownloadTimeout       = 10 * time.Minute
-	constSnapshotFileSuffix    = ".snap"
-	constSnapshotTmpFileSuffix = ".tmp"
-	constIndexFileName         = "INDEX" // Index file contains a new-line separated list of snapshot files
-	constLocalAddress          = "local://"
+	constDownloadTimeout                     = 10 * time.Minute
+	constSnapshotIndexHashFileNameSepparator = "-"
+	constSnapshotFileSuffix                  = ".snap"
+	constSnapshotTmpFileSuffix               = ".tmp"
+	constIndexFileName                       = "INDEX" // Index file contains a new-line separated list of snapshot files
+	constLocalAddress                        = "local://"
 )
 
 func NewSnapshotManager(
@@ -145,7 +146,7 @@ func (smiT *snapshotManagerImpl) LoadSnapshotAsync(snapshotInfo SnapshotInfo) <-
 // -------------------------------------
 
 func (smiT *snapshotManagerImpl) cleanTempFiles() {
-	tempFileRegExp := tempSnapshotFileNameString("*")
+	tempFileRegExp := tempSnapshotFileNameString("*", "*")
 	tempFileRegExpWithPath := filepath.Join(smiT.localPath, tempFileRegExp)
 	tempFiles, err := filepath.Glob(tempFileRegExpWithPath)
 	if err != nil {
@@ -217,7 +218,7 @@ func (smiT *snapshotManagerImpl) handleUpdate() {
 }
 
 func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]]) {
-	fileRegExp := snapshotFileNameString("*")
+	fileRegExp := snapshotFileNameString("*", "*")
 	fileRegExpWithPath := filepath.Join(smiT.localPath, fileRegExp)
 	files, err := filepath.Glob(fileRegExpWithPath)
 	if err != nil {
@@ -308,7 +309,7 @@ func (smiT *snapshotManagerImpl) handleBlockCommitted(snapshotInfo SnapshotInfo)
 	if (stateIndex > lastIndexSnapshotted) && (stateIndex%smiT.createPeriod == 0) { // TODO: what if snapshotted state has been reverted?
 		commitment := snapshotInfo.GetCommitment()
 		smiT.log.Debugf("Creating snapshot %v %s...", stateIndex, commitment)
-		tmpFileName := tempSnapshotFileName(commitment.BlockHash())
+		tmpFileName := tempSnapshotFileName(stateIndex, commitment.BlockHash())
 		tmpFilePath := filepath.Join(smiT.localPath, tmpFileName)
 		exists, _, _ := ioutils.PathExists(tmpFilePath)
 		if exists {
@@ -331,7 +332,7 @@ func (smiT *snapshotManagerImpl) handleBlockCommitted(snapshotInfo SnapshotInfo)
 				return
 			}
 
-			finalFileName := snapshotFileName(commitment.BlockHash())
+			finalFileName := snapshotFileName(stateIndex, commitment.BlockHash())
 			finalFilePath := filepath.Join(smiT.localPath, finalFileName)
 			err = os.Rename(tmpFilePath, finalFilePath)
 			if err != nil {
@@ -415,20 +416,20 @@ func (smiT *snapshotManagerImpl) createSnapshotsNeeded() bool {
 	return smiT.createPeriod > 0
 }
 
-func tempSnapshotFileName(blockHash state.BlockHash) string {
-	return tempSnapshotFileNameString(blockHash.String())
+func tempSnapshotFileName(index uint32, blockHash state.BlockHash) string {
+	return tempSnapshotFileNameString(fmt.Sprint(index), blockHash.String())
 }
 
-func tempSnapshotFileNameString(blockHash string) string {
-	return snapshotFileNameString(blockHash) + constSnapshotTmpFileSuffix
+func tempSnapshotFileNameString(index, blockHash string) string {
+	return snapshotFileNameString(index, blockHash) + constSnapshotTmpFileSuffix
 }
 
-func snapshotFileName(blockHash state.BlockHash) string {
-	return snapshotFileNameString(blockHash.String())
+func snapshotFileName(index uint32, blockHash state.BlockHash) string {
+	return snapshotFileNameString(fmt.Sprint(index), blockHash.String())
 }
 
-func snapshotFileNameString(blockHash string) string {
-	return blockHash + constSnapshotFileSuffix
+func snapshotFileNameString(index, blockHash string) string {
+	return index + constSnapshotIndexHashFileNameSepparator + blockHash + constSnapshotFileSuffix
 }
 
 func downloadFile(ctx context.Context, log *logger.Logger, url string, timeout time.Duration) (context.CancelFunc, io.Reader, error) {
