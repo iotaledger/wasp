@@ -6,15 +6,9 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 )
 
@@ -57,7 +51,6 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 	if c.requestCache.Get(reqID) != nil {
 		return errors.New("request already processed")
 	}
-	c.requestCache.Set(reqID, true)
 
 	// check req signature
 	if err := request.VerifySignature(); err != nil {
@@ -76,51 +69,10 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 		return fmt.Errorf("unknown chain: %s", chainID.String())
 	}
 
-	if err := ShouldBeProcessed(chain, request); err != nil {
-		return err
+	if !chain.ReceiveOffLedgerRequest(request, c.networkProvider.Self().PubKey()) {
+		return interfaces.ErrNotAddedToMempool
 	}
 
-	chain.ReceiveOffLedgerRequest(request, c.networkProvider.Self().PubKey())
-
-	return nil
-}
-
-// implemented this way so we can re-use the same state, and avoid the overhead of calling views
-func ShouldBeProcessed(ch chain.ChainCore, req isc.OffLedgerRequest) error {
-	state, err := ch.LatestState(chain.ActiveOrCommittedState)
-	if err != nil {
-		// ServerError
-		return interfaces.ErrUnableToGetLatestState
-	}
-	// query blocklog contract
-
-	processed, err := blocklog.IsRequestProcessed(state, req.ID())
-	if err != nil {
-		// ServerError
-
-		return interfaces.ErrUnableToGetReceipt
-	}
-	if processed {
-		// BadRequest
-
-		return interfaces.ErrAlreadyProcessed
-	}
-
-	// query accounts contract
-	accountsPartition := subrealm.NewReadOnly(state, kv.Key(accounts.Contract.Hname().Bytes()))
-	// check user has on-chain balance
-	if !accounts.AccountExists(accountsPartition, req.SenderAccount()) {
-		// BadRequest
-
-		return interfaces.ErrNoBalanceOnAccount
-	}
-
-	accountNonce := accounts.GetMaxAssumedNonce(accountsPartition, req.SenderAccount())
-	if err := vmcontext.CheckNonce(req, accountNonce); err != nil {
-		// BadRequest
-
-		return interfaces.ErrInvalidNonce
-	}
-
+	c.requestCache.Set(reqID, true)
 	return nil
 }
