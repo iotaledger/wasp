@@ -269,7 +269,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		chainID,
 		c.snapshotPeriod,
 		c.snapshotFolderPath,
-		c.snapshotNetworkPath,
+		c.snapshotNetworkPaths,
 		chainStore,
 		chainLog.Named("Snap"),
 	)
