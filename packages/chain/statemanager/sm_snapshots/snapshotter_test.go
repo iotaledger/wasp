@@ -21,9 +21,9 @@ func TestWriteReadDifferentStores(t *testing.T) {
 	numberOfBlocks := 10
 	factory := sm_gpa_utils.NewBlockFactory(t)
 	blocks := factory.GetBlocks(numberOfBlocks, 1)
-	lastCommitment := blocks[numberOfBlocks-1].L1Commitment()
+	lastBlock := blocks[numberOfBlocks-1]
+	lastCommitment := lastBlock.L1Commitment()
 	snapshotInfo := NewSnapshotInfo(blocks[numberOfBlocks-1].StateIndex(), lastCommitment)
-	origState := factory.GetState(lastCommitment)
 	origSnapshot := factory.GetSnapshot(lastCommitment)
 	fileName := "TestWriteReadDifferentStores.snap"
 	f, err := os.OpenFile(fileName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
@@ -44,12 +44,20 @@ func TestWriteReadDifferentStores(t *testing.T) {
 	err = os.Remove(fileName)
 	require.NoError(t, err)
 
-	newBlock, err := store.BlockByTrieRoot(lastCommitment.TrieRoot())
-	require.NoError(t, err)
-	require.True(t, lastCommitment.TrieRoot().Equals(newBlock.TrieRoot()))
-	require.True(t, lastCommitment.BlockHash().Equals(newBlock.Hash()))
+	checkBlock(t, store, lastBlock)
+	checkState(t, store, factory.GetState(lastCommitment))
+}
 
-	newState, err := store.StateByTrieRoot(lastCommitment.TrieRoot())
+func checkBlock(t *testing.T, store state.Store, origBlock state.Block) {
+	origCommitment := origBlock.L1Commitment()
+	newBlock, err := store.BlockByTrieRoot(origCommitment.TrieRoot())
+	require.NoError(t, err)
+	require.True(t, origCommitment.TrieRoot().Equals(newBlock.TrieRoot()))
+	require.True(t, origCommitment.BlockHash().Equals(newBlock.Hash()))
+}
+
+func checkState(t *testing.T, store state.Store, origState state.State) {
+	newState, err := store.StateByTrieRoot(origState.TrieRoot())
 	require.NoError(t, err)
 	require.True(t, origState.TrieRoot().Equals(newState.TrieRoot()))
 	require.Equal(t, origState.BlockIndex(), newState.BlockIndex())

@@ -38,7 +38,7 @@ func (si *snapshotInfoImpl) GetBlockHash() state.BlockHash {
 }
 
 func (si *snapshotInfoImpl) String() string {
-	return fmt.Sprintf("%v:%s", si.GetStateIndex(), si.GetCommitment())
+	return fmt.Sprintf("%v %s", si.GetStateIndex(), si.GetCommitment())
 }
 
 func (si *snapshotInfoImpl) Equals(other SnapshotInfo) bool {

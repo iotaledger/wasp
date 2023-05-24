@@ -230,6 +230,7 @@ func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.Shrinkin
 		}
 		return
 	}
+	snapshotCount := 0
 	for _, file := range files {
 		func() { // Function to make the defers sooner
 			f, err := os.Open(file)
@@ -243,8 +244,10 @@ func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.Shrinkin
 				return
 			}
 			addSource(result, snapshotInfo, constLocalAddress+file)
+			snapshotCount++
 		}()
 	}
+	smiT.log.Debugf("%v snapshot files found locally", snapshotCount)
 }
 
 func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]]) {
@@ -261,6 +264,7 @@ func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.Shrink
 				smiT.log.Errorf("Failed to download index file: %w", err)
 				return
 			}
+			snapshotCount := 0
 			scanner := bufio.NewScanner(reader) // Defaults to splitting input by newline character
 			for scanner.Scan() {
 				func() {
@@ -282,12 +286,14 @@ func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.Shrink
 						return
 					}
 					addSource(result, snapshotInfo, snapshotFilePath)
+					snapshotCount++
 				}()
 			}
 			err = scanner.Err()
 			if err != nil {
 				smiT.log.Errorf("Failed reading index file %s: %w", indexFilePath, err)
 			}
+			smiT.log.Debugf("%v snapshot files found on %s", snapshotCount, networkPath)
 		}()
 	}
 }
@@ -355,18 +361,23 @@ func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfoCallback *snapsh
 	callback := snapshotInfoCallback.callback
 	defer close(callback)
 
+	smiT.log.Debugf("Loading snapshot %s", snapshotInfoCallback.SnapshotInfo)
 	// smiT.availableSnapshotsMutex.RLock() // Probably locking is not needed as it happens on the same thread as editing available snapshots
 	commitments, exists := smiT.availableSnapshots.Get(snapshotInfoCallback.SnapshotInfo.GetStateIndex())
 	// smiT.availableSnapshotsMutex.RUnlock()
 	if !exists {
-		callback <- fmt.Errorf("failed to obtain snapshot commitments of index %v", snapshotInfoCallback.SnapshotInfo.GetStateIndex())
+		err := fmt.Errorf("failed to obtain snapshot commitments of index %v", snapshotInfoCallback.SnapshotInfo.GetStateIndex())
+		smiT.log.Errorf("Loading snapshot %s: %w", snapshotInfoCallback.SnapshotInfo, err)
+		callback <- err
 		return
 	}
 	cs, exists := commitments.Find(func(c *commitmentSources) bool {
 		return c.commitment.Equals(snapshotInfoCallback.SnapshotInfo.GetCommitment())
 	})
 	if !exists {
-		callback <- fmt.Errorf("failed to obtain sources of snapshot %v", snapshotInfoCallback.SnapshotInfo)
+		err := fmt.Errorf("failed to obtain sources of snapshot %s", snapshotInfoCallback.SnapshotInfo)
+		smiT.log.Errorf("Loading snapshot %s: %w", snapshotInfoCallback.SnapshotInfo, err)
+		callback <- err
 		return
 	}
 
@@ -395,8 +406,11 @@ func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfoCallback *snapsh
 	}
 	loadFun := func(source string) error {
 		if strings.HasPrefix(source, constLocalAddress) {
-			return loadLocalFun(strings.TrimPrefix(source, constLocalAddress))
+			filePath := strings.TrimPrefix(source, constLocalAddress)
+			smiT.log.Debugf("Loading snapshot %s: reading local file %s", snapshotInfoCallback.SnapshotInfo, filePath)
+			return loadLocalFun(filePath)
 		}
+		smiT.log.Debugf("Loading snapshot %s: downloading file %s", snapshotInfoCallback.SnapshotInfo, source)
 		return loadNetworkFun(smiT.ctx, source)
 	}
 
@@ -404,9 +418,11 @@ func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfoCallback *snapsh
 	for _, source := range cs.sources {
 		e := loadFun(source)
 		if e == nil {
+			smiT.log.Debugf("Loading snapshot %s succeeded", snapshotInfoCallback.SnapshotInfo)
 			callback <- nil
 			return
 		}
+		smiT.log.Errorf("Loading snapshot %s: %e", snapshotInfoCallback.SnapshotInfo, e)
 		err = errors.Join(err, e)
 	}
 	callback <- err
