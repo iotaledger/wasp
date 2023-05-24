@@ -380,3 +380,20 @@ func TestGovernanceGasFee(t *testing.T) {
 	fp.GasPerToken.A /= 1000000
 	ch.SetGasFeePolicy(nil, fp) // should not fail with "gas budget exceeded"
 }
+
+func TestGovCallsNoBalance(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{})
+	ch := env.NewChain(false)
+
+	// the owner can call gov funcs without funds
+	_, err := ch.PostRequestOffLedger(
+		solo.NewCallParams(governance.Contract.Name, governance.FuncStartMaintenance.Name),
+		nil,
+	)
+	require.NoError(t, err)
+	_, err = ch.PostRequestOffLedger(
+		solo.NewCallParams(governance.Contract.Name, governance.FuncStopMaintenance.Name),
+		nil,
+	)
+	require.NoError(t, err)
+}
