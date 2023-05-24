@@ -8,6 +8,11 @@ import (
 )
 
 func WaspAPIClientByHostName(hostname string) (*apiclient.APIClient, error) {
+	_, err := ValidateAbsoluteURL(hostname)
+	if err != nil {
+		return nil, err
+	}
+
 	config := apiclient.NewConfiguration()
 	config.Servers[0].URL = hostname
 
