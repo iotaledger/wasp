@@ -1,7 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crypto::hashes::{blake2b::Blake2b256, Digest};
+use crypto::{
+    hashes::{blake2b::Blake2b256, Digest},
+    signatures::ed25519,
+};
 use wasmlib::*;
 
 use crate::keypair::KeyPair;
@@ -12,22 +15,22 @@ pub struct OffLedgerRequest {
     contract: ScHname,
     entry_point: ScHname,
     params: Vec<u8>,
-    signature_scheme: OffLedgerSignatureScheme,
+    signature: OffLedgerSignature,
     nonce: u64,
     allowance: ScAssets,
     gas_budget: u64,
 }
 
 #[derive(Clone)]
-pub struct OffLedgerSignatureScheme {
-    key_pair: KeyPair,
-    pub signature: Vec<u8>,
+pub struct OffLedgerSignature {
+    public_key: ed25519::PublicKey,
+    signature: Vec<u8>,
 }
 
-impl OffLedgerSignatureScheme {
-    pub fn new(key_pair: &KeyPair) -> Self {
-        return OffLedgerSignatureScheme {
-            key_pair: key_pair.clone(),
+impl OffLedgerSignature {
+    pub fn new(public_key: &ed25519::PublicKey) -> Self {
+        return OffLedgerSignature {
+            public_key: public_key.clone(),
             signature: Vec::new(),
         };
     }
@@ -46,7 +49,7 @@ impl OffLedgerRequest {
             contract: contract.clone(),
             entry_point: entry_point.clone(),
             params: params.to_vec(),
-            signature_scheme: OffLedgerSignatureScheme::new(&KeyPair::new(&[])),
+            signature: OffLedgerSignature::new(&KeyPair::new(&[]).public_key),
             nonce,
             allowance: ScAssets::new(&[]),
             gas_budget: u64::MAX,
@@ -54,16 +57,13 @@ impl OffLedgerRequest {
     }
 
     pub fn essence(&self) -> Vec<u8> {
-        let mut data: Vec<u8> = vec![1];
+        let mut data: Vec<u8> = vec![1]; // requestKindTagOffLedgerISC
         data.extend(self.chain_id.to_bytes());
         data.extend(self.contract.to_bytes());
         data.extend(self.entry_point.to_bytes());
         data.extend(self.params.clone());
         data.extend(uint64_to_bytes(self.nonce));
         data.extend(uint64_to_bytes(self.gas_budget));
-        let pub_key = self.signature_scheme.key_pair.public_key.to_bytes();
-        data.push(pub_key.len() as u8);
-        data.extend(pub_key);
         data.extend(self.allowance.to_bytes());
         return data;
     }
@@ -84,17 +84,20 @@ impl OffLedgerRequest {
             &self.params,
             self.nonce,
         );
-        req.signature_scheme = OffLedgerSignatureScheme::new(&key_pair);
-        req.signature_scheme.signature = key_pair.sign(&req.essence());
+        req.signature = OffLedgerSignature::new(&key_pair.public_key);
+        req.signature.signature = key_pair.sign(&req.essence());
         return req;
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut b = self.essence();
-        let sig = &self.signature_scheme.signature;
-        b.extend(uint16_to_bytes(sig.len() as u16));
-        b.extend(sig);
-        return b;
+        let mut data = self.essence();
+        let public_key = self.signature.public_key.to_bytes();
+        data.extend(uint8_to_bytes(public_key.len() as u8));
+        data.extend(public_key);
+        let signature = &self.signature.signature;
+        data.extend(uint16_to_bytes(signature.len() as u16));
+        data.extend(signature);
+        return data;
     }
 
     pub fn with_allowance(&mut self, allowance: &ScAssets) -> &Self {

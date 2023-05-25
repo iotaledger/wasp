@@ -23,9 +23,9 @@ $#each eventComment _eventComment
     $evtName($endFunc
 $#each event eventParam
 $#if event eventEndFunc2
-        const evt = new wasmlib.EventEncoder('$package.$evtName');
+        const enc = wasmlib.eventEncoder();
 $#each event eventEmit
-        evt.emit();
+        wasmlib.eventEmit('$package.$evtName', enc);
     }
 `,
 	// *******************************
@@ -35,7 +35,7 @@ $#each fldComment _eventParamComment
 `,
 	// *******************************
 	"eventEmit": `
-        evt.encode(wasmtypes.$fldType$+ToString($fldName));
+        wasmtypes.$fldType$+Encode(enc, $fldName);
 `,
 	// *******************************
 	"eventSetEndFunc": `
