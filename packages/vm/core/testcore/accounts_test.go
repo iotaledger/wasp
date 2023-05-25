@@ -1262,12 +1262,14 @@ func TestUnprocessable(t *testing.T) {
 	_, rec, _, err = v.ch.PostRequestSyncExt(retryReq, newUser)
 	require.NoError(t, err)
 	require.Nil(t, rec.Error) // assert the receipt for the "retry req" exists and its successful
+	require.Zero(t, rec.SDCharged)
 
 	receipt, err = v.ch.GetRequestReceipt(unprocessableReqID)
 	require.NoError(t, err)
 	require.NotNil(t, receipt)
-	require.Nil(t, receipt.Error)                                                                               // assert the receit for the initially unprocessable request exists and is successful
-	require.False(t, isInUnprocessableList())                                                                   // assert the request was removed from the unprocessable list
+	require.Nil(t, receipt.Error)             // assert the receit for the initially unprocessable request exists and is successful
+	require.False(t, isInUnprocessableList()) // assert the request was removed from the unprocessable list
+	require.NotZero(t, receipt.SDCharged)
 	require.True(t, blocklog.HasUnprocessableRequestBeenRemovedInBlock(v.ch.LatestBlock(), unprocessableReqID)) // assert this function returns true, its used to prevent these requests from being re-added to the mempool on a reorg
 
 	// assert the user was credited the tokens from the "initially unprocessable request"

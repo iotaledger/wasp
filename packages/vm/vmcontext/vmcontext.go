@@ -63,6 +63,8 @@ type VMContext struct {
 	gasFeeCharged uint64
 	// burn history. If disabled, it is nil
 	gasBurnLog *gas.BurnLog
+	// SD charged to consume the current request
+	sdCharged uint64
 
 	// used to set caller = nil when executing "open/close block context" funcs (meaning caller is the VM itself)
 	callerIsVM bool
