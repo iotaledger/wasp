@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 var Processor = Contract.Processor(nil,
@@ -60,6 +61,8 @@ func viewGetBlockInfo(ctx isc.SandboxView) dict.Dict {
 	}
 }
 
+var errNotFound = coreerrors.Register("not found").Create()
+
 // viewGetRequestIDsForBlock returns a list of requestIDs for a given block.
 // params:
 // ParamBlockIndex - index of the block (defaults to latest block)
@@ -73,7 +76,9 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
 
 	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
 	ctx.RequireNoError(err)
-	ctx.Requiref(found, "not found")
+	if !found {
+		panic(errNotFound)
+	}
 
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamRequestID)
@@ -113,7 +118,9 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
 
 	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
 	ctx.RequireNoError(err)
-	ctx.Requiref(found, "not found")
+	if !found {
+		panic(errNotFound)
+	}
 
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamRequestRecord)

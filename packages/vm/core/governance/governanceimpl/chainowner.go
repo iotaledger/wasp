@@ -8,8 +8,11 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
+
+var errOwnerNotDelegated = coreerrors.Register("not delegated to another chain owner").Create()
 
 // claimChainOwnership changes the chain owner to the delegated agentID (if any)
 // Checks authorisation if the caller is the one to which the ownership is delegated
@@ -22,8 +25,10 @@ func claimChainOwnership(ctx isc.Sandbox) dict.Dict {
 	currentOwner := stateDecoder.MustGetAgentID(governance.VarChainOwnerID)
 	nextOwner := stateDecoder.MustGetAgentID(governance.VarChainOwnerIDDelegated, currentOwner)
 
-	ctx.Requiref(!nextOwner.Equals(currentOwner), "governance.claimChainOwnership: not delegated to another chain owner")
-	ctx.Requiref(nextOwner.Equals(ctx.Caller()), "governance.claimChainOwnership: not authorized")
+	if nextOwner.Equals(currentOwner) {
+		panic(errOwnerNotDelegated)
+	}
+	ctx.RequireCaller(nextOwner)
 
 	state.Set(governance.VarChainOwnerID, codec.EncodeAgentID(nextOwner))
 	state.Del(governance.VarChainOwnerIDDelegated)
