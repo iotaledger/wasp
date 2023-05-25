@@ -1,9 +1,9 @@
 package coreerrors
 
 var (
-	ErrUntypedError          = Register("%v")
-	ErrErrorTemplateConflict = Register("Error with id %d conflicts with an already registered error")
-	ErrErrorMessageTooLong   = Register("Error message is too long").Create()
-	ErrErrorNotFound         = Register("Error not found").Create()
-	ErrMessageFormatEmpty    = Register("Error message is empty").Create()
+	ErrUntypedError          = Register("%s")
+	ErrErrorTemplateConflict = Register("error with id %d conflicts with an already registered error")
+	ErrErrorMessageTooLong   = Register("error message is too long").Create()
+	ErrErrorNotFound         = Register("error not found").Create()
+	ErrMessageFormatEmpty    = Register("error message is empty").Create()
 )

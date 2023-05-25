@@ -21,7 +21,7 @@ var (
 	ErrOverflow                             = coreerrors.Register("overflow in token arithmetics").Create()
 	ErrInvalidNFTID                         = coreerrors.Register("invalid NFT ID").Create()
 	ErrTooManyNFTsInAllowance               = coreerrors.Register("expected at most 1 NFT in allowance").Create()
-	ErrNFTIDNotFound                        = coreerrors.Register("NFTID not found: %s")
+	ErrNFTIDNotFound                        = coreerrors.Register("NFTID not found").Create()
 )
 
 const (

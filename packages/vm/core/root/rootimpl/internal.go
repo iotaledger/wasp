@@ -32,14 +32,14 @@ func isAuthorizedToDeploy(ctx isc.Sandbox) bool {
 	return collections.NewMap(ctx.State(), root.StateVarDeployPermissions).HasAt(caller.Bytes())
 }
 
-var errContractAlreadyExists = coreerrors.Register("contract %q (%s) already exists")
+var errContractAlreadyExists = coreerrors.Register("contract with hname %08x already exists")
 
 func storeContractRecord(state kv.KVStore, rec *root.ContractRecord) {
 	hname := isc.Hn(rec.Name)
 	// storing contract record in the registry
 	contractRegistry := root.GetContractRegistry(state)
 	if contractRegistry.HasAt(hname.Bytes()) {
-		panic(errContractAlreadyExists.Create(rec.Name, hname.String()))
+		panic(errContractAlreadyExists.Create(hname))
 	}
 	contractRegistry.SetAt(hname.Bytes(), rec.Bytes())
 }

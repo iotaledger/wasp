@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -124,7 +123,6 @@ func MapRequestReceiptResponse(vmService interfaces.VMService, chainID isc.Chain
 		}
 
 		response.Error = &models.BlockReceiptError{
-			Hash:         hexutil.EncodeUint64(uint64(resolved.Hash())),
 			ErrorMessage: resolved.Error(),
 		}
 	}

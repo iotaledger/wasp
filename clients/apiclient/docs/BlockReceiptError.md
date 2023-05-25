@@ -5,13 +5,12 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **ErrorMessage** | **string** |  | 
-**Hash** | **string** |  | 
 
 ## Methods
 
 ### NewBlockReceiptError
 
-`func NewBlockReceiptError(errorMessage string, hash string, ) *BlockReceiptError`
+`func NewBlockReceiptError(errorMessage string, ) *BlockReceiptError`
 
 NewBlockReceiptError instantiates a new BlockReceiptError object
 This constructor will assign default values to properties that have it defined,
@@ -44,26 +43,6 @@ and a boolean to check if the value has been set.
 `func (o *BlockReceiptError) SetErrorMessage(v string)`
 
 SetErrorMessage sets ErrorMessage field to given value.
-
-
-### GetHash
-
-`func (o *BlockReceiptError) GetHash() string`
-
-GetHash returns the Hash field if non-nil, zero value otherwise.
-
-### GetHashOk
-
-`func (o *BlockReceiptError) GetHashOk() (*string, bool)`
-
-GetHashOk returns a tuple with the Hash field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetHash
-
-`func (o *BlockReceiptError) SetHash(v string)`
-
-SetHash sets Hash field to given value.
 
 
 
