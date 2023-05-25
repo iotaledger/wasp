@@ -52,7 +52,6 @@ type RequestIDsResponse struct {
 }
 
 type BlockReceiptError struct {
-	Hash         string `json:"hash" swagger:"required"`
 	ErrorMessage string `json:"errorMessage" swagger:"required"`
 }
 

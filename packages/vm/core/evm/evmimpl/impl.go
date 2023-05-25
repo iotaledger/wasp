@@ -151,7 +151,7 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 }
 
 var (
-	errFoundryNotOwnedByCaller = coreerrors.Register("foundry sn %s not owned by caller")
+	errFoundryNotOwnedByCaller = coreerrors.Register("foundry with serial number %d not owned by caller")
 	errEVMAccountAlreadyExists = coreerrors.Register("cannot register ERC20NativeTokens contract: EVM account already exists").Create()
 )
 

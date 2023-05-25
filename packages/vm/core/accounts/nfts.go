@@ -78,7 +78,7 @@ func GetNFTData(state kv.KVStoreReader, id iotago.NFTID) (*isc.NFT, error) {
 	allNFTs := nftDataMapR(state)
 	b := allNFTs.GetAt(id[:])
 	if len(b) == 0 {
-		return nil, ErrNFTIDNotFound.Create(id)
+		return nil, ErrNFTIDNotFound
 	}
 	nft, err := isc.NFTFromBytes(b, false)
 	if err != nil {
