@@ -106,7 +106,7 @@ impl WasmClientEvents {
         let sep = sep.unwrap();
         let topic = &event.data[..sep];
         println!("{} {} {}", event.chain_id.to_string(), event.contract_id.to_string(), topic);
-        let buf = string_to_bytes(&event.data[sep+1..]);
+        let buf = hex_decode(&event.data[sep + 1..]);
         let mut dec = WasmDecoder::new(&buf);
         self.handler.call_handler(topic, &mut dec);
     }

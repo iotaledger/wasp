@@ -3,7 +3,7 @@
 
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
-import {IEventHandlers, panic, stringToBytes, WasmDecoder} from 'wasmlib';
+import {hexDecode, IEventHandlers, WasmDecoder} from 'wasmlib';
 import {RawData, WebSocket} from 'ws';
 
 export class ContractEvent {
@@ -86,27 +86,8 @@ export class WasmClientEvents {
         }
         const topic = event.data.slice(0, sep);
         console.log(event.chainID.toString() + ' ' + event.contractID.toString() + ' ' + topic);
-        const buf = stringToBytes(event.data.slice(sep+1));
+        const buf = hexDecode(event.data.slice(sep + 1));
         const dec = new WasmDecoder(buf);
         this.handler.callHandler(topic, dec);
-    }
-
-    private unescape(param: string): string {
-        const i = param.indexOf('~');
-        if (i < 0) {
-            return param;
-        }
-
-        switch (param.charAt(i + 1)) {
-            case '~': // escaped escape character
-                return param.slice(0, i) + '~' + this.unescape(param.slice(i + 2));
-            case '/': // escaped vertical bar
-                return param.slice(0, i) + '|' + this.unescape(param.slice(i + 2));
-            case '_': // escaped space
-                return param.slice(0, i) + ' ' + this.unescape(param.slice(i + 2));
-            default:
-                panic('invalid event encoding');
-        }
-        return '';
     }
 }

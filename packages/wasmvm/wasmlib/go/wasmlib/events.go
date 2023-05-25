@@ -26,5 +26,5 @@ func NewEventEncoder() *wasmtypes.WasmEncoder {
 }
 
 func EventEmit(topic string, enc *wasmtypes.WasmEncoder) {
-	ScFuncContext{}.Event(topic + "|" + string(enc.Buf()))
+	ScFuncContext{}.Event(topic + "|" + wasmtypes.HexEncode(enc.Buf()))
 }

@@ -8,7 +8,6 @@ import (
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
 
-	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	websocketservice "github.com/iotaledger/wasp/packages/webapi/websocket"
@@ -37,7 +36,7 @@ func startEventLoop(url string, eventDone chan bool, eventHandlers *[]*WasmClien
 	if err != nil {
 		return err
 	}
-	err = subscribe(ctx, ws, string(publisher.ISCEventKindBlockEvents))
+	err = subscribe(ctx, ws, "block_events")
 	if err != nil {
 		return err
 	}
@@ -84,7 +83,7 @@ func (h WasmClientEvents) ProcessEvent(event *ContractEvent) {
 	}
 	topic := event.Data[:sep]
 	fmt.Printf("%s %s %s\n", event.ChainID.String(), event.ContractID.String(), topic)
-	buf := wasmtypes.StringToBytes(event.Data[sep+1:])
+	buf := wasmtypes.HexDecode(event.Data[sep+1:])
 	dec := wasmtypes.NewWasmDecoder(buf)
 	h.handler.CallHandler(topic, dec)
 }

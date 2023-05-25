@@ -24,8 +24,7 @@ impl EventHandlers {
     }
 }
 
-pub struct EventEncoder {
-}
+pub struct EventEncoder {}
 
 impl EventEncoder {
     pub fn new() -> WasmEncoder {
@@ -35,9 +34,6 @@ impl EventEncoder {
     }
 
     pub fn emit(topic: &str, enc: &WasmEncoder) {
-        let mut buf = topic.as_bytes().to_vec();
-        buf.append(&mut ("|".as_bytes().to_vec()));
-        buf.append(&mut (enc.buf().to_vec()));
-        ScFuncContext {}.event(&string_from_bytes(&buf));
+        ScFuncContext {}.event(&(topic.to_string() + "|" + &hex_encode(&enc.buf())));
     }
 }

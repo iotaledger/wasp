@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {ScFuncContext} from './context';
-import {concat, stringFromBytes, stringToBytes, uint64Encode, WasmDecoder, WasmEncoder} from "./wasmtypes";
+import {concat, hexEncode, stringToBytes, uint64Encode, WasmDecoder, WasmEncoder} from "./wasmtypes";
 
 export interface IEventHandlers {
     callHandler(topic: string, dec: WasmDecoder): void;
@@ -24,6 +24,5 @@ export function eventEncoder(): WasmEncoder {
 }
 
 export function eventEmit(topic: string, enc: WasmEncoder): void {
-    const buf = concat(concat(stringToBytes(topic), stringToBytes("|")), enc.buf());
-    new ScFuncContext().event(stringFromBytes(buf));
+    new ScFuncContext().event(topic + "|" + hexEncode(enc.buf()));
 }
