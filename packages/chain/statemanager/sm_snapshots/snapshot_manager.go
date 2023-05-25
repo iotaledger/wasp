@@ -71,12 +71,21 @@ func NewSnapshotManager(
 	shutdownCoordinator *shutdown.Coordinator,
 	chainID isc.ChainID,
 	createPeriod uint32,
-	basePath string,
-	networkPaths []string,
+	baseLocalPath string,
+	baseNetworkPaths []string,
 	store state.Store,
 	log *logger.Logger,
 ) (SnapshotManager, error) {
-	localPath := filepath.Join(basePath, chainID.String())
+	chainIDString := chainID.String()
+	localPath := filepath.Join(baseLocalPath, chainIDString)
+	networkPaths := make([]string, len(baseNetworkPaths))
+	var err error
+	for i := range baseNetworkPaths {
+		networkPaths[i], err = url.JoinPath(baseNetworkPaths[i], chainIDString)
+		if err != nil {
+			return nil, fmt.Errorf("cannot append chain ID to network path %s: %v", baseNetworkPaths[i], err)
+		}
+	}
 	result := &snapshotManagerImpl{
 		log:                       log,
 		ctx:                       ctx,
@@ -96,7 +105,7 @@ func NewSnapshotManager(
 	}
 	if result.createSnapshotsNeeded() {
 		if err := ioutils.CreateDirectory(localPath, 0o777); err != nil {
-			return nil, fmt.Errorf("cannot create folder %s: %w", localPath, err)
+			return nil, fmt.Errorf("cannot create folder %s: %v", localPath, err)
 		}
 		result.cleanTempFiles() // To be able to make snapshots, which were not finished. See comment in `handleBlockCommitted` function
 		log.Debugf("Snapshot manager created; folder %v is used for snapshots", localPath)
@@ -223,10 +232,10 @@ func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.Shrinkin
 	files, err := filepath.Glob(fileRegExpWithPath)
 	if err != nil {
 		if smiT.createSnapshotsNeeded() {
-			smiT.log.Errorf("Failed to obtain snapshot file list: %w", err)
+			smiT.log.Errorf("Failed to obtain snapshot file list: %v", err)
 		} else {
 			// If snapshots are not created, snapshot dir is not supposed to exists; unless, it was created by other runs of Wasp or manually
-			smiT.log.Warnf("Cannot obtain local snapshot file list (possibly, it does not exist): %w", err)
+			smiT.log.Warnf("Cannot obtain local snapshot file list (possibly, it does not exist): %v", err)
 		}
 		return
 	}
@@ -235,12 +244,12 @@ func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.Shrinkin
 		func() { // Function to make the defers sooner
 			f, err := os.Open(file)
 			if err != nil {
-				smiT.log.Errorf("Failed to open snapshot file %s: %w", file, err)
+				smiT.log.Errorf("Failed to open snapshot file %s: %v", file, err)
 			}
 			defer f.Close()
 			snapshotInfo, err := readSnapshotInfo(f)
 			if err != nil {
-				smiT.log.Errorf("Failed to read snapshot info from file %s: %w", file, err)
+				smiT.log.Errorf("Failed to read snapshot info from file %s: %v", file, err)
 				return
 			}
 			addSource(result, snapshotInfo, constLocalAddress+file)
@@ -255,13 +264,13 @@ func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.Shrink
 		func() { // Function to make the defers sooner
 			indexFilePath, err := url.JoinPath(networkPath, constIndexFileName)
 			if err != nil {
-				smiT.log.Errorf("Unable to join paths %s and %s: %w", networkPath, constIndexFileName, err)
+				smiT.log.Errorf("Unable to join paths %s and %s: %v", networkPath, constIndexFileName, err)
 				return
 			}
 			cancelFun, reader, err := downloadFile(smiT.ctx, smiT.log, indexFilePath, constDownloadTimeout)
 			defer cancelFun()
 			if err != nil {
-				smiT.log.Errorf("Failed to download index file: %w", err)
+				smiT.log.Errorf("Failed to download index file: %v", err)
 				return
 			}
 			snapshotCount := 0
@@ -271,18 +280,18 @@ func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.Shrink
 					snapshotFileName := scanner.Text()
 					snapshotFilePath, er := url.JoinPath(networkPath, snapshotFileName)
 					if er != nil {
-						smiT.log.Errorf("Unable to join paths %s and %s: %w", networkPath, snapshotFileName, er)
+						smiT.log.Errorf("Unable to join paths %s and %s: %v", networkPath, snapshotFileName, er)
 						return
 					}
 					sCancelFun, sReader, er := downloadFile(smiT.ctx, smiT.log, snapshotFilePath, constDownloadTimeout)
 					defer sCancelFun()
 					if er != nil {
-						smiT.log.Errorf("Failed to download snapshot file: %w", er)
+						smiT.log.Errorf("Failed to download snapshot file: %v", er)
 						return
 					}
 					snapshotInfo, er := readSnapshotInfo(sReader)
 					if er != nil {
-						smiT.log.Errorf("Failed to download read snapshot info from %s: %w", snapshotFilePath, er)
+						smiT.log.Errorf("Failed to download read snapshot info from %s: %v", snapshotFilePath, er)
 						return
 					}
 					addSource(result, snapshotInfo, snapshotFilePath)
@@ -290,8 +299,8 @@ func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.Shrink
 				}()
 			}
 			err = scanner.Err()
-			if err != nil {
-				smiT.log.Errorf("Failed reading index file %s: %w", indexFilePath, err)
+			if err != nil && !errors.Is(err, io.EOF) {
+				smiT.log.Errorf("Failed reading index file %s: %v", indexFilePath, err)
 			}
 			smiT.log.Debugf("%v snapshot files found on %s", snapshotCount, networkPath)
 		}()
@@ -324,7 +333,7 @@ func (smiT *snapshotManagerImpl) handleBlockCommitted(snapshotInfo SnapshotInfo)
 		}
 		f, err := os.OpenFile(tmpFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 		if err != nil {
-			smiT.log.Errorf("Creating snapshot %v %s: failed to create temporary snapshot file %s: %w", stateIndex, commitment, tmpFilePath, err)
+			smiT.log.Errorf("Creating snapshot %v %s: failed to create temporary snapshot file %s: %v", stateIndex, commitment, tmpFilePath, err)
 			f.Close()
 			return
 		}
@@ -334,7 +343,7 @@ func (smiT *snapshotManagerImpl) handleBlockCommitted(snapshotInfo SnapshotInfo)
 			smiT.log.Debugf("Creating snapshot %v %s: storing it to file", stateIndex, commitment)
 			err := smiT.snapshotter.storeSnapshot(snapshotInfo, f)
 			if err != nil {
-				smiT.log.Errorf("Creating snapshot %v %s: failed to write snapshot to temporary file %s: %w", stateIndex, commitment, tmpFilePath, err)
+				smiT.log.Errorf("Creating snapshot %v %s: failed to write snapshot to temporary file %s: %v", stateIndex, commitment, tmpFilePath, err)
 				return
 			}
 
@@ -342,7 +351,7 @@ func (smiT *snapshotManagerImpl) handleBlockCommitted(snapshotInfo SnapshotInfo)
 			finalFilePath := filepath.Join(smiT.localPath, finalFileName)
 			err = os.Rename(tmpFilePath, finalFilePath)
 			if err != nil {
-				smiT.log.Errorf("Creating snapshot %v %s: failed to move temporary snapshot file %s to permanent location %s: %w",
+				smiT.log.Errorf("Creating snapshot %v %s: failed to move temporary snapshot file %s to permanent location %s: %v",
 					stateIndex, commitment, tmpFilePath, finalFilePath, err)
 				return
 			}
@@ -367,7 +376,7 @@ func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfoCallback *snapsh
 	// smiT.availableSnapshotsMutex.RUnlock()
 	if !exists {
 		err := fmt.Errorf("failed to obtain snapshot commitments of index %v", snapshotInfoCallback.SnapshotInfo.GetStateIndex())
-		smiT.log.Errorf("Loading snapshot %s: %w", snapshotInfoCallback.SnapshotInfo, err)
+		smiT.log.Errorf("Loading snapshot %s: %v", snapshotInfoCallback.SnapshotInfo, err)
 		callback <- err
 		return
 	}
@@ -376,7 +385,7 @@ func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfoCallback *snapsh
 	})
 	if !exists {
 		err := fmt.Errorf("failed to obtain sources of snapshot %s", snapshotInfoCallback.SnapshotInfo)
-		smiT.log.Errorf("Loading snapshot %s: %w", snapshotInfoCallback.SnapshotInfo, err)
+		smiT.log.Errorf("Loading snapshot %s: %v", snapshotInfoCallback.SnapshotInfo, err)
 		callback <- err
 		return
 	}
@@ -384,7 +393,7 @@ func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfoCallback *snapsh
 	loadSnapshotFun := func(r io.Reader) error {
 		err := smiT.snapshotter.loadSnapshot(snapshotInfoCallback.SnapshotInfo, r)
 		if err != nil {
-			return fmt.Errorf("loading snapshot failed: %w", err)
+			return fmt.Errorf("loading snapshot failed: %v", err)
 		}
 		return nil
 	}
@@ -422,7 +431,7 @@ func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfoCallback *snapsh
 			callback <- nil
 			return
 		}
-		smiT.log.Errorf("Loading snapshot %s: %e", snapshotInfoCallback.SnapshotInfo, e)
+		smiT.log.Errorf("Loading snapshot %s: %v", snapshotInfoCallback.SnapshotInfo, e)
 		err = errors.Join(err, e)
 	}
 	callback <- err
@@ -453,12 +462,12 @@ func downloadFile(ctx context.Context, log *logger.Logger, url string, timeout t
 
 	request, err := http.NewRequestWithContext(downloadCtx, http.MethodGet, url, http.NoBody)
 	if err != nil {
-		return downloadCtxCancel, nil, fmt.Errorf("failed creating request with url %s: %w", url, err)
+		return downloadCtxCancel, nil, fmt.Errorf("failed creating request with url %s: %v", url, err)
 	}
 
 	response, err := http.DefaultClient.Do(request) //nolint:bodyclose// it will be closed, when the caller calls `cancelFun`
 	if err != nil {
-		return downloadCtxCancel, nil, fmt.Errorf("http request to file url %s failed: %w", url, err)
+		return downloadCtxCancel, nil, fmt.Errorf("http request to file url %s failed: %v", url, err)
 	}
 	cancelFun := func() {
 		response.Body.Close()
@@ -470,7 +479,7 @@ func downloadFile(ctx context.Context, log *logger.Logger, url string, timeout t
 	}
 
 	progressReporter := NewProgressReporter(log, fmt.Sprintf("downloading file %s", url), uint64(response.ContentLength))
-	reader := io.TeeReader(response.Body, progressReporter)
+	reader := io.TeeReader(NewBlockingReader(response.Body), progressReporter)
 	return cancelFun, reader, nil
 }
 

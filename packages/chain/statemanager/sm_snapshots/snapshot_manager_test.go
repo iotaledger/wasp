@@ -1,16 +1,22 @@
 package sm_snapshots
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"net/http"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
@@ -35,7 +41,55 @@ func TestBlockCommitted(t *testing.T) { // TODO: improve
 	time.Sleep(5 * time.Second)
 }
 
-func TestSnapshotManagerSimple(t *testing.T) {
+func TestSnapshotManagerLocal(t *testing.T) {
+	createFun := func(chainID isc.ChainID, store state.Store, log *logger.Logger) SnapshotManager {
+		snapshotManager, err := NewSnapshotManager(context.Background(), nil, chainID, 0, localSnapshotsPathConst, []string{}, store, log)
+		require.NoError(t, err)
+		return snapshotManager
+	}
+	defer cleanupAfterTest(t)
+
+	testSnapshotManagerSimple(t, createFun, func(isc.ChainID, []SnapshotInfo) {})
+}
+
+func TestSnapshotManagerNetwork(t *testing.T) {
+	log := testlogger.NewLogger(t)
+	defer log.Sync()
+
+	err := ioutils.CreateDirectory(localSnapshotsPathConst, 0o777)
+	require.NoError(t, err)
+
+	port := ":9999"
+	handler := http.FileServer(http.Dir(localSnapshotsPathConst))
+	go http.ListenAndServe(port, handler)
+
+	createFun := func(chainID isc.ChainID, store state.Store, log *logger.Logger) SnapshotManager {
+		networkPaths := []string{"http://localhost" + port + "/"}
+		snapshotManager, err := NewSnapshotManager(context.Background(), nil, chainID, 0, "nonexistent", networkPaths, store, log)
+		require.NoError(t, err)
+		return snapshotManager
+	}
+	defer cleanupAfterTest(t)
+
+	createIndexFileFun := func(chainID isc.ChainID, snapshotInfos []SnapshotInfo) {
+		indexFilePath := filepath.Join(localSnapshotsPathConst, chainID.String(), constIndexFileName)
+		f, err := os.OpenFile(indexFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
+		require.NoError(t, err)
+		defer f.Close()
+		w := bufio.NewWriter(f)
+		for _, snapshotInfo := range snapshotInfos {
+			w.WriteString(snapshotFileName(snapshotInfo.GetStateIndex(), snapshotInfo.GetBlockHash()) + "\n")
+		}
+		w.Flush()
+	}
+	testSnapshotManagerSimple(t, createFun, createIndexFileFun)
+}
+
+func testSnapshotManagerSimple(
+	t *testing.T,
+	createNewNodeFun func(isc.ChainID, state.Store, *logger.Logger) SnapshotManager,
+	snapshotsAvailableFun func(isc.ChainID, []SnapshotInfo),
+) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
@@ -56,20 +110,21 @@ func TestSnapshotManagerSimple(t *testing.T) {
 	for i := snapshotCreatePeriod - 1; i < numberOfBlocks; i += snapshotCreatePeriod {
 		require.True(t, waitForBlock(t, snapshotManagerOrig, blocks[i], 10, 50*time.Millisecond))
 	}
+	createdSnapshots := make([]SnapshotInfo, 0)
 	for _, block := range blocks {
 		exists := snapshotManagerOrig.SnapshotExists(block.StateIndex(), block.L1Commitment())
 		if block.StateIndex()%uint32(snapshotCreatePeriod) == 0 {
 			require.True(t, exists)
+			createdSnapshots = append(createdSnapshots, NewSnapshotInfo(block.StateIndex(), block.L1Commitment()))
 		} else {
 			require.False(t, exists)
 		}
 	}
+	snapshotsAvailableFun(factory.GetChainID(), createdSnapshots)
 
 	// Node is restarted
 	storeNew := state.NewStore(mapdb.NewMapDB())
-	snapshotManagerNew, err := NewSnapshotManager(context.Background(), nil, factory.GetChainID(), 0, localSnapshotsPathConst, []string{}, storeNew, log)
-	require.NoError(t, err)
-	defer cleanupAfterTest(t)
+	snapshotManagerNew := createNewNodeFun(factory.GetChainID(), storeNew, log)
 
 	// Wait for node to read the list of snapshots
 	lastBlock := blocks[len(blocks)-1]
