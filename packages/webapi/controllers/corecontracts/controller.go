@@ -16,23 +16,11 @@ import (
 )
 
 type Controller struct {
-	accounts   *corecontracts.Accounts
-	blob       *corecontracts.Blob
-	blocklog   *corecontracts.BlockLog
-	errors     *corecontracts.Errors
-	governance *corecontracts.Governance
-	vmService  interfaces.VMService
+	chainService interfaces.ChainService
 }
 
-func NewCoreContractsController(vmService interfaces.VMService) interfaces.APIController {
-	return &Controller{
-		accounts:   corecontracts.NewAccounts(vmService),
-		blob:       corecontracts.NewBlob(vmService),
-		blocklog:   corecontracts.NewBlockLog(vmService),
-		errors:     corecontracts.NewErrors(vmService),
-		governance: corecontracts.NewGovernance(vmService),
-		vmService:  vmService,
-	}
+func NewCoreContractsController(chainService interfaces.ChainService) interfaces.APIController {
+	return &Controller{chainService}
 }
 
 func (c *Controller) Name() string {
@@ -239,14 +227,14 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 	api.GET("chains/:chainID/core/blocklog/blocks/:blockIndex/receipts", c.getRequestReceiptsForBlock).
 		AddParamPathNested(blocks{}).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The receipts", mocker.Get(models.BlockReceiptsResponse{}), nil).
+		AddResponse(http.StatusOK, "The receipts", mocker.Get([]models.ReceiptResponse{}), nil).
 		SetOperationId("blocklogGetRequestReceiptsOfBlock").
 		SetSummary("Get all receipts of a certain block")
 
 	api.GET("chains/:chainID/core/blocklog/blocks/latest/receipts", c.getRequestReceiptsForBlock).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The receipts", mocker.Get(models.BlockReceiptsResponse{}), nil).
+		AddResponse(http.StatusOK, "The receipts", mocker.Get([]models.ReceiptResponse{}), nil).
 		SetOperationId("blocklogGetRequestReceiptsOfLatestBlock").
 		SetSummary("Get all receipts of the latest block")
 
@@ -254,7 +242,7 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamPath("", params.ParamRequestID, params.DescriptionRequestID).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The receipt", mocker.Get(models.RequestReceiptResponse{}), nil).
+		AddResponse(http.StatusOK, "The receipt", mocker.Get(models.ReceiptResponse{}), nil).
 		SetOperationId("blocklogGetRequestReceipt").
 		SetSummary("Get the receipt of a certain request id")
 

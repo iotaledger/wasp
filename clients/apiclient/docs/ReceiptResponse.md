@@ -11,14 +11,15 @@ Name | Type | Description | Notes
 **GasBurned** | **string** | The burned gas (uint64 as string) | 
 **GasFeeCharged** | **string** | The charged gas fee (uint64 as string) | 
 **RawError** | Pointer to [**UnresolvedVMErrorJSON**](UnresolvedVMErrorJSON.md) |  | [optional] 
-**Request** | **string** |  | 
+**Request** | [**RequestDetail**](RequestDetail.md) |  | 
 **RequestIndex** | **uint32** |  | 
+**StorageDepositCharged** | **string** | Storage deposit charged (uint64 as string) | 
 
 ## Methods
 
 ### NewReceiptResponse
 
-`func NewReceiptResponse(blockIndex uint32, gasBudget string, gasBurnLog []BurnRecord, gasBurned string, gasFeeCharged string, request string, requestIndex uint32, ) *ReceiptResponse`
+`func NewReceiptResponse(blockIndex uint32, gasBudget string, gasBurnLog []BurnRecord, gasBurned string, gasFeeCharged string, request RequestDetail, requestIndex uint32, storageDepositCharged string, ) *ReceiptResponse`
 
 NewReceiptResponse instantiates a new ReceiptResponse object
 This constructor will assign default values to properties that have it defined,
@@ -185,20 +186,20 @@ HasRawError returns a boolean if a field has been set.
 
 ### GetRequest
 
-`func (o *ReceiptResponse) GetRequest() string`
+`func (o *ReceiptResponse) GetRequest() RequestDetail`
 
 GetRequest returns the Request field if non-nil, zero value otherwise.
 
 ### GetRequestOk
 
-`func (o *ReceiptResponse) GetRequestOk() (*string, bool)`
+`func (o *ReceiptResponse) GetRequestOk() (*RequestDetail, bool)`
 
 GetRequestOk returns a tuple with the Request field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetRequest
 
-`func (o *ReceiptResponse) SetRequest(v string)`
+`func (o *ReceiptResponse) SetRequest(v RequestDetail)`
 
 SetRequest sets Request field to given value.
 
@@ -221,6 +222,26 @@ and a boolean to check if the value has been set.
 `func (o *ReceiptResponse) SetRequestIndex(v uint32)`
 
 SetRequestIndex sets RequestIndex field to given value.
+
+
+### GetStorageDepositCharged
+
+`func (o *ReceiptResponse) GetStorageDepositCharged() string`
+
+GetStorageDepositCharged returns the StorageDepositCharged field if non-nil, zero value otherwise.
+
+### GetStorageDepositChargedOk
+
+`func (o *ReceiptResponse) GetStorageDepositChargedOk() (*string, bool)`
+
+GetStorageDepositChargedOk returns a tuple with the StorageDepositCharged field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetStorageDepositCharged
+
+`func (o *ReceiptResponse) SetStorageDepositCharged(v string)`
+
+SetStorageDepositCharged sets StorageDepositCharged field to given value.
 
 
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/common"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 
@@ -15,7 +16,7 @@ import (
 
 func (c *Controller) executeCallView(e echo.Context) error {
 	controllerutils.SetOperation(e, "call_view")
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
 		return err
 	}
@@ -23,10 +24,6 @@ func (c *Controller) executeCallView(e echo.Context) error {
 	var callViewRequest models.ContractCallViewRequest
 	if err = e.Bind(&callViewRequest); err != nil {
 		return apierrors.InvalidPropertyError("body", err)
-	}
-
-	if !c.chainService.HasChain(chainID) {
-		return apierrors.ChainNotFoundError(chainID.String())
 	}
 
 	// Get contract and function. The request model supports HName and common string names. HNames are preferred.
@@ -56,7 +53,7 @@ func (c *Controller) executeCallView(e echo.Context) error {
 		return apierrors.InvalidPropertyError("arguments", err)
 	}
 
-	result, err := c.vmService.CallViewByChainID(chainID, contractHName, functionHName, args)
+	result, err := common.CallView(ch, contractHName, functionHName, args)
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}

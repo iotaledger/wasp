@@ -756,7 +756,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BlockReceiptsResponse'
+                items:
+                  $ref: '#/components/schemas/ReceiptResponse'
+                type: array
           description: The receipts
         "401":
           content:
@@ -853,7 +855,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BlockReceiptsResponse'
+                items:
+                  $ref: '#/components/schemas/ReceiptResponse'
+                type: array
           description: The receipts
         "401":
           content:
@@ -1079,7 +1083,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RequestReceiptResponse'
+                $ref: '#/components/schemas/ReceiptResponse'
           description: The receipt
         "401":
           content:
@@ -2559,173 +2563,6 @@ components:
       type: object
       xml:
         name: BlockInfoResponse
-    BlockReceiptError:
-      example:
-        errorMessage: errorMessage
-        hash: hash
-      properties:
-        errorMessage:
-          format: string
-          type: string
-          xml:
-            name: ErrorMessage
-        hash:
-          format: string
-          type: string
-          xml:
-            name: Hash
-      required:
-      - errorMessage
-      - hash
-      type: object
-      xml:
-        name: BlockReceiptError
-    BlockReceiptsResponse:
-      example:
-        receipts:
-        - gasBurnLog:
-            records:
-            - code: 6
-              gasBurned: 1
-            - code: 6
-              gasBurned: 1
-          request:
-            fungibleTokens:
-              nfts:
-              - nfts
-              - nfts
-              baseTokens: baseTokens
-              nativeTokens:
-              - amount: amount
-                id: id
-              - amount: amount
-                id: id
-            senderAccount: senderAccount
-            isOffLedger: true
-            requestId: requestId
-            callTarget:
-              contractHName: contractHName
-              functionHName: functionHName
-            gasBudget: gasBudget
-            targetAddress: targetAddress
-            allowance:
-              nfts:
-              - nfts
-              - nfts
-              baseTokens: baseTokens
-              nativeTokens:
-              - amount: amount
-                id: id
-              - amount: amount
-                id: id
-            params:
-              Items:
-              - value: value
-                key: key
-              - value: value
-                key: key
-            nft:
-              owner: owner
-              metadata: metadata
-              id: id
-              issuer: issuer
-            isEVM: true
-          blockIndex: 1
-          requestIndex: 1
-          gasFeeCharged: gasFeeCharged
-          gasBudget: gasBudget
-          gasBurned: gasBurned
-          error:
-            errorMessage: errorMessage
-            hash: hash
-        - gasBurnLog:
-            records:
-            - code: 6
-              gasBurned: 1
-            - code: 6
-              gasBurned: 1
-          request:
-            fungibleTokens:
-              nfts:
-              - nfts
-              - nfts
-              baseTokens: baseTokens
-              nativeTokens:
-              - amount: amount
-                id: id
-              - amount: amount
-                id: id
-            senderAccount: senderAccount
-            isOffLedger: true
-            requestId: requestId
-            callTarget:
-              contractHName: contractHName
-              functionHName: functionHName
-            gasBudget: gasBudget
-            targetAddress: targetAddress
-            allowance:
-              nfts:
-              - nfts
-              - nfts
-              baseTokens: baseTokens
-              nativeTokens:
-              - amount: amount
-                id: id
-              - amount: amount
-                id: id
-            params:
-              Items:
-              - value: value
-                key: key
-              - value: value
-                key: key
-            nft:
-              owner: owner
-              metadata: metadata
-              id: id
-              issuer: issuer
-            isEVM: true
-          blockIndex: 1
-          requestIndex: 1
-          gasFeeCharged: gasFeeCharged
-          gasBudget: gasBudget
-          gasBurned: gasBurned
-          error:
-            errorMessage: errorMessage
-            hash: hash
-      properties:
-        receipts:
-          items:
-            $ref: '#/components/schemas/RequestReceiptResponse'
-          type: array
-          xml:
-            name: Receipts
-            wrapped: true
-      required:
-      - receipts
-      type: object
-      xml:
-        name: BlockReceiptsResponse
-    BurnLog:
-      example:
-        records:
-        - code: 6
-          gasBurned: 1
-        - code: 6
-          gasBurned: 1
-      properties:
-        records:
-          items:
-            $ref: '#/components/schemas/BurnRecord'
-          type: array
-          xml:
-            name: Records
-            wrapped: true
-      required:
-      - records
-      type: object
-      xml:
-        name: BurnLog
     BurnRecord:
       example:
         code: 6
@@ -2774,10 +2611,10 @@ components:
       example:
         chainOwnerId: tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e
         gasLimits:
-          maxGasExternalViewCall: 6
-          minGasPerRequest: 5
-          maxGasPerBlock: 1
-          maxGasPerRequest: 5
+          maxGasExternalViewCall: 5
+          minGasPerRequest: 7
+          maxGasPerBlock: 5
+          maxGasPerRequest: 2
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
         evmWebSocketUrl: evmWebSocketUrl
@@ -2786,10 +2623,10 @@ components:
           gasPerToken:
             a: 1
             b: 100
-          validatorFeeShare: 0
+          validatorFeeShare: 1
           evmGasRatio:
-            a: 1
-            b: 1
+            a: 0
+            b: 0
         evmJsonRpcUrl: evmJsonRpcUrl
         isActive: true
       properties:
@@ -3642,10 +3479,10 @@ components:
         gasPerToken:
           a: 1
           b: 100
-        validatorFeeShare: 0
+        validatorFeeShare: 1
         evmGasRatio:
-          a: 1
-          b: 1
+          a: 0
+          b: 0
       properties:
         evmGasRatio:
           $ref: '#/components/schemas/Ratio32_'
@@ -3669,15 +3506,15 @@ components:
         gasPerToken:
           a: 0
           b: 0
-        validatorFeeShare: 1
+        validatorFeeShare: 0
         evmGasRatio:
           a: 0
           b: 0
       properties:
         evmGasRatio:
-          $ref: '#/components/schemas/Ratio32__'
+          $ref: '#/components/schemas/Ratio32_'
         gasPerToken:
-          $ref: '#/components/schemas/Ratio32__'
+          $ref: '#/components/schemas/Ratio32_'
         validatorFeeShare:
           description: The validator fee share.
           format: int32
@@ -3737,10 +3574,10 @@ components:
       example:
         chainOwnerId: chainOwnerId
         gasLimits:
-          maxGasExternalViewCall: 6
-          minGasPerRequest: 5
-          maxGasPerBlock: 1
-          maxGasPerRequest: 5
+          maxGasExternalViewCall: 5
+          minGasPerRequest: 7
+          maxGasPerBlock: 5
+          maxGasPerRequest: 2
         chainID: chainID
         evmWebSocketUrl: evmWebSocketUrl
         publicUrl: publicUrl
@@ -3748,7 +3585,7 @@ components:
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 1
+          validatorFeeShare: 0
           evmGasRatio:
             a: 0
             b: 0
@@ -4126,10 +3963,10 @@ components:
         name: L1Params
     Limits:
       example:
-        maxGasExternalViewCall: 6
-        minGasPerRequest: 5
-        maxGasPerBlock: 1
-        maxGasPerRequest: 5
+        maxGasExternalViewCall: 5
+        minGasPerRequest: 7
+        maxGasPerBlock: 5
+        maxGasPerRequest: 2
       properties:
         maxGasExternalViewCall:
           description: The maximum gas per external view call
@@ -4987,31 +4824,6 @@ components:
         name: Ratio32
     Ratio32_:
       example:
-        a: 1
-        b: 1
-      properties:
-        a:
-          example: 1
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: A
-        b:
-          example: 1
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: B
-      required:
-      - a
-      - b
-      type: object
-      xml:
-        name: Ratio32
-    Ratio32__:
-      example:
         a: 0
         b: 0
       properties:
@@ -5040,7 +4852,47 @@ components:
           gasBurned: 1
         - code: 6
           gasBurned: 1
-        request: request
+        request:
+          fungibleTokens:
+            nfts:
+            - nfts
+            - nfts
+            baseTokens: baseTokens
+            nativeTokens:
+            - amount: amount
+              id: id
+            - amount: amount
+              id: id
+          senderAccount: senderAccount
+          isOffLedger: true
+          requestId: requestId
+          callTarget:
+            contractHName: contractHName
+            functionHName: functionHName
+          gasBudget: gasBudget
+          targetAddress: targetAddress
+          allowance:
+            nfts:
+            - nfts
+            - nfts
+            baseTokens: baseTokens
+            nativeTokens:
+            - amount: amount
+              id: id
+            - amount: amount
+              id: id
+          params:
+            Items:
+            - value: value
+              key: key
+            - value: value
+              key: key
+          nft:
+            owner: owner
+            metadata: metadata
+            id: id
+            issuer: issuer
+          isEVM: true
         blockIndex: 1
         rawError:
           code: code
@@ -5049,6 +4901,7 @@ components:
           - params
           hash: hash
         requestIndex: 1
+        storageDepositCharged: storageDepositCharged
         gasFeeCharged: gasFeeCharged
         errorMessage: errorMessage
         gasBudget: gasBudget
@@ -5093,16 +4946,19 @@ components:
         rawError:
           $ref: '#/components/schemas/UnresolvedVMErrorJSON'
         request:
-          format: string
-          type: string
-          xml:
-            name: Request
+          $ref: '#/components/schemas/RequestDetail'
         requestIndex:
           format: int32
           minimum: 1
           type: integer
           xml:
             name: RequestIndex
+        storageDepositCharged:
+          description: Storage deposit charged (uint64 as string)
+          format: string
+          type: string
+          xml:
+            name: SDCharged
       required:
       - blockIndex
       - gasBudget
@@ -5111,6 +4967,7 @@ components:
       - gasFeeCharged
       - request
       - requestIndex
+      - storageDepositCharged
       type: object
       xml:
         name: ReceiptResponse
@@ -5310,111 +5167,6 @@ components:
       type: object
       xml:
         name: RequestProcessedResponse
-    RequestReceiptResponse:
-      example:
-        gasBurnLog:
-          records:
-          - code: 6
-            gasBurned: 1
-          - code: 6
-            gasBurned: 1
-        request:
-          fungibleTokens:
-            nfts:
-            - nfts
-            - nfts
-            baseTokens: baseTokens
-            nativeTokens:
-            - amount: amount
-              id: id
-            - amount: amount
-              id: id
-          senderAccount: senderAccount
-          isOffLedger: true
-          requestId: requestId
-          callTarget:
-            contractHName: contractHName
-            functionHName: functionHName
-          gasBudget: gasBudget
-          targetAddress: targetAddress
-          allowance:
-            nfts:
-            - nfts
-            - nfts
-            baseTokens: baseTokens
-            nativeTokens:
-            - amount: amount
-              id: id
-            - amount: amount
-              id: id
-          params:
-            Items:
-            - value: value
-              key: key
-            - value: value
-              key: key
-          nft:
-            owner: owner
-            metadata: metadata
-            id: id
-            issuer: issuer
-          isEVM: true
-        blockIndex: 1
-        requestIndex: 1
-        gasFeeCharged: gasFeeCharged
-        gasBudget: gasBudget
-        gasBurned: gasBurned
-        error:
-          errorMessage: errorMessage
-          hash: hash
-      properties:
-        blockIndex:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: BlockIndex
-        error:
-          $ref: '#/components/schemas/BlockReceiptError'
-        gasBudget:
-          description: The gas budget (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: GasBudget
-        gasBurnLog:
-          $ref: '#/components/schemas/BurnLog'
-        gasBurned:
-          description: The burned gas (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: GasBurned
-        gasFeeCharged:
-          description: The charged gas fee (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: GasFeeCharged
-        request:
-          $ref: '#/components/schemas/RequestDetail'
-        requestIndex:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: RequestIndex
-      required:
-      - blockIndex
-      - gasBudget
-      - gasBurnLog
-      - gasBurned
-      - gasFeeCharged
-      - request
-      - requestIndex
-      type: object
-      xml:
-        name: RequestReceiptResponse
     StateResponse:
       example:
         state: state
