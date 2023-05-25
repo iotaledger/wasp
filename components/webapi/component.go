@@ -100,6 +100,8 @@ func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, lo
 	e.HidePort = true
 	e.HTTPErrorHandler = apierrors.HTTPErrorHandler()
 
+	e.Pre(middleware.RemoveTrailingSlash())
+
 	// publish metrics to prometheus component (that exposes a separate http server on another port)
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {

@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
@@ -39,9 +38,9 @@ func (v *VMService) ParseReceipt(chain chainpkg.Chain, receipt *blocklog.Request
 }
 
 func (v *VMService) GetReceipt(chainID isc.ChainID, requestID isc.RequestID) (*isc.Receipt, *isc.VMError, error) {
-	ch := v.chainsProvider().Get(chainID)
-	if ch == nil {
-		return nil, nil, interfaces.ErrChainNotFound
+	ch, err := v.chainsProvider().Get(chainID)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	blocklog := corecontracts.NewBlockLog(v)
@@ -54,10 +53,9 @@ func (v *VMService) GetReceipt(chainID isc.ChainID, requestID isc.RequestID) (*i
 }
 
 func (v *VMService) CallViewByChainID(chainID isc.ChainID, contractName, functionName isc.Hname, params dict.Dict) (dict.Dict, error) {
-	ch := v.chainsProvider().Get(chainID)
-
-	if ch == nil {
-		return nil, interfaces.ErrChainNotFound
+	ch, err := v.chainsProvider().Get(chainID)
+	if err != nil {
+		return nil, err
 	}
 
 	// TODO: should blockIndex be an optional parameter of this endpoint?
@@ -65,9 +63,18 @@ func (v *VMService) CallViewByChainID(chainID isc.ChainID, contractName, functio
 	if err != nil {
 		return nil, errors.New("error getting latest chain state")
 	}
-	return v.CallView(latestState, ch, contractName, functionName, params)
+	return chainutil.CallView(latestState, ch, contractName, functionName, params)
 }
 
-func (v *VMService) CallView(chainState state.State, chain chainpkg.Chain, contractName, functionName isc.Hname, params dict.Dict) (dict.Dict, error) {
-	return chainutil.CallView(chainState, chain, contractName, functionName, params)
+func (v *VMService) EstimateGas(chainID isc.ChainID, req isc.Request) (*isc.Receipt, error) {
+	ch, err := v.chainsProvider().Get(chainID)
+	if err != nil {
+		return nil, err
+	}
+	rec, err := chainutil.SimulateRequest(ch, req)
+	if err != nil {
+		return nil, err
+	}
+	parsedRec, _, err := v.ParseReceipt(ch, rec)
+	return parsedRec, err
 }

@@ -38,8 +38,8 @@ func (m *MultiClient) WaitUntilRequestProcessedSuccessfully(chainID isc.ChainID,
 	if err != nil {
 		return receipt, err
 	}
-	if receipt.Error != nil {
-		return receipt, fmt.Errorf("request processed with an error: %s", receipt.Error.Message)
+	if receipt.ErrorMessage != nil {
+		return receipt, fmt.Errorf("request processed with an error: %s", *receipt.ErrorMessage)
 	}
 	return receipt, nil
 }
@@ -60,8 +60,8 @@ func (m *MultiClient) WaitUntilEVMRequestProcessedSuccessfully(chainID isc.Chain
 	if err != nil {
 		return receipt, err
 	}
-	if receipt.Error != nil {
-		return receipt, fmt.Errorf("request processed with an error: %s", receipt.Error.Message)
+	if receipt.ErrorMessage != nil {
+		return receipt, fmt.Errorf("request processed with an error: %s", *receipt.ErrorMessage)
 	}
 	return receipt, nil
 }
@@ -92,8 +92,8 @@ func (m *MultiClient) WaitUntilAllRequestsProcessedSuccessfully(chainID isc.Chai
 		return receipts, err
 	}
 	for i, receipt := range receipts {
-		if receipt.Error != nil {
-			return receipts, fmt.Errorf("error found on receipt #%d: %s", i, receipt.Error.Message)
+		if receipt.ErrorMessage != nil {
+			return receipts, fmt.Errorf("error found on receipt #%d: %s", i, *receipt.ErrorMessage)
 		}
 	}
 	return receipts, nil

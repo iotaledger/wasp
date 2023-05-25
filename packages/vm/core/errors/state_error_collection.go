@@ -35,18 +35,21 @@ func (e *StateErrorCollectionWriter) getErrorTemplateMap() *collections.Map {
 	return collections.NewMap(e.partition, errorTemplateKey(e.hname))
 }
 
-func (e *StateErrorCollectionWriter) Get(errorID uint16) (*isc.VMErrorTemplate, error) {
+func (e *StateErrorCollectionWriter) Get(errorID uint16) (*isc.VMErrorTemplate, bool) {
 	errorMap := e.getErrorTemplateMap()
 	errorIDKey := codec.EncodeUint16(errorID)
 
 	errorBytes := errorMap.GetAt(errorIDKey)
+	if errorBytes == nil {
+		return nil, false
+	}
 
 	template, err := isc.VMErrorTemplateFromMarshalUtil(marshalutil.New(errorBytes))
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	return template, nil
+	return template, true
 }
 
 func (e *StateErrorCollectionWriter) Register(messageFormat string) (*isc.VMErrorTemplate, error) {
@@ -57,16 +60,13 @@ func (e *StateErrorCollectionWriter) Register(messageFormat string) (*isc.VMErro
 		return nil, coreerrors.ErrErrorMessageTooLong
 	}
 
-	mapKey := codec.EncodeUint16(errorID)
-
-	errorBytes := errorMap.GetAt(mapKey)
-	if len(errorBytes) > 0 {
-		return nil, coreerrors.ErrErrorAlreadyRegistered.Create(errorID)
+	if t, ok := e.Get(errorID); ok && messageFormat != t.MessageFormat() {
+		return nil, coreerrors.ErrErrorTemplateConflict.Create(errorID)
 	}
 
 	newError := isc.NewVMErrorTemplate(isc.NewVMErrorCode(e.hname, errorID), messageFormat)
 
-	errorMap.SetAt(mapKey, newError.Bytes())
+	errorMap.SetAt(codec.EncodeUint16(errorID), newError.Bytes())
 
 	return newError, nil
 }
@@ -91,18 +91,21 @@ func NewStateErrorCollectionReader(partition kv.KVStoreReader, hname isc.Hname) 
 	return &errorCollection
 }
 
-func (e *StateErrorCollectionReader) Get(errorID uint16) (*isc.VMErrorTemplate, error) {
+func (e *StateErrorCollectionReader) Get(errorID uint16) (*isc.VMErrorTemplate, bool) {
 	errorMap := e.getErrorTemplateMap()
 	errorIDKey := codec.EncodeUint16(errorID)
 
 	errorBytes := errorMap.GetAt(errorIDKey)
+	if errorBytes == nil {
+		return nil, false
+	}
 
 	template, err := isc.VMErrorTemplateFromMarshalUtil(marshalutil.New(errorBytes))
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	return template, nil
+	return template, true
 }
 
 func (e *StateErrorCollectionReader) Register(messageFormat string) (*isc.VMErrorTemplate, error) {

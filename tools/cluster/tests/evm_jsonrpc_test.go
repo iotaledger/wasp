@@ -55,8 +55,8 @@ func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestE
 			return err
 		}
 
-		if receipt.Error != nil {
-			return errors.New(receipt.Error.Message)
+		if receipt.ErrorMessage != nil {
+			return errors.New(*receipt.ErrorMessage)
 		}
 
 		return nil

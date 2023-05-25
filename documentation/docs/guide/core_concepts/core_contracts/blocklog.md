@@ -21,6 +21,10 @@ The `blocklog` contract is one of the [core contracts](overview.md) on each IOTA
 The `blocklog` contract keeps track of the blocks of requests processed by the chain, providing views to get request
 status, receipts, block, and event details.
 
+To avoid having a monotonically increasing state size, only the latest `N`
+blocks (and their events and receipts) are stored. This parameter can be configured
+when [deploying the chain](../../chains_and_nodes/setting-up-a-chain.md).
+
 ---
 
 ## Entry Points

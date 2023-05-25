@@ -16,3 +16,11 @@ type ContractCallViewRequest struct {
 	FunctionHName string        `json:"functionHName" swagger:"desc(The function name as HName (Hex)),required"`
 	Arguments     dict.JSONDict `json:"arguments" swagger:"desc(Encoded arguments to be passed to the function),required"`
 }
+
+type EstimateGasRequestOnledger struct {
+	Output string `json:"outputBytes" swagger:"desc(Serialized Output (Hex)),required"`
+}
+
+type EstimateGasRequestOffledger struct {
+	Request string `json:"requestBytes" swagger:"desc(Offledger Request (Hex)),required"`
+}

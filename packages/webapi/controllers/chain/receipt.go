@@ -27,7 +27,7 @@ func (c *Controller) getReceipt(e echo.Context) error {
 		return err
 	}
 
-	receipt, vmError, err := c.vmService.GetReceipt(chainID, requestID)
+	receipt, _, err := c.vmService.GetReceipt(chainID, requestID)
 	if err != nil {
 		if errors.Is(err, corecontracts.ErrNoRecord) {
 			return apierrors.NoRecordFoundError(err)
@@ -38,7 +38,5 @@ func (c *Controller) getReceipt(e echo.Context) error {
 		return apierrors.ReceiptError(err)
 	}
 
-	mappedReceipt := models.MapReceiptResponse(receipt, vmError)
-
-	return e.JSON(http.StatusOK, mappedReceipt)
+	return e.JSON(http.StatusOK, models.MapReceiptResponse(receipt))
 }

@@ -127,6 +127,8 @@ services:
       - "--wal.path=/app/waspdb/wal"
       - "--profiling.enabled=false"
       - "--profiling.bindAddress=0.0.0.0:6060"
+    environment:
+      - DEBUG=true
 
   ##################
   # WASP Dashboard #

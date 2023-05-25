@@ -20,7 +20,7 @@ var _ MappedNullable = &ReceiptResponse{}
 // ReceiptResponse struct for ReceiptResponse
 type ReceiptResponse struct {
 	BlockIndex uint32 `json:"blockIndex"`
-	Error *ReceiptError `json:"error,omitempty"`
+	ErrorMessage *string `json:"errorMessage,omitempty"`
 	// The gas budget (uint64 as string)
 	GasBudget string `json:"gasBudget"`
 	GasBurnLog []BurnRecord `json:"gasBurnLog"`
@@ -28,6 +28,7 @@ type ReceiptResponse struct {
 	GasBurned string `json:"gasBurned"`
 	// The charged gas fee (uint64 as string)
 	GasFeeCharged string `json:"gasFeeCharged"`
+	RawError *UnresolvedVMErrorJSON `json:"rawError,omitempty"`
 	Request string `json:"request"`
 	RequestIndex uint32 `json:"requestIndex"`
 }
@@ -80,36 +81,36 @@ func (o *ReceiptResponse) SetBlockIndex(v uint32) {
 	o.BlockIndex = v
 }
 
-// GetError returns the Error field value if set, zero value otherwise.
-func (o *ReceiptResponse) GetError() ReceiptError {
-	if o == nil || isNil(o.Error) {
-		var ret ReceiptError
+// GetErrorMessage returns the ErrorMessage field value if set, zero value otherwise.
+func (o *ReceiptResponse) GetErrorMessage() string {
+	if o == nil || isNil(o.ErrorMessage) {
+		var ret string
 		return ret
 	}
-	return *o.Error
+	return *o.ErrorMessage
 }
 
-// GetErrorOk returns a tuple with the Error field value if set, nil otherwise
+// GetErrorMessageOk returns a tuple with the ErrorMessage field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *ReceiptResponse) GetErrorOk() (*ReceiptError, bool) {
-	if o == nil || isNil(o.Error) {
+func (o *ReceiptResponse) GetErrorMessageOk() (*string, bool) {
+	if o == nil || isNil(o.ErrorMessage) {
 		return nil, false
 	}
-	return o.Error, true
+	return o.ErrorMessage, true
 }
 
-// HasError returns a boolean if a field has been set.
-func (o *ReceiptResponse) HasError() bool {
-	if o != nil && !isNil(o.Error) {
+// HasErrorMessage returns a boolean if a field has been set.
+func (o *ReceiptResponse) HasErrorMessage() bool {
+	if o != nil && !isNil(o.ErrorMessage) {
 		return true
 	}
 
 	return false
 }
 
-// SetError gets a reference to the given ReceiptError and assigns it to the Error field.
-func (o *ReceiptResponse) SetError(v ReceiptError) {
-	o.Error = &v
+// SetErrorMessage gets a reference to the given string and assigns it to the ErrorMessage field.
+func (o *ReceiptResponse) SetErrorMessage(v string) {
+	o.ErrorMessage = &v
 }
 
 // GetGasBudget returns the GasBudget field value
@@ -208,6 +209,38 @@ func (o *ReceiptResponse) SetGasFeeCharged(v string) {
 	o.GasFeeCharged = v
 }
 
+// GetRawError returns the RawError field value if set, zero value otherwise.
+func (o *ReceiptResponse) GetRawError() UnresolvedVMErrorJSON {
+	if o == nil || isNil(o.RawError) {
+		var ret UnresolvedVMErrorJSON
+		return ret
+	}
+	return *o.RawError
+}
+
+// GetRawErrorOk returns a tuple with the RawError field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ReceiptResponse) GetRawErrorOk() (*UnresolvedVMErrorJSON, bool) {
+	if o == nil || isNil(o.RawError) {
+		return nil, false
+	}
+	return o.RawError, true
+}
+
+// HasRawError returns a boolean if a field has been set.
+func (o *ReceiptResponse) HasRawError() bool {
+	if o != nil && !isNil(o.RawError) {
+		return true
+	}
+
+	return false
+}
+
+// SetRawError gets a reference to the given UnresolvedVMErrorJSON and assigns it to the RawError field.
+func (o *ReceiptResponse) SetRawError(v UnresolvedVMErrorJSON) {
+	o.RawError = &v
+}
+
 // GetRequest returns the Request field value
 func (o *ReceiptResponse) GetRequest() string {
 	if o == nil {
@@ -267,13 +300,16 @@ func (o ReceiptResponse) MarshalJSON() ([]byte, error) {
 func (o ReceiptResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["blockIndex"] = o.BlockIndex
-	if !isNil(o.Error) {
-		toSerialize["error"] = o.Error
+	if !isNil(o.ErrorMessage) {
+		toSerialize["errorMessage"] = o.ErrorMessage
 	}
 	toSerialize["gasBudget"] = o.GasBudget
 	toSerialize["gasBurnLog"] = o.GasBurnLog
 	toSerialize["gasBurned"] = o.GasBurned
 	toSerialize["gasFeeCharged"] = o.GasFeeCharged
+	if !isNil(o.RawError) {
+		toSerialize["rawError"] = o.RawError
+	}
 	toSerialize["request"] = o.Request
 	toSerialize["requestIndex"] = o.RequestIndex
 	return toSerialize, nil

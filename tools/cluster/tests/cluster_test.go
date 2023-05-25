@@ -70,6 +70,9 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 	t.Run("inccounter local state post", func(t *testing.T) { run(t, testIncLocalStatePost) })
 	t.Run("inccounter view counter", func(t *testing.T) { run(t, testIncViewCounter) })
 	t.Run("inccounter timelock", func(t *testing.T) { run(t, testIncCounterTimelock) })
+
+	t.Run("webapi ISC estimategas onledger", func(t *testing.T) { run(t, testEstimateGasOnLedger) })
+	t.Run("webapi ISC estimategas offledger", func(t *testing.T) { run(t, testEstimateGasOffLedger) })
 }
 
 func createTestWrapper(tt *testing.T, clusterSize int, committee []int) func(t *testing.T, f func(*testing.T, *ChainEnv)) {

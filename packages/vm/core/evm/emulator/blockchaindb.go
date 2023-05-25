@@ -4,8 +4,6 @@
 package emulator
 
 import (
-	"bytes"
-	"encoding/gob"
 	"errors"
 	"math/big"
 
@@ -27,8 +25,6 @@ const (
 
 	// EVM chain ID
 	keyChainID = "c"
-	// Amount of blocks to keep in DB. Older blocks will be pruned every time a transaction is added
-	keyKeepAmount = "k"
 
 	// blocks:
 
@@ -42,26 +38,32 @@ const (
 	keyBlockNumberByBlockHash = "bh:n"
 	keyBlockNumberByTxHash    = "th:n"
 	keyBlockIndexByTxHash     = "th:i"
+
+	BlockKeepAll = -1
 )
 
 // BlockchainDB contains logic for storing a fake blockchain (more like a list of blocks),
 // intended for satisfying EVM tools that depend on the concept of a block.
 type BlockchainDB struct {
-	kv            kv.KVStore
-	blockGasLimit uint64
+	kv              kv.KVStore
+	blockGasLimit   uint64
+	blockKeepAmount int32
 }
 
-func NewBlockchainDB(store kv.KVStore, blockGasLimit uint64) *BlockchainDB {
-	return &BlockchainDB{kv: store, blockGasLimit: blockGasLimit}
+func NewBlockchainDB(store kv.KVStore, blockGasLimit uint64, blockKeepAmount int32) *BlockchainDB {
+	return &BlockchainDB{
+		kv:              store,
+		blockGasLimit:   blockGasLimit,
+		blockKeepAmount: blockKeepAmount,
+	}
 }
 
 func (bc *BlockchainDB) Initialized() bool {
 	return bc.kv.Get(keyChainID) != nil
 }
 
-func (bc *BlockchainDB) Init(chainID uint16, keepAmount int32, timestamp uint64) {
+func (bc *BlockchainDB) Init(chainID uint16, timestamp uint64) {
 	bc.SetChainID(chainID)
-	bc.SetKeepAmount(keepAmount)
 	bc.addBlock(bc.makeHeader(nil, nil, 0, timestamp))
 }
 
@@ -69,24 +71,12 @@ func (bc *BlockchainDB) SetChainID(chainID uint16) {
 	bc.kv.Set(keyChainID, codec.EncodeUint16(chainID))
 }
 
+func GetChainIDFromBlockChainDBState(kv kv.KVStore) uint16 {
+	return codec.MustDecodeUint16(kv.Get(keyChainID))
+}
+
 func (bc *BlockchainDB) GetChainID() uint16 {
-	chainID, err := codec.DecodeUint16(bc.kv.Get(keyChainID))
-	if err != nil {
-		panic(err)
-	}
-	return chainID
-}
-
-func (bc *BlockchainDB) SetKeepAmount(keepAmount int32) {
-	bc.kv.Set(keyKeepAmount, codec.EncodeInt32(keepAmount))
-}
-
-func (bc *BlockchainDB) keepAmount() int32 {
-	gas, err := codec.DecodeInt32(bc.kv.Get(keyKeepAmount), -1)
-	if err != nil {
-		panic(err)
-	}
-	return gas
+	return GetChainIDFromBlockChainDBState(bc.kv)
 }
 
 func (bc *BlockchainDB) setNumber(n uint64) {
@@ -94,11 +84,7 @@ func (bc *BlockchainDB) setNumber(n uint64) {
 }
 
 func (bc *BlockchainDB) GetNumber() uint64 {
-	n, err := codec.DecodeUint64(bc.kv.Get(keyNumber))
-	if err != nil {
-		panic(err)
-	}
-	return n
+	return codec.MustDecodeUint64(bc.kv.Get(keyNumber))
 }
 
 func makeTransactionsByBlockNumberKey(blockNumber uint64) kv.Key {
@@ -187,15 +173,14 @@ func (bc *BlockchainDB) MintBlock(timestamp uint64) {
 }
 
 func (bc *BlockchainDB) prune(currentNumber uint64) {
-	keepAmount := bc.keepAmount()
-	if keepAmount < 0 {
+	if bc.blockKeepAmount <= 0 {
 		// keep all blocks
 		return
 	}
-	if currentNumber <= uint64(keepAmount) {
+	if currentNumber < uint64(bc.blockKeepAmount) {
 		return
 	}
-	toDelete := currentNumber - uint64(keepAmount)
+	toDelete := currentNumber - uint64(bc.blockKeepAmount)
 	// assume that all blocks prior to `toDelete` have been already deleted, so
 	// we only need to delete this one.
 	bc.deleteBlock(toDelete)
@@ -230,8 +215,6 @@ type header struct {
 	Bloom       types.Bloom
 }
 
-var headerSize = common.HashLength*3 + marshalutil.Uint64Size*3 + types.BloomByteLength
-
 func makeHeader(h *types.Header) *header {
 	return &header{
 		Hash:        h.Hash(),
@@ -257,10 +240,6 @@ func encodeHeader(g *header) []byte {
 }
 
 func decodeHeader(b []byte) *header {
-	if len(b) != headerSize {
-		// old format
-		return decodeHeaderGobOld(b)
-	}
 	m := marshalutil.New(b)
 	h := &header{}
 	var err error
@@ -295,16 +274,6 @@ func readBytes(m *marshalutil.MarshalUtil, size int, dst []byte) (err error) {
 		copy(dst, buf)
 	}
 	return err
-}
-
-// deprecated
-func decodeHeaderGobOld(b []byte) *header {
-	var g header
-	err := gob.NewDecoder(bytes.NewReader(b)).Decode(&g)
-	if err != nil {
-		panic(err)
-	}
-	return &g
 }
 
 func (bc *BlockchainDB) makeEthereumHeader(g *header, blockNumber uint64) *types.Header {
@@ -379,11 +348,7 @@ func (bc *BlockchainDB) getBlockNumberBy(key kv.Key) (uint64, bool) {
 	if b == nil {
 		return 0, false
 	}
-	n, err := codec.DecodeUint64(b)
-	if err != nil {
-		panic(err)
-	}
-	return n, true
+	return codec.MustDecodeUint64(b), true
 }
 
 func (bc *BlockchainDB) GetBlockNumberByTxHash(txHash common.Hash) (uint64, bool) {
@@ -391,11 +356,7 @@ func (bc *BlockchainDB) GetBlockNumberByTxHash(txHash common.Hash) (uint64, bool
 }
 
 func (bc *BlockchainDB) GetTxIndexInBlockByTxHash(txHash common.Hash) uint32 {
-	n, err := codec.DecodeUint32(bc.kv.Get(makeTxIndexInBlockByTxHashKey(txHash)), 0)
-	if err != nil {
-		panic(err)
-	}
-	return n
+	return codec.MustDecodeUint32(bc.kv.Get(makeTxIndexInBlockByTxHashKey(txHash)), 0)
 }
 
 func (bc *BlockchainDB) GetReceiptByTxHash(txHash common.Hash) *types.Receipt {
