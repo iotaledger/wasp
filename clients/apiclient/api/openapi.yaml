@@ -3669,7 +3669,7 @@ components:
         gasPerToken:
           a: 0
           b: 0
-        validatorFeeShare: 1
+        validatorFeeShare: 5
         evmGasRatio:
           a: 0
           b: 0
@@ -3742,18 +3742,25 @@ components:
           maxGasPerBlock: 1
           maxGasPerRequest: 5
         chainID: chainID
+        blockKeepAmount: 0
         evmWebSocketUrl: evmWebSocketUrl
         publicUrl: publicUrl
         gasFeePolicy:
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 1
+          validatorFeeShare: 5
           evmGasRatio:
             a: 0
             b: 0
         evmJsonRpcUrl: evmJsonRpcUrl
       properties:
+        blockKeepAmount:
+          description: Amount of blocks to keep in the state
+          format: int32
+          type: integer
+          xml:
+            name: BlockKeepAmount
         chainID:
           description: ChainID (Bech32-encoded).
           format: string

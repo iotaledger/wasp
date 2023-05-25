@@ -93,19 +93,17 @@ func getTracer(ctx isc.Sandbox, bctx *blockContext) tracers.Tracer {
 	return tracer.Tracer
 }
 
-func gasLimits(ctx isc.SandboxBase) emulator.GasLimits {
+func createEmulator(ctx isc.Sandbox, l2Balance *l2Balance) *emulator.EVMEmulator {
 	chainInfo := ctx.ChainInfo()
-	return emulator.GasLimits{
+	gasLimits := emulator.GasLimits{
 		Block: gas.EVMBlockGasLimit(chainInfo.GasLimits, &chainInfo.GasFeePolicy.EVMGasRatio),
 		Call:  gas.EVMCallGasLimit(chainInfo.GasLimits, &chainInfo.GasFeePolicy.EVMGasRatio),
 	}
-}
-
-func createEmulator(ctx isc.Sandbox, l2Balance *l2Balance) *emulator.EVMEmulator {
 	return emulator.NewEVMEmulator(
 		evmStateSubrealm(ctx.State()),
 		timestamp(ctx.Timestamp()),
-		gasLimits(ctx),
+		gasLimits,
+		chainInfo.BlockKeepAmount,
 		newMagicContract(ctx),
 		l2Balance,
 	)

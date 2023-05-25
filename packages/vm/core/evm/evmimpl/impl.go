@@ -48,7 +48,7 @@ var Processor = evm.Contract.Processor(nil,
 	evm.FuncGetChainID.WithHandler(getChainID),
 )
 
-func SetInitialState(state kv.KVStore, evmChainID uint16, blockKeepAmount int32) {
+func SetInitialState(state kv.KVStore, evmChainID uint16) {
 	// add the standard ISC contract at arbitrary address 0x1074...
 	genesisAlloc := core.GenesisAlloc{}
 	deployMagicContractOnGenesis(genesisAlloc)
@@ -75,7 +75,6 @@ func SetInitialState(state kv.KVStore, evmChainID uint16, blockKeepAmount int32)
 	emulator.Init(
 		evmStateSubrealm(state),
 		evmChainID,
-		blockKeepAmount,
 		emulator.GasLimits{
 			Block: gas.EVMBlockGasLimit(gasLimits, &gasRatio),
 			Call:  gas.EVMCallGasLimit(gasLimits, &gasRatio),
@@ -365,13 +364,12 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 }
 
 func getChainID(ctx isc.SandboxView) dict.Dict {
-	bdb := emulator.NewBlockchainDB(
+	chainID := emulator.GetChainIDFromBlockChainDBState(
 		emulator.NewBlockchainDBSubrealm(
 			evmStateSubrealm(buffered.NewBufferedKVStore(ctx.StateR())),
 		),
-		0, // block gas limit should not be needed for GetChainID()
 	)
-	return result(evmtypes.EncodeChainID(bdb.GetChainID()))
+	return result(evmtypes.EncodeChainID(chainID))
 }
 
 func tryGetRevertError(res *core.ExecutionResult) error {

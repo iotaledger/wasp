@@ -18,6 +18,8 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
@@ -52,7 +54,8 @@ func initDeployCmd() *cobra.Command {
 		node             string
 		peers            []string
 		quorum           int
-		evmParams        evmDeployParams
+		evmChainID       uint16
+		blockKeepAmount  int32
 		govControllerStr string
 		chainName        string
 	)
@@ -84,9 +87,9 @@ func initDeployCmd() *cobra.Command {
 				Textout:              os.Stdout,
 				GovernanceController: govController,
 				InitParams: dict.Dict{
-					origin.ParamChainOwner:   isc.NewAgentID(govController).Bytes(),
-					origin.ParamEVMChainID:   codec.EncodeUint16(evmParams.ChainID),
-					origin.ParamEVMBlockKeep: codec.EncodeInt32(evmParams.BlockKeepAmount),
+					origin.ParamChainOwner:      isc.NewAgentID(govController).Bytes(),
+					origin.ParamEVMChainID:      codec.EncodeUint16(evmChainID),
+					origin.ParamBlockKeepAmount: codec.EncodeInt32(blockKeepAmount),
 				},
 			}
 
@@ -101,8 +104,9 @@ func initDeployCmd() *cobra.Command {
 
 	waspcmd.WithWaspNodeFlag(cmd, &node)
 	waspcmd.WithPeersFlag(cmd, &peers)
-	evmParams.initFlags(cmd)
-	cmd.Flags().StringVar(&chainName, "chain", "", "name of the chain)")
+	cmd.Flags().Uint16VarP(&evmChainID, "evm-chainid", "", evm.DefaultChainID, "ChainID")
+	cmd.Flags().Int32VarP(&blockKeepAmount, "block-keep-amount", "", governance.BlockKeepAmountDefault, "Amount of blocks to keep in the blocklog (-1 to keep all blocks)")
+	cmd.Flags().StringVar(&chainName, "chain", "", "name of the chain")
 	log.Check(cmd.MarkFlagRequired("chain"))
 	cmd.Flags().IntVar(&quorum, "quorum", 0, "quorum (default: 3/4s of the number of committee nodes)")
 	cmd.Flags().StringVar(&govControllerStr, "gov-controller", "", "governance controller address")

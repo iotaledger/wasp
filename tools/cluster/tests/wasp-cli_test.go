@@ -53,7 +53,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 	committee, quorum := w.ArgCommitteeConfig(0)
 
 	// test chain deploy command
-	w.MustRun("chain", "deploy", "--chain="+chainName, committee, quorum, "--evm-chainid=1091", "--evm-block-keep-amount=123", "--node=0")
+	w.MustRun("chain", "deploy", "--chain="+chainName, committee, quorum, "--evm-chainid=1091", "--block-keep-amount=123", "--node=0")
 	w.ActivateChainOnAllNodes(chainName, 0)
 
 	// test chain info command
