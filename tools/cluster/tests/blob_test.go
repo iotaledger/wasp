@@ -109,7 +109,7 @@ func testBlobStoreManyBlobsNoEncoding(t *testing.T, e *ChainEnv) {
 
 	expectedHash, _, receipt, err := chClient.UploadBlob(context.Background(), fv)
 	require.NoError(t, err)
-	require.Empty(t, receipt.Error)
+	require.Empty(t, receipt.ErrorMessage)
 	t.Logf("expected hash: %s", expectedHash.String())
 
 	sizes := e.getBlobInfo(expectedHash)

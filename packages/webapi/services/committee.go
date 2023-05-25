@@ -33,9 +33,9 @@ func (c *CommitteeService) GetPublicKey() *cryptolib.PublicKey {
 }
 
 func (c *CommitteeService) GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNodeInfo, error) {
-	chain := c.chainsProvider().Get(chainID)
-	if chain == nil {
-		return nil, errors.New("chain does not exist")
+	chain, err := c.chainsProvider().Get(chainID)
+	if err != nil {
+		return nil, err
 	}
 
 	committeeInfo := chain.GetCommitteeInfo()

@@ -212,8 +212,8 @@ func logResolvedReceipt(receipt *apiclient.ReceiptResponse, index ...int) {
 	}
 
 	errMsg := "(empty)"
-	if receipt.Error != nil {
-		errMsg = receipt.Error.Message
+	if receipt.ErrorMessage != nil {
+		errMsg = *receipt.ErrorMessage
 	}
 
 	tree := []log.TreeItem{

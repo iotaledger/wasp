@@ -28,15 +28,10 @@ import (
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 )
 
 type Provider func() *Chains // TODO: Use DI instead of that.
-
-func (chains Provider) ChainProvider() func(chainID isc.ChainID) chain.Chain {
-	return func(chainID isc.ChainID) chain.Chain {
-		return chains().Get(chainID)
-	}
-}
 
 type ChainProvider func(chainID isc.ChainID) chain.Chain
 
@@ -323,13 +318,13 @@ func (c *Chains) Deactivate(chainID isc.ChainID) error {
 
 // Get returns active chain object or nil if it doesn't exist
 // lazy unsubscribing
-func (c *Chains) Get(chainID isc.ChainID) chain.Chain {
+func (c *Chains) Get(chainID isc.ChainID) (chain.Chain, error) {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
 	ret, exists := c.allChains.Get(chainID)
 	if !exists {
-		return nil
+		return nil, interfaces.ErrChainNotFound
 	}
-	return ret.chain
+	return ret.chain, nil
 }

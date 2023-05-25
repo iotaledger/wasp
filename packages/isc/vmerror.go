@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"hash/crc32"
 	"math"
+	"reflect"
 
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -190,6 +191,36 @@ func (e *UnresolvedVMError) AsGoError() error {
 		return nil
 	}
 	return e
+}
+
+type UnresolvedVMErrorJSON struct {
+	Params    []string `json:"params"`
+	ErrorCode string   `json:"code"`
+	Hash      string   `json:"hash"`
+}
+
+// produce the params as humanly readably json, and the uints as strings
+func (e *UnresolvedVMError) ToJSONStruct() *UnresolvedVMErrorJSON {
+	if e == nil {
+		return &UnresolvedVMErrorJSON{
+			Params:    []string{},
+			ErrorCode: "",
+			Hash:      "",
+		}
+	}
+	return &UnresolvedVMErrorJSON{
+		Params:    humanlyReadableParams(e.Params),
+		ErrorCode: e.ErrorCode.String(),
+		Hash:      fmt.Sprintf("%04x", e.Hash),
+	}
+}
+
+func humanlyReadableParams(params []interface{}) []string {
+	res := make([]string, len(params))
+	for i, param := range params {
+		res[i] = fmt.Sprintf("%v:%s", param, reflect.TypeOf(param).String())
+	}
+	return res
 }
 
 type VMError struct {

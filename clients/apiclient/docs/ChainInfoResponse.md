@@ -13,13 +13,12 @@ Name | Type | Description | Notes
 **GasLimits** | [**Limits**](Limits.md) |  | 
 **IsActive** | **bool** | Whether or not the chain is active. | 
 **PublicUrl** | **string** | The fully qualified public url leading to the chains metadata | 
-**Standard** | **string** | The chain info standard | 
 
 ## Methods
 
 ### NewChainInfoResponse
 
-`func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, evmJsonRpcUrl string, evmWebSocketUrl string, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, publicUrl string, standard string, ) *ChainInfoResponse`
+`func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, evmJsonRpcUrl string, evmWebSocketUrl string, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, publicUrl string, ) *ChainInfoResponse`
 
 NewChainInfoResponse instantiates a new ChainInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -212,26 +211,6 @@ and a boolean to check if the value has been set.
 `func (o *ChainInfoResponse) SetPublicUrl(v string)`
 
 SetPublicUrl sets PublicUrl field to given value.
-
-
-### GetStandard
-
-`func (o *ChainInfoResponse) GetStandard() string`
-
-GetStandard returns the Standard field if non-nil, zero value otherwise.
-
-### GetStandardOk
-
-`func (o *ChainInfoResponse) GetStandardOk() (*string, bool)`
-
-GetStandardOk returns a tuple with the Standard field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetStandard
-
-`func (o *ChainInfoResponse) SetStandard(v string)`
-
-SetStandard sets Standard field to given value.
 
 
 

@@ -35,15 +35,13 @@ type ChainInfoResponse struct {
 	IsActive bool `json:"isActive"`
 	// The fully qualified public url leading to the chains metadata
 	PublicUrl string `json:"publicUrl"`
-	// The chain info standard
-	Standard string `json:"standard"`
 }
 
 // NewChainInfoResponse instantiates a new ChainInfoResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, evmJsonRpcUrl string, evmWebSocketUrl string, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, publicUrl string, standard string) *ChainInfoResponse {
+func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, evmJsonRpcUrl string, evmWebSocketUrl string, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, publicUrl string) *ChainInfoResponse {
 	this := ChainInfoResponse{}
 	this.ChainID = chainID
 	this.ChainOwnerId = chainOwnerId
@@ -54,7 +52,6 @@ func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32
 	this.GasLimits = gasLimits
 	this.IsActive = isActive
 	this.PublicUrl = publicUrl
-	this.Standard = standard
 	return &this
 }
 
@@ -282,30 +279,6 @@ func (o *ChainInfoResponse) SetPublicUrl(v string) {
 	o.PublicUrl = v
 }
 
-// GetStandard returns the Standard field value
-func (o *ChainInfoResponse) GetStandard() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.Standard
-}
-
-// GetStandardOk returns a tuple with the Standard field value
-// and a boolean to check if the value has been set.
-func (o *ChainInfoResponse) GetStandardOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Standard, true
-}
-
-// SetStandard sets field value
-func (o *ChainInfoResponse) SetStandard(v string) {
-	o.Standard = v
-}
-
 func (o ChainInfoResponse) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -325,7 +298,6 @@ func (o ChainInfoResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize["gasLimits"] = o.GasLimits
 	toSerialize["isActive"] = o.IsActive
 	toSerialize["publicUrl"] = o.PublicUrl
-	toSerialize["standard"] = o.Standard
 	return toSerialize, nil
 }
 
