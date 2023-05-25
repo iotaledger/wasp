@@ -4,13 +4,11 @@
 package wasmlib
 
 import (
-	"strings"
-
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 type IEventHandlers interface {
-	CallHandler(topic string, params []string)
+	CallHandler(topic string, dec *wasmtypes.WasmDecoder)
 	ID() uint32
 }
 
@@ -21,43 +19,12 @@ func EventHandlersGenerateID() uint32 {
 	return nextID
 }
 
-type EventEncoder struct {
-	event string
+func NewEventEncoder() *wasmtypes.WasmEncoder {
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.Uint64Encode(enc, ScFuncContext{}.Timestamp())
+	return enc
 }
 
-func NewEventEncoder(eventName string) *EventEncoder {
-	e := &EventEncoder{event: eventName}
-	e.Encode(wasmtypes.Uint64ToString(ScFuncContext{}.Timestamp()))
-	return e
-}
-
-func (e *EventEncoder) Emit() {
-	ScFuncContext{}.Event(e.event)
-}
-
-func (e *EventEncoder) Encode(value string) {
-	value = strings.ReplaceAll(value, "~", "~~")
-	value = strings.ReplaceAll(value, "|", "~/")
-	value = strings.ReplaceAll(value, " ", "~_")
-	e.event += "|" + value
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-type EventDecoder struct {
-	msg []string
-}
-
-func NewEventDecoder(msg []string) *EventDecoder {
-	return &EventDecoder{msg: msg}
-}
-
-func (d *EventDecoder) Decode() string {
-	next := d.msg[0]
-	d.msg = d.msg[1:]
-	return next
-}
-
-func (d *EventDecoder) Timestamp() uint64 {
-	return wasmtypes.Uint64FromString(d.Decode())
+func EventEmit(topic string, enc *wasmtypes.WasmEncoder) {
+	ScFuncContext{}.Event(topic + "|" + string(enc.Buf()))
 }

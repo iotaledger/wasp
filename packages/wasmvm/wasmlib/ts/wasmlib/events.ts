@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {ScFuncContext} from './context';
-import {uint64FromString, uint64ToString} from './wasmtypes/scuint64';
+import {concat, stringFromBytes, stringToBytes, uint64Encode, WasmDecoder, WasmEncoder} from "./wasmtypes";
 
 export interface IEventHandlers {
-    callHandler(topic: string, params: string[]): void;
+    callHandler(topic: string, dec: WasmDecoder): void;
 
     id(): u32;
 }
@@ -17,40 +17,13 @@ export function eventHandlersGenerateID(): u32 {
     return nextID;
 }
 
-export class EventEncoder {
-    event: string;
-
-    constructor(eventName: string) {
-        this.event = eventName;
-        const timestamp = new ScFuncContext().timestamp();
-        // convert nanoseconds to seconds
-        this.encode(uint64ToString(timestamp / 1_000_000_000n));
-    }
-
-    emit(): void {
-        new ScFuncContext().event(this.event);
-    }
-
-    encode(value: string): void {
-        value = value.replaceAll('~', '~~');
-        value = value.replaceAll('|', '~/');
-        value = value.replaceAll(' ', '~_');
-        this.event += '|' + value;
-    }
+export function eventEncoder(): WasmEncoder {
+    const enc = new WasmEncoder();
+    uint64Encode(enc, new ScFuncContext().timestamp());
+    return enc;
 }
 
-export class EventDecoder {
-    msg: string[];
-
-    constructor(msg: string[]) {
-        this.msg = msg;
-    }
-
-    decode(): string {
-        return this.msg.shift()!;
-    }
-
-    timestamp(): u64 {
-        return uint64FromString(this.decode());
-    }
+export function eventEmit(topic: string, enc: WasmEncoder): void {
+    const buf = concat(concat(stringToBytes(topic), stringToBytes("|")), enc.buf());
+    new ScFuncContext().event(stringFromBytes(buf));
 }

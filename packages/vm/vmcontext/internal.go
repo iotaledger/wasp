@@ -202,7 +202,7 @@ func (vmctx *VMContext) MustSaveEvent(contract isc.Hname, msg string) {
 	if vmctx.requestEventIndex == math.MaxUint16 {
 		panic(vm.ErrTooManyEvents)
 	}
-	vmctx.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
+	vmctx.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), iotago.EncodeHex([]byte(msg)))
 
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
 		blocklog.SaveEvent(vmctx.State(), msg, vmctx.eventLookupKey(), contract)

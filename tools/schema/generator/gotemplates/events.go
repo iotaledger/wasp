@@ -23,9 +23,9 @@ $#each eventComment _eventComment
 func (e $TypeName) $EvtName($endFunc
 $#each event eventParam
 $#if event eventEndFunc2
-	evt := wasmlib.NewEventEncoder("$package.$evtName")
+	enc := wasmlib.NewEventEncoder()
 $#each event eventEmit
-	evt.Emit()
+	wasmlib.EventEmit("$package.$evtName", enc)
 }
 `,
 	// *******************************
@@ -35,7 +35,7 @@ $#each fldComment _eventParamComment
 `,
 	// *******************************
 	"eventEmit": `
-	evt.Encode(wasmtypes.$FldType$+ToString($fldName))
+	wasmtypes.$FldType$+Encode(enc, $fldName)
 `,
 	// *******************************
 	"eventSetEndFunc": `
