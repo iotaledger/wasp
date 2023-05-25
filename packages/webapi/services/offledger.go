@@ -53,8 +53,8 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 	}
 
 	// check req signature
-	if err := request.VerifySignature(); err != nil {
-		return fmt.Errorf("could not verify: %w", err)
+	if err2 := request.VerifySignature(); err2 != nil {
+		return fmt.Errorf("could not verify: %w", err2)
 	}
 
 	// check req is for the correct chain
