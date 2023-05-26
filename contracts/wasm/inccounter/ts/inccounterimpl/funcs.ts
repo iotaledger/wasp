@@ -10,16 +10,19 @@ const hex = "0123456789abcdef";
 let localStateMustIncrement: boolean = false;
 
 export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
+    const counter = f.state.counter();
     if (f.params.counter().exists()) {
-        let counter = f.params.counter().value();
-        f.state.counter().setValue(counter);
+        let value = f.params.counter().value();
+        counter.setValue(value);
     }
+    f.events.counter(counter.value());
 }
 
 export function funcCallIncrement(ctx: wasmlib.ScFuncContext, f: sc.CallIncrementContext): void {
     let counter = f.state.counter();
     let value = counter.value();
     counter.setValue(value + 1);
+    f.events.counter(counter.value());
     if (value == 0) {
         sc.ScFuncs.callIncrement(ctx).func.call();
     }
@@ -29,6 +32,7 @@ export function funcCallIncrementRecurse5x(ctx: wasmlib.ScFuncContext, f: sc.Cal
     let counter = f.state.counter();
     let value = counter.value();
     counter.setValue(value + 1);
+    f.events.counter(counter.value());
     if (value < 5) {
         sc.ScFuncs.callIncrementRecurse5x(ctx).func.call();
     }
@@ -48,6 +52,7 @@ export function funcIncrement(ctx: wasmlib.ScFuncContext, f: sc.IncrementContext
 
     let counter = f.state.counter();
     counter.setValue(counter.value() + incValue);
+    f.events.counter(counter.value());
 }
 
 export function funcIncrementWithDelay(ctx: wasmlib.ScFuncContext, f: sc.IncrementWithDelayContext): void {
@@ -58,10 +63,10 @@ export function funcIncrementWithDelay(ctx: wasmlib.ScFuncContext, f: sc.Increme
 
 export function funcLocalStateInternalCall(ctx: wasmlib.ScFuncContext, f: sc.LocalStateInternalCallContext): void {
     localStateMustIncrement = false;
-    whenMustIncrementState(ctx, f.state);
+    whenMustIncrementState(ctx, f.state, f.events);
     localStateMustIncrement = true;
-    whenMustIncrementState(ctx, f.state);
-    whenMustIncrementState(ctx, f.state);
+    whenMustIncrementState(ctx, f.state, f.events);
+    whenMustIncrementState(ctx, f.state, f.events);
     // counter ends up as 2
 }
 
@@ -88,6 +93,7 @@ export function funcPostIncrement(ctx: wasmlib.ScFuncContext, f: sc.PostIncremen
     let counter = f.state.counter();
     let value = counter.value();
     counter.setValue(value + 1);
+    f.events.counter(counter.value());
     if (value == 0) {
         sc.ScFuncs.increment(ctx).func.post();
     }
@@ -97,6 +103,7 @@ export function funcRepeatMany(ctx: wasmlib.ScFuncContext, f: sc.RepeatManyConte
     let counter = f.state.counter();
     let value = counter.value();
     counter.setValue(value + 1);
+    f.events.counter(counter.value());
     let stateRepeats = f.state.numRepeats();
     let repeats = f.params.numRepeats().value();
     if (repeats == 0) {
@@ -180,7 +187,7 @@ export function funcTestVluCodec(ctx: wasmlib.ScFuncContext, f: sc.TestVluCodecC
 }
 
 export function funcWhenMustIncrement(ctx: wasmlib.ScFuncContext, f: sc.WhenMustIncrementContext): void {
-    whenMustIncrementState(ctx, f.state);
+    whenMustIncrementState(ctx, f.state, f.events);
 }
 
 // note that getCounter mirrors the state of the 'counter' state variable
@@ -271,12 +278,13 @@ function vluSave(ctx: wasmlib.ScFuncContext, name: string, value: u64): void {
     }
 }
 
-function whenMustIncrementState(ctx: wasmlib.ScFuncContext, state: sc.MutableIncCounterState): void {
+function whenMustIncrementState(ctx: wasmlib.ScFuncContext, state: sc.MutableIncCounterState, events: sc.IncCounterEvents): void {
     ctx.log("whenMustIncrement called");
     if (!localStateMustIncrement) {
         return;
     }
     let counter = state.counter();
     counter.setValue(counter.value() + 1);
+    events.counter(counter.value());
     ctx.log("whenMustIncrement incremented");
 }

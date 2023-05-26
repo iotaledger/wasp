@@ -220,13 +220,12 @@ func funcTestEventLogDeploy(ctx wasmlib.ScFuncContext, _ *TestEventLogDeployCont
 	ctx.DeployContract(programHash, ContractNameDeployed, "test contract deploy log", nil)
 }
 
-func funcTestEventLogEventData(ctx wasmlib.ScFuncContext, _ *TestEventLogEventDataContext) {
-	ctx.Event(MsgTestingEvent)
+func funcTestEventLogEventData(ctx wasmlib.ScFuncContext, f *TestEventLogEventDataContext) {
+	f.Events.Test()
 }
 
 func funcTestEventLogGenericData(ctx wasmlib.ScFuncContext, f *TestEventLogGenericDataContext) {
-	event := MsgCounterNumber + f.Params.Counter().String()
-	ctx.Event(event)
+	f.Events.Counter(f.Params.Counter().Value())
 }
 
 func funcTestPanicFullEP(ctx wasmlib.ScFuncContext, _ *TestPanicFullEPContext) {

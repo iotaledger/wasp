@@ -37,12 +37,16 @@ const (
 	VarDescription = "dscr"
 )
 
+func eventCounter(ctx isc.Sandbox, val int64) {
+	ctx.Event(fmt.Sprintf("inccounter.counter counter = %d", val))
+}
+
 func initialize(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("inccounter.init in %s", ctx.Contract().String())
 	params := ctx.Params()
 	val := codec.MustDecodeInt64(params.Get(VarCounter), 0)
 	ctx.State().Set(VarCounter, codec.EncodeInt64(val))
-	ctx.Event(fmt.Sprintf("inccounter.init.success. counter = %d", val))
+	eventCounter(ctx, val)
 	return nil
 }
 
@@ -61,7 +65,7 @@ func incCounter(ctx isc.Sandbox) dict.Dict {
 	}
 	ctx.Log().Infof("incCounter: allowance available: %s", tra)
 	ctx.State().Set(VarCounter, codec.EncodeInt64(val+inc))
-	ctx.Event(fmt.Sprintf("incCounter: counter = %d", val+inc))
+	eventCounter(ctx, val+inc)
 	return nil
 }
 
@@ -72,7 +76,7 @@ func incCounterAndRepeatOnce(ctx isc.Sandbox) dict.Dict {
 
 	ctx.Log().Debugf(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
-	ctx.Event(fmt.Sprintf("incCounterAndRepeatOnce: counter = %d", val+1))
+	eventCounter(ctx, val+1)
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Send(isc.RequestParameters{
@@ -101,6 +105,7 @@ func incCounterAndRepeatMany(ctx isc.Sandbox) dict.Dict {
 	val := codec.MustDecodeInt64(state.Get(VarCounter), 0)
 
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
+	eventCounter(ctx, val+1)
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatMany: increasing counter value: %d", val)
 
 	var numRepeats int64
@@ -149,6 +154,7 @@ func spawn(ctx isc.Sandbox) dict.Dict {
 
 	callPar := dict.New()
 	callPar.Set(VarCounter, codec.EncodeInt64(val+1))
+	eventCounter(ctx, val+1)
 	ctx.DeployContract(Contract.ProgramHash, name, dscr, callPar)
 
 	// increase counter in newly spawned contract

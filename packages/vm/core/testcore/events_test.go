@@ -202,34 +202,44 @@ func TestGetEvents(t *testing.T) {
 
 	events := getEventsForRequest(t, ch, reqID1)
 	require.Len(t, events, 1)
-	require.Contains(t, events[0], "counter = 1")
+	checkEventCounter(t, events[0], 1)
+
 	events = getEventsForRequest(t, ch, reqID2)
 	require.Len(t, events, 1)
-	require.Contains(t, events[0], "counter = 2")
+	checkEventCounter(t, events[0], 2)
+
 	events = getEventsForRequest(t, ch, reqID3)
 	require.Len(t, events, 1)
-	require.Contains(t, events[0], "counter = 3")
+	checkEventCounter(t, events[0], 3)
 
 	events = getEventsForBlock(t, ch, 3)
 	require.Len(t, events, 2)
-	require.Contains(t, events[0], "counter = 0")
+	checkEventCounter(t, events[0], 0)
+
 	events = getEventsForBlock(t, ch, 4)
 	require.Len(t, events, 1)
-	require.Contains(t, events[0], "counter = 1")
+	checkEventCounter(t, events[0], 1)
+
 	events = getEventsForBlock(t, ch, 5)
 	require.Len(t, events, 1)
-	require.Contains(t, events[0], "counter = 2")
+	checkEventCounter(t, events[0], 2)
+
 	events = getEventsForBlock(t, ch)
 	require.Len(t, events, 1)
-	require.Contains(t, events[0], "counter = 3")
+	checkEventCounter(t, events[0], 3)
 
 	events = getEventsForSC(t, ch, 0, 1000)
 	require.Len(t, events, 4)
-	require.Contains(t, events[0], "counter = 0")
-	require.Contains(t, events[1], "counter = 1")
-	require.Contains(t, events[2], "counter = 2")
-	require.Contains(t, events[3], "counter = 3")
+	checkEventCounter(t, events[0], 0)
+	checkEventCounter(t, events[1], 1)
+	checkEventCounter(t, events[2], 2)
+	checkEventCounter(t, events[3], 3)
+
 	events = getEventsForSC(t, ch, 2, 3)
 	require.Len(t, events, 1)
-	require.Contains(t, events[0], "counter = 0")
+	checkEventCounter(t, events[0], 0)
+}
+
+func checkEventCounter(t *testing.T, event string, value int64) {
+	require.Contains(t, event, fmt.Sprintf("counter = %d", value))
 }
