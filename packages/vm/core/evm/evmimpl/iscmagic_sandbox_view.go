@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
@@ -119,6 +120,8 @@ func (h *magicContractHandler) GetNativeTokenID(foundrySN uint32) iscmagic.Nativ
 	return iscmagic.WrapNativeTokenID(nativeTokenID)
 }
 
+var errUnsupportedTokenScheme = coreerrors.Register("unsupported TokenScheme kind").Create()
+
 // handler for ISCSandbox::getNativeTokenScheme
 func (h *magicContractHandler) GetNativeTokenScheme(foundrySN uint32) iotago.SimpleTokenScheme {
 	r := h.callView(accounts.Contract.Hname(), accounts.ViewFoundryOutput.Hname(), dict.Dict{
@@ -129,7 +132,7 @@ func (h *magicContractHandler) GetNativeTokenScheme(foundrySN uint32) iotago.Sim
 	h.ctx.RequireNoError(err)
 	s, ok := out.TokenScheme.(*iotago.SimpleTokenScheme)
 	if !ok {
-		panic("expected SimpleTokenScheme")
+		panic(errUnsupportedTokenScheme)
 	}
 	return *s
 }

@@ -517,7 +517,7 @@ func TestSendBaseTokens(t *testing.T) {
 		gasLimit: 100_000, // skip estimate gas (which will fail)
 	}}, "sendBaseTokens", iscmagic.WrapL1Address(receiver), transfer)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "not previously allowed")
+	require.Contains(t, err.Error(), "remaining allowance insufficient")
 
 	// allow ISCTest to take the tokens
 	_, err = env.ISCMagicSandbox(ethKey).callFn(
@@ -1862,7 +1862,7 @@ func TestMagicContractExamples(t *testing.T) {
 
 	_, err = isTestContract.callFn(nil, "mint", uint32(1), big.NewInt(1000), uint64(10_000))
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "not controlled by the caller")
+	require.Contains(t, err.Error(), "unauthorized")
 }
 
 func TestCaller(t *testing.T) {

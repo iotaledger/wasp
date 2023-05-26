@@ -666,7 +666,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 	t.Run("withdraw with empty", func(t *testing.T) {
 		v := initWithdrawTest(t, 2*isc.Million)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
-		testmisc.RequireErrorToBe(t, err, "can't be empty")
+		testmisc.RequireErrorToBe(t, err, "not enough allowance")
 	})
 	t.Run("withdraw not enough for storage deposit", func(t *testing.T) {
 		v := initWithdrawTest(t, 2*isc.Million)
@@ -861,12 +861,12 @@ func TestFoundryDestroy(t *testing.T) {
 		err = v.ch.DestroyFoundry(sn, v.user)
 		require.NoError(t, err)
 		_, err = v.ch.GetFoundryOutput(sn)
-		testmisc.RequireErrorToBe(t, err, "does not exist")
+		testmisc.RequireErrorToBe(t, err, "not found")
 	})
 	t.Run("destroy fail", func(t *testing.T) {
 		v := initDepositTest(t)
 		err := v.ch.DestroyFoundry(2, v.user)
-		testmisc.RequireErrorToBe(t, err, "not controlled by the caller")
+		testmisc.RequireErrorToBe(t, err, "unauthorized")
 	})
 }
 

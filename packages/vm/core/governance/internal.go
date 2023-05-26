@@ -40,6 +40,7 @@ func GetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) (*isc.ChainInfo, 
 	if ret.GasLimits, err = GetGasLimits(state); err != nil {
 		return nil, err
 	}
+	ret.BlockKeepAmount = GetBlockKeepAmount(state)
 	if ret.PublicURL, err = GetPublicURL(state); err != nil {
 		return nil, err
 	}
@@ -90,6 +91,10 @@ func GetGasLimits(state kv.KVStoreReader) (*gas.Limits, error) {
 		return gas.LimitsDefault, nil
 	}
 	return gas.LimitsFromBytes(data)
+}
+
+func GetBlockKeepAmount(state kv.KVStoreReader) int32 {
+	return codec.MustDecodeInt32(state.Get(VarBlockKeepAmount), BlockKeepAmountDefault)
 }
 
 func SetPublicURL(state kv.KVStore, url string) {

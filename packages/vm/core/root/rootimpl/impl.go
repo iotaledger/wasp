@@ -16,10 +16,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -64,6 +66,8 @@ func SetInitialState(state kv.KVStore) {
 	}
 }
 
+var errInvalidContractName = coreerrors.Register("invalid contract name").Create()
+
 // deployContract deploys contract and calls its 'init' constructor.
 // If call to the constructor returns an error or an other error occurs,
 // removes smart contract form the registry as if it was never attempted to deploy
@@ -74,13 +78,17 @@ func SetInitialState(state kv.KVStore) {
 //   - ParamDescription string is an arbitrary string. Defaults to "N/A"
 func deployContract(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("root.deployContract.begin")
-	ctx.Requiref(isAuthorizedToDeploy(ctx), "root.deployContract: deploy not permitted for: %s", ctx.Caller().String())
+	if !isAuthorizedToDeploy(ctx) {
+		panic(vm.ErrUnauthorized)
+	}
 
 	params := ctx.Params()
 	progHash := params.MustGetHashValue(root.ParamProgramHash)
 	description := params.MustGetString(root.ParamDescription, "N/A")
 	name := params.MustGetString(root.ParamName)
-	ctx.Requiref(name != "", "wrong name")
+	if name == "" || len(name) > 255 {
+		panic(errInvalidContractName)
+	}
 
 	// pass to init function all params not consumed so far
 	initParams := dict.New()
@@ -111,10 +119,7 @@ func deployContract(ctx isc.Sandbox) dict.Dict {
 //   - ParamDeployer isc.AgentID
 func grantDeployPermission(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-
 	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
-	ctx.Requiref(deployer.Kind() != isc.AgentIDKindNil, "cannot grant deploy permission to NilAgentID")
-
 	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).SetAt(deployer.Bytes(), []byte{0xFF})
 	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer.String()))
 	return nil
@@ -125,9 +130,7 @@ func grantDeployPermission(ctx isc.Sandbox) dict.Dict {
 //   - ParamDeployer isc.AgentID
 func revokeDeployPermission(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-
 	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
-
 	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).DelAt(deployer.Bytes())
 	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %v", deployer))
 	return nil

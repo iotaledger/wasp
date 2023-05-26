@@ -19,6 +19,8 @@ var _ MappedNullable = &GovChainInfoResponse{}
 
 // GovChainInfoResponse struct for GovChainInfoResponse
 type GovChainInfoResponse struct {
+	// Amount of blocks to keep in the state
+	BlockKeepAmount *int32 `json:"blockKeepAmount,omitempty"`
 	// ChainID (Bech32-encoded).
 	ChainID string `json:"chainID"`
 	// The chain owner address (Bech32-encoded).
@@ -55,6 +57,38 @@ func NewGovChainInfoResponse(chainID string, chainOwnerId string, evmJsonRpcUrl 
 func NewGovChainInfoResponseWithDefaults() *GovChainInfoResponse {
 	this := GovChainInfoResponse{}
 	return &this
+}
+
+// GetBlockKeepAmount returns the BlockKeepAmount field value if set, zero value otherwise.
+func (o *GovChainInfoResponse) GetBlockKeepAmount() int32 {
+	if o == nil || isNil(o.BlockKeepAmount) {
+		var ret int32
+		return ret
+	}
+	return *o.BlockKeepAmount
+}
+
+// GetBlockKeepAmountOk returns a tuple with the BlockKeepAmount field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GovChainInfoResponse) GetBlockKeepAmountOk() (*int32, bool) {
+	if o == nil || isNil(o.BlockKeepAmount) {
+		return nil, false
+	}
+	return o.BlockKeepAmount, true
+}
+
+// HasBlockKeepAmount returns a boolean if a field has been set.
+func (o *GovChainInfoResponse) HasBlockKeepAmount() bool {
+	if o != nil && !isNil(o.BlockKeepAmount) {
+		return true
+	}
+
+	return false
+}
+
+// SetBlockKeepAmount gets a reference to the given int32 and assigns it to the BlockKeepAmount field.
+func (o *GovChainInfoResponse) SetBlockKeepAmount(v int32) {
+	o.BlockKeepAmount = &v
 }
 
 // GetChainID returns the ChainID field value
@@ -235,6 +269,9 @@ func (o GovChainInfoResponse) MarshalJSON() ([]byte, error) {
 
 func (o GovChainInfoResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
+	if !isNil(o.BlockKeepAmount) {
+		toSerialize["blockKeepAmount"] = o.BlockKeepAmount
+	}
 	toSerialize["chainID"] = o.ChainID
 	toSerialize["chainOwnerId"] = o.ChainOwnerId
 	toSerialize["evmJsonRpcUrl"] = o.EvmJsonRpcUrl

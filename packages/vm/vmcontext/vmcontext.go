@@ -215,6 +215,7 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 			vmctx.task.AnchorOutput.GovernorAddress(),
 			vmctx.task.AnchorOutput.StateIndex,
 		)
+		blocklog.Prune(s, blockInfo.BlockIndex(), vmctx.chainInfo.BlockKeepAmount)
 	})
 	vmctx.task.Log.Debugf("saved blockinfo: %s", blockInfo)
 	return nil

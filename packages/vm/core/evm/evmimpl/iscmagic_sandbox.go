@@ -4,14 +4,13 @@
 package evmimpl
 
 import (
-	"fmt"
-
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
@@ -51,6 +50,8 @@ func (h *magicContractHandler) TakeAllowedFunds(addr common.Address, allowance i
 	)
 }
 
+var errInvalidAllowance = coreerrors.Register("allowance must not be greater than sent tokens").Create()
+
 // handler for ISCSandbox::send
 func (h *magicContractHandler) Send(
 	targetAddress iscmagic.L1Address,
@@ -71,10 +72,9 @@ func (h *magicContractHandler) Send(
 
 	// make sure that allowance <= sent tokens, so that the target contract does not
 	// spend from the common account
-	h.ctx.Requiref(
-		req.Assets.Spend(req.Metadata.Allowance),
-		"allowance must not be greater than sent tokens",
-	)
+	if !req.Assets.Spend(req.Metadata.Allowance) {
+		panic(errInvalidAllowance)
+	}
 
 	h.moveAssetsToCommonAccount(req.Assets)
 
@@ -97,12 +97,13 @@ func (h *magicContractHandler) Call(
 	return iscmagic.WrapISCDict(callRet)
 }
 
+var errBaseTokensNotEnoughForStorageDeposit = coreerrors.Register("base tokens (%d) not enough to cover storage deposit (%d)")
+
 func (h *magicContractHandler) adjustStorageDeposit(req isc.RequestParameters) {
 	sd := h.ctx.EstimateRequiredStorageDeposit(req)
 	if req.Assets.BaseTokens < sd {
 		if !req.AdjustToMinimumStorageDeposit {
-			panic(fmt.Sprintf(
-				"base tokens (%d) not enough to cover storage deposit (%d)",
+			panic(errBaseTokensNotEnoughForStorageDeposit.Create(
 				req.Assets.BaseTokens,
 				sd,
 			))

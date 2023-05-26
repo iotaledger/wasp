@@ -57,9 +57,6 @@ const (
 const (
 	// TODO shouldn't this be different between chain, to prevent replay attacks? (maybe derived from ISC ChainID)
 	DefaultChainID = uint16(1074) // IOTA -- get it?
-
-	BlockKeepAll           = -1
-	BlockKeepAmountDefault = int32(BlockKeepAll)
 )
 
 // Gas is charged in isc VM (L1 currencies), not ETH

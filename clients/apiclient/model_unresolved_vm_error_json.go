@@ -20,7 +20,6 @@ var _ MappedNullable = &UnresolvedVMErrorJSON{}
 // UnresolvedVMErrorJSON struct for UnresolvedVMErrorJSON
 type UnresolvedVMErrorJSON struct {
 	Code *string `json:"code,omitempty"`
-	Hash *string `json:"hash,omitempty"`
 	Params []string `json:"params,omitempty"`
 }
 
@@ -73,38 +72,6 @@ func (o *UnresolvedVMErrorJSON) SetCode(v string) {
 	o.Code = &v
 }
 
-// GetHash returns the Hash field value if set, zero value otherwise.
-func (o *UnresolvedVMErrorJSON) GetHash() string {
-	if o == nil || isNil(o.Hash) {
-		var ret string
-		return ret
-	}
-	return *o.Hash
-}
-
-// GetHashOk returns a tuple with the Hash field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *UnresolvedVMErrorJSON) GetHashOk() (*string, bool) {
-	if o == nil || isNil(o.Hash) {
-		return nil, false
-	}
-	return o.Hash, true
-}
-
-// HasHash returns a boolean if a field has been set.
-func (o *UnresolvedVMErrorJSON) HasHash() bool {
-	if o != nil && !isNil(o.Hash) {
-		return true
-	}
-
-	return false
-}
-
-// SetHash gets a reference to the given string and assigns it to the Hash field.
-func (o *UnresolvedVMErrorJSON) SetHash(v string) {
-	o.Hash = &v
-}
-
 // GetParams returns the Params field value if set, zero value otherwise.
 func (o *UnresolvedVMErrorJSON) GetParams() []string {
 	if o == nil || isNil(o.Params) {
@@ -149,9 +116,6 @@ func (o UnresolvedVMErrorJSON) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	if !isNil(o.Code) {
 		toSerialize["code"] = o.Code
-	}
-	if !isNil(o.Hash) {
-		toSerialize["hash"] = o.Hash
 	}
 	if !isNil(o.Params) {
 		toSerialize["params"] = o.Params

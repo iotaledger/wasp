@@ -9,6 +9,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 func CommonAccount() isc.AgentID {
@@ -71,22 +73,30 @@ func transferAllowanceTo(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
+var errCallerMustHaveL1Address = coreerrors.Register("caller must have L1 address").Create()
+
 // withdraw sends the allowed funds to the caller's L1 address,
 func withdraw(ctx isc.Sandbox) dict.Dict {
 	allowance := ctx.AllowanceAvailable()
 	ctx.Log().Debugf("accounts.withdraw.begin -- %s", allowance)
-	ctx.Requiref(!allowance.IsEmpty(), "allowance can't be empty")
+	if allowance.IsEmpty() {
+		panic(ErrNotEnoughAllowance)
+	}
 	if len(allowance.NFTs) > 1 {
 		panic(ErrTooManyNFTsInAllowance)
 	}
 
 	caller := ctx.Caller()
-	_, ok := caller.(*isc.ContractAgentID)
-	ctx.Requiref(!ok, "cannot withdraw from contract account")
+	if _, ok := caller.(*isc.ContractAgentID); ok {
+		// cannot withdraw from contract account
+		panic(vm.ErrUnauthorized)
+	}
 
 	// simple case, caller is not a contract, this is a straightforward withdrawal to L1
 	callerAddress, ok := isc.AddressFromAgentID(caller)
-	ctx.Requiref(ok, "caller must have L1 address")
+	if !ok {
+		panic(errCallerMustHaveL1Address)
+	}
 	remains := ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Requiref(remains.IsEmpty(), "internal: allowance remains must be empty")
 	ctx.Send(isc.RequestParameters{
@@ -142,14 +152,19 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 func transferAccountToChain(ctx isc.Sandbox) dict.Dict {
 	allowance := ctx.AllowanceAvailable()
 	ctx.Log().Debugf("accounts.transferAccountToChain.begin -- %s", allowance)
-	ctx.Requiref(!allowance.IsEmpty(), "allowance can't be empty")
+	if allowance.IsEmpty() {
+		panic(ErrNotEnoughAllowance)
+	}
 	if len(allowance.NFTs) > 1 {
 		panic(ErrTooManyNFTsInAllowance)
 	}
 
 	caller := ctx.Caller()
 	callerContract, ok := caller.(*isc.ContractAgentID)
-	ctx.Requiref(ok && !callerContract.Hname().IsNil(), "caller must be contract")
+	if !ok || callerContract.Hname().IsNil() {
+		// caller must be contract
+		panic(vm.ErrUnauthorized)
+	}
 
 	// if the caller contract is on the same chain the transfer would end up
 	// in the same L2 account it is taken from, so we do nothing in that case
@@ -162,7 +177,9 @@ func transferAccountToChain(ctx isc.Sandbox) dict.Dict {
 
 	// deduct the gas reserve GAS2 from the allowance, if possible
 	gasReserve := ctx.Params().MustGetUint64(ParamGasReserve, 100)
-	ctx.Requiref(allowance.BaseTokens >= gasReserve, "insufficient base tokens for gas reserve")
+	if allowance.BaseTokens < gasReserve {
+		panic(ErrNotEnoughAllowance)
+	}
 	allowance.BaseTokens -= gasReserve
 
 	// Warning: this will transfer all assets into the accounts core contract's L2 account.
@@ -213,7 +230,9 @@ func harvest(ctx isc.Sandbox) dict.Dict {
 		// below minimum, nothing to withdraw
 		return nil
 	}
-	ctx.Requiref(toWithdraw.BaseTokens > bottomBaseTokens, "assertion failed: toWithdraw.BaseTokens > availableBaseTokens")
+	if toWithdraw.BaseTokens < bottomBaseTokens {
+		panic(ErrNotEnoughAllowance)
+	}
 	toWithdraw.BaseTokens -= bottomBaseTokens
 	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw)
 	return nil
@@ -245,6 +264,8 @@ func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
 	return ret
 }
 
+var errFoundryWithCirculatingSupply = coreerrors.Register("foundry must have zero circulating supply").Create()
+
 // foundryDestroy destroys foundry if that is possible
 func foundryDestroy(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryDestroy")
@@ -252,11 +273,15 @@ func foundryDestroy(ctx isc.Sandbox) dict.Dict {
 	// check if foundry is controlled by the caller
 	state := ctx.State()
 	caller := ctx.Caller()
-	ctx.Requiref(hasFoundry(state, caller, sn), "foundry #%d is not controlled by the caller", sn)
+	if !hasFoundry(state, caller, sn) {
+		panic(vm.ErrUnauthorized)
+	}
 
 	out, _, _ := GetFoundryOutput(state, sn, ctx.ChainID())
 	simpleTokenScheme := util.MustTokenScheme(out.TokenScheme)
-	ctx.Requiref(util.IsZeroBigInt(big.NewInt(0).Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)), "can't destroy foundry with positive circulating supply")
+	if !util.IsZeroBigInt(big.NewInt(0).Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)) {
+		panic(errFoundryWithCirculatingSupply)
+	}
 
 	storageDepositReleased := ctx.Privileged().DestroyFoundry(sn)
 
@@ -286,7 +311,9 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 	state := ctx.State()
 	caller := ctx.Caller()
 	// check if foundry is controlled by the caller
-	ctx.Requiref(hasFoundry(state, caller, sn), "foundry #%d is not controlled by the caller", sn)
+	if !hasFoundry(state, caller, sn) {
+		panic(vm.ErrUnauthorized)
+	}
 
 	out, _, _ := GetFoundryOutput(state, sn, ctx.ChainID())
 	nativeTokenID, err := out.NativeTokenID()

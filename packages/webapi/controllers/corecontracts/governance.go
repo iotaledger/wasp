@@ -18,6 +18,7 @@ func MapGovChainInfoResponse(chainInfo *isc.ChainInfo) models.GovChainInfoRespon
 		ChainOwnerID:    chainInfo.ChainOwnerID.String(),
 		GasFeePolicy:    chainInfo.GasFeePolicy,
 		GasLimits:       chainInfo.GasLimits,
+		BlockKeepAmount: chainInfo.BlockKeepAmount,
 		PublicURL:       chainInfo.PublicURL,
 		EVMJsonRPCURL:   chainInfo.MetadataEVMJsonRPCURL,
 		EVMWebSocketURL: chainInfo.MetadataEVMWebSocketURL,

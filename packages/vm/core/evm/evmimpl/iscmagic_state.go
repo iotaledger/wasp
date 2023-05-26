@@ -14,6 +14,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
@@ -49,6 +50,8 @@ func getAllowance(ctx isc.SandboxBase, from, to common.Address) *isc.Assets {
 	return isc.MustAssetsFromBytes(state.Get(key))
 }
 
+var errBaseTokensMustBeUint64 = coreerrors.Register("base tokens amount must be an uint64").Create()
+
 func setAllowanceBaseTokens(ctx isc.Sandbox, from, to common.Address, numTokens *big.Int) {
 	withAllowance(ctx, from, to, func(allowance *isc.Assets) {
 		if !numTokens.IsUint64() {
@@ -56,7 +59,7 @@ func setAllowanceBaseTokens(ctx isc.Sandbox, from, to common.Address, numTokens 
 			if numTokens.Cmp(gethmath.MaxBig256) == 0 {
 				numTokens = big.NewInt(0).SetUint64(math.MaxUint64)
 			} else {
-				panic("base tokens amount must be an uint64")
+				panic(errBaseTokensMustBeUint64)
 			}
 		}
 		allowance.BaseTokens = numTokens.Uint64()
@@ -88,6 +91,8 @@ func withAllowance(ctx isc.Sandbox, from, to common.Address, f func(*isc.Assets)
 	state.Set(key, allowance.Bytes())
 }
 
+var errFundsNotAllowed = coreerrors.Register("remaining allowance insufficient").Create()
+
 func subtractFromAllowance(ctx isc.Sandbox, from, to common.Address, taken *isc.Assets) *isc.Assets {
 	state := iscMagicSubrealm(ctx.State())
 	key := keyAllowance(from, to)
@@ -98,7 +103,9 @@ func subtractFromAllowance(ctx isc.Sandbox, from, to common.Address, taken *isc.
 	}
 
 	ok := remaining.Spend(taken)
-	ctx.Requiref(ok, "takeAllowedFunds: not previously allowed")
+	if !ok {
+		panic(errFundsNotAllowed)
+	}
 	if remaining.IsEmpty() {
 		state.Del(key)
 	} else {

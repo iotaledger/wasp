@@ -79,6 +79,9 @@ const (
 
 	// L1 metadata (stored and provided in the tangle)
 	VarPublicURL = "x"
+
+	// state pruning
+	VarBlockKeepAmount = "b"
 )
 
 // params
@@ -116,4 +119,9 @@ const (
 
 	// L1 metadata (stored and provided in the tangle)
 	ParamPublicURL = "x"
+
+	// state pruning
+	ParamBlockKeepAmount   = "b"
+	BlockKeepAll           = -1
+	BlockKeepAmountDefault = 10_000
 )
