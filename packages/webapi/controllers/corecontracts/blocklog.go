@@ -1,6 +1,7 @@
 package corecontracts
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -112,7 +113,10 @@ func GetRequestReceipt(e echo.Context, c interfaces.ChainService) error {
 
 	receipt, err := corecontracts.GetRequestReceipt(ch, requestID)
 	if err != nil {
-		return err
+		panic(err)
+	}
+	if receipt == nil {
+		return apierrors.NoRecordFoundError(errors.New("no receipt"))
 	}
 
 	resolvedReceipt, err := common.ParseReceipt(ch, receipt)
