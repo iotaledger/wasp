@@ -94,7 +94,7 @@ func (pt *PrivTangle) StartServers(deleteExisting bool) {
 
 	pt.waitAllReady(20 * time.Second)
 	pt.startCoordinator(0, deleteExisting)
-	pt.waitAllHealthy(20 * time.Second)
+	pt.waitAllHealthy(100 * time.Second)
 	pt.waitAllReturnTips(20 * time.Second)
 	for i := range pt.NodeKeyPairs {
 		pt.startIndexer(i)
