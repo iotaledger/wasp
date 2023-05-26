@@ -7,6 +7,8 @@ import (
 	"github.com/labstack/echo/v4"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
+	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
@@ -20,12 +22,12 @@ type BlobListResponse struct {
 }
 
 func (c *Controller) listBlobs(e echo.Context) error {
-	chainID, err := params.DecodeChainID(e)
+	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return err
+		return c.handleViewCallError(err, chainID)
 	}
 
-	blobList, err := c.blob.ListBlobs(chainID)
+	blobList, err := corecontracts.ListBlobs(ch)
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -49,9 +51,9 @@ type BlobValueResponse struct {
 }
 
 func (c *Controller) getBlobValue(e echo.Context) error {
-	chainID, err := params.DecodeChainID(e)
+	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return err
+		return c.handleViewCallError(err, chainID)
 	}
 
 	blobHash, err := params.DecodeBlobHash(e)
@@ -61,7 +63,7 @@ func (c *Controller) getBlobValue(e echo.Context) error {
 
 	fieldKey := e.Param(params.ParamFieldKey)
 
-	blobValueBytes, err := c.blob.GetBlobValue(chainID, *blobHash, fieldKey)
+	blobValueBytes, err := corecontracts.GetBlobValue(ch, *blobHash, fieldKey)
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -80,9 +82,9 @@ type BlobInfoResponse struct {
 func (c *Controller) getBlobInfo(e echo.Context) error {
 	fmt.Println("GET BLOB INFO")
 
-	chainID, err := params.DecodeChainID(e)
+	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return err
+		return c.handleViewCallError(err, chainID)
 	}
 
 	blobHash, err := params.DecodeBlobHash(e)
@@ -90,7 +92,7 @@ func (c *Controller) getBlobInfo(e echo.Context) error {
 		return err
 	}
 
-	blobInfo, ok, err := c.blob.GetBlobInfo(chainID, *blobHash)
+	blobInfo, ok, err := corecontracts.GetBlobInfo(ch, *blobHash)
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}

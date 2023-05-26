@@ -10,13 +10,14 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/common"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 )
 
 func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	controllerutils.SetOperation(e, "estimate_gas_onledger")
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
+	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
 		return err
 	}
@@ -46,7 +47,7 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 		return apierrors.InvalidPropertyError("Request", errors.New("wrong chainID"))
 	}
 
-	rec, err := c.vmService.EstimateGas(chainID, req)
+	rec, err := common.EstimateGas(ch, req)
 	if err != nil {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "VM run error", err)
 	}
@@ -55,7 +56,7 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 
 func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 	controllerutils.SetOperation(e, "estimate_gas_offledger")
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
+	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
 		return err
 	}
@@ -78,7 +79,7 @@ func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 		return apierrors.InvalidPropertyError("Request", errors.New("wrong chainID"))
 	}
 
-	rec, err := c.vmService.EstimateGas(chainID, req)
+	rec, err := common.EstimateGas(ch, req)
 	if err != nil {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "VM run error", err)
 	}

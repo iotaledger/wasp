@@ -145,6 +145,7 @@ func (vmctx *VMContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.R
 		GasBudget:     vmctx.gasBudgetAdjusted,
 		GasBurned:     vmctx.gasBurned,
 		GasFeeCharged: vmctx.gasFeeCharged,
+		SDCharged:     vmctx.sdCharged,
 	}
 
 	if vmError != nil {

@@ -1,29 +1,18 @@
 package corecontracts
 
 import (
-	"errors"
-
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/webapi/interfaces"
+	"github.com/iotaledger/wasp/packages/webapi/common"
 )
 
-type BlockLog struct {
-	vmService interfaces.VMService
-}
-
-func NewBlockLog(vmService interfaces.VMService) *BlockLog {
-	return &BlockLog{
-		vmService: vmService,
-	}
-}
-
-func (b *BlockLog) GetControlAddresses(chainID isc.ChainID) (*blocklog.ControlAddresses, error) {
-	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewControlAddresses.Hname(), nil)
+func GetControlAddresses(ch chain.Chain) (*blocklog.ControlAddresses, error) {
+	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewControlAddresses.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -70,8 +59,8 @@ func handleBlockInfo(info dict.Dict) (*blocklog.BlockInfo, error) {
 	return blockInfo, nil
 }
 
-func (b *BlockLog) GetLatestBlockInfo(chainID isc.ChainID) (*blocklog.BlockInfo, error) {
-	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetBlockInfo.Hname(), nil)
+func GetLatestBlockInfo(ch chain.Chain) (*blocklog.BlockInfo, error) {
+	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetBlockInfo.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +68,8 @@ func (b *BlockLog) GetLatestBlockInfo(chainID isc.ChainID) (*blocklog.BlockInfo,
 	return handleBlockInfo(ret)
 }
 
-func (b *BlockLog) GetBlockInfo(chainID isc.ChainID, blockIndex uint32) (*blocklog.BlockInfo, error) {
-	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetBlockInfo.Hname(), codec.MakeDict(map[string]interface{}{
+func GetBlockInfo(ch chain.Chain, blockIndex uint32) (*blocklog.BlockInfo, error) {
+	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetBlockInfo.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamBlockIndex: blockIndex,
 	}))
 	if err != nil {
@@ -109,8 +98,8 @@ func handleRequestIDs(requestIDsDict dict.Dict) ([]isc.RequestID, error) {
 	return requestIDs, nil
 }
 
-func (b *BlockLog) GetRequestIDsForLatestBlock(chainID isc.ChainID) ([]isc.RequestID, error) {
-	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetRequestIDsForBlock.Hname(), nil)
+func GetRequestIDsForLatestBlock(ch chain.Chain) ([]isc.RequestID, error) {
+	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetRequestIDsForBlock.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -118,8 +107,8 @@ func (b *BlockLog) GetRequestIDsForLatestBlock(chainID isc.ChainID) ([]isc.Reque
 	return handleRequestIDs(ret)
 }
 
-func (b *BlockLog) GetRequestIDsForBlock(chainID isc.ChainID, blockIndex uint32) ([]isc.RequestID, error) {
-	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetRequestIDsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
+func GetRequestIDsForBlock(ch chain.Chain, blockIndex uint32) ([]isc.RequestID, error) {
+	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetRequestIDsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamBlockIndex: blockIndex,
 	}))
 	if err != nil {
@@ -129,20 +118,18 @@ func (b *BlockLog) GetRequestIDsForBlock(chainID isc.ChainID, blockIndex uint32)
 	return handleRequestIDs(ret)
 }
 
-var ErrNoRecord = errors.New("no request record")
-
-func (b *BlockLog) GetRequestReceipt(chainID isc.ChainID, requestID isc.RequestID) (*blocklog.RequestReceipt, error) {
-	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceipt.Hname(), codec.MakeDict(map[string]interface{}{
+func GetRequestReceipt(ch chain.Chain, requestID isc.RequestID) (*blocklog.RequestReceipt, error) {
+	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceipt.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamRequestID: requestID,
 	}))
-	if err != nil {
+	if err != nil || ret == nil {
 		return nil, err
 	}
 
 	resultDecoder := kvdecoder.New(ret)
 	binRec, err := resultDecoder.GetBytes(blocklog.ParamRequestRecord)
-	if err != nil || binRec == nil {
-		return nil, ErrNoRecord
+	if err != nil {
+		return nil, err
 	}
 
 	requestReceipt, err := blocklog.RequestReceiptFromBytes(binRec)
@@ -163,8 +150,8 @@ func (b *BlockLog) GetRequestReceipt(chainID isc.ChainID, requestID isc.RequestI
 	return requestReceipt, err
 }
 
-func (b *BlockLog) GetRequestReceiptsForBlock(chainID isc.ChainID, blockIndex uint32) ([]*blocklog.RequestReceipt, error) {
-	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceiptsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
+func GetRequestReceiptsForBlock(ch chain.Chain, blockIndex uint32) ([]*blocklog.RequestReceipt, error) {
+	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceiptsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamBlockIndex: blockIndex,
 	}))
 	if err != nil {
@@ -193,8 +180,8 @@ func (b *BlockLog) GetRequestReceiptsForBlock(chainID isc.ChainID, blockIndex ui
 	return requestReceipts, nil
 }
 
-func (b *BlockLog) IsRequestProcessed(chainID isc.ChainID, requestID isc.RequestID) (bool, error) {
-	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewIsRequestProcessed.Hname(), codec.MakeDict(map[string]interface{}{
+func IsRequestProcessed(ch chain.Chain, requestID isc.RequestID) (bool, error) {
+	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewIsRequestProcessed.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamRequestID: requestID,
 	}))
 	if err != nil {
@@ -223,8 +210,8 @@ func eventsFromViewResult(viewResult dict.Dict) ([]string, error) {
 	return events, nil
 }
 
-func (b *BlockLog) GetEventsForRequest(chainID isc.ChainID, requestID isc.RequestID) ([]string, error) {
-	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetEventsForRequest.Hname(), codec.MakeDict(map[string]interface{}{
+func GetEventsForRequest(ch chain.Chain, requestID isc.RequestID) ([]string, error) {
+	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetEventsForRequest.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamRequestID: requestID,
 	}))
 	if err != nil {
@@ -234,8 +221,8 @@ func (b *BlockLog) GetEventsForRequest(chainID isc.ChainID, requestID isc.Reques
 	return eventsFromViewResult(ret)
 }
 
-func (b *BlockLog) GetEventsForBlock(chainID isc.ChainID, blockIndex uint32) ([]string, error) {
-	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetEventsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
+func GetEventsForBlock(ch chain.Chain, blockIndex uint32) ([]string, error) {
+	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetEventsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamBlockIndex: blockIndex,
 	}))
 	if err != nil {
@@ -245,8 +232,8 @@ func (b *BlockLog) GetEventsForBlock(chainID isc.ChainID, blockIndex uint32) ([]
 	return eventsFromViewResult(ret)
 }
 
-func (b *BlockLog) GetEventsForContract(chainID isc.ChainID, contractHname isc.Hname) ([]string, error) {
-	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetEventsForContract.Hname(), codec.MakeDict(map[string]interface{}{
+func GetEventsForContract(ch chain.Chain, contractHname isc.Hname) ([]string, error) {
+	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetEventsForContract.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamContractHname: contractHname,
 	}))
 	if err != nil {

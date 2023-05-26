@@ -24,7 +24,6 @@ type Controller struct {
 	committeeService interfaces.CommitteeService
 	offLedgerService interfaces.OffLedgerService
 	registryService  interfaces.RegistryService
-	vmService        interfaces.VMService
 }
 
 func NewChainController(log *loggerpkg.Logger,
@@ -34,7 +33,6 @@ func NewChainController(log *loggerpkg.Logger,
 	nodeService interfaces.NodeService,
 	offLedgerService interfaces.OffLedgerService,
 	registryService interfaces.RegistryService,
-	vmService interfaces.VMService,
 ) interfaces.APIController {
 	return &Controller{
 		log:              log,
@@ -44,7 +42,6 @@ func NewChainController(log *loggerpkg.Logger,
 		nodeService:      nodeService,
 		offLedgerService: offLedgerService,
 		registryService:  registryService,
-		vmService:        vmService,
 	}
 }
 

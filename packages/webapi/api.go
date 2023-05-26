@@ -91,8 +91,7 @@ func Init(
 	mocker := NewMocker()
 	mocker.LoadMockFiles()
 
-	vmService := services.NewVMService(chainsProvider, chainRecordRegistryProvider)
-	chainService := services.NewChainService(logger, chainsProvider, chainMetricsProvider, chainRecordRegistryProvider, vmService)
+	chainService := services.NewChainService(logger, chainsProvider, chainMetricsProvider, chainRecordRegistryProvider)
 	committeeService := services.NewCommitteeService(chainsProvider, networkProvider, dkShareRegistryProvider)
 	registryService := services.NewRegistryService(chainsProvider, chainRecordRegistryProvider)
 	offLedgerService := services.NewOffLedgerService(chainService, networkProvider, requestCacheTTL)
@@ -113,12 +112,12 @@ func Init(
 	authMiddleware := authentication.AddV2Authentication(server, userManager, nodeIdentityProvider, authConfig, claimValidator)
 
 	controllersToLoad := []interfaces.APIController{
-		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, vmService),
+		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService),
 		apimetrics.NewMetricsController(chainService, metricsService),
 		node.NewNodeController(waspVersion, config, dkgService, nodeService, peeringService),
-		requests.NewRequestsController(chainService, offLedgerService, peeringService, vmService),
+		requests.NewRequestsController(chainService, offLedgerService, peeringService),
 		users.NewUsersController(userService),
-		corecontracts.NewCoreContractsController(vmService),
+		corecontracts.NewCoreContractsController(chainService),
 	}
 
 	if debugRequestLoggerEnabled {
