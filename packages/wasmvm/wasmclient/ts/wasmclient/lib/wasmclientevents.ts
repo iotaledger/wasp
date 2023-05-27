@@ -3,15 +3,7 @@
 
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
-import {
-    hexDecode,
-    IEventHandlers,
-    ScUint64Length,
-    stringDecode,
-    uint64Decode,
-    uint64FromBytes,
-    WasmDecoder
-} from 'wasmlib';
+import {hexDecode, IEventHandlers, ScUint64Length, stringDecode, uint64FromBytes, WasmDecoder} from 'wasmlib';
 import {RawData, WebSocket} from 'ws';
 
 export class ContractEvent {
@@ -94,14 +86,8 @@ export class WasmClientEvents {
         if (!event.contractID.equals(this.contractID) || !event.chainID.equals(this.chainID)) {
             return;
         }
-        const sep = event.data.indexOf('|');
-        if (sep < 0) {
-            return;
-        }
-        const topic = event.data.slice(0, sep);
-        console.log(event.chainID.toString() + ' ' + event.contractID.toString() + ' ' + topic);
-        const buf = hexDecode(event.data.slice(sep + 1));
-        const dec = new WasmDecoder(buf);
-        this.handler.callHandler(topic, dec);
+        console.log(event.chainID.toString() + ' ' + event.contractID.toString() + ' ' + event.topic);
+        const dec = new WasmDecoder(event.payload);
+        this.handler.callHandler(event.topic, dec);
     }
 }

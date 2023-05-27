@@ -84,12 +84,13 @@ impl WasmClientEvents {
                         let mut dec = WasmDecoder::new(&buf);
                         let topic = string_decode(&mut dec);
                         let payload = dec.fixed_bytes(dec.length() as usize);
+                        let timestamp = uint64_from_bytes(&payload[..SC_UINT64_LENGTH]);
                         let event = ContractEvent {
                             chain_id: chain_id_from_string(&json.chain_id),
                             contract_id: hname_from_string(&parts[0]),
                             topic: topic,
                             payload: payload,
-                            timestamp: uint64_from_bytes(&payload[..SC_UINT64_LENGTH]),
+                            timestamp: timestamp,
                         };
                         let event_handlers = event_handlers.lock().unwrap();
                         for event_processor in event_handlers.iter() {
@@ -107,16 +108,9 @@ impl WasmClientEvents {
         if event.contract_id != self.contract_id || event.chain_id != self.chain_id {
             return;
         }
-        let sep = event.data.find('|');
-        if sep.is_none() {
-            return;
-        }
-        let sep = sep.unwrap();
-        let topic = &event.data[..sep];
-        println!("{} {} {}", event.chain_id.to_string(), event.contract_id.to_string(), topic);
-        let buf = hex_decode(&event.data[sep + 1..]);
-        let mut dec = WasmDecoder::new(&buf);
-        self.handler.call_handler(topic, &mut dec);
+         println!("{} {} {}", event.chain_id.to_string(), event.contract_id.to_string(), event.topic.to_string());
+        let mut dec = WasmDecoder::new(&event.payload);
+        self.handler.call_handler(&event.topic, &mut dec);
     }
 
     fn subscribe(sender: &Sender, topic: &str) {

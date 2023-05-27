@@ -3,7 +3,6 @@ package wasmclient
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
@@ -13,6 +12,14 @@ import (
 	websocketservice "github.com/iotaledger/wasp/packages/webapi/websocket"
 	"github.com/iotaledger/wasp/packages/webapi/websocket/commands"
 )
+
+type ContractEvent struct {
+	ChainID    wasmtypes.ScChainID
+	ContractID wasmtypes.ScHname
+	Topic      string
+	Timestamp  uint64
+	Payload    []byte
+}
 
 type WasmClientEvents struct {
 	chainID    wasmtypes.ScChainID
@@ -54,14 +61,14 @@ func eventLoop(ctx context.Context, ws *websocket.Conn, eventHandlers *[]*WasmCl
 		}
 		items := evt.Payload.([]interface{})
 		for _, item := range items {
-			parts := strings.Split(item.(string), ": ")
-			buf := wasmtypes.HexDecode(parts[1])
+			buf := []byte(item.(string))
 			dec := wasmtypes.NewWasmDecoder(buf)
+			hContract := wasmtypes.HnameDecode(dec)
 			topic := wasmtypes.StringDecode(dec)
 			payload := dec.FixedBytes(dec.Length())
-			event := wasmlib.ContractEvent{
+			event := ContractEvent{
 				ChainID:    wasmtypes.ChainIDFromString(evt.ChainID),
-				ContractID: wasmtypes.HnameFromString(parts[0]),
+				ContractID: hContract,
 				Topic:      topic,
 				Payload:    payload,
 				Timestamp:  wasmtypes.Uint64FromBytes(payload[:wasmtypes.ScUint64Length]),
@@ -73,7 +80,7 @@ func eventLoop(ctx context.Context, ws *websocket.Conn, eventHandlers *[]*WasmCl
 	}
 }
 
-func (h WasmClientEvents) ProcessEvent(event *wasmlib.ContractEvent) {
+func (h WasmClientEvents) ProcessEvent(event *ContractEvent) {
 	if event.ContractID != h.contractID || event.ChainID != h.chainID {
 		return
 	}

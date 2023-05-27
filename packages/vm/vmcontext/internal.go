@@ -203,15 +203,18 @@ func (vmctx *VMContext) MustSaveEvent(hContract isc.Hname, topic string, payload
 	if vmctx.requestEventIndex == math.MaxUint16 {
 		panic(vm.ErrTooManyEvents)
 	}
-	vmctx.Debugf("MustSaveEvent/%s: msg: '%s'", hContract.String(), topic)
+	vmctx.Debugf("MustSaveEvent/%s: topic: '%s'", hContract.String(), topic)
 
-	buf := util.Uint16To2Bytes(uint16(len(topic)))
-	buf = append(buf, []byte(topic)...)
 	timestamp := uint64(vmctx.Timestamp().UnixNano())
-	buf = append(buf, util.Uint64To8Bytes(timestamp)...)
-	buf = append(buf, payload...)
+
+	// event data is hContract / topic / timestamp / payload
+	eventData := make([]byte, 0, 4+2+len(topic)+8+len(payload))
+	eventData = append(eventData, util.Uint32To4Bytes(uint32(hContract))...)
+	eventData = append(eventData, util.Uint16To2Bytes(uint16(len(topic)))...)
+	eventData = append(eventData, util.Uint64To8Bytes(timestamp)...)
+	eventData = append(eventData, payload...)
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		blocklog.SaveEvent(vmctx.State(), string(buf), vmctx.eventLookupKey(), hContract)
+		blocklog.SaveEvent(vmctx.State(), vmctx.eventLookupKey(), eventData)
 	})
 	vmctx.requestEventIndex++
 }

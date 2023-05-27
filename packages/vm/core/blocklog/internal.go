@@ -86,13 +86,13 @@ func SaveRequestReceipt(partition kv.KVStore, rec *RequestReceipt, key RequestLo
 	return nil
 }
 
-func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey, contract isc.Hname) {
-	text := fmt.Sprintf("%s: %s", contract.String(), msg)
-	collections.NewMap(partition, prefixRequestEvents).SetAt(key.Bytes(), []byte(text))
+func SaveEvent(partition kv.KVStore, key EventLookupKey, eventData []byte) {
+	collections.NewMap(partition, prefixRequestEvents).SetAt(key.Bytes(), eventData)
 	scLut := collections.NewMap(partition, prefixSmartContractEventsLookup)
-	entries := scLut.GetAt(contract.Bytes())
+	contractKey := eventData[:4]
+	entries := scLut.GetAt(contractKey)
 	entries = append(entries, key.Bytes()...)
-	scLut.SetAt(contract.Bytes(), entries)
+	scLut.SetAt(contractKey, entries)
 }
 
 func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID isc.RequestID) RequestLookupKeyList {

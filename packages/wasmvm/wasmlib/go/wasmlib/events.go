@@ -7,14 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
-type ContractEvent struct {
-	ChainID    wasmtypes.ScChainID
-	ContractID wasmtypes.ScHname
-	Topic      string
-	Timestamp  uint64
-	Payload    []byte
-}
-
 type IEventHandlers interface {
 	CallHandler(topic string, dec *wasmtypes.WasmDecoder)
 	ID() uint32

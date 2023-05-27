@@ -22,7 +22,8 @@ func (h *magicContractHandler) GetEntropy() hashing.HashValue {
 
 // handler for ISCSandbox::triggerEvent
 func (h *magicContractHandler) TriggerEvent(s string) {
-	h.ctx.Event("EVM", []byte(s))
+	// TODO adjust triggerevent and all .sol code
+	h.ctx.Event("evm.event", []byte(s))
 }
 
 // handler for ISCSandbox::getRequestID

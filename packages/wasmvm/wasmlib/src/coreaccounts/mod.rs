@@ -7,10 +7,12 @@
 
 pub use consts::*;
 pub use contract::*;
+pub use eventhandlers::*;
 pub use params::*;
 pub use results::*;
 
 pub mod consts;
 pub mod contract;
+pub mod eventhandlers;
 pub mod params;
 pub mod results;

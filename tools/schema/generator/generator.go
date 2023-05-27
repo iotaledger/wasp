@@ -272,7 +272,7 @@ func (g *GenBase) generateInterface() error {
 	if err != nil {
 		return err
 	}
-	err = g.createSourceFile("events", len(g.s.Events) != 0)
+	err = g.createSourceFile("events", !g.s.CoreContracts && len(g.s.Events) != 0)
 	if err != nil {
 		return err
 	}

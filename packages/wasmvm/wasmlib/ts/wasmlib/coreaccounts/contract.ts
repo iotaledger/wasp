@@ -7,7 +7,7 @@ import * as wasmlib from '../index';
 import * as sc from './index';
 
 export class DepositCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
 
     public constructor(ctx: wasmlib.ScFuncClientContext) {
         this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncDeposit);
@@ -70,7 +70,7 @@ export class TransferAllowanceToCall {
 }
 
 export class WithdrawCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
 
     public constructor(ctx: wasmlib.ScFuncClientContext) {
         this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncWithdraw);

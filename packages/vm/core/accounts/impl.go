@@ -259,14 +259,8 @@ func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
 
 	ret := dict.New()
 	ret.Set(ParamFoundrySN, util.Uint32To4Bytes(sn))
-	eventFoundryCreate(ctx, sn)
+	eventFoundryCreated(ctx, sn)
 	return ret
-}
-
-func eventFoundryCreate(ctx isc.Sandbox, sn uint32) {
-	var buf []byte
-	buf = append(buf, util.Uint32To4Bytes(sn)...)
-	ctx.Event("foundryCreate", buf)
 }
 
 var errFoundryWithCirculatingSupply = coreerrors.Register("foundry must have zero circulating supply").Create()
@@ -296,6 +290,7 @@ func foundryDestroy(ctx isc.Sandbox) dict.Dict {
 	CreditToAccount(state, caller, &isc.Assets{
 		BaseTokens: storageDepositReleased,
 	})
+	eventFoundryDestroyed(ctx, sn)
 	return nil
 }
 
@@ -354,5 +349,6 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 		// storage deposit is returned to the caller account
 		CreditToAccount(state, caller, isc.NewAssetsBaseTokens(uint64(storageDepositAdjustment)))
 	}
+	eventFoundryModified(ctx, sn)
 	return nil
 }

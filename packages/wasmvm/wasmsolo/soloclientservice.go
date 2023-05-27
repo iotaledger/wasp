@@ -65,7 +65,7 @@ func (svc *SoloClientService) CurrentChainID() wasmtypes.ScChainID {
 }
 
 func (svc *SoloClientService) Event(topic string, timestamp uint64, payload []byte) {
-	event := wasmlib.ContractEvent{
+	event := wasmclient.ContractEvent{
 		ChainID:    svc.ctx.CurrentChainID(),
 		ContractID: wasmtypes.NewScHname(svc.ctx.scName),
 		Topic:      topic,
