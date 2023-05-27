@@ -43,6 +43,7 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm
 	vmctx.gasBudgetAdjusted = 0
 	vmctx.gasBurned = 0
 	vmctx.gasFeeCharged = 0
+	vmctx.sdCharged = 0
 	vmctx.GasBurnEnable(false)
 	initialGasBurnedTotal := vmctx.gasBurnedTotal
 	initialGasFeeChargedTotal := vmctx.gasFeeChargedTotal
@@ -120,7 +121,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	vmctx.creditToAccount(sender, vmctx.req.Assets())
 	vmctx.creditNFTToAccount(sender, vmctx.req.NFT())
 	if storageDepositNeeded > 0 {
-		// TODO the charged SD should be included in the receipt (?)
+		vmctx.sdCharged = storageDepositNeeded
 		vmctx.debitFromAccount(sender, isc.NewAssetsBaseTokens(storageDepositNeeded))
 	}
 }

@@ -27,9 +27,6 @@ docs/BlobInfoResponse.md
 docs/BlobListResponse.md
 docs/BlobValueResponse.md
 docs/BlockInfoResponse.md
-docs/BlockReceiptError.md
-docs/BlockReceiptsResponse.md
-docs/BurnLog.md
 docs/BurnRecord.md
 docs/CallTarget.md
 docs/ChainInfoResponse.md
@@ -95,7 +92,6 @@ docs/RequestDetail.md
 docs/RequestIDResponse.md
 docs/RequestIDsResponse.md
 docs/RequestProcessedResponse.md
-docs/RequestReceiptResponse.md
 docs/RequestsApi.md
 docs/StateResponse.md
 docs/StateTransaction.md
@@ -129,9 +125,6 @@ model_blob_info_response.go
 model_blob_list_response.go
 model_blob_value_response.go
 model_block_info_response.go
-model_block_receipt_error.go
-model_block_receipts_response.go
-model_burn_log.go
 model_burn_record.go
 model_call_target.go
 model_chain_info_response.go
@@ -192,7 +185,6 @@ model_request_detail.go
 model_request_id_response.go
 model_request_ids_response.go
 model_request_processed_response.go
-model_request_receipt_response.go
 model_state_response.go
 model_state_transaction.go
 model_transaction.go

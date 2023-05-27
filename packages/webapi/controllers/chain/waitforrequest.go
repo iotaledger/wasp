@@ -46,7 +46,7 @@ func (c *Controller) waitForRequestToFinish(e echo.Context) error {
 	var waitForL1Confirmation bool
 	echo.QueryParamsBinder(e).Bool("waitForL1Confirmation", &waitForL1Confirmation)
 
-	receipt, _, err := c.chainService.WaitForRequestProcessed(e.Request().Context(), chainID, requestID, waitForL1Confirmation, timeout)
+	receipt, err := c.chainService.WaitForRequestProcessed(e.Request().Context(), chainID, requestID, waitForL1Confirmation, timeout)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (c *Controller) waitForRequestToFinish(e echo.Context) error {
 	if receipt == nil {
 		// unprocessable request just return empty receipt (TODO maybe we need a better way to communicate this, but its good enough for now)
 		return e.JSON(http.StatusOK, models.ReceiptResponse{
-			Request:       "",
+			Request:       models.RequestDetail{},
 			RawError:      &isc.UnresolvedVMErrorJSON{},
 			ErrorMessage:  "",
 			GasBudget:     "",

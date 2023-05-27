@@ -2,25 +2,16 @@ package corecontracts
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/webapi/interfaces"
+	"github.com/iotaledger/wasp/packages/webapi/common"
 )
 
-type Governance struct {
-	vmService interfaces.VMService
-}
-
-func NewGovernance(vmService interfaces.VMService) *Governance {
-	return &Governance{
-		vmService: vmService,
-	}
-}
-
-func (g *Governance) GetAllowedStateControllerAddresses(chainID isc.ChainID) ([]iotago.Address, error) {
-	ret, err := g.vmService.CallViewByChainID(chainID, governance.Contract.Hname(), governance.ViewGetAllowedStateControllerAddresses.Hname(), nil)
+func GetAllowedStateControllerAddresses(ch chain.Chain) ([]iotago.Address, error) {
+	ret, err := common.CallView(ch, governance.Contract.Hname(), governance.ViewGetAllowedStateControllerAddresses.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -42,8 +33,8 @@ func (g *Governance) GetAllowedStateControllerAddresses(chainID isc.ChainID) ([]
 	return stateControllerAddresses, nil
 }
 
-func (g *Governance) GetChainOwner(chainID isc.ChainID) (isc.AgentID, error) {
-	ret, err := g.vmService.CallViewByChainID(chainID, governance.Contract.Hname(), governance.ViewGetChainOwner.Hname(), nil)
+func GetChainOwner(ch chain.Chain) (isc.AgentID, error) {
+	ret, err := common.CallView(ch, governance.Contract.Hname(), governance.ViewGetChainOwner.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -57,15 +48,15 @@ func (g *Governance) GetChainOwner(chainID isc.ChainID) (isc.AgentID, error) {
 	return ownerID, nil
 }
 
-func (g *Governance) GetChainInfo(chainID isc.ChainID) (*isc.ChainInfo, error) {
-	ret, err := g.vmService.CallViewByChainID(chainID, governance.Contract.Hname(), governance.ViewGetChainInfo.Hname(), nil)
+func GetChainInfo(ch chain.Chain) (*isc.ChainInfo, error) {
+	ret, err := common.CallView(ch, governance.Contract.Hname(), governance.ViewGetChainInfo.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	var chainInfo *isc.ChainInfo
 
-	if chainInfo, err = governance.GetChainInfo(ret, chainID); err != nil {
+	if chainInfo, err = governance.GetChainInfo(ret, ch.ID()); err != nil {
 		return nil, err
 	}
 

@@ -2544,7 +2544,7 @@ type ApiBlocklogGetRequestReceiptRequest struct {
 	requestID string
 }
 
-func (r ApiBlocklogGetRequestReceiptRequest) Execute() (*RequestReceiptResponse, *http.Response, error) {
+func (r ApiBlocklogGetRequestReceiptRequest) Execute() (*ReceiptResponse, *http.Response, error) {
 	return r.ApiService.BlocklogGetRequestReceiptExecute(r)
 }
 
@@ -2566,13 +2566,13 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceipt(ctx context.Context,
 }
 
 // Execute executes the request
-//  @return RequestReceiptResponse
-func (a *CorecontractsApiService) BlocklogGetRequestReceiptExecute(r ApiBlocklogGetRequestReceiptRequest) (*RequestReceiptResponse, *http.Response, error) {
+//  @return ReceiptResponse
+func (a *CorecontractsApiService) BlocklogGetRequestReceiptExecute(r ApiBlocklogGetRequestReceiptRequest) (*ReceiptResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *RequestReceiptResponse
+		localVarReturnValue  *ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetRequestReceipt")
@@ -2659,7 +2659,7 @@ type ApiBlocklogGetRequestReceiptsOfBlockRequest struct {
 	blockIndex uint32
 }
 
-func (r ApiBlocklogGetRequestReceiptsOfBlockRequest) Execute() (*BlockReceiptsResponse, *http.Response, error) {
+func (r ApiBlocklogGetRequestReceiptsOfBlockRequest) Execute() ([]ReceiptResponse, *http.Response, error) {
 	return r.ApiService.BlocklogGetRequestReceiptsOfBlockExecute(r)
 }
 
@@ -2681,13 +2681,13 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlock(ctx context.
 }
 
 // Execute executes the request
-//  @return BlockReceiptsResponse
-func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlockExecute(r ApiBlocklogGetRequestReceiptsOfBlockRequest) (*BlockReceiptsResponse, *http.Response, error) {
+//  @return []ReceiptResponse
+func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlockExecute(r ApiBlocklogGetRequestReceiptsOfBlockRequest) ([]ReceiptResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *BlockReceiptsResponse
+		localVarReturnValue  []ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetRequestReceiptsOfBlock")
@@ -2776,7 +2776,7 @@ type ApiBlocklogGetRequestReceiptsOfLatestBlockRequest struct {
 	chainID string
 }
 
-func (r ApiBlocklogGetRequestReceiptsOfLatestBlockRequest) Execute() (*BlockReceiptsResponse, *http.Response, error) {
+func (r ApiBlocklogGetRequestReceiptsOfLatestBlockRequest) Execute() ([]ReceiptResponse, *http.Response, error) {
 	return r.ApiService.BlocklogGetRequestReceiptsOfLatestBlockExecute(r)
 }
 
@@ -2796,13 +2796,13 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlock(ctx co
 }
 
 // Execute executes the request
-//  @return BlockReceiptsResponse
-func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlockExecute(r ApiBlocklogGetRequestReceiptsOfLatestBlockRequest) (*BlockReceiptsResponse, *http.Response, error) {
+//  @return []ReceiptResponse
+func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlockExecute(r ApiBlocklogGetRequestReceiptsOfLatestBlockRequest) ([]ReceiptResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *BlockReceiptsResponse
+		localVarReturnValue  []ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetRequestReceiptsOfLatestBlock")

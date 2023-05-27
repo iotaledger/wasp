@@ -270,9 +270,9 @@ func (ch *Chain) GetRequestReceipt(reqID isc.RequestID, nodeIndex ...int) (*apic
 	return receipt, err
 }
 
-func (ch *Chain) GetRequestReceiptsForBlock(blockIndex *uint32, nodeIndex ...int) ([]apiclient.RequestReceiptResponse, error) {
+func (ch *Chain) GetRequestReceiptsForBlock(blockIndex *uint32, nodeIndex ...int) ([]apiclient.ReceiptResponse, error) {
 	var err error
-	var receipts *apiclient.BlockReceiptsResponse
+	var receipts []apiclient.ReceiptResponse
 
 	if blockIndex != nil {
 		receipts, _, err = ch.Cluster.WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetRequestReceiptsOfBlock(context.Background(), ch.ChainID.String(), *blockIndex).
@@ -286,5 +286,5 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex *uint32, nodeIndex ...int
 		return nil, err
 	}
 
-	return receipts.Receipts, nil
+	return receipts, nil
 }
