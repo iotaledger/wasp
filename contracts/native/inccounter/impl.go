@@ -37,10 +37,6 @@ const (
 	VarDescription = "dscr"
 )
 
-func eventCounter(ctx isc.Sandbox, val int64) {
-	ctx.Event(fmt.Sprintf("inccounter.counter counter = %d", val))
-}
-
 func initialize(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("inccounter.init in %s", ctx.Contract().String())
 	params := ctx.Params()

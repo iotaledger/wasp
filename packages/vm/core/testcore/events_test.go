@@ -1,10 +1,10 @@
 package testcore
 
 import (
-	"fmt"
 	"math"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -26,16 +26,15 @@ var (
 
 	manyEventsContractProcessor = manyEventsContract.Processor(nil,
 		funcManyEvents.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-			n := int(codec.MustDecodeUint32(ctx.Params().Get("n")))
-			for i := 0; i < n; i++ {
-				ctx.Event(fmt.Sprintf("testing many events %d", i))
+			n := codec.MustDecodeUint32(ctx.Params().Get("n"))
+			for i := uint32(0); i < n; i++ {
+				ctx.Event("event.test", util.Uint32To4Bytes(n))
 			}
 			return nil
 		}),
 		funcBigEvent.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-			n := int(codec.MustDecodeUint32(ctx.Params().Get("n")))
-			buf := make([]byte, n)
-			ctx.Event(string(buf))
+			n := codec.MustDecodeUint32(ctx.Params().Get("n"))
+			ctx.Event("event.big", make([]byte, n))
 			return nil
 		}),
 	)
@@ -241,5 +240,8 @@ func TestGetEvents(t *testing.T) {
 }
 
 func checkEventCounter(t *testing.T, event string, value int64) {
-	require.Contains(t, event, fmt.Sprintf("counter = %d", value))
+	buf := []byte(event)
+	counter, err := util.Int64From8Bytes(buf[len(buf)-8:])
+	require.NoError(t, err)
+	require.EqualValues(t, counter, value)
 }

@@ -27,13 +27,13 @@ impl EventHandlers {
 pub struct EventEncoder {}
 
 impl EventEncoder {
-    pub fn new() -> WasmEncoder {
+    pub fn new(topic: &str) -> WasmEncoder {
         let mut enc = WasmEncoder::new();
-        uint64_encode(&mut enc, ScFuncContext {}.timestamp());
+        string_encode(&mut enc, topic);
         enc
     }
 
-    pub fn emit(topic: &str, enc: &WasmEncoder) {
-        ScFuncContext {}.event(&(topic.to_string() + "|" + &hex_encode(&enc.buf())));
+    pub fn emit(enc: &WasmEncoder) {
+        ScFuncContext {}.event(&enc.buf());
     }
 }

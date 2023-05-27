@@ -14,12 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/websocket/commands"
 )
 
-type ContractEvent struct {
-	ChainID    wasmtypes.ScChainID
-	ContractID wasmtypes.ScHname
-	Data       string
-}
-
 type WasmClientEvents struct {
 	chainID    wasmtypes.ScChainID
 	contractID wasmtypes.ScHname
@@ -61,10 +55,16 @@ func eventLoop(ctx context.Context, ws *websocket.Conn, eventHandlers *[]*WasmCl
 		items := evt.Payload.([]interface{})
 		for _, item := range items {
 			parts := strings.Split(item.(string), ": ")
-			event := ContractEvent{
+			buf := wasmtypes.HexDecode(parts[1])
+			dec := wasmtypes.NewWasmDecoder(buf)
+			topic := wasmtypes.StringDecode(dec)
+			payload := dec.FixedBytes(dec.Length())
+			event := wasmlib.ContractEvent{
 				ChainID:    wasmtypes.ChainIDFromString(evt.ChainID),
 				ContractID: wasmtypes.HnameFromString(parts[0]),
-				Data:       parts[1],
+				Topic:      topic,
+				Payload:    payload,
+				Timestamp:  wasmtypes.Uint64FromBytes(payload[:wasmtypes.ScUint64Length]),
 			}
 			for _, h := range *eventHandlers {
 				h.ProcessEvent(&event)
@@ -73,19 +73,13 @@ func eventLoop(ctx context.Context, ws *websocket.Conn, eventHandlers *[]*WasmCl
 	}
 }
 
-func (h WasmClientEvents) ProcessEvent(event *ContractEvent) {
+func (h WasmClientEvents) ProcessEvent(event *wasmlib.ContractEvent) {
 	if event.ContractID != h.contractID || event.ChainID != h.chainID {
 		return
 	}
-	sep := strings.Index(event.Data, "|")
-	if sep < 0 {
-		return
-	}
-	topic := event.Data[:sep]
-	fmt.Printf("%s %s %s\n", event.ChainID.String(), event.ContractID.String(), topic)
-	buf := wasmtypes.HexDecode(event.Data[sep+1:])
-	dec := wasmtypes.NewWasmDecoder(buf)
-	h.handler.CallHandler(topic, dec)
+	fmt.Printf("%s %s %s\n", event.ChainID.String(), event.ContractID.String(), event.Topic)
+	dec := wasmtypes.NewWasmDecoder(event.Payload)
+	h.handler.CallHandler(event.Topic, dec)
 }
 
 func RemoveHandler(eventHandlers []*WasmClientEvents, eventsID uint32) []*WasmClientEvents {

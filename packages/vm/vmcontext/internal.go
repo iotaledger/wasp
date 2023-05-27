@@ -7,6 +7,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -198,14 +199,19 @@ func (vmctx *VMContext) storeUnprocessable(lastInternalAssetUTXOIndex uint16) {
 	})
 }
 
-func (vmctx *VMContext) MustSaveEvent(contract isc.Hname, msg string) {
+func (vmctx *VMContext) MustSaveEvent(hContract isc.Hname, topic string, payload []byte) {
 	if vmctx.requestEventIndex == math.MaxUint16 {
 		panic(vm.ErrTooManyEvents)
 	}
-	vmctx.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
+	vmctx.Debugf("MustSaveEvent/%s: msg: '%s'", hContract.String(), topic)
 
+	buf := util.Uint16To2Bytes(uint16(len(topic)))
+	buf = append(buf, []byte(topic)...)
+	timestamp := uint64(vmctx.Timestamp().UnixNano())
+	buf = append(buf, util.Uint64To8Bytes(timestamp)...)
+	buf = append(buf, payload...)
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		blocklog.SaveEvent(vmctx.State(), msg, vmctx.eventLookupKey(), contract)
+		blocklog.SaveEvent(vmctx.State(), string(buf), vmctx.eventLookupKey(), hContract)
 	})
 	vmctx.requestEventIndex++
 }

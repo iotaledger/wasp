@@ -1,7 +1,6 @@
 package accounts
 
 import (
-	"fmt"
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -260,8 +259,14 @@ func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
 
 	ret := dict.New()
 	ret.Set(ParamFoundrySN, util.Uint32To4Bytes(sn))
-	ctx.Event(fmt.Sprintf("Foundry created, serial number = %d", sn))
+	eventFoundryCreate(ctx, sn)
 	return ret
+}
+
+func eventFoundryCreate(ctx isc.Sandbox, sn uint32) {
+	var buf []byte
+	buf = append(buf, util.Uint32To4Bytes(sn)...)
+	ctx.Event("foundryCreate", buf)
 }
 
 var errFoundryWithCirculatingSupply = coreerrors.Register("foundry must have zero circulating supply").Create()

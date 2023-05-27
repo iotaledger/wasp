@@ -236,8 +236,8 @@ pub trait ScSandboxFunc: ScSandbox {
     }
 
     // signals an event on the node that external entities can subscribe to
-    fn event(&self, msg: &str) {
-        sandbox(FN_EVENT, &string_to_bytes(msg));
+    fn event(&self, buf: &[u8]) {
+        sandbox(FN_EVENT, buf);
     }
 
     // retrieve the assets that were minted in this transaction

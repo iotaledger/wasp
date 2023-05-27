@@ -10,9 +10,14 @@ author: Eric Hop <eric@iota.org>
 license: Apache-2.0
 repository: https://github.com/iotaledger/wasp
 
+events:
+  rotate:
+    newAddr: Address
+    oldAddr: Address
 structs: {}
 typedefs: {} 
 state: {}
+
 funcs:
 
   # state controller

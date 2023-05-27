@@ -3,18 +3,30 @@
 
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
-import {hexDecode, IEventHandlers, WasmDecoder} from 'wasmlib';
+import {
+    hexDecode,
+    IEventHandlers,
+    ScUint64Length,
+    stringDecode,
+    uint64Decode,
+    uint64FromBytes,
+    WasmDecoder
+} from 'wasmlib';
 import {RawData, WebSocket} from 'ws';
 
 export class ContractEvent {
     chainID: wasmlib.ScChainID;
     contractID: wasmlib.ScHname;
-    data: string;
+    topic: string;
+    timestamp: u64;
+    payload: Uint8Array;
 
-    public constructor(chainID: string, contractID: string, data: string) {
+    public constructor(chainID: string, contractID: string, dec: WasmDecoder) {
         this.chainID = wasmlib.chainIDFromString(chainID);
         this.contractID = wasmlib.hnameFromString(contractID);
-        this.data = data;
+        this.topic = stringDecode(dec);
+        this.payload = dec.fixedBytes(dec.length());
+        this.timestamp = uint64FromBytes(this.payload.slice(0, ScUint64Length));
     }
 }
 
@@ -60,7 +72,9 @@ export class WasmClientEvents {
         const items: string[] = msg.payload;
         for (const item of items) {
             const parts = item.split(': ');
-            const event = new ContractEvent(msg.chainID, parts[0], parts[1]);
+            const buf = hexDecode(parts[1]);
+            const dec = new WasmDecoder(buf);
+            const event = new ContractEvent(msg.chainID, parts[0], dec);
             for (const h of eventHandlers) {
                 h.processEvent(event);
             }

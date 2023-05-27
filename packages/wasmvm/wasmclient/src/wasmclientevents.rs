@@ -36,7 +36,9 @@ pub struct EventMessage {
 pub struct ContractEvent {
     pub chain_id: ScChainID,
     pub contract_id: ScHname,
-    pub data: String,
+    pub topic: String,
+    pub timestamp: u64,
+    pub payload: Vec<u8>,
 }
 
 pub struct WasmClientEvents {
@@ -78,10 +80,16 @@ impl WasmClientEvents {
                 if let Ok(json) = serde_json::from_str::<EventMessage>(text) {
                     for item in json.payload {
                         let parts: Vec<String> = item.split(": ").map(|s| s.into()).collect();
+                        let buf = hex_decode(&parts[1]);
+                        let mut dec = WasmDecoder::new(&buf);
+                        let topic = string_decode(&mut dec);
+                        let payload = dec.fixed_bytes(dec.length() as usize);
                         let event = ContractEvent {
                             chain_id: chain_id_from_string(&json.chain_id),
                             contract_id: hname_from_string(&parts[0]),
-                            data: parts[1].clone(),
+                            topic: topic,
+                            payload: payload,
+                            timestamp: uint64_from_bytes(&payload[..SC_UINT64_LENGTH]),
                         };
                         let event_handlers = event_handlers.lock().unwrap();
                         for event_processor in event_handlers.iter() {

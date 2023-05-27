@@ -23,9 +23,9 @@ $#each eventComment _eventComment
     $evtName($endFunc
 $#each event eventParam
 $#if event eventEndFunc2
-        const enc = wasmlib.eventEncoder();
+        const enc = wasmlib.eventEncoder('$package.$evtName');
 $#each event eventEmit
-        wasmlib.eventEmit('$package.$evtName', enc);
+        wasmlib.eventEmit(enc);
     }
 `,
 	// *******************************

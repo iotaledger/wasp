@@ -86,6 +86,11 @@ export class WasmDecoder {
         return value;
     }
 
+    // returns the number of bytes left in the byte buffer
+    length(): u32 {
+        return this.buf.length as u32;
+    }
+
     // peeks at the next byte in the byte buffer
     peek(): u8 {
         if (this.buf.length == 0) {

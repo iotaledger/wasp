@@ -7,6 +7,14 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
+type ContractEvent struct {
+	ChainID    wasmtypes.ScChainID
+	ContractID wasmtypes.ScHname
+	Topic      string
+	Timestamp  uint64
+	Payload    []byte
+}
+
 type IEventHandlers interface {
 	CallHandler(topic string, dec *wasmtypes.WasmDecoder)
 	ID() uint32
@@ -19,12 +27,12 @@ func EventHandlersGenerateID() uint32 {
 	return nextID
 }
 
-func NewEventEncoder() *wasmtypes.WasmEncoder {
+func NewEventEncoder(topic string) *wasmtypes.WasmEncoder {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.Uint64Encode(enc, ScFuncContext{}.Timestamp())
+	wasmtypes.StringEncode(enc, topic)
 	return enc
 }
 
-func EventEmit(topic string, enc *wasmtypes.WasmEncoder) {
-	ScFuncContext{}.Event(topic + "|" + wasmtypes.HexEncode(enc.Buf()))
+func EventEmit(enc *wasmtypes.WasmEncoder) {
+	ScFuncContext{}.Event(enc.Buf())
 }
