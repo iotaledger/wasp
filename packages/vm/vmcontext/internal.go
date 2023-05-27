@@ -164,9 +164,10 @@ func (vmctx *VMContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.R
 	if vmctx.task.EnableGasBurnLogging {
 		vmctx.gasBurnLog = gas.NewGasBurnLog()
 	}
+	key := vmctx.requestLookupKey()
 	var err error
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		err = blocklog.SaveRequestReceipt(vmctx.State(), receipt, vmctx.requestLookupKey())
+		err = blocklog.SaveRequestReceipt(s, receipt, key)
 	})
 	if err != nil {
 		panic(err)
@@ -214,8 +215,9 @@ func (vmctx *VMContext) MustSaveEvent(hContract isc.Hname, topic string, payload
 	eventData = append(eventData, util.Uint16To2Bytes(uint16(len(topic)))...)
 	eventData = append(eventData, util.Uint64To8Bytes(timestamp)...)
 	eventData = append(eventData, payload...)
+	key := vmctx.eventLookupKey()
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		blocklog.SaveEvent(vmctx.State(), vmctx.eventLookupKey(), eventData)
+		blocklog.SaveEvent(s, key, eventData)
 	})
 	vmctx.requestEventIndex++
 }
