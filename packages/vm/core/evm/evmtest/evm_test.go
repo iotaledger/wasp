@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
@@ -434,7 +435,8 @@ func TestISCTriggerEvent(t *testing.T) {
 	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
 	require.NoError(t, err)
 	require.Len(t, ev, 1)
-	require.Contains(t, string(ev[0]), "Hi from EVM!")
+	event := blocklog.EventDecode(ev[0])
+	require.Equal(t, string(event.Payload), "Hi from EVM!")
 }
 
 func TestISCTriggerEventThenFail(t *testing.T) {
@@ -1633,7 +1635,8 @@ func TestStaticCall(t *testing.T) {
 	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
 	require.NoError(t, err)
 	require.Len(t, ev, 1)
-	require.Contains(t, string(ev[0]), "non-static")
+	event := blocklog.EventDecode(ev[0])
+	require.Equal(t, string(event.Payload), "non-static")
 }
 
 func TestSelfDestruct(t *testing.T) {

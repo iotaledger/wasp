@@ -239,9 +239,9 @@ func TestGetEvents(t *testing.T) {
 	checkEventCounter(t, events[0], 0)
 }
 
-func checkEventCounter(t *testing.T, event []byte, value int64) {
-	// event counter is final part of event data (== payload)
-	counter, err := util.Int64From8Bytes(event[len(event)-8:])
+func checkEventCounter(t *testing.T, eventData []byte, value int64) {
+	event := blocklog.EventDecode(eventData)
+	counter, err := util.Int64From8Bytes(event.Payload)
 	require.NoError(t, err)
 	require.EqualValues(t, counter, value)
 }
