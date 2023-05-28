@@ -12,17 +12,17 @@ func eventDeploy(ctx isc.Sandbox, progHash hashing.HashValue, name string, descr
 	buf = append(buf, progHash.Bytes()...)
 	buf = append(buf, util.StringToBytes(name)...)
 	buf = append(buf, wasmtypes.StringToBytes(description)...)
-	ctx.Event("root.deploy", buf)
+	ctx.Event("coreroot.deploy", buf)
 }
 
 func eventGrant(ctx isc.Sandbox, deployer isc.AgentID) {
 	var buf []byte
 	buf = append(buf, deployer.Bytes()...)
-	ctx.Event("root.grant", buf)
+	ctx.Event("coreroot.grant", buf)
 }
 
 func eventRevoke(ctx isc.Sandbox, deployer isc.AgentID) {
 	var buf []byte
 	buf = append(buf, deployer.Bytes()...)
-	ctx.Event("root.revoke", buf)
+	ctx.Event("coreroot.revoke", buf)
 }

@@ -8,5 +8,5 @@ import (
 func eventStore(ctx isc.Sandbox, blobHash hashing.HashValue) {
 	var buf []byte
 	buf = append(buf, blobHash.Bytes()...)
-	ctx.Event("blob.store", buf)
+	ctx.Event("coreblob.store", buf)
 }
