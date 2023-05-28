@@ -197,20 +197,7 @@ func IsRequestProcessed(ch chain.Chain, requestID isc.RequestID) (bool, error) {
 	return isProcessed, nil
 }
 
-func eventsFromViewResult(viewResult dict.Dict) ([]string, error) {
-	eventCollection := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
-	eventCount := eventCollection.Len()
-
-	events := make([]string, eventCount)
-	for i := range events {
-		data := eventCollection.GetAt(uint16(i))
-		events[i] = string(data)
-	}
-
-	return events, nil
-}
-
-func GetEventsForRequest(ch chain.Chain, requestID isc.RequestID) ([]string, error) {
+func GetEventsForRequest(ch chain.Chain, requestID isc.RequestID) ([][]byte, error) {
 	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetEventsForRequest.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamRequestID: requestID,
 	}))
@@ -218,10 +205,10 @@ func GetEventsForRequest(ch chain.Chain, requestID isc.RequestID) ([]string, err
 		return nil, err
 	}
 
-	return eventsFromViewResult(ret)
+	return blocklog.EventsFromViewResult(ret), nil
 }
 
-func GetEventsForBlock(ch chain.Chain, blockIndex uint32) ([]string, error) {
+func GetEventsForBlock(ch chain.Chain, blockIndex uint32) ([][]byte, error) {
 	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetEventsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamBlockIndex: blockIndex,
 	}))
@@ -229,10 +216,10 @@ func GetEventsForBlock(ch chain.Chain, blockIndex uint32) ([]string, error) {
 		return nil, err
 	}
 
-	return eventsFromViewResult(ret)
+	return blocklog.EventsFromViewResult(ret), nil
 }
 
-func GetEventsForContract(ch chain.Chain, contractHname isc.Hname) ([]string, error) {
+func GetEventsForContract(ch chain.Chain, contractHname isc.Hname) ([][]byte, error) {
 	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetEventsForContract.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamContractHname: contractHname,
 	}))
@@ -240,5 +227,5 @@ func GetEventsForContract(ch chain.Chain, contractHname isc.Hname) ([]string, er
 		return nil, err
 	}
 
-	return eventsFromViewResult(ret)
+	return blocklog.EventsFromViewResult(ret), nil
 }

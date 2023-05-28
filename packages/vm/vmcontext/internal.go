@@ -213,11 +213,12 @@ func (vmctx *VMContext) MustSaveEvent(hContract isc.Hname, topic string, payload
 	eventData := make([]byte, 0, 4+2+len(topic)+8+len(payload))
 	eventData = append(eventData, util.Uint32To4Bytes(uint32(hContract))...)
 	eventData = append(eventData, util.Uint16To2Bytes(uint16(len(topic)))...)
+	eventData = append(eventData, []byte(topic)...)
 	eventData = append(eventData, util.Uint64To8Bytes(timestamp)...)
 	eventData = append(eventData, payload...)
-	key := vmctx.eventLookupKey()
+	eventKey := vmctx.eventLookupKey().Bytes()
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		blocklog.SaveEvent(s, key, eventData)
+		blocklog.SaveEvent(s, eventKey, eventData)
 	})
 	vmctx.requestEventIndex++
 }

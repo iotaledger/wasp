@@ -16,9 +16,9 @@ import (
 type ContractEvent struct {
 	ChainID    wasmtypes.ScChainID
 	ContractID wasmtypes.ScHname
-	Topic      string
-	Timestamp  uint64
 	Payload    []byte
+	Timestamp  uint64
+	Topic      string
 }
 
 type WasmClientEvents struct {
@@ -61,23 +61,28 @@ func eventLoop(ctx context.Context, ws *websocket.Conn, eventHandlers *[]*WasmCl
 		}
 		items := evt.Payload.([]interface{})
 		for _, item := range items {
-			buf := []byte(item.(string))
-			dec := wasmtypes.NewWasmDecoder(buf)
-			hContract := wasmtypes.HnameDecode(dec)
-			topic := wasmtypes.StringDecode(dec)
-			payload := dec.FixedBytes(dec.Length())
-			event := ContractEvent{
-				ChainID:    wasmtypes.ChainIDFromString(evt.ChainID),
-				ContractID: hContract,
-				Topic:      topic,
-				Payload:    payload,
-				Timestamp:  wasmtypes.Uint64FromBytes(payload[:wasmtypes.ScUint64Length]),
-			}
+			eventData := wasmtypes.HexDecode(item.(string))
+			event := NewContractEvent(evt.ChainID, eventData)
 			for _, h := range *eventHandlers {
 				h.ProcessEvent(&event)
 			}
 		}
 	}
+}
+
+func NewContractEvent(chainID string, eventData []byte) ContractEvent {
+	dec := wasmtypes.NewWasmDecoder(eventData)
+	hContract := wasmtypes.HnameDecode(dec)
+	topic := wasmtypes.StringDecode(dec)
+	payload := dec.FixedBytes(dec.Length())
+	event := ContractEvent{
+		ChainID:    wasmtypes.ChainIDFromString(chainID),
+		ContractID: hContract,
+		Payload:    payload,
+		Timestamp:  wasmtypes.Uint64FromBytes(payload[:wasmtypes.ScUint64Length]),
+		Topic:      topic,
+	}
+	return event
 }
 
 func (h WasmClientEvents) ProcessEvent(event *ContractEvent) {

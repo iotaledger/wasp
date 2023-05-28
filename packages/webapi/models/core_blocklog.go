@@ -54,5 +54,5 @@ type RequestProcessedResponse struct {
 }
 
 type EventsResponse struct {
-	Events []string `json:"events" swagger:"required"`
+	Events [][]byte `json:"events" swagger:"required"`
 }

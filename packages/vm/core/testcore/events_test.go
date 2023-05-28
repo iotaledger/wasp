@@ -150,15 +150,15 @@ func incrementSCCounter(t *testing.T, ch *solo.Chain) isc.RequestID {
 	return reqs[0].ID()
 }
 
-func getEventsForRequest(t *testing.T, chain *solo.Chain, reqID isc.RequestID) []string {
+func getEventsForRequest(t *testing.T, chain *solo.Chain, reqID isc.RequestID) [][]byte {
 	res, err := chain.CallView(blocklog.Contract.Name, blocklog.ViewGetEventsForRequest.Name,
 		blocklog.ParamRequestID, reqID,
 	)
 	require.NoError(t, err)
-	return EventsViewResultToStringArray(res)
+	return blocklog.EventsFromViewResult(res)
 }
 
-func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...int32) []string {
+func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...int32) [][]byte {
 	var res dict.Dict
 	var err error
 	if len(blockNumber) > 0 {
@@ -169,17 +169,17 @@ func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...int32) []
 		res, err = chain.CallView(blocklog.Contract.Name, blocklog.ViewGetEventsForBlock.Name)
 	}
 	require.NoError(t, err)
-	return EventsViewResultToStringArray(res)
+	return blocklog.EventsFromViewResult(res)
 }
 
-func getEventsForSC(t *testing.T, chain *solo.Chain, fromBlock, toBlock int32) []string {
+func getEventsForSC(t *testing.T, chain *solo.Chain, fromBlock, toBlock int32) [][]byte {
 	res, err := chain.CallView(blocklog.Contract.Name, blocklog.ViewGetEventsForContract.Name,
 		blocklog.ParamContractHname, inccounter.Contract.Hname(),
 		blocklog.ParamFromBlock, fromBlock,
 		blocklog.ParamToBlock, toBlock,
 	)
 	require.NoError(t, err)
-	return EventsViewResultToStringArray(res)
+	return blocklog.EventsFromViewResult(res)
 }
 
 func TestGetEvents(t *testing.T) {
@@ -239,9 +239,9 @@ func TestGetEvents(t *testing.T) {
 	checkEventCounter(t, events[0], 0)
 }
 
-func checkEventCounter(t *testing.T, event string, value int64) {
-	buf := []byte(event)
-	counter, err := util.Int64From8Bytes(buf[len(buf)-8:])
+func checkEventCounter(t *testing.T, event []byte, value int64) {
+	// event counter is final part of event data (== payload)
+	counter, err := util.Int64From8Bytes(event[len(event)-8:])
 	require.NoError(t, err)
 	require.EqualValues(t, counter, value)
 }

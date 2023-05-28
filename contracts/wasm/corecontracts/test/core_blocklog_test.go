@@ -195,7 +195,7 @@ func TestGetEventsForRequest(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, uint32(len(events)), f.Results.Event().Length())
 	for i := uint32(0); i < uint32(len(events)); i++ {
-		assert.Equal(t, []byte(events[i]), f.Results.Event().GetBytes(i).Value())
+		assert.Equal(t, events[i], f.Results.Event().GetBytes(i).Value())
 	}
 }
 
@@ -212,7 +212,7 @@ func TestGetEventsForBlock(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, uint32(len(events)), f.Results.Event().Length())
 		for i := uint32(0); i < uint32(len(events)); i++ {
-			assert.Equal(t, []byte(events[i]), f.Results.Event().GetBytes(i).Value())
+			assert.Equal(t, events[i], f.Results.Event().GetBytes(i).Value())
 		}
 	}
 }
@@ -232,6 +232,6 @@ func TestGetEventsForContract(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, uint32(len(events)), f.Results.Event().Length())
 	for i := uint32(0); i < uint32(len(events)); i++ {
-		assert.Equal(t, []byte(events[i]), f.Results.Event().GetBytes(i).Value())
+		assert.Equal(t, events[i], f.Results.Event().GetBytes(i).Value())
 	}
 }

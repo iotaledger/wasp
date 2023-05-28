@@ -490,8 +490,8 @@ func TestFoundries(t *testing.T) {
 		events, err := ch.GetEventsForContract(accounts.Contract.Name)
 		require.NoError(t, err)
 		require.Len(t, events, 1)
-		buf := []byte(events[0])
-		sn, err = util.Uint32From4Bytes(buf[len(buf)-4:])
+		eventData := events[0]
+		sn, err = util.Uint32From4Bytes(eventData[len(eventData)-4:])
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
 	})
