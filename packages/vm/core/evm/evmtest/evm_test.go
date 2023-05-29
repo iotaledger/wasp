@@ -435,7 +435,8 @@ func TestISCTriggerEvent(t *testing.T) {
 	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
 	require.NoError(t, err)
 	require.Len(t, ev, 1)
-	event := blocklog.EventDecode(ev[0])
+	event, err := blocklog.EventDecode(ev[0])
+	require.NoError(t, err)
 	require.Equal(t, string(event.Payload), "Hi from EVM!")
 }
 
@@ -1635,7 +1636,8 @@ func TestStaticCall(t *testing.T) {
 	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
 	require.NoError(t, err)
 	require.Len(t, ev, 1)
-	event := blocklog.EventDecode(ev[0])
+	event, err := blocklog.EventDecode(ev[0])
+	require.NoError(t, err)
 	require.Equal(t, string(event.Payload), "non-static")
 }
 

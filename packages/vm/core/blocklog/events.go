@@ -2,6 +2,7 @@ package blocklog
 
 import (
 	"encoding/binary"
+	"errors"
 	"io"
 
 	"github.com/iotaledger/wasp/packages/isc"
@@ -57,11 +58,17 @@ type EventData struct {
 	Timestamp  uint64
 }
 
-func EventDecode(eventData []byte) *EventData {
+func EventDecode(eventData []byte) (*EventData, error) {
+	if len(eventData) < 4+2+8 {
+		return nil, errors.New("insufficient event data")
+	}
 	hContract := isc.Hname(binary.LittleEndian.Uint32(eventData[:4]))
 	eventData = eventData[4:]
 	length := binary.LittleEndian.Uint16(eventData[:2])
 	eventData = eventData[2:]
+	if len(eventData) < int(length)+8 {
+		return nil, errors.New("insufficient event topic data")
+	}
 	topic := string(eventData[:length])
 	eventData = eventData[length:]
 	timestamp := binary.LittleEndian.Uint64(eventData[:8])
@@ -70,5 +77,5 @@ func EventDecode(eventData []byte) *EventData {
 		Payload:    eventData[8:],
 		Timestamp:  timestamp,
 		Topic:      topic,
-	}
+	}, nil
 }
