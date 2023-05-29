@@ -55,12 +55,17 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 const (
@@ -89,13 +94,13 @@ type Mempool interface {
 	// It can mean simple advance of the chain, or a rollback or a reorg.
 	// This function is guaranteed to be called in the order, which is
 	// considered the chain block order by the ChainMgr.
-	TrackNewChainHead(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block)
+	TrackNewChainHead(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) <-chan bool
 	// Invoked by the chain when a new off-ledger request is received from a node user.
 	// Inter-node off-ledger dissemination is NOT performed via this function.
 	ReceiveOnLedgerRequest(request isc.OnLedgerRequest)
 	// This is called when this node receives an off-ledger request from a user directly.
 	// I.e. when this node is an entry point of the off-ledger request.
-	ReceiveOffLedgerRequest(request isc.OffLedgerRequest)
+	ReceiveOffLedgerRequest(request isc.OffLedgerRequest) bool
 	// Invoked by the ChainMgr when a time of a tangle changes.
 	TangleTimeUpdated(tangleTime time.Time)
 	// Invoked by the chain when a set of server nodes has changed.
@@ -184,11 +189,12 @@ type reqConsensusRequests struct {
 }
 
 type reqTrackNewChainHead struct {
-	st      state.State
-	from    *isc.AliasOutputWithID
-	till    *isc.AliasOutputWithID
-	added   []state.Block
-	removed []state.Block
+	st         state.State
+	from       *isc.AliasOutputWithID
+	till       *isc.AliasOutputWithID
+	added      []state.Block
+	removed    []state.Block
+	responseCh chan<- bool // only for tests, shouldn't be used in the chain package
 }
 
 func New(
@@ -198,6 +204,7 @@ func New(
 	net peering.NetworkProvider,
 	log *logger.Logger,
 	metrics metrics.IChainMempoolMetrics,
+	pipeMetrics metrics.IChainPipeMetrics,
 	listener ChainListener,
 ) Mempool {
 	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("Mempool")) // ChainID × Mempool
@@ -230,6 +237,17 @@ func New(
 		metrics:                        metrics,
 		listener:                       listener,
 	}
+
+	pipeMetrics.TrackPipeLen("mp-serverNodesUpdatedPipe", mpi.serverNodesUpdatedPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-accessNodesUpdatedPipe", mpi.accessNodesUpdatedPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-reqConsensusProposalPipe", mpi.reqConsensusProposalPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-reqConsensusRequestsPipe", mpi.reqConsensusRequestsPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-reqReceiveOnLedgerRequestPipe", mpi.reqReceiveOnLedgerRequestPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-reqReceiveOffLedgerRequestPipe", mpi.reqReceiveOffLedgerRequestPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-reqTangleTimeUpdatedPipe", mpi.reqTangleTimeUpdatedPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-reqTrackNewChainHeadPipe", mpi.reqTrackNewChainHeadPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-netRecvPipe", mpi.netRecvPipe.Len)
+
 	mpi.distSync = distsync.New(
 		mpi.pubKeyAsNodeID(nodeIdentity.GetPublicKey()),
 		mpi.distSyncRequestNeededCB,
@@ -254,16 +272,22 @@ func (mpi *mempoolImpl) TangleTimeUpdated(tangleTime time.Time) {
 	mpi.reqTangleTimeUpdatedPipe.In() <- tangleTime
 }
 
-func (mpi *mempoolImpl) TrackNewChainHead(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
-	mpi.reqTrackNewChainHeadPipe.In() <- &reqTrackNewChainHead{st, from, till, added, removed}
+func (mpi *mempoolImpl) TrackNewChainHead(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) <-chan bool {
+	responseCh := make(chan bool)
+	mpi.reqTrackNewChainHeadPipe.In() <- &reqTrackNewChainHead{st, from, till, added, removed, responseCh}
+	return responseCh
 }
 
 func (mpi *mempoolImpl) ReceiveOnLedgerRequest(request isc.OnLedgerRequest) {
 	mpi.reqReceiveOnLedgerRequestPipe.In() <- request
 }
 
-func (mpi *mempoolImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
-	mpi.reqReceiveOffLedgerRequestPipe.In() <- request
+func (mpi *mempoolImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest) bool {
+	if mpi.shouldAddOffledgerRequest(request) {
+		mpi.reqReceiveOffLedgerRequestPipe.In() <- request
+		return true
+	}
+	return false
 }
 
 func (mpi *mempoolImpl) ServerNodesUpdated(committeePubKeys, serverNodePubKeys []*cryptolib.PublicKey) {
@@ -424,13 +448,18 @@ func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) {
 		mpi.log.Warn("Dropping non-OffLedger request form dist %T: %+v", request, request)
 		return
 	}
-	mpi.addOffLedgerRequestIfUnseen(offLedgerReq)
+	if mpi.shouldAddOffledgerRequest(offLedgerReq) {
+		mpi.addOffledger(offLedgerReq)
+	}
 }
 
-func (mpi *mempoolImpl) addOffLedgerRequestIfUnseen(request isc.OffLedgerRequest) bool {
-	mpi.log.Debugf("trying to add to mempool, requestID: %s", request.ID().String())
+func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) bool {
+	mpi.log.Debugf("trying to add to mempool, requestID: %s", req.ID().String())
+	if mpi.offLedgerPool.Has(isc.RequestRefFromRequest(req)) {
+		return false
+	}
 	if mpi.chainHeadState != nil {
-		requestID := request.ID()
+		requestID := req.ID()
 		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, requestID)
 		if err != nil {
 			panic(fmt.Errorf(
@@ -443,14 +472,29 @@ func (mpi *mempoolImpl) addOffLedgerRequestIfUnseen(request isc.OffLedgerRequest
 		if processed {
 			return false // Already processed.
 		}
+		accountsPartition := subrealm.NewReadOnly(mpi.chainHeadState, kv.Key(accounts.Contract.Hname().Bytes()))
+		govPartition := subrealm.NewReadOnly(mpi.chainHeadState, kv.Key(governance.Contract.Hname().Bytes()))
+		// check user has on-chain balance
+		if !accounts.AccountExists(accountsPartition, req.SenderAccount()) {
+			// make an exception for gov calls (sender is chan owner and target is gov contract)
+			chainOwner := governance.MustGetChainOwnerID(govPartition)
+			isGovRequest := req.SenderAccount().Equals(chainOwner) && req.CallTarget().Contract == governance.Contract.Hname()
+			if !isGovRequest {
+				return false // no on-chain funds
+			}
+		}
+		accountNonce := accounts.GetMaxAssumedNonce(accountsPartition, req.SenderAccount())
+		if err := vmcontext.CheckNonce(req, accountNonce); err != nil {
+			return false // bad nonce
+		}
 	}
-	if !mpi.offLedgerPool.Has(isc.RequestRefFromRequest(request)) {
-		mpi.offLedgerPool.Add(request)
-		mpi.metrics.IncRequestsReceived(request)
-		mpi.log.Debugf("accepted by the mempool, requestID: %s", request.ID().String())
-		return true
-	}
-	return false
+	return true
+}
+
+func (mpi *mempoolImpl) addOffledger(request isc.OffLedgerRequest) {
+	mpi.offLedgerPool.Add(request)
+	mpi.metrics.IncRequestsReceived(request)
+	mpi.log.Debugf("accepted by the mempool, requestID: %s", request.ID().String())
 }
 
 func (mpi *mempoolImpl) handleServerNodesUpdated(recv *reqServerNodesUpdated) {
@@ -605,9 +649,8 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 
 func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
 	mpi.log.Debugf("Received request %v from outside.", request.ID())
-	if mpi.addOffLedgerRequestIfUnseen(request) {
-		mpi.sendMessages(mpi.distSync.Input(distsync.NewInputPublishRequest(request)))
-	}
+	mpi.addOffledger(request)
+	mpi.sendMessages(mpi.distSync.Input(distsync.NewInputPublishRequest(request)))
 }
 
 func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
@@ -640,7 +683,10 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 
 // - Re-add all the request from the reverted blocks.
 // - Cleanup requests from the blocks that were added.
+//
+//nolint:gocyclo
 func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
+	defer close(req.responseCh)
 	mpi.log.Debugf("handleTrackNewChainHead, %v from %v, current=%v", req.till, req.from, mpi.chainHeadAO)
 	if len(req.removed) != 0 {
 		mpi.log.Infof("Reorg detected, removing %v blocks, adding %v blocks", len(req.removed), len(req.added))
@@ -654,6 +700,9 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 			panic(fmt.Errorf("cannot extract receipts from block: %w", err))
 		}
 		for _, receipt := range blockReceipts {
+			if blocklog.HasUnprocessableRequestBeenRemovedInBlock(block, receipt.Request.ID()) {
+				continue // do not add unprocessable requests that were successfully retried back into the mempool in case of a reorg
+			}
 			mpi.tryReAddRequest(receipt.Request)
 		}
 	}
@@ -669,6 +718,14 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 		for _, receipt := range blockReceipts {
 			mpi.metrics.IncRequestsProcessed()
 			mpi.tryRemoveRequest(receipt.Request)
+		}
+		unprocessableRequests, err := blocklog.UnprocessableRequestsAddedInBlock(block)
+		if err != nil {
+			panic(fmt.Errorf("cannot extract unprocessable requests from block: %w", err))
+		}
+		for _, req := range unprocessableRequests {
+			mpi.metrics.IncRequestsProcessed()
+			mpi.tryRemoveRequest(req)
 		}
 	}
 	//

@@ -13,10 +13,13 @@ repository: https://github.com/iotaledger/wasp
 events: {}
 structs: {}
 typedefs: {}
+
 state:
-    owner: AgentID # current owner of this smart contract
+  owner: AgentID # current owner of this smart contract
+
 funcs:
-    f:
-        params:
-            n: Uint32
+  f:
+    params:
+      n: Uint32
+
 views: {}

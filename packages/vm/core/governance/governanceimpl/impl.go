@@ -46,13 +46,14 @@ var Processor = governance.Contract.Processor(nil,
 	governance.ViewGetMaintenanceStatus.WithHandler(getMaintenanceStatus),
 
 	// L1 metadata
-	governance.FuncSetCustomMetadata.WithHandler(setCustomMetadata),
-	governance.ViewGetCustomMetadata.WithHandler(getCustomMetadata),
+	governance.FuncSetMetadata.WithHandler(setMetadata),
+	governance.ViewGetMetadata.WithHandler(getMetadata),
 )
 
-func SetInitialState(state kv.KVStore, chainOwner isc.AgentID) {
+func SetInitialState(state kv.KVStore, chainOwner isc.AgentID, blockKeepAmount int32) {
 	state.Set(governance.VarChainOwnerID, chainOwner.Bytes())
 	state.Set(governance.VarGasFeePolicyBytes, gas.DefaultFeePolicy().Bytes())
 	state.Set(governance.VarGasLimitsBytes, gas.LimitsDefault.Bytes())
 	state.Set(governance.VarMaintenanceStatus, codec.Encode(false))
+	state.Set(governance.VarBlockKeepAmount, codec.EncodeInt32(blockKeepAmount))
 }

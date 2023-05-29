@@ -20,6 +20,7 @@ type KVWriter interface {
 	// Set writes new or updates existing key with the value.
 	// value == nil means deletion of the key from the store
 	Set(key, value []byte)
+	Del(key []byte)
 }
 
 // KVIterator is an interface to iterate through a set of key/value pairs.
@@ -41,12 +42,40 @@ type Traversable interface {
 	Iterator(prefix []byte) KVIterator
 }
 
-// CopyAll flushes KVIterator to KVWriter. It is up to the iterator correctly stop iterating
-func CopyAll(dst KVWriter, src KVIterator) {
-	src.Iterate(func(k, v []byte) bool {
-		dst.Set(k, v)
-		return true
-	})
+type kvStorePartition struct {
+	prefix byte
+	s      KVStore
+}
+
+func (p *kvStorePartition) Get(key []byte) []byte {
+	return p.s.Get(concat([]byte{p.prefix}, key))
+}
+
+func (p *kvStorePartition) Has(key []byte) bool {
+	return p.s.Has(concat([]byte{p.prefix}, key))
+}
+
+func (p *kvStorePartition) Del(key []byte) {
+	p.s.Del(concat([]byte{p.prefix}, key))
+}
+
+func (p *kvStorePartition) Set(key []byte, value []byte) {
+	p.s.Set(concat([]byte{p.prefix}, key), value)
+}
+
+func (p *kvStorePartition) Iterate(func(k []byte, v []byte) bool) {
+	panic("unimplemented")
+}
+
+func (p *kvStorePartition) IterateKeys(func(k []byte) bool) {
+	panic("unimplemented")
+}
+
+func makeKVStorePartition(s KVStore, prefix byte) *kvStorePartition {
+	return &kvStorePartition{
+		prefix: prefix,
+		s:      s,
+	}
 }
 
 type readerPartition struct {
@@ -76,6 +105,10 @@ type writerPartition struct {
 
 func (w *writerPartition) Set(key, value []byte) {
 	w.w.Set(concat([]byte{w.prefix}, key), value)
+}
+
+func (w *writerPartition) Del(key []byte) {
+	w.w.Del(concat([]byte{w.prefix}, key))
 }
 
 func makeWriterPartition(w KVWriter, prefix byte) KVWriter {

@@ -103,14 +103,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ChainInfoResponse'
           description: Information about a specific chain
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
       summary: Get information about a specific chain
       tags:
       - chains
@@ -764,7 +756,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BlockReceiptsResponse'
+                items:
+                  $ref: '#/components/schemas/ReceiptResponse'
+                type: array
           description: The receipts
         "401":
           content:
@@ -861,7 +855,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BlockReceiptsResponse'
+                items:
+                  $ref: '#/components/schemas/ReceiptResponse'
+                type: array
           description: The receipts
         "401":
           content:
@@ -1087,7 +1083,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RequestReceiptResponse'
+                $ref: '#/components/schemas/ReceiptResponse'
           description: The receipt
         "401":
           content:
@@ -1288,8 +1284,66 @@ paths:
       summary: Deactivate a chain
       tags:
       - chains
+  /v1/chains/{chainID}/estimategas-offledger:
+    post:
+      operationId: estimateGasOffledger
+      parameters:
+      - description: ChainID (Bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstimateGasRequestOffledger'
+        description: Request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptResponse'
+          description: ReceiptResponse
+      summary: Estimates gas for a given off-ledger ISC request
+      tags:
+      - chains
+      x-codegen-request-body-name: Request
+  /v1/chains/{chainID}/estimategas-onledger:
+    post:
+      operationId: estimateGasOnledger
+      parameters:
+      - description: ChainID (Bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstimateGasRequestOnledger'
+        description: Request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptResponse'
+          description: ReceiptResponse
+      summary: Estimates gas for a given on-ledger ISC request
+      tags:
+      - chains
+      x-codegen-request-body-name: Request
   /v1/chains/{chainID}/evm:
-    get:
+    post:
       parameters:
       - description: ChainID (Bech32)
         in: path
@@ -2509,173 +2563,6 @@ components:
       type: object
       xml:
         name: BlockInfoResponse
-    BlockReceiptError:
-      example:
-        errorMessage: errorMessage
-        hash: hash
-      properties:
-        errorMessage:
-          format: string
-          type: string
-          xml:
-            name: ErrorMessage
-        hash:
-          format: string
-          type: string
-          xml:
-            name: Hash
-      required:
-      - errorMessage
-      - hash
-      type: object
-      xml:
-        name: BlockReceiptError
-    BlockReceiptsResponse:
-      example:
-        receipts:
-        - gasBurnLog:
-            records:
-            - code: 6
-              gasBurned: 1
-            - code: 6
-              gasBurned: 1
-          request:
-            fungibleTokens:
-              nfts:
-              - nfts
-              - nfts
-              baseTokens: baseTokens
-              nativeTokens:
-              - amount: amount
-                id: id
-              - amount: amount
-                id: id
-            senderAccount: senderAccount
-            isOffLedger: true
-            requestId: requestId
-            callTarget:
-              contractHName: contractHName
-              functionHName: functionHName
-            gasBudget: gasBudget
-            targetAddress: targetAddress
-            allowance:
-              nfts:
-              - nfts
-              - nfts
-              baseTokens: baseTokens
-              nativeTokens:
-              - amount: amount
-                id: id
-              - amount: amount
-                id: id
-            params:
-              Items:
-              - value: value
-                key: key
-              - value: value
-                key: key
-            nft:
-              owner: owner
-              metadata: metadata
-              id: id
-              issuer: issuer
-            isEVM: true
-          blockIndex: 1
-          requestIndex: 1
-          gasFeeCharged: gasFeeCharged
-          gasBudget: gasBudget
-          gasBurned: gasBurned
-          error:
-            errorMessage: errorMessage
-            hash: hash
-        - gasBurnLog:
-            records:
-            - code: 6
-              gasBurned: 1
-            - code: 6
-              gasBurned: 1
-          request:
-            fungibleTokens:
-              nfts:
-              - nfts
-              - nfts
-              baseTokens: baseTokens
-              nativeTokens:
-              - amount: amount
-                id: id
-              - amount: amount
-                id: id
-            senderAccount: senderAccount
-            isOffLedger: true
-            requestId: requestId
-            callTarget:
-              contractHName: contractHName
-              functionHName: functionHName
-            gasBudget: gasBudget
-            targetAddress: targetAddress
-            allowance:
-              nfts:
-              - nfts
-              - nfts
-              baseTokens: baseTokens
-              nativeTokens:
-              - amount: amount
-                id: id
-              - amount: amount
-                id: id
-            params:
-              Items:
-              - value: value
-                key: key
-              - value: value
-                key: key
-            nft:
-              owner: owner
-              metadata: metadata
-              id: id
-              issuer: issuer
-            isEVM: true
-          blockIndex: 1
-          requestIndex: 1
-          gasFeeCharged: gasFeeCharged
-          gasBudget: gasBudget
-          gasBurned: gasBurned
-          error:
-            errorMessage: errorMessage
-            hash: hash
-      properties:
-        receipts:
-          items:
-            $ref: '#/components/schemas/RequestReceiptResponse'
-          type: array
-          xml:
-            name: Receipts
-            wrapped: true
-      required:
-      - receipts
-      type: object
-      xml:
-        name: BlockReceiptsResponse
-    BurnLog:
-      example:
-        records:
-        - code: 6
-          gasBurned: 1
-        - code: 6
-          gasBurned: 1
-      properties:
-        records:
-          items:
-            $ref: '#/components/schemas/BurnRecord'
-          type: array
-          xml:
-            name: Records
-            wrapped: true
-      required:
-      - records
-      type: object
-      xml:
-        name: BurnLog
     BurnRecord:
       example:
         code: 6
@@ -2730,7 +2617,8 @@ components:
           maxGasPerRequest: 5
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
-        customMetadata: customMetadata
+        evmWebSocketUrl: evmWebSocketUrl
+        publicUrl: publicUrl
         gasFeePolicy:
           gasPerToken:
             a: 1
@@ -2739,6 +2627,7 @@ components:
           evmGasRatio:
             a: 1
             b: 1
+        evmJsonRpcUrl: evmJsonRpcUrl
         isActive: true
       properties:
         chainID:
@@ -2755,13 +2644,6 @@ components:
           type: string
           xml:
             name: ChainOwnerID
-        customMetadata:
-          description: (base64) Optional extra metadata that is appended to the L1
-            AliasOutput
-          format: string
-          type: string
-          xml:
-            name: CustomMetadata
         evmChainId:
           description: The EVM chain ID
           example: 1074
@@ -2770,6 +2652,18 @@ components:
           type: integer
           xml:
             name: EVMChainID
+        evmJsonRpcUrl:
+          description: The EVM json rpc url
+          format: string
+          type: string
+          xml:
+            name: EVMJsonRPCURL
+        evmWebSocketUrl:
+          description: The EVM websocket url
+          format: string
+          type: string
+          xml:
+            name: EVMWebSocketURL
         gasFeePolicy:
           $ref: '#/components/schemas/FeePolicy'
         gasLimits:
@@ -2780,13 +2674,22 @@ components:
           type: boolean
           xml:
             name: IsActive
+        publicUrl:
+          description: The fully qualified public url leading to the chains metadata
+          format: string
+          type: string
+          xml:
+            name: PublicURL
       required:
       - chainID
       - chainOwnerId
       - evmChainId
+      - evmJsonRpcUrl
+      - evmWebSocketUrl
       - gasFeePolicy
       - gasLimits
       - isActive
+      - publicUrl
       type: object
       xml:
         name: ChainInfoResponse
@@ -3522,27 +3425,36 @@ components:
       type: object
       xml:
         name: ErrorMessageFormatResponse
-    ErrorParameter:
+    EstimateGasRequestOffledger:
       example:
-        type: type
-        value: value
+        requestBytes: requestBytes
       properties:
-        type:
+        requestBytes:
+          description: Offledger Request (Hex)
           format: string
           type: string
           xml:
-            name: Type
-        value:
-          format: string
-          type: string
-          xml:
-            name: Value
+            name: Request
       required:
-      - type
-      - value
+      - requestBytes
       type: object
       xml:
-        name: ErrorParameter
+        name: EstimateGasRequestOffledger
+    EstimateGasRequestOnledger:
+      example:
+        outputBytes: outputBytes
+      properties:
+        outputBytes:
+          description: Serialized Output (Hex)
+          format: string
+          type: string
+          xml:
+            name: Output
+      required:
+      - outputBytes
+      type: object
+      xml:
+        name: EstimateGasRequestOnledger
     EventsResponse:
       example:
         events:
@@ -3594,7 +3506,7 @@ components:
         gasPerToken:
           a: 0
           b: 0
-        validatorFeeShare: 1
+        validatorFeeShare: 5
         evmGasRatio:
           a: 0
           b: 0
@@ -3667,16 +3579,25 @@ components:
           maxGasPerBlock: 1
           maxGasPerRequest: 5
         chainID: chainID
-        customMetadata: customMetadata
+        blockKeepAmount: 0
+        evmWebSocketUrl: evmWebSocketUrl
+        publicUrl: publicUrl
         gasFeePolicy:
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 1
+          validatorFeeShare: 5
           evmGasRatio:
             a: 0
             b: 0
+        evmJsonRpcUrl: evmJsonRpcUrl
       properties:
+        blockKeepAmount:
+          description: Amount of blocks to keep in the state
+          format: int32
+          type: integer
+          xml:
+            name: BlockKeepAmount
         chainID:
           description: ChainID (Bech32-encoded).
           format: string
@@ -3689,22 +3610,36 @@ components:
           type: string
           xml:
             name: ChainOwnerID
-        customMetadata:
-          description: (base64) Optional extra metadata that is appended to the L1
-            AliasOutput
+        evmJsonRpcUrl:
+          description: The EVM json rpc url
           format: string
           type: string
           xml:
-            name: CustomMetadata
+            name: EVMJsonRPCURL
+        evmWebSocketUrl:
+          description: The EVM websocket url
+          format: string
+          type: string
+          xml:
+            name: EVMWebSocketURL
         gasFeePolicy:
           $ref: '#/components/schemas/FeePolicy_'
         gasLimits:
           $ref: '#/components/schemas/Limits'
+        publicUrl:
+          description: The fully qualified public url leading to the chains metadata
+          format: string
+          type: string
+          xml:
+            name: PublicURL
       required:
       - chainID
       - chainOwnerId
+      - evmJsonRpcUrl
+      - evmWebSocketUrl
       - gasFeePolicy
       - gasLimits
+      - publicUrl
       type: object
       xml:
         name: GovChainInfoResponse
@@ -4888,62 +4823,6 @@ components:
       type: object
       xml:
         name: Ratio32
-    ReceiptError:
-      example:
-        contractHName: contractHName
-        messageFormat: messageFormat
-        errorCode: errorCode
-        errorId: 1
-        message: message
-        parameters:
-        - type: type
-          value: value
-        - type: type
-          value: value
-      properties:
-        contractHName:
-          description: The contract hname (Hex)
-          format: string
-          type: string
-          xml:
-            name: ContractHName
-        errorCode:
-          format: string
-          type: string
-          xml:
-            name: ErrorCode
-        errorId:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: ErrorID
-        message:
-          format: string
-          type: string
-          xml:
-            name: Message
-        messageFormat:
-          format: string
-          type: string
-          xml:
-            name: MessageFormat
-        parameters:
-          items:
-            $ref: '#/components/schemas/ErrorParameter'
-          type: array
-          xml:
-            name: Parameters
-            wrapped: true
-      required:
-      - contractHName
-      - errorCode
-      - errorId
-      - message
-      - messageFormat
-      type: object
-      xml:
-        name: ReceiptError
     ReceiptResponse:
       example:
         gasBurnLog:
@@ -4951,23 +4830,59 @@ components:
           gasBurned: 1
         - code: 6
           gasBurned: 1
-        request: request
+        request:
+          fungibleTokens:
+            nfts:
+            - nfts
+            - nfts
+            baseTokens: baseTokens
+            nativeTokens:
+            - amount: amount
+              id: id
+            - amount: amount
+              id: id
+          senderAccount: senderAccount
+          isOffLedger: true
+          requestId: requestId
+          callTarget:
+            contractHName: contractHName
+            functionHName: functionHName
+          gasBudget: gasBudget
+          targetAddress: targetAddress
+          allowance:
+            nfts:
+            - nfts
+            - nfts
+            baseTokens: baseTokens
+            nativeTokens:
+            - amount: amount
+              id: id
+            - amount: amount
+              id: id
+          params:
+            Items:
+            - value: value
+              key: key
+            - value: value
+              key: key
+          nft:
+            owner: owner
+            metadata: metadata
+            id: id
+            issuer: issuer
+          isEVM: true
         blockIndex: 1
+        rawError:
+          code: code
+          params:
+          - params
+          - params
         requestIndex: 1
+        storageDepositCharged: storageDepositCharged
         gasFeeCharged: gasFeeCharged
+        errorMessage: errorMessage
         gasBudget: gasBudget
         gasBurned: gasBurned
-        error:
-          contractHName: contractHName
-          messageFormat: messageFormat
-          errorCode: errorCode
-          errorId: 1
-          message: message
-          parameters:
-          - type: type
-            value: value
-          - type: type
-            value: value
       properties:
         blockIndex:
           format: int32
@@ -4975,8 +4890,11 @@ components:
           type: integer
           xml:
             name: BlockIndex
-        error:
-          $ref: '#/components/schemas/ReceiptError'
+        errorMessage:
+          format: string
+          type: string
+          xml:
+            name: ErrorMessage
         gasBudget:
           description: The gas budget (uint64 as string)
           format: string
@@ -5002,17 +4920,22 @@ components:
           type: string
           xml:
             name: GasFeeCharged
+        rawError:
+          $ref: '#/components/schemas/UnresolvedVMErrorJSON'
         request:
-          format: string
-          type: string
-          xml:
-            name: Request
+          $ref: '#/components/schemas/RequestDetail'
         requestIndex:
           format: int32
           minimum: 1
           type: integer
           xml:
             name: RequestIndex
+        storageDepositCharged:
+          description: Storage deposit charged (uint64 as string)
+          format: string
+          type: string
+          xml:
+            name: SDCharged
       required:
       - blockIndex
       - gasBudget
@@ -5021,6 +4944,7 @@ components:
       - gasFeeCharged
       - request
       - requestIndex
+      - storageDepositCharged
       type: object
       xml:
         name: ReceiptResponse
@@ -5220,111 +5144,6 @@ components:
       type: object
       xml:
         name: RequestProcessedResponse
-    RequestReceiptResponse:
-      example:
-        gasBurnLog:
-          records:
-          - code: 6
-            gasBurned: 1
-          - code: 6
-            gasBurned: 1
-        request:
-          fungibleTokens:
-            nfts:
-            - nfts
-            - nfts
-            baseTokens: baseTokens
-            nativeTokens:
-            - amount: amount
-              id: id
-            - amount: amount
-              id: id
-          senderAccount: senderAccount
-          isOffLedger: true
-          requestId: requestId
-          callTarget:
-            contractHName: contractHName
-            functionHName: functionHName
-          gasBudget: gasBudget
-          targetAddress: targetAddress
-          allowance:
-            nfts:
-            - nfts
-            - nfts
-            baseTokens: baseTokens
-            nativeTokens:
-            - amount: amount
-              id: id
-            - amount: amount
-              id: id
-          params:
-            Items:
-            - value: value
-              key: key
-            - value: value
-              key: key
-          nft:
-            owner: owner
-            metadata: metadata
-            id: id
-            issuer: issuer
-          isEVM: true
-        blockIndex: 1
-        requestIndex: 1
-        gasFeeCharged: gasFeeCharged
-        gasBudget: gasBudget
-        gasBurned: gasBurned
-        error:
-          errorMessage: errorMessage
-          hash: hash
-      properties:
-        blockIndex:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: BlockIndex
-        error:
-          $ref: '#/components/schemas/BlockReceiptError'
-        gasBudget:
-          description: The gas budget (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: GasBudget
-        gasBurnLog:
-          $ref: '#/components/schemas/BurnLog'
-        gasBurned:
-          description: The burned gas (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: GasBurned
-        gasFeeCharged:
-          description: The charged gas fee (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: GasFeeCharged
-        request:
-          $ref: '#/components/schemas/RequestDetail'
-        requestIndex:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: RequestIndex
-      required:
-      - blockIndex
-      - gasBudget
-      - gasBurnLog
-      - gasBurned
-      - gasFeeCharged
-      - request
-      - requestIndex
-      type: object
-      xml:
-        name: RequestReceiptResponse
     StateResponse:
       example:
         state: state
@@ -5511,6 +5330,29 @@ components:
       type: object
       xml:
         name: UTXOInputMetricItem
+    UnresolvedVMErrorJSON:
+      example:
+        code: code
+        params:
+        - params
+        - params
+      properties:
+        code:
+          format: string
+          type: string
+          xml:
+            name: ErrorCode
+        params:
+          items:
+            format: string
+            type: string
+          type: array
+          xml:
+            name: Params
+            wrapped: true
+      type: object
+      xml:
+        name: UnresolvedVMErrorJSON
     UpdateUserPasswordRequest:
       example:
         password: password

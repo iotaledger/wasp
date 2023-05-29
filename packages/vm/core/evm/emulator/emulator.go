@@ -23,17 +23,17 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
 type EVMEmulator struct {
-	timestamp   uint64
-	gasLimits   GasLimits
-	chainConfig *params.ChainConfig
-	kv          kv.KVStore
-	vmConfig    vm.Config
-	l2Balance   L2Balance
+	timestamp       uint64
+	gasLimits       GasLimits
+	blockKeepAmount int32
+	chainConfig     *params.ChainConfig
+	kv              kv.KVStore
+	vmConfig        vm.Config
+	l2Balance       L2Balance
 }
 
 type GasLimits struct {
@@ -59,7 +59,6 @@ func getConfig(chainID int) *params.ChainConfig {
 		ChainID:             big.NewInt(int64(chainID)),
 		HomesteadBlock:      big.NewInt(0),
 		EIP150Block:         big.NewInt(0),
-		EIP150Hash:          common.Hash{},
 		EIP155Block:         big.NewInt(0),
 		EIP158Block:         big.NewInt(0),
 		ByzantiumBlock:      big.NewInt(0),
@@ -69,6 +68,7 @@ func getConfig(chainID int) *params.ChainConfig {
 		MuirGlacierBlock:    big.NewInt(0),
 		BerlinBlock:         big.NewInt(0),
 		Ethash:              &params.EthashConfig{},
+		ShanghaiTime:        new(uint64),
 	}
 	configCache.Add(chainID, c)
 	return c
@@ -83,24 +83,27 @@ func newStateDB(store kv.KVStore, l2Balance L2Balance) *StateDB {
 	return NewStateDB(subrealm.New(store, KeyStateDB), l2Balance)
 }
 
-func newBlockchainDB(store kv.KVStore, blockGasLimit uint64) *BlockchainDB {
-	return NewBlockchainDB(subrealm.New(store, KeyBlockchainDB), blockGasLimit)
+func NewBlockchainDBSubrealm(store kv.KVStore) kv.KVStore {
+	return subrealm.New(store, KeyBlockchainDB)
+}
+
+func newBlockchainDBWithSubrealm(store kv.KVStore, blockGasLimit uint64, blockKeepAmount int32) *BlockchainDB {
+	return NewBlockchainDB(NewBlockchainDBSubrealm(store), blockGasLimit, blockKeepAmount)
 }
 
 // Init initializes the EVM state with the provided genesis allocation parameters
 func Init(
 	store kv.KVStore,
 	chainID uint16,
-	blockKeepAmount int32,
 	gasLimits GasLimits,
 	timestamp uint64,
 	alloc core.GenesisAlloc,
 ) {
-	bdb := newBlockchainDB(store, gasLimits.Block)
+	bdb := newBlockchainDBWithSubrealm(store, gasLimits.Block, BlockKeepAll)
 	if bdb.Initialized() {
 		panic("evm state already initialized in kvstore")
 	}
-	bdb.Init(chainID, blockKeepAmount, timestamp)
+	bdb.Init(chainID, timestamp)
 
 	statedb := newStateDB(store, nil)
 	for addr, account := range alloc {
@@ -122,21 +125,23 @@ func NewEVMEmulator(
 	store kv.KVStore,
 	timestamp uint64,
 	gasLimits GasLimits,
+	blockKeepAmount int32,
 	magicContracts map[common.Address]vm.ISCMagicContract,
 	l2Balance L2Balance,
 ) *EVMEmulator {
-	bdb := newBlockchainDB(store, gasLimits.Block)
+	bdb := newBlockchainDBWithSubrealm(store, gasLimits.Block, blockKeepAmount)
 	if !bdb.Initialized() {
 		panic("must initialize genesis block first")
 	}
 
 	return &EVMEmulator{
-		timestamp:   timestamp,
-		gasLimits:   gasLimits,
-		chainConfig: getConfig(int(bdb.GetChainID())),
-		kv:          store,
-		vmConfig:    vm.Config{MagicContracts: magicContracts},
-		l2Balance:   l2Balance,
+		timestamp:       timestamp,
+		gasLimits:       gasLimits,
+		blockKeepAmount: blockKeepAmount,
+		chainConfig:     getConfig(int(bdb.GetChainID())),
+		kv:              store,
+		vmConfig:        vm.Config{MagicContracts: magicContracts},
+		l2Balance:       l2Balance,
 	}
 }
 
@@ -145,7 +150,7 @@ func (e *EVMEmulator) StateDB() *StateDB {
 }
 
 func (e *EVMEmulator) BlockchainDB() *BlockchainDB {
-	return newBlockchainDB(e.kv, e.gasLimits.Block)
+	return newBlockchainDBWithSubrealm(e.kv, e.gasLimits.Block, e.blockKeepAmount)
 }
 
 func (e *EVMEmulator) BlockGasLimit() uint64 {
@@ -162,6 +167,22 @@ func (e *EVMEmulator) ChainContext() core.ChainContext {
 	}
 }
 
+func coreMsgFromCallMsg(call ethereum.CallMsg, statedb *StateDB) *core.Message {
+	return &core.Message{
+		To:                call.To,
+		From:              call.From,
+		Nonce:             statedb.GetNonce(call.From),
+		Value:             call.Value,
+		GasLimit:          call.Gas,
+		GasPrice:          call.GasPrice,
+		GasFeeCap:         call.GasFeeCap,
+		GasTipCap:         call.GasTipCap,
+		Data:              call.Data,
+		AccessList:        call.AccessList,
+		SkipAccountChecks: false,
+	}
+}
+
 // CallContract executes a contract call, without committing changes to the state
 func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(bool)) (*core.ExecutionResult, error) {
 	// Ensure message is initialized properly.
@@ -172,35 +193,39 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(boo
 		call.Value = big.NewInt(0)
 	}
 
-	pendingHeader := e.BlockchainDB().GetPendingHeader()
+	pendingHeader := e.BlockchainDB().GetPendingHeader(e.timestamp)
 
 	// run the EVM code on a buffered state (so that writes are not committed)
 	statedb := e.StateDB().Buffered().StateDB()
 
-	return e.applyMessage(callMsg{call}, statedb, pendingHeader, gasBurnEnable, nil)
+	return e.applyMessage(coreMsgFromCallMsg(call, statedb), statedb, pendingHeader, gasBurnEnable, nil)
 }
 
 func (e *EVMEmulator) applyMessage(
-	msg callMsg,
+	msg *core.Message,
 	statedb vm.StateDB,
 	header *types.Header,
 	gasBurnEnable func(bool),
 	tracer tracers.Tracer,
 ) (res *core.ExecutionResult, err error) {
+	// Set msg gas price to 0
+	msg.GasPrice = big.NewInt(0)
+	msg.GasFeeCap = big.NewInt(0)
+	msg.GasTipCap = big.NewInt(0)
+
 	blockContext := core.NewEVMBlockContext(header, e.ChainContext(), nil)
 	txContext := core.NewEVMTxContext(msg)
 
 	vmConfig := e.vmConfig
 	vmConfig.Tracer = tracer
-	vmConfig.Debug = vmConfig.Tracer != nil
 
 	vmEnv := vm.NewEVM(blockContext, txContext, statedb, e.chainConfig, vmConfig)
 
-	if msg.CallMsg.Gas > e.gasLimits.Call {
-		msg.CallMsg.Gas = e.gasLimits.Call
+	if msg.GasLimit > e.gasLimits.Call {
+		msg.GasLimit = e.gasLimits.Call
 	}
 
-	gasPool := core.GasPool(msg.Gas())
+	gasPool := core.GasPool(msg.GasLimit)
 	vmEnv.Reset(txContext, statedb)
 	if gasBurnEnable != nil {
 		gasBurnEnable(true)
@@ -227,7 +252,7 @@ func (e *EVMEmulator) SendTransaction(
 ) (*types.Receipt, *core.ExecutionResult, error) {
 	buf := e.StateDB().Buffered()
 	statedb := buf.StateDB()
-	pendingHeader := e.BlockchainDB().GetPendingHeader()
+	pendingHeader := e.BlockchainDB().GetPendingHeader(e.timestamp)
 
 	sender, err := types.Sender(e.Signer(), tx)
 	if err != nil {
@@ -238,27 +263,13 @@ func (e *EVMEmulator) SendTransaction(
 		return nil, nil, fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
 	}
 
-	msg, err := tx.AsMessage(types.MakeSigner(e.chainConfig, pendingHeader.Number), pendingHeader.BaseFee)
+	msg, err := core.TransactionToMessage(tx, types.MakeSigner(e.chainConfig, pendingHeader.Number), pendingHeader.BaseFee)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	msgWithZeroGasPrice := callMsg{
-		CallMsg: ethereum.CallMsg{
-			From:       msg.From(),
-			To:         msg.To(),
-			Gas:        msg.Gas(),
-			GasPrice:   big.NewInt(0),
-			GasFeeCap:  big.NewInt(0),
-			GasTipCap:  big.NewInt(0),
-			Value:      msg.Value(),
-			Data:       msg.Data(),
-			AccessList: msg.AccessList(),
-		},
-	}
-
 	result, err := e.applyMessage(
-		msgWithZeroGasPrice,
+		msg,
 		statedb,
 		pendingHeader,
 		gasBurnEnable,
@@ -295,8 +306,8 @@ func (e *EVMEmulator) SendTransaction(
 		receipt.Status = types.ReceiptStatusSuccessful
 	}
 
-	if msg.To() == nil {
-		receipt.ContractAddress = crypto.CreateAddress(msg.From(), tx.Nonce())
+	if msg.To == nil {
+		receipt.ContractAddress = crypto.CreateAddress(msg.From, tx.Nonce())
 	}
 
 	buf.Commit()
@@ -312,23 +323,6 @@ func (e *EVMEmulator) MintBlock() {
 func (e *EVMEmulator) Signer() types.Signer {
 	return evmutil.Signer(e.chainConfig.ChainID)
 }
-
-// callMsg implements core.Message to allow passing it as a transaction simulator.
-type callMsg struct {
-	ethereum.CallMsg
-}
-
-func (m callMsg) From() common.Address         { return m.CallMsg.From }
-func (m callMsg) Nonce() uint64                { return 0 }
-func (m callMsg) IsFake() bool                 { return true }
-func (m callMsg) To() *common.Address          { return m.CallMsg.To }
-func (m callMsg) GasPrice() *big.Int           { return evm.GasPrice } // we ignore the gas price set by the sender
-func (m callMsg) GasFeeCap() *big.Int          { return m.CallMsg.GasFeeCap }
-func (m callMsg) GasTipCap() *big.Int          { return m.CallMsg.GasTipCap }
-func (m callMsg) Gas() uint64                  { return m.CallMsg.Gas }
-func (m callMsg) Value() *big.Int              { return m.CallMsg.Value }
-func (m callMsg) Data() []byte                 { return m.CallMsg.Data }
-func (m callMsg) AccessList() types.AccessList { return m.CallMsg.AccessList }
 
 type chainContext struct {
 	engine consensus.Engine

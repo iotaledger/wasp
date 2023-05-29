@@ -46,11 +46,6 @@ type RotateStateControllerCall struct {
 	Params MutableRotateStateControllerParams
 }
 
-type SetCustomMetadataCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableSetCustomMetadataParams
-}
-
 type SetEVMGasRatioCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableSetEVMGasRatioParams
@@ -64,6 +59,11 @@ type SetFeePolicyCall struct {
 type SetGasLimitsCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableSetGasLimitsParams
+}
+
+type SetMetadataCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableSetMetadataParams
 }
 
 type StartMaintenanceCall struct {
@@ -94,11 +94,6 @@ type GetChainOwnerCall struct {
 	Results ImmutableGetChainOwnerResults
 }
 
-type GetCustomMetadataCall struct {
-	Func    *wasmlib.ScView
-	Results ImmutableGetCustomMetadataResults
-}
-
 type GetEVMGasRatioCall struct {
 	Func    *wasmlib.ScView
 	Results ImmutableGetEVMGasRatioResults
@@ -119,26 +114,31 @@ type GetMaintenanceStatusCall struct {
 	Results ImmutableGetMaintenanceStatusResults
 }
 
+type GetMetadataCall struct {
+	Func    *wasmlib.ScView
+	Results ImmutableGetMetadataResults
+}
+
 type Funcs struct{}
 
 var ScFuncs Funcs
 
 // Adds the given address to the list of identities that constitute the state controller.
-func (sc Funcs) AddAllowedStateControllerAddress(ctx wasmlib.ScFuncCallContext) *AddAllowedStateControllerAddressCall {
+func (sc Funcs) AddAllowedStateControllerAddress(ctx wasmlib.ScFuncClientContext) *AddAllowedStateControllerAddressCall {
 	f := &AddAllowedStateControllerAddressCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncAddAllowedStateControllerAddress)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 // Adds a node to the list of candidates.
-func (sc Funcs) AddCandidateNode(ctx wasmlib.ScFuncCallContext) *AddCandidateNodeCall {
+func (sc Funcs) AddCandidateNode(ctx wasmlib.ScFuncClientContext) *AddCandidateNodeCall {
 	f := &AddCandidateNodeCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncAddCandidateNode)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 // Iterates through the given map of actions and applies them.
-func (sc Funcs) ChangeAccessNodes(ctx wasmlib.ScFuncCallContext) *ChangeAccessNodesCall {
+func (sc Funcs) ChangeAccessNodes(ctx wasmlib.ScFuncClientContext) *ChangeAccessNodesCall {
 	f := &ChangeAccessNodesCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncChangeAccessNodes)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
@@ -146,27 +146,27 @@ func (sc Funcs) ChangeAccessNodes(ctx wasmlib.ScFuncCallContext) *ChangeAccessNo
 
 // Claims the ownership of the chain if the caller matches the identity
 // that was set in delegateChainOwnership().
-func (sc Funcs) ClaimChainOwnership(ctx wasmlib.ScFuncCallContext) *ClaimChainOwnershipCall {
+func (sc Funcs) ClaimChainOwnership(ctx wasmlib.ScFuncClientContext) *ClaimChainOwnershipCall {
 	return &ClaimChainOwnershipCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncClaimChainOwnership)}
 }
 
 // Sets the Agent ID o as the new owner for the chain.
 // This change will only be effective once claimChainOwnership() is called by o.
-func (sc Funcs) DelegateChainOwnership(ctx wasmlib.ScFuncCallContext) *DelegateChainOwnershipCall {
+func (sc Funcs) DelegateChainOwnership(ctx wasmlib.ScFuncClientContext) *DelegateChainOwnershipCall {
 	f := &DelegateChainOwnershipCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncDelegateChainOwnership)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 // Removes the given address from the list of identities that constitute the state controller.
-func (sc Funcs) RemoveAllowedStateControllerAddress(ctx wasmlib.ScFuncCallContext) *RemoveAllowedStateControllerAddressCall {
+func (sc Funcs) RemoveAllowedStateControllerAddress(ctx wasmlib.ScFuncClientContext) *RemoveAllowedStateControllerAddressCall {
 	f := &RemoveAllowedStateControllerAddressCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRemoveAllowedStateControllerAddress)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 // Removes a node from the list of candidates.
-func (sc Funcs) RevokeAccessNode(ctx wasmlib.ScFuncCallContext) *RevokeAccessNodeCall {
+func (sc Funcs) RevokeAccessNode(ctx wasmlib.ScFuncClientContext) *RevokeAccessNodeCall {
 	f := &RevokeAccessNodeCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRevokeAccessNode)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
@@ -176,110 +176,110 @@ func (sc Funcs) RevokeAccessNode(ctx wasmlib.ScFuncCallContext) *RevokeAccessNod
 // If it succeeds, the next state transition will become a governance transition,
 // thus updating the state controller in the chain's Alias Output.
 // If it fails, nothing happens.
-func (sc Funcs) RotateStateController(ctx wasmlib.ScFuncCallContext) *RotateStateControllerCall {
+func (sc Funcs) RotateStateController(ctx wasmlib.ScFuncClientContext) *RotateStateControllerCall {
 	f := &RotateStateControllerCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRotateStateController)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
-// Changes optional extra metadata that is appended to the L1 AliasOutput.
-func (sc Funcs) SetCustomMetadata(ctx wasmlib.ScFuncCallContext) *SetCustomMetadataCall {
-	f := &SetCustomMetadataCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetCustomMetadata)}
-	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
-	return f
-}
-
 // Sets the EVM gas ratio for the chain.
-func (sc Funcs) SetEVMGasRatio(ctx wasmlib.ScFuncCallContext) *SetEVMGasRatioCall {
+func (sc Funcs) SetEVMGasRatio(ctx wasmlib.ScFuncClientContext) *SetEVMGasRatioCall {
 	f := &SetEVMGasRatioCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetEVMGasRatio)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 // Sets the fee policy for the chain.
-func (sc Funcs) SetFeePolicy(ctx wasmlib.ScFuncCallContext) *SetFeePolicyCall {
+func (sc Funcs) SetFeePolicy(ctx wasmlib.ScFuncClientContext) *SetFeePolicyCall {
 	f := &SetFeePolicyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetFeePolicy)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 // Sets the gas limits for the chain.
-func (sc Funcs) SetGasLimits(ctx wasmlib.ScFuncCallContext) *SetGasLimitsCall {
+func (sc Funcs) SetGasLimits(ctx wasmlib.ScFuncClientContext) *SetGasLimitsCall {
 	f := &SetGasLimitsCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetGasLimits)}
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+// Changes optional extra metadata that is appended to the L1 AliasOutput.
+func (sc Funcs) SetMetadata(ctx wasmlib.ScFuncClientContext) *SetMetadataCall {
+	f := &SetMetadataCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetMetadata)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 // Starts the chain maintenance mode, meaning no further requests
 // will be processed except calls to the governance contract.
-func (sc Funcs) StartMaintenance(ctx wasmlib.ScFuncCallContext) *StartMaintenanceCall {
+func (sc Funcs) StartMaintenance(ctx wasmlib.ScFuncClientContext) *StartMaintenanceCall {
 	return &StartMaintenanceCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncStartMaintenance)}
 }
 
 // Stops the maintenance mode.
-func (sc Funcs) StopMaintenance(ctx wasmlib.ScFuncCallContext) *StopMaintenanceCall {
+func (sc Funcs) StopMaintenance(ctx wasmlib.ScFuncClientContext) *StopMaintenanceCall {
 	return &StopMaintenanceCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncStopMaintenance)}
 }
 
 // Returns the list of allowed state controllers.
-func (sc Funcs) GetAllowedStateControllerAddresses(ctx wasmlib.ScViewCallContext) *GetAllowedStateControllerAddressesCall {
+func (sc Funcs) GetAllowedStateControllerAddresses(ctx wasmlib.ScViewClientContext) *GetAllowedStateControllerAddressesCall {
 	f := &GetAllowedStateControllerAddressesCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetAllowedStateControllerAddresses)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
 // Returns information about the chain.
-func (sc Funcs) GetChainInfo(ctx wasmlib.ScViewCallContext) *GetChainInfoCall {
+func (sc Funcs) GetChainInfo(ctx wasmlib.ScViewClientContext) *GetChainInfoCall {
 	f := &GetChainInfoCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetChainInfo)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
 // Returns the current access nodes and candidates.
-func (sc Funcs) GetChainNodes(ctx wasmlib.ScViewCallContext) *GetChainNodesCall {
+func (sc Funcs) GetChainNodes(ctx wasmlib.ScViewClientContext) *GetChainNodesCall {
 	f := &GetChainNodesCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetChainNodes)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
 // Returns the AgentID of the chain owner.
-func (sc Funcs) GetChainOwner(ctx wasmlib.ScViewCallContext) *GetChainOwnerCall {
+func (sc Funcs) GetChainOwner(ctx wasmlib.ScViewClientContext) *GetChainOwnerCall {
 	f := &GetChainOwnerCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetChainOwner)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
-// Returns the extra metadata that is added to the chain AliasOutput.
-func (sc Funcs) GetCustomMetadata(ctx wasmlib.ScViewCallContext) *GetCustomMetadataCall {
-	f := &GetCustomMetadataCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetCustomMetadata)}
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
-	return f
-}
-
 // Returns the EVM gas ratio.
-func (sc Funcs) GetEVMGasRatio(ctx wasmlib.ScViewCallContext) *GetEVMGasRatioCall {
+func (sc Funcs) GetEVMGasRatio(ctx wasmlib.ScViewClientContext) *GetEVMGasRatioCall {
 	f := &GetEVMGasRatioCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetEVMGasRatio)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
 // Returns the fee policy.
-func (sc Funcs) GetFeePolicy(ctx wasmlib.ScViewCallContext) *GetFeePolicyCall {
+func (sc Funcs) GetFeePolicy(ctx wasmlib.ScViewClientContext) *GetFeePolicyCall {
 	f := &GetFeePolicyCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetFeePolicy)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
 // Returns the gas limits.
-func (sc Funcs) GetGasLimits(ctx wasmlib.ScViewCallContext) *GetGasLimitsCall {
+func (sc Funcs) GetGasLimits(ctx wasmlib.ScViewClientContext) *GetGasLimitsCall {
 	f := &GetGasLimitsCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetGasLimits)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
 // Returns whether the chain is undergoing maintenance.
-func (sc Funcs) GetMaintenanceStatus(ctx wasmlib.ScViewCallContext) *GetMaintenanceStatusCall {
+func (sc Funcs) GetMaintenanceStatus(ctx wasmlib.ScViewClientContext) *GetMaintenanceStatusCall {
 	f := &GetMaintenanceStatusCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetMaintenanceStatus)}
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
+	return f
+}
+
+// Returns the extra metadata that is added to the chain AliasOutput.
+func (sc Funcs) GetMetadata(ctx wasmlib.ScViewClientContext) *GetMetadataCall {
+	f := &GetMetadataCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetMetadata)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
@@ -294,21 +294,21 @@ var exportMap = wasmlib.ScExportMap{
 		FuncRemoveAllowedStateControllerAddress,
 		FuncRevokeAccessNode,
 		FuncRotateStateController,
-		FuncSetCustomMetadata,
 		FuncSetEVMGasRatio,
 		FuncSetFeePolicy,
 		FuncSetGasLimits,
+		FuncSetMetadata,
 		FuncStartMaintenance,
 		FuncStopMaintenance,
 		ViewGetAllowedStateControllerAddresses,
 		ViewGetChainInfo,
 		ViewGetChainNodes,
 		ViewGetChainOwner,
-		ViewGetCustomMetadata,
 		ViewGetEVMGasRatio,
 		ViewGetFeePolicy,
 		ViewGetGasLimits,
 		ViewGetMaintenanceStatus,
+		ViewGetMetadata,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
 		wasmlib.FuncError,

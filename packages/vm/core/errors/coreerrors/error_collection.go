@@ -11,11 +11,9 @@ func NewCoreErrorCollection() ErrorCollection {
 	return CoreErrorCollection{}
 }
 
-func (e CoreErrorCollection) Get(errorID uint16) (*isc.VMErrorTemplate, error) {
-	if template, ok := e[errorID]; ok {
-		return template, nil
-	}
-	return nil, nil
+func (e CoreErrorCollection) Get(errorID uint16) (*isc.VMErrorTemplate, bool) {
+	template, ok := e[errorID]
+	return template, ok
 }
 
 func (e CoreErrorCollection) Register(messageFormat string) (*isc.VMErrorTemplate, error) {
@@ -25,8 +23,8 @@ func (e CoreErrorCollection) Register(messageFormat string) (*isc.VMErrorTemplat
 
 	errorID := isc.GetErrorIDFromMessageFormat(messageFormat)
 
-	if _, exists := e[errorID]; exists {
-		return nil, ErrErrorAlreadyRegistered.Create(errorID)
+	if t, exists := e[errorID]; exists && t.MessageFormat() != messageFormat {
+		return nil, ErrErrorTemplateConflict.Create(errorID)
 	}
 
 	e[errorID] = isc.NewVMErrorTemplate(isc.NewCoreVMErrorCode(errorID), messageFormat)

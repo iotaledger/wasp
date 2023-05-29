@@ -10,11 +10,15 @@ author: Eric Hop <eric@iota.org>
 license: Apache-2.0
 repository: https://github.com/iotaledger/wasp
 
+events: {}
 structs: {}
 typedefs: {}
-state:
+
+state: {}
+
 funcs:
-  now:
+  now: {}
+
 views:
   getTimestamp:
     results:

@@ -9,9 +9,13 @@ import (
 
 // ChainInfo is an API structure containing the main parameters of the chain
 type ChainInfo struct {
-	ChainID        ChainID
-	ChainOwnerID   AgentID
-	GasFeePolicy   *gas.FeePolicy
-	GasLimits      *gas.Limits
-	CustomMetadata []byte
+	ChainID         ChainID
+	ChainOwnerID    AgentID
+	GasFeePolicy    *gas.FeePolicy
+	GasLimits       *gas.Limits
+	BlockKeepAmount int32
+
+	MetadataEVMJsonRPCURL   string
+	MetadataEVMWebSocketURL string
+	PublicURL               string
 }

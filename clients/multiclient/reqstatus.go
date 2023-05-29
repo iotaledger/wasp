@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
@@ -36,8 +38,30 @@ func (m *MultiClient) WaitUntilRequestProcessedSuccessfully(chainID isc.ChainID,
 	if err != nil {
 		return receipt, err
 	}
-	if receipt.Error != nil {
-		return receipt, fmt.Errorf("request processed with an error: %s", receipt.Error.Message)
+	if receipt.ErrorMessage != nil {
+		return receipt, fmt.Errorf("request processed with an error: %s", *receipt.ErrorMessage)
+	}
+	return receipt, nil
+}
+
+// WaitUntilRequestProcessedSuccessfully is similar to WaitUntilRequestProcessed,
+// but also checks the receipt and return an error if the request was processed with an error
+func (m *MultiClient) WaitUntilEVMRequestProcessedSuccessfully(chainID isc.ChainID, txHash common.Hash, waitForL1Confirmation bool, timeout time.Duration) (*apiclient.ReceiptResponse, error) {
+	requestIDStr, _, err := m.nodes[0].ChainsApi.GetRequestIDFromEVMTransactionID(context.Background(), chainID.String(), txHash.Hex()).
+		Execute()
+	if err != nil {
+		return nil, err
+	}
+	requestID, err := isc.RequestIDFromString(requestIDStr.RequestId)
+	if err != nil {
+		return nil, err
+	}
+	receipt, err := m.WaitUntilRequestProcessed(chainID, requestID, waitForL1Confirmation, timeout)
+	if err != nil {
+		return receipt, err
+	}
+	if receipt.ErrorMessage != nil {
+		return receipt, fmt.Errorf("request processed with an error: %s", *receipt.ErrorMessage)
 	}
 	return receipt, nil
 }
@@ -68,8 +92,8 @@ func (m *MultiClient) WaitUntilAllRequestsProcessedSuccessfully(chainID isc.Chai
 		return receipts, err
 	}
 	for i, receipt := range receipts {
-		if receipt.Error != nil {
-			return receipts, fmt.Errorf("error found on receipt #%d: %s", i, receipt.Error.Message)
+		if receipt.ErrorMessage != nil {
+			return receipts, fmt.Errorf("error found on receipt #%d: %s", i, *receipt.ErrorMessage)
 		}
 	}
 	return receipts, nil

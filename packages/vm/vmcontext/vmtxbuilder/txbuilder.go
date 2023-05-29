@@ -103,10 +103,13 @@ func (txb *AnchorTransactionBuilder) SplitAssetsIntoInternalOutputs(req isc.OnLe
 	for _, nativeToken := range req.Assets().NativeTokens {
 		// ensure this NT is in the txbuilder, update it
 		nt := txb.ensureNativeTokenBalance(nativeToken.ID)
-		sdBefore := nt.out.Amount
+		sdBefore := nt.accountingOutput.Amount
+		if util.IsZeroBigInt(nt.getOutValue()) {
+			sdBefore = 0 // accounting output was zero'ed this block, meaning the existing SD was released
+		}
 		nt.add(nativeToken.Amount)
 		nt.updateMinSD()
-		sdAfter := nt.out.Amount
+		sdAfter := nt.accountingOutput.Amount
 		// user pays for the difference (in case SD has increased, will be the full SD cost if the output is new)
 		requiredSD += sdAfter - sdBefore
 	}
@@ -136,6 +139,27 @@ func (txb *AnchorTransactionBuilder) Consume(req isc.OnLedgerRequest) uint64 {
 	// deduct the minSD for all the outputs that need to be created
 	requiredSD := txb.SplitAssetsIntoInternalOutputs(req)
 	return requiredSD
+}
+
+// ConsumeUnprocessable adds an unprocessable request to the txbuilder,
+// consumes the original request and cretes a new output keeping assets intact
+// return the position of the resulting output in `txb.postedOutputs`
+func (txb *AnchorTransactionBuilder) ConsumeUnprocessable(req isc.OnLedgerRequest) int {
+	if txb.InputsAreFull() {
+		panic(vmexceptions.ErrInputLimitExceeded)
+	}
+
+	if txb.outputsAreFull() {
+		panic(vmexceptions.ErrOutputLimitExceeded)
+	}
+
+	defer txb.mustCheckTotalNativeTokensExceeded()
+
+	txb.consumed = append(txb.consumed, req)
+
+	txb.postedOutputs = append(txb.postedOutputs, retryOutputFromOnLedgerRequest(req, txb.anchorOutput.AliasID))
+
+	return len(txb.postedOutputs) - 1
 }
 
 // AddOutput adds an information about posted request. It will produce output
@@ -201,15 +225,21 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 
 	// consumed on-ledger requests
 	for i := range txb.consumed {
-		outputID := txb.consumed[i].ID().OutputID()
+		req := txb.consumed[i]
+		outputID := req.OutputID()
+		output := req.Output()
+		if retrReq, ok := req.(*isc.RetryOnLedgerRequest); ok {
+			outputID = retrReq.RetryOutputID()
+			output = retryOutputFromOnLedgerRequest(req, txb.anchorOutput.AliasID)
+		}
 		outputIDs = append(outputIDs, outputID)
-		inputs[outputID] = txb.consumed[i].Output()
+		inputs[outputID] = output
 	}
 
 	// internal native token outputs
 	for _, nativeTokenBalance := range txb.nativeTokenOutputsSorted() {
-		if nativeTokenBalance.requiresInput() {
-			outputID := nativeTokenBalance.outputID
+		if nativeTokenBalance.requiresExistingAccountingUTXOAsInput() {
+			outputID := nativeTokenBalance.accountingoutputID
 			outputIDs = append(outputIDs, outputID)
 			inputs[outputID] = nativeTokenBalance.in
 		}
@@ -217,7 +247,7 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 
 	// foundries
 	for _, foundry := range txb.foundriesSorted() {
-		if foundry.requiresInput() {
+		if foundry.requiresExistingAccountingUTXOAsInput() {
 			outputID := foundry.outputID
 			outputIDs = append(outputIDs, outputID)
 			inputs[outputID] = foundry.in
@@ -290,7 +320,7 @@ func (txb *AnchorTransactionBuilder) outputs(stateMetadata []byte) iotago.Output
 	nativeTokensToBeUpdated, _ := txb.NativeTokenRecordsToBeUpdated()
 	for _, id := range nativeTokensToBeUpdated {
 		// create one output for each token ID of internal account
-		ret = append(ret, txb.balanceNativeTokens[id].out)
+		ret = append(ret, txb.balanceNativeTokens[id].accountingOutput)
 	}
 	// creating outputs for updated foundries
 	foundriesToBeUpdated, _ := txb.FoundriesToBeUpdated()
@@ -311,12 +341,12 @@ func (txb *AnchorTransactionBuilder) outputs(stateMetadata []byte) iotago.Output
 func (txb *AnchorTransactionBuilder) numInputs() int {
 	ret := len(txb.consumed) + 1 // + 1 for anchor UTXO
 	for _, v := range txb.balanceNativeTokens {
-		if v.requiresInput() {
+		if v.requiresExistingAccountingUTXOAsInput() {
 			ret++
 		}
 	}
 	for _, f := range txb.invokedFoundries {
-		if f.requiresInput() {
+		if f.requiresExistingAccountingUTXOAsInput() {
 			ret++
 		}
 	}
@@ -332,13 +362,13 @@ func (txb *AnchorTransactionBuilder) numInputs() int {
 func (txb *AnchorTransactionBuilder) numOutputs() int {
 	ret := 1 // for chain output
 	for _, v := range txb.balanceNativeTokens {
-		if v.producesOutput() {
+		if v.producesAccountingOutput() {
 			ret++
 		}
 	}
 	ret += len(txb.postedOutputs)
 	for _, f := range txb.invokedFoundries {
-		if f.producesOutput() {
+		if f.producesAccountingOutput() {
 			ret++
 		}
 	}
@@ -353,11 +383,43 @@ func (txb *AnchorTransactionBuilder) outputsAreFull() bool {
 func (txb *AnchorTransactionBuilder) mustCheckTotalNativeTokensExceeded() {
 	num := 0
 	for _, nt := range txb.balanceNativeTokens {
-		if nt.requiresInput() || nt.producesOutput() {
+		if nt.requiresExistingAccountingUTXOAsInput() || nt.producesAccountingOutput() {
 			num++
 		}
 		if num > iotago.MaxNativeTokensCount {
 			panic(vmexceptions.ErrTotalNativeTokensLimitExceeded)
 		}
 	}
+}
+
+func retryOutputFromOnLedgerRequest(req isc.OnLedgerRequest, chainAliasID iotago.AliasID) iotago.Output {
+	out := req.Output().Clone()
+
+	features := iotago.Features{
+		&iotago.SenderFeature{
+			Address: chainAliasID.ToAddress(), // must have the chain as the sender, so its recognized as an internalUTXO
+		},
+	}
+
+	unlock := iotago.UnlockConditions{
+		&iotago.AddressUnlockCondition{
+			Address: chainAliasID.ToAddress(),
+		},
+	}
+
+	// cleanup features and unlock conditions except metadata
+	switch o := out.(type) {
+	case *iotago.BasicOutput:
+		o.Features = features
+		o.Conditions = unlock
+	case *iotago.NFTOutput:
+		o.Features = features
+		o.Conditions = unlock
+	case *iotago.AliasOutput:
+		o.Features = features
+		o.Conditions = unlock
+	default:
+		panic("unexpected output type")
+	}
+	return out
 }

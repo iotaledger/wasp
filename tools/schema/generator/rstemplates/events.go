@@ -27,9 +27,9 @@ $#each eventComment _eventComment
 	pub fn $evt_name(&self$endFunc
 $#each event eventParam
 $#if event eventEndFunc2
-		let mut evt = EventEncoder::new("$package.$evtName");
+		let mut enc = EventEncoder::new();
 $#each event eventEmit
-		evt.emit();
+		EventEncoder::emit("$package.$evtName", &enc);
 	}
 `,
 	// *******************************
@@ -39,7 +39,7 @@ $#each fldComment _eventParamComment
 `,
 	// *******************************
 	"eventEmit": `
-		evt.encode(&$fld_type$+_to_string($fldRef$fld_name));
+		$fld_type$+_encode(&mut enc, $fldRef$fld_name);
 `,
 	// *******************************
 	"eventSetEndFunc": `

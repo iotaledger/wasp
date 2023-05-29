@@ -6,29 +6,21 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/webapi/dto"
-	"github.com/iotaledger/wasp/packages/webapi/models"
-
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
-
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/webapi/dto"
+	"github.com/iotaledger/wasp/packages/webapi/models"
 )
 
 var (
+	ErrNotAddedToMempool      = errors.New("not added to the mempool")
 	ErrUnableToGetLatestState = errors.New("unable to get latest state")
-	ErrUnableToGetReceipt     = errors.New("unable to get request receipt from block state")
-	ErrAlreadyProcessed       = errors.New("request already processed")
-	ErrNoBalanceOnAccount     = errors.New("no balance on account")
-	ErrInvalidNonce           = errors.New("invalid nonce")
 	ErrChainNotFound          = errors.New("chain not found")
 	ErrCantDeleteLastUser     = errors.New("you can't delete the last user")
 )
@@ -45,12 +37,12 @@ type ChainService interface {
 	DeactivateChain(chainID isc.ChainID) error
 	GetAllChainIDs() ([]isc.ChainID, error)
 	HasChain(chainID isc.ChainID) bool
-	GetChainByID(chainID isc.ChainID) chain.Chain
+	GetChainByID(chainID isc.ChainID) (chain.Chain, error)
 	GetChainInfoByChainID(chainID isc.ChainID) (*dto.ChainInfo, error)
 	GetContracts(chainID isc.ChainID) (dto.ContractsMap, error)
 	GetEVMChainID(chainID isc.ChainID) (uint16, error)
 	GetState(chainID isc.ChainID, stateKey []byte) (state []byte, err error)
-	WaitForRequestProcessed(ctx context.Context, chainID isc.ChainID, requestID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*isc.Receipt, *isc.VMError, error)
+	WaitForRequestProcessed(ctx context.Context, chainID isc.ChainID, requestID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*isc.Receipt, error)
 }
 
 type EVMService interface {
@@ -105,13 +97,6 @@ type UserService interface {
 	GetUsers() []*models.User
 	UpdateUserPassword(username string, password string) error
 	UpdateUserPermissions(username string, permissions []string) error
-}
-
-type VMService interface {
-	CallView(chainState state.State, chain chain.Chain, contractName isc.Hname, functionName isc.Hname, params dict.Dict) (dict.Dict, error)
-	CallViewByChainID(chainID isc.ChainID, contractName isc.Hname, functionName isc.Hname, params dict.Dict) (dict.Dict, error)
-	ParseReceipt(chain chain.Chain, receipt *blocklog.RequestReceipt) (*isc.Receipt, *isc.VMError, error)
-	GetReceipt(chainID isc.ChainID, requestID isc.RequestID) (ret *isc.Receipt, vmError *isc.VMError, err error)
 }
 
 type Mocker interface {

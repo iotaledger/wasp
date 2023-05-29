@@ -28,15 +28,10 @@ import (
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 )
 
 type Provider func() *Chains // TODO: Use DI instead of that.
-
-func (chains Provider) ChainProvider() func(chainID isc.ChainID) chain.Chain {
-	return func(chainID isc.ChainID) chain.Chain {
-		return chains().Get(chainID)
-	}
-}
 
 type ChainProvider func(chainID isc.ChainID) chain.Chain
 
@@ -65,7 +60,7 @@ type Chains struct {
 	consensusStateRegistry      cmt_log.ConsensusStateRegistry
 	chainListener               chain.ChainListener
 
-	mutex     sync.RWMutex
+	mutex     *sync.RWMutex
 	allChains *shrinkingmap.ShrinkingMap[isc.ChainID, *activeChain]
 	accessMgr access_mgr.AccessMgr
 
@@ -105,6 +100,7 @@ func New(
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
+		mutex:                            &sync.RWMutex{},
 		allChains:                        shrinkingmap.New[isc.ChainID, *activeChain](),
 		nodeConnection:                   nodeConnection,
 		processorConfig:                  processorConfig,
@@ -161,6 +157,8 @@ func (c *Chains) Run(ctx context.Context) error {
 
 func (c *Chains) Close() {
 	util.ExecuteIfNotNil(c.cleanupFunc)
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
 	c.allChains.ForEach(func(_ isc.ChainID, ac *activeChain) bool {
 		ac.cancelFunc()
 		return true
@@ -212,6 +210,10 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	if c.ctx == nil {
 		return errors.New("run chains first")
 	}
+	if c.ctx.Err() != nil {
+		return errors.New("node is shutting down")
+	}
+
 	//
 	// Check, maybe it is already running.
 	if c.allChains.Has(chainID) {
@@ -235,7 +237,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		return fmt.Errorf("error when creating chain KV store: %w", err)
 	}
 
-	chainMetrics := c.chainMetricsProvider.NewChainMetrics(chainID)
+	chainMetrics := c.chainMetricsProvider.GetChainMetrics(chainID)
 
 	// Initialize WAL
 	chainLog := c.log.Named(chainID.ShortString())
@@ -316,13 +318,13 @@ func (c *Chains) Deactivate(chainID isc.ChainID) error {
 
 // Get returns active chain object or nil if it doesn't exist
 // lazy unsubscribing
-func (c *Chains) Get(chainID isc.ChainID) chain.Chain {
+func (c *Chains) Get(chainID isc.ChainID) (chain.Chain, error) {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
 	ret, exists := c.allChains.Get(chainID)
 	if !exists {
-		return nil
+		return nil, interfaces.ErrChainNotFound
 	}
-	return ret.chain
+	return ret.chain, nil
 }

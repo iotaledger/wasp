@@ -36,7 +36,7 @@ pub struct ScFuncs {
 
 impl ScFuncs {
     // Stores a new blob in the registry.
-    pub fn store_blob(ctx: &impl ScFuncCallContext) -> StoreBlobCall {
+    pub fn store_blob(ctx: &impl ScFuncClientContext) -> StoreBlobCall {
         let mut f = StoreBlobCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_STORE_BLOB),
             params:  MutableStoreBlobParams { proxy: Proxy::nil() },
@@ -48,7 +48,7 @@ impl ScFuncs {
     }
 
     //Returns the chunk associated with the given blob field name.
-    pub fn get_blob_field(ctx: &impl ScViewCallContext) -> GetBlobFieldCall {
+    pub fn get_blob_field(ctx: &impl ScViewClientContext) -> GetBlobFieldCall {
         let mut f = GetBlobFieldCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_BLOB_FIELD),
             params:  MutableGetBlobFieldParams { proxy: Proxy::nil() },
@@ -60,7 +60,7 @@ impl ScFuncs {
     }
 
     // Returns the size of each chunk of the blob.
-    pub fn get_blob_info(ctx: &impl ScViewCallContext) -> GetBlobInfoCall {
+    pub fn get_blob_info(ctx: &impl ScViewClientContext) -> GetBlobInfoCall {
         let mut f = GetBlobInfoCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_BLOB_INFO),
             params:  MutableGetBlobInfoParams { proxy: Proxy::nil() },
@@ -72,7 +72,7 @@ impl ScFuncs {
     }
 
     // Returns a list of all blobs hashes in the registry and their sized.
-    pub fn list_blobs(ctx: &impl ScViewCallContext) -> ListBlobsCall {
+    pub fn list_blobs(ctx: &impl ScViewClientContext) -> ListBlobsCall {
         let mut f = ListBlobsCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_LIST_BLOBS),
             results: ImmutableListBlobsResults { proxy: Proxy::nil() },

@@ -57,9 +57,9 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 	setupTestSandboxSC(t, ch, nil, w)
 	initialBlockInfo := ch.GetLatestBlockInfo()
 
-	// produce n requests over the block gas limit (each request uses the maximum amount of gas a call can use)
+	// produce 1 request over the block gas limit (each request uses the maximum amount of gas a call can use)
 	limits := ch.GetGasLimits()
-	nRequests := int(limits.MaxGasPerBlock / limits.MaxGasPerRequest)
+	nRequests := int(limits.MaxGasPerBlock/limits.MaxGasPerRequest) + 1
 	reqs := make([]isc.Request, nRequests)
 
 	for i := 0; i < nRequests; i++ {
@@ -69,20 +69,20 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 		reqs[i] = iscReq
 	}
 
-	ch.Env.AddRequestsToChainMempoolWaitUntilInbufferEmpty(ch, reqs)
+	ch.Env.AddRequestsToMempool(ch, reqs)
 	ch.WaitUntilMempoolIsEmpty()
 
 	fullGasBlockInfo, err := ch.GetBlockInfo(initialBlockInfo.BlockIndex() + 1)
 	require.NoError(t, err)
 	// the request number #{nRequests} should overflow the block and be moved to the next one
-	require.Equal(t, int(fullGasBlockInfo.TotalRequests), nRequests-1)
+	require.Equal(t, nRequests-1, int(fullGasBlockInfo.TotalRequests))
 	// gas burned will be sightly below the limit
 	require.LessOrEqual(t, fullGasBlockInfo.GasBurned, limits.MaxGasPerBlock)
 
 	// 1 requests should be moved to the next block
 	followingBlockInfo, err := ch.GetBlockInfo(initialBlockInfo.BlockIndex() + 2)
 	require.NoError(t, err)
-	require.Equal(t, followingBlockInfo.TotalRequests, uint16(1))
+	require.Equal(t, uint16(1), followingBlockInfo.TotalRequests)
 
 	// no further blocks should have been produced
 	_, err = ch.GetBlockInfo(initialBlockInfo.BlockIndex() + 3)

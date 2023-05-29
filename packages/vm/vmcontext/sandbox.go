@@ -186,3 +186,12 @@ func (s *contractSandbox) totalGasTokens() *isc.Assets {
 	amount := s.Ctx.(*VMContext).gasMaxTokensToSpendForGasFee
 	return isc.NewAssetsBaseTokens(amount)
 }
+
+func (s *contractSandbox) CallOnBehalfOf(caller isc.AgentID, target, entryPoint isc.Hname, params dict.Dict, transfer *isc.Assets) dict.Dict {
+	s.Ctx.GasBurn(gas.BurnCodeCallContract)
+	return s.Ctx.(*VMContext).CallOnBehalfOf(caller, target, entryPoint, params, transfer)
+}
+
+func (s *contractSandbox) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
+	s.Ctx.(*VMContext).RetryUnprocessable(req, blockIndex, outputIndex)
+}

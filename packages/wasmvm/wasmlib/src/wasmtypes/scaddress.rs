@@ -40,7 +40,6 @@ impl ScAddress {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-//TODO address type-dependent encoding/decoding?
 pub fn address_decode(dec: &mut WasmDecoder) -> ScAddress {
     let buf = dec.fixed_bytes(SC_ADDRESS_LENGTH);
     ScAddress {
@@ -56,32 +55,33 @@ pub fn address_from_bytes(buf: &[u8]) -> ScAddress {
     let mut addr = ScAddress {
         id: [0; SC_ADDRESS_LENGTH],
     };
-    if buf.len() == 0 {
+    let len = buf.len();
+    if len == 0 {
         return addr;
     }
 
     // special case, ETH address has no type byte but different length
-    if buf.len() == SC_LENGTH_ETH {
+    if len == SC_LENGTH_ETH {
         addr.id[0] = SC_ADDRESS_ETH;
-        addr.id[1..SC_LENGTH_ETH+1].copy_from_slice(&buf[..SC_LENGTH_ETH]);
+        addr.id[1..SC_LENGTH_ETH + 1].copy_from_slice(&buf[..SC_LENGTH_ETH]);
         return addr;
     }
 
     match buf[0] {
         SC_ADDRESS_ALIAS => {
-            if buf.len() != SC_LENGTH_ALIAS {
+            if len != SC_LENGTH_ALIAS {
                 panic("invalid Address length: Alias");
             }
             addr.id[..SC_LENGTH_ALIAS].copy_from_slice(&buf[..SC_LENGTH_ALIAS]);
         }
         SC_ADDRESS_ED25519 => {
-            if buf.len() != SC_LENGTH_ED25519 {
+            if len != SC_LENGTH_ED25519 {
                 panic("invalid Address length: Ed25519");
             }
             addr.id[..SC_LENGTH_ED25519].copy_from_slice(&buf[..SC_LENGTH_ED25519]);
         }
         SC_ADDRESS_NFT => {
-            if buf.len() != SC_LENGTH_NFT {
+            if len != SC_LENGTH_NFT {
                 panic("invalid Address length: NFT");
             }
             addr.id[..SC_LENGTH_NFT].copy_from_slice(&buf[..SC_LENGTH_NFT]);
@@ -103,7 +103,7 @@ pub fn address_to_bytes(value: &ScAddress) -> Vec<u8> {
             return value.id[..SC_LENGTH_NFT].to_vec();
         }
         SC_ADDRESS_ETH => {
-            return value.id[1..SC_LENGTH_ETH+1].to_vec();
+            return value.id[1..SC_LENGTH_ETH + 1].to_vec();
         }
         _ => panic("unexpected Address type"),
     }
@@ -111,10 +111,20 @@ pub fn address_to_bytes(value: &ScAddress) -> Vec<u8> {
 }
 
 pub fn address_from_string(value: &str) -> ScAddress {
-    if value.find("0x") == Some(0) {
-        return address_from_bytes(&hex_decode(value));
+    if !value.starts_with("0x") {
+        return bech32_decode(value);
     }
-    bech32_decode(value)
+
+    // ETH address, allow the common "0x0"
+    if value == "0x0" {
+        return address_from_bytes(&vec![0; SC_LENGTH_ETH]);
+    }
+
+    let bytes = hex_decode(value);
+    if bytes.len()!= SC_LENGTH_ETH {
+        panic("invalid ETH address");
+    }
+    address_from_bytes(&bytes)
 }
 
 pub fn address_to_string(value: &ScAddress) -> String {
@@ -125,7 +135,7 @@ pub fn address_to_string(value: &ScAddress) -> String {
     let mut hex = string_to_bytes(&hex_encode(&address_to_bytes(value)));
     let hash = hash_keccak(&hex[2..]).to_bytes();
     for i in 2..hex.len() {
-        let mut hash_byte = hash[(i-2) >> 1];
+        let mut hash_byte = hash[(i - 2) >> 1];
         if (i & 0x01) == 0 {
             hash_byte >>= 4;
         } else {

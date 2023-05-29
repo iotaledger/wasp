@@ -86,24 +86,26 @@ pub fn agent_id_encode(enc: &mut WasmEncoder, value: &ScAgentID) {
 }
 
 pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
-    if buf.len() == 0 {
+    let len = buf.len();
+    if len == 0 {
         return ScAgentID {
             kind: SC_AGENT_ID_NIL,
             address: address_from_bytes(buf),
             hname: ScHname(0),
         };
     }
+    let len = len - 1;
     match buf[0] {
         SC_AGENT_ID_ADDRESS => {
             let buf: &[u8] = &buf[1..];
-            if buf.len() != SC_LENGTH_ALIAS && buf.len() != SC_LENGTH_ED25519 {
+            if len != SC_LENGTH_ALIAS && len != SC_LENGTH_ED25519 {
                 panic("invalid AgentID length: address agentID");
             }
             return ScAgentID::from_address(&address_from_bytes(&buf));
         }
         SC_AGENT_ID_CONTRACT => {
             let buf: &[u8] = &buf[1..];
-            if buf.len() != SC_CHAIN_ID_LENGTH + SC_HNAME_LENGTH {
+            if len != SC_CHAIN_ID_LENGTH + SC_HNAME_LENGTH {
                 panic("invalid AgentID length: contract agentID");
             }
             let chain_id = chain_id_from_bytes(&buf[..SC_CHAIN_ID_LENGTH]);
@@ -112,7 +114,7 @@ pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
         }
         SC_AGENT_ID_ETHEREUM => {
             let buf: &[u8] = &buf[1..];
-            if buf.len() != SC_LENGTH_ETH {
+            if len != SC_LENGTH_ETH {
                 panic("invalid AgentID length: eth agentID");
             }
             return ScAgentID::from_address(&address_from_bytes(&buf));

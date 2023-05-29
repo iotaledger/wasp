@@ -8,6 +8,8 @@ Method | HTTP request | Description
 [**AddAccessNode**](ChainsApi.md#AddAccessNode) | **Put** /v1/chains/{chainID}/access-node/{peer} | Configure a trusted node to be an access node.
 [**CallView**](ChainsApi.md#CallView) | **Post** /v1/chains/{chainID}/callview | Call a view function on a contract by Hname
 [**DeactivateChain**](ChainsApi.md#DeactivateChain) | **Post** /v1/chains/{chainID}/deactivate | Deactivate a chain
+[**EstimateGasOffledger**](ChainsApi.md#EstimateGasOffledger) | **Post** /v1/chains/{chainID}/estimategas-offledger | Estimates gas for a given off-ledger ISC request
+[**EstimateGasOnledger**](ChainsApi.md#EstimateGasOnledger) | **Post** /v1/chains/{chainID}/estimategas-onledger | Estimates gas for a given on-ledger ISC request
 [**GetChainInfo**](ChainsApi.md#GetChainInfo) | **Get** /v1/chains/{chainID} | Get information about a specific chain
 [**GetChains**](ChainsApi.md#GetChains) | **Get** /v1/chains | Get a list of all chains
 [**GetCommitteeInfo**](ChainsApi.md#GetCommitteeInfo) | **Get** /v1/chains/{chainID}/committee | Get information about the deployed committee
@@ -17,7 +19,7 @@ Method | HTTP request | Description
 [**GetStateValue**](ChainsApi.md#GetStateValue) | **Get** /v1/chains/{chainID}/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
 [**RemoveAccessNode**](ChainsApi.md#RemoveAccessNode) | **Delete** /v1/chains/{chainID}/access-node/{peer} | Remove an access node.
 [**SetChainRecord**](ChainsApi.md#SetChainRecord) | **Post** /v1/chains/{chainID}/chainrecord | Sets the chain record.
-[**V1ChainsChainIDEvmGet**](ChainsApi.md#V1ChainsChainIDEvmGet) | **Get** /v1/chains/{chainID}/evm | Ethereum JSON-RPC
+[**V1ChainsChainIDEvmPost**](ChainsApi.md#V1ChainsChainIDEvmPost) | **Post** /v1/chains/{chainID}/evm | Ethereum JSON-RPC
 [**V1ChainsChainIDEvmWsGet**](ChainsApi.md#V1ChainsChainIDEvmWsGet) | **Get** /v1/chains/{chainID}/evm/ws | Ethereum JSON-RPC (Websocket transport)
 [**WaitForRequest**](ChainsApi.md#WaitForRequest) | **Get** /v1/chains/{chainID}/requests/{requestID}/wait | Wait until the given request has been processed by the node
 
@@ -296,6 +298,146 @@ Name | Type | Description  | Notes
 [[Back to README]](../README.md)
 
 
+## EstimateGasOffledger
+
+> ReceiptResponse EstimateGasOffledger(ctx, chainID).Request(request).Execute()
+
+Estimates gas for a given off-ledger ISC request
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    chainID := "chainID_example" // string | ChainID (Bech32)
+    request := *openapiclient.NewEstimateGasRequestOffledger("RequestBytes_example") // EstimateGasRequestOffledger | Request
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.ChainsApi.EstimateGasOffledger(context.Background(), chainID).Request(request).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.EstimateGasOffledger``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `EstimateGasOffledger`: ReceiptResponse
+    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.EstimateGasOffledger`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**chainID** | **string** | ChainID (Bech32) | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiEstimateGasOffledgerRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+ **request** | [**EstimateGasRequestOffledger**](EstimateGasRequestOffledger.md) | Request | 
+
+### Return type
+
+[**ReceiptResponse**](ReceiptResponse.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: application/json
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
+## EstimateGasOnledger
+
+> ReceiptResponse EstimateGasOnledger(ctx, chainID).Request(request).Execute()
+
+Estimates gas for a given on-ledger ISC request
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    chainID := "chainID_example" // string | ChainID (Bech32)
+    request := *openapiclient.NewEstimateGasRequestOnledger("OutputBytes_example") // EstimateGasRequestOnledger | Request
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.ChainsApi.EstimateGasOnledger(context.Background(), chainID).Request(request).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.EstimateGasOnledger``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `EstimateGasOnledger`: ReceiptResponse
+    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.EstimateGasOnledger`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**chainID** | **string** | ChainID (Bech32) | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiEstimateGasOnledgerRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+ **request** | [**EstimateGasRequestOnledger**](EstimateGasRequestOnledger.md) | Request | 
+
+### Return type
+
+[**ReceiptResponse**](ReceiptResponse.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: application/json
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
 ## GetChainInfo
 
 > ChainInfoResponse GetChainInfo(ctx, chainID).Execute()
@@ -352,7 +494,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-[Authorization](../README.md#Authorization)
+No authorization required
 
 ### HTTP request headers
 
@@ -909,9 +1051,9 @@ Name | Type | Description  | Notes
 [[Back to README]](../README.md)
 
 
-## V1ChainsChainIDEvmGet
+## V1ChainsChainIDEvmPost
 
-> V1ChainsChainIDEvmGet(ctx, chainID).Execute()
+> V1ChainsChainIDEvmPost(ctx, chainID).Execute()
 
 Ethereum JSON-RPC
 
@@ -932,9 +1074,9 @@ func main() {
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.V1ChainsChainIDEvmGet(context.Background(), chainID).Execute()
+    resp, r, err := apiClient.ChainsApi.V1ChainsChainIDEvmPost(context.Background(), chainID).Execute()
     if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.V1ChainsChainIDEvmGet``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.V1ChainsChainIDEvmPost``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
 }
@@ -950,7 +1092,7 @@ Name | Type | Description  | Notes
 
 ### Other Parameters
 
-Other parameters are passed through a pointer to a apiV1ChainsChainIDEvmGetRequest struct via the builder pattern
+Other parameters are passed through a pointer to a apiV1ChainsChainIDEvmPostRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes

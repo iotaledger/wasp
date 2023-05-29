@@ -90,8 +90,8 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 
 func TestMessageMetrics(t *testing.T) {
 	ncm := NewChainMetricsProvider()
-	cncm1 := ncm.NewChainMetrics(isc.RandomChainID())
-	cncm2 := ncm.NewChainMetrics(isc.RandomChainID())
+	cncm1 := ncm.GetChainMetrics(isc.RandomChainID())
+	cncm2 := ncm.GetChainMetrics(isc.RandomChainID())
 
 	// IN State output
 	outputID1 := &InStateOutput{OutputID: iotago.OutputID{1}}
@@ -247,4 +247,18 @@ func checkMetricsValues[T any, V any](t *testing.T, expectedTotal uint32, expect
 	} else {
 		require.Equal(t, expectedLastMessage, metrics.LastMessage())
 	}
+}
+
+func TestPeeringMetrics(t *testing.T) {
+	pmp := NewPeeringMetricsProvider()
+
+	pmp.RecvEnqueued(100, 1)
+	pmp.RecvEnqueued(1009, 2)
+	pmp.RecvDequeued(1009, 1)
+	pmp.RecvEnqueued(100, 0)
+
+	pmp.SendEnqueued(100, 1)
+	pmp.SendEnqueued(1009, 2)
+	pmp.SendDequeued(1009, 1)
+	pmp.SendEnqueued(100, 0)
 }

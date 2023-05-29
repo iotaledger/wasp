@@ -5,26 +5,17 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/webapi/interfaces"
+	"github.com/iotaledger/wasp/packages/webapi/common"
 )
 
-type Accounts struct {
-	vmService interfaces.VMService
-}
-
-func NewAccounts(vmService interfaces.VMService) *Accounts {
-	return &Accounts{
-		vmService: vmService,
-	}
-}
-
-func (a *Accounts) GetAccounts(chainID isc.ChainID) ([]isc.AgentID, error) {
-	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewAccounts.Hname(), nil)
+func GetAccounts(ch chain.Chain) ([]isc.AgentID, error) {
+	ret, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewAccounts.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +34,8 @@ func (a *Accounts) GetAccounts(chainID isc.ChainID) ([]isc.AgentID, error) {
 	return accountIds, nil
 }
 
-func (a *Accounts) GetTotalAssets(chainID isc.ChainID) (*isc.Assets, error) {
-	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewTotalAssets.Hname(), nil)
+func GetTotalAssets(ch chain.Chain) (*isc.Assets, error) {
+	ret, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewTotalAssets.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +43,8 @@ func (a *Accounts) GetTotalAssets(chainID isc.ChainID) (*isc.Assets, error) {
 	return isc.AssetsFromDict(ret)
 }
 
-func (a *Accounts) GetAccountBalance(chainID isc.ChainID, agentID isc.AgentID) (*isc.Assets, error) {
-	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewBalance.Hname(), codec.MakeDict(map[string]interface{}{
+func GetAccountBalance(ch chain.Chain, agentID isc.AgentID) (*isc.Assets, error) {
+	ret, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewBalance.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: agentID,
 	}))
 	if err != nil {
@@ -63,8 +54,8 @@ func (a *Accounts) GetAccountBalance(chainID isc.ChainID, agentID isc.AgentID) (
 	return isc.AssetsFromDict(ret)
 }
 
-func (a *Accounts) GetAccountNFTs(chainID isc.ChainID, agentID isc.AgentID) ([]iotago.NFTID, error) {
-	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewAccountNFTs.Hname(), codec.MakeDict(map[string]interface{}{
+func GetAccountNFTs(ch chain.Chain, agentID isc.AgentID) ([]iotago.NFTID, error) {
+	ret, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewAccountNFTs.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: agentID,
 	}))
 	if err != nil {
@@ -86,8 +77,8 @@ func (a *Accounts) GetAccountNFTs(chainID isc.ChainID, agentID isc.AgentID) ([]i
 	return nftIDs, nil
 }
 
-func (a *Accounts) GetAccountFoundries(chainID isc.ChainID, agentID isc.AgentID) ([]uint32, error) {
-	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewAccountFoundries.Hname(), dict.Dict{
+func GetAccountFoundries(ch chain.Chain, agentID isc.AgentID) ([]uint32, error) {
+	ret, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewAccountFoundries.Hname(), dict.Dict{
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 	})
 	if err != nil {
@@ -104,8 +95,8 @@ func (a *Accounts) GetAccountFoundries(chainID isc.ChainID, agentID isc.AgentID)
 	return sns, nil
 }
 
-func (a *Accounts) GetAccountNonce(chainID isc.ChainID, agentID isc.AgentID) (uint64, error) {
-	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewGetAccountNonce.Hname(), codec.MakeDict(map[string]interface{}{
+func GetAccountNonce(ch chain.Chain, agentID isc.AgentID) (uint64, error) {
+	ret, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewGetAccountNonce.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: agentID,
 	}))
 	if err != nil {
@@ -117,8 +108,8 @@ func (a *Accounts) GetAccountNonce(chainID isc.ChainID, agentID isc.AgentID) (ui
 	return codec.DecodeUint64(nonce)
 }
 
-func (a *Accounts) GetNFTData(chainID isc.ChainID, nftID iotago.NFTID) (*isc.NFT, error) {
-	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewNFTData.Hname(), codec.MakeDict(map[string]interface{}{
+func GetNFTData(ch chain.Chain, nftID iotago.NFTID) (*isc.NFT, error) {
+	ret, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewNFTData.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamNFTID: nftID[:],
 	}))
 	if err != nil {
@@ -144,8 +135,8 @@ func parseNativeTokenIDFromBytes(data []byte) (iotago.NativeTokenID, error) {
 	return ret, nil
 }
 
-func (a *Accounts) GetNativeTokenIDRegistry(chainID isc.ChainID) ([]iotago.NativeTokenID, error) {
-	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewGetNativeTokenIDRegistry.Hname(), nil)
+func GetNativeTokenIDRegistry(ch chain.Chain) ([]iotago.NativeTokenID, error) {
+	ret, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewGetNativeTokenIDRegistry.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -163,8 +154,8 @@ func (a *Accounts) GetNativeTokenIDRegistry(chainID isc.ChainID) ([]iotago.Nativ
 	return nativeTokenIDs, nil
 }
 
-func (a *Accounts) GetFoundryOutput(chainID isc.ChainID, serialNumber uint32) (*iotago.FoundryOutput, error) {
-	res, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewFoundryOutput.Hname(), codec.MakeDict(map[string]interface{}{
+func GetFoundryOutput(ch chain.Chain, serialNumber uint32) (*iotago.FoundryOutput, error) {
+	res, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewFoundryOutput.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamFoundrySN: serialNumber,
 	}))
 	if err != nil {

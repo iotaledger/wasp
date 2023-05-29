@@ -13,7 +13,7 @@ type nftIncluded struct {
 	ID          iotago.NFTID
 	outputID    iotago.OutputID // only available when the input is already accounted for (NFT was deposited in a previous block)
 	in          *iotago.NFTOutput
-	out         *iotago.NFTOutput
+	out         *iotago.NFTOutput // this is not the same as in the `nativeTokenBalance` struct, this can be the accounting output, or the output leaving the chain. // TODO should refactor to follow the same logic so its easier to grok
 	sentOutside bool
 }
 
@@ -70,7 +70,6 @@ func (txb *AnchorTransactionBuilder) NFTOutputs() []*iotago.NFTOutput {
 func (txb *AnchorTransactionBuilder) NFTOutputsToBeUpdated() (toBeAdded, toBeRemoved []*iotago.NFTOutput) {
 	toBeAdded = make([]*iotago.NFTOutput, 0, len(txb.nftsIncluded))
 	toBeRemoved = make([]*iotago.NFTOutput, 0, len(txb.nftsIncluded))
-	txb.inputs()
 	for _, nft := range txb.nftsSorted() {
 		if nft.in != nil {
 			// to remove if input is not nil (nft exists in accounting), and its sent to outside the chain

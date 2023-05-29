@@ -64,7 +64,7 @@ const (
 )
 
 type ChainRequests interface {
-	ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey)
+	ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) bool
 	AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID, confirmed bool) <-chan *blocklog.RequestReceipt
 }
 
@@ -325,6 +325,15 @@ func New(
 		chainMetrics:           chainMetrics,
 		log:                    log,
 	}
+
+	cni.chainMetrics.TrackPipeLen("node-recvAliasOutputPipe", cni.recvAliasOutputPipe.Len)
+	cni.chainMetrics.TrackPipeLen("node-recvTxPublishedPipe", cni.recvTxPublishedPipe.Len)
+	cni.chainMetrics.TrackPipeLen("node-recvMilestonePipe", cni.recvMilestonePipe.Len)
+	cni.chainMetrics.TrackPipeLen("node-consOutputPipe", cni.consOutputPipe.Len)
+	cni.chainMetrics.TrackPipeLen("node-consRecoverPipe", cni.consRecoverPipe.Len)
+	cni.chainMetrics.TrackPipeLen("node-serversUpdatedPipe", cni.serversUpdatedPipe.Len)
+	cni.chainMetrics.TrackPipeLen("node-netRecvPipe", cni.netRecvPipe.Len)
+
 	cni.tryRecoverStoreFromWAL(chainStore, blockWAL)
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
 	//
@@ -387,6 +396,7 @@ func New(
 		chainStore,
 		shutdownCoordinator.Nested("StateMgr"),
 		chainMetrics,
+		chainMetrics,
 		cni.log.Named("SM"),
 	)
 	if err != nil {
@@ -398,6 +408,7 @@ func New(
 		nodeIdentity,
 		net,
 		cni.log.Named("MP"),
+		chainMetrics,
 		chainMetrics,
 		cni.listener,
 	)
@@ -461,10 +472,10 @@ func New(
 	return cni, nil
 }
 
-func (cni *chainNodeImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) {
+func (cni *chainNodeImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) bool {
 	cni.log.Debugf("ReceiveOffLedgerRequest: %v from outside.", request.ID())
 	// TODO: What to do with the sender's pub key?
-	cni.mempool.ReceiveOffLedgerRequest(request)
+	return cni.mempool.ReceiveOffLedgerRequest(request)
 }
 
 func (cni *chainNodeImpl) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID, confirmed bool) <-chan *blocklog.RequestReceipt {
@@ -504,10 +515,9 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 				return
 			}
 			// needs to wait for state mgr and consensusInst
-			if cni.shutdownCoordinator.CheckNestedDone() {
-				cni.shutdownCoordinator.Done()
-				return
-			}
+			cni.shutdownCoordinator.WaitNestedWithLogging(1 * time.Second)
+			cni.shutdownCoordinator.Done()
+			return
 		}
 		select {
 		case txPublishResult, ok := <-recvTxPublishedPipeOutCh:
@@ -849,6 +859,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 				consGrCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
 				cni.procCache, cni.mempool, cni.stateMgr, cni.net,
 				recoveryTimeout, redeliveryPeriod, printStatusPeriod,
+				cni.chainMetrics,
 				cni.chainMetrics,
 				cni.log.Named(fmt.Sprintf("C-%v.LI-%v", committeeAddr.String()[:10], logIndexCopy)),
 			)

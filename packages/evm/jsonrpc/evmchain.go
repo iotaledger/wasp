@@ -246,9 +246,9 @@ func (e *EVMChain) iscAliasOutputFromEVMBlockNumber(blockNumber *big.Int) (*isc.
 		return nil, err
 	}
 	blocklogStatePartition := subrealm.NewReadOnly(nextISCState, kv.Key(blocklog.Contract.Hname().Bytes()))
-	nextBlock, err := blocklog.GetBlockInfo(blocklogStatePartition, nextISCBlockIndex)
-	if err != nil {
-		return nil, err
+	nextBlock, ok := blocklog.GetBlockInfo(blocklogStatePartition, nextISCBlockIndex)
+	if !ok {
+		return nil, fmt.Errorf("block not found: %d", nextISCBlockIndex)
 	}
 	return nextBlock.PreviousAliasOutput, nil
 }
@@ -323,16 +323,9 @@ func (e *EVMChain) TransactionByHash(hash common.Hash) (tx *types.Transaction, b
 	if !ok {
 		return nil, common.Hash{}, 0, 0, err
 	}
-	tx = db.GetTransactionByHash(hash)
+	tx, txIndex := db.GetTransactionByHash(hash)
 	block := db.GetBlockByNumber(blockNumber)
-	txIndex := uint64(0)
-	for i, t := range block.Transactions() {
-		if t.Hash() == tx.Hash() {
-			txIndex = uint64(i)
-			break
-		}
-	}
-	return tx, block.Hash(), blockNumber, txIndex, nil
+	return tx, block.Hash(), blockNumber, uint64(txIndex), nil
 }
 
 func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumber, indexRet uint64, err error) {
@@ -512,7 +505,10 @@ func (e *EVMChain) iscRequestsInBlock(blockIndex uint32) (*blocklog.BlockInfo, [
 		reqs[i] = receipt.Request
 	}
 	blocklogStatePartition := subrealm.NewReadOnly(iscState, kv.Key(blocklog.Contract.Hname().Bytes()))
-	block, err := blocklog.GetBlockInfo(blocklogStatePartition, blockIndex)
+	block, ok := blocklog.GetBlockInfo(blocklogStatePartition, blockIndex)
+	if !ok {
+		return nil, nil, fmt.Errorf("block not found: %d", blockIndex)
+	}
 	if err != nil {
 		return nil, nil, err
 	}
@@ -580,6 +576,7 @@ func blockchainDB(chainState state.State) *emulator.BlockchainDB {
 	govPartition := subrealm.NewReadOnly(chainState, kv.Key(governance.Contract.Hname().Bytes()))
 	gasLimits := governance.MustGetGasLimits(govPartition)
 	gasFeePolicy := governance.MustGetGasFeePolicy(govPartition)
+	blockKeepAmount := governance.GetBlockKeepAmount(govPartition)
 	bdbPartition := subrealm.NewReadOnly(
 		chainState,
 		kv.Key(evm.Contract.Hname().Bytes())+evm.KeyEVMState+emulator.KeyBlockchainDB,
@@ -587,6 +584,7 @@ func blockchainDB(chainState state.State) *emulator.BlockchainDB {
 	return emulator.NewBlockchainDB(
 		buffered.NewBufferedKVStore(bdbPartition),
 		gas.EVMBlockGasLimit(gasLimits, &gasFeePolicy.EVMGasRatio),
+		blockKeepAmount,
 	)
 }
 

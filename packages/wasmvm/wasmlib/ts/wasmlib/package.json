@@ -1,7 +1,7 @@
 {
   "name": "wasmlib",
   "description": "WasmLib, interface library for ISC Wasm VM",
-  "version": "1.0.11",
+  "version": "1.0.15",
   "author": "Eric Hop",
   "main": "index.ts",
   "scripts": {
@@ -24,6 +24,6 @@
     "ts-jest-resolver": "^2.0.0",
     "ts-node": "^10.9.1",
     "tsify": "^5.0.4",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.4"
   }
 }

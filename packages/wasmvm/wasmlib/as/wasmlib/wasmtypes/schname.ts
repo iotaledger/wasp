@@ -1,6 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+export const ScHnameLength = 4;
+
 import {panic} from '../sandbox';
 import {uint32FromBytes, uint32ToBytes} from './scuint32';
 import {bytesCompare} from './scbytes';
@@ -8,8 +10,6 @@ import {hashName, WasmDecoder, WasmEncoder} from './codec';
 import {Proxy} from './proxy';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-export const ScHnameLength = 4;
 
 export class ScHname {
     id: Uint8Array;

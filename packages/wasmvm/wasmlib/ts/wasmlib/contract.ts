@@ -11,18 +11,16 @@ import {ScHname} from './wasmtypes/schname';
 
 // base contract objects
 
-export interface ScViewCallContext {
+export interface ScViewClientContext {
+    clientContract(hContract: ScHname): ScHname;
+
     fnCall(req: CallRequest): Uint8Array;
 
     fnChainID(): ScChainID;
-
-    initViewCallContext(hContract: ScHname): ScHname;
 }
 
-export interface ScFuncCallContext extends ScViewCallContext {
+export interface ScFuncClientContext extends ScViewClientContext {
     fnPost(req: PostRequest): Uint8Array;
-
-    initFuncCallContext(): void;
 }
 
 export function newCallParamsProxy(v: ScView): Proxy {
@@ -42,15 +40,15 @@ export class ScView {
     private static nilParams: ScDict = new ScDict(null);
     public static nilProxy: Proxy = new Proxy(ScView.nilParams);
 
-    ctx: ScViewCallContext;
+    ctx: ScViewClientContext;
     hContract: ScHname;
     hFunction: ScHname;
     params: ScDict;
     resultsProxy: Proxy | null;
 
-    constructor(ctx: ScViewCallContext, hContract: ScHname, hFunction: ScHname) {
+    constructor(ctx: ScViewClientContext, hContract: ScHname, hFunction: ScHname) {
         this.ctx = ctx;
-        this.hContract = ctx.initViewCallContext(hContract);
+        this.hContract = ctx.clientContract(hContract);
         this.hFunction = hFunction;
         this.params = ScView.nilParams;
         this.resultsProxy = null;
@@ -60,32 +58,29 @@ export class ScView {
         this.callWithAllowance(null);
     }
 
+    ofContract(hContract: ScHname): ScView {
+        this.hContract = hContract;
+        return this;
+    }
+
     protected callWithAllowance(allowance: ScTransfer | null): void {
         const req = new CallRequest();
         req.contract = this.hContract;
         req.function = this.hFunction;
         req.params = this.params.toBytes();
-        if (allowance === null) {
-            allowance = new ScTransfer();
-        }
-        req.allowance = allowance.toBytes();
+        req.allowance = (allowance === null) ? new Uint8Array(0): allowance.toBytes();
         const res = this.ctx.fnCall(req);
         const proxy = this.resultsProxy;
         if (proxy != null) {
             proxy.kvStore = new ScDict(res);
         }
     }
-
-    ofContract(hContract: ScHname): ScView {
-        this.hContract = hContract;
-        return this;
-    }
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScInitFunc extends ScView {
-    constructor(ctx: ScFuncCallContext, hContract: ScHname, hFunction: ScHname) {
+    constructor(ctx: ScFuncClientContext, hContract: ScHname, hFunction: ScHname) {
         super(ctx, hContract, hFunction);
     }
 
@@ -99,10 +94,10 @@ export class ScInitFunc extends ScView {
 export class ScFunc extends ScView {
     allowanceAssets: ScTransfer | null = null;
     delaySeconds: u32 = 0;
-    fctx: ScFuncCallContext;
+    fctx: ScFuncClientContext;
     transferAssets: ScTransfer | null = null;
 
-    constructor(ctx: ScFuncCallContext, hContract: ScHname, hFunction: ScHname) {
+    constructor(ctx: ScFuncClientContext, hContract: ScHname, hFunction: ScHname) {
         super(ctx, hContract, hFunction);
         this.fctx = ctx;
     }

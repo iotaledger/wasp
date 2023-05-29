@@ -7,10 +7,15 @@ import {WasmClientSandbox} from './wasmclientsandbox';
 import {WasmClientService} from './wasmclientservice';
 import {WasmClientEvents} from "./wasmclientevents";
 
-export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFuncCallContext {
+export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFuncClientContext {
 
     public constructor(svcClient: WasmClientService, scName: string) {
         super(svcClient, scName);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    public clientContract(_hContract: wasmlib.ScHname): wasmlib.ScHname {
+        return this.scHname;
     }
 
     public currentKeyPair(): isc.KeyPair | null {
@@ -19,15 +24,6 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
 
     public currentSvcClient(): WasmClientService {
         return this.svcClient;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    public initFuncCallContext(): void {
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    public initViewCallContext(_hContract: wasmlib.ScHname): wasmlib.ScHname {
-        return this.scHname;
     }
 
     public register(handler: wasmlib.IEventHandlers): isc.Error {

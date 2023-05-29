@@ -1,12 +1,11 @@
 package rootimpl
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -33,12 +32,14 @@ func isAuthorizedToDeploy(ctx isc.Sandbox) bool {
 	return collections.NewMap(ctx.State(), root.StateVarDeployPermissions).HasAt(caller.Bytes())
 }
 
+var errContractAlreadyExists = coreerrors.Register("contract with hname %08x already exists")
+
 func storeContractRecord(state kv.KVStore, rec *root.ContractRecord) {
 	hname := isc.Hn(rec.Name)
 	// storing contract record in the registry
 	contractRegistry := root.GetContractRegistry(state)
 	if contractRegistry.HasAt(hname.Bytes()) {
-		panic(fmt.Sprintf("contract '%s'/%s already exists", rec.Name, hname.String()))
+		panic(errContractAlreadyExists.Create(hname))
 	}
 	contractRegistry.SetAt(hname.Bytes(), rec.Bytes())
 }

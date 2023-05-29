@@ -70,9 +70,11 @@ func (ch *Chain) L2LedgerString() string {
 
 // L2Assets return all tokens contained in the on-chain account controlled by the 'agentID'
 func (ch *Chain) L2Assets(agentID isc.AgentID) *isc.Assets {
-	return ch.parseAccountBalance(
+	assets := ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.ViewBalance.Name, accounts.ParamAgentID, agentID),
 	)
+	assets.NFTs = ch.L2NFTs(agentID)
+	return assets
 }
 
 func (ch *Chain) L2BaseTokens(agentID isc.AgentID) uint64 {

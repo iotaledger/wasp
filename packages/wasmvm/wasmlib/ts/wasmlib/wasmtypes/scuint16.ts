@@ -10,11 +10,11 @@ import {Proxy} from './proxy';
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export function uint16Decode(dec: WasmDecoder): u16 {
-    return dec.vluDecode(16) as u16;
+    return uint16FromBytes(dec.fixedBytes(ScUint16Length));
 }
 
 export function uint16Encode(enc: WasmEncoder, value: u16): void {
-    enc.vluEncode(value as u32);
+    enc.fixedBytes(uint16ToBytes(value), ScUint16Length);
 }
 
 export function uint16FromBytes(buf: Uint8Array): u16 {

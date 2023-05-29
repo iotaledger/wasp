@@ -48,8 +48,8 @@ var (
 	ViewGetMaintenanceStatus = coreutil.ViewFunc("getMaintenanceStatus")
 
 	// L1 metadata
-	FuncSetCustomMetadata = coreutil.Func("setCustomMetadata")
-	ViewGetCustomMetadata = coreutil.ViewFunc("getCustomMetadata")
+	FuncSetMetadata = coreutil.Func("setMetadata")
+	ViewGetMetadata = coreutil.ViewFunc("getMetadata")
 )
 
 // state variables
@@ -73,8 +73,15 @@ const (
 	// maintenance
 	VarMaintenanceStatus = "m"
 
-	// L1 metadata
-	VarCustomMetadata = "x"
+	// L2 metadata (provided by the webapi, located by the public url)
+	VarMetadataEVMJsonRPCURL   = "e"
+	VarMetadataEVMWebSocketURL = "w"
+
+	// L1 metadata (stored and provided in the tangle)
+	VarPublicURL = "x"
+
+	// state pruning
+	VarBlockKeepAmount = "b"
 )
 
 // params
@@ -106,6 +113,15 @@ const (
 	// access nodes: changeAccessNodes
 	ParamChangeAccessNodesActions = "n"
 
-	// L1 metadata
-	ParamCustomMetadata = "x"
+	// L2 metadata (provided by the webapi, located by the public url)
+	ParamMetadataEVMJsonRPCURL   = "e"
+	ParamMetadataEVMWebSocketURL = "w"
+
+	// L1 metadata (stored and provided in the tangle)
+	ParamPublicURL = "x"
+
+	// state pruning
+	ParamBlockKeepAmount   = "b"
+	BlockKeepAll           = -1
+	BlockKeepAmountDefault = 10_000
 )

@@ -29,6 +29,7 @@ type VMTask struct {
 	AnchorOutputStorageDeposit uint64 // will be filled by vmcontext
 	Store                      state.Store
 	Requests                   []isc.Request
+	UnprocessableToRetry       []isc.Request
 	TimeAssumption             time.Time
 	Entropy                    hashing.HashValue
 	ValidatorFeeTarget         isc.AgentID
@@ -67,14 +68,6 @@ type RequestResult struct {
 	Return dict.Dict
 	// Receipt is the receipt produced after executing the request
 	Receipt *blocklog.RequestReceipt
-}
-
-func (task *VMTask) GetProcessedRequestIDs() []isc.RequestID {
-	ret := make([]isc.RequestID, len(task.Results))
-	for i, res := range task.Results {
-		ret[i] = res.Request.ID()
-	}
-	return ret
 }
 
 func (task *VMTask) WillProduceBlock() bool {

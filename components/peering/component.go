@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/wasp/packages/daemon"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/lpp"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -40,6 +41,7 @@ func provide(c *dig.Container) error {
 
 		NodeIdentityProvider         registry.NodeIdentityProvider
 		TrustedPeersRegistryProvider registry.TrustedPeersRegistryProvider
+		PeeringMetricsProvider       *metrics.PeeringMetricsProvider
 	}
 
 	type networkResult struct {
@@ -56,6 +58,7 @@ func provide(c *dig.Container) error {
 			ParamsPeering.Port,
 			nodeIdentity,
 			deps.TrustedPeersRegistryProvider,
+			deps.PeeringMetricsProvider,
 			Component.Logger(),
 		)
 		if err != nil {

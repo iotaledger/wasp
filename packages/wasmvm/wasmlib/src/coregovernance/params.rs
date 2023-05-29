@@ -292,36 +292,6 @@ impl MutableRotateStateControllerParams {
 }
 
 #[derive(Clone)]
-pub struct ImmutableSetCustomMetadataParams {
-    pub(crate) proxy: Proxy,
-}
-
-impl ImmutableSetCustomMetadataParams {
-    pub fn new() -> ImmutableSetCustomMetadataParams {
-        ImmutableSetCustomMetadataParams {
-            proxy: params_proxy(),
-        }
-    }
-
-    // serialized chain metadata
-    pub fn metadata(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.proxy.root(PARAM_METADATA))
-    }
-}
-
-#[derive(Clone)]
-pub struct MutableSetCustomMetadataParams {
-    pub(crate) proxy: Proxy,
-}
-
-impl MutableSetCustomMetadataParams {
-    // serialized chain metadata
-    pub fn metadata(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.proxy.root(PARAM_METADATA))
-    }
-}
-
-#[derive(Clone)]
 pub struct ImmutableSetEVMGasRatioParams {
     pub(crate) proxy: Proxy,
 }
@@ -408,5 +378,55 @@ impl MutableSetGasLimitsParams {
     // serialized gas limits
     pub fn gas_limits(&self) -> ScMutableBytes {
         ScMutableBytes::new(self.proxy.root(PARAM_GAS_LIMITS))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableSetMetadataParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl ImmutableSetMetadataParams {
+    pub fn new() -> ImmutableSetMetadataParams {
+        ImmutableSetMetadataParams {
+            proxy: params_proxy(),
+        }
+    }
+
+    // the public evm json rpc url
+    pub fn evm_json_rpcurl(&self) -> ScImmutableString {
+        ScImmutableString::new(self.proxy.root(PARAM_EVM_JSON_RPCURL))
+    }
+
+    // the public evm websocket url
+    pub fn evm_web_socket_url(&self) -> ScImmutableString {
+        ScImmutableString::new(self.proxy.root(PARAM_EVM_WEB_SOCKET_URL))
+    }
+
+    // the public url leading to the chain info, stored on the tangle
+    pub fn public_url(&self) -> ScImmutableString {
+        ScImmutableString::new(self.proxy.root(PARAM_PUBLIC_URL))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableSetMetadataParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl MutableSetMetadataParams {
+    // the public evm json rpc url
+    pub fn evm_json_rpcurl(&self) -> ScMutableString {
+        ScMutableString::new(self.proxy.root(PARAM_EVM_JSON_RPCURL))
+    }
+
+    // the public evm websocket url
+    pub fn evm_web_socket_url(&self) -> ScMutableString {
+        ScMutableString::new(self.proxy.root(PARAM_EVM_WEB_SOCKET_URL))
+    }
+
+    // the public url leading to the chain info, stored on the tangle
+    pub fn public_url(&self) -> ScMutableString {
+        ScMutableString::new(self.proxy.root(PARAM_PUBLIC_URL))
     }
 }

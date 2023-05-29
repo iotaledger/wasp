@@ -6,11 +6,11 @@ package wasmsolo
 import (
 	"fmt"
 	"sort"
+	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/solo"
 )
 
 type SoloBalances struct {
@@ -126,7 +126,7 @@ func (bal *SoloBalances) findName(id string) string {
 	return ""
 }
 
-func (bal *SoloBalances) VerifyBalances(t solo.TestContext) {
+func (bal *SoloBalances) VerifyBalances(t testing.TB) {
 	bal.DumpBalances()
 	ctx := bal.ctx
 	actual := ctx.Balance(ctx.Account())

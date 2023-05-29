@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/params"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -97,11 +98,7 @@ func (s *StateDB) GetBalance(addr common.Address) *big.Int {
 }
 
 func (s *StateDB) GetNonce(addr common.Address) uint64 {
-	n, err := codec.DecodeUint64(s.kv.Get(accountNonceKey(addr)), 0)
-	if err != nil {
-		panic(err)
-	}
-	return n
+	return codec.MustDecodeUint64(s.kv.Get(accountNonceKey(addr)), 0)
 }
 
 func (s *StateDB) SetNonce(addr common.Address, n uint64) {
@@ -250,6 +247,21 @@ func (s *StateDB) ForEachStorage(common.Address, func(common.Hash, common.Hash) 
 
 func (s *StateDB) Buffered() *BufferedStateDB {
 	return NewBufferedStateDB(s)
+}
+
+// GetTransientState implements vm.StateDB
+func (*StateDB) GetTransientState(addr common.Address, key common.Hash) common.Hash {
+	panic("unimplemented")
+}
+
+// Prepare implements vm.StateDB
+func (s *StateDB) Prepare(rules params.Rules, sender common.Address, coinbase common.Address, dest *common.Address, precompiles []common.Address, txAccesses types.AccessList) {
+	// do nothing
+}
+
+// SetTransientState implements vm.StateDB
+func (*StateDB) SetTransientState(addr common.Address, key common.Hash, value common.Hash) {
+	panic("unimplemented")
 }
 
 // BufferedStateDB is a wrapper for StateDB that writes all mutations into an in-memory buffer,

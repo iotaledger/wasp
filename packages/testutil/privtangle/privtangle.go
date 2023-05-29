@@ -94,7 +94,7 @@ func (pt *PrivTangle) StartServers(deleteExisting bool) {
 
 	pt.waitAllReady(20 * time.Second)
 	pt.startCoordinator(0, deleteExisting)
-	pt.waitAllHealthy(20 * time.Second)
+	pt.waitAllHealthy(100 * time.Second)
 	pt.waitAllReturnTips(20 * time.Second)
 	for i := range pt.NodeKeyPairs {
 		pt.startIndexer(i)
@@ -324,25 +324,23 @@ func (pt *PrivTangle) waitAllHealthy(timeout time.Duration) {
 	pt.logf("Waiting for all HORNET nodes to become healthy...")
 
 	for {
-		select {
-		case <-ctx.Done():
+		if ctx.Err() != nil {
 			panic("nodes didn't become healthy in time")
-
-		default:
-			allOK := true
-			for i := range pt.NodeCommands {
-				ok, err := pt.nodeClient(i).Health(pt.ctx)
-				if err != nil || !ok {
-					allOK = false
-				}
-			}
-			if allOK {
-				pt.logf("Waiting for all HORNET nodes to become healthy... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
-				return
-			}
-
-			time.Sleep(100 * time.Millisecond)
 		}
+
+		allOK := true
+		for i := range pt.NodeCommands {
+			ok, err := pt.nodeClient(i).Health(pt.ctx)
+			if err != nil || !ok {
+				allOK = false
+			}
+		}
+		if allOK {
+			pt.logf("Waiting for all HORNET nodes to become healthy... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
+			return
+		}
+
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 

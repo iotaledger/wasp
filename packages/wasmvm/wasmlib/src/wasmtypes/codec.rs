@@ -18,8 +18,8 @@ impl WasmDecoder<'_> {
 
     // decodes the next variable length substring of bytes from the byte buffer
     pub fn bytes(&mut self) -> Vec<u8> {
-        let length = self.vlu_decode(32);
-        self.fixed_bytes(length as usize)
+        let length = uint32_decode(self) as usize;
+        self.fixed_bytes(length)
     }
 
     // decodes an uint8 from the byte buffer
@@ -33,12 +33,13 @@ impl WasmDecoder<'_> {
     }
 
     // decodes the next fixed length substring of bytes from the byte buffer
-    pub fn fixed_bytes(&mut self, size: usize) -> Vec<u8> {
-        if self.buf.len() < size {
+    pub fn fixed_bytes(&mut self, length: usize) -> Vec<u8> {
+        let len = self.buf.len();
+        if len < length {
             panic("insufficient fixed bytes");
         }
-        let value = &self.buf[..size];
-        self.buf = &self.buf[size..];
+        let value = &self.buf[..length];
+        self.buf = &self.buf[length..];
         value.to_vec()
     }
 
@@ -131,7 +132,7 @@ impl WasmEncoder {
     // encodes a variable sized substring of bytes into the byte buffer
     pub fn bytes(&mut self, value: &[u8]) -> &WasmEncoder {
         let length = value.len();
-        self.vlu_encode(length as u64);
+        uint32_encode(self, length as u32);
         self.fixed_bytes(value, length)
     }
 
@@ -142,7 +143,7 @@ impl WasmEncoder {
 
     // encodes a fixed sized substring of bytes into the byte buffer
     pub fn fixed_bytes(&mut self, value: &[u8], length: usize) -> &WasmEncoder {
-        if value.len() != length as usize {
+        if value.len() != length {
             panic(&("invalid fixed bytes length (".to_string() + &length.to_string() + "), found " + &value.len().to_string()));
         }
         self.buf.extend_from_slice(value);

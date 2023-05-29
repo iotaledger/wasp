@@ -48,13 +48,18 @@ type dependencies struct {
 	PrometheusEcho     *echo.Echo `name:"prometheusEcho"`
 	PrometheusRegistry *prometheus.Registry
 
-	AppInfo      *app.Info
-	ChainMetrics *metrics.ChainMetricsProvider
-	WebAPIEcho   *echo.Echo `name:"webapiEcho" optional:"true"`
+	AppInfo        *app.Info
+	ChainMetrics   *metrics.ChainMetricsProvider
+	PeeringMetrics *metrics.PeeringMetricsProvider
+	WebAPIEcho     *echo.Echo `name:"webapiEcho" optional:"true"`
 }
 
 func provide(c *dig.Container) error {
 	if err := c.Provide(metrics.NewChainMetricsProvider); err != nil {
+		Component.LogPanic(err)
+	}
+
+	if err := c.Provide(metrics.NewPeeringMetricsProvider); err != nil {
 		Component.LogPanic(err)
 	}
 
@@ -97,7 +102,7 @@ func configure() error {
 		register("write ahead logging", deps.ChainMetrics.PrometheusCollectorsBlockWAL()...)
 	}
 	if ParamsPrometheus.ConsensusMetrics {
-		register("consenus", deps.ChainMetrics.PrometheusCollectorsConsensus()...)
+		register("consensus", deps.ChainMetrics.PrometheusCollectorsConsensus()...)
 	}
 	if ParamsPrometheus.MempoolMetrics {
 		register("mempool", deps.ChainMetrics.PrometheusCollectorsMempool()...)
@@ -113,6 +118,12 @@ func configure() error {
 	}
 	if ParamsPrometheus.ChainNodeConnMetrics {
 		register("chain node conn", deps.ChainMetrics.PrometheusCollectorsChainNodeConn()...)
+	}
+	if ParamsPrometheus.ChainPipeMetrics {
+		deps.ChainMetrics.PrometheusRegisterChainPipeMetrics(deps.PrometheusRegistry)
+	}
+	if ParamsPrometheus.PeeringMetrics {
+		register("peering", deps.PeeringMetrics.Collectors()...)
 	}
 	if ParamsPrometheus.RestAPIMetrics {
 		register("rest API", newRestAPICollector(deps.WebAPIEcho)...)

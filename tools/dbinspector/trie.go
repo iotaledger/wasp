@@ -26,6 +26,7 @@ type trieStatsData struct {
 
 func trieStats(ctx context.Context, kvs kvstore.KVStore) {
 	state := getState(kvs, blockIndex)
+	blockIndex = int64(state.BlockIndex())
 	tr, err := trie.NewTrieReader(trie.NewHiveKVStoreAdapter(kvs, []byte{chaindb.PrefixTrie}), state.TrieRoot())
 	mustNoError(err)
 
@@ -42,13 +43,13 @@ func trieStats(ctx context.Context, kvs kvstore.KVStore) {
 
 	go func() {
 		defer close(nodesCh)
-		tr.IterateNodes(func(nodeKey []byte, node *trie.NodeData, depth int) bool {
+		tr.IterateNodes(func(nodeKey []byte, node *trie.NodeData, depth int) trie.IterateNodesAction {
 			if ctx.Err() != nil {
 				fmt.Println(ctx.Err())
-				return false
+				return trie.IterateStop
 			}
 			nodesCh <- nodeData{NodeData: node, depth: depth}
-			return true
+			return trie.IterateContinue
 		})
 	}()
 

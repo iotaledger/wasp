@@ -1,10 +1,12 @@
 package metrics
 
 import (
+	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/samber/lo"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
@@ -13,6 +15,7 @@ import (
 
 const (
 	labelNameChain                                  = "chain"
+	labelNamePipeName                               = "pipe_name"
 	labelNameMessageType                            = "message_type"
 	labelNameInMilestone                            = "in_milestone"
 	labelNameInStateOutputMetrics                   = "in_state_output"
@@ -32,6 +35,7 @@ const (
 )
 
 type IChainMetrics interface {
+	IChainPipeMetrics
 	IChainBlockWALMetrics
 	IChainConsensusMetrics
 	IChainMempoolMetrics
@@ -97,6 +101,7 @@ func (m *messageMetric[T]) LastMessage() T {
 }
 
 type emptyChainMetrics struct {
+	IChainPipeMetrics
 	IChainBlockWALMetrics
 	IChainConsensusMetrics
 	IChainMempoolMetrics
@@ -109,6 +114,7 @@ type emptyChainMetrics struct {
 
 func NewEmptyChainMetrics() IChainMetrics {
 	return &emptyChainMetrics{
+		IChainPipeMetrics:         NewEmptyChainPipeMetrics(),
 		IChainBlockWALMetrics:     NewEmptyChainBlockWALMetrics(),
 		IChainConsensusMetrics:    NewEmptyChainConsensusMetric(),
 		IChainMempoolMetrics:      NewEmptyChainMempoolMetric(),
@@ -121,6 +127,7 @@ func NewEmptyChainMetrics() IChainMetrics {
 }
 
 type chainMetrics struct {
+	*chainPipeMetrics
 	*chainBlockWALMetrics
 	*chainConsensusMetric
 	*chainMempoolMetric
@@ -133,6 +140,7 @@ type chainMetrics struct {
 
 func newChainMetrics(provider *ChainMetricsProvider, chainID isc.ChainID) *chainMetrics {
 	return &chainMetrics{
+		chainPipeMetrics:        newChainPipeMetric(provider, chainID),
 		chainBlockWALMetrics:    newChainBlockWALMetrics(provider, chainID),
 		chainConsensusMetric:    newChainConsensusMetric(provider, chainID),
 		chainMempoolMetric:      newChainMempoolMetric(provider, chainID),
@@ -146,6 +154,13 @@ func newChainMetrics(provider *ChainMetricsProvider, chainID isc.ChainID) *chain
 
 // ChainMetricsProvider holds all metrics for all chains per chain
 type ChainMetricsProvider struct {
+	chainsLock       *sync.RWMutex
+	chainsRegistered map[isc.ChainID]*chainMetrics
+
+	// We use Func variant of a metric here, thus we register them
+	// explicitly when they are created. Therefore we need a registry here.
+	pipeLenRegistry *prometheus.Registry
+
 	// blockWAL
 	blockWALFailedWrites  *prometheus.CounterVec
 	blockWALFailedReads   *prometheus.CounterVec
@@ -174,7 +189,6 @@ type ChainMetricsProvider struct {
 	mempoolMissingReqs       *prometheus.GaugeVec
 
 	// messages
-	chainsRegistered       []isc.ChainID
 	messagesL1             *prometheus.CounterVec
 	lastL1MessageTime      *prometheus.GaugeVec
 	messagesL1Chain        *prometheus.CounterVec
@@ -229,6 +243,9 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 	recCountBuckets := prometheus.ExponentialBucketsRange(1, 1000, 16)
 
 	m := &ChainMetricsProvider{
+		chainsLock:       &sync.RWMutex{},
+		chainsRegistered: map[isc.ChainID]*chainMetrics{},
+
 		//
 		// blockWAL
 		//
@@ -369,7 +386,6 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 		//
 		// messages // TODO: Review, if they are used/needed.
 		//
-		chainsRegistered: make([]isc.ChainID, 0),
 
 		messagesL1: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "iota_wasp",
@@ -536,14 +552,14 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 			Namespace: "iota_wasp",
 			Subsystem: "webapi",
 			Name:      "webapi_requests",
-			Help:      "Time elapsed processing requests",
+			Help:      "Time elapsed (s) processing requests",
 			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain, labelNameWebapiRequestOperation, labelNameWebapiRequestStatusCode}),
 		webAPIEvmRPCCalls: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "webapi",
 			Name:      "webapi_evm_rpc_calls",
-			Help:      "Time elapsed processing evm rpc requests",
+			Help:      "Time elapsed (s) processing evm rpc requests",
 			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain, labelNameWebapiRequestOperation, labelNameWebapiEvmRPCSuccess}),
 	}
@@ -563,8 +579,16 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 	return m
 }
 
-func (m *ChainMetricsProvider) NewChainMetrics(chainID isc.ChainID) IChainMetrics {
-	return newChainMetrics(m, chainID)
+func (m *ChainMetricsProvider) GetChainMetrics(chainID isc.ChainID) IChainMetrics {
+	m.chainsLock.Lock()
+	defer m.chainsLock.Unlock()
+
+	if cm, ok := m.chainsRegistered[chainID]; ok {
+		return cm
+	}
+	cm := newChainMetrics(m, chainID)
+	m.chainsRegistered[chainID] = cm
+	return cm
 }
 
 func (m *ChainMetricsProvider) PrometheusCollectorsBlockWAL() []prometheus.Collector {
@@ -645,6 +669,10 @@ func (m *ChainMetricsProvider) PrometheusCollectorsChainNodeConn() []prometheus.
 	}
 }
 
+func (m *ChainMetricsProvider) PrometheusRegisterChainPipeMetrics(reg *prometheus.Registry) {
+	m.pipeLenRegistry = reg
+}
+
 func (m *ChainMetricsProvider) PrometheusCollectorsWebAPI() []prometheus.Collector {
 	return []prometheus.Collector{
 		m.webAPIRequests,
@@ -653,21 +681,24 @@ func (m *ChainMetricsProvider) PrometheusCollectorsWebAPI() []prometheus.Collect
 }
 
 func (m *ChainMetricsProvider) RegisterChain(chainID isc.ChainID) {
-	m.chainsRegistered = append(m.chainsRegistered, chainID)
+	m.GetChainMetrics(chainID)
 }
 
 func (m *ChainMetricsProvider) UnregisterChain(chainID isc.ChainID) {
-	for i := 0; i < len(m.chainsRegistered); i++ {
-		if m.chainsRegistered[i] == chainID {
-			// remove the found chain from the slice and return
-			m.chainsRegistered = append(m.chainsRegistered[:i], m.chainsRegistered[i+1:]...)
-			return
-		}
+	m.chainsLock.Lock()
+	defer m.chainsLock.Unlock()
+
+	if cm, ok := m.chainsRegistered[chainID]; ok {
+		cm.cleanup()
+		delete(m.chainsRegistered, chainID)
 	}
 }
 
 func (m *ChainMetricsProvider) RegisteredChains() []isc.ChainID {
-	return m.chainsRegistered
+	m.chainsLock.RLock()
+	defer m.chainsLock.RUnlock()
+
+	return lo.Keys(m.chainsRegistered)
 }
 
 func (m *ChainMetricsProvider) InMilestone() IMessageMetric[*nodeclient.MilestoneInfo] {

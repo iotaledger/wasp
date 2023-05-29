@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -103,7 +104,7 @@ func TestCreateOrigin(t *testing.T) {
 			),
 			gas.DefaultFeePolicy(),
 			migrations.BaseSchemaVersion+uint32(len(migrations.Migrations)),
-			[]byte{},
+			"",
 		)
 
 		require.True(t,
@@ -188,7 +189,7 @@ func TestMismatchOriginCommitment(t *testing.T) {
 	require.NoError(t, err)
 	originMetadata, err := iotago.DecodeHex("0x0300000001006102000000e60701006204000000ffffffff01006322000000010024ed2ed9d3682c9c4b801dd15103f73d1fe877224cb51c8b3def6f91b67f5067")
 	require.NoError(t, err)
-	aoStateMetadata, err := iotago.DecodeHex("0x00000000006e55672af085d73ea0ed646f280a26e0eba053df10f439378fe4e99e0fb8774600761da7c0402da864000000010000000001000000010000000000")
+	aoStateMetadata, err := iotago.DecodeHex("0x01000000006e55672af085d73ea0ed646f280a26e0eba053df10f439378fe4e99e0fb8774600761da7c0402da864000000010000000001000000010000000000")
 	require.NoError(t, err)
 	_, sender, err := iotago.ParseBech32("rms1qqjw6tke6d5ze8ztsqwaz5gr7u73l6rhyfxt28yt8hhklydk0agxwgerk65")
 	require.NoError(t, err)
@@ -222,5 +223,5 @@ func TestMismatchOriginCommitment(t *testing.T) {
 	)
 
 	_, err = origin.InitChainByAliasOutput(store, ao)
-	require.Error(t, err)
+	testmisc.RequireErrorToBe(t, err, "l1Commitment mismatch between originAO / originBlock")
 }

@@ -18,6 +18,7 @@ var (
 	ErrNotEnoughFundsForInternalStorageDeposit = &skipRequestException{"not enough funds for internal storage deposit: common account must be topped up"}
 	ErrBlockGasLimitExceeded                   = &skipRequestException{"exceeded maximum gas allowed in a block"}
 	ErrMaxTransactionSizeExceeded              = &skipRequestException{"exceeded maximum size of the transaction"}
+	ErrNotEnoughFundsForSD                     = &skipRequestException{"user doesn't have enough on-chain funds to cover the SD cost of processing this request"}
 )
 
 var AllProtocolLimits = []error{
@@ -27,6 +28,7 @@ var AllProtocolLimits = []error{
 	ErrNotEnoughFundsForInternalStorageDeposit,
 	ErrBlockGasLimitExceeded,
 	ErrMaxTransactionSizeExceeded,
+	ErrNotEnoughFundsForSD,
 }
 
 func (m *skipRequestException) Error() string {

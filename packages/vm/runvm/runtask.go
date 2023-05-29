@@ -1,6 +1,8 @@
 package runvm
 
 import (
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
@@ -24,25 +26,20 @@ func NewVMRunner() vm.VMRunner {
 	return VMRunner{}
 }
 
-// runTask runs batch of requests on VM
-func runTask(task *vm.VMTask) {
-	vmctx := vmcontext.CreateVMContext(task)
-
-	var numOffLedger, numSuccess uint16
-	reqIndexInTheBlock := 0
-
-	vmctx.OpenBlockContexts()
+func runRequests(vmctx *vmcontext.VMContext, reqs []isc.Request, startRequestIndex uint16, log *logger.Logger) (results []*vm.RequestResult, numSuccess uint16, numOffLedger uint16) {
+	results = []*vm.RequestResult{}
+	reqIndexInTheBlock := startRequestIndex
 
 	// main loop over the batch of requests
-	for _, req := range task.Requests {
-		result, skipReason := vmctx.RunTheRequest(req, uint16(reqIndexInTheBlock))
+	for _, req := range reqs {
+		result, skipReason := vmctx.RunTheRequest(req, reqIndexInTheBlock)
 		if skipReason != nil {
 			// some requests are just ignored (deterministically)
-			task.Log.Infof("request skipped (ignored) by the VM: %s, reason: %v",
+			log.Infof("request skipped (ignored) by the VM: %s, reason: %v",
 				req.ID().String(), skipReason)
 			continue
 		}
-		task.Results = append(task.Results, result)
+		results = append(results, result)
 		reqIndexInTheBlock++
 		if req.IsOffLedger() {
 			numOffLedger++
@@ -51,10 +48,33 @@ func runTask(task *vm.VMTask) {
 		if result.Receipt.Error == nil {
 			numSuccess++
 		} else {
-			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().String(), result.Receipt.Error)
+			log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().String(), result.Receipt.Error)
 		}
-		vmctx.AssertConsistentGasTotals()
 	}
+	return results, numSuccess, numOffLedger
+}
+
+// runTask runs batch of requests on VM
+func runTask(task *vm.VMTask) {
+	vmctx := vmcontext.CreateVMContext(task)
+
+	vmctx.OpenBlockContexts()
+
+	// run the batch of requests
+	results, numSuccess, numOffLedger := runRequests(vmctx, task.Requests, 0, task.Log)
+	{
+		// run any scheduled retry of "unprocessable" requests
+		results2, numSuccess2, numOffLedger2 := runRequests(vmctx, task.UnprocessableToRetry, uint16(len(results)), task.Log)
+		vmctx.RemoveUnprocessable(results2)
+		if numOffLedger2 != 0 {
+			panic("offledger request executed as 'unprocessable retry', this cannot happen")
+		}
+		task.Results = results
+		task.Results = append(task.Results, results2...)
+		numSuccess += numSuccess2
+	}
+
+	vmctx.AssertConsistentGasTotals()
 
 	if !task.WillProduceBlock() {
 		return

@@ -1,0 +1,33 @@
+name: Publish @iota/iscmagic
+
+on:
+    workflow_call:
+        inputs:
+            version:
+                required: true
+                type: string
+        secrets:
+            NPM_TOKEN:
+                required: true
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+              working-directory: ./packages/vm/core/evm/iscmagic
+        steps:
+            - uses: actions/checkout@v3
+            - 
+                uses: actions/setup-node@v3
+                with:
+                    node-version: lts/*
+                    registry-url: 'https://registry.npmjs.org'
+                    scope: iota
+            - 
+                run: npm version ${{ inputs.version }}
+            - 
+                run: npm publish
+                env:
+                    NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+                  
