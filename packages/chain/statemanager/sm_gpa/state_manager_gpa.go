@@ -40,6 +40,7 @@ type stateManagerGPA struct {
 	lastCleanBlockCacheTime time.Time
 	lastCleanRequestsTime   time.Time
 	lastStatusLogTime       time.Time
+	lastSnapshotsUpdateTime time.Time
 	metrics                 metrics.IChainStateManagerMetrics
 }
 
@@ -545,6 +546,13 @@ func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMe
 		smT.metrics.SetRequestsWaiting(waitingCallbacks)
 		smT.log.Debugf("Callbacks of block fetchers cleaned, %v waiting callbacks remained, next cleaning not earlier than %v",
 			waitingCallbacks, smT.lastCleanRequestsTime.Add(smT.timers.StateManagerRequestCleaningPeriod))
+	}
+	nextSnapshotsUpdateTime := smT.lastSnapshotsUpdateTime.Add(smT.timers.SnapshotManagerUpdatePeriod)
+	if now.After(nextSnapshotsUpdateTime) {
+		smT.output.setUpdateSnapshots()
+		smT.lastSnapshotsUpdateTime = now
+		smT.log.Debugf("Ordered snapshot update, next update not earlier than %v",
+			smT.lastSnapshotsUpdateTime.Add(smT.timers.StateManagerRequestCleaningPeriod))
 	}
 	smT.metrics.StateManagerTimerTickHandled(time.Since(start))
 	return result

@@ -338,6 +338,9 @@ func (smT *stateManager) handleOutput() {
 	for _, snapshotInfo := range output.TakeBlocksCommitted() {
 		smT.snapshotManager.BlockCommittedAsync(snapshotInfo)
 	}
+	if output.TakeUpdateSnapshots() {
+		smT.snapshotManager.UpdateAsync()
+	}
 }
 
 func (smT *stateManager) handleNodePublicKeys(req *reqChainNodesUpdated) {

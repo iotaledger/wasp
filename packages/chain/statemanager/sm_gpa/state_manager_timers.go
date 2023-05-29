@@ -22,6 +22,8 @@ type StateManagerTimers struct {
 	StateManagerRequestCleaningPeriod time.Duration
 	// How often timer tick fires in state manager
 	StateManagerTimerTickPeriod time.Duration
+	// How often snapshot manager should update list of known snapshots
+	SnapshotManagerUpdatePeriod time.Duration
 
 	TimeProvider sm_gpa_utils.TimeProvider
 }
@@ -40,6 +42,7 @@ func NewStateManagerTimers(tpOpt ...sm_gpa_utils.TimeProvider) StateManagerTimer
 		StateManagerGetBlockRetry:         3 * time.Second,
 		StateManagerRequestCleaningPeriod: 1 * time.Second,
 		StateManagerTimerTickPeriod:       1 * time.Second,
+		SnapshotManagerUpdatePeriod:       5 * time.Minute,
 		TimeProvider:                      tp,
 	}
 }

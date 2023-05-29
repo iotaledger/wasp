@@ -16,6 +16,7 @@ import (
 type smOutputImpl struct {
 	blocksCommitted []sm_snapshots.SnapshotInfo
 	snapshotsToLoad []sm_snapshots.SnapshotInfo
+	updateSnapshots bool
 }
 
 var (
@@ -38,6 +39,10 @@ func (smoi *smOutputImpl) addSnapshotToLoad(stateIndex uint32, commitment *state
 	smoi.snapshotsToLoad = append(smoi.snapshotsToLoad, sm_snapshots.NewSnapshotInfo(stateIndex, commitment))
 }
 
+func (smoi *smOutputImpl) setUpdateSnapshots() {
+	smoi.updateSnapshots = true
+}
+
 func (smoi *smOutputImpl) TakeBlocksCommitted() []sm_snapshots.SnapshotInfo {
 	result := smoi.blocksCommitted
 	smoi.blocksCommitted = make([]sm_snapshots.SnapshotInfo, 0)
@@ -51,4 +56,12 @@ func (smoi *smOutputImpl) TakeSnapshotToLoad() sm_snapshots.SnapshotInfo {
 	result := smoi.snapshotsToLoad[0]
 	smoi.snapshotsToLoad = smoi.snapshotsToLoad[1:]
 	return result
+}
+
+func (smoi *smOutputImpl) TakeUpdateSnapshots() bool {
+	if smoi.updateSnapshots {
+		smoi.updateSnapshots = false
+		return true
+	}
+	return false
 }
