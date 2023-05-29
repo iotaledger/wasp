@@ -1,0 +1,100 @@
+package sm_snapshots
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/state"
+)
+
+func TestNewerSnapshotKeepsOlderSnapshot(t *testing.T) {
+	twoSnapshotsCheckEnds(t, func(t *testing.T, _storeOrig, storeNew state.Store, intermediateSnapshot, lastSnapshot kvstore.KVStore, blocks []state.Block) {
+		intermediateTrieRoot := blocks[0].TrieRoot()
+		lastTrieRoot := blocks[len(blocks)-1].TrieRoot()
+
+		err := storeNew.RestoreSnapshot(intermediateTrieRoot, intermediateSnapshot)
+		require.NoError(t, err)
+		require.True(t, storeNew.HasTrieRoot(intermediateTrieRoot))
+
+		err = storeNew.RestoreSnapshot(lastTrieRoot, lastSnapshot)
+		require.NoError(t, err)
+		require.True(t, storeNew.HasTrieRoot(intermediateTrieRoot))
+		require.True(t, storeNew.HasTrieRoot(lastTrieRoot))
+	})
+}
+
+func TestOlderSnapshotKeepsNewerSnapshot(t *testing.T) {
+	twoSnapshotsCheckEnds(t, func(t *testing.T, _storeOrig, storeNew state.Store, intermediateSnapshot, lastSnapshot kvstore.KVStore, blocks []state.Block) {
+		intermediateTrieRoot := blocks[0].TrieRoot()
+		lastTrieRoot := blocks[len(blocks)-1].TrieRoot()
+
+		err := storeNew.RestoreSnapshot(lastTrieRoot, lastSnapshot)
+		require.NoError(t, err)
+		require.True(t, storeNew.HasTrieRoot(lastTrieRoot))
+
+		err = storeNew.RestoreSnapshot(intermediateTrieRoot, intermediateSnapshot)
+		require.NoError(t, err)
+		require.True(t, storeNew.HasTrieRoot(intermediateTrieRoot))
+		require.True(t, storeNew.HasTrieRoot(lastTrieRoot))
+	})
+}
+
+func TestFillTheBlocksBetweenSnapshots(t *testing.T) {
+	twoSnapshotsCheckEnds(t, func(t *testing.T, storeOrig, storeNew state.Store, intermediateSnapshot, lastSnapshot kvstore.KVStore, blocks []state.Block) {
+		intermediateTrieRoot := blocks[0].TrieRoot()
+		lastTrieRoot := blocks[len(blocks)-1].TrieRoot()
+		err := storeNew.RestoreSnapshot(lastTrieRoot, lastSnapshot)
+		require.NoError(t, err)
+		err = storeNew.RestoreSnapshot(intermediateTrieRoot, intermediateSnapshot)
+		require.NoError(t, err)
+		require.True(t, storeNew.HasTrieRoot(intermediateTrieRoot))
+		require.True(t, storeNew.HasTrieRoot(lastTrieRoot))
+		for i := 1; i < len(blocks); i++ {
+			stateDraft, err := storeNew.NewEmptyStateDraft(blocks[i].PreviousL1Commitment())
+			require.NoError(t, err)
+			blocks[i].Mutations().ApplyTo(stateDraft)
+			block := storeNew.Commit(stateDraft)
+			require.True(t, blocks[i].TrieRoot().Equals(block.TrieRoot()))
+			require.True(t, blocks[i].Hash().Equals(block.Hash()))
+		}
+		for i := 1; i < len(blocks)-1; i++ { // blocks[i] and blocsk[len(blocks)-1] will be checked in `twoSnapshotsCheckEnds`
+			checkBlock(t, storeNew, blocks[i])
+			stateOrig, err := storeOrig.StateByTrieRoot(blocks[i].TrieRoot())
+			require.NoError(t, err)
+			checkState(t, storeNew, stateOrig)
+		}
+	})
+}
+
+func twoSnapshotsCheckEnds(t *testing.T, performTestFun func(t *testing.T, storeOrig, storeNew state.Store, intermediateSnapshot, lastSnapshot kvstore.KVStore, blocks []state.Block)) {
+	numberOfBlocks := 10
+	intermediateBlockIndex := 4
+
+	factory := sm_gpa_utils.NewBlockFactory(t)
+	blocks := factory.GetBlocks(numberOfBlocks, 1)
+	storeOrig := factory.GetStore()
+	storeNew := state.NewStore(mapdb.NewMapDB())
+
+	intermediateBlock := blocks[intermediateBlockIndex]
+	intermediateCommitment := intermediateBlock.L1Commitment()
+	intermediateSnapshot := mapdb.NewMapDB()
+	err := storeOrig.TakeSnapshot(intermediateCommitment.TrieRoot(), intermediateSnapshot)
+	require.NoError(t, err)
+
+	lastBlock := blocks[len(blocks)-1]
+	lastCommitment := lastBlock.L1Commitment()
+	lastSnapshot := mapdb.NewMapDB()
+	err = storeOrig.TakeSnapshot(lastCommitment.TrieRoot(), lastSnapshot)
+	require.NoError(t, err)
+
+	performTestFun(t, storeOrig, storeNew, intermediateSnapshot, lastSnapshot, blocks[intermediateBlockIndex:])
+
+	checkBlock(t, storeNew, lastBlock)
+	checkState(t, storeNew, factory.GetState(lastCommitment))
+	checkBlock(t, storeNew, intermediateBlock)
+	checkState(t, storeNew, factory.GetState(intermediateCommitment))
+}
