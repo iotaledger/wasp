@@ -6,6 +6,8 @@ package vmcontext
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/core/types"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -184,6 +186,10 @@ func (s *contractSandbox) CreditToAccount(agentID isc.AgentID, tokens *isc.Asset
 	s.Ctx.(*VMContext).creditToAccount(agentID, tokens)
 }
 
+func (s *contractSandbox) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
+	s.Ctx.(*VMContext).RetryUnprocessable(req, blockIndex, outputIndex)
+}
+
 func (s *contractSandbox) totalGasTokens() *isc.Assets {
 	if s.Ctx.(*VMContext).task.EstimateGasMode {
 		return isc.NewEmptyAssets()
@@ -197,6 +203,6 @@ func (s *contractSandbox) CallOnBehalfOf(caller isc.AgentID, target, entryPoint 
 	return s.Ctx.(*VMContext).CallOnBehalfOf(caller, target, entryPoint, params, transfer)
 }
 
-func (s *contractSandbox) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
-	s.Ctx.(*VMContext).RetryUnprocessable(req, blockIndex, outputIndex)
+func (s *contractSandbox) SetEVMFailed(tx *types.Transaction, receipt *types.Receipt) {
+	s.Ctx.(*VMContext).SetEVMFailed(tx, receipt)
 }

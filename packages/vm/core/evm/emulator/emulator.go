@@ -20,9 +20,11 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
@@ -255,29 +257,33 @@ func (e *EVMEmulator) applyMessage(
 
 func (e *EVMEmulator) SendTransaction(
 	tx *types.Transaction,
-	gasBurnEnable func(bool),
+	ctx isc.Sandbox,
 	tracer tracers.Tracer,
-) (*types.Receipt, *core.ExecutionResult, error) {
+) (receipt *types.Receipt, result *core.ExecutionResult, iscGasErr error, err error) {
 	buf := e.StateDB().Buffered()
 	statedb := buf.StateDB()
 	pendingHeader := e.BlockchainDB().GetPendingHeader(e.timestamp)
 
 	sender, err := types.Sender(e.Signer(), tx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("invalid transaction: %w", err)
+		return nil, nil, nil, fmt.Errorf("invalid transaction: %w", err)
 	}
 	nonce := e.StateDB().GetNonce(sender)
 	if tx.Nonce() != nonce {
-		return nil, nil, fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
+		return nil, nil, nil, fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
 	}
 
 	signer := types.MakeSigner(e.chainConfig, pendingHeader.Number, pendingHeader.Time)
 	msg, err := core.TransactionToMessage(tx, signer, pendingHeader.BaseFee)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	result, err := e.applyMessage(
+	var gasBurnEnable func(bool)
+	if ctx != nil {
+		gasBurnEnable = ctx.Privileged().GasBurnEnable
+	}
+	result, err = e.applyMessage(
 		msg,
 		statedb,
 		pendingHeader,
@@ -288,6 +294,26 @@ func (e *EVMEmulator) SendTransaction(
 	gasUsed := uint64(0)
 	if result != nil {
 		gasUsed = result.UsedGas
+		if ctx != nil {
+			// convert burnt EVM gas to ISC gas
+			chainInfo := ctx.ChainInfo()
+			ctx.Privileged().GasBurnEnable(true)
+			iscGasErr = panicutil.CatchPanic(
+				func() {
+					ctx.Gas().Burn(
+						gas.BurnCodeEVM1P,
+						gas.EVMGasToISC(result.UsedGas, &chainInfo.GasFeePolicy.EVMGasRatio),
+					)
+				},
+			)
+			ctx.Privileged().GasBurnEnable(false)
+			if iscGasErr != nil {
+				// out of gas when burning ISC gas, amend the EVM receipt so that it is saved as "failed execution"
+				result.Err = core.ErrInsufficientFunds
+			}
+			// amend the gas usage (to include any ISC gas from sandbox calls)
+			gasUsed = gas.ISCGasBudgetToEVM(ctx.Gas().Burned(), &chainInfo.GasFeePolicy.EVMGasRatio)
+		}
 	}
 
 	cumulativeGasUsed := gasUsed
@@ -298,7 +324,7 @@ func (e *EVMEmulator) SendTransaction(
 		index = latest.TransactionIndex + 1
 	}
 
-	receipt := &types.Receipt{
+	receipt = &types.Receipt{
 		Type:              tx.Type(),
 		CumulativeGasUsed: cumulativeGasUsed,
 		TxHash:            tx.Hash(),
@@ -322,7 +348,7 @@ func (e *EVMEmulator) SendTransaction(
 	buf.Commit()
 	e.BlockchainDB().AddTransaction(tx, receipt)
 
-	return receipt, result, err
+	return receipt, result, iscGasErr, err
 }
 
 func (e *EVMEmulator) MintBlock() {
