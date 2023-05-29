@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 var Processor = Contract.Processor(nil,
@@ -21,7 +22,12 @@ var Processor = Contract.Processor(nil,
 	ViewGetRequestReceipt.WithHandler(viewGetRequestReceipt),
 	ViewGetRequestReceiptsForBlock.WithHandler(viewGetRequestReceiptsForBlock),
 	ViewIsRequestProcessed.WithHandler(viewIsRequestProcessed),
+	ViewHasUnprocessable.WithHandler(viewHasUnprocessable),
+
+	FuncRetryUnprocessable.WithHandler(retryUnprocessable),
 )
+
+var ErrBlockNotFound = coreerrors.Register("Block not found").Create()
 
 func SetInitialState(s kv.KVStore) {
 	SaveNextBlockInfo(s, &BlockInfo{
@@ -51,11 +57,17 @@ func viewControlAddresses(ctx isc.SandboxView) dict.Dict {
 // ParamBlockIndex - index of the block (defaults to the latest block)
 func viewGetBlockInfo(ctx isc.SandboxView) dict.Dict {
 	blockIndex := getBlockIndexParams(ctx)
+	b := getBlockInfoBytes(ctx.StateR(), blockIndex)
+	if b == nil {
+		panic(ErrBlockNotFound)
+	}
 	return dict.Dict{
 		ParamBlockIndex: codec.EncodeUint32(blockIndex),
-		ParamBlockInfo:  getBlockInfoBytes(ctx.StateR(), blockIndex),
+		ParamBlockInfo:  b,
 	}
 }
+
+var errNotFound = coreerrors.Register("not found").Create()
 
 // viewGetRequestIDsForBlock returns a list of requestIDs for a given block.
 // params:
@@ -68,9 +80,10 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
 		return nil
 	}
 
-	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
-	ctx.RequireNoError(err)
-	ctx.Requiref(found, "not found")
+	dataArr, found := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
+	if !found {
+		panic(errNotFound)
+	}
 
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamRequestID)
@@ -108,9 +121,10 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
 		return nil
 	}
 
-	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
-	ctx.RequireNoError(err)
-	ctx.Requiref(found, "not found")
+	dataArr, found := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
+	if !found {
+		panic(errNotFound)
+	}
 
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamRequestRecord)
@@ -161,8 +175,8 @@ func viewGetEventsForBlock(ctx isc.SandboxView) dict.Dict {
 	}
 
 	stateR := ctx.StateR()
-	blockInfo, err := GetBlockInfo(stateR, blockIndex)
-	ctx.RequireNoError(err)
+	blockInfo, ok := GetBlockInfo(stateR, blockIndex)
+	ctx.Requiref(ok, "block not found: %d", blockIndex)
 	events := GetEventsByBlockIndex(stateR, blockIndex, blockInfo.TotalRequests)
 
 	ret := dict.New()

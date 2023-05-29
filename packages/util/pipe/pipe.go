@@ -5,10 +5,11 @@ package pipe
 // without blocking the sender process. Depending on the backing queue, the pipe
 // might have other characteristics.
 type InfinitePipe[E any] struct {
-	input  chan E
-	output chan E
-	length chan int
-	buffer Queue[E]
+	input     chan E
+	output    chan E
+	length    chan int
+	buffer    Queue[E]
+	discardCh chan struct{}
 }
 
 var _ Pipe[Hashable] = &InfinitePipe[Hashable]{}
@@ -47,10 +48,11 @@ func NewLimitPriorityHashInfinitePipe[E Hashable](priorityFun func(E) bool, limi
 
 func newInfinitePipe[E any](queue Queue[E]) *InfinitePipe[E] {
 	ch := &InfinitePipe[E]{
-		input:  make(chan E),
-		output: make(chan E),
-		length: make(chan int),
-		buffer: queue,
+		input:     make(chan E),
+		output:    make(chan E),
+		length:    make(chan int),
+		buffer:    queue,
+		discardCh: make(chan struct{}),
 	}
 	go ch.infiniteBuffer()
 	return ch
@@ -72,6 +74,21 @@ func (ch *InfinitePipe[E]) Close() {
 	close(ch.input)
 }
 
+func (ch *InfinitePipe[E]) Discard() {
+	ch.Close()
+	close(ch.discardCh)
+}
+
+func (ch *InfinitePipe[E]) TryAdd(e E, log func(msg string, args ...interface{})) {
+	defer func() {
+		if err := recover(); err != nil {
+			log("Attempt to write to a closed channel: %v", e)
+			return
+		}
+	}()
+	ch.In() <- e
+}
+
 func (ch *InfinitePipe[E]) infiniteBuffer() {
 	var input, output chan E
 	var next E
@@ -89,6 +106,15 @@ func (ch *InfinitePipe[E]) infiniteBuffer() {
 		case output <- next:
 			ch.buffer.Remove()
 		case ch.length <- ch.buffer.Length():
+		case <-ch.discardCh:
+			// Close the pipe without waiting for the values to be consumed.
+			for range ch.input { //nolint:revive
+				// Just clear the channel, to avoid blocking the senders.
+				// The channel itself should be closed already.
+			}
+			close(ch.output)
+			close(ch.length)
+			return
 		}
 
 		if ch.buffer.Length() > 0 {

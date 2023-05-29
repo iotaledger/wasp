@@ -41,8 +41,8 @@ func (c *MetricsService) GetNodeMessageMetrics() *dto.NodeMessageMetrics {
 }
 
 func (c *MetricsService) GetChainMessageMetrics(chainID isc.ChainID) *dto.ChainMessageMetrics {
-	chain := c.chainProvider().Get(chainID)
-	if chain == nil {
+	chain, err := c.chainProvider().Get(chainID)
+	if err != nil {
 		return nil
 	}
 
@@ -64,8 +64,8 @@ func (c *MetricsService) GetChainMessageMetrics(chainID isc.ChainID) *dto.ChainM
 }
 
 func (c *MetricsService) GetChainConsensusWorkflowMetrics(chainID isc.ChainID) *models.ConsensusWorkflowMetrics {
-	chain := c.chainProvider().Get(chainID)
-	if chain == nil {
+	chain, err := c.chainProvider().Get(chainID)
+	if err != nil {
 		return nil
 	}
 
@@ -78,8 +78,8 @@ func (c *MetricsService) GetChainConsensusWorkflowMetrics(chainID isc.ChainID) *
 }
 
 func (c *MetricsService) GetChainConsensusPipeMetrics(chainID isc.ChainID) *models.ConsensusPipeMetrics {
-	chain := c.chainProvider().Get(chainID)
-	if chain == nil {
+	chain, err := c.chainProvider().Get(chainID)
+	if err != nil {
 		return nil
 	}
 

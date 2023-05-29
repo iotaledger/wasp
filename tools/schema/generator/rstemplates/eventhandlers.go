@@ -13,15 +13,15 @@ use crate::*;
 
 pub struct $PkgName$+EventHandlers {
     my_id: u32,
-    $pkg_name$+_handlers: HashMap<&'static str, fn(evt: &$PkgName$+EventHandlers, msg: &Vec<String>)>,
+    $pkg_name$+_handlers: HashMap<&'static str, fn(evt: &$PkgName$+EventHandlers, dec: &mut WasmDecoder)>,
 
 $#each events eventHandlerMember
 }
 
 impl IEventHandlers for $PkgName$+EventHandlers {
-    fn call_handler(&self, topic: &str, params: &Vec<String>) {
+    fn call_handler(&self, topic: &str, dec: &mut WasmDecoder) {
         if let Some(handler) = self.$pkg_name$+_handlers.get(topic) {
-            handler(self, params);
+            handler(self, dec);
         }
     }
 
@@ -35,7 +35,7 @@ unsafe impl Sync for $PkgName$+EventHandlers {}
 
 impl $PkgName$+EventHandlers {
     pub fn new() -> $PkgName$+EventHandlers {
-        let mut handlers: HashMap<&str, fn(evt: &$PkgName$+EventHandlers, msg: &Vec<String>)> = HashMap::new();
+        let mut handlers: HashMap<&str, fn(evt: &$PkgName$+EventHandlers, dec: &mut WasmDecoder)> = HashMap::new();
 $#each events eventHandler
         return $PkgName$+EventHandlers {
             my_id: EventHandlers::generate_id(),
@@ -76,10 +76,9 @@ $#each event eventClassField
 }
 
 impl Event$EvtName {
-    pub fn new(msg: &Vec<String>) -> Event$EvtName {
-        let mut evt = EventDecoder::new(msg);
+    pub fn new(dec: &mut WasmDecoder) -> Event$EvtName {
         Event$EvtName {
-            timestamp: evt.timestamp(),
+            timestamp: uint64_decode(dec),
 $#each event eventHandlerField
         }
     }
@@ -91,6 +90,6 @@ $#each event eventHandlerField
 `,
 	// *******************************
 	"eventHandlerField": `
-            $fld_name: $fld_type$+_from_string(&evt.decode()),
+            $fld_name: $fld_type$+_decode(dec),
 `,
 }

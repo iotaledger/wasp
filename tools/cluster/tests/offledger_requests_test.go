@@ -171,7 +171,7 @@ func testOffledgerNonce(t *testing.T, e *ChainEnv) {
 	apiError, ok := apiextensions.AsAPIError(err)
 	require.True(t, ok)
 	require.NotNil(t, apiError.DetailError)
-	require.Regexp(t, "invalid nonce", apiError.DetailError.Error)
+	require.Regexp(t, "not added to the mempool", apiError.DetailError.Error)
 
 	// try replaying the initial request
 	_, err = chClient.PostOffLedgerRequest(context.Background(),

@@ -13,15 +13,13 @@ type Controller struct {
 	chainService     interfaces.ChainService
 	offLedgerService interfaces.OffLedgerService
 	peeringService   interfaces.PeeringService
-	vmService        interfaces.VMService
 }
 
-func NewRequestsController(chainService interfaces.ChainService, offLedgerService interfaces.OffLedgerService, peeringService interfaces.PeeringService, vmService interfaces.VMService) interfaces.APIController {
+func NewRequestsController(chainService interfaces.ChainService, offLedgerService interfaces.OffLedgerService, peeringService interfaces.PeeringService) interfaces.APIController {
 	return &Controller{
 		chainService:     chainService,
 		offLedgerService: offLedgerService,
 		peeringService:   peeringService,
-		vmService:        vmService,
 	}
 }
 

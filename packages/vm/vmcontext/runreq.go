@@ -43,7 +43,10 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm
 	vmctx.gasBudgetAdjusted = 0
 	vmctx.gasBurned = 0
 	vmctx.gasFeeCharged = 0
+	vmctx.sdCharged = 0
 	vmctx.GasBurnEnable(false)
+	initialGasBurnedTotal := vmctx.gasBurnedTotal
+	initialGasFeeChargedTotal := vmctx.gasFeeChargedTotal
 
 	vmctx.currentStateUpdate = NewStateUpdate()
 	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.task.StateDraft.Timestamp().Add(1*time.Nanosecond)))
@@ -78,8 +81,16 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm
 	if err != nil {
 		// protocol exception triggered. Skipping the request. Rollback
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
+		vmctx.gasBurnedTotal = initialGasBurnedTotal
+		vmctx.gasFeeChargedTotal = initialGasFeeChargedTotal
+
+		if errors.Is(vmexceptions.ErrNotEnoughFundsForSD, err) {
+			vmctx.unprocessable = append(vmctx.unprocessable, vmctx.req.(isc.OnLedgerRequest))
+		}
+
 		return nil, err
 	}
+
 	vmctx.chainState().Apply()
 	return result, nil
 }
@@ -97,22 +108,20 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	// Otherwise it all goes to the common sender and panics is logged in the SC call
 	sender := vmctx.req.SenderAccount()
 	if sender == nil {
-		// TODO this should never happen... can we just panic here?
-		// this is probably an artifact from the "originTx"
-		sender = accounts.CommonAccount()
+		panic("nil sender should never happen")
 	}
 
 	senderBaseTokens := vmctx.req.Assets().BaseTokens + vmctx.GetBaseTokensBalance(sender)
 
 	if senderBaseTokens < storageDepositNeeded {
-		panic("TODO, not enough funds to pay for the SD NEEDED, THIS REQUEST MUST BE IGNORED OR SAVED FOR LATER SOMEHOW")
-		// ...if not enough to pay for all the SD, this request needs to be flagged as "TO PROCESS LATER"... (do we consume it or not?)
+		// user doesn't have enough funds to pay for the SD needs of this request
+		panic(vmexceptions.ErrNotEnoughFundsForSD)
 	}
 
 	vmctx.creditToAccount(sender, vmctx.req.Assets())
 	vmctx.creditNFTToAccount(sender, vmctx.req.NFT())
 	if storageDepositNeeded > 0 {
-		// TODO the charged SD should be included in the receipt
+		vmctx.sdCharged = storageDepositNeeded
 		vmctx.debitFromAccount(sender, isc.NewAssetsBaseTokens(storageDepositNeeded))
 	}
 }
@@ -192,7 +201,6 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 		callRet = vmctx.callFromRequest()
 		// ensure at least the minimum amount of gas is charged
 		if vmctx.GasBurned() < gas.BurnCodeMinimumGasPerRequest1P.Cost() {
-			vmctx.gasBurnedTotal -= vmctx.gasBurned
 			vmctx.gasBurned = 0
 			vmctx.GasBurn(gas.BurnCodeMinimumGasPerRequest1P, vmctx.GasBurned())
 		}
@@ -204,6 +212,7 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	}
 	// charge gas fee no matter what
 	vmctx.chargeGasFee()
+
 	// write receipt no matter what
 	receipt = vmctx.writeReceiptToBlockLog(callErr)
 	return receipt, callRet
@@ -316,12 +325,13 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 // chargeGasFee takes burned tokens from the sender's account
 // It should always be enough because gas budget is set affordable
 func (vmctx *VMContext) chargeGasFee() {
+	defer func() {
+		vmctx.gasBurnedTotal += vmctx.gasBurned // add current request gas burn to the total of the block
+	}()
 	// ensure at least the minimum amount of gas is charged
 	minGas := gas.BurnCodeMinimumGasPerRequest1P.Cost()
-	if vmctx.GasBurned() < minGas {
-		currentGas := vmctx.gasBurned
+	if vmctx.gasBurned < minGas {
 		vmctx.gasBurned = minGas
-		vmctx.gasBurnedTotal += minGas - currentGas
 	}
 
 	vmctx.GasBurnEnable(false)

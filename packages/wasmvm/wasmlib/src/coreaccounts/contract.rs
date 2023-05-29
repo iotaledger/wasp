@@ -133,14 +133,14 @@ pub struct ScFuncs {
 
 impl ScFuncs {
     // A no-op that has the side effect of crediting any transferred tokens to the sender's account.
-    pub fn deposit(ctx: &impl ScFuncCallContext) -> DepositCall {
+    pub fn deposit(ctx: &impl ScFuncClientContext) -> DepositCall {
         DepositCall {
             func: ScFunc::new(ctx, HSC_NAME, HFUNC_DEPOSIT),
         }
     }
 
     // Creates a new foundry with the specified token scheme, and assigns the foundry to the sender.
-    pub fn foundry_create_new(ctx: &impl ScFuncCallContext) -> FoundryCreateNewCall {
+    pub fn foundry_create_new(ctx: &impl ScFuncClientContext) -> FoundryCreateNewCall {
         let mut f = FoundryCreateNewCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_FOUNDRY_CREATE_NEW),
             params:  MutableFoundryCreateNewParams { proxy: Proxy::nil() },
@@ -153,7 +153,7 @@ impl ScFuncs {
 
     // Destroys a given foundry output on L1, reimbursing the storage deposit to the caller.
     // The foundry must be owned by the caller.
-    pub fn foundry_destroy(ctx: &impl ScFuncCallContext) -> FoundryDestroyCall {
+    pub fn foundry_destroy(ctx: &impl ScFuncClientContext) -> FoundryDestroyCall {
         let mut f = FoundryDestroyCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_FOUNDRY_DESTROY),
             params:  MutableFoundryDestroyParams { proxy: Proxy::nil() },
@@ -163,7 +163,7 @@ impl ScFuncs {
     }
 
     // Mints or destroys tokens for the given foundry, which must be owned by the caller.
-    pub fn foundry_modify_supply(ctx: &impl ScFuncCallContext) -> FoundryModifySupplyCall {
+    pub fn foundry_modify_supply(ctx: &impl ScFuncClientContext) -> FoundryModifySupplyCall {
         let mut f = FoundryModifySupplyCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_FOUNDRY_MODIFY_SUPPLY),
             params:  MutableFoundryModifySupplyParams { proxy: Proxy::nil() },
@@ -174,7 +174,7 @@ impl ScFuncs {
 
     // Moves all tokens from the chain common account to the sender's L2 account.
     // The chain owner is the only one who can call this entry point.
-    pub fn harvest(ctx: &impl ScFuncCallContext) -> HarvestCall {
+    pub fn harvest(ctx: &impl ScFuncClientContext) -> HarvestCall {
         let mut f = HarvestCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_HARVEST),
             params:  MutableHarvestParams { proxy: Proxy::nil() },
@@ -185,7 +185,7 @@ impl ScFuncs {
 
     // Transfers the specified allowance from the sender SC's L2 account on
     // the target chain to the sender SC's L2 account on the origin chain.
-    pub fn transfer_account_to_chain(ctx: &impl ScFuncCallContext) -> TransferAccountToChainCall {
+    pub fn transfer_account_to_chain(ctx: &impl ScFuncClientContext) -> TransferAccountToChainCall {
         let mut f = TransferAccountToChainCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_TRANSFER_ACCOUNT_TO_CHAIN),
             params:  MutableTransferAccountToChainParams { proxy: Proxy::nil() },
@@ -196,7 +196,7 @@ impl ScFuncs {
 
     // Transfers the specified allowance from the sender's L2 account
     // to the given L2 account on the chain.
-    pub fn transfer_allowance_to(ctx: &impl ScFuncCallContext) -> TransferAllowanceToCall {
+    pub fn transfer_allowance_to(ctx: &impl ScFuncClientContext) -> TransferAllowanceToCall {
         let mut f = TransferAllowanceToCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_TRANSFER_ALLOWANCE_TO),
             params:  MutableTransferAllowanceToParams { proxy: Proxy::nil() },
@@ -207,14 +207,14 @@ impl ScFuncs {
 
     // Moves tokens from the caller's on-chain account to the caller's L1 address.
     // The number of tokens to be withdrawn must be specified via the allowance of the request.
-    pub fn withdraw(ctx: &impl ScFuncCallContext) -> WithdrawCall {
+    pub fn withdraw(ctx: &impl ScFuncClientContext) -> WithdrawCall {
         WithdrawCall {
             func: ScFunc::new(ctx, HSC_NAME, HFUNC_WITHDRAW),
         }
     }
 
     // Returns a set of all foundries owned by the given account.
-    pub fn account_foundries(ctx: &impl ScViewCallContext) -> AccountFoundriesCall {
+    pub fn account_foundries(ctx: &impl ScViewClientContext) -> AccountFoundriesCall {
         let mut f = AccountFoundriesCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_ACCOUNT_FOUNDRIES),
             params:  MutableAccountFoundriesParams { proxy: Proxy::nil() },
@@ -226,7 +226,7 @@ impl ScFuncs {
     }
 
     // Returns the amount of NFTs owned by the given account.
-    pub fn account_nft_amount(ctx: &impl ScViewCallContext) -> AccountNFTAmountCall {
+    pub fn account_nft_amount(ctx: &impl ScViewClientContext) -> AccountNFTAmountCall {
         let mut f = AccountNFTAmountCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_ACCOUNT_NFT_AMOUNT),
             params:  MutableAccountNFTAmountParams { proxy: Proxy::nil() },
@@ -238,7 +238,7 @@ impl ScFuncs {
     }
 
     // Returns the amount of NFTs in the specified collection owned by the given account.
-    pub fn account_nft_amount_in_collection(ctx: &impl ScViewCallContext) -> AccountNFTAmountInCollectionCall {
+    pub fn account_nft_amount_in_collection(ctx: &impl ScViewClientContext) -> AccountNFTAmountInCollectionCall {
         let mut f = AccountNFTAmountInCollectionCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_ACCOUNT_NFT_AMOUNT_IN_COLLECTION),
             params:  MutableAccountNFTAmountInCollectionParams { proxy: Proxy::nil() },
@@ -250,7 +250,7 @@ impl ScFuncs {
     }
 
     // Returns the NFT IDs for all NFTs owned by the given account.
-    pub fn account_nf_ts(ctx: &impl ScViewCallContext) -> AccountNFTsCall {
+    pub fn account_nf_ts(ctx: &impl ScViewClientContext) -> AccountNFTsCall {
         let mut f = AccountNFTsCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_ACCOUNT_NF_TS),
             params:  MutableAccountNFTsParams { proxy: Proxy::nil() },
@@ -262,7 +262,7 @@ impl ScFuncs {
     }
 
     // Returns the NFT IDs for all NFTs in the specified collection owned by the given account.
-    pub fn account_nf_ts_in_collection(ctx: &impl ScViewCallContext) -> AccountNFTsInCollectionCall {
+    pub fn account_nf_ts_in_collection(ctx: &impl ScViewClientContext) -> AccountNFTsInCollectionCall {
         let mut f = AccountNFTsInCollectionCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_ACCOUNT_NF_TS_IN_COLLECTION),
             params:  MutableAccountNFTsInCollectionParams { proxy: Proxy::nil() },
@@ -274,7 +274,7 @@ impl ScFuncs {
     }
 
     // Returns a set of all agent IDs that own assets on the chain.
-    pub fn accounts(ctx: &impl ScViewCallContext) -> AccountsCall {
+    pub fn accounts(ctx: &impl ScViewClientContext) -> AccountsCall {
         let mut f = AccountsCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_ACCOUNTS),
             results: ImmutableAccountsResults { proxy: Proxy::nil() },
@@ -284,7 +284,7 @@ impl ScFuncs {
     }
 
     // Returns the fungible tokens owned by the given Agent ID on the chain.
-    pub fn balance(ctx: &impl ScViewCallContext) -> BalanceCall {
+    pub fn balance(ctx: &impl ScViewClientContext) -> BalanceCall {
         let mut f = BalanceCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_BALANCE),
             params:  MutableBalanceParams { proxy: Proxy::nil() },
@@ -296,7 +296,7 @@ impl ScFuncs {
     }
 
     // Returns the amount of base tokens owned by an agent on the chain
-    pub fn balance_base_token(ctx: &impl ScViewCallContext) -> BalanceBaseTokenCall {
+    pub fn balance_base_token(ctx: &impl ScViewClientContext) -> BalanceBaseTokenCall {
         let mut f = BalanceBaseTokenCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_BALANCE_BASE_TOKEN),
             params:  MutableBalanceBaseTokenParams { proxy: Proxy::nil() },
@@ -308,7 +308,7 @@ impl ScFuncs {
     }
 
     // Returns the amount of specific native tokens owned by an agent on the chain
-    pub fn balance_native_token(ctx: &impl ScViewCallContext) -> BalanceNativeTokenCall {
+    pub fn balance_native_token(ctx: &impl ScViewClientContext) -> BalanceNativeTokenCall {
         let mut f = BalanceNativeTokenCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_BALANCE_NATIVE_TOKEN),
             params:  MutableBalanceNativeTokenParams { proxy: Proxy::nil() },
@@ -320,7 +320,7 @@ impl ScFuncs {
     }
 
     // Returns specified foundry output in serialized form.
-    pub fn foundry_output(ctx: &impl ScViewCallContext) -> FoundryOutputCall {
+    pub fn foundry_output(ctx: &impl ScViewClientContext) -> FoundryOutputCall {
         let mut f = FoundryOutputCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_FOUNDRY_OUTPUT),
             params:  MutableFoundryOutputParams { proxy: Proxy::nil() },
@@ -333,7 +333,7 @@ impl ScFuncs {
 
     // Returns the current account nonce for an Agent.
     // The account nonce is used to issue unique off-ledger requests.
-    pub fn get_account_nonce(ctx: &impl ScViewCallContext) -> GetAccountNonceCall {
+    pub fn get_account_nonce(ctx: &impl ScViewClientContext) -> GetAccountNonceCall {
         let mut f = GetAccountNonceCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_ACCOUNT_NONCE),
             params:  MutableGetAccountNonceParams { proxy: Proxy::nil() },
@@ -345,7 +345,7 @@ impl ScFuncs {
     }
 
     // Returns a set of all native tokenIDs that are owned by the chain.
-    pub fn get_native_token_id_registry(ctx: &impl ScViewCallContext) -> GetNativeTokenIDRegistryCall {
+    pub fn get_native_token_id_registry(ctx: &impl ScViewClientContext) -> GetNativeTokenIDRegistryCall {
         let mut f = GetNativeTokenIDRegistryCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_NATIVE_TOKEN_ID_REGISTRY),
             results: ImmutableGetNativeTokenIDRegistryResults { proxy: Proxy::nil() },
@@ -355,7 +355,7 @@ impl ScFuncs {
     }
 
     // Returns the data for a given NFT that is on the chain.
-    pub fn nft_data(ctx: &impl ScViewCallContext) -> NftDataCall {
+    pub fn nft_data(ctx: &impl ScViewClientContext) -> NftDataCall {
         let mut f = NftDataCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_NFT_DATA),
             params:  MutableNftDataParams { proxy: Proxy::nil() },
@@ -367,7 +367,7 @@ impl ScFuncs {
     }
 
     // Returns the balances of all fungible tokens controlled by the chain.
-    pub fn total_assets(ctx: &impl ScViewCallContext) -> TotalAssetsCall {
+    pub fn total_assets(ctx: &impl ScViewClientContext) -> TotalAssetsCall {
         let mut f = TotalAssetsCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_TOTAL_ASSETS),
             results: ImmutableTotalAssetsResults { proxy: Proxy::nil() },

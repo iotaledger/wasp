@@ -35,12 +35,13 @@ pub fn hash_encode(enc: &mut WasmEncoder, value: &ScHash) {
 }
 
 pub fn hash_from_bytes(buf: &[u8]) -> ScHash {
-    if buf.len() == 0 {
+    let len = buf.len();
+    if len == 0 {
         return ScHash {
             id: [0; SC_HASH_LENGTH],
         };
     }
-    if buf.len() != SC_HASH_LENGTH {
+    if len != SC_HASH_LENGTH {
         panic("invalid Hash length");
     }
     ScHash {

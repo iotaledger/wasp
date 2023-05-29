@@ -80,13 +80,13 @@ func logRequestsInBlock(index uint32, node, chain string) {
 
 	log.Check(err)
 
-	for i, receipt := range receipts.Receipts {
+	for i, receipt := range receipts {
 		r := receipt
-		logReceipt(&r, i)
+		logReceipt(r, i)
 	}
 }
 
-func logReceipt(receipt *apiclient.RequestReceiptResponse, index ...int) {
+func logReceipt(receipt apiclient.ReceiptResponse, index ...int) {
 	req := receipt.Request
 
 	kind := "on-ledger"
@@ -103,8 +103,8 @@ func logReceipt(receipt *apiclient.RequestReceiptResponse, index ...int) {
 	}
 
 	errMsg := "(empty)"
-	if receipt.Error != nil {
-		errMsg = receipt.Error.ErrorMessage
+	if receipt.ErrorMessage != nil {
+		errMsg = *receipt.ErrorMessage
 	}
 
 	tree := []log.TreeItem{
@@ -114,6 +114,10 @@ func logReceipt(receipt *apiclient.RequestReceiptResponse, index ...int) {
 		{K: "Function Hname", V: req.CallTarget.FunctionHName},
 		{K: "Arguments", V: argsTree},
 		{K: "Error", V: errMsg},
+		{K: "Gas budget", V: receipt.GasBudget},
+		{K: "Gas burned", V: receipt.GasBurned},
+		{K: "Gas fee charged", V: receipt.GasFeeCharged},
+		{K: "Storage deposit charged", V: receipt.StorageDepositCharged},
 	}
 	if len(index) > 0 {
 		log.Printf("Request #%d (%s):\n", index[0], req.RequestId)
@@ -183,7 +187,7 @@ func initRequestCmd() *cobra.Command {
 			log.Check(err)
 
 			log.Printf("Request found in block %d\n\n", receipt.BlockIndex)
-			logResolvedReceipt(receipt)
+			logReceipt(*receipt)
 
 			log.Printf("\n")
 			logEventsInRequest(reqID, node, chain)
@@ -193,43 +197,6 @@ func initRequestCmd() *cobra.Command {
 	waspcmd.WithWaspNodeFlag(cmd, &node)
 	withChainFlag(cmd, &chain)
 	return cmd
-}
-
-func logResolvedReceipt(receipt *apiclient.ReceiptResponse, index ...int) {
-	reqBytes, err := iotago.DecodeHex(receipt.Request)
-	log.Check(err)
-	req, err := isc.NewRequestFromBytes(reqBytes)
-	log.Check(err)
-
-	kind := "on-ledger"
-	if req.IsOffLedger() {
-		kind = "off-ledger"
-	}
-
-	var argsTree interface{} = "(empty)"
-	if len(req.Params()) > 0 {
-		argsTree = req.Params()
-	}
-
-	errMsg := "(empty)"
-	if receipt.Error != nil {
-		errMsg = receipt.Error.Message
-	}
-
-	tree := []log.TreeItem{
-		{K: "Kind", V: kind},
-		{K: "Sender", V: req.SenderAccount().String()},
-		{K: "Contract Hname", V: req.CallTarget().Contract.String()},
-		{K: "Function Hname", V: req.CallTarget().EntryPoint.String()},
-		{K: "Arguments", V: argsTree},
-		{K: "Error", V: errMsg},
-	}
-	if len(index) > 0 {
-		log.Printf("Request #%d (%s):\n", index[0], req.ID())
-	} else {
-		log.Printf("Request %s:\n", req.ID())
-	}
-	log.PrintTree(tree, 2, 2)
 }
 
 func logEventsInRequest(reqID isc.RequestID, node, chain string) {

@@ -3,7 +3,7 @@
 
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
-import {IEventHandlers, panic} from 'wasmlib';
+import {hexDecode, IEventHandlers, WasmDecoder} from 'wasmlib';
 import {RawData, WebSocket} from 'ws';
 
 export class ContractEvent {
@@ -80,32 +80,14 @@ export class WasmClientEvents {
         if (!event.contractID.equals(this.contractID) || !event.chainID.equals(this.chainID)) {
             return;
         }
-        console.log(event.chainID.toString() + ' ' + event.contractID.toString() + ' ' + event.data);
-        const params = event.data.split('|');
-        for (let i = 0; i < params.length; i++) {
-            params[i] = this.unescape(params[i]);
+        const sep = event.data.indexOf('|');
+        if (sep < 0) {
+            return;
         }
-        const topic = params[0];
-        params.shift();
-        this.handler.callHandler(topic, params);
-    }
-
-    private unescape(param: string): string {
-        const i = param.indexOf('~');
-        if (i < 0) {
-            return param;
-        }
-
-        switch (param.charAt(i + 1)) {
-            case '~': // escaped escape character
-                return param.slice(0, i) + '~' + this.unescape(param.slice(i + 2));
-            case '/': // escaped vertical bar
-                return param.slice(0, i) + '|' + this.unescape(param.slice(i + 2));
-            case '_': // escaped space
-                return param.slice(0, i) + ' ' + this.unescape(param.slice(i + 2));
-            default:
-                panic('invalid event encoding');
-        }
-        return '';
+        const topic = event.data.slice(0, sep);
+        console.log(event.chainID.toString() + ' ' + event.contractID.toString() + ' ' + topic);
+        const buf = hexDecode(event.data.slice(sep + 1));
+        const dec = new WasmDecoder(buf);
+        this.handler.callHandler(topic, dec);
     }
 }

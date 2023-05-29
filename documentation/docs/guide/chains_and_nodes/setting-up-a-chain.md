@@ -72,7 +72,7 @@ wasp-cli request-funds
 You can deploy your IOTA Smart Contracts chain by running:
 
 ```shell
-wasp-cli chain deploy --peers=foo,bar,baz --chain=mychain --description="My chain"
+wasp-cli chain deploy --peers=foo,bar,baz --chain=mychain --description="My chain" --block-keep-amount=10000
 ```
 
 The names in `--peers=foo,bar,baz` correspond to the names of the trusted peers of the node.
@@ -82,6 +82,8 @@ chain.
 
 The `--quorum` flag indicates the minimum amount of nodes required to form a consensus. The recommended formula to
 obtain this number `floor(N*2/3)+1` where `N` is the number of nodes in your committee.
+
+The `--block-keep-amount` parameter determines how many blocks are stored in the [`blocklog`](../core_concepts/core_contracts/blocklog.md) core contract.
 
 After deployment, the chain must be activated by the node operators of all peers.
 

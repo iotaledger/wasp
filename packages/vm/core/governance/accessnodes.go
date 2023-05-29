@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 // NodeOwnershipCertificate is a proof that a specified address is an owner of the specified node.
@@ -107,9 +108,13 @@ func (a *AccessNodeInfo) Bytes() []byte {
 	return w.Bytes()
 }
 
+var errSenderMustHaveL1Address = coreerrors.Register("sender must have L1 address").Create()
+
 func NewAccessNodeInfoFromAddCandidateNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
 	validatorAddr, _ := isc.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
-	ctx.Requiref(validatorAddr != nil, "sender must have L1 address")
+	if validatorAddr == nil {
+		panic(errSenderMustHaveL1Address)
+	}
 	params := ctx.Params()
 	ani := AccessNodeInfo{
 		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),
@@ -132,7 +137,9 @@ func (a *AccessNodeInfo) ToAddCandidateNodeParams() dict.Dict {
 
 func NewAccessNodeInfoFromRevokeAccessNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
 	validatorAddr, _ := isc.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
-	ctx.Requiref(validatorAddr != nil, "sender must have L1 address")
+	if validatorAddr == nil {
+		panic(errSenderMustHaveL1Address)
+	}
 	params := ctx.Params()
 	ani := AccessNodeInfo{
 		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),

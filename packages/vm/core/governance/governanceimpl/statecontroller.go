@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
@@ -25,7 +26,9 @@ func rotateStateController(ctx isc.Sandbox) dict.Dict {
 	// check is address is allowed
 	state := ctx.State()
 	amap := collections.NewMapReadOnly(state, governance.StateVarAllowedStateControllerAddresses)
-	ctx.Requiref(amap.HasAt(isc.BytesFromAddress(newStateControllerAddr)), "rotateStateController: address is not allowed as next state address: %s", newStateControllerAddr)
+	if !amap.HasAt(isc.BytesFromAddress(newStateControllerAddr)) {
+		panic(vm.ErrUnauthorized)
+	}
 
 	if !newStateControllerAddr.Equal(ctx.StateAnchor().StateController) {
 		// rotate request to another address has been issued. State update will be taken over by VM and will have no effect

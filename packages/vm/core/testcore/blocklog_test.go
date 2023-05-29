@@ -2,11 +2,15 @@ package testcore
 
 import (
 	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -107,8 +111,8 @@ func TestRequestIsProcessed(t *testing.T) {
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetCustomMetadata.Name,
-		governance.ParamCustomMetadata, []byte("foo"),
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetMetadata.Name,
+		governance.ParamPublicURL, []byte("foo"),
 	).
 		WithGasBudget(100_000)
 	tx, _, err := ch.PostRequestSyncTx(req, nil)
@@ -130,8 +134,8 @@ func TestRequestReceipt(t *testing.T) {
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetCustomMetadata.Name,
-		governance.ParamCustomMetadata, []byte("foo"),
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetMetadata.Name,
+		governance.ParamPublicURL, []byte("foo"),
 	).
 		WithGasBudget(100_000)
 	tx, _, err := ch.PostRequestSyncTx(req, nil)
@@ -159,8 +163,8 @@ func TestRequestReceiptsForBlocks(t *testing.T) {
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetCustomMetadata.Name,
-		governance.ParamCustomMetadata, []byte("foo"),
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetMetadata.Name,
+		governance.ParamPublicURL, []byte("foo"),
 	).
 		WithGasBudget(100_000)
 	tx, _, err := ch.PostRequestSyncTx(req, nil)
@@ -184,8 +188,8 @@ func TestRequestIDsForBlocks(t *testing.T) {
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetCustomMetadata.Name,
-		governance.ParamCustomMetadata, []byte("foo"),
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetMetadata.Name,
+		governance.ParamPublicURL, []byte("foo"),
 	).
 		WithGasBudget(100_000)
 	tx, _, err := ch.PostRequestSyncTx(req, nil)
@@ -209,4 +213,36 @@ func TestViewGetRequestReceipt(t *testing.T) {
 	receipt, err := ch.GetRequestReceipt(isc.RequestID{})
 	require.Nil(t, receipt)
 	require.Nil(t, err)
+}
+
+func TestBlocklogPruning(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true})
+	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", dict.Dict{
+		origin.ParamBlockKeepAmount: codec.EncodeInt32(10),
+	})
+	for i := 1; i <= 20; i++ {
+		ch.DepositBaseTokensToL2(1000, nil)
+	}
+	// at this point blocks 0..10 have been pruned, and blocks 11..20 are available
+	require.EqualValues(t, 20, ch.LatestBlock().StateIndex())
+	require.EqualValues(t, 20, ch.EVM().BlockNumber().Uint64())
+	for i := uint32(0); i <= 10; i++ {
+		_, err := ch.GetBlockInfo(i)
+		require.ErrorContains(t, err, "not found")
+		_, err = ch.EVM().BlockByNumber(big.NewInt(int64(i)))
+		if i == 10 {
+			// special case because of how `fakeistore` works, and the trie is not pruned
+			require.NoError(t, err)
+		} else {
+			require.ErrorContains(t, err, "not found")
+		}
+	}
+	for i := uint32(11); i <= 20; i++ {
+		bi, err := ch.GetBlockInfo(i)
+		require.NoError(t, err)
+		require.EqualValues(t, i, bi.BlockIndex())
+		evmBlock, err := ch.EVM().BlockByNumber(big.NewInt(int64(i)))
+		require.NoError(t, err)
+		require.EqualValues(t, i, evmBlock.Number().Uint64())
+	}
 }

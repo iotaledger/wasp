@@ -5,8 +5,6 @@ use std::convert::TryInto;
 
 use crate::*;
 
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 pub const SC_UINT8_LENGTH: usize = 1;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -20,10 +18,11 @@ pub fn uint8_encode(enc: &mut WasmEncoder, value: u8) {
 }
 
 pub fn uint8_from_bytes(buf: &[u8]) -> u8 {
-    if buf.len() == 0 {
+    let len = buf.len();
+    if len == 0 {
         return 0;
     }
-    if buf.len() != SC_UINT8_LENGTH {
+    if len != SC_UINT8_LENGTH {
         panic("invalid Uint8 length");
     }
     buf[0]

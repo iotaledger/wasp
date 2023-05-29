@@ -74,6 +74,7 @@ func TestCruelWorld(t *testing.T) {
 			stores[i],
 			nil,
 			metrics.NewEmptyChainStateManagerMetric(),
+			metrics.NewEmptyChainPipeMetrics(),
 			log.Named(peeringURLs[i]),
 			timers,
 		)

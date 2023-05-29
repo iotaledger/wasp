@@ -8,7 +8,6 @@ import (
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
 
-	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	websocketservice "github.com/iotaledger/wasp/packages/webapi/websocket"
@@ -37,7 +36,7 @@ func startEventLoop(url string, eventDone chan bool, eventHandlers *[]*WasmClien
 	if err != nil {
 		return err
 	}
-	err = subscribe(ctx, ws, string(publisher.ISCEventKindBlockEvents))
+	err = subscribe(ctx, ws, "block_events")
 	if err != nil {
 		return err
 	}
@@ -78,15 +77,15 @@ func (h WasmClientEvents) ProcessEvent(event *ContractEvent) {
 	if event.ContractID != h.contractID || event.ChainID != h.chainID {
 		return
 	}
-	fmt.Printf("%s %s %s\n", event.ChainID.String(), event.ContractID.String(), event.Data)
-
-	params := strings.Split(event.Data, "|")
-	for i, param := range params {
-		params[i] = unescape(param)
+	sep := strings.Index(event.Data, "|")
+	if sep < 0 {
+		return
 	}
-	topic := params[0]
-	params = params[1:]
-	h.handler.CallHandler(topic, params)
+	topic := event.Data[:sep]
+	fmt.Printf("%s %s %s\n", event.ChainID.String(), event.ContractID.String(), topic)
+	buf := wasmtypes.HexDecode(event.Data[sep+1:])
+	dec := wasmtypes.NewWasmDecoder(buf)
+	h.handler.CallHandler(topic, dec)
 }
 
 func RemoveHandler(eventHandlers []*WasmClientEvents, eventsID uint32) []*WasmClientEvents {
@@ -111,23 +110,4 @@ func subscribe(ctx context.Context, ws *websocket.Conn, topic string) error {
 		return err
 	}
 	return wsjson.Read(ctx, ws, &msg)
-}
-
-func unescape(param string) string {
-	i := strings.IndexByte(param, '~')
-	if i < 0 {
-		// no escape detected, return original string
-		return param
-	}
-
-	switch param[i+1] {
-	case '~': // escaped escape character
-		return param[:i] + "~" + unescape(param[i+2:])
-	case '/': // escaped vertical bar
-		return param[:i] + "|" + unescape(param[i+2:])
-	case '_': // escaped space
-		return param[:i] + " " + unescape(param[i+2:])
-	default:
-		panic("invalid event encoding")
-	}
 }

@@ -67,6 +67,8 @@ jobs:
     needs: setup
     name: Release Docker
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.tagger.outputs.tag }}
     steps:
       - name: Download temporary artifacts
         uses: actions/download-artifact@v3
@@ -121,3 +123,11 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}
+      
+  release-iscmagic:
+    uses: ./.github/workflows/publish-iscmagic.yml
+    needs: release-docker
+    with:
+      version: ${{ needs.release-docker.outputs.version }}
+    secrets: 
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

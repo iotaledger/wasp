@@ -14,17 +14,19 @@ const (
 )
 
 const (
-	ParamAccessAPI   = "ia"
-	ParamAccessOnly  = "i"
-	ParamActions     = "n"
-	ParamAddress     = "S"
-	ParamCertificate = "ic"
-	ParamChainOwner  = "o"
-	ParamFeePolicy   = "g"
-	ParamGasLimits   = "l"
-	ParamGasRatio    = "e"
-	ParamMetadata    = "x"
-	ParamPubKey      = "ip"
+	ParamAccessAPI       = "ia"
+	ParamAccessOnly      = "i"
+	ParamActions         = "n"
+	ParamAddress         = "S"
+	ParamCertificate     = "ic"
+	ParamChainOwner      = "o"
+	ParamEvmJsonRPCURL   = "e"
+	ParamEvmWebSocketUrl = "w"
+	ParamFeePolicy       = "g"
+	ParamGasLimits       = "l"
+	ParamGasRatio        = "e"
+	ParamPubKey          = "ip"
+	ParamPublicURL       = "x"
 )
 
 const (
@@ -35,10 +37,12 @@ const (
 	ResultChainOwnerID         = "o"
 	ResultControllers          = "a"
 	ResultCustomMetadata       = "x"
+	ResultEvmJsonRPCURL        = "e"
+	ResultEvmWebSocketUrl      = "w"
 	ResultFeePolicy            = "g"
 	ResultGasLimits            = "l"
 	ResultGasRatio             = "e"
-	ResultMetadata             = "x"
+	ResultPublicURL            = "x"
 	ResultStatus               = "m"
 )
 
@@ -51,21 +55,21 @@ const (
 	FuncRemoveAllowedStateControllerAddress = "removeAllowedStateControllerAddress"
 	FuncRevokeAccessNode                    = "revokeAccessNode"
 	FuncRotateStateController               = "rotateStateController"
-	FuncSetCustomMetadata                   = "setCustomMetadata"
 	FuncSetEVMGasRatio                      = "setEVMGasRatio"
 	FuncSetFeePolicy                        = "setFeePolicy"
 	FuncSetGasLimits                        = "setGasLimits"
+	FuncSetMetadata                         = "setMetadata"
 	FuncStartMaintenance                    = "startMaintenance"
 	FuncStopMaintenance                     = "stopMaintenance"
 	ViewGetAllowedStateControllerAddresses  = "getAllowedStateControllerAddresses"
 	ViewGetChainInfo                        = "getChainInfo"
 	ViewGetChainNodes                       = "getChainNodes"
 	ViewGetChainOwner                       = "getChainOwner"
-	ViewGetCustomMetadata                   = "getCustomMetadata"
 	ViewGetEVMGasRatio                      = "getEVMGasRatio"
 	ViewGetFeePolicy                        = "getFeePolicy"
 	ViewGetGasLimits                        = "getGasLimits"
 	ViewGetMaintenanceStatus                = "getMaintenanceStatus"
+	ViewGetMetadata                         = "getMetadata"
 )
 
 const (
@@ -77,19 +81,19 @@ const (
 	HFuncRemoveAllowedStateControllerAddress = wasmtypes.ScHname(0x31f69447)
 	HFuncRevokeAccessNode                    = wasmtypes.ScHname(0x5459512d)
 	HFuncRotateStateController               = wasmtypes.ScHname(0x244d1038)
-	HFuncSetCustomMetadata                   = wasmtypes.ScHname(0xaa71b0b3)
 	HFuncSetEVMGasRatio                      = wasmtypes.ScHname(0xaae22338)
 	HFuncSetFeePolicy                        = wasmtypes.ScHname(0x5b791c9f)
 	HFuncSetGasLimits                        = wasmtypes.ScHname(0xd72fb355)
+	HFuncSetMetadata                         = wasmtypes.ScHname(0x0eb3a798)
 	HFuncStartMaintenance                    = wasmtypes.ScHname(0x742f0521)
 	HFuncStopMaintenance                     = wasmtypes.ScHname(0x4e017b6a)
 	HViewGetAllowedStateControllerAddresses  = wasmtypes.ScHname(0xf3505183)
 	HViewGetChainInfo                        = wasmtypes.ScHname(0x434477e2)
 	HViewGetChainNodes                       = wasmtypes.ScHname(0xe1832289)
 	HViewGetChainOwner                       = wasmtypes.ScHname(0x9b2ef0ac)
-	HViewGetCustomMetadata                   = wasmtypes.ScHname(0x02d4bac9)
 	HViewGetEVMGasRatio                      = wasmtypes.ScHname(0xb81c8c34)
 	HViewGetFeePolicy                        = wasmtypes.ScHname(0xf8c89790)
 	HViewGetGasLimits                        = wasmtypes.ScHname(0x3a493455)
 	HViewGetMaintenanceStatus                = wasmtypes.ScHname(0x61fe5443)
+	HViewGetMetadata                         = wasmtypes.ScHname(0x79ad1ac6)
 )

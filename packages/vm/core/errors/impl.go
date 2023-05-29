@@ -37,13 +37,15 @@ func funcRegisterError(ctx isc.Sandbox) dict.Dict {
 func funcGetErrorMessageFormat(ctx isc.SandboxView) dict.Dict {
 	code := codec.MustDecodeVMErrorCode(ctx.Params().Get(ParamErrorCode))
 
-	template, err := getErrorMessageFormat(ctx.StateR(), code)
-	ctx.RequireNoError(err)
+	template, ok := getErrorMessageFormat(ctx.StateR(), code)
+	if !ok {
+		panic(coreerrors.ErrErrorNotFound)
+	}
 
 	return dict.Dict{ParamErrorMessageFormat: codec.EncodeString(template.MessageFormat())}
 }
 
-func getErrorMessageFormat(state kv.KVStoreReader, code isc.VMErrorCode) (*isc.VMErrorTemplate, error) {
+func getErrorMessageFormat(state kv.KVStoreReader, code isc.VMErrorCode) (*isc.VMErrorTemplate, bool) {
 	var e coreerrors.ErrorCollection
 	if code.ContractID == isc.VMCoreErrorContractID {
 		e = coreerrors.All()

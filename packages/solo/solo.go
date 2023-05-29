@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"math/rand"
 	"sync"
+	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -52,7 +53,7 @@ const (
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
-	T                               TestContext
+	T                               testing.TB
 	logger                          *logger.Logger
 	chainStateDatabaseManager       *database.ChainStateDatabaseManager
 	utxoDB                          *utxodb.UtxoDB
@@ -63,6 +64,7 @@ type Solo struct {
 	disableAutoAdjustStorageDeposit bool
 	seed                            cryptolib.Seed
 	publisher                       *publisher.Publisher
+	ctx                             context.Context
 }
 
 // Chain represents state of individual chain.
@@ -107,9 +109,6 @@ type Chain struct {
 
 	RequestsBlock     uint32
 	RequestsRemaining int
-
-	// used for non-standard VMs
-	bypassStardustVM bool
 }
 
 var _ chain.ChainCore = &Chain{}
@@ -120,16 +119,6 @@ type InitOptions struct {
 	PrintStackTrace          bool
 	Seed                     cryptolib.Seed
 	Log                      *logger.Logger
-}
-
-type InitChainOptions struct {
-	// optional parameters for the chain origin
-	OriginParameters dict.Dict
-	// optional VMRunner. Default is StardustVM
-	VMRunner vm.VMRunner
-	// flag forces bypassing any StardustVM ledger-dependent calls, such as init or blocklog
-	// To be used with provided non-standard VMRunner
-	BypassStardustVM bool
 }
 
 func DefaultInitOptions() *InitOptions {
@@ -144,10 +133,7 @@ func DefaultInitOptions() *InitOptions {
 // New creates an instance of the Solo environment
 // If solo is used for unit testing, 't' should be the *testing.T instance;
 // otherwise it can be either nil or an instance created with NewTestContext.
-func New(t TestContext, initOptions ...*InitOptions) *Solo {
-	if t == nil {
-		t = NewTestContext("solo")
-	}
+func New(t testing.TB, initOptions ...*InitOptions) *Solo {
 	opt := DefaultInitOptions()
 	if len(initOptions) > 0 {
 		opt = initOptions[0]
@@ -168,6 +154,8 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	}
 
 	utxoDBinitParams := utxodb.DefaultInitParams()
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	t.Cleanup(cancelCtx)
 	ret := &Solo{
 		T:                               t,
 		logger:                          opt.Log,
@@ -178,6 +166,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		disableAutoAdjustStorageDeposit: !opt.AutoAdjustStorageDeposit,
 		seed:                            opt.Seed,
 		publisher:                       publisher.New(opt.Log.Named("publisher")),
+		ctx:                             ctx,
 	}
 	globalTime := ret.utxoDB.GlobalTime()
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v",
@@ -191,9 +180,9 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	_ = ret.publisher.Events.Published.Hook(func(ev *publisher.ISCEvent[any]) {
 		ret.logger.Infof("solo publisher: %s %s %v", ev.Kind, ev.ChainID, ev.String())
 	})
+
 	go func() {
-		// TODO: cancel the context when the test finishes
-		ret.publisher.Run(context.Background())
+		ret.publisher.Run(ctx)
 	}()
 
 	return ret
@@ -214,11 +203,13 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 }
 
 // NewChain deploys new default chain instance.
-func (env *Solo) NewChain() *Chain {
+func (env *Solo) NewChain(depositFundsForOriginator ...bool) *Chain {
 	ret, _ := env.NewChainExt(nil, 0, "chain1")
-	// deposit some tokens for the chain originator
-	err := ret.DepositAssetsToL2(isc.NewAssetsBaseTokens(5*isc.Million), nil)
-	require.NoError(env.T, err)
+	if len(depositFundsForOriginator) == 0 || depositFundsForOriginator[0] {
+		// deposit some tokens for the chain originator
+		err := ret.DepositAssetsToL2(isc.NewAssetsBaseTokens(5*isc.Million), nil)
+		require.NoError(env.T, err)
+	}
 	return ret
 }
 
@@ -236,13 +227,13 @@ func (env *Solo) NewChain() *Chain {
 //   - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
 //
 // Upon return, the chain is fully functional to process requests
-//
-
-//nolint:funlen
-func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens uint64, name string, initOptions ...InitChainOptions) (*Chain, *iotago.Transaction) {
+func (env *Solo) NewChainExt(
+	chainOriginator *cryptolib.KeyPair,
+	initBaseTokens uint64,
+	name string,
+	originParams ...dict.Dict,
+) (*Chain, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
-
-	vmRunner := runvm.NewVMRunner()
 
 	if chainOriginator == nil {
 		chainOriginator = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
@@ -251,19 +242,13 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 		require.NoError(env.T, err)
 	}
 
-	originParams := dict.Dict{
+	initParams := dict.Dict{
 		origin.ParamChainOwner: isc.NewAgentID(chainOriginator.Address()).Bytes(),
 	}
-	bypassStardustVM := false
-
-	if len(initOptions) > 0 {
-		if initOptions[0].VMRunner != nil {
-			vmRunner = initOptions[0].VMRunner
+	if len(originParams) > 0 {
+		for k, v := range originParams[0] {
+			initParams[k] = v
 		}
-		if initOptions[0].OriginParameters != nil {
-			originParams = initOptions[0].OriginParameters
-		}
-		bypassStardustVM = initOptions[0].BypassStardustVM
 	}
 
 	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indices to user
@@ -280,7 +265,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 		stateControllerAddr,
 		stateControllerAddr,
 		initBaseTokens, // will be adjusted to min storage deposit + MinimumBaseTokensOnCommonAccount
-		originParams,
+		initParams,
 		outs,
 		outIDs,
 	)
@@ -304,7 +289,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 	require.NoError(env.T, err)
 	originAOMinSD := parameters.L1().Protocol.RentStructure.MinRent(originAO)
 	store := indexedstore.New(state.NewStore(kvStore))
-	origin.InitChain(store, originParams, originAO.Amount-originAOMinSD)
+	origin.InitChain(store, initParams, originAO.Amount-originAOMinSD)
 
 	{
 		block, err2 := store.LatestBlock()
@@ -323,8 +308,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 		OriginatorAgentID:      originatorAgentID,
 		ValidatorFeeTarget:     originatorAgentID,
 		store:                  store,
-		bypassStardustVM:       bypassStardustVM,
-		vmRunner:               vmRunner,
+		vmRunner:               runvm.NewVMRunner(),
 		proc:                   processors.MustNew(env.processorConfig),
 		log:                    chainlog,
 	}
@@ -336,11 +320,6 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 	env.glbMutex.Unlock()
 
 	go ret.batchLoop()
-
-	if bypassStardustVM {
-		// force skipping the init request. It is needed for non-Stardust VMs
-		return ret, originTx
-	}
 
 	ret.log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID.String())
 	return ret, originTx
@@ -372,18 +351,8 @@ func (env *Solo) requestsByChain(tx *iotago.Transaction) map[isc.ChainID][]isc.R
 	return ret
 }
 
-func (env *Solo) AddRequestsToChainMempool(ch *Chain, reqs []isc.Request) {
-	env.glbMutex.RLock()
-	defer env.glbMutex.RUnlock()
-	ch.runVMMutex.Lock()
-	defer ch.runVMMutex.Unlock()
-
-	ch.mempool.ReceiveRequests(reqs...)
-}
-
-// AddRequestsToChainMempoolWaitUntilInbufferEmpty adds all the requests to the chain mempool,
-// then waits for the in-buffer to be empty, before resuming VM execution
-func (env *Solo) AddRequestsToChainMempoolWaitUntilInbufferEmpty(ch *Chain, reqs []isc.Request, timeout ...time.Duration) {
+// AddRequestsToMempool adds all the requests to the chain mempool,
+func (env *Solo) AddRequestsToMempool(ch *Chain, reqs []isc.Request, timeout ...time.Duration) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 	ch.runVMMutex.Lock()
@@ -413,7 +382,7 @@ func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
 	}
 }
 
-func (ch *Chain) GetAnchorOutput() *isc.AliasOutputWithID {
+func (ch *Chain) GetAnchorOutputFromL1() *isc.AliasOutputWithID {
 	outputs := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
 	require.EqualValues(ch.Env.T, 1, len(outputs))
 	for outputID, aliasOutput := range outputs {
@@ -441,23 +410,17 @@ func (ch *Chain) collateBatch() []isc.Request {
 // batchLoop mimics behavior Wasp consensus
 func (ch *Chain) batchLoop() {
 	for {
-		ch.Sync()
+		ch.collateAndRunBatch()
 		time.Sleep(50 * time.Millisecond)
 	}
 }
 
-// Sync runs all ready requests
-func (ch *Chain) Sync() {
-	for {
-		if !ch.collateAndRunBatch() {
-			return
-		}
-	}
-}
-
-func (ch *Chain) collateAndRunBatch() bool {
+func (ch *Chain) collateAndRunBatch() {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
+	if ch.Env.ctx.Err() != nil {
+		return
+	}
 	batch := ch.collateBatch()
 	if len(batch) > 0 {
 		results := ch.runRequestsNolock(batch, "batchLoop")
@@ -466,9 +429,7 @@ func (ch *Chain) collateAndRunBatch() bool {
 				ch.log.Errorf("runRequestsSync: %v", res.Receipt.Error)
 			}
 		}
-		return true
 	}
-	return false
 }
 
 func (ch *Chain) GetCandidateNodes() []*governance.AccessNodeInfo {

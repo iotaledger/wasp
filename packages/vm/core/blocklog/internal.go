@@ -188,10 +188,28 @@ func getSmartContractEventsInternal(partition kv.KVStoreReader, contract isc.Hna
 	}
 }
 
-func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint32) ([][]byte, bool, error) {
-	blockInfo, err := GetBlockInfo(partition, blockIndex)
-	if err != nil || blockInfo == nil {
-		return nil, false, err
+func pruneEventsByBlockIndex(partition kv.KVStore, blockIndex uint32, totalRequests uint16) []string {
+	ret := make([]string, 0)
+	events := collections.NewMap(partition, prefixRequestEvents)
+	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
+		eventIndex := uint16(0)
+		for {
+			key := NewEventLookupKey(blockIndex, reqIdx, eventIndex)
+			msg := events.GetAt(key.Bytes())
+			if msg == nil {
+				break
+			}
+			events.DelAt(key.Bytes())
+			eventIndex++
+		}
+	}
+	return ret
+}
+
+func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint32) ([][]byte, bool) {
+	blockInfo, ok := GetBlockInfo(partition, blockIndex)
+	if !ok {
+		return nil, false
 	}
 	ret := make([][]byte, blockInfo.TotalRequests)
 	var found bool
@@ -201,7 +219,15 @@ func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint
 			panic("getRequestLogRecordsForBlockBin: inconsistency: request record not found")
 		}
 	}
-	return ret, true, nil
+	return ret, true
+}
+
+func pruneRequestLogRecordsByBlockIndex(partition kv.KVStore, blockIndex uint32, totalRequests uint16) {
+	lookupTable := collections.NewMap(partition, prefixRequestReceipts)
+	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
+		lookupKey := NewRequestLookupKey(blockIndex, reqIdx)
+		lookupTable.DelAt(lookupKey[:])
+	}
 }
 
 func getBlockInfoBytes(partition kv.KVStoreReader, blockIndex uint32) []byte {
@@ -222,12 +248,12 @@ func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, re
 	return recBin, true
 }
 
-func GetOutputID(stateR kv.KVStoreReader, stateIndex uint32, outputIndex uint16) (iotago.OutputID, error) {
-	blockInfo, err := GetBlockInfo(stateR, stateIndex+1)
-	if err != nil {
-		return iotago.OutputID{}, err
+func GetOutputID(stateR kv.KVStoreReader, stateIndex uint32, outputIndex uint16) (iotago.OutputID, bool) {
+	blockInfo, ok := GetBlockInfo(stateR, stateIndex+1)
+	if !ok {
+		return iotago.OutputID{}, false
 	}
-	return iotago.OutputIDFromTransactionIDAndIndex(blockInfo.PreviousAliasOutput.TransactionID(), outputIndex), nil
+	return iotago.OutputIDFromTransactionIDAndIndex(blockInfo.PreviousAliasOutput.TransactionID(), outputIndex), true
 }
 
 // tries to get block index from ParamBlockIndex, if no parameter is provided, returns the latest block index
@@ -238,4 +264,16 @@ func getBlockIndexParams(ctx isc.SandboxView) uint32 {
 	}
 	registry := collections.NewArray32ReadOnly(ctx.StateR(), PrefixBlockRegistry)
 	return registry.Len() - 1
+}
+
+func pruneBlock(partition kv.KVStore, blockIndex uint32) {
+	blockInfo, ok := GetBlockInfo(partition, blockIndex)
+	if !ok {
+		// already pruned?
+		return
+	}
+	registry := collections.NewArray32(partition, PrefixBlockRegistry)
+	registry.PruneAt(blockIndex)
+	pruneRequestLogRecordsByBlockIndex(partition, blockIndex, blockInfo.TotalRequests)
+	pruneEventsByBlockIndex(partition, blockIndex, blockInfo.TotalRequests)
 }

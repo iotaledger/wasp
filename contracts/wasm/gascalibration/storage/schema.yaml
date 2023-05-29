@@ -13,10 +13,13 @@ repository: https://github.com/iotaledger/wasp
 events: {}
 structs: {}
 typedefs: {}
+
 state:
-    v: Uint32[]
+  v: Uint32[]
+
 funcs:
-    f:
-        params:
-            n: Uint32
+  f:
+    params:
+      n: Uint32
+
 views: {}

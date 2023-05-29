@@ -188,12 +188,6 @@ func (r *CallParams) NewRequestOffLedger(chainID isc.ChainID, keyPair *cryptolib
 	return ret.Sign(keyPair)
 }
 
-func (ch *Chain) mustStardustVM() {
-	if ch.bypassStardustVM {
-		panic("Solo: StardustVM context expected")
-	}
-}
-
 func parseParams(params []interface{}) dict.Dict {
 	if len(params) == 1 {
 		return params[0].(dict.Dict)
@@ -358,8 +352,6 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 
 // LastReceipt returns the receipt for the latest request processed by the chain, will return nil if the last block is empty
 func (ch *Chain) LastReceipt() *isc.Receipt {
-	ch.mustStardustVM()
-
 	lastBlockReceipts := ch.GetRequestReceiptsForBlock()
 	if len(lastBlockReceipts) == 0 {
 		return nil
@@ -377,7 +369,7 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 	require.NoError(ch.Env.T, err)
 	results := ch.RunRequestsSync(reqs, "post")
 	if len(results) == 0 {
-		return nil, nil, nil, errors.New("request has been skipped")
+		return tx, nil, nil, errors.New("request has been skipped")
 	}
 	res := results[0]
 	return tx, res.Receipt, res.Return, nil
@@ -468,9 +460,6 @@ func (ch *Chain) CallViewByHname(hContract, hFunction isc.Hname, params ...inter
 }
 
 func (ch *Chain) CallViewByHnameAtState(chainState state.State, hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
-	if ch.bypassStardustVM {
-		return nil, errors.New("Solo: StardustVM context expected")
-	}
 	ch.Log().Debugf("callView: %s::%s", hContract.String(), hFunction.String())
 
 	p := parseParams(params)
@@ -533,7 +522,7 @@ func (ch *Chain) GetMerkleProof(scHname isc.Hname, key []byte) *trie.MerkleProof
 
 // GetL1Commitment returns state commitment taken from the anchor output
 func (ch *Chain) GetL1Commitment() *state.L1Commitment {
-	anchorOutput := ch.GetAnchorOutput()
+	anchorOutput := ch.GetAnchorOutputFromL1()
 	ret, err := transaction.L1CommitmentFromAliasOutput(anchorOutput.GetAliasOutput())
 	require.NoError(ch.Env.T, err)
 	return ret
@@ -571,6 +560,7 @@ func (ch *Chain) WaitUntil(p func() bool, maxWait ...time.Duration) bool {
 		}
 		if time.Now().After(deadline) {
 			ch.Log().Errorf("WaitUntil failed waiting max %v", maxw)
+			ch.Env.T.FailNow()
 			return false
 		}
 		time.Sleep(10 * time.Millisecond)

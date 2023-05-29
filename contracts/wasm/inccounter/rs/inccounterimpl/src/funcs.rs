@@ -174,10 +174,9 @@ pub fn view_get_counter(_ctx: &ScViewContext, f: &GetCounterContext) {
 pub fn view_get_vli(_ctx: &ScViewContext, f: &GetVliContext) {
     let mut enc = WasmEncoder::new();
     let n = f.params.ni64().value();
-    int64_encode(&mut enc,n);
-    let buf = enc.buf();
+    let buf = enc.vli_encode(n).buf();
     let mut dec = WasmDecoder::new(&buf);
-    let x = int64_decode(&mut dec);
+    let x = dec.vli_decode(64);
 
     let mut str = n.to_string() + " -";
     for b in &buf {
@@ -196,10 +195,9 @@ pub fn view_get_vli(_ctx: &ScViewContext, f: &GetVliContext) {
 pub fn view_get_vlu(_ctx: &ScViewContext, f: &GetVluContext) {
     let mut enc = WasmEncoder::new();
     let n = f.params.nu64().value();
-    uint64_encode(&mut enc, n);
-    let buf = enc.buf();
+    let buf = enc.vlu_encode(n).buf();
     let mut dec = WasmDecoder::new(&buf);
-    let x = uint64_decode(&mut dec);
+    let x = dec.vlu_decode(64);
 
     let mut str = n.to_string() + " -";
     for b in &buf {

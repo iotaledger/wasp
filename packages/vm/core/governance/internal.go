@@ -40,7 +40,17 @@ func GetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) (*isc.ChainInfo, 
 	if ret.GasLimits, err = GetGasLimits(state); err != nil {
 		return nil, err
 	}
-	ret.CustomMetadata = GetCustomMetadata(state)
+	ret.BlockKeepAmount = GetBlockKeepAmount(state)
+	if ret.PublicURL, err = GetPublicURL(state); err != nil {
+		return nil, err
+	}
+	if ret.MetadataEVMJsonRPCURL, err = GetEVMJsonRPCURL(state); err != nil {
+		return nil, err
+	}
+	if ret.MetadataEVMWebSocketURL, err = GetEVMWebSocketURL(state); err != nil {
+		return nil, err
+	}
+
 	return ret, nil
 }
 
@@ -83,12 +93,32 @@ func GetGasLimits(state kv.KVStoreReader) (*gas.Limits, error) {
 	return gas.LimitsFromBytes(data)
 }
 
-func SetCustomMetadata(state kv.KVStore, data []byte) {
-	state.Set(VarCustomMetadata, data)
+func GetBlockKeepAmount(state kv.KVStoreReader) int32 {
+	return codec.MustDecodeInt32(state.Get(VarBlockKeepAmount), BlockKeepAmountDefault)
 }
 
-func GetCustomMetadata(state kv.KVStoreReader) []byte {
-	return state.Get(VarCustomMetadata)
+func SetPublicURL(state kv.KVStore, url string) {
+	state.Set(VarPublicURL, codec.EncodeString(url))
+}
+
+func GetPublicURL(state kv.KVStoreReader) (string, error) {
+	return codec.DecodeString(state.Get(VarPublicURL), "")
+}
+
+func SetEVMJsonRPCURL(state kv.KVStore, url string) {
+	state.Set(VarMetadataEVMJsonRPCURL, codec.EncodeString(url))
+}
+
+func GetEVMJsonRPCURL(state kv.KVStoreReader) (string, error) {
+	return codec.DecodeString(state.Get(VarMetadataEVMJsonRPCURL), "")
+}
+
+func SetEVMWebSocketURL(state kv.KVStore, url string) {
+	state.Set(VarMetadataEVMWebSocketURL, codec.EncodeString(url))
+}
+
+func GetEVMWebSocketURL(state kv.KVStoreReader) (string, error) {
+	return codec.DecodeString(state.Get(VarMetadataEVMWebSocketURL), "")
 }
 
 func AccessNodesMap(state kv.KVStore) *collections.Map {

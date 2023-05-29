@@ -10,6 +10,7 @@ author: Eric Hop <eric@iota.org>
 license: Apache-2.0
 repository: https://github.com/iotaledger/wasp
 
+events: {}
 structs:
   Donation:
     amount: Uint64 # amount donated
@@ -18,11 +19,13 @@ structs:
     feedback: String # the feedback for the person donated to
     timestamp: Uint64 # when the donation took place
 typedefs: {}
+
 state:
   log: Donation[]
   maxDonation: Uint64
   owner: AgentID
   totalDonation: Uint64
+
 funcs:
   init:
     params:
@@ -34,6 +37,7 @@ funcs:
     access: owner # only SC owner can withdraw donated funds
     params:
       amount: Uint64? # amount to withdraw
+
 views:
   donation:
     params:

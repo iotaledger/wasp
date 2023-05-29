@@ -38,12 +38,13 @@ pub fn nft_id_encode(enc: &mut WasmEncoder, value: &ScNftID) {
 }
 
 pub fn nft_id_from_bytes(buf: &[u8]) -> ScNftID {
-    if buf.len() == 0 {
+    let len = buf.len();
+    if len == 0 {
         return ScNftID {
             id: [0; SC_NFT_ID_LENGTH],
         };
     }
-    if buf.len() != SC_NFT_ID_LENGTH {
+    if len != SC_NFT_ID_LENGTH {
         panic("invalid NftID length");
     }
     ScNftID {

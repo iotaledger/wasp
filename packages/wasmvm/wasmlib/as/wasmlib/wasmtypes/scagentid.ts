@@ -1,6 +1,11 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+export const ScAgentIDNil: u8 = 0;
+export const ScAgentIDAddress: u8 = 1;
+export const ScAgentIDContract: u8 = 2;
+export const ScAgentIDEthereum: u8 = 3;
+
 import {panic} from '../sandbox';
 import {
     addressFromBytes,
@@ -21,10 +26,6 @@ import {Proxy} from './proxy';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export const ScAgentIDNil: u8 = 0;
-export const ScAgentIDAddress: u8 = 1;
-export const ScAgentIDContract: u8 = 2;
-export const ScAgentIDEthereum: u8 = 3;
 const nilAgentIDString = '-';
 
 export class ScAgentID {

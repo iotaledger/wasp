@@ -99,14 +99,16 @@ impl WasmClientEvents {
         if event.contract_id != self.contract_id || event.chain_id != self.chain_id {
             return;
         }
-        println!("{} {} {}", event.chain_id.to_string(), event.contract_id.to_string(), event.data);
-
-        let mut params: Vec<String> = event.data.split("|").map(|s| s.into()).collect();
-        for i in 0..params.len() {
-            params[i] = Self::unescape(&params[i]);
+        let sep = event.data.find('|');
+        if sep.is_none() {
+            return;
         }
-        let topic = params.remove(0);
-        self.handler.call_handler(&topic, &params);
+        let sep = sep.unwrap();
+        let topic = &event.data[..sep];
+        println!("{} {} {}", event.chain_id.to_string(), event.contract_id.to_string(), topic);
+        let buf = hex_decode(&event.data[sep + 1..]);
+        let mut dec = WasmDecoder::new(&buf);
+        self.handler.call_handler(topic, &mut dec);
     }
 
     fn subscribe(sender: &Sender, topic: &str) {
@@ -116,22 +118,5 @@ impl WasmClientEvents {
         };
         let json = serde_json::to_string(&cmd).unwrap();
         let _ = sender.send(json);
-    }
-
-    fn unescape(param: &str) -> String {
-        let idx = match param.find("~") {
-            Some(idx) => idx,
-            None => return String::from(param),
-        };
-
-        match param.chars().nth(idx + 1) {
-            // escaped escape character
-            Some('~') => param[0..idx].to_string() + "~" + &Self::unescape(&param[idx + 2..]),
-            // escaped vertical bar
-            Some('/') => param[0..idx].to_string() + "|" + &Self::unescape(&param[idx + 2..]),
-            // escaped space
-            Some('_') => param[0..idx].to_string() + " " + &Self::unescape(&param[idx + 2..]),
-            _ => panic!("invalid event encoding"),
-        }
     }
 }

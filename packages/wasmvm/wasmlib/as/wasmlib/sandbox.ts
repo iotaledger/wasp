@@ -98,23 +98,6 @@ export class ScSandbox {
         return new ScAssets(sandbox(FnBalances, null)).balances();
     }
 
-    // calls a smart contract function
-    protected callWithAllowance(hContract: ScHname, hFunction: ScHname, params: ScDict | null, allowance: ScTransfer | null): ScImmutableDict {
-        const req = new CallRequest();
-        req.contract = hContract;
-        req.function = hFunction;
-        if (params === null) {
-            params = new ScDict(null);
-        }
-        req.params = params.toBytes();
-        if (allowance === null) {
-            allowance = new ScTransfer();
-        }
-        req.allowance = allowance.toBytes();
-        const res = this.fnCall(req);
-        return new ScDict(res).immutable();
-    }
-
     fnCall(req: CallRequest): Uint8Array {
         return sandbox(FnCall, req.bytes());
     }
@@ -178,6 +161,20 @@ export class ScSandbox {
     public utility(): ScSandboxUtils {
         return new ScSandboxUtils();
     }
+
+    // calls a smart contract function
+    protected callWithAllowance(hContract: ScHname, hFunction: ScHname, params: ScDict | null, allowance: ScTransfer | null): ScImmutableDict {
+        const req = new CallRequest();
+        req.contract = hContract;
+        req.function = hFunction;
+        if (params === null) {
+            params = new ScDict(null);
+        }
+        req.params = params.toBytes();
+        req.allowance = (allowance === null) ? new Uint8Array(0) : allowance.toBytes();
+        const res = this.fnCall(req);
+        return new ScDict(res).immutable();
+    }
 }
 
 export class ScSandboxView extends ScSandbox {
@@ -239,15 +236,9 @@ export class ScSandboxFunc extends ScSandbox {
         req.function = fn.hFunction;
         req.params = fn.params.toBytes();
         let allowance = fn.allowanceAssets;
-        if (allowance === null) {
-            allowance = new ScTransfer();
-        }
-        req.allowance = allowance.toBytes();
+        req.allowance = (allowance === null) ? new Uint8Array(0) : allowance.toBytes();
         let transfer = fn.transferAssets;
-        if (transfer === null) {
-            transfer = new ScTransfer();
-        }
-        req.transfer = transfer.toBytes();
+        req.transfer = (transfer === null) ? new Uint8Array(0) : transfer.toBytes();
         req.delay = fn.delaySeconds;
         return uint64FromBytes(sandbox(FnEstimateStorageDeposit, req.bytes()));
     }

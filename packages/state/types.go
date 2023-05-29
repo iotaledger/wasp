@@ -69,6 +69,9 @@ type Store interface {
 	// made to the DB.
 	ExtractBlock(StateDraft) Block
 
+	// Prune deletes the trie with the given root from the DB
+	Prune(trie.Hash) (trie.PruneStats, error)
+
 	// TakeSnapshot takes a snapshot of the block and trie at the given trie root.
 	TakeSnapshot(trie.Hash, kvstore.KVStore) error
 

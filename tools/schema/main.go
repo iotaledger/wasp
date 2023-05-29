@@ -25,7 +25,7 @@ import (
 	wasp_yaml "github.com/iotaledger/wasp/tools/schema/model/yaml"
 )
 
-const version = "schema tool version 1.1.7"
+const version = "schema tool version 1.1.9"
 
 var (
 	flagBuild   = flag.Bool("build", false, "build wasm target for specified languages")
@@ -43,9 +43,16 @@ func init() {
 }
 
 func main() {
+	err := mainWarp()
+	if err != nil {
+		os.Exit(1)
+	}
+}
+
+func mainWarp() error {
 	if *flagVersion {
 		fmt.Println(version)
-		return
+		return nil
 	}
 
 	err := generator.FindModulePath()
@@ -61,7 +68,7 @@ func main() {
 	if strings.HasSuffix(strings.ReplaceAll(cwd, "\\", "/"), "/packages/wasmvm/wasmlib") {
 		// use schema tool to generate WasmLib's built-in core contract interfaces
 		generateCoreInterfaces()
-		return
+		return nil
 	}
 
 	file, err := os.Open("schema.yaml")
@@ -74,7 +81,7 @@ func main() {
 		if err != nil && !errors.Is(err, generator.ErrNoError) {
 			log.Panic(err)
 		}
-		return
+		return err
 	}
 
 	if *flagInit != "" {
@@ -82,11 +89,10 @@ func main() {
 		if err != nil && !errors.Is(err, generator.ErrNoError) {
 			if _, err2 := os.Stat(*flagInit); err2 == nil {
 				log.Println("schema already exists")
-				return
 			}
 			log.Panic(err)
 		}
-		return
+		return err
 	}
 
 	// No schema file in current folder, walk all subfolders to see if there are
@@ -94,6 +100,8 @@ func main() {
 	if !walkSubFolders() {
 		flag.Usage()
 	}
+
+	return nil
 }
 
 func addSubProjectToParentToml() error {

@@ -66,7 +66,7 @@ func (p *EventHandler) AttachToEvents() context.CancelFunc {
 				return
 			}
 
-			receipt := models.MapReceiptResponse(block.Payload.RequestReceipt, block.Payload.Error)
+			receipt := models.MapReceiptResponse(block.Payload.RequestReceipt)
 			iscEvent := MapISCEvent(block, receipt)
 			p.publishEvent.Trigger(iscEvent)
 		}).Unhook,

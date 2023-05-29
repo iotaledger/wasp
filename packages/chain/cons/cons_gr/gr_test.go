@@ -130,6 +130,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 			1*time.Second, // RedeliveryPeriod
 			5*time.Second, // PrintStatusPeriod
 			metrics.NewEmptyChainConsensusMetric(),
+			metrics.NewEmptyChainPipeMetrics(),
 			log.Named(fmt.Sprintf("N#%v", i)),
 		)
 	}

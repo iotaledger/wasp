@@ -10,6 +10,7 @@ author: Eric Hop <eric@iota.org>
 license: Apache-2.0
 repository: https://github.com/iotaledger/wasp
 
+events: {}
 structs:
   Auction:
     nft: NftID # NFT of NFTs for sale
@@ -29,12 +30,14 @@ structs:
 typedefs:
   BidderList: AgentID[]
   Bids: map[AgentID]Bid
+
 state:
   auctions: map[NftID]Auction
   bidderList: map[NftID]BidderList
   bids: map[NftID]Bids
   owner: AgentID
   ownerMargin: Uint64 # default auction owner's margin in promilles
+
 funcs:
   init:
     params:
@@ -55,9 +58,10 @@ funcs:
     access: owner # only SC creator can set owner margin
     params:
       ownerMargin: Uint64 # new SC owner margin in promilles
+
 views:
   getAuctionInfo:
-    params: 
+    params:
       nft: NftID # NFT identifies the auction
     results:
       bidders: Uint32 # nr of bidders

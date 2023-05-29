@@ -11,11 +11,11 @@ import {uint32FromBytes} from './scuint32';
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export function uint64Decode(dec: WasmDecoder): u64 {
-    return dec.vluDecode64(64);
+    return uint64FromBytes(dec.fixedBytes(ScUint64Length));
 }
 
 export function uint64Encode(enc: WasmEncoder, value: u64): void {
-    enc.vluEncode64(value);
+    enc.fixedBytes(uint64ToBytes(value), ScUint64Length);
 }
 
 export function uint64FromBytes(buf: Uint8Array): u64 {

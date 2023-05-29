@@ -47,7 +47,7 @@ func (d *WasmDecoder) Byte() byte {
 
 // Bytes decodes the next variable sized slice of bytes from the byte buffer
 func (d *WasmDecoder) Bytes() []byte {
-	length := uint32(d.VluDecode(32))
+	length := Uint32Decode(d)
 	return d.FixedBytes(length)
 }
 
@@ -59,12 +59,12 @@ func (d *WasmDecoder) Close() {
 }
 
 // FixedBytes decodes the next fixed size slice of bytes from the byte buffer
-func (d *WasmDecoder) FixedBytes(size uint32) []byte {
-	if uint32(len(d.buf)) < size {
+func (d *WasmDecoder) FixedBytes(length uint32) []byte {
+	if uint32(len(d.buf)) < length {
 		d.abort("insufficient fixed bytes")
 	}
-	value := d.buf[:size]
-	d.buf = d.buf[size:]
+	value := d.buf[:length]
+	d.buf = d.buf[length:]
 	return value
 }
 
@@ -147,9 +147,9 @@ func (e *WasmEncoder) Byte(value uint8) *WasmEncoder {
 
 // Bytes encodes a variable sized slice of bytes into the byte buffer
 func (e *WasmEncoder) Bytes(value []byte) *WasmEncoder {
-	length := len(value)
-	e.VluEncode(uint64(length))
-	return e.FixedBytes(value, uint32(length))
+	length := uint32(len(value))
+	Uint32Encode(e, length)
+	return e.FixedBytes(value, length)
 }
 
 // FixedBytes encodes a fixed size slice of bytes into the byte buffer

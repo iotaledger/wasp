@@ -27,9 +27,6 @@ docs/BlobInfoResponse.md
 docs/BlobListResponse.md
 docs/BlobValueResponse.md
 docs/BlockInfoResponse.md
-docs/BlockReceiptError.md
-docs/BlockReceiptsResponse.md
-docs/BurnLog.md
 docs/BurnRecord.md
 docs/CallTarget.md
 docs/ChainInfoResponse.md
@@ -48,7 +45,8 @@ docs/DKSharesInfo.md
 docs/DKSharesPostRequest.md
 docs/DefaultApi.md
 docs/ErrorMessageFormatResponse.md
-docs/ErrorParameter.md
+docs/EstimateGasRequestOffledger.md
+docs/EstimateGasRequestOnledger.md
 docs/EventsResponse.md
 docs/FeePolicy.md
 docs/FoundryOutputResponse.md
@@ -88,14 +86,12 @@ docs/PeeringTrustRequest.md
 docs/ProtocolParameters.md
 docs/PublisherStateTransactionItem.md
 docs/Ratio32.md
-docs/ReceiptError.md
 docs/ReceiptResponse.md
 docs/RentStructure.md
 docs/RequestDetail.md
 docs/RequestIDResponse.md
 docs/RequestIDsResponse.md
 docs/RequestProcessedResponse.md
-docs/RequestReceiptResponse.md
 docs/RequestsApi.md
 docs/StateResponse.md
 docs/StateTransaction.md
@@ -105,6 +101,7 @@ docs/TransactionMetricItem.md
 docs/TxInclusionStateMsg.md
 docs/TxInclusionStateMsgMetricItem.md
 docs/UTXOInputMetricItem.md
+docs/UnresolvedVMErrorJSON.md
 docs/UpdateUserPasswordRequest.md
 docs/UpdateUserPermissionsRequest.md
 docs/User.md
@@ -128,9 +125,6 @@ model_blob_info_response.go
 model_blob_list_response.go
 model_blob_value_response.go
 model_block_info_response.go
-model_block_receipt_error.go
-model_block_receipts_response.go
-model_burn_log.go
 model_burn_record.go
 model_call_target.go
 model_chain_info_response.go
@@ -146,7 +140,8 @@ model_control_addresses_response.go
 model_dk_shares_info.go
 model_dk_shares_post_request.go
 model_error_message_format_response.go
-model_error_parameter.go
+model_estimate_gas_request_offledger.go
+model_estimate_gas_request_onledger.go
 model_events_response.go
 model_fee_policy.go
 model_foundry_output_response.go
@@ -184,14 +179,12 @@ model_peering_trust_request.go
 model_protocol_parameters.go
 model_publisher_state_transaction_item.go
 model_ratio32.go
-model_receipt_error.go
 model_receipt_response.go
 model_rent_structure.go
 model_request_detail.go
 model_request_id_response.go
 model_request_ids_response.go
 model_request_processed_response.go
-model_request_receipt_response.go
 model_state_response.go
 model_state_transaction.go
 model_transaction.go
@@ -199,6 +192,7 @@ model_transaction_id_metric_item.go
 model_transaction_metric_item.go
 model_tx_inclusion_state_msg.go
 model_tx_inclusion_state_msg_metric_item.go
+model_unresolved_vm_error_json.go
 model_update_user_password_request.go
 model_update_user_permissions_request.go
 model_user.go

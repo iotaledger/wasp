@@ -10,7 +10,7 @@ export class ControlAddressesCall {
     func:    wasmlib.ScView;
     results: sc.ImmutableControlAddressesResults = new sc.ImmutableControlAddressesResults(wasmlib.ScView.nilProxy);
 
-    public constructor(ctx: wasmlib.ScViewCallContext) {
+    public constructor(ctx: wasmlib.ScViewClientContext) {
         this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewControlAddresses);
     }
 }
@@ -20,7 +20,7 @@ export class GetBlockInfoCall {
     params:  sc.MutableGetBlockInfoParams = new sc.MutableGetBlockInfoParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetBlockInfoResults = new sc.ImmutableGetBlockInfoResults(wasmlib.ScView.nilProxy);
 
-    public constructor(ctx: wasmlib.ScViewCallContext) {
+    public constructor(ctx: wasmlib.ScViewClientContext) {
         this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetBlockInfo);
     }
 }
@@ -30,7 +30,7 @@ export class GetEventsForBlockCall {
     params:  sc.MutableGetEventsForBlockParams = new sc.MutableGetEventsForBlockParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetEventsForBlockResults = new sc.ImmutableGetEventsForBlockResults(wasmlib.ScView.nilProxy);
 
-    public constructor(ctx: wasmlib.ScViewCallContext) {
+    public constructor(ctx: wasmlib.ScViewClientContext) {
         this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetEventsForBlock);
     }
 }
@@ -40,7 +40,7 @@ export class GetEventsForContractCall {
     params:  sc.MutableGetEventsForContractParams = new sc.MutableGetEventsForContractParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetEventsForContractResults = new sc.ImmutableGetEventsForContractResults(wasmlib.ScView.nilProxy);
 
-    public constructor(ctx: wasmlib.ScViewCallContext) {
+    public constructor(ctx: wasmlib.ScViewClientContext) {
         this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetEventsForContract);
     }
 }
@@ -50,7 +50,7 @@ export class GetEventsForRequestCall {
     params:  sc.MutableGetEventsForRequestParams = new sc.MutableGetEventsForRequestParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetEventsForRequestResults = new sc.ImmutableGetEventsForRequestResults(wasmlib.ScView.nilProxy);
 
-    public constructor(ctx: wasmlib.ScViewCallContext) {
+    public constructor(ctx: wasmlib.ScViewClientContext) {
         this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetEventsForRequest);
     }
 }
@@ -60,7 +60,7 @@ export class GetRequestIDsForBlockCall {
     params:  sc.MutableGetRequestIDsForBlockParams = new sc.MutableGetRequestIDsForBlockParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetRequestIDsForBlockResults = new sc.ImmutableGetRequestIDsForBlockResults(wasmlib.ScView.nilProxy);
 
-    public constructor(ctx: wasmlib.ScViewCallContext) {
+    public constructor(ctx: wasmlib.ScViewClientContext) {
         this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetRequestIDsForBlock);
     }
 }
@@ -70,7 +70,7 @@ export class GetRequestReceiptCall {
     params:  sc.MutableGetRequestReceiptParams = new sc.MutableGetRequestReceiptParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetRequestReceiptResults = new sc.ImmutableGetRequestReceiptResults(wasmlib.ScView.nilProxy);
 
-    public constructor(ctx: wasmlib.ScViewCallContext) {
+    public constructor(ctx: wasmlib.ScViewClientContext) {
         this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetRequestReceipt);
     }
 }
@@ -80,7 +80,7 @@ export class GetRequestReceiptsForBlockCall {
     params:  sc.MutableGetRequestReceiptsForBlockParams = new sc.MutableGetRequestReceiptsForBlockParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetRequestReceiptsForBlockResults = new sc.ImmutableGetRequestReceiptsForBlockResults(wasmlib.ScView.nilProxy);
 
-    public constructor(ctx: wasmlib.ScViewCallContext) {
+    public constructor(ctx: wasmlib.ScViewClientContext) {
         this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetRequestReceiptsForBlock);
     }
 }
@@ -90,21 +90,21 @@ export class IsRequestProcessedCall {
     params:  sc.MutableIsRequestProcessedParams = new sc.MutableIsRequestProcessedParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableIsRequestProcessedResults = new sc.ImmutableIsRequestProcessedResults(wasmlib.ScView.nilProxy);
 
-    public constructor(ctx: wasmlib.ScViewCallContext) {
+    public constructor(ctx: wasmlib.ScViewClientContext) {
         this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewIsRequestProcessed);
     }
 }
 
 export class ScFuncs {
     // Returns the current state controller and governing addresses and at what block index they were set.
-    static controlAddresses(ctx: wasmlib.ScViewCallContext): ControlAddressesCall {
+    static controlAddresses(ctx: wasmlib.ScViewClientContext): ControlAddressesCall {
         const f = new ControlAddressesCall(ctx);
         f.results = new sc.ImmutableControlAddressesResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
     // Returns information about the given block.
-    static getBlockInfo(ctx: wasmlib.ScViewCallContext): GetBlockInfoCall {
+    static getBlockInfo(ctx: wasmlib.ScViewClientContext): GetBlockInfoCall {
         const f = new GetBlockInfoCall(ctx);
         f.params = new sc.MutableGetBlockInfoParams(wasmlib.newCallParamsProxy(f.func));
         f.results = new sc.ImmutableGetBlockInfoResults(wasmlib.newCallResultsProxy(f.func));
@@ -112,7 +112,7 @@ export class ScFuncs {
     }
 
     // Returns the list of events triggered during the execution of the given block.
-    static getEventsForBlock(ctx: wasmlib.ScViewCallContext): GetEventsForBlockCall {
+    static getEventsForBlock(ctx: wasmlib.ScViewClientContext): GetEventsForBlockCall {
         const f = new GetEventsForBlockCall(ctx);
         f.params = new sc.MutableGetEventsForBlockParams(wasmlib.newCallParamsProxy(f.func));
         f.results = new sc.ImmutableGetEventsForBlockResults(wasmlib.newCallResultsProxy(f.func));
@@ -121,7 +121,7 @@ export class ScFuncs {
 
     // Returns the list of events triggered by the given contract
     // during the execution of the given block range.
-    static getEventsForContract(ctx: wasmlib.ScViewCallContext): GetEventsForContractCall {
+    static getEventsForContract(ctx: wasmlib.ScViewClientContext): GetEventsForContractCall {
         const f = new GetEventsForContractCall(ctx);
         f.params = new sc.MutableGetEventsForContractParams(wasmlib.newCallParamsProxy(f.func));
         f.results = new sc.ImmutableGetEventsForContractResults(wasmlib.newCallResultsProxy(f.func));
@@ -129,7 +129,7 @@ export class ScFuncs {
     }
 
     // Returns the list of events triggered during the execution of the given request.
-    static getEventsForRequest(ctx: wasmlib.ScViewCallContext): GetEventsForRequestCall {
+    static getEventsForRequest(ctx: wasmlib.ScViewClientContext): GetEventsForRequestCall {
         const f = new GetEventsForRequestCall(ctx);
         f.params = new sc.MutableGetEventsForRequestParams(wasmlib.newCallParamsProxy(f.func));
         f.results = new sc.ImmutableGetEventsForRequestResults(wasmlib.newCallResultsProxy(f.func));
@@ -137,7 +137,7 @@ export class ScFuncs {
     }
 
     // Returns a list with all request IDs in the given block.
-    static getRequestIDsForBlock(ctx: wasmlib.ScViewCallContext): GetRequestIDsForBlockCall {
+    static getRequestIDsForBlock(ctx: wasmlib.ScViewClientContext): GetRequestIDsForBlockCall {
         const f = new GetRequestIDsForBlockCall(ctx);
         f.params = new sc.MutableGetRequestIDsForBlockParams(wasmlib.newCallParamsProxy(f.func));
         f.results = new sc.ImmutableGetRequestIDsForBlockResults(wasmlib.newCallResultsProxy(f.func));
@@ -145,7 +145,7 @@ export class ScFuncs {
     }
 
     // Returns the receipt for the request with the given ID.
-    static getRequestReceipt(ctx: wasmlib.ScViewCallContext): GetRequestReceiptCall {
+    static getRequestReceipt(ctx: wasmlib.ScViewClientContext): GetRequestReceiptCall {
         const f = new GetRequestReceiptCall(ctx);
         f.params = new sc.MutableGetRequestReceiptParams(wasmlib.newCallParamsProxy(f.func));
         f.results = new sc.ImmutableGetRequestReceiptResults(wasmlib.newCallResultsProxy(f.func));
@@ -153,7 +153,7 @@ export class ScFuncs {
     }
 
     // Returns all request receipts in the given block.
-    static getRequestReceiptsForBlock(ctx: wasmlib.ScViewCallContext): GetRequestReceiptsForBlockCall {
+    static getRequestReceiptsForBlock(ctx: wasmlib.ScViewClientContext): GetRequestReceiptsForBlockCall {
         const f = new GetRequestReceiptsForBlockCall(ctx);
         f.params = new sc.MutableGetRequestReceiptsForBlockParams(wasmlib.newCallParamsProxy(f.func));
         f.results = new sc.ImmutableGetRequestReceiptsForBlockResults(wasmlib.newCallResultsProxy(f.func));
@@ -161,7 +161,7 @@ export class ScFuncs {
     }
 
     // Returns whether the request with ID u has been processed.
-    static isRequestProcessed(ctx: wasmlib.ScViewCallContext): IsRequestProcessedCall {
+    static isRequestProcessed(ctx: wasmlib.ScViewClientContext): IsRequestProcessedCall {
         const f = new IsRequestProcessedCall(ctx);
         f.params = new sc.MutableIsRequestProcessedParams(wasmlib.newCallParamsProxy(f.func));
         f.results = new sc.ImmutableIsRequestProcessedResults(wasmlib.newCallResultsProxy(f.func));

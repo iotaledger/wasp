@@ -16,7 +16,9 @@ pub fn string_encode(enc: &mut WasmEncoder, value: &str) {
 }
 
 pub fn string_from_bytes(buf: &[u8]) -> String {
-    String::from_utf8_lossy(buf).to_string()
+    unsafe {
+        String::from_utf8_unchecked(buf.to_vec()).to_string()
+    }
 }
 
 pub fn string_to_bytes(value: &str) -> Vec<u8> {

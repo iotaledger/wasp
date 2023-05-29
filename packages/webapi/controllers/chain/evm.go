@@ -42,7 +42,7 @@ func (c *Controller) getRequestID(e echo.Context) error {
 	txHash := e.Param(params.ParamTxHash)
 	requestID, err := c.evmService.GetRequestID(chainID, txHash)
 	if err != nil {
-		return apierrors.InvalidPropertyError(params.ParamTxHash, err)
+		return apierrors.NoRecordFoundError(err)
 	}
 
 	return e.JSON(http.StatusOK, models.RequestIDResponse{

@@ -30,9 +30,10 @@ events:
     from: AgentID
     to: AgentID
     tokenID: Hash
-structs: { }
+structs: {}
 typedefs:
   Operators: map[AgentID]Bool # approval status of each operator
+
 state:
   name: String
   symbol: String
@@ -41,6 +42,7 @@ state:
   balances: map[AgentID]Uint64 # number of tokens held by owners
   approvedOperators: map[AgentID]Operators # approved operators per owner
   tokenURIs: map[Hash]String # token uri per token id
+
 funcs:
   approve:
     params:
@@ -72,6 +74,7 @@ funcs:
       from: AgentID # from account
       to: AgentID # to account
       tokenID: Hash # token ID
+
 views:
   balanceOf:
     params:

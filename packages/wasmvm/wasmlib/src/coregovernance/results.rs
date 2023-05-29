@@ -270,36 +270,6 @@ impl MutableGetChainOwnerResults {
 }
 
 #[derive(Clone)]
-pub struct ImmutableGetCustomMetadataResults {
-    pub proxy: Proxy,
-}
-
-impl ImmutableGetCustomMetadataResults {
-    // chain metadata
-    pub fn metadata(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.proxy.root(RESULT_METADATA))
-    }
-}
-
-#[derive(Clone)]
-pub struct MutableGetCustomMetadataResults {
-    pub proxy: Proxy,
-}
-
-impl MutableGetCustomMetadataResults {
-    pub fn new() -> MutableGetCustomMetadataResults {
-        MutableGetCustomMetadataResults {
-            proxy: results_proxy(),
-        }
-    }
-
-    // chain metadata
-    pub fn metadata(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.proxy.root(RESULT_METADATA))
-    }
-}
-
-#[derive(Clone)]
 pub struct ImmutableGetEVMGasRatioResults {
     pub proxy: Proxy,
 }
@@ -416,5 +386,55 @@ impl MutableGetMaintenanceStatusResults {
     // whether maintenance mode is on
     pub fn status(&self) -> ScMutableBool {
         ScMutableBool::new(self.proxy.root(RESULT_STATUS))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableGetMetadataResults {
+    pub proxy: Proxy,
+}
+
+impl ImmutableGetMetadataResults {
+    // the public evm json rpc url
+    pub fn evm_json_rpcurl(&self) -> ScImmutableString {
+        ScImmutableString::new(self.proxy.root(RESULT_EVM_JSON_RPCURL))
+    }
+
+    // the public evm websocket url
+    pub fn evm_web_socket_url(&self) -> ScImmutableString {
+        ScImmutableString::new(self.proxy.root(RESULT_EVM_WEB_SOCKET_URL))
+    }
+
+    // the public url leading to the chain info, stored on the tangle
+    pub fn public_url(&self) -> ScImmutableString {
+        ScImmutableString::new(self.proxy.root(RESULT_PUBLIC_URL))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableGetMetadataResults {
+    pub proxy: Proxy,
+}
+
+impl MutableGetMetadataResults {
+    pub fn new() -> MutableGetMetadataResults {
+        MutableGetMetadataResults {
+            proxy: results_proxy(),
+        }
+    }
+
+    // the public evm json rpc url
+    pub fn evm_json_rpcurl(&self) -> ScMutableString {
+        ScMutableString::new(self.proxy.root(RESULT_EVM_JSON_RPCURL))
+    }
+
+    // the public evm websocket url
+    pub fn evm_web_socket_url(&self) -> ScMutableString {
+        ScMutableString::new(self.proxy.root(RESULT_EVM_WEB_SOCKET_URL))
+    }
+
+    // the public url leading to the chain info, stored on the tangle
+    pub fn public_url(&self) -> ScMutableString {
+        ScMutableString::new(self.proxy.root(RESULT_PUBLIC_URL))
     }
 }

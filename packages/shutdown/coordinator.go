@@ -17,7 +17,7 @@ type Coordinator struct {
 	parent     *Coordinator
 	nestedWG   *sync.WaitGroup
 	nestedLock *sync.RWMutex
-	nested     *shrinkingmap.ShrinkingMap[string, struct{}]
+	nested     *shrinkingmap.ShrinkingMap[string, *Coordinator]
 	log        *logger.Logger
 }
 
@@ -36,7 +36,7 @@ func newCoordinator(name string, parent *Coordinator, log *logger.Logger) *Coord
 		parent:     parent,
 		nestedWG:   &sync.WaitGroup{},
 		nestedLock: &sync.RWMutex{},
-		nested:     shrinkingmap.New[string, struct{}](),
+		nested:     shrinkingmap.New[string, *Coordinator](),
 		log:        log,
 	}
 }
@@ -45,11 +45,14 @@ func newCoordinator(name string, parent *Coordinator, log *logger.Logger) *Coord
 func (s *Coordinator) Nested(name string) *Coordinator {
 	s.nestedLock.Lock()
 	defer s.nestedLock.Unlock()
-	if s.nested.Has(name) {
-		panic(fmt.Errorf("nested context '%v' already exist at %v", name, s.path))
+
+	if nested, exists := s.nested.Get(name); exists {
+		if !nested.CheckNestedDone() {
+			panic(fmt.Errorf("nested context '%v' already exist at %v", name, s.path))
+		}
 	}
 	newSub := newCoordinator(name, s, s.log)
-	s.nested.Set(name, struct{}{})
+	s.nested.Set(name, newSub)
 	s.nestedWG.Add(1)
 	return newSub
 }

@@ -36,12 +36,13 @@ pub fn request_id_encode(enc: &mut WasmEncoder, value: &ScRequestID) {
 }
 
 pub fn request_id_from_bytes(buf: &[u8]) -> ScRequestID {
-    if buf.len() == 0 {
+    let len = buf.len();
+    if len == 0 {
         return ScRequestID {
             id: [0; SC_REQUEST_ID_LENGTH],
         };
     }
-    if buf.len() != SC_REQUEST_ID_LENGTH {
+    if len != SC_REQUEST_ID_LENGTH {
         panic("invalid RequestID length");
     }
     // final uint16 output index must be > ledgerstate.MaxOutputCount

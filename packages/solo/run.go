@@ -5,8 +5,6 @@ package solo
 
 import (
 	"errors"
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -22,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
 func (ch *Chain) RunOffLedgerRequest(r isc.Request) (dict.Dict, error) {
@@ -31,12 +30,7 @@ func (ch *Chain) RunOffLedgerRequest(r isc.Request) (dict.Dict, error) {
 		return nil, errors.New("request was skipped")
 	}
 	res := results[0]
-	var err *isc.UnresolvedVMError
-	if !ch.bypassStardustVM {
-		// bypass if VM does not implement receipts
-		err = res.Receipt.Error
-	}
-	return res.Return, ch.ResolveVMError(err).AsGoError()
+	return res.Return, ch.ResolveVMError(res.Receipt.Error).AsGoError()
 }
 
 func (ch *Chain) RunOffLedgerRequests(reqs []isc.Request) []*vm.RequestResult {
@@ -63,7 +57,7 @@ func (ch *Chain) estimateGas(req isc.Request) (result *vm.RequestResult) {
 }
 
 func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTask {
-	anchorOutput := ch.GetAnchorOutput()
+	anchorOutput := ch.GetAnchorOutputFromL1()
 	task := &vm.VMTask{
 		Processors:         ch.proc,
 		AnchorOutput:       anchorOutput.GetAliasOutput(),
@@ -89,10 +83,6 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 	ch.Log().Debugf("runRequestsNolock ('%s')", trace)
 
 	task := ch.runTaskNoLock(reqs, false)
-	if len(task.Results) == 0 {
-		// don't produce empty blocks
-		return task.Results
-	}
 
 	var essence *iotago.TransactionEssence
 	if task.RotationAddress == nil {
@@ -119,7 +109,7 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 
 	if task.RotationAddress == nil {
 		// normal state transition
-		ch.settleStateTransition(tx, task.GetProcessedRequestIDs(), task.StateDraft)
+		ch.settleStateTransition(tx, task.StateDraft)
 	}
 
 	err = ch.Env.AddToLedger(tx)
@@ -139,7 +129,7 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 	return task.Results
 }
 
-func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc.RequestID, stateDraft state.StateDraft) {
+func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, stateDraft state.StateDraft) {
 	block := ch.store.Commit(stateDraft)
 	err := ch.store.SetLatest(block.TrieRoot())
 	if err != nil {
@@ -147,27 +137,27 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc
 	}
 	ch.Env.Publisher().BlockApplied(ch.ChainID, block)
 
+	blockReceipts, err := blocklog.RequestReceiptsFromBlock(block)
+	if err != nil {
+		panic(err)
+	}
+	for _, rec := range blockReceipts {
+		ch.mempool.RemoveRequest(rec.Request.ID())
+	}
+	unprocessableRequests, err := blocklog.UnprocessableRequestsAddedInBlock(block)
+	if err != nil {
+		panic(err)
+	}
+	for _, req := range unprocessableRequests {
+		ch.mempool.RemoveRequest(req.ID())
+	}
 	ch.Log().Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
-		stateDraft.BlockIndex(), len(reqids), len(stateTx.Essence.Outputs))
-	ch.Log().Debugf("Batch processed: %s", batchShortStr(reqids))
-
-	ch.mempool.RemoveRequests(reqids...)
+		stateDraft.BlockIndex(), len(blockReceipts), len(stateTx.Essence.Outputs))
 
 	go ch.Env.EnqueueRequests(stateTx)
 }
 
-func batchShortStr(reqIds []isc.RequestID) string {
-	ret := make([]string, len(reqIds))
-	for i, r := range reqIds {
-		ret[i] = r.Short()
-	}
-	return fmt.Sprintf("[%s]", strings.Join(ret, ","))
-}
-
 func (ch *Chain) logRequestLastBlock() {
-	if ch.bypassStardustVM {
-		return
-	}
 	recs := ch.GetRequestReceiptsForBlock(ch.GetLatestBlockInfo().BlockIndex())
 	for _, rec := range recs {
 		ch.Log().Infof("REQ: '%s'", rec.Short())

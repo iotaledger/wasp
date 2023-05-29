@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
 type Controller struct {
@@ -23,7 +24,6 @@ type Controller struct {
 	committeeService interfaces.CommitteeService
 	offLedgerService interfaces.OffLedgerService
 	registryService  interfaces.RegistryService
-	vmService        interfaces.VMService
 }
 
 func NewChainController(log *loggerpkg.Logger,
@@ -33,7 +33,6 @@ func NewChainController(log *loggerpkg.Logger,
 	nodeService interfaces.NodeService,
 	offLedgerService interfaces.OffLedgerService,
 	registryService interfaces.RegistryService,
-	vmService interfaces.VMService,
 ) interfaces.APIController {
 	return &Controller{
 		log:              log,
@@ -43,7 +42,6 @@ func NewChainController(log *loggerpkg.Logger,
 		nodeService:      nodeService,
 		offLedgerService: offLedgerService,
 		registryService:  registryService,
-		vmService:        vmService,
 	}
 }
 
@@ -52,18 +50,23 @@ func (c *Controller) Name() string {
 }
 
 func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
+	publicAPI.GET("chains/:chainID", c.getChainInfo).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddResponse(http.StatusOK, "Information about a specific chain", mocker.Get(models.ChainInfoResponse{}), nil).
+		SetOperationId("getChainInfo").
+		SetSummary("Get information about a specific chain")
+
 	// Echoswagger does not support ANY, so create a fake route, and overwrite it with Echo ANY afterwords.
-	evmURL := "chains/:chainID/evm"
 	publicAPI.
-		GET(evmURL, c.handleJSONRPC). // TODO shoulnd't this be POST instead of GET?
+		POST("chains/:chainID/"+routes.EVMJsonRPCPathSuffix, c.handleJSONRPC).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		SetSummary("Ethereum JSON-RPC")
 
 	publicAPI.
-		EchoGroup().Any(evmURL, c.handleJSONRPC)
+		EchoGroup().Any("chains/:chainID/"+routes.EVMJsonRPCPathSuffix, c.handleJSONRPC)
 
 	publicAPI.
-		GET("chains/:chainID/evm/ws", c.handleWebsocket).
+		GET("chains/:chainID/"+routes.EVMJsonWebSocketPathSuffix, c.handleWebsocket).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		SetSummary("Ethereum JSON-RPC (Websocket transport)")
 
@@ -102,6 +105,20 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		SetDescription("Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.").
 		SetOperationId("callView")
 
+	publicAPI.POST("chains/:chainID/estimategas-onledger", c.estimateGasOnLedger).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddParamBody(mocker.Get(models.EstimateGasRequestOnledger{}), "Request", "Request", true).
+		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
+		SetSummary("Estimates gas for a given on-ledger ISC request").
+		SetOperationId("estimateGasOnledger")
+
+	publicAPI.POST("chains/:chainID/estimategas-offledger", c.estimateGasOffLedger).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddParamBody(mocker.Get(models.EstimateGasRequestOffledger{}), "Request", "Request", true).
+		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
+		SetSummary("Estimates gas for a given off-ledger ISC request").
+		SetOperationId("estimateGasOffledger")
+
 	publicAPI.GET("chains/:chainID/requests/:requestID/wait", c.waitForRequestToFinish).
 		SetSummary("Wait until the given request has been processed by the node").
 		SetOperationId("waitForRequest").
@@ -133,12 +150,6 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		AddResponse(http.StatusOK, "Chain was successfully deactivated", nil, nil).
 		SetOperationId("deactivateChain").
 		SetSummary("Deactivate a chain")
-
-	adminAPI.GET("chains/:chainID", c.getChainInfo, authentication.ValidatePermissions([]string{permissions.Read})).
-		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
-		AddResponse(http.StatusOK, "Information about a specific chain", mocker.Get(models.ChainInfoResponse{}), nil).
-		SetOperationId("getChainInfo").
-		SetSummary("Get information about a specific chain")
 
 	adminAPI.GET("chains/:chainID/committee", c.getCommitteeInfo, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).

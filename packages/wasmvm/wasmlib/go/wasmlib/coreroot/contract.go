@@ -43,35 +43,35 @@ type Funcs struct{}
 var ScFuncs Funcs
 
 // Deploys a non-EVM smart contract on the chain if the caller has deployment permission.
-func (sc Funcs) DeployContract(ctx wasmlib.ScFuncCallContext) *DeployContractCall {
+func (sc Funcs) DeployContract(ctx wasmlib.ScFuncClientContext) *DeployContractCall {
 	f := &DeployContractCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncDeployContract)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 // Grants deploy permission to an agent.
-func (sc Funcs) GrantDeployPermission(ctx wasmlib.ScFuncCallContext) *GrantDeployPermissionCall {
+func (sc Funcs) GrantDeployPermission(ctx wasmlib.ScFuncClientContext) *GrantDeployPermissionCall {
 	f := &GrantDeployPermissionCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncGrantDeployPermission)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 // Enable or disable deploy permission check
-func (sc Funcs) RequireDeployPermissions(ctx wasmlib.ScFuncCallContext) *RequireDeployPermissionsCall {
+func (sc Funcs) RequireDeployPermissions(ctx wasmlib.ScFuncClientContext) *RequireDeployPermissionsCall {
 	f := &RequireDeployPermissionsCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRequireDeployPermissions)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 // Revokes deploy permission for an agent.
-func (sc Funcs) RevokeDeployPermission(ctx wasmlib.ScFuncCallContext) *RevokeDeployPermissionCall {
+func (sc Funcs) RevokeDeployPermission(ctx wasmlib.ScFuncClientContext) *RevokeDeployPermissionCall {
 	f := &RevokeDeployPermissionCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRevokeDeployPermission)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 // Returns the record for a given smart contract
-func (sc Funcs) FindContract(ctx wasmlib.ScViewCallContext) *FindContractCall {
+func (sc Funcs) FindContract(ctx wasmlib.ScViewClientContext) *FindContractCall {
 	f := &FindContractCall{Func: wasmlib.NewScView(ctx, HScName, HViewFindContract)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
@@ -79,7 +79,7 @@ func (sc Funcs) FindContract(ctx wasmlib.ScViewCallContext) *FindContractCall {
 }
 
 // Returns the list of all smart contracts deployed on the chain and their records.
-func (sc Funcs) GetContractRecords(ctx wasmlib.ScViewCallContext) *GetContractRecordsCall {
+func (sc Funcs) GetContractRecords(ctx wasmlib.ScViewClientContext) *GetContractRecordsCall {
 	f := &GetContractRecordsCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetContractRecords)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f

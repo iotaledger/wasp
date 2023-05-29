@@ -19,12 +19,12 @@ import (
 
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
-	// TODO request may be big (blobs). Do we want to store it all?
 	Request       isc.Request            `json:"request"`
 	Error         *isc.UnresolvedVMError `json:"error"`
 	GasBudget     uint64                 `json:"gasBudget"`
 	GasBurned     uint64                 `json:"gasBurned"`
 	GasFeeCharged uint64                 `json:"gasFeeCharged"`
+	SDCharged     uint64                 `json:"storageDepositCharged"`
 	// not persistent
 	BlockIndex   uint32       `json:"blockIndex"`
 	RequestIndex uint16       `json:"requestIndex"`
@@ -48,6 +48,9 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 	}
 	if ret.GasFeeCharged, err = mu.ReadUint64(); err != nil {
 		return nil, fmt.Errorf("cannot read GasFeeCharged: %w", err)
+	}
+	if ret.SDCharged, err = mu.ReadUint64(); err != nil {
+		return nil, fmt.Errorf("cannot read SDCharged: %w", err)
 	}
 	if ret.Request, err = isc.NewRequestFromMarshalUtil(mu); err != nil {
 		return nil, fmt.Errorf("cannot read Request: %w", err)
@@ -90,7 +93,8 @@ func (r *RequestReceipt) Bytes() []byte {
 
 	mu.WriteUint64(r.GasBudget).
 		WriteUint64(r.GasBurned).
-		WriteUint64(r.GasFeeCharged)
+		WriteUint64(r.GasFeeCharged).
+		WriteUint64(r.SDCharged)
 
 	r.Request.WriteToMarshalUtil(mu)
 
@@ -115,6 +119,7 @@ func (r *RequestReceipt) String() string {
 	ret += fmt.Sprintf("Err: %v\n", r.Error)
 	ret += fmt.Sprintf("Block/Request index: %d / %d\n", r.BlockIndex, r.RequestIndex)
 	ret += fmt.Sprintf("Gas budget / burned / fee charged: %d / %d /%d\n", r.GasBudget, r.GasBurned, r.GasFeeCharged)
+	ret += fmt.Sprintf("Storage deposit charged: %d\n", r.SDCharged)
 	ret += fmt.Sprintf("Call data: %s\n", r.Request)
 	return ret
 }

@@ -11,7 +11,7 @@ $#emit importWasmTypes
 
 export class $PkgName$+EventHandlers implements wasmlib.IEventHandlers {
     private myID: u32;
-    private $pkgName$+Handlers: Map<string, (evt: $PkgName$+EventHandlers, msg: string[]) => void> = new Map();
+    private $pkgName$+Handlers: Map<string, (evt: $PkgName$+EventHandlers, dec: wasmlib.WasmDecoder) => void> = new Map();
 
     /* eslint-disable @typescript-eslint/no-empty-function */
 $#each events eventHandlerMember
@@ -22,10 +22,10 @@ $#each events eventHandlerMember
 $#each events eventHandler
     }
 
-    public callHandler(topic: string, params: string[]): void {
+    public callHandler(topic: string, dec: wasmlib.WasmDecoder): void {
         const handler = this.$pkgName$+Handlers.get(topic);
         if (handler) {
-            handler(this, params);
+            handler(this, dec);
         }
     }
 
@@ -38,7 +38,7 @@ $#each events eventClass
 `,
 	// *******************************
 	"eventHandler": `
-        this.$pkgName$+Handlers.set('$package.$evtName', (evt: $PkgName$+EventHandlers, msg: string[]) => evt.$evtName(new Event$EvtName(msg)));
+        this.$pkgName$+Handlers.set('$package.$evtName', (evt: $PkgName$+EventHandlers, dec: wasmlib.WasmDecoder) => evt.$evtName(new Event$EvtName(dec)));
 `,
 	// *******************************
 	"eventHandlerMember": `
@@ -58,10 +58,10 @@ export class Event$EvtName {
     public readonly timestamp: u64;
 $#each event eventClassField
 
-    public constructor(msg: string[]) {
-        const evt = new wasmlib.EventDecoder(msg);
-        this.timestamp = evt.timestamp();
+    public constructor(dec: wasmlib.WasmDecoder) {
+        this.timestamp = wasmtypes.uint64Decode(dec);
 $#each event eventHandlerField
+        dec.close();
     }
 }
 `,
@@ -71,6 +71,6 @@ $#each event eventHandlerField
 `,
 	// *******************************
 	"eventHandlerField": `
-        this.$fldName = wasmtypes.$fldType$+FromString(evt.decode());
+        this.$fldName = wasmtypes.$fldType$+Decode(dec);
 `,
 }

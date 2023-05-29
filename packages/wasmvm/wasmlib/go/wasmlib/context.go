@@ -16,17 +16,14 @@ type ScFuncContext struct {
 	ScSandboxFunc
 }
 
-var _ ScFuncCallContext = &ScFuncContext{}
+var _ ScFuncClientContext = new(ScFuncContext)
+
+func (ctx ScFuncContext) ClientContract(hContract wasmtypes.ScHname) wasmtypes.ScHname {
+	return hContract
+}
 
 func (ctx ScFuncContext) Host() ScHost {
 	return nil
-}
-
-func (ctx ScFuncContext) InitFuncCallContext() {
-}
-
-func (ctx ScFuncContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
-	return hContract
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -37,10 +34,10 @@ type ScViewContext struct {
 }
 
 var (
-	_ ScViewCallContext = &ScFuncContext{}
-	_ ScViewCallContext = &ScViewContext{}
+	_ ScViewClientContext = new(ScFuncContext)
+	_ ScViewClientContext = new(ScViewContext)
 )
 
-func (ctx ScViewContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
+func (ctx ScViewContext) ClientContract(hContract wasmtypes.ScHname) wasmtypes.ScHname {
 	return hContract
 }

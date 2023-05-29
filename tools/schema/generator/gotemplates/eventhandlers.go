@@ -10,7 +10,7 @@ package $package
 
 $#emit importWasmLibAndWasmTypes
 
-var $pkgName$+Handlers = map[string]func(*$PkgName$+EventHandlers, []string){
+var $pkgName$+Handlers = map[string]func(*$PkgName$+EventHandlers, *wasmtypes.WasmDecoder){
 $#each events eventHandler
 }
 
@@ -25,10 +25,10 @@ func New$PkgName$+EventHandlers() *$PkgName$+EventHandlers {
 	return &$PkgName$+EventHandlers{ myID: wasmlib.EventHandlersGenerateID() }
 }
 
-func (h *$PkgName$+EventHandlers) CallHandler(topic string, params []string) {
+func (h *$PkgName$+EventHandlers) CallHandler(topic string, dec *wasmtypes.WasmDecoder) {
 	handler := $pkgName$+Handlers[topic]
 	if handler != nil {
-		handler(h, params)
+		handler(h, dec)
 	}
 }
 
@@ -51,7 +51,7 @@ func (h *$PkgName$+EventHandlers) On$PkgName$EvtName(handler func(e *Event$EvtNa
 `,
 	// *******************************
 	"eventHandler": `
-	"$package.$evtName": func(evt *$PkgName$+EventHandlers, msg []string) { evt.on$PkgName$EvtName$+Thunk(msg) },
+	"$package.$evtName": func(evt *$PkgName$+EventHandlers, dec *wasmtypes.WasmDecoder) { evt.on$PkgName$EvtName$+Thunk(dec) },
 `,
 	// *******************************
 	"eventClass": `
@@ -61,13 +61,14 @@ type Event$EvtName struct {
 $#each event eventClassField
 }
 
-func (h *$PkgName$+EventHandlers) on$PkgName$EvtName$+Thunk(msg []string) {
+func (h *$PkgName$+EventHandlers) on$PkgName$EvtName$+Thunk(dec *wasmtypes.WasmDecoder) {
 	if h.$evtName == nil {
 		return
 	}
-	evt := wasmlib.NewEventDecoder(msg)
-	e := &Event$EvtName{Timestamp: evt.Timestamp()}
+	e := &Event$EvtName{}
+	e.Timestamp = wasmtypes.Uint64Decode(dec)
 $#each event eventHandlerField
+	dec.Close()
 	h.$evtName(e)
 }
 `,
@@ -77,6 +78,6 @@ $#each event eventHandlerField
 `,
 	// *******************************
 	"eventHandlerField": `
-	e.$FldName = wasmtypes.$FldType$+FromString(evt.Decode())
+	e.$FldName = wasmtypes.$FldType$+Decode(dec)
 `,
 }

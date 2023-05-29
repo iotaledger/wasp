@@ -16,7 +16,7 @@ import (
 type Mempool interface {
 	ReceiveRequests(reqs ...isc.Request)
 	RequestBatchProposal() []isc.Request
-	RemoveRequests(reqs ...isc.RequestID)
+	RemoveRequest(reqs isc.RequestID)
 	Info() MempoolInfo
 }
 
@@ -77,14 +77,12 @@ func (mi *mempoolImpl) RequestBatchProposal() []isc.Request {
 	return batch
 }
 
-func (mi *mempoolImpl) RemoveRequests(reqIDs ...isc.RequestID) {
-	for _, rid := range reqIDs {
-		if _, ok := mi.requests[rid]; ok {
-			mi.info.OutPoolCounter++
-			mi.info.TotalPool--
-		}
-		delete(mi.requests, rid)
+func (mi *mempoolImpl) RemoveRequest(rID isc.RequestID) {
+	if _, ok := mi.requests[rID]; ok {
+		mi.info.OutPoolCounter++
+		mi.info.TotalPool--
 	}
+	delete(mi.requests, rID)
 }
 
 func (mi *mempoolImpl) Info() MempoolInfo {

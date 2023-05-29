@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -109,7 +108,7 @@ func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
 	return newClient(t, svc, wallet)
 }
 
-func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
+func setupClientDisposable(t testing.TB) *wasmclient.WasmClientContext {
 	configBytes, err := os.ReadFile("wasp-cli.json")
 	require.NoError(t, err)
 
@@ -138,7 +137,7 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 	return newClient(t, svc, wallet)
 }
 
-func setupClientSolo(t solo.TestContext) *wasmclient.WasmClientContext {
+func setupClientSolo(t testing.TB) *wasmclient.WasmClientContext {
 	ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlibimpl.OnDispatch)
 	chainID := ctx.Chain.ChainID.String()
 	wallet := ctx.Chain.OriginatorPrivateKey
@@ -147,7 +146,7 @@ func setupClientSolo(t solo.TestContext) *wasmclient.WasmClientContext {
 	return newClient(t, wasmsolo.NewSoloClientService(ctx, chainID), wallet)
 }
 
-func newClient(t solo.TestContext, svcClient wasmclient.IClientService, wallet *cryptolib.KeyPair) *wasmclient.WasmClientContext {
+func newClient(t testing.TB, svcClient wasmclient.IClientService, wallet *cryptolib.KeyPair) *wasmclient.WasmClientContext {
 	ctx := wasmclient.NewWasmClientContext(svcClient, testwasmlib.ScName)
 	require.NoError(t, ctx.Err)
 	ctx.SignRequests(wallet)

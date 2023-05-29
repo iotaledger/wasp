@@ -71,7 +71,6 @@ state:
   # Other
   random: Uint64
   latLong: map[Int32]Longitude
-  
 
 # ##################################
 
@@ -149,13 +148,13 @@ funcs:
       valueAddr: Address
 
   # Clear all the arrays of the array
-  arrayOfStringArrayClear:
+  arrayOfStringArrayClear: {}
   # Clear all the arrays of the array
-  arrayOfAddressArrayClear:
+  arrayOfAddressArrayClear: {}
 
-  arrayOfStringMapClear:
+  arrayOfStringMapClear: {}
 
-  arrayOfAddressMapClear:
+  arrayOfAddressMapClear: {}
 
   arrayOfStringMapSet:
     params:
@@ -193,9 +192,9 @@ funcs:
       uint32: Uint32?
       uint64: Uint64?
 
-  random:
+  random: {}
 
-  takeAllowance:
+  takeAllowance: {}
 
   takeBalance:
     results:
@@ -379,6 +378,14 @@ views:
       ethAgentID: AgentID
       ethAgentIDString: String
 
+  checkEthEmptyAddressAndAgentID:
+    params:
+      ethAddress: Address
+      ethAgentID: AgentID
+      ethAgentIDString: String
+
+  checkEthInvalidEmptyAddressFromString: {}
+
   checkHash:
     params:
       scHash: Hash
@@ -403,16 +410,20 @@ views:
       tokenIDBytes: Bytes
       tokenIDString: String
 
-  checkIntAndUint:
-  checkBool:
+  checkIntAndUint: {}
+
+  checkBool: {}
+
   checkBytes:
     params:
       bytes: Bytes
+
   checkHname:
     params:
       scHname: Hname
       hnameBytes: Bytes
       hnameString: String
+
   checkString:
     params:
       string: String

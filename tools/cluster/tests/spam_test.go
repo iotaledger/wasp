@@ -272,8 +272,12 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 	filterQuery := ethereum.FilterQuery{
 		Addresses: []common.Address{storageContractAddr},
 		FromBlock: big.NewInt(int64(initialBlockIndex + 1)),
-		ToBlock:   big.NewInt(int64(initialBlockIndex + 1 + numRequests)),
+		ToBlock:   big.NewInt(int64(initialBlockIndex + numRequests)),
 	}
+
+	bn, err := jsonRPCClient.BlockNumber(context.Background())
+	require.NoError(t, err)
+	require.EqualValues(t, initialBlockIndex+numRequests, bn)
 
 	logs, err := jsonRPCClient.FilterLogs(context.Background(), filterQuery)
 	require.NoError(t, err)

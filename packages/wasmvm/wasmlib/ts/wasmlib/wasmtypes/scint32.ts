@@ -10,11 +10,11 @@ import {Proxy} from './proxy';
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export function int32Decode(dec: WasmDecoder): i32 {
-    return dec.vliDecode(32) as i32;
+    return int32FromBytes(dec.fixedBytes(ScInt32Length));
 }
 
 export function int32Encode(enc: WasmEncoder, value: i32): void {
-    enc.vliEncode(value as i32);
+    enc.fixedBytes(int32ToBytes(value), ScInt32Length);
 }
 
 export function int32FromBytes(buf: Uint8Array): i32 {

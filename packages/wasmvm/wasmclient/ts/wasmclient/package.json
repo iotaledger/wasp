@@ -1,7 +1,7 @@
 {
   "name": "wasmclient",
   "description": "Smart Contract interface library for Wasm clients",
-  "version": "1.0.7",
+  "version": "1.0.15",
   "main": "index.ts",
   "scripts": {
     "build:node": "tsc --declaration",
@@ -27,7 +27,7 @@
     "ts-jest-resolver": "^2.0.0",
     "ts-node": "^10.9.1",
     "tsify": "^5.0.4",
-    "typescript": "^5.0.0",
+    "typescript": "^5.0.4",
     "ws": "^8.12.1"
   }
 }

@@ -8,31 +8,30 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
-type ScViewCallContext interface {
+type ScViewClientContext interface {
+	ClientContract(hContract wasmtypes.ScHname) wasmtypes.ScHname
 	FnCall(req *wasmrequests.CallRequest) []byte
 	FnChainID() wasmtypes.ScChainID
-	InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname
 }
 
-type ScFuncCallContext interface {
-	ScViewCallContext
+type ScFuncClientContext interface {
+	ScViewClientContext
 	FnPost(req *wasmrequests.PostRequest) []byte
-	InitFuncCallContext()
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScView struct {
-	ctx          ScViewCallContext
+	ctx          ScViewClientContext
 	hContract    wasmtypes.ScHname
 	hFunction    wasmtypes.ScHname
 	params       *ScDict
 	resultsProxy *wasmtypes.Proxy
 }
 
-func NewScView(ctx ScViewCallContext, hContract, hFunction wasmtypes.ScHname) *ScView {
+func NewScView(ctx ScViewClientContext, hContract, hFunction wasmtypes.ScHname) *ScView {
 	// allow context to override default hContract
-	hContract = ctx.InitViewCallContext(hContract)
+	hContract = ctx.ClientContract(hContract)
 	v := new(ScView)
 	v.ctx = ctx
 	v.initView(hContract, hFunction)
@@ -81,13 +80,10 @@ type ScInitFunc struct {
 	ScView
 }
 
-func NewScInitFunc(ctx ScFuncCallContext, hContract, hFunction wasmtypes.ScHname) *ScInitFunc {
+func NewScInitFunc(ctx ScFuncClientContext, hContract, hFunction wasmtypes.ScHname) *ScInitFunc {
 	f := new(ScInitFunc)
 	f.ctx = ctx
 	f.initView(hContract, hFunction)
-	if ctx != nil {
-		ctx.InitFuncCallContext()
-	}
 	return f
 }
 
@@ -115,12 +111,11 @@ type ScFunc struct {
 	ScView
 	allowance *ScTransfer
 	delay     uint32
-	fctx      ScFuncCallContext
+	fctx      ScFuncClientContext
 	transfer  *ScTransfer
 }
 
-func NewScFunc(ctx ScFuncCallContext, hContract, hFunction wasmtypes.ScHname) *ScFunc {
-	ctx.InitFuncCallContext()
+func NewScFunc(ctx ScFuncClientContext, hContract, hFunction wasmtypes.ScHname) *ScFunc {
 	f := new(ScFunc)
 	f.ctx = ctx
 	f.fctx = ctx

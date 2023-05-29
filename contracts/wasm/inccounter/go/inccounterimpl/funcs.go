@@ -175,7 +175,7 @@ func viewGetVli(_ wasmlib.ScViewContext, f *GetVliContext) {
 	n := f.Params.Ni64().Value()
 	buf := enc.VliEncode(n).Buf()
 	dec := wasmtypes.NewWasmDecoder(buf)
-	x := wasmtypes.Int64Decode(dec)
+	x := dec.VliDecode(64)
 
 	str := strconv.FormatInt(n, 10) + " -"
 	for j := 0; j < len(buf); j++ {
@@ -196,7 +196,7 @@ func viewGetVlu(_ wasmlib.ScViewContext, f *GetVluContext) {
 	n := f.Params.Nu64().Value()
 	buf := enc.VluEncode(n).Buf()
 	dec := wasmtypes.NewWasmDecoder(buf)
-	x := wasmtypes.Uint64Decode(dec)
+	x := dec.VluDecode(64)
 
 	str := strconv.FormatUint(n, 10) + " -"
 	for j := 0; j < len(buf); j++ {

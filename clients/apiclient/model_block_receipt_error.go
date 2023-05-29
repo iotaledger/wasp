@@ -20,17 +20,15 @@ var _ MappedNullable = &BlockReceiptError{}
 // BlockReceiptError struct for BlockReceiptError
 type BlockReceiptError struct {
 	ErrorMessage string `json:"errorMessage"`
-	Hash string `json:"hash"`
 }
 
 // NewBlockReceiptError instantiates a new BlockReceiptError object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBlockReceiptError(errorMessage string, hash string) *BlockReceiptError {
+func NewBlockReceiptError(errorMessage string) *BlockReceiptError {
 	this := BlockReceiptError{}
 	this.ErrorMessage = errorMessage
-	this.Hash = hash
 	return &this
 }
 
@@ -66,30 +64,6 @@ func (o *BlockReceiptError) SetErrorMessage(v string) {
 	o.ErrorMessage = v
 }
 
-// GetHash returns the Hash field value
-func (o *BlockReceiptError) GetHash() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.Hash
-}
-
-// GetHashOk returns a tuple with the Hash field value
-// and a boolean to check if the value has been set.
-func (o *BlockReceiptError) GetHashOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Hash, true
-}
-
-// SetHash sets field value
-func (o *BlockReceiptError) SetHash(v string) {
-	o.Hash = v
-}
-
 func (o BlockReceiptError) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -101,7 +75,6 @@ func (o BlockReceiptError) MarshalJSON() ([]byte, error) {
 func (o BlockReceiptError) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["errorMessage"] = o.ErrorMessage
-	toSerialize["hash"] = o.Hash
 	return toSerialize, nil
 }
 

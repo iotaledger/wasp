@@ -64,12 +64,13 @@ func (s *istore) findTrieRootByIndex(index uint32) (trie.Hash, error) {
 		)
 	}
 	if index == latestIndex {
-		return s.LatestTrieRoot()
+		return latestState.TrieRoot(), nil
 	}
 	blocklogStatePartition := subrealm.NewReadOnly(latestState, kv.Key(blocklog.Contract.Hname().Bytes()))
-	nextBlockInfo, err := blocklog.GetBlockInfo(blocklogStatePartition, index+1)
-	if err != nil {
-		return trie.Hash{}, err
+	nextBlockIndex := index + 1
+	nextBlockInfo, ok := blocklog.GetBlockInfo(blocklogStatePartition, nextBlockIndex)
+	if !ok {
+		return trie.Hash{}, fmt.Errorf("block not found: %d", nextBlockIndex)
 	}
 	return nextBlockInfo.PreviousL1Commitment().TrieRoot(), nil
 }

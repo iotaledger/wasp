@@ -26,7 +26,7 @@ pub struct ScFuncs {
 impl ScFuncs {
     // Registers an error message template.
     // note that this function must be call()ed
-    pub fn register_error(ctx: &impl ScFuncCallContext) -> RegisterErrorCall {
+    pub fn register_error(ctx: &impl ScFuncClientContext) -> RegisterErrorCall {
         let mut f = RegisterErrorCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_REGISTER_ERROR),
             params:  MutableRegisterErrorParams { proxy: Proxy::nil() },
@@ -38,7 +38,7 @@ impl ScFuncs {
     }
 
     // Returns the message template stored for a given error code.
-    pub fn get_error_message_format(ctx: &impl ScViewCallContext) -> GetErrorMessageFormatCall {
+    pub fn get_error_message_format(ctx: &impl ScViewClientContext) -> GetErrorMessageFormatCall {
         let mut f = GetErrorMessageFormatCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_ERROR_MESSAGE_FORMAT),
             params:  MutableGetErrorMessageFormatParams { proxy: Proxy::nil() },

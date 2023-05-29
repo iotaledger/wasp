@@ -5,25 +5,24 @@ use std::convert::TryInto;
 
 use crate::*;
 
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
 pub const SC_INT64_LENGTH: usize = 8;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub fn int64_decode(dec: &mut WasmDecoder) -> i64 {
-    dec.vli_decode(64)
+    int64_from_bytes(&dec.fixed_bytes(SC_INT64_LENGTH))
 }
 
 pub fn int64_encode(enc: &mut WasmEncoder, value: i64) {
-    enc.vli_encode(value);
+    enc.fixed_bytes(&int64_to_bytes(value), SC_INT64_LENGTH);
 }
 
 pub fn int64_from_bytes(buf: &[u8]) -> i64 {
-    if buf.len() == 0 {
+    let len = buf.len();
+    if len == 0 {
         return 0;
     }
-    if buf.len() != SC_INT64_LENGTH {
+    if len != SC_INT64_LENGTH {
         panic("invalid Int64 length");
     }
     i64::from_le_bytes(buf.try_into().expect("WTF?"))

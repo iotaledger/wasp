@@ -26,7 +26,8 @@ func (vmctx *VMContext) StateMetadata(stateCommitment *state.L1Commitment) []byt
 	})
 
 	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
-		stateMetadata.CustomMetadata = governance.GetCustomMetadata(s)
+		// On error, the publicURL is len(0)
+		stateMetadata.PublicURL, _ = governance.GetPublicURL(s)
 		stateMetadata.GasFeePolicy = governance.MustGetGasFeePolicy(s)
 	})
 
@@ -66,10 +67,7 @@ func (vmctx *VMContext) loadNativeTokenOutput(nativeTokenID iotago.NativeTokenID
 		return nil, iotago.OutputID{}
 	}
 
-	outputID, err := vmctx.getOutputID(blockIndex, outputIndex)
-	if err != nil {
-		panic(fmt.Errorf("internal: can't find UTXO input for block index %d, output index %d, error: %w", blockIndex, outputIndex, err))
-	}
+	outputID := vmctx.getOutputID(blockIndex, outputIndex)
 
 	return retOut, outputID
 }
@@ -85,28 +83,24 @@ func (vmctx *VMContext) loadFoundry(serNum uint32) (*iotago.FoundryOutput, iotag
 		return nil, iotago.OutputID{}
 	}
 
-	outputID, err := vmctx.getOutputID(blockIndex, outputIndex)
-	if err != nil {
-		panic(fmt.Errorf("internal: can't find UTXO input for block index %d, output index %d, error: %w", blockIndex, outputIndex, err))
-	}
+	outputID := vmctx.getOutputID(blockIndex, outputIndex)
 
 	return foundryOutput, outputID
 }
 
-func (vmctx *VMContext) getOutputID(blockIndex uint32, outputIndex uint16) (iotago.OutputID, error) {
+func (vmctx *VMContext) getOutputID(blockIndex uint32, outputIndex uint16) iotago.OutputID {
 	if blockIndex == vmctx.StateAnchor().StateIndex {
-		return iotago.OutputIDFromTransactionIDAndIndex(vmctx.StateAnchor().OutputID.TransactionID(), outputIndex), nil
+		return iotago.OutputIDFromTransactionIDAndIndex(vmctx.StateAnchor().OutputID.TransactionID(), outputIndex)
 	}
 	var outputID iotago.OutputID
-	var err error
+	var ok bool
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		outputID, err = blocklog.GetOutputID(s, blockIndex, outputIndex)
+		outputID, ok = blocklog.GetOutputID(s, blockIndex, outputIndex)
 	})
-	if err != nil {
-		return iotago.OutputID{}, err
+	if !ok {
+		panic(fmt.Errorf("internal: can't find UTXO input for block index %d, output index %d", blockIndex, outputIndex))
 	}
-
-	return outputID, nil
+	return outputID
 }
 
 func (vmctx *VMContext) loadNFT(id iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID) {
@@ -120,10 +114,7 @@ func (vmctx *VMContext) loadNFT(id iotago.NFTID) (*iotago.NFTOutput, iotago.Outp
 		return nil, iotago.OutputID{}
 	}
 
-	outputID, err := vmctx.getOutputID(blockIndex, outputIndex)
-	if err != nil {
-		panic(fmt.Errorf("internal: can't find UTXO input for block index %d, output index %d, error: %w", blockIndex, outputIndex, err))
-	}
+	outputID := vmctx.getOutputID(blockIndex, outputIndex)
 
 	return nftOutput, outputID
 }

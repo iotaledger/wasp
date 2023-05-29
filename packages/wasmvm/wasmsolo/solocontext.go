@@ -6,6 +6,7 @@ package wasmsolo
 import (
 	"errors"
 	"flag"
+	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -77,8 +78,8 @@ type SoloContext struct {
 }
 
 var (
-	_ wasmlib.ScFuncCallContext = &SoloContext{}
-	_ wasmlib.ScViewCallContext = &SoloContext{}
+	_ wasmlib.ScFuncClientContext = new(SoloContext)
+	_ wasmlib.ScViewClientContext = new(SoloContext)
 )
 
 func contains(s []isc.AgentID, e isc.AgentID) bool {
@@ -98,7 +99,7 @@ func contains(s []isc.AgentID, e isc.AgentID) bool {
 // the contract's init() function can be specified.
 // Unless you want to use a different chain than the default "chain1" this will be your
 // function of choice to set up a smart contract for your tests
-func NewSoloContext(t solo.TestContext, scName string, onLoad wasmhost.ScOnloadFunc, init ...*wasmlib.ScInitFunc) *SoloContext {
+func NewSoloContext(t testing.TB, scName string, onLoad wasmhost.ScOnloadFunc, init ...*wasmlib.ScInitFunc) *SoloContext {
 	ctx := NewSoloContextForChain(t, nil, nil, scName, onLoad, init...)
 	require.NoError(t, ctx.Err)
 	return ctx
@@ -112,7 +113,7 @@ func NewSoloContext(t solo.TestContext, scName string, onLoad wasmhost.ScOnloadF
 // Optionally, an init.Func that has been initialized with the parameters to pass to
 // the contract's init() function can be specified.
 // You can check for any error that occurred by checking the ctx.Err member.
-func NewSoloContextForChain(t solo.TestContext, chain *solo.Chain, creator *SoloAgent, scName string,
+func NewSoloContextForChain(t testing.TB, chain *solo.Chain, creator *SoloAgent, scName string,
 	onLoad wasmhost.ScOnloadFunc, init ...*wasmlib.ScInitFunc,
 ) *SoloContext {
 	ctx := soloContext(t, chain, scName, creator)
@@ -173,7 +174,7 @@ func NewSoloContextForChain(t solo.TestContext, chain *solo.Chain, creator *Solo
 // Optionally, an init.Func that has been initialized with the parameters to pass to
 // the contract's init() function can be specified.
 // You can check for any error that occurred by checking the ctx.Err member.
-func NewSoloContextForNative(t solo.TestContext, chain *solo.Chain, creator *SoloAgent, scName string, onLoad wasmhost.ScOnloadFunc,
+func NewSoloContextForNative(t testing.TB, chain *solo.Chain, creator *SoloAgent, scName string, onLoad wasmhost.ScOnloadFunc,
 	proc *coreutil.ContractProcessor, init ...*wasmlib.ScInitFunc,
 ) *SoloContext {
 	ctx := soloContext(t, chain, scName, creator)
@@ -203,7 +204,7 @@ func NewSoloContextForNative(t solo.TestContext, chain *solo.Chain, creator *Sol
 	return ctx.init(onLoad)
 }
 
-func soloContext(t solo.TestContext, chain *solo.Chain, scName string, creator *SoloAgent) *SoloContext {
+func soloContext(t testing.TB, chain *solo.Chain, scName string, creator *SoloAgent) *SoloContext {
 	if chain == nil {
 		chain = StartChain(t, "chain1")
 	}
@@ -220,7 +221,7 @@ func soloContext(t solo.TestContext, chain *solo.Chain, scName string, creator *
 }
 
 // StartChain starts a new chain named chainName.
-func StartChain(t solo.TestContext, chainName string, env ...*solo.Solo) *solo.Chain {
+func StartChain(t testing.TB, chainName string, env ...*solo.Solo) *solo.Chain {
 	if SoloDebug {
 		// avoid pesky timeouts during debugging
 		wasmhost.DisableWasmTimeout = true
@@ -306,6 +307,12 @@ func (ctx *SoloContext) ChainOwnerID() wasmtypes.ScAgentID {
 	return cvt.ScAgentID(ctx.Chain.OriginatorAgentID)
 }
 
+// ClientContract is a function that is required to use SoloContext as an ScViewClientContext
+func (ctx *SoloContext) ClientContract(hContract wasmtypes.ScHname) wasmtypes.ScHname {
+	_ = hContract
+	return cvt.ScHname(isc.Hn(ctx.scName))
+}
+
 // ContractExists checks to see if the contract named scName exists in the chain associated with ctx.
 func (ctx *SoloContext) ContractExists(scName string) error {
 	_, err := ctx.Chain.FindContract(scName)
@@ -374,16 +381,6 @@ func (ctx *SoloContext) init(onLoad wasmhost.ScOnloadFunc) *SoloContext {
 	return ctx
 }
 
-// InitFuncCallContext is a function that is required to use SoloContext as an ScFuncCallContext
-func (ctx *SoloContext) InitFuncCallContext() {
-}
-
-// InitViewCallContext is a function that is required to use SoloContext as an ScViewCallContext
-func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
-	_ = hContract
-	return cvt.ScHname(isc.Hn(ctx.scName))
-}
-
 // MintNFT tells SoloContext to mint a new NFT issued/owned by the specified agent
 // note that SoloContext will cache the NFT data to be able to use it
 // in Post()s that go through the *SAME* SoloContext
@@ -432,7 +429,7 @@ func (ctx *SoloContext) NFTs(agent *SoloAgent) []wasmtypes.ScNftID {
 }
 
 // OffLedger tells SoloContext to Post() the next request off-ledger
-func (ctx *SoloContext) OffLedger(agent *SoloAgent) wasmlib.ScFuncCallContext {
+func (ctx *SoloContext) OffLedger(agent *SoloAgent) wasmlib.ScFuncClientContext {
 	ctx.offLedger = true
 	ctx.keyPair = agent.Pair
 	return ctx
@@ -451,12 +448,12 @@ func (ctx *SoloContext) Originator() *SoloAgent {
 }
 
 // Sign is used to force a different agent for signing a Post() request
-func (ctx *SoloContext) Sign(agent *SoloAgent) wasmlib.ScFuncCallContext {
+func (ctx *SoloContext) Sign(agent *SoloAgent) wasmlib.ScFuncClientContext {
 	ctx.keyPair = agent.Pair
 	return ctx
 }
 
-func (ctx *SoloContext) SoloContextForCore(t solo.TestContext, scName string, onLoad wasmhost.ScOnloadFunc) *SoloContext {
+func (ctx *SoloContext) SoloContextForCore(t testing.TB, scName string, onLoad wasmhost.ScOnloadFunc) *SoloContext {
 	return soloContext(t, ctx.Chain, scName, nil).init(onLoad)
 }
 

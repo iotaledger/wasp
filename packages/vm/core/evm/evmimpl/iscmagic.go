@@ -15,6 +15,8 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
+	iscvm "github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
@@ -50,20 +52,26 @@ func init() {
 	}
 }
 
+var (
+	errMethodNotFound    = coreerrors.Register("method not found").Create()
+	errInvalidMethodArgs = coreerrors.Register("invalid method arguments").Create()
+	errReadOnlyContext   = coreerrors.Register("attempt to call non-view method in read-only context").Create()
+)
+
 func parseCall(input []byte, privileged bool) (*abi.Method, []any) {
 	magicMethod := allMethods[string(input[:4])]
 	if magicMethod == nil {
-		panic("method not found")
+		panic(errMethodNotFound)
 	}
 	if !privileged && magicMethod.isPrivileged {
-		panic("unauthorized")
+		panic(iscvm.ErrUnauthorized)
 	}
 	if len(input) == 4 {
 		return magicMethod.abi, nil
 	}
 	args, err := magicMethod.abi.Inputs.Unpack(input[4:])
 	if err != nil {
-		panic(err)
+		panic(errInvalidMethodArgs)
 	}
 	return magicMethod.abi, args
 }
@@ -119,33 +127,10 @@ func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, ga
 func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) []byte {
 	privileged := isCallerPrivileged(c.ctx, caller.Address())
 	method, args := parseCall(input, privileged)
-	if method.IsConstant() {
-		return callViewHandler(c.ctx, caller, method, args)
-	}
-	if readOnly {
-		panic("attempt to call non-view method in read-only context")
+	if readOnly && !method.IsConstant() {
+		panic(errReadOnlyContext)
 	}
 	return callHandler(c.ctx, caller, method, args)
-}
-
-type magicContractView struct {
-	ctx isc.SandboxBase
-}
-
-func newMagicContractView(ctx isc.SandboxBase) map[common.Address]vm.ISCMagicContract {
-	return map[common.Address]vm.ISCMagicContract{
-		iscmagic.Address: &magicContractView{ctx},
-	}
-}
-
-func (c *magicContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
-	return catchISCPanics(c.doRun, evm, caller, input, gas, readOnly, c.ctx.Log())
-}
-
-func (c *magicContractView) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) []byte {
-	privileged := isCallerPrivileged(c.ctx, caller.Address())
-	method, args := parseCall(input, privileged)
-	return callViewHandler(c.ctx, caller, method, args)
 }
 
 // deployMagicContractOnGenesis sets up the initial state of the ISC EVM contract

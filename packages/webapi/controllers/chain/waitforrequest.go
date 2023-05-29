@@ -7,6 +7,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
@@ -44,12 +46,27 @@ func (c *Controller) waitForRequestToFinish(e echo.Context) error {
 	var waitForL1Confirmation bool
 	echo.QueryParamsBinder(e).Bool("waitForL1Confirmation", &waitForL1Confirmation)
 
-	receipt, vmError, err := c.chainService.WaitForRequestProcessed(e.Request().Context(), chainID, requestID, waitForL1Confirmation, timeout)
+	receipt, err := c.chainService.WaitForRequestProcessed(e.Request().Context(), chainID, requestID, waitForL1Confirmation, timeout)
 	if err != nil {
 		return err
 	}
 
-	mappedReceipt := models.MapReceiptResponse(receipt, vmError)
+	if receipt == nil {
+		// unprocessable request just return empty receipt (TODO maybe we need a better way to communicate this, but its good enough for now)
+		return e.JSON(http.StatusOK, models.ReceiptResponse{
+			Request:       models.RequestDetail{},
+			RawError:      &isc.UnresolvedVMErrorJSON{},
+			ErrorMessage:  "",
+			GasBudget:     "",
+			GasBurned:     "",
+			GasFeeCharged: "",
+			BlockIndex:    0,
+			RequestIndex:  0,
+			GasBurnLog:    []gas.BurnRecord{},
+		})
+	}
+
+	mappedReceipt := models.MapReceiptResponse(receipt)
 
 	return e.JSON(http.StatusOK, mappedReceipt)
 }

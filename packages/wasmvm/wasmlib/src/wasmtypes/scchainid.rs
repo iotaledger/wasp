@@ -40,12 +40,13 @@ pub fn chain_id_encode(enc: &mut WasmEncoder, value: &ScChainID) {
 }
 
 pub fn chain_id_from_bytes(buf: &[u8]) -> ScChainID {
-    if buf.len() == 0 {
+    let len = buf.len();
+    if len == 0 {
         return ScChainID {
             id: [0; SC_CHAIN_ID_LENGTH],
         };
     }
-    if buf.len() != SC_CHAIN_ID_LENGTH {
+    if len != SC_CHAIN_ID_LENGTH {
         panic("invalid ChainID length");
     }
     ScChainID {

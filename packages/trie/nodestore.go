@@ -15,16 +15,19 @@ const defaultCacheSize = 10_000
 const (
 	partitionTrieNodes = byte(iota)
 	partitionValues
+	partitionRefcountNodes
+	partitionRefcountValues
 )
 
 // MustInitRoot initializes a new empty trie
-func MustInitRoot(store KVWriter) Hash {
+func MustInitRoot(store KVStore) Hash {
 	rootNodeData := newNodeData()
 	n := newBufferedNode(rootNodeData, nil)
 
 	trieStore := makeWriterPartition(store, partitionTrieNodes)
 	valueStore := makeWriterPartition(store, partitionValues)
-	n.commitNode(trieStore, valueStore)
+	refcounts := newRefcounts(store)
+	n.commitNode(trieStore, valueStore, refcounts)
 
 	return n.nodeData.Commitment
 }

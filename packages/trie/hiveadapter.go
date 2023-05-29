@@ -61,6 +61,11 @@ func (kvs *HiveKVStoreAdapter) Set(key, value []byte) {
 	mustNoErr(err)
 }
 
+func (kvs *HiveKVStoreAdapter) Del(key []byte) {
+	err := kvs.kvs.Delete(makeKey(kvs.prefix, key))
+	mustNoErr(err)
+}
+
 func (kvs *HiveKVStoreAdapter) Iterate(fun func(k []byte, v []byte) bool) {
 	err := kvs.kvs.Iterate(kvs.prefix, func(key kvstore.Key, value kvstore.Value) bool {
 		return fun(key[len(kvs.prefix):], value)
