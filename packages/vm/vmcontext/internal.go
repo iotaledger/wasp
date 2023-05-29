@@ -7,7 +7,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -207,18 +206,15 @@ func (vmctx *VMContext) MustSaveEvent(hContract isc.Hname, topic string, payload
 	}
 	vmctx.Debugf("MustSaveEvent/%s: topic: '%s'", hContract.String(), topic)
 
-	timestamp := uint64(vmctx.Timestamp().UnixNano())
-
-	// event data is hContract / topic / timestamp / payload
-	eventData := make([]byte, 0, 4+2+len(topic)+8+len(payload))
-	eventData = append(eventData, util.Uint32To4Bytes(uint32(hContract))...)
-	eventData = append(eventData, util.Uint16To2Bytes(uint16(len(topic)))...)
-	eventData = append(eventData, []byte(topic)...)
-	eventData = append(eventData, util.Uint64To8Bytes(timestamp)...)
-	eventData = append(eventData, payload...)
+	event := &isc.Event{
+		ContractID: hContract,
+		Topic:      topic,
+		Payload:    payload,
+		Timestamp:  uint64(vmctx.Timestamp().UnixNano()),
+	}
 	eventKey := vmctx.eventLookupKey().Bytes()
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		blocklog.SaveEvent(s, eventKey, eventData)
+		blocklog.SaveEvent(s, eventKey, event)
 	})
 	vmctx.requestEventIndex++
 }

@@ -87,10 +87,12 @@ func SaveRequestReceipt(partition kv.KVStore, rec *RequestReceipt, key RequestLo
 	return nil
 }
 
-func SaveEvent(partition kv.KVStore, eventKey []byte, eventData []byte) {
-	contractKey := eventData[:4]
-	collections.NewMap(partition, prefixRequestEvents).SetAt(eventKey, eventData)
+func SaveEvent(partition kv.KVStore, eventKey []byte, event *isc.Event) {
+	collections.NewMap(partition, prefixRequestEvents).SetAt(eventKey, event.Bytes())
+
+	// add the event lookup key to the list of events for this contract
 	scLut := collections.NewMap(partition, prefixSmartContractEventsLookup)
+	contractKey := event.ContractID.Bytes()
 	entries := scLut.GetAt(contractKey)
 	entries = append(entries, eventKey...)
 	scLut.SetAt(contractKey, entries)

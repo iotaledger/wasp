@@ -14,7 +14,7 @@ import (
 )
 
 type Events struct {
-	BlockEvents    *event.Event1[*ISCEvent[[]string]]
+	BlockEvents    *event.Event1[*ISCEvent[[]*isc.Event]]
 	NewBlock       *event.Event1[*ISCEvent[*BlockWithTrieRoot]]
 	RequestReceipt *event.Event1[*ISCEvent[*ReceiptWithError]]
 
@@ -46,7 +46,7 @@ func New(log *logger.Logger) *Publisher {
 		Events: &Events{
 			NewBlock:       event.New1[*ISCEvent[*BlockWithTrieRoot]](),
 			RequestReceipt: event.New1[*ISCEvent[*ReceiptWithError]](),
-			BlockEvents:    event.New1[*ISCEvent[[]string]](),
+			BlockEvents:    event.New1[*ISCEvent[[]*isc.Event]](),
 			Published:      event.New1[*ISCEvent[any]](),
 		},
 	}

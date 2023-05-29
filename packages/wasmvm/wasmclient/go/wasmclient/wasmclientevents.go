@@ -7,18 +7,36 @@ import (
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
 
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
-	websocketservice "github.com/iotaledger/wasp/packages/webapi/websocket"
 	"github.com/iotaledger/wasp/packages/webapi/websocket/commands"
 )
 
-type ContractEvent struct {
+type Event struct {
 	ChainID    wasmtypes.ScChainID
-	ContractID wasmtypes.ScHname
-	Payload    []byte
-	Timestamp  uint64
-	Topic      string
+	ContractID wasmtypes.ScHname `json:"contractID"`
+	Payload    []byte            `json:"payload"`
+	Timestamp  uint64            `json:"timestamp"`
+	Topic      string            `json:"topic"`
+}
+
+func (e *Event) Bytes() []byte {
+	eventData := make([]byte, 0, 4+2+len(e.Topic)+8+len(e.Payload))
+	eventData = append(eventData, e.ContractID.Bytes()...)
+	eventData = append(eventData, util.Uint16To2Bytes(uint16(len(e.Topic)))...)
+	eventData = append(eventData, []byte(e.Topic)...)
+	eventData = append(eventData, util.Uint64To8Bytes(e.Timestamp)...)
+	eventData = append(eventData, e.Payload...)
+	return eventData
+}
+
+type ISCEvent struct {
+	Kind      string   `json:"kind"`
+	Issuer    string   `json:"issuer"`    // (isc.AgentID) nil means issued by the VM
+	RequestID string   `json:"requestID"` // (isc.RequestID)
+	ChainID   string   `json:"chainID"`   // (isc.ChainID)
+	Payload   []*Event `json:"payload"`
 }
 
 type WasmClientEvents struct {
@@ -54,15 +72,14 @@ func startEventLoop(url string, eventDone chan bool, eventHandlers *[]*WasmClien
 
 func eventLoop(ctx context.Context, ws *websocket.Conn, eventHandlers *[]*WasmClientEvents) {
 	for {
-		evt := websocketservice.ISCEvent{}
+		evt := ISCEvent{}
 		err := wsjson.Read(ctx, ws, &evt)
 		if err != nil {
 			return
 		}
-		items := evt.Payload.([]interface{})
+		items := evt.Payload
 		for _, item := range items {
-			eventData := wasmtypes.HexDecode(item.(string))
-			event := NewContractEvent(evt.ChainID, eventData)
+			event := NewContractEvent(evt.ChainID, item.Bytes())
 			for _, h := range *eventHandlers {
 				h.ProcessEvent(&event)
 			}
@@ -70,12 +87,12 @@ func eventLoop(ctx context.Context, ws *websocket.Conn, eventHandlers *[]*WasmCl
 	}
 }
 
-func NewContractEvent(chainID string, eventData []byte) ContractEvent {
+func NewContractEvent(chainID string, eventData []byte) Event {
 	dec := wasmtypes.NewWasmDecoder(eventData)
 	hContract := wasmtypes.HnameDecode(dec)
 	topic := wasmtypes.StringDecode(dec)
 	payload := dec.FixedBytes(dec.Length())
-	event := ContractEvent{
+	event := Event{
 		ChainID:    wasmtypes.ChainIDFromString(chainID),
 		ContractID: hContract,
 		Payload:    payload,
@@ -85,7 +102,7 @@ func NewContractEvent(chainID string, eventData []byte) ContractEvent {
 	return event
 }
 
-func (h WasmClientEvents) ProcessEvent(event *ContractEvent) {
+func (h WasmClientEvents) ProcessEvent(event *Event) {
 	if event.ContractID != h.contractID || event.ChainID != h.chainID {
 		return
 	}

@@ -490,7 +490,7 @@ func TestFoundries(t *testing.T) {
 		events, err := ch.GetEventsForContract(accounts.Contract.Name)
 		require.NoError(t, err)
 		require.Len(t, events, 1)
-		event, err := blocklog.EventDecode(events[0])
+		event, err := isc.NewEvent(events[0])
 		require.NoError(t, err)
 		sn, err = util.Uint32From4Bytes(event.Payload)
 		require.NoError(t, err)

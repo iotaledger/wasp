@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/runtime/event"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
@@ -129,11 +128,15 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 	// the web API reads the strings as UTF8-encoded and will mangle
 	// the data when it encounters a non-UTF8 character, which makes
 	// it impossible to extract the original bytes at the client end
-	var payload []string
+	var payload []*isc.Event
 	for _, blockEvent := range blockEvents {
-		payload = append(payload, iotago.EncodeHex(blockEvent))
+		event, err := isc.NewEvent(blockEvent)
+		if err != nil {
+			panic(err)
+		}
+		payload = append(payload, event)
 	}
-	triggerEvent(events, events.BlockEvents, &ISCEvent[[]string]{
+	triggerEvent(events, events.BlockEvents, &ISCEvent[[]*isc.Event]{
 		Kind: ISCEventKindBlockEvents,
 		// TODO should be the contract Hname, but right now events are just stored as strings.
 		// must be refactored so its possible to filter by "events from a contract"

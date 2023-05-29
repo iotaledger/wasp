@@ -1,11 +1,8 @@
 package blocklog
 
 import (
-	"encoding/binary"
-	"errors"
 	"io"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -49,33 +46,4 @@ func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
 		return nil, io.EOF
 	}
 	return &k, nil
-}
-
-type EventData struct {
-	ContractID isc.Hname
-	Payload    []byte
-	Topic      string
-	Timestamp  uint64
-}
-
-func EventDecode(eventData []byte) (*EventData, error) {
-	if len(eventData) < 4+2+8 {
-		return nil, errors.New("insufficient event data")
-	}
-	hContract := isc.Hname(binary.LittleEndian.Uint32(eventData[:4]))
-	eventData = eventData[4:]
-	length := binary.LittleEndian.Uint16(eventData[:2])
-	eventData = eventData[2:]
-	if len(eventData) < int(length)+8 {
-		return nil, errors.New("insufficient event topic data")
-	}
-	topic := string(eventData[:length])
-	eventData = eventData[length:]
-	timestamp := binary.LittleEndian.Uint64(eventData[:8])
-	return &EventData{
-		ContractID: hContract,
-		Payload:    eventData[8:],
-		Timestamp:  timestamp,
-		Topic:      topic,
-	}, nil
 }

@@ -1,42 +1,34 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+import {Converter} from '@iota/util.js';
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
-import {
-    hexDecode,
-    hnameDecode,
-    IEventHandlers,
-    ScUint64Length,
-    stringDecode,
-    uint64FromBytes,
-    WasmDecoder
-} from 'wasmlib';
 import {RawData, WebSocket} from 'ws';
 
-export class ContractEvent {
+export class Event {
     chainID: wasmlib.ScChainID;
     contractID: wasmlib.ScHname;
     payload: Uint8Array;
-    timestamp: u64;
+    timestamp: string;
     topic: string;
 
-    public constructor(chainID: string, eventData: Uint8Array) {
+    public constructor(chainID: string, event: any) {
         this.chainID = wasmlib.chainIDFromString(chainID);
-        const dec = new WasmDecoder(eventData);
-        this.contractID = hnameDecode(dec);
-        this.topic = stringDecode(dec);
-        this.payload = dec.fixedBytes(dec.length());
-        this.timestamp = uint64FromBytes(this.payload.slice(0, ScUint64Length));
+        this.contractID = new wasmlib.ScHname(event.contractID);
+        this.topic = event.topic;
+        this.timestamp = event.timestamp.toString();
+        const timestamp = wasmlib.uint64FromString(this.timestamp);
+        this.payload = wasmlib.concat(wasmlib.uint64ToBytes(timestamp), Converter.base64ToBytes(event.payload));
     }
 }
 
 export class WasmClientEvents {
     chainID: wasmlib.ScChainID;
     contractID: wasmlib.ScHname;
-    handler: IEventHandlers;
+    handler: wasmlib.IEventHandlers;
 
-    constructor(chainID: wasmlib.ScChainID, contractID: wasmlib.ScHname, handler: IEventHandlers) {
+    constructor(chainID: wasmlib.ScChainID, contractID: wasmlib.ScHname, handler: wasmlib.IEventHandlers) {
         this.chainID = chainID;
         this.contractID = contractID;
         this.handler = handler;
@@ -70,10 +62,8 @@ export class WasmClientEvents {
             return;
         }
 
-        const items: string[] = msg.payload;
-        for (const item of items) {
-            const eventData = hexDecode(item);
-            const event = new ContractEvent(msg.chainID, eventData);
+        for (const item of msg.payload) {
+            const event = new Event(msg.chainID, item);
             for (const h of eventHandlers) {
                 h.processEvent(event);
             }
@@ -89,12 +79,12 @@ export class WasmClientEvents {
         ws.send(rawMsg);
     }
 
-    private processEvent(event: ContractEvent) {
+    private processEvent(event: Event) {
         if (!event.contractID.equals(this.contractID) || !event.chainID.equals(this.chainID)) {
             return;
         }
         console.log(event.chainID.toString() + ' ' + event.contractID.toString() + ' ' + event.topic);
-        const dec = new WasmDecoder(event.payload);
+        const dec = new wasmlib.WasmDecoder(event.payload);
         this.handler.callHandler(event.topic, dec);
     }
 }
