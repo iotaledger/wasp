@@ -184,7 +184,6 @@ func (smiT *snapshotManagerImpl) run() {
 			if smiT.shutdownCoordinator == nil {
 				return
 			}
-			// TODO what should the statemgr wait for?
 			if smiT.shutdownCoordinator.CheckNestedDone() {
 				smiT.log.Debugf("Stopping snapshot manager, because context was closed")
 				smiT.shutdownCoordinator.Done()
