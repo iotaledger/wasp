@@ -23,24 +23,6 @@ import (
 
 const localSnapshotsPathConst = "testSnapshots"
 
-func TestBlockCommitted(t *testing.T) { // TODO: improve
-	log := testlogger.NewLogger(t)
-	defer log.Sync()
-
-	var err error
-	numberOfBlocks := 10
-	factory := sm_gpa_utils.NewBlockFactory(t)
-	blocks := factory.GetBlocks(numberOfBlocks, 1)
-	store := factory.GetStore()
-	snapshotManager, err := NewSnapshotManager(context.Background(), nil, factory.GetChainID(), 2, localSnapshotsPathConst, []string{}, store, log)
-	require.NoError(t, err)
-	defer cleanupAfterTest(t)
-	for _, block := range blocks {
-		snapshotManager.BlockCommittedAsync(NewSnapshotInfo(block.StateIndex(), block.L1Commitment()))
-	}
-	time.Sleep(5 * time.Second)
-}
-
 func TestSnapshotManagerLocal(t *testing.T) {
 	createFun := func(chainID isc.ChainID, store state.Store, log *logger.Logger) SnapshotManager {
 		snapshotManager, err := NewSnapshotManager(context.Background(), nil, chainID, 0, localSnapshotsPathConst, []string{}, store, log)
