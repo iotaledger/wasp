@@ -154,7 +154,8 @@ func (teT *testEnv) sendConsensusDecidedState(commitment *state.L1Commitment, no
 }
 
 func (teT *testEnv) ensureCompletedConsensusDecidedState(respChan <-chan state.State, expectedCommitment *state.L1Commitment, maxTimeIterations int, timeStep time.Duration) bool {
-	expectedState := teT.bf.GetState(expectedCommitment)
+	expectedState, err := teT.bf.GetStore().StateByTrieRoot(expectedCommitment.TrieRoot())
+	require.NoError(teT.t, err)
 	return teT.ensureTrue("response from ConsensusDecidedState", func() bool {
 		select {
 		case s := <-respChan:

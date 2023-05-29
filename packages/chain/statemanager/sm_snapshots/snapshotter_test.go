@@ -45,7 +45,7 @@ func TestWriteReadDifferentStores(t *testing.T) {
 	require.NoError(t, err)
 
 	checkBlock(t, store, lastBlock)
-	checkState(t, store, factory.GetState(lastCommitment))
+	checkState(t, factory.GetStore(), store, lastCommitment)
 }
 
 func checkBlock(t *testing.T, store state.Store, origBlock state.Block) {
@@ -56,8 +56,10 @@ func checkBlock(t *testing.T, store state.Store, origBlock state.Block) {
 	require.True(t, origCommitment.BlockHash().Equals(newBlock.Hash()))
 }
 
-func checkState(t *testing.T, store state.Store, origState state.State) {
-	newState, err := store.StateByTrieRoot(origState.TrieRoot())
+func checkState(t *testing.T, storeOrig, storeNew state.Store, commitment *state.L1Commitment) {
+	origState, err := storeOrig.StateByTrieRoot(commitment.TrieRoot())
+	require.NoError(t, err)
+	newState, err := storeNew.StateByTrieRoot(commitment.TrieRoot())
 	require.NoError(t, err)
 	require.True(t, origState.TrieRoot().Equals(newState.TrieRoot()))
 	require.Equal(t, origState.BlockIndex(), newState.BlockIndex())

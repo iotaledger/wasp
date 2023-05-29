@@ -138,7 +138,7 @@ func testSnapshotManagerSimple(
 	require.True(t, storeNew.HasTrieRoot(lastBlock.TrieRoot()))
 
 	checkBlock(t, storeNew, lastBlock)
-	checkState(t, storeNew, factory.GetState(lastBlock.L1Commitment()))
+	checkState(t, storeOrig, storeNew, lastBlock.L1Commitment())
 }
 
 func waitForBlock(t *testing.T, snapshotManager SnapshotManager, block state.Block, maxIterations int, sleep time.Duration) bool {

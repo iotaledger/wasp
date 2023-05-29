@@ -143,7 +143,13 @@ func TestCruelWorld(t *testing.T) {
 		newStateOutput := bf.GetAliasOutput(blocks[newBlockIndex].L1Commitment())
 		responseCh := sms[nodeIndex].(*stateManager).ChainFetchStateDiff(context.Background(), oldStateOutput, newStateOutput)
 		results := <-responseCh
-		if !bf.GetState(blocks[newBlockIndex].L1Commitment()).TrieRoot().Equals(results.GetNewState().TrieRoot()) { // TODO: should compare states instead of trie roots
+		expectedNewState, err := bf.GetStore().StateByTrieRoot(blocks[newBlockIndex].TrieRoot())
+		if err != nil {
+			t.Logf("Mempool state request for new block %v and old block %v to node %v wasn't able to retrieve expected new state: %v",
+				newBlockIndex+1, oldBlockIndex+1, peeringURLs[nodeIndex], err)
+			return false
+		}
+		if !expectedNewState.TrieRoot().Equals(results.GetNewState().TrieRoot()) { // TODO: should compare states instead of trie roots
 			t.Logf("Mempool state request for new block %v and old block %v to node %v return wrong new state: expected trie root %s, received %s",
 				newBlockIndex+1, oldBlockIndex+1, peeringURLs[nodeIndex], blocks[newBlockIndex].TrieRoot(), results.GetNewState().TrieRoot())
 			return false

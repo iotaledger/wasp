@@ -63,9 +63,7 @@ func TestFillTheBlocksBetweenSnapshots(t *testing.T) {
 		}
 		for i := 1; i < len(blocks)-1; i++ { // blocks[i] and blocsk[len(blocks)-1] will be checked in `twoSnapshotsCheckEnds`
 			checkBlock(t, storeNew, blocks[i])
-			stateOrig, err := storeOrig.StateByTrieRoot(blocks[i].TrieRoot())
-			require.NoError(t, err)
-			checkState(t, storeNew, stateOrig)
+			checkState(t, storeOrig, storeNew, blocks[i].L1Commitment())
 		}
 	})
 }
@@ -93,8 +91,8 @@ func twoSnapshotsCheckEnds(t *testing.T, performTestFun func(t *testing.T, store
 
 	performTestFun(t, storeOrig, storeNew, intermediateSnapshot, lastSnapshot, blocks[intermediateBlockIndex:])
 
-	checkBlock(t, storeNew, lastBlock)
-	checkState(t, storeNew, factory.GetState(lastCommitment))
 	checkBlock(t, storeNew, intermediateBlock)
-	checkState(t, storeNew, factory.GetState(intermediateCommitment))
+	checkState(t, storeOrig, storeNew, intermediateCommitment)
+	checkBlock(t, storeNew, lastBlock)
+	checkState(t, storeOrig, storeNew, lastCommitment)
 }
