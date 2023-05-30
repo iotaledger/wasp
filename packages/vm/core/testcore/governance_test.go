@@ -363,8 +363,7 @@ func testMetadataBehaviorSetIgnoreUnset(t *testing.T, ch *solo.Chain, metadataPa
 
 	// set invalid custom metadata
 	hugeChainMetadata := isc.ChainMetadata{
-		EVMJsonRPCURL: string(make([]byte, governanceimpl.MaxCustomMetadataLength+1)),
-		Website:       string(make([]byte, governanceimpl.MaxCustomMetadataLength+1)),
+		Website: string(make([]byte, governanceimpl.MaxCustomMetadataLength+1)),
 	}
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(

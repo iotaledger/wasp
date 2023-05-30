@@ -24,7 +24,7 @@ pub struct ChangeAccessNodesCall<'a> {
 }
 
 pub struct ClaimChainOwnershipCall<'a> {
-    pub func:   ScFunc<'a>,
+    pub func: ScFunc<'a>,
 }
 
 pub struct DelegateChainOwnershipCall<'a> {
@@ -68,11 +68,11 @@ pub struct SetMetadataCall<'a> {
 }
 
 pub struct StartMaintenanceCall<'a> {
-    pub func:   ScFunc<'a>,
+    pub func: ScFunc<'a>,
 }
 
 pub struct StopMaintenanceCall<'a> {
-    pub func:   ScFunc<'a>,
+    pub func: ScFunc<'a>,
 }
 
 pub struct GetAllowedStateControllerAddressesCall<'a> {
