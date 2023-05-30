@@ -110,6 +110,7 @@ func (abp *AggregatedBatchProposals) OrderedRequests(requests []isc.Request, ran
 		ref *isc.RequestRef
 		req isc.Request
 	}
+
 	sortBuf := make([]*sortStruct, len(abp.decidedRequestRefs))
 	for i := range abp.decidedRequestRefs {
 		ref := abp.decidedRequestRefs[i]
@@ -132,6 +133,28 @@ func (abp *AggregatedBatchProposals) OrderedRequests(requests []isc.Request, ran
 	sort.Slice(sortBuf, func(i, j int) bool {
 		return bytes.Compare(sortBuf[i].key[:], sortBuf[j].key[:]) < 0
 	})
+
+	// Make sure the requests are sorted such way, that the nonces per account are increasing.
+	// This is needed to handle several requests per batch for the VMs that expect the in-order nonces.
+	// We make a second pass here to tain the overall ordering of requests (module account) without
+	// making requests from a single account grouped together while sorting.
+	for i := range sortBuf {
+		oi, ok := sortBuf[i].req.(isc.OffLedgerRequest)
+		if !ok {
+			continue
+		}
+		for j := range sortBuf {
+			oj, ok := sortBuf[j].req.(isc.OffLedgerRequest)
+			if !ok {
+				continue
+			}
+			if oi.SenderAccount().Equals(oj.SenderAccount()) && oi.Nonce() > oj.Nonce() {
+				// Swap entries, if they are from the same account and have out-of-order nonces.
+				sortBuf[i], sortBuf[j] = sortBuf[j], sortBuf[i]
+			}
+		}
+	}
+
 	sorted := make([]isc.Request, len(abp.decidedRequestRefs))
 	for i := range sortBuf {
 		sorted[i] = sortBuf[i].req
