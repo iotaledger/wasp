@@ -226,7 +226,7 @@ const protocolParameters = `
   "version": 2,
   "networkName": "private_tangle_wasp_cluster",
   "bech32HRP": "atoi",
-  "minPoWScore": 100,
+  "minPoWScore": 1,
   "belowMaxDepth": 150,
   "rentStructure": {
     "vByteCost": 600,
