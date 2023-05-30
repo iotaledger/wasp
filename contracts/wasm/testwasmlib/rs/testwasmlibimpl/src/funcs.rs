@@ -589,6 +589,14 @@ pub fn view_check_agent_id(ctx: &ScViewContext, f: &CheckAgentIDContext) {
         sc_agent_id.to_string() == agent_string,
         "agentID string mismatch",
     );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    agent_id_encode(&mut enc, &sc_agent_id);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        sc_agent_id == agent_id_decode(&mut dec),
+        "agentID encode/decode conversion failed",
+    );
 }
 
 pub fn view_check_address(ctx: &ScViewContext, f: &CheckAddressContext) {
@@ -610,6 +618,14 @@ pub fn view_check_address(ctx: &ScViewContext, f: &CheckAddressContext) {
     ctx.require(
         sc_address.to_string() == address_string,
         "address string mismatch",
+    );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    address_encode(&mut enc, &sc_address);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        sc_address == address_decode(&mut dec),
+        "address encode/decode conversion failed",
     );
 }
 
@@ -639,6 +655,14 @@ pub fn view_check_eth_address_and_agent_id(
         address_string == address_to_string(&address_from_string(&address_string)),
         "eth address from/to string conversion failed",
     );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    address_encode(&mut enc, &address);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        address == address_decode(&mut dec),
+        "address encode/decode conversion failed",
+    );
 
     let agent_id = f.params.eth_agent_id().value();
     let agent_id_string = f.params.eth_agent_id_string().value();
@@ -661,6 +685,14 @@ pub fn view_check_eth_address_and_agent_id(
     ctx.require(
         agent_id_string == agent_id_to_string(&agent_id_from_string(&agent_id_string)),
         "eth agentID from/to string conversion failed",
+    );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    agent_id_encode(&mut enc, &agent_id);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        agent_id == agent_id_decode(&mut dec),
+        "agent_id encode/decode conversion failed",
     );
 
     let agent_id_from_address = ScAgentID::from_address(&address);
@@ -698,6 +730,15 @@ pub fn view_check_hash(ctx: &ScViewContext, f: &CheckHashContext) {
     );
     ctx.require(sc_hash.to_bytes() == hash_bytes, "bytes mismatch");
     ctx.require(sc_hash.to_string() == hash_string, "string mismatch");
+
+    let mut enc = wasmtypes::WasmEncoder::new();
+    hash_encode(&mut enc, &sc_hash);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        sc_hash == hash_decode(&mut dec),
+        "hash encode/decode conversion failed",
+    );
 }
 
 pub fn view_check_nft_id(ctx: &ScViewContext, f: &CheckNftIDContext) {
@@ -714,6 +755,15 @@ pub fn view_check_nft_id(ctx: &ScViewContext, f: &CheckNftIDContext) {
     );
     ctx.require(sc_nft_id.to_bytes() == nft_id_bytes, "bytes mismatch");
     ctx.require(sc_nft_id.to_string() == nft_id_string, "string mismatch");
+
+    let mut enc = wasmtypes::WasmEncoder::new();
+    nft_id_encode(&mut enc, &sc_nft_id);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        sc_nft_id == nft_id_decode(&mut dec),
+        "nft_id encode/decode conversion failed",
+    );
 }
 
 pub fn view_check_request_id(ctx: &ScViewContext, f: &CheckRequestIDContext) {
@@ -736,6 +786,15 @@ pub fn view_check_request_id(ctx: &ScViewContext, f: &CheckRequestIDContext) {
         sc_request_id.to_string() == request_id_string,
         "string mismatch",
     );
+
+    let mut enc = wasmtypes::WasmEncoder::new();
+    request_id_encode(&mut enc, &sc_request_id);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        sc_request_id == request_id_decode(&mut dec),
+        "request_id encode/decode conversion failed",
+    );
 }
 
 pub fn view_check_token_id(ctx: &ScViewContext, f: &CheckTokenIDContext) {
@@ -755,6 +814,15 @@ pub fn view_check_token_id(ctx: &ScViewContext, f: &CheckTokenIDContext) {
         sc_token_id.to_string() == token_id_string,
         "string mismatch",
     );
+
+    let mut enc = wasmtypes::WasmEncoder::new();
+    token_id_encode(&mut enc, &sc_token_id);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        sc_token_id == token_id_decode(&mut dec),
+        "token_id encode/decode conversion failed",
+    );
 }
 
 pub fn view_check_big_int(ctx: &ScViewContext, f: &CheckBigIntContext) {
@@ -771,6 +839,15 @@ pub fn view_check_big_int(ctx: &ScViewContext, f: &CheckBigIntContext) {
     );
     ctx.require(sc_big_int.to_bytes() == big_int_bytes, "bytes mismatch");
     ctx.require(sc_big_int.to_string() == big_int_string, "string mismatch");
+
+    let mut enc = wasmtypes::WasmEncoder::new();
+    big_int_encode(&mut enc, &sc_big_int);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        sc_big_int == big_int_decode(&mut dec),
+        "big_int encode/decode conversion failed",
+    );
 }
 
 pub fn view_check_int_and_uint(ctx: &ScViewContext, _f: &CheckIntAndUintContext) {
@@ -819,6 +896,14 @@ pub fn view_check_int_and_uint(ctx: &ScViewContext, _f: &CheckIntAndUintContext)
         int8 == int8_from_string(&int8_to_string(int8)),
         "string conversion failed",
     );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    int8_encode(&mut enc, int8);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        int8 == int8_decode(&mut dec),
+        "int8 encode/decode conversion failed",
+    );
     let mut uint8 = std::u8::MAX;
     ctx.require(
         uint8 == uint8_from_bytes(&uint8_to_bytes(uint8)),
@@ -836,6 +921,14 @@ pub fn view_check_int_and_uint(ctx: &ScViewContext, _f: &CheckIntAndUintContext)
     ctx.require(
         uint8 == uint8_from_string(&uint8_to_string(uint8)),
         "string conversion failed",
+    );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    uint8_encode(&mut enc, uint8);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        uint8 == uint8_decode(&mut dec),
+        "int8 encode/decode conversion failed",
     );
 
     let mut int16 = std::i16::MAX;
@@ -883,6 +976,14 @@ pub fn view_check_int_and_uint(ctx: &ScViewContext, _f: &CheckIntAndUintContext)
         int16 == int16_from_string(&int16_to_string(int16)),
         "string conversion failed",
     );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    int16_encode(&mut enc, int16);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        int16 == int16_decode(&mut dec),
+        "int16 encode/decode conversion failed",
+    );
     let mut uint16 = std::u16::MAX;
     ctx.require(
         uint16 == uint16_from_bytes(&uint16_to_bytes(uint16)),
@@ -900,6 +1001,14 @@ pub fn view_check_int_and_uint(ctx: &ScViewContext, _f: &CheckIntAndUintContext)
     ctx.require(
         uint16 == uint16_from_string(&uint16_to_string(uint16)),
         "string conversion failed",
+    );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    uint16_encode(&mut enc, uint16);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        uint16 == uint16_decode(&mut dec),
+        "uint16 encode/decode conversion failed",
     );
 
     let mut int32 = std::i32::MAX;
@@ -947,6 +1056,14 @@ pub fn view_check_int_and_uint(ctx: &ScViewContext, _f: &CheckIntAndUintContext)
         int32 == int32_from_string(&int32_to_string(int32)),
         "string conversion failed",
     );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    int32_encode(&mut enc, int32);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        int32 == int32_decode(&mut dec),
+        "int32 encode/decode conversion failed",
+    );
     let mut uint32 = std::u32::MAX;
     ctx.require(
         uint32 == uint32_from_bytes(&uint32_to_bytes(uint32)),
@@ -964,6 +1081,14 @@ pub fn view_check_int_and_uint(ctx: &ScViewContext, _f: &CheckIntAndUintContext)
     ctx.require(
         uint32 == uint32_from_string(&uint32_to_string(uint32)),
         "string conversion failed",
+    );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    uint32_encode(&mut enc, uint32);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        uint32 == uint32_decode(&mut dec),
+        "uint32 encode/decode conversion failed",
     );
 
     let mut int64 = std::i64::MAX;
@@ -1011,6 +1136,14 @@ pub fn view_check_int_and_uint(ctx: &ScViewContext, _f: &CheckIntAndUintContext)
         int64 == int64_from_string(&int64_to_string(int64)),
         "string conversion failed",
     );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    int64_encode(&mut enc, int64);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        int64 == int64_decode(&mut dec),
+        "int64 encode/decode conversion failed",
+    );
     let mut uint64 = std::u64::MAX;
     ctx.require(
         uint64 == uint64_from_bytes(&uint64_to_bytes(uint64)),
@@ -1029,6 +1162,14 @@ pub fn view_check_int_and_uint(ctx: &ScViewContext, _f: &CheckIntAndUintContext)
         uint64 == uint64_from_string(&uint64_to_string(uint64)),
         "string conversion failed",
     );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    uint64_encode(&mut enc, uint64);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        uint64 == uint64_decode(&mut dec),
+        "uint64 encode/decode conversion failed",
+    );
 }
 
 pub fn view_check_bool(ctx: &ScViewContext, _f: &CheckBoolContext) {
@@ -1040,6 +1181,14 @@ pub fn view_check_bool(ctx: &ScViewContext, _f: &CheckBoolContext) {
         bool_from_string(&bool_to_string(true)),
         "string conversion failed",
     );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    bool_encode(&mut enc, true);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        bool_decode(&mut dec),
+        "bool encode/decode conversion failed",
+    );
     ctx.require(
         !bool_from_bytes(&bool_to_bytes(false)),
         "bytes conversion failed",
@@ -1047,6 +1196,14 @@ pub fn view_check_bool(ctx: &ScViewContext, _f: &CheckBoolContext) {
     ctx.require(
         !bool_from_string(&bool_to_string(false)),
         "string conversion failed",
+    );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    bool_encode(&mut enc, false);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        !bool_decode(&mut dec),
+        "bool encode/decode conversion failed",
     );
 }
 
@@ -1059,6 +1216,14 @@ pub fn view_check_bytes(ctx: &ScViewContext, f: &CheckBytesContext) {
     ctx.require(
         byte_data == bytes_from_string(&bytes_to_string(&byte_data)),
         "string conversion failed",
+    );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    bytes_encode(&mut enc, &byte_data);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        byte_data == bytes_decode(&mut dec),
+        "bytes encode/decode conversion failed",
     );
 }
 
@@ -1082,6 +1247,14 @@ pub fn view_check_hname(ctx: &ScViewContext, f: &CheckHnameContext) {
         hname_string == hname_to_string(sc_hname),
         "string conversion failed",
     );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    hname_encode(&mut enc, sc_hname);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        sc_hname == hname_decode(&mut dec),
+        "hname encode/decode conversion failed",
+    );
 }
 
 pub fn view_check_string(ctx: &ScViewContext, f: &CheckStringContext) {
@@ -1093,6 +1266,14 @@ pub fn view_check_string(ctx: &ScViewContext, f: &CheckStringContext) {
     ctx.require(
         string_data == string_to_string(&string_from_string(&string_data)),
         "string conversion failed",
+    );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    string_encode(&mut enc, &string_data);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        string_data == string_decode(&mut dec),
+        "string encode/decode conversion failed",
     );
 }
 
@@ -1119,6 +1300,14 @@ pub fn view_check_eth_empty_address_and_agent_id(
         address_string_long == address_to_string(&address),
         "eth address to/from string conversion failed",
     );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    address_encode(&mut enc, &address);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        address == address_decode(&mut dec),
+        "eth address encode/decode conversion failed",
+    );
 
     let agent_id = f.params.eth_agent_id().value();
     let agent_id_string = f.params.eth_agent_id_string().value();
@@ -1133,6 +1322,14 @@ pub fn view_check_eth_empty_address_and_agent_id(
     ctx.require(
         agent_id_string == agent_id_to_string(&agent_id),
         "eth agentID from/to string conversion failed",
+    );
+    let mut enc = wasmtypes::WasmEncoder::new();
+    agent_id_encode(&mut enc, &agent_id);
+    let buf = enc.buf();
+    let mut dec = wasmtypes::WasmDecoder::new(&buf);
+    ctx.require(
+        agent_id == agent_id_decode(&mut dec),
+        "eth agent_id encode/decode conversion failed",
     );
 
     let agent_id_from_address = ScAgentID::from_address(&address);
@@ -1157,8 +1354,8 @@ pub fn view_check_eth_empty_address_and_agent_id(
 }
 
 pub fn view_check_eth_invalid_empty_address_from_string(
-    ctx: &ScViewContext,
-    f: &CheckEthInvalidEmptyAddressFromStringContext,
+    _ctx: &ScViewContext,
+    _f: &CheckEthInvalidEmptyAddressFromStringContext,
 ) {
     address_from_string("0x00");
 }
