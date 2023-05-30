@@ -118,7 +118,7 @@ func (vas *varAccessNodeStateImpl) BlockConfirmed(confirmed *isc.AliasOutputWith
 	} else {
 		vas.pending.ForEach(func(si uint32, es []*varAccessNodeStateEntry) bool {
 			for _, e := range es {
-				vas.log.Debugf("⊳ Removing[all] %v", si, stateIndex, e.output)
+				vas.log.Debugf("⊳ Removing[all] %v", e.output)
 			}
 			vas.pending.Delete(si)
 			return true

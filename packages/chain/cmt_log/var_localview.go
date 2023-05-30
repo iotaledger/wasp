@@ -199,7 +199,7 @@ func (lvi *varLocalViewImpl) AliasOutputConfirmed(confirmed *isc.AliasOutputWith
 	} else {
 		lvi.pending.ForEach(func(si uint32, es []*varLocalViewEntry) bool {
 			for _, e := range es {
-				lvi.log.Debugf("⊳ Removing[all] %v", si, stateIndex, e.output)
+				lvi.log.Debugf("⊳ Removing[all] %v", e.output)
 			}
 			lvi.pending.Delete(si)
 			return true

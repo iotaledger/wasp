@@ -6,8 +6,7 @@ package wasmtypes
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 const (
-	ScRequestIDLength  = 34
-	RequestIDSeparator = "-"
+	ScRequestIDLength = 34
 )
 
 type ScRequestID struct {

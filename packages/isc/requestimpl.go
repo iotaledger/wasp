@@ -636,8 +636,6 @@ type RequestID iotago.OutputID
 
 const RequestIDDigestLen = 6
 
-const RequestIDSeparator = "-"
-
 type RequestRef struct {
 	ID   RequestID
 	Hash hashing.HashValue

@@ -26,7 +26,7 @@ const (
 
 // directory of EVM contracts that have access to the privileged methods of ISC magic
 func keyPrivileged(addr common.Address) kv.Key {
-	return kv.Key(prefixPrivileged) + kv.Key(addr.Bytes())
+	return prefixPrivileged + kv.Key(addr.Bytes())
 }
 
 func isCallerPrivileged(ctx isc.SandboxBase, addr common.Address) bool {
@@ -41,7 +41,7 @@ func addToPrivileged(s kv.KVStore, addr common.Address) {
 
 // allowance between two EVM accounts
 func keyAllowance(from, to common.Address) kv.Key {
-	return kv.Key(prefixAllowance) + kv.Key(from.Bytes()) + kv.Key(to.Bytes())
+	return prefixAllowance + kv.Key(from.Bytes()) + kv.Key(to.Bytes())
 }
 
 func getAllowance(ctx isc.SandboxBase, from, to common.Address) *isc.Assets {
@@ -117,7 +117,7 @@ func subtractFromAllowance(ctx isc.Sandbox, from, to common.Address, taken *isc.
 
 // directory of ERC20 contract addresses by native token ID
 func keyERC20ExternalNativeTokensAddress(nativeTokenID iotago.NativeTokenID) kv.Key {
-	return kv.Key(prefixERC20ExternalNativeTokens) + kv.Key(nativeTokenID[:])
+	return prefixERC20ExternalNativeTokens + kv.Key(nativeTokenID[:])
 }
 
 func addERC20ExternalNativeTokensAddress(ctx isc.Sandbox, nativeTokenID iotago.NativeTokenID, addr common.Address) {

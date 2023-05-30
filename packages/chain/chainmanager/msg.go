@@ -16,7 +16,7 @@ const (
 	msgTypeBlockProduced
 )
 
-func (cl *chainMgrImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
+func (cmi *chainMgrImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
 		return nil, errors.New("chainMgr::UnmarshalMessage: data too short")
 	}

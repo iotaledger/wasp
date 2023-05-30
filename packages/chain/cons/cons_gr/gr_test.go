@@ -24,7 +24,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
@@ -91,13 +90,13 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		netLogger := testlogger.WithLevel(log.Named("Network"), logger.LevelInfo, false)
 		networkBehaviour = testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 200*time.Millisecond, netLogger)
 	}
-	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
+	peeringNetwork := testutil.NewPeeringNetwork(
 		peeringURL, peerIdentities, 10000,
 		networkBehaviour,
 		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)
 	defer peeringNetwork.Close()
-	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
+	networkProviders := peeringNetwork.NetworkProviders()
 	cmtAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	//
 	// Initialize the DSS subsystem in each node / chain.

@@ -1,6 +1,5 @@
 // only included if runheavy tag is not present
 //go:build !runheavy
-// +build !runheavy
 
 package testutil
 
