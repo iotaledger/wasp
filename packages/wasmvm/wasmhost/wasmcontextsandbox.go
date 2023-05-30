@@ -121,7 +121,7 @@ type WasmContextSandbox struct {
 var (
 	_                ISandbox = new(WasmContextSandbox)
 	cvt              WasmConvertor
-	EventSubscribers []func(msg string)
+	EventSubscribers []func(topic string, timestamp uint64, payload []byte)
 )
 
 func NewWasmContextSandbox(wc *WasmContext, ctx interface{}) *WasmContextSandbox {
@@ -303,10 +303,19 @@ func (s *WasmContextSandbox) fnEstimateStorageDeposit(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnEvent(args []byte) []byte {
-	msg := string(args)
-	s.ctx.Event(msg)
+	dec := wasmtypes.NewWasmDecoder(args)
+	topic := wasmtypes.StringDecode(dec)
+	payload := dec.FixedBytes(dec.Length())
+	dec.Close()
+	s.ctx.Event(topic, payload)
+
+	// ctx.Event() will insert timestamp before payload,
+	// so we need to do that here as well
+	timestamp := uint64(s.ctx.Timestamp().UnixNano())
+	buf := wasmtypes.Uint64ToBytes(timestamp)
+	payload = append(buf, payload...)
 	for _, eventSubscribers := range EventSubscribers {
-		eventSubscribers(msg)
+		eventSubscribers(topic, timestamp, payload)
 	}
 	return nil
 }

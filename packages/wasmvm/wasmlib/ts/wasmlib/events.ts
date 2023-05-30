@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {ScFuncContext} from './context';
-import {concat, hexEncode, stringToBytes, uint64Encode, WasmDecoder, WasmEncoder} from "./wasmtypes";
+import {stringEncode, WasmDecoder, WasmEncoder} from "./wasmtypes";
 
 export interface IEventHandlers {
     callHandler(topic: string, dec: WasmDecoder): void;
@@ -17,12 +17,12 @@ export function eventHandlersGenerateID(): u32 {
     return nextID;
 }
 
-export function eventEncoder(): WasmEncoder {
+export function eventEncoder(topic: string): WasmEncoder {
     const enc = new WasmEncoder();
-    uint64Encode(enc, new ScFuncContext().timestamp());
+    stringEncode(enc, topic);
     return enc;
 }
 
-export function eventEmit(topic: string, enc: WasmEncoder): void {
-    new ScFuncContext().event(topic + "|" + hexEncode(enc.buf()));
+export function eventEmit(enc: WasmEncoder): void {
+    new ScFuncContext().event(enc.buf());
 }

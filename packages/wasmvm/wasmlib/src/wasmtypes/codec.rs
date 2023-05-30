@@ -43,6 +43,11 @@ impl WasmDecoder<'_> {
         value.to_vec()
     }
 
+    // returns the number of bytes left in the byte buffer
+    pub fn length(&self) -> u32 {
+        self.buf.len() as u32
+    }
+
     // peeks at the next byte in the byte buffer
     pub fn peek(&self) -> u8 {
         if self.buf.len() == 0 {

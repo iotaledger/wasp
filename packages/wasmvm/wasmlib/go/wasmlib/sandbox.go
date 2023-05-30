@@ -235,8 +235,8 @@ func (s ScSandboxFunc) EstimateStorageDeposit(fn *ScFunc) uint64 {
 }
 
 // signals an event on the node that external entities can subscribe to
-func (s ScSandboxFunc) Event(msg string) {
-	Sandbox(FnEvent, []byte(msg))
+func (s ScSandboxFunc) Event(buf []byte) {
+	Sandbox(FnEvent, buf)
 }
 
 // retrieve the assets that were minted in this transaction

@@ -8,8 +8,6 @@
 package rootimpl
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -69,12 +67,12 @@ func SetInitialState(state kv.KVStore) {
 var errInvalidContractName = coreerrors.Register("invalid contract name").Create()
 
 // deployContract deploys contract and calls its 'init' constructor.
-// If call to the constructor returns an error or an other error occurs,
+// If call to the constructor returns an error or another error occurs,
 // removes smart contract form the registry as if it was never attempted to deploy
 // Inputs:
-//   - ParamName string, the unique name of the contract in the chain. Later used as hname
+//   - ParamName string, the unique name of the contract in the chain. Later used as Hname
 //   - ParamProgramHash HashValue is a hash of the blob which represents program binary in the 'blob' contract.
-//     In case of hardcoded examples its an arbitrary unique hash set in the global call examples.AddProcessor
+//     In case of hardcoded examples it's an arbitrary unique hash set in the global call examples.AddProcessor
 //   - ParamDescription string is an arbitrary string. Defaults to "N/A"
 func deployContract(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("root.deployContract.begin")
@@ -109,8 +107,7 @@ func deployContract(ctx isc.Sandbox) dict.Dict {
 		Name:        name,
 	})
 	ctx.Call(isc.Hn(name), isc.EntryPointInit, initParams, nil)
-	ctx.Event(fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: '%s'",
-		name, isc.Hn(name), progHash.String(), description))
+	eventDeploy(ctx, progHash, name, description)
 	return nil
 }
 
@@ -121,7 +118,7 @@ func grantDeployPermission(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
 	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).SetAt(deployer.Bytes(), []byte{0xFF})
-	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer.String()))
+	eventGrant(ctx, deployer)
 	return nil
 }
 
@@ -132,7 +129,7 @@ func revokeDeployPermission(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
 	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).DelAt(deployer.Bytes())
-	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %v", deployer))
+	eventRevoke(ctx, deployer)
 	return nil
 }
 

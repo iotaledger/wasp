@@ -1,7 +1,6 @@
 package accounts
 
 import (
-	"fmt"
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -260,7 +259,7 @@ func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
 
 	ret := dict.New()
 	ret.Set(ParamFoundrySN, util.Uint32To4Bytes(sn))
-	ctx.Event(fmt.Sprintf("Foundry created, serial number = %d", sn))
+	eventFoundryCreated(ctx, sn)
 	return ret
 }
 
@@ -291,6 +290,7 @@ func foundryDestroy(ctx isc.Sandbox) dict.Dict {
 	CreditToAccount(state, caller, &isc.Assets{
 		BaseTokens: storageDepositReleased,
 	})
+	eventFoundryDestroyed(ctx, sn)
 	return nil
 }
 
@@ -349,5 +349,6 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 		// storage deposit is returned to the caller account
 		CreditToAccount(state, caller, isc.NewAssetsBaseTokens(uint64(storageDepositAdjustment)))
 	}
+	eventFoundryModified(ctx, sn)
 	return nil
 }

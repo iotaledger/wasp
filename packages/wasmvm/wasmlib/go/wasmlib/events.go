@@ -19,12 +19,12 @@ func EventHandlersGenerateID() uint32 {
 	return nextID
 }
 
-func NewEventEncoder() *wasmtypes.WasmEncoder {
+func NewEventEncoder(topic string) *wasmtypes.WasmEncoder {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.Uint64Encode(enc, ScFuncContext{}.Timestamp())
+	wasmtypes.StringEncode(enc, topic)
 	return enc
 }
 
-func EventEmit(topic string, enc *wasmtypes.WasmEncoder) {
-	ScFuncContext{}.Event(topic + "|" + wasmtypes.HexEncode(enc.Buf()))
+func EventEmit(enc *wasmtypes.WasmEncoder) {
+	ScFuncContext{}.Event(enc.Buf())
 }

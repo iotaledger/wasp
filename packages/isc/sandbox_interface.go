@@ -97,7 +97,7 @@ type Sandbox interface {
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
 	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict)
 	// Event emits an event
-	Event(msg string)
+	Event(topic string, payload []byte)
 	// RegisterError registers an error
 	RegisterError(messageFormat string) *VMErrorTemplate
 	// GetEntropy 32 random bytes based on the hash of the current state transaction

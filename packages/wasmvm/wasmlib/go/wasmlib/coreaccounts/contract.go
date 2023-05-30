@@ -8,7 +8,7 @@ package coreaccounts
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type DepositCall struct {
-	Func *wasmlib.ScFunc
+	Func   *wasmlib.ScFunc
 }
 
 type FoundryCreateNewCall struct {
@@ -43,7 +43,7 @@ type TransferAllowanceToCall struct {
 }
 
 type WithdrawCall struct {
-	Func *wasmlib.ScFunc
+	Func   *wasmlib.ScFunc
 }
 
 type AccountFoundriesCall struct {

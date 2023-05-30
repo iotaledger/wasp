@@ -163,9 +163,10 @@ func (vmctx *VMContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.R
 	if vmctx.task.EnableGasBurnLogging {
 		vmctx.gasBurnLog = gas.NewGasBurnLog()
 	}
+	key := vmctx.requestLookupKey()
 	var err error
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		err = blocklog.SaveRequestReceipt(vmctx.State(), receipt, vmctx.requestLookupKey())
+		err = blocklog.SaveRequestReceipt(s, receipt, key)
 	})
 	if err != nil {
 		panic(err)
@@ -199,14 +200,21 @@ func (vmctx *VMContext) storeUnprocessable(lastInternalAssetUTXOIndex uint16) {
 	})
 }
 
-func (vmctx *VMContext) MustSaveEvent(contract isc.Hname, msg string) {
+func (vmctx *VMContext) MustSaveEvent(hContract isc.Hname, topic string, payload []byte) {
 	if vmctx.requestEventIndex == math.MaxUint16 {
 		panic(vm.ErrTooManyEvents)
 	}
-	vmctx.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
+	vmctx.Debugf("MustSaveEvent/%s: topic: '%s'", hContract.String(), topic)
 
+	event := &isc.Event{
+		ContractID: hContract,
+		Topic:      topic,
+		Payload:    payload,
+		Timestamp:  uint64(vmctx.Timestamp().UnixNano()),
+	}
+	eventKey := vmctx.eventLookupKey().Bytes()
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		blocklog.SaveEvent(vmctx.State(), msg, vmctx.eventLookupKey(), contract)
+		blocklog.SaveEvent(s, eventKey, event)
 	})
 	vmctx.requestEventIndex++
 }

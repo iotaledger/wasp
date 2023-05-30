@@ -3,6 +3,8 @@
 
 use std::sync::{Arc, mpsc, Mutex};
 use std::thread::{JoinHandle, spawn};
+use base64::Engine;
+use base64::engine::general_purpose;
 
 use serde::{Deserialize, Serialize};
 use wasmlib::*;
@@ -19,8 +21,20 @@ pub struct SubscriptionCommand {
     pub topic: String,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct EventMessage {
+#[derive(Deserialize)]
+pub struct ISCPayload {
+    #[serde(rename = "contractID")]
+    pub contract_id: u32,
+    #[serde(rename = "payload")]
+    pub payload: String,
+    #[serde(rename = "timestamp")]
+    pub timestamp: u64,
+    #[serde(rename = "topic")]
+    pub topic: String,
+}
+
+#[derive(Deserialize)]
+pub struct ISCEvent {
     #[serde(rename = "kind")]
     pub kind: String,
     #[serde(rename = "issuer")]
@@ -30,13 +44,29 @@ pub struct EventMessage {
     #[serde(rename = "chainID")]
     pub chain_id: String,
     #[serde(rename = "payload")]
-    pub payload: Vec<String>,
+    pub payload: Vec<ISCPayload>,
 }
 
-pub struct ContractEvent {
+pub struct Event {
     pub chain_id: ScChainID,
     pub contract_id: ScHname,
-    pub data: String,
+    pub payload: Vec<u8>,
+    pub timestamp: u64,
+    pub topic: String,
+}
+
+impl Event {
+    pub fn new(chain_id: &str, event: &ISCPayload) -> Event {
+        let mut payload = uint64_to_bytes(event.timestamp);
+        payload.append(&mut general_purpose::STANDARD.decode(&event.payload).unwrap());
+        Event {
+            chain_id: chain_id_from_string(chain_id),
+            contract_id: ScHname(event.contract_id),
+            timestamp: event.timestamp,
+            topic: event.topic.clone(),
+            payload: payload,
+        }
+    }
 }
 
 pub struct WasmClientEvents {
@@ -75,14 +105,9 @@ impl WasmClientEvents {
         let f = Box::new(move |msg: Message| {
             // println!("Message: {}", msg);
             if let Ok(text) = msg.as_text() {
-                if let Ok(json) = serde_json::from_str::<EventMessage>(text) {
+                if let Ok(json) = serde_json::from_str::<ISCEvent>(text) {
                     for item in json.payload {
-                        let parts: Vec<String> = item.split(": ").map(|s| s.into()).collect();
-                        let event = ContractEvent {
-                            chain_id: chain_id_from_string(&json.chain_id),
-                            contract_id: hname_from_string(&parts[0]),
-                            data: parts[1].clone(),
-                        };
+                        let event = Event::new(&json.chain_id, &item);
                         let event_handlers = event_handlers.lock().unwrap();
                         for event_processor in event_handlers.iter() {
                             event_processor.process_event(&event);
@@ -95,20 +120,13 @@ impl WasmClientEvents {
         f
     }
 
-    fn process_event(&self, event: &ContractEvent) {
+    fn process_event(&self, event: &Event) {
         if event.contract_id != self.contract_id || event.chain_id != self.chain_id {
             return;
         }
-        let sep = event.data.find('|');
-        if sep.is_none() {
-            return;
-        }
-        let sep = sep.unwrap();
-        let topic = &event.data[..sep];
-        println!("{} {} {}", event.chain_id.to_string(), event.contract_id.to_string(), topic);
-        let buf = hex_decode(&event.data[sep + 1..]);
-        let mut dec = WasmDecoder::new(&buf);
-        self.handler.call_handler(topic, &mut dec);
+        println!("{} {} {}", event.chain_id.to_string(), event.contract_id.to_string(), event.topic.to_string());
+        let mut dec = WasmDecoder::new(&event.payload);
+        self.handler.call_handler(&event.topic, &mut dec);
     }
 
     fn subscribe(sender: &Sender, topic: &str) {
