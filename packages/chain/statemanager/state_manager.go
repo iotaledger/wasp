@@ -100,9 +100,8 @@ var (
 )
 
 const (
-	constMsgTypeStm           byte = iota
-	constDefaultTimerTickTime      = 1 * time.Second
-	constStatusTimerTime           = 10 * time.Second
+	constMsgTypeStm      byte = iota
+	constStatusTimerTime      = 10 * time.Second
 )
 
 func New(

@@ -10,8 +10,6 @@ import {bytesCompare} from './scbytes';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const RequestIDSeparator = '-';
-
 export class ScRequestID {
     id: Uint8Array = zeroes(ScRequestIDLength);
 

@@ -15,13 +15,13 @@ import (
 const (
 	ContractNameDeployed = "exampleDeployTR"
 	MsgCoreOnlyPanic     = "========== core only ========="
-	MsgCounterNumber     = "[GenericData] Counter Number: "
-	MsgDoNothing         = "========== doing nothing"
-	MsgFailOnPurpose     = "failing on purpose"
-	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="
-	MsgJustView          = "calling empty view entry point"
-	MsgTestingEvent      = "[Event] - Testing Event..."
-	MsgViewPanic         = "========== panic VIEW ========="
+
+	MsgDoNothing     = "========== doing nothing"
+	MsgFailOnPurpose = "failing on purpose"
+	MsgFullPanic     = "========== panic FULL ENTRY POINT ========="
+	MsgJustView      = "calling empty view entry point"
+
+	MsgViewPanic = "========== panic VIEW ========="
 )
 
 func funcCallOnChain(ctx wasmlib.ScFuncContext, f *CallOnChainContext) {

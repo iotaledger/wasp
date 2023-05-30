@@ -313,7 +313,7 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 			outputIndex++
 		}
 		for _, sn := range foundriesToBeRemoved {
-			vmctx.task.Log.Debugf("deleting foundry %s", sn)
+			vmctx.task.Log.Debugf("deleting foundry %d", sn)
 			accounts.DeleteFoundryOutput(s, sn)
 		}
 

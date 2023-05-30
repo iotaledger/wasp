@@ -14,13 +14,7 @@ import (
 
 const (
 	FlagToolNodeURL = "nodeURL"
-
-	FlagToolOutputJSON            = "json"
-	FlagToolDescriptionOutputJSON = "format output as JSON"
-)
-
-const (
-	ToolNodeHealth = "node-health"
+	ToolNodeHealth  = "node-health"
 )
 
 // ShouldHandleTools checks if tools were requested.

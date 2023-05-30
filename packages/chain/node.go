@@ -54,11 +54,11 @@ import (
 )
 
 const (
-	recoveryTimeout          time.Duration = 15 * time.Minute // TODO: Make it configurable?
-	redeliveryPeriod         time.Duration = 2 * time.Second  // TODO: Make it configurable?
-	printStatusPeriod        time.Duration = 3 * time.Second  // TODO: Make it configurable?
-	consensusInstsInAdvance  int           = 3                // TODO: Make it configurable?
-	awaitReceiptCleanupEvery int           = 100              // TODO: Make it configurable?
+	recoveryTimeout              = 15 * time.Minute // TODO: Make it configurable?
+	redeliveryPeriod             = 2 * time.Second  // TODO: Make it configurable?
+	printStatusPeriod            = 3 * time.Second  // TODO: Make it configurable?
+	consensusInstsInAdvance  int = 3                // TODO: Make it configurable?
+	awaitReceiptCleanupEvery int = 100              // TODO: Make it configurable?
 
 	msgTypeChainMgr byte = iota
 )

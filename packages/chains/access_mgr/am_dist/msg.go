@@ -15,7 +15,7 @@ const (
 	msgTypeAccess byte = iota
 )
 
-func (ami *accessMgrDist) UnmarshalMessage(data []byte) (gpa.Message, error) {
+func (amd *accessMgrDist) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
 		return nil, errors.New("accessMgrImpl::UnmarshalMessage: data too short")
 	}

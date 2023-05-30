@@ -100,21 +100,6 @@ func TestDeployTestCoreWithCreator(t *testing.T) {
 	})
 }
 
-// chainAccountBalances checks the balance of the chain account and the total
-// balance of all accounts, taking any extra uploadWasm() into account
-//
-//nolint:unused
-func chainAccountBalances(ctx *wasmsolo.SoloContext, w bool, chain, total uint64) {
-	_ = chain
-	if w {
-		// wasm setup takes 1 more iota than core setup due to uploadWasm()
-		// chain++
-		total++
-	}
-	// ctx.Chain.AssertCommonAccountIotas(chain)
-	ctx.Chain.AssertL2TotalBaseTokens(total)
-}
-
 func setDeployer(t *testing.T, ctx *wasmsolo.SoloContext, deployer *wasmsolo.SoloAgent) {
 	ctxRoot := ctx.SoloContextForCore(t, coreroot.ScName, coreroot.OnDispatch)
 	f := coreroot.ScFuncs.GrantDeployPermission(ctxRoot)
