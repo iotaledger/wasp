@@ -14,26 +14,38 @@ type Event struct {
 	Timestamp  uint64 `json:"timestamp"`
 }
 
-func NewEvent(eventData []byte) (*Event, error) {
-	if len(eventData) < 4+2+8 {
+func NewEvent(event []byte) (*Event, error) {
+	if len(event) < 4+2+8 {
 		return nil, errors.New("insufficient event data")
 	}
-	hContract := Hname(binary.LittleEndian.Uint32(eventData[:4]))
-	eventData = eventData[4:]
-	length := binary.LittleEndian.Uint16(eventData[:2])
-	eventData = eventData[2:]
-	if len(eventData) < int(length)+8 {
+	hContract := Hname(binary.LittleEndian.Uint32(event[:4]))
+	event = event[4:]
+	length := binary.LittleEndian.Uint16(event[:2])
+	event = event[2:]
+	if len(event) < int(length)+8 {
 		return nil, errors.New("insufficient event topic data")
 	}
-	topic := string(eventData[:length])
-	eventData = eventData[length:]
-	timestamp := binary.LittleEndian.Uint64(eventData[:8])
+	topic := string(event[:length])
+	event = event[length:]
+	timestamp := binary.LittleEndian.Uint64(event[:8])
 	return &Event{
 		ContractID: hContract,
-		Payload:    eventData[8:],
+		Payload:    event[8:],
 		Timestamp:  timestamp,
 		Topic:      topic,
 	}, nil
+}
+
+func NewEvents(events [][]byte) ([]*Event, error) {
+	ret := make([]*Event, 0, len(events))
+	for _, e := range events {
+		event, err := NewEvent(e)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, event)
+	}
+	return ret, nil
 }
 
 func (e *Event) Bytes() []byte {

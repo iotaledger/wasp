@@ -295,7 +295,7 @@ func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.Contra
 }
 
 // GetEventsForContract calls the view in the 'blocklog' core smart contract to retrieve events for a given smart contract.
-func (ch *Chain) GetEventsForContract(name string) ([][]byte, error) {
+func (ch *Chain) GetEventsForContract(name string) ([]*isc.Event, error) {
 	viewResult, err := ch.CallView(
 		blocklog.Contract.Name, blocklog.ViewGetEventsForContract.Name,
 		blocklog.ParamContractHname, isc.Hn(name),
@@ -304,11 +304,11 @@ func (ch *Chain) GetEventsForContract(name string) ([][]byte, error) {
 		return nil, err
 	}
 
-	return blocklog.EventsFromViewResult(viewResult), nil
+	return blocklog.EventsFromViewResult(viewResult)
 }
 
 // GetEventsForRequest calls the view in the 'blocklog' core smart contract to retrieve events for a given request.
-func (ch *Chain) GetEventsForRequest(reqID isc.RequestID) ([][]byte, error) {
+func (ch *Chain) GetEventsForRequest(reqID isc.RequestID) ([]*isc.Event, error) {
 	viewResult, err := ch.CallView(
 		blocklog.Contract.Name, blocklog.ViewGetEventsForRequest.Name,
 		blocklog.ParamRequestID, reqID,
@@ -316,11 +316,11 @@ func (ch *Chain) GetEventsForRequest(reqID isc.RequestID) ([][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return blocklog.EventsFromViewResult(viewResult), nil
+	return blocklog.EventsFromViewResult(viewResult)
 }
 
 // GetEventsForBlock calls the view in the 'blocklog' core smart contract to retrieve events for a given block.
-func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([][]byte, error) {
+func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]*isc.Event, error) {
 	viewResult, err := ch.CallView(
 		blocklog.Contract.Name, blocklog.ViewGetEventsForBlock.Name,
 		blocklog.ParamBlockIndex, blockIndex,
@@ -328,7 +328,7 @@ func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return blocklog.EventsFromViewResult(viewResult), nil
+	return blocklog.EventsFromViewResult(viewResult)
 }
 
 // CommonAccount return the agentID of the common account (controlled by the owner)

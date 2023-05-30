@@ -11,14 +11,18 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
-func EventsFromViewResult(viewResult dict.Dict) [][]byte {
+func EventsFromViewResult(viewResult dict.Dict) ([]*isc.Event, error) {
 	recs := collections.NewArray16ReadOnly(viewResult, ParamEvent)
-	ret := make([][]byte, recs.Len())
+	ret := make([]*isc.Event, recs.Len())
 	for i := range ret {
 		eventData := recs.GetAt(uint16(i))
-		ret[i] = eventData
+		event, err := isc.NewEvent(eventData)
+		if err != nil {
+			return nil, err
+		}
+		ret[i] = event
 	}
-	return ret
+	return ret, nil
 }
 
 // GetRequestIDsForBlock reads blocklog from chain state and returns request IDs settled in specific block

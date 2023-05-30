@@ -203,7 +203,7 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
-	var events [][]byte
+	var events []*isc.Event
 	blockIndex := e.Param(params.ParamBlockIndex)
 
 	if blockIndex != "" {

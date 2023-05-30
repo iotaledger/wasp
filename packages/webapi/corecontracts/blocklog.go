@@ -197,7 +197,7 @@ func IsRequestProcessed(ch chain.Chain, requestID isc.RequestID) (bool, error) {
 	return isProcessed, nil
 }
 
-func GetEventsForRequest(ch chain.Chain, requestID isc.RequestID) ([][]byte, error) {
+func GetEventsForRequest(ch chain.Chain, requestID isc.RequestID) ([]*isc.Event, error) {
 	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetEventsForRequest.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamRequestID: requestID,
 	}))
@@ -205,10 +205,10 @@ func GetEventsForRequest(ch chain.Chain, requestID isc.RequestID) ([][]byte, err
 		return nil, err
 	}
 
-	return blocklog.EventsFromViewResult(ret), nil
+	return blocklog.EventsFromViewResult(ret)
 }
 
-func GetEventsForBlock(ch chain.Chain, blockIndex uint32) ([][]byte, error) {
+func GetEventsForBlock(ch chain.Chain, blockIndex uint32) ([]*isc.Event, error) {
 	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetEventsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamBlockIndex: blockIndex,
 	}))
@@ -216,10 +216,10 @@ func GetEventsForBlock(ch chain.Chain, blockIndex uint32) ([][]byte, error) {
 		return nil, err
 	}
 
-	return blocklog.EventsFromViewResult(ret), nil
+	return blocklog.EventsFromViewResult(ret)
 }
 
-func GetEventsForContract(ch chain.Chain, contractHname isc.Hname) ([][]byte, error) {
+func GetEventsForContract(ch chain.Chain, contractHname isc.Hname) ([]*isc.Event, error) {
 	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetEventsForContract.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamContractHname: contractHname,
 	}))
@@ -227,5 +227,5 @@ func GetEventsForContract(ch chain.Chain, contractHname isc.Hname) ([][]byte, er
 		return nil, err
 	}
 
-	return blocklog.EventsFromViewResult(ret), nil
+	return blocklog.EventsFromViewResult(ret)
 }
