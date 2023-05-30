@@ -10,9 +10,19 @@ author: Eric Hop <eric@iota.org>
 license: Apache-2.0
 repository: https://github.com/iotaledger/wasp
 
+events:
+  deploy:
+    progHash: Hash
+    name: String
+    description: String
+  grant:
+    deployer: AgentID
+  revoke:
+    deployer: AgentID
 structs: {}
 typedefs: {}
 state: {}
+
 funcs:
 
   # Deploys a non-EVM smart contract on the chain if the caller has deployment permission.

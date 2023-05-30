@@ -25,7 +25,7 @@ import (
 	wasp_yaml "github.com/iotaledger/wasp/tools/schema/model/yaml"
 )
 
-const version = "schema tool version 1.1.9"
+const version = "schema tool version 1.1.10"
 
 var (
 	flagBuild   = flag.Bool("build", false, "build wasm target for specified languages")
@@ -43,13 +43,13 @@ func init() {
 }
 
 func main() {
-	err := mainWarp()
+	err := mainWrapper()
 	if err != nil {
 		os.Exit(1)
 	}
 }
 
-func mainWarp() error {
+func mainWrapper() error {
 	if *flagVersion {
 		fmt.Println(version)
 		return nil

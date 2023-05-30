@@ -360,7 +360,7 @@ func (vmctx *VMContext) AssertConsistentGasTotals() {
 
 func (vmctx *VMContext) LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
 	vmctx.callCore(blob.Contract, func(s kv.KVStore) {
-		vmtype, binary, err = blob.LocateProgram(vmctx.State(), programHash)
+		vmtype, binary, err = blob.LocateProgram(s, programHash)
 	})
 	return vmtype, binary, err
 }

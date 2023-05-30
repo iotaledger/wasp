@@ -13,8 +13,7 @@ export * from './thunks';
 	"index.ts": `
 export * from './consts';
 export * from './contract';
-$#set moduleName events
-$#if events exportModule
+$#if core else exportEvents
 $#set moduleName eventhandlers
 $#if events exportModule
 $#set moduleName params
@@ -27,6 +26,11 @@ $#set moduleName structs
 $#if structs exportModule
 $#set moduleName typedefs
 $#if typedefs exportModule
+`,
+	// *******************************
+	"exportEvents": `
+$#set moduleName events
+$#if events exportModule
 `,
 	// *******************************
 	"exportModule": `

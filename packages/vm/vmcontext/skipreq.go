@@ -52,7 +52,7 @@ func (vmctx *VMContext) checkReasonRequestProcessed() error {
 	reqid := vmctx.req.ID()
 	var isProcessed bool
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		isProcessed = blocklog.MustIsRequestProcessed(vmctx.State(), reqid)
+		isProcessed = blocklog.MustIsRequestProcessed(s, reqid)
 	})
 	if isProcessed {
 		return errors.New("already processed")
@@ -79,7 +79,8 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 	}
 
 	// skip ISC nonce check for EVM requests
-	if vmctx.req.SenderAccount().Kind() == isc.AgentIDKindEthereumAddress {
+	senderAccount := vmctx.req.SenderAccount()
+	if senderAccount.Kind() == isc.AgentIDKindEthereumAddress {
 		return nil
 	}
 
@@ -87,7 +88,7 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		// this is a replay protection measure for off-ledger requests assuming in the batch order of requests is random.
 		// It is checking if nonce is not too old. See replay-off-ledger.md
-		maxAssumed = accounts.GetMaxAssumedNonce(vmctx.State(), vmctx.req.SenderAccount())
+		maxAssumed = accounts.GetMaxAssumedNonce(s, senderAccount)
 	})
 
 	return CheckNonce(vmctx.req.(isc.OffLedgerRequest), maxAssumed)

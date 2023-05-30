@@ -17,16 +17,19 @@ const hex = "0123456789abcdef"
 var LocalStateMustIncrement = false
 
 func funcInit(_ wasmlib.ScFuncContext, f *InitContext) {
+	counter := f.State.Counter()
 	if f.Params.Counter().Exists() {
-		counter := f.Params.Counter().Value()
-		f.State.Counter().SetValue(counter)
+		value := f.Params.Counter().Value()
+		counter.SetValue(value)
 	}
+	f.Events.Counter(counter.Value())
 }
 
 func funcCallIncrement(ctx wasmlib.ScFuncContext, f *CallIncrementContext) {
 	counter := f.State.Counter()
 	value := counter.Value()
 	counter.SetValue(value + 1)
+	f.Events.Counter(counter.Value())
 	if value == 0 {
 		inccounter.ScFuncs.CallIncrement(ctx).Func.Call()
 	}
@@ -36,6 +39,7 @@ func funcCallIncrementRecurse5x(ctx wasmlib.ScFuncContext, f *CallIncrementRecur
 	counter := f.State.Counter()
 	value := counter.Value()
 	counter.SetValue(value + 1)
+	f.Events.Counter(counter.Value())
 	if value < 5 {
 		inccounter.ScFuncs.CallIncrementRecurse5x(ctx).Func.Call()
 	}
@@ -57,6 +61,7 @@ func funcIncrement(_ wasmlib.ScFuncContext, f *IncrementContext) {
 
 	counter := f.State.Counter()
 	counter.SetValue(counter.Value() + incValue)
+	f.Events.Counter(counter.Value())
 }
 
 func funcIncrementWithDelay(ctx wasmlib.ScFuncContext, f *IncrementWithDelayContext) {
@@ -67,10 +72,10 @@ func funcIncrementWithDelay(ctx wasmlib.ScFuncContext, f *IncrementWithDelayCont
 
 func funcLocalStateInternalCall(ctx wasmlib.ScFuncContext, f *LocalStateInternalCallContext) {
 	LocalStateMustIncrement = false
-	whenMustIncrementState(ctx, f.State)
+	whenMustIncrementState(ctx, f.State, f.Events)
 	LocalStateMustIncrement = true
-	whenMustIncrementState(ctx, f.State)
-	whenMustIncrementState(ctx, f.State)
+	whenMustIncrementState(ctx, f.State, f.Events)
+	whenMustIncrementState(ctx, f.State, f.Events)
 	// counter ends up as 2
 }
 
@@ -97,6 +102,7 @@ func funcPostIncrement(ctx wasmlib.ScFuncContext, f *PostIncrementContext) {
 	counter := f.State.Counter()
 	value := counter.Value()
 	counter.SetValue(value + 1)
+	f.Events.Counter(counter.Value())
 	if value == 0 {
 		inccounter.ScFuncs.PostIncrement(ctx).Func.Post()
 	}
@@ -106,6 +112,7 @@ func funcRepeatMany(ctx wasmlib.ScFuncContext, f *RepeatManyContext) {
 	counter := f.State.Counter()
 	value := counter.Value()
 	counter.SetValue(value + 1)
+	f.Events.Counter(counter.Value())
 	stateRepeats := f.State.NumRepeats()
 	repeats := f.Params.NumRepeats().Value()
 	if repeats == 0 {
@@ -157,7 +164,7 @@ func funcTestVluCodec(ctx wasmlib.ScFuncContext, _ *TestVluCodecContext) {
 }
 
 func funcWhenMustIncrement(ctx wasmlib.ScFuncContext, f *WhenMustIncrementContext) {
-	whenMustIncrementState(ctx, f.State)
+	whenMustIncrementState(ctx, f.State, f.Events)
 }
 
 // note that getCounter mirrors the state of the 'counter' state variable
@@ -250,11 +257,12 @@ func vluSave(ctx wasmlib.ScFuncContext, name string, value uint64) {
 	}
 }
 
-func whenMustIncrementState(ctx wasmlib.ScFuncContext, state inccounter.MutableIncCounterState) {
+func whenMustIncrementState(ctx wasmlib.ScFuncContext, state inccounter.MutableIncCounterState, events inccounter.IncCounterEvents) {
 	ctx.Log("when_must_increment called")
 	if !LocalStateMustIncrement {
 		return
 	}
 	counter := state.Counter()
 	counter.SetValue(counter.Value() + 1)
+	events.Counter(counter.Value())
 }

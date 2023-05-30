@@ -7,8 +7,23 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
+
+func EventsFromViewResult(viewResult dict.Dict) ([]*isc.Event, error) {
+	recs := collections.NewArray16ReadOnly(viewResult, ParamEvent)
+	ret := make([]*isc.Event, recs.Len())
+	for i := range ret {
+		eventData := recs.GetAt(uint16(i))
+		event, err := isc.NewEvent(eventData)
+		if err != nil {
+			return nil, err
+		}
+		ret[i] = event
+	}
+	return ret, nil
+}
 
 // GetRequestIDsForBlock reads blocklog from chain state and returns request IDs settled in specific block
 // Can only panic on DB error of internal error
@@ -94,18 +109,18 @@ func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID isc.Req
 	return nil, nil
 }
 
-func GetEventsByBlockIndex(partition kv.KVStoreReader, blockIndex uint32, totalRequests uint16) []string {
-	ret := make([]string, 0)
+func GetEventsByBlockIndex(partition kv.KVStoreReader, blockIndex uint32, totalRequests uint16) [][]byte {
+	var ret [][]byte
 	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
 	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
 		eventIndex := uint16(0)
 		for {
-			key := NewEventLookupKey(blockIndex, reqIdx, eventIndex)
-			msg := events.GetAt(key.Bytes())
-			if msg == nil {
+			key := NewEventLookupKey(blockIndex, reqIdx, eventIndex).Bytes()
+			eventData := events.GetAt(key)
+			if eventData == nil {
 				break
 			}
-			ret = append(ret, string(msg))
+			ret = append(ret, eventData)
 			eventIndex++
 		}
 	}

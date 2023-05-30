@@ -1,8 +1,6 @@
 package blob
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -45,13 +43,11 @@ func storeBlob(ctx isc.Sandbox) dict.Dict {
 	totalSize := uint32(0)
 	totalSizeWithKeys := uint32(0)
 
-	// save record of the blob. In parallel save record of sizes of blob fields
-	sizes := make([]uint32, len(kSorted))
+	// save record of the blob.
 	for i, k := range kSorted {
 		size := uint32(len(values[i]))
 		blbValues.SetAt([]byte(k), values[i])
 		blbSizes.SetAt([]byte(k), EncodeSize(size))
-		sizes[i] = size
 		totalSize += size
 		totalSizeWithKeys += size + uint32(len(k))
 	}
@@ -61,7 +57,7 @@ func storeBlob(ctx isc.Sandbox) dict.Dict {
 
 	directory.SetAt(blobHash[:], EncodeSize(totalSize))
 
-	ctx.Event(fmt.Sprintf("[blob] hash: %s, field sizes: %+v", blobHash.String(), sizes))
+	eventStore(ctx, blobHash)
 	return ret
 }
 

@@ -68,6 +68,11 @@ func (d *WasmDecoder) FixedBytes(length uint32) []byte {
 	return value
 }
 
+// Length returns the number of bytes left in the byte buffer
+func (d *WasmDecoder) Length() uint32 {
+	return uint32(len(d.buf))
+}
+
 // Peek peeks at the next byte in the byte buffer
 func (d *WasmDecoder) Peek() byte {
 	if len(d.buf) == 0 {

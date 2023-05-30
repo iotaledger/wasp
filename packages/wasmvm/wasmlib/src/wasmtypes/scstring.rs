@@ -8,11 +8,14 @@ use crate::*;
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub fn string_decode(dec: &mut WasmDecoder) -> String {
-    string_from_bytes(&dec.bytes())
+    let length = uint16_decode(dec);
+    string_from_bytes(&dec.fixed_bytes(length as usize))
 }
 
 pub fn string_encode(enc: &mut WasmEncoder, value: &str) {
-    enc.bytes(&string_to_bytes(value));
+    let buf = string_to_bytes(value);
+    uint16_encode(enc, buf.len() as u16);
+    enc.fixed_bytes(&buf, buf.len());
 }
 
 pub fn string_from_bytes(buf: &[u8]) -> String {

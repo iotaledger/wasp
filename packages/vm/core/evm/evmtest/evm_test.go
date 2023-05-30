@@ -431,10 +431,10 @@ func TestISCTriggerEvent(t *testing.T) {
 	res, err := iscTest.triggerEvent("Hi from EVM!")
 	require.NoError(t, err)
 	require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
-	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
+	events, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
 	require.NoError(t, err)
-	require.Len(t, ev, 1)
-	require.Contains(t, ev[0], "Hi from EVM!")
+	require.Len(t, events, 1)
+	require.Equal(t, string(events[0].Payload), "Hi from EVM!")
 }
 
 func TestISCTriggerEventThenFail(t *testing.T) {
@@ -447,9 +447,9 @@ func TestISCTriggerEventThenFail(t *testing.T) {
 		gasLimit: 100_000, // skip estimate gas (which will fail)
 	})
 	require.Error(t, err)
-	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
+	events, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
 	require.NoError(t, err)
-	require.Len(t, ev, 0)
+	require.Len(t, events, 0)
 }
 
 func TestISCEntropy(t *testing.T) {
@@ -1630,10 +1630,10 @@ func TestStaticCall(t *testing.T) {
 	}}, "testStaticCall")
 	require.NoError(t, err)
 	require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
-	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
+	events, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
 	require.NoError(t, err)
-	require.Len(t, ev, 1)
-	require.Contains(t, ev[0], "non-static")
+	require.Len(t, events, 1)
+	require.Equal(t, string(events[0].Payload), "non-static")
 }
 
 func TestSelfDestruct(t *testing.T) {

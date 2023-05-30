@@ -400,6 +400,11 @@ func WriteTime(w io.Writer, ts time.Time) error {
 
 //////////////////// string, uint16 length \\\\\\\\\\\\\\\\\\\\
 
+func StringToBytes(str string) []byte {
+	buf := Uint16To2Bytes(uint16(len(str)))
+	return append(buf, str...)
+}
+
 func ReadString16(r io.Reader) (string, error) {
 	ret, err := ReadBytes16(r)
 	if err != nil {

@@ -9,7 +9,7 @@ use crate::*;
 use crate::coreaccounts::*;
 
 pub struct DepositCall<'a> {
-    pub func: ScFunc<'a>,
+    pub func:   ScFunc<'a>,
 }
 
 pub struct FoundryCreateNewCall<'a> {
@@ -44,7 +44,7 @@ pub struct TransferAllowanceToCall<'a> {
 }
 
 pub struct WithdrawCall<'a> {
-    pub func: ScFunc<'a>,
+    pub func:   ScFunc<'a>,
 }
 
 pub struct AccountFoundriesCall<'a> {

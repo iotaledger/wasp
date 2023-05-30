@@ -10,8 +10,7 @@ var modRs = map[string]string{
 
 pub use consts::*;
 pub use contract::*;
-$#set moduleName events
-$#if events pubUseModule
+$#if core else pubUseEvents
 $#set moduleName eventhandlers
 $#if events pubUseModule
 $#set moduleName params
@@ -27,8 +26,7 @@ $#if typedefs pubUseModule
 
 pub mod consts;
 pub mod contract;
-$#set moduleName events
-$#if events pubModModule
+$#if core else pubModEvents
 $#set moduleName eventhandlers
 $#if events pubModModule
 $#set moduleName params
@@ -41,6 +39,16 @@ $#set moduleName structs
 $#if structs pubModModule
 $#set moduleName typedefs
 $#if typedefs pubModModule
+`,
+	// *******************************
+	"pubUseEvents": `
+$#set moduleName events
+$#if events pubUseModule
+`,
+	// *******************************
+	"pubModEvents": `
+$#set moduleName events
+$#if events pubModModule
 `,
 	// *******************************
 	"pubUseModule": `

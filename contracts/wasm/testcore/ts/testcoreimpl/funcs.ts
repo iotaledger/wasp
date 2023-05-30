@@ -207,12 +207,11 @@ export function funcTestEventLogDeploy(ctx: wasmlib.ScFuncContext, f: sc.TestEve
 }
 
 export function funcTestEventLogEventData(ctx: wasmlib.ScFuncContext, f: sc.TestEventLogEventDataContext): void {
-    ctx.event("[Event] - Testing Event...");
+    f.events.test();
 }
 
 export function funcTestEventLogGenericData(ctx: wasmlib.ScFuncContext, f: sc.TestEventLogGenericDataContext): void {
-    let event = "[GenericData] Counter Number: ".toString() + f.params.counter().toString();
-    ctx.event(event);
+    f.events.counter(f.params.counter().value());
 }
 
 export function funcTestPanicFullEP(ctx: wasmlib.ScFuncContext, f: sc.TestPanicFullEPContext): void {

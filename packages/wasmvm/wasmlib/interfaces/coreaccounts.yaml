@@ -10,6 +10,13 @@ author: Eric Hop <eric@iota.org>
 license: Apache-2.0
 repository: https://github.com/iotaledger/wasp
 
+events:
+  foundryCreated:
+    foundrySN: Uint32
+  foundryDestroyed:
+    foundrySN: Uint32
+  foundryModified:
+    foundrySN: Uint32
 structs: {}
 typedefs: {}
 state: {}

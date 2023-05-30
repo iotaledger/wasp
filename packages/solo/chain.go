@@ -294,18 +294,8 @@ func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.Contra
 	return ch.ChainID, chainOwnerID, contracts
 }
 
-func eventsFromViewResult(viewResult dict.Dict) []string {
-	recs := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
-	ret := make([]string, recs.Len())
-	for i := range ret {
-		data := recs.GetAt(uint16(i))
-		ret[i] = string(data)
-	}
-	return ret
-}
-
-// GetEventsForContract calls the view in the  'blocklog' core smart contract to retrieve events for a given smart contract.
-func (ch *Chain) GetEventsForContract(name string) ([]string, error) {
+// GetEventsForContract calls the view in the 'blocklog' core smart contract to retrieve events for a given smart contract.
+func (ch *Chain) GetEventsForContract(name string) ([]*isc.Event, error) {
 	viewResult, err := ch.CallView(
 		blocklog.Contract.Name, blocklog.ViewGetEventsForContract.Name,
 		blocklog.ParamContractHname, isc.Hn(name),
@@ -314,11 +304,11 @@ func (ch *Chain) GetEventsForContract(name string) ([]string, error) {
 		return nil, err
 	}
 
-	return eventsFromViewResult(viewResult), nil
+	return blocklog.EventsFromViewResult(viewResult)
 }
 
-// GetEventsForRequest calls the view in the  'blocklog' core smart contract to retrieve events for a given request.
-func (ch *Chain) GetEventsForRequest(reqID isc.RequestID) ([]string, error) {
+// GetEventsForRequest calls the view in the 'blocklog' core smart contract to retrieve events for a given request.
+func (ch *Chain) GetEventsForRequest(reqID isc.RequestID) ([]*isc.Event, error) {
 	viewResult, err := ch.CallView(
 		blocklog.Contract.Name, blocklog.ViewGetEventsForRequest.Name,
 		blocklog.ParamRequestID, reqID,
@@ -326,11 +316,11 @@ func (ch *Chain) GetEventsForRequest(reqID isc.RequestID) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return eventsFromViewResult(viewResult), nil
+	return blocklog.EventsFromViewResult(viewResult)
 }
 
 // GetEventsForBlock calls the view in the 'blocklog' core smart contract to retrieve events for a given block.
-func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]string, error) {
+func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]*isc.Event, error) {
 	viewResult, err := ch.CallView(
 		blocklog.Contract.Name, blocklog.ViewGetEventsForBlock.Name,
 		blocklog.ParamBlockIndex, blockIndex,
@@ -338,7 +328,7 @@ func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return eventsFromViewResult(viewResult), nil
+	return blocklog.EventsFromViewResult(viewResult)
 }
 
 // CommonAccount return the agentID of the common account (controlled by the owner)

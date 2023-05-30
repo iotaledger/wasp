@@ -7,7 +7,7 @@ var eventhandlersRs = map[string]string{
 	// *******************************
 	"eventhandlers.rs": `
 use std::collections::HashMap;
-use wasmlib::*;
+$#if core useCrate useWasmLib
 
 use crate::*;
 

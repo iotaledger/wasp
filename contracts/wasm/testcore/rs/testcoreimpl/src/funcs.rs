@@ -204,13 +204,12 @@ pub fn func_test_event_log_deploy(ctx: &ScFuncContext, _f: &TestEventLogDeployCo
     ctx.deploy_contract(&program_hash, CONTRACT_NAME_DEPLOYED, "test contract deploy log", None);
 }
 
-pub fn func_test_event_log_event_data(ctx: &ScFuncContext, _f: &TestEventLogEventDataContext) {
-    ctx.event("[Event] - Testing Event...");
+pub fn func_test_event_log_event_data(ctx: &ScFuncContext, f: &TestEventLogEventDataContext) {
+    f.events.test();
 }
 
 pub fn func_test_event_log_generic_data(ctx: &ScFuncContext, f: &TestEventLogGenericDataContext) {
-    let event = "[GenericData] Counter Number: ".to_string() + &f.params.counter().to_string();
-    ctx.event(&event);
+    f.events.counter(f.params.counter().value());
 }
 
 pub fn func_test_panic_full_ep(ctx: &ScFuncContext, _f: &TestPanicFullEPContext) {
