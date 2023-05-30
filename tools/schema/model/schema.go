@@ -21,12 +21,12 @@ type Func struct {
 	Name    string
 	Alias   string
 	Access  DefElt
-	Kind    string
+	Comment string
 	Hname   isc.Hname
+	Kind    string
+	Line    int
 	Params  []*Field
 	Results []*Field
-	Line    int
-	Comment string
 }
 
 type Struct struct {
@@ -277,10 +277,10 @@ func (s *Schema) compileStruct(kind string, structName DefElt, structFields DefM
 		if err != nil {
 			return nil, err
 		}
-		if field.Optional {
+		if field.IsOptional {
 			return nil, fmt.Errorf("%s field cannot be optional", kind)
 		}
-		if field.Array {
+		if field.IsArray {
 			return nil, fmt.Errorf("%s field cannot be an array", kind)
 		}
 		if field.MapKey != "" {

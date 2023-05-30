@@ -41,14 +41,14 @@ var FieldTypes = map[string]bool{
 type Field struct {
 	Name       string // external name for this field
 	Alias      string // internal name alias, can be different from Name
-	Array      bool
-	FldComment string
-	MapKey     string
-	Optional   bool
-	Type       string
-	BaseType   bool
 	Comment    string
+	FldComment string
+	IsArray    bool
+	IsBaseType bool
+	IsOptional bool
 	Line       int // the line number originally in yaml file
+	MapKey     string
+	Type       string
 }
 
 func (f *Field) Compile(s *Schema, fldNameDef, fldTypeDef *DefElt) error {
@@ -74,8 +74,8 @@ func (f *Field) Compile(s *Schema, fldNameDef, fldTypeDef *DefElt) error {
 		return err
 	}
 	f.Type = fldType
-	f.BaseType = FieldTypes[fldType]
-	if f.BaseType {
+	f.IsBaseType = FieldTypes[fldType]
+	if f.IsBaseType {
 		return nil
 	}
 	for _, typeDef := range s.Structs {
@@ -96,13 +96,13 @@ func (f *Field) compileFieldType(fldTypeDef *DefElt) (string, error) {
 
 	// strip 'optional' indicator
 	if strings.HasSuffix(fldType, "?") {
-		f.Optional = true
+		f.IsOptional = true
 		fldType = strings.TrimSpace(fldType[:len(fldType)-1])
 	}
 
 	switch {
 	case strings.HasSuffix(fldType, "[]"): // is it an array?
-		f.Array = true
+		f.IsArray = true
 		fldType = strings.TrimSpace(fldType[:len(fldType)-2])
 	case strings.HasPrefix(fldType, "map["): // is it a map?
 		parts := strings.Split(fldType[4:], "]")

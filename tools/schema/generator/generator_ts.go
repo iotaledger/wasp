@@ -17,7 +17,7 @@ const (
 )
 
 type TypeScriptGenerator struct {
-	GenBase
+	Generator
 }
 
 var _ IGenerator = new(TypeScriptGenerator)
