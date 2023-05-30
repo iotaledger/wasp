@@ -87,9 +87,9 @@ func initInfoCmd() *cobra.Command {
 			log.Printf("Description: %s\n", chainInfo.Metadata.Description)
 			log.Printf("Website: %s\n", chainInfo.Metadata.Website)
 
-			log.Printf("Public API: %s\n", chainInfo.PublicUrl)
-			log.Printf("EVM Json RPC URL: %s\n", chainInfo.Metadata.EvmJsonRpcUrl)
-			log.Printf("EVM WebSocket URL: %s\n", chainInfo.Metadata.EvmJsonRpcUrl)
+			log.Printf("Public API: %s\n", chainInfo.PublicURL)
+			log.Printf("EVM Json RPC URL: %s\n", chainInfo.Metadata.EvmJsonRpcURL)
+			log.Printf("EVM WebSocket URL: %s\n", chainInfo.Metadata.EvmWebSocketURL)
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)

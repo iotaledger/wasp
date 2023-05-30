@@ -2612,10 +2612,10 @@ components:
         chainOwnerId: tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e
         metadata:
           website: website
-          evmWebSocketUrl: evmWebSocketUrl
+          evmWebSocketURL: evmWebSocketURL
           name: name
           description: description
-          evmJsonRpcUrl: evmJsonRpcUrl
+          evmJsonRpcURL: evmJsonRpcURL
         gasLimits:
           maxGasExternalViewCall: 5
           minGasPerRequest: 7
@@ -2623,8 +2623,7 @@ components:
           maxGasPerRequest: 2
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
-        evmWebSocketUrl: evmWebSocketUrl
-        publicUrl: publicUrl
+        publicURL: publicURL
         gasFeePolicy:
           gasPerToken:
             a: 1
@@ -2636,14 +2635,14 @@ components:
         isActive: true
       properties:
         chainID:
-          description: ChainID (Bech32-encoded).
+          description: ChainID (Bech32-encoded)
           example: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
           format: string
           type: string
           xml:
             name: ChainID
         chainOwnerId:
-          description: The chain owner address (Bech32-encoded).
+          description: The chain owner address (Bech32-encoded)
           example: tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e
           format: string
           type: string
@@ -2657,29 +2656,19 @@ components:
           type: integer
           xml:
             name: EVMChainID
-        evmJsonRpcUrl:
-          description: The EVM json rpc url
-          format: string
-          type: string
-          xml:
-            name: EVMJsonRPCURL
-        evmWebSocketUrl:
-          description: The EVM websocket url
-          format: string
-          type: string
-          xml:
-            name: EVMWebSocketURL
         gasFeePolicy:
           $ref: '#/components/schemas/FeePolicy'
         gasLimits:
           $ref: '#/components/schemas/Limits'
         isActive:
-          description: Whether or not the chain is active.
+          description: Whether or not the chain is active
           format: boolean
           type: boolean
           xml:
             name: IsActive
-        publicUrl:
+        metadata:
+          $ref: '#/components/schemas/ChainMetadata'
+        publicURL:
           description: The fully qualified public url leading to the chains metadata
           format: string
           type: string
@@ -2689,12 +2678,11 @@ components:
       - chainID
       - chainOwnerId
       - evmChainId
-      - evmJsonRpcUrl
-      - evmWebSocketUrl
       - gasFeePolicy
       - gasLimits
       - isActive
-      - publicUrl
+      - metadata
+      - publicURL
       type: object
       xml:
         name: ChainInfoResponse
@@ -2801,10 +2789,10 @@ components:
     ChainMetadata:
       example:
         website: website
-        evmWebSocketUrl: evmWebSocketUrl
+        evmWebSocketURL: evmWebSocketURL
         name: name
         description: description
-        evmJsonRpcUrl: evmJsonRpcUrl
+        evmJsonRpcURL: evmJsonRpcURL
       properties:
         description:
           description: The description of the chain.
@@ -2812,13 +2800,13 @@ components:
           type: string
           xml:
             name: Description
-        evmJsonRpcUrl:
+        evmJsonRpcURL:
           description: The EVM json rpc url
           format: string
           type: string
           xml:
             name: EVMJsonRPCURL
-        evmWebSocketUrl:
+        evmWebSocketURL:
           description: The EVM websocket url)
           format: string
           type: string
@@ -2838,8 +2826,8 @@ components:
             name: Website
       required:
       - description
-      - evmJsonRpcUrl
-      - evmWebSocketUrl
+      - evmJsonRpcURL
+      - evmWebSocketURL
       - name
       - website
       type: object
@@ -3507,16 +3495,60 @@ components:
       type: object
       xml:
         name: EstimateGasRequestOnledger
+    Event:
+      example:
+        payload:
+        - 6
+        - 6
+        contractID: 0
+        topic: topic
+        timestamp: 1
+      properties:
+        contractID:
+          format: int32
+          type: integer
+          xml:
+            name: ContractID
+        payload:
+          items:
+            format: int32
+            type: integer
+          type: array
+          xml:
+            name: Payload
+            wrapped: true
+        timestamp:
+          format: int64
+          type: integer
+          xml:
+            name: Timestamp
+        topic:
+          format: string
+          type: string
+          xml:
+            name: Topic
+      type: object
+      xml:
+        name: Event
     EventsResponse:
       example:
         events:
-        - events
-        - events
+        - payload:
+          - 6
+          - 6
+          contractID: 0
+          topic: topic
+          timestamp: 1
+        - payload:
+          - 6
+          - 6
+          contractID: 0
+          topic: topic
+          timestamp: 1
       properties:
         events:
           items:
-            format: string
-            type: string
+            $ref: '#/components/schemas/Event'
           type: array
           xml:
             name: Events
@@ -3627,19 +3659,17 @@ components:
         chainOwnerId: chainOwnerId
         metadata:
           website: website
-          evmWebSocketUrl: evmWebSocketUrl
+          evmWebSocketURL: evmWebSocketURL
           name: name
           description: description
-          evmJsonRpcUrl: evmJsonRpcUrl
+          evmJsonRpcURL: evmJsonRpcURL
         gasLimits:
           maxGasExternalViewCall: 5
           minGasPerRequest: 7
           maxGasPerBlock: 5
           maxGasPerRequest: 2
         chainID: chainID
-        blockKeepAmount: 0
-        evmWebSocketUrl: evmWebSocketUrl
-        publicUrl: publicUrl
+        publicURL: publicURL
         gasFeePolicy:
           gasPerToken:
             a: 0
@@ -3648,14 +3678,7 @@ components:
           evmGasRatio:
             a: 0
             b: 0
-        evmJsonRpcUrl: evmJsonRpcUrl
       properties:
-        blockKeepAmount:
-          description: Amount of blocks to keep in the state
-          format: int32
-          type: integer
-          xml:
-            name: BlockKeepAmount
         chainID:
           description: ChainID (Bech32-encoded).
           format: string
@@ -3668,23 +3691,13 @@ components:
           type: string
           xml:
             name: ChainOwnerID
-        evmJsonRpcUrl:
-          description: The EVM json rpc url
-          format: string
-          type: string
-          xml:
-            name: EVMJsonRPCURL
-        evmWebSocketUrl:
-          description: The EVM websocket url
-          format: string
-          type: string
-          xml:
-            name: EVMWebSocketURL
         gasFeePolicy:
           $ref: '#/components/schemas/FeePolicy_'
         gasLimits:
           $ref: '#/components/schemas/Limits'
-        publicUrl:
+        metadata:
+          $ref: '#/components/schemas/GovChainMetadata'
+        publicURL:
           description: The fully qualified public url leading to the chains metadata
           format: string
           type: string
@@ -3693,21 +3706,20 @@ components:
       required:
       - chainID
       - chainOwnerId
-      - evmJsonRpcUrl
-      - evmWebSocketUrl
       - gasFeePolicy
       - gasLimits
-      - publicUrl
+      - metadata
+      - publicURL
       type: object
       xml:
         name: GovChainInfoResponse
     GovChainMetadata:
       example:
         website: website
-        evmWebSocketUrl: evmWebSocketUrl
+        evmWebSocketURL: evmWebSocketURL
         name: name
         description: description
-        evmJsonRpcUrl: evmJsonRpcUrl
+        evmJsonRpcURL: evmJsonRpcURL
       properties:
         description:
           description: The description of the chain.
@@ -3715,13 +3727,13 @@ components:
           type: string
           xml:
             name: Description
-        evmJsonRpcUrl:
+        evmJsonRpcURL:
           description: The EVM json rpc url
           format: string
           type: string
           xml:
             name: EVMJsonRPCURL
-        evmWebSocketUrl:
+        evmWebSocketURL:
           description: The EVM websocket url)
           format: string
           type: string
@@ -3741,8 +3753,8 @@ components:
             name: Website
       required:
       - description
-      - evmJsonRpcUrl
-      - evmWebSocketUrl
+      - evmJsonRpcURL
+      - evmWebSocketURL
       - name
       - website
       type: object

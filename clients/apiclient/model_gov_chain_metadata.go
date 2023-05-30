@@ -22,9 +22,9 @@ type GovChainMetadata struct {
 	// The description of the chain.
 	Description string `json:"description"`
 	// The EVM json rpc url
-	EvmJsonRpcUrl string `json:"evmJsonRpcUrl"`
+	EvmJsonRpcURL string `json:"evmJsonRpcURL"`
 	// The EVM websocket url)
-	EvmWebSocketUrl string `json:"evmWebSocketUrl"`
+	EvmWebSocketURL string `json:"evmWebSocketURL"`
 	// The name of the chain
 	Name string `json:"name"`
 	// The official website of the chain.
@@ -35,11 +35,11 @@ type GovChainMetadata struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGovChainMetadata(description string, evmJsonRpcUrl string, evmWebSocketUrl string, name string, website string) *GovChainMetadata {
+func NewGovChainMetadata(description string, evmJsonRpcURL string, evmWebSocketURL string, name string, website string) *GovChainMetadata {
 	this := GovChainMetadata{}
 	this.Description = description
-	this.EvmJsonRpcUrl = evmJsonRpcUrl
-	this.EvmWebSocketUrl = evmWebSocketUrl
+	this.EvmJsonRpcURL = evmJsonRpcURL
+	this.EvmWebSocketURL = evmWebSocketURL
 	this.Name = name
 	this.Website = website
 	return &this
@@ -77,52 +77,52 @@ func (o *GovChainMetadata) SetDescription(v string) {
 	o.Description = v
 }
 
-// GetEvmJsonRpcUrl returns the EvmJsonRpcUrl field value
-func (o *GovChainMetadata) GetEvmJsonRpcUrl() string {
+// GetEvmJsonRpcURL returns the EvmJsonRpcURL field value
+func (o *GovChainMetadata) GetEvmJsonRpcURL() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.EvmJsonRpcUrl
+	return o.EvmJsonRpcURL
 }
 
-// GetEvmJsonRpcUrlOk returns a tuple with the EvmJsonRpcUrl field value
+// GetEvmJsonRpcURLOk returns a tuple with the EvmJsonRpcURL field value
 // and a boolean to check if the value has been set.
-func (o *GovChainMetadata) GetEvmJsonRpcUrlOk() (*string, bool) {
+func (o *GovChainMetadata) GetEvmJsonRpcURLOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.EvmJsonRpcUrl, true
+	return &o.EvmJsonRpcURL, true
 }
 
-// SetEvmJsonRpcUrl sets field value
-func (o *GovChainMetadata) SetEvmJsonRpcUrl(v string) {
-	o.EvmJsonRpcUrl = v
+// SetEvmJsonRpcURL sets field value
+func (o *GovChainMetadata) SetEvmJsonRpcURL(v string) {
+	o.EvmJsonRpcURL = v
 }
 
-// GetEvmWebSocketUrl returns the EvmWebSocketUrl field value
-func (o *GovChainMetadata) GetEvmWebSocketUrl() string {
+// GetEvmWebSocketURL returns the EvmWebSocketURL field value
+func (o *GovChainMetadata) GetEvmWebSocketURL() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.EvmWebSocketUrl
+	return o.EvmWebSocketURL
 }
 
-// GetEvmWebSocketUrlOk returns a tuple with the EvmWebSocketUrl field value
+// GetEvmWebSocketURLOk returns a tuple with the EvmWebSocketURL field value
 // and a boolean to check if the value has been set.
-func (o *GovChainMetadata) GetEvmWebSocketUrlOk() (*string, bool) {
+func (o *GovChainMetadata) GetEvmWebSocketURLOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.EvmWebSocketUrl, true
+	return &o.EvmWebSocketURL, true
 }
 
-// SetEvmWebSocketUrl sets field value
-func (o *GovChainMetadata) SetEvmWebSocketUrl(v string) {
-	o.EvmWebSocketUrl = v
+// SetEvmWebSocketURL sets field value
+func (o *GovChainMetadata) SetEvmWebSocketURL(v string) {
+	o.EvmWebSocketURL = v
 }
 
 // GetName returns the Name field value
@@ -184,8 +184,8 @@ func (o GovChainMetadata) MarshalJSON() ([]byte, error) {
 func (o GovChainMetadata) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["description"] = o.Description
-	toSerialize["evmJsonRpcUrl"] = o.EvmJsonRpcUrl
-	toSerialize["evmWebSocketUrl"] = o.EvmWebSocketUrl
+	toSerialize["evmJsonRpcURL"] = o.EvmJsonRpcURL
+	toSerialize["evmWebSocketURL"] = o.EvmWebSocketURL
 	toSerialize["name"] = o.Name
 	toSerialize["website"] = o.Website
 	return toSerialize, nil

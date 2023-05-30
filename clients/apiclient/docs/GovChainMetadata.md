@@ -5,8 +5,8 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Description** | **string** | The description of the chain. | 
-**EvmJsonRpcUrl** | **string** | The EVM json rpc url | 
-**EvmWebSocketUrl** | **string** | The EVM websocket url) | 
+**EvmJsonRpcURL** | **string** | The EVM json rpc url | 
+**EvmWebSocketURL** | **string** | The EVM websocket url) | 
 **Name** | **string** | The name of the chain | 
 **Website** | **string** | The official website of the chain. | 
 
@@ -14,7 +14,7 @@ Name | Type | Description | Notes
 
 ### NewGovChainMetadata
 
-`func NewGovChainMetadata(description string, evmJsonRpcUrl string, evmWebSocketUrl string, name string, website string, ) *GovChainMetadata`
+`func NewGovChainMetadata(description string, evmJsonRpcURL string, evmWebSocketURL string, name string, website string, ) *GovChainMetadata`
 
 NewGovChainMetadata instantiates a new GovChainMetadata object
 This constructor will assign default values to properties that have it defined,
@@ -49,44 +49,44 @@ and a boolean to check if the value has been set.
 SetDescription sets Description field to given value.
 
 
-### GetEvmJsonRpcUrl
+### GetEvmJsonRpcURL
 
-`func (o *GovChainMetadata) GetEvmJsonRpcUrl() string`
+`func (o *GovChainMetadata) GetEvmJsonRpcURL() string`
 
-GetEvmJsonRpcUrl returns the EvmJsonRpcUrl field if non-nil, zero value otherwise.
+GetEvmJsonRpcURL returns the EvmJsonRpcURL field if non-nil, zero value otherwise.
 
-### GetEvmJsonRpcUrlOk
+### GetEvmJsonRpcURLOk
 
-`func (o *GovChainMetadata) GetEvmJsonRpcUrlOk() (*string, bool)`
+`func (o *GovChainMetadata) GetEvmJsonRpcURLOk() (*string, bool)`
 
-GetEvmJsonRpcUrlOk returns a tuple with the EvmJsonRpcUrl field if it's non-nil, zero value otherwise
+GetEvmJsonRpcURLOk returns a tuple with the EvmJsonRpcURL field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetEvmJsonRpcUrl
+### SetEvmJsonRpcURL
 
-`func (o *GovChainMetadata) SetEvmJsonRpcUrl(v string)`
+`func (o *GovChainMetadata) SetEvmJsonRpcURL(v string)`
 
-SetEvmJsonRpcUrl sets EvmJsonRpcUrl field to given value.
+SetEvmJsonRpcURL sets EvmJsonRpcURL field to given value.
 
 
-### GetEvmWebSocketUrl
+### GetEvmWebSocketURL
 
-`func (o *GovChainMetadata) GetEvmWebSocketUrl() string`
+`func (o *GovChainMetadata) GetEvmWebSocketURL() string`
 
-GetEvmWebSocketUrl returns the EvmWebSocketUrl field if non-nil, zero value otherwise.
+GetEvmWebSocketURL returns the EvmWebSocketURL field if non-nil, zero value otherwise.
 
-### GetEvmWebSocketUrlOk
+### GetEvmWebSocketURLOk
 
-`func (o *GovChainMetadata) GetEvmWebSocketUrlOk() (*string, bool)`
+`func (o *GovChainMetadata) GetEvmWebSocketURLOk() (*string, bool)`
 
-GetEvmWebSocketUrlOk returns a tuple with the EvmWebSocketUrl field if it's non-nil, zero value otherwise
+GetEvmWebSocketURLOk returns a tuple with the EvmWebSocketURL field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetEvmWebSocketUrl
+### SetEvmWebSocketURL
 
-`func (o *GovChainMetadata) SetEvmWebSocketUrl(v string)`
+`func (o *GovChainMetadata) SetEvmWebSocketURL(v string)`
 
-SetEvmWebSocketUrl sets EvmWebSocketUrl field to given value.
+SetEvmWebSocketURL sets EvmWebSocketURL field to given value.
 
 
 ### GetName

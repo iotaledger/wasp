@@ -19,8 +19,6 @@ var _ MappedNullable = &GovChainInfoResponse{}
 
 // GovChainInfoResponse struct for GovChainInfoResponse
 type GovChainInfoResponse struct {
-	// Amount of blocks to keep in the state
-	BlockKeepAmount *int32 `json:"blockKeepAmount,omitempty"`
 	// ChainID (Bech32-encoded).
 	ChainID string `json:"chainID"`
 	// The chain owner address (Bech32-encoded).
@@ -29,21 +27,21 @@ type GovChainInfoResponse struct {
 	GasLimits Limits `json:"gasLimits"`
 	Metadata GovChainMetadata `json:"metadata"`
 	// The fully qualified public url leading to the chains metadata
-	PublicUrl string `json:"publicUrl"`
+	PublicURL string `json:"publicURL"`
 }
 
 // NewGovChainInfoResponse instantiates a new GovChainInfoResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy FeePolicy, gasLimits Limits, metadata GovChainMetadata, publicUrl string) *GovChainInfoResponse {
+func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy FeePolicy, gasLimits Limits, metadata GovChainMetadata, publicURL string) *GovChainInfoResponse {
 	this := GovChainInfoResponse{}
 	this.ChainID = chainID
 	this.ChainOwnerId = chainOwnerId
 	this.GasFeePolicy = gasFeePolicy
 	this.GasLimits = gasLimits
 	this.Metadata = metadata
-	this.PublicUrl = publicUrl
+	this.PublicURL = publicURL
 	return &this
 }
 
@@ -53,38 +51,6 @@ func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy F
 func NewGovChainInfoResponseWithDefaults() *GovChainInfoResponse {
 	this := GovChainInfoResponse{}
 	return &this
-}
-
-// GetBlockKeepAmount returns the BlockKeepAmount field value if set, zero value otherwise.
-func (o *GovChainInfoResponse) GetBlockKeepAmount() int32 {
-	if o == nil || isNil(o.BlockKeepAmount) {
-		var ret int32
-		return ret
-	}
-	return *o.BlockKeepAmount
-}
-
-// GetBlockKeepAmountOk returns a tuple with the BlockKeepAmount field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *GovChainInfoResponse) GetBlockKeepAmountOk() (*int32, bool) {
-	if o == nil || isNil(o.BlockKeepAmount) {
-		return nil, false
-	}
-	return o.BlockKeepAmount, true
-}
-
-// HasBlockKeepAmount returns a boolean if a field has been set.
-func (o *GovChainInfoResponse) HasBlockKeepAmount() bool {
-	if o != nil && !isNil(o.BlockKeepAmount) {
-		return true
-	}
-
-	return false
-}
-
-// SetBlockKeepAmount gets a reference to the given int32 and assigns it to the BlockKeepAmount field.
-func (o *GovChainInfoResponse) SetBlockKeepAmount(v int32) {
-	o.BlockKeepAmount = &v
 }
 
 // GetChainID returns the ChainID field value
@@ -207,28 +173,28 @@ func (o *GovChainInfoResponse) SetMetadata(v GovChainMetadata) {
 	o.Metadata = v
 }
 
-// GetPublicUrl returns the PublicUrl field value
-func (o *GovChainInfoResponse) GetPublicUrl() string {
+// GetPublicURL returns the PublicURL field value
+func (o *GovChainInfoResponse) GetPublicURL() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.PublicUrl
+	return o.PublicURL
 }
 
-// GetPublicUrlOk returns a tuple with the PublicUrl field value
+// GetPublicURLOk returns a tuple with the PublicURL field value
 // and a boolean to check if the value has been set.
-func (o *GovChainInfoResponse) GetPublicUrlOk() (*string, bool) {
+func (o *GovChainInfoResponse) GetPublicURLOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.PublicUrl, true
+	return &o.PublicURL, true
 }
 
-// SetPublicUrl sets field value
-func (o *GovChainInfoResponse) SetPublicUrl(v string) {
-	o.PublicUrl = v
+// SetPublicURL sets field value
+func (o *GovChainInfoResponse) SetPublicURL(v string) {
+	o.PublicURL = v
 }
 
 func (o GovChainInfoResponse) MarshalJSON() ([]byte, error) {
@@ -241,15 +207,12 @@ func (o GovChainInfoResponse) MarshalJSON() ([]byte, error) {
 
 func (o GovChainInfoResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.BlockKeepAmount) {
-		toSerialize["blockKeepAmount"] = o.BlockKeepAmount
-	}
 	toSerialize["chainID"] = o.ChainID
 	toSerialize["chainOwnerId"] = o.ChainOwnerId
 	toSerialize["gasFeePolicy"] = o.GasFeePolicy
 	toSerialize["gasLimits"] = o.GasLimits
 	toSerialize["metadata"] = o.Metadata
-	toSerialize["publicUrl"] = o.PublicUrl
+	toSerialize["publicURL"] = o.PublicURL
 	return toSerialize, nil
 }
 

@@ -54,8 +54,8 @@ type ContractInfoResponse struct {
 }
 
 type ChainMetadata struct {
-	EVMJsonRPCURL   string `json:"evmJsonRpcUrl" swagger:"desc(The EVM json rpc url),required"`
-	EVMWebSocketURL string `json:"evmWebSocketUrl" swagger:"desc(The EVM websocket url)),required"`
+	EVMJsonRPCURL   string `json:"evmJsonRpcURL" swagger:"desc(The EVM json rpc url),required"`
+	EVMWebSocketURL string `json:"evmWebSocketURL" swagger:"desc(The EVM websocket url)),required"`
 
 	Name        string `json:"name" swagger:"desc(The name of the chain),required"`
 	Description string `json:"description" swagger:"desc(The description of the chain.),required"`
@@ -70,7 +70,7 @@ type ChainInfoResponse struct {
 	ChainOwnerID string         `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded)),required"`
 	GasFeePolicy *gas.FeePolicy `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
 	GasLimits    *gas.Limits    `json:"gasLimits" swagger:"desc(The gas limits),required"`
-	PublicURL    string         `json:"publicUrl" swagger:"desc(The fully qualified public url leading to the chains metadata),required"`
+	PublicURL    string         `json:"publicURL" swagger:"desc(The fully qualified public url leading to the chains metadata),required"`
 	Metadata     ChainMetadata  `json:"metadata" swagger:"desc(The metadata of the chain),required"`
 }
 

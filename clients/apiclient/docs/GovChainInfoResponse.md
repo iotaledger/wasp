@@ -4,19 +4,18 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**BlockKeepAmount** | Pointer to **int32** | Amount of blocks to keep in the state | [optional] 
 **ChainID** | **string** | ChainID (Bech32-encoded). | 
 **ChainOwnerId** | **string** | The chain owner address (Bech32-encoded). | 
 **GasFeePolicy** | [**FeePolicy**](FeePolicy.md) |  | 
 **GasLimits** | [**Limits**](Limits.md) |  | 
 **Metadata** | [**GovChainMetadata**](GovChainMetadata.md) |  | 
-**PublicUrl** | **string** | The fully qualified public url leading to the chains metadata | 
+**PublicURL** | **string** | The fully qualified public url leading to the chains metadata | 
 
 ## Methods
 
 ### NewGovChainInfoResponse
 
-`func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy FeePolicy, gasLimits Limits, metadata GovChainMetadata, publicUrl string, ) *GovChainInfoResponse`
+`func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy FeePolicy, gasLimits Limits, metadata GovChainMetadata, publicURL string, ) *GovChainInfoResponse`
 
 NewGovChainInfoResponse instantiates a new GovChainInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -30,31 +29,6 @@ will change when the set of required properties is changed
 NewGovChainInfoResponseWithDefaults instantiates a new GovChainInfoResponse object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
-
-### GetBlockKeepAmount
-
-`func (o *GovChainInfoResponse) GetBlockKeepAmount() int32`
-
-GetBlockKeepAmount returns the BlockKeepAmount field if non-nil, zero value otherwise.
-
-### GetBlockKeepAmountOk
-
-`func (o *GovChainInfoResponse) GetBlockKeepAmountOk() (*int32, bool)`
-
-GetBlockKeepAmountOk returns a tuple with the BlockKeepAmount field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetBlockKeepAmount
-
-`func (o *GovChainInfoResponse) SetBlockKeepAmount(v int32)`
-
-SetBlockKeepAmount sets BlockKeepAmount field to given value.
-
-### HasBlockKeepAmount
-
-`func (o *GovChainInfoResponse) HasBlockKeepAmount() bool`
-
-HasBlockKeepAmount returns a boolean if a field has been set.
 
 ### GetChainID
 
@@ -156,24 +130,24 @@ and a boolean to check if the value has been set.
 SetMetadata sets Metadata field to given value.
 
 
-### GetPublicUrl
+### GetPublicURL
 
-`func (o *GovChainInfoResponse) GetPublicUrl() string`
+`func (o *GovChainInfoResponse) GetPublicURL() string`
 
-GetPublicUrl returns the PublicUrl field if non-nil, zero value otherwise.
+GetPublicURL returns the PublicURL field if non-nil, zero value otherwise.
 
-### GetPublicUrlOk
+### GetPublicURLOk
 
-`func (o *GovChainInfoResponse) GetPublicUrlOk() (*string, bool)`
+`func (o *GovChainInfoResponse) GetPublicURLOk() (*string, bool)`
 
-GetPublicUrlOk returns a tuple with the PublicUrl field if it's non-nil, zero value otherwise
+GetPublicURLOk returns a tuple with the PublicURL field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetPublicUrl
+### SetPublicURL
 
-`func (o *GovChainInfoResponse) SetPublicUrl(v string)`
+`func (o *GovChainInfoResponse) SetPublicURL(v string)`
 
-SetPublicUrl sets PublicUrl field to given value.
+SetPublicURL sets PublicURL field to given value.
 
 
 
