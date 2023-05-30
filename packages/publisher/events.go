@@ -121,28 +121,16 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 
 	// Publish contract-issued events.
 	blockEvents := blocklog.GetEventsByBlockIndex(blocklogStatePartition, blockIndex, blockInfo.TotalRequests)
-	// TODO note that events are no longer strings but byte arrays
-	// so we temporarily encode them as hex strings here because it
-	// is impossible to define ISCEvent[[][]byte]] in Go and we can
-	// also not simply convert the byte arrays to strings because
-	// the web API reads the strings as UTF8-encoded and will mangle
-	// the data when it encounters a non-UTF8 character, which makes
-	// it impossible to extract the original bytes at the client end
 	var payload []*isc.Event
-	for _, blockEvent := range blockEvents {
-		event, err := isc.NewEvent(blockEvent)
+	for _, eventData := range blockEvents {
+		event, err := isc.NewEvent(eventData)
 		if err != nil {
 			panic(err)
 		}
 		payload = append(payload, event)
 	}
 	triggerEvent(events, events.BlockEvents, &ISCEvent[[]*isc.Event]{
-		Kind: ISCEventKindBlockEvents,
-		// TODO should be the contract Hname, but right now events are just stored as strings.
-		// must be refactored so its possible to filter by "events from a contract"
-		// EDIT (Eric): But a block can contain multiple requests to different
-		// contracts, so this is not where this info is encoded. Instead it's
-		// in the event data for each event.
+		Kind:   ISCEventKindBlockEvents,
 		Issuer: &isc.NilAgentID{},
 		// TODO should be possible to filter by request ID (not possible with current events impl)
 		// RequestID: event.RequestID,

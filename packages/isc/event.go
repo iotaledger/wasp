@@ -36,18 +36,6 @@ func NewEvent(event []byte) (*Event, error) {
 	}, nil
 }
 
-func NewEvents(events [][]byte) ([]*Event, error) {
-	ret := make([]*Event, 0, len(events))
-	for _, e := range events {
-		event, err := NewEvent(e)
-		if err != nil {
-			return nil, err
-		}
-		ret = append(ret, event)
-	}
-	return ret, nil
-}
-
 func (e *Event) Bytes() []byte {
 	eventData := make([]byte, 0, 4+2+len(e.Topic)+8+len(e.Payload))
 	eventData = append(eventData, e.ContractID.Bytes()...)
