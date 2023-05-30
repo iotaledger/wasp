@@ -454,6 +454,10 @@ export function viewCheckAgentID(ctx: wasmlib.ScViewContext, f: sc.CheckAgentIDC
     ctx.require(scAgentID.equals(wasmtypes.agentIDFromString(wasmtypes.agentIDToString(scAgentID))), 'agentID string conversion failed');
     ctx.require(wasmtypes.bytesCompare(scAgentID.toBytes(), agentBytes) == 0, 'agentID bytes mismatch');
     ctx.require(scAgentID.toString() == agentString, 'agentID string mismatch');
+    let enc = new wasmtypes.WasmEncoder();
+    wasmtypes.agentIDEncode(enc, scAgentID);
+    let dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(scAgentID.equals(wasmtypes.agentIDDecode(dec)), 'agentID encode/decode failed');
 }
 
 export function viewCheckAddress(ctx: wasmlib.ScViewContext, f: sc.CheckAddressContext): void {
@@ -464,6 +468,10 @@ export function viewCheckAddress(ctx: wasmlib.ScViewContext, f: sc.CheckAddressC
     ctx.require(address.equals(wasmtypes.addressFromString(wasmtypes.addressToString(address))), 'address string conversion failed');
     ctx.require(wasmtypes.bytesCompare(address.toBytes(), addressBytes) == 0, 'address bytes mismatch');
     ctx.require(address.toString() == addressString, 'address string mismatch');
+    let enc = new wasmtypes.WasmEncoder();
+    wasmtypes.addressEncode(enc, address);
+    let dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(address.equals(wasmtypes.addressDecode(dec)), 'address encode/decode failed');
 }
 
 export function viewCheckEthAddressAndAgentID(ctx: wasmlib.ScViewContext, f: sc.CheckEthAddressAndAgentIDContext): void {
@@ -474,6 +482,10 @@ export function viewCheckEthAddressAndAgentID(ctx: wasmlib.ScViewContext, f: sc.
     ctx.require(address.equals(wasmtypes.addressFromBytes(wasmtypes.addressToBytes(address))), 'eth address bytes conversion failed');
     ctx.require(address.equals(wasmtypes.addressFromString(wasmtypes.addressToString(address))), 'eth address to/from string conversion failed');
     ctx.require(addressString == wasmtypes.addressToString(wasmtypes.addressFromString(addressString)), 'eth address from/to string conversion failed');
+    let enc = new wasmtypes.WasmEncoder();
+    wasmtypes.addressEncode(enc, address);
+    let dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(address.equals(wasmtypes.addressDecode(dec)), 'eth address encode/decode failed');
 
     const agentID = f.params.ethAgentID().value();
     const agentIDString = f.params.ethAgentIDString().value();
@@ -482,6 +494,10 @@ export function viewCheckEthAddressAndAgentID(ctx: wasmlib.ScViewContext, f: sc.
     ctx.require(agentID.equals(wasmtypes.agentIDFromBytes(wasmtypes.agentIDToBytes(agentID))), 'eth agentID bytes conversion failed');
     ctx.require(agentID.equals(wasmtypes.agentIDFromString(wasmtypes.agentIDToString(agentID))), 'eth agentID to/from string conversion failed');
     ctx.require(agentIDString == wasmtypes.agentIDToString(wasmtypes.agentIDFromString(agentIDString)), 'eth agentID from/to string conversion failed');
+    enc = new wasmtypes.WasmEncoder();
+    wasmtypes.agentIDEncode(enc, agentID);
+    dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(agentID.equals(wasmtypes.agentIDDecode(dec)), 'eth agentID encode/decode failed');
 
     const agentIDFromAddress = wasmtypes.ScAgentID.fromAddress(address);
     ctx.require(agentIDFromAddress.equals(wasmtypes.agentIDFromBytes(wasmtypes.agentIDToBytes(agentIDFromAddress))), 'eth agentID bytes conversion failed');
@@ -496,197 +512,277 @@ export function viewCheckHash(ctx: wasmlib.ScViewContext, f: sc.CheckHashContext
     const hash = f.params.scHash().value();
     const hashBytes = f.params.hashBytes().value();
     const hashString = f.params.hashString().value();
-    ctx.require(hash.equals(wasmtypes.hashFromBytes(wasmtypes.hashToBytes(hash))), 'bytes conversion failed');
-    ctx.require(hash.equals(wasmtypes.hashFromString(wasmtypes.hashToString(hash))), 'string conversion failed');
-    ctx.require(wasmtypes.bytesCompare(hash.toBytes(), hashBytes) == 0, 'bytes mismatch');
-    ctx.require(hash.toString() == hashString, 'string mismatch');
+    ctx.require(hash.equals(wasmtypes.hashFromBytes(wasmtypes.hashToBytes(hash))), 'hash bytes conversion failed');
+    ctx.require(hash.equals(wasmtypes.hashFromString(wasmtypes.hashToString(hash))), 'hash string conversion failed');
+    ctx.require(wasmtypes.bytesCompare(hash.toBytes(), hashBytes) == 0, 'hash bytes mismatch');
+    ctx.require(hash.toString() == hashString, 'hash string mismatch');
+    let enc = new wasmtypes.WasmEncoder();
+    wasmtypes.hashEncode(enc, hash);
+    let dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(hash.equals(wasmtypes.hashDecode(dec)), 'hash encode/decode failed');
 }
 
 export function viewCheckNftID(ctx: wasmlib.ScViewContext, f: sc.CheckNftIDContext): void {
     const nftID = f.params.scNftID().value();
     const nftIDBytes = f.params.nftIDBytes().value();
     const nftIDString = f.params.nftIDString().value();
-    ctx.require(nftID.equals(wasmtypes.nftIDFromBytes(wasmtypes.nftIDToBytes(nftID))), 'bytes conversion failed');
-    ctx.require(nftID.equals(wasmtypes.nftIDFromString(wasmtypes.nftIDToString(nftID))), 'string conversion failed');
-    ctx.require(wasmtypes.bytesCompare(nftID.toBytes(), nftIDBytes) == 0, 'bytes mismatch');
-    ctx.require(nftID.toString() == nftIDString, 'string mismatch');
+    ctx.require(nftID.equals(wasmtypes.nftIDFromBytes(wasmtypes.nftIDToBytes(nftID))), 'nftID bytes conversion failed');
+    ctx.require(nftID.equals(wasmtypes.nftIDFromString(wasmtypes.nftIDToString(nftID))), 'nftID string conversion failed');
+    ctx.require(wasmtypes.bytesCompare(nftID.toBytes(), nftIDBytes) == 0, 'nftID bytes mismatch');
+    ctx.require(nftID.toString() == nftIDString, 'nftID string mismatch');
+    let enc = new wasmtypes.WasmEncoder();
+    wasmtypes.nftIDEncode(enc, nftID);
+    let dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(nftID.equals(wasmtypes.nftIDDecode(dec)), 'nftID encode/decode failed');
 }
 
 export function viewCheckRequestID(ctx: wasmlib.ScViewContext, f: sc.CheckRequestIDContext): void {
-    const RequestID = f.params.scRequestID().value();
-    const RequestIDBytes = f.params.requestIDBytes().value();
-    const RequestIDString = f.params.requestIDString().value();
-    ctx.require(RequestID.equals(wasmtypes.requestIDFromBytes(wasmtypes.requestIDToBytes(RequestID))), 'bytes conversion failed');
-    ctx.require(RequestID.equals(wasmtypes.requestIDFromString(wasmtypes.requestIDToString(RequestID))), 'string conversion failed');
-    ctx.require(wasmtypes.bytesCompare(RequestID.toBytes(), RequestIDBytes) == 0, 'bytes mismatch');
-    ctx.require(RequestID.toString() == RequestIDString, 'string mismatch');
+    const requestID = f.params.scRequestID().value();
+    const requestIDBytes = f.params.requestIDBytes().value();
+    const requestIDString = f.params.requestIDString().value();
+    ctx.require(requestID.equals(wasmtypes.requestIDFromBytes(wasmtypes.requestIDToBytes(requestID))), 'requestID bytes conversion failed');
+    ctx.require(requestID.equals(wasmtypes.requestIDFromString(wasmtypes.requestIDToString(requestID))), 'requestID string conversion failed');
+    ctx.require(wasmtypes.bytesCompare(requestID.toBytes(), requestIDBytes) == 0, 'requestID bytes mismatch');
+    ctx.require(requestID.toString() == requestIDString, 'requestID string mismatch');
+    let enc = new wasmtypes.WasmEncoder();
+    wasmtypes.requestIDEncode(enc, requestID);
+    let dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(requestID.equals(wasmtypes.requestIDDecode(dec)), 'requestID encode/decode failed');
 }
 
 export function viewCheckTokenID(ctx: wasmlib.ScViewContext, f: sc.CheckTokenIDContext): void {
     const tokenID = f.params.scTokenID().value();
     const tokenIDBytes = f.params.tokenIDBytes().value();
     const tokenIDString = f.params.tokenIDString().value();
-    ctx.require(tokenID.equals(wasmtypes.tokenIDFromBytes(wasmtypes.tokenIDToBytes(tokenID))), 'bytes conversion failed');
-    ctx.require(tokenID.equals(wasmtypes.tokenIDFromString(wasmtypes.tokenIDToString(tokenID))), 'string conversion failed');
-    ctx.require(wasmtypes.bytesCompare(tokenID.toBytes(), tokenIDBytes) == 0, 'bytes mismatch');
-    ctx.require(tokenID.toString() == tokenIDString, 'string mismatch');
+    ctx.require(tokenID.equals(wasmtypes.tokenIDFromBytes(wasmtypes.tokenIDToBytes(tokenID))), 'tokenID bytes conversion failed');
+    ctx.require(tokenID.equals(wasmtypes.tokenIDFromString(wasmtypes.tokenIDToString(tokenID))), 'tokenID string conversion failed');
+    ctx.require(wasmtypes.bytesCompare(tokenID.toBytes(), tokenIDBytes) == 0, 'tokenID bytes mismatch');
+    ctx.require(tokenID.toString() == tokenIDString, 'tokenID string mismatch');
+    let enc = new wasmtypes.WasmEncoder();
+    wasmtypes.tokenIDEncode(enc, tokenID);
+    let dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(tokenID.equals(wasmtypes.tokenIDDecode(dec)), 'tokenID encode/decode failed');
 }
 
 export function viewCheckBigInt(ctx: wasmlib.ScViewContext, f: sc.CheckBigIntContext): void {
     const bigInt = f.params.scBigInt().value();
     const bigIntBytes = f.params.bigIntBytes().value();
     const bigIntString = f.params.bigIntString().value();
-    ctx.require(bigInt.equals(wasmtypes.bigIntFromBytes(wasmtypes.bigIntToBytes(bigInt))), 'bytes conversion failed');
-    ctx.require(bigInt.equals(wasmtypes.bigIntFromString(wasmtypes.bigIntToString(bigInt))), 'string conversion failed');
-    ctx.require(wasmtypes.bytesCompare(bigInt.toBytes(), bigIntBytes) == 0, 'bytes mismatch');
-    ctx.require(bigInt.toString() == bigIntString, 'string mismatch');
+    ctx.require(bigInt.equals(wasmtypes.bigIntFromBytes(wasmtypes.bigIntToBytes(bigInt))), 'bigInt bytes conversion failed');
+    ctx.require(bigInt.equals(wasmtypes.bigIntFromString(wasmtypes.bigIntToString(bigInt))), 'bigInt string conversion failed');
+    ctx.require(wasmtypes.bytesCompare(bigInt.toBytes(), bigIntBytes) == 0, 'bigInt bytes mismatch');
+    ctx.require(bigInt.toString() == bigIntString, 'bigInt string mismatch');
+    let enc = new wasmtypes.WasmEncoder();
+    wasmtypes.bigIntEncode(enc, bigInt);
+    let dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(bigInt.equals(wasmtypes.bigIntDecode(dec)), 'bigInt encode/decode failed');
 }
 
 export function viewCheckIntAndUint(ctx: wasmlib.ScViewContext, f: sc.CheckIntAndUintContext): void {
     let int8 = i8.MAX_VALUE;
-    ctx.require(int8 == wasmtypes.int8FromBytes(wasmtypes.int8ToBytes(int8)), 'bytes conversion failed');
-    ctx.require(int8 == wasmtypes.int8FromString(wasmtypes.int8ToString(int8)), 'string conversion failed');
+    ctx.require(int8 == wasmtypes.int8FromBytes(wasmtypes.int8ToBytes(int8)), 'int8 bytes conversion failed');
+    ctx.require(int8 == wasmtypes.int8FromString(wasmtypes.int8ToString(int8)), 'int8 string conversion failed');
     int8 = i8.MIN_VALUE;
-    ctx.require(int8 == wasmtypes.int8FromBytes(wasmtypes.int8ToBytes(int8)), 'bytes conversion failed');
-    ctx.require(int8 == wasmtypes.int8FromString(wasmtypes.int8ToString(int8)), 'string conversion failed');
+    ctx.require(int8 == wasmtypes.int8FromBytes(wasmtypes.int8ToBytes(int8)), 'int8 bytes conversion failed');
+    ctx.require(int8 == wasmtypes.int8FromString(wasmtypes.int8ToString(int8)), 'int8 string conversion failed');
     int8 = 1;
-    ctx.require(int8 == wasmtypes.int8FromBytes(wasmtypes.int8ToBytes(int8)), 'bytes conversion failed');
-    ctx.require(int8 == wasmtypes.int8FromString(wasmtypes.int8ToString(int8)), 'string conversion failed');
+    ctx.require(int8 == wasmtypes.int8FromBytes(wasmtypes.int8ToBytes(int8)), 'int8 bytes conversion failed');
+    ctx.require(int8 == wasmtypes.int8FromString(wasmtypes.int8ToString(int8)), 'int8 string conversion failed');
     int8 = 0;
-    ctx.require(int8 == wasmtypes.int8FromBytes(wasmtypes.int8ToBytes(int8)), 'bytes conversion failed');
-    ctx.require(int8 == wasmtypes.int8FromString(wasmtypes.int8ToString(int8)), 'string conversion failed');
+    ctx.require(int8 == wasmtypes.int8FromBytes(wasmtypes.int8ToBytes(int8)), 'int8 bytes conversion failed');
+    ctx.require(int8 == wasmtypes.int8FromString(wasmtypes.int8ToString(int8)), 'int8 string conversion failed');
     int8 = -1;
-    ctx.require(int8 == wasmtypes.int8FromBytes(wasmtypes.int8ToBytes(int8)), 'bytes conversion failed');
-    ctx.require(int8 == wasmtypes.int8FromString(wasmtypes.int8ToString(int8)), 'string conversion failed');
+    ctx.require(int8 == wasmtypes.int8FromBytes(wasmtypes.int8ToBytes(int8)), 'int8 bytes conversion failed');
+    ctx.require(int8 == wasmtypes.int8FromString(wasmtypes.int8ToString(int8)), 'int8 string conversion failed');
+    let enc = new wasmtypes.WasmEncoder();
+    wasmtypes.int8Encode(enc, int8);
+    let dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(int8 == wasmtypes.int8Decode(dec), 'int8 encode/decode failed');
     let uint8 = u8.MIN_VALUE;
-    ctx.require(uint8 == wasmtypes.uint8FromBytes(wasmtypes.uint8ToBytes(uint8)), 'bytes conversion failed');
-    ctx.require(uint8 == wasmtypes.uint8FromString(wasmtypes.uint8ToString(uint8)), 'string conversion failed');
+    ctx.require(uint8 == wasmtypes.uint8FromBytes(wasmtypes.uint8ToBytes(uint8)), 'uint8 bytes conversion failed');
+    ctx.require(uint8 == wasmtypes.uint8FromString(wasmtypes.uint8ToString(uint8)), 'uint8 string conversion failed');
     uint8--;
-    ctx.require(uint8 == u8.MAX_VALUE, 'unxpected max u8')
-    ctx.require(uint8 == wasmtypes.uint8FromBytes(wasmtypes.uint8ToBytes(uint8)), 'bytes conversion failed');
-    ctx.require(uint8 == wasmtypes.uint8FromString(wasmtypes.uint8ToString(uint8)), 'string conversion failed');
+    ctx.require(uint8 == u8.MAX_VALUE, 'unexpected max u8')
+    ctx.require(uint8 == wasmtypes.uint8FromBytes(wasmtypes.uint8ToBytes(uint8)), 'uint8 bytes conversion failed');
+    ctx.require(uint8 == wasmtypes.uint8FromString(wasmtypes.uint8ToString(uint8)), 'uint8 string conversion failed');
+    enc = new wasmtypes.WasmEncoder();
+    wasmtypes.uint8Encode(enc, uint8);
+    dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(uint8 == wasmtypes.uint8Decode(dec), 'uint8 encode/decode failed');
 
     let int16 = i16.MAX_VALUE;
-    ctx.require(int16 == wasmtypes.int16FromBytes(wasmtypes.int16ToBytes(int16)), 'bytes conversion failed');
-    ctx.require(int16 == wasmtypes.int16FromString(wasmtypes.int16ToString(int16)), 'string conversion failed');
+    ctx.require(int16 == wasmtypes.int16FromBytes(wasmtypes.int16ToBytes(int16)), 'int16 bytes conversion failed');
+    ctx.require(int16 == wasmtypes.int16FromString(wasmtypes.int16ToString(int16)), 'int16 string conversion failed');
     int16 = i16.MIN_VALUE;
-    ctx.require(int16 == wasmtypes.int16FromBytes(wasmtypes.int16ToBytes(int16)), 'bytes conversion failed');
-    ctx.require(int16 == wasmtypes.int16FromString(wasmtypes.int16ToString(int16)), 'string conversion failed');
+    ctx.require(int16 == wasmtypes.int16FromBytes(wasmtypes.int16ToBytes(int16)), 'int16 bytes conversion failed');
+    ctx.require(int16 == wasmtypes.int16FromString(wasmtypes.int16ToString(int16)), 'int16 string conversion failed');
     int16 = 1;
-    ctx.require(int16 == wasmtypes.int16FromBytes(wasmtypes.int16ToBytes(int16)), 'bytes conversion failed');
-    ctx.require(int16 == wasmtypes.int16FromString(wasmtypes.int16ToString(int16)), 'string conversion failed');
+    ctx.require(int16 == wasmtypes.int16FromBytes(wasmtypes.int16ToBytes(int16)), 'int16 bytes conversion failed');
+    ctx.require(int16 == wasmtypes.int16FromString(wasmtypes.int16ToString(int16)), 'int16 string conversion failed');
     int16 = 0;
-    ctx.require(int16 == wasmtypes.int16FromBytes(wasmtypes.int16ToBytes(int16)), 'bytes conversion failed');
-    ctx.require(int16 == wasmtypes.int16FromString(wasmtypes.int16ToString(int16)), 'string conversion failed');
+    ctx.require(int16 == wasmtypes.int16FromBytes(wasmtypes.int16ToBytes(int16)), 'int16 bytes conversion failed');
+    ctx.require(int16 == wasmtypes.int16FromString(wasmtypes.int16ToString(int16)), 'int16 string conversion failed');
     int16 = -1;
-    ctx.require(int16 == wasmtypes.int16FromBytes(wasmtypes.int16ToBytes(int16)), 'bytes conversion failed');
-    ctx.require(int16 == wasmtypes.int16FromString(wasmtypes.int16ToString(int16)), 'string conversion failed');
+    ctx.require(int16 == wasmtypes.int16FromBytes(wasmtypes.int16ToBytes(int16)), 'int16 bytes conversion failed');
+    ctx.require(int16 == wasmtypes.int16FromString(wasmtypes.int16ToString(int16)), 'int16 string conversion failed');
+    enc = new wasmtypes.WasmEncoder();
+    wasmtypes.int16Encode(enc, int16);
+    dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(int16 == wasmtypes.int16Decode(dec), 'int16 encode/decode failed');
     let uint16 = u16.MIN_VALUE;
-    ctx.require(uint16 == wasmtypes.uint16FromBytes(wasmtypes.uint16ToBytes(uint16)), 'bytes conversion failed');
-    ctx.require(uint16 == wasmtypes.uint16FromString(wasmtypes.uint16ToString(uint16)), 'string conversion failed');
+    ctx.require(uint16 == wasmtypes.uint16FromBytes(wasmtypes.uint16ToBytes(uint16)), 'uint16 bytes conversion failed');
+    ctx.require(uint16 == wasmtypes.uint16FromString(wasmtypes.uint16ToString(uint16)), 'uint16 string conversion failed');
     uint16--;
-    ctx.require(uint16 == u16.MAX_VALUE, 'unxpected max u16')
-    ctx.require(uint16 == wasmtypes.uint16FromBytes(wasmtypes.uint16ToBytes(uint16)), 'bytes conversion failed');
-    ctx.require(uint16 == wasmtypes.uint16FromString(wasmtypes.uint16ToString(uint16)), 'string conversion failed');
+    ctx.require(uint16 == u16.MAX_VALUE, 'unexpected max u16')
+    ctx.require(uint16 == wasmtypes.uint16FromBytes(wasmtypes.uint16ToBytes(uint16)), 'uint16 bytes conversion failed');
+    ctx.require(uint16 == wasmtypes.uint16FromString(wasmtypes.uint16ToString(uint16)), 'uint16 string conversion failed');
+    enc = new wasmtypes.WasmEncoder();
+    wasmtypes.uint16Encode(enc, uint16);
+    dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(uint16 == wasmtypes.uint16Decode(dec), 'uint16 encode/decode failed');
 
     let int32 = i32.MAX_VALUE;
-    ctx.require(int32 == wasmtypes.int32FromBytes(wasmtypes.int32ToBytes(int32)), 'bytes conversion failed');
-    ctx.require(int32 == wasmtypes.int32FromString(wasmtypes.int32ToString(int32)), 'string conversion failed');
+    ctx.require(int32 == wasmtypes.int32FromBytes(wasmtypes.int32ToBytes(int32)), 'int32 bytes conversion failed');
+    ctx.require(int32 == wasmtypes.int32FromString(wasmtypes.int32ToString(int32)), 'int32 string conversion failed');
     int32 = i32.MIN_VALUE;
-    ctx.require(int32 == wasmtypes.int32FromBytes(wasmtypes.int32ToBytes(int32)), 'bytes conversion failed');
-    ctx.require(int32 == wasmtypes.int32FromString(wasmtypes.int32ToString(int32)), 'string conversion failed');
+    ctx.require(int32 == wasmtypes.int32FromBytes(wasmtypes.int32ToBytes(int32)), 'int32 bytes conversion failed');
+    ctx.require(int32 == wasmtypes.int32FromString(wasmtypes.int32ToString(int32)), 'int32 string conversion failed');
     int32 = 1;
-    ctx.require(int32 == wasmtypes.int32FromBytes(wasmtypes.int32ToBytes(int32)), 'bytes conversion failed');
-    ctx.require(int32 == wasmtypes.int32FromString(wasmtypes.int32ToString(int32)), 'string conversion failed');
+    ctx.require(int32 == wasmtypes.int32FromBytes(wasmtypes.int32ToBytes(int32)), 'int32 bytes conversion failed');
+    ctx.require(int32 == wasmtypes.int32FromString(wasmtypes.int32ToString(int32)), 'int32 string conversion failed');
     int32 = 0;
-    ctx.require(int32 == wasmtypes.int32FromBytes(wasmtypes.int32ToBytes(int32)), 'bytes conversion failed');
-    ctx.require(int32 == wasmtypes.int32FromString(wasmtypes.int32ToString(int32)), 'string conversion failed');
+    ctx.require(int32 == wasmtypes.int32FromBytes(wasmtypes.int32ToBytes(int32)), 'int32 bytes conversion failed');
+    ctx.require(int32 == wasmtypes.int32FromString(wasmtypes.int32ToString(int32)), 'int32 string conversion failed');
     int32 = -1;
-    ctx.require(int32 == wasmtypes.int32FromBytes(wasmtypes.int32ToBytes(int32)), 'bytes conversion failed');
-    ctx.require(int32 == wasmtypes.int32FromString(wasmtypes.int32ToString(int32)), 'string conversion failed');
+    ctx.require(int32 == wasmtypes.int32FromBytes(wasmtypes.int32ToBytes(int32)), 'int32 bytes conversion failed');
+    ctx.require(int32 == wasmtypes.int32FromString(wasmtypes.int32ToString(int32)), 'int32 string conversion failed');
+    enc = new wasmtypes.WasmEncoder();
+    wasmtypes.int32Encode(enc, int32);
+    dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(int32 == wasmtypes.int32Decode(dec), 'int32 encode/decode failed');
     let uint32 = u32.MIN_VALUE;
-    ctx.require(uint32 == wasmtypes.uint32FromBytes(wasmtypes.uint32ToBytes(uint32)), 'bytes conversion failed');
-    ctx.require(uint32 == wasmtypes.uint32FromString(wasmtypes.uint32ToString(uint32)), 'string conversion failed');
+    ctx.require(uint32 == wasmtypes.uint32FromBytes(wasmtypes.uint32ToBytes(uint32)), 'uint32 bytes conversion failed');
+    ctx.require(uint32 == wasmtypes.uint32FromString(wasmtypes.uint32ToString(uint32)), 'uint32 string conversion failed');
     uint32--;
-    ctx.require(uint32 == u32.MAX_VALUE, 'unxpected max u32')
-    ctx.require(uint32 == wasmtypes.uint32FromBytes(wasmtypes.uint32ToBytes(uint32)), 'bytes conversion failed');
-    ctx.require(uint32 == wasmtypes.uint32FromString(wasmtypes.uint32ToString(uint32)), 'string conversion failed');
+    ctx.require(uint32 == u32.MAX_VALUE, 'unexpected max u32')
+    ctx.require(uint32 == wasmtypes.uint32FromBytes(wasmtypes.uint32ToBytes(uint32)), 'uint32 bytes conversion failed');
+    ctx.require(uint32 == wasmtypes.uint32FromString(wasmtypes.uint32ToString(uint32)), 'uint32 string conversion failed');
+    enc = new wasmtypes.WasmEncoder();
+    wasmtypes.uint32Encode(enc, uint32);
+    dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(uint32 == wasmtypes.uint32Decode(dec), 'uint32 encode/decode failed');
 
     let int64 = i64.MAX_VALUE;
-    ctx.require(int64 == wasmtypes.int64FromBytes(wasmtypes.int64ToBytes(int64)), 'bytes conversion failed');
-    ctx.require(int64 == wasmtypes.int64FromString(wasmtypes.int64ToString(int64)), 'string conversion failed');
+    ctx.require(int64 == wasmtypes.int64FromBytes(wasmtypes.int64ToBytes(int64)), 'int64 bytes conversion failed');
+    ctx.require(int64 == wasmtypes.int64FromString(wasmtypes.int64ToString(int64)), 'int64 string conversion failed');
     int64 = i64.MIN_VALUE;
-    ctx.require(int64 == wasmtypes.int64FromBytes(wasmtypes.int64ToBytes(int64)), 'bytes conversion failed');
-    ctx.require(int64 == wasmtypes.int64FromString(wasmtypes.int64ToString(int64)), 'string conversion failed');
+    ctx.require(int64 == wasmtypes.int64FromBytes(wasmtypes.int64ToBytes(int64)), 'int64 bytes conversion failed');
+    ctx.require(int64 == wasmtypes.int64FromString(wasmtypes.int64ToString(int64)), 'int64 string conversion failed');
     int64 = 1;
-    ctx.require(int64 == wasmtypes.int64FromBytes(wasmtypes.int64ToBytes(int64)), 'bytes conversion failed');
-    ctx.require(int64 == wasmtypes.int64FromString(wasmtypes.int64ToString(int64)), 'string conversion failed');
+    ctx.require(int64 == wasmtypes.int64FromBytes(wasmtypes.int64ToBytes(int64)), 'int64 bytes conversion failed');
+    ctx.require(int64 == wasmtypes.int64FromString(wasmtypes.int64ToString(int64)), 'int64 string conversion failed');
     int64 = 0;
-    ctx.require(int64 == wasmtypes.int64FromBytes(wasmtypes.int64ToBytes(int64)), 'bytes conversion failed');
-    ctx.require(int64 == wasmtypes.int64FromString(wasmtypes.int64ToString(int64)), 'string conversion failed');
+    ctx.require(int64 == wasmtypes.int64FromBytes(wasmtypes.int64ToBytes(int64)), 'int64 bytes conversion failed');
+    ctx.require(int64 == wasmtypes.int64FromString(wasmtypes.int64ToString(int64)), 'int64 string conversion failed');
     int64 = -1;
-    ctx.require(int64 == wasmtypes.int64FromBytes(wasmtypes.int64ToBytes(int64)), 'bytes conversion failed');
-    ctx.require(int64 == wasmtypes.int64FromString(wasmtypes.int64ToString(int64)), 'string conversion failed');
+    ctx.require(int64 == wasmtypes.int64FromBytes(wasmtypes.int64ToBytes(int64)), 'int64 bytes conversion failed');
+    ctx.require(int64 == wasmtypes.int64FromString(wasmtypes.int64ToString(int64)), 'int64 string conversion failed');
+    enc = new wasmtypes.WasmEncoder();
+    wasmtypes.int64Encode(enc, int64);
+    dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(int64 == wasmtypes.int64Decode(dec), 'int64 encode/decode failed');
     let uint64 = u64.MIN_VALUE;
-    ctx.require(uint64 == wasmtypes.uint64FromBytes(wasmtypes.uint64ToBytes(uint64)), 'bytes conversion failed');
-    ctx.require(uint64 == wasmtypes.uint64FromString(wasmtypes.uint64ToString(uint64)), 'string conversion failed');
+    ctx.require(uint64 == wasmtypes.uint64FromBytes(wasmtypes.uint64ToBytes(uint64)), 'uint64 bytes conversion failed');
+    ctx.require(uint64 == wasmtypes.uint64FromString(wasmtypes.uint64ToString(uint64)), 'uint64 string conversion failed');
     uint64--;
-    ctx.require(uint64 == u64.MAX_VALUE, 'unxpected max u64')
-    ctx.require(uint64 == wasmtypes.uint64FromBytes(wasmtypes.uint64ToBytes(uint64)), 'bytes conversion failed');
-    ctx.require(uint64 == wasmtypes.uint64FromString(wasmtypes.uint64ToString(uint64)), 'string conversion failed');
+    ctx.require(uint64 == u64.MAX_VALUE, 'unexpected max u64')
+    ctx.require(uint64 == wasmtypes.uint64FromBytes(wasmtypes.uint64ToBytes(uint64)), 'uint64 bytes conversion failed');
+    ctx.require(uint64 == wasmtypes.uint64FromString(wasmtypes.uint64ToString(uint64)), 'uint64 string conversion failed');
+    enc = new wasmtypes.WasmEncoder();
+    wasmtypes.uint64Encode(enc, uint64);
+    dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(uint64 == wasmtypes.uint64Decode(dec), 'uint64 encode/decode failed');
 }
 
 export function viewCheckBool(ctx: wasmlib.ScViewContext, f: sc.CheckBoolContext): void {
-    ctx.require(wasmtypes.boolFromBytes(wasmtypes.boolToBytes(true)), 'bytes conversion failed');
-    ctx.require(wasmtypes.boolFromString(wasmtypes.boolToString(true)), 'string conversion failed');
-    ctx.require(!wasmtypes.boolFromBytes(wasmtypes.boolToBytes(false)), 'bytes conversion failed');
-    ctx.require(!wasmtypes.boolFromString(wasmtypes.boolToString(false)), 'string conversion failed');
+    ctx.require(wasmtypes.boolFromBytes(wasmtypes.boolToBytes(true)), 'bool bytes conversion failed');
+    ctx.require(wasmtypes.boolFromString(wasmtypes.boolToString(true)), 'bool string conversion failed');
+    ctx.require(!wasmtypes.boolFromBytes(wasmtypes.boolToBytes(false)), 'bool bytes conversion failed');
+    ctx.require(!wasmtypes.boolFromString(wasmtypes.boolToString(false)), 'bool string conversion failed');
+    let enc = new wasmtypes.WasmEncoder();
+    wasmtypes.boolEncode(enc, true);
+    let dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(wasmtypes.boolDecode(dec), 'bool encode/decode failed');
+    enc = new wasmtypes.WasmEncoder();
+    wasmtypes.boolEncode(enc, false);
+    dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(!wasmtypes.boolDecode(dec), 'bool encode/decode failed');
 }
 
 export function viewCheckBytes(ctx: wasmlib.ScViewContext, f: sc.CheckBytesContext): void {
     let byteData = f.params.bytes().value();
-    ctx.require(wasmtypes.bytesCompare(byteData, wasmtypes.bytesFromBytes(wasmtypes.bytesToBytes(byteData))) == 0, 'bytes conversion failed');
-    ctx.require(wasmtypes.bytesCompare(byteData, wasmtypes.bytesFromString(wasmtypes.bytesToString(byteData))) == 0, 'string conversion failed');
+    ctx.require(wasmtypes.bytesCompare(byteData, wasmtypes.bytesFromBytes(wasmtypes.bytesToBytes(byteData))) == 0, 'bytes bytes conversion failed');
+    ctx.require(wasmtypes.bytesCompare(byteData, wasmtypes.bytesFromString(wasmtypes.bytesToString(byteData))) == 0, 'bytes string conversion failed');
+    let enc = new wasmtypes.WasmEncoder();
+    wasmtypes.bytesEncode(enc, byteData);
+    let dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(wasmtypes.bytesCompare(byteData, wasmtypes.bytesDecode(dec)) == 0, 'bytes encode/decode failed');
 }
 
 export function viewCheckHname(ctx: wasmlib.ScViewContext, f: sc.CheckHnameContext): void {
     let scHname = f.params.scHname().value();
     let hnameBytes = f.params.hnameBytes().value();
     let hnameString = f.params.hnameString().value();
-    ctx.require(scHname.equals(wasmtypes.hnameFromBytes(wasmtypes.hnameToBytes(scHname))), 'bytes conversion failed');
-    ctx.require(scHname.equals(wasmtypes.hnameFromString(wasmtypes.hnameToString(scHname))), 'string conversion failed');
-    ctx.require(wasmtypes.bytesCompare(hnameBytes, wasmtypes.hnameToBytes(scHname)) == 0, 'not equal to input bytes');
-    ctx.require(hnameString == wasmtypes.hnameToString(scHname), 'not equal to input string');
+    ctx.require(scHname.equals(wasmtypes.hnameFromBytes(wasmtypes.hnameToBytes(scHname))), 'hname bytes conversion failed');
+    ctx.require(scHname.equals(wasmtypes.hnameFromString(wasmtypes.hnameToString(scHname))), 'hname string conversion failed');
+    ctx.require(wasmtypes.bytesCompare(hnameBytes, wasmtypes.hnameToBytes(scHname)) == 0, 'hname not equal to input bytes');
+    ctx.require(hnameString == wasmtypes.hnameToString(scHname), 'hname not equal to input string');
+    let enc = new wasmtypes.WasmEncoder();
+    wasmtypes.hnameEncode(enc, scHname);
+    let dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(scHname.equals(wasmtypes.hnameDecode(dec)), 'hname encode/decode failed');
 }
 
 export function viewCheckString(ctx: wasmlib.ScViewContext, f: sc.CheckStringContext): void {
     let stringData = f.params.string().value();
-    ctx.require(stringData == wasmtypes.stringFromBytes(wasmtypes.stringToBytes(stringData)), 'bytes conversion failed');
-    ctx.require(stringData == wasmtypes.stringToString(wasmtypes.stringFromString(stringData)), 'string conversion failed');
+    ctx.require(stringData == wasmtypes.stringFromBytes(wasmtypes.stringToBytes(stringData)), 'string bytes conversion failed');
+    ctx.require(stringData == wasmtypes.stringToString(wasmtypes.stringFromString(stringData)), 'string string conversion failed');
+    let enc = new wasmtypes.WasmEncoder();
+    wasmtypes.stringEncode(enc, stringData);
+    let dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(stringData == wasmtypes.stringDecode(dec), 'string encode/decode failed');
 }
 
 export function viewCheckEthEmptyAddressAndAgentID(ctx: wasmlib.ScViewContext, f: sc.CheckEthEmptyAddressAndAgentIDContext): void {
-	let address = f.params.ethAddress().value();
-	let addressString = "0x0";
-	let addressStringLong = "0x0000000000000000000000000000000000000000";
-	ctx.require(address.equals(wasmtypes.addressFromBytes(wasmtypes.addressToBytes(address))) , "eth address bytes conversion failed");
+    let address = f.params.ethAddress().value();
+    let addressString = "0x0";
+    let addressStringLong = "0x0000000000000000000000000000000000000000";
+    ctx.require(address.equals(wasmtypes.addressFromBytes(wasmtypes.addressToBytes(address))), "eth address bytes conversion failed");
     ctx.require(address.equals(wasmtypes.addressFromString(addressString)), "eth address to/from string conversion failed");
     ctx.require(address.equals(wasmtypes.addressFromString(addressStringLong)), "eth address to/from string conversion failed");
     ctx.require(addressStringLong == wasmtypes.addressToString(address), "eth address to/from string conversion failed");
+    let enc = new wasmtypes.WasmEncoder();
+    wasmtypes.addressEncode(enc, address);
+    let dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(address.equals(wasmtypes.addressDecode(dec)), 'eth address encode/decode failed');
 
-	let agentID = f.params.ethAgentID().value();
-	let agentIDString = f.params.ethAgentIDString().value();
-	ctx.require(agentID.toString() == agentIDString, "eth agentID string encoding failed");
-	ctx.require(agentID.equals(wasmtypes.agentIDFromBytes(wasmtypes.agentIDToBytes(agentID))), "eth agentID bytes conversion failed");
-	ctx.require(agentIDString == wasmtypes.agentIDToString(agentID), "eth agentID from/to string conversion failed");
+    let agentID = f.params.ethAgentID().value();
+    let agentIDString = f.params.ethAgentIDString().value();
+    ctx.require(agentID.toString() == agentIDString, "eth agentID string encoding failed");
+    ctx.require(agentID.equals(wasmtypes.agentIDFromBytes(wasmtypes.agentIDToBytes(agentID))), "eth agentID bytes conversion failed");
+    ctx.require(agentIDString == wasmtypes.agentIDToString(agentID), "eth agentID from/to string conversion failed");
+    enc = new wasmtypes.WasmEncoder();
+    wasmtypes.agentIDEncode(enc, agentID);
+    dec = new wasmtypes.WasmDecoder(enc.buf());
+    ctx.require(agentID.equals(wasmtypes.agentIDDecode(dec)), 'eth agentID encode/decode failed');
 
-	let agentIDFromAddress = wasmtypes.ScAgentID.fromAddress(address);
-	ctx.require(agentIDFromAddress.equals(wasmtypes.agentIDFromBytes(wasmtypes.agentIDToBytes(agentIDFromAddress))), "eth agentID bytes conversion failed");
-	ctx.require(agentIDString == wasmtypes.agentIDToString(agentIDFromAddress), "eth agentID string conversion failed");
+    let agentIDFromAddress = wasmtypes.ScAgentID.fromAddress(address);
+    ctx.require(agentIDFromAddress.equals(wasmtypes.agentIDFromBytes(wasmtypes.agentIDToBytes(agentIDFromAddress))), "eth agentID bytes conversion failed");
+    ctx.require(agentIDString == wasmtypes.agentIDToString(agentIDFromAddress), "eth agentID string conversion failed");
 
-	let addressFromAgentID = agentID.address();
-	ctx.require(addressFromAgentID.equals(wasmtypes.addressFromBytes(wasmtypes.addressToBytes(addressFromAgentID))), "eth raw agentID bytes conversion failed");
-	ctx.require(addressStringLong == wasmtypes.addressToString(addressFromAgentID), "eth raw agentID string conversion failed");
+    let addressFromAgentID = agentID.address();
+    ctx.require(addressFromAgentID.equals(wasmtypes.addressFromBytes(wasmtypes.addressToBytes(addressFromAgentID))), "eth raw agentID bytes conversion failed");
+    ctx.require(addressStringLong == wasmtypes.addressToString(addressFromAgentID), "eth raw agentID string conversion failed");
 }
 
 export function viewCheckEthInvalidEmptyAddressFromString(ctx: wasmlib.ScViewContext, f: sc.CheckEthInvalidEmptyAddressFromStringContext): void {
