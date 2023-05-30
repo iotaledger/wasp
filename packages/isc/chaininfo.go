@@ -7,16 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-type ChainMetadata struct {
-	EVMJsonRPCURL   string
-	EVMWebSocketURL string
-
-	ChainName        string
-	ChainDescription string
-	ChainOwnerEmail  string
-	ChainWebsite     string
-}
-
 // ChainInfo is an API structure containing the main parameters of the chain
 type ChainInfo struct {
 	ChainID         ChainID
@@ -26,5 +16,5 @@ type ChainInfo struct {
 	BlockKeepAmount int32
 
 	PublicURL string
-	Metadata  ChainMetadata
+	Metadata  *ChainMetadata
 }

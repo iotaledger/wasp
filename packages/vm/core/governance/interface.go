@@ -74,13 +74,7 @@ const (
 	VarMaintenanceStatus = "m"
 
 	// L2 metadata (provided by the webapi, located by the public url)
-	VarMetadataEVMJsonRPCURL   = "e"
-	VarMetadataEVMWebSocketURL = "w"
-
-	VarMetadataChainName        = "cn"
-	VarMetadataChainDescription = "cd"
-	VarMetadataChainOwnerEmail  = "ce"
-	VarMetadataChainWebsite     = "cw"
+	VarMetadata = "md"
 
 	// L1 metadata (stored and provided in the tangle)
 	VarPublicURL = "x"
@@ -119,13 +113,7 @@ const (
 	ParamChangeAccessNodesActions = "n"
 
 	// L2 metadata (provided by the webapi, located by the public url)
-	ParamMetadataEVMJsonRPCURL   = "e"
-	ParamMetadataEVMWebSocketURL = "w"
-
-	ParamMetadataChainName        = "cn"
-	ParamMetadataChainDescription = "cd"
-	ParamMetadataChainOwnerEmail  = "ce"
-	ParamMetadataChainWebsite     = "cw"
+	ParamMetadata = "md"
 
 	// L1 metadata (stored and provided in the tangle)
 	ParamPublicURL = "x"

@@ -4,18 +4,17 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**ChainDescription** | **string** | The description of the chain. | 
-**ChainName** | **string** | The name of the chain | 
-**ChainOwnerEmail** | **string** | The email of the chain owner. | 
-**ChainWebsite** | **string** | The official website of the chain. | 
+**Description** | **string** | The description of the chain. | 
 **EvmJsonRpcUrl** | **string** | The EVM json rpc url | 
 **EvmWebSocketUrl** | **string** | The EVM websocket url) | 
+**Name** | **string** | The name of the chain | 
+**Website** | **string** | The official website of the chain. | 
 
 ## Methods
 
 ### NewGovChainMetadata
 
-`func NewGovChainMetadata(chainDescription string, chainName string, chainOwnerEmail string, chainWebsite string, evmJsonRpcUrl string, evmWebSocketUrl string, ) *GovChainMetadata`
+`func NewGovChainMetadata(description string, evmJsonRpcUrl string, evmWebSocketUrl string, name string, website string, ) *GovChainMetadata`
 
 NewGovChainMetadata instantiates a new GovChainMetadata object
 This constructor will assign default values to properties that have it defined,
@@ -30,84 +29,24 @@ NewGovChainMetadataWithDefaults instantiates a new GovChainMetadata object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
 
-### GetChainDescription
+### GetDescription
 
-`func (o *GovChainMetadata) GetChainDescription() string`
+`func (o *GovChainMetadata) GetDescription() string`
 
-GetChainDescription returns the ChainDescription field if non-nil, zero value otherwise.
+GetDescription returns the Description field if non-nil, zero value otherwise.
 
-### GetChainDescriptionOk
+### GetDescriptionOk
 
-`func (o *GovChainMetadata) GetChainDescriptionOk() (*string, bool)`
+`func (o *GovChainMetadata) GetDescriptionOk() (*string, bool)`
 
-GetChainDescriptionOk returns a tuple with the ChainDescription field if it's non-nil, zero value otherwise
+GetDescriptionOk returns a tuple with the Description field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetChainDescription
+### SetDescription
 
-`func (o *GovChainMetadata) SetChainDescription(v string)`
+`func (o *GovChainMetadata) SetDescription(v string)`
 
-SetChainDescription sets ChainDescription field to given value.
-
-
-### GetChainName
-
-`func (o *GovChainMetadata) GetChainName() string`
-
-GetChainName returns the ChainName field if non-nil, zero value otherwise.
-
-### GetChainNameOk
-
-`func (o *GovChainMetadata) GetChainNameOk() (*string, bool)`
-
-GetChainNameOk returns a tuple with the ChainName field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetChainName
-
-`func (o *GovChainMetadata) SetChainName(v string)`
-
-SetChainName sets ChainName field to given value.
-
-
-### GetChainOwnerEmail
-
-`func (o *GovChainMetadata) GetChainOwnerEmail() string`
-
-GetChainOwnerEmail returns the ChainOwnerEmail field if non-nil, zero value otherwise.
-
-### GetChainOwnerEmailOk
-
-`func (o *GovChainMetadata) GetChainOwnerEmailOk() (*string, bool)`
-
-GetChainOwnerEmailOk returns a tuple with the ChainOwnerEmail field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetChainOwnerEmail
-
-`func (o *GovChainMetadata) SetChainOwnerEmail(v string)`
-
-SetChainOwnerEmail sets ChainOwnerEmail field to given value.
-
-
-### GetChainWebsite
-
-`func (o *GovChainMetadata) GetChainWebsite() string`
-
-GetChainWebsite returns the ChainWebsite field if non-nil, zero value otherwise.
-
-### GetChainWebsiteOk
-
-`func (o *GovChainMetadata) GetChainWebsiteOk() (*string, bool)`
-
-GetChainWebsiteOk returns a tuple with the ChainWebsite field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetChainWebsite
-
-`func (o *GovChainMetadata) SetChainWebsite(v string)`
-
-SetChainWebsite sets ChainWebsite field to given value.
+SetDescription sets Description field to given value.
 
 
 ### GetEvmJsonRpcUrl
@@ -148,6 +87,46 @@ and a boolean to check if the value has been set.
 `func (o *GovChainMetadata) SetEvmWebSocketUrl(v string)`
 
 SetEvmWebSocketUrl sets EvmWebSocketUrl field to given value.
+
+
+### GetName
+
+`func (o *GovChainMetadata) GetName() string`
+
+GetName returns the Name field if non-nil, zero value otherwise.
+
+### GetNameOk
+
+`func (o *GovChainMetadata) GetNameOk() (*string, bool)`
+
+GetNameOk returns a tuple with the Name field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetName
+
+`func (o *GovChainMetadata) SetName(v string)`
+
+SetName sets Name field to given value.
+
+
+### GetWebsite
+
+`func (o *GovChainMetadata) GetWebsite() string`
+
+GetWebsite returns the Website field if non-nil, zero value otherwise.
+
+### GetWebsiteOk
+
+`func (o *GovChainMetadata) GetWebsiteOk() (*string, bool)`
+
+GetWebsiteOk returns a tuple with the Website field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetWebsite
+
+`func (o *GovChainMetadata) SetWebsite(v string)`
+
+SetWebsite sets Website field to given value.
 
 
 

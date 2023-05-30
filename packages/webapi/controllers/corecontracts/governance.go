@@ -20,12 +20,11 @@ func MapGovChainInfoResponse(chainInfo *isc.ChainInfo) models.GovChainInfoRespon
 		GasLimits:    chainInfo.GasLimits,
 		PublicURL:    chainInfo.PublicURL,
 		Metadata: models.GovChainMetadata{
-			EVMJsonRPCURL:    chainInfo.Metadata.EVMJsonRPCURL,
-			EVMWebSocketURL:  chainInfo.Metadata.EVMWebSocketURL,
-			ChainName:        chainInfo.Metadata.ChainName,
-			ChainDescription: chainInfo.Metadata.ChainDescription,
-			ChainOwnerEmail:  chainInfo.Metadata.ChainOwnerEmail,
-			ChainWebsite:     chainInfo.Metadata.ChainWebsite,
+			EVMJsonRPCURL:   chainInfo.Metadata.EVMJsonRPCURL,
+			EVMWebSocketURL: chainInfo.Metadata.EVMWebSocketURL,
+			Name:            chainInfo.Metadata.Name,
+			Description:     chainInfo.Metadata.Description,
+			Website:         chainInfo.Metadata.Website,
 		},
 	}
 }

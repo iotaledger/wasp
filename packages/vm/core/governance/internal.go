@@ -29,7 +29,7 @@ func GetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) (*isc.ChainInfo, 
 	d := kvdecoder.New(state)
 	ret := &isc.ChainInfo{
 		ChainID:  chainID,
-		Metadata: isc.ChainMetadata{},
+		Metadata: &isc.ChainMetadata{},
 	}
 	var err error
 	if ret.ChainOwnerID, err = d.GetAgentID(VarChainOwnerID); err != nil {
@@ -54,37 +54,6 @@ func GetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) (*isc.ChainInfo, 
 	}
 
 	return ret, nil
-}
-
-func GetMetadata(state kv.KVStoreReader) (isc.ChainMetadata, error) {
-	var err error
-	metadata := isc.ChainMetadata{}
-
-	if metadata.EVMJsonRPCURL, err = GetEVMJsonRPCURL(state); err != nil {
-		return isc.ChainMetadata{}, err
-	}
-
-	if metadata.EVMWebSocketURL, err = GetEVMWebSocketURL(state); err != nil {
-		return isc.ChainMetadata{}, err
-	}
-
-	if metadata.ChainName, err = GetChainName(state); err != nil {
-		return isc.ChainMetadata{}, err
-	}
-
-	if metadata.ChainDescription, err = GetChainDescription(state); err != nil {
-		return isc.ChainMetadata{}, err
-	}
-
-	if metadata.ChainOwnerEmail, err = GetChainOwnerEmail(state); err != nil {
-		return isc.ChainMetadata{}, err
-	}
-
-	if metadata.ChainWebsite, err = GetChainWebsite(state); err != nil {
-		return isc.ChainMetadata{}, err
-	}
-
-	return metadata, nil
 }
 
 // MustGetChainInfo return global variables of the chain
@@ -138,52 +107,24 @@ func GetPublicURL(state kv.KVStoreReader) (string, error) {
 	return codec.DecodeString(state.Get(VarPublicURL), "")
 }
 
-func SetEVMJsonRPCURL(state kv.KVStore, url string) {
-	state.Set(VarMetadataEVMJsonRPCURL, codec.EncodeString(url))
+func SetMetadata(state kv.KVStore, metadata *isc.ChainMetadata) {
+	state.Set(VarMetadata, metadata.Bytes())
 }
 
-func GetEVMJsonRPCURL(state kv.KVStoreReader) (string, error) {
-	return codec.DecodeString(state.Get(VarMetadataEVMJsonRPCURL), "")
+func GetMetadata(state kv.KVStoreReader) (*isc.ChainMetadata, error) {
+	metadataBytes := state.Get(VarMetadata)
+	if metadataBytes == nil {
+		return &isc.ChainMetadata{}, nil
+	}
+	return isc.MetadataFromBytes(metadataBytes)
 }
 
-func SetEVMWebSocketURL(state kv.KVStore, url string) {
-	state.Set(VarMetadataEVMWebSocketURL, codec.EncodeString(url))
-}
-
-func GetEVMWebSocketURL(state kv.KVStoreReader) (string, error) {
-	return codec.DecodeString(state.Get(VarMetadataEVMWebSocketURL), "")
-}
-
-func SetChainName(state kv.KVStore, name string) {
-	state.Set(VarMetadataChainName, codec.EncodeString(name))
-}
-
-func GetChainName(state kv.KVStoreReader) (string, error) {
-	return codec.DecodeString(state.Get(VarMetadataChainName), "")
-}
-
-func SetChainDescription(state kv.KVStore, name string) {
-	state.Set(VarMetadataChainDescription, codec.EncodeString(name))
-}
-
-func GetChainDescription(state kv.KVStoreReader) (string, error) {
-	return codec.DecodeString(state.Get(VarMetadataChainDescription), "")
-}
-
-func SetChainOwnerEmail(state kv.KVStore, name string) {
-	state.Set(VarMetadataChainOwnerEmail, codec.EncodeString(name))
-}
-
-func GetChainOwnerEmail(state kv.KVStoreReader) (string, error) {
-	return codec.DecodeString(state.Get(VarMetadataChainOwnerEmail), "")
-}
-
-func SetChainWebsite(state kv.KVStore, name string) {
-	state.Set(VarMetadataChainWebsite, codec.EncodeString(name))
-}
-
-func GetChainWebsite(state kv.KVStoreReader) (string, error) {
-	return codec.DecodeString(state.Get(VarMetadataChainWebsite), "")
+func MustGetMetadata(state kv.KVStoreReader) *isc.ChainMetadata {
+	metadata, err := GetMetadata(state)
+	if err != nil {
+		panic(err)
+	}
+	return metadata
 }
 
 func AccessNodesMap(state kv.KVStore) *collections.Map {

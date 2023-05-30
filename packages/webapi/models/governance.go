@@ -10,10 +10,9 @@ type GovChainMetadata struct {
 	EVMJsonRPCURL   string `json:"evmJsonRpcUrl" swagger:"desc(The EVM json rpc url),required"`
 	EVMWebSocketURL string `json:"evmWebSocketUrl" swagger:"desc(The EVM websocket url)),required"`
 
-	ChainName        string `json:"chainName" swagger:"desc(The name of the chain),required"`
-	ChainDescription string `json:"chainDescription" swagger:"desc(The description of the chain.),required"`
-	ChainOwnerEmail  string `json:"chainOwnerEmail" swagger:"desc(The email of the chain owner.),required"`
-	ChainWebsite     string `json:"chainWebsite" swagger:"desc(The official website of the chain.),required"`
+	Name        string `json:"name" swagger:"desc(The name of the chain),required"`
+	Description string `json:"description" swagger:"desc(The description of the chain.),required"`
+	Website     string `json:"website" swagger:"desc(The official website of the chain.),required"`
 }
 
 type GovChainInfoResponse struct {

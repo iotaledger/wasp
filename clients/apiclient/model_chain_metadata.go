@@ -20,31 +20,28 @@ var _ MappedNullable = &ChainMetadata{}
 // ChainMetadata struct for ChainMetadata
 type ChainMetadata struct {
 	// The description of the chain.
-	ChainDescription string `json:"chainDescription"`
-	// The name of the chain
-	ChainName string `json:"chainName"`
-	// The email of the chain owner.
-	ChainOwnerEmail string `json:"chainOwnerEmail"`
-	// The official website of the chain.
-	ChainWebsite string `json:"chainWebsite"`
+	Description string `json:"description"`
 	// The EVM json rpc url
 	EvmJsonRpcUrl string `json:"evmJsonRpcUrl"`
 	// The EVM websocket url)
 	EvmWebSocketUrl string `json:"evmWebSocketUrl"`
+	// The name of the chain
+	Name string `json:"name"`
+	// The official website of the chain.
+	Website string `json:"website"`
 }
 
 // NewChainMetadata instantiates a new ChainMetadata object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewChainMetadata(chainDescription string, chainName string, chainOwnerEmail string, chainWebsite string, evmJsonRpcUrl string, evmWebSocketUrl string) *ChainMetadata {
+func NewChainMetadata(description string, evmJsonRpcUrl string, evmWebSocketUrl string, name string, website string) *ChainMetadata {
 	this := ChainMetadata{}
-	this.ChainDescription = chainDescription
-	this.ChainName = chainName
-	this.ChainOwnerEmail = chainOwnerEmail
-	this.ChainWebsite = chainWebsite
+	this.Description = description
 	this.EvmJsonRpcUrl = evmJsonRpcUrl
 	this.EvmWebSocketUrl = evmWebSocketUrl
+	this.Name = name
+	this.Website = website
 	return &this
 }
 
@@ -56,100 +53,28 @@ func NewChainMetadataWithDefaults() *ChainMetadata {
 	return &this
 }
 
-// GetChainDescription returns the ChainDescription field value
-func (o *ChainMetadata) GetChainDescription() string {
+// GetDescription returns the Description field value
+func (o *ChainMetadata) GetDescription() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.ChainDescription
+	return o.Description
 }
 
-// GetChainDescriptionOk returns a tuple with the ChainDescription field value
+// GetDescriptionOk returns a tuple with the Description field value
 // and a boolean to check if the value has been set.
-func (o *ChainMetadata) GetChainDescriptionOk() (*string, bool) {
+func (o *ChainMetadata) GetDescriptionOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ChainDescription, true
+	return &o.Description, true
 }
 
-// SetChainDescription sets field value
-func (o *ChainMetadata) SetChainDescription(v string) {
-	o.ChainDescription = v
-}
-
-// GetChainName returns the ChainName field value
-func (o *ChainMetadata) GetChainName() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.ChainName
-}
-
-// GetChainNameOk returns a tuple with the ChainName field value
-// and a boolean to check if the value has been set.
-func (o *ChainMetadata) GetChainNameOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.ChainName, true
-}
-
-// SetChainName sets field value
-func (o *ChainMetadata) SetChainName(v string) {
-	o.ChainName = v
-}
-
-// GetChainOwnerEmail returns the ChainOwnerEmail field value
-func (o *ChainMetadata) GetChainOwnerEmail() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.ChainOwnerEmail
-}
-
-// GetChainOwnerEmailOk returns a tuple with the ChainOwnerEmail field value
-// and a boolean to check if the value has been set.
-func (o *ChainMetadata) GetChainOwnerEmailOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.ChainOwnerEmail, true
-}
-
-// SetChainOwnerEmail sets field value
-func (o *ChainMetadata) SetChainOwnerEmail(v string) {
-	o.ChainOwnerEmail = v
-}
-
-// GetChainWebsite returns the ChainWebsite field value
-func (o *ChainMetadata) GetChainWebsite() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.ChainWebsite
-}
-
-// GetChainWebsiteOk returns a tuple with the ChainWebsite field value
-// and a boolean to check if the value has been set.
-func (o *ChainMetadata) GetChainWebsiteOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.ChainWebsite, true
-}
-
-// SetChainWebsite sets field value
-func (o *ChainMetadata) SetChainWebsite(v string) {
-	o.ChainWebsite = v
+// SetDescription sets field value
+func (o *ChainMetadata) SetDescription(v string) {
+	o.Description = v
 }
 
 // GetEvmJsonRpcUrl returns the EvmJsonRpcUrl field value
@@ -200,6 +125,54 @@ func (o *ChainMetadata) SetEvmWebSocketUrl(v string) {
 	o.EvmWebSocketUrl = v
 }
 
+// GetName returns the Name field value
+func (o *ChainMetadata) GetName() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Name
+}
+
+// GetNameOk returns a tuple with the Name field value
+// and a boolean to check if the value has been set.
+func (o *ChainMetadata) GetNameOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Name, true
+}
+
+// SetName sets field value
+func (o *ChainMetadata) SetName(v string) {
+	o.Name = v
+}
+
+// GetWebsite returns the Website field value
+func (o *ChainMetadata) GetWebsite() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Website
+}
+
+// GetWebsiteOk returns a tuple with the Website field value
+// and a boolean to check if the value has been set.
+func (o *ChainMetadata) GetWebsiteOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Website, true
+}
+
+// SetWebsite sets field value
+func (o *ChainMetadata) SetWebsite(v string) {
+	o.Website = v
+}
+
 func (o ChainMetadata) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -210,12 +183,11 @@ func (o ChainMetadata) MarshalJSON() ([]byte, error) {
 
 func (o ChainMetadata) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["chainDescription"] = o.ChainDescription
-	toSerialize["chainName"] = o.ChainName
-	toSerialize["chainOwnerEmail"] = o.ChainOwnerEmail
-	toSerialize["chainWebsite"] = o.ChainWebsite
+	toSerialize["description"] = o.Description
 	toSerialize["evmJsonRpcUrl"] = o.EvmJsonRpcUrl
 	toSerialize["evmWebSocketUrl"] = o.EvmWebSocketUrl
+	toSerialize["name"] = o.Name
+	toSerialize["website"] = o.Website
 	return toSerialize, nil
 }
 
