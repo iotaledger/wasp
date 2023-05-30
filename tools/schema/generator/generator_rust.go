@@ -14,7 +14,7 @@ import (
 )
 
 type RustGenerator struct {
-	GenBase
+	Generator
 }
 
 var _ IGenerator = new(RustGenerator)
