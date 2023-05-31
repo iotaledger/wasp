@@ -25,8 +25,8 @@ func readMetadataString(mu *marshalutil.MarshalUtil) (string, error) {
 	return string(ret), nil
 }
 
-func writeMetadataString(mu *marshalutil.MarshalUtil, str string) *marshalutil.MarshalUtil {
-	return mu.
+func writeMetadataString(mu *marshalutil.MarshalUtil, str string) {
+	mu.
 		WriteUint16(uint16(len(str))).
 		WriteBytes([]byte(str))
 }
