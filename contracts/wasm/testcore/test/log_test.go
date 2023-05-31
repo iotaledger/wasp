@@ -37,7 +37,7 @@ package test
 // 	)
 // 	require.NoError(t, err)
 
-// 	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
+// 	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
 // 	require.EqualValues(t, 3, array.Len())
 // }
 
@@ -65,7 +65,7 @@ package test
 // 	)
 // 	require.NoError(t, err)
 
-// 	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
+// 	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
 // 	require.EqualValues(t, 2, array.Len())
 // }
 
@@ -86,7 +86,7 @@ package test
 // 		eventlog.ParamContractHname, HScName,
 // 	)
 // 	require.NoError(t, err)
-// 	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
+// 	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
 
 // 	require.EqualValues(t, 1, array.Len())
 
@@ -128,7 +128,7 @@ package test
 // 		eventlog.ParamContractHname, HScName,
 // 	)
 // 	require.NoError(t, err)
-// 	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
+// 	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
 // 	require.EqualValues(t, 5, array.Len())
 
 // 	str, err := chain.GetEventsForContractString(ScName)
@@ -207,7 +207,7 @@ package test
 // 		eventlog.ParamContractHname, root.Contract.Hname(),
 // 	)
 // 	require.NoError(t, err)
-// 	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
+// 	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
 
 // 	require.EqualValues(t, 2, array.Len())
 
@@ -251,7 +251,7 @@ package test
 // 		eventlog.ParamContractHname, HScName,
 // 	)
 // 	require.NoError(t, err)
-// 	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
+// 	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
 // 	require.EqualValues(t, 2, array.Len())
 // 	//////////////////////////////////////
 

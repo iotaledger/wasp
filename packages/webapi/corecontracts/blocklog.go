@@ -80,13 +80,13 @@ func GetBlockInfo(ch chain.Chain, blockIndex uint32) (*blocklog.BlockInfo, error
 }
 
 func handleRequestIDs(requestIDsDict dict.Dict) ([]isc.RequestID, error) {
-	requestIDCollection := collections.NewArray16ReadOnly(requestIDsDict, blocklog.ParamRequestID)
+	requestIDCollection := collections.NewArrayReadOnly(requestIDsDict, blocklog.ParamRequestID)
 	requestIDsCount := requestIDCollection.Len()
 
 	requestIDs := make([]isc.RequestID, requestIDsCount)
 
 	for i := range requestIDs {
-		reqIDBin := requestIDCollection.GetAt(uint16(i))
+		reqIDBin := requestIDCollection.GetAt(uint32(i))
 
 		var err error
 		requestIDs[i], err = isc.RequestIDFromBytes(reqIDBin)
@@ -163,13 +163,13 @@ func GetRequestReceiptsForBlock(ch chain.Chain, blockIndex uint32) ([]*blocklog.
 		return nil, err
 	}
 
-	requestRecordCollection := collections.NewArray16ReadOnly(ret, blocklog.ParamRequestRecord)
+	requestRecordCollection := collections.NewArrayReadOnly(ret, blocklog.ParamRequestRecord)
 	requestRecordCount := requestRecordCollection.Len()
 
 	requestReceipts := make([]*blocklog.RequestReceipt, requestRecordCount)
 
 	for i := range requestReceipts {
-		data := requestRecordCollection.GetAt(uint16(i))
+		data := requestRecordCollection.GetAt(uint32(i))
 		requestReceipts[i], err = blocklog.RequestReceiptFromBytes(data)
 		if err != nil {
 			return nil, err

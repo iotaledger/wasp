@@ -62,11 +62,11 @@ func GetAccountNFTs(ch chain.Chain, agentID isc.AgentID) ([]iotago.NFTID, error)
 		return nil, err
 	}
 
-	nftIDsCollection := collections.NewArray16ReadOnly(ret, accounts.ParamNFTIDs)
+	nftIDsCollection := collections.NewArrayReadOnly(ret, accounts.ParamNFTIDs)
 	nftLen := nftIDsCollection.Len()
 	nftIDs := make([]iotago.NFTID, 0)
 
-	for i := uint16(0); i < nftLen; i++ {
+	for i := uint32(0); i < nftLen; i++ {
 		nftID := iotago.NFTID{}
 		nftIDBytes := nftIDsCollection.GetAt(i)
 

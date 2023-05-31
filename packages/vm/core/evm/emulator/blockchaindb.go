@@ -111,12 +111,12 @@ func makeTxIndexInBlockByTxHashKey(hash common.Hash) kv.Key {
 	return keyBlockIndexByTxHash + kv.Key(hash.Bytes())
 }
 
-func (bc *BlockchainDB) getTxArray(blockNumber uint64) *collections.Array32 {
-	return collections.NewArray32(bc.kv, string(makeTransactionsByBlockNumberKey(blockNumber)))
+func (bc *BlockchainDB) getTxArray(blockNumber uint64) *collections.Array {
+	return collections.NewArray(bc.kv, string(makeTransactionsByBlockNumberKey(blockNumber)))
 }
 
-func (bc *BlockchainDB) getReceiptArray(blockNumber uint64) *collections.Array32 {
-	return collections.NewArray32(bc.kv, string(makeReceiptsByBlockNumberKey(blockNumber)))
+func (bc *BlockchainDB) getReceiptArray(blockNumber uint64) *collections.Array {
+	return collections.NewArray(bc.kv, string(makeReceiptsByBlockNumberKey(blockNumber)))
 }
 
 func (bc *BlockchainDB) GetPendingBlockNumber() uint64 {

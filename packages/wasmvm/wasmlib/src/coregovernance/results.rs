@@ -30,7 +30,7 @@ pub struct ImmutableGetAllowedStateControllerAddressesResults {
 }
 
 impl ImmutableGetAllowedStateControllerAddressesResults {
-    // Array16 of state controller addresses
+    // Array of state controller addresses
     pub fn controllers(&self) -> ArrayOfImmutableAddress {
         ArrayOfImmutableAddress { proxy: self.proxy.root(RESULT_CONTROLLERS) }
     }
@@ -71,7 +71,7 @@ impl MutableGetAllowedStateControllerAddressesResults {
         }
     }
 
-    // Array16 of state controller addresses
+    // Array of state controller addresses
     pub fn controllers(&self) -> ArrayOfMutableAddress {
         ArrayOfMutableAddress { proxy: self.proxy.root(RESULT_CONTROLLERS) }
     }

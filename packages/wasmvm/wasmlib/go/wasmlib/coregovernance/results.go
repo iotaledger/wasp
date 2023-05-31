@@ -26,7 +26,7 @@ type ImmutableGetAllowedStateControllerAddressesResults struct {
 	Proxy wasmtypes.Proxy
 }
 
-// Array16 of state controller addresses
+// Array of state controller addresses
 func (s ImmutableGetAllowedStateControllerAddressesResults) Controllers() ArrayOfImmutableAddress {
 	return ArrayOfImmutableAddress{Proxy: s.Proxy.Root(ResultControllers)}
 }
@@ -59,7 +59,7 @@ func NewMutableGetAllowedStateControllerAddressesResults() MutableGetAllowedStat
 	return MutableGetAllowedStateControllerAddressesResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
-// Array16 of state controller addresses
+// Array of state controller addresses
 func (s MutableGetAllowedStateControllerAddressesResults) Controllers() ArrayOfMutableAddress {
 	return ArrayOfMutableAddress{Proxy: s.Proxy.Root(ResultControllers)}
 }

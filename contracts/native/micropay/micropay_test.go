@@ -247,7 +247,7 @@ package micropay
 // 	pay2 := NewPayment(last, 41, providerAddr, payer).Bytes()
 // 	par := dict.New()
 // 	par.Set(ParamPayerAddress, codec.EncodeAddress(payerAddr))
-// 	arr := collections.NewArray16(par, ParamPayments)
+// 	arr := collections.NewArray(par, ParamPayments)
 // 	_ = arr.Push(pay1)
 // 	_ = arr.Push(pay2)
 // 	req = solo.NewCallParamsFromDict("micropay", FuncSettle.Name, par).AddBaseTokens(1)

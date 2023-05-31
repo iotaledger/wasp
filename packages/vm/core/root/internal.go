@@ -88,12 +88,12 @@ func mustDecodeBlockContextSubscription(b []byte) (s BlockContextSubscription) {
 	return
 }
 
-func getBlockContextSubscriptions(state kv.KVStore) *collections.Array16 {
-	return collections.NewArray16(state, StateVarBlockContextSubscriptions)
+func getBlockContextSubscriptions(state kv.KVStore) *collections.Array {
+	return collections.NewArray(state, StateVarBlockContextSubscriptions)
 }
 
-func getBlockContextSubscriptionsR(state kv.KVStoreReader) *collections.Array16ReadOnly {
-	return collections.NewArray16ReadOnly(state, StateVarBlockContextSubscriptions)
+func getBlockContextSubscriptionsR(state kv.KVStoreReader) *collections.ArrayReadOnly {
+	return collections.NewArrayReadOnly(state, StateVarBlockContextSubscriptions)
 }
 
 func SubscribeBlockContext(state kv.KVStore, contract, openFunc, closeFunc isc.Hname) {
@@ -111,7 +111,7 @@ func GetBlockContextSubscriptions(state kv.KVStoreReader) []BlockContextSubscrip
 	subs := getBlockContextSubscriptionsR(state)
 	n := subs.Len()
 	r := make([]BlockContextSubscription, 0, n)
-	for i := uint16(0); i < n; i++ {
+	for i := uint32(0); i < n; i++ {
 		r = append(r, mustDecodeBlockContextSubscription(subs.GetAt(i)))
 	}
 	return r

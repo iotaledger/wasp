@@ -12,10 +12,10 @@ import (
 )
 
 func EventsFromViewResult(viewResult dict.Dict) ([]*isc.Event, error) {
-	recs := collections.NewArray16ReadOnly(viewResult, ParamEvent)
+	recs := collections.NewArrayReadOnly(viewResult, ParamEvent)
 	ret := make([]*isc.Event, recs.Len())
 	for i := range ret {
-		eventData := recs.GetAt(uint16(i))
+		eventData := recs.GetAt(uint32(i))
 		event, err := isc.NewEvent(eventData)
 		if err != nil {
 			return nil, err

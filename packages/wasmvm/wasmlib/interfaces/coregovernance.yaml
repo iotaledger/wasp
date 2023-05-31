@@ -128,7 +128,7 @@ views:
   # Returns the list of allowed state controllers.
   getAllowedStateControllerAddresses:
     results:
-      controllers=a: Address[] # Array16 of state controller addresses
+      controllers=a: Address[] # Array of state controller addresses
 
   # chain owner
 

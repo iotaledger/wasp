@@ -38,9 +38,9 @@ func (h *magicContractHandler) GetL2NFTs(agentID iscmagic.ISCAgentID) []iscmagic
 		accounts.ViewAccountNFTs.Hname(),
 		dict.Dict{accounts.ParamAgentID: codec.EncodeAgentID(agentID.MustUnwrap())},
 	)
-	arr := collections.NewArray16(r, accounts.ParamNFTIDs)
+	arr := collections.NewArray(r, accounts.ParamNFTIDs)
 	ret := make([]iscmagic.NFTID, arr.Len())
-	for i := uint16(0); i < arr.Len(); i++ {
+	for i := uint32(0); i < arr.Len(); i++ {
 		copy(ret[i][:], arr.GetAt(i))
 	}
 	return ret
@@ -67,9 +67,9 @@ func (h *magicContractHandler) GetL2NFTsInCollection(agentID iscmagic.ISCAgentID
 			accounts.ParamCollectionID: codec.EncodeNFTID(collectionID.Unwrap()),
 		},
 	)
-	arr := collections.NewArray16(r, accounts.ParamNFTIDs)
+	arr := collections.NewArray(r, accounts.ParamNFTIDs)
 	ret := make([]iscmagic.NFTID, arr.Len())
-	for i := uint16(0); i < arr.Len(); i++ {
+	for i := uint32(0); i < arr.Len(); i++ {
 		copy(ret[i][:], arr.GetAt(i))
 	}
 	return ret

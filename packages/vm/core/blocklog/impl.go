@@ -40,7 +40,7 @@ func SetInitialState(s kv.KVStore) {
 }
 
 func viewControlAddresses(ctx isc.SandboxView) dict.Dict {
-	registry := collections.NewArray32ReadOnly(ctx.StateR(), prefixControlAddresses)
+	registry := collections.NewArrayReadOnly(ctx.StateR(), prefixControlAddresses)
 	l := registry.Len()
 	ctx.Requiref(l > 0, "inconsistency: unknown control addresses")
 	rec, err := ControlAddressesFromBytes(registry.GetAt(l - 1))
@@ -86,7 +86,7 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
 	}
 
 	ret := dict.New()
-	arr := collections.NewArray16(ret, ParamRequestID)
+	arr := collections.NewArray(ret, ParamRequestID)
 	for _, d := range dataArr {
 		rec, err := RequestReceiptFromBytes(d)
 		ctx.RequireNoError(err)
@@ -127,7 +127,7 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
 	}
 
 	ret := dict.New()
-	arr := collections.NewArray16(ret, ParamRequestRecord)
+	arr := collections.NewArray(ret, ParamRequestRecord)
 	for _, d := range dataArr {
 		arr.Push(d)
 	}

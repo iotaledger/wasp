@@ -134,7 +134,7 @@ func listNFTIDs(nftIDs []iotago.NFTID) dict.Dict {
 		panic("too many NFTs")
 	}
 	ret := dict.New()
-	arr := collections.NewArray16(ret, ParamNFTIDs)
+	arr := collections.NewArray(ret, ParamNFTIDs)
 	for _, nftID := range nftIDs {
 		nftID := nftID
 		arr.Push(nftID[:])

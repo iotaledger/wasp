@@ -27,7 +27,7 @@ For more information about how to create Wasm smart contracts, refer to the [Was
 ## Deploy the Solo Tutorial
 
 The following examples will make use of the
-[`solotutorial` Rust/Wasm smart contract](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples/src/solotutorial.rs)
+[`solotutorial` Rust/Wasm smart contract](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples)
 .
 
 In order to test the smart contract using Solo, first you need to deploy it. You can use the following code to

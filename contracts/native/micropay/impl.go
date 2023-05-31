@@ -255,13 +255,13 @@ package micropay
 // }
 
 // func decodePayments(state kv.KVStoreReader, a assert.Assert) []*Payment {
-// 	payments := collections.NewArray16ReadOnly(state, ParamPayments)
+// 	payments := collections.NewArrayReadOnly(state, ParamPayments)
 // 	n := payments.Len()
 // 	a.Requiref(n > 0, "no payments found")
 
 // 	ret := make([]*Payment, n)
 // 	for i := range ret {
-// 		data, err := payments.GetAt(uint16(i))
+// 		data, err := payments.GetAt(uint32(i))
 // 		a.RequireNoError(err)
 // 		ret[i], err = NewPaymentFromBytes(data)
 // 		a.RequireNoError(err)
