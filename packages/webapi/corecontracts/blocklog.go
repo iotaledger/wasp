@@ -79,23 +79,18 @@ func GetBlockInfo(ch chain.Chain, blockIndex uint32) (*blocklog.BlockInfo, error
 	return handleBlockInfo(ret)
 }
 
-func handleRequestIDs(requestIDsDict dict.Dict) ([]isc.RequestID, error) {
-	requestIDCollection := collections.NewArrayReadOnly(requestIDsDict, blocklog.ParamRequestID)
-	requestIDsCount := requestIDCollection.Len()
+func handleRequestIDs(requestIDsDict dict.Dict) (ret []isc.RequestID, err error) {
+	requestIDs := collections.NewArrayReadOnly(requestIDsDict, blocklog.ParamRequestID)
+	requestIDsCount := requestIDs.Len()
 
-	requestIDs := make([]isc.RequestID, requestIDsCount)
-
-	for i := range requestIDs {
-		reqIDBin := requestIDCollection.GetAt(uint32(i))
-
-		var err error
-		requestIDs[i], err = isc.RequestIDFromBytes(reqIDBin)
+	ret = make([]isc.RequestID, requestIDsCount)
+	for i := range ret {
+		ret[i], err = isc.RequestIDFromBytes(requestIDs.GetAt(uint32(i)))
 		if err != nil {
 			return nil, err
 		}
 	}
-
-	return requestIDs, nil
+	return ret, nil
 }
 
 func GetRequestIDsForLatestBlock(ch chain.Chain) ([]isc.RequestID, error) {
@@ -151,33 +146,28 @@ func GetRequestReceipt(ch chain.Chain, requestID isc.RequestID) (*blocklog.Reque
 }
 
 func GetRequestReceiptsForBlock(ch chain.Chain, blockIndex uint32) ([]*blocklog.RequestReceipt, error) {
-	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceiptsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
+	res, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceiptsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamBlockIndex: blockIndex,
 	}))
 	if err != nil {
 		return nil, err
 	}
 
-	returnedBlockIndex, err := codec.DecodeUint32(ret.Get(blocklog.ParamBlockIndex))
+	blockIndex, err = codec.DecodeUint32(res.Get(blocklog.ParamBlockIndex))
 	if err != nil {
 		return nil, err
 	}
 
-	requestRecordCollection := collections.NewArrayReadOnly(ret, blocklog.ParamRequestRecord)
-	requestRecordCount := requestRecordCollection.Len()
-
-	requestReceipts := make([]*blocklog.RequestReceipt, requestRecordCount)
-
-	for i := range requestReceipts {
-		data := requestRecordCollection.GetAt(uint32(i))
-		requestReceipts[i], err = blocklog.RequestReceiptFromBytes(data)
+	receipts := collections.NewArrayReadOnly(res, blocklog.ParamRequestRecord)
+	ret := make([]*blocklog.RequestReceipt, receipts.Len())
+	for i := range ret {
+		ret[i], err = blocklog.RequestReceiptFromBytes(receipts.GetAt(uint32(i)))
 		if err != nil {
 			return nil, err
 		}
-		requestReceipts[i].WithBlockData(returnedBlockIndex, uint16(i))
+		ret[i].WithBlockData(blockIndex, uint16(i))
 	}
-
-	return requestReceipts, nil
+	return ret, nil
 }
 
 func IsRequestProcessed(ch chain.Chain, requestID isc.RequestID) (bool, error) {

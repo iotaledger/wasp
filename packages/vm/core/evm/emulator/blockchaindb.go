@@ -475,20 +475,18 @@ func (bc *BlockchainDB) GetCurrentBlock() *types.Block {
 
 func (bc *BlockchainDB) GetTransactionsByBlockNumber(blockNumber uint64) []*types.Transaction {
 	txArray := bc.getTxArray(blockNumber)
-	n := txArray.Len()
-	txs := make([]*types.Transaction, n)
-	for i := uint32(0); i < n; i++ {
-		txs[i] = bc.GetTransactionByBlockNumberAndIndex(blockNumber, i)
+	txs := make([]*types.Transaction, txArray.Len())
+	for i := range txs {
+		txs[i] = bc.GetTransactionByBlockNumberAndIndex(blockNumber, uint32(i))
 	}
 	return txs
 }
 
 func (bc *BlockchainDB) GetReceiptsByBlockNumber(blockNumber uint64) []*types.Receipt {
 	txArray := bc.getTxArray(blockNumber)
-	n := txArray.Len()
-	receipts := make([]*types.Receipt, n)
-	for txIndex := uint32(0); txIndex < n; txIndex++ {
-		receipts[txIndex] = bc.GetReceiptByBlockNumberAndIndex(blockNumber, txIndex)
+	receipts := make([]*types.Receipt, txArray.Len())
+	for i := range receipts {
+		receipts[i] = bc.GetReceiptByBlockNumberAndIndex(blockNumber, uint32(i))
 	}
 	return receipts
 }

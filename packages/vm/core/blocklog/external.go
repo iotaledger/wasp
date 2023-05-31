@@ -11,16 +11,14 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
-func EventsFromViewResult(viewResult dict.Dict) ([]*isc.Event, error) {
-	recs := collections.NewArrayReadOnly(viewResult, ParamEvent)
-	ret := make([]*isc.Event, recs.Len())
+func EventsFromViewResult(viewResult dict.Dict) (ret []*isc.Event, err error) {
+	events := collections.NewArrayReadOnly(viewResult, ParamEvent)
+	ret = make([]*isc.Event, events.Len())
 	for i := range ret {
-		eventData := recs.GetAt(uint32(i))
-		event, err := isc.NewEvent(eventData)
+		ret[i], err = isc.NewEvent(events.GetAt(uint32(i)))
 		if err != nil {
 			return nil, err
 		}
-		ret[i] = event
 	}
 	return ret, nil
 }

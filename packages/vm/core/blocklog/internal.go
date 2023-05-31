@@ -37,9 +37,9 @@ func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxID iotago.TransactionID
 // If state address does not change, it does nothing
 func SaveControlAddressesIfNecessary(partition kv.KVStore, stateAddress, governingAddress iotago.Address, blockIndex uint32) {
 	registry := collections.NewArray(partition, prefixControlAddresses)
-	l := registry.Len()
-	if l != 0 {
-		addrs, err := ControlAddressesFromBytes(registry.GetAt(l - 1))
+	length := registry.Len()
+	if length != 0 {
+		addrs, err := ControlAddressesFromBytes(registry.GetAt(length - 1))
 		if err != nil {
 			panic(fmt.Sprintf("SaveControlAddressesIfNecessary: %v", err))
 		}
@@ -288,9 +288,9 @@ func pruneBlock(partition kv.KVStore, blockIndex uint32) {
 
 func eventsToDict(events [][]byte) dict.Dict {
 	ret := dict.New()
-	arr := collections.NewArray(ret, ParamEvent)
+	retEvents := collections.NewArray(ret, ParamEvent)
 	for _, event := range events {
-		arr.Push(event)
+		retEvents.Push(event)
 	}
 	return ret
 }

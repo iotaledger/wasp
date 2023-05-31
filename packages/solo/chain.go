@@ -428,11 +428,10 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.Re
 	if err != nil {
 		return nil
 	}
-	recs := collections.NewArrayReadOnly(res, blocklog.ParamRequestRecord)
-	ret := make([]*blocklog.RequestReceipt, recs.Len())
+	receipts := collections.NewArrayReadOnly(res, blocklog.ParamRequestRecord)
+	ret := make([]*blocklog.RequestReceipt, receipts.Len())
 	for i := range ret {
-		data := recs.GetAt(uint32(i))
-		ret[i], err = blocklog.RequestReceiptFromBytes(data)
+		ret[i], err = blocklog.RequestReceiptFromBytes(receipts.GetAt(uint32(i)))
 		require.NoError(ch.Env.T, err)
 		ret[i].WithBlockData(blockIdx, uint16(i))
 	}
@@ -447,11 +446,10 @@ func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []isc.RequestID {
 		ch.Log().Warnf("GetRequestIDsForBlock: %v", err)
 		return nil
 	}
-	recs := collections.NewArrayReadOnly(res, blocklog.ParamRequestID)
-	ret := make([]isc.RequestID, recs.Len())
+	requestIDs := collections.NewArrayReadOnly(res, blocklog.ParamRequestID)
+	ret := make([]isc.RequestID, requestIDs.Len())
 	for i := range ret {
-		reqIDBin := recs.GetAt(uint32(i))
-		ret[i], err = isc.RequestIDFromBytes(reqIDBin)
+		ret[i], err = isc.RequestIDFromBytes(requestIDs.GetAt(uint32(i)))
 		require.NoError(ch.Env.T, err)
 	}
 	return ret
@@ -521,12 +519,11 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 	if len(res) == 0 {
 		return nil
 	}
-	ret := make([]iotago.Address, 0)
-	arr := collections.NewArrayReadOnly(res, governance.ParamAllowedStateControllerAddresses)
-	for i := uint32(0); i < arr.Len(); i++ {
-		a, err := codec.DecodeAddress(arr.GetAt(i))
+	addresses := collections.NewArrayReadOnly(res, governance.ParamAllowedStateControllerAddresses)
+	ret := make([]iotago.Address, addresses.Len())
+	for i := range ret {
+		ret[i], err = codec.DecodeAddress(addresses.GetAt(uint32(i)))
 		require.NoError(ch.Env.T, err)
-		ret = append(ret, a)
 	}
 	return ret
 }

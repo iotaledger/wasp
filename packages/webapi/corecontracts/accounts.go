@@ -55,26 +55,21 @@ func GetAccountBalance(ch chain.Chain, agentID isc.AgentID) (*isc.Assets, error)
 }
 
 func GetAccountNFTs(ch chain.Chain, agentID isc.AgentID) ([]iotago.NFTID, error) {
-	ret, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewAccountNFTs.Hname(), codec.MakeDict(map[string]interface{}{
+	res, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewAccountNFTs.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: agentID,
 	}))
 	if err != nil {
 		return nil, err
 	}
 
-	nftIDsCollection := collections.NewArrayReadOnly(ret, accounts.ParamNFTIDs)
-	nftLen := nftIDsCollection.Len()
-	nftIDs := make([]iotago.NFTID, 0)
-
-	for i := uint32(0); i < nftLen; i++ {
+	nftIDs := collections.NewArrayReadOnly(res, accounts.ParamNFTIDs)
+	ret := make([]iotago.NFTID, 0, nftIDs.Len())
+	for i := range ret {
 		nftID := iotago.NFTID{}
-		nftIDBytes := nftIDsCollection.GetAt(i)
-
-		copy(nftID[:], nftIDBytes)
-		nftIDs = append(nftIDs, nftID)
+		copy(nftID[:], nftIDs.GetAt(uint32(i)))
+		ret = append(ret, nftID)
 	}
-
-	return nftIDs, nil
+	return ret, nil
 }
 
 func GetAccountFoundries(ch chain.Chain, agentID isc.AgentID) ([]uint32, error) {
