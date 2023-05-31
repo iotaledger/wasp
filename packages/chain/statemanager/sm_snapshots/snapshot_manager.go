@@ -20,13 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util/pipe"
 )
-
-type snapshotInfoCallback struct {
-	SnapshotInfo
-	callback chan<- error
-}
 
 type commitmentSources struct {
 	commitment *state.L1Commitment
@@ -34,10 +28,9 @@ type commitmentSources struct {
 }
 
 type snapshotManagerImpl struct {
-	log                 *logger.Logger
-	ctx                 context.Context
-	shutdownCoordinator *shutdown.Coordinator
-	chainID             isc.ChainID
+	log     *logger.Logger
+	ctx     context.Context
+	chainID isc.ChainID
 
 	lastIndexSnapshotted      uint32
 	lastIndexSnapshottedMutex sync.Mutex
@@ -49,13 +42,9 @@ type snapshotManagerImpl struct {
 
 	localPath    string
 	networkPaths []string
-
-	updatePipe         pipe.Pipe[bool]
-	blockCommittedPipe pipe.Pipe[SnapshotInfo]
-	loadSnapshotPipe   pipe.Pipe[*snapshotInfoCallback]
 }
 
-var _ SnapshotManager = &snapshotManagerImpl{}
+var _ snapshotManagerCore = &snapshotManagerImpl{}
 
 const (
 	constDownloadTimeout                     = 10 * time.Minute
@@ -86,10 +75,9 @@ func NewSnapshotManager(
 			return nil, fmt.Errorf("cannot append chain ID to network path %s: %v", baseNetworkPaths[i], err)
 		}
 	}
-	result := &snapshotManagerImpl{
+	core := &snapshotManagerImpl{
 		log:                       log,
 		ctx:                       ctx,
-		shutdownCoordinator:       shutdownCoordinator,
 		chainID:                   chainID,
 		lastIndexSnapshotted:      0,
 		lastIndexSnapshottedMutex: sync.Mutex{},
@@ -99,38 +87,24 @@ func NewSnapshotManager(
 		availableSnapshotsMutex:   sync.RWMutex{},
 		localPath:                 localPath,
 		networkPaths:              networkPaths,
-		updatePipe:                pipe.NewInfinitePipe[bool](),
-		blockCommittedPipe:        pipe.NewInfinitePipe[SnapshotInfo](),
-		loadSnapshotPipe:          pipe.NewInfinitePipe[*snapshotInfoCallback](),
 	}
-	if result.createSnapshotsNeeded() {
+	if core.createSnapshotsNeeded() {
 		if err := ioutils.CreateDirectory(localPath, 0o777); err != nil {
 			return nil, fmt.Errorf("cannot create folder %s: %v", localPath, err)
 		}
-		result.cleanTempFiles() // To be able to make snapshots, which were not finished. See comment in `handleBlockCommitted` function
+		core.cleanTempFiles() // To be able to make snapshots, which were not finished. See comment in `handleBlockCommitted` function
 		log.Debugf("Snapshot manager created; folder %v is used for snapshots", localPath)
 	} else {
 		log.Debugf("Snapshot manager created; no snapshots will be produced")
 	}
-	go result.run()
-	return result, nil
+	return newSnapshotManagerRunner(ctx, shutdownCoordinator, core, log), nil
 }
 
 // -------------------------------------
-// Implementations of SnapshotManager interface
+// Implementations of snapshotManagerCore interface
 // -------------------------------------
 
-func (smiT *snapshotManagerImpl) UpdateAsync() {
-	smiT.updatePipe.In() <- true
-}
-
-func (smiT *snapshotManagerImpl) BlockCommittedAsync(snapshotInfo SnapshotInfo) {
-	if smiT.createSnapshotsNeeded() {
-		smiT.blockCommittedPipe.In() <- snapshotInfo
-	}
-}
-
-func (smiT *snapshotManagerImpl) SnapshotExists(stateIndex uint32, commitment *state.L1Commitment) bool {
+func (smiT *snapshotManagerImpl) snapshotExists(stateIndex uint32, commitment *state.L1Commitment) bool {
 	smiT.availableSnapshotsMutex.RLock()
 	defer smiT.availableSnapshotsMutex.RUnlock()
 
@@ -141,13 +115,141 @@ func (smiT *snapshotManagerImpl) SnapshotExists(stateIndex uint32, commitment *s
 	return commitments.ContainsBy(func(elem *commitmentSources) bool { return elem.commitment.Equals(commitment) && len(elem.sources) > 0 })
 }
 
-func (smiT *snapshotManagerImpl) LoadSnapshotAsync(snapshotInfo SnapshotInfo) <-chan error {
-	callback := make(chan error, 1)
-	smiT.loadSnapshotPipe.In() <- &snapshotInfoCallback{
-		SnapshotInfo: snapshotInfo,
-		callback:     callback,
+func (smiT *snapshotManagerImpl) handleUpdate() {
+	result := shrinkingmap.New[uint32, SliceStruct[*commitmentSources]]()
+	smiT.handleUpdateLocal(result)
+	smiT.handleUpdateNetwork(result)
+
+	smiT.availableSnapshotsMutex.Lock()
+	smiT.availableSnapshots = result
+	smiT.availableSnapshotsMutex.Unlock()
+}
+
+// Snapshot manager makes snapshot of every `period`th state only, if this state hasn't
+// been snapshotted before. The snapshot file name includes state index and state hash.
+// Snapshot manager first writes the state to temporary file and only then moves it to
+// permanent location. Writing is done in separate thread to not interfere with
+// normal State manager routine, as it may be lengthy. If snapshot manager detects that
+// the temporary file, needed to create a snapshot, already exists, it assumes
+// that another go routine is already making a snapshot and returns. For this reason
+// it is important to delete all temporary files on snapshot manager start.
+func (smiT *snapshotManagerImpl) handleBlockCommitted(snapshotInfo SnapshotInfo) {
+	stateIndex := snapshotInfo.GetStateIndex()
+	var lastIndexSnapshotted uint32
+	smiT.lastIndexSnapshottedMutex.Lock()
+	lastIndexSnapshotted = smiT.lastIndexSnapshotted
+	smiT.lastIndexSnapshottedMutex.Unlock()
+	if (stateIndex > lastIndexSnapshotted) && (stateIndex%smiT.createPeriod == 0) { // TODO: what if snapshotted state has been reverted?
+		commitment := snapshotInfo.GetCommitment()
+		smiT.log.Debugf("Creating snapshot %v %s...", stateIndex, commitment)
+		tmpFileName := tempSnapshotFileName(stateIndex, commitment.BlockHash())
+		tmpFilePath := filepath.Join(smiT.localPath, tmpFileName)
+		exists, _, _ := ioutils.PathExists(tmpFilePath)
+		if exists {
+			smiT.log.Debugf("Creating snapshot %v %s: skipped making snapshot as it is already being produced", stateIndex, commitment)
+			return
+		}
+		f, err := os.OpenFile(tmpFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
+		if err != nil {
+			smiT.log.Errorf("Creating snapshot %v %s: failed to create temporary snapshot file %s: %v", stateIndex, commitment, tmpFilePath, err)
+			f.Close()
+			return
+		}
+		go func() {
+			defer f.Close()
+
+			smiT.log.Debugf("Creating snapshot %v %s: storing it to file", stateIndex, commitment)
+			err := smiT.snapshotter.storeSnapshot(snapshotInfo, f)
+			if err != nil {
+				smiT.log.Errorf("Creating snapshot %v %s: failed to write snapshot to temporary file %s: %v", stateIndex, commitment, tmpFilePath, err)
+				return
+			}
+
+			finalFileName := snapshotFileName(stateIndex, commitment.BlockHash())
+			finalFilePath := filepath.Join(smiT.localPath, finalFileName)
+			err = os.Rename(tmpFilePath, finalFilePath)
+			if err != nil {
+				smiT.log.Errorf("Creating snapshot %v %s: failed to move temporary snapshot file %s to permanent location %s: %v",
+					stateIndex, commitment, tmpFilePath, finalFilePath, err)
+				return
+			}
+
+			smiT.lastIndexSnapshottedMutex.Lock()
+			if stateIndex > smiT.lastIndexSnapshotted {
+				smiT.lastIndexSnapshotted = stateIndex
+			}
+			smiT.lastIndexSnapshottedMutex.Unlock()
+			smiT.log.Infof("Creating snapshot %v %s: snapshot created in %s", stateIndex, commitment, finalFilePath)
+		}()
 	}
-	return callback
+}
+
+func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfo SnapshotInfo, callback chan<- error) {
+	smiT.log.Debugf("Loading snapshot %s", snapshotInfo)
+	// smiT.availableSnapshotsMutex.RLock() // Probably locking is not needed as it happens on the same thread as editing available snapshots
+	commitments, exists := smiT.availableSnapshots.Get(snapshotInfo.GetStateIndex())
+	// smiT.availableSnapshotsMutex.RUnlock()
+	if !exists {
+		err := fmt.Errorf("failed to obtain snapshot commitments of index %v", snapshotInfo.GetStateIndex())
+		smiT.log.Errorf("Loading snapshot %s: %v", snapshotInfo, err)
+		callback <- err
+		return
+	}
+	cs, exists := commitments.Find(func(c *commitmentSources) bool {
+		return c.commitment.Equals(snapshotInfo.GetCommitment())
+	})
+	if !exists {
+		err := fmt.Errorf("failed to obtain sources of snapshot %s", snapshotInfo)
+		smiT.log.Errorf("Loading snapshot %s: %v", snapshotInfo, err)
+		callback <- err
+		return
+	}
+
+	loadSnapshotFun := func(r io.Reader) error {
+		err := smiT.snapshotter.loadSnapshot(snapshotInfo, r)
+		if err != nil {
+			return fmt.Errorf("loading snapshot failed: %v", err)
+		}
+		return nil
+	}
+	loadLocalFun := func(path string) error {
+		f, err := os.Open(path)
+		if err != nil {
+			return fmt.Errorf("failed to open snapshot file %s", path)
+		}
+		defer f.Close()
+		return loadSnapshotFun(f)
+	}
+	loadNetworkFun := func(ctx context.Context, url string) error {
+		closeFun, reader, err := downloadFile(ctx, smiT.log, url, constDownloadTimeout)
+		defer closeFun()
+		if err != nil {
+			return err
+		}
+		return loadSnapshotFun(reader)
+	}
+	loadFun := func(source string) error {
+		if strings.HasPrefix(source, constLocalAddress) {
+			filePath := strings.TrimPrefix(source, constLocalAddress)
+			smiT.log.Debugf("Loading snapshot %s: reading local file %s", snapshotInfo, filePath)
+			return loadLocalFun(filePath)
+		}
+		smiT.log.Debugf("Loading snapshot %s: downloading file %s", snapshotInfo, source)
+		return loadNetworkFun(smiT.ctx, source)
+	}
+
+	var err error
+	for _, source := range cs.sources {
+		e := loadFun(source)
+		if e == nil {
+			smiT.log.Debugf("Loading snapshot %s succeeded", snapshotInfo)
+			callback <- nil
+			return
+		}
+		smiT.log.Errorf("Loading snapshot %s: %v", snapshotInfo, e)
+		err = errors.Join(err, e)
+	}
+	callback <- err
 }
 
 // -------------------------------------
@@ -173,56 +275,6 @@ func (smiT *snapshotManagerImpl) cleanTempFiles() {
 		}
 	}
 	smiT.log.Debugf("Removed %v out of %v temporary snapshot files", removed, len(tempFiles))
-}
-
-func (smiT *snapshotManagerImpl) run() {
-	updatePipeCh := smiT.updatePipe.Out()
-	blockCommittedPipeCh := smiT.blockCommittedPipe.Out()
-	loadSnapshotPipeCh := smiT.loadSnapshotPipe.Out()
-	for {
-		if smiT.ctx.Err() != nil {
-			if smiT.shutdownCoordinator == nil {
-				return
-			}
-			if smiT.shutdownCoordinator.CheckNestedDone() {
-				smiT.log.Debugf("Stopping snapshot manager, because context was closed")
-				smiT.shutdownCoordinator.Done()
-				return
-			}
-		}
-		select {
-		case _, ok := <-updatePipeCh:
-			if ok {
-				smiT.handleUpdate()
-			} else {
-				updatePipeCh = nil
-			}
-		case snapshotInfo, ok := <-blockCommittedPipeCh:
-			if ok {
-				smiT.handleBlockCommitted(snapshotInfo)
-			} else {
-				blockCommittedPipeCh = nil
-			}
-		case snapshotInfoC, ok := <-loadSnapshotPipeCh:
-			if ok {
-				smiT.handleLoadSnapshot(snapshotInfoC)
-			} else {
-				loadSnapshotPipeCh = nil
-			}
-		case <-smiT.ctx.Done():
-			continue
-		}
-	}
-}
-
-func (smiT *snapshotManagerImpl) handleUpdate() {
-	result := shrinkingmap.New[uint32, SliceStruct[*commitmentSources]]()
-	smiT.handleUpdateLocal(result)
-	smiT.handleUpdateNetwork(result)
-
-	smiT.availableSnapshotsMutex.Lock()
-	smiT.availableSnapshots = result
-	smiT.availableSnapshotsMutex.Unlock()
 }
 
 func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]]) {
@@ -304,136 +356,6 @@ func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.Shrink
 			smiT.log.Debugf("%v snapshot files found on %s", snapshotCount, networkPath)
 		}()
 	}
-}
-
-// Snapshot manager makes snapshot of every `period`th state only, if this state hasn't
-// been snapshotted before. The snapshot file name includes state index and state hash.
-// Snapshot manager first writes the state to temporary file and only then moves it to
-// permanent location. Writing is done in separate thread to not interfere with
-// normal State manager routine, as it may be lengthy. If snapshot manager detects that
-// the temporary file, needed to create a snapshot, already exists, it assumes
-// that another go routine is already making a snapshot and returns. For this reason
-// it is important to delete all temporary files on snapshot manager start.
-func (smiT *snapshotManagerImpl) handleBlockCommitted(snapshotInfo SnapshotInfo) {
-	stateIndex := snapshotInfo.GetStateIndex()
-	var lastIndexSnapshotted uint32
-	smiT.lastIndexSnapshottedMutex.Lock()
-	lastIndexSnapshotted = smiT.lastIndexSnapshotted
-	smiT.lastIndexSnapshottedMutex.Unlock()
-	if (stateIndex > lastIndexSnapshotted) && (stateIndex%smiT.createPeriod == 0) { // TODO: what if snapshotted state has been reverted?
-		commitment := snapshotInfo.GetCommitment()
-		smiT.log.Debugf("Creating snapshot %v %s...", stateIndex, commitment)
-		tmpFileName := tempSnapshotFileName(stateIndex, commitment.BlockHash())
-		tmpFilePath := filepath.Join(smiT.localPath, tmpFileName)
-		exists, _, _ := ioutils.PathExists(tmpFilePath)
-		if exists {
-			smiT.log.Debugf("Creating snapshot %v %s: skipped making snapshot as it is already being produced", stateIndex, commitment)
-			return
-		}
-		f, err := os.OpenFile(tmpFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
-		if err != nil {
-			smiT.log.Errorf("Creating snapshot %v %s: failed to create temporary snapshot file %s: %v", stateIndex, commitment, tmpFilePath, err)
-			f.Close()
-			return
-		}
-		go func() {
-			defer f.Close()
-
-			smiT.log.Debugf("Creating snapshot %v %s: storing it to file", stateIndex, commitment)
-			err := smiT.snapshotter.storeSnapshot(snapshotInfo, f)
-			if err != nil {
-				smiT.log.Errorf("Creating snapshot %v %s: failed to write snapshot to temporary file %s: %v", stateIndex, commitment, tmpFilePath, err)
-				return
-			}
-
-			finalFileName := snapshotFileName(stateIndex, commitment.BlockHash())
-			finalFilePath := filepath.Join(smiT.localPath, finalFileName)
-			err = os.Rename(tmpFilePath, finalFilePath)
-			if err != nil {
-				smiT.log.Errorf("Creating snapshot %v %s: failed to move temporary snapshot file %s to permanent location %s: %v",
-					stateIndex, commitment, tmpFilePath, finalFilePath, err)
-				return
-			}
-
-			smiT.lastIndexSnapshottedMutex.Lock()
-			if stateIndex > smiT.lastIndexSnapshotted {
-				smiT.lastIndexSnapshotted = stateIndex
-			}
-			smiT.lastIndexSnapshottedMutex.Unlock()
-			smiT.log.Infof("Creating snapshot %v %s: snapshot created in %s", stateIndex, commitment, finalFilePath)
-		}()
-	}
-}
-
-func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfoCallback *snapshotInfoCallback) {
-	callback := snapshotInfoCallback.callback
-	defer close(callback)
-
-	smiT.log.Debugf("Loading snapshot %s", snapshotInfoCallback.SnapshotInfo)
-	// smiT.availableSnapshotsMutex.RLock() // Probably locking is not needed as it happens on the same thread as editing available snapshots
-	commitments, exists := smiT.availableSnapshots.Get(snapshotInfoCallback.SnapshotInfo.GetStateIndex())
-	// smiT.availableSnapshotsMutex.RUnlock()
-	if !exists {
-		err := fmt.Errorf("failed to obtain snapshot commitments of index %v", snapshotInfoCallback.SnapshotInfo.GetStateIndex())
-		smiT.log.Errorf("Loading snapshot %s: %v", snapshotInfoCallback.SnapshotInfo, err)
-		callback <- err
-		return
-	}
-	cs, exists := commitments.Find(func(c *commitmentSources) bool {
-		return c.commitment.Equals(snapshotInfoCallback.SnapshotInfo.GetCommitment())
-	})
-	if !exists {
-		err := fmt.Errorf("failed to obtain sources of snapshot %s", snapshotInfoCallback.SnapshotInfo)
-		smiT.log.Errorf("Loading snapshot %s: %v", snapshotInfoCallback.SnapshotInfo, err)
-		callback <- err
-		return
-	}
-
-	loadSnapshotFun := func(r io.Reader) error {
-		err := smiT.snapshotter.loadSnapshot(snapshotInfoCallback.SnapshotInfo, r)
-		if err != nil {
-			return fmt.Errorf("loading snapshot failed: %v", err)
-		}
-		return nil
-	}
-	loadLocalFun := func(path string) error {
-		f, err := os.Open(path)
-		if err != nil {
-			return fmt.Errorf("failed to open snapshot file %s", path)
-		}
-		defer f.Close()
-		return loadSnapshotFun(f)
-	}
-	loadNetworkFun := func(ctx context.Context, url string) error {
-		closeFun, reader, err := downloadFile(ctx, smiT.log, url, constDownloadTimeout)
-		defer closeFun()
-		if err != nil {
-			return err
-		}
-		return loadSnapshotFun(reader)
-	}
-	loadFun := func(source string) error {
-		if strings.HasPrefix(source, constLocalAddress) {
-			filePath := strings.TrimPrefix(source, constLocalAddress)
-			smiT.log.Debugf("Loading snapshot %s: reading local file %s", snapshotInfoCallback.SnapshotInfo, filePath)
-			return loadLocalFun(filePath)
-		}
-		smiT.log.Debugf("Loading snapshot %s: downloading file %s", snapshotInfoCallback.SnapshotInfo, source)
-		return loadNetworkFun(smiT.ctx, source)
-	}
-
-	var err error
-	for _, source := range cs.sources {
-		e := loadFun(source)
-		if e == nil {
-			smiT.log.Debugf("Loading snapshot %s succeeded", snapshotInfoCallback.SnapshotInfo)
-			callback <- nil
-			return
-		}
-		smiT.log.Errorf("Loading snapshot %s: %v", snapshotInfoCallback.SnapshotInfo, e)
-		err = errors.Join(err, e)
-	}
-	callback <- err
 }
 
 func (smiT *snapshotManagerImpl) createSnapshotsNeeded() bool {

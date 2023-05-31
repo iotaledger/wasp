@@ -23,6 +23,14 @@ type SnapshotInfo interface {
 	Equals(SnapshotInfo) bool
 }
 
+type snapshotManagerCore interface {
+	createSnapshotsNeeded() bool
+	snapshotExists(uint32, *state.L1Commitment) bool
+	handleUpdate()
+	handleBlockCommitted(SnapshotInfo)
+	handleLoadSnapshot(SnapshotInfo, chan<- error)
+}
+
 type snapshotter interface {
 	storeSnapshot(SnapshotInfo, io.Writer) error
 	loadSnapshot(SnapshotInfo, io.Reader) error
