@@ -233,10 +233,10 @@ func TestNotEnoughISCGas(t *testing.T) {
 	// no changes should persist
 	require.EqualValues(t, 43, storage.retrieve())
 
-	// check nonces
-	x := env.soloChain.Nonce(isc.NewEthereumAddressAgentID(ethAddress))
-	y := env.getNonce(ethAddress)
-	require.EqualValues(t, x, y)
+	// check nonces are still in sync
+	iscNonce := env.soloChain.Nonce(isc.NewEthereumAddressAgentID(ethAddress))
+	evmNonce := env.getNonce(ethAddress)
+	require.EqualValues(t, iscNonce, evmNonce)
 }
 
 // ensure the amount of base tokens sent impacts the amount of gas used

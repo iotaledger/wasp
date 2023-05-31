@@ -62,9 +62,7 @@ func viewGetAccountNonce(ctx isc.SandboxView) dict.Dict {
 	account := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
 	nonce := Nonce(ctx.StateR(), account)
 	ret := dict.New()
-	if nonce != nil {
-		ret.Set(ParamAccountNonce, codec.EncodeUint64(*nonce))
-	}
+	ret.Set(ParamAccountNonce, codec.EncodeUint64(nonce))
 	return ret
 }
 

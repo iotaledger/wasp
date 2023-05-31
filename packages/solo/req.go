@@ -36,7 +36,7 @@ type CallParams struct {
 	nft        *isc.NFT
 	allowance  *isc.Assets
 	gasBudget  uint64
-	nonce      *uint64 // ignored for on-ledger
+	nonce      uint64 // ignored for on-ledger
 	params     dict.Dict
 	sender     iotago.Address
 }
@@ -172,7 +172,7 @@ func (r *CallParams) WithMaxAffordableGasBudget() *CallParams {
 }
 
 func (r *CallParams) WithNonce(nonce uint64) *CallParams {
-	r.nonce = &nonce
+	r.nonce = nonce
 	return r
 }
 
@@ -183,14 +183,10 @@ func (r *CallParams) WithSender(sender iotago.Address) *CallParams {
 
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair *cryptolib.KeyPair) isc.OffLedgerRequest {
-	if r.nonce == nil {
-		r.nonce = new(uint64)
-		accountNonce := ch.Nonce(isc.NewAgentID(keyPair.Address()))
-		if accountNonce != nil {
-			*r.nonce = *accountNonce + 1
-		}
+	if r.nonce == 0 {
+		r.nonce = ch.Nonce(isc.NewAgentID(keyPair.Address()))
 	}
-	ret := isc.NewOffLedgerRequest(ch.ID(), r.target, r.entryPoint, r.params, *r.nonce, r.gasBudget).
+	ret := isc.NewOffLedgerRequest(ch.ID(), r.target, r.entryPoint, r.params, r.nonce, r.gasBudget).
 		WithAllowance(r.allowance)
 	return ret.Sign(keyPair)
 }

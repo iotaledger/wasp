@@ -338,7 +338,7 @@ func testChained(t *testing.T, n, f, b int) {
 		allRequests[0] = append(tcl.MakeTxAccountsDeposit(scClient), tcl.MakeTxDeployIncCounterContract()...)
 	}
 	incTotal := 0
-	for i := 1; i < b; i++ {
+	for i := 0; i < b-1; i++ {
 		reqs := []isc.Request{}
 		reqPerBlock := 3
 		for ii := 0; ii < reqPerBlock; ii++ {
@@ -353,7 +353,7 @@ func testChained(t *testing.T, n, f, b int) {
 			reqs = append(reqs, scRequest)
 			incTotal++
 		}
-		allRequests[i] = reqs
+		allRequests[i+1] = reqs
 	}
 	//
 	// Construct the nodes for each instance.

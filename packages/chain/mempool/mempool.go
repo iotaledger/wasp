@@ -482,8 +482,9 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) bool
 				return false // no on-chain funds
 			}
 		}
-		if err := accounts.CheckNonce(accountsPartition, req.SenderAccount(), req.Nonce()); err != nil {
-			return false // only accept requests with correct nonces
+		accountNonce := accounts.Nonce(accountsPartition, req.SenderAccount())
+		if req.Nonce() < accountNonce {
+			return false // only accept requests with higher nonces
 		}
 	}
 	return true

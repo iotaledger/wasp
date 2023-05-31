@@ -221,8 +221,6 @@ func (vmctx *VMContext) MustSaveEvent(hContract isc.Hname, topic string, payload
 
 // updateOffLedgerRequestNonce updates stored nonce for off ledger requests
 func (vmctx *VMContext) updateOffLedgerRequestNonce() {
-	vmctx.GasBurnEnable(false)
-	defer vmctx.GasBurnEnable(true)
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.IncrementNonce(s, vmctx.req.SenderAccount())
 	})
