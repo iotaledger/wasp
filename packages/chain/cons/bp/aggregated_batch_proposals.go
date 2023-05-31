@@ -143,14 +143,14 @@ func (abp *AggregatedBatchProposals) OrderedRequests(requests []isc.Request, ran
 		if !ok {
 			continue
 		}
-		for j := range sortBuf {
+		for j := i + 1; j < len(sortBuf); j++ {
 			oj, ok := sortBuf[j].req.(isc.OffLedgerRequest)
 			if !ok {
 				continue
 			}
 			if oi.SenderAccount().Equals(oj.SenderAccount()) && oi.Nonce() > oj.Nonce() {
-				// Swap entries, if they are from the same account and have out-of-order nonces.
 				sortBuf[i], sortBuf[j] = sortBuf[j], sortBuf[i]
+				oi = oj
 			}
 		}
 	}
