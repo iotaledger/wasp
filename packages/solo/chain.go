@@ -670,6 +670,17 @@ func (ch *Chain) LatestBlock() state.Block {
 	return b
 }
 
+func (ch *Chain) Nonce(agentID isc.AgentID) *uint64 {
+	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewGetAccountNonce.Name, accounts.ParamAgentID, agentID)
+	require.NoError(ch.Env.T, err)
+	data := res.Get(accounts.ParamAccountNonce)
+	if data == nil {
+		return nil
+	}
+	ret := codec.MustDecodeUint64(data)
+	return &ret
+}
+
 // ReceiveOffLedgerRequest implements chain.Chain
 func (*Chain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) bool {
 	panic("unimplemented")

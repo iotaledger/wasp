@@ -151,7 +151,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 			te.chainID,
 			inccounter.Contract.Hname(),
 			inccounter.FuncIncCounter.Hname(),
-			dict.New(), uint64(i),
+			dict.New(), uint64(i+1),
 			2000000,
 		).Sign(scClient)
 		te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())

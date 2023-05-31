@@ -180,7 +180,7 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	snapMutations := vmctx.currentStateUpdate.Clone()
 
 	if vmctx.req.IsOffLedger() {
-		vmctx.updateOffLedgerRequestMaxAssumedNonce()
+		vmctx.updateOffLedgerRequestNonce()
 	}
 	var callErr *isc.VMError
 	func() {

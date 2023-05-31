@@ -200,7 +200,7 @@ func TestGasLimit(t *testing.T) {
 
 func TestNotEnoughISCGas(t *testing.T) {
 	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	ethKey, ethAddress := env.soloChain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
 
 	_, err := storage.store(43)
@@ -232,6 +232,11 @@ func TestNotEnoughISCGas(t *testing.T) {
 
 	// no changes should persist
 	require.EqualValues(t, 43, storage.retrieve())
+
+	// check nonces
+	x := env.soloChain.Nonce(isc.NewEthereumAddressAgentID(ethAddress))
+	y := env.getNonce(ethAddress)
+	require.EqualValues(t, x, y)
 }
 
 // ensure the amount of base tokens sent impacts the amount of gas used

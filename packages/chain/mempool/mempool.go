@@ -65,7 +65,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 const (
@@ -483,9 +482,8 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) bool
 				return false // no on-chain funds
 			}
 		}
-		accountNonce := accounts.GetMaxAssumedNonce(accountsPartition, req.SenderAccount())
-		if err := vmcontext.CheckNonce(req, accountNonce); err != nil {
-			return false // bad nonce
+		if err := accounts.CheckNonce(accountsPartition, req.SenderAccount(), req.Nonce()); err != nil {
+			return false // only accept requests with correct nonces
 		}
 	}
 	return true
