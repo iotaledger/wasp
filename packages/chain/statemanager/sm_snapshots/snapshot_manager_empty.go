@@ -6,10 +6,19 @@ import (
 
 type snapshotManagerEmpty struct{}
 
-var _ SnapshotManager = &snapshotManagerEmpty{}
+var (
+	_ SnapshotManager     = &snapshotManagerEmpty{}
+	_ SnapshotManagerTest = &snapshotManagerEmpty{}
+)
 
-func NewEmptySnapshotManager() SnapshotManager                                { return &snapshotManagerEmpty{} }
+func NewEmptySnapshotManager() SnapshotManagerTest                            { return &snapshotManagerEmpty{} }
 func (*snapshotManagerEmpty) UpdateAsync()                                    {}
 func (*snapshotManagerEmpty) BlockCommittedAsync(SnapshotInfo)                {}
 func (*snapshotManagerEmpty) SnapshotExists(uint32, *state.L1Commitment) bool { return false }
-func (*snapshotManagerEmpty) LoadSnapshotAsync(SnapshotInfo) <-chan error     { return nil }
+func (*snapshotManagerEmpty) SnapshotReady(snapshotInfo SnapshotInfo)         {}
+
+func (*snapshotManagerEmpty) LoadSnapshotAsync(SnapshotInfo) <-chan error {
+	callback := make(chan error, 1)
+	callback <- nil
+	return callback
+}
