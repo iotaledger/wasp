@@ -14,6 +14,7 @@ func NewRocksDB(path string) (*rocksdb.RocksDB, error) {
 	opts := []rocksdb.Option{
 		rocksdb.IncreaseParallelism(runtime.NumCPU() - 1),
 		rocksdb.Custom([]string{
+			"stats_dump_period_sec=10",
 			"periodic_compaction_seconds=43200",
 			"level_compaction_dynamic_level_bytes=true",
 			"keep_log_file_num=2",
