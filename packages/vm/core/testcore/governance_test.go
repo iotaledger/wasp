@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -278,7 +277,13 @@ func TestDisallowMaintenanceDeadlock(t *testing.T) {
 	require.Error(t, err)
 }
 
-func testMetadataBehaviorSetIgnoreUnset(t *testing.T, ch *solo.Chain, metadataParameter kv.Key) {
+func TestMetadata(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	ch := env.NewChain()
+
+	// deposit some extra tokens to the common account to accommodate for the SD change
+	ch.SendFromL1ToL2AccountBaseTokens(10*isc.Million, 9*isc.Million, accounts.CommonAccount(), nil)
+
 	/*
 		Values with the length == 0 will reset the state value
 		Values with the length > 0 will set the state value
@@ -375,16 +380,6 @@ func testMetadataBehaviorSetIgnoreUnset(t *testing.T, ch *solo.Chain, metadataPa
 		nil,
 	)
 	require.Error(t, err)
-}
-
-func TestMetadata(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	ch := env.NewChain()
-
-	// deposit some extra tokens to the common account to accommodate for the SD change
-	ch.SendFromL1ToL2AccountBaseTokens(10*isc.Million, 9*isc.Million, accounts.CommonAccount(), nil)
-
-	testMetadataBehaviorSetIgnoreUnset(t, ch, governance.ParamMetadata)
 }
 
 func TestL1Metadata(t *testing.T) {

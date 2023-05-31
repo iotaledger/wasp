@@ -47,7 +47,7 @@ var (
 	FuncStopMaintenance      = coreutil.Func("stopMaintenance")
 	ViewGetMaintenanceStatus = coreutil.ViewFunc("getMaintenanceStatus")
 
-	// L1 metadata
+	// L2 metadata
 	FuncSetMetadata = coreutil.Func("setMetadata")
 	ViewGetMetadata = coreutil.ViewFunc("getMetadata")
 )
