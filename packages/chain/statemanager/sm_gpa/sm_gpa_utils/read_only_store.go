@@ -71,6 +71,10 @@ func (ros *readOnlyStore) ExtractBlock(stateDraft state.StateDraft) state.Block 
 	return ros.store.ExtractBlock(stateDraft)
 }
 
+func (ros *readOnlyStore) Prune(trie.Hash) (trie.PruneStats, error) {
+	panic("Cannot prune read-only store")
+}
+
 func (ros *readOnlyStore) TakeSnapshot(trieRoot trie.Hash, kvStore kvstore.KVStore) error {
 	return ros.store.TakeSnapshot(trieRoot, kvStore)
 }
