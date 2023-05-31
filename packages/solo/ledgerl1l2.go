@@ -87,9 +87,7 @@ func (ch *Chain) L2NFTs(agentID isc.AgentID) []iotago.NFTID {
 	nftIDs := collections.NewArrayReadOnly(res, accounts.ParamNFTIDs)
 	ret := make([]iotago.NFTID, nftIDs.Len())
 	for i := range ret {
-		nftID := iotago.NFTID{}
-		copy(nftID[:], nftIDs.GetAt(uint32(i)))
-		ret = append(ret, nftID)
+		copy(ret[i][:], nftIDs.GetAt(uint32(i)))
 	}
 	return ret
 }

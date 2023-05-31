@@ -81,9 +81,7 @@ func GetBlockInfo(ch chain.Chain, blockIndex uint32) (*blocklog.BlockInfo, error
 
 func handleRequestIDs(requestIDsDict dict.Dict) (ret []isc.RequestID, err error) {
 	requestIDs := collections.NewArrayReadOnly(requestIDsDict, blocklog.ParamRequestID)
-	requestIDsCount := requestIDs.Len()
-
-	ret = make([]isc.RequestID, requestIDsCount)
+	ret = make([]isc.RequestID, requestIDs.Len())
 	for i := range ret {
 		ret[i], err = isc.RequestIDFromBytes(requestIDs.GetAt(uint32(i)))
 		if err != nil {

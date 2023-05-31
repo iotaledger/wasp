@@ -109,9 +109,9 @@ func SubscribeBlockContext(state kv.KVStore, contract, openFunc, closeFunc isc.H
 // in deterministic order
 func GetBlockContextSubscriptions(state kv.KVStoreReader) []BlockContextSubscription {
 	subscriptions := getBlockContextSubscriptionsR(state)
-	ret := make([]BlockContextSubscription, 0, subscriptions.Len())
+	ret := make([]BlockContextSubscription, subscriptions.Len())
 	for i := range ret {
-		ret = append(ret, mustDecodeBlockContextSubscription(subscriptions.GetAt(uint32(i))))
+		ret[i] = mustDecodeBlockContextSubscription(subscriptions.GetAt(uint32(i)))
 	}
 	return ret
 }

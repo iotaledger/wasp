@@ -17,13 +17,12 @@ func GetAllowedStateControllerAddresses(ch chain.Chain) ([]iotago.Address, error
 	}
 
 	addresses := collections.NewArrayReadOnly(res, governance.ParamAllowedStateControllerAddresses)
-	ret := make([]iotago.Address, 0, addresses.Len())
+	ret := make([]iotago.Address, addresses.Len())
 	for i := range ret {
-		address, err := codec.DecodeAddress(addresses.GetAt(uint32(i)))
+		ret[i], err = codec.DecodeAddress(addresses.GetAt(uint32(i)))
 		if err != nil {
 			return nil, err
 		}
-		ret = append(ret, address)
 	}
 	return ret, nil
 }

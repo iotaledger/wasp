@@ -526,13 +526,12 @@ func WriteString16(w io.Writer, str string) error {
 
 //////////////////// string array, uint16 length \\\\\\\\\\\\\\\\\\\\
 
-func ReadStrings16(r io.Reader) ([]string, error) {
+func ReadStrings16(r io.Reader) (ret []string, err error) {
 	var size uint16
-	if err := ReadUint16(r, &size); err != nil {
+	if err = ReadUint16(r, &size); err != nil {
 		return nil, nil
 	}
-	ret := make([]string, size)
-	var err error
+	ret = make([]string, size)
 	for i := range ret {
 		if ret[i], err = ReadString16(r); err != nil {
 			return nil, err
