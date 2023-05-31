@@ -58,7 +58,7 @@ func init() {
 
 	rootCmd = initRootCmd(waspVersion)
 	rootCmd.PersistentFlags().BoolVar(&cliclients.SkipCheckVersions, "skip-version-check", false, "skip-version-check")
-	
+
 	log.Init(rootCmd)
 	rootCmd.AddCommand(completion.InitCompletionCommand(rootCmd.Root().Name()))
 	cliinit.Init(rootCmd)
