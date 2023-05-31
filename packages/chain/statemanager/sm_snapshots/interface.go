@@ -14,6 +14,11 @@ type SnapshotManager interface {
 	LoadSnapshotAsync(SnapshotInfo) <-chan error
 }
 
+type SnapshotManagerTest interface {
+	SnapshotManager
+	SnapshotReady(SnapshotInfo)
+}
+
 type SnapshotInfo interface {
 	GetStateIndex() uint32
 	GetCommitment() *state.L1Commitment
@@ -25,7 +30,6 @@ type SnapshotInfo interface {
 
 type snapshotManagerCore interface {
 	createSnapshotsNeeded() bool
-	snapshotExists(uint32, *state.L1Commitment) bool
 	handleUpdate()
 	handleBlockCommitted(SnapshotInfo)
 	handleLoadSnapshot(SnapshotInfo, chan<- error)
@@ -44,6 +48,8 @@ type SliceStruct[E any] interface {
 	Set(int, E)
 	Length() int
 	ForEach(func(int, E) bool) bool
+	Clone() SliceStruct[E]              // Returns a new SliceStruct with exactly the same elements
+	CloneDeep(func(E) E) SliceStruct[E] // Returns a new SliceStruct with every element of the old SliceStruct cloned using provided function
 	ContainsBy(func(E) bool) bool
 	Find(func(E) bool) (E, bool)
 }

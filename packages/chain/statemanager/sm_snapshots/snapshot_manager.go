@@ -28,6 +28,8 @@ type commitmentSources struct {
 }
 
 type snapshotManagerImpl struct {
+	*snapshotManagerRunner
+
 	log     *logger.Logger
 	ctx     context.Context
 	chainID isc.ChainID
@@ -44,7 +46,10 @@ type snapshotManagerImpl struct {
 	networkPaths []string
 }
 
-var _ snapshotManagerCore = &snapshotManagerImpl{}
+var (
+	_ snapshotManagerCore = &snapshotManagerImpl{}
+	_ SnapshotManager     = &snapshotManagerImpl{}
+)
 
 const (
 	constDownloadTimeout                     = 10 * time.Minute
@@ -75,7 +80,7 @@ func NewSnapshotManager(
 			return nil, fmt.Errorf("cannot append chain ID to network path %s: %v", baseNetworkPaths[i], err)
 		}
 	}
-	core := &snapshotManagerImpl{
+	result := &snapshotManagerImpl{
 		log:                       log,
 		ctx:                       ctx,
 		chainID:                   chainID,
@@ -88,23 +93,24 @@ func NewSnapshotManager(
 		localPath:                 localPath,
 		networkPaths:              networkPaths,
 	}
-	if core.createSnapshotsNeeded() {
+	if result.createSnapshotsNeeded() {
 		if err := ioutils.CreateDirectory(localPath, 0o777); err != nil {
 			return nil, fmt.Errorf("cannot create folder %s: %v", localPath, err)
 		}
-		core.cleanTempFiles() // To be able to make snapshots, which were not finished. See comment in `handleBlockCommitted` function
+		result.cleanTempFiles() // To be able to make snapshots, which were not finished. See comment in `handleBlockCommitted` function
 		log.Debugf("Snapshot manager created; folder %v is used for snapshots", localPath)
 	} else {
 		log.Debugf("Snapshot manager created; no snapshots will be produced")
 	}
-	return newSnapshotManagerRunner(ctx, shutdownCoordinator, core, log), nil
+	result.snapshotManagerRunner = newSnapshotManagerRunner(ctx, shutdownCoordinator, result, log)
+	return result, nil
 }
 
 // -------------------------------------
-// Implementations of snapshotManagerCore interface
+// Implementations of SnapshotManager interface
 // -------------------------------------
 
-func (smiT *snapshotManagerImpl) snapshotExists(stateIndex uint32, commitment *state.L1Commitment) bool {
+func (smiT *snapshotManagerImpl) SnapshotExists(stateIndex uint32, commitment *state.L1Commitment) bool {
 	smiT.availableSnapshotsMutex.RLock()
 	defer smiT.availableSnapshotsMutex.RUnlock()
 
@@ -113,6 +119,16 @@ func (smiT *snapshotManagerImpl) snapshotExists(stateIndex uint32, commitment *s
 		return false
 	}
 	return commitments.ContainsBy(func(elem *commitmentSources) bool { return elem.commitment.Equals(commitment) && len(elem.sources) > 0 })
+}
+
+// NOTE: other implementations are inherited from snapshotManagerRunner
+
+// -------------------------------------
+// Implementations of snapshotManagerCore interface
+// -------------------------------------
+
+func (smiT *snapshotManagerImpl) createSnapshotsNeeded() bool {
+	return smiT.createPeriod > 0
 }
 
 func (smiT *snapshotManagerImpl) handleUpdate() {
@@ -356,10 +372,6 @@ func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.Shrink
 			smiT.log.Debugf("%v snapshot files found on %s", snapshotCount, networkPath)
 		}()
 	}
-}
-
-func (smiT *snapshotManagerImpl) createSnapshotsNeeded() bool {
-	return smiT.createPeriod > 0
 }
 
 func tempSnapshotFileName(index uint32, blockHash state.BlockHash) string {

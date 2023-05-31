@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/shutdown"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 )
 
@@ -26,14 +25,12 @@ type snapshotManagerRunner struct {
 	core snapshotManagerCore
 }
 
-var _ SnapshotManager = &snapshotManagerRunner{}
-
 func newSnapshotManagerRunner(
 	ctx context.Context,
 	shutdownCoordinator *shutdown.Coordinator,
 	core snapshotManagerCore,
 	log *logger.Logger,
-) SnapshotManager {
+) *snapshotManagerRunner {
 	result := &snapshotManagerRunner{
 		log:                 log,
 		ctx:                 ctx,
@@ -59,10 +56,6 @@ func (smrT *snapshotManagerRunner) BlockCommittedAsync(snapshotInfo SnapshotInfo
 	if smrT.core.createSnapshotsNeeded() {
 		smrT.blockCommittedPipe.In() <- snapshotInfo
 	}
-}
-
-func (smrT *snapshotManagerRunner) SnapshotExists(stateIndex uint32, commitment *state.L1Commitment) bool {
-	return smrT.core.snapshotExists(stateIndex, commitment)
 }
 
 func (smrT *snapshotManagerRunner) LoadSnapshotAsync(snapshotInfo SnapshotInfo) <-chan error {
