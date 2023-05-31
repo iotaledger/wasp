@@ -398,6 +398,113 @@ func WriteTime(w io.Writer, ts time.Time) error {
 	return WriteUint64(w, uint64(ts.UnixNano()))
 }
 
+//////////////////// Size16, Size32 \\\\\\\\\\\\\\\\\\\\
+
+// use ULEB16 decoding so that WasmLib can use it as well
+func BytesToSize16(buf []byte) uint16 {
+	b := uint16(buf[0])
+	if (b & 0x80) == 0 {
+		return b
+	}
+	ret := b & 0x7f
+	b = uint16(buf[1])
+	if (b & 0x80) == 0 {
+		return ret | (b << 7)
+	}
+	ret |= (b & 0x7f) << 7
+	b = uint16(buf[2])
+	if (b & 0xfc) == 0 {
+		return ret | (b << 14)
+	}
+	panic("invalid ULEB16")
+}
+
+// use ULEB16 encoding so that WasmLib can decode it as well
+func Size16ToBytes(value uint16) []byte {
+	if value < 0x80 {
+		return []byte{
+			byte(value),
+		}
+	}
+	if value < 0x4000 {
+		return []byte{
+			byte(value | 0x80),
+			byte(value >> 7),
+		}
+	}
+	return []byte{
+		byte(value | 0x80),
+		byte((value >> 7) | 0x80),
+		byte(value >> 14),
+	}
+}
+
+// use ULEB32 decoding so that WasmLib can use it as well
+func BytesToSize32(buf []byte) uint32 {
+	b := uint32(buf[0])
+	if (b & 0x80) == 0 {
+		return b
+	}
+	ret := b & 0x7f
+	b = uint32(buf[1])
+	if (b & 0x80) == 0 {
+		return ret | (b << 7)
+	}
+	ret |= (b & 0x7f) << 7
+	b = uint32(buf[2])
+	if (b & 0x80) == 0 {
+		return ret | (b << 14)
+	}
+	ret |= (b & 0x7f) << 14
+	b = uint32(buf[3])
+	if (b & 0x80) == 0 {
+		return ret | (b << 21)
+	}
+	ret |= (b & 0x7f) << 21
+	b = uint32(buf[4])
+	if (b & 0xf0) == 0 {
+		return ret | (b << 28)
+	}
+	panic("invalid ULEB32")
+}
+
+// use ULEB32 encoding so that WasmLib can decode it as well
+func Size32ToBytes(value uint32) []byte {
+	if value < 0x80 {
+		return []byte{
+			byte(value),
+		}
+	}
+	if value < 0x4000 {
+		return []byte{
+			byte(value | 0x80),
+			byte(value >> 7),
+		}
+	}
+	if value < 0x200000 {
+		return []byte{
+			byte(value | 0x80),
+			byte((value >> 7) | 0x80),
+			byte(value >> 14),
+		}
+	}
+	if value < 0x10000000 {
+		return []byte{
+			byte(value | 0x80),
+			byte((value >> 7) | 0x80),
+			byte((value >> 14) | 0x80),
+			byte(value >> 21),
+		}
+	}
+	return []byte{
+		byte(value | 0x80),
+		byte((value >> 7) | 0x80),
+		byte((value >> 14) | 0x80),
+		byte((value >> 21) | 0x80),
+		byte(value >> 28),
+	}
+}
+
 //////////////////// string, uint16 length \\\\\\\\\\\\\\\\\\\\
 
 func StringToBytes(str string) []byte {

@@ -92,7 +92,7 @@ func getBlockContextSubscriptions(state kv.KVStore) *collections.Array16 {
 	return collections.NewArray16(state, StateVarBlockContextSubscriptions)
 }
 
-func getBlockContextSubscriptionsR(state kv.KVStoreReader) *collections.ImmutableArray16 {
+func getBlockContextSubscriptionsR(state kv.KVStoreReader) *collections.Array16ReadOnly {
 	return collections.NewArray16ReadOnly(state, StateVarBlockContextSubscriptions)
 }
 

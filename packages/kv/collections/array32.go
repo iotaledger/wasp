@@ -4,38 +4,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"math"
 
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 var ErrArray32Overflow = errors.New("Array32 overflow")
-
-// Array32 represents a dynamic array stored in a kv.KVStore
-type Array32 struct {
-	*ImmutableArray32
-	kvw kv.KVWriter
-}
-
-// ImmutableArray32 provides read-only access to an Array32 in a kv.KVStoreReader.
-type ImmutableArray32 struct {
-	kvr  kv.KVStoreReader
-	name string
-}
-
-func NewArray32(kvStore kv.KVStore, name string) *Array32 {
-	return &Array32{
-		ImmutableArray32: NewArray32ReadOnly(kvStore, name),
-		kvw:              kvStore,
-	}
-}
-
-func NewArray32ReadOnly(kvReader kv.KVStoreReader, name string) *ImmutableArray32 {
-	return &ImmutableArray32{
-		kvr:  kvReader,
-		name: name,
-	}
-}
 
 // For easy distinction between arrays and map collections
 // we use '#' as separator for arrays and '.' for maps.
@@ -43,92 +17,107 @@ func NewArray32ReadOnly(kvReader kv.KVStoreReader, name string) *ImmutableArray3
 // WasmLib maps these collections in the exact same way
 const array32ElemKeyCode = byte('#')
 
-func Array32SizeKey(name string) kv.Key {
-	return kv.Key(name)
-}
-
-func Array32ElemKey(name string, idx uint32) kv.Key {
+func Array32ElemKey(name string, index uint32) kv.Key {
 	var buf bytes.Buffer
 	buf.Write([]byte(name))
 	buf.WriteByte(array32ElemKeyCode)
-	buf.Write(uint32ToBytes(idx))
+	buf.Write(util.Size32ToBytes(index))
 	return kv.Key(buf.Bytes())
 }
 
-// Array32RangeKeys returns the KVStore keys for the items between [from, to) (`to` being not inclusive),
-// assuming it has `length` elements.
-func Array32RangeKeys(name string, length, from, to uint32) []kv.Key {
-	keys := make([]kv.Key, 0)
-	if to >= from {
-		for i := from; i < to && i < length; i++ {
-			keys = append(keys, Array32ElemKey(name, i))
-		}
-	}
-	return keys
+/////////////////////////////////  Array32ReadOnly  \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+// Array32ReadOnly provides read-only access to an Array32 in a kv.KVStoreReader.
+type Array32ReadOnly struct {
+	kvr  kv.KVStoreReader
+	name string
 }
 
-// use ULEB128 decoding so that WasmLib can use it as well
-func bytesToUint32(buf []byte) uint32 {
-	value := uint32(buf[0] & 0x7f)
-	i := 0
-	for s := 7; (buf[i] & 0x80) != 0; s += 7 {
-		i++
-		value |= uint32(buf[i]&0x7f) << s
-	}
-	return value
-}
-
-// use ULEB128 encoding so that WasmLib can decode it as well
-func uint32ToBytes(value uint32) []byte {
-	buf := make([]byte, 0, 5)
-	b := byte(value)
-	value >>= 7
-	for value != 0 {
-		buf = append(buf, b|0x80)
-		b = byte(value)
-		value >>= 7
-	}
-	buf = append(buf, b)
-	return buf
-}
-
-func (a *Array32) Immutable() *ImmutableArray32 {
-	return a.ImmutableArray32
-}
-
-func (a *ImmutableArray32) getSizeKey() kv.Key {
-	return Array32SizeKey(a.name)
-}
-
-func (a *ImmutableArray32) getArray32ElemKey(idx uint32) kv.Key {
-	return Array32ElemKey(a.name, idx)
-}
-
-func (a *Array32) setSize(n uint32) {
-	if n == 0 {
-		a.kvw.Del(a.getSizeKey())
-	} else {
-		a.kvw.Set(a.getSizeKey(), uint32ToBytes(n))
+func NewArray32ReadOnly(kvReader kv.KVStoreReader, name string) *Array32ReadOnly {
+	return &Array32ReadOnly{
+		kvr:  kvReader,
+		name: name,
 	}
 }
 
-func (a *Array32) addToSize(amount int) uint32 {
-	prevSize := a.Len()
-	newSize := uint64(prevSize) + uint64(amount)
-	if newSize > math.MaxUint32 {
-		panic(ErrArray32Overflow)
+func (a *Array32ReadOnly) getArray32ElemKey(index uint32) kv.Key {
+	return Array32ElemKey(a.name, index)
+}
+
+func (a *Array32ReadOnly) GetAt(index uint32) []byte {
+	length := a.Len()
+	if index >= length {
+		panic(fmt.Errorf("index %d out of range for array of len %d", index, length))
 	}
-	a.setSize(uint32(newSize))
-	return prevSize
+	return a.kvr.Get(a.getArray32ElemKey(index))
+}
+
+func (a *Array32ReadOnly) getSizeKey() kv.Key {
+	return kv.Key(a.name)
 }
 
 // Len == 0/empty/non-existent are equivalent
-func (a *ImmutableArray32) Len() uint32 {
+func (a *Array32ReadOnly) Len() uint32 {
 	v := a.kvr.Get(a.getSizeKey())
 	if v == nil {
 		return 0
 	}
-	return bytesToUint32(v)
+	return util.BytesToSize32(v)
+}
+
+/////////////////////////////////  Array32  \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+// Array32 represents a dynamic array stored in a kv.KVStore
+type Array32 struct {
+	*Array32ReadOnly
+	kvw kv.KVWriter
+}
+
+func NewArray32(kvStore kv.KVStore, name string) *Array32 {
+	return &Array32{
+		Array32ReadOnly: NewArray32ReadOnly(kvStore, name),
+		kvw:             kvStore,
+	}
+}
+
+func (a *Array32) addToSize(amount uint32) uint32 {
+	prevSize := a.Len()
+	newSize := prevSize + amount
+	if newSize < prevSize {
+		panic(ErrArray32Overflow)
+	}
+	a.setSize(newSize)
+	return prevSize
+}
+
+// TODO implement with DelPrefix
+func (a *Array32) Erase() {
+	length := a.Len()
+	for i := uint32(0); i < length; i++ {
+		a.kvw.Del(a.getArray32ElemKey(i))
+	}
+	a.setSize(0)
+}
+
+func (a *Array32) Extend(other *Array32ReadOnly) {
+	length := other.Len()
+	for i := uint32(0); i < length; i++ {
+		a.Push(other.GetAt(i))
+	}
+}
+
+func (a *Array32) Immutable() *Array32ReadOnly {
+	return a.Array32ReadOnly
+}
+
+// PruneAt deletes the value at the given index, without shifting the rest
+// of the values.
+func (a *Array32) PruneAt(index uint32) {
+	length := a.Len()
+	if index >= length {
+		panic(fmt.Errorf("index %d out of range for array of len %d", index, length))
+	}
+	a.kvw.Del(a.getArray32ElemKey(index))
 }
 
 // adds to the end of the list
@@ -138,44 +127,18 @@ func (a *Array32) Push(value []byte) {
 	a.kvw.Set(k, value)
 }
 
-func (a *Array32) Extend(other *ImmutableArray32) {
-	otherLen := other.Len()
-	for i := uint32(0); i < otherLen; i++ {
-		a.Push(other.GetAt(i))
+func (a *Array32) SetAt(index uint32, value []byte) {
+	length := a.Len()
+	if index >= length {
+		panic(fmt.Errorf("index %d out of range for array of len %d", index, length))
 	}
+	a.kvw.Set(a.getArray32ElemKey(index), value)
 }
 
-// TODO implement with DelPrefix
-func (a *Array32) Erase() {
-	n := a.Len()
-	for i := uint32(0); i < n; i++ {
-		a.kvw.Del(a.getArray32ElemKey(i))
+func (a *Array32) setSize(size uint32) {
+	if size == 0 {
+		a.kvw.Del(a.getSizeKey())
+	} else {
+		a.kvw.Set(a.getSizeKey(), util.Size32ToBytes(size))
 	}
-	a.setSize(0)
-}
-
-func (a *ImmutableArray32) GetAt(idx uint32) []byte {
-	n := a.Len()
-	if idx >= n {
-		panic(fmt.Errorf("index %d out of range for array of len %d", idx, n))
-	}
-	return a.kvr.Get(a.getArray32ElemKey(idx))
-}
-
-func (a *Array32) SetAt(idx uint32, value []byte) {
-	n := a.Len()
-	if idx >= n {
-		panic(fmt.Errorf("index %d out of range for array of len %d", idx, n))
-	}
-	a.kvw.Set(a.getArray32ElemKey(idx), value)
-}
-
-// PruneAt deletes the value at the given index, without shifting the rest
-// of the values.
-func (a *Array32) PruneAt(idx uint32) {
-	n := a.Len()
-	if idx >= n {
-		panic(fmt.Errorf("index %d out of range for array of len %d", idx, n))
-	}
-	a.kvw.Del(a.getArray32ElemKey(idx))
 }
