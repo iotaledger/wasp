@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
@@ -82,7 +83,7 @@ func TestMempoolBasic(t *testing.T) {
 //   - Send a request.
 //   - Get proposals -- all received 1 request.
 //
-//nolint:gocyclo
+
 func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
 	te := newEnv(t, n, f, reliable)
@@ -104,48 +105,6 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		<-awaitTrackHeadChanels[i]
 	}
 
-	blockFn := func(req isc.Request, ao *isc.AliasOutputWithID) *isc.AliasOutputWithID {
-		store := te.stores[0]
-		vmTask := &vm.VMTask{
-			Processors:             processors.MustNew(coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)),
-			AnchorOutput:           ao.GetAliasOutput(),
-			AnchorOutputID:         ao.OutputID(),
-			Store:                  store,
-			Requests:               []isc.Request{req},
-			TimeAssumption:         tangleTime,
-			Entropy:                hashing.HashDataBlake2b([]byte{2, 1, 7}),
-			ValidatorFeeTarget:     accounts.CommonAccount(),
-			EstimateGasMode:        false,
-			EnableGasBurnLogging:   false,
-			MaintenanceModeEnabled: false,
-			Log:                    te.log.Named("VM"),
-		}
-		require.NoError(t, runvm.NewVMRunner().Run(vmTask))
-		block := store.Commit(vmTask.StateDraft)
-		chainState, err := store.StateByTrieRoot(block.TrieRoot())
-		require.NoError(t, err)
-		//
-		// Check if block has both requests as consumed.
-		receipts, err := blocklog.RequestReceiptsFromBlock(block)
-		require.NoError(t, err)
-		require.Len(t, receipts, 1)
-		blockReqs := []isc.Request{}
-		for i := range receipts {
-			blockReqs = append(blockReqs, receipts[i].Request)
-		}
-		require.Contains(t, blockReqs, req)
-		nextAO, _ := te.tcl.FakeTX(ao, te.cmtAddress)
-
-		// sync mempools with new state
-		for i := range te.mempools {
-			awaitTrackHeadChanels[i] = te.mempools[i].TrackNewChainHead(chainState, ao, nextAO, []state.Block{block}, []state.Block{})
-		}
-		for i := range te.mempools {
-			<-awaitTrackHeadChanels[i]
-		}
-		return nextAO
-	}
-
 	output := transaction.BasicOutputFromPostData(
 		te.governor.Address(),
 		isc.HnameNil,
@@ -159,7 +118,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	for _, node := range te.mempools {
 		node.ReceiveOnLedgerRequest(onLedgerReq)
 	}
-	currentAO := blockFn(onLedgerReq, te.originAO)
+	currentAO := blockFn(te, []isc.Request{onLedgerReq}, te.originAO, tangleTime)
 
 	//
 	offLedgerReq := isc.NewOffLedgerRequest(
@@ -194,7 +153,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	}
 	//
 	// Make a block consuming those 2 requests.
-	currentAO = blockFn(offLedgerReq, currentAO)
+	currentAO = blockFn(te, []isc.Request{offLedgerReq}, currentAO, tangleTime)
 
 	//
 	// Ask proposals for the next
@@ -232,6 +191,64 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		require.Len(t, prop, 1)
 		require.Contains(t, prop, offLedgerRef2)
 	}
+}
+
+func blockFn(te *testEnv, reqs []isc.Request, ao *isc.AliasOutputWithID, tangleTime time.Time) *isc.AliasOutputWithID {
+	// sort reqs by nonce
+	slices.SortFunc(reqs, func(a, b isc.Request) bool {
+		offledgerReqA, ok := a.(isc.OffLedgerRequest)
+		if !ok {
+			return false
+		}
+		offledgerReqB, ok := b.(isc.OffLedgerRequest)
+		if !ok {
+			return false
+		}
+		return offledgerReqA.Nonce() < offledgerReqB.Nonce()
+	})
+
+	store := te.stores[0]
+	vmTask := &vm.VMTask{
+		Processors:             processors.MustNew(coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)),
+		AnchorOutput:           ao.GetAliasOutput(),
+		AnchorOutputID:         ao.OutputID(),
+		Store:                  store,
+		Requests:               reqs,
+		TimeAssumption:         tangleTime,
+		Entropy:                hashing.HashDataBlake2b([]byte{2, 1, 7}),
+		ValidatorFeeTarget:     accounts.CommonAccount(),
+		EstimateGasMode:        false,
+		EnableGasBurnLogging:   false,
+		MaintenanceModeEnabled: false,
+		Log:                    te.log.Named("VM"),
+	}
+	require.NoError(te.t, runvm.NewVMRunner().Run(vmTask))
+	block := store.Commit(vmTask.StateDraft)
+	chainState, err := store.StateByTrieRoot(block.TrieRoot())
+	require.NoError(te.t, err)
+	//
+	// Check if block has both requests as consumed.
+	receipts, err := blocklog.RequestReceiptsFromBlock(block)
+	require.NoError(te.t, err)
+	require.Len(te.t, receipts, len(reqs))
+	blockReqs := []isc.Request{}
+	for i := range receipts {
+		blockReqs = append(blockReqs, receipts[i].Request)
+	}
+	for _, req := range reqs {
+		require.Contains(te.t, blockReqs, req)
+	}
+	nextAO, _ := te.tcl.FakeTX(ao, te.cmtAddress)
+
+	// sync mempools with new state
+	awaitTrackHeadChanels := make([]<-chan bool, len(te.mempools))
+	for i := range te.mempools {
+		awaitTrackHeadChanels[i] = te.mempools[i].TrackNewChainHead(chainState, ao, nextAO, []state.Block{block}, []state.Block{})
+	}
+	for i := range te.mempools {
+		<-awaitTrackHeadChanels[i]
+	}
+	return nextAO
 }
 
 func TestTimeLock(t *testing.T) {
@@ -432,7 +449,159 @@ func testExpiration(t *testing.T, n, f int, reliable bool) {
 	}
 }
 
-// TODO testNonceGaps
+func TestMempoolsNonceGaps(t *testing.T) {
+	// TODO how to remove the sleeps?
+	// 1 node setup
+	// send nonces 0,1,3,6,10
+	// ask for proposal, assert 0,1 are proposed
+	// ask again, nothing to be proposed
+	// send nonce 2
+	// ask for proposal, assert 2,3 are proposed
+	// send nonce 4, assert 4,5 are proposed
+
+	te := newEnv(t, 1, 0, true)
+	defer te.close()
+
+	t.Log("ServerNodesUpdated")
+	tangleTime := time.Now()
+	for _, node := range te.mempools {
+		node.ServerNodesUpdated(te.peerPubKeys, te.peerPubKeys)
+		node.TangleTimeUpdated(tangleTime)
+	}
+	awaitTrackHeadChanels := make([]<-chan bool, len(te.mempools))
+	// deposit some funds so off-ledger requests can go through
+	t.Log("TrackNewChainHead")
+	for i, node := range te.mempools {
+		awaitTrackHeadChanels[i] = node.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
+	}
+	for i := range te.mempools {
+		<-awaitTrackHeadChanels[i]
+	}
+
+	output := transaction.BasicOutputFromPostData(
+		te.governor.Address(),
+		isc.HnameNil,
+		isc.RequestParameters{
+			TargetAddress: te.chainID.AsAddress(),
+			Assets:        isc.NewAssetsBaseTokens(10 * isc.Million),
+		},
+	)
+	onLedgerReq, err := isc.OnLedgerFromUTXO(output, tpkg.RandOutputID(uint16(0)))
+	require.NoError(t, err)
+	for _, node := range te.mempools {
+		node.ReceiveOnLedgerRequest(onLedgerReq)
+	}
+	currentAO := blockFn(te, []isc.Request{onLedgerReq}, te.originAO, tangleTime)
+
+	// send nonces 0,1,3,6,10
+	createReqWithNonce := func(nonce uint64) isc.OffLedgerRequest {
+		return isc.NewOffLedgerRequest(
+			isc.RandomChainID(),
+			isc.Hn("foo"),
+			isc.Hn("bar"),
+			dict.New(),
+			nonce,
+			gas.LimitsDefault.MaxGasPerRequest,
+		).Sign(te.governor)
+	}
+	offLedgerReqs := []isc.Request{
+		createReqWithNonce(0),
+		createReqWithNonce(1),
+		createReqWithNonce(3),
+		createReqWithNonce(6),
+		createReqWithNonce(10),
+	}
+
+	chosenMempool := rand.Intn(len(te.mempools))
+	for _, req := range offLedgerReqs {
+		t.Log("Sending off-ledger request with nonces 0,1,3,6,10")
+		require.True(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(req.(isc.OffLedgerRequest)))
+	}
+	time.Sleep(500 * time.Millisecond) // give some time for the requests to reach the pool
+
+	askProposalExpectReqs := func(ao *isc.AliasOutputWithID, reqs ...isc.Request) *isc.AliasOutputWithID {
+		t.Log("Ask for proposals")
+		proposals := make([]<-chan []*isc.RequestRef, len(te.mempools))
+		for i, node := range te.mempools {
+			proposals[i] = node.ConsensusProposalAsync(te.ctx, ao)
+		}
+		t.Log("Wait for proposals and ask for decided requests")
+		decided := make([]<-chan []isc.Request, len(te.mempools))
+		for i, node := range te.mempools {
+			proposal := <-proposals[i]
+			require.Len(t, proposal, 2)
+			decided[i] = node.ConsensusRequestsAsync(te.ctx, proposal)
+		}
+		t.Log("Wait for decided requests")
+		var nodeDecidedReqs []isc.Request
+		for i := range te.mempools {
+			nodeDecidedReqs = <-decided[i]
+			require.Len(t, nodeDecidedReqs, len(reqs))
+			// they aren't ordered here, can be 0,1 or 1,0
+			for _, r := range reqs {
+				require.Contains(t, nodeDecidedReqs, r)
+			}
+		}
+		//
+		// Make a block consuming those 2 requests.
+		return blockFn(te, nodeDecidedReqs, ao, tangleTime)
+	}
+
+	emptyProposalFn := func(ao *isc.AliasOutputWithID) {
+		// ask again, nothing to be proposed
+		//
+		// Ask proposals for the next
+		proposals := make([]<-chan []*isc.RequestRef, len(te.mempools))
+		for i := range te.mempools {
+			proposals[i] = te.mempools[i].ConsensusProposalAsync(te.ctx, ao) // Intentionally invalid order (vs TrackNewChainHead).
+		}
+		//
+		// We should not get any requests, there is a gap in the nonces
+		for i := range te.mempools {
+			select {
+			case refs := <-proposals[i]:
+				t.Fatalf("should not get a value here, Got %+v", refs)
+			default:
+				// OK
+			}
+		}
+	}
+	// ask for proposal, assert 0,1 are proposed
+	currentAO = askProposalExpectReqs(currentAO, offLedgerReqs[0], offLedgerReqs[1])
+
+	// next proposal is empty
+	emptyProposalFn(currentAO)
+
+	// send nonce 2
+	reqNonce2 := createReqWithNonce(2)
+	t.Log("Sending off-ledger request with nonce 2")
+	require.True(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce2))
+	time.Sleep(500 * time.Millisecond) // give some time for the requests to reach the pool
+
+	// ask for proposal, assert 2,3 are proposed
+	currentAO = askProposalExpectReqs(currentAO, reqNonce2, offLedgerReqs[2])
+
+	// next proposal is empty
+	emptyProposalFn(currentAO)
+
+	// send nonce 5, assert proposal is still empty (there is still a gap with the state)
+	reqNonce5 := createReqWithNonce(5)
+	t.Log("Sending off-ledger request with nonce 5")
+	require.True(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce5))
+	time.Sleep(500 * time.Millisecond) // give some time for the requests to reach the pool
+
+	emptyProposalFn(currentAO)
+
+	// send nonce 4
+	reqNonce4 := createReqWithNonce(4)
+	t.Log("Sending off-ledger request with nonce 4")
+	require.True(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce4))
+	time.Sleep(500 * time.Millisecond) // give some time for the requests to reach the pool
+
+	// ask for proposal, assert 4,5,6 are proposed
+	askProposalExpectReqs(currentAO, reqNonce4, reqNonce5, offLedgerReqs[3])
+	// nonce 10 was never proposed
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // testEnv

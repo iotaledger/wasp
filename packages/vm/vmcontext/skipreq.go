@@ -72,7 +72,7 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 
 	var nonceErr error
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		nonceErr = accounts.CheckNonce(vmctx.State(), senderAccount, vmctx.req.(isc.OffLedgerRequest).Nonce())
+		nonceErr = accounts.CheckNonce(s, senderAccount, vmctx.req.(isc.OffLedgerRequest).Nonce())
 	})
 	return nonceErr
 }

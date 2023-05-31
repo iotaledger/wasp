@@ -48,8 +48,8 @@ const (
 	// noCollection is the special <collectionID> used for storing NFTs that do not belong in a collection
 	noCollection = "-"
 
-	// keyMaxAssumedNonce stores a map of <agentID> => max assumed nonce (uint64)
-	keyMaxAssumedNonce = "m"
+	// keyNonce stores a map of <agentID> => nonce (uint64)
+	keyNonce = "m"
 
 	// keyNativeTokenOutputMap stores a map of <nativeTokenID> => nativeTokenOutputRec
 	keyNativeTokenOutputMap = "TO"
