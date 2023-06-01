@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/hive.go/app/configuration"
 	"github.com/iotaledger/hive.go/app/shutdown"
 	loggerpkg "github.com/iotaledger/hive.go/logger"
-	components "github.com/iotaledger/wasp/components/webapi"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
@@ -34,10 +33,12 @@ import (
 
 const APIVersion = 1
 
+var ConfirmedStateLagThreshold uint32
+
 func AddHealthEndpoint(server echoswagger.ApiRoot, chainService interfaces.ChainService, metricsService interfaces.MetricsService) {
 	server.GET("/health", func(e echo.Context) error {
 		lag := metricsService.GetMaxChainConfirmedStateLag()
-		if lag > components.ParamsWebAPI.Limits.ConfirmedStateLagThreshold {
+		if lag > ConfirmedStateLagThreshold {
 			return e.String(http.StatusInternalServerError, fmt.Sprintf("chain unsync with %d diff", lag))
 		}
 
