@@ -34,7 +34,7 @@ export class ChangeAccessNodesCall {
 }
 
 export class ClaimChainOwnershipCall {
-    func:   wasmlib.ScFunc;
+    func: wasmlib.ScFunc;
 
     public constructor(ctx: wasmlib.ScFuncClientContext) {
         this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncClaimChainOwnership);
@@ -114,7 +114,7 @@ export class SetMetadataCall {
 }
 
 export class StartMaintenanceCall {
-    func:   wasmlib.ScFunc;
+    func: wasmlib.ScFunc;
 
     public constructor(ctx: wasmlib.ScFuncClientContext) {
         this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncStartMaintenance);
@@ -122,7 +122,7 @@ export class StartMaintenanceCall {
 }
 
 export class StopMaintenanceCall {
-    func:   wasmlib.ScFunc;
+    func: wasmlib.ScFunc;
 
     public constructor(ctx: wasmlib.ScFuncClientContext) {
         this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncStopMaintenance);

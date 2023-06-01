@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/tools/wasp-cli/authentication"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	cliinit "github.com/iotaledger/wasp/tools/wasp-cli/cli/init"
 	"github.com/iotaledger/wasp/tools/wasp-cli/completion"
@@ -56,6 +57,8 @@ func init() {
 	}
 
 	rootCmd = initRootCmd(waspVersion)
+	rootCmd.PersistentFlags().BoolVar(&cliclients.SkipCheckVersions, "skip-version-check", false, "skip-version-check")
+
 	log.Init(rootCmd)
 	rootCmd.AddCommand(completion.InitCompletionCommand(rootCmd.Root().Name()))
 	cliinit.Init(rootCmd)

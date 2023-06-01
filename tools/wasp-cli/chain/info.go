@@ -80,9 +80,16 @@ func initInfoCmd() *cobra.Command {
 				log.Printf("Owner: %s\n", chainInfo.ChainOwnerId)
 				log.Printf("Gas fee: gas units * (%d/%d)\n", chainInfo.GasFeePolicy.GasPerToken.A, chainInfo.GasFeePolicy.GasPerToken.B)
 				log.Printf("Validator fee share: %d%%\n", chainInfo.GasFeePolicy.ValidatorFeeShare)
-
-				log.Printf("Public API: %s", chainInfo.PublicUrl)
 			}
+
+			log.Printf("\nMetadata\n")
+			log.Printf("Name: %s\n", chainInfo.Metadata.Name)
+			log.Printf("Description: %s\n", chainInfo.Metadata.Description)
+			log.Printf("Website: %s\n", chainInfo.Metadata.Website)
+
+			log.Printf("Public API: %s\n", chainInfo.PublicURL)
+			log.Printf("EVM Json RPC URL: %s\n", chainInfo.Metadata.EvmJsonRpcURL)
+			log.Printf("EVM WebSocket URL: %s\n", chainInfo.Metadata.EvmWebSocketURL)
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)

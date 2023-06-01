@@ -13,47 +13,40 @@ import (
 
 const (
 	MaxCustomMetadataLength = iotago.MaxMetadataLength - serializer.OneByte - serializer.UInt32ByteSize - state.L1CommitmentSize - gas.GasPolicyByteSize - serializer.UInt16ByteSize
-	MaxURLLength            = 1000
 )
 
 func setMetadata(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
-	publicURLBytes := ctx.Params().Get(governance.ParamPublicURL)
-	publicURL, err := codec.DecodeString(publicURLBytes, "")
-	ctx.RequireNoError(err)
-	ctx.Requiref(len(publicURL) <= MaxCustomMetadataLength, "public url size too big (%d>%d)", len(publicURL), MaxCustomMetadataLength)
+	var publicURLBytes []byte
+	var metadataBytes []byte
 
-	evmJSONRPCUrlBytes := ctx.Params().Get(governance.ParamMetadataEVMJsonRPCURL)
-	evmJSONRPCUrl, err := codec.DecodeString(evmJSONRPCUrlBytes, "")
-	ctx.RequireNoError(err)
-	ctx.Requiref(len(evmJSONRPCUrl) <= MaxURLLength, "evm json rpc url size too big (%d>%d)", len(evmJSONRPCUrl), MaxURLLength)
+	publicURLBytes = ctx.Params().Get(governance.ParamPublicURL)
+	metadataBytes = ctx.Params().Get(governance.ParamMetadata)
 
-	evmWebSocketURLBytes := ctx.Params().Get(governance.ParamMetadataEVMWebSocketURL)
-	evmWebSocketURL, err := codec.DecodeString(evmWebSocketURLBytes, "")
-	ctx.RequireNoError(err)
-	ctx.Requiref(len(evmWebSocketURL) <= MaxURLLength, "evm websocket url size too big (%d>%d)", len(evmWebSocketURL), MaxURLLength)
+	ctx.Requiref(len(publicURLBytes)+len(metadataBytes) <= MaxCustomMetadataLength, "supplied publicUrl and metadata is too big (%d>%d)", len(publicURLBytes)+len(metadataBytes), MaxCustomMetadataLength)
 
-	governance.SetPublicURL(ctx.State(), publicURL)
-	governance.SetEVMJsonRPCURL(ctx.State(), evmJSONRPCUrl)
-	governance.SetEVMWebSocketURL(ctx.State(), evmWebSocketURL)
+	if publicURLBytes != nil {
+		publicURL, err := codec.DecodeString(publicURLBytes, "")
+		ctx.RequireNoError(err)
+		governance.SetPublicURL(ctx.State(), publicURL)
+	}
+
+	if metadataBytes != nil {
+		metadata, err := isc.PublicChainMetadataFromBytes(metadataBytes)
+		ctx.RequireNoError(err)
+		governance.SetMetadata(ctx.State(), metadata)
+	}
 
 	return nil
 }
 
 func getMetadata(ctx isc.SandboxView) dict.Dict {
-	publicURL, err := governance.GetPublicURL(ctx.StateR())
-	ctx.RequireNoError(err)
-
-	evmJSONRPCUrl, err := governance.GetEVMJsonRPCURL(ctx.StateR())
-	ctx.RequireNoError(err)
-
-	evmWebSocketURL, err := governance.GetEVMWebSocketURL(ctx.StateR())
-	ctx.RequireNoError(err)
+	publicURL, _ := governance.GetPublicURL(ctx.StateR())
+	metadata := governance.MustGetMetadata(ctx.StateR())
 
 	return dict.Dict{
-		governance.ParamPublicURL:               []byte(publicURL),
-		governance.ParamMetadataEVMJsonRPCURL:   []byte(evmJSONRPCUrl),
-		governance.ParamMetadataEVMWebSocketURL: []byte(evmWebSocketURL),
+		governance.ParamPublicURL: []byte(publicURL),
+		governance.ParamMetadata:  metadata.Bytes(),
 	}
 }

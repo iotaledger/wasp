@@ -4,13 +4,13 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Events** | **[]string** |  | 
+**Events** | [**[]Event**](Event.md) |  | 
 
 ## Methods
 
 ### NewEventsResponse
 
-`func NewEventsResponse(events []string, ) *EventsResponse`
+`func NewEventsResponse(events []Event, ) *EventsResponse`
 
 NewEventsResponse instantiates a new EventsResponse object
 This constructor will assign default values to properties that have it defined,
@@ -27,20 +27,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetEvents
 
-`func (o *EventsResponse) GetEvents() []string`
+`func (o *EventsResponse) GetEvents() []Event`
 
 GetEvents returns the Events field if non-nil, zero value otherwise.
 
 ### GetEventsOk
 
-`func (o *EventsResponse) GetEventsOk() (*[]string, bool)`
+`func (o *EventsResponse) GetEventsOk() (*[]Event, bool)`
 
 GetEventsOk returns a tuple with the Events field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetEvents
 
-`func (o *EventsResponse) SetEvents(v []string)`
+`func (o *EventsResponse) SetEvents(v []Event)`
 
 SetEvents sets Events field to given value.
 
