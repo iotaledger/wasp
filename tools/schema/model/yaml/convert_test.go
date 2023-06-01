@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/tools/schema/model"
 	"github.com/iotaledger/wasp/tools/schema/model/yaml"
@@ -345,23 +345,23 @@ func TestConvert(t *testing.T) {
 			tt := fn(t)
 
 			file, err := os.Open(tt.args.path)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			in, err := io.ReadAll(file)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			def := &model.SchemaDef{}
 			root := yaml.Parse(in)
-			assert.NotNil(t, root)
+			require.NotNil(t, root)
 			err = yaml.Convert(root, def)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.wants.out.Name, def.Name)
-			assert.Equal(t, tt.wants.out.Description, def.Description)
-			assert.Equal(t, tt.wants.out.Events, def.Events)
-			assert.Equal(t, tt.wants.out.Structs, def.Structs)
-			assert.Equal(t, tt.wants.out.Typedefs, def.Typedefs)
-			assert.Equal(t, tt.wants.out.State, def.State)
-			assert.Equal(t, tt.wants.out.Funcs, def.Funcs)
-			assert.Equal(t, tt.wants.out.Views, def.Views)
+			require.NoError(t, err)
+			require.Equal(t, tt.wants.out.Name, def.Name)
+			require.Equal(t, tt.wants.out.Description, def.Description)
+			require.Equal(t, tt.wants.out.Events, def.Events)
+			require.Equal(t, tt.wants.out.Structs, def.Structs)
+			require.Equal(t, tt.wants.out.Typedefs, def.Typedefs)
+			require.Equal(t, tt.wants.out.State, def.State)
+			require.Equal(t, tt.wants.out.Funcs, def.Funcs)
+			require.Equal(t, tt.wants.out.Views, def.Views)
 		})
 	}
 }

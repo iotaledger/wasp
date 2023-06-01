@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
@@ -53,9 +52,9 @@ func newMigrationsTest(t *testing.T, stateIndex uint32) *migrationsTestEnv {
 	cs := state.NewStore(db)
 	origin.InitChain(cs, nil, 0)
 	latest, err := cs.LatestBlock()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	vmctx := &VMContext{
 		task: &vm.VMTask{
 			StateDraft: stateDraft,
