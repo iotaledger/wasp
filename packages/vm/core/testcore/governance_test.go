@@ -277,7 +277,112 @@ func TestDisallowMaintenanceDeadlock(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestPublicURLL1Metadata(t *testing.T) {
+func TestMetadata(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	ch := env.NewChain()
+
+	// deposit some extra tokens to the common account to accommodate for the SD change
+	ch.SendFromL1ToL2AccountBaseTokens(10*isc.Million, 9*isc.Million, accounts.CommonAccount(), nil)
+
+	/*
+		Values with the length == 0 will reset the state value
+		Values with the length > 0 will set the state value
+		Nil values will be ignored and not change the state value
+	*/
+
+	testValue := "TESTYTEST"
+
+	testMetadata := isc.PublicChainMetadata{
+		EVMJsonRPCURL:   testValue,
+		EVMWebSocketURL: testValue,
+		Name:            testValue,
+		Description:     testValue,
+		Website:         testValue,
+	}
+
+	// Set proper metadata value
+	_, err := ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetMetadata.Name,
+			governance.ParamMetadata,
+			testMetadata.Bytes(),
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	res, err := ch.CallView(
+		governance.Contract.Name,
+		governance.ViewGetMetadata.Name,
+	)
+	require.NoError(t, err)
+	resMetadata := res.Get(governance.ParamMetadata)
+
+	// Chain name should be equal to the configured one.
+	require.Equal(t, testMetadata.Bytes(), resMetadata)
+
+	// Call SetMetadata without args. The metadata should be the same as it was previously configured and not be emptied.
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetMetadata.Name,
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	res, err = ch.CallView(
+		governance.Contract.Name,
+		governance.ViewGetMetadata.Name,
+	)
+	require.NoError(t, err)
+	resMetadata = res.Get(governance.ParamMetadata)
+
+	// Chain name should be equal to the configured one.
+	require.Equal(t, testMetadata.Bytes(), resMetadata)
+
+	// Call SetMetadata with an empty arg. The metadata call should fail.
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetMetadata.Name,
+			governance.ParamMetadata,
+			[]byte{},
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.Error(t, err)
+
+	// Test invalid custom metadata
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetMetadata.Name,
+			governance.ParamMetadata,
+			string(make([]byte, governanceimpl.MaxCustomMetadataLength+1)),
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.Error(t, err)
+
+	// set invalid custom metadata
+	hugePublicChainMetadata := isc.PublicChainMetadata{
+		Website: string(make([]byte, governanceimpl.MaxCustomMetadataLength+1)),
+	}
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetMetadata.Name,
+			governance.ParamPublicURL,
+			hugePublicChainMetadata.Bytes(),
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.Error(t, err)
+}
+
+func TestL1Metadata(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	ch := env.NewChain()
 
@@ -297,30 +402,6 @@ func TestPublicURLL1Metadata(t *testing.T) {
 		nil,
 	)
 	require.NoError(t, err)
-
-	// set custom metadata
-	_, err = ch.PostRequestSync(
-		solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncSetMetadata.Name,
-			governance.ParamPublicURL,
-			publicURLMetadata,
-		).WithMaxAffordableGasBudget(),
-		nil,
-	)
-	require.NoError(t, err)
-
-	// set invalid custom metadata
-	_, err = ch.PostRequestSync(
-		solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncSetMetadata.Name,
-			governance.ParamPublicURL,
-			string(make([]byte, governanceimpl.MaxCustomMetadataLength+1)),
-		).WithMaxAffordableGasBudget(),
-		nil,
-	)
-	require.Error(t, err)
 
 	// assert metadata is correct on view call
 	res, err := ch.CallView(

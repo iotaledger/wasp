@@ -4,21 +4,20 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**ChainID** | **string** | ChainID (Bech32-encoded). | 
-**ChainOwnerId** | **string** | The chain owner address (Bech32-encoded). | 
+**ChainID** | **string** | ChainID (Bech32-encoded) | 
+**ChainOwnerId** | **string** | The chain owner address (Bech32-encoded) | 
 **EvmChainId** | **uint32** | The EVM chain ID | 
-**EvmJsonRpcUrl** | **string** | The EVM json rpc url | 
-**EvmWebSocketUrl** | **string** | The EVM websocket url | 
 **GasFeePolicy** | [**FeePolicy**](FeePolicy.md) |  | 
 **GasLimits** | [**Limits**](Limits.md) |  | 
-**IsActive** | **bool** | Whether or not the chain is active. | 
-**PublicUrl** | **string** | The fully qualified public url leading to the chains metadata | 
+**IsActive** | **bool** | Whether or not the chain is active | 
+**Metadata** | [**PublicChainMetadata**](PublicChainMetadata.md) |  | 
+**PublicURL** | **string** | The fully qualified public url leading to the chains metadata | 
 
 ## Methods
 
 ### NewChainInfoResponse
 
-`func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, evmJsonRpcUrl string, evmWebSocketUrl string, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, publicUrl string, ) *ChainInfoResponse`
+`func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadata PublicChainMetadata, publicURL string, ) *ChainInfoResponse`
 
 NewChainInfoResponse instantiates a new ChainInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -93,46 +92,6 @@ and a boolean to check if the value has been set.
 SetEvmChainId sets EvmChainId field to given value.
 
 
-### GetEvmJsonRpcUrl
-
-`func (o *ChainInfoResponse) GetEvmJsonRpcUrl() string`
-
-GetEvmJsonRpcUrl returns the EvmJsonRpcUrl field if non-nil, zero value otherwise.
-
-### GetEvmJsonRpcUrlOk
-
-`func (o *ChainInfoResponse) GetEvmJsonRpcUrlOk() (*string, bool)`
-
-GetEvmJsonRpcUrlOk returns a tuple with the EvmJsonRpcUrl field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetEvmJsonRpcUrl
-
-`func (o *ChainInfoResponse) SetEvmJsonRpcUrl(v string)`
-
-SetEvmJsonRpcUrl sets EvmJsonRpcUrl field to given value.
-
-
-### GetEvmWebSocketUrl
-
-`func (o *ChainInfoResponse) GetEvmWebSocketUrl() string`
-
-GetEvmWebSocketUrl returns the EvmWebSocketUrl field if non-nil, zero value otherwise.
-
-### GetEvmWebSocketUrlOk
-
-`func (o *ChainInfoResponse) GetEvmWebSocketUrlOk() (*string, bool)`
-
-GetEvmWebSocketUrlOk returns a tuple with the EvmWebSocketUrl field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetEvmWebSocketUrl
-
-`func (o *ChainInfoResponse) SetEvmWebSocketUrl(v string)`
-
-SetEvmWebSocketUrl sets EvmWebSocketUrl field to given value.
-
-
 ### GetGasFeePolicy
 
 `func (o *ChainInfoResponse) GetGasFeePolicy() FeePolicy`
@@ -193,24 +152,44 @@ and a boolean to check if the value has been set.
 SetIsActive sets IsActive field to given value.
 
 
-### GetPublicUrl
+### GetMetadata
 
-`func (o *ChainInfoResponse) GetPublicUrl() string`
+`func (o *ChainInfoResponse) GetMetadata() PublicChainMetadata`
 
-GetPublicUrl returns the PublicUrl field if non-nil, zero value otherwise.
+GetMetadata returns the Metadata field if non-nil, zero value otherwise.
 
-### GetPublicUrlOk
+### GetMetadataOk
 
-`func (o *ChainInfoResponse) GetPublicUrlOk() (*string, bool)`
+`func (o *ChainInfoResponse) GetMetadataOk() (*PublicChainMetadata, bool)`
 
-GetPublicUrlOk returns a tuple with the PublicUrl field if it's non-nil, zero value otherwise
+GetMetadataOk returns a tuple with the Metadata field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetPublicUrl
+### SetMetadata
 
-`func (o *ChainInfoResponse) SetPublicUrl(v string)`
+`func (o *ChainInfoResponse) SetMetadata(v PublicChainMetadata)`
 
-SetPublicUrl sets PublicUrl field to given value.
+SetMetadata sets Metadata field to given value.
+
+
+### GetPublicURL
+
+`func (o *ChainInfoResponse) GetPublicURL() string`
+
+GetPublicURL returns the PublicURL field if non-nil, zero value otherwise.
+
+### GetPublicURLOk
+
+`func (o *ChainInfoResponse) GetPublicURLOk() (*string, bool)`
+
+GetPublicURLOk returns a tuple with the PublicURL field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetPublicURL
+
+`func (o *ChainInfoResponse) SetPublicURL(v string)`
+
+SetPublicURL sets PublicURL field to given value.
 
 
 

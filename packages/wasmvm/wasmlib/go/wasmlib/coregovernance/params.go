@@ -305,13 +305,8 @@ func NewImmutableSetMetadataParams() ImmutableSetMetadataParams {
 }
 
 // the public evm json rpc url
-func (s ImmutableSetMetadataParams) EvmJsonRPCURL() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.Proxy.Root(ParamEvmJsonRPCURL))
-}
-
-// the public evm websocket url
-func (s ImmutableSetMetadataParams) EvmWebSocketUrl() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.Proxy.Root(ParamEvmWebSocketUrl))
+func (s ImmutableSetMetadataParams) Metadata() ImmutablePublicChainMetadata {
+	return ImmutablePublicChainMetadata{Proxy: s.Proxy.Root(ParamMetadata)}
 }
 
 // the public url leading to the chain info, stored on the tangle
@@ -324,13 +319,8 @@ type MutableSetMetadataParams struct {
 }
 
 // the public evm json rpc url
-func (s MutableSetMetadataParams) EvmJsonRPCURL() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.Proxy.Root(ParamEvmJsonRPCURL))
-}
-
-// the public evm websocket url
-func (s MutableSetMetadataParams) EvmWebSocketUrl() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.Proxy.Root(ParamEvmWebSocketUrl))
+func (s MutableSetMetadataParams) Metadata() MutablePublicChainMetadata {
+	return MutablePublicChainMetadata{Proxy: s.Proxy.Root(ParamMetadata)}
 }
 
 // the public url leading to the chain info, stored on the tangle

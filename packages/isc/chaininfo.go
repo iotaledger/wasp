@@ -15,7 +15,6 @@ type ChainInfo struct {
 	GasLimits       *gas.Limits
 	BlockKeepAmount int32
 
-	MetadataEVMJsonRPCURL   string
-	MetadataEVMWebSocketURL string
-	PublicURL               string
+	PublicURL string
+	Metadata  *PublicChainMetadata
 }

@@ -19,39 +19,35 @@ var _ MappedNullable = &ChainInfoResponse{}
 
 // ChainInfoResponse struct for ChainInfoResponse
 type ChainInfoResponse struct {
-	// ChainID (Bech32-encoded).
+	// ChainID (Bech32-encoded)
 	ChainID string `json:"chainID"`
-	// The chain owner address (Bech32-encoded).
+	// The chain owner address (Bech32-encoded)
 	ChainOwnerId string `json:"chainOwnerId"`
 	// The EVM chain ID
 	EvmChainId uint32 `json:"evmChainId"`
-	// The EVM json rpc url
-	EvmJsonRpcUrl string `json:"evmJsonRpcUrl"`
-	// The EVM websocket url
-	EvmWebSocketUrl string `json:"evmWebSocketUrl"`
 	GasFeePolicy FeePolicy `json:"gasFeePolicy"`
 	GasLimits Limits `json:"gasLimits"`
-	// Whether or not the chain is active.
+	// Whether or not the chain is active
 	IsActive bool `json:"isActive"`
+	Metadata PublicChainMetadata `json:"metadata"`
 	// The fully qualified public url leading to the chains metadata
-	PublicUrl string `json:"publicUrl"`
+	PublicURL string `json:"publicURL"`
 }
 
 // NewChainInfoResponse instantiates a new ChainInfoResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, evmJsonRpcUrl string, evmWebSocketUrl string, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, publicUrl string) *ChainInfoResponse {
+func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadata PublicChainMetadata, publicURL string) *ChainInfoResponse {
 	this := ChainInfoResponse{}
 	this.ChainID = chainID
 	this.ChainOwnerId = chainOwnerId
 	this.EvmChainId = evmChainId
-	this.EvmJsonRpcUrl = evmJsonRpcUrl
-	this.EvmWebSocketUrl = evmWebSocketUrl
 	this.GasFeePolicy = gasFeePolicy
 	this.GasLimits = gasLimits
 	this.IsActive = isActive
-	this.PublicUrl = publicUrl
+	this.Metadata = metadata
+	this.PublicURL = publicURL
 	return &this
 }
 
@@ -135,54 +131,6 @@ func (o *ChainInfoResponse) SetEvmChainId(v uint32) {
 	o.EvmChainId = v
 }
 
-// GetEvmJsonRpcUrl returns the EvmJsonRpcUrl field value
-func (o *ChainInfoResponse) GetEvmJsonRpcUrl() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.EvmJsonRpcUrl
-}
-
-// GetEvmJsonRpcUrlOk returns a tuple with the EvmJsonRpcUrl field value
-// and a boolean to check if the value has been set.
-func (o *ChainInfoResponse) GetEvmJsonRpcUrlOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.EvmJsonRpcUrl, true
-}
-
-// SetEvmJsonRpcUrl sets field value
-func (o *ChainInfoResponse) SetEvmJsonRpcUrl(v string) {
-	o.EvmJsonRpcUrl = v
-}
-
-// GetEvmWebSocketUrl returns the EvmWebSocketUrl field value
-func (o *ChainInfoResponse) GetEvmWebSocketUrl() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.EvmWebSocketUrl
-}
-
-// GetEvmWebSocketUrlOk returns a tuple with the EvmWebSocketUrl field value
-// and a boolean to check if the value has been set.
-func (o *ChainInfoResponse) GetEvmWebSocketUrlOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.EvmWebSocketUrl, true
-}
-
-// SetEvmWebSocketUrl sets field value
-func (o *ChainInfoResponse) SetEvmWebSocketUrl(v string) {
-	o.EvmWebSocketUrl = v
-}
-
 // GetGasFeePolicy returns the GasFeePolicy field value
 func (o *ChainInfoResponse) GetGasFeePolicy() FeePolicy {
 	if o == nil {
@@ -255,28 +203,52 @@ func (o *ChainInfoResponse) SetIsActive(v bool) {
 	o.IsActive = v
 }
 
-// GetPublicUrl returns the PublicUrl field value
-func (o *ChainInfoResponse) GetPublicUrl() string {
+// GetMetadata returns the Metadata field value
+func (o *ChainInfoResponse) GetMetadata() PublicChainMetadata {
+	if o == nil {
+		var ret PublicChainMetadata
+		return ret
+	}
+
+	return o.Metadata
+}
+
+// GetMetadataOk returns a tuple with the Metadata field value
+// and a boolean to check if the value has been set.
+func (o *ChainInfoResponse) GetMetadataOk() (*PublicChainMetadata, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Metadata, true
+}
+
+// SetMetadata sets field value
+func (o *ChainInfoResponse) SetMetadata(v PublicChainMetadata) {
+	o.Metadata = v
+}
+
+// GetPublicURL returns the PublicURL field value
+func (o *ChainInfoResponse) GetPublicURL() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.PublicUrl
+	return o.PublicURL
 }
 
-// GetPublicUrlOk returns a tuple with the PublicUrl field value
+// GetPublicURLOk returns a tuple with the PublicURL field value
 // and a boolean to check if the value has been set.
-func (o *ChainInfoResponse) GetPublicUrlOk() (*string, bool) {
+func (o *ChainInfoResponse) GetPublicURLOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.PublicUrl, true
+	return &o.PublicURL, true
 }
 
-// SetPublicUrl sets field value
-func (o *ChainInfoResponse) SetPublicUrl(v string) {
-	o.PublicUrl = v
+// SetPublicURL sets field value
+func (o *ChainInfoResponse) SetPublicURL(v string) {
+	o.PublicURL = v
 }
 
 func (o ChainInfoResponse) MarshalJSON() ([]byte, error) {
@@ -292,12 +264,11 @@ func (o ChainInfoResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize["chainID"] = o.ChainID
 	toSerialize["chainOwnerId"] = o.ChainOwnerId
 	toSerialize["evmChainId"] = o.EvmChainId
-	toSerialize["evmJsonRpcUrl"] = o.EvmJsonRpcUrl
-	toSerialize["evmWebSocketUrl"] = o.EvmWebSocketUrl
 	toSerialize["gasFeePolicy"] = o.GasFeePolicy
 	toSerialize["gasLimits"] = o.GasLimits
 	toSerialize["isActive"] = o.IsActive
-	toSerialize["publicUrl"] = o.PublicUrl
+	toSerialize["metadata"] = o.Metadata
+	toSerialize["publicURL"] = o.PublicURL
 	return toSerialize, nil
 }
 

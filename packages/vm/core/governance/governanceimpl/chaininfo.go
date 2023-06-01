@@ -19,17 +19,11 @@ func getChainInfo(ctx isc.SandboxView) dict.Dict {
 	ret.Set(governance.VarGasFeePolicyBytes, info.GasFeePolicy.Bytes())
 	ret.Set(governance.VarGasLimitsBytes, info.GasLimits.Bytes())
 
-	if len(info.MetadataEVMJsonRPCURL) > 0 {
-		ret.Set(governance.VarMetadataEVMJsonRPCURL, codec.EncodeString(info.MetadataEVMJsonRPCURL))
-	}
-
-	if len(info.MetadataEVMWebSocketURL) > 0 {
-		ret.Set(governance.VarMetadataEVMWebSocketURL, codec.EncodeString(info.MetadataEVMWebSocketURL))
-	}
-
 	if len(info.PublicURL) > 0 {
 		ret.Set(governance.VarPublicURL, codec.EncodeString(info.PublicURL))
 	}
+
+	ret.Set(governance.VarMetadata, info.Metadata.Bytes())
 
 	return ret
 }

@@ -14,19 +14,18 @@ const (
 )
 
 const (
-	ParamAccessAPI       = "ia"
-	ParamAccessOnly      = "i"
-	ParamActions         = "n"
-	ParamAddress         = "S"
-	ParamCertificate     = "ic"
-	ParamChainOwner      = "o"
-	ParamEvmJsonRPCURL   = "e"
-	ParamEvmWebSocketUrl = "w"
-	ParamFeePolicy       = "g"
-	ParamGasLimits       = "l"
-	ParamGasRatio        = "e"
-	ParamPubKey          = "ip"
-	ParamPublicURL       = "x"
+	ParamAccessAPI   = "ia"
+	ParamAccessOnly  = "i"
+	ParamActions     = "n"
+	ParamAddress     = "S"
+	ParamCertificate = "ic"
+	ParamChainOwner  = "o"
+	ParamFeePolicy   = "g"
+	ParamGasLimits   = "l"
+	ParamGasRatio    = "e"
+	ParamMetadata    = "md"
+	ParamPubKey      = "ip"
+	ParamPublicURL   = "x"
 )
 
 const (
@@ -36,12 +35,10 @@ const (
 	ResultChainOwner           = "o"
 	ResultChainOwnerID         = "o"
 	ResultControllers          = "a"
-	ResultCustomMetadata       = "x"
-	ResultEvmJsonRPCURL        = "e"
-	ResultEvmWebSocketUrl      = "w"
 	ResultFeePolicy            = "g"
 	ResultGasLimits            = "l"
 	ResultGasRatio             = "e"
+	ResultMetadata             = "md"
 	ResultPublicURL            = "x"
 	ResultStatus               = "m"
 )

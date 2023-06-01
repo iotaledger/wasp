@@ -23,7 +23,7 @@ type ChangeAccessNodesCall struct {
 }
 
 type ClaimChainOwnershipCall struct {
-	Func   *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type DelegateChainOwnershipCall struct {
@@ -67,11 +67,11 @@ type SetMetadataCall struct {
 }
 
 type StartMaintenanceCall struct {
-	Func   *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type StopMaintenanceCall struct {
-	Func   *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type GetAllowedStateControllerAddressesCall struct {
