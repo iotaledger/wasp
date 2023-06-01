@@ -16,5 +16,5 @@ type ChainInfo struct {
 	BlockKeepAmount int32
 
 	PublicURL string
-	Metadata  *ChainMetadata
+	Metadata  *PublicChainMetadata
 }

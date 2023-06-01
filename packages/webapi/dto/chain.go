@@ -10,7 +10,7 @@ type (
 	ContractsMap map[isc.Hname]*root.ContractRecord
 )
 
-type ChainMetadata struct {
+type PublicChainMetadata struct {
 	EVMJsonRPCURL   string `json:"evmJsonRpcUrl" swagger:"desc(The EVM json rpc url),required"`
 	EVMWebSocketURL string `json:"evmWebSocketUrl" swagger:"desc(The EVM websocket url)),required"`
 
@@ -27,7 +27,7 @@ type ChainInfo struct {
 	GasLimits    *gas.Limits
 	PublicURL    string
 
-	Metadata ChainMetadata
+	Metadata PublicChainMetadata
 }
 
 func MapChainInfo(info *isc.ChainInfo, isActive bool) *ChainInfo {
@@ -38,7 +38,7 @@ func MapChainInfo(info *isc.ChainInfo, isActive bool) *ChainInfo {
 		GasFeePolicy: info.GasFeePolicy,
 		GasLimits:    info.GasLimits,
 		PublicURL:    info.PublicURL,
-		Metadata: ChainMetadata{
+		Metadata: PublicChainMetadata{
 			EVMJsonRPCURL:   info.Metadata.EVMJsonRPCURL,
 			EVMWebSocketURL: info.Metadata.EVMWebSocketURL,
 			Name:            info.Metadata.Name,

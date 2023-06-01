@@ -53,7 +53,7 @@ type ContractInfoResponse struct {
 	ProgramHash string `json:"programHash" swagger:"desc(The hash of the contract. (Hex encoded)),required"`
 }
 
-type ChainMetadata struct {
+type PublicChainMetadata struct {
 	EVMJsonRPCURL   string `json:"evmJsonRpcURL" swagger:"desc(The EVM json rpc url),required"`
 	EVMWebSocketURL string `json:"evmWebSocketURL" swagger:"desc(The EVM websocket url)),required"`
 
@@ -64,14 +64,14 @@ type ChainMetadata struct {
 
 // ChainInfoResponse includes the metadata standard
 type ChainInfoResponse struct {
-	IsActive     bool           `json:"isActive" swagger:"desc(Whether or not the chain is active),required"`
-	ChainID      string         `json:"chainID" swagger:"desc(ChainID (Bech32-encoded)),required"`
-	EVMChainID   uint16         `json:"evmChainId" swagger:"desc(The EVM chain ID),required,min(1)"`
-	ChainOwnerID string         `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded)),required"`
-	GasFeePolicy *gas.FeePolicy `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
-	GasLimits    *gas.Limits    `json:"gasLimits" swagger:"desc(The gas limits),required"`
-	PublicURL    string         `json:"publicURL" swagger:"desc(The fully qualified public url leading to the chains metadata),required"`
-	Metadata     ChainMetadata  `json:"metadata" swagger:"desc(The metadata of the chain),required"`
+	IsActive     bool                `json:"isActive" swagger:"desc(Whether or not the chain is active),required"`
+	ChainID      string              `json:"chainID" swagger:"desc(ChainID (Bech32-encoded)),required"`
+	EVMChainID   uint16              `json:"evmChainId" swagger:"desc(The EVM chain ID),required,min(1)"`
+	ChainOwnerID string              `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded)),required"`
+	GasFeePolicy *gas.FeePolicy      `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
+	GasLimits    *gas.Limits         `json:"gasLimits" swagger:"desc(The gas limits),required"`
+	PublicURL    string              `json:"publicURL" swagger:"desc(The fully qualified public url leading to the chains metadata),required"`
+	Metadata     PublicChainMetadata `json:"metadata" swagger:"desc(The metadata of the chain),required"`
 }
 
 type StateResponse struct {
@@ -106,7 +106,7 @@ func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfo
 		ChainID:    chainInfo.ChainID.String(),
 		EVMChainID: evmChainID,
 		PublicURL:  chainInfo.PublicURL,
-		Metadata: ChainMetadata{
+		Metadata: PublicChainMetadata{
 			EVMJsonRPCURL:   chainInfo.Metadata.EVMJsonRPCURL,
 			EVMWebSocketURL: chainInfo.Metadata.EVMWebSocketURL,
 			Name:            chainInfo.Metadata.Name,

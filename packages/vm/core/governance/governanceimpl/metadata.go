@@ -33,7 +33,7 @@ func setMetadata(ctx isc.Sandbox) dict.Dict {
 	}
 
 	if metadataBytes != nil {
-		metadata, err := isc.MetadataFromBytes(metadataBytes)
+		metadata, err := isc.PublicChainMetadataFromBytes(metadataBytes)
 		ctx.RequireNoError(err)
 		governance.SetMetadata(ctx.State(), metadata)
 	}

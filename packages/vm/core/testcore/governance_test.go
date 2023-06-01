@@ -292,7 +292,7 @@ func TestMetadata(t *testing.T) {
 
 	testValue := "TESTYTEST"
 
-	testMetadata := isc.ChainMetadata{
+	testMetadata := isc.PublicChainMetadata{
 		EVMJsonRPCURL:   testValue,
 		EVMWebSocketURL: testValue,
 		Name:            testValue,
@@ -367,7 +367,7 @@ func TestMetadata(t *testing.T) {
 	require.Error(t, err)
 
 	// set invalid custom metadata
-	hugeChainMetadata := isc.ChainMetadata{
+	hugePublicChainMetadata := isc.PublicChainMetadata{
 		Website: string(make([]byte, governanceimpl.MaxCustomMetadataLength+1)),
 	}
 	_, err = ch.PostRequestSync(
@@ -375,7 +375,7 @@ func TestMetadata(t *testing.T) {
 			governance.Contract.Name,
 			governance.FuncSetMetadata.Name,
 			governance.ParamPublicURL,
-			hugeChainMetadata.Bytes(),
+			hugePublicChainMetadata.Bytes(),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)

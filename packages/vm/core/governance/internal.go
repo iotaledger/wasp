@@ -29,7 +29,7 @@ func GetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) (*isc.ChainInfo, 
 	d := kvdecoder.New(state)
 	ret := &isc.ChainInfo{
 		ChainID:  chainID,
-		Metadata: &isc.ChainMetadata{},
+		Metadata: &isc.PublicChainMetadata{},
 	}
 	var err error
 	if ret.ChainOwnerID, err = d.GetAgentID(VarChainOwnerID); err != nil {
@@ -107,19 +107,19 @@ func GetPublicURL(state kv.KVStoreReader) (string, error) {
 	return codec.DecodeString(state.Get(VarPublicURL), "")
 }
 
-func SetMetadata(state kv.KVStore, metadata *isc.ChainMetadata) {
+func SetMetadata(state kv.KVStore, metadata *isc.PublicChainMetadata) {
 	state.Set(VarMetadata, metadata.Bytes())
 }
 
-func GetMetadata(state kv.KVStoreReader) (*isc.ChainMetadata, error) {
+func GetMetadata(state kv.KVStoreReader) (*isc.PublicChainMetadata, error) {
 	metadataBytes := state.Get(VarMetadata)
 	if metadataBytes == nil {
-		return &isc.ChainMetadata{}, nil
+		return &isc.PublicChainMetadata{}, nil
 	}
-	return isc.MetadataFromBytes(metadataBytes)
+	return isc.PublicChainMetadataFromBytes(metadataBytes)
 }
 
-func MustGetMetadata(state kv.KVStoreReader) *isc.ChainMetadata {
+func MustGetMetadata(state kv.KVStoreReader) *isc.PublicChainMetadata {
 	metadata, err := GetMetadata(state)
 	if err != nil {
 		panic(err)

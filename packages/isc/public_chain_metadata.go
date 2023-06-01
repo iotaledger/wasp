@@ -31,7 +31,7 @@ func writeMetadataString(mu *marshalutil.MarshalUtil, str string) {
 		WriteBytes([]byte(str))
 }
 
-func MetadataFromMarshalUtil(mu *marshalutil.MarshalUtil) (*PublicChainMetadata, error) {
+func PublicChainMetadataFromMarshalUtil(mu *marshalutil.MarshalUtil) (*PublicChainMetadata, error) {
 	ret := &PublicChainMetadata{}
 	var err error
 
@@ -58,9 +58,9 @@ func MetadataFromMarshalUtil(mu *marshalutil.MarshalUtil) (*PublicChainMetadata,
 	return ret, nil
 }
 
-func MetadataFromBytes(metadataBytes []byte) (*PublicChainMetadata, error) {
+func PublicChainMetadataFromBytes(metadataBytes []byte) (*PublicChainMetadata, error) {
 	mu := marshalutil.New(metadataBytes)
-	return MetadataFromMarshalUtil(mu)
+	return PublicChainMetadataFromMarshalUtil(mu)
 }
 
 func (m *PublicChainMetadata) Bytes() []byte {

@@ -47,7 +47,7 @@ var (
 	FuncStopMaintenance      = coreutil.Func("stopMaintenance")
 	ViewGetMaintenanceStatus = coreutil.ViewFunc("getMaintenanceStatus")
 
-	// L2 metadata
+	// public chain metadata
 	FuncSetMetadata = coreutil.Func("setMetadata")
 	ViewGetMetadata = coreutil.ViewFunc("getMetadata")
 )
@@ -112,7 +112,7 @@ const (
 	// access nodes: changeAccessNodes
 	ParamChangeAccessNodesActions = "n"
 
-	// L2 metadata (provided by the webapi, located by the public url)
+	// public chain metadata (provided by the webapi, located by the public url)
 	ParamMetadata = "md"
 
 	// L1 metadata (stored and provided in the tangle)

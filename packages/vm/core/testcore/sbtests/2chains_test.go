@@ -26,9 +26,6 @@ import (
 func Test2Chains(t *testing.T) { run2(t, test2Chains) }
 
 func test2Chains(t *testing.T, w bool) {
-	// if !w {
-	// 	t.Skip("TODO remove")
-	// }
 	corecontracts.PrintWellKnownHnames()
 
 	env := solo.New(t, &solo.InitOptions{
