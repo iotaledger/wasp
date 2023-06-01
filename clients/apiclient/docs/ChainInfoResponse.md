@@ -10,14 +10,14 @@ Name | Type | Description | Notes
 **GasFeePolicy** | [**FeePolicy**](FeePolicy.md) |  | 
 **GasLimits** | [**Limits**](Limits.md) |  | 
 **IsActive** | **bool** | Whether or not the chain is active | 
-**Metadata** | [**ChainMetadata**](ChainMetadata.md) |  | 
+**Metadata** | [**PublicChainMetadata**](PublicChainMetadata.md) |  | 
 **PublicURL** | **string** | The fully qualified public url leading to the chains metadata | 
 
 ## Methods
 
 ### NewChainInfoResponse
 
-`func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadata ChainMetadata, publicURL string, ) *ChainInfoResponse`
+`func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadata PublicChainMetadata, publicURL string, ) *ChainInfoResponse`
 
 NewChainInfoResponse instantiates a new ChainInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -154,20 +154,20 @@ SetIsActive sets IsActive field to given value.
 
 ### GetMetadata
 
-`func (o *ChainInfoResponse) GetMetadata() ChainMetadata`
+`func (o *ChainInfoResponse) GetMetadata() PublicChainMetadata`
 
 GetMetadata returns the Metadata field if non-nil, zero value otherwise.
 
 ### GetMetadataOk
 
-`func (o *ChainInfoResponse) GetMetadataOk() (*ChainMetadata, bool)`
+`func (o *ChainInfoResponse) GetMetadataOk() (*PublicChainMetadata, bool)`
 
 GetMetadataOk returns a tuple with the Metadata field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetMetadata
 
-`func (o *ChainInfoResponse) SetMetadata(v ChainMetadata)`
+`func (o *ChainInfoResponse) SetMetadata(v PublicChainMetadata)`
 
 SetMetadata sets Metadata field to given value.
 

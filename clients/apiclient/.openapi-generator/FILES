@@ -31,7 +31,6 @@ docs/BurnRecord.md
 docs/CallTarget.md
 docs/ChainInfoResponse.md
 docs/ChainMessageMetrics.md
-docs/ChainMetadata.md
 docs/ChainRecord.md
 docs/ChainsApi.md
 docs/CommitteeInfoResponse.md
@@ -54,8 +53,8 @@ docs/FeePolicy.md
 docs/FoundryOutputResponse.md
 docs/GovAllowedStateControllerAddressesResponse.md
 docs/GovChainInfoResponse.md
-docs/GovChainMetadata.md
 docs/GovChainOwnerResponse.md
+docs/GovPublicChainMetadata.md
 docs/InOutput.md
 docs/InOutputMetricItem.md
 docs/InStateOutput.md
@@ -87,6 +86,7 @@ docs/PeeringNodeIdentityResponse.md
 docs/PeeringNodeStatusResponse.md
 docs/PeeringTrustRequest.md
 docs/ProtocolParameters.md
+docs/PublicChainMetadata.md
 docs/PublisherStateTransactionItem.md
 docs/Ratio32.md
 docs/ReceiptResponse.md
@@ -132,7 +132,6 @@ model_burn_record.go
 model_call_target.go
 model_chain_info_response.go
 model_chain_message_metrics.go
-model_chain_metadata.go
 model_chain_record.go
 model_committee_info_response.go
 model_committee_node.go
@@ -152,8 +151,8 @@ model_fee_policy.go
 model_foundry_output_response.go
 model_gov_allowed_state_controller_addresses_response.go
 model_gov_chain_info_response.go
-model_gov_chain_metadata.go
 model_gov_chain_owner_response.go
+model_gov_public_chain_metadata.go
 model_in_output.go
 model_in_output_metric_item.go
 model_in_state_output.go
@@ -183,6 +182,7 @@ model_peering_node_identity_response.go
 model_peering_node_status_response.go
 model_peering_trust_request.go
 model_protocol_parameters.go
+model_public_chain_metadata.go
 model_publisher_state_transaction_item.go
 model_ratio32.go
 model_receipt_response.go

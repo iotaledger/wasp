@@ -29,7 +29,7 @@ type ChainInfoResponse struct {
 	GasLimits Limits `json:"gasLimits"`
 	// Whether or not the chain is active
 	IsActive bool `json:"isActive"`
-	Metadata ChainMetadata `json:"metadata"`
+	Metadata PublicChainMetadata `json:"metadata"`
 	// The fully qualified public url leading to the chains metadata
 	PublicURL string `json:"publicURL"`
 }
@@ -38,7 +38,7 @@ type ChainInfoResponse struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadata ChainMetadata, publicURL string) *ChainInfoResponse {
+func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadata PublicChainMetadata, publicURL string) *ChainInfoResponse {
 	this := ChainInfoResponse{}
 	this.ChainID = chainID
 	this.ChainOwnerId = chainOwnerId
@@ -204,9 +204,9 @@ func (o *ChainInfoResponse) SetIsActive(v bool) {
 }
 
 // GetMetadata returns the Metadata field value
-func (o *ChainInfoResponse) GetMetadata() ChainMetadata {
+func (o *ChainInfoResponse) GetMetadata() PublicChainMetadata {
 	if o == nil {
-		var ret ChainMetadata
+		var ret PublicChainMetadata
 		return ret
 	}
 
@@ -215,7 +215,7 @@ func (o *ChainInfoResponse) GetMetadata() ChainMetadata {
 
 // GetMetadataOk returns a tuple with the Metadata field value
 // and a boolean to check if the value has been set.
-func (o *ChainInfoResponse) GetMetadataOk() (*ChainMetadata, bool) {
+func (o *ChainInfoResponse) GetMetadataOk() (*PublicChainMetadata, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -223,7 +223,7 @@ func (o *ChainInfoResponse) GetMetadataOk() (*ChainMetadata, bool) {
 }
 
 // SetMetadata sets field value
-func (o *ChainInfoResponse) SetMetadata(v ChainMetadata) {
+func (o *ChainInfoResponse) SetMetadata(v PublicChainMetadata) {
 	o.Metadata = v
 }
 

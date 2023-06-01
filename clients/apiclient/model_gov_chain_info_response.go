@@ -25,7 +25,7 @@ type GovChainInfoResponse struct {
 	ChainOwnerId string `json:"chainOwnerId"`
 	GasFeePolicy FeePolicy `json:"gasFeePolicy"`
 	GasLimits Limits `json:"gasLimits"`
-	Metadata GovChainMetadata `json:"metadata"`
+	Metadata GovPublicChainMetadata `json:"metadata"`
 	// The fully qualified public url leading to the chains metadata
 	PublicURL string `json:"publicURL"`
 }
@@ -34,7 +34,7 @@ type GovChainInfoResponse struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy FeePolicy, gasLimits Limits, metadata GovChainMetadata, publicURL string) *GovChainInfoResponse {
+func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy FeePolicy, gasLimits Limits, metadata GovPublicChainMetadata, publicURL string) *GovChainInfoResponse {
 	this := GovChainInfoResponse{}
 	this.ChainID = chainID
 	this.ChainOwnerId = chainOwnerId
@@ -150,9 +150,9 @@ func (o *GovChainInfoResponse) SetGasLimits(v Limits) {
 }
 
 // GetMetadata returns the Metadata field value
-func (o *GovChainInfoResponse) GetMetadata() GovChainMetadata {
+func (o *GovChainInfoResponse) GetMetadata() GovPublicChainMetadata {
 	if o == nil {
-		var ret GovChainMetadata
+		var ret GovPublicChainMetadata
 		return ret
 	}
 
@@ -161,7 +161,7 @@ func (o *GovChainInfoResponse) GetMetadata() GovChainMetadata {
 
 // GetMetadataOk returns a tuple with the Metadata field value
 // and a boolean to check if the value has been set.
-func (o *GovChainInfoResponse) GetMetadataOk() (*GovChainMetadata, bool) {
+func (o *GovChainInfoResponse) GetMetadataOk() (*GovPublicChainMetadata, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -169,7 +169,7 @@ func (o *GovChainInfoResponse) GetMetadataOk() (*GovChainMetadata, bool) {
 }
 
 // SetMetadata sets field value
-func (o *GovChainInfoResponse) SetMetadata(v GovChainMetadata) {
+func (o *GovChainInfoResponse) SetMetadata(v GovPublicChainMetadata) {
 	o.Metadata = v
 }
 

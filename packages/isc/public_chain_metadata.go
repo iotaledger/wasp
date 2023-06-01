@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 )
 
-type ChainMetadata struct {
+type PublicChainMetadata struct {
 	EVMJsonRPCURL   string
 	EVMWebSocketURL string
 
@@ -31,8 +31,8 @@ func writeMetadataString(mu *marshalutil.MarshalUtil, str string) {
 		WriteBytes([]byte(str))
 }
 
-func MetadataFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainMetadata, error) {
-	ret := &ChainMetadata{}
+func MetadataFromMarshalUtil(mu *marshalutil.MarshalUtil) (*PublicChainMetadata, error) {
+	ret := &PublicChainMetadata{}
 	var err error
 
 	if ret.EVMJsonRPCURL, err = readMetadataString(mu); err != nil {
@@ -58,12 +58,12 @@ func MetadataFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainMetadata, error
 	return ret, nil
 }
 
-func MetadataFromBytes(metadataBytes []byte) (*ChainMetadata, error) {
+func MetadataFromBytes(metadataBytes []byte) (*PublicChainMetadata, error) {
 	mu := marshalutil.New(metadataBytes)
 	return MetadataFromMarshalUtil(mu)
 }
 
-func (m *ChainMetadata) Bytes() []byte {
+func (m *PublicChainMetadata) Bytes() []byte {
 	mu := marshalutil.New()
 
 	writeMetadataString(mu, m.EVMJsonRPCURL)

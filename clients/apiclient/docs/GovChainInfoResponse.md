@@ -8,14 +8,14 @@ Name | Type | Description | Notes
 **ChainOwnerId** | **string** | The chain owner address (Bech32-encoded). | 
 **GasFeePolicy** | [**FeePolicy**](FeePolicy.md) |  | 
 **GasLimits** | [**Limits**](Limits.md) |  | 
-**Metadata** | [**GovChainMetadata**](GovChainMetadata.md) |  | 
+**Metadata** | [**GovPublicChainMetadata**](GovPublicChainMetadata.md) |  | 
 **PublicURL** | **string** | The fully qualified public url leading to the chains metadata | 
 
 ## Methods
 
 ### NewGovChainInfoResponse
 
-`func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy FeePolicy, gasLimits Limits, metadata GovChainMetadata, publicURL string, ) *GovChainInfoResponse`
+`func NewGovChainInfoResponse(chainID string, chainOwnerId string, gasFeePolicy FeePolicy, gasLimits Limits, metadata GovPublicChainMetadata, publicURL string, ) *GovChainInfoResponse`
 
 NewGovChainInfoResponse instantiates a new GovChainInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -112,20 +112,20 @@ SetGasLimits sets GasLimits field to given value.
 
 ### GetMetadata
 
-`func (o *GovChainInfoResponse) GetMetadata() GovChainMetadata`
+`func (o *GovChainInfoResponse) GetMetadata() GovPublicChainMetadata`
 
 GetMetadata returns the Metadata field if non-nil, zero value otherwise.
 
 ### GetMetadataOk
 
-`func (o *GovChainInfoResponse) GetMetadataOk() (*GovChainMetadata, bool)`
+`func (o *GovChainInfoResponse) GetMetadataOk() (*GovPublicChainMetadata, bool)`
 
 GetMetadataOk returns a tuple with the Metadata field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetMetadata
 
-`func (o *GovChainInfoResponse) SetMetadata(v GovChainMetadata)`
+`func (o *GovChainInfoResponse) SetMetadata(v GovPublicChainMetadata)`
 
 SetMetadata sets Metadata field to given value.
 

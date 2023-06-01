@@ -2617,10 +2617,10 @@ components:
           description: description
           evmJsonRpcURL: evmJsonRpcURL
         gasLimits:
-          maxGasExternalViewCall: 5
-          minGasPerRequest: 7
-          maxGasPerBlock: 5
-          maxGasPerRequest: 2
+          maxGasExternalViewCall: 6
+          minGasPerRequest: 5
+          maxGasPerBlock: 1
+          maxGasPerRequest: 5
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
         publicURL: publicURL
@@ -2628,10 +2628,10 @@ components:
           gasPerToken:
             a: 1
             b: 100
-          validatorFeeShare: 1
+          validatorFeeShare: 0
           evmGasRatio:
-            a: 0
-            b: 0
+            a: 1
+            b: 1
         isActive: true
       properties:
         chainID:
@@ -2667,7 +2667,7 @@ components:
           xml:
             name: IsActive
         metadata:
-          $ref: '#/components/schemas/ChainMetadata'
+          $ref: '#/components/schemas/PublicChainMetadata'
         publicURL:
           description: The fully qualified public url leading to the chains metadata
           format: string
@@ -2786,53 +2786,6 @@ components:
       type: object
       xml:
         name: ChainMessageMetrics
-    ChainMetadata:
-      example:
-        website: website
-        evmWebSocketURL: evmWebSocketURL
-        name: name
-        description: description
-        evmJsonRpcURL: evmJsonRpcURL
-      properties:
-        description:
-          description: The description of the chain.
-          format: string
-          type: string
-          xml:
-            name: Description
-        evmJsonRpcURL:
-          description: The EVM json rpc url
-          format: string
-          type: string
-          xml:
-            name: EVMJsonRPCURL
-        evmWebSocketURL:
-          description: The EVM websocket url)
-          format: string
-          type: string
-          xml:
-            name: EVMWebSocketURL
-        name:
-          description: The name of the chain
-          format: string
-          type: string
-          xml:
-            name: Name
-        website:
-          description: The official website of the chain.
-          format: string
-          type: string
-          xml:
-            name: Website
-      required:
-      - description
-      - evmJsonRpcURL
-      - evmWebSocketURL
-      - name
-      - website
-      type: object
-      xml:
-        name: ChainMetadata
     ChainRecord:
       example:
         accessNodes:
@@ -3563,10 +3516,10 @@ components:
         gasPerToken:
           a: 1
           b: 100
-        validatorFeeShare: 1
+        validatorFeeShare: 0
         evmGasRatio:
-          a: 0
-          b: 0
+          a: 1
+          b: 1
       properties:
         evmGasRatio:
           $ref: '#/components/schemas/Ratio32_'
@@ -3590,15 +3543,15 @@ components:
         gasPerToken:
           a: 0
           b: 0
-        validatorFeeShare: 0
+        validatorFeeShare: 1
         evmGasRatio:
           a: 0
           b: 0
       properties:
         evmGasRatio:
-          $ref: '#/components/schemas/Ratio32_'
+          $ref: '#/components/schemas/Ratio32__'
         gasPerToken:
-          $ref: '#/components/schemas/Ratio32_'
+          $ref: '#/components/schemas/Ratio32__'
         validatorFeeShare:
           description: The validator fee share.
           format: int32
@@ -3664,17 +3617,17 @@ components:
           description: description
           evmJsonRpcURL: evmJsonRpcURL
         gasLimits:
-          maxGasExternalViewCall: 5
-          minGasPerRequest: 7
-          maxGasPerBlock: 5
-          maxGasPerRequest: 2
+          maxGasExternalViewCall: 6
+          minGasPerRequest: 5
+          maxGasPerBlock: 1
+          maxGasPerRequest: 5
         chainID: chainID
         publicURL: publicURL
         gasFeePolicy:
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 0
+          validatorFeeShare: 1
           evmGasRatio:
             a: 0
             b: 0
@@ -3696,7 +3649,7 @@ components:
         gasLimits:
           $ref: '#/components/schemas/Limits'
         metadata:
-          $ref: '#/components/schemas/GovChainMetadata'
+          $ref: '#/components/schemas/GovPublicChainMetadata'
         publicURL:
           description: The fully qualified public url leading to the chains metadata
           format: string
@@ -3713,7 +3666,20 @@ components:
       type: object
       xml:
         name: GovChainInfoResponse
-    GovChainMetadata:
+    GovChainOwnerResponse:
+      example:
+        chainOwner: chainOwner
+      properties:
+        chainOwner:
+          description: The chain owner (Bech32-encoded)
+          format: string
+          type: string
+          xml:
+            name: ChainOwner
+      type: object
+      xml:
+        name: GovChainOwnerResponse
+    GovPublicChainMetadata:
       example:
         website: website
         evmWebSocketURL: evmWebSocketURL
@@ -3759,20 +3725,7 @@ components:
       - website
       type: object
       xml:
-        name: GovChainMetadata
-    GovChainOwnerResponse:
-      example:
-        chainOwner: chainOwner
-      properties:
-        chainOwner:
-          description: The chain owner (Bech32-encoded)
-          format: string
-          type: string
-          xml:
-            name: ChainOwner
-      type: object
-      xml:
-        name: GovChainOwnerResponse
+        name: GovPublicChainMetadata
     InOutput:
       example:
         output:
@@ -4087,10 +4040,10 @@ components:
         name: L1Params
     Limits:
       example:
-        maxGasExternalViewCall: 5
-        minGasPerRequest: 7
-        maxGasPerBlock: 5
-        maxGasPerRequest: 2
+        maxGasExternalViewCall: 6
+        minGasPerRequest: 5
+        maxGasPerBlock: 1
+        maxGasPerRequest: 5
       properties:
         maxGasExternalViewCall:
           description: The maximum gas per external view call
@@ -4893,6 +4846,53 @@ components:
       type: object
       xml:
         name: ProtocolParameters
+    PublicChainMetadata:
+      example:
+        website: website
+        evmWebSocketURL: evmWebSocketURL
+        name: name
+        description: description
+        evmJsonRpcURL: evmJsonRpcURL
+      properties:
+        description:
+          description: The description of the chain.
+          format: string
+          type: string
+          xml:
+            name: Description
+        evmJsonRpcURL:
+          description: The EVM json rpc url
+          format: string
+          type: string
+          xml:
+            name: EVMJsonRPCURL
+        evmWebSocketURL:
+          description: The EVM websocket url)
+          format: string
+          type: string
+          xml:
+            name: EVMWebSocketURL
+        name:
+          description: The name of the chain
+          format: string
+          type: string
+          xml:
+            name: Name
+        website:
+          description: The official website of the chain.
+          format: string
+          type: string
+          xml:
+            name: Website
+      required:
+      - description
+      - evmJsonRpcURL
+      - evmWebSocketURL
+      - name
+      - website
+      type: object
+      xml:
+        name: PublicChainMetadata
     PublisherStateTransactionItem:
       example:
         lastMessage:
@@ -4947,6 +4947,31 @@ components:
       xml:
         name: Ratio32
     Ratio32_:
+      example:
+        a: 1
+        b: 1
+      properties:
+        a:
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: A
+        b:
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: B
+      required:
+      - a
+      - b
+      type: object
+      xml:
+        name: Ratio32
+    Ratio32__:
       example:
         a: 0
         b: 0
