@@ -7,7 +7,7 @@ package coregovernance
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-type ChainMetadata struct {
+type PublicChainMetadata struct {
 	Description     string
 	EvmJsonRPCURL   string
 	EvmWebSocketURL string
@@ -15,9 +15,9 @@ type ChainMetadata struct {
 	Website         string
 }
 
-func NewChainMetadataFromBytes(buf []byte) *ChainMetadata {
+func NewPublicChainMetadataFromBytes(buf []byte) *PublicChainMetadata {
 	dec := wasmtypes.NewWasmDecoder(buf)
-	data := &ChainMetadata{}
+	data := &PublicChainMetadata{}
 	data.Description     = wasmtypes.StringDecode(dec)
 	data.EvmJsonRPCURL   = wasmtypes.StringDecode(dec)
 	data.EvmWebSocketURL = wasmtypes.StringDecode(dec)
@@ -27,7 +27,7 @@ func NewChainMetadataFromBytes(buf []byte) *ChainMetadata {
 	return data
 }
 
-func (o *ChainMetadata) Bytes() []byte {
+func (o *PublicChainMetadata) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
 	wasmtypes.StringEncode(enc, o.Description)
 	wasmtypes.StringEncode(enc, o.EvmJsonRPCURL)
@@ -37,34 +37,34 @@ func (o *ChainMetadata) Bytes() []byte {
 	return enc.Buf()
 }
 
-type ImmutableChainMetadata struct {
+type ImmutablePublicChainMetadata struct {
 	Proxy wasmtypes.Proxy
 }
 
-func (o ImmutableChainMetadata) Exists() bool {
+func (o ImmutablePublicChainMetadata) Exists() bool {
 	return o.Proxy.Exists()
 }
 
-func (o ImmutableChainMetadata) Value() *ChainMetadata {
-	return NewChainMetadataFromBytes(o.Proxy.Get())
+func (o ImmutablePublicChainMetadata) Value() *PublicChainMetadata {
+	return NewPublicChainMetadataFromBytes(o.Proxy.Get())
 }
 
-type MutableChainMetadata struct {
+type MutablePublicChainMetadata struct {
 	Proxy wasmtypes.Proxy
 }
 
-func (o MutableChainMetadata) Delete() {
+func (o MutablePublicChainMetadata) Delete() {
 	o.Proxy.Delete()
 }
 
-func (o MutableChainMetadata) Exists() bool {
+func (o MutablePublicChainMetadata) Exists() bool {
 	return o.Proxy.Exists()
 }
 
-func (o MutableChainMetadata) SetValue(value *ChainMetadata) {
+func (o MutablePublicChainMetadata) SetValue(value *PublicChainMetadata) {
 	o.Proxy.Set(value.Bytes())
 }
 
-func (o MutableChainMetadata) Value() *ChainMetadata {
-	return NewChainMetadataFromBytes(o.Proxy.Get())
+func (o MutablePublicChainMetadata) Value() *PublicChainMetadata {
+	return NewPublicChainMetadataFromBytes(o.Proxy.Get())
 }

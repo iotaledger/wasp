@@ -394,8 +394,8 @@ impl ImmutableSetMetadataParams {
     }
 
     // the public evm json rpc url
-    pub fn metadata(&self) -> ImmutableChainMetadata {
-        ImmutableChainMetadata { proxy: self.proxy.root(PARAM_METADATA) }
+    pub fn metadata(&self) -> ImmutablePublicChainMetadata {
+        ImmutablePublicChainMetadata { proxy: self.proxy.root(PARAM_METADATA) }
     }
 
     // the public url leading to the chain info, stored on the tangle
@@ -411,8 +411,8 @@ pub struct MutableSetMetadataParams {
 
 impl MutableSetMetadataParams {
     // the public evm json rpc url
-    pub fn metadata(&self) -> MutableChainMetadata {
-        MutableChainMetadata { proxy: self.proxy.root(PARAM_METADATA) }
+    pub fn metadata(&self) -> MutablePublicChainMetadata {
+        MutablePublicChainMetadata { proxy: self.proxy.root(PARAM_METADATA) }
     }
 
     // the public url leading to the chain info, stored on the tangle

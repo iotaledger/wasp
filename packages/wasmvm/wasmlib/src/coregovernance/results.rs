@@ -104,8 +104,8 @@ impl ImmutableGetChainInfoResults {
     }
 
     // chain metadata
-    pub fn metadata(&self) -> ImmutableChainMetadata {
-        ImmutableChainMetadata { proxy: self.proxy.root(RESULT_METADATA) }
+    pub fn metadata(&self) -> ImmutablePublicChainMetadata {
+        ImmutablePublicChainMetadata { proxy: self.proxy.root(RESULT_METADATA) }
     }
 
     pub fn public_url(&self) -> ScImmutableString {
@@ -146,8 +146,8 @@ impl MutableGetChainInfoResults {
     }
 
     // chain metadata
-    pub fn metadata(&self) -> MutableChainMetadata {
-        MutableChainMetadata { proxy: self.proxy.root(RESULT_METADATA) }
+    pub fn metadata(&self) -> MutablePublicChainMetadata {
+        MutablePublicChainMetadata { proxy: self.proxy.root(RESULT_METADATA) }
     }
 
     pub fn public_url(&self) -> ScMutableString {
@@ -404,8 +404,8 @@ pub struct ImmutableGetMetadataResults {
 
 impl ImmutableGetMetadataResults {
     // the L2 metadata
-    pub fn metadata(&self) -> ImmutableChainMetadata {
-        ImmutableChainMetadata { proxy: self.proxy.root(RESULT_METADATA) }
+    pub fn metadata(&self) -> ImmutablePublicChainMetadata {
+        ImmutablePublicChainMetadata { proxy: self.proxy.root(RESULT_METADATA) }
     }
 
     // the public url leading to the chain info, stored on the tangle (l1)
@@ -427,8 +427,8 @@ impl MutableGetMetadataResults {
     }
 
     // the L2 metadata
-    pub fn metadata(&self) -> MutableChainMetadata {
-        MutableChainMetadata { proxy: self.proxy.root(RESULT_METADATA) }
+    pub fn metadata(&self) -> MutablePublicChainMetadata {
+        MutablePublicChainMetadata { proxy: self.proxy.root(RESULT_METADATA) }
     }
 
     // the public url leading to the chain info, stored on the tangle (l1)

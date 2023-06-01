@@ -9,7 +9,7 @@
 use crate::*;
 
 #[derive(Clone)]
-pub struct ChainMetadata {
+pub struct PublicChainMetadata {
     pub description        : String,
     pub evm_json_rpcurl    : String,
     pub evm_web_socket_url : String,
@@ -17,10 +17,10 @@ pub struct ChainMetadata {
     pub website            : String,
 }
 
-impl ChainMetadata {
-    pub fn from_bytes(bytes: &[u8]) -> ChainMetadata {
+impl PublicChainMetadata {
+    pub fn from_bytes(bytes: &[u8]) -> PublicChainMetadata {
         let mut dec = WasmDecoder::new(bytes);
-        ChainMetadata {
+        PublicChainMetadata {
             description        : string_decode(&mut dec),
             evm_json_rpcurl    : string_decode(&mut dec),
             evm_web_socket_url : string_decode(&mut dec),
@@ -41,26 +41,26 @@ impl ChainMetadata {
 }
 
 #[derive(Clone)]
-pub struct ImmutableChainMetadata {
+pub struct ImmutablePublicChainMetadata {
     pub(crate) proxy: Proxy,
 }
 
-impl ImmutableChainMetadata {
+impl ImmutablePublicChainMetadata {
     pub fn exists(&self) -> bool {
         self.proxy.exists()
     }
 
-    pub fn value(&self) -> ChainMetadata {
-        ChainMetadata::from_bytes(&self.proxy.get())
+    pub fn value(&self) -> PublicChainMetadata {
+        PublicChainMetadata::from_bytes(&self.proxy.get())
     }
 }
 
 #[derive(Clone)]
-pub struct MutableChainMetadata {
+pub struct MutablePublicChainMetadata {
     pub(crate) proxy: Proxy,
 }
 
-impl MutableChainMetadata {
+impl MutablePublicChainMetadata {
     pub fn delete(&self) {
         self.proxy.delete();
     }
@@ -69,11 +69,11 @@ impl MutableChainMetadata {
         self.proxy.exists()
     }
 
-    pub fn set_value(&self, value: &ChainMetadata) {
+    pub fn set_value(&self, value: &PublicChainMetadata) {
         self.proxy.set(&value.to_bytes());
     }
 
-    pub fn value(&self) -> ChainMetadata {
-        ChainMetadata::from_bytes(&self.proxy.get())
+    pub fn value(&self) -> PublicChainMetadata {
+        PublicChainMetadata::from_bytes(&self.proxy.get())
     }
 }

@@ -5,16 +5,16 @@
 
 import * as wasmtypes from '../wasmtypes';
 
-export class ChainMetadata {
+export class PublicChainMetadata {
     description     : string = '';
     evmJsonRPCURL   : string = '';
     evmWebSocketURL : string = '';
     name            : string = '';
     website         : string = '';
 
-    static fromBytes(buf: Uint8Array): ChainMetadata {
+    static fromBytes(buf: Uint8Array): PublicChainMetadata {
         const dec = new wasmtypes.WasmDecoder(buf);
-        const data = new ChainMetadata();
+        const data = new PublicChainMetadata();
         data.description     = wasmtypes.stringDecode(dec);
         data.evmJsonRPCURL   = wasmtypes.stringDecode(dec);
         data.evmWebSocketURL = wasmtypes.stringDecode(dec);
@@ -35,18 +35,18 @@ export class ChainMetadata {
     }
 }
 
-export class ImmutableChainMetadata extends wasmtypes.ScProxy {
+export class ImmutablePublicChainMetadata extends wasmtypes.ScProxy {
 
     exists(): bool {
         return this.proxy.exists();
     }
 
-    value(): ChainMetadata {
-        return ChainMetadata.fromBytes(this.proxy.get());
+    value(): PublicChainMetadata {
+        return PublicChainMetadata.fromBytes(this.proxy.get());
     }
 }
 
-export class MutableChainMetadata extends wasmtypes.ScProxy {
+export class MutablePublicChainMetadata extends wasmtypes.ScProxy {
 
     delete(): void {
         this.proxy.delete();
@@ -56,11 +56,11 @@ export class MutableChainMetadata extends wasmtypes.ScProxy {
         return this.proxy.exists();
     }
 
-    setValue(value: ChainMetadata): void {
+    setValue(value: PublicChainMetadata): void {
         this.proxy.set(value.bytes());
     }
 
-    value(): ChainMetadata {
-        return ChainMetadata.fromBytes(this.proxy.get());
+    value(): PublicChainMetadata {
+        return PublicChainMetadata.fromBytes(this.proxy.get());
     }
 }

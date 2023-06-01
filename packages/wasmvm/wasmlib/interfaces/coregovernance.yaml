@@ -11,7 +11,7 @@ license: Apache-2.0
 repository: https://github.com/iotaledger/wasp
 
 structs:
-  ChainMetadata:
+  PublicChainMetadata:
     evmJsonRPCURL: String
     evmWebSocketURL: String
     name: String
@@ -121,7 +121,7 @@ funcs:
     access: chain
     params:
       publicURL=x: String # the public url leading to the chain info, stored on the tangle
-      metadata=md: ChainMetadata # the public evm json rpc url
+      metadata=md: PublicChainMetadata # the public evm json rpc url
 
 views:
 
@@ -166,7 +166,7 @@ views:
       feePolicy=g: Bytes # serialized fee policy
       gasLimits=l: Bytes # serialized gas limits
       publicURL=x: String
-      metadata=md: ChainMetadata # chain metadata
+      metadata=md: PublicChainMetadata # chain metadata
 
   # access nodes
 
@@ -185,4 +185,4 @@ views:
   getMetadata:
     results:
       publicURL=x: String # the public url leading to the chain info, stored on the tangle (l1)
-      metadata=md: ChainMetadata? # the L2 metadata
+      metadata=md: PublicChainMetadata? # the L2 metadata

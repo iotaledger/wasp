@@ -305,8 +305,8 @@ func NewImmutableSetMetadataParams() ImmutableSetMetadataParams {
 }
 
 // the public evm json rpc url
-func (s ImmutableSetMetadataParams) Metadata() ImmutableChainMetadata {
-	return ImmutableChainMetadata{Proxy: s.Proxy.Root(ParamMetadata)}
+func (s ImmutableSetMetadataParams) Metadata() ImmutablePublicChainMetadata {
+	return ImmutablePublicChainMetadata{Proxy: s.Proxy.Root(ParamMetadata)}
 }
 
 // the public url leading to the chain info, stored on the tangle
@@ -319,8 +319,8 @@ type MutableSetMetadataParams struct {
 }
 
 // the public evm json rpc url
-func (s MutableSetMetadataParams) Metadata() MutableChainMetadata {
-	return MutableChainMetadata{Proxy: s.Proxy.Root(ParamMetadata)}
+func (s MutableSetMetadataParams) Metadata() MutablePublicChainMetadata {
+	return MutablePublicChainMetadata{Proxy: s.Proxy.Root(ParamMetadata)}
 }
 
 // the public url leading to the chain info, stored on the tangle

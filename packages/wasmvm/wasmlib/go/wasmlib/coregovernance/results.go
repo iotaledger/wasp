@@ -89,8 +89,8 @@ func (s ImmutableGetChainInfoResults) GasLimits() wasmtypes.ScImmutableBytes {
 }
 
 // chain metadata
-func (s ImmutableGetChainInfoResults) Metadata() ImmutableChainMetadata {
-	return ImmutableChainMetadata{Proxy: s.Proxy.Root(ResultMetadata)}
+func (s ImmutableGetChainInfoResults) Metadata() ImmutablePublicChainMetadata {
+	return ImmutablePublicChainMetadata{Proxy: s.Proxy.Root(ResultMetadata)}
 }
 
 func (s ImmutableGetChainInfoResults) PublicURL() wasmtypes.ScImmutableString {
@@ -126,8 +126,8 @@ func (s MutableGetChainInfoResults) GasLimits() wasmtypes.ScMutableBytes {
 }
 
 // chain metadata
-func (s MutableGetChainInfoResults) Metadata() MutableChainMetadata {
-	return MutableChainMetadata{Proxy: s.Proxy.Root(ResultMetadata)}
+func (s MutableGetChainInfoResults) Metadata() MutablePublicChainMetadata {
+	return MutablePublicChainMetadata{Proxy: s.Proxy.Root(ResultMetadata)}
 }
 
 func (s MutableGetChainInfoResults) PublicURL() wasmtypes.ScMutableString {
@@ -321,8 +321,8 @@ type ImmutableGetMetadataResults struct {
 }
 
 // the L2 metadata
-func (s ImmutableGetMetadataResults) Metadata() ImmutableChainMetadata {
-	return ImmutableChainMetadata{Proxy: s.Proxy.Root(ResultMetadata)}
+func (s ImmutableGetMetadataResults) Metadata() ImmutablePublicChainMetadata {
+	return ImmutablePublicChainMetadata{Proxy: s.Proxy.Root(ResultMetadata)}
 }
 
 // the public url leading to the chain info, stored on the tangle (l1)
@@ -339,8 +339,8 @@ func NewMutableGetMetadataResults() MutableGetMetadataResults {
 }
 
 // the L2 metadata
-func (s MutableGetMetadataResults) Metadata() MutableChainMetadata {
-	return MutableChainMetadata{Proxy: s.Proxy.Root(ResultMetadata)}
+func (s MutableGetMetadataResults) Metadata() MutablePublicChainMetadata {
+	return MutablePublicChainMetadata{Proxy: s.Proxy.Root(ResultMetadata)}
 }
 
 // the public url leading to the chain info, stored on the tangle (l1)

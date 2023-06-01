@@ -72,8 +72,8 @@ export class ImmutableGetChainInfoResults extends wasmtypes.ScProxy {
     }
 
     // chain metadata
-    metadata(): sc.ImmutableChainMetadata {
-        return new sc.ImmutableChainMetadata(this.proxy.root(sc.ResultMetadata));
+    metadata(): sc.ImmutablePublicChainMetadata {
+        return new sc.ImmutablePublicChainMetadata(this.proxy.root(sc.ResultMetadata));
     }
 
     publicURL(): wasmtypes.ScImmutableString {
@@ -103,8 +103,8 @@ export class MutableGetChainInfoResults extends wasmtypes.ScProxy {
     }
 
     // chain metadata
-    metadata(): sc.MutableChainMetadata {
-        return new sc.MutableChainMetadata(this.proxy.root(sc.ResultMetadata));
+    metadata(): sc.MutablePublicChainMetadata {
+        return new sc.MutablePublicChainMetadata(this.proxy.root(sc.ResultMetadata));
     }
 
     publicURL(): wasmtypes.ScMutableString {
@@ -244,8 +244,8 @@ export class MutableGetMaintenanceStatusResults extends wasmtypes.ScProxy {
 
 export class ImmutableGetMetadataResults extends wasmtypes.ScProxy {
     // the L2 metadata
-    metadata(): sc.ImmutableChainMetadata {
-        return new sc.ImmutableChainMetadata(this.proxy.root(sc.ResultMetadata));
+    metadata(): sc.ImmutablePublicChainMetadata {
+        return new sc.ImmutablePublicChainMetadata(this.proxy.root(sc.ResultMetadata));
     }
 
     // the public url leading to the chain info, stored on the tangle (l1)
@@ -256,8 +256,8 @@ export class ImmutableGetMetadataResults extends wasmtypes.ScProxy {
 
 export class MutableGetMetadataResults extends wasmtypes.ScProxy {
     // the L2 metadata
-    metadata(): sc.MutableChainMetadata {
-        return new sc.MutableChainMetadata(this.proxy.root(sc.ResultMetadata));
+    metadata(): sc.MutablePublicChainMetadata {
+        return new sc.MutablePublicChainMetadata(this.proxy.root(sc.ResultMetadata));
     }
 
     // the public url leading to the chain info, stored on the tangle (l1)
