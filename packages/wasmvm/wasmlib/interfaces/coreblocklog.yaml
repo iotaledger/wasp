@@ -36,7 +36,7 @@ views:
     params:
       blockIndex=n: Uint32? # default last block
     results:
-      event=e: Bytes[] # Array16 of serialized events
+      event=e: Bytes[] # Array of serialized events
 
   # Returns the list of events triggered by the given contract
   # during the execution of the given block range.
@@ -46,14 +46,14 @@ views:
       fromBlock=f: Uint32? # default first block
       toBlock=t: Uint32? # default last block
     results:
-      event=e: Bytes[] # Array16 of serialized events
+      event=e: Bytes[] # Array of serialized events
 
   # Returns the list of events triggered during the execution of the given request.
   getEventsForRequest:
     params:
       requestID=u: RequestID # target request ID
     results:
-      event=e: Bytes[] # Array16 of serialized events
+      event=e: Bytes[] # Array of serialized events
 
   # Returns a list with all request IDs in the given block.
   getRequestIDsForBlock:
@@ -61,7 +61,7 @@ views:
       blockIndex=n: Uint32? # default last block
     results:
       blockIndex=n: Uint32 # index of block containing request
-      requestID=u: RequestID[] # Array16 of request IDs
+      requestID=u: RequestID[] # Array of request IDs
 
   # Returns the receipt for the request with the given ID.
   getRequestReceipt:
@@ -78,7 +78,7 @@ views:
       blockIndex=n: Uint32? # default last block
     results:
       blockIndex=n: Uint32 # index of block containing request
-      requestReceipts=d: Bytes[] # Array16 of request receipts
+      requestReceipts=d: Bytes[] # Array of request receipts
 
   # Returns whether the request with ID u has been processed.
   isRequestProcessed:

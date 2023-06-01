@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/util"
@@ -269,7 +268,7 @@ func TestGetChainOwner(t *testing.T) {
 	f := coregovernance.ScFuncs.GetChainOwner(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	assert.Equal(t, ctx.ChainOwnerID(), f.Results.ChainOwner().Value())
+	require.Equal(t, ctx.ChainOwnerID(), f.Results.ChainOwner().Value())
 }
 
 func TestGetChainNodes(t *testing.T) {
@@ -303,8 +302,8 @@ func TestGetChainInfo(t *testing.T) {
 	f := coregovernance.ScFuncs.GetChainInfo(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	assert.Equal(t, ctx.ChainOwnerID().String(), f.Results.ChainOwnerID().Value().String())
+	require.Equal(t, ctx.ChainOwnerID().String(), f.Results.ChainOwnerID().Value().String())
 	gfp, err := gas.FeePolicyFromBytes(f.Results.FeePolicy().Value())
 	require.NoError(t, err)
-	assert.Equal(t, ctx.Chain.GetGasFeePolicy(), gfp)
+	require.Equal(t, ctx.Chain.GetGasFeePolicy(), gfp)
 }

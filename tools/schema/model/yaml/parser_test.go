@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/tools/schema/model/yaml"
 )
@@ -759,12 +759,12 @@ func TestParse(t *testing.T) {
 			tt := fn(t)
 
 			file, err := os.Open(tt.args.path)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			in, err := io.ReadAll(file)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			got := yaml.Parse(in)
-			assert.Equal(t, tt.wants.out, got)
+			require.Equal(t, tt.wants.out, got)
 		})
 	}
 }

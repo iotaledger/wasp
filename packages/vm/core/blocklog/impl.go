@@ -40,10 +40,10 @@ func SetInitialState(s kv.KVStore) {
 }
 
 func viewControlAddresses(ctx isc.SandboxView) dict.Dict {
-	registry := collections.NewArray32ReadOnly(ctx.StateR(), prefixControlAddresses)
-	l := registry.Len()
-	ctx.Requiref(l > 0, "inconsistency: unknown control addresses")
-	rec, err := ControlAddressesFromBytes(registry.GetAt(l - 1))
+	registry := collections.NewArrayReadOnly(ctx.StateR(), prefixControlAddresses)
+	length := registry.Len()
+	ctx.Requiref(length > 0, "inconsistency: unknown control addresses")
+	rec, err := ControlAddressesFromBytes(registry.GetAt(length - 1))
 	ctx.RequireNoError(err)
 	return dict.Dict{
 		ParamStateControllerAddress: isc.BytesFromAddress(rec.StateAddress),
@@ -80,17 +80,17 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
 		return nil
 	}
 
-	dataArr, found := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
+	receipts, found := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
 	if !found {
 		panic(errNotFound)
 	}
 
 	ret := dict.New()
-	arr := collections.NewArray16(ret, ParamRequestID)
-	for _, d := range dataArr {
-		rec, err := RequestReceiptFromBytes(d)
+	requestIDs := collections.NewArray(ret, ParamRequestID)
+	for _, receipt := range receipts {
+		requestReceipt, err := RequestReceiptFromBytes(receipt)
 		ctx.RequireNoError(err)
-		arr.Push(rec.Request.ID().Bytes())
+		requestIDs.Push(requestReceipt.Request.ID().Bytes())
 	}
 	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret
@@ -121,15 +121,15 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
 		return nil
 	}
 
-	dataArr, found := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
+	receipts, found := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
 	if !found {
 		panic(errNotFound)
 	}
 
 	ret := dict.New()
-	arr := collections.NewArray16(ret, ParamRequestRecord)
-	for _, d := range dataArr {
-		arr.Push(d)
+	requestReceipts := collections.NewArray(ret, ParamRequestRecord)
+	for _, receipt := range receipts {
+		requestReceipts.Push(receipt)
 	}
 	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret

@@ -18,7 +18,7 @@ export class ArrayOfImmutableAddress extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetAllowedStateControllerAddressesResults extends wasmtypes.ScProxy {
-    // Array16 of state controller addresses
+    // Array of state controller addresses
     controllers(): sc.ArrayOfImmutableAddress {
         return new sc.ArrayOfImmutableAddress(this.proxy.root(sc.ResultControllers));
     }
@@ -44,7 +44,7 @@ export class ArrayOfMutableAddress extends wasmtypes.ScProxy {
 }
 
 export class MutableGetAllowedStateControllerAddressesResults extends wasmtypes.ScProxy {
-    // Array16 of state controller addresses
+    // Array of state controller addresses
     controllers(): sc.ArrayOfMutableAddress {
         return new sc.ArrayOfMutableAddress(this.proxy.root(sc.ResultControllers));
     }

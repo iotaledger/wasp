@@ -3,7 +3,7 @@ package database
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
@@ -25,35 +25,35 @@ func count(t *testing.T, store kvstore.KVStore) int {
 
 func TestDbClean(t *testing.T) {
 	tmpdb, err := database.DatabaseWithDefaultSettings("", false, hivedb.EngineMapDB, false)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	storeTmp := tmpdb.KVStore()
 
 	err = storeTmp.Clear()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	num := count(t, storeTmp)
 
-	assert.NoError(t, err)
-	assert.EqualValues(t, 0, num)
+	require.NoError(t, err)
+	require.EqualValues(t, 0, num)
 
 	err = storeTmp.Set([]byte("1"), []byte("a"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	err = storeTmp.Set([]byte("2"), []byte("b"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	err = storeTmp.Set([]byte("3"), []byte("c"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	num = count(t, storeTmp)
 
-	assert.NoError(t, err)
-	assert.EqualValues(t, 3, num)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, num)
 
 	err = storeTmp.Clear()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	num = count(t, storeTmp)
 
-	assert.NoError(t, err)
-	assert.EqualValues(t, 0, num)
+	require.NoError(t, err)
+	require.EqualValues(t, 0, num)
 }

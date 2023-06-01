@@ -17,13 +17,13 @@ import (
 
 // SaveNextBlockInfo appends block info and returns its index
 func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) {
-	registry := collections.NewArray32(partition, PrefixBlockRegistry)
+	registry := collections.NewArray(partition, PrefixBlockRegistry)
 	registry.Push(blockInfo.Bytes())
 }
 
 // UpdateLatestBlockInfo is called before producing the next block to save anchor tx id and commitment data of the previous one
 func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxID iotago.TransactionID, aliasOutput *isc.AliasOutputWithID, l1commitment *state.L1Commitment) {
-	registry := collections.NewArray32(partition, PrefixBlockRegistry)
+	registry := collections.NewArray(partition, PrefixBlockRegistry)
 	lastBlockIndex := registry.Len() - 1
 	blockInfoBuffer := registry.GetAt(lastBlockIndex)
 	blockInfo, err := BlockInfoFromBytes(blockInfoBuffer)
@@ -36,10 +36,10 @@ func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxID iotago.TransactionID
 // SaveControlAddressesIfNecessary saves new information about state address in the blocklog partition
 // If state address does not change, it does nothing
 func SaveControlAddressesIfNecessary(partition kv.KVStore, stateAddress, governingAddress iotago.Address, blockIndex uint32) {
-	registry := collections.NewArray32(partition, prefixControlAddresses)
-	l := registry.Len()
-	if l != 0 {
-		addrs, err := ControlAddressesFromBytes(registry.GetAt(l - 1))
+	registry := collections.NewArray(partition, prefixControlAddresses)
+	length := registry.Len()
+	if length != 0 {
+		addrs, err := ControlAddressesFromBytes(registry.GetAt(length - 1))
 		if err != nil {
 			panic(fmt.Sprintf("SaveControlAddressesIfNecessary: %v", err))
 		}
@@ -239,7 +239,7 @@ func pruneRequestLogRecordsByBlockIndex(partition kv.KVStore, blockIndex uint32,
 }
 
 func getBlockInfoBytes(partition kv.KVStoreReader, blockIndex uint32) []byte {
-	return collections.NewArray32ReadOnly(partition, PrefixBlockRegistry).GetAt(blockIndex)
+	return collections.NewArrayReadOnly(partition, PrefixBlockRegistry).GetAt(blockIndex)
 }
 
 func RequestReceiptKey(rkey RequestLookupKey) []byte {
@@ -270,7 +270,7 @@ func getBlockIndexParams(ctx isc.SandboxView) uint32 {
 	if ret != math.MaxUint32 {
 		return ret
 	}
-	registry := collections.NewArray32ReadOnly(ctx.StateR(), PrefixBlockRegistry)
+	registry := collections.NewArrayReadOnly(ctx.StateR(), PrefixBlockRegistry)
 	return registry.Len() - 1
 }
 
@@ -280,7 +280,7 @@ func pruneBlock(partition kv.KVStore, blockIndex uint32) {
 		// already pruned?
 		return
 	}
-	registry := collections.NewArray32(partition, PrefixBlockRegistry)
+	registry := collections.NewArray(partition, PrefixBlockRegistry)
 	registry.PruneAt(blockIndex)
 	pruneRequestLogRecordsByBlockIndex(partition, blockIndex, blockInfo.TotalRequests)
 	pruneEventsByBlockIndex(partition, blockIndex, blockInfo.TotalRequests)
@@ -288,9 +288,9 @@ func pruneBlock(partition kv.KVStore, blockIndex uint32) {
 
 func eventsToDict(events [][]byte) dict.Dict {
 	ret := dict.New()
-	arr := collections.NewArray16(ret, ParamEvent)
+	retEvents := collections.NewArray(ret, ParamEvent)
 	for _, event := range events {
-		arr.Push(event)
+		retEvents.Push(event)
 	}
 	return ret
 }

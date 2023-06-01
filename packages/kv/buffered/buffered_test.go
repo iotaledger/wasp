@@ -3,7 +3,6 @@ package buffered
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -18,15 +17,15 @@ func TestBufferedKVStore(t *testing.T) {
 	require.NoError(t, err)
 
 	v, err := realm.Get([]byte("cd"))
-	assert.NoError(t, err)
-	assert.Equal(t, []byte("v1"), v)
+	require.NoError(t, err)
+	require.Equal(t, []byte("v1"), v)
 
 	b := NewBufferedKVStore(kv.NewHiveKVStoreReader(realm))
 
 	v = b.Get("cd")
-	assert.Equal(t, []byte("v1"), v)
+	require.Equal(t, []byte("v1"), v)
 
-	assert.EqualValues(
+	require.EqualValues(
 		t,
 		map[kv.Key][]byte{
 			"cd": []byte("v1"),
@@ -36,41 +35,41 @@ func TestBufferedKVStore(t *testing.T) {
 
 	n := 0
 	b.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
-		assert.Equal(t, kv.Key("cd"), key)
-		assert.Equal(t, []byte("v1"), value)
+		require.Equal(t, kv.Key("cd"), key)
+		require.Equal(t, []byte("v1"), value)
 		n++
 		return true
 	})
-	assert.Equal(t, 1, n)
+	require.Equal(t, 1, n)
 
 	n = 0
 	b.Iterate("c", func(key kv.Key, value []byte) bool {
-		assert.Equal(t, kv.Key("cd"), key)
-		assert.Equal(t, []byte("v1"), value)
+		require.Equal(t, kv.Key("cd"), key)
+		require.Equal(t, []byte("v1"), value)
 		n++
 		return true
 	})
-	assert.Equal(t, 1, n)
+	require.Equal(t, 1, n)
 
 	n = 0
 	b.IterateKeys(kv.EmptyPrefix, func(key kv.Key) bool {
-		assert.Equal(t, kv.Key("cd"), key)
+		require.Equal(t, kv.Key("cd"), key)
 		n++
 		return true
 	})
-	assert.Equal(t, 1, n)
+	require.Equal(t, 1, n)
 
 	b.Set("cd", []byte("v2"))
 
 	// not committed to DB
 	v, err = realm.Get([]byte("cd"))
-	assert.NoError(t, err)
-	assert.Equal(t, []byte("v1"), v)
+	require.NoError(t, err)
+	require.Equal(t, []byte("v1"), v)
 
 	v = b.Get("cd")
-	assert.Equal(t, []byte("v2"), v)
+	require.Equal(t, []byte("v2"), v)
 
-	assert.EqualValues(
+	require.EqualValues(
 		t,
 		map[kv.Key][]byte{
 			"cd": []byte("v2"),

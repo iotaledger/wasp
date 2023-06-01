@@ -50,64 +50,6 @@ func main() {
 	}
 }
 
-func runGenerator() error {
-	if *flagVersion {
-		fmt.Println(version)
-		return nil
-	}
-
-	err := generator.FindModulePath()
-	if err != nil && *flagGo {
-		return err
-	}
-
-	if mustGenerateCoreContractInterfaces() {
-		if *flagBuild {
-			return errors.New("cannot build core contracts")
-		}
-		return generateCoreContractInterfaces()
-	}
-
-	file, err := os.Open("schema.yaml")
-	if err == nil {
-		defer file.Close()
-		if *flagInit != "" {
-			return errors.New("schema definition file found")
-		}
-		return generateSchema(file)
-	}
-
-	if *flagInit != "" {
-		_, err = os.Stat(strings.ToLower(*flagInit))
-		if err == nil {
-			return errors.New("contract folder already exists")
-		}
-		return generateSchemaNew()
-	}
-
-	// No schema file in current folder, walk all sub-folders to see
-	// if there are schema files and do what's needed there instead.
-	generated, err := walkSubFolders()
-	if err != nil {
-		return err
-	}
-	if !generated {
-		flag.Usage()
-	}
-	return nil
-}
-
-func mustGenerateCoreContractInterfaces() bool {
-	// special case when we run in /packages/wasmvm/wasmlib:
-	// must generate WasmLib's built-in core contract interfaces
-	cwd, err := os.Getwd()
-	if err != nil {
-		log.Panic(err)
-	}
-	cwd = strings.ReplaceAll(cwd, "\\", "/")
-	return strings.HasSuffix(cwd, "/packages/wasmvm/wasmlib")
-}
-
 func addSubProjectToParentToml() error {
 	const cargoTomlPath = "../Cargo.toml"
 	_, err := os.Stat(cargoTomlPath)
@@ -361,6 +303,64 @@ func loadSchema(file *os.File) (s *model.Schema, err error) {
 		return nil, err
 	}
 	return s, nil
+}
+
+func mustGenerateCoreContractInterfaces() bool {
+	// special case when we run in /packages/wasmvm/wasmlib:
+	// must generate WasmLib's built-in core contract interfaces
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Panic(err)
+	}
+	cwd = strings.ReplaceAll(cwd, "\\", "/")
+	return strings.HasSuffix(cwd, "/packages/wasmvm/wasmlib")
+}
+
+func runGenerator() error {
+	if *flagVersion {
+		fmt.Println(version)
+		return nil
+	}
+
+	err := generator.FindModulePath()
+	if err != nil && *flagGo {
+		return err
+	}
+
+	if mustGenerateCoreContractInterfaces() {
+		if *flagBuild {
+			return errors.New("cannot build core contracts")
+		}
+		return generateCoreContractInterfaces()
+	}
+
+	file, err := os.Open("schema.yaml")
+	if err == nil {
+		defer file.Close()
+		if *flagInit != "" {
+			return errors.New("schema definition file found")
+		}
+		return generateSchema(file)
+	}
+
+	if *flagInit != "" {
+		_, err = os.Stat(strings.ToLower(*flagInit))
+		if err == nil {
+			return errors.New("contract folder already exists")
+		}
+		return generateSchemaNew()
+	}
+
+	// No schema file in current folder, walk all sub-folders to see
+	// if there are schema files and do what's needed there instead.
+	generated, err := walkSubFolders()
+	if err != nil {
+		return err
+	}
+	if !generated {
+		flag.Usage()
+	}
+	return nil
 }
 
 func walkSubFolders() (bool, error) {

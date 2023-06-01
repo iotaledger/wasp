@@ -6,7 +6,7 @@ package gpa_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 )
@@ -14,8 +14,8 @@ import (
 func TestOutMessages(t *testing.T) {
 	// Create a fresh one.
 	msgs := gpa.NoMessages()
-	assert.Equal(t, 0, msgs.Count())
-	assert.Equal(t, []gpa.Message{}, msgs.AsArray())
+	require.Equal(t, 0, msgs.Count())
+	require.Equal(t, []gpa.Message{}, msgs.AsArray())
 	//
 	// Add some messages.
 	m1 := &gpa.TestMessage{ID: 1}
@@ -26,14 +26,14 @@ func TestOutMessages(t *testing.T) {
 	msgs.Add(m1)
 	msgs.AddMany([]gpa.Message{m2, m3, m4})
 	msgs.Add(m5)
-	assert.Equal(t, 5, msgs.Count())
-	assert.Equal(t, []gpa.Message{m1, m2, m3, m4, m5}, msgs.AsArray())
+	require.Equal(t, 5, msgs.Count())
+	require.Equal(t, []gpa.Message{m1, m2, m3, m4, m5}, msgs.AsArray())
 	//
 	// Add one to other.
 	m0 := &gpa.TestMessage{ID: 0}
 	moreMsgs := gpa.NoMessages().Add(m0).AddAll(msgs)
-	assert.Equal(t, 6, moreMsgs.Count())
-	assert.Equal(t, []gpa.Message{m0, m1, m2, m3, m4, m5}, moreMsgs.AsArray())
+	require.Equal(t, 6, moreMsgs.Count())
+	require.Equal(t, []gpa.Message{m0, m1, m2, m3, m4, m5}, moreMsgs.AsArray())
 }
 
 // Check if appending works while iterating.
@@ -51,6 +51,6 @@ func TestOutMessagesIterate(t *testing.T) {
 			msgs.AddMany([]gpa.Message{m2, m3, m4})
 		}
 	})
-	assert.Equal(t, 4, msgs.Count())
-	assert.Equal(t, []gpa.Message{m1, m2, m3, m4}, msgs.AsArray())
+	require.Equal(t, 4, msgs.Count())
+	require.Equal(t, []gpa.Message{m1, m2, m3, m4}, msgs.AsArray())
 }

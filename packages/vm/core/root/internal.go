@@ -88,12 +88,12 @@ func mustDecodeBlockContextSubscription(b []byte) (s BlockContextSubscription) {
 	return
 }
 
-func getBlockContextSubscriptions(state kv.KVStore) *collections.Array16 {
-	return collections.NewArray16(state, StateVarBlockContextSubscriptions)
+func getBlockContextSubscriptions(state kv.KVStore) *collections.Array {
+	return collections.NewArray(state, StateVarBlockContextSubscriptions)
 }
 
-func getBlockContextSubscriptionsR(state kv.KVStoreReader) *collections.ImmutableArray16 {
-	return collections.NewArray16ReadOnly(state, StateVarBlockContextSubscriptions)
+func getBlockContextSubscriptionsR(state kv.KVStoreReader) *collections.ArrayReadOnly {
+	return collections.NewArrayReadOnly(state, StateVarBlockContextSubscriptions)
 }
 
 func SubscribeBlockContext(state kv.KVStore, contract, openFunc, closeFunc isc.Hname) {
@@ -108,11 +108,10 @@ func SubscribeBlockContext(state kv.KVStore, contract, openFunc, closeFunc isc.H
 // GetBlockContextSubscriptions returns all contracts that are subscribed to block context,
 // in deterministic order
 func GetBlockContextSubscriptions(state kv.KVStoreReader) []BlockContextSubscription {
-	subs := getBlockContextSubscriptionsR(state)
-	n := subs.Len()
-	r := make([]BlockContextSubscription, 0, n)
-	for i := uint16(0); i < n; i++ {
-		r = append(r, mustDecodeBlockContextSubscription(subs.GetAt(i)))
+	subscriptions := getBlockContextSubscriptionsR(state)
+	ret := make([]BlockContextSubscription, subscriptions.Len())
+	for i := range ret {
+		ret[i] = mustDecodeBlockContextSubscription(subscriptions.GetAt(uint32(i)))
 	}
-	return r
+	return ret
 }

@@ -3,7 +3,6 @@ package collections
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -13,7 +12,7 @@ func TestBasicMap(t *testing.T) {
 	vars := dict.New()
 	m := NewMap(vars, "testMap")
 
-	assert.Zero(t, m.Len())
+	require.Zero(t, m.Len())
 
 	k1 := []byte("k1")
 	k2 := []byte("k2")
@@ -26,78 +25,78 @@ func TestBasicMap(t *testing.T) {
 
 	m.SetAt(k1, v1)
 	ok := m.HasAt(k1)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = m.HasAt(k2)
-	assert.False(t, ok)
+	require.False(t, ok)
 
 	ok = m.HasAt(k3)
-	assert.False(t, ok)
-	assert.EqualValues(t, 1, m.Len())
+	require.False(t, ok)
+	require.EqualValues(t, 1, m.Len())
 
 	ok = m.HasAt(k4)
-	assert.False(t, ok)
-	assert.EqualValues(t, 1, m.Len())
+	require.False(t, ok)
+	require.EqualValues(t, 1, m.Len())
 
 	v := m.GetAt(k1)
-	assert.EqualValues(t, v1, v)
+	require.EqualValues(t, v1, v)
 
 	v = m.GetAt(k2)
-	assert.Nil(t, v)
+	require.Nil(t, v)
 
 	m.SetAt(k2, v2)
 	m.SetAt(k3, v3)
 
 	ok = m.HasAt(k1)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = m.HasAt(k2)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = m.HasAt(k3)
-	assert.True(t, ok)
+	require.True(t, ok)
 
-	assert.EqualValues(t, 3, m.Len())
+	require.EqualValues(t, 3, m.Len())
 
 	v = m.GetAt(k2)
-	assert.EqualValues(t, v2, v)
+	require.EqualValues(t, v2, v)
 
 	v = m.GetAt(k3)
-	assert.EqualValues(t, v3, v)
+	require.EqualValues(t, v3, v)
 
 	m.DelAt(k2)
 
 	ok = m.HasAt(k1)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = m.HasAt(k2)
-	assert.False(t, ok)
+	require.False(t, ok)
 
 	ok = m.HasAt(k3)
-	assert.True(t, ok)
+	require.True(t, ok)
 
-	assert.EqualValues(t, 2, m.Len())
+	require.EqualValues(t, 2, m.Len())
 
 	v = m.GetAt(k2)
-	assert.Nil(t, v)
+	require.Nil(t, v)
 
 	v = m.GetAt(k3)
-	assert.EqualValues(t, v3, v)
+	require.EqualValues(t, v3, v)
 
 	m.SetAt(k4, v4)
 	v = m.GetAt(k4)
-	assert.EqualValues(t, v, v4)
+	require.EqualValues(t, v, v4)
 
 	m.DelAt(k4)
 	v = m.GetAt(k4)
-	assert.Nil(t, v)
+	require.Nil(t, v)
 }
 
 func TestIterate(t *testing.T) {
 	vars := dict.New()
 	m := NewMap(vars, "testMap")
 
-	assert.Zero(t, m.Len())
+	require.Zero(t, m.Len())
 
 	kv := map[string]string{
 		"k1": "v1",
@@ -109,20 +108,20 @@ func TestIterate(t *testing.T) {
 		m.SetAt([]byte(k), []byte(v))
 	}
 	m.Iterate(func(k []byte, v []byte) bool {
-		assert.EqualValues(t, kv[string(k)], v)
+		require.EqualValues(t, kv[string(k)], v)
 		return true
 	})
 	m.DelAt([]byte("k1"))
 	m.Iterate(func(k []byte, v []byte) bool {
-		assert.NotEqualValues(t, k, "k1")
-		assert.EqualValues(t, kv[string(k)], v)
+		require.NotEqualValues(t, k, "k1")
+		require.EqualValues(t, kv[string(k)], v)
 		return true
 	})
 	m.DelAt([]byte(""))
 	m.Iterate(func(k []byte, v []byte) bool {
-		assert.NotEqualValues(t, k, "k1")
-		assert.NotEqualValues(t, k, "")
-		assert.EqualValues(t, kv[string(k)], v)
+		require.NotEqualValues(t, k, "k1")
+		require.NotEqualValues(t, k, "")
+		require.EqualValues(t, kv[string(k)], v)
 		return true
 	})
 }
