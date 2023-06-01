@@ -164,12 +164,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
 		chainStates[nid] = state.NewStore(mapdb.NewMapDB())
-		origin.InitChain(chainStates[nid],
-			dict.Dict{
-				origin.ParamChainOwner: isc.NewAgentID(originator.Address()).Bytes(),
-			},
-			accounts.MinimumBaseTokensOnCommonAccount,
-		)
+		origin.InitChainByAliasOutput(chainStates[nid], ao0)
 		require.NoError(t, err)
 		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, gpa.NodeIDFromPublicKey, nodeLog).AsGPA()
 	}
@@ -366,13 +361,7 @@ func testChained(t *testing.T, n, f, b int) {
 	testNodeStates := map[gpa.NodeID]state.Store{}
 	for _, nid := range nodeIDs {
 		testNodeStates[nid] = state.NewStore(mapdb.NewMapDB())
-		origin.InitChain(
-			testNodeStates[nid],
-			dict.Dict{
-				origin.ParamChainOwner: isc.NewAgentID(originator.Address()).Bytes(),
-			},
-			accounts.MinimumBaseTokensOnCommonAccount,
-		)
+		origin.InitChainByAliasOutput(testNodeStates[nid], originAO)
 	}
 	testChainInsts := make([]testConsInst, b)
 	for i := range testChainInsts {

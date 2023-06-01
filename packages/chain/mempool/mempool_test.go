@@ -238,7 +238,7 @@ func blockFn(te *testEnv, reqs []isc.Request, ao *isc.AliasOutputWithID, tangleT
 	for _, req := range reqs {
 		require.Contains(te.t, blockReqs, req)
 	}
-	nextAO, _ := te.tcl.FakeTX(ao, te.cmtAddress)
+	nextAO := te.tcl.FakeStateTransition(ao, block.L1Commitment())
 
 	// sync mempools with new state
 	awaitTrackHeadChanels := make([]<-chan bool, len(te.mempools))
@@ -517,7 +517,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 		t.Log("Sending off-ledger request with nonces 0,1,3,6,10")
 		require.True(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(req.(isc.OffLedgerRequest)))
 	}
-	time.Sleep(500 * time.Millisecond) // give some time for the requests to reach the pool
+	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
 
 	askProposalExpectReqs := func(ao *isc.AliasOutputWithID, reqs ...isc.Request) *isc.AliasOutputWithID {
 		t.Log("Ask for proposals")
@@ -529,7 +529,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 		decided := make([]<-chan []isc.Request, len(te.mempools))
 		for i, node := range te.mempools {
 			proposal := <-proposals[i]
-			require.Len(t, proposal, 2)
+			require.Len(t, proposal, len(reqs))
 			decided[i] = node.ConsensusRequestsAsync(te.ctx, proposal)
 		}
 		t.Log("Wait for decided requests")
@@ -576,7 +576,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	reqNonce2 := createReqWithNonce(2)
 	t.Log("Sending off-ledger request with nonce 2")
 	require.True(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce2))
-	time.Sleep(500 * time.Millisecond) // give some time for the requests to reach the pool
+	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
 
 	// ask for proposal, assert 2,3 are proposed
 	currentAO = askProposalExpectReqs(currentAO, reqNonce2, offLedgerReqs[2])
@@ -588,7 +588,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	reqNonce5 := createReqWithNonce(5)
 	t.Log("Sending off-ledger request with nonce 5")
 	require.True(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce5))
-	time.Sleep(500 * time.Millisecond) // give some time for the requests to reach the pool
+	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
 
 	emptyProposalFn(currentAO)
 
@@ -596,7 +596,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	reqNonce4 := createReqWithNonce(4)
 	t.Log("Sending off-ledger request with nonce 4")
 	require.True(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce4))
-	time.Sleep(500 * time.Millisecond) // give some time for the requests to reach the pool
+	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
 
 	// ask for proposal, assert 4,5,6 are proposed
 	askProposalExpectReqs(currentAO, reqNonce4, reqNonce5, offLedgerReqs[3])
@@ -666,9 +666,8 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.stores = make([]state.Store, len(te.peerIdentities))
 	for i := range te.peerIdentities {
 		te.stores[i] = state.NewStore(mapdb.NewMapDB())
-		origin.InitChain(te.stores[i], dict.Dict{
-			origin.ParamChainOwner: isc.NewAgentID(te.governor.Address()).Bytes(),
-		}, accounts.MinimumBaseTokensOnCommonAccount)
+		_, err := origin.InitChainByAliasOutput(te.stores[i], te.originAO)
+		require.NoError(t, err)
 		te.mempools[i] = mempool.New(
 			te.ctx,
 			te.chainID,
