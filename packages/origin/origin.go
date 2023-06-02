@@ -42,6 +42,7 @@ const (
 	ParamEVMChainID      = "a"
 	ParamBlockKeepAmount = "b"
 	ParamChainOwner      = "c"
+	ParamWaspVersion     = "d"
 )
 
 func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) state.Block {
