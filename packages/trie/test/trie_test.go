@@ -134,6 +134,20 @@ func TestBasic3(t *testing.T) {
 	require.Equal(t, []byte{1}, tr.Get([]byte{0xb2}))
 }
 
+func TestKeyTooLong(t *testing.T) {
+	store := NewInMemoryKVStore()
+
+	tooLongKey := make([]byte, trie.KeyMaxLength+1)
+	root0 := trie.MustInitRoot(store)
+	{
+		tr, err := trie.NewTrieUpdatable(store, root0)
+		require.NoError(t, err)
+		require.Panics(t, func() {
+			tr.Update(tooLongKey, []byte{0})
+		})
+	}
+}
+
 func TestCreateTrie(t *testing.T) {
 	t.Run("ok init-"+"", func(t *testing.T) {
 		rootC1 := trie.MustInitRoot(NewInMemoryKVStore())
