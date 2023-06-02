@@ -30,6 +30,7 @@ func (m *emptyChainStateMetric) SetChainConfirmedStateWant(stateIndex uint32) {}
 func (m *emptyChainStateMetric) SetChainConfirmedStateHave(stateIndex uint32) {}
 
 type chainStateMetric struct {
+	chainID               isc.ChainID
 	provider              *ChainMetricsProvider
 	metricsLabels         prometheus.Labels
 	lastSeenStateIndexVal uint32
@@ -45,6 +46,7 @@ func newChainStateMetric(provider *ChainMetricsProvider, chainID isc.ChainID) *c
 	provider.chainConfirmedStateHave.With(metricsLabels)
 
 	return &chainStateMetric{
+		chainID:               chainID,
 		provider:              provider,
 		metricsLabels:         metricsLabels,
 		lastSeenStateIndexVal: 0,
@@ -61,8 +63,10 @@ func (m *chainStateMetric) SetChainActiveStateHave(stateIndex uint32) {
 
 func (m *chainStateMetric) SetChainConfirmedStateWant(stateIndex uint32) {
 	m.provider.chainConfirmedStateWant.With(m.metricsLabels).Set(float64(stateIndex))
+	m.provider.chainConfirmedStateLag.Want(m.chainID, stateIndex)
 }
 
 func (m *chainStateMetric) SetChainConfirmedStateHave(stateIndex uint32) {
 	m.provider.chainConfirmedStateHave.With(m.metricsLabels).Set(float64(stateIndex))
+	m.provider.chainConfirmedStateLag.Have(m.chainID, stateIndex)
 }

@@ -33,8 +33,17 @@ import (
 
 const APIVersion = 1
 
-func addHealthEndpoint(server echoswagger.ApiRoot) {
-	server.GET("/health", func(c echo.Context) error { return c.NoContent(http.StatusOK) }).
+var ConfirmedStateLagThreshold uint32
+
+func AddHealthEndpoint(server echoswagger.ApiRoot, chainService interfaces.ChainService, metricsService interfaces.MetricsService) {
+	server.GET("/health", func(e echo.Context) error {
+		lag := metricsService.GetMaxChainConfirmedStateLag()
+		if lag > ConfirmedStateLagThreshold {
+			return e.String(http.StatusInternalServerError, fmt.Sprintf("chain unsync with %d diff", lag))
+		}
+
+		return e.String(http.StatusOK, "all chain synchronized")
+	}).
 		AddResponse(http.StatusOK, "The node is healthy.", nil, nil).
 		SetOperationId("getHealth").
 		SetSummary("Returns 200 if the node is healthy.")
@@ -126,7 +135,7 @@ func Init(
 		}))
 	}
 
-	addHealthEndpoint(server)
+	AddHealthEndpoint(server, chainService, metricsService)
 	addWebSocketEndpoint(server, websocketService)
 	loadControllers(server, mocker, controllersToLoad, authMiddleware)
 }
