@@ -100,6 +100,8 @@ func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, lo
 	e.HidePort = true
 	e.HTTPErrorHandler = apierrors.HTTPErrorHandler()
 
+	webapi.ConfirmedStateLagThreshold = params.Limits.ConfirmedStateLagThreshold
+
 	e.Pre(middleware.RemoveTrailingSlash())
 
 	// publish metrics to prometheus component (that exposes a separate http server on another port)
@@ -133,7 +135,6 @@ func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, lo
 				return err
 			}
 			metrics.GetChainMetrics(chainID).WebAPIRequest(operation, status, time.Since(start))
-
 			return err
 		}
 	})

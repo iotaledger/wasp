@@ -19,6 +19,7 @@ type ParametersWebAPI struct {
 		WriteTimeout                   time.Duration `default:"10s" usage:"the write timeout for the HTTP response body"`
 		MaxBodyLength                  string        `default:"2M" usage:"the maximum number of characters that the body of an API call may contain"`
 		MaxTopicSubscriptionsPerClient int           `default:"0" usage:"defines the max amount of subscriptions per client. 0 = deactivated (default)"`
+		ConfirmedStateLagThreshold     uint32        `default:"2" usage:"the threshold that define a chain is unsynchronized"`
 	}
 
 	DebugRequestLoggerEnabled bool `default:"false" usage:"whether the debug logging for requests should be enabled"`

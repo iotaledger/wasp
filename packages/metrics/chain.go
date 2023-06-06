@@ -211,6 +211,7 @@ type ChainMetricsProvider struct {
 	chainActiveStateHave    *prometheus.GaugeVec
 	chainConfirmedStateWant *prometheus.GaugeVec
 	chainConfirmedStateHave *prometheus.GaugeVec
+	chainConfirmedStateLag  ChainStateLag
 
 	// state manager
 	smCacheSize           *prometheus.GaugeVec
@@ -576,6 +577,8 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 	m.outPullTxInclusionStateMetrics = newMessageMetric[iotago.TransactionID](m, labelNameOutPullTxInclusionStateMetrics)
 	m.outPullOutputByIDMetrics = newMessageMetric[iotago.OutputID](m, labelNameOutPullOutputByIDMetrics)
 
+	m.chainConfirmedStateLag = make(ChainStateLag)
+
 	return m
 }
 
@@ -743,4 +746,8 @@ func (m *ChainMetricsProvider) OutPullTxInclusionState() IMessageMetric[iotago.T
 
 func (m *ChainMetricsProvider) OutPullOutputByID() IMessageMetric[iotago.OutputID] {
 	return m.outPullOutputByIDMetrics
+}
+
+func (m *ChainMetricsProvider) MaxChainConfirmedStateLag() uint32 {
+	return m.chainConfirmedStateLag.MaxLag()
 }
