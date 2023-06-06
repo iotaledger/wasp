@@ -140,7 +140,7 @@ func (c *cachedKVReader) Get(key []byte) []byte {
 func (c *cachedKVReader) Has(key []byte) bool {
 	v := c.cache.Get(nil, key)
 	if v == nil {
-		v := c.r.Get(key)
+		v = c.r.Get(key)
 		c.cache.Set(key, v)
 	}
 	return v != nil
