@@ -1,8 +1,6 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use std::convert::TryInto;
-
 use crate::*;
 
 pub const SC_BOOL_LENGTH: usize = 1;
@@ -51,7 +49,7 @@ pub fn bool_from_string(value: &str) -> bool {
     match value {
         "0" => return false,
         "1" => return true,
-        _ => panic("invalid Bool string")
+        _ => panic("invalid Bool string"),
     }
     false
 }

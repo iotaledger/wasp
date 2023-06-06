@@ -1,8 +1,6 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use std::convert::TryInto;
-
 use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -19,9 +17,7 @@ pub fn string_encode(enc: &mut WasmEncoder, value: &str) {
 }
 
 pub fn string_from_bytes(buf: &[u8]) -> String {
-    unsafe {
-        String::from_utf8_unchecked(buf.to_vec()).to_string()
-    }
+    unsafe { String::from_utf8_unchecked(buf.to_vec()).to_string() }
 }
 
 pub fn string_to_bytes(value: &str) -> Vec<u8> {
