@@ -14,18 +14,20 @@ const (
 )
 
 const (
-	ParamAccessAPI   = "ia"
-	ParamAccessOnly  = "i"
-	ParamActions     = "n"
-	ParamAddress     = "S"
-	ParamCertificate = "ic"
-	ParamChainOwner  = "o"
-	ParamFeePolicy   = "g"
-	ParamGasLimits   = "l"
-	ParamGasRatio    = "e"
-	ParamMetadata    = "md"
-	ParamPubKey      = "ip"
-	ParamPublicURL   = "x"
+	ParamAccessAPI     = "ia"
+	ParamAccessOnly    = "i"
+	ParamActions       = "n"
+	ParamAddress       = "S"
+	ParamCertificate   = "ic"
+	ParamChainOwner    = "o"
+	ParamFeePolicy     = "g"
+	ParamGasLimits     = "l"
+	ParamGasRatio      = "e"
+	ParamMetadata      = "md"
+	ParamPayoutAddress = "s"
+	ParamPubKey        = "ip"
+	ParamPublicURL     = "x"
+	ParamSetMinSD      = "ms"
 )
 
 const (
@@ -38,7 +40,9 @@ const (
 	ResultFeePolicy            = "g"
 	ResultGasLimits            = "l"
 	ResultGasRatio             = "e"
+	ResultGetMinSD             = "ms"
 	ResultMetadata             = "md"
+	ResultPayoutAddress        = "s"
 	ResultPublicURL            = "x"
 	ResultStatus               = "m"
 )
@@ -56,6 +60,8 @@ const (
 	FuncSetFeePolicy                        = "setFeePolicy"
 	FuncSetGasLimits                        = "setGasLimits"
 	FuncSetMetadata                         = "setMetadata"
+	FuncSetMinSD                            = "setMinSD"
+	FuncSetPayoutAddress                    = "setPayoutAddress"
 	FuncStartMaintenance                    = "startMaintenance"
 	FuncStopMaintenance                     = "stopMaintenance"
 	ViewGetAllowedStateControllerAddresses  = "getAllowedStateControllerAddresses"
@@ -67,6 +73,8 @@ const (
 	ViewGetGasLimits                        = "getGasLimits"
 	ViewGetMaintenanceStatus                = "getMaintenanceStatus"
 	ViewGetMetadata                         = "getMetadata"
+	ViewGetMinSD                            = "getMinSD"
+	ViewGetPayoutAddress                    = "getPayoutAddress"
 )
 
 const (
@@ -82,6 +90,8 @@ const (
 	HFuncSetFeePolicy                        = wasmtypes.ScHname(0x5b791c9f)
 	HFuncSetGasLimits                        = wasmtypes.ScHname(0xd72fb355)
 	HFuncSetMetadata                         = wasmtypes.ScHname(0x0eb3a798)
+	HFuncSetMinSD                            = wasmtypes.ScHname(0x9cad5084)
+	HFuncSetPayoutAddress                    = wasmtypes.ScHname(0x65e7c531)
 	HFuncStartMaintenance                    = wasmtypes.ScHname(0x742f0521)
 	HFuncStopMaintenance                     = wasmtypes.ScHname(0x4e017b6a)
 	HViewGetAllowedStateControllerAddresses  = wasmtypes.ScHname(0xf3505183)
@@ -93,4 +103,6 @@ const (
 	HViewGetGasLimits                        = wasmtypes.ScHname(0x3a493455)
 	HViewGetMaintenanceStatus                = wasmtypes.ScHname(0x61fe5443)
 	HViewGetMetadata                         = wasmtypes.ScHname(0x79ad1ac6)
+	HViewGetMinSD                            = wasmtypes.ScHname(0x37f53a59)
+	HViewGetPayoutAddress                    = wasmtypes.ScHname(0x2af7a8c3)
 )

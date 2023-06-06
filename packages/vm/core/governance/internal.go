@@ -65,6 +65,21 @@ func MustGetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) *isc.ChainInf
 	return info
 }
 
+func MustGetMinSD(state kv.KVStoreReader) uint64 {
+	d := kvdecoder.New(state)
+	minSD, err := d.GetUint64(StateVarMinSD)
+	if err != nil {
+		// FIXME there should be a default val
+		return 0
+	}
+	return minSD
+}
+
+func GetPayoutAddress(state kv.KVStoreReader) (isc.AgentID, error) {
+	d := kvdecoder.New(state)
+	return d.GetAgentID(StateVarPayoutAddress)
+}
+
 func mustGetChainOwnerID(state kv.KVStoreReader) isc.AgentID {
 	d := kvdecoder.New(state)
 	return d.MustGetAgentID(VarChainOwnerID)

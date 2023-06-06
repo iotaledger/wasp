@@ -436,3 +436,61 @@ impl MutableGetMetadataResults {
         ScMutableString::new(self.proxy.root(RESULT_PUBLIC_URL))
     }
 }
+
+#[derive(Clone)]
+pub struct ImmutableGetMinSDResults {
+    pub proxy: Proxy,
+}
+
+impl ImmutableGetMinSDResults {
+    pub fn get_min_sd(&self) -> ScImmutableUint64 {
+        ScImmutableUint64::new(self.proxy.root(RESULT_GET_MIN_SD))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableGetMinSDResults {
+    pub proxy: Proxy,
+}
+
+impl MutableGetMinSDResults {
+    pub fn new() -> MutableGetMinSDResults {
+        MutableGetMinSDResults {
+            proxy: results_proxy(),
+        }
+    }
+
+    pub fn get_min_sd(&self) -> ScMutableUint64 {
+        ScMutableUint64::new(self.proxy.root(RESULT_GET_MIN_SD))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableGetPayoutAddressResults {
+    pub proxy: Proxy,
+}
+
+impl ImmutableGetPayoutAddressResults {
+    // get payout address
+    pub fn payout_address(&self) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.proxy.root(RESULT_PAYOUT_ADDRESS))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableGetPayoutAddressResults {
+    pub proxy: Proxy,
+}
+
+impl MutableGetPayoutAddressResults {
+    pub fn new() -> MutableGetPayoutAddressResults {
+        MutableGetPayoutAddressResults {
+            proxy: results_proxy(),
+        }
+    }
+
+    // get payout address
+    pub fn payout_address(&self) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.proxy.root(RESULT_PAYOUT_ADDRESS))
+    }
+}

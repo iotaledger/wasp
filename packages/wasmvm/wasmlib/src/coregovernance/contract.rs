@@ -67,6 +67,16 @@ pub struct SetMetadataCall<'a> {
     pub params: MutableSetMetadataParams,
 }
 
+pub struct SetMinSDCall<'a> {
+    pub func:   ScFunc<'a>,
+    pub params: MutableSetMinSDParams,
+}
+
+pub struct SetPayoutAddressCall<'a> {
+    pub func:   ScFunc<'a>,
+    pub params: MutableSetPayoutAddressParams,
+}
+
 pub struct StartMaintenanceCall<'a> {
     pub func: ScFunc<'a>,
 }
@@ -118,6 +128,16 @@ pub struct GetMaintenanceStatusCall<'a> {
 pub struct GetMetadataCall<'a> {
     pub func:    ScView<'a>,
     pub results: ImmutableGetMetadataResults,
+}
+
+pub struct GetMinSDCall<'a> {
+    pub func:    ScView<'a>,
+    pub results: ImmutableGetMinSDResults,
+}
+
+pub struct GetPayoutAddressCall<'a> {
+    pub func:    ScView<'a>,
+    pub results: ImmutableGetPayoutAddressResults,
 }
 
 pub struct ScFuncs {
@@ -246,6 +266,24 @@ impl ScFuncs {
         f
     }
 
+    pub fn set_min_sd(ctx: &impl ScFuncClientContext) -> SetMinSDCall {
+        let mut f = SetMinSDCall {
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_SET_MIN_SD),
+            params:  MutableSetMinSDParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn set_payout_address(ctx: &impl ScFuncClientContext) -> SetPayoutAddressCall {
+        let mut f = SetPayoutAddressCall {
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_SET_PAYOUT_ADDRESS),
+            params:  MutableSetPayoutAddressParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
     // Starts the chain maintenance mode, meaning no further requests
     // will be processed except calls to the governance contract.
     pub fn start_maintenance(ctx: &impl ScFuncClientContext) -> StartMaintenanceCall {
@@ -346,6 +384,24 @@ impl ScFuncs {
         let mut f = GetMetadataCall {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_METADATA),
             results: ImmutableGetMetadataResults { proxy: Proxy::nil() },
+        };
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn get_min_sd(ctx: &impl ScViewClientContext) -> GetMinSDCall {
+        let mut f = GetMinSDCall {
+            func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_MIN_SD),
+            results: ImmutableGetMinSDResults { proxy: Proxy::nil() },
+        };
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn get_payout_address(ctx: &impl ScViewClientContext) -> GetPayoutAddressCall {
+        let mut f = GetPayoutAddressCall {
+            func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_PAYOUT_ADDRESS),
+            results: ImmutableGetPayoutAddressResults { proxy: Proxy::nil() },
         };
         ScView::link_results(&mut f.results.proxy, &f.func);
         f

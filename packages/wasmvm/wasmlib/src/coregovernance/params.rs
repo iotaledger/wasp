@@ -420,3 +420,61 @@ impl MutableSetMetadataParams {
         ScMutableString::new(self.proxy.root(PARAM_PUBLIC_URL))
     }
 }
+
+#[derive(Clone)]
+pub struct ImmutableSetMinSDParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl ImmutableSetMinSDParams {
+    pub fn new() -> ImmutableSetMinSDParams {
+        ImmutableSetMinSDParams {
+            proxy: params_proxy(),
+        }
+    }
+
+    pub fn set_min_sd(&self) -> ScImmutableUint64 {
+        ScImmutableUint64::new(self.proxy.root(PARAM_SET_MIN_SD))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableSetMinSDParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl MutableSetMinSDParams {
+    pub fn set_min_sd(&self) -> ScMutableUint64 {
+        ScMutableUint64::new(self.proxy.root(PARAM_SET_MIN_SD))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableSetPayoutAddressParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl ImmutableSetPayoutAddressParams {
+    pub fn new() -> ImmutableSetPayoutAddressParams {
+        ImmutableSetPayoutAddressParams {
+            proxy: params_proxy(),
+        }
+    }
+
+    // set payout address
+    pub fn payout_address(&self) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.proxy.root(PARAM_PAYOUT_ADDRESS))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableSetPayoutAddressParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl MutableSetPayoutAddressParams {
+    // set payout address
+    pub fn payout_address(&self) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.proxy.root(PARAM_PAYOUT_ADDRESS))
+    }
+}

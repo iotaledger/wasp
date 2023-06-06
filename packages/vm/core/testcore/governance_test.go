@@ -462,6 +462,62 @@ func TestGovernanceGasFee(t *testing.T) {
 	ch.SetGasFeePolicy(nil, fp) // should not fail with "gas budget exceeded"
 }
 
+func TestGovernanceSetGetPayoutAddress(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
+	ch := env.NewChain()
+
+	_, userAddr := env.NewKeyPairWithFunds()
+	userAgentID := isc.NewAgentID(userAddr)
+
+	_, err := ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetPayoutAddress.Name,
+			governance.ParamSetPayoutAddress,
+			userAgentID.Bytes(),
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	retDict, err := ch.CallView(
+		governance.Contract.Name,
+		governance.ViewGetPayoutAddress.Name,
+	)
+	require.NoError(t, err)
+	retAgentID, err := codec.DecodeAgentID(retDict.Get(governance.ParamSetPayoutAddress))
+	require.NoError(t, err)
+	require.Equal(t, userAgentID, retAgentID)
+}
+
+func TestGovernanceSetGetMinSD(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
+	ch := env.NewChain()
+
+	minSD := uint64(123456)
+
+	_, err := ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetMinSD.Name,
+			governance.ParamSetMinSD,
+			codec.EncodeUint64(minSD),
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	retDict, err := ch.CallView(
+		governance.Contract.Name,
+		governance.ViewGetMinSD.Name,
+	)
+	require.NoError(t, err)
+	retByte := retDict.Get(governance.ParamSetMinSD)
+	retMinSD, err := codec.DecodeUint64(retByte)
+	require.NoError(t, err)
+	require.Equal(t, minSD, retMinSD)
+}
+
 func TestGovCallsNoBalance(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain(false)

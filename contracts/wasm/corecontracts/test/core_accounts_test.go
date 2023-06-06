@@ -53,7 +53,7 @@ func TestDeposit(t *testing.T) {
 	require.Equal(t, balanceOld-depositAmount, balanceNew)
 
 	// expected changes to L2, note that caller pays the gas fee
-	bal.Common += ctx.GasFee
+	bal.Originator += ctx.GasFee
 	bal.Add(user, depositAmount-ctx.GasFee)
 	bal.VerifyBalances(t)
 }
@@ -81,7 +81,7 @@ func TestTransferAllowanceTo(t *testing.T) {
 	require.Equal(t, balanceOldUser1, balanceNewUser1)
 
 	// expected changes to L2, note that caller pays the gas fee
-	bal.Common += ctx.GasFee
+	bal.Originator += ctx.GasFee
 	bal.Add(user0, -transferAmountBaseTokens-ctx.GasFee)
 	bal.Add(user1, transferAmountBaseTokens)
 	bal.VerifyBalances(t)
@@ -139,6 +139,7 @@ func TestHarvest(t *testing.T) {
 	creatorAgentID := ctx.Creator().AgentID()
 	commonAccount := accounts.CommonAccount()
 	commonAccountBal0 := ctx.Chain.L2Assets(accounts.CommonAccount())
+	ownerBal0 := ctx.Chain.L2Assets(ctx.Chain.OriginatorAgentID)
 	foundry, err := ctx.NewSoloFoundry(mintAmount, user)
 	require.NoError(t, err)
 	err = foundry.Mint(mintAmount)
@@ -156,15 +157,17 @@ func TestHarvest(t *testing.T) {
 	fTransfer1.Func.Allowance(transfer).Post()
 	creatorBal0 := ctx.Chain.L2Assets(creatorAgentID)
 	commonAccountBal1 := ctx.Chain.L2Assets(commonAccount)
-	// create foundry, mint token, transfer BaseTokens and transfer token each charge GasFee, so there 4*GasFee in common account
-	require.Equal(t, commonAccountBal0.BaseTokens+transferAmount+ctx.GasFee*4, commonAccountBal1.BaseTokens)
+	// create foundry, mint token, transfer BaseTokens and transfer token each charge GasFee, so there 4*GasFee in owner account
+	ownerBal1 := ctx.Chain.L2Assets(ctx.Chain.OriginatorAgentID)
+	require.Equal(t, ownerBal0.BaseTokens+ctx.GasFee*4, ownerBal1.BaseTokens)
+	require.Equal(t, commonAccountBal0.BaseTokens+transferAmount, commonAccountBal1.BaseTokens)
 
 	f := coreaccounts.ScFuncs.Harvest(ctx.Sign(ctx.Creator()))
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
 	commonAccountBal2 := ctx.Chain.L2Assets(commonAccount)
 	creatorBal1 := ctx.Chain.L2Assets(creatorAgentID)
-	require.Equal(t, minimumBaseTokensOnCommonAccount+ctx.GasFee, commonAccountBal2.BaseTokens)
+	require.Equal(t, minimumBaseTokensOnCommonAccount, commonAccountBal2.BaseTokens)
 	require.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+ctx.StorageDeposit, creatorBal1.BaseTokens)
 	require.Equal(t, big.NewInt(int64(transferAmount)), creatorBal1.NativeTokens[0].Amount)
 }

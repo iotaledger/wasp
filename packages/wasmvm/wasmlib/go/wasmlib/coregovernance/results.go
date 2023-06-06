@@ -347,3 +347,45 @@ func (s MutableGetMetadataResults) Metadata() MutablePublicChainMetadata {
 func (s MutableGetMetadataResults) PublicURL() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.Proxy.Root(ResultPublicURL))
 }
+
+type ImmutableGetMinSDResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+func (s ImmutableGetMinSDResults) GetMinSD() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.Proxy.Root(ResultGetMinSD))
+}
+
+type MutableGetMinSDResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewMutableGetMinSDResults() MutableGetMinSDResults {
+	return MutableGetMinSDResults{Proxy: wasmlib.NewResultsProxy()}
+}
+
+func (s MutableGetMinSDResults) GetMinSD() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.Proxy.Root(ResultGetMinSD))
+}
+
+type ImmutableGetPayoutAddressResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+// get payout address
+func (s ImmutableGetPayoutAddressResults) PayoutAddress() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ResultPayoutAddress))
+}
+
+type MutableGetPayoutAddressResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewMutableGetPayoutAddressResults() MutableGetPayoutAddressResults {
+	return MutableGetPayoutAddressResults{Proxy: wasmlib.NewResultsProxy()}
+}
+
+// get payout address
+func (s MutableGetPayoutAddressResults) PayoutAddress() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ResultPayoutAddress))
+}

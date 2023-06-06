@@ -21,6 +21,10 @@ var Processor = governance.Contract.Processor(nil,
 	// chain owner
 	governance.FuncClaimChainOwnership.WithHandler(claimChainOwnership),
 	governance.FuncDelegateChainOwnership.WithHandler(delegateChainOwnership),
+	governance.FuncSetPayoutAddress.WithHandler(setPayoutAddress),
+	governance.ViewGetPayoutAddress.WithHandler(getPayoutAddress),
+	governance.FuncSetMinSD.WithHandler(setMinSD),
+	governance.ViewGetMinSD.WithHandler(getMinSD),
 	governance.ViewGetChainOwner.WithHandler(getChainOwner),
 
 	// fees

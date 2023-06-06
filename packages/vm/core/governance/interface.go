@@ -21,6 +21,10 @@ var (
 	// chain owner (L1 entity that is the "owner of the chain")
 	FuncClaimChainOwnership    = coreutil.Func("claimChainOwnership")
 	FuncDelegateChainOwnership = coreutil.Func("delegateChainOwnership")
+	FuncSetPayoutAddress       = coreutil.Func("setPayoutAddress")
+	FuncSetMinSD               = coreutil.Func("setMinSD")
+	ViewGetPayoutAddress       = coreutil.ViewFunc("getPayoutAddress")
+	ViewGetMinSD               = coreutil.ViewFunc("getMinSD")
 	ViewGetChainOwner          = coreutil.ViewFunc("getChainOwner")
 
 	// gas
@@ -57,6 +61,9 @@ const (
 	// state controller
 	StateVarAllowedStateControllerAddresses = "a"
 	StateVarRotateToAddress                 = "r"
+
+	StateVarPayoutAddress = "pa"
+	StateVarMinSD         = "vs"
 
 	// chain owner
 	VarChainOwnerID          = "o"
@@ -122,4 +129,10 @@ const (
 	ParamBlockKeepAmount   = "b"
 	BlockKeepAll           = -1
 	BlockKeepAmountDefault = 10_000
+
+	// set payout address
+	ParamSetPayoutAddress = "s"
+
+	// set min SD
+	ParamSetMinSD = "ms"
 )

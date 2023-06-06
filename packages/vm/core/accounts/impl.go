@@ -8,9 +8,11 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 func CommonAccount() isc.AgentID {
@@ -213,8 +215,6 @@ func transferAccountToChain(ctx isc.Sandbox) dict.Dict {
 // Params:
 //
 //	ParamForceMinimumBaseTokens: specify the number of BaseTokens left on the common account will be not less than MinimumBaseTokensOnCommonAccount constant
-//
-// TODO refactor owner of the chain moves all tokens balance the common account to its own account
 func harvest(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
@@ -224,8 +224,13 @@ func harvest(ctx isc.Sandbox) dict.Dict {
 	}
 
 	state := ctx.State()
-	commonAccount := CommonAccount()
-	toWithdraw := GetAccountFungibleTokens(state, commonAccount)
+	stateDecoder := kvdecoder.New(state, ctx.Log())
+	withdrawAgent, err := stateDecoder.GetAgentID(governance.StateVarPayoutAddress)
+	if err != nil {
+		withdrawAgent = CommonAccount()
+	}
+
+	toWithdraw := GetAccountFungibleTokens(state, withdrawAgent)
 	if toWithdraw.BaseTokens <= bottomBaseTokens {
 		// below minimum, nothing to withdraw
 		return nil
@@ -234,7 +239,7 @@ func harvest(ctx isc.Sandbox) dict.Dict {
 		panic(ErrNotEnoughAllowance)
 	}
 	toWithdraw.BaseTokens -= bottomBaseTokens
-	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw)
+	MustMoveBetweenAccounts(state, CommonAccount(), ctx.Caller(), toWithdraw)
 	return nil
 }
 

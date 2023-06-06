@@ -113,6 +113,24 @@ export class SetMetadataCall {
     }
 }
 
+export class SetMinSDCall {
+    func:   wasmlib.ScFunc;
+    params: sc.MutableSetMinSDParams = new sc.MutableSetMinSDParams(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScFuncClientContext) {
+        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetMinSD);
+    }
+}
+
+export class SetPayoutAddressCall {
+    func:   wasmlib.ScFunc;
+    params: sc.MutableSetPayoutAddressParams = new sc.MutableSetPayoutAddressParams(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScFuncClientContext) {
+        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetPayoutAddress);
+    }
+}
+
 export class StartMaintenanceCall {
     func: wasmlib.ScFunc;
 
@@ -210,6 +228,24 @@ export class GetMetadataCall {
     }
 }
 
+export class GetMinSDCall {
+    func:    wasmlib.ScView;
+    results: sc.ImmutableGetMinSDResults = new sc.ImmutableGetMinSDResults(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScViewClientContext) {
+        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetMinSD);
+    }
+}
+
+export class GetPayoutAddressCall {
+    func:    wasmlib.ScView;
+    results: sc.ImmutableGetPayoutAddressResults = new sc.ImmutableGetPayoutAddressResults(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScViewClientContext) {
+        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetPayoutAddress);
+    }
+}
+
 export class ScFuncs {
     // Adds the given address to the list of identities that constitute the state controller.
     static addAllowedStateControllerAddress(ctx: wasmlib.ScFuncClientContext): AddAllowedStateControllerAddressCall {
@@ -298,6 +334,18 @@ export class ScFuncs {
         return f;
     }
 
+    static setMinSD(ctx: wasmlib.ScFuncClientContext): SetMinSDCall {
+        const f = new SetMinSDCall(ctx);
+        f.params = new sc.MutableSetMinSDParams(wasmlib.newCallParamsProxy(f.func));
+        return f;
+    }
+
+    static setPayoutAddress(ctx: wasmlib.ScFuncClientContext): SetPayoutAddressCall {
+        const f = new SetPayoutAddressCall(ctx);
+        f.params = new sc.MutableSetPayoutAddressParams(wasmlib.newCallParamsProxy(f.func));
+        return f;
+    }
+
     // Starts the chain maintenance mode, meaning no further requests
     // will be processed except calls to the governance contract.
     static startMaintenance(ctx: wasmlib.ScFuncClientContext): StartMaintenanceCall {
@@ -369,6 +417,18 @@ export class ScFuncs {
     static getMetadata(ctx: wasmlib.ScViewClientContext): GetMetadataCall {
         const f = new GetMetadataCall(ctx);
         f.results = new sc.ImmutableGetMetadataResults(wasmlib.newCallResultsProxy(f.func));
+        return f;
+    }
+
+    static getMinSD(ctx: wasmlib.ScViewClientContext): GetMinSDCall {
+        const f = new GetMinSDCall(ctx);
+        f.results = new sc.ImmutableGetMinSDResults(wasmlib.newCallResultsProxy(f.func));
+        return f;
+    }
+
+    static getPayoutAddress(ctx: wasmlib.ScViewClientContext): GetPayoutAddressCall {
+        const f = new GetPayoutAddressCall(ctx);
+        f.results = new sc.ImmutableGetPayoutAddressResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 }

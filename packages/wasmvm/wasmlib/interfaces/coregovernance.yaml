@@ -31,6 +31,16 @@ funcs:
     params:
       address=S: Address # state controller address
 
+  setPayoutAddress:
+    access: chain
+    params:
+      payoutAddress=s: AgentID # set payout address
+
+  setMinSD:
+    access: chain
+    params:
+      setMinSD=ms: Uint64
+
   # Removes the given address from the list of identities that constitute the state controller.
   removeAllowedStateControllerAddress:
     access: chain
@@ -133,6 +143,14 @@ views:
       controllers=a: Address[] # Array of state controller addresses
 
   # chain owner
+
+  getPayoutAddress:
+    results:
+      payoutAddress=s: AgentID # get payout address
+  
+  getMinSD:
+    results:
+      getMinSD=ms: Uint64
 
   # Returns the AgentID of the chain owner.
   getChainOwner:
