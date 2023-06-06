@@ -35,7 +35,6 @@ func NewInMemoryKVStore() InMemoryKVStore {
 }
 
 func (im InMemoryKVStore) Get(k []byte) []byte {
-	time.Sleep(time.Millisecond * 25)
 	return im[string(k)]
 }
 
