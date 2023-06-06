@@ -617,28 +617,6 @@ func reverse(orig []string) []string {
 	return ret
 }
 
-// Benchmark trie cache speed
-func BenchmarkTrieCacheMiss(b *testing.B) {
-	store := NewInMemoryKVStore()
-
-	var root0 trie.Hash
-	{
-		root0 = trie.MustInitRoot(store)
-	}
-	{
-		state, err := trie.NewTrieReader(store, root0)
-		require.NoError(b, err)
-		require.EqualValues(b, []byte(nil), state.Get([]byte("a")))
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		key := fmt.Sprintf("key_%d", i)
-		val := fmt.Sprintf("value_%d", i)
-		store.Set([]byte(key), []byte(val))
-	}
-}
-
 type NewGeneratorFunc = func(int) Generator
 
 type Generator interface {
@@ -671,21 +649,19 @@ type CacheBenchmark struct {
 }
 
 const (
-	cacheItems = 1e3
-	itemCost   = 40 * 4
-	itemsToSet = cacheItems * 1e2
+	itemCost = 40 * 4
 )
 
 var (
-	cacheSize      = []int{1e4, 1e6}
-	multiplier     = []int{10, 100, 1000}
 	lruCache       *lru.Cache[string, []byte]
 	ristrettoCache *ristretto.Cache
 	fastcacheCache *fastcache.Cache
 	theineCache    *theine.Cache[string, []byte]
 	clockproCache  *clockpro.Cache
 
-	caches = map[string]CacheBenchmark{
+	cacheSize  = []int{1e4, 1e6}
+	multiplier = []int{10, 100, 1000}
+	caches     = map[string]CacheBenchmark{
 		"golang-lru": {
 			Init: func(size int) {
 				lruCache, _ = lru.New[string, []byte](size)
