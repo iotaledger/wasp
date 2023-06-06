@@ -1,10 +1,7 @@
 package trie
 
 import (
-	"fmt"
-
-	"github.com/dgraph-io/ristretto"
-	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/VictoriaMetrics/fastcache"
 )
 
 //----------------------------------------------------------------------------
@@ -122,52 +119,29 @@ func makeWriterPartition(w KVWriter, prefix byte) KVWriter {
 }
 
 type cachedKVReader struct {
-	r      KVReader
-	cache  *lru.Cache[string, []byte]
-	rCache ristretto.Cache
+	r     KVReader
+	cache *fastcache.Cache
 }
 
 func makeCachedKVReader(r KVReader, size int) KVReader {
-	cache, err := lru.New[string, []byte](size)
-	if err != nil {
-		panic(err)
-	}
-	rCache, err := ristretto.NewCache(&ristretto.Config{
-		NumCounters: 1e8,  // number of keys to track frequency of.
-		MaxCost:     1024^3, // maximum cost of cache.
-		BufferItems: 64,   // number of keys per Get buffer.
-	})
-	if err != nil {
-		panic(err)
-	}
-	return &cachedKVReader{r: r, cache: cache, rCache: *rCache}
+	cache := fastcache.New(size)
+	return &cachedKVReader{r: r, cache: cache}
 }
 
 func (c *cachedKVReader) Get(key []byte) []byte {
-	fmt.Println(c.rCache.Metrics.String())
-	if v, ok := c.rCache.Get(key); ok {
-		return v.([]byte)
+	if v := c.cache.Get(nil, key); v != nil {
+		return v
 	}
 	v := c.r.Get(key)
-	c.rCache.Set(key, v, 0)
-	// if v, ok := c.cache.Get(string(key)); ok {
-	// 	return v
-	// }
-	// v := c.r.Get(key)
-	// c.cache.Add(string(key), v)
+	c.cache.Set(key, v)
 	return v
 }
 
 func (c *cachedKVReader) Has(key []byte) bool {
-	if v, ok := c.rCache.Get(key); ok {
-		return v != nil
+	v := c.cache.Get(nil, key)
+	if v == nil {
+		v := c.r.Get(key)
+		c.cache.Set(key, v)
 	}
-	v := c.r.Get(key)
-	c.rCache.Set(key, v, 0)
-	// if v, ok := c.cache.Get(string(key)); ok {
-	// 	return v != nil
-	// }
-	// v := c.r.Get(key)
-	// c.cache.Add(string(key), v)
 	return v != nil
 }
