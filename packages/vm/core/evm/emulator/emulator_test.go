@@ -55,7 +55,7 @@ func estimateGas(callMsg ethereum.CallMsg, e *EVMEmulator) (uint64, error) {
 		callMsg.Gas = (lo + hi) / 2
 		res, err := e.CallContract(callMsg, nil)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("CallContract failed: %w", err)
 		}
 		if res.Err != nil {
 			lastErr = res.Err
@@ -67,7 +67,7 @@ func estimateGas(callMsg ethereum.CallMsg, e *EVMEmulator) (uint64, error) {
 	}
 	if lastOk == 0 {
 		if lastErr != nil {
-			return 0, fmt.Errorf("estimateGas failed: %s", lastErr.Error())
+			return 0, fmt.Errorf("estimateGas failed: %w", lastErr)
 		}
 		return 0, errors.New("estimateGas failed")
 	}
