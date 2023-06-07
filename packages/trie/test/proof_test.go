@@ -1,4 +1,4 @@
-package trie_test
+package test
 
 import (
 	"strings"

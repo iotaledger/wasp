@@ -1,12 +1,14 @@
 package blob
 
 import (
+	"bytes"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func eventStore(ctx isc.Sandbox, blobHash hashing.HashValue) {
-	var buf []byte
-	buf = append(buf, blobHash.Bytes()...)
-	ctx.Event("coreblob.store", buf)
+	w := new(bytes.Buffer)
+	_ = blobHash.Write(w)
+	ctx.Event("coreblob.store", w.Bytes())
 }

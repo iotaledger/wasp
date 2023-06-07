@@ -3,7 +3,7 @@ package blocklog
 import (
 	"io"
 
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 // EventLookupKey is a globally unique reference to the event:
@@ -12,22 +12,22 @@ type EventLookupKey [8]byte
 
 func NewEventLookupKey(blockIndex uint32, requestIndex, eventIndex uint16) EventLookupKey {
 	ret := EventLookupKey{}
-	copy(ret[:4], util.Uint32To4Bytes(blockIndex))
-	copy(ret[4:6], util.Uint16To2Bytes(requestIndex))
-	copy(ret[6:8], util.Uint16To2Bytes(eventIndex))
+	copy(ret[:4], codec.EncodeUint32(blockIndex))
+	copy(ret[4:6], codec.EncodeUint16(requestIndex))
+	copy(ret[6:8], codec.EncodeUint16(eventIndex))
 	return ret
 }
 
 func (k EventLookupKey) BlockIndex() uint32 {
-	return util.MustUint32From4Bytes(k[:4])
+	return codec.MustDecodeUint32(k[:4])
 }
 
 func (k EventLookupKey) RequestIndex() uint16 {
-	return util.MustUint16From2Bytes(k[4:6])
+	return codec.MustDecodeUint16(k[4:6])
 }
 
 func (k EventLookupKey) RequestEventIndex() uint16 {
-	return util.MustUint16From2Bytes(k[6:8])
+	return codec.MustDecodeUint16(k[6:8])
 }
 
 func (k EventLookupKey) Bytes() []byte {
