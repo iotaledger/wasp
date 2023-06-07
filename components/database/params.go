@@ -15,7 +15,7 @@ type ParametersDatabase struct {
 	}
 
 	// DebugSkipHealthCheck defines whether to ignore the check for corrupted databases (should only be used for debug reasons).
-	DebugSkipHealthCheck bool `default:"false" usage:"ignore the check for corrupted databases (should only be used for debug reasons)"`
+	DebugSkipHealthCheck bool `default:"true" usage:"ignore the check for corrupted databases (should only be used for debug reasons)"`
 }
 
 var ParamsDatabase = &ParametersDatabase{}
