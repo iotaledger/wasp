@@ -3,7 +3,7 @@ module github.com/iotaledger/wasp
 go 1.20
 
 replace (
-	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v1.11.6-wasp
+	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v1.12.0-wasp
 	go.dedis.ch/kyber/v3 => github.com/kape1395/kyber/v3 v3.0.14-0.20230124095845-ec682ff08c93 // branch: dkg-2suites
 )
 
@@ -14,7 +14,7 @@ require (
 	github.com/bytecodealliance/wasmtime-go/v9 v9.0.0
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/dgryski/go-clockpro v0.0.0-20140817124034-edc6d3eeb96e
-	github.com/ethereum/go-ethereum v1.11.6
+	github.com/ethereum/go-ethereum v1.12.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/hashicorp/golang-lru/v2 v2.0.2
 	github.com/iotaledger/hive.go/app v0.0.0-20230425142119-6abddaf15db9
@@ -77,7 +77,6 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/eclipse/paho.mqtt.golang v1.4.2 // indirect
-	github.com/edsrzf/mmap-go v1.0.0 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/flynn/noise v1.0.0 // indirect
