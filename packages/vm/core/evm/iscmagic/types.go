@@ -91,7 +91,7 @@ func WrapL1Address(a iotago.Address) L1Address {
 }
 
 func (a L1Address) Unwrap() (iotago.Address, error) {
-	ret, _, err := isc.AddressFromBytes(a.Data)
+	ret, err := isc.AddressFromBytes(a.Data)
 	return ret, err
 }
 

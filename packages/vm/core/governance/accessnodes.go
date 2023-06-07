@@ -166,7 +166,7 @@ func (a *AccessNodeInfo) ValidateCertificate(ctx isc.Sandbox) bool {
 	if err != nil {
 		return false
 	}
-	validatorAddr, _, err := isc.AddressFromBytes(a.ValidatorAddr)
+	validatorAddr, err := isc.AddressFromBytes(a.ValidatorAddr)
 	if err != nil {
 		return false
 	}
