@@ -39,21 +39,21 @@ func TestBasic(t *testing.T) {
 // several timer events are required for nodes to try to request blocks from peers.
 func TestManyNodes(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(10)
-	smTimers := NewStateManagerTimers()
-	smTimers.StateManagerGetBlockRetry = 100 * time.Millisecond
-	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewMockedTestBlockWAL, smTimers)
+	smParameters := NewStateManagerParameters()
+	smParameters.StateManagerGetBlockRetry = 100 * time.Millisecond
+	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewMockedTestBlockWAL, smParameters)
 	defer env.finalize()
 
 	blocks := env.bf.GetBlocks(16, 1)
-	env.sendBlocksToNode(nodeIDs[0], smTimers.StateManagerGetBlockRetry, blocks...)
+	env.sendBlocksToNode(nodeIDs[0], smParameters.StateManagerGetBlockRetry, blocks...)
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeIDs[0], blocks))
 
 	// Nodes are checked sequentially
 	lastCommitment := blocks[7].L1Commitment()
 	for i := 1; i < len(nodeIDs); i++ {
 		env.t.Logf("Sequential: waiting for blocks ending with %s to be available on node %s...", lastCommitment, nodeIDs[i].ShortString())
-		require.True(env.t, env.sendAndEnsureCompletedConsensusStateProposal(lastCommitment, nodeIDs[i], 100, smTimers.StateManagerGetBlockRetry))
-		require.True(env.t, env.sendAndEnsureCompletedConsensusDecidedState(lastCommitment, nodeIDs[i], 8, smTimers.StateManagerGetBlockRetry))
+		require.True(env.t, env.sendAndEnsureCompletedConsensusStateProposal(lastCommitment, nodeIDs[i], 100, smParameters.StateManagerGetBlockRetry))
+		require.True(env.t, env.sendAndEnsureCompletedConsensusDecidedState(lastCommitment, nodeIDs[i], 8, smParameters.StateManagerGetBlockRetry))
 		require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeIDs[i], blocks[:8]))
 	}
 	// Nodes are checked in parallel
@@ -68,7 +68,7 @@ func TestManyNodes(t *testing.T) {
 	env.tc.WithInputs(cspInputs).RunAll()
 	for nodeID, cspRespChan := range cspRespChans {
 		env.t.Logf("Parallel: waiting for blocks ending with %s to be available on node %s...", lastCommitment, nodeID.ShortString())
-		require.True(env.t, env.ensureCompletedConsensusStateProposal(cspRespChan, 10, smTimers.StateManagerGetBlockRetry))
+		require.True(env.t, env.ensureCompletedConsensusStateProposal(cspRespChan, 10, smParameters.StateManagerGetBlockRetry))
 	}
 	cdsInputs := make(map[gpa.NodeID]gpa.Input)
 	cdsRespChans := make(map[gpa.NodeID]<-chan state.State)
@@ -79,7 +79,7 @@ func TestManyNodes(t *testing.T) {
 	env.tc.WithInputs(cdsInputs).RunAll()
 	for nodeID, cdsRespChan := range cdsRespChans {
 		env.t.Logf("Parallel: waiting for state %s on node %s", lastCommitment, nodeID.ShortString())
-		require.True(env.t, env.ensureCompletedConsensusDecidedState(cdsRespChan, lastCommitment, 16, smTimers.StateManagerGetBlockRetry))
+		require.True(env.t, env.ensureCompletedConsensusDecidedState(cdsRespChan, lastCommitment, 16, smParameters.StateManagerGetBlockRetry))
 	}
 	for _, nodeID := range nodeIDs {
 		env.t.Logf("Parallel: waiting for blocks to be available in store on node %s", nodeID.ShortString())
@@ -107,9 +107,9 @@ func TestFull(t *testing.T) {
 	maxRetriesPerIteration := 100
 
 	nodeIDs := gpa.MakeTestNodeIDs(nodeCount)
-	smTimers := NewStateManagerTimers()
-	smTimers.StateManagerGetBlockRetry = 100 * time.Millisecond
-	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewMockedTestBlockWAL, smTimers)
+	smParameters := NewStateManagerParameters()
+	smParameters.StateManagerGetBlockRetry = 100 * time.Millisecond
+	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewMockedTestBlockWAL, smParameters)
 	defer env.finalize()
 
 	lastCommitment := origin.L1Commitment(nil, 0)
@@ -117,12 +117,12 @@ func TestFull(t *testing.T) {
 	testIterationFun := func(i int, baseCommitment *state.L1Commitment, incrementFactor ...uint64) []state.Block {
 		env.t.Logf("Iteration %v: generating %v blocks and sending them to nodes", i, iterationSize)
 		blocks := env.bf.GetBlocksFrom(iterationSize, 1, baseCommitment, incrementFactor...)
-		env.sendBlocksToRandomNode(nodeIDs, smTimers.StateManagerGetBlockRetry, blocks...)
+		env.sendBlocksToRandomNode(nodeIDs, smParameters.StateManagerGetBlockRetry, blocks...)
 		for _, nodeID := range nodeIDs {
 			randCommitment := blocks[rand.Intn(iterationSize-1)].L1Commitment() // Do not pick the last state/blocks
 			t.Logf("Iteration %v: sending ConsensusDecidedState for commitment %s to node %s",
 				i, randCommitment, nodeID.ShortString())
-			require.True(env.t, env.sendAndEnsureCompletedConsensusDecidedState(randCommitment, nodeID, maxRetriesPerIteration, smTimers.StateManagerGetBlockRetry))
+			require.True(env.t, env.sendAndEnsureCompletedConsensusDecidedState(randCommitment, nodeID, maxRetriesPerIteration, smParameters.StateManagerGetBlockRetry))
 		}
 		return blocks
 	}
@@ -144,7 +144,7 @@ func TestFull(t *testing.T) {
 	}
 	for _, nodeID := range nodeIDs {
 		t.Logf("Sending ConsensusDecidedState for last original commitment %s to node %s", lastCommitment, nodeID.ShortString())
-		require.True(env.t, env.sendAndEnsureCompletedConsensusDecidedState(lastCommitment, nodeID, maxRetriesPerIteration, smTimers.StateManagerGetBlockRetry))
+		require.True(env.t, env.sendAndEnsureCompletedConsensusDecidedState(lastCommitment, nodeID, maxRetriesPerIteration, smParameters.StateManagerGetBlockRetry))
 		require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, allBlocks))
 	}
 	oldCommitment := lastCommitment
@@ -160,7 +160,7 @@ func TestFull(t *testing.T) {
 	}
 	for _, nodeID := range nodeIDs {
 		t.Logf("Sending ConsensusDecidedState for last branch commitment %s to node %s", lastCommitment, nodeID.ShortString())
-		require.True(env.t, env.sendAndEnsureCompletedConsensusDecidedState(lastCommitment, nodeID, maxRetriesPerIteration, smTimers.StateManagerGetBlockRetry))
+		require.True(env.t, env.sendAndEnsureCompletedConsensusDecidedState(lastCommitment, nodeID, maxRetriesPerIteration, smParameters.StateManagerGetBlockRetry))
 		require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, newBlocks))
 	}
 	newCommitment := lastCommitment
@@ -168,7 +168,7 @@ func TestFull(t *testing.T) {
 	// ChainFetchStateDiff request
 	for _, nodeID := range env.nodeIDs {
 		env.t.Logf("Requesting state for Mempool from node %s", nodeID.ShortString())
-		require.True(env.t, env.sendAndEnsureCompletedChainFetchStateDiff(oldCommitment, newCommitment, oldBlocks, newBlocks, nodeID, maxRetriesPerIteration, smTimers.StateManagerGetBlockRetry))
+		require.True(env.t, env.sendAndEnsureCompletedChainFetchStateDiff(oldCommitment, newCommitment, oldBlocks, newBlocks, nodeID, maxRetriesPerIteration, smParameters.StateManagerGetBlockRetry))
 	}
 }
 
@@ -189,18 +189,18 @@ func TestMempoolRequest(t *testing.T) {
 	maxRetries := 100
 
 	nodeIDs := gpa.MakeTestNodeIDs(nodeCount)
-	smTimers := NewStateManagerTimers()
-	smTimers.StateManagerGetBlockRetry = 100 * time.Millisecond
-	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewMockedTestBlockWAL, smTimers)
+	smParameters := NewStateManagerParameters()
+	smParameters.StateManagerGetBlockRetry = 100 * time.Millisecond
+	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewMockedTestBlockWAL, smParameters)
 	defer env.finalize()
 
 	mainBlocks := env.bf.GetBlocks(mainSize, 1)
 	branchIndex := randomFrom + rand.Intn(randomTo-randomFrom)
 	branchBlocks := env.bf.GetBlocksFrom(branchSize, 1, mainBlocks[branchIndex].L1Commitment(), 2)
 
-	env.sendBlocksToNode(nodeIDs[0], smTimers.StateManagerGetBlockRetry, mainBlocks...)
+	env.sendBlocksToNode(nodeIDs[0], smParameters.StateManagerGetBlockRetry, mainBlocks...)
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeIDs[0], mainBlocks))
-	env.sendBlocksToNode(nodeIDs[0], smTimers.StateManagerGetBlockRetry, branchBlocks...)
+	env.sendBlocksToNode(nodeIDs[0], smParameters.StateManagerGetBlockRetry, branchBlocks...)
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeIDs[0], branchBlocks))
 
 	oldCommitment := mainBlocks[len(mainBlocks)-1].L1Commitment()
@@ -208,7 +208,7 @@ func TestMempoolRequest(t *testing.T) {
 	oldBlocks := mainBlocks[branchIndex+1:]
 	for _, nodeID := range nodeIDs[1:] {
 		env.t.Logf("Sending ChainFetchStateDiff for old commitment %s and new commitment %s to node %s", oldCommitment, newCommitment, nodeID.ShortString())
-		require.True(env.t, env.sendAndEnsureCompletedChainFetchStateDiff(oldCommitment, newCommitment, oldBlocks, branchBlocks, nodeID, maxRetries, smTimers.StateManagerGetBlockRetry))
+		require.True(env.t, env.sendAndEnsureCompletedChainFetchStateDiff(oldCommitment, newCommitment, oldBlocks, branchBlocks, nodeID, maxRetries, smParameters.StateManagerGetBlockRetry))
 		require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, mainBlocks))
 		require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, branchBlocks))
 	}
@@ -290,10 +290,10 @@ func TestMempoolRequestBranchFromOrigin(t *testing.T) {
 // timer events.
 func TestBlockCacheCleaningAuto(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(1)
-	smTimers := NewStateManagerTimers()
-	smTimers.BlockCacheBlocksInCacheDuration = 300 * time.Millisecond
-	smTimers.BlockCacheBlockCleaningPeriod = 70 * time.Millisecond
-	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, smTimers)
+	smParameters := NewStateManagerParameters()
+	smParameters.BlockCacheBlocksInCacheDuration = 300 * time.Millisecond
+	smParameters.BlockCacheBlockCleaningPeriod = 70 * time.Millisecond
+	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, smParameters)
 	defer env.finalize()
 
 	nodeID := nodeIDs[0]

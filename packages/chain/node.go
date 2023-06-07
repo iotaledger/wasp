@@ -33,6 +33,7 @@ import (
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -271,6 +272,7 @@ func New(
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
 	consensusDelay time.Duration,
+	smParameters sm_gpa.StateManagerParameters,
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
 	if listener == nil {
@@ -398,6 +400,7 @@ func New(
 		chainMetrics,
 		chainMetrics,
 		cni.log.Named("SM"),
+		smParameters,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create stateMgr: %w", err)

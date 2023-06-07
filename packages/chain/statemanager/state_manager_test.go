@@ -54,9 +54,9 @@ func TestCruelWorld(t *testing.T) {
 	bf := sm_gpa_utils.NewBlockFactory(t)
 	sms := make([]StateMgr, nodeCount)
 	stores := make([]state.Store, nodeCount)
-	timers := sm_gpa.NewStateManagerTimers()
-	timers.StateManagerTimerTickPeriod = timerTickPeriod
-	timers.StateManagerGetBlockRetry = getBlockPeriod
+	parameters := sm_gpa.NewStateManagerParameters()
+	parameters.StateManagerTimerTickPeriod = timerTickPeriod
+	parameters.StateManagerGetBlockRetry = getBlockPeriod
 	for i := range sms {
 		t.Logf("Creating %v-th state manager for node %s", i, peeringURLs[i])
 		var err error
@@ -74,7 +74,7 @@ func TestCruelWorld(t *testing.T) {
 			metrics.NewEmptyChainStateManagerMetric(),
 			metrics.NewEmptyChainPipeMetrics(),
 			log.Named(peeringURLs[i]),
-			timers,
+			parameters,
 		)
 		require.NoError(t, err)
 	}

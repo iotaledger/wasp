@@ -32,19 +32,19 @@ type testEnv struct {
 	log          *logger.Logger
 }
 
-func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() sm_gpa_utils.TestBlockWAL, timersOpt ...StateManagerTimers) *testEnv {
+func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() sm_gpa_utils.TestBlockWAL, parametersOpt ...StateManagerParameters) *testEnv {
 	bf := sm_gpa_utils.NewBlockFactory(t)
 	chainID := bf.GetChainID()
 	log := testlogger.NewLogger(t).Named("c-" + chainID.ShortString())
 	sms := make(map[gpa.NodeID]gpa.GPA)
 	stores := make(map[gpa.NodeID]state.Store)
-	var timers StateManagerTimers
-	if len(timersOpt) > 0 {
-		timers = timersOpt[0]
+	var parameters StateManagerParameters
+	if len(parametersOpt) > 0 {
+		parameters = parametersOpt[0]
 	} else {
-		timers = NewStateManagerTimers()
+		parameters = NewStateManagerParameters()
 	}
-	timers.TimeProvider = sm_gpa_utils.NewArtifficialTimeProvider()
+	parameters.TimeProvider = sm_gpa_utils.NewArtifficialTimeProvider()
 	for _, nodeID := range nodeIDs {
 		var err error
 		smLog := log.Named(nodeID.ShortString())
@@ -54,14 +54,14 @@ func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() sm_gpa_u
 		origin.InitChain(store, nil, 0)
 		stores[nodeID] = store
 		metrics := metrics.NewEmptyChainStateManagerMetric()
-		sms[nodeID], err = New(chainID, nr, wal, store, metrics, smLog, timers)
+		sms[nodeID], err = New(chainID, nr, wal, store, metrics, smLog, parameters)
 		require.NoError(t, err)
 	}
 	return &testEnv{
 		t:            t,
 		bf:           bf,
 		nodeIDs:      nodeIDs,
-		timeProvider: timers.TimeProvider,
+		timeProvider: parameters.TimeProvider,
 		sms:          sms,
 		stores:       stores,
 		tc:           gpa.NewTestContext(sms),
