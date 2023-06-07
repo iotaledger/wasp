@@ -1,22 +1,23 @@
 package codec
 
 import (
-	"bytes"
 	"errors"
-
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 func DecodeBool(b []byte, def ...bool) (bool, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return false, errors.New("cannot decode nil bytes")
+			return false, errors.New("cannot decode nil bool")
 		}
 		return def[0], nil
 	}
-	var ret bool
-	err := util.ReadBoolByte(bytes.NewReader(b), &ret)
-	return ret, err
+	if len(b) != 1 {
+		return false, errors.New("invalid bool size")
+	}
+	if (b[0] & 0xfe) != 0x00 {
+		return false, errors.New("invalid bool value")
+	}
+	return b[0] != 0, nil
 }
 
 func MustDecodeBool(b []byte, def ...bool) bool {
@@ -28,10 +29,8 @@ func MustDecodeBool(b []byte, def ...bool) bool {
 }
 
 func EncodeBool(value bool) []byte {
-	buf := bytes.NewBuffer(make([]byte, 0))
-	err := util.WriteBoolByte(buf, value)
-	if err != nil {
-		return nil
+	if value {
+		return []byte{1}
 	}
-	return buf.Bytes()
+	return []byte{0}
 }

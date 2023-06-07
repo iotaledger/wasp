@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -86,11 +85,11 @@ func LocateProgram(state kv.KVStoreReader, programHash hashing.HashValue) (strin
 }
 
 func EncodeSize(size uint32) []byte {
-	return util.Uint32To4Bytes(size)
+	return codec.EncodeUint32(size)
 }
 
 func DecodeSize(size []byte) (uint32, error) {
-	return util.Uint32From4Bytes(size)
+	return codec.DecodeUint32(size)
 }
 
 func DecodeSizesMap(sizes dict.Dict) (map[string]uint32, error) {

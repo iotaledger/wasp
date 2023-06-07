@@ -100,7 +100,7 @@ func (id ChainID) Empty() bool {
 	return id == emptyChainID
 }
 
-// String human readable form (bech32)
+// String human-readable form (bech32)
 func (id ChainID) String() string {
 	return id.AsAddress().Bech32(parameters.L1().Protocol.Bech32HRP)
 }

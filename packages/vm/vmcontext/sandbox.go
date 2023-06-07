@@ -42,7 +42,11 @@ func (s *contractSandbox) DeployContract(programHash hashing.HashValue, name, de
 func (s *contractSandbox) Event(topic string, payload []byte) {
 	s.Ctx.GasBurn(gas.BurnCodeEmitEventFixed)
 	hContract := s.Ctx.(*VMContext).CurrentContractHname()
-	s.Log().Infof("event::%s -> %s(%s)", hContract.String(), topic, iotago.EncodeHex(payload))
+	hex := iotago.EncodeHex(payload)
+	if len(hex) > 80 {
+		hex = hex[:40] + "..."
+	}
+	s.Log().Infof("event::%s -> %s(%s)", hContract.String(), topic, hex)
 	s.Ctx.(*VMContext).MustSaveEvent(hContract, topic, payload)
 }
 

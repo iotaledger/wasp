@@ -119,13 +119,12 @@ func GetCLIOutputText(outputModel CLIOutput) (string, error) {
 
 func ParseCLIOutputTemplate(output CLIOutput, templateDefinition string) (string, error) {
 	tpl := template.Must(template.New("clioutput").Parse(templateDefinition))
-	var result bytes.Buffer
-	err := tpl.Execute(&result, output)
+	w := new(bytes.Buffer)
+	err := tpl.Execute(w, output)
 	if err != nil {
 		return "", err
 	}
-
-	return result.String(), nil
+	return w.String(), nil
 }
 
 func PrintCLIOutput(output CLIOutput) {

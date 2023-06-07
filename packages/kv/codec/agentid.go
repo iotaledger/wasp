@@ -9,7 +9,7 @@ import (
 func DecodeAgentID(b []byte, def ...isc.AgentID) (isc.AgentID, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return nil, errors.New("cannot decode nil bytes")
+			return nil, errors.New("cannot decode nil AgentID")
 		}
 		return def[0], nil
 	}

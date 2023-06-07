@@ -22,10 +22,10 @@ import (
 type NodeOwnershipCertificate []byte
 
 func NewNodeOwnershipCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress iotago.Address) NodeOwnershipCertificate {
-	certData := bytes.Buffer{}
-	certData.Write(nodeKeyPair.GetPublicKey().AsBytes())
-	certData.Write(isc.BytesFromAddress(ownerAddress))
-	return nodeKeyPair.GetPrivateKey().Sign(certData.Bytes())
+	w := new(bytes.Buffer)
+	_, _ = w.Write(nodeKeyPair.GetPublicKey().AsBytes())
+	_, _ = w.Write(isc.BytesFromAddress(ownerAddress))
+	return nodeKeyPair.GetPrivateKey().Sign(w.Bytes())
 }
 
 func NewNodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate {
@@ -33,10 +33,10 @@ func NewNodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate 
 }
 
 func (c NodeOwnershipCertificate) Verify(nodePubKey *cryptolib.PublicKey, ownerAddress iotago.Address) bool {
-	certData := bytes.Buffer{}
-	certData.Write(nodePubKey.AsBytes())
-	certData.Write(isc.BytesFromAddress(ownerAddress))
-	return nodePubKey.Verify(certData.Bytes(), c.Bytes())
+	w := new(bytes.Buffer)
+	_, _ = w.Write(nodePubKey.AsBytes())
+	_, _ = w.Write(isc.BytesFromAddress(ownerAddress))
+	return nodePubKey.Verify(w.Bytes(), c.Bytes())
 }
 
 func (c NodeOwnershipCertificate) Bytes() []byte {

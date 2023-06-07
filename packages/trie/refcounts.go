@@ -1,7 +1,7 @@
 package trie
 
 import (
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 type Refcounts struct {
@@ -71,13 +71,13 @@ func getRefcount(s KVStore, key []byte) uint32 {
 	if b == nil {
 		return 0
 	}
-	return util.MustUint32From4Bytes(b)
+	return codec.MustDecodeUint32(b)
 }
 
 func setRefcount(s KVStore, key []byte, n uint32) {
 	if n == 0 {
 		s.Del(key)
 	} else {
-		s.Set(key, util.Uint32To4Bytes(n))
+		s.Set(key, codec.EncodeUint32(n))
 	}
 }

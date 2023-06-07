@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 type ConsoleReportParams struct {
@@ -103,7 +102,7 @@ func Scan(rdr kv.StreamIterator) (*FileProperties, error) {
 				errR = errors.New("duplicate record with state index")
 				return false
 			}
-			if ret.StateIndex, errR = util.Uint32From4Bytes(v); errR != nil {
+			if ret.StateIndex, errR = codec.DecodeUint32(v); errR != nil {
 				return false
 			}
 			stateIndexFound = true
