@@ -317,7 +317,7 @@ func TestPruningSequentially(t *testing.T) {
 		}
 	}
 	for i := blocksToKeep + 1; i < blockCount; i++ {
-		lastExistingBlockIndex := i - blocksToKeep - 1
+		lastExistingBlockIndex := i - blocksToKeep
 		env.sendBlocksToNode(nodeID, 0*time.Second, blocks[i])
 		require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks[lastExistingBlockIndex:i+1]))
 		for j := 0; j < lastExistingBlockIndex; j++ {
