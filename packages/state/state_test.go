@@ -365,9 +365,20 @@ func TestPruning(t *testing.T) {
 
 			if keepLatest > 0 && index >= uint32(keepLatest) {
 				p := index - uint32(keepLatest)
-				stats, err := r.cs.Prune(r.cs.BlockByIndex(p).TrieRoot())
+				trieRoot := r.cs.BlockByIndex(p).TrieRoot()
+				stats, err := r.cs.Prune(trieRoot)
 				require.NoError(t, err)
-				t.Logf("pruned block %d: %+v", p, stats)
+
+				t.Logf("pruned block %d: %+v %s", p, stats, trieRoot)
+				{
+					_, err := r.cs.Store.StateByTrieRoot(trieRoot)
+					require.ErrorContains(t, err, "does not exist")
+				}
+				{
+					_, err := r.cs.Store.BlockByTrieRoot(trieRoot)
+					require.ErrorContains(t, err, "not found")
+				}
+				require.False(t, r.cs.HasTrieRoot(trieRoot))
 			}
 
 			sizes = append(sizes, dbSize(r.db))
