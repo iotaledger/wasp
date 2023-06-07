@@ -133,11 +133,11 @@ Example:
 
 ## <a id="db"></a> 4. Database
 
-| Name                         | Description                                                                      | Type    | Default value |
-| ---------------------------- | -------------------------------------------------------------------------------- | ------- | ------------- |
-| engine                       | The used database engine (rocksdb/mapdb)                                         | string  | "rocksdb"     |
-| [chainState](#db_chainstate) | Configuration for chainState                                                     | object  |               |
-| debugSkipHealthCheck         | Ignore the check for corrupted databases (should only be used for debug reasons) | boolean | true          |
+| Name                         | Description                              | Type    | Default value |
+| ---------------------------- | ---------------------------------------- | ------- | ------------- |
+| engine                       | The used database engine (rocksdb/mapdb) | string  | "rocksdb"     |
+| [chainState](#db_chainstate) | Configuration for chainState             | object  |               |
+| debugSkipHealthCheck         | Ignore the check for corrupted databases | boolean | true          |
 
 ### <a id="db_chainstate"></a> ChainState
 
