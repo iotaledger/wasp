@@ -145,7 +145,9 @@ func (s *store) Prune(trieRoot trie.Hash) (trie.PruneStats, error) {
 	if err != nil {
 		return trie.PruneStats{}, err
 	}
+	s.db.pruneBlock(trieRoot)
 	s.db.commitToDB(buf.muts)
+	s.stateCache.Remove(trieRoot)
 	return stats, nil
 }
 
