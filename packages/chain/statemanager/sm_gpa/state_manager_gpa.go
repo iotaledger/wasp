@@ -526,6 +526,10 @@ func (smT *stateManagerGPA) commitStateDraft(stateDraft state.StateDraft) state.
 }
 
 func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment) {
+	if commitment == nil {
+		return // Nothing to prune
+	}
+
 	PreviousTrieRootFun := func(trieRoot trie.Hash) (trie.Hash, bool, error) {
 		block, err := smT.store.BlockByTrieRoot(trieRoot)
 		if err != nil {
@@ -541,7 +545,7 @@ func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment) {
 	var statesToKeepFromChain int
 	chainState, err := smT.store.LatestState()
 	if err != nil {
-		smT.log.Error("Cannot get latest chain state: %v", err)
+		smT.log.Errorf("Cannot get latest chain state: %v", err)
 		statesToKeepFromChain = 0
 	} else {
 		statesToKeepFromChain = int(governance.NewStateAccess(chainState).GetBlockKeepAmount())
@@ -581,13 +585,14 @@ func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment) {
 			return
 		}
 	}
-	for i := -1; i < -trieRoots.Length(); i-- {
-		stats, err := smT.store.Prune(trieRoots.Get(i))
+	for i := -1; i >= -trieRoots.Length(); i-- {
+		trieRoot = trieRoots.Get(i)
+		stats, err := smT.store.Prune(trieRoot)
 		if err != nil {
 			smT.log.Errorf("Failed to prune trie root %s: %v", trieRoot, err)
 			return // Returning in order not to leave gaps of pruned trie roots in between not pruned ones
 		}
-		smT.log.Debugf("Trie root %s pruned: %v nodes and %values deleted", trieRoot, err, stats.DeletedNodes, stats.DeletedValues)
+		smT.log.Debugf("Trie root %s pruned: %v nodes and %v values deleted", trieRoot, stats.DeletedNodes, stats.DeletedValues)
 	}
 	smT.log.Debugf("Pruning completed, %v trie roots pruned", trieRoots.Length())
 }

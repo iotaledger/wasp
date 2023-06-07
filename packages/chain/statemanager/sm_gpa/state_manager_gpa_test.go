@@ -286,6 +286,49 @@ func TestMempoolRequestBranchFromOrigin(t *testing.T) {
 	require.True(env.t, env.sendAndEnsureCompletedChainFetchStateDiff(oldCommitment, newCommitment, oldBlocks, newBlocks, nodeID, 1, 0*time.Second))
 }
 
+func TestPruningSequentially(t *testing.T) {
+	blocksToKeep := 10
+	blockCount := 20
+
+	nodeIDs := gpa.MakeTestNodeIDs(1)
+	nodeID := nodeIDs[0]
+	smParameters := NewStateManagerParameters()
+	smParameters.PruningMinStatesToKeep = blocksToKeep
+	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, smParameters)
+	defer env.finalize()
+
+	store, ok := env.stores[nodeID]
+	require.True(env.t, ok)
+	checkBlockFun := func(block state.Block) {
+		commitment := block.L1Commitment()
+		blockFromStore, err := store.BlockByTrieRoot(commitment.TrieRoot())
+		require.NoError(env.t, err)
+		require.Equal(env.t, block.StateIndex(), blockFromStore.StateIndex())
+		require.True(env.t, commitment.Equals(blockFromStore.L1Commitment()))
+		require.True(env.t, block.PreviousL1Commitment().Equals(blockFromStore.PreviousL1Commitment()))
+	}
+
+	blocks := env.bf.GetBlocks(blockCount, 1)
+	for i := 0; i <= blocksToKeep; i++ {
+		env.sendBlocksToNode(nodeID, 0*time.Second, blocks[i])
+		require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks[:i+1]))
+		for j := 0; j <= i; j++ {
+			checkBlockFun(blocks[j])
+		}
+	}
+	for i := blocksToKeep + 1; i < blockCount; i++ {
+		lastExistingBlockIndex := i - blocksToKeep - 1
+		env.sendBlocksToNode(nodeID, 0*time.Second, blocks[i])
+		require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks[lastExistingBlockIndex:i+1]))
+		for j := 0; j < lastExistingBlockIndex; j++ {
+			require.False(env.t, store.HasTrieRoot(blocks[j].TrieRoot()))
+		}
+		for j := lastExistingBlockIndex; j <= i; j++ {
+			checkBlockFun(blocks[j])
+		}
+	}
+}
+
 // Single node network. Checks if block cache is cleaned via state manager
 // timer events.
 func TestBlockCacheCleaningAuto(t *testing.T) {
