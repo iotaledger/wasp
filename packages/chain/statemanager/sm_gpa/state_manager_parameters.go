@@ -44,6 +44,8 @@ func NewStateManagerParameters(tpOpt ...sm_gpa_utils.TimeProvider) StateManagerP
 		StateManagerGetBlockRetry:         3 * time.Second,
 		StateManagerRequestCleaningPeriod: 1 * time.Second,
 		StateManagerTimerTickPeriod:       1 * time.Second,
+		PruningMinStatesToKeep:            10000,
+		PruningMaxStatesToDelete:          1000,
 		TimeProvider:                      tp,
 	}
 }

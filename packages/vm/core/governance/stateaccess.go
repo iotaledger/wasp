@@ -52,3 +52,7 @@ func (sa *StateAccess) GetCandidateNodes() []*AccessNodeInfo {
 	})
 	return candidateNodes
 }
+
+func (sa *StateAccess) GetBlockKeepAmount() int32 {
+	return GetBlockKeepAmount(sa.state)
+}

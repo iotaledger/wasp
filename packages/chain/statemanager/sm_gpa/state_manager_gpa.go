@@ -25,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 type stateManagerGPA struct {
@@ -525,8 +526,6 @@ func (smT *stateManagerGPA) commitStateDraft(stateDraft state.StateDraft) state.
 }
 
 func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment) {
-	statesToKeep := 1000 // TODO parametrise/governance
-	maxDelete := 1000    // TODO parametrise
 	PreviousTrieRootFun := func(trieRoot trie.Hash) (trie.Hash, bool, error) {
 		block, err := smT.store.BlockByTrieRoot(trieRoot)
 		if err != nil {
@@ -539,8 +538,22 @@ func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment) {
 		return com.TrieRoot(), true, nil
 	}
 
+	var statesToKeepFromChain int
+	chainState, err := smT.store.LatestState()
+	if err != nil {
+		smT.log.Error("Cannot get latest chain state: %v", err)
+		statesToKeepFromChain = 0
+	} else {
+		statesToKeepFromChain = int(governance.NewStateAccess(chainState).GetBlockKeepAmount())
+	}
+	var statesToKeep int
+	if statesToKeepFromChain > smT.parameters.PruningMinStatesToKeep {
+		statesToKeep = statesToKeepFromChain
+	} else {
+		statesToKeep = smT.parameters.PruningMinStatesToKeep
+	}
+
 	// Skip last `statesToKeep` trie roots
-	var err error
 	var exists bool
 	trieRoot := commitment.TrieRoot()
 	for i := 0; i < statesToKeep; i++ {
@@ -557,9 +570,9 @@ func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment) {
 		}
 	}
 
-	// Collect no more than maxDelete oldest trie roots
+	// Collect no more than `PruningMaxStatesToDelete` oldest trie roots
 	// exists = true // `exists` is true in this line, assignment not needed. Left for clarity.
-	trieRoots := pipe.NewLimitLimitedPriorityHashQueue[trie.Hash](maxDelete)
+	trieRoots := pipe.NewLimitLimitedPriorityHashQueue[trie.Hash](smT.parameters.PruningMaxStatesToDelete)
 	for exists && smT.store.HasTrieRoot(trieRoot) {
 		trieRoots.Add(trieRoot)
 		trieRoot, exists, err = PreviousTrieRootFun(trieRoot)
