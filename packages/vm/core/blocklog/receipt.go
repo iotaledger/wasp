@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -203,15 +203,15 @@ func (k *RequestLookupKey) Read(r io.Reader) error {
 // RequestLookupKeyList a list of RequestLookupReference of requests with colliding isc.RequestLookupDigest
 type RequestLookupKeyList []RequestLookupKey
 
-func RequestLookupKeyListFromBytes(data []byte) (RequestLookupKeyList, error) {
-	rdr := bytes.NewReader(data)
+func RequestLookupKeyListFromBytes(data []byte) (ret RequestLookupKeyList, err error) {
+	r := bytes.NewReader(data)
 	var size uint16
-	if err := util.ReadUint16(rdr, &size); err != nil {
+	if size, err = rwutil.ReadUint16(r); err != nil {
 		return nil, err
 	}
-	ret := make(RequestLookupKeyList, size)
+	ret = make(RequestLookupKeyList, size)
 	for i := uint16(0); i < size; i++ {
-		if err := ret[i].Read(rdr); err != nil {
+		if err := ret[i].Read(r); err != nil {
 			return nil, err
 		}
 	}
@@ -222,12 +222,12 @@ func (ll RequestLookupKeyList) Bytes() []byte {
 	if len(ll) > math.MaxUint16 {
 		panic("RequestLookupKeyList::Write: too long")
 	}
-	var buf bytes.Buffer
-	_ = util.WriteUint16(&buf, uint16(len(ll)))
+	w := new(bytes.Buffer)
+	_ = rwutil.WriteUint16(w, uint16(len(ll)))
 	for i := range ll {
-		_ = ll[i].Write(&buf)
+		_ = ll[i].Write(w)
 	}
-	return buf.Bytes()
+	return w.Bytes()
 }
 
 // endregion /////////////////////////////////////////////////////////////

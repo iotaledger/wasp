@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
@@ -58,16 +58,16 @@ func NewAccessNodeInfoFromBytes(pubKey, value []byte) (*AccessNodeInfo, error) {
 	var err error
 	r := bytes.NewReader(value)
 	a.NodePubKey = pubKey // NodePubKey stored as a map key.
-	if a.ValidatorAddr, err = util.ReadBytes16(r); err != nil {
+	if a.ValidatorAddr, err = rwutil.ReadBytes(r); err != nil {
 		return nil, fmt.Errorf("failed to read AccessNodeInfo.ValidatorAddr: %w", err)
 	}
-	if a.Certificate, err = util.ReadBytes16(r); err != nil {
+	if a.Certificate, err = rwutil.ReadBytes(r); err != nil {
 		return nil, fmt.Errorf("failed to read AccessNodeInfo.Certificate: %w", err)
 	}
-	if err2 := util.ReadBoolByte(r, &a.ForCommittee); err2 != nil {
-		return nil, fmt.Errorf("failed to read AccessNodeInfo.ForCommittee: %w", err2)
+	if a.ForCommittee, err = rwutil.ReadBool(r); err != nil {
+		return nil, fmt.Errorf("failed to read AccessNodeInfo.ForCommittee: %w", err)
 	}
-	if a.AccessAPI, err = util.ReadString16(r); err != nil {
+	if a.AccessAPI, err = rwutil.ReadString(r); err != nil {
 		return nil, fmt.Errorf("failed to read AccessNodeInfo.AccessAPI: %w", err)
 	}
 	return &a, nil
@@ -93,16 +93,16 @@ func NewAccessNodeInfoListFromMap(infoMap *collections.ImmutableMap) ([]*AccessN
 func (a *AccessNodeInfo) Bytes() []byte {
 	w := bytes.Buffer{}
 	// NodePubKey stored as a map key.
-	if err := util.WriteBytes16(&w, a.ValidatorAddr); err != nil {
+	if err := rwutil.WriteBytes(&w, a.ValidatorAddr); err != nil {
 		panic(fmt.Errorf("failed to write AccessNodeInfo.ValidatorAddr: %w", err))
 	}
-	if err := util.WriteBytes16(&w, a.Certificate); err != nil {
+	if err := rwutil.WriteBytes(&w, a.Certificate); err != nil {
 		panic(fmt.Errorf("failed to write AccessNodeInfo.Certificate: %w", err))
 	}
-	if err := util.WriteBoolByte(&w, a.ForCommittee); err != nil {
+	if err := rwutil.WriteBool(&w, a.ForCommittee); err != nil {
 		panic(fmt.Errorf("failed to write AccessNodeInfo.ForCommittee: %w", err))
 	}
-	if err := util.WriteString16(&w, a.AccessAPI); err != nil {
+	if err := rwutil.WriteString(&w, a.AccessAPI); err != nil {
 		panic(fmt.Errorf("failed to write AccessNodeInfo.AccessAPI: %w", err))
 	}
 	return w.Bytes()

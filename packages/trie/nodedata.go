@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
@@ -117,7 +119,7 @@ type cflags uint16
 
 func readCflags(r io.Reader) (cflags, error) {
 	var ret uint16
-	err := ReadUint16(r, &ret)
+	ret, err := rwutil.ReadUint16(r)
 	if err != nil {
 		return 0, err
 	}
@@ -156,11 +158,11 @@ func (n *NodeData) Write(w io.Writer) error {
 			return err
 		}
 	}
-	if err2 := writeByte(w, smallFlags); err2 != nil {
+	if err2 := rwutil.WriteByte(w, smallFlags); err2 != nil {
 		return err2
 	}
 	if smallFlags&isExtensionNodeFlag != 0 {
-		if err2 := WriteBytes16(w, pathExtensionEncoded); err2 != nil {
+		if err2 := rwutil.WriteBytes(w, pathExtensionEncoded); err2 != nil {
 			return err2
 		}
 	}
@@ -171,7 +173,7 @@ func (n *NodeData) Write(w io.Writer) error {
 	}
 	// write child commitments if any
 	if smallFlags&hasChildrenFlag != 0 {
-		if err2 := WriteUint16(w, uint16(childrenFlags)); err2 != nil {
+		if err2 := rwutil.WriteUint16(w, uint16(childrenFlags)); err2 != nil {
 			return err2
 		}
 		n.iterateChildren(func(_ byte, h Hash) bool {
@@ -191,11 +193,11 @@ func (n *NodeData) Write(w io.Writer) error {
 func (n *NodeData) Read(r io.Reader) error {
 	var err error
 	var smallFlags byte
-	if smallFlags, err = readByte(r); err != nil {
+	if smallFlags, err = rwutil.ReadByte(r); err != nil {
 		return err
 	}
 	if smallFlags&isExtensionNodeFlag != 0 {
-		encoded, err2 := ReadBytes16(r)
+		encoded, err2 := rwutil.ReadBytes(r)
 		if err2 != nil {
 			return err2
 		}

@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type msgImplicateKind byte
@@ -39,16 +39,16 @@ func (m *msgImplicateRecover) SetSender(sender gpa.NodeID) {
 
 func (m *msgImplicateRecover) MarshalBinary() ([]byte, error) {
 	w := &bytes.Buffer{}
-	if err := util.WriteByte(w, msgTypeImplicateRecover); err != nil {
+	if err := rwutil.WriteByte(w, msgTypeImplicateRecover); err != nil {
 		return nil, err
 	}
-	if err := util.WriteByte(w, byte(m.kind)); err != nil {
+	if err := rwutil.WriteByte(w, byte(m.kind)); err != nil {
 		return nil, err
 	}
-	if err := util.WriteUint16(w, uint16(m.i)); err != nil {
+	if err := rwutil.WriteUint16(w, uint16(m.i)); err != nil {
 		return nil, err
 	}
-	if err := util.WriteBytes32(w, m.data); err != nil {
+	if err := rwutil.WriteBytes(w, m.data); err != nil {
 		return nil, err
 	}
 	return w.Bytes(), nil
@@ -56,22 +56,22 @@ func (m *msgImplicateRecover) MarshalBinary() ([]byte, error) {
 
 func (m *msgImplicateRecover) UnmarshalBinary(data []byte) error {
 	r := bytes.NewReader(data)
-	t, err := util.ReadByte(r)
+	t, err := rwutil.ReadByte(r)
 	if err != nil {
 		return err
 	}
 	if t != msgTypeImplicateRecover {
 		return fmt.Errorf("unexpected msgType: %v in acss.msgImplicateRecover", t)
 	}
-	k, err := util.ReadByte(r)
+	k, err := rwutil.ReadByte(r)
 	if err != nil {
 		return err
 	}
 	var i uint16
-	if err2 := util.ReadUint16(r, &i); err2 != nil { // TODO: Resolve I from the context, trusting it might be unsafe.
-		return err2
+	if i, err = rwutil.ReadUint16(r); err != nil { // TODO: Resolve I from the context, trusting it might be unsafe.
+		return err
 	}
-	d, err := util.ReadBytes32(r)
+	d, err := rwutil.ReadBytes(r)
 	if err != nil {
 		return err
 	}

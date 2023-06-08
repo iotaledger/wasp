@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type msgVoteType byte
@@ -50,16 +50,16 @@ func (m *msgVote) SetSender(sender gpa.NodeID) {
 
 func (m *msgVote) MarshalBinary() ([]byte, error) {
 	w := bytes.NewBuffer([]byte{})
-	if err := util.WriteByte(w, msgTypeVote); err != nil {
+	if err := rwutil.WriteByte(w, msgTypeVote); err != nil {
 		return nil, err
 	}
-	if err := util.WriteUint16(w, uint16(m.round)); err != nil {
+	if err := rwutil.WriteUint16(w, uint16(m.round)); err != nil {
 		return nil, err
 	}
-	if err := util.WriteByte(w, byte(m.voteType)); err != nil {
+	if err := rwutil.WriteByte(w, byte(m.voteType)); err != nil {
 		return nil, err
 	}
-	if err := util.WriteBoolByte(w, m.value); err != nil {
+	if err := rwutil.WriteBool(w, m.value); err != nil {
 		return nil, err
 	}
 	return w.Bytes(), nil
@@ -67,7 +67,7 @@ func (m *msgVote) MarshalBinary() ([]byte, error) {
 
 func (m *msgVote) UnmarshalBinary(data []byte) error {
 	r := bytes.NewReader(data)
-	msgType, err := util.ReadByte(r)
+	msgType, err := rwutil.ReadByte(r)
 	if err != nil {
 		return err
 	}
@@ -75,16 +75,16 @@ func (m *msgVote) UnmarshalBinary(data []byte) error {
 		return fmt.Errorf("expected msgTypeVote, got %v", msgType)
 	}
 	var round uint16
-	if err2 := util.ReadUint16(r, &round); err2 != nil {
-		return err2
+	if round, err = rwutil.ReadUint16(r); err != nil {
+		return err
 	}
 	m.round = int(round)
-	voteType, err := util.ReadByte(r)
+	voteType, err := rwutil.ReadByte(r)
 	if err != nil {
 		return err
 	}
 	m.voteType = msgVoteType(voteType)
-	if err := util.ReadBoolByte(r, &m.value); err != nil {
+	if m.value, err = rwutil.ReadBool(r); err != nil {
 		return err
 	}
 	return nil
