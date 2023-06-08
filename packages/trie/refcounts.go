@@ -16,8 +16,8 @@ func newRefcounts(store KVStore) *Refcounts {
 	}
 }
 
-func (d *Refcounts) Inc(node *bufferedNode) {
-	d.incNodeAndValue(node.nodeData)
+func (d *Refcounts) Inc(node *bufferedNode) (uint32, uint32) {
+	nodeCount, valueCount := d.incNodeAndValue(node.nodeData)
 	node.nodeData.iterateChildren(func(i byte, commitment Hash) bool {
 		if _, ok := node.uncommittedChildren[i]; !ok {
 			// the new node adds a reference to an "old" node
@@ -26,13 +26,16 @@ func (d *Refcounts) Inc(node *bufferedNode) {
 		}
 		return true
 	})
+	return nodeCount, valueCount
 }
 
-func (d *Refcounts) incNodeAndValue(node *NodeData) {
+func (d *Refcounts) incNodeAndValue(node *NodeData) (uint32, uint32) {
 	n := d.incNode(node.Commitment)
+	v := uint32(0)
 	if n == 1 && node.Terminal != nil && !node.Terminal.IsValue {
-		incRefcount(d.values, node.Terminal.Data)
+		v = incRefcount(d.values, node.Terminal.Data)
 	}
+	return n, v
 }
 
 func (d *Refcounts) incNode(commitment Hash) uint32 {
