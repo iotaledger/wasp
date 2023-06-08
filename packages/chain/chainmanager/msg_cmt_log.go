@@ -8,7 +8,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // gpa.Wrapper is not applicable here, because here the addressing
@@ -41,21 +41,21 @@ func (msg *msgCmtLog) SetSender(sender gpa.NodeID) {
 
 func (msg *msgCmtLog) MarshalBinary() ([]byte, error) {
 	w := bytes.NewBuffer([]byte{})
-	if err := util.WriteByte(w, msgTypeCmtLog); err != nil {
+	if err := rwutil.WriteByte(w, msgTypeCmtLog); err != nil {
 		return nil, fmt.Errorf("cannot serialize msgType: %w", err)
 	}
 	committeeAddrBytes, err := msg.committeeAddr.Serialize(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
 		return nil, err
 	}
-	if err2 := util.WriteBytes16(w, committeeAddrBytes); err2 != nil {
+	if err2 := rwutil.WriteBytes(w, committeeAddrBytes); err2 != nil {
 		return nil, err2
 	}
 	bin, err := msg.wrapped.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
-	if err := util.WriteBytes16(w, bin); err != nil {
+	if err := rwutil.WriteBytes(w, bin); err != nil {
 		return nil, err
 	}
 	return w.Bytes(), nil
@@ -66,7 +66,7 @@ func (msg *msgCmtLog) UnmarshalBinary(data []byte) error {
 	r := bytes.NewReader(data)
 	//
 	// MsgType
-	msgType, err := util.ReadByte(r)
+	msgType, err := rwutil.ReadByte(r)
 	if err != nil {
 		return fmt.Errorf("cannot read msgType byte: %w", err)
 	}
@@ -74,7 +74,7 @@ func (msg *msgCmtLog) UnmarshalBinary(data []byte) error {
 		return fmt.Errorf("unexpected msgType: %v", msgType)
 	}
 	//
-	committeeAddrBytes, err := util.ReadBytes16(r)
+	committeeAddrBytes, err := rwutil.ReadBytes(r)
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (msg *msgCmtLog) UnmarshalBinary(data []byte) error {
 	if err != nil {
 		return err
 	}
-	wrappedMsgData, err := util.ReadBytes16(r)
+	wrappedMsgData, err := rwutil.ReadBytes(r)
 	if err != nil {
 		return err
 	}

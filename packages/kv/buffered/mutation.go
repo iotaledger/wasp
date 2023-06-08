@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // Mutations is a set of mutations: one for each key
@@ -32,22 +32,22 @@ func (ms *Mutations) Bytes() []byte {
 }
 
 func (ms *Mutations) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, uint32(len(ms.Sets))); err != nil {
+	if err := rwutil.WriteUint32(w, uint32(len(ms.Sets))); err != nil {
 		return err
 	}
 	for _, item := range ms.SetsSorted() {
-		if err := util.WriteString16(w, string(item.Key)); err != nil {
+		if err := rwutil.WriteString(w, string(item.Key)); err != nil {
 			return err
 		}
-		if err := util.WriteBytes32(w, item.Value); err != nil {
+		if err := rwutil.WriteBytes(w, item.Value); err != nil {
 			return err
 		}
 	}
-	if err := util.WriteUint32(w, uint32(len(ms.Dels))); err != nil {
+	if err := rwutil.WriteUint32(w, uint32(len(ms.Dels))); err != nil {
 		return err
 	}
 	for _, k := range ms.DelsSorted() {
-		if err := util.WriteString16(w, string(k)); err != nil {
+		if err := rwutil.WriteString(w, string(k)); err != nil {
 			return err
 		}
 	}
@@ -58,26 +58,26 @@ func (ms *Mutations) Write(w io.Writer) error {
 func (ms *Mutations) Read(r io.Reader) error {
 	var err error
 	var n uint32
-	if err = util.ReadUint32(r, &n); err != nil {
+	if err = rwutil.ReadUint32ByRef(r, &n); err != nil {
 		return err
 	}
 	for i := uint32(0); i < n; i++ {
 		var k string
 		var v []byte
-		if k, err = util.ReadString16(r); err != nil {
+		if k, err = rwutil.ReadString(r); err != nil {
 			return err
 		}
-		if v, err = util.ReadBytes32(r); err != nil {
+		if v, err = rwutil.ReadBytes(r); err != nil {
 			return err
 		}
 		ms.Set(kv.Key(k), v)
 	}
-	if err = util.ReadUint32(r, &n); err != nil {
+	if err = rwutil.ReadUint32ByRef(r, &n); err != nil {
 		return err
 	}
 	for i := uint32(0); i < n; i++ {
 		var k string
-		if k, err = util.ReadString16(r); err != nil {
+		if k, err = rwutil.ReadString(r); err != nil {
 			return err
 		}
 		ms.Del(kv.Key(k))

@@ -6,9 +6,8 @@ package acss
 import (
 	"bytes"
 
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"go.dedis.ch/kyber/v3/suites"
-
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 // This message is used as a payload of the RBC:
@@ -23,7 +22,7 @@ func (m *msgRBCCEPayload) MarshalBinary() ([]byte, error) {
 	w := &bytes.Buffer{}
 	//
 	// Write data.
-	if err := util.WriteBytes16(w, m.data); err != nil {
+	if err := rwutil.WriteBytes(w, m.data); err != nil {
 		return nil, err
 	}
 	return w.Bytes(), nil
@@ -34,7 +33,7 @@ func (m *msgRBCCEPayload) UnmarshalBinary(data []byte) error {
 	//
 	// Read data
 	var err error
-	m.data, err = util.ReadBytes16(r)
+	m.data, err = rwutil.ReadBytes(r)
 	if err != nil {
 		return err
 	}

@@ -8,7 +8,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // This message is used to inform access nodes on new blocks
@@ -42,7 +42,7 @@ func (msg *msgBlockProduced) String() string {
 
 func (msg *msgBlockProduced) MarshalBinary() ([]byte, error) {
 	w := bytes.NewBuffer([]byte{})
-	if err := util.WriteByte(w, msgTypeBlockProduced); err != nil {
+	if err := rwutil.WriteByte(w, msgTypeBlockProduced); err != nil {
 		return nil, fmt.Errorf("cannot serialize msgType: %w", err)
 	}
 	//
@@ -51,12 +51,12 @@ func (msg *msgBlockProduced) MarshalBinary() ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot serialize tx: %w", err)
 	}
-	if err := util.WriteBytes16(w, txBytes); err != nil {
+	if err := rwutil.WriteBytes(w, txBytes); err != nil {
 		return nil, fmt.Errorf("cannot write tx bytes: %w", err)
 	}
 	//
 	// Block
-	if err := util.WriteBytes32(w, msg.block.Bytes()); err != nil {
+	if err := rwutil.WriteBytes(w, msg.block.Bytes()); err != nil {
 		return nil, fmt.Errorf("cannot serialize block: %w", err)
 	}
 	return w.Bytes(), nil
@@ -67,7 +67,7 @@ func (msg *msgBlockProduced) UnmarshalBinary(data []byte) error {
 	r := bytes.NewReader(data)
 	//
 	// MsgType
-	msgType, err := util.ReadByte(r)
+	msgType, err := rwutil.ReadByte(r)
 	if err != nil {
 		return fmt.Errorf("cannot read msgType byte: %w", err)
 	}
@@ -76,7 +76,7 @@ func (msg *msgBlockProduced) UnmarshalBinary(data []byte) error {
 	}
 	//
 	// TX
-	txBytes, err := util.ReadBytes16(r)
+	txBytes, err := rwutil.ReadBytes(r)
 	if err != nil {
 		return fmt.Errorf("cannot read tx bytes: %w", err)
 	}
@@ -88,7 +88,7 @@ func (msg *msgBlockProduced) UnmarshalBinary(data []byte) error {
 	msg.tx = tx
 	//
 	// Block
-	blockBytes, err := util.ReadBytes32(r)
+	blockBytes, err := rwutil.ReadBytes(r)
 	if err != nil {
 		return fmt.Errorf("cannot read block bytes: %w", err)
 	}

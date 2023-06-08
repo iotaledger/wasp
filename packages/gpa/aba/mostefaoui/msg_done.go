@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type msgDone struct {
@@ -43,10 +43,10 @@ func (m *msgDone) SetSender(sender gpa.NodeID) {
 
 func (m *msgDone) MarshalBinary() ([]byte, error) {
 	w := bytes.NewBuffer([]byte{})
-	if err := util.WriteByte(w, msgTypeDone); err != nil {
+	if err := rwutil.WriteByte(w, msgTypeDone); err != nil {
 		return nil, err
 	}
-	if err := util.WriteUint16(w, uint16(m.round)); err != nil {
+	if err := rwutil.WriteUint16(w, uint16(m.round)); err != nil {
 		return nil, err
 	}
 	return w.Bytes(), nil
@@ -54,7 +54,7 @@ func (m *msgDone) MarshalBinary() ([]byte, error) {
 
 func (m *msgDone) UnmarshalBinary(data []byte) error {
 	r := bytes.NewReader(data)
-	msgType, err := util.ReadByte(r)
+	msgType, err := rwutil.ReadByte(r)
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func (m *msgDone) UnmarshalBinary(data []byte) error {
 		return fmt.Errorf("expected msgTypeDone, got %v", msgType)
 	}
 	var round uint16
-	if err := util.ReadUint16(r, &round); err != nil {
+	if err := rwutil.ReadUint16ByRef(r, &round); err != nil {
 		return err
 	}
 	m.round = int(round)

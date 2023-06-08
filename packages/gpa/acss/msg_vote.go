@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type msgVoteKind byte
@@ -37,10 +37,10 @@ func (m *msgVote) SetSender(sender gpa.NodeID) {
 
 func (m *msgVote) MarshalBinary() ([]byte, error) {
 	w := &bytes.Buffer{}
-	if err := util.WriteByte(w, msgTypeVote); err != nil {
+	if err := rwutil.WriteByte(w, msgTypeVote); err != nil {
 		return nil, err
 	}
-	if err := util.WriteByte(w, byte(m.kind)); err != nil {
+	if err := rwutil.WriteByte(w, byte(m.kind)); err != nil {
 		return nil, err
 	}
 	return w.Bytes(), nil
@@ -48,14 +48,14 @@ func (m *msgVote) MarshalBinary() ([]byte, error) {
 
 func (m *msgVote) UnmarshalBinary(data []byte) error {
 	r := bytes.NewReader(data)
-	t, err := util.ReadByte(r)
+	t, err := rwutil.ReadByte(r)
 	if err != nil {
 		return err
 	}
 	if t != msgTypeVote {
 		return fmt.Errorf("unexpected msgType: %v in acss.msgVote", t)
 	}
-	k, err := util.ReadByte(r)
+	k, err := rwutil.ReadByte(r)
 	if err != nil {
 		return err
 	}

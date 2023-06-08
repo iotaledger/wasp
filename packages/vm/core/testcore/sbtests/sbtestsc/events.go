@@ -4,12 +4,12 @@ import (
 	"bytes"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 func eventCounter(ctx isc.Sandbox, value uint64) {
 	w := new(bytes.Buffer)
-	_ = util.WriteUint64(w, value)
+	_ = rwutil.WriteUint64(w, value)
 	ctx.Event("testcore.counter", w.Bytes())
 }
 
