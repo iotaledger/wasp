@@ -26,7 +26,7 @@ func pregeneratedDksRead(n, t uint16) [][]byte {
 		panic(err)
 	}
 	r := bytes.NewReader(buf)
-	if err = rwutil.ReadUint16ByRef(r, &bufN); err != nil {
+	if bufN, err = rwutil.ReadUint16(r); err != nil {
 		panic(err)
 	}
 	if n != bufN {

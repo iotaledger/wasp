@@ -75,8 +75,8 @@ func (m *msgNextLogIndex) UnmarshalBinary(data []byte) error {
 		return fmt.Errorf("unexpected msgType=%v in cmtLog.msgNextLogIndex", msgType)
 	}
 	var nextLogIndex uint32
-	if err2 := rwutil.ReadUint32ByRef(r, &nextLogIndex); err2 != nil {
-		return fmt.Errorf("cannot unmarshal msgNextLogIndex.nextLogIndex: %w", err2)
+	if nextLogIndex, err = rwutil.ReadUint32(r); err != nil {
+		return fmt.Errorf("cannot unmarshal msgNextLogIndex.nextLogIndex: %w", err)
 	}
 	m.nextLogIndex = LogIndex(nextLogIndex)
 	nextAOBin, err := rwutil.ReadBytes(r)
@@ -87,7 +87,7 @@ func (m *msgNextLogIndex) UnmarshalBinary(data []byte) error {
 	if err != nil {
 		return fmt.Errorf("cannot decode msgNextLogIndex.nextBaseAO: %w", err)
 	}
-	if err := rwutil.ReadBoolByRef(r, &m.pleaseRepeat); err != nil {
+	if m.pleaseRepeat, err = rwutil.ReadBool(r); err != nil {
 		return fmt.Errorf("cannot unmarshal msgNextLogIndex.pleaseRepeat: %w", err)
 	}
 	return nil

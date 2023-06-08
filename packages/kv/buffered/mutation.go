@@ -54,11 +54,10 @@ func (ms *Mutations) Write(w io.Writer) error {
 	return nil
 }
 
-//nolint:gocritic
 func (ms *Mutations) Read(r io.Reader) error {
 	var err error
 	var n uint32
-	if err = rwutil.ReadUint32ByRef(r, &n); err != nil {
+	if n, err = rwutil.ReadUint32(r); err != nil {
 		return err
 	}
 	for i := uint32(0); i < n; i++ {
@@ -72,7 +71,7 @@ func (ms *Mutations) Read(r io.Reader) error {
 		}
 		ms.Set(kv.Key(k), v)
 	}
-	if err = rwutil.ReadUint32ByRef(r, &n); err != nil {
+	if n, err = rwutil.ReadUint32(r); err != nil {
 		return err
 	}
 	for i := uint32(0); i < n; i++ {

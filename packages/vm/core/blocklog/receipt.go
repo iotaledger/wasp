@@ -203,13 +203,13 @@ func (k *RequestLookupKey) Read(r io.Reader) error {
 // RequestLookupKeyList a list of RequestLookupReference of requests with colliding isc.RequestLookupDigest
 type RequestLookupKeyList []RequestLookupKey
 
-func RequestLookupKeyListFromBytes(data []byte) (RequestLookupKeyList, error) {
+func RequestLookupKeyListFromBytes(data []byte) (ret RequestLookupKeyList, err error) {
 	r := bytes.NewReader(data)
 	var size uint16
-	if err := rwutil.ReadUint16ByRef(r, &size); err != nil {
+	if size, err = rwutil.ReadUint16(r); err != nil {
 		return nil, err
 	}
-	ret := make(RequestLookupKeyList, size)
+	ret = make(RequestLookupKeyList, size)
 	for i := uint16(0); i < size; i++ {
 		if err := ret[i].Read(r); err != nil {
 			return nil, err

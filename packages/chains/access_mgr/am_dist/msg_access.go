@@ -68,10 +68,11 @@ func (m *msgAccess) MarshalBinary() ([]byte, error) {
 	return w.Bytes(), nil
 }
 
+//nolint:govet
 func (m *msgAccess) UnmarshalBinary(data []byte) error {
 	r := bytes.NewReader(data)
-	var u32 uint32
-	if msgType, err := rwutil.ReadByte(r); err != nil || msgType != msgTypeAccess {
+	msgType, err := rwutil.ReadByte(r)
+	if err != nil || msgType != msgTypeAccess {
 		if err != nil {
 			return err
 		}
@@ -79,19 +80,20 @@ func (m *msgAccess) UnmarshalBinary(data []byte) error {
 	}
 	//
 	// senderLClock
-	if err := rwutil.ReadUint32ByRef(r, &u32); err != nil {
+	var u32 uint32
+	if u32, err = rwutil.ReadUint32(r); err != nil {
 		return err
 	}
 	m.senderLClock = int(u32)
 	//
 	// receiverLClock
-	if err := rwutil.ReadUint32ByRef(r, &u32); err != nil {
+	if u32, err = rwutil.ReadUint32(r); err != nil {
 		return err
 	}
 	m.receiverLClock = int(u32)
 	//
 	// accessForChains
-	if err := rwutil.ReadUint32ByRef(r, &u32); err != nil {
+	if u32, err = rwutil.ReadUint32(r); err != nil {
 		return err
 	}
 	m.accessForChains = make([]isc.ChainID, u32)
@@ -108,7 +110,7 @@ func (m *msgAccess) UnmarshalBinary(data []byte) error {
 	}
 	//
 	// serverForChains
-	if err := rwutil.ReadUint32ByRef(r, &u32); err != nil {
+	if u32, err = rwutil.ReadUint32(r); err != nil {
 		return err
 	}
 	m.serverForChains = make([]isc.ChainID, u32)

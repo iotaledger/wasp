@@ -64,8 +64,8 @@ func NewAccessNodeInfoFromBytes(pubKey, value []byte) (*AccessNodeInfo, error) {
 	if a.Certificate, err = rwutil.ReadBytes(r); err != nil {
 		return nil, fmt.Errorf("failed to read AccessNodeInfo.Certificate: %w", err)
 	}
-	if err2 := rwutil.ReadBoolByRef(r, &a.ForCommittee); err2 != nil {
-		return nil, fmt.Errorf("failed to read AccessNodeInfo.ForCommittee: %w", err2)
+	if a.ForCommittee, err = rwutil.ReadBool(r); err != nil {
+		return nil, fmt.Errorf("failed to read AccessNodeInfo.ForCommittee: %w", err)
 	}
 	if a.AccessAPI, err = rwutil.ReadString(r); err != nil {
 		return nil, fmt.Errorf("failed to read AccessNodeInfo.AccessAPI: %w", err)

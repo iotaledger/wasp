@@ -119,7 +119,7 @@ type cflags uint16
 
 func readCflags(r io.Reader) (cflags, error) {
 	var ret uint16
-	err := rwutil.ReadUint16ByRef(r, &ret)
+	ret, err := rwutil.ReadUint16(r)
 	if err != nil {
 		return 0, err
 	}

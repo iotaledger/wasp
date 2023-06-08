@@ -66,8 +66,8 @@ func (w *MsgWrapper) UnmarshalMessage(data []byte) (Message, error) {
 		return nil, err
 	}
 	var indexU16 uint16
-	if err2 := rwutil.ReadUint16ByRef(r, &indexU16); err2 != nil {
-		return nil, err2
+	if indexU16, err = rwutil.ReadUint16(r); err != nil {
+		return nil, err
 	}
 	index := int(indexU16)
 	wrappedBin, err := rwutil.ReadBytes(r)

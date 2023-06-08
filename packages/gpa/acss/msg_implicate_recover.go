@@ -68,8 +68,8 @@ func (m *msgImplicateRecover) UnmarshalBinary(data []byte) error {
 		return err
 	}
 	var i uint16
-	if err2 := rwutil.ReadUint16ByRef(r, &i); err2 != nil { // TODO: Resolve I from the context, trusting it might be unsafe.
-		return err2
+	if i, err = rwutil.ReadUint16(r); err != nil { // TODO: Resolve I from the context, trusting it might be unsafe.
+		return err
 	}
 	d, err := rwutil.ReadBytes(r)
 	if err != nil {

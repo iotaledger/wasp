@@ -14,28 +14,6 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 )
 
-//////////////////// temporary, to be removed \\\\\\\\\\\\\\\\\\\\
-
-func ReadBoolByRef(r io.Reader, val *bool) (err error) {
-	*val, err = ReadBool(r)
-	return err
-}
-
-func ReadInt64ByRef(r io.Reader, val *int64) (err error) {
-	*val, err = ReadInt64(r)
-	return err
-}
-
-func ReadUint16ByRef(r io.Reader, val *uint16) (err error) {
-	*val, err = ReadUint16(r)
-	return err
-}
-
-func ReadUint32ByRef(r io.Reader, val *uint32) (err error) {
-	*val, err = ReadUint32(r)
-	return err
-}
-
 //////////////////// basic size-checked read/write \\\\\\\\\\\\\\\\\\\\
 
 func ReadN(r io.Reader, data []byte) error {

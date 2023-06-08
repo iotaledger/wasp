@@ -6,8 +6,9 @@ package acss
 import (
 	"bytes"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"go.dedis.ch/kyber/v3/suites"
+
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // This message is used as a payload of the RBC:

@@ -75,8 +75,8 @@ func (m *msgVote) UnmarshalBinary(data []byte) error {
 		return fmt.Errorf("expected msgTypeVote, got %v", msgType)
 	}
 	var round uint16
-	if err2 := rwutil.ReadUint16ByRef(r, &round); err2 != nil {
-		return err2
+	if round, err = rwutil.ReadUint16(r); err != nil {
+		return err
 	}
 	m.round = int(round)
 	voteType, err := rwutil.ReadByte(r)
@@ -84,7 +84,7 @@ func (m *msgVote) UnmarshalBinary(data []byte) error {
 		return err
 	}
 	m.voteType = msgVoteType(voteType)
-	if err := rwutil.ReadBoolByRef(r, &m.value); err != nil {
+	if m.value, err = rwutil.ReadBool(r); err != nil {
 		return err
 	}
 	return nil

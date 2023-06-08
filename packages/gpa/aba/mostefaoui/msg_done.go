@@ -62,7 +62,7 @@ func (m *msgDone) UnmarshalBinary(data []byte) error {
 		return fmt.Errorf("expected msgTypeDone, got %v", msgType)
 	}
 	var round uint16
-	if err := rwutil.ReadUint16ByRef(r, &round); err != nil {
+	if round, err = rwutil.ReadUint16(r); err != nil {
 		return err
 	}
 	m.round = int(round)
