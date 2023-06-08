@@ -33,6 +33,10 @@ func (ww *Writer) Bytes() []byte {
 	if !ok {
 		panic("writer expects bytes buffer")
 	}
+	if ww.Err != nil {
+		// writing to bytes buffer should never have failed
+		panic(ww.Err)
+	}
 	return buf.Bytes()
 }
 

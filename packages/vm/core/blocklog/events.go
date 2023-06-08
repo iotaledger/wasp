@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // EventLookupKey is a globally unique reference to the event:
@@ -34,9 +35,12 @@ func (k EventLookupKey) Bytes() []byte {
 	return k[:]
 }
 
+func (k *EventLookupKey) Read(r io.Reader) error {
+	return rwutil.ReadN(r, k[:])
+}
+
 func (k *EventLookupKey) Write(w io.Writer) error {
-	_, err := w.Write(k[:])
-	return err
+	return rwutil.WriteN(w, k[:])
 }
 
 func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {

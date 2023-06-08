@@ -674,9 +674,7 @@ func (rr *RequestRef) IsFor(req Request) bool {
 }
 
 func (rr *RequestRef) Bytes() []byte {
-	ret := rr.Hash[:]
-	ret = append(ret, rr.ID.Bytes()...)
-	return ret
+	return append(rr.Hash[:], rr.ID[:]...)
 }
 
 func (rr *RequestRef) String() string {

@@ -53,24 +53,15 @@ type AccessNodeInfo struct {
 	AccessAPI     string // API URL, if any.
 }
 
-func NewAccessNodeInfoFromBytes(pubKey, value []byte) (*AccessNodeInfo, error) {
-	var a AccessNodeInfo
-	var err error
-	r := bytes.NewReader(value)
-	a.NodePubKey = pubKey // NodePubKey stored as a map key.
-	if a.ValidatorAddr, err = rwutil.ReadBytes(r); err != nil {
-		return nil, fmt.Errorf("failed to read AccessNodeInfo.ValidatorAddr: %w", err)
-	}
-	if a.Certificate, err = rwutil.ReadBytes(r); err != nil {
-		return nil, fmt.Errorf("failed to read AccessNodeInfo.Certificate: %w", err)
-	}
-	if a.ForCommittee, err = rwutil.ReadBool(r); err != nil {
-		return nil, fmt.Errorf("failed to read AccessNodeInfo.ForCommittee: %w", err)
-	}
-	if a.AccessAPI, err = rwutil.ReadString(r); err != nil {
-		return nil, fmt.Errorf("failed to read AccessNodeInfo.AccessAPI: %w", err)
-	}
-	return &a, nil
+func NewAccessNodeInfoFromBytes(pubKey, data []byte) (*AccessNodeInfo, error) {
+	rr := rwutil.NewBytesReader(data)
+	return &AccessNodeInfo{
+		NodePubKey:    pubKey,
+		ValidatorAddr: rr.ReadBytes(),
+		Certificate:   rr.ReadBytes(),
+		ForCommittee:  rr.ReadBool(),
+		AccessAPI:     rr.ReadString(),
+	}, rr.Err
 }
 
 func NewAccessNodeInfoListFromMap(infoMap *collections.ImmutableMap) ([]*AccessNodeInfo, error) {
@@ -91,21 +82,12 @@ func NewAccessNodeInfoListFromMap(infoMap *collections.ImmutableMap) ([]*AccessN
 }
 
 func (a *AccessNodeInfo) Bytes() []byte {
-	w := bytes.Buffer{}
-	// NodePubKey stored as a map key.
-	if err := rwutil.WriteBytes(&w, a.ValidatorAddr); err != nil {
-		panic(fmt.Errorf("failed to write AccessNodeInfo.ValidatorAddr: %w", err))
-	}
-	if err := rwutil.WriteBytes(&w, a.Certificate); err != nil {
-		panic(fmt.Errorf("failed to write AccessNodeInfo.Certificate: %w", err))
-	}
-	if err := rwutil.WriteBool(&w, a.ForCommittee); err != nil {
-		panic(fmt.Errorf("failed to write AccessNodeInfo.ForCommittee: %w", err))
-	}
-	if err := rwutil.WriteString(&w, a.AccessAPI); err != nil {
-		panic(fmt.Errorf("failed to write AccessNodeInfo.AccessAPI: %w", err))
-	}
-	return w.Bytes()
+	ww := rwutil.NewBytesWriter()
+	ww.WriteBytes(a.ValidatorAddr)
+	ww.WriteBytes(a.Certificate)
+	ww.WriteBool(a.ForCommittee)
+	ww.WriteString(a.AccessAPI)
+	return ww.Bytes()
 }
 
 var errSenderMustHaveL1Address = coreerrors.Register("sender must have L1 address").Create()

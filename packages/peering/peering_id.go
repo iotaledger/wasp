@@ -11,11 +11,11 @@ package peering
 
 import (
 	"crypto/rand"
-	"fmt"
 	"io"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // PeeringID is relates peers in different nodes for a particular
@@ -42,15 +42,13 @@ func (pid *PeeringID) String() string {
 }
 
 func (pid *PeeringID) Read(r io.Reader) error {
-	if n, err := r.Read(pid[:]); err != nil || n != iotago.Ed25519AddressBytesLength {
-		return fmt.Errorf("error while parsing PeeringID (err=%w)", err)
-	}
-	return nil
+	rr := rwutil.NewReader(r)
+	rr.ReadN(pid[:])
+	return rr.Err
 }
 
 func (pid *PeeringID) Write(w io.Writer) error {
-	if n, err := w.Write(pid[:]); err != nil || n != iotago.Ed25519AddressBytesLength {
-		return fmt.Errorf("error while serializing PeeringID (err=%w)", err)
-	}
-	return nil
+	ww := rwutil.NewWriter(w)
+	ww.WriteN(pid[:])
+	return ww.Err
 }
