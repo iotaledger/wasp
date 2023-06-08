@@ -183,17 +183,12 @@ func (k RequestLookupKey) Bytes() []byte {
 	return k[:]
 }
 
-func (k *RequestLookupKey) Write(w io.Writer) error {
-	_, err := w.Write(k[:])
-	return err
+func (k *RequestLookupKey) Read(r io.Reader) error {
+	return rwutil.ReadN(r, k[:])
 }
 
-func (k *RequestLookupKey) Read(r io.Reader) error {
-	n, err := r.Read(k[:])
-	if err != nil || n != 6 {
-		return io.EOF
-	}
-	return nil
+func (k *RequestLookupKey) Write(w io.Writer) error {
+	return rwutil.WriteN(w, k[:])
 }
 
 // endregion ///////////////////////////////////////////////////////////

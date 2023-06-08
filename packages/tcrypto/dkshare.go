@@ -6,7 +6,6 @@
 package tcrypto
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -238,25 +237,14 @@ func (s *dkShareImpl) Clone() onchangemap.Item[string, *util.ComparableAddress] 
 
 // DKShareFromBytes reads DKShare from bytes.
 func DKShareFromBytes(buf []byte, edSuite suites.Suite, blsSuite Suite, nodePrivKey *cryptolib.PrivateKey) (DKShare, error) {
-	r := bytes.NewReader(buf)
-	s := dkShareImpl{nodePrivKey: nodePrivKey, edSuite: edSuite, blsSuite: blsSuite}
-	if err := s.Read(r); err != nil {
-		return nil, err
-	}
-	return &s, nil
+	s := &dkShareImpl{nodePrivKey: nodePrivKey, edSuite: edSuite, blsSuite: blsSuite}
+	return rwutil.ReaderFromBytes(buf, s)
 }
 
 // Bytes returns byte representation of the share.
 func (s *dkShareImpl) Bytes() []byte {
-	var buf bytes.Buffer
-	if err := s.Write(&buf); err != nil {
-		panic(fmt.Errorf("DKShare.Bytes: %w", err))
-	}
-	return buf.Bytes()
+	return rwutil.WriterToBytes(s)
 }
-
-// Write returns byte representation of this struct.
-//
 
 //nolint:gocyclo,funlen
 func (s *dkShareImpl) Write(w io.Writer) error {
@@ -410,15 +398,14 @@ func (s *dkShareImpl) Read(r io.Reader) error {
 }
 
 // Read function was split just to make the linter happy.
-func (s *dkShareImpl) readDSSAttrs(r io.Reader) error {
-	var arrLen uint16
+func (s *dkShareImpl) readDSSAttrs(r io.Reader) (err error) {
 	s.edSharedPublic = s.edSuite.Point()
-	if err := rwutil.ReadMarshaled(r, s.edSharedPublic); err != nil {
-		return err
+	if err2 := rwutil.ReadMarshaled(r, s.edSharedPublic); err2 != nil {
+		return err2
 	}
 	//
 	// Ed25519 shares: PublicCommits
-	var err error
+	var arrLen uint16
 	if arrLen, err = rwutil.ReadUint16(r); err != nil {
 		return err
 	}
@@ -452,7 +439,6 @@ func (s *dkShareImpl) readDSSAttrs(r io.Reader) error {
 
 // Read function was split just to make the linter happy.
 func (s *dkShareImpl) readBLSAttrs(r io.Reader) (err error) {
-	var arrLen uint16
 	if s.blsThreshold, err = rwutil.ReadUint16(r); err != nil {
 		return err
 	}
@@ -462,6 +448,7 @@ func (s *dkShareImpl) readBLSAttrs(r io.Reader) (err error) {
 	}
 	//
 	// BLS shares: PublicCommits
+	var arrLen uint16
 	if arrLen, err = rwutil.ReadUint16(r); err != nil {
 		return err
 	}

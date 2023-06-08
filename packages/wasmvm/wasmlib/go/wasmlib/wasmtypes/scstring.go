@@ -6,14 +6,11 @@ package wasmtypes
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 func StringDecode(dec *WasmDecoder) string {
-	length := Uint16Decode(dec)
-	return StringFromBytes(dec.FixedBytes(uint32(length)))
+	return StringFromBytes(dec.Bytes())
 }
 
 func StringEncode(enc *WasmEncoder, value string) {
-	buf := StringToBytes(value)
-	Uint16Encode(enc, uint16(len(buf)))
-	enc.FixedBytes(buf, uint32(len(buf)))
+	enc.Bytes(StringToBytes(value))
 }
 
 func StringFromBytes(buf []byte) string {
