@@ -67,32 +67,13 @@ func newPeerMessageDataFromBytes(data []byte) (*PeerMessageData, error) {
 
 func (m *PeerMessageData) Bytes() ([]byte, error) {
 	m.serializedOnce.Do(func() {
-		buf := new(bytes.Buffer)
-
-		if err := rwutil.WriteByte(buf, m.MsgReceiver); err != nil {
-			m.serializedErr = err
-			return
-		}
-		if err := rwutil.WriteByte(buf, m.MsgType); err != nil {
-			m.serializedErr = err
-			return
-		}
-		if err := m.PeeringID.Write(buf); err != nil {
-			m.serializedErr = err
-			return
-		}
-		if err := rwutil.WriteBytes(buf, m.MsgData); err != nil {
-			m.serializedErr = err
-			return
-		}
-
-		m.serializedData = buf.Bytes()
+		ww := rwutil.NewBytesWriter()
+		ww.WriteByte(m.MsgReceiver)
+		ww.WriteByte(m.MsgType)
+		ww.Write(&m.PeeringID)
+		ww.WriteBytes(m.MsgData)
+		m.serializedData = ww.Bytes()
 	})
-
-	if m.serializedErr != nil {
-		return nil, m.serializedErr
-	}
-
 	return m.serializedData, nil
 }
 

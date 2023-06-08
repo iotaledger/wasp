@@ -43,7 +43,7 @@ func HnameFromBytes(data []byte) (ret Hname, err error) {
 }
 
 // Hn calculates the hname for the given string.
-// For any given string s, it is guaranteed that Hn(s) != HnaneNil.
+// For any given string s, it is guaranteed that Hn(s) != HnameNil.
 func Hn(name string) (ret Hname) {
 	h := hashing.HashStrings(name)
 	for i := 0; i < hashing.HashSize; i += HnameLength {

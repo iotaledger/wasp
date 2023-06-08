@@ -1,10 +1,8 @@
 package blocklog
 
 import (
-	"bytes"
 	"fmt"
 	"io"
-	"math"
 
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -199,30 +197,22 @@ func (k *RequestLookupKey) Write(w io.Writer) error {
 type RequestLookupKeyList []RequestLookupKey
 
 func RequestLookupKeyListFromBytes(data []byte) (ret RequestLookupKeyList, err error) {
-	r := bytes.NewReader(data)
-	var size uint16
-	if size, err = rwutil.ReadUint16(r); err != nil {
-		return nil, err
-	}
+	rr := rwutil.NewBytesReader(data)
+	size := rr.ReadSize()
 	ret = make(RequestLookupKeyList, size)
-	for i := uint16(0); i < size; i++ {
-		if err := ret[i].Read(r); err != nil {
-			return nil, err
-		}
+	for i := range ret {
+		rr.Read(&ret[i])
 	}
-	return ret, nil
+	return ret, rr.Err
 }
 
 func (ll RequestLookupKeyList) Bytes() []byte {
-	if len(ll) > math.MaxUint16 {
-		panic("RequestLookupKeyList::Write: too long")
-	}
-	w := new(bytes.Buffer)
-	_ = rwutil.WriteUint16(w, uint16(len(ll)))
+	ww := rwutil.NewBytesWriter()
+	ww.WriteSize(len(ll))
 	for i := range ll {
-		_ = ll[i].Write(w)
+		ww.Write(&ll[i])
 	}
-	return w.Bytes()
+	return ww.Bytes()
 }
 
 // endregion /////////////////////////////////////////////////////////////
