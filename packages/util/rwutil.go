@@ -7,18 +7,39 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"time"
 
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/hashing"
 )
+
+//////////////////// basic size-checked read/write \\\\\\\\\\\\\\\\\\\\
+
+func ReadN(r io.Reader, data []byte) error {
+	n, err := r.Read(data)
+	if err != nil {
+		return err
+	}
+	if n != len(data) {
+		return errors.New("incomplete read")
+	}
+	return nil
+}
+
+func WriteN(w io.Writer, data []byte) error {
+	n, err := w.Write(data)
+	if err != nil {
+		return err
+	}
+	if n != len(data) {
+		return errors.New("incomplete write")
+	}
+	return nil
+}
 
 //////////////////// byte \\\\\\\\\\\\\\\\\\\\
 
 func ReadByte(r io.Reader) (byte, error) {
 	var b [1]byte
-	_, err := r.Read(b[:])
+	err := ReadN(r, b[:])
 	if err != nil {
 		return 0, err
 	}
@@ -27,7 +48,7 @@ func ReadByte(r io.Reader) (byte, error) {
 
 func WriteByte(w io.Writer, val byte) error {
 	b := []byte{val}
-	_, err := w.Write(b)
+	err := WriteN(w, b)
 	return err
 }
 
@@ -54,7 +75,7 @@ func MustUint8From1Bytes(b []byte) uint8 {
 
 func ReadUint8(r io.Reader, pval *uint8) error {
 	var tmp2 [1]byte
-	_, err := r.Read(tmp2[:])
+	err := ReadN(r, tmp2[:])
 	if err != nil {
 		return err
 	}
@@ -63,7 +84,7 @@ func ReadUint8(r io.Reader, pval *uint8) error {
 }
 
 func WriteUint8(w io.Writer, val uint8) error {
-	_, err := w.Write(Uint8To1Bytes(val))
+	err := WriteN(w, Uint8To1Bytes(val))
 	return err
 }
 
@@ -92,7 +113,7 @@ func MustUint16From2Bytes(b []byte) uint16 {
 
 func ReadUint16(r io.Reader, pval *uint16) error {
 	var tmp2 [2]byte
-	_, err := r.Read(tmp2[:])
+	err := ReadN(r, tmp2[:])
 	if err != nil {
 		return err
 	}
@@ -101,7 +122,7 @@ func ReadUint16(r io.Reader, pval *uint16) error {
 }
 
 func WriteUint16(w io.Writer, val uint16) error {
-	_, err := w.Write(Uint16To2Bytes(val))
+	err := WriteN(w, Uint16To2Bytes(val))
 	return err
 }
 
@@ -113,7 +134,7 @@ func Int32To4Bytes(val int32) []byte {
 
 func ReadInt32(r io.Reader, pval *int32) error {
 	var tmp4 [4]byte
-	_, err := r.Read(tmp4[:])
+	err := ReadN(r, tmp4[:])
 	if err != nil {
 		return err
 	}
@@ -146,7 +167,7 @@ func MustUint32From4Bytes(b []byte) uint32 {
 
 func ReadUint32(r io.Reader, pval *uint32) error {
 	var tmp4 [4]byte
-	_, err := r.Read(tmp4[:])
+	err := ReadN(r, tmp4[:])
 	if err != nil {
 		return err
 	}
@@ -155,7 +176,7 @@ func ReadUint32(r io.Reader, pval *uint32) error {
 }
 
 func WriteUint32(w io.Writer, val uint32) error {
-	_, err := w.Write(Uint32To4Bytes(val))
+	err := WriteN(w, Uint32To4Bytes(val))
 	return err
 }
 
@@ -172,7 +193,7 @@ func Int64From8Bytes(b []byte) (int64, error) {
 
 func ReadInt64(r io.Reader, pval *int64) error {
 	var tmp8 [8]byte
-	_, err := r.Read(tmp8[:])
+	err := ReadN(r, tmp8[:])
 	if err != nil {
 		return err
 	}
@@ -181,7 +202,7 @@ func ReadInt64(r io.Reader, pval *int64) error {
 }
 
 func WriteInt64(w io.Writer, val int64) error {
-	_, err := w.Write(Uint64To8Bytes(uint64(val)))
+	err := WriteN(w, Uint64To8Bytes(uint64(val)))
 	return err
 }
 
@@ -210,7 +231,7 @@ func MustUint64From8Bytes(b []byte) uint64 {
 
 func ReadUint64(r io.Reader, pval *uint64) error {
 	var tmp8 [8]byte
-	_, err := r.Read(tmp8[:])
+	err := ReadN(r, tmp8[:])
 	if err != nil {
 		return err
 	}
@@ -219,7 +240,7 @@ func ReadUint64(r io.Reader, pval *uint64) error {
 }
 
 func WriteUint64(w io.Writer, val uint64) error {
-	_, err := w.Write(Uint64To8Bytes(val))
+	err := WriteN(w, Uint64To8Bytes(val))
 	return err
 }
 
@@ -235,7 +256,7 @@ func ReadBytes8(r io.Reader) ([]byte, error) {
 		return []byte{}, nil
 	}
 	ret := make([]byte, length)
-	_, err = r.Read(ret)
+	err = ReadN(r, ret)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +272,7 @@ func WriteBytes8(w io.Writer, data []byte) error {
 		return err
 	}
 	if len(data) != 0 {
-		_, err = w.Write(data)
+		err = WriteN(w, data)
 	}
 	return err
 }
@@ -268,7 +289,7 @@ func ReadBytes16(r io.Reader) ([]byte, error) {
 		return []byte{}, nil
 	}
 	ret := make([]byte, length)
-	_, err = r.Read(ret)
+	err = ReadN(r, ret)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +305,7 @@ func WriteBytes16(w io.Writer, data []byte) error {
 		return err
 	}
 	if len(data) != 0 {
-		_, err = w.Write(data)
+		err = WriteN(w, data)
 	}
 	return err
 }
@@ -301,7 +322,7 @@ func ReadBytes32(r io.Reader) ([]byte, error) {
 		return []byte{}, nil
 	}
 	ret := make([]byte, length)
-	_, err = r.Read(ret)
+	err = ReadN(r, ret)
 	if err != nil {
 		return nil, err
 	}
@@ -316,7 +337,7 @@ func WriteBytes32(w io.Writer, data []byte) error {
 	if err != nil {
 		return err
 	}
-	_, err = w.Write(data)
+	err = WriteN(w, data)
 	return err
 }
 
@@ -324,7 +345,7 @@ func WriteBytes32(w io.Writer, data []byte) error {
 
 func ReadBoolByte(r io.Reader, cond *bool) error {
 	var b [1]byte
-	_, err := r.Read(b[:])
+	err := ReadN(r, b[:])
 	if err != nil {
 		return err
 	}
@@ -340,62 +361,8 @@ func WriteBoolByte(w io.Writer, cond bool) error {
 	if cond {
 		b[0] = 1
 	}
-	_, err := w.Write(b[:])
+	err := WriteN(w, b[:])
 	return err
-}
-
-///////////// []int as a bit vector \\\\\\\\\\\\\
-
-func WriteIntsAsBits(w io.Writer, ints []int) error {
-	max := 0
-	for _, b := range ints {
-		if max < b {
-			max = b
-		}
-	}
-	size := max/8 + 1
-	data := make([]byte, size)
-	for _, b := range ints {
-		var bitMask byte = 1
-		bitMask <<= b % 8
-		bytePos := b / 8
-		data[bytePos] |= bitMask
-	}
-	return WriteBytes16(w, data)
-}
-
-func ReadIntsAsBits(r io.Reader) ([]int, error) {
-	data, err := ReadBytes16(r)
-	if err != nil {
-		return nil, err
-	}
-	ints := []int{}
-	for bytePos := range data {
-		var bitMask byte = 1
-		for i := 0; i < 8; i++ {
-			if data[bytePos]&bitMask != 0 {
-				ints = append(ints, bytePos*8+i)
-			}
-			bitMask <<= 1
-		}
-	}
-	return ints, nil
-}
-
-//////////////////// time \\\\\\\\\\\\\\\\\\\\
-
-func ReadTime(r io.Reader, ts *time.Time) error {
-	var nano uint64
-	err := ReadUint64(r, &nano)
-	if err != nil {
-		return err
-	}
-	*ts = time.Unix(0, int64(nano))
-	return nil
-}
-
-func WriteTime(w io.Writer, ts time.Time) error {
-	return WriteUint64(w, uint64(ts.UnixNano()))
 }
 
 //////////////////// Size16, Size32 \\\\\\\\\\\\\\\\\\\\
@@ -524,50 +491,6 @@ func WriteString16(w io.Writer, str string) error {
 	return WriteBytes16(w, []byte(str))
 }
 
-//////////////////// string array, uint16 length \\\\\\\\\\\\\\\\\\\\
-
-func ReadStrings16(r io.Reader) (ret []string, err error) {
-	var size uint16
-	if err = ReadUint16(r, &size); err != nil {
-		return nil, nil
-	}
-	ret = make([]string, size)
-	for i := range ret {
-		if ret[i], err = ReadString16(r); err != nil {
-			return nil, err
-		}
-	}
-	return ret, nil
-}
-
-func WriteStrings16(w io.Writer, strs []string) error {
-	if len(strs) > math.MaxUint16 {
-		panic(fmt.Sprintf("WriteStrings16: too long array (%v)", len(strs)))
-	}
-	if err := WriteUint16(w, uint16(len(strs))); err != nil {
-		return err
-	}
-	for _, s := range strs {
-		if err := WriteString16(w, s); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-//////////////////// hash \\\\\\\\\\\\\\\\\\\\
-
-func ReadHashValue(r io.Reader, h *hashing.HashValue) error {
-	n, err := r.Read(h[:])
-	if err != nil {
-		return err
-	}
-	if n != hashing.HashSize {
-		return errors.New("error while reading hash")
-	}
-	return nil
-}
-
 //////////////////// marshaled \\\\\\\\\\\\\\\\\\\\
 
 // ReadMarshaled supports kyber.Point, kyber.Scalar and similar.
@@ -588,41 +511,6 @@ func WriteMarshaled(w io.Writer, val encoding.BinaryMarshaler) error {
 		return err
 	}
 	return WriteBytes16(w, bin)
-}
-
-func ReadOutputID(r io.Reader) (iotago.OutputID, error) {
-	var outputID iotago.OutputID
-	n, err := r.Read(outputID[:])
-	if err != nil {
-		return iotago.OutputID{}, err
-	}
-	if n != iotago.OutputIDLength {
-		return iotago.OutputID{}, fmt.Errorf("error while reading output ID: read %v bytes, expected %v bytes",
-			n, iotago.OutputIDLength)
-	}
-	return outputID, nil
-}
-
-func WriteOutputID(w io.Writer, outputID iotago.OutputID) error {
-	n, err := w.Write(outputID[:])
-	if n != iotago.OutputIDLength {
-		return fmt.Errorf("error while writing output ID: written %v bytes, expected %v bytes",
-			n, iotago.OutputIDLength)
-	}
-	return err
-}
-
-func ReadTransactionID(r io.Reader, txid *iotago.TransactionID) error {
-	n, err := r.Read(txid[:])
-	if err != nil {
-		return err
-	}
-
-	if n != iotago.TransactionIDLength {
-		return fmt.Errorf("error while reading transaction ID: read %v bytes, expected %v bytes",
-			n, iotago.TransactionIDLength)
-	}
-	return nil
 }
 
 func WriteBytes8ToMarshalUtil(data []byte, mu *marshalutil.MarshalUtil) {

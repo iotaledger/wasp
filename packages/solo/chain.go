@@ -45,14 +45,14 @@ var _ chain.Chain = &Chain{}
 
 // String is string representation for main parameters of the chain
 func (ch *Chain) String() string {
-	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
-	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
+	w := new(bytes.Buffer)
+	fmt.Fprintf(w, "Chain ID: %s\n", ch.ChainID)
+	fmt.Fprintf(w, "Chain state controller: %s\n", ch.StateControllerAddress)
 	block, err := ch.store.LatestBlock()
 	require.NoError(ch.Env.T, err)
-	fmt.Fprintf(&buf, "Root commitment: %s\n", block.TrieRoot())
-	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
-	return buf.String()
+	fmt.Fprintf(w, "Root commitment: %s\n", block.TrieRoot())
+	fmt.Fprintf(w, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
+	return w.String()
 }
 
 // DumpAccounts dumps all account balances into the human-readable string

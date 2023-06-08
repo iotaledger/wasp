@@ -22,6 +22,10 @@ func NewFixedSizeBitVector(size int) BitVector {
 	return &fixBitVector{size: size, data: make([]byte, (size-1)/8+1)}
 }
 
+func NewFixedSizeBitVectorFromBytes(data []byte) (BitVector, error) {
+	return NewFixedSizeBitVectorFromMarshalUtil(marshalutil.New(data))
+}
+
 func NewFixedSizeBitVectorFromMarshalUtil(mu *marshalutil.MarshalUtil) (BitVector, error) {
 	size, err := mu.ReadUint16()
 	if err != nil {

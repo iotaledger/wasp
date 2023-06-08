@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -57,7 +56,7 @@ func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) st
 		return subrealm.New(d, kv.Key(contract.Hname().Bytes()))
 	}
 
-	evmChainID := evmtypes.MustDecodeChainID(initParams.Get(ParamEVMChainID), evm.DefaultChainID)
+	evmChainID := codec.MustDecodeUint16(initParams.Get(ParamEVMChainID), evm.DefaultChainID)
 	blockKeepAmount := codec.MustDecodeInt32(initParams.Get(ParamBlockKeepAmount), governance.BlockKeepAmountDefault)
 	chainOwner := codec.MustDecodeAgentID(initParams.Get(ParamChainOwner), &isc.NilAgentID{})
 

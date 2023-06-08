@@ -51,12 +51,12 @@ func (n *bufferedNode) commitNode(triePartition, valuePartition KVWriter, refcou
 	refcounts.Inc(n)
 }
 
-func (n *bufferedNode) mustPersist(w KVWriter) {
+func (n *bufferedNode) mustPersist(partition KVWriter) {
 	dbKey := n.nodeData.Commitment.Bytes()
-	var buf bytes.Buffer
-	err := n.nodeData.Write(&buf)
+	w := new(bytes.Buffer)
+	err := n.nodeData.Write(w)
 	assertNoError(err)
-	w.Set(dbKey, buf.Bytes())
+	partition.Set(dbKey, w.Bytes())
 }
 
 func (n *bufferedNode) isRoot() bool {

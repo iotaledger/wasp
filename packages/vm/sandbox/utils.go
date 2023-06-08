@@ -85,7 +85,7 @@ func (u utilImpl) ValidSignature(data, pubKey, signature []byte) bool {
 	if err != nil {
 		return false
 	}
-	sig, _, err := cryptolib.SignatureFromBytes(signature)
+	sig, err := cryptolib.SignatureFromBytes(signature)
 	if err != nil {
 		return false
 	}

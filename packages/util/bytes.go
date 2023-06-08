@@ -3,8 +3,6 @@ package util
 import (
 	"bytes"
 	"io"
-
-	"github.com/iotaledger/wasp/packages/hashing"
 )
 
 func Bytes(obj interface{ Write(io.Writer) error }) ([]byte, error) {
@@ -21,8 +19,4 @@ func MustBytes(obj interface{ Write(io.Writer) error }) []byte {
 		panic(err)
 	}
 	return ret
-}
-
-func GetHashValue(obj interface{ Bytes() []byte }) hashing.HashValue {
-	return hashing.HashData(obj.Bytes())
 }

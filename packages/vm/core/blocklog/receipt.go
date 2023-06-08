@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -165,17 +166,17 @@ type RequestLookupKey [6]byte
 
 func NewRequestLookupKey(blockIndex uint32, requestIndex uint16) RequestLookupKey {
 	ret := RequestLookupKey{}
-	copy(ret[:4], util.Uint32To4Bytes(blockIndex))
-	copy(ret[4:6], util.Uint16To2Bytes(requestIndex))
+	copy(ret[:4], codec.EncodeUint32(blockIndex))
+	copy(ret[4:6], codec.EncodeUint16(requestIndex))
 	return ret
 }
 
 func (k RequestLookupKey) BlockIndex() uint32 {
-	return util.MustUint32From4Bytes(k[:4])
+	return codec.MustDecodeUint32(k[:4])
 }
 
 func (k RequestLookupKey) RequestIndex() uint16 {
-	return util.MustUint16From2Bytes(k[4:6])
+	return codec.MustDecodeUint16(k[4:6])
 }
 
 func (k RequestLookupKey) Bytes() []byte {

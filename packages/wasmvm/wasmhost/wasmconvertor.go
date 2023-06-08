@@ -19,7 +19,7 @@ type WasmConvertor struct{}
 
 func (cvt WasmConvertor) IscAddress(scAddress *wasmtypes.ScAddress) iotago.Address {
 	buf := wasmtypes.AddressToBytes(*scAddress)
-	address, _, err := isc.AddressFromBytes(buf)
+	address, err := isc.AddressFromBytes(buf)
 	if err != nil {
 		panic(err)
 	}

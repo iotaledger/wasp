@@ -369,7 +369,7 @@ func getChainID(ctx isc.SandboxView) dict.Dict {
 			evmStateSubrealm(buffered.NewBufferedKVStore(ctx.StateR())),
 		),
 	)
-	return result(evmtypes.EncodeChainID(chainID))
+	return result(codec.EncodeUint16(chainID))
 }
 
 func tryGetRevertError(res *core.ExecutionResult) error {

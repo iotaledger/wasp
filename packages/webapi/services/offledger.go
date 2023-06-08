@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
@@ -27,7 +26,7 @@ func NewOffLedgerService(chainService interfaces.ChainService, networkProvider p
 }
 
 func (c *OffLedgerService) ParseRequest(binaryRequest []byte) (isc.OffLedgerRequest, error) {
-	request, err := isc.NewRequestFromMarshalUtil(marshalutil.New(binaryRequest))
+	request, err := isc.NewRequestFromBytes(binaryRequest)
 	if err != nil {
 		return nil, errors.New("error parsing request from payload")
 	}

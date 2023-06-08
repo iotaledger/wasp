@@ -6,6 +6,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -258,7 +259,7 @@ func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
 	addFoundryToAccount(ctx.State(), ctx.Caller(), sn)
 
 	ret := dict.New()
-	ret.Set(ParamFoundrySN, util.Uint32To4Bytes(sn))
+	ret.Set(ParamFoundrySN, codec.EncodeUint32(sn))
 	eventFoundryCreated(ctx, sn)
 	return ret
 }

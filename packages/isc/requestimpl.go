@@ -1,7 +1,6 @@
 package isc
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"time"
@@ -749,9 +748,7 @@ func (rid RequestID) LookupDigest() RequestLookupDigest {
 }
 
 func (rid RequestID) Bytes() []byte {
-	var buf bytes.Buffer
-	buf.Write(rid[:])
-	return buf.Bytes()
+	return rid[:]
 }
 
 func (rid RequestID) Equals(other RequestID) bool {
