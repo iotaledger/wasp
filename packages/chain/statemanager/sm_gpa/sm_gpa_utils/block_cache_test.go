@@ -32,6 +32,7 @@ func TestBlockCacheSimple(t *testing.T) {
 }
 
 func TestBlockCacheCleaning(t *testing.T) {
+	// t.Skip("Needs fixing on windows")
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
@@ -67,6 +68,7 @@ func TestBlockCacheCleaning(t *testing.T) {
 }
 
 func TestBlockCacheSameBlockCleaning(t *testing.T) {
+	// t.Skip("Needs fixing on windows")
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 

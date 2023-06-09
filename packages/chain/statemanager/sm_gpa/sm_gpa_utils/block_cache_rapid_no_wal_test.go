@@ -172,5 +172,6 @@ func (bcnwtsmT *blockCacheNoWALTestSM) getAndCheckBlock(t *rapid.T, blockKey Blo
 }
 
 func TestBlockCachePropBasedNoWAL(t *testing.T) {
+	// t.Skip("Needs fixing on windows")
 	rapid.Check(t, rapid.Run[*blockCacheNoWALTestSM]())
 }

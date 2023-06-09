@@ -136,6 +136,10 @@ func (ww *Writer) WriteMarshaled(m encoding.BinaryMarshaler) *Writer {
 	return ww
 }
 
+func (ww *Writer) WriteMessageType(msgType byte) *Writer {
+	return ww.WriteByte(msgType)
+}
+
 type serializable interface {
 	Serialize(serializer.DeSerializationMode, interface{}) ([]byte, error)
 }

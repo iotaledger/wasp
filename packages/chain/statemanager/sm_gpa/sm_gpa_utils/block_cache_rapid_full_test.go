@@ -107,5 +107,6 @@ func (bctsmT *blockCacheTestSM) invariantAllBlocksInWAL(t *rapid.T) {
 }
 
 func TestBlockCachePropBasedFull(t *testing.T) {
+	// t.Skip("Needs fixing on windows")
 	rapid.Check(t, rapid.Run[*blockCacheTestSM]())
 }

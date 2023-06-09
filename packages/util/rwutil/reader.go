@@ -132,6 +132,13 @@ func (rr *Reader) ReadMarshaled(m encoding.BinaryUnmarshaler) {
 	}
 }
 
+func (rr *Reader) ReadMessageTypeAndVerify(expectedMsgType byte) {
+	msgType := rr.ReadByte()
+	if rr.Err == nil && msgType != expectedMsgType {
+		rr.Err = errors.New("unexpected message type")
+	}
+}
+
 type deserializable interface {
 	Deserialize([]byte, serializer.DeSerializationMode, interface{}) (int, error)
 }
