@@ -17,7 +17,7 @@ type msgCmtLog struct {
 	wrapped       gpa.Message
 }
 
-var _ gpa.Message = &msgCmtLog{}
+var _ gpa.Message = new(msgCmtLog)
 
 func NewMsgCmtLog(committeeAddr iotago.Ed25519Address, wrapped gpa.Message) gpa.Message {
 	return &msgCmtLog{
