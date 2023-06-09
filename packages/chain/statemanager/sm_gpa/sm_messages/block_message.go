@@ -12,7 +12,7 @@ type BlockMessage struct {
 	block state.Block
 }
 
-var _ gpa.Message = &BlockMessage{}
+var _ gpa.Message = new(BlockMessage)
 
 func NewBlockMessage(block state.Block, to gpa.NodeID) *BlockMessage {
 	return &BlockMessage{

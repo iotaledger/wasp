@@ -12,7 +12,7 @@ type GetBlockMessage struct {
 	commitment *state.L1Commitment
 }
 
-var _ gpa.Message = &GetBlockMessage{}
+var _ gpa.Message = new(GetBlockMessage)
 
 func NewGetBlockMessage(commitment *state.L1Commitment, to gpa.NodeID) *GetBlockMessage {
 	return &GetBlockMessage{

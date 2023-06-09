@@ -83,7 +83,7 @@ type WrappingMsg struct {
 	wrapped   Message
 }
 
-var _ Message = &WrappingMsg{}
+var _ Message = new(WrappingMsg)
 
 func NewWrappingMsg(msgType, subsystem byte, index int, wrapped Message) *WrappingMsg {
 	return &WrappingMsg{msgType: msgType, subsystem: subsystem, index: index, wrapped: wrapped}
@@ -110,10 +110,11 @@ func (msg *WrappingMsg) SetSender(sender NodeID) {
 }
 
 func (msg *WrappingMsg) MarshalBinary() ([]byte, error) {
-	return rwutil.WriterToBytes(msg), nil
+	return rwutil.MarshalBinary(msg)
 }
 
 func (msg *WrappingMsg) UnmarshalBinary(data []byte) error {
+	// return rwutil.UnmarshalBinary(data, msg)
 	panic("this message is un-marshaled by the gpa.MsgWrapper")
 }
 

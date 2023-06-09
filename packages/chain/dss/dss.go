@@ -195,12 +195,13 @@ func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 			if d.nodeIDs[i] == d.me {
 				continue
 			}
-			msgs.Add(&msgPartialSig{
-				suite:      d.suite,
-				sender:     d.me,
-				recipient:  d.nodeIDs[i],
-				partialSig: partialSig,
-			})
+			msg := &msgPartialSig{
+				BasicMessage: gpa.NewBasicMessage(d.nodeIDs[i]),
+				suite:        d.suite,
+				partialSig:   partialSig,
+			}
+			msg.SetSender(d.me)
+			msgs.Add(msg)
 		}
 		//
 		// Maybe we have everything for the signature already?
@@ -222,12 +223,12 @@ func (d *dssImpl) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
 		return nil
 	}
 	if d.dssSigner == nil {
-		if d.dssPartialSigBuffer.Has(msg.sender) {
-			d.log.Warn("duplicate partial signature from %v", msg.sender)
+		if d.dssPartialSigBuffer.Has(msg.Sender()) {
+			d.log.Warn("duplicate partial signature from %v", msg.Sender())
 			return nil
 		}
 
-		d.dssPartialSigBuffer.Set(msg.sender, msg.partialSig)
+		d.dssPartialSigBuffer.Set(msg.Sender(), msg.partialSig)
 		return nil
 	}
 	//

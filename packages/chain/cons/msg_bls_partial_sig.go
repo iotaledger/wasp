@@ -6,40 +6,34 @@ package cons
 import (
 	"io"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"go.dedis.ch/kyber/v3/suites"
 
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type msgBLSPartialSig struct {
+	gpa.BasicMessage
 	blsSuite   suites.Suite
-	sender     gpa.NodeID
-	recipient  gpa.NodeID
 	partialSig []byte
 }
 
 var _ gpa.Message = new(msgBLSPartialSig)
 
 func newMsgBLSPartialSig(blsSuite suites.Suite, recipient gpa.NodeID, partialSig []byte) *msgBLSPartialSig {
-	return &msgBLSPartialSig{blsSuite: blsSuite, recipient: recipient, partialSig: partialSig}
-}
-
-func (msg *msgBLSPartialSig) Recipient() gpa.NodeID {
-	return msg.recipient
-}
-
-func (msg *msgBLSPartialSig) SetSender(sender gpa.NodeID) {
-	msg.sender = sender
+	return &msgBLSPartialSig{
+		BasicMessage: gpa.NewBasicMessage(recipient),
+		blsSuite:     blsSuite,
+		partialSig:   partialSig,
+	}
 }
 
 func (msg *msgBLSPartialSig) MarshalBinary() ([]byte, error) {
-	return rwutil.WriterToBytes(msg), nil
+	return rwutil.MarshalBinary(msg)
 }
 
 func (msg *msgBLSPartialSig) UnmarshalBinary(data []byte) error {
-	_, err := rwutil.ReaderFromBytes(data, msg)
-	return err
+	return rwutil.UnmarshalBinary(data, msg)
 }
 
 func (msg *msgBLSPartialSig) Read(r io.Reader) error {

@@ -103,6 +103,7 @@ const (
 	msgTypeImplicateRecover byte = iota
 	msgTypeVote
 	msgTypeWrapped
+	msgTypeRBCCEPayload
 )
 
 type Output struct {
@@ -313,8 +314,8 @@ func (a *acssImpl) handleRBCOutput(rbcOutput *msgRBCCEPayload) gpa.OutMessages {
 
 // > on receiving <OK> from n-f parties:
 // >   send <READY> to all parties
-func (a *acssImpl) handleVoteOK(m *msgVote) gpa.OutMessages {
-	a.voteOKRecv[m.sender] = true
+func (a *acssImpl) handleVoteOK(msg *msgVote) gpa.OutMessages {
+	a.voteOKRecv[msg.Sender()] = true
 	count := len(a.voteOKRecv)
 	if !a.voteREADYSent && count >= (a.n-a.f) {
 		a.voteREADYSent = true
@@ -330,8 +331,8 @@ func (a *acssImpl) handleVoteOK(m *msgVote) gpa.OutMessages {
 // >   if sᵢ is valid:
 // >     out = true
 // >     output sᵢ
-func (a *acssImpl) handleVoteREADY(m *msgVote) gpa.OutMessages {
-	a.voteREADYRecv[m.sender] = true
+func (a *acssImpl) handleVoteREADY(msg *msgVote) gpa.OutMessages {
+	a.voteREADYRecv[msg.Sender()] = true
 	count := len(a.voteREADYRecv)
 	msgs := gpa.NoMessages()
 	if !a.voteREADYSent && count >= (a.f+1) {
@@ -344,18 +345,18 @@ func (a *acssImpl) handleVoteREADY(m *msgVote) gpa.OutMessages {
 
 // It is possible that we are receiving IMPLICATE/RECOVER messages before our RBC is completed.
 // We store these messages for processing after that, if RBC is not done and process it otherwise.
-func (a *acssImpl) handleImplicateRecoverReceived(m *msgImplicateRecover) gpa.OutMessages {
+func (a *acssImpl) handleImplicateRecoverReceived(msg *msgImplicateRecover) gpa.OutMessages {
 	if a.rbcOut == nil {
-		a.pendingIRMsgs = append(a.pendingIRMsgs, m)
+		a.pendingIRMsgs = append(a.pendingIRMsgs, msg)
 		return nil
 	}
-	switch m.kind {
+	switch msg.kind {
 	case msgImplicateRecoverKindIMPLICATE:
-		return a.handleImplicate(m)
+		return a.handleImplicate(msg)
 	case msgImplicateRecoverKindRECOVER:
-		return a.handleRecover(m)
+		return a.handleRecover(msg)
 	default:
-		panic(fmt.Errorf("handleImplicateRecoverReceived: unexpected msgImplicateRecover.kind=%v, message: %+v", m.kind, m))
+		panic(fmt.Errorf("handleImplicateRecoverReceived: unexpected msgImplicateRecover.kind=%v, message: %+v", msg.kind, msg))
 	}
 }
 
@@ -400,22 +401,22 @@ func (a *acssImpl) handleImplicateRecoverPending(msgs gpa.OutMessages) gpa.OutMe
 // >       return
 //
 // NOTE: We assume `if out == true:` stands for a wait for such condition.
-func (a *acssImpl) handleImplicate(m *msgImplicateRecover) gpa.OutMessages {
-	peerIndex := a.peerIndex(m.sender)
+func (a *acssImpl) handleImplicate(msg *msgImplicateRecover) gpa.OutMessages {
+	peerIndex := a.peerIndex(msg.sender)
 	if peerIndex == -1 {
-		a.log.Warnf("implicate received from unknown peer: %v", m.sender)
+		a.log.Warnf("implicate received from unknown peer: %v", msg.sender)
 		return nil
 	}
 	//
 	// Check message duplicates.
-	if _, ok := a.implicateRecv[m.sender]; ok {
+	if _, ok := a.implicateRecv[msg.sender]; ok {
 		// Received the implicate before, just ignore it.
 		return nil
 	}
-	a.implicateRecv[m.sender] = true
+	a.implicateRecv[msg.sender] = true
 	//
 	// Check implicate.
-	secret, err := crypto.CheckImplicate(a.suite, a.rbcOut.PubKey, a.peerPKs[m.sender], m.data)
+	secret, err := crypto.CheckImplicate(a.suite, a.rbcOut.PubKey, a.peerPKs[msg.sender], msg.data)
 	if err != nil {
 		a.log.Warnf("Invalid implication received: %v", err)
 		return nil
@@ -441,27 +442,27 @@ func (a *acssImpl) handleImplicate(m *msgImplicateRecover) gpa.OutMessages {
 // >       sᵢ = SSS.Recover(T, f+1, n)(i)
 // >       out = true
 // >       output sᵢ
-func (a *acssImpl) handleRecover(m *msgImplicateRecover) gpa.OutMessages {
+func (a *acssImpl) handleRecover(msg *msgImplicateRecover) gpa.OutMessages {
 	if a.output {
 		// Ignore the RECOVER messages, if we are done with the output.
 		return nil
 	}
-	peerIndex := a.peerIndex(m.sender)
+	peerIndex := a.peerIndex(msg.sender)
 	if peerIndex == -1 {
-		a.log.Warnf("Recover received from unexpected sender: %v", m.sender)
+		a.log.Warnf("Recover received from unexpected sender: %v", msg.sender)
 		return nil
 	}
-	if _, ok := a.recoverRecv[m.sender]; ok {
-		a.log.Warnf("Recover was already received from %v", m.sender)
+	if _, ok := a.recoverRecv[msg.sender]; ok {
+		a.log.Warnf("Recover was already received from %v", msg.sender)
 		return nil
 	}
 
-	peerSecret, err := crypto.DecryptShare(a.suite, a.rbcOut, peerIndex, m.data)
+	peerSecret, err := crypto.DecryptShare(a.suite, a.rbcOut, peerIndex, msg.data)
 	if err != nil {
 		a.log.Warn("invalid secret revealed")
 		return nil
 	}
-	a.recoverRecv[m.sender] = peerSecret
+	a.recoverRecv[msg.sender] = peerSecret
 
 	// >     wait until len(T) >= f+1:
 	// >       sᵢ = SSS.Recover(T, f+1, n)(i)
@@ -487,7 +488,12 @@ func (a *acssImpl) handleRecover(m *msgImplicateRecover) gpa.OutMessages {
 
 func (a *acssImpl) broadcastVote(voteKind msgVoteKind, msgs gpa.OutMessages) gpa.OutMessages {
 	for i := range a.peerIdx {
-		msgs.Add(&msgVote{sender: a.me, recipient: a.peerIdx[i], kind: voteKind})
+		msg := &msgVote{
+			BasicMessage: gpa.NewBasicMessage(a.peerIdx[i]),
+			kind:         voteKind,
+		}
+		msg.SetSender(a.me)
+		msgs.Add(msg)
 	}
 	return msgs
 }

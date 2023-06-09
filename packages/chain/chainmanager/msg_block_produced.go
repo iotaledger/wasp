@@ -40,12 +40,11 @@ func (msg *msgBlockProduced) String() string {
 }
 
 func (msg *msgBlockProduced) MarshalBinary() (ret []byte, err error) {
-	return rwutil.WriterToBytes(msg), nil
+	return rwutil.MarshalBinary(msg)
 }
 
 func (msg *msgBlockProduced) UnmarshalBinary(data []byte) error {
-	_, err := rwutil.ReaderFromBytes(data, msg)
-	return err
+	return rwutil.UnmarshalBinary(data, msg)
 }
 
 func (msg *msgBlockProduced) Read(r io.Reader) error {

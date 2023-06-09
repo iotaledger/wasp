@@ -49,12 +49,11 @@ func (msg *msgNextLogIndex) String() string {
 }
 
 func (msg *msgNextLogIndex) MarshalBinary() ([]byte, error) {
-	return rwutil.WriterToBytes(msg), nil
+	return rwutil.MarshalBinary(msg)
 }
 
 func (msg *msgNextLogIndex) UnmarshalBinary(data []byte) error {
-	_, err := rwutil.ReaderFromBytes(data, msg)
-	return err
+	return rwutil.UnmarshalBinary(data, msg)
 }
 
 func (msg *msgNextLogIndex) Read(r io.Reader) error {

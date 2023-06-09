@@ -315,6 +315,21 @@ func WriteUint64(w io.Writer, val uint64) error {
 
 //////////////////// binary marshaling \\\\\\\\\\\\\\\\\\\\
 
+// MarshalBinary is an adapter function that uses an object's Write()
+// function to marshal the object to data bytes. It is typically used
+// to implement a one-line MarshalBinary() member function for the object.
+func MarshalBinary(object interface{ Write(w io.Writer) error }) ([]byte, error) {
+	return WriterToBytes(object), nil
+}
+
+// UnmarshalBinary is an adapter function that uses an object's Read()
+// function to marshal the object from data bytes. It is typically used
+// to implement a one-line UnmarshalBinary member function for the object.
+func UnmarshalBinary[T interface{ Read(r io.Reader) error }](data []byte, object T) error {
+	_, err := ReaderFromBytes(data, object)
+	return err
+}
+
 func ReadMarshaled(r io.Reader, val encoding.BinaryUnmarshaler) error {
 	if val == nil {
 		panic("nil BinaryUnmarshaler")

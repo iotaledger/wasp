@@ -62,12 +62,12 @@ func (msg *BasicMessage) Recipient() NodeID {
 	return msg.recipient
 }
 
-func (msg *BasicMessage) SetSender(sender NodeID) {
-	msg.sender = sender
-}
-
 func (msg *BasicMessage) Sender() NodeID {
 	return msg.sender
+}
+
+func (msg *BasicMessage) SetSender(sender NodeID) {
+	msg.sender = sender
 }
 
 type Input interface{}

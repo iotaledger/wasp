@@ -334,7 +334,7 @@ func (c *consImpl) Input(input gpa.Input) gpa.OutMessages {
 func (c *consImpl) Message(msg gpa.Message) gpa.OutMessages {
 	switch msgT := msg.(type) {
 	case *msgBLSPartialSig:
-		return c.subRND.BLSPartialSigReceived(msgT.sender, msgT.partialSig)
+		return c.subRND.BLSPartialSigReceived(msgT.Sender(), msgT.partialSig)
 	case *gpa.WrappingMsg:
 		sub, subMsgs, err := c.msgWrapper.DelegateMessage(msgT)
 		if err != nil {

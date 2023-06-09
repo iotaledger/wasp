@@ -4,8 +4,8 @@
 package gpa
 
 import (
-	"bytes"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
@@ -316,40 +316,30 @@ type ackHandlerReset struct {
 	latestID int
 }
 
-var _ Message = &ackHandlerReset{}
+var _ Message = new(ackHandlerReset)
 
-func (m *ackHandlerReset) MarshalBinary() ([]byte, error) {
-	w := &bytes.Buffer{}
-	if err := rwutil.WriteByte(w, ackHandlerMsgTypeReset); err != nil {
-		return nil, fmt.Errorf("cannot serialize ackHandlerReset.msgType: %w", err)
-	}
-	if err := rwutil.WriteBool(w, m.response); err != nil {
-		return nil, fmt.Errorf("cannot serialize ackHandlerReset.response: %w", err)
-	}
-	if err := rwutil.WriteUint32(w, uint32(m.latestID)); err != nil {
-		return nil, fmt.Errorf("cannot serialize ackHandlerReset.latestID: %w", err)
-	}
-	return w.Bytes(), nil
+func (msg *ackHandlerReset) MarshalBinary() ([]byte, error) {
+	return rwutil.MarshalBinary(msg)
 }
 
-func (m *ackHandlerReset) UnmarshalBinary(data []byte) error {
-	r := bytes.NewReader(data)
-	msgType, err := rwutil.ReadByte(r)
-	if err != nil {
-		return fmt.Errorf("cannot deserialize ackHandlerReset.msgType: %w", err)
-	}
-	if msgType != ackHandlerMsgTypeReset {
-		return fmt.Errorf("unexpected msgType: %v", msgType)
-	}
-	if m.response, err = rwutil.ReadBool(r); err != nil {
-		return fmt.Errorf("cannot deserialize ackHandlerReset.response: %w", err)
-	}
-	var u32 uint32
-	if u32, err = rwutil.ReadUint32(r); err != nil {
-		return fmt.Errorf("cannot deserialize ackHandlerReset.latestID: %w", err)
-	}
-	m.latestID = int(u32)
-	return nil
+func (msg *ackHandlerReset) UnmarshalBinary(data []byte) error {
+	return rwutil.UnmarshalBinary(data, msg)
+}
+
+func (msg *ackHandlerReset) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.ReadMessageTypeAndVerify(ackHandlerMsgTypeReset)
+	msg.response = rr.ReadBool()
+	msg.latestID = int(rr.ReadUint32())
+	return rr.Err
+}
+
+func (msg *ackHandlerReset) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteMessageType(ackHandlerMsgTypeReset)
+	ww.WriteBool(msg.response)
+	ww.WriteUint32(uint32(msg.latestID))
+	return ww.Err
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -366,123 +356,73 @@ type ackHandlerBatch struct {
 	nestedGPA GPA        // Transient, for un-marshaling only.
 }
 
-var _ Message = &ackHandlerBatch{}
+var _ Message = new(ackHandlerBatch)
 
-func (m *ackHandlerBatch) Recipient() NodeID {
-	return m.recipient
+func (msg *ackHandlerBatch) Recipient() NodeID {
+	return msg.recipient
 }
 
-func (m *ackHandlerBatch) SetSender(sender NodeID) {
-	m.sender = sender
-	for _, msg := range m.msgs {
+func (msg *ackHandlerBatch) SetSender(sender NodeID) {
+	msg.sender = sender
+	for _, msg := range msg.msgs {
 		msg.SetSender(sender)
 	}
 }
 
-func (m *ackHandlerBatch) MarshalBinary() ([]byte, error) {
-	w := &bytes.Buffer{}
-	if err := rwutil.WriteByte(w, ackHandlerMsgTypeBatch); err != nil {
-		return nil, fmt.Errorf("cannot serialize ackHandlerBatch.msgType: %w", err)
-	}
-	//
-	// m.id
-	if m.id != nil {
-		if err := rwutil.WriteBool(w, true); err != nil {
-			return nil, fmt.Errorf("cannot serialize ackHandlerBatch.id!=nil: %w", err)
-		}
-		if err := rwutil.WriteUint32(w, uint32(*m.id)); err != nil {
-			return nil, fmt.Errorf("cannot serialize ackHandlerBatch.id: %w", err)
-		}
-	} else {
-		if err := rwutil.WriteBool(w, false); err != nil {
-			return nil, fmt.Errorf("cannot serialize ackHandlerBatch.id==nil: %w", err)
-		}
-	}
-	//
-	// m.msgs
-	if err := rwutil.WriteUint16(w, uint16(len(m.msgs))); err != nil {
-		return nil, fmt.Errorf("cannot serialize ackHandlerBatch.msgs.length: %w", err)
-	}
-	for i := range m.msgs {
-		msgData, err := m.msgs[i].MarshalBinary()
-		if err != nil {
-			return nil, fmt.Errorf("cannot serialize ackHandlerBatch.msgs[%v]: %w", i, err)
-		}
-		if err := rwutil.WriteBytes(w, msgData); err != nil {
-			return nil, fmt.Errorf("cannot serialize ackHandlerBatch.msgs[%v]: %w", i, err)
-		}
-	}
-	//
-	// m.acks
-	if err := rwutil.WriteUint16(w, uint16(len(m.acks))); err != nil {
-		return nil, fmt.Errorf("cannot serialize ackHandlerBatch.acks.length: %w", err)
-	}
-	for i := range m.acks {
-		if err := rwutil.WriteUint32(w, uint32(m.acks[i])); err != nil {
-			return nil, fmt.Errorf("cannot serialize ackHandlerBatch.acks[%v]: %w", i, err)
-		}
-	}
-	return w.Bytes(), nil
+func (msg *ackHandlerBatch) MarshalBinary() ([]byte, error) {
+	return rwutil.MarshalBinary(msg)
 }
 
-func (m *ackHandlerBatch) UnmarshalBinary(data []byte) error {
-	r := bytes.NewReader(data)
-	msgType, err := rwutil.ReadByte(r)
-	if err != nil {
-		return fmt.Errorf("cannot deserialize ackHandlerBatch.msgType: %w", err)
+func (msg *ackHandlerBatch) UnmarshalBinary(data []byte) error {
+	return rwutil.UnmarshalBinary(data, msg)
+}
+
+func (msg *ackHandlerBatch) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.ReadMessageTypeAndVerify(ackHandlerMsgTypeBatch)
+	msg.id = nil
+	hasID := rr.ReadBool()
+	if hasID {
+		id := int(rr.ReadUint32())
+		msg.id = &id
 	}
-	if msgType != ackHandlerMsgTypeBatch {
-		return fmt.Errorf("unexpected msgType: %v", msgType)
-	}
-	//
-	// m.id
-	var mIDPresent bool
-	if mIDPresent, err = rwutil.ReadBool(r); err != nil {
-		return fmt.Errorf("cannot deserialize ackHandlerBatch.id?=nil: %w", err)
-	}
-	if mIDPresent {
-		var mID uint32
-		if mID, err = rwutil.ReadUint32(r); err != nil {
-			return fmt.Errorf("cannot deserialize ackHandlerBatch.id: %w", err)
+
+	size := rr.ReadSize()
+	msg.msgs = make([]Message, size)
+	for i := range msg.msgs {
+		msgData := rr.ReadBytes()
+		if rr.Err != nil {
+			return rr.Err
 		}
-		mIDasInt := int(mID)
-		m.id = &mIDasInt
-	} else {
-		m.id = nil
+		msg.msgs[i], rr.Err = msg.nestedGPA.UnmarshalMessage(msgData)
 	}
-	//
-	// m.msgs
-	var msgsLen uint16
-	if msgsLen, err = rwutil.ReadUint16(r); err != nil {
-		return fmt.Errorf("cannot deserialize ackHandlerBatch.msgs.length: %w", err)
+
+	size = rr.ReadSize()
+	msg.acks = make([]int, size)
+	for i := range msg.acks {
+		msg.acks[i] = int(rr.ReadUint32())
 	}
-	m.msgs = make([]Message, msgsLen)
-	for i := range m.msgs {
-		msgData, err2 := rwutil.ReadBytes(r)
-		if err2 != nil {
-			return fmt.Errorf("cannot deserialize ackHandlerBatch.msgs[%v]: %w", i, err2)
-		}
-		msg, err2 := m.nestedGPA.UnmarshalMessage(msgData)
-		if err2 != nil {
-			return fmt.Errorf("cannot deserialize ackHandlerBatch.msgs[%v]: %w", i, err2)
-		}
-		m.msgs[i] = msg
+	return rr.Err
+}
+
+func (msg *ackHandlerBatch) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteMessageType(ackHandlerMsgTypeBatch)
+	ww.WriteBool(msg.id != nil)
+	if msg.id != nil {
+		ww.WriteUint32(uint32(*msg.id))
 	}
-	//
-	// m.acks
-	var acksLen uint16
-	if acksLen, err = rwutil.ReadUint16(r); err != nil {
-		return fmt.Errorf("cannot deserialize ackHandlerBatch.acks.length: %w", err)
+
+	ww.WriteSize(len(msg.msgs))
+	for i := range msg.msgs {
+		ww.WriteMarshaled(msg.msgs[i])
 	}
-	m.acks = make([]int, acksLen)
-	for i := range m.acks {
-		var ackedID uint32
-		if ackedID, err = rwutil.ReadUint32(r); err != nil {
-			return fmt.Errorf("cannot deserialize ackHandlerBatch.acks[%v]: %w", i, err)
-		}
-		m.acks[i] = int(ackedID)
+
+	ww.WriteSize(len(msg.acks))
+	for i := range msg.acks {
+		ww.WriteUint32(uint32(msg.acks[i]))
 	}
-	return nil
+	return ww.Err
 }
 
 ////////////////////////////////////////////////////////////////////////////////

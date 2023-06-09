@@ -39,12 +39,11 @@ func (msg *msgCmtLog) SetSender(sender gpa.NodeID) {
 }
 
 func (msg *msgCmtLog) MarshalBinary() ([]byte, error) {
-	return rwutil.WriterToBytes(msg), nil
+	return rwutil.MarshalBinary(msg)
 }
 
 func (msg *msgCmtLog) UnmarshalBinary(data []byte) error {
-	_, err := rwutil.ReaderFromBytes(data, msg)
-	return err
+	return rwutil.UnmarshalBinary(data, msg)
 }
 
 func (msg *msgCmtLog) Read(r io.Reader) error {

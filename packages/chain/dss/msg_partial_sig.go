@@ -15,29 +15,19 @@ import (
 )
 
 type msgPartialSig struct {
+	gpa.BasicMessage
 	suite      suites.Suite // Transient, for un-marshaling only.
-	sender     gpa.NodeID   // Transient.
-	recipient  gpa.NodeID   // Transient.
 	partialSig *dss.PartialSig
 }
 
 var _ gpa.Message = new(msgPartialSig)
 
-func (msg *msgPartialSig) Recipient() gpa.NodeID {
-	return msg.recipient
-}
-
-func (msg *msgPartialSig) SetSender(sender gpa.NodeID) {
-	msg.sender = sender
-}
-
 func (msg *msgPartialSig) MarshalBinary() ([]byte, error) {
-	return rwutil.WriterToBytes(msg), nil
+	return rwutil.MarshalBinary(msg)
 }
 
 func (msg *msgPartialSig) UnmarshalBinary(data []byte) error {
-	_, err := rwutil.ReaderFromBytes(data, msg)
-	return err
+	return rwutil.UnmarshalBinary(data, msg)
 }
 
 func (msg *msgPartialSig) Read(r io.Reader) error {
