@@ -4,10 +4,11 @@
 package acss
 
 import (
-	"bytes"
+	"io"
 
 	"go.dedis.ch/kyber/v3/suites"
 
+	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -15,28 +16,29 @@ import (
 //
 // > RBC(C||E)
 type msgRBCCEPayload struct {
+	gpa.BasicMessage
 	suite suites.Suite
 	data  []byte
 }
 
-func (m *msgRBCCEPayload) MarshalBinary() ([]byte, error) {
-	w := &bytes.Buffer{}
-	//
-	// Write data.
-	if err := rwutil.WriteBytes(w, m.data); err != nil {
-		return nil, err
-	}
-	return w.Bytes(), nil
+func (msg *msgRBCCEPayload) MarshalBinary() ([]byte, error) {
+	return rwutil.MarshalBinary(msg)
 }
 
-func (m *msgRBCCEPayload) UnmarshalBinary(data []byte) error {
-	r := bytes.NewReader(data)
-	//
-	// Read data
-	var err error
-	m.data, err = rwutil.ReadBytes(r)
-	if err != nil {
-		return err
-	}
-	return nil
+func (msg *msgRBCCEPayload) UnmarshalBinary(data []byte) error {
+	return rwutil.UnmarshalBinary(data, msg)
+}
+
+func (msg *msgRBCCEPayload) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.ReadKindAndVerify(msgTypeRBCCEPayload)
+	msg.data = rr.ReadBytes()
+	return rr.Err
+}
+
+func (msg *msgRBCCEPayload) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteKind(msgTypeRBCCEPayload)
+	ww.WriteBytes(msg.data)
+	return ww.Err
 }

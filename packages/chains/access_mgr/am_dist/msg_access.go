@@ -4,8 +4,7 @@
 package am_dist
 
 import (
-	"bytes"
-	"fmt"
+	"io"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -21,7 +20,7 @@ type msgAccess struct {
 	serverForChains []isc.ChainID
 }
 
-var _ gpa.Message = &msgAccess{}
+var _ gpa.Message = new(msgAccess)
 
 func newMsgAccess(
 	recipient gpa.NodeID,
@@ -38,92 +37,48 @@ func newMsgAccess(
 	}
 }
 
-func (m *msgAccess) MarshalBinary() ([]byte, error) {
-	w := bytes.NewBuffer([]byte{})
-	if err := rwutil.WriteByte(w, msgTypeAccess); err != nil {
-		return nil, err
-	}
-	if err := rwutil.WriteUint32(w, uint32(m.senderLClock)); err != nil {
-		return nil, err
-	}
-	if err := rwutil.WriteUint32(w, uint32(m.receiverLClock)); err != nil {
-		return nil, err
-	}
-	if err := rwutil.WriteUint32(w, uint32(len(m.accessForChains))); err != nil {
-		return nil, err
-	}
-	for i := range m.accessForChains {
-		if err := rwutil.WriteBytes(w, m.accessForChains[i].Bytes()); err != nil {
-			return nil, err
-		}
-	}
-	if err := rwutil.WriteUint32(w, uint32(len(m.serverForChains))); err != nil {
-		return nil, err
-	}
-	for i := range m.serverForChains {
-		if err := rwutil.WriteBytes(w, m.serverForChains[i].Bytes()); err != nil {
-			return nil, err
-		}
-	}
-	return w.Bytes(), nil
+func (msg *msgAccess) MarshalBinary() ([]byte, error) {
+	return rwutil.MarshalBinary(msg)
 }
 
-//nolint:govet
-func (m *msgAccess) UnmarshalBinary(data []byte) error {
-	r := bytes.NewReader(data)
-	msgType, err := rwutil.ReadByte(r)
-	if err != nil || msgType != msgTypeAccess {
-		if err != nil {
-			return err
-		}
-		return fmt.Errorf("unexpected message type: %v", msgType)
+func (msg *msgAccess) UnmarshalBinary(data []byte) error {
+	return rwutil.UnmarshalBinary(data, msg)
+}
+
+func (msg *msgAccess) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.ReadKindAndVerify(msgTypeAccess)
+	msg.senderLClock = int(rr.ReadUint32())
+	msg.receiverLClock = int(rr.ReadUint32())
+
+	size := rr.ReadSize()
+	msg.accessForChains = make([]isc.ChainID, size)
+	for i := range msg.accessForChains {
+		rr.ReadN(msg.accessForChains[i][:])
 	}
-	//
-	// senderLClock
-	var u32 uint32
-	if u32, err = rwutil.ReadUint32(r); err != nil {
-		return err
+
+	size = rr.ReadSize()
+	msg.serverForChains = make([]isc.ChainID, size)
+	for i := range msg.serverForChains {
+		rr.ReadN(msg.serverForChains[i][:])
 	}
-	m.senderLClock = int(u32)
-	//
-	// receiverLClock
-	if u32, err = rwutil.ReadUint32(r); err != nil {
-		return err
+	return rr.Err
+}
+
+func (msg *msgAccess) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteKind(msgTypeAccess)
+	ww.WriteUint32(uint32(msg.senderLClock))
+	ww.WriteUint32(uint32(msg.receiverLClock))
+
+	ww.WriteSize(len(msg.accessForChains))
+	for i := range msg.accessForChains {
+		ww.WriteN(msg.accessForChains[i][:])
 	}
-	m.receiverLClock = int(u32)
-	//
-	// accessForChains
-	if u32, err = rwutil.ReadUint32(r); err != nil {
-		return err
+
+	ww.WriteSize(len(msg.serverForChains))
+	for i := range msg.serverForChains {
+		ww.WriteN(msg.serverForChains[i][:])
 	}
-	m.accessForChains = make([]isc.ChainID, u32)
-	for i := range m.accessForChains {
-		val, err := rwutil.ReadBytes(r)
-		if err != nil {
-			return err
-		}
-		chainID, err := isc.ChainIDFromBytes(val)
-		if err != nil {
-			return err
-		}
-		m.accessForChains[i] = chainID
-	}
-	//
-	// serverForChains
-	if u32, err = rwutil.ReadUint32(r); err != nil {
-		return err
-	}
-	m.serverForChains = make([]isc.ChainID, u32)
-	for i := range m.serverForChains {
-		val, err := rwutil.ReadBytes(r)
-		if err != nil {
-			return err
-		}
-		chainID, err := isc.ChainIDFromBytes(val)
-		if err != nil {
-			return err
-		}
-		m.serverForChains[i] = chainID
-	}
-	return nil
+	return ww.Err
 }

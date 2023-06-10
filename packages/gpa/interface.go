@@ -6,10 +6,13 @@ package gpa
 
 import (
 	"encoding"
+	"errors"
+	"io"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type NodeID [32]byte
@@ -45,6 +48,8 @@ func (niT NodeID) ShortString() string {
 type Message interface {
 	encoding.BinaryMarshaler
 	encoding.BinaryUnmarshaler
+	Read(r io.Reader) error
+	Write(w io.Writer) error
 	Recipient() NodeID // The sender should indicate the recipient.
 	SetSender(NodeID)  // The transport later will set a validated sender for a message.
 }
@@ -62,12 +67,12 @@ func (msg *BasicMessage) Recipient() NodeID {
 	return msg.recipient
 }
 
-func (msg *BasicMessage) SetSender(sender NodeID) {
-	msg.sender = sender
-}
-
 func (msg *BasicMessage) Sender() NodeID {
 	return msg.sender
+}
+
+func (msg *BasicMessage) SetSender(sender NodeID) {
+	msg.sender = sender
 }
 
 type Input interface{}
@@ -116,4 +121,31 @@ type GPA interface {
 	Output() Output
 	StatusString() string // Status of the protocol as a string.
 	UnmarshalMessage(data []byte) (Message, error)
+}
+
+type (
+	Mapper   map[rwutil.Kind]func() Message
+	Fallback map[rwutil.Kind]func(data []byte) (Message, error)
+)
+
+func UnmarshalMessage(data []byte, mapper Mapper, fallback ...Fallback) (Message, error) {
+	rr := rwutil.NewBytesReader(data)
+	kind := rr.ReadKind()
+	if rr.Err != nil {
+		return nil, rr.Err
+	}
+	allocator := mapper[kind]
+	if allocator == nil {
+		if len(fallback) == 1 {
+			unmarshaler := fallback[0][kind]
+			if unmarshaler != nil {
+				return unmarshaler(data)
+			}
+		}
+		return nil, errors.New("cannot map kind to message")
+	}
+	msg := allocator()
+	rr.PushBack().WriteKind(kind)
+	rr.Read(msg)
+	return msg, rr.Err
 }

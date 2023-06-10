@@ -5,18 +5,17 @@ package isc
 
 import (
 	"errors"
-	"fmt"
+	"io"
 	"strings"
 
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-type AgentIDKind uint8
-
 const (
-	AgentIDKindNil AgentIDKind = iota
+	AgentIDKindNil rwutil.Kind = iota
 	AgentIDKindAddress
 	AgentIDKindContract
 	AgentIDKindEthereumAddress
@@ -24,10 +23,12 @@ const (
 
 // AgentID represents any entity that can hold assets on L2 and/or call contracts.
 type AgentID interface {
-	Kind() AgentIDKind
-	String() string
 	Bytes() []byte
 	Equals(other AgentID) bool
+	Kind() rwutil.Kind
+	Read(r io.Reader) error
+	String() string
+	Write(w io.Writer) error
 }
 
 // AgentIDWithL1Address is an AgentID backed by an L1 address (either AddressAgentID or ContractAgentID).
@@ -45,13 +46,12 @@ func AddressFromAgentID(a AgentID) (iotago.Address, bool) {
 	return wa.Address(), true
 }
 
-// HnameFromAgentID returns the hname of the AgentID, if applicable.
-func HnameFromAgentID(a AgentID) (Hname, bool) {
-	ca, ok := a.(*ContractAgentID)
-	if !ok {
-		return 0, false
+// HnameFromAgentID returns the hname of the AgentID, or HnameNil if not applicable.
+func HnameFromAgentID(a AgentID) Hname {
+	if ca, ok := a.(*ContractAgentID); ok {
+		return ca.Hname()
 	}
-	return ca.Hname(), true
+	return HnameNil
 }
 
 // NewAgentID creates an AddressAgentID if the address is not an AliasAddress;
@@ -65,26 +65,35 @@ func NewAgentID(addr iotago.Address) AgentID {
 }
 
 func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
-	var err error
-	kind, err := mu.ReadByte()
-	if err != nil {
-		return nil, err
-	}
-	switch AgentIDKind(kind) {
-	case AgentIDKindNil:
-		return &NilAgentID{}, nil
-	case AgentIDKindAddress:
-		return addressAgentIDFromMarshalUtil(mu)
-	case AgentIDKindContract:
-		return contractAgentIDFromMarshalUtil(mu)
-	case AgentIDKindEthereumAddress:
-		return ethAgentIDFromMarshalUtil(mu)
-	}
-	return nil, fmt.Errorf("no handler for AgentID kind %d", kind)
+	rr := rwutil.NewMuReader(mu)
+	return agentIDFromReader(rr), rr.Err
 }
 
 func AgentIDFromBytes(data []byte) (AgentID, error) {
-	return AgentIDFromMarshalUtil(marshalutil.New(data))
+	rr := rwutil.NewBytesReader(data)
+	return agentIDFromReader(rr), rr.Err
+}
+
+func agentIDFromReader(rr *rwutil.Reader) (ret AgentID) {
+	kind := rr.ReadKind()
+	switch kind {
+	case AgentIDKindNil:
+		ret = new(NilAgentID)
+	case AgentIDKindAddress:
+		ret = new(AddressAgentID)
+	case AgentIDKindContract:
+		ret = new(ContractAgentID)
+	case AgentIDKindEthereumAddress:
+		ret = new(EthereumAddressAgentID)
+	default:
+		if rr.Err == nil {
+			rr.Err = errors.New("invalid AgentID kind")
+			return nil
+		}
+	}
+	rr.PushBack().WriteKind(kind)
+	rr.Read(ret)
+	return ret
 }
 
 // NewAgentIDFromString parses the human-readable string representation

@@ -64,10 +64,10 @@ func (v *varDone) outputProduced() gpa.OutMessages {
 }
 
 func (v *varDone) msgDoneReceived(msg *msgDone) gpa.OutMessages {
-	if _, ok := v.recv[msg.sender]; ok {
+	if _, ok := v.recv[msg.Sender()]; ok {
 		return nil // Duplicate
 	}
-	v.recv[msg.sender] = msg.round
+	v.recv[msg.Sender()] = msg.round
 	return v.tryComplete()
 }
 

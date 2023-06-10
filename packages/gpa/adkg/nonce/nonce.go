@@ -35,15 +35,15 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/samber/lo"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acss"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type Output struct {
@@ -77,7 +77,7 @@ const (
 )
 
 const (
-	msgTypeWrapped byte = iota
+	msgTypeWrapped rwutil.Kind = iota
 )
 
 func New(

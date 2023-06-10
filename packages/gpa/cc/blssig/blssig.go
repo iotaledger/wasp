@@ -89,9 +89,12 @@ func (cc *ccImpl) Input(input gpa.Input) gpa.OutMessages {
 	}
 	cc.tryOutput()
 	msgs := gpa.NoMessages()
-	for _, nid := range cc.nodeIDs {
-		if nid != cc.me {
-			msgs.Add(&msgSigShare{recipient: nid, sigShare: sigShare})
+	for _, nodeID := range cc.nodeIDs {
+		if nodeID != cc.me {
+			msgs.Add(&msgSigShare{
+				BasicMessage: gpa.NewBasicMessage(nodeID),
+				sigShare:     sigShare,
+			})
 		}
 	}
 	return msgs
@@ -106,11 +109,11 @@ func (cc *ccImpl) Message(msg gpa.Message) gpa.OutMessages {
 	if !ok {
 		panic(fmt.Errorf("unexpected message: %+v", msg))
 	}
-	if _, ok := cc.sigShares[shareMsg.sender]; ok {
+	if _, ok := cc.sigShares[shareMsg.Sender()]; ok {
 		// Drop a duplicate.
 		return nil
 	}
-	cc.sigShares[shareMsg.sender] = shareMsg.sigShare
+	cc.sigShares[shareMsg.Sender()] = shareMsg.sigShare
 	cc.tryOutput()
 	return nil
 }
@@ -145,12 +148,4 @@ func (cc *ccImpl) Output() gpa.Output {
 
 func (cc *ccImpl) StatusString() string {
 	return fmt.Sprintf("{CC:blssig, threshold=%v, sigShares=%v/%v, output=%v}", cc.t, len(cc.sigShares), cc.n, cc.output)
-}
-
-func (cc *ccImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	msg := &msgSigShare{}
-	if err := msg.UnmarshalBinary(data); err != nil {
-		return nil, fmt.Errorf("cannot unmarshal msgSigShare: %w", err)
-	}
-	return msg, nil
 }

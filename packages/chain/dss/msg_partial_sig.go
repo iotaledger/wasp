@@ -4,8 +4,7 @@
 package dss
 
 import (
-	"bytes"
-	"fmt"
+	"io"
 
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/dss"
@@ -16,69 +15,42 @@ import (
 )
 
 type msgPartialSig struct {
+	gpa.BasicMessage
 	suite      suites.Suite // Transient, for un-marshaling only.
-	sender     gpa.NodeID   // Transient.
-	recipient  gpa.NodeID   // Transient.
 	partialSig *dss.PartialSig
 }
 
-var _ gpa.Message = &msgPartialSig{}
+var _ gpa.Message = new(msgPartialSig)
 
-func (m *msgPartialSig) Recipient() gpa.NodeID {
-	return m.recipient
+func (msg *msgPartialSig) MarshalBinary() ([]byte, error) {
+	return rwutil.MarshalBinary(msg)
 }
 
-func (m *msgPartialSig) SetSender(sender gpa.NodeID) {
-	m.sender = sender
+func (msg *msgPartialSig) UnmarshalBinary(data []byte) error {
+	return rwutil.UnmarshalBinary(data, msg)
 }
 
-func (m *msgPartialSig) MarshalBinary() ([]byte, error) {
-	w := &bytes.Buffer{}
-	if err := rwutil.WriteByte(w, msgTypePartialSig); err != nil {
-		return nil, fmt.Errorf("cannot marshal type=msgTypePartialSig: %w", err)
+func (msg *msgPartialSig) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.ReadKindAndVerify(msgTypePartialSig)
+	msg.partialSig = &dss.PartialSig{
+		Partial: &share.PriShare{
+			I: int(rr.ReadUint16()),
+			V: msg.suite.Scalar(),
+		},
 	}
-	if err := rwutil.WriteUint16(w, uint16(m.partialSig.Partial.I)); err != nil { // TODO: Resolve it from the context, instead of marshaling.
-		return nil, fmt.Errorf("cannot marshal partialSig.Partial.I: %w", err)
-	}
-	if err := rwutil.WriteMarshaled(w, m.partialSig.Partial.V); err != nil {
-		return nil, fmt.Errorf("cannot marshal partialSig.Partial.V: %w", err)
-	}
-	if err := rwutil.WriteBytes(w, m.partialSig.SessionID); err != nil {
-		return nil, fmt.Errorf("cannot marshal m.partialSig.SessionID: %w", err)
-	}
-	if err := rwutil.WriteBytes(w, m.partialSig.Signature); err != nil {
-		return nil, fmt.Errorf("cannot marshal partialSig.Signature: %w", err)
-	}
-	return w.Bytes(), nil
+	rr.ReadMarshaled(msg.partialSig.Partial.V)
+	msg.partialSig.SessionID = rr.ReadBytes()
+	msg.partialSig.Signature = rr.ReadBytes()
+	return rr.Err
 }
 
-func (m *msgPartialSig) UnmarshalBinary(data []byte) error {
-	r := bytes.NewReader(data)
-	msgType, err := rwutil.ReadByte(r)
-	if err != nil {
-		return err
-	}
-	if msgType != msgTypePartialSig {
-		return fmt.Errorf("unexpected msgType=%v in dss.msgPartialSig", msgType)
-	}
-	var partialI uint16
-	if partialI, err = rwutil.ReadUint16(r); err != nil {
-		return err
-	}
-	partialV := m.suite.Scalar()
-	if err2 := rwutil.ReadMarshaled(r, partialV); err2 != nil {
-		return fmt.Errorf("cannot unmarshal partialSig.V: %w", err2)
-	}
-	m.partialSig = &dss.PartialSig{
-		Partial: &share.PriShare{I: int(partialI), V: partialV},
-	}
-	m.partialSig.SessionID, err = rwutil.ReadBytes(r)
-	if err != nil {
-		return err
-	}
-	m.partialSig.Signature, err = rwutil.ReadBytes(r)
-	if err != nil {
-		return err
-	}
-	return nil
+func (msg *msgPartialSig) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteKind(msgTypePartialSig)
+	ww.WriteUint16(uint16(msg.partialSig.Partial.I)) // TODO: Resolve it from the context, instead of marshaling.
+	ww.WriteMarshaled(msg.partialSig.Partial.V)
+	ww.WriteBytes(msg.partialSig.SessionID)
+	ww.WriteBytes(msg.partialSig.Signature)
+	return ww.Err
 }

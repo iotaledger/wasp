@@ -6,7 +6,6 @@ package rwutil
 import (
 	"bytes"
 	"encoding"
-	"errors"
 	"io"
 	"time"
 
@@ -21,6 +20,9 @@ type Writer struct {
 }
 
 func NewWriter(w io.Writer) *Writer {
+	if w == nil {
+		panic("nil io.Writer")
+	}
 	return &Writer{w: w}
 }
 
@@ -34,13 +36,16 @@ func (ww *Writer) Bytes() []byte {
 		panic("writer expects bytes buffer")
 	}
 	if ww.Err != nil {
-		// writing to bytes buffer should never have failed
+		// writing to bytes buffer never fails
 		panic(ww.Err)
 	}
 	return buf.Bytes()
 }
 
 func (ww *Writer) Write(writer interface{ Write(w io.Writer) error }) *Writer {
+	if writer == nil {
+		panic("nil writer")
+	}
 	if ww.Err == nil {
 		ww.Err = writer.Write(ww.w)
 	}
@@ -54,9 +59,12 @@ func (ww *Writer) WriteN(val []byte) *Writer {
 	return ww
 }
 
-func (ww *Writer) WriteAddress(val iotago.Address) *Writer {
+func (ww *Writer) WriteAddress(a iotago.Address) *Writer {
+	if a == nil {
+		panic("nil address")
+	}
 	if ww.Err == nil {
-		buf, _ := val.Serialize(serializer.DeSeriModeNoValidation, nil)
+		buf, _ := a.Serialize(serializer.DeSeriModeNoValidation, nil)
 		ww.WriteN(buf)
 	}
 	return ww
@@ -123,12 +131,15 @@ func (ww *Writer) WriteInt64(val int64) *Writer {
 	return ww
 }
 
+func (ww *Writer) WriteKind(msgType Kind) *Writer {
+	return ww.WriteByte(byte(msgType))
+}
+
 func (ww *Writer) WriteMarshaled(m encoding.BinaryMarshaler) *Writer {
+	if m == nil {
+		panic("nil marshaler")
+	}
 	if ww.Err == nil {
-		if m == nil {
-			ww.Err = errors.New("nil marshaler")
-			return ww
-		}
 		var buf []byte
 		buf, ww.Err = m.MarshalBinary()
 		ww.WriteBytes(buf)
@@ -141,11 +152,10 @@ type serializable interface {
 }
 
 func (ww *Writer) WriteSerialized(s serializable) *Writer {
+	if s == nil {
+		panic("nil deserializer")
+	}
 	if ww.Err == nil {
-		if s == nil {
-			ww.Err = errors.New("nil deserializer")
-			return ww
-		}
 		var buf []byte
 		buf, ww.Err = s.Serialize(serializer.DeSeriModeNoValidation, nil)
 		ww.WriteBytes(buf)
@@ -176,6 +186,9 @@ type marshalUtilWriter interface {
 }
 
 func (ww *Writer) WriteToMarshalUtil(m marshalUtilWriter) *Writer {
+	if m == nil {
+		panic("nil marshalUtilWriter")
+	}
 	if ww.Err == nil {
 		mu := marshalutil.New()
 		m.WriteToMarshalUtil(mu)

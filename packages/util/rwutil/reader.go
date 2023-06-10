@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
@@ -20,11 +21,19 @@ type Reader struct {
 }
 
 func NewReader(r io.Reader) *Reader {
+	if r == nil {
+		panic("nil io.Reader")
+	}
 	return &Reader{r: r}
 }
 
 func NewBytesReader(data []byte) *Reader {
 	return NewReader(bytes.NewBuffer(data))
+}
+
+func NewMuReader(mu *marshalutil.MarshalUtil) *Reader {
+	r := &MuReader{mu: mu}
+	return NewReader(r)
 }
 
 // PushBack returns a pushback writer that allows you to insert data before the stream.
@@ -37,6 +46,9 @@ func (rr *Reader) PushBack() *Writer {
 }
 
 func (rr *Reader) Read(reader interface{ Read(r io.Reader) error }) {
+	if reader == nil {
+		panic("nil reader")
+	}
 	if rr.Err == nil {
 		rr.Err = reader.Read(rr.r)
 	}
@@ -121,13 +133,23 @@ func (rr *Reader) ReadInt64() (ret int64) {
 	return ret
 }
 
+func (rr *Reader) ReadKind() Kind {
+	return Kind(rr.ReadByte())
+}
+
+func (rr *Reader) ReadKindAndVerify(expectedKind Kind) {
+	kind := rr.ReadKind()
+	if rr.Err == nil && kind != expectedKind {
+		rr.Err = errors.New("unexpected object kind")
+	}
+}
+
 func (rr *Reader) ReadMarshaled(m encoding.BinaryUnmarshaler) {
+	if m == nil {
+		panic("nil unmarshaler")
+	}
 	buf := rr.ReadBytes()
 	if rr.Err == nil {
-		if m == nil {
-			rr.Err = errors.New("nil unmarshaler")
-			return
-		}
 		rr.Err = m.UnmarshalBinary(buf)
 	}
 }
@@ -137,12 +159,11 @@ type deserializable interface {
 }
 
 func (rr *Reader) ReadSerialized(s deserializable) {
+	if s == nil {
+		panic("nil deserializer")
+	}
 	data := rr.ReadBytes()
 	if rr.Err == nil {
-		if s == nil {
-			rr.Err = errors.New("nil deserializer")
-			return
-		}
 		var n int
 		n, rr.Err = s.Deserialize(data, serializer.DeSeriModeNoValidation, nil)
 		if rr.Err == nil && n != len(data) {

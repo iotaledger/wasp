@@ -579,7 +579,7 @@ func (clu *Cluster) KillNodeProcess(nodeIndex int, gracefully bool) error {
 		return nil
 	}
 
-	if gracefully && runtime.GOOS != "windows" {
+	if gracefully && runtime.GOOS != util.WindowsOS {
 		if err := wcmd.cmd.Process.Signal(os.Interrupt); err != nil {
 			return err
 		}

@@ -4,8 +4,8 @@
 package cmt_log
 
 import (
-	"bytes"
 	"fmt"
+	"io"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -19,7 +19,7 @@ type msgNextLogIndex struct {
 	pleaseRepeat bool                   // If true, the receiver should resend its latest message back to the sender.
 }
 
-var _ gpa.Message = &msgNextLogIndex{}
+var _ gpa.Message = new(msgNextLogIndex)
 
 func newMsgNextLogIndex(recipient gpa.NodeID, nextLogIndex LogIndex, nextBaseAO *isc.AliasOutputWithID, pleaseRepeat bool) *msgNextLogIndex {
 	return &msgNextLogIndex{
@@ -32,63 +32,45 @@ func newMsgNextLogIndex(recipient gpa.NodeID, nextLogIndex LogIndex, nextBaseAO 
 
 // Make a copy for re-sending the message.
 // We set pleaseResend to false to avoid accidental loops.
-func (m *msgNextLogIndex) AsResent() *msgNextLogIndex {
+func (msg *msgNextLogIndex) AsResent() *msgNextLogIndex {
 	return &msgNextLogIndex{
-		BasicMessage: gpa.NewBasicMessage(m.Recipient()),
-		nextLogIndex: m.nextLogIndex,
-		nextBaseAO:   m.nextBaseAO,
+		BasicMessage: gpa.NewBasicMessage(msg.Recipient()),
+		nextLogIndex: msg.nextLogIndex,
+		nextBaseAO:   msg.nextBaseAO,
 		pleaseRepeat: false,
 	}
 }
 
-func (m *msgNextLogIndex) String() string {
+func (msg *msgNextLogIndex) String() string {
 	return fmt.Sprintf(
 		"{msgNextLogIndex, sender=%v, nextLogIndex=%v, nextBaseAO=%v, pleaseRepeat=%v",
-		m.Sender().ShortString(), m.nextLogIndex, m.nextBaseAO, m.pleaseRepeat,
+		msg.Sender().ShortString(), msg.nextLogIndex, msg.nextBaseAO, msg.pleaseRepeat,
 	)
 }
 
-func (m *msgNextLogIndex) MarshalBinary() ([]byte, error) {
-	w := &bytes.Buffer{}
-	if err := rwutil.WriteByte(w, msgTypeNextLogIndex); err != nil {
-		return nil, fmt.Errorf("cannot marshal type=msgTypeNextLogIndex: %w", err)
-	}
-	if err := rwutil.WriteUint32(w, m.nextLogIndex.AsUint32()); err != nil {
-		return nil, fmt.Errorf("cannot marshal msgNextLogIndex.nextLogIndex: %w", err)
-	}
-	if err := rwutil.WriteBytes(w, m.nextBaseAO.Bytes()); err != nil {
-		return nil, fmt.Errorf("cannot marshal msgNextLogIndex.nextBaseAO: %w", err)
-	}
-	if err := rwutil.WriteBool(w, m.pleaseRepeat); err != nil {
-		return nil, fmt.Errorf("cannot marshal msgNextLogIndex.pleaseRepeat: %w", err)
-	}
-	return w.Bytes(), nil
+func (msg *msgNextLogIndex) MarshalBinary() ([]byte, error) {
+	return rwutil.MarshalBinary(msg)
 }
 
-func (m *msgNextLogIndex) UnmarshalBinary(data []byte) error {
-	r := bytes.NewReader(data)
-	msgType, err := rwutil.ReadByte(r)
-	if err != nil {
-		return err
-	}
-	if msgType != msgTypeNextLogIndex {
-		return fmt.Errorf("unexpected msgType=%v in cmtLog.msgNextLogIndex", msgType)
-	}
-	var nextLogIndex uint32
-	if nextLogIndex, err = rwutil.ReadUint32(r); err != nil {
-		return fmt.Errorf("cannot unmarshal msgNextLogIndex.nextLogIndex: %w", err)
-	}
-	m.nextLogIndex = LogIndex(nextLogIndex)
-	nextAOBin, err := rwutil.ReadBytes(r)
-	if err != nil {
-		return fmt.Errorf("cannot unmarshal msgNextLogIndex.nextBaseAO: %w", err)
-	}
-	m.nextBaseAO, err = isc.NewAliasOutputWithIDFromBytes(nextAOBin)
-	if err != nil {
-		return fmt.Errorf("cannot decode msgNextLogIndex.nextBaseAO: %w", err)
-	}
-	if m.pleaseRepeat, err = rwutil.ReadBool(r); err != nil {
-		return fmt.Errorf("cannot unmarshal msgNextLogIndex.pleaseRepeat: %w", err)
-	}
-	return nil
+func (msg *msgNextLogIndex) UnmarshalBinary(data []byte) error {
+	return rwutil.UnmarshalBinary(data, msg)
+}
+
+func (msg *msgNextLogIndex) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.ReadKindAndVerify(msgTypeNextLogIndex)
+	msg.nextLogIndex = LogIndex(rr.ReadUint32())
+	msg.nextBaseAO = new(isc.AliasOutputWithID)
+	rr.Read(msg.nextBaseAO)
+	msg.pleaseRepeat = rr.ReadBool()
+	return rr.Err
+}
+
+func (msg *msgNextLogIndex) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteKind(msgTypeNextLogIndex)
+	ww.WriteUint32(msg.nextLogIndex.AsUint32())
+	ww.Write(msg.nextBaseAO)
+	ww.WriteBool(msg.pleaseRepeat)
+	return ww.Err
 }

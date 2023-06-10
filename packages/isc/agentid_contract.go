@@ -1,36 +1,24 @@
 package isc
 
 import (
+	"errors"
 	"fmt"
+	"io"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // ContractAgentID is an AgentID formed by a ChainID and a contract Hname.
 type ContractAgentID struct {
 	chainID ChainID
-	h       Hname
+	hname   Hname
 }
 
 var _ AgentIDWithL1Address = &ContractAgentID{}
 
 func NewContractAgentID(chainID ChainID, hname Hname) *ContractAgentID {
-	return &ContractAgentID{chainID: chainID, h: hname}
-}
-
-func contractAgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
-	chainID, err := ChainIDFromMarshalUtil(mu)
-	if err != nil {
-		return nil, err
-	}
-
-	h, err := HnameFromMarshalUtil(mu)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewContractAgentID(chainID, h), nil
+	return &ContractAgentID{chainID: chainID, hname: hname}
 }
 
 func contractAgentIDFromString(hnamePart, addrPart string) (AgentID, error) {
@@ -55,23 +43,19 @@ func (a *ContractAgentID) ChainID() ChainID {
 }
 
 func (a *ContractAgentID) Hname() Hname {
-	return a.h
+	return a.hname
 }
 
-func (a *ContractAgentID) Kind() AgentIDKind {
+func (a *ContractAgentID) Kind() rwutil.Kind {
 	return AgentIDKindContract
 }
 
 func (a *ContractAgentID) Bytes() []byte {
-	mu := marshalutil.New()
-	mu.WriteByte(byte(a.Kind()))
-	mu.WriteBytes(a.chainID.Bytes())
-	mu.WriteBytes(a.h.Bytes())
-	return mu.Bytes()
+	return rwutil.WriterToBytes(a)
 }
 
 func (a *ContractAgentID) String() string {
-	return a.h.String() + "@" + a.chainID.String()
+	return a.hname.String() + "@" + a.chainID.String()
 }
 
 func (a *ContractAgentID) Equals(other AgentID) bool {
@@ -82,5 +66,24 @@ func (a *ContractAgentID) Equals(other AgentID) bool {
 		return false
 	}
 	o := other.(*ContractAgentID)
-	return o.chainID.Equals(a.chainID) && o.h == a.h
+	return o.chainID.Equals(a.chainID) && o.hname == a.hname
+}
+
+func (a *ContractAgentID) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	kind := rwutil.Kind(rr.ReadByte())
+	if rr.Err == nil && kind != a.Kind() {
+		return errors.New("invalid ContractAgentID kind")
+	}
+	rr.Read(&a.chainID)
+	rr.Read(&a.hname)
+	return rr.Err
+}
+
+func (a *ContractAgentID) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteUint8(uint8(a.Kind()))
+	ww.Write(&a.chainID)
+	ww.Write(&a.hname)
+	return ww.Err
 }

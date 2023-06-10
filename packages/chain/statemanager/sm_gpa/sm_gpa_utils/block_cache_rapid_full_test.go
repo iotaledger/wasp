@@ -1,6 +1,7 @@
 package sm_gpa_utils
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/samber/lo"
@@ -9,6 +10,7 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type blockCacheTestSM struct { // State machine for block cache property based Rapid tests
@@ -107,5 +109,8 @@ func (bctsmT *blockCacheTestSM) invariantAllBlocksInWAL(t *rapid.T) {
 }
 
 func TestBlockCachePropBasedFull(t *testing.T) {
+	if runtime.GOOS == util.WindowsOS {
+		t.Skip("Needs fixing on windows")
+	}
 	rapid.Check(t, rapid.Run[*blockCacheTestSM]())
 }

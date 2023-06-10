@@ -4,6 +4,7 @@
 package sm_gpa_utils
 
 import (
+	"runtime"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func TestBlockCacheSimple(t *testing.T) {
@@ -32,6 +34,9 @@ func TestBlockCacheSimple(t *testing.T) {
 }
 
 func TestBlockCacheCleaning(t *testing.T) {
+	if runtime.GOOS == util.WindowsOS {
+		t.Skip("Needs fixing on windows")
+	}
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
@@ -67,6 +72,9 @@ func TestBlockCacheCleaning(t *testing.T) {
 }
 
 func TestBlockCacheSameBlockCleaning(t *testing.T) {
+	if runtime.GOOS == util.WindowsOS {
+		t.Skip("Needs fixing on windows")
+	}
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 

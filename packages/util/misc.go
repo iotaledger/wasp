@@ -6,6 +6,8 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
+const WindowsOS = "windows"
+
 var (
 	Big0       = big.NewInt(0)
 	Big1       = big.NewInt(1)

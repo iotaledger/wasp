@@ -1,10 +1,11 @@
 package isc
 
 import (
-	"github.com/iotaledger/hive.go/serializer/v2"
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
+	"io"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // AddressAgentID is an AgentID backed by a non-alias address.
@@ -13,15 +14,6 @@ type AddressAgentID struct {
 }
 
 var _ AgentIDWithL1Address = &AddressAgentID{}
-
-func addressAgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
-	var addr iotago.Address
-	var err error
-	if addr, err = AddressFromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
-	return NewAgentID(addr), nil
-}
 
 func addressAgentIDFromString(s string) (AgentID, error) {
 	_, addr, err := iotago.ParseBech32(s)
@@ -35,19 +27,12 @@ func (a *AddressAgentID) Address() iotago.Address {
 	return a.a
 }
 
-func (a *AddressAgentID) Kind() AgentIDKind {
+func (a *AddressAgentID) Kind() rwutil.Kind {
 	return AgentIDKindAddress
 }
 
 func (a *AddressAgentID) Bytes() []byte {
-	mu := marshalutil.New()
-	mu.WriteByte(byte(a.Kind()))
-	addressBytes, err := a.a.Serialize(serializer.DeSeriModeNoValidation, nil)
-	if err != nil {
-		panic(err)
-	}
-	mu.WriteBytes(addressBytes)
-	return mu.Bytes()
+	return rwutil.WriterToBytes(a)
 }
 
 func (a *AddressAgentID) String() string {
@@ -61,6 +46,19 @@ func (a *AddressAgentID) Equals(other AgentID) bool {
 	if other.Kind() != a.Kind() {
 		return false
 	}
-	o := other.(*AddressAgentID)
-	return o.a.Equal(a.a)
+	return other.(*AddressAgentID).a.Equal(a.a)
+}
+
+func (a *AddressAgentID) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.ReadKindAndVerify(a.Kind())
+	a.a = rr.ReadAddress()
+	return rr.Err
+}
+
+func (a *AddressAgentID) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteUint8(uint8(a.Kind()))
+	ww.WriteAddress(a.a)
+	return ww.Err
 }

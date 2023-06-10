@@ -117,7 +117,7 @@ func (r *rbc) Message(msg gpa.Message) gpa.OutMessages {
 		if !r.checkMsgRecv(msgT) {
 			return nil
 		}
-		switch msgT.t {
+		switch msgT.brachaType {
 		case msgBrachaTypePropose:
 			return r.handlePropose(msgT)
 		case msgBrachaTypeEcho:
@@ -138,15 +138,15 @@ func (r *rbc) Message(msg gpa.Message) gpa.OutMessages {
 //	07:     if 𝑃(𝑀) then
 //	08:         send ⟨ECHO, 𝑀⟩ to all
 func (r *rbc) handlePropose(msg *msgBracha) gpa.OutMessages {
-	if msg.s != r.broadcaster {
+	if msg.Sender() != r.broadcaster {
 		// PROPOSE messages can only be sent by the broadcaster process.
 		// Ignore all the rest.
 		return nil
 	}
-	if !r.predicate(msg.v) {
+	if !r.predicate(msg.value) {
 		return nil
 	}
-	msgs := r.sendToAll(msgBrachaTypeEcho, msg.v)
+	msgs := r.sendToAll(msgBrachaTypeEcho, msg.value)
 	r.echoSent = true
 	return msgs
 }
@@ -165,7 +165,7 @@ func (r *rbc) handleEcho(msg *msgBracha) gpa.OutMessages {
 	// As there are only n distinct peers, every two Byzantine quorums overlap in at least one correct peer.
 	// |echoRecv| ≥ ⌈(n+f+1)/2⌉ ⟺ |echoRecv| > ⌊(n+f)/2⌋
 	if len(r.echoRecv[h]) > (r.n+r.f)/2 {
-		return r.maybeSendReady(msg.v)
+		return r.maybeSendReady(msg.value)
 	}
 	return nil
 }
@@ -185,24 +185,24 @@ func (r *rbc) handleReady(msg *msgBracha) gpa.OutMessages {
 	//
 	// Decide, if quorum is enough.
 	if count > 2*r.f && r.output == nil {
-		r.output = msg.v
+		r.output = msg.value
 	}
 	//
 	// Send the READY message, when a READY message was received from at least one honest peer.
 	// This amplification assures totality.
 	if count > r.f {
-		return r.maybeSendReady(msg.v)
+		return r.maybeSendReady(msg.value)
 	}
 	return nil
 }
 
 func (r *rbc) checkMsgRecv(msg *msgBracha) bool {
-	if msg.v == nil || len(msg.v) > r.maxMsgSize {
+	if msg.value == nil || len(msg.value) > r.maxMsgSize {
 		return false // Value not set, or is to big.
 	}
-	if mt, ok := r.msgRecv[msg.s]; ok {
-		if _, ok := mt[msg.t]; !ok {
-			mt[msg.t] = true
+	if mt, ok := r.msgRecv[msg.Sender()]; ok {
+		if _, ok := mt[msg.brachaType]; !ok {
+			mt[msg.brachaType] = true
 			return true // OK, that was the first such message.
 		}
 		return false // Was already received before, ignore it.
@@ -214,14 +214,14 @@ func (r *rbc) markEchoRecv(h hashing.HashValue, msg *msgBracha) {
 	if _, ok := r.echoRecv[h]; !ok {
 		r.echoRecv[h] = map[gpa.NodeID]bool{}
 	}
-	r.echoRecv[h][msg.s] = true
+	r.echoRecv[h][msg.Sender()] = true
 }
 
 func (r *rbc) markReadyRecv(h hashing.HashValue, msg *msgBracha) {
 	if _, ok := r.readyRecv[h]; !ok {
 		r.readyRecv[h] = map[gpa.NodeID]bool{}
 	}
-	r.readyRecv[h][msg.s] = true
+	r.readyRecv[h][msg.Sender()] = true
 }
 
 func (r *rbc) maybeSendReady(v []byte) gpa.OutMessages {
@@ -233,20 +233,20 @@ func (r *rbc) maybeSendReady(v []byte) gpa.OutMessages {
 	return msgs
 }
 
-func (r *rbc) sendToAll(t msgBrachaType, v []byte) gpa.OutMessages {
+func (r *rbc) sendToAll(brachaType msgBrachaType, value []byte) gpa.OutMessages {
 	msgs := make([]gpa.Message, len(r.peers))
 	for i := range r.peers {
 		msgs[i] = &msgBracha{
-			t: t,
-			r: r.peers[i],
-			v: v,
+			BasicMessage: gpa.NewBasicMessage(r.peers[i]),
+			brachaType:   brachaType,
+			value:        value,
 		}
 	}
 	return gpa.NoMessages().AddMany(msgs)
 }
 
 func (r *rbc) valueHash(msg *msgBracha) hashing.HashValue {
-	return hashing.HashData(msg.v)
+	return hashing.HashData(msg.value)
 }
 
 // Implements the GPA interface.

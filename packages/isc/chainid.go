@@ -4,13 +4,14 @@
 package isc
 
 import (
-	"errors"
 	"fmt"
+	"io"
 
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const ChainIDLength = iotago.AliasIDLength
@@ -32,13 +33,9 @@ func ChainIDFromAliasID(aliasID iotago.AliasID) ChainID {
 }
 
 // ChainIDFromBytes reconstructs a ChainID from its binary representation.
-func ChainIDFromBytes(data []byte) (ChainID, error) {
-	var chainID ChainID
-	if ChainIDLength != len(data) {
-		return ChainID{}, errors.New("cannot decode ChainID: wrong data length")
-	}
-	copy(chainID[:], data)
-	return chainID, nil
+func ChainIDFromBytes(data []byte) (ret ChainID, err error) {
+	_, err = rwutil.ReaderFromBytes(data, &ret)
+	return
 }
 
 func ChainIDFromString(bech32 string) (ChainID, error) {
@@ -53,12 +50,9 @@ func ChainIDFromString(bech32 string) (ChainID, error) {
 }
 
 // ChainIDFromMarshalUtil reads from Marshalutil
-func ChainIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (ChainID, error) {
-	bin, err := mu.ReadBytes(ChainIDLength)
-	if err != nil {
-		return ChainID{}, err
-	}
-	return ChainIDFromBytes(bin)
+func ChainIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (ret ChainID, err error) {
+	_, err = rwutil.ReaderFromMu(mu, &ret)
+	return
 }
 
 func ChainIDFromAddress(addr *iotago.AliasAddress) ChainID {
@@ -124,4 +118,12 @@ func (id ChainID) IsSameChain(agentID AgentID) bool {
 		return false
 	}
 	return id.Equals(contract.ChainID())
+}
+
+func (id *ChainID) Read(r io.Reader) error {
+	return rwutil.ReadN(r, id[:])
+}
+
+func (id *ChainID) Write(w io.Writer) error {
+	return rwutil.WriteN(w, id[:])
 }
