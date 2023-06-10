@@ -49,7 +49,7 @@ func (msg *msgVote) UnmarshalBinary(data []byte) error {
 
 func (msg *msgVote) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadMessageTypeAndVerify(msgTypeVote)
+	rr.ReadKindAndVerify(msgTypeVote)
 	msg.round = int(rr.ReadUint16())
 	msg.voteType = msgVoteType(rr.ReadByte())
 	msg.value = rr.ReadBool()
@@ -58,7 +58,7 @@ func (msg *msgVote) Read(r io.Reader) error {
 
 func (msg *msgVote) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteMessageType(msgTypeVote)
+	ww.WriteKind(msgTypeVote)
 	ww.WriteUint16(uint16(msg.round))
 	ww.WriteByte(byte(msg.voteType))
 	ww.WriteBool(msg.value)

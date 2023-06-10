@@ -14,6 +14,8 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 )
 
+type Kind byte
+
 //////////////////// basic size-checked read/write \\\\\\\\\\\\\\\\\\\\
 
 func ReadN(r io.Reader, data []byte) error {
@@ -437,7 +439,7 @@ func ReaderFromBytes[T interface{ Read(r io.Reader) error }](data []byte, object
 	return object, nil
 }
 
-// ReaderFromBytes is a wrapper that uses an object's Write() function to marshal
+// WriterToBytes is a wrapper that uses an object's Write() function to marshal
 // the object to data bytes. It's typically used to implement a one-line Bytes()
 // function for the object.
 func WriterToBytes(object interface{ Write(w io.Writer) error }) []byte {

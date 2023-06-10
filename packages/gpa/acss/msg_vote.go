@@ -35,14 +35,14 @@ func (msg *msgVote) UnmarshalBinary(data []byte) error {
 
 func (msg *msgVote) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadMessageTypeAndVerify(msgTypeVote)
+	rr.ReadKindAndVerify(msgTypeVote)
 	msg.kind = msgVoteKind(rr.ReadByte())
 	return rr.Err
 }
 
 func (msg *msgVote) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteMessageType(msgTypeVote)
+	ww.WriteKind(msgTypeVote)
 	ww.WriteByte(byte(msg.kind))
 	return ww.Err
 }

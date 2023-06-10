@@ -37,7 +37,7 @@ func (msg *msgShareRequest) UnmarshalBinary(data []byte) (err error) {
 
 func (msg *msgShareRequest) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadMessageTypeAndVerify(msgTypeShareRequest)
+	rr.ReadKindAndVerify(msgTypeShareRequest)
 	msg.ttl = rr.ReadByte()
 	msg.request = rwutil.ReadFromBytes(rr, isc.NewRequestFromBytes)
 	return rr.Err
@@ -45,7 +45,7 @@ func (msg *msgShareRequest) Read(r io.Reader) error {
 
 func (msg *msgShareRequest) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteMessageType(msgTypeShareRequest)
+	ww.WriteKind(msgTypeShareRequest)
 	ww.WriteByte(msg.ttl)
 	ww.WriteFromBytes(msg.request)
 	return ww.Err

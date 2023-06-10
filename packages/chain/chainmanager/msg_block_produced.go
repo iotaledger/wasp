@@ -49,7 +49,7 @@ func (msg *msgBlockProduced) UnmarshalBinary(data []byte) error {
 
 func (msg *msgBlockProduced) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadMessageTypeAndVerify(msgTypeBlockProduced)
+	rr.ReadKindAndVerify(msgTypeBlockProduced)
 	msg.tx = new(iotago.Transaction)
 	rr.ReadSerialized(msg.tx)
 	msg.block = rwutil.ReadFromBytes(rr, state.BlockFromBytes)
@@ -58,7 +58,7 @@ func (msg *msgBlockProduced) Read(r io.Reader) error {
 
 func (msg *msgBlockProduced) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteMessageType(msgTypeBlockProduced)
+	ww.WriteKind(msgTypeBlockProduced)
 	ww.WriteSerialized(msg.tx)
 	ww.WriteFromBytes(msg.block)
 	return ww.Err

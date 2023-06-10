@@ -87,6 +87,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
@@ -100,7 +101,7 @@ import (
 const (
 	subsystemRBC byte = iota
 
-	msgTypeImplicateRecover byte = iota
+	msgTypeImplicateRecover rwutil.Kind = iota
 	msgTypeVote
 	msgTypeWrapped
 	msgTypeRBCCEPayload
@@ -547,25 +548,10 @@ func (a *acssImpl) StatusString() string {
 }
 
 func (a *acssImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	if len(data) < 1 {
-		return nil, errors.New("data to short")
-	}
-	msgType := data[0]
-	switch msgType {
-	case msgTypeImplicateRecover:
-		m := &msgImplicateRecover{}
-		if err := m.UnmarshalBinary(data); err != nil {
-			return nil, err
-		}
-		return m, nil
-	case msgTypeVote:
-		m := &msgVote{}
-		if err := m.UnmarshalBinary(data); err != nil {
-			return nil, err
-		}
-		return m, nil
-	case msgTypeWrapped:
-		return a.msgWrapper.UnmarshalMessage(data)
-	}
-	return nil, fmt.Errorf("unexpected msgType: %v in acssImpl", msgType)
+	return gpa.UnmarshalMessage(data, gpa.Mapper{
+		msgTypeImplicateRecover: func() gpa.Message { return new(msgImplicateRecover) },
+		msgTypeVote:             func() gpa.Message { return new(msgVote) },
+	}, gpa.Fallback{
+		msgTypeWrapped: a.msgWrapper.UnmarshalMessage,
+	})
 }

@@ -137,20 +137,10 @@ func (smT *stateManagerGPA) StatusString() string {
 }
 
 func (smT *stateManagerGPA) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	if len(data) < 1 {
-		return nil, fmt.Errorf("error unmarshalling message: slice of length %d is too short", len(data))
-	}
-	var message gpa.Message
-	switch data[0] {
-	case sm_messages.MsgTypeBlockMessage:
-		message = sm_messages.NewEmptyBlockMessage()
-	case sm_messages.MsgTypeGetBlockMessage:
-		message = sm_messages.NewEmptyGetBlockMessage()
-	default:
-		return nil, fmt.Errorf("error unmarshalling message: message type %v unknown", data[0])
-	}
-	err := message.UnmarshalBinary(data)
-	return message, err
+	return gpa.UnmarshalMessage(data, gpa.Mapper{
+		sm_messages.MsgTypeBlockMessage:    func() gpa.Message { return sm_messages.NewEmptyBlockMessage() },
+		sm_messages.MsgTypeGetBlockMessage: func() gpa.Message { return sm_messages.NewEmptyGetBlockMessage() },
+	})
 }
 
 // -------------------------------------

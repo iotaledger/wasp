@@ -48,7 +48,7 @@ func (msg *msgCmtLog) UnmarshalBinary(data []byte) error {
 
 func (msg *msgCmtLog) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadMessageTypeAndVerify(msgTypeCmtLog)
+	rr.ReadKindAndVerify(msgTypeCmtLog)
 	rr.ReadN(msg.committeeAddr[:])
 	msg.wrapped = rwutil.ReadFromBytes(rr, cmt_log.UnmarshalMessage)
 	return rr.Err
@@ -56,7 +56,7 @@ func (msg *msgCmtLog) Read(r io.Reader) error {
 
 func (msg *msgCmtLog) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteMessageType(msgTypeCmtLog)
+	ww.WriteKind(msgTypeCmtLog)
 	ww.WriteN(msg.committeeAddr[:])
 	ww.WriteMarshaled(msg.wrapped)
 	return ww.Err

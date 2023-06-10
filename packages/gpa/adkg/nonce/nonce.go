@@ -35,6 +35,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
@@ -77,7 +78,7 @@ const (
 )
 
 const (
-	msgTypeWrapped byte = iota
+	msgTypeWrapped rwutil.Kind = iota
 )
 
 func New(

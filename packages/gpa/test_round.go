@@ -6,6 +6,7 @@ package gpa
 import (
 	"errors"
 	"fmt"
+	"io"
 )
 
 // A protocol for testing infrastructure.
@@ -25,7 +26,7 @@ func NewTestRound(nodeIDs []NodeID, me NodeID) GPA {
 func (tr *testRound) Input(input Input) OutMessages {
 	msgs := make([]Message, len(tr.nodeIDs))
 	for i := range msgs {
-		msgs[i] = &testRoundMsg{recipient: tr.nodeIDs[i]}
+		msgs[i] = &testRoundMsg{BasicMessage: NewBasicMessage(tr.nodeIDs[i])}
 	}
 	return NoMessages().AddMany(msgs)
 }
@@ -56,22 +57,23 @@ func (tr *testRound) UnmarshalMessage(data []byte) (Message, error) {
 }
 
 type testRoundMsg struct {
-	recipient NodeID
-	sender    NodeID
+	BasicMessage
 }
 
-func (m *testRoundMsg) Recipient() NodeID {
-	return m.recipient
-}
-
-func (m *testRoundMsg) SetSender(sender NodeID) {
-	m.sender = sender
-}
+var _ Message = new(testRoundMsg)
 
 func (m *testRoundMsg) MarshalBinary() ([]byte, error) {
 	panic(errors.New("should be not used"))
 }
 
 func (m *testRoundMsg) UnmarshalBinary(data []byte) error {
+	panic(errors.New("should be not used"))
+}
+
+func (m *testRoundMsg) Read(r io.Reader) error {
+	panic(errors.New("should be not used"))
+}
+
+func (m *testRoundMsg) Write(w io.Writer) error {
 	panic(errors.New("should be not used"))
 }

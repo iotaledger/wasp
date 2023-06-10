@@ -46,7 +46,7 @@ func (msg *msgImplicateRecover) UnmarshalBinary(data []byte) error {
 
 func (msg *msgImplicateRecover) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadMessageTypeAndVerify(msgTypeImplicateRecover)
+	rr.ReadKindAndVerify(msgTypeImplicateRecover)
 	msg.kind = msgImplicateKind(rr.ReadByte())
 	msg.i = int(rr.ReadUint16())
 	msg.data = rr.ReadBytes()
@@ -55,7 +55,7 @@ func (msg *msgImplicateRecover) Read(r io.Reader) error {
 
 func (msg *msgImplicateRecover) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteMessageType(msgTypeImplicateRecover)
+	ww.WriteKind(msgTypeImplicateRecover)
 	ww.WriteByte(byte(msg.kind))
 	ww.WriteUint16(uint16(msg.i))
 	ww.WriteBytes(msg.data)

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
@@ -28,6 +29,11 @@ func NewReader(r io.Reader) *Reader {
 
 func NewBytesReader(data []byte) *Reader {
 	return NewReader(bytes.NewBuffer(data))
+}
+
+func NewMuReader(mu *marshalutil.MarshalUtil) *Reader {
+	r := &MuReader{mu: mu}
+	return NewReader(r)
 }
 
 // PushBack returns a pushback writer that allows you to insert data before the stream.
@@ -127,6 +133,17 @@ func (rr *Reader) ReadInt64() (ret int64) {
 	return ret
 }
 
+func (rr *Reader) ReadKind() Kind {
+	return Kind(rr.ReadByte())
+}
+
+func (rr *Reader) ReadKindAndVerify(expectedKind Kind) {
+	kind := rr.ReadKind()
+	if rr.Err == nil && kind != expectedKind {
+		rr.Err = errors.New("unexpected object kind")
+	}
+}
+
 func (rr *Reader) ReadMarshaled(m encoding.BinaryUnmarshaler) {
 	if m == nil {
 		panic("nil unmarshaler")
@@ -134,13 +151,6 @@ func (rr *Reader) ReadMarshaled(m encoding.BinaryUnmarshaler) {
 	buf := rr.ReadBytes()
 	if rr.Err == nil {
 		rr.Err = m.UnmarshalBinary(buf)
-	}
-}
-
-func (rr *Reader) ReadMessageTypeAndVerify(expectedMsgType byte) {
-	msgType := rr.ReadByte()
-	if rr.Err == nil && msgType != expectedMsgType {
-		rr.Err = errors.New("unexpected message type")
 	}
 }
 

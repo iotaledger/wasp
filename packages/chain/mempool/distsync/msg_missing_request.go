@@ -35,14 +35,14 @@ func (msg *msgMissingRequest) UnmarshalBinary(data []byte) error {
 
 func (msg *msgMissingRequest) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadMessageTypeAndVerify(msgTypeMissingRequest)
+	rr.ReadKindAndVerify(msgTypeMissingRequest)
 	msg.requestRef = rwutil.ReadFromBytes(rr, isc.RequestRefFromBytes)
 	return rr.Err
 }
 
 func (msg *msgMissingRequest) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteMessageType(msgTypeMissingRequest)
+	ww.WriteKind(msgTypeMissingRequest)
 	ww.WriteFromBytes(msg.requestRef)
 	return ww.Err
 }

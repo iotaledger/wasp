@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	ackHandlerMsgTypeReset byte = iota
+	ackHandlerMsgTypeReset rwutil.Kind = iota
 	ackHandlerMsgTypeBatch
 )
 
@@ -105,25 +105,10 @@ func (a *ackHandler) StatusString() string {
 }
 
 func (a *ackHandler) UnmarshalMessage(data []byte) (Message, error) {
-	if len(data) < 1 {
-		return nil, fmt.Errorf("data to short: %v", data)
-	}
-	switch data[0] {
-	case ackHandlerMsgTypeReset:
-		msg := &ackHandlerReset{}
-		if err := msg.UnmarshalBinary(data); err != nil {
-			return nil, fmt.Errorf("cannot unmarshal ackHandlerReset: %w", err)
-		}
-		return msg, nil
-	case ackHandlerMsgTypeBatch:
-		msg := &ackHandlerBatch{nestedGPA: a.nested}
-		if err := msg.UnmarshalBinary(data); err != nil {
-			return nil, fmt.Errorf("cannot unmarshal ackHandlerBatch: %w", err)
-		}
-		return msg, nil
-	default:
-		return nil, fmt.Errorf("unexpected message type: %v", data[0])
-	}
+	return UnmarshalMessage(data, Mapper{
+		ackHandlerMsgTypeReset: func() Message { return &ackHandlerReset{} },
+		ackHandlerMsgTypeBatch: func() Message { return &ackHandlerBatch{nestedGPA: a.nested} },
+	})
 }
 
 func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) OutMessages {
@@ -328,7 +313,7 @@ func (msg *ackHandlerReset) UnmarshalBinary(data []byte) error {
 
 func (msg *ackHandlerReset) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadMessageTypeAndVerify(ackHandlerMsgTypeReset)
+	rr.ReadKindAndVerify(ackHandlerMsgTypeReset)
 	msg.response = rr.ReadBool()
 	msg.latestID = int(rr.ReadUint32())
 	return rr.Err
@@ -336,7 +321,7 @@ func (msg *ackHandlerReset) Read(r io.Reader) error {
 
 func (msg *ackHandlerReset) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteMessageType(ackHandlerMsgTypeReset)
+	ww.WriteKind(ackHandlerMsgTypeReset)
 	ww.WriteBool(msg.response)
 	ww.WriteUint32(uint32(msg.latestID))
 	return ww.Err
@@ -379,7 +364,7 @@ func (msg *ackHandlerBatch) UnmarshalBinary(data []byte) error {
 
 func (msg *ackHandlerBatch) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadMessageTypeAndVerify(ackHandlerMsgTypeBatch)
+	rr.ReadKindAndVerify(ackHandlerMsgTypeBatch)
 	msg.id = nil
 	hasID := rr.ReadBool()
 	if hasID {
@@ -407,7 +392,7 @@ func (msg *ackHandlerBatch) Read(r io.Reader) error {
 
 func (msg *ackHandlerBatch) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteMessageType(ackHandlerMsgTypeBatch)
+	ww.WriteKind(ackHandlerMsgTypeBatch)
 	ww.WriteBool(msg.id != nil)
 	if msg.id != nil {
 		ww.WriteUint32(uint32(*msg.id))

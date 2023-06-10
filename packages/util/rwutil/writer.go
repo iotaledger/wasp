@@ -131,6 +131,10 @@ func (ww *Writer) WriteInt64(val int64) *Writer {
 	return ww
 }
 
+func (ww *Writer) WriteKind(msgType Kind) *Writer {
+	return ww.WriteByte(byte(msgType))
+}
+
 func (ww *Writer) WriteMarshaled(m encoding.BinaryMarshaler) *Writer {
 	if m == nil {
 		panic("nil marshaler")
@@ -141,10 +145,6 @@ func (ww *Writer) WriteMarshaled(m encoding.BinaryMarshaler) *Writer {
 		ww.WriteBytes(buf)
 	}
 	return ww
-}
-
-func (ww *Writer) WriteMessageType(msgType byte) *Writer {
-	return ww.WriteByte(msgType)
 }
 
 type serializable interface {

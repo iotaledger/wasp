@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/bdn"
@@ -28,7 +29,7 @@ import (
 )
 
 const (
-	msgTypeSigShare = iota
+	msgTypeSigShare rwutil.Kind = iota
 )
 
 type ccImpl struct {
@@ -155,9 +156,7 @@ func (cc *ccImpl) StatusString() string {
 }
 
 func (cc *ccImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	msg := &msgSigShare{}
-	if err := msg.UnmarshalBinary(data); err != nil {
-		return nil, fmt.Errorf("cannot unmarshal msgSigShare: %w", err)
-	}
-	return msg, nil
+	return gpa.UnmarshalMessage(data, gpa.Mapper{
+		msgTypeSigShare: func() gpa.Message { return new(msgSigShare) },
+	})
 }

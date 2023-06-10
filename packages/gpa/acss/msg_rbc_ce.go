@@ -31,14 +31,14 @@ func (msg *msgRBCCEPayload) UnmarshalBinary(data []byte) error {
 
 func (msg *msgRBCCEPayload) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadMessageTypeAndVerify(msgTypeRBCCEPayload)
+	rr.ReadKindAndVerify(msgTypeRBCCEPayload)
 	msg.data = rr.ReadBytes()
 	return rr.Err
 }
 
 func (msg *msgRBCCEPayload) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteMessageType(msgTypeRBCCEPayload)
+	ww.WriteKind(msgTypeRBCCEPayload)
 	ww.WriteBytes(msg.data)
 	return ww.Err
 }

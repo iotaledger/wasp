@@ -38,14 +38,14 @@ func (msg *msgBLSPartialSig) UnmarshalBinary(data []byte) error {
 
 func (msg *msgBLSPartialSig) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadMessageTypeAndVerify(msgTypeBLSShare)
+	rr.ReadKindAndVerify(msgTypeBLSShare)
 	msg.partialSig = rr.ReadBytes()
 	return rr.Err
 }
 
 func (msg *msgBLSPartialSig) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteMessageType(msgTypeBLSShare)
+	ww.WriteKind(msgTypeBLSShare)
 	ww.WriteBytes(msg.partialSig)
 	return ww.Err
 }

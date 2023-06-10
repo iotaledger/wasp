@@ -47,7 +47,7 @@ func (msg *msgAccess) UnmarshalBinary(data []byte) error {
 
 func (msg *msgAccess) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadMessageTypeAndVerify(msgTypeAccess)
+	rr.ReadKindAndVerify(msgTypeAccess)
 	msg.senderLClock = int(rr.ReadUint32())
 	msg.receiverLClock = int(rr.ReadUint32())
 
@@ -67,7 +67,7 @@ func (msg *msgAccess) Read(r io.Reader) error {
 
 func (msg *msgAccess) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteMessageType(msgTypeAccess)
+	ww.WriteKind(msgTypeAccess)
 	ww.WriteUint32(uint32(msg.senderLClock))
 	ww.WriteUint32(uint32(msg.receiverLClock))
 

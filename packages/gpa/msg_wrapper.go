@@ -12,11 +12,11 @@ import (
 // MsgWrapper can be used to compose an algorithm out of other abstractions.
 // These messages are meant to wrap and route the messages of the sub-algorithms.
 type MsgWrapper struct {
-	msgType       byte
+	msgType       rwutil.Kind
 	subsystemFunc func(subsystem byte, index int) (GPA, error) // Resolve a subsystem GPA based on its code and index.
 }
 
-func NewMsgWrapper(msgType byte, subsystemFunc func(subsystem byte, index int) (GPA, error)) *MsgWrapper {
+func NewMsgWrapper(msgType rwutil.Kind, subsystemFunc func(subsystem byte, index int) (GPA, error)) *MsgWrapper {
 	return &MsgWrapper{msgType, subsystemFunc}
 }
 
@@ -53,7 +53,7 @@ func (w *MsgWrapper) DelegateMessage(msg *WrappingMsg) (GPA, OutMessages, error)
 
 func (w *MsgWrapper) UnmarshalMessage(data []byte) (Message, error) {
 	rr := rwutil.NewBytesReader(data)
-	rr.ReadMessageTypeAndVerify(w.msgType)
+	rr.ReadKindAndVerify(w.msgType)
 	ret := &WrappingMsg{
 		msgType:   w.msgType,
 		subsystem: rr.ReadByte(),
@@ -77,7 +77,7 @@ func (w *MsgWrapper) UnmarshalMessage(data []byte) (Message, error) {
 
 // The message that contains another, and its routing info.
 type WrappingMsg struct {
-	msgType   byte
+	msgType   rwutil.Kind
 	subsystem byte
 	index     int
 	wrapped   Message
@@ -85,7 +85,7 @@ type WrappingMsg struct {
 
 var _ Message = new(WrappingMsg)
 
-func NewWrappingMsg(msgType, subsystem byte, index int, wrapped Message) *WrappingMsg {
+func NewWrappingMsg(msgType rwutil.Kind, subsystem byte, index int, wrapped Message) *WrappingMsg {
 	return &WrappingMsg{msgType: msgType, subsystem: subsystem, index: index, wrapped: wrapped}
 }
 
@@ -121,7 +121,7 @@ func (msg *WrappingMsg) UnmarshalBinary(data []byte) error {
 // note: never called, unfinished concept version
 func (msg *WrappingMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadMessageTypeAndVerify(msg.msgType)
+	rr.ReadKindAndVerify(msg.msgType)
 	msg.subsystem = rr.ReadByte()
 	msg.index = int(rr.ReadUint16())
 	// TODO: allocate proper message
@@ -131,7 +131,7 @@ func (msg *WrappingMsg) Read(r io.Reader) error {
 
 func (msg *WrappingMsg) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteMessageType(msg.msgType)
+	ww.WriteKind(msg.msgType)
 	ww.WriteByte(msg.subsystem)
 	ww.WriteUint16(uint16(msg.index))
 	ww.WriteMarshaled(msg.wrapped)
