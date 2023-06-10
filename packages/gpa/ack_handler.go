@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	ackHandlerMsgTypeReset rwutil.Kind = iota
-	ackHandlerMsgTypeBatch
+	msgTypeAckHandlerReset rwutil.Kind = iota
+	msgTypeAckHandlerBatch
 )
 
 // The purpose of this wrapper is to handle unreliable network by implementing
@@ -106,8 +106,8 @@ func (a *ackHandler) StatusString() string {
 
 func (a *ackHandler) UnmarshalMessage(data []byte) (Message, error) {
 	return UnmarshalMessage(data, Mapper{
-		ackHandlerMsgTypeReset: func() Message { return &ackHandlerReset{} },
-		ackHandlerMsgTypeBatch: func() Message { return &ackHandlerBatch{nestedGPA: a.nested} },
+		msgTypeAckHandlerReset: func() Message { return &ackHandlerReset{} },
+		msgTypeAckHandlerBatch: func() Message { return &ackHandlerBatch{nestedGPA: a.nested} },
 	})
 }
 
@@ -313,7 +313,7 @@ func (msg *ackHandlerReset) UnmarshalBinary(data []byte) error {
 
 func (msg *ackHandlerReset) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadKindAndVerify(ackHandlerMsgTypeReset)
+	rr.ReadKindAndVerify(msgTypeAckHandlerReset)
 	msg.response = rr.ReadBool()
 	msg.latestID = int(rr.ReadUint32())
 	return rr.Err
@@ -321,7 +321,7 @@ func (msg *ackHandlerReset) Read(r io.Reader) error {
 
 func (msg *ackHandlerReset) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteKind(ackHandlerMsgTypeReset)
+	ww.WriteKind(msgTypeAckHandlerReset)
 	ww.WriteBool(msg.response)
 	ww.WriteUint32(uint32(msg.latestID))
 	return ww.Err
@@ -364,7 +364,7 @@ func (msg *ackHandlerBatch) UnmarshalBinary(data []byte) error {
 
 func (msg *ackHandlerBatch) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadKindAndVerify(ackHandlerMsgTypeBatch)
+	rr.ReadKindAndVerify(msgTypeAckHandlerBatch)
 	msg.id = nil
 	hasID := rr.ReadBool()
 	if hasID {
@@ -392,7 +392,7 @@ func (msg *ackHandlerBatch) Read(r io.Reader) error {
 
 func (msg *ackHandlerBatch) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteKind(ackHandlerMsgTypeBatch)
+	ww.WriteKind(msgTypeAckHandlerBatch)
 	ww.WriteBool(msg.id != nil)
 	if msg.id != nil {
 		ww.WriteUint32(uint32(*msg.id))

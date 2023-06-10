@@ -87,7 +87,6 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
@@ -96,6 +95,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acss/crypto"
 	rbc "github.com/iotaledger/wasp/packages/gpa/rbc/bracha"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (

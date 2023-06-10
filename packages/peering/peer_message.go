@@ -10,7 +10,6 @@
 package peering
 
 import (
-	"bytes"
 	"sync"
 
 	"github.com/iotaledger/hive.go/lo"
@@ -35,26 +34,19 @@ type PeerMessageData struct {
 // newPeerMessageDataFromBytes creates a new PeerMessageData from bytes.
 // The function takes ownership over "data" and the caller should not use "data" after this call.
 //
-//nolint:gocritic
+
 func newPeerMessageDataFromBytes(data []byte) (*PeerMessageData, error) {
 	// create a copy of the slice for later usage of the raw data.
 	cpy := lo.CopySlice(data)
 
-	var err error
-	buf := bytes.NewBuffer(data)
-
+	rr := rwutil.NewBytesReader(data)
 	m := new(PeerMessageData)
-	if m.MsgReceiver, err = rwutil.ReadByte(buf); err != nil {
-		return nil, err
-	}
-	if m.MsgType, err = rwutil.ReadByte(buf); err != nil {
-		return nil, err
-	}
-	if err = m.PeeringID.Read(buf); err != nil {
-		return nil, err
-	}
-	if m.MsgData, err = rwutil.ReadBytes(buf); err != nil {
-		return nil, err
+	m.MsgReceiver = rr.ReadByte()
+	m.MsgType = rr.ReadByte()
+	rr.Read(&m.PeeringID)
+	m.MsgData = rr.ReadBytes()
+	if rr.Err != nil {
+		return nil, rr.Err
 	}
 
 	m.serializedOnce.Do(func() {
