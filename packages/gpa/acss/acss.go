@@ -95,16 +95,10 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acss/crypto"
 	rbc "github.com/iotaledger/wasp/packages/gpa/rbc/bracha"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
 	subsystemRBC byte = iota
-
-	msgTypeImplicateRecover rwutil.Kind = iota
-	msgTypeVote
-	msgTypeWrapped
-	msgTypeRBCCEPayload
 )
 
 type Output struct {
@@ -545,13 +539,4 @@ func (a *acssImpl) Output() gpa.Output {
 
 func (a *acssImpl) StatusString() string {
 	return fmt.Sprintf("{ACSS, output=%v, rbc=%v}", a.output, a.rbc.StatusString())
-}
-
-func (a *acssImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return gpa.UnmarshalMessage(data, gpa.Mapper{
-		msgTypeImplicateRecover: func() gpa.Message { return new(msgImplicateRecover) },
-		msgTypeVote:             func() gpa.Message { return new(msgVote) },
-	}, gpa.Fallback{
-		msgTypeWrapped: a.msgWrapper.UnmarshalMessage,
-	})
 }

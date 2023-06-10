@@ -25,11 +25,6 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
-)
-
-const (
-	msgTypeSigShare rwutil.Kind = iota
 )
 
 type ccImpl struct {
@@ -153,10 +148,4 @@ func (cc *ccImpl) Output() gpa.Output {
 
 func (cc *ccImpl) StatusString() string {
 	return fmt.Sprintf("{CC:blssig, threshold=%v, sigShares=%v/%v, output=%v}", cc.t, len(cc.sigShares), cc.n, cc.output)
-}
-
-func (cc *ccImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return gpa.UnmarshalMessage(data, gpa.Mapper{
-		msgTypeSigShare: func() gpa.Message { return new(msgSigShare) },
-	})
 }

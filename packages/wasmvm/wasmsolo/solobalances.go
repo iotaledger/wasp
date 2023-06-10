@@ -75,7 +75,7 @@ func (bal *SoloBalances) DumpBalances() {
 		}
 		id := acc.String()
 		txt += fmt.Sprintf("\n%-19s %s\n\tL2: %10d", bal.findName(id), id, l2.BaseTokens)
-		hname, _ := isc.HnameFromAgentID(acc)
+		hname := isc.HnameFromAgentID(acc)
 		if hname.IsNil() {
 			txt += fmt.Sprintf(",\tL1: %10d", l1.BaseTokens)
 		}
