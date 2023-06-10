@@ -40,7 +40,7 @@ func (msg *GetBlockMessage) UnmarshalBinary(data []byte) error {
 
 func (msg *GetBlockMessage) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadKindAndVerify(MsgTypeGetBlockMessage)
+	MsgTypeGetBlockMessage.ReadAndVerify(rr)
 	data := rr.ReadBytes()
 	if rr.Err == nil {
 		msg.commitment, rr.Err = state.L1CommitmentFromBytes(data)
@@ -50,7 +50,7 @@ func (msg *GetBlockMessage) Read(r io.Reader) error {
 
 func (msg *GetBlockMessage) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteKind(MsgTypeGetBlockMessage)
+	MsgTypeGetBlockMessage.Write(ww)
 	ww.WriteBytes(msg.commitment.Bytes())
 	return ww.Err
 }

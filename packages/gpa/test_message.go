@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-const msgTypeTest = 0xff
+const msgTypeTest MessageType = 0xff
 
 // Just a message for test cases.
 type TestMessage struct {
@@ -38,14 +38,14 @@ func (msg *TestMessage) UnmarshalBinary(data []byte) error {
 
 func (msg *TestMessage) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadKindAndVerify(msgTypeTest)
+	msgTypeTest.ReadAndVerify(rr)
 	msg.ID = int(rr.ReadUint32())
 	return rr.Err
 }
 
 func (msg *TestMessage) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteKind(msgTypeTest)
+	msgTypeTest.Write(ww)
 	ww.WriteUint32(uint32(msg.ID))
 	return ww.Err
 }

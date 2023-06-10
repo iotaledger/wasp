@@ -2,11 +2,10 @@ package acss
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
-	msgTypeImplicateRecover rwutil.Kind = iota
+	msgTypeImplicateRecover gpa.MessageType = iota
 	msgTypeVote
 	msgTypeWrapped
 	msgTypeRBCCEPayload

@@ -27,14 +27,14 @@ func (msg *msgSigShare) UnmarshalBinary(data []byte) error {
 
 func (msg *msgSigShare) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadKindAndVerify(msgTypeSigShare)
+	msgTypeSigShare.ReadAndVerify(rr)
 	msg.sigShare = rr.ReadBytes()
 	return rr.Err
 }
 
 func (msg *msgSigShare) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteKind(msgTypeSigShare)
+	msgTypeSigShare.Write(ww)
 	ww.WriteBytes(msg.sigShare)
 	return ww.Err
 }

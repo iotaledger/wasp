@@ -58,7 +58,7 @@ func (msg *msgNextLogIndex) UnmarshalBinary(data []byte) error {
 
 func (msg *msgNextLogIndex) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadKindAndVerify(msgTypeNextLogIndex)
+	msgTypeNextLogIndex.ReadAndVerify(rr)
 	msg.nextLogIndex = LogIndex(rr.ReadUint32())
 	msg.nextBaseAO = new(isc.AliasOutputWithID)
 	rr.Read(msg.nextBaseAO)
@@ -68,7 +68,7 @@ func (msg *msgNextLogIndex) Read(r io.Reader) error {
 
 func (msg *msgNextLogIndex) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteKind(msgTypeNextLogIndex)
+	msgTypeNextLogIndex.Write(ww)
 	ww.WriteUint32(msg.nextLogIndex.AsUint32())
 	ww.Write(msg.nextBaseAO)
 	ww.WriteBool(msg.pleaseRepeat)

@@ -5,11 +5,10 @@ package cons
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
-	msgTypeBLSShare rwutil.Kind = iota
+	msgTypeBLSShare gpa.MessageType = iota
 	msgTypeWrapped
 )
 

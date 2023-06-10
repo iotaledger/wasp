@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	msgTypeAckHandlerReset rwutil.Kind = iota
+	msgTypeAckHandlerReset MessageType = iota
 	msgTypeAckHandlerBatch
 )
 
@@ -313,7 +313,7 @@ func (msg *ackHandlerReset) UnmarshalBinary(data []byte) error {
 
 func (msg *ackHandlerReset) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadKindAndVerify(msgTypeAckHandlerReset)
+	msgTypeAckHandlerReset.ReadAndVerify(rr)
 	msg.response = rr.ReadBool()
 	msg.latestID = int(rr.ReadUint32())
 	return rr.Err
@@ -321,7 +321,7 @@ func (msg *ackHandlerReset) Read(r io.Reader) error {
 
 func (msg *ackHandlerReset) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteKind(msgTypeAckHandlerReset)
+	msgTypeAckHandlerReset.Write(ww)
 	ww.WriteBool(msg.response)
 	ww.WriteUint32(uint32(msg.latestID))
 	return ww.Err
@@ -364,7 +364,7 @@ func (msg *ackHandlerBatch) UnmarshalBinary(data []byte) error {
 
 func (msg *ackHandlerBatch) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadKindAndVerify(msgTypeAckHandlerBatch)
+	msgTypeAckHandlerBatch.ReadAndVerify(rr)
 	msg.id = nil
 	hasID := rr.ReadBool()
 	if hasID {
@@ -392,7 +392,7 @@ func (msg *ackHandlerBatch) Read(r io.Reader) error {
 
 func (msg *ackHandlerBatch) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteKind(msgTypeAckHandlerBatch)
+	msgTypeAckHandlerBatch.Write(ww)
 	ww.WriteBool(msg.id != nil)
 	if msg.id != nil {
 		ww.WriteUint32(uint32(*msg.id))

@@ -5,11 +5,10 @@ package distsync
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
-	msgTypeShareRequest rwutil.Kind = iota
+	msgTypeShareRequest gpa.MessageType = iota
 	msgTypeMissingRequest
 )
 

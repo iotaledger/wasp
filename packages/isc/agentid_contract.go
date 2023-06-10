@@ -1,7 +1,6 @@
 package isc
 
 import (
-	"errors"
 	"fmt"
 	"io"
 
@@ -38,24 +37,12 @@ func (a *ContractAgentID) Address() iotago.Address {
 	return a.chainID.AsAddress()
 }
 
-func (a *ContractAgentID) ChainID() ChainID {
-	return a.chainID
-}
-
-func (a *ContractAgentID) Hname() Hname {
-	return a.hname
-}
-
-func (a *ContractAgentID) Kind() rwutil.Kind {
-	return AgentIDKindContract
-}
-
 func (a *ContractAgentID) Bytes() []byte {
 	return rwutil.WriterToBytes(a)
 }
 
-func (a *ContractAgentID) String() string {
-	return a.hname.String() + "@" + a.chainID.String()
+func (a *ContractAgentID) ChainID() ChainID {
+	return a.chainID
 }
 
 func (a *ContractAgentID) Equals(other AgentID) bool {
@@ -69,12 +56,21 @@ func (a *ContractAgentID) Equals(other AgentID) bool {
 	return o.chainID.Equals(a.chainID) && o.hname == a.hname
 }
 
+func (a *ContractAgentID) Hname() Hname {
+	return a.hname
+}
+
+func (a *ContractAgentID) Kind() AgentIDKind {
+	return AgentIDKindContract
+}
+
+func (a *ContractAgentID) String() string {
+	return a.hname.String() + "@" + a.chainID.String()
+}
+
 func (a *ContractAgentID) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	kind := rwutil.Kind(rr.ReadByte())
-	if rr.Err == nil && kind != a.Kind() {
-		return errors.New("invalid ContractAgentID kind")
-	}
+	rr.ReadKindAndVerify(rwutil.Kind(a.Kind()))
 	rr.Read(&a.chainID)
 	rr.Read(&a.hname)
 	return rr.Err
@@ -82,7 +78,7 @@ func (a *ContractAgentID) Read(r io.Reader) error {
 
 func (a *ContractAgentID) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteUint8(uint8(a.Kind()))
+	ww.WriteKind(rwutil.Kind(a.Kind()))
 	ww.Write(&a.chainID)
 	ww.Write(&a.hname)
 	return ww.Err

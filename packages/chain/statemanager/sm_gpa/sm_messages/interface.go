@@ -1,8 +1,8 @@
 package sm_messages
 
-import "github.com/iotaledger/wasp/packages/util/rwutil"
+import "github.com/iotaledger/wasp/packages/gpa"
 
 const (
-	MsgTypeBlockMessage rwutil.Kind = iota
+	MsgTypeBlockMessage gpa.MessageType = iota
 	MsgTypeGetBlockMessage
 )

@@ -32,7 +32,7 @@ func (msg *msgPartialSig) UnmarshalBinary(data []byte) error {
 
 func (msg *msgPartialSig) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadKindAndVerify(msgTypePartialSig)
+	msgTypePartialSig.ReadAndVerify(rr)
 	msg.partialSig = &dss.PartialSig{
 		Partial: &share.PriShare{
 			I: int(rr.ReadUint16()),
@@ -47,7 +47,7 @@ func (msg *msgPartialSig) Read(r io.Reader) error {
 
 func (msg *msgPartialSig) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteKind(msgTypePartialSig)
+	msgTypePartialSig.Write(ww)
 	ww.WriteUint16(uint16(msg.partialSig.Partial.I)) // TODO: Resolve it from the context, instead of marshaling.
 	ww.WriteMarshaled(msg.partialSig.Partial.V)
 	ww.WriteBytes(msg.partialSig.SessionID)

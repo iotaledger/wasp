@@ -5,11 +5,10 @@ package am_dist
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
-	msgTypeAccess rwutil.Kind = iota
+	msgTypeAccess gpa.MessageType = iota
 )
 
 func (amd *accessMgrDist) UnmarshalMessage(data []byte) (gpa.Message, error) {

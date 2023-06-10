@@ -5,11 +5,10 @@ package cmt_log
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
-	msgTypeNextLogIndex rwutil.Kind = iota
+	msgTypeNextLogIndex gpa.MessageType = iota
 )
 
 func (cl *cmtLogImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {

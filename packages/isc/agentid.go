@@ -14,8 +14,10 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
+type AgentIDKind rwutil.Kind
+
 const (
-	AgentIDKindNil rwutil.Kind = iota
+	AgentIDKindNil AgentIDKind = iota
 	AgentIDKindAddress
 	AgentIDKindContract
 	AgentIDKindEthereumAddress
@@ -25,7 +27,7 @@ const (
 type AgentID interface {
 	Bytes() []byte
 	Equals(other AgentID) bool
-	Kind() rwutil.Kind
+	Kind() AgentIDKind
 	Read(r io.Reader) error
 	String() string
 	Write(w io.Writer) error
@@ -76,7 +78,7 @@ func AgentIDFromBytes(data []byte) (AgentID, error) {
 
 func agentIDFromReader(rr *rwutil.Reader) (ret AgentID) {
 	kind := rr.ReadKind()
-	switch kind {
+	switch AgentIDKind(kind) {
 	case AgentIDKindNil:
 		ret = new(NilAgentID)
 	case AgentIDKindAddress:
@@ -111,7 +113,7 @@ func NewAgentIDFromString(s string) (AgentID, error) {
 			addrPart = parts[1]
 			hnamePart = parts[0]
 		default:
-			return nil, errors.New("NewAgentIDFromString: wrong format")
+			return nil, errors.New("invalid AgentID format")
 		}
 	}
 
@@ -124,7 +126,7 @@ func NewAgentIDFromString(s string) (AgentID, error) {
 	if strings.HasPrefix(addrPart, "0x") {
 		return ethAgentIDFromString(s)
 	}
-	return nil, errors.New("NewAgentIDFromString: wrong format")
+	return nil, errors.New("invalid AgentID string")
 }
 
 // NewRandomAgentID creates random AgentID

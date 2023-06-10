@@ -7,11 +7,10 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
-	msgTypePartialSig rwutil.Kind = iota
+	msgTypePartialSig gpa.MessageType = iota
 	msgTypeWrapped
 )
 

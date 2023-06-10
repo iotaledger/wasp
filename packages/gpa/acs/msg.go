@@ -5,11 +5,10 @@ package acs
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
-	msgTypeWrapped rwutil.Kind = iota
+	msgTypeWrapped gpa.MessageType = iota
 )
 
 func (a *acsImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
