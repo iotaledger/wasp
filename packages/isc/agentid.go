@@ -68,15 +68,15 @@ func NewAgentID(addr iotago.Address) AgentID {
 
 func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
 	rr := rwutil.NewMuReader(mu)
-	return agentIDFromReader(rr), rr.Err
+	return AgentIDFromReader(rr), rr.Err
 }
 
 func AgentIDFromBytes(data []byte) (AgentID, error) {
 	rr := rwutil.NewBytesReader(data)
-	return agentIDFromReader(rr), rr.Err
+	return AgentIDFromReader(rr), rr.Err
 }
 
-func agentIDFromReader(rr *rwutil.Reader) (ret AgentID) {
+func AgentIDFromReader(rr *rwutil.Reader) (ret AgentID) {
 	kind := rr.ReadKind()
 	switch AgentIDKind(kind) {
 	case AgentIDKindNil:

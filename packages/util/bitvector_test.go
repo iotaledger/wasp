@@ -13,12 +13,12 @@ import (
 
 func TestFixedSizeBitVector(t *testing.T) {
 	bv := util.NewFixedSizeBitVector(10)
-	require.Equal(t, bv.AsInts(), []int{})
+	require.Equal(t, []int{}, bv.AsInts())
 	bv = bv.SetBits([]int{0, 3, 7, 8, 9})
-	require.Equal(t, bv.AsInts(), []int{0, 3, 7, 8, 9})
+	require.Equal(t, []int{0, 3, 7, 8, 9}, bv.AsInts())
 }
 
-func TestFixedSizeBitVectorMarshalUtil(t *testing.T) {
+func TestFixedSizeBitVectorMarshaling(t *testing.T) {
 	bv := util.NewFixedSizeBitVector(10).SetBits([]int{0, 3, 7, 8, 9})
 	serialized := bv.Bytes()
 	newBV, err := util.NewFixedSizeBitVectorFromBytes(serialized)
