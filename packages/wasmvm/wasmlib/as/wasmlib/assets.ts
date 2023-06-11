@@ -28,15 +28,15 @@ export class ScAssets {
 
         this.baseTokens = uint64Decode(dec);
 
-        let size = uint16Decode(dec);
-        for (let i: u16 = 0; i < size; i++) {
+        let size = dec.vluDecode(32);
+        for (let i: u64 = 0; i < size; i++) {
             const tokenID = tokenIDDecode(dec);
             const amount = bigIntDecode(dec);
             this.nativeTokens.set(ScDict.toKey(tokenID.id), amount);
         }
 
-        size = uint16Decode(dec);
-        for (let i: u16 = 0; i < size; i++) {
+        size = dec.vluDecode(32);
+        for (let i: u64 = 0; i < size; i++) {
             const nftID = nftIDDecode(dec);
             this.nftIDs.add(nftID);
         }
@@ -70,7 +70,7 @@ export class ScAssets {
         uint64Encode(enc, this.baseTokens);
 
         const tokenIDs = this.tokenIDs();
-        uint16Encode(enc, tokenIDs.length as u16);
+        enc.vluEncode(tokenIDs.length as u64);
         for (let i = 0; i < tokenIDs.length; i++) {
             const tokenID = tokenIDs[i];
             tokenIDEncode(enc, tokenID);
@@ -79,7 +79,7 @@ export class ScAssets {
             bigIntEncode(enc, amount);
         }
 
-        uint16Encode(enc, this.nftIDs.size as u16);
+        enc.vluEncode(this.nftIDs.size as u64);
         const arr = this.nftIDs.values();
         for (let i = 0; i < arr.length; i++) {
             const nftID = arr[i];

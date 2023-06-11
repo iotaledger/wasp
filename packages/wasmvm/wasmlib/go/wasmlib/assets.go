@@ -31,7 +31,7 @@ func NewScAssets(buf []byte) *ScAssets {
 
 	assets.BaseTokens = wasmtypes.Uint64Decode(dec)
 
-	size := wasmtypes.Uint16Decode(dec)
+	size := dec.VluDecode(32)
 	if size > 0 {
 		assets.NativeTokens = make(TokenAmounts, size)
 		for ; size > 0; size-- {
@@ -40,7 +40,7 @@ func NewScAssets(buf []byte) *ScAssets {
 		}
 	}
 
-	size = wasmtypes.Uint16Decode(dec)
+	size = dec.VluDecode(32)
 	if size > 0 {
 		assets.NftIDs = make(map[wasmtypes.ScNftID]bool)
 	}
@@ -69,13 +69,13 @@ func (a *ScAssets) Bytes() []byte {
 
 	wasmtypes.Uint64Encode(enc, a.BaseTokens)
 
-	wasmtypes.Uint16Encode(enc, uint16(len(a.NativeTokens)))
+	enc.VluEncode(uint64(len(a.NativeTokens)))
 	for _, tokenID := range a.TokenIDs() {
 		wasmtypes.TokenIDEncode(enc, *tokenID)
 		wasmtypes.BigIntEncode(enc, a.NativeTokens[*tokenID])
 	}
 
-	wasmtypes.Uint16Encode(enc, uint16(len(a.NftIDs)))
+	enc.VluEncode(uint64(len(a.NftIDs)))
 	for nftID := range a.NftIDs {
 		wasmtypes.NftIDEncode(enc, nftID)
 	}

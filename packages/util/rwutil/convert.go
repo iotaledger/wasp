@@ -443,9 +443,9 @@ func ReaderFromBytes[T interface{ Read(r io.Reader) error }](data []byte, object
 // the object to data bytes. It's typically used to implement a one-line Bytes()
 // function for the object.
 func WriterToBytes(object interface{ Write(w io.Writer) error }) []byte {
-	if object == nil {
-		panic("nil writer object")
-	}
+	//if object == nil {
+	//	panic("nil writer object")
+	//}
 	w := new(bytes.Buffer)
 	err := object.Write(w)
 	// should never happen when writing to bytes.Buffer

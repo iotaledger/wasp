@@ -368,27 +368,37 @@ func IsBaseToken(tokenID []byte) bool {
 	return bytes.Equal(tokenID, BaseTokenID)
 }
 
+const (
+	hasBaseTokens   = 0x01
+	hasNativeTokens = 0x02
+	hasNFTs         = 0x04
+)
+
 func (a *Assets) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	isEmpty := rr.ReadBool()
-	if isEmpty {
+	flags := rr.ReadByte()
+	if flags == 0x00 {
 		return rr.Err
 	}
-	a.BaseTokens = rr.ReadUint64()
-
-	size := rr.ReadSize()
-	a.NativeTokens = make(iotago.NativeTokens, size)
-	for i := range a.NativeTokens {
-		nativeToken := new(iotago.NativeToken)
-		a.NativeTokens[i] = nativeToken
-		rr.ReadN(nativeToken.ID[:])
-		nativeToken.Amount = rr.ReadUint256()
+	if (flags & hasBaseTokens) != 0 {
+		a.BaseTokens = rr.ReadUint64()
 	}
-
-	size = rr.ReadSize()
-	a.NFTs = make([]iotago.NFTID, size)
-	for i := range a.NFTs {
-		rr.ReadN(a.NFTs[i][:])
+	if (flags & hasNativeTokens) != 0 {
+		size := rr.ReadSize()
+		a.NativeTokens = make(iotago.NativeTokens, size)
+		for i := range a.NativeTokens {
+			nativeToken := new(iotago.NativeToken)
+			a.NativeTokens[i] = nativeToken
+			rr.ReadN(nativeToken.ID[:])
+			nativeToken.Amount = rr.ReadUint256()
+		}
+	}
+	if (flags & hasNFTs) != 0 {
+		size := rr.ReadSize()
+		a.NFTs = make([]iotago.NFTID, size)
+		for i := range a.NFTs {
+			rr.ReadN(a.NFTs[i][:])
+		}
 	}
 	return rr.Err
 }
@@ -396,19 +406,38 @@ func (a *Assets) Read(r io.Reader) error {
 func (a *Assets) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	isEmpty := a.IsEmpty()
-	ww.WriteBool(isEmpty)
 	if isEmpty {
+		ww.WriteByte(0x00)
 		return ww.Err
 	}
-	ww.WriteUint64(a.BaseTokens)
-	ww.WriteSize(len(a.NativeTokens))
-	for _, nativeToken := range a.NativeTokens {
-		ww.WriteN(nativeToken.ID[:])
-		ww.WriteUint256(nativeToken.Amount)
+
+	var flags byte
+	if a.BaseTokens != 0 {
+		flags |= hasBaseTokens
 	}
-	ww.WriteSize(len(a.NFTs))
-	for _, nft := range a.NFTs {
-		ww.WriteBytes(nft[:])
+	if len(a.NativeTokens) != 0 {
+		flags |= hasNativeTokens
+	}
+	if len(a.NFTs) != 0 {
+		flags |= hasNFTs
+	}
+
+	ww.WriteByte(flags)
+	if (flags & hasBaseTokens) != 0 {
+		ww.WriteUint64(a.BaseTokens)
+	}
+	if (flags & hasNativeTokens) != 0 {
+		ww.WriteSize(len(a.NativeTokens))
+		for _, nativeToken := range a.NativeTokens {
+			ww.WriteN(nativeToken.ID[:])
+			ww.WriteUint256(nativeToken.Amount)
+		}
+	}
+	if (flags & hasNFTs) != 0 {
+		ww.WriteSize(len(a.NFTs))
+		for _, nft := range a.NFTs {
+			ww.WriteN(nft[:])
+		}
 	}
 	return ww.Err
 }

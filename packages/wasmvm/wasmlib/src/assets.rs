@@ -27,14 +27,14 @@ impl ScAssets {
 
         assets.base_tokens = uint64_decode(&mut dec);
 
-        let size = uint16_decode(&mut dec);
+        let size = dec.vlu_decode(32);
         for _i in 0..size {
             let token_id = token_id_decode(&mut dec);
             let amount = big_int_decode(&mut dec);
             assets.native_tokens.insert(token_id.to_bytes(), amount);
         }
 
-        let size = uint16_decode(&mut dec);
+        let size = dec.vlu_decode(32);
         for _i in 0..size {
             let nft_id = nft_id_decode(&mut dec);
             assets.nft_ids.insert(nft_id);
@@ -78,13 +78,13 @@ impl ScAssets {
 
         uint64_encode(&mut enc, self.base_tokens);
 
-        uint16_encode(&mut enc, self.native_tokens.len() as u16);
+        enc.vlu_encode(self.native_tokens.len() as u64);
         for (token_id, amount) in self.native_tokens.iter() {
             token_id_encode(&mut enc, &token_id_from_bytes(token_id));
             big_int_encode(&mut enc, amount);
         }
 
-        uint16_encode(&mut enc, self.nft_ids.len() as u16);
+        enc.vlu_encode(self.nft_ids.len() as u64);
         for nft_id in self.nft_ids.iter() {
             nft_id_encode(&mut enc, &nft_id);
         }
