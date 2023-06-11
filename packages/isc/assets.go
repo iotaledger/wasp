@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"sort"
 
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -428,6 +429,9 @@ func (a *Assets) Write(w io.Writer) error {
 	}
 	if (flags & hasNativeTokens) != 0 {
 		ww.WriteSize(len(a.NativeTokens))
+		sort.Slice(a.NativeTokens, func(lhs, rhs int) bool {
+			return bytes.Compare(a.NativeTokens[lhs].ID[:], a.NativeTokens[rhs].ID[:]) < 0
+		})
 		for _, nativeToken := range a.NativeTokens {
 			ww.WriteN(nativeToken.ID[:])
 			ww.WriteUint256(nativeToken.Amount)
@@ -435,6 +439,9 @@ func (a *Assets) Write(w io.Writer) error {
 	}
 	if (flags & hasNFTs) != 0 {
 		ww.WriteSize(len(a.NFTs))
+		sort.Slice(a.NFTs, func(lhs, rhs int) bool {
+			return bytes.Compare(a.NFTs[lhs][:], a.NFTs[rhs][:]) < 0
+		})
 		for _, nft := range a.NFTs {
 			ww.WriteN(nft[:])
 		}
