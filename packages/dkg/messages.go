@@ -14,6 +14,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/isc"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
@@ -411,7 +412,7 @@ func (msg *initiatorPubShareMsg) SetStep(step byte) {
 func (msg *initiatorPubShareMsg) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteByte(msg.step)
-	ww.WriteAddress(msg.sharedAddress)
+	isc.AddressToWriter(ww, msg.sharedAddress)
 
 	ww.WriteMarshaled(msg.edSharedPublic)
 	ww.WriteMarshaled(msg.edPublicShare)
@@ -426,7 +427,7 @@ func (msg *initiatorPubShareMsg) Write(w io.Writer) error {
 func (msg *initiatorPubShareMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
-	msg.sharedAddress = rr.ReadAddress()
+	msg.sharedAddress = isc.AddressFromReader(rr)
 
 	msg.edSharedPublic = msg.edSuite.Point()
 	rr.ReadMarshaled(msg.edSharedPublic)

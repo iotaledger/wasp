@@ -11,7 +11,6 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
-	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 type Writer struct {
@@ -55,17 +54,6 @@ func (ww *Writer) Write(writer interface{ Write(w io.Writer) error }) *Writer {
 func (ww *Writer) WriteN(val []byte) *Writer {
 	if ww.Err == nil {
 		ww.Err = WriteN(ww.w, val)
-	}
-	return ww
-}
-
-func (ww *Writer) WriteAddress(a iotago.Address) *Writer {
-	if a == nil {
-		panic("nil address")
-	}
-	if ww.Err == nil {
-		buf, _ := a.Serialize(serializer.DeSeriModeNoValidation, nil)
-		ww.WriteN(buf)
 	}
 	return ww
 }

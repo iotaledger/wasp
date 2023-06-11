@@ -52,13 +52,13 @@ func (a *AddressAgentID) String() string {
 func (a *AddressAgentID) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	rr.ReadKindAndVerify(rwutil.Kind(a.Kind()))
-	a.a = rr.ReadAddress()
+	a.a = AddressFromReader(rr)
 	return rr.Err
 }
 
 func (a *AddressAgentID) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteKind(rwutil.Kind(a.Kind()))
-	ww.WriteAddress(a.a)
+	AddressToWriter(ww, a.a)
 	return ww.Err
 }

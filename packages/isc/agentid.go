@@ -66,13 +66,13 @@ func NewAgentID(addr iotago.Address) AgentID {
 	return &AddressAgentID{a: addr}
 }
 
-func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
-	rr := rwutil.NewMuReader(mu)
+func AgentIDFromBytes(data []byte) (AgentID, error) {
+	rr := rwutil.NewBytesReader(data)
 	return AgentIDFromReader(rr), rr.Err
 }
 
-func AgentIDFromBytes(data []byte) (AgentID, error) {
-	rr := rwutil.NewBytesReader(data)
+func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
+	rr := rwutil.NewMuReader(mu)
 	return AgentIDFromReader(rr), rr.Err
 }
 

@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/iotaledger/wasp/packages/isc"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/bdn"
@@ -247,7 +248,7 @@ func (s *dkShareImpl) Bytes() []byte {
 
 func (s *dkShareImpl) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteAddress(s.address.Address())
+	isc.AddressToWriter(ww, s.address.Address())
 
 	ww.WriteUint16(*s.index)
 	ww.WriteUint16(s.n)
@@ -287,7 +288,7 @@ func (s *dkShareImpl) Write(w io.Writer) error {
 
 func (s *dkShareImpl) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	address := rr.ReadAddress()
+	address := isc.AddressFromReader(rr)
 	if rr.Err == nil {
 		s.address = util.NewComparableAddress(address)
 	}

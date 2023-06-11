@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 func BytesFromAddress(address iotago.Address) []byte {
@@ -26,21 +27,31 @@ func AddressFromBytes(bytes []byte) (address iotago.Address, err error) {
 }
 
 func AddressFromMarshalUtil(mu *marshalutil.MarshalUtil) (iotago.Address, error) {
-	typeByte, err := mu.ReadByte()
-	if err != nil {
-		return nil, err
+	rr := rwutil.NewMuReader(mu)
+	return AddressFromReader(rr), rr.Err
+}
+
+func AddressFromReader(rr *rwutil.Reader) (ret iotago.Address) {
+	kind := rr.ReadKind()
+	if rr.Err == nil {
+		ret, rr.Err = iotago.AddressSelector(uint32(kind))
 	}
-	addr, err := iotago.AddressSelector(uint32(typeByte))
-	if err != nil {
-		return nil, err
+	rr.PushBack().WriteKind(kind)
+	data := make([]byte, ret.Size())
+	rr.ReadN(data)
+	if rr.Err != nil {
+		return ret
 	}
-	mu.ReadSeek(-1)
-	initialOffset := mu.ReadOffset()
-	remainingBytes := mu.ReadRemainingBytes()
-	length, err := addr.Deserialize(remainingBytes, serializer.DeSeriModeNoValidation, nil)
-	if err != nil {
-		return nil, err
+	_, rr.Err = ret.Deserialize(data, serializer.DeSeriModeNoValidation, nil)
+	return ret
+}
+
+func AddressToWriter(ww *rwutil.Writer, a iotago.Address) {
+	if a == nil {
+		panic("nil address")
 	}
-	mu.ReadSeek(initialOffset + length)
-	return addr, nil
+	if ww.Err == nil {
+		buf, _ := a.Serialize(serializer.DeSeriModeNoValidation, nil)
+		ww.WriteN(buf)
+	}
 }

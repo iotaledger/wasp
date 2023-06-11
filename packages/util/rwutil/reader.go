@@ -12,7 +12,6 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
-	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 type Reader struct {
@@ -58,25 +57,6 @@ func (rr *Reader) ReadN(ret []byte) {
 	if rr.Err == nil {
 		rr.Err = ReadN(rr.r, ret)
 	}
-}
-
-func (rr *Reader) ReadAddress() (ret iotago.Address) {
-	addrType := rr.ReadByte()
-	if rr.Err != nil {
-		return ret
-	}
-	ret, rr.Err = iotago.AddressSelector(uint32(addrType))
-	if rr.Err != nil {
-		return ret
-	}
-	buf := make([]byte, ret.Size())
-	buf[0] = addrType
-	rr.ReadN(buf[1:])
-	if rr.Err != nil {
-		return ret
-	}
-	_, rr.Err = ret.Deserialize(buf, serializer.DeSeriModeNoValidation, nil)
-	return ret
 }
 
 func (rr *Reader) ReadBool() (ret bool) {
