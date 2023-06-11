@@ -30,7 +30,7 @@ func ValueFromString(vtype, s string) []byte {
 		}
 		return isc.BytesFromAddress(addr)
 	case "agentid":
-		agentid, err := isc.NewAgentIDFromString(s)
+		agentid, err := isc.AgentIDFromString(s)
 		log.Check(err)
 		return agentid.Bytes()
 	case "bigint":

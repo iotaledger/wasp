@@ -63,7 +63,7 @@ func HnameFromAgentID(a AgentID) Hname {
 func NewAgentID(addr iotago.Address) AgentID {
 	if addr.Type() == iotago.AddressAlias {
 		chainID := ChainIDFromAddress(addr.(*iotago.AliasAddress))
-		return NewContractAgentID(chainID, 0)
+		return NewContractAgentID(chainID, HnameNil)
 	}
 	return &AddressAgentID{a: addr}
 }
@@ -110,8 +110,8 @@ func AgentIDToWriter(ww *rwutil.Writer, agent AgentID) {
 	ww.Write(agent)
 }
 
-// NewAgentIDFromString parses the human-readable string representation
-func NewAgentIDFromString(s string) (AgentID, error) {
+// AgentIDFromString parses the human-readable string representation
+func AgentIDFromString(s string) (AgentID, error) {
 	if s == nilAgentIDString {
 		return &NilAgentID{}, nil
 	}

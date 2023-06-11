@@ -21,11 +21,11 @@ const (
 	requestKindTagOffLedgerEVMCall
 )
 
-func NewRequestFromBytes(data []byte) (Request, error) {
-	return NewRequestFromMarshalUtil(marshalutil.New(data))
+func RequestFromBytes(data []byte) (Request, error) {
+	return RequestFromMarshalUtil(marshalutil.New(data))
 }
 
-func NewRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (Request, error) {
+func RequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (Request, error) {
 	kind, err := mu.ReadByte()
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func (s *offLedgerSignature) readFromMarshalUtil(mu *marshalutil.MarshalUtil) er
 	if err != nil {
 		return err
 	}
-	s.publicKey, err = cryptolib.NewPublicKeyFromBytes(publicKey)
+	s.publicKey, err = cryptolib.PublicKeyFromBytes(publicKey)
 	if err != nil {
 		return err
 	}

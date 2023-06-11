@@ -26,7 +26,7 @@ func NewOffLedgerService(chainService interfaces.ChainService, networkProvider p
 }
 
 func (c *OffLedgerService) ParseRequest(binaryRequest []byte) (isc.OffLedgerRequest, error) {
-	request, err := isc.NewRequestFromBytes(binaryRequest)
+	request, err := isc.RequestFromBytes(binaryRequest)
 	if err != nil {
 		return nil, errors.New("error parsing request from payload")
 	}

@@ -153,8 +153,8 @@ func NewScTransfer() *ScTransfer {
 }
 
 // create a new transfer object from a balances object
-func NewScTransferFromBalances(balances *ScBalances) *ScTransfer {
-	transfer := NewScTransferBaseTokens(balances.BaseTokens())
+func ScTransferFromBalances(balances *ScBalances) *ScTransfer {
+	transfer := ScTransferFromBaseTokens(balances.BaseTokens())
 	for _, tokenID := range balances.TokenIDs() {
 		transfer.Set(tokenID, balances.Balance(tokenID))
 	}
@@ -165,21 +165,21 @@ func NewScTransferFromBalances(balances *ScBalances) *ScTransfer {
 }
 
 // create a new transfer object and initialize it with the specified amount of base tokens
-func NewScTransferBaseTokens(amount uint64) *ScTransfer {
+func ScTransferFromBaseTokens(amount uint64) *ScTransfer {
 	transfer := NewScTransfer()
 	transfer.assets.BaseTokens = amount
 	return transfer
 }
 
 // create a new transfer object and initialize it with the specified NFT
-func NewScTransferNFT(nftID *wasmtypes.ScNftID) *ScTransfer {
+func ScTransferFromNFT(nftID *wasmtypes.ScNftID) *ScTransfer {
 	transfer := NewScTransfer()
 	transfer.AddNFT(nftID)
 	return transfer
 }
 
 // create a new transfer object and initialize it with the specified token transfer
-func NewScTransferTokens(tokenID *wasmtypes.ScTokenID, amount wasmtypes.ScBigInt) *ScTransfer {
+func ScTransferFromTokens(tokenID *wasmtypes.ScTokenID, amount wasmtypes.ScBigInt) *ScTransfer {
 	transfer := NewScTransfer()
 	transfer.Set(tokenID, amount)
 	return transfer

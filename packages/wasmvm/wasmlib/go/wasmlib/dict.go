@@ -31,7 +31,7 @@ func NewScDict() *ScDict {
 	return &ScDict{ScImmutableDict{dict: make(map[string][]byte)}}
 }
 
-func NewScDictFromBytes(buf []byte) *ScDict {
+func ScDictFromBytes(buf []byte) *ScDict {
 	if len(buf) == 0 {
 		return NewScDict()
 	}

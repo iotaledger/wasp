@@ -136,7 +136,7 @@ func (c *CommitteeService) getCandidateNodes(
 	nodes := make([]*dto.ChainNodeStatus, 0)
 
 	for _, node := range candidateNodes {
-		pubKey, err := cryptolib.NewPublicKeyFromBytes(node.NodePubKey)
+		pubKey, err := cryptolib.PublicKeyFromBytes(node.NodePubKey)
 		if err != nil {
 			return nil, err
 		}
@@ -154,7 +154,7 @@ func (c *CommitteeService) getCandidateNodes(
 func (c *CommitteeService) getCandidateNodesAccessNodeInfo(chainCandidateNodes []*governance.AccessNodeInfo) (map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo, error) {
 	candidateNodes := make(map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo)
 	for _, chainCandidateNode := range chainCandidateNodes {
-		pubKey, err := cryptolib.NewPublicKeyFromBytes(chainCandidateNode.NodePubKey)
+		pubKey, err := cryptolib.PublicKeyFromBytes(chainCandidateNode.NodePubKey)
 		if err != nil {
 			return nil, err
 		}

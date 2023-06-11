@@ -27,11 +27,11 @@ func NewFixedSizeBitVector(size uint16) BitVector {
 	return &fixBitVector{size: size, data: make([]byte, (size+7)/8)}
 }
 
-func NewFixedSizeBitVectorFromBytes(data []byte) (BitVector, error) {
+func FixedSizeBitVectorFromBytes(data []byte) (BitVector, error) {
 	return rwutil.ReaderFromBytes(data, new(fixBitVector))
 }
 
-func NewFixedSizeBitVectorFromMarshalUtil(mu *marshalutil.MarshalUtil) (BitVector, error) {
+func FixedSizeBitVectorFromMarshalUtil(mu *marshalutil.MarshalUtil) (BitVector, error) {
 	return rwutil.ReaderFromMu(mu, new(fixBitVector))
 }
 

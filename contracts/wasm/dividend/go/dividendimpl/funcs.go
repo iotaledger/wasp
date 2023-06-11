@@ -172,7 +172,7 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 		if share > 0 {
 			// Yes, so let's set up an ScTransfer proxy that transfers the
 			// calculated amount of tokens.
-			var transfer *wasmlib.ScTransfer = wasmlib.NewScTransferBaseTokens(share)
+			var transfer *wasmlib.ScTransfer = wasmlib.ScTransferFromBaseTokens(share)
 
 			// Perform the actual transfer of tokens from the caller allowance
 			// to the member account.

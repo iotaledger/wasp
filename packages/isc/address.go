@@ -9,7 +9,6 @@ import (
 
 const AddressIsNil rwutil.Kind = 0x80
 
-// AddressFromBytes unmarshals an Address from a sequence of bytes.
 func AddressFromBytes(data []byte) (iotago.Address, error) {
 	rr := rwutil.NewBytesReader(data)
 	return AddressFromReader(rr), rr.Err

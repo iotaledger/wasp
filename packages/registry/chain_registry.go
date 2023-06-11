@@ -123,7 +123,7 @@ func (r *ChainRecord) UnmarshalJSON(bytes []byte) error {
 
 	accessNodesPubKeys := make([]*cryptolib.PublicKey, len(j.AccessNodes))
 	for i, accessNodePubKeyHex := range j.AccessNodes {
-		accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePubKeyHex)
+		accessNodePubKey, err := cryptolib.PublicKeyFromString(accessNodePubKeyHex)
 		if err != nil {
 			return err
 		}

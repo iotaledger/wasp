@@ -90,7 +90,7 @@ func (tp *TrustedPeer) UnmarshalJSON(bytes []byte) error {
 		return err
 	}
 
-	nodePubKey, err := cryptolib.NewPublicKeyFromString(j.PubKey)
+	nodePubKey, err := cryptolib.PublicKeyFromString(j.PubKey)
 	if err != nil {
 		return err
 	}

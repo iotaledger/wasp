@@ -150,7 +150,7 @@ func (s *WasmContextSandbox) checkErr(err error) {
 }
 
 func (s *WasmContextSandbox) makeRequest(args []byte) isc.RequestParameters {
-	req := wasmrequests.NewPostRequestFromBytes(args)
+	req := wasmrequests.PostRequestFromBytes(args)
 	chainID := cvt.IscChainID(&req.ChainID)
 	contract := cvt.IscHname(req.Contract)
 	function := cvt.IscHname(req.Function)
@@ -236,7 +236,7 @@ func (s *WasmContextSandbox) fnBlockContext(_ []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnCall(args []byte) []byte {
-	req := wasmrequests.NewCallRequestFromBytes(args)
+	req := wasmrequests.CallRequestFromBytes(args)
 	contract := cvt.IscHname(req.Contract)
 	function := cvt.IscHname(req.Function)
 	params, err := dict.FromBytes(req.Params)
@@ -275,7 +275,7 @@ func (s *WasmContextSandbox) fnContract(_ []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnDeployContract(args []byte) []byte {
-	req := wasmrequests.NewDeployRequestFromBytes(args)
+	req := wasmrequests.DeployRequestFromBytes(args)
 	programHash, err := hashing.HashValueFromBytes(req.ProgHash.Bytes())
 	s.checkErr(err)
 	initParams, err := dict.FromBytes(req.Params)
@@ -368,7 +368,7 @@ func (s *WasmContextSandbox) fnResults(args []byte) []byte {
 
 // transfer tokens to address
 func (s *WasmContextSandbox) fnSend(args []byte) []byte {
-	req := wasmrequests.NewSendRequestFromBytes(args)
+	req := wasmrequests.SendRequestFromBytes(args)
 	address := cvt.IscAddress(&req.Address)
 	scAssets := wasmlib.NewScAssets(req.Transfer)
 	if !scAssets.IsEmpty() {
@@ -398,7 +398,7 @@ func (s *WasmContextSandbox) fnTrace(args []byte) []byte {
 
 // transfer tokens to address
 func (s *WasmContextSandbox) fnTransferAllowed(args []byte) []byte {
-	req := wasmrequests.NewTransferRequestFromBytes(args)
+	req := wasmrequests.TransferRequestFromBytes(args)
 	agentID := cvt.IscAgentID(&req.AgentID)
 	scAssets := wasmlib.NewScAssets(req.Transfer)
 	if !scAssets.IsEmpty() {

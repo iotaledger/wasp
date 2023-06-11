@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/bdn"
@@ -23,6 +22,7 @@ import (
 	"github.com/iotaledger/hive.go/crypto/bls"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/onchangemap"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -303,7 +303,7 @@ func (s *dkShareImpl) Read(r io.Reader) error {
 	for i := range s.nodePubKeys {
 		nodePubKeyBin := rr.ReadBytes()
 		if rr.Err == nil {
-			s.nodePubKeys[i], rr.Err = cryptolib.NewPublicKeyFromBytes(nodePubKeyBin)
+			s.nodePubKeys[i], rr.Err = cryptolib.PublicKeyFromBytes(nodePubKeyBin)
 		}
 	}
 
@@ -376,7 +376,7 @@ func (s *dkShareImpl) GetSharedPublic() *cryptolib.PublicKey {
 	if err != nil {
 		panic(fmt.Errorf("cannot convert kyber.Point to cryptolib.PublicKey, failed to serialize: %w", err))
 	}
-	pubKeyCL, err := cryptolib.NewPublicKeyFromBytes(pubKeyBytes)
+	pubKeyCL, err := cryptolib.PublicKeyFromBytes(pubKeyBytes)
 	if err != nil {
 		panic(fmt.Errorf("cannot convert kyber.Point to cryptolib.PublicKey, failed to deserialize: %w", err))
 	}
@@ -741,7 +741,7 @@ func (s *dkShareImpl) UnmarshalJSON(bytes []byte) error {
 
 	s.nodePubKeys = make([]*cryptolib.PublicKey, len(j.NodePubKeys))
 	for i, nodePubKeyHex := range j.NodePubKeys {
-		nodePubKey, err2 := cryptolib.NewPublicKeyFromString(nodePubKeyHex)
+		nodePubKey, err2 := cryptolib.PublicKeyFromString(nodePubKeyHex)
 		if err2 != nil {
 			return err2
 		}

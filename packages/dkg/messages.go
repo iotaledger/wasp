@@ -14,7 +14,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
@@ -22,6 +21,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -238,10 +238,10 @@ func (msg *initiatorInitMsg) Read(r io.Reader) error {
 	size := rr.ReadSize()
 	msg.peerPubs = make([]*cryptolib.PublicKey, size)
 	for i := range msg.peerPubs {
-		msg.peerPubs[i] = rwutil.ReadFromBytes(rr, cryptolib.NewPublicKeyFromBytes)
+		msg.peerPubs[i] = rwutil.ReadFromBytes(rr, cryptolib.PublicKeyFromBytes)
 	}
 
-	msg.initiatorPub = rwutil.ReadFromBytes(rr, cryptolib.NewPublicKeyFromBytes)
+	msg.initiatorPub = rwutil.ReadFromBytes(rr, cryptolib.PublicKeyFromBytes)
 	msg.threshold = rr.ReadUint16()
 	msg.timeout = rr.ReadDuration()
 	msg.roundRetry = rr.ReadDuration()

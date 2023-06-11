@@ -21,7 +21,7 @@ func TestFixedSizeBitVector(t *testing.T) {
 func TestFixedSizeBitVectorMarshaling(t *testing.T) {
 	bv := util.NewFixedSizeBitVector(10).SetBits([]int{0, 3, 7, 8, 9})
 	serialized := bv.Bytes()
-	newBV, err := util.NewFixedSizeBitVectorFromBytes(serialized)
+	newBV, err := util.FixedSizeBitVectorFromBytes(serialized)
 	require.NoError(t, err)
 	require.Equal(t, bv.AsInts(), newBV.AsInts())
 }

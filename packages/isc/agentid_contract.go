@@ -23,12 +23,12 @@ func NewContractAgentID(chainID ChainID, hname Hname) *ContractAgentID {
 func contractAgentIDFromString(hnamePart, addrPart string) (AgentID, error) {
 	chainID, err := ChainIDFromString(addrPart)
 	if err != nil {
-		return nil, fmt.Errorf("NewAgentIDFromString: %w", err)
+		return nil, fmt.Errorf("AgentIDFromString: %w", err)
 	}
 
 	h, err := HnameFromHexString(hnamePart)
 	if err != nil {
-		return nil, fmt.Errorf("NewAgentIDFromString: %w", err)
+		return nil, fmt.Errorf("AgentIDFromString: %w", err)
 	}
 	return NewContractAgentID(chainID, h), nil
 }

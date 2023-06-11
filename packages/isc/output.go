@@ -51,11 +51,11 @@ func NewAliasOutputWithID(aliasOutput *iotago.AliasOutput, outputID iotago.Outpu
 	}
 }
 
-func NewAliasOutputWithIDFromBytes(data []byte) (*AliasOutputWithID, error) {
+func AliasOutputWithIDFromBytes(data []byte) (*AliasOutputWithID, error) {
 	return rwutil.ReaderFromBytes(data, new(AliasOutputWithID))
 }
 
-func NewAliasOutputWithIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AliasOutputWithID, error) {
+func AliasOutputWithIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AliasOutputWithID, error) {
 	return rwutil.ReaderFromMu(mu, new(AliasOutputWithID))
 }
 

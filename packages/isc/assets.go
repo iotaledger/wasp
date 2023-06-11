@@ -375,6 +375,7 @@ func (a *Assets) Read(r io.Reader) error {
 		return rr.Err
 	}
 	a.BaseTokens = rr.ReadUint64()
+
 	size := rr.ReadSize()
 	a.NativeTokens = make(iotago.NativeTokens, size)
 	for i := range a.NativeTokens {
@@ -383,7 +384,9 @@ func (a *Assets) Read(r io.Reader) error {
 		rr.ReadN(nativeToken.ID[:])
 		nativeToken.Amount = rr.ReadUint256()
 	}
+
 	size = rr.ReadSize()
+	a.NFTs = make([]iotago.NFTID, size)
 	for i := range a.NFTs {
 		rr.ReadN(a.NFTs[i][:])
 	}

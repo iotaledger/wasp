@@ -78,9 +78,9 @@ type PeerMessageNet struct {
 
 var _ pipe.Hashable = &PeerMessageNet{}
 
-// NewPeerMessageNetFromBytes creates a new PeerMessageNet from bytes.
+// PeerMessageNetFromBytes creates a new PeerMessageNet from bytes.
 // The function takes ownership over "data" and the caller should not use "data" after this call.
-func NewPeerMessageNetFromBytes(data []byte) (*PeerMessageNet, error) {
+func PeerMessageNetFromBytes(data []byte) (*PeerMessageNet, error) {
 	peerMessageData, err := newPeerMessageDataFromBytes(data)
 	if err != nil {
 		return nil, err

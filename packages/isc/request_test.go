@@ -20,7 +20,7 @@ func TestSerializeRequestData(t *testing.T) {
 		req = NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337, 100).Sign(cryptolib.NewKeyPair())
 
 		serialized := req.Bytes()
-		req2, err2 := NewRequestFromBytes(serialized)
+		req2, err2 := RequestFromBytes(serialized)
 		require.NoError(t, err2)
 
 		reqBack := req2.(*offLedgerRequestData)
@@ -60,7 +60,7 @@ func TestSerializeRequestData(t *testing.T) {
 		require.NoError(t, err)
 
 		serialized := req.Bytes()
-		req2, err := NewRequestFromBytes(serialized)
+		req2, err := RequestFromBytes(serialized)
 		require.NoError(t, err)
 		chainID := ChainIDFromAddress(sender)
 		require.True(t, req2.SenderAccount().Equals(NewContractAgentID(chainID, requestMetadata.SenderContract)))

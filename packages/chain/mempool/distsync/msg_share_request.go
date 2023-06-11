@@ -39,7 +39,7 @@ func (msg *msgShareRequest) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeShareRequest.ReadAndVerify(rr)
 	msg.ttl = rr.ReadByte()
-	msg.request = rwutil.ReadFromBytes(rr, isc.NewRequestFromBytes)
+	msg.request = rwutil.ReadFromBytes(rr, isc.RequestFromBytes)
 	return rr.Err
 }
 
