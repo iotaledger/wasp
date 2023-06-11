@@ -1,29 +1,18 @@
 package isc
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-func BytesFromAddress(address iotago.Address) []byte {
-	addressInBytes, err := address.Serialize(serializer.DeSeriModeNoValidation, nil)
-	if err != nil {
-		return nil
-	}
-	return addressInBytes
-}
+const AddressIsNil rwutil.Kind = 0x80
 
 // AddressFromBytes unmarshals an Address from a sequence of bytes.
-func AddressFromBytes(bytes []byte) (address iotago.Address, err error) {
-	marshalUtil := marshalutil.New(bytes)
-	if address, err = AddressFromMarshalUtil(marshalUtil); err != nil {
-		err = fmt.Errorf("failed to parse Address from MarshalUtil: %w", err)
-	}
-	return
+func AddressFromBytes(data []byte) (iotago.Address, error) {
+	rr := rwutil.NewBytesReader(data)
+	return AddressFromReader(rr), rr.Err
 }
 
 func AddressFromMarshalUtil(mu *marshalutil.MarshalUtil) (iotago.Address, error) {
@@ -33,6 +22,9 @@ func AddressFromMarshalUtil(mu *marshalutil.MarshalUtil) (iotago.Address, error)
 
 func AddressFromReader(rr *rwutil.Reader) (ret iotago.Address) {
 	kind := rr.ReadKind()
+	if kind == AddressIsNil {
+		return nil
+	}
 	if rr.Err == nil {
 		ret, rr.Err = iotago.AddressSelector(uint32(kind))
 	}
@@ -46,12 +38,19 @@ func AddressFromReader(rr *rwutil.Reader) (ret iotago.Address) {
 	return ret
 }
 
-func AddressToWriter(ww *rwutil.Writer, a iotago.Address) {
-	if a == nil {
-		panic("nil address")
+func AddressToWriter(ww *rwutil.Writer, address iotago.Address) {
+	if address == nil {
+		ww.WriteKind(AddressIsNil)
+		return
 	}
 	if ww.Err == nil {
-		buf, _ := a.Serialize(serializer.DeSeriModeNoValidation, nil)
+		buf, _ := address.Serialize(serializer.DeSeriModeNoValidation, nil)
 		ww.WriteN(buf)
 	}
+}
+
+func BytesFromAddress(address iotago.Address) []byte {
+	ww := rwutil.NewBytesWriter()
+	AddressToWriter(ww, address)
+	return ww.Bytes()
 }

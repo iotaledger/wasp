@@ -355,19 +355,19 @@ func WriteMarshaled(w io.Writer, val encoding.BinaryMarshaler) error {
 }
 
 //////////////////// marshalutil \\\\\\\\\\\\\\\\\\\\
-
-func FromMarshalUtil[T any](rr *Reader, fromMu func(mu *marshalutil.MarshalUtil) (T, error)) (ret T) {
-	if rr.Err == nil {
-		buf, ok := rr.r.(*bytes.Buffer)
-		if !ok {
-			panic("reader expects bytes buffer")
-		}
-		mu := marshalutil.New(buf.Bytes())
-		ret, rr.Err = fromMu(mu)
-		rr.r = bytes.NewBuffer(mu.Bytes()[mu.ReadOffset():])
-	}
-	return ret
-}
+//
+//func FromMarshalUtil[T any](rr *Reader, fromMu func(mu *marshalutil.MarshalUtil) (T, error)) (ret T) {
+//	if rr.Err == nil {
+//		buf, ok := rr.r.(*bytes.Buffer)
+//		if !ok {
+//			panic("reader expects bytes buffer")
+//		}
+//		mu := marshalutil.New(buf.Bytes())
+//		ret, rr.Err = fromMu(mu)
+//		rr.r = bytes.NewBuffer(mu.Bytes()[mu.ReadOffset():])
+//	}
+//	return ret
+//}
 
 func ReaderFromMu[T interface{ Read(r io.Reader) error }](mu *marshalutil.MarshalUtil, object T) (T, error) {
 	//if object == nil {

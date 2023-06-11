@@ -6,7 +6,9 @@ package rwutil
 import (
 	"bytes"
 	"encoding"
+	"errors"
 	"io"
+	"math/big"
 	"time"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -39,6 +41,12 @@ func (ww *Writer) Bytes() []byte {
 		panic(ww.Err)
 	}
 	return buf.Bytes()
+}
+
+func (ww *Writer) Skip() *Reader {
+	skip := &Skipper{ww: ww, w: ww.w}
+	ww.w = skip
+	return &Reader{r: skip}
 }
 
 func (ww *Writer) Write(writer interface{ Write(w io.Writer) error }) *Writer {
@@ -211,4 +219,15 @@ func (ww *Writer) WriteUint64(val uint64) *Writer {
 		ww.Err = WriteUint64(ww.w, val)
 	}
 	return ww
+}
+
+func (ww *Writer) WriteUint256(val *big.Int) *Writer {
+	if val == nil {
+		panic("nil uint256")
+	}
+	if ww.Err == nil && val.Sign() < 0 {
+		ww.Err = errors.New("negative uint256")
+		return ww
+	}
+	return ww.WriteBytes(val.Bytes())
 }

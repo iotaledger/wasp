@@ -21,6 +21,8 @@ const (
 	AgentIDKindAddress
 	AgentIDKindContract
 	AgentIDKindEthereumAddress
+
+	AgentIDIsNil AgentIDKind = 0x80
 )
 
 // AgentID represents any entity that can hold assets on L2 and/or call contracts.
@@ -79,6 +81,8 @@ func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
 func AgentIDFromReader(rr *rwutil.Reader) (ret AgentID) {
 	kind := rr.ReadKind()
 	switch AgentIDKind(kind) {
+	case AgentIDIsNil:
+		return nil
 	case AgentIDKindNil:
 		ret = new(NilAgentID)
 	case AgentIDKindAddress:
@@ -96,6 +100,14 @@ func AgentIDFromReader(rr *rwutil.Reader) (ret AgentID) {
 	rr.PushBack().WriteKind(kind)
 	rr.Read(ret)
 	return ret
+}
+
+func AgentIDToWriter(ww *rwutil.Writer, agent AgentID) {
+	if agent == nil {
+		ww.WriteKind(rwutil.Kind(AgentIDIsNil))
+		return
+	}
+	ww.Write(agent)
 }
 
 // NewAgentIDFromString parses the human-readable string representation

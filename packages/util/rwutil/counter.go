@@ -15,10 +15,7 @@ type Counter struct {
 	ww    *Writer
 }
 
-var (
-	_ io.Reader = new(Counter)
-	_ io.Writer = new(Counter)
-)
+var _ io.ReadWriter = new(Counter)
 
 func NewReadCounter(rr *Reader) (ret *Counter) {
 	ret = &Counter{r: rr.r, rr: rr}

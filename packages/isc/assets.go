@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"math/big"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type Assets struct {
@@ -168,38 +169,18 @@ func (a *Assets) String() string {
 }
 
 func (a *Assets) Bytes() []byte {
-	mu := marshalutil.New()
-	a.WriteToMarshalUtil(mu)
-	return mu.Bytes()
+	return rwutil.WriterToBytes(a)
 }
 
-var NativeAssetsSerializationArrayRules = iotago.NativeTokenArrayRules()
-
 func (a *Assets) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	mu.WriteBool(a.IsEmpty())
-	if a.IsEmpty() {
-		return
-	}
-	mu.WriteUint64(a.BaseTokens)
-	tokenBytes, err := serializer.NewSerializer().WriteSliceOfObjects(&a.NativeTokens, serializer.DeSeriModePerformLexicalOrdering, nil, serializer.SeriLengthPrefixTypeAsUint16, &NativeAssetsSerializationArrayRules, func(err error) error {
-		return fmt.Errorf("unable to serialize alias output native tokens: %w", err)
-	}).Serialize()
-	if err != nil {
-		panic(fmt.Errorf("unexpected error serializing native tokens: %w", err))
-	}
-	mu.WriteUint16(uint16(len(tokenBytes)))
-	mu.WriteBytes(tokenBytes)
-	mu.WriteUint16(uint16(len(a.NFTs)))
-	for _, id := range a.NFTs {
-		mu.WriteBytes(id[:])
-	}
+	mu.WriteBytes(a.Bytes())
 }
 
 func MustAssetsFromBytes(b []byte) *Assets {
 	if len(b) == 0 {
 		return NewEmptyAssets()
 	}
-	ret, err := AssetsFromMarshalUtil(marshalutil.New(b))
+	ret, err := rwutil.ReaderFromBytes(b, NewEmptyAssets())
 	if err != nil {
 		panic(err)
 	}
@@ -207,47 +188,7 @@ func MustAssetsFromBytes(b []byte) *Assets {
 }
 
 func AssetsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Assets, error) {
-	ret := NewEmptyAssets()
-	empty, err := mu.ReadBool()
-	if err != nil {
-		return nil, err
-	}
-	if empty {
-		return ret, nil
-	}
-	if ret.BaseTokens, err = mu.ReadUint64(); err != nil {
-		return nil, err
-	}
-	tokenBytesLength, err := mu.ReadUint16()
-	if err != nil {
-		return nil, err
-	}
-	tokenBytes, err := mu.ReadBytes(int(tokenBytesLength))
-	if err != nil {
-		return nil, err
-	}
-	_, err = serializer.NewDeserializer(tokenBytes).
-		ReadSliceOfObjects(&ret.NativeTokens, serializer.DeSeriModePerformLexicalOrdering, nil, serializer.SeriLengthPrefixTypeAsUint16, serializer.TypeDenotationNone, &NativeAssetsSerializationArrayRules, func(err error) error {
-			return fmt.Errorf("unable to deserialize native tokens for alias output: %w", err)
-		}).Done()
-	if err != nil {
-		return nil, err
-	}
-	nNFTs, err := mu.ReadUint16()
-	if err != nil {
-		return nil, err
-	}
-	ret.NFTs = make([]iotago.NFTID, nNFTs)
-	for i := 0; i < int(nNFTs); i++ {
-		b, err := mu.ReadBytes(iotago.NFTIDLength)
-		if err != nil {
-			return nil, err
-		}
-		var id iotago.NFTID
-		copy(id[:], b)
-		ret.NFTs[i] = id
-	}
-	return ret, nil
+	return rwutil.ReaderFromMu(mu, NewEmptyAssets())
 }
 
 func (a *Assets) Equals(b *Assets) bool {
@@ -425,4 +366,46 @@ func nativeTokensFromSet(nativeTokenSet iotago.NativeTokensSet) iotago.NativeTok
 // IsBaseToken return whether a given tokenID represents the base token
 func IsBaseToken(tokenID []byte) bool {
 	return bytes.Equal(tokenID, BaseTokenID)
+}
+
+func (a *Assets) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	isEmpty := rr.ReadBool()
+	if isEmpty {
+		return rr.Err
+	}
+	a.BaseTokens = rr.ReadUint64()
+	size := rr.ReadSize()
+	a.NativeTokens = make(iotago.NativeTokens, size)
+	for i := range a.NativeTokens {
+		nativeToken := new(iotago.NativeToken)
+		a.NativeTokens[i] = nativeToken
+		rr.ReadN(nativeToken.ID[:])
+		nativeToken.Amount = rr.ReadUint256()
+	}
+	size = rr.ReadSize()
+	for i := range a.NFTs {
+		rr.ReadN(a.NFTs[i][:])
+	}
+	return rr.Err
+}
+
+func (a *Assets) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	isEmpty := a.IsEmpty()
+	ww.WriteBool(isEmpty)
+	if isEmpty {
+		return ww.Err
+	}
+	ww.WriteUint64(a.BaseTokens)
+	ww.WriteSize(len(a.NativeTokens))
+	for _, nativeToken := range a.NativeTokens {
+		ww.WriteN(nativeToken.ID[:])
+		ww.WriteUint256(nativeToken.Amount)
+	}
+	ww.WriteSize(len(a.NFTs))
+	for _, nft := range a.NFTs {
+		ww.WriteBytes(nft[:])
+	}
+	return ww.Err
 }
