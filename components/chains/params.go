@@ -28,7 +28,7 @@ type ParametersStateManager struct {
 	StateManagerGetBlockRetry         time.Duration `default:"3s" usage:"how often get block requests should be repeated"`
 	StateManagerRequestCleaningPeriod time.Duration `default:"1s" usage:"how often requests waiting for response should be checked for expired context"`
 	StateManagerTimerTickPeriod       time.Duration `default:"1s" usage:"how often timer tick fires in state manager"`
-	PruningMinStatesToKeep            int           `default:"10000" usage:"this number of states will always be available in the database"`
+	PruningMinStatesToKeep            int           `default:"10000" usage:"this number of states will always be available in the store; if 0 - store pruning is disabled"`
 	PruningMaxStatesToDelete          int           `default:"1000" usage:"on single store pruning attempt at most this number of states will be deleted"`
 }
 

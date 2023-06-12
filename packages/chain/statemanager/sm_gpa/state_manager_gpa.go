@@ -521,8 +521,14 @@ func (smT *stateManagerGPA) getWaitingCallbacksCount() int {
 func (smT *stateManagerGPA) commitStateDraft(stateDraft state.StateDraft) state.Block {
 	block := smT.store.Commit(stateDraft)
 	smT.metrics.IncBlocksCommitted()
-	smT.pruneStore(block.PreviousL1Commitment())
+	if smT.pruningNeeded() {
+		smT.pruneStore(block.PreviousL1Commitment())
+	}
 	return block
+}
+
+func (smT *stateManagerGPA) pruningNeeded() bool {
+	return smT.parameters.PruningMinStatesToKeep > 0
 }
 
 func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment) {
