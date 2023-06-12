@@ -91,7 +91,7 @@ func (s *L1Commitment) BlockHash() BlockHash {
 }
 
 func (s *L1Commitment) Equals(other *L1Commitment) bool {
-	return s.blockHash == other.blockHash && s.trieRoot == other.trieRoot
+	return s.blockHash.Equals(other.blockHash) && s.trieRoot.Equals(other.trieRoot)
 }
 
 func (s *L1Commitment) Bytes() []byte {
