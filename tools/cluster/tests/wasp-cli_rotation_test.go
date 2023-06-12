@@ -112,7 +112,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		}
 
 		// add node 0 from cluster 2 as an access node
-		pubKey, err := cryptolib.NewPublicKeyFromString(node0peerInfo.PublicKey)
+		pubKey, err := cryptolib.PublicKeyFromString(node0peerInfo.PublicKey)
 		require.NoError(t, err)
 
 		addAccessNode(w, pubKey.String())

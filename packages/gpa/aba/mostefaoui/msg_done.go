@@ -40,14 +40,14 @@ func (msg *msgDone) UnmarshalBinary(data []byte) error {
 
 func (msg *msgDone) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadKindAndVerify(msgTypeDone)
+	msgTypeDone.ReadAndVerify(rr)
 	msg.round = int(rr.ReadUint16())
 	return rr.Err
 }
 
 func (msg *msgDone) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteKind(msgTypeDone)
+	msgTypeDone.Write(ww)
 	ww.WriteUint16(uint16(msg.round))
 	return ww.Err
 }

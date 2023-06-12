@@ -22,7 +22,7 @@ type Receipt struct {
 }
 
 func (r Receipt) DeserializedRequest() Request {
-	req, err := NewRequestFromBytes(r.Request)
+	req, err := RequestFromBytes(r.Request)
 	if err != nil {
 		panic(err)
 	}

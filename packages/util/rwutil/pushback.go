@@ -17,16 +17,16 @@ type PushBack struct {
 
 var _ io.ReadWriter = new(PushBack)
 
-func (pb *PushBack) Read(data []byte) (int, error) {
-	nBuf, err := pb.buf.Read(data)
+func (push *PushBack) Read(data []byte) (int, error) {
+	nBuf, err := push.buf.Read(data)
 	if err != nil {
 		if !errors.Is(err, io.EOF) {
 			return nBuf, err
 		}
 
 		// exhausted buffer, switch back to normal stream and re-read
-		pb.rr.r = pb.r
-		return pb.r.Read(data)
+		push.rr.r = push.r
+		return push.r.Read(data)
 	}
 
 	// read was fulfilled from buffer?
@@ -35,8 +35,8 @@ func (pb *PushBack) Read(data []byte) (int, error) {
 	}
 
 	// partial read from buffer, switch back to normal stream and read rest
-	pb.rr.r = pb.r
-	nStream, err := pb.r.Read(data[nBuf:])
+	push.rr.r = push.r
+	nStream, err := push.r.Read(data[nBuf:])
 
 	if errors.Is(err, io.EOF) {
 		// exhausted stream, report partial amount from buffer
@@ -47,9 +47,9 @@ func (pb *PushBack) Read(data []byte) (int, error) {
 	return nBuf + nStream, err
 }
 
-func (pb *PushBack) Write(data []byte) (n int, err error) {
-	if pb.rr.r == pb.r {
+func (push *PushBack) Write(data []byte) (n int, err error) {
+	if push.rr.r == push.r {
 		return 0, errors.New("invalid pushback write")
 	}
-	return pb.buf.Write(data)
+	return push.buf.Write(data)
 }

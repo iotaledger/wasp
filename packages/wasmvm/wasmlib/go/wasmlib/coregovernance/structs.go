@@ -15,7 +15,7 @@ type PublicChainMetadata struct {
 	Website         string
 }
 
-func NewPublicChainMetadataFromBytes(buf []byte) *PublicChainMetadata {
+func PublicChainMetadataFromBytes(buf []byte) *PublicChainMetadata {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &PublicChainMetadata{}
 	data.Description     = wasmtypes.StringDecode(dec)
@@ -46,7 +46,7 @@ func (o ImmutablePublicChainMetadata) Exists() bool {
 }
 
 func (o ImmutablePublicChainMetadata) Value() *PublicChainMetadata {
-	return NewPublicChainMetadataFromBytes(o.Proxy.Get())
+	return PublicChainMetadataFromBytes(o.Proxy.Get())
 }
 
 type MutablePublicChainMetadata struct {
@@ -66,5 +66,5 @@ func (o MutablePublicChainMetadata) SetValue(value *PublicChainMetadata) {
 }
 
 func (o MutablePublicChainMetadata) Value() *PublicChainMetadata {
-	return NewPublicChainMetadataFromBytes(o.Proxy.Get())
+	return PublicChainMetadataFromBytes(o.Proxy.Get())
 }

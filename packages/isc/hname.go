@@ -4,7 +4,6 @@
 package isc
 
 import (
-	"encoding/binary"
 	"fmt"
 	"io"
 	"strconv"
@@ -31,17 +30,6 @@ var (
 // HnameNil is the value used to represent a non-existent Hname.
 const HnameNil = Hname(0)
 
-// HnameFromBytes constructor, unmarshalling
-func HnameFromMarshalUtil(mu *marshalutil.MarshalUtil) (ret Hname, err error) {
-	err = ret.ReadFromMarshalUtil(mu)
-	return
-}
-
-func HnameFromBytes(data []byte) (ret Hname, err error) {
-	_, err = rwutil.ReaderFromBytes(data, &ret)
-	return
-}
-
 // Hn calculates the hname for the given string.
 // For any given string s, it is guaranteed that Hn(s) != HnameNil.
 func Hn(name string) (ret Hname) {
@@ -56,20 +44,9 @@ func Hn(name string) (ret Hname) {
 	return 1
 }
 
-func (hn Hname) IsNil() bool {
-	return hn == HnameNil
-}
-
-func (hn Hname) Bytes() []byte {
-	return rwutil.WriterToBytes(&hn)
-}
-
-func (hn Hname) Clone() Hname {
-	return hn
-}
-
-func (hn Hname) String() string {
-	return fmt.Sprintf("%08x", int(hn))
+func HnameFromBytes(data []byte) (ret Hname, err error) {
+	_, err = rwutil.ReaderFromBytes(data, &ret)
+	return
 }
 
 func HnameFromHexString(s string) (Hname, error) {
@@ -80,17 +57,35 @@ func HnameFromHexString(s string) (Hname, error) {
 	return Hname(n), nil
 }
 
-func (hn *Hname) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	mu.Write(hn)
+// HnameFromBytes constructor, unmarshalling
+func HnameFromMarshalUtil(mu *marshalutil.MarshalUtil) (ret Hname, err error) {
+	_, err = rwutil.ReaderFromMu(mu, &ret)
+	return
 }
 
-func (hn *Hname) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
-	b, err := mu.ReadBytes(HnameLength)
-	if err != nil {
-		return err
-	}
-	*hn = Hname(binary.LittleEndian.Uint32(b))
-	return nil
+func (hn Hname) Bytes() []byte {
+	return rwutil.WriterToBytes(&hn)
+}
+
+func (hn Hname) Clone() Hname {
+	return hn
+}
+
+func (hn Hname) IsNil() bool {
+	return hn == HnameNil
+}
+
+func (hn Hname) String() string {
+	return fmt.Sprintf("%08x", int(hn))
+}
+
+func (hn *Hname) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) (err error) {
+	_, err = rwutil.ReaderFromMu(mu, hn)
+	return err
+}
+
+func (hn *Hname) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
+	mu.Write(hn)
 }
 
 func (hn *Hname) Write(w io.Writer) error {

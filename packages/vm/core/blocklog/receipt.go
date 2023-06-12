@@ -51,7 +51,7 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 	if ret.SDCharged, err = mu.ReadUint64(); err != nil {
 		return nil, fmt.Errorf("cannot read SDCharged: %w", err)
 	}
-	if ret.Request, err = isc.NewRequestFromMarshalUtil(mu); err != nil {
+	if ret.Request, err = isc.RequestFromMarshalUtil(mu); err != nil {
 		return nil, fmt.Errorf("cannot read Request: %w", err)
 	}
 

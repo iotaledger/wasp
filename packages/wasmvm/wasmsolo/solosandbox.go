@@ -76,7 +76,7 @@ func (s *SoloSandbox) Tracef(format string, args ...interface{}) {
 
 func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allowance, transfer *isc.Assets) []byte {
 	ctx := s.ctx
-	req := solo.NewCallParamsFromDict(contract, function, params)
+	req := solo.CallParamsFromDict(contract, function, params)
 	if allowance.IsEmpty() {
 		allowance = transfer
 	}

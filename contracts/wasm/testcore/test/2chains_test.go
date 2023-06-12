@@ -94,7 +94,7 @@ func Test2Chains(t *testing.T) {
 		//
 		// targetChain := f.Params.ChainID().Value()
 		// withdrawal := f.Params.BaseTokens().Value()
-		// transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
+		// transfer := wasmlib.ScTransferFromBalances(ctx.Allowance())
 		// ctx.TransferAllowed(ctx.AccountID(), transfer)
 		// const gasFee = wasmlib.MinGasFee
 		// const gasReserve = wasmlib.MinGasFee

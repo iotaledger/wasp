@@ -28,7 +28,7 @@ func NewNodeOwnershipCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress io
 	return nodeKeyPair.GetPrivateKey().Sign(w.Bytes())
 }
 
-func NewNodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate {
+func NodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate {
 	return data
 }
 
@@ -53,7 +53,7 @@ type AccessNodeInfo struct {
 	AccessAPI     string // API URL, if any.
 }
 
-func NewAccessNodeInfoFromBytes(pubKey, data []byte) (*AccessNodeInfo, error) {
+func AccessNodeInfoFromBytes(pubKey, data []byte) (*AccessNodeInfo, error) {
 	rr := rwutil.NewBytesReader(data)
 	return &AccessNodeInfo{
 		NodePubKey:    pubKey,
@@ -64,12 +64,12 @@ func NewAccessNodeInfoFromBytes(pubKey, data []byte) (*AccessNodeInfo, error) {
 	}, rr.Err
 }
 
-func NewAccessNodeInfoListFromMap(infoMap *collections.ImmutableMap) ([]*AccessNodeInfo, error) {
+func AccessNodeInfoListFromMap(infoMap *collections.ImmutableMap) ([]*AccessNodeInfo, error) {
 	res := make([]*AccessNodeInfo, 0)
 	var accErr error
 	infoMap.Iterate(func(elemKey, value []byte) bool {
 		var a *AccessNodeInfo
-		if a, accErr = NewAccessNodeInfoFromBytes(elemKey, value); accErr != nil {
+		if a, accErr = AccessNodeInfoFromBytes(elemKey, value); accErr != nil {
 			return false
 		}
 		res = append(res, a)
@@ -92,7 +92,7 @@ func (a *AccessNodeInfo) Bytes() []byte {
 
 var errSenderMustHaveL1Address = coreerrors.Register("sender must have L1 address").Create()
 
-func NewAccessNodeInfoFromAddCandidateNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
+func AccessNodeInfoFromAddCandidateNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
 	validatorAddr, _ := isc.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
 	if validatorAddr == nil {
 		panic(errSenderMustHaveL1Address)
@@ -117,7 +117,7 @@ func (a *AccessNodeInfo) ToAddCandidateNodeParams() dict.Dict {
 	return d
 }
 
-func NewAccessNodeInfoFromRevokeAccessNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
+func AccessNodeInfoFromRevokeAccessNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
 	validatorAddr, _ := isc.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
 	if validatorAddr == nil {
 		panic(errSenderMustHaveL1Address)
@@ -144,7 +144,7 @@ func (a *AccessNodeInfo) AddCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAdd
 }
 
 func (a *AccessNodeInfo) ValidateCertificate(ctx isc.Sandbox) bool {
-	nodePubKey, err := cryptolib.NewPublicKeyFromBytes(a.NodePubKey)
+	nodePubKey, err := cryptolib.PublicKeyFromBytes(a.NodePubKey)
 	if err != nil {
 		return false
 	}
@@ -152,7 +152,7 @@ func (a *AccessNodeInfo) ValidateCertificate(ctx isc.Sandbox) bool {
 	if err != nil {
 		return false
 	}
-	cert := NewNodeOwnershipCertificateFromBytes(a.Certificate)
+	cert := NodeOwnershipCertificateFromBytes(a.Certificate)
 	return cert.Verify(nodePubKey, validatorAddr)
 }
 
@@ -169,7 +169,7 @@ type GetChainNodesResponse struct {
 	AccessNodes          []*cryptolib.PublicKey // Public Keys of Access Nodes.
 }
 
-func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
+func GetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 	res := GetChainNodesResponse{
 		AccessNodeCandidates: make([]*AccessNodeInfo, 0),
 		AccessNodes:          make([]*cryptolib.PublicKey, 0),
@@ -177,7 +177,7 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 
 	ac := collections.NewMapReadOnly(d, ParamGetChainNodesAccessNodeCandidates)
 	ac.Iterate(func(pubKey, value []byte) bool {
-		ani, err := NewAccessNodeInfoFromBytes(pubKey, value)
+		ani, err := AccessNodeInfoFromBytes(pubKey, value)
 		if err != nil {
 			panic(fmt.Errorf("unable to decode access node info: %w", err))
 		}
@@ -187,7 +187,7 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 
 	an := collections.NewMapReadOnly(d, ParamGetChainNodesAccessNodes)
 	an.Iterate(func(pubKeyBin, value []byte) bool {
-		publicKey, err := cryptolib.NewPublicKeyFromBytes(pubKeyBin)
+		publicKey, err := cryptolib.PublicKeyFromBytes(pubKeyBin)
 		if err != nil {
 			panic(fmt.Errorf("unable to decode public key: %w", err))
 		}

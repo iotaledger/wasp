@@ -5,11 +5,10 @@ package chainmanager
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
-	msgTypeCmtLog rwutil.Kind = iota
+	msgTypeCmtLog gpa.MessageType = iota
 	msgTypeBlockProduced
 )
 

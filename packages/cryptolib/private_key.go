@@ -18,17 +18,17 @@ type PrivateKey struct {
 const PrivateKeySize = ed25519.PrivateKeySize
 
 func NewPrivateKey() *PrivateKey {
-	return NewPrivateKeyFromSeed(NewSeed())
+	return PrivateKeyFromSeed(NewSeed())
 }
 
-func NewPrivateKeyFromBytes(privateKeyBytes []byte) (*PrivateKey, error) {
+func PrivateKeyFromBytes(privateKeyBytes []byte) (*PrivateKey, error) {
 	if len(privateKeyBytes) < PrivateKeySize {
 		return nil, errors.New("bytes too short")
 	}
 	return &PrivateKey{privateKeyBytes}, nil
 }
 
-func NewPrivateKeyFromSeed(seed Seed) *PrivateKey {
+func PrivateKeyFromSeed(seed Seed) *PrivateKey {
 	var seedByte [SeedSize]byte = seed
 	return &PrivateKey{ed25519.NewKeyFromSeed(seedByte[:])}
 }
@@ -64,7 +64,7 @@ func (pkT *PrivateKey) AsKyberKeyPair() (*key.Pair, error) {
 }
 
 func (pkT *PrivateKey) Public() *PublicKey {
-	return newPublicKeyFromCrypto(pkT.key.Public().(ed25519.PublicKey))
+	return publicKeyFromCrypto(pkT.key.Public().(ed25519.PublicKey))
 }
 
 func (pkT *PrivateKey) Sign(message []byte) []byte {

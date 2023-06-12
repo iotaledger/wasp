@@ -115,12 +115,12 @@ func nodeIdentityRegistry() *registry.NodeIdentity {
 		Component.LogPanicf("unable to convert private key for peer identity: %s", err)
 	}
 
-	waspPrivKey, err := cryptolib.NewPrivateKeyFromBytes(privKeyBytes)
+	waspPrivKey, err := cryptolib.PrivateKeyFromBytes(privKeyBytes)
 	if err != nil {
 		Component.LogPanicf("unable to convert private key for peer identity: %s", err)
 	}
 
-	waspKeyPair := cryptolib.NewKeyPairFromPrivateKey(waspPrivKey)
+	waspKeyPair := cryptolib.KeyPairFromPrivateKey(waspPrivKey)
 	Component.LogInfof("this node identity: %v", waspKeyPair.GetPublicKey())
 	return registry.NewNodeIdentity(waspKeyPair)
 }

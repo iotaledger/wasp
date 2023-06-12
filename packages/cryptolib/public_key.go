@@ -19,7 +19,7 @@ type PublicKeyKey [PublicKeySize]byte
 
 const PublicKeySize = ed25519.PublicKeySize
 
-func newPublicKeyFromCrypto(cryptoPublicKey ed25519.PublicKey) *PublicKey {
+func publicKeyFromCrypto(cryptoPublicKey ed25519.PublicKey) *PublicKey {
 	return &PublicKey{cryptoPublicKey}
 }
 
@@ -29,15 +29,15 @@ func NewEmptyPublicKey() *PublicKey {
 	}
 }
 
-func NewPublicKeyFromString(s string) (publicKey *PublicKey, err error) {
+func PublicKeyFromString(s string) (publicKey *PublicKey, err error) {
 	bytes, err := iotago.DecodeHex(s)
 	if err != nil {
 		return publicKey, fmt.Errorf("failed to parse public key %s from hex string: %w", s, err)
 	}
-	return NewPublicKeyFromBytes(bytes)
+	return PublicKeyFromBytes(bytes)
 }
 
-func NewPublicKeyFromBytes(publicKeyBytes []byte) (*PublicKey, error) {
+func PublicKeyFromBytes(publicKeyBytes []byte) (*PublicKey, error) {
 	if len(publicKeyBytes) < PublicKeySize {
 		return nil, errors.New("bytes too short")
 	}

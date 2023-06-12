@@ -14,18 +14,22 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
+type AgentIDKind rwutil.Kind
+
 const (
-	AgentIDKindNil rwutil.Kind = iota
+	AgentIDKindNil AgentIDKind = iota
 	AgentIDKindAddress
 	AgentIDKindContract
 	AgentIDKindEthereumAddress
+
+	AgentIDIsNil AgentIDKind = 0x80
 )
 
 // AgentID represents any entity that can hold assets on L2 and/or call contracts.
 type AgentID interface {
 	Bytes() []byte
 	Equals(other AgentID) bool
-	Kind() rwutil.Kind
+	Kind() AgentIDKind
 	Read(r io.Reader) error
 	String() string
 	Write(w io.Writer) error
@@ -59,24 +63,26 @@ func HnameFromAgentID(a AgentID) Hname {
 func NewAgentID(addr iotago.Address) AgentID {
 	if addr.Type() == iotago.AddressAlias {
 		chainID := ChainIDFromAddress(addr.(*iotago.AliasAddress))
-		return NewContractAgentID(chainID, 0)
+		return NewContractAgentID(chainID, HnameNil)
 	}
 	return &AddressAgentID{a: addr}
 }
 
-func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
-	rr := rwutil.NewMuReader(mu)
-	return agentIDFromReader(rr), rr.Err
-}
-
 func AgentIDFromBytes(data []byte) (AgentID, error) {
 	rr := rwutil.NewBytesReader(data)
-	return agentIDFromReader(rr), rr.Err
+	return AgentIDFromReader(rr), rr.Err
 }
 
-func agentIDFromReader(rr *rwutil.Reader) (ret AgentID) {
+func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
+	rr := rwutil.NewMuReader(mu)
+	return AgentIDFromReader(rr), rr.Err
+}
+
+func AgentIDFromReader(rr *rwutil.Reader) (ret AgentID) {
 	kind := rr.ReadKind()
-	switch kind {
+	switch AgentIDKind(kind) {
+	case AgentIDIsNil:
+		return nil
 	case AgentIDKindNil:
 		ret = new(NilAgentID)
 	case AgentIDKindAddress:
@@ -96,8 +102,16 @@ func agentIDFromReader(rr *rwutil.Reader) (ret AgentID) {
 	return ret
 }
 
-// NewAgentIDFromString parses the human-readable string representation
-func NewAgentIDFromString(s string) (AgentID, error) {
+func AgentIDToWriter(ww *rwutil.Writer, agent AgentID) {
+	if agent == nil {
+		ww.WriteKind(rwutil.Kind(AgentIDIsNil))
+		return
+	}
+	ww.Write(agent)
+}
+
+// AgentIDFromString parses the human-readable string representation
+func AgentIDFromString(s string) (AgentID, error) {
 	if s == nilAgentIDString {
 		return &NilAgentID{}, nil
 	}
@@ -111,7 +125,7 @@ func NewAgentIDFromString(s string) (AgentID, error) {
 			addrPart = parts[1]
 			hnamePart = parts[0]
 		default:
-			return nil, errors.New("NewAgentIDFromString: wrong format")
+			return nil, errors.New("invalid AgentID format")
 		}
 	}
 
@@ -124,7 +138,7 @@ func NewAgentIDFromString(s string) (AgentID, error) {
 	if strings.HasPrefix(addrPart, "0x") {
 		return ethAgentIDFromString(s)
 	}
-	return nil, errors.New("NewAgentIDFromString: wrong format")
+	return nil, errors.New("invalid AgentID string")
 }
 
 // NewRandomAgentID creates random AgentID

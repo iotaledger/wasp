@@ -355,19 +355,19 @@ func WriteMarshaled(w io.Writer, val encoding.BinaryMarshaler) error {
 }
 
 //////////////////// marshalutil \\\\\\\\\\\\\\\\\\\\
-
-func FromMarshalUtil[T any](rr *Reader, fromMu func(mu *marshalutil.MarshalUtil) (T, error)) (ret T) {
-	if rr.Err == nil {
-		buf, ok := rr.r.(*bytes.Buffer)
-		if !ok {
-			panic("reader expects bytes buffer")
-		}
-		mu := marshalutil.New(buf.Bytes())
-		ret, rr.Err = fromMu(mu)
-		rr.r = bytes.NewBuffer(mu.Bytes()[mu.ReadOffset():])
-	}
-	return ret
-}
+//
+//func FromMarshalUtil[T any](rr *Reader, fromMu func(mu *marshalutil.MarshalUtil) (T, error)) (ret T) {
+//	if rr.Err == nil {
+//		buf, ok := rr.r.(*bytes.Buffer)
+//		if !ok {
+//			panic("reader expects bytes buffer")
+//		}
+//		mu := marshalutil.New(buf.Bytes())
+//		ret, rr.Err = fromMu(mu)
+//		rr.r = bytes.NewBuffer(mu.Bytes()[mu.ReadOffset():])
+//	}
+//	return ret
+//}
 
 func ReaderFromMu[T interface{ Read(r io.Reader) error }](mu *marshalutil.MarshalUtil, object T) (T, error) {
 	//if object == nil {
@@ -443,9 +443,9 @@ func ReaderFromBytes[T interface{ Read(r io.Reader) error }](data []byte, object
 // the object to data bytes. It's typically used to implement a one-line Bytes()
 // function for the object.
 func WriterToBytes(object interface{ Write(w io.Writer) error }) []byte {
-	if object == nil {
-		panic("nil writer object")
-	}
+	//if object == nil {
+	//	panic("nil writer object")
+	//}
 	w := new(bytes.Buffer)
 	err := object.Write(w)
 	// should never happen when writing to bytes.Buffer

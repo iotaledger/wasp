@@ -30,7 +30,7 @@ func (sa *StateAccess) GetMaintenanceStatus() bool {
 func (sa *StateAccess) GetAccessNodes() []*cryptolib.PublicKey {
 	accessNodes := []*cryptolib.PublicKey{}
 	AccessNodesMapR(sa.state).IterateKeys(func(pubKeyBytes []byte) bool {
-		pubKey, err := cryptolib.NewPublicKeyFromBytes(pubKeyBytes)
+		pubKey, err := cryptolib.PublicKeyFromBytes(pubKeyBytes)
 		if err != nil {
 			panic(err)
 		}
@@ -43,7 +43,7 @@ func (sa *StateAccess) GetAccessNodes() []*cryptolib.PublicKey {
 func (sa *StateAccess) GetCandidateNodes() []*AccessNodeInfo {
 	candidateNodes := []*AccessNodeInfo{}
 	AccessNodeCandidatesMapR(sa.state).Iterate(func(pubKeyBytes, accessNodeInfoBytes []byte) bool {
-		ani, err := NewAccessNodeInfoFromBytes(pubKeyBytes, accessNodeInfoBytes)
+		ani, err := AccessNodeInfoFromBytes(pubKeyBytes, accessNodeInfoBytes)
 		if err != nil {
 			panic(err)
 		}

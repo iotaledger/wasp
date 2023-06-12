@@ -474,7 +474,7 @@ func (c *consImpl) uponACSInputsReceived(baseAliasOutput *isc.AliasOutputWithID,
 	batchProposal := bp.NewBatchProposal(
 		*c.dkShare.GetIndex(),
 		baseAliasOutput,
-		util.NewFixedSizeBitVector(int(c.dkShare.GetN())).SetBits(dssIndexProposal),
+		util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
 		timeData,
 		isc.NewContractAgentID(c.chainID, 0),
 		requestRefs,

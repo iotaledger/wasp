@@ -31,7 +31,7 @@ func NewScAssets(buf []byte) *ScAssets {
 
 	assets.BaseTokens = wasmtypes.Uint64Decode(dec)
 
-	size := wasmtypes.Uint16Decode(dec)
+	size := dec.VluDecode(32)
 	if size > 0 {
 		assets.NativeTokens = make(TokenAmounts, size)
 		for ; size > 0; size-- {
@@ -40,7 +40,7 @@ func NewScAssets(buf []byte) *ScAssets {
 		}
 	}
 
-	size = wasmtypes.Uint16Decode(dec)
+	size = dec.VluDecode(32)
 	if size > 0 {
 		assets.NftIDs = make(map[wasmtypes.ScNftID]bool)
 	}
@@ -69,13 +69,13 @@ func (a *ScAssets) Bytes() []byte {
 
 	wasmtypes.Uint64Encode(enc, a.BaseTokens)
 
-	wasmtypes.Uint16Encode(enc, uint16(len(a.NativeTokens)))
+	enc.VluEncode(uint64(len(a.NativeTokens)))
 	for _, tokenID := range a.TokenIDs() {
 		wasmtypes.TokenIDEncode(enc, *tokenID)
 		wasmtypes.BigIntEncode(enc, a.NativeTokens[*tokenID])
 	}
 
-	wasmtypes.Uint16Encode(enc, uint16(len(a.NftIDs)))
+	enc.VluEncode(uint64(len(a.NftIDs)))
 	for nftID := range a.NftIDs {
 		wasmtypes.NftIDEncode(enc, nftID)
 	}
@@ -153,8 +153,8 @@ func NewScTransfer() *ScTransfer {
 }
 
 // create a new transfer object from a balances object
-func NewScTransferFromBalances(balances *ScBalances) *ScTransfer {
-	transfer := NewScTransferBaseTokens(balances.BaseTokens())
+func ScTransferFromBalances(balances *ScBalances) *ScTransfer {
+	transfer := ScTransferFromBaseTokens(balances.BaseTokens())
 	for _, tokenID := range balances.TokenIDs() {
 		transfer.Set(tokenID, balances.Balance(tokenID))
 	}
@@ -165,21 +165,21 @@ func NewScTransferFromBalances(balances *ScBalances) *ScTransfer {
 }
 
 // create a new transfer object and initialize it with the specified amount of base tokens
-func NewScTransferBaseTokens(amount uint64) *ScTransfer {
+func ScTransferFromBaseTokens(amount uint64) *ScTransfer {
 	transfer := NewScTransfer()
 	transfer.assets.BaseTokens = amount
 	return transfer
 }
 
 // create a new transfer object and initialize it with the specified NFT
-func NewScTransferNFT(nftID *wasmtypes.ScNftID) *ScTransfer {
+func ScTransferFromNFT(nftID *wasmtypes.ScNftID) *ScTransfer {
 	transfer := NewScTransfer()
 	transfer.AddNFT(nftID)
 	return transfer
 }
 
 // create a new transfer object and initialize it with the specified token transfer
-func NewScTransferTokens(tokenID *wasmtypes.ScTokenID, amount wasmtypes.ScBigInt) *ScTransfer {
+func ScTransferFromTokens(tokenID *wasmtypes.ScTokenID, amount wasmtypes.ScBigInt) *ScTransfer {
 	transfer := NewScTransfer()
 	transfer.Set(tokenID, amount)
 	return transfer

@@ -51,17 +51,17 @@ type CallParams struct {
 // With the WithTransfers the CallParams structure may be complemented with attached ftokens
 // sent together with the request
 func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
-	return NewCallParamsFromDict(scName, funName, parseParams(params))
+	return CallParamsFromDict(scName, funName, parseParams(params))
 }
 
-func NewCallParamsFromDict(scName, funName string, par dict.Dict) *CallParams {
-	ret := NewCallParamsFromDictByHname(isc.Hn(scName), isc.Hn(funName), par)
+func CallParamsFromDict(scName, funName string, par dict.Dict) *CallParams {
+	ret := CallParamsFromDictByHname(isc.Hn(scName), isc.Hn(funName), par)
 	ret.targetName = scName
 	ret.epName = funName
 	return ret
 }
 
-func NewCallParamsFromDictByHname(hContract, hFunction isc.Hname, par dict.Dict) *CallParams {
+func CallParamsFromDictByHname(hContract, hFunction isc.Hname, par dict.Dict) *CallParams {
 	ret := &CallParams{
 		target:     hContract,
 		entryPoint: hFunction,

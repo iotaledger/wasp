@@ -2,11 +2,10 @@ package blssig
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
-	msgTypeSigShare rwutil.Kind = iota
+	msgTypeSigShare gpa.MessageType = iota
 )
 
 func (cc *ccImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {

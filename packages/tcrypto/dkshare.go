@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/hive.go/crypto/bls"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/onchangemap"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -247,7 +248,7 @@ func (s *dkShareImpl) Bytes() []byte {
 
 func (s *dkShareImpl) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteAddress(s.address.Address())
+	isc.AddressToWriter(ww, s.address.Address())
 
 	ww.WriteUint16(*s.index)
 	ww.WriteUint16(s.n)
@@ -287,7 +288,7 @@ func (s *dkShareImpl) Write(w io.Writer) error {
 
 func (s *dkShareImpl) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	address := rr.ReadAddress()
+	address := isc.AddressFromReader(rr)
 	if rr.Err == nil {
 		s.address = util.NewComparableAddress(address)
 	}
@@ -302,7 +303,7 @@ func (s *dkShareImpl) Read(r io.Reader) error {
 	for i := range s.nodePubKeys {
 		nodePubKeyBin := rr.ReadBytes()
 		if rr.Err == nil {
-			s.nodePubKeys[i], rr.Err = cryptolib.NewPublicKeyFromBytes(nodePubKeyBin)
+			s.nodePubKeys[i], rr.Err = cryptolib.PublicKeyFromBytes(nodePubKeyBin)
 		}
 	}
 
@@ -375,7 +376,7 @@ func (s *dkShareImpl) GetSharedPublic() *cryptolib.PublicKey {
 	if err != nil {
 		panic(fmt.Errorf("cannot convert kyber.Point to cryptolib.PublicKey, failed to serialize: %w", err))
 	}
-	pubKeyCL, err := cryptolib.NewPublicKeyFromBytes(pubKeyBytes)
+	pubKeyCL, err := cryptolib.PublicKeyFromBytes(pubKeyBytes)
 	if err != nil {
 		panic(fmt.Errorf("cannot convert kyber.Point to cryptolib.PublicKey, failed to deserialize: %w", err))
 	}
@@ -740,7 +741,7 @@ func (s *dkShareImpl) UnmarshalJSON(bytes []byte) error {
 
 	s.nodePubKeys = make([]*cryptolib.PublicKey, len(j.NodePubKeys))
 	for i, nodePubKeyHex := range j.NodePubKeys {
-		nodePubKey, err2 := cryptolib.NewPublicKeyFromString(nodePubKeyHex)
+		nodePubKey, err2 := cryptolib.PublicKeyFromString(nodePubKeyHex)
 		if err2 != nil {
 			return err2
 		}

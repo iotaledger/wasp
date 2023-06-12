@@ -2,16 +2,19 @@ package isc
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"math/big"
+	"sort"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type Assets struct {
@@ -168,38 +171,18 @@ func (a *Assets) String() string {
 }
 
 func (a *Assets) Bytes() []byte {
-	mu := marshalutil.New()
-	a.WriteToMarshalUtil(mu)
-	return mu.Bytes()
+	return rwutil.WriterToBytes(a)
 }
 
-var NativeAssetsSerializationArrayRules = iotago.NativeTokenArrayRules()
-
 func (a *Assets) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	mu.WriteBool(a.IsEmpty())
-	if a.IsEmpty() {
-		return
-	}
-	mu.WriteUint64(a.BaseTokens)
-	tokenBytes, err := serializer.NewSerializer().WriteSliceOfObjects(&a.NativeTokens, serializer.DeSeriModePerformLexicalOrdering, nil, serializer.SeriLengthPrefixTypeAsUint16, &NativeAssetsSerializationArrayRules, func(err error) error {
-		return fmt.Errorf("unable to serialize alias output native tokens: %w", err)
-	}).Serialize()
-	if err != nil {
-		panic(fmt.Errorf("unexpected error serializing native tokens: %w", err))
-	}
-	mu.WriteUint16(uint16(len(tokenBytes)))
-	mu.WriteBytes(tokenBytes)
-	mu.WriteUint16(uint16(len(a.NFTs)))
-	for _, id := range a.NFTs {
-		mu.WriteBytes(id[:])
-	}
+	mu.WriteBytes(a.Bytes())
 }
 
 func MustAssetsFromBytes(b []byte) *Assets {
 	if len(b) == 0 {
 		return NewEmptyAssets()
 	}
-	ret, err := AssetsFromMarshalUtil(marshalutil.New(b))
+	ret, err := rwutil.ReaderFromBytes(b, NewEmptyAssets())
 	if err != nil {
 		panic(err)
 	}
@@ -207,47 +190,7 @@ func MustAssetsFromBytes(b []byte) *Assets {
 }
 
 func AssetsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Assets, error) {
-	ret := NewEmptyAssets()
-	empty, err := mu.ReadBool()
-	if err != nil {
-		return nil, err
-	}
-	if empty {
-		return ret, nil
-	}
-	if ret.BaseTokens, err = mu.ReadUint64(); err != nil {
-		return nil, err
-	}
-	tokenBytesLength, err := mu.ReadUint16()
-	if err != nil {
-		return nil, err
-	}
-	tokenBytes, err := mu.ReadBytes(int(tokenBytesLength))
-	if err != nil {
-		return nil, err
-	}
-	_, err = serializer.NewDeserializer(tokenBytes).
-		ReadSliceOfObjects(&ret.NativeTokens, serializer.DeSeriModePerformLexicalOrdering, nil, serializer.SeriLengthPrefixTypeAsUint16, serializer.TypeDenotationNone, &NativeAssetsSerializationArrayRules, func(err error) error {
-			return fmt.Errorf("unable to deserialize native tokens for alias output: %w", err)
-		}).Done()
-	if err != nil {
-		return nil, err
-	}
-	nNFTs, err := mu.ReadUint16()
-	if err != nil {
-		return nil, err
-	}
-	ret.NFTs = make([]iotago.NFTID, nNFTs)
-	for i := 0; i < int(nNFTs); i++ {
-		b, err := mu.ReadBytes(iotago.NFTIDLength)
-		if err != nil {
-			return nil, err
-		}
-		var id iotago.NFTID
-		copy(id[:], b)
-		ret.NFTs[i] = id
-	}
-	return ret, nil
+	return rwutil.ReaderFromMu(mu, NewEmptyAssets())
 }
 
 func (a *Assets) Equals(b *Assets) bool {
@@ -425,4 +368,101 @@ func nativeTokensFromSet(nativeTokenSet iotago.NativeTokensSet) iotago.NativeTok
 // IsBaseToken return whether a given tokenID represents the base token
 func IsBaseToken(tokenID []byte) bool {
 	return bytes.Equal(tokenID, BaseTokenID)
+}
+
+// Since we are encoding a nil assets pointer with a byte already,
+// we may as well use more of the byte to compress the data further.
+// We're adding 3 flags to indicate the presence of the subcomponents
+// of the assets so that we may skip reading/writing them altogether.
+// we also use the lower 4 bits of the byte to encode the number of
+// significant bytes in the 8-byte BaseToken amount, leaving out the
+// remaining trailing zeros.
+const (
+	hasBaseTokens   = 0x80
+	hasNativeTokens = 0x40
+	hasNFTs         = 0x20
+)
+
+func (a *Assets) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	flags := rr.ReadByte()
+	if flags == 0x00 {
+		return rr.Err
+	}
+	if (flags & hasBaseTokens) != 0 {
+		baseTokens := make([]byte, 8)
+		rr.ReadN(baseTokens[:flags&0x0f])
+		a.BaseTokens = binary.LittleEndian.Uint64(baseTokens)
+	}
+	if (flags & hasNativeTokens) != 0 {
+		size := rr.ReadSize()
+		a.NativeTokens = make(iotago.NativeTokens, size)
+		for i := range a.NativeTokens {
+			nativeToken := new(iotago.NativeToken)
+			a.NativeTokens[i] = nativeToken
+			rr.ReadN(nativeToken.ID[:])
+			nativeToken.Amount = rr.ReadUint256()
+		}
+	}
+	if (flags & hasNFTs) != 0 {
+		size := rr.ReadSize()
+		a.NFTs = make([]iotago.NFTID, size)
+		for i := range a.NFTs {
+			rr.ReadN(a.NFTs[i][:])
+		}
+	}
+	return rr.Err
+}
+
+func (a *Assets) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	isEmpty := a.IsEmpty()
+	if isEmpty {
+		ww.WriteByte(0x00)
+		return ww.Err
+	}
+
+	var flags byte
+	var baseTokens [8]byte
+	if a.BaseTokens != 0 {
+		flags |= hasBaseTokens
+		binary.LittleEndian.PutUint64(baseTokens[:], a.BaseTokens)
+		for i := byte(8); i > 0; i-- {
+			if baseTokens[i-1] != 0 {
+				flags |= i
+				break
+			}
+		}
+	}
+	if len(a.NativeTokens) != 0 {
+		flags |= hasNativeTokens
+	}
+	if len(a.NFTs) != 0 {
+		flags |= hasNFTs
+	}
+
+	ww.WriteByte(flags)
+	if (flags & hasBaseTokens) != 0 {
+		ww.WriteN(baseTokens[:flags&0x0f])
+	}
+	if (flags & hasNativeTokens) != 0 {
+		ww.WriteSize(len(a.NativeTokens))
+		sort.Slice(a.NativeTokens, func(lhs, rhs int) bool {
+			return bytes.Compare(a.NativeTokens[lhs].ID[:], a.NativeTokens[rhs].ID[:]) < 0
+		})
+		for _, nativeToken := range a.NativeTokens {
+			ww.WriteN(nativeToken.ID[:])
+			ww.WriteUint256(nativeToken.Amount)
+		}
+	}
+	if (flags & hasNFTs) != 0 {
+		ww.WriteSize(len(a.NFTs))
+		sort.Slice(a.NFTs, func(lhs, rhs int) bool {
+			return bytes.Compare(a.NFTs[lhs][:], a.NFTs[rhs][:]) < 0
+		})
+		for _, nft := range a.NFTs {
+			ww.WriteN(nft[:])
+		}
+	}
+	return ww.Err
 }

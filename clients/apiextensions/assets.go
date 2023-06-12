@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-func NewAssetsFromAPIResponse(assetsResponse *apiclient.AssetsResponse) (*isc.Assets, error) {
+func AssetsFromAPIResponse(assetsResponse *apiclient.AssetsResponse) (*isc.Assets, error) {
 	assets := isc.NewEmptyAssets()
 
 	baseTokens, err := iotago.DecodeUint64(assetsResponse.BaseTokens)

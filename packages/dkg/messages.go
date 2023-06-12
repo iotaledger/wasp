@@ -21,6 +21,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -237,10 +238,10 @@ func (msg *initiatorInitMsg) Read(r io.Reader) error {
 	size := rr.ReadSize()
 	msg.peerPubs = make([]*cryptolib.PublicKey, size)
 	for i := range msg.peerPubs {
-		msg.peerPubs[i] = rwutil.ReadFromBytes(rr, cryptolib.NewPublicKeyFromBytes)
+		msg.peerPubs[i] = rwutil.ReadFromBytes(rr, cryptolib.PublicKeyFromBytes)
 	}
 
-	msg.initiatorPub = rwutil.ReadFromBytes(rr, cryptolib.NewPublicKeyFromBytes)
+	msg.initiatorPub = rwutil.ReadFromBytes(rr, cryptolib.PublicKeyFromBytes)
 	msg.threshold = rr.ReadUint16()
 	msg.timeout = rr.ReadDuration()
 	msg.roundRetry = rr.ReadDuration()
@@ -411,7 +412,7 @@ func (msg *initiatorPubShareMsg) SetStep(step byte) {
 func (msg *initiatorPubShareMsg) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteByte(msg.step)
-	ww.WriteAddress(msg.sharedAddress)
+	isc.AddressToWriter(ww, msg.sharedAddress)
 
 	ww.WriteMarshaled(msg.edSharedPublic)
 	ww.WriteMarshaled(msg.edPublicShare)
@@ -426,7 +427,7 @@ func (msg *initiatorPubShareMsg) Write(w io.Writer) error {
 func (msg *initiatorPubShareMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
-	msg.sharedAddress = rr.ReadAddress()
+	msg.sharedAddress = isc.AddressFromReader(rr)
 
 	msg.edSharedPublic = msg.edSuite.Point()
 	rr.ReadMarshaled(msg.edSharedPublic)

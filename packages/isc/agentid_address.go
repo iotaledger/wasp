@@ -27,16 +27,8 @@ func (a *AddressAgentID) Address() iotago.Address {
 	return a.a
 }
 
-func (a *AddressAgentID) Kind() rwutil.Kind {
-	return AgentIDKindAddress
-}
-
 func (a *AddressAgentID) Bytes() []byte {
 	return rwutil.WriterToBytes(a)
-}
-
-func (a *AddressAgentID) String() string {
-	return a.a.Bech32(parameters.L1().Protocol.Bech32HRP)
 }
 
 func (a *AddressAgentID) Equals(other AgentID) bool {
@@ -49,16 +41,24 @@ func (a *AddressAgentID) Equals(other AgentID) bool {
 	return other.(*AddressAgentID).a.Equal(a.a)
 }
 
+func (a *AddressAgentID) Kind() AgentIDKind {
+	return AgentIDKindAddress
+}
+
+func (a *AddressAgentID) String() string {
+	return a.a.Bech32(parameters.L1().Protocol.Bech32HRP)
+}
+
 func (a *AddressAgentID) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadKindAndVerify(a.Kind())
-	a.a = rr.ReadAddress()
+	rr.ReadKindAndVerify(rwutil.Kind(a.Kind()))
+	a.a = AddressFromReader(rr)
 	return rr.Err
 }
 
 func (a *AddressAgentID) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteUint8(uint8(a.Kind()))
-	ww.WriteAddress(a.a)
+	ww.WriteKind(rwutil.Kind(a.Kind()))
+	AddressToWriter(ww, a.a)
 	return ww.Err
 }

@@ -5,11 +5,10 @@ package mostefaoui
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
-	msgTypeVote rwutil.Kind = iota
+	msgTypeVote gpa.MessageType = iota
 	msgTypeDone
 	msgTypeWrapped
 )

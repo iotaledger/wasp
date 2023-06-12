@@ -6,12 +6,13 @@ package rwutil
 import (
 	"bytes"
 	"encoding"
+	"errors"
 	"io"
+	"math/big"
 	"time"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
-	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 type Writer struct {
@@ -42,6 +43,12 @@ func (ww *Writer) Bytes() []byte {
 	return buf.Bytes()
 }
 
+func (ww *Writer) Skip() *Reader {
+	skip := &Skipper{ww: ww, w: ww.w}
+	ww.w = skip
+	return &Reader{r: skip}
+}
+
 func (ww *Writer) Write(writer interface{ Write(w io.Writer) error }) *Writer {
 	if writer == nil {
 		panic("nil writer")
@@ -55,17 +62,6 @@ func (ww *Writer) Write(writer interface{ Write(w io.Writer) error }) *Writer {
 func (ww *Writer) WriteN(val []byte) *Writer {
 	if ww.Err == nil {
 		ww.Err = WriteN(ww.w, val)
-	}
-	return ww
-}
-
-func (ww *Writer) WriteAddress(a iotago.Address) *Writer {
-	if a == nil {
-		panic("nil address")
-	}
-	if ww.Err == nil {
-		buf, _ := a.Serialize(serializer.DeSeriModeNoValidation, nil)
-		ww.WriteN(buf)
 	}
 	return ww
 }
@@ -223,4 +219,15 @@ func (ww *Writer) WriteUint64(val uint64) *Writer {
 		ww.Err = WriteUint64(ww.w, val)
 	}
 	return ww
+}
+
+func (ww *Writer) WriteUint256(val *big.Int) *Writer {
+	if val == nil {
+		panic("nil uint256")
+	}
+	if ww.Err == nil && val.Sign() < 0 {
+		ww.Err = errors.New("negative uint256")
+		return ww
+	}
+	return ww.WriteBytes(val.Bytes())
 }

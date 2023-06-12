@@ -15,6 +15,20 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
+type MessageType rwutil.Kind
+
+func (m *MessageType) Read(rr *rwutil.Reader) {
+	*m = MessageType(rr.ReadKind())
+}
+
+func (m MessageType) ReadAndVerify(rr *rwutil.Reader) {
+	rr.ReadKindAndVerify(rwutil.Kind(m))
+}
+
+func (m MessageType) Write(ww *rwutil.Writer) {
+	ww.WriteKind(rwutil.Kind(m))
+}
+
 type NodeID [32]byte
 
 var _ util.ShortStringable = NodeID{}
@@ -124,8 +138,8 @@ type GPA interface {
 }
 
 type (
-	Mapper   map[rwutil.Kind]func() Message
-	Fallback map[rwutil.Kind]func(data []byte) (Message, error)
+	Mapper   map[MessageType]func() Message
+	Fallback map[MessageType]func(data []byte) (Message, error)
 )
 
 func UnmarshalMessage(data []byte, mapper Mapper, fallback ...Fallback) (Message, error) {
@@ -134,10 +148,11 @@ func UnmarshalMessage(data []byte, mapper Mapper, fallback ...Fallback) (Message
 	if rr.Err != nil {
 		return nil, rr.Err
 	}
-	allocator := mapper[kind]
+	msgType := MessageType(kind)
+	allocator := mapper[msgType]
 	if allocator == nil {
 		if len(fallback) == 1 {
-			unmarshaler := fallback[0][kind]
+			unmarshaler := fallback[0][msgType]
 			if unmarshaler != nil {
 				return unmarshaler(data)
 			}

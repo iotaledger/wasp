@@ -88,7 +88,7 @@ func funcRandom(ctx wasmlib.ScFuncContext, f *RandomContext) {
 }
 
 func funcTakeAllowance(ctx wasmlib.ScFuncContext, _ *TakeAllowanceContext) {
-	ctx.TransferAllowed(ctx.AccountID(), wasmlib.NewScTransferFromBalances(ctx.Allowance()))
+	ctx.TransferAllowed(ctx.AccountID(), wasmlib.ScTransferFromBalances(ctx.Allowance()))
 	ctx.Log(ctx.Utility().String(int64(ctx.Balances().BaseTokens())))
 }
 
@@ -510,7 +510,7 @@ func viewCheckEthAddressAndAgentID(ctx wasmlib.ScViewContext, f *CheckEthAddress
 	dec = wasmtypes.NewWasmDecoder(enc.Buf())
 	ctx.Require(agentID == wasmtypes.AgentIDDecode(dec), "eth agentID decode/encode failed")
 
-	agentIDFromAddress := wasmtypes.NewScAgentIDFromAddress(address)
+	agentIDFromAddress := wasmtypes.ScAgentIDFromAddress(address)
 	ctx.Require(agentIDFromAddress == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(agentIDFromAddress)), "eth agentID bytes conversion failed")
 	ctx.Require(agentIDFromAddress == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(agentIDFromAddress)), "eth agentID string conversion failed")
 
@@ -789,7 +789,7 @@ func viewCheckEthEmptyAddressAndAgentID(ctx wasmlib.ScViewContext, f *CheckEthEm
 	dec = wasmtypes.NewWasmDecoder(enc.Buf())
 	ctx.Require(agentID == wasmtypes.AgentIDDecode(dec), "eth agentID decode/encode failed")
 
-	agentIDFromAddress := wasmtypes.NewScAgentIDFromAddress(address)
+	agentIDFromAddress := wasmtypes.ScAgentIDFromAddress(address)
 	ctx.Require(agentIDFromAddress == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(agentIDFromAddress)), "eth agentID bytes conversion failed")
 	ctx.Require(agentIDString == wasmtypes.AgentIDToString(agentIDFromAddress), "eth agentID string conversion failed")
 

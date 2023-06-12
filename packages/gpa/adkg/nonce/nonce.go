@@ -43,7 +43,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acss"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type Output struct {
@@ -77,7 +76,7 @@ const (
 )
 
 const (
-	msgTypeWrapped rwutil.Kind = iota
+	msgTypeWrapped gpa.MessageType = iota
 )
 
 func New(

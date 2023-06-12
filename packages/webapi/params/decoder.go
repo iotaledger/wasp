@@ -21,7 +21,7 @@ func DecodeChainID(e echo.Context) (isc.ChainID, error) {
 }
 
 func DecodePublicKey(e echo.Context) (*cryptolib.PublicKey, error) {
-	publicKey, err := cryptolib.NewPublicKeyFromString(e.Param(ParamPublicKey))
+	publicKey, err := cryptolib.PublicKeyFromString(e.Param(ParamPublicKey))
 	if err != nil {
 		return nil, apierrors.InvalidPropertyError(ParamPublicKey, err)
 	}
@@ -47,7 +47,7 @@ func DecodeHNameFromHNameHexString(e echo.Context, key string) (isc.Hname, error
 }
 
 func DecodeAgentID(e echo.Context) (isc.AgentID, error) {
-	agentID, err := isc.NewAgentIDFromString(e.Param(ParamAgentID))
+	agentID, err := isc.AgentIDFromString(e.Param(ParamAgentID))
 	if err != nil {
 		return nil, apierrors.InvalidPropertyError(ParamAgentID, err)
 	}

@@ -223,7 +223,7 @@ func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 		n.log.Warnf("Failed to read incoming payload from %v, reason=%v", remotePeer.remotePeeringURL, err)
 		return
 	}
-	peerMsg, err := peering.NewPeerMessageNetFromBytes(payload) // Do not use the signatures, we have TLS.
+	peerMsg, err := peering.PeerMessageNetFromBytes(payload) // Do not use the signatures, we have TLS.
 	if err != nil {
 		n.log.Warnf("error while decoding a message, reason=%v", err)
 		return

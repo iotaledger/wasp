@@ -8,11 +8,11 @@ import (
 	"encoding"
 	"errors"
 	"io"
+	"math/big"
 	"time"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
-	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 type Reader struct {
@@ -40,9 +40,9 @@ func NewMuReader(mu *marshalutil.MarshalUtil) *Reader {
 // The Reader will read this data first, and then resume reading from the stream.
 // The pushback Writer is only valid for this Reader until it resumes the stream.
 func (rr *Reader) PushBack() *Writer {
-	pb := &PushBack{rr: rr, r: rr.r, buf: new(bytes.Buffer)}
-	rr.r = pb
-	return NewWriter(pb.buf)
+	push := &PushBack{rr: rr, r: rr.r, buf: new(bytes.Buffer)}
+	rr.r = push
+	return &Writer{w: push}
 }
 
 func (rr *Reader) Read(reader interface{ Read(r io.Reader) error }) {
@@ -58,25 +58,6 @@ func (rr *Reader) ReadN(ret []byte) {
 	if rr.Err == nil {
 		rr.Err = ReadN(rr.r, ret)
 	}
-}
-
-func (rr *Reader) ReadAddress() (ret iotago.Address) {
-	addrType := rr.ReadByte()
-	if rr.Err != nil {
-		return ret
-	}
-	ret, rr.Err = iotago.AddressSelector(uint32(addrType))
-	if rr.Err != nil {
-		return ret
-	}
-	buf := make([]byte, ret.Size())
-	buf[0] = addrType
-	rr.ReadN(buf[1:])
-	if rr.Err != nil {
-		return ret
-	}
-	_, rr.Err = ret.Deserialize(buf, serializer.DeSeriModeNoValidation, nil)
-	return ret
 }
 
 func (rr *Reader) ReadBool() (ret bool) {
@@ -215,5 +196,11 @@ func (rr *Reader) ReadUint64() (ret uint64) {
 	if rr.Err == nil {
 		ret, rr.Err = ReadUint64(rr.r)
 	}
+	return ret
+}
+
+func (rr *Reader) ReadUint256() (ret *big.Int) {
+	ret = new(big.Int)
+	ret.SetBytes(rr.ReadBytes())
 	return ret
 }
