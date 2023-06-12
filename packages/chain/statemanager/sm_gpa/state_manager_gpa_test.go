@@ -337,7 +337,7 @@ func TestPruningMany(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(1)
 	nodeID := nodeIDs[0]
 	smParameters := NewStateManagerParameters()
-	smParameters.PruningMinStatesToKeep = blocksToKeep // Also initialises chain with this value in governance contract
+	smParameters.PruningMinStatesToKeep = blocksToKeep // Also initializes chain with this value in governance contract
 	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, smParameters)
 	defer env.finalize()
 
@@ -377,7 +377,7 @@ func TestPruningTooMuch(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(1)
 	nodeID := nodeIDs[0]
 	smParameters := NewStateManagerParameters()
-	smParameters.PruningMinStatesToKeep = blocksToKeep // Also initialises chain with this value in governance contract
+	smParameters.PruningMinStatesToKeep = blocksToKeep // Also initializes chain with this value in governance contract
 	smParameters.PruningMaxStatesToDelete = blocksToPrune
 	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, smParameters)
 	defer env.finalize()

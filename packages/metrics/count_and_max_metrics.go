@@ -5,7 +5,6 @@ import (
 )
 
 type countAndMaxMetrics struct {
-	labels   prometheus.Labels
 	count    *prometheus.CounterVec
 	max      *prometheus.CounterVec
 	maxValue float64
