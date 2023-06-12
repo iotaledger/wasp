@@ -29,7 +29,7 @@ func TestNodeVersion(t *testing.T) {
 	mocker := webapi.NewMocker()
 	c.RegisterPublic(group, mocker)
 
-	req := httptest.NewRequest(http.MethodGet, "/v0/node/version", nil)
+	req := httptest.NewRequest(http.MethodGet, "/v0/node/version", http.NoBody)
 	rec := httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
 	require.Equal(t, http.StatusOK, rec.Code)

@@ -171,16 +171,16 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 	req.WithGasBudget(g)
 	res, err := ch.PostRequestOffLedger(req, user)
 	if err != nil {
-		return
+		return ret, err
 	}
 	resBin := res.Get(blob.ParamHash)
 	if resBin == nil {
 		err = errors.New("internal error: no hash returned")
-		return
+		return ret, err
 	}
 	ret, err = codec.DecodeHashValue(resBin)
 	if err != nil {
-		return
+		return ret, err
 	}
 	require.EqualValues(ch.Env.T, expectedHash, ret)
 	return ret, err
