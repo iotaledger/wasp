@@ -286,6 +286,12 @@ func TestMempoolRequestBranchFromOrigin(t *testing.T) {
 	require.True(env.t, env.sendAndEnsureCompletedChainFetchStateDiff(oldCommitment, newCommitment, oldBlocks, newBlocks, nodeID, 1, 0*time.Second))
 }
 
+// Single node setting, pruning leaves 10 historic blocks.
+//   - 11 blocks are added into the store one by one; each time it is checked if
+//     all of the added blocks are in the store (none of them got pruned).
+//   - 9 blocks are added into the store one by one; each time it is checked if
+//     only the newest block and 10 others are still in store and the remaining
+//     blocks are pruned.
 func TestPruningSequentially(t *testing.T) {
 	blocksToKeep := 10
 	blockCount := 20
@@ -324,6 +330,116 @@ func TestPruningSequentially(t *testing.T) {
 			require.False(env.t, store.HasTrieRoot(blocks[j].TrieRoot()))
 		}
 		for j := lastExistingBlockIndex; j <= i; j++ {
+			checkBlockFun(blocks[j])
+		}
+	}
+}
+
+// Single node setting
+//   - pruning leaves 10000 historic blocks.
+//   - 20 blocks are committed, none of them are pruned.
+//   - state manager is configured to leave 10 historic blocks after pruning.
+//   - another block is committed to trigger pruning, 11 blocks (origin+10 committed
+//     blocks) are pruned.
+func TestPruningMany(t *testing.T) {
+	blocksToKeep := 10
+	blocksToSend := 20
+
+	nodeIDs := gpa.MakeTestNodeIDs(1)
+	nodeID := nodeIDs[0]
+	smParameters := NewStateManagerParameters()
+	smParameters.PruningMinStatesToKeep = blocksToKeep
+	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, smParameters)
+	defer env.finalize()
+
+	sm, ok := env.sms[nodeID]
+	require.True(env.t, ok)
+	sm.(*stateManagerGPA).parameters.PruningMinStatesToKeep = 10000
+
+	store, ok := env.stores[nodeID]
+	require.True(env.t, ok)
+	checkBlockFun := func(block state.Block) {
+		commitment := block.L1Commitment()
+		blockFromStore, err := store.BlockByTrieRoot(commitment.TrieRoot())
+		require.NoError(env.t, err)
+		require.Equal(env.t, block.StateIndex(), blockFromStore.StateIndex())
+		require.True(env.t, commitment.Equals(blockFromStore.L1Commitment()))
+		require.True(env.t, block.PreviousL1Commitment().Equals(blockFromStore.PreviousL1Commitment()))
+	}
+
+	blocks := env.bf.GetBlocks(blocksToSend+1, 1)
+	env.sendBlocksToNode(nodeID, 0*time.Second, blocks[:blocksToSend]...)
+	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks[:blocksToSend]))
+
+	sm.(*stateManagerGPA).parameters.PruningMinStatesToKeep = blocksToKeep
+	env.sendBlocksToNode(nodeID, 0*time.Second, blocks[blocksToSend])
+	lastExistingBlockIndex := blocksToSend - blocksToKeep
+	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks[lastExistingBlockIndex:]))
+	for j := 0; j < lastExistingBlockIndex; j++ {
+		require.False(env.t, store.HasTrieRoot(blocks[j].TrieRoot()))
+	}
+	for j := lastExistingBlockIndex; j <= blocksToSend; j++ {
+		checkBlockFun(blocks[j])
+	}
+}
+
+// Single node setting
+//   - pruning leaves 10000 historic blocks.
+//   - 30 blocks are committed, none of them are pruned.
+//   - state manager is configured to leave 10 historic blocks after pruning but
+//     not to delete more than 8 blocks in one pruning run.
+//   - a block is committed several times to trigger pruning, each time pruning
+//     8 blocks or (in the case of last iteration) as many as needed (but not more
+//     than 8) to leave 10 historic blocks (in addition to recently committed block).
+func TestPruningTooMuch(t *testing.T) {
+	blocksToKeep := 10
+	blocksToSend := 30
+	blocksToPrune := 8
+
+	nodeIDs := gpa.MakeTestNodeIDs(1)
+	nodeID := nodeIDs[0]
+	smParameters := NewStateManagerParameters()
+	smParameters.PruningMinStatesToKeep = blocksToKeep
+	smParameters.PruningMaxStatesToDelete = blocksToPrune
+	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, smParameters)
+	defer env.finalize()
+
+	sm, ok := env.sms[nodeID]
+	require.True(env.t, ok)
+	sm.(*stateManagerGPA).parameters.PruningMinStatesToKeep = 10000
+
+	store, ok := env.stores[nodeID]
+	require.True(env.t, ok)
+	checkBlockFun := func(block state.Block) {
+		commitment := block.L1Commitment()
+		blockFromStore, err := store.BlockByTrieRoot(commitment.TrieRoot())
+		require.NoError(env.t, err)
+		require.Equal(env.t, block.StateIndex(), blockFromStore.StateIndex())
+		require.True(env.t, commitment.Equals(blockFromStore.L1Commitment()))
+		require.True(env.t, block.PreviousL1Commitment().Equals(blockFromStore.PreviousL1Commitment()))
+	}
+
+	blocks := env.bf.GetBlocks(blocksToSend, 1)
+	env.sendBlocksToNode(nodeID, 0*time.Second, blocks...)
+	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks))
+
+	sm.(*stateManagerGPA).parameters.PruningMinStatesToKeep = blocksToKeep
+	lastExistingBlockIndex := -1 // Origin block is not in blocks array
+	lastExistingBlockIndexExpected := blocksToSend - blocksToKeep - 1
+	for lastExistingBlockIndex < lastExistingBlockIndexExpected {
+		newBlocks := env.bf.GetBlocks(1, 1)
+		env.sendBlocksToNode(nodeID, 0*time.Second, newBlocks[0])
+		require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, newBlocks))
+		blocks = append(blocks, newBlocks[0])
+		lastExistingBlockIndexExpected++
+		lastExistingBlockIndex += blocksToPrune
+		if lastExistingBlockIndex > lastExistingBlockIndexExpected {
+			lastExistingBlockIndex = lastExistingBlockIndexExpected
+		}
+		for j := 0; j < lastExistingBlockIndex; j++ {
+			require.False(env.t, store.HasTrieRoot(blocks[j].TrieRoot()))
+		}
+		for j := lastExistingBlockIndex; j < len(blocks); j++ {
 			checkBlockFun(blocks[j])
 		}
 	}
