@@ -187,7 +187,7 @@ func viewGetEventsForContract(ctx isc.SandboxView) dict.Dict {
 	contract := params.MustGetHname(ParamContractHname)
 	fromBlock := params.MustGetUint32(ParamFromBlock, 0)
 	toBlock := params.MustGetUint32(ParamToBlock, math.MaxUint32)
-	events, err := getSmartContractEventsInternal(ctx.StateR(), contract, fromBlock, toBlock)
-	ctx.RequireNoError(err)
+	events := getSmartContractEventsInternal(ctx.StateR(), contract, fromBlock, toBlock)
+
 	return eventsToDict(events)
 }

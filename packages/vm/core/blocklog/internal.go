@@ -1,10 +1,8 @@
 package blocklog
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -89,13 +87,6 @@ func SaveRequestReceipt(partition kv.KVStore, rec *RequestReceipt, key RequestLo
 
 func SaveEvent(partition kv.KVStore, eventKey []byte, event *isc.Event) {
 	collections.NewMap(partition, prefixRequestEvents).SetAt(eventKey, event.Bytes())
-
-	// add the event lookup key to the list of events for this contract
-	scLut := collections.NewMap(partition, prefixSmartContractEventsLookup)
-	contractKey := event.ContractID.Bytes()
-	entries := scLut.GetAt(contractKey)
-	entries = append(entries, eventKey...)
-	scLut.SetAt(contractKey, entries)
 }
 
 func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID isc.RequestID) RequestLookupKeyList {
@@ -165,30 +156,32 @@ func getRequestEventsInternal(partition kv.KVStoreReader, reqID isc.RequestID) (
 	}
 }
 
-func getSmartContractEventsInternal(partition kv.KVStoreReader, contract isc.Hname, fromBlock, toBlock uint32) ([][]byte, error) {
-	scLut := collections.NewMapReadOnly(partition, prefixSmartContractEventsLookup)
-	entries := scLut.GetAt(contract.Bytes())
+func getSmartContractEventsInternal(partition kv.KVStoreReader, contractId isc.Hname, fromBlock, toBlock uint32) [][]byte {
 	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
-	keysBuf := bytes.NewBuffer(entries)
-	var ret [][]byte
-	for {
-		key, err := EventLookupKeyFromBytes(keysBuf)
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				return ret, nil
-			}
-			return nil, fmt.Errorf("getSmartContractEventsIntern unable to parse key. %w", err)
+	filteredEvents := make([][]byte, 0)
+	events.Iterate(func(elemKey []byte, value []byte) bool {
+		eventKey, _ := EventLookupKeyFromBytes(elemKey)
+		blockIndex := eventKey.BlockIndex()
+
+		if blockIndex < fromBlock {
+			return true
 		}
-		keyBlockIndex := key.BlockIndex()
-		if keyBlockIndex < fromBlock {
-			continue
+
+		if blockIndex > toBlock {
+			return true
 		}
-		if keyBlockIndex > toBlock {
-			return ret, nil
+
+		parsedContractId, _ := isc.ContractIDFromEventBytes(value)
+		if parsedContractId != contractId {
+			return true
 		}
-		eventData := events.GetAt(key.Bytes())
-		ret = append(ret, eventData)
-	}
+
+		filteredEvents = append(filteredEvents, value)
+
+		return true
+	})
+
+	return filteredEvents
 }
 
 func pruneEventsByBlockIndex(partition kv.KVStore, blockIndex uint32, totalRequests uint16) {
