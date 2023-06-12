@@ -67,8 +67,12 @@ func getConfig(chainID int) *params.ChainConfig {
 		IstanbulBlock:       big.NewInt(0),
 		MuirGlacierBlock:    big.NewInt(0),
 		BerlinBlock:         big.NewInt(0),
+		LondonBlock:         big.NewInt(0),
 		Ethash:              &params.EthashConfig{},
 		ShanghaiTime:        new(uint64),
+	}
+	if !c.IsShanghai(common.Big0, 0) {
+		panic("ChainConfig should report EVM version as Shanghai")
 	}
 	configCache.Add(chainID, c)
 	return c
@@ -140,8 +144,11 @@ func NewEVMEmulator(
 		blockKeepAmount: blockKeepAmount,
 		chainConfig:     getConfig(int(bdb.GetChainID())),
 		kv:              store,
-		vmConfig:        vm.Config{MagicContracts: magicContracts},
-		l2Balance:       l2Balance,
+		vmConfig: vm.Config{
+			MagicContracts: magicContracts,
+			NoBaseFee:      true, // gas fee is set by ISC
+		},
+		l2Balance: l2Balance,
 	}
 }
 
@@ -214,6 +221,7 @@ func (e *EVMEmulator) applyMessage(
 	msg.GasTipCap = big.NewInt(0)
 
 	blockContext := core.NewEVMBlockContext(header, e.ChainContext(), nil)
+	blockContext.BaseFee = new(big.Int)
 	txContext := core.NewEVMTxContext(msg)
 
 	vmConfig := e.vmConfig
@@ -248,27 +256,29 @@ func (e *EVMEmulator) applyMessage(
 func (e *EVMEmulator) SendTransaction(
 	tx *types.Transaction,
 	gasBurnEnable func(bool),
+	chargeISCGas func(*core.ExecutionResult) (uint64, error),
 	tracer tracers.Tracer,
-) (*types.Receipt, *core.ExecutionResult, error) {
+) (receipt *types.Receipt, result *core.ExecutionResult, iscGasErr error, err error) {
 	buf := e.StateDB().Buffered()
 	statedb := buf.StateDB()
 	pendingHeader := e.BlockchainDB().GetPendingHeader(e.timestamp)
 
 	sender, err := types.Sender(e.Signer(), tx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("invalid transaction: %w", err)
+		return nil, nil, nil, fmt.Errorf("invalid transaction: %w", err)
 	}
 	nonce := e.StateDB().GetNonce(sender)
 	if tx.Nonce() != nonce {
-		return nil, nil, fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
+		return nil, nil, nil, fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
 	}
 
-	msg, err := core.TransactionToMessage(tx, types.MakeSigner(e.chainConfig, pendingHeader.Number), pendingHeader.BaseFee)
+	signer := types.MakeSigner(e.chainConfig, pendingHeader.Number, pendingHeader.Time)
+	msg, err := core.TransactionToMessage(tx, signer, pendingHeader.BaseFee)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	result, err := e.applyMessage(
+	result, err = e.applyMessage(
 		msg,
 		statedb,
 		pendingHeader,
@@ -278,7 +288,12 @@ func (e *EVMEmulator) SendTransaction(
 
 	gasUsed := uint64(0)
 	if result != nil {
-		gasUsed = result.UsedGas
+		// chargeISCGas will keep gasBurnEnabled = false and mutate `result` when charging ISC gas fails
+		if chargeISCGas != nil {
+			gasUsed, iscGasErr = chargeISCGas(result)
+		} else {
+			gasUsed = result.UsedGas
+		}
 	}
 
 	cumulativeGasUsed := gasUsed
@@ -289,7 +304,7 @@ func (e *EVMEmulator) SendTransaction(
 		index = latest.TransactionIndex + 1
 	}
 
-	receipt := &types.Receipt{
+	receipt = &types.Receipt{
 		Type:              tx.Type(),
 		CumulativeGasUsed: cumulativeGasUsed,
 		TxHash:            tx.Hash(),
@@ -313,7 +328,7 @@ func (e *EVMEmulator) SendTransaction(
 	buf.Commit()
 	e.BlockchainDB().AddTransaction(tx, receipt)
 
-	return receipt, result, err
+	return receipt, result, iscGasErr, err
 }
 
 func (e *EVMEmulator) MintBlock() {

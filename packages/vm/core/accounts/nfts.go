@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 func nftsMapKey(agentID isc.AgentID) string {
@@ -63,7 +64,11 @@ func hasNFT(state kv.KVStoreReader, agentID isc.AgentID, nftID iotago.NFTID) boo
 }
 
 func saveNFTData(state kv.KVStore, nft *isc.NFT) {
-	nftDataMap(state).SetAt(nft.ID[:], nft.Bytes(false))
+	// note we store the NFT data without the leading id bytes
+	ww := rwutil.NewBytesWriter()
+	ww.Skip().ReadN(nft.ID[:])
+	ww.Write(nft)
+	nftDataMap(state).SetAt(nft.ID[:], ww.Bytes())
 }
 
 func deleteNFTData(state kv.KVStore, id iotago.NFTID) {
@@ -76,16 +81,15 @@ func deleteNFTData(state kv.KVStore, id iotago.NFTID) {
 
 func GetNFTData(state kv.KVStoreReader, id iotago.NFTID) (*isc.NFT, error) {
 	allNFTs := nftDataMapR(state)
-	b := allNFTs.GetAt(id[:])
-	if len(b) == 0 {
+	nftData := allNFTs.GetAt(id[:])
+	if len(nftData) == 0 {
 		return nil, ErrNFTIDNotFound
 	}
-	nft, err := isc.NFTFromBytes(b, false)
-	if err != nil {
-		panic(fmt.Sprintf("getNFTData: error when parsing NFTdata: %v", err))
-	}
-	nft.ID = id
-	return nft, nil
+
+	// note we stored the NFT data without the leading id bytes
+	rr := rwutil.NewBytesReader(nftData)
+	rr.PushBack().WriteN(id[:])
+	return isc.NFTFromReader(rr)
 }
 
 func MustGetNFTData(state kv.KVStoreReader, id iotago.NFTID) *isc.NFT {

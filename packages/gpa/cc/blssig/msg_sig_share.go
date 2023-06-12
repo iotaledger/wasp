@@ -4,35 +4,37 @@
 package blssig
 
 import (
-	"encoding"
+	"io"
 
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type msgSigShare struct {
-	recipient gpa.NodeID
-	sender    gpa.NodeID
-	sigShare  []byte
+	gpa.BasicMessage
+	sigShare []byte
 }
 
-var (
-	_ gpa.Message              = &msgSigShare{}
-	_ encoding.BinaryMarshaler = &msgSigShare{}
-)
+var _ gpa.Message = new(msgSigShare)
 
-func (m *msgSigShare) Recipient() gpa.NodeID {
-	return m.recipient
+func (msg *msgSigShare) MarshalBinary() ([]byte, error) {
+	return rwutil.MarshalBinary(msg)
 }
 
-func (m *msgSigShare) SetSender(sender gpa.NodeID) {
-	m.sender = sender
+func (msg *msgSigShare) UnmarshalBinary(data []byte) error {
+	return rwutil.UnmarshalBinary(data, msg)
 }
 
-func (m *msgSigShare) MarshalBinary() ([]byte, error) {
-	return m.sigShare, nil
+func (msg *msgSigShare) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msgTypeSigShare.ReadAndVerify(rr)
+	msg.sigShare = rr.ReadBytes()
+	return rr.Err
 }
 
-func (m *msgSigShare) UnmarshalBinary(data []byte) error {
-	m.sigShare = data
-	return nil
+func (msg *msgSigShare) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	msgTypeSigShare.Write(ww)
+	ww.WriteBytes(msg.sigShare)
+	return ww.Err
 }

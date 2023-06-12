@@ -334,7 +334,7 @@ func (c *consImpl) Input(input gpa.Input) gpa.OutMessages {
 func (c *consImpl) Message(msg gpa.Message) gpa.OutMessages {
 	switch msgT := msg.(type) {
 	case *msgBLSPartialSig:
-		return c.subRND.BLSPartialSigReceived(msgT.sender, msgT.partialSig)
+		return c.subRND.BLSPartialSigReceived(msgT.Sender(), msgT.partialSig)
 	case *gpa.WrappingMsg:
 		sub, subMsgs, err := c.msgWrapper.DelegateMessage(msgT)
 		if err != nil {
@@ -474,7 +474,7 @@ func (c *consImpl) uponACSInputsReceived(baseAliasOutput *isc.AliasOutputWithID,
 	batchProposal := bp.NewBatchProposal(
 		*c.dkShare.GetIndex(),
 		baseAliasOutput,
-		util.NewFixedSizeBitVector(int(c.dkShare.GetN())).SetBits(dssIndexProposal),
+		util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
 		timeData,
 		isc.NewContractAgentID(c.chainID, 0),
 		requestRefs,
@@ -560,7 +560,7 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 		ValidatorFeeTarget:     aggregatedProposals.ValidatorFeeTarget(),
 		EstimateGasMode:        false,
 		EnableGasBurnLogging:   false,
-		MaintenanceModeEnabled: governance.NewStateAccess(chainState).GetMaintenanceStatus(),
+		MaintenanceModeEnabled: governance.NewStateAccess(chainState).MaintenanceStatus(),
 		Log:                    c.log.Named("VM"),
 	}
 	return nil

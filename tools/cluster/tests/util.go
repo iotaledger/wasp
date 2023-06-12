@@ -69,7 +69,7 @@ func (e *ChainEnv) getBalanceOnChain(agentID isc.AgentID, assetID []byte, nodeIn
 		Execute()
 	require.NoError(e.t, err)
 
-	assets, err := apiextensions.NewAssetsFromAPIResponse(balance)
+	assets, err := apiextensions.AssetsFromAPIResponse(balance)
 	require.NoError(e.t, err)
 
 	if bytes.Equal(assetID, isc.BaseTokenID) {
@@ -103,7 +103,7 @@ func (e *ChainEnv) getAccountsOnChain() []isc.AgentID {
 
 	ret := make([]isc.AgentID, 0)
 	for _, address := range accounts.Accounts {
-		aid, err2 := isc.NewAgentIDFromString(address)
+		aid, err2 := isc.AgentIDFromString(address)
 		require.NoError(e.t, err2)
 
 		ret = append(ret, aid)
@@ -123,7 +123,7 @@ func (e *ChainEnv) getBalancesOnChain() map[string]*isc.Assets {
 			Execute()
 		require.NoError(e.t, err)
 
-		assets, err := apiextensions.NewAssetsFromAPIResponse(balance)
+		assets, err := apiextensions.AssetsFromAPIResponse(balance)
 		require.NoError(e.t, err)
 
 		ret[string(agentID.Bytes())] = assets
@@ -137,7 +137,7 @@ func (e *ChainEnv) getTotalBalance() *isc.Assets {
 		Execute()
 	require.NoError(e.t, err)
 
-	assets, err := apiextensions.NewAssetsFromAPIResponse(totalAssets)
+	assets, err := apiextensions.AssetsFromAPIResponse(totalAssets)
 	require.NoError(e.t, err)
 
 	return assets
@@ -173,7 +173,7 @@ func (e *ChainEnv) getChainInfo() (isc.ChainID, isc.AgentID) {
 	chainID, err := isc.ChainIDFromString(chainInfo.ChainID)
 	require.NoError(e.t, err)
 
-	ownerID, err := isc.NewAgentIDFromString(chainInfo.ChainOwnerId)
+	ownerID, err := isc.AgentIDFromString(chainInfo.ChainOwnerId)
 	require.NoError(e.t, err)
 
 	return chainID, ownerID

@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // Interfaces for writing/reading persistent streams of key/values
@@ -37,16 +37,13 @@ func NewBinaryStreamWriter(w io.Writer) *BinaryStreamWriter {
 var _ StreamWriter = &BinaryStreamWriter{}
 
 func (b *BinaryStreamWriter) Write(key, value []byte) error {
-	if err := util.WriteBytes16(b.w, key); err != nil {
-		return err
-	}
-	b.byteCount += len(key) + 2
-	if err := util.WriteBytes32(b.w, value); err != nil {
-		return err
-	}
-	b.byteCount += len(value) + 4
+	ww := rwutil.NewWriter(b.w)
+	counter := rwutil.NewWriteCounter(ww)
+	ww.WriteBytes(key)
+	ww.WriteBytes(value)
+	b.byteCount += int(counter.Count())
 	b.kvCount++
-	return nil
+	return ww.Err
 }
 
 func (b *BinaryStreamWriter) Stats() (int, int) {
@@ -63,18 +60,16 @@ func NewBinaryStreamIterator(r io.Reader) *BinaryStreamIterator {
 
 func (b BinaryStreamIterator) Iterate(fun func(k []byte, v []byte) bool) error {
 	for {
-		k, err := util.ReadBytes16(b.r)
-		if errors.Is(err, io.EOF) {
+		rr := rwutil.NewReader(b.r)
+		key := rr.ReadBytes()
+		if errors.Is(rr.Err, io.EOF) {
 			return nil
 		}
-		if err != nil {
-			return err
+		value := rr.ReadBytes()
+		if rr.Err != nil {
+			return rr.Err
 		}
-		v, err := util.ReadBytes32(b.r)
-		if err != nil {
-			return err
-		}
-		if !fun(k, v) {
+		if !fun(key, value) {
 			return nil
 		}
 	}

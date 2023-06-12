@@ -1,9 +1,10 @@
 package trie
 
 import (
-	"bytes"
 	"fmt"
 	"io"
+
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
@@ -41,16 +42,11 @@ func newNodeData() *NodeData {
 }
 
 func nodeDataFromBytes(data []byte) (*NodeData, error) {
-	ret := newNodeData()
-	rdr := bytes.NewReader(data)
-	if err := ret.Read(rdr); err != nil {
-		return nil, err
-	}
-	if rdr.Len() != 0 {
-		// not all data was consumed
-		return nil, ErrNotAllBytesConsumed
-	}
-	return ret, nil
+	return rwutil.ReaderFromBytes(data, newNodeData())
+}
+
+func (n *NodeData) Bytes() []byte {
+	return rwutil.WriterToBytes(n)
 }
 
 func (n *NodeData) ChildrenCount() int {
@@ -115,32 +111,24 @@ const (
 // cflags 16 flags, one for each child
 type cflags uint16
 
-func readCflags(r io.Reader) (cflags, error) {
-	var ret uint16
-	err := ReadUint16(r, &ret)
-	if err != nil {
-		return 0, err
-	}
-	return cflags(ret), nil
-}
-
 func (fl *cflags) setFlag(i byte) {
-	*fl |= 0x1 << i
+	*fl |= 1 << i
 }
 
 func (fl cflags) hasFlag(i byte) bool {
-	return fl&(0x1<<i) != 0
+	return fl&(1<<i) != 0
 }
 
 // Write serialized node data
 func (n *NodeData) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
 	var smallFlags byte
 	if n.Terminal != nil {
 		smallFlags |= isTerminalNodeFlag
 	}
 
+	// compress child indexes in 32 bits
 	childrenFlags := cflags(0)
-	// compress children childrenFlags 32 bytes, if any
 	n.iterateChildren(func(i byte, _ Hash) bool {
 		childrenFlags.setFlag(i)
 		return true
@@ -148,86 +136,57 @@ func (n *NodeData) Write(w io.Writer) error {
 	if childrenFlags != 0 {
 		smallFlags |= hasChildrenFlag
 	}
+
 	var pathExtensionEncoded []byte
-	var err error
 	if len(n.PathExtension) > 0 {
 		smallFlags |= isExtensionNodeFlag
-		if pathExtensionEncoded, err = encodeUnpackedBytes(n.PathExtension); err != nil {
-			return err
-		}
+		pathExtensionEncoded, ww.Err = encodeUnpackedBytes(n.PathExtension)
 	}
-	if err2 := writeByte(w, smallFlags); err2 != nil {
-		return err2
-	}
+
+	ww.WriteByte(smallFlags)
 	if smallFlags&isExtensionNodeFlag != 0 {
-		if err2 := WriteBytes16(w, pathExtensionEncoded); err2 != nil {
-			return err2
-		}
+		ww.WriteBytes(pathExtensionEncoded)
 	}
 	if smallFlags&isTerminalNodeFlag != 0 {
-		if err2 := n.Terminal.Write(w); err2 != nil {
-			return err2
-		}
+		ww.Write(n.Terminal)
 	}
-	// write child commitments if any
 	if smallFlags&hasChildrenFlag != 0 {
-		if err2 := WriteUint16(w, uint16(childrenFlags)); err2 != nil {
-			return err2
-		}
+		ww.WriteUint16(uint16(childrenFlags))
 		n.iterateChildren(func(_ byte, h Hash) bool {
-			if err = h.Write(w); err != nil {
-				return false
-			}
-			return true
+			ww.Write(h)
+			return ww.Err == nil
 		})
-		if err != nil {
-			return err
-		}
 	}
-	return nil
+	return ww.Err
 }
 
 // Read deserialize node data
 func (n *NodeData) Read(r io.Reader) error {
-	var err error
-	var smallFlags byte
-	if smallFlags, err = readByte(r); err != nil {
-		return err
-	}
+	rr := rwutil.NewReader(r)
+	smallFlags := rr.ReadByte()
+	n.PathExtension = nil
 	if smallFlags&isExtensionNodeFlag != 0 {
-		encoded, err2 := ReadBytes16(r)
-		if err2 != nil {
-			return err2
+		encoded := rr.ReadBytes()
+		if rr.Err == nil {
+			n.PathExtension, rr.Err = decodeToUnpackedBytes(encoded)
 		}
-		if n.PathExtension, err2 = decodeToUnpackedBytes(encoded); err2 != nil {
-			return err2
-		}
-	} else {
-		n.PathExtension = nil
 	}
 	n.Terminal = nil
 	if smallFlags&isTerminalNodeFlag != 0 {
 		n.Terminal = newTerminalCommitment()
-		if err2 := n.Terminal.Read(r); err2 != nil {
-			return err2
-		}
+		rr.Read(n.Terminal)
 	}
 	if smallFlags&hasChildrenFlag != 0 {
-		var flags cflags
-		if flags, err = readCflags(r); err != nil {
-			return err
-		}
+		flags := cflags(rr.ReadUint16())
 		for i := 0; i < NumChildren; i++ {
 			ib := uint8(i)
 			if flags.hasFlag(ib) {
 				n.Children[ib] = &Hash{}
-				if err := n.Children[ib].Read(r); err != nil {
-					return err
-				}
+				rr.Read(n.Children[ib])
 			}
 		}
 	}
-	return nil
+	return rr.Err
 }
 
 func (n *NodeData) iterateChildren(f func(byte, Hash) bool) {

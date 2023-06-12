@@ -18,17 +18,17 @@ type Deal struct {
 
 // MarshalBinary implements encoding.BinaryMarshaler.
 func (d *Deal) MarshalBinary() ([]byte, error) {
-	var buf bytes.Buffer
-	if _, err := d.Commits.MarshalTo(&buf); err != nil {
+	w := new(bytes.Buffer)
+	if _, err := d.Commits.MarshalTo(w); err != nil {
 		return nil, err
 	}
-	if _, err := d.PubKey.MarshalTo(&buf); err != nil {
+	if _, err := d.PubKey.MarshalTo(w); err != nil {
 		return nil, err
 	}
 	for _, s := range d.Shares {
-		buf.Write(s)
+		w.Write(s)
 	}
-	return buf.Bytes(), nil
+	return w.Bytes(), nil
 }
 
 // DealLen returns the length of Deal in bytes.

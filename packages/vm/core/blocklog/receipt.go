@@ -1,17 +1,16 @@
 package blocklog
 
 import (
-	"bytes"
 	"fmt"
 	"io"
-	"math"
 
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -52,7 +51,7 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 	if ret.SDCharged, err = mu.ReadUint64(); err != nil {
 		return nil, fmt.Errorf("cannot read SDCharged: %w", err)
 	}
-	if ret.Request, err = isc.NewRequestFromMarshalUtil(mu); err != nil {
+	if ret.Request, err = isc.RequestFromMarshalUtil(mu); err != nil {
 		return nil, fmt.Errorf("cannot read Request: %w", err)
 	}
 
@@ -165,34 +164,29 @@ type RequestLookupKey [6]byte
 
 func NewRequestLookupKey(blockIndex uint32, requestIndex uint16) RequestLookupKey {
 	ret := RequestLookupKey{}
-	copy(ret[:4], util.Uint32To4Bytes(blockIndex))
-	copy(ret[4:6], util.Uint16To2Bytes(requestIndex))
+	copy(ret[:4], codec.EncodeUint32(blockIndex))
+	copy(ret[4:6], codec.EncodeUint16(requestIndex))
 	return ret
 }
 
 func (k RequestLookupKey) BlockIndex() uint32 {
-	return util.MustUint32From4Bytes(k[:4])
+	return codec.MustDecodeUint32(k[:4])
 }
 
 func (k RequestLookupKey) RequestIndex() uint16 {
-	return util.MustUint16From2Bytes(k[4:6])
+	return codec.MustDecodeUint16(k[4:6])
 }
 
 func (k RequestLookupKey) Bytes() []byte {
 	return k[:]
 }
 
-func (k *RequestLookupKey) Write(w io.Writer) error {
-	_, err := w.Write(k[:])
-	return err
+func (k *RequestLookupKey) Read(r io.Reader) error {
+	return rwutil.ReadN(r, k[:])
 }
 
-func (k *RequestLookupKey) Read(r io.Reader) error {
-	n, err := r.Read(k[:])
-	if err != nil || n != 6 {
-		return io.EOF
-	}
-	return nil
+func (k *RequestLookupKey) Write(w io.Writer) error {
+	return rwutil.WriteN(w, k[:])
 }
 
 // endregion ///////////////////////////////////////////////////////////
@@ -202,31 +196,23 @@ func (k *RequestLookupKey) Read(r io.Reader) error {
 // RequestLookupKeyList a list of RequestLookupReference of requests with colliding isc.RequestLookupDigest
 type RequestLookupKeyList []RequestLookupKey
 
-func RequestLookupKeyListFromBytes(data []byte) (RequestLookupKeyList, error) {
-	rdr := bytes.NewReader(data)
-	var size uint16
-	if err := util.ReadUint16(rdr, &size); err != nil {
-		return nil, err
+func RequestLookupKeyListFromBytes(data []byte) (ret RequestLookupKeyList, err error) {
+	rr := rwutil.NewBytesReader(data)
+	size := rr.ReadSize()
+	ret = make(RequestLookupKeyList, size)
+	for i := range ret {
+		rr.Read(&ret[i])
 	}
-	ret := make(RequestLookupKeyList, size)
-	for i := uint16(0); i < size; i++ {
-		if err := ret[i].Read(rdr); err != nil {
-			return nil, err
-		}
-	}
-	return ret, nil
+	return ret, rr.Err
 }
 
 func (ll RequestLookupKeyList) Bytes() []byte {
-	if len(ll) > math.MaxUint16 {
-		panic("RequestLookupKeyList::Write: too long")
-	}
-	var buf bytes.Buffer
-	_ = util.WriteUint16(&buf, uint16(len(ll)))
+	ww := rwutil.NewBytesWriter()
+	ww.WriteSize(len(ll))
 	for i := range ll {
-		_ = ll[i].Write(&buf)
+		ww.Write(&ll[i])
 	}
-	return buf.Bytes()
+	return ww.Bytes()
 }
 
 // endregion /////////////////////////////////////////////////////////////

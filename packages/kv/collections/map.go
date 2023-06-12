@@ -4,7 +4,7 @@ import (
 	"math"
 
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // Map represents a dynamic key-value collection in a kv.KVStore.
@@ -74,7 +74,7 @@ func (m *Map) addToSize(amount int) {
 	if n == 0 {
 		m.kvw.Del(kv.Key(MapSizeKey(m.name)))
 	} else {
-		m.kvw.Set(kv.Key(MapSizeKey(m.name)), util.Uint32To4Bytes(uint32(n)))
+		m.kvw.Set(kv.Key(MapSizeKey(m.name)), rwutil.Size32ToBytes(uint32(n)))
 	}
 }
 
@@ -106,7 +106,7 @@ func (m *ImmutableMap) Len() uint32 {
 	if v == nil {
 		return 0
 	}
-	return util.MustUint32From4Bytes(v)
+	return rwutil.MustSize32FromBytes(v)
 }
 
 // Erase the map.

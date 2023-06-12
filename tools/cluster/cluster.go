@@ -332,7 +332,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 			return err
 		}
 
-		accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePeering.PublicKey)
+		accessNodePubKey, err := cryptolib.PublicKeyFromString(accessNodePeering.PublicKey)
 		if err != nil {
 			return err
 		}
@@ -370,7 +370,7 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 		return nil, err
 	}
 
-	accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePeering.PublicKey)
+	accessNodePubKey, err := cryptolib.PublicKeyFromString(accessNodePeering.PublicKey)
 	if err != nil {
 		return nil, err
 	}
@@ -579,7 +579,7 @@ func (clu *Cluster) KillNodeProcess(nodeIndex int, gracefully bool) error {
 		return nil
 	}
 
-	if gracefully && runtime.GOOS != "windows" {
+	if gracefully && runtime.GOOS != util.WindowsOS {
 		if err := wcmd.cmd.Process.Signal(os.Interrupt); err != nil {
 			return err
 		}

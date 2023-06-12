@@ -2,46 +2,33 @@ package isc
 
 import (
 	"fmt"
+	"io"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // ContractAgentID is an AgentID formed by a ChainID and a contract Hname.
 type ContractAgentID struct {
 	chainID ChainID
-	h       Hname
+	hname   Hname
 }
 
 var _ AgentIDWithL1Address = &ContractAgentID{}
 
 func NewContractAgentID(chainID ChainID, hname Hname) *ContractAgentID {
-	return &ContractAgentID{chainID: chainID, h: hname}
-}
-
-func contractAgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
-	chainID, err := ChainIDFromMarshalUtil(mu)
-	if err != nil {
-		return nil, err
-	}
-
-	h, err := HnameFromMarshalUtil(mu)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewContractAgentID(chainID, h), nil
+	return &ContractAgentID{chainID: chainID, hname: hname}
 }
 
 func contractAgentIDFromString(hnamePart, addrPart string) (AgentID, error) {
 	chainID, err := ChainIDFromString(addrPart)
 	if err != nil {
-		return nil, fmt.Errorf("NewAgentIDFromString: %w", err)
+		return nil, fmt.Errorf("AgentIDFromString: %w", err)
 	}
 
 	h, err := HnameFromHexString(hnamePart)
 	if err != nil {
-		return nil, fmt.Errorf("NewAgentIDFromString: %w", err)
+		return nil, fmt.Errorf("AgentIDFromString: %w", err)
 	}
 	return NewContractAgentID(chainID, h), nil
 }
@@ -50,28 +37,12 @@ func (a *ContractAgentID) Address() iotago.Address {
 	return a.chainID.AsAddress()
 }
 
+func (a *ContractAgentID) Bytes() []byte {
+	return rwutil.WriterToBytes(a)
+}
+
 func (a *ContractAgentID) ChainID() ChainID {
 	return a.chainID
-}
-
-func (a *ContractAgentID) Hname() Hname {
-	return a.h
-}
-
-func (a *ContractAgentID) Kind() AgentIDKind {
-	return AgentIDKindContract
-}
-
-func (a *ContractAgentID) Bytes() []byte {
-	mu := marshalutil.New()
-	mu.WriteByte(byte(a.Kind()))
-	mu.WriteBytes(a.chainID.Bytes())
-	mu.WriteBytes(a.h.Bytes())
-	return mu.Bytes()
-}
-
-func (a *ContractAgentID) String() string {
-	return a.h.String() + "@" + a.chainID.String()
 }
 
 func (a *ContractAgentID) Equals(other AgentID) bool {
@@ -82,5 +53,33 @@ func (a *ContractAgentID) Equals(other AgentID) bool {
 		return false
 	}
 	o := other.(*ContractAgentID)
-	return o.chainID.Equals(a.chainID) && o.h == a.h
+	return o.chainID.Equals(a.chainID) && o.hname == a.hname
+}
+
+func (a *ContractAgentID) Hname() Hname {
+	return a.hname
+}
+
+func (a *ContractAgentID) Kind() AgentIDKind {
+	return AgentIDKindContract
+}
+
+func (a *ContractAgentID) String() string {
+	return a.hname.String() + "@" + a.chainID.String()
+}
+
+func (a *ContractAgentID) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.ReadKindAndVerify(rwutil.Kind(a.Kind()))
+	rr.Read(&a.chainID)
+	rr.Read(&a.hname)
+	return rr.Err
+}
+
+func (a *ContractAgentID) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteKind(rwutil.Kind(a.Kind()))
+	ww.Write(&a.chainID)
+	ww.Write(&a.hname)
+	return ww.Err
 }

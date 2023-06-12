@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
@@ -28,7 +27,7 @@ var (
 		funcManyEvents.WithHandler(func(ctx isc.Sandbox) dict.Dict {
 			n := codec.MustDecodeUint32(ctx.Params().Get("n"))
 			for i := uint32(0); i < n; i++ {
-				ctx.Event("event.test", util.Uint32To4Bytes(n))
+				ctx.Event("event.test", codec.EncodeUint32(n))
 			}
 			return nil
 		}),
@@ -245,8 +244,8 @@ func TestGetEvents(t *testing.T) {
 	checkEventCounter(t, events[0], 0)
 }
 
-func checkEventCounter(t *testing.T, event *isc.Event, value int64) {
-	counter, err := util.Int64From8Bytes(event.Payload)
+func checkEventCounter(t *testing.T, event *isc.Event, value uint64) {
+	counter, err := codec.DecodeUint64(event.Payload)
 	require.NoError(t, err)
 	require.EqualValues(t, counter, value)
 }

@@ -1,11 +1,20 @@
-package trie_test
+package test
 
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/VictoriaMetrics/fastcache"
+	"github.com/Yiling-J/theine-go"
+	"github.com/dgraph-io/ristretto"
+	"github.com/dgryski/go-clockpro"
+	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/pingcap/go-ycsb/pkg/generator"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/trie"
@@ -67,7 +76,7 @@ func TestBasic(t *testing.T) {
 		require.Nil(t, tr.Get([]byte("cccddd")))
 		require.Nil(t, tr.Get([]byte("ccceee")))
 	}
-	// trie is now empty, so hash3 should be equl to hash0
+	// trie is now empty, so hash3 should be equal to hash0
 	require.Equal(t, root0, root3)
 }
 
@@ -606,4 +615,187 @@ func reverse(orig []string) []string {
 		ret = append(ret, orig[i])
 	}
 	return ret
+}
+
+type NewGeneratorFunc = func(int) Generator
+
+type Generator interface {
+	Next() string
+}
+
+//------------------------------------------------------------------------------
+
+type ScrambledZipfian struct {
+	r *rand.Rand
+	z *generator.ScrambledZipfian
+}
+
+func NewScrambledZipfian(max int) Generator {
+	return &ScrambledZipfian{
+		r: rand.New(rand.NewSource(time.Now().UnixNano())),
+		z: generator.NewScrambledZipfian(0, int64(max), generator.ZipfianConstant),
+	}
+}
+
+func (g *ScrambledZipfian) Next() string {
+	return strconv.FormatUint(uint64(g.z.Next(g.r)), 10)
+}
+
+type CacheBenchmark struct {
+	Init  func(size int)
+	Close func()
+	Get   func(key []byte) bool
+	Set   func(key []byte, value []byte) bool
+}
+
+const (
+	itemCost = 40 * 4
+)
+
+var (
+	lruCache       *lru.Cache[string, []byte]
+	ristrettoCache *ristretto.Cache
+	fastcacheCache *fastcache.Cache
+	theineCache    *theine.Cache[string, []byte]
+	clockproCache  *clockpro.Cache
+
+	cacheSize  = []int{1e4, 1e6}
+	multiplier = []int{10, 100, 1000}
+	caches     = map[string]CacheBenchmark{
+		"golang-lru": {
+			Init: func(size int) {
+				lruCache, _ = lru.New[string, []byte](size)
+			},
+			Close: func() {
+				lruCache.Purge()
+				lruCache = nil
+			},
+			Get: func(key []byte) bool {
+				_, ok := lruCache.Get(string(key))
+				return ok
+			},
+			Set: func(key []byte, value []byte) bool {
+				return lruCache.Add(string(key), value)
+			},
+		},
+		"ristretto": {
+			Init: func(size int) {
+				ristrettoCache, _ = ristretto.NewCache(&ristretto.Config{
+					// Keeps track of when keys are requested for LFU
+					// Recommendation is to make this 10x the max items in the cache, each key uses ~3 bytes
+					NumCounters: int64(size) * 10,
+					// Max cost of the cache should be the approximate size of each item * the number of items we want in the cache
+					MaxCost:     int64(size) * itemCost,
+					BufferItems: 64,
+				})
+			},
+			Close: ristrettoCache.Close,
+			Get: func(key []byte) bool {
+				_, ok := ristrettoCache.Get(key)
+				return ok
+			},
+			Set: func(key, value []byte) bool {
+				ok := ristrettoCache.Set(key, value, 0)
+				return ok
+			},
+		},
+		"fastcache": {
+			Init: func(size int) {
+				fastcacheCache = fastcache.New(size * itemCost)
+			},
+			Close: func() {
+				fastcacheCache.Reset()
+				fastcacheCache = nil
+			},
+			Get: func(key []byte) bool {
+				if v := fastcacheCache.Get(nil, key); v == nil {
+					return false
+				}
+				return true
+			},
+			Set: func(key, value []byte) bool {
+				fastcacheCache.Set(key, value)
+				return true
+			},
+		},
+		"theine": {
+			Init: func(size int) {
+				theineCache, _ = theine.NewBuilder[string, []byte](int64(size)).Build()
+			},
+			Close: func() {
+				theineCache.Close()
+				theineCache = nil
+			},
+			Get: func(key []byte) bool {
+				if _, ok := theineCache.Get(string(key)); ok {
+					return true
+				}
+				return false
+			},
+			Set: func(key, value []byte) bool {
+				return theineCache.Set(string(key), value, int64(len(value)))
+			},
+		},
+		"clockpro": {
+			Init: func(size int) {
+				clockproCache = clockpro.New(size)
+			},
+			Close: func() {
+				clockproCache = nil
+			},
+			Get: func(key []byte) bool {
+				if v := clockproCache.Get(string(key)); v != nil {
+					return true
+				}
+				return false
+			},
+			Set: func(key, value []byte) bool {
+				clockproCache.Set(string(key), value)
+				return true
+			},
+		},
+	}
+)
+
+// Benchmark to specifically test cache hits/misses on LRU
+func BenchmarkCaches(b *testing.B) {
+	for name, cache := range caches {
+		b.Run(name, func(b *testing.B) {
+			// hitrates := make([]float64, len(cacheSize)*len(multiplier))
+			for _, cacheSize := range cacheSize {
+				b.Run(fmt.Sprintf("cacheSize_%d", cacheSize), func(b *testing.B) {
+					for _, multiplier := range multiplier {
+						b.Run(fmt.Sprintf("possibleKeys_%d", multiplier*cacheSize), func(b *testing.B) {
+							b.StopTimer()
+							var hits, misses float64
+							cache.Init(cacheSize)
+							gen := NewScrambledZipfian(cacheSize * multiplier)
+							var hitrate float64
+							b.StartTimer()
+							defer func() {
+								b.StopTimer()
+								cache.Close()
+								b.StartTimer()
+							}()
+							for i := 0; i < b.N; i++ {
+								b.StopTimer()
+								key := gen.Next()
+								value := []byte(fmt.Sprintf("just a bunch of dummy text for key %s", key))
+								b.StartTimer()
+								if cache.Get([]byte(key)) {
+									hits++
+								} else {
+									misses++
+									cache.Set([]byte(key), value)
+								}
+							}
+							b.StopTimer()
+							hitrate = hits / (hits + misses)
+							b.Logf("sample size: %d, hits: %.2f, misses: %.2f, hitrate: %.2f", b.N, hits, misses, hitrate)
+						})
+					}
+				})
+			}
+		})
+	}
 }

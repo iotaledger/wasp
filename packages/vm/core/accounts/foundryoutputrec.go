@@ -3,9 +3,8 @@ package accounts
 import (
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // foundryOutputRec contains information to reconstruct output
@@ -22,8 +21,8 @@ func (f *foundryOutputRec) Bytes() []byte {
 	mu.WriteUint32(f.BlockIndex).
 		WriteUint16(f.OutputIndex).
 		WriteUint64(f.Amount)
-	util.WriteBytes8ToMarshalUtil(codec.EncodeTokenScheme(f.TokenScheme), mu)
-	util.WriteBytes16ToMarshalUtil(f.Metadata, mu)
+	rwutil.WriteBytesToMarshalUtil(codec.EncodeTokenScheme(f.TokenScheme), mu)
+	rwutil.WriteBytesToMarshalUtil(f.Metadata, mu)
 
 	return mu.Bytes()
 }
@@ -40,14 +39,14 @@ func foundryOutputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*foundryOutpu
 	if ret.Amount, err = mu.ReadUint64(); err != nil {
 		return nil, err
 	}
-	schemeBin, err := util.ReadBytes8FromMarshalUtil(mu)
+	schemeBin, err := rwutil.ReadBytesFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}
 	if ret.TokenScheme, err = codec.DecodeTokenScheme(schemeBin); err != nil {
 		return nil, err
 	}
-	if ret.Metadata, err = util.ReadBytes16FromMarshalUtil(mu); err != nil {
+	if ret.Metadata, err = rwutil.ReadBytesFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 	return ret, nil

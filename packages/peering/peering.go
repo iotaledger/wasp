@@ -87,7 +87,7 @@ func QueryByPubKeyOrName(trustedPeers []*TrustedPeer, pubKeysOrNames []string) (
 		var pubKey *cryptolib.PublicKey
 		var err error
 		if isPubKey {
-			pubKey, err = cryptolib.NewPublicKeyFromString(pubKeyOrName)
+			pubKey, err = cryptolib.PublicKeyFromString(pubKeyOrName)
 			if err != nil {
 				return nil, fmt.Errorf("cannot parse %v as pubKey: %w", pubKeyOrName, err)
 			}

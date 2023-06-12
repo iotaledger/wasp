@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/core/types"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -50,6 +52,13 @@ func (vmctx *VMContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	return vmctx.txbuilder.ModifyNativeTokenSupply(nativeTokenID, delta)
 }
 
+func (vmctx *VMContext) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
+	// set the "rety output ID" so that the correct output is used by the txbuilder
+	oid := vmctx.getOutputID(blockIndex, outputIndex)
+	retryReq := isc.NewRetryOnLedgerRequest(req.(isc.OnLedgerRequest), oid)
+	vmctx.task.UnprocessableToRetry = append(vmctx.task.UnprocessableToRetry, retryReq)
+}
+
 func (vmctx *VMContext) SetBlockContext(bctx interface{}) {
 	vmctx.blockContext[vmctx.CurrentContractHname()] = bctx
 }
@@ -63,9 +72,7 @@ func (vmctx *VMContext) CallOnBehalfOf(caller isc.AgentID, target, entryPoint is
 	return vmctx.callProgram(target, entryPoint, params, allowance, caller)
 }
 
-func (vmctx *VMContext) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
-	// set the "rety output ID" so that the correct output is used by the txbuilder
-	oid := vmctx.getOutputID(blockIndex, outputIndex)
-	retryReq := isc.NewRetryOnLedgerRequest(req.(isc.OnLedgerRequest), oid)
-	vmctx.task.UnprocessableToRetry = append(vmctx.task.UnprocessableToRetry, retryReq)
+func (vmctx *VMContext) SetEVMFailed(tx *types.Transaction, receipt *types.Receipt) {
+	vmctx.evmFailedTx = tx
+	vmctx.evmFailedReceipt = receipt
 }

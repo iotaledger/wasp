@@ -104,6 +104,7 @@ func (abp *AggregatedBatchProposals) DecidedRequestRefs() []*isc.RequestRef {
 	return abp.decidedRequestRefs
 }
 
+// TODO should this be moved to the VM?
 func (abp *AggregatedBatchProposals) OrderedRequests(requests []isc.Request, randomness hashing.HashValue) []isc.Request {
 	type sortStruct struct {
 		key hashing.HashValue

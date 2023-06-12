@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
+
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // Tcommitment (short for terminal commitment) commits to data of arbitrary size.
@@ -82,7 +84,7 @@ func (t *Tcommitment) Write(w io.Writer) error {
 	if t.IsValue {
 		size |= tcommitmentIsValueMask
 	}
-	if err := writeByte(w, size); err != nil {
+	if err := rwutil.WriteByte(w, size); err != nil {
 		return err
 	}
 	_, err := w.Write(t.Data)
@@ -92,7 +94,7 @@ func (t *Tcommitment) Write(w io.Writer) error {
 func (t *Tcommitment) Read(r io.Reader) error {
 	var err error
 	var l byte
-	if l, err = readByte(r); err != nil {
+	if l, err = rwutil.ReadByte(r); err != nil {
 		return err
 	}
 	t.IsValue = (l & tcommitmentIsValueMask) != 0
@@ -112,7 +114,7 @@ func (t *Tcommitment) Read(r io.Reader) error {
 }
 
 func (t *Tcommitment) Bytes() []byte {
-	return mustBytes(t)
+	return rwutil.WriterToBytes(t)
 }
 
 func (t *Tcommitment) String() string {

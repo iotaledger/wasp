@@ -4,20 +4,19 @@
 package gpa
 
 import (
-	"bytes"
-	"fmt"
+	"io"
 
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // MsgWrapper can be used to compose an algorithm out of other abstractions.
 // These messages are meant to wrap and route the messages of the sub-algorithms.
 type MsgWrapper struct {
-	msgType       byte
+	msgType       MessageType
 	subsystemFunc func(subsystem byte, index int) (GPA, error) // Resolve a subsystem GPA based on its code and index.
 }
 
-func NewMsgWrapper(msgType byte, subsystemFunc func(subsystem byte, index int) (GPA, error)) *MsgWrapper {
+func NewMsgWrapper(msgType MessageType, subsystemFunc func(subsystem byte, index int) (GPA, error)) *MsgWrapper {
 	return &MsgWrapper{msgType, subsystemFunc}
 }
 
@@ -53,95 +52,88 @@ func (w *MsgWrapper) DelegateMessage(msg *WrappingMsg) (GPA, OutMessages, error)
 }
 
 func (w *MsgWrapper) UnmarshalMessage(data []byte) (Message, error) {
-	r := bytes.NewReader(data)
-	msgType, err := util.ReadByte(r)
-	if err != nil {
-		return nil, fmt.Errorf("cannot decode MsgWrapper::msgType: %v", msgType)
+	rr := rwutil.NewBytesReader(data)
+	w.msgType.ReadAndVerify(rr)
+	ret := &WrappingMsg{
+		msgType:   w.msgType,
+		subsystem: rr.ReadByte(),
+		index:     int(rr.ReadUint16()),
 	}
-	if msgType != w.msgType {
-		return nil, fmt.Errorf("invalid MsgWrapper::msgType, got %v, expected %v", msgType, w.msgType)
-	}
-	subsystem, err := util.ReadByte(r)
-	if err != nil {
-		return nil, err
-	}
-	var indexU16 uint16
-	if err2 := util.ReadUint16(r, &indexU16); err2 != nil {
-		return nil, err2
-	}
-	index := int(indexU16)
-	wrappedBin, err := util.ReadBytes32(r)
-	if err != nil {
-		return nil, err
+	wrappedData := rr.ReadBytes()
+	if rr.Err != nil {
+		return nil, rr.Err
 	}
 
-	subGPA, err := w.subsystemFunc(subsystem, index)
+	subGPA, err := w.subsystemFunc(ret.subsystem, ret.index)
 	if err != nil {
 		return nil, err
 	}
-	wrapped, err := subGPA.UnmarshalMessage(wrappedBin)
+	ret.wrapped, err = subGPA.UnmarshalMessage(wrappedData)
 	if err != nil {
 		return nil, err
 	}
-
-	return &WrappingMsg{msgType, subsystem, index, wrapped}, nil
+	return ret, nil
 }
 
 // The message that contains another, and its routing info.
 type WrappingMsg struct {
-	msgType   byte
+	msgType   MessageType
 	subsystem byte
 	index     int
 	wrapped   Message
 }
 
-var _ Message = &WrappingMsg{}
+var _ Message = new(WrappingMsg)
 
-func NewWrappingMsg(msgType, subsystem byte, index int, wrapped Message) *WrappingMsg {
+func NewWrappingMsg(msgType MessageType, subsystem byte, index int, wrapped Message) *WrappingMsg {
 	return &WrappingMsg{msgType: msgType, subsystem: subsystem, index: index, wrapped: wrapped}
 }
 
-func (m *WrappingMsg) Subsystem() byte {
-	return m.subsystem
+func (msg *WrappingMsg) Subsystem() byte {
+	return msg.subsystem
 }
 
-func (m *WrappingMsg) Index() int {
-	return m.index
+func (msg *WrappingMsg) Index() int {
+	return msg.index
 }
 
-func (m *WrappingMsg) Wrapped() Message {
-	return m.wrapped
+func (msg *WrappingMsg) Wrapped() Message {
+	return msg.wrapped
 }
 
-func (m *WrappingMsg) Recipient() NodeID {
-	return m.wrapped.Recipient()
+func (msg *WrappingMsg) Recipient() NodeID {
+	return msg.wrapped.Recipient()
 }
 
-func (m *WrappingMsg) SetSender(sender NodeID) {
-	m.wrapped.SetSender(sender)
+func (msg *WrappingMsg) SetSender(sender NodeID) {
+	msg.wrapped.SetSender(sender)
 }
 
-func (m *WrappingMsg) MarshalBinary() ([]byte, error) {
-	w := &bytes.Buffer{}
-	if err := util.WriteByte(w, m.msgType); err != nil {
-		return nil, err
-	}
-	if err := util.WriteByte(w, m.subsystem); err != nil {
-		return nil, err
-	}
-	if err := util.WriteUint16(w, uint16(m.index)); err != nil {
-		return nil, err
-	}
-	bin, err := m.wrapped.MarshalBinary()
-	if err != nil {
-		return nil, err
-	}
-	if err := util.WriteBytes32(w, bin); err != nil {
-		return nil, err
-	}
-	return w.Bytes(), nil
+func (msg *WrappingMsg) MarshalBinary() ([]byte, error) {
+	return rwutil.MarshalBinary(msg)
 }
 
-func (m *WrappingMsg) UnmarshalBinary(data []byte) error {
+func (msg *WrappingMsg) UnmarshalBinary(data []byte) error {
+	// return rwutil.UnmarshalBinary(data, msg)
 	panic("this message is un-marshaled by the gpa.MsgWrapper")
+}
+
+// note: never called, unfinished concept version
+func (msg *WrappingMsg) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msg.msgType.ReadAndVerify(rr)
+	msg.subsystem = rr.ReadByte()
+	msg.index = int(rr.ReadUint16())
+	// TODO: allocate proper message
+	rr.ReadMarshaled(msg.wrapped)
+	return rr.Err
+}
+
+func (msg *WrappingMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	msg.msgType.Write(ww)
+	ww.WriteByte(msg.subsystem)
+	ww.WriteUint16(uint16(msg.index))
+	ww.WriteMarshaled(msg.wrapped)
+	return ww.Err
 }

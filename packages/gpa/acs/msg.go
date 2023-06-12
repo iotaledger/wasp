@@ -3,10 +3,12 @@
 
 package acs
 
-import "github.com/iotaledger/wasp/packages/gpa"
+import (
+	"github.com/iotaledger/wasp/packages/gpa"
+)
 
 const (
-	msgTypeWrapped byte = iota
+	msgTypeWrapped gpa.MessageType = iota
 )
 
 func (a *acsImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {

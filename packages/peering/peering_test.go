@@ -24,7 +24,7 @@ func TestPeerMessageCodec(t *testing.T) {
 	bin, err = src.Bytes()
 	require.Nil(t, err)
 	require.NotNil(t, bin)
-	dst, err = peering.NewPeerMessageNetFromBytes(bin)
+	dst, err = peering.PeerMessageNetFromBytes(bin)
 	require.Nil(t, err)
 	require.NotNil(t, dst)
 	require.EqualValues(t, src.PeeringID, dst.PeeringID)

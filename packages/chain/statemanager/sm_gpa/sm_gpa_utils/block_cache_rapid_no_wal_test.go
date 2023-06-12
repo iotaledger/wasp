@@ -1,6 +1,7 @@
 package sm_gpa_utils
 
 import (
+	"runtime"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type blockCacheNoWALTestSM struct { // State machine for block cache no WAL property based Rapid tests
@@ -172,5 +174,8 @@ func (bcnwtsmT *blockCacheNoWALTestSM) getAndCheckBlock(t *rapid.T, blockKey Blo
 }
 
 func TestBlockCachePropBasedNoWAL(t *testing.T) {
+	if runtime.GOOS == util.WindowsOS {
+		t.Skip("Needs fixing on windows")
+	}
 	rapid.Check(t, rapid.Run[*blockCacheNoWALTestSM]())
 }

@@ -299,8 +299,6 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2TotalNativeTokens(nativeTokenID, 1000)
 	})
 	t.Run("max supply MaxUint256, mintTokens MaxUint256_1", func(t *testing.T) {
-		t.SkipNow() // TODO not working
-
 		initTest()
 		sn, nativeTokenID, err := ch.NewFoundryParams(abi.MaxUint256).
 			WithUser(senderKeyPair).
@@ -490,7 +488,7 @@ func TestFoundries(t *testing.T) {
 		events, err := ch.GetEventsForContract(accounts.Contract.Name)
 		require.NoError(t, err)
 		require.Len(t, events, 1)
-		sn, err = util.Uint32From4Bytes(events[0].Payload)
+		sn, err = codec.DecodeUint32(events[0].Payload)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
 	})
@@ -1391,5 +1389,44 @@ func TestRequestWithNoGasBudget(t *testing.T) {
 	// post the request off-ledger again (the account has funds now), the request gets bumped to "minGasBudget"
 	_, err = ch.PostRequestOffLedger(req, senderWallet)
 	require.EqualValues(t, gas.LimitsDefault.MinGasPerRequest, ch.LastReceipt().GasBudget)
+	testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
+}
+
+func TestNonces(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	ch := env.NewChain()
+	senderWallet, _ := env.NewKeyPairWithFunds()
+	ch.DepositAssetsToL2(isc.NewAssetsBaseTokens(10*isc.Million), senderWallet)
+
+	req := solo.NewCallParams("dummy", "dummy").WithGasBudget(0).WithNonce(0)
+	_, err := ch.PostRequestOffLedger(req, senderWallet)
+	testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
+
+	req = req.WithNonce(1)
+	_, err = ch.PostRequestOffLedger(req, senderWallet)
+	testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
+
+	req = req.WithNonce(2)
+	_, err = ch.PostRequestOffLedger(req, senderWallet)
+	testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
+
+	// try to send old nonce
+	req = req.WithNonce(1)
+	_, err = ch.PostRequestOffLedger(req, senderWallet)
+	testmisc.RequireErrorToBe(t, err, "request was skipped")
+
+	// try to replay nonce 2
+	req = req.WithNonce(2)
+	_, err = ch.PostRequestOffLedger(req, senderWallet)
+	testmisc.RequireErrorToBe(t, err, "request was skipped")
+
+	// nonce too high
+	req = req.WithNonce(20)
+	_, err = ch.PostRequestOffLedger(req, senderWallet)
+	testmisc.RequireErrorToBe(t, err, "request was skipped")
+
+	// correct nonce passes
+	req = req.WithNonce(3)
+	_, err = ch.PostRequestOffLedger(req, senderWallet)
 	testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
 }

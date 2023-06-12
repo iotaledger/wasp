@@ -267,9 +267,9 @@ func decodeHeader(b []byte) *header {
 	return h
 }
 
-func readBytes(m *marshalutil.MarshalUtil, size int, dst []byte) (err error) {
+func readBytes(mu *marshalutil.MarshalUtil, size int, dst []byte) (err error) {
 	var buf []byte
-	buf, err = m.ReadBytes(size)
+	buf, err = mu.ReadBytes(size)
 	if err == nil {
 		copy(dst, buf)
 	}

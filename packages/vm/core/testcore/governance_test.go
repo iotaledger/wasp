@@ -134,7 +134,7 @@ func TestAccessNodes(t *testing.T) {
 		governance.GetChainNodesRequest{}.AsDict(),
 	)
 	require.NoError(t, err)
-	getChainNodesResponse := governance.NewGetChainNodesResponseFromDict(res)
+	getChainNodesResponse := governance.GetChainNodesResponseFromDict(res)
 	require.Empty(t, getChainNodesResponse.AccessNodeCandidates)
 	require.Empty(t, getChainNodesResponse.AccessNodes)
 
@@ -160,7 +160,7 @@ func TestAccessNodes(t *testing.T) {
 		governance.GetChainNodesRequest{}.AsDict(),
 	)
 	require.NoError(t, err)
-	getChainNodesResponse = governance.NewGetChainNodesResponseFromDict(res)
+	getChainNodesResponse = governance.GetChainNodesResponseFromDict(res)
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodeCandidates)) // Candidate registered.
 	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[0].AccessAPI)
 	require.Empty(t, getChainNodesResponse.AccessNodes)
@@ -183,7 +183,7 @@ func TestAccessNodes(t *testing.T) {
 		governance.GetChainNodesRequest{}.AsDict(),
 	)
 	require.NoError(t, err)
-	getChainNodesResponse = governance.NewGetChainNodesResponseFromDict(res)
+	getChainNodesResponse = governance.GetChainNodesResponseFromDict(res)
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodeCandidates)) // Candidate registered.
 	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[0].AccessAPI)
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodes))
@@ -208,7 +208,7 @@ func TestAccessNodes(t *testing.T) {
 		governance.GetChainNodesRequest{}.AsDict(),
 	)
 	require.NoError(t, err)
-	getChainNodesResponse = governance.NewGetChainNodesResponseFromDict(res)
+	getChainNodesResponse = governance.GetChainNodesResponseFromDict(res)
 	require.Empty(t, getChainNodesResponse.AccessNodeCandidates)
 	require.Empty(t, getChainNodesResponse.AccessNodes)
 }

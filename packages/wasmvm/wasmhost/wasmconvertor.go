@@ -19,7 +19,7 @@ type WasmConvertor struct{}
 
 func (cvt WasmConvertor) IscAddress(scAddress *wasmtypes.ScAddress) iotago.Address {
 	buf := wasmtypes.AddressToBytes(*scAddress)
-	address, _, err := isc.AddressFromBytes(buf)
+	address, err := isc.AddressFromBytes(buf)
 	if err != nil {
 		panic(err)
 	}
@@ -107,7 +107,7 @@ func (cvt WasmConvertor) ScAgentID(agentID isc.AgentID) wasmtypes.ScAgentID {
 }
 
 func (cvt WasmConvertor) ScBalances(allowance *isc.Assets) *wasmlib.ScBalances {
-	transfer := wasmlib.NewScTransferBaseTokens(allowance.BaseTokens)
+	transfer := wasmlib.ScTransferFromBaseTokens(allowance.BaseTokens)
 	for _, token := range allowance.NativeTokens {
 		tokenID := cvt.ScTokenID(token.ID)
 		transfer.Set(&tokenID, cvt.ScBigInt(token.Amount))

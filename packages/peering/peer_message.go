@@ -10,14 +10,13 @@
 package peering
 
 import (
-	"bytes"
 	"sync"
 
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // PeerMessage is an envelope for all the messages exchanged via the peering module.
@@ -35,26 +34,19 @@ type PeerMessageData struct {
 // newPeerMessageDataFromBytes creates a new PeerMessageData from bytes.
 // The function takes ownership over "data" and the caller should not use "data" after this call.
 //
-//nolint:gocritic
+
 func newPeerMessageDataFromBytes(data []byte) (*PeerMessageData, error) {
 	// create a copy of the slice for later usage of the raw data.
 	cpy := lo.CopySlice(data)
 
-	var err error
-	buf := bytes.NewBuffer(data)
-
+	rr := rwutil.NewBytesReader(data)
 	m := new(PeerMessageData)
-	if m.MsgReceiver, err = util.ReadByte(buf); err != nil {
-		return nil, err
-	}
-	if m.MsgType, err = util.ReadByte(buf); err != nil {
-		return nil, err
-	}
-	if err = m.PeeringID.Read(buf); err != nil {
-		return nil, err
-	}
-	if m.MsgData, err = util.ReadBytes32(buf); err != nil {
-		return nil, err
+	m.MsgReceiver = rr.ReadByte()
+	m.MsgType = rr.ReadByte()
+	rr.Read(&m.PeeringID)
+	m.MsgData = rr.ReadBytes()
+	if rr.Err != nil {
+		return nil, rr.Err
 	}
 
 	m.serializedOnce.Do(func() {
@@ -67,32 +59,13 @@ func newPeerMessageDataFromBytes(data []byte) (*PeerMessageData, error) {
 
 func (m *PeerMessageData) Bytes() ([]byte, error) {
 	m.serializedOnce.Do(func() {
-		buf := new(bytes.Buffer)
-
-		if err := util.WriteByte(buf, m.MsgReceiver); err != nil {
-			m.serializedErr = err
-			return
-		}
-		if err := util.WriteByte(buf, m.MsgType); err != nil {
-			m.serializedErr = err
-			return
-		}
-		if err := m.PeeringID.Write(buf); err != nil {
-			m.serializedErr = err
-			return
-		}
-		if err := util.WriteBytes32(buf, m.MsgData); err != nil {
-			m.serializedErr = err
-			return
-		}
-
-		m.serializedData = buf.Bytes()
+		ww := rwutil.NewBytesWriter()
+		ww.WriteByte(m.MsgReceiver)
+		ww.WriteByte(m.MsgType)
+		ww.Write(&m.PeeringID)
+		ww.WriteBytes(m.MsgData)
+		m.serializedData = ww.Bytes()
 	})
-
-	if m.serializedErr != nil {
-		return nil, m.serializedErr
-	}
-
 	return m.serializedData, nil
 }
 
@@ -105,9 +78,9 @@ type PeerMessageNet struct {
 
 var _ pipe.Hashable = &PeerMessageNet{}
 
-// NewPeerMessageNetFromBytes creates a new PeerMessageNet from bytes.
+// PeerMessageNetFromBytes creates a new PeerMessageNet from bytes.
 // The function takes ownership over "data" and the caller should not use "data" after this call.
-func NewPeerMessageNetFromBytes(data []byte) (*PeerMessageNet, error) {
+func PeerMessageNetFromBytes(data []byte) (*PeerMessageNet, error) {
 	peerMessageData, err := newPeerMessageDataFromBytes(data)
 	if err != nil {
 		return nil, err

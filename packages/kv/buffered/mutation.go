@@ -1,14 +1,13 @@
 package buffered
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"sort"
 
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // Mutations is a set of mutations: one for each key
@@ -26,63 +25,47 @@ func NewMutations() *Mutations {
 }
 
 func (ms *Mutations) Bytes() []byte {
-	var buf bytes.Buffer
-	_ = ms.Write(&buf)
-	return buf.Bytes()
+	return rwutil.WriterToBytes(ms)
 }
 
 func (ms *Mutations) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, uint32(len(ms.Sets))); err != nil {
-		return err
-	}
+	ww := rwutil.NewWriter(w)
+
+	ww.WriteSize(len(ms.Sets))
 	for _, item := range ms.SetsSorted() {
-		if err := util.WriteString16(w, string(item.Key)); err != nil {
-			return err
-		}
-		if err := util.WriteBytes32(w, item.Value); err != nil {
-			return err
-		}
+		ww.WriteString(string(item.Key))
+		ww.WriteBytes(item.Value)
 	}
-	if err := util.WriteUint32(w, uint32(len(ms.Dels))); err != nil {
-		return err
-	}
+
+	ww.WriteSize(len(ms.Dels))
 	for _, k := range ms.DelsSorted() {
-		if err := util.WriteString16(w, string(k)); err != nil {
-			return err
-		}
+		ww.WriteString(string(k))
 	}
-	return nil
+	return ww.Err
 }
 
-//nolint:gocritic
 func (ms *Mutations) Read(r io.Reader) error {
-	var err error
-	var n uint32
-	if err = util.ReadUint32(r, &n); err != nil {
-		return err
-	}
-	for i := uint32(0); i < n; i++ {
-		var k string
-		var v []byte
-		if k, err = util.ReadString16(r); err != nil {
-			return err
+	rr := rwutil.NewReader(r)
+
+	size := rr.ReadSize()
+	for i := 0; i < size; i++ {
+		key := rr.ReadString()
+		val := rr.ReadBytes()
+		if rr.Err != nil {
+			return rr.Err
 		}
-		if v, err = util.ReadBytes32(r); err != nil {
-			return err
+		ms.Set(kv.Key(key), val)
+	}
+
+	size = rr.ReadSize()
+	for i := 0; i < size; i++ {
+		key := rr.ReadString()
+		if rr.Err != nil {
+			return rr.Err
 		}
-		ms.Set(kv.Key(k), v)
+		ms.Del(kv.Key(key))
 	}
-	if err = util.ReadUint32(r, &n); err != nil {
-		return err
-	}
-	for i := uint32(0); i < n; i++ {
-		var k string
-		if k, err = util.ReadString16(r); err != nil {
-			return err
-		}
-		ms.Del(kv.Key(k))
-	}
-	return nil
+	return rr.Err
 }
 
 func (ms *Mutations) SetsSorted() kv.Items {

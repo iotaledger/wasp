@@ -71,8 +71,8 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	ctx := wasmclient.NewWasmClientContext(svc, testwasmlib.ScName)
 	require.NoError(t, ctx.Err)
 
-	seed := cryptolib.NewSeedFromBytes(wasmtypes.BytesFromString(mySeed))
-	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(0))
+	seed := cryptolib.SeedFromBytes(wasmtypes.BytesFromString(mySeed))
+	wallet := cryptolib.KeyPairFromSeed(seed.SubSeed(0))
 	ctx.SignRequests(wallet)
 	require.NoError(t, ctx.Err)
 	return ctx
@@ -111,8 +111,8 @@ func TestErrorHandling(t *testing.T) {
 	// fmt.Println("Error: " + ctx.Err.Error())
 
 	// sign with wrong wallet
-	seed := cryptolib.NewSeedFromBytes(wasmtypes.BytesFromString(mySeed))
-	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(1))
+	seed := cryptolib.SeedFromBytes(wasmtypes.BytesFromString(mySeed))
+	wallet := cryptolib.KeyPairFromSeed(seed.SubSeed(1))
 	ctx.SignRequests(wallet)
 	f := testwasmlib.ScFuncs.Random(ctx)
 	f.Func.Post()

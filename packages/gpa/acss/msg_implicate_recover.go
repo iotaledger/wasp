@@ -4,11 +4,10 @@
 package acss
 
 import (
-	"bytes"
-	"fmt"
+	"io"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type msgImplicateKind byte
@@ -27,56 +26,38 @@ type msgImplicateRecover struct {
 	data      []byte // Either implication or the recovered secret.
 }
 
-var _ gpa.Message = &msgImplicateRecover{}
+var _ gpa.Message = new(msgImplicateRecover)
 
-func (m *msgImplicateRecover) Recipient() gpa.NodeID {
-	return m.recipient
+func (msg *msgImplicateRecover) Recipient() gpa.NodeID {
+	return msg.recipient
 }
 
-func (m *msgImplicateRecover) SetSender(sender gpa.NodeID) {
-	m.sender = sender
+func (msg *msgImplicateRecover) SetSender(sender gpa.NodeID) {
+	msg.sender = sender
 }
 
-func (m *msgImplicateRecover) MarshalBinary() ([]byte, error) {
-	w := &bytes.Buffer{}
-	if err := util.WriteByte(w, msgTypeImplicateRecover); err != nil {
-		return nil, err
-	}
-	if err := util.WriteByte(w, byte(m.kind)); err != nil {
-		return nil, err
-	}
-	if err := util.WriteUint16(w, uint16(m.i)); err != nil {
-		return nil, err
-	}
-	if err := util.WriteBytes32(w, m.data); err != nil {
-		return nil, err
-	}
-	return w.Bytes(), nil
+func (msg *msgImplicateRecover) MarshalBinary() ([]byte, error) {
+	return rwutil.MarshalBinary(msg)
 }
 
-func (m *msgImplicateRecover) UnmarshalBinary(data []byte) error {
-	r := bytes.NewReader(data)
-	t, err := util.ReadByte(r)
-	if err != nil {
-		return err
-	}
-	if t != msgTypeImplicateRecover {
-		return fmt.Errorf("unexpected msgType: %v in acss.msgImplicateRecover", t)
-	}
-	k, err := util.ReadByte(r)
-	if err != nil {
-		return err
-	}
-	var i uint16
-	if err2 := util.ReadUint16(r, &i); err2 != nil { // TODO: Resolve I from the context, trusting it might be unsafe.
-		return err2
-	}
-	d, err := util.ReadBytes32(r)
-	if err != nil {
-		return err
-	}
-	m.kind = msgImplicateKind(k)
-	m.i = int(i)
-	m.data = d
-	return nil
+func (msg *msgImplicateRecover) UnmarshalBinary(data []byte) error {
+	return rwutil.UnmarshalBinary(data, msg)
+}
+
+func (msg *msgImplicateRecover) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msgTypeImplicateRecover.ReadAndVerify(rr)
+	msg.kind = msgImplicateKind(rr.ReadByte())
+	msg.i = int(rr.ReadUint16())
+	msg.data = rr.ReadBytes()
+	return rr.Err
+}
+
+func (msg *msgImplicateRecover) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	msgTypeImplicateRecover.Write(ww)
+	ww.WriteByte(byte(msg.kind))
+	ww.WriteUint16(uint16(msg.i))
+	ww.WriteBytes(msg.data)
+	return ww.Err
 }

@@ -14,10 +14,12 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -51,7 +53,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress iotago.Address) (
 		tcl.governor,
 		committeeAddress,
 		tcl.governor.Address(),
-		0,
+		100*isc.Million,
 		nil,
 		outs,
 		outIDs,
@@ -124,7 +126,32 @@ func (tcl *TestChainLedger) MakeTxDeployIncCounterContract() []isc.Request {
 	return tcl.findChainRequests(tx)
 }
 
-func (tcl *TestChainLedger) FakeTX(baseAO *isc.AliasOutputWithID, nextCommitteeAddr iotago.Address) (*isc.AliasOutputWithID, *iotago.Transaction) {
+func (tcl *TestChainLedger) FakeStateTransition(baseAO *isc.AliasOutputWithID, stateCommitment *state.L1Commitment) *isc.AliasOutputWithID {
+	stateMetadata := transaction.NewStateMetadata(
+		stateCommitment,
+		gas.DefaultFeePolicy(),
+		0,
+		"",
+	)
+	anchorOutput := &iotago.AliasOutput{
+		Amount:        baseAO.GetAliasOutput().Deposit(),
+		AliasID:       tcl.chainID.AsAliasID(),
+		StateIndex:    baseAO.GetStateIndex() + 1,
+		StateMetadata: stateMetadata.Bytes(),
+		Conditions: iotago.UnlockConditions{
+			&iotago.StateControllerAddressUnlockCondition{Address: tcl.governor.Address()},
+			&iotago.GovernorAddressUnlockCondition{Address: tcl.governor.Address()},
+		},
+		Features: iotago.Features{
+			&iotago.SenderFeature{
+				Address: tcl.chainID.AsAddress(),
+			},
+		},
+	}
+	return isc.NewAliasOutputWithID(anchorOutput, iotago.OutputID{byte(anchorOutput.StateIndex)})
+}
+
+func (tcl *TestChainLedger) FakeRotationTX(baseAO *isc.AliasOutputWithID, nextCommitteeAddr iotago.Address) (*isc.AliasOutputWithID, *iotago.Transaction) {
 	tx, err := transaction.NewRotateChainStateControllerTx(
 		tcl.chainID.AsAliasID(),
 		nextCommitteeAddr,

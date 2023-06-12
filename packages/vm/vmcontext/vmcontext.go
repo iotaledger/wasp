@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/core/types"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -50,6 +52,8 @@ type VMContext struct {
 	currentStateUpdate *StateUpdate
 	entropy            hashing.HashValue
 	callStack          []*callContext
+	evmFailedTx        *types.Transaction
+	evmFailedReceipt   *types.Receipt
 	// --- gas related
 	// max tokens that can be charged for gas fee
 	gasMaxTokensToSpendForGasFee uint64

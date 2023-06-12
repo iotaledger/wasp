@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"strconv"
@@ -22,42 +23,38 @@ func (r Ratio32) String() string {
 	return fmt.Sprintf("%d:%d", r.A, r.B)
 }
 
-func Ratio32FromString(s string) (Ratio32, error) {
+func Ratio32FromString(s string) (ret Ratio32, err error) {
 	parts := strings.Split(s, ":")
 	if len(parts) != 2 {
-		return Ratio32{}, fmt.Errorf("invalid string")
+		return ret, errors.New("invalid Ratio32 string")
 	}
 	a, err := strconv.ParseUint(parts[0], 10, 32)
 	if err != nil {
-		return Ratio32{}, err
+		return ret, err
 	}
 	b, err := strconv.ParseUint(parts[1], 10, 32)
 	if err != nil {
-		return Ratio32{}, err
+		return ret, err
 	}
-	return Ratio32{A: uint32(a), B: uint32(b)}, nil
+	ret.A = uint32(a)
+	ret.B = uint32(b)
+	return ret, nil
 }
 
 func (r Ratio32) Bytes() []byte {
 	var b [RatioByteSize]byte
-	copy(b[:4], Uint32To4Bytes(r.A))
-	copy(b[4:], Uint32To4Bytes(r.B))
+	binary.LittleEndian.PutUint32(b[:4], r.A)
+	binary.LittleEndian.PutUint32(b[4:], r.B)
 	return b[:]
 }
 
-func Ratio32FromBytes(bytes []byte) (Ratio32, error) {
+func Ratio32FromBytes(bytes []byte) (ret Ratio32, err error) {
 	if len(bytes) != RatioByteSize {
-		return Ratio32{}, fmt.Errorf("expected bytes length = %d", RatioByteSize)
+		return ret, errors.New("invalid Ratio32 size")
 	}
-	a, err := Uint32From4Bytes(bytes[:4])
-	if err != nil {
-		return Ratio32{}, err
-	}
-	b, err := Uint32From4Bytes(bytes[4:])
-	if err != nil {
-		return Ratio32{}, err
-	}
-	return Ratio32{A: a, B: b}, nil
+	ret.A = binary.LittleEndian.Uint32(bytes[:4])
+	ret.B = binary.LittleEndian.Uint32(bytes[4:])
+	return ret, nil
 }
 
 func ceil(x, dividend, divisor uint64) uint64 {

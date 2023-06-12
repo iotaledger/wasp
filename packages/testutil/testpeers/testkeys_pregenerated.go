@@ -8,7 +8,7 @@ import (
 	"embed"
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 //go:embed testkeys_pregenerated-*.bin
@@ -26,7 +26,7 @@ func pregeneratedDksRead(n, t uint16) [][]byte {
 		panic(err)
 	}
 	r := bytes.NewReader(buf)
-	if err = util.ReadUint16(r, &bufN); err != nil {
+	if bufN, err = rwutil.ReadUint16(r); err != nil {
 		panic(err)
 	}
 	if n != bufN {
@@ -34,7 +34,7 @@ func pregeneratedDksRead(n, t uint16) [][]byte {
 	}
 	res := make([][]byte, n)
 	for i := range res {
-		if res[i], err = util.ReadBytes16(r); err != nil {
+		if res[i], err = rwutil.ReadBytes(r); err != nil {
 			panic(r)
 		}
 	}

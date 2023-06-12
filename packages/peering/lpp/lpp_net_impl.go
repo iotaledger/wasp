@@ -43,7 +43,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/domain"
 	"github.com/iotaledger/wasp/packages/peering/group"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
@@ -223,7 +223,7 @@ func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 		n.log.Warnf("Failed to read incoming payload from %v, reason=%v", remotePeer.remotePeeringURL, err)
 		return
 	}
-	peerMsg, err := peering.NewPeerMessageNetFromBytes(payload) // Do not use the signatures, we have TLS.
+	peerMsg, err := peering.PeerMessageNetFromBytes(payload) // Do not use the signatures, we have TLS.
 	if err != nil {
 		n.log.Warnf("error while decoding a message, reason=%v", err)
 		return
@@ -535,7 +535,7 @@ func (n *netImpl) maintenanceLoop(stopCh chan bool) {
 	}
 }
 
-// readFrame differs from util.ReadBytes16 because it uses ReadFull instead of Read to read the data.
+// readFrame differs from rwutil.ReadBytes because it uses ReadFull instead of Read to read the data.
 func readFrame(stream network.Stream) ([]byte, error) {
 	var msgLenB [4]byte
 	if msgLenN, err := io.ReadFull(stream, msgLenB[:]); err != nil || msgLenN != len(msgLenB) {
@@ -560,5 +560,12 @@ func readFrame(stream network.Stream) ([]byte, error) {
 }
 
 func writeFrame(stream network.Stream, payload []byte) error {
-	return util.WriteBytes32(stream, payload)
+	err := rwutil.WriteUint32(stream, uint32(len(payload)))
+	if err != nil {
+		return err
+	}
+	if len(payload) != 0 {
+		_, err = stream.Write(payload)
+	}
+	return err
 }

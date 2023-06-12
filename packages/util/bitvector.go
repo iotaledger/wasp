@@ -4,35 +4,39 @@
 package util
 
 import (
+	"io"
+
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type BitVector interface {
 	SetBits(positions []int) BitVector
 	AsInts() []int
 	Bytes() []byte
+	Read(r io.Reader) error
+	Write(w io.Writer) error
 }
 
 type fixBitVector struct {
-	size int
+	size uint16
 	data []byte
 }
 
-func NewFixedSizeBitVector(size int) BitVector {
-	return &fixBitVector{size: size, data: make([]byte, (size-1)/8+1)}
+func NewFixedSizeBitVector(size uint16) BitVector {
+	return &fixBitVector{size: size, data: make([]byte, (size+7)/8)}
 }
 
-func NewFixedSizeBitVectorFromMarshalUtil(mu *marshalutil.MarshalUtil) (BitVector, error) {
-	size, err := mu.ReadUint16()
-	if err != nil {
-		return nil, err
-	}
-	byteSize := (int(size)-1)/8 + 1
-	data, err := mu.ReadBytes(byteSize)
-	if err != nil {
-		return nil, err
-	}
-	return &fixBitVector{size: int(size), data: data}, nil
+func FixedSizeBitVectorFromBytes(data []byte) (BitVector, error) {
+	return rwutil.ReaderFromBytes(data, new(fixBitVector))
+}
+
+func FixedSizeBitVectorFromMarshalUtil(mu *marshalutil.MarshalUtil) (BitVector, error) {
+	return rwutil.ReaderFromMu(mu, new(fixBitVector))
+}
+
+func (b *fixBitVector) Bytes() []byte {
+	return rwutil.WriterToBytes(b)
 }
 
 func (b *fixBitVector) SetBits(positions []int) BitVector {
@@ -43,13 +47,9 @@ func (b *fixBitVector) SetBits(positions []int) BitVector {
 	return b
 }
 
-func (b *fixBitVector) Bytes() []byte {
-	return marshalutil.New().WriteUint16(uint16(b.size)).WriteBytes(b.data).Bytes()
-}
-
 func (b *fixBitVector) AsInts() []int {
-	ints := []int{}
-	for i := 0; i < b.size; i++ {
+	ints := make([]int, 0, b.size)
+	for i := 0; i < int(b.size); i++ {
 		bytePos, bitMask := b.bitMask(i)
 		if b.data[bytePos]&bitMask != 0 {
 			ints = append(ints, i)
@@ -59,8 +59,23 @@ func (b *fixBitVector) AsInts() []int {
 }
 
 func (b *fixBitVector) bitMask(position int) (int, byte) {
-	var bitMask byte = 1
-	bitMask <<= position % 8
-	bytePos := position / 8
-	return bytePos, bitMask
+	if uint32(position) >= uint32(b.size) {
+		panic("bit vector position out of range")
+	}
+	return position >> 3, 1 << (position & 0x07)
+}
+
+func (b *fixBitVector) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	b.size = uint16(rr.ReadSize())
+	b.data = make([]byte, (b.size+7)/8)
+	rr.ReadN(b.data)
+	return rr.Err
+}
+
+func (b *fixBitVector) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteSize(int(b.size))
+	ww.WriteN(b.data)
+	return ww.Err
 }

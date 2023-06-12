@@ -1,21 +1,19 @@
 package isc
 
+import (
+	"io"
+
+	"github.com/iotaledger/wasp/packages/util/rwutil"
+)
+
 const nilAgentIDString = "-"
 
 type NilAgentID struct{}
 
 var _ AgentID = &NilAgentID{}
 
-func (a *NilAgentID) Kind() AgentIDKind {
-	return AgentIDKindNil
-}
-
 func (a *NilAgentID) Bytes() []byte {
-	return []byte{byte(a.Kind())}
-}
-
-func (a *NilAgentID) String() string {
-	return nilAgentIDString
+	return rwutil.WriterToBytes(a)
 }
 
 func (a *NilAgentID) Equals(other AgentID) bool {
@@ -23,4 +21,24 @@ func (a *NilAgentID) Equals(other AgentID) bool {
 		return false
 	}
 	return other.Kind() == a.Kind()
+}
+
+func (a *NilAgentID) Kind() AgentIDKind {
+	return AgentIDKindNil
+}
+
+func (a *NilAgentID) String() string {
+	return nilAgentIDString
+}
+
+func (a *NilAgentID) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.ReadKindAndVerify(rwutil.Kind(a.Kind()))
+	return rr.Err
+}
+
+func (a *NilAgentID) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteKind(rwutil.Kind(a.Kind()))
+	return ww.Err
 }

@@ -380,21 +380,22 @@ func TestWasmTypes(t *testing.T) {
 	nftBytes[0] = wasmtypes.ScAddressNFT
 	scNftAddress := wasmtypes.AddressFromBytes(nftBytes)
 	nftBytes[0] = byte(iotago.AddressNFT)
-	nftAddress, _, _ := isc.AddressFromBytes(nftBytes)
+	nftAddress, err := isc.AddressFromBytes(nftBytes)
+	require.NoError(t, err)
 	checkAddress(t, ctx, scNftAddress, nftAddress)
 
 	// check agent id of alias address (hname zero)
-	scAgentID := wasmtypes.NewScAgentIDFromAddress(scAliasAddress)
+	scAgentID := wasmtypes.ScAgentIDFromAddress(scAliasAddress)
 	agentID := isc.NewAgentID(aliasAddress)
 	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// check agent id of ed25519 address (hname zero)
-	scAgentID = wasmtypes.NewScAgentIDFromAddress(scEd25519Address)
+	scAgentID = wasmtypes.ScAgentIDFromAddress(scEd25519Address)
 	agentID = isc.NewAgentID(ed25519Address)
 	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// check agent id of NFT address (hname zero)
-	scAgentID = wasmtypes.NewScAgentIDFromAddress(scNftAddress)
+	scAgentID = wasmtypes.ScAgentIDFromAddress(scNftAddress)
 	agentID = isc.NewAgentID(nftAddress)
 	checkAgentID(t, ctx, scAgentID, agentID)
 

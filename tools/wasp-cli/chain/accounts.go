@@ -74,7 +74,7 @@ func initBalanceCmd() *cobra.Command {
 				agentID = isc.NewAgentID(wallet.Load().Address())
 			} else {
 				var err error
-				agentID, err = isc.NewAgentIDFromString(args[0])
+				agentID, err = isc.AgentIDFromString(args[0])
 				log.Check(err)
 			}
 
@@ -117,7 +117,7 @@ func initAccountNFTsCmd() *cobra.Command {
 				agentID = isc.NewAgentID(wallet.Load().Address())
 			} else {
 				var err error
-				agentID, err = isc.NewAgentIDFromString(args[0])
+				agentID, err = isc.AgentIDFromString(args[0])
 				log.Check(err)
 			}
 
@@ -198,7 +198,7 @@ func initDepositCmd() *cobra.Command {
 				})
 			} else {
 				// deposit to some other agentID
-				agentID, err := isc.NewAgentIDFromString(args[0])
+				agentID, err := isc.AgentIDFromString(args[0])
 				log.Check(err)
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))
 

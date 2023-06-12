@@ -1,10 +1,11 @@
 package sm_messages
 
 import (
-	"fmt"
+	"io"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type GetBlockMessage struct {
@@ -12,7 +13,7 @@ type GetBlockMessage struct {
 	commitment *state.L1Commitment
 }
 
-var _ gpa.Message = &GetBlockMessage{}
+var _ gpa.Message = new(GetBlockMessage)
 
 func NewGetBlockMessage(commitment *state.L1Commitment, to gpa.NodeID) *GetBlockMessage {
 	return &GetBlockMessage{
@@ -25,22 +26,31 @@ func NewEmptyGetBlockMessage() *GetBlockMessage { // `UnmarshalBinary` must be c
 	return NewGetBlockMessage(&state.L1Commitment{}, gpa.NodeID{})
 }
 
-func (gbmT *GetBlockMessage) MarshalBinary() (data []byte, err error) {
-	return append([]byte{MsgTypeGetBlockMessage}, gbmT.commitment.Bytes()...), nil
+func (msg *GetBlockMessage) GetL1Commitment() *state.L1Commitment {
+	return msg.commitment
 }
 
-func (gbmT *GetBlockMessage) UnmarshalBinary(data []byte) error {
-	if data[0] != MsgTypeGetBlockMessage {
-		return fmt.Errorf("error creating get block message from bytes: wrong message type %v", data[0])
-	}
-	var err error
-	gbmT.commitment, err = state.L1CommitmentFromBytes(data[1:])
-	if err != nil {
-		return fmt.Errorf("error creating get block message from bytes: %w", err)
-	}
-	return nil
+func (msg *GetBlockMessage) MarshalBinary() (data []byte, err error) {
+	return rwutil.MarshalBinary(msg)
 }
 
-func (gbmT *GetBlockMessage) GetL1Commitment() *state.L1Commitment {
-	return gbmT.commitment
+func (msg *GetBlockMessage) UnmarshalBinary(data []byte) error {
+	return rwutil.UnmarshalBinary(data, msg)
+}
+
+func (msg *GetBlockMessage) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	MsgTypeGetBlockMessage.ReadAndVerify(rr)
+	data := rr.ReadBytes()
+	if rr.Err == nil {
+		msg.commitment, rr.Err = state.L1CommitmentFromBytes(data)
+	}
+	return rr.Err
+}
+
+func (msg *GetBlockMessage) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	MsgTypeGetBlockMessage.Write(ww)
+	ww.WriteBytes(msg.commitment.Bytes())
+	return ww.Err
 }

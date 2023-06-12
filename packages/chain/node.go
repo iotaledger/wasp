@@ -621,7 +621,7 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 		cni.log.Debugf("Latest state set to ACT index=%v, trieRoot=%v", till.GetStateIndex(), l1Commitment.TrieRoot())
 	}
 
-	newAccessNodes := governance.NewStateAccess(st).GetAccessNodes()
+	newAccessNodes := governance.NewStateAccess(st).AccessNodes()
 	if !util.Same(newAccessNodes, cni.accessNodesFromACT) {
 		cni.updateAccessNodes(func() {
 			cni.accessNodesFromACT = newAccessNodes
@@ -644,7 +644,7 @@ func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *is
 	latestActiveStateAO := cni.latestActiveStateAO
 	cni.accessLock.Unlock()
 
-	newAccessNodes := governance.NewStateAccess(st).GetAccessNodes()
+	newAccessNodes := governance.NewStateAccess(st).AccessNodes()
 	if !util.Same(newAccessNodes, cni.accessNodesFromCNF) {
 		cni.updateAccessNodes(func() {
 			cni.accessNodesFromCNF = newAccessNodes
@@ -1213,7 +1213,7 @@ func (cni *chainNodeImpl) GetCandidateNodes() []*governance.AccessNodeInfo {
 		cni.log.Error("Cannot get latest chain state: %v", err)
 		return []*governance.AccessNodeInfo{}
 	}
-	return governance.NewStateAccess(state).GetCandidateNodes()
+	return governance.NewStateAccess(state).CandidateNodes()
 }
 
 func (cni *chainNodeImpl) GetChainMetrics() metrics.IChainMetrics {

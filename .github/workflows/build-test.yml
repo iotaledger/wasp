@@ -131,7 +131,7 @@ jobs:
       - name: Run global scope golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.52.2
+          version: v1.53.2
           args: --timeout 10m0s
           skip-pkg-cache: true
 
@@ -139,6 +139,6 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           working-directory: tools/wasp-cli
-          version: v1.52.2
+          version: v1.53.2
           args: --timeout 10m0s
           skip-pkg-cache: true 

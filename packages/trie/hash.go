@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/hex"
 	"io"
+
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
@@ -56,13 +58,11 @@ func (h Hash) Bytes() []byte {
 }
 
 func (h *Hash) Read(r io.Reader) error {
-	_, err := r.Read(h[:])
-	return err
+	return rwutil.ReadN(r, h[:])
 }
 
 func (h Hash) Write(w io.Writer) error {
-	_, err := w.Write(h[:])
-	return err
+	return rwutil.WriteN(w, h[:])
 }
 
 func (h Hash) String() string {

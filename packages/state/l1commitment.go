@@ -1,17 +1,15 @@
 package state
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
 	"io"
 
 	"golang.org/x/crypto/blake2b"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const BlockHashSize = 20
@@ -62,24 +60,8 @@ func (bh BlockHash) Equals(other BlockHash) bool {
 	return bh == other
 }
 
-//nolint:revive
-func L1CommitmentFromMarshalUtil(mu *marshalutil.MarshalUtil) (*L1Commitment, error) {
-	if buf, err := mu.ReadBytes(L1CommitmentSize); err != nil {
-		return nil, err
-	} else {
-		return L1CommitmentFromBytes(buf)
-	}
-}
-
 func L1CommitmentFromBytes(data []byte) (*L1Commitment, error) {
-	if len(data) != L1CommitmentSize {
-		return nil, errors.New("L1CommitmentFromBytes: wrong data length")
-	}
-	ret := L1Commitment{}
-	if err := ret.Read(bytes.NewReader(data)); err != nil {
-		return nil, err
-	}
-	return &ret, nil
+	return rwutil.ReaderFromBytes(data, new(L1Commitment))
 }
 
 func (s *L1Commitment) TrieRoot() trie.Hash {
@@ -95,31 +77,21 @@ func (s *L1Commitment) Equals(other *L1Commitment) bool {
 }
 
 func (s *L1Commitment) Bytes() []byte {
-	return util.MustBytes(s)
+	return rwutil.WriterToBytes(s)
 }
 
 func (s *L1Commitment) Write(w io.Writer) error {
-	hash := s.TrieRoot()
-	if err := hash.Write(w); err != nil {
-		return err
-	}
-	blockHash := s.BlockHash()
-	if _, err := w.Write(blockHash[:]); err != nil {
-		return err
-	}
+	ww := rwutil.NewWriter(w)
+	ww.WriteN(s.trieRoot[:])
+	ww.WriteN(s.blockHash[:])
 	return nil
 }
 
 func (s *L1Commitment) Read(r io.Reader) error {
-	var err error
-	s.trieRoot, err = trie.ReadHash(r)
-	if err != nil {
-		return err
-	}
-	if _, err := r.Read(s.blockHash[:]); err != nil {
-		return err
-	}
-	return nil
+	rr := rwutil.NewReader(r)
+	rr.ReadN(s.trieRoot[:])
+	rr.ReadN(s.blockHash[:])
+	return rr.Err
 }
 
 func (s *L1Commitment) String() string {

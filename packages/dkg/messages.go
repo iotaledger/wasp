@@ -11,7 +11,6 @@ package dkg
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"time"
 
@@ -24,7 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
@@ -127,7 +126,7 @@ func makePeerMessage(peeringID peering.PeeringID, receiver, step byte, msg msgBy
 		PeeringID:   peeringID,
 		MsgReceiver: receiver,
 		MsgType:     msg.MsgType(),
-		MsgData:     util.MustBytes(msg),
+		MsgData:     rwutil.WriterToBytes(msg),
 	}
 }
 
@@ -200,118 +199,65 @@ type initiatorInitMsgIn struct {
 	SenderPubKey *cryptolib.PublicKey
 }
 
-func (m *initiatorInitMsg) MsgType() byte {
+func (msg *initiatorInitMsg) MsgType() byte {
 	return initiatorInitMsgType
 }
 
-func (m *initiatorInitMsg) Step() byte {
-	return m.step
+func (msg *initiatorInitMsg) Step() byte {
+	return msg.step
 }
 
-func (m *initiatorInitMsg) SetStep(step byte) {
-	m.step = step
+func (msg *initiatorInitMsg) SetStep(step byte) {
+	msg.step = step
 }
 
-//nolint:gocritic
-func (m *initiatorInitMsg) Write(w io.Writer) error {
-	var err error
-	if err = util.WriteByte(w, m.step); err != nil {
-		return err
+func (msg *initiatorInitMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	ww.WriteString(msg.dkgRef)
+	ww.WriteN(msg.peeringID[:])
+
+	ww.WriteSize(len(msg.peerPubs))
+	for i := range msg.peerPubs {
+		ww.WriteBytes(msg.peerPubs[i].AsBytes())
 	}
-	if err = util.WriteString16(w, m.dkgRef); err != nil {
-		return err
-	}
-	if _, err = w.Write(m.peeringID[:]); err != nil {
-		return err
-	}
-	if err = util.WriteUint16(w, uint16(len(m.peerPubs))); err != nil {
-		return err
-	}
-	for i := range m.peerPubs {
-		if err = util.WriteBytes16(w, m.peerPubs[i].AsBytes()); err != nil {
-			return err
-		}
-	}
-	if err = util.WriteBytes16(w, m.initiatorPub.AsBytes()); err != nil {
-		return err
-	}
-	if err = util.WriteUint16(w, m.threshold); err != nil {
-		return err
-	}
-	if err = util.WriteInt64(w, m.timeout.Milliseconds()); err != nil {
-		return err
-	}
-	return util.WriteInt64(w, m.roundRetry.Milliseconds())
+
+	ww.WriteBytes(msg.initiatorPub.AsBytes())
+	ww.WriteUint16(msg.threshold)
+	ww.WriteDuration(msg.timeout)
+	ww.WriteDuration(msg.roundRetry)
+	return ww.Err
 }
 
-//nolint:gocritic
-func (m *initiatorInitMsg) Read(r io.Reader) error {
-	var err error
-	var n int
-	if m.step, err = util.ReadByte(r); err != nil {
-		return err
+func (msg *initiatorInitMsg) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msg.step = rr.ReadByte()
+	msg.dkgRef = rr.ReadString()
+	rr.ReadN(msg.peeringID[:])
+
+	size := rr.ReadSize()
+	msg.peerPubs = make([]*cryptolib.PublicKey, size)
+	for i := range msg.peerPubs {
+		msg.peerPubs[i] = rwutil.ReadFromBytes(rr, cryptolib.PublicKeyFromBytes)
 	}
-	if m.dkgRef, err = util.ReadString16(r); err != nil {
-		return err
-	}
-	if n, err = r.Read(m.peeringID[:]); err != nil {
-		return err
-	}
-	if n != iotago.Ed25519AddressBytesLength {
-		return fmt.Errorf("error while reading peering ID: read %v bytes, expected %v bytes",
-			n, iotago.Ed25519AddressBytesLength)
-	}
-	var arrLen uint16
-	if err = util.ReadUint16(r, &arrLen); err != nil {
-		return err
-	}
-	m.peerPubs = make([]*cryptolib.PublicKey, arrLen)
-	for i := range m.peerPubs {
-		var peerPubBytes []byte
-		if peerPubBytes, err = util.ReadBytes16(r); err != nil {
-			return err
-		}
-		peerPubKey, err2 := cryptolib.NewPublicKeyFromBytes(peerPubBytes)
-		if err2 != nil {
-			return err2
-		}
-		m.peerPubs[i] = peerPubKey
-	}
-	var initiatorPubBytes []byte
-	if initiatorPubBytes, err = util.ReadBytes16(r); err != nil {
-		return err
-	}
-	initiatorPub, err := cryptolib.NewPublicKeyFromBytes(initiatorPubBytes)
-	if err != nil {
-		return err
-	}
-	m.initiatorPub = initiatorPub
-	if err = util.ReadUint16(r, &m.threshold); err != nil {
-		return err
-	}
-	var timeoutMS int64
-	if err = util.ReadInt64(r, &timeoutMS); err != nil {
-		return err
-	}
-	m.timeout = time.Duration(timeoutMS) * time.Millisecond
-	var roundRetryMS int64
-	if err = util.ReadInt64(r, &roundRetryMS); err != nil {
-		return err
-	}
-	m.roundRetry = time.Duration(roundRetryMS) * time.Millisecond
-	return nil
+
+	msg.initiatorPub = rwutil.ReadFromBytes(rr, cryptolib.PublicKeyFromBytes)
+	msg.threshold = rr.ReadUint16()
+	msg.timeout = rr.ReadDuration()
+	msg.roundRetry = rr.ReadDuration()
+	return rr.Err
 }
 
-func (m *initiatorInitMsg) fromBytes(buf []byte) error {
+func (msg *initiatorInitMsg) fromBytes(buf []byte) error {
 	r := bytes.NewReader(buf)
-	return m.Read(r)
+	return msg.Read(r)
 }
 
-func (m *initiatorInitMsg) Error() error {
+func (msg *initiatorInitMsg) Error() error {
 	return nil
 }
 
-func (m *initiatorInitMsg) IsResponse() bool {
+func (msg *initiatorInitMsg) IsResponse() bool {
 	return false
 }
 
@@ -324,40 +270,40 @@ type initiatorStepMsg struct {
 	step byte
 }
 
-func (m *initiatorStepMsg) MsgType() byte {
+func (msg *initiatorStepMsg) MsgType() byte {
 	return initiatorStepMsgType
 }
 
-func (m *initiatorStepMsg) Step() byte {
-	return m.step
+func (msg *initiatorStepMsg) Step() byte {
+	return msg.step
 }
 
-func (m *initiatorStepMsg) SetStep(step byte) {
-	m.step = step
+func (msg *initiatorStepMsg) SetStep(step byte) {
+	msg.step = step
 }
 
-func (m *initiatorStepMsg) Write(w io.Writer) error {
-	return util.WriteByte(w, m.step)
+func (msg *initiatorStepMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	return ww.Err
 }
 
-func (m *initiatorStepMsg) Read(r io.Reader) error {
-	var err error
-	if m.step, err = util.ReadByte(r); err != nil {
-		return err
-	}
-	return nil
+func (msg *initiatorStepMsg) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msg.step = rr.ReadByte()
+	return rr.Err
 }
 
-func (m *initiatorStepMsg) fromBytes(buf []byte) error {
+func (msg *initiatorStepMsg) fromBytes(buf []byte) error {
 	r := bytes.NewReader(buf)
-	return m.Read(r)
+	return msg.Read(r)
 }
 
-func (m *initiatorStepMsg) Error() error {
+func (msg *initiatorStepMsg) Error() error {
 	return nil
 }
 
-func (m *initiatorStepMsg) IsResponse() bool {
+func (msg *initiatorStepMsg) IsResponse() bool {
 	return false
 }
 
@@ -370,89 +316,66 @@ type initiatorDoneMsg struct {
 	blsSuite     kyber.Group // Transient, for un-marshaling only.
 }
 
-func (m *initiatorDoneMsg) MsgType() byte {
+func (msg *initiatorDoneMsg) MsgType() byte {
 	return initiatorDoneMsgType
 }
 
-func (m *initiatorDoneMsg) Step() byte {
-	return m.step
+func (msg *initiatorDoneMsg) Step() byte {
+	return msg.step
 }
 
-func (m *initiatorDoneMsg) SetStep(step byte) {
-	m.step = step
+func (msg *initiatorDoneMsg) SetStep(step byte) {
+	msg.step = step
 }
 
-//nolint:gocritic
-func (m *initiatorDoneMsg) Write(w io.Writer) error {
-	var err error
-	if err = util.WriteByte(w, m.step); err != nil {
-		return err
+func (msg *initiatorDoneMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+
+	ww.WriteSize(len(msg.edPubShares))
+	for i := range msg.edPubShares {
+		ww.WriteMarshaled(msg.edPubShares[i])
 	}
-	if err = util.WriteUint16(w, uint16(len(m.edPubShares))); err != nil {
-		return err
+
+	ww.WriteSize(len(msg.blsPubShares))
+	for i := range msg.blsPubShares {
+		ww.WriteMarshaled(msg.blsPubShares[i])
 	}
-	for i := range m.edPubShares {
-		if err = util.WriteMarshaled(w, m.edPubShares[i]); err != nil {
-			return err
-		}
-	}
-	if err = util.WriteUint16(w, uint16(len(m.blsPubShares))); err != nil {
-		return err
-	}
-	for i := range m.blsPubShares {
-		if err = util.WriteMarshaled(w, m.blsPubShares[i]); err != nil {
-			return err
-		}
-	}
-	return nil
+	return ww.Err
 }
 
-//nolint:gocritic
-func (m *initiatorDoneMsg) Read(r io.Reader) error {
-	var err error
-	if m.step, err = util.ReadByte(r); err != nil {
-		return err
+func (msg *initiatorDoneMsg) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msg.step = rr.ReadByte()
+
+	size := rr.ReadSize()
+	msg.edPubShares = make([]kyber.Point, size)
+	for i := range msg.edPubShares {
+		msg.edPubShares[i] = msg.edSuite.Point()
+		rr.ReadMarshaled(msg.edPubShares[i])
 	}
-	//
-	// edPubShares
-	var arrLen uint16
-	if err = util.ReadUint16(r, &arrLen); err != nil {
-		return err
+
+	size = rr.ReadSize()
+	msg.blsPubShares = make([]kyber.Point, size)
+	for i := range msg.blsPubShares {
+		msg.blsPubShares[i] = msg.blsSuite.Point()
+		rr.ReadMarshaled(msg.blsPubShares[i])
 	}
-	m.edPubShares = make([]kyber.Point, arrLen)
-	for i := range m.edPubShares {
-		m.edPubShares[i] = m.edSuite.Point()
-		if err = util.ReadMarshaled(r, m.edPubShares[i]); err != nil {
-			return fmt.Errorf("failed to unmarshal initiatorDoneMsg.edPubShares: %w", err)
-		}
-	}
-	//
-	// blsPubShares
-	if err = util.ReadUint16(r, &arrLen); err != nil {
-		return err
-	}
-	m.blsPubShares = make([]kyber.Point, arrLen)
-	for i := range m.blsPubShares {
-		m.blsPubShares[i] = m.blsSuite.Point()
-		if err = util.ReadMarshaled(r, m.blsPubShares[i]); err != nil {
-			return fmt.Errorf("failed to unmarshal initiatorDoneMsg.blsPubShares: %w", err)
-		}
-	}
-	return nil
+	return rr.Err
 }
 
-func (m *initiatorDoneMsg) fromBytes(buf []byte, edSuite, blsSuite kyber.Group) error {
+func (msg *initiatorDoneMsg) fromBytes(buf []byte, edSuite, blsSuite kyber.Group) error {
 	r := bytes.NewReader(buf)
-	m.edSuite = edSuite
-	m.blsSuite = blsSuite
-	return m.Read(r)
+	msg.edSuite = edSuite
+	msg.blsSuite = blsSuite
+	return msg.Read(r)
 }
 
-func (m *initiatorDoneMsg) Error() error {
+func (msg *initiatorDoneMsg) Error() error {
 	return nil
 }
 
-func (m *initiatorDoneMsg) IsResponse() bool {
+func (msg *initiatorDoneMsg) IsResponse() bool {
 	return false
 }
 
@@ -474,109 +397,64 @@ type initiatorPubShareMsg struct {
 	blsSuite        kyber.Group // Transient, for un-marshaling only.
 }
 
-func (m *initiatorPubShareMsg) MsgType() byte {
+func (msg *initiatorPubShareMsg) MsgType() byte {
 	return initiatorPubShareMsgType
 }
 
-func (m *initiatorPubShareMsg) Step() byte {
-	return m.step
+func (msg *initiatorPubShareMsg) Step() byte {
+	return msg.step
 }
 
-func (m *initiatorPubShareMsg) SetStep(step byte) {
-	m.step = step
+func (msg *initiatorPubShareMsg) SetStep(step byte) {
+	msg.step = step
 }
 
-//nolint:gocritic
-func (m *initiatorPubShareMsg) Write(w io.Writer) error {
-	var err error
-	if err = util.WriteByte(w, m.step); err != nil {
-		return err
-	}
-	if err = util.WriteBytes16(w, isc.BytesFromAddress(m.sharedAddress)); err != nil {
-		return err
-	}
-	{ // Ed25519 part.
-		if err = util.WriteMarshaled(w, m.edSharedPublic); err != nil {
-			return err
-		}
-		if err = util.WriteMarshaled(w, m.edPublicShare); err != nil {
-			return err
-		}
-		if err = util.WriteBytes16(w, m.edSignature); err != nil {
-			return err
-		}
-	}
-	{ // BLS part.
-		if err = util.WriteMarshaled(w, m.blsSharedPublic); err != nil {
-			return err
-		}
-		if err = util.WriteMarshaled(w, m.blsPublicShare); err != nil {
-			return err
-		}
-		if err = util.WriteBytes16(w, m.blsSignature); err != nil {
-			return err
-		}
-	}
-	return nil
+func (msg *initiatorPubShareMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	isc.AddressToWriter(ww, msg.sharedAddress)
+
+	ww.WriteMarshaled(msg.edSharedPublic)
+	ww.WriteMarshaled(msg.edPublicShare)
+	ww.WriteBytes(msg.edSignature)
+
+	ww.WriteMarshaled(msg.blsSharedPublic)
+	ww.WriteMarshaled(msg.blsPublicShare)
+	ww.WriteBytes(msg.blsSignature)
+	return ww.Err
 }
 
-func (m *initiatorPubShareMsg) Read(r io.Reader) error {
-	var err error
-	if m.step, err = util.ReadByte(r); err != nil {
-		return err
-	}
-	//
-	// SharedAddress.
-	var sharedAddressBin []byte
-	var sharedAddress iotago.Address
-	if sharedAddressBin, err = util.ReadBytes16(r); err != nil {
-		return err
-	}
-	if sharedAddress, _, err = isc.AddressFromBytes(sharedAddressBin); err != nil {
-		return err
-	}
-	m.sharedAddress = sharedAddress
-	//
-	// Ed25519 part.
-	m.edSharedPublic = m.edSuite.Point()
-	if err = util.ReadMarshaled(r, m.edSharedPublic); err != nil {
-		return fmt.Errorf("failed to unmarshal initiatorPubShareMsg.edSharedPublic: %w", err)
-	}
-	m.edPublicShare = m.edSuite.Point()
-	if err = util.ReadMarshaled(r, m.edPublicShare); err != nil {
-		return fmt.Errorf("failed to unmarshal initiatorPubShareMsg.edPublicShare: %w", err)
-	}
-	if m.edSignature, err = util.ReadBytes16(r); err != nil {
-		return err
-	}
-	//
-	// BLS part.
-	m.blsSharedPublic = m.blsSuite.Point()
-	if err = util.ReadMarshaled(r, m.blsSharedPublic); err != nil {
-		return fmt.Errorf("failed to unmarshal initiatorPubShareMsg.blsSharedPublic: %w", err)
-	}
-	m.blsPublicShare = m.blsSuite.Point()
-	if err = util.ReadMarshaled(r, m.blsPublicShare); err != nil {
-		return fmt.Errorf("failed to unmarshal initiatorPubShareMsg.blsPublicShare: %w", err)
-	}
-	if m.blsSignature, err = util.ReadBytes16(r); err != nil {
-		return err
-	}
-	return nil
+func (msg *initiatorPubShareMsg) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msg.step = rr.ReadByte()
+	msg.sharedAddress = isc.AddressFromReader(rr)
+
+	msg.edSharedPublic = msg.edSuite.Point()
+	rr.ReadMarshaled(msg.edSharedPublic)
+	msg.edPublicShare = msg.edSuite.Point()
+	rr.ReadMarshaled(msg.edPublicShare)
+	msg.edSignature = rr.ReadBytes()
+
+	msg.blsSharedPublic = msg.blsSuite.Point()
+	rr.ReadMarshaled(msg.blsSharedPublic)
+	msg.blsPublicShare = msg.blsSuite.Point()
+	rr.ReadMarshaled(msg.blsPublicShare)
+	msg.blsSignature = rr.ReadBytes()
+	return rr.Err
 }
 
-func (m *initiatorPubShareMsg) fromBytes(buf []byte, edSuite, blsSuite kyber.Group) error {
+func (msg *initiatorPubShareMsg) fromBytes(buf []byte, edSuite, blsSuite kyber.Group) error {
 	r := bytes.NewReader(buf)
-	m.edSuite = edSuite
-	m.blsSuite = blsSuite
-	return m.Read(r)
+	msg.edSuite = edSuite
+	msg.blsSuite = blsSuite
+	return msg.Read(r)
 }
 
-func (m *initiatorPubShareMsg) Error() error {
+func (msg *initiatorPubShareMsg) Error() error {
 	return nil
 }
 
-func (m *initiatorPubShareMsg) IsResponse() bool {
+func (msg *initiatorPubShareMsg) IsResponse() bool {
 	return true
 }
 
@@ -586,56 +464,50 @@ type initiatorStatusMsg struct {
 	error error
 }
 
-func (m *initiatorStatusMsg) MsgType() byte {
+func (msg *initiatorStatusMsg) MsgType() byte {
 	return initiatorStatusMsgType
 }
 
-func (m *initiatorStatusMsg) Step() byte {
-	return m.step
+func (msg *initiatorStatusMsg) Step() byte {
+	return msg.step
 }
 
-func (m *initiatorStatusMsg) SetStep(step byte) {
-	m.step = step
+func (msg *initiatorStatusMsg) SetStep(step byte) {
+	msg.step = step
 }
 
-func (m *initiatorStatusMsg) Write(w io.Writer) error {
-	if err := util.WriteByte(w, m.step); err != nil {
-		return err
-	}
+func (msg *initiatorStatusMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
 	var errMsg string
-	if m.error != nil {
-		errMsg = m.error.Error()
+	if msg.error != nil {
+		errMsg = msg.error.Error()
 	}
-	return util.WriteString16(w, errMsg)
+	ww.WriteString(errMsg)
+	return ww.Err
 }
 
-func (m *initiatorStatusMsg) Read(r io.Reader) error {
-	var err error
-	if m.step, err = util.ReadByte(r); err != nil {
-		return err
-	}
-	var errMsg string
-	if errMsg, err = util.ReadString16(r); err != nil {
-		return err
-	}
+func (msg *initiatorStatusMsg) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msg.step = rr.ReadByte()
+	errMsg := rr.ReadString()
+	msg.error = nil
 	if errMsg != "" {
-		m.error = errors.New(errMsg)
-	} else {
-		m.error = nil
+		msg.error = errors.New(errMsg)
 	}
-	return nil
+	return rr.Err
 }
 
-func (m *initiatorStatusMsg) fromBytes(buf []byte) error {
+func (msg *initiatorStatusMsg) fromBytes(buf []byte) error {
 	r := bytes.NewReader(buf)
-	return m.Read(r)
+	return msg.Read(r)
 }
 
-func (m *initiatorStatusMsg) Error() error {
-	return m.error
+func (msg *initiatorStatusMsg) Error() error {
+	return msg.error
 }
 
-func (m *initiatorStatusMsg) IsResponse() bool {
+func (msg *initiatorStatusMsg) IsResponse() bool {
 	return true
 }
 
@@ -645,71 +517,48 @@ type rabinDealMsg struct {
 	deal *rabin_dkg.Deal
 }
 
-func (m *rabinDealMsg) MsgType() byte {
+func (msg *rabinDealMsg) MsgType() byte {
 	return rabinDealMsgType
 }
 
-func (m *rabinDealMsg) Step() byte {
-	return m.step
+func (msg *rabinDealMsg) Step() byte {
+	return msg.step
 }
 
-func (m *rabinDealMsg) SetStep(step byte) {
-	m.step = step
+func (msg *rabinDealMsg) SetStep(step byte) {
+	msg.step = step
 }
 
-//nolint:gocritic
-func (m *rabinDealMsg) Write(w io.Writer) error {
-	var err error
-	if err = util.WriteByte(w, m.step); err != nil {
-		return err
-	}
-	if err = util.WriteUint32(w, m.deal.Index); err != nil {
-		return err
-	}
-	if err = util.WriteMarshaled(w, m.deal.Deal.DHKey); err != nil {
-		return err
-	}
-	if err = util.WriteBytes16(w, m.deal.Deal.Signature); err != nil {
-		return err
-	}
-	if err = util.WriteBytes16(w, m.deal.Deal.Nonce); err != nil {
-		return err
-	}
-	return util.WriteBytes16(w, m.deal.Deal.Cipher)
+func (msg *rabinDealMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	ww.WriteUint32(msg.deal.Index)
+	ww.WriteMarshaled(msg.deal.Deal.DHKey)
+	ww.WriteBytes(msg.deal.Deal.Signature)
+	ww.WriteBytes(msg.deal.Deal.Nonce)
+	ww.WriteBytes(msg.deal.Deal.Cipher)
+	return ww.Err
 }
 
-//nolint:gocritic
-func (m *rabinDealMsg) Read(r io.Reader) error {
-	var err error
-	if m.step, err = util.ReadByte(r); err != nil {
-		return err
-	}
-	if err = util.ReadUint32(r, &m.deal.Index); err != nil {
-		return err
-	}
-	if err = util.ReadMarshaled(r, m.deal.Deal.DHKey); err != nil {
-		return err
-	}
-	if m.deal.Deal.Signature, err = util.ReadBytes16(r); err != nil {
-		return err
-	}
-	if m.deal.Deal.Nonce, err = util.ReadBytes16(r); err != nil {
-		return err
-	}
-	if m.deal.Deal.Cipher, err = util.ReadBytes16(r); err != nil {
-		return err
-	}
-	return nil
+func (msg *rabinDealMsg) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msg.step = rr.ReadByte()
+	msg.deal.Index = rr.ReadUint32()
+	rr.ReadMarshaled(msg.deal.Deal.DHKey)
+	msg.deal.Deal.Signature = rr.ReadBytes()
+	msg.deal.Deal.Nonce = rr.ReadBytes()
+	msg.deal.Deal.Cipher = rr.ReadBytes()
+	return rr.Err
 }
 
-func (m *rabinDealMsg) fromBytes(buf []byte, edSuite kyber.Group) error {
-	m.deal = &rabin_dkg.Deal{
+func (msg *rabinDealMsg) fromBytes(buf []byte, edSuite kyber.Group) error {
+	msg.deal = &rabin_dkg.Deal{
 		Deal: &rabin_vss.EncryptedDeal{
 			DHKey: edSuite.Point(),
 		},
 	}
 	rdr := bytes.NewReader(buf)
-	return m.Read(rdr)
+	return msg.Read(rdr)
 }
 
 // rabin_dkg.Response
@@ -718,86 +567,54 @@ type rabinResponseMsg struct {
 	responses []*rabin_dkg.Response
 }
 
-func (m *rabinResponseMsg) MsgType() byte {
+func (msg *rabinResponseMsg) MsgType() byte {
 	return rabinResponseMsgType
 }
 
-func (m *rabinResponseMsg) Step() byte {
-	return m.step
+func (msg *rabinResponseMsg) Step() byte {
+	return msg.step
 }
 
-func (m *rabinResponseMsg) SetStep(step byte) {
-	m.step = step
+func (msg *rabinResponseMsg) SetStep(step byte) {
+	msg.step = step
 }
 
-//nolint:gocritic
-func (m *rabinResponseMsg) Write(w io.Writer) error {
-	var err error
-	if err = util.WriteByte(w, m.step); err != nil {
-		return err
+func (msg *rabinResponseMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	ww.WriteSize(len(msg.responses))
+	for _, response := range msg.responses {
+		ww.WriteUint32(response.Index)
+		ww.WriteBytes(response.Response.SessionID)
+		ww.WriteUint32(response.Response.Index)
+		ww.WriteBool(response.Response.Approved)
+		ww.WriteBytes(response.Response.Signature)
 	}
-	listLen := uint32(len(m.responses))
-	if err = util.WriteUint32(w, listLen); err != nil {
-		return err
-	}
-	for _, r := range m.responses {
-		if err = util.WriteUint32(w, r.Index); err != nil {
-			return err
-		}
-		if err = util.WriteBytes16(w, r.Response.SessionID); err != nil {
-			return err
-		}
-		if err = util.WriteUint32(w, r.Response.Index); err != nil {
-			return err
-		}
-		if err = util.WriteBoolByte(w, r.Response.Approved); err != nil {
-			return err
-		}
-		if err = util.WriteBytes16(w, r.Response.Signature); err != nil {
-			return err
-		}
-	}
-	return nil
+	return ww.Err
 }
 
-//nolint:gocritic
-func (m *rabinResponseMsg) Read(r io.Reader) error {
-	var err error
-	if m.step, err = util.ReadByte(r); err != nil {
-		return err
-	}
-	var listLen uint32
-	if err = util.ReadUint32(r, &listLen); err != nil {
-		return err
-	}
-	m.responses = make([]*rabin_dkg.Response, int(listLen))
-	for i := range m.responses {
+func (msg *rabinResponseMsg) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msg.step = rr.ReadByte()
+	size := rr.ReadSize()
+	msg.responses = make([]*rabin_dkg.Response, size)
+	for i := range msg.responses {
 		response := rabin_dkg.Response{
 			Response: &rabin_vss.Response{},
 		}
-		m.responses[i] = &response
-		if err = util.ReadUint32(r, &response.Index); err != nil {
-			return err
-		}
-		if response.Response.SessionID, err = util.ReadBytes16(r); err != nil {
-			return err
-		}
-		if err = util.ReadUint32(r, &response.Response.Index); err != nil {
-			return err
-		}
-		if err = util.ReadBoolByte(r, &response.Response.Approved); err != nil {
-			return err
-		}
-		if response.Response.Signature, err = util.ReadBytes16(r); err != nil {
-			return err
-		}
+		msg.responses[i] = &response
+		response.Index = rr.ReadUint32()
+		response.Response.SessionID = rr.ReadBytes()
+		response.Response.Index = rr.ReadUint32()
+		response.Response.Approved = rr.ReadBool()
+		response.Response.Signature = rr.ReadBytes()
 	}
-	return nil
+	return rr.Err
 }
 
-func (m *rabinResponseMsg) fromBytes(buf []byte) error {
+func (msg *rabinResponseMsg) fromBytes(buf []byte) error {
 	rdr := bytes.NewReader(buf)
-	return m.Read(rdr)
+	return msg.Read(rdr)
 }
 
 // rabin_dkg.Justification
@@ -807,87 +624,55 @@ type rabinJustificationMsg struct {
 	blsSuite       kyber.Group // Just for un-marshaling.
 }
 
-func (m *rabinJustificationMsg) MsgType() byte {
+func (msg *rabinJustificationMsg) MsgType() byte {
 	return rabinJustificationMsgType
 }
 
-func (m *rabinJustificationMsg) Step() byte {
-	return m.step
+func (msg *rabinJustificationMsg) Step() byte {
+	return msg.step
 }
 
-func (m *rabinJustificationMsg) SetStep(step byte) {
-	m.step = step
+func (msg *rabinJustificationMsg) SetStep(step byte) {
+	msg.step = step
 }
 
-//nolint:gocritic
-func (m *rabinJustificationMsg) Write(w io.Writer) error {
-	var err error
-	if err = util.WriteByte(w, m.step); err != nil {
-		return err
+func (msg *rabinJustificationMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	ww.WriteSize(len(msg.justifications))
+	for _, j := range msg.justifications {
+		ww.WriteUint32(j.Index)
+		ww.WriteBytes(j.Justification.SessionID)
+		ww.WriteUint32(j.Justification.Index)
+		writeVssDeal(ww, j.Justification.Deal)
+		ww.WriteBytes(j.Justification.Signature)
 	}
-	jLen := uint32(len(m.justifications))
-	if err = util.WriteUint32(w, jLen); err != nil {
-		return err
-	}
-	for _, j := range m.justifications {
-		if err = util.WriteUint32(w, j.Index); err != nil {
-			return err
-		}
-		if err = util.WriteBytes16(w, j.Justification.SessionID); err != nil {
-			return err
-		}
-		if err = util.WriteUint32(w, j.Justification.Index); err != nil {
-			return err
-		}
-		if err = writeVssDeal(w, j.Justification.Deal); err != nil {
-			return err
-		}
-		if err = util.WriteBytes16(w, j.Justification.Signature); err != nil {
-			return err
-		}
-	}
-	return nil
+	return ww.Err
 }
 
-//nolint:gocritic
-func (m *rabinJustificationMsg) Read(r io.Reader) error {
-	var err error
-	if m.step, err = util.ReadByte(r); err != nil {
-		return err
-	}
-	var jLen uint32
-	if err = util.ReadUint32(r, &jLen); err != nil {
-		return err
-	}
-	m.justifications = make([]*rabin_dkg.Justification, int(jLen))
-	for i := range m.justifications {
-		j := rabin_dkg.Justification{
+func (msg *rabinJustificationMsg) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msg.step = rr.ReadByte()
+	size := rr.ReadSize()
+	msg.justifications = make([]*rabin_dkg.Justification, size)
+	for i := range msg.justifications {
+		j := &rabin_dkg.Justification{
 			Justification: &rabin_vss.Justification{},
 		}
-		m.justifications[i] = &j
-		if err = util.ReadUint32(r, &j.Index); err != nil {
-			return err
-		}
-		if j.Justification.SessionID, err = util.ReadBytes16(r); err != nil {
-			return err
-		}
-		if err = util.ReadUint32(r, &j.Justification.Index); err != nil {
-			return err
-		}
-		if err = readVssDeal(r, &j.Justification.Deal, m.blsSuite); err != nil {
-			return err
-		}
-		if j.Justification.Signature, err = util.ReadBytes16(r); err != nil {
-			return err
-		}
+		msg.justifications[i] = j
+		j.Index = rr.ReadUint32()
+		j.Justification.SessionID = rr.ReadBytes()
+		j.Justification.Index = rr.ReadUint32()
+		j.Justification.Deal = readVssDeal(rr, msg.blsSuite)
+		j.Justification.Signature = rr.ReadBytes()
 	}
-	return nil
+	return rr.Err
 }
 
-func (m *rabinJustificationMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
-	m.blsSuite = blsSuite
+func (msg *rabinJustificationMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
+	msg.blsSuite = blsSuite
 	rdr := bytes.NewReader(buf)
-	return m.Read(rdr)
+	return msg.Read(rdr)
 }
 
 // rabin_dkg.SecretCommits
@@ -897,89 +682,66 @@ type rabinSecretCommitsMsg struct {
 	blsSuite      kyber.Group // Just for un-marshaling.
 }
 
-func (m *rabinSecretCommitsMsg) MsgType() byte {
+func (msg *rabinSecretCommitsMsg) MsgType() byte {
 	return rabinSecretCommitsMsgType
 }
 
-func (m *rabinSecretCommitsMsg) Step() byte {
-	return m.step
+func (msg *rabinSecretCommitsMsg) Step() byte {
+	return msg.step
 }
 
-func (m *rabinSecretCommitsMsg) SetStep(step byte) {
-	m.step = step
+func (msg *rabinSecretCommitsMsg) SetStep(step byte) {
+	msg.step = step
 }
 
-//nolint:gocritic
-func (m *rabinSecretCommitsMsg) Write(w io.Writer) error {
-	var err error
-	if err = util.WriteByte(w, m.step); err != nil {
-		return err
+func (msg *rabinSecretCommitsMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	ww.WriteBool(msg.secretCommits == nil)
+	if msg.secretCommits == nil {
+		return ww.Err
 	}
-	if err = util.WriteBoolByte(w, m.secretCommits == nil); err != nil {
-		return err
+
+	ww.WriteUint32(msg.secretCommits.Index)
+
+	ww.WriteSize(len(msg.secretCommits.Commitments))
+	for i := range msg.secretCommits.Commitments {
+		ww.WriteMarshaled(msg.secretCommits.Commitments[i])
 	}
-	if m.secretCommits == nil {
-		return nil
-	}
-	if err = util.WriteUint32(w, m.secretCommits.Index); err != nil {
-		return err
-	}
-	if err = util.WriteUint32(w, uint32(len(m.secretCommits.Commitments))); err != nil {
-		return err
-	}
-	for i := range m.secretCommits.Commitments {
-		if err = util.WriteMarshaled(w, m.secretCommits.Commitments[i]); err != nil {
-			return err
-		}
-	}
-	if err = util.WriteBytes16(w, m.secretCommits.SessionID); err != nil {
-		return err
-	}
-	return util.WriteBytes16(w, m.secretCommits.Signature)
+
+	ww.WriteBytes(msg.secretCommits.SessionID)
+	ww.WriteBytes(msg.secretCommits.Signature)
+	return ww.Err
 }
 
-//nolint:gocritic
-func (m *rabinSecretCommitsMsg) Read(r io.Reader) error {
-	var err error
-	if m.step, err = util.ReadByte(r); err != nil {
-		return err
-	}
-	var isNil bool
-	if err = util.ReadBoolByte(r, &isNil); err != nil {
-		return err
-	}
+func (msg *rabinSecretCommitsMsg) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msg.step = rr.ReadByte()
+	isNil := rr.ReadBool()
 	if isNil {
-		m.secretCommits = nil
-		return nil
+		msg.secretCommits = nil
+		return rr.Err
 	}
-	m.secretCommits = &rabin_dkg.SecretCommits{}
-	if err = util.ReadUint32(r, &m.secretCommits.Index); err != nil {
-		return err
+
+	msg.secretCommits = &rabin_dkg.SecretCommits{}
+	msg.secretCommits.Index = rr.ReadUint32()
+
+	size := rr.ReadSize()
+	msg.secretCommits.Commitments = make([]kyber.Point, size)
+	for i := range msg.secretCommits.Commitments {
+		msg.secretCommits.Commitments[i] = msg.blsSuite.Point()
+		rr.ReadMarshaled(msg.secretCommits.Commitments[i])
 	}
-	var cLen uint32
-	if err = util.ReadUint32(r, &cLen); err != nil {
-		return err
-	}
-	m.secretCommits.Commitments = make([]kyber.Point, cLen)
-	for i := range m.secretCommits.Commitments {
-		m.secretCommits.Commitments[i] = m.blsSuite.Point()
-		if err = util.ReadMarshaled(r, m.secretCommits.Commitments[i]); err != nil {
-			return err
-		}
-	}
-	if m.secretCommits.SessionID, err = util.ReadBytes16(r); err != nil {
-		return err
-	}
-	if m.secretCommits.Signature, err = util.ReadBytes16(r); err != nil {
-		return err
-	}
-	return nil
+
+	msg.secretCommits.SessionID = rr.ReadBytes()
+	msg.secretCommits.Signature = rr.ReadBytes()
+	return rr.Err
 }
 
-func (m *rabinSecretCommitsMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
-	m.blsSuite = blsSuite
+func (msg *rabinSecretCommitsMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
+	msg.blsSuite = blsSuite
 	rdr := bytes.NewReader(buf)
-	return m.Read(rdr)
+	return msg.Read(rdr)
 }
 
 // rabin_dkg.ComplaintCommits
@@ -989,77 +751,50 @@ type rabinComplaintCommitsMsg struct {
 	blsSuite         kyber.Group // Just for un-marshaling.
 }
 
-func (m *rabinComplaintCommitsMsg) MsgType() byte {
+func (msg *rabinComplaintCommitsMsg) MsgType() byte {
 	return rabinComplaintCommitsMsgType
 }
 
-func (m *rabinComplaintCommitsMsg) Step() byte {
-	return m.step
+func (msg *rabinComplaintCommitsMsg) Step() byte {
+	return msg.step
 }
 
-func (m *rabinComplaintCommitsMsg) SetStep(step byte) {
-	m.step = step
+func (msg *rabinComplaintCommitsMsg) SetStep(step byte) {
+	msg.step = step
 }
 
-//nolint:gocritic
-func (m *rabinComplaintCommitsMsg) Write(w io.Writer) error {
-	var err error
-	if err = util.WriteByte(w, m.step); err != nil {
-		return err
+func (msg *rabinComplaintCommitsMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	ww.WriteSize(len(msg.complaintCommits))
+	for i := range msg.complaintCommits {
+		ww.WriteUint32(msg.complaintCommits[i].Index)
+		ww.WriteUint32(msg.complaintCommits[i].DealerIndex)
+		writeVssDeal(ww, msg.complaintCommits[i].Deal)
+		ww.WriteBytes(msg.complaintCommits[i].Signature)
 	}
-	if err = util.WriteUint32(w, uint32(len(m.complaintCommits))); err != nil {
-		return err
-	}
-	for i := range m.complaintCommits {
-		if err = util.WriteUint32(w, m.complaintCommits[i].Index); err != nil {
-			return err
-		}
-		if err = util.WriteUint32(w, m.complaintCommits[i].DealerIndex); err != nil {
-			return err
-		}
-		if err = writeVssDeal(w, m.complaintCommits[i].Deal); err != nil {
-			return err
-		}
-		if err = util.WriteBytes16(w, m.complaintCommits[i].Signature); err != nil {
-			return err
-		}
-	}
-	return nil
+	return ww.Err
 }
 
-//nolint:gocritic
-func (m *rabinComplaintCommitsMsg) Read(r io.Reader) error {
-	var err error
-	if m.step, err = util.ReadByte(r); err != nil {
-		return err
+func (msg *rabinComplaintCommitsMsg) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msg.step = rr.ReadByte()
+	size := rr.ReadSize()
+	msg.complaintCommits = make([]*rabin_dkg.ComplaintCommits, size)
+	for i := range msg.complaintCommits {
+		msg.complaintCommits[i] = &rabin_dkg.ComplaintCommits{}
+		msg.complaintCommits[i].Index = rr.ReadUint32()
+		msg.complaintCommits[i].DealerIndex = rr.ReadUint32()
+		msg.complaintCommits[i].Deal = readVssDeal(rr, msg.blsSuite)
+		msg.complaintCommits[i].Signature = rr.ReadBytes()
 	}
-	var ccLen uint32
-	if err = util.ReadUint32(r, &ccLen); err != nil {
-		return err
-	}
-	m.complaintCommits = make([]*rabin_dkg.ComplaintCommits, ccLen)
-	for i := range m.complaintCommits {
-		m.complaintCommits[i] = &rabin_dkg.ComplaintCommits{}
-		if err = util.ReadUint32(r, &m.complaintCommits[i].Index); err != nil {
-			return err
-		}
-		if err = util.ReadUint32(r, &m.complaintCommits[i].DealerIndex); err != nil {
-			return err
-		}
-		if err = readVssDeal(r, &m.complaintCommits[i].Deal, m.blsSuite); err != nil {
-			return err
-		}
-		if m.complaintCommits[i].Signature, err = util.ReadBytes16(r); err != nil {
-			return err
-		}
-	}
-	return nil
+	return rr.Err
 }
 
-func (m *rabinComplaintCommitsMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
-	m.blsSuite = blsSuite
+func (msg *rabinComplaintCommitsMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
+	msg.blsSuite = blsSuite
 	rdr := bytes.NewReader(buf)
-	return m.Read(rdr)
+	return msg.Read(rdr)
 }
 
 // rabin_dkg.ReconstructCommits
@@ -1068,82 +803,51 @@ type rabinReconstructCommitsMsg struct {
 	reconstructCommits []*rabin_dkg.ReconstructCommits
 }
 
-func (m *rabinReconstructCommitsMsg) MsgType() byte {
+func (msg *rabinReconstructCommitsMsg) MsgType() byte {
 	return rabinReconstructCommitsMsgType
 }
 
-func (m *rabinReconstructCommitsMsg) Step() byte {
-	return m.step
+func (msg *rabinReconstructCommitsMsg) Step() byte {
+	return msg.step
 }
 
-func (m *rabinReconstructCommitsMsg) SetStep(step byte) {
-	m.step = step
+func (msg *rabinReconstructCommitsMsg) SetStep(step byte) {
+	msg.step = step
 }
 
-//nolint:gocritic
-func (m *rabinReconstructCommitsMsg) Write(w io.Writer) error {
-	var err error
-	if err = util.WriteByte(w, m.step); err != nil {
-		return err
+func (msg *rabinReconstructCommitsMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	ww.WriteSize(len(msg.reconstructCommits))
+	for i := range msg.reconstructCommits {
+		ww.WriteBytes(msg.reconstructCommits[i].SessionID)
+		ww.WriteUint32(msg.reconstructCommits[i].Index)
+		ww.WriteUint32(msg.reconstructCommits[i].DealerIndex)
+		writePriShare(ww, msg.reconstructCommits[i].Share)
+		ww.WriteBytes(msg.reconstructCommits[i].Signature)
 	}
-	if err = util.WriteUint32(w, uint32(len(m.reconstructCommits))); err != nil {
-		return err
-	}
-	for i := range m.reconstructCommits {
-		if err = util.WriteBytes16(w, m.reconstructCommits[i].SessionID); err != nil {
-			return err
-		}
-		if err = util.WriteUint32(w, m.reconstructCommits[i].Index); err != nil {
-			return err
-		}
-		if err = util.WriteUint32(w, m.reconstructCommits[i].DealerIndex); err != nil {
-			return err
-		}
-		if err = writePriShare(w, m.reconstructCommits[i].Share); err != nil {
-			return err
-		}
-		if err = util.WriteBytes16(w, m.reconstructCommits[i].Signature); err != nil {
-			return err
-		}
-	}
-	return nil
+	return ww.Err
 }
 
-//nolint:gocritic
-func (m *rabinReconstructCommitsMsg) Read(r io.Reader) error {
-	var err error
-	if m.step, err = util.ReadByte(r); err != nil {
-		return err
+func (msg *rabinReconstructCommitsMsg) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msg.step = rr.ReadByte()
+	size := rr.ReadSize()
+	msg.reconstructCommits = make([]*rabin_dkg.ReconstructCommits, size)
+	for i := range msg.reconstructCommits {
+		msg.reconstructCommits[i] = &rabin_dkg.ReconstructCommits{}
+		msg.reconstructCommits[i].SessionID = rr.ReadBytes()
+		msg.reconstructCommits[i].Index = rr.ReadUint32()
+		msg.reconstructCommits[i].DealerIndex = rr.ReadUint32()
+		msg.reconstructCommits[i].Share = readPriShare(rr)
+		msg.reconstructCommits[i].Signature = rr.ReadBytes()
 	}
-	var ccLen uint32
-	if err = util.ReadUint32(r, &ccLen); err != nil {
-		return err
-	}
-	m.reconstructCommits = make([]*rabin_dkg.ReconstructCommits, ccLen)
-	for i := range m.reconstructCommits {
-		m.reconstructCommits[i] = &rabin_dkg.ReconstructCommits{}
-		if m.reconstructCommits[i].SessionID, err = util.ReadBytes16(r); err != nil {
-			return err
-		}
-		if err = util.ReadUint32(r, &m.reconstructCommits[i].Index); err != nil {
-			return err
-		}
-		if err = util.ReadUint32(r, &m.reconstructCommits[i].DealerIndex); err != nil {
-			return err
-		}
-		if err = readPriShare(r, &m.reconstructCommits[i].Share); err != nil {
-			return err
-		}
-		if m.reconstructCommits[i].Signature, err = util.ReadBytes16(r); err != nil {
-			return err
-		}
-	}
-	return nil
+	return rr.Err
 }
 
-func (m *rabinReconstructCommitsMsg) fromBytes(buf []byte) error {
+func (msg *rabinReconstructCommitsMsg) fromBytes(buf []byte) error {
 	rdr := bytes.NewReader(buf)
-	return m.Read(rdr)
+	return msg.Read(rdr)
 }
 
 // multiKeySetMsg wraps messages of different protocol instances (for different key set types).
@@ -1157,71 +861,58 @@ type multiKeySetMsg struct {
 	msgType   byte              // Transient.
 }
 
-func (m *multiKeySetMsg) MsgType() byte {
-	return m.msgType
+func (msg *multiKeySetMsg) MsgType() byte {
+	return msg.msgType
 }
 
-func (m *multiKeySetMsg) Step() byte {
-	return m.step
+func (msg *multiKeySetMsg) Step() byte {
+	return msg.step
 }
 
-func (m *multiKeySetMsg) SetStep(step byte) {
-	m.step = step
+func (msg *multiKeySetMsg) SetStep(step byte) {
+	msg.step = step
 }
 
-func (m *multiKeySetMsg) Write(w io.Writer) error {
-	if err := util.WriteByte(w, m.step); err != nil {
-		return err
-	}
-	if err := util.WriteBytes16(w, m.edMsg.MsgData); err != nil {
-		return err
-	}
-	if err := util.WriteBytes16(w, m.blsMsg.MsgData); err != nil {
-		return err
-	}
-	return nil
+func (msg *multiKeySetMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	ww.WriteBytes(msg.edMsg.MsgData)
+	ww.WriteBytes(msg.blsMsg.MsgData)
+	return ww.Err
 }
 
-func (m *multiKeySetMsg) Read(r io.Reader) error {
-	var err error
-	if m.step, err = util.ReadByte(r); err != nil {
-		return err
+func (msg *multiKeySetMsg) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msg.step = rr.ReadByte()
+	msg.edMsg = &peering.PeerMessageData{
+		PeeringID:   msg.peeringID,
+		MsgReceiver: msg.receiver,
+		MsgType:     msg.msgType,
+		MsgData:     rr.ReadBytes(),
 	}
-	m.edMsg = &peering.PeerMessageData{
-		PeeringID:   m.peeringID,
-		MsgReceiver: m.receiver,
-		MsgType:     m.msgType,
-		MsgData:     nil, // Assigned below.
+	msg.blsMsg = &peering.PeerMessageData{
+		PeeringID:   msg.peeringID,
+		MsgReceiver: msg.receiver,
+		MsgType:     msg.msgType,
+		MsgData:     rr.ReadBytes(),
 	}
-	if m.edMsg.MsgData, err = util.ReadBytes16(r); err != nil {
-		return err
-	}
-	m.blsMsg = &peering.PeerMessageData{
-		PeeringID:   m.peeringID,
-		MsgReceiver: m.receiver,
-		MsgType:     m.msgType,
-		MsgData:     nil, // Assigned below.
-	}
-	if m.blsMsg.MsgData, err = util.ReadBytes16(r); err != nil {
-		return err
-	}
-	return nil
+	return rr.Err
 }
 
-func (m *multiKeySetMsg) fromBytes(buf []byte, peeringID peering.PeeringID, receiver, msgType byte) error {
+func (msg *multiKeySetMsg) fromBytes(buf []byte, peeringID peering.PeeringID, receiver, msgType byte) error {
 	rdr := bytes.NewReader(buf)
-	m.peeringID = peeringID
-	m.receiver = receiver
-	m.msgType = msgType
-	return m.Read(rdr)
+	msg.peeringID = peeringID
+	msg.receiver = receiver
+	msg.msgType = msgType
+	return msg.Read(rdr)
 }
 
-func (m *multiKeySetMsg) mustDataBytes() []byte {
-	buf := bytes.Buffer{}
-	if err := m.Write(&buf); err != nil {
+func (msg *multiKeySetMsg) mustDataBytes() []byte {
+	w := new(bytes.Buffer)
+	if err := msg.Write(w); err != nil {
 		panic(err)
 	}
-	return buf.Bytes()
+	return w.Bytes()
 }
 
 type multiKeySetMsgs map[uint16]*multiKeySetMsg
@@ -1278,38 +969,22 @@ func (m multiKeySetMsgs) AddBLSMsgs(msgs map[uint16]*peering.PeerMessageData, st
 //		I int          // Index of the private share
 //		V kyber.Scalar // Value of the private share
 //	}
-//
-//nolint:gocritic
-func writePriShare(w io.Writer, val *share.PriShare) error {
-	var err error
-	if err = util.WriteBoolByte(w, val == nil); err != nil {
-		return err
+func writePriShare(ww *rwutil.Writer, val *share.PriShare) {
+	ww.WriteBool(val != nil)
+	if val != nil {
+		ww.WriteUint32(uint32(val.I))
+		ww.WriteMarshaled(val.V)
 	}
-	if val == nil {
-		return nil
-	}
-	if err = util.WriteUint32(w, uint32(val.I)); err != nil {
-		return err
-	}
-	return util.WriteMarshaled(w, val.V)
 }
 
-//nolint:gocritic
-func readPriShare(r io.Reader, val **share.PriShare) error {
-	var err error
-	var valNil bool
-	if err = util.ReadBoolByte(r, &valNil); err != nil {
-		return err
+func readPriShare(rr *rwutil.Reader) (ret *share.PriShare) {
+	hasPriShare := rr.ReadBool()
+	if hasPriShare {
+		ret = new(share.PriShare)
+		ret.I = int(rr.ReadUint32())
+		rr.ReadMarshaled(ret.V)
 	}
-	if valNil {
-		*val = nil
-	}
-	var i uint32
-	if err = util.ReadUint32(r, &i); err != nil {
-		return err
-	}
-	(*val).I = int(i)
-	return util.ReadMarshaled(r, (*val).V)
+	return ret
 }
 
 //	type rabin_vvs.Deal struct {
@@ -1319,59 +994,28 @@ func readPriShare(r io.Reader, val **share.PriShare) error {
 //		T uint32					// Threshold used for this secret sharing run
 //		Commitments []kyber.Point	// Commitments are the coefficients used to verify the shares against
 //	}
-//
-//nolint:gocritic
-func writeVssDeal(w io.Writer, d *rabin_vss.Deal) error {
-	var err error
-	if err = util.WriteBytes16(w, d.SessionID); err != nil {
-		return err
-	}
-	if err = writePriShare(w, d.SecShare); err != nil {
-		return err
-	}
-	if err = writePriShare(w, d.RndShare); err != nil {
-		return err
-	}
-	if err = util.WriteUint32(w, d.T); err != nil {
-		return err
-	}
-	if err = util.WriteUint32(w, uint32(len(d.Commitments))); err != nil {
-		return err
-	}
+func writeVssDeal(ww *rwutil.Writer, d *rabin_vss.Deal) {
+	ww.WriteBytes(d.SessionID)
+	writePriShare(ww, d.SecShare)
+	writePriShare(ww, d.RndShare)
+	ww.WriteUint32(d.T)
+	ww.WriteSize(len(d.Commitments))
 	for i := range d.Commitments {
-		if err = util.WriteMarshaled(w, d.Commitments[i]); err != nil {
-			return err
-		}
+		ww.WriteMarshaled(d.Commitments[i])
 	}
-	return nil
 }
 
-func readVssDeal(r io.Reader, d **rabin_vss.Deal, blsSuite kyber.Group) error {
-	var err error
-	dd := rabin_vss.Deal{}
-	if dd.SessionID, err = util.ReadBytes16(r); err != nil {
-		return err
+func readVssDeal(rr *rwutil.Reader, blsSuite kyber.Group) (ret *rabin_vss.Deal) {
+	ret = new(rabin_vss.Deal)
+	ret.SessionID = rr.ReadBytes()
+	ret.SecShare = readPriShare(rr)
+	ret.RndShare = readPriShare(rr)
+	ret.T = rr.ReadUint32()
+	size := rr.ReadSize()
+	ret.Commitments = make([]kyber.Point, size)
+	for i := range ret.Commitments {
+		ret.Commitments[i] = blsSuite.Point()
+		rr.ReadMarshaled(ret.Commitments[i])
 	}
-	if err := readPriShare(r, &dd.SecShare); err != nil {
-		return err
-	}
-	if err := readPriShare(r, &dd.RndShare); err != nil {
-		return err
-	}
-	if err := util.ReadUint32(r, &dd.T); err != nil {
-		return err
-	}
-	var commitmentCount uint32
-	if err := util.ReadUint32(r, &commitmentCount); err != nil {
-		return err
-	}
-	dd.Commitments = make([]kyber.Point, int(commitmentCount))
-	for i := range dd.Commitments {
-		dd.Commitments[i] = blsSuite.Point()
-		if err := util.ReadMarshaled(r, dd.Commitments[i]); err != nil {
-			return err
-		}
-	}
-	*d = &dd
-	return nil
+	return ret
 }

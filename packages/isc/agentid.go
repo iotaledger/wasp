@@ -5,29 +5,34 @@ package isc
 
 import (
 	"errors"
-	"fmt"
+	"io"
 	"strings"
 
 	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-type AgentIDKind uint8
+type AgentIDKind rwutil.Kind
 
 const (
 	AgentIDKindNil AgentIDKind = iota
 	AgentIDKindAddress
 	AgentIDKindContract
 	AgentIDKindEthereumAddress
+
+	AgentIDIsNil AgentIDKind = 0x80
 )
 
 // AgentID represents any entity that can hold assets on L2 and/or call contracts.
 type AgentID interface {
-	Kind() AgentIDKind
-	String() string
 	Bytes() []byte
 	Equals(other AgentID) bool
+	Kind() AgentIDKind
+	Read(r io.Reader) error
+	String() string
+	Write(w io.Writer) error
 }
 
 // AgentIDWithL1Address is an AgentID backed by an L1 address (either AddressAgentID or ContractAgentID).
@@ -45,13 +50,12 @@ func AddressFromAgentID(a AgentID) (iotago.Address, bool) {
 	return wa.Address(), true
 }
 
-// HnameFromAgentID returns the hname of the AgentID, if applicable.
-func HnameFromAgentID(a AgentID) (Hname, bool) {
-	ca, ok := a.(*ContractAgentID)
-	if !ok {
-		return 0, false
+// HnameFromAgentID returns the hname of the AgentID, or HnameNil if not applicable.
+func HnameFromAgentID(a AgentID) Hname {
+	if ca, ok := a.(*ContractAgentID); ok {
+		return ca.Hname()
 	}
-	return ca.Hname(), true
+	return HnameNil
 }
 
 // NewAgentID creates an AddressAgentID if the address is not an AliasAddress;
@@ -59,36 +63,55 @@ func HnameFromAgentID(a AgentID) (Hname, bool) {
 func NewAgentID(addr iotago.Address) AgentID {
 	if addr.Type() == iotago.AddressAlias {
 		chainID := ChainIDFromAddress(addr.(*iotago.AliasAddress))
-		return NewContractAgentID(chainID, 0)
+		return NewContractAgentID(chainID, HnameNil)
 	}
 	return &AddressAgentID{a: addr}
 }
 
-func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
-	var err error
-	kind, err := mu.ReadByte()
-	if err != nil {
-		return nil, err
-	}
-	switch AgentIDKind(kind) {
-	case AgentIDKindNil:
-		return &NilAgentID{}, nil
-	case AgentIDKindAddress:
-		return addressAgentIDFromMarshalUtil(mu)
-	case AgentIDKindContract:
-		return contractAgentIDFromMarshalUtil(mu)
-	case AgentIDKindEthereumAddress:
-		return ethAgentIDFromMarshalUtil(mu)
-	}
-	return nil, fmt.Errorf("no handler for AgentID kind %d", kind)
-}
-
 func AgentIDFromBytes(data []byte) (AgentID, error) {
-	return AgentIDFromMarshalUtil(marshalutil.New(data))
+	rr := rwutil.NewBytesReader(data)
+	return AgentIDFromReader(rr), rr.Err
 }
 
-// NewAgentIDFromString parses the human-readable string representation
-func NewAgentIDFromString(s string) (AgentID, error) {
+func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
+	rr := rwutil.NewMuReader(mu)
+	return AgentIDFromReader(rr), rr.Err
+}
+
+func AgentIDFromReader(rr *rwutil.Reader) (ret AgentID) {
+	kind := rr.ReadKind()
+	switch AgentIDKind(kind) {
+	case AgentIDIsNil:
+		return nil
+	case AgentIDKindNil:
+		ret = new(NilAgentID)
+	case AgentIDKindAddress:
+		ret = new(AddressAgentID)
+	case AgentIDKindContract:
+		ret = new(ContractAgentID)
+	case AgentIDKindEthereumAddress:
+		ret = new(EthereumAddressAgentID)
+	default:
+		if rr.Err == nil {
+			rr.Err = errors.New("invalid AgentID kind")
+			return nil
+		}
+	}
+	rr.PushBack().WriteKind(kind)
+	rr.Read(ret)
+	return ret
+}
+
+func AgentIDToWriter(ww *rwutil.Writer, agent AgentID) {
+	if agent == nil {
+		ww.WriteKind(rwutil.Kind(AgentIDIsNil))
+		return
+	}
+	ww.Write(agent)
+}
+
+// AgentIDFromString parses the human-readable string representation
+func AgentIDFromString(s string) (AgentID, error) {
 	if s == nilAgentIDString {
 		return &NilAgentID{}, nil
 	}
@@ -102,7 +125,7 @@ func NewAgentIDFromString(s string) (AgentID, error) {
 			addrPart = parts[1]
 			hnamePart = parts[0]
 		default:
-			return nil, errors.New("NewAgentIDFromString: wrong format")
+			return nil, errors.New("invalid AgentID format")
 		}
 	}
 
@@ -115,7 +138,7 @@ func NewAgentIDFromString(s string) (AgentID, error) {
 	if strings.HasPrefix(addrPart, "0x") {
 		return ethAgentIDFromString(s)
 	}
-	return nil, errors.New("NewAgentIDFromString: wrong format")
+	return nil, errors.New("invalid AgentID string")
 }
 
 // NewRandomAgentID creates random AgentID

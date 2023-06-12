@@ -1,7 +1,6 @@
 package isc
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"time"
@@ -22,11 +21,11 @@ const (
 	requestKindTagOffLedgerEVMCall
 )
 
-func NewRequestFromBytes(data []byte) (Request, error) {
-	return NewRequestFromMarshalUtil(marshalutil.New(data))
+func RequestFromBytes(data []byte) (Request, error) {
+	return RequestFromMarshalUtil(marshalutil.New(data))
 }
 
-func NewRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (Request, error) {
+func RequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (Request, error) {
 	kind, err := mu.ReadByte()
 	if err != nil {
 		return nil, err
@@ -85,7 +84,7 @@ func (s *offLedgerSignature) readFromMarshalUtil(mu *marshalutil.MarshalUtil) er
 	if err != nil {
 		return err
 	}
-	s.publicKey, err = cryptolib.NewPublicKeyFromBytes(publicKey)
+	s.publicKey, err = cryptolib.PublicKeyFromBytes(publicKey)
 	if err != nil {
 		return err
 	}
@@ -675,9 +674,7 @@ func (rr *RequestRef) IsFor(req Request) bool {
 }
 
 func (rr *RequestRef) Bytes() []byte {
-	ret := rr.Hash[:]
-	ret = append(ret, rr.ID.Bytes()...)
-	return ret
+	return append(rr.Hash[:], rr.ID[:]...)
 }
 
 func (rr *RequestRef) String() string {
@@ -749,9 +746,7 @@ func (rid RequestID) LookupDigest() RequestLookupDigest {
 }
 
 func (rid RequestID) Bytes() []byte {
-	var buf bytes.Buffer
-	buf.Write(rid[:])
-	return buf.Bytes()
+	return rid[:]
 }
 
 func (rid RequestID) Equals(other RequestID) bool {

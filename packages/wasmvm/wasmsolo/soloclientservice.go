@@ -88,7 +88,7 @@ func (svc *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract
 	if !iscChainID.Equals(svc.ctx.Chain.ChainID) {
 		return reqID, errors.New("SoloClientService.PostRequest chain ID mismatch")
 	}
-	req := solo.NewCallParamsFromDictByHname(iscContract, iscFunction, params)
+	req := solo.CallParamsFromDictByHname(iscContract, iscFunction, params)
 
 	key := string(keyPair.GetPublicKey().AsBytes())
 	nonce := svc.nonces[key]

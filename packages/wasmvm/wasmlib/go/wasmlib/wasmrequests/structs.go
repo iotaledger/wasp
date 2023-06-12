@@ -15,7 +15,7 @@ type CallRequest struct {
 	Params    []byte
 }
 
-func NewCallRequestFromBytes(buf []byte) *CallRequest {
+func CallRequestFromBytes(buf []byte) *CallRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &CallRequest{}
 	data.Allowance = wasmtypes.BytesDecode(dec)
@@ -44,7 +44,7 @@ func (o ImmutableCallRequest) Exists() bool {
 }
 
 func (o ImmutableCallRequest) Value() *CallRequest {
-	return NewCallRequestFromBytes(o.Proxy.Get())
+	return CallRequestFromBytes(o.Proxy.Get())
 }
 
 type MutableCallRequest struct {
@@ -64,7 +64,7 @@ func (o MutableCallRequest) SetValue(value *CallRequest) {
 }
 
 func (o MutableCallRequest) Value() *CallRequest {
-	return NewCallRequestFromBytes(o.Proxy.Get())
+	return CallRequestFromBytes(o.Proxy.Get())
 }
 
 type DeployRequest struct {
@@ -74,7 +74,7 @@ type DeployRequest struct {
 	ProgHash    wasmtypes.ScHash
 }
 
-func NewDeployRequestFromBytes(buf []byte) *DeployRequest {
+func DeployRequestFromBytes(buf []byte) *DeployRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &DeployRequest{}
 	data.Description = wasmtypes.StringDecode(dec)
@@ -103,7 +103,7 @@ func (o ImmutableDeployRequest) Exists() bool {
 }
 
 func (o ImmutableDeployRequest) Value() *DeployRequest {
-	return NewDeployRequestFromBytes(o.Proxy.Get())
+	return DeployRequestFromBytes(o.Proxy.Get())
 }
 
 type MutableDeployRequest struct {
@@ -123,7 +123,7 @@ func (o MutableDeployRequest) SetValue(value *DeployRequest) {
 }
 
 func (o MutableDeployRequest) Value() *DeployRequest {
-	return NewDeployRequestFromBytes(o.Proxy.Get())
+	return DeployRequestFromBytes(o.Proxy.Get())
 }
 
 type PostRequest struct {
@@ -138,7 +138,7 @@ type PostRequest struct {
 	Transfer  []byte
 }
 
-func NewPostRequestFromBytes(buf []byte) *PostRequest {
+func PostRequestFromBytes(buf []byte) *PostRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &PostRequest{}
 	data.Allowance = wasmtypes.BytesDecode(dec)
@@ -173,7 +173,7 @@ func (o ImmutablePostRequest) Exists() bool {
 }
 
 func (o ImmutablePostRequest) Value() *PostRequest {
-	return NewPostRequestFromBytes(o.Proxy.Get())
+	return PostRequestFromBytes(o.Proxy.Get())
 }
 
 type MutablePostRequest struct {
@@ -193,7 +193,7 @@ func (o MutablePostRequest) SetValue(value *PostRequest) {
 }
 
 func (o MutablePostRequest) Value() *PostRequest {
-	return NewPostRequestFromBytes(o.Proxy.Get())
+	return PostRequestFromBytes(o.Proxy.Get())
 }
 
 type SendRequest struct {
@@ -201,7 +201,7 @@ type SendRequest struct {
 	Transfer []byte
 }
 
-func NewSendRequestFromBytes(buf []byte) *SendRequest {
+func SendRequestFromBytes(buf []byte) *SendRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &SendRequest{}
 	data.Address  = wasmtypes.AddressDecode(dec)
@@ -226,7 +226,7 @@ func (o ImmutableSendRequest) Exists() bool {
 }
 
 func (o ImmutableSendRequest) Value() *SendRequest {
-	return NewSendRequestFromBytes(o.Proxy.Get())
+	return SendRequestFromBytes(o.Proxy.Get())
 }
 
 type MutableSendRequest struct {
@@ -246,7 +246,7 @@ func (o MutableSendRequest) SetValue(value *SendRequest) {
 }
 
 func (o MutableSendRequest) Value() *SendRequest {
-	return NewSendRequestFromBytes(o.Proxy.Get())
+	return SendRequestFromBytes(o.Proxy.Get())
 }
 
 type TransferRequest struct {
@@ -254,7 +254,7 @@ type TransferRequest struct {
 	Transfer []byte
 }
 
-func NewTransferRequestFromBytes(buf []byte) *TransferRequest {
+func TransferRequestFromBytes(buf []byte) *TransferRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &TransferRequest{}
 	data.AgentID  = wasmtypes.AgentIDDecode(dec)
@@ -279,7 +279,7 @@ func (o ImmutableTransferRequest) Exists() bool {
 }
 
 func (o ImmutableTransferRequest) Value() *TransferRequest {
-	return NewTransferRequestFromBytes(o.Proxy.Get())
+	return TransferRequestFromBytes(o.Proxy.Get())
 }
 
 type MutableTransferRequest struct {
@@ -299,5 +299,5 @@ func (o MutableTransferRequest) SetValue(value *TransferRequest) {
 }
 
 func (o MutableTransferRequest) Value() *TransferRequest {
-	return NewTransferRequestFromBytes(o.Proxy.Get())
+	return TransferRequestFromBytes(o.Proxy.Get())
 }

@@ -26,7 +26,7 @@ type ScAddress struct {
 }
 
 func (o ScAddress) AsAgentID() ScAgentID {
-	return NewScAgentIDFromAddress(o)
+	return ScAgentIDFromAddress(o)
 }
 
 func (o ScAddress) Bytes() []byte {

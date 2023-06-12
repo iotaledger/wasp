@@ -55,7 +55,7 @@ func estimateGas(callMsg ethereum.CallMsg, e *EVMEmulator) (uint64, error) {
 		callMsg.Gas = (lo + hi) / 2
 		res, err := e.CallContract(callMsg, nil)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("CallContract failed: %w", err)
 		}
 		if res.Err != nil {
 			lastErr = res.Err
@@ -67,7 +67,7 @@ func estimateGas(callMsg ethereum.CallMsg, e *EVMEmulator) (uint64, error) {
 	}
 	if lastOk == 0 {
 		if lastErr != nil {
-			return 0, fmt.Errorf("estimateGas failed: %s", lastErr.Error())
+			return 0, fmt.Errorf("estimateGas failed: %w", lastErr)
 		}
 		return 0, errors.New("estimateGas failed")
 	}
@@ -96,7 +96,7 @@ func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, r
 	)
 	require.NoError(t, err)
 
-	receipt, res, err := emu.SendTransaction(tx, nil, nil)
+	receipt, res, _, err := emu.SendTransaction(tx, nil, nil, nil)
 	require.NoError(t, err)
 	if res != nil && res.Err != nil {
 		t.Logf("Execution failed: %v", res.Err)
@@ -275,7 +275,7 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	)
 	require.NoError(t, err)
 
-	receipt, res, err := emu.SendTransaction(tx, nil, nil)
+	receipt, res, _, err := emu.SendTransaction(tx, nil, nil, nil)
 	require.NoError(t, err)
 	require.NoError(t, res.Err)
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
@@ -551,7 +551,7 @@ func benchmarkEVMEmulator(b *testing.B, k int) {
 	b.ResetTimer()
 	for _, chunk := range chunks {
 		for _, tx := range chunk {
-			receipt, res, err := emu.SendTransaction(tx, nil, nil)
+			receipt, res, _, err := emu.SendTransaction(tx, nil, nil, nil)
 			require.NoError(b, err)
 			require.NoError(b, res.Err)
 			require.Equal(b, types.ReceiptStatusSuccessful, receipt.Status)

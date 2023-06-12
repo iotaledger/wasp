@@ -38,7 +38,7 @@ func unprocessableRequestRecordFromBytes(data []byte) (*unprocessableRequestReco
 	if err != nil {
 		return nil, err
 	}
-	ret.req, err = isc.NewRequestFromMarshalUtil(mu)
+	ret.req, err = isc.RequestFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}
