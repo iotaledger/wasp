@@ -49,18 +49,17 @@ func HnameFromBytes(data []byte) (ret Hname, err error) {
 	return
 }
 
+func HnameFromMarshalUtil(mu *marshalutil.MarshalUtil) (ret Hname, err error) {
+	_, err = rwutil.ReaderFromMu(mu, &ret)
+	return ret, err
+}
+
 func HnameFromHexString(s string) (Hname, error) {
 	n, err := strconv.ParseUint(s, 16, 32)
 	if err != nil {
 		return HnameNil, fmt.Errorf("cannot parse hname: %w", err)
 	}
 	return Hname(n), nil
-}
-
-// HnameFromBytes constructor, unmarshalling
-func HnameFromMarshalUtil(mu *marshalutil.MarshalUtil) (ret Hname, err error) {
-	_, err = rwutil.ReaderFromMu(mu, &ret)
-	return
 }
 
 func (hn Hname) Bytes() []byte {

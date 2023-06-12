@@ -45,7 +45,7 @@ func ChainIDFromBytes(data []byte) (ret ChainID, err error) {
 // ChainIDFromMarshalUtil reads from Marshalutil
 func ChainIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (ret ChainID, err error) {
 	_, err = rwutil.ReaderFromMu(mu, &ret)
-	return
+	return ret, err
 }
 
 func ChainIDFromString(bech32 string) (ChainID, error) {

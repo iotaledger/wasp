@@ -22,7 +22,7 @@ func (r *unprocessableRequestRecord) bytes() []byte {
 	mu := marshalutil.New()
 	mu.WriteUint32(r.blockIndex)
 	mu.WriteUint16(r.outputIndex)
-	r.req.WriteToMarshalUtil(mu)
+	mu.Write(r.req)
 	return mu.Bytes()
 }
 

@@ -3,7 +3,6 @@ package isc
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io"
 	"math/big"
@@ -25,12 +24,6 @@ type Assets struct {
 
 var BaseTokenID = []byte{}
 
-func NewEmptyAssets() *Assets {
-	return &Assets{
-		NativeTokens: make([]*iotago.NativeToken, 0),
-	}
-}
-
 func NewAssets(baseTokens uint64, tokens iotago.NativeTokens, nfts ...iotago.NFTID) *Assets {
 	if tokens == nil {
 		tokens = make(iotago.NativeTokens, 0)
@@ -45,6 +38,24 @@ func NewAssets(baseTokens uint64, tokens iotago.NativeTokens, nfts ...iotago.NFT
 
 func NewAssetsBaseTokens(amount uint64) *Assets {
 	return &Assets{BaseTokens: amount}
+}
+
+func NewEmptyAssets() *Assets {
+	return &Assets{
+		NativeTokens: make([]*iotago.NativeToken, 0),
+	}
+}
+
+func AssetsFromBytes(b []byte) (*Assets, error) {
+	if len(b) == 0 {
+		return NewEmptyAssets(), nil
+	}
+	ret, err := rwutil.ReaderFromBytes(b, NewEmptyAssets())
+	return ret, err
+}
+
+func AssetsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Assets, error) {
+	return rwutil.ReaderFromMu(mu, NewEmptyAssets())
 }
 
 func AssetsFromDict(d dict.Dict) (*Assets, error) {
@@ -79,14 +90,6 @@ func AssetsFromNativeTokenSum(baseTokens uint64, tokens iotago.NativeTokenSum) *
 	return ret
 }
 
-func AssetsFromOutputMap(outs map[iotago.OutputID]iotago.Output) *Assets {
-	ret := NewEmptyAssets()
-	for _, out := range outs {
-		ret.Add(AssetsFromOutput(out))
-	}
-	return ret
-}
-
 func AssetsFromOutput(o iotago.Output) *Assets {
 	ret := &Assets{
 		BaseTokens:   o.Deposit(),
@@ -95,19 +98,18 @@ func AssetsFromOutput(o iotago.Output) *Assets {
 	return ret
 }
 
-func NativeTokenIDFromBytes(data []byte) (iotago.NativeTokenID, error) {
-	if len(data) != iotago.NativeTokenIDLength {
-		return iotago.NativeTokenID{}, errors.New("NativeTokenIDFromBytes: wrong data length")
+func AssetsFromOutputMap(outs map[iotago.OutputID]iotago.Output) *Assets {
+	ret := NewEmptyAssets()
+	for _, out := range outs {
+		ret.Add(AssetsFromOutput(out))
 	}
-	var nativeTokenID iotago.NativeTokenID
-	copy(nativeTokenID[:], data)
-	return nativeTokenID, nil
+	return ret
 }
 
-func MustNativeTokenIDFromBytes(data []byte) iotago.NativeTokenID {
-	ret, err := NativeTokenIDFromBytes(data)
+func MustAssetsFromBytes(b []byte) *Assets {
+	ret, err := AssetsFromBytes(b)
 	if err != nil {
-		panic(fmt.Errorf("MustNativeTokenIDFromBytes: %w", err))
+		panic(err)
 	}
 	return ret
 }
@@ -176,21 +178,6 @@ func (a *Assets) Bytes() []byte {
 
 func (a *Assets) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.WriteBytes(a.Bytes())
-}
-
-func MustAssetsFromBytes(b []byte) *Assets {
-	if len(b) == 0 {
-		return NewEmptyAssets()
-	}
-	ret, err := rwutil.ReaderFromBytes(b, NewEmptyAssets())
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-func AssetsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Assets, error) {
-	return rwutil.ReaderFromMu(mu, NewEmptyAssets())
 }
 
 func (a *Assets) Equals(b *Assets) bool {

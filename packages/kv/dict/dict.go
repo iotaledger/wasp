@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"sort"
 
 	"github.com/iotaledger/hive.go/lo"
@@ -11,6 +12,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // Dict is an implementation kv.KVStore interface backed by an in-memory map.
@@ -183,6 +185,28 @@ func (d Dict) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 		d.Set(kv.Key(k), v)
 	}
 	return nil
+}
+
+func (d Dict) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	size := rr.ReadSize()
+	for i := 0; i < size; i++ {
+		key := kv.Key(rr.ReadBytes())
+		value := rr.ReadBytes()
+		d.Set(key, value)
+	}
+	return rr.Err
+}
+
+func (d Dict) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	keys := d.KeysSorted()
+	ww.WriteSize(len(keys))
+	for _, key := range keys {
+		ww.WriteBytes([]byte(key))
+		ww.WriteBytes(d[key])
+	}
+	return ww.Err
 }
 
 // Keys takes all keys
