@@ -47,6 +47,8 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm
 	vmctx.GasBurnEnable(false)
 	initialGasBurnedTotal := vmctx.gasBurnedTotal
 	initialGasFeeChargedTotal := vmctx.gasFeeChargedTotal
+	vmctx.evmFailedTx = nil
+	vmctx.evmFailedReceipt = nil
 
 	vmctx.currentStateUpdate = NewStateUpdate()
 	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.task.StateDraft.Timestamp().Add(1*time.Nanosecond)))

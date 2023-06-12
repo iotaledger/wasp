@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
@@ -105,24 +104,11 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 		panic(errChainIDMismatch)
 	}
 
-	tracer := getTracer(ctx, bctx)
-
-	// Send the tx to the emulator.
-	// ISC gas burn will be enabled right before executing the tx, and disabled right after,
-	// so that ISC magic calls are charged gas.
-	receipt, result, err := bctx.emu.SendTransaction(
-		tx,
-		ctx.Privileged().GasBurnEnable,
-		tracer,
-	)
-
-	// burn EVM gas as ISC gas
-	var gasErr error
-	if result != nil {
+	chargeISCGas := func(result *core.ExecutionResult) (uint64, error) {
 		// convert burnt EVM gas to ISC gas
 		chainInfo := ctx.ChainInfo()
 		ctx.Privileged().GasBurnEnable(true)
-		gasErr = panicutil.CatchPanic(
+		iscGasErr := panicutil.CatchPanic(
 			func() {
 				ctx.Gas().Burn(
 					gas.BurnCodeEVM1P,
@@ -131,22 +117,36 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 			},
 		)
 		ctx.Privileged().GasBurnEnable(false)
-		if gasErr != nil {
-			// out of gas when burning ISC gas, edit the EVM receipt so that it fails
-			receipt.Status = types.ReceiptStatusFailed
+		if iscGasErr != nil {
+			// out of gas when burning ISC gas, amend the EVM receipt so that it is saved as "failed execution"
+			result.Err = core.ErrInsufficientFunds
 		}
+		// amend the gas usage (to include any ISC gas from sandbox calls)
+		evmGasUsed := gas.ISCGasBudgetToEVM(ctx.Gas().Burned(), &chainInfo.GasFeePolicy.EVMGasRatio)
+		return evmGasUsed, iscGasErr
 	}
 
-	if receipt != nil { // receipt can be nil when "intrinsic gas too low" or not enough funds
-		// If EVM execution was reverted we must revert the ISC request as well.
-		// Failed txs will be stored when closing the block context.
-		bctx.txs = append(bctx.txs, tx)
-		bctx.receipts = append(bctx.receipts, receipt)
-	}
-	ctx.RequireNoError(err)
-	ctx.RequireNoError(gasErr)
-	ctx.RequireNoError(tryGetRevertError(result))
+	// Send the tx to the emulator.
+	// ISC gas burn will be enabled right before executing the tx, and disabled right after,
+	// so that ISC magic calls are charged gas.
+	receipt, result, iscGasErr, err := bctx.emu.SendTransaction(
+		tx,
+		ctx.Privileged().GasBurnEnable,
+		chargeISCGas,
+		getTracer(ctx),
+	)
 
+	executionError := panicutil.CatchPanic(func() {
+		ctx.RequireNoError(err)
+		ctx.RequireNoError(iscGasErr)
+		ctx.RequireNoError(tryGetRevertError(result))
+	})
+
+	if executionError != nil {
+		// revert ISC/EVM state changes, store EVM tx/receipt so it is saved as "failed"
+		ctx.Privileged().SetEVMFailed(tx, receipt)
+		panic(executionError)
+	}
 	return nil
 }
 
