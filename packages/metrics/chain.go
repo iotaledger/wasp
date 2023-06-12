@@ -216,7 +216,7 @@ type ChainMetricsProvider struct {
 	smCacheSize           *prometheus.GaugeVec
 	smBlocksFetching      *prometheus.GaugeVec
 	smBlocksPending       *prometheus.GaugeVec
-	smBlocksCommitted     *prometheus.CounterVec
+	smBlocksCommitted     *countAndMaxMetrics
 	smRequestsWaiting     *prometheus.GaugeVec
 	smCSPHandlingDuration *prometheus.HistogramVec
 	smCDSHandlingDuration *prometheus.HistogramVec
@@ -463,12 +463,20 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 			Name:      "blocks_pending",
 			Help:      "Number of blocks the node has fetched but hasn't committed, because the node doesn't have their ancestors",
 		}, []string{labelNameChain}),
-		smBlocksCommitted: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "iota_wasp",
-			Subsystem: "state_manager",
-			Name:      "blocks_committed",
-			Help:      "Number of blocks the node has committed to the store",
-		}, []string{labelNameChain}),
+		smBlocksCommitted: newCountAndMaxMetrics(
+			prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: "iota_wasp",
+				Subsystem: "state_manager",
+				Name:      "blocks_committed",
+				Help:      "Number of blocks the node has committed to the store",
+			}, []string{labelNameChain}),
+			prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: "iota_wasp",
+				Subsystem: "state_manager",
+				Name:      "max_blocks_index_committed",
+				Help:      "Largest index of block committed to the store",
+			}, []string{labelNameChain}),
+		),
 		smRequestsWaiting: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "state_manager",
@@ -650,19 +658,21 @@ func (m *ChainMetricsProvider) PrometheusCollectorsChainState() []prometheus.Col
 }
 
 func (m *ChainMetricsProvider) PrometheusCollectorsChainStateManager() []prometheus.Collector {
-	return []prometheus.Collector{
-		m.smCacheSize,
-		m.smBlocksFetching,
-		m.smBlocksPending,
-		m.smBlocksCommitted,
-		m.smRequestsWaiting,
-		m.smCSPHandlingDuration,
-		m.smCDSHandlingDuration,
-		m.smCBPHandlingDuration,
-		m.smFSDHandlingDuration,
-		m.smTTHandlingDuration,
-		m.smBlockFetchDuration,
-	}
+	return append(
+		[]prometheus.Collector{
+			m.smCacheSize,
+			m.smBlocksFetching,
+			m.smBlocksPending,
+			m.smRequestsWaiting,
+			m.smCSPHandlingDuration,
+			m.smCDSHandlingDuration,
+			m.smCBPHandlingDuration,
+			m.smFSDHandlingDuration,
+			m.smTTHandlingDuration,
+			m.smBlockFetchDuration,
+		},
+		m.smBlocksCommitted.collectors()...,
+	)
 }
 
 func (m *ChainMetricsProvider) PrometheusCollectorsChainNodeConn() []prometheus.Collector {
