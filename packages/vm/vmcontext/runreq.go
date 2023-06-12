@@ -179,9 +179,6 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	vmctx.txsnapshot = vmctx.createTxBuilderSnapshot()
 	snapMutations := vmctx.currentStateUpdate.Clone()
 
-	if vmctx.req.IsOffLedger() {
-		vmctx.updateOffLedgerRequestMaxAssumedNonce()
-	}
 	var callErr *isc.VMError
 	func() {
 		defer func() {
@@ -215,6 +212,11 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 
 	// write receipt no matter what
 	receipt = vmctx.writeReceiptToBlockLog(callErr)
+
+	if vmctx.req.IsOffLedger() {
+		vmctx.updateOffLedgerRequestNonce()
+	}
+
 	return receipt, callRet
 }
 

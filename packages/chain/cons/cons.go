@@ -560,7 +560,7 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 		ValidatorFeeTarget:     aggregatedProposals.ValidatorFeeTarget(),
 		EstimateGasMode:        false,
 		EnableGasBurnLogging:   false,
-		MaintenanceModeEnabled: governance.NewStateAccess(chainState).GetMaintenanceStatus(),
+		MaintenanceModeEnabled: governance.NewStateAccess(chainState).MaintenanceStatus(),
 		Log:                    c.log.Named("VM"),
 	}
 	return nil
