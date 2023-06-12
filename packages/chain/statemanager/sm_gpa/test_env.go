@@ -81,6 +81,18 @@ func (teT *testEnv) finalize() {
 	_ = teT.log.Sync()
 }
 
+func (teT *testEnv) checkBlock(nodeID gpa.NodeID, origBlock state.Block) {
+	store, ok := teT.stores[nodeID]
+	require.True(teT.t, ok)
+	sm_gpa_utils.CheckBlockInStore(teT.t, store, origBlock)
+}
+
+func (teT *testEnv) doesNotContainBlock(nodeID gpa.NodeID, block state.Block) {
+	store, ok := teT.stores[nodeID]
+	require.True(teT.t, ok)
+	require.False(teT.t, store.HasTrieRoot(block.TrieRoot()))
+}
+
 func (teT *testEnv) sendBlocksToNode(nodeID gpa.NodeID, timeStep time.Duration, blocks ...state.Block) {
 	// If `ConsensusBlockProduced` is sent to the node, the node has definitely obtained all the blocks
 	// needed to commit this block. This is ensured by consensus.

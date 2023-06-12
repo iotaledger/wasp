@@ -303,23 +303,12 @@ func TestPruningSequentially(t *testing.T) {
 	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, smParameters)
 	defer env.finalize()
 
-	store, ok := env.stores[nodeID]
-	require.True(env.t, ok)
-	checkBlockFun := func(block state.Block) {
-		commitment := block.L1Commitment()
-		blockFromStore, err := store.BlockByTrieRoot(commitment.TrieRoot())
-		require.NoError(env.t, err)
-		require.Equal(env.t, block.StateIndex(), blockFromStore.StateIndex())
-		require.True(env.t, commitment.Equals(blockFromStore.L1Commitment()))
-		require.True(env.t, block.PreviousL1Commitment().Equals(blockFromStore.PreviousL1Commitment()))
-	}
-
 	blocks := env.bf.GetBlocks(blockCount, 1)
 	for i := 0; i <= blocksToKeep; i++ {
 		env.sendBlocksToNode(nodeID, 0*time.Second, blocks[i])
 		require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks[:i+1]))
 		for j := 0; j <= i; j++ {
-			checkBlockFun(blocks[j])
+			env.checkBlock(nodeID, blocks[j])
 		}
 	}
 	for i := blocksToKeep + 1; i < blockCount; i++ {
@@ -327,10 +316,10 @@ func TestPruningSequentially(t *testing.T) {
 		env.sendBlocksToNode(nodeID, 0*time.Second, blocks[i])
 		require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks[lastExistingBlockIndex:i+1]))
 		for j := 0; j < lastExistingBlockIndex; j++ {
-			require.False(env.t, store.HasTrieRoot(blocks[j].TrieRoot()))
+			env.doesNotContainBlock(nodeID, blocks[j])
 		}
 		for j := lastExistingBlockIndex; j <= i; j++ {
-			checkBlockFun(blocks[j])
+			env.checkBlock(nodeID, blocks[j])
 		}
 	}
 }
@@ -356,17 +345,6 @@ func TestPruningMany(t *testing.T) {
 	require.True(env.t, ok)
 	sm.(*stateManagerGPA).parameters.PruningMinStatesToKeep = 10000
 
-	store, ok := env.stores[nodeID]
-	require.True(env.t, ok)
-	checkBlockFun := func(block state.Block) {
-		commitment := block.L1Commitment()
-		blockFromStore, err := store.BlockByTrieRoot(commitment.TrieRoot())
-		require.NoError(env.t, err)
-		require.Equal(env.t, block.StateIndex(), blockFromStore.StateIndex())
-		require.True(env.t, commitment.Equals(blockFromStore.L1Commitment()))
-		require.True(env.t, block.PreviousL1Commitment().Equals(blockFromStore.PreviousL1Commitment()))
-	}
-
 	blocks := env.bf.GetBlocks(blocksToSend+1, 1)
 	env.sendBlocksToNode(nodeID, 0*time.Second, blocks[:blocksToSend]...)
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks[:blocksToSend]))
@@ -376,10 +354,10 @@ func TestPruningMany(t *testing.T) {
 	lastExistingBlockIndex := blocksToSend - blocksToKeep
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks[lastExistingBlockIndex:]))
 	for j := 0; j < lastExistingBlockIndex; j++ {
-		require.False(env.t, store.HasTrieRoot(blocks[j].TrieRoot()))
+		env.doesNotContainBlock(nodeID, blocks[j])
 	}
 	for j := lastExistingBlockIndex; j <= blocksToSend; j++ {
-		checkBlockFun(blocks[j])
+		env.checkBlock(nodeID, blocks[j])
 	}
 }
 
@@ -408,17 +386,6 @@ func TestPruningTooMuch(t *testing.T) {
 	require.True(env.t, ok)
 	sm.(*stateManagerGPA).parameters.PruningMinStatesToKeep = 10000
 
-	store, ok := env.stores[nodeID]
-	require.True(env.t, ok)
-	checkBlockFun := func(block state.Block) {
-		commitment := block.L1Commitment()
-		blockFromStore, err := store.BlockByTrieRoot(commitment.TrieRoot())
-		require.NoError(env.t, err)
-		require.Equal(env.t, block.StateIndex(), blockFromStore.StateIndex())
-		require.True(env.t, commitment.Equals(blockFromStore.L1Commitment()))
-		require.True(env.t, block.PreviousL1Commitment().Equals(blockFromStore.PreviousL1Commitment()))
-	}
-
 	blocks := env.bf.GetBlocks(blocksToSend, 1)
 	env.sendBlocksToNode(nodeID, 0*time.Second, blocks...)
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks))
@@ -437,10 +404,10 @@ func TestPruningTooMuch(t *testing.T) {
 			lastExistingBlockIndex = lastExistingBlockIndexExpected
 		}
 		for j := 0; j < lastExistingBlockIndex; j++ {
-			require.False(env.t, store.HasTrieRoot(blocks[j].TrieRoot()))
+			env.doesNotContainBlock(nodeID, blocks[j])
 		}
 		for j := lastExistingBlockIndex; j < len(blocks); j++ {
-			checkBlockFun(blocks[j])
+			env.checkBlock(nodeID, blocks[j])
 		}
 	}
 }

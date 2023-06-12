@@ -154,7 +154,7 @@ func TestCruelWorld(t *testing.T) {
 			return false
 		}
 		for i := 0; i < len(results.GetAdded()); i++ {
-			if !results.GetAdded()[i].L1Commitment().Equals(blocks[oldBlockIndex+i+1].L1Commitment()) { // TODO: should compare blocks instead of commitments
+			if !sm_gpa_utils.BlocksEqual(results.GetAdded()[i], blocks[oldBlockIndex+i+1]) {
 				t.Logf("Mempool state request for new block %v and old block %v to node %v return wrong %v-th element of added array: expected commitment %v, received %v",
 					newBlockIndex+1, oldBlockIndex+1, peeringURLs[nodeIndex], i, blocks[oldBlockIndex+i+1].L1Commitment(), results.GetAdded()[i].L1Commitment())
 				return false
