@@ -104,12 +104,35 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 		panic(errChainIDMismatch)
 	}
 
+	chargeISCGas := func(result *core.ExecutionResult) (uint64, error) {
+		// convert burnt EVM gas to ISC gas
+		chainInfo := ctx.ChainInfo()
+		ctx.Privileged().GasBurnEnable(true)
+		iscGasErr := panicutil.CatchPanic(
+			func() {
+				ctx.Gas().Burn(
+					gas.BurnCodeEVM1P,
+					gas.EVMGasToISC(result.UsedGas, &chainInfo.GasFeePolicy.EVMGasRatio),
+				)
+			},
+		)
+		ctx.Privileged().GasBurnEnable(false)
+		if iscGasErr != nil {
+			// out of gas when burning ISC gas, amend the EVM receipt so that it is saved as "failed execution"
+			result.Err = core.ErrInsufficientFunds
+		}
+		// amend the gas usage (to include any ISC gas from sandbox calls)
+		evmGasUsed := gas.ISCGasBudgetToEVM(ctx.Gas().Burned(), &chainInfo.GasFeePolicy.EVMGasRatio)
+		return evmGasUsed, iscGasErr
+	}
+
 	// Send the tx to the emulator.
 	// ISC gas burn will be enabled right before executing the tx, and disabled right after,
 	// so that ISC magic calls are charged gas.
 	receipt, result, iscGasErr, err := bctx.emu.SendTransaction(
 		tx,
-		ctx,
+		ctx.Privileged().GasBurnEnable,
+		chargeISCGas,
 		getTracer(ctx),
 	)
 

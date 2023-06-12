@@ -20,11 +20,9 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
@@ -257,7 +255,8 @@ func (e *EVMEmulator) applyMessage(
 
 func (e *EVMEmulator) SendTransaction(
 	tx *types.Transaction,
-	ctx isc.Sandbox,
+	gasBurnEnable func(bool),
+	chargeISCGas func(*core.ExecutionResult) (uint64, error),
 	tracer tracers.Tracer,
 ) (receipt *types.Receipt, result *core.ExecutionResult, iscGasErr error, err error) {
 	buf := e.StateDB().Buffered()
@@ -279,10 +278,6 @@ func (e *EVMEmulator) SendTransaction(
 		return nil, nil, nil, err
 	}
 
-	var gasBurnEnable func(bool)
-	if ctx != nil {
-		gasBurnEnable = ctx.Privileged().GasBurnEnable
-	}
 	result, err = e.applyMessage(
 		msg,
 		statedb,
@@ -293,26 +288,11 @@ func (e *EVMEmulator) SendTransaction(
 
 	gasUsed := uint64(0)
 	if result != nil {
-		gasUsed = result.UsedGas
-		if ctx != nil {
-			// convert burnt EVM gas to ISC gas
-			chainInfo := ctx.ChainInfo()
-			ctx.Privileged().GasBurnEnable(true)
-			iscGasErr = panicutil.CatchPanic(
-				func() {
-					ctx.Gas().Burn(
-						gas.BurnCodeEVM1P,
-						gas.EVMGasToISC(result.UsedGas, &chainInfo.GasFeePolicy.EVMGasRatio),
-					)
-				},
-			)
-			ctx.Privileged().GasBurnEnable(false)
-			if iscGasErr != nil {
-				// out of gas when burning ISC gas, amend the EVM receipt so that it is saved as "failed execution"
-				result.Err = core.ErrInsufficientFunds
-			}
-			// amend the gas usage (to include any ISC gas from sandbox calls)
-			gasUsed = gas.ISCGasBudgetToEVM(ctx.Gas().Burned(), &chainInfo.GasFeePolicy.EVMGasRatio)
+		// chargeISCGas will keep gasBurnEnabled = false and mutate `result` when charging ISC gas fails
+		if chargeISCGas != nil {
+			gasUsed, iscGasErr = chargeISCGas(result)
+		} else {
+			gasUsed = result.UsedGas
 		}
 	}
 
