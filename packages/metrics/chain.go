@@ -213,17 +213,21 @@ type ChainMetricsProvider struct {
 	chainConfirmedStateLag  ChainStateLag
 
 	// state manager
-	smCacheSize           *prometheus.GaugeVec
-	smBlocksFetching      *prometheus.GaugeVec
-	smBlocksPending       *prometheus.GaugeVec
-	smBlocksCommitted     *countAndMaxMetrics
-	smRequestsWaiting     *prometheus.GaugeVec
-	smCSPHandlingDuration *prometheus.HistogramVec
-	smCDSHandlingDuration *prometheus.HistogramVec
-	smCBPHandlingDuration *prometheus.HistogramVec
-	smFSDHandlingDuration *prometheus.HistogramVec
-	smTTHandlingDuration  *prometheus.HistogramVec
-	smBlockFetchDuration  *prometheus.HistogramVec
+	smCacheSize                  *prometheus.GaugeVec
+	smBlocksFetching             *prometheus.GaugeVec
+	smBlocksPending              *prometheus.GaugeVec
+	smBlocksCommitted            *countAndMaxMetrics
+	smRequestsWaiting            *prometheus.GaugeVec
+	smCSPHandlingDuration        *prometheus.HistogramVec
+	smCDSHandlingDuration        *prometheus.HistogramVec
+	smCBPHandlingDuration        *prometheus.HistogramVec
+	smFSDHandlingDuration        *prometheus.HistogramVec
+	smTTHandlingDuration         *prometheus.HistogramVec
+	smBlockFetchDuration         *prometheus.HistogramVec
+	smPruningRunDuration         *prometheus.HistogramVec
+	smPruningSingleStateDuration *prometheus.HistogramVec
+	smPruningStatesInRun         *prometheus.HistogramVec
+	smStatesPruned               *countAndMaxMetrics
 
 	// node conn
 	ncL1RequestReceived     *prometheus.CounterVec
@@ -525,6 +529,41 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 			Help:      "The duration (s) from starting fetching block from other till it is received in this node",
 			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain}),
+		smPruningRunDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "state_manager",
+			Name:      "pruning_run_duration",
+			Help:      "The duration (s) from starting till finishing pruning run, which may include pruning several states from store",
+			Buckets:   execTimeBuckets,
+		}, []string{labelNameChain}),
+		smPruningSingleStateDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "state_manager",
+			Name:      "pruning_single_state_duration",
+			Help:      "The duration (s) from starting till finishing pruning single state from store",
+			Buckets:   execTimeBuckets,
+		}, []string{labelNameChain}),
+		smPruningStatesInRun: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "state_manager",
+			Name:      "pruning_states_in_run",
+			Help:      "Number of states pruned in single pruning run (should be 1 in normally running nodes)",
+			Buckets:   recCountBuckets,
+		}, []string{labelNameChain}),
+		smStatesPruned: newCountAndMaxMetrics(
+			prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: "iota_wasp",
+				Subsystem: "state_manager",
+				Name:      "sates_pruned",
+				Help:      "Number of states pruned in total since starting the node",
+			}, []string{labelNameChain}),
+			prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: "iota_wasp",
+				Subsystem: "state_manager",
+				Name:      "max_state_index_pruned",
+				Help:      "Largest index of state pruned from the store",
+			}, []string{labelNameChain}),
+		),
 
 		//
 		// node conn
@@ -659,19 +698,25 @@ func (m *ChainMetricsProvider) PrometheusCollectorsChainState() []prometheus.Col
 
 func (m *ChainMetricsProvider) PrometheusCollectorsChainStateManager() []prometheus.Collector {
 	return append(
-		[]prometheus.Collector{
-			m.smCacheSize,
-			m.smBlocksFetching,
-			m.smBlocksPending,
-			m.smRequestsWaiting,
-			m.smCSPHandlingDuration,
-			m.smCDSHandlingDuration,
-			m.smCBPHandlingDuration,
-			m.smFSDHandlingDuration,
-			m.smTTHandlingDuration,
-			m.smBlockFetchDuration,
-		},
-		m.smBlocksCommitted.collectors()...,
+		append(
+			[]prometheus.Collector{
+				m.smCacheSize,
+				m.smBlocksFetching,
+				m.smBlocksPending,
+				m.smRequestsWaiting,
+				m.smCSPHandlingDuration,
+				m.smCDSHandlingDuration,
+				m.smCBPHandlingDuration,
+				m.smFSDHandlingDuration,
+				m.smTTHandlingDuration,
+				m.smBlockFetchDuration,
+				m.smPruningRunDuration,
+				m.smPruningSingleStateDuration,
+				m.smPruningStatesInRun,
+			},
+			m.smBlocksCommitted.collectors()...,
+		),
+		m.smStatesPruned.collectors()...,
 	)
 }
 

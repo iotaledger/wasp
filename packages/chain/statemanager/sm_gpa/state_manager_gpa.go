@@ -535,17 +535,26 @@ func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment) {
 	if commitment == nil {
 		return // Nothing to prune
 	}
+	start := time.Now()
 
-	PreviousTrieRootFun := func(trieRoot trie.Hash) (trie.Hash, bool, error) {
+	type blockInfo struct {
+		trieRoot   trie.Hash
+		blockIndex uint32
+	}
+
+	PreviousBlockInfoFun := func(trieRoot trie.Hash) (*blockInfo, error) {
 		block, err := smT.store.BlockByTrieRoot(trieRoot)
 		if err != nil {
-			return trie.Hash{}, false, err
+			return nil, err
 		}
 		com := block.PreviousL1Commitment()
 		if com == nil {
-			return trie.Hash{}, false, nil
+			return nil, nil
 		}
-		return com.TrieRoot(), true, nil
+		return &blockInfo{
+			trieRoot:   com.TrieRoot(),
+			blockIndex: block.StateIndex() - 1,
+		}, nil
 	}
 
 	var statesToKeepFromChain int
@@ -564,41 +573,46 @@ func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment) {
 	}
 
 	// Skip last `statesToKeep` trie roots
-	var exists bool
-	trieRoot := commitment.TrieRoot()
+	bi := &blockInfo{
+		trieRoot: commitment.TrieRoot(),
+		// NOTE: as `stateToKeep` is guaranteed to be at least 1, `stateIndex` will certainly be set by `PreviousBlockInfoFun` function
+	}
 	for i := 0; i < statesToKeep; i++ {
-		if !smT.store.HasTrieRoot(trieRoot) {
+		if !smT.store.HasTrieRoot(bi.trieRoot) {
 			return // Trie root history is not large enough for pruning
 		}
-		trieRoot, exists, err = PreviousTrieRootFun(trieRoot)
+		bi, err = PreviousBlockInfoFun(bi.trieRoot)
 		if err != nil {
-			smT.log.Errorf("Failed to retrieve previous trie root of %s while pruning: %v", trieRoot, err)
+			smT.log.Errorf("Failed to retrieve previous block info of %s while pruning: %v", bi.trieRoot, err)
 			return
 		}
-		if !exists {
+		if bi == nil {
 			return // Traced to the origin state (number of states in chain is less than `statesToKeep`)
 		}
 	}
 
 	// Collect no more than `PruningMaxStatesToDelete` oldest trie roots
-	// exists = true // `exists` is true in this line, assignment not needed. Left for clarity.
-	trieRoots := pipe.NewLimitLimitedPriorityHashQueue[trie.Hash](smT.parameters.PruningMaxStatesToDelete)
-	for exists && smT.store.HasTrieRoot(trieRoot) {
-		trieRoots.Add(trieRoot)
-		trieRoot, exists, err = PreviousTrieRootFun(trieRoot)
+	// `bi` is not nil in this line
+	bis := pipe.NewLimitLimitedPriorityHashQueue[*blockInfo](smT.parameters.PruningMaxStatesToDelete)
+	for bi != nil && smT.store.HasTrieRoot(bi.trieRoot) {
+		bis.Add(bi)
+		bi, err = PreviousBlockInfoFun(bi.trieRoot)
 		if err != nil {
-			smT.log.Errorf("Failed to retrieve previous trie root of %s while pruning: %v", trieRoot, err)
+			smT.log.Errorf("Failed to retrieve previous block info of %s while pruning: %v", bi.trieRoot, err)
 			return
 		}
 	}
-	for i := -1; i >= -trieRoots.Length(); i-- {
-		trieRoot = trieRoots.Get(i)
-		stats, err := smT.store.Prune(trieRoot)
+	for i := -1; i >= -bis.Length(); i-- {
+		singleStart := time.Now()
+		bi = bis.Get(i)
+		stats, err := smT.store.Prune(bi.trieRoot)
 		if err != nil {
-			smT.log.Errorf("Failed to prune trie root %s: %v", trieRoot, err)
+			smT.log.Errorf("Failed to prune trie root %s: %v", bi.trieRoot, err)
 			return // Returning in order not to leave gaps of pruned trie roots in between not pruned ones
 		}
-		smT.log.Debugf("Trie root %s pruned: %v nodes and %v values deleted", trieRoot, stats.DeletedNodes, stats.DeletedValues)
+		smT.metrics.StatePruned(time.Since(singleStart), bi.blockIndex)
+		smT.log.Debugf("Trie root %s pruned: %v nodes and %v values deleted", bi.trieRoot, stats.DeletedNodes, stats.DeletedValues)
 	}
-	smT.log.Debugf("Pruning completed, %v trie roots pruned", trieRoots.Length())
+	smT.metrics.PruningCompleted(time.Since(start), bis.Length())
+	smT.log.Debugf("Pruning completed, %v trie roots pruned", bis.Length())
 }
