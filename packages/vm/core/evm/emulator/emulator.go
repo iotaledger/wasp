@@ -256,28 +256,29 @@ func (e *EVMEmulator) applyMessage(
 func (e *EVMEmulator) SendTransaction(
 	tx *types.Transaction,
 	gasBurnEnable func(bool),
+	chargeISCGas func(*core.ExecutionResult) (uint64, error),
 	tracer tracers.Tracer,
-) (*types.Receipt, *core.ExecutionResult, error) {
+) (receipt *types.Receipt, result *core.ExecutionResult, iscGasErr error, err error) {
 	buf := e.StateDB().Buffered()
 	statedb := buf.StateDB()
 	pendingHeader := e.BlockchainDB().GetPendingHeader(e.timestamp)
 
 	sender, err := types.Sender(e.Signer(), tx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("invalid transaction: %w", err)
+		return nil, nil, nil, fmt.Errorf("invalid transaction: %w", err)
 	}
 	nonce := e.StateDB().GetNonce(sender)
 	if tx.Nonce() != nonce {
-		return nil, nil, fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
+		return nil, nil, nil, fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
 	}
 
 	signer := types.MakeSigner(e.chainConfig, pendingHeader.Number, pendingHeader.Time)
 	msg, err := core.TransactionToMessage(tx, signer, pendingHeader.BaseFee)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	result, err := e.applyMessage(
+	result, err = e.applyMessage(
 		msg,
 		statedb,
 		pendingHeader,
@@ -287,7 +288,12 @@ func (e *EVMEmulator) SendTransaction(
 
 	gasUsed := uint64(0)
 	if result != nil {
-		gasUsed = result.UsedGas
+		// chargeISCGas will keep gasBurnEnabled = false and mutate `result` when charging ISC gas fails
+		if chargeISCGas != nil {
+			gasUsed, iscGasErr = chargeISCGas(result)
+		} else {
+			gasUsed = result.UsedGas
+		}
 	}
 
 	cumulativeGasUsed := gasUsed
@@ -298,7 +304,7 @@ func (e *EVMEmulator) SendTransaction(
 		index = latest.TransactionIndex + 1
 	}
 
-	receipt := &types.Receipt{
+	receipt = &types.Receipt{
 		Type:              tx.Type(),
 		CumulativeGasUsed: cumulativeGasUsed,
 		TxHash:            tx.Hash(),
@@ -322,7 +328,7 @@ func (e *EVMEmulator) SendTransaction(
 	buf.Commit()
 	e.BlockchainDB().AddTransaction(tx, receipt)
 
-	return receipt, result, err
+	return receipt, result, iscGasErr, err
 }
 
 func (e *EVMEmulator) MintBlock() {

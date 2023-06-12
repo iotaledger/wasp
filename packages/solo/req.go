@@ -182,8 +182,11 @@ func (r *CallParams) WithSender(sender iotago.Address) *CallParams {
 }
 
 // NewRequestOffLedger creates off-ledger request from parameters
-func (r *CallParams) NewRequestOffLedger(chainID isc.ChainID, keyPair *cryptolib.KeyPair) isc.OffLedgerRequest {
-	ret := isc.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce, r.gasBudget).
+func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair *cryptolib.KeyPair) isc.OffLedgerRequest {
+	if r.nonce == 0 {
+		r.nonce = ch.Nonce(isc.NewAgentID(keyPair.Address()))
+	}
+	ret := isc.NewOffLedgerRequest(ch.ID(), r.target, r.entryPoint, r.params, r.nonce, r.gasBudget).
 		WithAllowance(r.allowance)
 	return ret.Sign(keyPair)
 }
@@ -338,7 +341,7 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
-	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
+	r := req.NewRequestOffLedger(ch, keyPair)
 	return ch.RunOffLedgerRequest(r)
 }
 
@@ -404,9 +407,8 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
-	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
+	r := req.NewRequestOffLedger(ch, keyPair)
 	res := ch.estimateGas(r)
-
 	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, ch.ResolveVMError(res.Receipt.Error).AsGoError()
 }
 

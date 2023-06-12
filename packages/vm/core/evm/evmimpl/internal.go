@@ -24,9 +24,7 @@ import (
 )
 
 type blockContext struct {
-	emu      *emulator.EVMEmulator
-	txs      []*types.Transaction
-	receipts []*types.Receipt
+	emu *emulator.EVMEmulator
 }
 
 // openBlockContext creates a new emulator instance before processing any
@@ -45,7 +43,7 @@ func openBlockContext(ctx isc.Sandbox) dict.Dict {
 // block have been processed.
 func closeBlockContext(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCaller(&isc.NilAgentID{}) // called from ISC VM
-	getBlockContext(ctx).mintBlock()
+	getBlockContext(ctx).emu.MintBlock()
 	return nil
 }
 
@@ -53,41 +51,9 @@ func getBlockContext(ctx isc.Sandbox) *blockContext {
 	return ctx.Privileged().BlockContext().(*blockContext)
 }
 
-func (bctx *blockContext) mintBlock() {
-	// count txs where status = success (which are already stored in the pending block)
-	txCount := uint(0)
-	for i := range bctx.txs {
-		if bctx.receipts[i].Status == types.ReceiptStatusSuccessful {
-			txCount++
-		}
-	}
-
-	// failed txs were not stored in the pending block -- store them now
-	for i := range bctx.txs {
-		if bctx.receipts[i].Status == types.ReceiptStatusSuccessful {
-			continue
-		}
-		bctx.receipts[i].TransactionIndex = txCount
-		bctx.emu.BlockchainDB().AddTransaction(bctx.txs[i], bctx.receipts[i])
-
-		// we must also increment the nonce manually since the original request was reverted
-		sender := evmutil.MustGetSender(bctx.txs[i])
-		nonce := bctx.emu.StateDB().GetNonce(sender)
-		bctx.emu.StateDB().SetNonce(sender, nonce+1)
-
-		txCount++
-	}
-
-	bctx.emu.MintBlock()
-}
-
-func getTracer(ctx isc.Sandbox, bctx *blockContext) tracers.Tracer {
+func getTracer(ctx isc.Sandbox) tracers.Tracer {
 	tracer := ctx.EVMTracer()
 	if tracer == nil {
-		return nil
-	}
-	if int(tracer.TxIndex) != len(bctx.txs) {
-		// some tx in this block is being traced but not the current one
 		return nil
 	}
 	return tracer.Tracer
@@ -107,6 +73,16 @@ func createEmulator(ctx isc.Sandbox, l2Balance *l2Balance) *emulator.EVMEmulator
 		newMagicContract(ctx),
 		l2Balance,
 	)
+}
+
+// IMPORTANT: Must only be called from the ISC VM (when the request is done executing)
+func AddFailedTx(ctx isc.Sandbox, tx *types.Transaction, receipt *types.Receipt) {
+	emu := getBlockContext(ctx).emu
+	emu.BlockchainDB().AddTransaction(tx, receipt)
+	// we must also increment the nonce manually since the original request was reverted
+	sender := evmutil.MustGetSender(tx)
+	nonce := emu.StateDB().GetNonce(sender)
+	emu.StateDB().SetNonce(sender, nonce+1)
 }
 
 // timestamp returns the current timestamp in seconds since epoch

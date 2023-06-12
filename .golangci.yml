@@ -172,7 +172,6 @@ linters:
         - bidichk # Checks for dangerous unicode character sequences
         - contextcheck # check the function whether use a non-inherited context
         - decorder # check declaration order and count of types, constants, variables and functions
-        - depguard # Go linter that checks if package imports are in a list of acceptable packages [fast: true, auto-fix: false]
         - execinquery # execinquery is a linter about query string checker in Query function which reads your Go src files and warning it finds
         - goheader # Checks is file header matches to pattern [fast: true, auto-fix: false]
         - gomodguard # Allow and block list linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations. [fast: true, auto-fix: false]
@@ -187,6 +186,7 @@ linters:
         - wastedassign # wastedassign finds wasted assignment statements. [fast: true, auto-fix: false]
 
 
+    # - depguard # Go linter that checks if package imports are in a list of acceptable packages [fast: true, auto-fix: false]
     # nlreturn # nlreturn checks for a new line before return and branch statements to increase code clarity [fast: true, auto-fix: false]
     # don't enable:
     # gomnd: An analyzer to detect magic numbers.

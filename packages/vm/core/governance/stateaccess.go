@@ -5,6 +5,7 @@ package governance
 
 import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
@@ -19,7 +20,7 @@ func NewStateAccess(store kv.KVStoreReader) *StateAccess {
 	return &StateAccess{state: state}
 }
 
-func (sa *StateAccess) GetMaintenanceStatus() bool {
+func (sa *StateAccess) MaintenanceStatus() bool {
 	r := sa.state.Get(VarMaintenanceStatus)
 	if r == nil {
 		return false // chain is being initialized, governance has not been initialized yet
@@ -27,7 +28,7 @@ func (sa *StateAccess) GetMaintenanceStatus() bool {
 	return codec.MustDecodeBool(r)
 }
 
-func (sa *StateAccess) GetAccessNodes() []*cryptolib.PublicKey {
+func (sa *StateAccess) AccessNodes() []*cryptolib.PublicKey {
 	accessNodes := []*cryptolib.PublicKey{}
 	AccessNodesMapR(sa.state).IterateKeys(func(pubKeyBytes []byte) bool {
 		pubKey, err := cryptolib.PublicKeyFromBytes(pubKeyBytes)
@@ -40,7 +41,7 @@ func (sa *StateAccess) GetAccessNodes() []*cryptolib.PublicKey {
 	return accessNodes
 }
 
-func (sa *StateAccess) GetCandidateNodes() []*AccessNodeInfo {
+func (sa *StateAccess) CandidateNodes() []*AccessNodeInfo {
 	candidateNodes := []*AccessNodeInfo{}
 	AccessNodeCandidatesMapR(sa.state).Iterate(func(pubKeyBytes, accessNodeInfoBytes []byte) bool {
 		ani, err := AccessNodeInfoFromBytes(pubKeyBytes, accessNodeInfoBytes)
@@ -51,4 +52,8 @@ func (sa *StateAccess) GetCandidateNodes() []*AccessNodeInfo {
 		return true
 	})
 	return candidateNodes
+}
+
+func (sa *StateAccess) ChainOwnerID() isc.AgentID {
+	return mustGetChainOwnerID(sa.state)
 }

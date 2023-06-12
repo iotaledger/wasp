@@ -171,16 +171,16 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 	req.WithGasBudget(g)
 	res, err := ch.PostRequestOffLedger(req, user)
 	if err != nil {
-		return
+		return ret, err
 	}
 	resBin := res.Get(blob.ParamHash)
 	if resBin == nil {
 		err = errors.New("internal error: no hash returned")
-		return
+		return ret, err
 	}
 	ret, err = codec.DecodeHashValue(resBin)
 	if err != nil {
-		return
+		return ret, err
 	}
 	require.EqualValues(ch.Env.T, expectedHash, ret)
 	return ret, err
@@ -665,6 +665,12 @@ func (ch *Chain) LatestBlock() state.Block {
 	b, err := ch.store.LatestBlock()
 	require.NoError(ch.Env.T, err)
 	return b
+}
+
+func (ch *Chain) Nonce(agentID isc.AgentID) uint64 {
+	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewGetAccountNonce.Name, accounts.ParamAgentID, agentID)
+	require.NoError(ch.Env.T, err)
+	return codec.MustDecodeUint64(res.Get(accounts.ParamAccountNonce))
 }
 
 // ReceiveOffLedgerRequest implements chain.Chain

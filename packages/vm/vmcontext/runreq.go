@@ -47,6 +47,8 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm
 	vmctx.GasBurnEnable(false)
 	initialGasBurnedTotal := vmctx.gasBurnedTotal
 	initialGasFeeChargedTotal := vmctx.gasFeeChargedTotal
+	vmctx.evmFailedTx = nil
+	vmctx.evmFailedReceipt = nil
 
 	vmctx.currentStateUpdate = NewStateUpdate()
 	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.task.StateDraft.Timestamp().Add(1*time.Nanosecond)))
@@ -179,9 +181,6 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	vmctx.txsnapshot = vmctx.createTxBuilderSnapshot()
 	snapMutations := vmctx.currentStateUpdate.Clone()
 
-	if vmctx.req.IsOffLedger() {
-		vmctx.updateOffLedgerRequestMaxAssumedNonce()
-	}
 	var callErr *isc.VMError
 	func() {
 		defer func() {
@@ -215,6 +214,11 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 
 	// write receipt no matter what
 	receipt = vmctx.writeReceiptToBlockLog(callErr)
+
+	if vmctx.req.IsOffLedger() {
+		vmctx.updateOffLedgerRequestNonce()
+	}
+
 	return receipt, callRet
 }
 
