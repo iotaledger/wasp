@@ -63,7 +63,7 @@ func MustGetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) *isc.ChainInf
 	return info
 }
 
-func MustGetChainOwnerID(state kv.KVStoreReader) isc.AgentID {
+func mustGetChainOwnerID(state kv.KVStoreReader) isc.AgentID {
 	d := kvdecoder.New(state)
 	return d.MustGetAgentID(VarChainOwnerID)
 }

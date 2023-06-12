@@ -73,7 +73,7 @@ func allAccountsMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 	return collections.NewMapReadOnly(state, keyAllAccounts)
 }
 
-func AccountExists(state kv.KVStoreReader, agentID isc.AgentID) bool {
+func accountExists(state kv.KVStoreReader, agentID isc.AgentID) bool {
 	return allAccountsMapR(state).HasAt(agentID.Bytes())
 }
 

@@ -56,8 +56,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -473,18 +471,18 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) bool
 		if processed {
 			return false // Already processed.
 		}
-		accountsPartition := subrealm.NewReadOnly(mpi.chainHeadState, kv.Key(accounts.Contract.Hname().Bytes()))
-		govPartition := subrealm.NewReadOnly(mpi.chainHeadState, kv.Key(governance.Contract.Hname().Bytes()))
+		accountsState := accounts.NewStateAccess(mpi.chainHeadState)
+		governanceState := governance.NewStateAccess(mpi.chainHeadState)
 		// check user has on-chain balance
-		if !accounts.AccountExists(accountsPartition, req.SenderAccount()) {
+		if !accountsState.AccountExists(req.SenderAccount()) {
 			// make an exception for gov calls (sender is chan owner and target is gov contract)
-			chainOwner := governance.MustGetChainOwnerID(govPartition)
+			chainOwner := governanceState.ChainOwnerID()
 			isGovRequest := req.SenderAccount().Equals(chainOwner) && req.CallTarget().Contract == governance.Contract.Hname()
 			if !isGovRequest {
 				return false // no on-chain funds
 			}
 		}
-		accountNonce := accounts.Nonce(accountsPartition, req.SenderAccount())
+		accountNonce := accountsState.Nonce(req.SenderAccount())
 		if req.Nonce() < accountNonce {
 			return false // only accept requests with higher nonces
 		}
@@ -551,7 +549,7 @@ func (mpi *mempoolImpl) handleConsensusProposalForChainHead(recv *reqConsensusPr
 
 	expectedAccountNonces := map[string]uint64{} // string is isc.AgentID.String()
 	requestsNonces := map[string][]reqRefNonce{} // string is isc.AgentID.String()
-	accountsContractStatePartition := subrealm.NewReadOnly(mpi.chainHeadState, kv.Key(accounts.Contract.Hname().Bytes()))
+	accountsState := accounts.NewStateAccess(mpi.chainHeadState)
 
 	mpi.offLedgerPool.Filter(func(request isc.OffLedgerRequest, ts time.Time) bool {
 		ref := isc.RequestRefFromRequest(request)
@@ -562,7 +560,7 @@ func (mpi *mempoolImpl) handleConsensusProposalForChainHead(recv *reqConsensusPr
 		_, ok := expectedAccountNonces[senderKey]
 		if !ok {
 			// get the current state nonce so we can detect gaps with it
-			expectedAccountNonces[senderKey] = accounts.Nonce(accountsContractStatePartition, request.SenderAccount())
+			expectedAccountNonces[senderKey] = accountsState.Nonce(request.SenderAccount())
 		}
 		requestsNonces[senderKey] = append(requestsNonces[senderKey], reqRefNonce{ref: ref, nonce: request.Nonce()})
 
