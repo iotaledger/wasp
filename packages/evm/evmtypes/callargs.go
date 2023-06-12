@@ -34,31 +34,31 @@ func DecodeCallMsg(callArgsBytes []byte) (ret ethereum.CallMsg, err error) {
 	var exists bool
 
 	if b, err = m.ReadBytes(common.AddressLength); err != nil {
-		return
+		return ret, err
 	}
 	ret.From.SetBytes(b)
 
 	if exists, err = m.ReadBool(); err != nil {
-		return
+		return ret, err
 	}
 	if exists {
 		if b, err = m.ReadBytes(common.AddressLength); err != nil {
-			return
+			return ret, err
 		}
 		ret.To = &common.Address{}
 		ret.To.SetBytes(b)
 	}
 
 	if ret.Gas, err = m.ReadUint64(); err != nil {
-		return
+		return ret, err
 	}
 
 	if exists, err = m.ReadBool(); err != nil {
-		return
+		return ret, err
 	}
 	if exists {
 		if b, err = readBytes(m); err != nil {
-			return
+			return ret, err
 		}
 		ret.Value = new(big.Int)
 		ret.Value.SetBytes(b)
@@ -67,7 +67,7 @@ func DecodeCallMsg(callArgsBytes []byte) (ret ethereum.CallMsg, err error) {
 	}
 
 	if ret.Data, err = readBytes(m); err != nil {
-		return
+		return ret, err
 	}
 	return ret, err
 }
