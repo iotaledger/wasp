@@ -162,10 +162,9 @@ type ChainMetricsProvider struct {
 	pipeLenRegistry *prometheus.Registry
 
 	// blockWAL
-	blockWALFailedWrites  *prometheus.CounterVec
-	blockWALFailedReads   *prometheus.CounterVec
-	blockWALBlocksAdded   *prometheus.CounterVec
-	blockWALMaxBlockIndex *prometheus.CounterVec
+	blockWALFailedWrites *prometheus.CounterVec
+	blockWALFailedReads  *prometheus.CounterVec
+	blockWALBlocksAdded  *countAndMaxMetrics
 
 	// consensus
 	consensusVMRunTime       *prometheus.HistogramVec
@@ -189,22 +188,22 @@ type ChainMetricsProvider struct {
 	mempoolMissingReqs       *prometheus.GaugeVec
 
 	// messages
-	messagesL1             *prometheus.CounterVec
-	lastL1MessageTime      *prometheus.GaugeVec
-	messagesL1Chain        *prometheus.CounterVec
-	lastL1MessageTimeChain *prometheus.GaugeVec
+	messagesL1             *prometheus.CounterVec // TODO: Outdated and should be removed?
+	lastL1MessageTime      *prometheus.GaugeVec   // TODO: Outdated and should be removed?
+	messagesL1Chain        *prometheus.CounterVec // TODO: Outdated and should be removed?
+	lastL1MessageTimeChain *prometheus.GaugeVec   // TODO: Outdated and should be removed?
 
-	inMilestoneMetrics                     *messageMetric[*nodeclient.MilestoneInfo]
-	inStateOutputMetrics                   *messageMetric[*InStateOutput]
-	inAliasOutputMetrics                   *messageMetric[*iotago.AliasOutput]
-	inOutputMetrics                        *messageMetric[*InOutput]
-	inOnLedgerRequestMetrics               *messageMetric[isc.OnLedgerRequest]
-	inTxInclusionStateMetrics              *messageMetric[*TxInclusionStateMsg]
-	outPublishStateTransactionMetrics      *messageMetric[*StateTransaction]
-	outPublishGovernanceTransactionMetrics *messageMetric[*iotago.Transaction]
-	outPullLatestOutputMetrics             *messageMetric[interface{}]
-	outPullTxInclusionStateMetrics         *messageMetric[iotago.TransactionID]
-	outPullOutputByIDMetrics               *messageMetric[iotago.OutputID]
+	inMilestoneMetrics                     *messageMetric[*nodeclient.MilestoneInfo] // TODO: Outdated and should be removed?
+	inStateOutputMetrics                   *messageMetric[*InStateOutput]            // TODO: Outdated and should be removed?
+	inAliasOutputMetrics                   *messageMetric[*iotago.AliasOutput]       // TODO: Outdated and should be removed?
+	inOutputMetrics                        *messageMetric[*InOutput]                 // TODO: Outdated and should be removed?
+	inOnLedgerRequestMetrics               *messageMetric[isc.OnLedgerRequest]       // TODO: Outdated and should be removed?
+	inTxInclusionStateMetrics              *messageMetric[*TxInclusionStateMsg]      // TODO: Outdated and should be removed?
+	outPublishStateTransactionMetrics      *messageMetric[*StateTransaction]         // TODO: Outdated and should be removed?
+	outPublishGovernanceTransactionMetrics *messageMetric[*iotago.Transaction]       // TODO: Outdated and should be removed?
+	outPullLatestOutputMetrics             *messageMetric[interface{}]               // TODO: Outdated and should be removed?
+	outPullTxInclusionStateMetrics         *messageMetric[iotago.TransactionID]      // TODO: Outdated and should be removed?
+	outPullOutputByIDMetrics               *messageMetric[iotago.OutputID]           // TODO: Outdated and should be removed?
 
 	// chain state / tips
 	chainActiveStateWant    *prometheus.GaugeVec
@@ -262,18 +261,20 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 			Name:      "failed_reads_total",
 			Help:      "Total number of reads failed while replaying WAL",
 		}, []string{labelNameChain}),
-		blockWALBlocksAdded: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "iota_wasp",
-			Subsystem: "wal",
-			Name:      "blocks_added",
-			Help:      "Total number of blocks added into WAL",
-		}, []string{labelNameChain}),
-		blockWALMaxBlockIndex: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "iota_wasp",
-			Subsystem: "wal",
-			Name:      "max_block_index",
-			Help:      "Largest index of block added into WAL",
-		}, []string{labelNameChain}),
+		blockWALBlocksAdded: newCountAndMaxMetrics(
+			prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: "iota_wasp",
+				Subsystem: "wal",
+				Name:      "blocks_added",
+				Help:      "Total number of blocks added into WAL",
+			}, []string{labelNameChain}),
+			prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: "iota_wasp",
+				Subsystem: "wal",
+				Name:      "max_block_index",
+				Help:      "Largest index of block added into WAL",
+			}, []string{labelNameChain}),
+		),
 
 		//
 		// consensus
@@ -595,12 +596,13 @@ func (m *ChainMetricsProvider) GetChainMetrics(chainID isc.ChainID) IChainMetric
 }
 
 func (m *ChainMetricsProvider) PrometheusCollectorsBlockWAL() []prometheus.Collector {
-	return []prometheus.Collector{
-		m.blockWALFailedWrites,
-		m.blockWALFailedReads,
-		m.blockWALBlocksAdded,
-		m.blockWALMaxBlockIndex,
-	}
+	return append(
+		[]prometheus.Collector{
+			m.blockWALFailedWrites,
+			m.blockWALFailedReads,
+		},
+		m.blockWALBlocksAdded.collectors()...,
+	)
 }
 
 func (m *ChainMetricsProvider) PrometheusCollectorsConsensus() []prometheus.Collector {
