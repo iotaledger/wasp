@@ -75,7 +75,10 @@ func TestTimePoolBasic(t *testing.T) {
 }
 
 func TestTimePoolRapid(t *testing.T) {
-	rapid.Check(t, rapid.Run[*timePoolSM]())
+	rapid.Check(t, func(t *rapid.T) {
+		sm := newtimePoolSM(t)
+		t.Repeat(rapid.StateMachineActions(sm))
+	})
 }
 
 type timePoolSM struct {
@@ -85,12 +88,16 @@ type timePoolSM struct {
 	taken int
 }
 
-func (sm *timePoolSM) Init(t *rapid.T) {
+var _ rapid.StateMachine = &timePoolSM{}
+
+func newtimePoolSM(t *rapid.T) *timePoolSM {
+	sm := new(timePoolSM)
 	log := testlogger.NewLogger(t)
 	sm.tp = mempool.NewTimePool(func(i int) {}, log)
 	sm.kp = cryptolib.NewKeyPair()
 	sm.added = 0
 	sm.taken = 0
+	return sm
 }
 
 func (sm *timePoolSM) Check(t *rapid.T) {
@@ -109,5 +116,3 @@ func (sm *timePoolSM) TakeTill(t *rapid.T) {
 	res := sm.tp.TakeTill(ts)
 	sm.taken += len(res)
 }
-
-var _ rapid.StateMachine = &timePoolSM{}

@@ -27,7 +27,8 @@ func MustInitRoot(store KVStore) Hash {
 	trieStore := makeWriterPartition(store, partitionTrieNodes)
 	valueStore := makeWriterPartition(store, partitionValues)
 	refcounts := newRefcounts(store)
-	n.commitNode(trieStore, valueStore, refcounts)
+	var stats CommitStats
+	n.commitNode(trieStore, valueStore, refcounts, &stats)
 
 	return n.nodeData.Commitment
 }

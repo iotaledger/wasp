@@ -59,8 +59,7 @@ The chain owns a unique L2 account, called the _common account_.
 The common account is controlled by the chain owner (defined in the chain root contract) and is used to store funds
 collected by fees or sent to the chain L1 address.
 
-The Agent ID of the common account is `<hname=0>@<chain-id>`. For
-example: `00000000@tgl1pzehtgythywhnhnz26s2vtpe2wy4y64pfcwkp9qvzhpwghzxhwkps2tk0nd`.
+The Agent ID of the common account is `<hname=0>@<address zero (0x00000...)>`.
 
 ### Ethereum Address
 

@@ -31,7 +31,10 @@ type cmtLogTestRapidSM struct {
 	genNodeID       *rapid.Generator[gpa.NodeID]
 }
 
-func (sm *cmtLogTestRapidSM) Init(t *rapid.T) {
+var _ rapid.StateMachine = &cmtLogTestRapidSM{}
+
+func newCmtLogTestRapidSM(t *rapid.T) *cmtLogTestRapidSM {
+	sm := new(cmtLogTestRapidSM)
 	n := 4
 	f := 1
 	log := testlogger.NewLogger(t)
@@ -73,6 +76,7 @@ func (sm *cmtLogTestRapidSM) Init(t *rapid.T) {
 	for _, nid := range gpaNodeIDs {
 		sm.l1Delivered[nid] = -1
 	}
+	return sm
 }
 
 func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *isc.AliasOutputWithID {
@@ -174,5 +178,8 @@ func (sm *cmtLogTestRapidSM) invHaveConsRunningOrTxConfirming(t *rapid.T) {
 var _ rapid.StateMachine = &cmtLogTestRapidSM{}
 
 func TestCmtLogRapid(t *testing.T) {
-	rapid.Check(t, rapid.Run[*cmtLogTestRapidSM]())
+	rapid.Check(t, func(t *rapid.T) {
+		sm := newCmtLogTestRapidSM(t)
+		t.Repeat(rapid.StateMachineActions(sm))
+	})
 }

@@ -331,11 +331,6 @@ func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]*isc.Event, error) {
 	return blocklog.EventsFromViewResult(viewResult)
 }
 
-// CommonAccount return the agentID of the common account (controlled by the owner)
-func (ch *Chain) CommonAccount() isc.AgentID {
-	return accounts.CommonAccount()
-}
-
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain
 func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name)
