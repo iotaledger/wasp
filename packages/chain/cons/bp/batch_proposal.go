@@ -14,12 +14,12 @@ import (
 )
 
 type BatchProposal struct {
-	nodeIndex        uint16                 // Just for a double-check.
-	baseAliasOutput  *isc.AliasOutputWithID // Proposed Base AliasOutput to use.
-	dssIndexProposal util.BitVector         // DSS Index proposal.
-	timeData         time.Time              // Our view of time.
-	feeDestination   isc.AgentID            // Proposed destination for fees.
-	requestRefs      []*isc.RequestRef      // Requests we propose to include into the execution.
+	nodeIndex               uint16                 // Just for a double-check.
+	baseAliasOutput         *isc.AliasOutputWithID // Proposed Base AliasOutput to use.
+	dssIndexProposal        util.BitVector         // DSS Index proposal.
+	timeData                time.Time              // Our view of time.
+	validatorFeeDestination isc.AgentID            // Proposed destination for fees.
+	requestRefs             []*isc.RequestRef      // Requests we propose to include into the execution.
 }
 
 func NewBatchProposal(
@@ -27,16 +27,16 @@ func NewBatchProposal(
 	baseAliasOutput *isc.AliasOutputWithID,
 	dssIndexProposal util.BitVector,
 	timeData time.Time,
-	feeDestination isc.AgentID,
+	validatorFeeDestination isc.AgentID,
 	requestRefs []*isc.RequestRef,
 ) *BatchProposal {
 	return &BatchProposal{
-		nodeIndex:        nodeIndex,
-		baseAliasOutput:  baseAliasOutput,
-		dssIndexProposal: dssIndexProposal,
-		timeData:         timeData,
-		feeDestination:   feeDestination,
-		requestRefs:      requestRefs,
+		nodeIndex:               nodeIndex,
+		baseAliasOutput:         baseAliasOutput,
+		dssIndexProposal:        dssIndexProposal,
+		timeData:                timeData,
+		validatorFeeDestination: validatorFeeDestination,
+		requestRefs:             requestRefs,
 	}
 }
 
@@ -61,7 +61,7 @@ func (b *BatchProposal) Read(r io.Reader) error {
 	b.dssIndexProposal = util.NewFixedSizeBitVector(0)
 	rr.Read(b.dssIndexProposal)
 	b.timeData = time.Unix(0, rr.ReadInt64())
-	b.feeDestination = isc.AgentIDFromReader(rr)
+	b.validatorFeeDestination = isc.AgentIDFromReader(rr)
 	size := rr.ReadSize()
 	b.requestRefs = make([]*isc.RequestRef, size)
 	for i := range b.requestRefs {
@@ -78,7 +78,7 @@ func (b *BatchProposal) Write(w io.Writer) error {
 	ww.Write(b.baseAliasOutput)
 	ww.Write(b.dssIndexProposal)
 	ww.WriteInt64(b.timeData.UnixNano())
-	ww.Write(b.feeDestination)
+	ww.Write(b.validatorFeeDestination)
 	ww.WriteSize(len(b.requestRefs))
 	for i := range b.requestRefs {
 		ww.WriteN(b.requestRefs[i].ID[:])
