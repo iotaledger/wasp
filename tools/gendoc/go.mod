@@ -85,7 +85,7 @@ require (
 	github.com/iotaledger/inx-app v1.0.0-rc.3.0.20230417131029-0bfe891d7c4a // indirect
 	github.com/iotaledger/inx/go v1.0.0-rc.2 // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
-	github.com/iotaledger/iota.go/v3 v3.0.0-rc.2 // indirect
+	github.com/iotaledger/iota.go/v3 v3.0.0-rc.3 // indirect
 	github.com/ipfs/go-cid v0.4.1 // indirect
 	github.com/ipfs/go-log/v2 v2.5.1 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
