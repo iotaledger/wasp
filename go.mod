@@ -9,7 +9,7 @@ replace (
 
 require (
 	github.com/VictoriaMetrics/fastcache v1.12.1
-	github.com/Yiling-J/theine-go v0.2.6
+	github.com/Yiling-J/theine-go v0.3.1
 	github.com/bygui86/multi-profile/v2 v2.1.0
 	github.com/bytecodealliance/wasmtime-go/v9 v9.0.0
 	github.com/dgraph-io/ristretto v0.1.1
@@ -153,6 +153,7 @@ require (
 	github.com/multiformats/go-multihash v0.2.2 // indirect
 	github.com/multiformats/go-multistream v0.4.1 // indirect
 	github.com/multiformats/go-varint v0.0.7 // indirect
+	github.com/ncw/directio v1.0.5 // indirect
 	github.com/oasisprotocol/ed25519 v0.0.0-20210505154701-76d8c688d86e // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/onsi/ginkgo/v2 v2.9.7 // indirect
