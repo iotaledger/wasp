@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 )
 
@@ -40,7 +41,7 @@ func testConcurrency(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	commonAccountInitialBalance := chain.L2BaseTokens(chain.CommonAccount())
+	commonAccountInitialBalance := chain.L2BaseTokens(accounts.CommonAccount())
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).
 		AddBaseTokens(1000).WithGasBudget(math.MaxUint64)
@@ -73,7 +74,7 @@ func testConcurrency(t *testing.T, w bool) {
 	res := deco.MustGetInt64(sbtestsc.VarCounter)
 	require.EqualValues(t, sum, res)
 
-	commonAccountFinalBalance := chain.L2BaseTokens(chain.CommonAccount())
+	commonAccountFinalBalance := chain.L2BaseTokens(accounts.CommonAccount())
 	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance+predictedGasFee*uint64(sum))
 
 	contractAgentID := isc.NewContractAgentID(chain.ChainID, HScName) // SC has no funds (because it never claims funds from allowance)
@@ -85,7 +86,7 @@ func testConcurrency2(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	commonAccountInitialBalance := chain.L2BaseTokens(chain.CommonAccount())
+	commonAccountInitialBalance := chain.L2BaseTokens(accounts.CommonAccount())
 
 	baseTokensSentPerRequest := 1 * isc.Million
 	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).
@@ -128,6 +129,6 @@ func testConcurrency2(t *testing.T, w bool) {
 		chain.Env.AssertL1BaseTokens(userAddr[i], utxodb.FundsFromFaucetAmount-uint64(repeats[i])*baseTokensSentPerRequest)
 	}
 
-	commonAccountFinalBalance := chain.L2BaseTokens(chain.CommonAccount())
+	commonAccountFinalBalance := chain.L2BaseTokens(accounts.CommonAccount())
 	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance+predictedGasFee*uint64(sum))
 }
