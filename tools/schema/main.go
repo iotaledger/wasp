@@ -45,7 +45,7 @@ func init() {
 func main() {
 	err := runGenerator()
 	if err != nil {
-		fmt.Printf("ERROR: %s", err.Error())
+		fmt.Printf("ERROR: %s\n", err.Error())
 		os.Exit(1)
 	}
 }
