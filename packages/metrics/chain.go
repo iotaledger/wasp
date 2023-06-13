@@ -700,6 +700,17 @@ func (m *ChainMetricsProvider) PrometheusCollectorsWebAPI() []prometheus.Collect
 	}
 }
 
+func (m *ChainMetricsProvider) PrometheusCollectorsState() []prometheus.Collector {
+	return []prometheus.Collector{
+		m.stateBlockCommitTimes,
+		m.stateBlockCommitNewTrieNodes,
+		m.stateBlockCommitNewTrieValues,
+		m.stateBlockPruneTimes,
+		m.stateBlockPruneDeletedTrieNodes,
+		m.stateBlockPruneDeletedTrieValues,
+	}
+}
+
 func (m *ChainMetricsProvider) RegisterChain(chainID isc.ChainID) {
 	m.GetChainMetrics(chainID)
 }
