@@ -23,6 +23,7 @@ type ParametersPrometheus struct {
 	ProcessMetrics           bool   `default:"true" usage:"whether to include process metrics"`
 	PromhttpMetrics          bool   `default:"true" usage:"whether to include promhttp metrics"`
 	WebAPIMetrics            bool   `default:"true" usage:"whether to include webapi metrics"`
+	StateMetrics             bool   `default:"true" usage:"whether to include state metrics"`
 }
 
 var ParamsPrometheus = &ParametersPrometheus{}
