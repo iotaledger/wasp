@@ -1,7 +1,6 @@
 package sm_gpa_utils
 
 import (
-	"runtime"
 	"testing"
 
 	"github.com/samber/lo"
@@ -10,7 +9,6 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 type blockCacheTestSM struct { // State machine for block cache property based Rapid tests
@@ -21,13 +19,15 @@ type blockCacheTestSM struct { // State machine for block cache property based R
 
 var _ rapid.StateMachine = &blockCacheTestSM{}
 
-func (bctsmT *blockCacheTestSM) Init(t *rapid.T) {
+func newblockCacheTestSM(t *rapid.T) *blockCacheTestSM {
+	bctsmT := new(blockCacheTestSM)
 	bctsmT.blockCacheNoWALTestSM = &blockCacheNoWALTestSM{}
 	bctsmT.blocksNotInWAL = []BlockKey{}
 	bctsmT.wal = NewMockedTestBlockWAL()
 	bctsmT.blockCacheNoWALTestSM.initStateMachine(t, 10, bctsmT.wal, func(block state.Block) {
 		bctsmT.blocksNotInWAL = lo.Without(bctsmT.blocksNotInWAL, NewBlockKey(block.L1Commitment()))
 	})
+	return bctsmT
 }
 
 // Cleanup() // inherited from blockCacheNoWALTestSM
@@ -64,7 +64,7 @@ func (bctsmT *blockCacheTestSM) GetBlockFromCache(t *rapid.T) {
 }
 
 func (bctsmT *blockCacheTestSM) GetBlockFromWAL(t *rapid.T) {
-	blocksToChoose := bctsmT.blocksNotInCache(t)
+	blocksToChoose := bctsmT.blocksNotInCache()
 	blocksToChoose = lo.Without(blocksToChoose, bctsmT.blocksNotInWAL...)
 	if len(blocksToChoose) == 0 {
 		t.Skip()
@@ -87,7 +87,7 @@ func (bctsmT *blockCacheTestSM) GetBlockFromCacheOrWAL(t *rapid.T) {
 }
 
 func (bctsmT *blockCacheTestSM) GetBlockFromNowhere(t *rapid.T) { // Unsuccessfully
-	blocksToChoose := lo.Intersect(bctsmT.blocksNotInWAL, bctsmT.blocksNotInCache(t))
+	blocksToChoose := lo.Intersect(bctsmT.blocksNotInWAL, bctsmT.blocksNotInCache())
 	if len(blocksToChoose) == 0 {
 		t.Skip()
 	}
@@ -109,8 +109,8 @@ func (bctsmT *blockCacheTestSM) invariantAllBlocksInWAL(t *rapid.T) {
 }
 
 func TestBlockCachePropBasedFull(t *testing.T) {
-	if runtime.GOOS == util.WindowsOS {
-		t.Skip("Needs fixing on windows")
-	}
-	rapid.Check(t, rapid.Run[*blockCacheTestSM]())
+	rapid.Check(t, func(t *rapid.T) {
+		sm := newblockCacheTestSM(t)
+		t.Repeat(rapid.StateMachineActions(sm))
+	})
 }
