@@ -8,7 +8,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -70,11 +69,6 @@ func NewAgentID(addr iotago.Address) AgentID {
 
 func AgentIDFromBytes(data []byte) (AgentID, error) {
 	rr := rwutil.NewBytesReader(data)
-	return AgentIDFromReader(rr), rr.Err
-}
-
-func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
-	rr := rwutil.NewMuReader(mu)
 	return AgentIDFromReader(rr), rr.Err
 }
 

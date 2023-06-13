@@ -1,7 +1,8 @@
 package blocklog
 
 import (
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
+	"io"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -9,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
@@ -18,31 +20,28 @@ type unprocessableRequestRecord struct {
 	req         isc.Request
 }
 
-func (r *unprocessableRequestRecord) bytes() []byte {
-	mu := marshalutil.New()
-	mu.WriteUint32(r.blockIndex)
-	mu.WriteUint16(r.outputIndex)
-	mu.Write(r.req)
-	return mu.Bytes()
+func unprocessableRequestRecordFromBytes(data []byte) (*unprocessableRequestRecord, error) {
+	return rwutil.ReaderFromBytes(data, new(unprocessableRequestRecord))
 }
 
-func unprocessableRequestRecordFromBytes(data []byte) (*unprocessableRequestRecord, error) {
-	ret := &unprocessableRequestRecord{}
-	mu := marshalutil.New(data)
-	var err error
-	ret.blockIndex, err = mu.ReadUint32()
-	if err != nil {
-		return nil, err
-	}
-	ret.outputIndex, err = mu.ReadUint16()
-	if err != nil {
-		return nil, err
-	}
-	ret.req, err = isc.RequestFromMarshalUtil(mu)
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
+func (rec *unprocessableRequestRecord) Bytes() []byte {
+	return rwutil.WriterToBytes(rec)
+}
+
+func (rec *unprocessableRequestRecord) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rec.blockIndex = rr.ReadUint32()
+	rec.outputIndex = rr.ReadUint16()
+	rec.req = isc.RequestFromReader(rr)
+	return rr.Err
+}
+
+func (rec *unprocessableRequestRecord) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteUint32(rec.blockIndex)
+	ww.WriteUint16(rec.outputIndex)
+	ww.Write(rec.req)
+	return ww.Err
 }
 
 func unprocessableMap(state kv.KVStore) *collections.Map {
@@ -60,7 +59,7 @@ func SaveUnprocessable(state kv.KVStore, req isc.OnLedgerRequest, blockIndex uin
 		outputIndex: outputIndex,
 		req:         req,
 	}
-	unprocessableMap(state).SetAt(req.ID().Bytes(), rec.bytes())
+	unprocessableMap(state).SetAt(req.ID().Bytes(), rec.Bytes())
 }
 
 func GetUnprocessable(state kv.KVStoreReader, reqID isc.RequestID) (req isc.Request, blockIndex uint32, outputIndex uint16, err error) {

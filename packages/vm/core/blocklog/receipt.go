@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -32,10 +31,6 @@ type RequestReceipt struct {
 
 func RequestReceiptFromBytes(data []byte) (*RequestReceipt, error) {
 	return rwutil.ReaderFromBytes(data, new(RequestReceipt))
-}
-
-func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt, error) {
-	return rwutil.ReaderFromMu(mu, new(RequestReceipt))
 }
 
 func RequestReceiptsFromBlock(block state.Block) ([]*RequestReceipt, error) {
@@ -70,11 +65,8 @@ func (rec *RequestReceipt) Read(r io.Reader) error {
 	rec.Request = isc.RequestFromReader(rr)
 	hasError := rr.ReadBool()
 	if hasError {
-		errorData := rr.ReadBytes()
-		if rr.Err == nil {
-			mu := marshalutil.New(errorData)
-			rec.Error, rr.Err = isc.UnresolvedVMErrorFromMarshalUtil(mu)
-		}
+		rec.Error = new(isc.UnresolvedVMError)
+		rr.Read(rec.Error)
 	}
 	return rr.Err
 }
@@ -88,7 +80,7 @@ func (rec *RequestReceipt) Write(w io.Writer) error {
 	ww.Write(rec.Request)
 	ww.WriteBool(rec.Error != nil)
 	if rec.Error != nil {
-		ww.WriteBytes(rec.Error.Bytes())
+		ww.Write(rec.Error)
 	}
 	return ww.Err
 }

@@ -7,7 +7,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -42,11 +41,6 @@ func NewBatchProposal(
 
 func batchProposalFromBytes(data []byte) (*BatchProposal, error) {
 	return rwutil.ReaderFromBytes(data, new(BatchProposal))
-}
-
-//nolint:unused
-func batchProposalMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, error) {
-	return rwutil.ReaderFromMu(mu, new(BatchProposal))
 }
 
 func (b *BatchProposal) Bytes() []byte {

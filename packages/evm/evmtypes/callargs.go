@@ -4,70 +4,35 @@
 package evmtypes
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 func EncodeCallMsg(c ethereum.CallMsg) []byte {
-	m := marshalutil.New()
-	m.WriteBytes(c.From.Bytes())
-	m.WriteBool(c.To != nil)
+	ww := rwutil.NewBytesWriter()
+	ww.WriteN(c.From[:])
+	ww.WriteBool(c.To != nil)
 	if c.To != nil {
-		m.WriteBytes(c.To.Bytes())
+		ww.WriteN(c.To[:])
 	}
-	m.WriteUint64(c.Gas)
-	m.WriteBool(c.Value != nil)
-	if c.Value != nil {
-		writeBytes(m, c.Value.Bytes())
-	}
-	writeBytes(m, c.Data)
-	return m.Bytes()
+	ww.WriteUint64(c.Gas)
+	ww.WriteUint256(c.Value)
+	ww.WriteBytes(c.Data)
+	return ww.Bytes()
 }
 
-func DecodeCallMsg(callArgsBytes []byte) (ret ethereum.CallMsg, err error) {
-	m := marshalutil.New(callArgsBytes)
-	var b []byte
-	var exists bool
-
-	if b, err = m.ReadBytes(common.AddressLength); err != nil {
-		return ret, err
+func DecodeCallMsg(data []byte) (ret ethereum.CallMsg, err error) {
+	rr := rwutil.NewBytesReader(data)
+	rr.ReadN(ret.From[:])
+	hasTo := rr.ReadBool()
+	if hasTo {
+		ret.To = new(common.Address)
+		rr.ReadN(ret.To[:])
 	}
-	ret.From.SetBytes(b)
-
-	if exists, err = m.ReadBool(); err != nil {
-		return ret, err
-	}
-	if exists {
-		if b, err = m.ReadBytes(common.AddressLength); err != nil {
-			return ret, err
-		}
-		ret.To = &common.Address{}
-		ret.To.SetBytes(b)
-	}
-
-	if ret.Gas, err = m.ReadUint64(); err != nil {
-		return ret, err
-	}
-
-	if exists, err = m.ReadBool(); err != nil {
-		return ret, err
-	}
-	if exists {
-		if b, err = readBytes(m); err != nil {
-			return ret, err
-		}
-		ret.Value = new(big.Int)
-		ret.Value.SetBytes(b)
-	} else {
-		ret.Value = big.NewInt(0)
-	}
-
-	if ret.Data, err = readBytes(m); err != nil {
-		return ret, err
-	}
-	return ret, err
+	ret.Gas = rr.ReadUint64()
+	ret.Value = rr.ReadUint256()
+	ret.Data = rr.ReadBytes()
+	return ret, rr.Err
 }

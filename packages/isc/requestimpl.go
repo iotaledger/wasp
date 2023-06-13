@@ -3,8 +3,8 @@ package isc
 import (
 	"errors"
 	"fmt"
+	"io"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -21,11 +21,7 @@ const (
 )
 
 func RequestFromBytes(data []byte) (Request, error) {
-	return RequestFromMarshalUtil(marshalutil.New(data))
-}
-
-func RequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (Request, error) {
-	rr := rwutil.NewMuReader(mu)
+	rr := rwutil.NewBytesReader(data)
 	return RequestFromReader(rr), rr.Err
 }
 
@@ -125,19 +121,9 @@ func NewRequestID(txid iotago.TransactionID, index uint16) RequestID {
 	return RequestID(iotago.OutputIDFromTransactionIDAndIndex(txid, index))
 }
 
-func RequestIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestID, error) {
-	outputIDData, err := mu.ReadBytes(iotago.OutputIDLength)
-	if err != nil {
-		return RequestID{}, err
-	}
-
-	outputID := iotago.OutputID{}
-	copy(outputID[:], outputIDData)
-	return RequestID(outputID), nil
-}
-
-func RequestIDFromBytes(data []byte) (RequestID, error) {
-	return RequestIDFromMarshalUtil(marshalutil.New(data))
+func RequestIDFromBytes(data []byte) (ret RequestID, err error) {
+	_, err = rwutil.ReaderFromBytes(data, &ret)
+	return
 }
 
 func RequestIDFromString(s string) (ret RequestID, err error) {
@@ -184,6 +170,14 @@ func (rid RequestID) Short() string {
 	return fmt.Sprintf("%s..%s", ridString[2:6], ridString[len(ridString)-4:])
 }
 
+func (rid *RequestID) Read(r io.Reader) error {
+	return rwutil.ReadN(r, rid[:])
+}
+
+func (rid *RequestID) Write(w io.Writer) error {
+	return rwutil.WriteN(w, rid[:])
+}
+
 func ShortRequestIDs(ids []RequestID) []string {
 	ret := make([]string, len(ids))
 	for i := range ret {
@@ -228,61 +222,49 @@ func requestMetadataFromFeatureSet(set iotago.FeatureSet) (*RequestMetadata, err
 }
 
 func RequestMetadataFromBytes(data []byte) (*RequestMetadata, error) {
-	ret := &RequestMetadata{}
-	err := ret.ReadFromMarshalUtil(marshalutil.New(data))
-	return ret, err
+	return rwutil.ReaderFromBytes(data, new(RequestMetadata))
 }
 
 // returns nil if nil pointer receiver is cloned
-func (p *RequestMetadata) Clone() *RequestMetadata {
-	if p == nil {
+func (meta *RequestMetadata) Clone() *RequestMetadata {
+	if meta == nil {
 		return nil
 	}
 
 	return &RequestMetadata{
-		SenderContract: p.SenderContract,
-		TargetContract: p.TargetContract,
-		EntryPoint:     p.EntryPoint,
-		Params:         p.Params.Clone(),
-		Allowance:      p.Allowance.Clone(),
-		GasBudget:      p.GasBudget,
+		SenderContract: meta.SenderContract,
+		TargetContract: meta.TargetContract,
+		EntryPoint:     meta.EntryPoint,
+		Params:         meta.Params.Clone(),
+		Allowance:      meta.Allowance.Clone(),
+		GasBudget:      meta.GasBudget,
 	}
 }
 
-func (p *RequestMetadata) Bytes() []byte {
-	mu := marshalutil.New()
-	p.WriteToMarshalUtil(mu)
-	return mu.Bytes()
+func (meta *RequestMetadata) Bytes() []byte {
+	return rwutil.WriterToBytes(meta)
 }
 
-func (p *RequestMetadata) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	mu.Write(p.SenderContract).
-		Write(p.TargetContract).
-		Write(p.EntryPoint).
-		WriteUint64(p.GasBudget)
-	p.Params.WriteToMarshalUtil(mu)
-	p.Allowance.WriteToMarshalUtil(mu)
+func (meta *RequestMetadata) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.Read(&meta.SenderContract)
+	rr.Read(&meta.TargetContract)
+	rr.Read(&meta.EntryPoint)
+	meta.GasBudget = rr.ReadUint64()
+	meta.Params = dict.New()
+	rr.Read(&meta.Params)
+	meta.Allowance = NewEmptyAssets()
+	rr.Read(meta.Allowance)
+	return rr.Err
 }
 
-func (p *RequestMetadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
-	var err error
-	if p.SenderContract, err = HnameFromMarshalUtil(mu); err != nil {
-		return err
-	}
-	if p.TargetContract, err = HnameFromMarshalUtil(mu); err != nil {
-		return err
-	}
-	if p.EntryPoint, err = HnameFromMarshalUtil(mu); err != nil {
-		return err
-	}
-	if p.GasBudget, err = mu.ReadUint64(); err != nil {
-		return err
-	}
-	if p.Params, err = dict.FromMarshalUtil(mu); err != nil {
-		return err
-	}
-	if p.Allowance, err = AssetsFromMarshalUtil(mu); err != nil {
-		return err
-	}
-	return nil
+func (meta *RequestMetadata) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.Write(&meta.SenderContract)
+	ww.Write(&meta.TargetContract)
+	ww.Write(&meta.EntryPoint)
+	ww.WriteUint64(meta.GasBudget)
+	ww.Write(&meta.Params)
+	ww.Write(meta.Allowance)
+	return ww.Err
 }

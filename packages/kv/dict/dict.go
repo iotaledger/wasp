@@ -8,7 +8,6 @@ import (
 	"sort"
 
 	"github.com/iotaledger/hive.go/lo"
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -132,79 +131,38 @@ func (d Dict) Get(key kv.Key) []byte {
 }
 
 func (d Dict) Bytes() []byte {
-	mu := marshalutil.New()
-	d.WriteToMarshalUtil(mu)
-	return mu.Bytes()
+	return rwutil.WriterToBytes(&d)
 }
 
-func FromMarshalUtil(mu *marshalutil.MarshalUtil) (Dict, error) {
-	ret := New()
-	if err := ret.ReadFromMarshalUtil(mu); err != nil {
+func FromBytes(data []byte) (ret Dict, err error) {
+	ret = New()
+	_, err = rwutil.ReaderFromBytes(data, &ret)
+	if err != nil {
 		return nil, err
 	}
-	return ret, nil
+	return ret, err
 }
 
-func FromBytes(data []byte) (Dict, error) {
-	return FromMarshalUtil(marshalutil.New(data))
-}
-
-func (d Dict) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	keys := d.KeysSorted()
-	mu.WriteUint32(uint32(len(keys)))
-	for _, k := range keys {
-		mu.WriteUint16(uint16(len(k))).
-			WriteBytes([]byte(k)).
-			WriteUint32(uint32(len(d[k]))).
-			WriteBytes(d[k])
-	}
-}
-
-func (d Dict) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
-	num, err := mu.ReadUint32()
-	if err != nil {
-		return err
-	}
-	for i := uint32(0); i < num; i++ {
-		sz16, err := mu.ReadUint16()
-		if err != nil {
-			return err
-		}
-		k, err := mu.ReadBytes(int(sz16))
-		if err != nil {
-			return err
-		}
-		sz32, err := mu.ReadUint32()
-		if err != nil {
-			return err
-		}
-		v, err := mu.ReadBytes(int(sz32))
-		if err != nil {
-			return err
-		}
-		d.Set(kv.Key(k), v)
-	}
-	return nil
-}
-
-func (d Dict) Read(r io.Reader) error {
+func (d *Dict) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	size := rr.ReadSize()
 	for i := 0; i < size; i++ {
 		key := kv.Key(rr.ReadBytes())
 		value := rr.ReadBytes()
-		d.Set(key, value)
+		if rr.Err == nil {
+			d.Set(key, value)
+		}
 	}
 	return rr.Err
 }
 
-func (d Dict) Write(w io.Writer) error {
+func (d *Dict) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	keys := d.KeysSorted()
 	ww.WriteSize(len(keys))
 	for _, key := range keys {
 		ww.WriteBytes([]byte(key))
-		ww.WriteBytes(d[key])
+		ww.WriteBytes(d.Get(key))
 	}
 	return ww.Err
 }

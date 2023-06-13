@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -35,7 +34,7 @@ func TestMarshalling(t *testing.T) {
 
 	assets := isc.NewAssets(1, tokens)
 	bytes := assets.Bytes()
-	assets2, err := isc.AssetsFromMarshalUtil(marshalutil.New(bytes))
+	assets2, err := isc.AssetsFromBytes(bytes)
 	require.NoError(t, err)
 	require.Equal(t, assets.BaseTokens, assets2.BaseTokens)
 	require.Equal(t, len(assets.NativeTokens), len(assets2.NativeTokens))

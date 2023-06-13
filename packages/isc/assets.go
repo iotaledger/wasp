@@ -8,7 +8,6 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -52,10 +51,6 @@ func AssetsFromBytes(b []byte) (*Assets, error) {
 	}
 	ret, err := rwutil.ReaderFromBytes(b, NewEmptyAssets())
 	return ret, err
-}
-
-func AssetsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Assets, error) {
-	return rwutil.ReaderFromMu(mu, NewEmptyAssets())
 }
 
 func AssetsFromDict(d dict.Dict) (*Assets, error) {
@@ -174,10 +169,6 @@ func (a *Assets) String() string {
 
 func (a *Assets) Bytes() []byte {
 	return rwutil.WriterToBytes(a)
-}
-
-func (a *Assets) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	mu.WriteBytes(a.Bytes())
 }
 
 func (a *Assets) Equals(b *Assets) bool {
@@ -378,7 +369,7 @@ func (a *Assets) Read(r io.Reader) error {
 	}
 	if (flags & hasBaseTokens) != 0 {
 		baseTokens := make([]byte, 8)
-		rr.ReadN(baseTokens[:flags&0x0f])
+		rr.ReadN(baseTokens[:(flags&0x07)+1])
 		a.BaseTokens = binary.LittleEndian.Uint64(baseTokens)
 	}
 	if (flags & hasNativeTokens) != 0 {
@@ -403,8 +394,7 @@ func (a *Assets) Read(r io.Reader) error {
 
 func (a *Assets) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	isEmpty := a.IsEmpty()
-	if isEmpty {
+	if a.IsEmpty() {
 		ww.WriteByte(0x00)
 		return ww.Err
 	}
@@ -414,8 +404,8 @@ func (a *Assets) Write(w io.Writer) error {
 	if a.BaseTokens != 0 {
 		flags |= hasBaseTokens
 		binary.LittleEndian.PutUint64(baseTokens[:], a.BaseTokens)
-		for i := byte(8); i > 0; i-- {
-			if baseTokens[i-1] != 0 {
+		for i := byte(7); i > 0; i-- {
+			if baseTokens[i] != 0 {
 				flags |= i
 				break
 			}
@@ -430,7 +420,7 @@ func (a *Assets) Write(w io.Writer) error {
 
 	ww.WriteByte(flags)
 	if (flags & hasBaseTokens) != 0 {
-		ww.WriteN(baseTokens[:flags&0x0f])
+		ww.WriteN(baseTokens[:(flags&0x07)+1])
 	}
 	if (flags & hasNativeTokens) != 0 {
 		ww.WriteSize(len(a.NativeTokens))

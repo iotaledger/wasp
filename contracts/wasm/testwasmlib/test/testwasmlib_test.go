@@ -149,6 +149,21 @@ func TestNoParams(t *testing.T) {
 	require.NoError(t, ctx.Err)
 }
 
+func TestBypass(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	chain := env.NewChain()
+	err := chain.DeployWasmContract(nil, testwasmlib.ScName, "../rs/testwasmlibwasm/pkg/testwasmlibwasm_bg.wasm")
+	require.NoError(t, err)
+
+	// invoke the `storeString` function
+	req := solo.NewCallParams(
+		testwasmlib.ScName, testwasmlib.FuncStringMapOfStringArrayClear,
+		"str", "Hello, world!",
+	).WithMaxAffordableGasBudget()
+	_, err = chain.PostRequestSync(req, nil)
+	require.NoError(t, err)
+}
+
 func TestValidParams(t *testing.T) {
 	_ = testValidParams(t)
 }

@@ -8,7 +8,6 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -49,11 +48,6 @@ func HnameFromBytes(data []byte) (ret Hname, err error) {
 	return
 }
 
-func HnameFromMarshalUtil(mu *marshalutil.MarshalUtil) (ret Hname, err error) {
-	_, err = rwutil.ReaderFromMu(mu, &ret)
-	return ret, err
-}
-
 func HnameFromHexString(s string) (Hname, error) {
 	n, err := strconv.ParseUint(s, 16, 32)
 	if err != nil {
@@ -78,21 +72,12 @@ func (hn Hname) String() string {
 	return fmt.Sprintf("%08x", int(hn))
 }
 
-func (hn *Hname) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) (err error) {
-	_, err = rwutil.ReaderFromMu(mu, hn)
-	return err
-}
-
-func (hn *Hname) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	mu.Write(hn)
-}
-
-func (hn *Hname) Write(w io.Writer) error {
-	return rwutil.WriteUint32(w, uint32(*hn))
-}
-
 func (hn *Hname) Read(r io.Reader) error {
 	u32, err := rwutil.ReadUint32(r)
 	*hn = Hname(u32)
 	return err
+}
+
+func (hn *Hname) Write(w io.Writer) error {
+	return rwutil.WriteUint32(w, uint32(*hn))
 }

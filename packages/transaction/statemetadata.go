@@ -2,11 +2,11 @@ package transaction
 
 import (
 	"fmt"
+	"io"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -41,65 +41,40 @@ func NewStateMetadata(
 	}
 }
 
-func (s *StateMetadata) Bytes() []byte {
-	mu := marshalutil.New()
-	mu.WriteByte(StateMetadataSupportedVersion) // Always write the new version.
-	mu.WriteUint32(s.SchemaVersion)
-	mu.WriteBytes(s.L1Commitment.Bytes())
-	mu.WriteBytes(s.GasFeePolicy.Bytes())
-	mu.WriteUint16(uint16(len(s.PublicURL)))
-	mu.WriteBytes([]byte(s.PublicURL))
-	return mu.Bytes()
-}
-
 func StateMetadataFromBytes(data []byte) (*StateMetadata, error) {
-	ret := &StateMetadata{}
-	mu := marshalutil.New(data)
-	var err error
-
-	ret.Version, err = mu.ReadByte()
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse state metadata version, error: %w", err)
-	}
-	if ret.Version > StateMetadataSupportedVersion {
-		return nil, fmt.Errorf("unsupported state metadata version: %d", ret.Version)
-	}
-
-	ret.SchemaVersion, err = mu.ReadUint32()
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse schema version, error: %w", err)
-	}
-
-	l1CommitmentBytes, err := mu.ReadBytes(state.L1CommitmentSize)
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse l1 commitment, error: %w", err)
-	}
-
-	ret.L1Commitment, err = state.L1CommitmentFromBytes(l1CommitmentBytes)
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse l1 commitment, error: %w", err)
-	}
-
-	ret.GasFeePolicy, err = gas.FeePolicyFromMarshalUtil(mu)
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse gas fee policy, error: %w", err)
-	}
-
-	publicURLBytesLength, err := mu.ReadUint16()
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse custom metadata length, error: %w", err)
-	}
-
-	publicURLBytes, err := mu.ReadBytes(int(publicURLBytesLength))
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse the public url, error: %w", err)
-	}
-
-	// On error, publicUrl is len(0)
-	ret.PublicURL, _ = codec.DecodeString(publicURLBytes)
-
-	return ret, nil
+	return rwutil.ReaderFromBytes(data, new(StateMetadata))
 }
+
+func (s *StateMetadata) Bytes() []byte {
+	return rwutil.WriterToBytes(s)
+}
+
+func (s *StateMetadata) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	s.Version = rr.ReadByte()
+	if rr.Err == nil && s.Version > StateMetadataSupportedVersion {
+		return fmt.Errorf("unsupported state metadata version: %d", s.Version)
+	}
+	s.SchemaVersion = rr.ReadUint32()
+	s.L1Commitment = new(state.L1Commitment)
+	rr.Read(s.L1Commitment)
+	s.GasFeePolicy = new(gas.FeePolicy)
+	rr.Read(s.GasFeePolicy)
+	s.PublicURL = rr.ReadString()
+	return rr.Err
+}
+
+func (s *StateMetadata) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(StateMetadataSupportedVersion)
+	ww.WriteUint32(s.SchemaVersion)
+	ww.Write(s.L1Commitment)
+	ww.Write(s.GasFeePolicy)
+	ww.WriteString(s.PublicURL)
+	return ww.Err
+}
+
+/////////////// avoiding circular imports: state <-> transaction //////////////////
 
 func L1CommitmentFromAliasOutput(ao *iotago.AliasOutput) (*state.L1Commitment, error) {
 	s, err := StateMetadataFromBytes(ao.StateMetadata)

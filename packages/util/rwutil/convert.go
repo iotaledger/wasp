@@ -10,8 +10,6 @@ import (
 	"errors"
 	"io"
 	"math"
-
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 )
 
 type Kind byte
@@ -354,53 +352,6 @@ func WriteMarshaled(w io.Writer, val encoding.BinaryMarshaler) error {
 	return WriteBytes(w, bin)
 }
 
-//////////////////// marshalutil \\\\\\\\\\\\\\\\\\\\
-//
-//func FromMarshalUtil[T any](rr *Reader, fromMu func(mu *marshalutil.MarshalUtil) (T, error)) (ret T) {
-//	if rr.Err == nil {
-//		buf, ok := rr.r.(*bytes.Buffer)
-//		if !ok {
-//			panic("reader expects bytes buffer")
-//		}
-//		mu := marshalutil.New(buf.Bytes())
-//		ret, rr.Err = fromMu(mu)
-//		rr.r = bytes.NewBuffer(mu.Bytes()[mu.ReadOffset():])
-//	}
-//	return ret
-//}
-
-func ReaderFromMu[T interface{ Read(r io.Reader) error }](mu *marshalutil.MarshalUtil, object T) (T, error) {
-	//if object == nil {
-	//	panic("nil unmarshaler object")
-	//}
-	r := &MuReader{mu: mu}
-	err := object.Read(r)
-	return object, err
-}
-
-func ReadBytesFromMarshalUtil(mu *marshalutil.MarshalUtil) ([]byte, error) {
-	if mu == nil {
-		panic("nil MarshalUtil reader")
-	}
-	size, err := decodeSize32(mu.ReadByte)
-	if err != nil {
-		return nil, err
-	}
-	ret, err := mu.ReadBytes(int(size))
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
-}
-
-func WriteBytesToMarshalUtil(data []byte, mu *marshalutil.MarshalUtil) {
-	if mu == nil {
-		panic("nil MarshalUtil writer")
-	}
-	size := uint32(len(data))
-	mu.WriteBytes(Size32ToBytes(size)).WriteBytes(data)
-}
-
 //////////////////// bytes \\\\\\\\\\\\\\\\\\\\
 
 // ReadFromBytes allows a reader to use any <Type>FromBytes() function as a source.
@@ -412,14 +363,6 @@ func ReadFromBytes[T any](rr *Reader, fromBytes func([]byte) (T, error)) (ret T)
 		ret, rr.Err = fromBytes(data)
 	}
 	return ret
-}
-
-// WriteFromBytes allows a writer to use any Bytes() function as a source
-func WriteFromBytes(w io.Writer, bytes interface{ Bytes() []byte }) error {
-	if bytes == nil {
-		panic("nil bytes writer")
-	}
-	return WriteN(w, bytes.Bytes())
 }
 
 // ReaderFromBytes is a wrapper that uses an object's Read() function to marshal

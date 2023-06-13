@@ -37,10 +37,10 @@ func (vm *WasmGoVM) Interrupt() {
 func (vm *WasmGoVM) LoadWasm(wasmData []byte) error {
 	scName := string(wasmData)
 	if !strings.HasPrefix(scName, "go:") {
-		return errors.New("WasmGoVM: not a Go contract: " + scName)
+		return errors.New("WasmGoVM: not a Go contract")
 	}
 	if scName[3:] != vm.scName {
-		return errors.New("WasmGoVM: unknown contract: " + scName)
+		return errors.New("WasmGoVM: unknown contract")
 	}
 	return nil
 }
