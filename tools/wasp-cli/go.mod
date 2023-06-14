@@ -12,7 +12,7 @@ require (
 	github.com/ethereum/go-ethereum v1.12.0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/iotaledger/hive.go/logger v0.0.0-20230425142119-6abddaf15db9
-	github.com/iotaledger/iota.go/v3 v3.0.0-rc.2
+	github.com/iotaledger/iota.go/v3 v3.0.0-rc.3
 	github.com/iotaledger/wasp v1.0.0-00010101000000-000000000000
 	github.com/samber/lo v1.38.1
 	github.com/spf13/cobra v1.7.0

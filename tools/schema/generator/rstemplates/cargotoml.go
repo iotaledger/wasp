@@ -50,12 +50,7 @@ $env_wasmlib$+wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "
 	"dependenciesImpl": `
 [dependencies]
 $package = { path = "../$package" }
-$#if packagetestwasmlib dependencyErc721
 $env_wasmlib$+wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "develop" }
-`,
-	// *******************************
-	"dependencyErc721": `
-erc721 = { path = "../../../erc721/rs/erc721" }
 `,
 	// *******************************
 	"dependenciesWasm": `
