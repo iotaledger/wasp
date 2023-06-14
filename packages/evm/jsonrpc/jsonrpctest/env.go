@@ -100,6 +100,7 @@ func (e *Env) SendTransactionAndWait(tx *types.Transaction) (*types.Receipt, err
 	return e.TxReceipt(tx.Hash())
 }
 
+//nolint:unparam
 func (e *Env) deployStorageContract(creator *ecdsa.PrivateKey) (*types.Transaction, common.Address, abi.ABI) {
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(e.T, err)
