@@ -4,13 +4,13 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
 	"pgregory.net/rapid"
 
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type blockCacheTestSM struct { // State machine for block cache property based Rapid tests
