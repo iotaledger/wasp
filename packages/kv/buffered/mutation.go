@@ -28,26 +28,10 @@ func (ms *Mutations) Bytes() []byte {
 	return rwutil.WriterToBytes(ms)
 }
 
-func (ms *Mutations) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-
-	ww.WriteSize(len(ms.Sets))
-	for _, item := range ms.SetsSorted() {
-		ww.WriteString(string(item.Key))
-		ww.WriteBytes(item.Value)
-	}
-
-	ww.WriteSize(len(ms.Dels))
-	for _, k := range ms.DelsSorted() {
-		ww.WriteString(string(k))
-	}
-	return ww.Err
-}
-
 func (ms *Mutations) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 
-	size := rr.ReadSize()
+	size := rr.ReadSize32()
 	for i := 0; i < size; i++ {
 		key := rr.ReadString()
 		val := rr.ReadBytes()
@@ -57,7 +41,7 @@ func (ms *Mutations) Read(r io.Reader) error {
 		ms.Set(kv.Key(key), val)
 	}
 
-	size = rr.ReadSize()
+	size = rr.ReadSize32()
 	for i := 0; i < size; i++ {
 		key := rr.ReadString()
 		if rr.Err != nil {
@@ -66,6 +50,22 @@ func (ms *Mutations) Read(r io.Reader) error {
 		ms.Del(kv.Key(key))
 	}
 	return rr.Err
+}
+
+func (ms *Mutations) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+
+	ww.WriteSize32(len(ms.Sets))
+	for _, item := range ms.SetsSorted() {
+		ww.WriteString(string(item.Key))
+		ww.WriteBytes(item.Value)
+	}
+
+	ww.WriteSize32(len(ms.Dels))
+	for _, k := range ms.DelsSorted() {
+		ww.WriteString(string(k))
+	}
+	return ww.Err
 }
 
 func (ms *Mutations) SetsSorted() kv.Items {

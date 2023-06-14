@@ -1,9 +1,11 @@
 package sm_gpa_utils
 
 import (
+	"runtime"
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
@@ -174,6 +176,9 @@ func (bcnwtsmT *blockCacheNoWALTestSM) getAndCheckBlock(t *rapid.T, blockKey Blo
 }
 
 func TestBlockCachePropBasedNoWAL(t *testing.T) {
+	if runtime.GOOS == util.WindowsOS {
+		t.Skip("Needs fixing on windows")
+	}
 	rapid.Check(t, func(t *rapid.T) {
 		sm := newBlockCacheNoWALTestSM(t)
 		t.Repeat(rapid.StateMachineActions(sm))

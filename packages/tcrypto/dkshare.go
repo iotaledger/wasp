@@ -254,18 +254,18 @@ func (s *dkShareImpl) Write(w io.Writer) error {
 	ww.WriteUint16(s.n)
 	ww.WriteUint16(s.t)
 
-	ww.WriteSize(len(s.nodePubKeys))
+	ww.WriteSize16(len(s.nodePubKeys))
 	for _, nodePubKey := range s.nodePubKeys {
 		ww.WriteBytes(nodePubKey.AsBytes())
 	}
 
 	// DSS / Ed25519 part of the key shares.
 	ww.WriteMarshaled(s.edSharedPublic)
-	ww.WriteSize(len(s.edPublicCommits))
+	ww.WriteSize16(len(s.edPublicCommits))
 	for i := 0; i < len(s.edPublicCommits); i++ {
 		ww.WriteMarshaled(s.edPublicCommits[i])
 	}
-	ww.WriteSize(len(s.edPublicShares))
+	ww.WriteSize16(len(s.edPublicShares))
 	for i := 0; i < len(s.edPublicShares); i++ {
 		ww.WriteMarshaled(s.edPublicShares[i])
 	}
@@ -274,11 +274,11 @@ func (s *dkShareImpl) Write(w io.Writer) error {
 	// BLS part of the key shares.
 	ww.WriteUint16(s.blsThreshold)
 	ww.WriteMarshaled(s.blsSharedPublic)
-	ww.WriteSize(len(s.blsPublicCommits))
+	ww.WriteSize16(len(s.blsPublicCommits))
 	for i := 0; i < len(s.blsPublicCommits); i++ {
 		ww.WriteMarshaled(s.blsPublicCommits[i])
 	}
-	ww.WriteSize(len(s.blsPublicShares))
+	ww.WriteSize16(len(s.blsPublicShares))
 	for i := 0; i < len(s.blsPublicShares); i++ {
 		ww.WriteMarshaled(s.blsPublicShares[i])
 	}
@@ -298,7 +298,7 @@ func (s *dkShareImpl) Read(r io.Reader) error {
 	s.n = rr.ReadUint16()
 	s.t = rr.ReadUint16()
 
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	s.nodePubKeys = make([]*cryptolib.PublicKey, size)
 	for i := range s.nodePubKeys {
 		nodePubKeyBin := rr.ReadBytes()
@@ -310,13 +310,13 @@ func (s *dkShareImpl) Read(r io.Reader) error {
 	// DSS / Ed25519 part of the key shares.
 	s.edSharedPublic = s.edSuite.Point()
 	rr.ReadMarshaled(s.edSharedPublic)
-	size = rr.ReadSize()
+	size = rr.ReadSize16()
 	s.edPublicCommits = make([]kyber.Point, size)
 	for i := range s.edPublicCommits {
 		s.edPublicCommits[i] = s.edSuite.Point()
 		rr.ReadMarshaled(s.edPublicCommits[i])
 	}
-	size = rr.ReadSize()
+	size = rr.ReadSize16()
 	s.edPublicShares = make([]kyber.Point, size)
 	for i := range s.edPublicShares {
 		s.edPublicShares[i] = s.edSuite.Point()
@@ -329,13 +329,13 @@ func (s *dkShareImpl) Read(r io.Reader) error {
 	s.blsThreshold = rr.ReadUint16()
 	s.blsSharedPublic = s.blsSuite.G2().Point()
 	rr.ReadMarshaled(s.blsSharedPublic)
-	size = rr.ReadSize()
+	size = rr.ReadSize16()
 	s.blsPublicCommits = make([]kyber.Point, size)
 	for i := range s.blsPublicCommits {
 		s.blsPublicCommits[i] = s.blsSuite.G2().Point()
 		rr.ReadMarshaled(s.blsPublicCommits[i])
 	}
-	size = rr.ReadSize()
+	size = rr.ReadSize16()
 	s.blsPublicShares = make([]kyber.Point, size)
 	for i := range s.blsPublicShares {
 		s.blsPublicShares[i] = s.blsSuite.G2().Point()

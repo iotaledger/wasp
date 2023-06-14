@@ -52,7 +52,7 @@ func (s *StateMetadata) Bytes() []byte {
 func (s *StateMetadata) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	s.Version = rr.ReadByte()
-	if rr.Err == nil && s.Version > StateMetadataSupportedVersion {
+	if s.Version > StateMetadataSupportedVersion && rr.Err == nil {
 		return fmt.Errorf("unsupported state metadata version: %d", s.Version)
 	}
 	s.SchemaVersion = rr.ReadUint32()

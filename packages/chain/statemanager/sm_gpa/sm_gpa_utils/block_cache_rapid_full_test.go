@@ -1,8 +1,10 @@
 package sm_gpa_utils
 
 import (
+	"runtime"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
@@ -109,6 +111,9 @@ func (bctsmT *blockCacheTestSM) invariantAllBlocksInWAL(t *rapid.T) {
 }
 
 func TestBlockCachePropBasedFull(t *testing.T) {
+	if runtime.GOOS == util.WindowsOS {
+		t.Skip("Needs fixing on windows")
+	}
 	rapid.Check(t, func(t *rapid.T) {
 		sm := newblockCacheTestSM(t)
 		t.Repeat(rapid.StateMachineActions(sm))

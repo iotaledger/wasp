@@ -11,8 +11,7 @@ import (
 // block index + index of the request within block + index of the event within the request
 type EventLookupKey [8]byte
 
-func NewEventLookupKey(blockIndex uint32, requestIndex, eventIndex uint16) EventLookupKey {
-	ret := EventLookupKey{}
+func NewEventLookupKey(blockIndex uint32, requestIndex, eventIndex uint16) (ret EventLookupKey) {
 	copy(ret[:4], codec.EncodeUint32(blockIndex))
 	copy(ret[4:6], codec.EncodeUint16(requestIndex))
 	copy(ret[6:8], codec.EncodeUint16(eventIndex))
