@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"math"
 
-	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -98,13 +97,6 @@ func funcTakeBalance(ctx wasmlib.ScFuncContext, f *TakeBalanceContext) {
 
 func funcTriggerEvent(_ wasmlib.ScFuncContext, f *TriggerEventContext) {
 	f.Events.Test(f.Params.Address().Value(), f.Params.Name().Value())
-}
-
-func funcVerifyErc721(ctx wasmlib.ScFuncContext, f *VerifyErc721Context) {
-	tokenHash := f.Params.TokenHash().Value()
-	oo := erc721.ScFuncs.OwnerOf(ctx)
-	oo.Params.TokenID().SetValue(tokenHash)
-	oo.Func.Call()
 }
 
 func viewGetRandom(_ wasmlib.ScViewContext, f *GetRandomContext) {
