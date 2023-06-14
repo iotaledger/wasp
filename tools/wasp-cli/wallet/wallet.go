@@ -28,32 +28,28 @@ func initInitCmd() *cobra.Command {
 			model := &InitModel{
 				ConfigPath: config.ConfigPath,
 			}
-
 			if log.VerboseFlag {
-				verboseOutputs := make(map[string]string)
-				verboseOutputs["Seed"] = seedString
-				model.VerboseOutputs = verboseOutputs
+				model.Seed = seedString
 			}
-
 			log.PrintCLIOutput(model)
 		},
 	}
 }
 
 type InitModel struct {
-	ConfigPath     string
-	Message        string
-	VerboseOutputs map[string]string
+	ConfigPath string
+	Seed       string
 }
 
 var _ log.CLIOutput = &InitModel{}
 
 func (i *InitModel) AsText() (string, error) {
 	template := `Initialized wallet seed in {{ .ConfigPath }}
-IMPORTANT: wasp-cli is alpha phase. The seed is currently being stored in a plain text file which is NOT secure. Do not use this seed to store funds in the mainnet
 
-  {{ range $i, $out := .VerboseOutputs }}
-    {{ $i }}: {{ $out}}
-  {{ end }}`
+IMPORTANT: wasp-cli is alpha phase. The seed is currently being stored in a plain text file which is NOT secure. Do not use this seed to store funds in the mainnet.
+{{ if .Seed }}
+  Seed: {{ .Seed -}}
+{{ end }}
+`
 	return log.ParseCLIOutputTemplate(i, template)
 }
