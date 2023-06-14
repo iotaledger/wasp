@@ -34,9 +34,6 @@ func TestBlockCacheSimple(t *testing.T) {
 }
 
 func TestBlockCacheCleaning(t *testing.T) {
-	if runtime.GOOS == util.WindowsOS {
-		t.Skip("Needs fixing on windows")
-	}
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
@@ -44,7 +41,12 @@ func TestBlockCacheCleaning(t *testing.T) {
 	blocks := factory.GetBlocks(6, 2)
 	blockCache, err := NewBlockCache(NewDefaultTimeProvider(), 100, NewEmptyTestBlockWAL(), metrics.NewEmptyChainStateManagerMetric(), log)
 	require.NoError(t, err)
+
 	beforeTime := time.Now()
+
+	// make sure some time elapses on faster machines with larger time granularity
+	time.Sleep(time.Millisecond)
+
 	blockCache.AddBlock(blocks[0])
 	blockCache.AddBlock(blocks[1])
 	require.NotNil(t, blockCache.GetBlock(blocks[0].L1Commitment()))
@@ -57,7 +59,14 @@ func TestBlockCacheCleaning(t *testing.T) {
 	require.Nil(t, blockCache.GetBlock(blocks[1].L1Commitment()))
 	blockCache.AddBlock(blocks[2])
 	blockCache.AddBlock(blocks[3])
+
 	inTheMiddleTime := time.Now()
+
+	// make sure some time elapses on faster machines with larger time granularity
+	if runtime.GOOS == util.WindowsOS {
+		time.Sleep(time.Millisecond)
+	}
+
 	blockCache.AddBlock(blocks[4])
 	blockCache.AddBlock(blocks[5])
 	require.NotNil(t, blockCache.GetBlock(blocks[2].L1Commitment()))
@@ -72,9 +81,6 @@ func TestBlockCacheCleaning(t *testing.T) {
 }
 
 func TestBlockCacheSameBlockCleaning(t *testing.T) {
-	if runtime.GOOS == util.WindowsOS {
-		t.Skip("Needs fixing on windows")
-	}
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
@@ -84,7 +90,14 @@ func TestBlockCacheSameBlockCleaning(t *testing.T) {
 	require.NoError(t, err)
 	blockCache.AddBlock(blocks[0])
 	blockCache.AddBlock(blocks[1])
+
 	inTheMiddleTime := time.Now()
+
+	// make sure some time elapses on faster machines with larger time granularity
+	if runtime.GOOS == util.WindowsOS {
+		time.Sleep(time.Millisecond)
+	}
+
 	blockCache.AddBlock(blocks[0])
 	blockCache.AddBlock(blocks[2])
 	require.Equal(t, 3, blockCache.Size())

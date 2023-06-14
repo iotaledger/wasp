@@ -154,6 +154,12 @@ func (bcnwtsmT *blockCacheNoWALTestSM) addBlockToCache(t *rapid.T, blockKey Bloc
 			time:     time.Now(),
 			blockKey: blockKey,
 		})
+
+		// make sure some time elapses on faster machines with larger time granularity
+		if runtime.GOOS == util.WindowsOS {
+			time.Sleep(time.Millisecond)
+		}
+
 		if len(bcnwtsmT.blocksInCache) > bcnwtsmT.blockCacheMaxSize {
 			blockKey := bcnwtsmT.blockTimes[0].blockKey
 			bcnwtsmT.blocksInCache = lo.Without(bcnwtsmT.blocksInCache, blockKey)
@@ -176,9 +182,6 @@ func (bcnwtsmT *blockCacheNoWALTestSM) getAndCheckBlock(t *rapid.T, blockKey Blo
 }
 
 func TestBlockCachePropBasedNoWAL(t *testing.T) {
-	if runtime.GOOS == util.WindowsOS {
-		t.Skip("Needs fixing on windows")
-	}
 	rapid.Check(t, func(t *rapid.T) {
 		sm := newBlockCacheNoWALTestSM(t)
 		t.Repeat(rapid.StateMachineActions(sm))
