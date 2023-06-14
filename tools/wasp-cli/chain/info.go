@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -69,20 +70,26 @@ func initInfoCmd() *cobra.Command {
 
 			if chainInfo.IsActive {
 				log.Printf("State address: %v\n", committeeInfo.StateAddress)
+
+				log.Printf("\n")
 				printNodes("Committee nodes", committeeInfo.CommitteeNodes, true, false)
+				log.Printf("\n")
 				printNodes("Access nodes", committeeInfo.AccessNodes, false, true)
+				log.Printf("\n")
 				printNodes("Candidate nodes", committeeInfo.CandidateNodes, false, false)
+				log.Printf("\n")
 
 				contracts, _, err := client.ChainsApi.GetContracts(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
 				log.Check(err)
 				log.Printf("#Contracts: %d\n", len(contracts))
 
 				log.Printf("Owner: %s\n", chainInfo.ChainOwnerId)
+				log.Printf("Common account: %s\n", accounts.CommonAccount())
 				log.Printf("Gas fee: gas units * (%d/%d)\n", chainInfo.GasFeePolicy.GasPerToken.A, chainInfo.GasFeePolicy.GasPerToken.B)
 				log.Printf("Validator fee share: %d%%\n", chainInfo.GasFeePolicy.ValidatorFeeShare)
 			}
 
-			log.Printf("\nMetadata\n")
+			log.Printf("\n[Metadata]\n")
 			log.Printf("Name: %s\n", chainInfo.Metadata.Name)
 			log.Printf("Description: %s\n", chainInfo.Metadata.Description)
 			log.Printf("Website: %s\n", chainInfo.Metadata.Website)
