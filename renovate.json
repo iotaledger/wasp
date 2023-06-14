@@ -15,5 +15,13 @@
   ],
   "goGetDirs": [
     "."
-  ]
+  ],
+  "allowedPostUpgradeCommands": [
+    "^\\./scripts/go_mod_tidy.sh$"
+  ],
+  "postUpgradeTasks": {
+    "commands": [
+      "./scripts/go_mod_tidy.sh"
+    ]
+  }
 }

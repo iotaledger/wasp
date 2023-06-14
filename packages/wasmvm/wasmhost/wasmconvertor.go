@@ -44,7 +44,7 @@ func (cvt WasmConvertor) IscAllowance(assets *wasmlib.ScAssets) *isc.Assets {
 		}
 		iscAllowance.NativeTokens = append(iscAllowance.NativeTokens, nativeToken)
 	}
-	for nftID := range assets.NftIDs {
+	for nftID := range assets.Nfts {
 		nft := cvt.IscNFTID(&nftID)
 		iscAllowance.NFTs = append(iscAllowance.NFTs, *nft)
 	}

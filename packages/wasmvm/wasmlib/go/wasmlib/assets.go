@@ -4,9 +4,16 @@
 package wasmlib
 
 import (
+	"bytes"
 	"sort"
 
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+)
+
+const (
+	hasBaseTokens   = 0x80
+	hasNativeTokens = 0x40
+	hasNFTs         = 0x20
 )
 
 type TokenAmounts map[wasmtypes.ScTokenID]wasmtypes.ScBigInt
@@ -14,7 +21,7 @@ type TokenAmounts map[wasmtypes.ScTokenID]wasmtypes.ScBigInt
 type ScAssets struct {
 	BaseTokens   uint64
 	NativeTokens TokenAmounts
-	NftIDs       map[wasmtypes.ScNftID]bool
+	Nfts         map[wasmtypes.ScNftID]bool
 }
 
 func NewScAssets(buf []byte) *ScAssets {
@@ -24,29 +31,31 @@ func NewScAssets(buf []byte) *ScAssets {
 	}
 
 	dec := wasmtypes.NewWasmDecoder(buf)
-	empty := wasmtypes.BoolDecode(dec)
-	if empty {
+	flags := wasmtypes.Uint8Decode(dec)
+	if flags == 0x00 {
 		return assets
 	}
 
-	assets.BaseTokens = wasmtypes.Uint64Decode(dec)
-
-	size := dec.VluDecode(32)
-	if size > 0 {
+	if (flags & hasBaseTokens) != 0 {
+		baseTokens := make([]byte, wasmtypes.ScUint64Length)
+		copy(baseTokens, dec.FixedBytes(uint32((flags&0x07)+1)))
+		assets.BaseTokens = wasmtypes.Uint64FromBytes(baseTokens)
+	}
+	if (flags & hasNativeTokens) != 0 {
+		size := dec.VluDecode(32)
 		assets.NativeTokens = make(TokenAmounts, size)
 		for ; size > 0; size-- {
 			tokenID := wasmtypes.TokenIDDecode(dec)
 			assets.NativeTokens[tokenID] = wasmtypes.BigIntDecode(dec)
 		}
 	}
-
-	size = dec.VluDecode(32)
-	if size > 0 {
-		assets.NftIDs = make(map[wasmtypes.ScNftID]bool)
-	}
-	for ; size > 0; size-- {
-		nftID := wasmtypes.NftIDDecode(dec)
-		assets.NftIDs[nftID] = true
+	if (flags & hasNFTs) != 0 {
+		size := dec.VluDecode(32)
+		assets.Nfts = make(map[wasmtypes.ScNftID]bool)
+		for ; size > 0; size-- {
+			nftID := wasmtypes.NftIDDecode(dec)
+			assets.Nfts[nftID] = true
+		}
 	}
 	return assets
 }
@@ -61,23 +70,55 @@ func (a *ScAssets) Bytes() []byte {
 	}
 
 	enc := wasmtypes.NewWasmEncoder()
-	empty := a.IsEmpty()
-	wasmtypes.BoolEncode(enc, empty)
-	if empty {
-		return enc.Buf()
+	if a.IsEmpty() {
+		return []byte{0}
 	}
 
-	wasmtypes.Uint64Encode(enc, a.BaseTokens)
-
-	enc.VluEncode(uint64(len(a.NativeTokens)))
-	for _, tokenID := range a.TokenIDs() {
-		wasmtypes.TokenIDEncode(enc, *tokenID)
-		wasmtypes.BigIntEncode(enc, a.NativeTokens[*tokenID])
+	var flags byte
+	var baseTokens []byte
+	if a.BaseTokens != 0 {
+		flags |= hasBaseTokens
+		baseTokens = wasmtypes.Uint64ToBytes(a.BaseTokens)
+		for i := len(baseTokens) - 1; i > 0; i-- {
+			if baseTokens[i] != 0 {
+				flags |= byte(i)
+				baseTokens = baseTokens[:i+1]
+				break
+			}
+		}
 	}
+	if len(a.NativeTokens) != 0 {
+		flags |= hasNativeTokens
+	}
+	if len(a.Nfts) != 0 {
+		flags |= hasNFTs
+	}
+	wasmtypes.Uint8Encode(enc, flags)
 
-	enc.VluEncode(uint64(len(a.NftIDs)))
-	for nftID := range a.NftIDs {
-		wasmtypes.NftIDEncode(enc, nftID)
+	if (flags & hasBaseTokens) != 0 {
+		enc.FixedBytes(baseTokens, uint32(len(baseTokens)))
+	}
+	if (flags & hasNativeTokens) != 0 {
+		enc.VluEncode(uint64(len(a.NativeTokens)))
+		for _, tokenID := range a.TokenIDs() {
+			wasmtypes.TokenIDEncode(enc, *tokenID)
+			wasmtypes.BigIntEncode(enc, a.NativeTokens[*tokenID])
+		}
+	}
+	if (flags & hasNFTs) != 0 {
+		nftIDs := make([]*wasmtypes.ScNftID, 0, len(a.Nfts))
+		for key := range a.Nfts {
+			// need a local copy to avoid referencing the single key var multiple times
+			nftID := key
+			nftIDs = append(nftIDs, &nftID)
+		}
+		sort.Slice(nftIDs, func(i, j int) bool {
+			return bytes.Compare(nftIDs[i].Bytes(), nftIDs[j].Bytes()) < 0
+		})
+		enc.VluEncode(uint64(len(a.Nfts)))
+		for _, nftID := range nftIDs {
+			wasmtypes.NftIDEncode(enc, *nftID)
+		}
 	}
 	return enc.Buf()
 }
@@ -91,7 +132,20 @@ func (a *ScAssets) IsEmpty() bool {
 			return false
 		}
 	}
-	return len(a.NftIDs) == 0
+	return len(a.Nfts) == 0
+}
+
+func (a *ScAssets) NftIDs() []*wasmtypes.ScNftID {
+	nftIDs := make([]*wasmtypes.ScNftID, 0, len(a.Nfts))
+	for key := range a.Nfts {
+		// need a local copy to avoid referencing the single key var multiple times
+		nftID := key
+		nftIDs = append(nftIDs, &nftID)
+	}
+	sort.Slice(nftIDs, func(i, j int) bool {
+		return bytes.Compare(nftIDs[i].Bytes(), nftIDs[j].Bytes()) < 0
+	})
+	return nftIDs
 }
 
 func (a *ScAssets) TokenIDs() []*wasmtypes.ScTokenID {
@@ -102,7 +156,7 @@ func (a *ScAssets) TokenIDs() []*wasmtypes.ScTokenID {
 		tokenIDs = append(tokenIDs, &tokenID)
 	}
 	sort.Slice(tokenIDs, func(i, j int) bool {
-		return string(tokenIDs[i].Bytes()) < string(tokenIDs[j].Bytes())
+		return bytes.Compare(tokenIDs[i].Bytes(), tokenIDs[j].Bytes()) < 0
 	})
 	return tokenIDs
 }
@@ -133,8 +187,8 @@ func (b *ScBalances) IsEmpty() bool {
 	return b.assets.IsEmpty()
 }
 
-func (b *ScBalances) NftIDs() map[wasmtypes.ScNftID]bool {
-	return b.assets.NftIDs
+func (b *ScBalances) NftIDs() []*wasmtypes.ScNftID {
+	return b.assets.NftIDs()
 }
 
 func (b *ScBalances) TokenIDs() []*wasmtypes.ScTokenID {
@@ -158,8 +212,9 @@ func ScTransferFromBalances(balances *ScBalances) *ScTransfer {
 	for _, tokenID := range balances.TokenIDs() {
 		transfer.Set(tokenID, balances.Balance(tokenID))
 	}
-	for nftID := range balances.NftIDs() {
-		transfer.AddNFT(&nftID)
+	nftIDs := balances.NftIDs()
+	for i := range nftIDs {
+		transfer.AddNFT(nftIDs[i])
 	}
 	return transfer
 }
@@ -186,10 +241,10 @@ func ScTransferFromTokens(tokenID *wasmtypes.ScTokenID, amount wasmtypes.ScBigIn
 }
 
 func (t *ScTransfer) AddNFT(nftID *wasmtypes.ScNftID) {
-	if t.assets.NftIDs == nil {
-		t.assets.NftIDs = make(map[wasmtypes.ScNftID]bool)
+	if t.assets.Nfts == nil {
+		t.assets.Nfts = make(map[wasmtypes.ScNftID]bool)
 	}
-	t.assets.NftIDs[*nftID] = true
+	t.assets.Nfts[*nftID] = true
 }
 
 func (t *ScTransfer) Bytes() []byte {

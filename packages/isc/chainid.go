@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -39,12 +38,6 @@ func ChainIDFromAliasID(aliasID iotago.AliasID) ChainID {
 // ChainIDFromBytes reconstructs a ChainID from its binary representation.
 func ChainIDFromBytes(data []byte) (ret ChainID, err error) {
 	_, err = rwutil.ReaderFromBytes(data, &ret)
-	return
-}
-
-// ChainIDFromMarshalUtil reads from Marshalutil
-func ChainIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (ret ChainID, err error) {
-	_, err = rwutil.ReaderFromMu(mu, &ret)
 	return
 }
 

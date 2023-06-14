@@ -1,12 +1,12 @@
 package gas
 
 import (
-	"errors"
 	"fmt"
+	"io"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // By default each token pays for 100 units of gas
@@ -16,12 +16,12 @@ var DefaultGasPerToken = util.Ratio32{A: 100, B: 1}
 const GasPolicyByteSize = util.RatioByteSize + serializer.OneByte + util.RatioByteSize
 
 type FeePolicy struct {
-	// GasPerToken specifies how many gas units are paid for each token.
-	GasPerToken util.Ratio32 `json:"gasPerToken" swagger:"desc(The gas per token ratio (A/B) (gas/token)),required"`
-
 	// EVMGasRatio expresses the ratio at which EVM gas is converted to ISC gas
 	// X = ISC gas, Y = EVM gas => ISC gas = EVM gas * A/B
 	EVMGasRatio util.Ratio32 `json:"evmGasRatio" swagger:"desc(The EVM gas ratio (ISC gas = EVM gas * A/B)),required"`
+
+	// GasPerToken specifies how many gas units are paid for each token.
+	GasPerToken util.Ratio32 `json:"gasPerToken" swagger:"desc(The gas per token ratio (A/B) (gas/token)),required"`
 
 	// ValidatorFeeShare Validator/Governor fee split: percentage of fees which goes to Validator
 	// 0 mean all goes to Governor
@@ -87,47 +87,12 @@ func MustFeePolicyFromBytes(data []byte) *FeePolicy {
 	return ret
 }
 
-var ErrInvalidRatio = errors.New("ratio must have both components != 0")
-
 func FeePolicyFromBytes(data []byte) (*FeePolicy, error) {
-	return FeePolicyFromMarshalUtil(marshalutil.New(data))
-}
-
-func FeePolicyFromMarshalUtil(mu *marshalutil.MarshalUtil) (*FeePolicy, error) {
-	ret := &FeePolicy{}
-	var err error
-	if ret.GasPerToken, err = ReadRatio32(mu); err != nil {
-		return nil, fmt.Errorf("unable to parse GasPerToken, error: %w", err)
-	}
-	if ret.ValidatorFeeShare, err = mu.ReadUint8(); err != nil {
-		return nil, fmt.Errorf("unable to parse ValidatorFeeShare, error: %w", err)
-	}
-	if ret.EVMGasRatio, err = ReadRatio32(mu); err != nil {
-		return nil, fmt.Errorf("unable to parse EVMGasRatio, error: %w", err)
-	}
-	return ret, nil
-}
-
-func ReadRatio32(mu *marshalutil.MarshalUtil) (ret util.Ratio32, err error) {
-	b, err := mu.ReadBytes(util.RatioByteSize)
-	if err != nil {
-		return ret, err
-	}
-	if ret, err = util.Ratio32FromBytes(b); err != nil {
-		return ret, err
-	}
-	if ret.HasZeroComponent() {
-		return ret, ErrInvalidRatio
-	}
-	return ret, nil
+	return rwutil.ReaderFromBytes(data, new(FeePolicy))
 }
 
 func (p *FeePolicy) Bytes() []byte {
-	mu := marshalutil.New()
-	mu.WriteBytes(p.GasPerToken.Bytes())
-	mu.WriteUint8(p.ValidatorFeeShare)
-	mu.WriteBytes(p.EVMGasRatio.Bytes())
-	return mu.Bytes()
+	return rwutil.WriterToBytes(p)
 }
 
 func (p *FeePolicy) String() string {
@@ -140,4 +105,20 @@ func (p *FeePolicy) String() string {
 		p.EVMGasRatio,
 		p.ValidatorFeeShare,
 	)
+}
+
+func (p *FeePolicy) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.Read(&p.EVMGasRatio)
+	rr.Read(&p.GasPerToken)
+	p.ValidatorFeeShare = rr.ReadUint8()
+	return rr.Err
+}
+
+func (p *FeePolicy) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.Write(&p.EVMGasRatio)
+	ww.Write(&p.GasPerToken)
+	ww.WriteUint8(p.ValidatorFeeShare)
+	return ww.Err
 }

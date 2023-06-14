@@ -80,18 +80,18 @@ func (s *L1Commitment) Bytes() []byte {
 	return rwutil.WriterToBytes(s)
 }
 
-func (s *L1Commitment) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteN(s.trieRoot[:])
-	ww.WriteN(s.blockHash[:])
-	return nil
-}
-
 func (s *L1Commitment) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	rr.ReadN(s.trieRoot[:])
 	rr.ReadN(s.blockHash[:])
 	return rr.Err
+}
+
+func (s *L1Commitment) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteN(s.trieRoot[:])
+	ww.WriteN(s.blockHash[:])
+	return nil
 }
 
 func (s *L1Commitment) String() string {

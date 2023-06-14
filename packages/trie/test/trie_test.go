@@ -40,7 +40,15 @@ func TestBasic(t *testing.T) {
 		require.NoError(t, err)
 		tr.Update([]byte("a"), []byte("a"))
 		tr.Update([]byte("b"), []byte("b"))
-		root1 = tr.Commit(store)
+		var stats trie.CommitStats
+		root1, stats = tr.Commit(store)
+		// the trie now has 4 nodes:
+		// [] c:7ec331767219528ab3c9e864ad9422e9f831ec5e ext:[] childIdx:[6] term:<nil>
+		//  [6] c:a00e505e10971ec248b1404ef9dcc6c6c493a6c9 ext:[] childIdx:[1 2] term:<nil>
+		//   [6 1] c:81db21106a17dd57e6099402bbe5543a015193d0 ext:[] childIdx:[] term:61
+		//   [6 2] c:b23756724eca8e6197bb6b6cbfc9725067b36d9c ext:[] childIdx:[] term:62
+		require.EqualValues(t, 4, stats.CreatedNodes)
+		require.EqualValues(t, 0, stats.CreatedValues)
 	}
 
 	var root2 trie.Hash
@@ -51,7 +59,7 @@ func TestBasic(t *testing.T) {
 		tr.Update([]byte("b"), []byte("bb"))
 		tr.Update([]byte("cccddd"), []byte("c"))
 		tr.Update([]byte("ccceee"), bytes.Repeat([]byte("c"), 70))
-		root2 = tr.Commit(store)
+		root2, _ = tr.Commit(store)
 		require.NoError(t, err)
 
 		require.Nil(t, tr.Get([]byte("a")))
@@ -68,7 +76,7 @@ func TestBasic(t *testing.T) {
 		tr.Update([]byte("b"), nil)
 		tr.Update([]byte("cccddd"), nil)
 		tr.Update([]byte("ccceee"), nil)
-		root3 = tr.Commit(store)
+		root3, _ = tr.Commit(store)
 		require.NoError(t, err)
 
 		require.Nil(t, tr.Get([]byte("a")))
@@ -92,7 +100,7 @@ func TestBasic2(t *testing.T) {
 		tr.Update([]byte{0x00}, []byte{0})
 		tr.Update([]byte{0x01}, []byte{0})
 		tr.Update([]byte{0x10}, []byte{0})
-		root1 = tr.Commit(store)
+		root1, _ = tr.Commit(store)
 	}
 
 	tr, err := trie.NewTrieReader(store, root1)
@@ -115,7 +123,7 @@ func TestBasic3(t *testing.T) {
 		tr.Update([]byte{0x31}, []byte{1})
 		tr.Update([]byte{0xb0}, []byte{1})
 		tr.Update([]byte{0xb2}, []byte{1})
-		root1 = tr.Commit(store)
+		root1, _ = tr.Commit(store)
 	}
 
 	tr, err := trie.NewTrieReader(store, root1)
@@ -152,7 +160,7 @@ func TestCreateTrie(t *testing.T) {
 		require.Empty(t, tr.GetStr(""))
 
 		tr.UpdateStr(key, value)
-		rootCnext := tr.Commit(store)
+		rootCnext, _ := tr.Commit(store)
 		t.Logf("initial root commitment: %s", rootInitial)
 		t.Logf("next root commitment: %s", rootCnext)
 
@@ -181,7 +189,8 @@ func TestCreateTrie(t *testing.T) {
 		require.Empty(t, tr.GetStr(""))
 
 		tr.UpdateStr(key, strings.Repeat(value, 500))
-		rootCnext := tr.Commit(store)
+		rootCnext, stats := tr.Commit(store)
+		require.NotZero(t, stats.CreatedValues)
 		t.Logf("initial root commitment: %s", rootInitial)
 		t.Logf("next root commitment: %s", rootCnext)
 
@@ -211,7 +220,7 @@ func TestBaseUpdate(t *testing.T) {
 				value := strings.Repeat(key, 5)
 				tr.UpdateStr(key, value)
 			}
-			rootNext := tr.Commit(store)
+			rootNext, _ := tr.Commit(store)
 			t.Logf("after commit: %s", rootNext)
 
 			err = tr.SetRoot(rootNext)
@@ -242,7 +251,7 @@ func runUpdateScenario(trieUpdatable *trie.TrieUpdatable, store trie.KVStore, sc
 			continue
 		}
 		if cmd == "*" {
-			ret = trieUpdatable.Commit(store)
+			ret, _ = trieUpdatable.Commit(store)
 			if traceScenarios {
 				fmt.Printf("+++ commit. Root: '%s'\n", ret)
 			}
@@ -275,7 +284,7 @@ func runUpdateScenario(trieUpdatable *trie.TrieUpdatable, store trie.KVStore, sc
 		}
 	}
 	if uncommitted {
-		ret = trieUpdatable.Commit(store)
+		ret, _ = trieUpdatable.Commit(store)
 		if traceScenarios {
 			fmt.Printf("+++ commit. Root: '%s'\n", ret)
 		}

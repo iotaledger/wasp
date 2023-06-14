@@ -17,6 +17,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -136,8 +137,8 @@ func TestHarvest(t *testing.T) {
 
 	user := ctx.NewSoloAgent("user")
 	creatorAgentID := ctx.Creator().AgentID()
-	commonAccount := ctx.Chain.CommonAccount()
-	commonAccountBal0 := ctx.Chain.L2Assets(commonAccount)
+	commonAccount := accounts.CommonAccount()
+	commonAccountBal0 := ctx.Chain.L2Assets(accounts.CommonAccount())
 	foundry, err := ctx.NewSoloFoundry(mintAmount, user)
 	require.NoError(t, err)
 	err = foundry.Mint(mintAmount)

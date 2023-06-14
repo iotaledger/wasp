@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 )
 
 type Writer struct {
@@ -177,22 +176,6 @@ func (ww *Writer) WriteString(val string) *Writer {
 	return ww
 }
 
-type marshalUtilWriter interface {
-	WriteToMarshalUtil(mu *marshalutil.MarshalUtil)
-}
-
-func (ww *Writer) WriteToMarshalUtil(m marshalUtilWriter) *Writer {
-	if m == nil {
-		panic("nil marshalUtilWriter")
-	}
-	if ww.Err == nil {
-		mu := marshalutil.New()
-		m.WriteToMarshalUtil(mu)
-		ww.WriteN(mu.Bytes()[:mu.WriteOffset()])
-	}
-	return ww
-}
-
 func (ww *Writer) WriteUint8(val uint8) *Writer {
 	if ww.Err == nil {
 		ww.Err = WriteUint8(ww.w, val)
@@ -223,7 +206,7 @@ func (ww *Writer) WriteUint64(val uint64) *Writer {
 
 func (ww *Writer) WriteUint256(val *big.Int) *Writer {
 	if val == nil {
-		panic("nil uint256")
+		val = new(big.Int)
 	}
 	if ww.Err == nil && val.Sign() < 0 {
 		ww.Err = errors.New("negative uint256")

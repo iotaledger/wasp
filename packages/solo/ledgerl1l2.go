@@ -97,15 +97,15 @@ func (ch *Chain) L2NativeTokens(agentID isc.AgentID, nativeTokenID iotago.Native
 }
 
 func (ch *Chain) L2CommonAccountAssets() *isc.Assets {
-	return ch.L2Assets(ch.CommonAccount())
+	return ch.L2Assets(accounts.CommonAccount())
 }
 
 func (ch *Chain) L2CommonAccountBaseTokens() uint64 {
-	return ch.L2Assets(ch.CommonAccount()).BaseTokens
+	return ch.L2Assets(accounts.CommonAccount()).BaseTokens
 }
 
 func (ch *Chain) L2CommonAccountNativeTokens(nativeTokenID iotago.NativeTokenID) *big.Int {
-	return ch.L2Assets(ch.CommonAccount()).AmountNativeToken(nativeTokenID)
+	return ch.L2Assets(accounts.CommonAccount()).AmountNativeToken(nativeTokenID)
 }
 
 // L2TotalAssets return total sum of ftokens contained in the on-chain accounts

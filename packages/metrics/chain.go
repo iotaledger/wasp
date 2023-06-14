@@ -44,6 +44,7 @@ type IChainMetrics interface {
 	IChainStateManagerMetrics
 	IChainNodeConnMetrics
 	IWebAPIMetrics
+	IStateMetrics
 }
 
 var (
@@ -110,6 +111,7 @@ type emptyChainMetrics struct {
 	IChainStateManagerMetrics
 	IChainNodeConnMetrics
 	IWebAPIMetrics
+	IStateMetrics
 }
 
 func NewEmptyChainMetrics() IChainMetrics {
@@ -123,6 +125,7 @@ func NewEmptyChainMetrics() IChainMetrics {
 		IChainStateManagerMetrics: NewEmptyChainStateManagerMetric(),
 		IChainNodeConnMetrics:     NewEmptyChainNodeConnMetric(),
 		IWebAPIMetrics:            NewEmptyWebAPIMetrics(),
+		IStateMetrics:             NewEmptyStateMetrics(),
 	}
 }
 
@@ -136,6 +139,7 @@ type chainMetrics struct {
 	*chainStateManagerMetric
 	*chainNodeConnMetric
 	*webAPIChainMetrics
+	*stateMetrics
 }
 
 func newChainMetrics(provider *ChainMetricsProvider, chainID isc.ChainID) *chainMetrics {
@@ -149,6 +153,7 @@ func newChainMetrics(provider *ChainMetricsProvider, chainID isc.ChainID) *chain
 		chainStateManagerMetric: newChainStateManagerMetric(provider, chainID),
 		chainNodeConnMetric:     newChainNodeConnMetric(provider, chainID),
 		webAPIChainMetrics:      newWebAPIChainMetrics(provider, chainID),
+		stateMetrics:            newStateMetrics(provider, chainID),
 	}
 }
 
@@ -238,14 +243,24 @@ type ChainMetricsProvider struct {
 	// webapi
 	webAPIRequests    *prometheus.HistogramVec
 	webAPIEvmRPCCalls *prometheus.HistogramVec
+
+	// state
+	stateBlockCommitTimes            *prometheus.HistogramVec
+	stateBlockCommitNewTrieNodes     *prometheus.CounterVec
+	stateBlockCommitNewTrieValues    *prometheus.CounterVec
+	stateBlockPruneTimes             *prometheus.HistogramVec
+	stateBlockPruneDeletedTrieNodes  *prometheus.CounterVec
+	stateBlockPruneDeletedTrieValues *prometheus.CounterVec
 }
+
+var (
+	postTimeBuckets = prometheus.ExponentialBucketsRange(0.1, 60*60, 17) // Time to confirm/reject a TX in L1 [0.1s - 1h].
+	execTimeBuckets = prometheus.ExponentialBucketsRange(0.01, 100, 17)  // Execution of misc functions.
+	recCountBuckets = prometheus.ExponentialBucketsRange(1, 1000, 16)
+)
 
 //nolint:funlen
 func NewChainMetricsProvider() *ChainMetricsProvider {
-	postTimeBuckets := prometheus.ExponentialBucketsRange(0.1, 60*60, 17) // Time to confirm/reject a TX in L1 [0.1s - 1h].
-	execTimeBuckets := prometheus.ExponentialBucketsRange(0.01, 100, 17)  // Execution of misc functions.
-	recCountBuckets := prometheus.ExponentialBucketsRange(1, 1000, 16)
-
 	m := &ChainMetricsProvider{
 		chainsLock:       &sync.RWMutex{},
 		chainsRegistered: map[isc.ChainID]*chainMetrics{},
@@ -627,6 +642,8 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 
 	m.chainConfirmedStateLag = make(ChainStateLag)
 
+	initStateMetrics(m)
+
 	return m
 }
 
@@ -737,6 +754,17 @@ func (m *ChainMetricsProvider) PrometheusCollectorsWebAPI() []prometheus.Collect
 	return []prometheus.Collector{
 		m.webAPIRequests,
 		m.webAPIEvmRPCCalls,
+	}
+}
+
+func (m *ChainMetricsProvider) PrometheusCollectorsState() []prometheus.Collector {
+	return []prometheus.Collector{
+		m.stateBlockCommitTimes,
+		m.stateBlockCommitNewTrieNodes,
+		m.stateBlockCommitNewTrieValues,
+		m.stateBlockPruneTimes,
+		m.stateBlockPruneDeletedTrieNodes,
+		m.stateBlockPruneDeletedTrieValues,
 	}
 }
 

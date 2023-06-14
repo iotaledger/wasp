@@ -6,7 +6,6 @@ package util
 import (
 	"io"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -29,10 +28,6 @@ func NewFixedSizeBitVector(size uint16) BitVector {
 
 func FixedSizeBitVectorFromBytes(data []byte) (BitVector, error) {
 	return rwutil.ReaderFromBytes(data, new(fixBitVector))
-}
-
-func FixedSizeBitVectorFromMarshalUtil(mu *marshalutil.MarshalUtil) (BitVector, error) {
-	return rwutil.ReaderFromMu(mu, new(fixBitVector))
 }
 
 func (b *fixBitVector) Bytes() []byte {

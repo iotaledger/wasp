@@ -20,10 +20,12 @@ type stateSM struct {
 var _ rapid.StateMachine = &stateSM{}
 
 // State Machine initialization.
-func (sm *stateSM) Init(t *rapid.T) {
+func newStateSM() *stateSM {
+	sm := new(stateSM)
 	sm.store = NewStore(mapdb.NewMapDB())
 	sm.draft = sm.store.NewOriginStateDraft()
 	sm.model = mapdb.NewMapDB()
+	return sm
 }
 
 // Action: Set a value for the KV store.
@@ -90,7 +92,10 @@ func (sm *stateSM) checkStateReaderMatchesModel(t *rapid.T, reader kv.KVStoreRea
 }
 
 func TestRapid(t *testing.T) {
-	rapid.Check(t, rapid.Run[*stateSM]())
+	rapid.Check(t, func(t *rapid.T) {
+		sm := newStateSM()
+		t.Repeat(rapid.StateMachineActions(sm))
+	})
 }
 
 func TestRapidReproduced(t *testing.T) {

@@ -18,6 +18,11 @@ type TrieReader struct {
 	root      Hash
 }
 
+type CommitStats struct {
+	CreatedNodes  uint
+	CreatedValues uint
+}
+
 func NewTrieUpdatable(store KVReader, root Hash, cacheSize ...int) (*TrieUpdatable, error) {
 	trieReader, err := NewTrieReader(store, root, cacheSize...)
 	if err != nil {
@@ -71,12 +76,13 @@ func (tr *TrieUpdatable) SetRoot(h Hash) error {
 // The nodes and values are written into separate partitions
 // The buffered nodes are garbage collected, except the mutated ones
 // By default, it sets new root in the end and clears the trie reader cache. To override, use notSetNewRoot = true
-func (tr *TrieUpdatable) Commit(store KVStore) Hash {
+func (tr *TrieUpdatable) Commit(store KVStore) (Hash, CommitStats) {
 	triePartition := makeWriterPartition(store, partitionTrieNodes)
 	valuePartition := makeWriterPartition(store, partitionValues)
 	refcounts := newRefcounts(store)
 
-	tr.mutatedRoot.commitNode(triePartition, valuePartition, refcounts)
+	var stats CommitStats
+	tr.mutatedRoot.commitNode(triePartition, valuePartition, refcounts, &stats)
 	// set uncommitted children in the root to empty -> the GC will collect the whole tree of buffered nodes
 	tr.mutatedRoot.uncommittedChildren = make(map[byte]*bufferedNode)
 
@@ -84,7 +90,7 @@ func (tr *TrieUpdatable) Commit(store KVStore) Hash {
 	err := tr.SetRoot(newTrieRoot) // always clear cache because NodeData-s are mutated and not valid anymore
 	assertNoError(err)
 
-	return newTrieRoot
+	return newTrieRoot, stats
 }
 
 func (tr *TrieUpdatable) newTerminalNode(triePath, pathExtension, value []byte) *bufferedNode {

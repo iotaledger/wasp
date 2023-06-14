@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 )
 
@@ -30,7 +31,7 @@ func runISCTask(
 		Requests:             reqs,
 		TimeAssumption:       blockTime,
 		Entropy:              hashing.PseudoRandomHash(nil),
-		ValidatorFeeTarget:   isc.NewContractAgentID(ch.ID(), 0),
+		ValidatorFeeTarget:   accounts.CommonAccount(),
 		EnableGasBurnLogging: false,
 		EstimateGasMode:      estimateGasMode,
 		EVMTracer:            evmTracer,

@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 )
 
 type Reader struct {
@@ -29,11 +28,6 @@ func NewReader(r io.Reader) *Reader {
 
 func NewBytesReader(data []byte) *Reader {
 	return NewReader(bytes.NewBuffer(data))
-}
-
-func NewMuReader(mu *marshalutil.MarshalUtil) *Reader {
-	r := &MuReader{mu: mu}
-	return NewReader(r)
 }
 
 // PushBack returns a pushback writer that allows you to insert data before the stream.

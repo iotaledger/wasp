@@ -3,13 +3,11 @@ package isc
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io"
 	"math/big"
 	"sort"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -25,12 +23,6 @@ type Assets struct {
 
 var BaseTokenID = []byte{}
 
-func NewEmptyAssets() *Assets {
-	return &Assets{
-		NativeTokens: make([]*iotago.NativeToken, 0),
-	}
-}
-
 func NewAssets(baseTokens uint64, tokens iotago.NativeTokens, nfts ...iotago.NFTID) *Assets {
 	if tokens == nil {
 		tokens = make(iotago.NativeTokens, 0)
@@ -45,6 +37,20 @@ func NewAssets(baseTokens uint64, tokens iotago.NativeTokens, nfts ...iotago.NFT
 
 func NewAssetsBaseTokens(amount uint64) *Assets {
 	return &Assets{BaseTokens: amount}
+}
+
+func NewEmptyAssets() *Assets {
+	return &Assets{
+		NativeTokens: make([]*iotago.NativeToken, 0),
+	}
+}
+
+func AssetsFromBytes(b []byte) (*Assets, error) {
+	if len(b) == 0 {
+		return NewEmptyAssets(), nil
+	}
+	ret, err := rwutil.ReaderFromBytes(b, NewEmptyAssets())
+	return ret, err
 }
 
 func AssetsFromDict(d dict.Dict) (*Assets, error) {
@@ -79,14 +85,6 @@ func AssetsFromNativeTokenSum(baseTokens uint64, tokens iotago.NativeTokenSum) *
 	return ret
 }
 
-func AssetsFromOutputMap(outs map[iotago.OutputID]iotago.Output) *Assets {
-	ret := NewEmptyAssets()
-	for _, out := range outs {
-		ret.Add(AssetsFromOutput(out))
-	}
-	return ret
-}
-
 func AssetsFromOutput(o iotago.Output) *Assets {
 	ret := &Assets{
 		BaseTokens:   o.Deposit(),
@@ -95,19 +93,18 @@ func AssetsFromOutput(o iotago.Output) *Assets {
 	return ret
 }
 
-func NativeTokenIDFromBytes(data []byte) (iotago.NativeTokenID, error) {
-	if len(data) != iotago.NativeTokenIDLength {
-		return iotago.NativeTokenID{}, errors.New("NativeTokenIDFromBytes: wrong data length")
+func AssetsFromOutputMap(outs map[iotago.OutputID]iotago.Output) *Assets {
+	ret := NewEmptyAssets()
+	for _, out := range outs {
+		ret.Add(AssetsFromOutput(out))
 	}
-	var nativeTokenID iotago.NativeTokenID
-	copy(nativeTokenID[:], data)
-	return nativeTokenID, nil
+	return ret
 }
 
-func MustNativeTokenIDFromBytes(data []byte) iotago.NativeTokenID {
-	ret, err := NativeTokenIDFromBytes(data)
+func MustAssetsFromBytes(b []byte) *Assets {
+	ret, err := AssetsFromBytes(b)
 	if err != nil {
-		panic(fmt.Errorf("MustNativeTokenIDFromBytes: %w", err))
+		panic(err)
 	}
 	return ret
 }
@@ -172,25 +169,6 @@ func (a *Assets) String() string {
 
 func (a *Assets) Bytes() []byte {
 	return rwutil.WriterToBytes(a)
-}
-
-func (a *Assets) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	mu.WriteBytes(a.Bytes())
-}
-
-func MustAssetsFromBytes(b []byte) *Assets {
-	if len(b) == 0 {
-		return NewEmptyAssets()
-	}
-	ret, err := rwutil.ReaderFromBytes(b, NewEmptyAssets())
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-func AssetsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Assets, error) {
-	return rwutil.ReaderFromMu(mu, NewEmptyAssets())
 }
 
 func (a *Assets) Equals(b *Assets) bool {
@@ -391,7 +369,7 @@ func (a *Assets) Read(r io.Reader) error {
 	}
 	if (flags & hasBaseTokens) != 0 {
 		baseTokens := make([]byte, 8)
-		rr.ReadN(baseTokens[:flags&0x0f])
+		rr.ReadN(baseTokens[:(flags&0x07)+1])
 		a.BaseTokens = binary.LittleEndian.Uint64(baseTokens)
 	}
 	if (flags & hasNativeTokens) != 0 {
@@ -416,8 +394,7 @@ func (a *Assets) Read(r io.Reader) error {
 
 func (a *Assets) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	isEmpty := a.IsEmpty()
-	if isEmpty {
+	if a.IsEmpty() {
 		ww.WriteByte(0x00)
 		return ww.Err
 	}
@@ -427,8 +404,8 @@ func (a *Assets) Write(w io.Writer) error {
 	if a.BaseTokens != 0 {
 		flags |= hasBaseTokens
 		binary.LittleEndian.PutUint64(baseTokens[:], a.BaseTokens)
-		for i := byte(8); i > 0; i-- {
-			if baseTokens[i-1] != 0 {
+		for i := byte(7); i > 0; i-- {
+			if baseTokens[i] != 0 {
 				flags |= i
 				break
 			}
@@ -443,7 +420,7 @@ func (a *Assets) Write(w io.Writer) error {
 
 	ww.WriteByte(flags)
 	if (flags & hasBaseTokens) != 0 {
-		ww.WriteN(baseTokens[:flags&0x0f])
+		ww.WriteN(baseTokens[:(flags&0x07)+1])
 	}
 	if (flags & hasNativeTokens) != 0 {
 		ww.WriteSize(len(a.NativeTokens))

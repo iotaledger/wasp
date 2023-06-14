@@ -292,7 +292,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		chainCtx,
 		chainLog,
 		chainID,
-		indexedstore.New(state.NewStore(chainKVStore)),
+		indexedstore.New(state.NewStoreWithMetrics(chainKVStore, chainMetrics)),
 		c.nodeConnection,
 		c.nodeIdentityProvider.NodeIdentity(),
 		c.processorConfig,

@@ -94,6 +94,7 @@ func register(name string, cs ...prometheus.Collector) {
 	}
 }
 
+//nolint:gocyclo
 func configure() error {
 	if ParamsPrometheus.NodeMetrics {
 		register("node", newNodeCollector(deps.AppInfo))
@@ -136,6 +137,9 @@ func configure() error {
 	}
 	if ParamsPrometheus.WebAPIMetrics {
 		register("webapi", deps.ChainMetrics.PrometheusCollectorsWebAPI()...)
+	}
+	if ParamsPrometheus.StateMetrics {
+		register("state", deps.ChainMetrics.PrometheusCollectorsState()...)
 	}
 	return nil
 }

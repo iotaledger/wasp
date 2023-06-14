@@ -121,5 +121,5 @@ func (bps batchProposalSet) selectedProposal(aggregatedTime time.Time) gpa.NodeI
 
 func (bps batchProposalSet) selectedFeeDestination(aggregatedTime time.Time) isc.AgentID {
 	bp := bps[bps.selectedProposal(aggregatedTime)]
-	return bp.feeDestination
+	return bp.validatorFeeDestination
 }

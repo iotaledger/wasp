@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -31,41 +30,7 @@ type RequestReceipt struct {
 }
 
 func RequestReceiptFromBytes(data []byte) (*RequestReceipt, error) {
-	return RequestReceiptFromMarshalUtil(marshalutil.New(data))
-}
-
-func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt, error) {
-	ret := &RequestReceipt{}
-
-	var err error
-
-	if ret.GasBudget, err = mu.ReadUint64(); err != nil {
-		return nil, fmt.Errorf("cannot read GasBudget: %w", err)
-	}
-	if ret.GasBurned, err = mu.ReadUint64(); err != nil {
-		return nil, fmt.Errorf("cannot read GasBurned: %w", err)
-	}
-	if ret.GasFeeCharged, err = mu.ReadUint64(); err != nil {
-		return nil, fmt.Errorf("cannot read GasFeeCharged: %w", err)
-	}
-	if ret.SDCharged, err = mu.ReadUint64(); err != nil {
-		return nil, fmt.Errorf("cannot read SDCharged: %w", err)
-	}
-	if ret.Request, err = isc.RequestFromMarshalUtil(mu); err != nil {
-		return nil, fmt.Errorf("cannot read Request: %w", err)
-	}
-
-	if isError, err2 := mu.ReadBool(); err2 != nil {
-		return nil, fmt.Errorf("cannot read isError: %w", err2)
-	} else if !isError {
-		return ret, nil
-	}
-
-	if ret.Error, err = isc.UnresolvedVMErrorFromMarshalUtil(mu); err != nil {
-		return nil, fmt.Errorf("cannot read Error: %w", err)
-	}
-
-	return ret, nil
+	return rwutil.ReaderFromBytes(data, new(RequestReceipt))
 }
 
 func RequestReceiptsFromBlock(block state.Block) ([]*RequestReceipt, error) {
@@ -87,70 +52,83 @@ func RequestReceiptsFromBlock(block state.Block) ([]*RequestReceipt, error) {
 	return receipts, nil
 }
 
-func (r *RequestReceipt) Bytes() []byte {
-	mu := marshalutil.New()
+func (rec *RequestReceipt) Bytes() []byte {
+	return rwutil.WriterToBytes(rec)
+}
 
-	mu.WriteUint64(r.GasBudget).
-		WriteUint64(r.GasBurned).
-		WriteUint64(r.GasFeeCharged).
-		WriteUint64(r.SDCharged)
-
-	r.Request.WriteToMarshalUtil(mu)
-
-	if r.Error == nil {
-		mu.WriteBool(false)
-	} else {
-		mu.WriteBool(true)
-		mu.WriteBytes(r.Error.Bytes())
+func (rec *RequestReceipt) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rec.GasBudget = rr.ReadUint64()
+	rec.GasBurned = rr.ReadUint64()
+	rec.GasFeeCharged = rr.ReadUint64()
+	rec.SDCharged = rr.ReadUint64()
+	rec.Request = isc.RequestFromReader(rr)
+	hasError := rr.ReadBool()
+	if hasError {
+		rec.Error = new(isc.UnresolvedVMError)
+		rr.Read(rec.Error)
 	}
-
-	return mu.Bytes()
+	return rr.Err
 }
 
-func (r *RequestReceipt) WithBlockData(blockIndex uint32, requestIndex uint16) *RequestReceipt {
-	r.BlockIndex = blockIndex
-	r.RequestIndex = requestIndex
-	return r
+func (rec *RequestReceipt) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteUint64(rec.GasBudget)
+	ww.WriteUint64(rec.GasBurned)
+	ww.WriteUint64(rec.GasFeeCharged)
+	ww.WriteUint64(rec.SDCharged)
+	ww.Write(rec.Request)
+	ww.WriteBool(rec.Error != nil)
+	if rec.Error != nil {
+		ww.Write(rec.Error)
+	}
+	return ww.Err
 }
 
-func (r *RequestReceipt) String() string {
-	ret := fmt.Sprintf("ID: %s\n", r.Request.ID().String())
-	ret += fmt.Sprintf("Err: %v\n", r.Error)
-	ret += fmt.Sprintf("Block/Request index: %d / %d\n", r.BlockIndex, r.RequestIndex)
-	ret += fmt.Sprintf("Gas budget / burned / fee charged: %d / %d /%d\n", r.GasBudget, r.GasBurned, r.GasFeeCharged)
-	ret += fmt.Sprintf("Storage deposit charged: %d\n", r.SDCharged)
-	ret += fmt.Sprintf("Call data: %s\n", r.Request)
+func (rec *RequestReceipt) WithBlockData(blockIndex uint32, requestIndex uint16) *RequestReceipt {
+	rec.BlockIndex = blockIndex
+	rec.RequestIndex = requestIndex
+	return rec
+}
+
+func (rec *RequestReceipt) String() string {
+	ret := fmt.Sprintf("ID: %s\n", rec.Request.ID().String())
+	ret += fmt.Sprintf("Err: %v\n", rec.Error)
+	ret += fmt.Sprintf("Block/Request index: %d / %d\n", rec.BlockIndex, rec.RequestIndex)
+	ret += fmt.Sprintf("Gas budget / burned / fee charged: %d / %d /%d\n", rec.GasBudget, rec.GasBurned, rec.GasFeeCharged)
+	ret += fmt.Sprintf("Storage deposit charged: %d\n", rec.SDCharged)
+	ret += fmt.Sprintf("Call data: %s\n", rec.Request)
 	return ret
 }
 
-func (r *RequestReceipt) Short() string {
+func (rec *RequestReceipt) Short() string {
 	prefix := "tx"
-	if r.Request.IsOffLedger() {
+	if rec.Request.IsOffLedger() {
 		prefix = "api"
 	}
 
-	ret := fmt.Sprintf("%s/%s", prefix, r.Request.ID())
+	ret := fmt.Sprintf("%s/%s", prefix, rec.Request.ID())
 
-	if r.Error != nil {
-		ret += fmt.Sprintf(": Err: %v", r.Error)
+	if rec.Error != nil {
+		ret += fmt.Sprintf(": Err: %v", rec.Error)
 	}
 
 	return ret
 }
 
-func (r *RequestReceipt) LookupKey() RequestLookupKey {
-	return NewRequestLookupKey(r.BlockIndex, r.RequestIndex)
+func (rec *RequestReceipt) LookupKey() RequestLookupKey {
+	return NewRequestLookupKey(rec.BlockIndex, rec.RequestIndex)
 }
 
-func (r *RequestReceipt) ToISCReceipt(resolvedError *isc.VMError) *isc.Receipt {
+func (rec *RequestReceipt) ToISCReceipt(resolvedError *isc.VMError) *isc.Receipt {
 	return &isc.Receipt{
-		Request:       r.Request.Bytes(),
-		Error:         r.Error,
-		GasBudget:     r.GasBudget,
-		GasBurned:     r.GasBurned,
-		GasFeeCharged: r.GasFeeCharged,
-		BlockIndex:    r.BlockIndex,
-		RequestIndex:  r.RequestIndex,
+		Request:       rec.Request.Bytes(),
+		Error:         rec.Error,
+		GasBudget:     rec.GasBudget,
+		GasBurned:     rec.GasBurned,
+		GasFeeCharged: rec.GasFeeCharged,
+		BlockIndex:    rec.BlockIndex,
+		RequestIndex:  rec.RequestIndex,
 		ResolvedError: resolvedError.Error(),
 	}
 }

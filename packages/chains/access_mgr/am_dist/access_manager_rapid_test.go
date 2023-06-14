@@ -4,6 +4,7 @@
 package am_dist_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/samber/lo"
@@ -45,8 +46,10 @@ type accessMgrSM struct {
 	mAccess  map[gpa.NodeID]map[isc.ChainID][]*cryptolib.PublicKey
 }
 
-// That's a template for Init(t *rapid.T) it will be called in the classes extending this one.
-func (sm *accessMgrSM) init(t *rapid.T, nodeCount, chainCount int) {
+var _ rapid.StateMachine = &accessMgrSM{}
+
+func newAccessMgrSM(t *rapid.T, nodeCount, chainCount int) *accessMgrSM {
+	sm := new(accessMgrSM)
 	if !sm.initialized {
 		sm.log = testlogger.NewLogger(t)
 		_, sm.nodeKeys = testpeers.SetupKeys(uint16(nodeCount))
@@ -98,6 +101,7 @@ func (sm *accessMgrSM) init(t *rapid.T, nodeCount, chainCount int) {
 			sm.mActive[nid][ch] = false
 		}
 	}
+	return sm
 }
 
 func (sm *accessMgrSM) InputTrustedNodes(t *rapid.T) {
@@ -175,36 +179,19 @@ func (sm *accessMgrSM) Check(t *rapid.T) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type accessMgrSMN1C1 struct{ accessMgrSM }
-
-func (sm *accessMgrSMN1C1) Init(t *rapid.T) { sm.init(t, 1, 1) }
-
-var _ rapid.StateMachine = &accessMgrSMN1C1{}
-
-func TestRapidN1C1(t *testing.T) {
-	rapid.Check(t, rapid.Run[*accessMgrSMN1C1]())
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-type accessMgrSMN2C1 struct{ accessMgrSM }
-
-func (sm *accessMgrSMN2C1) Init(t *rapid.T) { sm.init(t, 2, 1) }
-
-var _ rapid.StateMachine = &accessMgrSMN2C1{}
-
-func TestRapidN2C1(t *testing.T) {
-	rapid.Check(t, rapid.Run[*accessMgrSMN2C1]())
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-type accessMgrSMN4C3 struct{ accessMgrSM }
-
-func (sm *accessMgrSMN4C3) Init(t *rapid.T) { sm.init(t, 4, 3) }
-
-var _ rapid.StateMachine = &accessMgrSMN4C3{}
-
-func TestRapidN4C3(t *testing.T) {
-	rapid.Check(t, rapid.Run[*accessMgrSMN4C3]())
+func TestAccessMgrRapid(t *testing.T) {
+	tests := []struct {
+		n int
+		c int
+	}{
+		{n: 1, c: 1},
+		{n: 2, c: 1},
+		{n: 4, c: 3},
+	}
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("N%d C%d", test.n, test.c), rapid.MakeCheck(func(t *rapid.T) {
+			sm := newAccessMgrSM(t, test.n, test.c)
+			t.Repeat(rapid.StateMachineActions(sm))
+		}))
+	}
 }
