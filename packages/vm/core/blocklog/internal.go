@@ -301,7 +301,6 @@ func pruneBlock(partition kv.KVStore, blockIndex uint32) {
 	pruneRequestLogRecordsByBlockIndex(partition, blockIndex, blockInfo.TotalRequests)
 	pruneRequestLookupByBlockIndex(partition, blockIndex)
 	pruneEventsByBlockIndex(partition, blockIndex, blockInfo.TotalRequests)
-
 }
 
 func eventsToDict(events [][]byte) dict.Dict {
