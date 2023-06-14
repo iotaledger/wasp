@@ -15,6 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -30,9 +32,7 @@ func ValueFromString(vtype, s string) []byte {
 		}
 		return isc.BytesFromAddress(addr)
 	case "agentid":
-		agentid, err := isc.AgentIDFromString(s)
-		log.Check(err)
-		return agentid.Bytes()
+		return AgentIDFromString(s).Bytes()
 	case "bigint":
 		n, ok := new(big.Int).SetString(s, 10)
 		if !ok {
@@ -242,4 +242,20 @@ func UnmarshalDict() dict.Dict {
 	var d dict.Dict
 	log.Check(json.NewDecoder(os.Stdin).Decode(&d))
 	return d
+}
+
+func AgentIDFromArgs(args []string) isc.AgentID {
+	if len(args) == 0 {
+		return isc.NewAgentID(wallet.Load().Address())
+	}
+	return AgentIDFromString(args[0])
+}
+
+func AgentIDFromString(s string) isc.AgentID {
+	if s == "common" {
+		return accounts.CommonAccount()
+	}
+	agentID, err := isc.AgentIDFromString(s)
+	log.Check(err, "cannot parse AgentID")
+	return agentID
 }
