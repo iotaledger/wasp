@@ -63,25 +63,16 @@ func initBalanceCmd() *cobra.Command {
 	var chain string
 	cmd := &cobra.Command{
 		Use:   "balance [<agentid>]",
-		Short: "Show the L2 balance of the given account",
+		Short: "Show the L2 balance of the given L2 account (default: own account, `common`: chain common account)",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
-
-			var agentID isc.AgentID
-			if len(args) == 0 {
-				agentID = isc.NewAgentID(wallet.Load().Address())
-			} else {
-				var err error
-				agentID, err = isc.AgentIDFromString(args[0])
-				log.Check(err)
-			}
-
+			agentID := util.AgentIDFromArgs(args)
 			client := cliclients.WaspClient(node)
 			chainID := config.GetChain(chain)
-			balance, _, err := client.CorecontractsApi.AccountsGetAccountBalance(context.Background(), chainID.String(), agentID.String()).Execute() //nolint:bodyclose // false positive
 
+			balance, _, err := client.CorecontractsApi.AccountsGetAccountBalance(context.Background(), chainID.String(), agentID.String()).Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
 			header := []string{"token", "amount"}
@@ -105,26 +96,16 @@ func initAccountNFTsCmd() *cobra.Command {
 	var node string
 	var chain string
 	cmd := &cobra.Command{
-		Use:   "nfts [<agentid>]",
-		Short: "Show NFTs owned by a given account",
+		Use:   "nfts [<agentid>|common]",
+		Short: "Show NFTs owned by a given account (default: own account, `common`: chain common account)",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
-
-			var agentID isc.AgentID
-			if len(args) == 0 {
-				agentID = isc.NewAgentID(wallet.Load().Address())
-			} else {
-				var err error
-				agentID, err = isc.AgentIDFromString(args[0])
-				log.Check(err)
-			}
-
-			// ViewAccountNFTs
-
+			agentID := util.AgentIDFromArgs(args)
 			client := cliclients.WaspClient(node)
 			chainID := config.GetChain(chain)
+
 			nfts, _, err := client.CorecontractsApi.
 				AccountsGetAccountNFTIDs(context.Background(), chainID.String(), agentID.String()).
 				Execute() //nolint:bodyclose // false positive
@@ -174,7 +155,7 @@ func initDepositCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "deposit [<agentid>] <token-id>:<amount>, [<token-id>:amount ...]",
-		Short: "Deposit L1 funds into the given (default: your) L2 account",
+		Short: "Deposit L1 funds into the given L2 account (default: own account, `common`: chain common account)",
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
@@ -198,8 +179,7 @@ func initDepositCmd() *cobra.Command {
 				})
 			} else {
 				// deposit to some other agentID
-				agentID, err := isc.AgentIDFromString(args[0])
-				log.Check(err)
+				agentID := util.AgentIDFromString(args[0])
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))
 
 				allowance := tokens.Clone()
