@@ -8,6 +8,7 @@ import (
 	"encoding"
 	"errors"
 	"io"
+	"math"
 	"math/big"
 	"time"
 
@@ -158,13 +159,27 @@ func (ww *Writer) WriteSerialized(s serializable) *Writer {
 	return ww
 }
 
-func (ww *Writer) WriteSize(val int) *Writer {
-	return ww.WriteSize32(uint32(val))
+func (ww *Writer) WriteSize16(val int) *Writer {
+	return ww.WriteSizeWithLimit(val, math.MaxUint16)
 }
 
-func (ww *Writer) WriteSize32(val uint32) *Writer {
+func (ww *Writer) WriteSize32(val int) *Writer {
+	// note we cannot exceed SIGNED max
+	// because if int is actually 32 bit it would be negative
+	return ww.WriteSizeWithLimit(val, math.MaxInt32)
+}
+
+func (ww *Writer) WriteSizeWithLimit(val int, limit uint32) *Writer {
 	if ww.Err == nil {
-		ww.Err = WriteSize32(ww.w, val)
+		if val < 0 {
+			ww.Err = errors.New("write size limit underflow")
+			return ww
+		}
+		if val > int(limit) {
+			ww.Err = errors.New("write size limit overflow")
+			return ww
+		}
+		ww.Err = WriteSize32(ww.w, uint32(val))
 	}
 	return ww
 }

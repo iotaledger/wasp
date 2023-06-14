@@ -312,7 +312,7 @@ func validateParams(params []any) {
 
 //nolint:gocyclo
 func readParams(rr *rwutil.Reader) []any {
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	if rr.Err != nil || size == 0 {
 		return nil
 	}
@@ -356,7 +356,7 @@ func readParams(rr *rwutil.Reader) []any {
 }
 
 func writeParams(ww *rwutil.Writer, params []any) {
-	ww.WriteSize(len(params))
+	ww.WriteSize16(len(params))
 	for _, param := range params {
 		t := reflect.TypeOf(param)
 		v := reflect.ValueOf(param)

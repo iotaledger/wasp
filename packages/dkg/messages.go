@@ -217,7 +217,7 @@ func (msg *initiatorInitMsg) Write(w io.Writer) error {
 	ww.WriteString(msg.dkgRef)
 	ww.WriteN(msg.peeringID[:])
 
-	ww.WriteSize(len(msg.peerPubs))
+	ww.WriteSize16(len(msg.peerPubs))
 	for i := range msg.peerPubs {
 		ww.WriteBytes(msg.peerPubs[i].AsBytes())
 	}
@@ -235,7 +235,7 @@ func (msg *initiatorInitMsg) Read(r io.Reader) error {
 	msg.dkgRef = rr.ReadString()
 	rr.ReadN(msg.peeringID[:])
 
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	msg.peerPubs = make([]*cryptolib.PublicKey, size)
 	for i := range msg.peerPubs {
 		msg.peerPubs[i] = rwutil.ReadFromBytes(rr, cryptolib.PublicKeyFromBytes)
@@ -332,12 +332,12 @@ func (msg *initiatorDoneMsg) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteByte(msg.step)
 
-	ww.WriteSize(len(msg.edPubShares))
+	ww.WriteSize16(len(msg.edPubShares))
 	for i := range msg.edPubShares {
 		ww.WriteMarshaled(msg.edPubShares[i])
 	}
 
-	ww.WriteSize(len(msg.blsPubShares))
+	ww.WriteSize16(len(msg.blsPubShares))
 	for i := range msg.blsPubShares {
 		ww.WriteMarshaled(msg.blsPubShares[i])
 	}
@@ -348,14 +348,14 @@ func (msg *initiatorDoneMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
 
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	msg.edPubShares = make([]kyber.Point, size)
 	for i := range msg.edPubShares {
 		msg.edPubShares[i] = msg.edSuite.Point()
 		rr.ReadMarshaled(msg.edPubShares[i])
 	}
 
-	size = rr.ReadSize()
+	size = rr.ReadSize16()
 	msg.blsPubShares = make([]kyber.Point, size)
 	for i := range msg.blsPubShares {
 		msg.blsPubShares[i] = msg.blsSuite.Point()
@@ -582,7 +582,7 @@ func (msg *rabinResponseMsg) SetStep(step byte) {
 func (msg *rabinResponseMsg) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteByte(msg.step)
-	ww.WriteSize(len(msg.responses))
+	ww.WriteSize16(len(msg.responses))
 	for _, response := range msg.responses {
 		ww.WriteUint32(response.Index)
 		ww.WriteBytes(response.Response.SessionID)
@@ -596,7 +596,7 @@ func (msg *rabinResponseMsg) Write(w io.Writer) error {
 func (msg *rabinResponseMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	msg.responses = make([]*rabin_dkg.Response, size)
 	for i := range msg.responses {
 		response := rabin_dkg.Response{
@@ -639,7 +639,7 @@ func (msg *rabinJustificationMsg) SetStep(step byte) {
 func (msg *rabinJustificationMsg) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteByte(msg.step)
-	ww.WriteSize(len(msg.justifications))
+	ww.WriteSize16(len(msg.justifications))
 	for _, j := range msg.justifications {
 		ww.WriteUint32(j.Index)
 		ww.WriteBytes(j.Justification.SessionID)
@@ -653,7 +653,7 @@ func (msg *rabinJustificationMsg) Write(w io.Writer) error {
 func (msg *rabinJustificationMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	msg.justifications = make([]*rabin_dkg.Justification, size)
 	for i := range msg.justifications {
 		j := &rabin_dkg.Justification{
@@ -704,7 +704,7 @@ func (msg *rabinSecretCommitsMsg) Write(w io.Writer) error {
 
 	ww.WriteUint32(msg.secretCommits.Index)
 
-	ww.WriteSize(len(msg.secretCommits.Commitments))
+	ww.WriteSize16(len(msg.secretCommits.Commitments))
 	for i := range msg.secretCommits.Commitments {
 		ww.WriteMarshaled(msg.secretCommits.Commitments[i])
 	}
@@ -726,7 +726,7 @@ func (msg *rabinSecretCommitsMsg) Read(r io.Reader) error {
 	msg.secretCommits = &rabin_dkg.SecretCommits{}
 	msg.secretCommits.Index = rr.ReadUint32()
 
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	msg.secretCommits.Commitments = make([]kyber.Point, size)
 	for i := range msg.secretCommits.Commitments {
 		msg.secretCommits.Commitments[i] = msg.blsSuite.Point()
@@ -766,7 +766,7 @@ func (msg *rabinComplaintCommitsMsg) SetStep(step byte) {
 func (msg *rabinComplaintCommitsMsg) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteByte(msg.step)
-	ww.WriteSize(len(msg.complaintCommits))
+	ww.WriteSize16(len(msg.complaintCommits))
 	for i := range msg.complaintCommits {
 		ww.WriteUint32(msg.complaintCommits[i].Index)
 		ww.WriteUint32(msg.complaintCommits[i].DealerIndex)
@@ -779,7 +779,7 @@ func (msg *rabinComplaintCommitsMsg) Write(w io.Writer) error {
 func (msg *rabinComplaintCommitsMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	msg.complaintCommits = make([]*rabin_dkg.ComplaintCommits, size)
 	for i := range msg.complaintCommits {
 		msg.complaintCommits[i] = &rabin_dkg.ComplaintCommits{}
@@ -818,7 +818,7 @@ func (msg *rabinReconstructCommitsMsg) SetStep(step byte) {
 func (msg *rabinReconstructCommitsMsg) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteByte(msg.step)
-	ww.WriteSize(len(msg.reconstructCommits))
+	ww.WriteSize16(len(msg.reconstructCommits))
 	for i := range msg.reconstructCommits {
 		ww.WriteBytes(msg.reconstructCommits[i].SessionID)
 		ww.WriteUint32(msg.reconstructCommits[i].Index)
@@ -832,7 +832,7 @@ func (msg *rabinReconstructCommitsMsg) Write(w io.Writer) error {
 func (msg *rabinReconstructCommitsMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	msg.reconstructCommits = make([]*rabin_dkg.ReconstructCommits, size)
 	for i := range msg.reconstructCommits {
 		msg.reconstructCommits[i] = &rabin_dkg.ReconstructCommits{}
@@ -999,7 +999,7 @@ func writeVssDeal(ww *rwutil.Writer, d *rabin_vss.Deal) {
 	writePriShare(ww, d.SecShare)
 	writePriShare(ww, d.RndShare)
 	ww.WriteUint32(d.T)
-	ww.WriteSize(len(d.Commitments))
+	ww.WriteSize16(len(d.Commitments))
 	for i := range d.Commitments {
 		ww.WriteMarshaled(d.Commitments[i])
 	}
@@ -1011,7 +1011,7 @@ func readVssDeal(rr *rwutil.Reader, blsSuite kyber.Group) (ret *rabin_vss.Deal) 
 	ret.SecShare = readPriShare(rr)
 	ret.RndShare = readPriShare(rr)
 	ret.T = rr.ReadUint32()
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	ret.Commitments = make([]kyber.Point, size)
 	for i := range ret.Commitments {
 		ret.Commitments[i] = blsSuite.Point()

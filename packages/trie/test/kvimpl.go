@@ -2,16 +2,14 @@ package test
 
 import (
 	"bytes"
-	"errors"
-	"io"
 	"math"
 	"math/rand"
 	"os"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // ----------------------------------------------------------------------------
@@ -103,142 +101,9 @@ func (si *simpleInMemoryIterator) IterateKeys(f func(k []byte) bool) {
 	}
 }
 
-//----------------------------------------------------------------------------
-// interfaces for writing/reading persistent streams of key/value pairs
-
-// KVStreamWriter represents an interface to write a sequence of key/value pairs
-type KVStreamWriter interface {
-	// Write writes key/value pair
-	Write(key, value []byte) error
-	// Stats return num k/v pairs and num bytes so far
-	Stats() (int, int)
-}
-
-// KVStreamIterator is an interface to iterate stream
-// In general, order is non-deterministic
-type KVStreamIterator interface {
-	Iterate(func(k, v []byte) bool) error
-}
-
-//----------------------------------------------------------------------------
-// implementations of writing/reading persistent streams of key/value pairs
-
-// BinaryStreamWriter writes stream of k/v pairs in binary format
-// Each key is prefixed with 2 bytes (little-endian uint16) of size,
-// each value with 4 bytes of size (little-endian uint32)
-var _ KVStreamWriter = &BinaryStreamWriter{}
-
-type BinaryStreamWriter struct {
-	w         io.Writer
-	kvCount   int
-	byteCount int
-}
-
-func NewBinaryStreamWriter(w io.Writer) *BinaryStreamWriter {
-	return &BinaryStreamWriter{w: w}
-}
-
-// BinaryStreamWriter implements KVStreamWriter interface
-var _ KVStreamWriter = &BinaryStreamWriter{}
-
-func (b *BinaryStreamWriter) Write(key, value []byte) error {
-	if err := rwutil.WriteBytes(b.w, key); err != nil {
-		return err
-	}
-	b.byteCount += len(key) + 2
-	if err := rwutil.WriteBytes(b.w, value); err != nil {
-		return err
-	}
-	b.byteCount += len(value) + 4
-	b.kvCount++
-	return nil
-}
-
-func (b *BinaryStreamWriter) Stats() (int, int) {
-	return b.kvCount, b.byteCount
-}
-
-// BinaryStreamIterator deserializes stream of key/value pairs from io.Reader
-var _ KVStreamIterator = &BinaryStreamIterator{}
-
-type BinaryStreamIterator struct {
-	r io.Reader
-}
-
-func NewBinaryStreamIterator(r io.Reader) *BinaryStreamIterator {
-	return &BinaryStreamIterator{r: r}
-}
-
-func (b BinaryStreamIterator) Iterate(fun func(k []byte, v []byte) bool) error {
-	for {
-		k, err := rwutil.ReadBytes(b.r)
-		if errors.Is(err, io.EOF) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		v, err := rwutil.ReadBytes(b.r)
-		if err != nil {
-			return err
-		}
-		if !fun(k, v) {
-			return nil
-		}
-	}
-}
-
-// BinaryStreamFileWriter is a BinaryStreamWriter with the file as a backend
-var _ KVStreamWriter = &BinaryStreamFileWriter{}
-
-type BinaryStreamFileWriter struct {
-	*BinaryStreamWriter
-	file *os.File
-}
-
-// CreateKVStreamFile create a new BinaryStreamFileWriter
-func CreateKVStreamFile(fname string) (*BinaryStreamFileWriter, error) {
-	file, err := os.Create(fname)
-	if err != nil {
-		return nil, err
-	}
-	return &BinaryStreamFileWriter{
-		BinaryStreamWriter: NewBinaryStreamWriter(file),
-		file:               file,
-	}, nil
-}
-
-func (fw *BinaryStreamFileWriter) Close() error {
-	return fw.file.Close()
-}
-
-// BinaryStreamFileIterator is a BinaryStreamIterator with the file as a backend
-var _ KVStreamIterator = &BinaryStreamFileIterator{}
-
-type BinaryStreamFileIterator struct {
-	*BinaryStreamIterator
-	file *os.File
-}
-
-// OpenKVStreamFile opens existing file with key/value stream for reading
-func OpenKVStreamFile(fname string) (*BinaryStreamFileIterator, error) {
-	file, err := os.Open(fname)
-	if err != nil {
-		return nil, err
-	}
-	return &BinaryStreamFileIterator{
-		BinaryStreamIterator: NewBinaryStreamIterator(file),
-		file:                 file,
-	}, nil
-}
-
-func (fs *BinaryStreamFileIterator) Close() error {
-	return fs.file.Close()
-}
-
 // RandStreamIterator is a stream of random key/value pairs with the given parameters
 // Used for testing
-var _ KVStreamIterator = &PseudoRandStreamIterator{}
+var _ kv.StreamIterator = &PseudoRandStreamIterator{}
 
 type PseudoRandStreamIterator struct {
 	rnd   *rand.Rand

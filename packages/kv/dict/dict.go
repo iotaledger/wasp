@@ -145,7 +145,7 @@ func FromBytes(data []byte) (ret Dict, err error) {
 
 func (d *Dict) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	size := rr.ReadSize()
+	size := rr.ReadSize32()
 	for i := 0; i < size; i++ {
 		key := kv.Key(rr.ReadBytes())
 		value := rr.ReadBytes()
@@ -159,7 +159,7 @@ func (d *Dict) Read(r io.Reader) error {
 func (d *Dict) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	keys := d.KeysSorted()
-	ww.WriteSize(len(keys))
+	ww.WriteSize32(len(keys))
 	for _, key := range keys {
 		ww.WriteBytes([]byte(key))
 		ww.WriteBytes(d.Get(key))

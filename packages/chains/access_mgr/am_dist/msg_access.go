@@ -51,13 +51,13 @@ func (msg *msgAccess) Read(r io.Reader) error {
 	msg.senderLClock = int(rr.ReadUint32())
 	msg.receiverLClock = int(rr.ReadUint32())
 
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	msg.accessForChains = make([]isc.ChainID, size)
 	for i := range msg.accessForChains {
 		rr.ReadN(msg.accessForChains[i][:])
 	}
 
-	size = rr.ReadSize()
+	size = rr.ReadSize16()
 	msg.serverForChains = make([]isc.ChainID, size)
 	for i := range msg.serverForChains {
 		rr.ReadN(msg.serverForChains[i][:])
@@ -71,12 +71,12 @@ func (msg *msgAccess) Write(w io.Writer) error {
 	ww.WriteUint32(uint32(msg.senderLClock))
 	ww.WriteUint32(uint32(msg.receiverLClock))
 
-	ww.WriteSize(len(msg.accessForChains))
+	ww.WriteSize16(len(msg.accessForChains))
 	for i := range msg.accessForChains {
 		ww.WriteN(msg.accessForChains[i][:])
 	}
 
-	ww.WriteSize(len(msg.serverForChains))
+	ww.WriteSize16(len(msg.serverForChains))
 	for i := range msg.serverForChains {
 		ww.WriteN(msg.serverForChains[i][:])
 	}

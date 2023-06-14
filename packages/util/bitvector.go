@@ -62,7 +62,7 @@ func (b *fixBitVector) bitMask(position int) (int, byte) {
 
 func (b *fixBitVector) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	b.size = uint16(rr.ReadSize())
+	b.size = uint16(rr.ReadSize16())
 	b.data = make([]byte, (b.size+7)/8)
 	rr.ReadN(b.data)
 	return rr.Err
@@ -70,7 +70,7 @@ func (b *fixBitVector) Read(r io.Reader) error {
 
 func (b *fixBitVector) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteSize(int(b.size))
+	ww.WriteSize16(int(b.size))
 	ww.WriteN(b.data)
 	return ww.Err
 }

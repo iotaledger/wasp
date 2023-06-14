@@ -56,7 +56,7 @@ func (b *BatchProposal) Read(r io.Reader) error {
 	rr.Read(b.dssIndexProposal)
 	b.timeData = time.Unix(0, rr.ReadInt64())
 	b.validatorFeeDestination = isc.AgentIDFromReader(rr)
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	b.requestRefs = make([]*isc.RequestRef, size)
 	for i := range b.requestRefs {
 		b.requestRefs[i] = new(isc.RequestRef)
@@ -73,7 +73,7 @@ func (b *BatchProposal) Write(w io.Writer) error {
 	ww.Write(b.dssIndexProposal)
 	ww.WriteInt64(b.timeData.UnixNano())
 	ww.Write(b.validatorFeeDestination)
-	ww.WriteSize(len(b.requestRefs))
+	ww.WriteSize16(len(b.requestRefs))
 	for i := range b.requestRefs {
 		ww.WriteN(b.requestRefs[i].ID[:])
 		ww.WriteN(b.requestRefs[i].Hash[:])

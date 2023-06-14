@@ -8,6 +8,7 @@ import (
 	"encoding"
 	"errors"
 	"io"
+	"math"
 	"math/big"
 	"time"
 
@@ -114,7 +115,7 @@ func (rr *Reader) ReadKind() Kind {
 
 func (rr *Reader) ReadKindAndVerify(expectedKind Kind) {
 	kind := rr.ReadKind()
-	if rr.Err == nil && kind != expectedKind {
+	if kind != expectedKind && rr.Err == nil {
 		rr.Err = errors.New("unexpected object kind")
 	}
 }
@@ -141,21 +142,32 @@ func (rr *Reader) ReadSerialized(s deserializable) {
 	if rr.Err == nil {
 		var n int
 		n, rr.Err = s.Deserialize(data, serializer.DeSeriModeNoValidation, nil)
-		if rr.Err == nil && n != len(data) {
+		if n != len(data) && rr.Err == nil {
 			rr.Err = errors.New("incomplete deserialize")
 		}
 	}
 }
 
-func (rr *Reader) ReadSize() (ret int) {
-	return int(rr.ReadSize32())
+func (rr *Reader) ReadSize16() (ret int) {
+	return rr.ReadSizeWithLimit(math.MaxUint16)
 }
 
-func (rr *Reader) ReadSize32() (ret uint32) {
-	if rr.Err == nil {
-		ret, rr.Err = ReadSize32(rr.r)
+func (rr *Reader) ReadSize32() (ret int) {
+	// note we cannot exceed SIGNED max
+	// because if int is actually 32 bit it would turn negative
+	return rr.ReadSizeWithLimit(math.MaxInt32)
+}
+
+func (rr *Reader) ReadSizeWithLimit(limit uint32) int {
+	if rr.Err != nil {
+		return 0
 	}
-	return ret
+	var size32 uint32
+	size32, rr.Err = ReadSize32(rr.r)
+	if size32 > limit && rr.Err == nil {
+		rr.Err = errors.New("size limit overflow")
+	}
+	return int(size32)
 }
 
 func (rr *Reader) ReadString() (ret string) {
