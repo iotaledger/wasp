@@ -5,13 +5,7 @@ import {log} from './sandbox';
 import {
     IKvStore,
     Proxy,
-    ScUint16Length,
-    ScUint32Length,
     stringFromBytes,
-    uint16FromBytes,
-    uint16ToBytes,
-    uint32FromBytes,
-    uint32ToBytes,
     WasmDecoder,
     WasmEncoder
 } from './wasmtypes';
@@ -49,14 +43,12 @@ export class ScDict implements IKvStore {
     public constructor(buf: Uint8Array | null) {
         if (buf !== null && buf.length != 0) {
             const dec = new WasmDecoder(buf);
-            const size = uint32FromBytes(dec.fixedBytes(ScUint32Length));
-            for (let i: u32 = 0; i < size; i++) {
-                const keyBuf = dec.fixedBytes(ScUint16Length);
-                const keyLen = uint16FromBytes(keyBuf);
+           let size = dec.vluDecode(32) as u32;
+            for (; size > 0; size--) {
+                const keyLen = dec.vluDecode(32);
                 const key = dec.fixedBytes(keyLen as u32);
-                const valBuf = dec.fixedBytes(ScUint32Length);
-                const valLen = uint32FromBytes(valBuf);
-                const val = dec.fixedBytes(valLen);
+                const valLen = dec.vluDecode(32);
+                const val = dec.fixedBytes(valLen as u32);
                 this.set(key, val);
             }
         }
@@ -124,18 +116,18 @@ export class ScDict implements IKvStore {
 
     public toBytes(): Uint8Array {
         if (this.dict.size == 0) {
-            return new Uint8Array(ScUint32Length);
+            return new Uint8Array(1);
         }
         const keys = this.dict.keys().sort();
         const enc = new WasmEncoder();
-        enc.fixedBytes(uint32ToBytes(keys.length as u32), ScUint32Length);
+        enc.vluEncode(keys.length as u64);
         for (let i = 0; i < keys.length; i++) {
             const k = keys[i];
             const key = ScDict.fromKey(k);
             const val = this.dict.get(k);
-            enc.fixedBytes(uint16ToBytes(key.length as u16), ScUint16Length);
+            enc.vluEncode(key.length as u64);
             enc.fixedBytes(key, key.length as u32);
-            enc.fixedBytes(uint32ToBytes(val.length as u32), ScUint32Length);
+            enc.vluEncode(val.length as u64);
             enc.fixedBytes(val, val.length as u32);
         }
         return enc.buf();

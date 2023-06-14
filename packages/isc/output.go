@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
@@ -53,10 +52,6 @@ func NewAliasOutputWithID(aliasOutput *iotago.AliasOutput, outputID iotago.Outpu
 
 func AliasOutputWithIDFromBytes(data []byte) (*AliasOutputWithID, error) {
 	return rwutil.ReaderFromBytes(data, new(AliasOutputWithID))
-}
-
-func AliasOutputWithIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AliasOutputWithID, error) {
-	return rwutil.ReaderFromMu(mu, new(AliasOutputWithID))
 }
 
 func (a *AliasOutputWithID) Bytes() []byte {

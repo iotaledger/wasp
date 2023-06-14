@@ -15,7 +15,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 solotutorial = { path = "../solotutorial" }
-wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "develop" }
+wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "cleanup" }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"

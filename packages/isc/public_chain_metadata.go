@@ -1,76 +1,43 @@
 package isc
 
 import (
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
+	"io"
+
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type PublicChainMetadata struct {
 	EVMJsonRPCURL   string
 	EVMWebSocketURL string
-
-	Name        string
-	Description string
-	Website     string
+	Name            string
+	Description     string
+	Website         string
 }
 
-func readMetadataString(mu *marshalutil.MarshalUtil) (string, error) {
-	sz, err := mu.ReadUint16()
-	if err != nil {
-		return "", err
-	}
-	ret, err := mu.ReadBytes(int(sz))
-	if err != nil {
-		return "", err
-	}
-	return string(ret), nil
-}
-
-func writeMetadataString(mu *marshalutil.MarshalUtil, str string) {
-	mu.
-		WriteUint16(uint16(len(str))).
-		WriteBytes([]byte(str))
-}
-
-func PublicChainMetadataFromMarshalUtil(mu *marshalutil.MarshalUtil) (*PublicChainMetadata, error) {
-	ret := &PublicChainMetadata{}
-	var err error
-
-	if ret.EVMJsonRPCURL, err = readMetadataString(mu); err != nil {
-		return nil, err
-	}
-
-	if ret.EVMWebSocketURL, err = readMetadataString(mu); err != nil {
-		return nil, err
-	}
-
-	if ret.Name, err = readMetadataString(mu); err != nil {
-		return nil, err
-	}
-
-	if ret.Description, err = readMetadataString(mu); err != nil {
-		return nil, err
-	}
-
-	if ret.Website, err = readMetadataString(mu); err != nil {
-		return nil, err
-	}
-
-	return ret, nil
-}
-
-func PublicChainMetadataFromBytes(metadataBytes []byte) (*PublicChainMetadata, error) {
-	mu := marshalutil.New(metadataBytes)
-	return PublicChainMetadataFromMarshalUtil(mu)
+func PublicChainMetadataFromBytes(data []byte) (*PublicChainMetadata, error) {
+	return rwutil.ReaderFromBytes(data, new(PublicChainMetadata))
 }
 
 func (m *PublicChainMetadata) Bytes() []byte {
-	mu := marshalutil.New()
+	return rwutil.WriterToBytes(m)
+}
 
-	writeMetadataString(mu, m.EVMJsonRPCURL)
-	writeMetadataString(mu, m.EVMWebSocketURL)
-	writeMetadataString(mu, m.Name)
-	writeMetadataString(mu, m.Description)
-	writeMetadataString(mu, m.Website)
+func (m *PublicChainMetadata) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	m.EVMJsonRPCURL = rr.ReadString()
+	m.EVMWebSocketURL = rr.ReadString()
+	m.Name = rr.ReadString()
+	m.Description = rr.ReadString()
+	m.Website = rr.ReadString()
+	return rr.Err
+}
 
-	return mu.Bytes()
+func (m *PublicChainMetadata) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteString(m.EVMJsonRPCURL)
+	ww.WriteString(m.EVMWebSocketURL)
+	ww.WriteString(m.Name)
+	ww.WriteString(m.Description)
+	ww.WriteString(m.Website)
+	return ww.Err
 }

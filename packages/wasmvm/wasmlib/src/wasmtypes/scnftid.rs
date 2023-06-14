@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+use std::cmp::Ordering;
 use std::convert::TryInto;
 
 use crate::*;
@@ -9,7 +10,7 @@ use crate::*;
 
 pub const SC_NFT_ID_LENGTH: usize = 32;
 
-#[derive(PartialEq, Clone, Copy, Eq, Hash)]
+#[derive(PartialEq, Clone, Copy, Eq, Hash, Ord)]
 pub struct ScNftID {
     id: [u8; SC_NFT_ID_LENGTH],
 }
@@ -21,6 +22,12 @@ impl ScNftID {
 
     pub fn to_string(&self) -> String {
         nft_id_to_string(self)
+    }
+}
+
+impl PartialOrd for ScNftID {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.id.cmp(&other.id))
     }
 }
 

@@ -2,7 +2,6 @@ package isc
 
 import (
 	"github.com/iotaledger/hive.go/serializer/v2"
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -11,11 +10,6 @@ const AddressIsNil rwutil.Kind = 0x80
 
 func AddressFromBytes(data []byte) (iotago.Address, error) {
 	rr := rwutil.NewBytesReader(data)
-	return AddressFromReader(rr), rr.Err
-}
-
-func AddressFromMarshalUtil(mu *marshalutil.MarshalUtil) (iotago.Address, error) {
-	rr := rwutil.NewMuReader(mu)
 	return AddressFromReader(rr), rr.Err
 }
 

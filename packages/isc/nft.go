@@ -3,7 +3,6 @@ package isc
 import (
 	"io"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -17,10 +16,6 @@ type NFT struct {
 
 func NFTFromBytes(data []byte) (*NFT, error) {
 	return rwutil.ReaderFromBytes(data, new(NFT))
-}
-
-func NFTFromMarshalUtil(mu *marshalutil.MarshalUtil) (*NFT, error) {
-	return rwutil.ReaderFromMu(mu, new(NFT))
 }
 
 func NFTFromReader(rr *rwutil.Reader) (ret *NFT, err error) {

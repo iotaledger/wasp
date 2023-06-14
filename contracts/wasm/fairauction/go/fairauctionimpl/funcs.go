@@ -26,12 +26,7 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 	allowance := ctx.Allowance()
 	nfts := allowance.NftIDs()
 	ctx.Require(len(nfts) == 1, "single NFT allowance expected")
-
-	var auctionNFT wasmtypes.ScNftID
-	for nft := range nfts {
-		auctionNFT = nft
-		break
-	}
+	auctionNFT := *nfts[0]
 
 	minimumBid := f.Params.MinimumBid().Value()
 

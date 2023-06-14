@@ -1,13 +1,14 @@
 package util
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // A + B
@@ -19,8 +20,9 @@ type Ratio32 struct {
 	B uint32 `json:"b" swagger:"min(0),required"`
 }
 
-func (r Ratio32) String() string {
-	return fmt.Sprintf("%d:%d", r.A, r.B)
+func Ratio32FromBytes(data []byte) (ret Ratio32, err error) {
+	_, err = rwutil.ReaderFromBytes(data, &ret)
+	return ret, err
 }
 
 func Ratio32FromString(s string) (ret Ratio32, err error) {
@@ -42,19 +44,11 @@ func Ratio32FromString(s string) (ret Ratio32, err error) {
 }
 
 func (r Ratio32) Bytes() []byte {
-	var b [RatioByteSize]byte
-	binary.LittleEndian.PutUint32(b[:4], r.A)
-	binary.LittleEndian.PutUint32(b[4:], r.B)
-	return b[:]
+	return rwutil.WriterToBytes(&r)
 }
 
-func Ratio32FromBytes(bytes []byte) (ret Ratio32, err error) {
-	if len(bytes) != RatioByteSize {
-		return ret, errors.New("invalid Ratio32 size")
-	}
-	ret.A = binary.LittleEndian.Uint32(bytes[:4])
-	ret.B = binary.LittleEndian.Uint32(bytes[4:])
-	return ret, nil
+func (r Ratio32) String() string {
+	return fmt.Sprintf("%d:%d", r.A, r.B)
 }
 
 func ceil(x, dividend, divisor uint64) uint64 {
@@ -107,4 +101,21 @@ func (r Ratio32) Type() string {
 
 func (r Ratio32) HasZeroComponent() bool {
 	return r.A == 0 || r.B == 0
+}
+
+func (r *Ratio32) Read(xr io.Reader) error {
+	rr := rwutil.NewReader(xr)
+	r.A = rr.ReadUint32()
+	r.B = rr.ReadUint32()
+	if rr.Err == nil && r.HasZeroComponent() {
+		rr.Err = errors.New("ratio has zero component")
+	}
+	return rr.Err
+}
+
+func (r *Ratio32) Write(xw io.Writer) error {
+	ww := rwutil.NewWriter(xw)
+	ww.WriteUint32(r.A)
+	ww.WriteUint32(r.B)
+	return ww.Err
 }
