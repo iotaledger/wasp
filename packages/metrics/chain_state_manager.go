@@ -14,7 +14,7 @@ type IChainStateManagerMetrics interface {
 	DecBlocksFetching()
 	IncBlocksPending()
 	DecBlocksPending()
-	BlockCommitted(uint32)
+	BlockIndexCommitted(uint32)
 	IncRequestsWaiting()
 	SubRequestsWaiting(int)
 	SetRequestsWaiting(int)
@@ -43,7 +43,7 @@ func (m *emptyChainStateManagerMetric) IncBlocksFetching()                      
 func (m *emptyChainStateManagerMetric) DecBlocksFetching()                          {}
 func (m *emptyChainStateManagerMetric) IncBlocksPending()                           {}
 func (m *emptyChainStateManagerMetric) DecBlocksPending()                           {}
-func (m *emptyChainStateManagerMetric) BlockCommitted(uint32)                       {}
+func (m *emptyChainStateManagerMetric) BlockIndexCommitted(uint32)                  {}
 func (m *emptyChainStateManagerMetric) IncRequestsWaiting()                         {}
 func (m *emptyChainStateManagerMetric) SubRequestsWaiting(int)                      {}
 func (m *emptyChainStateManagerMetric) SetRequestsWaiting(int)                      {}
@@ -107,7 +107,7 @@ func (m *chainStateManagerMetric) DecBlocksPending() {
 	m.provider.smBlocksPending.With(m.metricsLabels).Dec()
 }
 
-func (m *chainStateManagerMetric) BlockCommitted(blockIndex uint32) {
+func (m *chainStateManagerMetric) BlockIndexCommitted(blockIndex uint32) {
 	m.provider.smBlocksCommitted.countValue(m.metricsLabels, float64(blockIndex))
 }
 
