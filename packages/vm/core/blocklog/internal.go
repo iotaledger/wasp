@@ -156,7 +156,7 @@ func getRequestEventsInternal(partition kv.KVStoreReader, reqID isc.RequestID) (
 	}
 }
 
-func getSmartContractEventsInternal(partition kv.KVStoreReader, contractId isc.Hname, fromBlock, toBlock uint32) [][]byte {
+func getSmartContractEventsInternal(partition kv.KVStoreReader, contractID isc.Hname, fromBlock, toBlock uint32) [][]byte {
 	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
 	filteredEvents := make([][]byte, 0)
 	events.Iterate(func(elemKey []byte, value []byte) bool {
@@ -171,8 +171,8 @@ func getSmartContractEventsInternal(partition kv.KVStoreReader, contractId isc.H
 			return true
 		}
 
-		parsedContractId, _ := isc.ContractIDFromEventBytes(value)
-		if parsedContractId != contractId {
+		parsedContractID, _ := isc.ContractIDFromEventBytes(value)
+		if parsedContractID != contractID {
 			return true
 		}
 
@@ -221,6 +221,29 @@ func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint
 		}
 	}
 	return ret, true
+}
+
+func pruneRequestLookupByBlockIndex(partition kv.KVStore, blockIndex uint32) {
+	lut := collections.NewMap(partition, prefixRequestLookupIndex)
+
+	lut.Iterate(func(lutKey []byte, lutValue []byte) bool {
+		requestKeys, err := RequestLookupKeyListFromBytes(lutValue)
+		if err != nil {
+			panic(err)
+		}
+
+		filteredRequestKeys := make(RequestLookupKeyList, 0)
+
+		for _, requestKey := range requestKeys {
+			if requestKey.BlockIndex() != blockIndex {
+				filteredRequestKeys = append(filteredRequestKeys, requestKey)
+			}
+		}
+
+		lut.SetAt(lutKey, filteredRequestKeys.Bytes())
+
+		return true
+	})
 }
 
 func pruneRequestLogRecordsByBlockIndex(partition kv.KVStore, blockIndex uint32, totalRequests uint16) {
@@ -276,7 +299,9 @@ func pruneBlock(partition kv.KVStore, blockIndex uint32) {
 	registry := collections.NewArray(partition, PrefixBlockRegistry)
 	registry.PruneAt(blockIndex)
 	pruneRequestLogRecordsByBlockIndex(partition, blockIndex, blockInfo.TotalRequests)
+	pruneRequestLookupByBlockIndex(partition, blockIndex)
 	pruneEventsByBlockIndex(partition, blockIndex, blockInfo.TotalRequests)
+
 }
 
 func eventsToDict(events [][]byte) dict.Dict {
