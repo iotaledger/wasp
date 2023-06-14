@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
@@ -15,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 type blockCacheNoWALTestSM struct { // State machine for block cache no WAL property based Rapid tests
@@ -154,6 +154,12 @@ func (bcnwtsmT *blockCacheNoWALTestSM) addBlockToCache(t *rapid.T, blockKey Bloc
 			time:     time.Now(),
 			blockKey: blockKey,
 		})
+
+		// make sure some time elapses on faster machines with larger time granularity
+		if runtime.GOOS == util.WindowsOS {
+			time.Sleep(time.Millisecond)
+		}
+
 		if len(bcnwtsmT.blocksInCache) > bcnwtsmT.blockCacheMaxSize {
 			blockKey := bcnwtsmT.blockTimes[0].blockKey
 			bcnwtsmT.blocksInCache = lo.Without(bcnwtsmT.blocksInCache, blockKey)
@@ -176,9 +182,6 @@ func (bcnwtsmT *blockCacheNoWALTestSM) getAndCheckBlock(t *rapid.T, blockKey Blo
 }
 
 func TestBlockCachePropBasedNoWAL(t *testing.T) {
-	if runtime.GOOS == util.WindowsOS {
-		t.Skip("Needs fixing on windows")
-	}
 	rapid.Check(t, func(t *rapid.T) {
 		sm := newBlockCacheNoWALTestSM(t)
 		t.Repeat(rapid.StateMachineActions(sm))
