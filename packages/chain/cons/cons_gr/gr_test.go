@@ -30,6 +30,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -120,6 +121,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 			ctx, chainID, chainStore, dkShare, &logIndex, peerIdentities[i],
 			procCache, mempools[i], stateMgrs[i],
 			networkProviders[i],
+			accounts.CommonAccount(),
 			1*time.Minute, // RecoverTimeout
 			1*time.Second, // RedeliveryPeriod
 			5*time.Second, // PrintStatusPeriod

@@ -91,6 +91,7 @@ func provide(c *dig.Container) error {
 				Component.Logger(),
 				deps.NodeConnection,
 				deps.ProcessorsConfig,
+				ParamsValidator.Address,
 				ParamsChains.BroadcastUpToNPeers,
 				ParamsChains.BroadcastInterval,
 				ParamsChains.PullMissingRequestsFromCommittee,

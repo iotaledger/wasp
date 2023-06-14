@@ -21,15 +21,21 @@ type ParametersWAL struct {
 	Path    string `default:"waspdb/wal" usage:"the path to the \"write-ahead logging\" folder"`
 }
 
+type ParametersValidator struct {
+	Address string `default:"" usage:"bech32 encoded address to collect validator fee payments"`
+}
+
 var (
-	ParamsChains = &ParametersChains{}
-	ParamsWAL    = &ParametersWAL{}
+	ParamsChains    = &ParametersChains{}
+	ParamsWAL       = &ParametersWAL{}
+	ParamsValidator = &ParametersValidator{}
 )
 
 var params = &app.ComponentParams{
 	Params: map[string]any{
-		"chains": ParamsChains,
-		"wal":    ParamsWAL,
+		"chains":    ParamsChains,
+		"wal":       ParamsWAL,
+		"validator": ParamsValidator,
 	},
 	Masked: nil,
 }
