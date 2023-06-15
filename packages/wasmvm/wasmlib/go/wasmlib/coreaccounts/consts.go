@@ -14,16 +14,15 @@ const (
 )
 
 const (
-	ParamAgentID                = "a"
-	ParamCollection             = "C"
-	ParamDestroyTokens          = "y"
-	ParamForceMinimumBaseTokens = "f"
-	ParamFoundrySN              = "s"
-	ParamGasReserve             = "g"
-	ParamNftID                  = "z"
-	ParamSupplyDeltaAbs         = "d"
-	ParamTokenID                = "N"
-	ParamTokenScheme            = "t"
+	ParamAgentID        = "a"
+	ParamCollection     = "C"
+	ParamDestroyTokens  = "y"
+	ParamFoundrySN      = "s"
+	ParamGasReserve     = "g"
+	ParamNftID          = "z"
+	ParamSupplyDeltaAbs = "d"
+	ParamTokenID        = "N"
+	ParamTokenScheme    = "t"
 )
 
 const (
@@ -47,7 +46,6 @@ const (
 	FuncFoundryCreateNew             = "foundryCreateNew"
 	FuncFoundryDestroy               = "foundryDestroy"
 	FuncFoundryModifySupply          = "foundryModifySupply"
-	FuncHarvest                      = "harvest"
 	FuncTransferAccountToChain       = "transferAccountToChain"
 	FuncTransferAllowanceTo          = "transferAllowanceTo"
 	FuncWithdraw                     = "withdraw"
@@ -72,7 +70,6 @@ const (
 	HFuncFoundryCreateNew             = wasmtypes.ScHname(0x41822f5f)
 	HFuncFoundryDestroy               = wasmtypes.ScHname(0x85e4c893)
 	HFuncFoundryModifySupply          = wasmtypes.ScHname(0x76a5868b)
-	HFuncHarvest                      = wasmtypes.ScHname(0x7b40efbd)
 	HFuncTransferAccountToChain       = wasmtypes.ScHname(0x07005c45)
 	HFuncTransferAllowanceTo          = wasmtypes.ScHname(0x23f4e3a1)
 	HFuncWithdraw                     = wasmtypes.ScHname(0x9dcc0f41)

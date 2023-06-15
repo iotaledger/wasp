@@ -28,7 +28,6 @@ var (
 	FuncFoundryCreateNew       = coreutil.Func("foundryCreateNew")
 	FuncFoundryDestroy         = coreutil.Func("foundryDestroy")
 	FuncFoundryModifySupply    = coreutil.Func("foundryModifySupply")
-	FuncHarvest                = coreutil.Func("harvest")
 	FuncTransferAccountToChain = coreutil.Func("transferAccountToChain")
 	FuncTransferAllowanceTo    = coreutil.Func("transferAllowanceTo")
 	FuncWithdraw               = coreutil.Func("withdraw")

@@ -48,6 +48,7 @@ func test2Chains(t *testing.T, w bool) {
 	userAgentID := isc.NewAgentID(userAddress)
 	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount)
 
+	chain1OwnerBaseTokens := chain1.L2BaseTokens(chain1.OriginatorAgentID)
 	chain1CommonAccountBaseTokens := chain1.L2BaseTokens(accounts.CommonAccount())
 	chain2CommonAccountBaseTokens := chain2.L2BaseTokens(accounts.CommonAccount())
 
@@ -83,7 +84,8 @@ func test2Chains(t *testing.T, w bool) {
 	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-baseTokensToSend)
 	chain1.AssertL2BaseTokens(userAgentID, baseTokensToSend-baseTokensCreditedToScOnChain1-chain1TransferAllowanceGas)
 	chain1.AssertL2BaseTokens(contractAgentID, baseTokensCreditedToScOnChain1)
-	chain1.AssertL2BaseTokens(accounts.CommonAccount(), chain1CommonAccountBaseTokens+chain1TransferAllowanceGas)
+	chain1.AssertL2BaseTokens(chain1.OriginatorAgentID, chain1OwnerBaseTokens+chain1TransferAllowanceGas)
+	chain1.AssertL2BaseTokens(accounts.CommonAccount(), chain1CommonAccountBaseTokens)
 	chain1CommonAccountBaseTokens += chain1TransferAllowanceGas
 	chain1.AssertL2TotalBaseTokens(chain1TotalBaseTokens + baseTokensToSend)
 	chain1TotalBaseTokens += baseTokensToSend

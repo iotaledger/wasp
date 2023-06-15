@@ -44,29 +44,6 @@ func TestDeposit(t *testing.T) {
 	t.Logf("========= burn log:\n%s", rec.GasBurnLog)
 }
 
-func TestHarvest(t *testing.T) {
-	env := solo.New(t)
-	ch, _ := env.NewChainExt(nil, 10_000, "chain1")
-	_ = ch.Log().Sync()
-
-	t.Logf("common base tokens BEFORE: %d", ch.L2CommonAccountBaseTokens())
-	err := ch.DepositBaseTokensToL2(100_000, nil)
-	require.NoError(t, err)
-	userAgentID := ch.OriginatorAgentID
-	t.Logf("userAgentID base tokens: %d", ch.L2BaseTokens(userAgentID))
-
-	_, err = ch.PostRequestSync(
-		solo.NewCallParams(
-			accounts.Contract.Name,
-			accounts.FuncHarvest.Name).
-			AddBaseTokens(10_000).
-			WithGasBudget(100_000),
-		nil)
-	require.NoError(t, err)
-	t.Logf("common base tokens AFTER: %d", ch.L2CommonAccountBaseTokens())
-	require.True(t, ch.L2CommonAccountBaseTokens() >= accounts.MinimumBaseTokensOnCommonAccount)
-}
-
 // allowance shouldn't allow you to bypass gas fees.
 func TestDepositCheatAllowance(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: false})
@@ -811,7 +788,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 	})
 }
 
-func TestTransferAndHarvestNativeTokens(t *testing.T) {
+func TestTransferAndCheckNativeTokens(t *testing.T) {
 	// initializes it all and prepares withdraw request, does not post it
 	v := initWithdrawTest(t, 10_000)
 	commonAssets := v.ch.L2CommonAccountAssets()
@@ -830,14 +807,6 @@ func TestTransferAndHarvestNativeTokens(t *testing.T) {
 	err = v.ch.DepositBaseTokensToL2(10_000, v.chainOwner)
 	require.NoError(t, err)
 
-	v.req = solo.NewCallParams("accounts", "harvest").
-		WithGasBudget(100_000)
-	_, err = v.ch.PostRequestSync(v.req, v.chainOwner)
-	require.NoError(t, err)
-
-	rec := v.ch.LastReceipt()
-	t.Logf("receipt from the 'harvest' tx: %s", rec)
-
 	// now we have 0 tokens on common account
 	v.ch.AssertL2NativeTokens(accounts.CommonAccount(), v.nativeTokenID, 0)
 	// 50 native tokens for chain on L2
@@ -849,7 +818,7 @@ func TestTransferAndHarvestNativeTokens(t *testing.T) {
 	require.EqualValues(t, 0, len(commonAssets.NativeTokens))
 }
 
-func TestTransferAndHarvestBaseTokens(t *testing.T) {
+func TestTransferAndCheckBaseTokens(t *testing.T) {
 	// initializes it all and prepares withdraw request, does not post it
 	v := initWithdrawTest(t, 10_000)
 	initialCommonAccountBaseTokens := v.ch.L2CommonAccountAssets().BaseTokens
@@ -862,11 +831,6 @@ func TestTransferAndHarvestBaseTokens(t *testing.T) {
 	require.EqualValues(t, commonAccBaseTokens, v.ch.L2CommonAccountAssets().BaseTokens)
 	require.EqualValues(t, 0, v.ch.L2Assets(v.chainOwnerAgentID).BaseTokens)
 
-	_, err = v.ch.PostRequestSync(
-		solo.NewCallParams("accounts", "harvest").WithFungibleTokens(isc.NewAssetsBaseTokens(1*isc.Million)),
-		v.chainOwner,
-	)
-	require.NoError(t, err)
 	remainingOnCommonAccount := accounts.MinimumBaseTokensOnCommonAccount + v.ch.LastReceipt().GasFeeCharged
 	require.EqualValues(t, remainingOnCommonAccount, v.ch.L2CommonAccountAssets().BaseTokens)
 	require.EqualValues(t, commonAccBaseTokens+1*isc.Million-remainingOnCommonAccount, v.ch.L2Assets(v.chainOwnerAgentID).BaseTokens)

@@ -17,7 +17,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -128,48 +127,6 @@ func TestWithdraw(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	balanceNewUser := user.Balance()
 	require.Equal(t, balanceOldUser+withdrawAmount, balanceNewUser)
-}
-
-func TestHarvest(t *testing.T) {
-	ctx := setupAccounts(t)
-	var transferAmount, mintAmount uint64 = 10_000, 20_000
-	var minimumBaseTokensOnCommonAccount uint64 = 3000
-
-	user := ctx.NewSoloAgent("user")
-	creatorAgentID := ctx.Creator().AgentID()
-	commonAccount := accounts.CommonAccount()
-	commonAccountBal0 := ctx.Chain.L2Assets(accounts.CommonAccount())
-	ownerBal0 := ctx.Chain.L2Assets(ctx.Chain.OriginatorAgentID)
-	foundry, err := ctx.NewSoloFoundry(mintAmount, user)
-	require.NoError(t, err)
-	err = foundry.Mint(mintAmount)
-	require.NoError(t, err)
-	tokenID := foundry.TokenID()
-
-	fTransfer0 := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user))
-	fTransfer0.Params.AgentID().SetValue(ctx.Cvt.ScAgentID(commonAccount))
-	fTransfer0.Func.AllowanceBaseTokens(transferAmount).Post()
-	require.NoError(t, ctx.Err)
-	fTransfer1 := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user))
-	fTransfer1.Params.AgentID().SetValue(ctx.Cvt.ScAgentID(commonAccount))
-	transfer := wasmlib.NewScTransfer()
-	transfer.Set(&tokenID, wasmtypes.BigIntFromString(fmt.Sprint(transferAmount)))
-	fTransfer1.Func.Allowance(transfer).Post()
-	creatorBal0 := ctx.Chain.L2Assets(creatorAgentID)
-	commonAccountBal1 := ctx.Chain.L2Assets(commonAccount)
-	// create foundry, mint token, transfer BaseTokens and transfer token each charge GasFee, so there 4*GasFee in owner account
-	ownerBal1 := ctx.Chain.L2Assets(ctx.Chain.OriginatorAgentID)
-	require.Equal(t, ownerBal0.BaseTokens+ctx.GasFee*4, ownerBal1.BaseTokens)
-	require.Equal(t, commonAccountBal0.BaseTokens+transferAmount, commonAccountBal1.BaseTokens)
-
-	f := coreaccounts.ScFuncs.Harvest(ctx.Sign(ctx.Creator()))
-	f.Func.Post()
-	require.NoError(t, ctx.Err)
-	commonAccountBal2 := ctx.Chain.L2Assets(commonAccount)
-	creatorBal1 := ctx.Chain.L2Assets(creatorAgentID)
-	require.Equal(t, minimumBaseTokensOnCommonAccount, commonAccountBal2.BaseTokens)
-	require.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+ctx.StorageDeposit, creatorBal1.BaseTokens)
-	require.Equal(t, big.NewInt(int64(transferAmount)), creatorBal1.NativeTokens[0].Amount)
 }
 
 func TestFoundryCreateNew(t *testing.T) {

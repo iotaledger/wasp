@@ -8,11 +8,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 func CommonAccount() isc.AgentID {
@@ -27,7 +25,6 @@ var Processor = Contract.Processor(nil,
 	FuncFoundryCreateNew.WithHandler(foundryCreateNew),
 	FuncFoundryDestroy.WithHandler(foundryDestroy),
 	FuncFoundryModifySupply.WithHandler(foundryModifySupply),
-	FuncHarvest.WithHandler(harvest),
 	FuncTransferAccountToChain.WithHandler(transferAccountToChain),
 	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
 	FuncWithdraw.WithHandler(withdraw),
@@ -208,38 +205,6 @@ func transferAccountToChain(ctx isc.Sandbox) dict.Dict {
 		callerContract.String(),
 		allowance.String(),
 	)
-	return nil
-}
-
-// harvest moves all the L2 balances of chain common account to chain owner's account
-// Params:
-//
-//	ParamForceMinimumBaseTokens: specify the number of BaseTokens left on the common account will be not less than MinimumBaseTokensOnCommonAccount constant
-func harvest(ctx isc.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner()
-
-	bottomBaseTokens := ctx.Params().MustGetUint64(ParamForceMinimumBaseTokens, MinimumBaseTokensOnCommonAccount)
-	if bottomBaseTokens > MinimumBaseTokensOnCommonAccount {
-		bottomBaseTokens = MinimumBaseTokensOnCommonAccount
-	}
-
-	state := ctx.State()
-	stateDecoder := kvdecoder.New(state, ctx.Log())
-	withdrawAgent, err := stateDecoder.GetAgentID(governance.StateVarPayoutAddress)
-	if err != nil {
-		withdrawAgent = CommonAccount()
-	}
-
-	toWithdraw := GetAccountFungibleTokens(state, withdrawAgent)
-	if toWithdraw.BaseTokens <= bottomBaseTokens {
-		// below minimum, nothing to withdraw
-		return nil
-	}
-	if toWithdraw.BaseTokens < bottomBaseTokens {
-		panic(ErrNotEnoughAllowance)
-	}
-	toWithdraw.BaseTokens -= bottomBaseTokens
-	MustMoveBetweenAccounts(state, CommonAccount(), ctx.Caller(), toWithdraw)
 	return nil
 }
 
