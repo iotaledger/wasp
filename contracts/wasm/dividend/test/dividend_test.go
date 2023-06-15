@@ -84,8 +84,6 @@ func TestDivide1Member(t *testing.T) {
 	dividendDivide(ctx, dividendToDivide)
 	require.NoError(t, ctx.Err)
 
-	// FIXME: WHY
-	// bal.Originator += ctx.GasFee
 	bal.Add(member1, dividendToDivide)
 	bal.VerifyBalances(t)
 }
@@ -99,7 +97,6 @@ func TestDivide2Members(t *testing.T) {
 	dividendMember(ctx, member1, 250)
 	require.NoError(t, ctx.Err)
 
-	// FIXME: Check behavior
 	bal.Originator += ctx.StorageDeposit
 	bal.VerifyBalances(t)
 
@@ -109,7 +106,6 @@ func TestDivide2Members(t *testing.T) {
 	dividendMember(ctx, member2, 750)
 	require.NoError(t, ctx.Err)
 
-	// FIXME: Check behavior
 	bal.Originator += ctx.StorageDeposit
 	bal.VerifyBalances(t)
 

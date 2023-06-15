@@ -180,7 +180,7 @@ func testPingBaseTokens1(t *testing.T, w bool) {
 	t.Logf("------ AFTER ------\nReceipt: %s\nUser funds left: %s\nCommon account: %s", receipt, userFundsAfter, commonAfter)
 
 	require.EqualValues(t, userFundsAfter.AssetsL1.BaseTokens, utxodb.FundsFromFaucetAmount-receipt.GasFeeCharged)
-	require.EqualValues(t, int(commonBefore.BaseTokens+receipt.GasFeeCharged), int(commonAfter.BaseTokens))
+	require.EqualValues(t, int(commonBefore.BaseTokens), int(commonAfter.BaseTokens))
 	require.EqualValues(t, utxodb.FundsFromFaucetAmount-receipt.GasFeeCharged, userFundsAfter.AssetsL1.BaseTokens)
 	require.Zero(t, userFundsAfter.AssetsL2.BaseTokens)
 }

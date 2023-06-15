@@ -69,7 +69,7 @@ func MustGetMinSD(state kv.KVStoreReader) uint64 {
 	d := kvdecoder.New(state)
 	minSD, err := d.GetUint64(StateVarMinSD)
 	if err != nil {
-		// FIXME there should be a default val
+		// FIXME we should use MinimumBaseTokensOnCommonAccount instead.
 		return 0
 	}
 	return minSD

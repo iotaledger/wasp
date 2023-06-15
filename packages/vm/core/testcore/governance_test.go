@@ -494,9 +494,18 @@ func TestGovernanceSetGetMinSD(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 
-	minSD := uint64(123456)
+	initRetDict, err := ch.CallView(
+		governance.Contract.Name,
+		governance.ViewGetMinSD.Name,
+	)
+	require.NoError(t, err)
+	retByte := initRetDict.Get(governance.ParamSetMinSD)
+	retMinSD, err := codec.DecodeUint64(retByte)
+	require.NoError(t, err)
+	require.Equal(t, governance.MinimumBaseTokensOnCommonAccount, retMinSD)
 
-	_, err := ch.PostRequestSync(
+	minSD := uint64(123456)
+	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
 			governance.Contract.Name,
 			governance.FuncSetMinSD.Name,
@@ -512,8 +521,8 @@ func TestGovernanceSetGetMinSD(t *testing.T) {
 		governance.ViewGetMinSD.Name,
 	)
 	require.NoError(t, err)
-	retByte := retDict.Get(governance.ParamSetMinSD)
-	retMinSD, err := codec.DecodeUint64(retByte)
+	retByte = retDict.Get(governance.ParamSetMinSD)
+	retMinSD, err = codec.DecodeUint64(retByte)
 	require.NoError(t, err)
 	require.Equal(t, minSD, retMinSD)
 }

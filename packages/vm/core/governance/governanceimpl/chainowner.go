@@ -74,7 +74,11 @@ func setMinSD(ctx isc.Sandbox) dict.Dict {
 
 func getMinSD(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
-	ret.Set(governance.ParamSetMinSD, ctx.StateR().Get(governance.StateVarMinSD))
+	minSD := ctx.StateR().Get(governance.StateVarMinSD)
+	if minSD == nil {
+		minSD = codec.EncodeUint64(governance.MinimumBaseTokensOnCommonAccount)
+	}
+	ret.Set(governance.ParamSetMinSD, minSD)
 	return ret
 }
 

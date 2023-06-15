@@ -71,7 +71,7 @@ func Test2Chains(t *testing.T) {
 		userL1 -= transferAmount
 		require.Equal(t, userL1, user.Balance())
 
-		// The actual chain1.accounts.TransferAllowanceTo() gas fee will be credited to chain1.Common
+		// The actual chain1.accounts.TransferAllowanceTo() gas fee will be credited to chain1.Originator
 		bal1.Originator += ctxAcc1.GasFee
 		// The 'user' account ends up with the remainder after both 'withdrawalAmount'
 		// and the actual gas fee have been deducted from 'transferAmount' (zero)

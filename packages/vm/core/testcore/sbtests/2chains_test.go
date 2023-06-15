@@ -86,7 +86,6 @@ func test2Chains(t *testing.T, w bool) {
 	chain1.AssertL2BaseTokens(contractAgentID, baseTokensCreditedToScOnChain1)
 	chain1.AssertL2BaseTokens(chain1.OriginatorAgentID, chain1OwnerBaseTokens+chain1TransferAllowanceGas)
 	chain1.AssertL2BaseTokens(accounts.CommonAccount(), chain1CommonAccountBaseTokens)
-	chain1CommonAccountBaseTokens += chain1TransferAllowanceGas
 	chain1.AssertL2TotalBaseTokens(chain1TotalBaseTokens + baseTokensToSend)
 	chain1TotalBaseTokens += baseTokensToSend
 
@@ -159,11 +158,11 @@ func test2Chains(t *testing.T, w bool) {
 
 	chain1.AssertL2BaseTokens(userAgentID, baseTokensToSend-baseTokensCreditedToScOnChain1-chain1TransferAllowanceGas)
 	chain1.AssertL2BaseTokens(contractAgentID, 0) // emptied the account
-	chain1.AssertL2BaseTokens(accounts.CommonAccount(), chain1CommonAccountBaseTokens+chain1TransferAccountToChainGas)
+	chain1.AssertL2BaseTokens(accounts.CommonAccount(), chain1CommonAccountBaseTokens)
 	chain1.AssertL2TotalBaseTokens(chain1TotalBaseTokens + chain1TransferAllowanceGas + chain1TransferAccountToChainGas - chain2TransferAllowanceGas - baseTokensToWithdrawFromChain1)
 
 	chain2.AssertL2BaseTokens(userAgentID, assetsBaseTokens-reqAllowance-chain2WithdrawFromChainGas)
 	chain2.AssertL2BaseTokens(contractAgentID, baseTokensToWithdrawFromChain1+storageDeposit)
-	chain2.AssertL2BaseTokens(accounts.CommonAccount(), chain2CommonAccountBaseTokens+chain2WithdrawFromChainGas+chain2TransferAllowanceGas)
+	chain2.AssertL2BaseTokens(accounts.CommonAccount(), chain2CommonAccountBaseTokens)
 	chain2.AssertL2TotalBaseTokens(chain2TotalBaseTokens + assetsBaseTokens + baseTokensCreditedToScOnChain1 + chain2TransferAllowanceGas - chain1TransferAllowanceGas - chain1TransferAccountToChainGas)
 }

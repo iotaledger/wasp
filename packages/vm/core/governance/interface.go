@@ -92,6 +92,9 @@ const (
 
 // params
 const (
+	// MinimumBaseTokensOnCommonAccount can't harvest the minimum
+	MinimumBaseTokensOnCommonAccount = uint64(3000)
+
 	// state controller
 	ParamStateControllerAddress          = coreutil.ParamStateControllerAddress
 	ParamAllowedStateControllerAddresses = "a"

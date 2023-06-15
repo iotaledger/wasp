@@ -217,8 +217,6 @@ func TestTakeAllowance(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	bal.Account += tokensToSend
-	// FIXME: why no GasFee
-	// bal.Originator += ctx.GasFee
 	bal.VerifyBalances(t)
 
 	g := testwasmlib.ScFuncs.TakeBalance(ctx)

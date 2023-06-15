@@ -36,9 +36,6 @@ var (
 )
 
 const (
-	// MinimumBaseTokensOnCommonAccount can't harvest the minimum
-	MinimumBaseTokensOnCommonAccount = uint64(3000)
-
 	ParamAccountNonce           = "n"
 	ParamAgentID                = "a"
 	ParamBalance                = "B"
