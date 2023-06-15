@@ -7,7 +7,13 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-const AddressIsNil rwutil.Kind = 0x80
+const addressIsNil rwutil.Kind = 0x80
+
+func BytesFromAddress(address iotago.Address) []byte {
+	ww := rwutil.NewBytesWriter()
+	AddressToWriter(ww, address)
+	return ww.Bytes()
+}
 
 func AddressFromBytes(data []byte) (iotago.Address, error) {
 	rr := rwutil.NewBytesReader(data)
@@ -16,7 +22,7 @@ func AddressFromBytes(data []byte) (iotago.Address, error) {
 
 func AddressFromReader(rr *rwutil.Reader) (address iotago.Address) {
 	kind := rr.ReadKind()
-	if kind == AddressIsNil {
+	if kind == addressIsNil {
 		return nil
 	}
 	if rr.Err == nil {
@@ -29,14 +35,8 @@ func AddressFromReader(rr *rwutil.Reader) (address iotago.Address) {
 
 func AddressToWriter(ww *rwutil.Writer, address iotago.Address) {
 	if address == nil {
-		ww.WriteKind(AddressIsNil)
+		ww.WriteKind(addressIsNil)
 		return
 	}
 	ww.WriteSerialized(address, math.MaxUint16, address.Size())
-}
-
-func BytesFromAddress(address iotago.Address) []byte {
-	ww := rwutil.NewBytesWriter()
-	AddressToWriter(ww, address)
-	return ww.Bytes()
 }

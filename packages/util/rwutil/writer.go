@@ -147,12 +147,16 @@ type serializable interface {
 	Serialize(serializer.DeSerializationMode, interface{}) ([]byte, error)
 }
 
+// WriteSerialized writes the serializable object to the stream.
+// If no sizes are present a 16-bit size is written to the stream.
+// The first size indicates a different limit for the size written to the stream.
+// The second size indicates the expected size and does not write it to the stream.
 func (ww *Writer) WriteSerialized(s serializable, sizes ...int) *Writer {
-	if s == nil {
-		panic("nil serializer")
-	}
 	if ww.Err != nil {
 		return ww
+	}
+	if s == nil {
+		panic("nil serializer")
 	}
 
 	var buf []byte
@@ -193,12 +197,8 @@ func (ww *Writer) WriteSize32(val int) *Writer {
 
 func (ww *Writer) WriteSizeWithLimit(val int, limit uint32) *Writer {
 	if ww.Err == nil {
-		if val < 0 {
-			ww.Err = errors.New("write size limit underflow")
-			return ww
-		}
-		if val > int(limit) {
-			ww.Err = errors.New("write size limit overflow")
+		if val < 0 || val > int(limit) {
+			ww.Err = errors.New("invalid write size limit")
 			return ww
 		}
 		ww.Err = WriteSize32(ww.w, uint32(val))

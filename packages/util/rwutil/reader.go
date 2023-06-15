@@ -135,10 +135,13 @@ type deserializable interface {
 }
 
 // ReadSerialized reads the deserializable object from the stream.
-// If no sizes are present a 16-bit size is expected in the stream.
-// The first size indicates the limit for the size in the stream.
+// If no sizes are present a 16-bit size is read from the stream.
+// The first size indicates a different limit for the size read from the stream.
 // The second size indicates the expected size and does not read it from the stream.
 func (rr *Reader) ReadSerialized(s deserializable, sizes ...int) {
+	if rr.Err != nil {
+		return
+	}
 	if s == nil {
 		panic("nil deserializer")
 	}
@@ -188,7 +191,7 @@ func (rr *Reader) ReadSizeWithLimit(limit uint32) int {
 	var size32 uint32
 	size32, rr.Err = ReadSize32(rr.r)
 	if size32 > limit && rr.Err == nil {
-		rr.Err = errors.New("size limit overflow")
+		rr.Err = errors.New("read size limit overflow")
 	}
 	return int(size32)
 }
