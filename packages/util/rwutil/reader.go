@@ -4,7 +4,6 @@
 package rwutil
 
 import (
-	"bytes"
 	"encoding"
 	"errors"
 	"io"
@@ -28,24 +27,41 @@ func NewReader(r io.Reader) *Reader {
 }
 
 func NewBytesReader(data []byte) *Reader {
-	return NewReader(bytes.NewBuffer(data))
+	buf := Buffer(data)
+	return NewReader(&buf)
+}
+
+// Bytes will return the remaining bytes in the Reader buffer.
+// It is asserted that the read stream is a Buffer, and that
+// the Reader error state is nil.
+func (rr *Reader) Bytes() []byte {
+	buf, ok := rr.r.(*Buffer)
+	if !ok {
+		panic("reader expects bytes buffer")
+	}
+	if rr.Err != nil {
+		panic(rr.Err)
+	}
+	return *buf
 }
 
 // PushBack returns a pushback writer that allows you to insert data before the stream.
 // The Reader will read this data first, and then resume reading from the stream.
 // The pushback Writer is only valid for this Reader until it resumes the stream.
 func (rr *Reader) PushBack() *Writer {
-	push := &PushBack{rr: rr, r: rr.r, buf: new(bytes.Buffer)}
+	push := &PushBack{rr: rr, r: rr.r}
 	rr.r = push
 	return &Writer{w: push}
 }
 
-func (rr *Reader) Read(reader interface{ Read(r io.Reader) error }) {
-	if reader == nil {
-		panic("nil reader")
-	}
+func (rr *Reader) Read(obj interface{ Read(r io.Reader) error }) {
+	// TODO: obj can be nil when obj.Read() can handle that.
+	// We don't want this. So find those instances and activate this code.
+	//if obj == nil {
+	//	panic("nil reader")
+	//}
 	if rr.Err == nil {
-		rr.Err = reader.Read(rr.r)
+		rr.Err = obj.Read(rr.r)
 	}
 }
 
@@ -120,13 +136,13 @@ func (rr *Reader) ReadKindAndVerify(expectedKind Kind) {
 	}
 }
 
-func (rr *Reader) ReadMarshaled(m encoding.BinaryUnmarshaler) {
-	if m == nil {
+func (rr *Reader) ReadMarshaled(obj encoding.BinaryUnmarshaler) {
+	if obj == nil {
 		panic("nil unmarshaler")
 	}
 	buf := rr.ReadBytes()
 	if rr.Err == nil {
-		rr.Err = m.UnmarshalBinary(buf)
+		rr.Err = obj.UnmarshalBinary(buf)
 	}
 }
 
@@ -138,11 +154,11 @@ type deserializable interface {
 // If no sizes are present a 16-bit size is read from the stream.
 // The first size indicates a different limit for the size read from the stream.
 // The second size indicates the expected size and does not read it from the stream.
-func (rr *Reader) ReadSerialized(s deserializable, sizes ...int) {
+func (rr *Reader) ReadSerialized(obj deserializable, sizes ...int) {
 	if rr.Err != nil {
 		return
 	}
-	if s == nil {
+	if obj == nil {
 		panic("nil deserializer")
 	}
 	var size int
@@ -167,7 +183,7 @@ func (rr *Reader) ReadSerialized(s deserializable, sizes ...int) {
 	rr.ReadN(data)
 	if rr.Err == nil {
 		var n int
-		n, rr.Err = s.Deserialize(data, serializer.DeSeriModeNoValidation, nil)
+		n, rr.Err = obj.Deserialize(data, serializer.DeSeriModeNoValidation, nil)
 		if n != len(data) && rr.Err == nil {
 			rr.Err = errors.New("unexpected deserialize size")
 		}

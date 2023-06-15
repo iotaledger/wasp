@@ -4,52 +4,69 @@
 package rwutil
 
 import (
-	"bytes"
 	"errors"
 	"io"
 )
 
+// PushBack implements a pushback wrapper for any read stream.
+// It uses an in-memory buffer that allows you to write data back to the stream.
+// It will read this data first, and then resume reading from the wrapped stream.
+// The pushback Writer is only valid for this Reader until it resumes the stream.
+// See accounts.getNFTData() and accounts.saveNFTData() for an example
+// of how Pushback and Skipper work in conjunction.
 type PushBack struct {
 	r   io.Reader
 	rr  *Reader
-	buf *bytes.Buffer
+	buf Buffer
 }
 
 var _ io.ReadWriter = new(PushBack)
 
 func (push *PushBack) Read(data []byte) (int, error) {
-	nBuf, err := push.buf.Read(data)
-	if err != nil {
-		if !errors.Is(err, io.EOF) {
-			return nBuf, err
+	if len(push.buf) == 0 {
+		// exhausted read buffer
+		// if we have an associated Reader switch it back to the wrapped stream
+		if push.rr != nil {
+			push.rr.r = push.r
 		}
-
-		// exhausted buffer, switch back to normal stream and re-read
-		push.rr.r = push.r
+		// read from wrapped stream
 		return push.r.Read(data)
 	}
 
-	// read was fulfilled from buffer?
-	if nBuf == len(data) {
-		return nBuf, nil
+	nPushed, err := push.buf.Read(data)
+	if err != nil {
+		return nPushed, err
 	}
 
-	// partial read from buffer, switch back to normal stream and read rest
-	push.rr.r = push.r
-	nStream, err := push.r.Read(data[nBuf:])
+	// read was completely fulfilled from buffer?
+	if nPushed == len(data) {
+		return nPushed, nil
+	}
 
+	// partial read from buffer
+	// if we have an associated Reader switch it back to the wrapped stream
+	if push.rr != nil {
+		push.rr.r = push.r
+	}
+
+	// attempt to read the rest from the wrapped stream
+	nStream, err := push.r.Read(data[nPushed:])
+
+	// special case, we don't return EOF here because we already read some bytes
 	if errors.Is(err, io.EOF) {
 		// exhausted stream, report partial amount from buffer
-		return nBuf, nil
+		return nPushed, nil
 	}
 
-	// report total amount read from buffer and stream
-	return nBuf + nStream, err
+	// report total amount read
+	return nPushed + nStream, err
 }
 
-func (push *PushBack) Write(data []byte) (n int, err error) {
-	if push.rr.r == push.r {
-		return 0, errors.New("invalid pushback write")
+func (push *PushBack) Write(data []byte) (int, error) {
+	// if we have an associated Reader make sure to prevent PushBack
+	// writing after switching back to the wrapped reader
+	if push.rr != nil && push.rr.r == push.r {
+		panic("invalid pushback write")
 	}
 	return push.buf.Write(data)
 }

@@ -128,7 +128,7 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID isc.AgentID, a
 	creditToAccount(state, accountKey(toAgentID), assets)
 
 	for _, nftID := range assets.NFTs {
-		nft, err := GetNFTData(state, nftID)
+		nft, err := getNFTData(state, nftID)
 		if err != nil {
 			return err
 		}

@@ -4,7 +4,6 @@
 package rwutil
 
 import (
-	"bytes"
 	"encoding"
 	"errors"
 	"io"
@@ -28,19 +27,26 @@ func NewWriter(w io.Writer) *Writer {
 }
 
 func NewBytesWriter() *Writer {
-	return NewWriter(new(bytes.Buffer))
+	// We're about to write one or more items.
+	// Pre-allocate a reasonable-sized buffer to prevent excessive copying.
+	// After that fills up, Go's append() will take care of growing.
+	buf := make(Buffer, 0, 128)
+	return NewWriter(&buf)
 }
 
+// Bytes will return the accumulated bytes in the Writer buffer.
+// It is asserted that the write stream is a Buffer, and that
+// the Writer error state is nil.
 func (ww *Writer) Bytes() []byte {
-	buf, ok := ww.w.(*bytes.Buffer)
+	buf, ok := ww.w.(*Buffer)
 	if !ok {
 		panic("writer expects bytes buffer")
 	}
 	if ww.Err != nil {
-		// writing to bytes buffer never fails
+		// WTF? writing to Buffer never fails
 		panic(ww.Err)
 	}
-	return buf.Bytes()
+	return *buf
 }
 
 func (ww *Writer) Skip() *Reader {
@@ -49,12 +55,14 @@ func (ww *Writer) Skip() *Reader {
 	return &Reader{r: skip}
 }
 
-func (ww *Writer) Write(writer interface{ Write(w io.Writer) error }) *Writer {
-	if writer == nil {
-		panic("nil writer")
-	}
+func (ww *Writer) Write(obj interface{ Write(w io.Writer) error }) *Writer {
+	// TODO: obj can be nil when obj.Write() can handle that.
+	// We don't want this. So find those instances and activate this code.
+	//if obj == nil {
+	//	panic("nil writer")
+	//}
 	if ww.Err == nil {
-		ww.Err = writer.Write(ww.w)
+		ww.Err = obj.Write(ww.w)
 	}
 	return ww
 }
@@ -92,9 +100,9 @@ func (ww *Writer) WriteDuration(val time.Duration) *Writer {
 	return ww.WriteInt64(int64(val))
 }
 
-func (ww *Writer) WriteFromBytes(bytes interface{ Bytes() []byte }) *Writer {
+func (ww *Writer) WriteFromBytes(obj interface{ Bytes() []byte }) *Writer {
 	if ww.Err == nil {
-		ww.WriteBytes(bytes.Bytes())
+		ww.WriteBytes(obj.Bytes())
 	}
 	return ww
 }
@@ -131,13 +139,13 @@ func (ww *Writer) WriteKind(msgType Kind) *Writer {
 	return ww.WriteByte(byte(msgType))
 }
 
-func (ww *Writer) WriteMarshaled(m encoding.BinaryMarshaler) *Writer {
-	if m == nil {
+func (ww *Writer) WriteMarshaled(obj encoding.BinaryMarshaler) *Writer {
+	if obj == nil {
 		panic("nil marshaler")
 	}
 	if ww.Err == nil {
 		var buf []byte
-		buf, ww.Err = m.MarshalBinary()
+		buf, ww.Err = obj.MarshalBinary()
 		ww.WriteBytes(buf)
 	}
 	return ww
@@ -151,16 +159,16 @@ type serializable interface {
 // If no sizes are present a 16-bit size is written to the stream.
 // The first size indicates a different limit for the size written to the stream.
 // The second size indicates the expected size and does not write it to the stream.
-func (ww *Writer) WriteSerialized(s serializable, sizes ...int) *Writer {
+func (ww *Writer) WriteSerialized(obj serializable, sizes ...int) *Writer {
 	if ww.Err != nil {
 		return ww
 	}
-	if s == nil {
+	if obj == nil {
 		panic("nil serializer")
 	}
 
 	var buf []byte
-	buf, ww.Err = s.Serialize(serializer.DeSeriModeNoValidation, nil)
+	buf, ww.Err = obj.Serialize(serializer.DeSeriModeNoValidation, nil)
 	switch len(sizes) {
 	case 0:
 		ww.WriteSize16(len(buf))
