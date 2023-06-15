@@ -40,7 +40,7 @@ func TestBlockWALBasic(t *testing.T) {
 	for i := range blocksInWAL {
 		block, err2 := walGood.Read(blocks[i].Hash())
 		require.NoError(t, err2)
-		require.True(t, blocks[i].Hash().Equals(block.Hash())) // Should be Equals instead of Hash().Equals()
+		CheckBlocksEqual(t, blocks[i], block)
 		_, err2 = walBad.Read(blocks[i].Hash())
 		require.Error(t, err2)
 	}
@@ -88,8 +88,7 @@ func TestBlockWALOverwrite(t *testing.T) {
 	require.True(t, wal.Contains(blocks[0].Hash()))
 	block, err = wal.Read(blocks[0].Hash())
 	require.NoError(t, err)
-	require.True(t, blocks[0].Hash().Equals(block.Hash()))
-	// require.True(t, blocks[0].Equals(block))
+	CheckBlocksEqual(t, blocks[0], block)
 }
 
 // Check if after restart wal is functioning correctly
@@ -114,7 +113,7 @@ func TestBlockWALRestart(t *testing.T) {
 		require.True(t, wal.Contains(blocks[i].Hash()))
 		block, err := wal.Read(blocks[i].Hash())
 		require.NoError(t, err)
-		require.True(t, blocks[i].Hash().Equals(block.Hash())) // Should be Equals instead of Hash().Equals()
+		CheckBlocksEqual(t, blocks[i], block)
 	}
 }
 

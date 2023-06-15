@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chains/access_mgr"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -51,8 +52,17 @@ type Chains struct {
 	trustedNetworkManager        peering.TrustedNetworkManager
 	trustedNetworkListenerCancel context.CancelFunc
 	chainStateStoreProvider      database.ChainStateKVStoreProvider
-	walEnabled                   bool
-	walFolderPath                string
+
+	walEnabled                          bool
+	walFolderPath                       string
+	smBlockCacheMaxSize                 int
+	smBlockCacheBlocksInCacheDuration   time.Duration
+	smBlockCacheBlockCleaningPeriod     time.Duration
+	smStateManagerGetBlockRetry         time.Duration
+	smStateManagerRequestCleaningPeriod time.Duration
+	smStateManagerTimerTickPeriod       time.Duration
+	smPruningMinStatesToKeep            int
+	smPruningMaxStatesToDelete          int
 
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
@@ -90,6 +100,14 @@ func New(
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
 	walEnabled bool,
 	walFolderPath string,
+	smBlockCacheMaxSize int,
+	smBlockCacheBlocksInCacheDuration time.Duration,
+	smBlockCacheBlockCleaningPeriod time.Duration,
+	smStateManagerGetBlockRetry time.Duration,
+	smStateManagerRequestCleaningPeriod time.Duration,
+	smStateManagerTimerTickPeriod time.Duration,
+	smPruningMinStatesToKeep int,
+	smPruningMaxStatesToDelete int,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
@@ -99,29 +117,37 @@ func New(
 	chainMetricsProvider *metrics.ChainMetricsProvider,
 ) *Chains {
 	ret := &Chains{
-		log:                              log,
-		mutex:                            &sync.RWMutex{},
-		allChains:                        shrinkingmap.New[isc.ChainID, *activeChain](),
-		nodeConnection:                   nodeConnection,
-		processorConfig:                  processorConfig,
-		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
-		offledgerBroadcastInterval:       offledgerBroadcastInterval,
-		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
-		deriveAliasOutputByQuorum:        deriveAliasOutputByQuorum,
-		pipeliningLimit:                  pipeliningLimit,
-		consensusDelay:                   consensusDelay,
-		networkProvider:                  networkProvider,
-		trustedNetworkManager:            trustedNetworkManager,
-		chainStateStoreProvider:          chainStateStoreProvider,
-		walEnabled:                       walEnabled,
-		walFolderPath:                    walFolderPath,
-		chainRecordRegistryProvider:      chainRecordRegistryProvider,
-		dkShareRegistryProvider:          dkShareRegistryProvider,
-		nodeIdentityProvider:             nodeIdentityProvider,
-		chainListener:                    nil, // See bellow.
-		consensusStateRegistry:           consensusStateRegistry,
-		shutdownCoordinator:              shutdownCoordinator,
-		chainMetricsProvider:             chainMetricsProvider,
+		log:                                 log,
+		mutex:                               &sync.RWMutex{},
+		allChains:                           shrinkingmap.New[isc.ChainID, *activeChain](),
+		nodeConnection:                      nodeConnection,
+		processorConfig:                     processorConfig,
+		offledgerBroadcastUpToNPeers:        offledgerBroadcastUpToNPeers,
+		offledgerBroadcastInterval:          offledgerBroadcastInterval,
+		pullMissingRequestsFromCommittee:    pullMissingRequestsFromCommittee,
+		deriveAliasOutputByQuorum:           deriveAliasOutputByQuorum,
+		pipeliningLimit:                     pipeliningLimit,
+		consensusDelay:                      consensusDelay,
+		networkProvider:                     networkProvider,
+		trustedNetworkManager:               trustedNetworkManager,
+		chainStateStoreProvider:             chainStateStoreProvider,
+		walEnabled:                          walEnabled,
+		walFolderPath:                       walFolderPath,
+		smBlockCacheMaxSize:                 smBlockCacheMaxSize,
+		smBlockCacheBlocksInCacheDuration:   smBlockCacheBlocksInCacheDuration,
+		smBlockCacheBlockCleaningPeriod:     smBlockCacheBlockCleaningPeriod,
+		smStateManagerGetBlockRetry:         smStateManagerGetBlockRetry,
+		smStateManagerRequestCleaningPeriod: smStateManagerRequestCleaningPeriod,
+		smStateManagerTimerTickPeriod:       smStateManagerTimerTickPeriod,
+		smPruningMinStatesToKeep:            smPruningMinStatesToKeep,
+		smPruningMaxStatesToDelete:          smPruningMaxStatesToDelete,
+		chainRecordRegistryProvider:         chainRecordRegistryProvider,
+		dkShareRegistryProvider:             dkShareRegistryProvider,
+		nodeIdentityProvider:                nodeIdentityProvider,
+		chainListener:                       nil, // See bellow.
+		consensusStateRegistry:              consensusStateRegistry,
+		shutdownCoordinator:                 shutdownCoordinator,
+		chainMetricsProvider:                chainMetricsProvider,
 	}
 	ret.chainListener = NewChainsListener(chainListener, ret.chainAccessUpdatedCB)
 	return ret
@@ -251,6 +277,16 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		chainWAL = sm_gpa_utils.NewEmptyBlockWAL()
 	}
 
+	stateManagerParameters := sm_gpa.NewStateManagerParameters()
+	stateManagerParameters.BlockCacheMaxSize = c.smBlockCacheMaxSize
+	stateManagerParameters.BlockCacheBlocksInCacheDuration = c.smBlockCacheBlocksInCacheDuration
+	stateManagerParameters.BlockCacheBlockCleaningPeriod = c.smBlockCacheBlockCleaningPeriod
+	stateManagerParameters.StateManagerGetBlockRetry = c.smStateManagerGetBlockRetry
+	stateManagerParameters.StateManagerRequestCleaningPeriod = c.smStateManagerRequestCleaningPeriod
+	stateManagerParameters.StateManagerTimerTickPeriod = c.smStateManagerTimerTickPeriod
+	stateManagerParameters.PruningMinStatesToKeep = c.smPruningMinStatesToKeep
+	stateManagerParameters.PruningMaxStatesToDelete = c.smPruningMaxStatesToDelete
+
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
 	newChain, err := chain.New(
 		chainCtx,
@@ -273,6 +309,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.deriveAliasOutputByQuorum,
 		c.pipeliningLimit,
 		c.consensusDelay,
+		stateManagerParameters,
 	)
 	if err != nil {
 		chainCancel()

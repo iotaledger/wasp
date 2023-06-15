@@ -57,3 +57,7 @@ func (sa *StateAccess) CandidateNodes() []*AccessNodeInfo {
 func (sa *StateAccess) ChainOwnerID() isc.AgentID {
 	return mustGetChainOwnerID(sa.state)
 }
+
+func (sa *StateAccess) GetBlockKeepAmount() int32 {
+	return GetBlockKeepAmount(sa.state)
+}
