@@ -1,9 +1,11 @@
 package blocklog
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -70,4 +72,68 @@ func TestPruneRequestIndexLookupTable(t *testing.T) {
 
 	validatePrunedRequestIndexLookupBlock(t, d, requestIDDigest0, blockToPrune)
 	validatePrunedRequestIndexLookupBlock(t, d, requestIDDigest1, blockToPrune)
+}
+
+func eventTopic(block uint32, requestIndex uint16, eventIndex uint16) string {
+	topic := fmt.Sprintf("fakeEvent:%d.%d.%d", block, requestIndex, eventIndex)
+	return topic
+}
+
+func createEventLookupKeys(eventMap *collections.Map, contractID isc.Hname, maxBlocks uint32, maxRequests uint16, maxEvents uint16) {
+	for blockIndex := uint32(0); blockIndex < maxBlocks; blockIndex++ {
+		for reqIndex := uint16(0); reqIndex < maxRequests; reqIndex++ {
+			for eventIndex := uint16(0); eventIndex < maxEvents; eventIndex++ {
+				key := NewEventLookupKey(blockIndex, reqIndex, eventIndex).Bytes()
+				topic := eventTopic(blockIndex, reqIndex, eventIndex)
+
+				event := isc.Event{
+					Topic:      topic,
+					Payload:    nil,
+					Timestamp:  uint64(time.Now().UnixNano()),
+					ContractID: contractID,
+				}
+
+				eventMap.SetAt(key, event.Bytes())
+			}
+		}
+	}
+}
+
+func validateEvents(t *testing.T, eventsInBytes [][]byte, maxRequests uint16, maxEvents uint16, blockFrom uint32, blockTo uint32) {
+	require.Len(t, eventsInBytes, int(maxRequests*maxEvents)*int(blockTo-blockFrom+1))
+
+	eventTopics := make([]string, 0)
+	for _, eventBytes := range eventsInBytes {
+		event, err := isc.NewEvent(eventBytes)
+		require.NoError(t, err)
+		eventTopics = append(eventTopics, event.Topic)
+	}
+
+	for blockIndex := blockFrom; blockIndex <= blockTo; blockIndex++ {
+		for reqIndex := uint16(0); reqIndex < maxRequests; reqIndex++ {
+			for eventIndex := uint16(0); eventIndex < maxEvents; eventIndex++ {
+				topic := eventTopic(blockIndex, reqIndex, eventIndex)
+				require.True(t, lo.Contains(eventTopics, topic))
+			}
+		}
+	}
+}
+
+func TestGetEventsInternal(t *testing.T) {
+	const maxBlocks = 20
+	const maxRequests = 5
+	const maxEventsPerRequest = 10
+
+	const blockFrom = 5
+	const blockTo = blockFrom + 5
+
+	contractID := isc.Hn("testytest")
+
+	d := dict.Dict{}
+
+	eventMap := collections.NewMap(d, prefixRequestEvents)
+	createEventLookupKeys(eventMap, contractID, maxBlocks, maxRequests, maxEventsPerRequest)
+
+	events := getSmartContractEventsInternal(d, contractID, blockFrom, blockTo)
+	validateEvents(t, events, maxRequests, maxEventsPerRequest, blockFrom, blockTo)
 }

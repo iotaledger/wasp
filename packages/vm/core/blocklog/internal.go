@@ -8,6 +8,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
@@ -157,29 +158,21 @@ func getRequestEventsInternal(partition kv.KVStoreReader, reqID isc.RequestID) (
 }
 
 func getSmartContractEventsInternal(partition kv.KVStoreReader, contractID isc.Hname, fromBlock, toBlock uint32) [][]byte {
-	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
 	filteredEvents := make([][]byte, 0)
-	events.Iterate(func(elemKey []byte, value []byte) bool {
-		eventKey, _ := EventLookupKeyFromBytes(elemKey)
-		blockIndex := eventKey.BlockIndex()
 
-		if blockIndex < fromBlock {
+	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
+		eventBlockKey := collections.MapElemKey(prefixRequestEvents, codec.EncodeUint32(blockNumber))
+
+		partition.Iterate(kv.Key(eventBlockKey), func(_ kv.Key, value []byte) bool {
+			parsedContractID, _ := isc.ContractIDFromEventBytes(value)
+			if parsedContractID != contractID {
+				return true
+			}
+
+			filteredEvents = append(filteredEvents, value)
 			return true
-		}
-
-		if blockIndex > toBlock {
-			return true
-		}
-
-		parsedContractID, _ := isc.ContractIDFromEventBytes(value)
-		if parsedContractID != contractID {
-			return true
-		}
-
-		filteredEvents = append(filteredEvents, value)
-
-		return true
-	})
+		})
+	}
 
 	return filteredEvents
 }
