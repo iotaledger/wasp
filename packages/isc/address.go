@@ -1,7 +1,8 @@
 package isc
 
 import (
-	"github.com/iotaledger/hive.go/serializer/v2"
+	"math"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -13,22 +14,17 @@ func AddressFromBytes(data []byte) (iotago.Address, error) {
 	return AddressFromReader(rr), rr.Err
 }
 
-func AddressFromReader(rr *rwutil.Reader) (ret iotago.Address) {
+func AddressFromReader(rr *rwutil.Reader) (address iotago.Address) {
 	kind := rr.ReadKind()
 	if kind == AddressIsNil {
 		return nil
 	}
 	if rr.Err == nil {
-		ret, rr.Err = iotago.AddressSelector(uint32(kind))
+		address, rr.Err = iotago.AddressSelector(uint32(kind))
 	}
 	rr.PushBack().WriteKind(kind)
-	data := make([]byte, ret.Size())
-	rr.ReadN(data)
-	if rr.Err != nil {
-		return ret
-	}
-	_, rr.Err = ret.Deserialize(data, serializer.DeSeriModeNoValidation, nil)
-	return ret
+	rr.ReadSerialized(address, math.MaxUint16, address.Size())
+	return address
 }
 
 func AddressToWriter(ww *rwutil.Writer, address iotago.Address) {
@@ -36,10 +32,7 @@ func AddressToWriter(ww *rwutil.Writer, address iotago.Address) {
 		ww.WriteKind(AddressIsNil)
 		return
 	}
-	if ww.Err == nil {
-		buf, _ := address.Serialize(serializer.DeSeriModeNoValidation, nil)
-		ww.WriteN(buf)
-	}
+	ww.WriteSerialized(address, math.MaxUint16, address.Size())
 }
 
 func BytesFromAddress(address iotago.Address) []byte {

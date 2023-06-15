@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -93,8 +94,8 @@ func (a *AliasOutputWithID) Equals(other *AliasOutputWithID) bool {
 	if a.outputID != other.outputID {
 		return false
 	}
-	out1 := rwutil.NewBytesWriter().WriteSerialized(a.aliasOutput).Bytes()
-	out2 := rwutil.NewBytesWriter().WriteSerialized(other.aliasOutput).Bytes()
+	out1 := rwutil.NewBytesWriter().WriteSerialized(a.aliasOutput, math.MaxInt32).Bytes()
+	out2 := rwutil.NewBytesWriter().WriteSerialized(other.aliasOutput, math.MaxInt32).Bytes()
 	return bytes.Equal(out1, out2)
 }
 
@@ -113,14 +114,14 @@ func (a *AliasOutputWithID) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	rr.ReadN(a.outputID[:])
 	a.aliasOutput = new(iotago.AliasOutput)
-	rr.ReadSerialized(a.aliasOutput)
+	rr.ReadSerialized(a.aliasOutput, math.MaxInt32)
 	return rr.Err
 }
 
 func (a *AliasOutputWithID) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteN(a.outputID[:])
-	ww.WriteSerialized(a.aliasOutput)
+	ww.WriteSerialized(a.aliasOutput, math.MaxInt32)
 	return ww.Err
 }
 

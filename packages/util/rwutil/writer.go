@@ -147,15 +147,37 @@ type serializable interface {
 	Serialize(serializer.DeSerializationMode, interface{}) ([]byte, error)
 }
 
-func (ww *Writer) WriteSerialized(s serializable) *Writer {
+func (ww *Writer) WriteSerialized(s serializable, sizes ...int) *Writer {
 	if s == nil {
-		panic("nil deserializer")
+		panic("nil serializer")
 	}
-	if ww.Err == nil {
-		var buf []byte
-		buf, ww.Err = s.Serialize(serializer.DeSeriModeNoValidation, nil)
-		ww.WriteBytes(buf)
+	if ww.Err != nil {
+		return ww
 	}
+
+	var buf []byte
+	buf, ww.Err = s.Serialize(serializer.DeSeriModeNoValidation, nil)
+	switch len(sizes) {
+	case 0:
+		ww.WriteSize16(len(buf))
+	case 1:
+		limit := sizes[0]
+		if limit < 0 || limit > math.MaxInt32 {
+			panic("invalid serialize limit")
+		}
+		ww.WriteSizeWithLimit(len(buf), uint32(limit))
+	case 2:
+		size := sizes[1]
+		if size < 0 || size > math.MaxInt32 {
+			panic("invalid serialize size")
+		}
+		if size != len(buf) && ww.Err == nil {
+			ww.Err = errors.New("unexpected serialize size")
+		}
+	default:
+		panic("too many serialize params")
+	}
+	ww.WriteN(buf)
 	return ww
 }
 
