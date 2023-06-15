@@ -79,7 +79,7 @@ func deleteNFTData(state kv.KVStore, id iotago.NFTID) {
 	allNFTs.DelAt(id[:])
 }
 
-func GetNFTData(state kv.KVStoreReader, id iotago.NFTID) (*isc.NFT, error) {
+func getNFTData(state kv.KVStoreReader, id iotago.NFTID) (*isc.NFT, error) {
 	allNFTs := nftDataMapR(state)
 	nftData := allNFTs.GetAt(id[:])
 	if len(nftData) == 0 {
@@ -93,7 +93,7 @@ func GetNFTData(state kv.KVStoreReader, id iotago.NFTID) (*isc.NFT, error) {
 }
 
 func MustGetNFTData(state kv.KVStoreReader, id iotago.NFTID) *isc.NFT {
-	nft, err := GetNFTData(state, id)
+	nft, err := getNFTData(state, id)
 	if err != nil {
 		panic(err)
 	}
@@ -128,7 +128,7 @@ func creditNFTToAccount(state kv.KVStore, agentID isc.AgentID, nft *isc.NFT) {
 // DebitNFTFromAccount removes an NFT from an account.
 // If the account does not own the nft, it panics.
 func DebitNFTFromAccount(state kv.KVStore, agentID isc.AgentID, id iotago.NFTID) {
-	nft, err := GetNFTData(state, id)
+	nft, err := getNFTData(state, id)
 	if err != nil {
 		panic(err)
 	}

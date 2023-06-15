@@ -4,7 +4,6 @@
 package testpeers_test
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"testing"
@@ -43,8 +42,9 @@ func testPregenerateDKS(t *testing.T, n, f uint16) {
 	require.GreaterOrEqual(t, threshold, (n*2)/3+1)
 	peeringURLs, identities := testpeers.SetupKeys(n)
 	dksAddr, dksRegistries := testpeers.SetupDkg(t, threshold, peeringURLs, identities, tcrypto.DefaultBLSSuite(), log.Named("dkg"))
-	w := new(bytes.Buffer)
-	_ = rwutil.WriteUint16(w, uint16(len(dksRegistries)))
+	ww := rwutil.NewBytesWriter()
+	ww.WriteSize16(len(dksRegistries))
+	require.NoError(t, ww.Err)
 	for i := range dksRegistries {
 		var dki tcrypto.DKShare
 		var dkb []byte
@@ -58,8 +58,9 @@ func testPregenerateDKS(t *testing.T, n, f uint16) {
 		// NodePubKeys will be set in the tests again, so we remove them here to save space.
 		dki.AssignNodePubKeys(make([]*cryptolib.PublicKey, 0))
 		dkb = dki.Bytes()
-		_ = rwutil.WriteBytes(w, dkb)
+		ww.WriteBytes(dkb)
+		require.NoError(t, ww.Err)
 	}
-	err = os.WriteFile(fmt.Sprintf("testkeys_pregenerated-%v-%v.bin", n, threshold), w.Bytes(), 0o644)
+	err = os.WriteFile(fmt.Sprintf("testkeys_pregenerated-%v-%v.bin", n, threshold), ww.Bytes(), 0o644)
 	require.Nil(t, err)
 }
