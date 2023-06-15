@@ -90,7 +90,6 @@ func Init(
 	shutdownHandler *shutdown.ShutdownHandler,
 	chainMetricsProvider *metrics.ChainMetricsProvider,
 	authConfig authentication.AuthConfiguration,
-	nodeOwnerAddresses []string,
 	requestCacheTTL time.Duration,
 	websocketService *websocket.Service,
 	pub *publisher.Publisher,
@@ -107,7 +106,7 @@ func Init(
 	metricsService := services.NewMetricsService(chainsProvider, chainMetricsProvider)
 	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
 	evmService := services.NewEVMService(chainService, networkProvider, pub, chainMetricsProvider, logger.Named("EVMService"))
-	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeOwnerAddresses, nodeIdentityProvider, shutdownHandler, trustedNetworkManager)
+	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeIdentityProvider, chainsProvider, shutdownHandler, trustedNetworkManager)
 	dkgService := services.NewDKGService(dkShareRegistryProvider, dkgNodeProvider, trustedNetworkManager)
 	userService := services.NewUserService(userManager)
 	// --

@@ -3,6 +3,8 @@
 
 package templates
 
+import "github.com/iotaledger/wasp/packages/cryptolib"
+
 type ModifyNodesConfigFn = func(nodeIndex int, configParams WaspConfigParams) WaspConfigParams
 
 type WaspConfigParams struct {
@@ -12,7 +14,8 @@ type WaspConfigParams struct {
 	ProfilingPort                int
 	MetricsPort                  int
 	OffledgerBroadcastUpToNPeers int
-	OwnerAddress                 string
+	ValidatorKeyPair             *cryptolib.KeyPair
+	ValidatorAddress             string // bech32 encoded address of ValidatorKeyPair
 }
 
 var WaspConfig = `
@@ -26,7 +29,7 @@ var WaspConfig = `
         "filePath": "shutdown.log"
       }
     }
-  },
+  }, 
   "logger": {
     "level": "debug",
     "disableCaller": true,
@@ -112,9 +115,11 @@ var WaspConfig = `
     "processMetrics": true,
     "promhttpMetrics": true
   },
+  "validator": {
+    "address": "{{.ValidatorAddress}}"
+  },
   "webapi": {
     "enabled": true,
-    "nodeOwnerAddresses": ["{{.OwnerAddress}}"],
     "bindAddress": "0.0.0.0:{{.APIPort}}",
     "debugRequestLoggerEnabled": false,
     "auth": {

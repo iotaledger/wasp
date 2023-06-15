@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
@@ -90,9 +91,13 @@ func configPath(dataPath string) string {
 	return path.Join(dataPath, "cluster.json")
 }
 
-func (c *ClusterConfig) SetOwnerAddress(address string) {
+func (c *ClusterConfig) setValidatorAddressIfNotSet(address string) {
 	for i := range c.Wasp {
-		c.Wasp[i].OwnerAddress = address
+		if c.Wasp[i].ValidatorKeyPair == nil {
+			kp := cryptolib.NewKeyPair()
+			c.Wasp[i].ValidatorKeyPair = kp
+			c.Wasp[i].ValidatorAddress = kp.Address().Bech32("atoi") // privtangle bech32
+		}
 	}
 }
 
@@ -129,6 +134,14 @@ func (c *ClusterConfig) APIHost(nodeIndex int) string {
 
 func (c *ClusterConfig) APIPort(nodeIndex int) int {
 	return c.Wasp[nodeIndex].APIPort
+}
+
+func (c *ClusterConfig) ValidatorAddress(nodeIndex int) string {
+	return c.Wasp[nodeIndex].ValidatorAddress
+}
+
+func (c *ClusterConfig) ValidatorKeyPair(nodeIndex int) *cryptolib.KeyPair {
+	return c.Wasp[nodeIndex].ValidatorKeyPair
 }
 
 func (c *ClusterConfig) PeeringHosts(nodeIndexes ...[]int) []string {

@@ -22,7 +22,7 @@ type ParametersWAL struct {
 }
 
 type ParametersValidator struct {
-	Address string `default:"" usage:"bech32 encoded address to collect validator fee payments"`
+	Address string `default:"" usage:"bech32 encoded address to identify the node (as access node on gov contract and to collect validator fee payments)"`
 }
 
 var (

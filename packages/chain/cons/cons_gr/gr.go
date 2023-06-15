@@ -133,7 +133,7 @@ func New(
 	mempool Mempool,
 	stateMgr StateMgr,
 	net peering.NetworkProvider,
-	validatorFeeAddr isc.AgentID,
+	validatorAgentID isc.AgentID,
 	recoveryTimeout time.Duration,
 	redeliveryPeriod time.Duration,
 	printStatusPeriod time.Duration,
@@ -180,7 +180,7 @@ func New(
 		procCache,
 		netPeeringID[:],
 		gpa.NodeIDFromPublicKey,
-		validatorFeeAddr,
+		validatorAgentID,
 		log,
 	).AsGPA()
 	cgr.consInst = gpa.NewAckHandler(me, constInstRaw, redeliveryPeriod)

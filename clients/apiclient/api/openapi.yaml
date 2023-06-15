@@ -1741,22 +1741,15 @@ paths:
       tags:
       - node
   /v1/node/owner/certificate:
-    post:
-      operationId: setNodeOwner
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NodeOwnerCertificateRequest'
-        description: The node owner certificate
-        required: true
+    get:
+      operationId: ownerCertificate
       responses:
         "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NodeOwnerCertificateResponse'
-          description: Node owner was successfully changed
+          description: Node Certificate
         "401":
           content:
             application/json:
@@ -1768,7 +1761,6 @@ paths:
       summary: Sets the node owner
       tags:
       - node
-      x-codegen-request-body-name: ""
   /v1/node/peers:
     get:
       operationId: getAllPeers
@@ -3522,9 +3514,9 @@ components:
           b: 1
       properties:
         evmGasRatio:
-          $ref: '#/components/schemas/Ratio32_'
-        gasPerToken:
           $ref: '#/components/schemas/Ratio32'
+        gasPerToken:
+          $ref: '#/components/schemas/Ratio32_'
         validatorFeeShare:
           description: The validator fee share.
           format: int32
@@ -4371,29 +4363,6 @@ components:
       type: object
       xml:
         name: NodeMessageMetrics
-    NodeOwnerCertificateRequest:
-      example:
-        ownerAddress: ownerAddress
-        publicKey: publicKey
-      properties:
-        ownerAddress:
-          description: Node owner address. (Bech32)
-          format: string
-          type: string
-          xml:
-            name: OwnerAddress
-        publicKey:
-          description: The public key of the node (Hex)
-          format: string
-          type: string
-          xml:
-            name: PublicKey
-      required:
-      - ownerAddress
-      - publicKey
-      type: object
-      xml:
-        name: NodeOwnerCertificateRequest
     NodeOwnerCertificateResponse:
       example:
         certificate: certificate
@@ -4924,7 +4893,7 @@ components:
     Ratio32:
       example:
         a: 1
-        b: 100
+        b: 1
       properties:
         a:
           example: 1
@@ -4934,7 +4903,7 @@ components:
           xml:
             name: A
         b:
-          example: 100
+          example: 1
           format: int32
           minimum: 0
           type: integer
@@ -4949,7 +4918,7 @@ components:
     Ratio32_:
       example:
         a: 1
-        b: 1
+        b: 100
       properties:
         a:
           example: 1
@@ -4959,7 +4928,7 @@ components:
           xml:
             name: A
         b:
-          example: 1
+          example: 100
           format: int32
           minimum: 0
           type: integer

@@ -162,7 +162,7 @@ type consImpl struct {
 	term             *termCondition // To detect, when this instance can be terminated.
 	msgWrapper       *gpa.MsgWrapper
 	output           *Output
-	validatorFeeAddr isc.AgentID
+	validatorAgentID isc.AgentID
 	log              *logger.Logger
 }
 
@@ -185,7 +185,7 @@ func New(
 	processorCache *processors.Cache,
 	instID []byte,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
-	validatorFeeAddr isc.AgentID,
+	validatorAgentID isc.AgentID,
 	log *logger.Logger,
 ) Cons {
 	edSuite := tcrypto.DefaultEd25519Suite()
@@ -231,7 +231,7 @@ func New(
 		acs:              acs.New(nodeIDs, me, f, acsCCInstFunc, acsLog),
 		output:           &Output{Status: Running},
 		log:              log,
-		validatorFeeAddr: validatorFeeAddr,
+		validatorAgentID: validatorAgentID,
 	}
 	c.asGPA = gpa.NewOwnHandler(me, c)
 	c.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, c.msgWrapperFunc)
@@ -479,7 +479,7 @@ func (c *consImpl) uponACSInputsReceived(baseAliasOutput *isc.AliasOutputWithID,
 		baseAliasOutput,
 		util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
 		timeData,
-		c.validatorFeeAddr,
+		c.validatorAgentID,
 		requestRefs,
 	)
 	subACS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeACS, 0, batchProposal.Bytes())

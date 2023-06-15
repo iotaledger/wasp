@@ -32,7 +32,7 @@ var errInvalidCertificate = coreerrors.Register("invalid certificate").Create()
 //	) => ()
 func addCandidateNode(ctx isc.Sandbox) dict.Dict {
 	ani := governance.AccessNodeInfoFromAddCandidateNodeParams(ctx)
-	if !ani.ValidateCertificate(ctx) {
+	if !ani.ValidateCertificate() {
 		panic(errInvalidCertificate)
 	}
 	pubKeyStr := base64.StdEncoding.EncodeToString(ani.NodePubKey)
@@ -62,7 +62,7 @@ func addCandidateNode(ctx isc.Sandbox) dict.Dict {
 // must be initiated by the chain owner explicitly.
 func revokeAccessNode(ctx isc.Sandbox) dict.Dict {
 	ani := governance.AccessNodeInfoFromRevokeAccessNodeParams(ctx)
-	if !ani.ValidateCertificate(ctx) {
+	if !ani.ValidateCertificate() {
 		panic(errInvalidCertificate)
 	}
 

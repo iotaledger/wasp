@@ -1,12 +1,10 @@
 package services
 
 import (
-	"bytes"
 	"errors"
 
 	"github.com/iotaledger/hive.go/app/shutdown"
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -16,17 +14,23 @@ import (
 
 type NodeService struct {
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
-	nodeOwnerAddresses          []string
 	nodeIdentityProvider        registry.NodeIdentityProvider
+	chainsProvider              chains.Provider
 	shutdownHandler             *shutdown.ShutdownHandler
 	trustedNetworkManager       peering.TrustedNetworkManager
 }
 
-func NewNodeService(chainRecordRegistryProvider registry.ChainRecordRegistryProvider, nodeOwnerAddresses []string, nodeIdentityProvider registry.NodeIdentityProvider, shutdownHandler *shutdown.ShutdownHandler, trustedNetworkManager peering.TrustedNetworkManager) interfaces.NodeService {
+func NewNodeService(
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
+	nodeIdentityProvider registry.NodeIdentityProvider,
+	chainsProvider chains.Provider,
+	shutdownHandler *shutdown.ShutdownHandler,
+	trustedNetworkManager peering.TrustedNetworkManager,
+) interfaces.NodeService {
 	return &NodeService{
 		chainRecordRegistryProvider: chainRecordRegistryProvider,
-		nodeOwnerAddresses:          nodeOwnerAddresses,
 		nodeIdentityProvider:        nodeIdentityProvider,
+		chainsProvider:              chainsProvider,
 		shutdownHandler:             shutdownHandler,
 		trustedNetworkManager:       trustedNetworkManager,
 	}
@@ -62,32 +66,9 @@ func (n *NodeService) DeleteAccessNode(chainID isc.ChainID, peerPubKeyOrName str
 	return nil
 }
 
-func (n *NodeService) SetNodeOwnerCertificate(publicKey *cryptolib.PublicKey, ownerAddress iotago.Address) ([]byte, error) {
+func (n *NodeService) NodeOwnerCertificate() []byte {
 	nodeIdentity := n.nodeIdentityProvider.NodeIdentity()
-
-	if !bytes.Equal(nodeIdentity.GetPublicKey().AsBytes(), publicKey.AsBytes()) {
-		return nil, errors.New("wrong public key")
-	}
-
-	ownerAuthorized := false
-	for _, nodeOwnerAddressStr := range n.nodeOwnerAddresses {
-		_, nodeOwnerAddress, err := iotago.ParseBech32(nodeOwnerAddressStr)
-		if err != nil {
-			continue
-		}
-		if bytes.Equal(isc.BytesFromAddress(ownerAddress), isc.BytesFromAddress(nodeOwnerAddress)) {
-			ownerAuthorized = true
-			break
-		}
-	}
-
-	if !ownerAuthorized {
-		return nil, errors.New("unauthorized request")
-	}
-
-	cert := governance.NewNodeOwnershipCertificate(nodeIdentity, ownerAddress)
-
-	return cert.Bytes(), nil
+	return governance.NewNodeOwnershipCertificate(nodeIdentity, n.chainsProvider().ValidatorAddress())
 }
 
 func (n *NodeService) ShutdownNode() {

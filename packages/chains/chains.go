@@ -71,7 +71,7 @@ type Chains struct {
 
 	chainMetricsProvider *metrics.ChainMetricsProvider
 
-	validatorFeeAddr isc.AgentID
+	validatorFeeAddr iotago.Address
 }
 
 type activeChain struct {
@@ -103,16 +103,16 @@ func New(
 	shutdownCoordinator *shutdown.Coordinator,
 	chainMetricsProvider *metrics.ChainMetricsProvider,
 ) *Chains {
-	validatorFeeAddr := accounts.CommonAccount()
+	var validatorFeeAddr iotago.Address
 	if validatorAddrStr != "" {
 		bechPrefix, addr, err := iotago.ParseBech32(validatorAddrStr)
 		if err != nil {
 			panic(fmt.Errorf("error parsing validator.address: %s", err.Error()))
 		}
 		if bechPrefix != nodeConnection.GetL1Params().Protocol.Bech32HRP {
-			panic(fmt.Errorf("validator Bech32 HRP does not match network HRP, expected: %s, got: %s", nodeConnection.GetL1Params().Protocol.Bech32HRP, bechPrefix))
+			panic(fmt.Errorf("validator.address Bech32 HRP does not match network HRP, expected: %s, got: %s", nodeConnection.GetL1Params().Protocol.Bech32HRP, bechPrefix))
 		}
-		validatorFeeAddr = isc.NewAgentID(addr)
+		validatorFeeAddr = addr
 	}
 	ret := &Chains{
 		log:                              log,
@@ -269,6 +269,10 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	}
 
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
+	validatorAgentID := accounts.CommonAccount()
+	if c.validatorFeeAddr != nil {
+		validatorAgentID = isc.NewAgentID(c.validatorFeeAddr)
+	}
 	newChain, err := chain.New(
 		chainCtx,
 		chainLog,
@@ -290,7 +294,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.deriveAliasOutputByQuorum,
 		c.pipeliningLimit,
 		c.consensusDelay,
-		c.validatorFeeAddr,
+		validatorAgentID,
 	)
 	if err != nil {
 		chainCancel()
@@ -345,4 +349,8 @@ func (c *Chains) Get(chainID isc.ChainID) (chain.Chain, error) {
 		return nil, interfaces.ErrChainNotFound
 	}
 	return ret.chain, nil
+}
+
+func (c *Chains) ValidatorAddress() iotago.Address {
+	return c.validatorFeeAddr
 }
