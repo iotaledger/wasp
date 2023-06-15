@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type PublicKey struct {
