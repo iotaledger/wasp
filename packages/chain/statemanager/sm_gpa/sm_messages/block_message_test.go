@@ -18,6 +18,6 @@ func TestMarshalUnmarshalBlockMessage(t *testing.T) {
 		unmarshaled := NewEmptyBlockMessage()
 		err = unmarshaled.UnmarshalBinary(marshaled)
 		require.NoError(t, err)
-		require.True(t, blocks[i].Hash().Equals(unmarshaled.GetBlock().Hash())) // Should be Equals instead of Hash().Equals()
+		sm_gpa_utils.CheckBlocksEqual(t, blocks[i], unmarshaled.GetBlock())
 	}
 }

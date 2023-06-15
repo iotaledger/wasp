@@ -37,8 +37,7 @@ func newChainBlockWALMetrics(provider *ChainMetricsProvider, chainID isc.ChainID
 	// init values so they appear in prometheus
 	provider.blockWALFailedWrites.With(metricsLabels)
 	provider.blockWALFailedReads.With(metricsLabels)
-	provider.blockWALBlocksAdded.With(metricsLabels)
-	provider.blockWALMaxBlockIndex.With(metricsLabels)
+	provider.blockWALBlocksAdded.with(metricsLabels)
 
 	return &chainBlockWALMetrics{
 		provider:      provider,
@@ -56,16 +55,5 @@ func (m *chainBlockWALMetrics) IncFailedReads() {
 }
 
 func (m *chainBlockWALMetrics) BlockWritten(blockIndex uint32) {
-	m.provider.blockWALBlocksAdded.With(m.metricsLabels).Inc()
-	blockIndexInt64 := int64(blockIndex)
-	if m.maxBlockIndex < 0 {
-		m.provider.blockWALMaxBlockIndex.With(m.metricsLabels).Add(float64(blockIndexInt64))
-		m.maxBlockIndex = blockIndexInt64
-	} else {
-		diff := blockIndexInt64 - m.maxBlockIndex
-		if diff > 0 {
-			m.provider.blockWALMaxBlockIndex.With(m.metricsLabels).Add(float64(diff))
-			m.maxBlockIndex = blockIndexInt64
-		}
-	}
+	m.provider.blockWALBlocksAdded.countValue(m.metricsLabels, float64(blockIndex))
 }

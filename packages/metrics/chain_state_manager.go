@@ -14,7 +14,7 @@ type IChainStateManagerMetrics interface {
 	DecBlocksFetching()
 	IncBlocksPending()
 	DecBlocksPending()
-	IncBlocksCommitted()
+	BlockIndexCommitted(uint32)
 	IncRequestsWaiting()
 	SubRequestsWaiting(int)
 	SetRequestsWaiting(int)
@@ -24,6 +24,8 @@ type IChainStateManagerMetrics interface {
 	ChainFetchStateDiffHandled(time.Duration)
 	StateManagerTimerTickHandled(time.Duration)
 	StateManagerBlockFetched(time.Duration)
+	StatePruned(time.Duration, uint32)
+	PruningCompleted(time.Duration, int)
 }
 
 var (
@@ -41,7 +43,7 @@ func (m *emptyChainStateManagerMetric) IncBlocksFetching()                      
 func (m *emptyChainStateManagerMetric) DecBlocksFetching()                          {}
 func (m *emptyChainStateManagerMetric) IncBlocksPending()                           {}
 func (m *emptyChainStateManagerMetric) DecBlocksPending()                           {}
-func (m *emptyChainStateManagerMetric) IncBlocksCommitted()                         {}
+func (m *emptyChainStateManagerMetric) BlockIndexCommitted(uint32)                  {}
 func (m *emptyChainStateManagerMetric) IncRequestsWaiting()                         {}
 func (m *emptyChainStateManagerMetric) SubRequestsWaiting(int)                      {}
 func (m *emptyChainStateManagerMetric) SetRequestsWaiting(int)                      {}
@@ -51,6 +53,8 @@ func (m *emptyChainStateManagerMetric) ConsensusBlockProducedHandled(time.Durati
 func (m *emptyChainStateManagerMetric) ChainFetchStateDiffHandled(time.Duration)    {}
 func (m *emptyChainStateManagerMetric) StateManagerTimerTickHandled(time.Duration)  {}
 func (m *emptyChainStateManagerMetric) StateManagerBlockFetched(time.Duration)      {}
+func (m *emptyChainStateManagerMetric) StatePruned(time.Duration, uint32)           {}
+func (m *emptyChainStateManagerMetric) PruningCompleted(time.Duration, int)         {}
 
 type chainStateManagerMetric struct {
 	provider      *ChainMetricsProvider
@@ -64,7 +68,7 @@ func newChainStateManagerMetric(provider *ChainMetricsProvider, chainID isc.Chai
 	provider.smCacheSize.With(metricsLabels)
 	provider.smBlocksFetching.With(metricsLabels)
 	provider.smBlocksPending.With(metricsLabels)
-	provider.smBlocksCommitted.With(metricsLabels)
+	provider.smBlocksCommitted.with(metricsLabels)
 	provider.smRequestsWaiting.With(metricsLabels)
 	provider.smCSPHandlingDuration.With(metricsLabels)
 	provider.smCDSHandlingDuration.With(metricsLabels)
@@ -72,6 +76,10 @@ func newChainStateManagerMetric(provider *ChainMetricsProvider, chainID isc.Chai
 	provider.smFSDHandlingDuration.With(metricsLabels)
 	provider.smTTHandlingDuration.With(metricsLabels)
 	provider.smBlockFetchDuration.With(metricsLabels)
+	provider.smPruningRunDuration.With(metricsLabels)
+	provider.smPruningSingleStateDuration.With(metricsLabels)
+	provider.smPruningStatesInRun.With(metricsLabels)
+	provider.smStatesPruned.with(metricsLabels)
 
 	return &chainStateManagerMetric{
 		provider:      provider,
@@ -99,8 +107,8 @@ func (m *chainStateManagerMetric) DecBlocksPending() {
 	m.provider.smBlocksPending.With(m.metricsLabels).Dec()
 }
 
-func (m *chainStateManagerMetric) IncBlocksCommitted() {
-	m.provider.smBlocksCommitted.With(m.metricsLabels).Inc()
+func (m *chainStateManagerMetric) BlockIndexCommitted(blockIndex uint32) {
+	m.provider.smBlocksCommitted.countValue(m.metricsLabels, float64(blockIndex))
 }
 
 func (m *chainStateManagerMetric) IncRequestsWaiting() {
@@ -137,4 +145,14 @@ func (m *chainStateManagerMetric) StateManagerTimerTickHandled(duration time.Dur
 
 func (m *chainStateManagerMetric) StateManagerBlockFetched(duration time.Duration) {
 	m.provider.smBlockFetchDuration.With(m.metricsLabels).Observe(duration.Seconds())
+}
+
+func (m *chainStateManagerMetric) StatePruned(duration time.Duration, stateIndex uint32) {
+	m.provider.smPruningSingleStateDuration.With(m.metricsLabels).Observe(duration.Seconds())
+	m.provider.smStatesPruned.countValue(m.metricsLabels, float64(stateIndex))
+}
+
+func (m *chainStateManagerMetric) PruningCompleted(duration time.Duration, statesPruned int) {
+	m.provider.smPruningRunDuration.With(m.metricsLabels).Observe(duration.Seconds())
+	m.provider.smPruningStatesInRun.With(m.metricsLabels).Observe(float64(statesPruned))
 }
