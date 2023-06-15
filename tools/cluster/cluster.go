@@ -391,7 +391,7 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 
 	scArgs := governance.AccessNodeInfo{
 		NodePubKey:    accessNodePubKey.AsBytes(),
-		ValidatorAddr: isc.BytesFromAddress(chain.OriginatorAddress()),
+		ValidatorAddr: isc.AddressToBytes(chain.OriginatorAddress()),
 		Certificate:   decodedCert,
 		ForCommittee:  false,
 		AccessAPI:     clu.Config.APIHost(accessNodeIndex),

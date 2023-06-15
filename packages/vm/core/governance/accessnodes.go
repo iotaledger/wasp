@@ -4,7 +4,6 @@
 package governance
 
 import (
-	"bytes"
 	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -22,10 +21,10 @@ import (
 type NodeOwnershipCertificate []byte
 
 func NewNodeOwnershipCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress iotago.Address) NodeOwnershipCertificate {
-	w := new(bytes.Buffer)
-	_, _ = w.Write(nodeKeyPair.GetPublicKey().AsBytes())
-	_, _ = w.Write(isc.BytesFromAddress(ownerAddress))
-	return nodeKeyPair.GetPrivateKey().Sign(w.Bytes())
+	ww := rwutil.NewBytesWriter()
+	ww.Write(nodeKeyPair.GetPublicKey())
+	isc.AddressToWriter(ww, ownerAddress)
+	return nodeKeyPair.GetPrivateKey().Sign(ww.Bytes())
 }
 
 func NodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate {
@@ -33,10 +32,10 @@ func NodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate {
 }
 
 func (c NodeOwnershipCertificate) Verify(nodePubKey *cryptolib.PublicKey, ownerAddress iotago.Address) bool {
-	w := new(bytes.Buffer)
-	_, _ = w.Write(nodePubKey.AsBytes())
-	_, _ = w.Write(isc.BytesFromAddress(ownerAddress))
-	return nodePubKey.Verify(w.Bytes(), c.Bytes())
+	ww := rwutil.NewBytesWriter()
+	ww.Write(nodePubKey)
+	isc.AddressToWriter(ww, ownerAddress)
+	return nodePubKey.Verify(ww.Bytes(), c.Bytes())
 }
 
 func (c NodeOwnershipCertificate) Bytes() []byte {
@@ -100,7 +99,7 @@ func AccessNodeInfoFromAddCandidateNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
 	params := ctx.Params()
 	ani := AccessNodeInfo{
 		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),
-		ValidatorAddr: isc.BytesFromAddress(validatorAddr),
+		ValidatorAddr: isc.AddressToBytes(validatorAddr),
 		Certificate:   params.MustGetBytes(ParamAccessNodeInfoCertificate),
 		ForCommittee:  params.MustGetBool(ParamAccessNodeInfoForCommittee, false),
 		AccessAPI:     params.MustGetString(ParamAccessNodeInfoAccessAPI, ""),
@@ -125,7 +124,7 @@ func AccessNodeInfoFromRevokeAccessNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
 	params := ctx.Params()
 	ani := AccessNodeInfo{
 		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),
-		ValidatorAddr: isc.BytesFromAddress(validatorAddr), // Not from params, to have it validated.
+		ValidatorAddr: isc.AddressToBytes(validatorAddr), // Not from params, to have it validated.
 		Certificate:   params.MustGetBytes(ParamAccessNodeInfoCertificate),
 	}
 	return &ani

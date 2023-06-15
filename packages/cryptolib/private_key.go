@@ -4,7 +4,9 @@ import (
 	"crypto/ed25519"
 	"errors"
 	"fmt"
+	"io"
 
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"go.dedis.ch/kyber/v3/sign/eddsa"
 	"go.dedis.ch/kyber/v3/util/key"
 
@@ -77,4 +79,22 @@ func (pkT *PrivateKey) AddressKeysForEd25519Address(addr *iotago.Ed25519Address)
 
 func (pkT *PrivateKey) AddressKeys(addr iotago.Address) iotago.AddressKeys {
 	return iotago.AddressKeys{Address: addr, Keys: pkT.key}
+}
+
+func (pkT *PrivateKey) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	if len(pkT.key) != PrivateKeySize {
+		panic("unexpected private key size for read")
+	}
+	rr.ReadN(pkT.key)
+	return rr.Err
+}
+
+func (pkT *PrivateKey) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	if len(pkT.key) != PrivateKeySize {
+		panic("unexpected private key size for write")
+	}
+	ww.WriteN(pkT.key)
+	return ww.Err
 }

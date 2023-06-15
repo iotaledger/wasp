@@ -4,7 +4,9 @@ import (
 	"crypto/ed25519"
 	"errors"
 	"fmt"
+	"io"
 
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
 
@@ -68,7 +70,7 @@ func (pkT *PublicKey) AsEd25519Address() *iotago.Ed25519Address {
 func (pkT *PublicKey) AsKyberPoint() (kyber.Point, error) {
 	group := new(edwards25519.Curve)
 	point := group.Point()
-	if err := point.UnmarshalBinary(pkT.AsBytes()); err != nil {
+	if err := point.UnmarshalBinary(pkT.key); err != nil {
 		return nil, err
 	}
 	return point, nil
@@ -92,4 +94,22 @@ func (pkT *PublicKey) Verify(message, sig []byte) bool {
 
 func (pkT *PublicKey) String() string {
 	return iotago.EncodeHex(pkT.key)
+}
+
+func (pkT *PublicKey) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	if len(pkT.key) != PublicKeySize {
+		panic("unexpected public key size for read")
+	}
+	rr.ReadN(pkT.key)
+	return rr.Err
+}
+
+func (pkT *PublicKey) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	if len(pkT.key) != PublicKeySize {
+		panic("unexpected public key size for write")
+	}
+	ww.WriteN(pkT.key)
+	return ww.Err
 }

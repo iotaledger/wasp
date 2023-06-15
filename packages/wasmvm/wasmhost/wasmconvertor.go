@@ -97,7 +97,7 @@ func (cvt WasmConvertor) IscTokenID(tokenID *wasmtypes.ScTokenID) iotago.NativeT
 }
 
 func (cvt WasmConvertor) ScAddress(address iotago.Address) wasmtypes.ScAddress {
-	buf := isc.BytesFromAddress(address)
+	buf := isc.AddressToBytes(address)
 	return wasmtypes.AddressFromBytes(buf)
 }
 

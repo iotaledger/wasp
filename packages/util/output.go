@@ -7,17 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-func BytesFromOutput(output iotago.Output) []byte {
-	ww := rwutil.NewBytesWriter()
-	OutputToWriter(ww, output)
-	return ww.Bytes()
-}
-
-func OutputFromBytes(data []byte) (iotago.Output, error) {
-	rr := rwutil.NewBytesReader(data)
-	return OutputFromReader(rr), rr.Err
-}
-
 func OutputFromReader(rr *rwutil.Reader) (output iotago.Output) {
 	size := rr.ReadSize32()
 	if size == 0 {
@@ -38,4 +27,15 @@ func OutputToWriter(ww *rwutil.Writer, output iotago.Output) {
 		return
 	}
 	ww.WriteSerialized(output, math.MaxInt32)
+}
+
+func OutputFromBytes(data []byte) (iotago.Output, error) {
+	rr := rwutil.NewBytesReader(data)
+	return OutputFromReader(rr), rr.Err
+}
+
+func OuutputToBytes(output iotago.Output) []byte {
+	ww := rwutil.NewBytesWriter()
+	OutputToWriter(ww, output)
+	return ww.Bytes()
 }

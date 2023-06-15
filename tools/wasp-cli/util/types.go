@@ -30,7 +30,7 @@ func ValueFromString(vtype, s string) []byte {
 		if prefix != l1Prefix {
 			log.Fatalf("address prefix %s does not match L1 prefix %s", prefix, l1Prefix)
 		}
-		return isc.BytesFromAddress(addr)
+		return isc.AddressToBytes(addr)
 	case "agentid":
 		return AgentIDFromString(s).Bytes()
 	case "bigint":

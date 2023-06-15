@@ -75,7 +75,7 @@ func (n *NodeService) SetNodeOwnerCertificate(publicKey *cryptolib.PublicKey, ow
 		if err != nil {
 			continue
 		}
-		if bytes.Equal(isc.BytesFromAddress(ownerAddress), isc.BytesFromAddress(nodeOwnerAddress)) {
+		if bytes.Equal(isc.AddressToBytes(ownerAddress), isc.AddressToBytes(nodeOwnerAddress)) {
 			ownerAuthorized = true
 			break
 		}

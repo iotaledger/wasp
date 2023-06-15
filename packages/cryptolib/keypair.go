@@ -1,7 +1,10 @@
 package cryptolib
 
 import (
+	"io"
+
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type KeyPair struct {
@@ -51,4 +54,18 @@ func (k *KeyPair) GetPublicKey() *PublicKey {
 
 func (k *KeyPair) Address() *iotago.Ed25519Address {
 	return k.GetPublicKey().AsEd25519Address()
+}
+
+func (k *KeyPair) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.Read(k.publicKey)
+	rr.Read(k.privateKey)
+	return rr.Err
+}
+
+func (k *KeyPair) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.Write(k.publicKey)
+	ww.Write(k.privateKey)
+	return ww.Err
 }

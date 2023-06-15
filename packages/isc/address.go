@@ -9,17 +9,6 @@ import (
 
 const addressIsNil rwutil.Kind = 0x80
 
-func BytesFromAddress(address iotago.Address) []byte {
-	ww := rwutil.NewBytesWriter()
-	AddressToWriter(ww, address)
-	return ww.Bytes()
-}
-
-func AddressFromBytes(data []byte) (iotago.Address, error) {
-	rr := rwutil.NewBytesReader(data)
-	return AddressFromReader(rr), rr.Err
-}
-
 func AddressFromReader(rr *rwutil.Reader) (address iotago.Address) {
 	kind := rr.ReadKind()
 	if kind == addressIsNil {
@@ -39,4 +28,15 @@ func AddressToWriter(ww *rwutil.Writer, address iotago.Address) {
 		return
 	}
 	ww.WriteSerialized(address, math.MaxUint16, address.Size())
+}
+
+func AddressFromBytes(data []byte) (iotago.Address, error) {
+	rr := rwutil.NewBytesReader(data)
+	return AddressFromReader(rr), rr.Err
+}
+
+func AddressToBytes(address iotago.Address) []byte {
+	ww := rwutil.NewBytesWriter()
+	AddressToWriter(ww, address)
+	return ww.Bytes()
 }

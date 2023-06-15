@@ -517,7 +517,7 @@ func checkAgentID(t *testing.T, ctx *wasmsolo.SoloContext, scAgentID wasmtypes.S
 }
 
 func checkAddress(t *testing.T, ctx *wasmsolo.SoloContext, scAddress wasmtypes.ScAddress, address iotago.Address) {
-	addressBytes := isc.BytesFromAddress(address)
+	addressBytes := isc.AddressToBytes(address)
 	addressString := address.Bech32(parameters.L1().Protocol.Bech32HRP)
 
 	require.EqualValues(t, scAddress.Bytes(), addressBytes)
