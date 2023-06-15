@@ -32,7 +32,7 @@ type comparableConsensusID struct {
 }
 
 func newComparableConsensusID(chainID isc.ChainID, address iotago.Address) *comparableConsensusID {
-	addressBytes := isc.BytesFromAddress(address)
+	addressBytes := isc.AddressToBytes(address)
 
 	key := comparableConsensusIDKey{}
 	copy(key[:isc.ChainIDLength], chainID[:])

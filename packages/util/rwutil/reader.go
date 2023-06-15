@@ -134,16 +134,42 @@ type deserializable interface {
 	Deserialize([]byte, serializer.DeSerializationMode, interface{}) (int, error)
 }
 
-func (rr *Reader) ReadSerialized(s deserializable) {
+// ReadSerialized reads the deserializable object from the stream.
+// If no sizes are present a 16-bit size is read from the stream.
+// The first size indicates a different limit for the size read from the stream.
+// The second size indicates the expected size and does not read it from the stream.
+func (rr *Reader) ReadSerialized(s deserializable, sizes ...int) {
+	if rr.Err != nil {
+		return
+	}
 	if s == nil {
 		panic("nil deserializer")
 	}
-	data := rr.ReadBytes()
+	var size int
+	switch len(sizes) {
+	case 0:
+		size = rr.ReadSize16()
+	case 1:
+		limit := sizes[0]
+		if limit < 0 || limit > math.MaxInt32 {
+			panic("invalid deserialize limit")
+		}
+		size = rr.ReadSizeWithLimit(uint32(limit))
+	case 2:
+		size = sizes[1]
+		if size < 0 || size > math.MaxInt32 {
+			panic("invalid deserialize size")
+		}
+	default:
+		panic("too many deserialize params")
+	}
+	data := make([]byte, size)
+	rr.ReadN(data)
 	if rr.Err == nil {
 		var n int
 		n, rr.Err = s.Deserialize(data, serializer.DeSeriModeNoValidation, nil)
 		if n != len(data) && rr.Err == nil {
-			rr.Err = errors.New("incomplete deserialize")
+			rr.Err = errors.New("unexpected deserialize size")
 		}
 	}
 }
@@ -165,7 +191,7 @@ func (rr *Reader) ReadSizeWithLimit(limit uint32) int {
 	var size32 uint32
 	size32, rr.Err = ReadSize32(rr.r)
 	if size32 > limit && rr.Err == nil {
-		rr.Err = errors.New("size limit overflow")
+		rr.Err = errors.New("read size limit overflow")
 	}
 	return int(size32)
 }
