@@ -34,7 +34,7 @@ func buildTX(t *testing.T, env *ChainEnv, addr iotago.Address, keyPair *cryptoli
 		UnspentOutputIDs: outputIDs,
 		Request: &isc.RequestParameters{
 			TargetAddress: env.Chain.ChainAddress(),
-			Assets:        &isc.Assets{BaseTokens: 1 * isc.Million},
+			Assets:        &isc.Assets{BaseTokens: 2 * isc.Million},
 			Metadata: &isc.SendMetadata{
 				TargetContract: nativeIncCounterSCHname,
 				EntryPoint:     inccounter.FuncIncCounter.Hname(),
@@ -57,7 +57,7 @@ func buildTX(t *testing.T, env *ChainEnv, addr iotago.Address, keyPair *cryptoli
 		customOut := out.Clone().(*iotago.BasicOutput)
 		sendBackCondition := &iotago.StorageDepositReturnUnlockCondition{
 			ReturnAddress: addr,
-			Amount:        500,
+			Amount:        1 * isc.Million,
 		}
 		customOut.Conditions = append(customOut.Conditions, sendBackCondition)
 		tx.Essence.Outputs[i] = customOut
