@@ -60,4 +60,6 @@ func SetInitialState(state kv.KVStore, chainOwner isc.AgentID, blockKeepAmount i
 	state.Set(governance.VarGasLimitsBytes, gas.LimitsDefault.Bytes())
 	state.Set(governance.VarMaintenanceStatus, codec.Encode(false))
 	state.Set(governance.VarBlockKeepAmount, codec.EncodeInt32(blockKeepAmount))
+	// FIXME we should use MinimumBaseTokensOnCommonAccount instead.
+	// state.Set(governance.StateVarMinCommonAccountBalance, codec.EncodeUint64(governance.DefaultMinCommonAccountBalance))
 }

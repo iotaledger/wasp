@@ -383,21 +383,21 @@ func (vmctx *VMContext) chargeGasFee() {
 		} else {
 			transfer.BaseTokens = sendToPayout
 		}
-		sendToPayout = sendToPayout - transfer.BaseTokens
+		sendToPayout -= transfer.BaseTokens
 		vmctx.mustMoveBetweenAccounts(sender, accounts.CommonAccount(), transfer)
 	}
 	if sendToPayout > 0 {
-		var payoutAddr *isc.AgentID
+		var payoutAddr isc.AgentID
 		vmctx.callCore(governance.Contract, func(s kv.KVStore) {
 			payoutAddr = governance.MustGetPayoutAddress(s)
 			if payoutAddr == nil {
-				payoutAddr = &vmctx.chainOwnerID
+				payoutAddr = vmctx.chainOwnerID
 			}
 		})
 
 		transfer := &isc.Assets{}
 		transfer.BaseTokens = sendToPayout
-		vmctx.mustMoveBetweenAccounts(sender, *payoutAddr, transfer)
+		vmctx.mustMoveBetweenAccounts(sender, payoutAddr, transfer)
 	}
 }
 
