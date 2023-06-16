@@ -256,7 +256,7 @@ func (s *dkShareImpl) Write(w io.Writer) error {
 
 	ww.WriteSize16(len(s.nodePubKeys))
 	for _, nodePubKey := range s.nodePubKeys {
-		ww.WriteBytes(nodePubKey.AsBytes())
+		ww.Write(nodePubKey)
 	}
 
 	// DSS / Ed25519 part of the key shares.
@@ -301,10 +301,8 @@ func (s *dkShareImpl) Read(r io.Reader) error {
 	size := rr.ReadSize16()
 	s.nodePubKeys = make([]*cryptolib.PublicKey, size)
 	for i := range s.nodePubKeys {
-		nodePubKeyBin := rr.ReadBytes()
-		if rr.Err == nil {
-			s.nodePubKeys[i], rr.Err = cryptolib.PublicKeyFromBytes(nodePubKeyBin)
-		}
+		s.nodePubKeys[i] = cryptolib.NewEmptyPublicKey()
+		rr.Read(s.nodePubKeys[i])
 	}
 
 	// DSS / Ed25519 part of the key shares.

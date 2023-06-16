@@ -204,10 +204,10 @@ func (msg *initiatorInitMsg) Write(w io.Writer) error {
 
 	ww.WriteSize16(len(msg.peerPubs))
 	for i := range msg.peerPubs {
-		ww.WriteBytes(msg.peerPubs[i].AsBytes())
+		ww.Write(msg.peerPubs[i])
 	}
 
-	ww.WriteBytes(msg.initiatorPub.AsBytes())
+	ww.Write(msg.initiatorPub)
 	ww.WriteUint16(msg.threshold)
 	ww.WriteDuration(msg.timeout)
 	ww.WriteDuration(msg.roundRetry)
@@ -223,10 +223,12 @@ func (msg *initiatorInitMsg) Read(r io.Reader) error {
 	size := rr.ReadSize16()
 	msg.peerPubs = make([]*cryptolib.PublicKey, size)
 	for i := range msg.peerPubs {
-		msg.peerPubs[i] = rwutil.ReadFromBytes(rr, cryptolib.PublicKeyFromBytes)
+		msg.peerPubs[i] = cryptolib.NewEmptyPublicKey()
+		rr.Read(msg.peerPubs[i])
 	}
 
-	msg.initiatorPub = rwutil.ReadFromBytes(rr, cryptolib.PublicKeyFromBytes)
+	msg.initiatorPub = cryptolib.NewEmptyPublicKey()
+	rr.Read(msg.initiatorPub)
 	msg.threshold = rr.ReadUint16()
 	msg.timeout = rr.ReadDuration()
 	msg.roundRetry = rr.ReadDuration()

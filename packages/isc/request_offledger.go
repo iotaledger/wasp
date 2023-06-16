@@ -58,11 +58,8 @@ func NewOffLedgerRequest(
 func (req *offLedgerRequestData) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	req.readEssence(rr)
-	publicKey := rr.ReadBytes()
-	if rr.Err != nil {
-		return rr.Err
-	}
-	req.signature.publicKey, rr.Err = cryptolib.PublicKeyFromBytes(publicKey)
+	req.signature.publicKey = cryptolib.NewEmptyPublicKey()
+	rr.Read(req.signature.publicKey)
 	req.signature.signature = rr.ReadBytes()
 	return rr.Err
 }
@@ -83,7 +80,7 @@ func (req *offLedgerRequestData) readEssence(rr *rwutil.Reader) {
 func (req *offLedgerRequestData) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	req.writeEssence(ww)
-	ww.WriteBytes(req.signature.publicKey.AsBytes())
+	ww.Write(req.signature.publicKey)
 	ww.WriteBytes(req.signature.signature)
 	return ww.Err
 }
