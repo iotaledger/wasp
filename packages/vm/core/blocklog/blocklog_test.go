@@ -29,11 +29,11 @@ func TestSerdeRequestReceipt(t *testing.T) {
 	require.EqualValues(t, forward, back.Bytes())
 }
 
-func createRequestLookupKeys(blocks uint32) []byte {
+func createRequestLookupKeys(blocks uint32, requests uint16) []byte {
 	keys := make(RequestLookupKeyList, 0)
 
 	for blockIndex := uint32(0); blockIndex < blocks; blockIndex++ {
-		for reqIndex := uint16(0); reqIndex < 3; reqIndex++ {
+		for reqIndex := uint16(0); reqIndex < requests; reqIndex++ {
 			key := NewRequestLookupKey(blockIndex, reqIndex)
 
 			keys = append(keys, key)
@@ -55,23 +55,28 @@ func validatePrunedRequestIndexLookupBlock(t *testing.T, partition kv.KVStore, c
 
 func TestPruneRequestIndexLookupTable(t *testing.T) {
 	const maxBlocks = 42
+	const requestsToCreate = 4
 	const blockToPrune = 33
 
-	requestIDDigest0 := kv.Key("0")
-	requestIDDigest1 := kv.Key("1")
+	requestIDDigest0 := [8]byte{0, 0, 0, 0, 0, 0, 0, 0}
+	requestIDDigest1 := [8]byte{0, 0, 0, 0, 0, 0, 0, 1}
 
 	d := dict.Dict{}
 
 	requestIndexLUT := collections.NewMap(d, prefixRequestLookupIndex)
-	requestIndexLUT.SetAt([]byte(requestIDDigest0), createRequestLookupKeys(maxBlocks))
-	requestIndexLUT.SetAt([]byte(requestIDDigest1), createRequestLookupKeys(maxBlocks))
+	requestIndexLUT.SetAt(requestIDDigest0[:], createRequestLookupKeys(maxBlocks, requestsToCreate))
+	requestIndexLUT.SetAt(requestIDDigest1[:], createRequestLookupKeys(maxBlocks, requestsToCreate))
 
 	require.NotPanics(t, func() {
-		pruneRequestLookupByBlockIndex(d, blockToPrune)
+		pruneRequestLookupTable(d, requestIDDigest0, blockToPrune)
 	})
 
-	validatePrunedRequestIndexLookupBlock(t, d, requestIDDigest0, blockToPrune)
-	validatePrunedRequestIndexLookupBlock(t, d, requestIDDigest1, blockToPrune)
+	validatePrunedRequestIndexLookupBlock(t, d, kv.Key(requestIDDigest0[:]), blockToPrune)
+	digest0Size := len(requestIndexLUT.GetAt(requestIDDigest0[:]))
+	digest1Size := len(requestIndexLUT.GetAt(requestIDDigest1[:]))
+
+	// Four requests in total should be removed in digest0, therefore the amount of bytes removed should be len(RequestLookupKey)*requestsToCreate
+	require.Equal(t, len(RequestLookupKey{})*requestsToCreate, digest1Size-digest0Size)
 }
 
 func eventTopic(block uint32, requestIndex uint16, eventIndex uint16) string {
@@ -79,7 +84,7 @@ func eventTopic(block uint32, requestIndex uint16, eventIndex uint16) string {
 	return topic
 }
 
-func createEventLookupKeys(eventMap *collections.Map, contractID isc.Hname, maxBlocks uint32, maxRequests uint16, maxEvents uint16) {
+func createEventLookupKeys(registryArray *collections.Array, eventMap *collections.Map, contractID isc.Hname, maxBlocks uint32, maxRequests uint16, maxEvents uint16) {
 	for blockIndex := uint32(0); blockIndex < maxBlocks; blockIndex++ {
 		for reqIndex := uint16(0); reqIndex < maxRequests; reqIndex++ {
 			for eventIndex := uint16(0); eventIndex < maxEvents; eventIndex++ {
@@ -96,6 +101,8 @@ func createEventLookupKeys(eventMap *collections.Map, contractID isc.Hname, maxB
 				eventMap.SetAt(key, event.Bytes())
 			}
 		}
+
+		registryArray.Push([]byte{0})
 	}
 }
 
@@ -131,8 +138,10 @@ func TestGetEventsInternal(t *testing.T) {
 
 	d := dict.Dict{}
 
+	registry := collections.NewArray(d, PrefixBlockRegistry)
+
 	eventMap := collections.NewMap(d, prefixRequestEvents)
-	createEventLookupKeys(eventMap, contractID, maxBlocks, maxRequests, maxEventsPerRequest)
+	createEventLookupKeys(registry, eventMap, contractID, maxBlocks, maxRequests, maxEventsPerRequest)
 
 	events := getSmartContractEventsInternal(d, contractID, blockFrom, blockTo)
 	validateEvents(t, events, maxRequests, maxEventsPerRequest, blockFrom, blockTo)

@@ -158,9 +158,16 @@ func getRequestEventsInternal(partition kv.KVStoreReader, reqID isc.RequestID) (
 }
 
 func getSmartContractEventsInternal(partition kv.KVStoreReader, contractID isc.Hname, fromBlock, toBlock uint32) [][]byte {
-	filteredEvents := make([][]byte, 0)
+	registry := collections.NewArrayReadOnly(partition, PrefixBlockRegistry)
+	latestBlockIndex := registry.Len() - 1
+	adjustedToBlock := toBlock
 
-	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
+	if adjustedToBlock > latestBlockIndex {
+		adjustedToBlock = latestBlockIndex
+	}
+
+	filteredEvents := make([][]byte, 0)
+	for blockNumber := fromBlock; blockNumber <= adjustedToBlock; blockNumber++ {
 		eventBlockKey := collections.MapElemKey(prefixRequestEvents, codec.EncodeUint32(blockNumber))
 
 		partition.Iterate(kv.Key(eventBlockKey), func(_ kv.Key, value []byte) bool {
@@ -178,13 +185,6 @@ func getSmartContractEventsInternal(partition kv.KVStoreReader, contractID isc.H
 }
 
 func pruneEventsByBlockIndex(partition kv.KVStore, blockIndex uint32, totalRequests uint16) {
-	// TODO what about these contract LUTs?
-	// scLut := collections.NewMap(partition, prefixSmartContractEventsLookup)
-	// we need to walk over all possible hContract values
-	// for each do a get of the lut
-	// for each lut scan and skip each block with a value < latestBlockIndex
-	// save the remaining part slice of the lut
-
 	events := collections.NewMap(partition, prefixRequestEvents)
 	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
 		eventIndex := uint16(0)
@@ -216,34 +216,48 @@ func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint
 	return ret, true
 }
 
-func pruneRequestLookupByBlockIndex(partition kv.KVStore, blockIndex uint32) {
+func pruneRequestLookupTable(partition kv.KVStore, lookupDigest isc.RequestLookupDigest, blockIndex uint32) error {
 	lut := collections.NewMap(partition, prefixRequestLookupIndex)
 
-	lut.Iterate(func(lutKey []byte, lutValue []byte) bool {
-		requestKeys, err := RequestLookupKeyListFromBytes(lutValue)
+	res := lut.GetAt(lookupDigest[:])
+	if len(res) == 0 {
+		return nil
+	}
+
+	requests, err := RequestLookupKeyListFromBytes(res)
+	if err != nil {
+		return err
+	}
+
+	filteredRequestKeys := make(RequestLookupKeyList, 0)
+
+	for _, requestKey := range requests {
+		if requestKey.BlockIndex() != blockIndex {
+			filteredRequestKeys = append(filteredRequestKeys, requestKey)
+		}
+	}
+
+	lut.SetAt(lookupDigest[:], filteredRequestKeys.Bytes())
+	return nil
+}
+
+func pruneRequestLogRecordsByBlockIndex(partition kv.KVStore, blockIndex uint32, totalRequests uint16) {
+	receiptMap := collections.NewMap(partition, prefixRequestReceipts)
+	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
+		lookupKey := NewRequestLookupKey(blockIndex, reqIdx)
+		receiptBytes := receiptMap.GetAt(lookupKey.Bytes())
+
+		receipt, err := RequestReceiptFromBytes(receiptBytes)
 		if err != nil {
 			panic(err)
 		}
 
-		filteredRequestKeys := make(RequestLookupKeyList, 0)
-
-		for _, requestKey := range requestKeys {
-			if requestKey.BlockIndex() != blockIndex {
-				filteredRequestKeys = append(filteredRequestKeys, requestKey)
-			}
+		err = pruneRequestLookupTable(partition, receipt.Request.ID().LookupDigest(), blockIndex)
+		if err != nil {
+			panic(err)
 		}
 
-		lut.SetAt(lutKey, filteredRequestKeys.Bytes())
-
-		return true
-	})
-}
-
-func pruneRequestLogRecordsByBlockIndex(partition kv.KVStore, blockIndex uint32, totalRequests uint16) {
-	lookupTable := collections.NewMap(partition, prefixRequestReceipts)
-	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
-		lookupKey := NewRequestLookupKey(blockIndex, reqIdx)
-		lookupTable.DelAt(lookupKey[:])
+		receiptMap.DelAt(lookupKey[:])
 	}
 }
 
@@ -292,7 +306,6 @@ func pruneBlock(partition kv.KVStore, blockIndex uint32) {
 	registry := collections.NewArray(partition, PrefixBlockRegistry)
 	registry.PruneAt(blockIndex)
 	pruneRequestLogRecordsByBlockIndex(partition, blockIndex, blockInfo.TotalRequests)
-	pruneRequestLookupByBlockIndex(partition, blockIndex)
 	pruneEventsByBlockIndex(partition, blockIndex, blockInfo.TotalRequests)
 }
 
