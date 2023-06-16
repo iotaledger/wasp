@@ -243,9 +243,14 @@ func pruneRequestLookupTable(partition kv.KVStore, lookupDigest isc.RequestLooku
 
 func pruneRequestLogRecordsByBlockIndex(partition kv.KVStore, blockIndex uint32, totalRequests uint16) {
 	receiptMap := collections.NewMap(partition, prefixRequestReceipts)
+
 	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
 		lookupKey := NewRequestLookupKey(blockIndex, reqIdx)
-		receiptBytes := receiptMap.GetAt(lookupKey.Bytes())
+
+		receiptBytes := receiptMap.GetAt(lookupKey[:])
+		if len(receiptBytes) == 0 {
+			continue
+		}
 
 		receipt, err := RequestReceiptFromBytes(receiptBytes)
 		if err != nil {
