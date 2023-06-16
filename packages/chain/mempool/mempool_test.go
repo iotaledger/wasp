@@ -668,14 +668,15 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 		te.stores[i] = state.NewStore(mapdb.NewMapDB())
 		_, err := origin.InitChainByAliasOutput(te.stores[i], te.originAO)
 		require.NoError(t, err)
+		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		te.mempools[i] = mempool.New(
 			te.ctx,
 			te.chainID,
 			te.peerIdentities[i],
 			te.networkProviders[i],
 			te.log.Named(fmt.Sprintf("N#%v", i)),
-			metrics.NewEmptyChainMempoolMetric(),
-			metrics.NewEmptyChainPipeMetrics(),
+			chainMetrics.Mempool,
+			chainMetrics.Pipe,
 			chain.NewEmptyChainListener(),
 		)
 	}

@@ -113,8 +113,8 @@ func New(
 	wal sm_gpa_utils.BlockWAL,
 	store state.Store,
 	shutdownCoordinator *shutdown.Coordinator,
-	metrics metrics.IChainStateManagerMetrics,
-	pipeMetrics metrics.IChainPipeMetrics,
+	metrics *metrics.ChainStateManagerMetrics,
+	pipeMetrics *metrics.ChainPipeMetrics,
 	log *logger.Logger,
 	parameters sm_gpa.StateManagerParameters,
 ) (StateMgr, error) {

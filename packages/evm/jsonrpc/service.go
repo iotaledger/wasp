@@ -30,10 +30,10 @@ import (
 type EthService struct {
 	evmChain *EVMChain
 	accounts *AccountManager
-	metrics  metrics.IChainMetrics
+	metrics  *metrics.ChainWebAPIMetrics
 }
 
-func NewEthService(evmChain *EVMChain, accounts *AccountManager, metrics metrics.IChainMetrics) *EthService {
+func NewEthService(evmChain *EVMChain, accounts *AccountManager, metrics *metrics.ChainWebAPIMetrics) *EthService {
 	return &EthService{
 		evmChain: evmChain,
 		accounts: accounts,
@@ -639,10 +639,10 @@ func (s *TxPoolService) Status() map[string]hexutil.Uint {
 
 type DebugService struct {
 	evmChain *EVMChain
-	metrics  metrics.IChainMetrics
+	metrics  *metrics.ChainWebAPIMetrics
 }
 
-func NewDebugService(evmChain *EVMChain, metrics metrics.IChainMetrics) *DebugService {
+func NewDebugService(evmChain *EVMChain, metrics *metrics.ChainWebAPIMetrics) *DebugService {
 	return &DebugService{
 		evmChain: evmChain,
 		metrics:  metrics,

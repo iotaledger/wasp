@@ -8,60 +8,88 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-type IChainNodeConnMetrics interface {
-	L1RequestReceived()
-	L1AliasOutputReceived()
-	TXPublishStarted()
-	TXPublishResult(confirmed bool, duration time.Duration)
+type ChainNodeConnMetricsProvider struct {
+	l1RequestReceived     *prometheus.CounterVec
+	l1AliasOutputReceived *prometheus.CounterVec
+	txPublishStarted      *prometheus.CounterVec
+	txPublishResult       *prometheus.HistogramVec
 }
 
-var (
-	_ IChainNodeConnMetrics = &emptyChainNodeConnMetric{}
-	_ IChainNodeConnMetrics = &chainNodeConnMetric{}
-)
-
-type emptyChainNodeConnMetric struct{}
-
-func NewEmptyChainNodeConnMetric() IChainNodeConnMetrics {
-	return &emptyChainNodeConnMetric{}
+func newChainNodeConnMetricsProvider() *ChainNodeConnMetricsProvider {
+	return &ChainNodeConnMetricsProvider{
+		l1RequestReceived: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "node_conn",
+			Name:      "l1_request_received",
+			Help:      "A number of confirmed requests received from L1.",
+		}, []string{labelNameChain}),
+		l1AliasOutputReceived: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "node_conn",
+			Name:      "l1_alias_output_received",
+			Help:      "A number of confirmed alias outputs received from L1.",
+		}, []string{labelNameChain}),
+		txPublishStarted: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "node_conn",
+			Name:      "tx_publish_started",
+			Help:      "A number of transactions submitted for publication in L1.",
+		}, []string{labelNameChain}),
+		txPublishResult: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "node_conn",
+			Name:      "tx_publish_result",
+			Help:      "The duration (s) to publish a transaction.",
+			Buckets:   postTimeBuckets,
+		}, []string{labelNameChain, labelTxPublishResult}),
+	}
 }
-func (m *emptyChainNodeConnMetric) L1RequestReceived()                                     {}
-func (m *emptyChainNodeConnMetric) L1AliasOutputReceived()                                 {}
-func (m *emptyChainNodeConnMetric) TXPublishStarted()                                      {}
-func (m *emptyChainNodeConnMetric) TXPublishResult(confirmed bool, duration time.Duration) {}
 
-type chainNodeConnMetric struct {
+func (p *ChainNodeConnMetricsProvider) register(reg prometheus.Registerer) {
+	reg.MustRegister(
+		p.l1RequestReceived,
+		p.l1AliasOutputReceived,
+		p.txPublishStarted,
+		p.txPublishResult,
+	)
+}
+
+func (p *ChainNodeConnMetricsProvider) createForChain(chainID isc.ChainID) *ChainNodeConnMetrics {
+	return newChainNodeConnMetrics(p, chainID)
+}
+
+type ChainNodeConnMetrics struct {
 	ncL1RequestReceived     prometheus.Counter
 	ncL1AliasOutputReceived prometheus.Counter
 	ncTXPublishStarted      prometheus.Counter
 	ncTXPublishResult       map[bool]prometheus.Observer
 }
 
-func newChainNodeConnMetric(provider *ChainMetricsProvider, chainID isc.ChainID) *chainNodeConnMetric {
-	chainLabels := getChainLabels(chainID)
-	return &chainNodeConnMetric{
-		ncL1RequestReceived:     provider.ncL1RequestReceived.With(chainLabels),
-		ncL1AliasOutputReceived: provider.ncL1AliasOutputReceived.With(chainLabels),
-		ncTXPublishStarted:      provider.ncTXPublishStarted.With(chainLabels),
+func newChainNodeConnMetrics(collectors *ChainNodeConnMetricsProvider, chainID isc.ChainID) *ChainNodeConnMetrics {
+	labels := getChainLabels(chainID)
+	return &ChainNodeConnMetrics{
+		ncL1RequestReceived:     collectors.l1RequestReceived.With(labels),
+		ncL1AliasOutputReceived: collectors.l1AliasOutputReceived.With(labels),
+		ncTXPublishStarted:      collectors.txPublishStarted.With(labels),
 		ncTXPublishResult: map[bool]prometheus.Observer{
-			true:  provider.ncTXPublishResult.MustCurryWith(chainLabels).With(prometheus.Labels{labelTxPublishResult: "confirmed"}),
-			false: provider.ncTXPublishResult.MustCurryWith(chainLabels).With(prometheus.Labels{labelTxPublishResult: "rejected"}),
+			true:  collectors.txPublishResult.MustCurryWith(labels).With(prometheus.Labels{labelTxPublishResult: "confirmed"}),
+			false: collectors.txPublishResult.MustCurryWith(labels).With(prometheus.Labels{labelTxPublishResult: "rejected"}),
 		},
 	}
 }
 
-func (m *chainNodeConnMetric) L1RequestReceived() {
+func (m *ChainNodeConnMetrics) L1RequestReceived() {
 	m.ncL1RequestReceived.Inc()
 }
 
-func (m *chainNodeConnMetric) L1AliasOutputReceived() {
+func (m *ChainNodeConnMetrics) L1AliasOutputReceived() {
 	m.ncL1AliasOutputReceived.Inc()
 }
 
-func (m *chainNodeConnMetric) TXPublishStarted() {
+func (m *ChainNodeConnMetrics) TXPublishStarted() {
 	m.ncTXPublishStarted.Inc()
 }
 
-func (m *chainNodeConnMetric) TXPublishResult(confirmed bool, duration time.Duration) {
+func (m *ChainNodeConnMetrics) TXPublishResult(confirmed bool, duration time.Duration) {
 	m.ncTXPublishResult[confirmed].Observe(duration.Seconds())
 }

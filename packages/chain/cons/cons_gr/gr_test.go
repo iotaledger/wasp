@@ -108,6 +108,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	defer ctxCancel()
 	logIndex := cmt_log.LogIndex(0)
+	chainMetricsProvider := metrics.NewChainMetricsProvider()
 	for i := range peerIdentities {
 		procCache := processors.MustNew(procConfig)
 		dkShare, err := dkShareProviders[i].LoadDKShare(cmtAddress)
@@ -117,6 +118,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		require.NoError(t, err)
 		mempools[i] = newTestMempool(t)
 		stateMgrs[i] = newTestStateMgr(t, chainStore)
+		chainMetrics := chainMetricsProvider.GetChainMetrics(isc.EmptyChainID())
 		nodes[i] = consGR.New(
 			ctx, chainID, chainStore, dkShare, &logIndex, peerIdentities[i],
 			procCache, mempools[i], stateMgrs[i],
@@ -125,8 +127,8 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 			1*time.Minute, // RecoverTimeout
 			1*time.Second, // RedeliveryPeriod
 			5*time.Second, // PrintStatusPeriod
-			metrics.NewEmptyChainConsensusMetric(),
-			metrics.NewEmptyChainPipeMetrics(),
+			chainMetrics.Consensus,
+			chainMetrics.Pipe,
 			log.Named(fmt.Sprintf("N#%v", i)),
 		)
 	}

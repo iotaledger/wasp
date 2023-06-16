@@ -1,10 +1,3 @@
-//
-//
-//
-//
-//
-//
-
 package sm_gpa
 
 import (
@@ -41,7 +34,7 @@ type stateManagerGPA struct {
 	lastCleanBlockCacheTime time.Time
 	lastCleanRequestsTime   time.Time
 	lastStatusLogTime       time.Time
-	metrics                 metrics.IChainStateManagerMetrics
+	metrics                 *metrics.ChainStateManagerMetrics
 }
 
 var _ gpa.GPA = &stateManagerGPA{}
@@ -56,7 +49,7 @@ func New(
 	nr sm_utils.NodeRandomiser,
 	wal sm_gpa_utils.BlockWAL,
 	store state.Store,
-	metrics metrics.IChainStateManagerMetrics,
+	metrics *metrics.ChainStateManagerMetrics,
 	log *logger.Logger,
 	parameters StateManagerParameters,
 ) (gpa.GPA, error) {

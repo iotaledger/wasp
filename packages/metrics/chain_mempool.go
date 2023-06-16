@@ -8,129 +8,218 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-type IChainMempoolMetrics interface {
-	IncBlocksPerChain()
-	IncRequestsReceived(isc.Request)
-	IncRequestsProcessed()
-	IncRequestsAckMessages()
-	SetRequestProcessingTime(time.Duration)
+type ChainMempoolMetricsProvider struct {
+	blocksTotalPerChain       *prometheus.CounterVec // TODO: Outdated and should be removed?
+	requestsReceivedOffLedger *prometheus.CounterVec // TODO: Outdated and should be removed?
+	requestsReceivedOnLedger  *prometheus.CounterVec // TODO: Outdated and should be removed?
+	requestsProcessed         *prometheus.CounterVec // TODO: Outdated and should be removed?
+	requestsAckMessages       *prometheus.CounterVec // TODO: Outdated and should be removed?
+	requestsProcessingTime    *prometheus.GaugeVec   // TODO: Outdated and should be removed?
 
-	SetTimePoolSize(count int)
-	SetOnLedgerPoolSize(count int)
-	SetOnLedgerReqTime(d time.Duration)
-	SetOffLedgerPoolSize(count int)
-	SetOffLedgerReqTime(d time.Duration)
-	SetMissingReqs(count int)
+	timePoolSize      *prometheus.GaugeVec
+	onLedgerPoolSize  *prometheus.GaugeVec
+	onLedgerReqTime   *prometheus.HistogramVec
+	offLedgerPoolSize *prometheus.GaugeVec
+	offLedgerReqTime  *prometheus.HistogramVec
+	totalSize         *prometheus.GaugeVec
+	missingReqs       *prometheus.GaugeVec
 }
 
-var (
-	_ IChainMempoolMetrics = &emptyChainMempoolMetric{}
-	_ IChainMempoolMetrics = &chainMempoolMetric{}
-)
+func newChainMempoolMetricsProvider() *ChainMempoolMetricsProvider {
+	return &ChainMempoolMetricsProvider{
+		blocksTotalPerChain: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "blocks",
+			Name:      "total",
+			Help:      "Number of blocks per chain",
+		}, []string{labelNameChain}),
+		requestsReceivedOffLedger: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "requests",
+			Name:      "off_ledger_total",
+			Help:      "Number of off-ledger requests made to chain",
+		}, []string{labelNameChain}),
+		requestsReceivedOnLedger: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "requests",
+			Name:      "on_ledger_total",
+			Help:      "Number of on-ledger requests made to the chain",
+		}, []string{labelNameChain}),
+		requestsProcessed: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "requests",
+			Name:      "processed_total",
+			Help:      "Number of requests processed per chain",
+		}, []string{labelNameChain}),
+		requestsAckMessages: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "requests",
+			Name:      "received_acks_total",
+			Help:      "Number of received request acknowledgements per chain",
+		}, []string{labelNameChain}),
+		requestsProcessingTime: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "requests",
+			Name:      "processing_time",
+			Help:      "Time to process requests per chain",
+		}, []string{labelNameChain}),
+		timePoolSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "mempool",
+			Name:      "time_pool_size",
+			Help:      "Number of postponed requests in mempool.",
+		}, []string{labelNameChain}),
+		onLedgerPoolSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "mempool",
+			Name:      "on_ledger_pool_size",
+			Help:      "Number of On Ledger requests in mempool.",
+		}, []string{labelNameChain}),
+		onLedgerReqTime: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "mempool",
+			Name:      "on_ledger_req_time",
+			Help:      "Time (s) an on-ledger request stayed in the mempool before removing it.",
+			Buckets:   execTimeBuckets,
+		}, []string{labelNameChain}),
+		offLedgerPoolSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "mempool",
+			Name:      "off_ledger_pool_size",
+			Help:      "Number of Off Ledger requests in mempool.",
+		}, []string{labelNameChain}),
+		offLedgerReqTime: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "mempool",
+			Name:      "off_ledger_req_time",
+			Help:      "Time (s) an off-ledger request stayed in the mempool before removing it.",
+			Buckets:   execTimeBuckets,
+		}, []string{labelNameChain}),
+		totalSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "mempool",
+			Name:      "total_pool_size",
+			Help:      "Total requests in mempool.",
+		}, []string{labelNameChain}),
+		missingReqs: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "mempool",
+			Name:      "missing_reqs",
+			Help:      "Number of requests missing at this node (asking others to send them).",
+		}, []string{labelNameChain}),
+	}
+}
 
-type emptyChainMempoolMetric struct{}
+func (p *ChainMempoolMetricsProvider) register(reg prometheus.Registerer) {
+	reg.MustRegister(
+		p.blocksTotalPerChain,
+		p.requestsReceivedOffLedger,
+		p.requestsReceivedOnLedger,
+		p.requestsProcessed,
+		p.requestsAckMessages,
+		p.requestsProcessingTime,
+		p.timePoolSize,
+		p.onLedgerPoolSize,
+		p.onLedgerReqTime,
+		p.offLedgerPoolSize,
+		p.offLedgerReqTime,
+		p.totalSize,
+		p.missingReqs,
+	)
+}
 
-func NewEmptyChainMempoolMetric() IChainMempoolMetrics                    { return &emptyChainMempoolMetric{} }
-func (m *emptyChainMempoolMetric) IncBlocksPerChain()                     {}
-func (m *emptyChainMempoolMetric) IncRequestsReceived(isc.Request)        {}
-func (m *emptyChainMempoolMetric) IncRequestsProcessed()                  {}
-func (m *emptyChainMempoolMetric) IncRequestsAckMessages()                {}
-func (m *emptyChainMempoolMetric) SetRequestProcessingTime(time.Duration) {}
-func (m *emptyChainMempoolMetric) SetTimePoolSize(count int)              {}
-func (m *emptyChainMempoolMetric) SetOnLedgerPoolSize(count int)          {}
-func (m *emptyChainMempoolMetric) SetOnLedgerReqTime(d time.Duration)     {}
-func (m *emptyChainMempoolMetric) SetOffLedgerPoolSize(count int)         {}
-func (m *emptyChainMempoolMetric) SetOffLedgerReqTime(d time.Duration)    {}
-func (m *emptyChainMempoolMetric) SetMissingReqs(count int)               {}
+func (p *ChainMempoolMetricsProvider) createForChain(chainID isc.ChainID) *ChainMempoolMetrics {
+	return newChainMempoolMetrics(p, chainID)
+}
 
-type chainMempoolMetric struct {
-	provider      *ChainMetricsProvider
-	metricsLabels prometheus.Labels
+type ChainMempoolMetrics struct {
+	collectors *ChainMempoolMetricsProvider
+	labels     prometheus.Labels
 
 	vTimePoolSize      int
 	vOnLedgerPoolSize  int
 	vOffLedgerPoolSize int
 }
 
-func newChainMempoolMetric(provider *ChainMetricsProvider, chainID isc.ChainID) *chainMempoolMetric {
-	metricsLabels := getChainLabels(chainID)
+func newChainMempoolMetrics(collectors *ChainMempoolMetricsProvider, chainID isc.ChainID) *ChainMempoolMetrics {
+	labels := getChainLabels(chainID)
 
 	// init values so they appear in prometheus
-	provider.blocksTotalPerChain.With(metricsLabels)
-	provider.requestsReceivedOffLedger.With(metricsLabels)
-	provider.requestsReceivedOnLedger.With(metricsLabels)
-	provider.requestsProcessed.With(metricsLabels)
-	provider.requestsAckMessages.With(metricsLabels)
-	provider.requestsProcessingTime.With(metricsLabels)
+	collectors.blocksTotalPerChain.With(labels)
+	collectors.requestsReceivedOffLedger.With(labels)
+	collectors.requestsReceivedOnLedger.With(labels)
+	collectors.requestsProcessed.With(labels)
+	collectors.requestsAckMessages.With(labels)
+	collectors.requestsProcessingTime.With(labels)
 
-	provider.mempoolTimePoolSize.With(metricsLabels)
-	provider.mempoolOnLedgerPoolSize.With(metricsLabels)
-	provider.mempoolOnLedgerReqTime.With(metricsLabels)
-	provider.mempoolOffLedgerPoolSize.With(metricsLabels)
-	provider.mempoolOffLedgerReqTime.With(metricsLabels)
-	provider.mempoolTotalSize.With(metricsLabels)
-	provider.mempoolMissingReqs.With(metricsLabels)
+	collectors.timePoolSize.With(labels)
+	collectors.onLedgerPoolSize.With(labels)
+	collectors.onLedgerReqTime.With(labels)
+	collectors.offLedgerPoolSize.With(labels)
+	collectors.offLedgerReqTime.With(labels)
+	collectors.totalSize.With(labels)
+	collectors.missingReqs.With(labels)
 
-	return &chainMempoolMetric{
-		provider:      provider,
-		metricsLabels: metricsLabels,
+	return &ChainMempoolMetrics{
+		collectors: collectors,
+		labels:     labels,
 	}
 }
 
-func (m *chainMempoolMetric) IncBlocksPerChain() {
-	m.provider.blocksTotalPerChain.With(m.metricsLabels).Inc()
+func (m *ChainMempoolMetrics) IncBlocksPerChain() {
+	m.collectors.blocksTotalPerChain.With(m.labels).Inc()
 }
 
-func (m *chainMempoolMetric) IncRequestsReceived(request isc.Request) {
+func (m *ChainMempoolMetrics) IncRequestsReceived(request isc.Request) {
 	if request.IsOffLedger() {
-		m.provider.requestsReceivedOffLedger.With(m.metricsLabels).Inc()
+		m.collectors.requestsReceivedOffLedger.With(m.labels).Inc()
 	} else {
-		m.provider.requestsReceivedOnLedger.With(m.metricsLabels).Inc()
+		m.collectors.requestsReceivedOnLedger.With(m.labels).Inc()
 	}
 }
 
-func (m *chainMempoolMetric) IncRequestsProcessed() {
-	m.provider.requestsProcessed.With(m.metricsLabels).Inc()
+func (m *ChainMempoolMetrics) IncRequestsProcessed() {
+	m.collectors.requestsProcessed.With(m.labels).Inc()
 }
 
-func (m *chainMempoolMetric) IncRequestsAckMessages() {
-	m.provider.requestsAckMessages.With(m.metricsLabels).Inc()
+func (m *ChainMempoolMetrics) IncRequestsAckMessages() {
+	m.collectors.requestsAckMessages.With(m.labels).Inc()
 }
 
-func (m *chainMempoolMetric) SetRequestProcessingTime(duration time.Duration) {
-	m.provider.requestsProcessingTime.With(m.metricsLabels).Set(duration.Seconds())
+func (m *ChainMempoolMetrics) SetRequestProcessingTime(duration time.Duration) {
+	m.collectors.requestsProcessingTime.With(m.labels).Set(duration.Seconds())
 }
 
-func (m *chainMempoolMetric) SetTimePoolSize(count int) {
+func (m *ChainMempoolMetrics) SetTimePoolSize(count int) {
 	m.vTimePoolSize = count
-	m.provider.mempoolTimePoolSize.With(m.metricsLabels).Set(float64(count))
+	m.collectors.timePoolSize.With(m.labels).Set(float64(count))
 	m.deriveTotalPoolSize()
 }
 
-func (m *chainMempoolMetric) SetOnLedgerPoolSize(count int) {
+func (m *ChainMempoolMetrics) SetOnLedgerPoolSize(count int) {
 	m.vOnLedgerPoolSize = count
-	m.provider.mempoolOnLedgerPoolSize.With(m.metricsLabels).Set(float64(count))
+	m.collectors.onLedgerPoolSize.With(m.labels).Set(float64(count))
 	m.deriveTotalPoolSize()
 }
 
-func (m *chainMempoolMetric) SetOffLedgerPoolSize(count int) {
+func (m *ChainMempoolMetrics) SetOffLedgerPoolSize(count int) {
 	m.vOffLedgerPoolSize = count
-	m.provider.mempoolOffLedgerPoolSize.With(m.metricsLabels).Set(float64(count))
+	m.collectors.offLedgerPoolSize.With(m.labels).Set(float64(count))
 	m.deriveTotalPoolSize()
 }
 
-func (m *chainMempoolMetric) deriveTotalPoolSize() {
-	m.provider.mempoolTotalSize.With(m.metricsLabels).Set(float64(m.vTimePoolSize + m.vOnLedgerPoolSize + m.vOffLedgerPoolSize))
+func (m *ChainMempoolMetrics) deriveTotalPoolSize() {
+	m.collectors.totalSize.With(m.labels).Set(float64(m.vTimePoolSize + m.vOnLedgerPoolSize + m.vOffLedgerPoolSize))
 }
 
-func (m *chainMempoolMetric) SetMissingReqs(count int) {
-	m.provider.mempoolMissingReqs.With(m.metricsLabels).Set(float64(count))
+func (m *ChainMempoolMetrics) SetMissingReqs(count int) {
+	m.collectors.missingReqs.With(m.labels).Set(float64(count))
 }
 
-func (m *chainMempoolMetric) SetOnLedgerReqTime(d time.Duration) {
-	m.provider.mempoolOnLedgerReqTime.With(m.metricsLabels).Observe(d.Seconds())
+func (m *ChainMempoolMetrics) SetOnLedgerReqTime(d time.Duration) {
+	m.collectors.onLedgerReqTime.With(m.labels).Observe(d.Seconds())
 }
 
-func (m *chainMempoolMetric) SetOffLedgerReqTime(d time.Duration) {
-	m.provider.mempoolOffLedgerReqTime.With(m.metricsLabels).Observe(d.Seconds())
+func (m *ChainMempoolMetrics) SetOffLedgerReqTime(d time.Duration) {
+	m.collectors.offLedgerReqTime.With(m.labels).Observe(d.Seconds())
 }
