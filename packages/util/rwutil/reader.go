@@ -97,6 +97,13 @@ func (rr *Reader) ReadDuration() (ret time.Duration) {
 	return time.Duration(rr.ReadInt64())
 }
 
+func (rr *Reader) ReadFromFunc(read func(w io.Reader) error) *Reader {
+	if rr.Err == nil {
+		rr.Err = read(rr.r)
+	}
+	return rr
+}
+
 func (rr *Reader) ReadInt8() (ret int8) {
 	if rr.Err == nil {
 		ret, rr.Err = ReadInt8(rr.r)

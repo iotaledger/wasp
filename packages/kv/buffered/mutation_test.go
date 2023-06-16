@@ -1,7 +1,6 @@
 package buffered
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -20,15 +19,8 @@ func TestMutationsMarshalling(t *testing.T) {
 	ms.Set("k1", []byte("v1"))
 	ms.Del("k2")
 
-	w := new(bytes.Buffer)
-	err := ms.Write(w)
+	ms2, err := MutationsFromBytes(ms.Bytes())
 	require.NoError(t, err)
-
-	ms2 := NewMutations()
-	r := bytes.NewBuffer(w.Bytes())
-	err = ms2.Read(r)
-	require.NoError(t, err)
-
 	require.EqualValues(t, util.GetHashValue(ms), util.GetHashValue(ms2))
 }
 

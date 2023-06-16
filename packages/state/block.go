@@ -4,9 +4,9 @@
 package state
 
 import (
-	"bytes"
 	"io"
 
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"golang.org/x/crypto/blake2b"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -25,39 +25,32 @@ type block struct {
 
 var _ Block = &block{}
 
-//nolint:revive
-func BlockFromBytes(data []byte) (*block, error) {
-	buf := bytes.NewBuffer(data)
+func BlockFromBytes(data []byte) (Block, error) {
+	return rwutil.ReaderFromBytes(data, new(block))
+}
 
-	trieRoot, err := trie.ReadHash(buf)
-	if err != nil {
-		return nil, err
-	}
+func (b *block) Bytes() []byte {
+	return rwutil.WriterToBytes(b)
+}
 
-	muts := buffered.NewMutations()
-	err = muts.Read(buf)
-	if err != nil {
-		return nil, err
-	}
+func (b *block) essenceBytes() []byte {
+	ww := rwutil.NewBytesWriter()
+	ww.WriteFromFunc(b.writeEssence)
+	return ww.Bytes()
+}
 
-	var hasPrevL1Commitment bool
-	if hasPrevL1Commitment, err = codec.DecodeBool(buf.Next(1)); err != nil {
-		return nil, err
-	}
-	var prevL1Commitment *L1Commitment
-	if hasPrevL1Commitment {
-		prevL1Commitment = new(L1Commitment)
-		err = prevL1Commitment.Read(buf)
-		if err != nil {
-			return nil, err
-		}
-	}
+func (b *block) Equals(other Block) bool {
+	return b.Hash().Equals(other.Hash())
+}
 
-	return &block{
-		trieRoot:             trieRoot,
-		mutations:            muts,
-		previousL1Commitment: prevL1Commitment,
-	}, nil
+func (b *block) Hash() (ret BlockHash) {
+	hash := blake2b.Sum256(b.essenceBytes())
+	copy(ret[:], hash[:])
+	return ret
+}
+
+func (b *block) L1Commitment() *L1Commitment {
+	return newL1Commitment(b.TrieRoot(), b.Hash())
 }
 
 func (b *block) Mutations() *buffered.Mutations {
@@ -71,10 +64,6 @@ func (b *block) MutationsReader() kv.KVStoreReader {
 	)
 }
 
-func (b *block) TrieRoot() trie.Hash {
-	return b.trieRoot
-}
-
 func (b *block) PreviousL1Commitment() *L1Commitment {
 	return b.previousL1Commitment
 }
@@ -83,50 +72,42 @@ func (b *block) StateIndex() uint32 {
 	return codec.MustDecodeUint32(b.MutationsReader().Get(kv.Key(coreutil.StatePrefixBlockIndex)))
 }
 
-func (b *block) essenceBytes() []byte {
-	w := new(bytes.Buffer)
-	b.writeEssence(w)
-	return w.Bytes()
+func (b *block) TrieRoot() trie.Hash {
+	return b.trieRoot
 }
 
-func (b *block) writeEssence(w io.Writer) {
-	if _, err := w.Write(b.Mutations().Bytes()); err != nil {
-		panic(err)
+func (b *block) readEssence(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	b.mutations = buffered.NewMutations()
+	rr.Read(b.mutations)
+	hasPrevL1Commitment := rr.ReadBool()
+	if hasPrevL1Commitment {
+		b.previousL1Commitment = new(L1Commitment)
+		rr.Read(b.previousL1Commitment)
 	}
+	return rr.Err
+}
 
-	if _, err := w.Write(codec.EncodeBool(b.PreviousL1Commitment() != nil)); err != nil {
-		panic(err)
-	}
-
+func (b *block) writeEssence(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteN(b.Mutations().Bytes())
+	ww.WriteBool(b.PreviousL1Commitment() != nil)
 	if b.PreviousL1Commitment() != nil {
-		if _, err := w.Write(b.PreviousL1Commitment().Bytes()); err != nil {
-			panic(err)
-		}
+		ww.WriteN(b.PreviousL1Commitment().Bytes())
 	}
+	return ww.Err
 }
 
-func (b *block) Bytes() []byte {
-	w := new(bytes.Buffer)
-	root := b.TrieRoot()
-	w.Write(root[:])
-	b.writeEssence(w)
-	return w.Bytes()
+func (b *block) Read(r io.Reader) error {
+	ww := rwutil.NewReader(r)
+	ww.ReadN(b.trieRoot[:])
+	ww.ReadFromFunc(b.readEssence)
+	return ww.Err
 }
 
-func (b *block) Hash() BlockHash {
-	return BlockHashFromData(b.essenceBytes())
-}
-
-func (b *block) L1Commitment() *L1Commitment {
-	return newL1Commitment(b.TrieRoot(), b.Hash())
-}
-
-func (b *block) GetHash() (ret BlockHash) {
-	r := blake2b.Sum256(b.essenceBytes())
-	copy(ret[:BlockHashSize], r[:BlockHashSize])
-	return
-}
-
-func (b *block) Equals(other Block) bool {
-	return b.GetHash().Equals(other.Hash())
+func (b *block) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteN(b.trieRoot[:])
+	ww.WriteFromFunc(b.writeEssence)
+	return ww.Err
 }

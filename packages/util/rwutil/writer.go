@@ -107,6 +107,13 @@ func (ww *Writer) WriteFromBytes(obj interface{ Bytes() []byte }) *Writer {
 	return ww
 }
 
+func (ww *Writer) WriteFromFunc(write func(w io.Writer) error) *Writer {
+	if ww.Err == nil {
+		ww.Err = write(ww.w)
+	}
+	return ww
+}
+
 func (ww *Writer) WriteInt8(val int8) *Writer {
 	if ww.Err == nil {
 		ww.Err = WriteInt8(ww.w, val)

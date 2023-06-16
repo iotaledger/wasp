@@ -908,11 +908,7 @@ func (msg *multiKeySetMsg) fromBytes(buf []byte, peeringID peering.PeeringID, re
 }
 
 func (msg *multiKeySetMsg) mustDataBytes() []byte {
-	w := new(bytes.Buffer)
-	if err := msg.Write(w); err != nil {
-		panic(err)
-	}
-	return w.Bytes()
+	return rwutil.WriterToBytes(msg)
 }
 
 type multiKeySetMsgs map[uint16]*multiKeySetMsg
