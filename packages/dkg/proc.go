@@ -16,6 +16,7 @@ import (
 
 	"go.dedis.ch/kyber/v3"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
+	rabin_vss "go.dedis.ch/kyber/v3/share/vss/rabin"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/key"
 
@@ -258,11 +259,17 @@ func (p *proc) rabinStep2R22SendResponsesMakeSent(step byte, kst keySetType, ini
 	// Decode the received deals, avoid nested locks.
 	recvDeals := make(map[uint16]*rabinDealMsg, len(prevMsgs))
 	for i := range prevMsgs {
-		peerDealMsg := rabinDealMsg{}
-		if err2 := peerDealMsg.fromBytes(prevMsgs[i].MsgData, p.node.edSuite); err2 != nil {
+		peerDealMsg := &rabinDealMsg{
+			deal: &rabin_dkg.Deal{
+				Deal: &rabin_vss.EncryptedDeal{
+					DHKey: p.node.edSuite.Point(),
+				},
+			},
+		}
+		if err2 := msgFromBytes(prevMsgs[i].MsgData, peerDealMsg); err2 != nil {
 			return nil, err2
 		}
-		recvDeals[i] = &peerDealMsg
+		recvDeals[i] = peerDealMsg
 	}
 	//
 	// Process the received deals and produce responses.
@@ -304,12 +311,12 @@ func (p *proc) rabinStep3R23SendJustificationsMakeSent(step byte, kst keySetType
 	// Decode the received response.
 	recvResponses := make(map[uint16]*rabinResponseMsg)
 	for i := range prevMsgs {
-		peerResponseMsg := rabinResponseMsg{}
-		if err = peerResponseMsg.fromBytes(prevMsgs[i].MsgData); err != nil {
+		peerResponseMsg := &rabinResponseMsg{}
+		if err = msgFromBytes(prevMsgs[i].MsgData, peerResponseMsg); err != nil {
 			err = fmt.Errorf("Response: decoding failed: %w", err)
 			return nil, err
 		}
-		recvResponses[i] = &peerResponseMsg
+		recvResponses[i] = peerResponseMsg
 	}
 	//
 	// Process the received responses and produce justifications.
@@ -355,11 +362,11 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, 
 	// Decode the received justifications.
 	recvJustifications := make(map[uint16]*rabinJustificationMsg)
 	for i := range prevMsgs {
-		peerJustificationMsg := rabinJustificationMsg{}
-		if err = peerJustificationMsg.fromBytes(prevMsgs[i].MsgData, p.keySetSuite(kst)); err != nil {
+		peerJustificationMsg := &rabinJustificationMsg{blsSuite: p.keySetSuite(kst)}
+		if err = msgFromBytes(prevMsgs[i].MsgData, peerJustificationMsg); err != nil {
 			return nil, fmt.Errorf("Justification: decoding failed: %w", err)
 		}
-		recvJustifications[i] = &peerJustificationMsg
+		recvJustifications[i] = peerJustificationMsg
 	}
 	//
 	// Process the received justifications.
@@ -424,11 +431,11 @@ func (p *proc) rabinStep5R5SendComplaintCommitsMakeSent(step byte, kst keySetTyp
 	// Decode and process the received secret commits.
 	recvSecretCommits := make(map[uint16]*rabinSecretCommitsMsg)
 	for i := range prevMsgs {
-		peerSecretCommitsMsg := rabinSecretCommitsMsg{}
-		if err2 := peerSecretCommitsMsg.fromBytes(prevMsgs[i].MsgData, p.keySetSuite(kst)); err2 != nil {
+		peerSecretCommitsMsg := &rabinSecretCommitsMsg{blsSuite: p.keySetSuite(kst)}
+		if err2 := msgFromBytes(prevMsgs[i].MsgData, peerSecretCommitsMsg); err2 != nil {
 			return nil, err2
 		}
-		recvSecretCommits[i] = &peerSecretCommitsMsg
+		recvSecretCommits[i] = peerSecretCommitsMsg
 	}
 	//
 	// Process the received secret commits.
@@ -482,11 +489,11 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeSent(step byte, kst keySetT
 	// Decode and process the received secret commits.
 	recvComplaintCommits := make(map[uint16]*rabinComplaintCommitsMsg)
 	for i := range prevMsgs {
-		peerComplaintCommitsMsg := rabinComplaintCommitsMsg{}
-		if err2 := peerComplaintCommitsMsg.fromBytes(prevMsgs[i].MsgData, p.keySetSuite(kst)); err2 != nil {
+		peerComplaintCommitsMsg := &rabinComplaintCommitsMsg{blsSuite: p.keySetSuite(kst)}
+		if err2 := msgFromBytes(prevMsgs[i].MsgData, peerComplaintCommitsMsg); err2 != nil {
 			return nil, err2
 		}
-		recvComplaintCommits[i] = &peerComplaintCommitsMsg
+		recvComplaintCommits[i] = peerComplaintCommitsMsg
 	}
 	//
 	// Process the received complaint commits.
@@ -560,12 +567,12 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 		//
 		// Process the received reconstruct commits.
 		for _, recvMsg := range recvMsgs {
-			peerReconstructCommitsMsgEd := rabinReconstructCommitsMsg{}
-			if err2 := peerReconstructCommitsMsgEd.fromBytes(recvMsg.edMsg.MsgData); err2 != nil {
+			peerReconstructCommitsMsgEd := &rabinReconstructCommitsMsg{}
+			if err2 := msgFromBytes(recvMsg.edMsg.MsgData, peerReconstructCommitsMsgEd); err2 != nil {
 				return nil, err2
 			}
-			peerReconstructCommitsMsgBLS := rabinReconstructCommitsMsg{}
-			if err2 := peerReconstructCommitsMsgBLS.fromBytes(recvMsg.blsMsg.MsgData); err2 != nil {
+			peerReconstructCommitsMsgBLS := &rabinReconstructCommitsMsg{}
+			if err2 := msgFromBytes(recvMsg.blsMsg.MsgData, peerReconstructCommitsMsgBLS); err2 != nil {
 				return nil, err2
 			}
 			p.dkgLock.Lock()
@@ -653,8 +660,8 @@ func (p *proc) rabinStep7CommitAndTerminateMakeSent(step byte, kst keySetType, i
 
 func (p *proc) rabinStep7CommitAndTerminateMakeResp(step byte, initRecv *peering.PeerMessageGroupIn, recvMsgs multiKeySetMsgs) (*peering.PeerMessageData, error) {
 	var err error
-	doneMsg := initiatorDoneMsg{}
-	if err = doneMsg.fromBytes(initRecv.MsgData, p.node.edSuite, p.node.blsSuite); err != nil {
+	doneMsg := &initiatorDoneMsg{edSuite: p.node.edSuite, blsSuite: p.node.blsSuite}
+	if err = msgFromBytes(initRecv.MsgData, doneMsg); err != nil {
 		p.log.Warnf("Dropping message, failed to decode: %v", initRecv)
 		return nil, err
 	}
@@ -872,8 +879,12 @@ func (s *procStep) run() {
 				if s.recvMsgs[recv.SenderIndex] == nil {
 					// Here we received a message from the peer first time in this round.
 					// Parse and store it and wait until we have messages from all the peers.
-					multiKSTMsg := &multiKeySetMsg{}
-					if err := multiKSTMsg.fromBytes(recv.PeerMessageData.MsgData, recv.PeerMessageData.PeeringID, recv.PeerMessageData.MsgReceiver, recv.PeerMessageData.MsgType); err != nil {
+					multiKSTMsg := &multiKeySetMsg{
+						peeringID: recv.PeerMessageData.PeeringID,
+						receiver:  recv.PeerMessageData.MsgReceiver,
+						msgType:   recv.PeerMessageData.MsgType,
+					}
+					if err := msgFromBytes(recv.PeerMessageData.MsgData, multiKSTMsg); err != nil {
 						s.log.Debugf("failed to parse peer message, peeringID: %s, msgType: %d, msgData: %s, error: %w", recv.PeerMessageData.PeeringID, recv.PeerMessageData.MsgType, hex.EncodeToString(recv.PeerMessageData.MsgData), err)
 						continue
 					}

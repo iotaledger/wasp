@@ -1,7 +1,6 @@
 package crypto
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +8,8 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"golang.org/x/crypto/chacha20poly1305"
+
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // errors returned by the package
@@ -35,22 +36,19 @@ type Commits []kyber.Point
 
 // MarshalTo encodes the receiver into binary and writes it to w.
 func (c Commits) MarshalTo(w io.Writer) (int, error) {
-	written := 0
+	ww := rwutil.NewWriter(w)
+	counter := rwutil.NewWriteCounter(ww)
 	for _, p := range c {
-		n, err := p.MarshalTo(w)
-		written += n
-		if err != nil {
-			return written, err
-		}
+		ww.WriteFromFunc(p.MarshalTo)
 	}
-	return written, nil
+	return counter.Count(), ww.Err
 }
 
 // MarshalBinary implements encoding.BinaryMarshaler.
 func (c Commits) MarshalBinary() ([]byte, error) {
-	w := new(bytes.Buffer)
-	_, err := c.MarshalTo(w)
-	return w.Bytes(), err
+	ww := rwutil.NewBytesWriter()
+	ww.WriteFromFunc(c.MarshalTo)
+	return ww.Bytes(), nil
 }
 
 // SecretLen returns the length of Secret in bytes.

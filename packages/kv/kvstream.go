@@ -39,7 +39,7 @@ func (b *BinaryStreamWriter) Write(key, value []byte) error {
 	counter := rwutil.NewWriteCounter(ww)
 	ww.WriteBytes(key)
 	ww.WriteBytes(value)
-	b.byteCount += int(counter.Count())
+	b.byteCount += counter.Count()
 	b.kvCount++
 	return ww.Err
 }

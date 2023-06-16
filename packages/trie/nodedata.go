@@ -89,106 +89,6 @@ func (n *NodeData) String() string {
 		n.Commitment, n.PathExtension, childIdx, t)
 }
 
-// Read/Write implements optimized serialization of the trie node
-// The serialization of the node takes advantage of the fact that most of the
-// nodes has just few children.
-// the 'smallFlags' (1 byte) contains information:
-// - 'hasChildrenFlag' does node contain at least one child
-// - 'isTerminalNodeFlag' means that the node contains a terminal commitment
-// - 'isExtensionNodeFlag' means that the node has a non-empty path extension
-// By the semantics of the trie, 'smallFlags' cannot be 0
-// 'childrenFlags' (2 bytes array or 16 bits) are only present if node contains at least one child commitment
-// In this case:
-// if node has a child commitment at the position of i, 0 <= p <= 255, it has a bit in the byte array
-// at the index i/8. The bit position in the byte is i % 8
-
-const (
-	isTerminalNodeFlag = 1 << iota
-	hasChildrenFlag
-	isExtensionNodeFlag
-)
-
-// cflags 16 flags, one for each child
-type cflags uint16
-
-func (fl *cflags) setFlag(i byte) {
-	*fl |= 1 << i
-}
-
-func (fl cflags) hasFlag(i byte) bool {
-	return fl&(1<<i) != 0
-}
-
-// Write serialized node data
-func (n *NodeData) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	var smallFlags byte
-	if n.Terminal != nil {
-		smallFlags |= isTerminalNodeFlag
-	}
-
-	// compress child indexes in 32 bits
-	childrenFlags := cflags(0)
-	n.iterateChildren(func(i byte, _ Hash) bool {
-		childrenFlags.setFlag(i)
-		return true
-	})
-	if childrenFlags != 0 {
-		smallFlags |= hasChildrenFlag
-	}
-
-	var pathExtensionEncoded []byte
-	if len(n.PathExtension) > 0 {
-		smallFlags |= isExtensionNodeFlag
-		pathExtensionEncoded, ww.Err = encodeUnpackedBytes(n.PathExtension)
-	}
-
-	ww.WriteByte(smallFlags)
-	if smallFlags&isExtensionNodeFlag != 0 {
-		ww.WriteBytes(pathExtensionEncoded)
-	}
-	if smallFlags&isTerminalNodeFlag != 0 {
-		ww.Write(n.Terminal)
-	}
-	if smallFlags&hasChildrenFlag != 0 {
-		ww.WriteUint16(uint16(childrenFlags))
-		n.iterateChildren(func(_ byte, h Hash) bool {
-			ww.Write(h)
-			return ww.Err == nil
-		})
-	}
-	return ww.Err
-}
-
-// Read deserialize node data
-func (n *NodeData) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	smallFlags := rr.ReadByte()
-	n.PathExtension = nil
-	if smallFlags&isExtensionNodeFlag != 0 {
-		encoded := rr.ReadBytes()
-		if rr.Err == nil {
-			n.PathExtension, rr.Err = decodeToUnpackedBytes(encoded)
-		}
-	}
-	n.Terminal = nil
-	if smallFlags&isTerminalNodeFlag != 0 {
-		n.Terminal = newTerminalCommitment()
-		rr.Read(n.Terminal)
-	}
-	if smallFlags&hasChildrenFlag != 0 {
-		flags := cflags(rr.ReadUint16())
-		for i := 0; i < NumChildren; i++ {
-			ib := uint8(i)
-			if flags.hasFlag(ib) {
-				n.Children[ib] = &Hash{}
-				rr.Read(n.Children[ib])
-			}
-		}
-	}
-	return rr.Err
-}
-
 func (n *NodeData) iterateChildren(f func(byte, Hash) bool) {
 	for i, v := range n.Children {
 		if v != nil {
@@ -222,4 +122,91 @@ func (n *NodeData) updateCommitment() {
 	pathExtensionCommitmentBytes := compressToHashSize(n.PathExtension)
 	hashes[pathExtensionIndex] = pathExtensionCommitmentBytes
 	n.Commitment = hashes.Hash()
+}
+
+// Read/Write implements optimized serialization of the trie node
+// The serialization of the node takes advantage of the fact that most of the
+// nodes has just few children.
+// the 'smallFlags' (1 byte) contains information:
+// - 'hasChildrenFlag' does node contain at least one child
+// - 'isTerminalNodeFlag' means that the node contains a terminal commitment
+// - 'isExtensionNodeFlag' means that the node has a non-empty path extension
+// By the semantics of the trie, 'smallFlags' cannot be 0
+// 'childrenFlags' (2 bytes array or 16 bits) are only present if node contains at least one child commitment
+// In this case:
+// if node has a child commitment at the position of i, 0 <= p <= 255, it has a bit in the byte array
+// at the index i/8. The bit position in the byte is i % 8
+
+const (
+	isTerminalNodeFlag = 1 << iota
+	hasChildrenFlag
+	isExtensionNodeFlag
+)
+
+func (n *NodeData) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	smallFlags := rr.ReadByte()
+	n.PathExtension = nil
+	if smallFlags&isExtensionNodeFlag != 0 {
+		encoded := rr.ReadBytes()
+		if rr.Err == nil {
+			n.PathExtension, rr.Err = decodeToUnpackedBytes(encoded)
+		}
+	}
+	n.Terminal = nil
+	if smallFlags&isTerminalNodeFlag != 0 {
+		n.Terminal = newTerminalCommitment()
+		rr.Read(n.Terminal)
+	}
+	if smallFlags&hasChildrenFlag != 0 {
+		flags := rr.ReadUint16()
+		for i := 0; i < NumChildren; i++ {
+			ib := uint8(i)
+			if (flags & (1 << i)) != 0 {
+				n.Children[ib] = &Hash{}
+				rr.Read(n.Children[ib])
+			}
+		}
+	}
+	return rr.Err
+}
+
+func (n *NodeData) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	var smallFlags byte
+	if n.Terminal != nil {
+		smallFlags |= isTerminalNodeFlag
+	}
+
+	// compress child indexes in 32 bits
+	childrenFlags := uint16(0)
+	n.iterateChildren(func(i byte, _ Hash) bool {
+		childrenFlags |= 1 << i
+		return true
+	})
+	if childrenFlags != 0 {
+		smallFlags |= hasChildrenFlag
+	}
+
+	var pathExtensionEncoded []byte
+	if len(n.PathExtension) > 0 {
+		smallFlags |= isExtensionNodeFlag
+		pathExtensionEncoded, ww.Err = encodeUnpackedBytes(n.PathExtension)
+	}
+
+	ww.WriteByte(smallFlags)
+	if smallFlags&isExtensionNodeFlag != 0 {
+		ww.WriteBytes(pathExtensionEncoded)
+	}
+	if smallFlags&isTerminalNodeFlag != 0 {
+		ww.Write(n.Terminal)
+	}
+	if smallFlags&hasChildrenFlag != 0 {
+		ww.WriteUint16(childrenFlags)
+		n.iterateChildren(func(_ byte, h Hash) bool {
+			ww.Write(h)
+			return ww.Err == nil
+		})
+	}
+	return ww.Err
 }

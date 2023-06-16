@@ -9,7 +9,6 @@ package dkg
 //
 
 import (
-	"bytes"
 	"errors"
 	"io"
 	"time"
@@ -75,6 +74,11 @@ const (
 )
 
 var initPeeringID peering.PeeringID
+
+func msgFromBytes[T interface{ Read(r io.Reader) error }](data []byte, msg T) error {
+	_, err := rwutil.ReaderFromBytes(data, msg)
+	return err
+}
 
 // Check if that's a Initiator -> PeerProc message.
 func isDkgInitProcRecvMsg(msgType byte) bool {
@@ -142,41 +146,22 @@ type initiatorMsg interface {
 	IsResponse() bool
 }
 
-func readInitiatorMsg(peerMessage *peering.PeerMessageData, edSuite, blsSuite kyber.Group) (bool, initiatorMsg, error) {
+func readInitiatorMsg(peerMessage *peering.PeerMessageData, edSuite, blsSuite kyber.Group) (msg initiatorMsg, err error) {
 	switch peerMessage.MsgType {
 	case initiatorInitMsgType:
-		msg := initiatorInitMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData); err != nil {
-			return true, nil, err
-		}
-		return true, &msg, nil
+		msg = new(initiatorInitMsg)
 	case initiatorStepMsgType:
-		msg := initiatorStepMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData); err != nil {
-			return true, nil, err
-		}
-		return true, &msg, nil
+		msg = new(initiatorStepMsg)
 	case initiatorDoneMsgType:
-		msg := initiatorDoneMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData, edSuite, blsSuite); err != nil {
-			return true, nil, err
-		}
-		return true, &msg, nil
+		msg = &initiatorDoneMsg{edSuite: edSuite, blsSuite: blsSuite}
 	case initiatorPubShareMsgType:
-		msg := initiatorPubShareMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData, edSuite, blsSuite); err != nil {
-			return true, nil, err
-		}
-		return true, &msg, nil
+		msg = &initiatorPubShareMsg{edSuite: edSuite, blsSuite: blsSuite}
 	case initiatorStatusMsgType:
-		msg := initiatorStatusMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData); err != nil {
-			return true, nil, err
-		}
-		return true, &msg, nil
+		msg = new(initiatorStatusMsg)
 	default:
-		return false, nil, nil
+		return nil, nil
 	}
+	return msg, msgFromBytes(peerMessage.MsgData, msg)
 }
 
 // initiatorInitMsg
@@ -248,11 +233,6 @@ func (msg *initiatorInitMsg) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (msg *initiatorInitMsg) fromBytes(buf []byte) error {
-	r := bytes.NewReader(buf)
-	return msg.Read(r)
-}
-
 func (msg *initiatorInitMsg) Error() error {
 	return nil
 }
@@ -292,11 +272,6 @@ func (msg *initiatorStepMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
 	return rr.Err
-}
-
-func (msg *initiatorStepMsg) fromBytes(buf []byte) error {
-	r := bytes.NewReader(buf)
-	return msg.Read(r)
 }
 
 func (msg *initiatorStepMsg) Error() error {
@@ -362,13 +337,6 @@ func (msg *initiatorDoneMsg) Read(r io.Reader) error {
 		rr.ReadMarshaled(msg.blsPubShares[i])
 	}
 	return rr.Err
-}
-
-func (msg *initiatorDoneMsg) fromBytes(buf []byte, edSuite, blsSuite kyber.Group) error {
-	r := bytes.NewReader(buf)
-	msg.edSuite = edSuite
-	msg.blsSuite = blsSuite
-	return msg.Read(r)
 }
 
 func (msg *initiatorDoneMsg) Error() error {
@@ -443,13 +411,6 @@ func (msg *initiatorPubShareMsg) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (msg *initiatorPubShareMsg) fromBytes(buf []byte, edSuite, blsSuite kyber.Group) error {
-	r := bytes.NewReader(buf)
-	msg.edSuite = edSuite
-	msg.blsSuite = blsSuite
-	return msg.Read(r)
-}
-
 func (msg *initiatorPubShareMsg) Error() error {
 	return nil
 }
@@ -498,11 +459,6 @@ func (msg *initiatorStatusMsg) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (msg *initiatorStatusMsg) fromBytes(buf []byte) error {
-	r := bytes.NewReader(buf)
-	return msg.Read(r)
-}
-
 func (msg *initiatorStatusMsg) Error() error {
 	return msg.error
 }
@@ -549,16 +505,6 @@ func (msg *rabinDealMsg) Read(r io.Reader) error {
 	msg.deal.Deal.Nonce = rr.ReadBytes()
 	msg.deal.Deal.Cipher = rr.ReadBytes()
 	return rr.Err
-}
-
-func (msg *rabinDealMsg) fromBytes(buf []byte, edSuite kyber.Group) error {
-	msg.deal = &rabin_dkg.Deal{
-		Deal: &rabin_vss.EncryptedDeal{
-			DHKey: edSuite.Point(),
-		},
-	}
-	rdr := bytes.NewReader(buf)
-	return msg.Read(rdr)
 }
 
 // rabin_dkg.Response
@@ -612,11 +558,6 @@ func (msg *rabinResponseMsg) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (msg *rabinResponseMsg) fromBytes(buf []byte) error {
-	rdr := bytes.NewReader(buf)
-	return msg.Read(rdr)
-}
-
 // rabin_dkg.Justification
 type rabinJustificationMsg struct {
 	step           byte
@@ -667,12 +608,6 @@ func (msg *rabinJustificationMsg) Read(r io.Reader) error {
 		j.Justification.Signature = rr.ReadBytes()
 	}
 	return rr.Err
-}
-
-func (msg *rabinJustificationMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
-	msg.blsSuite = blsSuite
-	rdr := bytes.NewReader(buf)
-	return msg.Read(rdr)
 }
 
 // rabin_dkg.SecretCommits
@@ -738,12 +673,6 @@ func (msg *rabinSecretCommitsMsg) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (msg *rabinSecretCommitsMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
-	msg.blsSuite = blsSuite
-	rdr := bytes.NewReader(buf)
-	return msg.Read(rdr)
-}
-
 // rabin_dkg.ComplaintCommits
 type rabinComplaintCommitsMsg struct {
 	step             byte
@@ -789,12 +718,6 @@ func (msg *rabinComplaintCommitsMsg) Read(r io.Reader) error {
 		msg.complaintCommits[i].Signature = rr.ReadBytes()
 	}
 	return rr.Err
-}
-
-func (msg *rabinComplaintCommitsMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
-	msg.blsSuite = blsSuite
-	rdr := bytes.NewReader(buf)
-	return msg.Read(rdr)
 }
 
 // rabin_dkg.ReconstructCommits
@@ -845,11 +768,6 @@ func (msg *rabinReconstructCommitsMsg) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (msg *rabinReconstructCommitsMsg) fromBytes(buf []byte) error {
-	rdr := bytes.NewReader(buf)
-	return msg.Read(rdr)
-}
-
 // multiKeySetMsg wraps messages of different protocol instances (for different key set types).
 // It is needed to cope with the round synchronization.
 type multiKeySetMsg struct {
@@ -897,14 +815,6 @@ func (msg *multiKeySetMsg) Read(r io.Reader) error {
 		MsgData:     rr.ReadBytes(),
 	}
 	return rr.Err
-}
-
-func (msg *multiKeySetMsg) fromBytes(buf []byte, peeringID peering.PeeringID, receiver, msgType byte) error {
-	rdr := bytes.NewReader(buf)
-	msg.peeringID = peeringID
-	msg.receiver = receiver
-	msg.msgType = msgType
-	return msg.Read(rdr)
 }
 
 func (msg *multiKeySetMsg) mustDataBytes() []byte {

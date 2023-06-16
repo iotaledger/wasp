@@ -10,7 +10,7 @@ import (
 // Counter implements a read/write stream that can wrap another stream.
 // It will count the total number of bytes read/written from/to the wrapped stream.
 type Counter struct {
-	count uint32
+	count int
 	r     io.Reader
 	rr    *Reader
 	w     io.Writer
@@ -46,18 +46,18 @@ func (counter *Counter) Close() {
 	panic("already closed")
 }
 
-func (counter *Counter) Count() uint32 {
+func (counter *Counter) Count() int {
 	return counter.count
 }
 
 func (counter *Counter) Read(data []byte) (int, error) {
 	bytes, err := counter.r.Read(data)
-	counter.count += uint32(bytes)
+	counter.count += bytes
 	return bytes, err
 }
 
 func (counter *Counter) Write(data []byte) (int, error) {
 	bytes, err := counter.w.Write(data)
-	counter.count += uint32(bytes)
+	counter.count += bytes
 	return bytes, err
 }

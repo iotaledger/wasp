@@ -107,9 +107,9 @@ func (ww *Writer) WriteFromBytes(obj interface{ Bytes() []byte }) *Writer {
 	return ww
 }
 
-func (ww *Writer) WriteFromFunc(write func(w io.Writer) error) *Writer {
+func (ww *Writer) WriteFromFunc(write func(w io.Writer) (int, error)) *Writer {
 	if ww.Err == nil {
-		ww.Err = write(ww.w)
+		_, ww.Err = write(ww.w)
 	}
 	return ww
 }

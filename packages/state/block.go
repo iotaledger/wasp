@@ -6,7 +6,6 @@ package state
 import (
 	"io"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"golang.org/x/crypto/blake2b"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -15,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type block struct {
@@ -76,8 +76,9 @@ func (b *block) TrieRoot() trie.Hash {
 	return b.trieRoot
 }
 
-func (b *block) readEssence(r io.Reader) error {
+func (b *block) readEssence(r io.Reader) (int, error) {
 	rr := rwutil.NewReader(r)
+	counter := rwutil.NewReadCounter(rr)
 	b.mutations = buffered.NewMutations()
 	rr.Read(b.mutations)
 	hasPrevL1Commitment := rr.ReadBool()
@@ -85,17 +86,17 @@ func (b *block) readEssence(r io.Reader) error {
 		b.previousL1Commitment = new(L1Commitment)
 		rr.Read(b.previousL1Commitment)
 	}
-	return rr.Err
+	return counter.Count(), rr.Err
 }
 
-func (b *block) writeEssence(w io.Writer) error {
+func (b *block) writeEssence(w io.Writer) (int, error) {
 	ww := rwutil.NewWriter(w)
 	ww.WriteN(b.Mutations().Bytes())
 	ww.WriteBool(b.PreviousL1Commitment() != nil)
 	if b.PreviousL1Commitment() != nil {
 		ww.WriteN(b.PreviousL1Commitment().Bytes())
 	}
-	return ww.Err
+	return len(ww.Bytes()), ww.Err
 }
 
 func (b *block) Read(r io.Reader) error {
