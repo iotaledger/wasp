@@ -17,6 +17,16 @@ func NewEvent(data []byte) (*Event, error) {
 	return rwutil.ReaderFromBytes(data, new(Event))
 }
 
+// ContractIDFromEventBytes is used by blocklog to filter out specific events per contract
+// For performance reasons it is working directly with the event bytes.
+func ContractIDFromEventBytes(eventBytes []byte) (Hname, error) {
+	if len(eventBytes) > 4 {
+		return HnameFromBytes(eventBytes[:4])
+	}
+
+	return HnameNil, nil
+}
+
 func (e *Event) Bytes() []byte {
 	return rwutil.WriterToBytes(e)
 }

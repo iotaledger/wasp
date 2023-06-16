@@ -14,7 +14,6 @@ const (
 	prefixRequestLookupIndex
 	prefixRequestReceipts
 	prefixRequestEvents
-	prefixSmartContractEventsLookup
 	prefixUnprocessableRequests
 )
 
