@@ -19,13 +19,13 @@ var (
 	ViewGetAllowedStateControllerAddresses  = coreutil.ViewFunc("getAllowedStateControllerAddresses")
 
 	// chain owner (L1 entity that is the "owner of the chain")
-	FuncClaimChainOwnership    = coreutil.Func("claimChainOwnership")
-	FuncDelegateChainOwnership = coreutil.Func("delegateChainOwnership")
-	FuncSetPayoutAddress       = coreutil.Func("setPayoutAddress")
-	FuncSetMinSD               = coreutil.Func("setMinSD")
-	ViewGetPayoutAddress       = coreutil.ViewFunc("getPayoutAddress")
-	ViewGetMinSD               = coreutil.ViewFunc("getMinSD")
-	ViewGetChainOwner          = coreutil.ViewFunc("getChainOwner")
+	FuncClaimChainOwnership        = coreutil.Func("claimChainOwnership")
+	FuncDelegateChainOwnership     = coreutil.Func("delegateChainOwnership")
+	FuncSetPayoutAddress           = coreutil.Func("setPayoutAddress")
+	FuncSetMinCommonAccountBalance = coreutil.Func("setMinCommonAccountBalance")
+	ViewGetPayoutAddress           = coreutil.ViewFunc("getPayoutAddress")
+	ViewGetMinCommonAccountBalance = coreutil.ViewFunc("getMinCommonAccountBalance")
+	ViewGetChainOwner              = coreutil.ViewFunc("getChainOwner")
 
 	// gas
 	FuncSetFeePolicy = coreutil.Func("setFeePolicy")
@@ -58,12 +58,15 @@ var (
 
 // state variables
 const (
+	// DefaultMinCommonAccountBalance can't harvest the minimum
+	DefaultMinCommonAccountBalance = uint64(3000)
+
 	// state controller
 	StateVarAllowedStateControllerAddresses = "a"
 	StateVarRotateToAddress                 = "r"
 
-	StateVarPayoutAddress = "pa"
-	StateVarMinSD         = "vs"
+	StateVarPayoutAddress           = "pa"
+	StateVarMinCommonAccountBalance = "vs"
 
 	// chain owner
 	VarChainOwnerID          = "o"
@@ -92,9 +95,6 @@ const (
 
 // params
 const (
-	// MinimumBaseTokensOnCommonAccount can't harvest the minimum
-	MinimumBaseTokensOnCommonAccount = uint64(3000)
-
 	// state controller
 	ParamStateControllerAddress          = coreutil.ParamStateControllerAddress
 	ParamAllowedStateControllerAddresses = "a"
@@ -137,5 +137,5 @@ const (
 	ParamSetPayoutAddress = "s"
 
 	// set min SD
-	ParamSetMinSD = "ms"
+	ParamSetMinCommonAccountBalance = "ms"
 )

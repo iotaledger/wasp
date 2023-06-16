@@ -322,7 +322,7 @@ func (sc Funcs) GetMinSD(ctx wasmlib.ScViewClientContext) *GetMinSDCall {
 	return f
 }
 
-func (sc Funcs) GetPayoutAddress(ctx wasmlib.ScViewClientContext) *GetPayoutAddressCall {
+func (sc Funcs) MustGetPayoutAddress(ctx wasmlib.ScViewClientContext) *GetPayoutAddressCall {
 	f := &GetPayoutAddressCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetPayoutAddress)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f

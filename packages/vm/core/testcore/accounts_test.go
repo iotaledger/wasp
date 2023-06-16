@@ -440,7 +440,7 @@ func TestFoundries(t *testing.T) {
 
 		ch.AssertL2NativeTokens(senderAgentID, nativeTokenID, big1)
 		ch.AssertL2TotalNativeTokens(nativeTokenID, big1)
-
+		ownerBal1 := ch.L2Assets(ch.OriginatorAgentID)
 		commonAccountBalanceBeforeLastMint := ch.L2CommonAccountBaseTokens()
 
 		// after minting 1 token, try to mint the remaining tokens
@@ -452,6 +452,10 @@ func TestFoundries(t *testing.T) {
 
 		commonAccountBalanceAfterLastMint := ch.L2CommonAccountBaseTokens()
 		require.Equal(t, commonAccountBalanceAfterLastMint, commonAccountBalanceBeforeLastMint)
+		// assert that no extra base tokens were used for the storage deposit
+		ownerBal2 := ch.L2Assets(ch.OriginatorAgentID)
+		receipt := ch.LastReceipt()
+		require.Equal(t, ownerBal1.BaseTokens+receipt.GasFeeCharged, ownerBal2.BaseTokens)
 	})
 	t.Run("newFoundry exposes foundry serial number in event", func(t *testing.T) {
 		initTest()
@@ -815,7 +819,7 @@ func TestTransferAndCheckNativeTokens(t *testing.T) {
 
 	commonAssets = v.ch.L2CommonAccountAssets()
 	// in the common account should have left minimum plus gas fee from the last request
-	require.EqualValues(t, governance.MinimumBaseTokensOnCommonAccount, commonAssets.BaseTokens)
+	require.EqualValues(t, governance.DefaultMinCommonAccountBalance, commonAssets.BaseTokens)
 	require.EqualValues(t, 0, len(commonAssets.NativeTokens))
 }
 

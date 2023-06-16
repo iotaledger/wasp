@@ -351,8 +351,8 @@ func (vmctx *VMContext) chargeGasFee() {
 	}
 
 	// total fees to charge
-	sendToOwner, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGasBurned(vmctx.GasBurned(), availableToPayFee)
-	vmctx.gasFeeCharged = sendToOwner + sendToValidator
+	sendToPayout, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGasBurned(vmctx.GasBurned(), availableToPayFee)
+	vmctx.gasFeeCharged = sendToPayout + sendToValidator
 
 	// calc gas totals
 	vmctx.gasFeeChargedTotal += vmctx.gasFeeCharged
@@ -372,34 +372,32 @@ func (vmctx *VMContext) chargeGasFee() {
 	// if the payout address is not set in governance contract, then chain owner will be used
 	var minSD uint64
 	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
-		minSD = governance.MustGetMinSD(s)
+		minSD = governance.MustGetMinCommonAccountBalance(s)
 	})
 	commonAccountBal := vmctx.GetBaseTokensBalance(accounts.CommonAccount())
-	sendToPayout := sendToOwner
 	if minSD > commonAccountBal {
 		// pay to common account since the balance of common account is less than minSD
 		transfer := &isc.Assets{}
-		if sendToOwner > (minSD - commonAccountBal) {
-			transfer.BaseTokens = sendToOwner - (minSD - commonAccountBal)
+		if sendToPayout > (minSD - commonAccountBal) {
+			transfer.BaseTokens = sendToPayout - (minSD - commonAccountBal)
 		} else {
-			transfer.BaseTokens = sendToOwner
+			transfer.BaseTokens = sendToPayout
 		}
-		sendToPayout = sendToOwner - transfer.BaseTokens
+		sendToPayout = sendToPayout - transfer.BaseTokens
 		vmctx.mustMoveBetweenAccounts(sender, accounts.CommonAccount(), transfer)
 	}
 	if sendToPayout > 0 {
-		var payoutAddr isc.AgentID
-		var err error
+		var payoutAddr *isc.AgentID
 		vmctx.callCore(governance.Contract, func(s kv.KVStore) {
-			payoutAddr, err = governance.GetPayoutAddress(s)
-			if err != nil {
-				payoutAddr = vmctx.chainOwnerID
+			payoutAddr = governance.MustGetPayoutAddress(s)
+			if payoutAddr == nil {
+				payoutAddr = &vmctx.chainOwnerID
 			}
 		})
 
 		transfer := &isc.Assets{}
 		transfer.BaseTokens = sendToPayout
-		vmctx.mustMoveBetweenAccounts(sender, payoutAddr, transfer)
+		vmctx.mustMoveBetweenAccounts(sender, *payoutAddr, transfer)
 	}
 }
 

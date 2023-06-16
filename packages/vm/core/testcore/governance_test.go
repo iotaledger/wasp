@@ -462,7 +462,7 @@ func TestGovernanceGasFee(t *testing.T) {
 	ch.SetGasFeePolicy(nil, fp) // should not fail with "gas budget exceeded"
 }
 
-func TestGovernanceSetGetPayoutAddress(t *testing.T) {
+func TestGovernanceSetMustGetPayoutAddress(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 
@@ -490,27 +490,27 @@ func TestGovernanceSetGetPayoutAddress(t *testing.T) {
 	require.Equal(t, userAgentID, retAgentID)
 }
 
-func TestGovernanceSetGetMinSD(t *testing.T) {
+func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 
 	initRetDict, err := ch.CallView(
 		governance.Contract.Name,
-		governance.ViewGetMinSD.Name,
+		governance.ViewGetMinCommonAccountBalance.Name,
 	)
 	require.NoError(t, err)
-	retByte := initRetDict.Get(governance.ParamSetMinSD)
-	retMinSD, err := codec.DecodeUint64(retByte)
+	retByte := initRetDict.Get(governance.ParamSetMinCommonAccountBalance)
+	retMinCommonAccountBalance, err := codec.DecodeUint64(retByte)
 	require.NoError(t, err)
-	require.Equal(t, governance.MinimumBaseTokensOnCommonAccount, retMinSD)
+	require.Equal(t, governance.DefaultMinCommonAccountBalance, retMinCommonAccountBalance)
 
-	minSD := uint64(123456)
+	minCommonAccountBalance := uint64(123456)
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
 			governance.Contract.Name,
-			governance.FuncSetMinSD.Name,
-			governance.ParamSetMinSD,
-			codec.EncodeUint64(minSD),
+			governance.FuncSetMinCommonAccountBalance.Name,
+			governance.ParamSetMinCommonAccountBalance,
+			codec.EncodeUint64(minCommonAccountBalance),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
@@ -518,13 +518,13 @@ func TestGovernanceSetGetMinSD(t *testing.T) {
 
 	retDict, err := ch.CallView(
 		governance.Contract.Name,
-		governance.ViewGetMinSD.Name,
+		governance.ViewGetMinCommonAccountBalance.Name,
 	)
 	require.NoError(t, err)
-	retByte = retDict.Get(governance.ParamSetMinSD)
-	retMinSD, err = codec.DecodeUint64(retByte)
+	retByte = retDict.Get(governance.ParamSetMinCommonAccountBalance)
+	retMinCommonAccountBalance, err = codec.DecodeUint64(retByte)
 	require.NoError(t, err)
-	require.Equal(t, minSD, retMinSD)
+	require.Equal(t, minCommonAccountBalance, retMinCommonAccountBalance)
 }
 
 func TestGovCallsNoBalance(t *testing.T) {

@@ -65,20 +65,20 @@ func getPayoutAddress(ctx isc.SandboxView) dict.Dict {
 	return ret
 }
 
-func setMinSD(ctx isc.Sandbox) dict.Dict {
+func setMinCommonAccountBalance(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	minSD := ctx.Params().MustGetUint64(governance.ParamSetMinSD)
-	ctx.State().Set(governance.StateVarMinSD, codec.EncodeUint64(minSD))
+	minCommonAccountBalance := ctx.Params().MustGetUint64(governance.ParamSetMinCommonAccountBalance)
+	ctx.State().Set(governance.StateVarMinCommonAccountBalance, codec.EncodeUint64(minCommonAccountBalance))
 	return nil
 }
 
-func getMinSD(ctx isc.SandboxView) dict.Dict {
+func getMinCommonAccountBalance(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
-	minSD := ctx.StateR().Get(governance.StateVarMinSD)
-	if minSD == nil {
-		minSD = codec.EncodeUint64(governance.MinimumBaseTokensOnCommonAccount)
+	minCommonAccountBalance := ctx.StateR().Get(governance.StateVarMinCommonAccountBalance)
+	if minCommonAccountBalance == nil {
+		minCommonAccountBalance = codec.EncodeUint64(governance.DefaultMinCommonAccountBalance)
 	}
-	ret.Set(governance.ParamSetMinSD, minSD)
+	ret.Set(governance.ParamSetMinCommonAccountBalance, minCommonAccountBalance)
 	return ret
 }
 

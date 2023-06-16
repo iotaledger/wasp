@@ -65,19 +65,23 @@ func MustGetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) *isc.ChainInf
 	return info
 }
 
-func MustGetMinSD(state kv.KVStoreReader) uint64 {
+func MustGetMinCommonAccountBalance(state kv.KVStoreReader) uint64 {
 	d := kvdecoder.New(state)
-	minSD, err := d.GetUint64(StateVarMinSD)
+	minCommonAccountBalance, err := d.GetUint64(StateVarMinCommonAccountBalance)
 	if err != nil {
-		// FIXME we should use MinimumBaseTokensOnCommonAccount instead.
+		// FIXME we should use DefaultMinCommonAccountBalance instead.
 		return 0
 	}
-	return minSD
+	return minCommonAccountBalance
 }
 
-func GetPayoutAddress(state kv.KVStoreReader) (isc.AgentID, error) {
+func MustGetPayoutAddress(state kv.KVStoreReader) *isc.AgentID {
 	d := kvdecoder.New(state)
-	return d.GetAgentID(StateVarPayoutAddress)
+	agentID, err := d.GetAgentID(StateVarPayoutAddress)
+	if err != nil {
+		panic(err)
+	}
+	return &agentID
 }
 
 func mustGetChainOwnerID(state kv.KVStoreReader) isc.AgentID {
