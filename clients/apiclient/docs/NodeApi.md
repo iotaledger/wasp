@@ -13,7 +13,7 @@ Method | HTTP request | Description
 [**GetPeeringIdentity**](NodeApi.md#GetPeeringIdentity) | **Get** /v1/node/peers/identity | Get basic peer info of the current node
 [**GetTrustedPeers**](NodeApi.md#GetTrustedPeers) | **Get** /v1/node/peers/trusted | Get trusted peers
 [**GetVersion**](NodeApi.md#GetVersion) | **Get** /v1/node/version | Returns the node version.
-[**OwnerCertificate**](NodeApi.md#OwnerCertificate) | **Get** /v1/node/owner/certificate | Sets the node owner
+[**OwnerCertificate**](NodeApi.md#OwnerCertificate) | **Get** /v1/node/owner/certificate | Gets the node owner
 [**ShutdownNode**](NodeApi.md#ShutdownNode) | **Post** /v1/node/shutdown | Shut down the node
 [**TrustPeer**](NodeApi.md#TrustPeer) | **Post** /v1/node/peers/trusted | Trust a peering node
 
@@ -575,7 +575,7 @@ No authorization required
 
 > NodeOwnerCertificateResponse OwnerCertificate(ctx).Execute()
 
-Sets the node owner
+Gets the node owner
 
 ### Example
 

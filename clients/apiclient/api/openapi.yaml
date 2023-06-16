@@ -1758,7 +1758,7 @@ paths:
           description: "Unauthorized (Wrong permissions, missing token)"
       security:
       - Authorization: []
-      summary: Sets the node owner
+      summary: Gets the node owner
       tags:
       - node
   /v1/node/peers:

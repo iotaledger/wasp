@@ -1109,7 +1109,7 @@ func (r ApiOwnerCertificateRequest) Execute() (*NodeOwnerCertificateResponse, *h
 }
 
 /*
-OwnerCertificate Sets the node owner
+OwnerCertificate Gets the node owner
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiOwnerCertificateRequest
