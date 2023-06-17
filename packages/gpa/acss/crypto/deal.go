@@ -26,7 +26,7 @@ func (d *Deal) MarshalBinary() ([]byte, error) {
 	for _, s := range d.Shares {
 		ww.WriteN(s)
 	}
-	return ww.Bytes(), nil
+	return ww.Bytes(), ww.Err
 }
 
 // DealLen returns the length of Deal in bytes.

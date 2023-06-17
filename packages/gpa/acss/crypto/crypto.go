@@ -48,7 +48,7 @@ func (c Commits) MarshalTo(w io.Writer) (int, error) {
 func (c Commits) MarshalBinary() ([]byte, error) {
 	ww := rwutil.NewBytesWriter()
 	ww.WriteFromFunc(c.MarshalTo)
-	return ww.Bytes(), nil
+	return ww.Bytes(), ww.Err
 }
 
 // SecretLen returns the length of Secret in bytes.

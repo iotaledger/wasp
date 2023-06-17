@@ -55,7 +55,7 @@ func (req *evmOffLedgerTxRequest) Read(r io.Reader) error {
 		return err
 	}
 	req.sender = NewEthereumAddressAgentID(sender)
-	return nil
+	return rr.Err
 }
 
 func (req *evmOffLedgerTxRequest) Write(w io.Writer) error {

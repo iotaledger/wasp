@@ -70,7 +70,7 @@ func (s *L1Commitment) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteN(s.trieRoot[:])
 	ww.WriteN(s.blockHash[:])
-	return nil
+	return ww.Err
 }
 
 func (s *L1Commitment) String() string {

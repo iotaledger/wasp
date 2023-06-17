@@ -77,18 +77,6 @@ func (t *Tcommitment) Clone() *Tcommitment {
 	}
 }
 
-func (t *Tcommitment) Write(w io.Writer) error {
-	assertf(len(t.Data) <= tcommitmentDataSizeMax, "size <= tcommitmentDataSizeMax")
-	ww := rwutil.NewWriter(w)
-	size := byte(len(t.Data))
-	if t.IsValue {
-		size |= tcommitmentIsValueMask
-	}
-	ww.WriteByte(size)
-	ww.WriteN(t.Data)
-	return ww.Err
-}
-
 func (t *Tcommitment) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	size := rr.ReadByte()
@@ -99,6 +87,18 @@ func (t *Tcommitment) Read(r io.Reader) error {
 		rr.ReadN(t.Data)
 	}
 	return rr.Err
+}
+
+func (t *Tcommitment) Write(w io.Writer) error {
+	assertf(len(t.Data) <= tcommitmentDataSizeMax, "size <= tcommitmentDataSizeMax")
+	ww := rwutil.NewWriter(w)
+	size := byte(len(t.Data))
+	if t.IsValue {
+		size |= tcommitmentIsValueMask
+	}
+	ww.WriteByte(size)
+	ww.WriteN(t.Data)
+	return ww.Err
 }
 
 func (t *Tcommitment) Bytes() []byte {

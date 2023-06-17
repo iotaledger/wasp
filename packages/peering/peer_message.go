@@ -58,15 +58,15 @@ func newPeerMessageDataFromBytes(data []byte) (*PeerMessageData, error) {
 }
 
 func (m *PeerMessageData) Bytes() ([]byte, error) {
+	ww := rwutil.NewBytesWriter()
 	m.serializedOnce.Do(func() {
-		ww := rwutil.NewBytesWriter()
 		ww.WriteByte(m.MsgReceiver)
 		ww.WriteByte(m.MsgType)
 		ww.Write(&m.PeeringID)
 		ww.WriteBytes(m.MsgData)
 		m.serializedData = ww.Bytes()
 	})
-	return m.serializedData, nil
+	return m.serializedData, ww.Err
 }
 
 type PeerMessageNet struct {

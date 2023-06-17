@@ -76,6 +76,20 @@ func (b *block) TrieRoot() trie.Hash {
 	return b.trieRoot
 }
 
+func (b *block) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.ReadN(b.trieRoot[:])
+	rr.ReadFromFunc(b.readEssence)
+	return rr.Err
+}
+
+func (b *block) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteN(b.trieRoot[:])
+	ww.WriteFromFunc(b.writeEssence)
+	return ww.Err
+}
+
 func (b *block) readEssence(r io.Reader) (int, error) {
 	rr := rwutil.NewReader(r)
 	counter := rwutil.NewReadCounter(rr)
@@ -97,18 +111,4 @@ func (b *block) writeEssence(w io.Writer) (int, error) {
 		ww.WriteN(b.PreviousL1Commitment().Bytes())
 	}
 	return len(ww.Bytes()), ww.Err
-}
-
-func (b *block) Read(r io.Reader) error {
-	ww := rwutil.NewReader(r)
-	ww.ReadN(b.trieRoot[:])
-	ww.ReadFromFunc(b.readEssence)
-	return ww.Err
-}
-
-func (b *block) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteN(b.trieRoot[:])
-	ww.WriteFromFunc(b.writeEssence)
-	return ww.Err
 }

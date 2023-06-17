@@ -64,6 +64,14 @@ func (req *offLedgerRequestData) Read(r io.Reader) error {
 	return rr.Err
 }
 
+func (req *offLedgerRequestData) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	req.writeEssence(ww)
+	ww.Write(req.signature.publicKey)
+	ww.WriteBytes(req.signature.signature)
+	return ww.Err
+}
+
 func (req *offLedgerRequestData) readEssence(rr *rwutil.Reader) {
 	rr.ReadKindAndVerify(rwutil.Kind(requestKindOffLedgerISC))
 	rr.Read(&req.chainID)
@@ -75,14 +83,6 @@ func (req *offLedgerRequestData) readEssence(rr *rwutil.Reader) {
 	req.gasBudget = rr.ReadUint64()
 	req.allowance = NewEmptyAssets()
 	rr.Read(req.allowance)
-}
-
-func (req *offLedgerRequestData) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	req.writeEssence(ww)
-	ww.Write(req.signature.publicKey)
-	ww.WriteBytes(req.signature.signature)
-	return ww.Err
 }
 
 func (req *offLedgerRequestData) writeEssence(ww *rwutil.Writer) {
