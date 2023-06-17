@@ -76,7 +76,7 @@ const (
 var initPeeringID peering.PeeringID
 
 func msgFromBytes[T interface{ Read(r io.Reader) error }](data []byte, msg T) error {
-	_, err := rwutil.ReaderFromBytes(data, msg)
+	_, err := rwutil.ReadFromBytes(data, msg)
 	return err
 }
 
@@ -130,7 +130,7 @@ func makePeerMessage(peeringID peering.PeeringID, receiver, step byte, msg msgBy
 		PeeringID:   peeringID,
 		MsgReceiver: receiver,
 		MsgType:     msg.MsgType(),
-		MsgData:     rwutil.WriterToBytes(msg),
+		MsgData:     rwutil.WriteToBytes(msg),
 	}
 }
 
@@ -820,7 +820,7 @@ func (msg *multiKeySetMsg) Write(w io.Writer) error {
 }
 
 func (msg *multiKeySetMsg) mustDataBytes() []byte {
-	return rwutil.WriterToBytes(msg)
+	return rwutil.WriteToBytes(msg)
 }
 
 type multiKeySetMsgs map[uint16]*multiKeySetMsg

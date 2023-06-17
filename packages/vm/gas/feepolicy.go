@@ -88,11 +88,11 @@ func MustFeePolicyFromBytes(data []byte) *FeePolicy {
 }
 
 func FeePolicyFromBytes(data []byte) (*FeePolicy, error) {
-	return rwutil.ReaderFromBytes(data, new(FeePolicy))
+	return rwutil.ReadFromBytes(data, new(FeePolicy))
 }
 
 func (p *FeePolicy) Bytes() []byte {
-	return rwutil.WriterToBytes(p)
+	return rwutil.WriteToBytes(p)
 }
 
 func (p *FeePolicy) String() string {

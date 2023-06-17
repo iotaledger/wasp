@@ -38,7 +38,7 @@ func (a *ContractAgentID) Address() iotago.Address {
 }
 
 func (a *ContractAgentID) Bytes() []byte {
-	return rwutil.WriterToBytes(a)
+	return rwutil.WriteToBytes(a)
 }
 
 func (a *ContractAgentID) ChainID() ChainID {

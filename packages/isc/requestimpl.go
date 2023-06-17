@@ -78,25 +78,39 @@ func RequestRefsFromRequests(reqs []Request) []*RequestRef {
 	return rr
 }
 
-func (rr *RequestRef) AsKey() RequestRefKey {
+func (ref *RequestRef) AsKey() RequestRefKey {
 	var key RequestRefKey
-	copy(key[:], rr.Bytes())
+	copy(key[:], ref.Bytes())
 	return key
 }
 
-func (rr *RequestRef) IsFor(req Request) bool {
-	if rr.ID != req.ID() {
+func (ref *RequestRef) IsFor(req Request) bool {
+	if ref.ID != req.ID() {
 		return false
 	}
-	return rr.Hash == RequestHash(req)
+	return ref.Hash == RequestHash(req)
 }
 
-func (rr *RequestRef) Bytes() []byte {
-	return append(rr.Hash[:], rr.ID[:]...)
+func (ref *RequestRef) Bytes() []byte {
+	return append(ref.Hash[:], ref.ID[:]...)
 }
 
-func (rr *RequestRef) String() string {
-	return fmt.Sprintf("{requestRef, id=%v, hash=%v}", rr.ID.String(), rr.Hash.Hex())
+func (ref *RequestRef) String() string {
+	return fmt.Sprintf("{requestRef, id=%v, hash=%v}", ref.ID.String(), ref.Hash.Hex())
+}
+
+func (ref *RequestRef) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.ReadN(ref.ID[:])
+	rr.ReadN(ref.Hash[:])
+	return rr.Err
+}
+
+func (ref *RequestRef) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteN(ref.ID[:])
+	ww.WriteN(ref.Hash[:])
+	return ww.Err
 }
 
 func RequestRefFromBytes(data []byte) (*RequestRef, error) {
@@ -122,7 +136,7 @@ func NewRequestID(txid iotago.TransactionID, index uint16) RequestID {
 }
 
 func RequestIDFromBytes(data []byte) (ret RequestID, err error) {
-	_, err = rwutil.ReaderFromBytes(data, &ret)
+	_, err = rwutil.ReadFromBytes(data, &ret)
 	return
 }
 
@@ -222,7 +236,7 @@ func requestMetadataFromFeatureSet(set iotago.FeatureSet) (*RequestMetadata, err
 }
 
 func RequestMetadataFromBytes(data []byte) (*RequestMetadata, error) {
-	return rwutil.ReaderFromBytes(data, new(RequestMetadata))
+	return rwutil.ReadFromBytes(data, new(RequestMetadata))
 }
 
 // returns nil if nil pointer receiver is cloned
@@ -242,7 +256,7 @@ func (meta *RequestMetadata) Clone() *RequestMetadata {
 }
 
 func (meta *RequestMetadata) Bytes() []byte {
-	return rwutil.WriterToBytes(meta)
+	return rwutil.WriteToBytes(meta)
 }
 
 func (meta *RequestMetadata) Read(r io.Reader) error {

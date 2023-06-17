@@ -23,7 +23,7 @@ func (su *StateUpdate) Clone() *StateUpdate {
 }
 
 func (su *StateUpdate) Bytes() []byte {
-	return rwutil.WriterToBytes(su)
+	return rwutil.WriteToBytes(su)
 }
 
 func (su *StateUpdate) Write(w io.Writer) error {

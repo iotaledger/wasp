@@ -239,7 +239,7 @@ func headerFromBytes(data []byte) (ret *header) {
 }
 
 func (h *header) Bytes() []byte {
-	return rwutil.WriterToBytes(h)
+	return rwutil.WriteToBytes(h)
 }
 
 func (h *header) Read(r io.Reader) error {

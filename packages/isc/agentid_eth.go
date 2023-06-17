@@ -25,7 +25,7 @@ func ethAgentIDFromString(s string) (AgentID, error) {
 }
 
 func (a *EthereumAddressAgentID) Bytes() []byte {
-	return rwutil.WriterToBytes(a)
+	return rwutil.WriteToBytes(a)
 }
 
 func (a *EthereumAddressAgentID) Equals(other AgentID) bool {

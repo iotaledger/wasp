@@ -238,12 +238,12 @@ func (s *dkShareImpl) Clone() onchangemap.Item[string, *util.ComparableAddress] 
 // DKShareFromBytes reads DKShare from bytes.
 func DKShareFromBytes(buf []byte, edSuite suites.Suite, blsSuite Suite, nodePrivKey *cryptolib.PrivateKey) (DKShare, error) {
 	s := &dkShareImpl{nodePrivKey: nodePrivKey, edSuite: edSuite, blsSuite: blsSuite}
-	return rwutil.ReaderFromBytes(buf, s)
+	return rwutil.ReadFromBytes(buf, s)
 }
 
 // Bytes returns byte representation of the share.
 func (s *dkShareImpl) Bytes() []byte {
-	return rwutil.WriterToBytes(s)
+	return rwutil.WriteToBytes(s)
 }
 
 func (s *dkShareImpl) Read(r io.Reader) error {

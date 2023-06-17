@@ -18,11 +18,11 @@ type ContractFeesRecord struct {
 }
 
 func ContractFeesRecordFromBytes(data []byte) (*ContractFeesRecord, error) {
-	return rwutil.ReaderFromBytes(data, new(ContractFeesRecord))
+	return rwutil.ReadFromBytes(data, new(ContractFeesRecord))
 }
 
 func (p *ContractFeesRecord) Bytes() []byte {
-	return rwutil.WriterToBytes(p)
+	return rwutil.WriteToBytes(p)
 }
 
 func (p *ContractFeesRecord) Read(r io.Reader) error {

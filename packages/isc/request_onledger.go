@@ -95,7 +95,7 @@ func (req *onLedgerRequestData) Assets() *Assets {
 }
 
 func (req *onLedgerRequestData) Bytes() []byte {
-	return rwutil.WriterToBytes(req)
+	return rwutil.WriteToBytes(req)
 }
 
 func (req *onLedgerRequestData) CallTarget() CallTarget {

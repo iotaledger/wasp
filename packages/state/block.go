@@ -30,11 +30,11 @@ func NewBlock() Block {
 }
 
 func BlockFromBytes(data []byte) (Block, error) {
-	return rwutil.ReaderFromBytes(data, new(block))
+	return rwutil.ReadFromBytes(data, new(block))
 }
 
 func (b *block) Bytes() []byte {
-	return rwutil.WriterToBytes(b)
+	return rwutil.WriteToBytes(b)
 }
 
 func (b *block) essenceBytes() []byte {

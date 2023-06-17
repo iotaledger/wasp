@@ -44,7 +44,7 @@ func Hn(name string) (ret Hname) {
 }
 
 func HnameFromBytes(data []byte) (ret Hname, err error) {
-	_, err = rwutil.ReaderFromBytes(data, &ret)
+	_, err = rwutil.ReadFromBytes(data, &ret)
 	return
 }
 
@@ -57,7 +57,7 @@ func HnameFromHexString(s string) (Hname, error) {
 }
 
 func (hn Hname) Bytes() []byte {
-	return rwutil.WriterToBytes(&hn)
+	return rwutil.WriteToBytes(&hn)
 }
 
 func (hn Hname) Clone() Hname {

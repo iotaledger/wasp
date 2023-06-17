@@ -30,7 +30,7 @@ type RequestReceipt struct {
 }
 
 func RequestReceiptFromBytes(data []byte) (*RequestReceipt, error) {
-	return rwutil.ReaderFromBytes(data, new(RequestReceipt))
+	return rwutil.ReadFromBytes(data, new(RequestReceipt))
 }
 
 func RequestReceiptsFromBlock(block state.Block) ([]*RequestReceipt, error) {
@@ -53,7 +53,7 @@ func RequestReceiptsFromBlock(block state.Block) ([]*RequestReceipt, error) {
 }
 
 func (rec *RequestReceipt) Bytes() []byte {
-	return rwutil.WriterToBytes(rec)
+	return rwutil.WriteToBytes(rec)
 }
 
 func (rec *RequestReceipt) Read(r io.Reader) error {

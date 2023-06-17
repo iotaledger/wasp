@@ -33,11 +33,11 @@ func ContractRecordFromContractInfo(itf *coreutil.ContractInfo) *ContractRecord 
 }
 
 func ContractRecordFromBytes(data []byte) (*ContractRecord, error) {
-	return rwutil.ReaderFromBytes(data, new(ContractRecord))
+	return rwutil.ReadFromBytes(data, new(ContractRecord))
 }
 
 func (p *ContractRecord) Bytes() []byte {
-	return rwutil.WriterToBytes(p)
+	return rwutil.WriteToBytes(p)
 }
 
 func (p *ContractRecord) Hname() isc.Hname {

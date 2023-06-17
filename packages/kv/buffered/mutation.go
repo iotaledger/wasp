@@ -25,11 +25,11 @@ func NewMutations() *Mutations {
 }
 
 func MutationsFromBytes(data []byte) (*Mutations, error) {
-	return rwutil.ReaderFromBytes(data, NewMutations())
+	return rwutil.ReadFromBytes(data, NewMutations())
 }
 
 func (ms *Mutations) Bytes() []byte {
-	return rwutil.WriterToBytes(ms)
+	return rwutil.WriteToBytes(ms)
 }
 
 func (ms *Mutations) Read(r io.Reader) error {

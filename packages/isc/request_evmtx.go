@@ -79,7 +79,7 @@ func (req *evmOffLedgerTxRequest) Assets() *Assets {
 }
 
 func (req *evmOffLedgerTxRequest) Bytes() []byte {
-	return rwutil.WriterToBytes(req)
+	return rwutil.WriteToBytes(req)
 }
 
 func (req *evmOffLedgerTxRequest) CallTarget() CallTarget {

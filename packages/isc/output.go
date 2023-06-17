@@ -52,11 +52,11 @@ func NewAliasOutputWithID(aliasOutput *iotago.AliasOutput, outputID iotago.Outpu
 }
 
 func AliasOutputWithIDFromBytes(data []byte) (*AliasOutputWithID, error) {
-	return rwutil.ReaderFromBytes(data, new(AliasOutputWithID))
+	return rwutil.ReadFromBytes(data, new(AliasOutputWithID))
 }
 
 func (a *AliasOutputWithID) Bytes() []byte {
-	return rwutil.WriterToBytes(a)
+	return rwutil.WriteToBytes(a)
 }
 
 func (a *AliasOutputWithID) GetAliasOutput() *iotago.AliasOutput {

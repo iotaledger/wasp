@@ -18,11 +18,11 @@ type foundryOutputRec struct {
 }
 
 func (rec *foundryOutputRec) Bytes() []byte {
-	return rwutil.WriterToBytes(rec)
+	return rwutil.WriteToBytes(rec)
 }
 
 func mustFoundryOutputRecFromBytes(data []byte) *foundryOutputRec {
-	ret, err := rwutil.ReaderFromBytes(data, new(foundryOutputRec))
+	ret, err := rwutil.ReadFromBytes(data, new(foundryOutputRec))
 	if err != nil {
 		panic(err)
 	}

@@ -30,12 +30,12 @@ func NewCoreVMErrorCode(id uint16) VMErrorCode {
 }
 
 func VMErrorCodeFromBytes(b []byte) (ret VMErrorCode, err error) {
-	_, err = rwutil.ReaderFromBytes(b, &ret)
+	_, err = rwutil.ReadFromBytes(b, &ret)
 	return ret, err
 }
 
 func (c VMErrorCode) Bytes() []byte {
-	return rwutil.WriterToBytes(&c)
+	return rwutil.WriteToBytes(&c)
 }
 
 func (c VMErrorCode) String() string {
@@ -77,11 +77,11 @@ func NewVMErrorTemplate(code VMErrorCode, messageFormat string) *VMErrorTemplate
 }
 
 func VMErrorTemplateFromBytes(data []byte) (*VMErrorTemplate, error) {
-	return rwutil.ReaderFromBytes(data, new(VMErrorTemplate))
+	return rwutil.ReadFromBytes(data, new(VMErrorTemplate))
 }
 
 func (e *VMErrorTemplate) Bytes() []byte {
-	return rwutil.WriterToBytes(e)
+	return rwutil.WriteToBytes(e)
 }
 
 func (e *VMErrorTemplate) Code() VMErrorCode {
@@ -142,7 +142,7 @@ func (e *UnresolvedVMError) AsGoError() error {
 }
 
 func (e *UnresolvedVMError) Bytes() []byte {
-	return rwutil.WriterToBytes(e)
+	return rwutil.WriteToBytes(e)
 }
 
 func (e *UnresolvedVMError) Code() VMErrorCode {
@@ -216,7 +216,7 @@ func (e *VMError) AsUnresolvedError() *UnresolvedVMError {
 }
 
 func (e *VMError) Bytes() []byte {
-	return rwutil.WriterToBytes(e)
+	return rwutil.WriteToBytes(e)
 }
 
 func (e *VMError) Code() VMErrorCode {
