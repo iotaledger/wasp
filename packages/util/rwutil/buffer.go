@@ -11,22 +11,22 @@ type Buffer []byte
 
 var _ io.ReadWriter = new(Buffer)
 
-func (b *Buffer) Read(data []byte) (int, error) {
+func (buf *Buffer) Read(data []byte) (int, error) {
 	if len(data) == 0 {
 		return 0, nil
 	}
-	if len(*b) == 0 {
+	if len(*buf) == 0 {
 		return 0, io.EOF
 	}
-	n := copy(data, *b)
-	*b = (*b)[n:]
+	n := copy(data, *buf)
+	*buf = (*buf)[n:]
 	return n, nil
 }
 
-func (b *Buffer) Write(data []byte) (int, error) {
+func (buf *Buffer) Write(data []byte) (int, error) {
 	if len(data) == 0 {
 		return 0, nil
 	}
-	*b = append(*b, data...)
+	*buf = append(*buf, data...)
 	return len(data), nil
 }

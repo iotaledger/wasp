@@ -1,18 +1,21 @@
 package trie
 
 import (
-	"bytes"
 	"fmt"
 
 	"golang.org/x/crypto/blake2b"
 )
 
 func concat(par ...[]byte) []byte {
-	w := new(bytes.Buffer)
+	size := 0
 	for _, p := range par {
-		_, _ = w.Write(p)
+		size += len(p)
 	}
-	return w.Bytes()
+	buf := make([]byte, 0, size)
+	for _, p := range par {
+		buf = append(buf, p...)
+	}
+	return buf
 }
 
 func blake2b160(data []byte) (ret [HashSizeBytes]byte) {

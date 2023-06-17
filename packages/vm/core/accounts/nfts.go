@@ -64,8 +64,8 @@ func hasNFT(state kv.KVStoreReader, agentID isc.AgentID, nftID iotago.NFTID) boo
 }
 
 func saveNFTData(state kv.KVStore, nft *isc.NFT) {
-	// note we store the NFT data without the leading id bytes
 	ww := rwutil.NewBytesWriter()
+	// note we store the NFT data without the leading id bytes
 	ww.Skip().ReadN(nft.ID[:])
 	ww.Write(nft)
 	nftDataMap(state).SetAt(nft.ID[:], ww.Bytes())
@@ -86,8 +86,8 @@ func getNFTData(state kv.KVStoreReader, id iotago.NFTID) (*isc.NFT, error) {
 		return nil, ErrNFTIDNotFound
 	}
 
-	// note we stored the NFT data without the leading id bytes
 	rr := rwutil.NewBytesReader(nftData)
+	// note we stored the NFT data without the leading id bytes
 	rr.PushBack().WriteN(id[:])
 	return isc.NFTFromReader(rr)
 }

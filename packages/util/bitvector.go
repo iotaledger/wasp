@@ -5,6 +5,7 @@ package util
 
 import (
 	"io"
+	"math"
 
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -62,8 +63,10 @@ func (b *fixBitVector) bitMask(position int) (int, byte) {
 
 func (b *fixBitVector) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	b.size = uint16(rr.ReadSize16())
-	b.data = make([]byte, (b.size+7)/8)
+	size := rr.ReadSizeWithLimit(math.MaxUint16)
+	b.size = uint16(size)
+	size = rr.CheckAvailable((size + 7) / 8)
+	b.data = make([]byte, size)
 	rr.ReadN(b.data)
 	return rr.Err
 }

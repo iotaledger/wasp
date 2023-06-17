@@ -246,46 +246,6 @@ func (s *dkShareImpl) Bytes() []byte {
 	return rwutil.WriterToBytes(s)
 }
 
-func (s *dkShareImpl) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	isc.AddressToWriter(ww, s.address.Address())
-
-	ww.WriteUint16(*s.index)
-	ww.WriteUint16(s.n)
-	ww.WriteUint16(s.t)
-
-	ww.WriteSize16(len(s.nodePubKeys))
-	for _, nodePubKey := range s.nodePubKeys {
-		ww.WriteBytes(nodePubKey.AsBytes())
-	}
-
-	// DSS / Ed25519 part of the key shares.
-	ww.WriteMarshaled(s.edSharedPublic)
-	ww.WriteSize16(len(s.edPublicCommits))
-	for i := 0; i < len(s.edPublicCommits); i++ {
-		ww.WriteMarshaled(s.edPublicCommits[i])
-	}
-	ww.WriteSize16(len(s.edPublicShares))
-	for i := 0; i < len(s.edPublicShares); i++ {
-		ww.WriteMarshaled(s.edPublicShares[i])
-	}
-	ww.WriteMarshaled(s.edPrivateShare)
-
-	// BLS part of the key shares.
-	ww.WriteUint16(s.blsThreshold)
-	ww.WriteMarshaled(s.blsSharedPublic)
-	ww.WriteSize16(len(s.blsPublicCommits))
-	for i := 0; i < len(s.blsPublicCommits); i++ {
-		ww.WriteMarshaled(s.blsPublicCommits[i])
-	}
-	ww.WriteSize16(len(s.blsPublicShares))
-	for i := 0; i < len(s.blsPublicShares); i++ {
-		ww.WriteMarshaled(s.blsPublicShares[i])
-	}
-	ww.WriteMarshaled(s.blsPrivateShare)
-	return ww.Err
-}
-
 func (s *dkShareImpl) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	address := isc.AddressFromReader(rr)
@@ -301,10 +261,8 @@ func (s *dkShareImpl) Read(r io.Reader) error {
 	size := rr.ReadSize16()
 	s.nodePubKeys = make([]*cryptolib.PublicKey, size)
 	for i := range s.nodePubKeys {
-		nodePubKeyBin := rr.ReadBytes()
-		if rr.Err == nil {
-			s.nodePubKeys[i], rr.Err = cryptolib.PublicKeyFromBytes(nodePubKeyBin)
-		}
+		s.nodePubKeys[i] = cryptolib.NewEmptyPublicKey()
+		rr.Read(s.nodePubKeys[i])
 	}
 
 	// DSS / Ed25519 part of the key shares.
@@ -344,6 +302,46 @@ func (s *dkShareImpl) Read(r io.Reader) error {
 	s.blsPrivateShare = s.blsSuite.G2().Scalar()
 	rr.ReadMarshaled(s.blsPrivateShare)
 	return rr.Err
+}
+
+func (s *dkShareImpl) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	isc.AddressToWriter(ww, s.address.Address())
+
+	ww.WriteUint16(*s.index)
+	ww.WriteUint16(s.n)
+	ww.WriteUint16(s.t)
+
+	ww.WriteSize16(len(s.nodePubKeys))
+	for _, nodePubKey := range s.nodePubKeys {
+		ww.Write(nodePubKey)
+	}
+
+	// DSS / Ed25519 part of the key shares.
+	ww.WriteMarshaled(s.edSharedPublic)
+	ww.WriteSize16(len(s.edPublicCommits))
+	for i := 0; i < len(s.edPublicCommits); i++ {
+		ww.WriteMarshaled(s.edPublicCommits[i])
+	}
+	ww.WriteSize16(len(s.edPublicShares))
+	for i := 0; i < len(s.edPublicShares); i++ {
+		ww.WriteMarshaled(s.edPublicShares[i])
+	}
+	ww.WriteMarshaled(s.edPrivateShare)
+
+	// BLS part of the key shares.
+	ww.WriteUint16(s.blsThreshold)
+	ww.WriteMarshaled(s.blsSharedPublic)
+	ww.WriteSize16(len(s.blsPublicCommits))
+	for i := 0; i < len(s.blsPublicCommits); i++ {
+		ww.WriteMarshaled(s.blsPublicCommits[i])
+	}
+	ww.WriteSize16(len(s.blsPublicShares))
+	for i := 0; i < len(s.blsPublicShares); i++ {
+		ww.WriteMarshaled(s.blsPublicShares[i])
+	}
+	ww.WriteMarshaled(s.blsPrivateShare)
+	return ww.Err
 }
 
 func (s *dkShareImpl) GetAddress() iotago.Address {

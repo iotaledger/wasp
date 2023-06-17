@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"golang.org/x/crypto/blake2b"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
@@ -25,25 +23,6 @@ type L1Commitment struct {
 }
 
 const L1CommitmentSize = trie.HashSizeBytes + BlockHashSize
-
-func BlockHashFromData(data []byte) (ret BlockHash) {
-	r := blake2b.Sum256(data)
-	copy(ret[:BlockHashSize], r[:BlockHashSize])
-	return
-}
-
-func BlockHashFromString(blockHashString string) (BlockHash, error) {
-	result := BlockHash{}
-	slice, err := iotago.DecodeHex(blockHashString)
-	if err != nil {
-		return result, fmt.Errorf("Error decoding block hash from string %s: %w", blockHashString, err)
-	}
-	if len(slice) != BlockHashSize {
-		return result, fmt.Errorf("Error decoding block hash from string %s: %v bytes obtained; expected %v bytes", blockHashString, len(slice), BlockHashSize)
-	}
-	copy(result[:], slice)
-	return result, nil
-}
 
 func newL1Commitment(c trie.Hash, blockHash BlockHash) *L1Commitment {
 	return &L1Commitment{
@@ -91,7 +70,7 @@ func (s *L1Commitment) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteN(s.trieRoot[:])
 	ww.WriteN(s.blockHash[:])
-	return nil
+	return ww.Err
 }
 
 func (s *L1Commitment) String() string {

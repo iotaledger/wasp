@@ -34,7 +34,7 @@ func OutputFromBytes(data []byte) (iotago.Output, error) {
 	return OutputFromReader(rr), rr.Err
 }
 
-func OuutputToBytes(output iotago.Output) []byte {
+func OutputToBytes(output iotago.Output) []byte {
 	ww := rwutil.NewBytesWriter()
 	OutputToWriter(ww, output)
 	return ww.Bytes()

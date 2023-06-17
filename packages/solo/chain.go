@@ -4,7 +4,6 @@
 package solo
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -29,6 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -45,14 +45,14 @@ var _ chain.Chain = &Chain{}
 
 // String is string representation for main parameters of the chain
 func (ch *Chain) String() string {
-	w := new(bytes.Buffer)
+	w := new(rwutil.Buffer)
 	fmt.Fprintf(w, "Chain ID: %s\n", ch.ChainID)
 	fmt.Fprintf(w, "Chain state controller: %s\n", ch.StateControllerAddress)
 	block, err := ch.store.LatestBlock()
 	require.NoError(ch.Env.T, err)
 	fmt.Fprintf(w, "Root commitment: %s\n", block.TrieRoot())
 	fmt.Fprintf(w, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
-	return w.String()
+	return string(*w)
 }
 
 // DumpAccounts dumps all account balances into the human-readable string

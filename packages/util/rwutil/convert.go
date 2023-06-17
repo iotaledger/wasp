@@ -82,9 +82,6 @@ func ReadBytes(r io.Reader) ([]byte, error) {
 	if length == 0 {
 		return []byte{}, nil
 	}
-	if buf, ok := r.(*Buffer); ok && uint32(len(*buf)) < length {
-		return nil, errors.New("insufficient bytes in buffer")
-	}
 	ret := make([]byte, length)
 	err = ReadN(r, ret)
 	if err != nil {

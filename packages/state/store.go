@@ -43,7 +43,7 @@ func NewStoreWithMetrics(db kvstore.KVStore, metrics metrics.IStateMetrics) Stor
 	}
 }
 
-func (s *store) blockByTrieRoot(root trie.Hash) (*block, error) {
+func (s *store) blockByTrieRoot(root trie.Hash) (Block, error) {
 	return s.db.readBlock(root)
 }
 

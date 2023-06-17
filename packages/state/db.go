@@ -87,7 +87,7 @@ func (db *storeDB) pruneBlock(trieRoot trie.Hash) {
 	db.mustDel(keyBlockByTrieRoot(trieRoot))
 }
 
-func (db *storeDB) readBlock(root trie.Hash) (*block, error) {
+func (db *storeDB) readBlock(root trie.Hash) (Block, error) {
 	key := keyBlockByTrieRoot(root)
 	if !db.mustHas(key) {
 		return nil, fmt.Errorf("%w %s", ErrTrieRootNotFound, root)

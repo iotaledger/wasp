@@ -45,6 +45,17 @@ func (rr *Reader) Bytes() []byte {
 	return *buf
 }
 
+func (rr *Reader) CheckAvailable(nrOfBytes int) int {
+	if rr.Err != nil {
+		return 0
+	}
+	if buf, ok := rr.r.(*Buffer); ok && len(*buf) < nrOfBytes {
+		rr.Err = errors.New("insufficient bytes remaining in buffer")
+		return 0
+	}
+	return nrOfBytes
+}
+
 // PushBack returns a pushback writer that allows you to insert data before the stream.
 // The Reader will read this data first, and then resume reading from the stream.
 // The pushback Writer is only valid for this Reader until it resumes the stream.
@@ -95,6 +106,13 @@ func (rr *Reader) ReadBytes() (ret []byte) {
 
 func (rr *Reader) ReadDuration() (ret time.Duration) {
 	return time.Duration(rr.ReadInt64())
+}
+
+func (rr *Reader) ReadFromFunc(read func(w io.Reader) (int, error)) *Reader {
+	if rr.Err == nil {
+		_, rr.Err = read(rr.r)
+	}
+	return rr
 }
 
 func (rr *Reader) ReadInt8() (ret int8) {
@@ -190,16 +208,31 @@ func (rr *Reader) ReadSerialized(obj deserializable, sizes ...int) {
 	}
 }
 
-func (rr *Reader) ReadSize16() (ret int) {
-	return rr.ReadSizeWithLimit(math.MaxUint16)
+// ReadSize16 reads a 16-bit size from the stream.
+// We expect this size to indicate how many items we are about to read
+// from the stream. Therefore, if we can determine that there are not
+// at least this amount of bytes available in the stream we raise an
+// error and return zero for the size.
+func (rr *Reader) ReadSize16() (size int) {
+	size = rr.ReadSizeWithLimit(math.MaxUint16)
+	return rr.CheckAvailable(size)
 }
 
-func (rr *Reader) ReadSize32() (ret int) {
-	// note we cannot exceed SIGNED max
-	// because if int is actually 32 bit it would turn negative
-	return rr.ReadSizeWithLimit(math.MaxInt32)
+// ReadSize32 reads a 32-bit size from the stream.
+// We expect this size to indicate how many items we are about to read
+// from the stream. Therefore, if we can determine that there are not
+// at least this amount of bytes available in the stream we raise an
+// error and return zero for the size.
+func (rr *Reader) ReadSize32() (size int) {
+	// Note that we cannot exceed SIGNED math.MaxInt32, because we don't
+	// want the returned int to turn negative in case ints are 32 bits
+	size = rr.ReadSizeWithLimit(math.MaxInt32)
+	return rr.CheckAvailable(size)
 }
 
+// ReadSizeWithLimit reads an int size from the stream, and verifies that
+// it does not exceed the specified limit. By limiting the size we can
+// better detect malformed input data.
 func (rr *Reader) ReadSizeWithLimit(limit uint32) int {
 	if rr.Err != nil {
 		return 0
@@ -208,6 +241,7 @@ func (rr *Reader) ReadSizeWithLimit(limit uint32) int {
 	size32, rr.Err = ReadSize32(rr.r)
 	if size32 > limit && rr.Err == nil {
 		rr.Err = errors.New("read size limit overflow")
+		return 0
 	}
 	return int(size32)
 }

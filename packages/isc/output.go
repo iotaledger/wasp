@@ -94,9 +94,11 @@ func (a *AliasOutputWithID) Equals(other *AliasOutputWithID) bool {
 	if a.outputID != other.outputID {
 		return false
 	}
-	out1 := rwutil.NewBytesWriter().WriteSerialized(a.aliasOutput, math.MaxInt32).Bytes()
-	out2 := rwutil.NewBytesWriter().WriteSerialized(other.aliasOutput, math.MaxInt32).Bytes()
-	return bytes.Equal(out1, out2)
+	ww1 := rwutil.NewBytesWriter()
+	ww1.WriteSerialized(a.aliasOutput, math.MaxInt32)
+	ww2 := rwutil.NewBytesWriter()
+	ww2.WriteSerialized(other.aliasOutput, math.MaxInt32)
+	return bytes.Equal(ww1.Bytes(), ww2.Bytes())
 }
 
 func (a *AliasOutputWithID) Hash() hashing.HashValue {

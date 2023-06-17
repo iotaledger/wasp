@@ -1,7 +1,6 @@
 package trie
 
 import (
-	"bytes"
 	"encoding/hex"
 	"io"
 
@@ -17,12 +16,6 @@ const (
 	pathExtensionIndex = NumChildren + 1
 )
 
-// Hash is a blake2b 160 bit (20 bytes) hash
-type Hash [HashSizeBytes]byte
-
-// hashVector is used to calculate the hash of a trie node
-type hashVector [vectorLength][]byte
-
 // compressToHashSize hashes data if longer than hash size, otherwise copies it
 func compressToHashSize(data []byte) (ret []byte) {
 	if len(data) <= HashSizeBytes {
@@ -34,6 +27,9 @@ func compressToHashSize(data []byte) (ret []byte) {
 	}
 	return
 }
+
+// hashVector is used to calculate the hash of a trie node
+type hashVector [vectorLength][]byte
 
 func (hashes *hashVector) Hash() Hash {
 	sum := 0
@@ -48,13 +44,29 @@ func (hashes *hashVector) Hash() Hash {
 	return blake2b160(buf)
 }
 
+// Hash is a blake2b 160 bit (20 bytes) hash
+type Hash [HashSizeBytes]byte
+
+func HashFromBytes(data []byte) (ret Hash, err error) {
+	_, err = rwutil.ReaderFromBytes(data, &ret)
+	return ret, err
+}
+
+func (h Hash) Bytes() []byte {
+	return h[:]
+}
+
 func (h Hash) Clone() (ret Hash) {
 	copy(ret[:], h[:])
 	return
 }
 
-func (h Hash) Bytes() []byte {
-	return h[:]
+func (h Hash) Equals(other Hash) bool {
+	return h == other
+}
+
+func (h Hash) String() string {
+	return hex.EncodeToString(h[:])
 }
 
 func (h *Hash) Read(r io.Reader) error {
@@ -63,29 +75,4 @@ func (h *Hash) Read(r io.Reader) error {
 
 func (h Hash) Write(w io.Writer) error {
 	return rwutil.WriteN(w, h[:])
-}
-
-func (h Hash) String() string {
-	return hex.EncodeToString(h[:])
-}
-
-func (h Hash) Equals(other Hash) bool {
-	return h == other
-}
-
-func ReadHash(r io.Reader) (ret Hash, err error) {
-	err = ret.Read(r)
-	return
-}
-
-func HashFromBytes(data []byte) (ret Hash, err error) {
-	rdr := bytes.NewReader(data)
-	ret, err = ReadHash(rdr)
-	if err != nil {
-		return
-	}
-	if rdr.Len() > 0 {
-		return Hash{}, ErrNotAllBytesConsumed
-	}
-	return
 }
