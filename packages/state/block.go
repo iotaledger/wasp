@@ -25,6 +25,10 @@ type block struct {
 
 var _ Block = &block{}
 
+func NewBlock() Block {
+	return new(block)
+}
+
 func BlockFromBytes(data []byte) (Block, error) {
 	return rwutil.ReaderFromBytes(data, new(block))
 }
@@ -105,10 +109,10 @@ func (b *block) readEssence(r io.Reader) (int, error) {
 
 func (b *block) writeEssence(w io.Writer) (int, error) {
 	ww := rwutil.NewWriter(w)
-	ww.WriteN(b.Mutations().Bytes())
-	ww.WriteBool(b.PreviousL1Commitment() != nil)
-	if b.PreviousL1Commitment() != nil {
-		ww.WriteN(b.PreviousL1Commitment().Bytes())
+	ww.Write(b.mutations)
+	ww.WriteBool(b.previousL1Commitment != nil)
+	if b.previousL1Commitment != nil {
+		ww.Write(b.previousL1Commitment)
 	}
 	return len(ww.Bytes()), ww.Err
 }

@@ -41,16 +41,14 @@ func (msg *BlockMessage) UnmarshalBinary(data []byte) error {
 func (msg *BlockMessage) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	MsgTypeBlockMessage.ReadAndVerify(rr)
-	data := rr.ReadBytes()
-	if rr.Err == nil {
-		msg.block, rr.Err = state.BlockFromBytes(data)
-	}
+	msg.block = state.NewBlock()
+	rr.Read(msg.block)
 	return rr.Err
 }
 
 func (msg *BlockMessage) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	MsgTypeBlockMessage.Write(ww)
-	ww.WriteBytes(msg.block.Bytes())
+	ww.Write(msg.block)
 	return ww.Err
 }
