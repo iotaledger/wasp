@@ -30,24 +30,24 @@ import (
 
 func PointFromReader(rr *rwutil.Reader, factory interface{ Point() kyber.Point }) (point kyber.Point) {
 	point = factory.Point()
-	rr.ReadMarshaled(point)
+	rr.ReadFromFunc(point.UnmarshalFrom)
 	return point
 }
 
 func PointToWriter(ww *rwutil.Writer, point kyber.Point) {
-	ww.WriteMarshaled(point)
+	ww.WriteFromFunc(point.MarshalTo)
 }
 
 func ScalarFromReader(rr *rwutil.Reader, factory interface{ Scalar() kyber.Scalar }) (scalar kyber.Scalar) {
 	if factory != nil {
 		scalar = factory.Scalar()
 	}
-	rr.ReadMarshaled(scalar)
+	rr.ReadFromFunc(scalar.UnmarshalFrom)
 	return scalar
 }
 
 func ScalarToWriter(ww *rwutil.Writer, scalar kyber.Scalar) {
-	ww.WriteMarshaled(scalar)
+	ww.WriteFromFunc(scalar.MarshalTo)
 }
 
 // secretShareImpl is an implementation for SecretShare.
