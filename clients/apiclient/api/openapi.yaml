@@ -2609,18 +2609,18 @@ components:
           description: description
           evmJsonRpcURL: evmJsonRpcURL
         gasLimits:
-          maxGasExternalViewCall: 6
-          minGasPerRequest: 5
-          maxGasPerBlock: 1
-          maxGasPerRequest: 5
+          maxGasExternalViewCall: 5
+          minGasPerRequest: 7
+          maxGasPerBlock: 5
+          maxGasPerRequest: 2
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
         publicURL: publicURL
         gasFeePolicy:
           gasPerToken:
-            a: 1
-            b: 100
-          validatorFeeShare: 0
+            a: 0
+            b: 0
+          validatorFeeShare: 1
           evmGasRatio:
             a: 1
             b: 1
@@ -3440,60 +3440,61 @@ components:
       type: object
       xml:
         name: EstimateGasRequestOnledger
-    Event:
+    EventJSON:
       example:
-        payload:
-        - 6
-        - 6
-        contractID: 0
+        payload: payload
+        contractID: 1
         topic: topic
-        timestamp: 1
+        timestamp: 6
       properties:
         contractID:
+          description: ID of the Contract that issued the event
           format: int32
+          minimum: 1
           type: integer
           xml:
             name: ContractID
         payload:
-          items:
-            format: int32
-            type: integer
-          type: array
+          description: payload
+          format: string
+          type: string
           xml:
             name: Payload
-            wrapped: true
         timestamp:
+          description: timestamp
           format: int64
           type: integer
           xml:
             name: Timestamp
         topic:
+          description: topic
           format: string
           type: string
           xml:
             name: Topic
+      required:
+      - contractID
+      - payload
+      - timestamp
+      - topic
       type: object
       xml:
-        name: Event
+        name: EventJSON
     EventsResponse:
       example:
         events:
-        - payload:
-          - 6
-          - 6
-          contractID: 0
+        - payload: payload
+          contractID: 1
           topic: topic
-          timestamp: 1
-        - payload:
-          - 6
-          - 6
-          contractID: 0
+          timestamp: 6
+        - payload: payload
+          contractID: 1
           topic: topic
-          timestamp: 1
+          timestamp: 6
       properties:
         events:
           items:
-            $ref: '#/components/schemas/Event'
+            $ref: '#/components/schemas/EventJSON'
           type: array
           xml:
             name: Events
@@ -3506,9 +3507,9 @@ components:
     FeePolicy:
       example:
         gasPerToken:
-          a: 1
-          b: 100
-        validatorFeeShare: 0
+          a: 0
+          b: 0
+        validatorFeeShare: 1
         evmGasRatio:
           a: 1
           b: 1
@@ -3535,15 +3536,15 @@ components:
         gasPerToken:
           a: 0
           b: 0
-        validatorFeeShare: 1
+        validatorFeeShare: 0
         evmGasRatio:
           a: 0
           b: 0
       properties:
         evmGasRatio:
-          $ref: '#/components/schemas/Ratio32__'
+          $ref: '#/components/schemas/Ratio32_'
         gasPerToken:
-          $ref: '#/components/schemas/Ratio32__'
+          $ref: '#/components/schemas/Ratio32_'
         validatorFeeShare:
           description: The validator fee share.
           format: int32
@@ -3609,17 +3610,17 @@ components:
           description: description
           evmJsonRpcURL: evmJsonRpcURL
         gasLimits:
-          maxGasExternalViewCall: 6
-          minGasPerRequest: 5
-          maxGasPerBlock: 1
-          maxGasPerRequest: 5
+          maxGasExternalViewCall: 5
+          minGasPerRequest: 7
+          maxGasPerBlock: 5
+          maxGasPerRequest: 2
         chainID: chainID
         publicURL: publicURL
         gasFeePolicy:
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 1
+          validatorFeeShare: 0
           evmGasRatio:
             a: 0
             b: 0
@@ -4032,10 +4033,10 @@ components:
         name: L1Params
     Limits:
       example:
-        maxGasExternalViewCall: 6
-        minGasPerRequest: 5
-        maxGasPerBlock: 1
-        maxGasPerRequest: 5
+        maxGasExternalViewCall: 5
+        minGasPerRequest: 7
+        maxGasPerBlock: 5
+        maxGasPerRequest: 2
       properties:
         maxGasExternalViewCall:
           description: The maximum gas per external view call
@@ -4862,31 +4863,6 @@ components:
       xml:
         name: Ratio32
     Ratio32_:
-      example:
-        a: 1
-        b: 100
-      properties:
-        a:
-          example: 1
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: A
-        b:
-          example: 100
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: B
-      required:
-      - a
-      - b
-      type: object
-      xml:
-        name: Ratio32
-    Ratio32__:
       example:
         a: 0
         b: 0

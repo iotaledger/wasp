@@ -47,7 +47,7 @@ docs/DefaultApi.md
 docs/ErrorMessageFormatResponse.md
 docs/EstimateGasRequestOffledger.md
 docs/EstimateGasRequestOnledger.md
-docs/Event.md
+docs/EventJSON.md
 docs/EventsResponse.md
 docs/FeePolicy.md
 docs/FoundryOutputResponse.md
@@ -144,7 +144,7 @@ model_dk_shares_post_request.go
 model_error_message_format_response.go
 model_estimate_gas_request_offledger.go
 model_estimate_gas_request_onledger.go
-model_event.go
+model_event_json.go
 model_events_response.go
 model_fee_policy.go
 model_foundry_output_response.go
