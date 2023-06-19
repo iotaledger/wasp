@@ -42,11 +42,11 @@ func newNodeData() *NodeData {
 }
 
 func nodeDataFromBytes(data []byte) (*NodeData, error) {
-	return rwutil.ReaderFromBytes(data, newNodeData())
+	return rwutil.ReadFromBytes(data, newNodeData())
 }
 
 func (n *NodeData) Bytes() []byte {
-	return rwutil.WriterToBytes(n)
+	return rwutil.WriteToBytes(n)
 }
 
 func (n *NodeData) ChildrenCount() int {

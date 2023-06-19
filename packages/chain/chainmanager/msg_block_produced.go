@@ -18,7 +18,7 @@ type msgBlockProduced struct {
 	block state.Block
 }
 
-var _ gpa.Message = new(msgCmtLog)
+var _ gpa.Message = new(msgBlockProduced)
 
 func NewMsgBlockProduced(recipient gpa.NodeID, tx *iotago.Transaction, block state.Block) gpa.Message {
 	return &msgBlockProduced{

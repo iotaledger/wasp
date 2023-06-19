@@ -40,7 +40,7 @@ func (bh BlockHash) Equals(other BlockHash) bool {
 }
 
 func L1CommitmentFromBytes(data []byte) (*L1Commitment, error) {
-	return rwutil.ReaderFromBytes(data, new(L1Commitment))
+	return rwutil.ReadFromBytes(data, new(L1Commitment))
 }
 
 func (s *L1Commitment) TrieRoot() trie.Hash {
@@ -56,7 +56,7 @@ func (s *L1Commitment) Equals(other *L1Commitment) bool {
 }
 
 func (s *L1Commitment) Bytes() []byte {
-	return rwutil.WriterToBytes(s)
+	return rwutil.WriteToBytes(s)
 }
 
 func (s *L1Commitment) Read(r io.Reader) error {

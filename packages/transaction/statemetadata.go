@@ -42,11 +42,11 @@ func NewStateMetadata(
 }
 
 func StateMetadataFromBytes(data []byte) (*StateMetadata, error) {
-	return rwutil.ReaderFromBytes(data, new(StateMetadata))
+	return rwutil.ReadFromBytes(data, new(StateMetadata))
 }
 
 func (s *StateMetadata) Bytes() []byte {
-	return rwutil.WriterToBytes(s)
+	return rwutil.WriteToBytes(s)
 }
 
 func (s *StateMetadata) Read(r io.Reader) error {

@@ -21,11 +21,11 @@ type unprocessableRequestRecord struct {
 }
 
 func unprocessableRequestRecordFromBytes(data []byte) (*unprocessableRequestRecord, error) {
-	return rwutil.ReaderFromBytes(data, new(unprocessableRequestRecord))
+	return rwutil.ReadFromBytes(data, new(unprocessableRequestRecord))
 }
 
 func (rec *unprocessableRequestRecord) Bytes() []byte {
-	return rwutil.WriterToBytes(rec)
+	return rwutil.WriteToBytes(rec)
 }
 
 func (rec *unprocessableRequestRecord) Read(r io.Reader) error {

@@ -23,7 +23,7 @@ var LimitsDefault = &Limits{
 }
 
 func LimitsFromBytes(data []byte) (*Limits, error) {
-	return rwutil.ReaderFromBytes(data, new(Limits))
+	return rwutil.ReadFromBytes(data, new(Limits))
 }
 
 func (gl *Limits) IsValid() bool {
@@ -43,7 +43,7 @@ func (gl *Limits) IsValid() bool {
 }
 
 func (gl *Limits) Bytes() []byte {
-	return rwutil.WriterToBytes(gl)
+	return rwutil.WriteToBytes(gl)
 }
 
 func (gl *Limits) String() string {

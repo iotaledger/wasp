@@ -131,12 +131,12 @@ func (d Dict) Get(key kv.Key) []byte {
 }
 
 func (d Dict) Bytes() []byte {
-	return rwutil.WriterToBytes(&d)
+	return rwutil.WriteToBytes(&d)
 }
 
 func FromBytes(data []byte) (ret Dict, err error) {
 	ret = New()
-	_, err = rwutil.ReaderFromBytes(data, &ret)
+	_, err = rwutil.ReadFromBytes(data, &ret)
 	if err != nil {
 		return nil, err
 	}

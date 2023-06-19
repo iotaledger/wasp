@@ -14,7 +14,7 @@ type Event struct {
 }
 
 func NewEvent(data []byte) (*Event, error) {
-	return rwutil.ReaderFromBytes(data, new(Event))
+	return rwutil.ReadFromBytes(data, new(Event))
 }
 
 // ContractIDFromEventBytes is used by blocklog to filter out specific events per contract
@@ -28,7 +28,7 @@ func ContractIDFromEventBytes(eventBytes []byte) (Hname, error) {
 }
 
 func (e *Event) Bytes() []byte {
-	return rwutil.WriterToBytes(e)
+	return rwutil.WriteToBytes(e)
 }
 
 func (e *Event) Read(r io.Reader) error {

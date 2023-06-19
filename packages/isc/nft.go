@@ -15,7 +15,7 @@ type NFT struct {
 }
 
 func NFTFromBytes(data []byte) (*NFT, error) {
-	return rwutil.ReaderFromBytes(data, new(NFT))
+	return rwutil.ReadFromBytes(data, new(NFT))
 }
 
 func NFTFromReader(rr *rwutil.Reader) (ret *NFT, err error) {
@@ -25,7 +25,7 @@ func NFTFromReader(rr *rwutil.Reader) (ret *NFT, err error) {
 }
 
 func (nft *NFT) Bytes() []byte {
-	return rwutil.WriterToBytes(nft)
+	return rwutil.WriteToBytes(nft)
 }
 
 func (nft *NFT) Read(r io.Reader) error {

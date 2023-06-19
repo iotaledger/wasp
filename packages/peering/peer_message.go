@@ -31,9 +31,28 @@ type PeerMessageData struct {
 	serializedOnce sync.Once
 }
 
+func NewPeerMessageData(peeringID PeeringID, receiver byte, msgType byte, msgData ...any) (ret *PeerMessageData) {
+	ret = &PeerMessageData{
+		PeeringID:   peeringID,
+		MsgReceiver: receiver,
+		MsgType:     msgType,
+	}
+	if len(msgData) == 0 {
+		return ret
+	}
+	if msg, ok := msgData[0].(rwutil.IoWriter); ok {
+		ret.MsgData = rwutil.WriteToBytes(msg)
+		return ret
+	}
+	if data, ok := msgData[0].([]byte); ok {
+		ret.MsgData = data
+		return ret
+	}
+	panic("invalid message data type")
+}
+
 // newPeerMessageDataFromBytes creates a new PeerMessageData from bytes.
 // The function takes ownership over "data" and the caller should not use "data" after this call.
-//
 
 func newPeerMessageDataFromBytes(data []byte) (*PeerMessageData, error) {
 	// create a copy of the slice for later usage of the raw data.

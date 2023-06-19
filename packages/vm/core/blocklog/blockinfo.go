@@ -59,11 +59,11 @@ func (bi *BlockInfo) String() string {
 }
 
 func (bi *BlockInfo) Bytes() []byte {
-	return rwutil.WriterToBytes(bi)
+	return rwutil.WriteToBytes(bi)
 }
 
 func BlockInfoFromBytes(data []byte) (*BlockInfo, error) {
-	return rwutil.ReaderFromBytes(data, new(BlockInfo))
+	return rwutil.ReadFromBytes(data, new(BlockInfo))
 }
 
 // BlockInfoKey a key to access block info record inside SC state

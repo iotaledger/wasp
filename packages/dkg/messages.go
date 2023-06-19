@@ -76,7 +76,7 @@ const (
 var initPeeringID peering.PeeringID
 
 func msgFromBytes[T interface{ Read(r io.Reader) error }](data []byte, msg T) error {
-	_, err := rwutil.ReaderFromBytes(data, msg)
+	_, err := rwutil.ReadFromBytes(data, msg)
 	return err
 }
 
@@ -120,18 +120,13 @@ type msgByteCoder interface {
 	MsgType() byte
 	Step() byte
 	SetStep(step byte)
-	Write(io.Writer) error
 	Read(io.Reader) error
+	Write(io.Writer) error
 }
 
 func makePeerMessage(peeringID peering.PeeringID, receiver, step byte, msg msgByteCoder) *peering.PeerMessageData {
 	msg.SetStep(step)
-	return &peering.PeerMessageData{
-		PeeringID:   peeringID,
-		MsgReceiver: receiver,
-		MsgType:     msg.MsgType(),
-		MsgData:     rwutil.WriterToBytes(msg),
-	}
+	return peering.NewPeerMessageData(peeringID, receiver, msg.MsgType(), msg)
 }
 
 // All the messages in this module have a step as a first byte in the payload.
@@ -164,6 +159,11 @@ func readInitiatorMsg(peerMessage *peering.PeerMessageData, edSuite, blsSuite ky
 	return msg, msgFromBytes(peerMessage.MsgData, msg)
 }
 
+type initiatorInitMsgIn struct {
+	initiatorInitMsg
+	SenderPubKey *cryptolib.PublicKey
+}
+
 // initiatorInitMsg
 //
 // This is a message sent by the initiator to all the peers to
@@ -179,10 +179,7 @@ type initiatorInitMsg struct {
 	roundRetry   time.Duration
 }
 
-type initiatorInitMsgIn struct {
-	initiatorInitMsg
-	SenderPubKey *cryptolib.PublicKey
-}
+var _ initiatorMsg = new(initiatorInitMsg)
 
 func (msg *initiatorInitMsg) MsgType() byte {
 	return initiatorInitMsgType
@@ -252,6 +249,8 @@ type initiatorStepMsg struct {
 	step byte
 }
 
+var _ initiatorMsg = new(initiatorStepMsg)
+
 func (msg *initiatorStepMsg) MsgType() byte {
 	return initiatorStepMsgType
 }
@@ -292,6 +291,8 @@ type initiatorDoneMsg struct {
 	blsPubShares []kyber.Point
 	blsSuite     kyber.Group // Transient, for un-marshaling only.
 }
+
+var _ initiatorMsg = new(initiatorDoneMsg)
 
 func (msg *initiatorDoneMsg) MsgType() byte {
 	return initiatorDoneMsgType
@@ -367,6 +368,8 @@ type initiatorPubShareMsg struct {
 	blsSuite        kyber.Group // Transient, for un-marshaling only.
 }
 
+var _ initiatorMsg = new(initiatorPubShareMsg)
+
 func (msg *initiatorPubShareMsg) MsgType() byte {
 	return initiatorPubShareMsgType
 }
@@ -426,6 +429,8 @@ type initiatorStatusMsg struct {
 	step  byte
 	error error
 }
+
+var _ initiatorMsg = new(initiatorStatusMsg)
 
 func (msg *initiatorStatusMsg) MsgType() byte {
 	return initiatorStatusMsgType
@@ -796,18 +801,8 @@ func (msg *multiKeySetMsg) SetStep(step byte) {
 func (msg *multiKeySetMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
-	msg.edMsg = &peering.PeerMessageData{
-		PeeringID:   msg.peeringID,
-		MsgReceiver: msg.receiver,
-		MsgType:     msg.msgType,
-		MsgData:     rr.ReadBytes(),
-	}
-	msg.blsMsg = &peering.PeerMessageData{
-		PeeringID:   msg.peeringID,
-		MsgReceiver: msg.receiver,
-		MsgType:     msg.msgType,
-		MsgData:     rr.ReadBytes(),
-	}
+	msg.edMsg = peering.NewPeerMessageData(msg.peeringID, msg.receiver, msg.msgType, rr.ReadBytes())
+	msg.blsMsg = peering.NewPeerMessageData(msg.peeringID, msg.receiver, msg.msgType, rr.ReadBytes())
 	return rr.Err
 }
 
@@ -820,7 +815,7 @@ func (msg *multiKeySetMsg) Write(w io.Writer) error {
 }
 
 func (msg *multiKeySetMsg) mustDataBytes() []byte {
-	return rwutil.WriterToBytes(msg)
+	return rwutil.WriteToBytes(msg)
 }
 
 type multiKeySetMsgs map[uint16]*multiKeySetMsg

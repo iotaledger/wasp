@@ -16,7 +16,7 @@ type nativeTokenOutputRec struct {
 }
 
 func mustNativeTokenOutputRecFromBytes(data []byte) *nativeTokenOutputRec {
-	ret, err := rwutil.ReaderFromBytes(data, new(nativeTokenOutputRec))
+	ret, err := rwutil.ReadFromBytes(data, new(nativeTokenOutputRec))
 	if err != nil {
 		panic(err)
 	}
@@ -24,7 +24,7 @@ func mustNativeTokenOutputRecFromBytes(data []byte) *nativeTokenOutputRec {
 }
 
 func (rec *nativeTokenOutputRec) Bytes() []byte {
-	return rwutil.WriterToBytes(rec)
+	return rwutil.WriteToBytes(rec)
 }
 
 func (rec *nativeTokenOutputRec) String() string {

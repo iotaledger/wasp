@@ -55,7 +55,7 @@ func (ww *Writer) Skip() *Reader {
 	return &Reader{r: skip}
 }
 
-func (ww *Writer) Write(obj interface{ Write(w io.Writer) error }) *Writer {
+func (ww *Writer) Write(obj IoWriter) *Writer {
 	// TODO: obj can be nil when obj.Write() can handle that.
 	// We don't want this. So find those instances and activate this code.
 	//if obj == nil {

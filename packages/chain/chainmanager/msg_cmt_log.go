@@ -50,7 +50,7 @@ func (msg *msgCmtLog) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeCmtLog.ReadAndVerify(rr)
 	rr.ReadN(msg.committeeAddr[:])
-	msg.wrapped = rwutil.ReadFromBytes(rr, cmt_log.UnmarshalMessage)
+	msg.wrapped = rwutil.ReadFromFunc(rr, cmt_log.UnmarshalMessage)
 	return rr.Err
 }
 

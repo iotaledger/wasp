@@ -62,18 +62,18 @@ type testRoundMsg struct {
 
 var _ Message = new(testRoundMsg)
 
-func (m *testRoundMsg) MarshalBinary() ([]byte, error) {
+func (msg *testRoundMsg) MarshalBinary() ([]byte, error) {
 	panic(errors.New("should be not used"))
 }
 
-func (m *testRoundMsg) UnmarshalBinary(data []byte) error {
+func (msg *testRoundMsg) UnmarshalBinary(data []byte) error {
 	panic(errors.New("should be not used"))
 }
 
-func (m *testRoundMsg) Read(r io.Reader) error {
+func (msg *testRoundMsg) Read(r io.Reader) error {
 	panic(errors.New("should be not used"))
 }
 
-func (m *testRoundMsg) Write(w io.Writer) error {
+func (msg *testRoundMsg) Write(w io.Writer) error {
 	panic(errors.New("should be not used"))
 }

@@ -15,7 +15,7 @@ type NFTOutputRec struct {
 }
 
 func mustNFTOutputRecFromBytes(data []byte) *NFTOutputRec {
-	ret, err := rwutil.ReaderFromBytes(data, new(NFTOutputRec))
+	ret, err := rwutil.ReadFromBytes(data, new(NFTOutputRec))
 	if err != nil {
 		panic(err)
 	}
@@ -23,7 +23,7 @@ func mustNFTOutputRecFromBytes(data []byte) *NFTOutputRec {
 }
 
 func (rec *NFTOutputRec) Bytes() []byte {
-	return rwutil.WriterToBytes(rec)
+	return rwutil.WriteToBytes(rec)
 }
 
 func (rec *NFTOutputRec) String() string {

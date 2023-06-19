@@ -49,7 +49,7 @@ func AssetsFromBytes(b []byte) (*Assets, error) {
 	if len(b) == 0 {
 		return NewEmptyAssets(), nil
 	}
-	ret, err := rwutil.ReaderFromBytes(b, NewEmptyAssets())
+	ret, err := rwutil.ReadFromBytes(b, NewEmptyAssets())
 	return ret, err
 }
 
@@ -168,7 +168,7 @@ func (a *Assets) String() string {
 }
 
 func (a *Assets) Bytes() []byte {
-	return rwutil.WriterToBytes(a)
+	return rwutil.WriteToBytes(a)
 }
 
 func (a *Assets) Equals(b *Assets) bool {

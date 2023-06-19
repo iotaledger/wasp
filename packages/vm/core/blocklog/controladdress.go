@@ -18,11 +18,11 @@ type ControlAddresses struct {
 }
 
 func ControlAddressesFromBytes(data []byte) (*ControlAddresses, error) {
-	return rwutil.ReaderFromBytes(data, new(ControlAddresses))
+	return rwutil.ReadFromBytes(data, new(ControlAddresses))
 }
 
 func (ca *ControlAddresses) Bytes() []byte {
-	return rwutil.WriterToBytes(ca)
+	return rwutil.WriteToBytes(ca)
 }
 
 func (ca *ControlAddresses) String() string {

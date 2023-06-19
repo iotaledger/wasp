@@ -28,7 +28,7 @@ func (a *AddressAgentID) Address() iotago.Address {
 }
 
 func (a *AddressAgentID) Bytes() []byte {
-	return rwutil.WriterToBytes(a)
+	return rwutil.WriteToBytes(a)
 }
 
 func (a *AddressAgentID) Equals(other AgentID) bool {

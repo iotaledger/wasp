@@ -48,6 +48,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type rbc struct {
@@ -267,9 +268,5 @@ func (r *rbc) StatusString() string {
 
 // Implements the GPA interface.
 func (r *rbc) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	m := &msgBracha{}
-	if err := m.UnmarshalBinary(data); err != nil {
-		return nil, fmt.Errorf("cannot unmarshal RBC:msgBracha message: %w", err)
-	}
-	return m, nil
+	return rwutil.ReadFromBytes(data, new(msgBracha))
 }

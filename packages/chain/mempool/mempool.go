@@ -884,19 +884,9 @@ func (mpi *mempoolImpl) sendMessages(outMsgs gpa.OutMessages) {
 	if outMsgs == nil {
 		return
 	}
-	outMsgs.MustIterate(func(m gpa.Message) {
-		msgData, err := m.MarshalBinary()
-		if err != nil {
-			mpi.log.Warnf("Failed to send a message: %v", err)
-			return
-		}
-		pm := &peering.PeerMessageData{
-			PeeringID:   mpi.netPeeringID,
-			MsgReceiver: peering.PeerMessageReceiverMempool,
-			MsgType:     msgTypeMempool,
-			MsgData:     msgData,
-		}
-		mpi.net.SendMsgByPubKey(mpi.netPeerPubs[m.Recipient()], pm)
+	outMsgs.MustIterate(func(msg gpa.Message) {
+		pm := peering.NewPeerMessageData(mpi.netPeeringID, peering.PeerMessageReceiverMempool, msgTypeMempool, msg)
+		mpi.net.SendMsgByPubKey(mpi.netPeerPubs[msg.Recipient()], pm)
 	})
 }
 

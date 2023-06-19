@@ -48,7 +48,7 @@ func (hashes *hashVector) Hash() Hash {
 type Hash [HashSizeBytes]byte
 
 func HashFromBytes(data []byte) (ret Hash, err error) {
-	_, err = rwutil.ReaderFromBytes(data, &ret)
+	_, err = rwutil.ReadFromBytes(data, &ret)
 	return ret, err
 }
 

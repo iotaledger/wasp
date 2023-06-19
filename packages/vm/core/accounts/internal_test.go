@@ -354,7 +354,7 @@ func TestFoundryOutputRec(t *testing.T) {
 		OutputIndex: 2,
 	}
 	data := o.Bytes()
-	o1, err := rwutil.ReaderFromBytes(data, new(foundryOutputRec))
+	o1, err := rwutil.ReadFromBytes(data, new(foundryOutputRec))
 	require.NoError(t, err)
 	require.EqualValues(t, o.Amount, o1.Amount)
 	ts, ok := o1.TokenScheme.(*iotago.SimpleTokenScheme)
