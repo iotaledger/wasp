@@ -13,7 +13,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
@@ -23,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
