@@ -238,17 +238,10 @@ func (teT *testEnv) sendConsensusDecidedState(commitment *state.L1Commitment, no
 }
 
 func (teT *testEnv) ensureCompletedConsensusDecidedState(respChan <-chan state.State, expectedCommitment *state.L1Commitment, maxTimeIterations int, timeStep time.Duration) bool {
-	expectedState, err := teT.bf.GetStore().StateByTrieRoot(expectedCommitment.TrieRoot())
-	require.NoError(teT.t, err)
 	return teT.ensureTrue("response from ConsensusDecidedState", func() bool {
 		select {
 		case s := <-respChan:
-			// Should be require.True(teT.t, expected.Equals(s))
-			expectedTrieRoot := expectedState.TrieRoot()
-			receivedTrieRoot := s.TrieRoot()
-			require.Equal(teT.t, expectedState.BlockIndex(), s.BlockIndex())
-			teT.t.Logf("Checking trie roots: expected %s, obtained %s", expectedTrieRoot, receivedTrieRoot)
-			require.True(teT.t, expectedTrieRoot.Equals(receivedTrieRoot))
+			sm_gpa_utils.CheckStateInStore(teT.t, teT.bf.GetStore(), s)
 			return true
 		default:
 			return false
@@ -277,14 +270,13 @@ func (teT *testEnv) ensureCompletedChainFetchStateDiff(respChan <-chan *sm_input
 			lastNewBlockTrieRoot := expectedNewBlocks[len(expectedNewBlocks)-1].TrieRoot()
 			teT.t.Logf("Checking trie roots: expected %s, obtained %s", lastNewBlockTrieRoot, newStateTrieRoot)
 			require.True(teT.t, newStateTrieRoot.Equals(lastNewBlockTrieRoot))
+			sm_gpa_utils.CheckStateInStore(teT.t, teT.bf.GetStore(), cfsdr.GetNewState())
 			requireEqualsFun := func(expected, received []state.Block) {
 				teT.t.Logf("\tExpected %v elements, obtained %v elements", len(expected), len(received))
 				require.Equal(teT.t, len(expected), len(received))
 				for i := range expected {
-					expectedCommitment := expected[i].L1Commitment()
-					receivedCommitment := received[i].L1Commitment()
-					teT.t.Logf("\tchecking %v-th element: expected %s, received %s", i, expectedCommitment, receivedCommitment)
-					require.True(teT.t, expectedCommitment.Equals(receivedCommitment))
+					teT.t.Logf("\tchecking %v-th element: expected %s, received %s", i, expected[i].L1Commitment(), received[i].L1Commitment())
+					sm_gpa_utils.CheckBlocksEqual(teT.t, expected[i], received[i])
 				}
 			}
 			teT.t.Log("Checking added blocks...")

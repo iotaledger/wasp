@@ -150,7 +150,7 @@ func TestCruelWorld(t *testing.T) {
 				newBlockIndex+1, oldBlockIndex+1, peeringURLs[nodeIndex], err)
 			return false
 		}
-		if !expectedNewState.TrieRoot().Equals(results.GetNewState().TrieRoot()) { // TODO: should compare states instead of trie roots
+		if !sm_gpa_utils.StatesEqual(expectedNewState, results.GetNewState()) {
 			t.Logf("Mempool state request for new block %v and old block %v to node %v return wrong new state: expected trie root %s, received %s",
 				newBlockIndex+1, oldBlockIndex+1, peeringURLs[nodeIndex], blocks[newBlockIndex].TrieRoot(), results.GetNewState().TrieRoot())
 			return false

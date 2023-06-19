@@ -8,7 +8,6 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
@@ -44,48 +43,6 @@ func TestWriteReadDifferentStores(t *testing.T) {
 	err = os.Remove(fileName)
 	require.NoError(t, err)
 
-	checkBlock(t, store, lastBlock)
-	checkState(t, factory.GetStore(), store, lastCommitment)
-}
-
-func checkBlock(t *testing.T, store state.Store, origBlock state.Block) {
-	origCommitment := origBlock.L1Commitment()
-	newBlock, err := store.BlockByTrieRoot(origCommitment.TrieRoot())
-	require.NoError(t, err)
-	require.True(t, origCommitment.TrieRoot().Equals(newBlock.TrieRoot()))
-	require.True(t, origCommitment.BlockHash().Equals(newBlock.Hash()))
-}
-
-func checkState(t *testing.T, storeOrig, storeNew state.Store, commitment *state.L1Commitment) {
-	origState, err := storeOrig.StateByTrieRoot(commitment.TrieRoot())
-	require.NoError(t, err)
-	newState, err := storeNew.StateByTrieRoot(commitment.TrieRoot())
-	require.NoError(t, err)
-	require.True(t, origState.TrieRoot().Equals(newState.TrieRoot()))
-	require.Equal(t, origState.BlockIndex(), newState.BlockIndex())
-	require.Equal(t, origState.Timestamp(), newState.Timestamp())
-	require.True(t, origState.PreviousL1Commitment().Equals(newState.PreviousL1Commitment()))
-
-	type commonEntry struct {
-		valueOrig   []byte
-		valueResult []byte
-	}
-	commonState := make(map[kv.Key]*commonEntry)
-	iterateFun := func(iterState state.State, setValueFun func(*commonEntry, []byte)) {
-		iterState.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
-			entry, ok := commonState[key]
-			if !ok {
-				entry = &commonEntry{}
-				commonState[key] = entry
-			}
-			setValueFun(entry, value)
-			return true
-		})
-	}
-	iterateFun(origState, func(entry *commonEntry, value []byte) { entry.valueOrig = value })
-	iterateFun(newState, func(entry *commonEntry, value []byte) { entry.valueResult = value })
-
-	for _, entry := range commonState {
-		require.Equal(t, entry.valueOrig, entry.valueResult)
-	}
+	sm_gpa_utils.CheckBlockInStore(t, store, lastBlock)
+	sm_gpa_utils.CheckStateInStores(t, factory.GetStore(), store, lastCommitment)
 }

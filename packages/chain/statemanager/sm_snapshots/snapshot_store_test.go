@@ -62,8 +62,8 @@ func TestFillTheBlocksBetweenSnapshots(t *testing.T) {
 			require.True(t, blocks[i].Hash().Equals(block.Hash()))
 		}
 		for i := 1; i < len(blocks)-1; i++ { // blocks[i] and blocsk[len(blocks)-1] will be checked in `twoSnapshotsCheckEnds`
-			checkBlock(t, storeNew, blocks[i])
-			checkState(t, storeOrig, storeNew, blocks[i].L1Commitment())
+			sm_gpa_utils.CheckBlockInStore(t, storeNew, blocks[i])
+			sm_gpa_utils.CheckStateInStores(t, storeOrig, storeNew, blocks[i].L1Commitment())
 		}
 	})
 }
@@ -91,8 +91,8 @@ func twoSnapshotsCheckEnds(t *testing.T, performTestFun func(t *testing.T, store
 
 	performTestFun(t, storeOrig, storeNew, intermediateSnapshot, lastSnapshot, blocks[intermediateBlockIndex:])
 
-	checkBlock(t, storeNew, intermediateBlock)
-	checkState(t, storeOrig, storeNew, intermediateCommitment)
-	checkBlock(t, storeNew, lastBlock)
-	checkState(t, storeOrig, storeNew, lastCommitment)
+	sm_gpa_utils.CheckBlockInStore(t, storeNew, intermediateBlock)
+	sm_gpa_utils.CheckStateInStores(t, storeOrig, storeNew, intermediateCommitment)
+	sm_gpa_utils.CheckBlockInStore(t, storeNew, lastBlock)
+	sm_gpa_utils.CheckStateInStores(t, storeOrig, storeNew, lastCommitment)
 }
