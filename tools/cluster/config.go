@@ -91,7 +91,7 @@ func configPath(dataPath string) string {
 	return path.Join(dataPath, "cluster.json")
 }
 
-func (c *ClusterConfig) setValidatorAddressIfNotSet(address string) {
+func (c *ClusterConfig) setValidatorAddressIfNotSet() {
 	for i := range c.Wasp {
 		if c.Wasp[i].ValidatorKeyPair == nil {
 			kp := cryptolib.NewKeyPair()

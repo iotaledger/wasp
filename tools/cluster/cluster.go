@@ -44,15 +44,15 @@ import (
 )
 
 type Cluster struct {
-	Name             string
-	Config           *ClusterConfig
-	Started          bool
-	DataPath         string
-	ValidatorKeyPair *cryptolib.KeyPair // Default identity for validators, chain owners, etc.
-	l1               l1connection.Client
-	waspCmds         []*waspCmd
-	t                *testing.T
-	log              *logger.Logger
+	Name              string
+	Config            *ClusterConfig
+	Started           bool
+	DataPath          string
+	OriginatorKeyPair *cryptolib.KeyPair
+	l1                l1connection.Client
+	waspCmds          []*waspCmd
+	t                 *testing.T
+	log               *logger.Logger
 }
 
 type waspCmd struct {
@@ -68,18 +68,17 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 		log = testlogger.NewLogger(t)
 	}
 
-	validatorKp := cryptolib.NewKeyPair()
-	config.setValidatorAddressIfNotSet(validatorKp.Address().Bech32("atoi")) // privtangle prefix
+	config.setValidatorAddressIfNotSet() // privtangle prefix
 
 	return &Cluster{
-		Name:             name,
-		Config:           config,
-		ValidatorKeyPair: validatorKp,
-		waspCmds:         make([]*waspCmd, len(config.Wasp)),
-		t:                t,
-		log:              log,
-		l1:               l1connection.NewClient(config.L1, log),
-		DataPath:         dataPath,
+		Name:              name,
+		Config:            config,
+		OriginatorKeyPair: cryptolib.NewKeyPair(),
+		waspCmds:          make([]*waspCmd, len(config.Wasp)),
+		t:                 t,
+		log:               log,
+		l1:                l1connection.NewClient(config.L1, log),
+		DataPath:          dataPath,
 	}
 }
 
@@ -89,10 +88,6 @@ func (clu *Cluster) Logf(format string, args ...any) {
 		return
 	}
 	clu.log.Infof(format, args...)
-}
-
-func (clu *Cluster) ValidatorAddress() iotago.Address {
-	return clu.ValidatorKeyPair.Address()
 }
 
 func (clu *Cluster) NewKeyPairWithFunds() (*cryptolib.KeyPair, iotago.Address, error) {
@@ -214,7 +209,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	}
 
 	chain := &Chain{
-		OriginatorKeyPair: clu.ValidatorKeyPair,
+		OriginatorKeyPair: clu.OriginatorKeyPair,
 		AllPeers:          allPeers,
 		CommitteeNodes:    committeeNodes,
 		Quorum:            quorum,
