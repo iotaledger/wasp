@@ -30,14 +30,6 @@ func (msg *GetBlockMessage) GetL1Commitment() *state.L1Commitment {
 	return msg.commitment
 }
 
-func (msg *GetBlockMessage) MarshalBinary() (data []byte, err error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *GetBlockMessage) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
-}
-
 func (msg *GetBlockMessage) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	MsgTypeGetBlockMessage.ReadAndVerify(rr)

@@ -23,14 +23,6 @@ type msgPartialSig struct {
 
 var _ gpa.Message = new(msgPartialSig)
 
-func (msg *msgPartialSig) MarshalBinary() ([]byte, error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *msgPartialSig) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
-}
-
 func (msg *msgPartialSig) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypePartialSig.ReadAndVerify(rr)

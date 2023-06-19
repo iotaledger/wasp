@@ -4,7 +4,6 @@
 package rwutil
 
 import (
-	"encoding"
 	"errors"
 	"io"
 	"math"
@@ -144,18 +143,6 @@ func (ww *Writer) WriteInt64(val int64) *Writer {
 
 func (ww *Writer) WriteKind(msgType Kind) *Writer {
 	return ww.WriteByte(byte(msgType))
-}
-
-func (ww *Writer) WriteMarshaled(obj encoding.BinaryMarshaler) *Writer {
-	if obj == nil {
-		panic("nil marshaler")
-	}
-	if ww.Err == nil {
-		var buf []byte
-		buf, ww.Err = obj.MarshalBinary()
-		ww.WriteBytes(buf)
-	}
-	return ww
 }
 
 type serializable interface {

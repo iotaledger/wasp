@@ -28,14 +28,6 @@ func newMsgBLSPartialSig(blsSuite suites.Suite, recipient gpa.NodeID, partialSig
 	}
 }
 
-func (msg *msgBLSPartialSig) MarshalBinary() ([]byte, error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *msgBLSPartialSig) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
-}
-
 func (msg *msgBLSPartialSig) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeBLSShare.ReadAndVerify(rr)

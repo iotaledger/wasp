@@ -28,14 +28,6 @@ func (msg *TestMessage) SetSender(sender NodeID) {
 	msg.sender = sender
 }
 
-func (msg *TestMessage) MarshalBinary() ([]byte, error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *TestMessage) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
-}
-
 func (msg *TestMessage) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeTest.ReadAndVerify(rr)

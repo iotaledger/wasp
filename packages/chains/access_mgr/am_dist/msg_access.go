@@ -37,14 +37,6 @@ func newMsgAccess(
 	}
 }
 
-func (msg *msgAccess) MarshalBinary() ([]byte, error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *msgAccess) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
-}
-
 func (msg *msgAccess) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeAccess.ReadAndVerify(rr)
