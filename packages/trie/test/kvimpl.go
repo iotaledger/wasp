@@ -9,6 +9,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 // ----------------------------------------------------------------------------
