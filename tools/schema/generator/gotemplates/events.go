@@ -23,9 +23,9 @@ $#each eventComment _eventComment
 func (e $TypeName) $EvtName($endFunc
 $#each event eventParam
 $#if event eventEndFunc2
-	enc := wasmlib.NewEventEncoder()
+	enc := wasmlib.NewEventEncoder("$package.$evtName")
 $#each event eventEmit
-	wasmlib.EventEmit("$package.$evtName", enc)
+	wasmlib.EventEmit(enc)
 }
 `,
 	// *******************************

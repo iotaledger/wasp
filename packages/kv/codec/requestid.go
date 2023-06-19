@@ -6,10 +6,10 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-func DecodeRequestID(b []byte, def ...isc.RequestID) (isc.RequestID, error) {
+func DecodeRequestID(b []byte, def ...isc.RequestID) (ret isc.RequestID, err error) {
 	if b == nil {
 		if len(def) == 0 {
-			return isc.RequestID{}, errors.New("cannot decode nil bytes")
+			return ret, errors.New("cannot decode nil RequestID")
 		}
 		return def[0], nil
 	}

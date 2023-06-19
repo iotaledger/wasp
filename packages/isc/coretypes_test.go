@@ -29,11 +29,11 @@ func TestAgentIDCoretypes(t *testing.T) {
 	require.True(t, chainID.AsAddress().Equal(aid.(*ContractAgentID).Address()))
 	require.EqualValues(t, aid.(*ContractAgentID).Hname(), hname)
 
-	aidBack, err = NewAgentIDFromString(aid.String())
+	aidBack, err = AgentIDFromString(aid.String())
 	require.NoError(t, err)
 	require.True(t, aid.Equals(aidBack))
 
-	aidBack, err = NewAgentIDFromString(aid.String())
+	aidBack, err = AgentIDFromString(aid.String())
 	require.NoError(t, err)
 	require.True(t, aid.Equals(aidBack))
 }

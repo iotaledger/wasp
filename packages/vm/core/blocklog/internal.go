@@ -1,28 +1,28 @@
 package blocklog
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 // SaveNextBlockInfo appends block info and returns its index
 func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) {
-	registry := collections.NewArray32(partition, PrefixBlockRegistry)
+	registry := collections.NewArray(partition, PrefixBlockRegistry)
 	registry.Push(blockInfo.Bytes())
 }
 
 // UpdateLatestBlockInfo is called before producing the next block to save anchor tx id and commitment data of the previous one
 func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxID iotago.TransactionID, aliasOutput *isc.AliasOutputWithID, l1commitment *state.L1Commitment) {
-	registry := collections.NewArray32(partition, PrefixBlockRegistry)
+	registry := collections.NewArray(partition, PrefixBlockRegistry)
 	lastBlockIndex := registry.Len() - 1
 	blockInfoBuffer := registry.GetAt(lastBlockIndex)
 	blockInfo, err := BlockInfoFromBytes(blockInfoBuffer)
@@ -35,10 +35,10 @@ func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxID iotago.TransactionID
 // SaveControlAddressesIfNecessary saves new information about state address in the blocklog partition
 // If state address does not change, it does nothing
 func SaveControlAddressesIfNecessary(partition kv.KVStore, stateAddress, governingAddress iotago.Address, blockIndex uint32) {
-	registry := collections.NewArray32(partition, prefixControlAddresses)
-	l := registry.Len()
-	if l != 0 {
-		addrs, err := ControlAddressesFromBytes(registry.GetAt(l - 1))
+	registry := collections.NewArray(partition, prefixControlAddresses)
+	length := registry.Len()
+	if length != 0 {
+		addrs, err := ControlAddressesFromBytes(registry.GetAt(length - 1))
 		if err != nil {
 			panic(fmt.Sprintf("SaveControlAddressesIfNecessary: %v", err))
 		}
@@ -86,13 +86,8 @@ func SaveRequestReceipt(partition kv.KVStore, rec *RequestReceipt, key RequestLo
 	return nil
 }
 
-func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey, contract isc.Hname) {
-	text := fmt.Sprintf("%s: %s", contract.String(), msg)
-	collections.NewMap(partition, prefixRequestEvents).SetAt(key.Bytes(), []byte(text))
-	scLut := collections.NewMap(partition, prefixSmartContractEventsLookup)
-	entries := scLut.GetAt(contract.Bytes())
-	entries = append(entries, key.Bytes()...)
-	scLut.SetAt(contract.Bytes(), entries)
+func SaveEvent(partition kv.KVStore, eventKey []byte, event *isc.Event) {
+	collections.NewMap(partition, prefixRequestEvents).SetAt(eventKey, event.Bytes())
 }
 
 func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID isc.RequestID) RequestLookupKeyList {
@@ -139,7 +134,7 @@ func isRequestProcessedInternal(partition kv.KVStoreReader, reqID isc.RequestID)
 	return record, nil
 }
 
-func getRequestEventsInternal(partition kv.KVStoreReader, reqID isc.RequestID) ([]string, error) {
+func getRequestEventsInternal(partition kv.KVStoreReader, reqID isc.RequestID) ([][]byte, error) {
 	lst := mustGetLookupKeyListFromReqID(partition, reqID)
 	record, err := getCorrectRecordFromLookupKeyList(partition, lst, reqID)
 	if err != nil {
@@ -148,62 +143,61 @@ func getRequestEventsInternal(partition kv.KVStoreReader, reqID isc.RequestID) (
 	if record == nil {
 		return nil, nil
 	}
-	ret := []string{}
 	eventIndex := uint16(0)
 	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
+	var ret [][]byte
 	for {
-		key := NewEventLookupKey(record.BlockIndex, record.RequestIndex, eventIndex)
-		msg := events.GetAt(key.Bytes())
-		if msg == nil {
+		key := NewEventLookupKey(record.BlockIndex, record.RequestIndex, eventIndex).Bytes()
+		eventData := events.GetAt(key)
+		if eventData == nil {
 			return ret, nil
 		}
-		ret = append(ret, string(msg))
+		ret = append(ret, eventData)
 		eventIndex++
 	}
 }
 
-func getSmartContractEventsInternal(partition kv.KVStoreReader, contract isc.Hname, fromBlock, toBlock uint32) ([]string, error) {
-	scLut := collections.NewMapReadOnly(partition, prefixSmartContractEventsLookup)
-	ret := []string{}
-	entries := scLut.GetAt(contract.Bytes())
-	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
-	keysBuf := bytes.NewBuffer(entries)
-	for {
-		key, err := EventLookupKeyFromBytes(keysBuf)
-		if err != nil && !errors.Is(err, io.EOF) {
-			return nil, fmt.Errorf("getSmartContractEventsIntern unable to parse key. %w", err)
-		}
-		if key == nil { // no more events
-			return ret, nil
-		}
-		keyBlockIndex := key.BlockIndex()
-		if keyBlockIndex < fromBlock {
-			continue
-		}
-		if keyBlockIndex > toBlock {
-			return ret, nil
-		}
-		event := events.GetAt(key.Bytes())
-		ret = append(ret, string(event))
+func getSmartContractEventsInternal(partition kv.KVStoreReader, contractID isc.Hname, fromBlock, toBlock uint32) [][]byte {
+	registry := collections.NewArrayReadOnly(partition, PrefixBlockRegistry)
+	latestBlockIndex := registry.Len() - 1
+	adjustedToBlock := toBlock
+
+	if adjustedToBlock > latestBlockIndex {
+		adjustedToBlock = latestBlockIndex
 	}
+
+	filteredEvents := make([][]byte, 0)
+	for blockNumber := fromBlock; blockNumber <= adjustedToBlock; blockNumber++ {
+		eventBlockKey := collections.MapElemKey(prefixRequestEvents, codec.EncodeUint32(blockNumber))
+
+		partition.Iterate(kv.Key(eventBlockKey), func(_ kv.Key, value []byte) bool {
+			parsedContractID, _ := isc.ContractIDFromEventBytes(value)
+			if parsedContractID != contractID {
+				return true
+			}
+
+			filteredEvents = append(filteredEvents, value)
+			return true
+		})
+	}
+
+	return filteredEvents
 }
 
-func pruneEventsByBlockIndex(partition kv.KVStore, blockIndex uint32, totalRequests uint16) []string {
-	ret := make([]string, 0)
+func pruneEventsByBlockIndex(partition kv.KVStore, blockIndex uint32, totalRequests uint16) {
 	events := collections.NewMap(partition, prefixRequestEvents)
 	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
 		eventIndex := uint16(0)
 		for {
-			key := NewEventLookupKey(blockIndex, reqIdx, eventIndex)
-			msg := events.GetAt(key.Bytes())
-			if msg == nil {
+			key := NewEventLookupKey(blockIndex, reqIdx, eventIndex).Bytes()
+			eventData := events.GetAt(key)
+			if eventData == nil {
 				break
 			}
-			events.DelAt(key.Bytes())
+			events.DelAt(key)
 			eventIndex++
 		}
 	}
-	return ret
 }
 
 func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint32) ([][]byte, bool) {
@@ -222,16 +216,58 @@ func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint
 	return ret, true
 }
 
+func pruneRequestLookupTable(partition kv.KVStore, lookupDigest isc.RequestLookupDigest, blockIndex uint32) error {
+	lut := collections.NewMap(partition, prefixRequestLookupIndex)
+
+	res := lut.GetAt(lookupDigest[:])
+	if len(res) == 0 {
+		return nil
+	}
+
+	requests, err := RequestLookupKeyListFromBytes(res)
+	if err != nil {
+		return err
+	}
+
+	filteredRequestKeys := make(RequestLookupKeyList, 0)
+
+	for _, requestKey := range requests {
+		if requestKey.BlockIndex() != blockIndex {
+			filteredRequestKeys = append(filteredRequestKeys, requestKey)
+		}
+	}
+
+	lut.SetAt(lookupDigest[:], filteredRequestKeys.Bytes())
+	return nil
+}
+
 func pruneRequestLogRecordsByBlockIndex(partition kv.KVStore, blockIndex uint32, totalRequests uint16) {
-	lookupTable := collections.NewMap(partition, prefixRequestReceipts)
+	receiptMap := collections.NewMap(partition, prefixRequestReceipts)
+
 	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
 		lookupKey := NewRequestLookupKey(blockIndex, reqIdx)
-		lookupTable.DelAt(lookupKey[:])
+
+		receiptBytes := receiptMap.GetAt(lookupKey[:])
+		if len(receiptBytes) == 0 {
+			continue
+		}
+
+		receipt, err := RequestReceiptFromBytes(receiptBytes)
+		if err != nil {
+			panic(err)
+		}
+
+		err = pruneRequestLookupTable(partition, receipt.Request.ID().LookupDigest(), blockIndex)
+		if err != nil {
+			panic(err)
+		}
+
+		receiptMap.DelAt(lookupKey[:])
 	}
 }
 
 func getBlockInfoBytes(partition kv.KVStoreReader, blockIndex uint32) []byte {
-	return collections.NewArray32ReadOnly(partition, PrefixBlockRegistry).GetAt(blockIndex)
+	return collections.NewArrayReadOnly(partition, PrefixBlockRegistry).GetAt(blockIndex)
 }
 
 func RequestReceiptKey(rkey RequestLookupKey) []byte {
@@ -262,7 +298,7 @@ func getBlockIndexParams(ctx isc.SandboxView) uint32 {
 	if ret != math.MaxUint32 {
 		return ret
 	}
-	registry := collections.NewArray32ReadOnly(ctx.StateR(), PrefixBlockRegistry)
+	registry := collections.NewArrayReadOnly(ctx.StateR(), PrefixBlockRegistry)
 	return registry.Len() - 1
 }
 
@@ -272,8 +308,17 @@ func pruneBlock(partition kv.KVStore, blockIndex uint32) {
 		// already pruned?
 		return
 	}
-	registry := collections.NewArray32(partition, PrefixBlockRegistry)
+	registry := collections.NewArray(partition, PrefixBlockRegistry)
 	registry.PruneAt(blockIndex)
 	pruneRequestLogRecordsByBlockIndex(partition, blockIndex, blockInfo.TotalRequests)
 	pruneEventsByBlockIndex(partition, blockIndex, blockInfo.TotalRequests)
+}
+
+func eventsToDict(events [][]byte) dict.Dict {
+	ret := dict.New()
+	retEvents := collections.NewArray(ret, ParamEvent)
+	for _, event := range events {
+		retEvents.Push(event)
+	}
+	return ret
 }

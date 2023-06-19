@@ -100,7 +100,7 @@ pub trait ScSandbox {
         let mut req = wasmrequests::CallRequest {
             contract: h_contract,
             function: h_function,
-            params: vec![0; SC_UINT32_LENGTH],
+            params: vec![0; 1],
             allowance: vec![0; 0],
         };
         if let Some(params) = params {
@@ -217,7 +217,7 @@ pub trait ScSandboxFunc: ScSandbox {
             prog_hash: program_hash.clone(),
             name: name.to_string(),
             description: description.to_string(),
-            params: vec![0; SC_UINT32_LENGTH],
+            params: vec![0; 1],
         };
         if let Some(init_params) = init_params {
             req.params = init_params.to_bytes();
@@ -236,8 +236,8 @@ pub trait ScSandboxFunc: ScSandbox {
     }
 
     // signals an event on the node that external entities can subscribe to
-    fn event(&self, msg: &str) {
-        sandbox(FN_EVENT, &string_to_bytes(msg));
+    fn event(&self, buf: &[u8]) {
+        sandbox(FN_EVENT, buf);
     }
 
     // retrieve the assets that were minted in this transaction

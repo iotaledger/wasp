@@ -41,14 +41,14 @@ var FieldTypes = map[string]bool{
 type Field struct {
 	Name       string // external name for this field
 	Alias      string // internal name alias, can be different from Name
-	Array      bool
-	FldComment string
-	MapKey     string
-	Optional   bool
-	Type       string
-	BaseType   bool
 	Comment    string
+	FldComment string
+	IsArray    bool
+	IsBaseType bool
+	IsOptional bool
 	Line       int // the line number originally in yaml file
+	MapKey     string
+	Type       string
 }
 
 func (f *Field) Compile(s *Schema, fldNameDef, fldTypeDef *DefElt) error {
@@ -63,10 +63,10 @@ func (f *Field) Compile(s *Schema, fldNameDef, fldTypeDef *DefElt) error {
 		f.Alias = strings.TrimSpace(fldName[index+1:])
 	}
 	if !fldNameRegexp.MatchString(f.Name) {
-		return fmt.Errorf("invalid field name: %s at %d", f.Name, fldNameDef.Line)
+		return fmt.Errorf("invalid field name: %s at line %d", f.Name, fldNameDef.Line)
 	}
 	if !fldAliasRegexp.MatchString(f.Alias) {
-		return fmt.Errorf("invalid field alias: %s at %d", f.Alias, fldNameDef.Line)
+		return fmt.Errorf("invalid field alias: %s at line %d", f.Alias, fldNameDef.Line)
 	}
 
 	fldType, err := f.compileFieldType(fldTypeDef)
@@ -74,8 +74,8 @@ func (f *Field) Compile(s *Schema, fldNameDef, fldTypeDef *DefElt) error {
 		return err
 	}
 	f.Type = fldType
-	f.BaseType = FieldTypes[fldType]
-	if f.BaseType {
+	f.IsBaseType = FieldTypes[fldType]
+	if f.IsBaseType {
 		return nil
 	}
 	for _, typeDef := range s.Structs {
@@ -88,7 +88,7 @@ func (f *Field) Compile(s *Schema, fldNameDef, fldTypeDef *DefElt) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("invalid field type: %s at %d", fldType, fldTypeDef.Line)
+	return fmt.Errorf("invalid field type: %s at line %d", fldType, fldTypeDef.Line)
 }
 
 func (f *Field) compileFieldType(fldTypeDef *DefElt) (string, error) {
@@ -96,27 +96,27 @@ func (f *Field) compileFieldType(fldTypeDef *DefElt) (string, error) {
 
 	// strip 'optional' indicator
 	if strings.HasSuffix(fldType, "?") {
-		f.Optional = true
+		f.IsOptional = true
 		fldType = strings.TrimSpace(fldType[:len(fldType)-1])
 	}
 
 	switch {
 	case strings.HasSuffix(fldType, "[]"): // is it an array?
-		f.Array = true
+		f.IsArray = true
 		fldType = strings.TrimSpace(fldType[:len(fldType)-2])
 	case strings.HasPrefix(fldType, "map["): // is it a map?
 		parts := strings.Split(fldType[4:], "]")
 		if len(parts) != 2 {
-			return "", fmt.Errorf("expected map field type: %s at %d", fldType, fldTypeDef.Line)
+			return "", fmt.Errorf("expected map field type: %s at line %d", fldType, fldTypeDef.Line)
 		}
 		f.MapKey = strings.TrimSpace(parts[0])
 		if !fldTypeRegexp.MatchString(f.MapKey) || f.MapKey == "Bool" {
-			return "", fmt.Errorf("invalid map key field type: %s at %d", f.MapKey, fldTypeDef.Line)
+			return "", fmt.Errorf("invalid map key field type: %s at line %d", f.MapKey, fldTypeDef.Line)
 		}
 		fldType = strings.TrimSpace(parts[1])
 	}
 	if !fldTypeRegexp.MatchString(fldType) {
-		return "", fmt.Errorf("invalid field type: %s at %d", fldType, fldTypeDef.Line)
+		return "", fmt.Errorf("invalid field type: %s at line %d", fldType, fldTypeDef.Line)
 	}
 	return fldType, nil
 }

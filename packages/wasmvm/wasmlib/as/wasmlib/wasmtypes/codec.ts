@@ -65,7 +65,7 @@ export class WasmDecoder {
 
     // decodes the next variable sized slice of bytes from the byte buffer
     bytes(): Uint8Array {
-        const length = uint32Decode(this);
+        const length = this.vluDecode(32) as u32;
         return this.fixedBytes(length);
     }
 
@@ -84,6 +84,11 @@ export class WasmDecoder {
         const value = this.buf.slice(0, size);
         this.buf = this.buf.subarray(size);
         return value;
+    }
+
+    // returns the number of bytes left in the byte buffer
+    length(): u32 {
+        return this.buf.length as u32;
     }
 
     // peeks at the next byte in the byte buffer
@@ -172,7 +177,7 @@ export class WasmEncoder {
     // encodes a variable sized slice of bytes into the byte buffer
     bytes(value: Uint8Array): WasmEncoder {
         const length = value.length as u32;
-        uint32Encode(this, length);
+        this.vluEncode(length as u64);
         return this.fixedBytes(value, length);
     }
 

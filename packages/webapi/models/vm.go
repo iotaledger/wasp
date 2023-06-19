@@ -95,7 +95,7 @@ func MapReceiptResponse(receipt *isc.Receipt) *ReceiptResponse {
 		burnRecords = append(burnRecords, receipt.GasBurnLog.Records...)
 	}
 
-	req, err := isc.NewRequestFromBytes(receipt.Request)
+	req, err := isc.RequestFromBytes(receipt.Request)
 	if err != nil {
 		panic(err)
 	}

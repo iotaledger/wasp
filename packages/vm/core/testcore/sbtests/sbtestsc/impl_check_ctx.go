@@ -69,16 +69,16 @@ func passTypesFull(ctx isc.Sandbox) dict.Dict {
 	if hname0 != 0 {
 		ctx.Log().Panicf("wrong Hname-0")
 	}
-	_, err = params.GetHname(ParamContractID)
+	_, err = params.GetAgentID(ParamContractID)
 	checkFull(ctx, err)
 
-	_, err = params.GetHname(ParamChainID)
+	_, err = params.GetChainID(ParamChainID)
 	checkFull(ctx, err)
 
-	_, err = params.GetHname(ParamAddress)
+	_, err = params.GetAddress(ParamAddress)
 	checkFull(ctx, err)
 
-	_, err = params.GetHname(ParamAgentID)
+	_, err = params.GetAgentID(ParamAgentID)
 	checkFull(ctx, err)
 	return nil
 }
@@ -115,16 +115,16 @@ func passTypesView(ctx isc.SandboxView) dict.Dict {
 	if hname0 != 0 {
 		ctx.Log().Panicf("wrong hname-0")
 	}
-	_, err = params.GetHname(ParamContractID)
+	_, err = params.GetAgentID(ParamContractID)
 	checkView(ctx, err)
 
-	_, err = params.GetHname(ParamChainID)
+	_, err = params.GetChainID(ParamChainID)
 	checkView(ctx, err)
 
-	_, err = params.GetHname(ParamAddress)
+	_, err = params.GetAddress(ParamAddress)
 	checkView(ctx, err)
 
-	_, err = params.GetHname(ParamAgentID)
+	_, err = params.GetAgentID(ParamAgentID)
 	checkView(ctx, err)
 	return nil
 }

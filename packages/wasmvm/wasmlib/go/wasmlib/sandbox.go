@@ -70,7 +70,7 @@ func Trace(text string) {
 }
 
 func NewParamsProxy() wasmtypes.Proxy {
-	return wasmtypes.NewProxy(NewScDictFromBytes(Sandbox(FnParams, nil)))
+	return wasmtypes.NewProxy(ScDictFromBytes(Sandbox(FnParams, nil)))
 }
 
 func NewResultsProxy() wasmtypes.Proxy {
@@ -101,7 +101,7 @@ func (s ScSandbox) callWithAllowance(hContract, hFunction wasmtypes.ScHname, par
 		Allowance: allowance.Bytes(),
 	}
 	res := s.FnCall(&req)
-	return NewScDictFromBytes(res).Immutable()
+	return ScDictFromBytes(res).Immutable()
 }
 
 func (s ScSandbox) FnCall(req *wasmrequests.CallRequest) []byte {
@@ -139,7 +139,7 @@ func (s ScSandbox) Panic(text string) {
 
 // retrieve parameters passed to the smart contract function that was called
 func (s ScSandbox) Params() *ScImmutableDict {
-	return NewScDictFromBytes(Sandbox(FnParams, nil)).Immutable()
+	return ScDictFromBytes(Sandbox(FnParams, nil)).Immutable()
 }
 
 func (s ScSandbox) RawState() ScImmutableState {
@@ -235,8 +235,8 @@ func (s ScSandboxFunc) EstimateStorageDeposit(fn *ScFunc) uint64 {
 }
 
 // signals an event on the node that external entities can subscribe to
-func (s ScSandboxFunc) Event(msg string) {
-	Sandbox(FnEvent, []byte(msg))
+func (s ScSandboxFunc) Event(buf []byte) {
+	Sandbox(FnEvent, buf)
 }
 
 // retrieve the assets that were minted in this transaction

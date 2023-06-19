@@ -223,7 +223,7 @@ Returns the NFT IDs for all NFTs owned by the given account.
 
 #### Returns
 
-- `i` ([`Array16`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/array16.go)
+- `i` ([`Array`](https://github.com/iotaledger/wasp/blob/develop/packages/kv/collections/array.go)
   of [`iotago::NFTID`](https://github.com/iotaledger/iota.go/blob/develop/output_nft.go)):
   The NFT IDs owned by the account
 
@@ -250,7 +250,7 @@ Returns the NFT IDs for all NFTs in the given collection that are owned by the g
 
 #### Returns
 
-- `i` ([`Array16`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/array16.go)
+- `i` ([`Array`](https://github.com/iotaledger/wasp/blob/develop/packages/kv/collections/array.go)
   of [`iotago::NFTID`](https://github.com/iotaledger/iota.go/blob/develop/output_nft.go)):
   The NFT IDs in the collection owned by the account
 

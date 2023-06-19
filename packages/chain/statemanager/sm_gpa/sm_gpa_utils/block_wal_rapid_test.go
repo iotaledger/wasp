@@ -29,7 +29,8 @@ type blockWALTestSM struct { // State machine for block WAL property based Rapid
 
 var _ rapid.StateMachine = &blockWALTestSM{}
 
-func (bwtsmT *blockWALTestSM) Init(t *rapid.T) {
+func newBlockWALTestSM(t *rapid.T) *blockWALTestSM {
+	bwtsmT := new(blockWALTestSM)
 	var err error
 	bwtsmT.factory = NewBlockFactory(t)
 	bwtsmT.lastBlockCommitment = origin.L1Commitment(nil, 0)
@@ -39,6 +40,7 @@ func (bwtsmT *blockWALTestSM) Init(t *rapid.T) {
 	bwtsmT.blocks = make(map[state.BlockHash]state.Block)
 	bwtsmT.blocksMoved = make([]state.BlockHash, 0)
 	bwtsmT.blocksDamaged = make([]state.BlockHash, 0)
+	return bwtsmT
 }
 
 func (bwtsmT *blockWALTestSM) Cleanup() {
@@ -140,7 +142,9 @@ func (bwtsmT *blockWALTestSM) ReadGoodBlock(t *rapid.T) {
 	blockHash := rapid.SampledFrom(blockHashes).Example()
 	block, err := bwtsmT.bw.Read(blockHash)
 	require.NoError(t, err)
-	require.True(t, block.Hash().Equals(blockHash)) // Should be Equals instead of Hash().Equals(); bwtsmT.blocks[blockHash]
+	blockExpected, ok := bwtsmT.blocks[blockHash]
+	require.True(t, ok)
+	CheckBlocksEqual(t, blockExpected, block)
 	t.Logf("Block %s read", blockHash)
 }
 
@@ -151,7 +155,9 @@ func (bwtsmT *blockWALTestSM) ReadMovedBlock(t *rapid.T) {
 	blockHash := rapid.SampledFrom(bwtsmT.blocksMoved).Example()
 	block, err := bwtsmT.bw.Read(blockHash)
 	require.NoError(t, err)
-	require.False(t, block.Hash().Equals(blockHash)) // Should be Equals instead of Hash().Equals(); bwtsmT.blocks[blockHash]
+	blockExpected, ok := bwtsmT.blocks[blockHash]
+	require.True(t, ok)
+	CheckBlocksDifferent(t, blockExpected, block)
 	t.Logf("Moved block %s read", blockHash)
 }
 
@@ -193,5 +199,8 @@ func (bwtsmT *blockWALTestSM) invariantAllWrittenBlocksExist(t *rapid.T) {
 }
 
 func TestBlockWALPropBased(t *testing.T) {
-	rapid.Check(t, rapid.Run[*blockWALTestSM]())
+	rapid.Check(t, func(t *rapid.T) {
+		sm := newBlockWALTestSM(t)
+		t.Repeat(rapid.StateMachineActions(sm))
+	})
 }

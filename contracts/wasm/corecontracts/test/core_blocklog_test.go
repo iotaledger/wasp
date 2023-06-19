@@ -6,7 +6,6 @@ package test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -35,10 +34,10 @@ func TestControlAddresses(t *testing.T) {
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	// solo agent is the chain owner here, so it is both the state controller address and governing address
-	assert.Equal(t, ctx.Cvt.ScAddress(ctx.Chain.StateControllerAddress), f.Results.StateControllerAddress().Value())
-	assert.Equal(t, ctx.Cvt.ScAddress(ctx.Chain.StateControllerAddress), f.Results.GoverningAddress().Value())
+	require.Equal(t, ctx.Cvt.ScAddress(ctx.Chain.StateControllerAddress), f.Results.StateControllerAddress().Value())
+	require.Equal(t, ctx.Cvt.ScAddress(ctx.Chain.StateControllerAddress), f.Results.GoverningAddress().Value())
 	// solo agent is set as state controller address and governing address from the beginning of the chain
-	assert.Equal(t, uint32(0), f.Results.BlockIndex().Value())
+	require.Equal(t, uint32(0), f.Results.BlockIndex().Value())
 }
 
 func TestGetBlockInfo(t *testing.T) {
@@ -57,15 +56,15 @@ func TestGetBlockInfo(t *testing.T) {
 		expectBlockInfo, err := ctx.Chain.GetBlockInfo(i)
 		require.NoError(t, err)
 
-		assert.Equal(t, expectBlockInfo.SchemaVersion, blockinfo.SchemaVersion)
-		assert.Equal(t, expectBlockInfo.BlockIndex(), blockinfo.BlockIndex())
-		assert.Equal(t, expectBlockInfo.Timestamp, blockinfo.Timestamp)
-		assert.Equal(t, expectBlockInfo.TotalRequests, blockinfo.TotalRequests)
-		assert.Equal(t, expectBlockInfo.NumSuccessfulRequests, blockinfo.NumSuccessfulRequests)
-		assert.Equal(t, expectBlockInfo.NumOffLedgerRequests, blockinfo.NumOffLedgerRequests)
-		assert.Equal(t, expectBlockInfo.PreviousAliasOutput, blockinfo.PreviousAliasOutput)
-		assert.Equal(t, expectBlockInfo.GasBurned, blockinfo.GasBurned)
-		assert.Equal(t, expectBlockInfo.GasFeeCharged, blockinfo.GasFeeCharged)
+		require.Equal(t, expectBlockInfo.SchemaVersion, blockinfo.SchemaVersion)
+		require.Equal(t, expectBlockInfo.BlockIndex(), blockinfo.BlockIndex())
+		require.Equal(t, expectBlockInfo.Timestamp, blockinfo.Timestamp)
+		require.Equal(t, expectBlockInfo.TotalRequests, blockinfo.TotalRequests)
+		require.Equal(t, expectBlockInfo.NumSuccessfulRequests, blockinfo.NumSuccessfulRequests)
+		require.Equal(t, expectBlockInfo.NumOffLedgerRequests, blockinfo.NumOffLedgerRequests)
+		require.Equal(t, expectBlockInfo.PreviousAliasOutput, blockinfo.PreviousAliasOutput)
+		require.Equal(t, expectBlockInfo.GasBurned, blockinfo.GasBurned)
+		require.Equal(t, expectBlockInfo.GasFeeCharged, blockinfo.GasFeeCharged)
 	}
 }
 
@@ -79,19 +78,19 @@ func TestGetLatestBlockInfo(t *testing.T) {
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	index := f.Results.BlockIndex().Value()
-	assert.Equal(t, expectBlockInfo.BlockIndex(), index)
+	require.Equal(t, expectBlockInfo.BlockIndex(), index)
 
 	blockinfo, err := blocklog.BlockInfoFromBytes(f.Results.BlockInfo().Value())
 	require.NoError(t, err)
-	assert.Equal(t, expectBlockInfo.SchemaVersion, blockinfo.SchemaVersion)
-	assert.Equal(t, expectBlockInfo.BlockIndex(), blockinfo.BlockIndex())
-	assert.Equal(t, expectBlockInfo.Timestamp, blockinfo.Timestamp)
-	assert.Equal(t, expectBlockInfo.TotalRequests, blockinfo.TotalRequests)
-	assert.Equal(t, expectBlockInfo.NumSuccessfulRequests, blockinfo.NumSuccessfulRequests)
-	assert.Equal(t, expectBlockInfo.NumOffLedgerRequests, blockinfo.NumOffLedgerRequests)
-	assert.Equal(t, expectBlockInfo.PreviousAliasOutput, blockinfo.PreviousAliasOutput)
-	assert.Equal(t, expectBlockInfo.GasBurned, blockinfo.GasBurned)
-	assert.Equal(t, expectBlockInfo.GasFeeCharged, blockinfo.GasFeeCharged)
+	require.Equal(t, expectBlockInfo.SchemaVersion, blockinfo.SchemaVersion)
+	require.Equal(t, expectBlockInfo.BlockIndex(), blockinfo.BlockIndex())
+	require.Equal(t, expectBlockInfo.Timestamp, blockinfo.Timestamp)
+	require.Equal(t, expectBlockInfo.TotalRequests, blockinfo.TotalRequests)
+	require.Equal(t, expectBlockInfo.NumSuccessfulRequests, blockinfo.NumSuccessfulRequests)
+	require.Equal(t, expectBlockInfo.NumOffLedgerRequests, blockinfo.NumOffLedgerRequests)
+	require.Equal(t, expectBlockInfo.PreviousAliasOutput, blockinfo.PreviousAliasOutput)
+	require.Equal(t, expectBlockInfo.GasBurned, blockinfo.GasBurned)
+	require.Equal(t, expectBlockInfo.GasFeeCharged, blockinfo.GasFeeCharged)
 }
 
 func TestGetRequestIDsForBlock(t *testing.T) {
@@ -104,9 +103,9 @@ func TestGetRequestIDsForBlock(t *testing.T) {
 		f.Func.Call()
 		require.NoError(t, ctx.Err)
 		reqs := ctx.Chain.GetRequestIDsForBlock(blockNum)
-		assert.Equal(t, uint32(len(reqs)), f.Results.RequestID().Length())
+		require.Equal(t, uint32(len(reqs)), f.Results.RequestID().Length())
 		for reqNum := uint32(0); reqNum < uint32(len(reqs)); reqNum++ {
-			assert.Equal(t, reqs[reqNum].Bytes(), f.Results.RequestID().GetRequestID(reqNum).Value().Bytes())
+			require.Equal(t, reqs[reqNum].Bytes(), f.Results.RequestID().GetRequestID(reqNum).Value().Bytes())
 		}
 	}
 }
@@ -122,19 +121,19 @@ func TestGetRequestReceipt(t *testing.T) {
 	f.Params.RequestID().SetValue(ctx.Cvt.ScRequestID(reqs[0]))
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	assert.Equal(t, blockIndex, f.Results.BlockIndex().Value())
-	assert.Equal(t, reqIndex, f.Results.RequestIndex().Value())
+	require.Equal(t, blockIndex, f.Results.BlockIndex().Value())
+	require.Equal(t, reqIndex, f.Results.RequestIndex().Value())
 
 	receipt, err := blocklog.RequestReceiptFromBytes(f.Results.RequestReceipt().Value())
 	require.NoError(t, err)
 	soloreceipt, err := ctx.Chain.GetRequestReceipt(reqs[0])
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	// note: this is what ctx.Chain.GetRequestReceipt() does as well,
 	// so we better make sure they are equal before comparing
 	receipt.BlockIndex = f.Results.BlockIndex().Value()
 	receipt.RequestIndex = f.Results.RequestIndex().Value()
-	assert.Equal(t, soloreceipt, receipt)
+	require.Equal(t, soloreceipt, receipt)
 }
 
 func TestGetRequestReceiptsForBlock(t *testing.T) {
@@ -154,7 +153,7 @@ func TestGetRequestReceiptsForBlock(t *testing.T) {
 			receipt, err := blocklog.RequestReceiptFromBytes(receipts.GetBytes(j).Value())
 			require.NoError(t, err)
 			receipt.BlockIndex = soloreceipts[j].BlockIndex
-			assert.Equal(t, soloreceipts[j], receipt)
+			require.Equal(t, soloreceipts[j], receipt)
 		}
 	}
 }
@@ -193,9 +192,9 @@ func TestGetEventsForRequest(t *testing.T) {
 
 	events, err := ctx.Chain.GetEventsForRequest(reqs[0])
 	require.NoError(t, err)
-	assert.Equal(t, uint32(len(events)), f.Results.Event().Length())
+	require.Equal(t, uint32(len(events)), f.Results.Event().Length())
 	for i := uint32(0); i < uint32(len(events)); i++ {
-		assert.Equal(t, []byte(events[i]), f.Results.Event().GetBytes(i).Value())
+		require.Equal(t, events[i].Bytes(), f.Results.Event().GetBytes(i).Value())
 	}
 }
 
@@ -210,9 +209,9 @@ func TestGetEventsForBlock(t *testing.T) {
 		require.NoError(t, ctx.Err)
 		events, err := ctx.Chain.GetEventsForBlock(blockIndex)
 		require.NoError(t, err)
-		assert.Equal(t, uint32(len(events)), f.Results.Event().Length())
+		require.Equal(t, uint32(len(events)), f.Results.Event().Length())
 		for i := uint32(0); i < uint32(len(events)); i++ {
-			assert.Equal(t, []byte(events[i]), f.Results.Event().GetBytes(i).Value())
+			require.Equal(t, events[i].Bytes(), f.Results.Event().GetBytes(i).Value())
 		}
 	}
 }
@@ -230,8 +229,8 @@ func TestGetEventsForContract(t *testing.T) {
 
 	events, err := ctx.Chain.GetEventsForContract(coreblocklog.ScName)
 	require.NoError(t, err)
-	assert.Equal(t, uint32(len(events)), f.Results.Event().Length())
+	require.Equal(t, uint32(len(events)), f.Results.Event().Length())
 	for i := uint32(0); i < uint32(len(events)); i++ {
-		assert.Equal(t, []byte(events[i]), f.Results.Event().GetBytes(i).Value())
+		require.Equal(t, events[i].Bytes(), f.Results.Event().GetBytes(i).Value())
 	}
 }

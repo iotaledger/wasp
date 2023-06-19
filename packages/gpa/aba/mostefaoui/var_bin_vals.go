@@ -64,10 +64,10 @@ func (v *varBinVals) startRound(round int, est bool) gpa.OutMessages {
 func (v *varBinVals) msgVoteBVALReceived(msg *msgVote) gpa.OutMessages {
 	recv := v.recv(msg.value) // NOTE: A reference to a field.
 
-	if ok := recv[msg.sender]; ok {
+	if ok := recv[msg.Sender()]; ok {
 		return nil // Duplicate.
 	}
-	recv[msg.sender] = true
+	recv[msg.Sender()] = true
 
 	msgs := gpa.NoMessages()
 	if len(recv) == v.f+1 {

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
@@ -54,5 +55,5 @@ type RequestProcessedResponse struct {
 }
 
 type EventsResponse struct {
-	Events []string `json:"events" swagger:"required"`
+	Events []*isc.Event `json:"events" swagger:"required"`
 }

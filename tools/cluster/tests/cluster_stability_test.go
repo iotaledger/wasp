@@ -16,8 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-const OSWindows string = "windows"
-
 type SabotageEnv struct {
 	chainEnv      *ChainEnv
 	NumValidators int

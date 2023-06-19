@@ -21,12 +21,12 @@ type Func struct {
 	Name    string
 	Alias   string
 	Access  DefElt
-	Kind    string
+	Comment string
 	Hname   isc.Hname
+	Kind    string
+	Line    int
 	Params  []*Field
 	Results []*Field
-	Line    int
-	Comment string
 }
 
 type Struct struct {
@@ -134,7 +134,7 @@ func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, v
 	}
 	for _, funcName := range sortedFuncDescs(templateFuncs) {
 		if views && schemaDef.Funcs[funcName] != nil {
-			return fmt.Errorf("duplicate func/view name: %s at %v", funcName.Val, templateFuncs[funcName].Line)
+			return fmt.Errorf("duplicate func/view name: %s at line %d", funcName.Val, templateFuncs[funcName].Line)
 		}
 		funcDesc := templateFuncs[funcName]
 		if funcDesc == nil {
@@ -158,7 +158,7 @@ func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, v
 		// check for Hname collision
 		for _, other := range s.Funcs {
 			if other.Hname == f.Hname {
-				return fmt.Errorf("hname collision: %d (%s and %s) at %v and %v",
+				return fmt.Errorf("hname collision: %d (%s and %s) at line %d and %d",
 					f.Hname, f.Name, other.Name, f.Line, other.Line)
 			}
 		}
@@ -190,7 +190,7 @@ func (s *Schema) compileFuncFields(fieldMap DefMap, allFieldMap *FieldMap, what 
 		}
 		tmpfld, ok := fieldNames[field.Name]
 		if ok {
-			return nil, fmt.Errorf("duplicate %s name at %d and %d", what, tmpfld.Line, field.Line)
+			return nil, fmt.Errorf("duplicate %s name at line %d and %d", what, tmpfld.Line, field.Line)
 		}
 		fieldNames[field.Name] = &DefElt{
 			Val:     field.Name,
@@ -199,7 +199,7 @@ func (s *Schema) compileFuncFields(fieldMap DefMap, allFieldMap *FieldMap, what 
 		}
 		tmpfld, ok = fieldAliases[field.Alias]
 		if ok {
-			return nil, fmt.Errorf("duplicate %s alias at %d and %d", what, tmpfld.Line, field.Line)
+			return nil, fmt.Errorf("duplicate %s alias at line %d and %d", what, tmpfld.Line, field.Line)
 		}
 		fieldAliases[field.Alias] = &DefElt{
 			Val:     field.Alias,
@@ -212,10 +212,10 @@ func (s *Schema) compileFuncFields(fieldMap DefMap, allFieldMap *FieldMap, what 
 			existing = field
 		}
 		if existing.Alias != field.Alias {
-			return nil, fmt.Errorf("redefined %s alias: '%s' != '%s' at %d and %d", what, existing.Alias, field.Alias, existing.Line, field.Line)
+			return nil, fmt.Errorf("redefined %s alias: '%s' != '%s' at line %d and %d", what, existing.Alias, field.Alias, existing.Line, field.Line)
 		}
 		if existing.Type != field.Type {
-			return nil, fmt.Errorf("redefined %s type: %s at %d and %d", what, field.Name, existing.Line, field.Line)
+			return nil, fmt.Errorf("redefined %s type: %s at line %d and %d", what, field.Name, existing.Line, field.Line)
 		}
 		fields = append(fields, field)
 	}
@@ -234,7 +234,7 @@ func (s *Schema) compileStateVars(schemaDef *SchemaDef) error {
 		}
 		varState, ok := varNames[varDef.Name]
 		if ok {
-			return fmt.Errorf("duplicate var name: %s at %d and %d", varState.Val, varState.Line, varDef.Line)
+			return fmt.Errorf("duplicate var name: %s at line %d and %d", varState.Val, varState.Line, varDef.Line)
 		}
 		varNames[varDef.Name] = &DefElt{
 			Val:     varDef.Name,
@@ -243,7 +243,7 @@ func (s *Schema) compileStateVars(schemaDef *SchemaDef) error {
 		}
 		varState, ok = varAliases[varDef.Alias]
 		if ok {
-			return fmt.Errorf("duplicate var alias: %s at %d and %d", varState.Val, varState.Line, varDef.Line)
+			return fmt.Errorf("duplicate var alias: %s at line %d and %d", varState.Val, varState.Line, varDef.Line)
 		}
 		varAliases[varDef.Alias] = &DefElt{
 			Val:     varDef.Alias,
@@ -277,10 +277,10 @@ func (s *Schema) compileStruct(kind string, structName DefElt, structFields DefM
 		if err != nil {
 			return nil, err
 		}
-		if field.Optional {
+		if field.IsOptional {
 			return nil, fmt.Errorf("%s field cannot be optional", kind)
 		}
-		if field.Array {
+		if field.IsArray {
 			return nil, fmt.Errorf("%s field cannot be an array", kind)
 		}
 		if field.MapKey != "" {
@@ -288,7 +288,7 @@ func (s *Schema) compileStruct(kind string, structName DefElt, structFields DefM
 		}
 		tmpfld, ok := fieldNames[field.Name]
 		if ok {
-			return nil, fmt.Errorf("duplicate %s field name at %d and %d", kind, tmpfld.Line, field.Line)
+			return nil, fmt.Errorf("duplicate %s field name at line %d and %d", kind, tmpfld.Line, field.Line)
 		}
 		fieldNames[field.Name] = &DefElt{
 			Val:  field.Name,
@@ -296,7 +296,7 @@ func (s *Schema) compileStruct(kind string, structName DefElt, structFields DefM
 		}
 		tmpfld, ok = fieldAliases[field.Alias]
 		if ok {
-			return nil, fmt.Errorf("duplicate %s field alias at %d and %d", kind, tmpfld.Line, field.Line)
+			return nil, fmt.Errorf("duplicate %s field alias at line %d and %d", kind, tmpfld.Line, field.Line)
 		}
 		fieldAliases[field.Alias] = &DefElt{
 			Val:  field.Alias,
@@ -319,7 +319,7 @@ func (s *Schema) compileTypeDefs(schemaDef *SchemaDef) error {
 		}
 		tmpvar, ok := varNames[varDef.Name]
 		if ok {
-			return fmt.Errorf("duplicate subtype name at %d and %d", tmpvar.Line, varDef.Line)
+			return fmt.Errorf("duplicate subtype name at line %d and %d", tmpvar.Line, varDef.Line)
 		}
 		varNames[varDef.Name] = &DefElt{
 			Val:  varDef.Name,
@@ -327,7 +327,7 @@ func (s *Schema) compileTypeDefs(schemaDef *SchemaDef) error {
 		}
 		tmpvar, ok = varAliases[varDef.Alias]
 		if ok {
-			return fmt.Errorf("duplicate subtype alias at %d and %d", tmpvar.Line, varDef.Line)
+			return fmt.Errorf("duplicate subtype alias at line %d and %d", tmpvar.Line, varDef.Line)
 		}
 		varAliases[varDef.Alias] = &DefElt{
 			Val:  varDef.Alias,

@@ -79,5 +79,5 @@ go test
 ```
 
 If you run this command from the `/documentation/tutorial-examples` folder, you will run the 
-[Tutorial Test](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples/tutorial-test.go), which
-contains all the examples explained in the following sections. 
+[Tutorial Test](https://github.com/iotaledger/wasp/blob/develop/documentation/tutorial-examples/test/tutorial_test.go), 
+which contains all the examples explained in the following sections. 

@@ -200,7 +200,7 @@ func TestGasLimit(t *testing.T) {
 
 func TestNotEnoughISCGas(t *testing.T) {
 	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	ethKey, ethAddress := env.soloChain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
 
 	_, err := storage.store(43)
@@ -232,6 +232,11 @@ func TestNotEnoughISCGas(t *testing.T) {
 
 	// no changes should persist
 	require.EqualValues(t, 43, storage.retrieve())
+
+	// check nonces are still in sync
+	iscNonce := env.soloChain.Nonce(isc.NewEthereumAddressAgentID(ethAddress))
+	evmNonce := env.getNonce(ethAddress)
+	require.EqualValues(t, iscNonce, evmNonce)
 }
 
 // ensure the amount of base tokens sent impacts the amount of gas used
@@ -431,10 +436,10 @@ func TestISCTriggerEvent(t *testing.T) {
 	res, err := iscTest.triggerEvent("Hi from EVM!")
 	require.NoError(t, err)
 	require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
-	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
+	events, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
 	require.NoError(t, err)
-	require.Len(t, ev, 1)
-	require.Contains(t, ev[0], "Hi from EVM!")
+	require.Len(t, events, 1)
+	require.Equal(t, string(events[0].Payload), "Hi from EVM!")
 }
 
 func TestISCTriggerEventThenFail(t *testing.T) {
@@ -447,9 +452,9 @@ func TestISCTriggerEventThenFail(t *testing.T) {
 		gasLimit: 100_000, // skip estimate gas (which will fail)
 	})
 	require.Error(t, err)
-	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
+	events, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
 	require.NoError(t, err)
-	require.Len(t, ev, 0)
+	require.Len(t, events, 0)
 }
 
 func TestISCEntropy(t *testing.T) {
@@ -1630,10 +1635,10 @@ func TestStaticCall(t *testing.T) {
 	}}, "testStaticCall")
 	require.NoError(t, err)
 	require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
-	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
+	events, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex())
 	require.NoError(t, err)
-	require.Len(t, ev, 1)
-	require.Contains(t, ev[0], "non-static")
+	require.Len(t, events, 1)
+	require.Equal(t, string(events[0].Payload), "non-static")
 }
 
 func TestSelfDestruct(t *testing.T) {

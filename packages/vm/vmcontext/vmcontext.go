@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/core/types"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -50,6 +52,8 @@ type VMContext struct {
 	currentStateUpdate *StateUpdate
 	entropy            hashing.HashValue
 	callStack          []*callContext
+	evmFailedTx        *types.Transaction
+	evmFailedReceipt   *types.Receipt
 	// --- gas related
 	// max tokens that can be charged for gas fee
 	gasMaxTokensToSpendForGasFee uint64
@@ -313,7 +317,7 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 			outputIndex++
 		}
 		for _, sn := range foundriesToBeRemoved {
-			vmctx.task.Log.Debugf("deleting foundry %s", sn)
+			vmctx.task.Log.Debugf("deleting foundry %d", sn)
 			accounts.DeleteFoundryOutput(s, sn)
 		}
 
@@ -360,7 +364,7 @@ func (vmctx *VMContext) AssertConsistentGasTotals() {
 
 func (vmctx *VMContext) LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
 	vmctx.callCore(blob.Contract, func(s kv.KVStore) {
-		vmtype, binary, err = blob.LocateProgram(vmctx.State(), programHash)
+		vmtype, binary, err = blob.LocateProgram(s, programHash)
 	})
 	return vmtype, binary, err
 }

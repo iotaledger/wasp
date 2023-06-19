@@ -243,7 +243,7 @@ func (a *abaImpl) Message(msg gpa.Message) gpa.OutMessages {
 }
 
 func (a *abaImpl) handleMsgVote(msgT *msgVote) gpa.OutMessages {
-	if _, ok := a.nodeIdx[msgT.sender]; !ok {
+	if _, ok := a.nodeIdx[msgT.Sender()]; !ok {
 		a.log.Warnf("unknown sender: %+v", msgT)
 		return nil // Unknown sender.
 	}
@@ -265,7 +265,7 @@ func (a *abaImpl) handleMsgVote(msgT *msgVote) gpa.OutMessages {
 }
 
 func (a *abaImpl) handleMsgDone(msgT *msgDone) gpa.OutMessages {
-	if _, ok := a.nodeIdx[msgT.sender]; !ok {
+	if _, ok := a.nodeIdx[msgT.Sender()]; !ok {
 		return nil // Unknown sender.
 	}
 	return a.varDone.msgDoneReceived(msgT)

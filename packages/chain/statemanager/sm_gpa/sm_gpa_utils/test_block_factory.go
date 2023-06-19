@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -30,14 +31,21 @@ type BlockFactory struct {
 	aliasOutputs        map[state.BlockHash]*isc.AliasOutputWithID
 }
 
-func NewBlockFactory(t require.TestingT) *BlockFactory {
+func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *BlockFactory {
+	var chainInitParams dict.Dict
+	if len(chainInitParamsOpt) > 0 {
+		chainInitParams = chainInitParamsOpt[0]
+	} else {
+		chainInitParams = nil
+	}
 	aliasOutput0ID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(t), 0)
 	chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(aliasOutput0ID))
 	stateAddress := cryptolib.NewKeyPair().GetPublicKey().AsEd25519Address()
+	originCommitment := origin.L1Commitment(chainInitParams, 0)
 	aliasOutput0 := &iotago.AliasOutput{
 		Amount:        tpkg.TestTokenSupply,
 		AliasID:       chainID.AsAliasID(), // NOTE: not very correct: origin output's AliasID should be empty; left here to make mocking transitions easier
-		StateMetadata: testutil.DummyStateMetadata(origin.L1Commitment(nil, 0)).Bytes(),
+		StateMetadata: testutil.DummyStateMetadata(originCommitment).Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress},
 			&iotago.GovernorAddressUnlockCondition{Address: stateAddress},
@@ -49,16 +57,15 @@ func NewBlockFactory(t require.TestingT) *BlockFactory {
 		},
 	}
 	aliasOutputs := make(map[state.BlockHash]*isc.AliasOutputWithID)
-	originCommitment := origin.L1Commitment(nil, 0)
 	originOutput := isc.NewAliasOutputWithID(aliasOutput0, aliasOutput0ID)
 	aliasOutputs[originCommitment.BlockHash()] = originOutput
 	chainStore := state.NewStore(mapdb.NewMapDB())
-	origin.InitChain(chainStore, nil, 0)
+	origin.InitChain(chainStore, chainInitParams, 0)
 	return &BlockFactory{
 		t:                   t,
 		store:               chainStore,
 		chainID:             chainID,
-		lastBlockCommitment: origin.L1Commitment(nil, 0),
+		lastBlockCommitment: originCommitment,
 		aliasOutputs:        aliasOutputs,
 	}
 }

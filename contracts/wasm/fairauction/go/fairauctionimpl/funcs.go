@@ -26,12 +26,7 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 	allowance := ctx.Allowance()
 	nfts := allowance.NftIDs()
 	ctx.Require(len(nfts) == 1, "single NFT allowance expected")
-
-	var auctionNFT wasmtypes.ScNftID
-	for nft := range nfts {
-		auctionNFT = nft
-		break
-	}
+	auctionNFT := *nfts[0]
 
 	minimumBid := f.Params.MinimumBid().Value()
 
@@ -91,7 +86,7 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 	currentAuction.SetValue(auction)
 
 	// take custody of deposit and NFT
-	transfer := wasmlib.NewScTransferBaseTokens(deposit)
+	transfer := wasmlib.ScTransferFromBaseTokens(deposit)
 	transfer.AddNFT(&auctionNFT)
 	ctx.TransferAllowed(ctx.AccountID(), transfer)
 
@@ -218,23 +213,23 @@ func viewGetAuctionInfo(ctx wasmlib.ScViewContext, f *GetAuctionInfoContext) {
 func transferTokens(ctx wasmlib.ScFuncContext, agent wasmtypes.ScAgentID, amount uint64) {
 	if agent.IsAddress() {
 		// send back to original Tangle address
-		ctx.Send(agent.Address(), wasmlib.NewScTransferBaseTokens(amount))
+		ctx.Send(agent.Address(), wasmlib.ScTransferFromBaseTokens(amount))
 		return
 	}
 
 	// TODO not an address, deposit into account on chain
-	ctx.Send(agent.Address(), wasmlib.NewScTransferBaseTokens(amount))
+	ctx.Send(agent.Address(), wasmlib.ScTransferFromBaseTokens(amount))
 }
 
 func transferNFT(ctx wasmlib.ScFuncContext, agent wasmtypes.ScAgentID, nft wasmtypes.ScNftID) {
 	if agent.IsAddress() {
 		// send back to original Tangle address
-		ctx.Send(agent.Address(), wasmlib.NewScTransferNFT(&nft))
+		ctx.Send(agent.Address(), wasmlib.ScTransferFromNFT(&nft))
 		return
 	}
 
 	// TODO not an address, deposit into account on chain
-	ctx.Send(agent.Address(), wasmlib.NewScTransferNFT(&nft))
+	ctx.Send(agent.Address(), wasmlib.ScTransferFromNFT(&nft))
 }
 
 func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {

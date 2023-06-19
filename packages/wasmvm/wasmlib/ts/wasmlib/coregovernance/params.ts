@@ -212,13 +212,8 @@ export class MutableSetGasLimitsParams extends wasmtypes.ScProxy {
 
 export class ImmutableSetMetadataParams extends wasmtypes.ScProxy {
     // the public evm json rpc url
-    evmJsonRPCURL(): wasmtypes.ScImmutableString {
-        return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamEvmJsonRPCURL));
-    }
-
-    // the public evm websocket url
-    evmWebSocketUrl(): wasmtypes.ScImmutableString {
-        return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamEvmWebSocketUrl));
+    metadata(): sc.ImmutablePublicChainMetadata {
+        return new sc.ImmutablePublicChainMetadata(this.proxy.root(sc.ParamMetadata));
     }
 
     // the public url leading to the chain info, stored on the tangle
@@ -229,13 +224,8 @@ export class ImmutableSetMetadataParams extends wasmtypes.ScProxy {
 
 export class MutableSetMetadataParams extends wasmtypes.ScProxy {
     // the public evm json rpc url
-    evmJsonRPCURL(): wasmtypes.ScMutableString {
-        return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamEvmJsonRPCURL));
-    }
-
-    // the public evm websocket url
-    evmWebSocketUrl(): wasmtypes.ScMutableString {
-        return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamEvmWebSocketUrl));
+    metadata(): sc.MutablePublicChainMetadata {
+        return new sc.MutablePublicChainMetadata(this.proxy.root(sc.ParamMetadata));
     }
 
     // the public url leading to the chain info, stored on the tangle

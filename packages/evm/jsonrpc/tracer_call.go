@@ -160,7 +160,7 @@ func (t *callTracer) GetResult() (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	return json.RawMessage(res), t.reason
+	return res, t.reason
 }
 
 // Stop terminates execution of the tracer at the first opportune moment.

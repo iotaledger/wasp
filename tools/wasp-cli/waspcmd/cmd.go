@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -34,10 +35,16 @@ func initAddWaspNodeCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			nodeName := args[0]
+			nodeURL := args[1]
+
 			if !util.IsSlug(nodeName) {
 				log.Fatalf("invalid node name: %s, must be in slug format, only lowercase and hypens, example: foo-bar", nodeName)
 			}
-			config.AddWaspNode(nodeName, args[1])
+
+			_, err := apiextensions.ValidateAbsoluteURL(nodeURL)
+			log.Check(err)
+
+			config.AddWaspNode(nodeName, nodeURL)
 		},
 	}
 

@@ -84,7 +84,7 @@ func (n *Node) receiveInitMessage(peerMsg *peering.PeerMessageIn) {
 		panic(fmt.Errorf("wrong type of DKG init message: %v", peerMsg.MsgType))
 	}
 	msg := &initiatorInitMsg{}
-	if err := msg.fromBytes(peerMsg.MsgData); err != nil {
+	if err := msgFromBytes(peerMsg.MsgData, msg); err != nil {
 		n.log.Warnf("Dropping unknown message: %v", peerMsg)
 		return
 	}
@@ -204,8 +204,8 @@ func (n *Node) GenerateDistributedKey(
 				pubShareResponses[int(recv.SenderIndex)] = msg
 				return true, nil
 			default:
-				n.log.Errorf("unexpected message type instead of initiatorPubShareMsg: %v", msg)
-				return false, errors.New("unexpected message type instead of initiatorPubShareMsg")
+				n.log.Errorf("msgType != initiatorPubShareMsg: %v", msg)
+				return false, errors.New("msgType != initiatorPubShareMsg")
 			}
 		},
 	); err != nil {
@@ -379,16 +379,13 @@ func (n *Node) exchangeInitiatorMsgs(
 	recvCB func(recv *peering.PeerMessageGroupIn, initMsg initiatorMsg) (bool, error),
 ) error {
 	recvInitCB := func(recv *peering.PeerMessageGroupIn) (bool, error) {
-		var err error
-		var initMsg initiatorMsg
-		var isInitMsg bool
-		isInitMsg, initMsg, err = readInitiatorMsg(recv.PeerMessageData, n.edSuite, n.blsSuite)
-		if !isInitMsg {
-			return false, nil
-		}
+		initMsg, err := readInitiatorMsg(recv.PeerMessageData, n.edSuite, n.blsSuite)
 		if err != nil {
 			n.log.Warnf("Failed to read message from %v: %v", recv.SenderPubKey.String(), recv.PeerMessageData)
 			return false, err
+		}
+		if initMsg == nil {
+			return false, nil
 		}
 		if !initMsg.IsResponse() {
 			return false, nil

@@ -28,7 +28,7 @@ func NewScAgentID(address ScAddress, hname ScHname) ScAgentID {
 	return ScAgentID{kind: ScAgentIDContract, address: address, hname: hname}
 }
 
-func NewScAgentIDFromAddress(address ScAddress) ScAgentID {
+func ScAgentIDFromAddress(address ScAddress) ScAgentID {
 	switch address.id[0] {
 	case ScAddressAlias:
 		return ScAgentID{kind: ScAgentIDContract, address: address, hname: 0}
@@ -129,7 +129,7 @@ func AgentIDFromString(value string) ScAgentID {
 	parts := strings.Split(value, "@")
 	switch len(parts) {
 	case 1:
-		return NewScAgentIDFromAddress(AddressFromString(parts[0]))
+		return ScAgentIDFromAddress(AddressFromString(parts[0]))
 	case 2:
 		return NewScAgentID(AddressFromString(parts[1]), HnameFromString(parts[0]))
 	default:

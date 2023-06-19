@@ -27,7 +27,7 @@ func Int16FromBytes(buf []byte) int16 {
 	if len(buf) != ScInt16Length {
 		panic("invalid Int16 length")
 	}
-	return int16(buf[0]) | int16(buf[1])<<8
+	return int16(buf[0]) | (int16(buf[1]) << 8)
 }
 
 func Int16ToBytes(value int16) []byte {

@@ -1,62 +1,56 @@
 package accounts
 
 import (
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
-	iotago "github.com/iotaledger/iota.go/v3"
+	"io"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // foundryOutputRec contains information to reconstruct output
 type foundryOutputRec struct {
+	BlockIndex  uint32
+	OutputIndex uint16
 	Amount      uint64 // always storage deposit
 	TokenScheme iotago.TokenScheme
 	Metadata    []byte
-	BlockIndex  uint32
-	OutputIndex uint16
 }
 
-func (f *foundryOutputRec) Bytes() []byte {
-	mu := marshalutil.New()
-	mu.WriteUint32(f.BlockIndex).
-		WriteUint16(f.OutputIndex).
-		WriteUint64(f.Amount)
-	util.WriteBytes8ToMarshalUtil(codec.EncodeTokenScheme(f.TokenScheme), mu)
-	util.WriteBytes16ToMarshalUtil(f.Metadata, mu)
-
-	return mu.Bytes()
-}
-
-func foundryOutputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*foundryOutputRec, error) {
-	ret := &foundryOutputRec{}
-	var err error
-	if ret.BlockIndex, err = mu.ReadUint32(); err != nil {
-		return nil, err
-	}
-	if ret.OutputIndex, err = mu.ReadUint16(); err != nil {
-		return nil, err
-	}
-	if ret.Amount, err = mu.ReadUint64(); err != nil {
-		return nil, err
-	}
-	schemeBin, err := util.ReadBytes8FromMarshalUtil(mu)
-	if err != nil {
-		return nil, err
-	}
-	if ret.TokenScheme, err = codec.DecodeTokenScheme(schemeBin); err != nil {
-		return nil, err
-	}
-	if ret.Metadata, err = util.ReadBytes16FromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
-	return ret, nil
+func (rec *foundryOutputRec) Bytes() []byte {
+	return rwutil.WriterToBytes(rec)
 }
 
 func mustFoundryOutputRecFromBytes(data []byte) *foundryOutputRec {
-	ret, err := foundryOutputRecFromMarshalUtil(marshalutil.New(data))
+	ret, err := rwutil.ReaderFromBytes(data, new(foundryOutputRec))
 	if err != nil {
 		panic(err)
 	}
 	return ret
+}
+
+func (rec *foundryOutputRec) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rec.BlockIndex = rr.ReadUint32()
+	rec.OutputIndex = rr.ReadUint16()
+	rec.Amount = rr.ReadUint64()
+	tokenScheme := rr.ReadBytes()
+	if rr.Err == nil {
+		rec.TokenScheme, rr.Err = codec.DecodeTokenScheme(tokenScheme)
+	}
+	rec.Metadata = rr.ReadBytes()
+	return rr.Err
+}
+
+func (rec *foundryOutputRec) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteUint32(rec.BlockIndex)
+	ww.WriteUint16(rec.OutputIndex)
+	ww.WriteUint64(rec.Amount)
+	if ww.Err == nil {
+		tokenScheme := codec.EncodeTokenScheme(rec.TokenScheme)
+		ww.WriteBytes(tokenScheme)
+	}
+	ww.WriteBytes(rec.Metadata)
+	return ww.Err
 }

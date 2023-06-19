@@ -4,8 +4,6 @@
 package governanceimpl
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -26,7 +24,7 @@ func rotateStateController(ctx isc.Sandbox) dict.Dict {
 	// check is address is allowed
 	state := ctx.State()
 	amap := collections.NewMapReadOnly(state, governance.StateVarAllowedStateControllerAddresses)
-	if !amap.HasAt(isc.BytesFromAddress(newStateControllerAddr)) {
+	if !amap.HasAt(isc.AddressToBytes(newStateControllerAddr)) {
 		panic(vm.ErrUnauthorized)
 	}
 
@@ -35,7 +33,7 @@ func rotateStateController(ctx isc.Sandbox) dict.Dict {
 		// By setting StateVarRotateToAddress we signal the VM this special situation
 		// StateVarRotateToAddress value should never persist in the state
 		ctx.Log().Infof("Governance::RotateStateController: newStateControllerAddress=%s", newStateControllerAddr.String())
-		state.Set(governance.StateVarRotateToAddress, isc.BytesFromAddress(newStateControllerAddr))
+		state.Set(governance.StateVarRotateToAddress, isc.AddressToBytes(newStateControllerAddr))
 		return nil
 	}
 	// here the new state controller address from the request equals to the state controller address in the anchor output
@@ -48,7 +46,7 @@ func rotateStateController(ctx isc.Sandbox) dict.Dict {
 	if !storedStateController.Equal(newStateControllerAddr) {
 		// state controller address recorded in the blocklog is different from the new one
 		// It means rotation happened
-		ctx.Event(fmt.Sprintf("rotate %s %s", newStateControllerAddr, storedStateController))
+		eventRotate(ctx, newStateControllerAddr, storedStateController)
 		return nil
 	}
 	// no need to rotate because address does not change
@@ -59,7 +57,7 @@ func addAllowedStateControllerAddress(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	addr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
-	amap.SetAt(isc.BytesFromAddress(addr), []byte{0xFF})
+	amap.SetAt(isc.AddressToBytes(addr), []byte{0xFF})
 	return nil
 }
 
@@ -67,7 +65,7 @@ func removeAllowedStateControllerAddress(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	addr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
-	amap.DelAt(isc.BytesFromAddress(addr))
+	amap.DelAt(isc.AddressToBytes(addr))
 	return nil
 }
 
@@ -77,7 +75,7 @@ func getAllowedStateControllerAddresses(ctx isc.SandboxView) dict.Dict {
 		return nil
 	}
 	ret := dict.New()
-	retArr := collections.NewArray16(ret, governance.ParamAllowedStateControllerAddresses)
+	retArr := collections.NewArray(ret, governance.ParamAllowedStateControllerAddresses)
 	amap.IterateKeys(func(elemKey []byte) bool {
 		retArr.Push(elemKey)
 		return true

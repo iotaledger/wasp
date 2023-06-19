@@ -30,13 +30,13 @@ func newBufferedNode(n *NodeData, triePath []byte) *bufferedNode {
 }
 
 // commitNode re-calculates node commitment and, recursively, its children commitments
-func (n *bufferedNode) commitNode(triePartition, valuePartition KVWriter, refcounts *Refcounts) {
+func (n *bufferedNode) commitNode(triePartition, valuePartition KVWriter, refcounts *Refcounts, stats *CommitStats) {
 	childUpdates := make(map[byte]*Hash)
 	for idx, child := range n.uncommittedChildren {
 		if child == nil {
 			childUpdates[idx] = nil
 		} else {
-			child.commitNode(triePartition, valuePartition, refcounts)
+			child.commitNode(triePartition, valuePartition, refcounts, stats)
 			childUpdates[idx] = &child.nodeData.Commitment
 		}
 	}
@@ -47,11 +47,18 @@ func (n *bufferedNode) commitNode(triePartition, valuePartition KVWriter, refcou
 		valuePartition.Set(n.terminal.Bytes(), n.value)
 	}
 
-	refcounts.Inc(n)
+	nodeCount, valueCount := refcounts.Inc(n)
+	if nodeCount == 1 {
+		stats.CreatedNodes++
+	}
+	if valueCount == 1 {
+		stats.CreatedValues++
+	}
 }
 
-func (n *bufferedNode) mustPersist(w KVWriter) {
-	n.nodeData.mustPersist(w)
+func (n *bufferedNode) mustPersist(partition KVWriter) {
+	dbKey := n.nodeData.Commitment.Bytes()
+	partition.Set(dbKey, n.nodeData.Bytes())
 }
 
 func (n *bufferedNode) isRoot() bool {

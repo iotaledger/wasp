@@ -13,12 +13,9 @@ import (
 
 // EncodeReceipt serializes the receipt in RLP format
 func EncodeReceipt(receipt *types.Receipt) []byte {
-	var b bytes.Buffer
-	err := receipt.EncodeRLP(&b)
-	if err != nil {
-		panic(err)
-	}
-	return b.Bytes()
+	w := new(bytes.Buffer)
+	_ = receipt.EncodeRLP(w)
+	return w.Bytes()
 }
 
 func DecodeReceipt(b []byte) (*types.Receipt, error) {

@@ -30,7 +30,7 @@ pub struct ImmutableGetAllowedStateControllerAddressesResults {
 }
 
 impl ImmutableGetAllowedStateControllerAddressesResults {
-    // Array16 of state controller addresses
+    // Array of state controller addresses
     pub fn controllers(&self) -> ArrayOfImmutableAddress {
         ArrayOfImmutableAddress { proxy: self.proxy.root(RESULT_CONTROLLERS) }
     }
@@ -71,7 +71,7 @@ impl MutableGetAllowedStateControllerAddressesResults {
         }
     }
 
-    // Array16 of state controller addresses
+    // Array of state controller addresses
     pub fn controllers(&self) -> ArrayOfMutableAddress {
         ArrayOfMutableAddress { proxy: self.proxy.root(RESULT_CONTROLLERS) }
     }
@@ -93,11 +93,6 @@ impl ImmutableGetChainInfoResults {
         ScImmutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER_ID))
     }
 
-    // chain metadata
-    pub fn custom_metadata(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.proxy.root(RESULT_CUSTOM_METADATA))
-    }
-
     // serialized fee policy
     pub fn fee_policy(&self) -> ScImmutableBytes {
         ScImmutableBytes::new(self.proxy.root(RESULT_FEE_POLICY))
@@ -106,6 +101,15 @@ impl ImmutableGetChainInfoResults {
     // serialized gas limits
     pub fn gas_limits(&self) -> ScImmutableBytes {
         ScImmutableBytes::new(self.proxy.root(RESULT_GAS_LIMITS))
+    }
+
+    // chain metadata
+    pub fn metadata(&self) -> ImmutablePublicChainMetadata {
+        ImmutablePublicChainMetadata { proxy: self.proxy.root(RESULT_METADATA) }
+    }
+
+    pub fn public_url(&self) -> ScImmutableString {
+        ScImmutableString::new(self.proxy.root(RESULT_PUBLIC_URL))
     }
 }
 
@@ -131,11 +135,6 @@ impl MutableGetChainInfoResults {
         ScMutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER_ID))
     }
 
-    // chain metadata
-    pub fn custom_metadata(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.proxy.root(RESULT_CUSTOM_METADATA))
-    }
-
     // serialized fee policy
     pub fn fee_policy(&self) -> ScMutableBytes {
         ScMutableBytes::new(self.proxy.root(RESULT_FEE_POLICY))
@@ -144,6 +143,15 @@ impl MutableGetChainInfoResults {
     // serialized gas limits
     pub fn gas_limits(&self) -> ScMutableBytes {
         ScMutableBytes::new(self.proxy.root(RESULT_GAS_LIMITS))
+    }
+
+    // chain metadata
+    pub fn metadata(&self) -> MutablePublicChainMetadata {
+        MutablePublicChainMetadata { proxy: self.proxy.root(RESULT_METADATA) }
+    }
+
+    pub fn public_url(&self) -> ScMutableString {
+        ScMutableString::new(self.proxy.root(RESULT_PUBLIC_URL))
     }
 }
 
@@ -395,17 +403,12 @@ pub struct ImmutableGetMetadataResults {
 }
 
 impl ImmutableGetMetadataResults {
-    // the public evm json rpc url
-    pub fn evm_json_rpcurl(&self) -> ScImmutableString {
-        ScImmutableString::new(self.proxy.root(RESULT_EVM_JSON_RPCURL))
+    // the L2 metadata
+    pub fn metadata(&self) -> ImmutablePublicChainMetadata {
+        ImmutablePublicChainMetadata { proxy: self.proxy.root(RESULT_METADATA) }
     }
 
-    // the public evm websocket url
-    pub fn evm_web_socket_url(&self) -> ScImmutableString {
-        ScImmutableString::new(self.proxy.root(RESULT_EVM_WEB_SOCKET_URL))
-    }
-
-    // the public url leading to the chain info, stored on the tangle
+    // the public url leading to the chain info, stored on the tangle (l1)
     pub fn public_url(&self) -> ScImmutableString {
         ScImmutableString::new(self.proxy.root(RESULT_PUBLIC_URL))
     }
@@ -423,17 +426,12 @@ impl MutableGetMetadataResults {
         }
     }
 
-    // the public evm json rpc url
-    pub fn evm_json_rpcurl(&self) -> ScMutableString {
-        ScMutableString::new(self.proxy.root(RESULT_EVM_JSON_RPCURL))
+    // the L2 metadata
+    pub fn metadata(&self) -> MutablePublicChainMetadata {
+        MutablePublicChainMetadata { proxy: self.proxy.root(RESULT_METADATA) }
     }
 
-    // the public evm websocket url
-    pub fn evm_web_socket_url(&self) -> ScMutableString {
-        ScMutableString::new(self.proxy.root(RESULT_EVM_WEB_SOCKET_URL))
-    }
-
-    // the public url leading to the chain info, stored on the tangle
+    // the public url leading to the chain info, stored on the tangle (l1)
     pub fn public_url(&self) -> ScMutableString {
         ScMutableString::new(self.proxy.root(RESULT_PUBLIC_URL))
     }

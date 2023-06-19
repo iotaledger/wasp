@@ -2,7 +2,6 @@ package accounts
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 )
@@ -29,7 +28,7 @@ func DeleteNFTOutput(state kv.KVStore, id iotago.NFTID) {
 	nftOutputMap(state).DelAt(id[:])
 }
 
-func GetNFTOutput(state kv.KVStoreReader, id iotago.NFTID, chainID isc.ChainID) (*iotago.NFTOutput, uint32, uint16) {
+func GetNFTOutput(state kv.KVStoreReader, id iotago.NFTID) (*iotago.NFTOutput, uint32, uint16) {
 	data := nftOutputMapR(state).GetAt(id[:])
 	if data == nil {
 		return nil, 0, 0

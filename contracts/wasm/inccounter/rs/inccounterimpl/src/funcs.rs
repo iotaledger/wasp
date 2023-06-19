@@ -10,16 +10,19 @@ const HEX: &str = "0123456789abcdef";
 static mut LOCAL_STATE_MUST_INCREMENT: bool = false;
 
 pub fn func_init(_ctx: &ScFuncContext, f: &InitContext) {
+    let counter = f.state.counter();
     if f.params.counter().exists() {
-        let counter = f.params.counter().value();
-        f.state.counter().set_value(counter);
+        let value = f.params.counter().value();
+        counter.set_value(value);
     }
+    f.events.counter(counter.value());
 }
 
 pub fn func_call_increment(ctx: &ScFuncContext, f: &CallIncrementContext) {
     let counter = f.state.counter();
     let value = counter.value();
     counter.set_value(value + 1);
+    f.events.counter(counter.value());
     if value == 0 {
         ScFuncs::call_increment(ctx).func.call();
     }
@@ -29,6 +32,7 @@ pub fn func_call_increment_recurse5x(ctx: &ScFuncContext, f: &CallIncrementRecur
     let counter = f.state.counter();
     let value = counter.value();
     counter.set_value(value + 1);
+    f.events.counter(counter.value());
     if value < 5 {
         ScFuncs::call_increment_recurse5x(ctx).func.call();
     }
@@ -47,6 +51,7 @@ pub fn func_increment(_ctx: &ScFuncContext, f: &IncrementContext) {
 
     let counter = f.state.counter();
     counter.set_value(counter.value() + inc_value);
+    f.events.counter(counter.value());
 }
 
 pub fn func_increment_with_delay(ctx: &ScFuncContext, f: &IncrementWithDelayContext) {
@@ -59,12 +64,12 @@ pub fn func_local_state_internal_call(ctx: &ScFuncContext, f: &LocalStateInterna
     unsafe {
         LOCAL_STATE_MUST_INCREMENT = false;
     }
-    when_must_increment_state(ctx, &f.state);
+    when_must_increment_state(ctx, &f.state, &f.events);
     unsafe {
         LOCAL_STATE_MUST_INCREMENT = true;
     }
-    when_must_increment_state(ctx, &f.state);
-    when_must_increment_state(ctx, &f.state);
+    when_must_increment_state(ctx, &f.state, &f.events);
+    when_must_increment_state(ctx, &f.state, &f.events);
     // counter ends up as 2
 }
 
@@ -99,6 +104,7 @@ pub fn func_post_increment(ctx: &ScFuncContext, f: &PostIncrementContext) {
     let counter = f.state.counter();
     let value = counter.value();
     counter.set_value(value + 1);
+    f.events.counter(counter.value());
     if value == 0 {
         ScFuncs::increment(ctx).func.post();
     }
@@ -108,6 +114,7 @@ pub fn func_repeat_many(ctx: &ScFuncContext, f: &RepeatManyContext) {
     let counter = f.state.counter();
     let value = counter.value();
     counter.set_value(value + 1);
+    f.events.counter(counter.value());
     let state_repeats = f.state.num_repeats();
     let mut repeats = f.params.num_repeats().value();
     if repeats == 0 {
@@ -159,7 +166,7 @@ pub fn func_test_vlu_codec(ctx: &ScFuncContext, _f: &TestVluCodecContext) {
 }
 
 pub fn func_when_must_increment(ctx: &ScFuncContext, f: &WhenMustIncrementContext) {
-    when_must_increment_state(ctx, &f.state);
+    when_must_increment_state(ctx, &f.state, &f.events);
 }
 
 // note that get_counter mirrors the state of the 'counter' state variable
@@ -252,7 +259,7 @@ fn vlu_save(ctx: &ScFuncContext, name: &str, value: u64) {
     }
 }
 
-fn when_must_increment_state(ctx: &ScFuncContext, state: &MutableIncCounterState) {
+fn when_must_increment_state(ctx: &ScFuncContext, state: &MutableIncCounterState, events: &IncCounterEvents) {
     ctx.log("when_must_increment called");
     unsafe {
         if !LOCAL_STATE_MUST_INCREMENT {
@@ -261,4 +268,5 @@ fn when_must_increment_state(ctx: &ScFuncContext, state: &MutableIncCounterState
     }
     let counter = state.counter();
     counter.set_value(counter.value() + 1);
+    events.counter(counter.value());
 }

@@ -2,9 +2,9 @@ package isc
 
 import (
 	"fmt"
+	"io"
 	"time"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -15,33 +15,32 @@ import (
 type Request interface {
 	Calldata
 
-	IsOffLedger() bool
-
-	WriteToMarshalUtil(mu *marshalutil.MarshalUtil)
-	readFromMarshalUtil(mu *marshalutil.MarshalUtil) error
-
 	Bytes() []byte
+	IsOffLedger() bool
 	String() string
+
+	Read(r io.Reader) error
+	Write(w io.Writer) error
 }
 
 type Calldata interface {
+	Allowance() *Assets // transfer of assets to the smart contract. Debited from sender account
+	Assets() *Assets    // attached assets for the UTXO request, nil for off-ledger. All goes to sender
+	CallTarget() CallTarget
+	GasBudget() (gas uint64, isEVM bool)
 	ID() RequestID
+	NFT() *NFT // Not nil if the request is an NFT request
 	Params() dict.Dict
 	SenderAccount() AgentID
-	CallTarget() CallTarget
 	TargetAddress() iotago.Address // TODO implement properly. Target depends on time assumptions and UTXO type
-	Assets() *Assets               // attached assets for the UTXO request, nil for off-ledger. All goes to sender
-	NFT() *NFT                     // Not nil if the request is an NFT request
-	Allowance() *Assets            // transfer of assets to the smart contract. Debited from sender account
-	GasBudget() (gas uint64, isEVM bool)
 }
 
 type Features interface {
-	// TimeLock returns the timelock feature, or a zero time if not present
-	TimeLock() time.Time
 	// Expiry returns the expiry time and sender address, or a zero time if not present
 	Expiry() (time.Time, iotago.Address) // return expiry time data and sender address or nil, nil if does not exist
 	ReturnAmount() (uint64, bool)
+	// TimeLock returns the timelock feature, or a zero time if not present
+	TimeLock() time.Time
 }
 
 type OffLedgerRequestData interface {
@@ -76,14 +75,6 @@ type OnLedgerRequest interface {
 type ReturnAmountOptions interface {
 	ReturnTo() iotago.Address
 	Amount() uint64
-}
-
-func TakeRequestIDs(reqs ...Request) []RequestID {
-	ret := make([]RequestID, len(reqs))
-	for i := range reqs {
-		ret[i] = reqs[i].ID()
-	}
-	return ret
 }
 
 func MustLogRequestsInTransaction(tx *iotago.Transaction, log func(msg string, args ...interface{}), prefix string) {

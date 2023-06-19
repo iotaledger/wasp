@@ -9,7 +9,7 @@ import (
 func DecodeChainID(b []byte, def ...isc.ChainID) (isc.ChainID, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return isc.ChainID{}, errors.New("cannot decode nil bytes")
+			return isc.ChainID{}, errors.New("cannot decode nil ChainID")
 		}
 		return def[0], nil
 	}

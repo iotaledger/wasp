@@ -394,13 +394,8 @@ impl ImmutableSetMetadataParams {
     }
 
     // the public evm json rpc url
-    pub fn evm_json_rpcurl(&self) -> ScImmutableString {
-        ScImmutableString::new(self.proxy.root(PARAM_EVM_JSON_RPCURL))
-    }
-
-    // the public evm websocket url
-    pub fn evm_web_socket_url(&self) -> ScImmutableString {
-        ScImmutableString::new(self.proxy.root(PARAM_EVM_WEB_SOCKET_URL))
+    pub fn metadata(&self) -> ImmutablePublicChainMetadata {
+        ImmutablePublicChainMetadata { proxy: self.proxy.root(PARAM_METADATA) }
     }
 
     // the public url leading to the chain info, stored on the tangle
@@ -416,13 +411,8 @@ pub struct MutableSetMetadataParams {
 
 impl MutableSetMetadataParams {
     // the public evm json rpc url
-    pub fn evm_json_rpcurl(&self) -> ScMutableString {
-        ScMutableString::new(self.proxy.root(PARAM_EVM_JSON_RPCURL))
-    }
-
-    // the public evm websocket url
-    pub fn evm_web_socket_url(&self) -> ScMutableString {
-        ScMutableString::new(self.proxy.root(PARAM_EVM_WEB_SOCKET_URL))
+    pub fn metadata(&self) -> MutablePublicChainMetadata {
+        MutablePublicChainMetadata { proxy: self.proxy.root(PARAM_METADATA) }
     }
 
     // the public url leading to the chain info, stored on the tangle

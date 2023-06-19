@@ -82,15 +82,12 @@ func (ch *Chain) L2BaseTokens(agentID isc.AgentID) uint64 {
 }
 
 func (ch *Chain) L2NFTs(agentID isc.AgentID) []iotago.NFTID {
-	ret := make([]iotago.NFTID, 0)
 	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewAccountNFTs.Name, accounts.ParamAgentID, agentID)
 	require.NoError(ch.Env.T, err)
-	nftIDs := collections.NewArray16ReadOnly(res, accounts.ParamNFTIDs)
-	nftLen := nftIDs.Len()
-	for i := uint16(0); i < nftLen; i++ {
-		nftID := iotago.NFTID{}
-		copy(nftID[:], nftIDs.GetAt(i))
-		ret = append(ret, nftID)
+	nftIDs := collections.NewArrayReadOnly(res, accounts.ParamNFTIDs)
+	ret := make([]iotago.NFTID, nftIDs.Len())
+	for i := range ret {
+		copy(ret[i][:], nftIDs.GetAt(uint32(i)))
 	}
 	return ret
 }
@@ -100,15 +97,15 @@ func (ch *Chain) L2NativeTokens(agentID isc.AgentID, nativeTokenID iotago.Native
 }
 
 func (ch *Chain) L2CommonAccountAssets() *isc.Assets {
-	return ch.L2Assets(ch.CommonAccount())
+	return ch.L2Assets(accounts.CommonAccount())
 }
 
 func (ch *Chain) L2CommonAccountBaseTokens() uint64 {
-	return ch.L2Assets(ch.CommonAccount()).BaseTokens
+	return ch.L2Assets(accounts.CommonAccount()).BaseTokens
 }
 
 func (ch *Chain) L2CommonAccountNativeTokens(nativeTokenID iotago.NativeTokenID) *big.Int {
-	return ch.L2Assets(ch.CommonAccount()).AmountNativeToken(nativeTokenID)
+	return ch.L2Assets(accounts.CommonAccount()).AmountNativeToken(nativeTokenID)
 }
 
 // L2TotalAssets return total sum of ftokens contained in the on-chain accounts
@@ -214,7 +211,7 @@ func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 	if fp.user != nil {
 		user = fp.user
 	}
-	req := NewCallParamsFromDict(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name, par).
+	req := CallParamsFromDict(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name, par).
 		WithAllowance(isc.NewAssetsBaseTokens(allowanceForFoundryStorageDeposit))
 
 	gas, _, err := fp.ch.EstimateGasOnLedger(req, user, true)

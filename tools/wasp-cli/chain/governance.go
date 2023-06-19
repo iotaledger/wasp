@@ -32,7 +32,7 @@ func initChangeAccessNodesCmd() *cobra.Command {
 			pars := governance.NewChangeAccessNodesRequest()
 			for i := 1; i < len(args); i += 2 {
 				action := args[i-1]
-				pubkey, err := cryptolib.NewPublicKeyFromString(args[i])
+				pubkey, err := cryptolib.PublicKeyFromString(args[i])
 				log.Check(err)
 				switch action {
 				case "accept":

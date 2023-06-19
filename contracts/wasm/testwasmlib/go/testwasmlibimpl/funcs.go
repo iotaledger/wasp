@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"math"
 
-	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -88,7 +87,7 @@ func funcRandom(ctx wasmlib.ScFuncContext, f *RandomContext) {
 }
 
 func funcTakeAllowance(ctx wasmlib.ScFuncContext, _ *TakeAllowanceContext) {
-	ctx.TransferAllowed(ctx.AccountID(), wasmlib.NewScTransferFromBalances(ctx.Allowance()))
+	ctx.TransferAllowed(ctx.AccountID(), wasmlib.ScTransferFromBalances(ctx.Allowance()))
 	ctx.Log(ctx.Utility().String(int64(ctx.Balances().BaseTokens())))
 }
 
@@ -98,13 +97,6 @@ func funcTakeBalance(ctx wasmlib.ScFuncContext, f *TakeBalanceContext) {
 
 func funcTriggerEvent(_ wasmlib.ScFuncContext, f *TriggerEventContext) {
 	f.Events.Test(f.Params.Address().Value(), f.Params.Name().Value())
-}
-
-func funcVerifyErc721(ctx wasmlib.ScFuncContext, f *VerifyErc721Context) {
-	tokenHash := f.Params.TokenHash().Value()
-	oo := erc721.ScFuncs.OwnerOf(ctx)
-	oo.Params.TokenID().SetValue(tokenHash)
-	oo.Func.Call()
 }
 
 func viewGetRandom(_ wasmlib.ScViewContext, f *GetRandomContext) {
@@ -462,6 +454,11 @@ func viewCheckAgentID(ctx wasmlib.ScViewContext, f *CheckAgentIDContext) {
 	ctx.Require(scAgentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(scAgentID)), "agentID string conversion failed")
 	ctx.Require(string(scAgentID.Bytes()) == string(agentBytes), "agentID bytes mismatch")
 	ctx.Require(scAgentID.String() == agentString, "agentID string mismatch")
+
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.AgentIDEncode(enc, scAgentID)
+	dec := wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(scAgentID == wasmtypes.AgentIDDecode(dec), "agentID decode/encode failed")
 }
 
 func viewCheckAddress(ctx wasmlib.ScViewContext, f *CheckAddressContext) {
@@ -472,6 +469,11 @@ func viewCheckAddress(ctx wasmlib.ScViewContext, f *CheckAddressContext) {
 	ctx.Require(address == wasmtypes.AddressFromString(wasmtypes.AddressToString(address)), "address string conversion failed")
 	ctx.Require(string(address.Bytes()) == string(addressBytes), "address bytes mismatch")
 	ctx.Require(address.String() == addressString, "address string mismatch")
+
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.AddressEncode(enc, address)
+	dec := wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(address == wasmtypes.AddressDecode(dec), "address decode/encode failed")
 }
 
 func viewCheckEthAddressAndAgentID(ctx wasmlib.ScViewContext, f *CheckEthAddressAndAgentIDContext) {
@@ -482,6 +484,10 @@ func viewCheckEthAddressAndAgentID(ctx wasmlib.ScViewContext, f *CheckEthAddress
 	ctx.Require(address == wasmtypes.AddressFromBytes(wasmtypes.AddressToBytes(address)), "eth address bytes conversion failed")
 	ctx.Require(address == wasmtypes.AddressFromString(wasmtypes.AddressToString(address)), "eth address to/from string conversion failed")
 	ctx.Require(addressString == wasmtypes.AddressToString(wasmtypes.AddressFromString(addressString)), "eth address from/to string conversion failed")
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.AddressEncode(enc, address)
+	dec := wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(address == wasmtypes.AddressDecode(dec), "eth address decode/encode failed")
 
 	agentID := f.Params.EthAgentID().Value()
 	agentIDString := f.Params.EthAgentIDString().Value()
@@ -491,7 +497,12 @@ func viewCheckEthAddressAndAgentID(ctx wasmlib.ScViewContext, f *CheckEthAddress
 	ctx.Require(agentID == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(agentID)), "eth agentID to/from string conversion failed")
 	ctx.Require(agentIDString == wasmtypes.AgentIDToString(wasmtypes.AgentIDFromString(agentIDString)), "eth agentID from/to string conversion failed")
 
-	agentIDFromAddress := wasmtypes.NewScAgentIDFromAddress(address)
+	enc = wasmtypes.NewWasmEncoder()
+	wasmtypes.AgentIDEncode(enc, agentID)
+	dec = wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(agentID == wasmtypes.AgentIDDecode(dec), "eth agentID decode/encode failed")
+
+	agentIDFromAddress := wasmtypes.ScAgentIDFromAddress(address)
 	ctx.Require(agentIDFromAddress == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(agentIDFromAddress)), "eth agentID bytes conversion failed")
 	ctx.Require(agentIDFromAddress == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(agentIDFromAddress)), "eth agentID string conversion failed")
 
@@ -504,10 +515,15 @@ func viewCheckHash(ctx wasmlib.ScViewContext, f *CheckHashContext) {
 	scHash := f.Params.ScHash().Value()
 	hashBytes := f.Params.HashBytes().Value()
 	hashString := f.Params.HashString().Value()
-	ctx.Require(scHash == wasmtypes.HashFromBytes(wasmtypes.HashToBytes(scHash)), "bytes conversion failed")
-	ctx.Require(scHash == wasmtypes.HashFromString(wasmtypes.HashToString(scHash)), "string conversion failed")
-	ctx.Require(string(scHash.Bytes()) == string(hashBytes), "bytes mismatch")
-	ctx.Require(scHash.String() == hashString, "string mismatch")
+	ctx.Require(scHash == wasmtypes.HashFromBytes(wasmtypes.HashToBytes(scHash)), "hash bytes conversion failed")
+	ctx.Require(scHash == wasmtypes.HashFromString(wasmtypes.HashToString(scHash)), "hash string conversion failed")
+	ctx.Require(string(scHash.Bytes()) == string(hashBytes), "hash bytes mismatch")
+	ctx.Require(scHash.String() == hashString, "hash string mismatch")
+
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.HashEncode(enc, scHash)
+	dec := wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(scHash == wasmtypes.HashDecode(dec), "hash decode/encode failed")
 }
 
 func viewCheckNftID(ctx wasmlib.ScViewContext, f *CheckNftIDContext) {
@@ -519,6 +535,11 @@ func viewCheckNftID(ctx wasmlib.ScViewContext, f *CheckNftIDContext) {
 	ctx.Require(scNftID == wasmtypes.NftIDFromBytes(wasmtypes.NftIDToBytes(scNftID)), "string conversion failed")
 	ctx.Require(string(scNftID.Bytes()) == string(nftIDBytes), "bytes mismatch")
 	ctx.Require(scNftID.String() == nftIDString, "string mismatch")
+
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.NftIDEncode(enc, scNftID)
+	dec := wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(scNftID == wasmtypes.NftIDDecode(dec), "nftID decode/encode failed")
 }
 
 func viewCheckRequestID(ctx wasmlib.ScViewContext, f *CheckRequestIDContext) {
@@ -530,6 +551,11 @@ func viewCheckRequestID(ctx wasmlib.ScViewContext, f *CheckRequestIDContext) {
 	ctx.Require(scRequestID == wasmtypes.RequestIDFromBytes(wasmtypes.RequestIDToBytes(scRequestID)), "string conversion failed")
 	ctx.Require(string(scRequestID.Bytes()) == string(requestIDBytes), "bytes mismatch")
 	ctx.Require(scRequestID.String() == requestIDString, "string mismatch")
+
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.RequestIDEncode(enc, scRequestID)
+	dec := wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(scRequestID == wasmtypes.RequestIDDecode(dec), "RequestID decode/encode failed")
 }
 
 func viewCheckTokenID(ctx wasmlib.ScViewContext, f *CheckTokenIDContext) {
@@ -541,6 +567,11 @@ func viewCheckTokenID(ctx wasmlib.ScViewContext, f *CheckTokenIDContext) {
 	ctx.Require(scTokenID == wasmtypes.TokenIDFromBytes(wasmtypes.TokenIDToBytes(scTokenID)), "string conversion failed")
 	ctx.Require(string(scTokenID.Bytes()) == string(tokenIDBytes), "bytes mismatch")
 	ctx.Require(scTokenID.String() == tokenIDString, "string mismatch")
+
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.TokenIDEncode(enc, scTokenID)
+	dec := wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(scTokenID == wasmtypes.TokenIDDecode(dec), "TokenID decode/encode failed")
 }
 
 func viewCheckBigInt(ctx wasmlib.ScViewContext, f *CheckBigIntContext) {
@@ -552,6 +583,11 @@ func viewCheckBigInt(ctx wasmlib.ScViewContext, f *CheckBigIntContext) {
 	ctx.Require(scBigInt.Cmp(wasmtypes.BigIntFromBytes(wasmtypes.BigIntToBytes(scBigInt))) == 0, "string conversion failed")
 	ctx.Require(string(scBigInt.Bytes()) == string(bigIntBytes), "bytes mismatch")
 	ctx.Require(scBigInt.String() == bigIntString, "string mismatch")
+
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.BigIntEncode(enc, scBigInt)
+	dec := wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(scBigInt.Cmp(wasmtypes.BigIntDecode(dec)) == 0, "BigInt decode/encode failed")
 }
 
 //nolint:funlen
@@ -577,6 +613,14 @@ func viewCheckIntAndUint(ctx wasmlib.ScViewContext, _ *CheckIntAndUintContext) {
 	goUint8 = math.MaxUint8
 	ctx.Require(goUint8 == wasmtypes.Uint8FromBytes(wasmtypes.Uint8ToBytes(goUint8)), "bytes conversion failed")
 	ctx.Require(goUint8 == wasmtypes.Uint8FromString(wasmtypes.Uint8ToString(goUint8)), "string conversion failed")
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.Int8Encode(enc, goInt8)
+	dec := wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(goInt8 == wasmtypes.Int8Decode(dec), "goInt8 decode/encode failed")
+	enc = wasmtypes.NewWasmEncoder()
+	wasmtypes.Uint8Encode(enc, goUint8)
+	dec = wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(goUint8 == wasmtypes.Uint8Decode(dec), "goUint8 decode/encode failed")
 
 	goInt16 := int16(math.MaxInt16)
 	ctx.Require(goInt16 == wasmtypes.Int16FromBytes(wasmtypes.Int16ToBytes(goInt16)), "bytes conversion failed")
@@ -599,6 +643,14 @@ func viewCheckIntAndUint(ctx wasmlib.ScViewContext, _ *CheckIntAndUintContext) {
 	goUint16 = math.MaxUint16
 	ctx.Require(goUint16 == wasmtypes.Uint16FromBytes(wasmtypes.Uint16ToBytes(goUint16)), "bytes conversion failed")
 	ctx.Require(goUint16 == wasmtypes.Uint16FromString(wasmtypes.Uint16ToString(goUint16)), "string conversion failed")
+	enc = wasmtypes.NewWasmEncoder()
+	wasmtypes.Int16Encode(enc, goInt16)
+	dec = wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(goInt16 == wasmtypes.Int16Decode(dec), "goInt16 decode/encode failed")
+	enc = wasmtypes.NewWasmEncoder()
+	wasmtypes.Uint16Encode(enc, goUint16)
+	dec = wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(goUint16 == wasmtypes.Uint16Decode(dec), "goUint16 decode/encode failed")
 
 	goInt32 := int32(math.MaxInt32)
 	ctx.Require(goInt32 == wasmtypes.Int32FromBytes(wasmtypes.Int32ToBytes(goInt32)), "bytes conversion failed")
@@ -621,6 +673,14 @@ func viewCheckIntAndUint(ctx wasmlib.ScViewContext, _ *CheckIntAndUintContext) {
 	goUint32 = math.MaxUint32
 	ctx.Require(goUint32 == wasmtypes.Uint32FromBytes(wasmtypes.Uint32ToBytes(goUint32)), "bytes conversion failed")
 	ctx.Require(goUint32 == wasmtypes.Uint32FromString(wasmtypes.Uint32ToString(goUint32)), "string conversion failed")
+	enc = wasmtypes.NewWasmEncoder()
+	wasmtypes.Int32Encode(enc, goInt32)
+	dec = wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(goInt32 == wasmtypes.Int32Decode(dec), "goInt32 decode/encode failed")
+	enc = wasmtypes.NewWasmEncoder()
+	wasmtypes.Uint32Encode(enc, goUint32)
+	dec = wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(goUint32 == wasmtypes.Uint32Decode(dec), "goUint32 decode/encode failed")
 
 	goInt64 := int64(math.MaxInt64)
 	ctx.Require(goInt64 == wasmtypes.Int64FromBytes(wasmtypes.Int64ToBytes(goInt64)), "bytes conversion failed")
@@ -643,6 +703,14 @@ func viewCheckIntAndUint(ctx wasmlib.ScViewContext, _ *CheckIntAndUintContext) {
 	goUint64 = math.MaxUint64
 	ctx.Require(goUint64 == wasmtypes.Uint64FromBytes(wasmtypes.Uint64ToBytes(goUint64)), "bytes conversion failed")
 	ctx.Require(goUint64 == wasmtypes.Uint64FromString(wasmtypes.Uint64ToString(goUint64)), "string conversion failed")
+	enc = wasmtypes.NewWasmEncoder()
+	wasmtypes.Int64Encode(enc, goInt64)
+	dec = wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(goInt64 == wasmtypes.Int64Decode(dec), "goInt64 decode/encode failed")
+	enc = wasmtypes.NewWasmEncoder()
+	wasmtypes.Uint64Encode(enc, goUint64)
+	dec = wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(goUint64 == wasmtypes.Uint64Decode(dec), "goUint64 decode/encode failed")
 }
 
 func viewCheckBool(ctx wasmlib.ScViewContext, _ *CheckBoolContext) {
@@ -650,6 +718,14 @@ func viewCheckBool(ctx wasmlib.ScViewContext, _ *CheckBoolContext) {
 	ctx.Require(wasmtypes.BoolFromString(wasmtypes.BoolToString(true)), "string conversion failed")
 	ctx.Require(!wasmtypes.BoolFromBytes(wasmtypes.BoolToBytes(false)), "bytes conversion failed")
 	ctx.Require(!wasmtypes.BoolFromString(wasmtypes.BoolToString(false)), "string conversion failed")
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.BoolEncode(enc, true)
+	dec := wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(wasmtypes.BoolDecode(dec), "goBool decode/encode failed")
+	enc = wasmtypes.NewWasmEncoder()
+	wasmtypes.BoolEncode(enc, false)
+	dec = wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(!wasmtypes.BoolDecode(dec), "goBool decode/encode failed")
 }
 
 func viewCheckBytes(ctx wasmlib.ScViewContext, f *CheckBytesContext) {
@@ -666,12 +742,20 @@ func viewCheckHname(ctx wasmlib.ScViewContext, f *CheckHnameContext) {
 	ctx.Require(scHname == wasmtypes.HnameFromString(wasmtypes.HnameToString(scHname)), "string conversion failed")
 	ctx.Require(bytes.Equal(hnameBytes, wasmtypes.HnameToBytes(scHname)), "bytes conversion failed")
 	ctx.Require(hnameString == wasmtypes.HnameToString(scHname), "string conversion failed")
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.HnameEncode(enc, scHname)
+	dec := wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(scHname == wasmtypes.HnameDecode(dec), "scHname decode/encode failed")
 }
 
 func viewCheckString(ctx wasmlib.ScViewContext, f *CheckStringContext) {
 	stringData := f.Params.String().Value()
 	ctx.Require(stringData == wasmtypes.StringFromBytes(wasmtypes.StringToBytes(stringData)), "bytes conversion failed")
 	ctx.Require(stringData == wasmtypes.StringToString(wasmtypes.StringFromString(stringData)), "string conversion failed")
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.StringEncode(enc, stringData)
+	dec := wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(stringData == wasmtypes.StringDecode(dec), "string decode/encode failed")
 }
 
 func viewCheckEthEmptyAddressAndAgentID(ctx wasmlib.ScViewContext, f *CheckEthEmptyAddressAndAgentIDContext) {
@@ -682,14 +766,22 @@ func viewCheckEthEmptyAddressAndAgentID(ctx wasmlib.ScViewContext, f *CheckEthEm
 	ctx.Require(address == wasmtypes.AddressFromString(addressString), "eth address to/from string conversion failed")
 	ctx.Require(address == wasmtypes.AddressFromString(addressStringLong), "eth address to/from string conversion failed")
 	ctx.Require(addressStringLong == wasmtypes.AddressToString(address), "eth address to/from string conversion failed")
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.AddressEncode(enc, address)
+	dec := wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(address == wasmtypes.AddressDecode(dec), "eth address decode/encode failed")
 
 	agentID := f.Params.EthAgentID().Value()
 	agentIDString := f.Params.EthAgentIDString().Value()
 	ctx.Require(agentID.String() == agentIDString, "eth agentID string encoding failed")
 	ctx.Require(agentID == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(agentID)), "eth agentID bytes conversion failed")
 	ctx.Require(agentIDString == wasmtypes.AgentIDToString(agentID), "eth agentID from/to string conversion failed")
+	enc = wasmtypes.NewWasmEncoder()
+	wasmtypes.AgentIDEncode(enc, agentID)
+	dec = wasmtypes.NewWasmDecoder(enc.Buf())
+	ctx.Require(agentID == wasmtypes.AgentIDDecode(dec), "eth agentID decode/encode failed")
 
-	agentIDFromAddress := wasmtypes.NewScAgentIDFromAddress(address)
+	agentIDFromAddress := wasmtypes.ScAgentIDFromAddress(address)
 	ctx.Require(agentIDFromAddress == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(agentIDFromAddress)), "eth agentID bytes conversion failed")
 	ctx.Require(agentIDString == wasmtypes.AgentIDToString(agentIDFromAddress), "eth agentID string conversion failed")
 

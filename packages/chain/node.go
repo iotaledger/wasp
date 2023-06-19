@@ -33,6 +33,7 @@ import (
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -55,11 +56,11 @@ import (
 )
 
 const (
-	recoveryTimeout          time.Duration = 15 * time.Minute // TODO: Make it configurable?
-	redeliveryPeriod         time.Duration = 2 * time.Second  // TODO: Make it configurable?
-	printStatusPeriod        time.Duration = 3 * time.Second  // TODO: Make it configurable?
-	consensusInstsInAdvance  int           = 3                // TODO: Make it configurable?
-	awaitReceiptCleanupEvery int           = 100              // TODO: Make it configurable?
+	recoveryTimeout              = 15 * time.Minute // TODO: Make it configurable?
+	redeliveryPeriod             = 2 * time.Second  // TODO: Make it configurable?
+	printStatusPeriod            = 3 * time.Second  // TODO: Make it configurable?
+	consensusInstsInAdvance  int = 3                // TODO: Make it configurable?
+	awaitReceiptCleanupEvery int = 100              // TODO: Make it configurable?
 
 	msgTypeChainMgr byte = iota
 )
@@ -273,6 +274,7 @@ func New(
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
 	consensusDelay time.Duration,
+	smParameters sm_gpa.StateManagerParameters,
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
 	if listener == nil {
@@ -401,6 +403,7 @@ func New(
 		chainMetrics,
 		chainMetrics,
 		cni.log.Named("SM"),
+		smParameters,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create stateMgr: %w", err)
@@ -621,7 +624,7 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 		cni.log.Debugf("Latest state set to ACT index=%v, trieRoot=%v", till.GetStateIndex(), l1Commitment.TrieRoot())
 	}
 
-	newAccessNodes := governance.NewStateAccess(st).GetAccessNodes()
+	newAccessNodes := governance.NewStateAccess(st).AccessNodes()
 	if !util.Same(newAccessNodes, cni.accessNodesFromACT) {
 		cni.updateAccessNodes(func() {
 			cni.accessNodesFromACT = newAccessNodes
@@ -644,7 +647,7 @@ func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *is
 	latestActiveStateAO := cni.latestActiveStateAO
 	cni.accessLock.Unlock()
 
-	newAccessNodes := governance.NewStateAccess(st).GetAccessNodes()
+	newAccessNodes := governance.NewStateAccess(st).AccessNodes()
 	if !util.Same(newAccessNodes, cni.accessNodesFromCNF) {
 		cni.updateAccessNodes(func() {
 			cni.accessNodesFromCNF = newAccessNodes
@@ -1213,7 +1216,7 @@ func (cni *chainNodeImpl) GetCandidateNodes() []*governance.AccessNodeInfo {
 		cni.log.Error("Cannot get latest chain state: %v", err)
 		return []*governance.AccessNodeInfo{}
 	}
-	return governance.NewStateAccess(state).GetCandidateNodes()
+	return governance.NewStateAccess(state).CandidateNodes()
 }
 
 func (cni *chainNodeImpl) GetChainMetrics() metrics.IChainMetrics {

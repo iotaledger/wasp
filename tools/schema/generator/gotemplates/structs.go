@@ -19,7 +19,7 @@ type $StrName struct {
 $#each struct structField
 }
 
-func New$StrName$+FromBytes(buf []byte) *$StrName {
+func $StrName$+FromBytes(buf []byte) *$StrName {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &$StrName$+{}
 $#each struct structDecode
@@ -64,7 +64,7 @@ func (o $mut$StrName) Exists() bool {
 $#if mut structMethodSetValue
 
 func (o $mut$StrName) Value() *$StrName {
-	return New$StrName$+FromBytes(o.Proxy.Get())
+	return $StrName$+FromBytes(o.Proxy.Get())
 }
 `,
 	// *******************************

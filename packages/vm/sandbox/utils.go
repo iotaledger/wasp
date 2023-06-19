@@ -81,11 +81,11 @@ func (u utilImpl) Sha3(data []byte) hashing.HashValue {
 
 func (u utilImpl) ValidSignature(data, pubKey, signature []byte) bool {
 	u.gas.Burn(gas.BurnCodeUtilsED25519ValidSig)
-	pk, err := cryptolib.NewPublicKeyFromBytes(pubKey)
+	pk, err := cryptolib.PublicKeyFromBytes(pubKey)
 	if err != nil {
 		return false
 	}
-	sig, _, err := cryptolib.SignatureFromBytes(signature)
+	sig, err := cryptolib.SignatureFromBytes(signature)
 	if err != nil {
 		return false
 	}
@@ -94,7 +94,7 @@ func (u utilImpl) ValidSignature(data, pubKey, signature []byte) bool {
 
 func (u utilImpl) AddressFromPublicKey(pubKey []byte) (iotago.Address, error) {
 	u.gas.Burn(gas.BurnCodeUtilsED25519AddrFromPubKey)
-	pk, err := cryptolib.NewPublicKeyFromBytes(pubKey)
+	pk, err := cryptolib.PublicKeyFromBytes(pubKey)
 	if err != nil {
 		return nil, err
 	}

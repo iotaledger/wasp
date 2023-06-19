@@ -1,10 +1,10 @@
 package trie
 
 import (
-	"bytes"
 	"encoding/hex"
-	"fmt"
 	"io"
+
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
@@ -15,12 +15,6 @@ const (
 	terminalIndex      = NumChildren
 	pathExtensionIndex = NumChildren + 1
 )
-
-// Hash is a blake2b 160 bit (20 bytes) hash
-type Hash [HashSizeBytes]byte
-
-// hashVector is used to calculate the hash of a trie node
-type hashVector [vectorLength][]byte
 
 // compressToHashSize hashes data if longer than hash size, otherwise copies it
 func compressToHashSize(data []byte) (ret []byte) {
@@ -33,6 +27,9 @@ func compressToHashSize(data []byte) (ret []byte) {
 	}
 	return
 }
+
+// hashVector is used to calculate the hash of a trie node
+type hashVector [vectorLength][]byte
 
 func (hashes *hashVector) Hash() Hash {
 	sum := 0
@@ -47,52 +44,35 @@ func (hashes *hashVector) Hash() Hash {
 	return blake2b160(buf)
 }
 
-func (h Hash) Clone() (ret Hash) {
-	copy(ret[:], h[:])
-	return
+// Hash is a blake2b 160 bit (20 bytes) hash
+type Hash [HashSizeBytes]byte
+
+func HashFromBytes(data []byte) (ret Hash, err error) {
+	_, err = rwutil.ReaderFromBytes(data, &ret)
+	return ret, err
 }
 
 func (h Hash) Bytes() []byte {
 	return h[:]
 }
 
-func (h *Hash) Read(r io.Reader) error {
-	n, err := r.Read(h[:])
-	if err != nil {
-		return err
-	}
-	if n < HashSizeBytes {
-		return fmt.Errorf("only %v bytes of %v read", n, HashSizeBytes)
-	}
-	return nil
-}
-
-func (h Hash) Write(w io.Writer) error {
-	_, err := w.Write(h[:])
-	return err
-}
-
-func (h Hash) String() string {
-	return hex.EncodeToString(h[:])
+func (h Hash) Clone() (ret Hash) {
+	copy(ret[:], h[:])
+	return
 }
 
 func (h Hash) Equals(other Hash) bool {
 	return h == other
 }
 
-func ReadHash(r io.Reader) (ret Hash, err error) {
-	err = ret.Read(r)
-	return
+func (h Hash) String() string {
+	return hex.EncodeToString(h[:])
 }
 
-func HashFromBytes(data []byte) (ret Hash, err error) {
-	rdr := bytes.NewReader(data)
-	ret, err = ReadHash(rdr)
-	if err != nil {
-		return
-	}
-	if rdr.Len() > 0 {
-		return Hash{}, ErrNotAllBytesConsumed
-	}
-	return
+func (h *Hash) Read(r io.Reader) error {
+	return rwutil.ReadN(r, h[:])
+}
+
+func (h Hash) Write(w io.Writer) error {
+	return rwutil.WriteN(w, h[:])
 }

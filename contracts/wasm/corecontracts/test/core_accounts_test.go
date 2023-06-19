@@ -11,13 +11,13 @@ import (
 	"testing"
 
 	"github.com/samber/lo"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -50,7 +50,7 @@ func TestDeposit(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	balanceNew := user.Balance()
-	assert.Equal(t, balanceOld-depositAmount, balanceNew)
+	require.Equal(t, balanceOld-depositAmount, balanceNew)
 
 	// expected changes to L2, note that caller pays the gas fee
 	bal.Common += ctx.GasFee
@@ -77,8 +77,8 @@ func TestTransferAllowanceTo(t *testing.T) {
 	// note: transfer took place on L2, so no change on L1
 	balanceNewUser0 := user0.Balance()
 	balanceNewUser1 := user1.Balance()
-	assert.Equal(t, balanceOldUser0, balanceNewUser0)
-	assert.Equal(t, balanceOldUser1, balanceNewUser1)
+	require.Equal(t, balanceOldUser0, balanceNewUser0)
+	require.Equal(t, balanceOldUser1, balanceNewUser1)
 
 	// expected changes to L2, note that caller pays the gas fee
 	bal.Common += ctx.GasFee
@@ -110,10 +110,10 @@ func TestTransferAllowanceTo(t *testing.T) {
 	balanceNewUser1 = user1.Balance(scTokenID)
 	balanceNewUser0L2 := ctx.Chain.L2NativeTokens(user0.AgentID(), nativeTokenID)
 	balanceNewUser1L2 := ctx.Chain.L2NativeTokens(user1.AgentID(), nativeTokenID)
-	assert.Equal(t, balanceOldUser0, balanceNewUser0)
-	assert.Equal(t, balanceOldUser1, balanceNewUser1)
-	assert.Equal(t, new(big.Int).Sub(balanceOldUser0L2, big.NewInt(int64(transferAmount))), balanceNewUser0L2)
-	assert.Equal(t, new(big.Int).Add(balanceOldUser1L2, big.NewInt(int64(transferAmount))), balanceNewUser1L2)
+	require.Equal(t, balanceOldUser0, balanceNewUser0)
+	require.Equal(t, balanceOldUser1, balanceNewUser1)
+	require.Equal(t, new(big.Int).Sub(balanceOldUser0L2, big.NewInt(int64(transferAmount))), balanceNewUser0L2)
+	require.Equal(t, new(big.Int).Add(balanceOldUser1L2, big.NewInt(int64(transferAmount))), balanceNewUser1L2)
 }
 
 func TestWithdraw(t *testing.T) {
@@ -127,7 +127,7 @@ func TestWithdraw(t *testing.T) {
 	f.Func.AllowanceBaseTokens(withdrawAmount).Post()
 	require.NoError(t, ctx.Err)
 	balanceNewUser := user.Balance()
-	assert.Equal(t, balanceOldUser+withdrawAmount, balanceNewUser)
+	require.Equal(t, balanceOldUser+withdrawAmount, balanceNewUser)
 }
 
 func TestHarvest(t *testing.T) {
@@ -137,8 +137,8 @@ func TestHarvest(t *testing.T) {
 
 	user := ctx.NewSoloAgent("user")
 	creatorAgentID := ctx.Creator().AgentID()
-	commonAccount := ctx.Chain.CommonAccount()
-	commonAccountBal0 := ctx.Chain.L2Assets(commonAccount)
+	commonAccount := accounts.CommonAccount()
+	commonAccountBal0 := ctx.Chain.L2Assets(accounts.CommonAccount())
 	foundry, err := ctx.NewSoloFoundry(mintAmount, user)
 	require.NoError(t, err)
 	err = foundry.Mint(mintAmount)
@@ -157,16 +157,16 @@ func TestHarvest(t *testing.T) {
 	creatorBal0 := ctx.Chain.L2Assets(creatorAgentID)
 	commonAccountBal1 := ctx.Chain.L2Assets(commonAccount)
 	// create foundry, mint token, transfer BaseTokens and transfer token each charge GasFee, so there 4*GasFee in common account
-	assert.Equal(t, commonAccountBal0.BaseTokens+transferAmount+ctx.GasFee*4, commonAccountBal1.BaseTokens)
+	require.Equal(t, commonAccountBal0.BaseTokens+transferAmount+ctx.GasFee*4, commonAccountBal1.BaseTokens)
 
 	f := coreaccounts.ScFuncs.Harvest(ctx.Sign(ctx.Creator()))
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
 	commonAccountBal2 := ctx.Chain.L2Assets(commonAccount)
 	creatorBal1 := ctx.Chain.L2Assets(creatorAgentID)
-	assert.Equal(t, minimumBaseTokensOnCommonAccount+ctx.GasFee, commonAccountBal2.BaseTokens)
-	assert.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+ctx.StorageDeposit, creatorBal1.BaseTokens)
-	assert.Equal(t, big.NewInt(int64(transferAmount)), creatorBal1.NativeTokens[0].Amount)
+	require.Equal(t, minimumBaseTokensOnCommonAccount+ctx.GasFee, commonAccountBal2.BaseTokens)
+	require.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+ctx.StorageDeposit, creatorBal1.BaseTokens)
+	require.Equal(t, big.NewInt(int64(transferAmount)), creatorBal1.NativeTokens[0].Amount)
 }
 
 func TestFoundryCreateNew(t *testing.T) {
@@ -183,7 +183,7 @@ func TestFoundryCreateNew(t *testing.T) {
 	f.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
-	assert.Equal(t, uint32(1), f.Results.FoundrySN().Value())
+	require.Equal(t, uint32(1), f.Results.FoundrySN().Value())
 
 	f = coreaccounts.ScFuncs.FoundryCreateNew(ctx.Sign(user))
 	f.Params.TokenScheme().SetValue(codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
@@ -193,7 +193,7 @@ func TestFoundryCreateNew(t *testing.T) {
 	}))
 	f.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
-	assert.Equal(t, uint32(2), f.Results.FoundrySN().Value())
+	require.Equal(t, uint32(2), f.Results.FoundrySN().Value())
 }
 
 func TestFoundryDestroy(t *testing.T) {
@@ -210,7 +210,7 @@ func TestFoundryDestroy(t *testing.T) {
 	fnew.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
-	assert.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
+	require.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
 
 	fdes := coreaccounts.ScFuncs.FoundryDestroy(ctx)
 	fdes.Params.FoundrySN().SetValue(1)
@@ -232,7 +232,7 @@ func TestFoundryNew(t *testing.T) {
 	fnew.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
-	assert.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
+	require.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
 }
 
 func TestFoundryModifySupply(t *testing.T) {
@@ -254,7 +254,7 @@ func TestFoundryModifySupply(t *testing.T) {
 	fmod2.Params.SupplyDeltaAbs().SetValue(wasmtypes.BigIntFromString("10"))
 	fmod2.Params.DestroyTokens().SetValue(true)
 	tokenID := foundry.TokenID()
-	allowance := wasmlib.NewScTransferTokens(&tokenID, wasmtypes.NewScBigInt(10))
+	allowance := wasmlib.ScTransferFromTokens(&tokenID, wasmtypes.NewScBigInt(10))
 	fmod2.Func.Allowance(allowance)
 	fmod2.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
@@ -319,7 +319,7 @@ func TestAccountNFTAmount(t *testing.T) {
 	fd := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
 	nftL2Num := 3
 	for i := 0; i < nftL2Num; i++ {
-		transfer := wasmlib.NewScTransferNFT(&nftIDs[i])
+		transfer := wasmlib.ScTransferFromNFT(&nftIDs[i])
 		fd.Func.Transfer(transfer).Post()
 		require.NoError(t, ctx.Err)
 		require.True(t, ctx.Chain.HasL2NFT(user.AgentID(), ctx.Cvt.IscNFTID(&nftIDs[i])))
@@ -512,7 +512,7 @@ func TestBalance(t *testing.T) {
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	balance := f.Results.Balances().GetBigInt(foundry.TokenID()).Value()
-	assert.Equal(t, mintAmount, balance)
+	require.Equal(t, mintAmount, balance)
 
 	transferTokenAmount := wasmtypes.NewScBigInt(9)
 	ftrans := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user0))
@@ -526,7 +526,7 @@ func TestBalance(t *testing.T) {
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	balance = f.Results.Balances().GetBigInt(foundry.TokenID()).Value()
-	assert.Equal(t, mintAmount.Sub(transferTokenAmount), balance)
+	require.Equal(t, mintAmount.Sub(transferTokenAmount), balance)
 }
 
 func TestBalanceBaseToken(t *testing.T) {
@@ -548,7 +548,7 @@ func TestBalanceBaseToken(t *testing.T) {
 	transferAmt := uint64(9)
 	ftrans := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user0))
 	ftrans.Params.AgentID().SetValue(user1.ScAgentID())
-	transfer := wasmlib.NewScTransferBaseTokens(transferAmt)
+	transfer := wasmlib.ScTransferFromBaseTokens(transferAmt)
 	ftrans.Func.Allowance(transfer).Post()
 	require.NoError(t, ctx.Err)
 	gasFee := ctx.GasFee
@@ -633,9 +633,9 @@ func TestTotalAssets(t *testing.T) {
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	val0 := f.Results.Assets().GetBigInt(tokenID0).Value()
-	assert.Equal(t, mintAmount0, val0)
+	require.Equal(t, mintAmount0, val0)
 	val1 := f.Results.Assets().GetBigInt(tokenID1).Value()
-	assert.Equal(t, mintAmount1, val1)
+	require.Equal(t, mintAmount1, val1)
 }
 
 func TestAccounts(t *testing.T) {
@@ -657,9 +657,9 @@ func TestAccounts(t *testing.T) {
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	allAccounts := f.Results.AllAccounts()
-	assert.True(t, allAccounts.GetBool(user0.ScAgentID()).Value())
-	assert.True(t, allAccounts.GetBool(user1.ScAgentID()).Value())
-	assert.False(t, allAccounts.GetBool(ctx.NewSoloAgent("dummy").ScAgentID()).Value())
+	require.True(t, allAccounts.GetBool(user0.ScAgentID()).Value())
+	require.True(t, allAccounts.GetBool(user1.ScAgentID()).Value())
+	require.False(t, allAccounts.GetBool(ctx.NewSoloAgent("dummy").ScAgentID()).Value())
 }
 
 func TestGetAccountNonce(t *testing.T) {
@@ -702,10 +702,10 @@ func TestGetNativeTokenIDRegistry(t *testing.T) {
 	f := coreaccounts.ScFuncs.GetNativeTokenIDRegistry(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	assert.True(t, f.Results.Mapping().GetBool(tokenID0).Value())
-	assert.True(t, f.Results.Mapping().GetBool(tokenID1).Value())
+	require.True(t, f.Results.Mapping().GetBool(tokenID0).Value())
+	require.True(t, f.Results.Mapping().GetBool(tokenID1).Value())
 	notExistTokenID := wasmtypes.TokenIDFromString("0x08f824508968d585ede1d154d34ba0d966ee03c928670fb85bd72e2924f67137890100000000")
-	assert.False(t, f.Results.Mapping().GetBool(notExistTokenID).Value())
+	require.False(t, f.Results.Mapping().GetBool(notExistTokenID).Value())
 }
 
 func TestFoundryOutput(t *testing.T) {
@@ -723,7 +723,7 @@ func TestFoundryOutput(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
 	serialNum := uint32(1)
-	assert.Equal(t, serialNum, fnew.Results.FoundrySN().Value())
+	require.Equal(t, serialNum, fnew.Results.FoundrySN().Value())
 
 	f := coreaccounts.ScFuncs.FoundryOutput(ctx)
 	f.Params.FoundrySN().SetValue(1)
@@ -735,7 +735,7 @@ func TestFoundryOutput(t *testing.T) {
 	require.NoError(t, err)
 	soloFoundry, err := ctx.Chain.GetFoundryOutput(serialNum)
 	require.NoError(t, err)
-	assert.Equal(t, soloFoundry, outFoundry)
+	require.Equal(t, soloFoundry, outFoundry)
 }
 
 func TestAccountNFTs(t *testing.T) {
@@ -748,7 +748,7 @@ func TestAccountNFTs(t *testing.T) {
 	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, ctx.Cvt.IscNFTID(&nftID)))
 
 	fd := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
-	transfer := wasmlib.NewScTransferNFT(&nftID)
+	transfer := wasmlib.ScTransferFromNFT(&nftID)
 	fd.Func.Transfer(transfer).Post()
 	require.NoError(t, ctx.Err)
 
@@ -773,7 +773,7 @@ func TestNFTData(t *testing.T) {
 	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, iscNFTID))
 
 	fd := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
-	transfer := wasmlib.NewScTransferNFT(&nftID)
+	transfer := wasmlib.ScTransferFromNFT(&nftID)
 	fd.Func.Transfer(transfer).Post()
 	require.NoError(t, ctx.Err)
 

@@ -3,11 +3,12 @@ package isc
 import (
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"reflect"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const VMErrorMessageLimit = math.MaxUint16
@@ -28,6 +29,15 @@ func NewCoreVMErrorCode(id uint16) VMErrorCode {
 	return VMErrorCode{ContractID: VMCoreErrorContractID, ID: id}
 }
 
+func VMErrorCodeFromBytes(b []byte) (ret VMErrorCode, err error) {
+	_, err = rwutil.ReaderFromBytes(b, &ret)
+	return ret, err
+}
+
+func (c VMErrorCode) Bytes() []byte {
+	return rwutil.WriterToBytes(&c)
+}
+
 func (c VMErrorCode) String() string {
 	if c.ContractID == VMCoreErrorContractID {
 		return fmt.Sprintf("%04x", c.ID)
@@ -35,29 +45,18 @@ func (c VMErrorCode) String() string {
 	return fmt.Sprintf("%s:%04x", c.ContractID, c.ID)
 }
 
-func (c VMErrorCode) Bytes() []byte {
-	mu := marshalutil.New()
-	c.Serialize(mu)
-	return mu.Bytes()
+func (c *VMErrorCode) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.Read(&c.ContractID)
+	c.ID = rr.ReadUint16()
+	return rr.Err
 }
 
-func (c VMErrorCode) Serialize(mu *marshalutil.MarshalUtil) {
-	mu.Write(c.ContractID).
-		WriteUint16(c.ID)
-}
-
-func VMErrorCodeFromBytes(b []byte) (code VMErrorCode, err error) {
-	return VMErrorCodeFromMarshalUtil(marshalutil.New(b))
-}
-
-func VMErrorCodeFromMarshalUtil(mu *marshalutil.MarshalUtil) (code VMErrorCode, err error) {
-	if code.ContractID, err = HnameFromMarshalUtil(mu); err != nil {
-		return
-	}
-	if code.ID, err = mu.ReadUint16(); err != nil {
-		return
-	}
-	return
+func (c *VMErrorCode) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.Write(&c.ContractID)
+	ww.WriteUint16(c.ID)
+	return ww.Err
 }
 
 // VMErrorBase is the common interface of UnresolvedVMError and VMError
@@ -77,19 +76,16 @@ func NewVMErrorTemplate(code VMErrorCode, messageFormat string) *VMErrorTemplate
 	return &VMErrorTemplate{code: code, messageFormat: messageFormat}
 }
 
-// VMErrorTemplate implements error just in case someone panics with
-// VMErrorTemplate by mistake, so that we don't crash the VM because of that.
-func (e *VMErrorTemplate) Error() string {
-	// calling Sprintf so that it marks missing parameters as errors
-	return fmt.Sprintf(e.messageFormat)
+func VMErrorTemplateFromBytes(data []byte) (*VMErrorTemplate, error) {
+	return rwutil.ReaderFromBytes(data, new(VMErrorTemplate))
+}
+
+func (e *VMErrorTemplate) Bytes() []byte {
+	return rwutil.WriterToBytes(e)
 }
 
 func (e *VMErrorTemplate) Code() VMErrorCode {
 	return e.code
-}
-
-func (e *VMErrorTemplate) MessageFormat() string {
-	return e.messageFormat
 }
 
 func (e *VMErrorTemplate) Create(params ...any) *VMError {
@@ -100,38 +96,29 @@ func (e *VMErrorTemplate) Create(params ...any) *VMError {
 	}
 }
 
-func (e *VMErrorTemplate) Serialize(mu *marshalutil.MarshalUtil) {
-	e.code.Serialize(mu)
-
-	messageFormatBytes := []byte(e.MessageFormat())
-	mu.WriteUint16(uint16(len(messageFormatBytes))).
-		WriteBytes(messageFormatBytes)
+// VMErrorTemplate implements error just in case someone panics with
+// VMErrorTemplate by mistake, so that we don't crash the VM because of that.
+func (e *VMErrorTemplate) Error() string {
+	// calling Sprintf so that it marks missing parameters as errors
+	return fmt.Sprintf(e.messageFormat)
 }
 
-func (e *VMErrorTemplate) Bytes() []byte {
-	mu := marshalutil.New()
-	e.Serialize(mu)
-	return mu.Bytes()
+func (e *VMErrorTemplate) MessageFormat() string {
+	return e.messageFormat
 }
 
-func VMErrorTemplateFromMarshalUtil(mu *marshalutil.MarshalUtil) (*VMErrorTemplate, error) {
-	var err error
-	e := &VMErrorTemplate{}
+func (e *VMErrorTemplate) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.Read(&e.code)
+	e.messageFormat = rr.ReadString()
+	return rr.Err
+}
 
-	if e.code, err = VMErrorCodeFromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
-
-	var messageLength uint16
-	if messageLength, err = mu.ReadUint16(); err != nil {
-		return nil, err
-	}
-	messageInBytes, err := mu.ReadBytes(int(messageLength))
-	if err != nil {
-		return nil, err
-	}
-	e.messageFormat = string(messageInBytes)
-	return e, nil
+func (e *VMErrorTemplate) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.Write(&e.code)
+	ww.WriteString(e.messageFormat)
+	return ww.Err
 }
 
 type UnresolvedVMError struct {
@@ -141,19 +128,9 @@ type UnresolvedVMError struct {
 
 var _ VMErrorBase = &UnresolvedVMError{}
 
-func (e *UnresolvedVMError) Error() string {
-	return fmt.Sprintf("UnresolvedVMError(code: %s)", e.ErrorCode)
-}
-
-func (e *UnresolvedVMError) Code() VMErrorCode {
-	return e.ErrorCode
-}
-
-func (e *UnresolvedVMError) Bytes() []byte {
-	mu := marshalutil.New()
-	e.ErrorCode.Serialize(mu)
-	serializeParams(mu, e.Params)
-	return mu.Bytes()
+type UnresolvedVMErrorJSON struct {
+	ErrorCode string   `json:"code"`
+	Params    []string `json:"params"`
 }
 
 func (e *UnresolvedVMError) AsGoError() error {
@@ -164,9 +141,16 @@ func (e *UnresolvedVMError) AsGoError() error {
 	return e
 }
 
-type UnresolvedVMErrorJSON struct {
-	Params    []string `json:"params"`
-	ErrorCode string   `json:"code"`
+func (e *UnresolvedVMError) Bytes() []byte {
+	return rwutil.WriterToBytes(e)
+}
+
+func (e *UnresolvedVMError) Code() VMErrorCode {
+	return e.ErrorCode
+}
+
+func (e *UnresolvedVMError) Error() string {
+	return fmt.Sprintf("UnresolvedVMError(code: %s)", e.ErrorCode)
 }
 
 // produce the params as humanly readably json, and the uints as strings
@@ -181,6 +165,20 @@ func (e *UnresolvedVMError) ToJSONStruct() *UnresolvedVMErrorJSON {
 		Params:    humanlyReadableParams(e.Params),
 		ErrorCode: e.ErrorCode.String(),
 	}
+}
+
+func (e *UnresolvedVMError) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.Read(&e.ErrorCode)
+	e.Params = readParams(rr)
+	return rr.Err
+}
+
+func (e *UnresolvedVMError) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.Write(&e.ErrorCode)
+	writeParams(ww, e.Params)
+	return ww.Err
 }
 
 func humanlyReadableParams(params []any) []string {
@@ -198,8 +196,38 @@ type VMError struct {
 
 var _ VMErrorBase = &VMError{}
 
+func (e *VMError) AsGoError() error {
+	// this is necessary because *UnresolvedVMError(nil) != error(nil)
+	if e == nil {
+		return nil
+	}
+	return e
+}
+
+func (e *VMError) AsTemplate() *VMErrorTemplate {
+	return e.template
+}
+
+func (e *VMError) AsUnresolvedError() *UnresolvedVMError {
+	return &UnresolvedVMError{
+		ErrorCode: e.template.code,
+		Params:    e.params,
+	}
+}
+
+func (e *VMError) Bytes() []byte {
+	return rwutil.WriterToBytes(e)
+}
+
 func (e *VMError) Code() VMErrorCode {
 	return e.template.code
+}
+
+func (e *VMError) Error() string {
+	if e == nil {
+		return ""
+	}
+	return fmt.Sprintf(e.MessageFormat(), e.params...)
 }
 
 func (e *VMError) MessageFormat() string {
@@ -210,60 +238,27 @@ func (e *VMError) Params() []any {
 	return e.params
 }
 
-func (e *VMError) Error() string {
-	if e == nil {
-		return ""
-	}
-	return fmt.Sprintf(e.MessageFormat(), e.params...)
+func (e *VMError) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.Read(&e.template.code)
+	e.params = readParams(rr)
+	return rr.Err
 }
 
-func (e *VMError) Bytes() []byte {
-	mu := marshalutil.New()
-	e.template.code.Serialize(mu)
-	serializeParams(mu, e.params)
-	return mu.Bytes()
-}
-
-func (e *VMError) AsGoError() error {
-	// this is necessary because *UnresolvedVMError(nil) != error(nil)
-	if e == nil {
-		return nil
-	}
-	return e
-}
-
-func (e *VMError) AsUnresolvedError() *UnresolvedVMError {
-	return &UnresolvedVMError{
-		ErrorCode: e.template.code,
-		Params:    e.params,
-	}
-}
-
-func (e *VMError) AsTemplate() *VMErrorTemplate {
-	return e.template
-}
-
-func UnresolvedVMErrorFromMarshalUtil(mu *marshalutil.MarshalUtil) (*UnresolvedVMError, error) {
-	var err error
-	unresolvedError := &UnresolvedVMError{}
-	if unresolvedError.ErrorCode, err = VMErrorCodeFromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
-	if unresolvedError.Params, err = deserializeParams(mu); err != nil {
-		return nil, err
-	}
-	return unresolvedError, nil
+func (e *VMError) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.Write(&e.template.code)
+	writeParams(ww, e.params)
+	return ww.Err
 }
 
 func GetErrorIDFromMessageFormat(messageFormat string) uint16 {
 	messageFormatHash := hashing.HashStrings(messageFormat).Bytes()
-	mu := marshalutil.New(messageFormatHash)
-
-	errorID, err := mu.ReadUint16()
-	if err != nil {
-		panic(err)
+	rr := rwutil.NewBytesReader(messageFormatHash)
+	errorID := rr.ReadUint16()
+	if rr.Err != nil {
+		panic(rr.Err)
 	}
-
 	return errorID
 }
 
@@ -296,142 +291,104 @@ func validateParams(params []any) {
 			if len(s) > 255 {
 				panic("string param too long")
 			}
-		case reflect.Uint8,
+
+		case reflect.Uint,
+			reflect.Uint8,
 			reflect.Uint16,
-			reflect.Uint, reflect.Uint32,
-			reflect.Uint64,
+			reflect.Uint32,
+			reflect.Uint64:
+
+		case reflect.Int,
 			reflect.Int8,
 			reflect.Int16,
-			reflect.Int, reflect.Int32,
+			reflect.Int32,
 			reflect.Int64:
+
 		default:
 			panic(fmt.Sprintf("no handler for param of type %s", t.Name()))
 		}
 	}
 }
 
-func serializeParams(mu *marshalutil.MarshalUtil, params []any) {
-	mu.WriteUint8(uint8(len(params)))
-	for _, param := range params {
-		t := reflect.TypeOf(param)
-		v := reflect.ValueOf(param)
-		mu.WriteUint8(uint8(t.Kind()))
-		switch t.Kind() {
-		case reflect.String:
-			s := v.String()
-			mu.WriteUint8(uint8(len(s)))
-			mu.WriteBytes([]byte(s))
-		case reflect.Uint8:
-			mu.WriteUint8(uint8(v.Uint()))
-		case reflect.Uint16:
-			mu.WriteUint16(uint16(v.Uint()))
-		case reflect.Uint, reflect.Uint32:
-			mu.WriteUint32(uint32(v.Uint()))
-		case reflect.Uint64:
-			mu.WriteUint64(v.Uint())
-		case reflect.Int8:
-			mu.WriteInt8(int8(v.Int()))
-		case reflect.Int16:
-			mu.WriteInt16(int16(v.Int()))
-		case reflect.Int, reflect.Int32:
-			mu.WriteInt32(int32(v.Int()))
-		case reflect.Int64:
-			mu.WriteInt64(v.Int())
-		default:
-			panic(fmt.Sprintf("no handler for param of type %s", t.Name()))
-		}
+//nolint:gocyclo
+func readParams(rr *rwutil.Reader) []any {
+	size := rr.ReadSize16()
+	if rr.Err != nil || size == 0 {
+		return nil
 	}
-}
-
-//nolint:gocyclo,funlen
-func deserializeParams(mu *marshalutil.MarshalUtil) ([]any, error) {
-	amount, err := mu.ReadUint8()
-	if err != nil {
-		return nil, err
-	}
-	if amount == 0 {
-		return nil, nil
-	}
-	ret := make([]any, amount)
-	for i := 0; i < int(amount); i++ {
-		kind, err := mu.ReadUint8()
-		if err != nil {
-			return nil, err
-		}
+	ret := make([]any, size)
+	for i := 0; i < size; i++ {
+		kind := rr.ReadUint8()
 		switch reflect.Kind(kind) {
 		case reflect.String:
-			sz, err := mu.ReadUint8()
-			if err != nil {
-				return nil, err
-			}
-			b, err := mu.ReadBytes(int(sz))
-			if err != nil {
-				return nil, err
-			}
-			ret[i] = string(b)
-		case reflect.Uint8:
-			n, err := mu.ReadUint8()
-			if err != nil {
-				return nil, err
-			}
-			ret[i] = n
-		case reflect.Uint16:
-			n, err := mu.ReadUint16()
-			if err != nil {
-				return nil, err
-			}
-			ret[i] = n
+			ret[i] = rr.ReadString()
+
 		case reflect.Uint:
-			n, err := mu.ReadUint32()
-			if err != nil {
-				return nil, err
-			}
-			ret[i] = uint(n)
+			ret[i] = uint(rr.ReadUint32())
+		case reflect.Uint8:
+			ret[i] = rr.ReadUint8()
+		case reflect.Uint16:
+			ret[i] = rr.ReadUint16()
 		case reflect.Uint32:
-			n, err := mu.ReadUint32()
-			if err != nil {
-				return nil, err
-			}
-			ret[i] = n
+			ret[i] = rr.ReadUint32()
 		case reflect.Uint64:
-			n, err := mu.ReadUint64()
-			if err != nil {
-				return nil, err
-			}
-			ret[i] = n
-		case reflect.Int8:
-			n, err := mu.ReadInt8()
-			if err != nil {
-				return nil, err
-			}
-			ret[i] = n
-		case reflect.Int16:
-			n, err := mu.ReadInt16()
-			if err != nil {
-				return nil, err
-			}
-			ret[i] = n
+			ret[i] = rr.ReadUint64()
+
 		case reflect.Int:
-			n, err := mu.ReadInt32()
-			if err != nil {
-				return nil, err
-			}
-			ret[i] = int(n)
+			ret[i] = int(rr.ReadInt32())
+		case reflect.Int8:
+			ret[i] = rr.ReadInt8()
+		case reflect.Int16:
+			ret[i] = rr.ReadInt16()
 		case reflect.Int32:
-			n, err := mu.ReadInt32()
-			if err != nil {
-				return nil, err
-			}
-			ret[i] = n
+			ret[i] = rr.ReadInt32()
 		case reflect.Int64:
-			n, err := mu.ReadInt64()
-			if err != nil {
-				return nil, err
-			}
-			ret[i] = n
+			ret[i] = rr.ReadInt64()
+
 		default:
 			panic(fmt.Sprintf("no handler for param of kind %s", reflect.Kind(kind)))
 		}
 	}
-	return ret, nil
+	if rr.Err != nil || size == 0 {
+		return nil
+	}
+	return ret
+}
+
+func writeParams(ww *rwutil.Writer, params []any) {
+	ww.WriteSize16(len(params))
+	for _, param := range params {
+		t := reflect.TypeOf(param)
+		v := reflect.ValueOf(param)
+		ww.WriteUint8(uint8(t.Kind()))
+		switch t.Kind() {
+		case reflect.String:
+			ww.WriteString(v.String())
+
+		case reflect.Uint:
+			ww.WriteUint32(uint32(v.Uint()))
+		case reflect.Uint8:
+			ww.WriteUint8(uint8(v.Uint()))
+		case reflect.Uint16:
+			ww.WriteUint16(uint16(v.Uint()))
+		case reflect.Uint32:
+			ww.WriteUint32(uint32(v.Uint()))
+		case reflect.Uint64:
+			ww.WriteUint64(v.Uint())
+
+		case reflect.Int:
+			ww.WriteInt32(int32(v.Int()))
+		case reflect.Int8:
+			ww.WriteInt8(int8(v.Int()))
+		case reflect.Int16:
+			ww.WriteInt16(int16(v.Int()))
+		case reflect.Int32:
+			ww.WriteInt32(int32(v.Int()))
+		case reflect.Int64:
+			ww.WriteInt64(v.Int())
+
+		default:
+			panic(fmt.Sprintf("no handler for param of type %s", t.Name()))
+		}
+	}
 }

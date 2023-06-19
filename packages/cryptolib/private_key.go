@@ -4,11 +4,13 @@ import (
 	"crypto/ed25519"
 	"errors"
 	"fmt"
+	"io"
 
 	"go.dedis.ch/kyber/v3/sign/eddsa"
 	"go.dedis.ch/kyber/v3/util/key"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type PrivateKey struct {
@@ -18,17 +20,17 @@ type PrivateKey struct {
 const PrivateKeySize = ed25519.PrivateKeySize
 
 func NewPrivateKey() *PrivateKey {
-	return NewPrivateKeyFromSeed(NewSeed())
+	return PrivateKeyFromSeed(NewSeed())
 }
 
-func NewPrivateKeyFromBytes(privateKeyBytes []byte) (*PrivateKey, error) {
+func PrivateKeyFromBytes(privateKeyBytes []byte) (*PrivateKey, error) {
 	if len(privateKeyBytes) < PrivateKeySize {
 		return nil, errors.New("bytes too short")
 	}
 	return &PrivateKey{privateKeyBytes}, nil
 }
 
-func NewPrivateKeyFromSeed(seed Seed) *PrivateKey {
+func PrivateKeyFromSeed(seed Seed) *PrivateKey {
 	var seedByte [SeedSize]byte = seed
 	return &PrivateKey{ed25519.NewKeyFromSeed(seedByte[:])}
 }
@@ -64,7 +66,7 @@ func (pkT *PrivateKey) AsKyberKeyPair() (*key.Pair, error) {
 }
 
 func (pkT *PrivateKey) Public() *PublicKey {
-	return newPublicKeyFromCrypto(pkT.key.Public().(ed25519.PublicKey))
+	return publicKeyFromCrypto(pkT.key.Public().(ed25519.PublicKey))
 }
 
 func (pkT *PrivateKey) Sign(message []byte) []byte {
@@ -77,4 +79,22 @@ func (pkT *PrivateKey) AddressKeysForEd25519Address(addr *iotago.Ed25519Address)
 
 func (pkT *PrivateKey) AddressKeys(addr iotago.Address) iotago.AddressKeys {
 	return iotago.AddressKeys{Address: addr, Keys: pkT.key}
+}
+
+func (pkT *PrivateKey) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	if len(pkT.key) != PrivateKeySize {
+		panic("unexpected private key size for read")
+	}
+	rr.ReadN(pkT.key)
+	return rr.Err
+}
+
+func (pkT *PrivateKey) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	if len(pkT.key) != PrivateKeySize {
+		panic("unexpected private key size for write")
+	}
+	ww.WriteN(pkT.key)
+	return ww.Err
 }

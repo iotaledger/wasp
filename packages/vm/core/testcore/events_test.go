@@ -1,7 +1,6 @@
 package testcore
 
 import (
-	"fmt"
 	"math"
 	"testing"
 
@@ -26,16 +25,15 @@ var (
 
 	manyEventsContractProcessor = manyEventsContract.Processor(nil,
 		funcManyEvents.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-			n := int(codec.MustDecodeUint32(ctx.Params().Get("n")))
-			for i := 0; i < n; i++ {
-				ctx.Event(fmt.Sprintf("testing many events %d", i))
+			n := codec.MustDecodeUint32(ctx.Params().Get("n"))
+			for i := uint32(0); i < n; i++ {
+				ctx.Event("event.test", codec.EncodeUint32(n))
 			}
 			return nil
 		}),
 		funcBigEvent.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-			n := int(codec.MustDecodeUint32(ctx.Params().Get("n")))
-			buf := make([]byte, n)
-			ctx.Event(string(buf))
+			n := codec.MustDecodeUint32(ctx.Params().Get("n"))
+			ctx.Event("event.big", make([]byte, n))
 			return nil
 		}),
 	)
@@ -151,15 +149,17 @@ func incrementSCCounter(t *testing.T, ch *solo.Chain) isc.RequestID {
 	return reqs[0].ID()
 }
 
-func getEventsForRequest(t *testing.T, chain *solo.Chain, reqID isc.RequestID) []string {
+func getEventsForRequest(t *testing.T, chain *solo.Chain, reqID isc.RequestID) (events []*isc.Event) {
 	res, err := chain.CallView(blocklog.Contract.Name, blocklog.ViewGetEventsForRequest.Name,
 		blocklog.ParamRequestID, reqID,
 	)
 	require.NoError(t, err)
-	return EventsViewResultToStringArray(res)
+	events, err = blocklog.EventsFromViewResult(res)
+	require.NoError(t, err)
+	return events
 }
 
-func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...int32) []string {
+func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...int32) (events []*isc.Event) {
 	var res dict.Dict
 	var err error
 	if len(blockNumber) > 0 {
@@ -170,17 +170,21 @@ func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...int32) []
 		res, err = chain.CallView(blocklog.Contract.Name, blocklog.ViewGetEventsForBlock.Name)
 	}
 	require.NoError(t, err)
-	return EventsViewResultToStringArray(res)
+	events, err = blocklog.EventsFromViewResult(res)
+	require.NoError(t, err)
+	return events
 }
 
-func getEventsForSC(t *testing.T, chain *solo.Chain, fromBlock, toBlock int32) []string {
+func getEventsForSC(t *testing.T, chain *solo.Chain, fromBlock, toBlock int32) (events []*isc.Event) {
 	res, err := chain.CallView(blocklog.Contract.Name, blocklog.ViewGetEventsForContract.Name,
 		blocklog.ParamContractHname, inccounter.Contract.Hname(),
 		blocklog.ParamFromBlock, fromBlock,
 		blocklog.ParamToBlock, toBlock,
 	)
 	require.NoError(t, err)
-	return EventsViewResultToStringArray(res)
+	events, err = blocklog.EventsFromViewResult(res)
+	require.NoError(t, err)
+	return events
 }
 
 func TestGetEvents(t *testing.T) {
@@ -202,34 +206,46 @@ func TestGetEvents(t *testing.T) {
 
 	events := getEventsForRequest(t, ch, reqID1)
 	require.Len(t, events, 1)
-	require.Contains(t, events[0], "counter = 1")
+	checkEventCounter(t, events[0], 1)
+
 	events = getEventsForRequest(t, ch, reqID2)
 	require.Len(t, events, 1)
-	require.Contains(t, events[0], "counter = 2")
+	checkEventCounter(t, events[0], 2)
+
 	events = getEventsForRequest(t, ch, reqID3)
 	require.Len(t, events, 1)
-	require.Contains(t, events[0], "counter = 3")
+	checkEventCounter(t, events[0], 3)
 
 	events = getEventsForBlock(t, ch, 3)
 	require.Len(t, events, 2)
-	require.Contains(t, events[0], "counter = 0")
+	checkEventCounter(t, events[0], 0)
+
 	events = getEventsForBlock(t, ch, 4)
 	require.Len(t, events, 1)
-	require.Contains(t, events[0], "counter = 1")
+	checkEventCounter(t, events[0], 1)
+
 	events = getEventsForBlock(t, ch, 5)
 	require.Len(t, events, 1)
-	require.Contains(t, events[0], "counter = 2")
+	checkEventCounter(t, events[0], 2)
+
 	events = getEventsForBlock(t, ch)
 	require.Len(t, events, 1)
-	require.Contains(t, events[0], "counter = 3")
+	checkEventCounter(t, events[0], 3)
 
 	events = getEventsForSC(t, ch, 0, 1000)
 	require.Len(t, events, 4)
-	require.Contains(t, events[0], "counter = 0")
-	require.Contains(t, events[1], "counter = 1")
-	require.Contains(t, events[2], "counter = 2")
-	require.Contains(t, events[3], "counter = 3")
+	checkEventCounter(t, events[0], 0)
+	checkEventCounter(t, events[1], 1)
+	checkEventCounter(t, events[2], 2)
+	checkEventCounter(t, events[3], 3)
+
 	events = getEventsForSC(t, ch, 2, 3)
 	require.Len(t, events, 1)
-	require.Contains(t, events[0], "counter = 0")
+	checkEventCounter(t, events[0], 0)
+}
+
+func checkEventCounter(t *testing.T, event *isc.Event, value uint64) {
+	counter, err := codec.DecodeUint64(event.Payload)
+	require.NoError(t, err)
+	require.EqualValues(t, counter, value)
 }

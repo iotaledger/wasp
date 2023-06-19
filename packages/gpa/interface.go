@@ -6,11 +6,28 @@ package gpa
 
 import (
 	"encoding"
+	"errors"
+	"io"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
+
+type MessageType rwutil.Kind
+
+func (m *MessageType) Read(rr *rwutil.Reader) {
+	*m = MessageType(rr.ReadKind())
+}
+
+func (m MessageType) ReadAndVerify(rr *rwutil.Reader) {
+	rr.ReadKindAndVerify(rwutil.Kind(m))
+}
+
+func (m MessageType) Write(ww *rwutil.Writer) {
+	ww.WriteKind(rwutil.Kind(m))
+}
 
 type NodeID [32]byte
 
@@ -45,6 +62,8 @@ func (niT NodeID) ShortString() string {
 type Message interface {
 	encoding.BinaryMarshaler
 	encoding.BinaryUnmarshaler
+	Read(r io.Reader) error
+	Write(w io.Writer) error
 	Recipient() NodeID // The sender should indicate the recipient.
 	SetSender(NodeID)  // The transport later will set a validated sender for a message.
 }
@@ -62,12 +81,12 @@ func (msg *BasicMessage) Recipient() NodeID {
 	return msg.recipient
 }
 
-func (msg *BasicMessage) SetSender(sender NodeID) {
-	msg.sender = sender
-}
-
 func (msg *BasicMessage) Sender() NodeID {
 	return msg.sender
+}
+
+func (msg *BasicMessage) SetSender(sender NodeID) {
+	msg.sender = sender
 }
 
 type Input interface{}
@@ -116,4 +135,32 @@ type GPA interface {
 	Output() Output
 	StatusString() string // Status of the protocol as a string.
 	UnmarshalMessage(data []byte) (Message, error)
+}
+
+type (
+	Mapper   map[MessageType]func() Message
+	Fallback map[MessageType]func(data []byte) (Message, error)
+)
+
+func UnmarshalMessage(data []byte, mapper Mapper, fallback ...Fallback) (Message, error) {
+	rr := rwutil.NewBytesReader(data)
+	kind := rr.ReadKind()
+	if rr.Err != nil {
+		return nil, rr.Err
+	}
+	msgType := MessageType(kind)
+	allocator := mapper[msgType]
+	if allocator == nil {
+		if len(fallback) == 1 {
+			unmarshaler := fallback[0][msgType]
+			if unmarshaler != nil {
+				return unmarshaler(data)
+			}
+		}
+		return nil, errors.New("cannot map kind to message")
+	}
+	msg := allocator()
+	rr.PushBack().WriteKind(kind)
+	rr.Read(msg)
+	return msg, rr.Err
 }

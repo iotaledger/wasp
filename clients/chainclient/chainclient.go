@@ -162,8 +162,14 @@ func (c *Client) PostOffLedgerRequest(context context.Context,
 	par := defaultParams(params...)
 	if par.Nonce == 0 {
 		c.noncesMutex.Lock()
-		c.nonces[c.KeyPair.Address().Key()]++
-		par.Nonce = c.nonces[c.KeyPair.Address().Key()]
+		nonce, exists := c.nonces[c.KeyPair.Address().Key()]
+		if !exists {
+			c.nonces[c.KeyPair.Address().Key()] = 0
+		} else {
+			nonce++
+			c.nonces[c.KeyPair.Address().Key()] = nonce
+			par.Nonce = nonce
+		}
 		c.noncesMutex.Unlock()
 	}
 	req := isc.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, par.Args, par.Nonce, par.GasBudget())

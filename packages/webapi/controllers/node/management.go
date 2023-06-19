@@ -23,7 +23,7 @@ func (c *Controller) setNodeOwner(e echo.Context) error {
 		return apierrors.InvalidPropertyError("PublicKey", err)
 	}
 
-	reqPublicKey, err := cryptolib.NewPublicKeyFromBytes(reqPublicKeyBytes)
+	reqPublicKey, err := cryptolib.PublicKeyFromBytes(reqPublicKeyBytes)
 	if err != nil {
 		return apierrors.InvalidPropertyError("PublicKey", err)
 	}

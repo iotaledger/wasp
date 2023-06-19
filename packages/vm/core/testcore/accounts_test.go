@@ -229,7 +229,7 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2NativeTokens(senderAgentID, nativeTokenID, util.Big0)
 		ch.AssertL2TotalNativeTokens(nativeTokenID, util.Big0)
 
-		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, ch.CommonAccount(), senderKeyPair)
+		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
 		t.Logf("common account base tokens = %d before mint", ch.L2CommonAccountBaseTokens())
 
@@ -249,7 +249,7 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2NativeTokens(senderAgentID, nativeTokenID, util.Big0)
 		ch.AssertL2TotalNativeTokens(nativeTokenID, util.Big0)
 
-		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, ch.CommonAccount(), senderKeyPair)
+		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
 		err = ch.MintTokens(sn, 1, senderKeyPair)
 		require.NoError(t, err)
@@ -280,7 +280,7 @@ func TestFoundries(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
 
-		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, ch.CommonAccount(), senderKeyPair)
+		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
 		err = ch.MintTokens(sn, 500, senderKeyPair)
 		require.NoError(t, err)
@@ -299,8 +299,6 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2TotalNativeTokens(nativeTokenID, 1000)
 	})
 	t.Run("max supply MaxUint256, mintTokens MaxUint256_1", func(t *testing.T) {
-		t.SkipNow() // TODO not working
-
 		initTest()
 		sn, nativeTokenID, err := ch.NewFoundryParams(abi.MaxUint256).
 			WithUser(senderKeyPair).
@@ -308,7 +306,7 @@ func TestFoundries(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
 
-		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, ch.CommonAccount(), senderKeyPair)
+		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
 		err = ch.MintTokens(sn, abi.MaxUint256, senderKeyPair)
 		require.NoError(t, err)
@@ -347,7 +345,7 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2NativeTokens(senderAgentID, nativeTokenID, util.Big0)
 		ch.AssertL2TotalNativeTokens(nativeTokenID, util.Big0)
 
-		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, ch.CommonAccount(), senderKeyPair)
+		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
 		err = ch.MintTokens(sn, 20, senderKeyPair)
 		require.NoError(t, err)
@@ -373,7 +371,7 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2NativeTokens(senderAgentID, nativeTokenID, 0)
 		ch.AssertL2TotalNativeTokens(nativeTokenID, 0)
 
-		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, ch.CommonAccount(), senderKeyPair)
+		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
 		err = ch.MintTokens(sn, 1_000_000, senderKeyPair)
 		require.NoError(t, err)
@@ -453,7 +451,7 @@ func TestFoundries(t *testing.T) {
 			CreateFoundry()
 		require.NoError(t, err)
 
-		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1, ch.CommonAccount(), senderKeyPair)
+		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1, accounts.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
 		x := ch.L2CommonAccountBaseTokens()
 		t.Logf("common account base tokens = %d before mint", x)
@@ -490,7 +488,9 @@ func TestFoundries(t *testing.T) {
 		events, err := ch.GetEventsForContract(accounts.Contract.Name)
 		require.NoError(t, err)
 		require.Len(t, events, 1)
-		require.Contains(t, events[0], "Foundry created, serial number = 1")
+		sn, err = codec.DecodeUint32(events[0].Payload)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, sn)
 	})
 }
 
@@ -508,7 +508,7 @@ func TestAccountBalances(t *testing.T) {
 
 	ch, _ := env.NewChainExt(chainOwner, 0, "chain1")
 
-	x := ch.L2BaseTokens(ch.CommonAccount())
+	x := ch.L2BaseTokens(accounts.CommonAccount())
 	println(x)
 
 	totalGasFeeCharged := uint64(0)
@@ -529,18 +529,18 @@ func TestAccountBalances(t *testing.T) {
 		anchorSD := parameters.L1().Protocol.RentStructure.MinRent(anchor)
 		require.EqualValues(t,
 			anchor.Deposit(),
-			anchorSD+ch.L2BaseTokens(chainOwnerAgentID)+ch.L2BaseTokens(senderAgentID)+ch.L2BaseTokens(ch.CommonAccount()),
+			anchorSD+ch.L2BaseTokens(chainOwnerAgentID)+ch.L2BaseTokens(senderAgentID)+ch.L2BaseTokens(accounts.CommonAccount()),
 		)
 
 		totalGasFeeCharged += bi.GasFeeCharged
 		require.EqualValues(t,
 			int(anchor.Deposit()-anchorSD-100_000+totalGasFeeCharged),
-			int(ch.L2BaseTokens(ch.CommonAccount())),
+			int(ch.L2BaseTokens(accounts.CommonAccount())),
 		)
 
 		require.EqualValues(t,
 			utxodb.FundsFromFaucetAmount+totalGasFeeCharged-anchorSD,
-			l1BaseTokens(chainOwnerAddr)+ch.L2BaseTokens(chainOwnerAgentID)+ch.L2BaseTokens(ch.CommonAccount()),
+			l1BaseTokens(chainOwnerAddr)+ch.L2BaseTokens(chainOwnerAgentID)+ch.L2BaseTokens(accounts.CommonAccount()),
 		)
 		require.EqualValues(t,
 			utxodb.FundsFromFaucetAmount-totalGasFeeCharged,
@@ -811,7 +811,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 	})
 }
 
-func TestTransferAndHarvest(t *testing.T) {
+func TestTransferAndHarvestNativeTokens(t *testing.T) {
 	// initializes it all and prepares withdraw request, does not post it
 	v := initWithdrawTest(t, 10_000)
 	commonAssets := v.ch.L2CommonAccountAssets()
@@ -820,10 +820,10 @@ func TestTransferAndHarvest(t *testing.T) {
 	v.ch.AssertL2NativeTokens(v.userAgentID, v.nativeTokenID, 100)
 
 	// move minted tokens from user to the common account on-chain
-	err := v.ch.SendFromL2ToL2AccountNativeTokens(v.nativeTokenID, v.ch.CommonAccount(), 50, v.user)
+	err := v.ch.SendFromL2ToL2AccountNativeTokens(v.nativeTokenID, accounts.CommonAccount(), 50, v.user)
 	require.NoError(t, err)
 	// now we have 50 tokens on common account
-	v.ch.AssertL2NativeTokens(v.ch.CommonAccount(), v.nativeTokenID, 50)
+	v.ch.AssertL2NativeTokens(accounts.CommonAccount(), v.nativeTokenID, 50)
 	// no native tokens for chainOwner on L1
 	v.env.AssertL1NativeTokens(v.chainOwnerAddr, v.nativeTokenID, 0)
 
@@ -839,7 +839,7 @@ func TestTransferAndHarvest(t *testing.T) {
 	t.Logf("receipt from the 'harvest' tx: %s", rec)
 
 	// now we have 0 tokens on common account
-	v.ch.AssertL2NativeTokens(v.ch.CommonAccount(), v.nativeTokenID, 0)
+	v.ch.AssertL2NativeTokens(accounts.CommonAccount(), v.nativeTokenID, 0)
 	// 50 native tokens for chain on L2
 	v.ch.AssertL2NativeTokens(v.chainOwnerAgentID, v.nativeTokenID, 50)
 
@@ -847,6 +847,29 @@ func TestTransferAndHarvest(t *testing.T) {
 	// in the common account should have left minimum plus gas fee from the last request
 	require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged, commonAssets.BaseTokens)
 	require.EqualValues(t, 0, len(commonAssets.NativeTokens))
+}
+
+func TestTransferAndHarvestBaseTokens(t *testing.T) {
+	// initializes it all and prepares withdraw request, does not post it
+	v := initWithdrawTest(t, 10_000)
+	initialCommonAccountBaseTokens := v.ch.L2CommonAccountAssets().BaseTokens
+
+	// deposit some base tokens into the common account
+	someUserWallet, _ := v.env.NewKeyPairWithFunds()
+	err := v.ch.SendFromL1ToL2Account(11*isc.Million, isc.NewAssetsBaseTokens(10*isc.Million), accounts.CommonAccount(), someUserWallet)
+	require.NoError(t, err)
+	commonAccBaseTokens := initialCommonAccountBaseTokens + 10*isc.Million + v.ch.LastReceipt().GasFeeCharged
+	require.EqualValues(t, commonAccBaseTokens, v.ch.L2CommonAccountAssets().BaseTokens)
+	require.EqualValues(t, 0, v.ch.L2Assets(v.chainOwnerAgentID).BaseTokens)
+
+	_, err = v.ch.PostRequestSync(
+		solo.NewCallParams("accounts", "harvest").WithFungibleTokens(isc.NewAssetsBaseTokens(1*isc.Million)),
+		v.chainOwner,
+	)
+	require.NoError(t, err)
+	remainingOnCommonAccount := accounts.MinimumBaseTokensOnCommonAccount + v.ch.LastReceipt().GasFeeCharged
+	require.EqualValues(t, remainingOnCommonAccount, v.ch.L2CommonAccountAssets().BaseTokens)
+	require.EqualValues(t, commonAccBaseTokens+1*isc.Million-remainingOnCommonAccount, v.ch.L2Assets(v.chainOwnerAgentID).BaseTokens)
 }
 
 func TestFoundryDestroy(t *testing.T) {
@@ -881,7 +904,7 @@ func TestTransferPartialAssets(t *testing.T) {
 	require.EqualValues(t, 1, int(sn))
 
 	// deposit base tokens for the chain owner (needed for L1 storage deposit to mint tokens)
-	err = v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1*isc.Million, v.ch.CommonAccount(), v.chainOwner)
+	err = v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1*isc.Million, accounts.CommonAccount(), v.chainOwner)
 	require.NoError(t, err)
 	err = v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1*isc.Million, v.userAgentID, v.user)
 	require.NoError(t, err)
@@ -1389,5 +1412,44 @@ func TestRequestWithNoGasBudget(t *testing.T) {
 	// post the request off-ledger again (the account has funds now), the request gets bumped to "minGasBudget"
 	_, err = ch.PostRequestOffLedger(req, senderWallet)
 	require.EqualValues(t, gas.LimitsDefault.MinGasPerRequest, ch.LastReceipt().GasBudget)
+	testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
+}
+
+func TestNonces(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	ch := env.NewChain()
+	senderWallet, _ := env.NewKeyPairWithFunds()
+	ch.DepositAssetsToL2(isc.NewAssetsBaseTokens(10*isc.Million), senderWallet)
+
+	req := solo.NewCallParams("dummy", "dummy").WithGasBudget(0).WithNonce(0)
+	_, err := ch.PostRequestOffLedger(req, senderWallet)
+	testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
+
+	req = req.WithNonce(1)
+	_, err = ch.PostRequestOffLedger(req, senderWallet)
+	testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
+
+	req = req.WithNonce(2)
+	_, err = ch.PostRequestOffLedger(req, senderWallet)
+	testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
+
+	// try to send old nonce
+	req = req.WithNonce(1)
+	_, err = ch.PostRequestOffLedger(req, senderWallet)
+	testmisc.RequireErrorToBe(t, err, "request was skipped")
+
+	// try to replay nonce 2
+	req = req.WithNonce(2)
+	_, err = ch.PostRequestOffLedger(req, senderWallet)
+	testmisc.RequireErrorToBe(t, err, "request was skipped")
+
+	// nonce too high
+	req = req.WithNonce(20)
+	_, err = ch.PostRequestOffLedger(req, senderWallet)
+	testmisc.RequireErrorToBe(t, err, "request was skipped")
+
+	// correct nonce passes
+	req = req.WithNonce(3)
+	_, err = ch.PostRequestOffLedger(req, senderWallet)
 	testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
 }

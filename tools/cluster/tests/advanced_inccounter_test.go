@@ -97,7 +97,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	myClient := e.Chain.SCClient(isc.Hn(nativeIncCounterSCName), keyPair)
 
 	for i := 0; i < numRequests; i++ {
-		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
+		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i)})
 		require.NoError(t, err)
 	}
 

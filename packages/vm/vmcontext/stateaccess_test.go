@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -21,9 +20,9 @@ func TestSetThenGet(t *testing.T) {
 	cs := state.NewStore(db)
 	origin.InitChain(cs, nil, 0)
 	latest, err := cs.LatestBlock()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	stateUpdate := NewStateUpdate()
 	hname := isc.Hn("test")
@@ -39,40 +38,40 @@ func TestSetThenGet(t *testing.T) {
 
 	// contract sets variable x
 	s.Set("x", []byte{42})
-	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: {42}}, stateUpdate.Mutations.Sets)
-	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations.Dels)
+	require.Equal(t, map[kv.Key][]byte{subpartitionedKey: {42}}, stateUpdate.Mutations.Sets)
+	require.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations.Dels)
 
 	// contract gets variable x
 	v := s.Get("x")
-	assert.Equal(t, []byte{42}, v)
+	require.Equal(t, []byte{42}, v)
 
 	// mutation is in currentStateUpdate, prefixed by the contract id
-	assert.Equal(t, []byte{42}, stateUpdate.Mutations.Sets[subpartitionedKey])
+	require.Equal(t, []byte{42}, stateUpdate.Mutations.Sets[subpartitionedKey])
 
 	// mutation is in the not committed to the virtual state yet
 	v = stateDraft.Get(subpartitionedKey)
-	assert.Nil(t, v)
+	require.Nil(t, v)
 
 	// contract deletes variable x
 	s.Del("x")
-	assert.Equal(t, map[kv.Key][]byte{}, stateUpdate.Mutations.Sets)
-	assert.Equal(t, map[kv.Key]struct{}{subpartitionedKey: {}}, stateUpdate.Mutations.Dels)
+	require.Equal(t, map[kv.Key][]byte{}, stateUpdate.Mutations.Sets)
+	require.Equal(t, map[kv.Key]struct{}{subpartitionedKey: {}}, stateUpdate.Mutations.Dels)
 
 	// contract sees variable x does not exist
 	v = s.Get("x")
-	assert.Nil(t, v)
+	require.Nil(t, v)
 
 	// contract makes several writes to same variable, gets the latest value
 	s.Set("x", []byte{2 * 42})
-	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: {2 * 42}}, stateUpdate.Mutations.Sets)
-	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations.Dels)
+	require.Equal(t, map[kv.Key][]byte{subpartitionedKey: {2 * 42}}, stateUpdate.Mutations.Sets)
+	require.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations.Dels)
 
 	s.Set("x", []byte{3 * 42})
-	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: {3 * 42}}, stateUpdate.Mutations.Sets)
-	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations.Dels)
+	require.Equal(t, map[kv.Key][]byte{subpartitionedKey: {3 * 42}}, stateUpdate.Mutations.Sets)
+	require.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations.Dels)
 
 	v = s.Get("x")
-	assert.Equal(t, []byte{3 * 42}, v)
+	require.Equal(t, []byte{3 * 42}, v)
 }
 
 func TestIterate(t *testing.T) {
@@ -80,9 +79,9 @@ func TestIterate(t *testing.T) {
 	cs := state.NewStore(db)
 	origin.InitChain(cs, nil, 0)
 	latest, err := cs.LatestBlock()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	stateUpdate := NewStateUpdate()
 	hname := isc.Hn("test")
@@ -98,7 +97,7 @@ func TestIterate(t *testing.T) {
 
 	arr := make([][]byte, 0)
 	s.IterateSorted("xy", func(k kv.Key, v []byte) bool {
-		assert.True(t, strings.HasPrefix(string(k), "xy"))
+		require.True(t, strings.HasPrefix(string(k), "xy"))
 		arr = append(arr, v)
 		return true
 	})
@@ -115,9 +114,9 @@ func TestVmctxStateDeletion(t *testing.T) {
 	foo := kv.Key("foo")
 	{
 		latest, err := cs.LatestBlock()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		stateDraft.Set(foo, []byte("bar"))
 		block := cs.Commit(stateDraft)
 		err = cs.SetLatest(block.TrieRoot())
@@ -125,9 +124,9 @@ func TestVmctxStateDeletion(t *testing.T) {
 	}
 
 	latest, err := cs.LatestBlock()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	stateUpdate := NewStateUpdate()
 	vmctx := &VMContext{
 		task:               &vm.VMTask{StateDraft: stateDraft},

@@ -12,7 +12,7 @@ import (
 )
 
 type GoGenerator struct {
-	GenBase
+	Generator
 }
 
 var _ IGenerator = new(GoGenerator)

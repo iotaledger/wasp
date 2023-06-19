@@ -18,7 +18,7 @@ export class ArrayOfImmutableAddress extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetAllowedStateControllerAddressesResults extends wasmtypes.ScProxy {
-    // Array16 of state controller addresses
+    // Array of state controller addresses
     controllers(): sc.ArrayOfImmutableAddress {
         return new sc.ArrayOfImmutableAddress(this.proxy.root(sc.ResultControllers));
     }
@@ -44,7 +44,7 @@ export class ArrayOfMutableAddress extends wasmtypes.ScProxy {
 }
 
 export class MutableGetAllowedStateControllerAddressesResults extends wasmtypes.ScProxy {
-    // Array16 of state controller addresses
+    // Array of state controller addresses
     controllers(): sc.ArrayOfMutableAddress {
         return new sc.ArrayOfMutableAddress(this.proxy.root(sc.ResultControllers));
     }
@@ -61,11 +61,6 @@ export class ImmutableGetChainInfoResults extends wasmtypes.ScProxy {
         return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultChainOwnerID));
     }
 
-    // chain metadata
-    customMetadata(): wasmtypes.ScImmutableBytes {
-        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultCustomMetadata));
-    }
-
     // serialized fee policy
     feePolicy(): wasmtypes.ScImmutableBytes {
         return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultFeePolicy));
@@ -74,6 +69,15 @@ export class ImmutableGetChainInfoResults extends wasmtypes.ScProxy {
     // serialized gas limits
     gasLimits(): wasmtypes.ScImmutableBytes {
         return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultGasLimits));
+    }
+
+    // chain metadata
+    metadata(): sc.ImmutablePublicChainMetadata {
+        return new sc.ImmutablePublicChainMetadata(this.proxy.root(sc.ResultMetadata));
+    }
+
+    publicURL(): wasmtypes.ScImmutableString {
+        return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultPublicURL));
     }
 }
 
@@ -88,11 +92,6 @@ export class MutableGetChainInfoResults extends wasmtypes.ScProxy {
         return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultChainOwnerID));
     }
 
-    // chain metadata
-    customMetadata(): wasmtypes.ScMutableBytes {
-        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultCustomMetadata));
-    }
-
     // serialized fee policy
     feePolicy(): wasmtypes.ScMutableBytes {
         return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultFeePolicy));
@@ -101,6 +100,15 @@ export class MutableGetChainInfoResults extends wasmtypes.ScProxy {
     // serialized gas limits
     gasLimits(): wasmtypes.ScMutableBytes {
         return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultGasLimits));
+    }
+
+    // chain metadata
+    metadata(): sc.MutablePublicChainMetadata {
+        return new sc.MutablePublicChainMetadata(this.proxy.root(sc.ResultMetadata));
+    }
+
+    publicURL(): wasmtypes.ScMutableString {
+        return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultPublicURL));
     }
 }
 
@@ -235,34 +243,24 @@ export class MutableGetMaintenanceStatusResults extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetMetadataResults extends wasmtypes.ScProxy {
-    // the public evm json rpc url
-    evmJsonRPCURL(): wasmtypes.ScImmutableString {
-        return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultEvmJsonRPCURL));
+    // the L2 metadata
+    metadata(): sc.ImmutablePublicChainMetadata {
+        return new sc.ImmutablePublicChainMetadata(this.proxy.root(sc.ResultMetadata));
     }
 
-    // the public evm websocket url
-    evmWebSocketUrl(): wasmtypes.ScImmutableString {
-        return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultEvmWebSocketUrl));
-    }
-
-    // the public url leading to the chain info, stored on the tangle
+    // the public url leading to the chain info, stored on the tangle (l1)
     publicURL(): wasmtypes.ScImmutableString {
         return new wasmtypes.ScImmutableString(this.proxy.root(sc.ResultPublicURL));
     }
 }
 
 export class MutableGetMetadataResults extends wasmtypes.ScProxy {
-    // the public evm json rpc url
-    evmJsonRPCURL(): wasmtypes.ScMutableString {
-        return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultEvmJsonRPCURL));
+    // the L2 metadata
+    metadata(): sc.MutablePublicChainMetadata {
+        return new sc.MutablePublicChainMetadata(this.proxy.root(sc.ResultMetadata));
     }
 
-    // the public evm websocket url
-    evmWebSocketUrl(): wasmtypes.ScMutableString {
-        return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultEvmWebSocketUrl));
-    }
-
-    // the public url leading to the chain info, stored on the tangle
+    // the public url leading to the chain info, stored on the tangle (l1)
     publicURL(): wasmtypes.ScMutableString {
         return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultPublicURL));
     }

@@ -3,7 +3,7 @@ package isc
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestChainID(t *testing.T) {
@@ -11,10 +11,10 @@ func TestChainID(t *testing.T) {
 	chainIDStr := chainID.String()
 
 	chainIDFromBytes, err := ChainIDFromBytes(chainID.Bytes())
-	assert.NoError(t, err)
-	assert.EqualValues(t, chainIDFromBytes, chainID)
+	require.NoError(t, err)
+	require.EqualValues(t, chainIDFromBytes, chainID)
 
 	chainIDFromString, err := ChainIDFromString(chainIDStr)
-	assert.NoError(t, err)
-	assert.EqualValues(t, chainIDFromString, chainID)
+	require.NoError(t, err)
+	require.EqualValues(t, chainIDFromString, chainID)
 }

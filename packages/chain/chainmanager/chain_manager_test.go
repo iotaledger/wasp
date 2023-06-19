@@ -124,7 +124,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	}
 	//
 	// Provide consensus output.
-	step2AO, step2TX := tcl.FakeTX(originAO, cmtAddrA)
+	step2AO, step2TX := tcl.FakeRotationTX(originAO, cmtAddrA)
 	for nid := range nodes {
 		consReq := nodes[nid].Output().(*chainmanager.Output).NeedConsensus()
 		fake2ST := indexedstore.NewFake(state.NewStore(mapdb.NewMapDB()))
@@ -196,7 +196,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	}
 	//
 	// Make external committee rotation.
-	rotateAO, _ := tcl.FakeTX(step2AO, cmtAddrB)
+	rotateAO, _ := tcl.FakeRotationTX(step2AO, cmtAddrB)
 	for nid := range nodes {
 		tc.WithInput(nid, chainmanager.NewInputAliasOutputConfirmed(rotateAO))
 	}

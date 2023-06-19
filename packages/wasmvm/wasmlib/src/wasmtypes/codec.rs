@@ -18,7 +18,7 @@ impl WasmDecoder<'_> {
 
     // decodes the next variable length substring of bytes from the byte buffer
     pub fn bytes(&mut self) -> Vec<u8> {
-        let length = uint32_decode(self) as usize;
+        let length = self.vlu_decode(32) as usize;
         self.fixed_bytes(length)
     }
 
@@ -41,6 +41,11 @@ impl WasmDecoder<'_> {
         let value = &self.buf[..length];
         self.buf = &self.buf[length..];
         value.to_vec()
+    }
+
+    // returns the number of bytes left in the byte buffer
+    pub fn length(&self) -> u32 {
+        self.buf.len() as u32
     }
 
     // peeks at the next byte in the byte buffer
@@ -132,7 +137,7 @@ impl WasmEncoder {
     // encodes a variable sized substring of bytes into the byte buffer
     pub fn bytes(&mut self, value: &[u8]) -> &WasmEncoder {
         let length = value.len();
-        uint32_encode(self, length as u32);
+        self.vlu_encode(length as u64);
         self.fixed_bytes(value, length)
     }
 

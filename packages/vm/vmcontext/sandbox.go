@@ -6,6 +6,8 @@ package vmcontext
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/core/types"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -35,48 +37,53 @@ func (s *contractSandbox) Call(target, entryPoint isc.Hname, params dict.Dict, t
 // DeployContract deploys contract by the binary hash
 // and calls "init" endpoint (constructor) with provided parameters
 func (s *contractSandbox) DeployContract(programHash hashing.HashValue, name, description string, initParams dict.Dict) {
-	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeDeployContract)
+	s.Ctx.GasBurn(gas.BurnCodeDeployContract)
 	s.Ctx.(*VMContext).DeployContract(programHash, name, description, initParams)
 }
 
-func (s *contractSandbox) Event(msg string) {
-	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeEmitEventFixed)
-	s.Log().Infof("event::%s -> '%s'", s.Ctx.(*VMContext).CurrentContractHname(), msg)
-	s.Ctx.(*VMContext).MustSaveEvent(s.Ctx.(*VMContext).CurrentContractHname(), msg)
+func (s *contractSandbox) Event(topic string, payload []byte) {
+	s.Ctx.GasBurn(gas.BurnCodeEmitEventFixed)
+	hContract := s.Ctx.(*VMContext).CurrentContractHname()
+	hex := iotago.EncodeHex(payload)
+	if len(hex) > 80 {
+		hex = hex[:40] + "..."
+	}
+	s.Log().Infof("event::%s -> %s(%s)", hContract.String(), topic, hex)
+	s.Ctx.(*VMContext).MustSaveEvent(hContract, topic, payload)
 }
 
 func (s *contractSandbox) GetEntropy() hashing.HashValue {
-	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeGetContext)
+	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.(*VMContext).Entropy()
 }
 
 func (s *contractSandbox) AllowanceAvailable() *isc.Assets {
-	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeGetAllowance)
+	s.Ctx.GasBurn(gas.BurnCodeGetAllowance)
 	return s.Ctx.(*VMContext).AllowanceAvailable()
 }
 
 func (s *contractSandbox) TransferAllowedFunds(target isc.AgentID, transfer ...*isc.Assets) *isc.Assets {
-	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeTransferAllowance)
+	s.Ctx.GasBurn(gas.BurnCodeTransferAllowance)
 	return s.Ctx.(*VMContext).TransferAllowedFunds(target, transfer...)
 }
 
 func (s *contractSandbox) TransferAllowedFundsForceCreateTarget(target isc.AgentID, transfer ...*isc.Assets) *isc.Assets {
-	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeTransferAllowance)
+	s.Ctx.GasBurn(gas.BurnCodeTransferAllowance)
 	return s.Ctx.(*VMContext).TransferAllowedFunds(target, transfer...)
 }
 
 func (s *contractSandbox) Request() isc.Calldata {
-	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeGetContext)
+	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.(*VMContext).Request()
 }
 
 func (s *contractSandbox) Send(par isc.RequestParameters) {
-	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeSendL1Request, uint64(s.Ctx.(*VMContext).NumPostedOutputs))
+	s.Ctx.GasBurn(gas.BurnCodeSendL1Request, uint64(s.Ctx.(*VMContext).NumPostedOutputs))
 	s.Ctx.(*VMContext).Send(par)
 }
 
 func (s *contractSandbox) EstimateRequiredStorageDeposit(par isc.RequestParameters) uint64 {
-	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeEstimateStorageDepositCost)
+	s.Ctx.GasBurn(gas.BurnCodeEstimateStorageDepositCost)
 	return s.Ctx.(*VMContext).EstimateRequiredStorageDeposit(par)
 }
 
@@ -85,7 +92,7 @@ func (s *contractSandbox) State() kv.KVStore {
 }
 
 func (s *contractSandbox) StateAnchor() *isc.StateAnchor {
-	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeGetContext)
+	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.(*VMContext).StateAnchor()
 }
 
@@ -179,6 +186,10 @@ func (s *contractSandbox) CreditToAccount(agentID isc.AgentID, tokens *isc.Asset
 	s.Ctx.(*VMContext).creditToAccount(agentID, tokens)
 }
 
+func (s *contractSandbox) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
+	s.Ctx.(*VMContext).RetryUnprocessable(req, blockIndex, outputIndex)
+}
+
 func (s *contractSandbox) totalGasTokens() *isc.Assets {
 	if s.Ctx.(*VMContext).task.EstimateGasMode {
 		return isc.NewEmptyAssets()
@@ -192,6 +203,6 @@ func (s *contractSandbox) CallOnBehalfOf(caller isc.AgentID, target, entryPoint 
 	return s.Ctx.(*VMContext).CallOnBehalfOf(caller, target, entryPoint, params, transfer)
 }
 
-func (s *contractSandbox) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
-	s.Ctx.(*VMContext).RetryUnprocessable(req, blockIndex, outputIndex)
+func (s *contractSandbox) SetEVMFailed(tx *types.Transaction, receipt *types.Receipt) {
+	s.Ctx.(*VMContext).SetEVMFailed(tx, receipt)
 }

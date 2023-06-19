@@ -4,7 +4,6 @@
 package solo
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -29,6 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -45,14 +45,14 @@ var _ chain.Chain = &Chain{}
 
 // String is string representation for main parameters of the chain
 func (ch *Chain) String() string {
-	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
-	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
+	w := new(rwutil.Buffer)
+	fmt.Fprintf(w, "Chain ID: %s\n", ch.ChainID)
+	fmt.Fprintf(w, "Chain state controller: %s\n", ch.StateControllerAddress)
 	block, err := ch.store.LatestBlock()
 	require.NoError(ch.Env.T, err)
-	fmt.Fprintf(&buf, "Root commitment: %s\n", block.TrieRoot())
-	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
-	return buf.String()
+	fmt.Fprintf(w, "Root commitment: %s\n", block.TrieRoot())
+	fmt.Fprintf(w, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
+	return string(*w)
 }
 
 // DumpAccounts dumps all account balances into the human-readable string
@@ -171,16 +171,16 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 	req.WithGasBudget(g)
 	res, err := ch.PostRequestOffLedger(req, user)
 	if err != nil {
-		return
+		return ret, err
 	}
 	resBin := res.Get(blob.ParamHash)
 	if resBin == nil {
 		err = errors.New("internal error: no hash returned")
-		return
+		return ret, err
 	}
 	ret, err = codec.DecodeHashValue(resBin)
 	if err != nil {
-		return
+		return ret, err
 	}
 	require.EqualValues(ch.Env.T, expectedHash, ret)
 	return ret, err
@@ -294,18 +294,8 @@ func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.Contra
 	return ch.ChainID, chainOwnerID, contracts
 }
 
-func eventsFromViewResult(viewResult dict.Dict) []string {
-	recs := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
-	ret := make([]string, recs.Len())
-	for i := range ret {
-		data := recs.GetAt(uint16(i))
-		ret[i] = string(data)
-	}
-	return ret
-}
-
-// GetEventsForContract calls the view in the  'blocklog' core smart contract to retrieve events for a given smart contract.
-func (ch *Chain) GetEventsForContract(name string) ([]string, error) {
+// GetEventsForContract calls the view in the 'blocklog' core smart contract to retrieve events for a given smart contract.
+func (ch *Chain) GetEventsForContract(name string) ([]*isc.Event, error) {
 	viewResult, err := ch.CallView(
 		blocklog.Contract.Name, blocklog.ViewGetEventsForContract.Name,
 		blocklog.ParamContractHname, isc.Hn(name),
@@ -314,11 +304,11 @@ func (ch *Chain) GetEventsForContract(name string) ([]string, error) {
 		return nil, err
 	}
 
-	return eventsFromViewResult(viewResult), nil
+	return blocklog.EventsFromViewResult(viewResult)
 }
 
-// GetEventsForRequest calls the view in the  'blocklog' core smart contract to retrieve events for a given request.
-func (ch *Chain) GetEventsForRequest(reqID isc.RequestID) ([]string, error) {
+// GetEventsForRequest calls the view in the 'blocklog' core smart contract to retrieve events for a given request.
+func (ch *Chain) GetEventsForRequest(reqID isc.RequestID) ([]*isc.Event, error) {
 	viewResult, err := ch.CallView(
 		blocklog.Contract.Name, blocklog.ViewGetEventsForRequest.Name,
 		blocklog.ParamRequestID, reqID,
@@ -326,11 +316,11 @@ func (ch *Chain) GetEventsForRequest(reqID isc.RequestID) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return eventsFromViewResult(viewResult), nil
+	return blocklog.EventsFromViewResult(viewResult)
 }
 
 // GetEventsForBlock calls the view in the 'blocklog' core smart contract to retrieve events for a given block.
-func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]string, error) {
+func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]*isc.Event, error) {
 	viewResult, err := ch.CallView(
 		blocklog.Contract.Name, blocklog.ViewGetEventsForBlock.Name,
 		blocklog.ParamBlockIndex, blockIndex,
@@ -338,12 +328,7 @@ func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return eventsFromViewResult(viewResult), nil
-}
-
-// CommonAccount return the agentID of the common account (controlled by the owner)
-func (ch *Chain) CommonAccount() isc.AgentID {
-	return accounts.CommonAccount()
+	return blocklog.EventsFromViewResult(viewResult)
 }
 
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain
@@ -438,11 +423,10 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.Re
 	if err != nil {
 		return nil
 	}
-	recs := collections.NewArray16ReadOnly(res, blocklog.ParamRequestRecord)
-	ret := make([]*blocklog.RequestReceipt, recs.Len())
+	receipts := collections.NewArrayReadOnly(res, blocklog.ParamRequestRecord)
+	ret := make([]*blocklog.RequestReceipt, receipts.Len())
 	for i := range ret {
-		data := recs.GetAt(uint16(i))
-		ret[i], err = blocklog.RequestReceiptFromBytes(data)
+		ret[i], err = blocklog.RequestReceiptFromBytes(receipts.GetAt(uint32(i)))
 		require.NoError(ch.Env.T, err)
 		ret[i].WithBlockData(blockIdx, uint16(i))
 	}
@@ -457,11 +441,10 @@ func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []isc.RequestID {
 		ch.Log().Warnf("GetRequestIDsForBlock: %v", err)
 		return nil
 	}
-	recs := collections.NewArray16ReadOnly(res, blocklog.ParamRequestID)
-	ret := make([]isc.RequestID, recs.Len())
+	requestIDs := collections.NewArrayReadOnly(res, blocklog.ParamRequestID)
+	ret := make([]isc.RequestID, requestIDs.Len())
 	for i := range ret {
-		reqIDBin := recs.GetAt(uint16(i))
-		ret[i], err = isc.RequestIDFromBytes(reqIDBin)
+		ret[i], err = isc.RequestIDFromBytes(requestIDs.GetAt(uint32(i)))
 		require.NoError(ch.Env.T, err)
 	}
 	return ret
@@ -531,12 +514,11 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 	if len(res) == 0 {
 		return nil
 	}
-	ret := make([]iotago.Address, 0)
-	arr := collections.NewArray16ReadOnly(res, governance.ParamAllowedStateControllerAddresses)
-	for i := uint16(0); i < arr.Len(); i++ {
-		a, err := codec.DecodeAddress(arr.GetAt(i))
+	addresses := collections.NewArrayReadOnly(res, governance.ParamAllowedStateControllerAddresses)
+	ret := make([]iotago.Address, addresses.Len())
+	for i := range ret {
+		ret[i], err = codec.DecodeAddress(addresses.GetAt(uint32(i)))
 		require.NoError(ch.Env.T, err)
-		ret = append(ret, a)
 	}
 	return ret
 }
@@ -678,6 +660,12 @@ func (ch *Chain) LatestBlock() state.Block {
 	b, err := ch.store.LatestBlock()
 	require.NoError(ch.Env.T, err)
 	return b
+}
+
+func (ch *Chain) Nonce(agentID isc.AgentID) uint64 {
+	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewGetAccountNonce.Name, accounts.ParamAgentID, agentID)
+	require.NoError(ch.Env.T, err)
+	return codec.MustDecodeUint64(res.Get(accounts.ParamAccountNonce))
 }
 
 // ReceiveOffLedgerRequest implements chain.Chain

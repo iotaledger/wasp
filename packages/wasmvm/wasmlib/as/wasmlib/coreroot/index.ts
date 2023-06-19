@@ -5,5 +5,6 @@
 
 export * from './consts';
 export * from './contract';
+export * from './eventhandlers';
 export * from './params';
 export * from './results';

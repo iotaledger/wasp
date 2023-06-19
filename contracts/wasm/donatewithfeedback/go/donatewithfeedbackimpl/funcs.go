@@ -10,7 +10,7 @@ import (
 
 func funcDonate(ctx wasmlib.ScFuncContext, f *DonateContext) {
 	amount := ctx.Allowance().BaseTokens()
-	transfer := wasmlib.NewScTransferBaseTokens(amount)
+	transfer := wasmlib.ScTransferFromBaseTokens(amount)
 	ctx.TransferAllowed(ctx.AccountID(), transfer)
 	donation := &donatewithfeedback.Donation{
 		Amount:    amount,
@@ -45,7 +45,7 @@ func funcWithdraw(ctx wasmlib.ScFuncContext, f *WithdrawContext) {
 	}
 
 	scOwner := f.State.Owner().Value().Address()
-	ctx.Send(scOwner, wasmlib.NewScTransferBaseTokens(amount))
+	ctx.Send(scOwner, wasmlib.ScTransferFromBaseTokens(amount))
 }
 
 func viewDonation(_ wasmlib.ScViewContext, f *DonationContext) {

@@ -166,7 +166,7 @@ Iterates through the given map of actions and applies them.
 
 #### Parameters
 
-- `n` ([`Map`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/map.go) of `public key` => `byte`):
+- `n` ([`Map`](https://github.com/iotaledger/wasp/blob/develop/packages/kv/collections/map.go) of `public key` => `byte`):
   The list of actions to perform. Each byte value can be one of the following:
     - `0`: Remove the access node from the access nodes list.
     - `1`: Accept a candidate node and add it to the list of access nodes.
@@ -205,7 +205,7 @@ Returns the list of allowed state controllers.
 
 #### Returns
 
-- `a` ([`Array16`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/array16.go)
+- `a` ([`Array`](https://github.com/iotaledger/wasp/blob/develop/packages/kv/collections/array.go)
   of [`iotago::Address`](https://github.com/iotaledger/iota.go/blob/develop/address.go)): The list of allowed state
   controllers.
 
@@ -259,9 +259,9 @@ Returns the current access nodes and candidates.
 
 #### Returns
 
-- `ac` ([`Map`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/map.go)
+- `ac` ([`Map`](https://github.com/iotaledger/wasp/blob/develop/packages/kv/collections/map.go)
   of public key => `0x01`): The access nodes.
-- `an` ([`Map`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/map.go)
+- `an` ([`Map`](https://github.com/iotaledger/wasp/blob/develop/packages/kv/collections/map.go)
   of public key => [`AccessNodeInfo`](#accessnodeinfo)): The candidate nodes.
 
 ### `getMaintenanceStatus()`

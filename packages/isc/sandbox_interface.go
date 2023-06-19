@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -97,7 +98,7 @@ type Sandbox interface {
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
 	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict)
 	// Event emits an event
-	Event(msg string)
+	Event(topic string, payload []byte)
 	// RegisterError registers an error
 	RegisterError(messageFormat string) *VMErrorTemplate
 	// GetEntropy 32 random bytes based on the hash of the current state transaction
@@ -139,10 +140,11 @@ type Privileged interface {
 	CreditToAccount(AgentID, *Assets)
 	RetryUnprocessable(req Request, blockIndex uint32, outputIndex uint16)
 
+	// EVM
 	SetBlockContext(bctx interface{})
 	BlockContext() interface{}
-
 	CallOnBehalfOf(caller AgentID, target, entryPoint Hname, params dict.Dict, allowance *Assets) dict.Dict
+	SetEVMFailed(*types.Transaction, *types.Receipt)
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters

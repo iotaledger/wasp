@@ -4,7 +4,9 @@
 package governance
 
 import (
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
+	"io"
+
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // ContractFeesRecord is a structure which contains the fee information for a contract
@@ -15,21 +17,24 @@ type ContractFeesRecord struct {
 	ValidatorFee uint64
 }
 
-func ContractFeesRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ContractFeesRecord, error) {
-	ret := &ContractFeesRecord{}
-	var err error
-	if ret.OwnerFee, err = mu.ReadUint64(); err != nil {
-		return nil, err
-	}
-	if ret.ValidatorFee, err = mu.ReadUint64(); err != nil {
-		return nil, err
-	}
-	return ret, nil
+func ContractFeesRecordFromBytes(data []byte) (*ContractFeesRecord, error) {
+	return rwutil.ReaderFromBytes(data, new(ContractFeesRecord))
 }
 
 func (p *ContractFeesRecord) Bytes() []byte {
-	mu := marshalutil.New()
-	mu.WriteUint64(p.OwnerFee)
-	mu.WriteUint64(p.ValidatorFee)
-	return mu.Bytes()
+	return rwutil.WriterToBytes(p)
+}
+
+func (p *ContractFeesRecord) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	p.OwnerFee = rr.ReadUint64()
+	p.ValidatorFee = rr.ReadUint64()
+	return rr.Err
+}
+
+func (p *ContractFeesRecord) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteUint64(p.OwnerFee)
+	ww.WriteUint64(p.ValidatorFee)
+	return ww.Err
 }

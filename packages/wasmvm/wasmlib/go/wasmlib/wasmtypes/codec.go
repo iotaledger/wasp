@@ -47,8 +47,8 @@ func (d *WasmDecoder) Byte() byte {
 
 // Bytes decodes the next variable sized slice of bytes from the byte buffer
 func (d *WasmDecoder) Bytes() []byte {
-	length := Uint32Decode(d)
-	return d.FixedBytes(length)
+	length := d.VluDecode(32)
+	return d.FixedBytes(uint32(length))
 }
 
 // Close finalizes decoding by panicking if any bytes remain in the byte buffer
@@ -66,6 +66,11 @@ func (d *WasmDecoder) FixedBytes(length uint32) []byte {
 	value := d.buf[:length]
 	d.buf = d.buf[length:]
 	return value
+}
+
+// Length returns the number of bytes left in the byte buffer
+func (d *WasmDecoder) Length() uint32 {
+	return uint32(len(d.buf))
 }
 
 // Peek peeks at the next byte in the byte buffer
@@ -147,9 +152,9 @@ func (e *WasmEncoder) Byte(value uint8) *WasmEncoder {
 
 // Bytes encodes a variable sized slice of bytes into the byte buffer
 func (e *WasmEncoder) Bytes(value []byte) *WasmEncoder {
-	length := uint32(len(value))
-	Uint32Encode(e, length)
-	return e.FixedBytes(value, length)
+	length := uint64(len(value))
+	e.VluEncode(length)
+	return e.FixedBytes(value, uint32(length))
 }
 
 // FixedBytes encodes a fixed size slice of bytes into the byte buffer

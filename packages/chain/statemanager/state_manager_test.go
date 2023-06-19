@@ -55,9 +55,9 @@ func TestCruelWorld(t *testing.T) {
 	bf := sm_gpa_utils.NewBlockFactory(t)
 	sms := make([]StateMgr, nodeCount)
 	stores := make([]state.Store, nodeCount)
-	timers := sm_gpa.NewStateManagerTimers()
-	timers.StateManagerTimerTickPeriod = timerTickPeriod
-	timers.StateManagerGetBlockRetry = getBlockPeriod
+	parameters := sm_gpa.NewStateManagerParameters()
+	parameters.StateManagerTimerTickPeriod = timerTickPeriod
+	parameters.StateManagerGetBlockRetry = getBlockPeriod
 	for i := range sms {
 		t.Logf("Creating %v-th state manager for node %s", i, peeringURLs[i])
 		var err error
@@ -76,7 +76,7 @@ func TestCruelWorld(t *testing.T) {
 			metrics.NewEmptyChainStateManagerMetric(),
 			metrics.NewEmptyChainPipeMetrics(),
 			log.Named(peeringURLs[i]),
-			timers,
+			parameters,
 		)
 		require.NoError(t, err)
 	}
@@ -162,7 +162,7 @@ func TestCruelWorld(t *testing.T) {
 			return false
 		}
 		for i := 0; i < len(results.GetAdded()); i++ {
-			if !results.GetAdded()[i].L1Commitment().Equals(blocks[oldBlockIndex+i+1].L1Commitment()) { // TODO: should compare blocks instead of commitments
+			if !sm_gpa_utils.BlocksEqual(results.GetAdded()[i], blocks[oldBlockIndex+i+1]) {
 				t.Logf("Mempool state request for new block %v and old block %v to node %v return wrong %v-th element of added array: expected commitment %v, received %v",
 					newBlockIndex+1, oldBlockIndex+1, peeringURLs[nodeIndex], i, blocks[oldBlockIndex+i+1].L1Commitment(), results.GetAdded()[i].L1Commitment())
 				return false

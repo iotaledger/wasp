@@ -9,7 +9,7 @@ import (
 func DecodeHashValue(b []byte, def ...hashing.HashValue) (hashing.HashValue, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return hashing.HashValue{}, errors.New("cannot decode nil bytes")
+			return hashing.HashValue{}, errors.New("cannot decode nil Hash")
 		}
 		return def[0], nil
 	}

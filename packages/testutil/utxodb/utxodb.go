@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	genesisKeyPair = cryptolib.NewKeyPairFromSeed(cryptolib.NewSeedFromBytes([]byte("3.141592653589793238462643383279")))
+	genesisKeyPair = cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("3.141592653589793238462643383279")))
 	genesisAddress = genesisKeyPair.GetPublicKey().AsEd25519Address()
 	genesisSigner  = iotago.NewInMemoryAddressSigner(genesisKeyPair.GetPrivateKey().AddressKeysForEd25519Address(genesisAddress))
 )

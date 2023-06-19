@@ -133,11 +133,11 @@ Example:
 
 ## <a id="db"></a> 4. Database
 
-| Name                         | Description                                                                      | Type    | Default value |
-| ---------------------------- | -------------------------------------------------------------------------------- | ------- | ------------- |
-| engine                       | The used database engine (rocksdb/mapdb)                                         | string  | "rocksdb"     |
-| [chainState](#db_chainstate) | Configuration for chainState                                                     | object  |               |
-| debugSkipHealthCheck         | Ignore the check for corrupted databases (should only be used for debug reasons) | boolean | false         |
+| Name                         | Description                              | Type    | Default value |
+| ---------------------------- | ---------------------------------------- | ------- | ------------- |
+| engine                       | The used database engine (rocksdb/mapdb) | string  | "rocksdb"     |
+| [chainState](#db_chainstate) | Configuration for chainState             | object  |               |
+| debugSkipHealthCheck         | Ignore the check for corrupted databases | boolean | true          |
 
 ### <a id="db_chainstate"></a> ChainState
 
@@ -154,7 +154,7 @@ Example:
       "chainState": {
         "path": "waspdb/chains/data"
       },
-      "debugSkipHealthCheck": false
+      "debugSkipHealthCheck": true
     }
   }
 ```
@@ -360,6 +360,7 @@ Example:
 | writeTimeout                   | The write timeout for the HTTP response body                                  | string | "10s"         |
 | maxBodyLength                  | The maximum number of characters that the body of an API call may contain     | string | "2M"          |
 | maxTopicSubscriptionsPerClient | Defines the max amount of subscriptions per client. 0 = deactivated (default) | int    | 0             |
+| confirmedStateLagThreshold     | The threshold that define a chain is unsynchronized                           | uint   | 2             |
 
 Example:
 
@@ -388,7 +389,8 @@ Example:
         "readTimeout": "10s",
         "writeTimeout": "10s",
         "maxBodyLength": "2M",
-        "maxTopicSubscriptionsPerClient": 0
+        "maxTopicSubscriptionsPerClient": 0,
+        "confirmedStateLagThreshold": 2
       },
       "debugRequestLoggerEnabled": false
     }

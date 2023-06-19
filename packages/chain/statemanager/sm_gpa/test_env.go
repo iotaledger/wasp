@@ -15,6 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_utils"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
@@ -41,23 +43,29 @@ func newTestEnv(
 	nodeIDs []gpa.NodeID,
 	createWALFun func() sm_gpa_utils.TestBlockWAL,
 	createSnapMFun func(origStore, nodeStore state.Store, log *logger.Logger) sm_snapshots.SnapshotManagerTest,
-	timersOpt ...StateManagerTimers,
+	parametersOpt ...StateManagerParameters,
 ) *testEnv {
-	bf := sm_gpa_utils.NewBlockFactory(t)
-	chainID := bf.GetChainID()
-	log := testlogger.NewLogger(t).Named("c-" + chainID.ShortString())
+	var bf *sm_gpa_utils.BlockFactory
 	sms := make(map[gpa.NodeID]gpa.GPA)
 	stores := make(map[gpa.NodeID]state.Store)
 	snapms := make(map[gpa.NodeID]sm_snapshots.SnapshotManagerTest)
 	snaprchs := make(map[gpa.NodeID]<-chan error)
 	snaprsis := make(map[gpa.NodeID]sm_snapshots.SnapshotInfo)
-	var timers StateManagerTimers
-	if len(timersOpt) > 0 {
-		timers = timersOpt[0]
+	var parameters StateManagerParameters
+	var chainInitParameters dict.Dict
+	if len(parametersOpt) > 0 {
+		parameters = parametersOpt[0]
+		chainInitParameters = dict.New()
+		chainInitParameters.Set(origin.ParamBlockKeepAmount, codec.EncodeInt32(int32(parameters.PruningMinStatesToKeep)))
 	} else {
-		timers = NewStateManagerTimers()
+		parameters = NewStateManagerParameters()
+		chainInitParameters = nil
 	}
-	timers.TimeProvider = sm_gpa_utils.NewArtifficialTimeProvider()
+
+	bf = sm_gpa_utils.NewBlockFactory(t, chainInitParameters)
+	chainID := bf.GetChainID()
+	log := testlogger.NewLogger(t).Named("c-" + chainID.ShortString())
+	parameters.TimeProvider = sm_gpa_utils.NewArtifficialTimeProvider()
 	for _, nodeID := range nodeIDs {
 		var err error
 		smLog := log.Named(nodeID.ShortString())
@@ -65,10 +73,10 @@ func newTestEnv(
 		wal := createWALFun()
 		snapshotExistsFun := func(_ uint32, _ *state.L1Commitment) bool { return false }
 		store := state.NewStore(mapdb.NewMapDB())
-		origin.InitChain(store, nil, 0)
+		origin.InitChain(store, chainInitParameters, 0)
 		stores[nodeID] = store
 		metrics := metrics.NewEmptyChainStateManagerMetric()
-		sms[nodeID], err = New(chainID, nr, wal, snapshotExistsFun, store, metrics, smLog, timers)
+		sms[nodeID], err = New(chainID, nr, wal, snapshotExistsFun, store, metrics, smLog, parameters)
 		require.NoError(t, err)
 		snapms[nodeID] = createSnapMFun(bf.GetStore(), store, log.Named("snap").Named(nodeID.ShortString()))
 		snaprchs[nodeID] = nil
@@ -78,7 +86,7 @@ func newTestEnv(
 		t:            t,
 		bf:           bf,
 		nodeIDs:      nodeIDs,
-		timeProvider: timers.TimeProvider,
+		timeProvider: parameters.TimeProvider,
 		sms:          sms,
 		snapms:       snapms,
 		snaprchs:     snaprchs,
@@ -115,6 +123,18 @@ func (teT *testEnv) finalize() {
 	_ = teT.log.Sync()
 }
 
+func (teT *testEnv) checkBlock(nodeID gpa.NodeID, origBlock state.Block) {
+	store, ok := teT.stores[nodeID]
+	require.True(teT.t, ok)
+	sm_gpa_utils.CheckBlockInStore(teT.t, store, origBlock)
+}
+
+func (teT *testEnv) doesNotContainBlock(nodeID gpa.NodeID, block state.Block) {
+	store, ok := teT.stores[nodeID]
+	require.True(teT.t, ok)
+	require.False(teT.t, store.HasTrieRoot(block.TrieRoot()))
+}
+
 func (teT *testEnv) checkSnapshotsLoaded() {
 	inputs := make(map[gpa.NodeID]gpa.Input)
 	for nodeID, ch := range teT.snaprchs {
@@ -141,6 +161,11 @@ func (teT *testEnv) sendBlocksToNode(nodeID gpa.NodeID, timeStep time.Duration, 
 		teT.t.Logf("Supplying block %s to node %s", blocks[i].L1Commitment(), nodeID.ShortString())
 		teT.sendAndEnsureCompletedConsensusBlockProduced(blocks[i], nodeID, 100, timeStep)
 	}
+
+	store, ok := teT.stores[nodeID]
+	require.True(teT.t, ok)
+	err := store.SetLatest(blocks[len(blocks)-1].TrieRoot())
+	require.NoError(teT.t, err)
 }
 
 func (teT *testEnv) sendBlocksToRandomNode(nodeIDs []gpa.NodeID, timeStep time.Duration, blocks ...state.Block) {

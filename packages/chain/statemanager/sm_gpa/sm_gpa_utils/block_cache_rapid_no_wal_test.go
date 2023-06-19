@@ -1,6 +1,7 @@
 package sm_gpa_utils
 
 import (
+	"runtime"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type blockCacheNoWALTestSM struct { // State machine for block cache no WAL property based Rapid tests
@@ -44,8 +46,10 @@ func (bcnwtsmT *blockCacheNoWALTestSM) initStateMachine(t *rapid.T, bcms int, wa
 	bcnwtsmT.addBlockCallback = addBlockCallback
 }
 
-func (bcnwtsmT *blockCacheNoWALTestSM) Init(t *rapid.T) {
+func newBlockCacheNoWALTestSM(t *rapid.T) *blockCacheNoWALTestSM {
+	bcnwtsmT := new(blockCacheNoWALTestSM)
 	bcnwtsmT.initStateMachine(t, 10, NewEmptyTestBlockWAL(), func(state.Block) {})
+	return bcnwtsmT
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) Cleanup() {
@@ -69,7 +73,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) AddExistingBlock(t *rapid.T) {
 	if len(bcnwtsmT.blocksInCache) == len(bcnwtsmT.blocks) {
 		t.Skip()
 	}
-	blockKey := rapid.SampledFrom(bcnwtsmT.blocksNotInCache(t)).Example()
+	blockKey := rapid.SampledFrom(bcnwtsmT.blocksNotInCache()).Example()
 	block, ok := bcnwtsmT.blocks[blockKey]
 	require.True(t, ok)
 	bcnwtsmT.addBlock(t, block)
@@ -150,6 +154,12 @@ func (bcnwtsmT *blockCacheNoWALTestSM) addBlockToCache(t *rapid.T, blockKey Bloc
 			time:     time.Now(),
 			blockKey: blockKey,
 		})
+
+		// make sure some time elapses on faster machines with larger time granularity
+		if runtime.GOOS == util.WindowsOS {
+			time.Sleep(time.Millisecond)
+		}
+
 		if len(bcnwtsmT.blocksInCache) > bcnwtsmT.blockCacheMaxSize {
 			blockKey := bcnwtsmT.blockTimes[0].blockKey
 			bcnwtsmT.blocksInCache = lo.Without(bcnwtsmT.blocksInCache, blockKey)
@@ -159,7 +169,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) addBlockToCache(t *rapid.T, blockKey Bloc
 	}
 }
 
-func (bcnwtsmT *blockCacheNoWALTestSM) blocksNotInCache(t *rapid.T) []BlockKey {
+func (bcnwtsmT *blockCacheNoWALTestSM) blocksNotInCache() []BlockKey {
 	return lo.Without(maps.Keys(bcnwtsmT.blocks), bcnwtsmT.blocksInCache...)
 }
 
@@ -168,9 +178,12 @@ func (bcnwtsmT *blockCacheNoWALTestSM) getAndCheckBlock(t *rapid.T, blockKey Blo
 	require.True(t, ok)
 	block := bcnwtsmT.bc.GetBlock(blockExpected.L1Commitment())
 	require.NotNil(t, block)
-	require.True(t, blockExpected.Hash().Equals(block.Hash())) // Should be Equals instead of Hash().Equals(); bwtsmT.blocks[blockHash]
+	CheckBlocksEqual(t, blockExpected, block)
 }
 
 func TestBlockCachePropBasedNoWAL(t *testing.T) {
-	rapid.Check(t, rapid.Run[*blockCacheNoWALTestSM]())
+	rapid.Check(t, func(t *rapid.T) {
+		sm := newBlockCacheNoWALTestSM(t)
+		t.Repeat(rapid.StateMachineActions(sm))
+	})
 }

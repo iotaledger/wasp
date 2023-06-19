@@ -21,10 +21,8 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
@@ -32,7 +30,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -91,13 +88,13 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		netLogger := testlogger.WithLevel(log.Named("Network"), logger.LevelInfo, false)
 		networkBehaviour = testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 200*time.Millisecond, netLogger)
 	}
-	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
+	peeringNetwork := testutil.NewPeeringNetwork(
 		peeringURL, peerIdentities, 10000,
 		networkBehaviour,
 		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)
 	defer peeringNetwork.Close()
-	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
+	networkProviders := peeringNetwork.NetworkProviders()
 	cmtAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	//
 	// Initialize the DSS subsystem in each node / chain.
@@ -115,11 +112,8 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		dkShare, err := dkShareProviders[i].LoadDKShare(cmtAddress)
 		require.NoError(t, err)
 		chainStore := state.NewStore(mapdb.NewMapDB())
-		origin.InitChain(
-			chainStore,
-			dict.Dict{origin.ParamChainOwner: isc.NewAgentID(originator.Address()).Bytes()},
-			accounts.MinimumBaseTokensOnCommonAccount,
-		)
+		_, err = origin.InitChainByAliasOutput(chainStore, originAO)
+		require.NoError(t, err)
 		mempools[i] = newTestMempool(t)
 		stateMgrs[i] = newTestStateMgr(t, chainStore)
 		nodes[i] = consGR.New(
@@ -276,11 +270,10 @@ func newTestStateMgr(t *testing.T, chainStore state.Store) *testStateMgr {
 }
 
 func (tsm *testStateMgr) addOriginState(originAO *isc.AliasOutputWithID) {
-	initParams := dict.Dict{
-		origin.ParamChainOwner: isc.NewAgentID(originAO.GetAliasOutput().GovernorAddress()).Bytes(),
-	}
+	originAOStateMetadata, err := transaction.StateMetadataFromBytes(originAO.GetStateMetadata())
+	require.NoError(tsm.t, err)
 	chainState, err := tsm.chainStore.StateByTrieRoot(
-		origin.L1Commitment(initParams, accounts.MinimumBaseTokensOnCommonAccount).TrieRoot(),
+		originAOStateMetadata.L1Commitment.TrieRoot(),
 	)
 	require.NoError(tsm.t, err)
 	tsm.addState(originAO, chainState)

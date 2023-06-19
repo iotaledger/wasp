@@ -16,8 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721"
-	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721impl"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -100,45 +98,6 @@ func TestDeploy(t *testing.T) {
 	ctx := setupTest(t)
 	require.NoError(t, ctx.Err)
 	require.NoError(t, ctx.ContractExists(testwasmlib.ScName))
-}
-
-func TestDeployErc721Too(t *testing.T) {
-	//NOTE: when trying to crash a node using WasmTime we need to run some Wasm code
-	//*wasmsolo.RsWasm = true
-	ctx := setupTest(t)
-	require.NoError(t, ctx.Err)
-	require.NoError(t, ctx.ContractExists(testwasmlib.ScName))
-
-	init := erc721.ScFuncs.Init(nil)
-	init.Params.Name().SetValue("Name")
-	init.Params.Symbol().SetValue("Symbol")
-
-	ctxErc721 := wasmsolo.NewSoloContextForChain(t, ctx.Chain, nil, erc721.ScName, erc721impl.OnDispatch, init.Func)
-	require.NoError(t, ctxErc721.Err)
-	require.NoError(t, ctxErc721.ContractExists(erc721.ScName))
-
-	mint := erc721.ScFuncs.Mint(ctxErc721)
-	tokenID := wasmtypes.HashFromString("0xd4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab37")
-	mint.Params.TokenID().SetValue(tokenID)
-	mint.Params.TokenURI().SetValue("information about the token")
-	mint.Func.Post()
-	require.NoError(t, ctxErc721.Err)
-
-	oo := erc721.ScFuncs.OwnerOf(ctxErc721)
-	oo.Params.TokenID().SetValue(tokenID)
-	oo.Func.Call()
-	require.NoError(t, ctxErc721.Err)
-	require.EqualValues(t, oo.Results.Owner().Value(), ctxErc721.ChainOwnerID())
-
-	// NOTE: this post() can bring a node down when reactivating the commented out line
-	// in WasmTimeVM.RunScFunction() because it triggers a Rust panic() in the WasmTime code.
-	// We need to find out how to catch such an error from within Go.
-	// Note that this post() triggers a call() to an Erc721 view, which then triggers the
-	// Rust panic() after returning from the call.
-	f := testwasmlib.ScFuncs.VerifyErc721(ctx)
-	f.Params.TokenHash().SetValue(tokenID)
-	f.Func.Post()
-	require.NoError(t, ctx.Err)
 }
 
 func TestNoParams(t *testing.T) {
@@ -380,21 +339,22 @@ func TestWasmTypes(t *testing.T) {
 	nftBytes[0] = wasmtypes.ScAddressNFT
 	scNftAddress := wasmtypes.AddressFromBytes(nftBytes)
 	nftBytes[0] = byte(iotago.AddressNFT)
-	nftAddress, _, _ := isc.AddressFromBytes(nftBytes)
+	nftAddress, err := isc.AddressFromBytes(nftBytes)
+	require.NoError(t, err)
 	checkAddress(t, ctx, scNftAddress, nftAddress)
 
 	// check agent id of alias address (hname zero)
-	scAgentID := wasmtypes.NewScAgentIDFromAddress(scAliasAddress)
+	scAgentID := wasmtypes.ScAgentIDFromAddress(scAliasAddress)
 	agentID := isc.NewAgentID(aliasAddress)
 	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// check agent id of ed25519 address (hname zero)
-	scAgentID = wasmtypes.NewScAgentIDFromAddress(scEd25519Address)
+	scAgentID = wasmtypes.ScAgentIDFromAddress(scEd25519Address)
 	agentID = isc.NewAgentID(ed25519Address)
 	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// check agent id of NFT address (hname zero)
-	scAgentID = wasmtypes.NewScAgentIDFromAddress(scNftAddress)
+	scAgentID = wasmtypes.ScAgentIDFromAddress(scNftAddress)
 	agentID = isc.NewAgentID(nftAddress)
 	checkAgentID(t, ctx, scAgentID, agentID)
 
@@ -557,7 +517,7 @@ func checkAgentID(t *testing.T, ctx *wasmsolo.SoloContext, scAgentID wasmtypes.S
 }
 
 func checkAddress(t *testing.T, ctx *wasmsolo.SoloContext, scAddress wasmtypes.ScAddress, address iotago.Address) {
-	addressBytes := isc.BytesFromAddress(address)
+	addressBytes := isc.AddressToBytes(address)
 	addressString := address.Bech32(parameters.L1().Protocol.Bech32HRP)
 
 	require.EqualValues(t, scAddress.Bytes(), addressBytes)

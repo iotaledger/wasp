@@ -100,7 +100,7 @@ type ImmutableGetEventsForBlockResults struct {
 	Proxy wasmtypes.Proxy
 }
 
-// Array16 of serialized events
+// Array of serialized events
 func (s ImmutableGetEventsForBlockResults) Event() ArrayOfImmutableBytes {
 	return ArrayOfImmutableBytes{Proxy: s.Proxy.Root(ResultEvent)}
 }
@@ -133,7 +133,7 @@ func NewMutableGetEventsForBlockResults() MutableGetEventsForBlockResults {
 	return MutableGetEventsForBlockResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
-// Array16 of serialized events
+// Array of serialized events
 func (s MutableGetEventsForBlockResults) Event() ArrayOfMutableBytes {
 	return ArrayOfMutableBytes{Proxy: s.Proxy.Root(ResultEvent)}
 }
@@ -142,7 +142,7 @@ type ImmutableGetEventsForContractResults struct {
 	Proxy wasmtypes.Proxy
 }
 
-// Array16 of serialized events
+// Array of serialized events
 func (s ImmutableGetEventsForContractResults) Event() ArrayOfImmutableBytes {
 	return ArrayOfImmutableBytes{Proxy: s.Proxy.Root(ResultEvent)}
 }
@@ -155,7 +155,7 @@ func NewMutableGetEventsForContractResults() MutableGetEventsForContractResults 
 	return MutableGetEventsForContractResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
-// Array16 of serialized events
+// Array of serialized events
 func (s MutableGetEventsForContractResults) Event() ArrayOfMutableBytes {
 	return ArrayOfMutableBytes{Proxy: s.Proxy.Root(ResultEvent)}
 }
@@ -164,7 +164,7 @@ type ImmutableGetEventsForRequestResults struct {
 	Proxy wasmtypes.Proxy
 }
 
-// Array16 of serialized events
+// Array of serialized events
 func (s ImmutableGetEventsForRequestResults) Event() ArrayOfImmutableBytes {
 	return ArrayOfImmutableBytes{Proxy: s.Proxy.Root(ResultEvent)}
 }
@@ -177,7 +177,7 @@ func NewMutableGetEventsForRequestResults() MutableGetEventsForRequestResults {
 	return MutableGetEventsForRequestResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
-// Array16 of serialized events
+// Array of serialized events
 func (s MutableGetEventsForRequestResults) Event() ArrayOfMutableBytes {
 	return ArrayOfMutableBytes{Proxy: s.Proxy.Root(ResultEvent)}
 }
@@ -203,7 +203,7 @@ func (s ImmutableGetRequestIDsForBlockResults) BlockIndex() wasmtypes.ScImmutabl
 	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ResultBlockIndex))
 }
 
-// Array16 of request IDs
+// Array of request IDs
 func (s ImmutableGetRequestIDsForBlockResults) RequestID() ArrayOfImmutableRequestID {
 	return ArrayOfImmutableRequestID{Proxy: s.Proxy.Root(ResultRequestID)}
 }
@@ -241,7 +241,7 @@ func (s MutableGetRequestIDsForBlockResults) BlockIndex() wasmtypes.ScMutableUin
 	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ResultBlockIndex))
 }
 
-// Array16 of request IDs
+// Array of request IDs
 func (s MutableGetRequestIDsForBlockResults) RequestID() ArrayOfMutableRequestID {
 	return ArrayOfMutableRequestID{Proxy: s.Proxy.Root(ResultRequestID)}
 }
@@ -297,7 +297,7 @@ func (s ImmutableGetRequestReceiptsForBlockResults) BlockIndex() wasmtypes.ScImm
 	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ResultBlockIndex))
 }
 
-// Array16 of request receipts
+// Array of request receipts
 func (s ImmutableGetRequestReceiptsForBlockResults) RequestReceipts() ArrayOfImmutableBytes {
 	return ArrayOfImmutableBytes{Proxy: s.Proxy.Root(ResultRequestReceipts)}
 }
@@ -315,7 +315,7 @@ func (s MutableGetRequestReceiptsForBlockResults) BlockIndex() wasmtypes.ScMutab
 	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ResultBlockIndex))
 }
 
-// Array16 of request receipts
+// Array of request receipts
 func (s MutableGetRequestReceiptsForBlockResults) RequestReceipts() ArrayOfMutableBytes {
 	return ArrayOfMutableBytes{Proxy: s.Proxy.Root(ResultRequestReceipts)}
 }

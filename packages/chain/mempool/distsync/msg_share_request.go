@@ -4,10 +4,11 @@
 package distsync
 
 import (
-	"fmt"
+	"io"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type msgShareRequest struct {
@@ -16,7 +17,7 @@ type msgShareRequest struct {
 	ttl     byte
 }
 
-var _ gpa.Message = &msgShareRequest{}
+var _ gpa.Message = new(msgShareRequest)
 
 func newMsgShareRequest(request isc.Request, ttl byte, recipient gpa.NodeID) gpa.Message {
 	return &msgShareRequest{
@@ -27,19 +28,25 @@ func newMsgShareRequest(request isc.Request, ttl byte, recipient gpa.NodeID) gpa
 }
 
 func (msg *msgShareRequest) MarshalBinary() (data []byte, err error) {
-	ret := []byte{msgTypeShareRequest, msg.ttl}
-	ret = append(ret, msg.request.Bytes()...)
-	return ret, nil
+	return rwutil.MarshalBinary(msg)
 }
 
 func (msg *msgShareRequest) UnmarshalBinary(data []byte) (err error) {
-	if len(data) < 2 {
-		return fmt.Errorf("cannot parse a message, data to short, len=%v", len(data))
-	}
-	if data[0] != msgTypeShareRequest {
-		return fmt.Errorf("cannot parse a message, unexpected msgType=%v", data[0])
-	}
-	msg.ttl = data[1]
-	msg.request, err = isc.NewRequestFromBytes(data[2:])
-	return err
+	return rwutil.UnmarshalBinary(data, msg)
+}
+
+func (msg *msgShareRequest) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msgTypeShareRequest.ReadAndVerify(rr)
+	msg.ttl = rr.ReadByte()
+	msg.request = rwutil.ReadFromBytes(rr, isc.RequestFromBytes)
+	return rr.Err
+}
+
+func (msg *msgShareRequest) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	msgTypeShareRequest.Write(ww)
+	ww.WriteByte(msg.ttl)
+	ww.WriteFromBytes(msg.request)
+	return ww.Err
 }

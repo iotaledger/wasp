@@ -10,9 +10,17 @@ author: Eric Hop <eric@iota.org>
 license: Apache-2.0
 repository: https://github.com/iotaledger/wasp
 
-structs: {}
+structs:
+  PublicChainMetadata:
+    evmJsonRPCURL: String
+    evmWebSocketURL: String
+    name: String
+    description: String
+    website: String
+
 typedefs: {} 
 state: {}
+
 funcs:
 
   # state controller
@@ -113,8 +121,7 @@ funcs:
     access: chain
     params:
       publicURL=x: String # the public url leading to the chain info, stored on the tangle
-      evmJsonRPCURL=e: String? # the public evm json rpc url
-      evmWebSocketUrl=w: String? # the public evm websocket url
+      metadata=md: PublicChainMetadata # the public evm json rpc url
 
 views:
 
@@ -123,7 +130,7 @@ views:
   # Returns the list of allowed state controllers.
   getAllowedStateControllerAddresses:
     results:
-      controllers=a: Address[] # Array16 of state controller addresses
+      controllers=a: Address[] # Array of state controller addresses
 
   # chain owner
 
@@ -158,7 +165,8 @@ views:
       chainOwnerID=o: AgentID # chain owner agent ID
       feePolicy=g: Bytes # serialized fee policy
       gasLimits=l: Bytes # serialized gas limits
-      customMetadata=x: Bytes? # chain metadata
+      publicURL=x: String
+      metadata=md: PublicChainMetadata # chain metadata
 
   # access nodes
 
@@ -176,6 +184,5 @@ views:
   # Returns the extra metadata that is added to the chain AliasOutput.
   getMetadata:
     results:
-      publicURL=x: String # the public url leading to the chain info, stored on the tangle
-      evmJsonRPCURL=e: String? # the public evm json rpc url
-      evmWebSocketUrl=w: String? # the public evm websocket url
+      publicURL=x: String # the public url leading to the chain info, stored on the tangle (l1)
+      metadata=md: PublicChainMetadata? # the L2 metadata

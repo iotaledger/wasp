@@ -40,14 +40,14 @@ func SetInitialState(s kv.KVStore) {
 }
 
 func viewControlAddresses(ctx isc.SandboxView) dict.Dict {
-	registry := collections.NewArray32ReadOnly(ctx.StateR(), prefixControlAddresses)
-	l := registry.Len()
-	ctx.Requiref(l > 0, "inconsistency: unknown control addresses")
-	rec, err := ControlAddressesFromBytes(registry.GetAt(l - 1))
+	registry := collections.NewArrayReadOnly(ctx.StateR(), prefixControlAddresses)
+	length := registry.Len()
+	ctx.Requiref(length > 0, "inconsistency: unknown control addresses")
+	rec, err := ControlAddressesFromBytes(registry.GetAt(length - 1))
 	ctx.RequireNoError(err)
 	return dict.Dict{
-		ParamStateControllerAddress: isc.BytesFromAddress(rec.StateAddress),
-		ParamGoverningAddress:       isc.BytesFromAddress(rec.GoverningAddress),
+		ParamStateControllerAddress: isc.AddressToBytes(rec.StateAddress),
+		ParamGoverningAddress:       isc.AddressToBytes(rec.GoverningAddress),
 		ParamBlockIndex:             codec.EncodeUint32(rec.SinceBlockIndex),
 	}
 }
@@ -80,17 +80,17 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
 		return nil
 	}
 
-	dataArr, found := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
+	receipts, found := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
 	if !found {
 		panic(errNotFound)
 	}
 
 	ret := dict.New()
-	arr := collections.NewArray16(ret, ParamRequestID)
-	for _, d := range dataArr {
-		rec, err := RequestReceiptFromBytes(d)
+	requestIDs := collections.NewArray(ret, ParamRequestID)
+	for _, receipt := range receipts {
+		requestReceipt, err := RequestReceiptFromBytes(receipt)
 		ctx.RequireNoError(err)
-		arr.Push(rec.Request.ID().Bytes())
+		requestIDs.Push(requestReceipt.Request.ID().Bytes())
 	}
 	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret
@@ -121,15 +121,15 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
 		return nil
 	}
 
-	dataArr, found := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
+	receipts, found := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
 	if !found {
 		panic(errNotFound)
 	}
 
 	ret := dict.New()
-	arr := collections.NewArray16(ret, ParamRequestRecord)
-	for _, d := range dataArr {
-		arr.Push(d)
+	requestReceipts := collections.NewArray(ret, ParamRequestRecord)
+	for _, receipt := range receipts {
+		requestReceipts.Push(receipt)
 	}
 	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret
@@ -151,16 +151,9 @@ func viewIsRequestProcessed(ctx isc.SandboxView) dict.Dict {
 // ParamRequestID - requestID
 func viewGetEventsForRequest(ctx isc.SandboxView) dict.Dict {
 	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
-
 	events, err := getRequestEventsInternal(ctx.StateR(), requestID)
 	ctx.RequireNoError(err)
-
-	ret := dict.New()
-	arr := collections.NewArray16(ret, ParamEvent)
-	for _, event := range events {
-		arr.Push([]byte(event))
-	}
-	return ret
+	return eventsToDict(events)
 }
 
 // viewGetEventsForBlock returns a list of events for a given block.
@@ -179,11 +172,7 @@ func viewGetEventsForBlock(ctx isc.SandboxView) dict.Dict {
 	ctx.Requiref(ok, "block not found: %d", blockIndex)
 	events := GetEventsByBlockIndex(stateR, blockIndex, blockInfo.TotalRequests)
 
-	ret := dict.New()
-	arr := collections.NewArray16(ret, ParamEvent)
-	for _, event := range events {
-		arr.Push([]byte(event))
-	}
+	ret := eventsToDict(events)
 	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret
 }
@@ -198,13 +187,7 @@ func viewGetEventsForContract(ctx isc.SandboxView) dict.Dict {
 	contract := params.MustGetHname(ParamContractHname)
 	fromBlock := params.MustGetUint32(ParamFromBlock, 0)
 	toBlock := params.MustGetUint32(ParamToBlock, math.MaxUint32)
-	events, err := getSmartContractEventsInternal(ctx.StateR(), contract, fromBlock, toBlock)
-	ctx.RequireNoError(err)
+	events := getSmartContractEventsInternal(ctx.StateR(), contract, fromBlock, toBlock)
 
-	ret := dict.New()
-	arr := collections.NewArray16(ret, ParamEvent)
-	for _, event := range events {
-		arr.Push([]byte(event))
-	}
-	return ret
+	return eventsToDict(events)
 }

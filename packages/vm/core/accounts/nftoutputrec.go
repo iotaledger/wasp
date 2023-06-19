@@ -2,55 +2,48 @@ package accounts
 
 import (
 	"fmt"
+	"io"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type NFTOutputRec struct {
-	Output      *iotago.NFTOutput
 	BlockIndex  uint32
 	OutputIndex uint16
-}
-
-func (r *NFTOutputRec) Bytes() []byte {
-	mu := marshalutil.New()
-	mu.WriteUint32(r.BlockIndex).
-		WriteUint16(r.OutputIndex)
-	outBytes, err := r.Output.Serialize(serializer.DeSeriModeNoValidation, nil)
-	if err != nil {
-		panic("error serializing NFToutput")
-	}
-	mu.WriteBytes(outBytes)
-	return mu.Bytes()
-}
-
-func (r *NFTOutputRec) String() string {
-	return fmt.Sprintf("NFT Record: base tokens: %d, ID: %s, block: %d, outIdx: %d",
-		r.Output.Deposit(), r.Output.NFTID, r.BlockIndex, r.OutputIndex)
-}
-
-func NFTOutputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*NFTOutputRec, error) {
-	ret := &NFTOutputRec{}
-	var err error
-	if ret.BlockIndex, err = mu.ReadUint32(); err != nil {
-		return nil, err
-	}
-	if ret.OutputIndex, err = mu.ReadUint16(); err != nil {
-		return nil, err
-	}
-	ret.Output = &iotago.NFTOutput{}
-	if _, err := ret.Output.Deserialize(mu.ReadRemainingBytes(), serializer.DeSeriModeNoValidation, nil); err != nil {
-		return nil, err
-	}
-	return ret, nil
+	Output      *iotago.NFTOutput
 }
 
 func mustNFTOutputRecFromBytes(data []byte) *NFTOutputRec {
-	ret, err := NFTOutputRecFromMarshalUtil(marshalutil.New(data))
+	ret, err := rwutil.ReaderFromBytes(data, new(NFTOutputRec))
 	if err != nil {
 		panic(err)
 	}
 	return ret
+}
+
+func (rec *NFTOutputRec) Bytes() []byte {
+	return rwutil.WriterToBytes(rec)
+}
+
+func (rec *NFTOutputRec) String() string {
+	return fmt.Sprintf("NFT Record: base tokens: %d, ID: %s, block: %d, outIdx: %d",
+		rec.Output.Deposit(), rec.Output.NFTID, rec.BlockIndex, rec.OutputIndex)
+}
+
+func (rec *NFTOutputRec) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rec.BlockIndex = rr.ReadUint32()
+	rec.OutputIndex = rr.ReadUint16()
+	rec.Output = new(iotago.NFTOutput)
+	rr.ReadSerialized(rec.Output)
+	return rr.Err
+}
+
+func (rec *NFTOutputRec) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteUint32(rec.BlockIndex)
+	ww.WriteUint16(rec.OutputIndex)
+	ww.WriteSerialized(rec.Output)
+	return ww.Err
 }

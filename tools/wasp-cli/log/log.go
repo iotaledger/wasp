@@ -119,28 +119,32 @@ func GetCLIOutputText(outputModel CLIOutput) (string, error) {
 
 func ParseCLIOutputTemplate(output CLIOutput, templateDefinition string) (string, error) {
 	tpl := template.Must(template.New("clioutput").Parse(templateDefinition))
-	var result bytes.Buffer
-	err := tpl.Execute(&result, output)
+	w := new(bytes.Buffer)
+	err := tpl.Execute(w, output)
 	if err != nil {
 		return "", err
 	}
-
-	return result.String(), nil
+	return w.String(), nil
 }
 
 func PrintCLIOutput(output CLIOutput) {
 	outputText, err := GetCLIOutputText(output)
 	Check(err)
-	Printf("%s\n", outputText)
+	Printf("%s", outputText)
+	// make sure we always end with newline
+	if !strings.HasSuffix(outputText, "\n") {
+		Printf("\n")
+	}
 }
 
-func Check(err error) {
+func Check(err error, msg ...string) {
 	if err == nil {
 		return
 	}
-	errorModel := &ErrorModel{err.Error()}
-	apiError, ok := apiextensions.AsAPIError(err)
 
+	errorModel := &ErrorModel{err.Error()}
+
+	apiError, ok := apiextensions.AsAPIError(err)
 	if ok {
 		if strings.Contains(apiError.Error, "401") {
 			errorModel = &ErrorModel{"unauthorized request: are you logged in? (wasp-cli login)"}
@@ -151,6 +155,10 @@ func Check(err error) {
 				errorModel.Error += "\n" + apiError.DetailError.Error + "\n" + apiError.DetailError.Message
 			}
 		}
+	}
+
+	if len(msg) > 0 {
+		errorModel.Error = msg[0] + ": " + errorModel.Error
 	}
 
 	message, _ := GetCLIOutputText(errorModel)

@@ -11,26 +11,20 @@ import (
 )
 
 func GetAllowedStateControllerAddresses(ch chain.Chain) ([]iotago.Address, error) {
-	ret, err := common.CallView(ch, governance.Contract.Hname(), governance.ViewGetAllowedStateControllerAddresses.Hname(), nil)
+	res, err := common.CallView(ch, governance.Contract.Hname(), governance.ViewGetAllowedStateControllerAddresses.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	stateControllerAddressesCollection := collections.NewArray16ReadOnly(ret, governance.ParamAllowedStateControllerAddresses)
-	stateControllerAddressesCount := stateControllerAddressesCollection.Len()
-
-	stateControllerAddresses := make([]iotago.Address, 0)
-	for i := uint16(0); i < stateControllerAddressesCount; i++ {
-		addressBytes := stateControllerAddressesCollection.GetAt(i)
-		address, err := codec.DecodeAddress(addressBytes)
+	addresses := collections.NewArrayReadOnly(res, governance.ParamAllowedStateControllerAddresses)
+	ret := make([]iotago.Address, addresses.Len())
+	for i := range ret {
+		ret[i], err = codec.DecodeAddress(addresses.GetAt(uint32(i)))
 		if err != nil {
 			return nil, err
 		}
-
-		stateControllerAddresses = append(stateControllerAddresses, address)
 	}
-
-	return stateControllerAddresses, nil
+	return ret, nil
 }
 
 func GetChainOwner(ch chain.Chain) (isc.AgentID, error) {

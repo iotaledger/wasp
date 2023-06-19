@@ -92,7 +92,7 @@ type stateManager struct {
 	wal                  sm_gpa_utils.BlockWAL
 	net                  peering.NetworkProvider
 	netPeeringID         peering.PeeringID
-	timers               sm_gpa.StateManagerTimers
+	parameters           sm_gpa.StateManagerParameters
 	ctx                  context.Context
 	cleanupFun           func()
 	shutdownCoordinator  *shutdown.Coordinator
@@ -104,9 +104,8 @@ var (
 )
 
 const (
-	constMsgTypeStm           byte = iota
-	constDefaultTimerTickTime      = 1 * time.Second
-	constStatusTimerTime           = 10 * time.Second
+	constMsgTypeStm      byte = iota
+	constStatusTimerTime      = 10 * time.Second
 )
 
 func New(
@@ -122,21 +121,13 @@ func New(
 	metrics metrics.IChainStateManagerMetrics,
 	pipeMetrics metrics.IChainPipeMetrics,
 	log *logger.Logger,
-	timersOpt ...sm_gpa.StateManagerTimers,
+	parameters sm_gpa.StateManagerParameters,
 ) (StateMgr, error) {
 	nr := sm_utils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), log)
-	var timers sm_gpa.StateManagerTimers
-	if len(timersOpt) > 0 {
-		timers = timersOpt[0]
-	} else {
-		timers = sm_gpa.NewStateManagerTimers()
-	}
-
 	snapshotExistsFun := func(stateIndex uint32, commitment *state.L1Commitment) bool {
 		return snapshotManager.SnapshotExists(stateIndex, commitment)
 	}
-
-	stateManagerGPA, err := sm_gpa.New(chainID, nr, wal, snapshotExistsFun, store, metrics, log, timers)
+	stateManagerGPA, err := sm_gpa.New(chainID, nr, wal, snapshotExistsFun, store, metrics, log, parameters)
 	if err != nil {
 		log.Errorf("failed to create state manager GPA: %w", err)
 		return nil, err
@@ -154,7 +145,7 @@ func New(
 		wal:                  wal,
 		net:                  net,
 		netPeeringID:         peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("StateManager")), // ChainID × StateManager
-		timers:               timers,
+		parameters:           parameters,
 		ctx:                  ctx,
 		shutdownCoordinator:  shutdownCoordinator,
 	}
@@ -254,8 +245,8 @@ func (smT *stateManager) run() { //nolint:gocyclo
 	messagePipeCh := smT.messagePipe.Out()
 	nodePubKeysPipeCh := smT.nodePubKeysPipe.Out()
 	preliminaryBlockPipeCh := smT.preliminaryBlockPipe.Out()
-	timerTickCh := smT.timers.TimeProvider.After(smT.timers.StateManagerTimerTickPeriod)
-	statusTimerCh := smT.timers.TimeProvider.After(constStatusTimerTime)
+	timerTickCh := smT.parameters.TimeProvider.After(smT.parameters.StateManagerTimerTickPeriod)
+	statusTimerCh := smT.parameters.TimeProvider.After(constStatusTimerTime)
 	for {
 		if smT.ctx.Err() != nil {
 			if smT.shutdownCoordinator == nil {
@@ -300,12 +291,12 @@ func (smT *stateManager) run() { //nolint:gocyclo
 		case now, ok := <-timerTickCh:
 			if ok {
 				smT.handleTimerTick(now)
-				timerTickCh = smT.timers.TimeProvider.After(smT.timers.StateManagerTimerTickPeriod)
+				timerTickCh = smT.parameters.TimeProvider.After(smT.parameters.StateManagerTimerTickPeriod)
 			} else {
 				timerTickCh = nil
 			}
 		case <-statusTimerCh:
-			statusTimerCh = smT.timers.TimeProvider.After(constStatusTimerTime)
+			statusTimerCh = smT.parameters.TimeProvider.After(constStatusTimerTime)
 			smT.log.Debugf("State manager loop iteration; there are %v inputs, %v messages, %v public key changes waiting to be handled",
 				smT.inputPipe.Len(), smT.messagePipe.Len(), smT.nodePubKeysPipe.Len())
 		case <-smT.ctx.Done():

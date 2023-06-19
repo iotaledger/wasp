@@ -74,10 +74,10 @@ func (v *varAuxVals) binValuesUpdated(binValues []bool) gpa.OutMessages {
 // >           received, such that the set of values carried by these
 // >           messages, vals are a subset of bin_values_r ...
 func (v *varAuxVals) msgVoteAUXReceived(msg *msgVote) gpa.OutMessages {
-	if _, ok := v.recv[msg.sender]; ok {
+	if _, ok := v.recv[msg.Sender()]; ok {
 		return nil // Duplicate.
 	}
-	v.recv[msg.sender] = msg.value
+	v.recv[msg.Sender()] = msg.value
 	return v.tryOutput()
 }
 

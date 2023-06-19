@@ -4,27 +4,15 @@
 package am_dist
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
-	msgTypeAccess byte = iota
+	msgTypeAccess gpa.MessageType = iota
 )
 
-func (ami *accessMgrDist) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	if len(data) < 1 {
-		return nil, errors.New("accessMgrImpl::UnmarshalMessage: data too short")
-	}
-	if data[0] == msgTypeAccess {
-		m := &msgAccess{}
-		if err := m.UnmarshalBinary(data); err != nil {
-			return nil, fmt.Errorf("cannot unmarshal msgAccess: %w", err)
-		}
-		return m, nil
-	}
-	return nil, fmt.Errorf("accessMgrImpl::UnmarshalMessage: cannot parse message starting with: %v", util.PrefixHex(data, 20))
+func (amd *accessMgrDist) UnmarshalMessage(data []byte) (gpa.Message, error) {
+	return gpa.UnmarshalMessage(data, gpa.Mapper{
+		msgTypeAccess: func() gpa.Message { return new(msgAccess) },
+	})
 }

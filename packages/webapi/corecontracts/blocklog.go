@@ -79,23 +79,16 @@ func GetBlockInfo(ch chain.Chain, blockIndex uint32) (*blocklog.BlockInfo, error
 	return handleBlockInfo(ret)
 }
 
-func handleRequestIDs(requestIDsDict dict.Dict) ([]isc.RequestID, error) {
-	requestIDCollection := collections.NewArray16ReadOnly(requestIDsDict, blocklog.ParamRequestID)
-	requestIDsCount := requestIDCollection.Len()
-
-	requestIDs := make([]isc.RequestID, requestIDsCount)
-
-	for i := range requestIDs {
-		reqIDBin := requestIDCollection.GetAt(uint16(i))
-
-		var err error
-		requestIDs[i], err = isc.RequestIDFromBytes(reqIDBin)
+func handleRequestIDs(requestIDsDict dict.Dict) (ret []isc.RequestID, err error) {
+	requestIDs := collections.NewArrayReadOnly(requestIDsDict, blocklog.ParamRequestID)
+	ret = make([]isc.RequestID, requestIDs.Len())
+	for i := range ret {
+		ret[i], err = isc.RequestIDFromBytes(requestIDs.GetAt(uint32(i)))
 		if err != nil {
 			return nil, err
 		}
 	}
-
-	return requestIDs, nil
+	return ret, nil
 }
 
 func GetRequestIDsForLatestBlock(ch chain.Chain) ([]isc.RequestID, error) {
@@ -151,33 +144,28 @@ func GetRequestReceipt(ch chain.Chain, requestID isc.RequestID) (*blocklog.Reque
 }
 
 func GetRequestReceiptsForBlock(ch chain.Chain, blockIndex uint32) ([]*blocklog.RequestReceipt, error) {
-	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceiptsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
+	res, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceiptsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamBlockIndex: blockIndex,
 	}))
 	if err != nil {
 		return nil, err
 	}
 
-	returnedBlockIndex, err := codec.DecodeUint32(ret.Get(blocklog.ParamBlockIndex))
+	blockIndex, err = codec.DecodeUint32(res.Get(blocklog.ParamBlockIndex))
 	if err != nil {
 		return nil, err
 	}
 
-	requestRecordCollection := collections.NewArray16ReadOnly(ret, blocklog.ParamRequestRecord)
-	requestRecordCount := requestRecordCollection.Len()
-
-	requestReceipts := make([]*blocklog.RequestReceipt, requestRecordCount)
-
-	for i := range requestReceipts {
-		data := requestRecordCollection.GetAt(uint16(i))
-		requestReceipts[i], err = blocklog.RequestReceiptFromBytes(data)
+	receipts := collections.NewArrayReadOnly(res, blocklog.ParamRequestRecord)
+	ret := make([]*blocklog.RequestReceipt, receipts.Len())
+	for i := range ret {
+		ret[i], err = blocklog.RequestReceiptFromBytes(receipts.GetAt(uint32(i)))
 		if err != nil {
 			return nil, err
 		}
-		requestReceipts[i].WithBlockData(returnedBlockIndex, uint16(i))
+		ret[i].WithBlockData(blockIndex, uint16(i))
 	}
-
-	return requestReceipts, nil
+	return ret, nil
 }
 
 func IsRequestProcessed(ch chain.Chain, requestID isc.RequestID) (bool, error) {
@@ -197,20 +185,7 @@ func IsRequestProcessed(ch chain.Chain, requestID isc.RequestID) (bool, error) {
 	return isProcessed, nil
 }
 
-func eventsFromViewResult(viewResult dict.Dict) ([]string, error) {
-	eventCollection := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
-	eventCount := eventCollection.Len()
-
-	events := make([]string, eventCount)
-	for i := range events {
-		data := eventCollection.GetAt(uint16(i))
-		events[i] = string(data)
-	}
-
-	return events, nil
-}
-
-func GetEventsForRequest(ch chain.Chain, requestID isc.RequestID) ([]string, error) {
+func GetEventsForRequest(ch chain.Chain, requestID isc.RequestID) ([]*isc.Event, error) {
 	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetEventsForRequest.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamRequestID: requestID,
 	}))
@@ -218,10 +193,10 @@ func GetEventsForRequest(ch chain.Chain, requestID isc.RequestID) ([]string, err
 		return nil, err
 	}
 
-	return eventsFromViewResult(ret)
+	return blocklog.EventsFromViewResult(ret)
 }
 
-func GetEventsForBlock(ch chain.Chain, blockIndex uint32) ([]string, error) {
+func GetEventsForBlock(ch chain.Chain, blockIndex uint32) ([]*isc.Event, error) {
 	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetEventsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamBlockIndex: blockIndex,
 	}))
@@ -229,10 +204,10 @@ func GetEventsForBlock(ch chain.Chain, blockIndex uint32) ([]string, error) {
 		return nil, err
 	}
 
-	return eventsFromViewResult(ret)
+	return blocklog.EventsFromViewResult(ret)
 }
 
-func GetEventsForContract(ch chain.Chain, contractHname isc.Hname) ([]string, error) {
+func GetEventsForContract(ch chain.Chain, contractHname isc.Hname) ([]*isc.Event, error) {
 	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewGetEventsForContract.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamContractHname: contractHname,
 	}))
@@ -240,5 +215,5 @@ func GetEventsForContract(ch chain.Chain, contractHname isc.Hname) ([]string, er
 		return nil, err
 	}
 
-	return eventsFromViewResult(ret)
+	return blocklog.EventsFromViewResult(ret)
 }

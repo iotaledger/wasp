@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
-	cliwallet "github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
@@ -85,7 +85,7 @@ func initRotateWithDKGCmd() *cobra.Command {
 func rotateTo(chain string, newStateControllerAddr iotago.Address) {
 	l1Client := cliclients.L1Client()
 
-	wallet := cliwallet.Load()
+	myWallet := wallet.Load()
 	aliasID := config.GetChain(chain).AsAliasID()
 
 	chainOutputID, chainOutput, err := l1Client.GetAliasOutput(aliasID)
@@ -96,7 +96,7 @@ func rotateTo(chain string, newStateControllerAddr iotago.Address) {
 		newStateControllerAddr,
 		chainOutputID,
 		chainOutput,
-		wallet.KeyPair,
+		myWallet.KeyPair,
 	)
 	log.Check(err)
 
@@ -115,7 +115,7 @@ func rotateTo(chain string, newStateControllerAddr iotago.Address) {
 
 		json, err2 := tx.MarshalJSON()
 		log.Check(err2)
-		log.Printf("issuing rotation tx, signed for address: %s", wallet.KeyPair.Address().Bech32(parameters.L1().Protocol.Bech32HRP))
+		log.Printf("issuing rotation tx, signed for address: %s", myWallet.KeyPair.Address().Bech32(parameters.L1().Protocol.Bech32HRP))
 		log.Printf("rotation tx: %s", string(json))
 	}
 

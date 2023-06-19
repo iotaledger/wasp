@@ -155,17 +155,17 @@ pub fn agent_id_from_string(value: &str) -> ScAgentID {
     }
 
     let parts: Vec<&str> = value.split("@").collect();
-    match parts.len() {
-        1 => return ScAgentID::from_address(&address_from_string(&parts[0])),
+    return match parts.len() {
+        1 => ScAgentID::from_address(&address_from_string(&parts[0])),
         2 => {
-            return ScAgentID::new(
+            ScAgentID::new(
                 &address_from_string(&parts[1]),
                 hname_from_string(&parts[0]),
-            );
+            )
         }
         _ => {
             panic("invalid AgentID string");
-            return agent_id_from_bytes(&[]);
+            agent_id_from_bytes(&[])
         }
     }
 }

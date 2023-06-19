@@ -4,11 +4,10 @@
 package acss
 
 import (
-	"bytes"
-	"fmt"
+	"io"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type msgVoteKind byte
@@ -20,45 +19,30 @@ const (
 
 // This message is used a vote for the "Bracha-style totality" agreement.
 type msgVote struct {
-	sender    gpa.NodeID
-	recipient gpa.NodeID
-	kind      msgVoteKind
+	gpa.BasicMessage
+	kind msgVoteKind
 }
 
-var _ gpa.Message = &msgVote{}
+var _ gpa.Message = new(msgVote)
 
-func (m *msgVote) Recipient() gpa.NodeID {
-	return m.recipient
+func (msg *msgVote) MarshalBinary() ([]byte, error) {
+	return rwutil.MarshalBinary(msg)
 }
 
-func (m *msgVote) SetSender(sender gpa.NodeID) {
-	m.sender = sender
+func (msg *msgVote) UnmarshalBinary(data []byte) error {
+	return rwutil.UnmarshalBinary(data, msg)
 }
 
-func (m *msgVote) MarshalBinary() ([]byte, error) {
-	w := &bytes.Buffer{}
-	if err := util.WriteByte(w, msgTypeVote); err != nil {
-		return nil, err
-	}
-	if err := util.WriteByte(w, byte(m.kind)); err != nil {
-		return nil, err
-	}
-	return w.Bytes(), nil
+func (msg *msgVote) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msgTypeVote.ReadAndVerify(rr)
+	msg.kind = msgVoteKind(rr.ReadByte())
+	return rr.Err
 }
 
-func (m *msgVote) UnmarshalBinary(data []byte) error {
-	r := bytes.NewReader(data)
-	t, err := util.ReadByte(r)
-	if err != nil {
-		return err
-	}
-	if t != msgTypeVote {
-		return fmt.Errorf("unexpected msgType: %v in acss.msgVote", t)
-	}
-	k, err := util.ReadByte(r)
-	if err != nil {
-		return err
-	}
-	m.kind = msgVoteKind(k)
-	return nil
+func (msg *msgVote) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	msgTypeVote.Write(ww)
+	ww.WriteByte(byte(msg.kind))
+	return ww.Err
 }

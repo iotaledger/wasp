@@ -3,6 +3,7 @@
 
 import {WasmDecoder, WasmEncoder} from './codec';
 import {Proxy} from './proxy';
+import {uint16Decode, uint16Encode} from "./scuint16";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 

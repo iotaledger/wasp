@@ -70,7 +70,7 @@ func (c *Controller) trustPeer(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	publicKey, err := cryptolib.NewPublicKeyFromString(trustedPeer.PublicKey)
+	publicKey, err := cryptolib.PublicKeyFromString(trustedPeer.PublicKey)
 	if err != nil {
 		return apierrors.InvalidPropertyError("publicKey", err)
 	}

@@ -1,8 +1,6 @@
 package sbtestsc
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -19,12 +17,12 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 func testEventLogGenericData(ctx isc.Sandbox) dict.Dict {
 	params := ctx.Params()
 	inc := codec.MustDecodeUint64(params.Get(VarCounter), 1)
-	ctx.Event(fmt.Sprintf("[GenericData] Counter Number: %d", inc))
+	eventCounter(ctx, inc)
 	return nil
 }
 
 func testEventLogEventData(ctx isc.Sandbox) dict.Dict {
-	ctx.Event("[Event] - Testing Event...")
+	eventTest(ctx)
 	return nil
 }
 

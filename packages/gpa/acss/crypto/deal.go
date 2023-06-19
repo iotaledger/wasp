@@ -7,6 +7,8 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
+
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // Deal contains the information distributed by the dealer.
@@ -18,17 +20,13 @@ type Deal struct {
 
 // MarshalBinary implements encoding.BinaryMarshaler.
 func (d *Deal) MarshalBinary() ([]byte, error) {
-	var buf bytes.Buffer
-	if _, err := d.Commits.MarshalTo(&buf); err != nil {
-		return nil, err
-	}
-	if _, err := d.PubKey.MarshalTo(&buf); err != nil {
-		return nil, err
-	}
+	ww := rwutil.NewBytesWriter()
+	ww.WriteFromFunc(d.Commits.MarshalTo)
+	ww.WriteFromFunc(d.PubKey.MarshalTo)
 	for _, s := range d.Shares {
-		buf.Write(s)
+		ww.WriteN(s)
 	}
-	return buf.Bytes(), nil
+	return ww.Bytes(), ww.Err
 }
 
 // DealLen returns the length of Deal in bytes.

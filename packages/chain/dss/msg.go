@@ -4,15 +4,13 @@
 package dss
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
-	msgTypePartialSig byte = iota
+	msgTypePartialSig gpa.MessageType = iota
 	msgTypeWrapped
 )
 
@@ -27,22 +25,9 @@ func (d *dssImpl) msgWrapperFunc(subsystem byte, index int) (gpa.GPA, error) {
 }
 
 func (d *dssImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	if len(data) < 1 {
-		return nil, errors.New("dssImpl::UnmarshalMessage: data too short")
-	}
-	switch data[0] {
-	case msgTypePartialSig:
-		m := &msgPartialSig{suite: d.suite}
-		if err := m.UnmarshalBinary(data); err != nil {
-			return nil, fmt.Errorf("cannot unmarshal msgPartialSig: %w", err)
-		}
-		return m, nil
-	case msgTypeWrapped:
-		m, err := d.msgWrapper.UnmarshalMessage(data)
-		if err != nil {
-			return nil, fmt.Errorf("cannot unmarshal Wrapped msg: %w", err)
-		}
-		return m, nil
-	}
-	return nil, fmt.Errorf("dssImpl::UnmarshalMessage: cannot parse message starting with: %v", util.PrefixHex(data, 20))
+	return gpa.UnmarshalMessage(data, gpa.Mapper{
+		msgTypePartialSig: func() gpa.Message { return &msgPartialSig{suite: d.suite} },
+	}, gpa.Fallback{
+		msgTypeWrapped: d.msgWrapper.UnmarshalMessage,
+	})
 }

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/kv"
@@ -15,15 +14,15 @@ func TestBasicKVMap(t *testing.T) {
 	vars := New()
 
 	v := vars.Get("k1")
-	assert.Nil(t, v)
+	require.Nil(t, v)
 
 	vars.Set("k1", []byte("v1"))
 	v = vars.Get("k1")
-	assert.Equal(t, []byte("v1"), v)
+	require.Equal(t, []byte("v1"), v)
 
 	vars.Del("k1")
 	v = vars.Get("v1")
-	assert.Nil(t, v)
+	require.Nil(t, v)
 }
 
 func TestBytes(t *testing.T) {
@@ -33,24 +32,24 @@ func TestBytes(t *testing.T) {
 	vars2 := vars1.Clone()
 	h2 := util.GetHashValue(vars2)
 
-	assert.EqualValues(t, h1, h2)
+	require.EqualValues(t, h1, h2)
 
 	vars1.Set("k1", []byte("kuku"))
 	vars2.Set("k1", []byte("kuku"))
 
 	h11 := util.GetHashValue(vars1)
 	h12 := util.GetHashValue(vars2)
-	assert.EqualValues(t, h11, h12)
+	require.EqualValues(t, h11, h12)
 
 	vars1.Set("k1", []byte("mumu"))
 	h11 = util.GetHashValue(vars1)
-	assert.False(t, h11 == h12)
+	require.False(t, h11 == h12)
 
 	vars1.Del("k1")
 	vars2.Del("k1")
 	h11 = util.GetHashValue(vars1)
 	h12 = util.GetHashValue(vars2)
-	assert.EqualValues(t, h11, h12)
+	require.EqualValues(t, h11, h12)
 
 	vars1.Set("k1", []byte{42})
 	vars1.Set("k2", []byte("42"))
@@ -59,7 +58,7 @@ func TestBytes(t *testing.T) {
 	vars2.Set("k1", []byte{42})
 	h11 = util.GetHashValue(vars1)
 	h12 = util.GetHashValue(vars2)
-	assert.EqualValues(t, h11, h12)
+	require.EqualValues(t, h11, h12)
 }
 
 func TestDeterminism(t *testing.T) {
@@ -69,7 +68,7 @@ func TestDeterminism(t *testing.T) {
 	vars2 := vars1.Clone()
 	h2 := util.GetHashValue(vars2)
 
-	assert.EqualValues(t, h1, h2)
+	require.EqualValues(t, h1, h2)
 
 	vars1.Set("k1", []byte("kuku"))
 	vars1.Set("k2", []byte{42})
@@ -83,11 +82,11 @@ func TestDeterminism(t *testing.T) {
 
 	h11 := util.GetHashValue(vars1)
 	h12 := util.GetHashValue(vars2)
-	assert.EqualValues(t, h11, h12)
+	require.EqualValues(t, h11, h12)
 
 	vars1.Del("k3")
 	vars2.Del("k3")
-	assert.EqualValues(t, h11, h12)
+	require.EqualValues(t, h11, h12)
 
 	t.Logf("\n%s", vars1.String())
 	t.Logf("\n%s", vars2.String())
@@ -125,7 +124,7 @@ func TestMarshalling(t *testing.T) {
 	vars1.Set("k4", []byte{2})
 
 	vars2, err := FromBytes(vars1.Bytes())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	require.EqualValues(t, vars1.Bytes(), vars2.Bytes())
 }
 
@@ -137,11 +136,11 @@ func TestJSONMarshalling(t *testing.T) {
 	vars1.Set("k4", []byte{2})
 
 	b, err := json.Marshal(vars1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	var vars2 Dict
 	err = json.Unmarshal(b, &vars2)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.EqualValues(t, util.GetHashValue(vars1), util.GetHashValue(vars2))
+	require.EqualValues(t, util.GetHashValue(vars1), util.GetHashValue(vars2))
 }

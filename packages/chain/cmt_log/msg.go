@@ -4,15 +4,11 @@
 package cmt_log
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
-	msgTypeNextLogIndex byte = iota
+	msgTypeNextLogIndex gpa.MessageType = iota
 )
 
 func (cl *cmtLogImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
@@ -20,15 +16,7 @@ func (cl *cmtLogImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 }
 
 func UnmarshalMessage(data []byte) (gpa.Message, error) {
-	if len(data) < 1 {
-		return nil, errors.New("cmtLogImpl::UnmarshalMessage: data too short")
-	}
-	if data[0] == msgTypeNextLogIndex {
-		m := &msgNextLogIndex{}
-		if err := m.UnmarshalBinary(data); err != nil {
-			return nil, fmt.Errorf("cannot unmarshal msgNextLogIndex: %w", err)
-		}
-		return m, nil
-	}
-	return nil, fmt.Errorf("cmtLogImpl::UnmarshalMessage: cannot parse message starting with: %v", util.PrefixHex(data, 20))
+	return gpa.UnmarshalMessage(data, gpa.Mapper{
+		msgTypeNextLogIndex: func() gpa.Message { return new(msgNextLogIndex) },
+	})
 }

@@ -4,6 +4,7 @@
 package state
 
 import (
+	"io"
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore"
@@ -94,6 +95,8 @@ type Block interface {
 	// Hash is computed from Mutations + PreviousL1Commitment
 	Hash() BlockHash
 	Bytes() []byte
+	Read(io.Reader) error
+	Write(io.Writer) error
 }
 
 type StateCommonValues interface {

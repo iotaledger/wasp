@@ -12,6 +12,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -163,12 +165,19 @@ func (vmctx *VMContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.R
 	if vmctx.task.EnableGasBurnLogging {
 		vmctx.gasBurnLog = gas.NewGasBurnLog()
 	}
+	key := vmctx.requestLookupKey()
 	var err error
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		err = blocklog.SaveRequestReceipt(vmctx.State(), receipt, vmctx.requestLookupKey())
+		err = blocklog.SaveRequestReceipt(s, receipt, key)
 	})
 	if err != nil {
 		panic(err)
+	}
+	if vmctx.evmFailedReceipt != nil {
+		// save failed EVM transactions
+		vmctx.callCore(evm.Contract, func(s kv.KVStore) {
+			evmimpl.AddFailedTx(NewSandbox(vmctx), vmctx.evmFailedTx, vmctx.evmFailedReceipt)
+		})
 	}
 	return receipt
 }
@@ -199,28 +208,29 @@ func (vmctx *VMContext) storeUnprocessable(lastInternalAssetUTXOIndex uint16) {
 	})
 }
 
-func (vmctx *VMContext) MustSaveEvent(contract isc.Hname, msg string) {
+func (vmctx *VMContext) MustSaveEvent(hContract isc.Hname, topic string, payload []byte) {
 	if vmctx.requestEventIndex == math.MaxUint16 {
 		panic(vm.ErrTooManyEvents)
 	}
-	vmctx.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
+	vmctx.Debugf("MustSaveEvent/%s: topic: '%s'", hContract.String(), topic)
 
+	event := &isc.Event{
+		ContractID: hContract,
+		Topic:      topic,
+		Payload:    payload,
+		Timestamp:  uint64(vmctx.Timestamp().UnixNano()),
+	}
+	eventKey := vmctx.eventLookupKey().Bytes()
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		blocklog.SaveEvent(vmctx.State(), msg, vmctx.eventLookupKey(), contract)
+		blocklog.SaveEvent(s, eventKey, event)
 	})
 	vmctx.requestEventIndex++
 }
 
-// updateOffLedgerRequestMaxAssumedNonce updates stored nonce for off ledger requests
-func (vmctx *VMContext) updateOffLedgerRequestMaxAssumedNonce() {
-	vmctx.GasBurnEnable(false)
-	defer vmctx.GasBurnEnable(true)
+// updateOffLedgerRequestNonce updates stored nonce for off ledger requests
+func (vmctx *VMContext) updateOffLedgerRequestNonce() {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accounts.SaveMaxAssumedNonce(
-			s,
-			vmctx.req.SenderAccount(),
-			vmctx.req.(isc.OffLedgerRequest).Nonce(),
-		)
+		accounts.IncrementNonce(s, vmctx.req.SenderAccount())
 	})
 }
 

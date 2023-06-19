@@ -56,6 +56,7 @@ type MetricsService interface {
 	GetChainMessageMetrics(chainID isc.ChainID) *dto.ChainMessageMetrics
 	GetChainConsensusPipeMetrics(chainID isc.ChainID) *models.ConsensusPipeMetrics
 	GetChainConsensusWorkflowMetrics(chainID isc.ChainID) *models.ConsensusWorkflowMetrics
+	GetMaxChainConfirmedStateLag() uint32
 }
 
 var ErrPeerNotFound = errors.New("couldn't find peer")

@@ -28,26 +28,28 @@ func GetRotationAddress(state kv.KVStoreReader) iotago.Address {
 func GetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) (*isc.ChainInfo, error) {
 	d := kvdecoder.New(state)
 	ret := &isc.ChainInfo{
-		ChainID: chainID,
+		ChainID:  chainID,
+		Metadata: &isc.PublicChainMetadata{},
 	}
 	var err error
 	if ret.ChainOwnerID, err = d.GetAgentID(VarChainOwnerID); err != nil {
 		return nil, err
 	}
+
 	if ret.GasFeePolicy, err = GetGasFeePolicy(state); err != nil {
 		return nil, err
 	}
+
 	if ret.GasLimits, err = GetGasLimits(state); err != nil {
 		return nil, err
 	}
+
 	ret.BlockKeepAmount = GetBlockKeepAmount(state)
 	if ret.PublicURL, err = GetPublicURL(state); err != nil {
 		return nil, err
 	}
-	if ret.MetadataEVMJsonRPCURL, err = GetEVMJsonRPCURL(state); err != nil {
-		return nil, err
-	}
-	if ret.MetadataEVMWebSocketURL, err = GetEVMWebSocketURL(state); err != nil {
+
+	if ret.Metadata, err = GetMetadata(state); err != nil {
 		return nil, err
 	}
 
@@ -63,7 +65,7 @@ func MustGetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) *isc.ChainInf
 	return info
 }
 
-func MustGetChainOwnerID(state kv.KVStoreReader) isc.AgentID {
+func mustGetChainOwnerID(state kv.KVStoreReader) isc.AgentID {
 	d := kvdecoder.New(state)
 	return d.MustGetAgentID(VarChainOwnerID)
 }
@@ -105,20 +107,24 @@ func GetPublicURL(state kv.KVStoreReader) (string, error) {
 	return codec.DecodeString(state.Get(VarPublicURL), "")
 }
 
-func SetEVMJsonRPCURL(state kv.KVStore, url string) {
-	state.Set(VarMetadataEVMJsonRPCURL, codec.EncodeString(url))
+func SetMetadata(state kv.KVStore, metadata *isc.PublicChainMetadata) {
+	state.Set(VarMetadata, metadata.Bytes())
 }
 
-func GetEVMJsonRPCURL(state kv.KVStoreReader) (string, error) {
-	return codec.DecodeString(state.Get(VarMetadataEVMJsonRPCURL), "")
+func GetMetadata(state kv.KVStoreReader) (*isc.PublicChainMetadata, error) {
+	metadataBytes := state.Get(VarMetadata)
+	if metadataBytes == nil {
+		return &isc.PublicChainMetadata{}, nil
+	}
+	return isc.PublicChainMetadataFromBytes(metadataBytes)
 }
 
-func SetEVMWebSocketURL(state kv.KVStore, url string) {
-	state.Set(VarMetadataEVMWebSocketURL, codec.EncodeString(url))
-}
-
-func GetEVMWebSocketURL(state kv.KVStoreReader) (string, error) {
-	return codec.DecodeString(state.Get(VarMetadataEVMWebSocketURL), "")
+func MustGetMetadata(state kv.KVStoreReader) *isc.PublicChainMetadata {
+	metadata, err := GetMetadata(state)
+	if err != nil {
+		panic(err)
+	}
+	return metadata
 }
 
 func AccessNodesMap(state kv.KVStore) *collections.Map {

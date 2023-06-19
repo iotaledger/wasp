@@ -34,12 +34,16 @@ type varLocalViewSM struct {
 	utxoIDCounter int // To have unique UTXO IDs.
 }
 
-func (sm *varLocalViewSM) Init(t *rapid.T) {
+var _ rapid.StateMachine = &varLocalViewSM{}
+
+func newVarLocalViewSM(t *rapid.T) *varLocalViewSM {
+	sm := new(varLocalViewSM)
 	sm.lv = cmt_log.NewVarLocalView(-1, testlogger.NewLogger(t))
 	sm.confirmed = []*isc.AliasOutputWithID{}
 	sm.pending = []*isc.AliasOutputWithID{}
 	sm.rejected = []*isc.AliasOutputWithID{}
 	sm.rejSync = false
+	return sm
 }
 
 // E.g. external rotation of a TX by other chain.
@@ -223,5 +227,8 @@ var _ rapid.StateMachine = &varLocalViewSM{}
 // E.g. for special parameters for reproducibility, etc.
 // `go test ./packages/chain/cmtLog/ --run TestPropsRapid -v -rapid.seed=13061922091840831492 -rapid.checks=100`
 func TestVarLocalViewRapid(t *testing.T) {
-	rapid.Check(t, rapid.Run[*varLocalViewSM]())
+	rapid.Check(t, func(t *rapid.T) {
+		sm := newVarLocalViewSM(t)
+		t.Repeat(rapid.StateMachineActions(sm))
+	})
 }

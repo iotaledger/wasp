@@ -26,7 +26,7 @@ type ImmutableGetAllowedStateControllerAddressesResults struct {
 	Proxy wasmtypes.Proxy
 }
 
-// Array16 of state controller addresses
+// Array of state controller addresses
 func (s ImmutableGetAllowedStateControllerAddressesResults) Controllers() ArrayOfImmutableAddress {
 	return ArrayOfImmutableAddress{Proxy: s.Proxy.Root(ResultControllers)}
 }
@@ -59,7 +59,7 @@ func NewMutableGetAllowedStateControllerAddressesResults() MutableGetAllowedStat
 	return MutableGetAllowedStateControllerAddressesResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
-// Array16 of state controller addresses
+// Array of state controller addresses
 func (s MutableGetAllowedStateControllerAddressesResults) Controllers() ArrayOfMutableAddress {
 	return ArrayOfMutableAddress{Proxy: s.Proxy.Root(ResultControllers)}
 }
@@ -78,11 +78,6 @@ func (s ImmutableGetChainInfoResults) ChainOwnerID() wasmtypes.ScImmutableAgentI
 	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ResultChainOwnerID))
 }
 
-// chain metadata
-func (s ImmutableGetChainInfoResults) CustomMetadata() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultCustomMetadata))
-}
-
 // serialized fee policy
 func (s ImmutableGetChainInfoResults) FeePolicy() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultFeePolicy))
@@ -91,6 +86,15 @@ func (s ImmutableGetChainInfoResults) FeePolicy() wasmtypes.ScImmutableBytes {
 // serialized gas limits
 func (s ImmutableGetChainInfoResults) GasLimits() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultGasLimits))
+}
+
+// chain metadata
+func (s ImmutableGetChainInfoResults) Metadata() ImmutablePublicChainMetadata {
+	return ImmutablePublicChainMetadata{Proxy: s.Proxy.Root(ResultMetadata)}
+}
+
+func (s ImmutableGetChainInfoResults) PublicURL() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.Proxy.Root(ResultPublicURL))
 }
 
 type MutableGetChainInfoResults struct {
@@ -111,11 +115,6 @@ func (s MutableGetChainInfoResults) ChainOwnerID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ResultChainOwnerID))
 }
 
-// chain metadata
-func (s MutableGetChainInfoResults) CustomMetadata() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultCustomMetadata))
-}
-
 // serialized fee policy
 func (s MutableGetChainInfoResults) FeePolicy() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultFeePolicy))
@@ -124,6 +123,15 @@ func (s MutableGetChainInfoResults) FeePolicy() wasmtypes.ScMutableBytes {
 // serialized gas limits
 func (s MutableGetChainInfoResults) GasLimits() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultGasLimits))
+}
+
+// chain metadata
+func (s MutableGetChainInfoResults) Metadata() MutablePublicChainMetadata {
+	return MutablePublicChainMetadata{Proxy: s.Proxy.Root(ResultMetadata)}
+}
+
+func (s MutableGetChainInfoResults) PublicURL() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.Proxy.Root(ResultPublicURL))
 }
 
 type MapBytesToImmutableBytes struct {
@@ -312,17 +320,12 @@ type ImmutableGetMetadataResults struct {
 	Proxy wasmtypes.Proxy
 }
 
-// the public evm json rpc url
-func (s ImmutableGetMetadataResults) EvmJsonRPCURL() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.Proxy.Root(ResultEvmJsonRPCURL))
+// the L2 metadata
+func (s ImmutableGetMetadataResults) Metadata() ImmutablePublicChainMetadata {
+	return ImmutablePublicChainMetadata{Proxy: s.Proxy.Root(ResultMetadata)}
 }
 
-// the public evm websocket url
-func (s ImmutableGetMetadataResults) EvmWebSocketUrl() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.Proxy.Root(ResultEvmWebSocketUrl))
-}
-
-// the public url leading to the chain info, stored on the tangle
+// the public url leading to the chain info, stored on the tangle (l1)
 func (s ImmutableGetMetadataResults) PublicURL() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.Proxy.Root(ResultPublicURL))
 }
@@ -335,17 +338,12 @@ func NewMutableGetMetadataResults() MutableGetMetadataResults {
 	return MutableGetMetadataResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
-// the public evm json rpc url
-func (s MutableGetMetadataResults) EvmJsonRPCURL() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.Proxy.Root(ResultEvmJsonRPCURL))
+// the L2 metadata
+func (s MutableGetMetadataResults) Metadata() MutablePublicChainMetadata {
+	return MutablePublicChainMetadata{Proxy: s.Proxy.Root(ResultMetadata)}
 }
 
-// the public evm websocket url
-func (s MutableGetMetadataResults) EvmWebSocketUrl() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.Proxy.Root(ResultEvmWebSocketUrl))
-}
-
-// the public url leading to the chain info, stored on the tangle
+// the public url leading to the chain info, stored on the tangle (l1)
 func (s MutableGetMetadataResults) PublicURL() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.Proxy.Root(ResultPublicURL))
 }

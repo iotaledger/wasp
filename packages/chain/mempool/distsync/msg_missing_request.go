@@ -4,8 +4,11 @@
 package distsync
 
 import (
+	"io"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type msgMissingRequest struct {
@@ -13,7 +16,7 @@ type msgMissingRequest struct {
 	requestRef *isc.RequestRef
 }
 
-var _ gpa.Message = &msgMissingRequest{}
+var _ gpa.Message = new(msgMissingRequest)
 
 func newMsgMissingRequest(requestRef *isc.RequestRef, recipient gpa.NodeID) gpa.Message {
 	return &msgMissingRequest{
@@ -23,12 +26,23 @@ func newMsgMissingRequest(requestRef *isc.RequestRef, recipient gpa.NodeID) gpa.
 }
 
 func (msg *msgMissingRequest) MarshalBinary() (data []byte, err error) {
-	ret := []byte{msgTypeMissingRequest}
-	ret = append(ret, msg.requestRef.Bytes()...)
-	return ret, nil
+	return rwutil.MarshalBinary(msg)
 }
 
-func (msg *msgMissingRequest) UnmarshalBinary(data []byte) (err error) {
-	msg.requestRef, err = isc.RequestRefFromBytes(data[1:])
-	return err
+func (msg *msgMissingRequest) UnmarshalBinary(data []byte) error {
+	return rwutil.UnmarshalBinary(data, msg)
+}
+
+func (msg *msgMissingRequest) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msgTypeMissingRequest.ReadAndVerify(rr)
+	msg.requestRef = rwutil.ReadFromBytes(rr, isc.RequestRefFromBytes)
+	return rr.Err
+}
+
+func (msg *msgMissingRequest) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	msgTypeMissingRequest.Write(ww)
+	ww.WriteFromBytes(msg.requestRef)
+	return ww.Err
 }

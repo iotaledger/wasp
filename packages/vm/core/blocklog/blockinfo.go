@@ -1,15 +1,15 @@
 package blocklog
 
 import (
-	"errors"
 	"fmt"
+	"io"
 	"time"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
@@ -59,64 +59,16 @@ func (bi *BlockInfo) String() string {
 }
 
 func (bi *BlockInfo) Bytes() []byte {
-	mu := marshalutil.New()
-	mu.WriteUint8(bi.SchemaVersion)
-	mu.WriteTime(bi.Timestamp)
-	mu.WriteUint16(bi.TotalRequests)
-	mu.WriteUint16(bi.NumSuccessfulRequests)
-	mu.WriteUint16(bi.NumOffLedgerRequests)
-	mu.WriteBool(bi.PreviousAliasOutput != nil)
-	if bi.PreviousAliasOutput != nil {
-		mu.WriteBytes(bi.PreviousAliasOutput.Bytes())
-	}
-	mu.WriteUint64(bi.GasBurned)
-	mu.WriteUint64(bi.GasFeeCharged)
-	return mu.Bytes()
+	return rwutil.WriterToBytes(bi)
 }
 
 func BlockInfoFromBytes(data []byte) (*BlockInfo, error) {
-	mu := marshalutil.New(data)
-	var err error
-	bi := &BlockInfo{}
-	if bi.SchemaVersion, err = mu.ReadUint8(); err != nil {
-		return nil, err
-	}
-	if bi.Timestamp, err = mu.ReadTime(); err != nil {
-		return nil, err
-	}
-	if bi.TotalRequests, err = mu.ReadUint16(); err != nil {
-		return nil, err
-	}
-	if bi.NumSuccessfulRequests, err = mu.ReadUint16(); err != nil {
-		return nil, err
-	}
-	if bi.NumOffLedgerRequests, err = mu.ReadUint16(); err != nil {
-		return nil, err
-	}
-	if hasPreviousAliasOutput, err2 := mu.ReadBool(); err2 != nil {
-		return nil, err2
-	} else if hasPreviousAliasOutput {
-		if bi.PreviousAliasOutput, err2 = isc.NewAliasOutputWithIDFromMarshalUtil(mu); err2 != nil {
-			return nil, err2
-		}
-	}
-	if bi.GasBurned, err = mu.ReadUint64(); err != nil {
-		return nil, err
-	}
-	if bi.GasFeeCharged, err = mu.ReadUint64(); err != nil {
-		return nil, err
-	}
-	if done, err := mu.DoneReading(); err != nil {
-		return nil, err
-	} else if !done {
-		return nil, errors.New("BlockInfoFromBytes: remaining bytes")
-	}
-	return bi, nil
+	return rwutil.ReaderFromBytes(data, new(BlockInfo))
 }
 
 // BlockInfoKey a key to access block info record inside SC state
 func BlockInfoKey(index uint32) []byte {
-	return []byte(collections.Array32ElemKey(PrefixBlockRegistry, index))
+	return []byte(collections.ArrayElemKey(PrefixBlockRegistry, index))
 }
 
 func (bi *BlockInfo) BlockIndex() uint32 {
@@ -124,4 +76,37 @@ func (bi *BlockInfo) BlockIndex() uint32 {
 		return 0
 	}
 	return bi.PreviousAliasOutput.GetStateIndex() + 1
+}
+
+func (bi *BlockInfo) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	bi.SchemaVersion = rr.ReadUint8()
+	bi.Timestamp = time.Unix(0, rr.ReadInt64())
+	bi.TotalRequests = rr.ReadUint16()
+	bi.NumSuccessfulRequests = rr.ReadUint16()
+	bi.NumOffLedgerRequests = rr.ReadUint16()
+	hasPreviousAliasOutput := rr.ReadBool()
+	if hasPreviousAliasOutput {
+		bi.PreviousAliasOutput = &isc.AliasOutputWithID{}
+		rr.Read(bi.PreviousAliasOutput)
+	}
+	bi.GasBurned = rr.ReadUint64()
+	bi.GasFeeCharged = rr.ReadUint64()
+	return rr.Err
+}
+
+func (bi *BlockInfo) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteUint8(bi.SchemaVersion)
+	ww.WriteInt64(bi.Timestamp.UnixNano())
+	ww.WriteUint16(bi.TotalRequests)
+	ww.WriteUint16(bi.NumSuccessfulRequests)
+	ww.WriteUint16(bi.NumOffLedgerRequests)
+	ww.WriteBool(bi.PreviousAliasOutput != nil)
+	if bi.PreviousAliasOutput != nil {
+		ww.Write(bi.PreviousAliasOutput)
+	}
+	ww.WriteUint64(bi.GasBurned)
+	ww.WriteUint64(bi.GasFeeCharged)
+	return ww.Err
 }

@@ -1,11 +1,20 @@
-package trie_test
+package test
 
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/VictoriaMetrics/fastcache"
+	"github.com/Yiling-J/theine-go"
+	"github.com/dgraph-io/ristretto"
+	"github.com/dgryski/go-clockpro"
+	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/pingcap/go-ycsb/pkg/generator"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/trie"
@@ -31,7 +40,15 @@ func TestBasic(t *testing.T) {
 		require.NoError(t, err)
 		tr.Update([]byte("a"), []byte("a"))
 		tr.Update([]byte("b"), []byte("b"))
-		root1 = tr.Commit(store)
+		var stats trie.CommitStats
+		root1, stats = tr.Commit(store)
+		// the trie now has 4 nodes:
+		// [] c:7ec331767219528ab3c9e864ad9422e9f831ec5e ext:[] childIdx:[6] term:<nil>
+		//  [6] c:a00e505e10971ec248b1404ef9dcc6c6c493a6c9 ext:[] childIdx:[1 2] term:<nil>
+		//   [6 1] c:81db21106a17dd57e6099402bbe5543a015193d0 ext:[] childIdx:[] term:61
+		//   [6 2] c:b23756724eca8e6197bb6b6cbfc9725067b36d9c ext:[] childIdx:[] term:62
+		require.EqualValues(t, 4, stats.CreatedNodes)
+		require.EqualValues(t, 0, stats.CreatedValues)
 	}
 
 	var root2 trie.Hash
@@ -42,7 +59,7 @@ func TestBasic(t *testing.T) {
 		tr.Update([]byte("b"), []byte("bb"))
 		tr.Update([]byte("cccddd"), []byte("c"))
 		tr.Update([]byte("ccceee"), bytes.Repeat([]byte("c"), 70))
-		root2 = tr.Commit(store)
+		root2, _ = tr.Commit(store)
 		require.NoError(t, err)
 
 		require.Nil(t, tr.Get([]byte("a")))
@@ -59,7 +76,7 @@ func TestBasic(t *testing.T) {
 		tr.Update([]byte("b"), nil)
 		tr.Update([]byte("cccddd"), nil)
 		tr.Update([]byte("ccceee"), nil)
-		root3 = tr.Commit(store)
+		root3, _ = tr.Commit(store)
 		require.NoError(t, err)
 
 		require.Nil(t, tr.Get([]byte("a")))
@@ -67,7 +84,7 @@ func TestBasic(t *testing.T) {
 		require.Nil(t, tr.Get([]byte("cccddd")))
 		require.Nil(t, tr.Get([]byte("ccceee")))
 	}
-	// trie is now empty, so hash3 should be equl to hash0
+	// trie is now empty, so hash3 should be equal to hash0
 	require.Equal(t, root0, root3)
 }
 
@@ -83,7 +100,7 @@ func TestBasic2(t *testing.T) {
 		tr.Update([]byte{0x00}, []byte{0})
 		tr.Update([]byte{0x01}, []byte{0})
 		tr.Update([]byte{0x10}, []byte{0})
-		root1 = tr.Commit(store)
+		root1, _ = tr.Commit(store)
 	}
 
 	tr, err := trie.NewTrieReader(store, root1)
@@ -106,7 +123,7 @@ func TestBasic3(t *testing.T) {
 		tr.Update([]byte{0x31}, []byte{1})
 		tr.Update([]byte{0xb0}, []byte{1})
 		tr.Update([]byte{0xb2}, []byte{1})
-		root1 = tr.Commit(store)
+		root1, _ = tr.Commit(store)
 	}
 
 	tr, err := trie.NewTrieReader(store, root1)
@@ -143,7 +160,7 @@ func TestCreateTrie(t *testing.T) {
 		require.Empty(t, tr.GetStr(""))
 
 		tr.UpdateStr(key, value)
-		rootCnext := tr.Commit(store)
+		rootCnext, _ := tr.Commit(store)
 		t.Logf("initial root commitment: %s", rootInitial)
 		t.Logf("next root commitment: %s", rootCnext)
 
@@ -172,7 +189,8 @@ func TestCreateTrie(t *testing.T) {
 		require.Empty(t, tr.GetStr(""))
 
 		tr.UpdateStr(key, strings.Repeat(value, 500))
-		rootCnext := tr.Commit(store)
+		rootCnext, stats := tr.Commit(store)
+		require.NotZero(t, stats.CreatedValues)
 		t.Logf("initial root commitment: %s", rootInitial)
 		t.Logf("next root commitment: %s", rootCnext)
 
@@ -202,7 +220,7 @@ func TestBaseUpdate(t *testing.T) {
 				value := strings.Repeat(key, 5)
 				tr.UpdateStr(key, value)
 			}
-			rootNext := tr.Commit(store)
+			rootNext, _ := tr.Commit(store)
 			t.Logf("after commit: %s", rootNext)
 
 			err = tr.SetRoot(rootNext)
@@ -233,7 +251,7 @@ func runUpdateScenario(trieUpdatable *trie.TrieUpdatable, store trie.KVStore, sc
 			continue
 		}
 		if cmd == "*" {
-			ret = trieUpdatable.Commit(store)
+			ret, _ = trieUpdatable.Commit(store)
 			if traceScenarios {
 				fmt.Printf("+++ commit. Root: '%s'\n", ret)
 			}
@@ -266,7 +284,7 @@ func runUpdateScenario(trieUpdatable *trie.TrieUpdatable, store trie.KVStore, sc
 		}
 	}
 	if uncommitted {
-		ret = trieUpdatable.Commit(store)
+		ret, _ = trieUpdatable.Commit(store)
 		if traceScenarios {
 			fmt.Printf("+++ commit. Root: '%s'\n", ret)
 		}
@@ -606,4 +624,187 @@ func reverse(orig []string) []string {
 		ret = append(ret, orig[i])
 	}
 	return ret
+}
+
+type NewGeneratorFunc = func(int) Generator
+
+type Generator interface {
+	Next() string
+}
+
+//------------------------------------------------------------------------------
+
+type ScrambledZipfian struct {
+	r *rand.Rand
+	z *generator.ScrambledZipfian
+}
+
+func NewScrambledZipfian(max int) Generator {
+	return &ScrambledZipfian{
+		r: rand.New(rand.NewSource(time.Now().UnixNano())),
+		z: generator.NewScrambledZipfian(0, int64(max), generator.ZipfianConstant),
+	}
+}
+
+func (g *ScrambledZipfian) Next() string {
+	return strconv.FormatUint(uint64(g.z.Next(g.r)), 10)
+}
+
+type CacheBenchmark struct {
+	Init  func(size int)
+	Close func()
+	Get   func(key []byte) bool
+	Set   func(key []byte, value []byte) bool
+}
+
+const (
+	itemCost = 40 * 4
+)
+
+var (
+	lruCache       *lru.Cache[string, []byte]
+	ristrettoCache *ristretto.Cache
+	fastcacheCache *fastcache.Cache
+	theineCache    *theine.Cache[string, []byte]
+	clockproCache  *clockpro.Cache
+
+	cacheSize  = []int{1e4, 1e6}
+	multiplier = []int{10, 100, 1000}
+	caches     = map[string]CacheBenchmark{
+		"golang-lru": {
+			Init: func(size int) {
+				lruCache, _ = lru.New[string, []byte](size)
+			},
+			Close: func() {
+				lruCache.Purge()
+				lruCache = nil
+			},
+			Get: func(key []byte) bool {
+				_, ok := lruCache.Get(string(key))
+				return ok
+			},
+			Set: func(key []byte, value []byte) bool {
+				return lruCache.Add(string(key), value)
+			},
+		},
+		"ristretto": {
+			Init: func(size int) {
+				ristrettoCache, _ = ristretto.NewCache(&ristretto.Config{
+					// Keeps track of when keys are requested for LFU
+					// Recommendation is to make this 10x the max items in the cache, each key uses ~3 bytes
+					NumCounters: int64(size) * 10,
+					// Max cost of the cache should be the approximate size of each item * the number of items we want in the cache
+					MaxCost:     int64(size) * itemCost,
+					BufferItems: 64,
+				})
+			},
+			Close: ristrettoCache.Close,
+			Get: func(key []byte) bool {
+				_, ok := ristrettoCache.Get(key)
+				return ok
+			},
+			Set: func(key, value []byte) bool {
+				ok := ristrettoCache.Set(key, value, 0)
+				return ok
+			},
+		},
+		"fastcache": {
+			Init: func(size int) {
+				fastcacheCache = fastcache.New(size * itemCost)
+			},
+			Close: func() {
+				fastcacheCache.Reset()
+				fastcacheCache = nil
+			},
+			Get: func(key []byte) bool {
+				if v := fastcacheCache.Get(nil, key); v == nil {
+					return false
+				}
+				return true
+			},
+			Set: func(key, value []byte) bool {
+				fastcacheCache.Set(key, value)
+				return true
+			},
+		},
+		"theine": {
+			Init: func(size int) {
+				theineCache, _ = theine.NewBuilder[string, []byte](int64(size)).Build()
+			},
+			Close: func() {
+				theineCache.Close()
+				theineCache = nil
+			},
+			Get: func(key []byte) bool {
+				if _, ok := theineCache.Get(string(key)); ok {
+					return true
+				}
+				return false
+			},
+			Set: func(key, value []byte) bool {
+				return theineCache.Set(string(key), value, int64(len(value)))
+			},
+		},
+		"clockpro": {
+			Init: func(size int) {
+				clockproCache = clockpro.New(size)
+			},
+			Close: func() {
+				clockproCache = nil
+			},
+			Get: func(key []byte) bool {
+				if v := clockproCache.Get(string(key)); v != nil {
+					return true
+				}
+				return false
+			},
+			Set: func(key, value []byte) bool {
+				clockproCache.Set(string(key), value)
+				return true
+			},
+		},
+	}
+)
+
+// Benchmark to specifically test cache hits/misses on LRU
+func BenchmarkCaches(b *testing.B) {
+	for name, cache := range caches {
+		b.Run(name, func(b *testing.B) {
+			// hitrates := make([]float64, len(cacheSize)*len(multiplier))
+			for _, cacheSize := range cacheSize {
+				b.Run(fmt.Sprintf("cacheSize_%d", cacheSize), func(b *testing.B) {
+					for _, multiplier := range multiplier {
+						b.Run(fmt.Sprintf("possibleKeys_%d", multiplier*cacheSize), func(b *testing.B) {
+							b.StopTimer()
+							var hits, misses float64
+							cache.Init(cacheSize)
+							gen := NewScrambledZipfian(cacheSize * multiplier)
+							var hitrate float64
+							b.StartTimer()
+							defer func() {
+								b.StopTimer()
+								cache.Close()
+								b.StartTimer()
+							}()
+							for i := 0; i < b.N; i++ {
+								b.StopTimer()
+								key := gen.Next()
+								value := []byte(fmt.Sprintf("just a bunch of dummy text for key %s", key))
+								b.StartTimer()
+								if cache.Get([]byte(key)) {
+									hits++
+								} else {
+									misses++
+									cache.Set([]byte(key), value)
+								}
+							}
+							b.StopTimer()
+							hitrate = hits / (hits + misses)
+							b.Logf("sample size: %d, hits: %.2f, misses: %.2f, hitrate: %.2f", b.N, hits, misses, hitrate)
+						})
+					}
+				})
+			}
+		})
+	}
 }

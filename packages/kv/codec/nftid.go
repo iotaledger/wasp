@@ -6,19 +6,18 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
-func DecodeNFTID(b []byte, def ...iotago.NFTID) (iotago.NFTID, error) {
+func DecodeNFTID(b []byte, def ...iotago.NFTID) (ret iotago.NFTID, err error) {
 	if b == nil {
 		if len(def) == 0 {
-			return iotago.NFTID{}, errors.New("cannot decode nil bytes")
+			return ret, errors.New("cannot decode nil NFTID")
 		}
 		return def[0], nil
 	}
 	if len(b) != iotago.NFTIDLength {
-		return iotago.NFTID{}, errors.New("cannot decode NFTID: invalid length")
+		return ret, errors.New("invalid NFTID size")
 	}
-	nftID := iotago.NFTID{}
-	copy(nftID[:], b)
-	return nftID, nil
+	copy(ret[:], b)
+	return ret, nil
 }
 
 func MustDecodeNFTID(b []byte) iotago.NFTID {

@@ -35,7 +35,7 @@ func startAuction(t *testing.T) (*wasmsolo.SoloContext, *wasmsolo.SoloAgent, was
 	sa := fairauction.ScFuncs.StartAuction(ctx.Sign(auctioneer))
 	sa.Params.MinimumBid().SetValue(minBid)
 	sa.Params.Description().SetValue(description)
-	transfer := wasmlib.NewScTransferBaseTokens(deposit) // deposit, must be >=minimum*margin
+	transfer := wasmlib.ScTransferFromBaseTokens(deposit) // deposit, must be >=minimum*margin
 	transfer.AddNFT(&nftID)
 	sa.Func.Transfer(transfer).Post()
 	require.NoError(t, ctx.Err)

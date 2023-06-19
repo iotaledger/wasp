@@ -104,12 +104,14 @@ func (abp *AggregatedBatchProposals) DecidedRequestRefs() []*isc.RequestRef {
 	return abp.decidedRequestRefs
 }
 
+// TODO should this be moved to the VM?
 func (abp *AggregatedBatchProposals) OrderedRequests(requests []isc.Request, randomness hashing.HashValue) []isc.Request {
 	type sortStruct struct {
 		key hashing.HashValue
 		ref *isc.RequestRef
 		req isc.Request
 	}
+
 	sortBuf := make([]*sortStruct, len(abp.decidedRequestRefs))
 	for i := range abp.decidedRequestRefs {
 		ref := abp.decidedRequestRefs[i]
@@ -132,6 +134,28 @@ func (abp *AggregatedBatchProposals) OrderedRequests(requests []isc.Request, ran
 	sort.Slice(sortBuf, func(i, j int) bool {
 		return bytes.Compare(sortBuf[i].key[:], sortBuf[j].key[:]) < 0
 	})
+
+	// Make sure the requests are sorted such way, that the nonces per account are increasing.
+	// This is needed to handle several requests per batch for the VMs that expect the in-order nonces.
+	// We make a second pass here to tain the overall ordering of requests (module account) without
+	// making requests from a single account grouped together while sorting.
+	for i := range sortBuf {
+		oi, ok := sortBuf[i].req.(isc.OffLedgerRequest)
+		if !ok {
+			continue
+		}
+		for j := i + 1; j < len(sortBuf); j++ {
+			oj, ok := sortBuf[j].req.(isc.OffLedgerRequest)
+			if !ok {
+				continue
+			}
+			if oi.SenderAccount().Equals(oj.SenderAccount()) && oi.Nonce() > oj.Nonce() {
+				sortBuf[i], sortBuf[j] = sortBuf[j], sortBuf[i]
+				oi = oj
+			}
+		}
+	}
+
 	sorted := make([]isc.Request, len(abp.decidedRequestRefs))
 	for i := range sortBuf {
 		sorted[i] = sortBuf[i].req

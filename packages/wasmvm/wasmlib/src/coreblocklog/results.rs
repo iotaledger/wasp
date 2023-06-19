@@ -120,7 +120,7 @@ pub struct ImmutableGetEventsForBlockResults {
 }
 
 impl ImmutableGetEventsForBlockResults {
-    // Array16 of serialized events
+    // Array of serialized events
     pub fn event(&self) -> ArrayOfImmutableBytes {
         ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
     }
@@ -161,7 +161,7 @@ impl MutableGetEventsForBlockResults {
         }
     }
 
-    // Array16 of serialized events
+    // Array of serialized events
     pub fn event(&self) -> ArrayOfMutableBytes {
         ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
     }
@@ -173,7 +173,7 @@ pub struct ImmutableGetEventsForContractResults {
 }
 
 impl ImmutableGetEventsForContractResults {
-    // Array16 of serialized events
+    // Array of serialized events
     pub fn event(&self) -> ArrayOfImmutableBytes {
         ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
     }
@@ -191,7 +191,7 @@ impl MutableGetEventsForContractResults {
         }
     }
 
-    // Array16 of serialized events
+    // Array of serialized events
     pub fn event(&self) -> ArrayOfMutableBytes {
         ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
     }
@@ -203,7 +203,7 @@ pub struct ImmutableGetEventsForRequestResults {
 }
 
 impl ImmutableGetEventsForRequestResults {
-    // Array16 of serialized events
+    // Array of serialized events
     pub fn event(&self) -> ArrayOfImmutableBytes {
         ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
     }
@@ -221,7 +221,7 @@ impl MutableGetEventsForRequestResults {
         }
     }
 
-    // Array16 of serialized events
+    // Array of serialized events
     pub fn event(&self) -> ArrayOfMutableBytes {
         ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
     }
@@ -253,7 +253,7 @@ impl ImmutableGetRequestIDsForBlockResults {
         ScImmutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
     }
 
-    // Array16 of request IDs
+    // Array of request IDs
     pub fn request_id(&self) -> ArrayOfImmutableRequestID {
         ArrayOfImmutableRequestID { proxy: self.proxy.root(RESULT_REQUEST_ID) }
     }
@@ -299,7 +299,7 @@ impl MutableGetRequestIDsForBlockResults {
         ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
     }
 
-    // Array16 of request IDs
+    // Array of request IDs
     pub fn request_id(&self) -> ArrayOfMutableRequestID {
         ArrayOfMutableRequestID { proxy: self.proxy.root(RESULT_REQUEST_ID) }
     }
@@ -366,7 +366,7 @@ impl ImmutableGetRequestReceiptsForBlockResults {
         ScImmutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
     }
 
-    // Array16 of request receipts
+    // Array of request receipts
     pub fn request_receipts(&self) -> ArrayOfImmutableBytes {
         ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_REQUEST_RECEIPTS) }
     }
@@ -389,7 +389,7 @@ impl MutableGetRequestReceiptsForBlockResults {
         ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
     }
 
-    // Array16 of request receipts
+    // Array of request receipts
     pub fn request_receipts(&self) -> ArrayOfMutableBytes {
         ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_REQUEST_RECEIPTS) }
     }

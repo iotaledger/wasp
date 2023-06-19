@@ -47,7 +47,7 @@ var (
 	FuncStopMaintenance      = coreutil.Func("stopMaintenance")
 	ViewGetMaintenanceStatus = coreutil.ViewFunc("getMaintenanceStatus")
 
-	// L1 metadata
+	// public chain metadata
 	FuncSetMetadata = coreutil.Func("setMetadata")
 	ViewGetMetadata = coreutil.ViewFunc("getMetadata")
 )
@@ -74,8 +74,7 @@ const (
 	VarMaintenanceStatus = "m"
 
 	// L2 metadata (provided by the webapi, located by the public url)
-	VarMetadataEVMJsonRPCURL   = "e"
-	VarMetadataEVMWebSocketURL = "w"
+	VarMetadata = "md"
 
 	// L1 metadata (stored and provided in the tangle)
 	VarPublicURL = "x"
@@ -113,9 +112,8 @@ const (
 	// access nodes: changeAccessNodes
 	ParamChangeAccessNodesActions = "n"
 
-	// L2 metadata (provided by the webapi, located by the public url)
-	ParamMetadataEVMJsonRPCURL   = "e"
-	ParamMetadataEVMWebSocketURL = "w"
+	// public chain metadata (provided by the webapi, located by the public url)
+	ParamMetadata = "md"
 
 	// L1 metadata (stored and provided in the tangle)
 	ParamPublicURL = "x"

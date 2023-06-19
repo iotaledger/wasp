@@ -15,23 +15,20 @@ import (
 )
 
 func GetAccounts(ch chain.Chain) ([]isc.AgentID, error) {
-	ret, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewAccounts.Hname(), nil)
+	accountIDs, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewAccounts.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	accountIds := make([]isc.AgentID, 0)
-
-	for k := range ret {
-		agentID, err := codec.DecodeAgentID([]byte(k))
+	ret := make([]isc.AgentID, 0)
+	for accountID := range accountIDs {
+		agentID, err := codec.DecodeAgentID([]byte(accountID))
 		if err != nil {
 			return nil, err
 		}
-
-		accountIds = append(accountIds, agentID)
+		ret = append(ret, agentID)
 	}
-
-	return accountIds, nil
+	return ret, nil
 }
 
 func GetTotalAssets(ch chain.Chain) (*isc.Assets, error) {
@@ -55,44 +52,37 @@ func GetAccountBalance(ch chain.Chain, agentID isc.AgentID) (*isc.Assets, error)
 }
 
 func GetAccountNFTs(ch chain.Chain, agentID isc.AgentID) ([]iotago.NFTID, error) {
-	ret, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewAccountNFTs.Hname(), codec.MakeDict(map[string]interface{}{
+	res, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewAccountNFTs.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: agentID,
 	}))
 	if err != nil {
 		return nil, err
 	}
 
-	nftIDsCollection := collections.NewArray16ReadOnly(ret, accounts.ParamNFTIDs)
-	nftLen := nftIDsCollection.Len()
-	nftIDs := make([]iotago.NFTID, 0)
-
-	for i := uint16(0); i < nftLen; i++ {
-		nftID := iotago.NFTID{}
-		nftIDBytes := nftIDsCollection.GetAt(i)
-
-		copy(nftID[:], nftIDBytes)
-		nftIDs = append(nftIDs, nftID)
+	nftIDs := collections.NewArrayReadOnly(res, accounts.ParamNFTIDs)
+	ret := make([]iotago.NFTID, nftIDs.Len())
+	for i := range ret {
+		copy(ret[i][:], nftIDs.GetAt(uint32(i)))
 	}
-
-	return nftIDs, nil
+	return ret, nil
 }
 
 func GetAccountFoundries(ch chain.Chain, agentID isc.AgentID) ([]uint32, error) {
-	ret, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewAccountFoundries.Hname(), dict.Dict{
+	foundrySNs, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewAccountFoundries.Hname(), dict.Dict{
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 	})
 	if err != nil {
 		return nil, err
 	}
-	sns := make([]uint32, 0, len(ret))
-	for k := range ret {
-		sn, err := codec.DecodeUint32([]byte(k))
+	ret := make([]uint32, 0, len(foundrySNs))
+	for foundrySN := range foundrySNs {
+		sn, err := codec.DecodeUint32([]byte(foundrySN))
 		if err != nil {
 			return nil, err
 		}
-		sns = append(sns, sn)
+		ret = append(ret, sn)
 	}
-	return sns, nil
+	return ret, nil
 }
 
 func GetAccountNonce(ch chain.Chain, agentID isc.AgentID) (uint64, error) {
@@ -136,22 +126,21 @@ func parseNativeTokenIDFromBytes(data []byte) (iotago.NativeTokenID, error) {
 }
 
 func GetNativeTokenIDRegistry(ch chain.Chain) ([]iotago.NativeTokenID, error) {
-	ret, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewGetNativeTokenIDRegistry.Hname(), nil)
+	nativeTokenIDs, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewGetNativeTokenIDRegistry.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	nativeTokenIDs := make([]iotago.NativeTokenID, len(ret))
-	for k := range ret {
-		parsedTokenID, err := parseNativeTokenIDFromBytes([]byte(k))
+	ret := make([]iotago.NativeTokenID, 0, len(nativeTokenIDs))
+	for nativeTokenID := range nativeTokenIDs {
+		tokenID, err := parseNativeTokenIDFromBytes([]byte(nativeTokenID))
 		if err != nil {
 			return nil, err
 		}
-
-		nativeTokenIDs = append(nativeTokenIDs, parsedTokenID)
+		ret = append(ret, tokenID)
 	}
 
-	return nativeTokenIDs, nil
+	return ret, nil
 }
 
 func GetFoundryOutput(ch chain.Chain, serialNumber uint32) (*iotago.FoundryOutput, error) {

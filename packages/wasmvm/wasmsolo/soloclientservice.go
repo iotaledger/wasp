@@ -38,9 +38,7 @@ func NewSoloClientService(ctx *SoloContext, chainID string, extra ...bool) *Solo
 	if len(extra) != 1 || !extra[0] {
 		wasmhost.EventSubscribers = nil
 	}
-	wasmhost.EventSubscribers = append(wasmhost.EventSubscribers, func(msg string) {
-		s.Event(msg)
-	})
+	wasmhost.EventSubscribers = append(wasmhost.EventSubscribers, s.Event)
 	return s
 }
 
@@ -66,11 +64,13 @@ func (svc *SoloClientService) CurrentChainID() wasmtypes.ScChainID {
 	return svc.chainID
 }
 
-func (svc *SoloClientService) Event(msg string) {
-	event := wasmclient.ContractEvent{
+func (svc *SoloClientService) Event(topic string, timestamp uint64, payload []byte) {
+	event := wasmclient.Event{
 		ChainID:    svc.ctx.CurrentChainID(),
 		ContractID: wasmtypes.NewScHname(svc.ctx.scName),
-		Data:       msg,
+		Topic:      topic,
+		Timestamp:  timestamp,
+		Payload:    payload,
 	}
 	for _, h := range svc.eventHandlers {
 		h.ProcessEvent(&event)
@@ -88,7 +88,7 @@ func (svc *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract
 	if !iscChainID.Equals(svc.ctx.Chain.ChainID) {
 		return reqID, errors.New("SoloClientService.PostRequest chain ID mismatch")
 	}
-	req := solo.NewCallParamsFromDictByHname(iscContract, iscFunction, params)
+	req := solo.CallParamsFromDictByHname(iscContract, iscFunction, params)
 
 	key := string(keyPair.GetPublicKey().AsBytes())
 	nonce := svc.nonces[key]
