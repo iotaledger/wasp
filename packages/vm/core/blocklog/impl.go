@@ -46,8 +46,8 @@ func viewControlAddresses(ctx isc.SandboxView) dict.Dict {
 	rec, err := ControlAddressesFromBytes(registry.GetAt(length - 1))
 	ctx.RequireNoError(err)
 	return dict.Dict{
-		ParamStateControllerAddress: isc.BytesFromAddress(rec.StateAddress),
-		ParamGoverningAddress:       isc.BytesFromAddress(rec.GoverningAddress),
+		ParamStateControllerAddress: isc.AddressToBytes(rec.StateAddress),
+		ParamGoverningAddress:       isc.AddressToBytes(rec.GoverningAddress),
 		ParamBlockIndex:             codec.EncodeUint32(rec.SinceBlockIndex),
 	}
 }
@@ -187,7 +187,7 @@ func viewGetEventsForContract(ctx isc.SandboxView) dict.Dict {
 	contract := params.MustGetHname(ParamContractHname)
 	fromBlock := params.MustGetUint32(ParamFromBlock, 0)
 	toBlock := params.MustGetUint32(ParamToBlock, math.MaxUint32)
-	events, err := getSmartContractEventsInternal(ctx.StateR(), contract, fromBlock, toBlock)
-	ctx.RequireNoError(err)
+	events := getSmartContractEventsInternal(ctx.StateR(), contract, fromBlock, toBlock)
+
 	return eventsToDict(events)
 }

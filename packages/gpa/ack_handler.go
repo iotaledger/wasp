@@ -372,7 +372,7 @@ func (msg *ackHandlerBatch) Read(r io.Reader) error {
 		msg.id = &id
 	}
 
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	msg.msgs = make([]Message, size)
 	for i := range msg.msgs {
 		msgData := rr.ReadBytes()
@@ -382,7 +382,7 @@ func (msg *ackHandlerBatch) Read(r io.Reader) error {
 		msg.msgs[i], rr.Err = msg.nestedGPA.UnmarshalMessage(msgData)
 	}
 
-	size = rr.ReadSize()
+	size = rr.ReadSize16()
 	msg.acks = make([]int, size)
 	for i := range msg.acks {
 		msg.acks[i] = int(rr.ReadUint32())
@@ -398,12 +398,12 @@ func (msg *ackHandlerBatch) Write(w io.Writer) error {
 		ww.WriteUint32(uint32(*msg.id))
 	}
 
-	ww.WriteSize(len(msg.msgs))
+	ww.WriteSize16(len(msg.msgs))
 	for i := range msg.msgs {
 		ww.WriteMarshaled(msg.msgs[i])
 	}
 
-	ww.WriteSize(len(msg.acks))
+	ww.WriteSize16(len(msg.acks))
 	for i := range msg.acks {
 		ww.WriteUint32(uint32(msg.acks[i]))
 	}

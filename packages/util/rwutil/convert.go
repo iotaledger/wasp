@@ -4,7 +4,6 @@
 package rwutil
 
 import (
-	"bytes"
 	"encoding"
 	"encoding/binary"
 	"errors"
@@ -152,8 +151,9 @@ func WriteInt64(w io.Writer, val int64) error {
 
 //////////////////// size32 \\\\\\\\\\\\\\\\\\\\
 
-func Size32FromBytes(buf []byte) (uint32, error) {
-	return ReadSize32(bytes.NewReader(buf))
+func Size32FromBytes(data []byte) (uint32, error) {
+	buf := Buffer(data)
+	return ReadSize32(&buf)
 }
 
 func Size32ToBytes(s uint32) []byte {
@@ -318,34 +318,34 @@ func WriteUint64(w io.Writer, val uint64) error {
 // MarshalBinary is an adapter function that uses an object's Write()
 // function to marshal the object to data bytes. It is typically used
 // to implement a one-line MarshalBinary() member function for the object.
-func MarshalBinary(object interface{ Write(w io.Writer) error }) ([]byte, error) {
-	return WriterToBytes(object), nil
+func MarshalBinary(obj interface{ Write(w io.Writer) error }) ([]byte, error) {
+	return WriterToBytes(obj), nil
 }
 
 // UnmarshalBinary is an adapter function that uses an object's Read()
 // function to marshal the object from data bytes. It is typically used
 // to implement a one-line UnmarshalBinary member function for the object.
-func UnmarshalBinary[T interface{ Read(r io.Reader) error }](data []byte, object T) error {
-	_, err := ReaderFromBytes(data, object)
+func UnmarshalBinary[T interface{ Read(r io.Reader) error }](data []byte, obj T) error {
+	_, err := ReaderFromBytes(data, obj)
 	return err
 }
 
-func ReadMarshaled(r io.Reader, val encoding.BinaryUnmarshaler) error {
-	if val == nil {
+func ReadMarshaled(r io.Reader, obj encoding.BinaryUnmarshaler) error {
+	if obj == nil {
 		panic("nil BinaryUnmarshaler")
 	}
 	bin, err := ReadBytes(r)
 	if err != nil {
 		return err
 	}
-	return val.UnmarshalBinary(bin)
+	return obj.UnmarshalBinary(bin)
 }
 
-func WriteMarshaled(w io.Writer, val encoding.BinaryMarshaler) error {
-	if val == nil {
+func WriteMarshaled(w io.Writer, obj encoding.BinaryMarshaler) error {
+	if obj == nil {
 		panic("nil BinaryMarshaler")
 	}
-	bin, err := val.MarshalBinary()
+	bin, err := obj.MarshalBinary()
 	if err != nil {
 		return err
 	}
@@ -368,32 +368,29 @@ func ReadFromBytes[T any](rr *Reader, fromBytes func([]byte) (T, error)) (ret T)
 // ReaderFromBytes is a wrapper that uses an object's Read() function to marshal
 // the object from data bytes. It's typically used to implement a one-line
 // <Type>FromBytes() function and returns the expected type and error.
-func ReaderFromBytes[T interface{ Read(r io.Reader) error }](data []byte, object T) (T, error) {
-	//if object == nil {
-	//	panic("nil reader object")
-	//}
-	r := bytes.NewBuffer(data)
-	if err := object.Read(r); err != nil {
-		return object, err
+func ReaderFromBytes[T interface{ Read(r io.Reader) error }](data []byte, obj T) (T, error) {
+	// note: obj can be nil if obj.Read can handle that
+	rr := NewBytesReader(data)
+	rr.Read(obj)
+	if rr.Err != nil {
+		return obj, rr.Err
 	}
-	if r.Len() != 0 {
-		return object, errors.New("excess bytes")
+	if len(rr.Bytes()) != 0 {
+		return obj, errors.New("excess bytes in buffer")
 	}
-	return object, nil
+	return obj, nil
 }
 
 // WriterToBytes is a wrapper that uses an object's Write() function to marshal
 // the object to data bytes. It's typically used to implement a one-line Bytes()
 // function for the object.
-func WriterToBytes(object interface{ Write(w io.Writer) error }) []byte {
-	//if object == nil {
-	//	panic("nil writer object")
-	//}
-	w := new(bytes.Buffer)
-	err := object.Write(w)
-	// should never happen when writing to bytes.Buffer
-	if err != nil {
-		panic(err)
+func WriterToBytes(obj interface{ Write(w io.Writer) error }) []byte {
+	// note: obj can be nil if obj.Write can handle that
+	ww := NewBytesWriter()
+	ww.Write(obj)
+	if ww.Err != nil {
+		// should never happen when writing to Buffer
+		panic(ww.Err)
 	}
-	return w.Bytes()
+	return ww.Bytes()
 }

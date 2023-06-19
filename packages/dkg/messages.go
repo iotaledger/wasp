@@ -9,7 +9,6 @@ package dkg
 //
 
 import (
-	"bytes"
 	"errors"
 	"io"
 	"time"
@@ -75,6 +74,11 @@ const (
 )
 
 var initPeeringID peering.PeeringID
+
+func msgFromBytes[T interface{ Read(r io.Reader) error }](data []byte, msg T) error {
+	_, err := rwutil.ReaderFromBytes(data, msg)
+	return err
+}
 
 // Check if that's a Initiator -> PeerProc message.
 func isDkgInitProcRecvMsg(msgType byte) bool {
@@ -142,41 +146,22 @@ type initiatorMsg interface {
 	IsResponse() bool
 }
 
-func readInitiatorMsg(peerMessage *peering.PeerMessageData, edSuite, blsSuite kyber.Group) (bool, initiatorMsg, error) {
+func readInitiatorMsg(peerMessage *peering.PeerMessageData, edSuite, blsSuite kyber.Group) (msg initiatorMsg, err error) {
 	switch peerMessage.MsgType {
 	case initiatorInitMsgType:
-		msg := initiatorInitMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData); err != nil {
-			return true, nil, err
-		}
-		return true, &msg, nil
+		msg = new(initiatorInitMsg)
 	case initiatorStepMsgType:
-		msg := initiatorStepMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData); err != nil {
-			return true, nil, err
-		}
-		return true, &msg, nil
+		msg = new(initiatorStepMsg)
 	case initiatorDoneMsgType:
-		msg := initiatorDoneMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData, edSuite, blsSuite); err != nil {
-			return true, nil, err
-		}
-		return true, &msg, nil
+		msg = &initiatorDoneMsg{edSuite: edSuite, blsSuite: blsSuite}
 	case initiatorPubShareMsgType:
-		msg := initiatorPubShareMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData, edSuite, blsSuite); err != nil {
-			return true, nil, err
-		}
-		return true, &msg, nil
+		msg = &initiatorPubShareMsg{edSuite: edSuite, blsSuite: blsSuite}
 	case initiatorStatusMsgType:
-		msg := initiatorStatusMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData); err != nil {
-			return true, nil, err
-		}
-		return true, &msg, nil
+		msg = new(initiatorStatusMsg)
 	default:
-		return false, nil, nil
+		return nil, nil
 	}
+	return msg, msgFromBytes(peerMessage.MsgData, msg)
 }
 
 // initiatorInitMsg
@@ -211,46 +196,43 @@ func (msg *initiatorInitMsg) SetStep(step byte) {
 	msg.step = step
 }
 
-func (msg *initiatorInitMsg) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteByte(msg.step)
-	ww.WriteString(msg.dkgRef)
-	ww.WriteN(msg.peeringID[:])
-
-	ww.WriteSize(len(msg.peerPubs))
-	for i := range msg.peerPubs {
-		ww.WriteBytes(msg.peerPubs[i].AsBytes())
-	}
-
-	ww.WriteBytes(msg.initiatorPub.AsBytes())
-	ww.WriteUint16(msg.threshold)
-	ww.WriteDuration(msg.timeout)
-	ww.WriteDuration(msg.roundRetry)
-	return ww.Err
-}
-
 func (msg *initiatorInitMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
 	msg.dkgRef = rr.ReadString()
 	rr.ReadN(msg.peeringID[:])
 
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	msg.peerPubs = make([]*cryptolib.PublicKey, size)
 	for i := range msg.peerPubs {
-		msg.peerPubs[i] = rwutil.ReadFromBytes(rr, cryptolib.PublicKeyFromBytes)
+		msg.peerPubs[i] = cryptolib.NewEmptyPublicKey()
+		rr.Read(msg.peerPubs[i])
 	}
 
-	msg.initiatorPub = rwutil.ReadFromBytes(rr, cryptolib.PublicKeyFromBytes)
+	msg.initiatorPub = cryptolib.NewEmptyPublicKey()
+	rr.Read(msg.initiatorPub)
 	msg.threshold = rr.ReadUint16()
 	msg.timeout = rr.ReadDuration()
 	msg.roundRetry = rr.ReadDuration()
 	return rr.Err
 }
 
-func (msg *initiatorInitMsg) fromBytes(buf []byte) error {
-	r := bytes.NewReader(buf)
-	return msg.Read(r)
+func (msg *initiatorInitMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	ww.WriteString(msg.dkgRef)
+	ww.WriteN(msg.peeringID[:])
+
+	ww.WriteSize16(len(msg.peerPubs))
+	for i := range msg.peerPubs {
+		ww.Write(msg.peerPubs[i])
+	}
+
+	ww.Write(msg.initiatorPub)
+	ww.WriteUint16(msg.threshold)
+	ww.WriteDuration(msg.timeout)
+	ww.WriteDuration(msg.roundRetry)
+	return ww.Err
 }
 
 func (msg *initiatorInitMsg) Error() error {
@@ -282,21 +264,16 @@ func (msg *initiatorStepMsg) SetStep(step byte) {
 	msg.step = step
 }
 
-func (msg *initiatorStepMsg) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteByte(msg.step)
-	return ww.Err
-}
-
 func (msg *initiatorStepMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
 	return rr.Err
 }
 
-func (msg *initiatorStepMsg) fromBytes(buf []byte) error {
-	r := bytes.NewReader(buf)
-	return msg.Read(r)
+func (msg *initiatorStepMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	return ww.Err
 }
 
 func (msg *initiatorStepMsg) Error() error {
@@ -328,34 +305,18 @@ func (msg *initiatorDoneMsg) SetStep(step byte) {
 	msg.step = step
 }
 
-func (msg *initiatorDoneMsg) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteByte(msg.step)
-
-	ww.WriteSize(len(msg.edPubShares))
-	for i := range msg.edPubShares {
-		ww.WriteMarshaled(msg.edPubShares[i])
-	}
-
-	ww.WriteSize(len(msg.blsPubShares))
-	for i := range msg.blsPubShares {
-		ww.WriteMarshaled(msg.blsPubShares[i])
-	}
-	return ww.Err
-}
-
 func (msg *initiatorDoneMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
 
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	msg.edPubShares = make([]kyber.Point, size)
 	for i := range msg.edPubShares {
 		msg.edPubShares[i] = msg.edSuite.Point()
 		rr.ReadMarshaled(msg.edPubShares[i])
 	}
 
-	size = rr.ReadSize()
+	size = rr.ReadSize16()
 	msg.blsPubShares = make([]kyber.Point, size)
 	for i := range msg.blsPubShares {
 		msg.blsPubShares[i] = msg.blsSuite.Point()
@@ -364,11 +325,20 @@ func (msg *initiatorDoneMsg) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (msg *initiatorDoneMsg) fromBytes(buf []byte, edSuite, blsSuite kyber.Group) error {
-	r := bytes.NewReader(buf)
-	msg.edSuite = edSuite
-	msg.blsSuite = blsSuite
-	return msg.Read(r)
+func (msg *initiatorDoneMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+
+	ww.WriteSize16(len(msg.edPubShares))
+	for i := range msg.edPubShares {
+		ww.WriteMarshaled(msg.edPubShares[i])
+	}
+
+	ww.WriteSize16(len(msg.blsPubShares))
+	for i := range msg.blsPubShares {
+		ww.WriteMarshaled(msg.blsPubShares[i])
+	}
+	return ww.Err
 }
 
 func (msg *initiatorDoneMsg) Error() error {
@@ -409,21 +379,6 @@ func (msg *initiatorPubShareMsg) SetStep(step byte) {
 	msg.step = step
 }
 
-func (msg *initiatorPubShareMsg) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteByte(msg.step)
-	isc.AddressToWriter(ww, msg.sharedAddress)
-
-	ww.WriteMarshaled(msg.edSharedPublic)
-	ww.WriteMarshaled(msg.edPublicShare)
-	ww.WriteBytes(msg.edSignature)
-
-	ww.WriteMarshaled(msg.blsSharedPublic)
-	ww.WriteMarshaled(msg.blsPublicShare)
-	ww.WriteBytes(msg.blsSignature)
-	return ww.Err
-}
-
 func (msg *initiatorPubShareMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
@@ -443,11 +398,19 @@ func (msg *initiatorPubShareMsg) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (msg *initiatorPubShareMsg) fromBytes(buf []byte, edSuite, blsSuite kyber.Group) error {
-	r := bytes.NewReader(buf)
-	msg.edSuite = edSuite
-	msg.blsSuite = blsSuite
-	return msg.Read(r)
+func (msg *initiatorPubShareMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	isc.AddressToWriter(ww, msg.sharedAddress)
+
+	ww.WriteMarshaled(msg.edSharedPublic)
+	ww.WriteMarshaled(msg.edPublicShare)
+	ww.WriteBytes(msg.edSignature)
+
+	ww.WriteMarshaled(msg.blsSharedPublic)
+	ww.WriteMarshaled(msg.blsPublicShare)
+	ww.WriteBytes(msg.blsSignature)
+	return ww.Err
 }
 
 func (msg *initiatorPubShareMsg) Error() error {
@@ -476,17 +439,6 @@ func (msg *initiatorStatusMsg) SetStep(step byte) {
 	msg.step = step
 }
 
-func (msg *initiatorStatusMsg) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteByte(msg.step)
-	var errMsg string
-	if msg.error != nil {
-		errMsg = msg.error.Error()
-	}
-	ww.WriteString(errMsg)
-	return ww.Err
-}
-
 func (msg *initiatorStatusMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
@@ -498,9 +450,15 @@ func (msg *initiatorStatusMsg) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (msg *initiatorStatusMsg) fromBytes(buf []byte) error {
-	r := bytes.NewReader(buf)
-	return msg.Read(r)
+func (msg *initiatorStatusMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	var errMsg string
+	if msg.error != nil {
+		errMsg = msg.error.Error()
+	}
+	ww.WriteString(errMsg)
+	return ww.Err
 }
 
 func (msg *initiatorStatusMsg) Error() error {
@@ -529,17 +487,6 @@ func (msg *rabinDealMsg) SetStep(step byte) {
 	msg.step = step
 }
 
-func (msg *rabinDealMsg) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteByte(msg.step)
-	ww.WriteUint32(msg.deal.Index)
-	ww.WriteMarshaled(msg.deal.Deal.DHKey)
-	ww.WriteBytes(msg.deal.Deal.Signature)
-	ww.WriteBytes(msg.deal.Deal.Nonce)
-	ww.WriteBytes(msg.deal.Deal.Cipher)
-	return ww.Err
-}
-
 func (msg *rabinDealMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
@@ -551,14 +498,15 @@ func (msg *rabinDealMsg) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (msg *rabinDealMsg) fromBytes(buf []byte, edSuite kyber.Group) error {
-	msg.deal = &rabin_dkg.Deal{
-		Deal: &rabin_vss.EncryptedDeal{
-			DHKey: edSuite.Point(),
-		},
-	}
-	rdr := bytes.NewReader(buf)
-	return msg.Read(rdr)
+func (msg *rabinDealMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	ww.WriteUint32(msg.deal.Index)
+	ww.WriteMarshaled(msg.deal.Deal.DHKey)
+	ww.WriteBytes(msg.deal.Deal.Signature)
+	ww.WriteBytes(msg.deal.Deal.Nonce)
+	ww.WriteBytes(msg.deal.Deal.Cipher)
+	return ww.Err
 }
 
 // rabin_dkg.Response
@@ -579,24 +527,10 @@ func (msg *rabinResponseMsg) SetStep(step byte) {
 	msg.step = step
 }
 
-func (msg *rabinResponseMsg) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteByte(msg.step)
-	ww.WriteSize(len(msg.responses))
-	for _, response := range msg.responses {
-		ww.WriteUint32(response.Index)
-		ww.WriteBytes(response.Response.SessionID)
-		ww.WriteUint32(response.Response.Index)
-		ww.WriteBool(response.Response.Approved)
-		ww.WriteBytes(response.Response.Signature)
-	}
-	return ww.Err
-}
-
 func (msg *rabinResponseMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	msg.responses = make([]*rabin_dkg.Response, size)
 	for i := range msg.responses {
 		response := rabin_dkg.Response{
@@ -612,9 +546,18 @@ func (msg *rabinResponseMsg) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (msg *rabinResponseMsg) fromBytes(buf []byte) error {
-	rdr := bytes.NewReader(buf)
-	return msg.Read(rdr)
+func (msg *rabinResponseMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	ww.WriteSize16(len(msg.responses))
+	for _, response := range msg.responses {
+		ww.WriteUint32(response.Index)
+		ww.WriteBytes(response.Response.SessionID)
+		ww.WriteUint32(response.Response.Index)
+		ww.WriteBool(response.Response.Approved)
+		ww.WriteBytes(response.Response.Signature)
+	}
+	return ww.Err
 }
 
 // rabin_dkg.Justification
@@ -636,24 +579,10 @@ func (msg *rabinJustificationMsg) SetStep(step byte) {
 	msg.step = step
 }
 
-func (msg *rabinJustificationMsg) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteByte(msg.step)
-	ww.WriteSize(len(msg.justifications))
-	for _, j := range msg.justifications {
-		ww.WriteUint32(j.Index)
-		ww.WriteBytes(j.Justification.SessionID)
-		ww.WriteUint32(j.Justification.Index)
-		writeVssDeal(ww, j.Justification.Deal)
-		ww.WriteBytes(j.Justification.Signature)
-	}
-	return ww.Err
-}
-
 func (msg *rabinJustificationMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	msg.justifications = make([]*rabin_dkg.Justification, size)
 	for i := range msg.justifications {
 		j := &rabin_dkg.Justification{
@@ -669,10 +598,18 @@ func (msg *rabinJustificationMsg) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (msg *rabinJustificationMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
-	msg.blsSuite = blsSuite
-	rdr := bytes.NewReader(buf)
-	return msg.Read(rdr)
+func (msg *rabinJustificationMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	ww.WriteSize16(len(msg.justifications))
+	for _, j := range msg.justifications {
+		ww.WriteUint32(j.Index)
+		ww.WriteBytes(j.Justification.SessionID)
+		ww.WriteUint32(j.Justification.Index)
+		writeVssDeal(ww, j.Justification.Deal)
+		ww.WriteBytes(j.Justification.Signature)
+	}
+	return ww.Err
 }
 
 // rabin_dkg.SecretCommits
@@ -694,26 +631,6 @@ func (msg *rabinSecretCommitsMsg) SetStep(step byte) {
 	msg.step = step
 }
 
-func (msg *rabinSecretCommitsMsg) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteByte(msg.step)
-	ww.WriteBool(msg.secretCommits == nil)
-	if msg.secretCommits == nil {
-		return ww.Err
-	}
-
-	ww.WriteUint32(msg.secretCommits.Index)
-
-	ww.WriteSize(len(msg.secretCommits.Commitments))
-	for i := range msg.secretCommits.Commitments {
-		ww.WriteMarshaled(msg.secretCommits.Commitments[i])
-	}
-
-	ww.WriteBytes(msg.secretCommits.SessionID)
-	ww.WriteBytes(msg.secretCommits.Signature)
-	return ww.Err
-}
-
 func (msg *rabinSecretCommitsMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
@@ -726,7 +643,7 @@ func (msg *rabinSecretCommitsMsg) Read(r io.Reader) error {
 	msg.secretCommits = &rabin_dkg.SecretCommits{}
 	msg.secretCommits.Index = rr.ReadUint32()
 
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	msg.secretCommits.Commitments = make([]kyber.Point, size)
 	for i := range msg.secretCommits.Commitments {
 		msg.secretCommits.Commitments[i] = msg.blsSuite.Point()
@@ -738,10 +655,24 @@ func (msg *rabinSecretCommitsMsg) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (msg *rabinSecretCommitsMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
-	msg.blsSuite = blsSuite
-	rdr := bytes.NewReader(buf)
-	return msg.Read(rdr)
+func (msg *rabinSecretCommitsMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	ww.WriteBool(msg.secretCommits == nil)
+	if msg.secretCommits == nil {
+		return ww.Err
+	}
+
+	ww.WriteUint32(msg.secretCommits.Index)
+
+	ww.WriteSize16(len(msg.secretCommits.Commitments))
+	for i := range msg.secretCommits.Commitments {
+		ww.WriteMarshaled(msg.secretCommits.Commitments[i])
+	}
+
+	ww.WriteBytes(msg.secretCommits.SessionID)
+	ww.WriteBytes(msg.secretCommits.Signature)
+	return ww.Err
 }
 
 // rabin_dkg.ComplaintCommits
@@ -763,23 +694,10 @@ func (msg *rabinComplaintCommitsMsg) SetStep(step byte) {
 	msg.step = step
 }
 
-func (msg *rabinComplaintCommitsMsg) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteByte(msg.step)
-	ww.WriteSize(len(msg.complaintCommits))
-	for i := range msg.complaintCommits {
-		ww.WriteUint32(msg.complaintCommits[i].Index)
-		ww.WriteUint32(msg.complaintCommits[i].DealerIndex)
-		writeVssDeal(ww, msg.complaintCommits[i].Deal)
-		ww.WriteBytes(msg.complaintCommits[i].Signature)
-	}
-	return ww.Err
-}
-
 func (msg *rabinComplaintCommitsMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	msg.complaintCommits = make([]*rabin_dkg.ComplaintCommits, size)
 	for i := range msg.complaintCommits {
 		msg.complaintCommits[i] = &rabin_dkg.ComplaintCommits{}
@@ -791,10 +709,17 @@ func (msg *rabinComplaintCommitsMsg) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (msg *rabinComplaintCommitsMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
-	msg.blsSuite = blsSuite
-	rdr := bytes.NewReader(buf)
-	return msg.Read(rdr)
+func (msg *rabinComplaintCommitsMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	ww.WriteSize16(len(msg.complaintCommits))
+	for i := range msg.complaintCommits {
+		ww.WriteUint32(msg.complaintCommits[i].Index)
+		ww.WriteUint32(msg.complaintCommits[i].DealerIndex)
+		writeVssDeal(ww, msg.complaintCommits[i].Deal)
+		ww.WriteBytes(msg.complaintCommits[i].Signature)
+	}
+	return ww.Err
 }
 
 // rabin_dkg.ReconstructCommits
@@ -815,24 +740,10 @@ func (msg *rabinReconstructCommitsMsg) SetStep(step byte) {
 	msg.step = step
 }
 
-func (msg *rabinReconstructCommitsMsg) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteByte(msg.step)
-	ww.WriteSize(len(msg.reconstructCommits))
-	for i := range msg.reconstructCommits {
-		ww.WriteBytes(msg.reconstructCommits[i].SessionID)
-		ww.WriteUint32(msg.reconstructCommits[i].Index)
-		ww.WriteUint32(msg.reconstructCommits[i].DealerIndex)
-		writePriShare(ww, msg.reconstructCommits[i].Share)
-		ww.WriteBytes(msg.reconstructCommits[i].Signature)
-	}
-	return ww.Err
-}
-
 func (msg *rabinReconstructCommitsMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	msg.reconstructCommits = make([]*rabin_dkg.ReconstructCommits, size)
 	for i := range msg.reconstructCommits {
 		msg.reconstructCommits[i] = &rabin_dkg.ReconstructCommits{}
@@ -845,9 +756,18 @@ func (msg *rabinReconstructCommitsMsg) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (msg *rabinReconstructCommitsMsg) fromBytes(buf []byte) error {
-	rdr := bytes.NewReader(buf)
-	return msg.Read(rdr)
+func (msg *rabinReconstructCommitsMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	ww.WriteSize16(len(msg.reconstructCommits))
+	for i := range msg.reconstructCommits {
+		ww.WriteBytes(msg.reconstructCommits[i].SessionID)
+		ww.WriteUint32(msg.reconstructCommits[i].Index)
+		ww.WriteUint32(msg.reconstructCommits[i].DealerIndex)
+		writePriShare(ww, msg.reconstructCommits[i].Share)
+		ww.WriteBytes(msg.reconstructCommits[i].Signature)
+	}
+	return ww.Err
 }
 
 // multiKeySetMsg wraps messages of different protocol instances (for different key set types).
@@ -873,14 +793,6 @@ func (msg *multiKeySetMsg) SetStep(step byte) {
 	msg.step = step
 }
 
-func (msg *multiKeySetMsg) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteByte(msg.step)
-	ww.WriteBytes(msg.edMsg.MsgData)
-	ww.WriteBytes(msg.blsMsg.MsgData)
-	return ww.Err
-}
-
 func (msg *multiKeySetMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
@@ -899,20 +811,16 @@ func (msg *multiKeySetMsg) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (msg *multiKeySetMsg) fromBytes(buf []byte, peeringID peering.PeeringID, receiver, msgType byte) error {
-	rdr := bytes.NewReader(buf)
-	msg.peeringID = peeringID
-	msg.receiver = receiver
-	msg.msgType = msgType
-	return msg.Read(rdr)
+func (msg *multiKeySetMsg) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(msg.step)
+	ww.WriteBytes(msg.edMsg.MsgData)
+	ww.WriteBytes(msg.blsMsg.MsgData)
+	return ww.Err
 }
 
 func (msg *multiKeySetMsg) mustDataBytes() []byte {
-	w := new(bytes.Buffer)
-	if err := msg.Write(w); err != nil {
-		panic(err)
-	}
-	return w.Bytes()
+	return rwutil.WriterToBytes(msg)
 }
 
 type multiKeySetMsgs map[uint16]*multiKeySetMsg
@@ -999,7 +907,7 @@ func writeVssDeal(ww *rwutil.Writer, d *rabin_vss.Deal) {
 	writePriShare(ww, d.SecShare)
 	writePriShare(ww, d.RndShare)
 	ww.WriteUint32(d.T)
-	ww.WriteSize(len(d.Commitments))
+	ww.WriteSize16(len(d.Commitments))
 	for i := range d.Commitments {
 		ww.WriteMarshaled(d.Commitments[i])
 	}
@@ -1011,7 +919,7 @@ func readVssDeal(rr *rwutil.Reader, blsSuite kyber.Group) (ret *rabin_vss.Deal) 
 	ret.SecShare = readPriShare(rr)
 	ret.RndShare = readPriShare(rr)
 	ret.T = rr.ReadUint32()
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	ret.Commitments = make([]kyber.Point, size)
 	for i := range ret.Commitments {
 		ret.Commitments[i] = blsSuite.Point()

@@ -5,7 +5,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
@@ -65,27 +64,18 @@ func (req *onLedgerRequestData) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	rr.ReadKindAndVerify(rwutil.Kind(requestKindOnLedger))
 	rr.ReadN(req.outputID[:])
-	outputData := rr.ReadBytes()
-	if rr.Err != nil {
-		return rr.Err
+	req.output = util.OutputFromReader(rr)
+	if rr.Err == nil {
+		rr.Err = req.readFromUTXO(req.output, req.outputID)
 	}
-	req.output, rr.Err = util.OutputFromBytes(outputData)
-	if rr.Err != nil {
-		return rr.Err
-	}
-	return req.readFromUTXO(req.output, req.outputID)
+	return rr.Err
 }
 
 func (req *onLedgerRequestData) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteKind(rwutil.Kind(requestKindOnLedger))
 	ww.WriteN(req.outputID[:])
-	if ww.Err != nil {
-		return ww.Err
-	}
-	outputData, err := req.output.Serialize(serializer.DeSeriModePerformLexicalOrdering, nil)
-	ww.Err = err
-	ww.WriteBytes(outputData)
+	util.OutputToWriter(ww, req.output)
 	return ww.Err
 }
 

@@ -1,6 +1,7 @@
 package sm_gpa_utils
 
 import (
+	"runtime"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type blockCacheNoWALTestSM struct { // State machine for block cache no WAL property based Rapid tests
@@ -152,6 +154,12 @@ func (bcnwtsmT *blockCacheNoWALTestSM) addBlockToCache(t *rapid.T, blockKey Bloc
 			time:     time.Now(),
 			blockKey: blockKey,
 		})
+
+		// make sure some time elapses on faster machines with larger time granularity
+		if runtime.GOOS == util.WindowsOS {
+			time.Sleep(time.Millisecond)
+		}
+
 		if len(bcnwtsmT.blocksInCache) > bcnwtsmT.blockCacheMaxSize {
 			blockKey := bcnwtsmT.blockTimes[0].blockKey
 			bcnwtsmT.blocksInCache = lo.Without(bcnwtsmT.blocksInCache, blockKey)
@@ -170,7 +178,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) getAndCheckBlock(t *rapid.T, blockKey Blo
 	require.True(t, ok)
 	block := bcnwtsmT.bc.GetBlock(blockExpected.L1Commitment())
 	require.NotNil(t, block)
-	require.True(t, blockExpected.Hash().Equals(block.Hash())) // Should be Equals instead of Hash().Equals(); bwtsmT.blocks[blockHash]
+	CheckBlocksEqual(t, blockExpected, block)
 }
 
 func TestBlockCachePropBasedNoWAL(t *testing.T) {

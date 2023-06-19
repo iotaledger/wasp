@@ -7,12 +7,13 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
+const EventLookupKeyLength = 8
+
 // EventLookupKey is a globally unique reference to the event:
 // block index + index of the request within block + index of the event within the request
-type EventLookupKey [8]byte
+type EventLookupKey [EventLookupKeyLength]byte
 
-func NewEventLookupKey(blockIndex uint32, requestIndex, eventIndex uint16) EventLookupKey {
-	ret := EventLookupKey{}
+func NewEventLookupKey(blockIndex uint32, requestIndex, eventIndex uint16) (ret EventLookupKey) {
 	copy(ret[:4], codec.EncodeUint32(blockIndex))
 	copy(ret[4:6], codec.EncodeUint16(requestIndex))
 	copy(ret[6:8], codec.EncodeUint16(eventIndex))
@@ -43,11 +44,21 @@ func (k *EventLookupKey) Write(w io.Writer) error {
 	return rwutil.WriteN(w, k[:])
 }
 
-func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
+func EventLookupKeyFromReader(r io.Reader) (*EventLookupKey, error) {
 	k := EventLookupKey{}
 	n, err := r.Read(k[:])
-	if err != nil || n != 8 {
+	if err != nil || n != EventLookupKeyLength {
 		return nil, io.EOF
 	}
+	return &k, nil
+}
+
+func EventLookupKeyFromBytes(key []byte) (*EventLookupKey, error) {
+	if len(key) != EventLookupKeyLength {
+		return nil, io.EOF
+	}
+
+	k := EventLookupKey{}
+	copy(k[:], key)
 	return &k, nil
 }

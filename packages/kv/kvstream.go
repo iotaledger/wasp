@@ -22,26 +22,24 @@ type StreamIterator interface {
 }
 
 // BinaryStreamWriter writes stream of k/v pairs in binary format.
-// Keys encoding is 'bytes16' and values is 'bytes32'
 type BinaryStreamWriter struct {
 	w         io.Writer
 	kvCount   int
 	byteCount int
 }
 
+var _ StreamWriter = &BinaryStreamWriter{}
+
 func NewBinaryStreamWriter(w io.Writer) *BinaryStreamWriter {
 	return &BinaryStreamWriter{w: w}
 }
-
-// BinaryStreamWriter implements StreamWriter interface
-var _ StreamWriter = &BinaryStreamWriter{}
 
 func (b *BinaryStreamWriter) Write(key, value []byte) error {
 	ww := rwutil.NewWriter(b.w)
 	counter := rwutil.NewWriteCounter(ww)
 	ww.WriteBytes(key)
 	ww.WriteBytes(value)
-	b.byteCount += int(counter.Count())
+	b.byteCount += counter.Count()
 	b.kvCount++
 	return ww.Err
 }
@@ -59,8 +57,8 @@ func NewBinaryStreamIterator(r io.Reader) *BinaryStreamIterator {
 }
 
 func (b BinaryStreamIterator) Iterate(fun func(k []byte, v []byte) bool) error {
+	rr := rwutil.NewReader(b.r)
 	for {
-		rr := rwutil.NewReader(b.r)
 		key := rr.ReadBytes()
 		if errors.Is(rr.Err, io.EOF) {
 			return nil
@@ -92,6 +90,10 @@ func CreateKVStreamFile(fname string) (*BinaryStreamFileWriter, error) {
 	}, nil
 }
 
+func (fw *BinaryStreamFileWriter) Close() error {
+	return fw.File.Close()
+}
+
 type BinaryStreamFileIterator struct {
 	*BinaryStreamIterator
 	File *os.File
@@ -107,4 +109,8 @@ func OpenKVStreamFile(fname string) (*BinaryStreamFileIterator, error) {
 		BinaryStreamIterator: NewBinaryStreamIterator(file),
 		File:                 file,
 	}, nil
+}
+
+func (fs *BinaryStreamFileIterator) Close() error {
+	return fs.File.Close()
 }

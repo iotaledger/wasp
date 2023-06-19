@@ -176,7 +176,7 @@ type RequestLookupKeyList []RequestLookupKey
 
 func RequestLookupKeyListFromBytes(data []byte) (ret RequestLookupKeyList, err error) {
 	rr := rwutil.NewBytesReader(data)
-	size := rr.ReadSize()
+	size := rr.ReadSize16()
 	ret = make(RequestLookupKeyList, size)
 	for i := range ret {
 		rr.Read(&ret[i])
@@ -186,7 +186,7 @@ func RequestLookupKeyListFromBytes(data []byte) (ret RequestLookupKeyList, err e
 
 func (ll RequestLookupKeyList) Bytes() []byte {
 	ww := rwutil.NewBytesWriter()
-	ww.WriteSize(len(ll))
+	ww.WriteSize16(len(ll))
 	for i := range ll {
 		ww.Write(&ll[i])
 	}

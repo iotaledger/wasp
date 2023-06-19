@@ -373,7 +373,7 @@ func (a *Assets) Read(r io.Reader) error {
 		a.BaseTokens = binary.LittleEndian.Uint64(baseTokens)
 	}
 	if (flags & hasNativeTokens) != 0 {
-		size := rr.ReadSize()
+		size := rr.ReadSize16()
 		a.NativeTokens = make(iotago.NativeTokens, size)
 		for i := range a.NativeTokens {
 			nativeToken := new(iotago.NativeToken)
@@ -383,7 +383,7 @@ func (a *Assets) Read(r io.Reader) error {
 		}
 	}
 	if (flags & hasNFTs) != 0 {
-		size := rr.ReadSize()
+		size := rr.ReadSize16()
 		a.NFTs = make([]iotago.NFTID, size)
 		for i := range a.NFTs {
 			rr.ReadN(a.NFTs[i][:])
@@ -423,7 +423,7 @@ func (a *Assets) Write(w io.Writer) error {
 		ww.WriteN(baseTokens[:(flags&0x07)+1])
 	}
 	if (flags & hasNativeTokens) != 0 {
-		ww.WriteSize(len(a.NativeTokens))
+		ww.WriteSize16(len(a.NativeTokens))
 		sort.Slice(a.NativeTokens, func(lhs, rhs int) bool {
 			return bytes.Compare(a.NativeTokens[lhs].ID[:], a.NativeTokens[rhs].ID[:]) < 0
 		})
@@ -433,7 +433,7 @@ func (a *Assets) Write(w io.Writer) error {
 		}
 	}
 	if (flags & hasNFTs) != 0 {
-		ww.WriteSize(len(a.NFTs))
+		ww.WriteSize16(len(a.NFTs))
 		sort.Slice(a.NFTs, func(lhs, rhs int) bool {
 			return bytes.Compare(a.NFTs[lhs][:], a.NFTs[rhs][:]) < 0
 		})

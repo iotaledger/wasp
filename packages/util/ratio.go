@@ -43,12 +43,12 @@ func Ratio32FromString(s string) (ret Ratio32, err error) {
 	return ret, nil
 }
 
-func (r Ratio32) Bytes() []byte {
-	return rwutil.WriterToBytes(&r)
+func (ratio Ratio32) Bytes() []byte {
+	return rwutil.WriterToBytes(&ratio)
 }
 
-func (r Ratio32) String() string {
-	return fmt.Sprintf("%d:%d", r.A, r.B)
+func (ratio Ratio32) String() string {
+	return fmt.Sprintf("%d:%d", ratio.A, ratio.B)
 }
 
 func ceil(x, dividend, divisor uint64) uint64 {
@@ -56,27 +56,27 @@ func ceil(x, dividend, divisor uint64) uint64 {
 }
 
 // YFloor64 computes y = floor(x * b / a)
-func (r Ratio32) YFloor64(x uint64) uint64 {
-	return x * uint64(r.B) / uint64(r.A)
+func (ratio Ratio32) YFloor64(x uint64) uint64 {
+	return x * uint64(ratio.B) / uint64(ratio.A)
 }
 
 // YCeil64 computes y = ceil(x * b / a)
-func (r Ratio32) YCeil64(x uint64) uint64 {
-	return ceil(x, uint64(r.B), uint64(r.A))
+func (ratio Ratio32) YCeil64(x uint64) uint64 {
+	return ceil(x, uint64(ratio.B), uint64(ratio.A))
 }
 
 // XFloor64 computes x = floor(y * a / b)
-func (r Ratio32) XFloor64(y uint64) uint64 {
-	return y * uint64(r.A) / uint64(r.B)
+func (ratio Ratio32) XFloor64(y uint64) uint64 {
+	return y * uint64(ratio.A) / uint64(ratio.B)
 }
 
 // XCeil64 computes x = ceil(y * a / b)
-func (r Ratio32) XCeil64(y uint64) uint64 {
-	return ceil(y, uint64(r.A), uint64(r.B))
+func (ratio Ratio32) XCeil64(y uint64) uint64 {
+	return ceil(y, uint64(ratio.A), uint64(ratio.B))
 }
 
 // Set is part of the pflag.Value interface. It accepts a string in the form "a:b".
-func (r *Ratio32) Set(s string) error {
+func (ratio *Ratio32) Set(s string) error {
 	parts := strings.Split(s, ":")
 	if len(parts) != 2 {
 		return errors.New("invalid format for Ratio32")
@@ -89,33 +89,33 @@ func (r *Ratio32) Set(s string) error {
 	if err != nil {
 		return err
 	}
-	r.A = uint32(a)
-	r.B = uint32(b)
+	ratio.A = uint32(a)
+	ratio.B = uint32(b)
 	return nil
 }
 
 // Type is part of the pflag.Value interface.
-func (r Ratio32) Type() string {
+func (ratio Ratio32) Type() string {
 	return "Ratio32"
 }
 
-func (r Ratio32) HasZeroComponent() bool {
-	return r.A == 0 || r.B == 0
+func (ratio Ratio32) HasZeroComponent() bool {
+	return ratio.A == 0 || ratio.B == 0
 }
 
-func (r *Ratio32) Read(xr io.Reader) error {
-	rr := rwutil.NewReader(xr)
-	r.A = rr.ReadUint32()
-	r.B = rr.ReadUint32()
-	if rr.Err == nil && r.HasZeroComponent() {
+func (ratio *Ratio32) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	ratio.A = rr.ReadUint32()
+	ratio.B = rr.ReadUint32()
+	if rr.Err == nil && ratio.HasZeroComponent() {
 		rr.Err = errors.New("ratio has zero component")
 	}
 	return rr.Err
 }
 
-func (r *Ratio32) Write(xw io.Writer) error {
-	ww := rwutil.NewWriter(xw)
-	ww.WriteUint32(r.A)
-	ww.WriteUint32(r.B)
+func (ratio *Ratio32) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteUint32(ratio.A)
+	ww.WriteUint32(ratio.B)
 	return ww.Err
 }
