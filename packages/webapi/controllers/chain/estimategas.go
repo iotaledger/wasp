@@ -27,11 +27,11 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	requestBytes, err := iotago.DecodeHex(estimateGasRequest.Output)
+	outputBytes, err := iotago.DecodeHex(estimateGasRequest.Output)
 	if err != nil {
 		return apierrors.InvalidPropertyError("Request", err)
 	}
-	output, err := util.OutputFromBytes(requestBytes)
+	output, err := util.OutputFromBytes(outputBytes)
 	if err != nil {
 		return apierrors.InvalidPropertyError("Output", err)
 	}

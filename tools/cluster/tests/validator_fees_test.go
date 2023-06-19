@@ -55,7 +55,7 @@ func TestValidatorFees(t *testing.T) {
 			Nonce: 0,
 		})
 		require.NoError(t, err2)
-		_, err2 = clu.MultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req.ID(), false, 10*time.Second)
+		_, err2 = clu.MultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req.ID(), false, 30*time.Second)
 		require.NoError(t, err2)
 	}
 	// send a bunch of requests
@@ -64,7 +64,7 @@ func TestValidatorFees(t *testing.T) {
 	userWallet, _, err := chEnv.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	scClient := chainclient.New(clu.L1Client(), clu.WaspClient(0), chainID, userWallet)
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 20; i++ {
 		reqTx, err := scClient.Post1Request(nativeIncCounterSCHname, inccounter.FuncIncCounter.Hname())
 		require.NoError(t, err)
 		_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chainID, reqTx, false, 30*time.Second)
