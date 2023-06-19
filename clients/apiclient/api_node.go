@@ -1099,30 +1099,23 @@ func (a *NodeApiService) GetVersionExecute(r ApiGetVersionRequest) (*VersionResp
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
-type ApiSetNodeOwnerRequest struct {
+type ApiOwnerCertificateRequest struct {
 	ctx context.Context
 	ApiService *NodeApiService
-	nodeOwnerCertificateRequest *NodeOwnerCertificateRequest
 }
 
-// The node owner certificate
-func (r ApiSetNodeOwnerRequest) NodeOwnerCertificateRequest(nodeOwnerCertificateRequest NodeOwnerCertificateRequest) ApiSetNodeOwnerRequest {
-	r.nodeOwnerCertificateRequest = &nodeOwnerCertificateRequest
-	return r
-}
-
-func (r ApiSetNodeOwnerRequest) Execute() (*NodeOwnerCertificateResponse, *http.Response, error) {
-	return r.ApiService.SetNodeOwnerExecute(r)
+func (r ApiOwnerCertificateRequest) Execute() (*NodeOwnerCertificateResponse, *http.Response, error) {
+	return r.ApiService.OwnerCertificateExecute(r)
 }
 
 /*
-SetNodeOwner Sets the node owner
+OwnerCertificate Gets the node owner
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiSetNodeOwnerRequest
+ @return ApiOwnerCertificateRequest
 */
-func (a *NodeApiService) SetNodeOwner(ctx context.Context) ApiSetNodeOwnerRequest {
-	return ApiSetNodeOwnerRequest{
+func (a *NodeApiService) OwnerCertificate(ctx context.Context) ApiOwnerCertificateRequest {
+	return ApiOwnerCertificateRequest{
 		ApiService: a,
 		ctx: ctx,
 	}
@@ -1130,15 +1123,15 @@ func (a *NodeApiService) SetNodeOwner(ctx context.Context) ApiSetNodeOwnerReques
 
 // Execute executes the request
 //  @return NodeOwnerCertificateResponse
-func (a *NodeApiService) SetNodeOwnerExecute(r ApiSetNodeOwnerRequest) (*NodeOwnerCertificateResponse, *http.Response, error) {
+func (a *NodeApiService) OwnerCertificateExecute(r ApiOwnerCertificateRequest) (*NodeOwnerCertificateResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
+		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
 		localVarReturnValue  *NodeOwnerCertificateResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeApiService.SetNodeOwner")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeApiService.OwnerCertificate")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -1148,12 +1141,9 @@ func (a *NodeApiService) SetNodeOwnerExecute(r ApiSetNodeOwnerRequest) (*NodeOwn
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
-	if r.nodeOwnerCertificateRequest == nil {
-		return localVarReturnValue, nil, reportError("nodeOwnerCertificateRequest is required and must be specified")
-	}
 
 	// to determine the Content-Type header
-	localVarHTTPContentTypes := []string{"application/json"}
+	localVarHTTPContentTypes := []string{}
 
 	// set Content-Type header
 	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
@@ -1169,8 +1159,6 @@ func (a *NodeApiService) SetNodeOwnerExecute(r ApiSetNodeOwnerRequest) (*NodeOwn
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	// body params
-	localVarPostBody = r.nodeOwnerCertificateRequest
 	if r.ctx != nil {
 		// API Key Authentication
 		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {

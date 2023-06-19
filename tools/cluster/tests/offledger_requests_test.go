@@ -144,60 +144,33 @@ func testOffledgerNonce(t *testing.T, e *ChainEnv) {
 		},
 	)
 	require.NoError(t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(e.Chain.ChainID, offledgerReq.ID(), false, 30*time.Second)
-	require.NoError(t, err)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(e.Chain.ChainID, offledgerReq.ID(), false, 5*time.Second)
+	require.Error(t, err) // wont' be processed
 
-	// send off-ledger request with a high nonce -1
-	offledgerReq, err = chClient.PostOffLedgerRequest(context.Background(),
-		nativeIncCounterSCHname,
-		inccounter.FuncIncCounter.Hname(),
-		chainclient.PostRequestParams{
-			Nonce: 999_999,
-		},
-	)
-	require.NoError(t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(e.Chain.ChainID, offledgerReq.ID(), false, 30*time.Second)
-	require.NoError(t, err)
+	// send off-ledger requests with the correct nonce
+	for i := uint64(0); i < 5; i++ {
+		req, err2 := chClient.PostOffLedgerRequest(context.Background(),
+			nativeIncCounterSCHname,
+			inccounter.FuncIncCounter.Hname(),
+			chainclient.PostRequestParams{
+				Nonce: i,
+			},
+		)
+		require.NoError(t, err2)
+		_, err2 = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(e.Chain.ChainID, req.ID(), false, 10*time.Second)
+		require.NoError(t, err2)
+	}
 
-	// send off-ledger request with a much lower nonce
+	// try replaying an older nonce
 	_, err = chClient.PostOffLedgerRequest(context.Background(),
-		nativeIncCounterSCHname,
-		inccounter.FuncIncCounter.Hname(),
+		accounts.Contract.Hname(),
+		accounts.FuncTransferAccountToChain.Hname(),
 		chainclient.PostRequestParams{
 			Nonce: 1,
 		},
 	)
-
-	apiError, ok := apiextensions.AsAPIError(err)
-	require.True(t, ok)
-	require.NotNil(t, apiError.DetailError)
-	require.Regexp(t, "not added to the mempool", apiError.DetailError.Error)
-
-	// try replaying the initial request
-	_, err = chClient.PostOffLedgerRequest(context.Background(),
-		nativeIncCounterSCHname,
-		inccounter.FuncIncCounter.Hname(),
-		chainclient.PostRequestParams{
-			Nonce: 1_000_000,
-		},
-	)
-
-	apiError, ok = apiextensions.AsAPIError(err)
-	require.True(t, ok)
-	require.NotNil(t, apiError.DetailError)
-	require.Regexp(t, "request already processed", apiError.DetailError.Error)
-
-	// send a request with a higher nonce
-	offledgerReq, err = chClient.PostOffLedgerRequest(context.Background(),
-		nativeIncCounterSCHname,
-		inccounter.FuncIncCounter.Hname(),
-		chainclient.PostRequestParams{
-			Nonce: 1_000_001,
-		},
-	)
-	require.NoError(t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(e.Chain.ChainID, offledgerReq.ID(), false, 30*time.Second)
-	require.NoError(t, err)
+	require.Error(t, err)
+	require.Contains(t, string(err.(*apiclient.GenericOpenAPIError).Body()), "not added to the mempool")
 }
 
 func newWalletWithFunds(e *ChainEnv, waspnode int, waitOnNodes ...int) *chainclient.Client {

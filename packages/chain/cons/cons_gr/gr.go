@@ -133,6 +133,7 @@ func New(
 	mempool Mempool,
 	stateMgr StateMgr,
 	net peering.NetworkProvider,
+	validatorAgentID isc.AgentID,
 	recoveryTimeout time.Duration,
 	redeliveryPeriod time.Duration,
 	printStatusPeriod time.Duration,
@@ -171,7 +172,17 @@ func New(
 
 	pipeMetrics.TrackPipeLenMax("cons-gr-netRecvPipe", netPeeringID.String(), cgr.netRecvPipe.Len)
 
-	constInstRaw := cons.New(chainID, chainStore, me, myNodeIdentity.GetPrivateKey(), dkShare, procCache, netPeeringID[:], gpa.NodeIDFromPublicKey, log).AsGPA()
+	constInstRaw := cons.New(chainID,
+		chainStore,
+		me,
+		myNodeIdentity.GetPrivateKey(),
+		dkShare,
+		procCache,
+		netPeeringID[:],
+		gpa.NodeIDFromPublicKey,
+		validatorAgentID,
+		log,
+	).AsGPA()
 	cgr.consInst = gpa.NewAckHandler(me, constInstRaw, redeliveryPeriod)
 
 	unhook := net.Attach(&netPeeringID, peering.PeerMessageReceiverChainCons, func(recv *peering.PeerMessageIn) {

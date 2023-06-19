@@ -167,7 +167,8 @@ type chainNodeImpl struct {
 	blockWAL            sm_gpa_utils.BlockWAL
 	//
 	// Configuration values.
-	consensusDelay time.Duration
+	consensusDelay   time.Duration
+	validatorAgentID isc.AgentID
 	//
 	// Information for other components.
 	listener               ChainListener          // Object expecting event notifications.
@@ -272,6 +273,7 @@ func New(
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
 	consensusDelay time.Duration,
+	validatorAgentID isc.AgentID,
 	smParameters sm_gpa.StateManagerParameters,
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
@@ -304,6 +306,7 @@ func New(
 		stateTrackerCnf:        nil, // Set bellow.
 		blockWAL:               blockWAL,
 		consensusDelay:         consensusDelay,
+		validatorAgentID:       validatorAgentID,
 		listener:               listener,
 		accessLock:             &sync.RWMutex{},
 		activeCommitteeDKShare: nil,
@@ -861,6 +864,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 			cgr := consGR.New(
 				consGrCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
 				cni.procCache, cni.mempool, cni.stateMgr, cni.net,
+				cni.validatorAgentID,
 				recoveryTimeout, redeliveryPeriod, printStatusPeriod,
 				cni.chainMetrics,
 				cni.chainMetrics,

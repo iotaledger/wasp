@@ -279,7 +279,6 @@ func provide(c *dig.Container) error {
 			deps.ShutdownHandler,
 			deps.ChainMetricsProvider,
 			ParamsWebAPI.Auth,
-			ParamsWebAPI.NodeOwnerAddresses,
 			deps.APICacheTTL,
 			websocketService,
 			deps.Publisher,

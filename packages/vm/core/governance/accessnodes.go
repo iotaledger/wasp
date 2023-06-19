@@ -46,7 +46,7 @@ func (c NodeOwnershipCertificate) Bytes() []byte {
 // on the governance SC about a specific node.
 type AccessNodeInfo struct {
 	NodePubKey    []byte // Public Key of the node. Stored as a key in the SC State and Params.
-	ValidatorAddr []byte // Address of the validator owning the node. Not sent via parameters.
+	validatorAddr []byte // Address of the validator owning the node. Not sent via parameters.
 	Certificate   []byte // Proof that Validator owns the Node.
 	ForCommittee  bool   // true, if Node should be a candidate to a committee.
 	AccessAPI     string // API URL, if any.
@@ -56,7 +56,7 @@ func AccessNodeInfoFromBytes(pubKey, data []byte) (*AccessNodeInfo, error) {
 	rr := rwutil.NewBytesReader(data)
 	return &AccessNodeInfo{
 		NodePubKey:    pubKey,
-		ValidatorAddr: rr.ReadBytes(),
+		validatorAddr: rr.ReadBytes(),
 		Certificate:   rr.ReadBytes(),
 		ForCommittee:  rr.ReadBool(),
 		AccessAPI:     rr.ReadString(),
@@ -82,7 +82,7 @@ func AccessNodeInfoListFromMap(infoMap *collections.ImmutableMap) ([]*AccessNode
 
 func (a *AccessNodeInfo) Bytes() []byte {
 	ww := rwutil.NewBytesWriter()
-	ww.WriteBytes(a.ValidatorAddr)
+	ww.WriteBytes(a.validatorAddr)
 	ww.WriteBytes(a.Certificate)
 	ww.WriteBool(a.ForCommittee)
 	ww.WriteString(a.AccessAPI)
@@ -99,7 +99,7 @@ func AccessNodeInfoFromAddCandidateNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
 	params := ctx.Params()
 	ani := AccessNodeInfo{
 		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),
-		ValidatorAddr: isc.AddressToBytes(validatorAddr),
+		validatorAddr: isc.AddressToBytes(validatorAddr),
 		Certificate:   params.MustGetBytes(ParamAccessNodeInfoCertificate),
 		ForCommittee:  params.MustGetBool(ParamAccessNodeInfoForCommittee, false),
 		AccessAPI:     params.MustGetString(ParamAccessNodeInfoAccessAPI, ""),
@@ -124,7 +124,7 @@ func AccessNodeInfoFromRevokeAccessNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
 	params := ctx.Params()
 	ani := AccessNodeInfo{
 		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),
-		ValidatorAddr: isc.AddressToBytes(validatorAddr), // Not from params, to have it validated.
+		validatorAddr: isc.AddressToBytes(validatorAddr), // Not from params, to have it validated.
 		Certificate:   params.MustGetBytes(ParamAccessNodeInfoCertificate),
 	}
 	return &ani
@@ -142,12 +142,12 @@ func (a *AccessNodeInfo) AddCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAdd
 	return a
 }
 
-func (a *AccessNodeInfo) ValidateCertificate(ctx isc.Sandbox) bool {
+func (a *AccessNodeInfo) ValidateCertificate() bool {
 	nodePubKey, err := cryptolib.PublicKeyFromBytes(a.NodePubKey)
 	if err != nil {
 		return false
 	}
-	validatorAddr, err := isc.AddressFromBytes(a.ValidatorAddr)
+	validatorAddr, err := isc.AddressFromBytes(a.validatorAddr)
 	if err != nil {
 		return false
 	}

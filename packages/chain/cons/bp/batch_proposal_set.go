@@ -4,8 +4,11 @@
 package bp
 
 import (
+	"bytes"
 	"sort"
 	"time"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -115,6 +118,9 @@ func (bps batchProposalSet) selectedProposal(aggregatedTime time.Time) gpa.NodeI
 	for nid := range bps {
 		peers = append(peers, nid)
 	}
+	slices.SortFunc(peers, func(a gpa.NodeID, b gpa.NodeID) bool {
+		return bytes.Compare(a[:], b[:]) < 0
+	})
 	rnd := util.NewPseudoRand(aggregatedTime.UnixNano())
 	return peers[rnd.Intn(len(bps))]
 }
