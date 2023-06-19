@@ -38,6 +38,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 )
 
@@ -460,6 +461,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			true,
 			-1,
 			10*time.Millisecond,
+			accounts.CommonAccount(),
 			sm_gpa.NewStateManagerParameters(),
 		)
 		require.NoError(t, err)

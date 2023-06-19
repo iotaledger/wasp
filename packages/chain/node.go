@@ -167,7 +167,8 @@ type chainNodeImpl struct {
 	blockWAL            sm_gpa_utils.BlockWAL
 	//
 	// Configuration values.
-	consensusDelay time.Duration
+	consensusDelay   time.Duration
+	validatorAgentID isc.AgentID
 	//
 	// Information for other components.
 	listener               ChainListener          // Object expecting event notifications.
@@ -272,6 +273,7 @@ func New(
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
 	consensusDelay time.Duration,
+	validatorAgentID isc.AgentID,
 	smParameters sm_gpa.StateManagerParameters,
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
@@ -304,6 +306,7 @@ func New(
 		stateTrackerCnf:        nil, // Set bellow.
 		blockWAL:               blockWAL,
 		consensusDelay:         consensusDelay,
+		validatorAgentID:       validatorAgentID,
 		listener:               listener,
 		accessLock:             &sync.RWMutex{},
 		activeCommitteeDKShare: nil,
@@ -429,7 +432,7 @@ func New(
 	//
 	// Connect to the peering network.
 	netRecvPipeInCh := cni.netRecvPipe.In()
-	unhook := net.Attach(&netPeeringID, peering.PeerMessageReceiverChain, func(recv *peering.PeerMessageIn) {
+	unhook := net.Attach(&netPeeringID, peering.ReceiverChain, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeChainMgr {
 			cni.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
@@ -861,6 +864,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 			cgr := consGR.New(
 				consGrCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
 				cni.procCache, cni.mempool, cni.stateMgr, cni.net,
+				cni.validatorAgentID,
 				recoveryTimeout, redeliveryPeriod, printStatusPeriod,
 				cni.chainMetrics,
 				cni.chainMetrics,
@@ -933,7 +937,7 @@ func (cni *chainNodeImpl) sendMessages(outMsgs gpa.OutMessages) {
 			cni.log.Warnf("Pub key for the recipient not found: %v", msg.Recipient())
 			return
 		}
-		pm := peering.NewPeerMessageData(cni.netPeeringID, peering.PeerMessageReceiverChain, msgTypeChainMgr, msg)
+		pm := peering.NewPeerMessageData(cni.netPeeringID, peering.ReceiverChain, msgTypeChainMgr, msg)
 		cni.net.SendMsgByPubKey(recipientPubKey, pm)
 	})
 }

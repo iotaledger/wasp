@@ -152,7 +152,7 @@ func New(
 		committeeNodes: []*cryptolib.PublicKey{},
 	})
 
-	unhook := result.net.Attach(&result.netPeeringID, peering.PeerMessageReceiverStateManager, func(recv *peering.PeerMessageIn) {
+	unhook := result.net.Attach(&result.netPeeringID, peering.ReceiverStateManager, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != constMsgTypeStm {
 			result.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
@@ -365,7 +365,7 @@ func (smT *stateManager) sendMessages(outMsgs gpa.OutMessages) {
 		return
 	}
 	outMsgs.MustIterate(func(msg gpa.Message) {
-		pm := peering.NewPeerMessageData(smT.netPeeringID, peering.PeerMessageReceiverStateManager, constMsgTypeStm, msg)
+		pm := peering.NewPeerMessageData(smT.netPeeringID, peering.ReceiverStateManager, constMsgTypeStm, msg)
 		recipientPubKey, ok := smT.nodeIDToPubKey[msg.Recipient()]
 		if !ok {
 			smT.log.Debugf("Dropping outgoing message, because NodeID=%s it is not in the NodeList.", msg.Recipient().ShortString())

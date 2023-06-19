@@ -182,7 +182,7 @@ func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 			d.dssPartialSigBuffer.ForEach(func(nid gpa.NodeID, ps *dss.PartialSig) bool {
 				err := d.dssSigner.ProcessPartialSig(ps)
 				if err != nil {
-					d.log.Warnf("Failed to process a buffered partial signature: %v", err)
+					d.log.Errorf("Failed to process a buffered partial signature: %v", err)
 				}
 
 				d.dssPartialSigBuffer.Delete(nid)
