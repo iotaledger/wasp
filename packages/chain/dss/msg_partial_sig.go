@@ -6,6 +6,7 @@ package dss
 import (
 	"io"
 
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/suites"
@@ -33,13 +34,9 @@ func (msg *msgPartialSig) UnmarshalBinary(data []byte) error {
 func (msg *msgPartialSig) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypePartialSig.ReadAndVerify(rr)
-	msg.partialSig = &dss.PartialSig{
-		Partial: &share.PriShare{
-			I: int(rr.ReadUint16()),
-			V: msg.suite.Scalar(),
-		},
-	}
-	rr.ReadMarshaled(msg.partialSig.Partial.V)
+	msg.partialSig = &dss.PartialSig{Partial: &share.PriShare{}}
+	msg.partialSig.Partial.I = int(rr.ReadUint16())
+	msg.partialSig.Partial.V = tcrypto.ScalarFromReader(rr, msg.suite)
 	msg.partialSig.SessionID = rr.ReadBytes()
 	msg.partialSig.Signature = rr.ReadBytes()
 	return rr.Err
@@ -49,7 +46,7 @@ func (msg *msgPartialSig) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	msgTypePartialSig.Write(ww)
 	ww.WriteUint16(uint16(msg.partialSig.Partial.I)) // TODO: Resolve it from the context, instead of marshaling.
-	ww.WriteMarshaled(msg.partialSig.Partial.V)
+	tcrypto.ScalarToWriter(ww, msg.partialSig.Partial.V)
 	ww.WriteBytes(msg.partialSig.SessionID)
 	ww.WriteBytes(msg.partialSig.Signature)
 	return ww.Err

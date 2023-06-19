@@ -171,8 +171,8 @@ func New(
 
 	pipeMetrics.TrackPipeLenMax("cons-gr-netRecvPipe", netPeeringID.String(), cgr.netRecvPipe.Len)
 
-	constInstRaw := cons.New(chainID, chainStore, me, myNodeIdentity.GetPrivateKey(), dkShare, procCache, netPeeringID[:], gpa.NodeIDFromPublicKey, log).AsGPA()
-	cgr.consInst = gpa.NewAckHandler(me, constInstRaw, redeliveryPeriod)
+	consInstRaw := cons.New(chainID, chainStore, me, myNodeIdentity.GetPrivateKey(), dkShare, procCache, netPeeringID[:], gpa.NodeIDFromPublicKey, log).AsGPA()
+	cgr.consInst = gpa.NewAckHandler(me, consInstRaw, redeliveryPeriod)
 
 	unhook := net.Attach(&netPeeringID, peering.PeerMessageReceiverChainCons, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeCons {

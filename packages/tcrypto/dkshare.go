@@ -28,6 +28,28 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
+func PointFromReader(rr *rwutil.Reader, factory interface{ Point() kyber.Point }) (point kyber.Point) {
+	point = factory.Point()
+	rr.ReadMarshaled(point)
+	return point
+}
+
+func PointToWriter(ww *rwutil.Writer, point kyber.Point) {
+	ww.WriteMarshaled(point)
+}
+
+func ScalarFromReader(rr *rwutil.Reader, factory interface{ Scalar() kyber.Scalar }) (scalar kyber.Scalar) {
+	if factory != nil {
+		scalar = factory.Scalar()
+	}
+	rr.ReadMarshaled(scalar)
+	return scalar
+}
+
+func ScalarToWriter(ww *rwutil.Writer, scalar kyber.Scalar) {
+	ww.WriteMarshaled(scalar)
+}
+
 // secretShareImpl is an implementation for SecretShare.
 type secretShareImpl struct {
 	priShare    *share.PriShare
@@ -266,41 +288,35 @@ func (s *dkShareImpl) Read(r io.Reader) error {
 	}
 
 	// DSS / Ed25519 part of the key shares.
-	s.edSharedPublic = s.edSuite.Point()
-	rr.ReadMarshaled(s.edSharedPublic)
+	edSuite := s.edSuite
+	s.edSharedPublic = PointFromReader(rr, edSuite)
 	size = rr.ReadSize16()
 	s.edPublicCommits = make([]kyber.Point, size)
 	for i := range s.edPublicCommits {
-		s.edPublicCommits[i] = s.edSuite.Point()
-		rr.ReadMarshaled(s.edPublicCommits[i])
+		s.edPublicCommits[i] = PointFromReader(rr, edSuite)
 	}
 	size = rr.ReadSize16()
 	s.edPublicShares = make([]kyber.Point, size)
 	for i := range s.edPublicShares {
-		s.edPublicShares[i] = s.edSuite.Point()
-		rr.ReadMarshaled(s.edPublicShares[i])
+		s.edPublicShares[i] = PointFromReader(rr, edSuite)
 	}
-	s.edPrivateShare = s.edSuite.Scalar()
-	rr.ReadMarshaled(s.edPrivateShare)
+	s.edPrivateShare = ScalarFromReader(rr, edSuite)
 
 	// BLS part of the key shares.
+	blsGroup := s.blsSuite.G2()
 	s.blsThreshold = rr.ReadUint16()
-	s.blsSharedPublic = s.blsSuite.G2().Point()
-	rr.ReadMarshaled(s.blsSharedPublic)
+	s.blsSharedPublic = PointFromReader(rr, blsGroup)
 	size = rr.ReadSize16()
 	s.blsPublicCommits = make([]kyber.Point, size)
 	for i := range s.blsPublicCommits {
-		s.blsPublicCommits[i] = s.blsSuite.G2().Point()
-		rr.ReadMarshaled(s.blsPublicCommits[i])
+		s.blsPublicCommits[i] = PointFromReader(rr, blsGroup)
 	}
 	size = rr.ReadSize16()
 	s.blsPublicShares = make([]kyber.Point, size)
 	for i := range s.blsPublicShares {
-		s.blsPublicShares[i] = s.blsSuite.G2().Point()
-		rr.ReadMarshaled(s.blsPublicShares[i])
+		s.blsPublicShares[i] = PointFromReader(rr, blsGroup)
 	}
-	s.blsPrivateShare = s.blsSuite.G2().Scalar()
-	rr.ReadMarshaled(s.blsPrivateShare)
+	s.blsPrivateShare = ScalarFromReader(rr, blsGroup)
 	return rr.Err
 }
 
@@ -318,29 +334,29 @@ func (s *dkShareImpl) Write(w io.Writer) error {
 	}
 
 	// DSS / Ed25519 part of the key shares.
-	ww.WriteMarshaled(s.edSharedPublic)
+	PointToWriter(ww, s.edSharedPublic)
 	ww.WriteSize16(len(s.edPublicCommits))
 	for i := 0; i < len(s.edPublicCommits); i++ {
-		ww.WriteMarshaled(s.edPublicCommits[i])
+		PointToWriter(ww, s.edPublicCommits[i])
 	}
 	ww.WriteSize16(len(s.edPublicShares))
 	for i := 0; i < len(s.edPublicShares); i++ {
-		ww.WriteMarshaled(s.edPublicShares[i])
+		PointToWriter(ww, s.edPublicShares[i])
 	}
-	ww.WriteMarshaled(s.edPrivateShare)
+	ScalarToWriter(ww, s.edPrivateShare)
 
 	// BLS part of the key shares.
 	ww.WriteUint16(s.blsThreshold)
-	ww.WriteMarshaled(s.blsSharedPublic)
+	PointToWriter(ww, s.blsSharedPublic)
 	ww.WriteSize16(len(s.blsPublicCommits))
 	for i := 0; i < len(s.blsPublicCommits); i++ {
-		ww.WriteMarshaled(s.blsPublicCommits[i])
+		PointToWriter(ww, s.blsPublicCommits[i])
 	}
 	ww.WriteSize16(len(s.blsPublicShares))
 	for i := 0; i < len(s.blsPublicShares); i++ {
-		ww.WriteMarshaled(s.blsPublicShares[i])
+		PointToWriter(ww, s.blsPublicShares[i])
 	}
-	ww.WriteMarshaled(s.blsPrivateShare)
+	ScalarToWriter(ww, s.blsPrivateShare)
 	return ww.Err
 }
 

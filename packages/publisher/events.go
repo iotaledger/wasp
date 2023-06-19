@@ -123,7 +123,7 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 	blockEvents := blocklog.GetEventsByBlockIndex(blocklogStatePartition, blockIndex, blockInfo.TotalRequests)
 	var payload []*isc.Event
 	for _, eventData := range blockEvents {
-		event, err := isc.NewEvent(eventData)
+		event, err := isc.EventFromBytes(eventData)
 		if err != nil {
 			panic(err)
 		}
