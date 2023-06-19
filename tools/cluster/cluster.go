@@ -29,9 +29,11 @@ import (
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/multiclient"
+	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/origin"
@@ -250,7 +252,8 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			Textout:           os.Stdout,
 			Prefix:            "[cluster] ",
 			InitParams: dict.Dict{
-				origin.ParamChainOwner: isc.NewAgentID(chain.OriginatorAddress()).Bytes(),
+				origin.ParamChainOwner:  isc.NewAgentID(chain.OriginatorAddress()).Bytes(),
+				origin.ParamWaspVersion: codec.EncodeString(app.Version),
 			},
 		},
 		stateAddr,

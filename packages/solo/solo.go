@@ -244,6 +244,8 @@ func (env *Solo) NewChainExt(
 
 	initParams := dict.Dict{
 		origin.ParamChainOwner: isc.NewAgentID(chainOriginator.Address()).Bytes(),
+		// FIXME this will cause import cycle
+		// origin.ParamWaspVersion: codec.EncodeString(app.Version),
 	}
 	if len(originParams) > 0 {
 		for k, v := range originParams[0] {
