@@ -65,7 +65,7 @@ func (rr *Reader) PushBack() *Writer {
 	return &Writer{w: push}
 }
 
-func (rr *Reader) Read(obj interface{ Read(r io.Reader) error }) {
+func (rr *Reader) Read(obj IoReader) {
 	// TODO: obj can be nil when obj.Read() can handle that.
 	// We don't want this. So find those instances and activate this code.
 	//if obj == nil {

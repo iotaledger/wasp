@@ -13,6 +13,11 @@ import (
 
 type Kind byte
 
+type (
+	IoReader interface{ Read(r io.Reader) error }
+	IoWriter interface{ Write(w io.Writer) error }
+)
+
 //////////////////// basic size-checked read/write \\\\\\\\\\\\\\\\\\\\
 
 func ReadN(r io.Reader, data []byte) error {
@@ -318,14 +323,14 @@ func WriteUint64(w io.Writer, val uint64) error {
 // MarshalBinary is an adapter function that uses an object's Write()
 // function to marshal the object to data bytes. It is typically used
 // to implement a one-line MarshalBinary() member function for the object.
-func MarshalBinary(obj interface{ Write(w io.Writer) error }) ([]byte, error) {
+func MarshalBinary(obj IoWriter) ([]byte, error) {
 	return WriteToBytes(obj), nil
 }
 
 // UnmarshalBinary is an adapter function that uses an object's Read()
 // function to marshal the object from data bytes. It is typically used
 // to implement a one-line UnmarshalBinary member function for the object.
-func UnmarshalBinary[T interface{ Read(r io.Reader) error }](data []byte, obj T) error {
+func UnmarshalBinary[T IoReader](data []byte, obj T) error {
 	_, err := ReadFromBytes(data, obj)
 	return err
 }
@@ -368,7 +373,7 @@ func ReadFromFunc[T any](rr *Reader, fromBytes func([]byte) (T, error)) (ret T) 
 // ReadFromBytes is a wrapper that uses an object's Read() function to marshal
 // the object from data bytes. It's typically used to implement a one-line
 // <Type>FromBytes() function and returns the expected type and error.
-func ReadFromBytes[T interface{ Read(r io.Reader) error }](data []byte, obj T) (T, error) {
+func ReadFromBytes[T IoReader](data []byte, obj T) (T, error) {
 	// note: obj can be nil if obj.Read can handle that
 	rr := NewBytesReader(data)
 	rr.Read(obj)
@@ -384,7 +389,7 @@ func ReadFromBytes[T interface{ Read(r io.Reader) error }](data []byte, obj T) (
 // WriteToBytes is a wrapper that uses an object's Write() function to marshal
 // the object to data bytes. It's typically used to implement a one-line Bytes()
 // function for the object.
-func WriteToBytes(obj interface{ Write(w io.Writer) error }) []byte {
+func WriteToBytes(obj IoWriter) []byte {
 	// note: obj can be nil if obj.Write can handle that
 	ww := NewBytesWriter()
 	ww.Write(obj)

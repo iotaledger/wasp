@@ -927,23 +927,13 @@ func (cni *chainNodeImpl) sendMessages(outMsgs gpa.OutMessages) {
 	if outMsgs == nil {
 		return
 	}
-	outMsgs.MustIterate(func(m gpa.Message) {
-		recipientPubKey, ok := cni.netPeerPubs[m.Recipient()]
+	outMsgs.MustIterate(func(msg gpa.Message) {
+		recipientPubKey, ok := cni.netPeerPubs[msg.Recipient()]
 		if !ok {
-			cni.log.Warnf("Pub key for the recipient not found: %v", m.Recipient())
+			cni.log.Warnf("Pub key for the recipient not found: %v", msg.Recipient())
 			return
 		}
-		msgData, err := m.MarshalBinary()
-		if err != nil {
-			cni.log.Warnf("Failed to send a message: %v", err)
-			return
-		}
-		pm := &peering.PeerMessageData{
-			PeeringID:   cni.netPeeringID,
-			MsgReceiver: peering.PeerMessageReceiverChain,
-			MsgType:     msgTypeChainMgr,
-			MsgData:     msgData,
-		}
+		pm := peering.NewPeerMessageData(cni.netPeeringID, peering.PeerMessageReceiverChain, msgTypeChainMgr, msg)
 		cni.net.SendMsgByPubKey(recipientPubKey, pm)
 	})
 }

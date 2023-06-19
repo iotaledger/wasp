@@ -21,6 +21,8 @@ type msgRBCCEPayload struct {
 	data  []byte
 }
 
+var _ gpa.Message = new(msgRBCCEPayload)
+
 func (msg *msgRBCCEPayload) MarshalBinary() ([]byte, error) {
 	return rwutil.MarshalBinary(msg)
 }
