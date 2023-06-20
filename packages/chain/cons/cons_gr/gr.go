@@ -118,7 +118,7 @@ type ConsGr struct {
 	netDisconnect               context.CancelFunc
 	net                         peering.NetworkProvider
 	ctx                         context.Context
-	pipeMetrics                 metrics.IChainPipeMetrics
+	pipeMetrics                 *metrics.ChainPipeMetrics
 	log                         *logger.Logger
 }
 
@@ -137,8 +137,8 @@ func New(
 	recoveryTimeout time.Duration,
 	redeliveryPeriod time.Duration,
 	printStatusPeriod time.Duration,
-	chainMetrics metrics.IChainConsensusMetrics,
-	pipeMetrics metrics.IChainPipeMetrics,
+	chainMetrics *metrics.ChainConsensusMetrics,
+	pipeMetrics *metrics.ChainPipeMetrics,
 	log *logger.Logger,
 ) *ConsGr {
 	cmtPubKey := dkShare.GetSharedPublic()

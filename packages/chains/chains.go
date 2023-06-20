@@ -286,7 +286,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	chainLog := c.log.Named(chainID.ShortString())
 	var chainWAL sm_gpa_utils.BlockWAL
 	if c.walEnabled {
-		chainWAL, err = sm_gpa_utils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, chainMetrics)
+		chainWAL, err = sm_gpa_utils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, chainMetrics.BlockWAL)
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}
@@ -313,7 +313,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		chainCtx,
 		chainLog,
 		chainID,
-		indexedstore.New(state.NewStoreWithMetrics(chainKVStore, chainMetrics)),
+		indexedstore.New(state.NewStoreWithMetrics(chainKVStore, chainMetrics.State)),
 		c.nodeConnection,
 		c.nodeIdentityProvider.NodeIdentity(),
 		c.processorConfig,

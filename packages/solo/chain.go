@@ -603,8 +603,8 @@ func (*Chain) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
 }
 
 // GetChainMetrics implements chain.Chain
-func (*Chain) GetChainMetrics() metrics.IChainMetrics {
-	panic("unimplemented")
+func (ch *Chain) GetChainMetrics() *metrics.ChainMetrics {
+	return ch.metrics
 }
 
 // GetConsensusPipeMetrics implements chain.Chain

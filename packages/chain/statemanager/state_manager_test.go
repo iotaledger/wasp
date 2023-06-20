@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
@@ -62,6 +63,7 @@ func TestCruelWorld(t *testing.T) {
 		var err error
 		stores[i] = state.NewStore(mapdb.NewMapDB())
 		origin.InitChain(stores[i], nil, 0)
+		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		sms[i], err = New(
 			context.Background(),
 			bf.GetChainID(),
@@ -71,8 +73,8 @@ func TestCruelWorld(t *testing.T) {
 			sm_gpa_utils.NewMockedTestBlockWAL(),
 			stores[i],
 			nil,
-			metrics.NewEmptyChainStateManagerMetric(),
-			metrics.NewEmptyChainPipeMetrics(),
+			chainMetrics.StateManager,
+			chainMetrics.Pipe,
 			log.Named(peeringURLs[i]),
 			parameters,
 		)

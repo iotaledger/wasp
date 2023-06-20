@@ -21,12 +21,12 @@ type blockWAL struct {
 	*logger.WrappedLogger
 
 	dir     string
-	metrics metrics.IChainBlockWALMetrics
+	metrics *metrics.ChainBlockWALMetrics
 }
 
 const constFileSuffix = ".blk"
 
-func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metrics metrics.IChainBlockWALMetrics) (BlockWAL, error) {
+func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metrics *metrics.ChainBlockWALMetrics) (BlockWAL, error) {
 	dir := filepath.Join(baseDir, chainID.String())
 	if err := ioutils.CreateDirectory(dir, 0o777); err != nil {
 		return nil, fmt.Errorf("BlockWAL cannot create folder %v: %w", dir, err)

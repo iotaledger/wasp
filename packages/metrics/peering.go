@@ -54,14 +54,14 @@ func NewPeeringMetricsProvider() *PeeringMetricsProvider {
 	}
 }
 
-func (m *PeeringMetricsProvider) Collectors() []prometheus.Collector {
-	return []prometheus.Collector{
+func (m *PeeringMetricsProvider) Register(reg prometheus.Registerer) {
+	reg.MustRegister(
 		m.peerCount,
 		m.recvQueueLen,
 		m.recvMsgSizes,
 		m.sendQueueLen,
 		m.sendMsgSizes,
-	}
+	)
 }
 
 func (m *PeeringMetricsProvider) PeerCount(peerCount int) {

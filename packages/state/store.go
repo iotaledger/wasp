@@ -24,14 +24,14 @@ type store struct {
 	// State instances allows to better take advantage of its internal caches.
 	stateCache *lru.Cache[trie.Hash, *state]
 
-	metrics metrics.IStateMetrics
+	metrics *metrics.ChainStateMetrics
 }
 
 func NewStore(db kvstore.KVStore) Store {
-	return NewStoreWithMetrics(db, metrics.NewEmptyStateMetrics())
+	return NewStoreWithMetrics(db, nil)
 }
 
-func NewStoreWithMetrics(db kvstore.KVStore, metrics metrics.IStateMetrics) Store {
+func NewStoreWithMetrics(db kvstore.KVStore, metrics *metrics.ChainStateMetrics) Store {
 	stateCache, err := lru.New[trie.Hash, *state](100)
 	if err != nil {
 		panic(err)
@@ -145,7 +145,9 @@ func (s *store) Commit(d StateDraft) Block {
 	start := time.Now()
 	block, muts, stats := s.extractBlock(d)
 	s.db.commitToDB(muts)
-	s.metrics.BlockCommitted(time.Since(start), stats.CreatedNodes, stats.CreatedValues)
+	if s.metrics != nil {
+		s.metrics.BlockCommitted(time.Since(start), stats.CreatedNodes, stats.CreatedValues)
+	}
 	return block
 }
 
@@ -159,7 +161,9 @@ func (s *store) Prune(trieRoot trie.Hash) (trie.PruneStats, error) {
 	s.db.pruneBlock(trieRoot)
 	s.db.commitToDB(buf.muts)
 	s.stateCache.Remove(trieRoot)
-	s.metrics.BlockPruned(time.Since(start), stats.DeletedNodes, stats.DeletedValues)
+	if s.metrics != nil {
+		s.metrics.BlockPruned(time.Since(start), stats.DeletedNodes, stats.DeletedValues)
+	}
 	return stats, nil
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_utils"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
@@ -61,8 +62,7 @@ func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() sm_gpa_u
 		store := state.NewStore(mapdb.NewMapDB())
 		origin.InitChain(store, chainInitParameters, 0)
 		stores[nodeID] = store
-		metrics := metrics.NewEmptyChainStateManagerMetric()
-		sms[nodeID], err = New(chainID, nr, wal, store, metrics, smLog, parameters)
+		sms[nodeID], err = New(chainID, nr, wal, store, mockStateManagerMetrics(), smLog, parameters)
 		require.NoError(t, err)
 	}
 	return &testEnv{
@@ -288,4 +288,8 @@ func (teT *testEnv) sendInputToNodes(makeInputFun func(gpa.NodeID) gpa.Input) {
 		inputs[nodeID] = makeInputFun(nodeID)
 	}
 	teT.tc.WithInputs(inputs).RunAll()
+}
+
+func mockStateManagerMetrics() *metrics.ChainStateManagerMetrics {
+	return metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID()).StateManager
 }
