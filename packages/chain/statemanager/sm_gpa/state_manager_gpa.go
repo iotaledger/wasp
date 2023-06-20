@@ -1,10 +1,3 @@
-//
-//
-//
-//
-//
-//
-
 package sm_gpa
 
 import (
@@ -22,7 +15,10 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/pipe"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 type stateManagerGPA struct {
@@ -33,12 +29,12 @@ type stateManagerGPA struct {
 	blocksFetched           blockFetchers
 	nodeRandomiser          sm_utils.NodeRandomiser
 	store                   state.Store
-	timers                  StateManagerTimers
+	parameters              StateManagerParameters
 	lastGetBlocksTime       time.Time
 	lastCleanBlockCacheTime time.Time
 	lastCleanRequestsTime   time.Time
 	lastStatusLogTime       time.Time
-	metrics                 metrics.IChainStateManagerMetrics
+	metrics                 *metrics.ChainStateManagerMetrics
 }
 
 var _ gpa.GPA = &stateManagerGPA{}
@@ -53,13 +49,13 @@ func New(
 	nr sm_utils.NodeRandomiser,
 	wal sm_gpa_utils.BlockWAL,
 	store state.Store,
-	metrics metrics.IChainStateManagerMetrics,
+	metrics *metrics.ChainStateManagerMetrics,
 	log *logger.Logger,
-	timers StateManagerTimers,
+	parameters StateManagerParameters,
 ) (gpa.GPA, error) {
 	var err error
 	smLog := log.Named("gpa")
-	blockCache, err := sm_gpa_utils.NewBlockCache(timers.TimeProvider, timers.BlockCacheMaxSize, wal, metrics, smLog)
+	blockCache, err := sm_gpa_utils.NewBlockCache(parameters.TimeProvider, parameters.BlockCacheMaxSize, wal, metrics, smLog)
 	if err != nil {
 		return nil, fmt.Errorf("error creating block cache: %v", err)
 	}
@@ -71,7 +67,7 @@ func New(
 		blocksFetched:           newBlockFetchers(newBlockFetchersMetrics(metrics.IncBlocksPending, metrics.DecBlocksPending, bfmNopDurationFun)),
 		nodeRandomiser:          nr,
 		store:                   store,
-		timers:                  timers,
+		parameters:              parameters,
 		lastGetBlocksTime:       time.Time{},
 		lastCleanBlockCacheTime: time.Time{},
 		lastStatusLogTime:       time.Time{},
@@ -130,27 +126,17 @@ func (smT *stateManagerGPA) StatusString() string {
 		smT.blocksToFetch.getSize(),
 		smT.blocksFetched.getSize(),
 		smT.getWaitingCallbacksCount(),
-		util.TimeOrNever(smT.lastGetBlocksTime), smT.timers.StateManagerGetBlockRetry,
-		util.TimeOrNever(smT.lastCleanRequestsTime), smT.timers.StateManagerRequestCleaningPeriod,
-		util.TimeOrNever(smT.lastCleanBlockCacheTime), smT.timers.BlockCacheBlockCleaningPeriod,
+		util.TimeOrNever(smT.lastGetBlocksTime), smT.parameters.StateManagerGetBlockRetry,
+		util.TimeOrNever(smT.lastCleanRequestsTime), smT.parameters.StateManagerRequestCleaningPeriod,
+		util.TimeOrNever(smT.lastCleanBlockCacheTime), smT.parameters.BlockCacheBlockCleaningPeriod,
 	)
 }
 
 func (smT *stateManagerGPA) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	if len(data) < 1 {
-		return nil, fmt.Errorf("error unmarshalling message: slice of length %d is too short", len(data))
-	}
-	var message gpa.Message
-	switch data[0] {
-	case sm_messages.MsgTypeBlockMessage:
-		message = sm_messages.NewEmptyBlockMessage()
-	case sm_messages.MsgTypeGetBlockMessage:
-		message = sm_messages.NewEmptyGetBlockMessage()
-	default:
-		return nil, fmt.Errorf("error unmarshalling message: message type %v unknown", data[0])
-	}
-	err := message.UnmarshalBinary(data)
-	return message, err
+	return gpa.UnmarshalMessage(data, gpa.Mapper{
+		sm_messages.MsgTypeBlockMessage:    func() gpa.Message { return sm_messages.NewEmptyBlockMessage() },
+		sm_messages.MsgTypeGetBlockMessage: func() gpa.Message { return sm_messages.NewEmptyGetBlockMessage() },
+	})
 }
 
 // -------------------------------------
@@ -236,8 +222,7 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *sm_inputs.Consen
 		smT.log.Panicf("Input block produced on state index %v %s: state, on which this block is produced, is not yet in the store", stateIndex, commitment)
 	}
 	// NOTE: committing already committed block is allowed (see `TestDoubleCommit` test in `packages/state/state_test.go`)
-	block := smT.store.Commit(input.GetStateDraft())
-	smT.metrics.IncBlocksCommitted()
+	block := smT.commitStateDraft(input.GetStateDraft())
 	blockCommitment := block.L1Commitment()
 	smT.blockCache.AddBlock(block)
 	input.Respond(block)
@@ -448,8 +433,7 @@ func (smT *stateManagerGPA) markFetched(fetcher blockFetcher) gpa.OutMessages {
 			}
 		}
 		block.Mutations().ApplyTo(stateDraft)
-		committedBlock := smT.store.Commit(stateDraft)
-		smT.metrics.IncBlocksCommitted()
+		committedBlock := smT.commitStateDraft(stateDraft)
 		committedCommitment := committedBlock.L1Commitment()
 		if !committedCommitment.Equals(commitment) {
 			smT.log.Panicf("Block index %v, received after committing (%s), differs from the block, which was committed (%s)",
@@ -482,7 +466,7 @@ func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMe
 		smT.log.Debugf("State manager gpa status: %s", smT.StatusString())
 		smT.lastStatusLogTime = now
 	}
-	nextGetBlocksTime := smT.lastGetBlocksTime.Add(smT.timers.StateManagerGetBlockRetry)
+	nextGetBlocksTime := smT.lastGetBlocksTime.Add(smT.parameters.StateManagerGetBlockRetry)
 	if now.After(nextGetBlocksTime) {
 		commitments := smT.blocksToFetch.getCommitments()
 		for _, commitment := range commitments {
@@ -490,16 +474,16 @@ func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMe
 		}
 		smT.lastGetBlocksTime = now
 		smT.log.Debugf("Resent getBlock messages for blocks %s, next resend not earlier than %v",
-			commitments, smT.lastGetBlocksTime.Add(smT.timers.StateManagerGetBlockRetry))
+			commitments, smT.lastGetBlocksTime.Add(smT.parameters.StateManagerGetBlockRetry))
 	}
-	nextCleanBlockCacheTime := smT.lastCleanBlockCacheTime.Add(smT.timers.BlockCacheBlockCleaningPeriod)
+	nextCleanBlockCacheTime := smT.lastCleanBlockCacheTime.Add(smT.parameters.BlockCacheBlockCleaningPeriod)
 	if now.After(nextCleanBlockCacheTime) {
-		smT.blockCache.CleanOlderThan(now.Add(-smT.timers.BlockCacheBlocksInCacheDuration))
+		smT.blockCache.CleanOlderThan(now.Add(-smT.parameters.BlockCacheBlocksInCacheDuration))
 		smT.lastCleanBlockCacheTime = now
 		smT.log.Debugf("Block cache cleaned, %v blocks remaining, next cleaning not earlier than %v",
-			smT.blockCache.Size(), smT.lastCleanBlockCacheTime.Add(smT.timers.BlockCacheBlockCleaningPeriod))
+			smT.blockCache.Size(), smT.lastCleanBlockCacheTime.Add(smT.parameters.BlockCacheBlockCleaningPeriod))
 	}
-	nextCleanRequestsTime := smT.lastCleanRequestsTime.Add(smT.timers.StateManagerRequestCleaningPeriod)
+	nextCleanRequestsTime := smT.lastCleanRequestsTime.Add(smT.parameters.StateManagerRequestCleaningPeriod)
 	if now.After(nextCleanRequestsTime) {
 		smT.blocksToFetch.cleanCallbacks()
 		smT.blocksFetched.cleanCallbacks()
@@ -507,7 +491,7 @@ func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMe
 		waitingCallbacks := smT.getWaitingCallbacksCount()
 		smT.metrics.SetRequestsWaiting(waitingCallbacks)
 		smT.log.Debugf("Callbacks of block fetchers cleaned, %v waiting callbacks remained, next cleaning not earlier than %v",
-			waitingCallbacks, smT.lastCleanRequestsTime.Add(smT.timers.StateManagerRequestCleaningPeriod))
+			waitingCallbacks, smT.lastCleanRequestsTime.Add(smT.parameters.StateManagerRequestCleaningPeriod))
 	}
 	smT.metrics.StateManagerTimerTickHandled(time.Since(start))
 	return result
@@ -515,4 +499,103 @@ func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMe
 
 func (smT *stateManagerGPA) getWaitingCallbacksCount() int {
 	return smT.blocksToFetch.getCallbacksCount() + smT.blocksFetched.getCallbacksCount()
+}
+
+func (smT *stateManagerGPA) commitStateDraft(stateDraft state.StateDraft) state.Block {
+	block := smT.store.Commit(stateDraft)
+	smT.metrics.BlockIndexCommitted(block.StateIndex())
+	if smT.pruningNeeded() {
+		smT.pruneStore(block.PreviousL1Commitment())
+	}
+	return block
+}
+
+func (smT *stateManagerGPA) pruningNeeded() bool {
+	return smT.parameters.PruningMinStatesToKeep > 0
+}
+
+func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment) {
+	if commitment == nil {
+		return // Nothing to prune
+	}
+	start := time.Now()
+
+	type blockInfo struct {
+		trieRoot   trie.Hash
+		blockIndex uint32
+	}
+
+	PreviousBlockInfoFun := func(trieRoot trie.Hash) (*blockInfo, error) {
+		block, err := smT.store.BlockByTrieRoot(trieRoot)
+		if err != nil {
+			return nil, err
+		}
+		com := block.PreviousL1Commitment()
+		if com == nil {
+			return nil, nil
+		}
+		return &blockInfo{
+			trieRoot:   com.TrieRoot(),
+			blockIndex: block.StateIndex() - 1,
+		}, nil
+	}
+
+	var statesToKeepFromChain int
+	chainState, err := smT.store.LatestState()
+	if err != nil {
+		smT.log.Errorf("Cannot get latest chain state: %v", err)
+		statesToKeepFromChain = 0
+	} else {
+		statesToKeepFromChain = int(governance.NewStateAccess(chainState).GetBlockKeepAmount())
+	}
+	var statesToKeep int
+	if statesToKeepFromChain > smT.parameters.PruningMinStatesToKeep {
+		statesToKeep = statesToKeepFromChain
+	} else {
+		statesToKeep = smT.parameters.PruningMinStatesToKeep
+	}
+
+	// Skip last `statesToKeep` trie roots
+	bi := &blockInfo{
+		trieRoot: commitment.TrieRoot(),
+		// NOTE: as `stateToKeep` is guaranteed to be at least 1, `stateIndex` will certainly be set by `PreviousBlockInfoFun` function
+	}
+	for i := 0; i < statesToKeep; i++ {
+		if !smT.store.HasTrieRoot(bi.trieRoot) {
+			return // Trie root history is not large enough for pruning
+		}
+		bi, err = PreviousBlockInfoFun(bi.trieRoot)
+		if err != nil {
+			smT.log.Errorf("Failed to retrieve previous block info of %s while pruning: %v", bi.trieRoot, err)
+			return
+		}
+		if bi == nil {
+			return // Traced to the origin state (number of states in chain is less than `statesToKeep`)
+		}
+	}
+
+	// Collect no more than `PruningMaxStatesToDelete` oldest trie roots
+	// `bi` is not nil in this line
+	bis := pipe.NewLimitLimitedPriorityHashQueue[*blockInfo](smT.parameters.PruningMaxStatesToDelete)
+	for bi != nil && smT.store.HasTrieRoot(bi.trieRoot) {
+		bis.Add(bi)
+		bi, err = PreviousBlockInfoFun(bi.trieRoot)
+		if err != nil {
+			smT.log.Errorf("Failed to retrieve previous block info of %s while pruning: %v", bi.trieRoot, err)
+			return
+		}
+	}
+	for i := -1; i >= -bis.Length(); i-- {
+		singleStart := time.Now()
+		bi = bis.Get(i)
+		stats, err := smT.store.Prune(bi.trieRoot)
+		if err != nil {
+			smT.log.Errorf("Failed to prune trie root %s: %v", bi.trieRoot, err)
+			return // Returning in order not to leave gaps of pruned trie roots in between not pruned ones
+		}
+		smT.metrics.StatePruned(time.Since(singleStart), bi.blockIndex)
+		smT.log.Debugf("Trie root %s pruned: %v nodes and %v values deleted", bi.trieRoot, stats.DeletedNodes, stats.DeletedValues)
+	}
+	smT.metrics.PruningCompleted(time.Since(start), bis.Length())
+	smT.log.Debugf("Pruning completed, %v trie roots pruned", bis.Length())
 }

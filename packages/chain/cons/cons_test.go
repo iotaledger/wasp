@@ -164,14 +164,9 @@ func testConsBasic(t *testing.T, n, f int) {
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
 		chainStates[nid] = state.NewStore(mapdb.NewMapDB())
-		origin.InitChain(chainStates[nid],
-			dict.Dict{
-				origin.ParamChainOwner: isc.NewAgentID(originator.Address()).Bytes(),
-			},
-			accounts.MinimumBaseTokensOnCommonAccount,
-		)
+		origin.InitChainByAliasOutput(chainStates[nid], ao0)
 		require.NoError(t, err)
-		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, gpa.NodeIDFromPublicKey, nodeLog).AsGPA()
+		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, gpa.NodeIDFromPublicKey, accounts.CommonAccount(), nodeLog).AsGPA()
 	}
 	tc := gpa.NewTestContext(nodes)
 	//
@@ -338,7 +333,7 @@ func testChained(t *testing.T, n, f, b int) {
 		allRequests[0] = append(tcl.MakeTxAccountsDeposit(scClient), tcl.MakeTxDeployIncCounterContract()...)
 	}
 	incTotal := 0
-	for i := 1; i < b; i++ {
+	for i := 0; i < b-1; i++ {
 		reqs := []isc.Request{}
 		reqPerBlock := 3
 		for ii := 0; ii < reqPerBlock; ii++ {
@@ -353,7 +348,7 @@ func testChained(t *testing.T, n, f, b int) {
 			reqs = append(reqs, scRequest)
 			incTotal++
 		}
-		allRequests[i] = reqs
+		allRequests[i+1] = reqs
 	}
 	//
 	// Construct the nodes for each instance.
@@ -366,13 +361,7 @@ func testChained(t *testing.T, n, f, b int) {
 	testNodeStates := map[gpa.NodeID]state.Store{}
 	for _, nid := range nodeIDs {
 		testNodeStates[nid] = state.NewStore(mapdb.NewMapDB())
-		origin.InitChain(
-			testNodeStates[nid],
-			dict.Dict{
-				origin.ParamChainOwner: isc.NewAgentID(originator.Address()).Bytes(),
-			},
-			accounts.MinimumBaseTokensOnCommonAccount,
-		)
+		origin.InitChainByAliasOutput(testNodeStates[nid], originAO)
 	}
 	testChainInsts := make([]testConsInst, b)
 	for i := range testChainInsts {
@@ -486,7 +475,7 @@ func newTestConsInst(
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareRegistryProviders[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
-		nodes[nid] = cons.New(chainID, nodeStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, gpa.NodeIDFromPublicKey, nodeLog).AsGPA()
+		nodes[nid] = cons.New(chainID, nodeStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, gpa.NodeIDFromPublicKey, accounts.CommonAccount(), nodeLog).AsGPA()
 	}
 	tci := &testConsInst{
 		t:                                t,

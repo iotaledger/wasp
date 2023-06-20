@@ -4,7 +4,7 @@
 package cmt_log
 
 import (
-	"encoding/binary"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 // LogIndex starts from 1. 0 is used as a nil value.
@@ -15,9 +15,7 @@ func (li LogIndex) AsUint32() uint32 {
 }
 
 func (li LogIndex) Bytes() []byte {
-	liBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(liBytes, li.AsUint32())
-	return liBytes
+	return codec.EncodeUint32(li.AsUint32())
 }
 
 func (li LogIndex) IsNil() bool {

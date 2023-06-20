@@ -3,6 +3,14 @@
 
 package gpa
 
+import (
+	"io"
+
+	"github.com/iotaledger/wasp/packages/util/rwutil"
+)
+
+const msgTypeTest MessageType = 0xff
+
 // Just a message for test cases.
 type TestMessage struct {
 	recipient NodeID
@@ -10,20 +18,26 @@ type TestMessage struct {
 	ID        int
 }
 
-var _ Message = &TestMessage{}
+var _ Message = new(TestMessage)
 
-func (m *TestMessage) Recipient() NodeID {
-	return m.recipient
+func (msg *TestMessage) Recipient() NodeID {
+	return msg.recipient
 }
 
-func (m *TestMessage) SetSender(sender NodeID) {
-	m.sender = sender
+func (msg *TestMessage) SetSender(sender NodeID) {
+	msg.sender = sender
 }
 
-func (m *TestMessage) MarshalBinary() ([]byte, error) {
-	panic("not important")
+func (msg *TestMessage) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	msgTypeTest.ReadAndVerify(rr)
+	msg.ID = int(rr.ReadUint32())
+	return rr.Err
 }
 
-func (m *TestMessage) UnmarshalBinary(data []byte) error {
-	panic("not important")
+func (msg *TestMessage) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	msgTypeTest.Write(ww)
+	ww.WriteUint32(uint32(msg.ID))
+	return ww.Err
 }

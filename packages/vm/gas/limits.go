@@ -3,8 +3,9 @@ package gas
 import (
 	"errors"
 	"fmt"
+	"io"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type Limits struct {
@@ -21,31 +22,8 @@ var LimitsDefault = &Limits{
 	MaxGasExternalViewCall: 50_000_000,
 }
 
-var ErrInvalidLimits = errors.New("invalid gas limits")
-
 func LimitsFromBytes(data []byte) (*Limits, error) {
-	return LimitsFromMarshalUtil(marshalutil.New(data))
-}
-
-func LimitsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*Limits, error) {
-	ret := &Limits{}
-	var err error
-	if ret.MaxGasPerBlock, err = mu.ReadUint64(); err != nil {
-		return nil, fmt.Errorf("unable to parse MaxGasPerBlock: %w", err)
-	}
-	if ret.MinGasPerRequest, err = mu.ReadUint64(); err != nil {
-		return nil, fmt.Errorf("unable to parse MinGasPerRequest: %w", err)
-	}
-	if ret.MaxGasPerRequest, err = mu.ReadUint64(); err != nil {
-		return nil, fmt.Errorf("unable to parse MaxGasPerRequest: %w", err)
-	}
-	if ret.MaxGasExternalViewCall, err = mu.ReadUint64(); err != nil {
-		return nil, fmt.Errorf("unable to parse MaxGasExternalViewCall: %w", err)
-	}
-	if !ret.IsValid() {
-		return nil, ErrInvalidLimits
-	}
-	return ret, nil
+	return rwutil.ReadFromBytes(data, new(Limits))
 }
 
 func (gl *Limits) IsValid() bool {
@@ -65,12 +43,7 @@ func (gl *Limits) IsValid() bool {
 }
 
 func (gl *Limits) Bytes() []byte {
-	mu := marshalutil.New()
-	mu.WriteUint64(gl.MaxGasPerBlock)
-	mu.WriteUint64(gl.MinGasPerRequest)
-	mu.WriteUint64(gl.MaxGasPerRequest)
-	mu.WriteUint64(gl.MaxGasExternalViewCall)
-	return mu.Bytes()
+	return rwutil.WriteToBytes(gl)
 }
 
 func (gl *Limits) String() string {
@@ -81,4 +54,25 @@ func (gl *Limits) String() string {
 		gl.MinGasPerRequest,
 		gl.MaxGasExternalViewCall,
 	)
+}
+
+func (gl *Limits) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	gl.MaxGasPerBlock = rr.ReadUint64()
+	gl.MinGasPerRequest = rr.ReadUint64()
+	gl.MaxGasPerRequest = rr.ReadUint64()
+	gl.MaxGasExternalViewCall = rr.ReadUint64()
+	if rr.Err == nil && !gl.IsValid() {
+		rr.Err = errors.New("invalid gas limits")
+	}
+	return rr.Err
+}
+
+func (gl *Limits) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteUint64(gl.MaxGasPerBlock)
+	ww.WriteUint64(gl.MinGasPerRequest)
+	ww.WriteUint64(gl.MaxGasPerRequest)
+	ww.WriteUint64(gl.MaxGasExternalViewCall)
+	return ww.Err
 }

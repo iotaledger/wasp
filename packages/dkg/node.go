@@ -69,14 +69,14 @@ func NewNode(
 		initMsgQueue:            make(chan *initiatorInitMsgIn),
 		log:                     log,
 	}
-	unhook := netProvider.Attach(&initPeeringID, peering.PeerMessageReceiverDkgInit, n.receiveInitMessage)
+	unhook := netProvider.Attach(&initPeeringID, peering.ReceiverDkgInit, n.receiveInitMessage)
 	n.cleanupFunc = unhook
 	go n.recvLoop()
 	return &n, nil
 }
 
 func (n *Node) receiveInitMessage(peerMsg *peering.PeerMessageIn) {
-	if peerMsg.MsgReceiver != peering.PeerMessageReceiverDkgInit {
+	if peerMsg.MsgReceiver != peering.ReceiverDkgInit {
 		panic(fmt.Errorf("DKG init handler does not accept peer messages of other receiver type %v, message type=%v",
 			peerMsg.MsgReceiver, peerMsg.MsgType))
 	}
@@ -84,7 +84,7 @@ func (n *Node) receiveInitMessage(peerMsg *peering.PeerMessageIn) {
 		panic(fmt.Errorf("wrong type of DKG init message: %v", peerMsg.MsgType))
 	}
 	msg := &initiatorInitMsg{}
-	if err := msg.fromBytes(peerMsg.MsgData); err != nil {
+	if err := msgFromBytes(peerMsg.MsgData, msg); err != nil {
 		n.log.Warnf("Dropping unknown message: %v", peerMsg)
 		return
 	}
@@ -131,7 +131,7 @@ func (n *Node) GenerateDistributedKey(
 	}
 	defer netGroup.Close()
 	recvCh := make(chan *peering.PeerMessageIn, peerCount*2)
-	unhook := n.netProvider.Attach(&dkgID, peering.PeerMessageReceiverDkg, func(recv *peering.PeerMessageIn) {
+	unhook := n.netProvider.Attach(&dkgID, peering.ReceiverDkg, func(recv *peering.PeerMessageIn) {
 		recvCh <- recv
 	})
 	defer util.ExecuteIfNotNil(unhook)
@@ -156,7 +156,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep0Initialize,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep0Initialize, peer.PeeringURL())
-			peer.SendMsg(makePeerMessage(initPeeringID, peering.PeerMessageReceiverDkgInit, rabinStep0Initialize, &initiatorInitMsg{
+			peer.SendMsg(makePeerMessage(initPeeringID, peering.ReceiverDkgInit, rabinStep0Initialize, &initiatorInitMsg{
 				dkgRef:       dkgID.String(), // It could be some other identifier.
 				peeringID:    dkgID,
 				peerPubs:     peerPubs,
@@ -196,7 +196,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorMsgs(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep6R6SendReconstructCommits,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep6R6SendReconstructCommits, peer.PeeringURL())
-			peer.SendMsg(makePeerMessage(dkgID, peering.PeerMessageReceiverDkg, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{}))
+			peer.SendMsg(makePeerMessage(dkgID, peering.ReceiverDkg, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{}))
 		},
 		func(recv *peering.PeerMessageGroupIn, initMsg initiatorMsg) (bool, error) {
 			switch msg := initMsg.(type) {
@@ -204,8 +204,8 @@ func (n *Node) GenerateDistributedKey(
 				pubShareResponses[int(recv.SenderIndex)] = msg
 				return true, nil
 			default:
-				n.log.Errorf("unexpected message type instead of initiatorPubShareMsg: %v", msg)
-				return false, errors.New("unexpected message type instead of initiatorPubShareMsg")
+				n.log.Errorf("msgType != initiatorPubShareMsg: %v", msg)
+				return false, errors.New("msgType != initiatorPubShareMsg")
 			}
 		},
 	); err != nil {
@@ -235,7 +235,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep7CommitAndTerminate,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep7CommitAndTerminate, peer.PeeringURL())
-			peer.SendMsg(makePeerMessage(dkgID, peering.PeerMessageReceiverDkg, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
+			peer.SendMsg(makePeerMessage(dkgID, peering.ReceiverDkg, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
 				edPubShares:  edPublicShares,
 				blsPubShares: blsPublicShares,
 			}))
@@ -308,7 +308,7 @@ func (n *Node) onInitMsg(msg *initiatorInitMsgIn) {
 		// To have idempotence for retries, we need to consider duplicate
 		// messages as success, if process is already created.
 		n.procLock.RUnlock()
-		n.netProvider.SendMsgByPubKey(msg.SenderPubKey, makePeerMessage(msg.peeringID, peering.PeerMessageReceiverDkg, msg.step, &initiatorStatusMsg{
+		n.netProvider.SendMsgByPubKey(msg.SenderPubKey, makePeerMessage(msg.peeringID, peering.ReceiverDkg, msg.step, &initiatorStatusMsg{
 			error: nil,
 		}))
 		return
@@ -322,7 +322,7 @@ func (n *Node) onInitMsg(msg *initiatorInitMsgIn) {
 			n.processes.Set(p.dkgRef, p)
 		}
 		n.procLock.Unlock()
-		n.netProvider.SendMsgByPubKey(msg.SenderPubKey, makePeerMessage(msg.peeringID, peering.PeerMessageReceiverDkg, msg.step, &initiatorStatusMsg{
+		n.netProvider.SendMsgByPubKey(msg.SenderPubKey, makePeerMessage(msg.peeringID, peering.ReceiverDkg, msg.step, &initiatorStatusMsg{
 			error: err,
 		}))
 	}()
@@ -347,7 +347,7 @@ func (n *Node) exchangeInitiatorStep(
 ) error {
 	sendCB := func(peerIdx uint16, peer peering.PeerSender) {
 		n.log.Debugf("Initiator sends step=%v command to %v", step, peer.PeeringURL())
-		peer.SendMsg(makePeerMessage(dkgID, peering.PeerMessageReceiverDkg, step, &initiatorStepMsg{}))
+		peer.SendMsg(makePeerMessage(dkgID, peering.ReceiverDkg, step, &initiatorStepMsg{}))
 	}
 	return n.exchangeInitiatorAcks(netGroup, peers, recvCh, retryTimeout, giveUpTimeout, step, sendCB)
 }
@@ -379,16 +379,13 @@ func (n *Node) exchangeInitiatorMsgs(
 	recvCB func(recv *peering.PeerMessageGroupIn, initMsg initiatorMsg) (bool, error),
 ) error {
 	recvInitCB := func(recv *peering.PeerMessageGroupIn) (bool, error) {
-		var err error
-		var initMsg initiatorMsg
-		var isInitMsg bool
-		isInitMsg, initMsg, err = readInitiatorMsg(recv.PeerMessageData, n.edSuite, n.blsSuite)
-		if !isInitMsg {
-			return false, nil
-		}
+		initMsg, err := readInitiatorMsg(recv.PeerMessageData, n.edSuite, n.blsSuite)
 		if err != nil {
 			n.log.Warnf("Failed to read message from %v: %v", recv.SenderPubKey.String(), recv.PeerMessageData)
 			return false, err
+		}
+		if initMsg == nil {
+			return false, nil
 		}
 		if !initMsg.IsResponse() {
 			return false, nil

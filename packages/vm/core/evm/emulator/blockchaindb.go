@@ -5,6 +5,7 @@ package emulator
 
 import (
 	"errors"
+	"io"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -12,12 +13,12 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
@@ -227,53 +228,42 @@ func makeHeader(h *types.Header) *header {
 	}
 }
 
-func encodeHeader(g *header) []byte {
-	m := marshalutil.New()
-	m.WriteBytes(g.Hash[:])
-	m.WriteUint64(g.GasLimit)
-	m.WriteUint64(g.GasUsed)
-	m.WriteUint64(g.Time)
-	m.WriteBytes(g.TxHash[:])
-	m.WriteBytes(g.ReceiptHash[:])
-	m.WriteBytes(g.Bloom[:])
-	return m.Bytes()
+func headerFromBytes(data []byte) (ret *header) {
+	rr := rwutil.NewBytesReader(data)
+	ret = new(header)
+	rr.Read(ret)
+	if rr.Err != nil {
+		panic(rr.Err)
+	}
+	return ret
 }
 
-func decodeHeader(b []byte) *header {
-	m := marshalutil.New(b)
-	h := &header{}
-	var err error
-	if err = readBytes(m, common.HashLength, h.Hash[:]); err != nil {
-		panic(err)
-	}
-	if h.GasLimit, err = m.ReadUint64(); err != nil {
-		panic(err)
-	}
-	if h.GasUsed, err = m.ReadUint64(); err != nil {
-		panic(err)
-	}
-	if h.Time, err = m.ReadUint64(); err != nil {
-		panic(err)
-	}
-	if err = readBytes(m, common.HashLength, h.TxHash[:]); err != nil {
-		panic(err)
-	}
-	if err = readBytes(m, common.HashLength, h.ReceiptHash[:]); err != nil {
-		panic(err)
-	}
-	if err = readBytes(m, types.BloomByteLength, h.Bloom[:]); err != nil {
-		panic(err)
-	}
-	return h
+func (h *header) Bytes() []byte {
+	return rwutil.WriteToBytes(h)
 }
 
-func readBytes(m *marshalutil.MarshalUtil, size int, dst []byte) (err error) {
-	var buf []byte
-	buf, err = m.ReadBytes(size)
-	if err == nil {
-		copy(dst, buf)
-	}
-	return err
+func (h *header) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.ReadN(h.Hash[:])
+	h.GasLimit = rr.ReadUint64()
+	h.GasUsed = rr.ReadUint64()
+	h.Time = rr.ReadUint64()
+	rr.ReadN(h.TxHash[:])
+	rr.ReadN(h.ReceiptHash[:])
+	rr.ReadN(h.Bloom[:])
+	return rr.Err
+}
+
+func (h *header) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteN(h.Hash[:])
+	ww.WriteUint64(h.GasLimit)
+	ww.WriteUint64(h.GasUsed)
+	ww.WriteUint64(h.Time)
+	ww.WriteN(h.TxHash[:])
+	ww.WriteN(h.ReceiptHash[:])
+	ww.WriteN(h.Bloom[:])
+	return ww.Err
 }
 
 func (bc *BlockchainDB) makeEthereumHeader(g *header, blockNumber uint64) *types.Header {
@@ -299,7 +289,7 @@ func (bc *BlockchainDB) addBlock(header *types.Header) {
 	blockNumber := header.Number.Uint64()
 	bc.kv.Set(
 		makeBlockHeaderByBlockNumberKey(blockNumber),
-		encodeHeader(makeHeader(header)),
+		makeHeader(header).Bytes(),
 	)
 	bc.kv.Set(
 		makeBlockNumberByBlockHashKey(header.Hash()),
@@ -450,7 +440,7 @@ func (bc *BlockchainDB) getHeaderByBlockNumber(blockNumber uint64) *header {
 	if b == nil {
 		return nil
 	}
-	return decodeHeader(b)
+	return headerFromBytes(b)
 }
 
 func (bc *BlockchainDB) GetHeaderByHash(hash common.Hash) *types.Header {

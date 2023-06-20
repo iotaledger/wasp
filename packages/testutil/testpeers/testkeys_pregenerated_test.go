@@ -4,7 +4,6 @@
 package testpeers_test
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"testing"
@@ -15,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // To update the pregenerated keys uncomment the t.Skip temporarily and run:
@@ -43,8 +42,9 @@ func testPregenerateDKS(t *testing.T, n, f uint16) {
 	require.GreaterOrEqual(t, threshold, (n*2)/3+1)
 	peeringURLs, identities := testpeers.SetupKeys(n)
 	dksAddr, dksRegistries := testpeers.SetupDkg(t, threshold, peeringURLs, identities, tcrypto.DefaultBLSSuite(), log.Named("dkg"))
-	var buf bytes.Buffer
-	util.WriteUint16(&buf, uint16(len(dksRegistries)))
+	ww := rwutil.NewBytesWriter()
+	ww.WriteSize16(len(dksRegistries))
+	require.NoError(t, ww.Err)
 	for i := range dksRegistries {
 		var dki tcrypto.DKShare
 		var dkb []byte
@@ -58,8 +58,9 @@ func testPregenerateDKS(t *testing.T, n, f uint16) {
 		// NodePubKeys will be set in the tests again, so we remove them here to save space.
 		dki.AssignNodePubKeys(make([]*cryptolib.PublicKey, 0))
 		dkb = dki.Bytes()
-		require.Nil(t, util.WriteBytes16(&buf, dkb))
+		ww.WriteBytes(dkb)
+		require.NoError(t, ww.Err)
 	}
-	err = os.WriteFile(fmt.Sprintf("testkeys_pregenerated-%v-%v.bin", n, threshold), buf.Bytes(), 0o644)
+	err = os.WriteFile(fmt.Sprintf("testkeys_pregenerated-%v-%v.bin", n, threshold), ww.Bytes(), 0o644)
 	require.Nil(t, err)
 }

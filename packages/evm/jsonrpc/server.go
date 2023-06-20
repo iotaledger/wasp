@@ -12,7 +12,7 @@ import (
 func NewServer(
 	evmChain *EVMChain,
 	accountManager *AccountManager,
-	metrics metrics.IChainMetrics,
+	metrics *metrics.ChainWebAPIMetrics,
 ) (*rpc.Server, error) {
 	chainID := evmChain.ChainID()
 	rpcsrv := rpc.NewServer()

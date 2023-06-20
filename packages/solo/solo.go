@@ -24,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -109,6 +110,8 @@ type Chain struct {
 
 	RequestsBlock     uint32
 	RequestsRemaining int
+
+	metrics *metrics.ChainMetrics
 }
 
 var _ chain.ChainCore = &Chain{}
@@ -244,6 +247,8 @@ func (env *Solo) NewChainExt(
 
 	initParams := dict.Dict{
 		origin.ParamChainOwner: isc.NewAgentID(chainOriginator.Address()).Bytes(),
+		// FIXME this will cause import cycle
+		// origin.ParamWaspVersion: codec.EncodeString(app.Version),
 	}
 	if len(originParams) > 0 {
 		for k, v := range originParams[0] {
@@ -311,6 +316,7 @@ func (env *Solo) NewChainExt(
 		vmRunner:               runvm.NewVMRunner(),
 		proc:                   processors.MustNew(env.processorConfig),
 		log:                    chainlog,
+		metrics:                metrics.NewChainMetricsProvider().GetChainMetrics(chainID),
 	}
 
 	ret.mempool = newMempool(env.utxoDB.GlobalTime)

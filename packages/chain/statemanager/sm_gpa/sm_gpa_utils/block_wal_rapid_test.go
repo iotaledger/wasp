@@ -11,6 +11,7 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
@@ -29,16 +30,18 @@ type blockWALTestSM struct { // State machine for block WAL property based Rapid
 
 var _ rapid.StateMachine = &blockWALTestSM{}
 
-func (bwtsmT *blockWALTestSM) Init(t *rapid.T) {
+func newBlockWALTestSM(t *rapid.T) *blockWALTestSM {
+	bwtsmT := new(blockWALTestSM)
 	var err error
 	bwtsmT.factory = NewBlockFactory(t)
 	bwtsmT.lastBlockCommitment = origin.L1Commitment(nil, 0)
 	bwtsmT.log = testlogger.NewLogger(t)
-	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), metrics.NewEmptyChainBlockWALMetrics())
+	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
 	bwtsmT.blocks = make(map[state.BlockHash]state.Block)
 	bwtsmT.blocksMoved = make([]state.BlockHash, 0)
 	bwtsmT.blocksDamaged = make([]state.BlockHash, 0)
+	return bwtsmT
 }
 
 func (bwtsmT *blockWALTestSM) Cleanup() {
@@ -140,7 +143,9 @@ func (bwtsmT *blockWALTestSM) ReadGoodBlock(t *rapid.T) {
 	blockHash := rapid.SampledFrom(blockHashes).Example()
 	block, err := bwtsmT.bw.Read(blockHash)
 	require.NoError(t, err)
-	require.True(t, block.Hash().Equals(blockHash)) // Should be Equals instead of Hash().Equals(); bwtsmT.blocks[blockHash]
+	blockExpected, ok := bwtsmT.blocks[blockHash]
+	require.True(t, ok)
+	CheckBlocksEqual(t, blockExpected, block)
 	t.Logf("Block %s read", blockHash)
 }
 
@@ -151,7 +156,9 @@ func (bwtsmT *blockWALTestSM) ReadMovedBlock(t *rapid.T) {
 	blockHash := rapid.SampledFrom(bwtsmT.blocksMoved).Example()
 	block, err := bwtsmT.bw.Read(blockHash)
 	require.NoError(t, err)
-	require.False(t, block.Hash().Equals(blockHash)) // Should be Equals instead of Hash().Equals(); bwtsmT.blocks[blockHash]
+	blockExpected, ok := bwtsmT.blocks[blockHash]
+	require.True(t, ok)
+	CheckBlocksDifferent(t, blockExpected, block)
 	t.Logf("Moved block %s read", blockHash)
 }
 
@@ -167,7 +174,7 @@ func (bwtsmT *blockWALTestSM) ReadDamagedBlock(t *rapid.T) {
 
 func (bwtsmT *blockWALTestSM) Restart(t *rapid.T) {
 	var err error
-	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), metrics.NewEmptyChainBlockWALMetrics())
+	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
 	t.Log("Block WAL restarted")
 }
@@ -193,5 +200,16 @@ func (bwtsmT *blockWALTestSM) invariantAllWrittenBlocksExist(t *rapid.T) {
 }
 
 func TestBlockWALPropBased(t *testing.T) {
-	rapid.Check(t, rapid.Run[*blockWALTestSM]())
+	rapid.Check(t, func(t *rapid.T) {
+		sm := newBlockWALTestSM(t)
+		t.Repeat(rapid.StateMachineActions(sm))
+	})
+}
+
+func mockStateManagerMetrics() *metrics.ChainStateManagerMetrics {
+	return metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID()).StateManager
+}
+
+func mockBlockWALMetrics() *metrics.ChainBlockWALMetrics {
+	return metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID()).BlockWAL
 }

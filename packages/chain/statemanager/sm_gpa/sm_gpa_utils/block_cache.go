@@ -23,12 +23,12 @@ type blockCache struct {
 	wal          BlockWAL
 	times        []*blockTime
 	timeProvider TimeProvider
-	metrics      metrics.IChainStateManagerMetrics
+	metrics      *metrics.ChainStateManagerMetrics
 }
 
 var _ BlockCache = &blockCache{}
 
-func NewBlockCache(tp TimeProvider, maxCacheSize int, wal BlockWAL, metrics metrics.IChainStateManagerMetrics, log *logger.Logger) (BlockCache, error) {
+func NewBlockCache(tp TimeProvider, maxCacheSize int, wal BlockWAL, metrics *metrics.ChainStateManagerMetrics, log *logger.Logger) (BlockCache, error) {
 	return &blockCache{
 		log:          log.Named("bc"),
 		blocks:       shrinkingmap.New[BlockKey, state.Block](),

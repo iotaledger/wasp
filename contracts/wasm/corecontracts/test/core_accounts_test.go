@@ -17,6 +17,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -136,8 +137,8 @@ func TestHarvest(t *testing.T) {
 
 	user := ctx.NewSoloAgent("user")
 	creatorAgentID := ctx.Creator().AgentID()
-	commonAccount := ctx.Chain.CommonAccount()
-	commonAccountBal0 := ctx.Chain.L2Assets(commonAccount)
+	commonAccount := accounts.CommonAccount()
+	commonAccountBal0 := ctx.Chain.L2Assets(accounts.CommonAccount())
 	foundry, err := ctx.NewSoloFoundry(mintAmount, user)
 	require.NoError(t, err)
 	err = foundry.Mint(mintAmount)
@@ -253,7 +254,7 @@ func TestFoundryModifySupply(t *testing.T) {
 	fmod2.Params.SupplyDeltaAbs().SetValue(wasmtypes.BigIntFromString("10"))
 	fmod2.Params.DestroyTokens().SetValue(true)
 	tokenID := foundry.TokenID()
-	allowance := wasmlib.NewScTransferTokens(&tokenID, wasmtypes.NewScBigInt(10))
+	allowance := wasmlib.ScTransferFromTokens(&tokenID, wasmtypes.NewScBigInt(10))
 	fmod2.Func.Allowance(allowance)
 	fmod2.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
@@ -318,7 +319,7 @@ func TestAccountNFTAmount(t *testing.T) {
 	fd := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
 	nftL2Num := 3
 	for i := 0; i < nftL2Num; i++ {
-		transfer := wasmlib.NewScTransferNFT(&nftIDs[i])
+		transfer := wasmlib.ScTransferFromNFT(&nftIDs[i])
 		fd.Func.Transfer(transfer).Post()
 		require.NoError(t, ctx.Err)
 		require.True(t, ctx.Chain.HasL2NFT(user.AgentID(), ctx.Cvt.IscNFTID(&nftIDs[i])))
@@ -547,7 +548,7 @@ func TestBalanceBaseToken(t *testing.T) {
 	transferAmt := uint64(9)
 	ftrans := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user0))
 	ftrans.Params.AgentID().SetValue(user1.ScAgentID())
-	transfer := wasmlib.NewScTransferBaseTokens(transferAmt)
+	transfer := wasmlib.ScTransferFromBaseTokens(transferAmt)
 	ftrans.Func.Allowance(transfer).Post()
 	require.NoError(t, ctx.Err)
 	gasFee := ctx.GasFee
@@ -747,7 +748,7 @@ func TestAccountNFTs(t *testing.T) {
 	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, ctx.Cvt.IscNFTID(&nftID)))
 
 	fd := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
-	transfer := wasmlib.NewScTransferNFT(&nftID)
+	transfer := wasmlib.ScTransferFromNFT(&nftID)
 	fd.Func.Transfer(transfer).Post()
 	require.NoError(t, ctx.Err)
 
@@ -772,7 +773,7 @@ func TestNFTData(t *testing.T) {
 	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, iscNFTID))
 
 	fd := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
-	transfer := wasmlib.NewScTransferNFT(&nftID)
+	transfer := wasmlib.ScTransferFromNFT(&nftID)
 	fd.Func.Transfer(transfer).Post()
 	require.NoError(t, ctx.Err)
 

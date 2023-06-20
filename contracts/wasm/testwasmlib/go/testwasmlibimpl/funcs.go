@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"math"
 
-	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -88,7 +87,7 @@ func funcRandom(ctx wasmlib.ScFuncContext, f *RandomContext) {
 }
 
 func funcTakeAllowance(ctx wasmlib.ScFuncContext, _ *TakeAllowanceContext) {
-	ctx.TransferAllowed(ctx.AccountID(), wasmlib.NewScTransferFromBalances(ctx.Allowance()))
+	ctx.TransferAllowed(ctx.AccountID(), wasmlib.ScTransferFromBalances(ctx.Allowance()))
 	ctx.Log(ctx.Utility().String(int64(ctx.Balances().BaseTokens())))
 }
 
@@ -98,13 +97,6 @@ func funcTakeBalance(ctx wasmlib.ScFuncContext, f *TakeBalanceContext) {
 
 func funcTriggerEvent(_ wasmlib.ScFuncContext, f *TriggerEventContext) {
 	f.Events.Test(f.Params.Address().Value(), f.Params.Name().Value())
-}
-
-func funcVerifyErc721(ctx wasmlib.ScFuncContext, f *VerifyErc721Context) {
-	tokenHash := f.Params.TokenHash().Value()
-	oo := erc721.ScFuncs.OwnerOf(ctx)
-	oo.Params.TokenID().SetValue(tokenHash)
-	oo.Func.Call()
 }
 
 func viewGetRandom(_ wasmlib.ScViewContext, f *GetRandomContext) {
@@ -510,7 +502,7 @@ func viewCheckEthAddressAndAgentID(ctx wasmlib.ScViewContext, f *CheckEthAddress
 	dec = wasmtypes.NewWasmDecoder(enc.Buf())
 	ctx.Require(agentID == wasmtypes.AgentIDDecode(dec), "eth agentID decode/encode failed")
 
-	agentIDFromAddress := wasmtypes.NewScAgentIDFromAddress(address)
+	agentIDFromAddress := wasmtypes.ScAgentIDFromAddress(address)
 	ctx.Require(agentIDFromAddress == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(agentIDFromAddress)), "eth agentID bytes conversion failed")
 	ctx.Require(agentIDFromAddress == wasmtypes.AgentIDFromString(wasmtypes.AgentIDToString(agentIDFromAddress)), "eth agentID string conversion failed")
 
@@ -789,7 +781,7 @@ func viewCheckEthEmptyAddressAndAgentID(ctx wasmlib.ScViewContext, f *CheckEthEm
 	dec = wasmtypes.NewWasmDecoder(enc.Buf())
 	ctx.Require(agentID == wasmtypes.AgentIDDecode(dec), "eth agentID decode/encode failed")
 
-	agentIDFromAddress := wasmtypes.NewScAgentIDFromAddress(address)
+	agentIDFromAddress := wasmtypes.ScAgentIDFromAddress(address)
 	ctx.Require(agentIDFromAddress == wasmtypes.AgentIDFromBytes(wasmtypes.AgentIDToBytes(agentIDFromAddress)), "eth agentID bytes conversion failed")
 	ctx.Require(agentIDString == wasmtypes.AgentIDToString(agentIDFromAddress), "eth agentID string conversion failed")
 

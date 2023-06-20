@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"sort"
 
 	"github.com/iotaledger/hive.go/lo"
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // Dict is an implementation kv.KVStore interface backed by an in-memory map.
@@ -130,59 +131,40 @@ func (d Dict) Get(key kv.Key) []byte {
 }
 
 func (d Dict) Bytes() []byte {
-	mu := marshalutil.New()
-	d.WriteToMarshalUtil(mu)
-	return mu.Bytes()
+	return rwutil.WriteToBytes(&d)
 }
 
-func FromMarshalUtil(mu *marshalutil.MarshalUtil) (Dict, error) {
-	ret := New()
-	if err := ret.ReadFromMarshalUtil(mu); err != nil {
+func FromBytes(data []byte) (ret Dict, err error) {
+	ret = New()
+	_, err = rwutil.ReadFromBytes(data, &ret)
+	if err != nil {
 		return nil, err
 	}
-	return ret, nil
+	return ret, err
 }
 
-func FromBytes(data []byte) (Dict, error) {
-	return FromMarshalUtil(marshalutil.New(data))
+func (d *Dict) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	size := rr.ReadSize32()
+	for i := 0; i < size; i++ {
+		key := kv.Key(rr.ReadBytes())
+		value := rr.ReadBytes()
+		if rr.Err == nil {
+			d.Set(key, value)
+		}
+	}
+	return rr.Err
 }
 
-func (d Dict) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
+func (d *Dict) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
 	keys := d.KeysSorted()
-	mu.WriteUint32(uint32(len(keys)))
-	for _, k := range keys {
-		mu.WriteUint16(uint16(len(k))).
-			WriteBytes([]byte(k)).
-			WriteUint32(uint32(len(d[k]))).
-			WriteBytes(d[k])
+	ww.WriteSize32(len(keys))
+	for _, key := range keys {
+		ww.WriteBytes([]byte(key))
+		ww.WriteBytes(d.Get(key))
 	}
-}
-
-func (d Dict) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
-	num, err := mu.ReadUint32()
-	if err != nil {
-		return err
-	}
-	for i := uint32(0); i < num; i++ {
-		sz16, err := mu.ReadUint16()
-		if err != nil {
-			return err
-		}
-		k, err := mu.ReadBytes(int(sz16))
-		if err != nil {
-			return err
-		}
-		sz32, err := mu.ReadUint32()
-		if err != nil {
-			return err
-		}
-		v, err := mu.ReadBytes(int(sz32))
-		if err != nil {
-			return err
-		}
-		d.Set(kv.Key(k), v)
-	}
-	return nil
+	return ww.Err
 }
 
 // Keys takes all keys

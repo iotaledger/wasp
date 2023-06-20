@@ -2,10 +2,11 @@ package blocklog
 
 import (
 	"fmt"
+	"io"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // region ControlAddresses ///////////////////////////////////////////////
@@ -17,32 +18,11 @@ type ControlAddresses struct {
 }
 
 func ControlAddressesFromBytes(data []byte) (*ControlAddresses, error) {
-	return ControlAddressesFromMarshalUtil(marshalutil.New(data))
-}
-
-func ControlAddressesFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ControlAddresses, error) {
-	ret := &ControlAddresses{}
-	var err error
-
-	if ret.StateAddress, err = isc.AddressFromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
-	if ret.GoverningAddress, err = isc.AddressFromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
-	if ret.SinceBlockIndex, err = mu.ReadUint32(); err != nil {
-		return nil, err
-	}
-	return ret, nil
+	return rwutil.ReadFromBytes(data, new(ControlAddresses))
 }
 
 func (ca *ControlAddresses) Bytes() []byte {
-	mu := marshalutil.New()
-
-	mu.WriteBytes(isc.BytesFromAddress(ca.StateAddress)).
-		WriteBytes(isc.BytesFromAddress(ca.GoverningAddress)).
-		WriteUint32(ca.SinceBlockIndex)
-	return mu.Bytes()
+	return rwutil.WriteToBytes(ca)
 }
 
 func (ca *ControlAddresses) String() string {
@@ -54,6 +34,22 @@ func (ca *ControlAddresses) String() string {
 			ca.StateAddress, ca.GoverningAddress, ca.SinceBlockIndex)
 	}
 	return ret
+}
+
+func (ca *ControlAddresses) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	ca.StateAddress = isc.AddressFromReader(rr)
+	ca.GoverningAddress = isc.AddressFromReader(rr)
+	ca.SinceBlockIndex = rr.ReadUint32()
+	return rr.Err
+}
+
+func (ca *ControlAddresses) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	isc.AddressToWriter(ww, ca.StateAddress)
+	isc.AddressToWriter(ww, ca.GoverningAddress)
+	ww.WriteUint32(ca.SinceBlockIndex)
+	return ww.Err
 }
 
 // endregion /////////////////////////////////////////////////////////////

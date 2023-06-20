@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 func TestMarshalUnmarshalGetBlockMessage(t *testing.T) {
@@ -14,10 +15,9 @@ func TestMarshalUnmarshalGetBlockMessage(t *testing.T) {
 	for i := range blocks {
 		commitment := blocks[i].L1Commitment()
 		t.Logf("Checking block %v: %v", i, commitment)
-		marshaled, err := NewGetBlockMessage(commitment, gpa.RandomTestNodeID()).MarshalBinary()
-		require.NoError(t, err)
-		unmarshaled := NewEmptyGetBlockMessage()
-		err = unmarshaled.UnmarshalBinary(marshaled)
+		msg := NewGetBlockMessage(commitment, gpa.RandomTestNodeID())
+		marshaled := rwutil.WriteToBytes(msg)
+		unmarshaled, err := rwutil.ReadFromBytes(marshaled, NewEmptyGetBlockMessage())
 		require.NoError(t, err)
 		require.True(t, commitment.Equals(unmarshaled.GetL1Commitment()))
 	}

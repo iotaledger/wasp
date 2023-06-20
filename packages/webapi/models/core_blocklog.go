@@ -55,5 +55,5 @@ type RequestProcessedResponse struct {
 }
 
 type EventsResponse struct {
-	Events []*isc.Event `json:"events" swagger:"required"`
+	Events []*isc.EventJSON `json:"events" swagger:"required"`
 }

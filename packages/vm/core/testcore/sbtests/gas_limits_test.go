@@ -64,7 +64,7 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 
 	for i := 0; i < nRequests; i++ {
 		req, wallet := infiniteLoopRequest(ch)
-		iscReq, err := solo.NewIscRequestFromCallParams(ch, req, wallet)
+		iscReq, err := solo.IscRequestFromCallParams(ch, req, wallet)
 		require.NoError(t, err)
 		reqs[i] = iscReq
 	}

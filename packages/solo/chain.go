@@ -4,7 +4,6 @@
 package solo
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -29,6 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -45,14 +45,14 @@ var _ chain.Chain = &Chain{}
 
 // String is string representation for main parameters of the chain
 func (ch *Chain) String() string {
-	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
-	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
+	w := new(rwutil.Buffer)
+	fmt.Fprintf(w, "Chain ID: %s\n", ch.ChainID)
+	fmt.Fprintf(w, "Chain state controller: %s\n", ch.StateControllerAddress)
 	block, err := ch.store.LatestBlock()
 	require.NoError(ch.Env.T, err)
-	fmt.Fprintf(&buf, "Root commitment: %s\n", block.TrieRoot())
-	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
-	return buf.String()
+	fmt.Fprintf(w, "Root commitment: %s\n", block.TrieRoot())
+	fmt.Fprintf(w, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
+	return string(*w)
 }
 
 // DumpAccounts dumps all account balances into the human-readable string
@@ -171,16 +171,16 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 	req.WithGasBudget(g)
 	res, err := ch.PostRequestOffLedger(req, user)
 	if err != nil {
-		return
+		return ret, err
 	}
 	resBin := res.Get(blob.ParamHash)
 	if resBin == nil {
 		err = errors.New("internal error: no hash returned")
-		return
+		return ret, err
 	}
 	ret, err = codec.DecodeHashValue(resBin)
 	if err != nil {
-		return
+		return ret, err
 	}
 	require.EqualValues(ch.Env.T, expectedHash, ret)
 	return ret, err
@@ -329,11 +329,6 @@ func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]*isc.Event, error) {
 		return nil, err
 	}
 	return blocklog.EventsFromViewResult(viewResult)
-}
-
-// CommonAccount return the agentID of the common account (controlled by the owner)
-func (ch *Chain) CommonAccount() isc.AgentID {
-	return accounts.CommonAccount()
 }
 
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain
@@ -608,8 +603,8 @@ func (*Chain) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
 }
 
 // GetChainMetrics implements chain.Chain
-func (*Chain) GetChainMetrics() metrics.IChainMetrics {
-	panic("unimplemented")
+func (ch *Chain) GetChainMetrics() *metrics.ChainMetrics {
+	return ch.metrics
 }
 
 // GetConsensusPipeMetrics implements chain.Chain
@@ -665,6 +660,12 @@ func (ch *Chain) LatestBlock() state.Block {
 	b, err := ch.store.LatestBlock()
 	require.NoError(ch.Env.T, err)
 	return b
+}
+
+func (ch *Chain) Nonce(agentID isc.AgentID) uint64 {
+	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewGetAccountNonce.Name, accounts.ParamAgentID, agentID)
+	require.NoError(ch.Env.T, err)
+	return codec.MustDecodeUint64(res.Get(accounts.ParamAccountNonce))
 }
 
 // ReceiveOffLedgerRequest implements chain.Chain

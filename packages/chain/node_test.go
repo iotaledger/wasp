@@ -19,6 +19,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -37,6 +38,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 )
 
@@ -438,6 +440,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	for i := range te.peerIdentities {
 		te.nodeConns[i] = newTestNodeConn(t)
 		log := te.log.Named(fmt.Sprintf("N#%v", i))
+		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		te.nodes[i], err = chain.New(
 			te.ctx,
 			log,
@@ -452,13 +455,15 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			chain.NewEmptyChainListener(),
 			[]*cryptolib.PublicKey{}, // Access nodes.
 			te.networkProviders[i],
-			metrics.NewEmptyChainMetrics(),
+			chainMetrics,
 			shutdown.NewCoordinator("test", log),
 			nil,
 			nil,
 			true,
 			-1,
 			10*time.Millisecond,
+			accounts.CommonAccount(),
+			sm_gpa.NewStateManagerParameters(),
 		)
 		require.NoError(t, err)
 		te.nodes[i].ServersUpdated(te.peerPubKeys)

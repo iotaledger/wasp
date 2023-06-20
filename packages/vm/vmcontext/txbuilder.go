@@ -108,7 +108,7 @@ func (vmctx *VMContext) loadNFT(id iotago.NFTID) (*iotago.NFTOutput, iotago.Outp
 	var blockIndex uint32
 	var outputIndex uint16
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		nftOutput, blockIndex, outputIndex = accounts.GetNFTOutput(s, id, vmctx.ChainID())
+		nftOutput, blockIndex, outputIndex = accounts.GetNFTOutput(s, id)
 	})
 	if nftOutput == nil {
 		return nil, iotago.OutputID{}

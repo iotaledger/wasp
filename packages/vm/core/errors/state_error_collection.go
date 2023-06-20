@@ -3,7 +3,6 @@ package errors
 import (
 	"errors"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -44,7 +43,7 @@ func (e *StateErrorCollectionWriter) Get(errorID uint16) (*isc.VMErrorTemplate, 
 		return nil, false
 	}
 
-	template, err := isc.VMErrorTemplateFromMarshalUtil(marshalutil.New(errorBytes))
+	template, err := isc.VMErrorTemplateFromBytes(errorBytes)
 	if err != nil {
 		panic(err)
 	}
@@ -100,7 +99,7 @@ func (e *StateErrorCollectionReader) Get(errorID uint16) (*isc.VMErrorTemplate, 
 		return nil, false
 	}
 
-	template, err := isc.VMErrorTemplateFromMarshalUtil(marshalutil.New(errorBytes))
+	template, err := isc.VMErrorTemplateFromBytes(errorBytes)
 	if err != nil {
 		panic(err)
 	}

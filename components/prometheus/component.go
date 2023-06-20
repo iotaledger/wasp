@@ -86,57 +86,15 @@ func provide(c *dig.Container) error {
 	return nil
 }
 
-func register(name string, cs ...prometheus.Collector) {
-	for _, c := range cs {
-		if err := deps.PrometheusRegistry.Register(c); err != nil {
-			Component.LogWarnf("failed to register %s metrics: %v", name, err)
-		}
-	}
-}
-
 func configure() error {
-	if ParamsPrometheus.NodeMetrics {
-		register("node", newNodeCollector(deps.AppInfo))
-	}
-	if ParamsPrometheus.BlockWALMetrics {
-		register("write ahead logging", deps.ChainMetrics.PrometheusCollectorsBlockWAL()...)
-	}
-	if ParamsPrometheus.ConsensusMetrics {
-		register("consensus", deps.ChainMetrics.PrometheusCollectorsConsensus()...)
-	}
-	if ParamsPrometheus.MempoolMetrics {
-		register("mempool", deps.ChainMetrics.PrometheusCollectorsMempool()...)
-	}
-	if ParamsPrometheus.ChainMessagesMetrics {
-		register("chain messages", deps.ChainMetrics.PrometheusCollectorsChainMessages()...)
-	}
-	if ParamsPrometheus.ChainStateMetrics {
-		register("chain state", deps.ChainMetrics.PrometheusCollectorsChainState()...)
-	}
-	if ParamsPrometheus.ChainStateManagerMetrics {
-		register("chain state manager", deps.ChainMetrics.PrometheusCollectorsChainStateManager()...)
-	}
-	if ParamsPrometheus.ChainNodeConnMetrics {
-		register("chain node conn", deps.ChainMetrics.PrometheusCollectorsChainNodeConn()...)
-	}
-	if ParamsPrometheus.ChainPipeMetrics {
-		deps.ChainMetrics.PrometheusRegisterChainPipeMetrics(deps.PrometheusRegistry)
-	}
-	if ParamsPrometheus.PeeringMetrics {
-		register("peering", deps.PeeringMetrics.Collectors()...)
-	}
-	if ParamsPrometheus.RestAPIMetrics {
-		register("rest API", newRestAPICollector(deps.WebAPIEcho)...)
-	}
-	if ParamsPrometheus.GoMetrics {
-		register("go", collectors.NewGoCollector())
-	}
-	if ParamsPrometheus.ProcessMetrics {
-		register("process", collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
-	}
-	if ParamsPrometheus.WebAPIMetrics {
-		register("webapi", deps.ChainMetrics.PrometheusCollectorsWebAPI()...)
-	}
+	reg := deps.PrometheusRegistry
+
+	reg.MustRegister(collectors.NewGoCollector())
+	reg.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
+	registerNodeMetrics(reg, deps.AppInfo)
+	deps.PeeringMetrics.Register(reg)
+	registerRestAPIMetrics(reg, deps.WebAPIEcho)
+	deps.ChainMetrics.Register(reg)
 	return nil
 }
 
@@ -154,9 +112,7 @@ func run() error {
 				},
 			)
 
-			if ParamsPrometheus.PromhttpMetrics {
-				handler = promhttp.InstrumentMetricHandler(deps.PrometheusRegistry, handler)
-			}
+			handler = promhttp.InstrumentMetricHandler(deps.PrometheusRegistry, handler)
 
 			handler.ServeHTTP(c.Response().Writer, c.Request())
 			return nil

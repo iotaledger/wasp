@@ -29,13 +29,14 @@ import (
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/multiclient"
+	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -45,15 +46,15 @@ import (
 )
 
 type Cluster struct {
-	Name             string
-	Config           *ClusterConfig
-	Started          bool
-	DataPath         string
-	ValidatorKeyPair *cryptolib.KeyPair // Default identity for validators, chain owners, etc.
-	l1               l1connection.Client
-	waspCmds         []*waspCmd
-	t                *testing.T
-	log              *logger.Logger
+	Name              string
+	Config            *ClusterConfig
+	Started           bool
+	DataPath          string
+	OriginatorKeyPair *cryptolib.KeyPair
+	l1                l1connection.Client
+	waspCmds          []*waspCmd
+	t                 *testing.T
+	log               *logger.Logger
 }
 
 type waspCmd struct {
@@ -69,18 +70,17 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 		log = testlogger.NewLogger(t)
 	}
 
-	validatorKp := cryptolib.NewKeyPair()
-	config.SetOwnerAddress(validatorKp.Address().Bech32(parameters.L1().Protocol.Bech32HRP))
+	config.setValidatorAddressIfNotSet() // privtangle prefix
 
 	return &Cluster{
-		Name:             name,
-		Config:           config,
-		ValidatorKeyPair: validatorKp,
-		waspCmds:         make([]*waspCmd, len(config.Wasp)),
-		t:                t,
-		log:              log,
-		l1:               l1connection.NewClient(config.L1, log),
-		DataPath:         dataPath,
+		Name:              name,
+		Config:            config,
+		OriginatorKeyPair: cryptolib.NewKeyPair(),
+		waspCmds:          make([]*waspCmd, len(config.Wasp)),
+		t:                 t,
+		log:               log,
+		l1:                l1connection.NewClient(config.L1, log),
+		DataPath:          dataPath,
 	}
 }
 
@@ -90,10 +90,6 @@ func (clu *Cluster) Logf(format string, args ...any) {
 		return
 	}
 	clu.log.Infof(format, args...)
-}
-
-func (clu *Cluster) ValidatorAddress() iotago.Address {
-	return clu.ValidatorKeyPair.Address()
 }
 
 func (clu *Cluster) NewKeyPairWithFunds() (*cryptolib.KeyPair, iotago.Address, error) {
@@ -215,7 +211,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	}
 
 	chain := &Chain{
-		OriginatorKeyPair: clu.ValidatorKeyPair,
+		OriginatorKeyPair: clu.OriginatorKeyPair,
 		AllPeers:          allPeers,
 		CommitteeNodes:    committeeNodes,
 		Quorum:            quorum,
@@ -250,7 +246,8 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			Textout:           os.Stdout,
 			Prefix:            "[cluster] ",
 			InitParams: dict.Dict{
-				origin.ParamChainOwner: isc.NewAgentID(chain.OriginatorAddress()).Bytes(),
+				origin.ParamChainOwner:  isc.NewAgentID(chain.OriginatorAddress()).Bytes(),
+				origin.ParamWaspVersion: codec.EncodeString(app.Version),
 			},
 		},
 		stateAddr,
@@ -296,25 +293,25 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	chain.ChainID = chainID
 
 	// After a rotation other nodes can become access nodes,
-	// so we make all of the nodes possible access nodes.
+	// so we make all of the nodes are possible access nodes.
 	return chain, clu.addAllAccessNodes(chain, allPeers)
 }
 
 func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	//
 	// Register all nodes as access nodes.
-	addAccessNodesRequests := make([]*iotago.Transaction, len(accessNodes))
+	addAccessNodesTxs := make([]*iotago.Transaction, len(accessNodes))
 	for i, a := range accessNodes {
-		tx, err := clu.AddAccessNode(a, chain)
+		tx, err := clu.addAccessNode(a, chain)
 		if err != nil {
 			return err
 		}
-		addAccessNodesRequests[i] = tx
+		addAccessNodesTxs[i] = tx
 	}
 
-	peers := multiclient.New(clu.WaspClientFromHostName, chain.CommitteeAPIHosts()) //.WithLogFunc(clu.t.Logf)
+	peers := multiclient.New(clu.WaspClientFromHostName, chain.CommitteeAPIHosts())
 
-	for _, tx := range addAccessNodesRequests {
+	for _, tx := range addAccessNodesTxs {
 		// ---------- wait until the requests are processed in all committee nodes
 
 		if _, err := peers.WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, true, 30*time.Second); err != nil {
@@ -332,7 +329,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 			return err
 		}
 
-		accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePeering.PublicKey)
+		accessNodePubKey, err := cryptolib.PublicKeyFromString(accessNodePeering.PublicKey)
 		if err != nil {
 			return err
 		}
@@ -355,12 +352,18 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	return nil
 }
 
-// AddAccessNode introduces node at accessNodeIndex as an access node to the chain.
+// addAccessNode introduces node at accessNodeIndex as an access node to the chain.
 // This is done by activating the chain on the node and asking the governance contract
 // to consider it as an access node.
-func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Transaction, error) {
+func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Transaction, error) {
 	waspClient := clu.WaspClient(accessNodeIndex)
 	if err := apilib.ActivateChainOnNodes(clu.WaspClientFromHostName, clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
+		return nil, err
+	}
+
+	validatorKeyPair := clu.Config.ValidatorKeyPair(accessNodeIndex)
+	err := clu.RequestFunds(validatorKeyPair.Address())
+	if err != nil {
 		return nil, err
 	}
 
@@ -370,16 +373,12 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 		return nil, err
 	}
 
-	accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePeering.PublicKey)
+	accessNodePubKey, err := cryptolib.PublicKeyFromString(accessNodePeering.PublicKey)
 	if err != nil {
 		return nil, err
 	}
 
-	clu.log.Infof("Node owner bech32: %v", chain.OriginatorAddress().Bech32(parameters.L1().Protocol.Bech32HRP))
-	cert, _, err := waspClient.NodeApi.SetNodeOwner(context.Background()).NodeOwnerCertificateRequest(apiclient.NodeOwnerCertificateRequest{
-		PublicKey:    accessNodePubKey.String(),
-		OwnerAddress: chain.OriginatorAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
-	}).Execute() //nolint:bodyclose // false positive
+	cert, _, err := waspClient.NodeApi.OwnerCertificate(context.Background()).Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		return nil, err
 	}
@@ -390,18 +389,17 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 	}
 
 	scArgs := governance.AccessNodeInfo{
-		NodePubKey:    accessNodePubKey.AsBytes(),
-		ValidatorAddr: isc.BytesFromAddress(chain.OriginatorAddress()),
-		Certificate:   decodedCert,
-		ForCommittee:  false,
-		AccessAPI:     clu.Config.APIHost(accessNodeIndex),
+		NodePubKey:   accessNodePubKey.AsBytes(),
+		Certificate:  decodedCert,
+		ForCommittee: false,
+		AccessAPI:    clu.Config.APIHost(accessNodeIndex),
 	}
+
 	scParams := chainclient.
 		NewPostRequestParams(scArgs.ToAddCandidateNodeParams()).
 		WithBaseTokens(1000)
 
-	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
-
+	govClient := chain.SCClient(governance.Contract.Hname(), validatorKeyPair)
 	tx, err := govClient.PostRequest(governance.FuncAddCandidateNode.Name, *scParams)
 	if err != nil {
 		return nil, err
@@ -579,7 +577,7 @@ func (clu *Cluster) KillNodeProcess(nodeIndex int, gracefully bool) error {
 		return nil
 	}
 
-	if gracefully && runtime.GOOS != "windows" {
+	if gracefully && runtime.GOOS != util.WindowsOS {
 		if err := wcmd.cmd.Process.Signal(os.Interrupt); err != nil {
 			return err
 		}

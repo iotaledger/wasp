@@ -88,7 +88,7 @@ type stateManager struct {
 	wal                  sm_gpa_utils.BlockWAL
 	net                  peering.NetworkProvider
 	netPeeringID         peering.PeeringID
-	timers               sm_gpa.StateManagerTimers
+	parameters           sm_gpa.StateManagerParameters
 	ctx                  context.Context
 	cleanupFun           func()
 	shutdownCoordinator  *shutdown.Coordinator
@@ -113,20 +113,13 @@ func New(
 	wal sm_gpa_utils.BlockWAL,
 	store state.Store,
 	shutdownCoordinator *shutdown.Coordinator,
-	metrics metrics.IChainStateManagerMetrics,
-	pipeMetrics metrics.IChainPipeMetrics,
+	metrics *metrics.ChainStateManagerMetrics,
+	pipeMetrics *metrics.ChainPipeMetrics,
 	log *logger.Logger,
-	timersOpt ...sm_gpa.StateManagerTimers,
+	parameters sm_gpa.StateManagerParameters,
 ) (StateMgr, error) {
 	nr := sm_utils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), log)
-	var timers sm_gpa.StateManagerTimers
-	if len(timersOpt) > 0 {
-		timers = timersOpt[0]
-	} else {
-		timers = sm_gpa.NewStateManagerTimers()
-	}
-
-	stateManagerGPA, err := sm_gpa.New(chainID, nr, wal, store, metrics, log, timers)
+	stateManagerGPA, err := sm_gpa.New(chainID, nr, wal, store, metrics, log, parameters)
 	if err != nil {
 		log.Errorf("failed to create state manager GPA: %w", err)
 		return nil, err
@@ -143,7 +136,7 @@ func New(
 		wal:                  wal,
 		net:                  net,
 		netPeeringID:         peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("StateManager")), // ChainID × StateManager
-		timers:               timers,
+		parameters:           parameters,
 		ctx:                  ctx,
 		shutdownCoordinator:  shutdownCoordinator,
 	}
@@ -159,7 +152,7 @@ func New(
 		committeeNodes: []*cryptolib.PublicKey{},
 	})
 
-	unhook := result.net.Attach(&result.netPeeringID, peering.PeerMessageReceiverStateManager, func(recv *peering.PeerMessageIn) {
+	unhook := result.net.Attach(&result.netPeeringID, peering.ReceiverStateManager, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != constMsgTypeStm {
 			result.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
@@ -243,8 +236,8 @@ func (smT *stateManager) run() { //nolint:gocyclo
 	messagePipeCh := smT.messagePipe.Out()
 	nodePubKeysPipeCh := smT.nodePubKeysPipe.Out()
 	preliminaryBlockPipeCh := smT.preliminaryBlockPipe.Out()
-	timerTickCh := smT.timers.TimeProvider.After(smT.timers.StateManagerTimerTickPeriod)
-	statusTimerCh := smT.timers.TimeProvider.After(constStatusTimerTime)
+	timerTickCh := smT.parameters.TimeProvider.After(smT.parameters.StateManagerTimerTickPeriod)
+	statusTimerCh := smT.parameters.TimeProvider.After(constStatusTimerTime)
 	for {
 		if smT.ctx.Err() != nil {
 			if smT.shutdownCoordinator == nil {
@@ -284,12 +277,12 @@ func (smT *stateManager) run() { //nolint:gocyclo
 		case now, ok := <-timerTickCh:
 			if ok {
 				smT.handleTimerTick(now)
-				timerTickCh = smT.timers.TimeProvider.After(smT.timers.StateManagerTimerTickPeriod)
+				timerTickCh = smT.parameters.TimeProvider.After(smT.parameters.StateManagerTimerTickPeriod)
 			} else {
 				timerTickCh = nil
 			}
 		case <-statusTimerCh:
-			statusTimerCh = smT.timers.TimeProvider.After(constStatusTimerTime)
+			statusTimerCh = smT.parameters.TimeProvider.After(constStatusTimerTime)
 			smT.log.Debugf("State manager loop iteration; there are %v inputs, %v messages, %v public key changes waiting to be handled",
 				smT.inputPipe.Len(), smT.messagePipe.Len(), smT.nodePubKeysPipe.Len())
 		case <-smT.ctx.Done():
@@ -372,17 +365,7 @@ func (smT *stateManager) sendMessages(outMsgs gpa.OutMessages) {
 		return
 	}
 	outMsgs.MustIterate(func(msg gpa.Message) {
-		msgData, err := msg.MarshalBinary()
-		if err != nil {
-			smT.log.Warnf("Failed to marshal message for sending: %v", err)
-			return
-		}
-		pm := &peering.PeerMessageData{
-			PeeringID:   smT.netPeeringID,
-			MsgReceiver: peering.PeerMessageReceiverStateManager,
-			MsgType:     constMsgTypeStm,
-			MsgData:     msgData,
-		}
+		pm := peering.NewPeerMessageData(smT.netPeeringID, peering.ReceiverStateManager, constMsgTypeStm, msg)
 		recipientPubKey, ok := smT.nodeIDToPubKey[msg.Recipient()]
 		if !ok {
 			smT.log.Debugf("Dropping outgoing message, because NodeID=%s it is not in the NodeList.", msg.Recipient().ShortString())

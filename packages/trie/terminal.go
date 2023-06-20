@@ -3,8 +3,9 @@ package trie
 import (
 	"bytes"
 	"encoding/hex"
-	"errors"
 	"io"
+
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // Tcommitment (short for terminal commitment) commits to data of arbitrary size.
@@ -76,43 +77,32 @@ func (t *Tcommitment) Clone() *Tcommitment {
 	}
 }
 
+func (t *Tcommitment) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	size := rr.ReadByte()
+	t.IsValue = (size & tcommitmentIsValueMask) != 0
+	size &= tcommitmentDataSizeMask
+	if size > 0 {
+		t.Data = make([]byte, size)
+		rr.ReadN(t.Data)
+	}
+	return rr.Err
+}
+
 func (t *Tcommitment) Write(w io.Writer) error {
 	assertf(len(t.Data) <= tcommitmentDataSizeMax, "size <= tcommitmentDataSizeMax")
+	ww := rwutil.NewWriter(w)
 	size := byte(len(t.Data))
 	if t.IsValue {
 		size |= tcommitmentIsValueMask
 	}
-	if err := writeByte(w, size); err != nil {
-		return err
-	}
-	_, err := w.Write(t.Data)
-	return err
-}
-
-func (t *Tcommitment) Read(r io.Reader) error {
-	var err error
-	var l byte
-	if l, err = readByte(r); err != nil {
-		return err
-	}
-	t.IsValue = (l & tcommitmentIsValueMask) != 0
-	l &= tcommitmentDataSizeMask
-	if l > 0 {
-		t.Data = make([]byte, l)
-
-		n, err := r.Read(t.Data)
-		if err != nil {
-			return err
-		}
-		if n != int(l) {
-			return errors.New("bad data length")
-		}
-	}
-	return nil
+	ww.WriteByte(size)
+	ww.WriteN(t.Data)
+	return ww.Err
 }
 
 func (t *Tcommitment) Bytes() []byte {
-	return mustBytes(t)
+	return rwutil.WriteToBytes(t)
 }
 
 func (t *Tcommitment) String() string {

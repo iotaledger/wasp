@@ -58,7 +58,7 @@ func (c *Controller) setChainRecord(e echo.Context) error {
 	record := registry.NewChainRecord(chainID, request.IsActive, []*cryptolib.PublicKey{})
 
 	for _, publicKeyStr := range request.AccessNodes {
-		publicKey, err := cryptolib.NewPublicKeyFromString(publicKeyStr)
+		publicKey, err := cryptolib.PublicKeyFromString(publicKeyStr)
 		if err != nil {
 			return apierrors.InvalidPropertyError("accessNode", err)
 		}

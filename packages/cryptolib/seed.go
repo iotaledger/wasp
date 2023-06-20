@@ -23,7 +23,7 @@ func NewSeed() Seed {
 	return newSeed
 }
 
-func NewSeedFromBytes(seedData []byte) Seed {
+func SeedFromBytes(seedData []byte) Seed {
 	var seed Seed
 
 	copy(seed[:], seedData)
@@ -40,5 +40,5 @@ func (seed *Seed) SubSeed(n uint64) Seed {
 
 	byteutils.XORBytes(subSeed, seed[:], hashOfIndexBytes[:])
 
-	return NewSeedFromBytes(subSeed)
+	return SeedFromBytes(subSeed)
 }

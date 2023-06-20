@@ -11,6 +11,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/trie"
 )
 
@@ -22,9 +23,15 @@ type store struct {
 	// stateCache is a cache of immutable state readers by trie root. Reusing the
 	// State instances allows to better take advantage of its internal caches.
 	stateCache *lru.Cache[trie.Hash, *state]
+
+	metrics *metrics.ChainStateMetrics
 }
 
 func NewStore(db kvstore.KVStore) Store {
+	return NewStoreWithMetrics(db, nil)
+}
+
+func NewStoreWithMetrics(db kvstore.KVStore, metrics *metrics.ChainStateMetrics) Store {
 	stateCache, err := lru.New[trie.Hash, *state](100)
 	if err != nil {
 		panic(err)
@@ -32,10 +39,11 @@ func NewStore(db kvstore.KVStore) Store {
 	return &store{
 		db:         &storeDB{db},
 		stateCache: stateCache,
+		metrics:    metrics,
 	}
 }
 
-func (s *store) blockByTrieRoot(root trie.Hash) (*block, error) {
+func (s *store) blockByTrieRoot(root trie.Hash) (Block, error) {
 	return s.db.readBlock(root)
 }
 
@@ -86,7 +94,7 @@ func (s *store) NewEmptyStateDraft(prevL1Commitment *L1Commitment) (StateDraft, 
 	return newEmptyStateDraft(prevL1Commitment, prevState), nil
 }
 
-func (s *store) extractBlock(d StateDraft) (Block, *buffered.Mutations) {
+func (s *store) extractBlock(d StateDraft) (Block, *buffered.Mutations, trie.CommitStats) {
 	buf, bufDB := s.db.buffered()
 
 	var baseTrieRoot trie.Hash
@@ -103,7 +111,7 @@ func (s *store) extractBlock(d StateDraft) (Block, *buffered.Mutations) {
 	}
 
 	// compute state db mutations
-	block := func() Block {
+	block, stats := func() (Block, trie.CommitStats) {
 		trie, err := bufDB.trieUpdatable(baseTrieRoot)
 		if err != nil {
 			// should not happen
@@ -115,37 +123,47 @@ func (s *store) extractBlock(d StateDraft) (Block, *buffered.Mutations) {
 		for k := range d.Mutations().Dels {
 			trie.Delete([]byte(k))
 		}
-		trieRoot := trie.Commit(bufDB.trieStore())
+		trieRoot, stats := trie.Commit(bufDB.trieStore())
 		block := &block{
 			trieRoot:             trieRoot,
 			mutations:            d.Mutations(),
 			previousL1Commitment: d.BaseL1Commitment(),
 		}
 		bufDB.saveBlock(block)
-		return block
+		return block, stats
 	}()
 
-	return block, buf.muts
+	return block, buf.muts, stats
 }
 
 func (s *store) ExtractBlock(d StateDraft) Block {
-	block, _ := s.extractBlock(d)
+	block, _, _ := s.extractBlock(d)
 	return block
 }
 
 func (s *store) Commit(d StateDraft) Block {
-	block, muts := s.extractBlock(d)
+	start := time.Now()
+	block, muts, stats := s.extractBlock(d)
 	s.db.commitToDB(muts)
+	if s.metrics != nil {
+		s.metrics.BlockCommitted(time.Since(start), stats.CreatedNodes, stats.CreatedValues)
+	}
 	return block
 }
 
 func (s *store) Prune(trieRoot trie.Hash) (trie.PruneStats, error) {
+	start := time.Now()
 	buf, bufDB := s.db.buffered()
 	stats, err := trie.Prune(bufDB.trieStore(), trieRoot)
 	if err != nil {
 		return trie.PruneStats{}, err
 	}
+	s.db.pruneBlock(trieRoot)
 	s.db.commitToDB(buf.muts)
+	s.stateCache.Remove(trieRoot)
+	if s.metrics != nil {
+		s.metrics.BlockPruned(time.Since(start), stats.DeletedNodes, stats.DeletedValues)
+	}
 	return stats, nil
 }
 

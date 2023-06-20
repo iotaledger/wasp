@@ -6,10 +6,10 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-func DecodeVMErrorCode(b []byte, def ...isc.VMErrorCode) (isc.VMErrorCode, error) {
+func DecodeVMErrorCode(b []byte, def ...isc.VMErrorCode) (ret isc.VMErrorCode, err error) {
 	if b == nil {
 		if len(def) == 0 {
-			return isc.VMErrorCode{}, errors.New("cannot decode nil bytes")
+			return ret, errors.New("cannot decode nil VMErrorCode")
 		}
 		return def[0], nil
 	}

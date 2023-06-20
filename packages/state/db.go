@@ -83,7 +83,11 @@ func (db *storeDB) saveBlock(block Block) {
 	db.mustSet(keyBlockByTrieRoot(block.TrieRoot()), block.Bytes())
 }
 
-func (db *storeDB) readBlock(root trie.Hash) (*block, error) {
+func (db *storeDB) pruneBlock(trieRoot trie.Hash) {
+	db.mustDel(keyBlockByTrieRoot(trieRoot))
+}
+
+func (db *storeDB) readBlock(root trie.Hash) (Block, error) {
 	key := keyBlockByTrieRoot(root)
 	if !db.mustHas(key) {
 		return nil, fmt.Errorf("%w %s", ErrTrieRootNotFound, root)
@@ -108,6 +112,11 @@ func (db *storeDB) commitToDB(muts *buffered.Mutations) {
 
 func (db *storeDB) mustSet(key []byte, value []byte) {
 	err := db.Set(key, value)
+	mustNoErr(err)
+}
+
+func (db *storeDB) mustDel(key []byte) {
+	err := db.Delete(key)
 	mustNoErr(err)
 }
 

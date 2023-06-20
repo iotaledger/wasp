@@ -88,7 +88,7 @@ func New(
 	), resendPeriod)
 
 	netRecvPipeInCh := ami.netRecvPipe.In()
-	unhook := net.Attach(&netPeeringID, peering.PeerMessageReceiverAccessMgr, func(recv *peering.PeerMessageIn) {
+	unhook := net.Attach(&netPeeringID, peering.ReceiverAccessMgr, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeAccessMgr {
 			ami.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
@@ -217,19 +217,9 @@ func (ami *accessMgrImpl) sendMessages(outMsgs gpa.OutMessages) {
 	if outMsgs == nil {
 		return
 	}
-	outMsgs.MustIterate(func(m gpa.Message) {
-		msgData, err := m.MarshalBinary()
-		if err != nil {
-			ami.log.Warnf("Failed to send a message: %v", err)
-			return
-		}
-		pm := &peering.PeerMessageData{
-			PeeringID:   ami.netPeeringID,
-			MsgReceiver: peering.PeerMessageReceiverAccessMgr,
-			MsgType:     msgTypeAccessMgr,
-			MsgData:     msgData,
-		}
-		ami.net.SendMsgByPubKey(ami.netPeerPubs[m.Recipient()], pm)
+	outMsgs.MustIterate(func(msg gpa.Message) {
+		pm := peering.NewPeerMessageData(ami.netPeeringID, peering.ReceiverAccessMgr, msgTypeAccessMgr, msg)
+		ami.net.SendMsgByPubKey(ami.netPeerPubs[msg.Recipient()], pm)
 	})
 }
 

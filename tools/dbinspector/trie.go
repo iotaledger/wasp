@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"time"
@@ -57,10 +56,7 @@ func trieStats(ctx context.Context, kvs kvstore.KVStore) {
 	for node := range nodesCh {
 		data.n++
 
-		var buf bytes.Buffer
-		err := node.Write(&buf)
-		mustNoError(err)
-		data.size += len(buf.Bytes()) + trie.HashSizeBytes
+		data.size += len(node.Bytes()) + trie.HashSizeBytes
 		data.childCount[node.ChildrenCount()]++
 		if node.Terminal == nil {
 			data.notTerminal++

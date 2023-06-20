@@ -10,10 +10,10 @@ func EncodeRatio32(r util.Ratio32) []byte {
 	return r.Bytes()
 }
 
-func DecodeRatio32(b []byte, def ...util.Ratio32) (util.Ratio32, error) {
+func DecodeRatio32(b []byte, def ...util.Ratio32) (ret util.Ratio32, err error) {
 	if b == nil {
 		if len(def) == 0 {
-			return util.Ratio32{}, errors.New("cannot decode nil bytes")
+			return ret, errors.New("cannot decode nil Ratio32")
 		}
 		return def[0], nil
 	}

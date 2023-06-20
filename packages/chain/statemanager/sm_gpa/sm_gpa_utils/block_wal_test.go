@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
@@ -23,9 +22,9 @@ func TestBlockWALBasic(t *testing.T) {
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(5, 1)
 	blocksInWAL := blocks[:4]
-	walGood, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), metrics.NewEmptyChainBlockWALMetrics())
+	walGood, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
-	walBad, err := NewBlockWAL(log, constTestFolder, isc.RandomChainID(), metrics.NewEmptyChainBlockWALMetrics())
+	walBad, err := NewBlockWAL(log, constTestFolder, isc.RandomChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocksInWAL {
 		err = walGood.Write(blocks[i])
@@ -40,7 +39,7 @@ func TestBlockWALBasic(t *testing.T) {
 	for i := range blocksInWAL {
 		block, err2 := walGood.Read(blocks[i].Hash())
 		require.NoError(t, err2)
-		require.True(t, blocks[i].Hash().Equals(block.Hash())) // Should be Equals instead of Hash().Equals()
+		CheckBlocksEqual(t, blocks[i], block)
 		_, err2 = walBad.Read(blocks[i].Hash())
 		require.Error(t, err2)
 	}
@@ -58,7 +57,7 @@ func TestBlockWALOverwrite(t *testing.T) {
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(4, 1)
-	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), metrics.NewEmptyChainBlockWALMetrics())
+	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
 		err = wal.Write(blocks[i])
@@ -88,8 +87,7 @@ func TestBlockWALOverwrite(t *testing.T) {
 	require.True(t, wal.Contains(blocks[0].Hash()))
 	block, err = wal.Read(blocks[0].Hash())
 	require.NoError(t, err)
-	require.True(t, blocks[0].Hash().Equals(block.Hash()))
-	// require.True(t, blocks[0].Equals(block))
+	CheckBlocksEqual(t, blocks[0], block)
 }
 
 // Check if after restart wal is functioning correctly
@@ -100,7 +98,7 @@ func TestBlockWALRestart(t *testing.T) {
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(4, 1)
-	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), metrics.NewEmptyChainBlockWALMetrics())
+	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
 		err = wal.Write(blocks[i])
@@ -108,13 +106,13 @@ func TestBlockWALRestart(t *testing.T) {
 	}
 
 	// Restart: WAL object is recreated
-	wal, err = NewBlockWAL(log, constTestFolder, factory.GetChainID(), metrics.NewEmptyChainBlockWALMetrics())
+	wal, err = NewBlockWAL(log, constTestFolder, factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
 		require.True(t, wal.Contains(blocks[i].Hash()))
 		block, err := wal.Read(blocks[i].Hash())
 		require.NoError(t, err)
-		require.True(t, blocks[i].Hash().Equals(block.Hash())) // Should be Equals instead of Hash().Equals()
+		CheckBlocksEqual(t, blocks[i], block)
 	}
 }
 

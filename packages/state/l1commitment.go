@@ -1,17 +1,13 @@
 package state
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
 	"io"
 
-	"golang.org/x/crypto/blake2b"
-
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const BlockHashSize = 20
@@ -28,25 +24,6 @@ type L1Commitment struct {
 
 const L1CommitmentSize = trie.HashSizeBytes + BlockHashSize
 
-func BlockHashFromData(data []byte) (ret BlockHash) {
-	r := blake2b.Sum256(data)
-	copy(ret[:BlockHashSize], r[:BlockHashSize])
-	return
-}
-
-func BlockHashFromString(blockHashString string) (BlockHash, error) {
-	result := BlockHash{}
-	slice, err := iotago.DecodeHex(blockHashString)
-	if err != nil {
-		return result, fmt.Errorf("Error decoding block hash from string %s: %w", blockHashString, err)
-	}
-	if len(slice) != BlockHashSize {
-		return result, fmt.Errorf("Error decoding block hash from string %s: %v bytes obtained; expected %v bytes", blockHashString, len(slice), BlockHashSize)
-	}
-	copy(result[:], slice)
-	return result, nil
-}
-
 func newL1Commitment(c trie.Hash, blockHash BlockHash) *L1Commitment {
 	return &L1Commitment{
 		trieRoot:  c,
@@ -62,24 +39,8 @@ func (bh BlockHash) Equals(other BlockHash) bool {
 	return bh == other
 }
 
-//nolint:revive
-func L1CommitmentFromMarshalUtil(mu *marshalutil.MarshalUtil) (*L1Commitment, error) {
-	if buf, err := mu.ReadBytes(L1CommitmentSize); err != nil {
-		return nil, err
-	} else {
-		return L1CommitmentFromBytes(buf)
-	}
-}
-
 func L1CommitmentFromBytes(data []byte) (*L1Commitment, error) {
-	if len(data) != L1CommitmentSize {
-		return nil, errors.New("L1CommitmentFromBytes: wrong data length")
-	}
-	ret := L1Commitment{}
-	if err := ret.Read(bytes.NewReader(data)); err != nil {
-		return nil, err
-	}
-	return &ret, nil
+	return rwutil.ReadFromBytes(data, new(L1Commitment))
 }
 
 func (s *L1Commitment) TrieRoot() trie.Hash {
@@ -91,35 +52,25 @@ func (s *L1Commitment) BlockHash() BlockHash {
 }
 
 func (s *L1Commitment) Equals(other *L1Commitment) bool {
-	return s.blockHash == other.blockHash && s.trieRoot == other.trieRoot
+	return s.blockHash.Equals(other.blockHash) && s.trieRoot.Equals(other.trieRoot)
 }
 
 func (s *L1Commitment) Bytes() []byte {
-	return util.MustBytes(s)
-}
-
-func (s *L1Commitment) Write(w io.Writer) error {
-	hash := s.TrieRoot()
-	if err := hash.Write(w); err != nil {
-		return err
-	}
-	blockHash := s.BlockHash()
-	if _, err := w.Write(blockHash[:]); err != nil {
-		return err
-	}
-	return nil
+	return rwutil.WriteToBytes(s)
 }
 
 func (s *L1Commitment) Read(r io.Reader) error {
-	var err error
-	s.trieRoot, err = trie.ReadHash(r)
-	if err != nil {
-		return err
-	}
-	if _, err := r.Read(s.blockHash[:]); err != nil {
-		return err
-	}
-	return nil
+	rr := rwutil.NewReader(r)
+	rr.ReadN(s.trieRoot[:])
+	rr.ReadN(s.blockHash[:])
+	return rr.Err
+}
+
+func (s *L1Commitment) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteN(s.trieRoot[:])
+	ww.WriteN(s.blockHash[:])
+	return ww.Err
 }
 
 func (s *L1Commitment) String() string {

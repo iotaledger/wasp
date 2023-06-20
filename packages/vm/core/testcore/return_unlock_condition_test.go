@@ -68,7 +68,7 @@ func TestSendBack(t *testing.T) {
 		customOut := out.Clone().(*iotago.BasicOutput)
 		sendBackCondition := &iotago.StorageDepositReturnUnlockCondition{
 			ReturnAddress: addr,
-			Amount:        500,
+			Amount:        1 * isc.Million,
 		}
 		customOut.Conditions = append(customOut.Conditions, sendBackCondition)
 		tx.Essence.Outputs[i] = customOut

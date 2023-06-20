@@ -1,13 +1,15 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+use std::cmp::Ordering;
+
 use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub const SC_TOKEN_ID_LENGTH: usize = 38;
 
-#[derive(PartialEq, Clone, Copy, Eq, Hash)]
+#[derive(PartialEq, Clone, Copy, Eq, Hash, Ord)]
 pub struct ScTokenID {
     id: [u8; SC_TOKEN_ID_LENGTH],
 }
@@ -19,6 +21,12 @@ impl ScTokenID {
 
     pub fn to_string(&self) -> String {
         token_id_to_string(self)
+    }
+}
+
+impl PartialOrd for ScTokenID {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.id.cmp(&other.id))
     }
 }
 

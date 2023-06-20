@@ -26,17 +26,17 @@ const (
 	// FirstUserMsgCode is the first committee message type.
 	// All the equal and larger msg types are committee messages.
 	// those with smaller are reserved by the package for heartbeat and handshake messages
-	FirstUserMsgCode                = byte(0x10)
-	PeerMessageReceiverStateManager = byte(iota)
-	PeerMessageReceiverConsensus
-	PeerMessageReceiverCommonSubset
-	PeerMessageReceiverChain
-	PeerMessageReceiverChainDSS
-	PeerMessageReceiverChainCons
-	PeerMessageReceiverDkg
-	PeerMessageReceiverDkgInit
-	PeerMessageReceiverMempool
-	PeerMessageReceiverAccessMgr
+	FirstUserMsgCode     = byte(0x10)
+	ReceiverStateManager = byte(iota)
+	ReceiverConsensus
+	ReceiverCommonSubset
+	ReceiverChain
+	ReceiverChainDSS
+	ReceiverChainCons
+	ReceiverDkg
+	ReceiverDkgInit
+	ReceiverMempool
+	ReceiverAccessMgr
 )
 
 // NetworkProvider stands for the peer-to-peer network, as seen
@@ -87,7 +87,7 @@ func QueryByPubKeyOrName(trustedPeers []*TrustedPeer, pubKeysOrNames []string) (
 		var pubKey *cryptolib.PublicKey
 		var err error
 		if isPubKey {
-			pubKey, err = cryptolib.NewPublicKeyFromString(pubKeyOrName)
+			pubKey, err = cryptolib.PublicKeyFromString(pubKeyOrName)
 			if err != nil {
 				return nil, fmt.Errorf("cannot parse %v as pubKey: %w", pubKeyOrName, err)
 			}

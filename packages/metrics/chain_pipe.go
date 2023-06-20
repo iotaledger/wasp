@@ -9,25 +9,35 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-type IChainPipeMetrics interface {
-	TrackPipeLen(name string, lenFunc func() int)
-	TrackPipeLenMax(name string, key string, lenFunc func() int)
-	ForgetPipeLenMax(name string, key string)
+type ChainPipeMetricsProvider struct {
+	// We use Func variant of a metric here, thus we register them
+	// explicitly when they are created. Therefore we need a registry here.
+	reg prometheus.Registerer
 }
 
-type emptyChainPipeMetrics struct{}
+func newChainPipeMetricsProvider() *ChainPipeMetricsProvider {
+	return &ChainPipeMetricsProvider{}
+}
 
-func NewEmptyChainPipeMetrics() IChainPipeMetrics                                            { return &emptyChainPipeMetrics{} }
-func (m *emptyChainPipeMetrics) TrackPipeLen(name string, lenFunc func() int)                {}
-func (m *emptyChainPipeMetrics) TrackPipeLenMax(name string, key string, lenFunc func() int) {}
-func (m *emptyChainPipeMetrics) ForgetPipeLenMax(name string, key string)                    {}
+func (p *ChainPipeMetricsProvider) register(reg prometheus.Registerer) {
+	p.reg = reg
+}
 
-type chainPipeMetrics struct {
+func (p *ChainPipeMetricsProvider) createForChain(chainID isc.ChainID) *ChainPipeMetrics {
+	return &ChainPipeMetrics{
+		chainID:    chainID,
+		reg:        p.reg,
+		lenMetrics: map[string]prometheus.Collector{},
+		maxMetrics: map[string]*chainPipeMaxCollector{},
+	}
+}
+
+type ChainPipeMetrics struct {
+	reg        prometheus.Registerer
 	chainID    isc.ChainID
-	provider   *ChainMetricsProvider
 	lenMetrics map[string]prometheus.Collector
 	maxMetrics map[string]*chainPipeMaxCollector
-	regLock    *sync.RWMutex
+	regLock    sync.RWMutex
 }
 
 type chainPipeMaxCollector struct {
@@ -35,53 +45,41 @@ type chainPipeMaxCollector struct {
 	valueFuncs map[string]func() int
 }
 
-func newChainPipeMetric(provider *ChainMetricsProvider, chainID isc.ChainID) *chainPipeMetrics {
-	return &chainPipeMetrics{
-		chainID:    chainID,
-		provider:   provider,
-		lenMetrics: map[string]prometheus.Collector{},
-		maxMetrics: map[string]*chainPipeMaxCollector{},
-		regLock:    &sync.RWMutex{},
-	}
-}
-
-func (m *chainPipeMetrics) cleanup() {
+func (m *ChainPipeMetrics) cleanup() {
 	m.regLock.Lock()
 	defer m.regLock.Unlock()
 
-	reg := m.provider.pipeLenRegistry
-	if reg == nil {
+	if m.reg == nil {
 		return
 	}
 
 	for _, collector := range m.lenMetrics {
-		reg.Unregister(collector)
+		m.reg.Unregister(collector)
 	}
 	m.lenMetrics = map[string]prometheus.Collector{}
 
 	for _, maxCollector := range m.maxMetrics {
-		reg.Unregister(maxCollector.collector)
+		m.reg.Unregister(maxCollector.collector)
 	}
 	m.maxMetrics = map[string]*chainPipeMaxCollector{}
 }
 
-func (m *chainPipeMetrics) makeLabels(pipeName string) prometheus.Labels {
+func (m *ChainPipeMetrics) makeLabels(pipeName string) prometheus.Labels {
 	return prometheus.Labels{
 		labelNameChain:    m.chainID.String(),
 		labelNamePipeName: pipeName,
 	}
 }
 
-func (m *chainPipeMetrics) TrackPipeLen(name string, lenFunc func() int) {
+func (m *ChainPipeMetrics) TrackPipeLen(name string, lenFunc func() int) {
 	m.regLock.Lock()
 	defer m.regLock.Unlock()
 
-	reg := m.provider.pipeLenRegistry
-	if reg == nil {
+	if m.reg == nil {
 		return
 	}
 	if oldCollector, ok := m.lenMetrics[name]; ok {
-		reg.Unregister(oldCollector)
+		m.reg.Unregister(oldCollector)
 	}
 
 	collector := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
@@ -93,17 +91,16 @@ func (m *chainPipeMetrics) TrackPipeLen(name string, lenFunc func() int) {
 	}, func() float64 { return float64(lenFunc()) })
 	m.lenMetrics[name] = collector
 
-	if err := reg.Register(collector); err != nil {
+	if err := m.reg.Register(collector); err != nil {
 		panic(fmt.Errorf("failed to register pipe %v len metric for chain %v: %w", name, m.chainID, err))
 	}
 }
 
-func (m *chainPipeMetrics) TrackPipeLenMax(name string, key string, lenFunc func() int) {
+func (m *ChainPipeMetrics) TrackPipeLenMax(name string, key string, lenFunc func() int) {
 	m.regLock.Lock()
 	defer m.regLock.Unlock()
 
-	reg := m.provider.pipeLenRegistry
-	if reg == nil {
+	if m.reg == nil {
 		return
 	}
 
@@ -126,7 +123,7 @@ func (m *chainPipeMetrics) TrackPipeLenMax(name string, key string, lenFunc func
 			}
 			return float64(max)
 		})
-		if err := reg.Register(collector); err != nil {
+		if err := m.reg.Register(collector); err != nil {
 			panic(fmt.Errorf("failed to register pipe %v max len metric for chain %v: %w", name, m.chainID, err))
 		}
 		maxCollector = &chainPipeMaxCollector{
@@ -138,12 +135,11 @@ func (m *chainPipeMetrics) TrackPipeLenMax(name string, key string, lenFunc func
 	maxCollector.valueFuncs[key] = lenFunc
 }
 
-func (m *chainPipeMetrics) ForgetPipeLenMax(name string, key string) {
+func (m *ChainPipeMetrics) ForgetPipeLenMax(name string, key string) {
 	m.regLock.Lock()
 	defer m.regLock.Unlock()
 
-	reg := m.provider.pipeLenRegistry
-	if reg == nil {
+	if m.reg == nil {
 		return
 	}
 	maxCollector, found := m.maxMetrics[name]

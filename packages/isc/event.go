@@ -1,47 +1,67 @@
 package isc
 
 import (
-	"encoding/binary"
-	"errors"
+	"io"
 
-	"github.com/iotaledger/wasp/packages/util"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type Event struct {
-	ContractID Hname  `json:"contractID"`
-	Payload    []byte `json:"payload"`
-	Topic      string `json:"topic"`
-	Timestamp  uint64 `json:"timestamp"`
+	ContractID Hname
+	Payload    []byte
+	Topic      string
+	Timestamp  uint64
 }
 
-func NewEvent(event []byte) (*Event, error) {
-	if len(event) < 4+2+8 {
-		return nil, errors.New("insufficient event data")
+func EventFromBytes(data []byte) (*Event, error) {
+	return rwutil.ReadFromBytes(data, new(Event))
+}
+
+// ContractIDFromEventBytes is used by blocklog to filter out specific events per contract
+// For performance reasons it is working directly with the event bytes.
+func ContractIDFromEventBytes(eventBytes []byte) (Hname, error) {
+	if len(eventBytes) > 4 {
+		return HnameFromBytes(eventBytes[:4])
 	}
-	hContract := Hname(binary.LittleEndian.Uint32(event[:4]))
-	event = event[4:]
-	length := binary.LittleEndian.Uint16(event[:2])
-	event = event[2:]
-	if len(event) < int(length)+8 {
-		return nil, errors.New("insufficient event topic data")
-	}
-	topic := string(event[:length])
-	event = event[length:]
-	timestamp := binary.LittleEndian.Uint64(event[:8])
-	return &Event{
-		ContractID: hContract,
-		Payload:    event[8:],
-		Timestamp:  timestamp,
-		Topic:      topic,
-	}, nil
+
+	return HnameNil, nil
 }
 
 func (e *Event) Bytes() []byte {
-	eventData := make([]byte, 0, 4+2+len(e.Topic)+8+len(e.Payload))
-	eventData = append(eventData, e.ContractID.Bytes()...)
-	eventData = append(eventData, util.Uint16To2Bytes(uint16(len(e.Topic)))...)
-	eventData = append(eventData, []byte(e.Topic)...)
-	eventData = append(eventData, util.Uint64To8Bytes(e.Timestamp)...)
-	eventData = append(eventData, e.Payload...)
-	return eventData
+	return rwutil.WriteToBytes(e)
+}
+
+func (e *Event) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.Read(&e.ContractID)
+	e.Topic = rr.ReadString()
+	e.Timestamp = rr.ReadUint64()
+	e.Payload = rr.ReadBytes()
+	return rr.Err
+}
+
+func (e *Event) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.Write(&e.ContractID)
+	ww.WriteString(e.Topic)
+	ww.WriteUint64(e.Timestamp)
+	ww.WriteBytes(e.Payload)
+	return ww.Err
+}
+
+func (e *Event) ToJSONStruct() *EventJSON {
+	return &EventJSON{
+		ContractID: e.ContractID,
+		Payload:    iotago.EncodeHex(e.Payload),
+		Topic:      e.Topic,
+		Timestamp:  e.Timestamp,
+	}
+}
+
+type EventJSON struct {
+	ContractID Hname  `json:"contractID" swagger:"desc(ID of the Contract that issued the event),required,min(1)"`
+	Payload    string `json:"payload" swagger:"desc(payload),required"`
+	Topic      string `json:"topic" swagger:"desc(topic),required"`
+	Timestamp  uint64 `json:"timestamp" swagger:"desc(timestamp),required"`
 }

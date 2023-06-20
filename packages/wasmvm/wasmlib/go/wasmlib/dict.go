@@ -31,20 +31,18 @@ func NewScDict() *ScDict {
 	return &ScDict{ScImmutableDict{dict: make(map[string][]byte)}}
 }
 
-func NewScDictFromBytes(buf []byte) *ScDict {
+func ScDictFromBytes(buf []byte) *ScDict {
 	if len(buf) == 0 {
 		return NewScDict()
 	}
 	dec := wasmtypes.NewWasmDecoder(buf)
-	size := wasmtypes.Uint32FromBytes(dec.FixedBytes(wasmtypes.ScUint32Length))
+	size := uint32(dec.VluDecode(32))
 	dict := NewScDict()
 	for i := uint32(0); i < size; i++ {
-		keyBuf := dec.FixedBytes(wasmtypes.ScUint16Length)
-		keyLen := wasmtypes.Uint16FromBytes(keyBuf)
+		keyLen := dec.VluDecode(32)
 		key := dec.FixedBytes(uint32(keyLen))
-		valBuf := dec.FixedBytes(wasmtypes.ScUint32Length)
-		valLen := wasmtypes.Uint32FromBytes(valBuf)
-		val := dec.FixedBytes(valLen)
+		valLen := dec.VluDecode(32)
+		val := dec.FixedBytes(uint32(valLen))
 		dict.Set(key, val)
 	}
 	return dict
@@ -56,7 +54,7 @@ func (d *ScDict) AsProxy() wasmtypes.Proxy {
 
 func (d *ScDict) Bytes() []byte {
 	if d == nil {
-		return []byte{0, 0, 0, 0}
+		return []byte{0}
 	}
 	keys := make([]string, 0, len(d.dict))
 	for key := range d.dict {
@@ -66,13 +64,13 @@ func (d *ScDict) Bytes() []byte {
 		return keys[i] < keys[j]
 	})
 	enc := wasmtypes.NewWasmEncoder()
-	enc.FixedBytes(wasmtypes.Uint32ToBytes(uint32(len(keys))), wasmtypes.ScUint32Length)
+	enc.VluEncode(uint64(len(keys)))
 	for _, k := range keys {
 		key := []byte(k)
 		val := d.dict[k]
-		enc.FixedBytes(wasmtypes.Uint16ToBytes(uint16(len(key))), wasmtypes.ScUint16Length)
+		enc.VluEncode(uint64(len(key)))
 		enc.FixedBytes(key, uint32(len(key)))
-		enc.FixedBytes(wasmtypes.Uint32ToBytes(uint32(len(val))), wasmtypes.ScUint32Length)
+		enc.VluEncode(uint64(len(val)))
 		enc.FixedBytes(val, uint32(len(val)))
 	}
 	return enc.Buf()

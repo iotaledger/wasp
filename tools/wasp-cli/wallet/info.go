@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	cliwallet "github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -17,15 +17,15 @@ func initAddressCmd() *cobra.Command {
 		Short: "Show the wallet address",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			wallet := cliwallet.Load()
-			address := wallet.Address()
+			myWallet := wallet.Load()
+			address := myWallet.Address()
 
 			model := &AddressModel{Address: address.Bech32(parameters.L1().Protocol.Bech32HRP)}
 
 			if log.VerboseFlag {
 				verboseOutput := make(map[string]string)
-				verboseOutput["Private key"] = wallet.KeyPair.GetPrivateKey().String()
-				verboseOutput["Public key"] = wallet.KeyPair.GetPublicKey().String()
+				verboseOutput["Private key"] = myWallet.KeyPair.GetPrivateKey().String()
+				verboseOutput["Public key"] = myWallet.KeyPair.GetPublicKey().String()
 				model.VerboseOutput = verboseOutput
 			}
 			log.PrintCLIOutput(model)
@@ -58,8 +58,8 @@ func initBalanceCmd() *cobra.Command {
 		Short: "Show the wallet balance",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			wallet := cliwallet.Load()
-			address := wallet.Address()
+			myWallet := wallet.Load()
+			address := myWallet.Address()
 
 			outs, err := cliclients.L1Client().OutputMap(address)
 			log.Check(err)
@@ -68,7 +68,7 @@ func initBalanceCmd() *cobra.Command {
 
 			model := &BalanceModel{
 				Address:      address.Bech32(parameters.L1().Protocol.Bech32HRP),
-				AddressIndex: wallet.AddressIndex,
+				AddressIndex: myWallet.AddressIndex,
 				NativeTokens: balance.NativeTokens,
 				BaseTokens:   balance.BaseTokens,
 				OutputMap:    outs,

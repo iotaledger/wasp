@@ -198,6 +198,16 @@ func (c *Controller) getIsRequestProcessed(e echo.Context) error {
 	return e.JSON(http.StatusOK, requestProcessedResponse)
 }
 
+func eventsResponse(e echo.Context, events []*isc.Event) error {
+	eventsJSON := make([]*isc.EventJSON, len(events))
+	for i, ev := range events {
+		eventsJSON[i] = ev.ToJSONStruct()
+	}
+	return e.JSON(http.StatusOK, models.EventsResponse{
+		Events: eventsJSON,
+	})
+}
+
 func (c *Controller) getBlockEvents(e echo.Context) error {
 	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
@@ -227,12 +237,7 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 			return c.handleViewCallError(err, chainID)
 		}
 	}
-
-	eventsResponse := models.EventsResponse{
-		Events: events,
-	}
-
-	return e.JSON(http.StatusOK, eventsResponse)
+	return eventsResponse(e, events)
 }
 
 func (c *Controller) getContractEvents(e echo.Context) error {
@@ -249,12 +254,7 @@ func (c *Controller) getContractEvents(e echo.Context) error {
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
-
-	eventsResponse := models.EventsResponse{
-		Events: events,
-	}
-
-	return e.JSON(http.StatusOK, eventsResponse)
+	return eventsResponse(e, events)
 }
 
 func (c *Controller) getRequestEvents(e echo.Context) error {
@@ -271,10 +271,5 @@ func (c *Controller) getRequestEvents(e echo.Context) error {
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
-
-	eventsResponse := models.EventsResponse{
-		Events: events,
-	}
-
-	return e.JSON(http.StatusOK, eventsResponse)
+	return eventsResponse(e, events)
 }

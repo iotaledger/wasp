@@ -104,7 +104,7 @@ func TestPanicDueMissingErrorMessage(t *testing.T) {
 	typedError := err.(*isc.VMError)
 	require.Equal(t, typedError.AsTemplate(), coreerrors.ErrUntypedError)
 
-	require.Equal(t, err.Error(), "cannot decode key 'm': cannot decode nil bytes")
+	require.Equal(t, err.Error(), "cannot decode key 'm': cannot decode nil string")
 }
 
 func TestSuccessfulRegisterError(t *testing.T) {

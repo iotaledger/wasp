@@ -2,16 +2,16 @@ package sbtestsc
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 func eventCounter(ctx isc.Sandbox, value uint64) {
-	var buf []byte
-	buf = append(buf, util.Uint64To8Bytes(value)...)
-	ctx.Event("testcore.counter", buf)
+	ww := rwutil.NewBytesWriter()
+	ww.WriteUint64(value)
+	ctx.Event("testcore.counter", ww.Bytes())
 }
 
 func eventTest(ctx isc.Sandbox) {
-	var buf []byte
-	ctx.Event("testcore.test", buf)
+	ww := rwutil.NewBytesWriter()
+	ctx.Event("testcore.test", ww.Bytes())
 }

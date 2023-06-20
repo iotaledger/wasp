@@ -6,6 +6,8 @@ package vmcontext
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/core/types"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -42,7 +44,11 @@ func (s *contractSandbox) DeployContract(programHash hashing.HashValue, name, de
 func (s *contractSandbox) Event(topic string, payload []byte) {
 	s.Ctx.GasBurn(gas.BurnCodeEmitEventFixed)
 	hContract := s.Ctx.(*VMContext).CurrentContractHname()
-	s.Log().Infof("event::%s -> %s(%s)", hContract.String(), topic, iotago.EncodeHex(payload))
+	hex := iotago.EncodeHex(payload)
+	if len(hex) > 80 {
+		hex = hex[:40] + "..."
+	}
+	s.Log().Infof("event::%s -> %s(%s)", hContract.String(), topic, hex)
 	s.Ctx.(*VMContext).MustSaveEvent(hContract, topic, payload)
 }
 
@@ -180,6 +186,10 @@ func (s *contractSandbox) CreditToAccount(agentID isc.AgentID, tokens *isc.Asset
 	s.Ctx.(*VMContext).creditToAccount(agentID, tokens)
 }
 
+func (s *contractSandbox) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
+	s.Ctx.(*VMContext).RetryUnprocessable(req, blockIndex, outputIndex)
+}
+
 func (s *contractSandbox) totalGasTokens() *isc.Assets {
 	if s.Ctx.(*VMContext).task.EstimateGasMode {
 		return isc.NewEmptyAssets()
@@ -193,6 +203,6 @@ func (s *contractSandbox) CallOnBehalfOf(caller isc.AgentID, target, entryPoint 
 	return s.Ctx.(*VMContext).CallOnBehalfOf(caller, target, entryPoint, params, transfer)
 }
 
-func (s *contractSandbox) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
-	s.Ctx.(*VMContext).RetryUnprocessable(req, blockIndex, outputIndex)
+func (s *contractSandbox) SetEVMFailed(tx *types.Transaction, receipt *types.Receipt) {
+	s.Ctx.(*VMContext).SetEVMFailed(tx, receipt)
 }

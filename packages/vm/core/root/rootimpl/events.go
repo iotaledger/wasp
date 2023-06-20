@@ -3,26 +3,25 @@ package rootimpl
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 func eventDeploy(ctx isc.Sandbox, progHash hashing.HashValue, name string, description string) {
-	var buf []byte
-	buf = append(buf, progHash.Bytes()...)
-	buf = append(buf, util.StringToBytes(name)...)
-	buf = append(buf, wasmtypes.StringToBytes(description)...)
-	ctx.Event("coreroot.deploy", buf)
+	ww := rwutil.NewBytesWriter()
+	ww.Write(&progHash)
+	ww.WriteString(name)
+	ww.WriteString(description)
+	ctx.Event("coreroot.deploy", ww.Bytes())
 }
 
 func eventGrant(ctx isc.Sandbox, deployer isc.AgentID) {
-	var buf []byte
-	buf = append(buf, deployer.Bytes()...)
-	ctx.Event("coreroot.grant", buf)
+	ww := rwutil.NewBytesWriter()
+	ww.Write(deployer)
+	ctx.Event("coreroot.grant", ww.Bytes())
 }
 
 func eventRevoke(ctx isc.Sandbox, deployer isc.AgentID) {
-	var buf []byte
-	buf = append(buf, deployer.Bytes()...)
-	ctx.Event("coreroot.revoke", buf)
+	ww := rwutil.NewBytesWriter()
+	ww.Write(deployer)
+	ctx.Event("coreroot.revoke", ww.Bytes())
 }

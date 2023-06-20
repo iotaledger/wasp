@@ -13,8 +13,10 @@ import (
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chains/access_mgr"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -27,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 )
@@ -51,8 +54,17 @@ type Chains struct {
 	trustedNetworkManager        peering.TrustedNetworkManager
 	trustedNetworkListenerCancel context.CancelFunc
 	chainStateStoreProvider      database.ChainStateKVStoreProvider
-	walEnabled                   bool
-	walFolderPath                string
+
+	walEnabled                          bool
+	walFolderPath                       string
+	smBlockCacheMaxSize                 int
+	smBlockCacheBlocksInCacheDuration   time.Duration
+	smBlockCacheBlockCleaningPeriod     time.Duration
+	smStateManagerGetBlockRetry         time.Duration
+	smStateManagerRequestCleaningPeriod time.Duration
+	smStateManagerTimerTickPeriod       time.Duration
+	smPruningMinStatesToKeep            int
+	smPruningMaxStatesToDelete          int
 
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
@@ -68,6 +80,8 @@ type Chains struct {
 	shutdownCoordinator *shutdown.Coordinator
 
 	chainMetricsProvider *metrics.ChainMetricsProvider
+
+	validatorFeeAddr iotago.Address
 }
 
 type activeChain struct {
@@ -79,6 +93,7 @@ func New(
 	log *logger.Logger,
 	nodeConnection chain.NodeConnection,
 	processorConfig *processors.Config,
+	validatorAddrStr string,
 	offledgerBroadcastUpToNPeers int, // TODO: Unused for now.
 	offledgerBroadcastInterval time.Duration, // TODO: Unused for now.
 	pullMissingRequestsFromCommittee bool, // TODO: Unused for now.
@@ -90,6 +105,14 @@ func New(
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
 	walEnabled bool,
 	walFolderPath string,
+	smBlockCacheMaxSize int,
+	smBlockCacheBlocksInCacheDuration time.Duration,
+	smBlockCacheBlockCleaningPeriod time.Duration,
+	smStateManagerGetBlockRetry time.Duration,
+	smStateManagerRequestCleaningPeriod time.Duration,
+	smStateManagerTimerTickPeriod time.Duration,
+	smPruningMinStatesToKeep int,
+	smPruningMaxStatesToDelete int,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
@@ -98,30 +121,50 @@ func New(
 	shutdownCoordinator *shutdown.Coordinator,
 	chainMetricsProvider *metrics.ChainMetricsProvider,
 ) *Chains {
+	var validatorFeeAddr iotago.Address
+	if validatorAddrStr != "" {
+		bechPrefix, addr, err := iotago.ParseBech32(validatorAddrStr)
+		if err != nil {
+			panic(fmt.Errorf("error parsing validator.address: %s", err.Error()))
+		}
+		if bechPrefix != nodeConnection.GetL1Params().Protocol.Bech32HRP {
+			panic(fmt.Errorf("validator.address Bech32 HRP does not match network HRP, expected: %s, got: %s", nodeConnection.GetL1Params().Protocol.Bech32HRP, bechPrefix))
+		}
+		validatorFeeAddr = addr
+	}
 	ret := &Chains{
-		log:                              log,
-		mutex:                            &sync.RWMutex{},
-		allChains:                        shrinkingmap.New[isc.ChainID, *activeChain](),
-		nodeConnection:                   nodeConnection,
-		processorConfig:                  processorConfig,
-		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
-		offledgerBroadcastInterval:       offledgerBroadcastInterval,
-		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
-		deriveAliasOutputByQuorum:        deriveAliasOutputByQuorum,
-		pipeliningLimit:                  pipeliningLimit,
-		consensusDelay:                   consensusDelay,
-		networkProvider:                  networkProvider,
-		trustedNetworkManager:            trustedNetworkManager,
-		chainStateStoreProvider:          chainStateStoreProvider,
-		walEnabled:                       walEnabled,
-		walFolderPath:                    walFolderPath,
-		chainRecordRegistryProvider:      chainRecordRegistryProvider,
-		dkShareRegistryProvider:          dkShareRegistryProvider,
-		nodeIdentityProvider:             nodeIdentityProvider,
-		chainListener:                    nil, // See bellow.
-		consensusStateRegistry:           consensusStateRegistry,
-		shutdownCoordinator:              shutdownCoordinator,
-		chainMetricsProvider:             chainMetricsProvider,
+		log:                                 log,
+		mutex:                               &sync.RWMutex{},
+		allChains:                           shrinkingmap.New[isc.ChainID, *activeChain](),
+		nodeConnection:                      nodeConnection,
+		processorConfig:                     processorConfig,
+		offledgerBroadcastUpToNPeers:        offledgerBroadcastUpToNPeers,
+		offledgerBroadcastInterval:          offledgerBroadcastInterval,
+		pullMissingRequestsFromCommittee:    pullMissingRequestsFromCommittee,
+		deriveAliasOutputByQuorum:           deriveAliasOutputByQuorum,
+		pipeliningLimit:                     pipeliningLimit,
+		consensusDelay:                      consensusDelay,
+		networkProvider:                     networkProvider,
+		trustedNetworkManager:               trustedNetworkManager,
+		chainStateStoreProvider:             chainStateStoreProvider,
+		walEnabled:                          walEnabled,
+		walFolderPath:                       walFolderPath,
+		smBlockCacheMaxSize:                 smBlockCacheMaxSize,
+		smBlockCacheBlocksInCacheDuration:   smBlockCacheBlocksInCacheDuration,
+		smBlockCacheBlockCleaningPeriod:     smBlockCacheBlockCleaningPeriod,
+		smStateManagerGetBlockRetry:         smStateManagerGetBlockRetry,
+		smStateManagerRequestCleaningPeriod: smStateManagerRequestCleaningPeriod,
+		smStateManagerTimerTickPeriod:       smStateManagerTimerTickPeriod,
+		smPruningMinStatesToKeep:            smPruningMinStatesToKeep,
+		smPruningMaxStatesToDelete:          smPruningMaxStatesToDelete,
+		chainRecordRegistryProvider:         chainRecordRegistryProvider,
+		dkShareRegistryProvider:             dkShareRegistryProvider,
+		nodeIdentityProvider:                nodeIdentityProvider,
+		chainListener:                       nil, // See bellow.
+		consensusStateRegistry:              consensusStateRegistry,
+		shutdownCoordinator:                 shutdownCoordinator,
+		chainMetricsProvider:                chainMetricsProvider,
+		validatorFeeAddr:                    validatorFeeAddr,
 	}
 	ret.chainListener = NewChainsListener(chainListener, ret.chainAccessUpdatedCB)
 	return ret
@@ -243,7 +286,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	chainLog := c.log.Named(chainID.ShortString())
 	var chainWAL sm_gpa_utils.BlockWAL
 	if c.walEnabled {
-		chainWAL, err = sm_gpa_utils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, chainMetrics)
+		chainWAL, err = sm_gpa_utils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, chainMetrics.BlockWAL)
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}
@@ -251,12 +294,26 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		chainWAL = sm_gpa_utils.NewEmptyBlockWAL()
 	}
 
+	stateManagerParameters := sm_gpa.NewStateManagerParameters()
+	stateManagerParameters.BlockCacheMaxSize = c.smBlockCacheMaxSize
+	stateManagerParameters.BlockCacheBlocksInCacheDuration = c.smBlockCacheBlocksInCacheDuration
+	stateManagerParameters.BlockCacheBlockCleaningPeriod = c.smBlockCacheBlockCleaningPeriod
+	stateManagerParameters.StateManagerGetBlockRetry = c.smStateManagerGetBlockRetry
+	stateManagerParameters.StateManagerRequestCleaningPeriod = c.smStateManagerRequestCleaningPeriod
+	stateManagerParameters.StateManagerTimerTickPeriod = c.smStateManagerTimerTickPeriod
+	stateManagerParameters.PruningMinStatesToKeep = c.smPruningMinStatesToKeep
+	stateManagerParameters.PruningMaxStatesToDelete = c.smPruningMaxStatesToDelete
+
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
+	validatorAgentID := accounts.CommonAccount()
+	if c.validatorFeeAddr != nil {
+		validatorAgentID = isc.NewAgentID(c.validatorFeeAddr)
+	}
 	newChain, err := chain.New(
 		chainCtx,
 		chainLog,
 		chainID,
-		indexedstore.New(state.NewStore(chainKVStore)),
+		indexedstore.New(state.NewStoreWithMetrics(chainKVStore, chainMetrics.State)),
 		c.nodeConnection,
 		c.nodeIdentityProvider.NodeIdentity(),
 		c.processorConfig,
@@ -273,6 +330,8 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.deriveAliasOutputByQuorum,
 		c.pipeliningLimit,
 		c.consensusDelay,
+		validatorAgentID,
+		stateManagerParameters,
 	)
 	if err != nil {
 		chainCancel()
@@ -327,4 +386,8 @@ func (c *Chains) Get(chainID isc.ChainID) (chain.Chain, error) {
 		return nil, interfaces.ErrChainNotFound
 	}
 	return ret.chain, nil
+}
+
+func (c *Chains) ValidatorAddress() iotago.Address {
+	return c.validatorFeeAddr
 }

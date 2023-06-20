@@ -4,11 +4,13 @@ import (
 	"crypto/ed25519"
 	"errors"
 	"fmt"
+	"io"
 
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type PublicKey struct {
@@ -19,7 +21,7 @@ type PublicKeyKey [PublicKeySize]byte
 
 const PublicKeySize = ed25519.PublicKeySize
 
-func newPublicKeyFromCrypto(cryptoPublicKey ed25519.PublicKey) *PublicKey {
+func publicKeyFromCrypto(cryptoPublicKey ed25519.PublicKey) *PublicKey {
 	return &PublicKey{cryptoPublicKey}
 }
 
@@ -29,15 +31,15 @@ func NewEmptyPublicKey() *PublicKey {
 	}
 }
 
-func NewPublicKeyFromString(s string) (publicKey *PublicKey, err error) {
+func PublicKeyFromString(s string) (publicKey *PublicKey, err error) {
 	bytes, err := iotago.DecodeHex(s)
 	if err != nil {
 		return publicKey, fmt.Errorf("failed to parse public key %s from hex string: %w", s, err)
 	}
-	return NewPublicKeyFromBytes(bytes)
+	return PublicKeyFromBytes(bytes)
 }
 
-func NewPublicKeyFromBytes(publicKeyBytes []byte) (*PublicKey, error) {
+func PublicKeyFromBytes(publicKeyBytes []byte) (*PublicKey, error) {
 	if len(publicKeyBytes) < PublicKeySize {
 		return nil, errors.New("bytes too short")
 	}
@@ -66,12 +68,7 @@ func (pkT *PublicKey) AsEd25519Address() *iotago.Ed25519Address {
 }
 
 func (pkT *PublicKey) AsKyberPoint() (kyber.Point, error) {
-	group := new(edwards25519.Curve)
-	point := group.Point()
-	if err := point.UnmarshalBinary(pkT.AsBytes()); err != nil {
-		return nil, err
-	}
-	return point, nil
+	return PointFromBytes(pkT.key, new(edwards25519.Curve))
 }
 
 func (pkT *PublicKey) Equals(other *PublicKey) bool {
@@ -92,4 +89,22 @@ func (pkT *PublicKey) Verify(message, sig []byte) bool {
 
 func (pkT *PublicKey) String() string {
 	return iotago.EncodeHex(pkT.key)
+}
+
+func (pkT *PublicKey) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	if len(pkT.key) != PublicKeySize {
+		panic("unexpected public key size for read")
+	}
+	rr.ReadN(pkT.key)
+	return rr.Err
+}
+
+func (pkT *PublicKey) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	if len(pkT.key) != PublicKeySize {
+		panic("unexpected public key size for write")
+	}
+	ww.WriteN(pkT.key)
+	return ww.Err
 }

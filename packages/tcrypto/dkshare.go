@@ -6,7 +6,6 @@
 package tcrypto
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,11 +20,12 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 
 	"github.com/iotaledger/hive.go/crypto/bls"
-	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/onchangemap"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // secretShareImpl is an implementation for SecretShare.
@@ -237,258 +237,105 @@ func (s *dkShareImpl) Clone() onchangemap.Item[string, *util.ComparableAddress] 
 
 // DKShareFromBytes reads DKShare from bytes.
 func DKShareFromBytes(buf []byte, edSuite suites.Suite, blsSuite Suite, nodePrivKey *cryptolib.PrivateKey) (DKShare, error) {
-	r := bytes.NewReader(buf)
-	s := dkShareImpl{nodePrivKey: nodePrivKey, edSuite: edSuite, blsSuite: blsSuite}
-	if err := s.Read(r); err != nil {
-		return nil, err
-	}
-	return &s, nil
+	s := &dkShareImpl{nodePrivKey: nodePrivKey, edSuite: edSuite, blsSuite: blsSuite}
+	return rwutil.ReadFromBytes(buf, s)
 }
 
 // Bytes returns byte representation of the share.
 func (s *dkShareImpl) Bytes() []byte {
-	var buf bytes.Buffer
-	if err := s.Write(&buf); err != nil {
-		panic(fmt.Errorf("DKShare.Bytes: %w", err))
-	}
-	return buf.Bytes()
-}
-
-// Write returns byte representation of this struct.
-//
-
-//nolint:gocyclo,funlen
-func (s *dkShareImpl) Write(w io.Writer) error {
-	var err error
-	//
-	// Common attributes.
-	addressType := s.address.Address().Type()
-	addressBytes, err := s.address.Address().Serialize(serializer.DeSeriModeNoValidation, nil)
-	if err != nil {
-		return fmt.Errorf("cannot serialize an address: %w", err)
-	}
-	if err := util.WriteByte(w, byte(addressType)); err != nil {
-		return err
-	}
-	if err := util.WriteBytes16(w, addressBytes); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, *s.index); err != nil { // It must be not nil here.
-		return err
-	}
-	if err := util.WriteUint16(w, s.n); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, s.t); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, uint16(len(s.nodePubKeys))); err != nil {
-		return err
-	}
-	for _, nodePubKey := range s.nodePubKeys {
-		if err := util.WriteBytes16(w, nodePubKey.AsBytes()); err != nil {
-			return err
-		}
-	}
-	//
-	// Ed25519 part of the key shares.
-	if err := util.WriteMarshaled(w, s.edSharedPublic); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, uint16(len(s.edPublicCommits))); err != nil {
-		return err
-	}
-	for i := 0; i < len(s.edPublicCommits); i++ {
-		if err := util.WriteMarshaled(w, s.edPublicCommits[i]); err != nil {
-			return err
-		}
-	}
-	if err := util.WriteUint16(w, uint16(len(s.edPublicShares))); err != nil {
-		return err
-	}
-	for i := 0; i < len(s.edPublicShares); i++ {
-		if err := util.WriteMarshaled(w, s.edPublicShares[i]); err != nil {
-			return err
-		}
-	}
-	if err := util.WriteMarshaled(w, s.edPrivateShare); err != nil {
-		return err
-	}
-	//
-	// BLS part of the key shares.
-	if err := util.WriteUint16(w, s.blsThreshold); err != nil {
-		return err
-	}
-	if err := util.WriteMarshaled(w, s.blsSharedPublic); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, uint16(len(s.blsPublicCommits))); err != nil {
-		return err
-	}
-	for i := 0; i < len(s.blsPublicCommits); i++ {
-		if err := util.WriteMarshaled(w, s.blsPublicCommits[i]); err != nil {
-			return err
-		}
-	}
-	if err := util.WriteUint16(w, uint16(len(s.blsPublicShares))); err != nil {
-		return err
-	}
-	for i := 0; i < len(s.blsPublicShares); i++ {
-		if err := util.WriteMarshaled(w, s.blsPublicShares[i]); err != nil {
-			return err
-		}
-	}
-	if err := util.WriteMarshaled(w, s.blsPrivateShare); err != nil {
-		return err
-	}
-	return nil
+	return rwutil.WriteToBytes(s)
 }
 
 func (s *dkShareImpl) Read(r io.Reader) error {
-	var err error
-	var arrLen uint16
-	//
-	// Common attributes.
-	var addressTypeByte byte
-	var addressBytes []byte
-	if addressTypeByte, err = util.ReadByte(r); err != nil {
-		return err
-	}
-	if addressBytes, err = util.ReadBytes16(r); err != nil {
-		return err
+	rr := rwutil.NewReader(r)
+	address := isc.AddressFromReader(rr)
+	if rr.Err == nil {
+		s.address = util.NewComparableAddress(address)
 	}
 
-	address, err := iotago.AddressSelector(uint32(addressTypeByte))
-	if err != nil {
-		return err
-	}
-	if _, err = address.Deserialize(addressBytes, serializer.DeSeriModeNoValidation, nil); err != nil {
-		return err
-	}
-	s.address = util.NewComparableAddress(address)
-
-	var index uint16
-	if err2 := util.ReadUint16(r, &index); err2 != nil {
-		return err2
-	}
+	index := rr.ReadUint16()
 	s.index = &index
-	if err2 := util.ReadUint16(r, &s.n); err2 != nil {
-		return err2
-	}
-	if err2 := util.ReadUint16(r, &s.t); err2 != nil {
-		return err2
-	}
-	//
-	// NodePubKeys
-	if err2 := util.ReadUint16(r, &arrLen); err2 != nil {
-		return err2
-	}
-	s.nodePubKeys = make([]*cryptolib.PublicKey, arrLen)
+	s.n = rr.ReadUint16()
+	s.t = rr.ReadUint16()
+
+	size := rr.ReadSize16()
+	s.nodePubKeys = make([]*cryptolib.PublicKey, size)
 	for i := range s.nodePubKeys {
-		var nodePubKeyBin []byte
-		var nodePubKey *cryptolib.PublicKey
-		if nodePubKeyBin, err = util.ReadBytes16(r); err != nil {
-			return err
-		}
-		if nodePubKey, err = cryptolib.NewPublicKeyFromBytes(nodePubKeyBin); err != nil {
-			return err
-		}
-		s.nodePubKeys[i] = nodePubKey
+		s.nodePubKeys[i] = cryptolib.NewEmptyPublicKey()
+		rr.Read(s.nodePubKeys[i])
 	}
-	//
-	// DSS / Ed25519 shares.
-	if err := s.readDSSAttrs(r); err != nil {
-		return err
+
+	// DSS / Ed25519 part of the key shares.
+	edSuite := s.edSuite
+	s.edSharedPublic = cryptolib.PointFromReader(rr, edSuite)
+	size = rr.ReadSize16()
+	s.edPublicCommits = make([]kyber.Point, size)
+	for i := range s.edPublicCommits {
+		s.edPublicCommits[i] = cryptolib.PointFromReader(rr, edSuite)
 	}
-	//
-	// BLS Shares.
-	if err := s.readBLSAttrs(r); err != nil {
-		return err
+	size = rr.ReadSize16()
+	s.edPublicShares = make([]kyber.Point, size)
+	for i := range s.edPublicShares {
+		s.edPublicShares[i] = cryptolib.PointFromReader(rr, edSuite)
 	}
-	return nil
+	s.edPrivateShare = cryptolib.ScalarFromReader(rr, edSuite)
+
+	// BLS part of the key shares.
+	blsGroup := s.blsSuite.G2()
+	s.blsThreshold = rr.ReadUint16()
+	s.blsSharedPublic = cryptolib.PointFromReader(rr, blsGroup)
+	size = rr.ReadSize16()
+	s.blsPublicCommits = make([]kyber.Point, size)
+	for i := range s.blsPublicCommits {
+		s.blsPublicCommits[i] = cryptolib.PointFromReader(rr, blsGroup)
+	}
+	size = rr.ReadSize16()
+	s.blsPublicShares = make([]kyber.Point, size)
+	for i := range s.blsPublicShares {
+		s.blsPublicShares[i] = cryptolib.PointFromReader(rr, blsGroup)
+	}
+	s.blsPrivateShare = cryptolib.ScalarFromReader(rr, blsGroup)
+	return rr.Err
 }
 
-// Read function was split just to make the linter happy.
-func (s *dkShareImpl) readDSSAttrs(r io.Reader) error {
-	var arrLen uint16
-	s.edSharedPublic = s.edSuite.Point()
-	if err := util.ReadMarshaled(r, s.edSharedPublic); err != nil {
-		return err
-	}
-	//
-	// Ed25519 shares: PublicCommits
-	if err := util.ReadUint16(r, &arrLen); err != nil {
-		return err
-	}
-	s.edPublicCommits = make([]kyber.Point, arrLen)
-	for i := uint16(0); i < arrLen; i++ {
-		s.edPublicCommits[i] = s.edSuite.Point()
-		if err := util.ReadMarshaled(r, s.edPublicCommits[i]); err != nil {
-			return err
-		}
-	}
-	//
-	// Ed25519 shares: PublicShares
-	if err := util.ReadUint16(r, &arrLen); err != nil {
-		return err
-	}
-	s.edPublicShares = make([]kyber.Point, arrLen)
-	for i := uint16(0); i < arrLen; i++ {
-		s.edPublicShares[i] = s.edSuite.Point()
-		if err := util.ReadMarshaled(r, s.edPublicShares[i]); err != nil {
-			return err
-		}
-	}
-	//
-	// Ed25519 shares: Private share.
-	s.edPrivateShare = s.edSuite.Scalar()
-	if err := util.ReadMarshaled(r, s.edPrivateShare); err != nil {
-		return err
-	}
-	return nil
-}
+func (s *dkShareImpl) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	isc.AddressToWriter(ww, s.address.Address())
 
-// Read function was split just to make the linter happy.
-func (s *dkShareImpl) readBLSAttrs(r io.Reader) error {
-	var arrLen uint16
-	if err := util.ReadUint16(r, &s.blsThreshold); err != nil {
-		return err
+	ww.WriteUint16(*s.index)
+	ww.WriteUint16(s.n)
+	ww.WriteUint16(s.t)
+
+	ww.WriteSize16(len(s.nodePubKeys))
+	for _, nodePubKey := range s.nodePubKeys {
+		ww.Write(nodePubKey)
 	}
-	s.blsSharedPublic = s.blsSuite.G2().Point()
-	if err := util.ReadMarshaled(r, s.blsSharedPublic); err != nil {
-		return err
+
+	// DSS / Ed25519 part of the key shares.
+	cryptolib.PointToWriter(ww, s.edSharedPublic)
+	ww.WriteSize16(len(s.edPublicCommits))
+	for i := 0; i < len(s.edPublicCommits); i++ {
+		cryptolib.PointToWriter(ww, s.edPublicCommits[i])
 	}
-	//
-	// BLS shares: PublicCommits
-	if err := util.ReadUint16(r, &arrLen); err != nil {
-		return err
+	ww.WriteSize16(len(s.edPublicShares))
+	for i := 0; i < len(s.edPublicShares); i++ {
+		cryptolib.PointToWriter(ww, s.edPublicShares[i])
 	}
-	s.blsPublicCommits = make([]kyber.Point, arrLen)
-	for i := uint16(0); i < arrLen; i++ {
-		s.blsPublicCommits[i] = s.blsSuite.G2().Point()
-		if err := util.ReadMarshaled(r, s.blsPublicCommits[i]); err != nil {
-			return err
-		}
+	cryptolib.ScalarToWriter(ww, s.edPrivateShare)
+
+	// BLS part of the key shares.
+	ww.WriteUint16(s.blsThreshold)
+	cryptolib.PointToWriter(ww, s.blsSharedPublic)
+	ww.WriteSize16(len(s.blsPublicCommits))
+	for i := 0; i < len(s.blsPublicCommits); i++ {
+		cryptolib.PointToWriter(ww, s.blsPublicCommits[i])
 	}
-	//
-	// BLS shares: PublicShares
-	if err := util.ReadUint16(r, &arrLen); err != nil {
-		return err
+	ww.WriteSize16(len(s.blsPublicShares))
+	for i := 0; i < len(s.blsPublicShares); i++ {
+		cryptolib.PointToWriter(ww, s.blsPublicShares[i])
 	}
-	s.blsPublicShares = make([]kyber.Point, arrLen)
-	for i := uint16(0); i < arrLen; i++ {
-		s.blsPublicShares[i] = s.blsSuite.G2().Point()
-		if err := util.ReadMarshaled(r, s.blsPublicShares[i]); err != nil {
-			return err
-		}
-	}
-	//
-	// BLS shares: Private share.
-	s.blsPrivateShare = s.blsSuite.G2().Scalar()
-	if err := util.ReadMarshaled(r, s.blsPrivateShare); err != nil {
-		return err
-	}
-	return nil
+	cryptolib.ScalarToWriter(ww, s.blsPrivateShare)
+	return ww.Err
 }
 
 func (s *dkShareImpl) GetAddress() iotago.Address {
@@ -521,7 +368,7 @@ func (s *dkShareImpl) GetSharedPublic() *cryptolib.PublicKey {
 	if err != nil {
 		panic(fmt.Errorf("cannot convert kyber.Point to cryptolib.PublicKey, failed to serialize: %w", err))
 	}
-	pubKeyCL, err := cryptolib.NewPublicKeyFromBytes(pubKeyBytes)
+	pubKeyCL, err := cryptolib.PublicKeyFromBytes(pubKeyBytes)
 	if err != nil {
 		panic(fmt.Errorf("cannot convert kyber.Point to cryptolib.PublicKey, failed to deserialize: %w", err))
 	}
@@ -886,7 +733,7 @@ func (s *dkShareImpl) UnmarshalJSON(bytes []byte) error {
 
 	s.nodePubKeys = make([]*cryptolib.PublicKey, len(j.NodePubKeys))
 	for i, nodePubKeyHex := range j.NodePubKeys {
-		nodePubKey, err2 := cryptolib.NewPublicKeyFromString(nodePubKeyHex)
+		nodePubKey, err2 := cryptolib.PublicKeyFromString(nodePubKeyHex)
 		if err2 != nil {
 			return err2
 		}

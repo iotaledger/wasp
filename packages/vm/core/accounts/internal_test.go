@@ -6,13 +6,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 func knownAgentID(b byte, h uint32) isc.AgentID {
@@ -353,8 +353,8 @@ func TestFoundryOutputRec(t *testing.T) {
 		BlockIndex:  3,
 		OutputIndex: 2,
 	}
-	oBin := o.Bytes()
-	o1, err := foundryOutputRecFromMarshalUtil(marshalutil.New(oBin))
+	data := o.Bytes()
+	o1, err := rwutil.ReadFromBytes(data, new(foundryOutputRec))
 	require.NoError(t, err)
 	require.EqualValues(t, o.Amount, o1.Amount)
 	ts, ok := o1.TokenScheme.(*iotago.SimpleTokenScheme)

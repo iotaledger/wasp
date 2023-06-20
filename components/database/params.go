@@ -14,8 +14,8 @@ type ParametersDatabase struct {
 		Path string `default:"waspdb/chains/data" usage:"the path to the chain state databases folder"`
 	}
 
-	// DebugSkipHealthCheck defines whether to ignore the check for corrupted databases (should only be used for debug reasons).
-	DebugSkipHealthCheck bool `default:"false" usage:"ignore the check for corrupted databases (should only be used for debug reasons)"`
+	// DebugSkipHealthCheck defines whether to ignore the check for corrupted databases.
+	DebugSkipHealthCheck bool `default:"true" usage:"ignore the check for corrupted databases"`
 }
 
 var ParamsDatabase = &ParametersDatabase{}

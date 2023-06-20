@@ -16,11 +16,11 @@ import (
 
 type vmAsync struct {
 	runner  vm.VMRunner
-	metrics metrics.IChainConsensusMetrics
+	metrics *metrics.ChainConsensusMetrics
 	log     *logger.Logger
 }
 
-func NewVMAsync(metrics metrics.IChainConsensusMetrics, log *logger.Logger) VM {
+func NewVMAsync(metrics *metrics.ChainConsensusMetrics, log *logger.Logger) VM {
 	return &vmAsync{
 		runner:  runvm.NewVMRunner(),
 		metrics: metrics,

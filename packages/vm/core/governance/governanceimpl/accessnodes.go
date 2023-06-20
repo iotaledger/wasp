@@ -31,8 +31,8 @@ var errInvalidCertificate = coreerrors.Register("invalid certificate").Create()
 //	    accessNodeInfo{NodePubKey, Certificate, ForCommittee, AccessAPI}
 //	) => ()
 func addCandidateNode(ctx isc.Sandbox) dict.Dict {
-	ani := governance.NewAccessNodeInfoFromAddCandidateNodeParams(ctx)
-	if !ani.ValidateCertificate(ctx) {
+	ani := governance.AccessNodeInfoFromAddCandidateNodeParams(ctx)
+	if !ani.ValidateCertificate() {
 		panic(errInvalidCertificate)
 	}
 	pubKeyStr := base64.StdEncoding.EncodeToString(ani.NodePubKey)
@@ -61,8 +61,8 @@ func addCandidateNode(ctx isc.Sandbox) dict.Dict {
 // The node is removed from the list of access nodes immediately, but the validator rotation
 // must be initiated by the chain owner explicitly.
 func revokeAccessNode(ctx isc.Sandbox) dict.Dict {
-	ani := governance.NewAccessNodeInfoFromRevokeAccessNodeParams(ctx)
-	if !ani.ValidateCertificate(ctx) {
+	ani := governance.AccessNodeInfoFromRevokeAccessNodeParams(ctx)
+	if !ani.ValidateCertificate() {
 		panic(errInvalidCertificate)
 	}
 

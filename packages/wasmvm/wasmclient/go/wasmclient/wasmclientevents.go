@@ -7,7 +7,6 @@ import (
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
 
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/webapi/websocket/commands"
@@ -22,13 +21,12 @@ type Event struct {
 }
 
 func (e *Event) Bytes() []byte {
-	eventData := make([]byte, 0, 4+2+len(e.Topic)+8+len(e.Payload))
-	eventData = append(eventData, e.ContractID.Bytes()...)
-	eventData = append(eventData, util.Uint16To2Bytes(uint16(len(e.Topic)))...)
-	eventData = append(eventData, []byte(e.Topic)...)
-	eventData = append(eventData, util.Uint64To8Bytes(e.Timestamp)...)
-	eventData = append(eventData, e.Payload...)
-	return eventData
+	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.HnameEncode(enc, e.ContractID)
+	wasmtypes.StringEncode(enc, e.Topic)
+	wasmtypes.Uint64Encode(enc, e.Timestamp)
+	enc.FixedBytes(e.Payload, uint32(len(e.Payload)))
+	return enc.Buf()
 }
 
 type ISCEvent struct {

@@ -19,7 +19,7 @@ type WasmConvertor struct{}
 
 func (cvt WasmConvertor) IscAddress(scAddress *wasmtypes.ScAddress) iotago.Address {
 	buf := wasmtypes.AddressToBytes(*scAddress)
-	address, _, err := isc.AddressFromBytes(buf)
+	address, err := isc.AddressFromBytes(buf)
 	if err != nil {
 		panic(err)
 	}
@@ -44,7 +44,7 @@ func (cvt WasmConvertor) IscAllowance(assets *wasmlib.ScAssets) *isc.Assets {
 		}
 		iscAllowance.NativeTokens = append(iscAllowance.NativeTokens, nativeToken)
 	}
-	for nftID := range assets.NftIDs {
+	for nftID := range assets.Nfts {
 		nft := cvt.IscNFTID(&nftID)
 		iscAllowance.NFTs = append(iscAllowance.NFTs, *nft)
 	}
@@ -97,7 +97,7 @@ func (cvt WasmConvertor) IscTokenID(tokenID *wasmtypes.ScTokenID) iotago.NativeT
 }
 
 func (cvt WasmConvertor) ScAddress(address iotago.Address) wasmtypes.ScAddress {
-	buf := isc.BytesFromAddress(address)
+	buf := isc.AddressToBytes(address)
 	return wasmtypes.AddressFromBytes(buf)
 }
 
@@ -107,7 +107,7 @@ func (cvt WasmConvertor) ScAgentID(agentID isc.AgentID) wasmtypes.ScAgentID {
 }
 
 func (cvt WasmConvertor) ScBalances(allowance *isc.Assets) *wasmlib.ScBalances {
-	transfer := wasmlib.NewScTransferBaseTokens(allowance.BaseTokens)
+	transfer := wasmlib.ScTransferFromBaseTokens(allowance.BaseTokens)
 	for _, token := range allowance.NativeTokens {
 		tokenID := cvt.ScTokenID(token.ID)
 		transfer.Set(&tokenID, cvt.ScBigInt(token.Amount))

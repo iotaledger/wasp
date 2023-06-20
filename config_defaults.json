@@ -33,7 +33,7 @@
     "chainState": {
       "path": "waspdb/chains/data"
     },
-    "debugSkipHealthCheck": false
+    "debugSkipHealthCheck": true
   },
   "p2p": {
     "identity": {
@@ -98,7 +98,8 @@
       "readTimeout": "10s",
       "writeTimeout": "10s",
       "maxBodyLength": "2M",
-      "maxTopicSubscriptionsPerClient": 0
+      "maxTopicSubscriptionsPerClient": 0,
+      "confirmedStateLagThreshold": 2
     },
     "debugRequestLoggerEnabled": false
   },

@@ -27,7 +27,7 @@ func Uint16FromBytes(buf []byte) uint16 {
 	if len(buf) != ScUint16Length {
 		panic("invalid Uint16 length")
 	}
-	return uint16(buf[0]) | uint16(buf[1])<<8
+	return uint16(buf[0]) | (uint16(buf[1]) << 8)
 }
 
 func Uint16ToBytes(value uint16) []byte {

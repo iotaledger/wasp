@@ -60,7 +60,7 @@ func (v *ScView) callWithAllowance(allowance *ScTransfer) {
 	}
 	res := v.ctx.FnCall(&req)
 	if v.resultsProxy != nil {
-		*v.resultsProxy = wasmtypes.NewProxy(NewScDictFromBytes(res))
+		*v.resultsProxy = wasmtypes.NewProxy(ScDictFromBytes(res))
 	}
 }
 
@@ -132,7 +132,7 @@ func (f *ScFunc) Allowance(allowance *ScTransfer) *ScFunc {
 }
 
 func (f *ScFunc) AllowanceBaseTokens(amount uint64) *ScFunc {
-	f.allowance = NewScTransferBaseTokens(amount)
+	f.allowance = ScTransferFromBaseTokens(amount)
 	return f
 }
 
@@ -172,7 +172,7 @@ func (f *ScFunc) PostToChain(chainID wasmtypes.ScChainID) {
 	}
 	res := f.fctx.FnPost(&req)
 	if f.resultsProxy != nil {
-		*f.resultsProxy = wasmtypes.NewProxy(NewScDictFromBytes(res))
+		*f.resultsProxy = wasmtypes.NewProxy(ScDictFromBytes(res))
 	}
 }
 
@@ -185,6 +185,6 @@ func (f *ScFunc) Transfer(transfer *ScTransfer) *ScFunc {
 }
 
 func (f *ScFunc) TransferBaseTokens(amount uint64) *ScFunc {
-	f.transfer = NewScTransferBaseTokens(amount)
+	f.transfer = ScTransferFromBaseTokens(amount)
 	return f
 }

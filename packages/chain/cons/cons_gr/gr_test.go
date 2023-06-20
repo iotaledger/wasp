@@ -21,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
@@ -109,27 +108,27 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	defer ctxCancel()
 	logIndex := cmt_log.LogIndex(0)
+	chainMetricsProvider := metrics.NewChainMetricsProvider()
 	for i := range peerIdentities {
 		procCache := processors.MustNew(procConfig)
 		dkShare, err := dkShareProviders[i].LoadDKShare(cmtAddress)
 		require.NoError(t, err)
 		chainStore := state.NewStore(mapdb.NewMapDB())
-		origin.InitChain(
-			chainStore,
-			dict.Dict{origin.ParamChainOwner: isc.NewAgentID(originator.Address()).Bytes()},
-			accounts.MinimumBaseTokensOnCommonAccount,
-		)
+		_, err = origin.InitChainByAliasOutput(chainStore, originAO)
+		require.NoError(t, err)
 		mempools[i] = newTestMempool(t)
 		stateMgrs[i] = newTestStateMgr(t, chainStore)
+		chainMetrics := chainMetricsProvider.GetChainMetrics(isc.EmptyChainID())
 		nodes[i] = consGR.New(
 			ctx, chainID, chainStore, dkShare, &logIndex, peerIdentities[i],
 			procCache, mempools[i], stateMgrs[i],
 			networkProviders[i],
+			accounts.CommonAccount(),
 			1*time.Minute, // RecoverTimeout
 			1*time.Second, // RedeliveryPeriod
 			5*time.Second, // PrintStatusPeriod
-			metrics.NewEmptyChainConsensusMetric(),
-			metrics.NewEmptyChainPipeMetrics(),
+			chainMetrics.Consensus,
+			chainMetrics.Pipe,
 			log.Named(fmt.Sprintf("N#%v", i)),
 		)
 	}
@@ -275,11 +274,10 @@ func newTestStateMgr(t *testing.T, chainStore state.Store) *testStateMgr {
 }
 
 func (tsm *testStateMgr) addOriginState(originAO *isc.AliasOutputWithID) {
-	initParams := dict.Dict{
-		origin.ParamChainOwner: isc.NewAgentID(originAO.GetAliasOutput().GovernorAddress()).Bytes(),
-	}
+	originAOStateMetadata, err := transaction.StateMetadataFromBytes(originAO.GetStateMetadata())
+	require.NoError(tsm.t, err)
 	chainState, err := tsm.chainStore.StateByTrieRoot(
-		origin.L1Commitment(initParams, accounts.MinimumBaseTokensOnCommonAccount).TrieRoot(),
+		originAOStateMetadata.L1Commitment.TrieRoot(),
 	)
 	require.NoError(tsm.t, err)
 	tsm.addState(originAO, chainState)

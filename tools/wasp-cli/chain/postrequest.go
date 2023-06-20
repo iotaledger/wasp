@@ -1,8 +1,6 @@
 package chain
 
 import (
-	"time"
-
 	"github.com/spf13/cobra"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -22,7 +20,6 @@ func postRequest(nodeName, chain, hname, fname string, params chainclient.PostRe
 	scClient := cliclients.SCClient(apiClient, chainID, isc.Hn(hname))
 
 	if offLedger {
-		params.Nonce = uint64(time.Now().UnixNano())
 		util.WithOffLedgerRequest(chainID, nodeName, func() (isc.OffLedgerRequest, error) {
 			return scClient.PostOffLedgerRequest(fname, params)
 		})

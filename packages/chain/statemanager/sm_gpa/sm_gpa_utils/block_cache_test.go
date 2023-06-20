@@ -4,14 +4,15 @@
 package sm_gpa_utils
 
 import (
+	"runtime"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func TestBlockCacheSimple(t *testing.T) {
@@ -20,7 +21,7 @@ func TestBlockCacheSimple(t *testing.T) {
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(4, 1)
-	blockCache, err := NewBlockCache(NewDefaultTimeProvider(), 100, NewEmptyTestBlockWAL(), metrics.NewEmptyChainStateManagerMetric(), log)
+	blockCache, err := NewBlockCache(NewDefaultTimeProvider(), 100, NewEmptyTestBlockWAL(), mockStateManagerMetrics(), log)
 	require.NoError(t, err)
 	blockCache.AddBlock(blocks[0])
 	blockCache.AddBlock(blocks[1])
@@ -37,9 +38,14 @@ func TestBlockCacheCleaning(t *testing.T) {
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(6, 2)
-	blockCache, err := NewBlockCache(NewDefaultTimeProvider(), 100, NewEmptyTestBlockWAL(), metrics.NewEmptyChainStateManagerMetric(), log)
+	blockCache, err := NewBlockCache(NewDefaultTimeProvider(), 100, NewEmptyTestBlockWAL(), mockStateManagerMetrics(), log)
 	require.NoError(t, err)
+
 	beforeTime := time.Now()
+
+	// make sure some time elapses on faster machines with larger time granularity
+	time.Sleep(time.Millisecond)
+
 	blockCache.AddBlock(blocks[0])
 	blockCache.AddBlock(blocks[1])
 	require.NotNil(t, blockCache.GetBlock(blocks[0].L1Commitment()))
@@ -52,7 +58,14 @@ func TestBlockCacheCleaning(t *testing.T) {
 	require.Nil(t, blockCache.GetBlock(blocks[1].L1Commitment()))
 	blockCache.AddBlock(blocks[2])
 	blockCache.AddBlock(blocks[3])
+
 	inTheMiddleTime := time.Now()
+
+	// make sure some time elapses on faster machines with larger time granularity
+	if runtime.GOOS == util.WindowsOS {
+		time.Sleep(time.Millisecond)
+	}
+
 	blockCache.AddBlock(blocks[4])
 	blockCache.AddBlock(blocks[5])
 	require.NotNil(t, blockCache.GetBlock(blocks[2].L1Commitment()))
@@ -72,11 +85,18 @@ func TestBlockCacheSameBlockCleaning(t *testing.T) {
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(3, 2)
-	blockCache, err := NewBlockCache(NewDefaultTimeProvider(), 100, NewEmptyTestBlockWAL(), metrics.NewEmptyChainStateManagerMetric(), log)
+	blockCache, err := NewBlockCache(NewDefaultTimeProvider(), 100, NewEmptyTestBlockWAL(), mockStateManagerMetrics(), log)
 	require.NoError(t, err)
 	blockCache.AddBlock(blocks[0])
 	blockCache.AddBlock(blocks[1])
+
 	inTheMiddleTime := time.Now()
+
+	// make sure some time elapses on faster machines with larger time granularity
+	if runtime.GOOS == util.WindowsOS {
+		time.Sleep(time.Millisecond)
+	}
+
 	blockCache.AddBlock(blocks[0])
 	blockCache.AddBlock(blocks[2])
 	require.Equal(t, 3, blockCache.Size())
@@ -98,7 +118,7 @@ func TestBlockCacheWAL(t *testing.T) {
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(3, 2)
 	wal := NewMockedTestBlockWAL()
-	blockCache, err := NewBlockCache(NewDefaultTimeProvider(), 100, wal, metrics.NewEmptyChainStateManagerMetric(), log)
+	blockCache, err := NewBlockCache(NewDefaultTimeProvider(), 100, wal, mockStateManagerMetrics(), log)
 	require.NoError(t, err)
 	blockCache.AddBlock(blocks[0])
 	blockCache.AddBlock(blocks[1])
@@ -124,7 +144,7 @@ func TestBlockCacheCleanUp(t *testing.T) {
 	now := time.Now()
 	wal := NewEmptyTestBlockWAL()
 	tp := NewArtifficialTimeProvider(now)
-	blockCache, err := NewBlockCache(tp, 5, wal, metrics.NewEmptyChainStateManagerMetric(), log)
+	blockCache, err := NewBlockCache(tp, 5, wal, mockStateManagerMetrics(), log)
 	require.NoError(t, err)
 	setNowAddBlockFun := func(d time.Duration, b state.Block) {
 		tp.SetNow(now.Add(d))
@@ -200,7 +220,7 @@ func TestBlockCacheFull(t *testing.T) {
 	now := time.Now()
 	wal := NewMockedTestBlockWAL()
 	tp := NewArtifficialTimeProvider(now)
-	blockCache, err := NewBlockCache(tp, 100, wal, metrics.NewEmptyChainStateManagerMetric(), log)
+	blockCache, err := NewBlockCache(tp, 100, wal, mockStateManagerMetrics(), log)
 	require.NoError(t, err)
 	blockCache.AddBlock(blocks[0]) // Will be dropped from cache AND WAL
 	blockCache.AddBlock(blocks[1]) // Will be dropped from cache

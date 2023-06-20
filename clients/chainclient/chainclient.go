@@ -3,10 +3,10 @@ package chainclient
 import (
 	"context"
 	"math"
-	"sync"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -22,8 +22,6 @@ type Client struct {
 	WaspClient   *apiclient.APIClient
 	ChainID      isc.ChainID
 	KeyPair      *cryptolib.KeyPair
-	nonces       map[string]uint64
-	noncesMutex  sync.Mutex
 }
 
 // New creates a new chainclient.Client
@@ -38,7 +36,6 @@ func New(
 		WaspClient:   waspClient,
 		ChainID:      chainID,
 		KeyPair:      keyPair,
-		nonces:       make(map[string]uint64),
 	}
 }
 
@@ -153,18 +150,38 @@ func (c *Client) post1RequestWithOutputs(
 	return tx, err
 }
 
+func (c *Client) ISCNonce(ctx context.Context) (uint64, error) {
+	result, _, err := c.WaspClient.ChainsApi.CallView(ctx, c.ChainID.String()).
+		ContractCallViewRequest(apiclient.ContractCallViewRequest{
+			ContractHName: accounts.Contract.Hname().String(),
+			FunctionHName: accounts.ViewGetAccountNonce.Hname().String(),
+			Arguments: apiextensions.JSONDictToAPIJSONDict(dict.Dict{
+				accounts.ParamAgentID: isc.NewAgentID(c.KeyPair.Address()).Bytes(),
+			}.JSONDict()),
+		}).Execute()
+	if err != nil {
+		return 0, err
+	}
+	resultDict, err := apiextensions.APIJsonDictToDict(*result)
+	if err != nil {
+		return 0, err
+	}
+	return codec.DecodeUint64(resultDict.Get(accounts.ParamAccountNonce))
+}
+
 // PostOffLedgerRequest sends an off-ledger tx via the wasp node web api
-func (c *Client) PostOffLedgerRequest(context context.Context,
+func (c *Client) PostOffLedgerRequest(ctx context.Context,
 	contractHname isc.Hname,
 	entrypoint isc.Hname,
 	params ...PostRequestParams,
 ) (isc.OffLedgerRequest, error) {
 	par := defaultParams(params...)
 	if par.Nonce == 0 {
-		c.noncesMutex.Lock()
-		c.nonces[c.KeyPair.Address().Key()]++
-		par.Nonce = c.nonces[c.KeyPair.Address().Key()]
-		c.noncesMutex.Unlock()
+		nonce, err := c.ISCNonce(ctx)
+		if err != nil {
+			return nil, err
+		}
+		par.Nonce = nonce
 	}
 	req := isc.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, par.Args, par.Nonce, par.GasBudget())
 	req.WithAllowance(par.Allowance)
@@ -178,7 +195,7 @@ func (c *Client) PostOffLedgerRequest(context context.Context,
 		Request: request,
 	}
 	_, err := c.WaspClient.RequestsApi.
-		OffLedger(context).
+		OffLedger(ctx).
 		OffLedgerRequest(offLedgerRequest).
 		Execute()
 

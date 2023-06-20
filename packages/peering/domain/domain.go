@@ -53,12 +53,7 @@ func (d *DomainImpl) SendMsgByPubKey(pubKey *cryptolib.PublicKey, msgReceiver, m
 		d.log.Warnf("SendMsgByPubKey: PubKey %v is not in the domain", pubKey.String())
 		return
 	}
-	peer.SendMsg(&peering.PeerMessageData{
-		PeeringID:   d.peeringID,
-		MsgReceiver: msgReceiver,
-		MsgType:     msgType,
-		MsgData:     msgData,
-	})
+	peer.SendMsg(peering.NewPeerMessageData(d.peeringID, msgReceiver, msgType, msgData))
 }
 
 func (d *DomainImpl) GetRandomOtherPeers(upToNumPeers int) []*cryptolib.PublicKey {

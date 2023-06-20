@@ -13,18 +13,17 @@ func TestPeerMessageCodec(t *testing.T) {
 	var err error
 	var src, dst *peering.PeerMessageNet
 	src = &peering.PeerMessageNet{
-		PeerMessageData: &peering.PeerMessageData{
-			PeeringID:   peering.RandomPeeringID(),
-			MsgReceiver: byte(10),
-			MsgType:     peering.FirstUserMsgCode + 17,
-			MsgData:     []byte{1, 2, 3, 4, 5},
-		},
+		PeerMessageData: peering.NewPeerMessageData(
+			peering.RandomPeeringID(),
+			byte(10),
+			peering.FirstUserMsgCode+17,
+			[]byte{1, 2, 3, 4, 5}),
 	}
 	var bin []byte
 	bin, err = src.Bytes()
 	require.Nil(t, err)
 	require.NotNil(t, bin)
-	dst, err = peering.NewPeerMessageNetFromBytes(bin)
+	dst, err = peering.PeerMessageNetFromBytes(bin)
 	require.Nil(t, err)
 	require.NotNil(t, dst)
 	require.EqualValues(t, src.PeeringID, dst.PeeringID)
