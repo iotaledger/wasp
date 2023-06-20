@@ -31,10 +31,10 @@ funcs:
     params:
       address=S: Address # state controller address
 
-  setPayoutAddress:
+  setPayoutAgentID:
     access: chain
     params:
-      payoutAddress=s: AgentID # set payout address
+      payoutAgentID=s: AgentID # set payout AgentID
 
   setMinSD:
     access: chain
@@ -144,9 +144,9 @@ views:
 
   # chain owner
 
-  getPayoutAddress:
+  getPayoutAgentID:
     results:
-      payoutAddress=s: AgentID # get payout address
+      payoutAgentID=s: AgentID # get payout AgentID
   
   getMinSD:
     results:

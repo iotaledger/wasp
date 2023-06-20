@@ -450,31 +450,31 @@ impl MutableSetMinSDParams {
 }
 
 #[derive(Clone)]
-pub struct ImmutableSetPayoutAddressParams {
+pub struct ImmutableSetPayoutAgentIDParams {
     pub(crate) proxy: Proxy,
 }
 
-impl ImmutableSetPayoutAddressParams {
-    pub fn new() -> ImmutableSetPayoutAddressParams {
-        ImmutableSetPayoutAddressParams {
+impl ImmutableSetPayoutAgentIDParams {
+    pub fn new() -> ImmutableSetPayoutAgentIDParams {
+        ImmutableSetPayoutAgentIDParams {
             proxy: params_proxy(),
         }
     }
 
-    // set payout address
-    pub fn payout_address(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.proxy.root(PARAM_PAYOUT_ADDRESS))
+    // set payout AgentID
+    pub fn payout_agent_id(&self) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.proxy.root(PARAM_PAYOUT_AGENT_ID))
     }
 }
 
 #[derive(Clone)]
-pub struct MutableSetPayoutAddressParams {
+pub struct MutableSetPayoutAgentIDParams {
     pub(crate) proxy: Proxy,
 }
 
-impl MutableSetPayoutAddressParams {
-    // set payout address
-    pub fn payout_address(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.proxy.root(PARAM_PAYOUT_ADDRESS))
+impl MutableSetPayoutAgentIDParams {
+    // set payout AgentID
+    pub fn payout_agent_id(&self) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.proxy.root(PARAM_PAYOUT_AGENT_ID))
     }
 }

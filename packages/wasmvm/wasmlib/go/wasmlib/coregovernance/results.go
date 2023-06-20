@@ -368,24 +368,24 @@ func (s MutableGetMinSDResults) GetMinSD() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.Proxy.Root(ResultGetMinSD))
 }
 
-type ImmutableGetPayoutAddressResults struct {
+type ImmutableGetPayoutAgentIDResults struct {
 	Proxy wasmtypes.Proxy
 }
 
-// get payout address
-func (s ImmutableGetPayoutAddressResults) PayoutAddress() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ResultPayoutAddress))
+// get payout AgentID
+func (s ImmutableGetPayoutAgentIDResults) PayoutAgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ResultPayoutAgentID))
 }
 
-type MutableGetPayoutAddressResults struct {
+type MutableGetPayoutAgentIDResults struct {
 	Proxy wasmtypes.Proxy
 }
 
-func NewMutableGetPayoutAddressResults() MutableGetPayoutAddressResults {
-	return MutableGetPayoutAddressResults{Proxy: wasmlib.NewResultsProxy()}
+func NewMutableGetPayoutAgentIDResults() MutableGetPayoutAgentIDResults {
+	return MutableGetPayoutAgentIDResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
-// get payout address
-func (s MutableGetPayoutAddressResults) PayoutAddress() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ResultPayoutAddress))
+// get payout AgentID
+func (s MutableGetPayoutAgentIDResults) PayoutAgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ResultPayoutAgentID))
 }

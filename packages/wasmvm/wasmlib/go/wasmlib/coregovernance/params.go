@@ -348,24 +348,24 @@ func (s MutableSetMinSDParams) SetMinSD() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.Proxy.Root(ParamSetMinSD))
 }
 
-type ImmutableSetPayoutAddressParams struct {
+type ImmutableSetPayoutAgentIDParams struct {
 	Proxy wasmtypes.Proxy
 }
 
-func NewImmutableSetPayoutAddressParams() ImmutableSetPayoutAddressParams {
-	return ImmutableSetPayoutAddressParams{Proxy: wasmlib.NewParamsProxy()}
+func NewImmutableSetPayoutAgentIDParams() ImmutableSetPayoutAgentIDParams {
+	return ImmutableSetPayoutAgentIDParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
-// set payout address
-func (s ImmutableSetPayoutAddressParams) PayoutAddress() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ParamPayoutAddress))
+// set payout AgentID
+func (s ImmutableSetPayoutAgentIDParams) PayoutAgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ParamPayoutAgentID))
 }
 
-type MutableSetPayoutAddressParams struct {
+type MutableSetPayoutAgentIDParams struct {
 	Proxy wasmtypes.Proxy
 }
 
-// set payout address
-func (s MutableSetPayoutAddressParams) PayoutAddress() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ParamPayoutAddress))
+// set payout AgentID
+func (s MutableSetPayoutAgentIDParams) PayoutAgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ParamPayoutAgentID))
 }

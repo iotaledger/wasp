@@ -21,9 +21,9 @@ var (
 	// chain owner (L1 entity that is the "owner of the chain")
 	FuncClaimChainOwnership        = coreutil.Func("claimChainOwnership")
 	FuncDelegateChainOwnership     = coreutil.Func("delegateChainOwnership")
-	FuncSetPayoutAddress           = coreutil.Func("setPayoutAddress")
+	FuncSetPayoutAgentID           = coreutil.Func("setPayoutAgentID")
 	FuncSetMinCommonAccountBalance = coreutil.Func("setMinCommonAccountBalance")
-	ViewGetPayoutAddress           = coreutil.ViewFunc("getPayoutAddress")
+	ViewGetPayoutAgentID           = coreutil.ViewFunc("getPayoutAgentID")
 	ViewGetMinCommonAccountBalance = coreutil.ViewFunc("getMinCommonAccountBalance")
 	ViewGetChainOwner              = coreutil.ViewFunc("getChainOwner")
 
@@ -65,7 +65,7 @@ const (
 	StateVarAllowedStateControllerAddresses = "a"
 	StateVarRotateToAddress                 = "r"
 
-	StateVarPayoutAddress           = "pa"
+	StateVarPayoutAgentID           = "pa"
 	StateVarMinCommonAccountBalance = "vs"
 
 	// chain owner
@@ -133,8 +133,8 @@ const (
 	BlockKeepAll           = -1
 	BlockKeepAmountDefault = 10_000
 
-	// set payout address
-	ParamSetPayoutAddress = "s"
+	// set payout AgentID
+	ParamSetPayoutAgentID = "s"
 
 	// set min SD
 	ParamSetMinCommonAccountBalance = "ms"

@@ -71,9 +71,9 @@ type SetMinSDCall struct {
 	Params MutableSetMinSDParams
 }
 
-type SetPayoutAddressCall struct {
+type SetPayoutAgentIDCall struct {
 	Func   *wasmlib.ScFunc
-	Params MutableSetPayoutAddressParams
+	Params MutableSetPayoutAgentIDParams
 }
 
 type StartMaintenanceCall struct {
@@ -134,9 +134,9 @@ type GetMinSDCall struct {
 	Results ImmutableGetMinSDResults
 }
 
-type GetPayoutAddressCall struct {
+type GetPayoutAgentIDCall struct {
 	Func    *wasmlib.ScView
-	Results ImmutableGetPayoutAddressResults
+	Results ImmutableGetPayoutAgentIDResults
 }
 
 type Funcs struct{}
@@ -236,8 +236,8 @@ func (sc Funcs) SetMinSD(ctx wasmlib.ScFuncClientContext) *SetMinSDCall {
 	return f
 }
 
-func (sc Funcs) SetPayoutAddress(ctx wasmlib.ScFuncClientContext) *SetPayoutAddressCall {
-	f := &SetPayoutAddressCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetPayoutAddress)}
+func (sc Funcs) SetPayoutAgentID(ctx wasmlib.ScFuncClientContext) *SetPayoutAgentIDCall {
+	f := &SetPayoutAgentIDCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetPayoutAgentID)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
@@ -322,8 +322,8 @@ func (sc Funcs) GetMinSD(ctx wasmlib.ScViewClientContext) *GetMinSDCall {
 	return f
 }
 
-func (sc Funcs) MustGetPayoutAddress(ctx wasmlib.ScViewClientContext) *GetPayoutAddressCall {
-	f := &GetPayoutAddressCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetPayoutAddress)}
+func (sc Funcs) GetPayoutAgentID(ctx wasmlib.ScViewClientContext) *GetPayoutAgentIDCall {
+	f := &GetPayoutAgentIDCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetPayoutAgentID)}
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
@@ -343,7 +343,7 @@ var exportMap = wasmlib.ScExportMap{
 		FuncSetGasLimits,
 		FuncSetMetadata,
 		FuncSetMinSD,
-		FuncSetPayoutAddress,
+		FuncSetPayoutAgentID,
 		FuncStartMaintenance,
 		FuncStopMaintenance,
 		ViewGetAllowedStateControllerAddresses,
@@ -356,7 +356,7 @@ var exportMap = wasmlib.ScExportMap{
 		ViewGetMaintenanceStatus,
 		ViewGetMetadata,
 		ViewGetMinSD,
-		ViewGetPayoutAddress,
+		ViewGetPayoutAgentID,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
 		wasmlib.FuncError,

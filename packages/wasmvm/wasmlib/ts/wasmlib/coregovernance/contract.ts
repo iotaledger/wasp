@@ -122,12 +122,12 @@ export class SetMinSDCall {
     }
 }
 
-export class SetPayoutAddressCall {
+export class SetPayoutAgentIDCall {
     func:   wasmlib.ScFunc;
-    params: sc.MutableSetPayoutAddressParams = new sc.MutableSetPayoutAddressParams(wasmlib.ScView.nilProxy);
+    params: sc.MutableSetPayoutAgentIDParams = new sc.MutableSetPayoutAgentIDParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncClientContext) {
-        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetPayoutAddress);
+        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSetPayoutAgentID);
     }
 }
 
@@ -237,12 +237,12 @@ export class GetMinSDCall {
     }
 }
 
-export class GetPayoutAddressCall {
+export class GetPayoutAgentIDCall {
     func:    wasmlib.ScView;
-    results: sc.ImmutableGetPayoutAddressResults = new sc.ImmutableGetPayoutAddressResults(wasmlib.ScView.nilProxy);
+    results: sc.ImmutableGetPayoutAgentIDResults = new sc.ImmutableGetPayoutAgentIDResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewClientContext) {
-        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetPayoutAddress);
+        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetPayoutAgentID);
     }
 }
 
@@ -340,9 +340,9 @@ export class ScFuncs {
         return f;
     }
 
-    static setPayoutAddress(ctx: wasmlib.ScFuncClientContext): SetPayoutAddressCall {
-        const f = new SetPayoutAddressCall(ctx);
-        f.params = new sc.MutableSetPayoutAddressParams(wasmlib.newCallParamsProxy(f.func));
+    static setPayoutAgentID(ctx: wasmlib.ScFuncClientContext): SetPayoutAgentIDCall {
+        const f = new SetPayoutAgentIDCall(ctx);
+        f.params = new sc.MutableSetPayoutAgentIDParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
@@ -426,9 +426,9 @@ export class ScFuncs {
         return f;
     }
 
-    static getPayoutAddress(ctx: wasmlib.ScViewClientContext): GetPayoutAddressCall {
-        const f = new GetPayoutAddressCall(ctx);
-        f.results = new sc.ImmutableGetPayoutAddressResults(wasmlib.newCallResultsProxy(f.func));
+    static getPayoutAgentID(ctx: wasmlib.ScViewClientContext): GetPayoutAgentIDCall {
+        const f = new GetPayoutAgentIDCall(ctx);
+        f.results = new sc.ImmutableGetPayoutAgentIDResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 }

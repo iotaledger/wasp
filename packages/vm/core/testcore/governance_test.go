@@ -462,7 +462,7 @@ func TestGovernanceGasFee(t *testing.T) {
 	ch.SetGasFeePolicy(nil, fp) // should not fail with "gas budget exceeded"
 }
 
-func TestGovernanceSetMustGetPayoutAddress(t *testing.T) {
+func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 
@@ -472,8 +472,8 @@ func TestGovernanceSetMustGetPayoutAddress(t *testing.T) {
 	_, err := ch.PostRequestSync(
 		solo.NewCallParams(
 			governance.Contract.Name,
-			governance.FuncSetPayoutAddress.Name,
-			governance.ParamSetPayoutAddress,
+			governance.FuncSetPayoutAgentID.Name,
+			governance.ParamSetPayoutAgentID,
 			userAgentID.Bytes(),
 		).WithMaxAffordableGasBudget(),
 		nil,
@@ -482,10 +482,10 @@ func TestGovernanceSetMustGetPayoutAddress(t *testing.T) {
 
 	retDict, err := ch.CallView(
 		governance.Contract.Name,
-		governance.ViewGetPayoutAddress.Name,
+		governance.ViewGetPayoutAgentID.Name,
 	)
 	require.NoError(t, err)
-	retAgentID, err := codec.DecodeAgentID(retDict.Get(governance.ParamSetPayoutAddress))
+	retAgentID, err := codec.DecodeAgentID(retDict.Get(governance.ParamSetPayoutAgentID))
 	require.NoError(t, err)
 	require.Equal(t, userAgentID, retAgentID)
 }

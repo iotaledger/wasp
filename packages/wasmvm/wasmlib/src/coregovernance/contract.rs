@@ -72,9 +72,9 @@ pub struct SetMinSDCall<'a> {
     pub params: MutableSetMinSDParams,
 }
 
-pub struct SetPayoutAddressCall<'a> {
+pub struct SetPayoutAgentIDCall<'a> {
     pub func:   ScFunc<'a>,
-    pub params: MutableSetPayoutAddressParams,
+    pub params: MutableSetPayoutAgentIDParams,
 }
 
 pub struct StartMaintenanceCall<'a> {
@@ -135,9 +135,9 @@ pub struct GetMinSDCall<'a> {
     pub results: ImmutableGetMinSDResults,
 }
 
-pub struct GetPayoutAddressCall<'a> {
+pub struct GetPayoutAgentIDCall<'a> {
     pub func:    ScView<'a>,
-    pub results: ImmutableGetPayoutAddressResults,
+    pub results: ImmutableGetPayoutAgentIDResults,
 }
 
 pub struct ScFuncs {
@@ -275,10 +275,10 @@ impl ScFuncs {
         f
     }
 
-    pub fn set_payout_address(ctx: &impl ScFuncClientContext) -> SetPayoutAddressCall {
-        let mut f = SetPayoutAddressCall {
-            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_SET_PAYOUT_ADDRESS),
-            params:  MutableSetPayoutAddressParams { proxy: Proxy::nil() },
+    pub fn set_payout_agent_id(ctx: &impl ScFuncClientContext) -> SetPayoutAgentIDCall {
+        let mut f = SetPayoutAgentIDCall {
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_SET_PAYOUT_AGENT_ID),
+            params:  MutableSetPayoutAgentIDParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
@@ -398,10 +398,10 @@ impl ScFuncs {
         f
     }
 
-    pub fn get_payout_address(ctx: &impl ScViewClientContext) -> GetPayoutAddressCall {
-        let mut f = GetPayoutAddressCall {
-            func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_PAYOUT_ADDRESS),
-            results: ImmutableGetPayoutAddressResults { proxy: Proxy::nil() },
+    pub fn get_payout_agent_id(ctx: &impl ScViewClientContext) -> GetPayoutAgentIDCall {
+        let mut f = GetPayoutAgentIDCall {
+            func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_PAYOUT_AGENT_ID),
+            results: ImmutableGetPayoutAgentIDResults { proxy: Proxy::nil() },
         };
         ScView::link_results(&mut f.results.proxy, &f.func);
         f

@@ -278,16 +278,16 @@ export class MutableGetMinSDResults extends wasmtypes.ScProxy {
     }
 }
 
-export class ImmutableGetPayoutAddressResults extends wasmtypes.ScProxy {
-    // get payout address
-    payoutAddress(): wasmtypes.ScImmutableAgentID {
-        return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultPayoutAddress));
+export class ImmutableGetPayoutAgentIDResults extends wasmtypes.ScProxy {
+    // get payout AgentID
+    payoutAgentID(): wasmtypes.ScImmutableAgentID {
+        return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultPayoutAgentID));
     }
 }
 
-export class MutableGetPayoutAddressResults extends wasmtypes.ScProxy {
-    // get payout address
-    payoutAddress(): wasmtypes.ScMutableAgentID {
-        return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultPayoutAddress));
+export class MutableGetPayoutAgentIDResults extends wasmtypes.ScProxy {
+    // get payout AgentID
+    payoutAgentID(): wasmtypes.ScMutableAgentID {
+        return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultPayoutAgentID));
     }
 }

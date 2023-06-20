@@ -24,7 +24,7 @@ const (
 	ParamGasLimits     = "l"
 	ParamGasRatio      = "e"
 	ParamMetadata      = "md"
-	ParamPayoutAddress = "s"
+	ParamPayoutAgentID = "s"
 	ParamPubKey        = "ip"
 	ParamPublicURL     = "x"
 	ParamSetMinSD      = "ms"
@@ -42,7 +42,7 @@ const (
 	ResultGasRatio             = "e"
 	ResultGetMinSD             = "ms"
 	ResultMetadata             = "md"
-	ResultPayoutAddress        = "s"
+	ResultPayoutAgentID        = "s"
 	ResultPublicURL            = "x"
 	ResultStatus               = "m"
 )
@@ -61,7 +61,7 @@ const (
 	FuncSetGasLimits                        = "setGasLimits"
 	FuncSetMetadata                         = "setMetadata"
 	FuncSetMinSD                            = "setMinSD"
-	FuncSetPayoutAddress                    = "setPayoutAddress"
+	FuncSetPayoutAgentID                    = "setPayoutAgentID"
 	FuncStartMaintenance                    = "startMaintenance"
 	FuncStopMaintenance                     = "stopMaintenance"
 	ViewGetAllowedStateControllerAddresses  = "getAllowedStateControllerAddresses"
@@ -74,7 +74,7 @@ const (
 	ViewGetMaintenanceStatus                = "getMaintenanceStatus"
 	ViewGetMetadata                         = "getMetadata"
 	ViewGetMinSD                            = "getMinSD"
-	ViewGetPayoutAddress                    = "getPayoutAddress"
+	ViewGetPayoutAgentID                    = "getPayoutAgentID"
 )
 
 const (
@@ -91,7 +91,7 @@ const (
 	HFuncSetGasLimits                        = wasmtypes.ScHname(0xd72fb355)
 	HFuncSetMetadata                         = wasmtypes.ScHname(0x0eb3a798)
 	HFuncSetMinSD                            = wasmtypes.ScHname(0x9cad5084)
-	HFuncSetPayoutAddress                    = wasmtypes.ScHname(0x65e7c531)
+	HFuncSetPayoutAgentID                    = wasmtypes.ScHname(0x2184ed1c)
 	HFuncStartMaintenance                    = wasmtypes.ScHname(0x742f0521)
 	HFuncStopMaintenance                     = wasmtypes.ScHname(0x4e017b6a)
 	HViewGetAllowedStateControllerAddresses  = wasmtypes.ScHname(0xf3505183)
@@ -104,5 +104,5 @@ const (
 	HViewGetMaintenanceStatus                = wasmtypes.ScHname(0x61fe5443)
 	HViewGetMetadata                         = wasmtypes.ScHname(0x79ad1ac6)
 	HViewGetMinSD                            = wasmtypes.ScHname(0x37f53a59)
-	HViewGetPayoutAddress                    = wasmtypes.ScHname(0x2af7a8c3)
+	HViewGetPayoutAgentID                    = wasmtypes.ScHname(0x02aca9ad)
 )

@@ -466,31 +466,31 @@ impl MutableGetMinSDResults {
 }
 
 #[derive(Clone)]
-pub struct ImmutableGetPayoutAddressResults {
+pub struct ImmutableGetPayoutAgentIDResults {
     pub proxy: Proxy,
 }
 
-impl ImmutableGetPayoutAddressResults {
-    // get payout address
-    pub fn payout_address(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.proxy.root(RESULT_PAYOUT_ADDRESS))
+impl ImmutableGetPayoutAgentIDResults {
+    // get payout AgentID
+    pub fn payout_agent_id(&self) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.proxy.root(RESULT_PAYOUT_AGENT_ID))
     }
 }
 
 #[derive(Clone)]
-pub struct MutableGetPayoutAddressResults {
+pub struct MutableGetPayoutAgentIDResults {
     pub proxy: Proxy,
 }
 
-impl MutableGetPayoutAddressResults {
-    pub fn new() -> MutableGetPayoutAddressResults {
-        MutableGetPayoutAddressResults {
+impl MutableGetPayoutAgentIDResults {
+    pub fn new() -> MutableGetPayoutAgentIDResults {
+        MutableGetPayoutAgentIDResults {
             proxy: results_proxy(),
         }
     }
 
-    // get payout address
-    pub fn payout_address(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.proxy.root(RESULT_PAYOUT_ADDRESS))
+    // get payout AgentID
+    pub fn payout_agent_id(&self) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.proxy.root(RESULT_PAYOUT_AGENT_ID))
     }
 }

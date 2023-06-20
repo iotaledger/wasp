@@ -52,16 +52,16 @@ func delegateChainOwnership(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
-func setPayoutAddress(ctx isc.Sandbox) dict.Dict {
+func setPayoutAgentID(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	agent := ctx.Params().MustGetAgentID(governance.ParamSetPayoutAddress)
-	ctx.State().Set(governance.StateVarPayoutAddress, codec.EncodeAgentID(agent))
+	agent := ctx.Params().MustGetAgentID(governance.ParamSetPayoutAgentID)
+	ctx.State().Set(governance.StateVarPayoutAgentID, codec.EncodeAgentID(agent))
 	return nil
 }
 
-func getPayoutAddress(ctx isc.SandboxView) dict.Dict {
+func getPayoutAgentID(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
-	ret.Set(governance.ParamSetPayoutAddress, ctx.StateR().Get(governance.StateVarPayoutAddress))
+	ret.Set(governance.ParamSetPayoutAgentID, ctx.StateR().Get(governance.StateVarPayoutAgentID))
 	return ret
 }
 

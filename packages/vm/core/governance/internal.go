@@ -77,9 +77,9 @@ func MustGetMinCommonAccountBalance(state kv.KVStoreReader) uint64 {
 	return minCommonAccountBalance
 }
 
-func MustGetPayoutAddress(state kv.KVStoreReader) isc.AgentID {
+func MustGetPayoutAgentID(state kv.KVStoreReader) isc.AgentID {
 	d := kvdecoder.New(state)
-	agentID, err := d.GetAgentID(StateVarPayoutAddress)
+	agentID, err := d.GetAgentID(StateVarPayoutAgentID)
 	if err != nil && !errors.Is(err, codec.ErrNilAgentID) {
 		panic(err)
 	}
