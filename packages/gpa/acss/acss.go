@@ -95,6 +95,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acss/crypto"
 	rbc "github.com/iotaledger/wasp/packages/gpa/rbc/bracha"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const (
@@ -245,10 +246,7 @@ func (a *acssImpl) handleInput(secretToShare kyber.Scalar) gpa.OutMessages {
 	}
 
 	// > RBC(C||E)
-	rbcCEPayloadBytes, err := (&msgRBCCEPayload{suite: a.suite, data: data}).MarshalBinary()
-	if err != nil {
-		panic(fmt.Errorf("cannot serialize msg_rbc_ce: %w", err))
-	}
+	rbcCEPayloadBytes := rwutil.WriteToBytes(&msgRBCCEPayload{suite: a.suite, data: data})
 	msgs := a.msgWrapper.WrapMessages(subsystemRBC, 0, a.rbc.Input(rbcCEPayloadBytes))
 	return a.tryHandleRBCTermination(false, msgs)
 }
@@ -266,8 +264,8 @@ func (a *acssImpl) handleRBCMessage(m *gpa.WrappingMsg) gpa.OutMessages {
 func (a *acssImpl) tryHandleRBCTermination(wasOut bool, msgs gpa.OutMessages) gpa.OutMessages {
 	if out := a.rbc.Output(); !wasOut && out != nil {
 		// Send the result for self as a message (maybe the code will look nicer this way).
-		outParsed := &msgRBCCEPayload{suite: a.suite}
-		if err := outParsed.UnmarshalBinary(out.([]byte)); err != nil {
+		outParsed, err := rwutil.ReadFromBytes(out.([]byte), &msgRBCCEPayload{suite: a.suite})
+		if err != nil {
 			panic(fmt.Errorf("cannot unmarshal msgRBCCEPayload: %w", err))
 		}
 		msgs.AddAll(a.handleRBCOutput(outParsed))

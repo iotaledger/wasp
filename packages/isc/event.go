@@ -14,7 +14,7 @@ type Event struct {
 	Timestamp  uint64
 }
 
-func NewEvent(data []byte) (*Event, error) {
+func EventFromBytes(data []byte) (*Event, error) {
 	return rwutil.ReadFromBytes(data, new(Event))
 }
 

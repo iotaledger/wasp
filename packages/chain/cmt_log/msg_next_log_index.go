@@ -48,14 +48,6 @@ func (msg *msgNextLogIndex) String() string {
 	)
 }
 
-func (msg *msgNextLogIndex) MarshalBinary() ([]byte, error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *msgNextLogIndex) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
-}
-
 func (msg *msgNextLogIndex) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeNextLogIndex.ReadAndVerify(rr)

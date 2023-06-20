@@ -172,7 +172,7 @@ func New(
 
 	pipeMetrics.TrackPipeLenMax("cons-gr-netRecvPipe", netPeeringID.String(), cgr.netRecvPipe.Len)
 
-	constInstRaw := cons.New(chainID,
+	consInstRaw := cons.New(chainID,
 		chainStore,
 		me,
 		myNodeIdentity.GetPrivateKey(),
@@ -183,9 +183,9 @@ func New(
 		validatorAgentID,
 		log,
 	).AsGPA()
-	cgr.consInst = gpa.NewAckHandler(me, constInstRaw, redeliveryPeriod)
+	cgr.consInst = gpa.NewAckHandler(me, consInstRaw, redeliveryPeriod)
 
-	unhook := net.Attach(&netPeeringID, peering.PeerMessageReceiverChainCons, func(recv *peering.PeerMessageIn) {
+	unhook := net.Attach(&netPeeringID, peering.ReceiverChainCons, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeCons {
 			cgr.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
@@ -402,7 +402,7 @@ func (cgr *ConsGr) sendMessages(outMsgs gpa.OutMessages) {
 		return
 	}
 	outMsgs.MustIterate(func(msg gpa.Message) {
-		pm := peering.NewPeerMessageData(cgr.netPeeringID, peering.PeerMessageReceiverChainCons, msgTypeCons, msg)
+		pm := peering.NewPeerMessageData(cgr.netPeeringID, peering.ReceiverChainCons, msgTypeCons, msg)
 		cgr.net.SendMsgByPubKey(cgr.netPeerPubs[msg.Recipient()], pm)
 	})
 }

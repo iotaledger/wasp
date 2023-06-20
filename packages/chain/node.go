@@ -432,7 +432,7 @@ func New(
 	//
 	// Connect to the peering network.
 	netRecvPipeInCh := cni.netRecvPipe.In()
-	unhook := net.Attach(&netPeeringID, peering.PeerMessageReceiverChain, func(recv *peering.PeerMessageIn) {
+	unhook := net.Attach(&netPeeringID, peering.ReceiverChain, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeChainMgr {
 			cni.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
@@ -937,7 +937,7 @@ func (cni *chainNodeImpl) sendMessages(outMsgs gpa.OutMessages) {
 			cni.log.Warnf("Pub key for the recipient not found: %v", msg.Recipient())
 			return
 		}
-		pm := peering.NewPeerMessageData(cni.netPeeringID, peering.PeerMessageReceiverChain, msgTypeChainMgr, msg)
+		pm := peering.NewPeerMessageData(cni.netPeeringID, peering.ReceiverChain, msgTypeChainMgr, msg)
 		cni.net.SendMsgByPubKey(recipientPubKey, pm)
 	})
 }

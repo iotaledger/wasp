@@ -266,41 +266,35 @@ func (s *dkShareImpl) Read(r io.Reader) error {
 	}
 
 	// DSS / Ed25519 part of the key shares.
-	s.edSharedPublic = s.edSuite.Point()
-	rr.ReadMarshaled(s.edSharedPublic)
+	edSuite := s.edSuite
+	s.edSharedPublic = cryptolib.PointFromReader(rr, edSuite)
 	size = rr.ReadSize16()
 	s.edPublicCommits = make([]kyber.Point, size)
 	for i := range s.edPublicCommits {
-		s.edPublicCommits[i] = s.edSuite.Point()
-		rr.ReadMarshaled(s.edPublicCommits[i])
+		s.edPublicCommits[i] = cryptolib.PointFromReader(rr, edSuite)
 	}
 	size = rr.ReadSize16()
 	s.edPublicShares = make([]kyber.Point, size)
 	for i := range s.edPublicShares {
-		s.edPublicShares[i] = s.edSuite.Point()
-		rr.ReadMarshaled(s.edPublicShares[i])
+		s.edPublicShares[i] = cryptolib.PointFromReader(rr, edSuite)
 	}
-	s.edPrivateShare = s.edSuite.Scalar()
-	rr.ReadMarshaled(s.edPrivateShare)
+	s.edPrivateShare = cryptolib.ScalarFromReader(rr, edSuite)
 
 	// BLS part of the key shares.
+	blsGroup := s.blsSuite.G2()
 	s.blsThreshold = rr.ReadUint16()
-	s.blsSharedPublic = s.blsSuite.G2().Point()
-	rr.ReadMarshaled(s.blsSharedPublic)
+	s.blsSharedPublic = cryptolib.PointFromReader(rr, blsGroup)
 	size = rr.ReadSize16()
 	s.blsPublicCommits = make([]kyber.Point, size)
 	for i := range s.blsPublicCommits {
-		s.blsPublicCommits[i] = s.blsSuite.G2().Point()
-		rr.ReadMarshaled(s.blsPublicCommits[i])
+		s.blsPublicCommits[i] = cryptolib.PointFromReader(rr, blsGroup)
 	}
 	size = rr.ReadSize16()
 	s.blsPublicShares = make([]kyber.Point, size)
 	for i := range s.blsPublicShares {
-		s.blsPublicShares[i] = s.blsSuite.G2().Point()
-		rr.ReadMarshaled(s.blsPublicShares[i])
+		s.blsPublicShares[i] = cryptolib.PointFromReader(rr, blsGroup)
 	}
-	s.blsPrivateShare = s.blsSuite.G2().Scalar()
-	rr.ReadMarshaled(s.blsPrivateShare)
+	s.blsPrivateShare = cryptolib.ScalarFromReader(rr, blsGroup)
 	return rr.Err
 }
 
@@ -318,29 +312,29 @@ func (s *dkShareImpl) Write(w io.Writer) error {
 	}
 
 	// DSS / Ed25519 part of the key shares.
-	ww.WriteMarshaled(s.edSharedPublic)
+	cryptolib.PointToWriter(ww, s.edSharedPublic)
 	ww.WriteSize16(len(s.edPublicCommits))
 	for i := 0; i < len(s.edPublicCommits); i++ {
-		ww.WriteMarshaled(s.edPublicCommits[i])
+		cryptolib.PointToWriter(ww, s.edPublicCommits[i])
 	}
 	ww.WriteSize16(len(s.edPublicShares))
 	for i := 0; i < len(s.edPublicShares); i++ {
-		ww.WriteMarshaled(s.edPublicShares[i])
+		cryptolib.PointToWriter(ww, s.edPublicShares[i])
 	}
-	ww.WriteMarshaled(s.edPrivateShare)
+	cryptolib.ScalarToWriter(ww, s.edPrivateShare)
 
 	// BLS part of the key shares.
 	ww.WriteUint16(s.blsThreshold)
-	ww.WriteMarshaled(s.blsSharedPublic)
+	cryptolib.PointToWriter(ww, s.blsSharedPublic)
 	ww.WriteSize16(len(s.blsPublicCommits))
 	for i := 0; i < len(s.blsPublicCommits); i++ {
-		ww.WriteMarshaled(s.blsPublicCommits[i])
+		cryptolib.PointToWriter(ww, s.blsPublicCommits[i])
 	}
 	ww.WriteSize16(len(s.blsPublicShares))
 	for i := 0; i < len(s.blsPublicShares); i++ {
-		ww.WriteMarshaled(s.blsPublicShares[i])
+		cryptolib.PointToWriter(ww, s.blsPublicShares[i])
 	}
-	ww.WriteMarshaled(s.blsPrivateShare)
+	cryptolib.ScalarToWriter(ww, s.blsPrivateShare)
 	return ww.Err
 }
 

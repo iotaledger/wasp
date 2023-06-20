@@ -16,8 +16,7 @@ func TestMarshalUnmarshalBlockMessage(t *testing.T) {
 		t.Logf("Checking block %v: %v", i, blocks[i].L1Commitment())
 		msg := NewBlockMessage(blocks[i], gpa.RandomTestNodeID())
 		marshaled := rwutil.WriteToBytes(msg)
-		unmarshaled := NewEmptyBlockMessage()
-		err := unmarshaled.UnmarshalBinary(marshaled)
+		unmarshaled, err := rwutil.ReadFromBytes(marshaled, NewEmptyBlockMessage())
 		require.NoError(t, err)
 		sm_gpa_utils.CheckBlocksEqual(t, blocks[i], unmarshaled.GetBlock())
 	}

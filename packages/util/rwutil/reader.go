@@ -4,7 +4,6 @@
 package rwutil
 
 import (
-	"encoding"
 	"errors"
 	"io"
 	"math"
@@ -151,16 +150,6 @@ func (rr *Reader) ReadKindAndVerify(expectedKind Kind) {
 	kind := rr.ReadKind()
 	if kind != expectedKind && rr.Err == nil {
 		rr.Err = errors.New("unexpected object kind")
-	}
-}
-
-func (rr *Reader) ReadMarshaled(obj encoding.BinaryUnmarshaler) {
-	if obj == nil {
-		panic("nil unmarshaler")
-	}
-	buf := rr.ReadBytes()
-	if rr.Err == nil {
-		rr.Err = obj.UnmarshalBinary(buf)
 	}
 }
 

@@ -38,14 +38,6 @@ func (msg *msgCmtLog) SetSender(sender gpa.NodeID) {
 	msg.wrapped.SetSender(sender)
 }
 
-func (msg *msgCmtLog) MarshalBinary() ([]byte, error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *msgCmtLog) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
-}
-
 func (msg *msgCmtLog) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeCmtLog.ReadAndVerify(rr)
@@ -58,6 +50,6 @@ func (msg *msgCmtLog) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	msgTypeCmtLog.Write(ww)
 	ww.WriteN(msg.committeeAddr[:])
-	ww.WriteMarshaled(msg.wrapped)
+	ww.WriteBytes(rwutil.WriteToBytes(msg.wrapped))
 	return ww.Err
 }

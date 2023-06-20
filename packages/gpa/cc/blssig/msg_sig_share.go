@@ -17,14 +17,6 @@ type msgSigShare struct {
 
 var _ gpa.Message = new(msgSigShare)
 
-func (msg *msgSigShare) MarshalBinary() ([]byte, error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *msgSigShare) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
-}
-
 func (msg *msgSigShare) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeSigShare.ReadAndVerify(rr)

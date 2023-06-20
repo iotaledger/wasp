@@ -27,14 +27,6 @@ func newMsgShareRequest(request isc.Request, ttl byte, recipient gpa.NodeID) gpa
 	}
 }
 
-func (msg *msgShareRequest) MarshalBinary() (data []byte, err error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *msgShareRequest) UnmarshalBinary(data []byte) (err error) {
-	return rwutil.UnmarshalBinary(data, msg)
-}
-
 func (msg *msgShareRequest) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeShareRequest.ReadAndVerify(rr)

@@ -256,7 +256,7 @@ func New(
 		log,
 	)
 	netRecvPipeInCh := mpi.netRecvPipe.In()
-	unhook := net.Attach(&netPeeringID, peering.PeerMessageReceiverMempool, func(recv *peering.PeerMessageIn) {
+	unhook := net.Attach(&netPeeringID, peering.ReceiverMempool, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeMempool {
 			mpi.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
@@ -885,7 +885,7 @@ func (mpi *mempoolImpl) sendMessages(outMsgs gpa.OutMessages) {
 		return
 	}
 	outMsgs.MustIterate(func(msg gpa.Message) {
-		pm := peering.NewPeerMessageData(mpi.netPeeringID, peering.PeerMessageReceiverMempool, msgTypeMempool, msg)
+		pm := peering.NewPeerMessageData(mpi.netPeeringID, peering.ReceiverMempool, msgTypeMempool, msg)
 		mpi.net.SendMsgByPubKey(mpi.netPeerPubs[msg.Recipient()], pm)
 	})
 }

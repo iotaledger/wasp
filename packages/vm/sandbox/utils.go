@@ -106,9 +106,8 @@ var suite = bn256.NewSuite()
 
 func (u utilImplBLS) ValidSignature(data, pubKeyBin, signature []byte) bool {
 	u.gas.Burn(gas.BurnCodeUtilsBLSValidSignature)
-	pubKey := suite.G2().Point()
-	var err error
-	if err = pubKey.UnmarshalBinary(pubKeyBin); err != nil {
+	pubKey, err := cryptolib.PointFromBytes(pubKeyBin, suite.G2())
+	if err != nil {
 		return false
 	}
 	return bdn.Verify(suite, pubKey, data, signature) == nil
@@ -117,8 +116,8 @@ func (u utilImplBLS) ValidSignature(data, pubKeyBin, signature []byte) bool {
 func (u utilImplBLS) AddressFromPublicKey(pubKeyBin []byte) (iotago.Address, error) {
 	panic("deprecate BLS")
 	// u.gas.Burn(gas.UtilsBLSAddressFromPublicKey)
-	// pubKey := suite.G2().Point()
-	// if err := pubKey.UnmarshalBinary(pubKeyBin); err != nil {
+	// _, err := cryptolib.PointFromBytes(pubKeyBin, suite.G2())
+	// if err != nil {
 	// 	return nil, errors.New("BLSUtil: wrong public key bytes")
 	// }
 	// return iotago.NewBLSAddress(pubKeyBin), nil

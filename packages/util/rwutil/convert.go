@@ -4,7 +4,6 @@
 package rwutil
 
 import (
-	"encoding"
 	"encoding/binary"
 	"errors"
 	"io"
@@ -316,45 +315,6 @@ func WriteUint64(w io.Writer, val uint64) error {
 	var b [8]byte
 	binary.LittleEndian.PutUint64(b[:], val)
 	return WriteN(w, b[:])
-}
-
-//////////////////// binary marshaling \\\\\\\\\\\\\\\\\\\\
-
-// MarshalBinary is an adapter function that uses an object's Write()
-// function to marshal the object to data bytes. It is typically used
-// to implement a one-line MarshalBinary() member function for the object.
-func MarshalBinary(obj IoWriter) ([]byte, error) {
-	return WriteToBytes(obj), nil
-}
-
-// UnmarshalBinary is an adapter function that uses an object's Read()
-// function to marshal the object from data bytes. It is typically used
-// to implement a one-line UnmarshalBinary member function for the object.
-func UnmarshalBinary[T IoReader](data []byte, obj T) error {
-	_, err := ReadFromBytes(data, obj)
-	return err
-}
-
-func ReadMarshaled(r io.Reader, obj encoding.BinaryUnmarshaler) error {
-	if obj == nil {
-		panic("nil BinaryUnmarshaler")
-	}
-	bin, err := ReadBytes(r)
-	if err != nil {
-		return err
-	}
-	return obj.UnmarshalBinary(bin)
-}
-
-func WriteMarshaled(w io.Writer, obj encoding.BinaryMarshaler) error {
-	if obj == nil {
-		panic("nil BinaryMarshaler")
-	}
-	bin, err := obj.MarshalBinary()
-	if err != nil {
-		return err
-	}
-	return WriteBytes(w, bin)
 }
 
 //////////////////// bytes \\\\\\\\\\\\\\\\\\\\

@@ -22,20 +22,12 @@ func NewBlockMessage(block state.Block, to gpa.NodeID) *BlockMessage {
 	}
 }
 
-func NewEmptyBlockMessage() *BlockMessage { // `UnmarshalBinary` must be called afterwards
+func NewEmptyBlockMessage() *BlockMessage {
 	return NewBlockMessage(nil, gpa.NodeID{})
 }
 
 func (msg *BlockMessage) GetBlock() state.Block {
 	return msg.block
-}
-
-func (msg *BlockMessage) MarshalBinary() (data []byte, err error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *BlockMessage) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
 }
 
 func (msg *BlockMessage) Read(r io.Reader) error {

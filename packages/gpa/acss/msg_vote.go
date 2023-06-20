@@ -25,14 +25,6 @@ type msgVote struct {
 
 var _ gpa.Message = new(msgVote)
 
-func (msg *msgVote) MarshalBinary() ([]byte, error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *msgVote) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
-}
-
 func (msg *msgVote) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeVote.ReadAndVerify(rr)

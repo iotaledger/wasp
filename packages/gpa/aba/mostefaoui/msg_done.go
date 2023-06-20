@@ -30,14 +30,6 @@ func multicastMsgDone(recipients []gpa.NodeID, me gpa.NodeID, round int) gpa.Out
 	return msgs
 }
 
-func (msg *msgDone) MarshalBinary() ([]byte, error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *msgDone) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
-}
-
 func (msg *msgDone) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeDone.ReadAndVerify(rr)
