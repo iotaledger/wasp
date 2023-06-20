@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestChainID(t *testing.T) {
+func TestChainIDSerialization(t *testing.T) {
 	chainID := RandomChainID()
 	chainIDStr := chainID.String()
 
