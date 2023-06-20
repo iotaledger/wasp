@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -189,6 +190,16 @@ func New(t testing.TB, initOptions ...*InitOptions) *Solo {
 	}()
 
 	return ret
+}
+
+func (env *Solo) VerifyDBHash(expected hashing.HashValue) {
+	actual := env.chainStateDatabaseManager.DBHash()
+	require.Equal(env.T, expected, actual,
+		"DB hash has changed! (new hash: %s). "+
+			"This is a BREAKING CHANGE; make sure that you add a migration "+
+			"(if necessary), and then update the hash in the test.",
+		actual,
+	)
 }
 
 func (env *Solo) SyncLog() {
