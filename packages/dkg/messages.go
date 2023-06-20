@@ -22,7 +22,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -314,13 +313,13 @@ func (msg *initiatorDoneMsg) Read(r io.Reader) error {
 	size := rr.ReadSize16()
 	msg.edPubShares = make([]kyber.Point, size)
 	for i := range msg.edPubShares {
-		msg.edPubShares[i] = tcrypto.PointFromReader(rr, msg.edSuite)
+		msg.edPubShares[i] = cryptolib.PointFromReader(rr, msg.edSuite)
 	}
 
 	size = rr.ReadSize16()
 	msg.blsPubShares = make([]kyber.Point, size)
 	for i := range msg.blsPubShares {
-		msg.blsPubShares[i] = tcrypto.PointFromReader(rr, msg.blsSuite)
+		msg.blsPubShares[i] = cryptolib.PointFromReader(rr, msg.blsSuite)
 	}
 	return rr.Err
 }
@@ -331,12 +330,12 @@ func (msg *initiatorDoneMsg) Write(w io.Writer) error {
 
 	ww.WriteSize16(len(msg.edPubShares))
 	for i := range msg.edPubShares {
-		tcrypto.PointToWriter(ww, msg.edPubShares[i])
+		cryptolib.PointToWriter(ww, msg.edPubShares[i])
 	}
 
 	ww.WriteSize16(len(msg.blsPubShares))
 	for i := range msg.blsPubShares {
-		tcrypto.PointToWriter(ww, msg.blsPubShares[i])
+		cryptolib.PointToWriter(ww, msg.blsPubShares[i])
 	}
 	return ww.Err
 }
@@ -386,12 +385,12 @@ func (msg *initiatorPubShareMsg) Read(r io.Reader) error {
 	msg.step = rr.ReadByte()
 	msg.sharedAddress = isc.AddressFromReader(rr)
 
-	msg.edSharedPublic = tcrypto.PointFromReader(rr, msg.edSuite)
-	msg.edPublicShare = tcrypto.PointFromReader(rr, msg.edSuite)
+	msg.edSharedPublic = cryptolib.PointFromReader(rr, msg.edSuite)
+	msg.edPublicShare = cryptolib.PointFromReader(rr, msg.edSuite)
 	msg.edSignature = rr.ReadBytes()
 
-	msg.blsSharedPublic = tcrypto.PointFromReader(rr, msg.blsSuite)
-	msg.blsPublicShare = tcrypto.PointFromReader(rr, msg.blsSuite)
+	msg.blsSharedPublic = cryptolib.PointFromReader(rr, msg.blsSuite)
+	msg.blsPublicShare = cryptolib.PointFromReader(rr, msg.blsSuite)
 	msg.blsSignature = rr.ReadBytes()
 	return rr.Err
 }
@@ -401,12 +400,12 @@ func (msg *initiatorPubShareMsg) Write(w io.Writer) error {
 	ww.WriteByte(msg.step)
 	isc.AddressToWriter(ww, msg.sharedAddress)
 
-	tcrypto.PointToWriter(ww, msg.edSharedPublic)
-	tcrypto.PointToWriter(ww, msg.edPublicShare)
+	cryptolib.PointToWriter(ww, msg.edSharedPublic)
+	cryptolib.PointToWriter(ww, msg.edPublicShare)
 	ww.WriteBytes(msg.edSignature)
 
-	tcrypto.PointToWriter(ww, msg.blsSharedPublic)
-	tcrypto.PointToWriter(ww, msg.blsPublicShare)
+	cryptolib.PointToWriter(ww, msg.blsSharedPublic)
+	cryptolib.PointToWriter(ww, msg.blsPublicShare)
 	ww.WriteBytes(msg.blsSignature)
 	return ww.Err
 }
@@ -646,7 +645,7 @@ func (msg *rabinSecretCommitsMsg) Read(r io.Reader) error {
 	size := rr.ReadSize16()
 	msg.secretCommits.Commitments = make([]kyber.Point, size)
 	for i := range msg.secretCommits.Commitments {
-		msg.secretCommits.Commitments[i] = tcrypto.PointFromReader(rr, msg.blsSuite)
+		msg.secretCommits.Commitments[i] = cryptolib.PointFromReader(rr, msg.blsSuite)
 	}
 
 	msg.secretCommits.SessionID = rr.ReadBytes()
@@ -666,7 +665,7 @@ func (msg *rabinSecretCommitsMsg) Write(w io.Writer) error {
 
 	ww.WriteSize16(len(msg.secretCommits.Commitments))
 	for i := range msg.secretCommits.Commitments {
-		tcrypto.PointToWriter(ww, msg.secretCommits.Commitments[i])
+		cryptolib.PointToWriter(ww, msg.secretCommits.Commitments[i])
 	}
 
 	ww.WriteBytes(msg.secretCommits.SessionID)
@@ -873,7 +872,7 @@ func readPriShare(rr *rwutil.Reader) (ret *share.PriShare) {
 		ret = new(share.PriShare)
 		ret.I = int(rr.ReadUint32())
 		// TODO need factory object to create ret.V
-		ret.V = tcrypto.ScalarFromReader(rr, nil)
+		ret.V = cryptolib.ScalarFromReader(rr, nil)
 	}
 	return ret
 }
@@ -882,7 +881,7 @@ func writePriShare(ww *rwutil.Writer, val *share.PriShare) {
 	ww.WriteBool(val != nil)
 	if val != nil {
 		ww.WriteUint32(uint32(val.I))
-		tcrypto.ScalarToWriter(ww, val.V)
+		cryptolib.ScalarToWriter(ww, val.V)
 	}
 }
 
@@ -903,7 +902,7 @@ func readVssDeal(rr *rwutil.Reader, blsSuite kyber.Group) (ret *rabin_vss.Deal) 
 	size := rr.ReadSize16()
 	ret.Commitments = make([]kyber.Point, size)
 	for i := range ret.Commitments {
-		ret.Commitments[i] = tcrypto.PointFromReader(rr, blsSuite)
+		ret.Commitments[i] = cryptolib.PointFromReader(rr, blsSuite)
 	}
 	return ret
 }
@@ -915,6 +914,6 @@ func writeVssDeal(ww *rwutil.Writer, d *rabin_vss.Deal) {
 	ww.WriteUint32(d.T)
 	ww.WriteSize16(len(d.Commitments))
 	for i := range d.Commitments {
-		tcrypto.PointToWriter(ww, d.Commitments[i])
+		cryptolib.PointToWriter(ww, d.Commitments[i])
 	}
 }

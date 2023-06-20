@@ -28,28 +28,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-func PointFromReader(rr *rwutil.Reader, factory interface{ Point() kyber.Point }) (point kyber.Point) {
-	point = factory.Point()
-	rr.ReadFromFunc(point.UnmarshalFrom)
-	return point
-}
-
-func PointToWriter(ww *rwutil.Writer, point kyber.Point) {
-	ww.WriteFromFunc(point.MarshalTo)
-}
-
-func ScalarFromReader(rr *rwutil.Reader, factory interface{ Scalar() kyber.Scalar }) (scalar kyber.Scalar) {
-	if factory != nil {
-		scalar = factory.Scalar()
-	}
-	rr.ReadFromFunc(scalar.UnmarshalFrom)
-	return scalar
-}
-
-func ScalarToWriter(ww *rwutil.Writer, scalar kyber.Scalar) {
-	ww.WriteFromFunc(scalar.MarshalTo)
-}
-
 // secretShareImpl is an implementation for SecretShare.
 type secretShareImpl struct {
 	priShare    *share.PriShare
@@ -289,34 +267,34 @@ func (s *dkShareImpl) Read(r io.Reader) error {
 
 	// DSS / Ed25519 part of the key shares.
 	edSuite := s.edSuite
-	s.edSharedPublic = PointFromReader(rr, edSuite)
+	s.edSharedPublic = cryptolib.PointFromReader(rr, edSuite)
 	size = rr.ReadSize16()
 	s.edPublicCommits = make([]kyber.Point, size)
 	for i := range s.edPublicCommits {
-		s.edPublicCommits[i] = PointFromReader(rr, edSuite)
+		s.edPublicCommits[i] = cryptolib.PointFromReader(rr, edSuite)
 	}
 	size = rr.ReadSize16()
 	s.edPublicShares = make([]kyber.Point, size)
 	for i := range s.edPublicShares {
-		s.edPublicShares[i] = PointFromReader(rr, edSuite)
+		s.edPublicShares[i] = cryptolib.PointFromReader(rr, edSuite)
 	}
-	s.edPrivateShare = ScalarFromReader(rr, edSuite)
+	s.edPrivateShare = cryptolib.ScalarFromReader(rr, edSuite)
 
 	// BLS part of the key shares.
 	blsGroup := s.blsSuite.G2()
 	s.blsThreshold = rr.ReadUint16()
-	s.blsSharedPublic = PointFromReader(rr, blsGroup)
+	s.blsSharedPublic = cryptolib.PointFromReader(rr, blsGroup)
 	size = rr.ReadSize16()
 	s.blsPublicCommits = make([]kyber.Point, size)
 	for i := range s.blsPublicCommits {
-		s.blsPublicCommits[i] = PointFromReader(rr, blsGroup)
+		s.blsPublicCommits[i] = cryptolib.PointFromReader(rr, blsGroup)
 	}
 	size = rr.ReadSize16()
 	s.blsPublicShares = make([]kyber.Point, size)
 	for i := range s.blsPublicShares {
-		s.blsPublicShares[i] = PointFromReader(rr, blsGroup)
+		s.blsPublicShares[i] = cryptolib.PointFromReader(rr, blsGroup)
 	}
-	s.blsPrivateShare = ScalarFromReader(rr, blsGroup)
+	s.blsPrivateShare = cryptolib.ScalarFromReader(rr, blsGroup)
 	return rr.Err
 }
 
@@ -334,29 +312,29 @@ func (s *dkShareImpl) Write(w io.Writer) error {
 	}
 
 	// DSS / Ed25519 part of the key shares.
-	PointToWriter(ww, s.edSharedPublic)
+	cryptolib.PointToWriter(ww, s.edSharedPublic)
 	ww.WriteSize16(len(s.edPublicCommits))
 	for i := 0; i < len(s.edPublicCommits); i++ {
-		PointToWriter(ww, s.edPublicCommits[i])
+		cryptolib.PointToWriter(ww, s.edPublicCommits[i])
 	}
 	ww.WriteSize16(len(s.edPublicShares))
 	for i := 0; i < len(s.edPublicShares); i++ {
-		PointToWriter(ww, s.edPublicShares[i])
+		cryptolib.PointToWriter(ww, s.edPublicShares[i])
 	}
-	ScalarToWriter(ww, s.edPrivateShare)
+	cryptolib.ScalarToWriter(ww, s.edPrivateShare)
 
 	// BLS part of the key shares.
 	ww.WriteUint16(s.blsThreshold)
-	PointToWriter(ww, s.blsSharedPublic)
+	cryptolib.PointToWriter(ww, s.blsSharedPublic)
 	ww.WriteSize16(len(s.blsPublicCommits))
 	for i := 0; i < len(s.blsPublicCommits); i++ {
-		PointToWriter(ww, s.blsPublicCommits[i])
+		cryptolib.PointToWriter(ww, s.blsPublicCommits[i])
 	}
 	ww.WriteSize16(len(s.blsPublicShares))
 	for i := 0; i < len(s.blsPublicShares); i++ {
-		PointToWriter(ww, s.blsPublicShares[i])
+		cryptolib.PointToWriter(ww, s.blsPublicShares[i])
 	}
-	ScalarToWriter(ww, s.blsPrivateShare)
+	cryptolib.ScalarToWriter(ww, s.blsPrivateShare)
 	return ww.Err
 }
 

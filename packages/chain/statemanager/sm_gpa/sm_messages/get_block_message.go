@@ -22,7 +22,7 @@ func NewGetBlockMessage(commitment *state.L1Commitment, to gpa.NodeID) *GetBlock
 	}
 }
 
-func NewEmptyGetBlockMessage() *GetBlockMessage { // `UnmarshalBinary` must be called afterwards
+func NewEmptyGetBlockMessage() *GetBlockMessage {
 	return NewGetBlockMessage(&state.L1Commitment{}, gpa.NodeID{})
 }
 

@@ -22,7 +22,7 @@ func NewBlockMessage(block state.Block, to gpa.NodeID) *BlockMessage {
 	}
 }
 
-func NewEmptyBlockMessage() *BlockMessage { // `UnmarshalBinary` must be called afterwards
+func NewEmptyBlockMessage() *BlockMessage {
 	return NewBlockMessage(nil, gpa.NodeID{})
 }
 

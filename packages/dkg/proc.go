@@ -73,13 +73,13 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 
 	var dkgImpl map[keySetType]*rabin_dkg.DistKeyGenerator
 	if len(msg.peerPubs) >= 2 {
-		// We use real DKG only if N >= 2. Otherwise we just generate key pair, and that's all.
+		// We use real DKG only if N >= 2. Otherwise, we just generate key pair, and that's all.
 		dkgImpl = make(map[keySetType]*rabin_dkg.DistKeyGenerator)
 		kyberPeerPubs := make([]kyber.Point, len(msg.peerPubs))
 		for i := range kyberPeerPubs {
-			kyberPeerPubs[i] = node.edSuite.Point()
-			if err2 := kyberPeerPubs[i].UnmarshalBinary(msg.peerPubs[i].AsBytes()); err2 != nil {
-				return nil, err2
+			kyberPeerPubs[i], err = cryptolib.PointFromBytes(msg.peerPubs[i].AsBytes(), node.edSuite)
+			if err != nil {
+				return nil, err
 			}
 		}
 		if dkgImpl[keySetTypeEd25519], err = rabin_dkg.NewDistKeyGenerator(node.edSuite, node.edSuite, node.secKey, kyberPeerPubs, int(msg.threshold)); err != nil {
