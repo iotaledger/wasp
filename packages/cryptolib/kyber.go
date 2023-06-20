@@ -35,9 +35,7 @@ func ScalarFromBytes(data []byte, factory interface{ Scalar() kyber.Scalar }) (s
 }
 
 func ScalarFromReader(rr *rwutil.Reader, factory interface{ Scalar() kyber.Scalar }) (scalar kyber.Scalar) {
-	if factory != nil {
-		scalar = factory.Scalar()
-	}
+	scalar = factory.Scalar()
 	rr.ReadFromFunc(scalar.UnmarshalFrom)
 	return scalar
 }

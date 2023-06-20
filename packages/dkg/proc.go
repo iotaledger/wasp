@@ -567,11 +567,11 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 		//
 		// Process the received reconstruct commits.
 		for _, recvMsg := range recvMsgs {
-			peerReconstructCommitsMsgEd := &rabinReconstructCommitsMsg{}
+			peerReconstructCommitsMsgEd := &rabinReconstructCommitsMsg{suite: p.node.edSuite}
 			if err2 := msgFromBytes(recvMsg.edMsg.MsgData, peerReconstructCommitsMsgEd); err2 != nil {
 				return nil, err2
 			}
-			peerReconstructCommitsMsgBLS := &rabinReconstructCommitsMsg{}
+			peerReconstructCommitsMsgBLS := &rabinReconstructCommitsMsg{suite: p.node.blsSuite}
 			if err2 := msgFromBytes(recvMsg.blsMsg.MsgData, peerReconstructCommitsMsgBLS); err2 != nil {
 				return nil, err2
 			}

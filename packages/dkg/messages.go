@@ -17,6 +17,7 @@ import (
 	"go.dedis.ch/kyber/v3/share"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 	rabin_vss "go.dedis.ch/kyber/v3/share/vss/rabin"
+	"go.dedis.ch/kyber/v3/suites"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -723,6 +724,7 @@ func (msg *rabinComplaintCommitsMsg) Write(w io.Writer) error {
 // rabin_dkg.ReconstructCommits
 type rabinReconstructCommitsMsg struct {
 	step               byte
+	suite              suites.Suite
 	reconstructCommits []*rabin_dkg.ReconstructCommits
 }
 
@@ -748,7 +750,7 @@ func (msg *rabinReconstructCommitsMsg) Read(r io.Reader) error {
 		msg.reconstructCommits[i].SessionID = rr.ReadBytes()
 		msg.reconstructCommits[i].Index = rr.ReadUint32()
 		msg.reconstructCommits[i].DealerIndex = rr.ReadUint32()
-		msg.reconstructCommits[i].Share = readPriShare(rr)
+		msg.reconstructCommits[i].Share = readPriShare(rr, msg.suite)
 		msg.reconstructCommits[i].Signature = rr.ReadBytes()
 	}
 	return rr.Err
@@ -866,13 +868,12 @@ func (m multiKeySetMsgs) AddBLSMsgs(msgs map[uint16]*peering.PeerMessageData, st
 //		V kyber.Scalar // Value of the private share
 //	}
 
-func readPriShare(rr *rwutil.Reader) (ret *share.PriShare) {
+func readPriShare(rr *rwutil.Reader, scalarFactory interface{ Scalar() kyber.Scalar }) (ret *share.PriShare) {
 	hasPriShare := rr.ReadBool()
 	if hasPriShare {
 		ret = new(share.PriShare)
 		ret.I = int(rr.ReadUint32())
-		// TODO need factory object to create ret.V
-		ret.V = cryptolib.ScalarFromReader(rr, nil)
+		ret.V = cryptolib.ScalarFromReader(rr, scalarFactory)
 	}
 	return ret
 }
@@ -896,8 +897,8 @@ func writePriShare(ww *rwutil.Writer, val *share.PriShare) {
 func readVssDeal(rr *rwutil.Reader, blsSuite kyber.Group) (ret *rabin_vss.Deal) {
 	ret = new(rabin_vss.Deal)
 	ret.SessionID = rr.ReadBytes()
-	ret.SecShare = readPriShare(rr)
-	ret.RndShare = readPriShare(rr)
+	ret.SecShare = readPriShare(rr, blsSuite)
+	ret.RndShare = readPriShare(rr, blsSuite)
 	ret.T = rr.ReadUint32()
 	size := rr.ReadSize16()
 	ret.Commitments = make([]kyber.Point, size)
