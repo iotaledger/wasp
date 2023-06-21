@@ -8,13 +8,24 @@ import (
 	"errors"
 	"io"
 	"math"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 type Kind byte
 
 type (
-	IoReader interface{ Read(r io.Reader) error }
-	IoWriter interface{ Write(w io.Writer) error }
+	IoReader interface {
+		Read(r io.Reader) error
+	}
+	IoWriter interface {
+		Write(w io.Writer) error
+	}
+	IoReadWriter interface {
+		IoReader
+		IoWriter
+	}
 )
 
 //////////////////// basic size-checked read/write \\\\\\\\\\\\\\\\\\\\
@@ -358,4 +369,13 @@ func WriteToBytes(obj IoWriter) []byte {
 		panic(ww.Err)
 	}
 	return ww.Bytes()
+}
+
+func SerializationTest[T IoReadWriter](t *testing.T, obj1 T, newObj T) {
+	data1 := WriteToBytes(obj1)
+	obj2, err := ReadFromBytes(data1, newObj)
+	require.NoError(t, err)
+	require.Equal(t, obj1, obj2)
+	data2 := WriteToBytes(obj2)
+	require.Equal(t, data1, data2)
 }
