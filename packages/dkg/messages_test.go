@@ -13,14 +13,14 @@ import (
 
 func TestInitiatorMsgSerialization(t *testing.T) {
 	hash1 := hashing.PseudoRandomHash(nil).Bytes()
-	pubKey1, err := cryptolib.PublicKeyFromBytes(hash1)
-	require.NoError(t, err)
+	pubKey1, err1 := cryptolib.PublicKeyFromBytes(hash1)
+	require.NoError(t, err1)
 	hash2 := hashing.PseudoRandomHash(nil).Bytes()
-	pubKey2, err := cryptolib.PublicKeyFromBytes(hash2)
-	require.NoError(t, err)
+	pubKey2, err2 := cryptolib.PublicKeyFromBytes(hash2)
+	require.NoError(t, err2)
 	hash3 := hashing.PseudoRandomHash(nil).Bytes()
-	pubKey3, err := cryptolib.PublicKeyFromBytes(hash3)
-	require.NoError(t, err)
+	pubKey3, err3 := cryptolib.PublicKeyFromBytes(hash3)
+	require.NoError(t, err3)
 
 	// set up a random initiatorInitMsg
 	// make sure to fill in all the fields that get serialized
