@@ -14,7 +14,7 @@ type ImmutableFindContractResults struct {
 	Proxy wasmtypes.Proxy
 }
 
-// whether or not the contract exists.
+// whether the contract exists.
 func (s ImmutableFindContractResults) ContractFound() wasmtypes.ScImmutableBool {
 	return wasmtypes.NewScImmutableBool(s.Proxy.Root(ResultContractFound))
 }
@@ -32,7 +32,7 @@ func NewMutableFindContractResults() MutableFindContractResults {
 	return MutableFindContractResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
-// whether or not the contract exists.
+// whether the contract exists.
 func (s MutableFindContractResults) ContractFound() wasmtypes.ScMutableBool {
 	return wasmtypes.NewScMutableBool(s.Proxy.Root(ResultContractFound))
 }

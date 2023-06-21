@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
-var Contract = coreutil.NewContract("inccounter", "Increment counter, a PoC smart contract")
+var Contract = coreutil.NewContract("inccounter")
 
 var Processor = Contract.Processor(initialize,
 	FuncIncCounter.WithHandler(incCounter),
@@ -31,10 +31,9 @@ var (
 )
 
 const (
-	VarNumRepeats  = "numRepeats"
-	VarCounter     = "counter"
-	VarName        = "name"
-	VarDescription = "dscr"
+	VarNumRepeats = "numRepeats"
+	VarCounter    = "counter"
+	VarName       = "name"
 )
 
 func initialize(ctx isc.Sandbox) dict.Dict {
@@ -146,12 +145,11 @@ func spawn(ctx isc.Sandbox) dict.Dict {
 	val := state.MustGetInt64(VarCounter)
 	params := ctx.Params()
 	name := params.MustGetString(VarName)
-	dscr := params.MustGetString(VarDescription, "N/A")
 
 	callPar := dict.New()
 	callPar.Set(VarCounter, codec.EncodeInt64(val+1))
 	eventCounter(ctx, val+1)
-	ctx.DeployContract(Contract.ProgramHash, name, dscr, callPar)
+	ctx.DeployContract(Contract.ProgramHash, name, callPar)
 
 	// increase counter in newly spawned contract
 	hname := isc.Hn(name)

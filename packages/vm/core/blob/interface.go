@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 )
 
-var Contract = coreutil.NewContract(coreutil.CoreContractBlob, "Blob Contract")
+var Contract = coreutil.NewContract(coreutil.CoreContractBlob)
 
 const (
 	// request parameters

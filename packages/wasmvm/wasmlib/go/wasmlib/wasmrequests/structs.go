@@ -68,26 +68,23 @@ func (o MutableCallRequest) Value() *CallRequest {
 }
 
 type DeployRequest struct {
-	Description string
-	Name        string
-	Params      []byte
-	ProgHash    wasmtypes.ScHash
+	Name     string
+	Params   []byte
+	ProgHash wasmtypes.ScHash
 }
 
 func DeployRequestFromBytes(buf []byte) *DeployRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &DeployRequest{}
-	data.Description = wasmtypes.StringDecode(dec)
-	data.Name        = wasmtypes.StringDecode(dec)
-	data.Params      = wasmtypes.BytesDecode(dec)
-	data.ProgHash    = wasmtypes.HashDecode(dec)
+	data.Name     = wasmtypes.StringDecode(dec)
+	data.Params   = wasmtypes.BytesDecode(dec)
+	data.ProgHash = wasmtypes.HashDecode(dec)
 	dec.Close()
 	return data
 }
 
 func (o *DeployRequest) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.StringEncode(enc, o.Description)
 	wasmtypes.StringEncode(enc, o.Name)
 	wasmtypes.BytesEncode(enc, o.Params)
 	wasmtypes.HashEncode(enc, o.ProgHash)

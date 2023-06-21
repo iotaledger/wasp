@@ -49,13 +49,11 @@ export class CoreRootEventHandlers implements wasmlib.IEventHandlers {
 
 export class EventDeploy {
     public readonly timestamp: u64;
-    public readonly description: string;
     public readonly name: string;
     public readonly progHash: wasmtypes.ScHash;
 
     public constructor(dec: wasmlib.WasmDecoder) {
         this.timestamp = wasmtypes.uint64Decode(dec);
-        this.description = wasmtypes.stringDecode(dec);
         this.name = wasmtypes.stringDecode(dec);
         this.progHash = wasmtypes.hashDecode(dec);
         dec.close();

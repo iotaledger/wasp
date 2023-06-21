@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
-var Contract = coreutil.NewContract(coreutil.CoreContractGovernance, "Governance contract")
+var Contract = coreutil.NewContract(coreutil.CoreContractGovernance)
 
 var (
 	// state controller (entity that owns the state output via AliasAddress)

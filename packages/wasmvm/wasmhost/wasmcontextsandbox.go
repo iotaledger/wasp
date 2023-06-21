@@ -280,17 +280,17 @@ func (s *WasmContextSandbox) fnDeployContract(args []byte) []byte {
 	s.checkErr(err)
 	initParams, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
-	s.Tracef("DEPLOY %s: %s", req.Name, req.Description)
-	s.deployUnlocked(programHash, req.Name, req.Description, initParams)
+	s.Tracef("DEPLOY %s", req.Name)
+	s.deployUnlocked(programHash, req.Name, initParams)
 	return nil
 }
 
-func (s *WasmContextSandbox) deployUnlocked(programHash hashing.HashValue, name, description string, params dict.Dict) {
+func (s *WasmContextSandbox) deployUnlocked(programHash hashing.HashValue, name string, params dict.Dict) {
 	// TODO is this really necessary? We should not be able to call in parallel
 	s.wc.proc.instanceLock.Unlock()
 	defer s.wc.proc.instanceLock.Lock()
 
-	s.ctx.DeployContract(programHash, name, description, params)
+	s.ctx.DeployContract(programHash, name, params)
 }
 
 func (s *WasmContextSandbox) fnEntropy(_ []byte) []byte {

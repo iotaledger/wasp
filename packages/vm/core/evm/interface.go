@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
 )
 
-var Contract = coreutil.NewContract(evmnames.Contract, "EVM contract")
+var Contract = coreutil.NewContract(evmnames.Contract)
 
 var (
 	// EVM state

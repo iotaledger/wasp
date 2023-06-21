@@ -14,11 +14,6 @@ export class MapStringToImmutableBytes extends wasmtypes.ScProxy {
 }
 
 export class ImmutableDeployContractParams extends wasmtypes.ScProxy {
-    // Description of the contract to be deployed. Default 'N/A'
-    description(): wasmtypes.ScImmutableString {
-        return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamDescription));
-    }
-
     // additional params for smart contract init function
     initParams(): sc.MapStringToImmutableBytes {
         return new sc.MapStringToImmutableBytes(this.proxy);
@@ -48,11 +43,6 @@ export class MapStringToMutableBytes extends wasmtypes.ScProxy {
 }
 
 export class MutableDeployContractParams extends wasmtypes.ScProxy {
-    // Description of the contract to be deployed. Default 'N/A'
-    description(): wasmtypes.ScMutableString {
-        return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamDescription));
-    }
-
     // additional params for smart contract init function
     initParams(): sc.MapStringToMutableBytes {
         return new sc.MapStringToMutableBytes(this.proxy);

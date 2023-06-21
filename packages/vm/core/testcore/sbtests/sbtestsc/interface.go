@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
-var Contract = coreutil.NewContract("testcore", "Test Core Sandbox functions")
+var Contract = coreutil.NewContract("testcore")
 
 var Processor = Contract.Processor(initialize,
 	FuncChainOwnerIDView.WithHandler(testChainOwnerIDView),
