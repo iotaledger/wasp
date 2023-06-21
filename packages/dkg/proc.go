@@ -518,15 +518,14 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeSent(step byte, kst keySetT
 	// Produce the sent messages.
 	sentMsgs := make(map[uint16]*peering.PeerMessageData)
 	for i := range prevMsgs { // Use peerIdx from the previous round.
-		if p.nodeInQUAL(kst, i) {
-			sentMsgs[i] = makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &rabinReconstructCommitsMsg{
-				reconstructCommits: ourReconstructCommits,
-			})
-		} else {
-			sentMsgs[i] = makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &rabinReconstructCommitsMsg{
-				reconstructCommits: []*rabin_dkg.ReconstructCommits{},
-			})
+		msg := &rabinReconstructCommitsMsg{
+			suite:              p.keySetSuite(kst),
+			reconstructCommits: []*rabin_dkg.ReconstructCommits{},
 		}
+		if p.nodeInQUAL(kst, i) {
+			msg.reconstructCommits = ourReconstructCommits
+		}
+		sentMsgs[i] = makePeerMessage(p.dkgID, peering.ReceiverDkg, step, msg)
 	}
 	return sentMsgs, nil
 }
