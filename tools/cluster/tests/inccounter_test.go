@@ -22,8 +22,7 @@ import (
 )
 
 const (
-	incName        = "inccounter"
-	incDescription = "IncCounter, a PoC smart contract"
+	incName = "inccounter"
 )
 
 var incHname = isc.Hn(incName)
@@ -39,7 +38,7 @@ type contractWithMessageCounterEnv struct {
 }
 
 func setupContract(env *ChainEnv) *contractWithMessageCounterEnv {
-	cEnv := env.deployWasmContract(incName, incDescription, nil)
+	cEnv := env.deployWasmContract(incName, nil)
 
 	// deposit funds onto the contract account, so it can post a L1 request
 	contractAgentID := isc.NewContractAgentID(env.Chain.ChainID, incHname)
@@ -96,7 +95,6 @@ func (e *contractEnv) checkSC(numRequests int) {
 		cr := contractRegistry[incHname]
 		require.EqualValues(e.t, e.programHash, cr.ProgramHash)
 		require.EqualValues(e.t, incName, cr.Name)
-		require.EqualValues(e.t, incDescription, cr.Description)
 	}
 }
 

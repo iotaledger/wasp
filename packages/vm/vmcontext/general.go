@@ -158,7 +158,6 @@ func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name, desc
 	par := initParams.Clone()
 	par.Set(root.ParamProgramHash, codec.EncodeHashValue(programHash))
 	par.Set(root.ParamName, codec.EncodeString(name))
-	par.Set(root.ParamDescription, codec.EncodeString(description))
 	vmctx.Call(root.Contract.Hname(), root.FuncDeployContract.Hname(), par, nil)
 }
 

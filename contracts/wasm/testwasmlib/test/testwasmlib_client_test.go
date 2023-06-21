@@ -99,7 +99,7 @@ func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
 	wasm, err := os.ReadFile("../rs/testwasmlibwasm/pkg/testwasmlibwasm_bg.wasm")
 	require.NoError(t, err)
 
-	_, err = env.Chain.DeployWasmContract("testwasmlib", "Test WasmLib", wasm, nil)
+	_, err = env.Chain.DeployWasmContract("testwasmlib", wasm, nil)
 	require.NoError(t, err)
 
 	svc := wasmclient.NewWasmClientService("http://localhost:19090")

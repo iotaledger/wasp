@@ -1770,7 +1770,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/PeeringNodeStatusResponse_'
+                  $ref: '#/components/schemas/PeeringNodeStatusResponse__'
                 type: array
           description: A list of all peers
         "401":
@@ -2826,18 +2826,18 @@ components:
         committeeNodes:
         - node:
             isAlive: true
-            peeringURL: localhost:4000
+            peeringURL: peeringURL
             name: name
-            publicKey: 0x0000
-            numUsers: 1
+            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+            numUsers: 6
             isTrusted: true
           accessAPI: accessAPI
         - node:
             isAlive: true
-            peeringURL: localhost:4000
+            peeringURL: peeringURL
             name: name
-            publicKey: 0x0000
-            numUsers: 1
+            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+            numUsers: 6
             isTrusted: true
           accessAPI: accessAPI
         chainId: tst1pqm5ckama06xhkl080mmvz6l3xy8c8lulrwy7mx4ll0fc69krxfgka70j0e
@@ -2943,10 +2943,10 @@ components:
       example:
         node:
           isAlive: true
-          peeringURL: localhost:4000
+          peeringURL: peeringURL
           name: name
-          publicKey: 0x0000
-          numUsers: 1
+          publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+          numUsers: 6
           isTrusted: true
         accessAPI: accessAPI
       properties:
@@ -3221,16 +3221,8 @@ components:
       example:
         programHash: 0xc102cb078eb7a8c59b65c3682c878e3189cc696b86098d8c5883d08d0d215a87
         name: evm
-        description: EVM contract
         hName: 07cb02c1
       properties:
-        description:
-          description: The description of the contract.
-          example: EVM contract
-          format: string
-          type: string
-          xml:
-            name: Description
         hName:
           description: The id (HName as Hex)) of the contract.
           example: 07cb02c1
@@ -3253,7 +3245,6 @@ components:
           xml:
             name: ProgramHash
       required:
-      - description
       - hName
       - name
       - programHash
@@ -4604,6 +4595,60 @@ components:
       xml:
         name: PeeringNodeStatusResponse
     PeeringNodeStatusResponse_:
+      example:
+        isAlive: true
+        peeringURL: peeringURL
+        name: name
+        publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+        numUsers: 6
+        isTrusted: true
+      properties:
+        isAlive:
+          description: Whether or not the peer is activated
+          format: boolean
+          type: boolean
+          xml:
+            name: IsAlive
+        isTrusted:
+          format: boolean
+          type: boolean
+          xml:
+            name: IsTrusted
+        name:
+          format: string
+          type: string
+          xml:
+            name: Name
+        numUsers:
+          description: The amount of users attached to the peer
+          format: int32
+          type: integer
+          xml:
+            name: NumUsers
+        peeringURL:
+          description: The peering URL of the peer
+          format: string
+          type: string
+          xml:
+            name: PeeringURL
+        publicKey:
+          description: The peers public key encoded in Hex
+          example: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+          format: string
+          type: string
+          xml:
+            name: PublicKey
+      required:
+      - isAlive
+      - isTrusted
+      - name
+      - numUsers
+      - peeringURL
+      - publicKey
+      type: object
+      xml:
+        name: PeeringNodeStatusResponse
+    PeeringNodeStatusResponse__:
       example:
         isAlive: true
         peeringURL: localhost:4000

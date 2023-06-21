@@ -57,7 +57,7 @@ type contractEnv struct {
 	programHash hashing.HashValue
 }
 
-func (e *ChainEnv) deployWasmContract(wasmName, scDescription string, initParams map[string]interface{}) *contractEnv {
+func (e *ChainEnv) deployWasmContract(wasmName string, initParams map[string]interface{}) *contractEnv {
 	ret := &contractEnv{ChainEnv: e}
 
 	wasmPath := "wasm/" + wasmName + "_bg.wasm"
@@ -71,7 +71,7 @@ func (e *ChainEnv) deployWasmContract(wasmName, scDescription string, initParams
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 30*time.Second)
 	require.NoError(e.t, err)
 
-	ph, err := e.Chain.DeployWasmContract(wasmName, scDescription, wasm, initParams)
+	ph, err := e.Chain.DeployWasmContract(wasmName, wasm, initParams)
 	require.NoError(e.t, err)
 	ret.programHash = ph
 	e.t.Logf("deployContract: proghash = %s\n", ph.String())

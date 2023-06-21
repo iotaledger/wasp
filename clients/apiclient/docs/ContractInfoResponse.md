@@ -4,7 +4,6 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Description** | **string** | The description of the contract. | 
 **HName** | **string** | The id (HName as Hex)) of the contract. | 
 **Name** | **string** | The name of the contract. | 
 **ProgramHash** | **string** | The hash of the contract. (Hex encoded) | 
@@ -13,7 +12,7 @@ Name | Type | Description | Notes
 
 ### NewContractInfoResponse
 
-`func NewContractInfoResponse(description string, hName string, name string, programHash string, ) *ContractInfoResponse`
+`func NewContractInfoResponse(hName string, name string, programHash string, ) *ContractInfoResponse`
 
 NewContractInfoResponse instantiates a new ContractInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -27,26 +26,6 @@ will change when the set of required properties is changed
 NewContractInfoResponseWithDefaults instantiates a new ContractInfoResponse object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
-
-### GetDescription
-
-`func (o *ContractInfoResponse) GetDescription() string`
-
-GetDescription returns the Description field if non-nil, zero value otherwise.
-
-### GetDescriptionOk
-
-`func (o *ContractInfoResponse) GetDescriptionOk() (*string, bool)`
-
-GetDescriptionOk returns a tuple with the Description field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetDescription
-
-`func (o *ContractInfoResponse) SetDescription(v string)`
-
-SetDescription sets Description field to given value.
-
 
 ### GetHName
 

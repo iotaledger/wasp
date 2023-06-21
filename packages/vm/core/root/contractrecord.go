@@ -18,8 +18,6 @@ type ContractRecord struct {
 	//  - VarFieldVType
 	//  - VarFieldProgramBinary
 	ProgramHash hashing.HashValue
-	// Description of the instance
-	Description string
 	// Unique name of the contract on the chain. The real identity of the instance on the chain
 	// is hname(name) =  isc.Hn(name)
 	Name string
@@ -47,7 +45,6 @@ func (p *ContractRecord) Hname() isc.Hname {
 func (p *ContractRecord) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	rr.ReadN(p.ProgramHash[:])
-	p.Description = rr.ReadString()
 	p.Name = rr.ReadString()
 	return rr.Err
 }
@@ -55,7 +52,6 @@ func (p *ContractRecord) Read(r io.Reader) error {
 func (p *ContractRecord) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteN(p.ProgramHash[:])
-	ww.WriteString(p.Description)
 	ww.WriteString(p.Name)
 	return ww.Err
 }
