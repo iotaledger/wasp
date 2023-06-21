@@ -15,16 +15,18 @@ func TestInitiatorMsgSerialization(t *testing.T) {
 	hash1 := hashing.PseudoRandomHash(nil).Bytes()
 	pubKey1, err1 := cryptolib.PublicKeyFromBytes(hash1)
 	require.NoError(t, err1)
+
 	hash2 := hashing.PseudoRandomHash(nil).Bytes()
 	pubKey2, err2 := cryptolib.PublicKeyFromBytes(hash2)
 	require.NoError(t, err2)
+
 	hash3 := hashing.PseudoRandomHash(nil).Bytes()
 	pubKey3, err3 := cryptolib.PublicKeyFromBytes(hash3)
 	require.NoError(t, err3)
 
-	// set up a random initiatorInitMsg
-	// make sure to fill in all the fields that get serialized
-	// first test with an empty peerPubs array
+	// Set up a random initiatorInitMsg.
+	// Make sure to fill in all the fields that get serialized.
+	// First we test with an empty peerPubs array.
 	msg := &initiatorInitMsg{
 		step:         69,
 		dkgRef:       "some text",
@@ -36,11 +38,11 @@ func TestInitiatorMsgSerialization(t *testing.T) {
 	}
 	rwutil.SerializationTest(t, msg, new(initiatorInitMsg))
 
-	//  test with a 1-item peerPubs array
+	// Test with a 1-item peerPubs array.
 	msg.peerPubs = []*cryptolib.PublicKey{pubKey2}
 	rwutil.SerializationTest(t, msg, new(initiatorInitMsg))
 
-	//  test with a 3-item peerPubs array
+	// Test with a 3-item peerPubs array.
 	msg.peerPubs = []*cryptolib.PublicKey{pubKey3, pubKey2, pubKey1}
 	rwutil.SerializationTest(t, msg, new(initiatorInitMsg))
 }
