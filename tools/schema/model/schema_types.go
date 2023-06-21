@@ -3,10 +3,6 @@
 
 package model
 
-import (
-	"fmt"
-)
-
 type (
 	FieldMap       map[string]*Field
 	StringMap      map[string]string
@@ -58,8 +54,4 @@ func NewSchemaDef() *SchemaDef {
 	def.Funcs = make(FuncDefMap)
 	def.Views = make(FuncDefMap)
 	return def
-}
-
-func LineErrorf(lineNr int, format string, args ...interface{}) error {
-	return fmt.Errorf("line %d: %s", lineNr, fmt.Sprintf(format, args...))
 }

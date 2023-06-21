@@ -63,23 +63,6 @@ func AccessNodeInfoFromBytes(pubKey, data []byte) (*AccessNodeInfo, error) {
 	}, rr.Err
 }
 
-func AccessNodeInfoListFromMap(infoMap *collections.ImmutableMap) ([]*AccessNodeInfo, error) {
-	res := make([]*AccessNodeInfo, 0)
-	var accErr error
-	infoMap.Iterate(func(elemKey, value []byte) bool {
-		var a *AccessNodeInfo
-		if a, accErr = AccessNodeInfoFromBytes(elemKey, value); accErr != nil {
-			return false
-		}
-		res = append(res, a)
-		return true
-	})
-	if accErr != nil {
-		return nil, fmt.Errorf("failed to iterate over AccessNodeInfo list: %w", accErr)
-	}
-	return res, nil
-}
-
 func (a *AccessNodeInfo) Bytes() []byte {
 	ww := rwutil.NewBytesWriter()
 	ww.WriteBytes(a.validatorAddr)

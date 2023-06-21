@@ -7,8 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-var emptyNativeTokenID = iotago.NativeTokenID{}
-
 func NativeTokenIDFromBytes(data []byte) (ret iotago.NativeTokenID, err error) {
 	rr := rwutil.NewBytesReader(data)
 	rr.ReadN(ret[:])
@@ -21,8 +19,4 @@ func MustNativeTokenIDFromBytes(data []byte) iotago.NativeTokenID {
 		panic(fmt.Errorf("MustNativeTokenIDFromBytes: %w", err))
 	}
 	return ret
-}
-
-func IsEmptyNativeTokenID(nativeTokenID iotago.NativeTokenID) bool {
-	return nativeTokenID == emptyNativeTokenID
 }

@@ -18,10 +18,9 @@ import (
 )
 
 var (
-	ErrNotAddedToMempool      = errors.New("not added to the mempool")
-	ErrUnableToGetLatestState = errors.New("unable to get latest state")
-	ErrChainNotFound          = errors.New("chain not found")
-	ErrCantDeleteLastUser     = errors.New("you can't delete the last user")
+	ErrNotAddedToMempool  = errors.New("not added to the mempool")
+	ErrChainNotFound      = errors.New("chain not found")
+	ErrCantDeleteLastUser = errors.New("you can't delete the last user")
 )
 
 type APIController interface {

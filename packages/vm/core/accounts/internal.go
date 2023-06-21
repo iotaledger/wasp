@@ -19,7 +19,6 @@ var (
 	ErrRepeatingFoundrySerialNumber         = coreerrors.Register("repeating serial number of the foundry").Create()
 	ErrFoundryNotFound                      = coreerrors.Register("foundry not found").Create()
 	ErrOverflow                             = coreerrors.Register("overflow in token arithmetics").Create()
-	ErrInvalidNFTID                         = coreerrors.Register("invalid NFT ID").Create()
 	ErrTooManyNFTsInAllowance               = coreerrors.Register("expected at most 1 NFT in allowance").Create()
 	ErrNFTIDNotFound                        = coreerrors.Register("NFTID not found").Create()
 )
