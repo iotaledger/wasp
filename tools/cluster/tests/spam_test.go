@@ -102,7 +102,10 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsApi.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, err)
 
-	require.Contains(t, res.Events[len(res.Events)-1], fmt.Sprintf("counter = %d", numRequests))
+	eventBytes, err := iotago.DecodeHex(res.Events[len(res.Events)-1].Payload)
+	require.NoError(t, err)
+	lastEventCounterValue := codec.MustDecodeInt64(eventBytes)
+	require.EqualValues(t, lastEventCounterValue, numRequests)
 }
 
 // executed in cluster_test.go
@@ -271,7 +274,7 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 
 	bn, err := jsonRPCClient.BlockNumber(context.Background())
 	require.NoError(t, err)
-	require.EqualValues(t, initialBlockIndex+1+numRequests, bn)
+	require.EqualValues(t, initialBlockIndex+numRequests, bn)
 
 	filterQuery := ethereum.FilterQuery{
 		Addresses: []common.Address{storageContractAddr},
