@@ -112,7 +112,6 @@ func (tcl *TestChainLedger) MakeTxDeployIncCounterContract() []isc.Request {
 					EntryPoint:     root.FuncDeployContract.Hname(),
 					Params: codec.MakeDict(map[string]interface{}{
 						root.ParamProgramHash: inccounter.Contract.ProgramHash,
-						root.ParamDescription: "inccounter",
 						root.ParamName:        inccounter.Contract.Name,
 						inccounter.VarCounter: 0,
 					}),

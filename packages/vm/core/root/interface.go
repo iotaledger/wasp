@@ -24,7 +24,6 @@ const (
 	ParamProgramHash                  = "ph"
 	ParamContractRecData              = "dt"
 	ParamContractFound                = "cf"
-	ParamDescription                  = "ds"
 	ParamDeployPermissionsEnabled     = "de"
 	ParamStorageDepositAssumptionsBin = "db"
 )

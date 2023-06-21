@@ -29,7 +29,7 @@ func initializeStabilityTest(t *testing.T, numValidators, clusterSize int) *Sabo
 
 	require.NoError(t, err)
 
-	_, _ = env.Chain.DeployContract(nativeIncCounterSCName, progHash.String(), "testing with inccounter", nil)
+	_, _ = env.Chain.DeployContract(nativeIncCounterSCName, progHash.String(), nil)
 	waitUntil(t, env.contractIsDeployed(), env.Clu.Config.AllNodes(), 50*time.Second, "contract is deployed")
 
 	return &SabotageEnv{

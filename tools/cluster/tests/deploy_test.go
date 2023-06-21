@@ -58,9 +58,8 @@ func testDeployContractOnly(t *testing.T, env *ChainEnv) {
 
 	require.NoError(t, err)
 	recb := ret.Get(root.ParamContractRecData)
-	rec, err := root.ContractRecordFromBytes(recb)
+	_, err = root.ContractRecordFromBytes(recb)
 	require.NoError(t, err)
-	require.EqualValues(t, "testing contract deployment with inccounter", rec.Description)
 }
 
 // executed in cluster_test.go
@@ -100,7 +99,6 @@ func testDeployContractAndSpawn(t *testing.T, env *ChainEnv) {
 		require.True(t, ok)
 		require.NotNil(t, cr)
 
-		require.EqualValues(t, dscrNew, cr.Description)
 		require.EqualValues(t, nameNew, cr.Name)
 
 		counterValue, err := env.Chain.GetCounterValue(hname, i)

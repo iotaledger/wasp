@@ -102,7 +102,7 @@ func (ch *Chain) AllNodesMultiClient() *multiclient.MultiClient {
 	return multiclient.New(resolver, ch.AllAPIHosts()) //.WithLogFunc(ch.Cluster.t.Logf)
 }
 
-func (ch *Chain) DeployContract(name, progHashStr, description string, initParams map[string]interface{}) (*iotago.Transaction, error) {
+func (ch *Chain) DeployContract(name, progHashStr string, initParams map[string]interface{}) (*iotago.Transaction, error) {
 	programHash, err := hashing.HashValueFromHex(progHashStr)
 	if err != nil {
 		return nil, err
@@ -111,7 +111,6 @@ func (ch *Chain) DeployContract(name, progHashStr, description string, initParam
 	params := map[string]interface{}{
 		root.ParamName:        name,
 		root.ParamProgramHash: programHash,
-		root.ParamDescription: description,
 	}
 	for k, v := range initParams {
 		params[k] = v
@@ -133,11 +132,10 @@ func (ch *Chain) DeployContract(name, progHashStr, description string, initParam
 	return tx, nil
 }
 
-func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte, initParams map[string]interface{}) (hashing.HashValue, error) {
+func (ch *Chain) DeployWasmContract(name string, progBinary []byte, initParams map[string]interface{}) (hashing.HashValue, error) {
 	blobFieldValues := codec.MakeDict(map[string]interface{}{
-		blob.VarFieldVMType:             vmtypes.WasmTime,
-		blob.VarFieldProgramBinary:      progBinary,
-		blob.VarFieldProgramDescription: description,
+		blob.VarFieldVMType:        vmtypes.WasmTime,
+		blob.VarFieldProgramBinary: progBinary,
 	})
 
 	programHash, _, _, err := ch.OriginatorClient().UploadBlob(context.Background(), blobFieldValues)
@@ -160,7 +158,6 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 	}
 	params[root.ParamName] = name
 	params[root.ParamProgramHash] = programHash
-	params[root.ParamDescription] = description
 
 	args := codec.MakeDict(params)
 	tx, err := ch.OriginatorClient().Post1Request(

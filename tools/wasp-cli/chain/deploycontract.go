@@ -60,7 +60,7 @@ func initDeployContractCmd() *cobra.Command {
 				})
 				progHash = uploadBlob(client, chainID, blobFieldValues)
 			}
-			deployContract(client, chainID, node, name, description, progHash, initParams)
+			deployContract(client, chainID, node, name, progHash, initParams)
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
@@ -68,11 +68,10 @@ func initDeployContractCmd() *cobra.Command {
 	return cmd
 }
 
-func deployContract(client *apiclient.APIClient, chainID isc.ChainID, node, name, description string, progHash hashing.HashValue, initParams dict.Dict) {
+func deployContract(client *apiclient.APIClient, chainID isc.ChainID, node, name string, progHash hashing.HashValue, initParams dict.Dict) {
 	util.WithOffLedgerRequest(chainID, node, func() (isc.OffLedgerRequest, error) {
 		args := codec.MakeDict(map[string]interface{}{
 			root.ParamName:        name,
-			root.ParamDescription: description,
 			root.ParamProgramHash: progHash,
 		})
 		args.Extend(initParams)

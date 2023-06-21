@@ -73,7 +73,6 @@ var errInvalidContractName = coreerrors.Register("invalid contract name").Create
 //   - ParamName string, the unique name of the contract in the chain. Later used as Hname
 //   - ParamProgramHash HashValue is a hash of the blob which represents program binary in the 'blob' contract.
 //     In case of hardcoded examples it's an arbitrary unique hash set in the global call examples.AddProcessor
-//   - ParamDescription string is an arbitrary string. Defaults to "N/A"
 func deployContract(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("root.deployContract.begin")
 	if !isAuthorizedToDeploy(ctx) {
@@ -82,7 +81,6 @@ func deployContract(ctx isc.Sandbox) dict.Dict {
 
 	params := ctx.Params()
 	progHash := params.MustGetHashValue(root.ParamProgramHash)
-	description := params.MustGetString(root.ParamDescription, "N/A")
 	name := params.MustGetString(root.ParamName)
 	if name == "" || len(name) > 255 {
 		panic(errInvalidContractName)
@@ -91,7 +89,7 @@ func deployContract(ctx isc.Sandbox) dict.Dict {
 	// pass to init function all params not consumed so far
 	initParams := dict.New()
 	params.Dict.Iterate("", func(key kv.Key, value []byte) bool {
-		if key != root.ParamProgramHash && key != root.ParamName && key != root.ParamDescription {
+		if key != root.ParamProgramHash && key != root.ParamName {
 			initParams.Set(key, value)
 		}
 		return true
@@ -103,11 +101,10 @@ func deployContract(ctx isc.Sandbox) dict.Dict {
 	// VM loaded successfully. Storing contract in the registry and calling constructor
 	storeContractRecord(ctx.State(), &root.ContractRecord{
 		ProgramHash: progHash,
-		Description: description,
 		Name:        name,
 	})
 	ctx.Call(isc.Hn(name), isc.EntryPointInit, initParams, nil)
-	eventDeploy(ctx, progHash, name, description)
+	eventDeploy(ctx, progHash, name)
 	return nil
 }
 
