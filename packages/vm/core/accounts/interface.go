@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
-var Contract = coreutil.NewContract(coreutil.CoreContractAccounts, "Chain account ledger contract")
+var Contract = coreutil.NewContract(coreutil.CoreContractAccounts)
 
 var (
 	// Views

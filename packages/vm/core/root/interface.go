@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
-var Contract = coreutil.NewContract(coreutil.CoreContractRoot, "Root Contract")
+var Contract = coreutil.NewContract(coreutil.CoreContractRoot)
 
 // state variables
 const (
@@ -18,14 +18,13 @@ const (
 
 // param variables
 const (
-	ParamDeployer                     = "dp"
-	ParamHname                        = "hn"
-	ParamName                         = "nm"
-	ParamProgramHash                  = "ph"
-	ParamContractRecData              = "dt"
-	ParamContractFound                = "cf"
-	ParamDeployPermissionsEnabled     = "de"
-	ParamStorageDepositAssumptionsBin = "db"
+	ParamDeployer                 = "dp"
+	ParamHname                    = "hn"
+	ParamName                     = "nm"
+	ParamProgramHash              = "ph"
+	ParamContractRecData          = "dt"
+	ParamContractFound            = "cf"
+	ParamDeployPermissionsEnabled = "de"
 )
 
 // function names

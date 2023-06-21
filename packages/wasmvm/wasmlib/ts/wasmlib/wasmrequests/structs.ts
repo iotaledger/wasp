@@ -64,25 +64,22 @@ export class MutableCallRequest extends wasmtypes.ScProxy {
 }
 
 export class DeployRequest {
-    description : string = '';
-    name        : string = '';
-    params      : Uint8Array = new Uint8Array(0);
-    progHash    : wasmtypes.ScHash = new wasmtypes.ScHash();
+    name     : string = '';
+    params   : Uint8Array = new Uint8Array(0);
+    progHash : wasmtypes.ScHash = new wasmtypes.ScHash();
 
     static fromBytes(buf: Uint8Array): DeployRequest {
         const dec = new wasmtypes.WasmDecoder(buf);
         const data = new DeployRequest();
-        data.description = wasmtypes.stringDecode(dec);
-        data.name        = wasmtypes.stringDecode(dec);
-        data.params      = wasmtypes.bytesDecode(dec);
-        data.progHash    = wasmtypes.hashDecode(dec);
+        data.name     = wasmtypes.stringDecode(dec);
+        data.params   = wasmtypes.bytesDecode(dec);
+        data.progHash = wasmtypes.hashDecode(dec);
         dec.close();
         return data;
     }
 
     bytes(): Uint8Array {
         const enc = new wasmtypes.WasmEncoder();
-        wasmtypes.stringEncode(enc, this.description);
         wasmtypes.stringEncode(enc, this.name);
         wasmtypes.bytesEncode(enc, this.params);
         wasmtypes.hashEncode(enc, this.progHash);

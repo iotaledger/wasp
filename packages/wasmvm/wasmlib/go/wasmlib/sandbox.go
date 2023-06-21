@@ -207,12 +207,11 @@ func (s ScSandboxFunc) Caller() wasmtypes.ScAgentID {
 }
 
 // deploys a smart contract
-func (s ScSandboxFunc) DeployContract(programHash wasmtypes.ScHash, name, description string, initParams *ScDict) {
+func (s ScSandboxFunc) DeployContract(programHash wasmtypes.ScHash, name string, initParams *ScDict) {
 	req := &wasmrequests.DeployRequest{
-		ProgHash:    programHash,
-		Name:        name,
-		Description: description,
-		Params:      initParams.Bytes(),
+		ProgHash: programHash,
+		Name:     name,
+		Params:   initParams.Bytes(),
 	}
 	Sandbox(FnDeployContract, req.Bytes())
 }

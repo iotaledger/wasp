@@ -7,7 +7,7 @@ import * as wasmtypes from '../wasmtypes';
 import * as sc from './index';
 
 export class ImmutableFindContractResults extends wasmtypes.ScProxy {
-    // whether or not the contract exists.
+    // whether the contract exists.
     contractFound(): wasmtypes.ScImmutableBool {
         return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ResultContractFound));
     }
@@ -19,7 +19,7 @@ export class ImmutableFindContractResults extends wasmtypes.ScProxy {
 }
 
 export class MutableFindContractResults extends wasmtypes.ScProxy {
-    // whether or not the contract exists.
+    // whether the contract exists.
     contractFound(): wasmtypes.ScMutableBool {
         return new wasmtypes.ScMutableBool(this.proxy.root(sc.ResultContractFound));
     }

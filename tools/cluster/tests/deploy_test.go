@@ -69,12 +69,10 @@ func testDeployContractAndSpawn(t *testing.T, env *ChainEnv) {
 	hname := isc.Hn(nativeIncCounterSCName)
 
 	nameNew := "spawnedContract"
-	dscrNew := "spawned contract it is"
 	hnameNew := isc.Hn(nameNew)
 	// send 'spawn' request to the SC which was just deployed
 	par := chainclient.NewPostRequestParams(
 		inccounter.VarName, nameNew,
-		inccounter.VarDescription, dscrNew,
 	).WithBaseTokens(100)
 	tx, err := env.Chain.OriginatorClient().Post1Request(hname, inccounter.FuncSpawn.Hname(), *par)
 	require.NoError(t, err)

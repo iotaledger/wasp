@@ -212,11 +212,10 @@ pub trait ScSandboxFunc: ScSandbox {
     }
 
     // deploys a smart contract
-    fn deploy_contract(&self, program_hash: &ScHash, name: &str, description: &str, init_params: Option<ScDict>) {
+    fn deploy_contract(&self, program_hash: &ScHash, name: &str, init_params: Option<ScDict>) {
         let mut req = wasmrequests::DeployRequest {
             prog_hash: program_hash.clone(),
             name: name.to_string(),
-            description: description.to_string(),
             params: vec![0; 1],
         };
         if let Some(init_params) = init_params {

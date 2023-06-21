@@ -26,11 +26,6 @@ func NewImmutableDeployContractParams() ImmutableDeployContractParams {
 	return ImmutableDeployContractParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
-// Description of the contract to be deployed. Default 'N/A'
-func (s ImmutableDeployContractParams) Description() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.Proxy.Root(ParamDescription))
-}
-
 // additional params for smart contract init function
 func (s ImmutableDeployContractParams) InitParams() MapStringToImmutableBytes {
 	return MapStringToImmutableBytes(s)
@@ -61,11 +56,6 @@ func (m MapStringToMutableBytes) GetBytes(key string) wasmtypes.ScMutableBytes {
 
 type MutableDeployContractParams struct {
 	Proxy wasmtypes.Proxy
-}
-
-// Description of the contract to be deployed. Default 'N/A'
-func (s MutableDeployContractParams) Description() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.Proxy.Root(ParamDescription))
 }
 
 // additional params for smart contract init function

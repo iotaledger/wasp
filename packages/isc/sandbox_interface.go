@@ -96,7 +96,7 @@ type Sandbox interface {
 	// accounts (if enough). If the entry point is view, 'allowance' has no effect
 	Call(target, entryPoint Hname, params dict.Dict, allowance *Assets) dict.Dict
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
-	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict)
+	DeployContract(programHash hashing.HashValue, name string, initParams dict.Dict)
 	// Event emits an event
 	Event(topic string, payload []byte)
 	// RegisterError registers an error

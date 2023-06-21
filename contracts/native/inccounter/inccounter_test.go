@@ -126,10 +126,8 @@ func TestSpawn(t *testing.T) {
 	checkCounter(chain, 17)
 
 	nameNew := "spawnedContract"
-	dscrNew := "spawned contract it is"
 	req := solo.NewCallParams(incName, FuncSpawn.Name,
 		VarName, nameNew,
-		VarDescription, dscrNew,
 	).AddBaseTokens(1).WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
