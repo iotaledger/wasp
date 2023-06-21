@@ -34,11 +34,3 @@ func ShuffleNodeIDs(nodeIDs []NodeID) []NodeID {
 	rand.Shuffle(len(nodeIDs), func(i, j int) { nodeIDs[i], nodeIDs[j] = nodeIDs[j], nodeIDs[i] })
 	return nodeIDs
 }
-
-func CopyNodeIDs(nodeIDs []NodeID) []NodeID {
-	c := make([]NodeID, len(nodeIDs))
-	for i := range c {
-		c[i] = nodeIDs[i]
-	}
-	return c
-}

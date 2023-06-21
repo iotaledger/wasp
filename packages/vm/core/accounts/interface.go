@@ -1,8 +1,6 @@
 package accounts
 
 import (
-	"errors"
-
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
@@ -59,5 +57,3 @@ const (
 	ParamSupplyDeltaAbs         = "d"
 	ParamTokenScheme            = "t"
 )
-
-var ErrStorageDepositAssumptionsWrong = errors.New("'storage deposit assumptions' parameter not specified or wrong")

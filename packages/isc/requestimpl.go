@@ -66,6 +66,10 @@ func (rrk RequestRefKey) String() string {
 	return iotago.EncodeHex(rrk[:])
 }
 
+func RequestRefFromBytes(data []byte) (*RequestRef, error) {
+	return rwutil.ReadFromBytes(data, new(RequestRef))
+}
+
 func RequestRefFromRequest(req Request) *RequestRef {
 	return &RequestRef{ID: req.ID(), Hash: RequestHash(req)}
 }
@@ -92,7 +96,7 @@ func (ref *RequestRef) IsFor(req Request) bool {
 }
 
 func (ref *RequestRef) Bytes() []byte {
-	return append(ref.Hash[:], ref.ID[:]...)
+	return rwutil.WriteToBytes(ref)
 }
 
 func (ref *RequestRef) String() string {
@@ -101,29 +105,16 @@ func (ref *RequestRef) String() string {
 
 func (ref *RequestRef) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rr.ReadN(ref.ID[:])
 	rr.ReadN(ref.Hash[:])
+	rr.ReadN(ref.ID[:])
 	return rr.Err
 }
 
 func (ref *RequestRef) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteN(ref.ID[:])
 	ww.WriteN(ref.Hash[:])
+	ww.WriteN(ref.ID[:])
 	return ww.Err
-}
-
-func RequestRefFromBytes(data []byte) (*RequestRef, error) {
-	reqID, err := RequestIDFromBytes(data[hashing.HashSize:])
-	if err != nil {
-		return nil, err
-	}
-	ret := &RequestRef{
-		ID: reqID,
-	}
-	copy(ret.Hash[:], data[:hashing.HashSize])
-
-	return ret, nil
 }
 
 // RequestLookupDigest is shortened version of the request id. It is guaranteed to be unique
@@ -190,22 +181,6 @@ func (rid *RequestID) Read(r io.Reader) error {
 
 func (rid *RequestID) Write(w io.Writer) error {
 	return rwutil.WriteN(w, rid[:])
-}
-
-func ShortRequestIDs(ids []RequestID) []string {
-	ret := make([]string, len(ids))
-	for i := range ret {
-		ret[i] = ids[i].Short()
-	}
-	return ret
-}
-
-func ShortRequestIDsFromRequests(reqs []Request) []string {
-	requestIDs := make([]RequestID, len(reqs))
-	for i := range reqs {
-		requestIDs[i] = reqs[i].ID()
-	}
-	return ShortRequestIDs(requestIDs)
 }
 
 // endregion ////////////////////////////////////////////////////////////

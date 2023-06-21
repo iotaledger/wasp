@@ -1,8 +1,6 @@
 package corecontracts
 
 import (
-	"sort"
-
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -24,18 +22,7 @@ var All = map[isc.Hname]*coreutil.ContractInfo{
 	evm.Contract.Hname():        evm.Contract,
 }
 
-func AllSortedByName() []*coreutil.ContractInfo {
-	ret := make([]*coreutil.ContractInfo, 0, len(All))
-	for _, ci := range All {
-		ret = append(ret, ci)
-	}
-	sort.Slice(ret, func(i, j int) bool {
-		return ret[i].Name < ret[j].Name
-	})
-	return ret
-}
-
 func IsCoreHname(hname isc.Hname) bool {
-	_, ret := All[hname]
-	return ret
+	_, ok := All[hname]
+	return ok
 }
