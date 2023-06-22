@@ -362,11 +362,12 @@ func (vmctx *VMContext) chargeGasFee() {
 		return
 	}
 
-	transferToValidator := &isc.Assets{}
-	transferToValidator.BaseTokens = sendToValidator
 	sender := vmctx.req.SenderAccount()
-
-	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
+	if sendToValidator != 0 {
+		transferToValidator := &isc.Assets{}
+		transferToValidator.BaseTokens = sendToValidator
+		vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
+	}
 
 	// ensure common account has at least minSD, and transfer the rest of gas fee to payout AgentID
 	// if the payout AgentID is not set in governance contract, then chain owner will be used

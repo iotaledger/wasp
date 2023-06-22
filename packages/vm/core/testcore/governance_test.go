@@ -466,7 +466,7 @@ func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 
-	_, userAddr := env.NewKeyPairWithFunds()
+	user, userAddr := env.NewKeyPairWithFunds()
 	userAgentID := isc.NewAgentID(userAddr)
 
 	_, err := ch.PostRequestSync(
@@ -488,6 +488,17 @@ func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
 	retAgentID, err := codec.DecodeAgentID(retDict.Get(governance.ParamSetPayoutAgentID))
 	require.NoError(t, err)
 	require.Equal(t, userAgentID, retAgentID)
+
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetPayoutAgentID.Name,
+			governance.ParamSetPayoutAgentID,
+			userAgentID.Bytes(),
+		).WithMaxAffordableGasBudget(),
+		user,
+	)
+	require.ErrorContains(t, err, "unauthorized access")
 }
 
 func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
@@ -542,4 +553,78 @@ func TestGovCallsNoBalance(t *testing.T) {
 		nil,
 	)
 	require.NoError(t, err)
+}
+
+func TestGasPayout(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{
+		AutoAdjustStorageDeposit: true,
+		Debug:                    true,
+		PrintStackTrace:          true,
+	})
+	ch := env.NewChain(false)
+	user1, user1Addr := env.NewKeyPairWithFunds()
+	user1AgentID := isc.NewAgentID(user1Addr)
+
+	ownerBal1 := ch.L2Assets(ch.OriginatorAgentID)
+	user1Bal1 := ch.L2Assets(user1AgentID)
+	transferAmt := uint64(2000)
+
+	_, err := ch.PostRequestSync(
+		solo.NewCallParams(
+			accounts.Contract.Name,
+			accounts.FuncDeposit.Name,
+		).AddBaseTokens(transferAmt),
+		user1,
+	)
+	require.NoError(t, err)
+	receipt := ch.LastReceipt()
+
+	ownerBal2 := ch.L2Assets(ch.OriginatorAgentID)
+	commonBal2 := ch.L2CommonAccountAssets()
+	user1Bal2 := ch.L2Assets(user1AgentID)
+
+	require.Equal(t, ownerBal1.BaseTokens+receipt.GasFeeCharged, ownerBal2.BaseTokens)
+	require.Equal(t, user1Bal1.BaseTokens+transferAmt-receipt.GasFeeCharged, user1Bal2.BaseTokens)
+
+	_, err = ch.PostRequestOffLedger(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetPayoutAgentID.Name,
+			governance.ParamSetPayoutAgentID,
+			user1AgentID.Bytes(),
+		),
+		nil,
+	)
+	require.NoError(t, err)
+
+	retDict, err := ch.CallView(
+		governance.Contract.Name,
+		governance.ViewGetPayoutAgentID.Name,
+	)
+	require.NoError(t, err)
+	retAgentID, err := codec.DecodeAgentID(retDict.Get(governance.ParamSetPayoutAgentID))
+	require.NoError(t, err)
+	require.Equal(t, user1AgentID, retAgentID)
+
+	ownerBal3 := ch.L2Assets(ch.OriginatorAgentID)
+	commonBal3 := ch.L2CommonAccountAssets()
+	user1Bal3 := ch.L2Assets(user1AgentID)
+	require.Equal(t, ownerBal2.BaseTokens, ownerBal3.BaseTokens)
+	require.Equal(t, commonBal2.BaseTokens, commonBal3.BaseTokens)
+	require.Equal(t, user1Bal2.BaseTokens, user1Bal3.BaseTokens)
+
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			accounts.Contract.Name,
+			accounts.FuncDeposit.Name,
+		).AddBaseTokens(transferAmt),
+		user1,
+	)
+	require.NoError(t, err)
+	ownerBal4 := ch.L2Assets(ch.OriginatorAgentID)
+	commonBal4 := ch.L2CommonAccountAssets()
+	user1Bal4 := ch.L2Assets(user1AgentID)
+	require.Equal(t, ownerBal3.BaseTokens, ownerBal4.BaseTokens)
+	require.Equal(t, commonBal3.BaseTokens, commonBal4.BaseTokens)
+	require.Equal(t, user1Bal3.BaseTokens+transferAmt, user1Bal4.BaseTokens)
 }
