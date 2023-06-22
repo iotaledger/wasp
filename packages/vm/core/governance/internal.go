@@ -69,9 +69,9 @@ func MustGetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) *isc.ChainInf
 
 func MustGetMinCommonAccountBalance(state kv.KVStoreReader) uint64 {
 	d := kvdecoder.New(state)
-	minCommonAccountBalance, err := d.GetUint64(StateVarMinCommonAccountBalance)
+	minCommonAccountBalance, err := d.GetUint64(StateVarMinBaseTokensOnCommonAccount)
 	if err != nil {
-		// FIXME we should use DefaultMinCommonAccountBalance instead.
+		// FIXME we should use DefaultMinBaseTokensOnCommonAccount instead.
 		return 0
 	}
 	return minCommonAccountBalance

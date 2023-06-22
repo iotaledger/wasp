@@ -513,7 +513,7 @@ func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
 	retByte := initRetDict.Get(governance.ParamSetMinCommonAccountBalance)
 	retMinCommonAccountBalance, err := codec.DecodeUint64(retByte)
 	require.NoError(t, err)
-	require.Equal(t, governance.DefaultMinCommonAccountBalance, retMinCommonAccountBalance)
+	require.Equal(t, governance.DefaultMinBaseTokensOnCommonAccount, retMinCommonAccountBalance)
 
 	minCommonAccountBalance := uint64(123456)
 	_, err = ch.PostRequestSync(

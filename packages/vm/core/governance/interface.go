@@ -58,15 +58,15 @@ var (
 
 // state variables
 const (
-	// DefaultMinCommonAccountBalance can't harvest the minimum
-	DefaultMinCommonAccountBalance = uint64(3000)
+	// DefaultMinBaseTokensOnCommonAccount can't harvest the minimum
+	DefaultMinBaseTokensOnCommonAccount = uint64(3000)
 
 	// state controller
 	StateVarAllowedStateControllerAddresses = "a"
 	StateVarRotateToAddress                 = "r"
 
-	StateVarPayoutAgentID           = "pa"
-	StateVarMinCommonAccountBalance = "vs"
+	StateVarPayoutAgentID                = "pa"
+	StateVarMinBaseTokensOnCommonAccount = "vs"
 
 	// chain owner
 	VarChainOwnerID          = "o"

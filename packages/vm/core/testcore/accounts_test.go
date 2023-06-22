@@ -819,7 +819,7 @@ func TestTransferAndCheckNativeTokens(t *testing.T) {
 
 	commonAssets = v.ch.L2CommonAccountAssets()
 	// in the common account should have left minimum plus gas fee from the last request
-	require.EqualValues(t, governance.DefaultMinCommonAccountBalance, commonAssets.BaseTokens)
+	require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, commonAssets.BaseTokens)
 	require.EqualValues(t, 0, len(commonAssets.NativeTokens))
 }
 

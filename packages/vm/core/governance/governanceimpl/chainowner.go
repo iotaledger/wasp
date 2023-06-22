@@ -68,15 +68,15 @@ func getPayoutAgentID(ctx isc.SandboxView) dict.Dict {
 func setMinCommonAccountBalance(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	minCommonAccountBalance := ctx.Params().MustGetUint64(governance.ParamSetMinCommonAccountBalance)
-	ctx.State().Set(governance.StateVarMinCommonAccountBalance, codec.EncodeUint64(minCommonAccountBalance))
+	ctx.State().Set(governance.StateVarMinBaseTokensOnCommonAccount, codec.EncodeUint64(minCommonAccountBalance))
 	return nil
 }
 
 func getMinCommonAccountBalance(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
-	minCommonAccountBalance := ctx.StateR().Get(governance.StateVarMinCommonAccountBalance)
+	minCommonAccountBalance := ctx.StateR().Get(governance.StateVarMinBaseTokensOnCommonAccount)
 	if minCommonAccountBalance == nil {
-		minCommonAccountBalance = codec.EncodeUint64(governance.DefaultMinCommonAccountBalance)
+		minCommonAccountBalance = codec.EncodeUint64(governance.DefaultMinBaseTokensOnCommonAccount)
 	}
 	ret.Set(governance.ParamSetMinCommonAccountBalance, minCommonAccountBalance)
 	return ret

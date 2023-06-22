@@ -395,7 +395,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 }
 
 func TestFoundries(t *testing.T) {
-	const initialTotalBaseTokens = 10*isc.Million + governance.DefaultMinCommonAccountBalance
+	const initialTotalBaseTokens = 10*isc.Million + governance.DefaultMinBaseTokensOnCommonAccount
 	addr := tpkg.RandEd25519Address()
 	aliasID := testiotago.RandAliasID()
 	anchor := &iotago.AliasOutput{

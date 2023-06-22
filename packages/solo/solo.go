@@ -280,7 +280,7 @@ func (env *Solo) NewChainExt(
 		chainOriginator,
 		stateControllerAddr,
 		stateControllerAddr,
-		initBaseTokens, // will be adjusted to min storage deposit + MinimumBaseTokensOnCommonAccount
+		initBaseTokens, // will be adjusted to min storage deposit + DefaultMinBaseTokensOnCommonAccount
 		initParams,
 		outs,
 		outIDs,

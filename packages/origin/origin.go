@@ -170,7 +170,7 @@ func NewChainOriginTransaction(
 	}
 
 	minSD := parameters.L1().Protocol.RentStructure.MinRent(aliasOutput)
-	minAmount := minSD + governance.DefaultMinCommonAccountBalance
+	minAmount := minSD + governance.DefaultMinBaseTokensOnCommonAccount
 	if aliasOutput.Amount < minAmount {
 		aliasOutput.Amount = minAmount
 	}
