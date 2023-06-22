@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -46,6 +47,8 @@ func TestInitLoad(t *testing.T) {
 
 	t.Logf("common base tokens: %d", ch.L2CommonAccountBaseTokens())
 	require.True(t, cassets.BaseTokens >= accounts.MinimumBaseTokensOnCommonAccount)
+
+	env.VerifyDBHash(hashing.MustHashValueFromHex("0x49413f4c5b68285c852f9693904c5bc622c3907eea60307b79fa8db971cc8a62"))
 }
 
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers

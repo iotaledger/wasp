@@ -566,7 +566,21 @@ func (ch *Chain) L1L2Funds(addr iotago.Address) *L1L2AddressAssets {
 }
 
 func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...uint64) {
-	walletKey, walletAddr := ch.Env.NewKeyPairWithFunds()
+	// find a deterministic L1 address that has 0 balance
+	walletKey, walletAddr := func() (*cryptolib.KeyPair, iotago.Address) {
+		seed := cryptolib.SeedFromBytes([]byte("GetL2FundsFromFaucet"))
+		i := uint64(0)
+		for {
+			ss := seed.SubSeed(i)
+			key, addr := ch.Env.NewKeyPair(&ss)
+			_, err := ch.Env.GetFundsFromFaucet(addr)
+			require.NoError(ch.Env.T, err)
+			if ch.L2BaseTokens(isc.NewAgentID(addr)) == 0 {
+				return key, addr
+			}
+			i++
+		}
+	}()
 
 	var amount uint64
 	if len(baseTokens) > 0 {

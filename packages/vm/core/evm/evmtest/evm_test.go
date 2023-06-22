@@ -45,7 +45,7 @@ import (
 
 func TestStorageContract(t *testing.T) {
 	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	ethKey, _ := env.soloChain.EthereumAccountByIndexWithL2Funds(0)
 	require.EqualValues(t, 1, env.getBlockNumber()) // evm block number is incremented along with ISC block index
 
 	// deploy solidity `storage` contract
@@ -85,6 +85,8 @@ func TestStorageContract(t *testing.T) {
 		require.NoError(t, storage.callView("retrieve", nil, &v, rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)))
 		require.EqualValues(t, 46, v)
 	}
+
+	env.solo.VerifyDBHash(hashing.MustHashValueFromHex("0xd6e0c4da0e42ba69ae437cf0cc3b99f92ad2b0f3ee52dafe67e6e493cead1ca3"))
 }
 
 func TestERC20Contract(t *testing.T) {
