@@ -35,6 +35,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	testparameters "github.com/iotaledger/wasp/packages/testutil/parameters"
+	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -86,7 +87,7 @@ func TestStorageContract(t *testing.T) {
 		require.EqualValues(t, 46, v)
 	}
 
-	env.solo.VerifyDBHash(hashing.MustHashValueFromHex("0xd6e0c4da0e42ba69ae437cf0cc3b99f92ad2b0f3ee52dafe67e6e493cead1ca3"))
+	testdbhash.VerifyDBHash(env.solo, t.Name())
 }
 
 func TestERC20Contract(t *testing.T) {
