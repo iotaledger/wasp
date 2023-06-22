@@ -170,7 +170,7 @@ func getSmartContractEventsInternal(partition kv.KVStoreReader, contractID isc.H
 	for blockNumber := fromBlock; blockNumber <= adjustedToBlock; blockNumber++ {
 		eventBlockKey := collections.MapElemKey(prefixRequestEvents, codec.EncodeUint32(blockNumber))
 
-		partition.Iterate(kv.Key(eventBlockKey), func(_ kv.Key, value []byte) bool {
+		partition.Iterate(eventBlockKey, func(_ kv.Key, value []byte) bool {
 			parsedContractID, _ := isc.ContractIDFromEventBytes(value)
 			if parsedContractID != contractID {
 				return true
@@ -271,7 +271,7 @@ func getBlockInfoBytes(partition kv.KVStoreReader, blockIndex uint32) []byte {
 }
 
 func RequestReceiptKey(rkey RequestLookupKey) []byte {
-	return collections.MapElemKey(prefixRequestReceipts, rkey.Bytes())
+	return []byte(collections.MapElemKey(prefixRequestReceipts, rkey.Bytes()))
 }
 
 func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, requestIndex uint16) ([]byte, bool) {

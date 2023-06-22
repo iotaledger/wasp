@@ -27,7 +27,7 @@ func NewReader(r io.Reader) *Reader {
 
 func NewBytesReader(data []byte) *Reader {
 	buf := Buffer(data)
-	return NewReader(&buf)
+	return &Reader{r: &buf}
 }
 
 // Bytes will return the remaining bytes in the Reader buffer.
@@ -53,6 +53,13 @@ func (rr *Reader) CheckAvailable(nrOfBytes int) int {
 		return 0
 	}
 	return nrOfBytes
+}
+
+// Must will wrap the reader stream in a stream that will panic whenever an error occurs.
+func (rr *Reader) Must() *Reader {
+	must := &Must{r: rr.r}
+	rr.r = must
+	return rr
 }
 
 // PushBack returns a pushback writer that allows you to insert data before the stream.
