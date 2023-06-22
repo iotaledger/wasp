@@ -24,22 +24,16 @@ wasm:
 	bash contracts/wasm/scripts/schema_all.sh
 
 compile-solidity:
-ifdef SKIP_SOLIDITY
-	@echo "skipping compile-solidity rule"
-else ifeq (, $(shell which solc))
-	@echo "no solc found in PATH, evm contracts won't be compiled"
-else
 	cd packages/vm/core/evm/iscmagic && go generate
 	cd packages/evm/evmtest && go generate
-endif
 
 build-cli:
 	cd tools/wasp-cli && go mod tidy && go build -ldflags $(BUILD_LD_FLAGS) -o ../../
 
-build-full: compile-solidity build-cli
+build-full: build-cli
 	$(BUILD_CMD) ./...
 
-build: compile-solidity build-cli
+build: build-cli
 	$(BUILD_CMD) $(BUILD_PKGS)
 
 build-lint: build lint
@@ -59,10 +53,10 @@ test-short:
 install-cli:
 	cd tools/wasp-cli && go mod tidy && go install -ldflags $(BUILD_LD_FLAGS)
 
-install-full: compile-solidity install-cli
+install-full: install-cli
 	$(INSTALL_CMD) ./...
 
-install: compile-solidity install-cli install-pkgs
+install: install-cli install-pkgs
 
 install-pkgs:
 	$(INSTALL_CMD) $(BUILD_PKGS)
@@ -82,7 +76,7 @@ apiclient-docker:
 gofumpt-list:
 	gofumpt -l ./
 
-docker-build: compile-solidity
+docker-build:
 	DOCKER_BUILDKIT=1 docker build ${DOCKER_BUILD_ARGS} \
 		--build-arg BUILD_TAGS=${BUILD_TAGS} \
 		--build-arg BUILD_LD_FLAGS=${BUILD_LD_FLAGS} \
