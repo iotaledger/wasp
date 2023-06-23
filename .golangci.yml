@@ -140,7 +140,6 @@ linters:
     disable-all: true
     enable:
         - bodyclose # Checks whether HTTP response body is closed successfully.
-        - dogsled # Checks assignments with too many blank identifiers (e.g. x, , , _, := f()).
         - dupl # Tool for code clone detection.
         - errcheck # Errcheck is a program for checking for unchecked errors in go programs. These unchecked errors can be critical bugs in some cases
         - exportloopref # Checks for pointers to enclosing loop variables.

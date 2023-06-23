@@ -192,14 +192,8 @@ func New(t testing.TB, initOptions ...*InitOptions) *Solo {
 	return ret
 }
 
-func (env *Solo) VerifyDBHash(expected hashing.HashValue) {
-	actual := env.chainStateDatabaseManager.DBHash()
-	require.Equal(env.T, expected, actual,
-		"DB hash has changed! (new hash: %s). "+
-			"This is a BREAKING CHANGE; make sure that you add a migration "+
-			"(if necessary), and then update the hash in the test.",
-		actual,
-	)
+func (env *Solo) GetDBHash() hashing.HashValue {
+	return env.chainStateDatabaseManager.DBHash()
 }
 
 func (env *Solo) SyncLog() {

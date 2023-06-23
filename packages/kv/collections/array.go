@@ -17,8 +17,11 @@ var ErrArrayOverflow = errors.New("Array overflow")
 const arrayElemKeyCode = byte('#')
 
 func ArrayElemKey(name string, index uint32) kv.Key {
-	key := append([]byte(name), arrayElemKeyCode)
-	return kv.Key(append(key, rwutil.Size32ToBytes(index)...))
+	return kv.Key(rwutil.NewBytesWriter().
+		WriteN([]byte(name)).
+		WriteByte(arrayElemKeyCode).
+		WriteSize32(int(index)).
+		Bytes())
 }
 
 /////////////////////////////////  ArrayReadOnly  \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -48,17 +51,13 @@ func (a *ArrayReadOnly) GetAt(index uint32) []byte {
 	return a.kvr.Get(a.getArrayElemKey(index))
 }
 
-func (a *ArrayReadOnly) getSizeKey() kv.Key {
-	return kv.Key(a.name)
-}
-
 // Len == 0/empty/non-existent are equivalent
 func (a *ArrayReadOnly) Len() uint32 {
-	v := a.kvr.Get(a.getSizeKey())
-	if v == nil {
+	data := a.kvr.Get(kv.Key(a.name))
+	if data == nil {
 		return 0
 	}
-	return rwutil.MustSize32FromBytes(v)
+	return uint32(rwutil.NewBytesReader(data).Must().ReadSize32())
 }
 
 /////////////////////////////////  Array  \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -118,9 +117,9 @@ func (a *Array) PruneAt(index uint32) {
 
 // adds to the end of the list
 func (a *Array) Push(value []byte) {
-	prevSize := a.addToSize(1)
-	k := a.getArrayElemKey(prevSize)
-	a.kvw.Set(k, value)
+	index := a.addToSize(1)
+	key := a.getArrayElemKey(index)
+	a.kvw.Set(key, value)
 }
 
 func (a *Array) SetAt(index uint32, value []byte) {
@@ -133,8 +132,8 @@ func (a *Array) SetAt(index uint32, value []byte) {
 
 func (a *Array) setSize(size uint32) {
 	if size == 0 {
-		a.kvw.Del(a.getSizeKey())
-	} else {
-		a.kvw.Set(a.getSizeKey(), rwutil.Size32ToBytes(size))
+		a.kvw.Del(kv.Key(a.name))
+		return
 	}
+	a.kvw.Set(kv.Key(a.name), rwutil.NewBytesWriter().WriteSize32(int(size)).Bytes())
 }
