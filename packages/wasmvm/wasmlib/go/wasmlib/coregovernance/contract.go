@@ -66,6 +66,16 @@ type SetMetadataCall struct {
 	Params MutableSetMetadataParams
 }
 
+type SetMinSDCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableSetMinSDParams
+}
+
+type SetPayoutAgentIDCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableSetPayoutAgentIDParams
+}
+
 type StartMaintenanceCall struct {
 	Func *wasmlib.ScFunc
 }
@@ -117,6 +127,16 @@ type GetMaintenanceStatusCall struct {
 type GetMetadataCall struct {
 	Func    *wasmlib.ScView
 	Results ImmutableGetMetadataResults
+}
+
+type GetMinSDCall struct {
+	Func    *wasmlib.ScView
+	Results ImmutableGetMinSDResults
+}
+
+type GetPayoutAgentIDCall struct {
+	Func    *wasmlib.ScView
+	Results ImmutableGetPayoutAgentIDResults
 }
 
 type Funcs struct{}
@@ -210,6 +230,18 @@ func (sc Funcs) SetMetadata(ctx wasmlib.ScFuncClientContext) *SetMetadataCall {
 	return f
 }
 
+func (sc Funcs) SetMinSD(ctx wasmlib.ScFuncClientContext) *SetMinSDCall {
+	f := &SetMinSDCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetMinSD)}
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) SetPayoutAgentID(ctx wasmlib.ScFuncClientContext) *SetPayoutAgentIDCall {
+	f := &SetPayoutAgentIDCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetPayoutAgentID)}
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
 // Starts the chain maintenance mode, meaning no further requests
 // will be processed except calls to the governance contract.
 func (sc Funcs) StartMaintenance(ctx wasmlib.ScFuncClientContext) *StartMaintenanceCall {
@@ -284,6 +316,18 @@ func (sc Funcs) GetMetadata(ctx wasmlib.ScViewClientContext) *GetMetadataCall {
 	return f
 }
 
+func (sc Funcs) GetMinSD(ctx wasmlib.ScViewClientContext) *GetMinSDCall {
+	f := &GetMinSDCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetMinSD)}
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
+	return f
+}
+
+func (sc Funcs) GetPayoutAgentID(ctx wasmlib.ScViewClientContext) *GetPayoutAgentIDCall {
+	f := &GetPayoutAgentIDCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetPayoutAgentID)}
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
+	return f
+}
+
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
 		FuncAddAllowedStateControllerAddress,
@@ -298,6 +342,8 @@ var exportMap = wasmlib.ScExportMap{
 		FuncSetFeePolicy,
 		FuncSetGasLimits,
 		FuncSetMetadata,
+		FuncSetMinSD,
+		FuncSetPayoutAgentID,
 		FuncStartMaintenance,
 		FuncStopMaintenance,
 		ViewGetAllowedStateControllerAddresses,
@@ -309,6 +355,8 @@ var exportMap = wasmlib.ScExportMap{
 		ViewGetGasLimits,
 		ViewGetMaintenanceStatus,
 		ViewGetMetadata,
+		ViewGetMinSD,
+		ViewGetPayoutAgentID,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
 		wasmlib.FuncError,
@@ -325,8 +373,12 @@ var exportMap = wasmlib.ScExportMap{
 		wasmlib.FuncError,
 		wasmlib.FuncError,
 		wasmlib.FuncError,
+		wasmlib.FuncError,
+		wasmlib.FuncError,
 	},
 	Views: []wasmlib.ScViewContextFunction{
+		wasmlib.ViewError,
+		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,

@@ -44,29 +44,6 @@ func TestDeposit(t *testing.T) {
 	t.Logf("========= burn log:\n%s", rec.GasBurnLog)
 }
 
-func TestHarvest(t *testing.T) {
-	env := solo.New(t)
-	ch, _ := env.NewChainExt(nil, 10_000, "chain1")
-	_ = ch.Log().Sync()
-
-	t.Logf("common base tokens BEFORE: %d", ch.L2CommonAccountBaseTokens())
-	err := ch.DepositBaseTokensToL2(100_000, nil)
-	require.NoError(t, err)
-	userAgentID := ch.OriginatorAgentID
-	t.Logf("userAgentID base tokens: %d", ch.L2BaseTokens(userAgentID))
-
-	_, err = ch.PostRequestSync(
-		solo.NewCallParams(
-			accounts.Contract.Name,
-			accounts.FuncHarvest.Name).
-			AddBaseTokens(10_000).
-			WithGasBudget(100_000),
-		nil)
-	require.NoError(t, err)
-	t.Logf("common base tokens AFTER: %d", ch.L2CommonAccountBaseTokens())
-	require.True(t, ch.L2CommonAccountBaseTokens() >= accounts.MinimumBaseTokensOnCommonAccount)
-}
-
 // allowance shouldn't allow you to bypass gas fees.
 func TestDepositCheatAllowance(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: false})
@@ -462,7 +439,7 @@ func TestFoundries(t *testing.T) {
 
 		ch.AssertL2NativeTokens(senderAgentID, nativeTokenID, big1)
 		ch.AssertL2TotalNativeTokens(nativeTokenID, big1)
-
+		ownerBal1 := ch.L2Assets(ch.OriginatorAgentID)
 		commonAccountBalanceBeforeLastMint := ch.L2CommonAccountBaseTokens()
 
 		// after minting 1 token, try to mint the remaining tokens
@@ -472,10 +449,12 @@ func TestFoundries(t *testing.T) {
 		err = ch.MintTokens(sn, allOtherTokens, senderKeyPair)
 		require.NoError(t, err)
 
-		// assert that no extra base tokens were used for the storage deposit
-		receipt := ch.LastReceipt()
 		commonAccountBalanceAfterLastMint := ch.L2CommonAccountBaseTokens()
-		require.Equal(t, commonAccountBalanceAfterLastMint, commonAccountBalanceBeforeLastMint+receipt.GasFeeCharged)
+		require.Equal(t, commonAccountBalanceAfterLastMint, commonAccountBalanceBeforeLastMint)
+		// assert that no extra base tokens were used for the storage deposit
+		ownerBal2 := ch.L2Assets(ch.OriginatorAgentID)
+		receipt := ch.LastReceipt()
+		require.Equal(t, ownerBal1.BaseTokens+receipt.GasFeeCharged, ownerBal2.BaseTokens)
 	})
 	t.Run("newFoundry exposes foundry serial number in event", func(t *testing.T) {
 		initTest()
@@ -508,9 +487,6 @@ func TestAccountBalances(t *testing.T) {
 
 	ch, _ := env.NewChainExt(chainOwner, 0, "chain1")
 
-	x := ch.L2BaseTokens(accounts.CommonAccount())
-	println(x)
-
 	totalGasFeeCharged := uint64(0)
 
 	checkBalance := func() {
@@ -533,11 +509,6 @@ func TestAccountBalances(t *testing.T) {
 		)
 
 		totalGasFeeCharged += bi.GasFeeCharged
-		require.EqualValues(t,
-			int(anchor.Deposit()-anchorSD-100_000+totalGasFeeCharged),
-			int(ch.L2BaseTokens(accounts.CommonAccount())),
-		)
-
 		require.EqualValues(t,
 			utxodb.FundsFromFaucetAmount+totalGasFeeCharged-anchorSD,
 			l1BaseTokens(chainOwnerAddr)+ch.L2BaseTokens(chainOwnerAgentID)+ch.L2BaseTokens(accounts.CommonAccount()),
@@ -811,65 +782,20 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 	})
 }
 
-func TestTransferAndHarvestNativeTokens(t *testing.T) {
-	// initializes it all and prepares withdraw request, does not post it
-	v := initWithdrawTest(t, 10_000)
-	commonAssets := v.ch.L2CommonAccountAssets()
-	require.EqualValues(t, 0, len(commonAssets.NativeTokens))
-
-	v.ch.AssertL2NativeTokens(v.userAgentID, v.nativeTokenID, 100)
-
-	// move minted tokens from user to the common account on-chain
-	err := v.ch.SendFromL2ToL2AccountNativeTokens(v.nativeTokenID, accounts.CommonAccount(), 50, v.user)
-	require.NoError(t, err)
-	// now we have 50 tokens on common account
-	v.ch.AssertL2NativeTokens(accounts.CommonAccount(), v.nativeTokenID, 50)
-	// no native tokens for chainOwner on L1
-	v.env.AssertL1NativeTokens(v.chainOwnerAddr, v.nativeTokenID, 0)
-
-	err = v.ch.DepositBaseTokensToL2(10_000, v.chainOwner)
-	require.NoError(t, err)
-
-	v.req = solo.NewCallParams("accounts", "harvest").
-		WithGasBudget(100_000)
-	_, err = v.ch.PostRequestSync(v.req, v.chainOwner)
-	require.NoError(t, err)
-
-	rec := v.ch.LastReceipt()
-	t.Logf("receipt from the 'harvest' tx: %s", rec)
-
-	// now we have 0 tokens on common account
-	v.ch.AssertL2NativeTokens(accounts.CommonAccount(), v.nativeTokenID, 0)
-	// 50 native tokens for chain on L2
-	v.ch.AssertL2NativeTokens(v.chainOwnerAgentID, v.nativeTokenID, 50)
-
-	commonAssets = v.ch.L2CommonAccountAssets()
-	// in the common account should have left minimum plus gas fee from the last request
-	require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged, commonAssets.BaseTokens)
-	require.EqualValues(t, 0, len(commonAssets.NativeTokens))
-}
-
-func TestTransferAndHarvestBaseTokens(t *testing.T) {
+func TestTransferAndCheckBaseTokens(t *testing.T) {
 	// initializes it all and prepares withdraw request, does not post it
 	v := initWithdrawTest(t, 10_000)
 	initialCommonAccountBaseTokens := v.ch.L2CommonAccountAssets().BaseTokens
+	initialOwnerAccountBaseTokens := v.ch.L2Assets(v.chainOwnerAgentID).BaseTokens
 
 	// deposit some base tokens into the common account
 	someUserWallet, _ := v.env.NewKeyPairWithFunds()
 	err := v.ch.SendFromL1ToL2Account(11*isc.Million, isc.NewAssetsBaseTokens(10*isc.Million), accounts.CommonAccount(), someUserWallet)
 	require.NoError(t, err)
-	commonAccBaseTokens := initialCommonAccountBaseTokens + 10*isc.Million + v.ch.LastReceipt().GasFeeCharged
+	commonAccBaseTokens := initialCommonAccountBaseTokens + 10*isc.Million
 	require.EqualValues(t, commonAccBaseTokens, v.ch.L2CommonAccountAssets().BaseTokens)
-	require.EqualValues(t, 0, v.ch.L2Assets(v.chainOwnerAgentID).BaseTokens)
-
-	_, err = v.ch.PostRequestSync(
-		solo.NewCallParams("accounts", "harvest").WithFungibleTokens(isc.NewAssetsBaseTokens(1*isc.Million)),
-		v.chainOwner,
-	)
-	require.NoError(t, err)
-	remainingOnCommonAccount := accounts.MinimumBaseTokensOnCommonAccount + v.ch.LastReceipt().GasFeeCharged
-	require.EqualValues(t, remainingOnCommonAccount, v.ch.L2CommonAccountAssets().BaseTokens)
-	require.EqualValues(t, commonAccBaseTokens+1*isc.Million-remainingOnCommonAccount, v.ch.L2Assets(v.chainOwnerAgentID).BaseTokens)
+	require.EqualValues(t, initialOwnerAccountBaseTokens+v.ch.LastReceipt().GasFeeCharged, v.ch.L2Assets(v.chainOwnerAgentID).BaseTokens)
+	require.EqualValues(t, commonAccBaseTokens, v.ch.L2CommonAccountAssets().BaseTokens)
 }
 
 func TestFoundryDestroy(t *testing.T) {

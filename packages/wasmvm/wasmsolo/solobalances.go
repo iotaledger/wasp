@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 type SoloBalances struct {
@@ -126,18 +127,23 @@ func (bal *SoloBalances) findName(id string) string {
 	return ""
 }
 
+func (bal *SoloBalances) UpdateFeeBalances(gasfee uint64) {
+	bal.Common += gasfee
+	if bal.Common > governance.DefaultMinBaseTokensOnCommonAccount {
+		exceess := bal.Common - governance.DefaultMinBaseTokensOnCommonAccount
+		bal.Common = governance.DefaultMinBaseTokensOnCommonAccount
+		bal.Originator += exceess
+	}
+}
+
 func (bal *SoloBalances) VerifyBalances(t testing.TB) {
 	bal.DumpBalances()
 	ctx := bal.ctx
-	actual := ctx.Balance(ctx.Account())
-	require.EqualValues(t, bal.Account, actual)
-	actual = ctx.Balance(ctx.CommonAccount())
-	require.EqualValues(t, bal.Common, actual)
-	actual = ctx.Balance(ctx.Originator())
-	require.EqualValues(t, bal.Originator, actual)
+	require.EqualValues(t, bal.Account, ctx.Balance(ctx.Account()))
+	require.EqualValues(t, bal.Common, ctx.Balance(ctx.CommonAccount()))
+	require.EqualValues(t, bal.Originator, ctx.Balance(ctx.Originator()))
 	for _, agent := range bal.agents {
 		expected := bal.accounts[agent.AgentID().String()]
-		actual = ctx.Balance(agent)
-		require.EqualValues(t, expected, actual)
+		require.EqualValues(t, expected, ctx.Balance(agent))
 	}
 }

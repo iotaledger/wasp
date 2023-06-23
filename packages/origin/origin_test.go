@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -100,7 +100,7 @@ func TestCreateOrigin(t *testing.T) {
 		originStateMetadata := transaction.NewStateMetadata(
 			origin.L1Commitment(
 				dict.Dict{origin.ParamChainOwner: isc.NewAgentID(anchor.GovernanceController).Bytes()},
-				accounts.MinimumBaseTokensOnCommonAccount,
+				governance.DefaultMinBaseTokensOnCommonAccount,
 			),
 			gas.DefaultFeePolicy(),
 			migrations.BaseSchemaVersion+uint32(len(migrations.Migrations)),

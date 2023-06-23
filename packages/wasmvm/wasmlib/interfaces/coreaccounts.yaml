@@ -45,15 +45,6 @@ funcs:
       supplyDeltaAbs=d: BigInt # positive nonzero amount to mint or destroy
       destroyTokens=y: Bool? # mint (default) or destroy tokens
 
-  # Moves all tokens from the chain common account to the sender's L2 account.
-  # The chain owner is the only one who can call this entry point.
-  harvest:
-    access: chain # only chain owner can invoke this function
-    params:
-      # amount of base tokens to leave in the common account
-      # default MinimumBaseTokensOnCommonAccount, can never be less
-      forceMinimumBaseTokens=f: Uint64?
-
   # Transfers the specified allowance from the sender SC's L2 account on
   # the target chain to the sender SC's L2 account on the origin chain.
   transferAccountToChain:

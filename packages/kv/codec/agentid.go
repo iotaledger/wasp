@@ -6,10 +6,12 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
+var ErrNilAgentID = errors.New("cannot decode nil AgentID")
+
 func DecodeAgentID(b []byte, def ...isc.AgentID) (isc.AgentID, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return nil, errors.New("cannot decode nil AgentID")
+			return nil, ErrNilAgentID
 		}
 		return def[0], nil
 	}

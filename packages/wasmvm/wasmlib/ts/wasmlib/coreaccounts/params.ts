@@ -68,22 +68,6 @@ export class MutableFoundryModifySupplyParams extends wasmtypes.ScProxy {
     }
 }
 
-export class ImmutableHarvestParams extends wasmtypes.ScProxy {
-    // amount of base tokens to leave in the common account
-    // default MinimumBaseTokensOnCommonAccount, can never be less
-    forceMinimumBaseTokens(): wasmtypes.ScImmutableUint64 {
-        return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamForceMinimumBaseTokens));
-    }
-}
-
-export class MutableHarvestParams extends wasmtypes.ScProxy {
-    // amount of base tokens to leave in the common account
-    // default MinimumBaseTokensOnCommonAccount, can never be less
-    forceMinimumBaseTokens(): wasmtypes.ScMutableUint64 {
-        return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamForceMinimumBaseTokens));
-    }
-}
-
 export class ImmutableTransferAccountToChainParams extends wasmtypes.ScProxy {
     // Optional gas amount to reserve in the allowance for the internal
     // call to transferAllowanceTo(). Default 100 (MinGasFee).

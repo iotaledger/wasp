@@ -1,7 +1,7 @@
 package common
 
 import (
-	"errors"
+	"fmt"
 
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
@@ -25,7 +25,7 @@ func CallView(ch chainpkg.Chain, contractName, functionName isc.Hname, params di
 	// TODO: should blockIndex be an optional parameter of this endpoint?
 	latestState, err := ch.LatestState(chainpkg.ActiveOrCommittedState)
 	if err != nil {
-		return nil, errors.New("error getting latest chain state")
+		return nil, fmt.Errorf("error getting latest chain state: %w", err)
 	}
 	return chainutil.CallView(latestState, ch, contractName, functionName, params)
 }

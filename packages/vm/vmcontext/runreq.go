@@ -351,8 +351,8 @@ func (vmctx *VMContext) chargeGasFee() {
 	}
 
 	// total fees to charge
-	sendToOwner, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGasBurned(vmctx.GasBurned(), availableToPayFee)
-	vmctx.gasFeeCharged = sendToOwner + sendToValidator
+	sendToPayout, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGasBurned(vmctx.GasBurned(), availableToPayFee)
+	vmctx.gasFeeCharged = sendToPayout + sendToValidator
 
 	// calc gas totals
 	vmctx.gasFeeChargedTotal += vmctx.gasFeeCharged
@@ -362,14 +362,39 @@ func (vmctx *VMContext) chargeGasFee() {
 		return
 	}
 
-	transferToValidator := &isc.Assets{}
-	transferToOwner := &isc.Assets{}
-	transferToValidator.BaseTokens = sendToValidator
-	transferToOwner.BaseTokens = sendToOwner
 	sender := vmctx.req.SenderAccount()
+	if sendToValidator != 0 {
+		transferToValidator := &isc.Assets{}
+		transferToValidator.BaseTokens = sendToValidator
+		vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
+	}
 
-	vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
-	vmctx.mustMoveBetweenAccounts(sender, accounts.CommonAccount(), transferToOwner)
+	// ensure common account has at least minBalanceInCommonAccount, and transfer the rest of gas fee to payout AgentID
+	// if the payout AgentID is not set in governance contract, then chain owner will be used
+	var minBalanceInCommonAccount uint64
+	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
+		minBalanceInCommonAccount = governance.MustGetMinCommonAccountBalance(s)
+	})
+	commonAccountBal := vmctx.GetBaseTokensBalance(accounts.CommonAccount())
+	if commonAccountBal < minBalanceInCommonAccount {
+		// pay to common account since the balance of common account is less than minSD
+		transferToCommonAcc := sendToPayout
+		sendToPayout = 0
+		if commonAccountBal+transferToCommonAcc > minBalanceInCommonAccount {
+			excess := (commonAccountBal + transferToCommonAcc) - minBalanceInCommonAccount
+			transferToCommonAcc -= excess
+			sendToPayout = excess
+		}
+		vmctx.mustMoveBetweenAccounts(sender, accounts.CommonAccount(), isc.NewAssetsBaseTokens(transferToCommonAcc))
+	}
+	if sendToPayout > 0 {
+		var payoutAddr isc.AgentID
+		vmctx.callCore(governance.Contract, func(s kv.KVStore) {
+			payoutAddr = governance.MustGetPayoutAgentID(s)
+		})
+
+		vmctx.mustMoveBetweenAccounts(sender, payoutAddr, isc.NewAssetsBaseTokens(sendToPayout))
+	}
 }
 
 func (vmctx *VMContext) GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {

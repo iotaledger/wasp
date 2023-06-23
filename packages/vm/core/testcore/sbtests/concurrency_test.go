@@ -46,9 +46,6 @@ func testConcurrency(t *testing.T, w bool) {
 	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).
 		AddBaseTokens(1000).WithGasBudget(math.MaxUint64)
 
-	_, predictedGasFee, err := chain.EstimateGasOnLedger(req, nil, true)
-	require.NoError(t, err)
-
 	repeats := []int{300, 100, 100, 100, 200, 100, 100}
 	sum := 0
 	for _, i := range repeats {
@@ -75,7 +72,7 @@ func testConcurrency(t *testing.T, w bool) {
 	require.EqualValues(t, sum, res)
 
 	commonAccountFinalBalance := chain.L2BaseTokens(accounts.CommonAccount())
-	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance+predictedGasFee*uint64(sum))
+	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance)
 
 	contractAgentID := isc.NewContractAgentID(chain.ChainID, HScName) // SC has no funds (because it never claims funds from allowance)
 	chain.AssertL2BaseTokens(contractAgentID, 0)
@@ -130,5 +127,5 @@ func testConcurrency2(t *testing.T, w bool) {
 	}
 
 	commonAccountFinalBalance := chain.L2BaseTokens(accounts.CommonAccount())
-	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance+predictedGasFee*uint64(sum))
+	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance)
 }

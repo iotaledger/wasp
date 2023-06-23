@@ -96,30 +96,6 @@ func (s MutableFoundryModifySupplyParams) SupplyDeltaAbs() wasmtypes.ScMutableBi
 	return wasmtypes.NewScMutableBigInt(s.Proxy.Root(ParamSupplyDeltaAbs))
 }
 
-type ImmutableHarvestParams struct {
-	Proxy wasmtypes.Proxy
-}
-
-func NewImmutableHarvestParams() ImmutableHarvestParams {
-	return ImmutableHarvestParams{Proxy: wasmlib.NewParamsProxy()}
-}
-
-// amount of base tokens to leave in the common account
-// default MinimumBaseTokensOnCommonAccount, can never be less
-func (s ImmutableHarvestParams) ForceMinimumBaseTokens() wasmtypes.ScImmutableUint64 {
-	return wasmtypes.NewScImmutableUint64(s.Proxy.Root(ParamForceMinimumBaseTokens))
-}
-
-type MutableHarvestParams struct {
-	Proxy wasmtypes.Proxy
-}
-
-// amount of base tokens to leave in the common account
-// default MinimumBaseTokensOnCommonAccount, can never be less
-func (s MutableHarvestParams) ForceMinimumBaseTokens() wasmtypes.ScMutableUint64 {
-	return wasmtypes.NewScMutableUint64(s.Proxy.Root(ParamForceMinimumBaseTokens))
-}
-
 type ImmutableTransferAccountToChainParams struct {
 	Proxy wasmtypes.Proxy
 }

@@ -321,3 +321,24 @@ A ratio between two values `x` and `y`, expressed as two `int32` numbers `a:b`, 
 - Whether the access node is part of the committee of validators. (`bool`)
 - The API base URL. (`string` prefixed by `uint16` size)
 
+### `SetPayoutAgentID`
+
+`SetPayoutAgentID` sets the payout AgentID. The default AgentID is the chain owner. Transaction fee will be taken to ensure the common account has minimum storage deposit which is in base token. The rest of transaction fee will be transferred to payout AgentID.
+
+### `GetPayoutAgentID`
+
+`GetPayoutAgentID` gets the payout AgentID.
+
+Returns the payout AgentID of the chain.
+
+- `s` (`AgentID`): the payout AgentID.
+
+### `SetMinCommonAccountBalance`
+
+`SetMinCommonAccountBalance` sets the minimum balanced to be held in the common account.
+
+### `GetMinCommonAccountBalance`
+
+`GetMinCommonAccountBalance` returns the minimum balanced to be held in the common account.
+
+- `ms` (`uint64`): the minimum storage deposit.
