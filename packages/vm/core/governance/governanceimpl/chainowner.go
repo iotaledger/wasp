@@ -73,13 +73,9 @@ func setMinCommonAccountBalance(ctx isc.Sandbox) dict.Dict {
 }
 
 func getMinCommonAccountBalance(ctx isc.SandboxView) dict.Dict {
-	ret := dict.New()
-	minCommonAccountBalance := ctx.StateR().Get(governance.StateVarMinBaseTokensOnCommonAccount)
-	if minCommonAccountBalance == nil {
-		minCommonAccountBalance = codec.EncodeUint64(governance.DefaultMinBaseTokensOnCommonAccount)
+	return dict.Dict{
+		governance.ParamSetMinCommonAccountBalance: ctx.StateR().Get(governance.StateVarMinBaseTokensOnCommonAccount),
 	}
-	ret.Set(governance.ParamSetMinCommonAccountBalance, minCommonAccountBalance)
-	return ret
 }
 
 func getChainOwner(ctx isc.SandboxView) dict.Dict {

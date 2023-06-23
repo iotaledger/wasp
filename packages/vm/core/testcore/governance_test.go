@@ -565,10 +565,10 @@ func TestGasPayout(t *testing.T) {
 	user1, user1Addr := env.NewKeyPairWithFunds()
 	user1AgentID := isc.NewAgentID(user1Addr)
 
+	// transfer some tokens from a new account (user1)
 	ownerBal1 := ch.L2Assets(ch.OriginatorAgentID)
 	user1Bal1 := ch.L2Assets(user1AgentID)
 	transferAmt := uint64(2000)
-
 	_, err := ch.PostRequestSync(
 		solo.NewCallParams(
 			accounts.Contract.Name,
@@ -577,15 +577,16 @@ func TestGasPayout(t *testing.T) {
 		user1,
 	)
 	require.NoError(t, err)
-	receipt := ch.LastReceipt()
+	gasFees := ch.LastReceipt().GasFeeCharged
 
+	// asert gas payout works as expected, owner gets the fees
 	ownerBal2 := ch.L2Assets(ch.OriginatorAgentID)
 	commonBal2 := ch.L2CommonAccountAssets()
 	user1Bal2 := ch.L2Assets(user1AgentID)
+	require.Equal(t, ownerBal1.BaseTokens+gasFees, ownerBal2.BaseTokens)
+	require.Equal(t, user1Bal1.BaseTokens+transferAmt-gasFees, user1Bal2.BaseTokens)
 
-	require.Equal(t, ownerBal1.BaseTokens+receipt.GasFeeCharged, ownerBal2.BaseTokens)
-	require.Equal(t, user1Bal1.BaseTokens+transferAmt-receipt.GasFeeCharged, user1Bal2.BaseTokens)
-
+	// change the payoutAddress, so that user1 now receives the fees charged by the chain
 	_, err = ch.PostRequestOffLedger(
 		solo.NewCallParams(
 			governance.Contract.Name,
@@ -597,6 +598,15 @@ func TestGasPayout(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	// no balance changes (owner calls to gov contract don't pay fees)
+	ownerBal3 := ch.L2Assets(ch.OriginatorAgentID)
+	commonBal3 := ch.L2CommonAccountAssets()
+	user1Bal3 := ch.L2Assets(user1AgentID)
+	require.Equal(t, ownerBal2.BaseTokens, ownerBal3.BaseTokens)
+	require.Equal(t, commonBal2.BaseTokens, commonBal3.BaseTokens)
+	require.Equal(t, user1Bal2.BaseTokens, user1Bal3.BaseTokens)
+
+	// assert new payoutAddr is correctly set
 	retDict, err := ch.CallView(
 		governance.Contract.Name,
 		governance.ViewGetPayoutAgentID.Name,
@@ -606,13 +616,7 @@ func TestGasPayout(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, user1AgentID, retAgentID)
 
-	ownerBal3 := ch.L2Assets(ch.OriginatorAgentID)
-	commonBal3 := ch.L2CommonAccountAssets()
-	user1Bal3 := ch.L2Assets(user1AgentID)
-	require.Equal(t, ownerBal2.BaseTokens, ownerBal3.BaseTokens)
-	require.Equal(t, commonBal2.BaseTokens, commonBal3.BaseTokens)
-	require.Equal(t, user1Bal2.BaseTokens, user1Bal3.BaseTokens)
-
+	// send a new request (another deposit from user1)
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
 			accounts.Contract.Name,
@@ -621,10 +625,22 @@ func TestGasPayout(t *testing.T) {
 		user1,
 	)
 	require.NoError(t, err)
+	gasFees = ch.LastReceipt().GasFeeCharged
 	ownerBal4 := ch.L2Assets(ch.OriginatorAgentID)
 	commonBal4 := ch.L2CommonAccountAssets()
 	user1Bal4 := ch.L2Assets(user1AgentID)
 	require.Equal(t, ownerBal3.BaseTokens, ownerBal4.BaseTokens)
-	require.Equal(t, commonBal3.BaseTokens, commonBal4.BaseTokens)
-	require.Equal(t, user1Bal3.BaseTokens+transferAmt, user1Bal4.BaseTokens)
+	// because common account has less balance than minimum, fees go to the common account
+	require.Less(t, commonBal3.BaseTokens, governance.DefaultMinBaseTokensOnCommonAccount)
+	require.Equal(t, commonBal3.BaseTokens+gasFees, commonBal4.BaseTokens)
+	require.Equal(t, user1Bal3.BaseTokens+transferAmt-gasFees, user1Bal4.BaseTokens)
+
+	// top-up the common account, so its over the minimum balance (owner(originator) makes the transaction)
+	err = ch.TransferAllowanceTo(isc.NewAssetsBaseTokens(1*isc.Million), accounts.CommonAccount(), nil)
+	require.NoError(t, err)
+	commonBal5 := ch.L2CommonAccountAssets()
+	user1Bal5 := ch.L2Assets(user1AgentID)
+	gasFees = ch.LastReceipt().GasFeeCharged
+	require.Equal(t, commonBal4.BaseTokens+1*isc.Million, commonBal5.BaseTokens)
+	require.Equal(t, user1Bal4.BaseTokens+gasFees, user1Bal5.BaseTokens)
 }

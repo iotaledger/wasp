@@ -369,18 +369,18 @@ func (vmctx *VMContext) chargeGasFee() {
 		vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
 	}
 
-	// ensure common account has at least minSD, and transfer the rest of gas fee to payout AgentID
+	// ensure common account has at least minBalanceInCommonAccount, and transfer the rest of gas fee to payout AgentID
 	// if the payout AgentID is not set in governance contract, then chain owner will be used
-	var minSD uint64
+	var minBalanceInCommonAccount uint64
 	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
-		minSD = governance.MustGetMinCommonAccountBalance(s)
+		minBalanceInCommonAccount = governance.MustGetMinCommonAccountBalance(s)
 	})
 	commonAccountBal := vmctx.GetBaseTokensBalance(accounts.CommonAccount())
-	if minSD > commonAccountBal {
+	if commonAccountBal < minBalanceInCommonAccount {
 		// pay to common account since the balance of common account is less than minSD
 		transfer := &isc.Assets{}
-		if sendToPayout > (minSD - commonAccountBal) {
-			transfer.BaseTokens = sendToPayout - (minSD - commonAccountBal)
+		if sendToPayout > (minBalanceInCommonAccount - commonAccountBal) {
+			transfer.BaseTokens = sendToPayout - (minBalanceInCommonAccount - commonAccountBal)
 		} else {
 			transfer.BaseTokens = sendToPayout
 		}
@@ -391,9 +391,6 @@ func (vmctx *VMContext) chargeGasFee() {
 		var payoutAddr isc.AgentID
 		vmctx.callCore(governance.Contract, func(s kv.KVStore) {
 			payoutAddr = governance.MustGetPayoutAgentID(s)
-			if payoutAddr == nil {
-				payoutAddr = vmctx.chainOwnerID
-			}
 		})
 
 		transfer := &isc.Assets{}

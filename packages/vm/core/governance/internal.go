@@ -4,8 +4,6 @@
 package governance
 
 import (
-	"errors"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -68,22 +66,11 @@ func MustGetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) *isc.ChainInf
 }
 
 func MustGetMinCommonAccountBalance(state kv.KVStoreReader) uint64 {
-	d := kvdecoder.New(state)
-	minCommonAccountBalance, err := d.GetUint64(StateVarMinBaseTokensOnCommonAccount)
-	if err != nil {
-		// FIXME we should use DefaultMinBaseTokensOnCommonAccount instead.
-		return 0
-	}
-	return minCommonAccountBalance
+	return kvdecoder.New(state).MustGetUint64(StateVarMinBaseTokensOnCommonAccount)
 }
 
 func MustGetPayoutAgentID(state kv.KVStoreReader) isc.AgentID {
-	d := kvdecoder.New(state)
-	agentID, err := d.GetAgentID(StateVarPayoutAgentID)
-	if err != nil && !errors.Is(err, codec.ErrNilAgentID) {
-		panic(err)
-	}
-	return agentID
+	return kvdecoder.New(state).MustGetAgentID(StateVarPayoutAgentID)
 }
 
 func mustGetChainOwnerID(state kv.KVStoreReader) isc.AgentID {

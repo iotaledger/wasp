@@ -100,7 +100,7 @@ func TestCreateOrigin(t *testing.T) {
 		originStateMetadata := transaction.NewStateMetadata(
 			origin.L1Commitment(
 				dict.Dict{origin.ParamChainOwner: isc.NewAgentID(anchor.GovernanceController).Bytes()},
-				governance.DefaultMinCommonAccountBalance,
+				governance.DefaultMinBaseTokensOnCommonAccount,
 			),
 			gas.DefaultFeePolicy(),
 			migrations.BaseSchemaVersion+uint32(len(migrations.Migrations)),

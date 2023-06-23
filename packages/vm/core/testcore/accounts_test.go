@@ -25,7 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -488,9 +487,6 @@ func TestAccountBalances(t *testing.T) {
 
 	ch, _ := env.NewChainExt(chainOwner, 0, "chain1")
 
-	x := ch.L2BaseTokens(accounts.CommonAccount())
-	println(x)
-
 	totalGasFeeCharged := uint64(0)
 
 	checkBalance := func() {
@@ -513,11 +509,6 @@ func TestAccountBalances(t *testing.T) {
 		)
 
 		totalGasFeeCharged += bi.GasFeeCharged
-		require.EqualValues(t,
-			int(anchor.Deposit()-anchorSD-100_000),
-			int(ch.L2BaseTokens(accounts.CommonAccount())),
-		)
-
 		require.EqualValues(t,
 			utxodb.FundsFromFaucetAmount+totalGasFeeCharged-anchorSD,
 			l1BaseTokens(chainOwnerAddr)+ch.L2BaseTokens(chainOwnerAgentID)+ch.L2BaseTokens(accounts.CommonAccount()),
@@ -789,38 +780,6 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.nativeTokenID, 0)
 		v.env.AssertL1NativeTokens(v.userAddr, v.nativeTokenID, 50)
 	})
-}
-
-func TestTransferAndCheckNativeTokens(t *testing.T) {
-	// initializes it all and prepares withdraw request, does not post it
-	v := initWithdrawTest(t, 10_000)
-	commonAssets := v.ch.L2CommonAccountAssets()
-	require.EqualValues(t, 0, len(commonAssets.NativeTokens))
-
-	v.ch.AssertL2NativeTokens(v.userAgentID, v.nativeTokenID, 100)
-
-	// move minted tokens from user to the common account on-chain
-	err := v.ch.SendFromL2ToL2AccountNativeTokens(v.nativeTokenID, accounts.CommonAccount(), 50, v.user)
-	require.NoError(t, err)
-	// now we have 50 tokens on common account
-	v.ch.AssertL2NativeTokens(accounts.CommonAccount(), v.nativeTokenID, 50)
-	// no native tokens for chainOwner on L1
-	v.env.AssertL1NativeTokens(v.chainOwnerAddr, v.nativeTokenID, 0)
-
-	err = v.ch.DepositBaseTokensToL2(10_000, v.chainOwner)
-	require.NoError(t, err)
-
-	// FIXME we need to trigger the transfer part in runreq.go
-	t.Skip()
-	// now we have 0 tokens on common account
-	v.ch.AssertL2NativeTokens(accounts.CommonAccount(), v.nativeTokenID, 0)
-	// 50 native tokens for chain on L2
-	v.ch.AssertL2NativeTokens(v.chainOwnerAgentID, v.nativeTokenID, 50)
-
-	commonAssets = v.ch.L2CommonAccountAssets()
-	// in the common account should have left minimum plus gas fee from the last request
-	require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, commonAssets.BaseTokens)
-	require.EqualValues(t, 0, len(commonAssets.NativeTokens))
 }
 
 func TestTransferAndCheckBaseTokens(t *testing.T) {

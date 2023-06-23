@@ -335,10 +335,10 @@ Returns the payout AgentID of the chain.
 
 ### `SetMinCommonAccountBalance`
 
-`SetMinCommonAccountBalance` sets the minimum storage deposit.
+`SetMinCommonAccountBalance` sets the minimum balanced to be held in the common account.
 
 ### `GetMinCommonAccountBalance`
 
-`GetMinCommonAccountBalance` returns the minimum storage deposit.
+`GetMinCommonAccountBalance` returns the minimum balanced to be held in the common account.
 
 - `ms` (`uint64`): the minimum storage deposit.
