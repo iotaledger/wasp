@@ -24,7 +24,7 @@ func initAddressCmd() *cobra.Command {
 
 			if log.VerboseFlag {
 				verboseOutput := make(map[string]string)
-				verboseOutput["Private key"] = myWallet.KeyPair.GetPrivateKey().String()
+				//verboseOutput["Private key"] = myWallet.KeyPair.GetPrivateKey().String()
 				verboseOutput["Public key"] = myWallet.KeyPair.GetPublicKey().String()
 				model.VerboseOutput = verboseOutput
 			}
@@ -90,7 +90,7 @@ func initBalanceCmd() *cobra.Command {
 var _ log.CLIOutput = &BalanceModel{}
 
 type BalanceModel struct {
-	AddressIndex int                 `json:"AddressIndex"`
+	AddressIndex uint64              `json:"AddressIndex"`
 	Address      string              `json:"Address"`
 	BaseTokens   uint64              `json:"BaseTokens"`
 	NativeTokens iotago.NativeTokens `json:"NativeTokens"`

@@ -39,7 +39,6 @@ require (
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/labstack/gommon v0.4.2
 	github.com/libp2p/go-libp2p v0.30.0
-	github.com/minio/blake2b-simd v0.0.0-20160723061019-3f5f724cb5b1
 	github.com/mr-tron/base58 v1.2.0
 	github.com/multiformats/go-multiaddr v0.12.2
 	github.com/pangpanglabs/echoswagger/v2 v2.4.1
@@ -50,8 +49,9 @@ require (
 	github.com/second-state/WasmEdge-go v0.13.4
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
+	github.com/tdewolff/parse/v2 v2.6.4
 	github.com/wasmerio/wasmer-go v1.0.4
-	github.com/wollac/iota-crypto-demo v0.0.0-20221117162917-b10619eccb98
+	github.com/zondax/ledger-go v0.14.1
 	go.dedis.ch/kyber/v3 v3.1.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/dig v1.17.1
@@ -202,6 +202,7 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
+	github.com/zondax/hid v0.9.1 // indirect
 	go.dedis.ch/fixbuf v1.0.3 // indirect
 	go.dedis.ch/protobuf v1.0.11 // indirect
 	go.uber.org/fx v1.20.0 // indirect

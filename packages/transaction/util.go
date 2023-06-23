@@ -233,10 +233,10 @@ func MakeAnchorTransaction(essence *iotago.TransactionEssence, sig iotago.Signat
 	}
 }
 
-func CreateAndSignTx(inputs iotago.Inputs, inputsCommitment []byte, outputs iotago.Outputs, wallet *cryptolib.KeyPair, networkID uint64) (*iotago.Transaction, error) {
+func CreateAndSignTx(inputs iotago.OutputIDs, inputsCommitment []byte, outputs iotago.Outputs, wallet cryptolib.VariantKeyPair, networkID uint64) (*iotago.Transaction, error) {
 	unorderedEssence := &iotago.TransactionEssence{
 		NetworkID: networkID,
-		Inputs:    inputs,
+		Inputs:    inputs.UTXOInputs(),
 		Outputs:   outputs,
 	}
 
@@ -253,11 +253,8 @@ func CreateAndSignTx(inputs iotago.Inputs, inputsCommitment []byte, outputs iota
 		return nil, err
 	}
 	// --
-
-	sigs, err := essence.Sign(
-		inputsCommitment,
-		wallet.GetPrivateKey().AddressKeysForEd25519Address(wallet.Address()),
-	)
+	
+	sigs, err := SignEssence(essence, inputsCommitment, wallet)
 	if err != nil {
 		return nil, err
 	}

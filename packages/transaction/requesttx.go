@@ -12,7 +12,7 @@ import (
 )
 
 type NewRequestTransactionParams struct {
-	SenderKeyPair                   *cryptolib.KeyPair
+	SenderKeyPair                   cryptolib.VariantKeyPair
 	SenderAddress                   iotago.Address // might be different from the senderKP address (when sending as NFT or alias)
 	UnspentOutputs                  iotago.OutputSet
 	UnspentOutputIDs                iotago.OutputIDs
@@ -26,7 +26,7 @@ type NewTransferTransactionParams struct {
 	FungibleTokens                  *isc.Assets
 	SendOptions                     isc.SendOptions
 	SenderAddress                   iotago.Address
-	SenderKeyPair                   *cryptolib.KeyPair
+	SenderKeyPair                   cryptolib.VariantKeyPair
 	TargetAddress                   iotago.Address
 	UnspentOutputs                  iotago.OutputSet
 	UnspentOutputIDs                iotago.OutputIDs

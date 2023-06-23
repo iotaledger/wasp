@@ -186,10 +186,10 @@ func (req *OffLedgerRequestData) SenderAccount() AgentID {
 }
 
 // Sign signs the essence
-func (req *OffLedgerRequestData) Sign(key *cryptolib.KeyPair) OffLedgerRequest {
+func (req *offLedgerRequestData) Sign(key cryptolib.VariantKeyPair) OffLedgerRequest {
 	req.signature = offLedgerSignature{
 		publicKey: key.GetPublicKey(),
-		signature: key.GetPrivateKey().Sign(req.messageToSign()),
+		signature: key.Sign(req.messageToSign()),
 	}
 	return req
 }
