@@ -21,6 +21,10 @@ var Processor = governance.Contract.Processor(nil,
 	// chain owner
 	governance.FuncClaimChainOwnership.WithHandler(claimChainOwnership),
 	governance.FuncDelegateChainOwnership.WithHandler(delegateChainOwnership),
+	governance.FuncSetPayoutAgentID.WithHandler(setPayoutAgentID),
+	governance.ViewGetPayoutAgentID.WithHandler(getPayoutAgentID),
+	governance.FuncSetMinCommonAccountBalance.WithHandler(setMinCommonAccountBalance),
+	governance.ViewGetMinCommonAccountBalance.WithHandler(getMinCommonAccountBalance),
 	governance.ViewGetChainOwner.WithHandler(getChainOwner),
 
 	// fees
@@ -56,4 +60,6 @@ func SetInitialState(state kv.KVStore, chainOwner isc.AgentID, blockKeepAmount i
 	state.Set(governance.VarGasLimitsBytes, gas.LimitsDefault.Bytes())
 	state.Set(governance.VarMaintenanceStatus, codec.Encode(false))
 	state.Set(governance.VarBlockKeepAmount, codec.EncodeInt32(blockKeepAmount))
+	state.Set(governance.StateVarMinBaseTokensOnCommonAccount, codec.EncodeUint64(governance.DefaultMinBaseTokensOnCommonAccount))
+	state.Set(governance.StateVarPayoutAgentID, chainOwner.Bytes())
 }

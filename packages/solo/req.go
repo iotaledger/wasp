@@ -316,7 +316,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 	return tx, isc.NewRequestID(txid, 0), nil
 }
 
-// PostRequestSync posts a request synchronously  sent by the test program to the smart contract on the same or another chain:
+// PostRequestSync posts a request synchronously sent by the test program to the smart contract on the same or another chain:
 //   - creates a request transaction with the request block on it. The sigScheme is used to
 //     sign the inputs of the transaction or OriginatorKeyPair is used if parameter is nil
 //   - adds request transaction to UTXODB

@@ -82,16 +82,6 @@ the target chain to the sender SC's L2 account on the origin chain.
 
 :::
 
-### `harvest(f ForceMinimumBaseTokens)`
-
-Moves all tokens from the chain [common account](../accounts/the-common-account.mdx) to the sender's L2 account. The chain
-owner is the only one who can call this entry point.
-
-#### Parameters
-
-- `f` (optional `uint64` - default: `MinimumBaseTokensOnCommonAccount`): Specifies the amount of base tokens to leave in
-  the common account.
-
 ### `foundryCreateNew(t TokenScheme) s SerialNumber`
 
 Creates a new foundry with the specified token scheme, and assigns the foundry to the sender.

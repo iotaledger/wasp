@@ -28,7 +28,6 @@ var (
 	FuncFoundryCreateNew       = coreutil.Func("foundryCreateNew")
 	FuncFoundryDestroy         = coreutil.Func("foundryDestroy")
 	FuncFoundryModifySupply    = coreutil.Func("foundryModifySupply")
-	FuncHarvest                = coreutil.Func("harvest")
 	FuncTransferAccountToChain = coreutil.Func("transferAccountToChain")
 	FuncTransferAllowanceTo    = coreutil.Func("transferAllowanceTo")
 	FuncWithdraw               = coreutil.Func("withdraw")
@@ -37,9 +36,6 @@ var (
 )
 
 const (
-	// MinimumBaseTokensOnCommonAccount can't harvest the minimum
-	MinimumBaseTokensOnCommonAccount = uint64(3000)
-
 	ParamAccountNonce           = "n"
 	ParamAgentID                = "a"
 	ParamBalance                = "B"

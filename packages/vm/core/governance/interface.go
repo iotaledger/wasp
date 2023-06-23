@@ -19,9 +19,13 @@ var (
 	ViewGetAllowedStateControllerAddresses  = coreutil.ViewFunc("getAllowedStateControllerAddresses")
 
 	// chain owner (L1 entity that is the "owner of the chain")
-	FuncClaimChainOwnership    = coreutil.Func("claimChainOwnership")
-	FuncDelegateChainOwnership = coreutil.Func("delegateChainOwnership")
-	ViewGetChainOwner          = coreutil.ViewFunc("getChainOwner")
+	FuncClaimChainOwnership        = coreutil.Func("claimChainOwnership")
+	FuncDelegateChainOwnership     = coreutil.Func("delegateChainOwnership")
+	FuncSetPayoutAgentID           = coreutil.Func("setPayoutAgentID")
+	FuncSetMinCommonAccountBalance = coreutil.Func("setMinCommonAccountBalance")
+	ViewGetPayoutAgentID           = coreutil.ViewFunc("getPayoutAgentID")
+	ViewGetMinCommonAccountBalance = coreutil.ViewFunc("getMinCommonAccountBalance")
+	ViewGetChainOwner              = coreutil.ViewFunc("getChainOwner")
 
 	// gas
 	FuncSetFeePolicy = coreutil.Func("setFeePolicy")
@@ -54,9 +58,15 @@ var (
 
 // state variables
 const (
+	// DefaultMinBaseTokensOnCommonAccount can't harvest the minimum
+	DefaultMinBaseTokensOnCommonAccount = uint64(3000)
+
 	// state controller
 	StateVarAllowedStateControllerAddresses = "a"
 	StateVarRotateToAddress                 = "r"
+
+	StateVarPayoutAgentID                = "pa"
+	StateVarMinBaseTokensOnCommonAccount = "vs"
 
 	// chain owner
 	VarChainOwnerID          = "o"
@@ -122,4 +132,10 @@ const (
 	ParamBlockKeepAmount   = "b"
 	BlockKeepAll           = -1
 	BlockKeepAmountDefault = 10_000
+
+	// set payout AgentID
+	ParamSetPayoutAgentID = "s"
+
+	// set min SD
+	ParamSetMinCommonAccountBalance = "ms"
 )

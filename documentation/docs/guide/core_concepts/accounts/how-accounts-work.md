@@ -77,8 +77,6 @@ By calling this contract, it is possible to:
 - [View current account balances](./view-account-balances.mdx)
 - [Deposit funds to the chain](./how-to-deposit-to-a-chain.mdx)
 - [Withdraw funds from the chain](./how-to-withdraw-from-a-chain.mdx)
-- [Harvest](./the-common-account.mdx) - can only be called by the chain owner, to move funds from the chain common
-  account to their account.
 
 ## Example
 
