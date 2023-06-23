@@ -58,10 +58,10 @@ func (gl *Limits) String() string {
 
 func (gl *Limits) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	gl.MaxGasPerBlock = rr.ReadUint64()
-	gl.MinGasPerRequest = rr.ReadUint64()
-	gl.MaxGasPerRequest = rr.ReadUint64()
-	gl.MaxGasExternalViewCall = rr.ReadUint64()
+	gl.MaxGasPerBlock = rr.ReadGas64()
+	gl.MinGasPerRequest = rr.ReadGas64()
+	gl.MaxGasPerRequest = rr.ReadGas64()
+	gl.MaxGasExternalViewCall = rr.ReadGas64()
 	if rr.Err == nil && !gl.IsValid() {
 		rr.Err = errors.New("invalid gas limits")
 	}
@@ -70,9 +70,9 @@ func (gl *Limits) Read(r io.Reader) error {
 
 func (gl *Limits) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteUint64(gl.MaxGasPerBlock)
-	ww.WriteUint64(gl.MinGasPerRequest)
-	ww.WriteUint64(gl.MaxGasPerRequest)
-	ww.WriteUint64(gl.MaxGasExternalViewCall)
+	ww.WriteGas64(gl.MaxGasPerBlock)
+	ww.WriteGas64(gl.MinGasPerRequest)
+	ww.WriteGas64(gl.MaxGasPerRequest)
+	ww.WriteGas64(gl.MaxGasExternalViewCall)
 	return ww.Err
 }

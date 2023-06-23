@@ -89,6 +89,36 @@ func (rr *Reader) ReadN(ret []byte) {
 	}
 }
 
+// ReadAmount16 reads a variable-length encoded amount.
+func (rr *Reader) ReadAmount16() (ret uint16) {
+	if rr.Err == nil {
+		ret, rr.Err = size16Decode(func() (byte, error) {
+			return rr.ReadByte(), rr.Err
+		})
+	}
+	return ret
+}
+
+// ReadAmount32 reads a variable-length encoded amount.
+func (rr *Reader) ReadAmount32() (ret uint32) {
+	if rr.Err == nil {
+		ret, rr.Err = size32Decode(func() (byte, error) {
+			return rr.ReadByte(), rr.Err
+		})
+	}
+	return ret
+}
+
+// ReadAmount64 reads a variable-length encoded amount.
+func (rr *Reader) ReadAmount64() (ret uint64) {
+	if rr.Err == nil {
+		ret, rr.Err = size64Decode(func() (byte, error) {
+			return rr.ReadByte(), rr.Err
+		})
+	}
+	return ret
+}
+
 func (rr *Reader) ReadBool() bool {
 	if rr.Err != nil {
 		return false
@@ -139,6 +169,17 @@ func (rr *Reader) ReadFromFunc(read func(w io.Reader) (int, error)) {
 	if rr.Err == nil {
 		_, rr.Err = read(rr.r)
 	}
+}
+
+// ReadGas64 reads a variable-length encoded amount of gas.
+// Note that the amount was incremented before storing so that the
+// math.MaxUint64 gas limit will wrap to zero and only takes 1 byte.
+func (rr *Reader) ReadGas64() (ret uint64) {
+	ret = rr.ReadAmount64()
+	if rr.Err == nil {
+		ret--
+	}
+	return ret
 }
 
 func (rr *Reader) ReadInt8() (ret int8) {

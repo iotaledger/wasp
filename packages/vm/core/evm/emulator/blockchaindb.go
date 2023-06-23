@@ -245,8 +245,8 @@ func (h *header) Bytes() []byte {
 func (h *header) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	rr.ReadN(h.Hash[:])
-	h.GasLimit = rr.ReadUint64()
-	h.GasUsed = rr.ReadUint64()
+	h.GasLimit = rr.ReadGas64()
+	h.GasUsed = rr.ReadGas64()
 	h.Time = rr.ReadUint64()
 	rr.ReadN(h.TxHash[:])
 	rr.ReadN(h.ReceiptHash[:])
@@ -257,8 +257,8 @@ func (h *header) Read(r io.Reader) error {
 func (h *header) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteN(h.Hash[:])
-	ww.WriteUint64(h.GasLimit)
-	ww.WriteUint64(h.GasUsed)
+	ww.WriteGas64(h.GasLimit)
+	ww.WriteGas64(h.GasUsed)
 	ww.WriteUint64(h.Time)
 	ww.WriteN(h.TxHash[:])
 	ww.WriteN(h.ReceiptHash[:])

@@ -58,10 +58,10 @@ func (rec *RequestReceipt) Bytes() []byte {
 
 func (rec *RequestReceipt) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rec.GasBudget = rr.ReadUint64()
-	rec.GasBurned = rr.ReadUint64()
-	rec.GasFeeCharged = rr.ReadUint64()
-	rec.SDCharged = rr.ReadUint64()
+	rec.GasBudget = rr.ReadGas64()
+	rec.GasBurned = rr.ReadGas64()
+	rec.GasFeeCharged = rr.ReadGas64()
+	rec.SDCharged = rr.ReadAmount64()
 	rec.Request = isc.RequestFromReader(rr)
 	hasError := rr.ReadBool()
 	if hasError {
@@ -73,10 +73,10 @@ func (rec *RequestReceipt) Read(r io.Reader) error {
 
 func (rec *RequestReceipt) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteUint64(rec.GasBudget)
-	ww.WriteUint64(rec.GasBurned)
-	ww.WriteUint64(rec.GasFeeCharged)
-	ww.WriteUint64(rec.SDCharged)
+	ww.WriteGas64(rec.GasBudget)
+	ww.WriteGas64(rec.GasBurned)
+	ww.WriteGas64(rec.GasFeeCharged)
+	ww.WriteAmount64(rec.SDCharged)
 	ww.Write(rec.Request)
 	ww.WriteBool(rec.Error != nil)
 	if rec.Error != nil {

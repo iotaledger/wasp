@@ -239,7 +239,7 @@ func (meta *RequestMetadata) Read(r io.Reader) error {
 	rr.Read(&meta.SenderContract)
 	rr.Read(&meta.TargetContract)
 	rr.Read(&meta.EntryPoint)
-	meta.GasBudget = rr.ReadUint64()
+	meta.GasBudget = rr.ReadGas64()
 	meta.Params = dict.New()
 	rr.Read(&meta.Params)
 	meta.Allowance = NewEmptyAssets()
@@ -252,7 +252,7 @@ func (meta *RequestMetadata) Write(w io.Writer) error {
 	ww.Write(&meta.SenderContract)
 	ww.Write(&meta.TargetContract)
 	ww.Write(&meta.EntryPoint)
-	ww.WriteUint64(meta.GasBudget)
+	ww.WriteGas64(meta.GasBudget)
 	ww.Write(&meta.Params)
 	ww.Write(meta.Allowance)
 	return ww.Err

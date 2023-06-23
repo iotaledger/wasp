@@ -74,6 +74,30 @@ func (ww *Writer) WriteN(val []byte) *Writer {
 	return ww
 }
 
+// WriteAmount16 writes a variable-length encoded amount.
+func (ww *Writer) WriteAmount16(val uint16) *Writer {
+	if ww.Err == nil {
+		ww.WriteN(size64Encode(uint64(val)))
+	}
+	return ww
+}
+
+// WriteAmount32 writes a variable-length encoded amount.
+func (ww *Writer) WriteAmount32(val uint32) *Writer {
+	if ww.Err == nil {
+		ww.WriteN(size64Encode(uint64(val)))
+	}
+	return ww
+}
+
+// WriteAmount64 writes a variable-length encoded amount.
+func (ww *Writer) WriteAmount64(val uint64) *Writer {
+	if ww.Err == nil {
+		ww.WriteN(size64Encode(val))
+	}
+	return ww
+}
+
 func (ww *Writer) WriteBool(val bool) *Writer {
 	if ww.Err == nil {
 		data := []byte{0x00}
@@ -123,6 +147,13 @@ func (ww *Writer) WriteFromFunc(write func(w io.Writer) (int, error)) *Writer {
 		_, ww.Err = write(ww.w)
 	}
 	return ww
+}
+
+// WriteGas64 writes a variable-length encoded amount of gas.
+// Note that the amount is incremented before storing so that the
+// math.MaxUint64 gas limit will wrap to zero and only takes 1 byte.
+func (ww *Writer) WriteGas64(val uint64) *Writer {
+	return ww.WriteAmount64(val + 1)
 }
 
 func (ww *Writer) WriteInt8(val int8) *Writer {
@@ -201,7 +232,7 @@ func (ww *Writer) WriteSize32(val int) *Writer {
 func (ww *Writer) WriteSizeWithLimit(val int, limit uint32) *Writer {
 	if ww.Err == nil {
 		if 0 <= val && val <= int(limit) {
-			return ww.WriteN(size32Encode(uint32(val)))
+			return ww.WriteN(size64Encode(uint64(val)))
 		}
 		ww.Err = errors.New("invalid write size limit")
 	}
@@ -236,6 +267,15 @@ func (ww *Writer) WriteUint32(val uint32) *Writer {
 }
 
 func (ww *Writer) WriteUint64(val uint64) *Writer {
+	if ww.Err == nil {
+		var b [8]byte
+		binary.LittleEndian.PutUint64(b[:], val)
+		ww.Err = WriteN(ww.w, b[:])
+	}
+	return ww
+}
+
+func (ww *Writer) WriteTokens(val uint64) *Writer {
 	if ww.Err == nil {
 		var b [8]byte
 		binary.LittleEndian.PutUint64(b[:], val)

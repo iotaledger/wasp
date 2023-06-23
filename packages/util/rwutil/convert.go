@@ -50,67 +50,89 @@ func WriteN(w io.Writer, data []byte) error {
 	return nil
 }
 
-//////////////////// size32 encoding/decoding \\\\\\\\\\\\\\\\\\\\
+//////////////////// size16/size32/size64 encoding/decoding \\\\\\\\\\\\\\\\\\\\
+
+func size16Decode(readByte func() (byte, error)) (uint16, error) {
+	size64, err := size64Decode(readByte)
+	if size64 >= 0x1_0000 {
+		return 0, errors.New("size16 overflow")
+	}
+	return uint16(size64), err
+}
 
 func size32Decode(readByte func() (byte, error)) (uint32, error) {
+	size64, err := size64Decode(readByte)
+	if size64 >= 0x1_0000_0000 {
+		return 0, errors.New("size32 overflow")
+	}
+	return uint32(size64), err
+}
+
+// size64Decode uses a simple variable length encoding scheme
+// It takes groups of 7 bits per byte, and decodes following groups while
+// the 0x80 bit is set. Since most numbers are small, this will result in
+// significant storage savings, with values < 128 occupying only a single
+// byte, and values < 16384 only 2 bytes.
+func size64Decode(readByte func() (byte, error)) (uint64, error) {
 	b, err := readByte()
 	if err != nil {
 		return 0, err
 	}
 	if b < 0x80 {
-		return uint32(b), nil
+		return uint64(b), nil
 	}
-	value := uint32(b & 0x7f)
+	value := uint64(b & 0x7f)
 
+	for shift := 7; shift < 63; shift += 7 {
+		b, err = readByte()
+		if err != nil {
+			return 0, err
+		}
+		if b < 0x80 {
+			return value | (uint64(b) << shift), nil
+		}
+		value |= uint64(b&0x7f) << shift
+	}
+
+	// must be the final bit (since we already encoded 63 bits)
 	b, err = readByte()
 	if err != nil {
 		return 0, err
 	}
-	if b < 0x80 {
-		return value | (uint32(b) << 7), nil
+	if b > 0x01 {
+		return 0, errors.New("size64 overflow")
 	}
-	value |= uint32(b&0x7f) << 7
-
-	b, err = readByte()
-	if err != nil {
-		return 0, err
-	}
-	if b < 0x80 {
-		return value | (uint32(b) << 14), nil
-	}
-	value |= uint32(b&0x7f) << 14
-
-	b, err = readByte()
-	if err != nil {
-		return 0, err
-	}
-	if b < 0x80 {
-		return value | (uint32(b) << 21), nil
-	}
-	value |= uint32(b&0x7f) << 21
-
-	b, err = readByte()
-	if err != nil {
-		return 0, err
-	}
-	if b < 0xf0 {
-		return value | (uint32(b) << 28), nil
-	}
-	return 0, errors.New("size32 overflow")
+	return value | (uint64(b) << 63), nil
 }
 
-func size32Encode(s uint32) []byte {
+// size64Encode uses a simple variable length encoding scheme
+// It takes groups of 7 bits per byte, and encodes if there will be a next group
+// by setting the 0x80 bit. Since most numbers are small, this will result in
+// significant storage savings, with values < 128 occupying only a single byte,
+// and values < 16384 only 2 bytes.
+func size64Encode(s uint64) []byte {
+	// serious loop unrolling to optimize for speed
 	switch {
 	case s < 0x80:
 		return []byte{byte(s)}
 	case s < 0x4000:
 		return []byte{byte(s | 0x80), byte(s >> 7)}
-	case s < 0x200000:
+	case s < 0x20_0000:
 		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte(s >> 14)}
-	case s < 0x10000000:
+	case s < 0x1000_0000:
 		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte((s >> 14) | 0x80), byte(s >> 21)}
-	default:
+	case s < 0x8_0000_0000:
 		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte((s >> 14) | 0x80), byte((s >> 21) | 0x80), byte(s >> 28)}
+	case s < 0x400_0000_0000:
+		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte((s >> 14) | 0x80), byte((s >> 21) | 0x80), byte((s >> 28) | 0x80), byte(s >> 35)}
+	case s < 0x2_0000_0000_0000:
+		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte((s >> 14) | 0x80), byte((s >> 21) | 0x80), byte((s >> 28) | 0x80), byte((s >> 35) | 0x80), byte(s >> 42)}
+	case s < 0x100_0000_0000_0000:
+		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte((s >> 14) | 0x80), byte((s >> 21) | 0x80), byte((s >> 28) | 0x80), byte((s >> 35) | 0x80), byte((s >> 42) | 0x80), byte(s >> 49)}
+	case s < 0x8000_0000_0000_0000:
+		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte((s >> 14) | 0x80), byte((s >> 21) | 0x80), byte((s >> 28) | 0x80), byte((s >> 35) | 0x80), byte((s >> 42) | 0x80), byte((s >> 49) | 0x80), byte(s >> 56)}
+	default:
+		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte((s >> 14) | 0x80), byte((s >> 21) | 0x80), byte((s >> 28) | 0x80), byte((s >> 35) | 0x80), byte((s >> 42) | 0x80), byte((s >> 49) | 0x80), byte((s >> 56) | 0x80), byte(s >> 63)}
 	}
 }
 
