@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/common"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/dto"
@@ -217,6 +218,6 @@ func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.
 		}
 		return common.ParseReceipt(ch, receiptResponse)
 	case <-ctxTimeout.Done():
-		return nil, errors.New("timeout while waiting for request to be processed")
+		return nil, apierrors.Timeout("timeout while waiting for request to be processed")
 	}
 }

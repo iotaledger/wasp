@@ -59,3 +59,7 @@ func NoRecordFoundError(err error) *HTTPError {
 func ReceiptError(err error) *HTTPError {
 	return NewHTTPError(http.StatusBadRequest, "Failed to get receipt", err)
 }
+
+func Timeout(msg string) *HTTPError {
+	return NewHTTPError(http.StatusRequestTimeout, msg, nil)
+}
