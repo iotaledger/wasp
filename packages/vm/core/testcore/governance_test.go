@@ -635,12 +635,16 @@ func TestGasPayout(t *testing.T) {
 	require.Equal(t, commonBal3.BaseTokens+gasFees, commonBal4.BaseTokens)
 	require.Equal(t, user1Bal3.BaseTokens+transferAmt-gasFees, user1Bal4.BaseTokens)
 
-	// top-up the common account, so its over the minimum balance (owner(originator) makes the transaction)
-	err = ch.TransferAllowanceTo(isc.NewAssetsBaseTokens(1*isc.Million), accounts.CommonAccount(), nil)
+	// top-up the common account, so its the minBalance - 10 tokens, assert what happens with the fees
+	err = ch.TransferAllowanceTo(
+		isc.NewAssetsBaseTokens(governance.DefaultMinBaseTokensOnCommonAccount-commonBal4.BaseTokens-10),
+		accounts.CommonAccount(),
+		nil,
+	)
 	require.NoError(t, err)
 	commonBal5 := ch.L2CommonAccountAssets()
 	user1Bal5 := ch.L2Assets(user1AgentID)
 	gasFees = ch.LastReceipt().GasFeeCharged
-	require.Equal(t, commonBal4.BaseTokens+1*isc.Million, commonBal5.BaseTokens)
-	require.Equal(t, user1Bal4.BaseTokens+gasFees, user1Bal5.BaseTokens)
+	require.Equal(t, governance.DefaultMinBaseTokensOnCommonAccount, commonBal5.BaseTokens)
+	require.Equal(t, user1Bal4.BaseTokens+gasFees-10, user1Bal5.BaseTokens)
 }

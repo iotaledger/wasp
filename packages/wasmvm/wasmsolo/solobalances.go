@@ -129,15 +129,11 @@ func (bal *SoloBalances) findName(id string) string {
 func (bal *SoloBalances) VerifyBalances(t testing.TB) {
 	bal.DumpBalances()
 	ctx := bal.ctx
-	actual := ctx.Balance(ctx.Account())
-	require.EqualValues(t, bal.Account, actual)
-	actual = ctx.Balance(ctx.CommonAccount())
-	require.EqualValues(t, bal.Common, actual)
-	actual = ctx.Balance(ctx.Originator())
-	require.EqualValues(t, bal.Originator, actual)
+	require.EqualValues(t, bal.Account, ctx.Balance(ctx.Account()))
+	require.EqualValues(t, bal.Common, ctx.Balance(ctx.CommonAccount()))
+	require.EqualValues(t, bal.Originator, ctx.Balance(ctx.Originator()))
 	for _, agent := range bal.agents {
 		expected := bal.accounts[agent.AgentID().String()]
-		actual = ctx.Balance(agent)
-		require.EqualValues(t, expected, actual)
+		require.EqualValues(t, expected, ctx.Balance(agent))
 	}
 }

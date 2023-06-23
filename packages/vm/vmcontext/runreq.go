@@ -378,14 +378,14 @@ func (vmctx *VMContext) chargeGasFee() {
 	commonAccountBal := vmctx.GetBaseTokensBalance(accounts.CommonAccount())
 	if commonAccountBal < minBalanceInCommonAccount {
 		// pay to common account since the balance of common account is less than minSD
-		transfer := &isc.Assets{}
-		if sendToPayout > (minBalanceInCommonAccount - commonAccountBal) {
-			transfer.BaseTokens = sendToPayout - (minBalanceInCommonAccount - commonAccountBal)
-		} else {
-			transfer.BaseTokens = sendToPayout
+		transferToCommonAcc := sendToPayout
+		sendToPayout = 0
+		if commonAccountBal+transferToCommonAcc > minBalanceInCommonAccount {
+			excess := (commonAccountBal + transferToCommonAcc) - minBalanceInCommonAccount
+			transferToCommonAcc -= excess
+			sendToPayout = excess
 		}
-		sendToPayout -= transfer.BaseTokens
-		vmctx.mustMoveBetweenAccounts(sender, accounts.CommonAccount(), transfer)
+		vmctx.mustMoveBetweenAccounts(sender, accounts.CommonAccount(), isc.NewAssetsBaseTokens(transferToCommonAcc))
 	}
 	if sendToPayout > 0 {
 		var payoutAddr isc.AgentID
@@ -393,9 +393,7 @@ func (vmctx *VMContext) chargeGasFee() {
 			payoutAddr = governance.MustGetPayoutAgentID(s)
 		})
 
-		transfer := &isc.Assets{}
-		transfer.BaseTokens = sendToPayout
-		vmctx.mustMoveBetweenAccounts(sender, payoutAddr, transfer)
+		vmctx.mustMoveBetweenAccounts(sender, payoutAddr, isc.NewAssetsBaseTokens(sendToPayout))
 	}
 }
 
