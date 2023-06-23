@@ -17,8 +17,7 @@ import (
 const (
 	// ExpiryUnlockSafetyWindowDuration creates safety window around time assumption,
 	// the UTXO won't be consumed to avoid race conditions
-	ExpiryUnlockSafetyWindowDuration  = 1 * time.Minute
-	ExpiryUnlockSafetyWindowMilestone = 3
+	ExpiryUnlockSafetyWindowDuration = 1 * time.Minute
 )
 
 // earlyCheckReasonToSkip checks if request must be ignored without even modifying the state

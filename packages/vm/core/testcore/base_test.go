@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -46,6 +47,8 @@ func TestInitLoad(t *testing.T) {
 
 	t.Logf("common base tokens: %d", ch.L2CommonAccountBaseTokens())
 	require.True(t, cassets.BaseTokens >= accounts.MinimumBaseTokensOnCommonAccount)
+
+	testdbhash.VerifyDBHash(env, t.Name())
 }
 
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers

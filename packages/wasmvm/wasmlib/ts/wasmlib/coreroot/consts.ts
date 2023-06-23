@@ -11,7 +11,6 @@ export const HScName       = new wasmtypes.ScHname(0xcebf5908);
 
 export const ParamDeployer                 = 'dp';
 export const ParamDeployPermissionsEnabled = 'de';
-export const ParamDescription              = 'ds';
 export const ParamHname                    = 'hn';
 export const ParamInitParams               = 'this';
 export const ParamName                     = 'nm';

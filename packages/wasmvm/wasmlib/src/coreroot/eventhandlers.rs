@@ -66,7 +66,6 @@ impl CoreRootEventHandlers {
 
 pub struct EventDeploy {
     pub timestamp: u64,
-    pub description: String,
     pub name: String,
     pub prog_hash: ScHash,
 }
@@ -75,7 +74,6 @@ impl EventDeploy {
     pub fn new(dec: &mut WasmDecoder) -> EventDeploy {
         EventDeploy {
             timestamp: uint64_decode(dec),
-            description: string_decode(dec),
             name: string_decode(dec),
             prog_hash: hash_decode(dec),
         }

@@ -127,42 +127,6 @@ func (a *AliasOutputWithID) Write(w io.Writer) error {
 	return ww.Err
 }
 
-func AliasOutputsEqual(ao1, ao2 *iotago.AliasOutput) bool {
-	if ao1 == nil {
-		return ao2 == nil
-	}
-	if ao2 == nil {
-		return false
-	}
-	if ao1.Amount != ao2.Amount {
-		return false
-	}
-	if !ao1.NativeTokens.Equal(ao2.NativeTokens) {
-		return false
-	}
-	if ao1.AliasID != ao2.AliasID {
-		return false
-	}
-	if ao1.StateIndex != ao2.StateIndex {
-		return false
-	}
-	if !bytes.Equal(ao1.StateMetadata, ao2.StateMetadata) {
-		return false
-	}
-	if ao1.FoundryCounter != ao2.FoundryCounter {
-		return false
-	}
-	if len(ao1.Conditions) != len(ao2.Conditions) {
-		return false
-	}
-	for index := range ao1.Conditions {
-		if !ao1.Conditions[index].Equal(ao2.Conditions[index]) {
-			return false
-		}
-	}
-	return ao1.Features.Equal(ao2.Features)
-}
-
 func OutputSetToOutputIDs(outputSet iotago.OutputSet) iotago.OutputIDs {
 	outputIDs := make(iotago.OutputIDs, len(outputSet))
 	i := 0

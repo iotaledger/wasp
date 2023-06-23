@@ -1,8 +1,6 @@
 package collections
 
 import (
-	"math"
-
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -25,7 +23,6 @@ type ImmutableMap struct {
 // WasmLib maps these collections in the exact same way
 const (
 	mapElemKeyCode = byte('.')
-	mapSizeKeyCode = byte('#')
 )
 
 func NewMap(kvStore kv.KVStore, name string) *Map {
@@ -42,17 +39,12 @@ func NewMapReadOnly(kvReader kv.KVStoreReader, name string) *ImmutableMap {
 	}
 }
 
-func MapSizeKey(mapName string) []byte {
-	ret := make([]byte, 0, len(mapName)+1)
-	ret = append(ret, []byte(mapName)...)
-	return append(ret, mapSizeKeyCode)
-}
-
-func MapElemKey(mapName string, keyInMap []byte) []byte {
-	ret := make([]byte, 0, len(mapName)+len(keyInMap)+1)
-	ret = append(ret, []byte(mapName)...)
-	ret = append(ret, mapElemKeyCode)
-	return append(ret, keyInMap...)
+func MapElemKey(name string, key []byte) kv.Key {
+	return kv.Key(rwutil.NewBytesWriter().
+		WriteN([]byte(name)).
+		WriteByte(mapElemKeyCode).
+		WriteN(key).
+		Bytes())
 }
 
 func (m *Map) Immutable() *ImmutableMap {
@@ -64,29 +56,27 @@ func (m *ImmutableMap) Name() string {
 }
 
 func (m *Map) addToSize(amount int) {
-	n := int64(m.Len()) + int64(amount)
-	if n < 0 {
-		panic("negative size in Map")
+	key := kv.Key(m.name)
+	data := m.kvr.Get(key)
+	if data != nil {
+		amount += rwutil.NewBytesReader(data).Must().ReadSize32()
 	}
-	if n > math.MaxUint32 {
-		panic("Map is full")
+	if amount == 0 {
+		m.kvw.Del(key)
+		return
 	}
-	if n == 0 {
-		m.kvw.Del(kv.Key(MapSizeKey(m.name)))
-	} else {
-		m.kvw.Set(kv.Key(MapSizeKey(m.name)), rwutil.Size32ToBytes(uint32(n)))
-	}
+	m.kvw.Set(key, rwutil.NewBytesWriter().WriteSize32(amount).Bytes())
 }
 
 func (m *ImmutableMap) GetAt(key []byte) []byte {
-	return m.kvr.Get(kv.Key(MapElemKey(m.name, key)))
+	return m.kvr.Get(MapElemKey(m.name, key))
 }
 
 func (m *Map) SetAt(key, value []byte) {
 	if !m.HasAt(key) {
 		m.addToSize(1)
 	}
-	m.kvw.Set(kv.Key(MapElemKey(m.name, key)), value)
+	m.kvw.Set(MapElemKey(m.name, key), value)
 }
 
 func (m *Map) DelAt(key []byte) {
@@ -94,19 +84,19 @@ func (m *Map) DelAt(key []byte) {
 		return
 	}
 	m.addToSize(-1)
-	m.kvw.Del(kv.Key(MapElemKey(m.name, key)))
+	m.kvw.Del(MapElemKey(m.name, key))
 }
 
 func (m *ImmutableMap) HasAt(key []byte) bool {
-	return m.kvr.Has(kv.Key(MapElemKey(m.name, key)))
+	return m.kvr.Has(MapElemKey(m.name, key))
 }
 
 func (m *ImmutableMap) Len() uint32 {
-	v := m.kvr.Get(kv.Key(MapSizeKey(m.name)))
-	if v == nil {
+	data := m.kvr.Get(kv.Key(m.name))
+	if data == nil {
 		return 0
 	}
-	return rwutil.MustSize32FromBytes(v)
+	return uint32(rwutil.NewBytesReader(data).Must().ReadSize32())
 }
 
 // Erase the map.
@@ -119,7 +109,7 @@ func (m *Map) Erase() {
 
 // Iterate non-deterministic
 func (m *ImmutableMap) Iterate(f func(elemKey []byte, value []byte) bool) {
-	prefix := kv.Key(MapElemKey(m.name, nil))
+	prefix := MapElemKey(m.name, nil)
 	m.kvr.Iterate(prefix, func(key kv.Key, value []byte) bool {
 		return f([]byte(key)[len(prefix):], value)
 	})
@@ -127,7 +117,7 @@ func (m *ImmutableMap) Iterate(f func(elemKey []byte, value []byte) bool) {
 
 // IterateKeys non-deterministic
 func (m *ImmutableMap) IterateKeys(f func(elemKey []byte) bool) {
-	prefix := kv.Key(MapElemKey(m.name, nil))
+	prefix := MapElemKey(m.name, nil)
 	m.kvr.IterateKeys(prefix, func(key kv.Key) bool {
 		return f([]byte(key)[len(prefix):])
 	})

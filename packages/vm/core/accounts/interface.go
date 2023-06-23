@@ -1,12 +1,10 @@
 package accounts
 
 import (
-	"errors"
-
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
-var Contract = coreutil.NewContract(coreutil.CoreContractAccounts, "Chain account ledger contract")
+var Contract = coreutil.NewContract(coreutil.CoreContractAccounts)
 
 var (
 	// Views
@@ -59,5 +57,3 @@ const (
 	ParamSupplyDeltaAbs         = "d"
 	ParamTokenScheme            = "t"
 )
-
-var ErrStorageDepositAssumptionsWrong = errors.New("'storage deposit assumptions' parameter not specified or wrong")

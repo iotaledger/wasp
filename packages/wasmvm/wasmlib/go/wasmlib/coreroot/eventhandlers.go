@@ -54,7 +54,6 @@ func (h *CoreRootEventHandlers) OnCoreRootRevoke(handler func(e *EventRevoke)) {
 
 type EventDeploy struct {
 	Timestamp uint64
-	Description string
 	Name string
 	ProgHash wasmtypes.ScHash
 }
@@ -65,7 +64,6 @@ func (h *CoreRootEventHandlers) onCoreRootDeployThunk(dec *wasmtypes.WasmDecoder
 	}
 	e := &EventDeploy{}
 	e.Timestamp = wasmtypes.Uint64Decode(dec)
-	e.Description = wasmtypes.StringDecode(dec)
 	e.Name = wasmtypes.StringDecode(dec)
 	e.ProgHash = wasmtypes.HashDecode(dec)
 	dec.Close()

@@ -219,7 +219,7 @@ func TestDisallowMaintenanceDeadlock(t *testing.T) {
 	claimOwnershipFunc := coreutil.Func("claimOwnership")
 	startMaintenceFunc := coreutil.Func("initMaintenance")
 	stopMaintenceFunc := coreutil.Func("stopMaintenance")
-	ownerContract := coreutil.NewContract("chain owner contract", "N/A")
+	ownerContract := coreutil.NewContract("chain owner contract")
 	ownerContractProcessor := ownerContract.Processor(nil,
 		claimOwnershipFunc.WithHandler(func(ctx isc.Sandbox) dict.Dict {
 			return ctx.Call(governance.Contract.Hname(), governance.FuncClaimChainOwnership.Hname(), nil, nil)

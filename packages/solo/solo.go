@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -189,6 +190,10 @@ func New(t testing.TB, initOptions ...*InitOptions) *Solo {
 	}()
 
 	return ret
+}
+
+func (env *Solo) GetDBHash() hashing.HashValue {
+	return env.chainStateDatabaseManager.DBHash()
 }
 
 func (env *Solo) SyncLog() {

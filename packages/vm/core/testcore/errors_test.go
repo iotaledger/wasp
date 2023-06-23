@@ -20,7 +20,7 @@ var errorMessageToTest = "Test error message %v"
 
 var (
 	errorContractName = "ErrorContract"
-	errorContract     = coreutil.NewContract(errorContractName, "error contract")
+	errorContract     = coreutil.NewContract(errorContractName)
 )
 
 var (

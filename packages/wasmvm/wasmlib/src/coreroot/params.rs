@@ -32,11 +32,6 @@ impl ImmutableDeployContractParams {
         }
     }
 
-    // Description of the contract to be deployed. Default 'N/A'
-    pub fn description(&self) -> ScImmutableString {
-        ScImmutableString::new(self.proxy.root(PARAM_DESCRIPTION))
-    }
-
     // additional params for smart contract init function
     pub fn init_params(&self) -> MapStringToImmutableBytes {
         MapStringToImmutableBytes { proxy: self.proxy.clone() }
@@ -75,11 +70,6 @@ pub struct MutableDeployContractParams {
 }
 
 impl MutableDeployContractParams {
-    // Description of the contract to be deployed. Default 'N/A'
-    pub fn description(&self) -> ScMutableString {
-        ScMutableString::new(self.proxy.root(PARAM_DESCRIPTION))
-    }
-
     // additional params for smart contract init function
     pub fn init_params(&self) -> MapStringToMutableBytes {
         MapStringToMutableBytes { proxy: self.proxy.clone() }

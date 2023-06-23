@@ -59,6 +59,14 @@ func HashValueFromBytes(b []byte) (HashValue, error) {
 	return ret, nil
 }
 
+func MustHashValueFromHex(s string) HashValue {
+	ret, err := HashValueFromHex(s)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 func HashValueFromHex(s string) (HashValue, error) {
 	b, err := iotago.DecodeHex(s)
 	if err != nil {

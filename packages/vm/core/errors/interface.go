@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
-var Contract = coreutil.NewContract(coreutil.CoreContractErrors, "Errors contract")
+var Contract = coreutil.NewContract(coreutil.CoreContractErrors)
 
 const (
 	prefixErrorTemplateMap = "a"

@@ -73,11 +73,13 @@ func (hn Hname) String() string {
 }
 
 func (hn *Hname) Read(r io.Reader) error {
-	u32, err := rwutil.ReadUint32(r)
-	*hn = Hname(u32)
-	return err
+	rr := rwutil.NewReader(r)
+	*hn = Hname(rr.ReadUint32())
+	return rr.Err
 }
 
 func (hn *Hname) Write(w io.Writer) error {
-	return rwutil.WriteUint32(w, uint32(*hn))
+	ww := rwutil.NewWriter(w)
+	ww.WriteUint32(uint32(*hn))
+	return ww.Err
 }
