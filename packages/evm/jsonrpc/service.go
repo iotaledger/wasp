@@ -226,7 +226,7 @@ func (e *EthService) getTransactionReceipt(txHash common.Hash) (map[string]inter
 	if r == nil {
 		return nil, nil
 	}
-	tx, _, _, _, err := e.evmChain.TransactionByHash(txHash) //nolint:dogsled
+	tx, _, _, _, err := e.evmChain.TransactionByHash(txHash)
 	if err != nil {
 		return nil, e.resolveError(err)
 	}
