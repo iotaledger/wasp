@@ -217,6 +217,8 @@ func TestTakeAllowance(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	bal.Account += tokensToSend
+	bal.UpdateFeeBalances(ctx.GasFee)
+	bal.Originator -= ctx.GasFee // request is sent from the originator...
 	bal.VerifyBalances(t)
 
 	g := testwasmlib.ScFuncs.TakeBalance(ctx)
@@ -249,7 +251,8 @@ func TestTakeNoAllowance(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	ctx.Balances()
 
-	bal.Originator += tokensToSend
+	bal.UpdateFeeBalances(ctx.GasFee)
+	bal.Originator += tokensToSend - ctx.GasFee // request is sent by the originator
 	bal.VerifyBalances(t)
 
 	g := testwasmlib.ScFuncs.TakeBalance(ctx)

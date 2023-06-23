@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 type SoloBalances struct {
@@ -124,6 +125,15 @@ func (bal *SoloBalances) findName(id string) string {
 		}
 	}
 	return ""
+}
+
+func (bal *SoloBalances) UpdateFeeBalances(gasfee uint64) {
+	bal.Common += gasfee
+	if bal.Common > governance.DefaultMinBaseTokensOnCommonAccount {
+		exceess := bal.Common - governance.DefaultMinBaseTokensOnCommonAccount
+		bal.Common = governance.DefaultMinBaseTokensOnCommonAccount
+		bal.Originator += exceess
+	}
 }
 
 func (bal *SoloBalances) VerifyBalances(t testing.TB) {
