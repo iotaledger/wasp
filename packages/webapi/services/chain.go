@@ -207,14 +207,6 @@ func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.
 		return nil, err
 	}
 
-	receipt, err := corecontracts.GetRequestReceipt(ch, requestID)
-	if err != nil {
-		panic(err)
-	}
-	if receipt != nil {
-		return common.ParseReceipt(ch, receipt)
-	}
-
 	ctxTimeout, ctxCancel := context.WithTimeout(ctx, timeout)
 	defer ctxCancel()
 
