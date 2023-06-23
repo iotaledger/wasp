@@ -535,7 +535,7 @@ func (n *netImpl) maintenanceLoop(stopCh chan bool) {
 	}
 }
 
-// readFrame differs from rwutil.ReadBytes because it uses ReadFull instead of Read to read the data.
+// readFrame differs from ReadBytes because it uses ReadFull instead of Read to read the data.
 func readFrame(stream network.Stream) ([]byte, error) {
 	var msgLenB [4]byte
 	if msgLenN, err := io.ReadFull(stream, msgLenB[:]); err != nil || msgLenN != len(msgLenB) {
@@ -560,12 +560,10 @@ func readFrame(stream network.Stream) ([]byte, error) {
 }
 
 func writeFrame(stream network.Stream, payload []byte) error {
-	err := rwutil.WriteUint32(stream, uint32(len(payload)))
-	if err != nil {
-		return err
-	}
+	ww := rwutil.NewWriter(stream)
+	ww.WriteUint32(uint32(len(payload)))
 	if len(payload) != 0 {
-		_, err = stream.Write(payload)
+		ww.WriteN(payload)
 	}
-	return err
+	return ww.Err
 }
