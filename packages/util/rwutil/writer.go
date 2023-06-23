@@ -4,6 +4,7 @@
 package rwutil
 
 import (
+	"encoding/binary"
 	"errors"
 	"io"
 	"math"
@@ -75,7 +76,11 @@ func (ww *Writer) WriteN(val []byte) *Writer {
 
 func (ww *Writer) WriteBool(val bool) *Writer {
 	if ww.Err == nil {
-		ww.Err = WriteBool(ww.w, val)
+		data := []byte{0x00}
+		if val {
+			data[0] = 0x01
+		}
+		ww.Err = WriteN(ww.w, data)
 	}
 	return ww
 }
@@ -83,20 +88,27 @@ func (ww *Writer) WriteBool(val bool) *Writer {
 //nolint:govet
 func (ww *Writer) WriteByte(val byte) *Writer {
 	if ww.Err == nil {
-		ww.Err = WriteByte(ww.w, val)
+		ww.Err = WriteN(ww.w, []byte{val})
 	}
 	return ww
 }
 
-func (ww *Writer) WriteBytes(val []byte) *Writer {
+func (ww *Writer) WriteBytes(data []byte) *Writer {
 	if ww.Err == nil {
-		ww.Err = WriteBytes(ww.w, val)
+		size := len(data)
+		if size > math.MaxInt32 {
+			panic("data size overflow")
+		}
+		ww.WriteSize32(size)
+		if size != 0 {
+			ww.WriteN(data)
+		}
 	}
 	return ww
 }
 
 func (ww *Writer) WriteDuration(val time.Duration) *Writer {
-	return ww.WriteInt64(int64(val))
+	return ww.WriteUint64(uint64(val))
 }
 
 func (ww *Writer) WriteFromBytes(obj interface{ Bytes() []byte }) *Writer {
@@ -114,31 +126,19 @@ func (ww *Writer) WriteFromFunc(write func(w io.Writer) (int, error)) *Writer {
 }
 
 func (ww *Writer) WriteInt8(val int8) *Writer {
-	if ww.Err == nil {
-		ww.Err = WriteInt8(ww.w, val)
-	}
-	return ww
+	return ww.WriteUint8(uint8(val))
 }
 
 func (ww *Writer) WriteInt16(val int16) *Writer {
-	if ww.Err == nil {
-		ww.Err = WriteInt16(ww.w, val)
-	}
-	return ww
+	return ww.WriteUint16(uint16(val))
 }
 
 func (ww *Writer) WriteInt32(val int32) *Writer {
-	if ww.Err == nil {
-		ww.Err = WriteInt32(ww.w, val)
-	}
-	return ww
+	return ww.WriteUint32(uint32(val))
 }
 
 func (ww *Writer) WriteInt64(val int64) *Writer {
-	if ww.Err == nil {
-		ww.Err = WriteInt64(ww.w, val)
-	}
-	return ww
+	return ww.WriteUint64(uint64(val))
 }
 
 func (ww *Writer) WriteKind(msgType Kind) *Writer {
@@ -152,7 +152,8 @@ type serializable interface {
 // WriteSerialized writes the serializable object to the stream.
 // If no sizes are present a 16-bit size is written to the stream.
 // The first size indicates a different limit for the size written to the stream.
-// The second size indicates the expected size and does not write it to the stream.
+// The second size indicates the expected size and does not write it to the stream,
+// but verifies that the serialized size is equal to the expected size..
 func (ww *Writer) WriteSerialized(obj serializable, sizes ...int) *Writer {
 	if ww.Err != nil {
 		return ww
@@ -193,63 +194,65 @@ func (ww *Writer) WriteSize16(val int) *Writer {
 
 func (ww *Writer) WriteSize32(val int) *Writer {
 	// note we cannot exceed SIGNED max
-	// because if int is actually 32 bit it would be negative
+	// because if int is actually 32 bit it would become negative
 	return ww.WriteSizeWithLimit(val, math.MaxInt32)
 }
 
 func (ww *Writer) WriteSizeWithLimit(val int, limit uint32) *Writer {
 	if ww.Err == nil {
-		if val < 0 || val > int(limit) {
-			ww.Err = errors.New("invalid write size limit")
-			return ww
+		if 0 <= val && val <= int(limit) {
+			return ww.WriteN(size32Encode(uint32(val)))
 		}
-		ww.Err = WriteSize32(ww.w, uint32(val))
+		ww.Err = errors.New("invalid write size limit")
 	}
 	return ww
 }
 
 func (ww *Writer) WriteString(val string) *Writer {
-	if ww.Err == nil {
-		ww.Err = WriteString(ww.w, val)
-	}
-	return ww
+	return ww.WriteBytes([]byte(val))
 }
 
 func (ww *Writer) WriteUint8(val uint8) *Writer {
 	if ww.Err == nil {
-		ww.Err = WriteUint8(ww.w, val)
+		ww.Err = WriteN(ww.w, []byte{val})
 	}
 	return ww
 }
 
 func (ww *Writer) WriteUint16(val uint16) *Writer {
 	if ww.Err == nil {
-		ww.Err = WriteUint16(ww.w, val)
+		ww.Err = WriteN(ww.w, []byte{byte(val), byte(val >> 8)})
 	}
 	return ww
 }
 
 func (ww *Writer) WriteUint32(val uint32) *Writer {
 	if ww.Err == nil {
-		ww.Err = WriteUint32(ww.w, val)
+		var b [4]byte
+		binary.LittleEndian.PutUint32(b[:], val)
+		ww.Err = WriteN(ww.w, b[:])
 	}
 	return ww
 }
 
 func (ww *Writer) WriteUint64(val uint64) *Writer {
 	if ww.Err == nil {
-		ww.Err = WriteUint64(ww.w, val)
+		var b [8]byte
+		binary.LittleEndian.PutUint64(b[:], val)
+		ww.Err = WriteN(ww.w, b[:])
 	}
 	return ww
 }
 
 func (ww *Writer) WriteUint256(val *big.Int) *Writer {
-	if val == nil {
-		val = new(big.Int)
-	}
-	if ww.Err == nil && val.Sign() < 0 {
+	if ww.Err == nil {
+		if val == nil {
+			val = new(big.Int)
+		}
+		if val.Sign() >= 0 {
+			return ww.WriteBytes(val.Bytes())
+		}
 		ww.Err = errors.New("negative uint256")
-		return ww
 	}
-	return ww.WriteBytes(val.Bytes())
+	return ww
 }

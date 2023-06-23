@@ -57,7 +57,6 @@ var (
 const (
 	broadcastQueueSize            = 20000
 	clientSendChannelSize         = 1000
-	webSocketWriteTimeout         = time.Duration(3) * time.Second
 	maxWebsocketMessageSize int64 = 510
 )
 
