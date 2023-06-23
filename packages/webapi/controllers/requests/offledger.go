@@ -8,10 +8,12 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 )
 
 func (c *Controller) handleOffLedgerRequest(e echo.Context) error {
+	controllerutils.SetOperation(e, "offledger")
 	request := new(models.OffLedgerRequest)
 	if err := e.Bind(request); err != nil {
 		return apierrors.InvalidOffLedgerRequestError(err)
@@ -21,6 +23,9 @@ func (c *Controller) handleOffLedgerRequest(e echo.Context) error {
 	if err != nil {
 		return apierrors.InvalidPropertyError("ChainID", err)
 	}
+
+	// set chainID to be used by the prometheus metrics
+	e.Set(controllerutils.EchoContextKeyChainID, chainID)
 
 	if !c.chainService.HasChain(chainID) {
 		return apierrors.ChainNotFoundError(chainID.String())

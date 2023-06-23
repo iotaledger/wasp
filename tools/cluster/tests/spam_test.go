@@ -129,15 +129,14 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 	processingDurationsSum := uint64(0)
 	maxProcessingDuration := uint64(0)
 
-	maxChan := make(chan int, maxParallelRequests)
+	maxChan := make(chan uint64, maxParallelRequests)
 	reqSuccessChan := make(chan uint64, numRequests)
 	reqErrorChan := make(chan error, 1)
 
 	go func() {
-		for i := 0; i < numRequests; i++ {
+		for i := uint64(0); i < numRequests; i++ {
 			maxChan <- i
-			nonce := uint64(i + 1)
-			go func() {
+			go func(nonce uint64) {
 				// send the request
 				req, er := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: nonce})
 				if er != nil {
@@ -146,7 +145,7 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 				}
 				reqSentTime := time.Now()
 				// wait for the request to be processed
-				_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), false, 5*time.Minute)
+				_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), false, 1*time.Minute)
 				if err != nil {
 					reqErrorChan <- err
 					return
@@ -161,7 +160,7 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 				if processingDuration > maxProcessingDuration {
 					maxProcessingDuration = processingDuration
 				}
-			}()
+			}(i)
 		}
 	}()
 
@@ -185,7 +184,10 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsApi.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, err)
 
-	require.Regexp(t, fmt.Sprintf("counter = %d", numRequests), res.Events[len(res.Events)-1])
+	eventBytes, err := iotago.DecodeHex(res.Events[len(res.Events)-1].Payload)
+	require.NoError(t, err)
+	lastEventCounterValue := codec.MustDecodeInt64(eventBytes)
+	require.EqualValues(t, lastEventCounterValue, numRequests)
 	avgProcessingDuration := processingDurationsSum / numRequests
 	fmt.Printf("avg processing duration: %ds\n max: %ds\n", avgProcessingDuration, maxProcessingDuration)
 }

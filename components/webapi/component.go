@@ -258,6 +258,12 @@ func provide(c *dig.Container) error {
 			publisher.ISCEventKindBlockEvents,
 		}, deps.Publisher, websocket.WithMaxTopicSubscriptionsPerClient(ParamsWebAPI.Limits.MaxTopicSubscriptionsPerClient))
 
+		if ParamsWebAPI.DebugRequestLoggerEnabled {
+			echoSwagger.Echo().Use(middleware.BodyDump(func(c echo.Context, reqBody, resBody []byte) {
+				logger.Debugf("API Dump: Request=%q, Response=%q", reqBody, resBody)
+			}))
+		}
+
 		webapi.Init(
 			logger,
 			echoSwagger,
@@ -281,7 +287,6 @@ func provide(c *dig.Container) error {
 			deps.APICacheTTL,
 			websocketService,
 			deps.Publisher,
-			ParamsWebAPI.DebugRequestLoggerEnabled,
 		)
 
 		return webapiServerResult{
