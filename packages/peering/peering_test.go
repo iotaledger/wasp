@@ -19,8 +19,7 @@ func TestPeerMessageCodec(t *testing.T) {
 			peering.FirstUserMsgCode+17,
 			[]byte{1, 2, 3, 4, 5}),
 	}
-	var bin []byte
-	bin = src.Bytes()
+	bin := src.Bytes()
 	require.NotNil(t, bin)
 	dst, err = peering.PeerMessageNetFromBytes(bin)
 	require.NoError(t, err)
