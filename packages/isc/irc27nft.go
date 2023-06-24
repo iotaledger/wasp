@@ -22,16 +22,13 @@ func NewIRC27NFTMetadata(mimeType, uri, name string) *IRC27NFTMetadata {
 	}
 }
 
-func (m *IRC27NFTMetadata) Bytes() ([]byte, error) {
-	return json.Marshal(m)
-}
-
-func (m *IRC27NFTMetadata) MustBytes() []byte {
-	b, err := json.Marshal(m)
+func (m *IRC27NFTMetadata) Bytes() []byte {
+	ret, err := json.Marshal(m)
 	if err != nil {
+		// only happens when passing unsupported structures, which we don't
 		panic(err)
 	}
-	return b
+	return ret
 }
 
 func IRC27NFTMetadataFromBytes(b []byte) (*IRC27NFTMetadata, error) {

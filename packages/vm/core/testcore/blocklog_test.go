@@ -147,7 +147,7 @@ func TestRequestReceipt(t *testing.T) {
 	require.True(t, ch.IsRequestProcessed(reqs[0].ID()))
 
 	receipt, err := ch.GetRequestReceipt(reqs[0].ID())
-	require.Nil(t, err)
+	require.NoError(t, err)
 	a := reqs[0].Bytes()
 	b := receipt.Request.Bytes()
 	require.Equal(t, a, b)
@@ -212,7 +212,7 @@ func TestViewGetRequestReceipt(t *testing.T) {
 	// try to get a receipt for a request that does not exist
 	receipt, err := ch.GetRequestReceipt(isc.RequestID{})
 	require.Nil(t, receipt)
-	require.Nil(t, err)
+	require.NoError(t, err)
 }
 
 func TestBlocklogPruning(t *testing.T) {

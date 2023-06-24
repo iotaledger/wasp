@@ -722,7 +722,7 @@ func TestERC721NFTCollection(t *testing.T) {
 		"a string that is longer than 32 bytes",
 	)
 
-	collection, collectionInfo, err := env.solo.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.MustBytes())
+	collection, collectionInfo, err := env.solo.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.Bytes())
 	require.NoError(t, err)
 
 	nftMetadatas := []*isc.IRC27NFTMetadata{
@@ -739,7 +739,7 @@ func TestERC721NFTCollection(t *testing.T) {
 	}
 	allNFTs, _, err := env.solo.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID,
 		lo.Map(nftMetadatas, func(item *isc.IRC27NFTMetadata, index int) []byte {
-			return item.MustBytes()
+			return item.Bytes()
 		}),
 	)
 	require.NoError(t, err)

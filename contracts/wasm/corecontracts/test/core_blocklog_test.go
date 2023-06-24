@@ -127,7 +127,7 @@ func TestGetRequestReceipt(t *testing.T) {
 	receipt, err := blocklog.RequestReceiptFromBytes(f.Results.RequestReceipt().Value())
 	require.NoError(t, err)
 	soloreceipt, err := ctx.Chain.GetRequestReceipt(reqs[0])
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	// note: this is what ctx.Chain.GetRequestReceipt() does as well,
 	// so we better make sure they are equal before comparing

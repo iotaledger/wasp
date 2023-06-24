@@ -13,12 +13,10 @@ func TestIRC27NFT(t *testing.T) {
 	testURL := "http://no.org"
 	testName := "hi-name"
 	testNft := isc.NewIRC27NFTMetadata(testMIME, testURL, testName)
-	data1, err := testNft.Bytes()
-	require.NoError(t, err)
+	data1 := testNft.Bytes()
 	nft, err := isc.IRC27NFTMetadataFromBytes(data1)
 	require.NoError(t, err)
 	require.Equal(t, testNft, nft)
-	data2, err := nft.Bytes()
-	require.NoError(t, err)
+	data2 := nft.Bytes()
 	require.Equal(t, data1, data2)
 }

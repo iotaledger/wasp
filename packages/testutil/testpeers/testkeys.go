@@ -75,7 +75,7 @@ func SetupDkg(
 		200*time.Second,
 		timeout,
 	)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, dkShare.GetAddress())
 	require.NotNil(t, dkShare.GetSharedPublic())
 	require.NoError(t, networkCloser.Close())
@@ -169,7 +169,7 @@ func SetupDkgPregenerated( // TODO: Remove.
 	dkShareRegistryProviders := make([]registry.DKShareRegistryProvider, len(identities))
 	for i := range dks {
 		dks[i], err = tcrypto.DKShareFromBytes(serializedDks[i], tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBLSSuite(), identities[i].GetPrivateKey())
-		require.Nil(t, err)
+		require.NoError(t, err)
 		if i > 0 {
 			dks[i].AssignCommonData(dks[0])
 		}

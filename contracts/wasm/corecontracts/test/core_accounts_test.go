@@ -309,7 +309,7 @@ func TestAccountNFTAmountInCollection(t *testing.T) {
 		"a string that is longer than 32 bytes",
 	)
 
-	collection, collectionInfo, err := ctx.Chain.Env.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.MustBytes())
+	collection, collectionInfo, err := ctx.Chain.Env.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.Bytes())
 	require.NoError(t, err)
 
 	nftMetadatas := []*isc.IRC27NFTMetadata{
@@ -327,7 +327,7 @@ func TestAccountNFTAmountInCollection(t *testing.T) {
 	nftNum := len(nftMetadatas)
 	allNFTs, _, err := ctx.Chain.Env.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID,
 		lo.Map(nftMetadatas, func(item *isc.IRC27NFTMetadata, index int) []byte {
-			return item.MustBytes()
+			return item.Bytes()
 		}),
 	)
 	require.NoError(t, err)
@@ -379,7 +379,7 @@ func TestAccountNFTsInCollection(t *testing.T) {
 		"a string that is longer than 32 bytes",
 	)
 
-	collection, collectionInfo, err := ctx.Chain.Env.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.MustBytes())
+	collection, collectionInfo, err := ctx.Chain.Env.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.Bytes())
 	require.NoError(t, err)
 
 	nftMetadatas := []*isc.IRC27NFTMetadata{
@@ -397,7 +397,7 @@ func TestAccountNFTsInCollection(t *testing.T) {
 	nftNum := len(nftMetadatas)
 	allNFTs, _, err := ctx.Chain.Env.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID,
 		lo.Map(nftMetadatas, func(item *isc.IRC27NFTMetadata, index int) []byte {
-			return item.MustBytes()
+			return item.Bytes()
 		}),
 	)
 	require.NoError(t, err)

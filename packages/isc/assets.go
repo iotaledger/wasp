@@ -48,8 +48,7 @@ func AssetsFromBytes(b []byte) (*Assets, error) {
 	if len(b) == 0 {
 		return NewEmptyAssets(), nil
 	}
-	ret, err := rwutil.ReadFromBytes(b, NewEmptyAssets())
-	return ret, err
+	return rwutil.ReadFromBytes(b, NewEmptyAssets())
 }
 
 func AssetsFromDict(d dict.Dict) (*Assets, error) {

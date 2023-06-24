@@ -2,7 +2,6 @@ package hashing
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -12,6 +11,7 @@ import (
 	"golang.org/x/crypto/sha3"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const HashSize = 32
@@ -50,13 +50,9 @@ func (h *HashValue) UnmarshalJSON(buf []byte) error {
 	return nil
 }
 
-func HashValueFromBytes(b []byte) (HashValue, error) {
-	if len(b) != HashSize {
-		return NilHash, errors.New("wrong HashValue bytes length")
-	}
-	var ret HashValue
-	copy(ret[:], b)
-	return ret, nil
+func HashValueFromBytes(b []byte) (ret HashValue, err error) {
+	_, err = rwutil.ReadFromBytes(b, &ret)
+	return ret, err
 }
 
 func MustHashValueFromHex(s string) HashValue {
@@ -163,17 +159,9 @@ func PseudoRandomHash(rnd *rand.Rand) HashValue {
 }
 
 func (h *HashValue) Write(w io.Writer) error {
-	_, err := w.Write(h[:])
-	return err
+	return rwutil.WriteN(w, h[:])
 }
 
 func (h *HashValue) Read(r io.Reader) error {
-	n, err := r.Read(h[:])
-	if err != nil {
-		return err
-	}
-	if n != HashSize {
-		return errors.New("not enough bytes for HashValue")
-	}
-	return nil
+	return rwutil.ReadN(r, h[:])
 }

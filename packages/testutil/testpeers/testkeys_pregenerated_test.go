@@ -49,7 +49,7 @@ func testPregenerateDKS(t *testing.T, n, f uint16) {
 		var dki tcrypto.DKShare
 		var dkb []byte
 		dki, err2 := dksRegistries[i].LoadDKShare(dksAddr)
-		require.Nil(t, err2)
+		require.NoError(t, err2)
 		if i > 0 {
 			// Remove it here to make serialized object smaller.
 			// Will restore it from dks[0].
@@ -62,5 +62,5 @@ func testPregenerateDKS(t *testing.T, n, f uint16) {
 		require.NoError(t, ww.Err)
 	}
 	err = os.WriteFile(fmt.Sprintf("testkeys_pregenerated-%v-%v.bin", n, threshold), ww.Bytes(), 0o644)
-	require.Nil(t, err)
+	require.NoError(t, err)
 }
