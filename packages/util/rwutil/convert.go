@@ -145,13 +145,8 @@ func ReadFromBytes[T IoReader](data []byte, obj T) (T, error) {
 	// note: obj can be nil if obj.Read can handle that
 	rr := NewBytesReader(data)
 	rr.Read(obj)
-	if rr.Err != nil {
-		return obj, rr.Err
-	}
-	if len(rr.Bytes()) != 0 {
-		return obj, errors.New("excess bytes in buffer")
-	}
-	return obj, nil
+	rr.Close()
+	return obj, rr.Err
 }
 
 // WriteToBytes is a wrapper that uses an object's Write() function to marshal

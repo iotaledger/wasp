@@ -56,6 +56,14 @@ func (rr *Reader) CheckAvailable(nrOfBytes int) int {
 	return nrOfBytes
 }
 
+// Close indicates the end of reading from the bytes buffer.
+// If any unread bytes are remaining in the buffer an error will be returned.
+func (rr *Reader) Close() {
+	if rr.Err == nil && len(rr.Bytes()) != 0 {
+		rr.Err = errors.New("excess bytes in buffer")
+	}
+}
+
 // Must will wrap the reader stream in a stream that will panic whenever an error occurs.
 func (rr *Reader) Must() *Reader {
 	must := &Must{r: rr.r}

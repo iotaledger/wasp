@@ -54,20 +54,18 @@ func NewPeerMessageData(peeringID PeeringID, receiver byte, msgType byte, msgDat
 // newPeerMessageDataFromBytes creates a new PeerMessageData from bytes.
 // The function takes ownership over "data" and the caller should not use "data" after this call.
 
-func newPeerMessageDataFromBytes(data []byte) (*PeerMessageData, error) {
+func newPeerMessageDataFromBytes(data []byte) (ret *PeerMessageData, err error) {
 	// create a copy of the slice for later usage of the raw data.
 	cpy := lo.CopySlice(data)
 
-	m, err := rwutil.ReadFromBytes(data, new(PeerMessageData))
+	ret, err = rwutil.ReadFromBytes(data, new(PeerMessageData))
 	if err != nil {
 		return nil, err
 	}
-
-	m.serializedOnce.Do(func() {
-		m.serializedData = cpy
+	ret.serializedOnce.Do(func() {
+		ret.serializedData = cpy
 	})
-
-	return m, nil
+	return ret, nil
 }
 
 func (m *PeerMessageData) Bytes() []byte {
@@ -111,12 +109,7 @@ func PeerMessageNetFromBytes(data []byte) (*PeerMessageNet, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	peerMessageNet := &PeerMessageNet{
-		PeerMessageData: peerMessageData,
-	}
-
-	return peerMessageNet, nil
+	return &PeerMessageNet{PeerMessageData: peerMessageData}, nil
 }
 
 func (m *PeerMessageNet) Bytes() []byte {

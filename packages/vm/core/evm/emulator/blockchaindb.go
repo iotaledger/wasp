@@ -228,7 +228,8 @@ func makeHeader(h *types.Header) *header {
 	}
 }
 
-func headerFromBytes(data []byte) (ret *header) {
+// note we do not check for excess data bytes because the old format was longer
+func mustHeaderFromBytes(data []byte) (ret *header) {
 	rr := rwutil.NewBytesReader(data)
 	ret = new(header)
 	rr.Read(ret)
@@ -440,7 +441,7 @@ func (bc *BlockchainDB) getHeaderByBlockNumber(blockNumber uint64) *header {
 	if b == nil {
 		return nil
 	}
-	return headerFromBytes(b)
+	return mustHeaderFromBytes(b)
 }
 
 func (bc *BlockchainDB) GetHeaderByHash(hash common.Hash) *types.Header {

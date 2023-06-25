@@ -128,7 +128,7 @@ func NewRequestID(txid iotago.TransactionID, index uint16) RequestID {
 
 func RequestIDFromBytes(data []byte) (ret RequestID, err error) {
 	_, err = rwutil.ReadFromBytes(data, &ret)
-	return
+	return ret, err
 }
 
 func RequestIDFromString(s string) (ret RequestID, err error) {
