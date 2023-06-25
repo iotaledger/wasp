@@ -37,7 +37,7 @@ func (rec *nativeTokenOutputRec) Read(r io.Reader) error {
 	rec.BlockIndex = rr.ReadUint32()
 	rec.OutputIndex = rr.ReadUint16()
 	rec.Amount = rr.ReadUint256()
-	rec.StorageBaseTokens = rr.ReadUint64()
+	rec.StorageBaseTokens = rr.ReadAmount64()
 	return rr.Err
 }
 
@@ -46,6 +46,6 @@ func (rec *nativeTokenOutputRec) Write(w io.Writer) error {
 	ww.WriteUint32(rec.BlockIndex)
 	ww.WriteUint16(rec.OutputIndex)
 	ww.WriteUint256(rec.Amount)
-	ww.WriteUint64(rec.StorageBaseTokens)
+	ww.WriteAmount64(rec.StorageBaseTokens)
 	return ww.Err
 }

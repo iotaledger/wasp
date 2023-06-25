@@ -45,7 +45,7 @@ func Hn(name string) (ret Hname) {
 
 func HnameFromBytes(data []byte) (ret Hname, err error) {
 	_, err = rwutil.ReadFromBytes(data, &ret)
-	return
+	return ret, err
 }
 
 func HnameFromHexString(s string) (Hname, error) {

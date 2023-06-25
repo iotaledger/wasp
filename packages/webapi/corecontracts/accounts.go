@@ -1,8 +1,6 @@
 package corecontracts
 
 import (
-	"errors"
-
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -114,17 +112,6 @@ func GetNFTData(ch chain.Chain, nftID iotago.NFTID) (*isc.NFT, error) {
 	return nftData, nil
 }
 
-func parseNativeTokenIDFromBytes(data []byte) (iotago.NativeTokenID, error) {
-	if len(data) != iotago.NativeTokenIDLength {
-		return iotago.NativeTokenID{}, errors.New("len(data) != iotago.NativeTokenIDLength")
-	}
-
-	ret := iotago.NativeTokenID{}
-	copy(ret[:], data)
-
-	return ret, nil
-}
-
 func GetNativeTokenIDRegistry(ch chain.Chain) ([]iotago.NativeTokenID, error) {
 	nativeTokenIDs, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewGetNativeTokenIDRegistry.Hname(), nil)
 	if err != nil {
@@ -133,7 +120,7 @@ func GetNativeTokenIDRegistry(ch chain.Chain) ([]iotago.NativeTokenID, error) {
 
 	ret := make([]iotago.NativeTokenID, 0, len(nativeTokenIDs))
 	for nativeTokenID := range nativeTokenIDs {
-		tokenID, err := parseNativeTokenIDFromBytes([]byte(nativeTokenID))
+		tokenID, err := isc.NativeTokenIDFromBytes([]byte(nativeTokenID))
 		if err != nil {
 			return nil, err
 		}

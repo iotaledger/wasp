@@ -10,6 +10,7 @@ import (
 func NativeTokenIDFromBytes(data []byte) (ret iotago.NativeTokenID, err error) {
 	rr := rwutil.NewBytesReader(data)
 	rr.ReadN(ret[:])
+	rr.Close()
 	return ret, rr.Err
 }
 

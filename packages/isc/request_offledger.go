@@ -79,8 +79,8 @@ func (req *offLedgerRequestData) readEssence(rr *rwutil.Reader) {
 	rr.Read(&req.entryPoint)
 	req.params = dict.New()
 	rr.Read(&req.params)
-	req.nonce = rr.ReadUint64()
-	req.gasBudget = rr.ReadUint64()
+	req.nonce = rr.ReadAmount64()
+	req.gasBudget = rr.ReadGas64()
 	req.allowance = NewEmptyAssets()
 	rr.Read(req.allowance)
 }
@@ -91,8 +91,8 @@ func (req *offLedgerRequestData) writeEssence(ww *rwutil.Writer) {
 	ww.Write(&req.contract)
 	ww.Write(&req.entryPoint)
 	ww.Write(&req.params)
-	ww.WriteUint64(req.nonce)
-	ww.WriteUint64(req.gasBudget)
+	ww.WriteAmount64(req.nonce)
+	ww.WriteGas64(req.gasBudget)
 	ww.Write(req.allowance)
 }
 
