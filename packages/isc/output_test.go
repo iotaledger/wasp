@@ -8,10 +8,9 @@ import (
 	mathrand "math/rand"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 func TestAliasOutputWithIDSerialization(t *testing.T) {

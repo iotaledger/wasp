@@ -5,8 +5,8 @@ import (
 	"io"
 
 	"github.com/ethereum/go-ethereum/common"
-	iotago "github.com/iotaledger/iota.go/v3"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 

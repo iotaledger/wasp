@@ -4,13 +4,13 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 func TestSerializeRequestData(t *testing.T) {
