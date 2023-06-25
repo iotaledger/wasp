@@ -134,7 +134,7 @@ func NewWasmContextSandbox(wc *WasmContext, ctx interface{}) *WasmContextSandbox
 		s.common = tctx
 		s.ctxView = tctx
 	default:
-		panic(isc.ErrWrongTypeEntryPoint)
+		panic("invalid entry point type")
 	}
 	return s
 }

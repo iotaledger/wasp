@@ -4,20 +4,25 @@
 package isc_test
 
 import (
+	"crypto/rand"
+	mathrand "math/rand"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func TestAliasOutputWithIDSerialization(t *testing.T) {
-	outputTest := isc.NewAliasOutputWithID(&iotago.AliasOutput{}, iotago.OutputID{})
-	data1 := outputTest.Bytes()
-	output, err := isc.AliasOutputWithIDFromBytes(data1)
-	require.NoError(t, err)
-	require.Equal(t, outputTest, output)
-	data2 := output.Bytes()
-	require.Equal(t, data1, data2)
+	output := iotago.AliasOutput{
+		Amount:     mathrand.Uint64(),
+		StateIndex: mathrand.Uint32(),
+	}
+	rand.Read(output.AliasID[:])
+	outputID := iotago.OutputID{}
+	rand.Read(outputID[:])
+	aliasOutputWithID := isc.NewAliasOutputWithID(&output, outputID)
+	rwutil.ReadWriteTest(t, aliasOutputWithID, new(isc.AliasOutputWithID))
+	rwutil.BytesTest(t, aliasOutputWithID, isc.AliasOutputWithIDFromBytes)
 }

@@ -21,3 +21,7 @@ func MustNativeTokenIDFromBytes(data []byte) iotago.NativeTokenID {
 	}
 	return ret
 }
+
+func NativeTokenIDToBytes(tokenID iotago.NativeTokenID) []byte {
+	return tokenID[:]
+}

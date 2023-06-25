@@ -33,7 +33,7 @@ func (c *Controller) executeCallView(e echo.Context) error {
 	if callViewRequest.ContractHName == "" {
 		contractHName = isc.Hn(callViewRequest.ContractName)
 	} else {
-		contractHName, err = isc.HnameFromHexString(callViewRequest.ContractHName)
+		contractHName, err = isc.HnameFromString(callViewRequest.ContractHName)
 		if err != nil {
 			return apierrors.InvalidPropertyError("contractHName", err)
 		}
@@ -42,7 +42,7 @@ func (c *Controller) executeCallView(e echo.Context) error {
 	if callViewRequest.FunctionHName == "" {
 		functionHName = isc.Hn(callViewRequest.FunctionName)
 	} else {
-		functionHName, err = isc.HnameFromHexString(callViewRequest.FunctionHName)
+		functionHName, err = isc.HnameFromString(callViewRequest.FunctionHName)
 		if err != nil {
 			return apierrors.InvalidPropertyError("contractHName", err)
 		}

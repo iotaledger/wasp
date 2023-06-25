@@ -19,8 +19,8 @@
 // can later be deployed on chains which are run by the network of Wasp nodes without any modifications.
 //
 // The 'solo' environment uses in-memory UTXO ledger to validate and store transactions. The UTXODB
-// mocks Goshimmer UTXO ledger, it uses same value transaction structure, colored tokens, signature
-// schemes as well as transaction and signature validation as in Value Tangle of Goshimmer (Pollen release).
+// mocks the Shimmer UTXO ledger, it uses same value transaction structure, colored tokens, signature
+// schemes as well as transaction and signature validation as in the Value Tangle of Shimmer.
 // The only difference with the Value Tangle is that UTXODB provides full synchronicity of ledger updates.
 //
 // The virtual state (key/value database) in 'solo' is an in-memory database. It provides exactly the same
