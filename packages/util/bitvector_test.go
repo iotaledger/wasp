@@ -6,10 +6,10 @@ package util_test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 func TestFixedSizeBitVector(t *testing.T) {
