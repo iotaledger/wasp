@@ -1,7 +1,6 @@
 package isc
 
 import (
-	"bytes"
 	"math/big"
 	"testing"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 func TestSerializeRequestData(t *testing.T) {
@@ -18,17 +18,8 @@ func TestSerializeRequestData(t *testing.T) {
 	var err error
 	t.Run("off ledger", func(t *testing.T) {
 		req = NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337, 100).Sign(cryptolib.NewKeyPair())
-
-		serialized := req.Bytes()
-		req2, err2 := RequestFromBytes(serialized)
-		require.NoError(t, err2)
-
-		reqBack := req2.(*offLedgerRequestData)
-		require.EqualValues(t, req.ID(), reqBack.ID())
-		require.True(t, req.SenderAccount().Equals(reqBack.SenderAccount()))
-
-		serialized2 := req2.Bytes()
-		require.True(t, bytes.Equal(serialized, serialized2))
+		rwutil.ReadWriteTest(t, req.(*offLedgerRequestData), new(offLedgerRequestData))
+		rwutil.BytesTest(t, req, RequestFromBytes)
 	})
 
 	t.Run("on ledger", func(t *testing.T) {
@@ -49,8 +40,8 @@ func TestSerializeRequestData(t *testing.T) {
 				},
 			},
 			Features: iotago.Features{
-				&iotago.MetadataFeature{Data: requestMetadata.Bytes()},
 				&iotago.SenderFeature{Address: sender},
+				&iotago.MetadataFeature{Data: requestMetadata.Bytes()},
 			},
 			Conditions: iotago.UnlockConditions{
 				&iotago.AddressUnlockCondition{Address: sender},
@@ -58,27 +49,12 @@ func TestSerializeRequestData(t *testing.T) {
 		}
 		req, err = OnLedgerFromUTXO(basicOutput, iotago.OutputID{})
 		require.NoError(t, err)
-
-		serialized := req.Bytes()
-		req2, err := RequestFromBytes(serialized)
-		require.NoError(t, err)
-		chainID := ChainIDFromAddress(sender)
-		require.True(t, req2.SenderAccount().Equals(NewContractAgentID(chainID, requestMetadata.SenderContract)))
-		require.True(t, req2.CallTarget().Equals(NewCallTarget(requestMetadata.TargetContract, requestMetadata.EntryPoint)))
-		require.EqualValues(t, req.ID(), req2.ID())
-		require.True(t, req.SenderAccount().Equals(req2.SenderAccount()))
-
-		serialized2 := req2.Bytes()
-		require.True(t, bytes.Equal(serialized, serialized2))
+		rwutil.ReadWriteTest(t, req.(*onLedgerRequestData), new(onLedgerRequestData))
 	})
 }
 
 func TestRequestIDToFromString(t *testing.T) {
 	req := NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337, 200).Sign(cryptolib.NewKeyPair())
-	oritinalID := req.ID()
-	s := oritinalID.String()
-	require.NotEmpty(t, s)
-	parsedID, err := RequestIDFromString(s)
-	require.NoError(t, err)
-	require.EqualValues(t, oritinalID, parsedID)
+	requestID := req.ID()
+	rwutil.StringTest(t, requestID, RequestIDFromString)
 }

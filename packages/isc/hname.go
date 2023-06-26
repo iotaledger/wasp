@@ -48,7 +48,7 @@ func HnameFromBytes(data []byte) (ret Hname, err error) {
 	return ret, err
 }
 
-func HnameFromHexString(s string) (Hname, error) {
+func HnameFromString(s string) (Hname, error) {
 	n, err := strconv.ParseUint(s, 16, 32)
 	if err != nil {
 		return HnameNil, fmt.Errorf("cannot parse hname: %w", err)

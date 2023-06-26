@@ -4,8 +4,6 @@
 package isc
 
 import (
-	"errors"
-
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -22,5 +20,3 @@ type VMProcessorEntryPoint interface {
 	Call(ctx interface{}) dict.Dict
 	IsView() bool
 }
-
-var ErrWrongTypeEntryPoint = errors.New("wrong type of the entry point")

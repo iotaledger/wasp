@@ -11,17 +11,20 @@ import (
 )
 
 func TestNativeTokenIDSerialization(t *testing.T) {
-	data1 := make([]byte, len(iotago.NativeTokenID{}))
-	rand.Read(data1)
-	nativeTokenID1, err := isc.NativeTokenIDFromBytes(data1)
+	obj1 := iotago.NativeTokenID{}
+	rand.Read(obj1[:])
+
+	data1 := isc.NativeTokenIDToBytes(obj1)
+	obj2, err := isc.NativeTokenIDFromBytes(data1)
 	require.NoError(t, err)
-	hex1 := nativeTokenID1.ToHex()
-	data2, err := iotago.DecodeHex(hex1)
-	require.NoError(t, err)
+	require.Equal(t, obj1, obj2)
+	data2 := isc.NativeTokenIDToBytes(obj2)
 	require.Equal(t, data1, data2)
-	nativeTokenID2 := isc.MustNativeTokenIDFromBytes(data1)
-	hex2 := nativeTokenID2.ToHex()
-	data3, err := iotago.DecodeHex(hex2)
+
+	hex1 := obj1.ToHex()
+	data3, err := iotago.DecodeHex(hex1)
 	require.NoError(t, err)
 	require.Equal(t, data1, data3)
+	obj3 := isc.MustNativeTokenIDFromBytes(data3)
+	require.Equal(t, obj1, obj3)
 }

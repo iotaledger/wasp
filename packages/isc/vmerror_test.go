@@ -3,18 +3,15 @@ package isc_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 func TestVMErrorCodeSerialization(t *testing.T) {
-	vmerrTest := isc.VMErrorCode{
+	vmErrorCode := isc.VMErrorCode{
 		ContractID: isc.Hname(1074),
 		ID:         123,
 	}
-	data := vmerrTest.Bytes()
-	vmerr, err := isc.VMErrorCodeFromBytes(data)
-	require.NoError(t, err)
-	require.Equal(t, vmerrTest, vmerr)
+	rwutil.ReadWriteTest(t, &vmErrorCode, new(isc.VMErrorCode))
+	rwutil.BytesTest(t, vmErrorCode, isc.VMErrorCodeFromBytes)
 }

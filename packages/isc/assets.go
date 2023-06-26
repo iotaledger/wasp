@@ -23,15 +23,14 @@ type Assets struct {
 var BaseTokenID = []byte{}
 
 func NewAssets(baseTokens uint64, tokens iotago.NativeTokens, nfts ...iotago.NFTID) *Assets {
-	if tokens == nil {
-		tokens = make(iotago.NativeTokens, 0)
-	}
 	ret := &Assets{
 		BaseTokens:   baseTokens,
 		NativeTokens: tokens,
-		NFTs:         make([]iotago.NFTID, 0),
 	}
-	return ret.AddNFTs(nfts...)
+	if len(nfts) != 0 {
+		ret.AddNFTs(nfts...)
+	}
+	return ret
 }
 
 func NewAssetsBaseTokens(amount uint64) *Assets {
@@ -39,9 +38,7 @@ func NewAssetsBaseTokens(amount uint64) *Assets {
 }
 
 func NewEmptyAssets() *Assets {
-	return &Assets{
-		NativeTokens: make([]*iotago.NativeToken, 0),
-	}
+	return &Assets{}
 }
 
 func AssetsFromBytes(b []byte) (*Assets, error) {
@@ -179,6 +176,7 @@ func (a *Assets) Equals(b *Assets) bool {
 	if a.BaseTokens != b.BaseTokens {
 		return false
 	}
+
 	if len(a.NativeTokens) != len(b.NativeTokens) {
 		return false
 	}
@@ -188,10 +186,10 @@ func (a *Assets) Equals(b *Assets) bool {
 			return false
 		}
 	}
+
 	if len(a.NFTs) != len(b.NFTs) {
 		return false
 	}
-
 	bNFTS := b.NFTSet()
 	for _, nft := range a.NFTs {
 		if !bNFTS[nft] {
@@ -214,9 +212,10 @@ func (a *Assets) Spend(toSpend *Assets) bool {
 	if a.Equals(toSpend) {
 		a.BaseTokens = 0
 		a.NativeTokens = nil
-		a.NFTs = make([]iotago.NFTID, 0)
+		a.NFTs = nil
 		return true
 	}
+
 	if a.BaseTokens < toSpend.BaseTokens {
 		return false
 	}

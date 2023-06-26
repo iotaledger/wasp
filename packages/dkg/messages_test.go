@@ -36,13 +36,13 @@ func TestInitiatorMsgSerialization(t *testing.T) {
 		timeout:      time.Duration(time.Now().UnixNano()),
 		roundRetry:   time.Duration(time.Now().UnixNano() + 1),
 	}
-	rwutil.SerializationTest(t, msg, new(initiatorInitMsg))
+	rwutil.ReadWriteTest(t, msg, new(initiatorInitMsg))
 
 	// Test with a 1-item peerPubs array.
 	msg.peerPubs = []*cryptolib.PublicKey{pubKey2}
-	rwutil.SerializationTest(t, msg, new(initiatorInitMsg))
+	rwutil.ReadWriteTest(t, msg, new(initiatorInitMsg))
 
 	// Test with a 3-item peerPubs array.
 	msg.peerPubs = []*cryptolib.PublicKey{pubKey3, pubKey2, pubKey1}
-	rwutil.SerializationTest(t, msg, new(initiatorInitMsg))
+	rwutil.ReadWriteTest(t, msg, new(initiatorInitMsg))
 }

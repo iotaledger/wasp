@@ -12,30 +12,48 @@ import (
 
 func TestAddressSerialization(t *testing.T) {
 	{
-		ed25519AddressByte1 := make([]byte, iotago.Ed25519AddressBytesLength+1)
-		rand.Read(ed25519AddressByte1)
-		ed25519AddressByte1[0] = byte(iotago.AddressEd25519)
-		addr1, err := isc.AddressFromBytes(ed25519AddressByte1)
+		data := make([]byte, iotago.Ed25519AddressBytesLength+1)
+		data[0] = byte(iotago.AddressEd25519)
+		rand.Read(data[1:])
+
+		addr1, err := isc.AddressFromBytes(data)
 		require.NoError(t, err)
-		ed25519AddressByte2 := isc.AddressToBytes(addr1)
-		require.Equal(t, ed25519AddressByte1, ed25519AddressByte2)
+		require.IsType(t, &iotago.Ed25519Address{}, addr1)
+
+		data2 := isc.AddressToBytes(addr1)
+		require.Equal(t, data, data2)
+		addr2, err := isc.AddressFromBytes(data2)
+		require.NoError(t, err)
+		require.Equal(t, addr1, addr2)
 	}
 	{
-		aliasAddressByte1 := make([]byte, iotago.AliasAddressBytesLength+1)
-		rand.Read(aliasAddressByte1)
-		aliasAddressByte1[0] = byte(iotago.AddressAlias)
-		addr1, err := isc.AddressFromBytes(aliasAddressByte1)
+		data := make([]byte, iotago.AliasAddressBytesLength+1)
+		data[0] = byte(iotago.AddressAlias)
+		rand.Read(data[1:])
+
+		addr1, err := isc.AddressFromBytes(data)
 		require.NoError(t, err)
-		aliasAddressByte2 := isc.AddressToBytes(addr1)
-		require.Equal(t, aliasAddressByte1, aliasAddressByte2)
+		require.IsType(t, &iotago.AliasAddress{}, addr1)
+
+		data2 := isc.AddressToBytes(addr1)
+		require.Equal(t, data, data2)
+		addr2, err := isc.AddressFromBytes(data2)
+		require.NoError(t, err)
+		require.Equal(t, addr1, addr2)
 	}
 	{
-		nftAddressByte1 := make([]byte, iotago.NFTAddressBytesLength+1)
-		rand.Read(nftAddressByte1)
-		nftAddressByte1[0] = byte(iotago.AddressNFT)
-		addr1, err := isc.AddressFromBytes(nftAddressByte1)
+		data := make([]byte, iotago.NFTAddressBytesLength+1)
+		data[0] = byte(iotago.AddressNFT)
+		rand.Read(data[1:])
+
+		addr1, err := isc.AddressFromBytes(data)
 		require.NoError(t, err)
-		nftAddressByte2 := isc.AddressToBytes(addr1)
-		require.Equal(t, nftAddressByte1, nftAddressByte2)
+		require.IsType(t, &iotago.NFTAddress{}, addr1)
+
+		data2 := isc.AddressToBytes(addr1)
+		require.Equal(t, data, data2)
+		addr2, err := isc.AddressFromBytes(data2)
+		require.NoError(t, err)
+		require.Equal(t, addr1, addr2)
 	}
 }
