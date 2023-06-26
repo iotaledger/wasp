@@ -1,31 +1,19 @@
 package peering_test
 
 import (
-	"bytes"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-func TestPeerMessageCodec(t *testing.T) {
-	var err error
-	var src, dst *peering.PeerMessageNet
-	src = &peering.PeerMessageNet{
+func TestPeerMessageSerialization(t *testing.T) {
+	msg := &peering.PeerMessageNet{
 		PeerMessageData: peering.NewPeerMessageData(
 			peering.RandomPeeringID(),
 			byte(10),
 			peering.FirstUserMsgCode+17,
 			[]byte{1, 2, 3, 4, 5}),
 	}
-	bin := src.Bytes()
-	require.NotNil(t, bin)
-	dst, err = peering.PeerMessageNetFromBytes(bin)
-	require.NoError(t, err)
-	require.NotNil(t, dst)
-	require.EqualValues(t, src.PeeringID, dst.PeeringID)
-	require.Equal(t, src.MsgReceiver, dst.MsgReceiver)
-	require.Equal(t, src.MsgType, dst.MsgType)
-	require.True(t, bytes.Equal(src.MsgData, dst.MsgData))
+	rwutil.BytesTest(t, msg, peering.PeerMessageNetFromBytes)
 }

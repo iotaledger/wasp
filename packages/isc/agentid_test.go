@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-func TestAgentID(t *testing.T) {
+func TestAgentIDSerialization(t *testing.T) {
 	n := &NilAgentID{}
 	rwutil.BytesTest(t, AgentID(n), AgentIDFromBytes)
 	rwutil.StringTest(t, AgentID(n), AgentIDFromString)

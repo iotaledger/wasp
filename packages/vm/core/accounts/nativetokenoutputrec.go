@@ -15,8 +15,12 @@ type nativeTokenOutputRec struct {
 	StorageBaseTokens uint64 // always storage deposit
 }
 
+func nativeTokenOutputRecFromBytes(data []byte) (*nativeTokenOutputRec, error) {
+	return rwutil.ReadFromBytes(data, new(nativeTokenOutputRec))
+}
+
 func mustNativeTokenOutputRecFromBytes(data []byte) *nativeTokenOutputRec {
-	ret, err := rwutil.ReadFromBytes(data, new(nativeTokenOutputRec))
+	ret, err := nativeTokenOutputRecFromBytes(data)
 	if err != nil {
 		panic(err)
 	}

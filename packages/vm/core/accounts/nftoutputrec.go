@@ -14,8 +14,12 @@ type NFTOutputRec struct {
 	Output      *iotago.NFTOutput
 }
 
+func nftOutputRecFromBytes(data []byte) (*NFTOutputRec, error) {
+	return rwutil.ReadFromBytes(data, new(NFTOutputRec))
+}
+
 func mustNFTOutputRecFromBytes(data []byte) *NFTOutputRec {
-	ret, err := rwutil.ReadFromBytes(data, new(NFTOutputRec))
+	ret, err := nftOutputRecFromBytes(data)
 	if err != nil {
 		panic(err)
 	}

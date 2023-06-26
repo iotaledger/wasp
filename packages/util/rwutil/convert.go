@@ -176,18 +176,20 @@ func ReadFromFunc[T any](rr *Reader, fromBytes func([]byte) (T, error)) (ret T) 
 	return ret
 }
 
-func BytesTest[T interface{ Bytes() []byte }](t *testing.T, obj1 T, fromBytes func(data []byte) (T, error)) {
+func BytesTest[T interface{ Bytes() []byte }](t *testing.T, obj1 T, fromBytes func(data []byte) (T, error)) T {
 	obj2, err := fromBytes(obj1.Bytes())
 	require.NoError(t, err)
 	require.Equal(t, obj1, obj2)
 	require.Equal(t, obj1.Bytes(), obj2.Bytes())
+	return obj2
 }
 
-func StringTest[T interface{ String() string }](t *testing.T, obj1 T, fromString func(data string) (T, error)) {
+func StringTest[T interface{ String() string }](t *testing.T, obj1 T, fromString func(data string) (T, error)) T {
 	obj2, err := fromString(obj1.String())
 	require.NoError(t, err)
 	require.Equal(t, obj1, obj2)
 	require.Equal(t, obj1.String(), obj2.String())
+	return obj2
 }
 
 // ReadWriteTest can be used with any object that implements IoReader and IoWriter
@@ -195,12 +197,14 @@ func StringTest[T interface{ String() string }](t *testing.T, obj1 T, fromString
 // You pass in an object that has all fields that need serialization set, plus a new,
 // empty object that will receive the deserialized data. The function will Write, Read,
 // and Write again and compare the objects for equality and both serialized versions
-// as well.
-func ReadWriteTest[T IoReadWriter](t *testing.T, obj1 T, newObj T) {
+// as well. It will return the deserialized object in case the user wants to perform
+// more tests with it.
+func ReadWriteTest[T IoReadWriter](t *testing.T, obj1 T, newObj T) T {
 	data1 := WriteToBytes(obj1)
 	obj2, err := ReadFromBytes(data1, newObj)
 	require.NoError(t, err)
 	require.Equal(t, obj1, obj2)
 	data2 := WriteToBytes(obj2)
 	require.Equal(t, data1, data2)
+	return obj2
 }

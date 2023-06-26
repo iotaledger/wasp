@@ -342,29 +342,20 @@ func TestTransferNFTs(t *testing.T) {
 	})
 }
 
-func TestFoundryOutputRec(t *testing.T) {
+func TestFoundryOutputRecSerialization(t *testing.T) {
 	o := foundryOutputRec{
 		Amount: 300,
 		TokenScheme: &iotago.SimpleTokenScheme{
 			MaximumSupply: big.NewInt(1000),
 			MintedTokens:  big.NewInt(20),
-			MeltedTokens:  util.Big0,
+			MeltedTokens:  big.NewInt(1),
 		},
+		Metadata:    []byte("Tralala"),
 		BlockIndex:  3,
 		OutputIndex: 2,
 	}
-	data := o.Bytes()
-	o1, err := rwutil.ReadFromBytes(data, new(foundryOutputRec))
-	require.NoError(t, err)
-	require.EqualValues(t, o.Amount, o1.Amount)
-	ts, ok := o1.TokenScheme.(*iotago.SimpleTokenScheme)
-	require.True(t, ok)
-	//nolint:gocritic
-	require.True(t, ts.MaximumSupply.Cmp(ts.MaximumSupply) == 0)
-	//nolint:gocritic
-	require.True(t, ts.MintedTokens.Cmp(ts.MintedTokens) == 0)
-	require.EqualValues(t, o.BlockIndex, o1.BlockIndex)
-	require.EqualValues(t, o.OutputIndex, o1.OutputIndex)
+	rwutil.ReadWriteTest(t, &o, new(foundryOutputRec))
+	rwutil.BytesTest(t, &o, foundryOutputRecFromBytes)
 }
 
 func TestCreditDebitNFT1(t *testing.T) {

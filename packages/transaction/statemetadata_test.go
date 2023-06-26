@@ -1,14 +1,12 @@
 package transaction_test
 
 import (
-	"reflect"
 	"testing"
-
-	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -29,8 +27,5 @@ func TestStateMetadataSerialization(t *testing.T) {
 		6,
 		"https://iota.org",
 	)
-	data := s.Bytes()
-	s2, err := transaction.StateMetadataFromBytes(data)
-	require.NoError(t, err)
-	require.True(t, reflect.DeepEqual(s, s2))
+	rwutil.BytesTest(t, s, transaction.StateMetadataFromBytes)
 }
