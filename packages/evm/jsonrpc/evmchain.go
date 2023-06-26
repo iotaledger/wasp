@@ -165,7 +165,7 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 	if err != nil {
 		return fmt.Errorf("invalid transaction: %w", err)
 	}
-	if tx.Nonce() != expectedNonce {
+	if tx.Nonce() < expectedNonce {
 		return fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), expectedNonce)
 	}
 
