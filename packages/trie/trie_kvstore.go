@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 )
 
+const KeyMaxLength = 256
+
 // Update updates TrieUpdatable with the unpackedKey/value. Reorganizes and re-calculates trie, keeps cache consistent
 func (tr *TrieUpdatable) Update(key []byte, value []byte) {
 	assertf(len(key) > 0, "len(key) must be > 0")
@@ -105,7 +107,8 @@ func (tr *TrieReader) Iterator(prefix []byte) KVIterator {
 }
 
 func (tr *TrieUpdatable) update(triePath []byte, value []byte) {
-	assertf(len(value) > 0, "len(value)>0")
+	assertf(len(value) > 0, "len(value) > 0")
+	assertf(len(triePath) < KeyMaxLength, "len(key) = %d, must under KeyMaxLength", len(triePath))
 
 	nodes := make([]*bufferedNode, 0)
 	var ends pathEndingCode

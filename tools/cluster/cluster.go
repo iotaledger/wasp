@@ -307,6 +307,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 			return err
 		}
 		addAccessNodesTxs[i] = tx
+		time.Sleep(100 * time.Millisecond) // give some time for the indexer to catch up, otherwise it might not find the user outputs...
 	}
 
 	peers := multiclient.New(clu.WaspClientFromHostName, chain.CommitteeAPIHosts())
