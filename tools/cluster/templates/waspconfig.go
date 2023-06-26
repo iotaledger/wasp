@@ -13,9 +13,10 @@ type WaspConfigParams struct {
 	L1INXAddress                 string
 	ProfilingPort                int
 	MetricsPort                  int
-	OffledgerBroadcastUpToNPeers int
+	OffledgerBroadcastUpToNPeers int // TODO this is unused, should it be removed?
 	ValidatorKeyPair             *cryptolib.KeyPair
 	ValidatorAddress             string // bech32 encoded address of ValidatorKeyPair
+	PruningMinStatesToKeep       int
 }
 
 var WaspConfig = `
@@ -29,7 +30,7 @@ var WaspConfig = `
         "filePath": "shutdown.log"
       }
     }
-  }, 
+  },
   "logger": {
     "level": "debug",
     "disableCaller": true,
@@ -55,7 +56,7 @@ var WaspConfig = `
     "chainState": {
       "path": "waspdb/chains/data"
     },
-    "debugSkipHealthCheck": false
+    "debugSkipHealthCheck": true
   },
   "p2p": {
     "identity": {
@@ -93,35 +94,26 @@ var WaspConfig = `
     "pipeliningLimit": -1,
     "consensusDelay": "50ms"
   },
-  "rawBlocks": {
-    "enabled": false,
-    "directory": "blocks"
-  },
-  "profiling": {
-    "enabled": false,
-    "bindAddress": "0.0.0.0:{{.ProfilingPort}}"
-  },
-  "profilingRecorder": {
-    "enabled": false
-  },
-  "prometheus": {
-    "enabled": true,
-    "bindAddress": "0.0.0.0:{{.MetricsPort}}",
-    "nodeMetrics": true,
-    "nodeConnMetrics": true,
-    "blockWALMetrics": true,
-    "restAPIMetrics": true,
-    "goMetrics": true,
-    "processMetrics": true,
-    "promhttpMetrics": true
+  "stateManager": {
+    "blockCacheMaxSize": 1000,
+    "blockCacheBlocksInCacheDuration": "1h",
+    "blockCacheBlockCleaningPeriod": "1m",
+    "stateManagerGetBlockRetry": "3s",
+    "stateManagerRequestCleaningPeriod": "1s",
+    "stateManagerTimerTickPeriod": "1s",
+    "pruningMinStatesToKeep": {{.PruningMinStatesToKeep}},
+    "pruningMaxStatesToDelete": 1000
   },
   "validator": {
     "address": "{{.ValidatorAddress}}"
   },
+  "wal": {
+    "enabled": true,
+    "path": "waspdb/wal"
+  },
   "webapi": {
     "enabled": true,
     "bindAddress": "0.0.0.0:{{.APIPort}}",
-    "debugRequestLoggerEnabled": false,
     "auth": {
       "scheme": "none",
       "jwt": {
@@ -135,6 +127,27 @@ var WaspConfig = `
           "0.0.0.0"
         ]
       }
-    }
+    },
+    "limits": {
+      "timeout": "30s",
+      "readTimeout": "10s",
+      "writeTimeout": "1m",
+      "maxBodyLength": "2M",
+      "maxTopicSubscriptionsPerClient": 0,
+      "confirmedStateLagThreshold": 2
+    },
+    "debugRequestLoggerEnabled": false
+  },
+  "profiling": {
+    "enabled": false,
+    "bindAddress": "0.0.0.0:{{.ProfilingPort}}" 
+  },
+  "profilingRecorder": {
+    "enabled": false
+  },
+  "prometheus": {
+    "enabled": true,
+    "bindAddress": "0.0.0.0:{{.MetricsPort}}"
   }
-}`
+}
+`

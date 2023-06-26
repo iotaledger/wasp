@@ -28,6 +28,7 @@ func (w *WaspConfig) WaspConfigTemplateParams(i int) templates.WaspConfigParams 
 		ProfilingPort:                w.FirstProfilingPort + i,
 		MetricsPort:                  w.FirstMetricsPort + i,
 		OffledgerBroadcastUpToNPeers: 10,
+		PruningMinStatesToKeep:       10000,
 	}
 }
 
