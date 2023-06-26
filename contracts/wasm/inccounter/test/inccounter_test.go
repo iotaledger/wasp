@@ -8,8 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 	"github.com/iotaledger/wasp/contracts/wasm/inccounter/go/inccounter"
 	"github.com/iotaledger/wasp/contracts/wasm/inccounter/go/inccounterimpl"

@@ -11,6 +11,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/testutil/testiotago"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -49,6 +50,13 @@ func NewAliasOutputWithID(aliasOutput *iotago.AliasOutput, outputID iotago.Outpu
 		outputID:    outputID,
 		aliasOutput: aliasOutput,
 	}
+}
+
+// only for testing
+func RandomAliasOutputWithID() *AliasOutputWithID {
+	outputID := testiotago.RandOutputID()
+	aliasOutput := &iotago.AliasOutput{}
+	return NewAliasOutputWithID(aliasOutput, outputID)
 }
 
 func AliasOutputWithIDFromBytes(data []byte) (*AliasOutputWithID, error) {

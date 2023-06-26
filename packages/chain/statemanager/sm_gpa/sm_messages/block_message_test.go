@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -20,4 +21,14 @@ func TestMarshalUnmarshalBlockMessage(t *testing.T) {
 		require.NoError(t, err)
 		sm_gpa_utils.CheckBlocksEqual(t, blocks[i], unmarshaled.GetBlock())
 	}
+}
+
+func TestBlockMessageSerialization(t *testing.T) {
+	// FIXME
+	msg := &BlockMessage{
+		gpa.BasicMessage{},
+		state.NewBlock(),
+	}
+
+	rwutil.ReadWriteTest(t, msg, new(BlockMessage))
 }

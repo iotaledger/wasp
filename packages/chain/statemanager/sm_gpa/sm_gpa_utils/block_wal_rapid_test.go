@@ -1,7 +1,7 @@
 package sm_gpa_utils
 
 import (
-	"math/rand"
+	"crypto/rand"
 	"os"
 	"path/filepath"
 	"testing"
