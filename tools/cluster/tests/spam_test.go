@@ -257,6 +257,7 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 
 	jsonRPCClient := env.EVMJSONRPClient(0) // send request to node #0
 	nonce := env.GetNonceEVM(evmAddr)
+	transactions := make([]*types.Transaction, numRequests)
 	for i := uint64(0); i < numRequests; i++ {
 		// send tx to change the stored value
 		callArguments, err2 := storageContractABI.Pack("store", uint32(i))
@@ -269,24 +270,20 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 		require.NoError(t, err2)
 		err2 = jsonRPCClient.SendTransaction(context.Background(), tx)
 		require.NoError(t, err2)
-		// await tx confirmed
-		_, err2 = env.Clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(env.Chain.ChainID, tx.Hash(), false, 5*time.Second)
-		require.NoError(t, err2)
+		transactions[i] = tx
 	}
 
-	bn, err := jsonRPCClient.BlockNumber(context.Background())
-	require.NoError(t, err)
-	require.EqualValues(t, initialBlockIndex+numRequests, bn)
+	// await txs confirmed
+	for _, tx := range transactions {
+		_, err2 := env.Clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(env.Chain.ChainID, tx.Hash(), false, 5*time.Second)
+		require.NoError(t, err2)
+	}
 
 	filterQuery := ethereum.FilterQuery{
 		Addresses: []common.Address{storageContractAddr},
 		FromBlock: big.NewInt(int64(initialBlockIndex + 1)),
 		ToBlock:   big.NewInt(int64(initialBlockIndex + numRequests)),
 	}
-
-	bn, err = jsonRPCClient.BlockNumber(context.Background())
-	require.NoError(t, err)
-	require.EqualValues(t, initialBlockIndex+numRequests, bn)
 
 	logs, err := jsonRPCClient.FilterLogs(context.Background(), filterQuery)
 	require.NoError(t, err)
