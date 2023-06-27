@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-func TestSerializeRequestData(t *testing.T) {
+func TestRequestDataSerialization(t *testing.T) {
 	var req Request
 	var err error
 	t.Run("off ledger", func(t *testing.T) {
@@ -53,8 +53,10 @@ func TestSerializeRequestData(t *testing.T) {
 	})
 }
 
-func TestRequestIDToFromString(t *testing.T) {
+func TestRequestIDToSerialization(t *testing.T) {
 	req := NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337, 200).Sign(cryptolib.NewKeyPair())
 	requestID := req.ID()
+	rwutil.ReadWriteTest(t, &requestID, new(RequestID))
+	rwutil.BytesTest(t, requestID, RequestIDFromBytes)
 	rwutil.StringTest(t, requestID, RequestIDFromString)
 }

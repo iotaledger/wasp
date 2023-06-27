@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-func TestIRC27NFT(t *testing.T) {
+func TestIRC27NFTSerialization(t *testing.T) {
 	testMIME := "fakeMIME"
 	testURL := "http://no.org"
 	testName := "hi-name"

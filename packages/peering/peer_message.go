@@ -13,7 +13,6 @@ import (
 	"io"
 	"sync"
 
-	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util/pipe"
@@ -51,19 +50,15 @@ func NewPeerMessageData(peeringID PeeringID, receiver byte, msgType byte, msgDat
 	panic("invalid message data type")
 }
 
-// newPeerMessageDataFromBytes creates a new PeerMessageData from bytes.
+// peerMessageDataFromBytes creates a new PeerMessageData from bytes.
 // The function takes ownership over "data" and the caller should not use "data" after this call.
-
-func newPeerMessageDataFromBytes(data []byte) (ret *PeerMessageData, err error) {
-	// create a copy of the slice for later usage of the raw data.
-	cpy := lo.CopySlice(data)
-
+func peerMessageDataFromBytes(data []byte) (ret *PeerMessageData, err error) {
 	ret, err = rwutil.ReadFromBytes(data, new(PeerMessageData))
 	if err != nil {
 		return nil, err
 	}
 	ret.serializedOnce.Do(func() {
-		ret.serializedData = cpy
+		ret.serializedData = data
 	})
 	return ret, nil
 }
@@ -105,7 +100,7 @@ var _ pipe.Hashable = &PeerMessageNet{}
 // PeerMessageNetFromBytes creates a new PeerMessageNet from bytes.
 // The function takes ownership over "data" and the caller should not use "data" after this call.
 func PeerMessageNetFromBytes(data []byte) (*PeerMessageNet, error) {
-	peerMessageData, err := newPeerMessageDataFromBytes(data)
+	peerMessageData, err := peerMessageDataFromBytes(data)
 	if err != nil {
 		return nil, err
 	}

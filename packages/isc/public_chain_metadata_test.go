@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-func TestPublicMetadataSerialization(t *testing.T) {
+func TestPublicChainMetadataSerialization(t *testing.T) {
 	metadata := &isc.PublicChainMetadata{
 		EVMJsonRPCURL:   "EVMJsonRPCURL",
 		EVMWebSocketURL: "EVMWebSocketURL",
