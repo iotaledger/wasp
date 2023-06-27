@@ -24,10 +24,9 @@ func TestMarshalUnmarshalBlockMessage(t *testing.T) {
 }
 
 func TestBlockMessageSerialization(t *testing.T) {
-	// FIXME
 	msg := &BlockMessage{
 		gpa.BasicMessage{},
-		state.NewBlock(),
+		state.RandomBlock(),
 	}
 
 	rwutil.ReadWriteTest(t, msg, new(BlockMessage))
