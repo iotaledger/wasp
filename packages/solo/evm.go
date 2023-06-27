@@ -10,19 +10,15 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 type jsonRPCSoloBackend struct {
@@ -106,13 +102,6 @@ func (ch *Chain) EVM() *jsonrpc.EVMChain {
 		ch.Env.publisher,
 		ch.log,
 	)
-}
-
-func (ch *Chain) EVMGasRatio() util.Ratio32 {
-	// TODO: Cache the gas ratio?
-	ret, err := ch.CallView(governance.Contract.Name, governance.ViewGetEVMGasRatio.Name)
-	require.NoError(ch.Env.T, err)
-	return codec.MustDecodeRatio32(ret.Get(governance.ParamEVMGasRatio))
 }
 
 func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (dict.Dict, error) {

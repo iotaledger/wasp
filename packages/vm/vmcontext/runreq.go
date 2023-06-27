@@ -51,7 +51,7 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm
 	vmctx.evmFailedReceipt = nil
 
 	vmctx.currentStateUpdate = NewStateUpdate()
-	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.task.StateDraft.Timestamp().Add(1*time.Nanosecond)))
+	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.taskResult.StateDraft.Timestamp().Add(1*time.Nanosecond)))
 	defer func() { vmctx.currentStateUpdate = nil }()
 
 	if err2 := vmctx.earlyCheckReasonToSkip(); err2 != nil {

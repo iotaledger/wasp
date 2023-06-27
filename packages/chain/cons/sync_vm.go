@@ -20,7 +20,7 @@ type SyncVM interface {
 	DecidedStateReceived(chainState state.State) gpa.OutMessages
 	RandomnessReceived(randomness hashing.HashValue) gpa.OutMessages
 	RequestsReceived(requests []isc.Request) gpa.OutMessages
-	VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages
+	VMResultReceived(vmResult *vm.VMTaskResult) gpa.OutMessages
 	String() string
 }
 
@@ -32,12 +32,12 @@ type syncVMImpl struct {
 	inputsReady         bool
 	inputsReadyCB       func(aggregatedProposals *bp.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages
 	outputReady         bool
-	outputReadyCB       func(output *vm.VMTask) gpa.OutMessages
+	outputReadyCB       func(output *vm.VMTaskResult) gpa.OutMessages
 }
 
 func NewSyncVM(
 	inputsReadyCB func(aggregatedProposals *bp.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages,
-	outputReadyCB func(output *vm.VMTask) gpa.OutMessages,
+	outputReadyCB func(output *vm.VMTaskResult) gpa.OutMessages,
 ) SyncVM {
 	return &syncVMImpl{inputsReadyCB: inputsReadyCB, outputReadyCB: outputReadyCB}
 }
@@ -82,7 +82,7 @@ func (sub *syncVMImpl) tryCompleteInputs() gpa.OutMessages {
 	return sub.inputsReadyCB(sub.aggregatedProposals, sub.chainState, sub.randomness, sub.requests)
 }
 
-func (sub *syncVMImpl) VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages {
+func (sub *syncVMImpl) VMResultReceived(vmResult *vm.VMTaskResult) gpa.OutMessages {
 	if vmResult == nil {
 		return nil
 	}

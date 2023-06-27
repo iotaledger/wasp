@@ -134,11 +134,11 @@ func (vmctx *VMContext) GetSenderTokenBalanceForFees() uint64 {
 }
 
 func (vmctx *VMContext) requestLookupKey() blocklog.RequestLookupKey {
-	return blocklog.NewRequestLookupKey(vmctx.task.StateDraft.BlockIndex(), vmctx.requestIndex)
+	return blocklog.NewRequestLookupKey(vmctx.taskResult.StateDraft.BlockIndex(), vmctx.requestIndex)
 }
 
 func (vmctx *VMContext) eventLookupKey() blocklog.EventLookupKey {
-	return blocklog.NewEventLookupKey(vmctx.task.StateDraft.BlockIndex(), vmctx.requestIndex, vmctx.requestEventIndex)
+	return blocklog.NewEventLookupKey(vmctx.taskResult.StateDraft.BlockIndex(), vmctx.requestIndex, vmctx.requestEventIndex)
 }
 
 func (vmctx *VMContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.RequestReceipt {

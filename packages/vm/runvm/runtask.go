@@ -10,16 +10,16 @@ import (
 
 type VMRunner struct{}
 
-func (r VMRunner) Run(task *vm.VMTask) error {
+func (r VMRunner) Run(task *vm.VMTask) (res *vm.VMTaskResult, err error) {
 	// top exception catcher for all panics
 	// The VM session will be abandoned peacefully
-	err := panicutil.CatchAllButDBError(func() {
-		runTask(task)
+	err = panicutil.CatchAllButDBError(func() {
+		res = runTask(task)
 	}, task.Log)
 	if err != nil {
 		task.Log.Warnf("GENERAL VM EXCEPTION: the task has been abandoned due to: %s", err.Error())
 	}
-	return err
+	return res, err
 }
 
 func NewVMRunner() vm.VMRunner {
@@ -55,8 +55,10 @@ func runRequests(vmctx *vmcontext.VMContext, reqs []isc.Request, startRequestInd
 }
 
 // runTask runs batch of requests on VM
-func runTask(task *vm.VMTask) {
-	vmctx := vmcontext.CreateVMContext(task)
+func runTask(task *vm.VMTask) *vm.VMTaskResult {
+	taskResult := task.CreateResult()
+
+	vmctx := vmcontext.CreateVMContext(task, taskResult)
 
 	vmctx.OpenBlockContexts()
 
@@ -69,18 +71,18 @@ func runTask(task *vm.VMTask) {
 		if numOffLedger2 != 0 {
 			panic("offledger request executed as 'unprocessable retry', this cannot happen")
 		}
-		task.Results = results
-		task.Results = append(task.Results, results2...)
+		taskResult.RequestResults = results
+		taskResult.RequestResults = append(taskResult.RequestResults, results2...)
 		numSuccess += numSuccess2
 	}
 
 	vmctx.AssertConsistentGasTotals()
 
 	if !task.WillProduceBlock() {
-		return
+		return taskResult
 	}
 
-	numProcessed := uint16(len(task.Results))
+	numProcessed := uint16(len(taskResult.RequestResults))
 
 	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
 		numProcessed, numSuccess, numOffLedger)
@@ -93,12 +95,13 @@ func runTask(task *vm.VMTask) {
 
 	if rotationAddr == nil {
 		// rotation does not happen
-		task.ResultTransactionEssence, task.ResultInputsCommitment = vmctx.BuildTransactionEssence(l1Commitment, true)
+		taskResult.TransactionEssence, taskResult.InputsCommitment = vmctx.BuildTransactionEssence(l1Commitment, true)
 		task.Log.Debugf("runTask OUT. block index: %d", blockIndex)
 	} else {
 		// rotation happens
-		task.RotationAddress = rotationAddr
-		task.ResultTransactionEssence = nil
+		taskResult.RotationAddress = rotationAddr
+		taskResult.TransactionEssence = nil
 		task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
+	return taskResult
 }

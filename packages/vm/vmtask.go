@@ -14,15 +14,13 @@ import (
 )
 
 type VMRunner interface {
-	Run(task *VMTask) error
+	Run(task *VMTask) (*VMTaskResult, error)
 }
 
 // VMTask is task context (for batch of requests). It is used to pass parameters and take results
 // It is assumed that all requests/inputs are unlock-able by aliasAddress of provided AnchorOutput
 // at timestamp = Timestamp + len(Requests) nanoseconds
 type VMTask struct {
-	// INPUTS:
-
 	Processors                 *processors.Cache
 	AnchorOutput               *iotago.AliasOutput
 	AnchorOutputID             iotago.OutputID
@@ -35,30 +33,29 @@ type VMTask struct {
 	ValidatorFeeTarget         isc.AgentID
 	// If EstimateGasMode is enabled, gas fee will be calculated but not charged
 	EstimateGasMode bool
-	// If EVMtrace is set, all requests will be executed normally up until the EVM
+	// If EVMTracer is set, all requests will be executed normally up until the EVM
 	// tx with the given index, which will then be executed with the given tracer.
 	EVMTracer            *isc.EVMTracer
 	EnableGasBurnLogging bool // for testing and Solo only
-
-	// INPUTS_OUTPUTS:
+	// If maintenance mode is enabled, only requests to the governance contract will be executed
+	MaintenanceModeEnabled bool
 
 	Log *logger.Logger
+}
 
-	// OUTPUTS:
-
+type VMTaskResult struct {
+	Task *VMTask
 	// the uncommitted state resulting from the execution of the requests
 	StateDraft state.StateDraft
 	// RotationAddress is the next address after a rotation, or nil if there is no rotation
 	RotationAddress iotago.Address
 	// TransactionEssence is the transaction essence for the next block,
 	// or nil if the task does not produce a normal block
-	ResultTransactionEssence *iotago.TransactionEssence
-	// ResultInputsCommitment is the inputs commitment necessary to sign the ResultTransactionEssence
-	ResultInputsCommitment []byte
-	// Results contains one result for each non-skipped request
-	Results []*RequestResult
-	// If maintenance mode is enabled, only requests to the governance contract will be executed
-	MaintenanceModeEnabled bool
+	TransactionEssence *iotago.TransactionEssence
+	// InputsCommitment is the inputs commitment necessary to sign the ResultTransactionEssence
+	InputsCommitment []byte
+	// RequestResults contains one result for each non-skipped request
+	RequestResults []*RequestResult
 }
 
 type RequestResult struct {
@@ -72,4 +69,8 @@ type RequestResult struct {
 
 func (task *VMTask) WillProduceBlock() bool {
 	return !task.EstimateGasMode && task.EVMTracer == nil
+}
+
+func (task *VMTask) CreateResult() *VMTaskResult {
+	return &VMTaskResult{Task: task}
 }

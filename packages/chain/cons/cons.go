@@ -569,9 +569,9 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 	return nil
 }
 
-func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
+func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessages {
 	c.output.NeedVMResult = nil
-	if len(vmResult.Results) == 0 {
+	if len(vmResult.RequestResults) == 0 {
 		// No requests were processed, don't have what to do.
 		// Will need to retry the consensus with the next log index some time later.
 		c.log.Infof("Terminating consensus with status=Skipped, 0 requests processed.")
@@ -584,8 +584,8 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 		// Rotation by the Self-Governed Committee.
 		essence, err := rotate.MakeRotateStateControllerTransaction(
 			vmResult.RotationAddress,
-			isc.NewAliasOutputWithID(vmResult.AnchorOutput, vmResult.AnchorOutputID),
-			vmResult.TimeAssumption,
+			isc.NewAliasOutputWithID(vmResult.Task.AnchorOutput, vmResult.Task.AnchorOutputID),
+			vmResult.Task.TimeAssumption,
 			identity.ID{},
 			identity.ID{},
 		)
@@ -595,11 +595,11 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 			c.term.haveOutputProduced()
 			return nil
 		}
-		vmResult.ResultTransactionEssence = essence
+		vmResult.TransactionEssence = essence
 		vmResult.StateDraft = nil
 	}
 
-	signingMsg, err := vmResult.ResultTransactionEssence.SigningMessage()
+	signingMsg, err := vmResult.TransactionEssence.SigningMessage()
 	if err != nil {
 		panic(fmt.Errorf("uponVMOutputReceived: cannot obtain signing message: %w", err))
 	}
@@ -613,8 +613,8 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 // TX
 
 // Everything is ready for the output TX, produce it.
-func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, block state.Block, signature []byte) gpa.OutMessages {
-	resultTxEssence := vmResult.ResultTransactionEssence
+func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTaskResult, block state.Block, signature []byte) gpa.OutMessages {
+	resultTxEssence := vmResult.TransactionEssence
 	publicKey := c.dkShare.GetSharedPublic()
 	var signatureArray [ed25519.SignatureSize]byte
 	copy(signatureArray[:], signature)
@@ -636,12 +636,12 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, block state.Block, sig
 	}
 	c.output.Result = &Result{
 		Transaction:     tx,
-		BaseAliasOutput: vmResult.AnchorOutputID,
+		BaseAliasOutput: vmResult.Task.AnchorOutputID,
 		NextAliasOutput: chained,
 		Block:           block,
 	}
 	c.output.Status = Completed
-	c.log.Infof("Terminating consensus with status=Completed, produced tx.ID=%v, nextAO=%v, baseAO.ID=%v", txID.ToHex(), chained, vmResult.AnchorOutputID.ToHex())
+	c.log.Infof("Terminating consensus with status=Completed, produced tx.ID=%v, nextAO=%v, baseAO.ID=%v", txID.ToHex(), chained, vmResult.Task.AnchorOutputID.ToHex())
 	c.term.haveOutputProduced()
 	return nil
 }

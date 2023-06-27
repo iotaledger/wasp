@@ -32,7 +32,9 @@ import (
 // The VMContext is created from immutable vm.VMTask object and UTXO state of the
 // chain address contained in the statetxbuilder.Builder
 type VMContext struct {
-	task *vm.VMTask
+	task       *vm.VMTask
+	taskResult *vm.VMTaskResult
+
 	// same for the block
 	chainOwnerID        isc.AgentID
 	finalStateTimestamp time.Time
@@ -84,7 +86,7 @@ type callContext struct {
 }
 
 // CreateVMContext creates a context for the whole batch run
-func CreateVMContext(task *vm.VMTask) *VMContext {
+func CreateVMContext(task *vm.VMTask, taskResult *vm.VMTaskResult) *VMContext {
 	// assert consistency. It is a bit redundant double check
 	if len(task.Requests) == 0 {
 		// should never happen
@@ -96,7 +98,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		panic(fmt.Errorf("CreateVMContext: can't parse state data as L1Commitment from chain input %w", err))
 	}
 
-	task.StateDraft, err = task.Store.NewStateDraft(task.TimeAssumption, prevL1Commitment)
+	taskResult.StateDraft, err = task.Store.NewStateDraft(task.TimeAssumption, prevL1Commitment)
 	if err != nil {
 		// should never happen
 		panic(err)
@@ -104,6 +106,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 
 	ret := &VMContext{
 		task:                task,
+		taskResult:          taskResult,
 		finalStateTimestamp: task.TimeAssumption.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond),
 		blockContext:        make(map[isc.Hname]interface{}),
 		entropy:             task.Entropy,
@@ -157,7 +160,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 func (vmctx *VMContext) withStateUpdate(f func()) {
 	vmctx.currentStateUpdate = NewStateUpdate()
 	f()
-	vmctx.currentStateUpdate.Mutations.ApplyTo(vmctx.task.StateDraft)
+	vmctx.currentStateUpdate.Mutations.ApplyTo(vmctx.taskResult.StateDraft)
 	vmctx.currentStateUpdate = nil
 }
 
@@ -172,12 +175,12 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 		vmctx.saveInternalUTXOs()
 	})
 
-	block := vmctx.task.Store.ExtractBlock(vmctx.task.StateDraft)
+	block := vmctx.task.Store.ExtractBlock(vmctx.taskResult.StateDraft)
 
 	l1Commitment := block.L1Commitment()
 
-	blockIndex := vmctx.task.StateDraft.BlockIndex()
-	timestamp := vmctx.task.StateDraft.Timestamp()
+	blockIndex := vmctx.taskResult.StateDraft.BlockIndex()
+	timestamp := vmctx.taskResult.StateDraft.Timestamp()
 
 	return blockIndex, l1Commitment, timestamp, rotationAddr
 }
@@ -200,7 +203,7 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 
 	blockInfo := &blocklog.BlockInfo{
 		SchemaVersion:         blocklog.BlockInfoLatestSchemaVersion,
-		Timestamp:             vmctx.task.StateDraft.Timestamp(),
+		Timestamp:             vmctx.taskResult.StateDraft.Timestamp(),
 		TotalRequests:         numRequests,
 		NumSuccessfulRequests: numSuccess,
 		NumOffLedgerRequests:  numOffLedger,
@@ -350,7 +353,7 @@ func (vmctx *VMContext) RemoveUnprocessable(results []*vm.RequestResult) {
 func (vmctx *VMContext) AssertConsistentGasTotals() {
 	var sumGasBurned, sumGasFeeCharged uint64
 
-	for _, r := range vmctx.task.Results {
+	for _, r := range vmctx.taskResult.RequestResults {
 		sumGasBurned += r.Receipt.GasBurned
 		sumGasFeeCharged += r.Receipt.GasFeeCharged
 	}
