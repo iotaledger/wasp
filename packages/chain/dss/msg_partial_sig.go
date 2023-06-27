@@ -28,7 +28,6 @@ func (msg *msgPartialSig) Read(r io.Reader) error {
 	msgTypePartialSig.ReadAndVerify(rr)
 	msg.partialSig = &dss.PartialSig{Partial: &share.PriShare{}}
 	msg.partialSig.Partial.I = int(rr.ReadUint16())
-	// FIXME no msg.suite is assigned here
 	msg.partialSig.Partial.V = cryptolib.ScalarFromReader(rr, msg.suite)
 	msg.partialSig.SessionID = rr.ReadBytes()
 	msg.partialSig.Signature = rr.ReadBytes()

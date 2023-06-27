@@ -23,7 +23,7 @@ func TestMarshalUnmarshalBlockMessage(t *testing.T) {
 	}
 }
 
-func TestBlockMessageSerialization(t *testing.T) {
+func TestSerializationBlockMessage(t *testing.T) {
 	msg := &BlockMessage{
 		gpa.BasicMessage{},
 		state.RandomBlock(),

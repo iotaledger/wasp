@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/state"
 )
 
 type stateSM struct {
@@ -101,7 +100,7 @@ func TestRapid(t *testing.T) {
 
 func TestRapidReproduced(t *testing.T) {
 	var err error
-	store := state.NewStore(mapdb.NewMapDB())
+	store := NewStore(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()
 	draft.Set(kv.Key([]byte{0}), []byte{0})
 	draft.Set(kv.Key([]byte{1}), []byte{0})

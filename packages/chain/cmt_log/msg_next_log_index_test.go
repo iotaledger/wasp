@@ -14,21 +14,21 @@ import (
 
 func TestMsgNextLogIndexSerialization(t *testing.T) {
 	{
-		msg := &msgNextLogIndex{
+		msg := &MsgNextLogIndex{
 			gpa.BasicMessage{},
 			LogIndex(rand.Int31()),
 			isc.RandomAliasOutputWithID(),
 			false,
 		}
 
-		rwutil.ReadWriteTest(t, msg, new(msgNextLogIndex))
+		rwutil.ReadWriteTest(t, msg, new(MsgNextLogIndex))
 	}
-	msg := &msgNextLogIndex{
+	msg := &MsgNextLogIndex{
 		gpa.BasicMessage{},
 		LogIndex(rand.Int31()),
 		isc.RandomAliasOutputWithID(),
 		true,
 	}
 
-	rwutil.ReadWriteTest(t, msg, new(msgNextLogIndex))
+	rwutil.ReadWriteTest(t, msg, new(MsgNextLogIndex))
 }

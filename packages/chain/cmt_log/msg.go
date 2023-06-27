@@ -17,6 +17,6 @@ func (cl *cmtLogImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 
 func UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return gpa.UnmarshalMessage(data, gpa.Mapper{
-		msgTypeNextLogIndex: func() gpa.Message { return new(msgNextLogIndex) },
+		msgTypeNextLogIndex: func() gpa.Message { return new(MsgNextLogIndex) },
 	})
 }

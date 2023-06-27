@@ -9,9 +9,10 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/stretchr/testify/require"
 )
 
 func TestMsgImplicateRecoverSerialization(t *testing.T) {

@@ -270,7 +270,7 @@ func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
 
 // Implements the gpa.GPA interface.
 func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
-	msgNLI, ok := msg.(*msgNextLogIndex)
+	msgNLI, ok := msg.(*MsgNextLogIndex)
 	if !ok {
 		cl.log.Warnf("dropping unexpected message %T: %+v", msg, msg)
 		return nil
@@ -362,7 +362,7 @@ func (cl *cmtLogImpl) handleInputSuspend() gpa.OutMessages {
 
 // > ON Reception of ⟨NextLI, •⟩ message:
 // >   ...
-func (cl *cmtLogImpl) handleMsgNextLogIndex(msg *msgNextLogIndex) gpa.OutMessages {
+func (cl *cmtLogImpl) handleMsgNextLogIndex(msg *MsgNextLogIndex) gpa.OutMessages {
 	msgs := cl.varLogIndex.MsgNextLogIndexReceived(msg)
 	return cl.tryProposeConsensus(msgs)
 }
