@@ -478,15 +478,17 @@ func (ch *Chain) GetRequestReceiptsForBlockRangeAsStrings(fromBlockIndex, toBloc
 }
 
 func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
-	res, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewControlAddresses.Name)
-	require.NoError(ch.Env.T, err)
-	par := kvdecoder.New(res, ch.Log())
-	ret := &blocklog.ControlAddresses{
-		StateAddress:     par.MustGetAddress(blocklog.ParamStateControllerAddress),
-		GoverningAddress: par.MustGetAddress(blocklog.ParamGoverningAddress),
-		SinceBlockIndex:  par.MustGetUint32(blocklog.ParamBlockIndex),
+	aliasOutputID, err := ch.LatestAliasOutput(chain.ConfirmedState)
+	if err != nil {
+		return nil
 	}
-	return ret
+	aliasOutput := aliasOutputID.GetAliasOutput()
+	controlAddr := &blocklog.ControlAddresses{
+		StateAddress:     aliasOutput.StateController(),
+		GoverningAddress: aliasOutput.GovernorAddress(),
+		SinceBlockIndex:  aliasOutput.StateIndex,
+	}
+	return controlAddr
 }
 
 // AddAllowedStateController adds the address to the allowed state controlled address list

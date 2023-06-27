@@ -32,28 +32,6 @@ func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxID iotago.TransactionID
 	registry.SetAt(lastBlockIndex, blockInfo.Bytes())
 }
 
-// SaveControlAddressesIfNecessary saves new information about state address in the blocklog partition
-// If state address does not change, it does nothing
-func SaveControlAddressesIfNecessary(partition kv.KVStore, stateAddress, governingAddress iotago.Address, blockIndex uint32) {
-	registry := collections.NewArray(partition, prefixControlAddresses)
-	length := registry.Len()
-	if length != 0 {
-		addrs, err := ControlAddressesFromBytes(registry.GetAt(length - 1))
-		if err != nil {
-			panic(fmt.Sprintf("SaveControlAddressesIfNecessary: %v", err))
-		}
-		if addrs.StateAddress.Equal(stateAddress) && addrs.GoverningAddress.Equal(governingAddress) {
-			return
-		}
-	}
-	rec := &ControlAddresses{
-		StateAddress:     stateAddress,
-		GoverningAddress: governingAddress,
-		SinceBlockIndex:  blockIndex,
-	}
-	registry.Push(rec.Bytes())
-}
-
 // SaveRequestReceipt appends request record to the record log and creates records for fast lookup
 func SaveRequestReceipt(partition kv.KVStore, rec *RequestReceipt, key RequestLookupKey) error {
 	// save lookup record for fast lookup

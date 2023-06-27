@@ -222,15 +222,8 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 	}
 
 	// TODO this "SaveControlAddressesIfNecessary" call is saving potentially outdated info.
-	// Regardless the "control addresses in the state" can be completely removed, these are useless as the info can be derived from the AO
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
 		blocklog.SaveNextBlockInfo(s, blockInfo)
-		blocklog.SaveControlAddressesIfNecessary(
-			s,
-			vmctx.task.AnchorOutput.StateController(),
-			vmctx.task.AnchorOutput.GovernorAddress(),
-			vmctx.task.AnchorOutput.StateIndex,
-		)
 		blocklog.Prune(s, blockInfo.BlockIndex(), vmctx.chainInfo.BlockKeepAmount)
 	})
 	vmctx.task.Log.Debugf("saved blockinfo: %s", blockInfo)

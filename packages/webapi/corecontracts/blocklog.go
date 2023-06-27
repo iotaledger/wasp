@@ -12,32 +12,16 @@ import (
 )
 
 func GetControlAddresses(ch chain.Chain) (*blocklog.ControlAddresses, error) {
-	ret, err := common.CallView(ch, blocklog.Contract.Hname(), blocklog.ViewControlAddresses.Hname(), nil)
+	aliasOutputID, err := ch.LatestAliasOutput(chain.ConfirmedState)
 	if err != nil {
 		return nil, err
 	}
-
-	par := kvdecoder.New(ret)
-
-	stateAddress, err := par.GetAddress(blocklog.ParamStateControllerAddress)
-	if err != nil {
-		return nil, err
-	}
-
-	governingAddress, err := par.GetAddress(blocklog.ParamGoverningAddress)
-	if err != nil {
-		return nil, err
-	}
-
-	sinceBlockIndex, err := par.GetUint32(blocklog.ParamBlockIndex)
-	if err != nil {
-		return nil, err
-	}
+	aliasOutput := aliasOutputID.GetAliasOutput()
 
 	controlAddresses := &blocklog.ControlAddresses{
-		StateAddress:     stateAddress,
-		GoverningAddress: governingAddress,
-		SinceBlockIndex:  sinceBlockIndex,
+		StateAddress:     aliasOutputID.GetStateAddress(),
+		GoverningAddress: aliasOutput.GovernorAddress(),
+		SinceBlockIndex:  aliasOutput.StateIndex,
 	}
 
 	return controlAddresses, nil
