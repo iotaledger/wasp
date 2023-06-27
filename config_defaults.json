@@ -71,6 +71,16 @@
     "pipeliningLimit": -1,
     "consensusDelay": "500ms"
   },
+  "stateManager": {
+    "blockCacheMaxSize": 1000,
+    "blockCacheBlocksInCacheDuration": "1h",
+    "blockCacheBlockCleaningPeriod": "1m",
+    "stateManagerGetBlockRetry": "3s",
+    "stateManagerRequestCleaningPeriod": "1s",
+    "stateManagerTimerTickPeriod": "1s",
+    "pruningMinStatesToKeep": 10000,
+    "pruningMaxStatesToDelete": 1000
+  },
   "wal": {
     "enabled": true,
     "path": "waspdb/wal"
@@ -127,6 +137,7 @@
     "goMetrics": true,
     "processMetrics": true,
     "promhttpMetrics": true,
-    "webAPIMetrics": true
+    "webAPIMetrics": true,
+    "stateMetrics": true
   }
 }

@@ -295,7 +295,37 @@ Example:
   }
 ```
 
-## <a id="wal"></a> 9. Write-Ahead Logging
+## <a id="statemanager"></a> 9. StateManager
+
+| Name                              | Description                                                                                   | Type   | Default value |
+| --------------------------------- | --------------------------------------------------------------------------------------------- | ------ | ------------- |
+| blockCacheMaxSize                 | How many blocks may be stored in cache before old ones start being deleted                    | int    | 1000          |
+| blockCacheBlocksInCacheDuration   | How long should the block stay in block cache before being deleted                            | string | "1h"          |
+| blockCacheBlockCleaningPeriod     | How often should the block cache be cleaned                                                   | string | "1m"          |
+| stateManagerGetBlockRetry         | How often get block requests should be repeated                                               | string | "3s"          |
+| stateManagerRequestCleaningPeriod | How often requests waiting for response should be checked for expired context                 | string | "1s"          |
+| stateManagerTimerTickPeriod       | How often timer tick fires in state manager                                                   | string | "1s"          |
+| pruningMinStatesToKeep            | This number of states will always be available in the store; if 0 - store pruning is disabled | int    | 10000         |
+| pruningMaxStatesToDelete          | On single store pruning attempt at most this number of states will be deleted                 | int    | 1000          |
+
+Example:
+
+```json
+  {
+    "stateManager": {
+      "blockCacheMaxSize": 1000,
+      "blockCacheBlocksInCacheDuration": "1h",
+      "blockCacheBlockCleaningPeriod": "1m",
+      "stateManagerGetBlockRetry": "3s",
+      "stateManagerRequestCleaningPeriod": "1s",
+      "stateManagerTimerTickPeriod": "1s",
+      "pruningMinStatesToKeep": 10000,
+      "pruningMaxStatesToDelete": 1000
+    }
+  }
+```
+
+## <a id="wal"></a> 10. Write-Ahead Logging
 
 | Name    | Description                                  | Type    | Default value |
 | ------- | -------------------------------------------- | ------- | ------------- |
@@ -313,7 +343,7 @@ Example:
   }
 ```
 
-## <a id="webapi"></a> 10. Web API
+## <a id="webapi"></a> 11. Web API
 
 | Name                      | Description                                              | Type    | Default value  |
 | ------------------------- | -------------------------------------------------------- | ------- | -------------- |
@@ -397,7 +427,7 @@ Example:
   }
 ```
 
-## <a id="profiling"></a> 11. Profiling
+## <a id="profiling"></a> 12. Profiling
 
 | Name        | Description                                       | Type    | Default value    |
 | ----------- | ------------------------------------------------- | ------- | ---------------- |
@@ -415,7 +445,7 @@ Example:
   }
 ```
 
-## <a id="profilingrecorder"></a> 12. ProfilingRecorder
+## <a id="profilingrecorder"></a> 13. ProfilingRecorder
 
 | Name    | Description                                     | Type    | Default value |
 | ------- | ----------------------------------------------- | ------- | ------------- |
@@ -431,7 +461,7 @@ Example:
   }
 ```
 
-## <a id="prometheus"></a> 13. Prometheus
+## <a id="prometheus"></a> 14. Prometheus
 
 | Name                     | Description                                                  | Type    | Default value  |
 | ------------------------ | ------------------------------------------------------------ | ------- | -------------- |
@@ -452,6 +482,7 @@ Example:
 | processMetrics           | Whether to include process metrics                           | boolean | true           |
 | promhttpMetrics          | Whether to include promhttp metrics                          | boolean | true           |
 | webAPIMetrics            | Whether to include webapi metrics                            | boolean | true           |
+| stateMetrics             | Whether to include state metrics                             | boolean | true           |
 
 Example:
 
@@ -474,7 +505,8 @@ Example:
       "goMetrics": true,
       "processMetrics": true,
       "promhttpMetrics": true,
-      "webAPIMetrics": true
+      "webAPIMetrics": true,
+      "stateMetrics": true
     }
   }
 ```
