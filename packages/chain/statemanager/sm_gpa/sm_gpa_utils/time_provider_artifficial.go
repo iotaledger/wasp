@@ -1,12 +1,14 @@
 package sm_gpa_utils
 
 import (
+	"sync"
 	"time"
 )
 
 type artifficialTimeProvider struct {
 	now    time.Time
 	timers []*timer
+	mutex  sync.Mutex
 }
 
 type timer struct {
@@ -26,10 +28,14 @@ func NewArtifficialTimeProvider(nowOpt ...time.Time) TimeProvider {
 	return &artifficialTimeProvider{
 		now:    now,
 		timers: make([]*timer, 0),
+		mutex:  sync.Mutex{},
 	}
 }
 
 func (atpT *artifficialTimeProvider) SetNow(now time.Time) {
+	atpT.mutex.Lock()
+	defer atpT.mutex.Unlock()
+
 	atpT.now = now
 	var i int
 	for i = 0; i < len(atpT.timers) && atpT.timers[i].time.Before(atpT.now); i++ {
@@ -40,10 +46,16 @@ func (atpT *artifficialTimeProvider) SetNow(now time.Time) {
 }
 
 func (atpT *artifficialTimeProvider) GetNow() time.Time {
+	atpT.mutex.Lock()
+	defer atpT.mutex.Unlock()
+
 	return atpT.now
 }
 
 func (atpT *artifficialTimeProvider) After(d time.Duration) <-chan time.Time {
+	atpT.mutex.Lock()
+	defer atpT.mutex.Unlock()
+
 	timerTime := atpT.now.Add(d)
 
 	var count int

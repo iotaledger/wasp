@@ -17,6 +17,8 @@ type SnapshotManager interface {
 type SnapshotManagerTest interface {
 	SnapshotManager
 	SnapshotReady(SnapshotInfo)
+	IsSnapshotReady(SnapshotInfo) bool
+	SetAfterSnapshotCreated(func(SnapshotInfo))
 }
 
 type SnapshotInfo interface {

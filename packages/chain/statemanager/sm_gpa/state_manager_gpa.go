@@ -83,7 +83,9 @@ func New(
 		parameters:              parameters,
 		lastGetBlocksTime:       time.Time{},
 		lastCleanBlockCacheTime: time.Time{},
+		lastCleanRequestsTime:   time.Time{},
 		lastStatusLogTime:       time.Time{},
+		lastSnapshotsUpdateTime: time.Time{},
 		metrics:                 metrics,
 	}
 
@@ -545,7 +547,7 @@ func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMe
 		smT.output.setUpdateSnapshots()
 		smT.lastSnapshotsUpdateTime = now
 		smT.log.Debugf("Ordered snapshot update, next update not earlier than %v",
-			smT.lastSnapshotsUpdateTime.Add(smT.parameters.StateManagerRequestCleaningPeriod))
+			smT.lastSnapshotsUpdateTime.Add(smT.parameters.SnapshotManagerUpdatePeriod))
 	}
 	smT.metrics.StateManagerTimerTickHandled(time.Since(start))
 	return result

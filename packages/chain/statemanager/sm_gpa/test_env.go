@@ -42,7 +42,23 @@ func newTestEnv(
 	t *testing.T,
 	nodeIDs []gpa.NodeID,
 	createWALFun func() sm_gpa_utils.TestBlockWAL,
-	createSnapMFun func(origStore, nodeStore state.Store, log *logger.Logger) sm_snapshots.SnapshotManagerTest,
+	createSnapMFun func(origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManagerTest,
+	parametersOpt ...StateManagerParameters,
+) *testEnv {
+	createWALVariedFun := func(gpa.NodeID) sm_gpa_utils.TestBlockWAL {
+		return createWALFun()
+	}
+	createSnapMVariedFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManagerTest {
+		return createSnapMFun(origStore, nodeStore, tp, log)
+	}
+	return newVariedTestEnv(t, nodeIDs, createWALVariedFun, createSnapMVariedFun, parametersOpt...)
+}
+
+func newVariedTestEnv(
+	t *testing.T,
+	nodeIDs []gpa.NodeID,
+	createWALFun func(gpa.NodeID) sm_gpa_utils.TestBlockWAL,
+	createSnapMFun func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManagerTest,
 	parametersOpt ...StateManagerParameters,
 ) *testEnv {
 	var bf *sm_gpa_utils.BlockFactory
@@ -70,15 +86,16 @@ func newTestEnv(
 		var err error
 		smLog := log.Named(nodeID.ShortString())
 		nr := sm_utils.NewNodeRandomiser(nodeID, nodeIDs, smLog)
-		wal := createWALFun()
-		snapshotExistsFun := func(_ uint32, _ *state.L1Commitment) bool { return false }
+		wal := createWALFun(nodeID)
 		store := state.NewStore(mapdb.NewMapDB())
+		snapshotManager := createSnapMFun(nodeID, bf.GetStore(), store, parameters.TimeProvider, log.Named("snap").Named(nodeID.ShortString()))
+		snapshotExistsFun := snapshotManager.SnapshotExists
 		origin.InitChain(store, chainInitParameters, 0)
 		stores[nodeID] = store
 		metrics := metrics.NewEmptyChainStateManagerMetric()
 		sms[nodeID], err = New(chainID, nr, wal, snapshotExistsFun, store, metrics, smLog, parameters)
 		require.NoError(t, err)
-		snapms[nodeID] = createSnapMFun(bf.GetStore(), store, log.Named("snap").Named(nodeID.ShortString()))
+		snapms[nodeID] = snapshotManager
 		snaprchs[nodeID] = nil
 		snaprsis[nodeID] = nil
 	}
