@@ -233,7 +233,7 @@ func (smT *stateManagerGPA) handleConsensusDecidedState(cds *sm_inputs.Consensus
 
 func (smT *stateManagerGPA) handleConsensusBlockProduced(input *sm_inputs.ConsensusBlockProduced) gpa.OutMessages {
 	start := time.Now()
-	stateIndex := input.GetStateDraft().BlockIndex()
+	stateIndex := input.GetStateDraft().BlockIndex() - 1 // NOTE: as this state draft is complete, the returned index is the one of the next state (which will be obtained, once this state draft is committed); to get the index of the base state, we need to subtract one
 	commitment := input.GetStateDraft().BaseL1Commitment()
 	smT.log.Debugf("Input block produced on state index %v %s received...", stateIndex, commitment)
 	if !smT.store.HasTrieRoot(commitment.TrieRoot()) {
@@ -244,8 +244,8 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *sm_inputs.Consen
 	blockCommitment := block.L1Commitment()
 	smT.blockCache.AddBlock(block)
 	input.Respond(block)
-	smT.log.Debugf("Input block produced on state index %v %s: state draft index %v has been committed to the store, responded to consensus with resulting block %s",
-		stateIndex, commitment, input.GetStateDraft().BlockIndex(), blockCommitment)
+	smT.log.Debugf("Input block produced on state index %v %s: state draft has been committed to the store, responded to consensus with resulting block index %v %s",
+		stateIndex, commitment, block.StateIndex(), blockCommitment)
 	fetcher := smT.blocksToFetch.takeFetcher(blockCommitment)
 	var result gpa.OutMessages
 	if fetcher != nil {
