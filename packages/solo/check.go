@@ -100,7 +100,7 @@ func (ch *Chain) AssertControlAddresses() {
 	rec := ch.GetControlAddresses()
 	require.True(ch.Env.T, rec.StateAddress.Equal(ch.StateControllerAddress))
 	require.True(ch.Env.T, rec.GoverningAddress.Equal(ch.StateControllerAddress))
-	require.EqualValues(ch.Env.T, 0, rec.SinceBlockIndex)
+	require.EqualValues(ch.Env.T, ch.LatestBlock().StateIndex(), rec.SinceBlockIndex)
 }
 
 func (ch *Chain) HasL2NFT(agentID isc.AgentID, nftID *iotago.NFTID) bool {
