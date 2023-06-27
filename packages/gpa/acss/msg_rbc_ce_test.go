@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/stretchr/testify/require"
 )
@@ -20,7 +19,7 @@ func TestMsgRBCCEPayloadSerialization(t *testing.T) {
 	require.NoError(t, err)
 	msg := &msgRBCCEPayload{
 		gpa.BasicMessage{},
-		tcrypto.DefaultEd25519Suite(),
+		nil,
 		b,
 	}
 
