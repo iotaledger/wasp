@@ -292,6 +292,53 @@ func TestMempoolRequestBranchFromOrigin(t *testing.T) {
 	require.True(env.t, env.sendAndEnsureCompletedChainFetchStateDiff(oldCommitment, newCommitment, oldBlocks, newBlocks, nodeID, 1, 0*time.Second))
 }
 
+// Two node setting.
+//  1. A batch of 10 consecutive blocks is generated, each of them is sent
+//     to the first node.
+//  2. A batch of 5 consecutive blocks is branched from block 4. Each of
+//     the blocks is sent to the first node.
+//  3. Second node is configured to download snapshot at index 7 of both branches
+//  4. A ChainFetchStateDiff request is sent for the branch as a new and
+//     and original batch as old.
+func TestMempoolSnapshotInTheMiddle(t *testing.T) {
+	batchSize := 10
+	branchSize := 5
+	branchIndex := 4
+	snapshottedIndex := 7
+
+	nodeIDs := gpa.MakeTestNodeIDs(2)
+	newMockedSnapshotManagerFun := func(origStore, nodeStore state.Store, timeProvider sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManagerTest {
+		return sm_snapshots.NewMockedSnapshotManager(t, 0, origStore, nodeStore, 0*time.Second, 0*time.Second, timeProvider, log)
+	}
+	smParameters := NewStateManagerParameters()
+	smParameters.StateManagerGetBlockRetry = 100 * time.Millisecond
+	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewMockedTestBlockWAL, newMockedSnapshotManagerFun, smParameters)
+	defer env.finalize()
+
+	oldBlocks := env.bf.GetBlocks(batchSize, 1)
+	newBlocks := env.bf.GetBlocksFrom(branchSize, 1, oldBlocks[branchIndex].L1Commitment(), 2)
+	oldSnapshottedBlock := oldBlocks[snapshottedIndex]
+	newSnapshottedBlock := newBlocks[snapshottedIndex-branchIndex-1]
+	env.snapms[nodeIDs[1]].SnapshotReady(sm_snapshots.NewSnapshotInfo(oldSnapshottedBlock.StateIndex(), oldSnapshottedBlock.L1Commitment()))
+	env.snapms[nodeIDs[1]].SnapshotReady(sm_snapshots.NewSnapshotInfo(newSnapshottedBlock.StateIndex(), newSnapshottedBlock.L1Commitment()))
+	env.snapms[nodeIDs[1]].UpdateAsync()
+
+	env.sendBlocksToNode(nodeIDs[0], 0*time.Second, oldBlocks...)
+	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeIDs[0], oldBlocks))
+
+	env.sendBlocksToNode(nodeIDs[0], 0*time.Second, newBlocks...)
+	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeIDs[0], newBlocks))
+
+	oldCommitment := oldBlocks[len(oldBlocks)-1].L1Commitment()
+	newCommitment := newBlocks[len(newBlocks)-1].L1Commitment()
+	responseCh := env.sendChainFetchStateDiff(oldCommitment, newCommitment, nodeIDs[1])
+	time.Sleep(10 * time.Millisecond)                // To allow snapshot manager to receive load old state snapshot request
+	env.sendTimerTickToNodes(100 * time.Millisecond) // To check the response from snapshot manager about loaded old state snapshot; timer tick is not necessary: any input would be suitable
+	time.Sleep(10 * time.Millisecond)                // To allow snapshot manager to receive load new state snapshot request
+	env.sendTimerTickToNodes(100 * time.Millisecond) // To check the response from snapshot manager about loaded new state snapshot; timer tick is not necessary: any input would be suitable
+	require.True(env.t, env.ensureCompletedChainFetchStateDiff(responseCh, oldBlocks[branchIndex+1:], newBlocks, 1, 0*time.Millisecond))
+}
+
 // Single node setting, pruning leaves 10 historic blocks.
 //   - 11 blocks are added into the store one by one; each time it is checked if
 //     all of the added blocks are in the store (none of them got pruned).

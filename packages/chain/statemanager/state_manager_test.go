@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
@@ -39,6 +40,11 @@ func TestCruelWorld(t *testing.T) {
 	consensusDecidedStateCount := 50
 	mempoolStateRequestDelay := 50 * time.Millisecond
 	mempoolStateRequestCount := 50
+	snapshotCreateNodeCount := 2
+	snapshotCreatePeriod := uint32(7)
+	snapshotCommitTime := 170 * time.Millisecond
+	snapshotLoadTime := 320 * time.Millisecond
+	snapshotUpdatePeriod := 510 * time.Millisecond
 
 	peeringURLs, peerIdentities := testpeers.SetupKeys(uint16(nodeCount))
 	peerPubKeys := make([]*cryptolib.PublicKey, len(peerIdentities))
@@ -55,13 +61,26 @@ func TestCruelWorld(t *testing.T) {
 	bf := sm_gpa_utils.NewBlockFactory(t)
 	sms := make([]StateMgr, nodeCount)
 	stores := make([]state.Store, nodeCount)
+	snapMs := make([]sm_snapshots.SnapshotManagerTest, nodeCount)
 	parameters := sm_gpa.NewStateManagerParameters()
 	parameters.StateManagerTimerTickPeriod = timerTickPeriod
 	parameters.StateManagerGetBlockRetry = getBlockPeriod
+	parameters.SnapshotManagerUpdatePeriod = snapshotUpdatePeriod
+	NewMockedSnapshotManagerFun := func(createSnapshots bool, store state.Store, log *logger.Logger) sm_snapshots.SnapshotManagerTest {
+		var createPeriod uint32
+		if createSnapshots {
+			createPeriod = snapshotCreatePeriod
+		} else {
+			createPeriod = 0
+		}
+		return sm_snapshots.NewMockedSnapshotManager(t, createPeriod, bf.GetStore(), store, snapshotCommitTime, snapshotLoadTime, parameters.TimeProvider, log)
+	}
 	for i := range sms {
 		t.Logf("Creating %v-th state manager for node %s", i, peeringURLs[i])
 		var err error
+		logNode := log.Named(peeringURLs[i])
 		stores[i] = state.NewStore(mapdb.NewMapDB())
+		snapMs[i] = NewMockedSnapshotManagerFun(i < snapshotCreateNodeCount, stores[i], logNode)
 		origin.InitChain(stores[i], nil, 0)
 		sms[i], err = New(
 			context.Background(),
@@ -70,15 +89,22 @@ func TestCruelWorld(t *testing.T) {
 			peerPubKeys,
 			netProviders[i],
 			sm_gpa_utils.NewMockedTestBlockWAL(),
-			sm_snapshots.NewEmptySnapshotManager(),
+			snapMs[i],
 			stores[i],
 			nil,
 			metrics.NewEmptyChainStateManagerMetric(),
 			metrics.NewEmptyChainPipeMetrics(),
-			log.Named(peeringURLs[i]),
+			logNode,
 			parameters,
 		)
 		require.NoError(t, err)
+	}
+	for i := 0; i < snapshotCreateNodeCount; i++ {
+		snapMs[i].SetAfterSnapshotCreated(func(snapshotInfo sm_snapshots.SnapshotInfo) {
+			for j := snapshotCreateNodeCount; j < len(snapMs); j++ {
+				snapMs[j].SnapshotReady(snapshotInfo)
+			}
+		})
 	}
 	blocks := bf.GetBlocks(blockCount, 1)
 	stateDrafts := make([]state.StateDraft, blockCount)

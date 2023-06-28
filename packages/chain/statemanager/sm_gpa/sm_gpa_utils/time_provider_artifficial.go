@@ -53,25 +53,30 @@ func (atpT *artifficialTimeProvider) GetNow() time.Time {
 }
 
 func (atpT *artifficialTimeProvider) After(d time.Duration) <-chan time.Time {
-	atpT.mutex.Lock()
-	defer atpT.mutex.Unlock()
-
-	timerTime := atpT.now.Add(d)
-
-	var count int
-	for i := 0; i < len(atpT.timers) && atpT.timers[i].time.Before(timerTime); i++ {
-		count++
-	}
-
-	if count == len(atpT.timers) {
-		atpT.timers = append(atpT.timers, nil)
-	} else {
-		atpT.timers = append(atpT.timers[:count+1], atpT.timers[count:]...)
-	}
 	channel := make(chan time.Time, 1)
-	atpT.timers[count] = &timer{
-		time:    timerTime,
-		channel: channel,
+	if d == 0 {
+		channel <- atpT.now
+		close(channel)
+	} else {
+		atpT.mutex.Lock()
+		defer atpT.mutex.Unlock()
+
+		timerTime := atpT.now.Add(d)
+
+		var count int
+		for i := 0; i < len(atpT.timers) && atpT.timers[i].time.Before(timerTime); i++ {
+			count++
+		}
+
+		if count == len(atpT.timers) {
+			atpT.timers = append(atpT.timers, nil)
+		} else {
+			atpT.timers = append(atpT.timers[:count+1], atpT.timers[count:]...)
+		}
+		atpT.timers[count] = &timer{
+			time:    timerTime,
+			channel: channel,
+		}
 	}
 	return channel
 }
