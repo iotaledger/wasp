@@ -148,7 +148,7 @@ func (e *EthService) GetTransactionByHash(hash common.Hash) (*RPCTransaction, er
 }
 
 func (e *EthService) getTransactionByBlockHashAndIndex(blockHash common.Hash, index hexutil.Uint) (*RPCTransaction, error) {
-	tx, _, blockNumber, _, err := e.evmChain.TransactionByBlockHashAndIndex(blockHash, uint64(index))
+	tx, blockNumber, err := e.evmChain.TransactionByBlockHashAndIndex(blockHash, uint64(index))
 	if err != nil {
 		return nil, e.resolveError(err)
 	}
@@ -168,7 +168,7 @@ func (e *EthService) GetTransactionByBlockHashAndIndex(blockHash common.Hash, in
 }
 
 func (e *EthService) getTransactionByBlockNumberAndIndex(blockNumberOrTag rpc.BlockNumber, index hexutil.Uint) (*RPCTransaction, error) {
-	tx, blockHash, blockNumber, _, err := e.evmChain.TransactionByBlockNumberAndIndex(parseBlockNumber(blockNumberOrTag), uint64(index))
+	tx, blockHash, blockNumber, err := e.evmChain.TransactionByBlockNumberAndIndex(parseBlockNumber(blockNumberOrTag), uint64(index))
 	if err != nil {
 		return nil, e.resolveError(err)
 	}

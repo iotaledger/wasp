@@ -230,12 +230,7 @@ func TestBlocklogPruning(t *testing.T) {
 		_, err := ch.GetBlockInfo(i)
 		require.ErrorContains(t, err, "not found")
 		_, err = ch.EVM().BlockByNumber(big.NewInt(int64(i)))
-		if i == 10 {
-			// special case because of how `fakeistore` works, and the trie is not pruned
-			require.NoError(t, err)
-		} else {
-			require.ErrorContains(t, err, "not found")
-		}
+		require.ErrorContains(t, err, "not found")
 	}
 	for i := uint32(11); i <= 20; i++ {
 		bi, err := ch.GetBlockInfo(i)
