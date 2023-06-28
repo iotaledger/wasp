@@ -347,8 +347,8 @@ github.com/iotaledger/grocksdb v1.7.5-0.20230220105546-5162e18885c7 h1:dTrD7X2PT
 github.com/iotaledger/grocksdb v1.7.5-0.20230220105546-5162e18885c7/go.mod h1:ZRdPu684P0fQ1z8sXz4dj9H5LWHhz4a9oCtvjunkSrw=
 github.com/iotaledger/hive.go/app v0.0.0-20230425142119-6abddaf15db9 h1:vdVG068l2cDUuyUSrdKRG9IZOSii74t5iWyrwfr0utc=
 github.com/iotaledger/hive.go/app v0.0.0-20230425142119-6abddaf15db9/go.mod h1:vMXrLYkkHAqQC8yGLXcB1Adq9s3hPPf8Dv4sfd/koas=
-github.com/iotaledger/hive.go/apputils v1.0.0-rc.1.0.20230425142119-6abddaf15db9 h1:xJY45paXrbRpyIbLYsBO+5FulB2S2TQlKf8psFIsjH8=
-github.com/iotaledger/hive.go/apputils v1.0.0-rc.1.0.20230425142119-6abddaf15db9/go.mod h1:07HqeSxRXp/JFguDfDH4jb+dwDJ/jIE4xZ0iTMtSrGc=
+github.com/iotaledger/hive.go/apputils v1.0.0-rc.1.0.20230417125513-e2e89991217f h1:7WLntDniah8KzA5XLb4hwhtR+gR+UYIot9gDpXPJ824=
+github.com/iotaledger/hive.go/apputils v1.0.0-rc.1.0.20230417125513-e2e89991217f/go.mod h1:07HqeSxRXp/JFguDfDH4jb+dwDJ/jIE4xZ0iTMtSrGc=
 github.com/iotaledger/hive.go/constraints v0.0.0-20230425142119-6abddaf15db9 h1:cADhnifbOeGuGZfAw+QYq1DdRYSWxOQpq3fRzhN3aaE=
 github.com/iotaledger/hive.go/constraints v0.0.0-20230425142119-6abddaf15db9/go.mod h1:bvXXc6quBdERMMKnirr2+iQU4WnTz4KDbdHcusW9Ats=
 github.com/iotaledger/hive.go/crypto v0.0.0-20230425142119-6abddaf15db9 h1:oXs44XoTd5IK6qy1Mcu/O607FGqH52RIAiCNBSExizA=

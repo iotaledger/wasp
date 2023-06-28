@@ -197,15 +197,15 @@ func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...ti
 	return apilib.RunDKG(client, peerPubKeys, threshold, timeout...)
 }
 
-func (clu *Cluster) DeployChainWithDKG(allPeers, committeeNodes []int, quorum uint16) (*Chain, error) {
+func (clu *Cluster) DeployChainWithDKG(allPeers, committeeNodes []int, quorum uint16, blockKeepAmount ...int32) (*Chain, error) {
 	stateAddr, err := clu.RunDKG(committeeNodes, quorum)
 	if err != nil {
 		return nil, err
 	}
-	return clu.DeployChain(allPeers, committeeNodes, quorum, stateAddr)
+	return clu.DeployChain(allPeers, committeeNodes, quorum, stateAddr, blockKeepAmount...)
 }
 
-func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, stateAddr iotago.Address) (*Chain, error) {
+func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, stateAddr iotago.Address, blockKeepAmount ...int32) (*Chain, error) {
 	if len(allPeers) == 0 {
 		allPeers = clu.Config.AllNodes()
 	}
@@ -236,6 +236,14 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		committeePubKeys[i] = peeringNode.PublicKey
 	}
 
+	initParams := dict.Dict{
+		origin.ParamChainOwner:  isc.NewAgentID(chain.OriginatorAddress()).Bytes(),
+		origin.ParamWaspVersion: codec.EncodeString(app.Version),
+	}
+	if len(blockKeepAmount) > 0 {
+		initParams[origin.ParamBlockKeepAmount] = codec.EncodeInt32(blockKeepAmount[0])
+	}
+
 	chainID, err := apilib.DeployChain(
 		apilib.CreateChainParams{
 			Layer1Client:      clu.L1Client(),
@@ -245,10 +253,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			OriginatorKeyPair: chain.OriginatorKeyPair,
 			Textout:           os.Stdout,
 			Prefix:            "[cluster] ",
-			InitParams: dict.Dict{
-				origin.ParamChainOwner:  isc.NewAgentID(chain.OriginatorAddress()).Bytes(),
-				origin.ParamWaspVersion: codec.EncodeString(app.Version),
-			},
+			InitParams:        initParams,
 		},
 		stateAddr,
 		stateAddr,
