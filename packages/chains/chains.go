@@ -64,9 +64,9 @@ type Chains struct {
 	smStateManagerTimerTickPeriod       time.Duration
 	smPruningMinStatesToKeep            int
 	smPruningMaxStatesToDelete          int
-	snapshotPeriod               uint32
-	snapshotFolderPath           string
-	snapshotNetworkPaths         []string
+	snapshotPeriod                      uint32
+	snapshotFolderPath                  string
+	snapshotNetworkPaths                []string
 
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
@@ -279,7 +279,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	chainLog := c.log.Named(chainID.ShortString())
 	var chainWAL sm_gpa_utils.BlockWAL
 	if c.walEnabled {
-		chainWAL, err = sm_gpa_utils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, chainMetrics)
+		chainWAL, err = sm_gpa_utils.NewBlockWAL(chainLog, c.walFolderPath, chainID, chainMetrics)
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}
@@ -309,7 +309,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.snapshotFolderPath,
 		c.snapshotNetworkPaths,
 		chainStore,
-		chainLog.Named("Snap"),
+		chainLog,
 	)
 	if err != nil {
 		panic(fmt.Errorf("cannot create Snapshotter: %w", err))

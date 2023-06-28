@@ -80,8 +80,9 @@ func NewSnapshotManager(
 			return nil, fmt.Errorf("cannot append chain ID to network path %s: %v", baseNetworkPaths[i], err)
 		}
 	}
+	snapMLog := log.Named("Snap")
 	result := &snapshotManagerImpl{
-		log:                       log,
+		log:                       snapMLog,
 		ctx:                       ctx,
 		chainID:                   chainID,
 		lastIndexSnapshotted:      0,
@@ -98,11 +99,11 @@ func NewSnapshotManager(
 			return nil, fmt.Errorf("cannot create folder %s: %v", localPath, err)
 		}
 		result.cleanTempFiles() // To be able to make snapshots, which were not finished. See comment in `handleBlockCommitted` function
-		log.Debugf("Snapshot manager created; folder %v is used for snapshots", localPath)
+		snapMLog.Debugf("Snapshot manager created; folder %v is used for snapshots", localPath)
 	} else {
-		log.Debugf("Snapshot manager created; no snapshots will be produced")
+		snapMLog.Debugf("Snapshot manager created; no snapshots will be produced")
 	}
-	result.snapshotManagerRunner = newSnapshotManagerRunner(ctx, shutdownCoordinator, result, log)
+	result.snapshotManagerRunner = newSnapshotManagerRunner(ctx, shutdownCoordinator, result, snapMLog)
 	return result, nil
 }
 

@@ -442,11 +442,10 @@ func TestSnapshots(t *testing.T) {
 	nodeIDOther := nodeIDs[1]
 	newEmptyTestBlockWALFun := func(gpa.NodeID) sm_gpa_utils.TestBlockWAL { return sm_gpa_utils.NewEmptyTestBlockWAL() }
 	newMockedSnapshotManagerFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManagerTest {
-		smLog := log.Named("Snap")
 		if nodeID.Equals(nodeIDFirst) {
-			return sm_snapshots.NewMockedSnapshotManager(t, snapshotCreatePeriod, origStore, nodeStore, snapshotCreateTime, snapshotLoadTime, tp, smLog)
+			return sm_snapshots.NewMockedSnapshotManager(t, snapshotCreatePeriod, origStore, nodeStore, snapshotCreateTime, snapshotLoadTime, tp, log)
 		}
-		return sm_snapshots.NewMockedSnapshotManager(t, 0, origStore, nodeStore, snapshotCreateTime, snapshotLoadTime, tp, smLog)
+		return sm_snapshots.NewMockedSnapshotManager(t, 0, origStore, nodeStore, snapshotCreateTime, snapshotLoadTime, tp, log)
 	}
 	smParameters := NewStateManagerParameters()
 	smParameters.SnapshotManagerUpdatePeriod = 2 * time.Second

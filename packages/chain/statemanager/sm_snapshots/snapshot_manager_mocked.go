@@ -64,7 +64,7 @@ func NewMockedSnapshotManager(
 		timeProvider:            timeProvider,
 		afterSnapshotCreatedFun: func(SnapshotInfo) {},
 	}
-	result.snapshotManagerRunner = newSnapshotManagerRunner(context.Background(), nil, result, log)
+	result.snapshotManagerRunner = newSnapshotManagerRunner(context.Background(), nil, result, log.Named("MSnap"))
 	return result
 }
 

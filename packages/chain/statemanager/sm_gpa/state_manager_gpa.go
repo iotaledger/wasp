@@ -65,7 +65,7 @@ func New(
 	parameters StateManagerParameters,
 ) (gpa.GPA, error) {
 	var err error
-	smLog := log.Named("gpa")
+	smLog := log.Named("GPA")
 	blockCache, err := sm_gpa_utils.NewBlockCache(parameters.TimeProvider, parameters.BlockCacheMaxSize, wal, metrics, smLog)
 	if err != nil {
 		return nil, fmt.Errorf("error creating block cache: %v", err)

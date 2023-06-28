@@ -123,17 +123,18 @@ func New(
 	log *logger.Logger,
 	parameters sm_gpa.StateManagerParameters,
 ) (StateMgr, error) {
-	nr := sm_utils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), log)
+	smLog := log.Named("SM")
+	nr := sm_utils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), smLog)
 	snapshotExistsFun := func(stateIndex uint32, commitment *state.L1Commitment) bool {
 		return snapshotManager.SnapshotExists(stateIndex, commitment)
 	}
-	stateManagerGPA, err := sm_gpa.New(chainID, nr, wal, snapshotExistsFun, store, metrics, log, parameters)
+	stateManagerGPA, err := sm_gpa.New(chainID, nr, wal, snapshotExistsFun, store, metrics, smLog, parameters)
 	if err != nil {
-		log.Errorf("failed to create state manager GPA: %w", err)
+		smLog.Errorf("failed to create state manager GPA: %w", err)
 		return nil, err
 	}
 	result := &stateManager{
-		log:                  log,
+		log:                  smLog,
 		chainID:              chainID,
 		stateManagerGPA:      stateManagerGPA,
 		nodeRandomiser:       nr,

@@ -402,7 +402,7 @@ func New(
 		shutdownCoordinator.Nested("StateMgr"),
 		chainMetrics,
 		chainMetrics,
-		cni.log.Named("SM"),
+		cni.log,
 		smParameters,
 	)
 	if err != nil {

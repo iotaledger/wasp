@@ -80,7 +80,7 @@ func newVariedTestEnv(
 
 	bf = sm_gpa_utils.NewBlockFactory(t, chainInitParameters)
 	chainID := bf.GetChainID()
-	log := testlogger.NewLogger(t).Named("c-" + chainID.ShortString())
+	log := testlogger.NewLogger(t)
 	parameters.TimeProvider = sm_gpa_utils.NewArtifficialTimeProvider()
 	for _, nodeID := range nodeIDs {
 		var err error
@@ -88,7 +88,7 @@ func newVariedTestEnv(
 		nr := sm_utils.NewNodeRandomiser(nodeID, nodeIDs, smLog)
 		wal := createWALFun(nodeID)
 		store := state.NewStore(mapdb.NewMapDB())
-		snapshotManager := createSnapMFun(nodeID, bf.GetStore(), store, parameters.TimeProvider, log.Named("snap").Named(nodeID.ShortString()))
+		snapshotManager := createSnapMFun(nodeID, bf.GetStore(), store, parameters.TimeProvider, smLog)
 		snapshotExistsFun := snapshotManager.SnapshotExists
 		origin.InitChain(store, chainInitParameters, 0)
 		stores[nodeID] = store
