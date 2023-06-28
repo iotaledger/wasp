@@ -300,10 +300,10 @@ func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.Shrinkin
 	files, err := filepath.Glob(fileRegExpWithPath)
 	if err != nil {
 		if smiT.createSnapshotsNeeded() {
-			smiT.log.Errorf("Failed to obtain snapshot file list: %v", err)
+			smiT.log.Errorf("Update local: failed to obtain snapshot file list: %v", err)
 		} else {
 			// If snapshots are not created, snapshot dir is not supposed to exists; unless, it was created by other runs of Wasp or manually
-			smiT.log.Warnf("Cannot obtain local snapshot file list (possibly, it does not exist): %v", err)
+			smiT.log.Warnf("Update local: cannot obtain snapshot file list (possibly, it does not exist): %v", err)
 		}
 		return
 	}
@@ -312,19 +312,19 @@ func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.Shrinkin
 		func() { // Function to make the defers sooner
 			f, err := os.Open(file)
 			if err != nil {
-				smiT.log.Errorf("Failed to open snapshot file %s: %v", file, err)
+				smiT.log.Errorf("Update local: failed to open snapshot file %s: %v", file, err)
 			}
 			defer f.Close()
 			snapshotInfo, err := readSnapshotInfo(f)
 			if err != nil {
-				smiT.log.Errorf("Failed to read snapshot info from file %s: %v", file, err)
+				smiT.log.Errorf("Update local: failed to read snapshot info from file %s: %v", file, err)
 				return
 			}
 			addSource(result, snapshotInfo, constLocalAddress+file)
 			snapshotCount++
 		}()
 	}
-	smiT.log.Debugf("%v snapshot files found locally", snapshotCount)
+	smiT.log.Debugf("Update local: %v snapshot files found", snapshotCount)
 }
 
 func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]]) {
@@ -332,13 +332,13 @@ func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.Shrink
 		func() { // Function to make the defers sooner
 			indexFilePath, err := url.JoinPath(networkPath, constIndexFileName)
 			if err != nil {
-				smiT.log.Errorf("Unable to join paths %s and %s: %v", networkPath, constIndexFileName, err)
+				smiT.log.Errorf("Update network: unable to join paths %s and %s: %v", networkPath, constIndexFileName, err)
 				return
 			}
 			cancelFun, reader, err := downloadFile(smiT.ctx, smiT.log, indexFilePath, constDownloadTimeout)
 			defer cancelFun()
 			if err != nil {
-				smiT.log.Errorf("Failed to download index file: %v", err)
+				smiT.log.Errorf("Update network: failed to download index file: %v", err)
 				return
 			}
 			snapshotCount := 0
@@ -348,18 +348,18 @@ func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.Shrink
 					snapshotFileName := scanner.Text()
 					snapshotFilePath, er := url.JoinPath(networkPath, snapshotFileName)
 					if er != nil {
-						smiT.log.Errorf("Unable to join paths %s and %s: %v", networkPath, snapshotFileName, er)
+						smiT.log.Errorf("Update network: unable to join paths %s and %s: %v", networkPath, snapshotFileName, er)
 						return
 					}
 					sCancelFun, sReader, er := downloadFile(smiT.ctx, smiT.log, snapshotFilePath, constDownloadTimeout)
 					defer sCancelFun()
 					if er != nil {
-						smiT.log.Errorf("Failed to download snapshot file: %v", er)
+						smiT.log.Errorf("Update network: failed to download snapshot file: %v", er)
 						return
 					}
 					snapshotInfo, er := readSnapshotInfo(sReader)
 					if er != nil {
-						smiT.log.Errorf("Failed to download read snapshot info from %s: %v", snapshotFilePath, er)
+						smiT.log.Errorf("Update network: failed to read snapshot info from %s: %v", snapshotFilePath, er)
 						return
 					}
 					addSource(result, snapshotInfo, snapshotFilePath)
@@ -368,9 +368,9 @@ func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.Shrink
 			}
 			err = scanner.Err()
 			if err != nil && !errors.Is(err, io.EOF) {
-				smiT.log.Errorf("Failed reading index file %s: %v", indexFilePath, err)
+				smiT.log.Errorf("Update network: failed reading index file %s: %v", indexFilePath, err)
 			}
-			smiT.log.Debugf("%v snapshot files found on %s", snapshotCount, networkPath)
+			smiT.log.Debugf("Update network: %v snapshot files found on %s", snapshotCount, networkPath)
 		}()
 	}
 }

@@ -137,7 +137,7 @@ func (msmT *mockedSnapshotManager) handleUpdate() {
 		availableSnapshots[index] = clonedCommitments
 		count += clonedCommitments.Length()
 	}
-	msmT.log.Debugf("%v snapshots found", count)
+	msmT.log.Debugf("Update: %v snapshots found", count)
 
 	msmT.availableSnapshotsMutex.Lock()
 	defer msmT.availableSnapshotsMutex.Unlock()
