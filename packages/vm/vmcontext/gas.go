@@ -10,39 +10,40 @@ func (vmctx *VMContext) GasBurnEnable(enable bool) {
 	if enable && !vmctx.shouldChargeGasFee() {
 		return
 	}
-	vmctx.gasBurnEnabled = enable
+	vmctx.blockGas.burnEnabled = enable
 }
 
-func (vmctx *VMContext) gasSetBudget(gasBudget uint64) {
-	vmctx.gasBudgetAdjusted = gasBudget
-	vmctx.gasBurned = 0
+func (vmctx *VMContext) gasSetBudget(gasBudget, maxTokensToSpendForGasFee uint64) {
+	vmctx.reqCtx.gas.budgetAdjusted = gasBudget
+	vmctx.reqCtx.gas.maxTokensToSpendForGasFee = maxTokensToSpendForGasFee
+	vmctx.reqCtx.gas.burned = 0
 }
 
 func (vmctx *VMContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
-	if !vmctx.gasBurnEnabled {
+	if !vmctx.blockGas.burnEnabled {
 		return
 	}
 	g := burnCode.Cost(par...)
-	vmctx.gasBurnLog.Record(burnCode, g)
-	vmctx.gasBurned += g
+	vmctx.reqCtx.gas.burnLog.Record(burnCode, g)
+	vmctx.reqCtx.gas.burned += g
 
-	if vmctx.gasBurned > vmctx.gasBudgetAdjusted {
-		vmctx.gasBurned = vmctx.gasBudgetAdjusted // do not charge more than the limit set by the request
+	if vmctx.reqCtx.gas.burned > vmctx.reqCtx.gas.budgetAdjusted {
+		vmctx.reqCtx.gas.burned = vmctx.reqCtx.gas.budgetAdjusted // do not charge more than the limit set by the request
 		panic(vm.ErrGasBudgetExceeded)
 	}
 
-	if vmctx.gasBurnedTotal+vmctx.gasBurned > vmctx.chainInfo.GasLimits.MaxGasPerBlock {
+	if vmctx.blockGas.burned+vmctx.reqCtx.gas.burned > vmctx.chainInfo.GasLimits.MaxGasPerBlock {
 		panic(vmexceptions.ErrBlockGasLimitExceeded) // panic if the current request gas overshoots the block limit
 	}
 }
 
 func (vmctx *VMContext) GasBudgetLeft() uint64 {
-	if vmctx.gasBudgetAdjusted < vmctx.gasBurned {
+	if vmctx.reqCtx.gas.budgetAdjusted < vmctx.reqCtx.gas.burned {
 		return 0
 	}
-	return vmctx.gasBudgetAdjusted - vmctx.gasBurned
+	return vmctx.reqCtx.gas.budgetAdjusted - vmctx.reqCtx.gas.burned
 }
 
 func (vmctx *VMContext) GasBurned() uint64 {
-	return vmctx.gasBurned
+	return vmctx.reqCtx.gas.burned
 }

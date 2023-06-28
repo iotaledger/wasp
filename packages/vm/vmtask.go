@@ -21,16 +21,15 @@ type VMRunner interface {
 // It is assumed that all requests/inputs are unlock-able by aliasAddress of provided AnchorOutput
 // at timestamp = Timestamp + len(Requests) nanoseconds
 type VMTask struct {
-	Processors                 *processors.Cache
-	AnchorOutput               *iotago.AliasOutput
-	AnchorOutputID             iotago.OutputID
-	AnchorOutputStorageDeposit uint64 // will be filled by vmcontext
-	Store                      state.Store
-	Requests                   []isc.Request
-	UnprocessableToRetry       []isc.Request
-	TimeAssumption             time.Time
-	Entropy                    hashing.HashValue
-	ValidatorFeeTarget         isc.AgentID
+	Processors           *processors.Cache
+	AnchorOutput         *iotago.AliasOutput
+	AnchorOutputID       iotago.OutputID
+	Store                state.Store
+	Requests             []isc.Request
+	UnprocessableToRetry []isc.Request
+	TimeAssumption       time.Time
+	Entropy              hashing.HashValue
+	ValidatorFeeTarget   isc.AgentID
 	// If EstimateGasMode is enabled, gas fee will be calculated but not charged
 	EstimateGasMode bool
 	// If EVMTracer is set, all requests will be executed normally up until the EVM
@@ -44,7 +43,8 @@ type VMTask struct {
 }
 
 type VMTaskResult struct {
-	Task *VMTask
+	Task                       *VMTask
+	AnchorOutputStorageDeposit uint64
 	// the uncommitted state resulting from the execution of the requests
 	StateDraft state.StateDraft
 	// RotationAddress is the next address after a rotation, or nil if there is no rotation
@@ -73,4 +73,8 @@ func (task *VMTask) WillProduceBlock() bool {
 
 func (task *VMTask) CreateResult() *VMTaskResult {
 	return &VMTaskResult{Task: task}
+}
+
+func (task *VMTask) FinalStateTimestamp() time.Time {
+	return task.TimeAssumption.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 }

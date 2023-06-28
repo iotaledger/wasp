@@ -17,10 +17,10 @@ func (vmctx *VMContext) chainState() chainStateWrapper {
 }
 
 func (s chainStateWrapper) Has(name kv.Key) bool {
-	if _, ok := s.vmctx.currentStateUpdate.Mutations.Sets[name]; ok {
+	if _, ok := s.vmctx.currentStateUpdate.Sets[name]; ok {
 		return true
 	}
-	if _, wasDeleted := s.vmctx.currentStateUpdate.Mutations.Dels[name]; wasDeleted {
+	if _, wasDeleted := s.vmctx.currentStateUpdate.Dels[name]; wasDeleted {
 		return false
 	}
 	return s.vmctx.taskResult.StateDraft.Has(name)
@@ -33,7 +33,7 @@ func (s chainStateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) {
 }
 
 func (s chainStateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
-	for k := range s.vmctx.currentStateUpdate.Mutations.Sets {
+	for k := range s.vmctx.currentStateUpdate.Sets {
 		if k.HasPrefix(prefix) {
 			if !f(k) {
 				return
@@ -41,7 +41,7 @@ func (s chainStateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
 		}
 	}
 	s.vmctx.taskResult.StateDraft.IterateKeys(prefix, func(k kv.Key) bool {
-		if !s.vmctx.currentStateUpdate.Mutations.Contains(k) {
+		if !s.vmctx.currentStateUpdate.Contains(k) {
 			return f(k)
 		}
 		return true
@@ -56,13 +56,13 @@ func (s chainStateWrapper) IterateSorted(prefix kv.Key, f func(kv.Key, []byte) b
 
 func (s chainStateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
 	var keys []kv.Key
-	for k := range s.vmctx.currentStateUpdate.Mutations.Sets {
+	for k := range s.vmctx.currentStateUpdate.Sets {
 		if k.HasPrefix(prefix) {
 			keys = append(keys, k)
 		}
 	}
 	s.vmctx.taskResult.StateDraft.IterateKeysSorted(prefix, func(k kv.Key) bool {
-		if !s.vmctx.currentStateUpdate.Mutations.Contains(k) {
+		if !s.vmctx.currentStateUpdate.Contains(k) {
 			keys = append(keys, k)
 		}
 		return true
@@ -76,11 +76,11 @@ func (s chainStateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) b
 }
 
 func (s chainStateWrapper) Get(name kv.Key) []byte {
-	v, ok := s.vmctx.currentStateUpdate.Mutations.Sets[name]
+	v, ok := s.vmctx.currentStateUpdate.Sets[name]
 	if ok {
 		return v
 	}
-	if _, wasDeleted := s.vmctx.currentStateUpdate.Mutations.Dels[name]; wasDeleted {
+	if _, wasDeleted := s.vmctx.currentStateUpdate.Dels[name]; wasDeleted {
 		return nil
 	}
 	ret := s.vmctx.taskResult.StateDraft.Get(name)
@@ -89,11 +89,11 @@ func (s chainStateWrapper) Get(name kv.Key) []byte {
 }
 
 func (s chainStateWrapper) Del(name kv.Key) {
-	s.vmctx.currentStateUpdate.Mutations.Del(name)
+	s.vmctx.currentStateUpdate.Del(name)
 }
 
 func (s chainStateWrapper) Set(name kv.Key, value []byte) {
-	s.vmctx.currentStateUpdate.Mutations.Set(name, value)
+	s.vmctx.currentStateUpdate.Set(name, value)
 	// only burning gas when storing bytes to the state
 	s.vmctx.GasBurn(gas.BurnCodeStorage1P, uint64(len(name)+len(value)))
 }
@@ -107,5 +107,5 @@ func (vmctx *VMContext) StateReader() kv.KVStoreReader {
 }
 
 func (s chainStateWrapper) Apply() {
-	s.vmctx.currentStateUpdate.Mutations.ApplyTo(s.vmctx.taskResult.StateDraft)
+	s.vmctx.currentStateUpdate.ApplyTo(s.vmctx.taskResult.StateDraft)
 }

@@ -35,7 +35,7 @@ func (vmctx *VMContext) callProgram(targetContract, epCode isc.Hname, params dic
 	if epCode == isc.EntryPointInit {
 		if !vmctx.callerIsRoot() {
 			panic(fmt.Errorf("%v: target=(%s, %s)",
-				vm.ErrRepeatingInitCall, vmctx.req.CallTarget().Contract, epCode))
+				vm.ErrRepeatingInitCall, vmctx.reqCtx.req.CallTarget().Contract, epCode))
 		}
 	}
 	return ep.Call(NewSandbox(vmctx))
@@ -54,13 +54,15 @@ func (vmctx *VMContext) callerIsRoot() bool {
 
 const traceStack = false
 
-func (vmctx *VMContext) pushCallContext(contract isc.Hname, params dict.Dict, allowance *isc.Assets, caller ...isc.AgentID) {
-	toBeCaller := vmctx.getToBeCaller()
-	if len(caller) != 0 {
-		toBeCaller = caller[0]
+func (vmctx *VMContext) pushCallContext(contract isc.Hname, params dict.Dict, allowance *isc.Assets, optCaller ...isc.AgentID) {
+	var caller isc.AgentID
+	if len(optCaller) != 0 {
+		caller = optCaller[0]
+	} else {
+		caller = vmctx.getToBeCaller()
 	}
 	ctx := &callContext{
-		caller:   toBeCaller,
+		caller:   caller,
 		contract: contract,
 		params: isc.Params{
 			Dict:      params,
@@ -86,14 +88,11 @@ func (vmctx *VMContext) getToBeCaller() isc.AgentID {
 	if len(vmctx.callStack) > 0 {
 		return vmctx.MyAgentID()
 	}
-	if vmctx.req == nil {
-		if vmctx.callerIsVM {
-			return &isc.NilAgentID{} // calling open/close block context
-		}
+	if vmctx.reqCtx == nil {
 		// e.g. saving the anchor ID
 		return vmctx.chainOwnerID
 	}
-	return vmctx.req.SenderAccount()
+	return vmctx.reqCtx.req.SenderAccount()
 }
 
 func (vmctx *VMContext) getCallContext() *callContext {

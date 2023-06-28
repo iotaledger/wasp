@@ -47,10 +47,10 @@ func (vmctx *VMContext) Send(par isc.RequestParameters) {
 }
 
 func (vmctx *VMContext) sendOutput(o iotago.Output) {
-	if vmctx.NumPostedOutputs >= MaxPostedOutputsInOneRequest {
+	if vmctx.reqCtx.numPostedOutputs >= MaxPostedOutputsInOneRequest {
 		panic(vm.ErrExceededPostedOutputLimit)
 	}
-	vmctx.NumPostedOutputs++
+	vmctx.reqCtx.numPostedOutputs++
 
 	assets := isc.AssetsFromOutput(o)
 

@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -35,45 +36,55 @@ type VMContext struct {
 	task       *vm.VMTask
 	taskResult *vm.VMTaskResult
 
-	// same for the block
-	chainOwnerID        isc.AgentID
-	finalStateTimestamp time.Time
-	blockContext        map[isc.Hname]interface{}
-	txbuilder           *vmtxbuilder.AnchorTransactionBuilder
-	txsnapshot          *vmtxbuilder.AnchorTransactionBuilder
-	gasBurnedTotal      uint64
-	gasFeeChargedTotal  uint64
-	unprocessable       []isc.OnLedgerRequest // list of request that were found to be unprocessable during this VM execution
+	chainOwnerID isc.AgentID
+	blockContext map[isc.Hname]interface{}
+	txbuilder    *vmtxbuilder.AnchorTransactionBuilder
+	// unprocessable is a list of requests that were found to be unprocessable during this VM execution
+	unprocessable []isc.OnLedgerRequest
+	chainInfo     *isc.ChainInfo
+	blockGas      blockGas
+	reqCtx        *requestContext
 
-	// ---- request context
-	chainInfo          *isc.ChainInfo
-	req                isc.Request
-	NumPostedOutputs   int // how many outputs has been posted in the request
-	requestIndex       uint16
-	requestEventIndex  uint16
-	currentStateUpdate *StateUpdate
-	entropy            hashing.HashValue
+	currentStateUpdate *buffered.Mutations
 	callStack          []*callContext
-	evmFailedTx        *types.Transaction
-	evmFailedReceipt   *types.Receipt
-	// --- gas related
-	// max tokens that can be charged for gas fee
-	gasMaxTokensToSpendForGasFee uint64
-	// final gas budget set for the run
-	gasBudgetAdjusted uint64
-	// is gas bur enabled
-	gasBurnEnabled bool
-	// gas already burned
-	gasBurned uint64
-	// tokens charged
-	gasFeeCharged uint64
-	// burn history. If disabled, it is nil
-	gasBurnLog *gas.BurnLog
+}
+
+type blockGas struct {
+	burned     uint64
+	feeCharged uint64
+	// is gas burn enabled
+	// TODO: should be in requestGas?
+	burnEnabled bool
+}
+
+type requestContext struct {
+	req               isc.Request
+	numPostedOutputs  int
+	requestIndex      uint16
+	requestEventIndex uint16
+	entropy           hashing.HashValue
+	evmFailed         *evmFailed
+	gas               requestGas
 	// SD charged to consume the current request
 	sdCharged uint64
+}
 
-	// used to set caller = nil when executing "open/close block context" funcs (meaning caller is the VM itself)
-	callerIsVM bool
+type evmFailed struct {
+	tx      *types.Transaction
+	receipt *types.Receipt
+}
+
+type requestGas struct {
+	// max tokens that can be charged for gas fee
+	maxTokensToSpendForGasFee uint64
+	// final gas budget set for the run
+	budgetAdjusted uint64
+	// gas already burned
+	burned uint64
+	// tokens charged
+	feeCharged uint64
+	// burn history. If disabled, it is nil
+	burnLog *gas.BurnLog
 }
 
 var _ execution.WaspContext = &VMContext{}
@@ -104,17 +115,11 @@ func CreateVMContext(task *vm.VMTask, taskResult *vm.VMTaskResult) *VMContext {
 		panic(err)
 	}
 
-	ret := &VMContext{
-		task:                task,
-		taskResult:          taskResult,
-		finalStateTimestamp: task.TimeAssumption.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond),
-		blockContext:        make(map[isc.Hname]interface{}),
-		entropy:             task.Entropy,
-		callStack:           make([]*callContext, 0),
-		unprocessable:       make([]isc.OnLedgerRequest, 0),
-	}
-	if task.EnableGasBurnLogging {
-		ret.gasBurnLog = gas.NewGasBurnLog()
+	vmctx := &VMContext{
+		task:          task,
+		taskResult:    taskResult,
+		blockContext:  make(map[isc.Hname]interface{}),
+		unprocessable: make([]isc.OnLedgerRequest, 0),
 	}
 	// at the beginning of each block
 	l1Commitment, err := transaction.L1CommitmentFromAliasOutput(task.AnchorOutput)
@@ -124,44 +129,48 @@ func CreateVMContext(task *vm.VMTask, taskResult *vm.VMTaskResult) *VMContext {
 	}
 
 	var totalL2Funds *isc.Assets
-	ret.withStateUpdate(func() {
-		ret.runMigrations(migrations.BaseSchemaVersion, migrations.Migrations)
+	vmctx.withStateUpdate(func() {
+		vmctx.runMigrations(migrations.BaseSchemaVersion, migrations.Migrations)
 
 		// save the anchor tx ID of the current state
-		ret.callCore(blocklog.Contract, func(s kv.KVStore) {
+		vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
 			blocklog.UpdateLatestBlockInfo(
 				s,
-				ret.task.AnchorOutputID.TransactionID(),
-				isc.NewAliasOutputWithID(ret.task.AnchorOutput, ret.task.AnchorOutputID),
+				vmctx.task.AnchorOutputID.TransactionID(),
+				isc.NewAliasOutputWithID(vmctx.task.AnchorOutput, vmctx.task.AnchorOutputID),
 				l1Commitment,
 			)
 		})
 		// get the total L2 funds in accounting
-		totalL2Funds = ret.loadTotalFungibleTokens()
+		totalL2Funds = vmctx.loadTotalFungibleTokens()
 	})
 
-	task.AnchorOutputStorageDeposit = task.AnchorOutput.Amount - totalL2Funds.BaseTokens
+	taskResult.AnchorOutputStorageDeposit = task.AnchorOutput.Amount - totalL2Funds.BaseTokens
 
-	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
+	vmctx.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
 		task.AnchorOutput,
 		task.AnchorOutputID,
-		task.AnchorOutputStorageDeposit,
+		taskResult.AnchorOutputStorageDeposit,
 		vmtxbuilder.AccountsContractRead{
-			NativeTokenOutput:   ret.loadNativeTokenOutput,
-			FoundryOutput:       ret.loadFoundry,
-			NFTOutput:           ret.loadNFT,
-			TotalFungibleTokens: ret.loadTotalFungibleTokens,
+			NativeTokenOutput:   vmctx.loadNativeTokenOutput,
+			FoundryOutput:       vmctx.loadFoundry,
+			NFTOutput:           vmctx.loadNFT,
+			TotalFungibleTokens: vmctx.loadTotalFungibleTokens,
 		},
 	)
 
-	return ret
+	return vmctx
 }
 
 func (vmctx *VMContext) withStateUpdate(f func()) {
-	vmctx.currentStateUpdate = NewStateUpdate()
+	if vmctx.currentStateUpdate != nil {
+		panic("expected currentStateUpdate == nil")
+	}
+	defer func() { vmctx.currentStateUpdate = nil }()
+
+	vmctx.currentStateUpdate = buffered.NewMutations()
 	f()
-	vmctx.currentStateUpdate.Mutations.ApplyTo(vmctx.taskResult.StateDraft)
-	vmctx.currentStateUpdate = nil
+	vmctx.currentStateUpdate.ApplyTo(vmctx.taskResult.StateDraft)
 }
 
 // CloseVMContext does the closing actions on the block
@@ -208,8 +217,8 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		NumSuccessfulRequests: numSuccess,
 		NumOffLedgerRequests:  numOffLedger,
 		PreviousAliasOutput:   isc.NewAliasOutputWithID(vmctx.task.AnchorOutput, vmctx.task.AnchorOutputID),
-		GasBurned:             vmctx.gasBurnedTotal,
-		GasFeeCharged:         vmctx.gasFeeChargedTotal,
+		GasBurned:             vmctx.blockGas.burned,
+		GasFeeCharged:         vmctx.blockGas.feeCharged,
 	}
 
 	// TODO this "SaveControlAddressesIfNecessary" call is saving potentially outdated info.
@@ -230,7 +239,7 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 
 // OpenBlockContexts calls the block context open function for all subscribed core contracts
 func (vmctx *VMContext) OpenBlockContexts() {
-	if vmctx.gasBurnEnabled {
+	if vmctx.blockGas.burnEnabled {
 		panic("expected gasBurnEnabled == false")
 	}
 
@@ -241,28 +250,24 @@ func (vmctx *VMContext) OpenBlockContexts() {
 		vmctx.callCore(root.Contract, func(s kv.KVStore) {
 			subs = root.GetBlockContextSubscriptions(s)
 		})
-		vmctx.callerIsVM = true
 		for _, sub := range subs {
-			vmctx.callProgram(sub.Contract, sub.OpenFunc, nil, nil)
+			vmctx.callProgram(sub.Contract, sub.OpenFunc, nil, nil, &isc.NilAgentID{})
 		}
-		vmctx.callerIsVM = false
 	})
 }
 
 // closeBlockContexts closes block contexts in deterministic FIFO sequence
 func (vmctx *VMContext) closeBlockContexts() {
-	if vmctx.gasBurnEnabled {
+	if vmctx.blockGas.burnEnabled {
 		panic("expected gasBurnEnabled == false")
 	}
 	var subs []root.BlockContextSubscription
 	vmctx.callCore(root.Contract, func(s kv.KVStore) {
 		subs = root.GetBlockContextSubscriptions(s)
 	})
-	vmctx.callerIsVM = true
 	for i := len(subs) - 1; i >= 0; i-- {
-		vmctx.callProgram(subs[i].Contract, subs[i].CloseFunc, nil, nil)
+		vmctx.callProgram(subs[i].Contract, subs[i].CloseFunc, nil, nil, &isc.NilAgentID{})
 	}
-	vmctx.callerIsVM = false
 }
 
 // saveInternalUTXOs relies on the order of the outputs in the anchor tx. If that order changes, this will be broken.
@@ -277,7 +282,7 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 	// create a mock AO, with a nil statecommitment, just to calculate changes in the minimum SD
 	mockAO := vmctx.txbuilder.CreateAnchorOutput(vmctx.StateMetadata(state.L1CommitmentNil))
 	newMinSD := parameters.L1().Protocol.RentStructure.MinRent(mockAO)
-	oldMinSD := vmctx.task.AnchorOutputStorageDeposit
+	oldMinSD := vmctx.taskResult.AnchorOutputStorageDeposit
 	changeInSD := int64(oldMinSD) - int64(newMinSD)
 
 	if changeInSD != 0 {
@@ -357,10 +362,10 @@ func (vmctx *VMContext) AssertConsistentGasTotals() {
 		sumGasBurned += r.Receipt.GasBurned
 		sumGasFeeCharged += r.Receipt.GasFeeCharged
 	}
-	if vmctx.gasBurnedTotal != sumGasBurned {
+	if vmctx.blockGas.burned != sumGasBurned {
 		panic("vmctx.gasBurnedTotal != sumGasBurned")
 	}
-	if vmctx.gasFeeChargedTotal != sumGasFeeCharged {
+	if vmctx.blockGas.feeCharged != sumGasFeeCharged {
 		panic("vmctx.gasFeeChargedTotal != sumGasFeeCharged")
 	}
 }

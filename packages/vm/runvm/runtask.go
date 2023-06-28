@@ -26,7 +26,16 @@ func NewVMRunner() vm.VMRunner {
 	return VMRunner{}
 }
 
-func runRequests(vmctx *vmcontext.VMContext, reqs []isc.Request, startRequestIndex uint16, log *logger.Logger) (results []*vm.RequestResult, numSuccess uint16, numOffLedger uint16) {
+func runRequests(
+	vmctx *vmcontext.VMContext,
+	reqs []isc.Request,
+	startRequestIndex uint16,
+	log *logger.Logger,
+) (
+	results []*vm.RequestResult,
+	numSuccess uint16,
+	numOffLedger uint16,
+) {
 	results = []*vm.RequestResult{}
 	reqIndexInTheBlock := startRequestIndex
 
