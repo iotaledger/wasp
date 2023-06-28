@@ -77,16 +77,13 @@ func TestDivide1Member(t *testing.T) {
 	dividendMember(ctx, member1, 1000)
 	require.NoError(t, ctx.Err)
 
-	bal.Common += ctx.GasFee
-	bal.Originator += ctx.StorageDeposit - ctx.GasFee
+	bal.Originator += ctx.StorageDeposit
 	bal.VerifyBalances(t)
 
 	const dividendToDivide = 1*isc.Million + 1
 	dividendDivide(ctx, dividendToDivide)
 	require.NoError(t, ctx.Err)
 
-	bal.Common += ctx.GasFee
-	bal.Originator -= ctx.GasFee
 	bal.Add(member1, dividendToDivide)
 	bal.VerifyBalances(t)
 }
@@ -100,8 +97,7 @@ func TestDivide2Members(t *testing.T) {
 	dividendMember(ctx, member1, 250)
 	require.NoError(t, ctx.Err)
 
-	bal.Common += ctx.GasFee
-	bal.Originator += ctx.StorageDeposit - ctx.GasFee
+	bal.Originator += ctx.StorageDeposit
 	bal.VerifyBalances(t)
 
 	member2 := ctx.NewSoloAgent("member2")
@@ -110,8 +106,7 @@ func TestDivide2Members(t *testing.T) {
 	dividendMember(ctx, member2, 750)
 	require.NoError(t, ctx.Err)
 
-	bal.Common += ctx.GasFee
-	bal.Originator += ctx.StorageDeposit - ctx.GasFee
+	bal.Originator += ctx.StorageDeposit
 	bal.VerifyBalances(t)
 
 	const dividendToDivide = 2*isc.Million - 1
@@ -119,8 +114,7 @@ func TestDivide2Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	remain := dividendToDivide - dividendToDivide*250/1000 - dividendToDivide*750/1000
-	bal.Common += ctx.GasFee
-	bal.Originator += remain - ctx.GasFee
+	bal.Originator += remain
 	bal.Add(member1, dividendToDivide*250/1000)
 	bal.Add(member2, dividendToDivide*750/1000)
 	bal.VerifyBalances(t)
@@ -135,8 +129,7 @@ func TestDivide3Members(t *testing.T) {
 	dividendMember(ctx, member1, 250)
 	require.NoError(t, ctx.Err)
 
-	bal.Common += ctx.GasFee
-	bal.Originator += ctx.StorageDeposit - ctx.GasFee
+	bal.Originator += ctx.StorageDeposit
 	bal.VerifyBalances(t)
 
 	member2 := ctx.NewSoloAgent("member2")
@@ -145,8 +138,7 @@ func TestDivide3Members(t *testing.T) {
 	dividendMember(ctx, member2, 500)
 	require.NoError(t, ctx.Err)
 
-	bal.Common += ctx.GasFee
-	bal.Originator += ctx.StorageDeposit - ctx.GasFee
+	bal.Originator += ctx.StorageDeposit
 	bal.VerifyBalances(t)
 
 	member3 := ctx.NewSoloAgent("member3")
@@ -155,8 +147,7 @@ func TestDivide3Members(t *testing.T) {
 	dividendMember(ctx, member3, 750)
 	require.NoError(t, ctx.Err)
 
-	bal.Common += ctx.GasFee
-	bal.Originator += ctx.StorageDeposit - ctx.GasFee
+	bal.Originator += ctx.StorageDeposit
 	bal.VerifyBalances(t)
 
 	const dividendToDivide = 2*isc.Million - 1
@@ -164,8 +155,7 @@ func TestDivide3Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	remain := dividendToDivide - dividendToDivide*250/1500 - dividendToDivide*500/1500 - dividendToDivide*750/1500
-	bal.Common += ctx.GasFee
-	bal.Originator += remain - ctx.GasFee
+	bal.Originator += remain
 	bal.Add(member1, dividendToDivide*250/1500)
 	bal.Add(member2, dividendToDivide*500/1500)
 	bal.Add(member3, dividendToDivide*750/1500)
@@ -176,8 +166,7 @@ func TestDivide3Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	remain = dividendToDivide2 - dividendToDivide2*250/1500 - dividendToDivide2*500/1500 - dividendToDivide2*750/1500
-	bal.Common += ctx.GasFee
-	bal.Originator += remain - ctx.GasFee
+	bal.Originator += remain
 	bal.Add(member1, dividendToDivide2*250/1500)
 	bal.Add(member2, dividendToDivide2*500/1500)
 	bal.Add(member3, dividendToDivide2*750/1500)

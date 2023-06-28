@@ -46,7 +46,6 @@ func initListContractsCmd() *cobra.Command {
 				rows[i] = []string{
 					contract.HName,
 					contract.Name,
-					contract.Description,
 					contract.ProgramHash,
 				}
 				i++

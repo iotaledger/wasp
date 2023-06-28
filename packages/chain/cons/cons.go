@@ -78,7 +78,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -141,29 +140,30 @@ func (r *Result) String() string {
 }
 
 type consImpl struct {
-	chainID        isc.ChainID
-	chainStore     state.Store
-	edSuite        suites.Suite // For signatures.
-	blsSuite       suites.Suite // For randomness only.
-	dkShare        tcrypto.DKShare
-	processorCache *processors.Cache
-	nodeIDs        []gpa.NodeID
-	me             gpa.NodeID
-	f              int
-	asGPA          gpa.GPA
-	dss            dss.DSS
-	acs            acs.ACS
-	subMP          SyncMP         // Mempool.
-	subSM          SyncSM         // StateMgr.
-	subDSS         SyncDSS        // Distributed Schnorr Signature.
-	subACS         SyncACS        // Asynchronous Common Subset.
-	subRND         SyncRND        // Randomness.
-	subVM          SyncVM         // Virtual Machine.
-	subTX          SyncTX         // Building final TX.
-	term           *termCondition // To detect, when this instance can be terminated.
-	msgWrapper     *gpa.MsgWrapper
-	output         *Output
-	log            *logger.Logger
+	chainID          isc.ChainID
+	chainStore       state.Store
+	edSuite          suites.Suite // For signatures.
+	blsSuite         suites.Suite // For randomness only.
+	dkShare          tcrypto.DKShare
+	processorCache   *processors.Cache
+	nodeIDs          []gpa.NodeID
+	me               gpa.NodeID
+	f                int
+	asGPA            gpa.GPA
+	dss              dss.DSS
+	acs              acs.ACS
+	subMP            SyncMP         // Mempool.
+	subSM            SyncSM         // StateMgr.
+	subDSS           SyncDSS        // Distributed Schnorr Signature.
+	subACS           SyncACS        // Asynchronous Common Subset.
+	subRND           SyncRND        // Randomness.
+	subVM            SyncVM         // Virtual Machine.
+	subTX            SyncTX         // Building final TX.
+	term             *termCondition // To detect, when this instance can be terminated.
+	msgWrapper       *gpa.MsgWrapper
+	output           *Output
+	validatorAgentID isc.AgentID
+	log              *logger.Logger
 }
 
 const (
@@ -185,6 +185,7 @@ func New(
 	processorCache *processors.Cache,
 	instID []byte,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
+	validatorAgentID isc.AgentID,
 	log *logger.Logger,
 ) Cons {
 	edSuite := tcrypto.DefaultEd25519Suite()
@@ -217,19 +218,20 @@ func New(
 		return semi.New(round, realCC)
 	}
 	c := &consImpl{
-		chainID:        chainID,
-		chainStore:     chainStore,
-		edSuite:        edSuite,
-		blsSuite:       blsSuite,
-		dkShare:        dkShare,
-		processorCache: processorCache,
-		nodeIDs:        nodeIDs,
-		me:             me,
-		f:              f,
-		dss:            dss.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log.Named("DSS")),
-		acs:            acs.New(nodeIDs, me, f, acsCCInstFunc, acsLog),
-		output:         &Output{Status: Running},
-		log:            log,
+		chainID:          chainID,
+		chainStore:       chainStore,
+		edSuite:          edSuite,
+		blsSuite:         blsSuite,
+		dkShare:          dkShare,
+		processorCache:   processorCache,
+		nodeIDs:          nodeIDs,
+		me:               me,
+		f:                f,
+		dss:              dss.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log.Named("DSS")),
+		acs:              acs.New(nodeIDs, me, f, acsCCInstFunc, acsLog),
+		output:           &Output{Status: Running},
+		log:              log,
+		validatorAgentID: validatorAgentID,
 	}
 	c.asGPA = gpa.NewOwnHandler(me, c)
 	c.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, c.msgWrapperFunc)
@@ -477,7 +479,7 @@ func (c *consImpl) uponACSInputsReceived(baseAliasOutput *isc.AliasOutputWithID,
 		baseAliasOutput,
 		util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
 		timeData,
-		accounts.CommonAccount(),
+		c.validatorAgentID,
 		requestRefs,
 	)
 	subACS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeACS, 0, batchProposal.Bytes())

@@ -6,11 +6,10 @@ package indexedstore
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 // IndexedStore augments a Store with functions to search blocks by index.
@@ -66,15 +65,39 @@ func (s *istore) findTrieRootByIndex(index uint32) (trie.Hash, error) {
 	if index == latestIndex {
 		return latestState.TrieRoot(), nil
 	}
-	blocklogStatePartition := subrealm.NewReadOnly(latestState, kv.Key(blocklog.Contract.Hname().Bytes()))
-	nextBlockIndex := index + 1
-	nextBlockInfo, ok := blocklog.GetBlockInfo(blocklogStatePartition, nextBlockIndex)
+
+	// iterate until we find the next block (that contains the L1 commitment for the block we are looking for)
+	targetBlockIndex := index + 1
+	state := latestState
+
+	blockKeepAmount := governance.NewStateAccess(state).GetBlockKeepAmount() // block keep amount cannot be changed (its set in stone from origin)
+
+	for blockKeepAmount != -1 { // no need to iterate if pruning is disabled
+		blocklogStateAccess := blocklog.NewStateAccess(state)
+		earliestAvailableBlockIndex := uint32(0)
+		if uint32(blockKeepAmount) < state.BlockIndex() {
+			earliestAvailableBlockIndex = state.BlockIndex() - uint32(blockKeepAmount) + 1
+		}
+		if targetBlockIndex >= earliestAvailableBlockIndex {
+			break // found it
+		}
+		bi, ok := blocklogStateAccess.BlockInfo(earliestAvailableBlockIndex + 1) // get +1 to make things easier and get the actual block (because we do previousL1Commitment)
+		if !ok {
+			return trie.Hash{}, fmt.Errorf("iterating the chain: blocklog missing block index %d on active state %d", earliestAvailableBlockIndex, state.BlockIndex())
+		}
+		state, err = s.StateByTrieRoot(bi.PreviousL1Commitment().TrieRoot())
+		if err != nil {
+			return trie.Hash{}, err
+		}
+	}
+	nextBlockInfo, ok := blocklog.NewStateAccess(state).BlockInfo(targetBlockIndex)
 	if !ok {
-		return trie.Hash{}, fmt.Errorf("block not found: %d", nextBlockIndex)
+		return trie.Hash{}, fmt.Errorf("blocklog missing block index %d on active state %d", targetBlockIndex, state.BlockIndex())
 	}
 	return nextBlockInfo.PreviousL1Commitment().TrieRoot(), nil
 }
 
+// TODO this can probably be removed, since we do the search on the "regular" impl
 type fakeistore struct {
 	state.Store
 }

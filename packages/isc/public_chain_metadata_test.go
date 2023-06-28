@@ -1,23 +1,20 @@
-package isc
+package isc_test
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-func TestPublicMetadataSerialization(t *testing.T) {
-	metadata := PublicChainMetadata{
+func TestPublicChainMetadataSerialization(t *testing.T) {
+	metadata := &isc.PublicChainMetadata{
 		EVMJsonRPCURL:   "EVMJsonRPCURL",
 		EVMWebSocketURL: "EVMWebSocketURL",
 		Name:            "Name",
 		Description:     "Description",
 		Website:         "Website",
 	}
-
-	metadataDeserialized, err := PublicChainMetadataFromBytes(metadata.Bytes())
-
-	require.NoError(t, err)
-	require.EqualValues(t, metadata, *metadataDeserialized)
-	require.EqualValues(t, metadata.Bytes(), metadataDeserialized.Bytes())
+	rwutil.ReadWriteTest(t, metadata, new(isc.PublicChainMetadata))
+	rwutil.BytesTest(t, metadata, isc.PublicChainMetadataFromBytes)
 }

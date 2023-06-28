@@ -118,7 +118,7 @@ type ConsGr struct {
 	netDisconnect               context.CancelFunc
 	net                         peering.NetworkProvider
 	ctx                         context.Context
-	pipeMetrics                 metrics.IChainPipeMetrics
+	pipeMetrics                 *metrics.ChainPipeMetrics
 	log                         *logger.Logger
 }
 
@@ -133,11 +133,12 @@ func New(
 	mempool Mempool,
 	stateMgr StateMgr,
 	net peering.NetworkProvider,
+	validatorAgentID isc.AgentID,
 	recoveryTimeout time.Duration,
 	redeliveryPeriod time.Duration,
 	printStatusPeriod time.Duration,
-	chainMetrics metrics.IChainConsensusMetrics,
-	pipeMetrics metrics.IChainPipeMetrics,
+	chainMetrics *metrics.ChainConsensusMetrics,
+	pipeMetrics *metrics.ChainPipeMetrics,
 	log *logger.Logger,
 ) *ConsGr {
 	cmtPubKey := dkShare.GetSharedPublic()
@@ -171,10 +172,20 @@ func New(
 
 	pipeMetrics.TrackPipeLenMax("cons-gr-netRecvPipe", netPeeringID.String(), cgr.netRecvPipe.Len)
 
-	constInstRaw := cons.New(chainID, chainStore, me, myNodeIdentity.GetPrivateKey(), dkShare, procCache, netPeeringID[:], gpa.NodeIDFromPublicKey, log).AsGPA()
-	cgr.consInst = gpa.NewAckHandler(me, constInstRaw, redeliveryPeriod)
+	consInstRaw := cons.New(chainID,
+		chainStore,
+		me,
+		myNodeIdentity.GetPrivateKey(),
+		dkShare,
+		procCache,
+		netPeeringID[:],
+		gpa.NodeIDFromPublicKey,
+		validatorAgentID,
+		log,
+	).AsGPA()
+	cgr.consInst = gpa.NewAckHandler(me, consInstRaw, redeliveryPeriod)
 
-	unhook := net.Attach(&netPeeringID, peering.PeerMessageReceiverChainCons, func(recv *peering.PeerMessageIn) {
+	unhook := net.Attach(&netPeeringID, peering.ReceiverChainCons, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeCons {
 			cgr.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
@@ -390,18 +401,8 @@ func (cgr *ConsGr) sendMessages(outMsgs gpa.OutMessages) {
 	if outMsgs == nil {
 		return
 	}
-	outMsgs.MustIterate(func(m gpa.Message) {
-		msgData, err := m.MarshalBinary()
-		if err != nil {
-			cgr.log.Warnf("Failed to send a message: %v", err)
-			return
-		}
-		pm := &peering.PeerMessageData{
-			PeeringID:   cgr.netPeeringID,
-			MsgReceiver: peering.PeerMessageReceiverChainCons,
-			MsgType:     msgTypeCons,
-			MsgData:     msgData,
-		}
-		cgr.net.SendMsgByPubKey(cgr.netPeerPubs[m.Recipient()], pm)
+	outMsgs.MustIterate(func(msg gpa.Message) {
+		pm := peering.NewPeerMessageData(cgr.netPeeringID, peering.ReceiverChainCons, msgTypeCons, msg)
+		cgr.net.SendMsgByPubKey(cgr.netPeerPubs[msg.Recipient()], pm)
 	})
 }

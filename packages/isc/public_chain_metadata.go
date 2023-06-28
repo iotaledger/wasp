@@ -15,11 +15,11 @@ type PublicChainMetadata struct {
 }
 
 func PublicChainMetadataFromBytes(data []byte) (*PublicChainMetadata, error) {
-	return rwutil.ReaderFromBytes(data, new(PublicChainMetadata))
+	return rwutil.ReadFromBytes(data, new(PublicChainMetadata))
 }
 
 func (m *PublicChainMetadata) Bytes() []byte {
-	return rwutil.WriterToBytes(m)
+	return rwutil.WriteToBytes(m)
 }
 
 func (m *PublicChainMetadata) Read(r io.Reader) error {

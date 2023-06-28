@@ -26,14 +26,6 @@ type msgBracha struct {
 
 var _ gpa.Message = new(msgBracha)
 
-func (msg *msgBracha) MarshalBinary() ([]byte, error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *msgBracha) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
-}
-
 func (msg *msgBracha) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.brachaType = msgBrachaType(rr.ReadByte())

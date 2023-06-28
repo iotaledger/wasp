@@ -17,7 +17,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -53,7 +52,7 @@ func TestDeposit(t *testing.T) {
 	require.Equal(t, balanceOld-depositAmount, balanceNew)
 
 	// expected changes to L2, note that caller pays the gas fee
-	bal.Common += ctx.GasFee
+	bal.Originator += ctx.GasFee
 	bal.Add(user, depositAmount-ctx.GasFee)
 	bal.VerifyBalances(t)
 }
@@ -81,7 +80,7 @@ func TestTransferAllowanceTo(t *testing.T) {
 	require.Equal(t, balanceOldUser1, balanceNewUser1)
 
 	// expected changes to L2, note that caller pays the gas fee
-	bal.Common += ctx.GasFee
+	bal.Originator += ctx.GasFee
 	bal.Add(user0, -transferAmountBaseTokens-ctx.GasFee)
 	bal.Add(user1, transferAmountBaseTokens)
 	bal.VerifyBalances(t)
@@ -128,45 +127,6 @@ func TestWithdraw(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	balanceNewUser := user.Balance()
 	require.Equal(t, balanceOldUser+withdrawAmount, balanceNewUser)
-}
-
-func TestHarvest(t *testing.T) {
-	ctx := setupAccounts(t)
-	var transferAmount, mintAmount uint64 = 10_000, 20_000
-	var minimumBaseTokensOnCommonAccount uint64 = 3000
-
-	user := ctx.NewSoloAgent("user")
-	creatorAgentID := ctx.Creator().AgentID()
-	commonAccount := accounts.CommonAccount()
-	commonAccountBal0 := ctx.Chain.L2Assets(accounts.CommonAccount())
-	foundry, err := ctx.NewSoloFoundry(mintAmount, user)
-	require.NoError(t, err)
-	err = foundry.Mint(mintAmount)
-	require.NoError(t, err)
-	tokenID := foundry.TokenID()
-
-	fTransfer0 := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user))
-	fTransfer0.Params.AgentID().SetValue(ctx.Cvt.ScAgentID(commonAccount))
-	fTransfer0.Func.AllowanceBaseTokens(transferAmount).Post()
-	require.NoError(t, ctx.Err)
-	fTransfer1 := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user))
-	fTransfer1.Params.AgentID().SetValue(ctx.Cvt.ScAgentID(commonAccount))
-	transfer := wasmlib.NewScTransfer()
-	transfer.Set(&tokenID, wasmtypes.BigIntFromString(fmt.Sprint(transferAmount)))
-	fTransfer1.Func.Allowance(transfer).Post()
-	creatorBal0 := ctx.Chain.L2Assets(creatorAgentID)
-	commonAccountBal1 := ctx.Chain.L2Assets(commonAccount)
-	// create foundry, mint token, transfer BaseTokens and transfer token each charge GasFee, so there 4*GasFee in common account
-	require.Equal(t, commonAccountBal0.BaseTokens+transferAmount+ctx.GasFee*4, commonAccountBal1.BaseTokens)
-
-	f := coreaccounts.ScFuncs.Harvest(ctx.Sign(ctx.Creator()))
-	f.Func.Post()
-	require.NoError(t, ctx.Err)
-	commonAccountBal2 := ctx.Chain.L2Assets(commonAccount)
-	creatorBal1 := ctx.Chain.L2Assets(creatorAgentID)
-	require.Equal(t, minimumBaseTokensOnCommonAccount+ctx.GasFee, commonAccountBal2.BaseTokens)
-	require.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+ctx.StorageDeposit, creatorBal1.BaseTokens)
-	require.Equal(t, big.NewInt(int64(transferAmount)), creatorBal1.NativeTokens[0].Amount)
 }
 
 func TestFoundryCreateNew(t *testing.T) {
@@ -349,7 +309,7 @@ func TestAccountNFTAmountInCollection(t *testing.T) {
 		"a string that is longer than 32 bytes",
 	)
 
-	collection, collectionInfo, err := ctx.Chain.Env.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.MustBytes())
+	collection, collectionInfo, err := ctx.Chain.Env.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.Bytes())
 	require.NoError(t, err)
 
 	nftMetadatas := []*isc.IRC27NFTMetadata{
@@ -367,7 +327,7 @@ func TestAccountNFTAmountInCollection(t *testing.T) {
 	nftNum := len(nftMetadatas)
 	allNFTs, _, err := ctx.Chain.Env.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID,
 		lo.Map(nftMetadatas, func(item *isc.IRC27NFTMetadata, index int) []byte {
-			return item.MustBytes()
+			return item.Bytes()
 		}),
 	)
 	require.NoError(t, err)
@@ -419,7 +379,7 @@ func TestAccountNFTsInCollection(t *testing.T) {
 		"a string that is longer than 32 bytes",
 	)
 
-	collection, collectionInfo, err := ctx.Chain.Env.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.MustBytes())
+	collection, collectionInfo, err := ctx.Chain.Env.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.Bytes())
 	require.NoError(t, err)
 
 	nftMetadatas := []*isc.IRC27NFTMetadata{
@@ -437,7 +397,7 @@ func TestAccountNFTsInCollection(t *testing.T) {
 	nftNum := len(nftMetadatas)
 	allNFTs, _, err := ctx.Chain.Env.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID,
 		lo.Map(nftMetadatas, func(item *isc.IRC27NFTMetadata, index int) []byte {
-			return item.MustBytes()
+			return item.Bytes()
 		}),
 	)
 	require.NoError(t, err)

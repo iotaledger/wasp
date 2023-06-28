@@ -18,7 +18,7 @@ import (
 
 var (
 	manyEventsContractName = "ManyEventsContract"
-	manyEventsContract     = coreutil.NewContract(manyEventsContractName, "many events contract")
+	manyEventsContract     = coreutil.NewContract(manyEventsContractName)
 
 	funcManyEvents = coreutil.Func("manyevents")
 	funcBigEvent   = coreutil.Func("bigevent")

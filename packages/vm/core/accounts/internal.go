@@ -19,7 +19,6 @@ var (
 	ErrRepeatingFoundrySerialNumber         = coreerrors.Register("repeating serial number of the foundry").Create()
 	ErrFoundryNotFound                      = coreerrors.Register("foundry not found").Create()
 	ErrOverflow                             = coreerrors.Register("overflow in token arithmetics").Create()
-	ErrInvalidNFTID                         = coreerrors.Register("invalid NFT ID").Create()
 	ErrTooManyNFTsInAllowance               = coreerrors.Register("expected at most 1 NFT in allowance").Create()
 	ErrNFTIDNotFound                        = coreerrors.Register("NFTID not found").Create()
 )
@@ -91,7 +90,7 @@ func touchAccount(state kv.KVStore, agentID isc.AgentID) {
 	allAccountsMap(state).SetAt([]byte(accountKey(agentID)), codec.EncodeBool(true))
 }
 
-// HasEnoughForAllowance checkes whether an account has enough balance to cover for the allowance
+// HasEnoughForAllowance checks whether an account has enough balance to cover for the allowance
 func HasEnoughForAllowance(state kv.KVStoreReader, agentID isc.AgentID, allowance *isc.Assets) bool {
 	if allowance == nil || allowance.IsEmpty() {
 		return true

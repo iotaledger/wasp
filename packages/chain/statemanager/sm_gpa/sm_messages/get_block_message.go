@@ -22,20 +22,12 @@ func NewGetBlockMessage(commitment *state.L1Commitment, to gpa.NodeID) *GetBlock
 	}
 }
 
-func NewEmptyGetBlockMessage() *GetBlockMessage { // `UnmarshalBinary` must be called afterwards
+func NewEmptyGetBlockMessage() *GetBlockMessage {
 	return NewGetBlockMessage(&state.L1Commitment{}, gpa.NodeID{})
 }
 
 func (msg *GetBlockMessage) GetL1Commitment() *state.L1Commitment {
 	return msg.commitment
-}
-
-func (msg *GetBlockMessage) MarshalBinary() (data []byte, err error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *GetBlockMessage) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
 }
 
 func (msg *GetBlockMessage) Read(r io.Reader) error {

@@ -15,7 +15,7 @@ import (
 var errOwnerNotDelegated = coreerrors.Register("not delegated to another chain owner").Create()
 
 // claimChainOwnership changes the chain owner to the delegated agentID (if any)
-// Checks authorisation if the caller is the one to which the ownership is delegated
+// Checks authorization if the caller is the one to which the ownership is delegated
 // Note that ownership is only changed by the successful call to  claimChainOwnership
 func claimChainOwnership(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("governance.delegateChainOwnership.begin")
@@ -40,7 +40,7 @@ func claimChainOwnership(ctx isc.Sandbox) dict.Dict {
 }
 
 // delegateChainOwnership stores next possible (delegated) chain owner to another agentID
-// checks authorisation by the current owner
+// checks authorization by the current owner
 // Two-step process allow/change is in order to avoid mistakes
 func delegateChainOwnership(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("governance.delegateChainOwnership.begin")
@@ -50,6 +50,32 @@ func delegateChainOwnership(ctx isc.Sandbox) dict.Dict {
 	ctx.State().Set(governance.VarChainOwnerIDDelegated, codec.EncodeAgentID(newOwnerID))
 	ctx.Log().Debugf("governance.delegateChainOwnership.success: chain ownership delegated to %s", newOwnerID.String())
 	return nil
+}
+
+func setPayoutAgentID(ctx isc.Sandbox) dict.Dict {
+	ctx.RequireCallerIsChainOwner()
+	agent := ctx.Params().MustGetAgentID(governance.ParamSetPayoutAgentID)
+	ctx.State().Set(governance.StateVarPayoutAgentID, codec.EncodeAgentID(agent))
+	return nil
+}
+
+func getPayoutAgentID(ctx isc.SandboxView) dict.Dict {
+	ret := dict.New()
+	ret.Set(governance.ParamSetPayoutAgentID, ctx.StateR().Get(governance.StateVarPayoutAgentID))
+	return ret
+}
+
+func setMinCommonAccountBalance(ctx isc.Sandbox) dict.Dict {
+	ctx.RequireCallerIsChainOwner()
+	minCommonAccountBalance := ctx.Params().MustGetUint64(governance.ParamSetMinCommonAccountBalance)
+	ctx.State().Set(governance.StateVarMinBaseTokensOnCommonAccount, codec.EncodeUint64(minCommonAccountBalance))
+	return nil
+}
+
+func getMinCommonAccountBalance(ctx isc.SandboxView) dict.Dict {
+	return dict.Dict{
+		governance.ParamSetMinCommonAccountBalance: ctx.StateR().Get(governance.StateVarMinBaseTokensOnCommonAccount),
+	}
 }
 
 func getChainOwner(ctx isc.SandboxView) dict.Dict {

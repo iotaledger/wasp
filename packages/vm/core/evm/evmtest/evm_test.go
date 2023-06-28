@@ -35,6 +35,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	testparameters "github.com/iotaledger/wasp/packages/testutil/parameters"
+	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -45,7 +46,7 @@ import (
 
 func TestStorageContract(t *testing.T) {
 	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	ethKey, _ := env.soloChain.EthereumAccountByIndexWithL2Funds(0)
 	require.EqualValues(t, 1, env.getBlockNumber()) // evm block number is incremented along with ISC block index
 
 	// deploy solidity `storage` contract
@@ -85,6 +86,8 @@ func TestStorageContract(t *testing.T) {
 		require.NoError(t, storage.callView("retrieve", nil, &v, rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)))
 		require.EqualValues(t, 46, v)
 	}
+
+	testdbhash.VerifyDBHash(env.solo, t.Name())
 }
 
 func TestERC20Contract(t *testing.T) {
@@ -719,7 +722,7 @@ func TestERC721NFTCollection(t *testing.T) {
 		"a string that is longer than 32 bytes",
 	)
 
-	collection, collectionInfo, err := env.solo.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.MustBytes())
+	collection, collectionInfo, err := env.solo.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.Bytes())
 	require.NoError(t, err)
 
 	nftMetadatas := []*isc.IRC27NFTMetadata{
@@ -736,7 +739,7 @@ func TestERC721NFTCollection(t *testing.T) {
 	}
 	allNFTs, _, err := env.solo.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID,
 		lo.Map(nftMetadatas, func(item *isc.IRC27NFTMetadata, index int) []byte {
-			return item.MustBytes()
+			return item.Bytes()
 		}),
 	)
 	require.NoError(t, err)

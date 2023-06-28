@@ -219,7 +219,7 @@ func TestDisallowMaintenanceDeadlock(t *testing.T) {
 	claimOwnershipFunc := coreutil.Func("claimOwnership")
 	startMaintenceFunc := coreutil.Func("initMaintenance")
 	stopMaintenceFunc := coreutil.Func("stopMaintenance")
-	ownerContract := coreutil.NewContract("chain owner contract", "N/A")
+	ownerContract := coreutil.NewContract("chain owner contract")
 	ownerContractProcessor := ownerContract.Processor(nil,
 		claimOwnershipFunc.WithHandler(func(ctx isc.Sandbox) dict.Dict {
 			return ctx.Call(governance.Contract.Hname(), governance.FuncClaimChainOwnership.Hname(), nil, nil)
@@ -462,6 +462,82 @@ func TestGovernanceGasFee(t *testing.T) {
 	ch.SetGasFeePolicy(nil, fp) // should not fail with "gas budget exceeded"
 }
 
+func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
+	ch := env.NewChain()
+
+	user, userAddr := env.NewKeyPairWithFunds()
+	userAgentID := isc.NewAgentID(userAddr)
+
+	_, err := ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetPayoutAgentID.Name,
+			governance.ParamSetPayoutAgentID,
+			userAgentID.Bytes(),
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	retDict, err := ch.CallView(
+		governance.Contract.Name,
+		governance.ViewGetPayoutAgentID.Name,
+	)
+	require.NoError(t, err)
+	retAgentID, err := codec.DecodeAgentID(retDict.Get(governance.ParamSetPayoutAgentID))
+	require.NoError(t, err)
+	require.Equal(t, userAgentID, retAgentID)
+
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetPayoutAgentID.Name,
+			governance.ParamSetPayoutAgentID,
+			userAgentID.Bytes(),
+		).WithMaxAffordableGasBudget(),
+		user,
+	)
+	require.ErrorContains(t, err, "unauthorized access")
+}
+
+func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
+	ch := env.NewChain()
+
+	initRetDict, err := ch.CallView(
+		governance.Contract.Name,
+		governance.ViewGetMinCommonAccountBalance.Name,
+	)
+	require.NoError(t, err)
+	retByte := initRetDict.Get(governance.ParamSetMinCommonAccountBalance)
+	retMinCommonAccountBalance, err := codec.DecodeUint64(retByte)
+	require.NoError(t, err)
+	require.Equal(t, governance.DefaultMinBaseTokensOnCommonAccount, retMinCommonAccountBalance)
+
+	minCommonAccountBalance := uint64(123456)
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetMinCommonAccountBalance.Name,
+			governance.ParamSetMinCommonAccountBalance,
+			codec.EncodeUint64(minCommonAccountBalance),
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	retDict, err := ch.CallView(
+		governance.Contract.Name,
+		governance.ViewGetMinCommonAccountBalance.Name,
+	)
+	require.NoError(t, err)
+	retByte = retDict.Get(governance.ParamSetMinCommonAccountBalance)
+	retMinCommonAccountBalance, err = codec.DecodeUint64(retByte)
+	require.NoError(t, err)
+	require.Equal(t, minCommonAccountBalance, retMinCommonAccountBalance)
+}
+
 func TestGovCallsNoBalance(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain(false)
@@ -477,4 +553,98 @@ func TestGovCallsNoBalance(t *testing.T) {
 		nil,
 	)
 	require.NoError(t, err)
+}
+
+func TestGasPayout(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{
+		AutoAdjustStorageDeposit: true,
+		Debug:                    true,
+		PrintStackTrace:          true,
+	})
+	ch := env.NewChain(false)
+	user1, user1Addr := env.NewKeyPairWithFunds()
+	user1AgentID := isc.NewAgentID(user1Addr)
+
+	// transfer some tokens from a new account (user1)
+	ownerBal1 := ch.L2Assets(ch.OriginatorAgentID)
+	user1Bal1 := ch.L2Assets(user1AgentID)
+	transferAmt := uint64(2000)
+	_, err := ch.PostRequestSync(
+		solo.NewCallParams(
+			accounts.Contract.Name,
+			accounts.FuncDeposit.Name,
+		).AddBaseTokens(transferAmt),
+		user1,
+	)
+	require.NoError(t, err)
+	gasFees := ch.LastReceipt().GasFeeCharged
+
+	// asert gas payout works as expected, owner gets the fees
+	ownerBal2 := ch.L2Assets(ch.OriginatorAgentID)
+	commonBal2 := ch.L2CommonAccountAssets()
+	user1Bal2 := ch.L2Assets(user1AgentID)
+	require.Equal(t, ownerBal1.BaseTokens+gasFees, ownerBal2.BaseTokens)
+	require.Equal(t, user1Bal1.BaseTokens+transferAmt-gasFees, user1Bal2.BaseTokens)
+
+	// change the payoutAddress, so that user1 now receives the fees charged by the chain
+	_, err = ch.PostRequestOffLedger(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetPayoutAgentID.Name,
+			governance.ParamSetPayoutAgentID,
+			user1AgentID.Bytes(),
+		),
+		nil,
+	)
+	require.NoError(t, err)
+
+	// no balance changes (owner calls to gov contract don't pay fees)
+	ownerBal3 := ch.L2Assets(ch.OriginatorAgentID)
+	commonBal3 := ch.L2CommonAccountAssets()
+	user1Bal3 := ch.L2Assets(user1AgentID)
+	require.Equal(t, ownerBal2.BaseTokens, ownerBal3.BaseTokens)
+	require.Equal(t, commonBal2.BaseTokens, commonBal3.BaseTokens)
+	require.Equal(t, user1Bal2.BaseTokens, user1Bal3.BaseTokens)
+
+	// assert new payoutAddr is correctly set
+	retDict, err := ch.CallView(
+		governance.Contract.Name,
+		governance.ViewGetPayoutAgentID.Name,
+	)
+	require.NoError(t, err)
+	retAgentID, err := codec.DecodeAgentID(retDict.Get(governance.ParamSetPayoutAgentID))
+	require.NoError(t, err)
+	require.Equal(t, user1AgentID, retAgentID)
+
+	// send a new request (another deposit from user1)
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			accounts.Contract.Name,
+			accounts.FuncDeposit.Name,
+		).AddBaseTokens(transferAmt),
+		user1,
+	)
+	require.NoError(t, err)
+	gasFees = ch.LastReceipt().GasFeeCharged
+	ownerBal4 := ch.L2Assets(ch.OriginatorAgentID)
+	commonBal4 := ch.L2CommonAccountAssets()
+	user1Bal4 := ch.L2Assets(user1AgentID)
+	require.Equal(t, ownerBal3.BaseTokens, ownerBal4.BaseTokens)
+	// because common account has less balance than minimum, fees go to the common account
+	require.Less(t, commonBal3.BaseTokens, governance.DefaultMinBaseTokensOnCommonAccount)
+	require.Equal(t, commonBal3.BaseTokens+gasFees, commonBal4.BaseTokens)
+	require.Equal(t, user1Bal3.BaseTokens+transferAmt-gasFees, user1Bal4.BaseTokens)
+
+	// top-up the common account, so its the minBalance - 10 tokens, assert what happens with the fees
+	err = ch.TransferAllowanceTo(
+		isc.NewAssetsBaseTokens(governance.DefaultMinBaseTokensOnCommonAccount-commonBal4.BaseTokens-10),
+		accounts.CommonAccount(),
+		nil,
+	)
+	require.NoError(t, err)
+	commonBal5 := ch.L2CommonAccountAssets()
+	user1Bal5 := ch.L2Assets(user1AgentID)
+	gasFees = ch.LastReceipt().GasFeeCharged
+	require.Equal(t, governance.DefaultMinBaseTokensOnCommonAccount, commonBal5.BaseTokens)
+	require.Equal(t, user1Bal4.BaseTokens+gasFees-10, user1Bal5.BaseTokens)
 }

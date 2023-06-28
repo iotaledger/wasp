@@ -59,11 +59,11 @@ func (bi *BlockInfo) String() string {
 }
 
 func (bi *BlockInfo) Bytes() []byte {
-	return rwutil.WriterToBytes(bi)
+	return rwutil.WriteToBytes(bi)
 }
 
 func BlockInfoFromBytes(data []byte) (*BlockInfo, error) {
-	return rwutil.ReaderFromBytes(data, new(BlockInfo))
+	return rwutil.ReadFromBytes(data, new(BlockInfo))
 }
 
 // BlockInfoKey a key to access block info record inside SC state
@@ -90,8 +90,8 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 		bi.PreviousAliasOutput = &isc.AliasOutputWithID{}
 		rr.Read(bi.PreviousAliasOutput)
 	}
-	bi.GasBurned = rr.ReadUint64()
-	bi.GasFeeCharged = rr.ReadUint64()
+	bi.GasBurned = rr.ReadGas64()
+	bi.GasFeeCharged = rr.ReadGas64()
 	return rr.Err
 }
 
@@ -106,7 +106,7 @@ func (bi *BlockInfo) Write(w io.Writer) error {
 	if bi.PreviousAliasOutput != nil {
 		ww.Write(bi.PreviousAliasOutput)
 	}
-	ww.WriteUint64(bi.GasBurned)
-	ww.WriteUint64(bi.GasFeeCharged)
+	ww.WriteGas64(bi.GasBurned)
+	ww.WriteGas64(bi.GasFeeCharged)
 	return ww.Err
 }

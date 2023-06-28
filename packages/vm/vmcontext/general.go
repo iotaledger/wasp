@@ -149,16 +149,15 @@ func (vmctx *VMContext) StateAnchor() *isc.StateAnchor {
 	}
 }
 
-// DeployContract deploys contract by its program hash with the name and description specific to the instance
-func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name, description string, initParams dict.Dict) {
-	vmctx.Debugf("vmcontext.DeployContract: %s, name: %s, dscr: '%s'", programHash.String(), name, description)
+// DeployContract deploys contract by its program hash with the name specific to the instance
+func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name string, initParams dict.Dict) {
+	vmctx.Debugf("vmcontext.DeployContract: %s, name: %s", programHash.String(), name)
 
 	// calling root contract from another contract to install contract
 	// adding parameters specific to deployment
 	par := initParams.Clone()
 	par.Set(root.ParamProgramHash, codec.EncodeHashValue(programHash))
 	par.Set(root.ParamName, codec.EncodeString(name))
-	par.Set(root.ParamDescription, codec.EncodeString(description))
 	vmctx.Call(root.Contract.Hname(), root.FuncDeployContract.Hname(), par, nil)
 }
 

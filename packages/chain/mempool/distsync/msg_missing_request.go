@@ -25,24 +25,17 @@ func newMsgMissingRequest(requestRef *isc.RequestRef, recipient gpa.NodeID) gpa.
 	}
 }
 
-func (msg *msgMissingRequest) MarshalBinary() (data []byte, err error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *msgMissingRequest) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
-}
-
 func (msg *msgMissingRequest) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeMissingRequest.ReadAndVerify(rr)
-	msg.requestRef = rwutil.ReadFromBytes(rr, isc.RequestRefFromBytes)
+	msg.requestRef = new(isc.RequestRef)
+	rr.Read(msg.requestRef)
 	return rr.Err
 }
 
 func (msg *msgMissingRequest) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	msgTypeMissingRequest.Write(ww)
-	ww.WriteFromBytes(msg.requestRef)
+	ww.Write(msg.requestRef)
 	return ww.Err
 }

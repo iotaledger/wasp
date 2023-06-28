@@ -42,6 +42,7 @@ const (
 	ParamEVMChainID      = "a"
 	ParamBlockKeepAmount = "b"
 	ParamChainOwner      = "c"
+	ParamWaspVersion     = "d"
 )
 
 func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) state.Block {
@@ -169,7 +170,7 @@ func NewChainOriginTransaction(
 	}
 
 	minSD := parameters.L1().Protocol.RentStructure.MinRent(aliasOutput)
-	minAmount := minSD + accounts.MinimumBaseTokensOnCommonAccount
+	minAmount := minSD + governance.DefaultMinBaseTokensOnCommonAccount
 	if aliasOutput.Amount < minAmount {
 		aliasOutput.Amount = minAmount
 	}

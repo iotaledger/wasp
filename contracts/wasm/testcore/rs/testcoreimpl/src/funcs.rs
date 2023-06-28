@@ -140,8 +140,7 @@ pub fn func_set_int(_ctx: &ScFuncContext, f: &SetIntContext) {
 pub fn func_spawn(ctx: &ScFuncContext, f: &SpawnContext) {
     let program_hash = f.params.prog_hash().value();
     let spawn_name = SC_NAME.to_string() + "_spawned";
-    let spawn_descr = "spawned contract description";
-    ctx.deploy_contract(&program_hash, &spawn_name, spawn_descr, None);
+    ctx.deploy_contract(&program_hash, &spawn_name, None);
 
     let spawn_hname = ScHname::new(&spawn_name);
     for _i in 0..5 {
@@ -201,7 +200,7 @@ pub fn func_test_chain_owner_id_full(ctx: &ScFuncContext, f: &TestChainOwnerIDFu
 pub fn func_test_event_log_deploy(ctx: &ScFuncContext, _f: &TestEventLogDeployContext) {
     // deploy the same contract with another name
     let program_hash = ctx.utility().hash_blake2b("testcore".as_bytes());
-    ctx.deploy_contract(&program_hash, CONTRACT_NAME_DEPLOYED, "test contract deploy log", None);
+    ctx.deploy_contract(&program_hash, CONTRACT_NAME_DEPLOYED, None);
 }
 
 pub fn func_test_event_log_event_data(ctx: &ScFuncContext, f: &TestEventLogEventDataContext) {

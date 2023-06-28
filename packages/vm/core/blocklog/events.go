@@ -43,22 +43,3 @@ func (k *EventLookupKey) Read(r io.Reader) error {
 func (k *EventLookupKey) Write(w io.Writer) error {
 	return rwutil.WriteN(w, k[:])
 }
-
-func EventLookupKeyFromReader(r io.Reader) (*EventLookupKey, error) {
-	k := EventLookupKey{}
-	n, err := r.Read(k[:])
-	if err != nil || n != EventLookupKeyLength {
-		return nil, io.EOF
-	}
-	return &k, nil
-}
-
-func EventLookupKeyFromBytes(key []byte) (*EventLookupKey, error) {
-	if len(key) != EventLookupKeyLength {
-		return nil, io.EOF
-	}
-
-	k := EventLookupKey{}
-	copy(k[:], key)
-	return &k, nil
-}

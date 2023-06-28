@@ -18,7 +18,7 @@ type msgBlockProduced struct {
 	block state.Block
 }
 
-var _ gpa.Message = new(msgCmtLog)
+var _ gpa.Message = new(msgBlockProduced)
 
 func NewMsgBlockProduced(recipient gpa.NodeID, tx *iotago.Transaction, block state.Block) gpa.Message {
 	return &msgBlockProduced{
@@ -37,14 +37,6 @@ func (msg *msgBlockProduced) String() string {
 		"{chainMgr.msgBlockProduced, stateIndex=%v, l1Commitment=%v, tx.ID=%v}",
 		msg.block.StateIndex(), msg.block.L1Commitment(), txID.ToHex(),
 	)
-}
-
-func (msg *msgBlockProduced) MarshalBinary() (ret []byte, err error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *msgBlockProduced) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
 }
 
 func (msg *msgBlockProduced) Read(r io.Reader) error {

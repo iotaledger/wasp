@@ -1,8 +1,6 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use std::convert::TryInto;
-
 use crate::*;
 
 pub const SC_INT8_LENGTH: usize = 1;

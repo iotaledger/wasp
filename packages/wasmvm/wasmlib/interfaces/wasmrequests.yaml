@@ -21,7 +21,6 @@ structs:
   DeployRequest:
     progHash: Hash
     name: String
-    description: String
     params: Bytes
 
   PostRequest:

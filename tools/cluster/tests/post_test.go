@@ -24,10 +24,9 @@ const inccounterName = "inc"
 
 func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 	hname := isc.Hn(inccounterName)
-	description := "testing contract deployment with inccounter"
 	programHash := inccounter.Contract.ProgramHash
 
-	_, err := e.Chain.DeployContract(inccounterName, programHash.String(), description, map[string]interface{}{
+	_, err := e.Chain.DeployContract(inccounterName, programHash.String(), map[string]interface{}{
 		inccounter.VarCounter: 42,
 		root.ParamName:        inccounterName,
 	})
@@ -49,7 +48,6 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 		require.NotNil(e.t, cr)
 
 		require.EqualValues(e.t, programHash.Hex(), cr.ProgramHash)
-		require.EqualValues(e.t, description, cr.Description)
 		require.EqualValues(e.t, cr.Name, inccounterName)
 
 		counterValue, err2 := e.Chain.GetCounterValue(hname, i)
@@ -72,9 +70,8 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 
 	recb := result.Get(root.ParamContractRecData)
 
-	rec, err := root.ContractRecordFromBytes(recb)
+	_, err = root.ContractRecordFromBytes(recb)
 	require.NoError(e.t, err)
-	require.EqualValues(e.t, description, rec.Description)
 
 	e.expectCounter(hname, 42)
 	return isc.NewContractAgentID(e.Chain.ChainID, hname)

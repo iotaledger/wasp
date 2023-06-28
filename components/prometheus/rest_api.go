@@ -7,15 +7,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-func newRestAPICollector(e *echo.Echo) []prometheus.Collector {
-	collectors := make([]prometheus.Collector, 0)
+func registerRestAPIMetrics(reg prometheus.Registerer, e *echo.Echo) {
 	if e != nil {
 		p := echoprometheus.NewPrometheus("iota_wasp_restapi", nil)
 		for _, m := range p.MetricsList {
-			collectors = append(collectors, m.MetricCollector)
+			reg.MustRegister(m.MetricCollector)
 		}
 		e.Use(p.HandlerFunc)
 	}
-
-	return collectors
 }

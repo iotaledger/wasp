@@ -4,7 +4,7 @@
 package rwutil
 
 import (
-	"encoding"
+	"encoding/binary"
 	"errors"
 	"io"
 	"math"
@@ -28,7 +28,7 @@ func NewReader(r io.Reader) *Reader {
 
 func NewBytesReader(data []byte) *Reader {
 	buf := Buffer(data)
-	return NewReader(&buf)
+	return &Reader{r: &buf}
 }
 
 // Bytes will return the remaining bytes in the Reader buffer.
@@ -56,6 +56,21 @@ func (rr *Reader) CheckAvailable(nrOfBytes int) int {
 	return nrOfBytes
 }
 
+// Close indicates the end of reading from the bytes buffer.
+// If any unread bytes are remaining in the buffer an error will be returned.
+func (rr *Reader) Close() {
+	if rr.Err == nil && len(rr.Bytes()) != 0 {
+		rr.Err = errors.New("excess bytes in buffer")
+	}
+}
+
+// Must will wrap the reader stream in a stream that will panic whenever an error occurs.
+func (rr *Reader) Must() *Reader {
+	must := &Must{r: rr.r}
+	rr.r = must
+	return rr
+}
+
 // PushBack returns a pushback writer that allows you to insert data before the stream.
 // The Reader will read this data first, and then resume reading from the stream.
 // The pushback Writer is only valid for this Reader until it resumes the stream.
@@ -65,7 +80,7 @@ func (rr *Reader) PushBack() *Writer {
 	return &Writer{w: push}
 }
 
-func (rr *Reader) Read(obj interface{ Read(r io.Reader) error }) {
+func (rr *Reader) Read(obj IoReader) {
 	// TODO: obj can be nil when obj.Read() can handle that.
 	// We don't want this. So find those instances and activate this code.
 	//if obj == nil {
@@ -82,65 +97,113 @@ func (rr *Reader) ReadN(ret []byte) {
 	}
 }
 
-func (rr *Reader) ReadBool() (ret bool) {
+// ReadAmount16 reads a variable-length encoded amount.
+func (rr *Reader) ReadAmount16() (ret uint16) {
 	if rr.Err == nil {
-		ret, rr.Err = ReadBool(rr.r)
+		ret, rr.Err = size16Decode(func() (byte, error) {
+			return rr.ReadByte(), rr.Err
+		})
 	}
 	return ret
+}
+
+// ReadAmount32 reads a variable-length encoded amount.
+func (rr *Reader) ReadAmount32() (ret uint32) {
+	if rr.Err == nil {
+		ret, rr.Err = size32Decode(func() (byte, error) {
+			return rr.ReadByte(), rr.Err
+		})
+	}
+	return ret
+}
+
+// ReadAmount64 reads a variable-length encoded amount.
+func (rr *Reader) ReadAmount64() (ret uint64) {
+	if rr.Err == nil {
+		ret, rr.Err = size64Decode(func() (byte, error) {
+			return rr.ReadByte(), rr.Err
+		})
+	}
+	return ret
+}
+
+func (rr *Reader) ReadBool() bool {
+	if rr.Err != nil {
+		return false
+	}
+	var b [1]byte
+	rr.Err = ReadN(rr.r, b[:])
+	if (b[0] & 0xfe) != 0x00 {
+		rr.Err = errors.New("unexpected bool value")
+		return false
+	}
+	return b[0] != 0x00
 }
 
 //nolint:govet
-func (rr *Reader) ReadByte() (ret byte) {
-	if rr.Err == nil {
-		ret, rr.Err = ReadByte(rr.r)
+func (rr *Reader) ReadByte() byte {
+	if rr.Err != nil {
+		return 0
 	}
-	return ret
+	var b [1]byte
+	rr.Err = ReadN(rr.r, b[:])
+	return b[0]
 }
 
-func (rr *Reader) ReadBytes() (ret []byte) {
-	if rr.Err == nil {
-		ret, rr.Err = ReadBytes(rr.r)
+func (rr *Reader) ReadBytes() []byte {
+	if rr.Err != nil {
+		return nil
+	}
+	size := rr.ReadSize32()
+	if rr.Err != nil {
+		return nil
+	}
+	if size == 0 {
+		return []byte{}
+	}
+	ret := make([]byte, size)
+	rr.Err = ReadN(rr.r, ret)
+	if rr.Err != nil {
+		return nil
 	}
 	return ret
 }
 
 func (rr *Reader) ReadDuration() (ret time.Duration) {
-	return time.Duration(rr.ReadInt64())
+	return time.Duration(rr.ReadUint64())
 }
 
-func (rr *Reader) ReadFromFunc(read func(w io.Reader) (int, error)) *Reader {
+func (rr *Reader) ReadFromFunc(read func(w io.Reader) (int, error)) {
 	if rr.Err == nil {
 		_, rr.Err = read(rr.r)
 	}
-	return rr
+}
+
+// ReadGas64 reads a variable-length encoded amount of gas.
+// Note that the amount was incremented before storing so that the
+// math.MaxUint64 gas limit will wrap to zero and only takes 1 byte.
+func (rr *Reader) ReadGas64() (ret uint64) {
+	ret = rr.ReadAmount64()
+	if rr.Err == nil {
+		ret--
+	}
+	return ret
 }
 
 func (rr *Reader) ReadInt8() (ret int8) {
-	if rr.Err == nil {
-		ret, rr.Err = ReadInt8(rr.r)
-	}
-	return ret
+	return int8(rr.ReadUint8())
 }
 
 func (rr *Reader) ReadInt16() (ret int16) {
-	if rr.Err == nil {
-		ret, rr.Err = ReadInt16(rr.r)
-	}
-	return ret
+	return int16(rr.ReadUint16())
 }
 
 func (rr *Reader) ReadInt32() (ret int32) {
-	if rr.Err == nil {
-		ret, rr.Err = ReadInt32(rr.r)
-	}
-	return ret
+	return int32(rr.ReadUint32())
 }
 
 func (rr *Reader) ReadInt64() (ret int64) {
-	if rr.Err == nil {
-		ret, rr.Err = ReadInt64(rr.r)
-	}
-	return ret
+	return int64(rr.ReadUint64())
 }
 
 func (rr *Reader) ReadKind() Kind {
@@ -151,16 +214,6 @@ func (rr *Reader) ReadKindAndVerify(expectedKind Kind) {
 	kind := rr.ReadKind()
 	if kind != expectedKind && rr.Err == nil {
 		rr.Err = errors.New("unexpected object kind")
-	}
-}
-
-func (rr *Reader) ReadMarshaled(obj encoding.BinaryUnmarshaler) {
-	if obj == nil {
-		panic("nil unmarshaler")
-	}
-	buf := rr.ReadBytes()
-	if rr.Err == nil {
-		rr.Err = obj.UnmarshalBinary(buf)
 	}
 }
 
@@ -232,13 +285,16 @@ func (rr *Reader) ReadSize32() (size int) {
 
 // ReadSizeWithLimit reads an int size from the stream, and verifies that
 // it does not exceed the specified limit. By limiting the size we can
-// better detect malformed input data.
+// better detect malformed input data. The size returned will always be
+// zero if an error occurred.
 func (rr *Reader) ReadSizeWithLimit(limit uint32) int {
 	if rr.Err != nil {
 		return 0
 	}
 	var size32 uint32
-	size32, rr.Err = ReadSize32(rr.r)
+	size32, rr.Err = size32Decode(func() (byte, error) {
+		return rr.ReadByte(), rr.Err
+	})
 	if size32 > limit && rr.Err == nil {
 		rr.Err = errors.New("read size limit overflow")
 		return 0
@@ -247,42 +303,54 @@ func (rr *Reader) ReadSizeWithLimit(limit uint32) int {
 }
 
 func (rr *Reader) ReadString() (ret string) {
-	if rr.Err == nil {
-		ret, rr.Err = ReadString(rr.r)
-	}
-	return ret
+	return string(rr.ReadBytes())
 }
 
 func (rr *Reader) ReadUint8() (ret uint8) {
-	if rr.Err == nil {
-		ret, rr.Err = ReadUint8(rr.r)
-	}
-	return ret
+	return rr.ReadByte()
 }
 
 func (rr *Reader) ReadUint16() (ret uint16) {
-	if rr.Err == nil {
-		ret, rr.Err = ReadUint16(rr.r)
+	if rr.Err != nil {
+		return 0
 	}
-	return ret
+	var b [2]byte
+	rr.Err = ReadN(rr.r, b[:])
+	if rr.Err != nil {
+		return 0
+	}
+	return uint16(b[0]) | (uint16(b[1]) << 8)
 }
 
 func (rr *Reader) ReadUint32() (ret uint32) {
-	if rr.Err == nil {
-		ret, rr.Err = ReadUint32(rr.r)
+	if rr.Err != nil {
+		return 0
 	}
-	return ret
+	var b [4]byte
+	rr.Err = ReadN(rr.r, b[:])
+	if rr.Err != nil {
+		return 0
+	}
+	return binary.LittleEndian.Uint32(b[:])
 }
 
 func (rr *Reader) ReadUint64() (ret uint64) {
-	if rr.Err == nil {
-		ret, rr.Err = ReadUint64(rr.r)
+	if rr.Err != nil {
+		return 0
 	}
-	return ret
+	var b [8]byte
+	rr.Err = ReadN(rr.r, b[:])
+	if rr.Err != nil {
+		return 0
+	}
+	return binary.LittleEndian.Uint64(b[:])
 }
 
 func (rr *Reader) ReadUint256() (ret *big.Int) {
 	ret = new(big.Int)
-	ret.SetBytes(rr.ReadBytes())
+	data := rr.ReadBytes()
+	if data != nil {
+		ret.SetBytes(data)
+	}
 	return ret
 }

@@ -327,3 +327,45 @@ func (s MutableSetMetadataParams) Metadata() MutablePublicChainMetadata {
 func (s MutableSetMetadataParams) PublicURL() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.Proxy.Root(ParamPublicURL))
 }
+
+type ImmutableSetMinSDParams struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewImmutableSetMinSDParams() ImmutableSetMinSDParams {
+	return ImmutableSetMinSDParams{Proxy: wasmlib.NewParamsProxy()}
+}
+
+func (s ImmutableSetMinSDParams) SetMinSD() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.Proxy.Root(ParamSetMinSD))
+}
+
+type MutableSetMinSDParams struct {
+	Proxy wasmtypes.Proxy
+}
+
+func (s MutableSetMinSDParams) SetMinSD() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.Proxy.Root(ParamSetMinSD))
+}
+
+type ImmutableSetPayoutAgentIDParams struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewImmutableSetPayoutAgentIDParams() ImmutableSetPayoutAgentIDParams {
+	return ImmutableSetPayoutAgentIDParams{Proxy: wasmlib.NewParamsProxy()}
+}
+
+// set payout AgentID
+func (s ImmutableSetPayoutAgentIDParams) PayoutAgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ParamPayoutAgentID))
+}
+
+type MutableSetPayoutAgentIDParams struct {
+	Proxy wasmtypes.Proxy
+}
+
+// set payout AgentID
+func (s MutableSetPayoutAgentIDParams) PayoutAgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ParamPayoutAgentID))
+}

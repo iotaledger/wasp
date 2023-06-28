@@ -6,10 +6,8 @@ import (
 	"github.com/iotaledger/hive.go/app"
 )
 
-var appInfo *prometheus.GaugeVec
-
-func newNodeCollector(info *app.Info) prometheus.Collector {
-	appInfo = prometheus.NewGaugeVec(
+func registerNodeMetrics(reg prometheus.Registerer, info *app.Info) {
+	appInfo := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "node",
@@ -18,8 +16,6 @@ func newNodeCollector(info *app.Info) prometheus.Collector {
 		},
 		[]string{"name", "version"},
 	)
-
 	appInfo.WithLabelValues(info.Name, info.Version).Set(1)
-
-	return appInfo
+	reg.MustRegister(appInfo)
 }

@@ -46,7 +46,7 @@ func TestGroupProvider(t *testing.T) {
 	// Create a group on one of nodes.
 	var g peering.GroupProvider
 	g, err := nodes[0].PeerGroup(peeringID, testpeers.PublicKeys(nodeIdentities))
-	require.Nil(t, err)
+	require.NoError(t, err)
 	//
 	// Broadcast a message and wait until it will be received on all the nodes.
 	g.SendMsgBroadcast(receiver, 125, []byte{})

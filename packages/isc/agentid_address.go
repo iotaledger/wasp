@@ -15,12 +15,16 @@ type AddressAgentID struct {
 
 var _ AgentIDWithL1Address = &AddressAgentID{}
 
-func addressAgentIDFromString(s string) (AgentID, error) {
+func NewAddressAgentID(addr iotago.Address) *AddressAgentID {
+	return &AddressAgentID{a: addr}
+}
+
+func addressAgentIDFromString(s string) (*AddressAgentID, error) {
 	_, addr, err := iotago.ParseBech32(s)
 	if err != nil {
 		return nil, err
 	}
-	return NewAgentID(addr), nil
+	return &AddressAgentID{a: addr}, nil
 }
 
 func (a *AddressAgentID) Address() iotago.Address {
@@ -28,7 +32,7 @@ func (a *AddressAgentID) Address() iotago.Address {
 }
 
 func (a *AddressAgentID) Bytes() []byte {
-	return rwutil.WriterToBytes(a)
+	return rwutil.WriteToBytes(a)
 }
 
 func (a *AddressAgentID) Equals(other AgentID) bool {

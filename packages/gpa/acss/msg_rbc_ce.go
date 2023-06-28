@@ -21,13 +21,7 @@ type msgRBCCEPayload struct {
 	data  []byte
 }
 
-func (msg *msgRBCCEPayload) MarshalBinary() ([]byte, error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *msgRBCCEPayload) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
-}
+var _ gpa.Message = new(msgRBCCEPayload)
 
 func (msg *msgRBCCEPayload) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)

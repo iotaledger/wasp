@@ -61,11 +61,10 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetSummary("Distrust a peering node").
 		SetOperationId("distrustPeer")
 
-	adminAPI.POST("node/owner/certificate", c.setNodeOwner, authentication.ValidatePermissions([]string{permissions.Write})).
-		AddParamBody(mocker.Get(models.NodeOwnerCertificateRequest{}), "", "The node owner certificate", true).
-		AddResponse(http.StatusOK, "Node owner was successfully changed", mocker.Get(models.NodeOwnerCertificateResponse{}), nil).
-		SetSummary("Sets the node owner").
-		SetOperationId("setNodeOwner")
+	adminAPI.GET("node/owner/certificate", c.nodeOwnerCertificate, authentication.ValidatePermissions([]string{permissions.Read})).
+		AddResponse(http.StatusOK, "Node Certificate", mocker.Get(models.NodeOwnerCertificateResponse{}), nil).
+		SetSummary("Gets the node owner").
+		SetOperationId("ownerCertificate")
 
 	adminAPI.POST("node/peers/trusted", c.trustPeer, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddParamBody(mocker.Get(models.PeeringTrustRequest{}), "", "Info of the peer to trust", true).

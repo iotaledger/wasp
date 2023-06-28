@@ -27,11 +27,6 @@ type FoundryModifySupplyCall struct {
 	Params MutableFoundryModifySupplyParams
 }
 
-type HarvestCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableHarvestParams
-}
-
 type TransferAccountToChainCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableTransferAccountToChainParams
@@ -155,14 +150,6 @@ func (sc Funcs) FoundryDestroy(ctx wasmlib.ScFuncClientContext) *FoundryDestroyC
 // Mints or destroys tokens for the given foundry, which must be owned by the caller.
 func (sc Funcs) FoundryModifySupply(ctx wasmlib.ScFuncClientContext) *FoundryModifySupplyCall {
 	f := &FoundryModifySupplyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncFoundryModifySupply)}
-	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
-	return f
-}
-
-// Moves all tokens from the chain common account to the sender's L2 account.
-// The chain owner is the only one who can call this entry point.
-func (sc Funcs) Harvest(ctx wasmlib.ScFuncClientContext) *HarvestCall {
-	f := &HarvestCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncHarvest)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
@@ -305,7 +292,6 @@ var exportMap = wasmlib.ScExportMap{
 		FuncFoundryCreateNew,
 		FuncFoundryDestroy,
 		FuncFoundryModifySupply,
-		FuncHarvest,
 		FuncTransferAccountToChain,
 		FuncTransferAllowanceTo,
 		FuncWithdraw,
@@ -325,7 +311,6 @@ var exportMap = wasmlib.ScExportMap{
 		ViewTotalAssets,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
-		wasmlib.FuncError,
 		wasmlib.FuncError,
 		wasmlib.FuncError,
 		wasmlib.FuncError,

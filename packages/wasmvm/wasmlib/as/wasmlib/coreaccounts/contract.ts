@@ -42,15 +42,6 @@ export class FoundryModifySupplyCall {
     }
 }
 
-export class HarvestCall {
-    func:   wasmlib.ScFunc;
-    params: sc.MutableHarvestParams = new sc.MutableHarvestParams(wasmlib.ScView.nilProxy);
-
-    public constructor(ctx: wasmlib.ScFuncClientContext) {
-        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncHarvest);
-    }
-}
-
 export class TransferAccountToChainCall {
     func:   wasmlib.ScFunc;
     params: sc.MutableTransferAccountToChainParams = new sc.MutableTransferAccountToChainParams(wasmlib.ScView.nilProxy);
@@ -240,14 +231,6 @@ export class ScFuncs {
     static foundryModifySupply(ctx: wasmlib.ScFuncClientContext): FoundryModifySupplyCall {
         const f = new FoundryModifySupplyCall(ctx);
         f.params = new sc.MutableFoundryModifySupplyParams(wasmlib.newCallParamsProxy(f.func));
-        return f;
-    }
-
-    // Moves all tokens from the chain common account to the sender's L2 account.
-    // The chain owner is the only one who can call this entry point.
-    static harvest(ctx: wasmlib.ScFuncClientContext): HarvestCall {
-        const f = new HarvestCall(ctx);
-        f.params = new sc.MutableHarvestParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 

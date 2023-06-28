@@ -1,107 +1,31 @@
 package isc
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/iota.go/v3/tpkg"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-func TestAgentID(t *testing.T) {
-	networkPrefix := parameters.L1().Protocol.Bech32HRP
+func TestAgentIDSerialization(t *testing.T) {
+	n := &NilAgentID{}
+	rwutil.BytesTest(t, AgentID(n), AgentIDFromBytes)
+	rwutil.StringTest(t, AgentID(n), AgentIDFromString)
 
-	{
-		n := &NilAgentID{}
+	a := NewAddressAgentID(tpkg.RandEd25519Address())
+	rwutil.BytesTest(t, AgentID(a), AgentIDFromBytes)
+	rwutil.StringTest(t, AgentID(a), AgentIDFromString)
+	rwutil.StringTest(t, a, addressAgentIDFromString)
 
-		{
-			require.Equal(t, "-", n.String())
-			n2, err := AgentIDFromString("-")
-			require.NoError(t, err)
-			require.EqualValues(t, n, n2)
-			require.True(t, n.Equals(n2))
-		}
+	chainID := ChainIDFromAddress(tpkg.RandAliasAddress())
+	c := NewContractAgentID(chainID, 42)
+	rwutil.BytesTest(t, AgentID(c), AgentIDFromBytes)
+	rwutil.StringTest(t, AgentID(c), AgentIDFromString)
 
-		{
-			b := n.Bytes()
-			require.Len(t, b, 1)
-			n2, err := AgentIDFromBytes(b)
-			require.NoError(t, err)
-			require.EqualValues(t, n, n2)
-			require.True(t, n.Equals(n2))
-		}
-	}
-
-	{
-		a := NewAgentID(tpkg.RandEd25519Address())
-
-		{
-			s := a.String()
-			require.NotEqual(t, "-", s)
-			require.NotContains(t, s, "@")
-			require.Equal(t, string(networkPrefix), s[:len(networkPrefix)])
-			a2, err := AgentIDFromString(s)
-			require.NoError(t, err)
-			require.EqualValues(t, a, a2)
-			require.True(t, a.Equals(a2))
-		}
-
-		{
-			b := a.Bytes()
-			a2, err := AgentIDFromBytes(b)
-			require.NoError(t, err)
-			require.EqualValues(t, a, a2)
-			require.True(t, a.Equals(a2))
-		}
-	}
-
-	{
-		chainID := ChainIDFromAddress(tpkg.RandAliasAddress())
-		a := NewContractAgentID(chainID, 42)
-
-		{
-			s := a.String()
-			require.Contains(t, s, "@")
-			parts := strings.Split(s, "@")
-			require.Len(t, parts, 2)
-			require.Equal(t, string(networkPrefix), parts[1][:len(networkPrefix)])
-			a2, err := AgentIDFromString(s)
-			require.NoError(t, err)
-			require.EqualValues(t, a, a2)
-			require.True(t, a.Equals(a2))
-		}
-
-		{
-			b := a.Bytes()
-			a2, err := AgentIDFromBytes(b)
-			require.NoError(t, err)
-			require.EqualValues(t, a, a2)
-			require.True(t, a.Equals(a2))
-		}
-	}
-
-	{
-		a := NewEthereumAddressAgentID(common.HexToAddress("1074"))
-
-		{
-			s := a.String()
-			require.NotContains(t, s, "@")
-			require.Regexp(t, `^0x[^@]+`, s)
-			a2, err := AgentIDFromString(s)
-			require.NoError(t, err)
-			require.EqualValues(t, a, a2)
-			require.True(t, a.Equals(a2))
-		}
-
-		{
-			b := a.Bytes()
-			a2, err := AgentIDFromBytes(b)
-			require.NoError(t, err)
-			require.EqualValues(t, a, a2)
-			require.True(t, a.Equals(a2))
-		}
-	}
+	e := NewEthereumAddressAgentID(common.HexToAddress("1074"))
+	rwutil.BytesTest(t, AgentID(e), AgentIDFromBytes)
+	rwutil.StringTest(t, AgentID(e), AgentIDFromString)
+	rwutil.StringTest(t, e, ethAgentIDFromString)
 }

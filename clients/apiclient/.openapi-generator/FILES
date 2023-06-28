@@ -47,7 +47,7 @@ docs/DefaultApi.md
 docs/ErrorMessageFormatResponse.md
 docs/EstimateGasRequestOffledger.md
 docs/EstimateGasRequestOnledger.md
-docs/Event.md
+docs/EventJSON.md
 docs/EventsResponse.md
 docs/FeePolicy.md
 docs/FoundryOutputResponse.md
@@ -75,7 +75,6 @@ docs/NativeToken.md
 docs/NativeTokenIDRegistryResponse.md
 docs/NodeApi.md
 docs/NodeMessageMetrics.md
-docs/NodeOwnerCertificateRequest.md
 docs/NodeOwnerCertificateResponse.md
 docs/OffLedgerRequest.md
 docs/OnLedgerRequest.md
@@ -145,7 +144,7 @@ model_dk_shares_post_request.go
 model_error_message_format_response.go
 model_estimate_gas_request_offledger.go
 model_estimate_gas_request_onledger.go
-model_event.go
+model_event_json.go
 model_events_response.go
 model_fee_policy.go
 model_foundry_output_response.go
@@ -171,7 +170,6 @@ model_native_token.go
 model_native_token_id_registry_response.go
 model_nft_data_response.go
 model_node_message_metrics.go
-model_node_owner_certificate_request.go
 model_node_owner_certificate_response.go
 model_off_ledger_request.go
 model_on_ledger_request.go

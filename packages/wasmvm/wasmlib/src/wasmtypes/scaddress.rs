@@ -1,8 +1,6 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use std::convert::TryInto;
-
 use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -121,7 +119,7 @@ pub fn address_from_string(value: &str) -> ScAddress {
     }
 
     let bytes = hex_decode(value);
-    if bytes.len()!= SC_LENGTH_ETH {
+    if bytes.len() != SC_LENGTH_ETH {
         panic("invalid ETH address");
     }
     address_from_bytes(&bytes)

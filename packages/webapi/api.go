@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/hive.go/app/configuration"
@@ -90,11 +89,9 @@ func Init(
 	shutdownHandler *shutdown.ShutdownHandler,
 	chainMetricsProvider *metrics.ChainMetricsProvider,
 	authConfig authentication.AuthConfiguration,
-	nodeOwnerAddresses []string,
 	requestCacheTTL time.Duration,
 	websocketService *websocket.Service,
 	pub *publisher.Publisher,
-	debugRequestLoggerEnabled bool,
 ) {
 	// load mock files to generate correct echo swagger documentation
 	mocker := NewMocker()
@@ -107,7 +104,7 @@ func Init(
 	metricsService := services.NewMetricsService(chainsProvider, chainMetricsProvider)
 	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
 	evmService := services.NewEVMService(chainService, networkProvider, pub, chainMetricsProvider, logger.Named("EVMService"))
-	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeOwnerAddresses, nodeIdentityProvider, shutdownHandler, trustedNetworkManager)
+	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeIdentityProvider, chainsProvider, shutdownHandler, trustedNetworkManager)
 	dkgService := services.NewDKGService(dkShareRegistryProvider, dkgNodeProvider, trustedNetworkManager)
 	userService := services.NewUserService(userManager)
 	// --
@@ -127,12 +124,6 @@ func Init(
 		requests.NewRequestsController(chainService, offLedgerService, peeringService),
 		users.NewUsersController(userService),
 		corecontracts.NewCoreContractsController(chainService),
-	}
-
-	if debugRequestLoggerEnabled {
-		server.Echo().Use(middleware.BodyDump(func(c echo.Context, reqBody, resBody []byte) {
-			logger.Debugf("API Dump: Request=%q, Response=%q", reqBody, resBody)
-		}))
 	}
 
 	AddHealthEndpoint(server, chainService, metricsService)

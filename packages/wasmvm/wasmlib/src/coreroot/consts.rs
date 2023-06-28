@@ -13,7 +13,6 @@ pub const HSC_NAME       : ScHname = ScHname(0xcebf5908);
 
 pub(crate) const PARAM_DEPLOYER                   : &str = "dp";
 pub(crate) const PARAM_DEPLOY_PERMISSIONS_ENABLED : &str = "de";
-pub(crate) const PARAM_DESCRIPTION                : &str = "ds";
 pub(crate) const PARAM_HNAME                      : &str = "hn";
 pub(crate) const PARAM_INIT_PARAMS                : &str = "this";
 pub(crate) const PARAM_NAME                       : &str = "nm";

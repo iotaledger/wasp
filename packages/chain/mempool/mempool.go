@@ -150,7 +150,7 @@ type mempoolImpl struct {
 	netPeerPubs                    map[gpa.NodeID]*cryptolib.PublicKey
 	net                            peering.NetworkProvider
 	log                            *logger.Logger
-	metrics                        metrics.IChainMempoolMetrics
+	metrics                        *metrics.ChainMempoolMetrics
 	listener                       ChainListener
 }
 
@@ -202,8 +202,8 @@ func New(
 	nodeIdentity *cryptolib.KeyPair,
 	net peering.NetworkProvider,
 	log *logger.Logger,
-	metrics metrics.IChainMempoolMetrics,
-	pipeMetrics metrics.IChainPipeMetrics,
+	metrics *metrics.ChainMempoolMetrics,
+	pipeMetrics *metrics.ChainPipeMetrics,
 	listener ChainListener,
 ) Mempool {
 	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("Mempool")) // ChainID × Mempool
@@ -256,7 +256,7 @@ func New(
 		log,
 	)
 	netRecvPipeInCh := mpi.netRecvPipe.In()
-	unhook := net.Attach(&netPeeringID, peering.PeerMessageReceiverMempool, func(recv *peering.PeerMessageIn) {
+	unhook := net.Attach(&netPeeringID, peering.ReceiverMempool, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeMempool {
 			mpi.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
@@ -884,19 +884,9 @@ func (mpi *mempoolImpl) sendMessages(outMsgs gpa.OutMessages) {
 	if outMsgs == nil {
 		return
 	}
-	outMsgs.MustIterate(func(m gpa.Message) {
-		msgData, err := m.MarshalBinary()
-		if err != nil {
-			mpi.log.Warnf("Failed to send a message: %v", err)
-			return
-		}
-		pm := &peering.PeerMessageData{
-			PeeringID:   mpi.netPeeringID,
-			MsgReceiver: peering.PeerMessageReceiverMempool,
-			MsgType:     msgTypeMempool,
-			MsgData:     msgData,
-		}
-		mpi.net.SendMsgByPubKey(mpi.netPeerPubs[m.Recipient()], pm)
+	outMsgs.MustIterate(func(msg gpa.Message) {
+		pm := peering.NewPeerMessageData(mpi.netPeeringID, peering.ReceiverMempool, msgTypeMempool, msg)
+		mpi.net.SendMsgByPubKey(mpi.netPeerPubs[msg.Recipient()], pm)
 	})
 }
 

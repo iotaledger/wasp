@@ -4,14 +4,27 @@
 package rwutil
 
 import (
-	"encoding"
-	"encoding/binary"
 	"errors"
 	"io"
-	"math"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 type Kind byte
+
+type (
+	IoReader interface {
+		Read(r io.Reader) error
+	}
+	IoWriter interface {
+		Write(w io.Writer) error
+	}
+	IoReadWriter interface {
+		IoReader
+		IoWriter
+	}
+)
 
 //////////////////// basic size-checked read/write \\\\\\\\\\\\\\\\\\\\
 
@@ -37,354 +50,109 @@ func WriteN(w io.Writer, data []byte) error {
 	return nil
 }
 
-//////////////////// bool \\\\\\\\\\\\\\\\\\\\
+//////////////////// size16/size32/size64 encoding/decoding \\\\\\\\\\\\\\\\\\\\
 
-func ReadBool(r io.Reader) (bool, error) {
-	var b [1]byte
-	err := ReadN(r, b[:])
-	if err != nil {
-		return false, err
+func size16Decode(readByte func() (byte, error)) (uint16, error) {
+	size64, err := size64Decode(readByte)
+	if size64 >= 0x1_0000 {
+		return 0, errors.New("size16 overflow")
 	}
-	if (b[0] & 0xfe) != 0x00 {
-		return false, errors.New("unexpected bool value")
+	return uint16(size64), err
+}
+
+func size32Decode(readByte func() (byte, error)) (uint32, error) {
+	size64, err := size64Decode(readByte)
+	if size64 >= 0x1_0000_0000 {
+		return 0, errors.New("size32 overflow")
 	}
-	return b[0] != 0, nil
+	return uint32(size64), err
 }
 
-func WriteBool(w io.Writer, cond bool) error {
-	var b [1]byte
-	if cond {
-		b[0] = 1
-	}
-	err := WriteN(w, b[:])
-	return err
-}
-
-//////////////////// byte \\\\\\\\\\\\\\\\\\\\
-
-func ReadByte(r io.Reader) (byte, error) {
-	var b [1]byte
-	err := ReadN(r, b[:])
-	return b[0], err
-}
-
-func WriteByte(w io.Writer, val byte) error {
-	return WriteN(w, []byte{val})
-}
-
-//////////////////// bytes \\\\\\\\\\\\\\\\\\\\
-
-func ReadBytes(r io.Reader) ([]byte, error) {
-	length, err := ReadSize32(r)
-	if err != nil {
-		return nil, err
-	}
-	if length == 0 {
-		return []byte{}, nil
-	}
-	ret := make([]byte, length)
-	err = ReadN(r, ret)
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
-}
-
-func WriteBytes(w io.Writer, data []byte) error {
-	size := len(data)
-	if size > math.MaxUint32 {
-		panic("data size overflow")
-	}
-	err := WriteSize32(w, uint32(size))
-	if err != nil {
-		return err
-	}
-	if size != 0 {
-		return WriteN(w, data)
-	}
-	return nil
-}
-
-//////////////////// int8 \\\\\\\\\\\\\\\\\\\\
-
-func ReadInt8(r io.Reader) (int8, error) {
-	val, err := ReadUint8(r)
-	return int8(val), err
-}
-
-func WriteInt8(w io.Writer, val int8) error {
-	return WriteUint8(w, uint8(val))
-}
-
-//////////////////// int16 \\\\\\\\\\\\\\\\\\\\
-
-func ReadInt16(r io.Reader) (int16, error) {
-	val, err := ReadUint16(r)
-	return int16(val), err
-}
-
-func WriteInt16(w io.Writer, val int16) error {
-	return WriteUint16(w, uint16(val))
-}
-
-//////////////////// int32 \\\\\\\\\\\\\\\\\\\\
-
-func ReadInt32(r io.Reader) (int32, error) {
-	val, err := ReadUint32(r)
-	return int32(val), err
-}
-
-func WriteInt32(w io.Writer, val int32) error {
-	return WriteUint32(w, uint32(val))
-}
-
-//////////////////// int64 \\\\\\\\\\\\\\\\\\\\
-
-func ReadInt64(r io.Reader) (int64, error) {
-	val, err := ReadUint64(r)
-	return int64(val), err
-}
-
-func WriteInt64(w io.Writer, val int64) error {
-	return WriteUint64(w, uint64(val))
-}
-
-//////////////////// size32 \\\\\\\\\\\\\\\\\\\\
-
-func Size32FromBytes(data []byte) (uint32, error) {
-	buf := Buffer(data)
-	return ReadSize32(&buf)
-}
-
-func Size32ToBytes(s uint32) []byte {
-	switch {
-	case s < 0x80:
-		return []byte{byte(s)}
-	case s < 0x4000:
-		return []byte{byte(s | 0x80), byte(s >> 7)}
-	case s < 0x200000:
-		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte(s >> 14)}
-	case s < 0x10000000:
-		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte((s >> 14) | 0x80), byte(s >> 21)}
-	default:
-		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte((s >> 14) | 0x80), byte((s >> 21) | 0x80), byte(s >> 28)}
-	}
-}
-
-func MustSize32FromBytes(b []byte) uint32 {
-	size, err := Size32FromBytes(b)
-	if err != nil {
-		panic(err)
-	}
-	return size
-}
-
-func ReadSize32(r io.Reader) (uint32, error) {
-	return decodeSize32(func() (byte, error) {
-		return ReadByte(r)
-	})
-}
-
-func WriteSize32(w io.Writer, value uint32) error {
-	return WriteN(w, Size32ToBytes(value))
-}
-
-func decodeSize32(readByte func() (byte, error)) (uint32, error) {
+// size64Decode uses a simple variable length encoding scheme
+// It takes groups of 7 bits per byte, and decodes following groups while
+// the 0x80 bit is set. Since most numbers are small, this will result in
+// significant storage savings, with values < 128 occupying only a single
+// byte, and values < 16384 only 2 bytes.
+func size64Decode(readByte func() (byte, error)) (uint64, error) {
 	b, err := readByte()
 	if err != nil {
 		return 0, err
 	}
 	if b < 0x80 {
-		return uint32(b), nil
+		return uint64(b), nil
 	}
-	value := uint32(b & 0x7f)
+	value := uint64(b & 0x7f)
 
+	for shift := 7; shift < 63; shift += 7 {
+		b, err = readByte()
+		if err != nil {
+			return 0, err
+		}
+		if b < 0x80 {
+			return value | (uint64(b) << shift), nil
+		}
+		value |= uint64(b&0x7f) << shift
+	}
+
+	// must be the final bit (since we already encoded 63 bits)
 	b, err = readByte()
 	if err != nil {
 		return 0, err
 	}
-	if b < 0x80 {
-		return value | (uint32(b) << 7), nil
+	if b > 0x01 {
+		return 0, errors.New("size64 overflow")
 	}
-	value |= uint32(b&0x7f) << 7
-
-	b, err = readByte()
-	if err != nil {
-		return 0, err
-	}
-	if b < 0x80 {
-		return value | (uint32(b) << 14), nil
-	}
-	value |= uint32(b&0x7f) << 14
-
-	b, err = readByte()
-	if err != nil {
-		return 0, err
-	}
-	if b < 0x80 {
-		return value | (uint32(b) << 21), nil
-	}
-	value |= uint32(b&0x7f) << 21
-
-	b, err = readByte()
-	if err != nil {
-		return 0, err
-	}
-	if b < 0xf0 {
-		return value | (uint32(b) << 28), nil
-	}
-	return 0, errors.New("size32 overflow")
+	return value | (uint64(b) << 63), nil
 }
 
-//////////////////// string \\\\\\\\\\\\\\\\\\\\
-
-func ReadString(r io.Reader) (string, error) {
-	ret, err := ReadBytes(r)
-	if err != nil {
-		return "", err
+// size64Encode uses a simple variable length encoding scheme
+// It takes groups of 7 bits per byte, and encodes if there will be a next group
+// by setting the 0x80 bit. Since most numbers are small, this will result in
+// significant storage savings, with values < 128 occupying only a single byte,
+// and values < 16384 only 2 bytes.
+func size64Encode(s uint64) []byte {
+	// serious loop unrolling to optimize for speed
+	switch {
+	case s < 0x80:
+		return []byte{byte(s)}
+	case s < 0x4000:
+		return []byte{byte(s | 0x80), byte(s >> 7)}
+	case s < 0x20_0000:
+		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte(s >> 14)}
+	case s < 0x1000_0000:
+		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte((s >> 14) | 0x80), byte(s >> 21)}
+	case s < 0x8_0000_0000:
+		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte((s >> 14) | 0x80), byte((s >> 21) | 0x80), byte(s >> 28)}
+	case s < 0x400_0000_0000:
+		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte((s >> 14) | 0x80), byte((s >> 21) | 0x80), byte((s >> 28) | 0x80), byte(s >> 35)}
+	case s < 0x2_0000_0000_0000:
+		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte((s >> 14) | 0x80), byte((s >> 21) | 0x80), byte((s >> 28) | 0x80), byte((s >> 35) | 0x80), byte(s >> 42)}
+	case s < 0x100_0000_0000_0000:
+		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte((s >> 14) | 0x80), byte((s >> 21) | 0x80), byte((s >> 28) | 0x80), byte((s >> 35) | 0x80), byte((s >> 42) | 0x80), byte(s >> 49)}
+	case s < 0x8000_0000_0000_0000:
+		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte((s >> 14) | 0x80), byte((s >> 21) | 0x80), byte((s >> 28) | 0x80), byte((s >> 35) | 0x80), byte((s >> 42) | 0x80), byte((s >> 49) | 0x80), byte(s >> 56)}
+	default:
+		return []byte{byte(s | 0x80), byte((s >> 7) | 0x80), byte((s >> 14) | 0x80), byte((s >> 21) | 0x80), byte((s >> 28) | 0x80), byte((s >> 35) | 0x80), byte((s >> 42) | 0x80), byte((s >> 49) | 0x80), byte((s >> 56) | 0x80), byte(s >> 63)}
 	}
-	return string(ret), err
 }
 
-func WriteString(w io.Writer, str string) error {
-	return WriteBytes(w, []byte(str))
-}
+//////////////////// one-line implementation wrapper functions \\\\\\\\\\\\\\\\\\\\
 
-//////////////////// uint8 \\\\\\\\\\\\\\\\\\\\
-
-func ReadUint8(r io.Reader) (uint8, error) {
-	var b [1]byte
-	err := ReadN(r, b[:])
-	return b[0], err
-}
-
-func WriteUint8(w io.Writer, val uint8) error {
-	return WriteN(w, []byte{val})
-}
-
-//////////////////// uint16 \\\\\\\\\\\\\\\\\\\\
-
-func ReadUint16(r io.Reader) (uint16, error) {
-	var b [2]byte
-	err := ReadN(r, b[:])
-	if err != nil {
-		return 0, err
-	}
-	return binary.LittleEndian.Uint16(b[:]), nil
-}
-
-func WriteUint16(w io.Writer, val uint16) error {
-	var b [2]byte
-	binary.LittleEndian.PutUint16(b[:], val)
-	return WriteN(w, b[:])
-}
-
-//////////////////// uint32 \\\\\\\\\\\\\\\\\\\\
-
-func ReadUint32(r io.Reader) (uint32, error) {
-	var b [4]byte
-	err := ReadN(r, b[:])
-	if err != nil {
-		return 0, err
-	}
-	return binary.LittleEndian.Uint32(b[:]), nil
-}
-
-func WriteUint32(w io.Writer, val uint32) error {
-	var b [4]byte
-	binary.LittleEndian.PutUint32(b[:], val)
-	return WriteN(w, b[:])
-}
-
-//////////////////// uint64 \\\\\\\\\\\\\\\\\\\\
-
-func ReadUint64(r io.Reader) (uint64, error) {
-	var b [8]byte
-	err := ReadN(r, b[:])
-	if err != nil {
-		return 0, err
-	}
-	return binary.LittleEndian.Uint64(b[:]), nil
-}
-
-func WriteUint64(w io.Writer, val uint64) error {
-	var b [8]byte
-	binary.LittleEndian.PutUint64(b[:], val)
-	return WriteN(w, b[:])
-}
-
-//////////////////// binary marshaling \\\\\\\\\\\\\\\\\\\\
-
-// MarshalBinary is an adapter function that uses an object's Write()
-// function to marshal the object to data bytes. It is typically used
-// to implement a one-line MarshalBinary() member function for the object.
-func MarshalBinary(obj interface{ Write(w io.Writer) error }) ([]byte, error) {
-	return WriterToBytes(obj), nil
-}
-
-// UnmarshalBinary is an adapter function that uses an object's Read()
-// function to marshal the object from data bytes. It is typically used
-// to implement a one-line UnmarshalBinary member function for the object.
-func UnmarshalBinary[T interface{ Read(r io.Reader) error }](data []byte, obj T) error {
-	_, err := ReaderFromBytes(data, obj)
-	return err
-}
-
-func ReadMarshaled(r io.Reader, obj encoding.BinaryUnmarshaler) error {
-	if obj == nil {
-		panic("nil BinaryUnmarshaler")
-	}
-	bin, err := ReadBytes(r)
-	if err != nil {
-		return err
-	}
-	return obj.UnmarshalBinary(bin)
-}
-
-func WriteMarshaled(w io.Writer, obj encoding.BinaryMarshaler) error {
-	if obj == nil {
-		panic("nil BinaryMarshaler")
-	}
-	bin, err := obj.MarshalBinary()
-	if err != nil {
-		return err
-	}
-	return WriteBytes(w, bin)
-}
-
-//////////////////// bytes \\\\\\\\\\\\\\\\\\\\
-
-// ReadFromBytes allows a reader to use any <Type>FromBytes() function as a source.
-// It will read the next group of bytes and pass it to the specified function and
-// returns the correct type of object
-func ReadFromBytes[T any](rr *Reader, fromBytes func([]byte) (T, error)) (ret T) {
-	data := rr.ReadBytes()
-	if rr.Err == nil {
-		ret, rr.Err = fromBytes(data)
-	}
-	return ret
-}
-
-// ReaderFromBytes is a wrapper that uses an object's Read() function to marshal
+// ReadFromBytes is a wrapper that uses an object's Read() function to marshal
 // the object from data bytes. It's typically used to implement a one-line
 // <Type>FromBytes() function and returns the expected type and error.
-func ReaderFromBytes[T interface{ Read(r io.Reader) error }](data []byte, obj T) (T, error) {
+func ReadFromBytes[T IoReader](data []byte, obj T) (T, error) {
 	// note: obj can be nil if obj.Read can handle that
 	rr := NewBytesReader(data)
 	rr.Read(obj)
-	if rr.Err != nil {
-		return obj, rr.Err
-	}
-	if len(rr.Bytes()) != 0 {
-		return obj, errors.New("excess bytes in buffer")
-	}
-	return obj, nil
+	rr.Close()
+	return obj, rr.Err
 }
 
-// WriterToBytes is a wrapper that uses an object's Write() function to marshal
+// WriteToBytes is a wrapper that uses an object's Write() function to marshal
 // the object to data bytes. It's typically used to implement a one-line Bytes()
 // function for the object.
-func WriterToBytes(obj interface{ Write(w io.Writer) error }) []byte {
+func WriteToBytes(obj IoWriter) []byte {
 	// note: obj can be nil if obj.Write can handle that
 	ww := NewBytesWriter()
 	ww.Write(obj)
@@ -393,4 +161,50 @@ func WriterToBytes(obj interface{ Write(w io.Writer) error }) []byte {
 		panic(ww.Err)
 	}
 	return ww.Bytes()
+}
+
+//////////////////// misc generic wrapper functions \\\\\\\\\\\\\\\\\\\\
+
+// ReadFromFunc allows a reader to use any <Type>FromBytes()-like function as a source.
+// It will read the next group of bytes and pass it to the specified function and
+// returns the correct type of object
+func ReadFromFunc[T any](rr *Reader, fromBytes func([]byte) (T, error)) (ret T) {
+	data := rr.ReadBytes()
+	if rr.Err == nil {
+		ret, rr.Err = fromBytes(data)
+	}
+	return ret
+}
+
+func BytesTest[T interface{ Bytes() []byte }](t *testing.T, obj1 T, fromBytes func(data []byte) (T, error)) T {
+	obj2, err := fromBytes(obj1.Bytes())
+	require.NoError(t, err)
+	require.Equal(t, obj1, obj2)
+	require.Equal(t, obj1.Bytes(), obj2.Bytes())
+	return obj2
+}
+
+func StringTest[T interface{ String() string }](t *testing.T, obj1 T, fromString func(data string) (T, error)) T {
+	obj2, err := fromString(obj1.String())
+	require.NoError(t, err)
+	require.Equal(t, obj1, obj2)
+	require.Equal(t, obj1.String(), obj2.String())
+	return obj2
+}
+
+// ReadWriteTest can be used with any object that implements IoReader and IoWriter
+// to test whether the Read() and Write() functions complement each other correctly.
+// You pass in an object that has all fields that need serialization set, plus a new,
+// empty object that will receive the deserialized data. The function will Write, Read,
+// and Write again and compare the objects for equality and both serialized versions
+// as well. It will return the deserialized object in case the user wants to perform
+// more tests with it.
+func ReadWriteTest[T IoReadWriter](t *testing.T, obj1 T, newObj T) T {
+	data1 := WriteToBytes(obj1)
+	obj2, err := ReadFromBytes(data1, newObj)
+	require.NoError(t, err)
+	require.Equal(t, obj1, obj2)
+	data2 := WriteToBytes(obj2)
+	require.Equal(t, data1, data2)
+	return obj2
 }

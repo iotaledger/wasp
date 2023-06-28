@@ -36,14 +36,6 @@ func (msg *msgImplicateRecover) SetSender(sender gpa.NodeID) {
 	msg.sender = sender
 }
 
-func (msg *msgImplicateRecover) MarshalBinary() ([]byte, error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *msgImplicateRecover) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
-}
-
 func (msg *msgImplicateRecover) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeImplicateRecover.ReadAndVerify(rr)

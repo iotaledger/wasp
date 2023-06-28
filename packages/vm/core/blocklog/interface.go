@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
-var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog, "Block log contract")
+var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog)
 
 const (
 	PrefixBlockRegistry = string('a' + iota)

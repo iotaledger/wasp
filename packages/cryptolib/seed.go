@@ -16,19 +16,14 @@ const (
 
 type Seed [SeedSize]byte
 
-func NewSeed() Seed {
-	newSeedBytes := hivecrypto.NewSeed().Bytes()
-	var newSeed Seed
-	copy(newSeed[:], newSeedBytes)
-	return newSeed
+func NewSeed() (ret Seed) {
+	copy(ret[:], hivecrypto.NewSeed().Bytes())
+	return ret
 }
 
-func SeedFromBytes(seedData []byte) Seed {
-	var seed Seed
-
-	copy(seed[:], seedData)
-
-	return seed
+func SeedFromBytes(data []byte) (ret Seed) {
+	copy(ret[:], data)
+	return ret
 }
 
 func (seed *Seed) SubSeed(n uint64) Seed {

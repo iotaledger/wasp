@@ -28,11 +28,11 @@ func NewFixedSizeBitVector(size uint16) BitVector {
 }
 
 func FixedSizeBitVectorFromBytes(data []byte) (BitVector, error) {
-	return rwutil.ReaderFromBytes(data, new(fixBitVector))
+	return rwutil.ReadFromBytes(data, new(fixBitVector))
 }
 
 func (b *fixBitVector) Bytes() []byte {
-	return rwutil.WriterToBytes(b)
+	return rwutil.WriteToBytes(b)
 }
 
 func (b *fixBitVector) SetBits(positions []int) BitVector {

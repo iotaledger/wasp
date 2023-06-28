@@ -51,7 +51,7 @@ func TestDomainProvider(t *testing.T) {
 	// Create a group on one of nodes.
 	var d peering.PeerDomainProvider
 	d, err := nodes[1].PeerDomain(peeringID, nodePubKeys)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, d)
 
 	d.SendMsgByPubKey(nodePubKeys[0], receiver, 125, []byte{})

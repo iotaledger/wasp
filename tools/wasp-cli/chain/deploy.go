@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -90,6 +91,7 @@ func initDeployCmd() *cobra.Command {
 					origin.ParamChainOwner:      isc.NewAgentID(govController).Bytes(),
 					origin.ParamEVMChainID:      codec.EncodeUint16(evmChainID),
 					origin.ParamBlockKeepAmount: codec.EncodeInt32(blockKeepAmount),
+					origin.ParamWaspVersion:     codec.EncodeString(app.Version),
 				},
 			}
 

@@ -7,12 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest/observer"
-
-	"github.com/labstack/echo/v4"
-	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/components/webapi"
 	"github.com/iotaledger/wasp/packages/authentication"
@@ -24,14 +23,13 @@ func TestInternalServerErrors(t *testing.T) {
 	log := zap.New(logCore)
 
 	e := webapi.NewEcho(&webapi.ParametersWebAPI{
-		Enabled:            true,
-		BindAddress:        ":9999",
-		NodeOwnerAddresses: []string{},
-		Auth:               authentication.AuthConfiguration{},
+		Enabled:     true,
+		BindAddress: ":9999",
+		Auth:        authentication.AuthConfiguration{},
 		Limits: struct {
 			Timeout                        time.Duration "default:\"30s\" usage:\"the timeout after which a long running operation will be canceled\""
 			ReadTimeout                    time.Duration "default:\"10s\" usage:\"the read timeout for the HTTP request body\""
-			WriteTimeout                   time.Duration "default:\"10s\" usage:\"the write timeout for the HTTP response body\""
+			WriteTimeout                   time.Duration "default:\"60s\" usage:\"the write timeout for the HTTP response body\""
 			MaxBodyLength                  string        "default:\"2M\" usage:\"the maximum number of characters that the body of an API call may contain\""
 			MaxTopicSubscriptionsPerClient int           "default:\"0\" usage:\"defines the max amount of subscriptions per client. 0 = deactivated (default)\""
 			ConfirmedStateLagThreshold     uint32        "default:\"2\" usage:\"the threshold that define a chain is unsynchronized\""

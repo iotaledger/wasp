@@ -111,7 +111,7 @@ func validateEvents(t *testing.T, eventsInBytes [][]byte, maxRequests uint16, ma
 
 	eventTopics := make([]string, 0)
 	for _, eventBytes := range eventsInBytes {
-		event, err := isc.NewEvent(eventBytes)
+		event, err := isc.EventFromBytes(eventBytes)
 		require.NoError(t, err)
 		eventTopics = append(eventTopics, event.Topic)
 	}

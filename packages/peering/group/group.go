@@ -88,12 +88,7 @@ func (g *groupImpl) PubKeyByIndex(index uint16) (*cryptolib.PublicKey, error) {
 
 // SendMsgByIndex implements peering.GroupProvider.
 func (g *groupImpl) SendMsgByIndex(peerIdx uint16, msgReceiver, msgType byte, msgData []byte) {
-	g.nodes[peerIdx].SendMsg(&peering.PeerMessageData{
-		PeeringID:   g.peeringID,
-		MsgReceiver: msgReceiver,
-		MsgType:     msgType,
-		MsgData:     msgData,
-	})
+	g.nodes[peerIdx].SendMsg(peering.NewPeerMessageData(g.peeringID, msgReceiver, msgType, msgData))
 }
 
 // Broadcast implements peering.GroupProvider.

@@ -1,8 +1,6 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use std::convert::TryInto;
-
 use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -157,17 +155,15 @@ pub fn agent_id_from_string(value: &str) -> ScAgentID {
     let parts: Vec<&str> = value.split("@").collect();
     return match parts.len() {
         1 => ScAgentID::from_address(&address_from_string(&parts[0])),
-        2 => {
-            ScAgentID::new(
-                &address_from_string(&parts[1]),
-                hname_from_string(&parts[0]),
-            )
-        }
+        2 => ScAgentID::new(
+            &address_from_string(&parts[1]),
+            hname_from_string(&parts[0]),
+        ),
         _ => {
             panic("invalid AgentID string");
             agent_id_from_bytes(&[])
         }
-    }
+    };
 }
 
 pub fn agent_id_to_string(value: &ScAgentID) -> String {

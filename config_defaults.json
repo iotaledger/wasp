@@ -81,6 +81,9 @@
     "pruningMinStatesToKeep": 10000,
     "pruningMaxStatesToDelete": 1000
   },
+  "validator": {
+    "address": ""
+  },
   "wal": {
     "enabled": true,
     "path": "waspdb/wal"
@@ -88,7 +91,6 @@
   "webapi": {
     "enabled": true,
     "bindAddress": "0.0.0.0:9090",
-    "nodeOwnerAddresses": [],
     "auth": {
       "scheme": "jwt",
       "jwt": {
@@ -106,7 +108,7 @@
     "limits": {
       "timeout": "30s",
       "readTimeout": "10s",
-      "writeTimeout": "10s",
+      "writeTimeout": "1m",
       "maxBodyLength": "2M",
       "maxTopicSubscriptionsPerClient": 0,
       "confirmedStateLagThreshold": 2
@@ -122,22 +124,6 @@
   },
   "prometheus": {
     "enabled": true,
-    "bindAddress": "0.0.0.0:2112",
-    "nodeMetrics": true,
-    "blockWALMetrics": true,
-    "consensusMetrics": true,
-    "mempoolMetrics": true,
-    "chainMessagesMetrics": true,
-    "chainStateMetrics": true,
-    "chainStateManagerMetrics": true,
-    "chainNodeConnMetrics": true,
-    "chainPipeMetrics": true,
-    "peeringMetrics": true,
-    "restAPIMetrics": true,
-    "goMetrics": true,
-    "processMetrics": true,
-    "promhttpMetrics": true,
-    "webAPIMetrics": true,
-    "stateMetrics": true
+    "bindAddress": "0.0.0.0:2112"
   }
 }

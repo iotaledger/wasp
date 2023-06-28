@@ -217,14 +217,13 @@ export class ScSandboxFunc extends ScSandbox {
     }
 
     // deploys a smart contract
-    public deployContract(programHash: ScHash, name: string, description: string, initParams: ScDict | null): void {
+    public deployContract(programHash: ScHash, name: string, initParams: ScDict | null): void {
         if (initParams === null) {
             initParams = new ScDict(null);
         }
         const req = new DeployRequest();
         req.progHash = programHash;
         req.name = name;
-        req.description = description;
         req.params = initParams.toBytes();
         sandbox(FnDeployContract, req.bytes());
     }

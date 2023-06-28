@@ -8,43 +8,73 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-type IChainConsensusMetrics interface {
-	VMRun(duration time.Duration, reqCount int)
+type ChainConsensusMetricsProvider struct {
+	vmRunTime       *prometheus.HistogramVec
+	vmRunTimePerReq *prometheus.HistogramVec
+	vmRunReqCount   *prometheus.HistogramVec
 }
 
-var (
-	_ IChainConsensusMetrics = &emptyChainConsensusMetric{}
-	_ IChainConsensusMetrics = &chainConsensusMetric{}
-)
-
-type emptyChainConsensusMetric struct{}
-
-func NewEmptyChainConsensusMetric() IChainConsensusMetrics                      { return &emptyChainConsensusMetric{} }
-func (m *emptyChainConsensusMetric) VMRun(duration time.Duration, reqCount int) {}
-
-type chainConsensusMetric struct {
-	provider      *ChainMetricsProvider
-	metricsLabels prometheus.Labels
-}
-
-func newChainConsensusMetric(provider *ChainMetricsProvider, chainID isc.ChainID) *chainConsensusMetric {
-	metricsLabels := getChainLabels(chainID)
-
-	// init values so they appear in prometheus
-	provider.consensusVMRunTime.With(metricsLabels)
-	provider.consensusVMRunTimePerReq.With(metricsLabels)
-	provider.consensusVMRunReqCount.With(metricsLabels)
-
-	return &chainConsensusMetric{
-		provider:      provider,
-		metricsLabels: metricsLabels,
+func newChainConsensusMetricsProvider() *ChainConsensusMetricsProvider {
+	return &ChainConsensusMetricsProvider{
+		vmRunTime: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "consensus",
+			Name:      "vm_run_time",
+			Help:      "Time (s) it takes to run the VM per chain block.",
+			Buckets:   execTimeBuckets,
+		}, []string{labelNameChain}),
+		vmRunTimePerReq: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "consensus",
+			Name:      "vm_run_time_per_req",
+			Help:      "Time (s) it takes to run the VM per request.",
+			Buckets:   execTimeBuckets,
+		}, []string{labelNameChain}),
+		vmRunReqCount: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "consensus",
+			Name:      "vm_run_req_count",
+			Help:      "Number of requests processed per VM run.",
+			Buckets:   recCountBuckets,
+		}, []string{labelNameChain}),
 	}
 }
 
-func (m *chainConsensusMetric) VMRun(duration time.Duration, reqCount int) {
+func (p *ChainConsensusMetricsProvider) register(reg prometheus.Registerer) {
+	reg.MustRegister(
+		p.vmRunTime,
+		p.vmRunTimePerReq,
+		p.vmRunReqCount,
+	)
+}
+
+func (p *ChainConsensusMetricsProvider) createForChain(chainID isc.ChainID) *ChainConsensusMetrics {
+	return newChainConsensusMetrics(p, chainID)
+}
+
+type ChainConsensusMetrics struct {
+	labels     prometheus.Labels
+	collectors *ChainConsensusMetricsProvider
+}
+
+func newChainConsensusMetrics(collectors *ChainConsensusMetricsProvider, chainID isc.ChainID) *ChainConsensusMetrics {
+	labels := getChainLabels(chainID)
+
+	// init values so they appear in prometheus
+	collectors.vmRunTime.With(labels)
+	collectors.vmRunTimePerReq.With(labels)
+	collectors.vmRunReqCount.With(labels)
+
+	return &ChainConsensusMetrics{
+		collectors: collectors,
+		labels:     labels,
+	}
+}
+
+func (m *ChainConsensusMetrics) VMRun(duration time.Duration, reqCount int) {
 	d := duration.Seconds()
 	r := float64(reqCount)
-	m.provider.consensusVMRunTime.With(m.metricsLabels).Observe(d)
-	m.provider.consensusVMRunTimePerReq.With(m.metricsLabels).Observe(d / r)
-	m.provider.consensusVMRunReqCount.With(m.metricsLabels).Observe(r)
+	m.collectors.vmRunTime.With(m.labels).Observe(d)
+	m.collectors.vmRunTimePerReq.With(m.labels).Observe(d / r)
+	m.collectors.vmRunReqCount.With(m.labels).Observe(r)
 }

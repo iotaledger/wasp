@@ -68,12 +68,7 @@ func (pkT *PublicKey) AsEd25519Address() *iotago.Ed25519Address {
 }
 
 func (pkT *PublicKey) AsKyberPoint() (kyber.Point, error) {
-	group := new(edwards25519.Curve)
-	point := group.Point()
-	if err := point.UnmarshalBinary(pkT.key); err != nil {
-		return nil, err
-	}
-	return point, nil
+	return PointFromBytes(pkT.key, new(edwards25519.Curve))
 }
 
 func (pkT *PublicKey) Equals(other *PublicKey) bool {

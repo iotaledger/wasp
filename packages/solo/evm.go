@@ -123,6 +123,23 @@ func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (dict.Dict, erro
 	return ch.RunOffLedgerRequest(req)
 }
 
+var EthereumAccounts []*ecdsa.PrivateKey
+
+func init() {
+	EthereumAccounts = make([]*ecdsa.PrivateKey, 4)
+	EthereumAccounts[0], _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	EthereumAccounts[1], _ = crypto.HexToECDSA("289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032")
+	EthereumAccounts[2], _ = crypto.HexToECDSA("8a1f9a8f95be41cd7ccb6168179afb4504aefe388d1e14474d32c45c72ce7b7a")
+	EthereumAccounts[3], _ = crypto.HexToECDSA("49a7b37aa6f6645917e7b807e9d1c00d4fa71f18343b0d4122a4d2df64dd6fee")
+}
+
+func (ch *Chain) EthereumAccountByIndexWithL2Funds(i int, baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
+	key := EthereumAccounts[i]
+	addr := crypto.PubkeyToAddress(key.PublicKey)
+	ch.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(addr), baseTokens...)
+	return key, addr
+}
+
 func NewEthereumAccount() (*ecdsa.PrivateKey, common.Address) {
 	key, err := crypto.GenerateKey()
 	if err != nil {

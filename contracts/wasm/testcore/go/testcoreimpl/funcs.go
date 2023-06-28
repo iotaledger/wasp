@@ -156,8 +156,7 @@ func funcSetInt(_ wasmlib.ScFuncContext, f *SetIntContext) {
 func funcSpawn(ctx wasmlib.ScFuncContext, f *SpawnContext) {
 	programHash := f.Params.ProgHash().Value()
 	spawnName := testcore.ScName + "_spawned"
-	spawnDescr := "spawned contract description"
-	ctx.DeployContract(programHash, spawnName, spawnDescr, nil)
+	ctx.DeployContract(programHash, spawnName, nil)
 
 	spawnHname := wasmtypes.NewScHname(spawnName)
 	for i := 0; i < 5; i++ {
@@ -217,7 +216,7 @@ func funcTestChainOwnerIDFull(ctx wasmlib.ScFuncContext, f *TestChainOwnerIDFull
 func funcTestEventLogDeploy(ctx wasmlib.ScFuncContext, _ *TestEventLogDeployContext) {
 	// deploy the same contract with another name
 	programHash := ctx.Utility().HashBlake2b([]byte(testcore.ScName))
-	ctx.DeployContract(programHash, ContractNameDeployed, "test contract deploy log", nil)
+	ctx.DeployContract(programHash, ContractNameDeployed, nil)
 }
 
 func funcTestEventLogEventData(ctx wasmlib.ScFuncContext, f *TestEventLogEventDataContext) {

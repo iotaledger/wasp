@@ -5,11 +5,6 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
-type NodeOwnerCertificateRequest struct {
-	PublicKey    string `json:"publicKey" swagger:"desc(The public key of the node (Hex)),required"`
-	OwnerAddress string `json:"ownerAddress" swagger:"desc(Node owner address. (Bech32)),required"`
-}
-
 type NodeOwnerCertificateResponse struct {
 	Certificate string `json:"certificate" swagger:"desc(Certificate stating the ownership. (Hex)),required"`
 }

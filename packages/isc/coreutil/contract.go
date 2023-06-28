@@ -35,7 +35,7 @@ type ContractInfo struct {
 
 var FuncDefaultInitializer = Func("initializer")
 
-func NewContract(name, description string) *ContractInfo {
+func NewContract(name string) *ContractInfo {
 	return &ContractInfo{
 		Name:        name,
 		ProgramHash: hashing.HashStrings(name),

@@ -1940,7 +1940,7 @@ type ApiWaitForRequestRequest struct {
 	waitForL1Confirmation *bool
 }
 
-// The timeout in seconds
+// The timeout in seconds, maximum 60s
 func (r ApiWaitForRequestRequest) TimeoutSeconds(timeoutSeconds int32) ApiWaitForRequestRequest {
 	r.timeoutSeconds = &timeoutSeconds
 	return r
