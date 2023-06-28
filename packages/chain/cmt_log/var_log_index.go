@@ -30,7 +30,7 @@ type VarLogIndex interface {
 	// NextAO = nil means we don't know the latest AO from L1 (either startup or reject of a chain is happening).
 	L1ReplacedBaseAliasOutput(nextBaseAO *isc.AliasOutputWithID) gpa.OutMessages
 	// Messages are exchanged, so this function handles them.
-	MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutMessages
+	MsgNextLogIndexReceived(msg *MsgNextLogIndex) gpa.OutMessages
 	// Summary of the internal state.
 	StatusString() string
 }
@@ -122,9 +122,9 @@ type varLogIndexImpl struct {
 	agreedLI         LogIndex                        // LI for which we have N-F proposals (when reached, consensus starts, the LI is persisted).
 	agreedAO         *isc.AliasOutputWithID          // AO agreed for agreedLI.
 	minLI            LogIndex                        // Minimal LI at which this node can participate (set on boot).
-	maxPeerLIs       map[gpa.NodeID]*msgNextLogIndex // Latest peer indexes received from peers.
+	maxPeerLIs       map[gpa.NodeID]*MsgNextLogIndex // Latest peer indexes received from peers.
 	outputCB         func(li LogIndex, ao *isc.AliasOutputWithID)
-	lastMsgs         map[gpa.NodeID]*msgNextLogIndex // Messages with highest LIs received from the peers.
+	lastMsgs         map[gpa.NodeID]*MsgNextLogIndex // Messages with highest LIs received from the peers.
 	deriveAOByQuorum bool                            // True, if the AO should be derived from a quorum, instead of own value.
 	log              *logger.Logger
 }
@@ -153,9 +153,9 @@ func NewVarLogIndex(
 		agreedLI:         NilLogIndex(),
 		agreedAO:         nil,
 		minLI:            persistedLI.Next(),
-		maxPeerLIs:       map[gpa.NodeID]*msgNextLogIndex{},
+		maxPeerLIs:       map[gpa.NodeID]*MsgNextLogIndex{},
 		outputCB:         outputCB,
-		lastMsgs:         map[gpa.NodeID]*msgNextLogIndex{},
+		lastMsgs:         map[gpa.NodeID]*MsgNextLogIndex{},
 		deriveAOByQuorum: deriveAOByQuorum,
 		log:              log,
 	}
@@ -223,7 +223,7 @@ func (v *varLogIndexImpl) L1ReplacedBaseAliasOutput(nextBaseAO *isc.AliasOutputW
 // >   IF ali = EnoughVotes(agreedLI, N-F) ∧ ali ≥ minLI ∧ DerivedAO(ali) ≠ ⊥ THEN
 // >     agreedLI ← ali
 // >     OUTPUT(ali, DerivedAO(ali))
-func (v *varLogIndexImpl) MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutMessages {
+func (v *varLogIndexImpl) MsgNextLogIndexReceived(msg *MsgNextLogIndex) gpa.OutMessages {
 	v.log.Debugf("MsgNextLogIndexReceived, %v", msg)
 	sender := msg.Sender()
 	//
@@ -233,16 +233,16 @@ func (v *varLogIndexImpl) MsgNextLogIndexReceived(msg *msgNextLogIndex) gpa.OutM
 		return nil
 	}
 	msgs := gpa.NoMessages()
-	if lastMsg, ok := v.lastMsgs[msg.Sender()]; ok && msg.pleaseRepeat {
+	if lastMsg, ok := v.lastMsgs[msg.Sender()]; ok && msg.PleaseRepeat {
 		msgs.Add(lastMsg.AsResent())
 	}
 	var prevPeerLI LogIndex
 	if prevPeerNLI, ok := v.maxPeerLIs[sender]; ok {
-		prevPeerLI = prevPeerNLI.nextLogIndex
+		prevPeerLI = prevPeerNLI.NextLogIndex
 	} else {
 		prevPeerLI = NilLogIndex()
 	}
-	if prevPeerLI.AsUint32() >= msg.nextLogIndex.AsUint32() {
+	if prevPeerLI.AsUint32() >= msg.NextLogIndex.AsUint32() {
 		return msgs
 	}
 	v.maxPeerLIs[sender] = msg
@@ -280,7 +280,7 @@ func (v *varLogIndexImpl) tryPropose(li LogIndex) gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	for _, nodeID := range v.nodeIDs {
 		_, haveMsgFrom := v.maxPeerLIs[nodeID] // It might happen, that we rebooted and lost the state.
-		msg := newMsgNextLogIndex(nodeID, v.proposedLI, derivedAO, !haveMsgFrom)
+		msg := NewMsgNextLogIndex(nodeID, v.proposedLI, derivedAO, !haveMsgFrom)
 		v.lastMsgs[nodeID] = msg
 		msgs.Add(msg)
 	}
@@ -298,11 +298,11 @@ func (v *varLogIndexImpl) deriveAO(li LogIndex) *isc.AliasOutputWithID {
 	countsAOMap := map[iotago.OutputID]*isc.AliasOutputWithID{}
 	countsAO := map[iotago.OutputID]int{}
 	for _, msg := range v.maxPeerLIs {
-		if msg.nextLogIndex < li {
+		if msg.NextLogIndex < li {
 			continue
 		}
-		countsAOMap[msg.nextBaseAO.OutputID()] = msg.nextBaseAO
-		countsAO[msg.nextBaseAO.OutputID()]++
+		countsAOMap[msg.NextBaseAO.OutputID()] = msg.NextBaseAO
+		countsAO[msg.NextBaseAO.OutputID()]++
 	}
 
 	var q1fAO *isc.AliasOutputWithID
@@ -332,8 +332,8 @@ func (v *varLogIndexImpl) deriveAO(li LogIndex) *isc.AliasOutputWithID {
 func (v *varLogIndexImpl) enoughVotes(aboveLI LogIndex, quorum int) LogIndex {
 	countsLI := map[LogIndex]int{}
 	for _, msg := range v.maxPeerLIs {
-		if msg.nextLogIndex > aboveLI {
-			countsLI[msg.nextLogIndex]++
+		if msg.NextLogIndex > aboveLI {
+			countsLI[msg.NextLogIndex]++
 		}
 	}
 	maxLI := NilLogIndex()

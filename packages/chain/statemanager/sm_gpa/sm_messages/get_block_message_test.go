@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -17,4 +18,13 @@ func TestMarshalUnmarshalGetBlockMessage(t *testing.T) {
 		msg := NewGetBlockMessage(commitment, gpa.NodeID{})
 		rwutil.ReadWriteTest(t, msg, NewEmptyGetBlockMessage())
 	}
+}
+
+func TestGetBlockMessageSerialization(t *testing.T) {
+	msg := &GetBlockMessage{
+		gpa.BasicMessage{},
+		state.PseudoRandL1Commitment(),
+	}
+
+	rwutil.ReadWriteTest(t, msg, new(GetBlockMessage))
 }

@@ -12,57 +12,57 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-type msgNextLogIndex struct {
+type MsgNextLogIndex struct {
 	gpa.BasicMessage
-	nextLogIndex LogIndex               // Proposal is to go to this LI without waiting for a consensus.
-	nextBaseAO   *isc.AliasOutputWithID // Using this AO as a base.
-	pleaseRepeat bool                   // If true, the receiver should resend its latest message back to the sender.
+	NextLogIndex LogIndex               // Proposal is to go to this LI without waiting for a consensus.
+	NextBaseAO   *isc.AliasOutputWithID // Using this AO as a base.
+	PleaseRepeat bool                   // If true, the receiver should resend its latest message back to the sender.
 }
 
-var _ gpa.Message = new(msgNextLogIndex)
+var _ gpa.Message = new(MsgNextLogIndex)
 
-func newMsgNextLogIndex(recipient gpa.NodeID, nextLogIndex LogIndex, nextBaseAO *isc.AliasOutputWithID, pleaseRepeat bool) *msgNextLogIndex {
-	return &msgNextLogIndex{
+func NewMsgNextLogIndex(recipient gpa.NodeID, nextLogIndex LogIndex, nextBaseAO *isc.AliasOutputWithID, pleaseRepeat bool) *MsgNextLogIndex {
+	return &MsgNextLogIndex{
 		BasicMessage: gpa.NewBasicMessage(recipient),
-		nextLogIndex: nextLogIndex,
-		nextBaseAO:   nextBaseAO,
-		pleaseRepeat: pleaseRepeat,
+		NextLogIndex: nextLogIndex,
+		NextBaseAO:   nextBaseAO,
+		PleaseRepeat: pleaseRepeat,
 	}
 }
 
 // Make a copy for re-sending the message.
 // We set pleaseResend to false to avoid accidental loops.
-func (msg *msgNextLogIndex) AsResent() *msgNextLogIndex {
-	return &msgNextLogIndex{
+func (msg *MsgNextLogIndex) AsResent() *MsgNextLogIndex {
+	return &MsgNextLogIndex{
 		BasicMessage: gpa.NewBasicMessage(msg.Recipient()),
-		nextLogIndex: msg.nextLogIndex,
-		nextBaseAO:   msg.nextBaseAO,
-		pleaseRepeat: false,
+		NextLogIndex: msg.NextLogIndex,
+		NextBaseAO:   msg.NextBaseAO,
+		PleaseRepeat: false,
 	}
 }
 
-func (msg *msgNextLogIndex) String() string {
+func (msg *MsgNextLogIndex) String() string {
 	return fmt.Sprintf(
-		"{msgNextLogIndex, sender=%v, nextLogIndex=%v, nextBaseAO=%v, pleaseRepeat=%v",
-		msg.Sender().ShortString(), msg.nextLogIndex, msg.nextBaseAO, msg.pleaseRepeat,
+		"{MsgNextLogIndex, sender=%v, nextLogIndex=%v, nextBaseAO=%v, pleaseRepeat=%v",
+		msg.Sender().ShortString(), msg.NextLogIndex, msg.NextBaseAO, msg.PleaseRepeat,
 	)
 }
 
-func (msg *msgNextLogIndex) Read(r io.Reader) error {
+func (msg *MsgNextLogIndex) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeNextLogIndex.ReadAndVerify(rr)
-	msg.nextLogIndex = LogIndex(rr.ReadUint32())
-	msg.nextBaseAO = new(isc.AliasOutputWithID)
-	rr.Read(msg.nextBaseAO)
-	msg.pleaseRepeat = rr.ReadBool()
+	msg.NextLogIndex = LogIndex(rr.ReadUint32())
+	msg.NextBaseAO = new(isc.AliasOutputWithID)
+	rr.Read(msg.NextBaseAO)
+	msg.PleaseRepeat = rr.ReadBool()
 	return rr.Err
 }
 
-func (msg *msgNextLogIndex) Write(w io.Writer) error {
+func (msg *MsgNextLogIndex) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	msgTypeNextLogIndex.Write(ww)
-	ww.WriteUint32(msg.nextLogIndex.AsUint32())
-	ww.Write(msg.nextBaseAO)
-	ww.WriteBool(msg.pleaseRepeat)
+	ww.WriteUint32(msg.NextLogIndex.AsUint32())
+	ww.Write(msg.NextBaseAO)
+	ww.WriteBool(msg.PleaseRepeat)
 	return ww.Err
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -16,4 +17,13 @@ func TestBlockMessageSerialization(t *testing.T) {
 		msg := NewBlockMessage(blocks[i], gpa.NodeID{})
 		rwutil.ReadWriteTest(t, msg, NewEmptyBlockMessage())
 	}
+}
+
+func TestSerializationBlockMessage(t *testing.T) {
+	msg := &BlockMessage{
+		gpa.BasicMessage{},
+		state.RandomBlock(),
+	}
+
+	rwutil.ReadWriteTest(t, msg, new(BlockMessage))
 }
