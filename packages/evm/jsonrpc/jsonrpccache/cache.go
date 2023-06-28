@@ -91,7 +91,6 @@ func (c *Cache) CacheBlock(trieRoot trie.Hash, stateByTrieRoot func(trieRoot tri
 		blockTransactions := evmBlock.Transactions()
 		c.txsByBlockHash[evmBlock.Hash()] = blockTransactions
 		for _, tx := range blockTransactions {
-			tx := tx // FIX FOR ITERATION VALUE SHARING
 			c.txBlockByHash[tx.Hash()] = evmBlock
 		}
 		// walk backwards until all blocks are cached
