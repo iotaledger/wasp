@@ -32,7 +32,7 @@ func (vmctx *vmContext) earlyCheckReasonToSkip() error {
 		}
 	}
 
-	if vmctx.task.MaintenanceModeEnabled &&
+	if vmctx.maintenanceMode &&
 		vmctx.reqCtx.req.CallTarget().Contract != governance.Contract.Hname() {
 		return errors.New("skipped due to maintenance mode")
 	}

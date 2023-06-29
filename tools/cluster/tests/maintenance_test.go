@@ -18,6 +18,7 @@ import (
 )
 
 // executed in cluster_test.go
+// TODO: rewrite as a solo test
 func testMaintenance(t *testing.T, env *ChainEnv) {
 	env.deployNativeIncCounterSC(0)
 	ownerWallet, ownerAddr, err := env.Clu.NewKeyPairWithFunds()

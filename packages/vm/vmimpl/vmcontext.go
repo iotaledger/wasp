@@ -40,11 +40,12 @@ type vmContext struct {
 	blockContext map[isc.Hname]interface{}
 	txbuilder    *vmtxbuilder.AnchorTransactionBuilder
 	// unprocessable is a list of requests that were found to be unprocessable during this VM execution
-	unprocessable  []isc.OnLedgerRequest
-	chainInfo      *isc.ChainInfo
-	blockGas       blockGas
-	reqCtx         *requestContext
-	anchorOutputSD uint64
+	unprocessable   []isc.OnLedgerRequest
+	chainInfo       *isc.ChainInfo
+	blockGas        blockGas
+	reqCtx          *requestContext
+	anchorOutputSD  uint64
+	maintenanceMode bool
 
 	currentStateUpdate *buffered.Mutations
 	callStack          []*callContext
@@ -117,10 +118,11 @@ func createVMContext(task *vm.VMTask, taskResult *vm.VMTaskResult) *vmContext {
 	}
 
 	vmctx := &vmContext{
-		task:          task,
-		taskResult:    taskResult,
-		blockContext:  make(map[isc.Hname]interface{}),
-		unprocessable: make([]isc.OnLedgerRequest, 0),
+		task:            task,
+		taskResult:      taskResult,
+		blockContext:    make(map[isc.Hname]interface{}),
+		unprocessable:   make([]isc.OnLedgerRequest, 0),
+		maintenanceMode: governance.NewStateAccess(taskResult.StateDraft).MaintenanceStatus(),
 	}
 	// at the beginning of each block
 	l1Commitment, err := transaction.L1CommitmentFromAliasOutput(task.AnchorOutput)

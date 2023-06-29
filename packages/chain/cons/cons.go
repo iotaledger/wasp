@@ -78,7 +78,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -553,18 +552,17 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 	// The decided base alias output can be different from that we have proposed!
 	decidedBaseAliasOutput := aggregatedProposals.DecidedBaseAliasOutput()
 	c.output.NeedVMResult = &vm.VMTask{
-		Processors:             c.processorCache,
-		AnchorOutput:           decidedBaseAliasOutput.GetAliasOutput(),
-		AnchorOutputID:         decidedBaseAliasOutput.OutputID(),
-		Store:                  c.chainStore,
-		Requests:               aggregatedProposals.OrderedRequests(requests, *randomness),
-		TimeAssumption:         aggregatedProposals.AggregatedTime(),
-		Entropy:                *randomness,
-		ValidatorFeeTarget:     aggregatedProposals.ValidatorFeeTarget(),
-		EstimateGasMode:        false,
-		EnableGasBurnLogging:   false,
-		MaintenanceModeEnabled: governance.NewStateAccess(chainState).MaintenanceStatus(),
-		Log:                    c.log.Named("VM"),
+		Processors:           c.processorCache,
+		AnchorOutput:         decidedBaseAliasOutput.GetAliasOutput(),
+		AnchorOutputID:       decidedBaseAliasOutput.OutputID(),
+		Store:                c.chainStore,
+		Requests:             aggregatedProposals.OrderedRequests(requests, *randomness),
+		TimeAssumption:       aggregatedProposals.AggregatedTime(),
+		Entropy:              *randomness,
+		ValidatorFeeTarget:   aggregatedProposals.ValidatorFeeTarget(),
+		EstimateGasMode:      false,
+		EnableGasBurnLogging: false,
+		Log:                  c.log.Named("VM"),
 	}
 	return nil
 }

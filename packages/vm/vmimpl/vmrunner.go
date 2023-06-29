@@ -11,7 +11,7 @@ func (r VMRunner) Run(task *vm.VMTask) (res *vm.VMTaskResult, err error) {
 	// top exception catcher for all panics
 	// The VM session will be abandoned peacefully
 	err = panicutil.CatchAllButDBError(func() {
-		res := task.CreateResult()
+		res = task.CreateResult()
 		createVMContext(task, res).run()
 	}, task.Log)
 	if err != nil {
