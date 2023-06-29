@@ -43,9 +43,9 @@ type VMTask struct {
 }
 
 type VMTaskResult struct {
-	Task                       *VMTask
-	AnchorOutputStorageDeposit uint64
-	// the uncommitted state resulting from the execution of the requests
+	Task *VMTask
+
+	// StateDraft is the uncommitted state resulting from the execution of the requests
 	StateDraft state.StateDraft
 	// RotationAddress is the next address after a rotation, or nil if there is no rotation
 	RotationAddress iotago.Address

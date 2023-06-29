@@ -40,10 +40,11 @@ type vmContext struct {
 	blockContext map[isc.Hname]interface{}
 	txbuilder    *vmtxbuilder.AnchorTransactionBuilder
 	// unprocessable is a list of requests that were found to be unprocessable during this VM execution
-	unprocessable []isc.OnLedgerRequest
-	chainInfo     *isc.ChainInfo
-	blockGas      blockGas
-	reqCtx        *requestContext
+	unprocessable  []isc.OnLedgerRequest
+	chainInfo      *isc.ChainInfo
+	blockGas       blockGas
+	reqCtx         *requestContext
+	anchorOutputSD uint64
 
 	currentStateUpdate *buffered.Mutations
 	callStack          []*callContext
@@ -145,12 +146,12 @@ func createVMContext(task *vm.VMTask, taskResult *vm.VMTaskResult) *vmContext {
 		totalL2Funds = vmctx.loadTotalFungibleTokens()
 	})
 
-	taskResult.AnchorOutputStorageDeposit = task.AnchorOutput.Amount - totalL2Funds.BaseTokens
+	vmctx.anchorOutputSD = task.AnchorOutput.Amount - totalL2Funds.BaseTokens
 
 	vmctx.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
 		task.AnchorOutput,
 		task.AnchorOutputID,
-		taskResult.AnchorOutputStorageDeposit,
+		vmctx.anchorOutputSD,
 		vmtxbuilder.AccountsContractRead{
 			NativeTokenOutput:   vmctx.loadNativeTokenOutput,
 			FoundryOutput:       vmctx.loadFoundry,
@@ -274,7 +275,7 @@ func (vmctx *vmContext) saveInternalUTXOs() {
 	// create a mock AO, with a nil statecommitment, just to calculate changes in the minimum SD
 	mockAO := vmctx.txbuilder.CreateAnchorOutput(vmctx.StateMetadata(state.L1CommitmentNil))
 	newMinSD := parameters.L1().Protocol.RentStructure.MinRent(mockAO)
-	oldMinSD := vmctx.taskResult.AnchorOutputStorageDeposit
+	oldMinSD := vmctx.anchorOutputSD
 	changeInSD := int64(oldMinSD) - int64(newMinSD)
 
 	if changeInSD != 0 {
