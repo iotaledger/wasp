@@ -1,25 +1,25 @@
-package vmcontext
+package vmimpl
 
 import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
-func (vmctx *VMContext) GasBurnEnable(enable bool) {
+func (vmctx *vmContext) GasBurnEnable(enable bool) {
 	if enable && !vmctx.shouldChargeGasFee() {
 		return
 	}
 	vmctx.blockGas.burnEnabled = enable
 }
 
-func (vmctx *VMContext) gasSetBudget(gasBudget, maxTokensToSpendForGasFee uint64) {
+func (vmctx *vmContext) gasSetBudget(gasBudget, maxTokensToSpendForGasFee uint64) {
 	vmctx.reqCtx.gas.budgetAdjusted = gasBudget
 	vmctx.reqCtx.gas.maxTokensToSpendForGasFee = maxTokensToSpendForGasFee
 	vmctx.reqCtx.gas.burned = 0
 }
 
-func (vmctx *VMContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
+func (vmctx *vmContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	if !vmctx.blockGas.burnEnabled {
 		return
 	}
@@ -37,13 +37,13 @@ func (vmctx *VMContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	}
 }
 
-func (vmctx *VMContext) GasBudgetLeft() uint64 {
+func (vmctx *vmContext) GasBudgetLeft() uint64 {
 	if vmctx.reqCtx.gas.budgetAdjusted < vmctx.reqCtx.gas.burned {
 		return 0
 	}
 	return vmctx.reqCtx.gas.budgetAdjusted - vmctx.reqCtx.gas.burned
 }
 
-func (vmctx *VMContext) GasBurned() uint64 {
+func (vmctx *vmContext) GasBurned() uint64 {
 	return vmctx.reqCtx.gas.burned
 }

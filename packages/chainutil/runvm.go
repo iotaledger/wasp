@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/runvm"
+	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
 func runISCTask(
@@ -22,7 +22,7 @@ func runISCTask(
 	estimateGasMode bool,
 	evmTracer *isc.EVMTracer,
 ) ([]*vm.RequestResult, error) {
-	vmRunner := runvm.NewVMRunner()
+	vmRunner := vmimpl.NewVMRunner()
 	task := &vm.VMTask{
 		Processors:           ch.Processors(),
 		AnchorOutput:         aliasOutput.GetAliasOutput(),

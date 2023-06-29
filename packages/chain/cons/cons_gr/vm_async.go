@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/runvm"
+	vmcontext "github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
 type vmAsync struct {
@@ -22,7 +22,7 @@ type vmAsync struct {
 
 func NewVMAsync(metrics *metrics.ChainConsensusMetrics, log *logger.Logger) VM {
 	return &vmAsync{
-		runner:  runvm.NewVMRunner(),
+		runner:  vmcontext.NewVMRunner(),
 		metrics: metrics,
 		log:     log,
 	}

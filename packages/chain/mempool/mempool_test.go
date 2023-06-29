@@ -40,7 +40,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/vm/runvm"
+	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
 type tc struct {
@@ -222,7 +222,7 @@ func blockFn(te *testEnv, reqs []isc.Request, ao *isc.AliasOutputWithID, tangleT
 		MaintenanceModeEnabled: false,
 		Log:                    te.log.Named("VM"),
 	}
-	vmResult, err := runvm.NewVMRunner().Run(vmTask)
+	vmResult, err := vmcontext.NewVMRunner().Run(vmTask)
 	require.NoError(te.t, err)
 	block := store.Commit(vmResult.StateDraft)
 	chainState, err := store.StateByTrieRoot(block.TrieRoot())

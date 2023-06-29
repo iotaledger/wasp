@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
 // nativeTokenBalance represents on-chain account of the specific native token

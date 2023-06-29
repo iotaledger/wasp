@@ -41,7 +41,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/vm/runvm"
+	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
@@ -318,7 +318,7 @@ func (env *Solo) NewChainExt(
 		OriginatorAgentID:      originatorAgentID,
 		ValidatorFeeTarget:     originatorAgentID,
 		store:                  store,
-		vmRunner:               runvm.NewVMRunner(),
+		vmRunner:               vmcontext.NewVMRunner(),
 		proc:                   processors.MustNew(env.processorConfig),
 		log:                    chainlog,
 		metrics:                metrics.NewChainMetricsProvider().GetChainMetrics(chainID),

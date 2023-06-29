@@ -1,4 +1,4 @@
-package vmcontext
+package vmimpl
 
 import (
 	"math"
@@ -16,18 +16,18 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
 // It adds new tokens to the chain ledger. It is used when new tokens arrive with a request
-func (vmctx *VMContext) creditToAccount(agentID isc.AgentID, ftokens *isc.Assets) {
+func (vmctx *vmContext) creditToAccount(agentID isc.AgentID, ftokens *isc.Assets) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.CreditToAccount(s, agentID, ftokens)
 	})
 }
 
-func (vmctx *VMContext) creditNFTToAccount(agentID isc.AgentID, nft *isc.NFT) {
+func (vmctx *vmContext) creditNFTToAccount(agentID isc.AgentID, nft *isc.NFT) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.CreditNFTToAccount(s, agentID, nft)
 	})
@@ -35,7 +35,7 @@ func (vmctx *VMContext) creditNFTToAccount(agentID isc.AgentID, nft *isc.NFT) {
 
 // debitFromAccount subtracts tokens from account if it is enough of it.
 // should be called only when posting request
-func (vmctx *VMContext) debitFromAccount(agentID isc.AgentID, transfer *isc.Assets) {
+func (vmctx *vmContext) debitFromAccount(agentID isc.AgentID, transfer *isc.Assets) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.DebitFromAccount(s, agentID, transfer)
 	})
@@ -43,26 +43,26 @@ func (vmctx *VMContext) debitFromAccount(agentID isc.AgentID, transfer *isc.Asse
 
 // debitNFTFromAccount removes a NFT from account.
 // should be called only when posting request
-func (vmctx *VMContext) debitNFTFromAccount(agentID isc.AgentID, nftID iotago.NFTID) {
+func (vmctx *vmContext) debitNFTFromAccount(agentID isc.AgentID, nftID iotago.NFTID) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.DebitNFTFromAccount(s, agentID, nftID)
 	})
 }
 
-func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, assets *isc.Assets) {
+func (vmctx *vmContext) mustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, assets *isc.Assets) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.MustMoveBetweenAccounts(s, fromAgentID, toAgentID, assets)
 	})
 }
 
-func (vmctx *VMContext) findContractByHname(contractHname isc.Hname) (ret *root.ContractRecord) {
+func (vmctx *vmContext) findContractByHname(contractHname isc.Hname) (ret *root.ContractRecord) {
 	vmctx.callCore(root.Contract, func(s kv.KVStore) {
 		ret = root.FindContract(s, contractHname)
 	})
 	return ret
 }
 
-func (vmctx *VMContext) getChainInfo() *isc.ChainInfo {
+func (vmctx *vmContext) getChainInfo() *isc.ChainInfo {
 	var ret *isc.ChainInfo
 	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
 		ret = governance.MustGetChainInfo(s, vmctx.ChainID())
@@ -70,7 +70,7 @@ func (vmctx *VMContext) getChainInfo() *isc.ChainInfo {
 	return ret
 }
 
-func (vmctx *VMContext) GetBaseTokensBalance(agentID isc.AgentID) uint64 {
+func (vmctx *vmContext) GetBaseTokensBalance(agentID isc.AgentID) uint64 {
 	var ret uint64
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.GetBaseTokensBalance(s, agentID)
@@ -78,7 +78,7 @@ func (vmctx *VMContext) GetBaseTokensBalance(agentID isc.AgentID) uint64 {
 	return ret
 }
 
-func (vmctx *VMContext) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.Assets) bool {
+func (vmctx *vmContext) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.Assets) bool {
 	var ret bool
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.HasEnoughForAllowance(s, agentID, allowance)
@@ -86,7 +86,7 @@ func (vmctx *VMContext) HasEnoughForAllowance(agentID isc.AgentID, allowance *is
 	return ret
 }
 
-func (vmctx *VMContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID) *big.Int {
+func (vmctx *vmContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID) *big.Int {
 	var ret *big.Int
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.GetNativeTokenBalance(s, agentID, nativeTokenID)
@@ -94,7 +94,7 @@ func (vmctx *VMContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID
 	return ret
 }
 
-func (vmctx *VMContext) GetNativeTokenBalanceTotal(nativeTokenID iotago.NativeTokenID) *big.Int {
+func (vmctx *vmContext) GetNativeTokenBalanceTotal(nativeTokenID iotago.NativeTokenID) *big.Int {
 	var ret *big.Int
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.GetNativeTokenBalanceTotal(s, nativeTokenID)
@@ -102,7 +102,7 @@ func (vmctx *VMContext) GetNativeTokenBalanceTotal(nativeTokenID iotago.NativeTo
 	return ret
 }
 
-func (vmctx *VMContext) GetNativeTokens(agentID isc.AgentID) iotago.NativeTokens {
+func (vmctx *vmContext) GetNativeTokens(agentID isc.AgentID) iotago.NativeTokens {
 	var ret iotago.NativeTokens
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.GetNativeTokens(s, agentID)
@@ -110,21 +110,21 @@ func (vmctx *VMContext) GetNativeTokens(agentID isc.AgentID) iotago.NativeTokens
 	return ret
 }
 
-func (vmctx *VMContext) GetAccountNFTs(agentID isc.AgentID) (ret []iotago.NFTID) {
+func (vmctx *vmContext) GetAccountNFTs(agentID isc.AgentID) (ret []iotago.NFTID) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.GetAccountNFTs(s, agentID)
 	})
 	return ret
 }
 
-func (vmctx *VMContext) GetNFTData(nftID iotago.NFTID) (ret *isc.NFT) {
+func (vmctx *vmContext) GetNFTData(nftID iotago.NFTID) (ret *isc.NFT) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		ret = accounts.MustGetNFTData(s, nftID)
 	})
 	return ret
 }
 
-func (vmctx *VMContext) GetSenderTokenBalanceForFees() uint64 {
+func (vmctx *vmContext) GetSenderTokenBalanceForFees() uint64 {
 	sender := vmctx.reqCtx.req.SenderAccount()
 	if sender == nil {
 		return 0
@@ -132,15 +132,15 @@ func (vmctx *VMContext) GetSenderTokenBalanceForFees() uint64 {
 	return vmctx.GetBaseTokensBalance(sender)
 }
 
-func (vmctx *VMContext) requestLookupKey() blocklog.RequestLookupKey {
+func (vmctx *vmContext) requestLookupKey() blocklog.RequestLookupKey {
 	return blocklog.NewRequestLookupKey(vmctx.taskResult.StateDraft.BlockIndex(), vmctx.reqCtx.requestIndex)
 }
 
-func (vmctx *VMContext) eventLookupKey() blocklog.EventLookupKey {
+func (vmctx *vmContext) eventLookupKey() blocklog.EventLookupKey {
 	return blocklog.NewEventLookupKey(vmctx.taskResult.StateDraft.BlockIndex(), vmctx.reqCtx.requestIndex, vmctx.reqCtx.requestEventIndex)
 }
 
-func (vmctx *VMContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.RequestReceipt {
+func (vmctx *vmContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.RequestReceipt {
 	receipt := &blocklog.RequestReceipt{
 		Request:       vmctx.reqCtx.req,
 		GasBudget:     vmctx.reqCtx.gas.budgetAdjusted,
@@ -177,7 +177,7 @@ func (vmctx *VMContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.R
 	return receipt
 }
 
-func (vmctx *VMContext) storeUnprocessable(lastInternalAssetUTXOIndex uint16) {
+func (vmctx *vmContext) storeUnprocessable(lastInternalAssetUTXOIndex uint16) {
 	if len(vmctx.unprocessable) == 0 {
 		return
 	}
@@ -203,7 +203,7 @@ func (vmctx *VMContext) storeUnprocessable(lastInternalAssetUTXOIndex uint16) {
 	})
 }
 
-func (vmctx *VMContext) MustSaveEvent(hContract isc.Hname, topic string, payload []byte) {
+func (vmctx *vmContext) MustSaveEvent(hContract isc.Hname, topic string, payload []byte) {
 	if vmctx.reqCtx.requestEventIndex == math.MaxUint16 {
 		panic(vm.ErrTooManyEvents)
 	}
@@ -223,14 +223,14 @@ func (vmctx *VMContext) MustSaveEvent(hContract isc.Hname, topic string, payload
 }
 
 // updateOffLedgerRequestNonce updates stored nonce for off ledger requests
-func (vmctx *VMContext) updateOffLedgerRequestNonce() {
+func (vmctx *vmContext) updateOffLedgerRequestNonce() {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.IncrementNonce(s, vmctx.reqCtx.req.SenderAccount())
 	})
 }
 
 // adjustL2BaseTokensIfNeeded adjust L2 ledger for base tokens if the L1 changed because of storage deposit changes
-func (vmctx *VMContext) adjustL2BaseTokensIfNeeded(adjustment int64, account isc.AgentID) {
+func (vmctx *vmContext) adjustL2BaseTokensIfNeeded(adjustment int64, account isc.AgentID) {
 	if adjustment == 0 {
 		return
 	}

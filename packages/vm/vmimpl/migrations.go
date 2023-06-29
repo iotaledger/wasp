@@ -1,4 +1,4 @@
-package vmcontext
+package vmimpl
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-func (vmctx *VMContext) runMigrations(baseSchemaVersion uint32, allMigrations []migrations.Migration) {
+func (vmctx *vmContext) runMigrations(baseSchemaVersion uint32, allMigrations []migrations.Migration) {
 	latestSchemaVersion := baseSchemaVersion + uint32(len(allMigrations))
 
 	if vmctx.task.AnchorOutput.StateIndex == 0 {

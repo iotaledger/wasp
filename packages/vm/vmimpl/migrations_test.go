@@ -1,4 +1,4 @@
-package vmcontext
+package vmimpl
 
 import (
 	"testing"
@@ -23,7 +23,7 @@ type migrationsTestEnv struct {
 	t     *testing.T
 	db    kvstore.KVStore
 	cs    state.Store
-	vmctx *VMContext
+	vmctx *vmContext
 
 	counter    int
 	incCounter migrations.Migration
@@ -62,7 +62,7 @@ func newMigrationsTest(t *testing.T, stateIndex uint32) *migrationsTestEnv {
 	}
 	taskResult := task.CreateResult()
 	taskResult.StateDraft = stateDraft
-	vmctx := &VMContext{
+	vmctx := &vmContext{
 		task:       task,
 		taskResult: taskResult,
 	}

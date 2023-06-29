@@ -1,4 +1,4 @@
-package vmcontext
+package vmimpl
 
 import (
 	"errors"
@@ -27,11 +27,11 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
-// RunTheRequest processes each isc.Request in the batch
-func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm.RequestResult, error) {
+// runRequest processes a single isc.Request in the batch
+func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16) (*vm.RequestResult, error) {
 	if len(vmctx.callStack) != 0 {
 		panic("expected empty callstack")
 	}
@@ -111,7 +111,7 @@ func (vmctx *VMContext) payoutAgentID() isc.AgentID {
 }
 
 // creditAssetsToChain credits L1 accounts with attached assets and accrues all of them to the sender's account on-chain
-func (vmctx *VMContext) creditAssetsToChain() {
+func (vmctx *vmContext) creditAssetsToChain() {
 	req := vmctx.reqCtx.req
 	if req.IsOffLedger() {
 		// off ledger request does not bring any deposit
@@ -154,7 +154,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	}
 }
 
-func (vmctx *VMContext) catchRequestPanic(f func()) error {
+func (vmctx *vmContext) catchRequestPanic(f func()) error {
 	err := panicutil.CatchPanic(f)
 	if err == nil {
 		return nil
@@ -178,13 +178,13 @@ func (vmctx *VMContext) catchRequestPanic(f func()) error {
 
 // checkAllowance ensure there are enough funds to cover the specified allowance
 // panics if not enough funds
-func (vmctx *VMContext) checkAllowance() {
+func (vmctx *vmContext) checkAllowance() {
 	if !vmctx.HasEnoughForAllowance(vmctx.reqCtx.req.SenderAccount(), vmctx.reqCtx.req.Allowance()) {
 		panic(vm.ErrNotEnoughFundsForAllowance)
 	}
 }
 
-func (vmctx *VMContext) shouldChargeGasFee() bool {
+func (vmctx *vmContext) shouldChargeGasFee() bool {
 	if vmctx.reqCtx.req.SenderAccount() == nil {
 		return false
 	}
@@ -194,7 +194,7 @@ func (vmctx *VMContext) shouldChargeGasFee() bool {
 	return true
 }
 
-func (vmctx *VMContext) prepareGasBudget() {
+func (vmctx *vmContext) prepareGasBudget() {
 	if !vmctx.shouldChargeGasFee() {
 		return
 	}
@@ -203,7 +203,7 @@ func (vmctx *VMContext) prepareGasBudget() {
 }
 
 // callTheContract runs the contract. It catches and processes all panics except the one which cancel the whole block
-func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, callRet dict.Dict) {
+func (vmctx *vmContext) callTheContract() (receipt *blocklog.RequestReceipt, callRet dict.Dict) {
 	txsnapshot := vmctx.createTxBuilderSnapshot()
 	snapMutations := vmctx.currentStateUpdate.Clone()
 
@@ -245,7 +245,7 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	return receipt, callRet
 }
 
-func (vmctx *VMContext) checkVMPluginPanic(r interface{}) *isc.VMError {
+func (vmctx *vmContext) checkVMPluginPanic(r interface{}) *isc.VMError {
 	if r == nil {
 		return nil
 	}
@@ -271,7 +271,7 @@ func (vmctx *VMContext) checkVMPluginPanic(r interface{}) *isc.VMError {
 }
 
 // callFromRequest is the call itself. Assumes sc exists
-func (vmctx *VMContext) callFromRequest() dict.Dict {
+func (vmctx *vmContext) callFromRequest() dict.Dict {
 	req := vmctx.reqCtx.req
 	vmctx.Debugf("callFromRequest: %s", req.ID().String())
 
@@ -291,7 +291,7 @@ func (vmctx *VMContext) callFromRequest() dict.Dict {
 	)
 }
 
-func (vmctx *VMContext) getGasBudget() uint64 {
+func (vmctx *vmContext) getGasBudget() uint64 {
 	gasBudget, isEVM := vmctx.reqCtx.req.GasBudget()
 	if !isEVM || gasBudget == 0 {
 		return gasBudget
@@ -308,7 +308,7 @@ func (vmctx *VMContext) getGasBudget() uint64 {
 // Affordable gas budget is calculated from gas budget provided in the request by the user and taking into account
 // how many tokens the sender has in its account and how many are allowed for the target.
 // Safe arithmetics is used
-func (vmctx *VMContext) calculateAffordableGasBudget() (budget, maxTokensToSpendForGasFee uint64) {
+func (vmctx *vmContext) calculateAffordableGasBudget() (budget, maxTokensToSpendForGasFee uint64) {
 	gasBudget := vmctx.getGasBudget()
 
 	if vmctx.task.EstimateGasMode && gasBudget == 0 {
@@ -336,7 +336,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() (budget, maxTokensToSpend
 
 // calcGuaranteedFeeTokens return the maximum tokens (base tokens or native) can be guaranteed for the fee,
 // taking into account allowance (which must be 'reserved')
-func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
+func (vmctx *vmContext) calcGuaranteedFeeTokens() uint64 {
 	tokensGuaranteed := vmctx.GetBaseTokensBalance(vmctx.reqCtx.req.SenderAccount())
 	// safely subtract the allowed from the sender to the target
 	if allowed := vmctx.reqCtx.req.Allowance(); allowed != nil {
@@ -351,7 +351,7 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 
 // chargeGasFee takes burned tokens from the sender's account
 // It should always be enough because gas budget is set affordable
-func (vmctx *VMContext) chargeGasFee() {
+func (vmctx *vmContext) chargeGasFee() {
 	defer func() {
 		// add current request gas burn to the total of the block
 		vmctx.blockGas.burned += vmctx.reqCtx.gas.burned
@@ -418,7 +418,7 @@ func (vmctx *VMContext) chargeGasFee() {
 	}
 }
 
-func (vmctx *VMContext) GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {
+func (vmctx *vmContext) GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {
 	ret = vmctx.findContractByHname(contractHname)
 	if ret == nil {
 		vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
@@ -427,18 +427,18 @@ func (vmctx *VMContext) GetContractRecord(contractHname isc.Hname) (ret *root.Co
 	return ret
 }
 
-func (vmctx *VMContext) getOrCreateContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {
+func (vmctx *vmContext) getOrCreateContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {
 	return vmctx.GetContractRecord(contractHname)
 }
 
 // loadChainConfig only makes sense if chain is already deployed
-func (vmctx *VMContext) loadChainConfig() {
+func (vmctx *vmContext) loadChainConfig() {
 	vmctx.chainInfo = vmctx.getChainInfo()
 	vmctx.chainOwnerID = vmctx.chainInfo.ChainOwnerID
 }
 
 // mustCheckTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
-func (vmctx *VMContext) mustCheckTransactionSize() {
+func (vmctx *vmContext) mustCheckTransactionSize() {
 	essence, _ := vmctx.BuildTransactionEssence(state.L1CommitmentNil, false)
 	tx := transaction.MakeAnchorTransaction(essence, &iotago.Ed25519Signature{})
 	if tx.Size() > parameters.L1().MaxPayloadSize {

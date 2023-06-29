@@ -1,4 +1,4 @@
-package vmcontext
+package vmimpl
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -11,7 +11,7 @@ import (
 
 const MaxPostedOutputsInOneRequest = 4
 
-func (vmctx *VMContext) getNFTData(nftID iotago.NFTID) *isc.NFT {
+func (vmctx *vmContext) getNFTData(nftID iotago.NFTID) *isc.NFT {
 	var nft *isc.NFT
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		nft = accounts.MustGetNFTData(s, nftID)
@@ -20,7 +20,7 @@ func (vmctx *VMContext) getNFTData(nftID iotago.NFTID) *isc.NFT {
 }
 
 // Send implements sandbox function of sending cross-chain request
-func (vmctx *VMContext) Send(par isc.RequestParameters) {
+func (vmctx *vmContext) Send(par isc.RequestParameters) {
 	if len(par.Assets.NFTs) > 1 {
 		panic(vm.ErrSendMultipleNFTs)
 	}
@@ -46,7 +46,7 @@ func (vmctx *VMContext) Send(par isc.RequestParameters) {
 	vmctx.sendOutput(out)
 }
 
-func (vmctx *VMContext) sendOutput(o iotago.Output) {
+func (vmctx *vmContext) sendOutput(o iotago.Output) {
 	if vmctx.reqCtx.numPostedOutputs >= MaxPostedOutputsInOneRequest {
 		panic(vm.ErrExceededPostedOutputLimit)
 	}

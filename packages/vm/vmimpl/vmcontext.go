@@ -1,4 +1,4 @@
-package vmcontext
+package vmimpl
 
 import (
 	"errors"
@@ -25,14 +25,14 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
+	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
 
-// VMContext represents state of the chain during one run of the VM while processing
-// a batch of requests. VMContext object mutates with each request in the batch.
-// The VMContext is created from immutable vm.VMTask object and UTXO state of the
+// vmContext represents state of the chain during one run of the VM while processing
+// a batch of requests. vmContext object mutates with each request in the batch.
+// The vmContext is created from immutable vm.VMTask object and UTXO state of the
 // chain address contained in the statetxbuilder.Builder
-type VMContext struct {
+type vmContext struct {
 	task       *vm.VMTask
 	taskResult *vm.VMTaskResult
 
@@ -87,7 +87,7 @@ type requestGas struct {
 	burnLog *gas.BurnLog
 }
 
-var _ execution.WaspContext = &VMContext{}
+var _ execution.WaspContext = &vmContext{}
 
 type callContext struct {
 	caller             isc.AgentID // calling agent
@@ -96,8 +96,8 @@ type callContext struct {
 	allowanceAvailable *isc.Assets // MUTABLE: allowance budget left after TransferAllowedFunds
 }
 
-// CreateVMContext creates a context for the whole batch run
-func CreateVMContext(task *vm.VMTask, taskResult *vm.VMTaskResult) *VMContext {
+// createVMContext creates a context for the whole batch run
+func createVMContext(task *vm.VMTask, taskResult *vm.VMTaskResult) *vmContext {
 	// assert consistency. It is a bit redundant double check
 	if len(task.Requests) == 0 {
 		// should never happen
@@ -115,7 +115,7 @@ func CreateVMContext(task *vm.VMTask, taskResult *vm.VMTaskResult) *VMContext {
 		panic(err)
 	}
 
-	vmctx := &VMContext{
+	vmctx := &vmContext{
 		task:          task,
 		taskResult:    taskResult,
 		blockContext:  make(map[isc.Hname]interface{}),
@@ -162,7 +162,7 @@ func CreateVMContext(task *vm.VMTask, taskResult *vm.VMTaskResult) *VMContext {
 	return vmctx
 }
 
-func (vmctx *VMContext) withStateUpdate(f func()) {
+func (vmctx *vmContext) withStateUpdate(f func()) {
 	if vmctx.currentStateUpdate != nil {
 		panic("expected currentStateUpdate == nil")
 	}
@@ -173,9 +173,9 @@ func (vmctx *VMContext) withStateUpdate(f func()) {
 	vmctx.currentStateUpdate.ApplyTo(vmctx.taskResult.StateDraft)
 }
 
-// CloseVMContext does the closing actions on the block
+// extractBlock does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
-func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, *state.L1Commitment, time.Time, iotago.Address) {
+func (vmctx *vmContext) extractBlock(numRequests, numSuccess, numOffLedger uint16) (uint32, *state.L1Commitment, time.Time, iotago.Address) {
 	vmctx.GasBurnEnable(false)
 	var rotationAddr iotago.Address
 	vmctx.withStateUpdate(func() {
@@ -194,7 +194,7 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	return blockIndex, l1Commitment, timestamp, rotationAddr
 }
 
-func (vmctx *VMContext) checkRotationAddress() (ret iotago.Address) {
+func (vmctx *vmContext) checkRotationAddress() (ret iotago.Address) {
 	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
 		ret = governance.GetRotationAddress(s)
 	})
@@ -202,7 +202,7 @@ func (vmctx *VMContext) checkRotationAddress() (ret iotago.Address) {
 }
 
 // saveBlockInfo is in the blocklog partition context. Returns rotation address if this block is a rotation block
-func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint16) iotago.Address {
+func (vmctx *vmContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint16) iotago.Address {
 	if rotationAddress := vmctx.checkRotationAddress(); rotationAddress != nil {
 		// block was marked fake by the governance contract because it is a committee rotation.
 		// There was only on request in the block
@@ -229,8 +229,8 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 	return nil
 }
 
-// OpenBlockContexts calls the block context open function for all subscribed core contracts
-func (vmctx *VMContext) OpenBlockContexts() {
+// openBlockContexts calls the block context open function for all subscribed core contracts
+func (vmctx *vmContext) openBlockContexts() {
 	if vmctx.blockGas.burnEnabled {
 		panic("expected gasBurnEnabled == false")
 	}
@@ -249,7 +249,7 @@ func (vmctx *VMContext) OpenBlockContexts() {
 }
 
 // closeBlockContexts closes block contexts in deterministic FIFO sequence
-func (vmctx *VMContext) closeBlockContexts() {
+func (vmctx *vmContext) closeBlockContexts() {
 	if vmctx.blockGas.burnEnabled {
 		panic("expected gasBurnEnabled == false")
 	}
@@ -270,7 +270,7 @@ func (vmctx *VMContext) closeBlockContexts() {
 // 3. NFTs
 // 4. produced outputs
 // 5. unprocessable requests
-func (vmctx *VMContext) saveInternalUTXOs() {
+func (vmctx *vmContext) saveInternalUTXOs() {
 	// create a mock AO, with a nil statecommitment, just to calculate changes in the minimum SD
 	mockAO := vmctx.txbuilder.CreateAnchorOutput(vmctx.StateMetadata(state.L1CommitmentNil))
 	newMinSD := parameters.L1().Protocol.RentStructure.MinRent(mockAO)
@@ -337,7 +337,7 @@ func (vmctx *VMContext) saveInternalUTXOs() {
 	vmctx.storeUnprocessable(outputIndex)
 }
 
-func (vmctx *VMContext) RemoveUnprocessable(results []*vm.RequestResult) {
+func (vmctx *vmContext) removeUnprocessable(results []*vm.RequestResult) {
 	vmctx.withStateUpdate(func() {
 		vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
 			for _, r := range results {
@@ -347,7 +347,7 @@ func (vmctx *VMContext) RemoveUnprocessable(results []*vm.RequestResult) {
 	})
 }
 
-func (vmctx *VMContext) AssertConsistentGasTotals() {
+func (vmctx *vmContext) assertConsistentGasTotals() {
 	var sumGasBurned, sumGasFeeCharged uint64
 
 	for _, r := range vmctx.taskResult.RequestResults {
@@ -362,13 +362,13 @@ func (vmctx *VMContext) AssertConsistentGasTotals() {
 	}
 }
 
-func (vmctx *VMContext) LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
+func (vmctx *vmContext) LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
 	vmctx.callCore(blob.Contract, func(s kv.KVStore) {
 		vmtype, binary, err = blob.LocateProgram(s, programHash)
 	})
 	return vmtype, binary, err
 }
 
-func (vmctx *VMContext) Processors() *processors.Cache {
+func (vmctx *vmContext) Processors() *processors.Cache {
 	return vmctx.task.Processors
 }

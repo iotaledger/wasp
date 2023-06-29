@@ -1,4 +1,4 @@
-package vmcontext
+package vmimpl
 
 import (
 	"errors"
@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
 const (
@@ -21,7 +21,7 @@ const (
 )
 
 // earlyCheckReasonToSkip checks if request must be ignored without even modifying the state
-func (vmctx *VMContext) earlyCheckReasonToSkip() error {
+func (vmctx *vmContext) earlyCheckReasonToSkip() error {
 	if vmctx.task.AnchorOutput.StateIndex == 0 {
 		if len(vmctx.task.AnchorOutput.NativeTokens) > 0 {
 			return errors.New("can't init chain with native assets on the origin alias output")
@@ -44,7 +44,7 @@ func (vmctx *VMContext) earlyCheckReasonToSkip() error {
 }
 
 // checkReasonRequestProcessed checks if request ID is already in the blocklog
-func (vmctx *VMContext) checkReasonRequestProcessed() error {
+func (vmctx *vmContext) checkReasonRequestProcessed() error {
 	reqid := vmctx.reqCtx.req.ID()
 	var isProcessed bool
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
@@ -57,7 +57,7 @@ func (vmctx *VMContext) checkReasonRequestProcessed() error {
 }
 
 // checkReasonToSkipOffLedger checks reasons to skip off ledger request
-func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
+func (vmctx *vmContext) checkReasonToSkipOffLedger() error {
 	// first checks if it is already in backlog
 	if err := vmctx.checkReasonRequestProcessed(); err != nil {
 		return err
@@ -77,7 +77,7 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 }
 
 // checkReasonToSkipOnLedger check reasons to skip UTXO request
-func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
+func (vmctx *vmContext) checkReasonToSkipOnLedger() error {
 	if err := vmctx.checkInternalOutput(); err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
 	return nil
 }
 
-func (vmctx *VMContext) checkInternalOutput() error {
+func (vmctx *vmContext) checkInternalOutput() error {
 	// internal outputs are used for internal accounting of assets inside the chain. They are not interpreted as requests
 	if vmctx.reqCtx.req.(isc.OnLedgerRequest).IsInternalUTXO(vmctx.ChainID()) {
 		return errors.New("it is an internal output")
@@ -109,7 +109,7 @@ func (vmctx *VMContext) checkInternalOutput() error {
 
 // checkReasonTimeLock checking timelock conditions based on time assumptions.
 // VM must ensure that the UTXO can be unlocked
-func (vmctx *VMContext) checkReasonTimeLock() error {
+func (vmctx *vmContext) checkReasonTimeLock() error {
 	timeLock := vmctx.reqCtx.req.(isc.OnLedgerRequest).Features().TimeLock()
 	if !timeLock.IsZero() {
 		if vmctx.task.FinalStateTimestamp().Before(timeLock) {
@@ -121,7 +121,7 @@ func (vmctx *VMContext) checkReasonTimeLock() error {
 
 // checkReasonExpiry checking expiry conditions based on time assumptions.
 // VM must ensure that the UTXO can be unlocked
-func (vmctx *VMContext) checkReasonExpiry() error {
+func (vmctx *vmContext) checkReasonExpiry() error {
 	expiry, _ := vmctx.reqCtx.req.(isc.OnLedgerRequest).Features().Expiry()
 
 	if expiry.IsZero() {
@@ -152,7 +152,7 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 }
 
 // checkReasonReturnAmount skipping anything with return amounts in this version. There's no risk to lose funds
-func (vmctx *VMContext) checkReasonReturnAmount() error {
+func (vmctx *vmContext) checkReasonReturnAmount() error {
 	if _, ok := vmctx.reqCtx.req.(isc.OnLedgerRequest).Features().ReturnAmount(); ok {
 		return errors.New("return amount feature not supported in this version")
 	}
