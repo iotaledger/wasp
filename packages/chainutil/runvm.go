@@ -37,11 +37,11 @@ func runISCTask(
 		EVMTracer:            evmTracer,
 		Log:                  ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 	}
-	err := vmRunner.Run(task)
+	res, err := vmRunner.Run(task)
 	if err != nil {
 		return nil, err
 	}
-	return task.Results, nil
+	return res.RequestResults, nil
 }
 
 func runISCRequest(

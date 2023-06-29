@@ -64,7 +64,7 @@ type StateMgr interface {
 }
 
 type VM interface {
-	ConsensusRunTask(ctx context.Context, task *vm.VMTask) <-chan *vm.VMTask
+	ConsensusRunTask(ctx context.Context, task *vm.VMTask) <-chan *vm.VMTaskResult
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -110,7 +110,7 @@ type ConsGr struct {
 	stateMgrSaveBlockRespCh     <-chan state.Block
 	stateMgrSaveBlockAsked      bool
 	vm                          VM
-	vmRespCh                    <-chan *vm.VMTask
+	vmRespCh                    <-chan *vm.VMTaskResult
 	vmAsked                     bool
 	netRecvPipe                 pipe.Pipe[*peering.PeerMessageIn]
 	netPeeringID                peering.PeeringID

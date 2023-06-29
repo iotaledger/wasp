@@ -224,8 +224,9 @@ func testConsBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedStateMgrDecidedState)
 		require.NotNil(t, out.NeedVMResult)
 		out.NeedVMResult.Log = out.NeedVMResult.Log.Desugar().WithOptions(zap.IncreaseLevel(logger.LevelError)).Sugar() // Decrease VM logging.
-		require.NoError(t, runvm.NewVMRunner().Run(out.NeedVMResult))
-		tc.WithInput(nid, cons.NewInputVMResult(out.NeedVMResult))
+		vmResult, err := runvm.NewVMRunner().Run(out.NeedVMResult)
+		require.NoError(t, err)
+		tc.WithInput(nid, cons.NewInputVMResult(vmResult))
 	}
 	tc.RunAll()
 	//
@@ -688,8 +689,9 @@ func (tci *testConsInst) tryHandledNeedStateMgrDecidedState(nodeID gpa.NodeID, o
 func (tci *testConsInst) tryHandledNeedVMResult(nodeID gpa.NodeID, out *cons.Output) {
 	if out.NeedVMResult != nil && !tci.handledNeedVMResult[nodeID] {
 		out.NeedVMResult.Log = out.NeedVMResult.Log.Desugar().WithOptions(zap.IncreaseLevel(logger.LevelError)).Sugar() // Decrease VM logging.
-		require.NoError(tci.t, runvm.NewVMRunner().Run(out.NeedVMResult))
-		tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputVMResult(out.NeedVMResult)}
+		vmResult, err := runvm.NewVMRunner().Run(out.NeedVMResult)
+		require.NoError(tci.t, err)
+		tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputVMResult(vmResult)}
 		tci.handledNeedVMResult[nodeID] = true
 	}
 }

@@ -73,6 +73,8 @@ func (vmctx *VMContext) CallOnBehalfOf(caller isc.AgentID, target, entryPoint is
 }
 
 func (vmctx *VMContext) SetEVMFailed(tx *types.Transaction, receipt *types.Receipt) {
-	vmctx.evmFailedTx = tx
-	vmctx.evmFailedReceipt = receipt
+	vmctx.reqCtx.evmFailed = &evmFailed{
+		tx:      tx,
+		receipt: receipt,
+	}
 }

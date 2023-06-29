@@ -60,11 +60,11 @@ func (vmctx *VMContext) Timestamp() time.Time {
 }
 
 func (vmctx *VMContext) Entropy() hashing.HashValue {
-	return vmctx.entropy
+	return vmctx.reqCtx.entropy
 }
 
 func (vmctx *VMContext) Request() isc.Calldata {
-	return vmctx.req
+	return vmctx.reqCtx.req
 }
 
 func (vmctx *VMContext) AccountID() isc.AgentID {

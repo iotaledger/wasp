@@ -11,10 +11,10 @@ import (
 )
 
 type inputVMResult struct {
-	task *vm.VMTask // With results set.
+	task *vm.VMTaskResult
 }
 
-func NewInputVMResult(task *vm.VMTask) gpa.Input {
+func NewInputVMResult(task *vm.VMTaskResult) gpa.Input {
 	return &inputVMResult{task: task}
 }
 
