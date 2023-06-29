@@ -40,11 +40,12 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16) (*vm.Re
 		req:          req,
 		requestIndex: requestIndex,
 		entropy:      hashing.HashData(append(codec.EncodeUint16(requestIndex), vmctx.task.Entropy[:]...)),
-		gas: requestGas{
-			burnLog: gas.NewGasBurnLog(),
-		},
 	}
 	defer func() { vmctx.reqCtx = nil }()
+
+	if vmctx.task.EnableGasBurnLogging {
+		vmctx.reqCtx.gas.burnLog = gas.NewGasBurnLog()
+	}
 
 	vmctx.GasBurnEnable(false)
 
