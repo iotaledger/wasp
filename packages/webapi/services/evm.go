@@ -31,6 +31,7 @@ type EVMService struct {
 	chainService    interfaces.ChainService
 	networkProvider peering.NetworkProvider
 	publisher       *publisher.Publisher
+	isArchiveNode   bool
 	metrics         *metrics.ChainMetricsProvider
 	log             *logger.Logger
 }
@@ -39,6 +40,7 @@ func NewEVMService(
 	chainService interfaces.ChainService,
 	networkProvider peering.NetworkProvider,
 	pub *publisher.Publisher,
+	isArchiveNode bool,
 	metrics *metrics.ChainMetricsProvider,
 	log *logger.Logger,
 ) interfaces.EVMService {
@@ -48,6 +50,7 @@ func NewEVMService(
 		evmBackendMutex: sync.Mutex{},
 		networkProvider: networkProvider,
 		publisher:       pub,
+		isArchiveNode:   isArchiveNode,
 		metrics:         metrics,
 		log:             log,
 	}
@@ -70,7 +73,7 @@ func (e *EVMService) getEVMBackend(chainID isc.ChainID) (*chainServer, error) {
 	backend := jsonrpc.NewWaspEVMBackend(chain, nodePubKey, parameters.L1().BaseToken)
 
 	srv, err := jsonrpc.NewServer(
-		jsonrpc.NewEVMChain(backend, e.publisher, e.log.Named("EVMChain")),
+		jsonrpc.NewEVMChain(backend, e.publisher, e.isArchiveNode, e.log.Named("EVMChain")),
 		jsonrpc.NewAccountManager(nil),
 		e.metrics.GetChainMetrics(chainID).WebAPI,
 	)

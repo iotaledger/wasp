@@ -54,16 +54,13 @@ type NewBlockEvent struct {
 	logs  []*types.Log
 }
 
-func NewEVMChain(backend ChainBackend, pub *publisher.Publisher, log *logger.Logger) *EVMChain {
+func NewEVMChain(backend ChainBackend, pub *publisher.Publisher, isArchiveNode bool, log *logger.Logger) *EVMChain {
 	e := &EVMChain{
 		backend:  backend,
 		newBlock: event.New1[*NewBlockEvent](),
 		log:      log,
 		cache:    jsonrpccache.New(blockchainDB),
 	}
-
-	// TODO disable cache for non-archive nodes based on the config parameter (only enable when -1)
-	cacheEnabled := true
 
 	blocksFromPublisher := pipe.NewInfinitePipe[*publisher.BlockWithTrieRoot]()
 
@@ -72,7 +69,7 @@ func NewEVMChain(backend ChainBackend, pub *publisher.Publisher, log *logger.Log
 			return
 		}
 		blocksFromPublisher.In() <- ev.Payload
-		if cacheEnabled {
+		if isArchiveNode {
 			e.cache.CacheBlock(ev.Payload.TrieRoot, e.backend.ISCStateByTrieRoot)
 		}
 	})
