@@ -35,7 +35,6 @@ const (
 	// parameters
 	ParamBlockIndex                 = "n"
 	ParamBlockInfo                  = "i"
-	ParamGoverningAddress           = "g"
 	ParamContractHname              = "h"
 	ParamFromBlock                  = "f"
 	ParamToBlock                    = "t"
