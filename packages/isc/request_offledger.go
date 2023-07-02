@@ -189,7 +189,7 @@ func (req *OffLedgerRequestData) SenderAccount() AgentID {
 func (req *offLedgerRequestData) Sign(key cryptolib.VariantKeyPair) OffLedgerRequest {
 	req.signature = offLedgerSignature{
 		publicKey: key.GetPublicKey(),
-		signature: key.Sign(req.messageToSign()),
+		signature: key.SignBytes(req.messageToSign()),
 	}
 	return req
 }

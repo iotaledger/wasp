@@ -139,7 +139,7 @@ func NewChainOriginTransaction(
 		panic("mismatched lengths of outputs and inputs slices")
 	}
 
-	walletAddr := keyPair.GetPublicKey().AsEd25519Address()
+	walletAddr := keyPair.Address()
 
 	if initParams == nil {
 		initParams = dict.New()

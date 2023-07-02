@@ -18,22 +18,7 @@ func initInitCmd() *cobra.Command {
 		Short: "Initialize a new wallet",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			scheme := wallet.GetWalletScheme()
-			log.Printf(scheme)
-			if scheme != wallet.SchemeKeyChain {
-				log.Fatal("Nothing to do here")
-				return
-			}
-
-			keyChain := wallet.NewKeyChain()
-			err := keyChain.InitializeKeyPair()
-			log.Check(err)
-
-			model := &InitModel{
-				Scheme: scheme,
-			}
-
-			log.PrintCLIOutput(model)
+			wallet.InitWallet()
 		},
 	}
 }

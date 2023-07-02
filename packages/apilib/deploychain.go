@@ -40,7 +40,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 	if par.Textout != nil {
 		textout = par.Textout
 	}
-	originatorAddr := par.OriginatorKeyPair.GetPublicKey().AsEd25519Address()
+	originatorAddr := par.OriginatorKeyPair.Address()
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "Creating new chain\n* Owner address:    %s\n* State controller: %s\n* committee size = %d\n* quorum = %d\n",
@@ -84,7 +84,7 @@ func CreateChainOrigin(
 	governanceController iotago.Address,
 	initParams dict.Dict,
 ) (isc.ChainID, error) {
-	originatorAddr := originator.GetPublicKey().AsEd25519Address()
+	originatorAddr := originator.Address()
 	// ----------- request owner address' outputs from the ledger
 	utxoMap, err := layer1Client.OutputMap(originatorAddr)
 	if err != nil {

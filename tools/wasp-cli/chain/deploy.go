@@ -84,7 +84,7 @@ func initDeployCmd() *cobra.Command {
 				CommitteeAPIHosts:    config.NodeAPIURLs([]string{node}),
 				N:                    uint16(len(node)),
 				T:                    uint16(quorum),
-				OriginatorKeyPair:    wallet.Load().KeyPair,
+				OriginatorKeyPair:    wallet.Load(),
 				Textout:              os.Stdout,
 				GovernanceController: govController,
 				InitParams: dict.Dict{

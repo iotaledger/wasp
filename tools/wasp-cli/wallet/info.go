@@ -20,12 +20,12 @@ func initAddressCmd() *cobra.Command {
 			myWallet := wallet.Load()
 			address := myWallet.Address()
 
-			model := &AddressModel{Address: address.Bech32(parameters.L1().Protocol.Bech32HRP)}
+			model := &AddressModel{Address: address.Bech32(parameters.L1().Protocol.Bech32HRP), Index: int(myWallet.AddressIndex())}
 
 			if log.VerboseFlag {
 				verboseOutput := make(map[string]string)
 				//verboseOutput["Private key"] = myWallet.KeyPair.GetPrivateKey().String()
-				verboseOutput["Public key"] = myWallet.KeyPair.GetPublicKey().String()
+				verboseOutput["Public key"] = myWallet.GetPublicKey().String()
 				model.VerboseOutput = verboseOutput
 			}
 			log.PrintCLIOutput(model)
@@ -68,7 +68,7 @@ func initBalanceCmd() *cobra.Command {
 
 			model := &BalanceModel{
 				Address:      address.Bech32(parameters.L1().Protocol.Bech32HRP),
-				AddressIndex: myWallet.AddressIndex,
+				AddressIndex: myWallet.AddressIndex(),
 				NativeTokens: balance.NativeTokens,
 				BaseTokens:   balance.BaseTokens,
 				OutputMap:    outs,
@@ -90,7 +90,7 @@ func initBalanceCmd() *cobra.Command {
 var _ log.CLIOutput = &BalanceModel{}
 
 type BalanceModel struct {
-	AddressIndex uint64              `json:"AddressIndex"`
+	AddressIndex uint32              `json:"AddressIndex"`
 	Address      string              `json:"Address"`
 	BaseTokens   uint64              `json:"BaseTokens"`
 	NativeTokens iotago.NativeTokens `json:"NativeTokens"`

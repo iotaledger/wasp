@@ -52,8 +52,17 @@ func (k *KeyPair) GetPublicKey() *PublicKey {
 	return k.publicKey
 }
 
-func (k *KeyPair) Sign(data []byte) []byte {
+func (k *KeyPair) SignBytes(data []byte) []byte {
 	return k.GetPrivateKey().Sign(data)
+}
+
+func (k *KeyPair) Sign(addr iotago.Address, payload []byte) (iotago.Signature, error) {
+	// TODO: Validate this
+
+	signature := iotago.Ed25519Signature{}
+	copy(signature.Signature[:], k.privateKey.Sign(payload))
+	copy(signature.PublicKey[:], k.publicKey.AsBytes())
+	return &signature, nil
 }
 
 func (k *KeyPair) AddressKeysForEd25519Address(addr *iotago.Ed25519Address) iotago.AddressKeys {

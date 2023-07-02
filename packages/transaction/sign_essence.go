@@ -9,7 +9,7 @@ import (
 // This will ignore passed addressKeys and only use the passed AddressSigner.
 // This is important for HW-wallets where the private key is unknown.
 func alternateSignEssence(essence *iotago.TransactionEssence, inputsCommitment []byte, signer iotago.AddressSigner, addrKeys ...iotago.AddressKeys) ([]iotago.Signature, error) {
-	// Sign produces signatures signing the essence for every given AddressKeys.
+	// SignBytes produces signatures signing the essence for every given AddressKeys.
 	// The produced signatures are in the same order as the AddressKeys.
 	if inputsCommitment == nil || len(inputsCommitment) != iotago.InputsCommitmentLength {
 		return nil, iotago.ErrInvalidInputsCommitment

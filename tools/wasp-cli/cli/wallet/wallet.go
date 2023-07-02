@@ -1,67 +1,53 @@
 package wallet
 
 import (
-	"fmt"
-
 	"github.com/spf13/viper"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	wasp_wallet_sdk "github.com/iotaledger/wasp-wallet-sdk"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/providers"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/wallets"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
-var AddressIndex uint64
-
-type Wallet struct {
-	KeyPair      cryptolib.VariantKeyPair
-	AddressIndex uint64
-}
+var AddressIndex uint32
 
 const (
-	SchemeKeyChain = "keychain"
-	SchemeLedger   = "ledger"
+	SchemeInMemory   = "in_memory"
+	SchemeLedger     = "sdk_ledger"
+	SchemeStronghold = "sdk_stronghold"
 )
 
 func GetWalletScheme() string {
 	scheme := viper.GetString("wallet.scheme")
 
-	fmt.Println(scheme)
-
 	switch scheme {
-	case SchemeLedger, SchemeKeyChain:
+	case SchemeLedger, SchemeInMemory, SchemeStronghold:
 		return scheme
 	default:
-		return SchemeKeyChain
+		log.Fatalf("invalid wallet scheme configured")
 	}
+	return ""
 }
 
-func loadLedgerWallet() *Wallet {
-	NewHWKeyPair()
-
-	return &Wallet{}
-}
-
-func loadKeyChainWallet() *Wallet {
-	keyChain := NewKeyChain()
-
-	kp, err := keyChain.KeyPair(AddressIndex)
+func getIotaSDK() *wasp_wallet_sdk.IOTASDK {
+	sdk, err := wasp_wallet_sdk.NewIotaSDK("/home/luke/dev/iota-sdk/target/release/libiota_sdk_go.so")
 	log.Check(err)
-
-	return &Wallet{KeyPair: kp, AddressIndex: AddressIndex}
+	return sdk
 }
 
-func Load() *Wallet {
+func Load() wallets.Wallet {
 	walletScheme := GetWalletScheme()
 
-	log.Printf("Scheme: %v", walletScheme)
+	log.Printf("Scheme: %v\n", walletScheme)
 	switch walletScheme {
-	case SchemeKeyChain:
-		return loadKeyChainWallet()
+	case SchemeInMemory:
+		return providers.LoadInMemory(AddressIndex)
 	case SchemeLedger:
-		return loadLedgerWallet()
+		return providers.LoadLedgerWallet(getIotaSDK(), AddressIndex)
+	case SchemeStronghold:
+		return providers.LoadStrongholdWallet(getIotaSDK(), AddressIndex)
 	}
 
-	log.Fatal("invalid wallet scheme")
 	return nil
 	seedHex := viper.GetString("wallet.seed")
 
@@ -78,6 +64,15 @@ func Load() *Wallet {
 	return &Wallet{KeyPair: kp, AddressIndex: AddressIndex}
 }
 
-func (w *Wallet) Address() iotago.Address {
-	return w.KeyPair.Address()
+func InitWallet() {
+	walletScheme := GetWalletScheme()
+
+	switch walletScheme {
+	case SchemeInMemory:
+		providers.CreateNewInMemory()
+	case SchemeLedger:
+		log.Printf("Ledger wallet scheme selected, no initialization required")
+	case SchemeStronghold:
+		providers.CreateNewStrongholdWallet(getIotaSDK())
+	}
 }

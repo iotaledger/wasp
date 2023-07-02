@@ -96,7 +96,7 @@ func rotateTo(chain string, newStateControllerAddr iotago.Address) {
 		newStateControllerAddr,
 		chainOutputID,
 		chainOutput,
-		myWallet.KeyPair,
+		myWallet,
 	)
 	log.Check(err)
 
@@ -115,7 +115,7 @@ func rotateTo(chain string, newStateControllerAddr iotago.Address) {
 
 		json, err2 := tx.MarshalJSON()
 		log.Check(err2)
-		log.Printf("issuing rotation tx, signed for address: %s", myWallet.KeyPair.Address().Bech32(parameters.L1().Protocol.Bech32HRP))
+		log.Printf("issuing rotation tx, signed for address: %s", myWallet.Address().Bech32(parameters.L1().Protocol.Bech32HRP))
 		log.Printf("rotation tx: %s", string(json))
 	}
 
