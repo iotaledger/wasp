@@ -221,7 +221,6 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		GasFeeCharged:         vmctx.blockGas.feeCharged,
 	}
 
-	// TODO this "SaveControlAddressesIfNecessary" call is saving potentially outdated info.
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
 		blocklog.SaveNextBlockInfo(s, blockInfo)
 		blocklog.Prune(s, blockInfo.BlockIndex(), vmctx.chainInfo.BlockKeepAmount)

@@ -477,13 +477,13 @@ func (ch *Chain) GetRequestReceiptsForBlockRangeAsStrings(fromBlockIndex, toBloc
 	return ret
 }
 
-func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
+func (ch *Chain) GetControlAddresses() *isc.ControlAddresses {
 	aliasOutputID, err := ch.LatestAliasOutput(chain.ConfirmedState)
 	if err != nil {
 		return nil
 	}
 	aliasOutput := aliasOutputID.GetAliasOutput()
-	controlAddr := &blocklog.ControlAddresses{
+	controlAddr := &isc.ControlAddresses{
 		StateAddress:     aliasOutput.StateController(),
 		GoverningAddress: aliasOutput.GovernorAddress(),
 		SinceBlockIndex:  aliasOutput.StateIndex,

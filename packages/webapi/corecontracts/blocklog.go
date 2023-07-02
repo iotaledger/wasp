@@ -11,14 +11,14 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/common"
 )
 
-func GetControlAddresses(ch chain.Chain) (*blocklog.ControlAddresses, error) {
+func GetControlAddresses(ch chain.Chain) (*isc.ControlAddresses, error) {
 	aliasOutputID, err := ch.LatestAliasOutput(chain.ConfirmedState)
 	if err != nil {
 		return nil, err
 	}
 	aliasOutput := aliasOutputID.GetAliasOutput()
 
-	controlAddresses := &blocklog.ControlAddresses{
+	controlAddresses := &isc.ControlAddresses{
 		StateAddress:     aliasOutputID.GetStateAddress(),
 		GoverningAddress: aliasOutput.GovernorAddress(),
 		SinceBlockIndex:  aliasOutput.StateIndex,
