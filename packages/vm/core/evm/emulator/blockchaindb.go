@@ -372,13 +372,15 @@ func (bc *BlockchainDB) GetTransactionByBlockNumberAndIndex(blockNumber uint64, 
 	return tx
 }
 
-func (bc *BlockchainDB) GetTransactionByHash(txHash common.Hash) (*types.Transaction, uint32) {
+func (bc *BlockchainDB) GetTransactionByHash(txHash common.Hash) (tx *types.Transaction, blockHash common.Hash, blockNumber, index uint64, err error) {
 	blockNumber, ok := bc.GetBlockNumberByTxHash(txHash)
 	if !ok {
-		return nil, 0
+		return nil, common.Hash{}, 0, 0, err
 	}
-	i := bc.GetTxIndexInBlockByTxHash(txHash)
-	return bc.GetTransactionByBlockNumberAndIndex(blockNumber, i), i
+	txIndex := bc.GetTxIndexInBlockByTxHash(txHash)
+	block := bc.GetBlockByNumber(blockNumber)
+	tx = bc.GetTransactionByBlockNumberAndIndex(blockNumber, txIndex)
+	return tx, block.Hash(), blockNumber, uint64(txIndex), nil
 }
 
 func (bc *BlockchainDB) GetBlockHashByBlockNumber(blockNumber uint64) common.Hash {
