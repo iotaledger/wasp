@@ -17,10 +17,7 @@ import (
 )
 
 func strongholdStorePath() string {
-	homeDir, err := os.UserHomeDir()
-	log.Check(err)
-
-	return path.Join(homeDir, config.BaseDir, "client.stronghold")
+	return path.Join(config.BaseDir, "client.stronghold")
 }
 
 func strongholdStoreExists() bool {
