@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/scclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -237,7 +238,7 @@ func TestRebootN3Single(t *testing.T) {
 	client := env.createNewClient()
 	tm.Step("createNewClient")
 
-	env.DepositFunds(1_000_000, client.ChainClient.KeyPair) // For Off-ledger requests to pass.
+	env.DepositFunds(1_000_000, client.ChainClient.KeyPair.(*cryptolib.KeyPair)) // For Off-ledger requests to pass.
 	tm.Step("DepositFunds")
 
 	icc := newIncCounterClient(t, env, client)
@@ -264,7 +265,7 @@ func TestRebootN3TwoNodes(t *testing.T) {
 	client := env.createNewClient()
 	tm.Step("createNewClient")
 
-	env.DepositFunds(1_000_000, client.ChainClient.KeyPair) // For Off-ledger requests to pass.
+	env.DepositFunds(1_000_000, client.ChainClient.KeyPair.(*cryptolib.KeyPair)) // For Off-ledger requests to pass.
 	tm.Step("DepositFunds")
 
 	icc := newIncCounterClient(t, env, client)
