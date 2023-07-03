@@ -15,7 +15,7 @@ npm install --save @iota/iscmagic
 After installing `@iota/iscmagic` you can use the functions by importing them as you normally would.
 
 ```solidity
-import "@iota/iscmagic"
+import "@iota/iscmagic/ISC.sol"
 ...
 ...
 ```
