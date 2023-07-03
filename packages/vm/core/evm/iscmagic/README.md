@@ -12,7 +12,7 @@ Read more in the [Wiki](https://wiki.iota.org/shimmer/smart-contracts/guide/evm/
 
 ## Installing @iota/iscmagic contracts
 
-The @iscmagic contracts are installable via __NPM__ with 
+The @iota/iscmagic contracts are installable via __NPM__ with 
 
 ```bash
 npm install @iota/iscmagic
