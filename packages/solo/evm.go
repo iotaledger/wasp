@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
+	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
@@ -100,6 +101,9 @@ func (ch *Chain) EVM() *jsonrpc.EVMChain {
 	return jsonrpc.NewEVMChain(
 		newJSONRPCSoloBackend(ch, parameters.L1().BaseToken),
 		ch.Env.publisher,
+		true,
+		hivedb.EngineMapDB,
+		"",
 		ch.log,
 	)
 }
