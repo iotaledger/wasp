@@ -33,7 +33,6 @@ func configureStronghold(sdk *walletsdk.IOTASDK, unlockPassword string) (*wallet
 		SnapshotPath: strongholdStorePath(),
 		Password:     unlockPassword,
 	})
-
 	if err != nil {
 		return nil, err
 	}

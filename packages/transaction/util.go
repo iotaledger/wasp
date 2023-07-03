@@ -253,7 +253,7 @@ func CreateAndSignTx(inputs iotago.OutputIDs, inputsCommitment []byte, outputs i
 		return nil, err
 	}
 	// --
-	
+
 	sigs, err := SignEssence(essence, inputsCommitment, wallet)
 	if err != nil {
 		return nil, err
