@@ -336,7 +336,7 @@ func TestMempoolSnapshotInTheMiddle(t *testing.T) {
 	env.sendTimerTickToNodes(100 * time.Millisecond) // To check the response from snapshot manager about loaded old state snapshot; timer tick is not necessary: any input would be suitable
 	time.Sleep(10 * time.Millisecond)                // To allow snapshot manager to receive load new state snapshot request
 	env.sendTimerTickToNodes(100 * time.Millisecond) // To check the response from snapshot manager about loaded new state snapshot; timer tick is not necessary: any input would be suitable
-	require.True(env.t, env.ensureCompletedChainFetchStateDiff(responseCh, oldBlocks[branchIndex+1:], newBlocks, 1, 0*time.Millisecond))
+	require.True(env.t, env.ensureCompletedChainFetchStateDiff(responseCh, oldBlocks[branchIndex+1:], newBlocks, 10, 100*time.Millisecond))
 }
 
 // Single node setting, pruning leaves 10 historic blocks.
