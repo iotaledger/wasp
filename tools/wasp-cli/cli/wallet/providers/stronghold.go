@@ -11,6 +11,7 @@ import (
 	walletsdk "github.com/iotaledger/wasp-wallet-sdk"
 	"github.com/iotaledger/wasp-wallet-sdk/types"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/wallets"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
@@ -19,7 +20,7 @@ func strongholdStorePath() string {
 	homeDir, err := os.UserHomeDir()
 	log.Check(err)
 
-	return path.Join(homeDir, ".config/wasp-cli", "client.stronghold")
+	return path.Join(homeDir, config.BaseDir, "client.stronghold")
 }
 
 func strongholdStoreExists() bool {
@@ -41,7 +42,7 @@ func configureStronghold(sdk *walletsdk.IOTASDK, unlockPassword string) (*wallet
 }
 
 func LoadStrongholdWallet(sdk *walletsdk.IOTASDK, addressIndex uint32) wallets.Wallet {
-	keyChain := NewKeyChain()
+	keyChain := config.NewKeyChain()
 	password, err := keyChain.GetStrongholdPassword()
 	log.Check(err)
 
@@ -106,7 +107,7 @@ func CreateNewStrongholdWallet(sdk *walletsdk.IOTASDK) {
 		return
 	}
 
-	keyChain := NewKeyChain()
+	keyChain := config.NewKeyChain()
 	err = keyChain.SetStrongholdPassword(unlockPassword)
 	log.Check(err)
 }

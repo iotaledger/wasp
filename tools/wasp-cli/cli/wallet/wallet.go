@@ -23,10 +23,8 @@ func GetWalletScheme() string {
 	switch scheme {
 	case SchemeLedger, SchemeInMemory, SchemeStronghold:
 		return scheme
-	default:
-		log.Fatalf("invalid wallet scheme configured")
 	}
-	return ""
+	return SchemeInMemory
 }
 
 func getIotaSDK() *wasp_wallet_sdk.IOTASDK {

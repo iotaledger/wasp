@@ -1,7 +1,8 @@
-package providers
+package config
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/99designs/keyring"
 
@@ -9,12 +10,13 @@ import (
 )
 
 const (
-	strongholdKey = "wasp-cli.stronghold.key"
-	jwtTokenKey   = "wasp-cli.auth.jwt"
-	seedKey       = "wasp-cli.seed"
+	strongholdKey     = "wasp-cli.stronghold.key"
+	jwtTokenKeyPrefix = "wasp-cli.auth.jwt"
+	seedKey           = "wasp-cli.seed"
 )
 
 var (
+	ErrTokenDoesNotExist      = errors.New("jwt token not found, call 'login'")
 	ErrPasswordDoesNotExist   = errors.New("stronghold entry not found, call 'init'")
 	ErrSeedDoesNotExist       = errors.New("seed not found, call 'init'")
 	ErrSeedDoesNotMatchLength = errors.New("returned seed does not have a valid length")
@@ -73,6 +75,27 @@ func (k *KeyChain) GetStrongholdPassword() (string, error) {
 	seedItem, err := k.Keyring.Get(strongholdKey)
 	if errors.Is(err, keyring.ErrKeyNotFound) {
 		return "", ErrPasswordDoesNotExist
+	}
+
+	return string(seedItem.Data), nil
+}
+
+func jwtTokenKey(node string) string {
+	return fmt.Sprintf("%s.%s", jwtTokenKeyPrefix, node)
+}
+
+func (k *KeyChain) SetJWTAuthToken(node string, token string) error {
+	return k.Keyring.Set(keyring.Item{
+		Key:  jwtTokenKey(node),
+		Data: []byte(token),
+	})
+}
+
+func (k *KeyChain) GetJWTAuthToken(node string) (string, error) {
+	seedItem, err := k.Keyring.Get(jwtTokenKey(node))
+	// Special case. If the key is not found, return an empty token.
+	if errors.Is(err, keyring.ErrKeyNotFound) {
+		return "", nil
 	}
 
 	return string(seedItem.Data), nil

@@ -2,6 +2,7 @@ package providers
 
 import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/wallets"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
@@ -23,7 +24,7 @@ func (i *InMemoryWallet) AddressIndex() uint32 {
 }
 
 func LoadInMemory(addressIndex uint32) wallets.Wallet {
-	keyChain := NewKeyChain()
+	keyChain := config.NewKeyChain()
 	seed, err := keyChain.GetSeed()
 	log.Check(err)
 
@@ -33,7 +34,7 @@ func LoadInMemory(addressIndex uint32) wallets.Wallet {
 }
 
 func CreateNewInMemory() {
-	keyChain := NewKeyChain()
+	keyChain := config.NewKeyChain()
 	seed := cryptolib.NewSeed()
 	err := keyChain.SetSeed(seed)
 	log.Check(err)

@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"os"
+	"path"
 	"time"
 
 	"github.com/spf13/viper"
@@ -14,6 +16,7 @@ import (
 )
 
 var (
+	BaseDir           string
 	ConfigPath        string
 	WaitForCompletion bool
 )
@@ -48,7 +51,49 @@ func LoadL1ParamsFromConfig() {
 	parameters.InitL1(params)
 }
 
+func locateBaseDir() string {
+	homeDir, err := os.UserHomeDir()
+	log.Check(err)
+
+	_, err = os.Stat(homeDir)
+	log.Check(err)
+
+	baseDir := path.Join(homeDir, ".wasp-cli")
+	_, err = os.Stat(baseDir)
+
+	if err != nil {
+		err = os.Mkdir(baseDir, os.ModePerm)
+		log.Check(err)
+	}
+
+	BaseDir = baseDir
+	return baseDir
+}
+
+func locateConfigFile() string {
+	/*
+		Searches for a wasp-cli.json at the current working directory,
+		If not found, use the config file from the base dir (usually ~/.wasp-cli/wasp-cli.json)
+	*/
+	if ConfigPath == "" {
+		cwd, err := os.Getwd()
+		log.Check(err)
+
+		_, err = os.Stat(path.Join(cwd, "wasp-cli.json"))
+		if err == nil {
+			ConfigPath = path.Join(cwd, "wasp-cli.json")
+		} else {
+			ConfigPath = path.Join(BaseDir, "wasp-cli.json")
+		}
+	}
+
+	return ConfigPath
+}
+
 func Read() {
+	locateBaseDir()
+	locateConfigFile()
+
 	viper.SetConfigFile(ConfigPath)
 	_ = viper.ReadInConfig()
 }
@@ -78,11 +123,16 @@ func L1FaucetAddress() string {
 }
 
 func GetToken(node string) string {
-	return viper.GetString(fmt.Sprintf("authentication.wasp.%s.token", node))
+	keyChain := NewKeyChain()
+	token, err := keyChain.GetJWTAuthToken(node)
+	log.Check(err)
+	return token
 }
 
 func SetToken(node, token string) {
-	Set(fmt.Sprintf("authentication.wasp.%s.token", node), token)
+	keyChain := NewKeyChain()
+	err := keyChain.SetJWTAuthToken(node, token)
+	log.Check(err)
 }
 
 func MustWaspAPIURL(nodeName string) string {
