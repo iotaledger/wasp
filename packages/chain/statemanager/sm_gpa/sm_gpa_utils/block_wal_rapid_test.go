@@ -1,7 +1,7 @@
 package sm_gpa_utils
 
 import (
-	"math/rand"
+	"crypto/rand"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,6 +11,7 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
@@ -35,7 +36,7 @@ func newBlockWALTestSM(t *rapid.T) *blockWALTestSM {
 	bwtsmT.factory = NewBlockFactory(t)
 	bwtsmT.lastBlockCommitment = origin.L1Commitment(nil, 0)
 	bwtsmT.log = testlogger.NewLogger(t)
-	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), metrics.NewEmptyChainBlockWALMetrics())
+	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
 	bwtsmT.blocks = make(map[state.BlockHash]state.Block)
 	bwtsmT.blocksMoved = make([]state.BlockHash, 0)
@@ -125,7 +126,6 @@ func (bwtsmT *blockWALTestSM) DamageBlock(t *rapid.T) {
 	blockHash := rapid.SampledFrom(blockHashes).Example()
 	filePath := bwtsmT.pathFromHash(blockHash)
 	data := make([]byte, 50)
-	//nolint:staticcheck // we don't care about weak random numbers here
 	_, err := rand.Read(data)
 	require.NoError(t, err)
 	err = os.WriteFile(filePath, data, 0o644)
@@ -173,7 +173,7 @@ func (bwtsmT *blockWALTestSM) ReadDamagedBlock(t *rapid.T) {
 
 func (bwtsmT *blockWALTestSM) Restart(t *rapid.T) {
 	var err error
-	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), metrics.NewEmptyChainBlockWALMetrics())
+	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
 	t.Log("Block WAL restarted")
 }
@@ -203,4 +203,12 @@ func TestBlockWALPropBased(t *testing.T) {
 		sm := newBlockWALTestSM(t)
 		t.Repeat(rapid.StateMachineActions(sm))
 	})
+}
+
+func mockStateManagerMetrics() *metrics.ChainStateManagerMetrics {
+	return metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID()).StateManager
+}
+
+func mockBlockWALMetrics() *metrics.ChainBlockWALMetrics {
+	return metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID()).BlockWAL
 }

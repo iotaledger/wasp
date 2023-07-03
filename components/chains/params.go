@@ -21,6 +21,10 @@ type ParametersWAL struct {
 	Path    string `default:"waspdb/wal" usage:"the path to the \"write-ahead logging\" folder"`
 }
 
+type ParametersValidator struct {
+	Address string `default:"" usage:"bech32 encoded address to identify the node (as access node on gov contract and to collect validator fee payments)"`
+}
+
 type ParametersStateManager struct {
 	BlockCacheMaxSize                 int           `default:"1000" usage:"how many blocks may be stored in cache before old ones start being deleted"`
 	BlockCacheBlocksInCacheDuration   time.Duration `default:"1h" usage:"how long should the block stay in block cache before being deleted"`
@@ -41,6 +45,7 @@ type ParametersSnapshotManager struct {
 var (
 	ParamsChains          = &ParametersChains{}
 	ParamsWAL             = &ParametersWAL{}
+	ParamsValidator       = &ParametersValidator{}
 	ParamsStateManager    = &ParametersStateManager{}
 	ParamsSnapshotManager = &ParametersSnapshotManager{}
 )
@@ -49,8 +54,9 @@ var params = &app.ComponentParams{
 	Params: map[string]any{
 		"chains":       ParamsChains,
 		"wal":          ParamsWAL,
+		"validator":    ParamsValidator,
 		"stateManager": ParamsStateManager,
-		"snapshots": ParamsSnapshotManager,
+		"snapshots":    ParamsSnapshotManager,
 	},
 	Masked: nil,
 }

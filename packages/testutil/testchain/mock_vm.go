@@ -35,17 +35,17 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *MockedVMRunner {
 	return ret
 }
 
-func (r *MockedVMRunner) Run(task *vm.VMTask) error {
-	r.log.Debugf("Mocked VM runner: VM started for trie root %v output %v",
-		task.StateDraft.BaseL1Commitment().TrieRoot(), task.AnchorOutputID.ToHex())
+func (r *MockedVMRunner) Run(task *vm.VMTask) (*vm.VMTaskResult, error) {
+	r.log.Debugf("Mocked VM runner: VM started for output %v", task.AnchorOutputID.ToHex())
 	draft, block, txEssence, inputsCommitment := nextState(r.t, task.Store, task.AnchorOutput, task.AnchorOutputID, task.TimeAssumption, task.Requests)
-	task.StateDraft = draft
-	task.RotationAddress = nil
-	task.ResultTransactionEssence = txEssence
-	task.ResultInputsCommitment = inputsCommitment
-	task.Results = make([]*vm.RequestResult, len(task.Requests))
-	for i := range task.Results {
-		task.Results[i] = &vm.RequestResult{
+	res := task.CreateResult()
+	res.StateDraft = draft
+	res.RotationAddress = nil
+	res.TransactionEssence = txEssence
+	res.InputsCommitment = inputsCommitment
+	res.RequestResults = make([]*vm.RequestResult, len(task.Requests))
+	for i := range res.RequestResults {
+		res.RequestResults[i] = &vm.RequestResult{
 			Request: task.Requests[i],
 			Return:  dict.New(),
 			Receipt: &blocklog.RequestReceipt{
@@ -55,7 +55,7 @@ func (r *MockedVMRunner) Run(task *vm.VMTask) error {
 		}
 	}
 	r.log.Debugf("Mocked VM runner: VM completed; state %v commitment %v received", draft.BlockIndex(), block.TrieRoot())
-	return nil
+	return res, nil
 }
 
 func nextState(

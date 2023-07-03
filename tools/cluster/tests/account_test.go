@@ -45,10 +45,9 @@ func TestBasicAccountsNLow(t *testing.T) {
 
 func testAccounts(e *ChainEnv) {
 	hname := isc.Hn(nativeIncCounterSCName)
-	description := "testing contract deployment with inccounter"
 	programHash1 := inccounter.Contract.ProgramHash
 
-	tx, err := e.Chain.DeployContract(nativeIncCounterSCName, programHash1.String(), description, map[string]interface{}{
+	tx, err := e.Chain.DeployContract(nativeIncCounterSCName, programHash1.String(), map[string]interface{}{
 		inccounter.VarCounter: 42,
 		root.ParamName:        nativeIncCounterSCName,
 	})
@@ -76,7 +75,6 @@ func testAccounts(e *ChainEnv) {
 		require.True(e.t, ok)
 
 		require.EqualValues(e.t, programHash1.Hex(), cr.ProgramHash)
-		require.EqualValues(e.t, description, cr.Description)
 		require.EqualValues(e.t, nativeIncCounterSCName, cr.Name)
 
 		counterValue, err2 := e.Chain.GetCounterValue(hname, i)
@@ -120,10 +118,9 @@ func testAccounts(e *ChainEnv) {
 func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	chain := env.Chain
 	hname := isc.Hn(nativeIncCounterSCName)
-	description := "testing contract deployment with inccounter"
 	programHash1 := inccounter.Contract.ProgramHash
 
-	tx, err := chain.DeployContract(nativeIncCounterSCName, programHash1.String(), description, map[string]interface{}{
+	tx, err := chain.DeployContract(nativeIncCounterSCName, programHash1.String(), map[string]interface{}{
 		inccounter.VarCounter: 42,
 		root.ParamName:        nativeIncCounterSCName,
 	})
@@ -150,7 +147,6 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 		require.NotNil(t, cr)
 
 		require.EqualValues(t, programHash1.Hex(), cr.ProgramHash)
-		require.EqualValues(t, description, cr.Description)
 		require.EqualValues(t, nativeIncCounterSCName, cr.Name)
 
 		counterValue, err2 := chain.GetCounterValue(hname, i)

@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -45,7 +46,9 @@ func TestInitLoad(t *testing.T) {
 	require.EqualValues(t, 0, len(cassets.NativeTokens))
 
 	t.Logf("common base tokens: %d", ch.L2CommonAccountBaseTokens())
-	require.True(t, cassets.BaseTokens >= accounts.MinimumBaseTokensOnCommonAccount)
+	require.True(t, cassets.BaseTokens >= governance.DefaultMinBaseTokensOnCommonAccount)
+
+	testdbhash.VerifyDBHash(env, t.Name())
 }
 
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers
@@ -92,7 +95,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 
 	someUserWallet, _ := env.NewKeyPairWithFunds()
 	ch.DepositBaseTokensToL2(1*isc.Million, someUserWallet)
-	// AliasOutput minSD changes from block #0 to block #1 because the "state metadata" part gets bigger
+	// AliasOutput minCommonAccountBalance changes from block #0 to block #1 because the "state metadata" part gets bigger
 	totalAccountedL2Tokens += originAOSD - parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 	ch.AssertL2TotalBaseTokens(totalAccountedL2Tokens + 1*isc.Million)
 	ch.AssertControlAddresses()
@@ -108,7 +111,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalBaseTokensBefore := ch.L2TotalBaseTokens()
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
 		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
-		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
+		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
 
 		req := solo.NewCallParams("dummyContract", "dummyEP").
 			WithGasBudget(100_000)
@@ -119,21 +122,20 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalBaseTokensAfter := ch.L2TotalBaseTokens()
 		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
 
-		// AO minSD changes from block 0 to block 1 because the statemedata grows
+		// AO minCommonAccountBalance changes from block 0 to block 1 because the statemedata grows
 		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
-		changeInAOminSD := newAOSD - oldAOSD
+		changeInAOminCommonAccountBalance := newAOSD - oldAOSD
 
 		reqStorageDeposit := GetStorageDeposit(reqTx)[0]
-		rec := ch.LastReceipt()
 
 		// total base tokens on chain increase by the storage deposit from the request tx
-		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit-changeInAOminSD), int(totalBaseTokensAfter))
+		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit-changeInAOminCommonAccountBalance), int(totalBaseTokensAfter))
 		// user on L1 is charged with storage deposit
 		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore-reqStorageDeposit)
 		// originator (user) is charged with gas fee on L2
-		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+reqStorageDeposit-rec.GasFeeCharged)
+		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+reqStorageDeposit)
 		// all gas fee goes to the common account
-		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged-changeInAOminSD, commonAccountBaseTokensAfter)
+		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount-changeInAOminCommonAccountBalance, commonAccountBaseTokensAfter)
 	})
 	t.Run("no contract,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
@@ -147,7 +149,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
 		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
 		env.AssertL1BaseTokens(senderAddr, utxodb.FundsFromFaucetAmount)
-		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
+		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
 
 		req := solo.NewCallParams("dummyContract", "dummyEP").
 			WithGasBudget(100_000)
@@ -158,25 +160,25 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalBaseTokensAfter := ch.L2TotalBaseTokens()
 		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
 
-		// AO minSD changes from block 0 to block 1 because the statemedata grows
+		// AO minCommonAccountBalance changes from block 0 to block 1 because the statemedata grows
 		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
-		changeInAOminSD := newAOSD - oldAOSD
+		changeInAOminCommonAccountBalance := newAOSD - oldAOSD
 
 		reqStorageDeposit := GetStorageDeposit(reqTx)[0]
 		rec := ch.LastReceipt()
 
 		// total base tokens on chain increase by the storage deposit from the request tx
-		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit-changeInAOminSD), int(totalBaseTokensAfter))
+		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit-changeInAOminCommonAccountBalance), int(totalBaseTokensAfter))
 		// originator on L1 does not change
 		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore)
 		// user on L1 is charged with storage deposit
 		env.AssertL1BaseTokens(senderAddr, utxodb.FundsFromFaucetAmount-reqStorageDeposit)
 		// originator account does not change
-		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore)
+		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+rec.GasFeeCharged)
 		// user is charged with gas fee on L2
 		ch.AssertL2BaseTokens(senderAgentID, reqStorageDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged-changeInAOminSD, commonAccountBaseTokensAfter)
+		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount-changeInAOminCommonAccountBalance, commonAccountBaseTokensAfter)
 	})
 	t.Run("no EP,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
@@ -186,7 +188,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalBaseTokensBefore := ch.L2TotalBaseTokens()
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
 		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
-		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
+		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
 
 		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
 			WithGasBudget(100_000)
@@ -198,20 +200,19 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
 
 		reqStorageDeposit := GetStorageDeposit(reqTx)[0]
-		rec := ch.LastReceipt()
 
-		// AO minSD changes from block 0 to block 1 because the statemedata grows
+		// AO minCommonAccountBalance changes from block 0 to block 1 because the statemedata grows
 		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
-		changeInAOminSD := newAOSD - oldAOSD
+		changeInAOminCommonAccountBalance := newAOSD - oldAOSD
 
 		// total base tokens on chain increase by the storage deposit from the request tx
-		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit-changeInAOminSD), int(totalBaseTokensAfter))
+		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit-changeInAOminCommonAccountBalance), int(totalBaseTokensAfter))
 		// user on L1 is charged with storage deposit
 		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore-reqStorageDeposit)
 		// originator (user) is charged with gas fee on L2
-		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+reqStorageDeposit-rec.GasFeeCharged)
+		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+reqStorageDeposit)
 		// all gas fee goes to the common account
-		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged-changeInAOminSD, commonAccountBaseTokensAfter)
+		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount-changeInAOminCommonAccountBalance, commonAccountBaseTokensAfter)
 	})
 	t.Run("no EP,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
@@ -225,7 +226,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
 		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
 		env.AssertL1BaseTokens(senderAddr, utxodb.FundsFromFaucetAmount)
-		require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
+		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
 
 		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
 			WithGasBudget(100_000)
@@ -236,25 +237,25 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalBaseTokensAfter := ch.L2TotalBaseTokens()
 		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
 
-		// AO minSD changes from block 0 to block 1 because the statemedata grows
+		// AO minCommonAccountBalance changes from block 0 to block 1 because the statemedata grows
 		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
-		changeInAOminSD := newAOSD - oldAOSD
+		changeInAOminCommonAccountBalance := newAOSD - oldAOSD
 
 		reqStorageDeposit := GetStorageDeposit(reqTx)[0]
 		rec := ch.LastReceipt()
 		// total base tokens on chain increase by the storage deposit from the request tx
-		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit-changeInAOminSD), int(totalBaseTokensAfter))
+		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit-changeInAOminCommonAccountBalance), int(totalBaseTokensAfter))
 		// originator on L1 does not change
 		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore)
 		// user on L1 is charged with storage deposit
 		env.AssertL1BaseTokens(senderAddr, utxodb.FundsFromFaucetAmount-reqStorageDeposit)
 		// originator account does not change
-		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore)
+		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+rec.GasFeeCharged)
 		// user is charged with gas fee on L2
 		ch.AssertL2BaseTokens(senderAgentID, reqStorageDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
 		require.EqualValues(t,
-			accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged-changeInAOminSD,
+			governance.DefaultMinBaseTokensOnCommonAccount-changeInAOminCommonAccountBalance,
 			commonAccountBaseTokensAfter,
 		)
 	})
@@ -541,7 +542,7 @@ func TestMessageSize(t *testing.T) {
 
 	for _, req := range reqs {
 		receipt, err := ch.GetRequestReceipt(req.ID())
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.Nil(t, receipt.Error)
 	}
 }

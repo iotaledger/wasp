@@ -1,12 +1,10 @@
 package accounts
 
 import (
-	"errors"
-
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
-var Contract = coreutil.NewContract(coreutil.CoreContractAccounts, "Chain account ledger contract")
+var Contract = coreutil.NewContract(coreutil.CoreContractAccounts)
 
 var (
 	// Views
@@ -30,7 +28,6 @@ var (
 	FuncFoundryCreateNew       = coreutil.Func("foundryCreateNew")
 	FuncFoundryDestroy         = coreutil.Func("foundryDestroy")
 	FuncFoundryModifySupply    = coreutil.Func("foundryModifySupply")
-	FuncHarvest                = coreutil.Func("harvest")
 	FuncTransferAccountToChain = coreutil.Func("transferAccountToChain")
 	FuncTransferAllowanceTo    = coreutil.Func("transferAllowanceTo")
 	FuncWithdraw               = coreutil.Func("withdraw")
@@ -39,9 +36,6 @@ var (
 )
 
 const (
-	// MinimumBaseTokensOnCommonAccount can't harvest the minimum
-	MinimumBaseTokensOnCommonAccount = uint64(3000)
-
 	ParamAccountNonce           = "n"
 	ParamAgentID                = "a"
 	ParamBalance                = "B"
@@ -59,5 +53,3 @@ const (
 	ParamSupplyDeltaAbs         = "d"
 	ParamTokenScheme            = "t"
 )
-
-var ErrStorageDepositAssumptionsWrong = errors.New("'storage deposit assumptions' parameter not specified or wrong")

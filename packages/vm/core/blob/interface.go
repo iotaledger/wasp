@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 )
 
-var Contract = coreutil.NewContract(coreutil.CoreContractBlob, "Blob Contract")
+var Contract = coreutil.NewContract(coreutil.CoreContractBlob)
 
 const (
 	// request parameters
@@ -30,5 +30,5 @@ var (
 
 // FieldValueKey returns key of the blob field value in the SC state.
 func FieldValueKey(blobHash hashing.HashValue, fieldName string) []byte {
-	return collections.MapElemKey(valuesMapName(blobHash), []byte(fieldName))
+	return []byte(collections.MapElemKey(valuesMapName(blobHash), []byte(fieldName)))
 }

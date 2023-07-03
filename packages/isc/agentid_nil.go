@@ -13,7 +13,7 @@ type NilAgentID struct{}
 var _ AgentID = &NilAgentID{}
 
 func (a *NilAgentID) Bytes() []byte {
-	return rwutil.WriterToBytes(a)
+	return rwutil.WriteToBytes(a)
 }
 
 func (a *NilAgentID) Equals(other AgentID) bool {

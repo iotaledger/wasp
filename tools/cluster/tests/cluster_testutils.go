@@ -29,10 +29,9 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) {
 	if len(initCounter) > 0 {
 		counterStartValue = initCounter[0]
 	}
-	description := "testing contract deployment with inccounter" //nolint:goconst
 	programHash := inccounter.Contract.ProgramHash
 
-	tx, err := e.Chain.DeployContract(nativeIncCounterSCName, programHash.String(), description, map[string]interface{}{
+	tx, err := e.Chain.DeployContract(nativeIncCounterSCName, programHash.String(), map[string]interface{}{
 		inccounter.VarCounter: counterStartValue,
 		root.ParamName:        nativeIncCounterSCName,
 	})
@@ -76,7 +75,6 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) {
 		require.NotNil(e.t, cr)
 
 		require.EqualValues(e.t, programHash.Hex(), cr.ProgramHash)
-		require.EqualValues(e.t, description, cr.Description)
 		require.EqualValues(e.t, cr.Name, nativeIncCounterSCName)
 
 		counterValue, err2 := e.Chain.GetCounterValue(nativeIncCounterSCHname, i)

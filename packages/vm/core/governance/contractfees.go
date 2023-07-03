@@ -18,23 +18,23 @@ type ContractFeesRecord struct {
 }
 
 func ContractFeesRecordFromBytes(data []byte) (*ContractFeesRecord, error) {
-	return rwutil.ReaderFromBytes(data, new(ContractFeesRecord))
+	return rwutil.ReadFromBytes(data, new(ContractFeesRecord))
 }
 
 func (p *ContractFeesRecord) Bytes() []byte {
-	return rwutil.WriterToBytes(p)
+	return rwutil.WriteToBytes(p)
 }
 
 func (p *ContractFeesRecord) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	p.OwnerFee = rr.ReadUint64()
-	p.ValidatorFee = rr.ReadUint64()
+	p.OwnerFee = rr.ReadAmount64()
+	p.ValidatorFee = rr.ReadAmount64()
 	return rr.Err
 }
 
 func (p *ContractFeesRecord) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteUint64(p.OwnerFee)
-	ww.WriteUint64(p.ValidatorFee)
+	ww.WriteAmount64(p.OwnerFee)
+	ww.WriteAmount64(p.ValidatorFee)
 	return ww.Err
 }

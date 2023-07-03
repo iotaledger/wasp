@@ -13,7 +13,6 @@ import (
 )
 
 var Processor = Contract.Processor(nil,
-	ViewControlAddresses.WithHandler(viewControlAddresses),
 	ViewGetBlockInfo.WithHandler(viewGetBlockInfo),
 	ViewGetEventsForBlock.WithHandler(viewGetEventsForBlock),
 	ViewGetEventsForContract.WithHandler(viewGetEventsForContract),
@@ -37,19 +36,6 @@ func SetInitialState(s kv.KVStore) {
 		NumSuccessfulRequests: 1,
 		NumOffLedgerRequests:  0,
 	})
-}
-
-func viewControlAddresses(ctx isc.SandboxView) dict.Dict {
-	registry := collections.NewArrayReadOnly(ctx.StateR(), prefixControlAddresses)
-	length := registry.Len()
-	ctx.Requiref(length > 0, "inconsistency: unknown control addresses")
-	rec, err := ControlAddressesFromBytes(registry.GetAt(length - 1))
-	ctx.RequireNoError(err)
-	return dict.Dict{
-		ParamStateControllerAddress: isc.AddressToBytes(rec.StateAddress),
-		ParamGoverningAddress:       isc.AddressToBytes(rec.GoverningAddress),
-		ParamBlockIndex:             codec.EncodeUint32(rec.SinceBlockIndex),
-	}
 }
 
 // viewGetBlockInfo returns blockInfo for a given block.

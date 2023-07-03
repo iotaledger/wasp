@@ -37,8 +37,8 @@ func ChainIDFromAliasID(aliasID iotago.AliasID) ChainID {
 
 // ChainIDFromBytes reconstructs a ChainID from its binary representation.
 func ChainIDFromBytes(data []byte) (ret ChainID, err error) {
-	_, err = rwutil.ReaderFromBytes(data, &ret)
-	return
+	_, err = rwutil.ReadFromBytes(data, &ret)
+	return ret, err
 }
 
 func ChainIDFromString(bech32 string) (ChainID, error) {

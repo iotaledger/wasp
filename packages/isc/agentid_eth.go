@@ -1,10 +1,12 @@
 package isc
 
 import (
+	"errors"
 	"io"
 
 	"github.com/ethereum/go-ethereum/common"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -19,13 +21,19 @@ func NewEthereumAddressAgentID(eth common.Address) *EthereumAddressAgentID {
 	return &EthereumAddressAgentID{eth: eth}
 }
 
-func ethAgentIDFromString(s string) (AgentID, error) {
-	eth := common.HexToAddress(s)
-	return NewEthereumAddressAgentID(eth), nil
+func ethAgentIDFromString(s string) (*EthereumAddressAgentID, error) {
+	data, err := iotago.DecodeHex(s)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) != common.AddressLength {
+		return nil, errors.New("invalid ETH address string")
+	}
+	return &EthereumAddressAgentID{eth: common.BytesToAddress(data)}, nil
 }
 
 func (a *EthereumAddressAgentID) Bytes() []byte {
-	return rwutil.WriterToBytes(a)
+	return rwutil.WriteToBytes(a)
 }
 
 func (a *EthereumAddressAgentID) Equals(other AgentID) bool {

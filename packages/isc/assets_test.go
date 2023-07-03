@@ -10,9 +10,10 @@ import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-func TestMarshalling(t *testing.T) {
+func TestAssetsSerialization(t *testing.T) {
 	maxVal, e := big.NewInt(2), big.NewInt(256)
 	maxVal.Exp(maxVal, e, nil)
 	maxVal.Sub(maxVal, big.NewInt(1))
@@ -33,17 +34,10 @@ func TestMarshalling(t *testing.T) {
 	}
 
 	assets := isc.NewAssets(1, tokens)
-	bytes := assets.Bytes()
-	assets2, err := isc.AssetsFromBytes(bytes)
-	require.NoError(t, err)
-	require.Equal(t, assets.BaseTokens, assets2.BaseTokens)
-	require.Equal(t, len(assets.NativeTokens), len(assets2.NativeTokens))
-	for i := range tokens {
-		require.Equal(t, assets.NativeTokens[i], assets2.NativeTokens[i])
-	}
+	rwutil.BytesTest(t, assets, isc.AssetsFromBytes)
 }
 
-func TestAssets_SpendBudget(t *testing.T) {
+func TestAssetsSpendBudget(t *testing.T) {
 	var toSpend *isc.Assets
 	var budget *isc.Assets
 	require.True(t, budget.Spend(toSpend))
@@ -143,7 +137,7 @@ func TestAssets_SpendBudget(t *testing.T) {
 	require.False(t, budget.Spend(toSpend))
 }
 
-func TestAddNFTs(t *testing.T) {
+func TestAssetsAddNFTs(t *testing.T) {
 	nftSet1 := []iotago.NFTID{
 		{1},
 		{2},

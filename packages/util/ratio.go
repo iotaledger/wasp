@@ -21,7 +21,7 @@ type Ratio32 struct {
 }
 
 func Ratio32FromBytes(data []byte) (ret Ratio32, err error) {
-	_, err = rwutil.ReaderFromBytes(data, &ret)
+	_, err = rwutil.ReadFromBytes(data, &ret)
 	return ret, err
 }
 
@@ -44,7 +44,7 @@ func Ratio32FromString(s string) (ret Ratio32, err error) {
 }
 
 func (ratio Ratio32) Bytes() []byte {
-	return rwutil.WriterToBytes(&ratio)
+	return rwutil.WriteToBytes(&ratio)
 }
 
 func (ratio Ratio32) String() string {

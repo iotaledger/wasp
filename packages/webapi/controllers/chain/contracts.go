@@ -25,7 +25,6 @@ func (c *Controller) getContracts(e echo.Context) error {
 
 	for hName, contract := range contracts {
 		contractInfo := models.ContractInfoResponse{
-			Description: contract.Description,
 			HName:       hName.String(),
 			Name:        contract.Name,
 			ProgramHash: contract.ProgramHash.String(),

@@ -15,8 +15,12 @@ type nativeTokenOutputRec struct {
 	StorageBaseTokens uint64 // always storage deposit
 }
 
+func nativeTokenOutputRecFromBytes(data []byte) (*nativeTokenOutputRec, error) {
+	return rwutil.ReadFromBytes(data, new(nativeTokenOutputRec))
+}
+
 func mustNativeTokenOutputRecFromBytes(data []byte) *nativeTokenOutputRec {
-	ret, err := rwutil.ReaderFromBytes(data, new(nativeTokenOutputRec))
+	ret, err := nativeTokenOutputRecFromBytes(data)
 	if err != nil {
 		panic(err)
 	}
@@ -24,7 +28,7 @@ func mustNativeTokenOutputRecFromBytes(data []byte) *nativeTokenOutputRec {
 }
 
 func (rec *nativeTokenOutputRec) Bytes() []byte {
-	return rwutil.WriterToBytes(rec)
+	return rwutil.WriteToBytes(rec)
 }
 
 func (rec *nativeTokenOutputRec) String() string {
@@ -37,7 +41,7 @@ func (rec *nativeTokenOutputRec) Read(r io.Reader) error {
 	rec.BlockIndex = rr.ReadUint32()
 	rec.OutputIndex = rr.ReadUint16()
 	rec.Amount = rr.ReadUint256()
-	rec.StorageBaseTokens = rr.ReadUint64()
+	rec.StorageBaseTokens = rr.ReadAmount64()
 	return rr.Err
 }
 
@@ -46,6 +50,6 @@ func (rec *nativeTokenOutputRec) Write(w io.Writer) error {
 	ww.WriteUint32(rec.BlockIndex)
 	ww.WriteUint16(rec.OutputIndex)
 	ww.WriteUint256(rec.Amount)
-	ww.WriteUint64(rec.StorageBaseTokens)
+	ww.WriteAmount64(rec.StorageBaseTokens)
 	return ww.Err
 }

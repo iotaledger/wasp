@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
@@ -126,7 +125,7 @@ func (vmctx *VMContext) GetNFTData(nftID iotago.NFTID) (ret *isc.NFT) {
 }
 
 func (vmctx *VMContext) GetSenderTokenBalanceForFees() uint64 {
-	sender := vmctx.req.SenderAccount()
+	sender := vmctx.reqCtx.req.SenderAccount()
 	if sender == nil {
 		return 0
 	}
@@ -134,20 +133,21 @@ func (vmctx *VMContext) GetSenderTokenBalanceForFees() uint64 {
 }
 
 func (vmctx *VMContext) requestLookupKey() blocklog.RequestLookupKey {
-	return blocklog.NewRequestLookupKey(vmctx.task.StateDraft.BlockIndex(), vmctx.requestIndex)
+	return blocklog.NewRequestLookupKey(vmctx.taskResult.StateDraft.BlockIndex(), vmctx.reqCtx.requestIndex)
 }
 
 func (vmctx *VMContext) eventLookupKey() blocklog.EventLookupKey {
-	return blocklog.NewEventLookupKey(vmctx.task.StateDraft.BlockIndex(), vmctx.requestIndex, vmctx.requestEventIndex)
+	return blocklog.NewEventLookupKey(vmctx.taskResult.StateDraft.BlockIndex(), vmctx.reqCtx.requestIndex, vmctx.reqCtx.requestEventIndex)
 }
 
 func (vmctx *VMContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.RequestReceipt {
 	receipt := &blocklog.RequestReceipt{
-		Request:       vmctx.req,
-		GasBudget:     vmctx.gasBudgetAdjusted,
-		GasBurned:     vmctx.gasBurned,
-		GasFeeCharged: vmctx.gasFeeCharged,
-		SDCharged:     vmctx.sdCharged,
+		Request:       vmctx.reqCtx.req,
+		GasBudget:     vmctx.reqCtx.gas.budgetAdjusted,
+		GasBurned:     vmctx.reqCtx.gas.burned,
+		GasFeeCharged: vmctx.reqCtx.gas.feeCharged,
+		GasBurnLog:    vmctx.reqCtx.gas.burnLog,
+		SDCharged:     vmctx.reqCtx.sdCharged,
 	}
 
 	if vmError != nil {
@@ -158,13 +158,8 @@ func (vmctx *VMContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.R
 		receipt.Error = vmError.AsUnresolvedError()
 	}
 
-	vmctx.Debugf("writeReceiptToBlockLog - reqID:%s err: %v", vmctx.req.ID(), vmError)
+	vmctx.Debugf("writeReceiptToBlockLog - reqID:%s err: %v", vmctx.reqCtx.req.ID(), vmError)
 
-	receipt.GasBurnLog = vmctx.gasBurnLog
-
-	if vmctx.task.EnableGasBurnLogging {
-		vmctx.gasBurnLog = gas.NewGasBurnLog()
-	}
 	key := vmctx.requestLookupKey()
 	var err error
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
@@ -173,10 +168,10 @@ func (vmctx *VMContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.R
 	if err != nil {
 		panic(err)
 	}
-	if vmctx.evmFailedReceipt != nil {
+	if vmctx.reqCtx.evmFailed != nil {
 		// save failed EVM transactions
 		vmctx.callCore(evm.Contract, func(s kv.KVStore) {
-			evmimpl.AddFailedTx(NewSandbox(vmctx), vmctx.evmFailedTx, vmctx.evmFailedReceipt)
+			evmimpl.AddFailedTx(NewSandbox(vmctx), vmctx.reqCtx.evmFailed.tx, vmctx.reqCtx.evmFailed.receipt)
 		})
 	}
 	return receipt
@@ -209,7 +204,7 @@ func (vmctx *VMContext) storeUnprocessable(lastInternalAssetUTXOIndex uint16) {
 }
 
 func (vmctx *VMContext) MustSaveEvent(hContract isc.Hname, topic string, payload []byte) {
-	if vmctx.requestEventIndex == math.MaxUint16 {
+	if vmctx.reqCtx.requestEventIndex == math.MaxUint16 {
 		panic(vm.ErrTooManyEvents)
 	}
 	vmctx.Debugf("MustSaveEvent/%s: topic: '%s'", hContract.String(), topic)
@@ -224,13 +219,13 @@ func (vmctx *VMContext) MustSaveEvent(hContract isc.Hname, topic string, payload
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
 		blocklog.SaveEvent(s, eventKey, event)
 	})
-	vmctx.requestEventIndex++
+	vmctx.reqCtx.requestEventIndex++
 }
 
 // updateOffLedgerRequestNonce updates stored nonce for off ledger requests
 func (vmctx *VMContext) updateOffLedgerRequestNonce() {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accounts.IncrementNonce(s, vmctx.req.SenderAccount())
+		accounts.IncrementNonce(s, vmctx.reqCtx.req.SenderAccount())
 	})
 }
 

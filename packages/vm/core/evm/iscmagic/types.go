@@ -337,27 +337,6 @@ type ISCExpiration struct {
 	ReturnAddress L1Address
 }
 
-func WrapISCExpiration(data *isc.Expiration) ISCExpiration {
-	if data == nil {
-		return ISCExpiration{
-			Time:          0,
-			ReturnAddress: WrapL1Address(nil),
-		}
-	}
-	var expiryTime int64
-
-	if !data.Time.IsZero() {
-		expiryTime = data.Time.UnixMilli()
-	}
-
-	ret := ISCExpiration{
-		Time:          expiryTime,
-		ReturnAddress: WrapL1Address(data.ReturnAddress),
-	}
-
-	return ret
-}
-
 func (i *ISCExpiration) Unwrap() *isc.Expiration {
 	if i == nil {
 		return nil
@@ -380,21 +359,6 @@ func (i *ISCExpiration) Unwrap() *isc.Expiration {
 type ISCSendOptions struct {
 	Timelock   int64
 	Expiration ISCExpiration
-}
-
-func WrapISCSendOptions(options isc.SendOptions) ISCSendOptions {
-	var timeLock int64
-
-	if !options.Timelock.IsZero() {
-		timeLock = options.Timelock.UnixMilli()
-	}
-
-	ret := ISCSendOptions{
-		Timelock:   timeLock,
-		Expiration: WrapISCExpiration(options.Expiration),
-	}
-
-	return ret
 }
 
 func (i *ISCSendOptions) Unwrap() isc.SendOptions {

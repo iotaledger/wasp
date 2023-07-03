@@ -78,7 +78,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -141,29 +140,30 @@ func (r *Result) String() string {
 }
 
 type consImpl struct {
-	chainID        isc.ChainID
-	chainStore     state.Store
-	edSuite        suites.Suite // For signatures.
-	blsSuite       suites.Suite // For randomness only.
-	dkShare        tcrypto.DKShare
-	processorCache *processors.Cache
-	nodeIDs        []gpa.NodeID
-	me             gpa.NodeID
-	f              int
-	asGPA          gpa.GPA
-	dss            dss.DSS
-	acs            acs.ACS
-	subMP          SyncMP         // Mempool.
-	subSM          SyncSM         // StateMgr.
-	subDSS         SyncDSS        // Distributed Schnorr Signature.
-	subACS         SyncACS        // Asynchronous Common Subset.
-	subRND         SyncRND        // Randomness.
-	subVM          SyncVM         // Virtual Machine.
-	subTX          SyncTX         // Building final TX.
-	term           *termCondition // To detect, when this instance can be terminated.
-	msgWrapper     *gpa.MsgWrapper
-	output         *Output
-	log            *logger.Logger
+	chainID          isc.ChainID
+	chainStore       state.Store
+	edSuite          suites.Suite // For signatures.
+	blsSuite         suites.Suite // For randomness only.
+	dkShare          tcrypto.DKShare
+	processorCache   *processors.Cache
+	nodeIDs          []gpa.NodeID
+	me               gpa.NodeID
+	f                int
+	asGPA            gpa.GPA
+	dss              dss.DSS
+	acs              acs.ACS
+	subMP            SyncMP         // Mempool.
+	subSM            SyncSM         // StateMgr.
+	subDSS           SyncDSS        // Distributed Schnorr Signature.
+	subACS           SyncACS        // Asynchronous Common Subset.
+	subRND           SyncRND        // Randomness.
+	subVM            SyncVM         // Virtual Machine.
+	subTX            SyncTX         // Building final TX.
+	term             *termCondition // To detect, when this instance can be terminated.
+	msgWrapper       *gpa.MsgWrapper
+	output           *Output
+	validatorAgentID isc.AgentID
+	log              *logger.Logger
 }
 
 const (
@@ -185,6 +185,7 @@ func New(
 	processorCache *processors.Cache,
 	instID []byte,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
+	validatorAgentID isc.AgentID,
 	log *logger.Logger,
 ) Cons {
 	edSuite := tcrypto.DefaultEd25519Suite()
@@ -217,19 +218,20 @@ func New(
 		return semi.New(round, realCC)
 	}
 	c := &consImpl{
-		chainID:        chainID,
-		chainStore:     chainStore,
-		edSuite:        edSuite,
-		blsSuite:       blsSuite,
-		dkShare:        dkShare,
-		processorCache: processorCache,
-		nodeIDs:        nodeIDs,
-		me:             me,
-		f:              f,
-		dss:            dss.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log.Named("DSS")),
-		acs:            acs.New(nodeIDs, me, f, acsCCInstFunc, acsLog),
-		output:         &Output{Status: Running},
-		log:            log,
+		chainID:          chainID,
+		chainStore:       chainStore,
+		edSuite:          edSuite,
+		blsSuite:         blsSuite,
+		dkShare:          dkShare,
+		processorCache:   processorCache,
+		nodeIDs:          nodeIDs,
+		me:               me,
+		f:                f,
+		dss:              dss.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log.Named("DSS")),
+		acs:              acs.New(nodeIDs, me, f, acsCCInstFunc, acsLog),
+		output:           &Output{Status: Running},
+		log:              log,
+		validatorAgentID: validatorAgentID,
 	}
 	c.asGPA = gpa.NewOwnHandler(me, c)
 	c.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, c.msgWrapperFunc)
@@ -477,7 +479,7 @@ func (c *consImpl) uponACSInputsReceived(baseAliasOutput *isc.AliasOutputWithID,
 		baseAliasOutput,
 		util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
 		timeData,
-		accounts.CommonAccount(),
+		c.validatorAgentID,
 		requestRefs,
 	)
 	subACS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeACS, 0, batchProposal.Bytes())
@@ -567,9 +569,9 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 	return nil
 }
 
-func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
+func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessages {
 	c.output.NeedVMResult = nil
-	if len(vmResult.Results) == 0 {
+	if len(vmResult.RequestResults) == 0 {
 		// No requests were processed, don't have what to do.
 		// Will need to retry the consensus with the next log index some time later.
 		c.log.Infof("Terminating consensus with status=Skipped, 0 requests processed.")
@@ -582,8 +584,8 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 		// Rotation by the Self-Governed Committee.
 		essence, err := rotate.MakeRotateStateControllerTransaction(
 			vmResult.RotationAddress,
-			isc.NewAliasOutputWithID(vmResult.AnchorOutput, vmResult.AnchorOutputID),
-			vmResult.TimeAssumption,
+			isc.NewAliasOutputWithID(vmResult.Task.AnchorOutput, vmResult.Task.AnchorOutputID),
+			vmResult.Task.TimeAssumption,
 			identity.ID{},
 			identity.ID{},
 		)
@@ -593,11 +595,11 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 			c.term.haveOutputProduced()
 			return nil
 		}
-		vmResult.ResultTransactionEssence = essence
+		vmResult.TransactionEssence = essence
 		vmResult.StateDraft = nil
 	}
 
-	signingMsg, err := vmResult.ResultTransactionEssence.SigningMessage()
+	signingMsg, err := vmResult.TransactionEssence.SigningMessage()
 	if err != nil {
 		panic(fmt.Errorf("uponVMOutputReceived: cannot obtain signing message: %w", err))
 	}
@@ -611,8 +613,8 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 // TX
 
 // Everything is ready for the output TX, produce it.
-func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, block state.Block, signature []byte) gpa.OutMessages {
-	resultTxEssence := vmResult.ResultTransactionEssence
+func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTaskResult, block state.Block, signature []byte) gpa.OutMessages {
+	resultTxEssence := vmResult.TransactionEssence
 	publicKey := c.dkShare.GetSharedPublic()
 	var signatureArray [ed25519.SignatureSize]byte
 	copy(signatureArray[:], signature)
@@ -634,12 +636,12 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, block state.Block, sig
 	}
 	c.output.Result = &Result{
 		Transaction:     tx,
-		BaseAliasOutput: vmResult.AnchorOutputID,
+		BaseAliasOutput: vmResult.Task.AnchorOutputID,
 		NextAliasOutput: chained,
 		Block:           block,
 	}
 	c.output.Status = Completed
-	c.log.Infof("Terminating consensus with status=Completed, produced tx.ID=%v, nextAO=%v, baseAO.ID=%v", txID.ToHex(), chained, vmResult.AnchorOutputID.ToHex())
+	c.log.Infof("Terminating consensus with status=Completed, produced tx.ID=%v, nextAO=%v, baseAO.ID=%v", txID.ToHex(), chained, vmResult.Task.AnchorOutputID.ToHex())
 	c.term.haveOutputProduced()
 	return nil
 }

@@ -66,6 +66,10 @@ func (rrk RequestRefKey) String() string {
 	return iotago.EncodeHex(rrk[:])
 }
 
+func RequestRefFromBytes(data []byte) (*RequestRef, error) {
+	return rwutil.ReadFromBytes(data, new(RequestRef))
+}
+
 func RequestRefFromRequest(req Request) *RequestRef {
 	return &RequestRef{ID: req.ID(), Hash: RequestHash(req)}
 }
@@ -78,38 +82,39 @@ func RequestRefsFromRequests(reqs []Request) []*RequestRef {
 	return rr
 }
 
-func (rr *RequestRef) AsKey() RequestRefKey {
+func (ref *RequestRef) AsKey() RequestRefKey {
 	var key RequestRefKey
-	copy(key[:], rr.Bytes())
+	copy(key[:], ref.Bytes())
 	return key
 }
 
-func (rr *RequestRef) IsFor(req Request) bool {
-	if rr.ID != req.ID() {
+func (ref *RequestRef) IsFor(req Request) bool {
+	if ref.ID != req.ID() {
 		return false
 	}
-	return rr.Hash == RequestHash(req)
+	return ref.Hash == RequestHash(req)
 }
 
-func (rr *RequestRef) Bytes() []byte {
-	return append(rr.Hash[:], rr.ID[:]...)
+func (ref *RequestRef) Bytes() []byte {
+	return rwutil.WriteToBytes(ref)
 }
 
-func (rr *RequestRef) String() string {
-	return fmt.Sprintf("{requestRef, id=%v, hash=%v}", rr.ID.String(), rr.Hash.Hex())
+func (ref *RequestRef) String() string {
+	return fmt.Sprintf("{requestRef, id=%v, hash=%v}", ref.ID.String(), ref.Hash.Hex())
 }
 
-func RequestRefFromBytes(data []byte) (*RequestRef, error) {
-	reqID, err := RequestIDFromBytes(data[hashing.HashSize:])
-	if err != nil {
-		return nil, err
-	}
-	ret := &RequestRef{
-		ID: reqID,
-	}
-	copy(ret.Hash[:], data[:hashing.HashSize])
+func (ref *RequestRef) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.ReadN(ref.Hash[:])
+	rr.ReadN(ref.ID[:])
+	return rr.Err
+}
 
-	return ret, nil
+func (ref *RequestRef) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteN(ref.Hash[:])
+	ww.WriteN(ref.ID[:])
+	return ww.Err
 }
 
 // RequestLookupDigest is shortened version of the request id. It is guaranteed to be unique
@@ -122,8 +127,8 @@ func NewRequestID(txid iotago.TransactionID, index uint16) RequestID {
 }
 
 func RequestIDFromBytes(data []byte) (ret RequestID, err error) {
-	_, err = rwutil.ReaderFromBytes(data, &ret)
-	return
+	_, err = rwutil.ReadFromBytes(data, &ret)
+	return ret, err
 }
 
 func RequestIDFromString(s string) (ret RequestID, err error) {
@@ -178,22 +183,6 @@ func (rid *RequestID) Write(w io.Writer) error {
 	return rwutil.WriteN(w, rid[:])
 }
 
-func ShortRequestIDs(ids []RequestID) []string {
-	ret := make([]string, len(ids))
-	for i := range ret {
-		ret[i] = ids[i].Short()
-	}
-	return ret
-}
-
-func ShortRequestIDsFromRequests(reqs []Request) []string {
-	requestIDs := make([]RequestID, len(reqs))
-	for i := range reqs {
-		requestIDs[i] = reqs[i].ID()
-	}
-	return ShortRequestIDs(requestIDs)
-}
-
 // endregion ////////////////////////////////////////////////////////////
 
 // region RequestMetadata //////////////////////////////////////////////////
@@ -222,7 +211,7 @@ func requestMetadataFromFeatureSet(set iotago.FeatureSet) (*RequestMetadata, err
 }
 
 func RequestMetadataFromBytes(data []byte) (*RequestMetadata, error) {
-	return rwutil.ReaderFromBytes(data, new(RequestMetadata))
+	return rwutil.ReadFromBytes(data, new(RequestMetadata))
 }
 
 // returns nil if nil pointer receiver is cloned
@@ -242,7 +231,7 @@ func (meta *RequestMetadata) Clone() *RequestMetadata {
 }
 
 func (meta *RequestMetadata) Bytes() []byte {
-	return rwutil.WriterToBytes(meta)
+	return rwutil.WriteToBytes(meta)
 }
 
 func (meta *RequestMetadata) Read(r io.Reader) error {
@@ -250,7 +239,7 @@ func (meta *RequestMetadata) Read(r io.Reader) error {
 	rr.Read(&meta.SenderContract)
 	rr.Read(&meta.TargetContract)
 	rr.Read(&meta.EntryPoint)
-	meta.GasBudget = rr.ReadUint64()
+	meta.GasBudget = rr.ReadGas64()
 	meta.Params = dict.New()
 	rr.Read(&meta.Params)
 	meta.Allowance = NewEmptyAssets()
@@ -263,7 +252,7 @@ func (meta *RequestMetadata) Write(w io.Writer) error {
 	ww.Write(&meta.SenderContract)
 	ww.Write(&meta.TargetContract)
 	ww.Write(&meta.EntryPoint)
-	ww.WriteUint64(meta.GasBudget)
+	ww.WriteGas64(meta.GasBudget)
 	ww.Write(&meta.Params)
 	ww.Write(meta.Allowance)
 	return ww.Err

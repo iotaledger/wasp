@@ -17,6 +17,7 @@ import (
 	"go.dedis.ch/kyber/v3/share"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 	rabin_vss "go.dedis.ch/kyber/v3/share/vss/rabin"
+	"go.dedis.ch/kyber/v3/suites"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -76,11 +77,11 @@ const (
 var initPeeringID peering.PeeringID
 
 func msgFromBytes[T interface{ Read(r io.Reader) error }](data []byte, msg T) error {
-	_, err := rwutil.ReaderFromBytes(data, msg)
+	_, err := rwutil.ReadFromBytes(data, msg)
 	return err
 }
 
-// Check if that's a Initiator -> PeerProc message.
+// Check if that's an Initiator -> PeerProc message.
 func isDkgInitProcRecvMsg(msgType byte) bool {
 	return msgType == initiatorStepMsgType || msgType == initiatorDoneMsgType
 }
@@ -120,18 +121,13 @@ type msgByteCoder interface {
 	MsgType() byte
 	Step() byte
 	SetStep(step byte)
-	Write(io.Writer) error
 	Read(io.Reader) error
+	Write(io.Writer) error
 }
 
 func makePeerMessage(peeringID peering.PeeringID, receiver, step byte, msg msgByteCoder) *peering.PeerMessageData {
 	msg.SetStep(step)
-	return &peering.PeerMessageData{
-		PeeringID:   peeringID,
-		MsgReceiver: receiver,
-		MsgType:     msg.MsgType(),
-		MsgData:     rwutil.WriterToBytes(msg),
-	}
+	return peering.NewPeerMessageData(peeringID, receiver, msg.MsgType(), msg)
 }
 
 // All the messages in this module have a step as a first byte in the payload.
@@ -164,6 +160,11 @@ func readInitiatorMsg(peerMessage *peering.PeerMessageData, edSuite, blsSuite ky
 	return msg, msgFromBytes(peerMessage.MsgData, msg)
 }
 
+type initiatorInitMsgIn struct {
+	initiatorInitMsg
+	SenderPubKey *cryptolib.PublicKey
+}
+
 // initiatorInitMsg
 //
 // This is a message sent by the initiator to all the peers to
@@ -179,10 +180,7 @@ type initiatorInitMsg struct {
 	roundRetry   time.Duration
 }
 
-type initiatorInitMsgIn struct {
-	initiatorInitMsg
-	SenderPubKey *cryptolib.PublicKey
-}
+var _ initiatorMsg = new(initiatorInitMsg)
 
 func (msg *initiatorInitMsg) MsgType() byte {
 	return initiatorInitMsgType
@@ -252,6 +250,8 @@ type initiatorStepMsg struct {
 	step byte
 }
 
+var _ initiatorMsg = new(initiatorStepMsg)
+
 func (msg *initiatorStepMsg) MsgType() byte {
 	return initiatorStepMsgType
 }
@@ -293,6 +293,8 @@ type initiatorDoneMsg struct {
 	blsSuite     kyber.Group // Transient, for un-marshaling only.
 }
 
+var _ initiatorMsg = new(initiatorDoneMsg)
+
 func (msg *initiatorDoneMsg) MsgType() byte {
 	return initiatorDoneMsgType
 }
@@ -312,15 +314,13 @@ func (msg *initiatorDoneMsg) Read(r io.Reader) error {
 	size := rr.ReadSize16()
 	msg.edPubShares = make([]kyber.Point, size)
 	for i := range msg.edPubShares {
-		msg.edPubShares[i] = msg.edSuite.Point()
-		rr.ReadMarshaled(msg.edPubShares[i])
+		msg.edPubShares[i] = cryptolib.PointFromReader(rr, msg.edSuite)
 	}
 
 	size = rr.ReadSize16()
 	msg.blsPubShares = make([]kyber.Point, size)
 	for i := range msg.blsPubShares {
-		msg.blsPubShares[i] = msg.blsSuite.Point()
-		rr.ReadMarshaled(msg.blsPubShares[i])
+		msg.blsPubShares[i] = cryptolib.PointFromReader(rr, msg.blsSuite)
 	}
 	return rr.Err
 }
@@ -331,12 +331,12 @@ func (msg *initiatorDoneMsg) Write(w io.Writer) error {
 
 	ww.WriteSize16(len(msg.edPubShares))
 	for i := range msg.edPubShares {
-		ww.WriteMarshaled(msg.edPubShares[i])
+		cryptolib.PointToWriter(ww, msg.edPubShares[i])
 	}
 
 	ww.WriteSize16(len(msg.blsPubShares))
 	for i := range msg.blsPubShares {
-		ww.WriteMarshaled(msg.blsPubShares[i])
+		cryptolib.PointToWriter(ww, msg.blsPubShares[i])
 	}
 	return ww.Err
 }
@@ -367,6 +367,8 @@ type initiatorPubShareMsg struct {
 	blsSuite        kyber.Group // Transient, for un-marshaling only.
 }
 
+var _ initiatorMsg = new(initiatorPubShareMsg)
+
 func (msg *initiatorPubShareMsg) MsgType() byte {
 	return initiatorPubShareMsgType
 }
@@ -384,16 +386,12 @@ func (msg *initiatorPubShareMsg) Read(r io.Reader) error {
 	msg.step = rr.ReadByte()
 	msg.sharedAddress = isc.AddressFromReader(rr)
 
-	msg.edSharedPublic = msg.edSuite.Point()
-	rr.ReadMarshaled(msg.edSharedPublic)
-	msg.edPublicShare = msg.edSuite.Point()
-	rr.ReadMarshaled(msg.edPublicShare)
+	msg.edSharedPublic = cryptolib.PointFromReader(rr, msg.edSuite)
+	msg.edPublicShare = cryptolib.PointFromReader(rr, msg.edSuite)
 	msg.edSignature = rr.ReadBytes()
 
-	msg.blsSharedPublic = msg.blsSuite.Point()
-	rr.ReadMarshaled(msg.blsSharedPublic)
-	msg.blsPublicShare = msg.blsSuite.Point()
-	rr.ReadMarshaled(msg.blsPublicShare)
+	msg.blsSharedPublic = cryptolib.PointFromReader(rr, msg.blsSuite)
+	msg.blsPublicShare = cryptolib.PointFromReader(rr, msg.blsSuite)
 	msg.blsSignature = rr.ReadBytes()
 	return rr.Err
 }
@@ -403,12 +401,12 @@ func (msg *initiatorPubShareMsg) Write(w io.Writer) error {
 	ww.WriteByte(msg.step)
 	isc.AddressToWriter(ww, msg.sharedAddress)
 
-	ww.WriteMarshaled(msg.edSharedPublic)
-	ww.WriteMarshaled(msg.edPublicShare)
+	cryptolib.PointToWriter(ww, msg.edSharedPublic)
+	cryptolib.PointToWriter(ww, msg.edPublicShare)
 	ww.WriteBytes(msg.edSignature)
 
-	ww.WriteMarshaled(msg.blsSharedPublic)
-	ww.WriteMarshaled(msg.blsPublicShare)
+	cryptolib.PointToWriter(ww, msg.blsSharedPublic)
+	cryptolib.PointToWriter(ww, msg.blsPublicShare)
 	ww.WriteBytes(msg.blsSignature)
 	return ww.Err
 }
@@ -426,6 +424,8 @@ type initiatorStatusMsg struct {
 	step  byte
 	error error
 }
+
+var _ initiatorMsg = new(initiatorStatusMsg)
 
 func (msg *initiatorStatusMsg) MsgType() byte {
 	return initiatorStatusMsgType
@@ -491,7 +491,7 @@ func (msg *rabinDealMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
 	msg.deal.Index = rr.ReadUint32()
-	rr.ReadMarshaled(msg.deal.Deal.DHKey)
+	rr.ReadFromFunc(msg.deal.Deal.DHKey.UnmarshalFrom)
 	msg.deal.Deal.Signature = rr.ReadBytes()
 	msg.deal.Deal.Nonce = rr.ReadBytes()
 	msg.deal.Deal.Cipher = rr.ReadBytes()
@@ -502,7 +502,7 @@ func (msg *rabinDealMsg) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteByte(msg.step)
 	ww.WriteUint32(msg.deal.Index)
-	ww.WriteMarshaled(msg.deal.Deal.DHKey)
+	ww.WriteFromFunc(msg.deal.Deal.DHKey.MarshalTo)
 	ww.WriteBytes(msg.deal.Deal.Signature)
 	ww.WriteBytes(msg.deal.Deal.Nonce)
 	ww.WriteBytes(msg.deal.Deal.Cipher)
@@ -646,8 +646,7 @@ func (msg *rabinSecretCommitsMsg) Read(r io.Reader) error {
 	size := rr.ReadSize16()
 	msg.secretCommits.Commitments = make([]kyber.Point, size)
 	for i := range msg.secretCommits.Commitments {
-		msg.secretCommits.Commitments[i] = msg.blsSuite.Point()
-		rr.ReadMarshaled(msg.secretCommits.Commitments[i])
+		msg.secretCommits.Commitments[i] = cryptolib.PointFromReader(rr, msg.blsSuite)
 	}
 
 	msg.secretCommits.SessionID = rr.ReadBytes()
@@ -667,7 +666,7 @@ func (msg *rabinSecretCommitsMsg) Write(w io.Writer) error {
 
 	ww.WriteSize16(len(msg.secretCommits.Commitments))
 	for i := range msg.secretCommits.Commitments {
-		ww.WriteMarshaled(msg.secretCommits.Commitments[i])
+		cryptolib.PointToWriter(ww, msg.secretCommits.Commitments[i])
 	}
 
 	ww.WriteBytes(msg.secretCommits.SessionID)
@@ -725,6 +724,7 @@ func (msg *rabinComplaintCommitsMsg) Write(w io.Writer) error {
 // rabin_dkg.ReconstructCommits
 type rabinReconstructCommitsMsg struct {
 	step               byte
+	suite              suites.Suite
 	reconstructCommits []*rabin_dkg.ReconstructCommits
 }
 
@@ -750,7 +750,7 @@ func (msg *rabinReconstructCommitsMsg) Read(r io.Reader) error {
 		msg.reconstructCommits[i].SessionID = rr.ReadBytes()
 		msg.reconstructCommits[i].Index = rr.ReadUint32()
 		msg.reconstructCommits[i].DealerIndex = rr.ReadUint32()
-		msg.reconstructCommits[i].Share = readPriShare(rr)
+		msg.reconstructCommits[i].Share = readPriShare(rr, msg.suite)
 		msg.reconstructCommits[i].Signature = rr.ReadBytes()
 	}
 	return rr.Err
@@ -796,18 +796,8 @@ func (msg *multiKeySetMsg) SetStep(step byte) {
 func (msg *multiKeySetMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
-	msg.edMsg = &peering.PeerMessageData{
-		PeeringID:   msg.peeringID,
-		MsgReceiver: msg.receiver,
-		MsgType:     msg.msgType,
-		MsgData:     rr.ReadBytes(),
-	}
-	msg.blsMsg = &peering.PeerMessageData{
-		PeeringID:   msg.peeringID,
-		MsgReceiver: msg.receiver,
-		MsgType:     msg.msgType,
-		MsgData:     rr.ReadBytes(),
-	}
+	msg.edMsg = peering.NewPeerMessageData(msg.peeringID, msg.receiver, msg.msgType, rr.ReadBytes())
+	msg.blsMsg = peering.NewPeerMessageData(msg.peeringID, msg.receiver, msg.msgType, rr.ReadBytes())
 	return rr.Err
 }
 
@@ -820,7 +810,7 @@ func (msg *multiKeySetMsg) Write(w io.Writer) error {
 }
 
 func (msg *multiKeySetMsg) mustDataBytes() []byte {
-	return rwutil.WriterToBytes(msg)
+	return rwutil.WriteToBytes(msg)
 }
 
 type multiKeySetMsgs map[uint16]*multiKeySetMsg
@@ -877,22 +867,23 @@ func (m multiKeySetMsgs) AddBLSMsgs(msgs map[uint16]*peering.PeerMessageData, st
 //		I int          // Index of the private share
 //		V kyber.Scalar // Value of the private share
 //	}
-func writePriShare(ww *rwutil.Writer, val *share.PriShare) {
-	ww.WriteBool(val != nil)
-	if val != nil {
-		ww.WriteUint32(uint32(val.I))
-		ww.WriteMarshaled(val.V)
-	}
-}
 
-func readPriShare(rr *rwutil.Reader) (ret *share.PriShare) {
+func readPriShare(rr *rwutil.Reader, scalarFactory interface{ Scalar() kyber.Scalar }) (ret *share.PriShare) {
 	hasPriShare := rr.ReadBool()
 	if hasPriShare {
 		ret = new(share.PriShare)
 		ret.I = int(rr.ReadUint32())
-		rr.ReadMarshaled(ret.V)
+		ret.V = cryptolib.ScalarFromReader(rr, scalarFactory)
 	}
 	return ret
+}
+
+func writePriShare(ww *rwutil.Writer, val *share.PriShare) {
+	ww.WriteBool(val != nil)
+	if val != nil {
+		ww.WriteUint32(uint32(val.I))
+		cryptolib.ScalarToWriter(ww, val.V)
+	}
 }
 
 //	type rabin_vvs.Deal struct {
@@ -902,6 +893,21 @@ func readPriShare(rr *rwutil.Reader) (ret *share.PriShare) {
 //		T uint32					// Threshold used for this secret sharing run
 //		Commitments []kyber.Point	// Commitments are the coefficients used to verify the shares against
 //	}
+
+func readVssDeal(rr *rwutil.Reader, blsSuite kyber.Group) (ret *rabin_vss.Deal) {
+	ret = new(rabin_vss.Deal)
+	ret.SessionID = rr.ReadBytes()
+	ret.SecShare = readPriShare(rr, blsSuite)
+	ret.RndShare = readPriShare(rr, blsSuite)
+	ret.T = rr.ReadUint32()
+	size := rr.ReadSize16()
+	ret.Commitments = make([]kyber.Point, size)
+	for i := range ret.Commitments {
+		ret.Commitments[i] = cryptolib.PointFromReader(rr, blsSuite)
+	}
+	return ret
+}
+
 func writeVssDeal(ww *rwutil.Writer, d *rabin_vss.Deal) {
 	ww.WriteBytes(d.SessionID)
 	writePriShare(ww, d.SecShare)
@@ -909,21 +915,6 @@ func writeVssDeal(ww *rwutil.Writer, d *rabin_vss.Deal) {
 	ww.WriteUint32(d.T)
 	ww.WriteSize16(len(d.Commitments))
 	for i := range d.Commitments {
-		ww.WriteMarshaled(d.Commitments[i])
+		cryptolib.PointToWriter(ww, d.Commitments[i])
 	}
-}
-
-func readVssDeal(rr *rwutil.Reader, blsSuite kyber.Group) (ret *rabin_vss.Deal) {
-	ret = new(rabin_vss.Deal)
-	ret.SessionID = rr.ReadBytes()
-	ret.SecShare = readPriShare(rr)
-	ret.RndShare = readPriShare(rr)
-	ret.T = rr.ReadUint32()
-	size := rr.ReadSize16()
-	ret.Commitments = make([]kyber.Point, size)
-	for i := range ret.Commitments {
-		ret.Commitments[i] = blsSuite.Point()
-		rr.ReadMarshaled(ret.Commitments[i])
-	}
-	return ret
 }

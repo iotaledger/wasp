@@ -9,7 +9,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
-func TestTokenSchemeDeSeri(t *testing.T) {
+func TestTokenSchemeSerialization(t *testing.T) {
 	ts := &iotago.SimpleTokenScheme{
 		MintedTokens:  big.NewInt(1001),
 		MeltedTokens:  big.NewInt(1002),

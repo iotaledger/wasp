@@ -25,7 +25,6 @@ var Processor = Contract.Processor(nil,
 	FuncFoundryCreateNew.WithHandler(foundryCreateNew),
 	FuncFoundryDestroy.WithHandler(foundryDestroy),
 	FuncFoundryModifySupply.WithHandler(foundryModifySupply),
-	FuncHarvest.WithHandler(harvest),
 	FuncTransferAccountToChain.WithHandler(transferAccountToChain),
 	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
 	FuncWithdraw.WithHandler(withdraw),
@@ -206,35 +205,6 @@ func transferAccountToChain(ctx isc.Sandbox) dict.Dict {
 		callerContract.String(),
 		allowance.String(),
 	)
-	return nil
-}
-
-// harvest moves all the L2 balances of chain common account to chain owner's account
-// Params:
-//
-//	ParamForceMinimumBaseTokens: specify the number of BaseTokens left on the common account will be not less than MinimumBaseTokensOnCommonAccount constant
-//
-// TODO refactor owner of the chain moves all tokens balance the common account to its own account
-func harvest(ctx isc.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner()
-
-	bottomBaseTokens := ctx.Params().MustGetUint64(ParamForceMinimumBaseTokens, MinimumBaseTokensOnCommonAccount)
-	if bottomBaseTokens > MinimumBaseTokensOnCommonAccount {
-		bottomBaseTokens = MinimumBaseTokensOnCommonAccount
-	}
-
-	state := ctx.State()
-	commonAccount := CommonAccount()
-	toWithdraw := GetAccountFungibleTokens(state, commonAccount)
-	if toWithdraw.BaseTokens <= bottomBaseTokens {
-		// below minimum, nothing to withdraw
-		return nil
-	}
-	if toWithdraw.BaseTokens < bottomBaseTokens {
-		panic(ErrNotEnoughAllowance)
-	}
-	toWithdraw.BaseTokens -= bottomBaseTokens
-	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw)
 	return nil
 }
 

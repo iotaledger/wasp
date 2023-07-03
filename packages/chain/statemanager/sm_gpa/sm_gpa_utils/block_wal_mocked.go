@@ -17,10 +17,6 @@ var (
 	_ TestBlockWAL = &mockedBlockWAL{}
 )
 
-func NewMockedBlockWAL() BlockWAL {
-	return NewMockedTestBlockWAL()
-}
-
 func NewMockedTestBlockWAL() TestBlockWAL {
 	return &mockedBlockWAL{walContents: shrinkingmap.New[state.BlockHash, state.Block]()}
 }

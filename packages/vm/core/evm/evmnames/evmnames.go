@@ -32,7 +32,6 @@ const (
 	FieldResult           = "r"
 	FieldBlockNumber      = "bn"
 	FieldBlockHash        = "bh"
-	FieldGasRatio         = "w"
 	FieldFilterQuery      = "fq"
 	FieldBlockKeepAmount  = "bk"
 

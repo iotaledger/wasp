@@ -15,7 +15,7 @@ func EventsFromViewResult(viewResult dict.Dict) (ret []*isc.Event, err error) {
 	events := collections.NewArrayReadOnly(viewResult, ParamEvent)
 	ret = make([]*isc.Event, events.Len())
 	for i := range ret {
-		ret[i], err = isc.NewEvent(events.GetAt(uint32(i)))
+		ret[i], err = isc.EventFromBytes(events.GetAt(uint32(i)))
 		if err != nil {
 			return nil, err
 		}

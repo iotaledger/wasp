@@ -265,3 +265,29 @@ export class MutableGetMetadataResults extends wasmtypes.ScProxy {
         return new wasmtypes.ScMutableString(this.proxy.root(sc.ResultPublicURL));
     }
 }
+
+export class ImmutableGetMinSDResults extends wasmtypes.ScProxy {
+    getMinSD(): wasmtypes.ScImmutableUint64 {
+        return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultGetMinSD));
+    }
+}
+
+export class MutableGetMinSDResults extends wasmtypes.ScProxy {
+    getMinSD(): wasmtypes.ScMutableUint64 {
+        return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultGetMinSD));
+    }
+}
+
+export class ImmutableGetPayoutAgentIDResults extends wasmtypes.ScProxy {
+    // get payout AgentID
+    payoutAgentID(): wasmtypes.ScImmutableAgentID {
+        return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultPayoutAgentID));
+    }
+}
+
+export class MutableGetPayoutAgentIDResults extends wasmtypes.ScProxy {
+    // get payout AgentID
+    payoutAgentID(): wasmtypes.ScMutableAgentID {
+        return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultPayoutAgentID));
+    }
+}

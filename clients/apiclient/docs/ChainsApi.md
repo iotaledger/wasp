@@ -1204,7 +1204,7 @@ import (
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
     requestID := "requestID_example" // string | RequestID (Hex)
-    timeoutSeconds := int32(56) // int32 | The timeout in seconds (optional)
+    timeoutSeconds := int32(56) // int32 | The timeout in seconds, maximum 60s (optional)
     waitForL1Confirmation := true // bool | Wait for the block to be confirmed on L1 (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -1237,7 +1237,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 
 
- **timeoutSeconds** | **int32** | The timeout in seconds | 
+ **timeoutSeconds** | **int32** | The timeout in seconds, maximum 60s | 
  **waitForL1Confirmation** | **bool** | Wait for the block to be confirmed on L1 | 
 
 ### Return type

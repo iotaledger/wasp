@@ -13,27 +13,27 @@ import (
 )
 
 type SyncTX interface {
-	VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages
+	VMResultReceived(vmResult *vm.VMTaskResult) gpa.OutMessages
 	SignatureReceived(signature []byte) gpa.OutMessages
 	BlockSaved(block state.Block) gpa.OutMessages
 	String() string
 }
 
 type syncTXImpl struct {
-	vmResult   *vm.VMTask
+	vmResult   *vm.VMTaskResult
 	signature  []byte
 	blockSaved bool
 	block      state.Block
 
 	inputsReady   bool
-	inputsReadyCB func(vmResult *vm.VMTask, block state.Block, signature []byte) gpa.OutMessages
+	inputsReadyCB func(vmResult *vm.VMTaskResult, block state.Block, signature []byte) gpa.OutMessages
 }
 
-func NewSyncTX(inputsReadyCB func(vmResult *vm.VMTask, block state.Block, signature []byte) gpa.OutMessages) SyncTX {
+func NewSyncTX(inputsReadyCB func(vmResult *vm.VMTaskResult, block state.Block, signature []byte) gpa.OutMessages) SyncTX {
 	return &syncTXImpl{inputsReadyCB: inputsReadyCB}
 }
 
-func (sub *syncTXImpl) VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages {
+func (sub *syncTXImpl) VMResultReceived(vmResult *vm.VMTaskResult) gpa.OutMessages {
 	if sub.vmResult != nil || vmResult == nil {
 		return nil
 	}

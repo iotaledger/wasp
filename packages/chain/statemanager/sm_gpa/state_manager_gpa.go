@@ -1,10 +1,3 @@
-//
-//
-//
-//
-//
-//
-
 package sm_gpa
 
 import (
@@ -44,7 +37,7 @@ type stateManagerGPA struct {
 	lastCleanRequestsTime   time.Time
 	lastStatusLogTime       time.Time
 	lastSnapshotsUpdateTime time.Time
-	metrics                 metrics.IChainStateManagerMetrics
+	metrics                 *metrics.ChainStateManagerMetrics
 }
 
 var _ gpa.GPA = &stateManagerGPA{}
@@ -60,7 +53,7 @@ func New(
 	wal sm_gpa_utils.BlockWAL,
 	snapshotExistsFun SnapshotExistsFun,
 	store state.Store,
-	metrics metrics.IChainStateManagerMetrics,
+	metrics *metrics.ChainStateManagerMetrics,
 	log *logger.Logger,
 	parameters StateManagerParameters,
 ) (gpa.GPA, error) {

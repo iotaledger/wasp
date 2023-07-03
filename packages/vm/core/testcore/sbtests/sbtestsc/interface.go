@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
-var Contract = coreutil.NewContract("testcore", "Test Core Sandbox functions")
+var Contract = coreutil.NewContract("testcore")
 
 var Processor = Contract.Processor(initialize,
 	FuncChainOwnerIDView.WithHandler(testChainOwnerIDView),
@@ -121,7 +121,6 @@ var (
 const (
 	// State variables
 	VarCounter              = "counter"
-	VarSandboxCall          = "sandboxCall"
 	VarContractNameDeployed = "exampleDeployTR"
 
 	// parameters
@@ -140,11 +139,9 @@ const (
 	ParamN             = "n"
 	ParamProgHash      = "progHash"
 	ParamSize          = "size"
-	ParamVarName       = "varName"
 
 	// error fragments for testing
-	MsgDoNothing         = "========== doing nothing"
-	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="
-	MsgPanicUnauthorized = "============== panic due to unauthorized call"
-	MsgViewPanic         = "========== panic VIEW ========="
+	MsgDoNothing = "========== doing nothing"
+	MsgFullPanic = "========== panic FULL ENTRY POINT ========="
+	MsgViewPanic = "========== panic VIEW ========="
 )

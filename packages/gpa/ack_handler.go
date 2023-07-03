@@ -303,14 +303,6 @@ type ackHandlerReset struct {
 
 var _ Message = new(ackHandlerReset)
 
-func (msg *ackHandlerReset) MarshalBinary() ([]byte, error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *ackHandlerReset) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
-}
-
 func (msg *ackHandlerReset) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeAckHandlerReset.ReadAndVerify(rr)
@@ -354,14 +346,6 @@ func (msg *ackHandlerBatch) SetSender(sender NodeID) {
 	}
 }
 
-func (msg *ackHandlerBatch) MarshalBinary() ([]byte, error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *ackHandlerBatch) UnmarshalBinary(data []byte) error {
-	return rwutil.UnmarshalBinary(data, msg)
-}
-
 func (msg *ackHandlerBatch) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeAckHandlerBatch.ReadAndVerify(rr)
@@ -375,11 +359,7 @@ func (msg *ackHandlerBatch) Read(r io.Reader) error {
 	size := rr.ReadSize16()
 	msg.msgs = make([]Message, size)
 	for i := range msg.msgs {
-		msgData := rr.ReadBytes()
-		if rr.Err != nil {
-			return rr.Err
-		}
-		msg.msgs[i], rr.Err = msg.nestedGPA.UnmarshalMessage(msgData)
+		msg.msgs[i] = rwutil.ReadFromFunc(rr, msg.nestedGPA.UnmarshalMessage)
 	}
 
 	size = rr.ReadSize16()
@@ -400,7 +380,7 @@ func (msg *ackHandlerBatch) Write(w io.Writer) error {
 
 	ww.WriteSize16(len(msg.msgs))
 	for i := range msg.msgs {
-		ww.WriteMarshaled(msg.msgs[i])
+		ww.WriteBytes(rwutil.WriteToBytes(msg.msgs[i]))
 	}
 
 	ww.WriteSize16(len(msg.acks))

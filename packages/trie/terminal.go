@@ -102,7 +102,7 @@ func (t *Tcommitment) Write(w io.Writer) error {
 }
 
 func (t *Tcommitment) Bytes() []byte {
-	return rwutil.WriterToBytes(t)
+	return rwutil.WriteToBytes(t)
 }
 
 func (t *Tcommitment) String() string {

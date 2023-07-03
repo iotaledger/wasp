@@ -214,7 +214,7 @@ func logEvents(ret *apiclient.EventsResponse) {
 	rows := make([][]string, len(ret.Events))
 
 	for i, event := range ret.Events {
-		rows[i] = []string{*event.Topic}
+		rows[i] = []string{event.Topic}
 	}
 
 	log.Printf("Total %d events\n", len(ret.Events))

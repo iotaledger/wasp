@@ -6,11 +6,10 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-func eventDeploy(ctx isc.Sandbox, progHash hashing.HashValue, name string, description string) {
+func eventDeploy(ctx isc.Sandbox, progHash hashing.HashValue, name string) {
 	ww := rwutil.NewBytesWriter()
 	ww.Write(&progHash)
 	ww.WriteString(name)
-	ww.WriteString(description)
 	ctx.Event("coreroot.deploy", ww.Bytes())
 }
 

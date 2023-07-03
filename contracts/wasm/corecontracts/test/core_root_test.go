@@ -45,7 +45,6 @@ func TestDeployContract(t *testing.T) {
 	fdeploy := coreroot.ScFuncs.DeployContract(ctxr)
 	fdeploy.Params.ProgramHash().SetValue(fblob.Results.Hash().Value())
 	fdeploy.Params.Name().SetValue("test_name")
-	fdeploy.Params.Description().SetValue("this is desc")
 	fdeploy.Func.Post()
 	require.NoError(t, ctxr.Err)
 }

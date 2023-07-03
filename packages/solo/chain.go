@@ -477,16 +477,18 @@ func (ch *Chain) GetRequestReceiptsForBlockRangeAsStrings(fromBlockIndex, toBloc
 	return ret
 }
 
-func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
-	res, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewControlAddresses.Name)
-	require.NoError(ch.Env.T, err)
-	par := kvdecoder.New(res, ch.Log())
-	ret := &blocklog.ControlAddresses{
-		StateAddress:     par.MustGetAddress(blocklog.ParamStateControllerAddress),
-		GoverningAddress: par.MustGetAddress(blocklog.ParamGoverningAddress),
-		SinceBlockIndex:  par.MustGetUint32(blocklog.ParamBlockIndex),
+func (ch *Chain) GetControlAddresses() *isc.ControlAddresses {
+	aliasOutputID, err := ch.LatestAliasOutput(chain.ConfirmedState)
+	if err != nil {
+		return nil
 	}
-	return ret
+	aliasOutput := aliasOutputID.GetAliasOutput()
+	controlAddr := &isc.ControlAddresses{
+		StateAddress:     aliasOutput.StateController(),
+		GoverningAddress: aliasOutput.GovernorAddress(),
+		SinceBlockIndex:  aliasOutput.StateIndex,
+	}
+	return controlAddr
 }
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
@@ -566,7 +568,21 @@ func (ch *Chain) L1L2Funds(addr iotago.Address) *L1L2AddressAssets {
 }
 
 func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...uint64) {
-	walletKey, walletAddr := ch.Env.NewKeyPairWithFunds()
+	// find a deterministic L1 address that has 0 balance
+	walletKey, walletAddr := func() (*cryptolib.KeyPair, iotago.Address) {
+		seed := cryptolib.SeedFromBytes([]byte("GetL2FundsFromFaucet"))
+		i := uint64(0)
+		for {
+			ss := seed.SubSeed(i)
+			key, addr := ch.Env.NewKeyPair(&ss)
+			_, err := ch.Env.GetFundsFromFaucet(addr)
+			require.NoError(ch.Env.T, err)
+			if ch.L2BaseTokens(isc.NewAgentID(addr)) == 0 {
+				return key, addr
+			}
+			i++
+		}
+	}()
 
 	var amount uint64
 	if len(baseTokens) > 0 {
@@ -603,8 +619,8 @@ func (*Chain) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
 }
 
 // GetChainMetrics implements chain.Chain
-func (*Chain) GetChainMetrics() metrics.IChainMetrics {
-	panic("unimplemented")
+func (ch *Chain) GetChainMetrics() *metrics.ChainMetrics {
+	return ch.metrics
 }
 
 // GetConsensusPipeMetrics implements chain.Chain

@@ -19,14 +19,14 @@ var _ MappedNullable = &EventsResponse{}
 
 // EventsResponse struct for EventsResponse
 type EventsResponse struct {
-	Events []Event `json:"events"`
+	Events []EventJSON `json:"events"`
 }
 
 // NewEventsResponse instantiates a new EventsResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewEventsResponse(events []Event) *EventsResponse {
+func NewEventsResponse(events []EventJSON) *EventsResponse {
 	this := EventsResponse{}
 	this.Events = events
 	return &this
@@ -41,9 +41,9 @@ func NewEventsResponseWithDefaults() *EventsResponse {
 }
 
 // GetEvents returns the Events field value
-func (o *EventsResponse) GetEvents() []Event {
+func (o *EventsResponse) GetEvents() []EventJSON {
 	if o == nil {
-		var ret []Event
+		var ret []EventJSON
 		return ret
 	}
 
@@ -52,7 +52,7 @@ func (o *EventsResponse) GetEvents() []Event {
 
 // GetEventsOk returns a tuple with the Events field value
 // and a boolean to check if the value has been set.
-func (o *EventsResponse) GetEventsOk() ([]Event, bool) {
+func (o *EventsResponse) GetEventsOk() ([]EventJSON, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -60,7 +60,7 @@ func (o *EventsResponse) GetEventsOk() ([]Event, bool) {
 }
 
 // SetEvents sets field value
-func (o *EventsResponse) SetEvents(v []Event) {
+func (o *EventsResponse) SetEvents(v []EventJSON) {
 	o.Events = v
 }
 

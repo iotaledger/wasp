@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
@@ -82,6 +83,7 @@ func TestCruelWorld(t *testing.T) {
 		stores[i] = state.NewStore(mapdb.NewMapDB())
 		snapMs[i] = NewMockedSnapshotManagerFun(i < snapshotCreateNodeCount, stores[i], logNode)
 		origin.InitChain(stores[i], nil, 0)
+		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		sms[i], err = New(
 			context.Background(),
 			bf.GetChainID(),
@@ -92,8 +94,8 @@ func TestCruelWorld(t *testing.T) {
 			snapMs[i],
 			stores[i],
 			nil,
-			metrics.NewEmptyChainStateManagerMetric(),
-			metrics.NewEmptyChainPipeMetrics(),
+			chainMetrics.StateManager,
+			chainMetrics.Pipe,
 			logNode,
 			parameters,
 		)

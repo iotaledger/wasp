@@ -15,7 +15,7 @@ import (
 )
 
 func TestSandboxStackOverflow(t *testing.T) {
-	contract := coreutil.NewContract("test stack overflow", "")
+	contract := coreutil.NewContract("test stack overflow")
 	testFunc := coreutil.Func("overflow")
 	env := solo.New(t, &solo.InitOptions{
 		AutoAdjustStorageDeposit: true,

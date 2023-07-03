@@ -64,7 +64,7 @@ func NewAgentID(addr iotago.Address) AgentID {
 		chainID := ChainIDFromAddress(addr.(*iotago.AliasAddress))
 		return NewContractAgentID(chainID, HnameNil)
 	}
-	return &AddressAgentID{a: addr}
+	return NewAddressAgentID(addr)
 }
 
 func AgentIDFromBytes(data []byte) (AgentID, error) {

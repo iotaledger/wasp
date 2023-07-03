@@ -92,16 +92,13 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 	// calls to non-maintenance endpoints are not processed
 	notProccessedReq1, err := userIncCounterSCClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
-	time.Sleep(10 * time.Second) // not ideal, but I don't think there is a good way to wait for something that will NOT be processed
 	rec, err := env.Chain.GetRequestReceipt(notProccessedReq1.ID())
-
 	require.EqualValues(t, `404 Not Found`, err.Error())
 	require.Nil(t, rec)
 
 	// calls to non-maintenance endpoints are not processed, even when done by the chain owner
 	notProccessedReq2, err := ownerIncCounterSCClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
 	require.NoError(t, err)
-	time.Sleep(10 * time.Second) // not ideal, but I don't think there is a good way to wait for something that will NOT be processed
 	rec, err = env.Chain.GetRequestReceipt(notProccessedReq2.ID())
 	require.EqualValues(t, `404 Not Found`, err.Error())
 	require.Nil(t, rec)
@@ -118,43 +115,43 @@ func testMaintenance(t *testing.T, env *ChainEnv) {
 		EVMGasRatio:       gas.DefaultEVMGasRatio,
 	}
 	{
-		req, err2 := ownerSCClient.PostOffLedgerRequest(governance.FuncSetFeePolicy.Name, chainclient.PostRequestParams{
+		tx, err2 := ownerSCClient.PostRequest(governance.FuncSetFeePolicy.Name, chainclient.PostRequestParams{
 			Args: dict.Dict{
 				governance.ParamFeePolicyBytes: newGasFeePolicy.Bytes(),
 			},
 		})
 		require.NoError(t, err2)
-		_, err2 = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), false, 10*time.Second)
+		_, err2 = env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 10*time.Second)
 		require.NoError(t, err2)
 	}
 
 	// calls to governance from non-owners should be processed, but fail
 	{
-		req, err2 := userSCClient.PostOffLedgerRequest(governance.FuncSetFeePolicy.Name, chainclient.PostRequestParams{
+		tx, err2 := userSCClient.PostRequest(governance.FuncSetFeePolicy.Name, chainclient.PostRequestParams{
 			Args: dict.Dict{
 				governance.ParamFeePolicyBytes: newGasFeePolicy.Bytes(),
 			},
 		})
 		require.NoError(t, err2)
-		receipt, err2 := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), false, 10*time.Second)
+		receipts, err2 := env.Clu.MultiClient().WaitUntilAllRequestsProcessed(env.Chain.ChainID, tx, false, 10*time.Second)
 		require.NoError(t, err2)
-		require.NotNil(t, receipt.ErrorMessage)
+		require.NotNil(t, receipts[0].ErrorMessage)
 	}
 
 	// test non-chain owner cannot call stop maintenance
 	{
-		req, err2 := userSCClient.PostOffLedgerRequest(governance.FuncStopMaintenance.Name)
+		tx, err2 := userSCClient.PostRequest(governance.FuncStopMaintenance.Name)
 		require.NoError(t, err2)
-		rec, err2 := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), false, 10*time.Second)
+		receipts, err2 := env.Clu.MultiClient().WaitUntilAllRequestsProcessed(env.Chain.ChainID, tx, false, 10*time.Second)
 		require.NoError(t, err2)
-		require.NotNil(t, rec.ErrorMessage)
+		require.NotNil(t, receipts[0].ErrorMessage)
 	}
 
 	// owner can stop maintenance mode
 	{
-		req, err2 := ownerSCClient.PostOffLedgerRequest(governance.FuncStopMaintenance.Name)
+		tx, err2 := ownerSCClient.PostRequest(governance.FuncStopMaintenance.Name)
 		require.NoError(t, err2)
-		_, err2 = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), false, 10*time.Second)
+		_, err2 = env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 10*time.Second)
 		require.NoError(t, err2)
 	}
 

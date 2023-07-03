@@ -85,10 +85,6 @@ type WrappingMsg struct {
 
 var _ Message = new(WrappingMsg)
 
-func NewWrappingMsg(msgType MessageType, subsystem byte, index int, wrapped Message) *WrappingMsg {
-	return &WrappingMsg{msgType: msgType, subsystem: subsystem, index: index, wrapped: wrapped}
-}
-
 func (msg *WrappingMsg) Subsystem() byte {
 	return msg.subsystem
 }
@@ -109,24 +105,16 @@ func (msg *WrappingMsg) SetSender(sender NodeID) {
 	msg.wrapped.SetSender(sender)
 }
 
-func (msg *WrappingMsg) MarshalBinary() ([]byte, error) {
-	return rwutil.MarshalBinary(msg)
-}
-
-func (msg *WrappingMsg) UnmarshalBinary(data []byte) error {
-	// return rwutil.UnmarshalBinary(data, msg)
-	panic("this message is un-marshaled by the gpa.MsgWrapper")
-}
-
 // note: never called, unfinished concept version
 func (msg *WrappingMsg) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	msg.msgType.ReadAndVerify(rr)
-	msg.subsystem = rr.ReadByte()
-	msg.index = int(rr.ReadUint16())
-	// TODO: allocate proper message
-	rr.ReadMarshaled(msg.wrapped)
-	return rr.Err
+	panic("this message is un-marshaled by the gpa.MsgWrapper")
+	//rr := rwutil.NewReader(r)
+	//msg.msgType.ReadAndVerify(rr)
+	//msg.subsystem = rr.ReadByte()
+	//msg.index = int(rr.ReadUint16())
+	//// TODO: allocate proper message instead of msg.wrapped parameter
+	//msg.wrapped, rr.Err = rwutil.ReadFromBytes(rr.ReadBytes(), msg.wrapped)
+	//return rr.Err
 }
 
 func (msg *WrappingMsg) Write(w io.Writer) error {
@@ -134,6 +122,6 @@ func (msg *WrappingMsg) Write(w io.Writer) error {
 	msg.msgType.Write(ww)
 	ww.WriteByte(msg.subsystem)
 	ww.WriteUint16(uint16(msg.index))
-	ww.WriteMarshaled(msg.wrapped)
+	ww.WriteBytes(rwutil.WriteToBytes(msg.wrapped))
 	return ww.Err
 }

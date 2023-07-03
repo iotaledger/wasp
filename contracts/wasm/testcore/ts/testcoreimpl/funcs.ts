@@ -142,8 +142,7 @@ export function funcSetInt(ctx: wasmlib.ScFuncContext, f: sc.SetIntContext): voi
 export function funcSpawn(ctx: wasmlib.ScFuncContext, f: sc.SpawnContext): void {
     let programHash = f.params.progHash().value();
     let spawnName = sc.ScName + "_spawned";
-    let spawnDescr = "spawned contract description";
-    ctx.deployContract(programHash, spawnName, spawnDescr, null);
+    ctx.deployContract(programHash, spawnName, null);
 
     let spawnHname = wasmtypes.ScHname.fromName(spawnName);
     for (let i = 0; i < 5; i++) {
@@ -203,7 +202,7 @@ export function funcTestChainOwnerIDFull(ctx: wasmlib.ScFuncContext, f: sc.TestC
 export function funcTestEventLogDeploy(ctx: wasmlib.ScFuncContext, f: sc.TestEventLogDeployContext): void {
     // deploy the same contract with another name
     let programHash = ctx.utility().hashBlake2b(wasmtypes.stringToBytes("testcore"));
-    ctx.deployContract(programHash, CONTRACT_NAME_DEPLOYED, "test contract deploy log", null);
+    ctx.deployContract(programHash, CONTRACT_NAME_DEPLOYED, null);
 }
 
 export function funcTestEventLogEventData(ctx: wasmlib.ScFuncContext, f: sc.TestEventLogEventDataContext): void {

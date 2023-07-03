@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_utils"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
@@ -92,8 +93,7 @@ func newVariedTestEnv(
 		snapshotExistsFun := snapshotManager.SnapshotExists
 		origin.InitChain(store, chainInitParameters, 0)
 		stores[nodeID] = store
-		metrics := metrics.NewEmptyChainStateManagerMetric()
-		sms[nodeID], err = New(chainID, nr, wal, snapshotExistsFun, store, metrics, smLog, parameters)
+		sms[nodeID], err = New(chainID, nr, wal, snapshotExistsFun, store, mockStateManagerMetrics(), smLog, parameters)
 		require.NoError(t, err)
 		snapms[nodeID] = snapshotManager
 		snaprchs[nodeID] = nil
@@ -358,4 +358,8 @@ func (teT *testEnv) sendInputToNodes(makeInputFun func(gpa.NodeID) gpa.Input) {
 		inputs[nodeID] = makeInputFun(nodeID)
 	}
 	teT.tc.WithInputs(inputs).RunAll()
+}
+
+func mockStateManagerMetrics() *metrics.ChainStateManagerMetrics {
+	return metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID()).StateManager
 }

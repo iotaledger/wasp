@@ -14,7 +14,6 @@ events:
   deploy:
     progHash: Hash
     name: String
-    description: String
   grant:
     deployer: AgentID
   revoke:
@@ -39,7 +38,6 @@ funcs:
       # The name of the contract to be deployed, used to calculate the contract's hname.
       # The hname must be unique among all contract hnames in the chain.
       name=nm: String
-      description=ds: String? # Description of the contract to be deployed. Default 'N/A'
 
   # Grants deploy permission to an agent.
   grantDeployPermission:
@@ -66,7 +64,7 @@ views:
     params:
       hname=hn: Hname # The smart contract’s Hname
     results:
-      contractFound=cf: Bool # whether or not the contract exists.
+      contractFound=cf: Bool # whether the contract exists.
       contractRecData=dt: Bytes? # encoded contract record (if exists)
 
   # Returns the list of all smart contracts deployed on the chain and their records.

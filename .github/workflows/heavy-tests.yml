@@ -16,12 +16,6 @@ jobs:
         run: |
           apt update
           apt install -y build-essential libstdc++6 software-properties-common make gcc git curl tar
-      - name: Install solc
-        id: solc
-        run: |
-          add-apt-repository ppa:ethereum/ethereum
-          apt-get update
-          apt-get install solc
       - name: Check out code into the Go module directory
         id: checkout
         uses: actions/checkout@v3
@@ -30,10 +24,6 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: "1.20"
-
-      - name: Compile solidity contracts
-        id: make_solidity
-        run: make compile-solidity
 
       - name: Run global scope golangci-lint
         id: global_lint
@@ -127,12 +117,6 @@ jobs:
         run: |
           apt update
           apt install -y build-essential libstdc++6 software-properties-common make gcc git wget curl tar
-      - name: Install solc
-        id: solc
-        run: |
-          add-apt-repository ppa:ethereum/ethereum
-          apt-get update
-          apt-get install solc
       - name: checkout to the directory
         id: checkout
         uses: actions/checkout@v3
@@ -191,7 +175,6 @@ jobs:
         env:
           TEST_LANG: ${{matrix.TEST_LANG}}
         run: |
-          make compile-solidity
           cd contracts/wasm
           if [ $TEST_LANG == "go" ]; then
             go test ./...
@@ -271,12 +254,6 @@ jobs:
         run: |
           apt update
           apt install -y build-essential libstdc++6 software-properties-common make gcc git curl tar
-      - name: Install solc
-        id: solc
-        run: |
-          add-apt-repository ppa:ethereum/ethereum
-          apt-get update
-          apt-get install solc
       - name: Check out code into the Go module directory
         id: checkout
         uses: actions/checkout@v3

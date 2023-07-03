@@ -15,7 +15,7 @@ pub struct ImmutableFindContractResults {
 }
 
 impl ImmutableFindContractResults {
-    // whether or not the contract exists.
+    // whether the contract exists.
     pub fn contract_found(&self) -> ScImmutableBool {
         ScImmutableBool::new(self.proxy.root(RESULT_CONTRACT_FOUND))
     }
@@ -38,7 +38,7 @@ impl MutableFindContractResults {
         }
     }
 
-    // whether or not the contract exists.
+    // whether the contract exists.
     pub fn contract_found(&self) -> ScMutableBool {
         ScMutableBool::new(self.proxy.root(RESULT_CONTRACT_FOUND))
     }

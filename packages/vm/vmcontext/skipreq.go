@@ -17,8 +17,7 @@ import (
 const (
 	// ExpiryUnlockSafetyWindowDuration creates safety window around time assumption,
 	// the UTXO won't be consumed to avoid race conditions
-	ExpiryUnlockSafetyWindowDuration  = 1 * time.Minute
-	ExpiryUnlockSafetyWindowMilestone = 3
+	ExpiryUnlockSafetyWindowDuration = 1 * time.Minute
 )
 
 // earlyCheckReasonToSkip checks if request must be ignored without even modifying the state
@@ -34,11 +33,11 @@ func (vmctx *VMContext) earlyCheckReasonToSkip() error {
 	}
 
 	if vmctx.task.MaintenanceModeEnabled &&
-		vmctx.req.CallTarget().Contract != governance.Contract.Hname() {
+		vmctx.reqCtx.req.CallTarget().Contract != governance.Contract.Hname() {
 		return errors.New("skipped due to maintenance mode")
 	}
 
-	if vmctx.req.IsOffLedger() {
+	if vmctx.reqCtx.req.IsOffLedger() {
 		return vmctx.checkReasonToSkipOffLedger()
 	}
 	return vmctx.checkReasonToSkipOnLedger()
@@ -46,7 +45,7 @@ func (vmctx *VMContext) earlyCheckReasonToSkip() error {
 
 // checkReasonRequestProcessed checks if request ID is already in the blocklog
 func (vmctx *VMContext) checkReasonRequestProcessed() error {
-	reqid := vmctx.req.ID()
+	reqid := vmctx.reqCtx.req.ID()
 	var isProcessed bool
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
 		isProcessed = blocklog.MustIsRequestProcessed(s, reqid)
@@ -65,14 +64,14 @@ func (vmctx *VMContext) checkReasonToSkipOffLedger() error {
 	}
 
 	// skip ISC nonce check for EVM requests
-	senderAccount := vmctx.req.SenderAccount()
+	senderAccount := vmctx.reqCtx.req.SenderAccount()
 	if senderAccount.Kind() == isc.AgentIDKindEthereumAddress {
 		return nil
 	}
 
 	var nonceErr error
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		nonceErr = accounts.CheckNonce(s, senderAccount, vmctx.req.(isc.OffLedgerRequest).Nonce())
+		nonceErr = accounts.CheckNonce(s, senderAccount, vmctx.reqCtx.req.(isc.OffLedgerRequest).Nonce())
 	})
 	return nonceErr
 }
@@ -102,7 +101,7 @@ func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
 
 func (vmctx *VMContext) checkInternalOutput() error {
 	// internal outputs are used for internal accounting of assets inside the chain. They are not interpreted as requests
-	if vmctx.req.(isc.OnLedgerRequest).IsInternalUTXO(vmctx.ChainID()) {
+	if vmctx.reqCtx.req.(isc.OnLedgerRequest).IsInternalUTXO(vmctx.ChainID()) {
 		return errors.New("it is an internal output")
 	}
 	return nil
@@ -111,10 +110,10 @@ func (vmctx *VMContext) checkInternalOutput() error {
 // checkReasonTimeLock checking timelock conditions based on time assumptions.
 // VM must ensure that the UTXO can be unlocked
 func (vmctx *VMContext) checkReasonTimeLock() error {
-	timeLock := vmctx.req.(isc.OnLedgerRequest).Features().TimeLock()
+	timeLock := vmctx.reqCtx.req.(isc.OnLedgerRequest).Features().TimeLock()
 	if !timeLock.IsZero() {
-		if vmctx.finalStateTimestamp.Before(timeLock) {
-			return fmt.Errorf("can't be consumed due to lock until %v", vmctx.finalStateTimestamp)
+		if vmctx.task.FinalStateTimestamp().Before(timeLock) {
+			return fmt.Errorf("can't be consumed due to lock until %v", vmctx.task.FinalStateTimestamp())
 		}
 	}
 	return nil
@@ -123,25 +122,26 @@ func (vmctx *VMContext) checkReasonTimeLock() error {
 // checkReasonExpiry checking expiry conditions based on time assumptions.
 // VM must ensure that the UTXO can be unlocked
 func (vmctx *VMContext) checkReasonExpiry() error {
-	expiry, _ := vmctx.req.(isc.OnLedgerRequest).Features().Expiry()
+	expiry, _ := vmctx.reqCtx.req.(isc.OnLedgerRequest).Features().Expiry()
 
 	if expiry.IsZero() {
 		return nil
 	}
 
 	// Validate time window
-	windowFrom := vmctx.finalStateTimestamp.Add(-ExpiryUnlockSafetyWindowDuration)
-	windowTo := vmctx.finalStateTimestamp.Add(ExpiryUnlockSafetyWindowDuration)
+	finalStateTimestamp := vmctx.task.FinalStateTimestamp()
+	windowFrom := finalStateTimestamp.Add(-ExpiryUnlockSafetyWindowDuration)
+	windowTo := finalStateTimestamp.Add(ExpiryUnlockSafetyWindowDuration)
 
 	if expiry.After(windowFrom) && expiry.Before(windowTo) {
 		return fmt.Errorf("can't be consumed in the expire safety window close to %v", expiry)
 	}
 
 	// General unlock validation
-	output, _ := vmctx.req.(isc.OnLedgerRequest).Output().(iotago.TransIndepIdentOutput)
+	output, _ := vmctx.reqCtx.req.(isc.OnLedgerRequest).Output().(iotago.TransIndepIdentOutput)
 
 	unlockable := output.UnlockableBy(vmctx.task.AnchorOutput.AliasID.ToAddress(), &iotago.ExternalUnlockParameters{
-		ConfUnix: uint32(vmctx.finalStateTimestamp.Unix()),
+		ConfUnix: uint32(finalStateTimestamp.Unix()),
 	})
 
 	if !unlockable {
@@ -153,7 +153,7 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 
 // checkReasonReturnAmount skipping anything with return amounts in this version. There's no risk to lose funds
 func (vmctx *VMContext) checkReasonReturnAmount() error {
-	if _, ok := vmctx.req.(isc.OnLedgerRequest).Features().ReturnAmount(); ok {
+	if _, ok := vmctx.reqCtx.req.(isc.OnLedgerRequest).Features().ReturnAmount(); ok {
 		return errors.New("return amount feature not supported in this version")
 	}
 	return nil

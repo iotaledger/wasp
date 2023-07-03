@@ -5,12 +5,9 @@ package governanceimpl
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
@@ -40,13 +37,10 @@ func rotateStateController(ctx isc.Sandbox) dict.Dict {
 	// Two situations possible:
 	// - either there's no need to rotate
 	// - or it just has been rotated. In case of the second situation we emit a 'rotate' event
-	addrs := ctx.Call(coreutil.CoreContractBlocklogHname, blocklog.ViewControlAddresses.Hname(), nil, nil)
-	par := kvdecoder.New(addrs, ctx.Log())
-	storedStateController := par.MustGetAddress(blocklog.ParamStateControllerAddress)
-	if !storedStateController.Equal(newStateControllerAddr) {
+	if !ctx.StateAnchor().StateController.Equal(newStateControllerAddr) {
 		// state controller address recorded in the blocklog is different from the new one
 		// It means rotation happened
-		eventRotate(ctx, newStateControllerAddr, storedStateController)
+		eventRotate(ctx, newStateControllerAddr, ctx.StateAnchor().StateController)
 		return nil
 	}
 	// no need to rotate because address does not change

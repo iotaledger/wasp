@@ -40,11 +40,11 @@ func NewBatchProposal(
 }
 
 func batchProposalFromBytes(data []byte) (*BatchProposal, error) {
-	return rwutil.ReaderFromBytes(data, new(BatchProposal))
+	return rwutil.ReadFromBytes(data, new(BatchProposal))
 }
 
 func (b *BatchProposal) Bytes() []byte {
-	return rwutil.WriterToBytes(b)
+	return rwutil.WriteToBytes(b)
 }
 
 func (b *BatchProposal) Read(r io.Reader) error {

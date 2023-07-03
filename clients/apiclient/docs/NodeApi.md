@@ -13,7 +13,7 @@ Method | HTTP request | Description
 [**GetPeeringIdentity**](NodeApi.md#GetPeeringIdentity) | **Get** /v1/node/peers/identity | Get basic peer info of the current node
 [**GetTrustedPeers**](NodeApi.md#GetTrustedPeers) | **Get** /v1/node/peers/trusted | Get trusted peers
 [**GetVersion**](NodeApi.md#GetVersion) | **Get** /v1/node/version | Returns the node version.
-[**SetNodeOwner**](NodeApi.md#SetNodeOwner) | **Post** /v1/node/owner/certificate | Sets the node owner
+[**OwnerCertificate**](NodeApi.md#OwnerCertificate) | **Get** /v1/node/owner/certificate | Gets the node owner
 [**ShutdownNode**](NodeApi.md#ShutdownNode) | **Post** /v1/node/shutdown | Shut down the node
 [**TrustPeer**](NodeApi.md#TrustPeer) | **Post** /v1/node/peers/trusted | Trust a peering node
 
@@ -571,11 +571,11 @@ No authorization required
 [[Back to README]](../README.md)
 
 
-## SetNodeOwner
+## OwnerCertificate
 
-> NodeOwnerCertificateResponse SetNodeOwner(ctx).NodeOwnerCertificateRequest(nodeOwnerCertificateRequest).Execute()
+> NodeOwnerCertificateResponse OwnerCertificate(ctx).Execute()
 
-Sets the node owner
+Gets the node owner
 
 ### Example
 
@@ -590,32 +590,27 @@ import (
 )
 
 func main() {
-    nodeOwnerCertificateRequest := *openapiclient.NewNodeOwnerCertificateRequest("OwnerAddress_example", "PublicKey_example") // NodeOwnerCertificateRequest | The node owner certificate
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.NodeApi.SetNodeOwner(context.Background()).NodeOwnerCertificateRequest(nodeOwnerCertificateRequest).Execute()
+    resp, r, err := apiClient.NodeApi.OwnerCertificate(context.Background()).Execute()
     if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `NodeApi.SetNodeOwner``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Error when calling `NodeApi.OwnerCertificate``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `SetNodeOwner`: NodeOwnerCertificateResponse
-    fmt.Fprintf(os.Stdout, "Response from `NodeApi.SetNodeOwner`: %v\n", resp)
+    // response from `OwnerCertificate`: NodeOwnerCertificateResponse
+    fmt.Fprintf(os.Stdout, "Response from `NodeApi.OwnerCertificate`: %v\n", resp)
 }
 ```
 
 ### Path Parameters
 
-
+This endpoint does not need any parameter.
 
 ### Other Parameters
 
-Other parameters are passed through a pointer to a apiSetNodeOwnerRequest struct via the builder pattern
+Other parameters are passed through a pointer to a apiOwnerCertificateRequest struct via the builder pattern
 
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **nodeOwnerCertificateRequest** | [**NodeOwnerCertificateRequest**](NodeOwnerCertificateRequest.md) | The node owner certificate | 
 
 ### Return type
 
@@ -627,7 +622,7 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
-- **Content-Type**: application/json
+- **Content-Type**: Not defined
 - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)

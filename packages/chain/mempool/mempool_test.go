@@ -222,8 +222,9 @@ func blockFn(te *testEnv, reqs []isc.Request, ao *isc.AliasOutputWithID, tangleT
 		MaintenanceModeEnabled: false,
 		Log:                    te.log.Named("VM"),
 	}
-	require.NoError(te.t, runvm.NewVMRunner().Run(vmTask))
-	block := store.Commit(vmTask.StateDraft)
+	vmResult, err := runvm.NewVMRunner().Run(vmTask)
+	require.NoError(te.t, err)
+	block := store.Commit(vmResult.StateDraft)
 	chainState, err := store.StateByTrieRoot(block.TrieRoot())
 	require.NoError(te.t, err)
 	//
@@ -668,14 +669,15 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 		te.stores[i] = state.NewStore(mapdb.NewMapDB())
 		_, err := origin.InitChainByAliasOutput(te.stores[i], te.originAO)
 		require.NoError(t, err)
+		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		te.mempools[i] = mempool.New(
 			te.ctx,
 			te.chainID,
 			te.peerIdentities[i],
 			te.networkProviders[i],
 			te.log.Named(fmt.Sprintf("N#%v", i)),
-			metrics.NewEmptyChainMempoolMetric(),
-			metrics.NewEmptyChainPipeMetrics(),
+			chainMetrics.Mempool,
+			chainMetrics.Pipe,
 			chain.NewEmptyChainListener(),
 		)
 	}

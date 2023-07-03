@@ -51,12 +51,12 @@ func (ch *Chain) estimateGas(req isc.Request) (result *vm.RequestResult) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	task := ch.runTaskNoLock([]isc.Request{req}, true)
-	require.Len(ch.Env.T, task.Results, 1, "cannot estimate gas: request was skipped")
-	return task.Results[0]
+	res := ch.runTaskNoLock([]isc.Request{req}, true)
+	require.Len(ch.Env.T, res.RequestResults, 1, "cannot estimate gas: request was skipped")
+	return res.RequestResults[0]
 }
 
-func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTask {
+func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskResult {
 	anchorOutput := ch.GetAnchorOutputFromL1()
 	task := &vm.VMTask{
 		Processors:         ch.proc,
@@ -73,27 +73,27 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTask 
 		EstimateGasMode:      estimateGas,
 	}
 
-	err := ch.vmRunner.Run(task)
+	res, err := ch.vmRunner.Run(task)
 	require.NoError(ch.Env.T, err)
-	accounts.CheckLedger(task.StateDraft, "solo")
-	return task
+	accounts.CheckLedger(res.StateDraft, "solo")
+	return res
 }
 
 func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []*vm.RequestResult) {
 	ch.Log().Debugf("runRequestsNolock ('%s')", trace)
 
-	task := ch.runTaskNoLock(reqs, false)
+	res := ch.runTaskNoLock(reqs, false)
 
 	var essence *iotago.TransactionEssence
-	if task.RotationAddress == nil {
-		essence = task.ResultTransactionEssence
-		copy(essence.InputsCommitment[:], task.ResultInputsCommitment)
+	if res.RotationAddress == nil {
+		essence = res.TransactionEssence
+		copy(essence.InputsCommitment[:], res.InputsCommitment)
 	} else {
 		var err error
 		essence, err = rotate.MakeRotateStateControllerTransaction(
-			task.RotationAddress,
-			isc.NewAliasOutputWithID(task.AnchorOutput, task.AnchorOutputID),
-			task.TimeAssumption.Add(2*time.Nanosecond),
+			res.RotationAddress,
+			isc.NewAliasOutputWithID(res.Task.AnchorOutput, res.Task.AnchorOutputID),
+			res.Task.TimeAssumption.Add(2*time.Nanosecond),
 			identity.ID{},
 			identity.ID{},
 		)
@@ -107,9 +107,9 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 
 	tx := transaction.MakeAnchorTransaction(essence, sigs[0])
 
-	if task.RotationAddress == nil {
+	if res.RotationAddress == nil {
 		// normal state transition
-		ch.settleStateTransition(tx, task.StateDraft)
+		ch.settleStateTransition(tx, res.StateDraft)
 	}
 
 	err = ch.Env.AddToLedger(tx)
@@ -118,7 +118,7 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 	anchor, _, err := transaction.GetAnchorFromTransaction(tx)
 	require.NoError(ch.Env.T, err)
 
-	if task.RotationAddress != nil {
+	if res.RotationAddress != nil {
 		ch.Log().Infof("ROTATED STATE CONTROLLER to %s", anchor.StateController)
 	}
 
@@ -126,7 +126,7 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 	l1C := ch.GetL1Commitment()
 	require.Equal(ch.Env.T, rootC, l1C.TrieRoot())
 
-	return task.Results
+	return res.RequestResults
 }
 
 func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, stateDraft state.StateDraft) {

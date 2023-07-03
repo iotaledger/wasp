@@ -6,6 +6,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -37,7 +38,7 @@ func (vmctx *VMContext) StateMetadata(stateCommitment *state.L1Commitment) []byt
 func (vmctx *VMContext) BuildTransactionEssence(stateCommitment *state.L1Commitment, assertTxbuilderBalanced bool) (*iotago.TransactionEssence, []byte) {
 	if vmctx.currentStateUpdate == nil {
 		// create a temporary empty state update, so that vmctx.callCore works and contracts state can be read
-		vmctx.currentStateUpdate = NewStateUpdate()
+		vmctx.currentStateUpdate = buffered.NewMutations()
 		defer func() { vmctx.currentStateUpdate = nil }()
 	}
 	stateMetadata := vmctx.StateMetadata(stateCommitment)

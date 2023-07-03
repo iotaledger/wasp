@@ -81,7 +81,7 @@ type Chain interface {
 	// can query the nodes for blocks, etc. NOTE: servers = access⁻¹
 	ServersUpdated(serverNodes []*cryptolib.PublicKey)
 	// Metrics and the current descriptive state.
-	GetChainMetrics() metrics.IChainMetrics
+	GetChainMetrics() *metrics.ChainMetrics
 	GetConsensusPipeMetrics() ConsensusPipeMetrics // TODO: Review this.
 	GetConsensusWorkflowStatus() ConsensusWorkflowStatus
 }
@@ -168,7 +168,8 @@ type chainNodeImpl struct {
 	blockWAL            sm_gpa_utils.BlockWAL
 	//
 	// Configuration values.
-	consensusDelay time.Duration
+	consensusDelay   time.Duration
+	validatorAgentID isc.AgentID
 	//
 	// Information for other components.
 	listener               ChainListener          // Object expecting event notifications.
@@ -193,7 +194,7 @@ type chainNodeImpl struct {
 	netPeerPubs         map[gpa.NodeID]*cryptolib.PublicKey
 	net                 peering.NetworkProvider
 	shutdownCoordinator *shutdown.Coordinator
-	chainMetrics        metrics.IChainMetrics
+	chainMetrics        *metrics.ChainMetrics
 	log                 *logger.Logger
 }
 
@@ -267,13 +268,14 @@ func New(
 	listener ChainListener,
 	accessNodesFromNode []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
-	chainMetrics metrics.IChainMetrics,
+	chainMetrics *metrics.ChainMetrics,
 	shutdownCoordinator *shutdown.Coordinator,
 	onChainConnect func(),
 	onChainDisconnect func(),
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
 	consensusDelay time.Duration,
+	validatorAgentID isc.AgentID,
 	smParameters sm_gpa.StateManagerParameters,
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
@@ -306,6 +308,7 @@ func New(
 		stateTrackerCnf:        nil, // Set bellow.
 		blockWAL:               blockWAL,
 		consensusDelay:         consensusDelay,
+		validatorAgentID:       validatorAgentID,
 		listener:               listener,
 		accessLock:             &sync.RWMutex{},
 		activeCommitteeDKShare: nil,
@@ -330,13 +333,13 @@ func New(
 		log:                    log,
 	}
 
-	cni.chainMetrics.TrackPipeLen("node-recvAliasOutputPipe", cni.recvAliasOutputPipe.Len)
-	cni.chainMetrics.TrackPipeLen("node-recvTxPublishedPipe", cni.recvTxPublishedPipe.Len)
-	cni.chainMetrics.TrackPipeLen("node-recvMilestonePipe", cni.recvMilestonePipe.Len)
-	cni.chainMetrics.TrackPipeLen("node-consOutputPipe", cni.consOutputPipe.Len)
-	cni.chainMetrics.TrackPipeLen("node-consRecoverPipe", cni.consRecoverPipe.Len)
-	cni.chainMetrics.TrackPipeLen("node-serversUpdatedPipe", cni.serversUpdatedPipe.Len)
-	cni.chainMetrics.TrackPipeLen("node-netRecvPipe", cni.netRecvPipe.Len)
+	cni.chainMetrics.Pipe.TrackPipeLen("node-recvAliasOutputPipe", cni.recvAliasOutputPipe.Len)
+	cni.chainMetrics.Pipe.TrackPipeLen("node-recvTxPublishedPipe", cni.recvTxPublishedPipe.Len)
+	cni.chainMetrics.Pipe.TrackPipeLen("node-recvMilestonePipe", cni.recvMilestonePipe.Len)
+	cni.chainMetrics.Pipe.TrackPipeLen("node-consOutputPipe", cni.consOutputPipe.Len)
+	cni.chainMetrics.Pipe.TrackPipeLen("node-consRecoverPipe", cni.consRecoverPipe.Len)
+	cni.chainMetrics.Pipe.TrackPipeLen("node-serversUpdatedPipe", cni.serversUpdatedPipe.Len)
+	cni.chainMetrics.Pipe.TrackPipeLen("node-netRecvPipe", cni.netRecvPipe.Len)
 
 	cni.tryRecoverStoreFromWAL(chainStore, blockWAL)
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
@@ -400,8 +403,8 @@ func New(
 		snapshotManager,
 		chainStore,
 		shutdownCoordinator.Nested("StateMgr"),
-		chainMetrics,
-		chainMetrics,
+		chainMetrics.StateManager,
+		chainMetrics.Pipe,
 		cni.log,
 		smParameters,
 	)
@@ -414,15 +417,15 @@ func New(
 		nodeIdentity,
 		net,
 		cni.log.Named("MP"),
-		chainMetrics,
-		chainMetrics,
+		chainMetrics.Mempool,
+		chainMetrics.Pipe,
 		cni.listener,
 	)
 	cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr.AsGPA(), redeliveryPeriod)
 	cni.stateMgr = stateMgr
 	cni.mempool = mempool
-	cni.stateTrackerAct = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerActCB, chainMetrics.SetChainActiveStateWant, chainMetrics.SetChainActiveStateHave, cni.log.Named("ST.ACT"))
-	cni.stateTrackerCnf = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerCnfCB, chainMetrics.SetChainConfirmedStateWant, chainMetrics.SetChainConfirmedStateHave, cni.log.Named("ST.CNF"))
+	cni.stateTrackerAct = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerActCB, chainMetrics.StateManager.SetChainActiveStateWant, chainMetrics.StateManager.SetChainActiveStateHave, cni.log.Named("ST.ACT"))
+	cni.stateTrackerCnf = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerCnfCB, chainMetrics.StateManager.SetChainConfirmedStateWant, chainMetrics.StateManager.SetChainConfirmedStateHave, cni.log.Named("ST.CNF"))
 	cni.updateAccessNodes(func() {
 		cni.accessNodesFromNode = accessNodesFromNode
 		cni.accessNodesFromACT = []*cryptolib.PublicKey{}
@@ -432,7 +435,7 @@ func New(
 	//
 	// Connect to the peering network.
 	netRecvPipeInCh := cni.netRecvPipe.In()
-	unhook := net.Attach(&netPeeringID, peering.PeerMessageReceiverChain, func(recv *peering.PeerMessageIn) {
+	unhook := net.Attach(&netPeeringID, peering.ReceiverChain, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeChainMgr {
 			cni.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
@@ -443,7 +446,7 @@ func New(
 	// Attach to the L1.
 	recvRequestCB := func(outputInfo *isc.OutputInfo) {
 		log.Debugf("recvRequestCB[%p], consumed=%v, outputID=%v", cni, outputInfo.Consumed(), outputInfo.OutputID.ToHex())
-		cni.chainMetrics.L1RequestReceived()
+		cni.chainMetrics.NodeConn.L1RequestReceived()
 		req, err := isc.OnLedgerFromUTXO(outputInfo.Output, outputInfo.OutputID)
 		if err != nil {
 			cni.log.Warnf("Cannot create OnLedgerRequest from output: %v", err)
@@ -458,7 +461,7 @@ func New(
 	recvAliasOutputPipeInCh := cni.recvAliasOutputPipe.In()
 	recvAliasOutputCB := func(outputInfo *isc.OutputInfo) {
 		log.Debugf("recvAliasOutputCB[%p], %v", cni, outputInfo.OutputID.ToHex())
-		cni.chainMetrics.L1AliasOutputReceived()
+		cni.chainMetrics.NodeConn.L1AliasOutputReceived()
 		if outputInfo.Consumed() {
 			// we don't need to send consumed alias outputs to the pipe
 			return
@@ -764,7 +767,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 			cni.publishingTXes.Set(txToPost.TxID, subCancel)
 			publishStart := time.Now()
 			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, txToPost.Tx, func(_ *iotago.Transaction, confirmed bool) {
-				cni.chainMetrics.TXPublishResult(confirmed, time.Since(publishStart))
+				cni.chainMetrics.NodeConn.TXPublishResult(confirmed, time.Since(publishStart))
 				cni.recvTxPublishedPipe.In() <- &txPublished{
 					committeeAddr:   txToPost.CommitteeAddr,
 					logIndex:        txToPost.LogIndex,
@@ -775,7 +778,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 			}); err != nil {
 				cni.log.Error(err.Error())
 			}
-			cni.chainMetrics.TXPublishStarted()
+			cni.chainMetrics.NodeConn.TXPublishStarted()
 		}
 
 		return true
@@ -864,9 +867,10 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 			cgr := consGR.New(
 				consGrCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
 				cni.procCache, cni.mempool, cni.stateMgr, cni.net,
+				cni.validatorAgentID,
 				recoveryTimeout, redeliveryPeriod, printStatusPeriod,
-				cni.chainMetrics,
-				cni.chainMetrics,
+				cni.chainMetrics.Consensus,
+				cni.chainMetrics.Pipe,
 				cni.log.Named(fmt.Sprintf("C-%v.LI-%v", committeeAddr.String()[:10], logIndexCopy)),
 			)
 			consensusInstances.Set(addLogIndex, &consensusInst{
@@ -930,23 +934,13 @@ func (cni *chainNodeImpl) sendMessages(outMsgs gpa.OutMessages) {
 	if outMsgs == nil {
 		return
 	}
-	outMsgs.MustIterate(func(m gpa.Message) {
-		recipientPubKey, ok := cni.netPeerPubs[m.Recipient()]
+	outMsgs.MustIterate(func(msg gpa.Message) {
+		recipientPubKey, ok := cni.netPeerPubs[msg.Recipient()]
 		if !ok {
-			cni.log.Warnf("Pub key for the recipient not found: %v", m.Recipient())
+			cni.log.Warnf("Pub key for the recipient not found: %v", msg.Recipient())
 			return
 		}
-		msgData, err := m.MarshalBinary()
-		if err != nil {
-			cni.log.Warnf("Failed to send a message: %v", err)
-			return
-		}
-		pm := &peering.PeerMessageData{
-			PeeringID:   cni.netPeeringID,
-			MsgReceiver: peering.PeerMessageReceiverChain,
-			MsgType:     msgTypeChainMgr,
-			MsgData:     msgData,
-		}
+		pm := peering.NewPeerMessageData(cni.netPeeringID, peering.ReceiverChain, msgTypeChainMgr, msg)
 		cni.net.SendMsgByPubKey(recipientPubKey, pm)
 	})
 }
@@ -1219,7 +1213,7 @@ func (cni *chainNodeImpl) GetCandidateNodes() []*governance.AccessNodeInfo {
 	return governance.NewStateAccess(state).CandidateNodes()
 }
 
-func (cni *chainNodeImpl) GetChainMetrics() metrics.IChainMetrics {
+func (cni *chainNodeImpl) GetChainMetrics() *metrics.ChainMetrics {
 	return cni.chainMetrics
 }
 

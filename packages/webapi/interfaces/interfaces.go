@@ -9,7 +9,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -19,10 +18,9 @@ import (
 )
 
 var (
-	ErrNotAddedToMempool      = errors.New("not added to the mempool")
-	ErrUnableToGetLatestState = errors.New("unable to get latest state")
-	ErrChainNotFound          = errors.New("chain not found")
-	ErrCantDeleteLastUser     = errors.New("you can't delete the last user")
+	ErrNotAddedToMempool  = errors.New("not added to the mempool")
+	ErrChainNotFound      = errors.New("chain not found")
+	ErrCantDeleteLastUser = errors.New("you can't delete the last user")
 )
 
 type APIController interface {
@@ -64,7 +62,7 @@ var ErrPeerNotFound = errors.New("couldn't find peer")
 type NodeService interface {
 	AddAccessNode(chainID isc.ChainID, peer string) error
 	DeleteAccessNode(chainID isc.ChainID, peer string) error
-	SetNodeOwnerCertificate(publicKey *cryptolib.PublicKey, ownerAddress iotago.Address) ([]byte, error)
+	NodeOwnerCertificate() []byte
 	ShutdownNode()
 }
 

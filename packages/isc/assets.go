@@ -2,7 +2,6 @@ package isc
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
 	"io"
 	"math/big"
@@ -24,15 +23,14 @@ type Assets struct {
 var BaseTokenID = []byte{}
 
 func NewAssets(baseTokens uint64, tokens iotago.NativeTokens, nfts ...iotago.NFTID) *Assets {
-	if tokens == nil {
-		tokens = make(iotago.NativeTokens, 0)
-	}
 	ret := &Assets{
 		BaseTokens:   baseTokens,
 		NativeTokens: tokens,
-		NFTs:         make([]iotago.NFTID, 0),
 	}
-	return ret.AddNFTs(nfts...)
+	if len(nfts) != 0 {
+		ret.AddNFTs(nfts...)
+	}
+	return ret
 }
 
 func NewAssetsBaseTokens(amount uint64) *Assets {
@@ -40,17 +38,14 @@ func NewAssetsBaseTokens(amount uint64) *Assets {
 }
 
 func NewEmptyAssets() *Assets {
-	return &Assets{
-		NativeTokens: make([]*iotago.NativeToken, 0),
-	}
+	return &Assets{}
 }
 
 func AssetsFromBytes(b []byte) (*Assets, error) {
 	if len(b) == 0 {
 		return NewEmptyAssets(), nil
 	}
-	ret, err := rwutil.ReaderFromBytes(b, NewEmptyAssets())
-	return ret, err
+	return rwutil.ReadFromBytes(b, NewEmptyAssets())
 }
 
 func AssetsFromDict(d dict.Dict) (*Assets, error) {
@@ -168,7 +163,7 @@ func (a *Assets) String() string {
 }
 
 func (a *Assets) Bytes() []byte {
-	return rwutil.WriterToBytes(a)
+	return rwutil.WriteToBytes(a)
 }
 
 func (a *Assets) Equals(b *Assets) bool {
@@ -181,6 +176,7 @@ func (a *Assets) Equals(b *Assets) bool {
 	if a.BaseTokens != b.BaseTokens {
 		return false
 	}
+
 	if len(a.NativeTokens) != len(b.NativeTokens) {
 		return false
 	}
@@ -190,10 +186,10 @@ func (a *Assets) Equals(b *Assets) bool {
 			return false
 		}
 	}
+
 	if len(a.NFTs) != len(b.NFTs) {
 		return false
 	}
-
 	bNFTS := b.NFTSet()
 	for _, nft := range a.NFTs {
 		if !bNFTS[nft] {
@@ -216,9 +212,10 @@ func (a *Assets) Spend(toSpend *Assets) bool {
 	if a.Equals(toSpend) {
 		a.BaseTokens = 0
 		a.NativeTokens = nil
-		a.NFTs = make([]iotago.NFTID, 0)
+		a.NFTs = nil
 		return true
 	}
+
 	if a.BaseTokens < toSpend.BaseTokens {
 		return false
 	}
@@ -352,9 +349,6 @@ func IsBaseToken(tokenID []byte) bool {
 // we may as well use more of the byte to compress the data further.
 // We're adding 3 flags to indicate the presence of the subcomponents
 // of the assets so that we may skip reading/writing them altogether.
-// we also use the lower 4 bits of the byte to encode the number of
-// significant bytes in the 8-byte BaseToken amount, leaving out the
-// remaining trailing zeros.
 const (
 	hasBaseTokens   = 0x80
 	hasNativeTokens = 0x40
@@ -368,9 +362,7 @@ func (a *Assets) Read(r io.Reader) error {
 		return rr.Err
 	}
 	if (flags & hasBaseTokens) != 0 {
-		baseTokens := make([]byte, 8)
-		rr.ReadN(baseTokens[:(flags&0x07)+1])
-		a.BaseTokens = binary.LittleEndian.Uint64(baseTokens)
+		a.BaseTokens = rr.ReadAmount64()
 	}
 	if (flags & hasNativeTokens) != 0 {
 		size := rr.ReadSize16()
@@ -400,16 +392,8 @@ func (a *Assets) Write(w io.Writer) error {
 	}
 
 	var flags byte
-	var baseTokens [8]byte
 	if a.BaseTokens != 0 {
 		flags |= hasBaseTokens
-		binary.LittleEndian.PutUint64(baseTokens[:], a.BaseTokens)
-		for i := byte(7); i > 0; i-- {
-			if baseTokens[i] != 0 {
-				flags |= i
-				break
-			}
-		}
 	}
 	if len(a.NativeTokens) != 0 {
 		flags |= hasNativeTokens
@@ -420,7 +404,7 @@ func (a *Assets) Write(w io.Writer) error {
 
 	ww.WriteByte(flags)
 	if (flags & hasBaseTokens) != 0 {
-		ww.WriteN(baseTokens[:(flags&0x07)+1])
+		ww.WriteAmount64(a.BaseTokens)
 	}
 	if (flags & hasNativeTokens) != 0 {
 		ww.WriteSize16(len(a.NativeTokens))

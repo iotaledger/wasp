@@ -5,6 +5,8 @@ package state
 
 import (
 	"io"
+	"math"
+	"math/rand"
 
 	"golang.org/x/crypto/blake2b"
 
@@ -30,11 +32,11 @@ func NewBlock() Block {
 }
 
 func BlockFromBytes(data []byte) (Block, error) {
-	return rwutil.ReaderFromBytes(data, new(block))
+	return rwutil.ReadFromBytes(data, new(block))
 }
 
 func (b *block) Bytes() []byte {
-	return rwutil.WriterToBytes(b)
+	return rwutil.WriteToBytes(b)
 }
 
 func (b *block) essenceBytes() []byte {
@@ -115,4 +117,15 @@ func (b *block) writeEssence(w io.Writer) (int, error) {
 		ww.Write(b.previousL1Commitment)
 	}
 	return len(ww.Bytes()), ww.Err
+}
+
+// test only function
+func RandomBlock() Block {
+	store := NewStore(mapdb.NewMapDB())
+	draft := store.NewOriginStateDraft()
+	for i := 0; i < 3; i++ {
+		draft.Set(kv.Key([]byte{byte(rand.Intn(math.MaxInt8))}), []byte{byte(rand.Intn(math.MaxInt8))})
+	}
+
+	return store.Commit(draft)
 }

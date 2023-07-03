@@ -36,9 +36,9 @@ func (s *contractSandbox) Call(target, entryPoint isc.Hname, params dict.Dict, t
 
 // DeployContract deploys contract by the binary hash
 // and calls "init" endpoint (constructor) with provided parameters
-func (s *contractSandbox) DeployContract(programHash hashing.HashValue, name, description string, initParams dict.Dict) {
+func (s *contractSandbox) DeployContract(programHash hashing.HashValue, name string, initParams dict.Dict) {
 	s.Ctx.GasBurn(gas.BurnCodeDeployContract)
-	s.Ctx.(*VMContext).DeployContract(programHash, name, description, initParams)
+	s.Ctx.(*VMContext).DeployContract(programHash, name, initParams)
 }
 
 func (s *contractSandbox) Event(topic string, payload []byte) {
@@ -78,7 +78,7 @@ func (s *contractSandbox) Request() isc.Calldata {
 }
 
 func (s *contractSandbox) Send(par isc.RequestParameters) {
-	s.Ctx.GasBurn(gas.BurnCodeSendL1Request, uint64(s.Ctx.(*VMContext).NumPostedOutputs))
+	s.Ctx.GasBurn(gas.BurnCodeSendL1Request, uint64(s.Ctx.(*VMContext).reqCtx.numPostedOutputs))
 	s.Ctx.(*VMContext).Send(par)
 }
 
@@ -194,7 +194,7 @@ func (s *contractSandbox) totalGasTokens() *isc.Assets {
 	if s.Ctx.(*VMContext).task.EstimateGasMode {
 		return isc.NewEmptyAssets()
 	}
-	amount := s.Ctx.(*VMContext).gasMaxTokensToSpendForGasFee
+	amount := s.Ctx.(*VMContext).reqCtx.gas.maxTokensToSpendForGasFee
 	return isc.NewAssetsBaseTokens(amount)
 }
 

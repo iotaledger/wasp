@@ -57,7 +57,6 @@ var (
 const (
 	broadcastQueueSize            = 20000
 	clientSendChannelSize         = 1000
-	webSocketWriteTimeout         = time.Duration(3) * time.Second
 	maxWebsocketMessageSize int64 = 510
 )
 
@@ -134,7 +133,7 @@ func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, lo
 			if !ok {
 				return err
 			}
-			metrics.GetChainMetrics(chainID).WebAPIRequest(operation, status, time.Since(start))
+			metrics.GetChainMetrics(chainID).WebAPI.WebAPIRequest(operation, status, time.Since(start))
 			return err
 		}
 	})
@@ -259,6 +258,12 @@ func provide(c *dig.Container) error {
 			publisher.ISCEventKindBlockEvents,
 		}, deps.Publisher, websocket.WithMaxTopicSubscriptionsPerClient(ParamsWebAPI.Limits.MaxTopicSubscriptionsPerClient))
 
+		if ParamsWebAPI.DebugRequestLoggerEnabled {
+			echoSwagger.Echo().Use(middleware.BodyDump(func(c echo.Context, reqBody, resBody []byte) {
+				logger.Debugf("API Dump: Request=%q, Response=%q", reqBody, resBody)
+			}))
+		}
+
 		webapi.Init(
 			logger,
 			echoSwagger,
@@ -279,11 +284,9 @@ func provide(c *dig.Container) error {
 			deps.ShutdownHandler,
 			deps.ChainMetricsProvider,
 			ParamsWebAPI.Auth,
-			ParamsWebAPI.NodeOwnerAddresses,
 			deps.APICacheTTL,
 			websocketService,
 			deps.Publisher,
-			ParamsWebAPI.DebugRequestLoggerEnabled,
 		)
 
 		return webapiServerResult{

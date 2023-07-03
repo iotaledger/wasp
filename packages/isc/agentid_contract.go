@@ -26,7 +26,7 @@ func contractAgentIDFromString(hnamePart, addrPart string) (AgentID, error) {
 		return nil, fmt.Errorf("AgentIDFromString: %w", err)
 	}
 
-	h, err := HnameFromHexString(hnamePart)
+	h, err := HnameFromString(hnamePart)
 	if err != nil {
 		return nil, fmt.Errorf("AgentIDFromString: %w", err)
 	}
@@ -38,7 +38,7 @@ func (a *ContractAgentID) Address() iotago.Address {
 }
 
 func (a *ContractAgentID) Bytes() []byte {
-	return rwutil.WriterToBytes(a)
+	return rwutil.WriteToBytes(a)
 }
 
 func (a *ContractAgentID) ChainID() ChainID {

@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
+	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpccache"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -45,6 +46,7 @@ type EVMChain struct {
 	chainID  uint16 // cache
 	newBlock *event.Event1[*NewBlockEvent]
 	log      *logger.Logger
+	cache    *jsonrpccache.Cache // only caches blocks that will be pruned from the active state
 }
 
 type NewBlockEvent struct {
@@ -57,7 +59,11 @@ func NewEVMChain(backend ChainBackend, pub *publisher.Publisher, log *logger.Log
 		backend:  backend,
 		newBlock: event.New1[*NewBlockEvent](),
 		log:      log,
+		cache:    jsonrpccache.New(blockchainDB),
 	}
+
+	// TODO disable cache for non-archive nodes based on the config parameter (only enable when -1)
+	cacheEnabled := true
 
 	blocksFromPublisher := pipe.NewInfinitePipe[*publisher.BlockWithTrieRoot]()
 
@@ -66,6 +72,9 @@ func NewEVMChain(backend ChainBackend, pub *publisher.Publisher, log *logger.Log
 			return
 		}
 		blocksFromPublisher.In() <- ev.Payload
+		if cacheEnabled {
+			e.cache.CacheBlock(ev.Payload.TrieRoot, e.backend.ISCStateByTrieRoot)
+		}
 	})
 
 	// publish blocks on a separate goroutine so that we don't block the publisher
@@ -165,7 +174,7 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 	if err != nil {
 		return fmt.Errorf("invalid transaction: %w", err)
 	}
-	if tx.Nonce() != expectedNonce {
+	if tx.Nonce() < expectedNonce {
 		return fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), expectedNonce)
 	}
 
@@ -209,6 +218,10 @@ func (e *EVMChain) iscStateFromEVMBlockNumber(blockNumber *big.Int) (state.State
 	iscBlockIndex, err := iscBlockIndexByEVMBlockNumber(blockNumber)
 	if err != nil {
 		return nil, err
+	}
+	cachedTrieHash := e.cache.BlockTrieHashByIndex(iscBlockIndex)
+	if cachedTrieHash != nil {
+		return e.backend.ISCStateByTrieRoot(*cachedTrieHash)
 	}
 	return e.backend.ISCStateByBlockIndex(iscBlockIndex)
 }
@@ -290,11 +303,17 @@ func (e *EVMChain) Code(address common.Address, blockNumberOrHash *rpc.BlockNumb
 
 func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
 	e.log.Debugf("BlockByNumber(blockNumber=%v)", blockNumber)
-	chainState, err := e.iscStateFromEVMBlockNumber(blockNumber)
-	if err != nil {
-		return nil, err
+
+	cachedBlock := e.cache.BlockByNumber(blockNumber)
+	if cachedBlock != nil {
+		return cachedBlock, nil
 	}
-	return e.blockByNumber(chainState, blockNumber)
+
+	block, err := e.blockByNumber(e.backend.ISCLatestState(), blockNumber)
+	if err == nil && block == nil {
+		return nil, fmt.Errorf("not found")
+	}
+	return block, err
 }
 
 func (e *EVMChain) blockByNumber(chainState state.State, blockNumber *big.Int) (*types.Block, error) {
@@ -318,44 +337,62 @@ func blockNumberU64(db *emulator.BlockchainDB, blockNumber *big.Int) (uint64, er
 
 func (e *EVMChain) TransactionByHash(hash common.Hash) (tx *types.Transaction, blockHash common.Hash, blockNumber, index uint64, err error) {
 	e.log.Debugf("TransactionByHash(hash=%v)", hash)
+	cachedTx, block, index := e.cache.TxByHash(hash)
+	if cachedTx != nil {
+		return cachedTx, block.Hash(), block.NumberU64(), index, nil
+	}
 	db := blockchainDB(e.backend.ISCLatestState())
 	blockNumber, ok := db.GetBlockNumberByTxHash(hash)
 	if !ok {
 		return nil, common.Hash{}, 0, 0, err
 	}
 	tx, txIndex := db.GetTransactionByHash(hash)
-	block := db.GetBlockByNumber(blockNumber)
+	block = db.GetBlockByNumber(blockNumber)
 	return tx, block.Hash(), blockNumber, uint64(txIndex), nil
 }
 
-func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumber, indexRet uint64, err error) {
+func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64) (tx *types.Transaction, blockNumber uint64, err error) {
 	e.log.Debugf("TransactionByBlockHashAndIndex(hash=%v, index=%v)", hash, index)
+	cachedTx, bn := e.cache.TxByBlockHashAndIndex(hash, index)
+	if cachedTx != nil {
+		return cachedTx, bn, nil
+	}
 	db := blockchainDB(e.backend.ISCLatestState())
 	block := db.GetBlockByHash(hash)
 	if block == nil {
-		return nil, common.Hash{}, 0, 0, err
+		return nil, 0, err
 	}
 	txs := block.Transactions()
-	return txs[index], hash, block.Number().Uint64(), index, nil
+	return txs[index], block.Number().Uint64(), nil
 }
 
-func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumberRet, indexRet uint64, err error) {
+func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumberRet uint64, err error) {
 	e.log.Debugf("TransactionByBlockNumberAndIndex(blockNumber=%v, index=%v)", blockNumber, index)
+	cachedTx, blockHash := e.cache.TxByBlockNumberAndIndex(blockNumber, index)
+	if cachedTx != nil {
+		return cachedTx, blockHash, blockNumber.Uint64(), nil
+	}
 	db := blockchainDB(e.backend.ISCLatestState())
 	bn, err := blockNumberU64(db, blockNumber)
 	if err != nil {
-		return nil, common.Hash{}, 0, 0, err
+		return nil, common.Hash{}, 0, err
 	}
 	block := db.GetBlockByNumber(bn)
 	if block == nil {
-		return nil, common.Hash{}, 0, 0, err
+		return nil, common.Hash{}, 0, err
 	}
 	txs := block.Transactions()
-	return txs[index], block.Hash(), bn, index, nil
+	return txs[index], block.Hash(), bn, nil
 }
 
 func (e *EVMChain) BlockByHash(hash common.Hash) *types.Block {
 	e.log.Debugf("BlockByHash(hash=%v)", hash)
+
+	cachedBlock := e.cache.BlockByHash(hash)
+	if cachedBlock != nil {
+		return cachedBlock
+	}
+
 	db := blockchainDB(e.backend.ISCLatestState())
 	block := db.GetBlockByHash(hash)
 	return block
@@ -363,6 +400,14 @@ func (e *EVMChain) BlockByHash(hash common.Hash) *types.Block {
 
 func (e *EVMChain) TransactionReceipt(txHash common.Hash) *types.Receipt {
 	e.log.Debugf("TransactionReceipt(txHash=%v)", txHash)
+	tx, block, _ := e.cache.TxByHash(txHash)
+	if tx != nil {
+		state, err := e.backend.ISCStateByBlockIndex(uint32(block.NumberU64()))
+		if err != nil {
+			panic(err)
+		}
+		return blockchainDB(state).GetReceiptByTxHash(txHash)
+	}
 	db := blockchainDB(e.backend.ISCLatestState())
 	return db.GetReceiptByTxHash(txHash)
 }
@@ -443,10 +488,93 @@ func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, 
 	return uint64(len(block.Transactions())), nil
 }
 
-func (e *EVMChain) Logs(q *ethereum.FilterQuery) ([]*types.Log, error) {
-	e.log.Debugf("Logs(q=%v)", q)
-	db := blockchainDB(e.backend.ISCLatestState())
-	return db.FilterLogs(q)
+const (
+	maxBlocksInFilterRange = 1_000
+	maxLogsInResult        = 10_000
+)
+
+// Logs executes a log filter operation, blocking during execution and
+// returning all the results in one batch.
+//
+//nolint:gocyclo
+func (e *EVMChain) Logs(query *ethereum.FilterQuery) ([]*types.Log, error) {
+	e.log.Debugf("Logs(q=%v)", query)
+	logs := make([]*types.Log, 0)
+
+	// single block query
+	if query.BlockHash != nil {
+		state, err := e.iscStateFromEVMBlockNumberOrHash(&rpc.BlockNumberOrHash{
+			BlockHash: query.BlockHash,
+		})
+		if err != nil {
+			return nil, err
+		}
+		db := blockchainDB(state)
+		receipts := db.GetReceiptsByBlockNumber(uint64(state.BlockIndex()))
+		err = filterAndAppendToLogs(query, receipts, &logs)
+		if err != nil {
+			return nil, err
+		}
+		return logs, nil
+	}
+
+	// block range query
+
+	// Initialize unset filter boundaries to run from genesis to chain head
+	first := big.NewInt(1) // skip genesis since it has no logs
+	last := new(big.Int).SetUint64(uint64(e.backend.ISCLatestState().BlockIndex()))
+	from := first
+	if query.FromBlock != nil && query.FromBlock.Cmp(first) >= 0 && query.FromBlock.Cmp(last) <= 0 {
+		from = query.FromBlock
+	}
+	to := last
+	if query.ToBlock != nil && query.ToBlock.Cmp(first) >= 0 && query.ToBlock.Cmp(last) <= 0 {
+		to = query.ToBlock
+	}
+
+	if !from.IsUint64() || !to.IsUint64() {
+		return nil, errors.New("block number is too large")
+	}
+	{
+		from := from.Uint64()
+		to := to.Uint64()
+		if to > from && to-from > maxBlocksInFilterRange {
+			return nil, errors.New("too many blocks in filter range")
+		}
+		for i := from; i <= to; i++ {
+			state, err := e.iscStateFromEVMBlockNumber(new(big.Int).SetUint64(i))
+			if err != nil {
+				return nil, err
+			}
+			err = filterAndAppendToLogs(
+				query,
+				blockchainDB(state).GetReceiptsByBlockNumber(i),
+				&logs,
+			)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return logs, nil
+}
+
+func filterAndAppendToLogs(query *ethereum.FilterQuery, receipts []*types.Receipt, logs *[]*types.Log) error {
+	for _, r := range receipts {
+		if !evmtypes.BloomFilter(r.Bloom, query.Addresses, query.Topics) {
+			continue
+		}
+		for _, log := range r.Logs {
+			if !evmtypes.LogMatches(log, query.Addresses, query.Topics) {
+				continue
+			}
+			if len(*logs) >= maxLogsInResult {
+				return errors.New("too many logs in result")
+			}
+			*logs = append(*logs, log)
+		}
+	}
+	return nil
 }
 
 func (e *EVMChain) BaseToken() *parameters.BaseToken {
@@ -559,7 +687,7 @@ func (e *EVMChain) TraceTransaction(txHash common.Hash, config *tracers.TraceCon
 
 var maxUint32 = big.NewInt(math.MaxUint32)
 
-// the first EVM block (number 0) is "minted" at ISC block index 1 (init chain)
+// the first EVM block (number 0) is "minted" at ISC block index 0 (init chain)
 func iscBlockIndexByEVMBlockNumber(blockNumber *big.Int) (uint32, error) {
 	if blockNumber.Cmp(maxUint32) > 0 {
 		return 0, fmt.Errorf("block number is too large: %s", blockNumber)

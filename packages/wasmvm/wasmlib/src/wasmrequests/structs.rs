@@ -78,26 +78,23 @@ impl MutableCallRequest {
 
 #[derive(Clone)]
 pub struct DeployRequest {
-    pub description : String,
-    pub name        : String,
-    pub params      : Vec<u8>,
-    pub prog_hash   : ScHash,
+    pub name      : String,
+    pub params    : Vec<u8>,
+    pub prog_hash : ScHash,
 }
 
 impl DeployRequest {
     pub fn from_bytes(bytes: &[u8]) -> DeployRequest {
         let mut dec = WasmDecoder::new(bytes);
         DeployRequest {
-            description : string_decode(&mut dec),
-            name        : string_decode(&mut dec),
-            params      : bytes_decode(&mut dec),
-            prog_hash   : hash_decode(&mut dec),
+            name      : string_decode(&mut dec),
+            params    : bytes_decode(&mut dec),
+            prog_hash : hash_decode(&mut dec),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut enc = WasmEncoder::new();
-        string_encode(&mut enc, &self.description);
         string_encode(&mut enc, &self.name);
         bytes_encode(&mut enc, &self.params);
         hash_encode(&mut enc, &self.prog_hash);

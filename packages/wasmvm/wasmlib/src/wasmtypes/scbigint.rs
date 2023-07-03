@@ -1,8 +1,6 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use std::convert::TryInto;
-
 use crate::*;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -36,7 +34,9 @@ impl ScBigInt {
         while buf_len > 0 && buf[buf_len - 1] == 0 {
             buf_len -= 1;
         }
-        ScBigInt { bytes: buf[..buf_len].to_vec() }
+        ScBigInt {
+            bytes: buf[..buf_len].to_vec(),
+        }
     }
 
     pub fn add(&self, rhs: &ScBigInt) -> ScBigInt {
@@ -230,7 +230,10 @@ impl ScBigInt {
             buf[i] = (remain / rhs) as u8;
             remain %= rhs;
         }
-        (ScBigInt::normalize(&buf), ScBigInt::normalize(&[remain as u8]))
+        (
+            ScBigInt::normalize(&buf),
+            ScBigInt::normalize(&[remain as u8]),
+        )
     }
 
     pub fn is_uint64(&self) -> bool {
@@ -372,7 +375,6 @@ impl ScBigInt {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-
 pub fn big_int_decode(dec: &mut WasmDecoder) -> ScBigInt {
     ScBigInt { bytes: dec.bytes() }
 }
@@ -382,7 +384,9 @@ pub fn big_int_encode(enc: &mut WasmEncoder, value: &ScBigInt) {
 }
 
 pub fn big_int_from_bytes(buf: &[u8]) -> ScBigInt {
-    ScBigInt { bytes: reverse(buf) }
+    ScBigInt {
+        bytes: reverse(buf),
+    }
 }
 
 pub fn big_int_to_bytes(value: &ScBigInt) -> Vec<u8> {

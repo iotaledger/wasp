@@ -26,20 +26,6 @@ func TestBlockLogXxx(t *testing.T) {
 	require.NoError(t, ctx.Err)
 }
 
-func TestControlAddresses(t *testing.T) {
-	ctx := setupBlockLog(t)
-	require.NoError(t, ctx.Err)
-
-	f := coreblocklog.ScFuncs.ControlAddresses(ctx)
-	f.Func.Call()
-	require.NoError(t, ctx.Err)
-	// solo agent is the chain owner here, so it is both the state controller address and governing address
-	require.Equal(t, ctx.Cvt.ScAddress(ctx.Chain.StateControllerAddress), f.Results.StateControllerAddress().Value())
-	require.Equal(t, ctx.Cvt.ScAddress(ctx.Chain.StateControllerAddress), f.Results.GoverningAddress().Value())
-	// solo agent is set as state controller address and governing address from the beginning of the chain
-	require.Equal(t, uint32(0), f.Results.BlockIndex().Value())
-}
-
 func TestGetBlockInfo(t *testing.T) {
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
@@ -127,7 +113,7 @@ func TestGetRequestReceipt(t *testing.T) {
 	receipt, err := blocklog.RequestReceiptFromBytes(f.Results.RequestReceipt().Value())
 	require.NoError(t, err)
 	soloreceipt, err := ctx.Chain.GetRequestReceipt(reqs[0])
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	// note: this is what ctx.Chain.GetRequestReceipt() does as well,
 	// so we better make sure they are equal before comparing

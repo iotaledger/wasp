@@ -19,8 +19,6 @@ var _ MappedNullable = &ContractInfoResponse{}
 
 // ContractInfoResponse struct for ContractInfoResponse
 type ContractInfoResponse struct {
-	// The description of the contract.
-	Description string `json:"description"`
 	// The id (HName as Hex)) of the contract.
 	HName string `json:"hName"`
 	// The name of the contract.
@@ -33,9 +31,8 @@ type ContractInfoResponse struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewContractInfoResponse(description string, hName string, name string, programHash string) *ContractInfoResponse {
+func NewContractInfoResponse(hName string, name string, programHash string) *ContractInfoResponse {
 	this := ContractInfoResponse{}
-	this.Description = description
 	this.HName = hName
 	this.Name = name
 	this.ProgramHash = programHash
@@ -48,30 +45,6 @@ func NewContractInfoResponse(description string, hName string, name string, prog
 func NewContractInfoResponseWithDefaults() *ContractInfoResponse {
 	this := ContractInfoResponse{}
 	return &this
-}
-
-// GetDescription returns the Description field value
-func (o *ContractInfoResponse) GetDescription() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.Description
-}
-
-// GetDescriptionOk returns a tuple with the Description field value
-// and a boolean to check if the value has been set.
-func (o *ContractInfoResponse) GetDescriptionOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Description, true
-}
-
-// SetDescription sets field value
-func (o *ContractInfoResponse) SetDescription(v string) {
-	o.Description = v
 }
 
 // GetHName returns the HName field value
@@ -156,7 +129,6 @@ func (o ContractInfoResponse) MarshalJSON() ([]byte, error) {
 
 func (o ContractInfoResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["description"] = o.Description
 	toSerialize["hName"] = o.HName
 	toSerialize["name"] = o.Name
 	toSerialize["programHash"] = o.ProgramHash

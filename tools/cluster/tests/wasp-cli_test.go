@@ -111,7 +111,7 @@ func checkBalance(t *testing.T, out []string, expected int) {
 	}
 	amount, err := strconv.Atoi(r[1])
 	require.NoError(t, err)
-	require.EqualValues(t, amount, expected)
+	require.EqualValues(t, expected, amount)
 }
 
 func getAddress(out []string) string {
@@ -138,19 +138,23 @@ func TestWaspCLIDeposit(t *testing.T) {
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
 
+	// fund an alternative address to deposit from (so we can test the fees, since --address-index=0 is the chain owner / default payoutAddress)
+	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
+	w.MustRun("send-funds", "-s", alternativeAddress, "base:10000000")
+
 	t.Run("deposit directly to EVM", func(t *testing.T) {
 		_, eth := newEthereumAccount()
-		w.MustRun("chain", "deposit", eth.String(), "base:1000000", "--node=0")
+		w.MustRun("chain", "deposit", eth.String(), "base:1000000", "--node=0", "--address-index=1")
 		checkBalance(t, w.MustRun("chain", "balance", eth.String(), "--node=0"), 1000000-int(gas.DefaultFeePolicy().MinFee()))
 	})
 
 	t.Run("deposit to own account, then to EVM", func(t *testing.T) {
-		w.MustRun("chain", "deposit", "base:1000000", "--node=0")
-		checkBalance(t, w.MustRun("chain", "balance", "--node=0"), 1000000-int(gas.DefaultFeePolicy().MinFee()))
+		w.MustRun("chain", "deposit", "base:1000000", "--node=0", "--address-index=1")
+		checkBalance(t, w.MustRun("chain", "balance", "--node=0", "--address-index=1"), 1000000-int(gas.DefaultFeePolicy().MinFee()))
 		_, eth := newEthereumAccount()
-		w.MustRun("chain", "deposit", eth.String(), "base:1000000", "--node=0")
-		checkBalance(t, w.MustRun("chain", "balance", eth.String(), "--node=0"), 1000000) // fee should be taken from the sender
-		checkBalance(t, w.MustRun("chain", "balance", "--node=0"), 1000000-2*int(gas.DefaultFeePolicy().MinFee()))
+		w.MustRun("chain", "deposit", eth.String(), "base:1000000", "--node=0", "--address-index=1")
+		checkBalance(t, w.MustRun("chain", "balance", eth.String(), "--node=0", "--address-index=1"), 1000000) // fee will be taken from the sender on-chain balance
+		checkBalance(t, w.MustRun("chain", "balance", "--node=0", "--address-index=1"), 1000000-2*int(gas.DefaultFeePolicy().MinFee()))
 	})
 
 	t.Run("mint and deposit native tokens to an ethereum account", func(t *testing.T) {

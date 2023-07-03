@@ -71,8 +71,8 @@ func Test2Chains(t *testing.T) {
 		userL1 -= transferAmount
 		require.Equal(t, userL1, user.Balance())
 
-		// The actual chain1.accounts.TransferAllowanceTo() gas fee will be credited to chain1.Common
-		bal1.Common += ctxAcc1.GasFee
+		// The actual chain1.accounts.TransferAllowanceTo() gas fee will be credited to the common account because its balance is lower than the minimum expected
+		bal1.UpdateFeeBalances(ctxAcc1.GasFee)
 		// The 'user' account ends up with the remainder after both 'withdrawalAmount'
 		// and the actual gas fee have been deducted from 'transferAmount' (zero)
 		bal1.Add(user, transferAmount-withdrawalAmount-ctxAcc1.GasFee)
@@ -150,10 +150,9 @@ func Test2Chains(t *testing.T) {
 		withdrawalReceipt := receipts[len(receipts)-2]
 		transferReceipt := receipts[len(receipts)-1]
 
-		// The chain1.accounts.TransferAccountToChain() gas fee will be credited to chain1.Common
-		bal1.Common += ctxAcc1.GasFee
 		// chain2.testcore account will be credited with SD+GAS1+GAS2, pay actual GAS1,
 		// and be debited by SD+GAS2+'withdrawalAmount'
+		bal1.UpdateFeeBalances(ctxAcc1.GasFee)
 		bal1.Add(testcore2, xferDeposit+wasmlib.MinGasFee+wasmlib.MinGasFee-ctxAcc1.GasFee-xferDeposit-wasmlib.MinGasFee-withdrawalAmount)
 		// verify these changes against the actual chain1 account balances
 		bal1.VerifyBalances(t)
@@ -161,8 +160,9 @@ func Test2Chains(t *testing.T) {
 		userL1 -= xferAllowance + isc.Million
 		require.Equal(t, userL1, user.Balance())
 
-		// The gas fees will be credited to chain1.Common
-		bal2.Common += withdrawalReceipt.GasFeeCharged + transferReceipt.GasFeeCharged
+		// The gas fees will be credited to chain1.Originator
+		bal2.UpdateFeeBalances(withdrawalReceipt.GasFeeCharged)
+		bal2.UpdateFeeBalances(transferReceipt.GasFeeCharged)
 		// deduct coretest.WithdrawFromChain() gas fee from user's cool million
 		bal2.Add(user, isc.Million-withdrawalReceipt.GasFeeCharged)
 		// chain2.accounts1 will be credited with SD+GAS2+'withdrawalAmount', pay actual GAS2,

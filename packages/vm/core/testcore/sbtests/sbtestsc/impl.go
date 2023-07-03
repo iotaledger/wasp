@@ -43,8 +43,7 @@ func testSandboxCall(ctx isc.SandboxView) dict.Dict {
 
 func testEventLogDeploy(ctx isc.Sandbox) dict.Dict {
 	// Deploy the same contract with another name
-	ctx.DeployContract(Contract.ProgramHash,
-		VarContractNameDeployed, "test contract deploy log", nil)
+	ctx.DeployContract(Contract.ProgramHash, VarContractNameDeployed, nil)
 	return nil
 }
 

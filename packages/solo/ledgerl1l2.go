@@ -120,21 +120,12 @@ func (ch *Chain) L2TotalBaseTokens() uint64 {
 	return ch.L2TotalAssets().BaseTokens
 }
 
-func mustNativeTokenIDFromBytes(data []byte) iotago.NativeTokenID {
-	if len(data) != iotago.NativeTokenIDLength {
-		panic("len(data) != iotago.NativeTokenIDLength")
-	}
-	ret := iotago.NativeTokenID{}
-	copy(ret[:], data)
-	return ret
-}
-
 func (ch *Chain) GetOnChainTokenIDs() []iotago.NativeTokenID {
 	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewGetNativeTokenIDRegistry.Name)
 	require.NoError(ch.Env.T, err)
 	ret := make([]iotago.NativeTokenID, 0, len(res))
 	for k := range res {
-		ret = append(ret, mustNativeTokenIDFromBytes([]byte(k)))
+		ret = append(ret, isc.MustNativeTokenIDFromBytes([]byte(k)))
 	}
 	return ret
 }

@@ -28,11 +28,6 @@ pub struct FoundryModifySupplyCall<'a> {
     pub params: MutableFoundryModifySupplyParams,
 }
 
-pub struct HarvestCall<'a> {
-    pub func:   ScFunc<'a>,
-    pub params: MutableHarvestParams,
-}
-
 pub struct TransferAccountToChainCall<'a> {
     pub func:   ScFunc<'a>,
     pub params: MutableTransferAccountToChainParams,
@@ -167,17 +162,6 @@ impl ScFuncs {
         let mut f = FoundryModifySupplyCall {
             func:    ScFunc::new(ctx, HSC_NAME, HFUNC_FOUNDRY_MODIFY_SUPPLY),
             params:  MutableFoundryModifySupplyParams { proxy: Proxy::nil() },
-        };
-        ScFunc::link_params(&mut f.params.proxy, &f.func);
-        f
-    }
-
-    // Moves all tokens from the chain common account to the sender's L2 account.
-    // The chain owner is the only one who can call this entry point.
-    pub fn harvest(ctx: &impl ScFuncClientContext) -> HarvestCall {
-        let mut f = HarvestCall {
-            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_HARVEST),
-            params:  MutableHarvestParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f

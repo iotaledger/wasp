@@ -60,7 +60,7 @@ func TestBasic(t *testing.T) {
 		2*time.Second,
 		timeout,
 	)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, dkShare.GetAddress())
 	require.NotNil(t, dkShare.GetSharedPublic())
 	//
@@ -141,7 +141,7 @@ func TestUnreliableNet(t *testing.T) {
 		500*time.Millisecond, // Step retry.
 		timeout,
 	)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, dkShare.GetAddress())
 	require.NotNil(t, dkShare.GetSharedPublic())
 }
@@ -185,7 +185,7 @@ func TestLowN(t *testing.T) {
 			2*time.Second,
 			timeout,
 		)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.NotNil(t, dkShare.GetAddress())
 		require.NotNil(t, dkShare.GetSharedPublic())
 	}

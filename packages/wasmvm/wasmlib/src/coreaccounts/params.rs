@@ -120,38 +120,6 @@ impl MutableFoundryModifySupplyParams {
 }
 
 #[derive(Clone)]
-pub struct ImmutableHarvestParams {
-    pub(crate) proxy: Proxy,
-}
-
-impl ImmutableHarvestParams {
-    pub fn new() -> ImmutableHarvestParams {
-        ImmutableHarvestParams {
-            proxy: params_proxy(),
-        }
-    }
-
-    // amount of base tokens to leave in the common account
-    // default MinimumBaseTokensOnCommonAccount, can never be less
-    pub fn force_minimum_base_tokens(&self) -> ScImmutableUint64 {
-        ScImmutableUint64::new(self.proxy.root(PARAM_FORCE_MINIMUM_BASE_TOKENS))
-    }
-}
-
-#[derive(Clone)]
-pub struct MutableHarvestParams {
-    pub(crate) proxy: Proxy,
-}
-
-impl MutableHarvestParams {
-    // amount of base tokens to leave in the common account
-    // default MinimumBaseTokensOnCommonAccount, can never be less
-    pub fn force_minimum_base_tokens(&self) -> ScMutableUint64 {
-        ScMutableUint64::new(self.proxy.root(PARAM_FORCE_MINIMUM_BASE_TOKENS))
-    }
-}
-
-#[derive(Clone)]
 pub struct ImmutableTransferAccountToChainParams {
     pub(crate) proxy: Proxy,
 }

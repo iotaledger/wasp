@@ -38,7 +38,7 @@ func DecodeRequestID(e echo.Context) (isc.RequestID, error) {
 }
 
 func DecodeHNameFromHNameHexString(e echo.Context, key string) (isc.Hname, error) {
-	hname, err := isc.HnameFromHexString(e.Param(key))
+	hname, err := isc.HnameFromString(e.Param(key))
 	if err != nil {
 		return 0, apierrors.InvalidPropertyError(key, err)
 	}
