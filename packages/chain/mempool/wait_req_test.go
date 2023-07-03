@@ -37,9 +37,9 @@ func TestWaitReq(t *testing.T) {
 	wr.WaitMany(ctxM, []*isc.RequestRef{ref0, ref1, ref2}, func(req isc.Request) {
 		recvMany = append(recvMany, req)
 	})
-	wr.Have(req0)
-	wr.Have(req1)
-	wr.Have(req2)
+	wr.MarkAvailable(req0)
+	wr.MarkAvailable(req1)
+	wr.MarkAvailable(req2)
 	require.NotNil(t, recvAny)
 	require.Len(t, recvMany, 3)
 	require.Contains(t, recvMany, req0)

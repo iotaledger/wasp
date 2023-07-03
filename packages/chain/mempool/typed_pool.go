@@ -55,7 +55,7 @@ func (olp *typedPool[V]) Add(request V) {
 		olp.log.Debugf("ADD %v as key=%v", request.ID(), refKey)
 		olp.sizeMetric(olp.requests.Size())
 	}
-	olp.waitReq.Have(request)
+	olp.waitReq.MarkAvailable(request)
 }
 
 func (olp *typedPool[V]) Remove(request V) {

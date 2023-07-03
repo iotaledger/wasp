@@ -42,3 +42,4 @@ tests_output.log
 go.work
 go.work.sum
 TMP*
+tmp.*
