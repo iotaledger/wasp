@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"errors"
+	"math"
 	"math/big"
 	"strings"
 	"testing"
@@ -18,7 +19,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/require"
 
@@ -323,21 +323,30 @@ func (e *Env) TestRPCGetLogs() {
 }
 
 func (e *Env) TestRPCInvalidNonce() {
-	from, fromAddress := e.NewAccountWithL2Funds()
+	from, _ := e.NewAccountWithL2Funds()
 	_, toAddress := e.NewAccountWithL2Funds()
-	value := big.NewInt(0)
-	nonce := e.NonceAt(fromAddress) + 1
-	gasLimit := params.TxGas
-	tx, err := types.SignTx(
-		types.NewTransaction(nonce, toAddress, value, gasLimit, evm.GasPrice, nil),
-		e.Signer(),
-		from,
-	)
+	// try sending correct nonces in invalid order 1,2, then 0 - this should succeed
+	createTx := func(nonce uint64) *types.Transaction {
+		tx, err := types.SignTx(
+			types.NewTransaction(nonce, toAddress, big.NewInt(0), math.MaxUint64, evm.GasPrice, nil),
+			e.Signer(),
+			from,
+		)
+		require.NoError(e.T, err)
+		return tx
+	}
+
+	err := e.Client.SendTransaction(context.Background(), createTx(1))
+	require.NoError(e.T, err)
+	err = e.Client.SendTransaction(context.Background(), createTx(2))
+	require.NoError(e.T, err)
+	_, err = e.SendTransactionAndWait(createTx(0))
 	require.NoError(e.T, err)
 
-	_, err = e.SendTransactionAndWait(tx)
+	// try sending nonce 0 again
+	_, err = e.SendTransactionAndWait(createTx(0))
 	require.Error(e.T, err)
-	require.Regexp(e.T, `invalid transaction nonce: got 1, want 0`, err.Error())
+	require.Regexp(e.T, `invalid transaction nonce: got 0, want 3`, err.Error())
 	_, ok := err.(*isc.VMError)
 	require.False(e.T, ok)
 }

@@ -77,7 +77,9 @@ func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 		return err
 	}
 	b.chain.Log().Debugf("EVMSendTransaction, evm.tx.nonce=%v, evm.tx.hash=%v => isc.req.id=%v", tx.Nonce(), tx.Hash().Hex(), req.ID())
-	b.chain.ReceiveOffLedgerRequest(req, b.nodePubKey)
+	if !b.chain.ReceiveOffLedgerRequest(req, b.nodePubKey) {
+		return fmt.Errorf("tx not added to the mempool")
+	}
 
 	// store the request ID so that the user can query it later (if the
 	// Ethereum tx fails, the Ethereum receipt is never generated).

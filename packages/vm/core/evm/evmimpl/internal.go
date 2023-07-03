@@ -77,6 +77,12 @@ func createEmulator(ctx isc.Sandbox, l2Balance *l2Balance) *emulator.EVMEmulator
 
 // IMPORTANT: Must only be called from the ISC VM (when the request is done executing)
 func AddFailedTx(ctx isc.Sandbox, tx *types.Transaction, receipt *types.Receipt) {
+	if tx == nil {
+		panic("nil tx")
+	}
+	if receipt == nil {
+		panic("nil receipt")
+	}
 	emu := getBlockContext(ctx).emu
 	emu.BlockchainDB().AddTransaction(tx, receipt)
 	// we must also increment the nonce manually since the original request was reverted
