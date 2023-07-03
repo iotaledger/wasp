@@ -23,7 +23,7 @@ After installing `@iota/iscmagic` you can use the functions by importing them as
 ```ts
 pragma solidity >=0.8.5;
 
-import "@iota/iscmagic";
+import "@iota/iscmagic/ISC.sol";
 
 contract MyEVMContract {
     event EntropyEvent(bytes32 entropy);
