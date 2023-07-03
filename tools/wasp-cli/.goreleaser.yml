@@ -12,6 +12,8 @@ builds:
       - -s -w -X=github.com/iotaledger/wasp/components/app.Version={{ .Summary }}
     main: main.go
     dir: ./tools/wasp-cli
+    tags:
+      - no_wasmhost
     goos:
       - linux
     goarch:
@@ -28,10 +30,27 @@ builds:
       - -s -w -X=github.com/iotaledger/wasp/components/app.Version={{ .Summary }}
     main: main.go
     dir: ./tools/wasp-cli
+    tags:
+      - no_wasmhost
     goos:
       - linux
     goarch:
       - arm64
+  
+  # macOS
+  - id: wasp-cli-darwin-all
+    binary: wasp-cli
+    ldflags:
+      - -s -w -X=github.com/iotaledger/wasp/components/app.Version={{ .Summary }}
+    main: main.go
+    dir: ./tools/wasp-cli
+    tags:
+      - no_wasmhost
+    goos:
+      - darwin
+    goarch:
+      - arm64
+      - arch64
 
   # Windows AMD64
   - id: wasp-cli-windows-amd64
@@ -44,6 +63,8 @@ builds:
       - -s -w -X=github.com/iotaledger/wasp/components/app.Version={{ .Summary }}
     main: main.go
     dir: ./tools/wasp-cli
+    tags:
+      - no_wasmhost
     goos:
       - windows
     goarch:
