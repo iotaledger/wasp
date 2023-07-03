@@ -185,3 +185,11 @@ func GetChain(name string) isc.ChainID {
 	log.Check(err)
 	return chainID
 }
+
+func GetWalletSchemeString() string {
+	return viper.GetString("wallet.scheme")
+}
+
+func SetWalletSchemeString(scheme string) {
+	Set("wallet.scheme", scheme)
+}

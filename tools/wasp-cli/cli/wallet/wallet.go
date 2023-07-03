@@ -1,9 +1,12 @@
 package wallet
 
 import (
-	"github.com/spf13/viper"
+	"errors"
+	"fmt"
+	"runtime"
 
 	wasp_wallet_sdk "github.com/iotaledger/wasp-wallet-sdk"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/providers"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/wallets"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -11,14 +14,16 @@ import (
 
 var AddressIndex uint32
 
+type WalletScheme string
+
 const (
-	SchemeInMemory   = "in_memory"
-	SchemeLedger     = "sdk_ledger"
-	SchemeStronghold = "sdk_stronghold"
+	SchemeInMemory   WalletScheme = "in_memory"
+	SchemeLedger     WalletScheme = "sdk_ledger"
+	SchemeStronghold WalletScheme = "sdk_stronghold"
 )
 
-func GetWalletScheme() string {
-	scheme := viper.GetString("wallet.scheme")
+func GetWalletScheme() WalletScheme {
+	scheme := WalletScheme(config.GetWalletSchemeString())
 
 	switch scheme {
 	case SchemeLedger, SchemeInMemory, SchemeStronghold:
@@ -27,8 +32,32 @@ func GetWalletScheme() string {
 	return SchemeInMemory
 }
 
+func SetWalletScheme(scheme WalletScheme) error {
+	switch scheme {
+	case SchemeLedger, SchemeInMemory, SchemeStronghold:
+		config.SetWalletSchemeString(string(scheme))
+		return nil
+	}
+	return errors.New("invalid wallet scheme provided")
+}
+
+func getIotaSDKLibName() string {
+	switch runtime.GOOS {
+	case "windows":
+		return "iota_sdk_native.dll"
+	case "linux":
+		return "libiota_sdk_native.so"
+	case "darwin":
+		return "libiota_sdk_native.dylib"
+	default:
+		panic(fmt.Sprintf("unsupported OS: %s", runtime.GOOS))
+	}
+}
+
 func getIotaSDK() *wasp_wallet_sdk.IOTASDK {
-	sdk, err := wasp_wallet_sdk.NewIotaSDK("/home/luke/dev/iota-sdk/target/release/libiota_sdk_go.so")
+	// LoadLibrary (windows) and dlLoad (linux) have different search path behaviors
+	// For now, use a relative path - as it will eventually be shipped with a release.
+	sdk, err := wasp_wallet_sdk.NewIotaSDK(getIotaSDKLibName())
 	log.Check(err)
 	return sdk
 }
