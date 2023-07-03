@@ -24,7 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 )
 
-func TestCruelWorld(t *testing.T) {
+func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 

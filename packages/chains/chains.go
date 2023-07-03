@@ -259,7 +259,7 @@ func (c *Chains) activateAllFromRegistry() error {
 }
 
 // activateWithoutLocking activates a chain in the node.
-func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
+func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:funlen
 	if c.ctx == nil {
 		return errors.New("run chains first")
 	}
@@ -315,7 +315,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	stateManagerParameters.PruningMaxStatesToDelete = c.smPruningMaxStatesToDelete
 
 	// Initialize Snapshotter
-	chainStore := indexedstore.New(state.NewStoreWithMetrics(chainKVStore, chainMetrics.State)),
+	chainStore := indexedstore.New(state.NewStoreWithMetrics(chainKVStore, chainMetrics.State))
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
 	validatorAgentID := accounts.CommonAccount()
 	if c.validatorFeeAddr != nil {

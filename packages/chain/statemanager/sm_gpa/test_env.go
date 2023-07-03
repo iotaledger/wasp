@@ -259,6 +259,7 @@ func (teT *testEnv) ensureCompletedConsensusDecidedState(respChan <-chan state.S
 		select {
 		case s := <-respChan:
 			sm_gpa_utils.CheckStateInStore(teT.t, teT.bf.GetStore(), s)
+			require.True(teT.t, expectedCommitment.TrieRoot().Equals(s.TrieRoot()))
 			return true
 		default:
 			return false
