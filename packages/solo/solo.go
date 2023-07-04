@@ -41,8 +41,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
+	vmcontext "github.com/iotaledger/wasp/packages/vm/vmimpl"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 )
@@ -109,8 +109,7 @@ type Chain struct {
 	// mempool of the chain is used in Solo to mimic a real node
 	mempool Mempool
 
-	RequestsBlock     uint32
-	RequestsRemaining int
+	RequestsBlock uint32
 
 	metrics *metrics.ChainMetrics
 }
@@ -363,7 +362,7 @@ func (env *Solo) requestsByChain(tx *iotago.Transaction) map[isc.ChainID][]isc.R
 }
 
 // AddRequestsToMempool adds all the requests to the chain mempool,
-func (env *Solo) AddRequestsToMempool(ch *Chain, reqs []isc.Request, timeout ...time.Duration) {
+func (env *Solo) AddRequestsToMempool(ch *Chain, reqs []isc.Request) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 	ch.runVMMutex.Lock()

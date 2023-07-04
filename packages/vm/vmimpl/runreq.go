@@ -103,7 +103,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16) (*vm.Re
 	return result, nil
 }
 
-func (vmctx *VMContext) payoutAgentID() isc.AgentID {
+func (vmctx *vmContext) payoutAgentID() isc.AgentID {
 	var payoutAgentID isc.AgentID
 	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
 		payoutAgentID = governance.MustGetPayoutAgentID(s)
