@@ -154,34 +154,6 @@ func MakeSharedSecret(suite suites.Suite, n, t int) (kyber.Point, *share.PubPoly
 	return pubKey, pubPoly, priShares
 }
 
-func SetupDkgPregenerated( // TODO: Remove.
-	t *testing.T,
-	threshold uint16,
-	identities []*cryptolib.KeyPair,
-) (iotago.Address, []registry.DKShareRegistryProvider) {
-	var err error
-	serializedDks := pregeneratedDksRead(uint16(len(identities)), threshold)
-	nodePubKeys := make([]*cryptolib.PublicKey, len(identities))
-	for i := range nodePubKeys {
-		nodePubKeys[i] = identities[i].GetPublicKey()
-	}
-	dks := make([]tcrypto.DKShare, len(serializedDks))
-	dkShareRegistryProviders := make([]registry.DKShareRegistryProvider, len(identities))
-	for i := range dks {
-		dks[i], err = tcrypto.DKShareFromBytes(serializedDks[i], tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBLSSuite(), identities[i].GetPrivateKey())
-		require.NoError(t, err)
-		if i > 0 {
-			dks[i].AssignCommonData(dks[0])
-		}
-		dks[i].AssignNodePubKeys(nodePubKeys)
-		dkShareRegistryProviders[i] = testutil.NewDkgRegistryProvider(identities[i].GetPrivateKey())
-		require.Nil(t, dkShareRegistryProviders[i].SaveDKShare(dks[i]))
-	}
-	require.Equal(t, dks[0].GetN(), uint16(len(identities)), "dks was pregenerated for different node count (N=%v)", dks[0].GetN())
-	require.Equal(t, dks[0].GetT(), threshold, "dks was pregenerated for different threshold (T=%v)", dks[0].GetT())
-	return dks[0].GetAddress(), dkShareRegistryProviders
-}
-
 func SetupNet(
 	peeringURLs []string,
 	peerIdentities []*cryptolib.KeyPair,
