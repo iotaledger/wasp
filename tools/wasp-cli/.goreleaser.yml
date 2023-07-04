@@ -50,7 +50,7 @@ builds:
       - darwin
     goarch:
       - arm64
-      - arch64
+      - amd64
 
   # Windows AMD64
   - id: wasp-cli-windows-amd64
